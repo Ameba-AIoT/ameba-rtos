@@ -1,0 +1,630 @@
+
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/ha/
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/se/
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/zcl/
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/zgp/
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/zgpd/
+MODULE_IFLAGS += -I$(ZB_STACK_DIR)/include/zll/
+
+vpath %.c $(ZB_STACK_DIR)/aps \
+		  $(ZB_STACK_DIR)/commissioning/bdb/ \
+		  $(ZB_STACK_DIR)/commissioning/legacy/ \
+		  $(ZB_STACK_DIR)/commissioning/se/ \
+		  $(ZB_STACK_DIR)/common/ \
+		  $(ZB_STACK_DIR)/mac \
+		  $(ZB_STACK_DIR)/nwk \
+		  $(ZB_STACK_DIR)/secur \
+		  $(ZB_STACK_DIR)/zcl \
+		  $(ZB_STACK_DIR)/zdo \
+		  $(ZB_STACK_DIR)/zgp/ \
+		  $(ZB_STACK_DIR)/zll/ \
+		  $(ZB_STACK_DIR)/zse/ \
+
+SRC_COMMON = \
+		$(ZB_STACK_DIR)/common/zb_24bit_math.c \
+		$(ZB_STACK_DIR)/common/zb_48bit_math.c \
+		$(ZB_STACK_DIR)/common/zb_address.c \
+		$(ZB_STACK_DIR)/common/zb_bufpool_mult.c \
+		$(ZB_STACK_DIR)/common/zb_bufpool_mult_storage.c \
+		$(ZB_STACK_DIR)/common/zb_channel_page.c \
+		$(ZB_STACK_DIR)/common/zb_debug.c \
+		$(ZB_STACK_DIR)/common/zb_error_indication.c \
+		$(ZB_STACK_DIR)/common/zb_fsm.c \
+		$(ZB_STACK_DIR)/common/zb_init_common.c \
+		$(ZB_STACK_DIR)/common/zb_init_default.c \
+		$(ZB_STACK_DIR)/common/zb_led_button.c \
+		$(ZB_STACK_DIR)/common/zb_memconfig.c \
+		$(ZB_STACK_DIR)/common/zb_net_trace.c \
+		$(ZB_STACK_DIR)/common/zb_nvram.c \
+		$(ZB_STACK_DIR)/common/zb_nvram_custom_handlers.c \
+		$(ZB_STACK_DIR)/common/zb_osif_single_serial_bridge.c \
+		$(ZB_STACK_DIR)/common/zb_random.c \
+		$(ZB_STACK_DIR)/common/zb_scheduler.c \
+		$(ZB_STACK_DIR)/common/zb_scheduler_init.c \
+		$(ZB_STACK_DIR)/common/zb_serial_trace_bin.c \
+		$(ZB_STACK_DIR)/common/zb_signal_common.c \
+		$(ZB_STACK_DIR)/common/zb_sleep.c \
+		$(ZB_STACK_DIR)/common/zb_time.c \
+		$(ZB_STACK_DIR)/common/zb_trace_common.c \
+		$(ZB_STACK_DIR)/common/zb_verify.c \
+		$(ZB_STACK_DIR)/common/zb_watchdog.c
+		
+		# $(ZB_STACK_DIR)/common/zb_file_trace.c \
+		# $(ZB_STACK_DIR)/common/zb_file_trace_bin.c \
+		# $(ZB_STACK_DIR)/common/zb_globals.c \
+		# $(ZB_STACK_DIR)/common/zb_nvram_trace.c \
+		
+SRC_COMMON_U = \
+		$(ZB_STACK_DIR)/common/zb_debug.c \
+		$(ZB_STACK_DIR)/common/zb_error_indication.c \
+		$(ZB_STACK_DIR)/common/zb_random.c \
+		$(ZB_STACK_DIR)/common/zb_serial_trace_bin.c \
+		$(ZB_STACK_DIR)/common/zb_verify.c
+		
+OBJS_COMMON  		= $(notdir $(SRC_COMMON:.c=.o))
+OBJS_COMMON_ED  	= $(notdir $(SRC_COMMON:.c=.ed.o))
+OBJS_COMMON_ZGPD 	= $(notdir $(SRC_COMMON:.c=.zgpd.o))
+OBJS_COMMON_GPCB	= $(notdir $(SRC_COMMON:.c=.gpcb.o))
+OBJS_COMMON_U 		= $(notdir $(SRC_COMMON_U:.c=.u.o))
+
+COMMON_LIB		= libcommon.a
+COMMON_LIB_ED 	= libcommon.ed.a
+COMMON_LIB_GPCB	= libcommon.gpcb.a
+COMMON_LIB_ZGPD	= libcommon.zgpd.a
+
+$(COMMON_LIB):$(OBJS_COMMON)
+	$(MAKE_LIB)
+
+$(COMMON_LIB_ED):$(OBJS_COMMON_ED)
+	$(MAKE_LIB)
+	
+$(COMMON_LIB_GPCB):$(OBJS_COMMON_GPCB)
+	$(MAKE_LIB)
+
+$(COMMON_LIB_ZGPD):$(OBJS_COMMON_ZGPD)
+	$(MAKE_LIB)
+	
+SRC_MAC = \
+		$(ZB_STACK_DIR)/mac/mac.c \
+		$(ZB_STACK_DIR)/mac/mac_api_trace.c \
+		$(ZB_STACK_DIR)/mac/mac_associate.c \
+		$(ZB_STACK_DIR)/mac/mac_cb_stubs.c \
+		$(ZB_STACK_DIR)/mac/mac_common.c \
+		$(ZB_STACK_DIR)/mac/mac_cr_associate.c \
+		$(ZB_STACK_DIR)/mac/mac_cr_coordinator.c \
+		$(ZB_STACK_DIR)/mac/mac_cr_data.c \
+		$(ZB_STACK_DIR)/mac/mac_data.c \
+		$(ZB_STACK_DIR)/mac/mac_disturber.c \
+		$(ZB_STACK_DIR)/mac/mac_dump.c \
+		$(ZB_STACK_DIR)/mac/mac_duty_cycle.c \
+		$(ZB_STACK_DIR)/mac/mac_fcs.c \
+		$(ZB_STACK_DIR)/mac/mac_lbt.c \
+		$(ZB_STACK_DIR)/mac/mac_optional.c \
+		$(ZB_STACK_DIR)/mac/mac_phy_testing_mode.c \
+		$(ZB_STACK_DIR)/mac/mac_pib.c \
+		$(ZB_STACK_DIR)/mac/mac_power_control.c \
+		$(ZB_STACK_DIR)/mac/mac_scan.c \
+		$(ZB_STACK_DIR)/mac/mac_source_matching.c \
+		$(ZB_STACK_DIR)/mac/mac_visibility.c \
+		$(ZB_STACK_DIR)/mac/mac_zcl_diagnostic.c \
+		$(ZB_STACK_DIR)/mac/mac_zgp.c \
+		$(ZB_STACK_DIR)/mac/zb_ie.c
+
+OBJS_MAC 		= $(notdir $(SRC_MAC:.c=.o))
+OBJS_MAC_ED 	= $(notdir $(SRC_MAC:.c=.ed.o))
+OBJS_MAC_ZGPD	= $(notdir $(SRC_MAC:.c=.zgpd.o))
+
+MAC_LIB			= libmac.a
+MAC_LIB_ED		= libmac.ed.a
+MAC_LIB_ZGPD	= libmac.zgpd.a
+
+$(MAC_LIB):$(OBJS_MAC)
+	$(MAKE_LIB)
+
+$(MAC_LIB_ED):$(OBJS_MAC_ED)
+	$(MAKE_LIB)
+
+$(MAC_LIB_ZGPD):$(OBJS_MAC_ZGPD)
+	$(MAKE_LIB)
+	
+SRC_NWK += \
+		$(ZB_STACK_DIR)/nwk/nwk_address_assign.c \
+		$(ZB_STACK_DIR)/nwk/nwk_address_conflict.c \
+		$(ZB_STACK_DIR)/nwk/nwk_broadcasting.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_formation.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_join.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_mesh_routing.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_parent.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_permit_join.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_route_discovery.c \
+		$(ZB_STACK_DIR)/nwk/nwk_cr_tree_routing.c \
+		$(ZB_STACK_DIR)/nwk/nwk_discovery.c \
+		$(ZB_STACK_DIR)/nwk/nwk_formation.c \
+		$(ZB_STACK_DIR)/nwk/nwk_join.c \
+		$(ZB_STACK_DIR)/nwk/nwk_link_power_delta.c \
+		$(ZB_STACK_DIR)/nwk/nwk_link_status.c \
+		$(ZB_STACK_DIR)/nwk/nwk_main.c \
+		$(ZB_STACK_DIR)/nwk/nwk_mm.c \
+		$(ZB_STACK_DIR)/nwk/nwk_multimac_proxy.c \
+		$(ZB_STACK_DIR)/nwk/nwk_neighbor.c \
+		$(ZB_STACK_DIR)/nwk/nwk_neighbor_utility.c \
+		$(ZB_STACK_DIR)/nwk/nwk_nlme.c \
+		$(ZB_STACK_DIR)/nwk/nwk_panid_conflict.c \
+		$(ZB_STACK_DIR)/nwk/nwk_srouting.c \
+		$(ZB_STACK_DIR)/nwk/zb_nwk_ed_aging.c \
+		
+		# $(ZB_STACK_DIR)/nwk/nwk_cb_stubs.c \
+		
+OBJS_NWK  	= $(notdir $(SRC_NWK:.c=.o))
+OBJS_NWK_ED = $(notdir $(SRC_NWK:.c=.ed.o))
+
+NWK_LIB 	= libnwk.a
+NWK_LIB_ED 	= libnwk.ed.a
+
+$(NWK_LIB):$(OBJS_NWK)
+	$(MAKE_LIB)
+
+$(NWK_LIB_ED):$(OBJS_NWK_ED)
+	$(MAKE_LIB)
+
+
+SRC_APS += \
+		$(ZB_STACK_DIR)/aps/aps_aib.c \
+		$(ZB_STACK_DIR)/aps/aps_bind.c \
+		$(ZB_STACK_DIR)/aps/aps_binding_whitelist.c \
+		$(ZB_STACK_DIR)/aps/aps_commands.c \
+		$(ZB_STACK_DIR)/aps/aps_dups.c \
+		$(ZB_STACK_DIR)/aps/aps_group_table.c \
+		$(ZB_STACK_DIR)/aps/aps_interpan.c \
+		$(ZB_STACK_DIR)/aps/aps_interpan_mchan.c \
+		$(ZB_STACK_DIR)/aps/aps_main.c \
+		$(ZB_STACK_DIR)/aps/aps_nwk_confirm.c \
+		
+OBJS_APS  	= $(notdir $(SRC_APS:.c=.o))
+OBJS_APS_ED = $(notdir $(SRC_APS:.c=.ed.o))
+APS_LIB		= libaps.a
+APS_LIB_ED	= libaps.ed.a
+
+$(APS_LIB):$(OBJS_APS)
+	$(MAKE_LIB)
+
+$(APS_LIB_ED):$(OBJS_APS_ED)
+	$(MAKE_LIB)
+
+SRC_ZDO += \
+		$(ZB_STACK_DIR)/zdo/af_descriptor.c \
+		$(ZB_STACK_DIR)/zdo/af_interpan.c \
+		$(ZB_STACK_DIR)/zdo/af_rx.c \
+		$(ZB_STACK_DIR)/zdo/joining_list_mgmt.c \
+		$(ZB_STACK_DIR)/zdo/ncp_weak.c \
+		$(ZB_STACK_DIR)/zdo/test_profile.c \
+		$(ZB_STACK_DIR)/zdo/zb_zboss_api_common.c \
+		$(ZB_STACK_DIR)/zdo/zb_zboss_api_default.c \
+		$(ZB_STACK_DIR)/zdo/zdo_app.c \
+		$(ZB_STACK_DIR)/zdo/zdo_app_common.c \
+		$(ZB_STACK_DIR)/zdo/zdo_app_join.c \
+		$(ZB_STACK_DIR)/zdo/zdo_app_leave.c \
+		$(ZB_STACK_DIR)/zdo/zdo_app_prod_conf.c \
+		$(ZB_STACK_DIR)/zdo/zdo_bind_manage.c \
+		$(ZB_STACK_DIR)/zdo/zdo_channel_manager.c \
+		$(ZB_STACK_DIR)/zdo/zdo_commissioning.c \
+		$(ZB_STACK_DIR)/zdo/zdo_common.c \
+		$(ZB_STACK_DIR)/zdo/zdo_diagnostics.c \
+		$(ZB_STACK_DIR)/zdo/zdo_disc_cli.c \
+		$(ZB_STACK_DIR)/zdo/zdo_disc_srv.c \
+		$(ZB_STACK_DIR)/zdo/zdo_ed_aging.c \
+		$(ZB_STACK_DIR)/zdo/zdo_formation.c \
+		$(ZB_STACK_DIR)/zdo/zdo_hubs.c \
+		$(ZB_STACK_DIR)/zdo/zdo_nwk_manage_cli.c \
+		$(ZB_STACK_DIR)/zdo/zdo_nwk_manage_srv.c \
+		$(ZB_STACK_DIR)/zdo/zdo_poll.c \
+		$(ZB_STACK_DIR)/zdo/zdo_promisc.c \
+		$(ZB_STACK_DIR)/zdo/zdo_resp_validate.c \
+		$(ZB_STACK_DIR)/zdo/zdo_rx.c \
+		$(ZB_STACK_DIR)/zdo/zdo_wwah_parent_classification.c \
+		$(ZB_STACK_DIR)/zdo/zdo_wwah_survey_beacons.c
+		
+		# $(ZB_STACK_DIR)/zdo/zdo_cb_stubs.c \
+		
+OBJS_ZDO  	= $(notdir $(SRC_ZDO:.c=.o))
+OBJS_ZDO_ED = $(notdir $(SRC_ZDO:.c=.ed.o))
+ZDO_LIB		= libzdo.a
+ZDO_LIB_ED	= libzdo.ed.a
+
+$(ZDO_LIB):$(OBJS_ZDO)
+	$(MAKE_LIB)
+	
+$(ZDO_LIB_ED):$(OBJS_ZDO_ED)
+	$(MAKE_LIB)
+
+
+SRC_COMM_BDB = \
+		$(ZB_STACK_DIR)/commissioning/bdb/zdo_commissioning_bdb.c \
+		$(ZB_STACK_DIR)/commissioning/bdb/zdo_commissioning_bdb_formation.c \
+		$(ZB_STACK_DIR)/commissioning/bdb/bdb_finding_binding.c \
+		$(ZB_STACK_DIR)/commissioning/bdb/bdb_touchlink.c
+		
+OBJS_COMM_BDB  		= $(notdir $(SRC_COMM_BDB:.c=.o))
+OBJS_COMM_BDB_ED	= $(notdir $(SRC_COMM_BDB:.c=.ed.o))
+COMM_BDB_LIB		= libcommbdb.a
+COMM_BDB_LIB_ED		= libcommbdb.ed.a
+
+$(COMM_BDB_LIB):$(OBJS_COMM_BDB)
+	$(MAKE_LIB)
+
+$(COMM_BDB_LIB_ED):$(OBJS_COMM_BDB_ED)
+	$(MAKE_LIB)
+
+SRC_COMM_LEGACY	= \
+		$(ZB_STACK_DIR)/commissioning/legacy/zdo_commissioning_classic.c
+
+OBJS_COMM_LEGACY	= $(notdir $(SRC_COMM_LEGACY:.c=.o))
+OBJS_COMM_LEGACY_ED	= $(notdir $(SRC_COMM_LEGACY:.c=.ed.o))
+COMM_LEGACY_LIB		= libcommlegacy.a
+COMM_LEGACY_LIB_ED	= libcommlegacy.ed.a
+
+$(COMM_LEGACY_LIB):$(OBJS_COMM_LEGACY)
+	$(MAKE_LIB)
+
+$(COMM_LEGACY_LIB_ED):$(OBJS_COMM_LEGACY_ED)
+	$(MAKE_LIB)
+
+	
+SRC_COMM_SE	= \
+		$(ZB_STACK_DIR)/commissioning/se/zdo_commissioning_se.c \
+		$(ZB_STACK_DIR)/commissioning/se/zdo_commissioning_se_formation.c \
+		$(ZB_STACK_DIR)/commissioning/se/zdo_commissioning_se_bdb_mixed.c
+
+OBJS_COMM_SE	= $(notdir $(SRC_COMM_SE:.c=.o))
+OBJS_COMM_SE_ED	= $(notdir $(SRC_COMM_SE:.c=.ed.o))
+COMM_SE_LIB		= libcommse.a
+COMM_SE_LIB_ED	= libcommse.ed.a
+
+$(COMM_SE_LIB):$(OBJS_COMM_SE)
+	$(MAKE_LIB)
+
+$(COMM_SE_LIB_ED):$(OBJS_COMM_SE_ED)
+	$(MAKE_LIB)
+	
+SRC_ZCL += \
+		$(ZB_STACK_DIR)/zcl/zcl_main.c \
+		$(ZB_STACK_DIR)/zcl/zcl_general_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_attr_value.c \
+		$(ZB_STACK_DIR)/zcl/zcl_common.c \
+		$(ZB_STACK_DIR)/zcl/zcl_nvram.c \
+		$(ZB_STACK_DIR)/zcl/zcl_reporting.c \
+		$(ZB_STACK_DIR)/zcl/zcl_identify_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_on_off_commands.c \
+		$(ZB_STACK_DIR)/zcl/ha_sas.c \
+		$(ZB_STACK_DIR)/zcl/zcl_groups.c \
+		$(ZB_STACK_DIR)/zcl/zcl_scenes.c \
+		$(ZB_STACK_DIR)/zcl/zcl_level_control_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_shade_config_commands.c\
+		$(ZB_STACK_DIR)/zcl/zcl_continuous_value_change_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_color_control_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_poll_control_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_poll_control_client.c \
+		$(ZB_STACK_DIR)/zcl/zcl_alarms_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_power_config_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_diagnostics_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ias_ace_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ias_wd_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ias_zone_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ota_upgrade_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ota_upgrade_srv_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ota_upgrade_common.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ota_upgrade_minimal.c \
+		$(ZB_STACK_DIR)/zcl/zcl_basic_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_temp_measurement.c \
+		$(ZB_STACK_DIR)/zcl/zcl_pressure_measurement.c \
+		$(ZB_STACK_DIR)/zcl/zcl_thermostat_commands.c \
+		$(ZB_STACK_DIR)/zcl/zcl_tunnel.c zcl_time.c \
+		$(ZB_STACK_DIR)/zcl/zcl_en50523_appliance_events_and_alerts.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_tunneling.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_tunneling.c \
+		$(ZB_STACK_DIR)/zcl/zcl_dehumid_control.c \
+		$(ZB_STACK_DIR)/zcl/zcl_door_lock.c \
+		$(ZB_STACK_DIR)/zcl/zcl_el_measurement.c \
+		$(ZB_STACK_DIR)/zcl/zcl_fan_control.c \
+		$(ZB_STACK_DIR)/zcl/zcl_rel_humidity.c \
+		$(ZB_STACK_DIR)/zcl/zcl_thermostat_ui_config.c \
+		$(ZB_STACK_DIR)/zcl/zcl_window_covering.c \
+		$(ZB_STACK_DIR)/zcl/zcl_on_off_switch_config.c \
+		$(ZB_STACK_DIR)/zcl/zcl_illuminance_measurement.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_drlc.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_drlc.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_price.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_price.c \
+		$(ZB_STACK_DIR)/zcl/zcl_prepayment.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_calendar.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_calendar.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_energy_mgmt.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_energy_mgmt.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_messaging.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_messaging.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_events.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_events.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_subghz.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_subghz.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_mdu_pairing.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_mdu_pairing.c \
+		$(ZB_STACK_DIR)/zcl/zcl_meter_identification.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_metering.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_metering.c \
+		$(ZB_STACK_DIR)/zcl/zcl_device_management.c \
+		$(ZB_STACK_DIR)/zcl/zcl_binary_input.c \
+		$(ZB_STACK_DIR)/zcl/zcl_ir_blaster.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_wwah.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_wwah.c \
+		$(ZB_STACK_DIR)/zcl/zcl_wwah_common.c \
+		$(ZB_STACK_DIR)/zcl/zcl_control4_networking.c \
+		$(ZB_STACK_DIR)/zcl/zcl_c_daily_schedule.c \
+		$(ZB_STACK_DIR)/zcl/zcl_s_daily_schedule.c \
+		$(ZB_STACK_DIR)/zcl/zcl_occupancy_sensing_commands.c\
+		
+OBJS_ZCL  	= $(notdir $(SRC_ZCL:.c=.o))
+OBJS_ZCL_ED	= $(notdir $(SRC_ZCL:.c=.ed.o))
+
+ZCL_LIB		= libzcl.a
+ZCL_LIB_ED	= libzcl.ed.a
+
+$(ZCL_LIB):$(OBJS_ZCL)
+	$(MAKE_LIB)
+
+$(ZCL_LIB_ED):$(OBJS_ZCL_ED)
+	$(MAKE_LIB)
+
+SRC_ZGP = \
+		$(ZB_STACK_DIR)/zgp/zgp_cluster.c \
+		$(ZB_STACK_DIR)/zgp/zgp_cluster_gp.c \
+		$(ZB_STACK_DIR)/zgp/zgp_common.c \
+		$(ZB_STACK_DIR)/zgp/zgp_helper.c \
+		$(ZB_STACK_DIR)/zgp/zgp_proxy_table.c \
+		$(ZB_STACK_DIR)/zgp/zgp_secur.c \
+		$(ZB_STACK_DIR)/zgp/zgp_sink.c \
+		$(ZB_STACK_DIR)/zgp/zgp_sink_gpdf_to_zcl.c \
+		$(ZB_STACK_DIR)/zgp/zgp_stub.c \
+		$(ZB_STACK_DIR)/zgp/zgp_tx_queue.c \
+		$(ZB_STACK_DIR)/zgp/zgp_zgpd_app_table.c \
+		
+SRC_ZGP_ZGPD = \
+		$(ZB_STACK_DIR)/zgp/zgp_zgpd.c \
+		$(ZB_STACK_DIR)/zgp/zgp_secur.c \
+		$(ZB_STACK_DIR)/zgp/zgp_common.c \
+		
+SRC_ZGP_DUMMY = zgp_dummy.c
+		
+OBJS_ZGP_GPPB = $(notdir $(SRC_ZGP:.c=.gppb.o))
+OBJS_ZGP_GPCB = $(notdir $(SRC_ZGP:.c=.gpcb.o))
+OBJS_ZGP_ZGPD = $(notdir $(SRC_ZGP_ZGPD:.c=.zgpd.o))
+OBJS_ZGP_DUMMY = $(notdir $(SRC_ZGP_DUMMY:.c=.o))
+
+OBJS_ZGP_GPCT = $(notdir $(SRC_ZGP:.c=.gpct.o))
+OBJS_ZGP_ED = $(notdir $(SRC_ZGP:.c=.ed.o))
+OBJS_ZGP_GPT = $(notdir $(SRC_ZGP:.c=.gpt.ed.o))
+OBJS_ZGP_GPTP = $(notdir $(SRC_ZGP:.c=.gptp.ed.o))
+
+ZGP_GPPB_LIB	= libzgp.gppb.a
+ZGP_GPCB_LIB	= libzgp.gpcb.a
+ZGPD_LIB	= libzgpd.a
+ZGP_DUMMY_LIB	= libzgp.dummy.a
+
+ZGP_ED_LIB		= libzgp.ed.a
+	
+$(ZGP_GPPB_LIB):$(OBJS_ZGP_GPPB)
+	$(MAKE_LIB)
+
+$(ZGP_GPCB_LIB):$(OBJS_ZGP_GPCB)
+	$(MAKE_LIB)
+	
+$(ZGPD_LIB):$(OBJS_ZGP_ZGPD)
+	$(MAKE_LIB)
+	
+$(ZGP_ED_LIB):$(OBJS_ZGP_ED)
+	$(MAKE_LIB)
+
+$(ZGP_DUMMY_LIB):$(OBJS_ZGP_DUMMY)
+	$(MAKE_LIB)
+
+SRC_SECUR += \
+		$(ZB_STACK_DIR)/secur/aps_secur.c \
+		$(ZB_STACK_DIR)/secur/apsme_secur.c \
+		$(ZB_STACK_DIR)/secur/bdb_secur.c \
+		$(ZB_STACK_DIR)/secur/ic_secur.c \
+		$(ZB_STACK_DIR)/secur/nwk_secur.c \
+		$(ZB_STACK_DIR)/secur/secur_ccm.c \
+		$(ZB_STACK_DIR)/secur/secur_formation.c \
+		$(ZB_STACK_DIR)/secur/tcswap_zc.c \
+		$(ZB_STACK_DIR)/secur/zb_ecc.c \
+		$(ZB_STACK_DIR)/secur/zdo_secur.c \
+		
+		# $(ZB_STACK_DIR)/secur/mac_secur.c \
+
+SRC_SECUR_ZGPD = \
+		$(ZB_STACK_DIR)/secur/secur_ccm.c \
+		
+OBJS_SECUR  	= $(notdir $(SRC_SECUR:.c=.o))
+OBJS_SECUR_ED  	= $(notdir $(SRC_SECUR:.c=.ed.o))
+OBJS_SECUR_ZGPD = $(notdir $(SRC_SECUR_ZGPD:.c=.zgpd.o))
+
+SECUR_LIB 		= libsec.a
+SECUR_LIB_ED	= libsec.ed.a
+SECUR_LIB_ZGPD	= libsec.zgpd.a
+
+$(SECUR_LIB):$(OBJS_SECUR)
+	$(MAKE_LIB)
+
+$(SECUR_LIB_ED):$(OBJS_SECUR_ED)
+	$(MAKE_LIB)
+	
+$(SECUR_LIB_ZGPD):$(OBJS_SECUR_ZGPD)
+	$(MAKE_LIB)
+	
+SRC_ZSE += \
+		$(ZB_STACK_DIR)/zse/zse_aps_key_est.c \
+		$(ZB_STACK_DIR)/zse/zse_certdb.c \
+		$(ZB_STACK_DIR)/zse/zse_common.c \
+		$(ZB_STACK_DIR)/zse/zse_kec_cluster.c \
+		$(ZB_STACK_DIR)/zse/zse_kec_cluster_nvram.c \
+		$(ZB_STACK_DIR)/zse/zse_sas.c \
+		$(ZB_STACK_DIR)/zse/zse_secur.c \
+		$(ZB_STACK_DIR)/zse/zse_service_discovery.c \
+		$(ZB_STACK_DIR)/zse/zse_steady_state.c \
+		
+OBJS_ZSE  	= $(notdir $(SRC_ZSE:.c=.o))
+OBJS_ZSE_ED	= $(notdir $(SRC_ZSE:.c=.ed.o))
+
+ZSE_LIB		= libzse.a
+ZSE_LIB_ED	= libzse.ed.a
+
+$(ZSE_LIB):$(OBJS_ZSE)
+	$(MAKE_LIB)
+
+$(ZSE_LIB_ED):$(OBJS_ZSE_ED)
+	$(MAKE_LIB)
+	
+SRC_ZLL += \
+		$(ZB_STACK_DIR)/zll/zll_app.c \
+		$(ZB_STACK_DIR)/zll/zll_commissioning.c \
+		$(ZB_STACK_DIR)/zll/zll_device_discovery.c \
+		$(ZB_STACK_DIR)/zll/zll_identify.c \
+		$(ZB_STACK_DIR)/zll/zll_join_end_device.c \
+		$(ZB_STACK_DIR)/zll/zll_join_router.c \
+		$(ZB_STACK_DIR)/zll/zll_network_start.c \
+		$(ZB_STACK_DIR)/zll/zll_nwk_features.c \
+		$(ZB_STACK_DIR)/zll/zll_reset_factory.c \
+		$(ZB_STACK_DIR)/zll/zll_sas.c \
+		$(ZB_STACK_DIR)/zll/zll_secur.c \
+		
+OBJS_ZLL  	= $(notdir $(SRC_ZLL:.c=.o))
+OBJS_ZLL_ED = $(notdir $(SRC_ZLL:.c=.ed.o))
+
+ZLL_LIB		= libzll.a
+ZLL_LIB_ED	= libzll.ed.a
+
+$(ZLL_LIB):$(OBJS_ZLL)
+	$(MAKE_LIB)
+
+$(ZLL_LIB_ED):$(OBJS_ZLL_ED)
+	$(MAKE_LIB)
+
+# mac cert
+ifeq ($(CONFIG_802154_ZIGBEE_MAC_TEST_EN), y)			
+LIBS_MAC_CERT = \
+		$(COMMON_LIB) \
+		$(MAC_LIB)
+
+ZBOSS_LIB_MAC_CERT = libzboss_mac_cert.a
+
+LIBS = $(LIBS_MAC_CERT)
+ZBOSS_LIB = $(ZBOSS_LIB_MAC_CERT)
+endif
+
+# zcp test
+ifeq ($(CONFIG_802154_ZIGBEE_ZCP_TEST_EN), y)
+COMM_LIBS = \
+	$(COMM_BDB_LIB) \
+	$(COMM_LEGACY_LIB) \
+
+COMM_LIBS_ED = \
+	$(COMM_BDB_LIB_ED) \
+	$(COMM_LEGACY_LIB_ED) \
+	
+LIBS_WO_APS = \
+	$(COMMON_LIB) \
+	$(MAC_LIB) \
+	$(NWK_LIB)
+
+LIBS_WO_APS_ED = \
+	$(COMMON_LIB_ED) \
+	$(MAC_LIB_ED) \
+	$(NWK_LIB_ED)
+
+LIBS_WO_OSIF = \
+	$(LIBS_WO_APS) \
+	$(SECUR_LIB) \
+	$(APS_LIB) \
+	$(ZDO_LIB) \
+	$(COMM_LIBS) \
+	$(ZCL_LIB) \
+	$(ZGP_GPPB_LIB) \
+
+LIBS_WO_OSIF_ED = \
+	$(LIBS_WO_APS_ED) \
+	$(SECUR_LIB_ED) \
+	$(APS_LIB_ED) \
+	$(ZDO_LIB_ED) \
+	$(ZCL_LIB_ED) \
+	$(COMM_LIBS_ED)
+	
+LIBS =  \
+	$(LIBS_WO_OSIF)
+	
+LIBS_ED = \
+	$(LIBS_WO_OSIF_ED)
+
+ZBOSS_LIB_R22_CERT = libzboss_r22_cert.a
+ZBOSS_LIB_R22_CERT_ED = libzboss_r22_cert.ed.a
+
+ZBOSS_LIB = $(ZBOSS_LIB_R22_CERT)
+ZBOSS_LIB_ED = $(ZBOSS_LIB_R22_CERT_ED)
+endif
+
+# regression test
+ifeq ($(CONFIG_802154_ZIGBEE_REGRESSION_TEST_EN), y)
+endif
+
+# application
+ifeq ($(CONFIG_802154_ZIGBEE_APPLICATION_EN), y)
+COMM_LIBS = \
+	$(COMM_BDB_LIB) \
+	$(COMM_LEGACY_LIB) \
+	$(COMM_SE_LIB)
+
+COMM_LIBS_ED = \
+	$(COMM_BDB_LIB_ED) \
+	$(COMM_LEGACY_LIB_ED) \
+	$(COMM_SE_LIB_ED) \
+	
+LIBS_WO_APS = \
+	$(COMMON_LIB) \
+	$(MAC_LIB) \
+	$(NWK_LIB)
+
+LIBS_WO_APS_ED = \
+	$(COMMON_LIB_ED) \
+	$(MAC_LIB_ED) \
+	$(NWK_LIB_ED)
+
+LIBS_WO_OSIF = \
+	$(LIBS_WO_APS) \
+	$(SECUR_LIB) \
+	$(APS_LIB) \
+	$(ZDO_LIB) \
+	$(COMM_LIBS) \
+	$(ZCL_LIB) \
+	$(ZGP_GPPB_LIB) \
+	$(ZSE_LIB)
+
+LIBS_WO_OSIF_ED = \
+	$(LIBS_WO_APS_ED) \
+	$(SECUR_LIB_ED) \
+	$(APS_LIB_ED) \
+	$(ZDO_LIB_ED) \
+	$(COMM_LIBS_ED) \
+	$(ZCL_LIB_ED) \
+	$(ZSE_LIB_ED)
+	
+LIBS =  \
+	$(LIBS_WO_OSIF)
+	
+LIBS_ED = \
+	$(LIBS_WO_OSIF_ED)
+
+ZBOSS_LIB = libzboss.a
+ZBOSS_LIB_ED = libzboss.ed.a
+
+endif
+
+

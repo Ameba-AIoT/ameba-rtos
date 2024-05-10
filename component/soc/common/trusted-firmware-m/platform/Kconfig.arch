@@ -1,0 +1,103 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+############### Supported Arch Options for platforms to "select" ###############
+config ARCH_ARM_V6M
+    def_bool n
+    help
+        Armv6-M
+
+config ARCH_ARM_V7M
+    def_bool n
+    help
+        Armv7-M
+
+config ARCH_ARM_V80MB
+    def_bool n
+    help
+        Armv8.0-M baseline
+
+config ARCH_ARM_V80MM
+    def_bool n
+    help
+        Armv8.0-M mainline
+
+config ARCH_ARM_V81M
+    def_bool n
+    help
+        Armv8.1-M
+
+config TFM_SYSTEM_ARCHITECTURE
+    string
+    default "armv6-m" if ARCH_ARM_V6M
+    default "armv7-m" if ARCH_ARM_V7M
+    default "armv8-m.base" if ARCH_ARM_V80MB
+    default "armv8-m.main" if ARCH_ARM_V80MM
+    default "armv8.1-m.main" if ARCH_ARM_V81M
+    default ""
+
+################# Processor Options for platforms to "select" ##################
+config PROCESSOR_CM0PLUS
+    def_bool n
+    help
+        Cortex-M0+
+
+config PROCESSOR_CM23
+    def_bool n
+    help
+        Cortex-M23
+
+config PROCESSOR_CM33
+    def_bool n
+    help
+        Cortex-M33
+
+config PROCESSOR_CM55
+    def_bool n
+    help
+        Cortex-M55
+
+config PROCESSOR_CM85
+    def_bool n
+    help
+        Cortex-M85
+
+config TFM_SYSTEM_PROCESSOR
+    string
+    default "cortex-m0plus" if PROCESSOR_CM0PLUS
+    default "cortex-m23" if PROCESSOR_CM23
+    default "cortex-m33" if PROCESSOR_CM33
+    default "cortex-m55" if PROCESSOR_CM55
+    default "cortex-m85" if PROCESSOR_CM85
+    default ""
+
+######################### TFM system DSP #######################################
+
+config TFM_SYSTEM_DSP
+    def_bool n
+
+############################## FP Arch #########################################
+config FP_ARCH_FPV5_D16
+    def_bool n
+    help
+        FPv5-D16
+
+config FP_ARCH_FPV5_SP_D16
+    def_bool n
+    help
+        FPv5-SP-D16
+
+config CONFIG_TFM_FP_ARCH
+    string
+    default "fpv5-d16" if FP_ARCH_FPV5_D16
+    default "fpv5-sp-d16" if FP_ARCH_FPV5_SP_D16
+    default ""
+
+config CONFIG_TFM_FP_ARCH_ASM
+    string
+    default "FPv5_D16" if FP_ARCH_FPV5_D16
+    default ""

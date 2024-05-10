@@ -1,0 +1,64 @@
+{
+  "psa_framework_version": 1.0,
+  "name": "DRIVER_PARTITION",
+  "type": "PSA-ROT",
+  "priority": "NORMAL",
+  "description": "Implements device services such print, flash read/write,. etc.",
+  "entry_point": "driver_main",
+  "stack_size": "0x400",
+  "services": [{
+      "name": "DRIVER_UART",
+      "sid": "0x0000FC01",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "DRIVER_WATCHDOG",
+      "sid": "0x0000FC02",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "DRIVER_NVMEM",
+      "sid": "0x0000FC03",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "DRIVER_TEST",
+      "sid": "0x0000FC04",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "RELAXED"
+    }
+  ],
+  "mmio_regions" : [
+    {
+      "name": "FF_TEST_UART_REGION",
+      "permission": "READ-WRITE"
+    },
+    {
+      "name": "FF_TEST_WATCHDOG_REGION",
+      "permission": "READ-WRITE"
+    },
+    {
+      "name": "FF_TEST_NVMEM_REGION",
+      "permission": "READ-WRITE"
+    },
+    {
+      "name": "FF_TEST_DRIVER_PARTITION_MMIO",
+      "permission": "READ-WRITE"
+    }
+  ],
+  "irqs": [
+    {
+       "description": "Using UART TX interrupt to test psa_wait and psa_eoi for irq_signal",
+       "signal": "DRIVER_UART_INTR_SIG",
+       "source": "FF_TEST_UART_IRQ"
+    }
+  ]
+}
+

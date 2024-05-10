@@ -1,0 +1,32 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig TFM_PARTITION_PROTECTED_STORAGE
+    bool "Protected Storage"
+    depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE && TFM_PARTITION_PLATFORM && TFM_PARTITION_CRYPTO
+    default n
+
+if TFM_PARTITION_PROTECTED_STORAGE
+
+config PS_ENCRYPTION
+    bool "PS encryption"
+    default y
+    help
+      Enable encryption option to encrypt the protected storage data.
+
+config PS_CRYPTO_AEAD_ALG
+    string "PS encryption AEAD algorithm"
+    default "PSA_ALG_GCM"
+    help
+      Indicates the AEAD algorithm to use for authenticated encryption in
+      Protected Storage.
+
+      Note: For GCM/CCM it is essential that IV doesn't get repeated. If this
+      flag is set to PSA_ALG_GCM or PSA_ALG_CCM, PS_ROLLBACK_PROTECTION must be
+      enabled to protect against IV rollback.
+
+endif

@@ -1,0 +1,5 @@
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/mem.c:160:1:mem_init	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/mem.c:169:1:mem_trim	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/mem.c:207:1:mem_malloc	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/mem.c:228:1:mem_free	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/mem.c:982:1:mem_calloc	0	static

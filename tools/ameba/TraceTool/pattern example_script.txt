@@ -1,0 +1,11 @@
+loop=2
+loop_start
+	timeout=20000
+	pass_pattern=Bringing up secondary CPUs
+	fail_pattern=fail
+	reboot
+	if pass
+		break
+	fi
+loop_end
+stop

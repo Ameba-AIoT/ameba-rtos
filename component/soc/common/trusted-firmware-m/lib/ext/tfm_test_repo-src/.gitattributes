@@ -1,0 +1,11 @@
+* text=auto
+
+# Text files that should be normalized
+*.c text
+*.h text
+*.txt text
+*.rst text
+
+# Binary files that should not be normalized
+*.a binary
+*.lib binary

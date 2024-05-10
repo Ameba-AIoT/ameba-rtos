@@ -1,0 +1,11 @@
+#OpenThread lib hdlc
+CPPSRC += $(THREADDIR)/openthread/src/lib/hdlc/hdlc.cpp
+
+#OpenThread lib platform
+CSRC += $(THREADDIR)/openthread/src/lib/platform/exit_code.c
+
+#OpenThread lib spinel
+CSRC += $(THREADDIR)/openthread/src/lib/spinel/spinel.c
+CPPSRC += $(THREADDIR)/openthread/src/lib/spinel/spinel_buffer.cpp
+CPPSRC += $(THREADDIR)/openthread/src/lib/spinel/spinel_decoder.cpp
+CPPSRC += $(THREADDIR)/openthread/src/lib/spinel/spinel_encoder.cpp

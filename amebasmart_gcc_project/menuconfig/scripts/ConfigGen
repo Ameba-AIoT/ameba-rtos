@@ -1,0 +1,101 @@
+SCRIPTS_FATHER_CONFIG_NAME=menuconfig
+HP_PROJECT_PATH=./project_hp
+LP_PROJECT_PATH=./project_lp
+AP_PROJECT_PATH=./project_ap
+
+DEF_CONFIG="$SCRIPTS_FATHER_CONFIG_NAME/.config"
+DEF_CONFIG_H="$SCRIPTS_FATHER_CONFIG_NAME/autoconf.h"
+CONFIG_TEMP="$SCRIPTS_FATHER_CONFIG_NAME/tempconfig.txt"
+
+CONFIG_LP="$SCRIPTS_FATHER_CONFIG_NAME/.config_lp"
+CONFIG_HP="$SCRIPTS_FATHER_CONFIG_NAME/.config_hp"
+CONFIG_AP="$SCRIPTS_FATHER_CONFIG_NAME/.config_ap"
+
+CONFIG_LP_H="$LP_PROJECT_PATH/inc/platform_autoconf.h"
+CONFIG_HP_H="$HP_PROJECT_PATH/inc/platform_autoconf.h"
+CONFIG_AP_H="$AP_PROJECT_PATH/inc/platform_autoconf.h"
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG > $CONFIG_TEMP
+sed -n '/#LPStart/,/#LPEnd/{//!p}' $DEF_CONFIG >> $CONFIG_TEMP
+sed -i '/_FOR_HP/d' $CONFIG_TEMP
+sed -i '/_FOR_AP/d' $CONFIG_TEMP
+sed -i 's/_FOR_LP//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_LP
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG_H > $CONFIG_TEMP
+sed -n '/#LPStart/,/#LPEnd/{//!p}' $DEF_CONFIG_H >> $CONFIG_TEMP
+sed -i '/_FOR_HP/d' $CONFIG_TEMP
+sed -i '/_FOR_AP/d' $CONFIG_TEMP
+sed -i 's/_FOR_LP//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_LP_H
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG > $CONFIG_TEMP
+sed -n '/#HPStart/,/#HPEnd/{//!p}' $DEF_CONFIG >> $CONFIG_TEMP
+sed -i '/_FOR_AP/d' $CONFIG_TEMP
+sed -i '/_FOR_LP/d' $CONFIG_TEMP
+sed -i 's/_FOR_HP//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_HP
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG_H > $CONFIG_TEMP
+sed -n '/#HPStart/,/#HPEnd/{//!p}' $DEF_CONFIG_H >> $CONFIG_TEMP
+sed -i '/_FOR_AP/d' $CONFIG_TEMP
+sed -i '/_FOR_LP/d' $CONFIG_TEMP
+sed -i 's/_FOR_HP//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_HP_H
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG > $CONFIG_TEMP
+sed -n '/#APStart/,/#APEnd/{//!p}' $DEF_CONFIG >> $CONFIG_TEMP
+sed -i '/_FOR_HP/d' $CONFIG_TEMP
+sed -i '/_FOR_LP/d' $CONFIG_TEMP
+sed -i 's/_FOR_AP//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_AP
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG_H > $CONFIG_TEMP
+sed -n '/#APStart/,/#APEnd/{//!p}' $DEF_CONFIG_H >> $CONFIG_TEMP
+sed -i '/_FOR_HP/d' $CONFIG_TEMP
+sed -i '/_FOR_LP/d' $CONFIG_TEMP
+sed -i 's/_FOR_AP//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_AP_H
+
+rm $CONFIG_TEMP $DEF_CONFIG_H
+
+echo "/*" >>$CONFIG_HP_H
+echo " * < CONFIG IAR PROJECT" >>$CONFIG_HP_H
+echo " */" >>$CONFIG_HP_H
+echo "#if defined(CONFIG_INIC_IPC_DISABLE) && (CONFIG_INIC_IPC_DISABLE == 1)" >> $CONFIG_HP_H
+echo "#ifdef CONFIG_INIC_EN" >> $CONFIG_HP_H
+echo "#undef CONFIG_INIC_EN" >> $CONFIG_HP_H
+echo "#endif" >> $CONFIG_HP_H
+echo "#ifdef CONFIG_HIGH_TP_TEST" >> $CONFIG_HP_H
+echo "#undef CONFIG_HIGH_TP_TEST" >> $CONFIG_HP_H
+echo "#endif" >> $CONFIG_HP_H
+echo "#ifdef CONFIG_INIC_IPC" >> $CONFIG_HP_H
+echo "#undef CONFIG_INIC_IPC" >> $CONFIG_HP_H
+echo "#endif" >> $CONFIG_HP_H
+echo "#ifdef CONFIG_INIC_IPC_HIGH_TP" >> $CONFIG_HP_H
+echo "#undef CONFIG_INIC_IPC_HIGH_TP" >> $CONFIG_HP_H
+echo "#endif" >> $CONFIG_HP_H
+echo "#ifdef CONFIG_AS_INIC_NP" >> $CONFIG_HP_H
+echo "#undef CONFIG_AS_INIC_NP" >> $CONFIG_HP_H
+echo "#endif" >> $CONFIG_HP_H
+echo "#define CONFIG_SINGLE_CORE_WIFI 1" >> $CONFIG_HP_H
+echo "#define CONFIG_LWIP_LAYER 1" >> $CONFIG_HP_H
+echo "#endif" >> $CONFIG_HP_H
+
+echo "/*" >>$CONFIG_AP_H
+echo " * < CONFIG IAR PROJECT" >>$CONFIG_AP_H
+echo " */" >>$CONFIG_AP_H
+echo "#if defined(CONFIG_INIC_IPC_DISABLE) && (CONFIG_INIC_IPC_DISABLE == 1)" >> $CONFIG_AP_H
+echo "#ifdef CONFIG_WLAN" >> $CONFIG_AP_H
+echo "#undef CONFIG_WLAN" >> $CONFIG_AP_H
+echo "#endif" >> $CONFIG_AP_H
+echo "#ifdef CONFIG_HIGH_TP_TEST" >> $CONFIG_AP_H
+echo "#undef CONFIG_HIGH_TP_TEST" >> $CONFIG_AP_H
+echo "#endif" >> $CONFIG_AP_H
+echo "#ifdef CONFIG_AS_INIC_AP" >> $CONFIG_AP_H
+echo "#undef CONFIG_AS_INIC_AP" >> $CONFIG_AP_H
+echo "#endif" >> $CONFIG_AP_H
+echo "#ifdef CONFIG_LWIP_LAYER" >> $CONFIG_AP_H
+echo "#undef CONFIG_LWIP_LAYER" >> $CONFIG_AP_H
+echo "#endif" >> $CONFIG_AP_H
+echo "#endif" >> $CONFIG_AP_H

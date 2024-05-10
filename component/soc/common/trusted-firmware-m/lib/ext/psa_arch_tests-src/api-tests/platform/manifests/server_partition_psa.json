@@ -1,0 +1,67 @@
+{
+  "psa_framework_version": 1.0,
+  "name": "SERVER_PARTITION",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "description": "Server partition executing server test func",
+  "entry_point": "server_main",
+  "stack_size": "0x400",
+  "services": [{
+      "name": "SERVER_TEST_DISPATCHER",
+      "sid": "0x0000FB01",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "SERVER_SECURE_CONNECT_ONLY",
+      "sid": "0x0000FB02",
+      "non_secure_clients": false,
+      "version": 2,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "SERVER_STRICT_VERSION",
+      "sid": "0x0000FB03",
+      "non_secure_clients": true,
+      "version": 2,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "SERVER_UNSPECIFED_VERSION",
+      "sid": "0x0000FB04",
+      "non_secure_clients": true
+    },
+    {
+      "name": "SERVER_RELAX_VERSION",
+      "sid": "0x0000FB05",
+      "non_secure_clients": true,
+      "version": 2,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "SERVER_UNEXTERN",
+      "sid": "0x0000FB06",
+      "non_secure_clients": true,
+      "version": 2,
+      "version_policy": "RELAXED"
+    },
+    {
+      "name": "SERVER_CONNECTION_DROP",
+      "sid": "0x0000FB07",
+      "non_secure_clients": true,
+      "version": 2,
+      "version_policy": "RELAXED"
+    }
+  ],
+  "dependencies": [
+    "DRIVER_UART",
+    "DRIVER_NVMEM"
+  ],
+  "mmio_regions" : [
+    {
+      "name": "FF_TEST_SERVER_PARTITION_MMIO",
+      "permission": "READ-WRITE"
+    }
+   ]
+}

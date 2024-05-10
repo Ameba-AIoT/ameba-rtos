@@ -1,0 +1,3 @@
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/netif/ethernet.c:69:6:rarp_retrieve_hook_callback	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/netif/ethernet.c:153:1:ethernet_input	32	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/netif/ethernet.c:351:1:ethernet_output	32	static

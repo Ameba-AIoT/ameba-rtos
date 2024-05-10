@@ -1,0 +1,100 @@
+
+.PHONY: make_wifi_lib
+
+ifeq ($(CONFIG_WLAN),y)
+
+# AP Link Library
+ifeq ($(CONFIG_AS_INIC_AP), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_ap.a
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
+
+# NP Link Library
+else ifeq ($(CONFIG_AS_INIC_NP), y)
+ifeq ($(CONFIG_AMEBADPLUS), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
+else
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+endif
+ifeq ($(CONFIG_MP_INCLUDED), y)
+ifeq ($(CONFIG_INIC_INTF_SDIO), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_inic_sdio_wlan_mp.a
+else
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_inic_wlan_mp.a
+endif
+else
+ifeq ($(CONFIG_INIC_INTF_SDIO), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_inic_sdio_wlan.a
+else
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_inic_wlan.a
+endif
+endif
+
+# Single Core Library
+else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wlan_mp.a
+else
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wlan.a
+endif
+endif
+
+endif
+
+ifeq ($(CONFIG_AMEBADPLUS), y)
+ifeq ($(CONFIG_AS_INIC_AP), y)
+ifeq ($(CONFIG_WIFI_AUDIO),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_cast.a
+endif
+endif
+endif
+
+ifeq ($(CONFIG_AMEBASMART), y)
+ifeq ($(CONFIG_AS_INIC_AP), y)
+ifeq ($(CONFIG_WIFI_AUDIO),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_cast.a
+endif
+endif
+endif
+
+make_wifi_lib:
+ifeq ($(CONFIG_WLAN), y)
+	@+$(MAKE) -C $(WIFI_MAKE_DIR)/common lib
+
+# build AP libs
+ifeq ($(CONFIG_AS_INIC_AP), y)
+	@+$(MAKE) -C $(WIFI_MAKE_DIR)/wpa_lite lib
+	@+$(MAKE) -C $(WIFI_MAKE_DIR)/inic lib
+ifeq ($(CONFIG_AMEBASMART), y)
+	@+$(MAKE) -C $(WIFI_MAKE_DIR)/wifi_cast lib
+endif
+
+# build NP libs
+else ifeq ($(CONFIG_AS_INIC_NP), y)
+ifeq ($(CONFIG_MP_INCLUDED), y)
+	@+$(MAKE) -C $(WIFI_MAKE_DIR) lib_mp
+else
+	@+$(MAKE) -C $(WIFI_MAKE_DIR) lib
+endif
+
+# build single core wifi libs
+else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
+ifeq ($(CONFIG_MP_INCLUDED), y)
+	@+$(MAKE) -C $(WIFI_MAKE_DIR) lib_mp
+else
+	@+$(MAKE) -C $(WIFI_MAKE_DIR) lib
+endif
+	@+$(MAKE) -C $(WIFI_MAKE_DIR)/wpa_lite lib
+endif
+
+endif
+
+ifeq ($(CONFIG_AMEBADPLUS), y)
+ifeq ($(CONFIG_AS_INIC_AP), y)
+ifeq ($(CONFIG_WIFI_AUDIO), y)
+	@+$(MAKE) -C $(WIFI_MAKE_DIR)/wifi_cast lib
+endif
+endif
+endif

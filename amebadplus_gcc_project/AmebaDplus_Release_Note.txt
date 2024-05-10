@@ -1,0 +1,19 @@
+/******************************************
+ *v11.2a Release Note For MPChip
+ *first version of release candidate version
+ ******************************************/
+SDK feature:
+	biasc wifi bt function pass
+Change List:
+	None
+	
+/******************************************
+ *v11.2b Release Note For MPChip
+ *first version of release candidate version
+ ******************************************/
+SDK feature:
+	biasc wifi bt function pass
+Change List:
+	adjust memory layout
+	revise wifi stability
+GIT_REVISION = 

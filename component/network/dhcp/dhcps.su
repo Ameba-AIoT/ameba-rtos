@@ -1,0 +1,14 @@
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:79:13:mark_ip_in_table	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:467:13:dhcps_initialize_message	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:930:13:dnss_receive_udp_packet_handler	48	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:213:16:check_client_direct_request_ip.constprop	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:366:15:add_offer_options	48	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:51:5:dhcps_ip_in_table_check	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:257:6:dump_client_table	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:640:9:dhcps_handle_state_machine_change	32	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:813:13:dhcps_receive_udp_packet_handler	144	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:906:6:dhcps_set_addr_pool	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:1017:6:dns_server_init	32	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:1052:6:dns_server_deinit	16	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:1067:6:dhcps_init	48	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/dhcp/dhcps.c:1149:6:dhcps_deinit	16	static

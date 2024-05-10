@@ -1,0 +1,28 @@
+{
+  "psa_framework_version": 1.0,
+  "name": "CLIENT_PARTITION",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "description": "Client partition executing client test func from SPE",
+  "entry_point": "client_main",
+  "stack_size": "0x400",
+  "services": [{
+      "name": "CLIENT_TEST_DISPATCHER",
+      "sid": "0x0000FA01",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "RELAXED"
+    }
+  ],
+  "dependencies": [
+    "DRIVER_UART",
+    "DRIVER_NVMEM",
+    "DRIVER_TEST",
+    "SERVER_TEST_DISPATCHER",
+    "SERVER_UNSPECIFED_VERSION",
+    "SERVER_STRICT_VERSION",
+    "SERVER_RELAX_VERSION",
+    "SERVER_SECURE_CONNECT_ONLY",
+    "SERVER_CONNECTION_DROP"
+  ]
+}

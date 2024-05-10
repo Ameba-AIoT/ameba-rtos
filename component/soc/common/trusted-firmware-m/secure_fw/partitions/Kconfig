@@ -1,0 +1,46 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "Secure partitions"
+
+rsource "protected_storage/Kconfig"
+rsource "initial_attestation/Kconfig"
+rsource "firmware_update/Kconfig"
+rsource "crypto/Kconfig"
+rsource "platform/Kconfig"
+rsource "internal_trusted_storage/Kconfig"
+
+choice PARTITION_LOG_LEVEL
+    prompt "Secure Partition Log Level"
+    default PARTITION_LOG_LEVEL_SILENCE
+
+    config PARTITION_LOG_LEVEL_DEBUG
+        bool "Debug"
+
+    config PARTITION_LOG_LEVEL_INFO
+        bool "Info"
+
+    config PARTITION_LOG_LEVEL_ERROR
+        bool "Error"
+
+    config PARTITION_LOG_LEVEL_SILENCE
+        bool "Silence"
+endchoice
+
+config TFM_PARTITION_LOG_LEVEL
+    int
+    default 3 if PARTITION_LOG_LEVEL_DEBUG
+    default 2 if PARTITION_LOG_LEVEL_INFO
+    default 1 if PARTITION_LOG_LEVEL_ERROR
+    default 0 if PARTITION_LOG_LEVEL_SILENCE
+
+config TFM_SP_LOG_RAW_ENABLED
+    bool
+    default y if TFM_PARTITION_LOG_LEVEL != 0 || TFM_S_REG_TEST || TFM_NS_REG_TEST
+    default n
+
+endmenu

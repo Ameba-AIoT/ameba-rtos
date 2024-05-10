@@ -1,0 +1,100 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+config TFM_CODE_SHARING
+    bool "Enable code sharing between MCUboot and secure firmware"
+    #FIXME: Shall check IAR
+    default n
+    depends on !CRYPTO_HW_ACCELERATOR
+    help
+      This feature is only officially tested on AN521 and Musca-B1 platforms.
+
+################################# NS ###########################################
+
+menu "NS support"
+config NS
+    bool "NS app"
+    default y
+
+config TFM_NS_MANAGE_NSID
+    bool "Support NSPE OS providing NSPE client_id"
+    depends on !TFM_MULTI_CORE_TOPOLOGY
+    help
+      An NSPE client_id is provided by the NSPE OS via the SPM or directly
+      by the SPM. When `TFM_NS_MANAGE_NSID` is `ON`, TF-M supports NSPE OS
+      providing NSPE client_id.
+
+config NS_EVALUATION_APP_PATH
+    string "Path to TFM NS Evaluation Application"
+    default ""
+endmenu
+
+################################# Mbedcrypto ###################################
+
+menu "Mbedcrypto profile"
+
+config MBEDCRYPTO_BUILD_TYPE
+    string "Mbedcrypto build type"
+    default "$(CMAKE_BUILD_TYPE)"
+
+config TFM_MBEDCRYPTO_CONFIG_PATH
+    string "Mbedtls config path"
+    default "$(TFM_SOURCE_DIR)/lib/ext/mbedcrypto/mbedcrypto_config/tfm_mbedcrypto_config_default.h"
+    help
+      Config to use for Mbed Crypto. For increased flexibility when
+      pointing to a file, set the type of this setting to 'STRING' by
+      passing the :<type> portion when specifying the setting value in
+      the command line. E.g.
+      '-DTFM_MBEDCRYPTO_CONFIG_PATH:STRING=some_file_which_is_generated.h'
+      This can be useful if the config file is generated and placed
+      inside a directory already added to the include path of mbedtls.
+
+config TFM_MBEDCRYPTO_PSA_CRYPTO_CONFIG_PATH
+    string "Mbedtls psa crypto config path"
+    default "$(TFM_SOURCE_DIR)/lib/ext/mbedcrypto/mbedcrypto_config/crypto_config_default.h"
+    help
+      Config to use psa crypto setting for Mbed Crypto
+
+config TFM_MBEDCRYPTO_PLATFORM_EXTRA_CONFIG_PATH
+    string "Mbedtls platform crypto config path"
+    default ""
+    help
+      Config to append to standard Mbed Crypto config, used by platforms
+      to configure feature support
+
+endmenu
+
+################################# Manifest #####################################
+
+menu "TF-M manifest"
+
+config TFM_MANIFEST_LIST
+    string "TF-M native Secure Partition manifests list file"
+    default "$(TFM_SOURCE_DIR)/tools/tfm_manifest_list.yaml"
+    help
+      TF-M native Secure Partition manifests list file
+
+config TFM_EXTRA_MANIFEST_LIST_FILES
+    string "Extra manifest list file(s)"
+    default ""
+    help
+      Used to list extra Secure Partition manifests.
+
+config TFM_EXTRA_GENERATED_FILE_LIST_PATH
+    string "Path to extra generated file list."
+    default ""
+    help
+      Appended to stardard TFM generated file list
+
+config TFM_EXTRA_PARTITION_PATHS
+    string "List of extra Secure Partitions directories."
+    default ""
+    help
+      An extra Secure Parition folder contains source code, CMakeLists.txt and
+      manifest files
+
+endmenu

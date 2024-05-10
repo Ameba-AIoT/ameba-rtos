@@ -1,0 +1,766 @@
+***** PSA Architecture Test Suite - Version 0.9 *****
+
+Running.. Crypto Suite
+******************************************
+
+TEST: 201 | DESCRIPTION: Testing psa_crypto_init API: Basic
+[Info] Executing tests from non-secure
+[Check 1] Test calling crypto functions before psa_crypto_init
+[Check 2] Test psa_crypto_init
+[Check 3] Test multiple psa_crypto_init
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 202 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_import_key 16 Byte AES
+[Check 2] Test psa_import_key 24 Byte AES
+[Check 3] Test psa_import_key 32 Byte AES
+[Check 4] Test psa_import_key 2048 RSA public key
+[Check 5] Test psa_import_key with RSA 2048 keypair
+[Check 6] Test psa_import_key with DES 64 bit key
+[Check 7] Test psa_import_key with Triple DES 2-Key
+[Check 8] Test psa_import_key with Triple DES 3-Key
+[Check 9] Test psa_import_key with EC Public key
+[Check 10] Test psa_import_key with EC keypair
+[Check 11] Test psa_import_key with key data greater than the algorithm size
+[Check 12] Test psa_import_key with incorrect key data size
+[Check 13] Test psa_import_key with incorrect key type
+[Check 14] Test psa_import_key with already occupied key slot
+[Check 15] Test psa_import_key with zero as key handle
+[Check 16] Test psa_import_key with destroyed handle
+[Check 17] Test psa_import_key with unallocated key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 203 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_export_key 16 Byte AES
+[Check 2] Test psa_export_key 24 Byte AES
+[Check 3] Test psa_export_key 32 Byte AES
+[Check 4] Test psa_export_key 2048 RSA public key
+[Check 5] Test psa_export_key with RSA 2048 keypair
+[Check 6] Test psa_export_key with DES 64 bit key
+[Check 7] Test psa_export_key with Triple DES 2-Key
+[Check 8] Test psa_export_key with Triple DES 3-Key
+[Check 9] Test psa_export_key with EC Public key
+[Check 10] Test psa_export_key with EC keypair
+[Check 11] Test psa_export_key with key policy verify
+[Check 12] Test psa_export_key with less buffer size
+[Check 13] Test psa_export_key with unallocated key handle
+[Check 14] Test psa_export_key with empty key handle
+[Check 15] Test psa_export_key with zero as key handle
+[Check 16] Test psa_export_key with destroyed key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 204 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_export_public_key 16 Byte AES
+[Check 2] Test psa_export_public_key 24 Byte AES
+[Check 3] Test psa_export_public_key 32 Byte AES
+[Check 4] Test psa_export_public_key 2048 RSA public key
+[Check 5] Test psa_export_public_key with RSA 2048 keypair
+[Check 6] Test psa_export_public_key with DES 64 bit key
+[Check 7] Test psa_export_public_key with Triple DES 2-Key
+[Check 8] Test psa_export_public_key with Triple DES 3-Key
+[Check 9] Test psa_export_public_key with EC Public key
+[Check 10] Test psa_export_public_key with EC keypair
+[Check 11] Test psa_export_public_key with less buffer size
+[Check 12] Test psa_export_key with unallocated key handle
+[Check 13] Test psa_export_key with empty key handle
+[Check 14] Test psa_export_key with zero as key handle
+[Check 15] Test psa_export_key with destroyed key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 205 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_destroy_key 16 Byte AES
+[Check 2] Test psa_destroy_key 24 Byte AES
+[Check 3] Test psa_destroy_key 32 Byte AES
+[Check 4] Test psa_destroy_key 2048 RSA public key
+[Check 5] Test psa_destroy_key with RSA 2048 keypair
+[Check 6] Test psa_destroy_key with DES 64 bit key
+[Check 7] Test psa_destroy_key with Triple DES 2-Key
+[Check 8] Test psa_destroy_key with Triple DES 3-Key
+[Check 9] Test psa_destroy_key with EC Public key
+[Check 10] Test psa_destroy_key with EC keypair
+[Check 11] Test psa_destroy_key with unallocated key handle
+[Check 12] Test psa_destroy_key with zero as key handle
+[Check 13] Test psa_destroy_key with empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 206 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_get_key_information 16 Byte AES
+[Check 2] Test psa_get_key_information 24 Byte AES
+[Check 3] Test psa_get_key_information 32 Byte AES
+[Check 4] Test psa_get_key_information 2048 RSA public key
+[Check 5] Test psa_get_key_information with RSA 2048 keypair
+[Check 6] Test psa_get_key_information with DES 64 bit key
+[Check 7] Test psa_get_key_information with Triple DES 2-Key
+[Check 8] Test psa_get_key_information with Triple DES 3-Key
+[Check 9] Test psa_get_key_information with EC Public key
+[Check 10] Test psa_get_key_information with EC keypair
+[Check 11] Test psa_get_key_information with unallocated key handle
+[Check 12] Test psa_get_key_information with zero as key handle
+[Check 13] Test psa_get_key_information with empty key handle
+[Check 14] Test psa_get_key_information with destroyed key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 207 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_set_key_policy 16 Byte AES
+[Check 2] Test psa_set_key_policy 24 Byte AES
+[Check 3] Test psa_set_key_policy 32 Byte AES
+[Check 4] Test psa_set_key_policy 2048 RSA public key
+[Check 5] Test psa_set_key_policy with RSA 2048 keypair
+[Check 6] Test psa_set_key_policy with DES 64 bit key
+[Check 7] Test psa_set_key_policy with Triple DES 2-Key
+[Check 8] Test psa_set_key_policy with Triple DES 3-Key
+[Check 9] Test psa_set_key_policy with EC Public key
+[Check 10] Test psa_set_key_policy with EC keypair
+[Check 11] Test psa_set_key_policy with invalid usage
+[Check 12] Test psa_set_key_policy with unallocated key handle
+[Check 13] Test psa_set_key_policy with zero as key handle
+[Check 14] Test psa_set_key_policy with already occupied handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 208 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_get_key_policy 16 Byte AES
+[Check 2] Test psa_get_key_policy 24 Byte AES
+[Check 3] Test psa_get_key_policy 32 Byte AES
+[Check 4] Test psa_get_key_policy 2048 RSA public key
+[Check 5] Test psa_get_key_policy with RSA 2048 keypair
+[Check 6] Test psa_get_key_policy with DES 64 bit key
+[Check 7] Test psa_get_key_policy with Triple DES 2-Key
+[Check 8] Test psa_get_key_policy with Triple DES 3-Key
+[Check 9] Test psa_get_key_policy with EC Public key
+[Check 10] Test psa_get_key_policy with EC keypair
+[Check 11] Test psa_get_key_policy negative cases
+[Check 12] Test psa_get_key_policy with unallocated key handle
+[Check 13] Test psa_get_key_policy with zero as key handle
+[Check 14] Test psa_get_key_policy with empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 209 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_allocate_key 16 Byte AES
+[Check 2] Test psa_allocate_key 24 Byte AES
+[Check 3] Test psa_allocate_key 32 Byte AES
+[Check 4] Test psa_allocate_key 2048 RSA public key
+[Check 5] Test psa_allocate_key with RSA 2048 keypair
+[Check 6] Test psa_allocate_key with DES 64 bit key
+[Check 7] Test psa_allocate_key with Triple DES 2-Key
+[Check 8] Test psa_allocate_key with Triple DES 3-Key
+[Check 9] Test psa_allocate_key with EC Public key
+[Check 10] Test psa_allocate_key with EC keypair
+[Check 11] Testing the insufficient memory
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 210 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_get_key_lifetime 16 Byte AES
+[Check 2] Test psa_get_key_lifetime 2048 RSA public key
+[Check 3] Test psa_get_key_lifetime with Triple DES 2-Key
+[Check 4] Test psa_get_key_lifetime with EC Public key
+[Check 5] Test psa_get_key_lifetime with EC keypair
+[Check 6] Test psa_get_key_lifetime with invalid key handle
+[Check 7] Test psa_get_key_lifetime with zero as key handle
+[Check 8] Test psa_get_key_lifetime with empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 211 | DESCRIPTION: Testing crypto hash functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_hash_setup with MD2 algorithm
+[Check 2] Test psa_hash_setup with MD4 algorithm
+[Check 3] Test psa_hash_setup with MD5 algorithm
+[Check 4] Test psa_hash_setup with RIPEMD160 algorithm
+[Check 5] Test psa_hash_setup with SHA1 algorithm
+[Check 6] Test psa_hash_setup with SHA224 algorithm
+[Check 7] Test psa_hash_setup with SHA256 algorithm
+[Check 8] Test psa_hash_setup with SHA384 algorithm
+[Check 9] Test psa_hash_setup with SHA512 algorithm
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 212 | DESCRIPTION: Testing crypto hash functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_hash_update with MD2 algorithm
+[Check 2] Test psa_hash_update with MD4 algorithm
+[Check 3] Test psa_hash_update with MD5 algorithm
+[Check 4] Test psa_hash_update with RIPEMD160 algorithm
+[Check 5] Test psa_hash_update with SHA1 algorithm
+[Check 6] Test psa_hash_update with SHA224 algorithm
+[Check 7] Test psa_hash_update with SHA256 algorithm
+[Check 8] Test psa_hash_update with SHA384 algorithm
+[Check 9] Test psa_hash_update with SHA512 algorithm
+[Check 10] Test psa_hash_update without hash setup
+[Check 11] Test psa_hash_update with completed opertaion handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 213 | DESCRIPTION: Testing crypto hash functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_hash_verify with MD2 algorithm
+[Check 2] Test psa_hash_verify with MD4 algorithm
+[Check 3] Test psa_hash_verify with MD5 algorithm
+[Check 4] Test psa_hash_verify with RIPEMD160 algorithm
+[Check 5] Test psa_hash_verify with SHA1 algorithm
+[Check 6] Test psa_hash_verify with SHA224 algorithm
+[Check 7] Test psa_hash_verify with SHA256 algorithm
+[Check 8] Test psa_hash_verify with SHA384 algorithm
+[Check 9] Test psa_hash_verify with SHA512 algorithm
+[Check 10] Test psa_hash_verify with incorrect expected hash
+[Check 11] Test psa_hash_verify with incorrect hash length
+[Check 12] test psa_hash_verify with inactive & invalid operation handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 214 | DESCRIPTION: Testing crypto hash functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_hash_finish with MD2 algorithm
+[Check 2] Test psa_hash_finish with MD4 algorithm
+[Check 3] Test psa_hash_finish with MD5 algorithm
+[Check 4] Test psa_hash_finish with RIPEMD160 algorithm
+[Check 5] Test psa_hash_finish with SHA1 algorithm
+[Check 6] Test psa_hash_finish with SHA224 algorithm
+[Check 7] Test psa_hash_finish with SHA256 algorithm
+[Check 8] Test psa_hash_finish with SHA384 algorithm
+[Check 9] Test psa_hash_finish with SHA512 algorithm
+[Check 10] test psa_hash_finish with inactive operation handle
+[Check 11] test psa_hash_finish with invalid hash buffer size
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 215 | DESCRIPTION: Testing crypto hash functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_hash_abort with MD2 algorithm
+[Check 2] Test psa_hash_abort with MD4 algorithm
+[Check 3] Test psa_hash_abort with MD5 algorithm
+[Check 4] Test psa_hash_abort with RIPEMD160 algorithm
+[Check 5] Test psa_hash_abort with SHA1 algorithm
+[Check 6] Test psa_hash_abort with SHA224 algorithm
+[Check 7] Test psa_hash_abort with SHA256 algorithm
+[Check 8] Test psa_hash_abort with SHA384 algorithm
+[Check 9] Test psa_hash_abort with SHA512 algorithm
+[Check 10] Test psa_hash_finish after calling psa_hash_abort
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 216 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_generate_key 16 Byte AES
+[Check 2] Test psa_generate_key 24 Byte AES
+[Check 3] Test psa_generate_key 32 Byte AES
+[Check 4] Test psa_generate_key with DES 64 bit key
+[Check 5] Test psa_generate_key with Triple DES 2-Key
+[Check 6] Test psa_generate_key with Triple DES 3-Key
+[Check 7] Test psa_generate_key with Null extra and Non-Zero extra size
+[Check 8] Test psa_generate_key with ECC KeyPair
+[Check 9] Test psa_generate_key with RSA 2048 Public key
+[Check 10] Test psa_generate_key with unallocated key handle
+[Check 11] Test psa_generate_key with zero as key handle
+[Check 12] Test psa_generate_key with pre-occupied key handle
+[Check 13] Test psa_generate_key with destroyed key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 217 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_generate_random to get 0 Byte data
+[Check 2] Test psa_generate_random to get 16 Byte data
+[Check 3] Test psa_generate_random to get 24 Byte data
+[Check 4] Test psa_generate_random to get 32 Byte data
+[Check 5] Test psa_generate_random to get 64 Byte data
+[Check 6] Test psa_generate_random to get 128 Byte data
+[Check 7] Test psa_generate_random to get 256 Byte data
+[Check 8] Test psa_generate_random to get 512 Byte data
+[Check 9] Test psa_generate_random to get 1000 Byte data
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 218 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_generator_read to get 16 Byte data with SHA-256
+[Check 2] Test psa_generator_read to get 32 Byte data with SHA-512
+[Check 3] Test psa_generator_read to get 8 Byte data with SHA-1
+[Check 4] Test psa_generator_read to request maximum capacity
+[Check 5] Test psa_generator_read to request maximum capacity +1
+[Check 6] Test psa_generator_read without setup
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 219 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_generator_get_capacity to get 16 Byte data with SHA-256
+[Check 2] Test psa_generator_get_capacity to get 32 Byte data with SHA-512
+[Check 3] Test psa_get_generator_capacity without setup
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 220 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_generator_import_key for 16 Byte AES Key
+[Check 2] Test psa_generator_import_key for Triple DES 3-Key
+[Check 3] Test psa_generator_import_key output greater than capacity
+[Check 4] Test psa_generator_import_key for RSA Public Key - Invalid type
+[Check 5] Test psa_generator_import_key for invalid byte for generation
+[Check 6] Test psa_generator_import_key with invalid handle
+[Check 7] Test psa_generator_import_key with zero handle
+[Check 8] Test psa_generator_import_key with pre-occupied key slot
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 221 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_generator_abort on empty generator
+[Check 2] Test psa_generator_abort
+[Check 3] Multiple psa_generator_abort test
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 222 | DESCRIPTION: Testing crypto generator functions APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_key_derivation to get 16 Byte data with SHA-256
+[Check 2] Test psa_key_derivation to get 32 Byte data with SHA-512
+[Check 3] Test psa_key_derivation to get 32 Byte data with MD-5
+[Check 4] Test psa_key_derivation to get 16 Byte data with salt and label
+[Check 5] Test psa_key_derivation with too large capacity for alg and key
+[Check 6] Test psa_key_derivation with unsupported key type
+[Check 7] Test psa_key_derivation with incorrect usage
+[Check 8] Test psa_key_derivation with unsupported key derivation algorithm
+[Check 9] Test psa_key_derivation with invalid algorithm
+[Check 10] Test psa_key_derivation with Invalid key handle
+[Check 11] Test psa_key_derivation with Zero as key handle
+[Check 12] Test psa_key_derivation with Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 223 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_key_policy_get_usage with usage as encrypt
+[Check 2] Test psa_key_policy_get_usage with usage as decrypt
+[Check 3] Test psa_key_policy_get_usage with usage as derive
+[Check 4] Test psa_key_policy_get_usage with usage as export
+[Check 5] Test psa_key_policy_get_usage with usage as sign
+[Check 6] Test psa_key_policy_get_usage with usage as verify
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 224 | DESCRIPTION: Testing crypto AEAD APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_aead_encrypt - CCM - 16B AES - 13B nounce & 8B addi data
+[Check 2] Test psa_aead_encrypt - AES-CCM
+[Check 3] Test psa_aead_encrypt - AES-CCM 24 bytes Tag length = 4
+[Check 4] Test psa_aead_encrypt - GCM - 16B AES - 12B Nounce & 12B addi data
+[Check 5] Test psa_aead_encrypt - DES Key
+[Check 6] Test psa_aead_encrypt - Unsupported Algorithm
+[Check 7] Test psa_aead_encrypt - Invalid key usage
+[Check 8] Test psa_aead_encrypt - Small output buffer size
+[Check 9] Test psa_aead_encrypt - Invalid key handle
+[Check 10] Test psa_aead_encrypt - Zero as key handle
+[Check 11] Test psa_aead_encrypt - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 225 | DESCRIPTION: Testing crypto AEAD APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_aead_decrypt - CCM - 16B AES - 13B nounce & 8B addi data
+[Check 2] Test psa_aead_encrypt - AES-CCM
+[Check 3] Test psa_aead_encrypt - AES-CCM 24 bytes Tag length = 4
+[Check 4] Test psa_aead_decrypt - GCM - 16B AES - 12B Nounce & 12B addi data
+[Check 5] Test psa_aead_decrypt - DES Key
+[Check 6] Test psa_aead_decrypt - Unsupported Algorithm
+[Check 7] Test psa_aead_decrypt - Invalid key usage
+[Check 8] Test psa_aead_decrypt - Small output buffer size
+[Check 9] Test psa_aead_decrypt - Invalid cipher text
+[Check 10] Test psa_aead_decrypt - Invalid cipher text size
+[Check 11] Test psa_aead_decrypt - Invalid tag length 0
+[Check 12] Test psa_aead_decrypt - Invalid key handle
+[Check 13] Test psa_aead_decrypt - Zero as key handle
+[Check 14] Test psa_aead_decrypt - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 226 | DESCRIPTION: Testing crypto MAC APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_mac_sign_setup 64 Byte HMAC
+[Check 2] Test psa_mac_sign_setup 16 Byte AES - CMAC
+[Check 3] Test psa_mac_sign_setup 16 Byte AES - GMAC
+[Check 4] Test psa_mac_sign_setup incompactible HMAC for CMAC
+[Check 5] Test psa_mac_sign_setup invalid usage
+[Check 6] Test psa_mac_sign_setup invalid key type
+[Check 7] Test psa_mac_sign_setup truncated MAC too large
+[Check 8] Test psa_mac_sign_setup truncated MAC too small
+[Check 9] Test psa_mac_sign_setup bad algorithm (unknown MAC algorithm)
+[Check 10] Test psa_mac_sign_setup bad algorithm (not a MAC algorithm)
+[Check 11] Test psa_mac_sign_setup with invalid key handle
+[Check 12] Test psa_mac_sign_setup with zero key handle
+[Check 13] Test psa_mac_sign_setup with empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 227 | DESCRIPTION: Testing crypto MAC APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_mac_update 64 Byte HMAC SHA256
+[Check 2] Test psa_mac_update 16 Byte AES - CMAC
+[Check 3] Test psa_mac_update 32 Byte HMAC SHA512
+[Check 4] Test psa_mac_update without mac setup
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 228 | DESCRIPTION: Testing crypto MAC APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_mac_sign_finish HMAC SHA 224
+[Check 2] Test psa_mac_sign_finish HMAC SHA 256
+[Check 3] Test psa_mac_sign_finish HMAC SHA 512
+[Check 4] Test psa_mac_sign_finish HMAC SHA 224 (truncated to 8 Byte)
+[Check 5] Test psa_mac_sign_finish CMAC AES 128
+[Check 6] Test psa_mac_sign_finish small size buffer
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 229 | DESCRIPTION: Testing crypto MAC APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_mac_verify_setup 64 Byte HMAC
+[Check 2] Test psa_mac_verify_setup 16 Byte AES - CMAC
+[Check 3] Test psa_mac_verify_setup 16 Byte AES - GMAC
+[Check 4] Test psa_mac_verify_setup incompactible HMAC for CMAC
+[Check 5] Test psa_mac_verify_setup invalid usage
+[Check 6] Test psa_mac_verify_setup invalid key type
+[Check 7] Test psa_mac_verify_setup truncated MAC too large
+[Check 8] Test psa_mac_verify_setup truncated MAC too small
+[Check 9] Test psa_mac_verify_setup bad algorithm (unknown MAC algorithm)
+[Check 10] Test psa_mac_verify_setup bad algorithm (not a MAC algorithm)
+[Check 11] Test psa_mac_verify_setup invalid key handle
+[Check 12] Test psa_mac_verify_setup zero as key handle
+[Check 13] Test psa_mac_verify_setup empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 230 | DESCRIPTION: Testing crypto MAC APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_mac_verify_finish HMAC SHA 224
+[Check 2] Test psa_mac_verify_finish HMAC SHA 256
+[Check 3] Test psa_mac_verify_finish HMAC SHA 512
+[Check 4] Test psa_mac_verify_finish HMAC SHA 224 (truncated to 8 Byte)
+[Check 5] Test psa_mac_verify_finish CMAC AES 128
+[Check 6] Test psa_mac_verify_finish small size buffer
+[Check 7] Test psa_mac_verify_finish incorrect expected MAC
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 231 | DESCRIPTION: Testing crypto MAC APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_mac_abort HMAC SHA 224
+[Check 2] Test psa_mac_abort HMAC SHA 256
+[Check 3] Test psa_mac_abort HMAC SHA 512
+[Check 4] Test psa_mac_abort HMAC SHA 224 (truncated to 8 Byte)
+[Check 5] Test psa_mac_abort CMAC AES 128
+[Check 6] Test psa_mac_sign_finish after calling psa_mac_abort
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 232 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_encrypt_setup 16 Byte AES
+[Check 2] Test psa_cipher_encrypt_setup 24 Byte AES
+[Check 3] Test psa_cipher_encrypt_setup 32 Byte AES
+[Check 4] Test psa_cipher_encrypt_setup DES 64 bit key
+[Check 5] Test psa_cipher_encrypt_setup Triple DES 2-Key
+[Check 6] Test psa_cipher_encrypt_setup Triple DES 3-Key
+[Check 7] Test psa_cipher_encrypt_setup 16 Byte raw data
+[Check 8] Test psa_cipher_encrypt_setup - not a cipher algorithm
+[Check 9] Test psa_cipher_encrypt_setup - unknown cipher algorithm
+[Check 10] Test psa_cipher_encrypt_setup - incompatible key ARC4
+[Check 11] Test psa_cipher_encrypt_setup - incorrect usage
+[Check 12] Test psa_cipher_encrypt_setup - RSA public key
+[Check 13] Test psa_cipher_encrypt_setup - RSA keypair
+[Check 14] Test psa_cipher_encrypt_setup - EC Public key
+[Check 15] Test psa_cipher_encrypt_setup - EC keypair
+[Check 16] Test psa_cipher_encrypt_setup - Invalid key handle
+[Check 17] Test psa_cipher_encrypt_setup - Zero as key handle
+[Check 18] Test psa_cipher_encrypt_setup - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 233 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_decrypt_setup 16 Byte AES
+[Check 2] Test psa_cipher_decrypt_setup 24 Byte AES
+[Check 3] Test psa_cipher_decrypt_setup 32 Byte AES
+[Check 4] Test psa_cipher_decrypt_setup DES 64 bit key
+[Check 5] Test psa_cipher_decrypt_setup Triple DES 2-Key
+[Check 6] Test psa_cipher_decrypt_setup Triple DES 3-Key
+[Check 7] Test psa_cipher_decrypt_setup 16 Byte raw data
+[Check 8] Test psa_cipher_decrypt_setup - not a cipher algorithm
+[Check 9] Test psa_cipher_decrypt_setup - unknown cipher algorithm
+[Check 10] Test psa_cipher_decrypt_setup - incompatible key ARC4
+[Check 11] Test psa_cipher_decrypt_setup - incorrect usage
+[Check 12] Test psa_cipher_decrypt_setup - RSA public key
+[Check 13] Test psa_cipher_decrypt_setup - RSA keypair
+[Check 14] Test psa_cipher_decrypt_setup - EC Public key
+[Check 15] Test psa_cipher_decrypt_setup - EC keypair
+[Check 16] Test psa_cipher_decrypt_setup - Invalid key handle
+[Check 17] Test psa_cipher_decrypt_setup - Zero as key handle
+[Check 18] Test psa_cipher_decrypt_setup - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 234 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_generate_iv 16 Byte AES
+[Check 2] Test psa_cipher_generate_iv 24 Byte AES
+[Check 3] Test psa_cipher_generate_iv 32 Byte AES
+[Check 4] Test psa_cipher_generate_iv DES 64 bit key
+[Check 5] Test psa_cipher_generate_iv Triple DES 2-Key
+[Check 6] Test psa_cipher_generate_iv Triple DES 3-Key
+[Check 7] Test psa_cipher_generate_iv AES - small iv buffer
+[Check 8] Test psa_cipher_generate_iv DES - small iv buffer
+[Check 9] Test psa_cipher_generate_iv AES - large iv buffer
+[Check 10] Test psa_cipher_generate_iv DES - large iv buffer
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 235 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_set_iv 16 Byte AES
+[Check 2] Test psa_cipher_set_iv 24 Byte AES
+[Check 3] Test psa_cipher_set_iv 32 Byte AES
+[Check 4] Test psa_cipher_set_iv DES 64 bit key
+[Check 5] Test psa_cipher_set_iv Triple DES 2-Key
+[Check 6] Test psa_cipher_set_iv Triple DES 3-Key
+[Check 7] Test psa_cipher_set_iv AES - small iv buffer
+[Check 8] Test psa_cipher_set_iv DES - small iv buffer
+[Check 9] Test psa_cipher_set_iv AES - large iv buffer
+[Check 10] Test psa_cipher_set_iv DES - large iv buffer
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 236 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_update - Encrypt - AES CBC_NO_PADDING
+[Check 2] Test psa_cipher_update - Encrypt - AES CBC_NO_PADDING (Short input)
+[Check 3] Test psa_cipher_update - Encrypt - AES CBC_PKCS7
+[Check 4] Test psa_cipher_update - Encrypt - AES CBC_PKCS7 (Short input)
+[Check 5] Test psa_cipher_update - Encrypt - AES CTR
+[Check 6] Test psa_cipher_update - Encrypt - DES CBC (nopad)
+[Check 7] Test psa_cipher_update - Encrypt - 2-key 3DE -CBC (nopad)
+[Check 8] Test psa_cipher_update - Encrypt - 3-key 3DE -CBC (nopad)
+[Check 9] Test psa_cipher_update - small output buffer size
+[Check 10] Test psa_cipher_update - Decrypt - AES CBC_NO_PADDING
+[Check 11] Test psa_cipher_update - Decrypt - AES CBC_NO_PADDING (Short input)
+[Check 12] Test psa_cipher_update - Decrypt - AES CBC_PKCS7
+[Check 13] Test psa_cipher_update - Decrypt - AES CBC_PKCS7 (Short input)
+[Check 14] Test psa_cipher_update - Decrypt - AES CTR
+[Check 15] Test psa_cipher_update - Decrypt - DES CBC (nopad)
+[Check 16] Test psa_cipher_update - Decrypt - 2-key 3DE -CBC (nopad)
+[Check 17] Test psa_cipher_update - Decrypt - 3-key 3DE -CBC (nopad)
+[Check 18] Test psa_cipher_update without cipher setup
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 237 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_finish - Encrypt - AES CBC_NO_PADDING
+[Check 2] Test psa_cipher_finish - Encrypt - AES CBC_NO_PADDING (Short input)
+[Check 3] Test psa_cipher_finish - Encrypt - AES CBC_PKCS7
+[Check 4] Test psa_cipher_finish - Encrypt - AES CBC_PKCS7 (Short input)
+[Check 5] Test psa_cipher_finish - Encrypt - AES CTR
+[Check 6] Test psa_cipher_finish - Encrypt - AES CTR (short input)
+[Check 7] Test psa_cipher_finish - Encrypt - DES CBC (nopad)
+[Check 8] Test psa_cipher_finish - Encrypt - 2-key 3DE -CBC (nopad)
+[Check 9] Test psa_cipher_finish - Encrypt - 3-key 3DE -CBC (nopad)
+[Check 10] Test psa_cipher_finish - small output buffer size
+[Check 11] Test psa_cipher_finish - Decrypt - AES CBC_NO_PADDING
+[Check 12] Test psa_cipher_finish - Decrypt - AES CBC_NO_PADDING (Short input)
+[Check 13] Test psa_cipher_finish - Decrypt - AES CBC_PKCS7
+[Check 14] Test psa_cipher_finish - Decrypt - AES CBC_PKCS7 (Short input)
+[Check 15] Test psa_cipher_finish - Decrypt - AES CTR
+[Check 16] Test psa_cipher_finish - Decrypt - AES CTR (short input)
+[Check 17] Test psa_cipher_finish - Decrypt - DES CBC (nopad)
+[Check 18] Test psa_cipher_finish - Decrypt - 2-key 3DE -CBC (nopad)
+[Check 19] Test psa_cipher_finish - 3-key 3DE -CBC (nopad)
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 238 | DESCRIPTION: Testing crypto symmetric cipher APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_cipher_abort - Encrypt - AES CBC_NO_PADDING
+[Check 2] Test psa_cipher_abort - Encrypt - AES CBC_PKCS7
+[Check 3] Test psa_cipher_abort - Encrypt - AES CTR
+[Check 4] Test psa_cipher_abort - Encrypt - DES CBC (nopad)
+[Check 5] Test psa_cipher_abort - Encrypt - 2-key 3DE -CBC (nopad)
+[Check 6] Test psa_cipher_abort - Encrypt - 3-key 3DE -CBC (nopad)
+[Check 7] Test psa_cipher_abort - Decrypt - AES CBC_NO_PADDING
+[Check 8] Test psa_cipher_abort - Decrypt - AES CBC_PKCS7
+[Check 9] Test psa_cipher_abort - Decrypt - AES CTR
+[Check 10] Test psa_cipher_abort - Decrypt - DES CBC (nopad)
+[Check 11] Test psa_cipher_abort - Decrypt - 2-key 3DE -CBC (nopad)
+[Check 12] Test psa_cipher_abort - Decrypt - 3-key 3DE -CBC (nopad)
+[Check 13] Test psa_cipher_update after psa_cipher_abort should fail
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 239 | DESCRIPTION: Testing crypto asymmetric APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_asymmetric_encrypt - RSA PKCS1V15
+[Check 2] Test psa_asymmetric_encrypt - RSA OAEP SHA256
+[Check 3] Test psa_asymmetric_encrypt - RSA OAEP SHA256 with label
+[Check 4] Test psa_asymmetric_encrypt - RSA KEYPAIR PKCS1V15
+[Check 5] Test psa_asymmetric_encrypt - Small output buffer
+[Check 6] Test psa_asymmetric_encrypt - Invalid algorithm
+[Check 7] Test psa_asymmetric_encrypt - Invalid key type
+[Check 8] Test psa_asymmetric_encrypt - Invalid usage
+[Check 9] Test psa_asymmetric_encrypt - Invalid key handle
+[Check 10] Test psa_asymmetric_encrypt - Zero as key handle
+[Check 11] Test psa_asymmetric_encrypt - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 240 | DESCRIPTION: Testing crypto asymmetric APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_asymmetric_decrypt - RSA KEYPAIR PKCS1V15
+[Check 2] Test psa_asymmetric_decrypt - RSA KEYPAIR OAEP SHA256
+[Check 3] Test psa_asymmetric_decrypt - RSA KEYPAIR OAEP SHA256 with label
+[Check 4] Test psa_asymmetric_decrypt - Invalid key type (RSA public key)
+[Check 5] Test psa_asymmetric_decrypt - Small output buffer
+[Check 6] Test psa_asymmetric_decrypt - Invalid algorithm
+[Check 7] Test psa_asymmetric_decrypt - Invalid key type (AES Key)
+[Check 8] Test psa_asymmetric_decrypt - Invalid usage
+[Check 9] Test psa_asymmetric_decrypt - Invalid key handle
+[Check 10] Test psa_asymmetric_decrypt - Zero as key handle
+[Check 11] Test psa_asymmetric_decrypt - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 241 | DESCRIPTION: Testing crypto asymmetric APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_asymmetric_sign - RSA KEYPAIR PKCS1V15 RAW
+[Check 2] Test psa_asymmetric_sign - RSA KEYPAIR PKCS1V15 SHA-256
+[Check 3] Test psa_asymmetric_sign - ECDSA SECP256R1 SHA-256
+[Check 4] Test psa_asymmetric_sign - Invalid key type (RSA public key)
+[Check 5] Test psa_asymmetric_sign - Small output buffer
+[Check 6] Test psa_asymmetric_sign - Invalid algorithm
+[Check 7] Test psa_asymmetric_sign - Invalid key type (AES Key)
+[Check 8] Test psa_asymmetric_sign - Invalid usage
+[Check 9] Test psa_asymmetric_sign - Wrong hash size
+[Check 10] Test psa_asymmetric_sign - Invalid key handle
+[Check 11] Test psa_asymmetric_sign - Zero as key handle
+[Check 12] Test psa_asymmetric_sign - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 242 | DESCRIPTION: Testing crypto asymmetric APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_asymmetric_verify - RSA KEYPAIR PKCS1V15 RAW
+[Check 2] Test psa_asymmetric_verify - RSA KEYPAIR PKCS1V15 SHA-256
+[Check 3] Test psa_asymmetric_verify - ECDSA KEYPAIR SECP256R1 SHA-256
+[Check 4] Test psa_asymmetric_verify - RSA public key
+[Check 5] Test psa_asymmetric_verify - Small output buffer
+[Check 6] Test psa_asymmetric_verify - Invalid algorithm
+[Check 7] Test psa_asymmetric_verify - Invalid key type (AES Key)
+[Check 8] Test psa_asymmetric_verify - Invalid usage
+[Check 9] Test psa_asymmetric_verify - Wrong hash size
+[Check 10] Test psa_asymmetric_verify - Wrong signature
+[Check 11] Test psa_asymmetric_verify - EC public key
+[Check 12] Test psa_asymmetric_verify - Wrong signature size
+[Check 13] Test psa_asymmetric_verify - Invalid key handle
+[Check 14] Test psa_asymmetric_verify - Invalid key handle
+[Check 15] Test psa_asymmetric_verify - Zero as key handle
+[Check 16] Test psa_asymmetric_verify - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 243 | DESCRIPTION: Testing crypto generator APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_key_agreement - ECDH SECP256R1
+[Check 2] Test psa_key_agreement - ECDH SECP384R1
+[Check 3] Test psa_key_agreement - Invalid usage
+[Check 4] Test psa_key_agreement - Unknown KDF
+[Check 5] Test psa_key_agreement - Not a key agreement alg
+[Check 6] Test psa_key_agreement - Public key on different curve
+[Check 7] Test psa_key_agreement - Public key instead of private key
+[Check 8] Test psa_key_agreement - Invalid key handle
+[Check 9] Test psa_key_agreement - Invalid key handle
+[Check 10] Test psa_key_agreement - Zero as key handle
+[Check 11] Test psa_key_agreement - Empty key handle
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 244 | DESCRIPTION: Testing crypto key management APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_copy_key 16 Byte AES
+[Check 2] Test psa_copy_key 24 Byte AES
+[Check 3] Test psa_copy_key 32 Byte AES
+[Check 4] Test psa_copy_key 2048 RSA public key
+[Check 5] Test psa_copy_key with RSA 2048 keypair
+[Check 6] Test psa_copy_key with Incompatible target policy(source and target)
+[Check 7] Test psa_copy_key with Incompatible constraint
+[Check 8] Test psa_copy_key with unexport source key usage
+TEST RESULT: PASSED
+
+******************************************
+
+************ Crypto Suite Report **********
+TOTAL TESTS     : 44
+TOTAL PASSED    : 44
+TOTAL SIM ERROR : 0
+TOTAL FAILED    : 0
+TOTAL SKIPPED   : 0
+********************
+
+Entering standby..
+

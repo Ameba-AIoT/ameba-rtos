@@ -1,0 +1,21 @@
+# this file is included by ../driver/Makefile.drv
+IPCDRV = $(BASEDIR)/component/wifi/inic/ipc
+SDIODRV = $(BASEDIR)/component/wifi/inic/sdio
+
+vpath %.c $(IPCDRV) \
+        $(SDIODRV)
+
+ifeq ($(CONFIG_AS_INIC_NP),y)
+# IPC DEV
+ifeq ($(CONFIG_INIC_INTF_SDIO), y)
+CSRC_DRV += $(SDIODRV)/inic_sdio_msg_queue.c
+CSRC_DRV += $(SDIODRV)/inic_sdio_dev_trx.c
+CSRC_DRV += $(SDIODRV)/inic_sdio_dev_api.c
+CSRC_DRV += $(SDIODRV)/inic_sdio_dev.c
+else
+CSRC_DRV += $(IPCDRV)/inic_ipc_msg_queue.c
+CSRC_DRV += $(IPCDRV)/inic_ipc_dev_trx.c
+CSRC_DRV += $(IPCDRV)/inic_ipc_device.c
+CSRC_DRV += $(IPCDRV)/inic_ipc_dev_api.c
+endif
+endif

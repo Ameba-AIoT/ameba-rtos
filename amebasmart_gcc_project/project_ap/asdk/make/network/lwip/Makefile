@@ -1,0 +1,123 @@
+
+include $(MAKE_INCLUDE_GEN)
+#MODULE_IFLAGS               += -I$(BASEDIR)/component/network/coap/include
+
+.PHONY: all clean
+
+#*****************************************************************************#
+#                               VARIABLES	                              #
+#*****************************************************************************#
+LWIPDIR = $(BASEDIR)/component/lwip/lwip_v2.1.2
+LWIPAPI = $(BASEDIR)/component/lwip/api
+NETWORK = $(BASEDIR)/component/network
+LWIPPORT = $(LWIPDIR)/port/realtek/freertos
+
+
+vpath ethernetif.c $(LWIPPORT)
+vpath sys_arch.c $(LWIPPORT)
+vpath %.c $(INICDRV) $(LWIPAPI)
+vpath %.c $(LWIPDIR)/src/core/ipv4 \
+		$(LWIPDIR)/src/core/ipv6 \
+		$(LWIPDIR)/src/core \
+		$(LWIPDIR)/src/api \
+		$(LWIPDIR)/src/netif \
+		$(LWIPDIR)/src/apps/mdns \
+
+vpath %.c $(NETWORK) $(shell find $(NETWORK) -type d)
+
+#*****************************************************************************#
+#                               Source FILE LIST                              #
+#*****************************************************************************#
+CSRC =  $(NETWORK)/sntp/sntp.c \
+		$(NETWORK)/websocket/wsserver_tls.c \
+		$(NETWORK)/websocket/wsclient_tls.c \
+		$(NETWORK)/dhcp/dhcps.c \
+		$(NETWORK)/httpc/httpc_tls.c \
+		$(NETWORK)/httpd/httpd_tls.c \
+		$(NETWORK)/mDNS/mDNSPlatform.c \
+		#$(NETWORK)/coap/sn_coap_ameba_port.c\
+		#$(NETWORK)/coap/sn_coap_builder.c\
+		#$(NETWORK)/coap/sn_coap_header_check.c\
+		#$(NETWORK)/coap/sn_coap_parser.c\
+		#$(NETWORK)/coap/sn_coap_protocol.c
+		
+CSRC += $(LWIPDIR)/src/core/ipv4/dhcp.c \
+		$(LWIPDIR)/src/core/ipv6/dhcp6.c \
+		$(LWIPDIR)/src/core/dns.c \
+		$(LWIPDIR)/src/core/init.c \
+		$(LWIPDIR)/src/core/ipv4/autoip.c \
+		$(LWIPDIR)/src/core/ipv4/icmp.c \
+		$(LWIPDIR)/src/core/ipv6/icmp6.c \
+		$(LWIPDIR)/src/core/ipv6/inet6.c \
+		$(LWIPDIR)/src/core/ipv6/mld6.c \
+		$(LWIPDIR)/src/core/ipv6/nd6.c \
+		$(LWIPDIR)/src/api/err.c \
+		$(LWIPDIR)/src/core/stats.c \
+		$(LWIPDIR)/src/core/sys.c \
+		$(LWIPDIR)/src/core/tcp_in.c \
+		$(LWIPDIR)/src/core/tcp_out.c \
+		$(LWIPDIR)/src/core/def.c \
+		$(LWIPDIR)/src/core/ipv4/igmp.c \
+		$(LWIPDIR)/src/core/pbuf.c \
+		$(LWIPDIR)/src/core/inet_chksum.c \
+		$(LWIPDIR)/src/api/api_msg.c \
+		$(LWIPDIR)/src/api/netbuf.c \
+		$(LWIPPORT)/sys_arch.c \
+		$(LWIPPORT)/ethernetif.c \
+		$(LWIPDIR)/src/core/timeouts.c \
+		$(LWIPDIR)/src/core/raw.c \
+		$(LWIPDIR)/src/core/mem.c \
+		$(LWIPDIR)/src/core/memp.c \
+		$(LWIPDIR)/src/core/netif.c \
+		$(LWIPDIR)/src/core/ip.c \
+		$(LWIPDIR)/src/core/ipv4/ip4.c \
+		$(LWIPDIR)/src/core/ipv4/ip4_addr.c \
+		$(LWIPDIR)/src/core/ipv4/ip4_frag.c \
+		$(LWIPDIR)/src/core/ipv6/ip6.c \
+		$(LWIPDIR)/src/core/ipv6/ip6_addr.c \
+		$(LWIPDIR)/src/core/ipv6/ip6_frag.c \
+		$(LWIPDIR)/src/core/tcp.c \
+		$(LWIPDIR)/src/core/udp.c \
+		$(LWIPDIR)/src/api/sockets.c \
+		$(LWIPDIR)/src/api/tcpip.c \
+		$(LWIPDIR)/src/netif/ethernet.c \
+		$(LWIPDIR)/src/core/ipv4/etharp.c \
+		$(LWIPDIR)/src/core/ipv6/ethip6.c \
+		$(LWIPDIR)/src/api/netdb.c \
+		$(LWIPDIR)/src/api/api_lib.c \
+		$(LWIPDIR)/src/api/netifapi.c \
+		$(LWIPDIR)/src/apps/mdns/mdns.c
+
+CSRC += $(LWIPAPI)/lwip_netconf.c
+
+#*****************************************************************************#
+#                               Object FILE LIST                              #
+#*****************************************************************************#
+OBJS = $(notdir $(CSRC:.c=.o))
+
+#*****************************************************************************#
+#                               Include Dependency                            #
+#*****************************************************************************#
+-include $(OBJS:.o=.d)
+
+#*****************************************************************************#
+#                        RULES TO GENERATE TARGETS                            #
+#*****************************************************************************#
+
+# Define the Rules to build the core targets
+#all: CORE_TARGETS COPY_RAM_OBJS
+all: CORE_TARGETS COPY_RAM_OBJS
+	
+#*****************************************************************************#
+#              GENERATE OBJECT FILE 
+#*****************************************************************************#
+CORE_TARGETS:	$(OBJS) $(ASM_OBJS)
+
+
+#*****************************************************************************#
+#                        RULES TO CLEAN TARGETS                               #
+#*****************************************************************************#
+clean: CLEAN_OBJS
+	$(call CLEAN_FUNC)
+	
+-include $(DEPS)

@@ -1,0 +1,20 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+config MBEDCRYPTO_BUILD_TYPE
+    default "relwithdebinfo"
+
+config CONFIG_TFM_HALT_ON_CORE_PANIC
+    default y
+
+choice SPM_LOG_LEVEL
+    default SPM_LOG_LEVEL_DEBUG
+endchoice
+
+choice PARTITION_LOG_LEVEL
+    default PARTITION_LOG_LEVEL_DEBUG
+endchoice

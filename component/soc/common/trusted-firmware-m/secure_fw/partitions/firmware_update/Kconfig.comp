@@ -1,0 +1,22 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "FWU component configs"
+    depends on TFM_PARTITION_FIRMWARE_UPDATE
+
+config TFM_FWU_BUF_SIZE
+    int "Size of the FWU internal data transfer buffer"
+    default TFM_CONFIG_FWU_MAX_WRITE_SIZE
+    help
+      Size of the FWU internal data transfer buffer
+      (defaults to TFM_CONFIG_FWU_MAX_WRITE_SIZE if not set)
+
+config FWU_STACK_SIZE
+    hex "Stack size"
+    default 0x600
+
+endmenu

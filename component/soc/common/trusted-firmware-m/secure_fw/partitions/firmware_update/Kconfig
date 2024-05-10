@@ -1,0 +1,39 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig TFM_PARTITION_FIRMWARE_UPDATE
+    bool "Firmware update"
+    depends on TFM_PARTITION_PLATFORM && TFM_PARTITION_CRYPTO && PLATFORM_HAS_FIRMWARE_UPDATE_SUPPORT
+    default n
+
+if TFM_PARTITION_FIRMWARE_UPDATE
+
+config TFM_FWU_BOOTLOADER_LIB
+    string "Bootloader configure file"
+    default "mcuboot"
+    help
+      Bootloader configure file for Firmware Update partition
+
+config TFM_CONFIG_FWU_MAX_WRITE_SIZE
+    int "Max block size (byte) in psa_fwu_write"
+    default 1024
+
+config TFM_CONFIG_FWU_MAX_MANIFEST_SIZE
+    int "Max size (byte) for manifest in psa_fwu_start"
+    default 0
+
+config FWU_DEVICE_CONFIG_FILE
+    string "The device configuration file for Firmware Update partition"
+    default ""
+
+config FWU_SUPPORT_TRIAL_STATE
+    bool
+    default n
+    help
+      Device support TRIAL component state.
+
+endif

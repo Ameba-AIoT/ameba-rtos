@@ -1,0 +1,23 @@
+#
+# Format of this file: description<nl>variable<nl>  helptext<nl>...<nl><nl>.
+# If the question being documented is of type "choice", we list
+# only the first occurring config variable. The help texts
+# must not contain empty lines. No variable should occur twice; if it
+# does, only the first occurrence will be used by Configure. The lines
+# in a help text should be indented two positions. Lines starting with
+# `#' are ignored. To be nice to menuconfig, limit your lines to 70
+# characters. Use emacs' kfill.el to edit this file or you lose.
+#
+
+# Note: Following format is invalid.
+# For configuration shared by KM4 and KR4, the suffix that indicate specific core is needed.
+# CONFIG_AMEBALITE_A_CUT
+#   test short ACut
+
+# Prompt for menuconfig option "AMEBALITE_A_CUT" of KM4
+CONFIG_AMEBALITE_A_CUT_FOR_KM4
+  The rom code is compatible between Acut and Bcut.
+
+# Prompt for menuconfig option "AMEBALITE_A_CUT" of KR4
+CONFIG_AMEBALITE_A_CUT_FOR_KR4
+  The rom code is compatible between Acut and Bcut.

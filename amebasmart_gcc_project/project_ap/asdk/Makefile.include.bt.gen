@@ -1,0 +1,67 @@
+BLEDIR = $(BASEDIR)/component/bluetooth
+
+IFLAGS += \
+	-I$(BASEDIR)/component/soc/amebasmart/fwlib/include \
+	-I$(BLEDIR)/rtk_coex \
+	-I$(BLEDIR)/driver \
+	-I$(BLEDIR)/driver/hci \
+	-I$(BLEDIR)/driver/inc \
+	-I$(BLEDIR)/driver/inc/hci \
+	-I$(BLEDIR)/driver/platform/amebasmart/inc \
+	-I$(BLEDIR)/osif \
+	-I$(BLEDIR)/bt_audio/include \
+	-I$(BLEDIR)/bt_audio/bt_codec
+
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+IFLAGS += \
+	-I$(BLEDIR)/api/zephyr_stack \
+	-I$(BLEDIR)/zephyr \
+	-I$(BLEDIR)/zephyr/hci_driver \
+	-I$(BLEDIR)/zephyr/include \
+	-I$(BLEDIR)/zephyr/stack/host \
+	-I$(BLEDIR)/zephyr/settings \
+	-I$(BLEDIR)/zephyr/port
+else
+IFLAGS += \
+	-I$(BLEDIR)/api/rtk_stack \
+	-I$(BLEDIR)/rtk_stack/example \
+	-I$(BLEDIR)/rtk_stack/inc/app \
+	-I$(BLEDIR)/rtk_stack/inc/os \
+	-I$(BLEDIR)/rtk_stack/inc/platform \
+	-I$(BLEDIR)/rtk_stack/inc/stack \
+	-I$(BLEDIR)/rtk_stack/inc/bluetooth/gap \
+	-I$(BLEDIR)/rtk_stack/inc/bluetooth/profile \
+	-I$(BLEDIR)/rtk_stack/inc/bluetooth/profile/client \
+	-I$(BLEDIR)/rtk_stack/inc/bluetooth/profile/server \
+	-I$(BLEDIR)/rtk_stack/inc/bluetooth/leaudio \
+	-I$(BLEDIR)/rtk_stack/inc/ble_mgr \
+	-I$(BLEDIR)/rtk_stack/inc/framework/bt_mgr_inc \
+	-I$(BLEDIR)/rtk_stack/inc/framework/sysm_inc \
+	-I$(BLEDIR)/rtk_stack/platform/amebasmart/inc \
+	-I$(BLEDIR)/rtk_stack/src/ble/gatt_client \
+	-I$(BLEDIR)/rtk_stack/src/ble/vector \
+	-I$(BLEDIR)/rtk_stack/src/mesh/cmd \
+	-I$(BLEDIR)/rtk_stack/src/mesh/common \
+	-I$(BLEDIR)/rtk_stack/src/mesh/gap \
+	-I$(BLEDIR)/rtk_stack/src/mesh/inc \
+	-I$(BLEDIR)/rtk_stack/src/mesh/inc/amebasmart \
+	-I$(BLEDIR)/rtk_stack/src/mesh/model \
+	-I$(BLEDIR)/rtk_stack/src/mesh/model/ali \
+	-I$(BLEDIR)/rtk_stack/src/mesh/model/realtek \
+	-I$(BLEDIR)/rtk_stack/src/mesh/platform \
+	-I$(BLEDIR)/rtk_stack/src/mesh/profile \
+	-I$(BLEDIR)/rtk_stack/src/mesh/utility
+
+ifeq ($(CONFIG_BT_BLE_ONLY), y)
+IFLAGS += -I$(BLEDIR)/rtk_stack/platform/amebasmart/lib/ca32/ble_only
+else ifeq ($(CONFIG_BT_DUAL_MODE), y)
+IFLAGS += -I$(BLEDIR)/rtk_stack/platform/amebasmart/lib/ca32/dual_mode
+endif
+endif
+
+IFLAGS += \
+	-I$(BLEDIR)/api \
+	-I$(BLEDIR)/api/include \
+	-I$(BLEDIR)/example/bt_atcmd \
+	-I$(BLEDIR)/example/gatt_service/server \
+	-I$(BLEDIR)/example/gatt_service/client

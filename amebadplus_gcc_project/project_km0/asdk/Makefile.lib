@@ -1,0 +1,45 @@
+
+APP_LIB_DIR = $(ROOTDIR)/lib/application
+WIFI_MAKE_DIR = make/wlan
+
+ifeq ($(CONFIG_WLAN),y)
+ifeq ($(CONFIG_WIFI_FW_EN),y) 
+image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
+endif
+
+# NP Link Library
+ifeq ($(CONFIG_AS_INIC_NP), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
+endif
+
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_chipinfo.a
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_crashdump.a
+
+lib_image2: build_target_folder check_toolchain build_info.h make_subdirs_lib_img2
+
+ifneq ($(wildcard ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi),)
+include ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi
+make_subdirs_lib_img2: make_wifi_lib
+endif
+
+#*****************************************************************************#
+#                      RULES TO CREATE DIRECTORY                              #
+#*****************************************************************************#
+
+make_subdirs_lib_img2:
+	@ rm -f $(RAM_OBJS_LIST)
+# build pmc libs
+	@+$(MAKE) -C make_lib/pmc_lib all
+	@+$(MAKE) -C make_lib/chipinfo_lib all
+	@+$(MAKE) -C make_lib/crashdump_lib all
+
+ifeq ($(CONFIG_WLAN), y)
+ifeq ($(CONFIG_WIFI_FW_EN),y) 
+	@+$(MAKE) -C make/target/wifi_fw all
+endif
+ifeq ($(CONFIG_AS_INIC_NP), y)
+	@+$(MAKE) -C make/rtk_coex all
+endif
+endif

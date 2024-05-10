@@ -1,0 +1,14 @@
+combine_images.pyc
+
+[Description]
+Script can combine all images together in accordance with profile to a binary named as image_all.bin, which used for 1-N MP ImageTool download.
+
+[argv]
+--profile: specified the profile to combine images
+--image_path: specified the images path which to be combined
+--out: optional, specified the output path where to store image_all.bin, default, the image_all.bin will store in image_path
+
+Note: All images which are mentioned in the profile to be default downloaded should be store at --image_path.
+
+[Example]
+python combine.py --profile E:\test\RTL8730E_FreeRTOS_NAND.rdev --image_path E:\test\images --out E:\temp

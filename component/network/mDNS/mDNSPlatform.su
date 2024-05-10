@@ -1,0 +1,5 @@
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/mDNS/mDNSPlatform.c:10:6:mDNSPlatformCustomInit	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/mDNS/mDNSPlatform.c:15:10:mDNSPlatformHtons	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/mDNS/mDNSPlatform.c:20:10:mDNSPlatformInetAddr	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/mDNS/mDNSPlatform.c:25:9:mDNSPlatformNetifIsUp	0	static
+/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/network/mDNS/mDNSPlatform.c:32:7:mDNSPlatformHostname	0	static

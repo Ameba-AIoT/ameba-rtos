@@ -1,0 +1,33 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "Platform options"
+
+rsource "Kconfig.arch"
+
+config SECURE_UART1
+    bool "Enable secure UART1"
+    default n
+
+config TFM_DUMMY_PROVISIONING
+    bool "Provision with dummy values"
+    default y
+    select PLATFORM_DEFAULT_OTP_WRITEABLE if PLATFORM_DEFAULT_OTP
+    help
+      NOT to be used in production
+
+################################# Crypto dependencies ##########################
+
+config CRYPTO_HW_ACCELERATOR
+    bool "Enable the crypto hardware accelerator"
+    depends on CRYPTO_HW_ACCELERATOR_TYPE != ""
+    default n
+
+rsource "Kconfig.fpu"
+rsource "Kconfig.platform"
+
+endmenu
