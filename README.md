@@ -50,7 +50,7 @@ Run `make menuconfig` to open a configuration menu and you can configure the pro
 
 After compiling finishes, both app and bootloader images are generated.
 
-**Note:** If somehow failed, type $ make clean to clean and then redo the make procedure.
+**Note:** If somehow failed, type `make clean` to clean and then redo the make procedure.
 
 ## Flashing the Project
 
