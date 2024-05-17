@@ -1,0 +1,249 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig BL2
+    bool "BL2"
+    default y
+
+if BL2
+
+config DEFAULT_MCUBOOT_SECURITY_COUNTERS
+    bool "Use the default security counter configuration"
+    default y
+    help
+      Use the default security counter configuration defined by TF-M project
+
+config DEFAULT_MCUBOOT_FLASH_MAP
+    bool "Use the default flash map"
+    default y
+    help
+      Whether to use the default flash map defined by TF-M project
+
+config MCUBOOT_S_IMAGE_FLASH_AREA_NUM
+    int "ID of the flash area containing the primary Secure image"
+    default 0
+    help
+      ID of the flash area containing the primary Secure image
+
+config MCUBOOT_NS_IMAGE_FLASH_AREA_NUM
+    int "ID of the flash area containing the primary Non-Secure image"
+    default 1
+
+config MCUBOOT_IMAGE_NUMBER
+    int "Whether to combine S and NS into either 1 image, or sign each seperately"
+    default 2
+    range 1 4
+
+config MCUBOOT_EXECUTION_SLOT
+    int "Slot from which to execute the image, used for XIP mode"
+    default 1
+
+config MCUBOOT_HW_KEY
+    bool "Embed the entire public key"
+    default y
+    help
+      Whether to embed the entire public key in the image metadata instead of
+      the hash only
+
+choice
+    prompt "Upgrade strategy for images"
+    default MCUBOOT_UPGRADE_STRATEGY_OVERWRITE_ONLY
+
+    config MCUBOOT_UPGRADE_STRATEGY_OVERWRITE_ONLY
+        bool "Overwrite only"
+
+    config MCUBOOT_UPGRADE_STRATEGY_SWAP_USING_SCRATCH
+        bool "Swap using scratch"
+        imply FWU_SUPPORT_TRIAL_STATE
+
+    config MCUBOOT_UPGRADE_STRATEGY_SWAP_USING_MOVE
+        bool "Swap using move"
+        imply FWU_SUPPORT_TRIAL_STATE
+
+    config MCUBOOT_UPGRADE_STRATEGY_DIRECT_XIP
+        bool "Direct xip"
+        depends on !TFM_PARTITION_FIRMWARE_UPDATE
+
+    config MCUBOOT_UPGRADE_STRATEGY_RAM_LOAD
+        bool "Ram load"
+        depends on !TFM_PARTITION_FIRMWARE_UPDATE
+endchoice
+
+config MCUBOOT_UPGRADE_STRATEGY
+    string "Upgrade strategy for images"
+    default "OVERWRITE_ONLY" if MCUBOOT_UPGRADE_STRATEGY_OVERWRITE_ONLY
+    default "SWAP_USING_SCRATCH" if MCUBOOT_UPGRADE_STRATEGY_SWAP_USING_SCRATCH
+    default "SWAP_USING_MOVE" if MCUBOOT_UPGRADE_STRATEGY_SWAP_USING_MOVE
+    default "DIRECT_XIP" if MCUBOOT_UPGRADE_STRATEGY_DIRECT_XIP
+    default "RAM_LOAD" if MCUBOOT_UPGRADE_STRATEGY_RAM_LOAD
+
+config BL2_HEADER_SIZE
+    hex "BL2 Header size"
+    default 0x400
+
+config BL2_TRAILER_SIZE
+    hex "BL2 Trailer size"
+    default 0x400
+
+choice
+    prompt "Align option for mcuboot and build image with imgtool"
+    config MCUBOOT_ALIGN_VAL_1
+        bool "1"
+    config MCUBOOT_ALIGN_VAL_2
+        bool "2"
+    config MCUBOOT_ALIGN_VAL_4
+        bool "4"
+    config MCUBOOT_ALIGN_VAL_8
+        bool "8"
+    config MCUBOOT_ALIGN_VAL_16
+        bool "16"
+    config MCUBOOT_ALIGN_VAL_32
+        bool "32"
+endchoice
+
+config MCUBOOT_ALIGN_VAL
+    int
+    default 1 if MCUBOOT_ALIGN_VAL_1
+    default 2 if MCUBOOT_ALIGN_VAL_2
+    default 4 if MCUBOOT_ALIGN_VAL_4
+    default 8 if MCUBOOT_ALIGN_VAL_8
+    default 16 if MCUBOOT_ALIGN_VAL_16
+    default 32 if MCUBOOT_ALIGN_VAL_32
+
+config MCUBOOT_CONFIRM_IMAGE
+    bool "Whether to confirm the image if REVERT is supported in MCUboot"
+    default n
+
+config MCUBOOT_DIRECT_XIP_REVERT
+    bool "Enable the revert mechanism in direct-xip mode"
+    default y
+
+config MCUBOOT_HW_ROLLBACK_PROT
+    bool "Enable security counter validation against non-volatile HW counters"
+    default y
+
+config MCUBOOT_ENC_IMAGES
+    bool "Enable encrypted image upgrade support"
+    default n
+
+config MCUBOOT_BOOTSTRAP
+    bool "Support initial state with empty primary slot and images installed from secondary slots"
+    default n
+
+config MCUBOOT_ENCRYPT_RSA
+    bool "Use RSA for encrypted image upgrade support"
+    default n
+
+choice
+    prompt "Fault injection hardening profile"
+    default MCUBOOT_FIH_PROFILE_OFF
+
+    config MCUBOOT_FIH_PROFILE_OFF
+        bool "OFF"
+
+    config MCUBOOT_FIH_PROFILE_LOW
+        bool "LOW"
+
+    config MCUBOOT_FIH_PROFILE_MEDIUM
+        bool "MEDIUM"
+
+    config MCUBOOT_FIH_PROFILE_HIGH
+        bool "HIGH"
+endchoice
+
+config MCUBOOT_FIH_PROFILE
+    string
+    default "OFF" if MCUBOOT_FIH_PROFILE_OFF
+    default "LOW" if MCUBOOT_FIH_PROFILE_LOW
+    default "MEDIUM" if MCUBOOT_FIH_PROFILE_MEDIUM
+    default "HIGH" if MCUBOOT_FIH_PROFILE_HIGH
+
+config MCUBOOT_SIGNATURE_TYPE
+    string "Algorithm to use for signature validation"
+    default "RSA"
+    help
+      Note - If either SIGNATURE_TYPE or KEY_LEN are changed, the entries for KEY_S
+      and KEY_NS will either have to be updated manually or removed from the cache.
+      `cmake .. -UMCUBOOT_KEY_S -UMCUBOOT_KEY_NS`. Once removed from the cache it
+      will be set to default again.
+
+config MCUBOOT_SIGNATURE_KEY_LEN
+    int "Key length to use for signature validation"
+    default 3072
+
+config MCUBOOT_KEY_S
+    string "Path to key with which to sign secure binary"
+    default "$(TFM_SOURCE_DIR)/bl2/ext/mcuboot/root-${MCUBOOT_SIGNATURE_TYPE}-${MCUBOOT_SIGNATURE_KEY_LEN}.pem"
+
+config MCUBOOT_KEY_NS
+    string "Path to key with which to sign non-secure binary"
+    default "$(TFM_SOURCE_DIR)/bl2/ext/mcuboot/root-${MCUBOOT_SIGNATURE_TYPE}-${MCUBOOT_SIGNATURE_KEY_LEN}_1.pem"
+
+config MCUBOOT_IMAGE_VERSION_S
+    string "Version number of S image"
+    default "$(TFM_VERSION)"
+
+config MCUBOOT_IMAGE_VERSION_NS
+    string "Version number of NS image"
+    default "0.0.0"
+
+config MCUBOOT_SECURITY_COUNTER_S
+    int "Security counter for S image. auto sets it to IMAGE_VERSION_S"
+    default 1
+
+config MCUBOOT_SECURITY_COUNTER_NS
+    int "Security counter for NS image. auto sets it to IMAGE_VERSION_NS"
+    default 1
+
+config MCUBOOT_S_IMAGE_MIN_VER
+    string "Minimum version of secure image"
+    default "0.0.0+0"
+    help
+      Minimum version of secure image required by the non-secure image for
+      upgrade to this non-secure image. If MCUBOOT_IMAGE_NUMBER == 1 this
+      option has no effect
+
+config MCUBOOT_NS_IMAGE_MIN_VER
+    string "Minimum version of non-secure image"
+    default "0.0.0+0"
+    help
+      Minimum version of non-secure image required by the secure image for
+      upgrade to this secure image. If MCUBOOT_IMAGE_NUMBER == 1 this option
+      has no effect
+
+config MCUBOOT_ENC_KEY_LEN
+    int "Length of the AES key for encrypting images"
+    default 128
+
+config MCUBOOT_MBEDCRYPTO_CONFIG_FILEPATH
+    string "Mbedtls config file to use with MCUboot"
+    default "$(TFM_SOURCE_DIR)/bl2/ext/mcuboot/config/mcuboot-mbedtls-cfg.h"
+
+choice
+    prompt "MCUBoot Log Level"
+    default MCUBOOT_LOG_LEVEL_INFO
+
+    config MCUBOOT_LOG_LEVEL_DEBUG
+        bool "Debug"
+    config MCUBOOT_LOG_LEVEL_INFO
+        bool "Info"
+    config MCUBOOT_LOG_LEVEL_WARNING
+        bool "Warning"
+    config MCUBOOT_LOG_LEVEL_ERROR
+        bool "Error"
+    config MCUBOOT_LOG_LEVEL_OFF
+        bool "Off"
+endchoice
+
+config MCUBOOT_LOG_LEVEL
+    string
+    default "DEBUG" if MCUBOOT_LOG_LEVEL_DEBUG
+    default "INFO" if MCUBOOT_LOG_LEVEL_INFO
+    default "WARNING" if MCUBOOT_LOG_LEVEL_WARNING
+    default "ERROR" if MCUBOOT_LOG_LEVEL_ERROR
+    default "OFF" if MCUBOOT_LOG_LEVEL_OFF
+endif

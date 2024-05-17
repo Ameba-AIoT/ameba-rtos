@@ -1,0 +1,39 @@
+SCRIPTS_FATHER_CONFIG_NAME=menuconfig
+KM4_PROJECT_PATH=./project_km4
+KM0_PROJECT_PATH=./project_km0
+
+DEF_CONFIG="$SCRIPTS_FATHER_CONFIG_NAME/.config"
+DEF_CONFIG_H="$SCRIPTS_FATHER_CONFIG_NAME/autoconf.h"
+CONFIG_TEMP="$SCRIPTS_FATHER_CONFIG_NAME/tempconfig.txt"
+CONFIG_KM4="$SCRIPTS_FATHER_CONFIG_NAME/.config_km4"
+CONFIG_KM0="$SCRIPTS_FATHER_CONFIG_NAME/.config_km0"
+CONFIG_KM4_H="$KM4_PROJECT_PATH/inc/platform_autoconf.h"
+CONFIG_KM0_H="$KM0_PROJECT_PATH/inc/platform_autoconf.h"
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG > $CONFIG_TEMP
+sed -n '/#KM0Start/,/#KM0End/{//!p}' $DEF_CONFIG >> $CONFIG_TEMP
+sed -i '/_FOR_KM4/d' $CONFIG_TEMP
+sed -i 's/_FOR_KM0//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_KM0
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG_H > $CONFIG_TEMP
+sed -n '/#KM0Start/,/#KM0End/{//!p}' $DEF_CONFIG_H >> $CONFIG_TEMP
+sed -i '/_FOR_KM4/d' $CONFIG_TEMP
+sed -i 's/_FOR_KM0//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_KM0_H
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG > $CONFIG_TEMP
+sed -n '/#KM4Start/,/#KM4End/{//!p}' $DEF_CONFIG >> $CONFIG_TEMP
+sed -i '/_FOR_KM0/d' $CONFIG_TEMP
+sed -i 's/_FOR_KM4//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_KM4
+
+sed -n '/#GeneralStart/,/#GeneralEnd/{//!p}' $DEF_CONFIG_H > $CONFIG_TEMP
+sed -n '/#KM4Start/,/#KM4End/{//!p}' $DEF_CONFIG_H >> $CONFIG_TEMP
+sed -i '/_FOR_KM0/d' $CONFIG_TEMP
+sed -i 's/_FOR_KM4//g' $CONFIG_TEMP
+cat $CONFIG_TEMP > $CONFIG_KM4_H
+
+
+
+rm $CONFIG_TEMP $DEF_CONFIG_H

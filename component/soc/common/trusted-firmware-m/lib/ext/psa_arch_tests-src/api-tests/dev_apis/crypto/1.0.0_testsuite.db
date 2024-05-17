@@ -1,0 +1,87 @@
+#/** @file
+# * Copyright (c) 2021, Arm Limited or its affiliates. All rights reserved.
+# * SPDX-License-Identifier : Apache-2.0
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *  http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+#**/
+
+
+#List of tests to be compiled and run as part of crypto suite
+
+(START)
+
+test_c001
+test_c002
+test_c003
+test_c004
+test_c005
+test_c006
+test_c007
+test_c008
+test_c009
+test_c010
+test_c011
+test_c012
+test_c013
+test_c014
+test_c015
+test_c016
+test_c017
+test_c018
+test_c019
+test_c020
+test_c021
+test_c022
+test_c023
+test_c024
+test_c025
+test_c026
+test_c027
+test_c028
+test_c029
+test_c030
+test_c031
+test_c032
+test_c033
+test_c034
+test_c035
+test_c036
+test_c037
+test_c038
+test_c039
+test_c040
+test_c041
+test_c042
+test_c043
+test_c044
+test_c045
+test_c046
+test_c047
+test_c048
+test_c049
+test_c050
+test_c051
+test_c052
+test_c053
+test_c054
+test_c055
+test_c056
+test_c057
+test_c058
+test_c059
+test_c060
+test_c061
+test_c062
+test_c063
+
+(END)

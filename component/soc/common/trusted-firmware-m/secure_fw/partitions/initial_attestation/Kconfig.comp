@@ -1,0 +1,40 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "Initial Attestation component options"
+    depends on TFM_PARTITION_INITIAL_ATTESTATION
+
+config ATTEST_INCLUDE_OPTIONAL_CLAIMS
+    bool "Include optional claims"
+    default y
+    help
+      Include optional claims in initial attestation token
+
+config ATTEST_INCLUDE_COSE_KEY_ID
+    bool "Include COSE key-id"
+    default n
+    help
+      COSE key-id is an optional field in the COSE unprotected header.
+      Key-id is calculated and added to the COSE header based on the value of this option.
+
+choice ATTEST_TOKEN_PROFILE
+    prompt "Token profile"
+    default ATTEST_TOKEN_PROFILE_PSA_IOT_1
+
+    config ATTEST_TOKEN_PROFILE_PSA_IOT_1
+        bool "PSA_IOT_1"
+    config ATTEST_TOKEN_PROFILE_PSA_2_0_0
+        bool "PSA_2_0_0"
+    config ATTEST_TOKEN_PROFILE_ARM_CCA
+        bool "ARM_CCA"
+endchoice
+
+config ATTEST_STACK_SIZE
+    hex "Stack size"
+    default 0x700
+
+endmenu

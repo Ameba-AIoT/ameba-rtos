@@ -1,0 +1,31 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "Platform partition component configs"
+    depends on TFM_PARTITION_PLATFORM
+
+config PLATFORM_SERVICE_INPUT_BUFFER_SIZE
+    int "Size of input buffer"
+    default 64
+    help
+      Size of the internal transiant buffer to hold input vectors from client.
+
+config PLATFORM_SERVICE_OUTPUT_BUFFER_SIZE
+    int "Size of output buffer"
+    default 64
+    help
+      Size of the internal transiant buffer to hold service outputs.
+
+config PLATFORM_SP_STACK_SIZE
+    hex "Stack size"
+    default 0x500
+
+config PLATFORM_NV_COUNTER_MODULE_DISABLED
+    bool "Disable Non-volatile counter module"
+    default n
+
+endmenu

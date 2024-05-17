@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2021-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon
+ * company) or an affiliate of Cypress Semiconductor Corporation. All rights
+ * reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+#include <stdint.h>
+
+#include "cmsis.h"
+#include "spm.h"
+#include "tfm_hal_interrupt.h"
+#include "tfm_peripherals_def.h"
+#include "ffm/interrupt.h"
+#include "load/interrupt_defs.h"
+
+static struct irq_t dma0_ch0_irq = {0};
+static struct irq_t dma0_ch1_irq = {0};
+
+void DMA_Channel_0_Handler(void)
+{
+    spm_handle_interrupt(dma0_ch0_irq.p_pt, dma0_ch0_irq.p_ildi);
+}
+
+void DMA_Channel_1_Handler(void)
+{
+    spm_handle_interrupt(dma0_ch1_irq.p_pt, dma0_ch1_irq.p_ildi);
+}
+
+enum tfm_hal_status_t tfm_dma0_ch0_irq_init(void *p_pt,
+                                          const struct irq_load_info_t *p_ildi)
+{
+    dma0_ch0_irq.p_ildi = p_ildi;
+    dma0_ch0_irq.p_pt = p_pt;
+
+    NVIC_SetPriority(TFM_DMA0_CH0_IRQ, DEFAULT_IRQ_PRIORITY);
+    NVIC_ClearTargetState(TFM_DMA0_CH0_IRQ);
+    NVIC_DisableIRQ(TFM_DMA0_CH0_IRQ);
+
+    return TFM_HAL_SUCCESS;
+}
+
+enum tfm_hal_status_t tfm_dma0_ch1_irq_init(void *p_pt,
+                                          const struct irq_load_info_t *p_ildi)
+{
+    dma0_ch1_irq.p_ildi = p_ildi;
+    dma0_ch1_irq.p_pt = p_pt;
+
+    NVIC_SetPriority(TFM_DMA0_CH1_IRQ, DEFAULT_IRQ_PRIORITY);
+    NVIC_ClearTargetState(TFM_DMA0_CH1_IRQ);
+    NVIC_DisableIRQ(TFM_DMA0_CH1_IRQ);
+
+    return TFM_HAL_SUCCESS;
+}

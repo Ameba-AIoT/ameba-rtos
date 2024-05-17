@@ -1,0 +1,36 @@
+***** PSA Architecture Test Suite - Version 0.8 *****
+
+Running.. Attestation Suite
+******************************************
+
+TEST: 801 | DESCRIPTION: Testing initial attestation APIs
+[Info] Executing tests from non-secure
+[Check 1] Test psa_initial_attestation_get_token with Challenge 32
+[Check 2] Test psa_initial_attestation_get_token with Challenge 48
+[Check 3] Test psa_initial_attestation_get_token with Challenge 64
+[Check 4] Test psa_initial_attestation_get_token with zero challenge size
+[Check 5] Test psa_initial_attestation_get_token with small challenge size
+[Check 6] Test psa_initial_attestation_get_token with invalid challenge size
+[Check 7] Test psa_initial_attestation_get_token with large challenge size
+[Check 8] Test psa_initial_attestation_get_token with zero as token size
+[Check 9] Test psa_initial_attestation_get_token with small token size
+[Check 10] Test psa_initial_attestation_get_token_size with Challenge 32
+[Check 11] Test psa_initial_attestation_get_token_size with Challenge 48
+[Check 12] Test psa_initial_attestation_get_token_size with Challenge 64
+[Check 13] Test psa_initial_attestation_get_token_size with zero challenge size
+[Check 14] Test psa_initial_attestation_get_token_size with small challenge size
+[Check 15] Test psa_initial_attestation_get_token_size with invalid challenge size
+[Check 16] Test psa_initial_attestation_get_token_size with large challenge size
+TEST RESULT: PASSED
+
+******************************************
+
+************ Attestation Suite Report **********
+TOTAL TESTS     : 1
+TOTAL PASSED    : 1
+TOTAL SIM ERROR : 0
+TOTAL FAILED    : 0
+TOTAL SKIPPED   : 0
+******************************************
+
+Entering standby..

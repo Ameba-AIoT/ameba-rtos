@@ -1,0 +1,62 @@
+
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+################################# FPU ####################################
+
+menu "FPU/MVE"
+
+    config CONFIG_TFM_LAZY_STACKING
+        bool
+        default n
+        help
+          Enable lazy stacking
+
+    config CONFIG_TFM_ENABLE_CP10CP11
+        bool
+        default n
+        help
+          Make FPU and MVE operational when SPE and/or NSPE require FPU or MVE usage.
+          This alone only enables the coprocessors CP10-CP11, whereas CONFIG_TFM_FLOAT_ABI=hard
+          along with CONFIG_TFM_ENABLE_FP, CONFIG_TFM_ENABLE_MVE or CONFIG_TFM_ENABLE_MVE_FP
+          compiles the code with hardware FP or MVE instructions and ABI.
+
+    config CONFIG_TFM_ENABLE_FP
+        #TODO: depends on toolchain type
+        bool "Enable FP usage"
+        depends on CONFIG_TFM_FP_ARCH != ""
+        default n
+        imply CONFIG_TFM_LAZY_STACKING
+        select CONFIG_TFM_ENABLE_CP10CP11
+
+    config CONFIG_TFM_ENABLE_MVE
+        #TODO: depends on v8.1
+        bool "Enable integer MVE usage"
+        default n
+        imply CONFIG_TFM_LAZY_STACKING
+        select CONFIG_TFM_ENABLE_CP10CP11
+
+    config CONFIG_TFM_ENABLE_MVE_FP
+        bool "Enable floating-point MVE usage"
+        depends on CONFIG_TFM_FP_ARCH != ""
+        default n
+        imply CONFIG_TFM_LAZY_STACKING
+        select CONFIG_TFM_ENABLE_CP10CP11
+
+    config CONFIG_TFM_FLOAT_ABI
+        #TODO: shall be int to align with compile options
+        string
+        default "hard"  if CONFIG_TFM_ENABLE_FP || CONFIG_TFM_ENABLE_MVE || CONFIG_TFM_ENABLE_MVE_FP
+        default "soft"
+        help
+          Set float abi hard to enable hardware floating-point instructions and
+          hardware floating-point linkage.
+
+          Set float abi soft, meaning software library functions for
+          floating-point operations and software floating-point linkage.
+
+endmenu

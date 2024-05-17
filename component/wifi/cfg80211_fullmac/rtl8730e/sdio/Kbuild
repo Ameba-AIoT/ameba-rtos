@@ -1,0 +1,31 @@
+ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
+ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
+ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_SDIO
+ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)
+
+fullmac_sdio-y := rtw_sdio_drvio.o \
+		rtw_sdio_ops.o \
+		rtw_sdio_probe.o \
+		../rtw_drv_probe.o \
+		../rtw_cfg80211_ops.o \
+		../rtw_wiphy.o \
+		../rtw_regd.o \
+		../rtw_ethtool_ops.o \
+		../rtw_cfg80211_ops_ap.o \
+		../rtw_cfg80211_ops_key.o \
+		../rtw_cfg80211_ops_nan.o \
+		../rtw_cfg80211_ops_p2p.o \
+		../rtw_netdev_ops.o \
+		../rtw_netdev_ops_p2p.o \
+		../rtw_cfgvendor.o \
+		../rtw_proc.o \
+		rtw_llhw_ops.o \
+		rtw_llhw_event.o \
+		rtw_llhw_recv.o \
+		rtw_llhw_xmit.o \
+		rtw_llhw_msg.o \
+		rtw_llhw_hci.o \
+		rtw_llhw_memory.o \
+		rtw_protocal_offload.o
+
+obj-m += fullmac_sdio.o

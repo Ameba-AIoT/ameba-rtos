@@ -1,0 +1,137 @@
+
+=============================================================
+         0          0          0          0 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       552         32          0        584 bootloader_km0.o
+         0        185          2        187 ameba_bootcfg.o
+       552        217          2        771 (TOTALS)
+=============================================================
+         0          0          0          0 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       284        156         49        489 freertos_heap5_config.o
+       116          0          6        122 os_wrapper_critical.o
+       104          0          0        104 os_wrapper_memory.o
+       564        100          0        664 os_wrapper_mutex.o
+       496         96          0        592 os_wrapper_queue.o
+       400          0          0        400 os_wrapper_semaphore.o
+       204          0          0        204 os_wrapper_task.o
+        84          0          0         84 os_wrapper_time.o
+       532          0          0        532 os_wrapper_timer.o
+      1088          0       4664       5752 os_wrapper_static_functions.o
+      3872        352       4719       8943 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      7448        822        384       8654 tasks.o
+       144          0          0        144 list.o
+       832          0        128        960 croutine.o
+      4064        521         68       4653 queue.o
+      1564          8       1328       2900 timers.o
+       720          0          0        720 event_groups.o
+      1584          0          0       1584 stream_buffer.o
+       876        171       4800       5847 port.o
+       900          0         32        932 heap_5.o
+     18132       1522       6740      26394 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       124          0          0        124 gcc_wrap.o
+       124          0          0        124 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1192        943         32       2167 monitor_km0.o
+       952         86        132       1170 shell_ram.o
+       128          4          0        132 low_level_io.o
+      2272       1033        164       3469 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       136         12          0        148 ameba_app_start.o
+       472          0          0        472 ameba_pinmap.o
+      1928          0         12       1940 ameba_pll.o
+      1368        240         12       1620 ameba_flash_ram.o
+      1020        205          0       1225 ameba_npcap.o
+         0        260          0        260 ameba_pinmapcfg.o
+         0        272         15        287 ameba_sleepcfg.o
+       288        404          0        692 ameba_flashcfg.o
+       332        168        256        756 ameba_ipc_ram.o
+       720        297         64       1081 ameba_ipc_api.o
+      2348        436          0       2784 ameba_tim.o
+      3824        164          0       3988 ameba_rtc.o
+       400        167          0        567 ameba_rtc_io.o
+       384        166          0        550 ameba_reset.o
+       500        275          4        779 ameba_mpu_ram.o
+      3604        249         28       3881 ameba_i2c.o
+      2024        328          0       2352 ameba_spi.o
+       236          4          0        240 ameba_arch.o
+      1596        168          0       1764 ameba_keyscan.o
+      3044        222          0       3266 ameba_gdma_ram.o
+      2212        172         33       2417 ameba_adc.o
+      1316        171          0       1487 ameba_comparator.o
+      5204       1190          0       6394 ameba_captouch.o
+      1568        237         24       1829 ameba_uart.o
+      4788        700         32       5520 ameba_psram.o
+       924        164          0       1088 ameba_ppe.o
+      1144         29          0       1173 ameba_qspi.o
+       508          0          0        508 ameba_sdio.o
+       480        211          0        691 ameba_fault_handle.o
+      1076        155         48       1279 log.o
+      1252          0          0       1252 sscanf_minimal.o
+     44696       7066        528      52290 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       468        155          0        623 flash_api.o
+       176         90          0        266 pinmap_common.o
+       796        624          0       1420 sys_api.o
+       304         32          4        340 us_ticker.o
+       816        155          0        971 timer_api.o
+       304         95          0        399 dma_api.o
+       436        154          0        590 gpio_api.o
+       468         40          0        508 gpio_irq_api.o
+       172        152          0        324 pinmap.o
+       196        154          0        350 port_api.o
+      6092        818        456       7366 spi_api.o
+      6164        433        820       7417 serial_api.o
+      2188        169        176       2533 i2c_api.o
+      1164        196         10       1370 pwmout_api.o
+       416        294          0        710 analogin_api.o
+       372        261          0        633 efuse_api.o
+       236        205          0        441 wdt_api.o
+       236          0          8        244 us_ticker_api.o
+        52          0          0         52 wait_api.o
+       852         12          8        872 rtc_api.o
+       632         93          0        725 captouch_api.o
+      3668       1174         68       4910 spdio_api.o
+     26208       5306       1550      33064 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       792        164        160       1116 ameba_pmu.o
+       792        164        160       1116 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       452         40          8        500 main.o
+       452         40          8        500 (TOTALS)
+=============================================================
+         0          0          0          0 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1748        315        232       2295 lwip_netconf.o
+      1748        315        232       2295 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       400         79        368        847 wifi_ind.o
+        28          0          0         28 wifi_init.o
+       116          0         60        176 ameba_wificfg.o
+       564       1108          2       1674 ameba_wifi_power_table_usrcfg.o
+       200        606          0        806 ameba_wifi_country_code_table_usrcfg.o
+       564       1108          2       1674 ameba_wifi_power_table_usrcfg_1v8.o
+        44         65          0        109 ameba_wifi_power_table_usrcfg_3v3_1v25.o
+        44         65          0        109 ameba_wifi_power_table_usrcfg_1v8_1v25.o
+      1960       3031        432       5423 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+         0          0          0          0 wifi_feature_dis_csi.o
+         0          0          0          0 wifi_feature_dis_antdiv.o
+        56          0          0         56 wifi_feature_dis_speaker.o
+       124          0          0        124 wifi_feature_dis_kvr.o
+         0          0          0          0 wifi_intf_drv_to_app_ext_noused.o
+       180          0          0        180 (TOTALS)

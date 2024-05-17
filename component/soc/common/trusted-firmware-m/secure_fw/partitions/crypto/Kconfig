@@ -1,0 +1,24 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig TFM_PARTITION_CRYPTO
+    bool "Crypto"
+    depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    select CRYPTO_NV_SEED if !CRYPTO_HW_ACCELERATOR
+    default n
+
+if TFM_PARTITION_CRYPTO
+
+config CRYPTO_TFM_BUILTIN_KEYS_DRIVER
+    bool "Enable loading builtin keys in the Crypto service secure memory"
+    default y
+    help
+      Whether to enable the TF-M builtin key loader component. Without this, a
+      platform must be define its own mechanism to make builtin keys available
+      for the Crypto service (for example, through a fully opaque driver)
+
+endif

@@ -1,0 +1,53 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+mainmenu "TF-M Configuration"
+
+# Load platform Kconfig file if exists
+osource "$(PLATFORM_PATH)/Kconfig"
+osource "$(TFM_SOURCE_DIR)/config/build_type/Kconfig.$(CMAKE_BUILD_TYPE)"
+
+################################# System options ###############################
+
+rsource "Kconfig.bl"
+rsource "secure_fw/spm/Kconfig"
+rsource "secure_fw/partitions/Kconfig" # These are partition switches.
+rsource "platform/Kconfig"
+rsource "Kconfig.misc"
+
+################################# Test options #################################
+
+menu "TF-M tests"
+rsource "lib/ext/tf-m-tests/Kconfig"
+rsource "lib/ext/psa_arch_tests/Kconfig"
+endmenu
+
+################################# Component ####################################
+
+# These configs in this menu are local to a component or externally referenced
+# when components are coupled. Usually, such options are located in C header
+# file. The Header File Config System has more details about it.
+
+# Other configs above which are not in component menu are TF-M build options to
+# select which file or component to include into compilation. These are options,
+# usually used by a build system to enable/disable modules, specify location of
+# external dependency or other selection, global to a project. These options
+# shall be considered while adopting TF-M to other build systems.
+
+menu "TF-M component configs"
+
+# Load configurations set by PSA arch test
+if TEST_PSA_API != ""
+    rsource "$(TFM_SOURCE_DIR)/config/tests/Kconfig.test_psa_api"
+endif
+
+rsource "secure_fw/spm/Kconfig.comp"
+
+menu "Secure Partitions component configs"
+    rsource "secure_fw/partitions/*/Kconfig.comp"
+endmenu
+endmenu

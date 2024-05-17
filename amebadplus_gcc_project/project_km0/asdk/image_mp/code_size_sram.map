@@ -1,0 +1,139 @@
+========================= libc_nano Start =========================================
+text         rodata       data         bss          module       
+0            0            0            312          libc_nano.a(lib_a-findfp.o)
+0            0            100          0            libc_nano.a(lib_a-impure.o)
+0            0            0            9            libc_nano.a(lib_a-lock.o)
+0            0            0            4            libc_nano.a(lib_a-reent.o)
+------------------------- libc_nano End -------------------------------------------
+text         rodata       data         bss          module       
+0            0            100          325          (TOTALS)     
+
+Module libc_nano size:
+0x1a9			425
+
+========================= wifirom Start ===========================================
+text         rodata       data         bss          module       
+0            0            40           0            rom_wifi_patch.o
+------------------------- wifirom End ---------------------------------------------
+text         rodata       data         bss          module       
+0            0            40           0            (TOTALS)     
+
+Module wifirom size:
+0x28			40
+
+========================= fullmac Start ===========================================
+text         rodata       data         bss          module       
+0            0            0            92           inic_ipc_dev_api.o
+0            0            0            24           inic_ipc_dev_trx.o
+0            0            0            96           inic_ipc_msg_queue.o
+------------------------- fullmac End ---------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            212          (TOTALS)     
+
+Module fullmac size:
+0xd4			212
+
+========================= wifidrv Start ===========================================
+text         rodata       data         bss          module       
+0            0            0            0            hal_recv.o   
+0            0            0            0            hal_xmit.o   
+0            0            0            1            rtw_debug.o  
+0            0            0            376          rtw_drv_init.o
+0            0            0            56           rtw_skbuff.o 
+0            0            0            488          rtw_sta_mgt.o
+0            0            0            16           rtw_timer.o  
+0            0            0            256          wifi_hal_halinit.o
+0            0            0            1            wifi_hal_interrupt.o
+0            0            1            0            wifi_hal_recv.o
+0            0            0            4            wifi_hal_speaker.o
+0            0            2            8            wifi_hal_txpower.o
+0            0            0            12           wifi_intf_drv_to_app_basic.o
+0            0            0            2916         wifi_intf_drv_to_upper.o
+------------------------- wifidrv End ---------------------------------------------
+text         rodata       data         bss          module       
+0            0            3            4134         (TOTALS)     
+
+Module wifidrv size:
+0x1029			4137
+
+========================= wificoex Start ==========================================
+text         rodata       data         bss          module       
+0            0            0            4            rtw_coex_api.o
+0            0            9            0            rtw_coex_dbg.o
+0            0            92           0            rtw_coex_wl_chip_rtl8721da.o
+------------------------- wificoex End --------------------------------------------
+text         rodata       data         bss          module       
+0            0            101          4            (TOTALS)     
+
+Module wificoex size:
+0x69			105
+
+========================= wifibb Start ============================================
+text         rodata       data         bss          module       
+0            0            0            1968         phydm.o      
+0            0            0            1            phydm_pmac_tx_setting.o
+------------------------- wifibb End ----------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            1969         (TOTALS)     
+
+Module wifibb size:
+0x7b1			1969
+
+========================= fwlib Start =============================================
+text         rodata       data         bss          module       
+0            12           12           0            ameba_app_start.o
+0            0            4            0            ameba_arch.o 
+0            0            0            8            ameba_flash_ram.o
+0            0            0            64           ameba_ipc_api.o
+0            0            0            256          ameba_ipc_ram.o
+0            0            0            4            ameba_mpu_ram.o
+0            0            8            120          ameba_pmu.o  
+0            0            0            4            ameba_rom_patch.o
+0            0            0            116          ameba_v8m_crashdump.o
+0            0            0            60           ameba_wificfg.o
+0            0            1            2            ameba_wifi_power_table_usrcfg.o
+0            0            1            2            ameba_wifi_power_table_usrcfg_1v8.o
+216          0            32           0            bootloader_km0.o
+0            0            1            48           log.o        
+0            0            0            4            main.o       
+0            0            0            132          shell_ram.o  
+------------------------- fwlib End -----------------------------------------------
+text         rodata       data         bss          module       
+216          12           59           820          (TOTALS)     
+
+Module fwlib size:
+0x453			1107
+
+========================= os Start ================================================
+text         rodata       data         bss          module       
+0            0            0            49           freertos_heap5_config.o
+0            0            0            32           heap_5.o     
+0            0            0            6            os_wrapper_critical.o
+0            0            0            72           os_wrapper_static_functions.o
+0            0            0            700          port.o       
+0            0            4            384          tasks.o      
+0            0            0            1328         timers.o     
+------------------------- os End --------------------------------------------------
+text         rodata       data         bss          module       
+0            0            4            2571         (TOTALS)     
+
+Module os size:
+0xa0f			2575
+
+========================= others Start ============================================
+text         rodata       data         bss          module       
+------------------------- others End ----------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            0            (TOTALS)     
+
+Module others size:
+0x0			0
+
+================================================================================
+text         rodata       data         bss          module       
+216          12           307          10035        (TOTALS)     
+
+
+Image size:
+0x294a			10570
+

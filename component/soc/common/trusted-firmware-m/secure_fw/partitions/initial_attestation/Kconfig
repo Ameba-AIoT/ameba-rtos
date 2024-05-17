@@ -1,0 +1,35 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig TFM_PARTITION_INITIAL_ATTESTATION
+    bool "Initial attestation"
+    depends on TFM_PARTITION_CRYPTO
+    default n
+
+if TFM_PARTITION_INITIAL_ATTESTATION
+
+config SYMMETRIC_INITIAL_ATTESTATION
+    bool "Symmetric key algorithm based Initial Attestation"
+    default n
+    help
+      Use symmetric crypto for inital attestation
+
+config ATTEST_INCLUDE_TEST_CODE
+    bool "Include test code"
+    depends on TEST_NS_ATTESTATION || TEST_S_ATTESTATION
+    default n
+    help
+      Include minimal development tests in the initial attestation regression
+      test suite
+
+config ATTEST_KEY_BITS
+    int "Key bit width"
+    default 256
+    help
+      The size of the initial attestation key in bits
+
+endif

@@ -1,0 +1,31 @@
+========================= wificoex Start ==========================================
+text         rodata       data         bss          module       
+0            0            0            0            rtw_coex_action.o
+0            0            0            0            rtw_coex_action_single_ant.o
+0            0            0            0            rtw_coex_api.o
+0            0            0            0            rtw_coex_wl_chip.o
+0            0            0            0            rtw_coex_wl_chip_rtl8721da.o
+------------------------- wificoex End --------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            0            (TOTALS)     
+
+Module wificoex size:
+0x0			0
+
+========================= others Start ============================================
+text         rodata       data         bss          module       
+------------------------- others End ----------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            0            (TOTALS)     
+
+Module others size:
+0x0			0
+
+================================================================================
+text         rodata       data         bss          module       
+0            0            0            0            (TOTALS)     
+
+
+Image size:
+0x0			0
+

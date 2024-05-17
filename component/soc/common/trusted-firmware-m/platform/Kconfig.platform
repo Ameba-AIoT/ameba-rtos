@@ -1,0 +1,200 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+################################# Platform dependencies ########################
+
+config PLATFORM_SVC_HANDLERS
+    bool "Platform specific SVC handlers"
+    default n
+
+config PLATFORM_HAS_FIRMWARE_UPDATE_SUPPORT
+    def_bool n
+
+config PLATFORM_HAS_ISOLATION_L3_SUPPORT
+    def_bool n
+    help
+        Platform supports Isolation level 3
+
+################################# Test dependencies ############################
+
+config PS_TEST_NV_COUNTERS
+    bool "Use the PS test NV counters"
+    default y
+    help
+      Enables the virtual implementation of the PS NV counters interface in
+      test/secure_fw/suites/ps/secure/nv_counters of the tf-m-tests repo,
+      which emulates NV counters in RAM, and disables the hardware
+      implementation of NV counters provided by the secure service. This flag is
+      enabled by default, but has no effect when the secure regression test is
+      disabled. This flag can be overridden to OFF when building the regression
+      tests. In this case, the PS rollback protection test suite will not be
+      built, as it relies on extra functionality provided by the virtual NV
+      counters to simulate different rollback scenarios.
+
+      The remainder of the PS test suites will run using the hardware NV
+      counters. Please note that running the tests in this configuration will
+      quickly increase the hardware NV counter values, which cannot be decreased
+      again.
+
+      Overriding this flag from its default value of OFF when not building the
+      regression tests is not currently supported.
+
+config PLATFORM_SLIH_IRQ_TEST_SUPPORT
+    def_bool n
+    help
+      Platform supports SLIH IRQ tests
+
+config PLATFORM_FLIH_IRQ_TEST_SUPPORT
+    def_bool n
+    help
+      Platform supports FLIH IRQ tests
+
+######################### TFM psa api test target ##############################
+
+config PSA_API_TEST_TARGET
+    def_string ""
+
+################################# Debug authentication #########################
+
+config DEBUG_AUTHENTICATION_CHIP_DEFAULT
+    def_bool y
+
+config DEBUG_AUTHENTICATION_NONE
+    def_bool n
+
+config DEBUG_AUTHENTICATION_NS_ONLY
+    def_bool n
+
+config DEBUG_AUTHENTICATION_FULL
+    def_bool n
+
+config DEBUG_AUTHENTICATION
+    string
+    default "CHIP_DEFAULT" if DEBUG_AUTHENTICATION_CHIP_DEFAULT
+    default "NONE" if DEBUG_AUTHENTICATION_NONE
+    default "NS_ONLY" if DEBUG_AUTHENTICATION_NS_ONLY
+    default "FULL" if DEBUG_AUTHENTICATION_FULL
+
+################################# Platform Hardware topology ###################
+config TFM_MULTI_CORE_TOPOLOGY
+    bool
+    default n
+    help
+      Dual-cpu architecture
+
+config CONFIG_TFM_USE_TRUSTZONE
+    bool
+    default n
+    help
+      Enable use of TrustZone to transition between NSPE and SPE
+
+######################### Cyrpto Hardware accelerator ##########################
+config CRYPTO_HW_ACCELERATOR_CC312
+    def_bool n
+    help
+        CryptoCell-312
+
+config CRYPTO_HW_ACCELERATOR_STM
+    def_bool n
+
+config CRYPTO_HW_ACCELERATOR_TYPE
+    string
+    default "cc312" if CRYPTO_HW_ACCELERATOR_CC312
+    default "stm" if CRYPTO_HW_ACCELERATOR_STM
+    default ""
+
+################################# Platform default #############################
+
+config PLATFORM_DEFAULT_BL1
+    bool "Use default BL1"
+    default y
+
+config PLATFORM_DEFAULT_ATTEST_HAL
+    def_bool y
+    help
+      Use default attest hal implementation
+
+config PLATFORM_DEFAULT_NV_COUNTERS
+    def_bool y
+    depends on PLATFORM_DEFAULT_OTP_WRITEABLE
+    help
+      Use default nv counter implementation
+
+config PLATFORM_DEFAULT_CRYPTO_KEYS
+    def_bool y
+    help
+      Use default crypto keys implementation
+
+config PLATFORM_DEFAULT_ROTPK
+    def_bool y
+    help
+      Use default root of trust public key
+
+config PLATFORM_DEFAULT_IAK
+    def_bool y
+    help
+      Use default initial attestation_key
+
+config PLATFORM_DEFAULT_UART_STDOUT
+    def_bool y
+    help
+      Use default uart stdout implementation
+
+config PLATFORM_DEFAULT_NV_SEED
+    def_bool y
+    help
+      Use default NV seed implementation
+
+config PLATFORM_DEFAULT_OTP
+    bool "Use trusted on-chip flash to implement OTP memory"
+    default y
+    help
+      Use trusted on-chip flash to implement OTP memory
+
+config PLATFORM_DEFAULT_OTP_WRITEABLE
+    def_bool y
+    help
+      Use OTP memory with write support
+
+config PLATFORM_DEFAULT_PROVISIONING
+    def_bool y
+    help
+      Use default provisioning implementation
+
+config PLATFORM_DEFAULT_SYSTEM_RESET_HALT
+    bool "Use default system halt implementation"
+    default y
+    help
+      Use default system reset/halt implementation
+
+config PLATFORM_DEFAULT_IMAGE_SIGNING
+    def_bool y
+    help
+      Use default image signing implementation
+
+config TFM_PLAT_SPECIFIC_MULTI_CORE_COMM
+    bool "Use a platform specific inter-core communication"
+    depends on TFM_MULTI_CORE_TOPOLOGY
+    help
+      Whether to use a platform specific inter-core communication instead of
+      mailbox in dual-cpu topology
+
+config OTP_NV_COUNTERS_RAM_EMULATION
+    bool "Enable OTP/NV_COUNTERS emulation in RAM"
+    default n
+    depends on PLATFORM_DEFAULT_OTP || PLATFORM_DEFAULT_NV_COUNTERS
+    help
+      Enable OTP/NV_COUNTERS emulation in RAM. Has no effect on non-default
+      implementations of the OTP and NV_COUNTERS
+
+config TFM_NS_NV_COUNTER_AMOUNT
+    int "Numbers of NS NV counters"
+    default 0
+    range 0 3
+
+config PSA_API_TEST_TARGET
+    def_string ""

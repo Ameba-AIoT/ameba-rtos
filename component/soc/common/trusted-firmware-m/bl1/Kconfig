@@ -1,0 +1,99 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig BL1
+    bool "BL1"
+    default n
+
+if BL1 && PLATFORM_DEFAULT_BL1
+
+config TFM_BL2_ENCRYPTION_KEY_PATH
+    string
+    default "$(TFM_SOURCE_DIR)/bl1/bl1_2/bl2_dummy_encryption_key.bin"
+    help
+      Path to binary key to use for encrypting BL2
+
+config TFM_GUK_PATH
+    string
+    default "$(TFM_SOURCE_DIR)/bl1/bl1_1/dummy_guk.bin"
+    help
+      Path to binary GUK key file to provision
+
+config TFM_BL2_IMAGE_FLASH_AREA_NUM
+    int "Which flash area BL2 is stored in"
+    default 0
+
+config TFM_BL2_SIGNING_KEY_PATH
+    string
+    default "$(TFM_SOURCE_DIR)/bl1/bl1_2/bl1_dummy_rotpk"
+    help
+      Path to binary BL2 signing private key
+
+config TFM_BL1_MEMORY_MAPPED_FLASH
+    bool "BL1 Access flash content"
+    default y
+
+config TFM_BL1_LOGGING
+    bool "BL1 log to uart"
+    default y
+
+config TFM_BL1_DEFAULT_OTP
+    bool
+    default y
+    help
+      Whether BL1_1 will use default OTP memory
+
+config TFM_BL1_DEFAULT_PROVISIONING
+    bool
+    default y
+    help
+      Whether BL1_1 will use default provisioning
+
+config TFM_BL1_SOFTWARE_CRYPTO
+    bool
+    default y
+    help
+      Whether BL1_1 will use software crypto
+
+config TFM_BL1_DUMMY_TRNG
+    bool
+    default y
+    help
+      Whether BL1_1 will use dummy TRNG
+
+config TFM_BL1_PQ_CRYPTO
+    bool "Enable LMS PQ crypto for BL2 verification."
+    default n
+    help
+      Enable LMS PQ crypto for BL2 verification. This is experimental and should
+      not yet be used in production
+
+config TFM_BL1_IMAGE_VERSION_BL2
+    string "Image version of BL2 image"
+    default "1.9.0+0"
+
+config TFM_BL1_IMAGE_SECURITY_COUNTER_BL2
+    int "Security counter value to include with BL2 image"
+    default 1
+
+config TFM_BL1_2_IN_OTP
+    bool "Whether BL1_2 is stored in OTP"
+    default y
+
+config BL1_HEADER_SIZE
+    hex "BL1 Header size"
+    default 0x800
+
+config BL1_TRAILER_SIZE
+    hex "BL1 Trailer size"
+    default 0x000
+
+config TFM_BL1_LOGGING
+    bool "Enable BL1 Logging"
+    default y
+
+endif

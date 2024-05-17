@@ -1,0 +1,21 @@
+
+vpath %.c $(DIR)/halbtc \
+
+CSRC_BTC += $(DIR)/halbtc/wifi_hal_btc_api.c
+
+ifeq ($(CONFIG_AMEBALITE), y)
+CSRC_BTC += $(DIR)/halbtc/wifi_hal_btc_rtl8720e.c
+endif
+
+ifeq ($(CONFIG_AMEBADPLUS), y)
+CSRC_BTC += $(DIR)/halbtc/wifi_hal_btc_rtl8721f.c
+endif
+
+ifeq ($(CONFIG_AMEBASMART), y)
+CSRC_BTC += $(DIR)/halbtc/wifi_hal_btc_rtl8730e.c
+endif
+
+OBJS_BTC = $(notdir $(CSRC_BTC:.c=.o))
+
+make_objs_btc: GLOBAL_CFLAGS += -DCOMPIL_LOG_LEVEL=RTK_LOG_INFO
+make_objs_btc: $(OBJS_BTC)

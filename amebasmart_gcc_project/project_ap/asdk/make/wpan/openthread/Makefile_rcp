@@ -1,0 +1,51 @@
+NCP 				= $(THREADDIR)/openthread/src/ncp
+
+#OpenThread example
+CPPSRC += $(EX_UTILS_DIR)/link_metrics.cpp
+CPPSRC += $(EX_UTILS_DIR)/mac_frame.cpp
+
+#OpenThread src CRYPTO
+CPPSRC += $(CRYPTO_DIR)/aes_ccm.cpp
+CPPSRC += $(CRYPTO_DIR)/aes_ecb.cpp
+CPPSRC += $(CRYPTO_DIR)/crypto_platform.cpp
+CPPSRC += $(CRYPTO_DIR)/storage.cpp
+
+#OpenThread src API
+CPPSRC += $(API_DIR)/instance_api.cpp
+CPPSRC += $(API_DIR)/link_raw_api.cpp
+CPPSRC += $(API_DIR)/logging_api.cpp
+CPPSRC += $(API_DIR)/random_noncrypto_api.cpp
+CPPSRC += $(API_DIR)/tasklet_api.cpp
+
+#OpenThread src COMMON
+CPPSRC += $(COMMON_DIR)/instance.cpp
+CPPSRC += $(COMMON_DIR)/log.cpp
+CPPSRC += $(COMMON_DIR)/random.cpp
+CPPSRC += $(COMMON_DIR)/string.cpp
+CPPSRC += $(COMMON_DIR)/tasklet.cpp
+CPPSRC += $(COMMON_DIR)/timer.cpp
+CPPSRC += $(COMMON_DIR)/error.cpp
+CPPSRC += $(COMMON_DIR)/frame_builder.cpp
+
+#OpenThread src THREAD
+CPPSRC += $(THREAD_DIR)/link_quality.cpp
+
+#OpenThread src MAC
+CPPSRC += $(MAC_DIR)/link_raw.cpp
+CPPSRC += $(MAC_DIR)/mac_frame.cpp
+CPPSRC += $(MAC_DIR)/mac_types.cpp
+CPPSRC += $(MAC_DIR)/sub_mac.cpp
+CPPSRC += $(MAC_DIR)/sub_mac_callbacks.cpp
+
+#OpenThread src RADIO
+CPPSRC += $(RADIO_DIR)/radio.cpp
+CPPSRC += $(RADIO_DIR)/radio_callbacks.cpp
+CPPSRC += $(RADIO_DIR)/radio_platform.cpp
+
+#OpenThread ncp
+CPPSRC += $(NCP)/changed_props_set.cpp
+CPPSRC += $(NCP)/ncp_base.cpp
+CPPSRC += $(NCP)/ncp_base_dispatcher.cpp
+CPPSRC += $(NCP)/ncp_base_radio.cpp
+CPPSRC += $(NCP)/ncp_hdlc.cpp
+CSRC += $(THREADDIR)/openthread/examples/apps/ncp/ncp.c

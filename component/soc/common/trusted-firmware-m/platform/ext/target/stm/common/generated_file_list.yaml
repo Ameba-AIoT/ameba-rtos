@@ -1,0 +1,36 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020, Arm Limited. All rights reserved.
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+# or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+# The path of "template" can be relative path to TF-M root or absolute path
+# The path of "output" must be relative path to the root for generated files
+# Both can contain environment variables
+
+{
+  "description": "stm generated file list",
+  "type": "generated_file_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "file_list": [
+    {
+        "description": "isolation l3 scatter file",
+        "template": "platform/ext/common/armclang/tfm_isolation_l3.sct.template",
+        "output": "platform/ext/common/armclang/tfm_isolation_l3.sct"
+    },
+    {
+        "description": "isolation l3 linker script",
+        "template": "platform/ext/common/gcc/tfm_isolation_l3.ld.template",
+        "output": "platform/ext/common/gcc/tfm_isolation_l3.ld"
+    },
+    {
+        "description": "isolation l3 linker script",
+        "template": "platform/ext/common/iar/tfm_isolation_l3.icf.template",
+        "output": "platform/ext/common/iar/tfm_isolation_l3.icf"
+    }
+  ]
+}

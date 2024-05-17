@@ -1,0 +1,44 @@
+
+SW_RADIO = $(BASEDIR)/component/wpan/platform/sw_radio
+
+vpath %.c $(SW_RADIO) $(shell find $(SW_RADIO) -type d)
+
+GLOBAL_CFLAGS += -DRTW_802154_HOST_IPC=1
+#*****************************************************************************#
+#                               Source FILE LIST                              #
+#*****************************************************************************#
+#802154 bb
+CSRC += $(SW_RADIO)/phy/common/radio_api/rtw_802154_radio.c
+#802154 mac
+CSRC += $(SW_RADIO)/mac/mac_features/ack_generator/rtw_802154_ack_data.c \
+		$(SW_RADIO)/mac/mac_features/ack_generator/rtw_802154_ack_generator.c \
+		$(SW_RADIO)/mac/mac_features/ack_generator/rtw_802154_enh_ack_generator.c \
+		$(SW_RADIO)/mac/mac_features/ack_generator/rtw_802154_imm_ack_generator.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_csma_ca.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_delayed_trx.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_filter.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_frame_parser.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_precise_ack_timeout.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_ifs.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_ie_writer.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_security_pib.c \
+		$(SW_RADIO)/mac/mac_features/rtw_802154_security_writer.c \
+		$(SW_RADIO)/mac/rtw_802154_aes_ccm.c \
+		$(SW_RADIO)/mac/rtw_802154_encrypt.c \
+		$(SW_RADIO)/mac/rtw_802154_core_hooks.c \
+		$(SW_RADIO)/mac/rtw_802154_core.c \
+		$(SW_RADIO)/mac/rtw_802154_critical_section.c \
+		$(SW_RADIO)/mac/rtw_802154_pib.c \
+		$(SW_RADIO)/mac/rtw_802154_rx_buffer.c \
+		$(SW_RADIO)/mac/rtw_802154.c \
+		$(SW_RADIO)/mac/rtw_802154_debug.c \
+		$(SW_RADIO)/mac/rtw_802154_notification.c
+
+MODULE_IFLAGS += -I$(SW_RADIO)/phy/common/radio_api/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/mac_features/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/mac_features/ack_generator/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/rsch/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/rsch/coex/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/rsch/raal/
+MODULE_IFLAGS += -I$(SW_RADIO)/mac/rsch/raal/softdevice/

@@ -1,0 +1,89 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "PS component options"
+
+config PS_CREATE_FLASH_LAYOUT
+    bool "Create flash FS"
+    default y
+    help
+      Indicates that it is required to create a PS flash layout. If this flag is
+      set, PS service will generate an empty and valid PS flash layout to store
+      assets. It will erase all data located in the assigned PS memory area
+      before generating the PS layout.  This flag is required to be set if the
+      PS memory area is located in a non-persistent memory.  This flag can be
+      set if the PS memory area is located in a persistent memory without a
+      valid PS flash layout in it. That is the case when it is the first time in
+      the device life that the PS service is executed.
+
+config PS_RAM_FS
+    bool "Emulated RAM FS"
+    default n
+    help
+      Enables the use of RAM instead of the persistent storage device to store
+      the FS in the Protected Storage service. This flag is OFF by default.
+      The PS regression tests write/erase storage multiple time, so enabling
+      this flag can increase the life of flash memory when testing.
+
+      If this flag is enabled, PS_RAM_FS_SIZE must also be provided. This
+      specifies the size of the block of RAM to be used to simulate the flash.
+
+      Note: If this flag is disabled when running the regression tests, then it
+      is recommended that the persistent storage area is erased before running
+      the tests to ensure that all tests can run to completion. The type of
+      persistent storage area is platform specific (eFlash, MRAM, etc.) and it
+      is described in corresponding flash_layout.h
+
+config PS_ROLLBACK_PROTECTION
+    bool "Rollback protection"
+    default y
+    depends on !PLATFORM_NV_COUNTER_MODULE_DISABLED && PS_ENCRYPTION
+    help
+      Enable rollback protection in protected storage service. This flag takes
+      effect only if the target has non-volatile counters and PS_ENCRYPTION flag
+      is on.
+
+config PS_VALIDATE_METADATA_FROM_FLASH
+    bool "Validate filesystem metadata"
+    default y
+    imply ITS_VALIDATE_METADATA_FROM_FLASH
+    help
+      Enable the validation mechanism to check the metadata store in flash
+      every time the flash data is read from flash. This validation is required
+      if the flash is not hardware protected against malicious writes. In case
+      the flash is protected against malicious writes (i.e embedded flash, etc),
+      this validation can be disabled in order to reduce the validation
+      overhead.
+
+config PS_MAX_ASSET_SIZE
+    int "Maximum stored asset size"
+    default 2048
+    help
+      Defines the maximum asset size to be stored in the PS area. This size is
+      used to define the temporary buffers used by PS to read/write the asset
+      content from/to flash. The memory used by the temporary buffers is
+      allocated statically as PS does not use dynamic memory allocation.
+
+config PS_NUM_ASSETS
+    int "Maximum stored assets number"
+    default 10
+    help
+      Defines the maximum number of assets to be stored in the PS area. This
+      number is used to dimension statically the object table size in
+      RAM (fast access) and flash (persistent storage). The memory used by the
+      object table is allocated statically as PS does not use dynamic memory
+      allocation.
+
+config PS_STACK_SIZE
+    hex "Stack size"
+    default 0x700
+    help
+      Defines the stack size of the Protected Storage Secure Partition. This
+      value mainly depends on the build type(debug, release and minisizerel) and
+      compiler.
+
+endmenu

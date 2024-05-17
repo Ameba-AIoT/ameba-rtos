@@ -1,0 +1,114 @@
+#/** @file
+# * Copyright (c) 2018-2022, Arm Limited or its affiliates. All rights reserved.
+# * SPDX-License-Identifier : Apache-2.0
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *  http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+#**/
+
+
+#List of tests to be compiled and run as part of IPC suite
+
+(START)
+
+test_i001
+test_i002, panic_test
+test_i003
+test_i004, panic_test
+test_i005, panic_test
+test_i006, panic_test
+test_i007, panic_test
+test_i008, panic_test
+test_i009, panic_test
+test_i010, panic_test
+test_i011, panic_test
+test_i012, panic_test
+test_i013, panic_test
+test_i014, panic_test
+test_i015, panic_test
+test_i016, panic_test
+test_i017, panic_test
+test_i018, panic_test
+test_i019, panic_test
+test_i020, panic_test
+test_i021
+test_i022, panic_test
+test_i023, panic_test
+test_i024, panic_test
+test_i025, panic_test
+test_i026, panic_test
+test_i027, panic_test
+test_i028, panic_test
+test_i029, panic_test
+test_i030, panic_test
+test_i031, panic_test
+test_i032, panic_test
+test_i033, panic_test
+test_i034, panic_test
+test_i035, panic_test
+test_i036, panic_test
+test_i037, panic_test
+test_i038, panic_test
+test_i039, panic_test
+test_i040, panic_test
+test_i041, panic_test
+test_i042, panic_test
+test_i043, panic_test
+test_i044, panic_test
+test_i045, panic_test
+test_i046, panic_test
+test_i047, panic_test
+test_i048, panic_test
+test_i049, panic_test
+test_i050, panic_test
+test_i051, panic_test
+test_i052, panic_test
+test_i053, panic_test
+test_i054, panic_test
+test_i055, panic_test
+test_i056, panic_test
+test_i057, panic_test
+test_i058
+test_i059, panic_test
+test_i060, panic_test
+test_i061, panic_test
+test_i062, panic_test
+test_i063
+test_i064, panic_test
+test_i065, panic_test
+test_i066, panic_test
+test_i067
+test_i068, panic_test
+test_i069, panic_test
+test_i070, panic_test
+test_i071
+test_i072, panic_test
+test_i073, panic_test
+test_i074, panic_test
+test_i075, panic_test
+test_i076, panic_test
+test_i077, panic_test
+test_i078, panic_test
+test_i079, panic_test
+test_i080, panic_test
+test_i081, panic_test
+test_i082, panic_test
+test_i083, panic_test
+test_i084, panic_test
+test_i085, panic_test
+test_i086, panic_test
+test_i087, panic_test
+test_i088
+test_i089, panic_test
+test_i090, panic_test
+
+(END)

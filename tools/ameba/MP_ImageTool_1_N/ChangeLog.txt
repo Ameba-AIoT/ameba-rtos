@@ -1,0 +1,117 @@
+ChangeLog:
+20170110  v2.0.0  Initial version .
+20170111  v2.0.1  Rename project and exe name .
+20170112  v2.0.2  Update icon.
+20170113  v2.0.3  Adjust UI layout
+20170116  v2.0.4  Check if amebaz already in uart download mode before tx ESC and uartburn cmd
+20170119  v2.0.5  Remove device name filter
+20170119  v2.0.6  (1) Support adjust window size according to situations
+                  (2) Reduce xmodem max-retry times to 6 in order to reduce wait time.
+20170216  v2.0.7  Support command line mode
+20170221  v2.0.8  (1) Add write/read register function
+                  (2) Erase flash before download image.
+                  (3) Add program 256byte flash data each time
+20170228  v2.0.9  Fix some QC issues
+20170428  v2.0.10 Reset flash status register before download
+20170606  v2.0.11 Add option to close log
+20180910  v2.0.12 Fix checksum error when RSIP enable
+20181129  v2.0.13 Add download cancel function
+20190103  v2.1.0  Compatible with AmebaD
+20190425  v2.1.1  Fix exception caused by carriage return
+20190425  v2.1.2  Fix checksum error when download 3MB image
+20190529  v2.2.0  Enable alternative baudrates
+20191218  v2.2.1  Add erase flash function.
+20200304  v2.3.0  Fix download fail when images are readonly
+20200325  v2.3.1  Fix log error when erase
+20200403  v2.3.2  Support boot option after download
+20210611  v2.4.0  Add support for AmebaZ2
+20210729  v2.4.1  (1) Disable the Length Textbox for AmebaZ2 during user reopen the application without selecting AmebaZ2 in chip select.
+                  (2) Fix button display by recover the Download and Verify button instead of keep showing Cancel button after image is not existing error prompted in both normal and factory mode.
+                  (3) Fix the progress timer to 0 when the particular port is failed before and unchecked in the next download
+                  (4) Updated user manual with all images have been replaced with Version 1.2.18 and information in section 3.1.1 Normal Mode and 3.3 Setting.ini.
+20210802  v2.4.2  (1) Bug fixing for re-flash in Download mode 1 where there are multiple modules (CF and CN boards) are being checked in scan device and start download process.
+                  (2) Bug fix is to avoid module re-flash with wronged flash pin.
+20210810  v2.4.3  (1) Port in download_progress_display feature into merge version for only AmebaZ2.
+                  (2) Fix ReadTimeout setting which always set to 10s regardless of Setting.ini.
+                  (3) Update user guide with correction on typo error in FTCHKCHIPERASE function and update the default value of ReadTimeout in Setting.ini.
+20210811  v2.4.4  (1) Port in write crc32 to flash specified position feature (CRC32OFFSET) into merge version for only AmebaZ2.
+                  (2) Port in control progress clean feature (CMODECLRRES) when JIG up or down for only AmebaZ2.
+                  (3) Add crc32.cs
+20211126  v2.4.5  (1) Compatible with AmebaSmart
+                  (2) Add d2 flashloader.bin
+20211206  v2.4.6  (1) Modified check image rules.
+                  (2) Fixed compatible issue with smart
+20211223  v2.4.7  (1) Add text indicator to download result on UI
+                  (2) Format scan device list as that in device manager
+                  (3) Design for LGE
+20211228  v2.4.8  (1) Adjust version management scheme
+                  (2) Add ChangeLog.txt
+                  (3) Rename 1-10 MP Image Tool as Ameba 1-N MP ImageTool
+20211229  v2.4.9  (1) Remove image format limit
+                  (2) Replace MP tool logo
+20220112  v2.4.10 (1) Update download flow for amebad and amebaz
+                  (2) Modify and separate the design of factory mode for amebad/z and amebaz2
+                  (3) Group UI settings for each soc in Reset_SoC_Setting(...)
+20220124  v2.4.11 (1) Add support for image combination via command line.
+                  (2) Remove boot function temporarily.
+                  (3) Fix command line show setting bug.
+20220223  v2.4.12 (1) Fix flash erase bug in command line mode with multi-devices
+                  (2) Modify command line help info
+20220701  v2.4.13 Support process flash status register BPs for download and erase
+20220701  v2.4.14 Fix timestamp not work bug
+20220725  v2.4.15 (1) Support read MAC feature for AmebaD2/AmebaD/AmebaZ2
+                  (2) Fix hang during verify for AmebaZ2
+                  (3) Fix duplicate log occured in win7 when doing verify for AmebaZ2
+                  (4) Increase xmodem buffer to accelerate download speed for AmebaZ2
+                  (5) Fix xmodem timeout issue when using mode 4 with XTX 64MB flash for AmebaZ2
+                  (6) Update AmebaD/AmebaD2/AmebaZ2 flashloader
+                  (7) Fix log fail bug when erase
+20220817  v2.5.0  (1) Rename IC with RTL Number
+                      amebaz -> rtl871xb, amebad -> rtl872xd, amebad2 -> rtl8730a,
+                      amebalite -> rtl8720e, amebaz2 -> rtl872xc
+                  (2) Rename flash_loaders with RTL Number
+20220822  v2.5.1  Support USB download feature for NAND flash
+20220915  v2.5.2  (1) Support for rtl8730e download
+                  (2) Add process flash bps for download function
+                  (3) Fix rtl8720e download bug
+                  (4) Fix 1-N USB download bug
+20221011  v2.5.3  Add GPIO/PWM indicating feature for usb download
+20221124  v2.5.4  Support for rtl8726e download
+20221226  v2.5.5  (1) Fix 8726e/8720e download fail in normal mode
+                  (2) Fix 8726e download fail when device connect to PC the first time & without reset
+                  (3) Support rtl8713ec/rtl8710ec download
+20230427  v2.5.6  (1) Fix erase bug in CLI mode
+                  (2) Add set flash 4-byte address mode function
+                  (3) Adjust return code number
+20230620  v2.5.7  (1) Add ChipErase function
+                  (2) Update DotNet Framework to v4.0
+20230711  v2.5.8  (1) Show chip erase status on processbar
+                  (2) Fix exception when COM in use
+                  (3) Add DTR/RTS config in setting.ini
+20230713  v2.5.9  (1) Support for rtl8721dx/rtl8711dx download
+                  (2) Fix bug for CLI mode download
+                  (3) Fix update chip erase status bug
+20230728  v2.5.10 (1) Support ProgressBar in CLI mode
+                  (2) Modified check download result method
+20230803  v2.5.11 Change commandline usage, refer to migration guide.txt for detail migrate description
+20230814  v2.5.12 Modified check download result method for rtl872xc and delete rtl871xc progress display feature
+20230907  v2.5.13 Fix AmebaZ download bug
+20230907  v2.5.14 (1) Fix AmebaZ2 UI download text issue
+                  (2) Fix CLI download progress bar bug without using cls
+20231116  v2.5.15 (1) Modified commandline length input from int to hex format
+                  (2) Add commandline add device fail error message
+20231116  v2.5.16 Add download progress display option to setting.ini for all ICs
+20231205  v2.5.17 (1) Add detail log when downloading in progress
+                  (2) Support AmebaD download with large capacity flash
+                  (3) Update handshake check when enter uartdownload mode
+20231214  v2.5.18 (1) Accelarate transmit data speed in Xmodem and Uburn for all ICs
+                  (2) Update rtl872xd flashloader
+20231225  v2.5.19 (1) Changed floader/setting/log path as absolute when in runtime
+                  (2) Fix donwloading hang when floader is not exists
+                  (3) Reduce download timeout when TX floating
+                  (4) Add error message when handshake fail
+20240112  v2.5.20 Add timeout when Tx/RX floating
+20240230  v2.5.21 Modify FileShare mode when multi-thread access the same image
+20240419  v2.5.22 (1) Fix handshake fail in incidental case
+                  (2) Add detail debug log in xmodem api
+                  (3) Add retry for some cmds

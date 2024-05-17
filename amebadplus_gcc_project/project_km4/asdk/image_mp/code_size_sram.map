@@ -1,0 +1,137 @@
+========================= lib_chipinfo Start ======================================
+text         rodata       data         bss          module       
+0            0            0            4            lib_chipinfo.a(ameba_rom_patch.o)
+------------------------- lib_chipinfo End ----------------------------------------
+text         rodata       data         bss          module       
+0            0            0            4            (TOTALS)     
+
+Module lib_chipinfo size:
+0x4			4
+
+========================= libstdc++ Start =========================================
+text         rodata       data         bss          module       
+0            0            0            16           libstdc++.a(eh_alloc.o)
+------------------------- libstdc++ End -------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            16           (TOTALS)     
+
+Module libstdc++ size:
+0x10			16
+
+========================= libc Start ==============================================
+text         rodata       data         bss          module       
+0            0            0            312          libc.a(lib_a-findfp.o)
+0            0            244          0            libc.a(lib_a-impure.o)
+------------------------- libc End ------------------------------------------------
+text         rodata       data         bss          module       
+0            0            244          312          (TOTALS)     
+
+Module libc size:
+0x22c			556
+
+========================= wifirom Start ===========================================
+text         rodata       data         bss          module       
+0            0            0            16           rom_rtw_mbedtls_func_map.o
+------------------------- wifirom End ---------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            16           (TOTALS)     
+
+Module wifirom size:
+0x10			16
+
+========================= fullmac Start ===========================================
+text         rodata       data         bss          module       
+0            0            0            88           inic_ipc_host_api.o
+0            0            0            28           inic_ipc_host_api_basic.o
+0            0            0            4            inic_ipc_host_api_ext.o
+0            0            0            48           inic_ipc_host_trx.o
+0            0            0            96           inic_ipc_msg_queue.o
+------------------------- fullmac End ---------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            264          (TOTALS)     
+
+Module fullmac size:
+0x108			264
+
+========================= wifidrv Start ===========================================
+text         rodata       data         bss          module       
+0            0            0            16           rtw_timer.o  
+0            0            0            368          wifi_ind.o   
+------------------------- wifidrv End ---------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            384          (TOTALS)     
+
+Module wifidrv size:
+0x180			384
+
+========================= atcmd Start =============================================
+text         rodata       data         bss          module       
+0            0            32           0            atcmd_sys.o  
+------------------------- atcmd End -----------------------------------------------
+text         rodata       data         bss          module       
+0            0            32           0            (TOTALS)     
+
+Module atcmd size:
+0x20			32
+
+========================= fwlib Start =============================================
+text         rodata       data         bss          module       
+0            0            0            1            ameba_adc.o  
+0            12           0            0            ameba_app_start.o
+0            0            4            0            ameba_arch.o 
+0            0            0            88           ameba_data_flash.o
+0            0            0            5            ameba_data_flashclk.o
+0            0            0            36           ameba_flash_ram.o
+0            0            0            64           ameba_ipc_api.o
+0            0            0            256          ameba_ipc_ram.o
+0            0            0            8            ameba_mpu_ram.o
+0            0            0            16           ameba_ota.o  
+0            0            8            124          ameba_pmu.o  
+0            0            0            116          ameba_v8m_crashdump.o
+0            0            0            60           ameba_wificfg.o
+0            0            1            48           log.o        
+0            0            9            264          log_service.o
+0            0            0            4            main.o       
+0            0            8            0            platform.o   
+0            0            0            131          shell_ram.o  
+------------------------- fwlib End -----------------------------------------------
+text         rodata       data         bss          module       
+0            12           30           1221         (TOTALS)     
+
+Module fwlib size:
+0x4ef			1263
+
+========================= os Start ================================================
+text         rodata       data         bss          module       
+0            0            0            49           freertos_heap5_config.o
+0            0            0            32           heap_5.o     
+0            0            0            6            os_wrapper_critical.o
+0            0            0            72           os_wrapper_static_functions.o
+0            0            0            716          port.o       
+0            0            4            388          tasks.o      
+0            0            0            304          timers.o     
+------------------------- os End --------------------------------------------------
+text         rodata       data         bss          module       
+0            0            4            1567         (TOTALS)     
+
+Module os size:
+0x623			1571
+
+========================= others Start ============================================
+text         rodata       data         bss          module       
+0            0            0            28           crtbegin.o   
+------------------------- others End ----------------------------------------------
+text         rodata       data         bss          module       
+0            0            0            28           (TOTALS)     
+
+Module others size:
+0x1c			28
+
+================================================================================
+text         rodata       data         bss          module       
+0            12           310          3812         (TOTALS)     
+
+
+Image size:
+0x1026			4134
+

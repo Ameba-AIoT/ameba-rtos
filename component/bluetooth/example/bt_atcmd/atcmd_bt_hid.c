@@ -1,0 +1,191 @@
+/*
+*******************************************************************************
+* Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
+*******************************************************************************
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <osif.h>
+
+#include "platform_autoconf.h"
+#include <log_service.h>
+#include <bt_utils.h>
+#include <rtk_bt_def.h>
+#include <rtk_bt_common.h>
+#include <../bt_hid/gamepad_des.h>
+#include <../bt_hid/mouse_des.h>
+#include <rtk_bt_hid.h>
+#include <atcmd_bt_impl.h>
+#include <rtk_bt_br_gap.h>
+
+_WEAK uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
+{
+	(void)bd_addr;
+	AT_PRINTK("[ATBE] Hid not support disconnect");
+	return -1;
+}
+
+_WEAK uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr)
+{
+	(void)bd_addr;
+	AT_PRINTK("[ATBE] Hid not support get report rsp");
+	return -1;
+}
+
+_WEAK uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t len)
+{
+	(void)bd_addr;
+	(void)data;
+	(void)len;
+	AT_PRINTK("[ATBE] Hid not support data send");
+	return -1;
+}
+
+_WEAK uint16_t rtk_bt_hid_mouse_control(rtk_bt_hid_mouse_report_t *pmouse_t)
+{
+	(void)pmouse_t;
+	AT_PRINTK("[ATBE] Hid not support mouse");
+	return -1;
+}
+
+_WEAK uint16_t rtk_bt_hid_gamepad_control(rtk_bt_hid_gamepad_report_t *pgamepad_t)
+{
+	(void)pgamepad_t;
+	AT_PRINTK("[ATBE] Hid not support gamepad");
+	return -1;
+}
+
+static int atcmd_bt_hid_disconnect(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	if (argc != 1) {
+		AT_PRINTK("[ATBC] HID disconnect op failed! wrong args num!");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_hid_disconnect(bd_addr)) {
+		AT_PRINTK("[ATBC] HID disconnect fail \r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	AT_PRINTK("[ATBC] HID disconnecting to device %s ...", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_hid_get_report_rsp(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	if (argc != 1) {
+		AT_PRINTK("[ATBC] HID get report response op failed! wrong args num!");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_hid_get_report_rsp(bd_addr)) {
+		AT_PRINTK("[ATBC] HID get report response fail \r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	AT_PRINTK("[ATBC] HID get report response to device %s ...", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_hid_data_send(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	rtk_bt_hid_input_data_t data_t = {0};
+
+	if (argc < 1) {
+		AT_PRINTK("[ATBC] HID data send op failed! wrong args num!");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], data_t.bd_addr, RTK_BD_ADDR_LEN);
+	for (uint8_t i = 0; i < (argc - 1); i ++) {
+		data_t.data[i] = (uint8_t)str_to_int(argv[i + 1]);
+	}
+	if (rtk_bt_hid_input_data_send(data_t.bd_addr, data_t.data, data_t.len)) {
+		AT_PRINTK("[ATBC] HID data send fail \r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(data_t.bd_addr, addr_str, sizeof(addr_str));
+	AT_PRINTK("[ATBC] HID data send op to device %s ...", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_hid_mouse(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	rtk_bt_hid_mouse_report_t report = {0};
+
+	if (argc != 6) {
+		AT_PRINTK("[ATBC] HID mouse op failed! wrong args num!");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], report.bd_addr, RTK_BD_ADDR_LEN);
+	report.ReportID = (uint8_t)str_to_int(argv[1]);
+	report.mse_data.Button = (uint8_t)str_to_int(argv[2]);
+	report.mse_data.LocationX = (int8_t)str_to_int(argv[3]);
+	report.mse_data.LocationY = (int8_t)str_to_int(argv[4]);
+	report.mse_data.Wheel = (int8_t)str_to_int(argv[5]);
+
+	if (rtk_bt_hid_mouse_control(&report)) {
+		AT_PRINTK("[ATBC] HID mouse fail \r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(report.bd_addr, addr_str, sizeof(addr_str));
+	AT_PRINTK("[ATBC] HID mouse op to device %s ...", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_hid_gamepad(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	rtk_bt_hid_gamepad_report_t report = {0};
+
+	if (argc != 11) {
+		AT_PRINTK("[ATBC] HID gamepad op failed! wrong args num!");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], report.bd_addr, RTK_BD_ADDR_LEN);
+	report.ReportID = (uint8_t)str_to_int(argv[1]);
+	report.gpd_data.LeftThumbstickX = (int16_t)str_to_int(argv[2]);
+	report.gpd_data.LeftThumbstickY = (int16_t)str_to_int(argv[3]);
+	report.gpd_data.RightThumbstickX = (int16_t)str_to_int(argv[4]);
+	report.gpd_data.RightThumbstickY = (int16_t)str_to_int(argv[5]);
+	report.gpd_data.LeftTrigger = (uint16_t)str_to_int(argv[6]);
+	report.gpd_data.RightTrigger = (uint16_t)str_to_int(argv[7]);
+	report.gpd_data.DPadButtons = (uint8_t)str_to_int(argv[8]);
+	report.gpd_data.DigitalButtons.Value16 = (uint16_t)str_to_int(argv[9]);
+	report.gpd_data.ShareButton = (uint8_t)str_to_int(argv[10]);
+	if (rtk_bt_hid_gamepad_control(&report)) {
+		AT_PRINTK("[ATBC] HID gamepad fail \r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(report.bd_addr, addr_str, sizeof(addr_str));
+	AT_PRINTK("[ATBC] HID gamepad op to device %s ...", addr_str);
+
+	return 0;
+}
+
+static const cmd_table_t hid_cmd_table[] = {
+	{"disconn",             atcmd_bt_hid_disconnect,             1, 2},
+	{"get_report_rsp",      atcmd_bt_hid_get_report_rsp,         1, 2},
+	{"data_send",           atcmd_bt_hid_data_send,              1, 22},
+	{"mouse",               atcmd_bt_hid_mouse,                  1, 12},
+	{"gamepad",             atcmd_bt_hid_gamepad,                1, 12},
+	{NULL,},
+};
+
+int atcmd_bt_hid_cmd(int argc, char *argv[])
+{
+	atcmd_bt_excute(argc, argv, hid_cmd_table, "[ATBC][hid]");
+	return 0;
+}

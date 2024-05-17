@@ -1,0 +1,28 @@
+# only pick one example & one device role
+# example: light_control
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_LIGHTCTL_B), y) 
+include example/light_control/light_bulb/Makefile
+endif
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_LIGHTCTL_S), y) 
+include example/light_control/light_switch/Makefile
+endif
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_LIGHTCTL_C), y) 
+include example/light_control/light_coordinator/Makefile
+endif
+
+# example: ha_on_off_light_n_switch
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_ONOFFLIGHT_L), y) 
+include example/ha_on_off_light_n_switch/on_off_light/Makefile
+endif
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_ONOFFLIGHT_S), y) 
+include example/ha_on_off_light_n_switch/on_off_light_switch/Makefile
+endif
+
+# example: ha_custom_cluster
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_CUSTOM_CLUSTER_ZC), y)
+include example/ha_custom_cluster/custom_cluster_zc/Makefile
+endif
+ifeq ($(CONFIG_802154_ZIGBEE_EXAMPLE_CUSTOM_CLUSTER_ZR), y)
+include example/ha_custom_cluster/custom_cluster_zr/Makefile
+endif
+

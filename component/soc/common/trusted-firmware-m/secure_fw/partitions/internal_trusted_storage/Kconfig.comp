@@ -1,0 +1,79 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menu "ITS component options"
+  depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+
+config ITS_CREATE_FLASH_LAYOUT
+    bool "Create flash layout"
+    default y
+    help
+      Indicates that it is required to create an ITS flash layout.
+
+config ITS_RAM_FS
+    bool "RAM emulated file system"
+    default n
+    help
+      Enables the use of RAM instead of the persistent storage device to store
+      the FS in the ITS. The ITS regression tests write/erase storage multiple
+      time, so enabling this option can increase the life of flash memory when
+      testing.
+
+      If this option enabled, ITS_RAM_FS_SIZE must also be provided by platforms
+      in flash_layout.h to specify the size of the block of RAM to be used to
+      simulate the flash.
+
+config ITS_VALIDATE_METADATA_FROM_FLASH
+    bool "Validate filesystem metadata"
+    default y
+    help
+      Allows to enable the validation mechanism to check the metadata store in
+      flash every time the flash data is read from flash. This validation is
+      required if the flash is not hardware protected against data corruption.
+
+config ITS_MAX_ASSET_SIZE
+    int "Maximum asset size"
+    default 512
+    help
+      The maximum asset size to be stored in the ITS area.
+
+      When building for the PSA Crypto API tests, ensure the ITS max asset size
+      is set to at least the size of the largest asset created by the tests.
+
+config ITS_BUF_SIZE
+    int "Internal buffer size"
+    default ITS_MAX_ASSET_SIZE
+    help
+      Defines the size of the partition's internal data transfer buffer. If not
+      provided, then ``ITS_MAX_ASSET_SIZE`` is used to allow asset data to be
+      copied between the client and the filesystem in one iteration.
+
+      Reducing the buffer size will decrease the RAM usage of the partition at
+      the expense of latency, as data will be copied in multiple iterations.
+
+      Note: when data is copied in multiple iterations, the atomicity property
+      of the filesystem is lost in the case of an asynchronous power failure.
+
+config ITS_NUM_ASSETS
+    int "Number of assets"
+    default 10
+    help
+      Defines the maximum number of assets to be stored in the ITS area. This
+      number is used to dimension statically the filesystem metadata tables in
+      RAM (fast access) and flash (persistent storage). The memory used by the
+      filesystem metadata tables is allocated statically as ITS does not use
+      dynamic memory allocation.
+
+config ITS_STACK_SIZE
+    hex "Stack size"
+    default 0x720
+    help
+      Defines the stack size of the Internal Trusted Storage Secure Partition.
+      This value mainly depends on the platform specific flash drivers, the
+      build type (Debug, Release and MinSizeRel) and compiler.
+
+endmenu

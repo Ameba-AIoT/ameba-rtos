@@ -1,0 +1,154 @@
+***** PSA Architecture Test Suite - Version 0.8 *****
+
+Running.. Protected Storage Suite
+******************************************
+
+TEST: 401 | DESCRIPTION: UID not found check
+[Info] Executing tests from non-secure
+[Check 1] Call get API for UID 6 which is not set
+[Check 2] Call get_info API for UID 6 which is not set
+[Check 3] Call remove API for UID 6 which is not set
+[Check 4] Call get API for UID 6 which is removed
+[Check 5] Call get_info API for UID 6 which is removed
+[Check 6] Call remove API for UID 6 which is removed
+Set storage for UID 6
+[Check 7] Call get API for different UID 6
+[Check 8] Call get_info API for different UID 6
+[Check 9] Call remove API for different UID 6
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 402 | DESCRIPTION: Write once error check
+[Info] Executing tests from non-secure
+[Check 1] Update the flag of UID 1 with WRITE_ONCE flag
+[Check 2] Try to remove the UID 1 having WRITE_ONCE flag
+[Check 3] Create a new UID 2 with WRITE_ONCE flag
+[Check 4] Try to remove the UID 2 having WRITE_ONCE flag
+[Check 5] Try to change the length of write_once UID 2
+[Check 6] Check UID removal still fails
+[Check 7] Try to change the WRITE_ONCE flag to None for UID 2
+[Check 8] Check UID removal still fails
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 403 | DESCRIPTION: Insufficient space check
+[Info] Executing tests from non-secure
+[Check 1] Overload storage space
+Remove all registered UIDs
+[Check 2] Overload storage again to verify all previous UID removed
+Remove all registered UIDs
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 404 | DESCRIPTION: Data Consistency check
+[Info] Executing tests from non-secure
+[Check 1] Call get API with incorrect length
+[Check 2] Old buffer invalid after length change
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 405 | DESCRIPTION: Success scenarios check
+[Info] Executing tests from non-secure
+[Check 1] Set UID with data length zero and call storage APIs
+[Check 2] Resetting the length check
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 406 | DESCRIPTION: Flags not supported check
+[Info] Executing tests from non-secure
+[Check 1] Call set API with valid flag values
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 407 | DESCRIPTION: Incorrect Size check
+[Info] Executing tests from non-secure
+Create a valid Storage
+Increase the length of storage
+[Check 1] Call get API with old length
+Decrease the length of storage
+[Check 2] Call get API with old length
+[Check 3] Call get API with valid length
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 408 | DESCRIPTION: Invalid offset check
+[Info] Executing tests from non-secure
+[Check 1] Try to access data with varying valid offset
+[Check 2] Try to access data with varying invalid offset
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 409 | DESCRIPTION: Invalid Arguments check
+[Info] Executing tests from non-secure
+[Check 1] Call set API with NULL pointer and data length 0
+[Check 2] Create UID with zero data length
+[Check 3] Try to set NULL buffer for existing UID
+[Check 4] Call get API with NULL read buffer and data length 0
+[Check 5] Increase the length
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 410 | DESCRIPTION: UID value zero check
+[Info] Executing tests from non-secure
+[Check 1] Creating storage with UID 0 should fail
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 411 | DESCRIPTION: Optional APIs: UID not found check
+[Info] Executing tests from non-secure
+Test Case skipped as Optional PS APIs are not supported.
+TEST RESULT: SKIPPED (Skip Code=0x2B)
+
+******************************************
+
+TEST: 412 | DESCRIPTION: Optional APIs: Invalid arguments and offset invalid
+[Info] Executing tests from non-secure
+Test Case skipped as Optional PS APIs are not supported.
+TEST RESULT: SKIPPED (Skip Code=0x2B)
+
+******************************************
+
+TEST: 413 | DESCRIPTION: Set_Extended and Create api : Success
+[Info] Executing tests from non-secure
+Test Case skipped as Optional PS APIs are not supported.
+TEST RESULT: SKIPPED (Skip Code=0x2B)
+
+******************************************
+
+TEST: 414 | DESCRIPTION: Optional APIs not supported check
+[Info] Executing tests from non-secure
+Optional PS APIs are not supported.
+[Check 1] Call to create API should fail as API not supported
+[Check 2] Create valid storage with set API
+[Check 3] Call to set_extended API call should fail
+[Check 4] Verify data is unchanged
+TEST RESULT: PASSED
+
+******************************************
+
+TEST: 415 | DESCRIPTION: Create API write_once flag value check
+[Info] Executing tests from non-secure
+Test Case skipped as Optional PS APIs are not supported.
+TEST RESULT: SKIPPED (Skip Code=0x2B)
+
+******************************************
+
+************ Protected Storage Suite Report **********
+TOTAL TESTS     : 15
+TOTAL PASSED    : 11
+TOTAL SIM ERROR : 0
+TOTAL FAILED    : 0
+TOTAL SKIPPED   : 4
+******************************************
+
+Entering standby..

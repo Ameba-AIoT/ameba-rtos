@@ -1,0 +1,10 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    bool "Internal Trusted Storage"
+    default n

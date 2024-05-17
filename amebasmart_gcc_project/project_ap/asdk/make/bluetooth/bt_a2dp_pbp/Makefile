@@ -1,0 +1,57 @@
+include $(MAKE_INCLUDE_GEN)
+
+.PHONY: all clean
+
+#*****************************************************************************#
+#                                  VARIABLES                                  #
+#*****************************************************************************#
+BT_DIR = $(BASEDIR)/component/bluetooth
+AUDIO_HAL_DIR = $(BASEDIR)/component/audio
+BT_AUDIO_DIR = $(BT_DIR)/bt_audio
+BT_CODEC_SBC = $(BT_AUDIO_DIR)/bt_codec/sbc
+A2DP_PBP_DIR= $(BT_DIR)/example/bt_a2dp_pbp
+BLE_AUDIO_COMMON_DIR = $(BT_DIR)/example/ble_audio_common
+
+vpath %.c $(A2DP_PBP_DIR) \
+		$(BLE_AUDIO_COMMON_DIR)
+
+MODULE_IFLAGS += \
+	-I$(BT_AUDIO_DIR)/include \
+	-I$(BT_AUDIO_DIR)/bt_codec \
+	-I$(BT_CODEC_SBC)/decoder/include \
+	-I$(BT_CODEC_SBC)/encoder/include \
+	-I$(BLE_AUDIO_COMMON_DIR) \
+	-I$(AUDIO_HAL_DIR)/interfaces \
+	-I$(AUDIO_HAL_DIR)/base/osal/osal_c/interfaces
+
+CSRC += \
+	$(A2DP_PBP_DIR)/a2dp_pbp.c
+
+OBJS = $(notdir $(CSRC:.c=.o))
+
+#*****************************************************************************#
+#                          RULES TO GENERATE TARGETS                          #
+#*****************************************************************************#
+# LIBBLUETOOTH_OBJS_PATH = $(shell pwd)/objs
+# Define the Rules to build the core targets
+all: CORE_TARGETS COPY_RAM_OBJS
+	# mkdir -p $(LIBBLUETOOTH_OBJS_PATH)
+	# for i in $(OBJS); do \
+	# 	 $(COPY)  $$i $(LIBBLUETOOTH_OBJS_PATH) -f;\
+	# 	done
+	# $(REMOVE) *.i
+	# $(REMOVE) *.s
+	# $(REMOVE) *.d
+
+#*****************************************************************************#
+#                            GENERATE OBJECT FILE                             #
+#*****************************************************************************#
+CORE_TARGETS: $(OBJS)
+
+#*****************************************************************************#
+#                           RULES TO CLEAN TARGETS                            #
+#*****************************************************************************#
+clean: CLEAN_OBJS
+	$(call CLEAN_FUNC)
+
+-include $(DEPS)

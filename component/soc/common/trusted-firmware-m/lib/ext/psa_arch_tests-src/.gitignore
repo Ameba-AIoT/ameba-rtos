@@ -1,0 +1,11 @@
+# Ignore miscellaneous files
+cscope.*
+*.swp
+*~
+.project
+.cproject
+*.o*
+sbsa
+#Ignore build directory
+build/
+BUILD/

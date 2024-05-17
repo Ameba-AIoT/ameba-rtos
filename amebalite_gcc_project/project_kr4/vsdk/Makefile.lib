@@ -1,0 +1,184 @@
+
+APP_LIB_DIR = $(ROOTDIR)/lib/application
+WIFI_MAKE_DIR = make/wlan
+
+APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
+	$(APP_LIB_DIR)/lib_httpd.a \
+	$(APP_LIB_DIR)/lib_websocket.a \
+    $(APP_LIB_DIR)/lib_wps.a \
+	$(APP_LIB_DIR)/lib_tftp.a
+	#$(APP_LIB_DIR)/lib_mdns.a 
+	#$(APP_LIB_DIR)/lib_coap.a
+	#$(APP_LIB_DIR)/lib_dct.a
+	#$(APP_LIB_DIR)/lib_eap.a
+	#$(APP_LIB_DIR)/lib_rt_airkiss_algo.a
+	#$(BASEDIR)/component/application/airkiss/2.0.0-26515/lib/libairkiss.a
+
+LINK_THIRD_APP_LIB =
+
+ifeq ($(CONFIG_WLAN),y)
+
+# AP Link Library
+ifeq ($(CONFIG_AS_INIC_AP), y)
+LINK_APP_LIB += $(APP_LIB)
+
+# NP Link Library
+else ifeq ($(CONFIG_AS_INIC_NP), y)
+ifneq ($(CONFIG_MP_INCLUDED), y)
+image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
+endif
+ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
+
+
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+
+
+# Single Core Library
+else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
+LINK_APP_LIB += $(APP_LIB)
+ifneq ($(CONFIG_MP_INCLUDED), y)
+image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
+endif
+ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
+
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
+endif
+endif
+
+endif
+
+ifeq ($(CONFIG_BT), y)
+ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btcodec.a
+endif
+ifneq ($(CONFIG_BT_ZEPHYR), y)
+ifeq ($(CONFIG_BT_BLE_ONLY), y)
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebalite/lib/kr4/ble_only/btgap.a
+else ifeq ($(CONFIG_BT_DUAL_MODE), y)
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebalite/lib/kr4/dual_mode/btgap.a
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebalite/lib/kr4/bt_mgr.a
+endif
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebalite/lib/kr4/leaudio.a
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebalite/lib/kr4/ble_mgr.a
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebalite/lib/kr4/sysm.a
+ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/amebalite/kr4/btmesh.a
+endif
+endif
+endif
+
+#soc
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_chipinfo.a
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_crashdump.a
+
+#audio
+ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_playback.a
+ifneq ($(CONFIG_MEDIA_CODEC_AAC)$(CONFIG_MEDIA_LITE_CODEC_AAC),)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_fdkaac.a
+endif
+ifneq ($(CONFIG_MEDIA_CODEC_HAAC)$(CONFIG_MEDIA_LITE_CODEC_HAAC),)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_haac.a
+endif
+ifeq ($(CONFIG_MEDIA_CODEC_OPUS),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_opus.a
+endif
+ifeq ($(CONFIG_MEDIA_DEMUX_FLAC),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_flac.a
+endif
+ifeq ($(CONFIG_MEDIA_DEMUX_OGG),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_vorbisdec.a
+endif
+
+endif
+
+ifeq ($(CONFIG_AUDIO_MIXER),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_mixer.a
+else ifeq ($(CONFIG_AUDIO_PASSTHROUGH),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_passthrough.a
+endif
+
+ifeq ($(CONFIG_AUDIO_FWK),y)
+#LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_fwk.a
+endif
+
+ifeq ($(CONFIG_RPC_EN),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
+endif
+ifneq ($(CONFIG_AUDIO_RPC_AFE)$(CONFIG_AUDIO_LOCAL_AFE)$(CONFIG_AUDIO_FWK),)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
+endif
+ifeq ($(CONFIG_RPC_EN),y)
+#LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc_hal.a
+endif
+
+lib_image2: build_target_folder check_toolchain copy_ld_img2 build_info.h make_subdirs_lib_img2
+
+ifneq ($(wildcard ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi),)
+include ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi
+make_subdirs_lib_img2: make_wifi_lib
+endif
+
+#*****************************************************************************#
+#                      RULES TO CREATE DIRECTORY                              #
+#*****************************************************************************#
+
+make_subdirs_lib_img2:
+	@ rm -f $(RAM_OBJS_LIST)
+
+# build pmc lib
+	@+$(MAKE) -C make_lib/pmc_lib all
+	@+$(MAKE) -C make_lib/chipinfo_lib all
+	@+$(MAKE) -C make_lib/crashdump_lib all
+
+ifeq ($(CONFIG_WLAN), y)
+
+# build AP libs
+ifeq ($(CONFIG_AS_INIC_AP), y)
+	@+$(MAKE) -C make/wps all
+	@+$(MAKE) -C make/network/httpc all
+	@+$(MAKE) -C make/network/httpd all
+	@+$(MAKE) -C make/network/websocket all
+	@+$(MAKE) -C make/network/tftp all
+    #@+$(MAKE) -C make/network/eap all
+	#@+$(MAKE) -C make/network/http2 all
+
+# build NP libs
+else ifeq ($(CONFIG_AS_INIC_NP), y)
+ifneq ($(CONFIG_MP_INCLUDED), y)
+	@+$(MAKE) -C make/target/wifi_fw all
+endif
+	@+$(MAKE) -C make/rtk_coex all
+# build single core wifi libs
+else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
+
+	@+$(MAKE) -C make/wps all
+	@+$(MAKE) -C make/network/httpc all
+	@+$(MAKE) -C make/network/httpd all
+	@+$(MAKE) -C make/network/websocket all
+	#@+$(MAKE) -C make/network/eap all
+	#@+$(MAKE) -C make/network/http2 all
+	@+$(MAKE) -C make/network/tftp all
+ifneq ($(CONFIG_MP_INCLUDED), y)
+	@+$(MAKE) -C make/target/wifi_fw all
+endif
+	@+$(MAKE) -C make/rtk_coex all
+endif
+
+endif
+
+ifeq ($(CONFIG_BT), y)
+ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
+	@+$(MAKE) -C make/bluetooth/bt_audio/bt_codec all
+endif
+endif
+
+# build audio libs
+	@+$(MAKE) -C make/audio lib
+# build utils libs
+	@+$(MAKE) -C make/utils lib

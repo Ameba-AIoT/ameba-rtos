@@ -1,0 +1,118 @@
+
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+if PSA_API_TEST_CRYPTO
+    config CRYPTO_ENGINE_BUF_SIZE
+        default 0x5000
+
+    config CRYPTO_CONC_OPER_NUM
+        default 8
+
+    config CRYPTO_RNG_MODULE_ENABLED
+        default y
+
+    config CRYPTO_KEY_MODULE_ENABLED
+        default y
+
+    config CRYPTO_AEAD_MODULE_ENABLED
+        default y
+
+    config CRYPTO_MAC_MODULE_ENABLED
+        default y
+
+    config CRYPTO_HASH_MODULE_ENABLED
+        default y
+
+    config CRYPTO_CIPHER_MODULE_ENABLED
+        default y
+
+    config CRYPTO_ASYM_SIGN_MODULE_ENABLED
+        default y
+
+    config CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
+        default y
+
+    config CRYPTO_KEY_DERIVATION_MODULE_ENABLED
+        default y
+
+    config CRYPTO_IOVEC_BUFFER_SIZE
+        default 5120
+
+    config CRYPTO_NV_SEED
+        default y
+
+    config CRYPTO_SINGLE_PART_FUNCS_DISABLED
+        default n
+
+    config CRYPTO_STACK_SIZE
+        default 0x1B00
+endif
+
+if PSA_API_TEST_INITIAL_ATTESTATION
+    config ATTEST_INCLUDE_OPTIONAL_CLAIMS
+        default y
+
+    config ATTEST_INCLUDE_COSE_KEY_ID
+        default n
+
+    config ATTEST_STACK_SIZE
+        default 0x700
+
+    choice ATTEST_TOKEN_PROFILE
+        default ATTEST_TOKEN_PROFILE_PSA_IOT_1
+    endchoice
+endif
+
+if PSA_API_TEST_INTERNAL_TRUSTED_STORAGE || PSA_API_TEST_STORAGE
+    config ITS_CREATE_FLASH_LAYOUT
+        default y
+
+    config ITS_RAM_FS
+        default n
+
+    config ITS_VALIDATE_METADATA_FROM_FLASH
+        default y
+
+    config ITS_BUF_SIZE
+        default ITS_MAX_ASSET_SIZE
+
+    config ITS_NUM_ASSETS
+        default 10
+
+    config ITS_STACK_SIZE
+        default 0x720
+
+    config ITS_MAX_ASSET_SIZE
+        default 1229 if PSA_API_TEST_CRYPTO
+endif
+
+if PSA_API_TEST_PROTECTED_STORAGE || PSA_API_TEST_STORAGE
+    config PS_CREATE_FLASH_LAYOUT
+        default y
+
+    config PS_RAM_FS
+        default n
+
+    config PS_ROLLBACK_PROTECTION
+        default y
+
+    config PS_VALIDATE_METADATA_FROM_FLASH
+        default y
+
+    config PS_MAX_ASSET_SIZE
+        default 2048
+
+    config PS_NUM_ASSETS
+        default 10
+
+    config PS_STACK_SIZE
+        default 0x700
+endif
+
+config CONFIG_TFM_CONN_HANDLE_MAX_NUM
+    default 8

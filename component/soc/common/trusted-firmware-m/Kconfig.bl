@@ -1,0 +1,33 @@
+
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+rsource "bl1/Kconfig"
+rsource "bl2/ext/mcuboot/Kconfig"
+
+menu "BL options"
+
+config CONFIG_TFM_BOOT_STORE_MEASUREMENTS
+    bool "Store measurement values from all the boot stages"
+    default y
+    help
+       Used for initial attestation token.
+
+config CONFIG_TFM_BOOT_STORE_ENCODED_MEASUREMENTS
+    bool "Enable storing of encoded measurements in boot"
+    default y
+
+config MCUBOOT_DATA_SHARING
+    bool
+    default y if TFM_PARTITION_FIRMWARE_UPDATE || \
+                 (BL2 && CONFIG_TFM_BOOT_STORE_MEASUREMENTS && \
+                  !CONFIG_TFM_BOOT_STORE_ENCODED_MEASUREMENTS)
+    default n
+    help
+      Add sharing of application specific data using the same shared data area
+      as for the measured boot
+endmenu

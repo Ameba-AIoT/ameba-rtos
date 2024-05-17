@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0
+menuconfig WIFI_RTK_CFG80211_FULLMAC
+    tristate "CFG80211 WiFi FULLMAC drivers"
+
+if WIFI_RTK_CFG80211_FULLMAC
+
+source "drivers/rtkdrivers/net/wireless/cfg80211_fullmac/rtl8730e/Kconfig"
+
+endif

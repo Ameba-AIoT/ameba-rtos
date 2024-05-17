@@ -1,0 +1,67 @@
+ChangeLog:
+20180605  v2.0.0  (1) Add chip selection.Compatible with AmebaD,support e-Fuse programming.
+                  (2) Add save/load history commands function.
+                  (3) Timestamp of each line indicates the time when the first character occurs. Do not update timestamp when each line ends.
+                  (4) Fix register value show error sometimes
+20181127  v2.0.1  Update efuse read/save map format.
+20190722  v2.0.2  (1) Enable serial port auto detection
+                  (2) Enable COM page auto sizing
+20210129  v2.1.0  (1) Support AGG function
+20210401  v2.1.0  (1) Support socket function.
+				  (2) Add BT timestamp.
+				  (3) Add BT FW timestamp.
+20210527  v2.1.1  (1) Fix BT and BT FW bug
+				  (2) Change log file filename extension
+				  (3) Change BT FW timestamp format
+				  (4) Flush serial rx buffer when clear log
+20211011  v2.1.2  Disable advanced functions from release version
+20211022  v2.1.3  (1) Rename target files to eliminate blank spaces
+				  (2) Update title from assembly info
+				  (3) Remove socket disconnetct warning temporarily
+20220302  v2.1.4  Fix Shell ls --color gibberish code issue
+20220328  v2.1.5  Fix ls file information arrangement issue
+20220616  v2.1.6  Add AmebaLite and AmebaSmart support
+20220620  v2.1.7  Add Chinese display support
+20220712  v2.1.8  Add pattern match support for auto script
+20220726  v2.1.9  Fix auto script write delay issue
+20220802  v2.1.10 Add tag for corresponding core
+				  (1) lite:[KM4]/[KR4]/[DSP]
+				  (2) smart:[KM0]/[KM4]/[CA7]/[CA32]
+20220817  v2.1.11 Add support for ACSII/GBK/UTF8 encoding
+20220823  v2.1.12 (1) fix log loss and stuck issue
+				  (2) fix Chinese display override issue
+				  (3) fix incomplete display of the interface issue
+				  (4) fix scroll bar can not remains at the bottom issue
+				  (5) fix command cannot be executed sequentially in auto issue
+20220826  v2.1.13 Update the UI to remove redundant information
+20220909  v2.1.14 (1) Add support to delete history command
+				  (2) Add support to mask log
+20221019  v2.1.15 (1) Fix log loss issue
+                  (2) Fix layout issue
+				  (3) Fix serial port recognition issue
+				  (4) Fix auto script issue
+20221110  v2.1.16 (1) Fix BT log loss issue
+                  (2) Fix port display issue
+				  (3) Fix layout issue
+20221128  v2.1.17 Fix list history box issue
+20221130  v2.1.18 Fix log display delay issue
+20221212  v2.1.19 Add support to rename log when saving it
+20221212  v2.1.20 Add support to RTL8713EC and RTL8710EC
+20230106  v2.1.21 Fix chip menu issue
+20230111  v2.1.22 (1) Add Core Groups feature for release version
+				  (2) Enable REG and Auto feature for release version
+				  (3) Fix Tag filter issue
+20230217  v2.1.23 Fix layout issue
+20230320  v2.1.24 Update layout
+20230505  v2.1.25 Remove Setup.ini file
+20230728  v2.1.26 Fix layout issue
+20231023  v2.1.27 (1) Add timeout for log saving
+				  (2) Add support to new format of register value
+20231113  v2.1.28 Add scope feature to display waveforms dynamically based on capture data
+20240122  v2.1.29 (1) Update UI
+				  (2) Add WiFi debug feature
+				  (3) Add max/min/average feature for scope
+				  (4) Add support for segmented log
+20240122  v2.1.30 Fix BT log loss issue
+20240425  v2.1.31 (1) Fix compiling warnings
+				  (2) Rename chips for internal version

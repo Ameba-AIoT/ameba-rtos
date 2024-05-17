@@ -1,0 +1,57 @@
+#!/bin/bash
+echo '------------'
+current_dir=$(pwd)
+echo $current_dir
+
+while true
+do
+    case "$1" in
+        "n" | --build1)
+            echo "build NP"
+            cd ../project_km0
+            make 2>$current_dir/warning.txt
+
+            cat $current_dir/warning.txt|grep "warning"
+            cat $current_dir/warning.txt|grep "error"
+            exit 1
+            ;;
+        "an" | --build2)
+            echo "build AP->NP"
+            cd ../project_km4
+            make 2>$current_dir/warning.txt
+
+            cd ../project_km0
+            make 2>>$current_dir/warning.txt
+
+            cat $current_dir/warning.txt|grep "warning"
+            cat $current_dir/warning.txt|grep "error"
+            exit 1
+            ;;
+        "a" | --build3)
+            echo "build AP"
+            cd ../project_km4
+            make 2>$current_dir/warning.txt
+
+            cd ../project_km0
+
+            cat $current_dir/warning.txt|grep "warning"
+            cat $current_dir/warning.txt|grep "error"
+            exit 1
+            ;;
+        "x" | --build4)
+            git restore ../menuconfig/.config
+            git restore ../menuconfig/.config_km0
+            git restore ../menuconfig/.config_km4
+            git restore inc/platform_autoconf.h
+            git restore ../project_km4/inc/platform_autoconf.h
+
+            git status -uno
+            exit 1
+            ;;
+        *)
+            echo "Internal error!!!"
+            exit 1
+            ;;
+    esac
+done
+echo '------------'
