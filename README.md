@@ -52,7 +52,7 @@ After compiling finishes, both app and bootloader images are generated.
 
 **Note:** If somehow failed, type `make clean` to clean and then redo the make procedure.
 
-## Flashing the Project
+## Flashing
 
 When the build finishes, downloading images into flash by [AmebaImageTool](tools/ameba/ImageTool/AmebaImageTool.exe):
 
