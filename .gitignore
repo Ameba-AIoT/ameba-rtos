@@ -3,6 +3,9 @@
 *.d
 *.o
 *.su
+*.i
+*.ii
+*.s
 libsrc
 *@tmp
 toolchain/
