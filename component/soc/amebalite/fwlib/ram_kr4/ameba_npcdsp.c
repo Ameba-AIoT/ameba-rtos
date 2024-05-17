@@ -229,7 +229,11 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_kr4cdsp_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
+#ifndef CONFIG_MP_INCLUDED
 	.Rxfunc = dsp_tickless_ipc_int,
+#else
+	.Rxfunc = NULL,
+#endif
 	.RxIrqData = (void *) NULL,
 	.Txfunc = IPC_TXHandler,
 	.TxIrqData = (void *) NULL,

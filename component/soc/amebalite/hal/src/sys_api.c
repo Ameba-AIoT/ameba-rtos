@@ -23,6 +23,10 @@
 #include "sys_api.h"
 #include "flash_api.h"
 #include "ameba_ota.h"
+#include "log.h"
+
+static const char *TAG = "SYS";
+
 
 /** @addtogroup Ameba_Mbed_API
   * @{
@@ -81,7 +85,7 @@ void sys_clear_ota_signature(void)
 		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 
-		RTK_LOGS("NOTAG", "[%s] IMGID: %d, current OTA%d Address: 0x%08x, target OTA%d Address: 0x%08x\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
+		RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08x, target OTA%d Address: 0x%08x\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
 				 otaDstIdx + 1,
 				 Address[otaDstIdx]);
 
@@ -91,7 +95,7 @@ void sys_clear_ota_signature(void)
 		if (ota_sig[0] == 0x35393138 && ota_sig[1] == 0x31313738) {
 			FLASH_WriteStream(Address[otaCurIdx], 8, (u8 *)empty_sig);
 		} else {
-			RTK_LOGS("NOTAG", "[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
+			RTK_LOGE(TAG, "[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
 		}
 	}
 }
@@ -113,7 +117,7 @@ void sys_recover_ota_signature(void)
 
 	backup = (u8 *)malloc(0x1000);
 	if (backup == NULL) {
-		RTK_LOGS("NOTAG", "[%s] backup malloc failded\n", __func__);
+		RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
 		return;
 	}
 
@@ -127,7 +131,7 @@ void sys_recover_ota_signature(void)
 		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 
-		RTK_LOGS("NOTAG", "[%s] IMGID: %d, current OTA%d Address: 0x%08x, target OTA%d Address: 0x%08x\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
+		RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08x, target OTA%d Address: 0x%08x\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
 				 otaDstIdx + 1,
 				 Address[otaDstIdx]);
 		/* backup this sector */

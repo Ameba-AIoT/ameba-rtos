@@ -85,7 +85,7 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	}
 
 	res = fwrite(val, len, 1, (FILE *)finfo);
-	if (res != 1) {
+	if (res != len) {
 		FS_DBG(FS_ERROR, "fwrite failed,err is %d!!", res);
 	}
 	fclose((FILE *)finfo);

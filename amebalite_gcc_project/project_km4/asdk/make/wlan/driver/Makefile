@@ -9,6 +9,10 @@ IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf
 IFLAGS               += -I$(BASEDIR)/component/wifi/common/secure
 
+ifeq ($(CONFIG_MP_INCLUDED), y)
+GLOBAL_CFLAGS += -Wno-unused-function
+endif
+
 ifeq ($(CONFIG_AMEBALITE), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf
@@ -50,11 +54,12 @@ endif
 #*****************************************************************************#
 DIR = $(BASEDIR)/component/wifi/driver
 
-lib_mp:GLOBAL_CFLAGS += -DCONFIG_MP_INCLUDED
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LIB_NAME_MP_SUFFIX = _mp
+endif
 # OBJS_CONFIG: code run flash or sram based on config
 # OBJS: Flash code
 # OBJS_SRAM: SRAM code
-TARGET_LIB = lib_wlan
 
 #*****************************************************************************#
 #                               Source FILE LIST                              #
@@ -88,27 +93,15 @@ lib: make_objs_drv make_objs_phy make_objs_btc COPY_RAM_OBJS
 	$(FROMELF) -g -D lib_wlan.a
 ifeq ($(CONFIG_AS_INIC_NP),y)
 ifeq ($(CONFIG_INIC_INTF_SDIO), y)
-	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_inic_sdio_wlan.a
+	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_sdio_np$(LIB_NAME_MP_SUFFIX).a
 else
-	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_inic_wlan.a
+	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_np$(LIB_NAME_MP_SUFFIX).a
 endif
 else
-	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application
-endif
-	$(REMOVE) $(TARGET_LIB)_git_version.*
-lib_mp: make_objs_drv make_objs_phy make_objs_btc COPY_RAM_OBJS
-	$(AR) rvs lib_wlan_mp.a $(OBJS)
-	$(FROMELF) -g -D lib_wlan_mp.a
-ifeq ($(CONFIG_AS_INIC_NP),y)
-ifeq ($(CONFIG_INIC_INTF_SDIO), y)
-	$(MOVE) -f lib_wlan_mp.a $(ROOTDIR)/lib/application/lib_inic_sdio_wlan_mp.a
-else
-	$(MOVE) -f lib_wlan_mp.a $(ROOTDIR)/lib/application/lib_inic_wlan_mp.a
-endif
-else
-	$(MOVE) -f lib_wlan_mp.a $(ROOTDIR)/lib/application/
+	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_single_core$(LIB_NAME_MP_SUFFIX).a
 endif
 	$(REMOVE) $(TARGET_LIB)_git_version.*
+
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
 #*****************************************************************************#

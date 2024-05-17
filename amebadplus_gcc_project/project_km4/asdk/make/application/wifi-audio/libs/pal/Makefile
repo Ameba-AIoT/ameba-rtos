@@ -7,10 +7,10 @@ include ../config.mk
 #                               VARIABLES	                              #
 #*****************************************************************************#
 WFA_DIR = $(BASEDIR)/component/application/wifi-audio
-DIR = $(WFA_DIR)/pal
+DIR = $(WFA_DIR)/pal/common
 
 MODULE_IFLAGS += \
-    -I$(DIR)/include
+    -I$(WFA_DIR)/pal/include
 
 MODULE_IFLAGS += \
     -I$(WFA_DIR)/base/log/include \

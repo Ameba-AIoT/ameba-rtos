@@ -21,6 +21,7 @@
 #include <rtk_bt_sdp.h>
 #include <rtk_bt_avrcp.h>
 #include <rtk_bt_tmap.h>
+#include <rtk_bt_bap.h>
 #include <rtk_bt_a2dp.h>
 #include <bt_audio_intf.h>
 #include <bt_audio_codec_wrapper.h>
@@ -70,7 +71,7 @@
 /* ------------------------------- TMAP Related Macros ------------------------------- */
 #define TMAP_ENCODE_TASK_PRIO                          4
 #define TMAP_ENCODE_TASK_STACK_SIZE                    (1024 * 5)
-
+#define A2DP_TMAP_REOPEN_TEST                          0
 /* ---------------------------- Global Variables ---------------------------- */
 typedef enum {
 	RTK_BT_LE_AUDIO_PBP_ROLE_UNKNOWN = 0,
@@ -946,10 +947,12 @@ static uint16_t a2dp_tmap_demo_queue_deinit(a2dp_tmap_demo_queue_t *p_queue)
 	return RTK_BT_FAIL;
 }
 
-static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len)
+static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len, void *pentity, void *track)
 {
 	(void)p_pcm_data;
 	(void)p_len;
+	(void)pentity;
+	(void)track;
 	void *pmtx = NULL;
 	uint32_t queue_size = 0;
 
@@ -1013,7 +1016,7 @@ static uint16_t rtk_bt_a2dp_tmap_demo_resample_generate(rtk_bt_audio_resample_t 
 		// flush a2dp_decoded_pcm_queue
 		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
 		a2dp_tmap_demo_queue_pcm_data_flush(&a2dp_decoded_pcm_queue);
-		BT_APP_PRINT(BT_APP_INFO, "a2dp_decoded_pcm_queue flush!\r\n");
+		BT_APP_PRINT(BT_APP_DEBUG, "a2dp_decoded_pcm_queue flush!\r\n");
 		osif_mutex_give(p_dequeue_mtx);
 
 		// flush tmap_resample_pcm_data_queue
@@ -1021,7 +1024,7 @@ static uint16_t rtk_bt_a2dp_tmap_demo_resample_generate(rtk_bt_audio_resample_t 
 		dequeue_size = tmap_resample_pcm_data_queue.queue_size;
 		if (dequeue_size) {
 			a2dp_tmap_demo_queue_pcm_data_flush(&tmap_resample_pcm_data_queue);
-			BT_APP_PRINT(BT_APP_INFO, "tmap_resample_pcm_data_queue flush!\r\n");
+			BT_APP_PRINT(BT_APP_DEBUG, "tmap_resample_pcm_data_queue flush!\r\n");
 			tmap_pcm_data_dequeue_flag = false;
 		}
 		osif_mutex_give(p_enqueue_mtx);
@@ -1314,7 +1317,7 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 						memset((void *)&a2dp_demo_bond_table[i], 0, sizeof(a2dp_demo_bond_info_t));
 					}
 				}
-				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 				} else {
 					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
@@ -1386,7 +1389,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 			if (pbond_info) {
 				memcpy((void *)pbond_info->name, (void *)p_name_rsp->name, RTK_BT_GAP_DEVICE_NAME_LEN);
 				pbond_info->name_contained = 1;
-				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 					a2dp_demo_bond_info_dump();
 				} else {
@@ -1705,7 +1708,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 
 	return 0;
 }
-
+static void app_bt_le_audio_tmap_encode_data_control(bool enable);
 static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -1809,6 +1812,14 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
+#if defined(A2DP_TMAP_REOPEN_TEST) && A2DP_TMAP_REOPEN_TEST
+		//restart iso data path
+		if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
+			if (g_ums_info.status == RTK_BLE_AUDIO_INITIATOR_UNICAST_STOP) {
+				rtk_bt_bap_unicast_client_start(0, 1);
+			}
+		}
+#endif
 	}
 	break;
 
@@ -1829,6 +1840,18 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
+#if defined(A2DP_TMAP_REOPEN_TEST) && A2DP_TMAP_REOPEN_TEST
+		if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
+			if (g_ums_info.status == RTK_BLE_AUDIO_INITIATOR_UNICAST_START) {
+				// delete timer handle and task handle
+				//app_bt_le_audio_tmap_encode_data_control(false);
+				// stop unicast session
+				rtk_bt_bap_unicast_client_stop(0);
+				// release unicast session
+				rtk_bt_bap_unicast_client_release(0);
+			}
+		}
+#endif
 	}
 	break;
 
@@ -1893,8 +1916,18 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 static void app_bt_le_audio_tmap_send_timer_handler(void *arg)
 {
 	(void)arg;
-
+	uint8_t i = 0, tx_iso_data_path_num = 0;
+	tx_iso_data_path_num = app_bt_le_audio_iso_data_path_get_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
+	app_lea_iso_data_path_t *p_iso_path = NULL;
 	if (g_tmap_encode_task.run) {
+		for (i = 0 ; i < tx_iso_data_path_num; i++) {
+			p_iso_path = app_bt_le_audio_iso_data_path_find_by_idx(i, RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
+			if (p_iso_path == NULL) {
+				BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+				continue;
+			}
+			p_iso_path->pkt_seq_num ++;
+		}
 		if (tmap_pcm_data_dequeue_flag && a2dp_play_flag) {
 			if (g_tmap_encode_data_sem) {
 				osif_sem_give(g_tmap_encode_data_sem);
@@ -2019,7 +2052,7 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 		BT_APP_DUMPBUF(BT_APP_DEBUG, __func__, p_data, data_len);
 		p_iso_path->status_fail_cnt++;
 	}
-	p_iso_path->pkt_seq_num ++;
+
 	app_bt_le_audio_iso_data_tx_statistics(p_iso_path);
 
 	return ret;
@@ -2156,7 +2189,7 @@ static void app_bt_le_audio_tmap_encode_task_entry(void *ctx)
 			}
 		}
 	}
-	BT_APP_PRINT(BT_APP_DEBUG, "%s task_delete\r\n", __func__);
+	BT_APP_PRINT(BT_APP_INFO, "%s task_delete\r\n", __func__);
 	osif_sem_give(g_tmap_encode_task.sem);
 	g_tmap_encode_task.run = 0;
 	g_tmap_encode_task.hdl = NULL;
@@ -2194,6 +2227,7 @@ static void app_bt_le_audio_tmap_encode_data_control(bool enable)
 			BT_APP_PRINT(BT_APP_WARNING, "%s: encode task is alreay disabled\r\n", __func__);
 			return ;
 		}
+		g_tmap_encode_task_enable = false;
 		app_bt_le_audio_tmap_send_timer_deinit();
 		if (g_tmap_encode_task.hdl) {
 			g_tmap_encode_task.run = 0;
@@ -3328,7 +3362,7 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 					goto failed;
 				}
 				/* Load reconnect info from file system */
-				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Load a2dp demo bond info table success \r\n");
 					/* dump bond info */
 					a2dp_demo_bond_info_dump();
@@ -3485,7 +3519,7 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 					goto failed;
 				}
 				/* Load reconnect info from file system */
-				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Load a2dp demo bond info table success \r\n");
 					/* dump bond info */
 					a2dp_demo_bond_info_dump();

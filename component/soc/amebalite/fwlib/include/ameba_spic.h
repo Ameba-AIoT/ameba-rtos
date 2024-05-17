@@ -944,7 +944,14 @@ typedef struct {
   */
 
 
-/* FLASH_Normal_Functions FLASH Normal Functions */
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup FLASH_Exported_Functions FLASH Exported Functions
+  * @{
+  */
+
+/** @defgroup FLASH_Normal_Functions FLASH Normal Functions
+  * @{
+  */
 
 _LONG_CALL_ void FLASH_Erase(u32 EraseType, u32 Address);
 _LONG_CALL_ void FLASH_SetStatus(u8 Cmd, u32 Len, u8 *Status);
@@ -987,10 +994,15 @@ _LONG_CALL_ void FLASH_ClockSwitch(u32 Source, u32 Protection);
 _LONG_CALL_ int FLASH_WriteStream(u32 address, u32 len, u8 *data);
 _LONG_CALL_ int  FLASH_ReadStream(u32 address, u32 len, u8 *data);
 
-
-/* FLASH_XIP_Functions FLASH XIP Functions
-  * @note These functions will lock cpu when exec to forbit XIP, and flush cache after exec.
+/**
+  * @}
   */
+
+/** @defgroup FLASH_XIP_Functions FLASH XIP Functions
+  * @note These functions will lock cpu when exec to forbit XIP, and flush cache after exec.
+  * @{
+  */
+
 void FLASH_Write_Lock(void);
 void FLASH_Write_Unlock(void);
 void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data);
@@ -1001,6 +1013,17 @@ void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData);
 void FLASH_EraseXIP(u32 EraseType, u32 Address);
 void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum);
 
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/** @} */
+
+/** @} */
 
 /* Other definitions --------------------------------------------------------*/
 extern FLASH_InitTypeDef flash_init_para;
@@ -1017,9 +1040,6 @@ typedef void (*FLASH_STRUCT_INIT_FUNC)(FLASH_InitTypeDef *FLASH_InitStruct);
 
 #define SPIC_VALID_CMD_MASK		(0xffff)
 
-/** @} */
-
-/** @} */
 /* MANUAL_GEN_END */
 
 #endif

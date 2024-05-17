@@ -199,8 +199,13 @@ standard names - or at least those used in the unmodified vector table. */
 #define configEXPECTED_IDLE_TIME_BEFORE_SLEEP   		2
 
 /* It's magic trick that let us can use our own sleep function */
+#ifndef CONFIG_MP_INCLUDED
 #define configPRE_SLEEP_PROCESSING( x )                        ( pmu_pre_sleep_processing((uint32_t *)&x) )
 #define configPOST_SLEEP_PROCESSING( x )                       ( pmu_post_sleep_processing((uint32_t *)&x) )
+#else
+#define configPRE_SLEEP_PROCESSING( x )
+#define configPOST_SLEEP_PROCESSING( x )
+#endif
 
 /* It's magic trick that let us can enable/disable tickless dynamically */
 #define traceLOW_POWER_IDLE_BEGIN()

@@ -1295,34 +1295,16 @@ exit:
 	free_stream_data(stream_data_s);
 	rtos_mutex_give(g_tptest_mutex);
 
-	if (strncmp(argv[0], "tcp", 3) == 0) {
-		printf("\n\r[ATWT] Command format ERROR!\n");
-		printf("\n\r[ATWT] Usage: ATWT=[-s|-c,host|stop],[options]\n");
-		printf("\n\r   Client/Server:\n");
-		printf("  \r	  ?     		List all stream status\n");
-		printf("  \r	 stop  #		terminate specific stream id or terminate all stream if no id specified\n");
-		printf("  \r	 -i    #		seconds between periodic bandwidth reports\n");
-		printf("  \r	 -l    #		length of buffer to read or write (default 1460 Bytes)\n");
-		printf("  \r	 -p    #		server port to listen on/connect to (default 5001)\n");
-		printf("\n\r   Server specific:\n");
-		printf("  \r	 -s 			run in server mode\n");
-		printf("\n\r   Client specific:\n");
-		printf("  \r	 -c    <host>	run in client mode, connecting to <host>\n");
-		printf("  \r	 -d 			Do a bidirectional test simultaneously\n");
-		printf("  \r	 -t    #		time in seconds to transmit for (default 10 secs)\n");
-		printf("  \r	 -n    #[KM]	number of bytes to transmit (instead of -t)\n");
-		printf("\n\r   Example:\n");
-		printf("  \r	 ATWT=-s,-p,5002\n");
-		printf("  \r	 ATWT=-c,192.168.1.2,-t,100,-p,5002\n");
-	} else if (strncmp(argv[0], "udp", 3) == 0) {
-		printf("\n\r[ATWU] Command format ERROR!\n");
-		printf("\n\r[ATWU] Usage: ATWU=[-s|-c,host|stop][options]\n");
+	if ((strncmp(argv[0], "tcp", 3) == 0) || (strncmp(argv[0], "udp", 3) == 0)) {
+		printf("\n\r[AT+IPERF] Command format ERROR!\n");
+		printf("\n\r[AT+IPERF] Usage: AT+IPERF=[-s|-c,host|stop],[options]\n");
 		printf("\n\r   Client/Server:\n");
 		printf("  \r	  ?     		List all stream status\n");
 		printf("  \r     stop  #        terminate specific stream id or terminate all stream if no id specified\n");
 		printf("  \r     -i    #        seconds between periodic bandwidth reports\n");
 		printf("  \r     -l    #        length of buffer to read or write (default 1460 Bytes)\n");
 		printf("  \r     -p    #        server port to listen on/connect to (default 5001)\n");
+		printf("  \r     -u    #        use UDP protocol (default TCP)\n");
 		printf("\n\r   Server specific:\n");
 		printf("  \r     -s             run in server mode\n");
 		printf("  \r     -B             bind multicast address in udp server mode\n");
@@ -1333,13 +1315,16 @@ exit:
 		printf("  \r     -t    #        time in seconds to transmit for (default 10 secs)\n");
 		printf("  \r     -n    #[KM]    number of bytes to transmit (instead of -t)\n");
 #if CONFIG_WLAN
-		printf("  \r     -S    #        set the IP 'type of service'\n");
+		printf("  \r     -S    #        for UDP, set the IP 'type of service'\n");
 #endif
-		printf("\n\r   Example:\n");
-		printf("  \r     ATWU=-s,-p,5002\n");
-		printf("  \r     ATWU=-c,192.168.1.2,-t,100,-p,5002\n");
+		printf("\n\r   Example for TCP:\n");
+		printf("  \r	 AT+IPERF=-s,-p,5002\n");
+		printf("  \r	 AT+IPERF=-c,192.168.1.2,-t,100,-p,5002\n");
+		printf("\n\r   Example for UDP:\n");
+		printf("  \r     AT+IPERF=-s,-p,5002,-u\n");
+		printf("  \r     AT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\n");
 	} else {
-		printf("\n\rATWT/ATWU Command ERROR!\n");
+		printf("\n\rAT+IPERF Command ERROR!\n");
 	}
 	return;
 }

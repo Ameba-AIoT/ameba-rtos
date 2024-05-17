@@ -69,13 +69,14 @@ void app_pmu_init(void)
 	pmu_acquire_deepwakelock(PMU_OS);
 	pmu_release_deepwakelock(PMU_KM4_RUN);
 	pmu_release_deepwakelock(PMU_AP_RUN);
+#ifndef CONFIG_MP_INCLUDED
 
 	SOCPS_WakeEvent_Init();
 	SOCPS_SleepInit();
 
 	// set power cut stable time
 	SOCPS_SetPowerCut_Time(PC_Stable_256);
-
+#endif
 	pmc_patch();
 
 }

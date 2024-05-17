@@ -91,9 +91,8 @@ int littlefs_read(unsigned char *buf, unsigned int size, unsigned int count, vfs
 	ret = lfs_file_read(&g_lfs, file, buf, size * count);
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fread error %d \r\n", ret);
-		return ret;
 	}
-	return ret / (size * count);
+	return ret;
 }
 
 int littlefs_write(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
@@ -103,9 +102,8 @@ int littlefs_write(unsigned char *buf, unsigned int size, unsigned int count, vf
 	ret = lfs_file_write(&g_lfs, file, buf, size * count);
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fwrite error %d \r\n", ret);
-		return ret;
 	}
-	return ret / (size * count);
+	return ret;
 }
 
 int littlefs_close(vfs_file *finfo)

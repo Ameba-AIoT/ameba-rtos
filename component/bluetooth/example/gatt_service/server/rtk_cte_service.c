@@ -638,6 +638,8 @@ static void cte_write_hdl(void *data)
 
 void cte_srv_callback(uint8_t event, void *data)
 {
+	uint16_t ret = 0;
+
 	switch (event) {
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;

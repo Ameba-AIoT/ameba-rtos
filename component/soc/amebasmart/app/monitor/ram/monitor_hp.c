@@ -435,18 +435,14 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t Can write only one dword at the same time \n"
 		"\t\t Ex: EW Address Value \n"
 	},
-	{
-		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
-		"\t\t wmap addr len data\n"
-		"\t\t rmap \n"
-		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x98\n"
-		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
-	},
+
 	{
 		(const u8 *)"REBOOT",	4, cmd_reboot,	(const u8 *)"\tREBOOT \n"
 		"\t\t reboot \n"
 		"\t\t reboot uartburn \n"
 	},
+
+#ifndef CONFIG_MP_INCLUDED
 	{
 		(const u8 *)"TICKPS",	4, CmdTickPS,	(const u8 *)"\tTICKPS \n"
 		"\t\t r: release os wakelock \n"
@@ -455,6 +451,13 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 	{
 		(const u8 *)"RTC",		4, CmdRTC,	(const u8 *)"\tRTC \n"
 		"\t\t get\n"
+	},
+	{
+		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
+		"\t\t wmap addr len data\n"
+		"\t\t rmap \n"
+		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x98\n"
+		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
 	},
 	{
 		(const u8 *)"TSFTEST",	4, CmdTsfTest,	(const u8 *)"\tTSFTEST \n"
@@ -475,6 +478,7 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t	   4, info log\n"
 		"\t\t	   5, debug log\n"
 	},
+#endif
 };
 
 u32

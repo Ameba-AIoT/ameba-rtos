@@ -88,8 +88,8 @@ int parse_param(char *buf, char **argv);
 #define C_NUM_AT_CMD_DLT		1 //"=", 1 charater
 #define STR_END_OF_ATCMD_RET	"\r\n\n# " //each AT command response will end with this string
 #define STR_END_OF_ATDATA_RET	"\r\n\n> " //data transparent transmission indicator
-#define SMALL_BUF	128
-#define BIG_BUF		1024
+#define SMALL_BUF               128
+#define BIG_BUF                 1024
 
 #ifdef CONFIG_NEW_ATCMD
 /* TODO */
@@ -100,8 +100,24 @@ extern char global_buf[SMALL_BUF];
 extern at_write out_buffer;
 int at_printf(const char *fmt, ...);
 #else
-#define at_printf(fmt, args...)    do{printf(fmt, ##args);}while(0)
+#define at_printf(fmt, args...)    RTK_LOGS(NOTAG, fmt, ##args)
 #endif
+#endif
+
+/* TODO */
+/* For compatibility with the old Bluetooth command, need cut down 4-letter command
+  into two parts, e.g. Cut the top "AT" of "ATBE=peripheral,1", into "BE=peripheral,1"
+  Because that, in function log_handler ( ), the top 2-letter "AT" has been drawn already.
+  This should be deleted once the new format commands are ready. */
+#define ATCMD_BT_CUT_DOWN       1
+
+#ifndef CONFIG_MP_INCLUDED
+extern void print_mqtt_help(void);
+extern void print_wlan_help(void);
+#endif
+extern void print_system_help(void);
+#if defined(CONFIG_BT) && CONFIG_BT
+extern void print_bt_help(void);
 #endif
 
 #endif

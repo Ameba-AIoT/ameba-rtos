@@ -1081,7 +1081,7 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 						memset((void *)&a2dp_demo_bond_table[i], 0, sizeof(a2dp_demo_bond_info_t));
 					}
 				}
-				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 				} else {
 					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
@@ -1278,10 +1278,12 @@ failed:
 */
 uint8_t a2dp_decoded_pcm_buffer_threshold_enable = 0;
 
-static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len)
+static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len, void *pentity, void *track)
 {
 	(void)p_pcm_data;
 	(void)p_len;
+	(void)pentity;
+	(void)track;
 	void *pmtx = NULL;
 	uint32_t queue_size = 0;
 
@@ -1368,7 +1370,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 			if (pbond_info) {
 				memcpy((void *)pbond_info->name, (void *)p_name_rsp->name, RTK_BT_GAP_DEVICE_NAME_LEN);
 				pbond_info->name_contained = 1;
-				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 					a2dp_demo_bond_info_dump();
 				} else {
@@ -2070,10 +2072,21 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_handler(void *arg)
 {
 	(void)arg;
 	bool pbp_tx_flag = false;
+	uint8_t i = 0, tx_iso_data_path_num = 0;
+	tx_iso_data_path_num = app_bt_le_audio_iso_data_path_get_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
+	app_lea_iso_data_path_t *p_iso_path = NULL;
 	pbp_tx_flag = pbp_broadcast_dequeue_flag && a2dp_play_flag;
 
-	if (pbp_tx_flag) {
-		if (g_pbp_bsrc_encode_task.run) {
+	if (g_pbp_bsrc_encode_task.run) {
+		for (i = 0 ; i < tx_iso_data_path_num; i++) {
+			p_iso_path = app_bt_le_audio_iso_data_path_find_by_idx(i, RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
+			if (p_iso_path == NULL) {
+				BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+				continue;
+			}
+			p_iso_path->pkt_seq_num ++;
+		}
+		if (pbp_tx_flag) {
 			if (g_pbp_brc_encode_data_sem) {
 				osif_sem_give(g_pbp_brc_encode_data_sem);
 			}
@@ -2176,7 +2189,6 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 		BT_APP_DUMPBUF(BT_APP_DEBUG, __func__, p_data, data_len);
 		p_iso_path->status_fail_cnt++;
 	}
-	p_iso_path->pkt_seq_num ++;
 	app_bt_le_audio_iso_data_tx_statistics(p_iso_path);
 
 	return ret;
@@ -2348,6 +2360,7 @@ static void app_bt_le_audio_pbp_encode_data_control(bool enable)
 			BT_APP_PRINT(BT_APP_WARNING, "%s: encode task is alreay disabled\r\n", __func__);
 			return ;
 		}
+		g_pbp_brc_task_enable = false;
 		app_bt_le_audio_pbp_bsrc_send_timer_deinit();
 		if (g_pbp_bsrc_encode_task.hdl) {
 			g_pbp_bsrc_encode_task.run = 0;
@@ -2923,7 +2936,7 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 					goto failed;
 				}
 				/* Load reconnect info from file system */
-				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Load a2dp demo bond info table success \r\n");
 					/* dump bond info */
 					a2dp_demo_bond_info_dump();

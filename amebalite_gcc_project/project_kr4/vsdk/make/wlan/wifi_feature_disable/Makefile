@@ -18,6 +18,9 @@ endif
 ifneq ($(CONFIG_WIFI_ANTDIV_ENABLE),y)
 CSRC += $(DIR)/wifi_feature_dis_antdiv.c
 endif
+ifneq ($(CONFIG_WIFI_SPEAKER_ENABLE),y)
+CSRC += $(DIR)/wifi_feature_dis_speaker.c
+endif
 endif
 
 ifneq ($(CONFIG_WIFI_11K_ENABLE)_$(CONFIG_WIFI_11V_ENABLE)_$(CONFIG_WIFI_11R_ENABLE), y_y_y)

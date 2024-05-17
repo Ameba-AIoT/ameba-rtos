@@ -361,6 +361,21 @@ int32_t RTAudioTrack_GetTimestamp(struct RTAudioTrack *track, RTAudioTimestamp *
 int32_t RTAudioTrack_GetPresentTime(struct RTAudioTrack *track, int64_t *now_ns, int64_t *audio_ns);
 
 /**
+ * @brief Get trigger timestamp of track.
+ *
+ * @param audio_track is the pointer of struct RTAudioTrack.
+ * @param trigger_ns the time render is triggered(start or stop).
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * AUDIO_OK | the operation is successful.
+ * AUDIO_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioTrack_GetTriggerTimestamp(struct RTAudioTrack *audio_track, int64_t *trigger_ns);
+
+/**
  * @brief Set params of track.
  *
  * @param track is the pointer of struct RTAudioTrack.

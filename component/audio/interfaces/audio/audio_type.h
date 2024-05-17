@@ -37,6 +37,9 @@
 #ifndef AMEBA_FWK_MEDIA_AUDIO_INTERFACES_AUDIO_AUDIO_TYPE_H
 #define AMEBA_FWK_MEDIA_AUDIO_INTERFACES_AUDIO_AUDIO_TYPE_H
 
+#include <stdint.h>
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -191,6 +194,30 @@ enum {
 	/** allows less data for service to write to HAL one time */
 	RTAUDIO_OUT_MIN_FRAMES_STAGE2  = 1,
 };
+
+static inline size_t RTAudio_GetAudioBytesPerSample(int32_t format)
+{
+	size_t size = 0;
+
+	switch (format) {
+	case RTAUDIO_FORMAT_PCM_32_BIT:
+	case RTAUDIO_FORMAT_PCM_8_24_BIT:
+		size = sizeof(int32_t);
+		break;
+	case RTAUDIO_FORMAT_PCM_24_BIT_PACKED:
+		size = sizeof(uint8_t) * 3;
+		break;
+	case RTAUDIO_FORMAT_PCM_16_BIT:
+		size = sizeof(int16_t);
+		break;
+	case RTAUDIO_FORMAT_PCM_8_BIT:
+		size = sizeof(uint8_t);
+		break;
+	default:
+		break;
+	}
+	return size;
+}
 
 #ifdef __cplusplus
 }

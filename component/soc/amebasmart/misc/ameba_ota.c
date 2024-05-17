@@ -28,25 +28,42 @@ extern void sys_reset(void);
 u32 ota_get_cur_index(u32 idx)
 {
 	u32 PhyAddr;
-	(void)idx;
-
+	u32 AddrStart;
 	RSIP_REG_TypeDef *RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
-	u32 AddrStart = RSIP->FLASH_MMU[0].RSIP_REMAPxOR;
+
+	if (idx == OTA_IMGID_BOOT) {
+		AddrStart = RSIP->FLASH_MMU[MMU_BOOTLOADER_IDX].RSIP_REMAPxOR;
+	} else {
+		AddrStart = RSIP->FLASH_MMU[MMU_LP_IDX].RSIP_REMAPxOR;
+	}
 
 	if (IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1] == 0) {
+		flash_get_layout_info(IMG_BOOT, &IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_1], NULL);
+		flash_get_layout_info(IMG_BOOT_OTA2, &IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_2], NULL);
 		flash_get_layout_info(IMG_APP_OTA1, &IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1], NULL);
+		flash_get_layout_info(IMG_APP_OTA2, &IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_2], NULL);
 	}
 
 	if (AddrStart & RSIP_BIT_REMAP_x_ENABLE) {
 		PhyAddr = (AddrStart >> 9) << 5;
+		if (idx == OTA_IMGID_APP) {
+			/*add certificate and manifest*/
+			PhyAddr = PhyAddr - 0x2000;
 
-		/*add certificate and manifest*/
-		PhyAddr = PhyAddr - 0x2000;
-
-		if (PhyAddr == IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1]) {
-			return OTA_INDEX_1;
+			if (PhyAddr == IMG_ADDR[idx][OTA_INDEX_1]) {
+				return OTA_INDEX_1;
+			} else {
+				return OTA_INDEX_2;
+			}
 		} else {
-			return OTA_INDEX_2;
+			/*add manifest*/
+			PhyAddr = PhyAddr - 0x1000;
+
+			if (PhyAddr == IMG_ADDR[idx][OTA_INDEX_1]) {
+				return OTA_INDEX_1;
+			} else {
+				return OTA_INDEX_2;
+			}
 		}
 	}
 

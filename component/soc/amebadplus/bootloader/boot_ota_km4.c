@@ -73,10 +73,12 @@ u8 BOOT_OTA_SlotSelect(void)
 	/* ----1 load certificate(Slot A & Slot B) from flash to SRAM, get full version and check validation---- */
 	for (i = 0; i < 2; i++) {
 		_memcpy((void *)&Cert[i], (void *)OTA_Region[IMG_CERT][i], sizeof(Certificate_TypeDef));
-		_memcpy((void *)&Signature[i], (void *)(OTA_Region[IMG_CERT][i] + Cert[i].TableSize), SIGN_MAX_LEN);
-		_memcpy((void *)&Manifest[i], (void *)OTA_Region[IMG_IMG2][i], sizeof(Manifest_TypeDef)); // load img2 manifest together
 
 		if (_memcmp(Cert[i].Pattern, ImagePattern, sizeof(ImagePattern)) == 0) {
+			/*do signature copy only when cert valid*/
+			_memcpy((void *)&Signature[i], (void *)(OTA_Region[IMG_CERT][i] + Cert[i].TableSize), SIGN_MAX_LEN);
+			_memcpy((void *)&Manifest[i], (void *)OTA_Region[IMG_IMG2][i], sizeof(Manifest_TypeDef)); // load img2 manifest together
+
 			MajorVer[i] = (u16)Cert[i].MajorKeyVer;
 			MinorVer[i] = (u16)Cert[i].MinorKeyVer;
 			Vertemp = (MajorVer[i] << 16) | MinorVer[i]; // get 32-bit full version number

@@ -23,6 +23,12 @@
 #define AUDIO_HW_AMPLIFIER_DISABLE_TIME 1
 
 /*
+ * Set 1 to let hal control amplifier's enable and disable automatically.
+ * Set 0 to let user control amplifier's enable and disable.
+ */
+#define AUDIO_HW_AMPLIFIER_CONTROL_ENABLE  1
+
+/*
  *When no sound playing, should amplifier mute? Set 1 if user wants amplifier mute, set
  *0 if user wants amplifier stay unmute.
  *For d2 and lite demo board, our hardware design makes sure aec noise acceptable, if
@@ -76,7 +82,7 @@
  *Define I2S out sport index, for example, if I2S in using sport3, set 3 as value here.
  *For I2S out, soc always works as master.
  */
-#define AUDIO_I2S_OUT_SPORT_INDEX       3
+#define AUDIO_I2S_OUT_SPORT_INDEX       0
 
 /*
  *Define I2S out pins.
@@ -158,5 +164,19 @@
  */
 #define AUDIO_OUT_TSTAMP_TYPE           AUDIO_TSTAMP_BY_COUNTER
 
+/*
+ *Set 1 to start audio hardware playback by user.
+ *Set 0 to start audio hardware playback by HAL.
+ *Normally we set it as 0, if user sets 1 here, please
+ *remember to start audio sport tx in application.
+ */
+#define AUDIO_DELAY_START                      0
+
+/*
+ *Set 1 to use native system time for timestamp.
+ *Set 0 to use other time for timestamp.
+ *Please always use 1.
+ */
+#define AUDIO_USING_NATIVE_TIME                 1
 
 #endif

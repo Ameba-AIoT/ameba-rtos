@@ -362,6 +362,8 @@ log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"ATSC", fATSC, {NULL, NULL}},	// Clear OTA signature
 	{"ATSR", fATSR, {NULL, NULL}},	// Recover OTA signature
+
+#ifndef CONFIG_MP_INCLUDED
 #if (configGENERATE_RUN_TIME_STATS == 1)
 	{"ATSP", fATSP, {NULL, NULL}},
 //	{"ATSS", fATSS, {NULL, NULL}},	// Show CPU stats==》改成开始和停止输出信息，以及秒级间隔。
@@ -370,7 +372,7 @@ log_item_t at_sys_items[] = {
 #if defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG
 	{"ATSV", fATSV},				// Write SW version for wifi logo test
 #endif
-
+#endif /* ifndef CONFIG_MP_INCLUDED */
 #endif
 };
 

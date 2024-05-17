@@ -38,6 +38,16 @@ do
             cat $current_dir/warning.txt|grep "error"
             exit 1
             ;;
+        "x" | --build4)
+            git restore ../menuconfig/.config
+            git restore ../menuconfig/.config_km0
+            git restore ../menuconfig/.config_km4
+            git restore inc/platform_autoconf.h
+            git restore ../project_km4/inc/platform_autoconf.h
+
+            git status -uno
+            exit 1
+            ;;
         *)
             echo "Internal error!!!"
             exit 1

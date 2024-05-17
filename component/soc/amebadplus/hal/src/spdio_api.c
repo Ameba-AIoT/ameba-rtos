@@ -121,7 +121,7 @@ s8 spdio_rx_done_cb(void *padapter, void *data, u16 offset, u16 pktsize, u8 type
 	if (obj) {
 		return obj->rx_done_cb(obj, buf, (u8 *)(buf->buf_addr + offset), pktsize, type);
 	} else {
-		RTK_LOGE(TAG, "spdio rx done callback function is null!");
+		RTK_LOGS_LVL(TAG, RTK_LOG_ERROR, "spdio rx done callback function is null!");
 	}
 	return SUCCESS;
 }
@@ -133,7 +133,7 @@ s8 spdio_tx_done_cb(void *padapter, IN u8 *data)
 	if (obj) {
 		return obj->tx_done_cb(obj, buf);
 	} else {
-		RTK_LOGE(TAG, "spdio tx done callback function is null!");
+		RTK_LOGS(TAG, "spdio tx done callback function is null!");
 	}
 	return SUCCESS;
 }
@@ -314,29 +314,29 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 		if (unlikely(pSPDIODev->TxOverFlow != 0)) {
 			pSPDIODev->TxOverFlow = 0;
 			reg = SDIO_DMA_CTRL_Get();
-			RTK_LOGW(TAG, "SDIO TX Overflow Case: Reg DMA_CTRL==0x%lx %lx %lx %lx\n", (reg >> 24) & 0xff, (reg >> 16) & 0xff, (reg >> 8) & 0xff,
-					 (reg) & 0xff);
+			RTK_LOGS_LVL(TAG, RTK_LOG_WARN, "SDIO TX Overflow Case: Reg DMA_CTRL==0x%x %x %x %x\n", (reg >> 24) & 0xff, (reg >> 16) & 0xff, (reg >> 8) & 0xff,
+						 (reg) & 0xff);
 		} else {
-			RTK_LOGW(TAG, "SDIO TX Data Read False Triggered!!, TXBDWPtr=0x%x\n", TxBDWPtr);
+			RTK_LOGS_LVL(TAG, RTK_LOG_WARN, "SDIO TX Data Read False Triggered!!, TXBDWPtr=0x%x\n", TxBDWPtr);
 			goto exit;
 		}
 	}
 
 	do {
-		RTK_LOGI(TAG, "SDIO_TX_DataReady: TxBDWPtr=%d TxBDRPtr=%d\n", TxBDWPtr, pSPDIODev->TXBDRPtr);
+		RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "SDIO_TX_DataReady: TxBDWPtr=%d TxBDRPtr=%d\n", TxBDWPtr, pSPDIODev->TXBDRPtr);
 		pTXBD = (SPDIO_TX_BD *)(pSPDIODev->pTXBDAddrAligned + pSPDIODev->TXBDRPtr);
 		pTxBdHdl = pSPDIODev->pTXBDHdl + pSPDIODev->TXBDRPtr;
 		pTxDesc = (PINIC_TX_DESC)(pTXBD->Address);
 		DCache_Invalidate((u32)pTxDesc, sizeof(INIC_TX_DESC));
 
-		RTK_LOGI(TAG, "SDIO_TX_DataReady: PktSz=%d Offset=%d\n", pTxDesc->txpktsize, pTxDesc->offset);
+		RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "SDIO_TX_DataReady: PktSz=%d Offset=%d\n", pTxDesc->txpktsize, pTxDesc->offset);
 
 		if ((pTxDesc->txpktsize + pTxDesc->offset) <= obj->rx_bd_bufsz) {
 			// use the callback function to fordward this packet to target(WLan) driver
 			ret = spdio_rx_done_cb(obj, (u8 *)pTxBdHdl->priv, pTxDesc->offset, pTxDesc->txpktsize, pTxDesc->type);
 			if (ret == FAIL) {
 				pSPDIODev->WaitForTxbuf = _TRUE;
-				RTK_LOGW(TAG, "spdio_rx_done_cb return fail!\n");
+				RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "spdio_rx_done_cb return fail!\n");
 			} else {
 				pSPDIODev->WaitForTxbuf = _FALSE;
 			}
@@ -375,7 +375,7 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 
 	// if not all TX data were processed, set an event to trigger SDIO_Task to process them later
 	if (isForceBreak) {
-		RTK_LOGW(TAG, "SDIO_TX Force Break: TXBDWP=0x%x TXBDRP=0x%x\n", TxBDWPtr, pSPDIODev->TXBDRPtr);
+		RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "SDIO_TX Force Break: TXBDWP=0x%x TXBDRP=0x%x\n", TxBDWPtr, pSPDIODev->TXBDRPtr);
 	}
 
 exit:
@@ -406,7 +406,7 @@ void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 			_memset((void *)pRXBD, 0, sizeof(SPDIO_RX_BD));	// clean this RX_BD
 			pRxBdHdl->isFree = 1;
 		} else {
-			RTK_LOGW(TAG, "SDIO_Recycle_Rx_BD: Warring, Recycle a Free RX_BD,RXBDRPtr=%d\n", pgSPDIODev->RXBDRPtr);
+			RTK_LOGS_LVL(TAG, RTK_LOG_WARN, "SDIO_Recycle_Rx_BD: Warring, Recycle a Free RX_BD,RXBDRPtr=%d\n", pgSPDIODev->RXBDRPtr);
 		}
 		pgSPDIODev->RXBDRPtr++;
 		if (pgSPDIODev->RXBDRPtr >= obj->tx_bd_num) {
@@ -418,7 +418,7 @@ void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 		}
 	}
 	SDIO_INTConfig(BIT_C2H_DMA_OK, ENABLE);
-	RTK_LOGI(TAG, "<==SDIO_Recycle_Rx_BD(%lu)\n", FreeCnt);
+	RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "<==SDIO_Recycle_Rx_BD(%u)\n", FreeCnt);
 
 }
 
@@ -450,7 +450,7 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 		rtos_sema_take(pgSPDIODev->IrqSema, RTOS_MAX_TIMEOUT);
 
 		IntStatus = SDIO_INTStatus();
-		RTK_LOGI(TAG, "%s:ISRStatus=0x%x\n", __FUNCTION__, IntStatus);
+		RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "%s:ISRStatus=0x%x\n", __FUNCTION__, IntStatus);
 
 		SDIO_INTClear(IntStatus);	// clean the ISR
 		InterruptEn(SDIO_IRQ, SPDIO_IRQ_PRIORITY);
@@ -472,7 +472,7 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 			pgSPDIODev->TxOverFlow = 1;
 		}
 
-		RTK_LOGI(TAG, "%s @2 IntStatus=0x%x\n", __FUNCTION__, IntStatus);
+		RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "%s @2 IntStatus=0x%x\n", __FUNCTION__, IntStatus);
 	}
 }
 

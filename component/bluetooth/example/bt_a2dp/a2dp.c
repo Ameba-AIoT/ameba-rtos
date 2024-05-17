@@ -971,7 +971,7 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 						memset((void *)&a2dp_demo_bond_table[i], 0, sizeof(a2dp_demo_bond_info_t));
 					}
 				}
-				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 				} else {
 					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
@@ -1040,7 +1040,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 			if (pbond_info) {
 				memcpy((void *)pbond_info->name, (void *)p_name_rsp->name, RTK_BT_GAP_DEVICE_NAME_LEN);
 				pbond_info->name_contained = 1;
-				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 					a2dp_demo_bond_info_dump();
 				} else {
@@ -1062,7 +1062,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		uint8_t *bd_addr = (uint8_t *)param;
 		if (a2dp_demo_auto_reconnect) {
 			/* write reconnect info to file system */
-			if (rt_kv_set(a2dp_demo_filesystem_key, (void *)bd_addr, 6) == 1) {
+			if (rt_kv_set(a2dp_demo_filesystem_key, (void *)bd_addr, 6) == 6) {
 				printf("[A2DP Demo] Save a2dp demo reconnect data success \r\n");
 			} else {
 				printf("[A2DP Demo] Fail to save a2dp reconnect data \r\n");
@@ -1859,7 +1859,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 				a2dp_demo_auto_reconnect_try_count = RTK_BT_DEMO_RECONNECT_COUNT;
 			}
 			/* Load reconnect info from file system */
-			if (rt_kv_get(a2dp_demo_filesystem_key, (void *)remote_bd_addr, 6) == 1) {
+			if (rt_kv_get(a2dp_demo_filesystem_key, (void *)remote_bd_addr, 6) == 6) {
 				printf("[A2DP Demo] Load a2dp demo reconnect data success \r\n");
 				/* avoid another device inquiry req and paging our dut */
 				rtk_bt_br_gap_set_radio_mode(RTK_BT_BR_GAP_RADIO_MODE_CONNECTABLE);
@@ -1875,7 +1875,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 				goto failed;
 			}
 			/* Load reconnect info from file system */
-			if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == 1) {
+			if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
 				printf("[A2DP Demo] Load a2dp demo bond info table success \r\n");
 				/* dump bond info */
 				a2dp_demo_bond_info_dump();

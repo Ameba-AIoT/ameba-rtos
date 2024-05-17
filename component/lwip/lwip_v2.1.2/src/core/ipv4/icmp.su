@@ -1,4 +1,0 @@
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/ipv4/icmp.c:360:1:icmp_send_response	64	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/ipv4/icmp.c:88:1:icmp_input	48	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/ipv4/icmp.c:328:1:icmp_dest_unreach	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/ipv4/icmp.c:343:1:icmp_time_exceeded	0	static

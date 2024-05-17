@@ -28,7 +28,9 @@ endif
 ifeq ($(CONFIG_WLAN),y)
 # AP
 ifeq ($(CONFIG_AS_INIC_AP), y)
+ifneq ($(CONFIG_MP_INCLUDED),y)
 COMPONENT += network
+endif
 COMPONENT += api
 COMPONENT += utilities
 
@@ -42,7 +44,9 @@ else ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
 COMPONENT += api
 COMPONENT += wlan
 COMPONENT += utilities
+ifneq ($(CONFIG_MP_INCLUDED),y)
 COMPONENT += network
+endif
 endif
 endif
 ifeq ($(CONFIG_MBED_TLS_ENABLED),y)

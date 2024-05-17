@@ -120,7 +120,11 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_AS_INIC_NP_FOR_KM0 y
 		define_bool CONFIG_AS_INIC_AP_FOR_KM4 y
-		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_KM4 n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 y
 	fi
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
@@ -134,8 +138,12 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	fi
 
 #	KM0 firmware follow WLAN menu	
-	define_bool CONFIG_WIFI_FW_EN_FOR_KM0 y
-	
+	if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+		define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
+	else
+		define_bool CONFIG_WIFI_FW_EN_FOR_KM0 y
+	fi
+
 	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
 		bool "Enable WPS"		CONFIG_ENABLE_WPS_FOR_KM4
 		if [ "$CONFIG_ENABLE_WPS_FOR_KM4" = "y" ]; then
@@ -155,7 +163,8 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	bool "Enable 11K"		CONFIG_WIFI_11K_ENABLE
 	bool "Enable 11V"		CONFIG_WIFI_11V_ENABLE
 	bool "Enable 11R"		CONFIG_WIFI_11R_ENABLE
-
+	bool "Enable WIFI SPEAKER"		CONFIG_WIFI_SPEAKER_ENABLE
+	
 	mainmenu_option next_comment
 	comment '< CONFIG LWIP'
 	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then

@@ -1,4 +1,0 @@
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/api/netdb.c:87:1:lwip_gethostbyname	32	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/api/netdb.c:162:1:lwip_gethostbyname_r	64	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/api/netdb.c:236:1:lwip_freeaddrinfo	16	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/api/netdb.c:269:1:lwip_getaddrinfo	64	static

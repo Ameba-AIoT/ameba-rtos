@@ -22,7 +22,7 @@ typedef struct wifi_roaming_ap {
 	u8 	password[65];
 	u8	key_idx;
 	s32	rssi;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	u8	ip[4];
 #endif
 } wifi_roaming_ap_t;
@@ -106,7 +106,7 @@ void wifi_roaming_thread(void *param)
 	memset(&setting, 0, sizeof(rtw_wifi_setting_t));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	uint8_t *IP = LwIP_GetIP(0);
 #endif
 	printf("\nExample: wifi_roaming \n");
@@ -121,7 +121,7 @@ void wifi_roaming_thread(void *param)
 					strcpy((char *)roaming_ap.password, (char const *)setting.password);
 					roaming_ap.key_idx = setting.key_idx;
 					memcpy(roaming_ap.bssid, setting.bssid, 6);
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 					memcpy(roaming_ap.ip, IP, 4);
 #endif
 					if (pscan_enable == _TRUE) {
@@ -153,7 +153,7 @@ connect_ap:
 							connect_param.password_len =  strlen((char const *)ap_list[i]->password);
 							connect_param.key_id = ap_list[i]->key_idx;
 							if (RTW_SUCCESS == wifi_connect(&connect_param, 1)) {
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 
 								LwIP_DHCP(0, DHCP_START);
 

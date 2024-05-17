@@ -39,23 +39,27 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #include "at_intf_uart.h"
 #include "lwip_netconf.h"
 
-extern void at_wifi_init(void);
 extern void at_sys_init(void);
+#ifndef CONFIG_MP_INCLUDED
+extern void at_wifi_init(void);
 extern void at_mqtt_init(void);
+#endif
+#if defined(CONFIG_BT) && CONFIG_BT
+extern void at_bt_init(void);
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+extern void at_mp_init(void);
+#endif
+#endif
 
 _WEAK
 struct static_ip_config user_static_ip;
 
-_WEAK void print_wlan_help(void)
-{
-
-}
 #else
 /* apply old atcmd, which should be deleted after new version is ready */
 #include "atcmd_wifi.h"
 extern void at_wifi_init(void);
 extern void at_sys_init(void);
-#endif
+#endif /* CONFIG_NEW_ATCMD */
 
 void at_log_init(void);
 
@@ -65,11 +69,13 @@ log_init_t *__log_init_begin__;
 log_init_t *__log_init_end__;
 log_init_t log_init_table[] = {
 
+#ifndef CONFIG_MP_INCLUDED
 #if CONFIG_WLAN
 	at_wifi_init,
 #endif
+#endif
 
-#if defined(CONFIG_802154_ZIGBEE_EN)
+#if 0 /* defined(CONFIG_802154_ZIGBEE_EN) */
 	at_wpan_init,
 #endif
 
@@ -83,7 +89,9 @@ log_init_t log_init_table[] = {
 	at_sys_init,
 
 #ifdef CONFIG_NEW_ATCMD
+#ifndef CONFIG_MP_INCLUDED
 	at_mqtt_init,
+#endif
 #endif
 };
 #else
@@ -352,11 +360,21 @@ void at_set_debug_mask(unsigned int newDbgFlag)
 
 void print_help_msg(void)
 {
+#ifdef CONFIG_NEW_ATCMD /* TODO: Delete this later. */
+	print_system_help();
+#ifndef CONFIG_MP_INCLUDED
 #if CONFIG_WLAN
-	extern void print_wlan_help(void);
 	print_wlan_help();
 #endif
-//add other help message print here
+	print_mqtt_help();
+#endif
+#if defined(CONFIG_BT) && CONFIG_BT
+	print_bt_help();
+#endif
+#if 0
+	print_tcpip_help();
+#endif
+#endif /* CONFIG_NEW_ATCMD */
 }
 
 #if CONFIG_WLAN

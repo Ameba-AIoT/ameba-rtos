@@ -472,7 +472,7 @@ extern void dhcps_deinit(void);
 int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 {
 	unsigned char idx = 0;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr;
 	u32 netmask;
 	u32 gw;
@@ -489,7 +489,7 @@ int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 	}
 
 	// stop dhcp server
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit();
 #endif
 
@@ -502,7 +502,7 @@ int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 	} else
 #endif
 	{
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 		dhcps_deinit();
 		ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 		netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
@@ -544,7 +544,7 @@ int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 	}
 #endif
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	// start dhcp server
 	dhcps_init(&xnetif[idx]);
 #endif
@@ -1235,7 +1235,7 @@ static void ConnectTargetAP(void)
 		return;
 	}
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
 	LwIP_DHCP(0, DHCP_START);
 #endif
@@ -1607,7 +1607,7 @@ exit:
 
 #define STACKSIZE				512
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 
@@ -1616,7 +1616,7 @@ static void example_start_captive_portal(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 	u32 ip_addr;
 	u32 netmask;
@@ -1625,7 +1625,7 @@ static void example_start_captive_portal(void *param)
 
 	int timeout = 20;
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit();
 	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
@@ -1676,7 +1676,7 @@ static void example_start_captive_portal(void *param)
 		timeout --;
 	}
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	dhcps_init(pnetif);
 #endif
 

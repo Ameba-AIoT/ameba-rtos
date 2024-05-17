@@ -42,8 +42,9 @@ LINK_APP_LIB += $(APP_LIB)
 
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP), y)
+ifneq ($(CONFIG_MP_INCLUDED), y)
 image2_ns:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
-
+endif
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
 
 # Single Core Library
@@ -95,6 +96,7 @@ ifeq ($(CONFIG_RPC_EN),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
 endif
 ifneq ($(CONFIG_AUDIO_RPC_AFE)$(CONFIG_AUDIO_LOCAL_AFE)$(CONFIG_AUDIO_FWK),)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 ifeq ($(CONFIG_RPC_EN),y)
@@ -165,7 +167,9 @@ ifeq ($(CONFIG_AS_INIC_AP), y)
 	#@+$(MAKE) -C make/network/http2 all
 # build NP libs
 else ifeq ($(CONFIG_AS_INIC_NP), y)
+ifneq ($(CONFIG_MP_INCLUDED), y)
 	@+$(MAKE) -C make/target/wifi_fw all
+endif
 	@+$(MAKE) -C make/rtk_coex all
 # build single core wifi libs
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)

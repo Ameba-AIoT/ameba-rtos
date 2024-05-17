@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "utils/os.h"
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #endif
 #include "wifi_conf.h"
@@ -223,7 +223,7 @@ static unsigned char wps_stop_notified = 0;
 void wps_check_and_show_connection_info(void)
 {
 	struct _rtw_wifi_setting_t setting;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	/* Start DHCP Client */
 	LwIP_DHCP(0, DHCP_START);
 #endif

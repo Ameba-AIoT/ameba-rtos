@@ -55,8 +55,9 @@ void app_pmu_init(void)
 	pmu_acquire_wakelock(PMU_OS);
 	pmu_acquire_wakelock(PMU_KM4_RUN);
 	pmu_init_wakeup_timer();
-
+#ifndef CONFIG_MP_INCLUDED
 	SOCPS_sleepInit();
+#endif
 }
 
 void app_IWDG_refresh(void *arg)

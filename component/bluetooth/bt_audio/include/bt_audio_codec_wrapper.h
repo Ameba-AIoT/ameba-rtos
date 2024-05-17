@@ -112,6 +112,7 @@ struct audio_codec_entity_priv {
 	int (*decoder_num_channels)(void *pentity);
 	int (*decoder_sample_rate)(void *pentity);
 	uint16_t (*get_pcm_buffer_from_decode)(void *p_pcm_buf, uint16_t p_len);
+        void *user_param;
 };
 
 /** @brief typedef struct audio_application_entity_priv */

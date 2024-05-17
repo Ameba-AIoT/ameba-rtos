@@ -35,7 +35,10 @@ void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 	}
 
 	/* wait for API calling done */
-	wait_for_completion(&event_priv->api_ret_sema);
+	if (wait_for_completion_timeout(&event_priv->api_ret_sema, msecs_to_jiffies(2000)) == 0) {
+		dev_err(global_idev.fullmac_dev, "wait ret value timeout!!\n");
+		goto exit;
+	}
 
 	ret_msg = (struct inic_api_info *)event_priv->rx_api_ret_msg;
 	if (ret_msg != NULL) {
@@ -903,6 +906,48 @@ int llhw_wifi_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 	return ret;
 }
 
+int llhw_wifi_set_country_code(char *cc)
+{
+	int ret = 0;
+	u8 param[2];
+
+	if (strlen(cc) != 2) {
+		dev_err(global_idev.fullmac_dev, "%s: the length of country is not 2.\n", __func__);
+		return -EINVAL;
+	}
+
+	if ((cc[0] == '0') && (cc[1] == '0')) {
+		param[0] = 0xff;
+		param[1] = 0xff;
+	} else {
+		memcpy(param, cc, 2);
+	}
+
+	llhw_send_msg(INIC_API_WIFI_SET_COUNTRY_CODE, param, sizeof(param), (u8 *)&ret, sizeof(int));
+
+	return ret;
+}
+
+int llhw_wifi_get_country_code(struct country_code_table_t *table)
+{
+	int ret = 0;
+
+	if (table == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: input is NULL.\n", __func__);
+		return -EINVAL;
+	}
+
+	llhw_send_msg(INIC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)table, sizeof(struct country_code_table_t));
+
+	if ((table->char2[0] == 0xff) && (table->char2[1] == 0xff)) {
+		table->char2[0] = '0';
+		table->char2[1] = '0';
+	}
+
+	return ret;
+}
+
+
 #ifdef CONFIG_P2P
 void llhw_wifi_set_p2p_role(enum rtw_p2p_role role)
 {
@@ -925,4 +970,47 @@ int llhw_wifi_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 	return ret;
 }
 #endif
+
+int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm)
+{
+	int ret = 0;
+	u32 size = 0, mdns_para_len = 0;
+	u8 *ptr, *param;
+
+	size = sizeof(struct H2C_WAROFFLOAD_PARM) + RTW_IP_ADDR_LEN + IPv6_ALEN + 4096;
+	ptr = param = (u8 *)kzalloc(size, GFP_KERNEL);
+
+	memcpy(ptr, offload_parm, sizeof(struct H2C_WAROFFLOAD_PARM));
+	ptr += sizeof(struct H2C_WAROFFLOAD_PARM);
+
+	memcpy(ptr, global_idev.ip_addr, RTW_IP_ADDR_LEN);
+	ptr += RTW_IP_ADDR_LEN;
+
+	/* TODO: copy IPv6 addr to send*/
+	ptr += IPv6_ALEN;
+
+	if (offload_parm->offload_en) {
+		if (offload_parm->sd_mdns_v4_rsp_en || offload_parm->sd_mdns_v4_wake_en ||
+			offload_parm->sd_mdns_v6_rsp_en || offload_parm->sd_mdns_v6_wake_en) {
+			rtw_wow_prepare_mdns_para(ptr + 4, &mdns_para_len);
+		} else {
+			mdns_para_len = 0;
+		}
+	} else {
+		mdns_para_len = 0;
+	}
+
+	printk("%s, mdns_para_len:%d\n", __func__, mdns_para_len);
+
+	*(u32 *)ptr = mdns_para_len;
+	size = size - 4096 + (mdns_para_len + 4);
+
+	print_hex_dump_bytes("mdns_para: ", DUMP_PREFIX_NONE, param, size);
+
+	llhw_send_msg(INIC_API_WAR_OFFLOAD_CTRL, param, size, (u8 *)&ret, sizeof(int));
+
+	kfree((void *)param);
+
+	return ret;
+}
 

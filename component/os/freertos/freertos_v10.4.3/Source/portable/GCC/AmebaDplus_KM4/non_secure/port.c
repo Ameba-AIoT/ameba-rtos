@@ -1079,5 +1079,8 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	/* Re-enable interrupts - see comments above the cpsid instruction()
 	above. */
 	__enable_irq();
+
+	/* fix warning in mp */
+	(void)tick_before_sleep;
 }
 

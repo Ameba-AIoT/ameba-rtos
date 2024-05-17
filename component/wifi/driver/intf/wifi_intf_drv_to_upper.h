@@ -81,25 +81,8 @@ extern int rtw_ap_start_api(struct _rtw_softap_info_t *softAP_config, unsigned c
 extern int rtw_scan_start_api(struct _rtw_scan_param_t *scan_param, unsigned char block);
 extern void rtw_joinbss_by_roaming(struct _rtw_network_info_t *connect_param);
 
-#ifdef CONFIG_WOWLAN_SD1
-extern int rtw_wowlan_ctrl(unsigned char wlan_idx, enum rtw_wowlan_option type, void *param);
-#endif
-
 extern int wifi_hal_iwpriv_command(unsigned char wlan_idx, char *cmd, int show_msg);
 #define rtw_iwpriv_command(wlan_idx, cmd,show_msg)	wifi_hal_iwpriv_command(wlan_idx, cmd,show_msg)
-
-//promisc related
-extern int promisc_filter_retransmit_pkt(unsigned char enable, unsigned char filter_interval_ms);
-extern int _promisc_set(enum rtw_promisc_level enabled, void (*callback)(unsigned char *, unsigned int, void *), unsigned char len_used);
-extern unsigned char _is_promisc_enabled(void);
-extern int _promisc_get_fixed_channel(void *fixed_bssid, unsigned char *ssid, int *ssid_length);
-extern void _promisc_filter_by_ap_and_phone_mac(unsigned char enable, void *ap_mac, void *phone_mac);
-extern int _promisc_set_mgntframe(unsigned char enable);
-extern int _promisc_get_chnl_by_bssid(unsigned char *bssid);
-extern void _promisc_update_candi_ap_rssi_avg(signed char rssi, unsigned char cnt);
-extern void _promisc_issue_probersp(unsigned char *da);
-extern void _promisc_stop_tx_beacn(void);
-extern void _promisc_resume_tx_beacn(void);
 
 #ifdef CONFIG_NAN
 int nan_intfs_init(void);

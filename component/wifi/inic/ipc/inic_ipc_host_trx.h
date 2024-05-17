@@ -34,6 +34,8 @@
 #define SKB_DATA_ALIGN(X)	(((X) + (4 - 1)) & ~(4 - 1))
 /* 308 from DP asm 2024/4/11 */
 #define WIFI_STACK_SIZE_INIC_TRX_HST	(512 + CONTEXT_SAVE_SIZE)
+
+#define INIC_SKIP_RX_TASK
 /* -------------------------------- Macros ---------------------------------- */
 /* ------------------------------- Data Types ------------------------------- */
 

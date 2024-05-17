@@ -184,7 +184,9 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 
+#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
+#endif
 
 #ifdef CONFIG_MBED_TLS_ENABLED
 	app_mbedtls_rom_init();

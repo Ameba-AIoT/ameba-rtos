@@ -20,16 +20,21 @@ include $(MAKE_INCLUDE_GEN)
 
 # Verbose flag
 V ?= 0
-ifeq (${V},0)
-        Q:=@
-        ECHO:=@echo
-else
+ifeq (${V},1)
         Q:=
-	ECHO:=@\#
+        ECHO:=@\#
+else
+        Q:=@
+	ECHO:=@echo
 endif
 # Code analyze link lib flag
 ifeq (${V},2)
 CODE_ANA ?= 1
+endif
+ifeq (${V},3)
+DAILY_BUILD = 1
+else
+DAILY_BUILD = 0
 endif
 export ABS_ROOTDIR MAKE_INCLUDE_GEN HOSTCC ECHO Q
 
@@ -87,6 +92,11 @@ include $(MAKE_INCLUDE_LIB)
 CODE_ANALYZE_PYTHON=python $(SCRIPT_DIR)/code_analyze.py
 STATIC_ANALYZE_PYTHON=python $(SCRIPT_DIR)/static_code_analyze.py
 EXTRACT_CODE_SIZE_PYTHON=python $(SCRIPT_DIR)/extract_code_size.py
+ifeq ($(CONFIG_MP_INCLUDED), y)
+    ANALYZE_MP_IMG = 1
+else
+    ANALYZE_MP_IMG = 0
+endif
 
 .PHONY: all build_target_folder menuconfig clean build_libraries
 
@@ -340,7 +350,7 @@ linker_loader:
 code_analyze:
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
-		$(CODE_ANALYZE_PYTHON); \
+		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
 	fi
 	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
 		$(STATIC_ANALYZE_PYTHON); \

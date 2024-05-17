@@ -26,7 +26,7 @@ cmd_reboot(
 	IN  u8  *argv[]
 )
 {
-	RTK_LOGI(TAG, "Rebooting ...\n\r");
+	RTK_LOGS(TAG, "Rebooting ...\n\r");
 
 	(void) argc;	/* To avoid gcc warnings */
 	(void) argv;	/* To avoid gcc warnings */
@@ -69,14 +69,14 @@ CmdTickPS(
 	}
 
 	if (_strcmp((const char *)argv[0], "dslp") == 0) {
-		DBG_8195A("dslp: KM4 AP\n");
+		RTK_LOGS(TAG, "dslp: KM4 AP\n");
 		pmu_release_deepwakelock(PMU_OS);
 		pmu_release_wakelock(PMU_OS);
 	}
 
 	if (_strcmp((const char *)argv[0], "get") == 0) { // get sleep & wake time
-		RTK_LOGI(TAG, "lockbit:%lx \n", pmu_get_wakelock_status());
-		RTK_LOGI(TAG, "dslp_lockbit:%lx\n", pmu_get_deepwakelock_status());
+		RTK_LOGS(TAG, "lockbit:%x \n", pmu_get_wakelock_status());
+		RTK_LOGS(TAG, "dslp_lockbit:%x\n", pmu_get_deepwakelock_status());
 	}
 
 	return _TRUE;
@@ -104,18 +104,18 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		Cnt = _strlen(DString);
 		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			RTK_LOGS(TAG, "string length(%u) should be odd \n", Cnt);
 			ret = FALSE;
 			goto exit;
 		}
 
 		Cnt = Cnt / 2;
 		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
+			RTK_LOGS(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
 
-		RTK_LOGI(TAG, "efuse wmap write len:%lu, string len:%lu\n", Len, Cnt << 1);
+		RTK_LOGS(TAG, "efuse wmap write len:%u, string len:%u\n", Len, Cnt << 1);
 
 		for (index = 0; index < Len; index++) {
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
@@ -125,7 +125,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	}
 
 	if (_strcmp((const char *)argv[0], "rmap") == 0) {
-		RTK_LOGI(TAG, "efuse rmap \n");
+		RTK_LOGS(TAG, "efuse rmap \n");
 
 		u32 Addr = 0;
 		u32 Len = OTP_LMAP_LEN;
@@ -138,21 +138,21 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		ret = OTP_LogicalMap_Read(EfuseBuf, Addr, Len);
 
 		if (ret == _FAIL) {
-			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			RTK_LOGS(TAG, "EFUSE_LogicalMap_Read fail \n");
 		}
 
 		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
 			if (i % 16 == 0) {
-				RTK_LOGA(NOTAG, "\n\rEFUSE[%03lx]:", index);
+				RTK_LOGS(NOTAG, "\n\rEFUSE[%03x]:", index);
 			}
-			RTK_LOGA(NOTAG, " %02x", EfuseBuf[i]);
+			RTK_LOGS(NOTAG, " %02x", EfuseBuf[i]);
 		}
-		RTK_LOGA(NOTAG, "\n\r");
+		RTK_LOGS(NOTAG, "\n\r");
 
 	}
 
 	if (_strcmp((const char *)argv[0], "rraw") == 0) {
-		RTK_LOGI(TAG, "efuse rraw\n");
+		RTK_LOGS(TAG, "efuse rraw\n");
 
 		u32 Addr = 0;
 		u32 Len = OTP_USER_END;
@@ -168,12 +168,12 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		for (u32 i = 0, index = Addr; index < Addr + Len; index ++, i++) {
 			if (i % 16 == 0) {
-				RTK_LOGA(NOTAG, "\n\rRawMap[%03lx]:", index);
+				RTK_LOGS(NOTAG, "\n\rRawMap[%03x]:", index);
 			}
-			RTK_LOGA(NOTAG, " %02x", EfuseBuf[index]);
+			RTK_LOGS(NOTAG, " %02x", EfuseBuf[index]);
 		}
 
-		RTK_LOGA(NOTAG, "\n\r");
+		RTK_LOGS(NOTAG, "\n\r");
 	}
 
 	/* efuse wraw 0xA0 1 aa */
@@ -187,14 +187,14 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		Cnt = _strlen(DString);
 		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			RTK_LOGS(TAG, "string length(%u) should be odd \n", Cnt);
 			ret = FALSE;
 			goto exit;
 		}
 
 		Cnt = Cnt / 2;
 		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
+			RTK_LOGS(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
 
@@ -202,10 +202,10 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
-		RTK_LOGI(TAG, "efuse wraw write len:%lu, string len:%lu\n", Len, Cnt << 1);
+		RTK_LOGS(TAG, "efuse wraw write len:%u, string len:%u\n", Len, Cnt << 1);
 
 		for (index = 0; index < Len; index++) {
-			RTK_LOGI(TAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
+			RTK_LOGS(TAG, "wraw: %x %x \n", Addr + index, EfuseBuf[index]);
 			OTP_Write8(Addr + index, EfuseBuf[index]);
 		}
 	}
@@ -227,7 +227,7 @@ u32 cmd_dump_word(u16 argc, u8  *argv[])
 
 	/* get parameters */
 	if (argc < 1 || argc > 3) {
-		RTK_LOGE(TAG, "Wrong argument number!\r\n");
+		RTK_LOGS(TAG, "Wrong argument number!\r\n");
 		return _FALSE;
 	}
 	if (argc >= 3) {
@@ -246,7 +246,7 @@ u32 cmd_dump_word(u16 argc, u8  *argv[])
 	/* read encrypt image for FW protection */
 	if (IS_FLASH_ADDR(Src)) {
 		if (OTF_Enable != 0) {
-			RTK_LOGW(TAG, "RSIP enabled, Can't Read Flash.\n");
+			RTK_LOGS(TAG, "RSIP enabled, Can't Read Flash.\n");
 			return _TRUE;
 		}
 	}
@@ -259,7 +259,7 @@ u32 cmd_dump_word(u16 argc, u8  *argv[])
 		DCache_CleanInvalidate(Src, sizeof(u32) * Len);
 		rtk_log_memory_dump_word((u32 *)Src, Len);
 	} else {
-		RTK_LOGE(TAG, "Wrong cmd!\r\n");
+		RTK_LOGS(TAG, "Wrong cmd!\r\n");
 		return _FALSE;
 	}
 
@@ -280,7 +280,7 @@ u32 cmd_write_word(u16 argc, u8  *argv[])
 
 	Value = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
 
-	RTK_LOGA(NOTAG, "[%08lX] %08lX \n", Src, Value);
+	RTK_LOGS(NOTAG, "[%08lX] %08lX \n", Src, Value);
 
 	*(volatile u32 *)(Src) = Value;
 
@@ -322,17 +322,12 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t Ex: EW Address Value \n"
 	},
 	{
-		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
-		"\t\t wmap addr len data\n"
-		"\t\t rmap \n"
-		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x98\n"
-		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
-	},
-	{
 		(const u8 *)"REBOOT",	4, cmd_reboot,	(const u8 *)"\tREBOOT \n"
 		"\t\t reboot \n"
 		"\t\t reboot uartburn \n"
 	},
+
+#ifndef CONFIG_MP_INCLUDED
 	{
 		(const u8 *)"TICKPS",	4, CmdTickPS,	(const u8 *)"\tTICKPS \n"
 		"\t\t r: release os wakelock \n"
@@ -343,12 +338,21 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t Set the log display level of a module individually\n"
 		"\t\t <tag>: module label, If the tag is *, this will reset all tag levels except those added to the array\n"
 		"\t\t <level>:0, turn off log\n"
-		"\t\t 	   1, always (Resident)log\n"
-		"\t\t 	   2, error log\n"
-		"\t\t 	   3, warning log\n"
-		"\t\t 	   4, info log\n"
-		"\t\t 	   5, debug log\n"
+		"\t\t	   1, always (Resident)log\n"
+		"\t\t	   2, error log\n"
+		"\t\t	   3, warning log\n"
+		"\t\t	   4, info log\n"
+		"\t\t	   5, debug log\n"
 	},
+	{
+		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
+		"\t\t wmap addr len data\n"
+		"\t\t rmap \n"
+		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x98\n"
+		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
+	},
+
+#endif
 };
 
 u32

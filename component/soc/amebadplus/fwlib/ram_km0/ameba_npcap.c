@@ -165,11 +165,12 @@ void km4_resume(void)
 
 	SOCPS_AP_resume_config(ENABLE);
 
-#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if !defined(CONFIG_MP_INCLUDED) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 	extern void wifi_hal_system_resume_wlan(void);
 	//request FW leave 32k and wakeup driver, by rpwm int
 	wifi_hal_system_resume_wlan();
 #endif
+
 	/*KM4 rst will be released by PMC when PG wake, thus KM0 only need enable KM4 clk*/
 	km4_clock_on();
 }
@@ -221,7 +222,11 @@ void km4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_tickless_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
+#ifndef CONFIG_MP_INCLUDED
 	.Rxfunc = km4_tickless_ipc_int,
+#else
+	.Rxfunc = NULL,
+#endif
 	.RxIrqData = (void *) NULL,
 	.Txfunc = IPC_TXHandler,
 	.TxIrqData = (void *) NULL,

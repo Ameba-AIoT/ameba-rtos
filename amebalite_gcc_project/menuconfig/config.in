@@ -151,6 +151,23 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 				bool "    BLE Audio Common Audio Profile"					CONFIG_BT_CAP_MENU
 				bool "    BLE Audio Public Broadcast Profile"				CONFIG_BT_PBP_MENU
 				bool "    BLE Audio Telephony and Media Audio Profile"		CONFIG_BT_TMAP_MENU
+				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_BAP_FOR_KM4 y
+					define_bool CONFIG_BT_BAP_SUPPORT_FOR_KM4 y
+				fi
+				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_CAP_FOR_KM4 y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KM4 y
+				fi
+				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_PBP_FOR_KM4 y
+					define_bool CONFIG_BT_PBP_SUPPORT_FOR_KM4 y
+				fi
+				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_TMAP_FOR_KM4 y
+					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KM4 y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KM4 y
+				fi
 			fi
 			bool "  BT A2DP"												CONFIG_BT_A2DP_MENU
 			bool "  BT HFP"													CONFIG_BT_HFP_MENU
@@ -163,23 +180,6 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 #			bool "  BT A2DP and BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU
 			bool "  BT A2DP and BLE Audio PBP"								CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
 			bool "  BT A2DP and BLE Audio TMAP"								CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_BAP_FOR_KM4 y
-				define_bool CONFIG_BT_BAP_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_CAP_FOR_KM4 y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_PBP_FOR_KM4 y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_TMAP_FOR_KM4 y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_KM4 y
-			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
 				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_KM4 y
 				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
@@ -309,6 +309,23 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 				bool "    BLE Audio Common Audio Profile"					CONFIG_BT_CAP_MENU
 				bool "    BLE Audio Public Broadcast Profile"				CONFIG_BT_PBP_MENU
 				bool "    BLE Audio Telephony and Media Audio Profile"		CONFIG_BT_TMAP_MENU
+				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_BAP_FOR_KR4 y
+					define_bool CONFIG_BT_BAP_SUPPORT_FOR_KR4 y
+				fi
+				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_CAP_FOR_KR4 y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KR4 y
+				fi
+				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_PBP_FOR_KR4 y
+					define_bool CONFIG_BT_PBP_SUPPORT_FOR_KR4 y
+				fi
+				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_TMAP_FOR_KR4 y
+					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KR4 y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KR4 y
+				fi
 			fi
 			bool "  BT A2DP"												CONFIG_BT_A2DP_MENU
 			bool "  BT HFP"													CONFIG_BT_HFP_MENU
@@ -321,23 +338,6 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 #			bool "  BT A2DP and BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU
 			bool "  BT A2DP and BLE Audio PBP"								CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
 			bool "  BT A2DP and BLE Audio TMAP"								CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_BAP_FOR_KR4 y
-				define_bool CONFIG_BT_BAP_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_CAP_FOR_KR4 y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_PBP_FOR_KR4 y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_TMAP_FOR_KR4 y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_KR4 y
-			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
 				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_KR4 y
 				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KR4 y
@@ -466,7 +466,11 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_AS_INIC_AP_FOR_KR4 y
 		define_bool CONFIG_AS_INIC_NP_FOR_KM4 y
-		define_bool CONFIG_LWIP_LAYER_FOR_KR4 y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_KR4 n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_KR4 y
+		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM4 y
 	fi
 
@@ -475,21 +479,33 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_AS_INIC_AP_FOR_KM4 y
 		define_bool CONFIG_AS_INIC_NP_FOR_KR4 y
-		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_KM4 n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KR4 y
 	fi
 
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
-		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_KM4 n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM4 y
 	fi
 
 	if [ "$CONFIG_WIFI_KR4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KR4 y
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KR4 y
-		define_bool CONFIG_LWIP_LAYER_FOR_KR4 y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_KR4 n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_KR4 y
+		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KR4 y
 	fi
 	

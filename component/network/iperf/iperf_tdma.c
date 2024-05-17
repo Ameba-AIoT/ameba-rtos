@@ -1190,7 +1190,7 @@ void cmd_tcp(int argc, char **argv)
 				}
 			} else if (strcmp(argv[argv_count - 1], "-c") == 0) {
 				if (g_tcp_client_task) {
-					printf("\n\rTCP: TCP client is already running. Please enter \"ATWT=stop\" to stop it.");
+					printf("\n\rTCP: TCP client is already running. Please enter \"AT+IPERF=stop\" to stop it.");
 					return;
 				} else {
 					if (argc < (argv_count + 1)) {
@@ -1321,8 +1321,8 @@ void cmd_tcp(int argc, char **argv)
 
 	return;
 Exit:
-	printf("\n\r[ATWT] Command format ERROR!\n");
-	printf("\n\r[ATWT] Usage: ATWT=[-s|-c,host|stop],[options]\n");
+	printf("\n\r[AT+IPERF] Command format ERROR!\n");
+	printf("\n\r[AT+IPERF] Usage: AT+IPERF=[-s|-c,host|stop],[options]\n");
 	printf("\n\r   Client/Server:\n");
 	printf("  \r     stop           terminate client & server\n");
 	printf("  \r     -i    #        seconds between periodic bandwidth reports\n");
@@ -1336,8 +1336,8 @@ Exit:
 	printf("  \r     -t    #        time in seconds to transmit for (default 10 secs)\n");
 	printf("  \r     -n    #[KM]    number of bytes to transmit (instead of -t)\n");
 	printf("\n\r   Example:\n");
-	printf("  \r     ATWT=-s,-p,5002\n");
-	printf("  \r     ATWT=-c,192.168.1.2,-t,100,-p,5002\n");
+	printf("  \r     AT+IPERF=-s,-p,5002\n");
+	printf("  \r     AT+IPERF=-c,192.168.1.2,-t,100,-p,5002\n");
 	return;
 }
 
@@ -1423,7 +1423,7 @@ void cmd_udp(int argc, char **argv)
 				}
 			} else if (strcmp(argv[argv_count - 1], "-c") == 0) {
 				if (g_udp_client_task) {
-					printf("\n\rUDP: UDP client is already running. Please enter \"ATWU=stop\" to stop it.");
+					printf("\n\rUDP: UDP client is already running. Please enter \"AT+UDP=stop\" to stop it.");
 					return;
 				} else {
 					if (argc < (argv_count + 1)) {
@@ -1608,8 +1608,8 @@ void cmd_udp(int argc, char **argv)
 	return;
 
 Exit:
-	printf("\n\r[ATWU] Command format ERROR!\n");
-	printf("\n\r[ATWU] Usage: ATWU=[-s|-c,host|stop][options]\n");
+	printf("\n\r[AT+UDP] Command format ERROR!\n");
+	printf("\n\r[AT+UDP] Usage: AT+UDP=[-s|-c,host|stop][options]\n");
 	printf("\n\r   Client/Server:\n");
 	printf("  \r     stop           terminate client & server\n");
 	printf("  \r     -i    #        seconds between periodic bandwidth reports\n");
@@ -1627,7 +1627,7 @@ Exit:
 	printf("  \r     -S    #        set the IP 'type of service'\n");
 #endif
 	printf("\n\r   Example:\n");
-	printf("  \r     ATWU=-s,-p,5002\n");
-	printf("  \r     ATWU=-c,192.168.1.2,-t,100,-p,5002\n");
+	printf("  \r     AT+UDP=-s,-p,5002\n");
+	printf("  \r     AT+UDP=-c,192.168.1.2,-t,100,-p,5002\n");
 	return;
 }

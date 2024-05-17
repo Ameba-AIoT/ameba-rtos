@@ -38,6 +38,8 @@
 
 #endif
 
+#include "inic_sdio_protocal_offload.h"
+
 /* -------------------------------- Macros ---------------------------------- */
 #define FLAG_WLAN_IF_NOT_RUNNING		0xFFFFFFFF
 

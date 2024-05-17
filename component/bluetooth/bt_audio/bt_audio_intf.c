@@ -260,7 +260,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 					   (int)param.bits);
 			} else {
 				if (track->pcm_data_cb) {
-					track->pcm_data_cb(pdecode_frame_buffer->pbuffer, pcm_data_size);
+					track->pcm_data_cb(pdecode_frame_buffer->pbuffer, pcm_data_size, (void *)entity, (void *)track);
 				}
 				if (track->audio_track_hdl) {
 					rtk_bt_audio_track_play(track->audio_track_hdl, pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);

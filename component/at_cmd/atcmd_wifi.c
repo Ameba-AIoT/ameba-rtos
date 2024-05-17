@@ -17,6 +17,7 @@
 #include <wifi_intf_drv_to_upper.h>
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 struct static_ip_config user_static_ip;
 extern struct netif xnetif[NET_IF_NUM];
@@ -201,7 +202,7 @@ static rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *u
 	}
 
 	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		rtos_mem_free((u8 *)scan_buf);
+		rtos_mem_free((void *)scan_buf);
 		return RTW_ERROR;
 	}
 
@@ -216,9 +217,19 @@ static rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *u
 
 		print_scan_result(scanned_AP_info);
 	}
-	rtos_mem_free((u8 *)scan_buf);
+	rtos_mem_free((void *)scan_buf);
 
 	return RTW_SUCCESS;
+}
+
+static void at_wlconn_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLCONN=<ssid>,<pwd>[,<key_id>,<bssid>]\r\n");
+	at_printf("\t<ssid>:\t The wifi ssid, this parameter can not be empty\r\n");
+	at_printf("\t<pwd>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
+	at_printf("\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
+	at_printf("\t<bssid>:\tA hexnumber of 6 bytes, e.g. \"11aa22cc33ee\"\r\n");
 }
 
 /****************************************************************
@@ -366,12 +377,15 @@ void at_wlconn(void *arg)
 #endif
 
 end:
-	rtos_mem_free((u8 *)p_wifi_setting);
+	rtos_mem_free((void *)p_wifi_setting);
 	init_wifi_struct();
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLCONN:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLCONN:", error_no);
+		if (error_no == 1 || error_no == 2) {
+			at_wlconn_help();
+		}
 	}
 }
 
@@ -440,6 +454,14 @@ end:
 	}
 }
 
+void at_wlscan_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLSCAN\r\n");
+	at_printf("AT+WLSCAN=<num_channel>[,chl1,chl2,chl3,......]\r\n");
+	at_printf("\tIf add parameters, the length of chlx list must be same as <num_channel>\r\n");
+}
+
 /****************************************************************
 AT command process:
 	AT+WLSCAN
@@ -493,12 +515,24 @@ void at_wlscan(void *arg)
 	}
 
 end:
-	rtos_mem_free(channel_list);
+	rtos_mem_free((void *)channel_list);
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSCAN:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLSCAN:", error_no);
+		if (error_no == 1) {
+			at_wlscan_help();
+		}
 	}
+}
+
+void at_wlscanssid_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLSCANSSID\r\n");
+	at_printf("AT+WLSCANSSID=<num_channel>,[chl1,chl2,chl3,......]\r\n");
+	at_printf("\t<num_channel>:\tThe channel number it will scan\r\n");
+	at_printf("\t[list......]:\tThe channel list should be same length as num_channel\r\n");
 }
 
 /****************************************************************
@@ -510,7 +544,7 @@ AT command process:
 ****************************************************************/
 void at_wlscanssid(void *arg)
 {
-	const int ssid_idx = 1, num_idx = 2, channel_start = 3;
+	const int ssid_idx = 1, channel_start = 2;
 	int argc = 0, i = 0, ret = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	u8 *channel_list = NULL;
@@ -541,22 +575,16 @@ void at_wlscanssid(void *arg)
 
 	/* Channel list */
 	if (argc > channel_start) {
-		num_channel = atoi(argv[num_idx]);
-		if ((num_channel == argc - channel_start) && (num_channel > 0)) {
-			channel_list = (u8 *)rtos_mem_malloc(num_channel);
-			if (channel_list == NULL) {
-				RTK_LOGW(NOTAG, "[+WLSCANSSID] Memory Failure\r\n");
-				error_no = 3;
-				goto end;
-			}
-			/* Get channel list */
-			for (i = channel_start; i < argc; i++) {
-				channel_list[i - channel_start] = (u8)atoi(argv[i]);
-			}
-		} else {
-			RTK_LOGW(NOTAG, "[+WLSCANSSID] Wrong channel number\r\n");
-			error_no = 2;
+		num_channel = argc - channel_start;
+		channel_list = (u8 *)rtos_mem_malloc(num_channel);
+		if (channel_list == NULL) {
+			RTK_LOGW(NOTAG, "[+WLSCANSSID] Memory Failure\r\n");
+			error_no = 3;
 			goto end;
+		}
+		/* Get channel list */
+		for (i = channel_start; i < argc; i++) {
+			channel_list[i - channel_start] = (u8)atoi(argv[i]);
 		}
 	}
 
@@ -567,18 +595,21 @@ void at_wlscanssid(void *arg)
 	scan_param.channel_list_num = num_channel;
 	ret = wifi_scan_networks(&scan_param, 0);
 	if (ret != RTW_SUCCESS) {
-		RTK_LOGI(NOTAG, "[WLSCANSSID]ERROR: wifi scan failed\n\r");
+		RTK_LOGI(NOTAG, "[WLSCANSSID]ERROR: wifi scan failed\r\n");
 		error_no = 4;
 		goto end;
 	}
 
 end:
 	init_wifi_struct();
-	rtos_mem_free(channel_list);
+	rtos_mem_free((void *)channel_list);
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSCANSSID:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLSCANSSID:", error_no);
+		if (error_no == 1 || error_no == 2) {
+			at_wlscanssid_help();
+		}
 	}
 }
 
@@ -603,23 +634,14 @@ void at_wlrssi(void *arg)
 	at_printf("\r\n%sOK\r\n", "+WLRSSI:");
 }
 
-/****************************************************************
-AT command process:
-	AT+WLSNR
-	Wifi AT Command:
-	Get the SNR value of current network.
-	[+WLSNR]:OK
-****************************************************************/
-void at_wlsnr(void *arg)
+void at_wlstartap_help(void)
 {
-	rtw_phy_statistics_t phy_statistics;
-
-	UNUSED(arg);
-
-	RTK_LOGI(NOTAG, "[WLSNR]: _AT_WLAN_GET_SNR_\r\n");
-	wifi_fetch_phy_statistic(&phy_statistics);
-	at_printf("snr = %d\r\n", phy_statistics.snr);
-	at_printf("\r\n%sOK\r\n", "+WLSNR:");
+	at_printf("\r\n");
+	at_printf("AT+WLSTARTAP=<ssid>[,<channel>,<open/wep/tkip/wpa2/wpa3>,<password>]\r\n");
+	at_printf("\t<ssid>:\tThe ssid of AP, could not be empty\r\n");
+	at_printf("\t<channel>:\t[1,11]\r\n");
+	at_printf("\t<open/wep/tkip/wpa2/wpa3>:\t[0,3]\r\n");
+	at_printf("\t<password>:\tWith length in [8,64]\r\n");
 }
 
 /****************************************************************
@@ -680,15 +702,28 @@ void at_wlstartap(void *arg)
 		}
 	}
 
-	/* Security (maybe not exist) */
+	/* Security <open/wep/tkip/wpa2/wpa3> (maybe not exist) */
 	if (argc > security_idx) {
-		if ((argv[security_idx] == NULL) || (strlen(argv[security_idx]) != 1)
-			|| (argv[security_idx][0] < '0') || (argv[security_idx][0] > '3')) {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] ERROR security\r\n");
+		if (argv[security_idx] == NULL) {
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] ERROR <open/wep/tkip/wpa2/wpa3>\r\n");
 			error_no = 2;
 			goto end;
 		}
-		security = atoi(argv[security_idx]);
+		if (0 == strcmp("open", argv[security_idx])) {
+			security = 0;
+		} else if (0 == strcmp("wep", argv[security_idx])) {
+			security = 1;
+		} else if (0 == strcmp("tpic", argv[security_idx])) {
+			security = 2;
+		} else if (0 == strcmp("wpa2", argv[security_idx])) {
+			security = 3;
+		} else if (0 == strcmp("wpa3", argv[security_idx])) {
+			security = 4;
+		} else {
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid security value\r\n");
+			error_no = 2;
+			goto end;
+		}
 	}
 
 	/* Password (maybe not exist) */
@@ -741,6 +776,8 @@ void at_wlstartap(void *arg)
 		ap.security_type = RTW_SECURITY_WPA2_TKIP_PSK;
 	} else if (security == 3) {
 		ap.security_type = RTW_SECURITY_WPA2_AES_PSK;
+	} else if (security == 4) {
+		ap.security_type = RTW_SECURITY_WPA3_AES_PSK;
 	}
 	if ((security > 0) && (ap.password == NULL)) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password, please input it\r\n");
@@ -798,12 +835,15 @@ void at_wlstartap(void *arg)
 #endif
 
 end:
-	rtos_mem_free(setting);
+	rtos_mem_free((void *)setting);
 	init_wifi_struct();
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSTARTAP:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLSTARTAP:", error_no);
+		if (error_no == 1 || error_no == 2) {
+			at_wlstartap_help();
+		}
 	}
 }
 
@@ -846,11 +886,11 @@ void at_wlstate(void *arg)
 	p_wifi_setting = (struct _rtw_wifi_setting_t *)rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
 	if (p_wifi_setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTATE]: alloc p_wifi_setting fail \r\n");
-		at_printf("\r\n%sERROR%d", "+WLSTATE:", 1);
+		at_printf("\r\n%sERROR: %d\r\n", "+WLSTATE:", 1);
 		return;
 	}
 
-	at_printf("[+WLSTATE]: _AT_WLAN_INFO_\r\n");
+	RTK_LOGI(NOTAG, "[+WLSTATE]: _AT_WLAN_INFO_\r\n");
 	for (i = 0; i < NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
 #ifdef CONFIG_LWIP_LAYER
@@ -864,8 +904,8 @@ void at_wlstate(void *arg)
 
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
-				at_printf("max_skbinfo_used_num=%d, skbinfo_used_num=%d\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
-				at_printf("max_skbdata_used_num=%d, skbdata_used_num=%d\n\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
+				at_printf("max_skbinfo_used_num=%d, skbinfo_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
+				at_printf("max_skbdata_used_num=%d, skbdata_used_num=%d\r\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);
@@ -917,7 +957,7 @@ void at_wlstate(void *arg)
 		}
 	}
 
-	rtos_mem_free((u8 *)p_wifi_setting);
+	rtos_mem_free((void *)p_wifi_setting);
 	at_printf("\r\n%sOK\r\n", "+WLSTATE:");
 
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
@@ -933,6 +973,13 @@ void at_wlstate(void *arg)
 #endif
 }
 
+static void at_wlautoconn_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLAUTOCONN=<mode>");
+	at_printf("\t<mode>:\t1: disable auto-reconnect, 2: clear stored flash data\r\n");
+}
+
 /****************************************************************
 AT command process:
 	AT+WLAUTOCONN
@@ -943,7 +990,6 @@ AT command process:
 void at_wlautoconn(void *arg)
 {
 	int error_no = 0;
-
 	int argc = 0, mode = 0;
 	char *argv[MAX_ARGC] = {0};
 
@@ -961,18 +1007,14 @@ void at_wlautoconn(void *arg)
 	}
 
 	mode = atoi(argv[1]);
-	if (mode == 1) {
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Disable autoreconnect...\r\n");
+	if (mode == 0) {
+		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Disable autoreconnect\r\n");
 		wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
-	} else if (mode == 2) {
-		extern int32_t rt_kv_delete(const char *key);
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Flush system data\r\n");
-		rt_kv_delete("wlan_data");
-		rt_kv_delete("bt_data");
+	} else if (mode == 1) {
+		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Enable autoreconnect\r\n");
+		wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
 	} else {
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Invalid mode %d\r\n", mode);
-		error_no = 1;
-		goto end;
+		error_no = 2;
 	}
 
 end:
@@ -980,10 +1022,20 @@ end:
 		at_printf("\r\n%sOK\r\n", "+WLAUTOCONN:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLAUTOCONN:", error_no);
+		at_wlautoconn_help();
 	}
 }
 
 #if ENABLE_SET_MAC_ADDRESS
+static void at_wlmac_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLMAC=<mac_addr>[,<er_idx>,<i_idx>]");
+	at_printf("\t<mac_addr>:\tA hexnumber of 6 bytes, e.g. 2c033ad355f1\r\n");
+	at_printf("\t<er_idx>:\tStore in efuse or RAM? 0 in RAM, 1 in efuse\r\n");
+	at_printf("\t<i_idx>:\tNet device index\r\n");
+}
+
 /****************************************************************
 AT command process:
 	AT+WLMAC
@@ -1053,7 +1105,7 @@ void at_wlmac(void *arg)
 	ret = wifi_set_mac_address(i, (unsigned char *)argv[mac_idx], efuse_ram);
 	if (ret != RTW_SUCCESS) {
 		RTK_LOGW(NOTAG, "[+WLMAC] wifi_set_mac_address failed\r\n");
-		error_no = 2;
+		error_no = 3;
 		goto end;
 	}
 
@@ -1062,9 +1114,20 @@ end:
 		at_printf("\r\n%sOK\r\n", "+WLMAC:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLMAC:", error_no);
+		if (error_no == 1 || error_no == 2) {
+			at_wlmac_help();
+		}
 	}
 }
 #endif
+
+static void at_wlpromisc_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLPROMISC=<enable>[,<all_apall>]\r\n");
+	at_printf("\t<enable>:\t\"enable\" or \"disable\"\r\n");
+	at_printf("\t<all_apall>:\t\"all\" or \"apall\" only when enabled\r\n");
+}
 
 /****************************************************************
 AT command process:
@@ -1119,16 +1182,23 @@ end:
 		at_printf("\r\n%sOK\r\n", "+WLPROMISC:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLPROMISC:", error_no);
+		at_wlpromisc_help();
 	}
+}
+
+static void at_wldbg_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLDBG=<command>[,<parameters>]\r\n");
 }
 
 /****************************************************************
 AT command process:
-	AT+WLIWPRIV
+	AT+WLDBG
 	Wifi AT Command:
-	[+WLIWPRIV]:OK
+	[+WLDBG]:OK
 ****************************************************************/
-void at_wliwpriv(void *arg)
+void at_wldbg(void *arg)
 {
 	char buf[64] = {0};
 	char *copy = buf;
@@ -1137,9 +1207,9 @@ void at_wliwpriv(void *arg)
 	int error_no = 0;
 	int ret = 0;
 
-	RTK_LOGI(NOTAG, "[WLIWPRIV]: _AT_WLAN_IWPRIV_\r\n");
+	RTK_LOGI(NOTAG, "[WLDBG]: _AT_WLAN_IWPRIV_\r\n");
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLIWPRIV]Usage: AT+WLIWPRIV=COMMAND[PARAMETERS]\r\n");
+		RTK_LOGW(NOTAG, "[WLDBG]Usage: AT+WLDBG=COMMAND[PARAMETERS]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1169,20 +1239,29 @@ void at_wliwpriv(void *arg)
 	ret = rtw_iwpriv_command(STA_WLAN_INDEX, copy, 1);
 #endif
 	if (ret != RTW_SUCCESS) {
-		RTK_LOGW(NOTAG, "[WLIWPRIV] Failed while iwpriv\r\n");
-		error_no = 1;
+		RTK_LOGW(NOTAG, "[WLDBG] Failed while iwpriv\r\n");
+		error_no = 2;
 		goto end;
 	}
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLIWPRIV:");
+		at_printf("\r\n%sOK\r\n", "+WLDBG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLIWPRIV:", error_no);
+		at_printf("\r\n%sERROR: %d\r\n", "+WLDBG:", error_no);
+		if (error_no == 1) {
+			at_wldbg_help();
+		}
 	}
 }
 
 #ifdef CONFIG_WPS
+static void at_wlwps_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLWPS=<pbc_pin>\r\n");
+}
+
 /****************************************************************
 AT command process:
 	AT+WLWPS
@@ -1226,9 +1305,20 @@ end:
 		at_printf("\r\n%sOK\r\n", "+WLWPS:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLWPS:", error_no);
+		if (error_no == 1 || error_no == 2) {
+			at_wlwps_help();
+		}
 	}
 }
 #endif
+
+static void at_wlpwrmode_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLPWRMODE=<lps_ips>,<enable>");
+	at_printf("\t<lps_ips>:\tShould be either \"lps\" or \"ips\"\r\n");
+	at_printf("\t<enable>:\t0: disable, 1: enable\r\n");
+}
 
 /****************************************************************
 AT command process:
@@ -1277,11 +1367,19 @@ end:
 		at_printf("\r\n%sOK\r\n", "+WLPWRMODE:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLPWRMODE:", error_no);
+		at_wlpwrmode_help();
 	}
 }
 #endif /* CONFIG_WLAN */
 
 #ifdef CONFIG_LWIP_LAYER
+static void at_wlstaticip_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+WLSTATICIP=<ip_addr>[,<gateway>,<netmask>]\r\n");
+	at_printf("\tThe <gateway> and <netmask> should be absent or present together\r\n");
+}
+
 /****************************************************************
 AT command process:
 	AT+WLSTATICIP
@@ -1320,7 +1418,17 @@ end:
 		at_printf("\r\n%sOK\r\n", "+WLSTATICIP:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+WLSTATICIP:", error_no);
+		at_wlstaticip_help();
 	}
+}
+
+static void at_ping_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+PING=<host>[,<options>]\r\n");
+	at_printf("\t-t\tPing the specified host until stopped\r\n");
+	at_printf("\t-n\tNumber of echo requests to send (default 4 times)\r\n");
+	at_printf("\t-l\tSend buffer size (default 32 bytes)\r\n");
 }
 
 /****************************************************************
@@ -1365,6 +1473,7 @@ end:
 		at_printf("\r\n%sOK\r\n", "+PING:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+PING:", error_no);
+		at_ping_help();
 	}
 }
 
@@ -1376,112 +1485,44 @@ static void cmd_iperf3(int argc, char **argv)
 	RTK_LOGW(NOTAG, " iperf3 is not supported yet\r\n");
 }
 
-/****************************************************************
-AT command process:
-	AT+WLIPERF
-	Wifi AT Command:
-	[+WLIPERF]:OK
-****************************************************************/
-void at_wliperf(void *arg)
+static void at_iperf_help(void)
 {
-	int error_no = 0;
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[+WLIPERF] iperf3 Usage: More Usage: ATWT=-help\r\n");
-		RTK_LOGI(NOTAG, "[+WLIPERF] iperf1 Usage: ATWT=[-s|-c,host|stop],[options]\r\n");
-		RTK_LOGI(NOTAG, "[+WLIPERF] Usage: AT+WLIPERF=[-s|-c,host|stop],[options]\r\n");
-		RTK_LOGI(NOTAG, "	Client/Server:\r\n");
-		RTK_LOGI(NOTAG, "	  ? 			List all stream status\r\n");
-		RTK_LOGI(NOTAG, "	 stop  #		terminate specific stream id or terminate all stream if no id specified\r\n");
-		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
-		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
-		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
-		RTK_LOGI(NOTAG, "	Server specific:\r\n");
-		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
-		RTK_LOGI(NOTAG, "	Client specific:\r\n");
-		RTK_LOGI(NOTAG, "	 -c    <host>	run in client mode, connecting to <host>\r\n");
-		RTK_LOGI(NOTAG, "	 -d 			Do a bidirectional test simultaneously\r\n");
-		RTK_LOGI(NOTAG, "	 -t    #		time in seconds to transmit for (default 10 secs)\r\n");
-		RTK_LOGI(NOTAG, "	 -n    #[KM]	number of bytes to transmit (instead of -t)\r\n");
-		RTK_LOGI(NOTAG, "	Example:\r\n");
-		RTK_LOGI(NOTAG, "	 [+WLIPERF]=-s,-p,5002\r\n");
-		RTK_LOGI(NOTAG, "	 [+WLIPERF]=-c,192.168.1.2,-t,100,-p,5002\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	char *body = (char *) rtos_mem_malloc(strlen(arg) + 1);
-	if (!body) {
-		RTK_LOGI(NOTAG, "[+WLIPERF]ERROR: Can't malloc memory for iperf3 Usage\r\n");
-		error_no = 2;
-		goto end;
-	}
-	memset(body, 0, strlen(arg) + 1);
-	memcpy(body, arg, strlen(arg));
-
-	char delims[] = ",";
-	char *version = NULL;
-	version = strsep(&body, delims);
-
-	argv[0] = (char *)"iperf3";
-
-	if (version && (strlen(version) == strlen("iperf3")) && (memcmp(version, argv[0], strlen(argv[0])) == 0)) {
-		RTK_LOGI(NOTAG, "[+WLIPERF]: _AT_WLAN_IPERF3_TEST_\r\n");
-		argc = parse_param((char *)arg + strlen(argv[0]) + 1, argv);
-		if (argc > 1) {
-			cmd_iperf3(argc, argv);
-		} else {
-			RTK_LOGI(NOTAG, "[+WLIPERF] More Usage: WLIPERF=-help\r\n");
-			error_no = 3;
-			goto end;
-		}
-	} else {
-		RTK_LOGI(NOTAG, "[+WLIPERF]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
-		argv[0] = (char *)"tcp";
-		argc = parse_param(arg, argv);
-		if (argc > 1) {
-			cmd_iperf(argc, argv);
-		} else {
-			RTK_LOGI(NOTAG, "[+WLIPERF] Should be some argc\r\n");
-			error_no = 3;
-			goto end;
-		}
-	}
-	rtos_mem_free(body);
-
-end:
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLIPERF:");
-	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLIPERF:", error_no);
-	}
+	at_printf("\r\n");
+	at_printf("AT+IPERF=-help\r\n");
+	at_printf("AT+IPERF=[-s|-c,host|stop],[options]\r\n");
+	at_printf("\tExample for TCP:\r\n");
+	at_printf("\tAT+IPERF=-s,-p,5002\r\n");
+	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
+	at_printf("\tExample for UDP:\r\n");
+	at_printf("\tAT+UDP=-s,-p,5002,-u\r\n");
+	at_printf("\tAT+UDP=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
 }
 
 /****************************************************************
 AT command process:
-	AT+WLUDP
+	AT+IPERF
 	Wifi AT Command:
-	UDP test.
-	[+WLUDP]:OK
+	[+IPERF]:OK
 ****************************************************************/
-void at_wludp(void *arg)
+void at_iperf(void *arg)
 {
 	int error_no = 0;
-	int argc = 0;
+	int argc;
 	char *argv[MAX_ARGC] = {0};
-
-	RTK_LOGI(NOTAG, "[WLUDP]: _AT_WLAN_UDP_TEST_\r\n");
+	char *pos;
+	char *input = NULL;
+	char *char_arg = (char *)arg;
 
 	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[WLUDP] Usage: AT+WLUDP=[-s|-c,host|stop][options]\r\n");
+		RTK_LOGI(NOTAG, "[+IPERF] iperf1 Usage: AT+IPERF=[-s|-c,host|stop],[options]\r\n");
+		RTK_LOGI(NOTAG, "[+IPERF] Usage: AT+IPERF=[-s|-c,host|stop],[options]\r\n");
 		RTK_LOGI(NOTAG, "	Client/Server:\r\n");
 		RTK_LOGI(NOTAG, "	  ? 			List all stream status\r\n");
 		RTK_LOGI(NOTAG, "	 stop  #		terminate specific stream id or terminate all stream if no id specified\r\n");
 		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
 		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
 		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
+		RTK_LOGI(NOTAG, "	 -u    #		use UDP protocol (default TCP)\r\n");
 		RTK_LOGI(NOTAG, "	Server specific:\r\n");
 		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
 		RTK_LOGI(NOTAG, "	Client specific:\r\n");
@@ -1490,206 +1531,144 @@ void at_wludp(void *arg)
 		RTK_LOGI(NOTAG, "	 -d 			Do a bidirectional test simultaneously\r\n");
 		RTK_LOGI(NOTAG, "	 -t    #		time in seconds to transmit for (default 10 secs)\r\n");
 		RTK_LOGI(NOTAG, "	 -n    #[KM]	number of bytes to transmit (instead of -t)\r\n");
-		RTK_LOGI(NOTAG, "		-S	  # 	   set the IP 'type of service'\r\n");
-		RTK_LOGI(NOTAG, "	Example:\r\n");
-		RTK_LOGI(NOTAG, "		WLUDP=-s,-p,5002\r\n");
-		RTK_LOGI(NOTAG, "		WLUDP=-c,192.168.1.2,-t,100,-p,5002\r\n");
+		RTK_LOGI(NOTAG, "		-S	  # 	   for UDP, set the IP 'type of service'\r\n");
+		RTK_LOGI(NOTAG, "	Example for TCP:\r\n");
+		RTK_LOGI(NOTAG, "	 AT+IPERF=-s,-p,5002\r\n");
+		RTK_LOGI(NOTAG, "	 AT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
+		RTK_LOGI(NOTAG, "	Example for UDP:\r\n");
+		RTK_LOGI(NOTAG, "	 AT+IPERF=-s,-p,5002,-u\r\n");
+		RTK_LOGI(NOTAG, "	 AT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
+
 		error_no = 1;
 		goto end;
 	}
 
-	argv[0] = (char *)"udp";
-	argc = parse_param(arg, argv);
+	pos = strpbrk(char_arg, "u");
+
+	if (pos) {
+		if ((memcmp(pos - 1, "-", 1)) || (pos == char_arg)) {
+			at_printf("- needs to be added before u\r\n");
+			error_no = 1;
+			goto end;
+		}
+
+		input = (char *)rtos_mem_zmalloc(strlen(char_arg) - 2); /* delete "-u,"or ",-u" and need '\0' at the end */
+		if (pos - char_arg == 1) {  // "-u" is at the beginning of arg
+			memcpy(input, char_arg + 3, strlen(char_arg) - 3);
+		} else {                      // "-u" is at the end or middle of arg
+			memcpy(input, char_arg, pos - char_arg - 2);                //copy str before "-u"
+			memcpy(input + strlen(input), pos + 1, strlen(pos) - 1);  //copy str after "-u"
+		}
+		argv[0] = (char *)"udp";
+	} else {
+		input = (char *)rtos_mem_zmalloc(strlen(char_arg) + 1); /* need '\0' at the end */
+		memcpy(input, char_arg, strlen(char_arg));
+		argv[0] = (char *)"tcp";
+	}
+
+	RTK_LOGI(NOTAG, "[+IPERF]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
+
+	argc = parse_param(input, argv);
 	if (argc > 1) {
 		cmd_iperf(argc, argv);
 	} else {
-		RTK_LOGI(NOTAG, "[WLUDP] Should be some argc\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLUDP:");
-	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLUDP:", error_no);
-	}
-}
-#endif /* CONFIG_LWIP_LAYER */
-
-#if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
-#ifdef CONFIG_SAE_SUPPORT
-/****************************************************************
-AT command process:
-	AT+WLSAEGROUP
-	Wifi AT Command:
-	set SAE group
-	[+WLSAEGROUP]:OK
-****************************************************************/
-void at_wlsaegroup(void *arg)
-{
-	unsigned char grp_id = 0;
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLSAEGROUP]Input error parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if ((argc != 2) || (argv[1] == NULL)) {
-		RTK_LOGW(NOTAG, "[WLSAEGROUP]Input error parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	grp_id = (unsigned char)atoi(argv[1]);
-	if ((grp_id != 19) && (grp_id != 20)) {
-		RTK_LOGW(NOTAG, "[WLSAEGROUP]ERROR group id\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-	wifi_set_group_id(grp_id);
-
-end:
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLSAEGROUP:");
-	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLSAEGROUP:", error_no);
-	}
-}
-#endif
-
-/****************************************************************
-AT command process:
-	AT+WLPMK
-	Wifi AT Command:
-	[+WLPMK]:OK
-****************************************************************/
-void at_wlpmk(void *arg)
-{
-	unsigned char pmk_enable = 0;
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLPMK]Input error parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if ((argc != 2) || (argv[1] == NULL)) {
-		RTK_LOGW(NOTAG, "[WLPMK]Input error parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	pmk_enable = (unsigned char)atoi(argv[1]);
-	if (pmk_enable > 1) {
-		RTK_LOGW(NOTAG, "[WLPMK]Invalid pmk_enable\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-	RTK_LOGI(NOTAG, "pmk_enable = %d\r\n", pmk_enable);
-	RTK_LOGI(NOTAG, "[WLPMK]: _AT_WLAN_SET_PMK\r\n");
-	wifi_set_pmk_cache_enable(pmk_enable);
-
-end:
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLPMK:");
-	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLPMK:", error_no);
-	}
-}
-
-
-#ifdef CONFIG_IEEE80211W
-/****************************************************************
-AT command process:
-	AT+WLPMF
-	Wifi AT Command:
-	[+WLPMF]:OK
-****************************************************************/
-void at_wlpmf(void *arg)
-{
-	int argc = 0, ret = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-	unsigned char pmf_mode;
-
-	RTK_LOGI(NOTAG, "[WLPMF]: _AT_WLAN_PROTECTED_MANAGEMENT_FRAME_\r\n");
-
-	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[WLPMF] Usage: AT+WLPMF=none/optional/required\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if (argc != 2) {
-		RTK_LOGI(NOTAG, "[WLPMF] Usage: AT+WLPMF=none/optional/required\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	if (strcmp(argv[1], "none") == 0) {
-		pmf_mode = 0;
-	} else if (strcmp(argv[1], "optional") == 0) {
-		pmf_mode = 1;
-	} else if (strcmp(argv[1], "required") == 0) {
-		pmf_mode = 2;
-	} else {
-		RTK_LOGW(NOTAG, "[WLPMF]: Invalid arg\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-	pmf_mode = 0;
-	ret = wifi_set_pmf_mode(pmf_mode);
-	if (ret != 0) {
-		RTK_LOGI(NOTAG, "[WLPMF]: Failed in wifi_set_pmf_mode\r\n");
+		RTK_LOGI(NOTAG, "[+IPERF] Should be some argc\r\n");
 		error_no = 3;
 		goto end;
 	}
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLPMF:");
+		at_printf("\r\n%sOK\r\n", "+IPERF:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLPMF:", error_no);
+		at_printf("\r\n%sERROR: %d\r\n", "+IPERF:", error_no);
+		at_iperf_help();
+	}
+	if (input) {
+		rtos_mem_free((void *)input);
 	}
 }
 
-#endif
-#endif /* WIFI_LOGO_CERTIFICATION_CONFIG */
+static void at_iperf3_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+IPERF3=-help\r\n");
+	at_printf("AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
+	at_printf("\tExample:\r\n");
+	at_printf("\tAT+IPERF3=-s,-p,5002\r\n");
+	at_printf("\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
+}
+
+/****************************************************************
+AT command process:
+	AT+IPERF3
+	Wifi AT Command:
+	[+IPERF3]:OK
+****************************************************************/
+void at_iperf3(void *arg)
+{
+	int error_no = 0;
+	int argc;
+	char *argv[MAX_ARGC] = {0};
+
+	if (arg == NULL) {
+		RTK_LOGI(NOTAG, "[+IPERF3] iperf3 Usage: More Usage: AT+IPERF3=-help\r\n");
+		RTK_LOGI(NOTAG, "[+IPERF3] Usage: AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
+		RTK_LOGI(NOTAG, "	Client/Server:\r\n");
+		RTK_LOGI(NOTAG, "	  ? 			List all stream status\r\n");
+		RTK_LOGI(NOTAG, "	 stop  #		terminate specific stream id or terminate all stream if no id specified\r\n");
+		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
+		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
+		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
+		RTK_LOGI(NOTAG, "	Server specific:\r\n");
+		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
+		RTK_LOGI(NOTAG, "	Client specific:\r\n");
+		RTK_LOGI(NOTAG, "	 -c    <host>	run in client mode, connecting to <host>\r\n");
+		RTK_LOGI(NOTAG, "	 -d 			Do a bidirectional test simultaneously\r\n");
+		RTK_LOGI(NOTAG, "	 -t    #		time in seconds to transmit for (default 10 secs)\r\n");
+		RTK_LOGI(NOTAG, "	 -n    #[KM]	number of bytes to transmit (instead of -t)\r\n");
+		RTK_LOGI(NOTAG, "	Example:\r\n");
+		RTK_LOGI(NOTAG, "	 AT+IPERF3=-s,-p,5002\r\n");
+		RTK_LOGI(NOTAG, "	 AT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	RTK_LOGI(NOTAG, "[+IPERF3]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
+	argv[0] = (char *)"iperf3";
+	argc = parse_param(arg, argv);
+	if (argc > 1) {
+		cmd_iperf3(argc, argv);
+	} else {
+		RTK_LOGI(NOTAG, "[+IPERF3] Should be some argc\r\n");
+		error_no = 2;
+		goto end;
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf("\r\n%sOK\r\n", "+IPERF3:");
+	} else {
+		at_printf("\r\n%sERROR: %d\r\n", "+IPERF3:", error_no);
+		at_iperf3_help();
+	}
+}
+
+#endif /* CONFIG_LWIP_LAYER */
 
 log_item_t at_wifi_items[ ] = {
 #ifdef CONFIG_LWIP_LAYER
 	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
 	{"+PING", at_ping, {NULL, NULL}},
-	{"+WLIPERF", at_wliperf, {NULL, NULL}},
-	{"+WLUDP", at_wludp, {NULL, NULL}},
+	{"+IPERF", at_iperf, {NULL, NULL}},
+	{"+IPERF3", at_iperf3, {NULL, NULL}},
 #endif /* CONFIG_LWIP_LAYER */
-#if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
-#ifdef CONFIG_SAE_SUPPORT
-	{"+WLSAEGROUP", at_wlsaegroup, {NULL, NULL}},
-#endif
-	{"+WLPMK", at_wlpmk, {NULL, NULL}},
-#ifdef CONFIG_IEEE80211W
-	{"+WLPMF", at_wlpmf, {NULL, NULL}},
-#endif
-#endif /* WIFI_LOGO_CERTIFICATION_CONFIG */
 #ifdef CONFIG_WLAN
 	{"+WLCONN", at_wlconn, {NULL, NULL}},
 	{"+WLDISCONN", at_wldisconn, {NULL, NULL}},
 	{"+WLSCAN", at_wlscan, {NULL, NULL}},
 	{"+WLSCANSSID", at_wlscanssid, {NULL, NULL}},
 	{"+WLRSSI", at_wlrssi, {NULL, NULL}},
-	{"+WLSNR", at_wlsnr, {NULL, NULL}},
 	{"+WLSTARTAP", at_wlstartap, {NULL, NULL}},
 	{"+WLSTOPAP", at_wlstopap, {NULL, NULL}},
 	{"+WLSTATE", at_wlstate, {NULL, NULL}},
@@ -1698,7 +1677,7 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLMAC", at_wlmac, {NULL, NULL}},
 #endif
 	{"+WLPROMISC", at_wlpromisc, {NULL, NULL}},
-	{"+WLIWPRIV", at_wliwpriv, {NULL, NULL}},
+	{"+WLDBG", at_wldbg, {NULL, NULL}},
 #ifdef CONFIG_WPS
 	{"+WLWPS", at_wlwps, {NULL, NULL}},
 #endif
@@ -1713,8 +1692,30 @@ void print_wifi_at(void)
 
 	cmd_len = sizeof(at_wifi_items) / sizeof(at_wifi_items[0]);
 	for (index = 0; index < cmd_len; index++) {
-		at_printf("\r\nAT%s", at_wifi_items[index].log_cmd);
+		at_printf("AT%s\r\n", at_wifi_items[index].log_cmd);
 	}
+}
+
+void print_wlan_help(void)
+{
+	at_printf("AT+WLCONN=<ss_id>[,passwd,key_id,bss_id]\r\n");
+	at_printf("AT+WLDISCONN\r\n");
+	at_printf("AT+WLSTARTAP=<ss_id>,<channel>,<open/wep/tkip/wpa2/wpa3>,<password>\r\n");
+	at_printf("AT+WLSTOPAP\r\n");
+	at_printf("AT+WLSCAN\r\n");
+	at_printf("AT+WLSCANSSID=<ssid>[,chnl_0,chnl_1,...]\r\n");
+	at_printf("AT+WLSTATE\r\n");
+	at_printf("AT+WLRSSI\r\n");
+	at_printf("AT+WLPROMISC=<enable/disable>[,<all/apall>]\r\n");
+	at_printf("AT+WLWPS=<pbc/pin>\r\n");
+	at_printf("AT+WLSTATICIP=<ip>[,<gateway>,<mask>]\r\n");
+	at_printf("AT+PING=[host],[options]\r\n");
+	at_printf("AT+IPERF=[-s|-c,host|stop],[options]\r\n");
+	at_printf("AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
+	at_printf("AT+UDP=[-s|-c,host|stop],[options]\r\n");
+	at_printf("AT+WLDBG=COMMAND[PARAMETERS]\r\n");
+	at_printf("AT+WLPWRMODE=lps/ips/dtim[mode]\r\n");
+	at_printf("\r\n");
 }
 
 void at_wifi_init(void)
@@ -1722,9 +1723,12 @@ void at_wifi_init(void)
 #ifdef CONFIG_WLAN
 	init_wifi_struct();
 #endif
+#ifndef CONFIG_MP_INCLUDED
 	log_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
+#endif
 }
 
 #ifdef SUPPORT_LOG_SERVICE
 log_module_init(at_wifi_init);
 #endif
+#endif /* CONFIG_MP_INCLUDED */

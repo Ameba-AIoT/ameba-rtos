@@ -48,9 +48,7 @@ enum {
 	do {\
 		if (level >= MQTT_DEBUG) {\
 			{\
-				printf("\r\n[%d]mqtt:", (int)rtos_time_get_current_system_time_ms());\
-				printf(fmt, ##arg);\
-				printf("\n\r");\
+				RTK_LOGA("MQTT", "[%d]mqtt:"fmt"\n\r", (int)rtos_time_get_current_system_time_ms(), ##arg);\
 			} \
 		}\
 	}while(0)

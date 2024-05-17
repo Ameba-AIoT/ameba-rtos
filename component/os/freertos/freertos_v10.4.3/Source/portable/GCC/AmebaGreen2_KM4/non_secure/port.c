@@ -1090,4 +1090,6 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	above. */
 	SOCPS_HWSleepFilter(DISABLE);
 	__enable_irq();
+
+	(void)tick_before_sleep;
 }

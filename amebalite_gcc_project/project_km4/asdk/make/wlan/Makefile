@@ -27,8 +27,6 @@ endif
 lib: CORE_TARGETS
 	make -C driver lib
 
-lib_mp: CORE_TARGETS
-	make -C driver lib_mp
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
 #*****************************************************************************#

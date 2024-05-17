@@ -80,6 +80,7 @@ void cfg80211_rtw_ops_p2p_init(void);
 void llhw_wifi_set_p2p_role(enum rtw_p2p_role role);
 int llhw_wifi_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable);
 void rtw_p2p_gc_intf_revert(u8 need_if2_deinit);
+void rtw_p2p_driver_macaddr_switch(void);
 int rtw_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 						struct wireless_dev **p2p_wdev, enum nl80211_iftype type);
 void rtw_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev);
@@ -132,6 +133,13 @@ int llhw_xmit_deinit(void);
 int llhw_event_init(struct inic_device *idev);
 void llhw_event_deinit(void);
 void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len);
+int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm);
+void rtw_set_wowlan_offload_ctrl(u32 value);
+void rtw_proxy_init(void);
+void rtw_proxy_mdns_parms_init(u8 is_set_default);
+ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+void rtw_wow_prepare_mdns_para(u8 *pframe, u32 *plen);
+
 #endif
 
 #endif // __RTW_FUNCTIONS_H__

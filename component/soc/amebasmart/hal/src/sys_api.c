@@ -23,8 +23,11 @@
 #include "sys_api.h"
 #include "flash_api.h"
 #include "ameba_ota.h"
+#include "log.h"
 
 //#define printf					DiagPrintf
+
+static const char *TAG = "SYS";
 
 #define RSIP_REMAP_REGION_ADDR_SHIFT	12
 
@@ -76,8 +79,9 @@ void sys_clear_ota_signature(void)
 		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 
-		printf("[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx], otaDstIdx + 1,
-			   Address[otaDstIdx]);
+		RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
+				 otaDstIdx + 1,
+				 Address[otaDstIdx]);
 
 		ota_sig[0] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx]);
 		ota_sig[1] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx] + 4);
@@ -85,7 +89,7 @@ void sys_clear_ota_signature(void)
 		if (ota_sig[0] == 0x35393138 && ota_sig[1] == 0x31313738) {
 			FLASH_WriteStream(Address[otaCurIdx], 8, (u8 *)empty_sig);
 		} else {
-			printf("[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
+			RTK_LOGE(TAG, "[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
 		}
 	}
 }
@@ -107,7 +111,7 @@ void sys_recover_ota_signature(void)
 
 	backup = (u8 *)malloc(0x1000);
 	if (backup == NULL) {
-		printf("[%s] backup malloc failded\n", __func__);
+		RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
 		return;
 	}
 
@@ -122,8 +126,9 @@ void sys_recover_ota_signature(void)
 		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 
-		printf("[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx], otaDstIdx + 1,
-			   Address[otaDstIdx]);
+		RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
+				 otaDstIdx + 1,
+				 Address[otaDstIdx]);
 		/* backup this sector */
 		FLASH_ReadStream(Address[otaDstIdx], 0x1000, backup);
 

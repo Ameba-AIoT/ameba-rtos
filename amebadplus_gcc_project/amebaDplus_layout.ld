@@ -163,6 +163,14 @@ MEMORY
 	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0E000020, LENGTH = 0x0F800000 - 0x0E000020	/* KM4 IMG2 Virtual address: 24576k */
 	BTRACE (rx) :                           ORIGIN = 0xC8800000, LENGTH = 0xC9000000 - 0xC8800000	/* BT LOG Virtual address: 8192k */
 	CTRACE (rx) :                           ORIGIN = 0xCA000000, LENGTH = 0xCA7FFFFF - 0xCA000000	/* COEX LOG Virtual address: 8192k */
+
+	/* mp sram temp  temp use now */
+	KM4_FLOADER_RAM_MP (rwx) :               ORIGIN = 0x3000A020, LENGTH = 0x30012000 - 0x3000A020	/* KM4 ImgTool Flash Loader RAM: 32k */
+	KM4_BOOTLOADER_RAM_MP (rwx) :            ORIGIN = 0x30012000 + IMAGE_HEADER_LEN, LENGTH = 0x3001A000 - 0x30012000 - IMAGE_HEADER_LEN	/* KM4 BootLoader RAM: 32k */
+
+	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20033000 - 0x2001A000 - IMAGE_HEADER_LEN	/* KM4 BD RAM: TZ off,100K*/
+	KM0_BD_RAM_MP (rwx) :                   ORIGIN = 0x20033000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20080000 - 0x20033000 - IMAGE_HEADER_LEN	/* KM0 BD RAM: 320 */
+
 }
 
 __km0_image2_entry_func__ = ORIGIN(KM0_BD_RAM);
@@ -183,3 +191,7 @@ __km4_psram_tz_nsc_start__ = ORIGIN(KM4_BD_PSRAM_TZ_NSC) - IMAGE_HEADER_LEN;
 __km4_psram_tz_entry_start__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) ;
 __km4_psram_tz_entry_end__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) + LENGTH(KM4_BD_PSRAM_TZ_ENTRY);
 __km4_bd_psram_start__ = ORIGIN(KM4_BD_PSRAM) - IMAGE_HEADER_LEN;
+
+/* mp used */
+__km0_bd_ram_mp_start__ = ORIGIN(KM0_BD_RAM_MP);
+__km0_image2_entry_func_mp__ = ORIGIN(KM0_IMG2_ENTRY);

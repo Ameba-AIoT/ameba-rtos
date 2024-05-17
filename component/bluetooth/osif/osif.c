@@ -64,6 +64,14 @@ bool osif_sched_resume(void)
 }
 
 /****************************************************************************/
+/* Check if os kernel scheduler suspended                                   */
+/****************************************************************************/
+bool osif_sched_is_suspended(void)
+{
+	return (rtos_sched_get_state() == RTOS_SCHED_SUSPENDED);
+}
+
+/****************************************************************************/
 /* Create os level task routine                                             */
 /****************************************************************************/
 bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(void *),

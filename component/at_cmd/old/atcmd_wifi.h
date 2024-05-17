@@ -8,7 +8,7 @@
 #define __ATCMD_WIFI_H__
 #include "main.h"
 #include "rtw_wifi_constants.h"
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 //#include "lwip_netconf.h"
 #endif
 #include "platform_autoconf.h"

@@ -16,7 +16,6 @@ endif
 ASDK_VER=10.3.1
 TOOLCHAINDIR	= /opt/rtk-toolchain
 
-
 #gcc release
 SRCDIR		=$(ROOTDIR)/../src
 INCDIR		=$(ROOTDIR)/../inc
@@ -80,8 +79,12 @@ export BUILD_TYPE
 
 ifeq ($(COMPILEOS),$(LINUX_OS))
 ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/linux/newlib
+TOOLCHAINNAME = asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
+TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
 else
 ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/mingw32/newlib
+TOOLCHAINNAME = asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
+TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 endif
 
 tool_dir = $(ASDK_TOOLCHAIN)/bin
@@ -321,9 +324,27 @@ check_toolchain:
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
 	else \
-		echo "Error: No Toolchain in $(ASDK_TOOLCHAIN)"; \
-		echo "Error: Please download ToolChain and Extract it, then Modify \$$(TOOLCHAINDIR) in Makefile.include.gen to Toolchain Directory"; \
-		exit 1; \
+		echo "Download Toolchain And Extract To $(TOOLCHAINDIR). Only Download And Extract Once"; \
+		$(MKDIR) -p $(TOOLCHAINDIR); \
+		if [ -d $(TOOLCHAINDIR) ]; then \
+			echo "Create Toolchain Dir $(TOOLCHAINDIR) Success"; \
+		else \
+			echo "Create Toolchain Dir Failed. May Not Have Permission. Please Refer To README.MD Or AN900 Chapter 1.3(Installing Toolchain)."; \
+			exit 1; \
+		fi; \
+		if wget -P $(TOOLCHAINDIR) $(TOOLCHAINURL); then \
+			echo "Download $(TOOLCHAINNAME) Success"; \
+		else \
+			echo "Download Failed. Please Check If The Network Connection Is Accessible Or Refer To AN900 Chapter 1.3(Installing Toolchain)."; \
+			exit 1; \
+		fi; \
+		echo "Download End And Then Extract..."; \
+		if [ $(LINUX_OS) = $(COMPILEOS) ]; then \
+			tar -jxf $(TOOLCHAINDIR)/$(TOOLCHAINNAME) -C $(TOOLCHAINDIR)/; \
+		else \
+			unzip -q $(TOOLCHAINDIR)/$(TOOLCHAINNAME) -d $(TOOLCHAINDIR)/; \
+		fi; \
+		echo "INSTALL SUCCESS"; \
 	fi
 	# check permission
 	@if [ ! -x $(UTILITYDIR)/checksum ]; then \

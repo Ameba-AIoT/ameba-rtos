@@ -16,11 +16,12 @@ OBJS =
 
 all: CORE_TARGETS
 	make -C src all
-	make -C coap all
 
 lib: CORE_TARGETS
 	make -C libs lib
+	make -C audio_hal lib
 	make -C xip lib
+	make -C audio_hal_xip lib
 
 test: CORE_TARGETS
 	make -C tests test
@@ -41,5 +42,6 @@ clean: CLEAN_OBJS
 	make -C src clean
 	make -C xip clean
 	make -C libs clean
-	make -C coap clean
+	make -C audio_hal clean
+	make -C audio_hal_xip clean
 -include $(DEPS)

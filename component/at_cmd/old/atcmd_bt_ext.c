@@ -503,7 +503,6 @@ static const cmd_table_t cmd_table[] = {
 	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	{"leaudio",     atcmd_ble_audio,               3, 8},
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
 	{"cap_cmd",     atcmd_bt_cap_cmd,              3, 10},
 	{"pbp_cmd",     atcmd_bt_pbp_cmd,              3, 10},
@@ -515,29 +514,69 @@ static const cmd_table_t cmd_table[] = {
 
 static const cmd_table_t example_table[] = {
 	{"help",             atcmd_bt_example_help,     1, 3},
-	{"demo",             atcmd_bt_demo,             1, 1},
+#if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
 	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
+#endif
+#if defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL
 	{"peripheral",       atcmd_bt_peripheral,       2, 2},
+#endif
+#if defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL
 	{"central",          atcmd_bt_central,          2, 2},
+#endif
+#if defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET
 	{"scatternet",       atcmd_bt_scatternet,       2, 2},
+#endif
+#if defined(CONFIG_BT_THROUGHPUT) && CONFIG_BT_THROUGHPUT
 	{"throughput",       atcmd_bt_throughput,       2, 13},
+#endif
+#if defined(CONFIG_BT_MESH_PROVISIONER) && CONFIG_BT_MESH_PROVISIONER
 	{"provisioner",      atcmd_bt_mesh_provisioner, 2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_DEVICE) && CONFIG_BT_MESH_DEVICE
 	{"device",           atcmd_bt_mesh_device,      2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_PROVISIONER_SCATTERNET) && CONFIG_BT_MESH_PROVISIONER_SCATTERNET
 	{"provisioner_scatternet", atcmd_bt_mesh_provisioner_scatternet, 2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_DEVICE_SCATTERNET) && CONFIG_BT_MESH_DEVICE_SCATTERNET
 	{"device_scatternet", atcmd_bt_mesh_device_scatternet, 2, 2},
+#endif
+#if defined(CONFIG_BT_MESH_PROVISIONER_TEST) && CONFIG_BT_MESH_PROVISIONER_TEST
 	{"provisioner_test", atcmd_bt_mesh_provisioner_test, 2, 9},
+#endif
+#if defined(CONFIG_BT_MESH_DEVICE_TEST) && CONFIG_BT_MESH_DEVICE_TEST
 	{"device_test", atcmd_bt_mesh_device_test, 2, 2},
+#endif
+#if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
 	{"iso",              atcmd_ble_iso,             3, 8},
+#endif
+#if defined(CONFIG_BT_A2DP) && CONFIG_BT_A2DP
 	{"a2dp",             atcmd_bt_a2dp,             3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_SCATTERNET) && CONFIG_BT_A2DP_SCATTERNET
 	{"a2dp_scatternet",  atcmd_bt_a2dp_scatternet,  3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET) && CONFIG_BT_A2DP_PROVISIONER_SCATTERNET
 	{"a2dp_provisioner_scatternet",  atcmd_bt_a2dp_provisioner_scatternet,  3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_LE_AUDIO_PBP) && CONFIG_BT_A2DP_LE_AUDIO_PBP
 	{"a2dp_pbp",         atcmd_bt_a2dp_pbp,         2, 2},
+#endif
+#if defined(CONFIG_BT_A2DP_LE_AUDIO_TMAP) && CONFIG_BT_A2DP_LE_AUDIO_TMAP
 	{"a2dp_tmap",        atcmd_bt_a2dp_tmap,        3, 3},
+#endif
+#if defined(CONFIG_BT_SPP) && CONFIG_BT_SPP
 	{"spp",              atcmd_bt_spp,              3, 6},
+#endif
+#if defined(CONFIG_BT_HID) && CONFIG_BT_HID
 	{"hid",              atcmd_bt_hid,              2, 3},
+#endif
+#if defined(CONFIG_BT_HFP) && CONFIG_BT_HFP
 	{"hfp",              atcmd_bt_hfp,              3, 3},
+#endif
+#if defined(CONFIG_BT_A2DP_HFP) && CONFIG_BT_A2DP_HFP
 	{"a2dp_hfp",         atcmd_bt_a2dp_hfp,         3, 3},
-	{"leaudio",          atcmd_ble_audio,           3, 8},
+#endif
 #if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
 	{"bap",              atcmd_bt_bap,              4, 4},
 #endif
@@ -553,8 +592,11 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
 	{"gmap",             atcmd_bt_gmap,             3, 3},
 #endif
-	{"bt_config",        atcmd_bt_config,           2, 2},
+#if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
 	{"pts",              atcmd_bt_pts,              1, 5},
+#endif
+	// {"bt_config",        atcmd_bt_config,           2, 2},
+	// {"demo",             atcmd_bt_demo,             1, 1},
 	{NULL,},
 };
 

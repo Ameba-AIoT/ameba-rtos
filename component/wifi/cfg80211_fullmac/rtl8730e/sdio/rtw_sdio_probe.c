@@ -241,9 +241,10 @@ void rtw_sdio_isr_dispatch(struct inic_sdio *priv)
 
 		do {
 			/* validate RX_LEN_RDY before reading RX0_REQ_LEN */
-			sdio_local_read(priv, SDIO_REG_RX0_REQ_LEN, 4, data);
-			rx_len_rdy = le32_to_cpu(*(u32 *)data) & BIT(31);
+			rx_len_rdy = sdio_read8(priv, SDIO_REG_RX0_REQ_LEN + 3) & BIT(7);
+
 			if (rx_len_rdy) {
+				sdio_local_read(priv, SDIO_REG_RX0_REQ_LEN, 4, data);
 				SdioRxFIFOSize = le16_to_cpu(*(u16 *)data);
 
 				if (SdioRxFIFOSize == 0) {

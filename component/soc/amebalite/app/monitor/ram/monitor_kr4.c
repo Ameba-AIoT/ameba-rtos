@@ -225,6 +225,7 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t reboot \n"
 		"\t\t reboot uartburn \n"
 	},
+#ifndef CONFIG_MP_INCLUDED
 	{
 		(const u8 *)"TICKPS",	4, CmdTickPS,	(const u8 *)"\t@TICKPS \n"
 		"\t\t r: release os wakelock \n"
@@ -245,6 +246,7 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t 	   4, info log\n"
 		"\t\t 	   5, debug log\n"
 	},
+#endif
 };
 
 u32

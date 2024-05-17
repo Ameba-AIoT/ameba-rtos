@@ -420,13 +420,12 @@ int _vsscanf_minimal(const char *buf, const char *fmt, va_list args)
 
 		default:
 			if (is_sign) {
-				*va_arg(args, int *) = val.s;
+				memcpy(va_arg(args, int *), &(val.s), sizeof(int));
 			} else {
-				*va_arg(args, unsigned int *) = val.u;
+				memcpy(va_arg(args, int *), &(val.u), sizeof(int));
 			}
 			break;
 		}
-
 		num++;
 
 		if (!next) {

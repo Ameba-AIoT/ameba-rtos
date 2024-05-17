@@ -293,6 +293,9 @@ const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("edcca_mode", proc_read_edcca_mode, proc_write_edcca_mode),
 	RTW_PROC_HDL_SSEQ("antdiv_mode", proc_read_antdiv_mode, NULL),
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
+#if defined(CONFIG_OFFLOAD_MDNS_V4) || defined(CONFIG_OFFLOAD_MDNS_V6)
+	RTW_PROC_HDL_SSEQ("mdns_offload", NULL, proc_set_mdns_offload),
+#endif
 };
 
 const int ndev_sta_proc_hdls_num = sizeof(ndev_sta_proc_hdls) / sizeof(struct rtw_proc_hdl);

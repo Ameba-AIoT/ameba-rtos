@@ -20,6 +20,9 @@
 #include "atcmd_wifi.h"
 #ifdef CONFIG_NEW_ATCMD
 #include "atcmd_mqtt.h"
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#include "atcmd_bt_mp.h"
+#endif
 #endif
 
 //#include "FreeRTOS.h"
@@ -28,6 +31,9 @@
 #if defined(configUSE_WAKELOCK_PMU) && (configUSE_WAKELOCK_PMU == 1)
 #include "ameba_pmu.h"
 #endif
+
+extern u32 cmd_dump_word(u16 argc, u8  *argv[]);
+extern u32 cmd_write_word(u16 argc, u8  *argv[]);
 
 #ifndef CONFIG_INIC_NO_FLASH
 #if (configGENERATE_RUN_TIME_STATS == 1)
@@ -135,7 +141,7 @@ void cpu_stat_thread(void *dummy)
 {
 	status_cmd_para_t *ppara = rtos_mem_malloc(sizeof(status_cmd_para_t));
 	if (NULL == ppara) {
-		RTK_LOGI(NOTAG, "%s malloc failed\r\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, "%s malloc failed\r\n", __FUNCTION__);
 		goto end;
 	}
 	memcpy(ppara, dummy, sizeof(status_cmd_para_t));
@@ -190,12 +196,21 @@ void at_otarecover(void *arg)
 }
 
 #if (configGENERATE_RUN_TIME_STATS == 1)
+static void at_cpuload_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+CPULOAD=<mode>[,<time_intval>,<counter>]\r\n");
+	at_printf("\t<mode>:\t[0,2]\r\n");
+	at_printf("\t<time_intval>:\tIn sec\r\n");
+	at_printf("\t<counter>\t0 means infinit\r\n");
+}
+
 /****************************************************************
 AT command process:
-	AT+PERFORM
-	[+PERFORM]: OK
+	AT+CPULOAD
+	[+CPULOAD]: OK
 ****************************************************************/
-void at_perform(void *arg)
+void at_cpuload(void *arg)
 {
 	int argc = 0;
 	int error_no = 0;
@@ -274,9 +289,12 @@ void at_perform(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+PERFORM:");
+		at_printf("\r\n%sOK\r\n", "+CPULOAD:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+PERFORM:", error_no);
+		at_printf("\r\n%sERROR: %d\r\n", "+CPULOAD:", error_no);
+		if (error_no == 1 || error_no == 3) {
+			at_cpuload_help();
+		}
 	}
 }
 #endif
@@ -308,30 +326,37 @@ void at_list(void *arg)
 	UNUSED(arg);
 
 	/* System commands. */
-	at_printf("\r\nCommon AT Command:\r\n");
+	at_printf("Common AT Command:\r\n");
 	print_system_at();
 
+#ifndef CONFIG_MP_INCLUDED
 	/* Wifi commands. */
-	at_printf("\r\nWi-Fi AT Command:\r\n");
+	at_printf("Wi-Fi AT Command:\r\n");
 	print_wifi_at();
+#endif
 
 #if 0
-#if CONFIG_TRANSPORT
+#if CONFIG_LWIP_LAYER
 	/* TCP/IP commands. */
-	at_printf("\r\nTCP/IP AT Command:\r\n");
+	at_printf("TCP/IP AT Command:\r\n");
 	print_tcpip_at();
+#endif
 #endif
 
 #if defined(CONFIG_BT) && CONFIG_BT
 	/* Bluetooth commands. */
-	at_printf("\r\nBT AT command:\r\n");
-	print_bt_at();
+	at_printf("BT AT command:\r\n");
+	print_bt_ext_at();
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+	print_bt_mp_at();
 #endif
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
 	/* MQTT commands. */
-	at_printf("\r\nMQTT AT command:\r\n");
+	at_printf("MQTT AT command:\r\n");
 	print_mqtt_at();
+#endif
 
 	at_printf("\r\n%sOK\r\n", "+LIST:");
 }
@@ -370,18 +395,192 @@ void at_gmr(void *arg)
 	at_printf("\r\n%s%s,%s,%s\r\n", "+GMR:", at_buf, fw_buf, RTL_FW_COMPILE_TIME);
 }
 
+static void at_log_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+LOG=<get_set>,<module>[,<log_level>]\r\n");
+	at_printf("\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\r\n");
+	at_printf("\t<module>:\t*-each module, others-specific module\r\n");
+	at_printf("\t<log_level>:\t[0,5], only applicable for set mode\r\n");
+}
+
+/****************************************************************
+AT command process:
+	AT+LOG
+	[+LOG]: OK
+	Set or get the log level of specific module / all modules.
+****************************************************************/
+void at_log(void *arg)
+{
+	int argc = 0, temp = 0, mode = -1, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	rtk_log_level_t log_level;
+
+	if (arg == NULL) {
+		RTK_LOGA(NOTAG, "[LOG] ERROR arg: \r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if ((argc > 1) && (argv[1] != NULL)) {
+		mode = atoi(argv[1]);
+	}
+
+	/* Get. */
+	if (mode == 0) {
+		if ((argc != 3) || (argv[2] == NULL)) {
+			RTK_LOGA(NOTAG, "[LOG] Invalid get parameters.\r\n");
+			error_no = 1;
+			goto end;
+		}
+		log_level = rtk_log_level_get(argv[2]);
+		at_printf("<%s> level is %d\r\n", argv[2], log_level);
+	}
+
+	/* Set. */
+	else if (mode == 1) {
+		if ((argc != 4) || (argv[2] == NULL) || (argv[3] == NULL)) {
+			RTK_LOGA(NOTAG, "[LOG] Invalid set parameters.\r\n");
+			error_no = 1;
+			goto end;
+		}
+		temp = atoi(argv[3]);
+		if ((temp < RTK_LOG_NONE) || (temp > RTK_LOG_DEBUG)) {
+			RTK_LOGA(NOTAG, "[LOG] Invalid log level %d.\r\n", temp);
+			error_no = 1;
+			goto end;
+		}
+		log_level = (rtk_log_level_t)temp;
+		rtk_log_level_set(argv[2], log_level);
+	}
+
+	/* Print all. */
+	else if (mode == 2) {
+		if (argc != 2) {
+			RTK_LOGA(NOTAG, "[LOG] Invalid parameter number.\r\n");
+			error_no = 1;
+			goto end;
+		}
+		rtk_log_array_print(rtk_log_tag_array);
+	}
+
+	/* Clean all. */
+	else if (mode == 3) {
+		if (argc != 2) {
+			RTK_LOGA(NOTAG, "[LOG] Invalid parameter number.\r\n");
+			error_no = 1;
+			goto end;
+		}
+		rtk_log_array_clear();
+	}
+
+	/* Invalid. */
+	else {
+		RTK_LOGA(NOTAG, "[LOG] Invalid get_set %d.\r\n", mode);
+		error_no = 1;
+		goto end;
+	}
+
+	RTK_LOGA(NOTAG, "[LOG] Test always level\r\n");
+	RTK_LOGE(NOTAG, "[LOG] Test error level\r\n");
+	RTK_LOGW(NOTAG, "[LOG] Test warning level\r\n");
+	RTK_LOGI(NOTAG, "[LOG] Test info level\r\n");
+	RTK_LOGD(NOTAG, "[LOG] Test debug level\r\n");
+	RTK_LOGS(NOTAG, "[LOG] Test LOG_ITEMS\r\n");
+
+end:
+	if (error_no == 0) {
+		at_printf("\r\n%sOK\r\n", "+LOG:");
+	} else {
+		at_printf("\r\n%sERROR: %d\r\n", "+LOG:", error_no);
+		at_log_help();
+	}
+}
+
+/****************************************************************
+AT command process:
+	AT+RREG
+	[+RREG]: OK
+	Read register value.
+****************************************************************/
+void at_rreg(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+
+	if (arg == NULL) {
+		RTK_LOGW(NOTAG, "[RREG] Error parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if ((argc < 2) || (argc > 4)) {
+		RTK_LOGW(NOTAG, "[RREG] Error parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	cmd_dump_word((u16)(argc - 1), (u8 **)&argv[1]);
+
+end:
+	if (error_no == 0) {
+		at_printf("\r\n%sOK\r\n", "+RREG:");
+	} else {
+		at_printf("\r\n%sERROR: %d\r\n", "+RREG:", error_no);
+	}
+}
+
+/****************************************************************
+AT command process:
+	AT+WREG
+	[+WREG]: OK
+	Write register value.
+****************************************************************/
+void at_wreg(void *arg)
+{
+	int argc = 0, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+
+	if (arg == NULL) {
+		RTK_LOGW(NOTAG, "[WREG] Error parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if (argc != 3) {
+		RTK_LOGW(NOTAG, "[WREG] Error parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	cmd_write_word((u16)(argc - 1), (u8 **)argv[1]);
+
+end:
+	if (error_no == 0) {
+		at_printf("\r\n%sOK\r\n", "+WREG:");
+	} else {
+		at_printf("\r\n%sERROR: %d\r\n", "+WREG:", error_no);
+	}
+}
+
 log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"+OTACLEAR", at_otaclear, {NULL, NULL}},
 	{"+OTARECOVER", at_otarecover, {NULL, NULL}},
 #if (configGENERATE_RUN_TIME_STATS == 1)
-	{"+PERFORM", at_perform, {NULL, NULL}},
+	{"+CPULOAD", at_cpuload, {NULL, NULL}},
 #endif
 #endif
 	{"+TEST", at_test, {NULL, NULL}},
 	{"+LIST", at_list, {NULL, NULL}},
 	{"+RST", at_rst, {NULL, NULL}},
 	{"+GMR", at_gmr, {NULL, NULL}},
+	{"+LOG", at_log, {NULL, NULL}},
+	{"+RREG", at_rreg, {NULL, NULL}},
+	{"+WREG", at_wreg, {NULL, NULL}},
 };
 
 void print_system_at(void)
@@ -391,8 +590,22 @@ void print_system_at(void)
 
 	cmd_len = sizeof(at_sys_items) / sizeof(at_sys_items[0]);
 	for (index = 0; index < cmd_len; index++) {
-		at_printf("\r\nAT%s", at_sys_items[index].log_cmd);
+		at_printf("AT%s\r\n", at_sys_items[index].log_cmd);
 	}
+}
+
+void print_system_help(void)
+{
+	at_printf("AT+OTACLEAR=\r\n");
+	at_printf("AT+OTARECOVER\r\n");
+	at_printf("AT+CPULOAD=<mode>,<time_inteval>,<count>\r\n");
+	at_printf("AT+TEST\r\n");
+	at_printf("AT+LIST\r\n");
+	at_printf("AT+GMR\r\n");
+	at_printf("AT+LOG=<set_or_get>[,<module_name>,<log_level>]\r\n");
+	at_printf("AT+RREG=<flash_address>[,<length>,<in_byte>]\r\n");
+	at_printf("AT+WREG=<flash_address>,<value>\r\n");
+	at_printf("\r\n");
 }
 
 void at_sys_init(void)

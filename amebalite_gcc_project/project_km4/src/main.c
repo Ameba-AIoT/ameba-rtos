@@ -72,9 +72,9 @@ void app_pmu_init(void)
 {
 	DBG_INFO_MSG_ON(MODULE_PMC);
 	DBG_INFO_MSG_ON(MODULE_KM4);
-
+#ifndef CONFIG_MP_INCLUDED
 	SOCPS_sleepInit();
-
+#endif
 	/* if wake from deepsleep, that means we have released wakelock last time */
 	if (BOOT_Reason() & AON_BIT_RSTF_DSLP) {
 		pmu_set_sysactive_time(2);
@@ -159,7 +159,9 @@ int main(void)
 
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
+#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
+#endif
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	app_ftl_init();
@@ -169,8 +171,8 @@ int main(void)
 	app_pre_example();
 
 //only NP can init FW
-#ifdef CONFIG_WLAN
-#if defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
+#if defined(CONFIG_WLAN)
+#if !defined(CONFIG_MP_INCLUDED) && defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
 	wififw_task_create();
 #endif
 

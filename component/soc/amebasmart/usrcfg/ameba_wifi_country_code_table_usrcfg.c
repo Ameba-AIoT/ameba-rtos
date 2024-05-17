@@ -66,6 +66,7 @@ const struct country_code_table_t country_code_table[] = {
 	{{'T', 'V'}, 0x21, TXPWR_LMT_ETSI}, /* 0228 Tuvalu */
 	{{'V', 'U'}, 0x26, TXPWR_LMT_ETSI}, /* 0232 Vanuatu */
 	{{'E', 'H'}, 0x3c, TXPWR_LMT_ETSI}, /* 0234 Western Sahara */
+	{{'0', '0'}, 0x7f, TXPWR_LMT_WW}, /* 0238 World Wide */
 };
 
 /* These countries all use the FCC as the regulatory standard

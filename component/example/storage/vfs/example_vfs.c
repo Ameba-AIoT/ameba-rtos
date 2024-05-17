@@ -26,7 +26,7 @@ void example_vfs_thread(void *param)
 	}
 
 	res = fwrite(val, strlen(val), 1, (FILE *)finfo);
-	if (res != 1) {
+	if (res != strlen(val)) {
 		printf("[%s] fwrite failed,err is %d!!\r\n", __FUNCTION__, res);
 
 	} else {

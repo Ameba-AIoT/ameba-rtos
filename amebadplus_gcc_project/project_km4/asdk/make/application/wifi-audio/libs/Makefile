@@ -101,6 +101,7 @@ lib: COPY_RAM_OBJS
 	make -C foundation lib
 	make -C common lib
 	make -C pal lib
+	make -C libcoap lib
 	$(COPY) $(OBJS) ../xip/
 
 #*****************************************************************************#
@@ -120,6 +121,7 @@ clean: CLEAN_OBJS
 	make -C foundation clean
 	make -C common clean
 	make -C pal clean
+	make -C libcoap clean
 	$(call CLEAN_FUNC)
 
 -include $(DEPS)

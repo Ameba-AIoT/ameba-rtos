@@ -12,6 +12,7 @@ CSRC_DRV += $(SDIODRV)/inic_sdio_msg_queue.c
 CSRC_DRV += $(SDIODRV)/inic_sdio_dev_trx.c
 CSRC_DRV += $(SDIODRV)/inic_sdio_dev_api.c
 CSRC_DRV += $(SDIODRV)/inic_sdio_dev.c
+CSRC_DRV += $(SDIODRV)/inic_sdio_protocal_offload.c
 else
 CSRC_DRV += $(IPCDRV)/inic_ipc_msg_queue.c
 CSRC_DRV += $(IPCDRV)/inic_ipc_dev_trx.c

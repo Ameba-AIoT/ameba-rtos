@@ -127,13 +127,11 @@
 
 /*Wifi verification*/
 #if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined(CONFIG_WIFI_VERIFY_PSPHY)
-#define RTL8730E_WIFI_TEST	1//test code, should delete when use ASIC
 #define WIFI_TEST 1
 #define DISABLE_FW
 #define DISABLE_BB_RF 1
 #endif
 #ifdef CONFIG_WIFI_VERIFY_ASIC
-#define RTL8730E_WIFI_TEST 1  // add wifi testcode for debug
 #define WIFI_TEST 1
 #endif
 
@@ -142,7 +140,6 @@
 /* enable csi function */
 #define CONFIG_CSI
 
-#define CONFIG_REG_ENABLE_KFREE 0	// 0: Depend on efuse(flash), 1: enable, 2: disable
 //#define DISABLE_BB_WATCHDOG
 #define PLATFOM_IS_LITTLE_ENDIAN	1/*for halbb use*/
 
@@ -156,24 +153,24 @@
 #endif
 #define RTL8730E_WORK_AROUND
 
-#define RA_RX_ACK_RSSI
-
-//#define CONFIG_SPEAKER_TEST
-#ifdef CONFIG_SPEAKER_TEST
-//#define CONFIG_SPEAKER_ENCRYPT
-#endif
+//#define RA_RX_ACK_RSSI
 
 //#define CONFIG_P2P
 /*************************** Config for MP_MODE *******************************/
-//#define CONFIG_MP_INCLUDED
 #ifdef CONFIG_MP_INCLUDED
-#define MP_DRIVER 1
-#undef CONFIG_REG_ENABLE_KFREE
-#define CONFIG_REG_ENABLE_KFREE 1	 // 1: enable, 2: disable
-#define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
-#else /* undef CONFIG_MP_INCLUDED  */
-#define MP_DRIVER 0
-#endif /* #ifdef CONFIG_MP_INCLUDED */
+#undef RX_SHORTCUT
+#undef TX_SHORTCUT
+#undef CONFIG_DFS
+#undef CONFIG_FW_C2H_PKT
+#undef CONFIG_IEEE80211W
+#undef CONFIG_WIFI_RA
+#undef CONFIG_WIFI_DIG
+#undef CONFIG_WIFI_TDMA_DIG /*for softap*/
+#undef CONFIG_WIFI_EDCCA
+#undef CONFIG_WIFI_ANTDIV
+#define DISABLE_FW
+
+#endif
 /************************* Config for MP_MODE end *****************************/
 #ifndef CONFIG_PHYDM_CMD
 #define DRV_BB_DBG_TRACE_DISABLE

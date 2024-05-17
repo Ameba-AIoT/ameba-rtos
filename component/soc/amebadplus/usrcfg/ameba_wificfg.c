@@ -77,6 +77,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
+	wifi_user_config.keepalive_interval = 20;
 
 	/* WPS */
 	wifi_user_config.wps_retry_count = 4;
@@ -88,5 +89,9 @@ _WEAK void wifi_set_user_config(void)
 #else
 	wifi_user_config.cfg80211 = 0;
 #endif
+
+	/* wifi speaker */
+	wifi_user_config.wifi_speaker_feature = 0;
+
 }
 

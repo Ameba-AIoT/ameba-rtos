@@ -48,6 +48,8 @@ typedef struct status_cmd_para_s {
 
 extern void print_system_at(void);
 
+extern void print_bt_ext_at(void);
+
 extern void sys_reset(void);
 
 #endif

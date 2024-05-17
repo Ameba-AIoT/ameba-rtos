@@ -894,15 +894,6 @@ enum rtw_channel_switch_res {
 };
 
 /**
-  * @brief wowlan option
-  */
-enum rtw_wowlan_option {
-	RTW_WOWLAN_CTRL,            ///< control mode
-	RTW_WOWLAN_SET_PATTREN,///< set pattren mode
-	RTW_WOWLAN_REDOWNLOAD_FW,///< redownload fw
-};
-
-/**
   * @brief  The enumeration is event type indicated from wlan driver.
   */
 enum rtw_event_indicate {

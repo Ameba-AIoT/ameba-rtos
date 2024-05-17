@@ -66,10 +66,14 @@ OBJS = $(notdir $(CSRC:.c=.o))
 
 # Define the Rules to build the core targets
 # only AP core will make lib/lib_mp
-lib: CORE_TARGETS
+lib_ipc: CORE_TARGETS
 	$(AR) rvs lib_inic.a $(OBJS)
 	$(FROMELF) -g -D lib_inic.a
+ifeq ($(CONFIG_MP_INCLUDED), y)
+	$(MOVE) -f lib_inic.a $(ROOTDIR)/lib/application/lib_wifi_inic_ap_mp.a
+else
 	$(MOVE) -f lib_inic.a $(ROOTDIR)/lib/application/lib_wifi_inic_ap.a
+endif
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE

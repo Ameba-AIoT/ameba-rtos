@@ -298,8 +298,18 @@ static uint8_t app_tmap_pac_source_codec[] = {
 static void app_bt_le_audio_tmap_send_timer_handler(void *arg)
 {
 	(void)arg;
-
+	uint8_t i = 0, tx_iso_data_path_num = 0;
+	tx_iso_data_path_num = app_bt_le_audio_iso_data_path_get_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
+	app_lea_iso_data_path_t *p_iso_path = NULL;
 	if (g_tmap_encode_task.run) {
+		for (i = 0 ; i < tx_iso_data_path_num; i++) {
+			p_iso_path = app_bt_le_audio_iso_data_path_find_by_idx(i, RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
+			if (p_iso_path == NULL) {
+				BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+				continue;
+			}
+			p_iso_path->pkt_seq_num ++;
+		}
 		if (g_tmap_encode_data_sem) {
 			osif_sem_give(g_tmap_encode_data_sem);
 		}
@@ -464,7 +474,6 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 		BT_APP_DUMPBUF(BT_APP_DEBUG, __func__, p_data, data_len);
 		p_iso_path->status_fail_cnt++;
 	}
-	p_iso_path->pkt_seq_num++;
 	app_bt_le_audio_iso_data_tx_statistics(p_iso_path);
 
 	return ret;

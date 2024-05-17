@@ -24,8 +24,9 @@ LINK_APP_LIB += $(APP_LIB)
 
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP), y)
-
+ifneq ($(CONFIG_MP_INCLUDED), y)
 image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
+endif
 ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
 
 
@@ -35,8 +36,9 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
 # Single Core Library
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 LINK_APP_LIB += $(APP_LIB)
-
+ifneq ($(CONFIG_MP_INCLUDED), y)
 image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
+endif
 ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
 
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
@@ -108,13 +110,14 @@ ifeq ($(CONFIG_RPC_EN),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
 endif
 ifneq ($(CONFIG_AUDIO_RPC_AFE)$(CONFIG_AUDIO_LOCAL_AFE)$(CONFIG_AUDIO_FWK),)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 ifeq ($(CONFIG_RPC_EN),y)
 #LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc_hal.a
 endif
 
-lib_image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs_lib_img2
+lib_image2: build_target_folder check_toolchain copy_ld_img2 build_info.h make_subdirs_lib_img2
 
 ifneq ($(wildcard ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi),)
 include ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi
@@ -147,8 +150,9 @@ ifeq ($(CONFIG_AS_INIC_AP), y)
 
 # build NP libs
 else ifeq ($(CONFIG_AS_INIC_NP), y)
-
+ifneq ($(CONFIG_MP_INCLUDED), y)
 	@+$(MAKE) -C make/target/wifi_fw all
+endif
 	@+$(MAKE) -C make/rtk_coex all
 # build single core wifi libs
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
@@ -160,7 +164,9 @@ else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 	#@+$(MAKE) -C make/network/eap all
 	#@+$(MAKE) -C make/network/http2 all
 	@+$(MAKE) -C make/network/tftp all
+ifneq ($(CONFIG_MP_INCLUDED), y)
 	@+$(MAKE) -C make/target/wifi_fw all
+endif
 	@+$(MAKE) -C make/rtk_coex all
 endif
 

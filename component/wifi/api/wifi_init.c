@@ -33,7 +33,7 @@ void _init_thread(void *param)
 	(void) param;
 	u32 val32;
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	/* Initilaize the LwIP stack */
 	LwIP_Init();
 #endif
@@ -89,7 +89,7 @@ void _init_thread(void *param)
 	rtos_create_secure_context(configMINIMAL_SECURE_STACK_SIZE);
 #endif
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	/* Initilaize the LwIP stack */
 	LwIP_Init();
 #endif
@@ -107,9 +107,7 @@ void _init_thread(void *param)
 
 void wlan_initialize(void)
 {
-#if (!defined(RTL8720F_WL_TODO)) && (!defined(RTL8721DA_WL_TODO))
 	wifi_fast_connect_enable(1);
-#endif
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 5) != SUCCESS) {
 		RTK_LOGE(TAG, "%s rtos_task_create(init_thread) failed\n", __FUNCTION__);

@@ -1410,6 +1410,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	Systick_Cmd(ENABLE);
 
 	system_can_yield = 1;
+	(void)xModifiableIdleTime;
 }
 
 void pmu_post_sleep_processing(uint32_t *tick_before_sleep)

@@ -15,7 +15,7 @@ void example_kv_thread(void *param)
 	int res = 0;
 
 	res = rt_kv_set(key, val, strlen(val));
-	if (res != 1) {
+	if (res != strlen(val)) {
 		printf("rt_kv_set failed\r\n");
 	} else {
 		printf("rt_kv_set success, write %d letters.\r\n", strlen(val));
@@ -25,7 +25,7 @@ void example_kv_thread(void *param)
 	memset(buffer, 0, strlen(val));
 	res = rt_kv_get(key, buffer, strlen(val));
 
-	if (res != 1) {
+	if (res != strlen(val)) {
 		printf("rt_kv_get failed\r\n");
 	} else {
 		if (memcmp(buffer, val, strlen(val)) == 0) {

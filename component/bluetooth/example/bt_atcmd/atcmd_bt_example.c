@@ -10,397 +10,7 @@
 #include <bt_utils.h>
 #include <atcmd_bt_impl.h>
 
-_WEAK int bt_demo_main(void)
-{
-	AT_PRINTK("[ATBE] NO demo example!");
-	return -1;
-}
-
-_WEAK int bt_audio_mp_test_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO bt audio mp test example!");
-	return -1;
-}
-
-_WEAK int ble_central_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO central example!");
-	return -1;
-}
-
-_WEAK int ble_peripheral_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO peripheral example!");
-	return -1;
-}
-
-_WEAK int ble_scatternet_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO scatternet example!");
-	return -1;
-}
-
-_WEAK int atcmd_bt_throughput_test(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO throughput example!");
-	return -1;
-}
-
-_WEAK int ble_throughput_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO throughput example!");
-	return -1;
-}
-
-_WEAK int ble_mesh_provisioner_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO mesh provisioner example!");
-	return -1;
-}
-
-_WEAK int ble_mesh_device_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO mesh device example!");
-	return -1;
-}
-
-_WEAK int ble_mesh_provisioner_scatternet_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO mesh provisioner scatternet example!");
-	return -1;
-}
-
-_WEAK int ble_mesh_device_scatternet_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO mesh device scatternet example!");
-	return -1;
-}
-
-_WEAK int ble_mesh_provisioner_test_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO mesh provisioner test example!");
-	return -1;
-}
-
-_WEAK int ble_mesh_device_test_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO mesh device test example!");
-	return -1;
-}
-
-_WEAK int atcmd_bt_mesh_performence_test(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO mesh provisioner test example!");
-	return -1;
-}
-
-_WEAK int bt_config_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO bt config example!");
-	return -1;
-}
-
-_WEAK int bt_a2dp_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO a2dp example!");
-	return -1;
-}
-
-_WEAK int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO a2dp scatternet example!");
-	return -1;
-}
-
-_WEAK int bt_a2dp_provisioner_scatternet_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO a2dp provisioner scatternet example!");
-	return -1;
-}
-
-_WEAK int bt_a2dp_sink_pbp_source_main(uint8_t enable)
-{
-	(void)enable;
-
-	AT_PRINTK("[ATBE] NO a2dp sink pbp source example!");
-	return -1;
-}
-
-_WEAK int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO a2dp sink tmap example!");
-	return -1;
-}
-
-_WEAK int bt_spp_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO spp example!");
-	return -1;
-}
-
-_WEAK int bt_hid_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO hid example!");
-	return -1;
-}
-
-_WEAK int bt_hfp_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO hfp example!");
-	return -1;
-}
-
-_WEAK int bt_pts_main(uint8_t enable)
-{
-	(void)enable;
-	AT_PRINTK("[ATBE] NO pts example!");
-	return -1;
-}
-
-_WEAK int atcmd_bt_pts_cmd(int argc, char **argv)
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO pts example!");
-	return -1;
-}
-
-_WEAK int bt_audio_a2dp_hfp_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO a2dp hfp example!");
-	return -1;
-}
-
-_WEAK int bt_bap_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO bap example!");
-	return -1;
-}
-
-_WEAK int bt_cap_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO cap example!");
-	return -1;
-}
-
-_WEAK int bt_pbp_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO pbp example!");
-	return -1;
-}
-
-_WEAK int bt_tmap_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO tmap example!");
-	return -1;
-}
-
-_WEAK int bt_gmap_main(uint8_t role, uint8_t enable)
-{
-	(void)role;
-	(void)enable;
-	AT_PRINTK("[ATBE] NO gmap example!");
-	return -1;
-}
-
-_WEAK int ble_cis_acceptor_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble cis acceptor example!");
-	return -1;
-}
-
-_WEAK int ble_cis_initiator_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble cis initiator example!");
-	return -1;
-}
-
-_WEAK int ble_bis_broadcaster_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble bis broadcaster example!");
-	return -1;
-}
-
-_WEAK int ble_bis_receiver_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble bis receiver example!");
-	return -1;
-}
-
-_WEAK int ble_audio_broadcast_sink_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio broadcast sink example!");
-	return -1;
-}
-
-_WEAK int ble_audio_broadcast_source_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio broadcast source example!");
-	return -1;
-}
-_WEAK int ble_audio_broadcast_assistant_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio broadcast assistant example!");
-	return -1;
-}
-
-_WEAK int ble_audio_scan_delegator_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio scan delegator example!");
-	return -1;
-}
-_WEAK int ble_audio_unicast_server_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio unicast server example!");
-	return -1;
-}
-
-_WEAK int ble_audio_unicast_client_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio unicast client example!");
-	return -1;
-}
-
-_WEAK int ble_audio_acceptor_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio acceptor example!");
-	return -1;
-}
-
-_WEAK int ble_audio_initiator_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio initiator example!");
-	return -1;
-}
-
-_WEAK int ble_audio_commander_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio commander example!");
-	return -1;
-}
-
-_WEAK int ble_audio_tmap_ums_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio tmap ums example!");
-	return -1;
-}
-
-_WEAK int ble_audio_tmap_umr_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio tmap umr example!");
-	return -1;
-}
-
-_WEAK int ble_audio_tmap_bms_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio tmap bms example!");
-	return -1;
-}
-
-_WEAK int ble_audio_tmap_bmr_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio tmap bmr example!");
-	return -1;
-}
-
-_WEAK int ble_audio_pbp_broadcast_source_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio pbp broadcast source example!");
-	return -1;
-}
-
-_WEAK int ble_audio_pbp_broadcast_sink_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio pbp broadcast sink example!");
-	return -1;
-}
-
-_WEAK int ble_audio_pbp_broadcast_assistant_main(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] NO ble audio pbp broadcast assistant example!");
-	return -1;
-}
-
+int bt_demo_main(void);
 int atcmd_bt_demo(int argc, char *argv[])
 {
 	(void)argc;
@@ -415,6 +25,7 @@ int atcmd_bt_demo(int argc, char *argv[])
 	return 0;
 }
 
+int bt_audio_mp_test_main(uint8_t enable);
 int atcmd_bt_audio_mp_test(int argc, char *argv[])
 {
 	(void)argc;
@@ -435,6 +46,7 @@ int atcmd_bt_audio_mp_test(int argc, char *argv[])
 	return 0;
 }
 
+int ble_central_main(uint8_t enable);
 int atcmd_bt_central(int argc, char *argv[])
 {
 	uint8_t op;
@@ -461,6 +73,7 @@ int atcmd_bt_central(int argc, char *argv[])
 	return 0;
 }
 
+int ble_peripheral_main(uint8_t enable);
 int atcmd_bt_peripheral(int argc, char *argv[])
 {
 	uint8_t op;
@@ -485,6 +98,7 @@ int atcmd_bt_peripheral(int argc, char *argv[])
 	return 0;
 }
 
+int ble_scatternet_main(uint8_t enable);
 int atcmd_bt_scatternet(int argc, char *argv[])
 {
 	uint8_t op;
@@ -509,6 +123,8 @@ int atcmd_bt_scatternet(int argc, char *argv[])
 	return 0;
 }
 
+int atcmd_bt_throughput_test(int argc, char *argv[]);
+int ble_throughput_main(uint8_t enable);
 int atcmd_bt_throughput(int argc, char *argv[])
 {
 	uint8_t op;
@@ -541,6 +157,7 @@ int atcmd_bt_throughput(int argc, char *argv[])
 	return 0;
 }
 
+int ble_mesh_provisioner_main(uint8_t enable);
 int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 {
 	uint8_t op;
@@ -565,6 +182,7 @@ int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 	return 0;
 }
 
+int ble_mesh_device_main(uint8_t enable);
 int atcmd_bt_mesh_device(int argc, char *argv[])
 {
 	uint8_t op;
@@ -589,6 +207,8 @@ int atcmd_bt_mesh_device(int argc, char *argv[])
 	return 0;
 }
 
+int atcmd_bt_mesh_performence_test(int argc, char *argv[]);
+int ble_mesh_provisioner_test_main(uint8_t enable);
 int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 {
 	uint8_t op;
@@ -620,6 +240,7 @@ int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 	return 0;
 }
 
+int ble_mesh_device_test_main(uint8_t enable);
 int atcmd_bt_mesh_device_test(int argc, char *argv[])
 {
 	uint8_t op;
@@ -644,6 +265,7 @@ int atcmd_bt_mesh_device_test(int argc, char *argv[])
 	return 0;
 }
 
+int ble_mesh_provisioner_scatternet_main(uint8_t enable);
 int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 {
 	uint8_t op;
@@ -668,6 +290,7 @@ int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 	return 0;
 }
 
+int ble_mesh_device_scatternet_main(uint8_t enable);
 int atcmd_bt_mesh_device_scatternet(int argc, char *argv[])
 {
 	uint8_t op;
@@ -692,6 +315,7 @@ int atcmd_bt_mesh_device_scatternet(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_main(uint8_t role, uint8_t enable);
 int atcmd_bt_a2dp(int argc, char *argv[])
 {
 	(void)argc;
@@ -722,6 +346,7 @@ int atcmd_bt_a2dp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable);
 int atcmd_bt_a2dp_scatternet(int argc, char *argv[])
 {
 	(void)argc;
@@ -752,6 +377,7 @@ int atcmd_bt_a2dp_scatternet(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_provisioner_scatternet_main(uint8_t role, uint8_t enable);
 int atcmd_bt_a2dp_provisioner_scatternet(int argc, char *argv[])
 {
 	(void)argc;
@@ -782,6 +408,7 @@ int atcmd_bt_a2dp_provisioner_scatternet(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_sink_pbp_source_main(uint8_t enable);
 int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 {
 	(void)argc;
@@ -802,6 +429,7 @@ int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable);
 int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 {
 	(void)argc;
@@ -834,6 +462,7 @@ int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 	return 0;
 }
 
+int bt_hfp_main(uint8_t role, uint8_t enable);
 int atcmd_bt_hfp(int argc, char *argv[])
 {
 	(void)argc;
@@ -864,6 +493,7 @@ int atcmd_bt_hfp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_audio_a2dp_hfp_main(uint8_t role, uint8_t enable);
 int atcmd_bt_a2dp_hfp(int argc, char *argv[])
 {
 	(void)argc;
@@ -894,6 +524,7 @@ int atcmd_bt_a2dp_hfp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_spp_main(uint8_t role, uint8_t enable);
 int atcmd_bt_spp(int argc, char *argv[])
 {
 	(void)argc;
@@ -924,6 +555,7 @@ int atcmd_bt_spp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_hid_main(uint8_t role, uint8_t enable);
 int atcmd_bt_hid(int argc, char *argv[])
 {
 	(void)argc;
@@ -954,6 +586,10 @@ int atcmd_bt_hid(int argc, char *argv[])
 	return 0;
 }
 
+int ble_cis_acceptor_main(int argc, char *argv[]);
+int ble_cis_initiator_main(int argc, char *argv[]);
+int ble_bis_broadcaster_main(int argc, char *argv[]);
+int ble_bis_receiver_main(int argc, char *argv[]);
 int atcmd_ble_iso(int argc, char *argv[])
 {
 	int ret = 0;
@@ -994,59 +630,7 @@ int atcmd_ble_iso(int argc, char *argv[])
 	return ret;
 }
 
-int atcmd_ble_audio(int argc, char *argv[])
-{
-	int ret = 0;
-
-	if (argc < 2) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for le audio!", argc);
-		return -1;
-	}
-
-	if (strcmp(argv[0], "usrv") == 0) {
-		ret =  ble_audio_unicast_server_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "ucli") == 0) {
-		ret =  ble_audio_unicast_client_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "bsnk") == 0) {
-		ret =  ble_audio_broadcast_sink_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "bsrc") == 0) {
-		ret =  ble_audio_broadcast_source_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "bass") == 0) {
-		ret =  ble_audio_broadcast_assistant_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "sdel") == 0) {
-		ret =  ble_audio_scan_delegator_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "acc") == 0) {
-		ret =  ble_audio_acceptor_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "ini") == 0) {
-		ret =  ble_audio_initiator_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "com") == 0) {
-		ret =  ble_audio_commander_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "tmap_ums") == 0) {
-		ret =  ble_audio_tmap_ums_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "tmap_umr") == 0) {
-		ret =  ble_audio_tmap_umr_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "tmap_bms") == 0) {
-		ret =  ble_audio_tmap_bms_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "tmap_bmr") == 0) {
-		ret =  ble_audio_tmap_bmr_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "pbp_bsrc") == 0) {
-		ret =  ble_audio_pbp_broadcast_source_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "pbp_bsink") == 0) {
-		ret =  ble_audio_pbp_broadcast_sink_main(argc - 1, argv + 1);
-	} else if (strcmp(argv[0], "pbp_assist") == 0) {
-		ret =  ble_audio_pbp_broadcast_assistant_main(argc - 1, argv + 1);
-	} else {
-		AT_PRINTK("[ATBE] Error: wrong argv (%s) for le audio!", argv[0]);
-		return -1;
-	}
-
-	if (ret != 0) {
-		AT_PRINTK("[ATBE] Error: ble audio %s %s example failed! ret= %d", argv[0], argv[1], ret);
-	}
-
-	return ret;
-}
-
+int bt_bap_main(uint8_t role, uint8_t enable);
 int atcmd_bt_bap(int argc, char *argv[])
 {
 	(void)argc;
@@ -1110,6 +694,7 @@ int atcmd_bt_bap(int argc, char *argv[])
 	return 0;
 }
 
+int bt_cap_main(uint8_t role, uint8_t enable);
 int atcmd_bt_cap(int argc, char *argv[])
 {
 	(void)argc;
@@ -1151,6 +736,7 @@ int atcmd_bt_cap(int argc, char *argv[])
 	return 0;
 }
 
+int bt_pbp_main(uint8_t role, uint8_t enable);
 int atcmd_bt_pbp(int argc, char *argv[])
 {
 	(void)argc;
@@ -1192,6 +778,7 @@ int atcmd_bt_pbp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_tmap_main(uint8_t role, uint8_t enable);
 int atcmd_bt_tmap(int argc, char *argv[])
 {
 	(void)argc;
@@ -1245,6 +832,7 @@ int atcmd_bt_tmap(int argc, char *argv[])
 	return 0;
 }
 
+int bt_gmap_main(uint8_t role, uint8_t enable);
 int atcmd_bt_gmap(int argc, char *argv[])
 {
 	(void)argc;
@@ -1290,6 +878,7 @@ int atcmd_bt_gmap(int argc, char *argv[])
 	return 0;
 }
 
+int bt_config_main(uint8_t enable);
 int atcmd_bt_config(int argc, char *argv[])
 {
 	uint8_t op;
@@ -1315,6 +904,7 @@ int atcmd_bt_config(int argc, char *argv[])
 	return 0;
 }
 
+int bt_pts_main(uint8_t enable);
 int atcmd_bt_pts(int argc, char *argv[])
 {
 	uint8_t op;

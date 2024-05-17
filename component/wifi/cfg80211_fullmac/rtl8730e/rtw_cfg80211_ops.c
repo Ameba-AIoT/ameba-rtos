@@ -58,6 +58,11 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy, struct net_device *nde
 		global_idev.p2p_global.p2p_role = P2P_ROLE_GO;
 		llhw_wifi_set_p2p_role(P2P_ROLE_GO);
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
+		if (ndev_to_wdev(ndev)->iftype == NL80211_IFTYPE_P2P_GO) {
+			/*change from GO to GC(P2P_TODO: below setting not suitable when STA port connected)*/
+			global_idev.p2p_global.pd_wlan_idx = 1;
+			rtw_p2p_driver_macaddr_switch();
+		}
 		global_idev.p2p_global.p2p_role = P2P_ROLE_CLIENT;
 		llhw_wifi_set_p2p_role(P2P_ROLE_CLIENT);
 	}

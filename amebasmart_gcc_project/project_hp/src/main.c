@@ -186,7 +186,9 @@ int main(void)
 	ipc_table_init(IPCNP_DEV);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
+#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
+#endif
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	app_ftl_init();

@@ -1,0 +1,167 @@
+/*********************************
+*
+*        ReadDMI
+* Notes
+*    (1) op: [0] NOP, [1] READ, [2] WRITE
+*/
+int ReadWriteDMI(U8 op, U8 index, int wdata) {
+  U8 TDI;
+  U8 TMS;
+  U8 TDO_0;
+  U8 TDO_1;
+  U8 TDO_2;
+  U8 TDO_3;
+  U8 TDO_4;
+  U8 TDO_5;
+  U8 ack;
+  int data;
+  
+  //JLINK_JTAG_Reset();
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 4); // wjraw 4, 0, 0
+  
+  TMS = 0x3;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 4); // wjraw 5, 3, 0
+  
+  TMS = 0x10;
+  TDI = 0x11;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 5); // wjraw 5, 10, 11
+  
+  TMS = 0x1;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 2); // wjraw 2, 1, 0
+  
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 4); // wjraw 4, 0, 0
+  
+  TMS = 0x1;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 3); // wjraw 3, 1, 0
+  
+  //
+  //ScanDR
+  //
+  TMS = 0x0;
+  TDI = op;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 2); // wjraw 2, 0, 1
+  TMS = 0x0;
+  TDI = (wdata >> 0) & 0xFF;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 8); // wjraw 8, 00, wdata[7:0]
+  TMS = 0x0;
+  TDI = (wdata >> 8) & 0xFF;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 8); // wjraw 8, 00, wdata[15:8]
+  TMS = 0x0;
+  TDI = (wdata >> 16) & 0xFF;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 8); // wjraw 8, 00, wdata[23:16]
+  TMS = 0x0;
+  TDI = (wdata >> 24) & 0xFF;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 8); // wjraw 8, 00, wdata[31:24]
+  
+  TMS = 0x80;
+  TDI = index;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 8); // wjraw 8, 80, index
+  
+  TMS = 0x1;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 2); // wjraw 2, 1, 0
+  
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 4); // wjraw 4, 0, 0 Run-Test/Idle
+  
+  //
+  // 2nd Loop
+  //
+  TMS = 0x1;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 3); // wjraw 3, 1, 0
+  //
+  // ScanDR
+  //
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 2); // wjraw 2, 0, 0
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_1 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_1, 8); // wjraw 8, 00, 00
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_2 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_2, 8); // wjraw 8, 00, 00
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_3 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_3, 8); // wjraw 8, 00, 00
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_4 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_4, 8); // wjraw 8, 00, 00
+  TMS = 0x80;
+  TDI = 0x0;
+  TDO_5 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_5, 8); // wjraw 8, 80, 00
+  
+  ack = TDO_0;
+  data = TDO_1 | (TDO_2 << 8) | (TDO_3 << 16) | (TDO_4 << 24);
+  //JLINK_SYS_Report1("INDEX: ", index);
+  //JLINK_SYS_Report1("ACK  : ", ack);
+  if (op == 1) {
+  JLINK_SYS_Report1("DATA : ", data);
+  }
+  
+  TMS = 0x1;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 2); // wjraw 2, 1, 0
+  TMS = 0x0;
+  TDI = 0x0;
+  TDO_0 = 0;
+  JLINK_JTAG_ReadWriteBits(&TDI, &TMS, &TDO_0, 4); // wjraw 4, 0, 0 Run-Test/Idle
+  
+  return data;
+}
+
+/**************************************************************************************
+*
+*        SetupTarget
+*
+* Notes
+*    (1) If using cJTAG connection, call JLINK_JTAG* after cJTAG connection was built
+*    (2) // write DM_CUSTOM2 inverse value to change its state
+*/
+int SetupTarget(void) {
+  int statusKR4;
+  // read DM_CUSTOM2(mapping to debug_custom in CPU top
+  statusKR4 = ReadWriteDMI(1, 0x72, 0);
+  JLINK_SYS_Report1("KR4 : ", statusKR4);
+  ReadWriteDMI(2, 0x72, ~statusKR4);
+  JLINK_SYS_Sleep(200);
+  statusKR4 = ReadWriteDMI(1, 0x72, 0);
+  JLINK_SYS_Report1("KR4 : ", statusKR4);
+  ReadWriteDMI(2, 0x72, ~statusKR4);
+  JLINK_SYS_Sleep(200);
+  ReadWriteDMI(1, 0x72, 0);
+  ReadWriteDMI(2, 0x72, 0);
+  ReadWriteDMI(1, 0x72, 0);
+  ReadWriteDMI(2, 0x72, 1);
+}

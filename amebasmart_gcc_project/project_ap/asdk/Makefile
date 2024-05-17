@@ -15,20 +15,30 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
           else echo sh; fi ; fi)
 
 CODE_ANALYZE_PYTHON=python $(SCRIPT_DIR)/code_analyze.py
+STATIC_ANALYZE_PYTHON=python $(SCRIPT_DIR)/static_code_analyze.py
+ifeq ($(CONFIG_MP_INCLUDED), y)
+    ANALYZE_MP_IMG = 1
+else
+    ANALYZE_MP_IMG = 0
+endif
 #ROM_SYMBOL_GEN_PYTHON=$(shell $(ABS_ROOTDIR)/img_utility/export_rom_symbol.py)
 #ROM_SYMBOL_GEN_PYTHON= 
 include $(MAKE_INCLUDE_GEN)
 
 # Verbose flag
 V ?= 0
-ifeq (${V},0)
-        Q:=@
-        ECHO:=@echo
-else
+ifeq (${V},1)
         Q:=
-	ECHO:=@\#
+        ECHO:=@\#
+else
+        Q:=@
+	ECHO:=@echo
 endif
-
+ifeq (${V},3)
+DAILY_BUILD = 1
+else
+DAILY_BUILD = 0
+endif
 export ABS_ROOTDIR MAKE_INCLUDE_GEN HOSTCC Q ECHO
 
 
@@ -94,7 +104,7 @@ LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp.a
 endif
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_chipinfo.a
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a
-LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_Vmin_Test.a
+#LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_Vmin_Test.a
 ifeq ($(CONFIG_802154_THREAD_EN), y)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_openthread.a
 endif
@@ -137,6 +147,7 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_ui_drivers.a
 endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 
@@ -337,8 +348,12 @@ endif
 code_analyze:
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
-		$(CODE_ANALYZE_PYTHON); \
+		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
 	fi
+	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
+         $(STATIC_ANALYZE_PYTHON); \
+	fi
+
 	@echo "========== Image analyze end =========="
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #

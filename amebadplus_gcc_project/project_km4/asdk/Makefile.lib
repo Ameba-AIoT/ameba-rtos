@@ -91,8 +91,8 @@ LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_crashdump.a
 
 #audio
 ifeq ($(CONFIG_WIFI_AUDIO),y)
+LINK_THIRD_APP_LIB += -Wl,--whole-archive $(APP_LIB_DIR)/lib_wfa_audio_hal.a -Wl,--no-whole-archive
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_wifi_audio.a
-LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_wfa_coap.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_flac.a
 endif
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
@@ -112,6 +112,7 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_passthrough.a
 endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 

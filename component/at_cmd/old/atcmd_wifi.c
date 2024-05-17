@@ -8,7 +8,7 @@
 #include "os_wrapper.h"
 #include "log_service.h"
 #include "atcmd_wifi.h"
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
@@ -16,7 +16,6 @@
 #include <wifi_conf.h>
 #include <wifi_intf_drv_to_upper.h>
 #endif
-
 
 /******************************************************************************/
 #define	_AT_WLAN_SET_SSID_          "ATW0"
@@ -62,10 +61,12 @@
 
 #define RTW_BUFFER_UNAVAILABLE_TEMPORARY	9
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
 #endif
+
+#ifndef CONFIG_MP_INCLUDED
 
 #if CONFIG_WLAN
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
@@ -75,7 +76,7 @@ extern void cmd_wps(int argc, char **argv);
 #ifdef CONFIG_AS_INIC_AP
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 #endif
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 
@@ -333,7 +334,7 @@ void fATWD(void *arg)
 	}
 	RTK_LOGS(NOTAG, "\n\r");
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	user_static_ip.use_static_ip = 0;
 	LwIP_ReleaseIP(STA_WLAN_INDEX);
 #endif
@@ -400,7 +401,7 @@ void fATWx(void *arg)
 	(void) arg;
 
 	int i = 0;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	u8 *mac = LwIP_GetMAC(0);
 	u8 *ip = LwIP_GetIP(0);
 	u8 *gw = LwIP_GetGW(0);
@@ -418,7 +419,7 @@ void fATWx(void *arg)
 	RTK_LOGI(NOTAG, "[ATW?]: _AT_WLAN_INFO_\n\r");
 	for (i = 0; i < NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 			mac = LwIP_GetMAC(i);
 			ip = LwIP_GetIP(i);
 			gw = LwIP_GetGW(i);
@@ -435,7 +436,7 @@ void fATWx(void *arg)
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 			RTK_LOGI(NOTAG, "Interface (%d)\n\r", i);
 			RTK_LOGI(NOTAG, "==============================\n\r");
 			RTK_LOGI(NOTAG, "\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\n\r", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
@@ -469,7 +470,7 @@ void fATWx(void *arg)
 		else {
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
 			if (i == NET_IF_NUM - 1) {
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 				mac = LwIP_GetMAC(i);
 				ip = LwIP_GetIP(i);
 				gw = LwIP_GetGW(i);
@@ -662,11 +663,8 @@ exit:
 #endif
 void fATWf(void *arg)
 {
-#ifndef RTL8721DA_WL_TODO
 	if (!arg) {
-		RTK_LOGI(NOTAG, "[ATWf]Usage: ATW8=[FLUSH_MODE]\n\r");
 		RTK_LOGI(NOTAG, "        1 : DISABLE AUTORECONNECT\n\r");
-		RTK_LOGI(NOTAG, "        2 : FLUSH SYSTEM DATA\n\r");
 		return;
 	}
 	int mode =  atoi((const char *)arg);
@@ -674,17 +672,7 @@ void fATWf(void *arg)
 	if (mode == 1) {
 		RTK_LOGI(NOTAG, "[ATWf] Disable autoreconnect...\n\r");
 		wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
-	} else if (mode == 2) {
-#ifndef RTL8720F_WL_TODO
-		extern int32_t rt_kv_delete(const char *key);
-		RTK_LOGI(NOTAG, "[ATWf] Flush system data\n\r");
-		rt_kv_delete("wlan_data");
-		rt_kv_delete("bt_data");
-#endif
 	}
-#else
-	(void)arg;
-#endif
 	return;
 }
 
@@ -692,7 +680,7 @@ void fATWA(void *arg)
 {
 	/* To avoid gcc warnings */
 	(void) arg;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 	u32 ip_addr;
 	u32 netmask;
@@ -742,7 +730,7 @@ void fATWA(void *arg)
 	}
 #endif
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit();
 	ip_addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = WIFI_MAKEU32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
@@ -785,7 +773,7 @@ void fATWA(void *arg)
 	if (setting) {
 		rtos_mem_free(setting);
 	}
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
@@ -862,7 +850,7 @@ void fATWC(void *arg)
 	//Check if in AP mode
 	wifi_get_setting(STA_WLAN_INDEX, p_wifi_setting);
 	if (p_wifi_setting->mode == RTW_MODE_AP) {
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 		dhcps_deinit();
 #endif
 		if (wifi_on(RTW_MODE_STA) < 0) {
@@ -890,7 +878,7 @@ void fATWC(void *arg)
 	}
 	tick2 = rtos_time_get_current_system_time_ms();
 	RTK_LOGI(NOTAG, "Connected after %d ms.\n\r\n", (unsigned int)(tick2 - tick1));
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
 	LwIP_DHCP(0, DHCP_START);
 	tick3 = rtos_time_get_current_system_time_ms();
@@ -1113,28 +1101,6 @@ exit:
 	return;
 }
 
-void print_wlan_help(void *arg)
-{
-	/* To avoid gcc warnings */
-	(void) arg;
-
-	RTK_LOGS(NOTAG, "WLAN AT COMMAND SET:\n\r");
-	RTK_LOGS(NOTAG, "==============================\n\r");
-	RTK_LOGS(NOTAG, "1. Wlan Scan for Network Access Point\n\r");
-	RTK_LOGS(NOTAG, "   # ATWS\n\r");
-	RTK_LOGS(NOTAG, "2. Connect to an AES AP\n\r");
-	RTK_LOGS(NOTAG, "   # ATW0=SSID\n\r");
-	RTK_LOGS(NOTAG, "   # ATW1=PASSPHRASE\n\r");
-	RTK_LOGS(NOTAG, "   # ATWC\n\r");
-	RTK_LOGS(NOTAG, "3. Create an AES AP\n\r");
-	RTK_LOGS(NOTAG, "   # ATW3=SSID\n\r");
-	RTK_LOGS(NOTAG, "   # ATW4=PASSPHRASE\n\r");
-	RTK_LOGS(NOTAG, "   # ATW5=CHANNEL\n\r");
-	RTK_LOGS(NOTAG, "   # ATWA\n\r");
-	RTK_LOGS(NOTAG, "4. Ping\n\r");
-	RTK_LOGS(NOTAG, "   # ATWI=xxx.xxx.xxx.xxx\n\r");
-}
-
 void fATPE(void *arg)
 {
 	int argc;
@@ -1283,7 +1249,7 @@ exit:
 
 #endif // end of #if CONFIG_WLAN
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 void fATWI(void *arg)
 {
 	int argc;
@@ -1351,24 +1317,11 @@ void fATWT(void *arg)
 		return;
 	}
 
-	char *body = (char *) malloc(strlen(arg) + 1);
-	if (!body) {
-		RTK_LOGS(NOTAG, "[ATWT]ERROR: Can't malloc memory for iperf3 Usage\n\r");
-		return;
-	}
-	memset(body, 0, strlen(arg) + 1);
-	memcpy(body, arg, strlen(arg));
-
-	char delims[] = ",";
-	char *version = NULL;
-	version = strsep(&body, delims);
-
-	argv[0] = (char *)"iperf3";
-
-	if (version && (strlen(version) == strlen("iperf3")) && (memcmp(version, argv[0], strlen(argv[0])) == 0)) {
+	if (!memcmp(arg, "iperf3", 6))  {
 		RTK_LOGS(NOTAG, "[ATWT]: _AT_WLAN_IPERF3_TEST_\n\r");
+		argv[0] = (char *)"iperf3";
 
-		if ((argc = parse_param((char *)arg + strlen(argv[0]) + 1, argv)) > 1) {
+		if ((argc = parse_param((char *)arg + 6 + 1, argv)) > 1) { //skip "iperf3,"
 			cmd_iperf3(argc, argv);
 		} else {
 			RTK_LOGS(NOTAG, "[ATWT] More Usage: ATWT=-help\n\r");
@@ -1380,7 +1333,6 @@ void fATWT(void *arg)
 			cmd_iperf(argc, argv);
 		}
 	}
-	free(body);
 }
 
 void fATWU(void *arg)
@@ -1421,7 +1373,7 @@ void fATWU(void *arg)
 }
 #endif
 log_item_t at_wifi_items[ ] = {
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	{"ATWI", fATWI, {NULL, NULL}},
 	{"ATWT", fATWT, {NULL, NULL}},
 	{"ATWU", fATWU, {NULL, NULL}},
@@ -1470,10 +1422,15 @@ log_item_t at_wifi_items[ ] = {
 	{"ATXP", fATXP, {NULL, NULL}},
 #endif
 };
+#else
+log_item_t at_wifi_items[ ] = {
 
+};
+
+#endif
 void at_wifi_init(void)
 {
-#if CONFIG_WLAN
+#if CONFIG_WLAN && !defined(CONFIG_MP_INCLUDED)
 	init_wifi_struct();
 #endif
 	log_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));

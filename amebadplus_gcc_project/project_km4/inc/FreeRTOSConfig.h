@@ -214,10 +214,14 @@ standard names - or at least those used in the unmodified vector table. */
 /* In wlan usage, this value is suggested to use value less than 80 milliseconds */
 #define configEXPECTED_IDLE_TIME_BEFORE_SLEEP   		2
 
+#ifndef CONFIG_MP_INCLUDED
 /* It's magic trick that let us can use our own sleep function */
 #define configPRE_SLEEP_PROCESSING( x )         		( pmu_pre_sleep_processing((uint32_t *)&x) )
 #define configPOST_SLEEP_PROCESSING( x )        		( pmu_post_sleep_processing((uint32_t *)&x) )
-
+#else
+#define configPRE_SLEEP_PROCESSING( x )
+#define configPOST_SLEEP_PROCESSING( x )
+#endif
 extern void pmu_pre_sleep_processing(uint32_t *expected_idle_time);
 extern void pmu_post_sleep_processing(uint32_t *expected_idle_time);
 extern int  pmu_ready_to_sleep(void);

@@ -43,6 +43,7 @@
 #define CONFIG_SAE_DH_SUPPORT 1
 #endif
 
+#define CONFIG_PS_EN
 
 /* For promiscuous mode */
 #define CONFIG_PROMISC
@@ -108,5 +109,22 @@
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
 //#define CONFIG_FRAME_DEFRAG // support frame defragmentaion
+
+#ifdef CONFIG_MP_INCLUDED
+#undef CONFIG_PS_EN
+#undef CONFIG_AUTO_RECONNECT
+
+#undef CONFIG_IEEE80211W
+#undef CONFIG_OWE_SUPPORT
+#undef CONFIG_SAE_SUPPORT
+#undef CONFIG_SAE_DH_SUPPORT
+#undef CONFIG_RTW_WNM
+#undef CONFIG_IEEE80211R
+#undef CONFIG_IEEE80211K
+#undef CONFIG_RTW_MBO
+
+#define CONFIG_AUTO_RECONNECT 0
+#endif
+
 
 #endif //WLANCONFIG_H

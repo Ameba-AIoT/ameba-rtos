@@ -112,6 +112,10 @@ extern u8 __km4_bd_psram_start__[];
 extern u8 __git_ver_table_start__[];
 extern u8 __git_ver_table_end__[];
 
+/* mp used */
+extern u8 __km0_bd_ram_mp_start__[];
+extern u8 __km0_image2_entry_func_mp__[];
+
 enum _BOOT_TYPE_ {
 	BOOT_FROM_FLASH = 0,
 	BOOT_FROM_SDIO  = 1,

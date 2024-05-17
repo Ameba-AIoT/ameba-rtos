@@ -1360,7 +1360,7 @@ static struct ieee80211_regdomain *_rtl_reg_get_regd(u8 chplan)
 	}
 
 	if (map) {
-		return map->regd;
+		return (struct ieee80211_regdomain *)map->regd;
 	} else {
 		return &rtl_regd_7F;
 	}
@@ -1376,7 +1376,7 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 	if (ret == 0) {
 		llhw_wifi_get_country_code(&table);
 		regd = _rtl_reg_get_regd(table.channel_plan);
-		memcpy(&regd->alpha2[0], &table.char2[0], 2);
+		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
 		wiphy_apply_custom_regulatory(wiphy, regd);
 		wiphy->regd = regd;
 	} else {
@@ -1424,10 +1424,10 @@ int rtw_regd_init(void)
 
 	regd = _rtl_reg_get_regd(table.channel_plan);
 	if ((table.char2[0] == 0xff) && (table.char2[1] == 0xff)) {
-		memcpy(&regd->alpha2[0], &ww_char2[0], 2);
+		memcpy((void *)&regd->alpha2[0], &ww_char2[0], 2);
 		dev_dbg(global_idev.fullmac_dev, "%s world wide\n", __func__);
 	} else {
-		memcpy(&regd->alpha2[0], &table.char2[0], 2);
+		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
 		dev_dbg(global_idev.fullmac_dev, "%s country: %s\n", __func__, table.char2);
 	}
 

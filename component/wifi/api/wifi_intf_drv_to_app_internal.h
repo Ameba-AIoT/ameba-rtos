@@ -121,14 +121,12 @@ void wifi_wpa_add_key(struct rtw_crypt_info *crypt);
  */
 void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops);
 
-#ifdef CONFIG_OWE_SUPPORT
 /**
  * @brief  for owe to set DH params
  * @param[in]  owe_param
  * @return  null.
  */
 void wifi_set_owe_param(struct rtw_owe_param_t *owe_param);
-#endif
 
 /**
  * @brief  Set Management Frame Protection Support.
@@ -160,14 +158,12 @@ int wifi_set_group_id(unsigned char value);
  */
 int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
 
-#ifdef CONFIG_IEEE80211R
 /**
  * @brief  for wpa supplicant indicate ft status.
  * @param[in] status:ft_status which will be indicated.
  * @return  null.
  */
 int wifi_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status);
-#endif
 
 /**
  * @brief  enable or disable pmk cache.

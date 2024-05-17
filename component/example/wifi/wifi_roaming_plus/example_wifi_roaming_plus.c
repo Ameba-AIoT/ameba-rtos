@@ -58,7 +58,7 @@ typedef struct wifi_roaming_ap {
 	u8 	password[65];
 	u8	key_idx;
 	s32	rssi;
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	u8	ip[4];
 #endif
 } wifi_roaming_ap_t;
@@ -83,7 +83,7 @@ enum {
 	FAST_CONNECT_ALL_CH  = 1
 };
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 static wifi_roaming_ap_t *ap_list;
@@ -219,7 +219,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	rtw_wifi_setting_t ap_info = {0};
 	struct psk_info PSK_INFO;
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	netifapi_netif_set_up(&xnetif[0]);
 #endif
 	//disable autoreconnect to manually reconnect the specific ap or channel.

@@ -117,9 +117,9 @@ int fatfs_read(unsigned char *buf, unsigned int size, unsigned int count, vfs_fi
 	FRESULT res = f_read(fil, buf, size * count, (UINT *)&br);
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs fread error %d \r\n", res);
-		return -1;
+		return -res;
 	}
-	return br / (size * count);
+	return br;
 }
 
 int fatfs_write(unsigned char *buf, unsigned int size, unsigned int count, vfs_file *finfo)
@@ -129,9 +129,9 @@ int fatfs_write(unsigned char *buf, unsigned int size, unsigned int count, vfs_f
 	FRESULT res = f_write(fil, buf, size * count, (UINT *)&bw);
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs fwrite error %d \r\n", res);
-		return -1;
+		return -res;
 	}
-	return bw / (size * count);
+	return bw;
 }
 
 int fatfs_close(vfs_file *finfo)

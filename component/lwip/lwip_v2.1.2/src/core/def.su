@@ -1,6 +1,0 @@
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/def.c:76:1:lwip_htons	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/def.c:90:1:lwip_htonl	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/def.c:105:1:lwip_strnstr	32	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/def.c:128:1:lwip_stricmp	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/def.c:163:1:lwip_strnicmp	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/def.c:199:1:lwip_itoa	0	static

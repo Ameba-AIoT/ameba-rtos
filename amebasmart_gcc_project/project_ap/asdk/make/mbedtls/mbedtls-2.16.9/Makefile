@@ -74,9 +74,11 @@ CSRC = $(DIR)/library/aes.c					\
        $(DIR)/library/x509write_csr.c		\
        $(DIR_MAP)/rom_ssl_ram_map.c			\
 
+ifneq ($(CONFIG_MP_INCLUDED), y)
 ifeq ($(CONFIG_WLAN),y)
 ifeq ($(CONFIG_AS_INIC_AP),y)
 	CSRC += $(DIR)/library/net_sockets.c
+endif
 endif
 endif
 

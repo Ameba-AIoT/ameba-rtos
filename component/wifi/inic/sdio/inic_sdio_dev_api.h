@@ -75,6 +75,7 @@ void inic_event_wifi_set_usr_config(u32 api_id, u32 *param_buf);
 void inic_event_wifi_set_edcca_mode(u32 api_id, u32 *param_buf);
 void inic_event_wifi_get_edcca_mode(u32 api_id, u32 *param_buf);
 void inic_event_wifi_get_ant_info(u32 api_id, u32 *param_buf);
+void inic_event_war_offload_ctrl(u32 api_id, u32 *param_buf);
 
 #ifdef CONFIG_NAN
 void inic_event_nan_init(u32 api_id, u32 *param_buf);

@@ -107,8 +107,7 @@ int wifi_set_lps_enable(u8 enable);
  * 	Wi-Fi automatically turns RF off during the association to AP
  * 	if traffic is not busy, while it also automatically turns RF on
  * 	to listen to the beacon of the associated AP. The listen interval is used to indicate
- *	how often the STA wakes to listen to beacons of AP. After setting LPS listen interval,
- *	STA will exit and re-enter LPS modeif it is already in LPS mode.
+ *	how often the STA wakes to listen to beacons of AP.
  * @param[in]  interval: the listen interval of LPS (unit: 102.4 ms).
  *	If the specified interval is not a multiple of beacon interval, the actual listen interval
  *	will be rounded to the largest multiple that <= the specified value. It will not be

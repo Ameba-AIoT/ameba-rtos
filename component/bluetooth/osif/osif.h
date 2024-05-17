@@ -27,6 +27,7 @@ bool osif_sched_start(void);
 bool osif_sched_stop(void);
 bool osif_sched_suspend(void);
 bool osif_sched_resume(void);
+bool osif_sched_is_suspended(void);
 
 /* OS task interfaces */
 bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(void *),

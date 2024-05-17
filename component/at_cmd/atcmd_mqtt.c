@@ -21,6 +21,7 @@
 #include "wifi_conf.h"
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
 static MQTT_RESULT_ENUM mqtt_get_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK **mqttCb, u8 needInit);
 static void mqtt_del_handle_cb(MQTT_CONTROL_BLOCK **mqttCb);
 static void mqtt_set_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK *mqttCb);
@@ -105,9 +106,9 @@ void mqtt_main(void *param)
 		resultNo = mqtt_clent_data_proc(mqttCb, &read_fds, &needAtOutpput);
 		if (1 == needAtOutpput) {
 			if (MQTT_OK == resultNo) {
-				at_printf("\r\nACK\r\n");
+				at_printf("ACK\r\n");
 			} else {
-				at_printf("\r\nERROR: %d\r\n", resultNo);
+				at_printf("ERROR: %d\r\n", resultNo);
 			}
 		}
 	}
@@ -117,6 +118,15 @@ end:
 	mqttCb->taskState = MQTT_TASK_STOP;
 	mqttCb->taskHandle = NULL;
 	rtos_task_delete(mqttCb->taskHandle);
+}
+
+static void at_mqttopen_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTOPEN=<tcpConnId>,<hostname>[,<port>]\r\n");
+	at_printf("\t<tcpConnId>:\t[0,3]\r\n");
+	at_printf("\t<hostname>:\tA string of hostname\r\n");
+	at_printf("\t<port>:\t[1,65535], if absent, use 1883 as default\r\n");
 }
 
 /****************************************************************
@@ -259,9 +269,19 @@ end:
 			mqtt_set_handle_cb(tcpConnId, mqttCb);
 		}
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTOPEN:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttopen_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTOPEN:");
 	}
+}
+
+static void at_mqttclose_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTCLOSE=<tcpConnId>\r\n");
+	at_printf("\t<tcpConnId>:\t[0,3]\r\n");
 }
 
 /****************************************************************
@@ -363,9 +383,23 @@ end:
 
 	if (MQTT_OK != resultNo) {
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTCLOSE:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttclose_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTCLOSE:");
 	}
+}
+
+static void at_mqttconn_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTCONN=<tcpConnId>[,<option>,<params>]\r\n");
+	at_printf("\tExample:\r\n");
+	at_printf("\tAT+MQTTCONN=1,clientid,the_clientid_name\r\n");
+	at_printf("\tAT+MQTTCONN=1,username,the_username_string\r\n");
+	at_printf("\tAT+MQTTCONN=1,password,the_password_string\r\n");
+	at_printf("\tAT+MQTTCONN=1,send\r\n");
 }
 
 /****************************************************************
@@ -467,6 +501,7 @@ void at_mqttconn(void *arg)
 					if (0 != res) {
 						RTK_LOGI(NOTAG, "\r\n[at_mqttconn] Can not connect to host %s", mqttCb->host);
 						mqttCb->client.mqttstatus = MQTT_START;
+						resultNo = MQTT_CONNECTION_ERROR;
 						goto end;
 					}
 					mqttCb->networkConnect = 1;
@@ -522,9 +557,18 @@ void at_mqttconn(void *arg)
 end:
 	if (MQTT_OK != resultNo) {
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTCONN:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttconn_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTCONN:");
 	}
+}
+
+static void at_mqttdisconn_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTDISCONN=<tcpConnid>\r\n");
 }
 
 /****************************************************************
@@ -606,9 +650,21 @@ end:
 
 	if (MQTT_OK != resultNo) {
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTDISCONN:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttdisconn_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTDISCONN:");
 	}
+}
+
+static void at_mqttsub_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTSUB=<tcpconnectid>,<topic>[,<qos>]\r\n");
+	at_printf("\t<tcpconnectid>:\t[0,3]\r\n");
+	at_printf("\t<topic>:\tThe topic string\r\n");
+	at_printf("\t<qos>:\t[0,2], if absent, use 2 as default\r\n");
 }
 
 /****************************************************************
@@ -720,14 +776,25 @@ void at_mqttsub(void *arg)
 
 end:
 	if (MQTT_OK != resultNo) {
-		if (1 == found && NULL != mqttCb->topic[j]) {
+		if (-1 != found && NULL != mqttCb->topic[j]) {
 			rtos_mem_free(mqttCb->topic[j]);
 			mqttCb->topic[j] = NULL;
 		}
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTSUB:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttsub_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTSUB:");
 	}
+}
+
+static void at_mqttunsub_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTUNSUB=<tcpConnid>,<topic>\r\n");
+	at_printf("\t<tcpConnid>:\t[0,3]\r\n");
+	at_printf("\t<topic>:\tThe topic string\r\n");
 }
 
 /****************************************************************
@@ -822,9 +889,24 @@ end:
 	}
 	if (MQTT_OK != resultNo) {
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTUNSUB:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttunsub_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTUNSUB:");
 	}
+}
+
+static void at_mqttpub_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTPUB=<tcpConnid>,<msgid>[,<option>,<params>]\r\n");
+	at_printf("\tExample:\r\n");
+	at_printf("\tAT+MQTTPUB=1,1,topic,topic_01\r\n");
+	at_printf("\tAT+MQTTPUB=1,1,msg,the_message_content\r\n");
+	at_printf("\tAT+MQTTPUB=1,1,qos,0\r\n");
+	at_printf("\tAT+MQTTPUB=1,1,retain,0\r\n");
+	at_printf("\tAT+MQTTPUB=1,1,send\r\n");
 }
 
 /****************************************************************
@@ -974,9 +1056,29 @@ end:
 	}
 	if (MQTT_OK != resultNo) {
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTPUB:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttpub_help();
+		}
 	} else {
 		at_printf("\r\n%sOK\r\n", "+MQTTPUB:");
 	}
+}
+
+static void at_mqttcfg_help(void)
+{
+	at_printf("\r\n");
+	at_printf("AT+MQTTCFG=<tcpConnid>,<option>[,<params>]");
+	at_printf("\tGet the parameters:\r\n");
+	at_printf("\tAT+MQTTCFG=1,?\r\n");
+	at_printf("\tSet the parameters:\r\n");
+	at_printf("\tAT+MQTTCFG=1,version,4\r\n");
+	at_printf("\tAT+MQTTCFG=1,keepalive,0\r\n");
+	at_printf("\tAT+MQTTCFG=1,session,0\r\n");
+	at_printf("\tAT+MQTTCFG=1,timeout,30000\r\n");
+	at_printf("\tAT+MQTTCFG=1,will,0\r\n");
+	at_printf("\tWhen will is 1, the parameters are qos, retain, topic, message:\r\n");
+	at_printf("\tAT+MQTTCFG=1,will,1,0,1,topic_string,message_string\r\n");
+	at_printf("\tAT+MQTTCFG=1,ssl,0\r\n");
 }
 
 /****************************************************************
@@ -995,7 +1097,7 @@ void at_mqttcfg(void *arg)
 
 	/* Get the parameters of AT command. */
 	if (!arg) {
-		RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Usage : at_mqttcfg=? or at_mqttcfg=<parameter>,<value>");
+		RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Usage : at_mqttcfg=<id>,? or at_mqttcfg=<id>,<parameter>,<value>");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1029,20 +1131,20 @@ void at_mqttcfg(void *arg)
 
 	/* Get command. */
 	if ('?' == argv[paramIndex][0]) {
-		at_printf("\r\n%sMQTTVersion %d", "+MQTTCFG:", mqttCb->connectData.MQTTVersion);
-		at_printf("\r\n%skeepAliveInterval %d", "+MQTTCFG:", mqttCb->connectData.keepAliveInterval);
-		at_printf("\r\n%scleansession %d", "+MQTTCFG:", mqttCb->connectData.cleansession);
-		at_printf("\r\n%scommand_timeout_ms %d (ms)", "+MQTTCFG:", mqttCb->client.command_timeout_ms);
-		at_printf("\r\n%swillFlag %d", "+MQTTCFG:", mqttCb->connectData.willFlag);
+		at_printf("%sMQTTVersion %d\r\n", "+MQTTCFG:", mqttCb->connectData.MQTTVersion);
+		at_printf("%skeepAliveInterval %d\r\n", "+MQTTCFG:", mqttCb->connectData.keepAliveInterval);
+		at_printf("%scleansession %d\r\n", "+MQTTCFG:", mqttCb->connectData.cleansession);
+		at_printf("%scommand_timeout_ms %d (ms)\r\n", "+MQTTCFG:", mqttCb->client.command_timeout_ms);
+		at_printf("%swillFlag %d\r\n", "+MQTTCFG:", mqttCb->connectData.willFlag);
 		if (mqttCb->connectData.willFlag) {
 			MQTTPacket_willOptions *will = &mqttCb->connectData.will;
-			at_printf("\r\n%sqos %d, retained %d, topicName %s, message %s",
+			at_printf("%sqos %d, retained %d, topicName %s, message %s\r\n",
 					  "+MQTTCFG:", will->qos, will->retained, will->topicName.cstring, will->message.cstring);
 		}
 #if MQTT_OVER_SSL
-		at_printf("\r\n%suseSsl %d", "+MQTTCFG:", mqttCb->useSsl);
+		at_printf("%suseSsl %d\r\n", "+MQTTCFG:", mqttCb->useSsl);
 #else
-		at_printf("\r\n%suseSsl not support", "+MQTTCFG:");
+		at_printf("%suseSsl not support\r\n", "+MQTTCFG:");
 #endif
 	}
 
@@ -1183,6 +1285,9 @@ end:
 		at_printf("\r\n%sOK\r\n", "+MQTTCFG:");
 	} else {
 		at_printf("\r\n%sERROR: %d\r\n", "+MQTTCFG:", resultNo);
+		if (MQTT_ARGS_ERROR == resultNo) {
+			at_mqttcfg_help();
+		}
 	}
 	return;
 }
@@ -1511,12 +1616,12 @@ static void mqtt_message_arrived(MessageData *data, void *param)
 		goto end;
 	}
 
-	snprintf(uns_buff, len_out, "%s:%d,%d,%s,", "+MQTTRECV", tcpconnectid, id, topicdest);
+	DiagSnPrintf(uns_buff, len_out, "%s:%d,%d,%s,", "+MQTTRECV", tcpconnectid, id, topicdest);
 	memcpy((uns_buff + data_shift), (char *)data->message->payload, (int16_t)(data->message->payloadlen));
-	snprintf(uns_buff + strlen(uns_buff), total_data_len - strlen(uns_buff), ",%d,%d,%d,%d", data->message->payloadlen, data->message->qos, data->message->dup,
-			 data->message->retained);
+	DiagSnPrintf(uns_buff + strlen(uns_buff), total_data_len - strlen(uns_buff), ",%d,%d,%d,%d", data->message->payloadlen, data->message->qos, data->message->dup,
+				 data->message->retained);
 
-	at_printf("\r\n%s\r\n", uns_buff);
+	at_printf("%s\r\n", uns_buff);
 
 end:
 	rtos_mem_free(topicdest);
@@ -1610,6 +1715,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			res = NetworkConnect(&mqttCb->network, mqttCb->host, mqttCb->port);
 			if (0 != res) {
 				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect failed");
+				resultNo = MQTT_CONNECTION_ERROR;
 				goto end;
 			}
 			mqttCb->networkConnect = 1;
@@ -1618,6 +1724,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			res = MQTTConnect(&mqttCb->client, &mqttCb->connectData);
 			if (0 != res) {
 				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect MQTT failed");
+				resultNo = MQTT_CONNECTION_ERROR;
 				goto end;
 			}
 			mqttCb->client.mqttstatus = MQTT_CONNECT;
@@ -1903,8 +2010,23 @@ void print_mqtt_at(void)
 
 	cmdSize = sizeof(at_mqtt_items) / sizeof(log_item_t);
 	for (i = 0; cmdSize > i; i++) {
-		at_printf("\r\nAT%s", at_mqtt_items[i].log_cmd);
+		at_printf("AT%s\r\n", at_mqtt_items[i].log_cmd);
 	}
+}
+
+void print_mqtt_help(void)
+{
+	at_printf("AT+MQTTOPEN=<conn_id>,<host>[,<port>]\r\n");
+	at_printf("AT+MQTTCLOSE=<conn_id>\r\n");
+	at_printf("AT+MQTTCONN=<conn_id>,<op>[,<string_val>]\r\n");
+	at_printf("AT+MQTTDISCONN=<conn_id>\r\n");
+	at_printf("AT+MQTTSUB=<conn_id>,<string_val>[,<QoS>]\r\n");
+	at_printf("AT+MQTTUNSUB=<conn_id>,<string_val>\r\n");
+	at_printf("AT+MQTTPUB=<conn_id>,<message_id>,<op>[,<op_value>]\r\n");
+	at_printf("AT+MQTTCFG=<conn_id>,?\r\n");
+	at_printf("AT+MQTTCFG=<conn_id>,<param>,<param_val>\r\n");
+	at_printf("AT+MQTTRESET\r\n");
+	at_printf("\r\n");
 }
 
 void at_mqtt_init(void)
@@ -1917,3 +2039,4 @@ void at_mqtt_init(void)
 #ifdef SUPPORT_LOG_SERVICE
 log_module_init(at_mqtt_init);
 #endif
+#endif /* CONFIG_MP_INCLUDED */

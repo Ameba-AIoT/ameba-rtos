@@ -180,12 +180,4 @@
  */
 #define AUDIO_OUT_DEBUG_BUFFER_LEVEL           0
 
-/*
- *Set 1 to start audio hardware playback by user.
- *Set 0 to start audio hardware playback by HAL.
- *Normally we set it as 0, if user sets 1 here, please
- *remember to start audio sport tx in application.
- */
-#define AUDIO_DELAY_START                      0
-
 #endif

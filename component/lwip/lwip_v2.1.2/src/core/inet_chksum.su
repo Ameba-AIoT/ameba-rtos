@@ -1,7 +1,0 @@
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:133:1:lwip_standard_chksum	16	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:310:1:inet_chksum_pseudo	32	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:379:1:ip_chksum_pseudo	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:456:1:inet_chksum_pseudo_partial	48	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:526:1:ip_chksum_pseudo_partial	0	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:555:1:inet_chksum	16	static
-/home/auto_jenkins_wlan5/IOT_ATS/repos/release-master/source/amebalite_gcc_project/project_kr4/vsdk/../../../component/lwip/lwip_v2.1.2/src/core/inet_chksum.c:568:1:inet_chksum_pbuf	32	static

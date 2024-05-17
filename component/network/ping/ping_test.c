@@ -321,14 +321,14 @@ void cmd_ping(int argc, char **argv)
 	return;
 
 Exit:
-	printf("\n\r[ATWI] Usage: ATWI=[host],[options]\n");
+	printf("\n\r[AT+PING] Usage: AT+PING=[host],[options]\n");
 	printf("\n\r       stop      Terminate ping \n");
 	printf("  \r     -t    #   Ping the specified host until stopped\n");
 	printf("  \r     -n   #   Number of echo requests to send (default 4 times)\n");
 	printf("  \r     -l    #   Send buffer size (default 32 bytes)\n");
 	printf("  \r     if   #   only for concurrent mode, set '0' or '1' \n");
 	printf("\n\r   Example:\n");
-	printf("  \r     ATWI=192.168.1.2,-n,100,-l,5000\n");
+	printf("  \r     AT+PING=192.168.1.2,-n,100,-l,5000\n");
 	return;
 }
 

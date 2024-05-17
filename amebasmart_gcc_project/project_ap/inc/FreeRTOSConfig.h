@@ -177,8 +177,13 @@ void vConfigureSMPSendIPI(uint32_t ulCoreID);
 #define configYieldOtherCore(x) vConfigureSMPSendIPI(x)
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
 #define configPRE_SLEEP_PROCESSING( x )                        ( pmu_pre_sleep_processing((uint32_t *)&x) )
 #define configPOST_SLEEP_PROCESSING( x )                       ( pmu_post_sleep_processing((uint32_t *)&x) )
+#else
+#define configPRE_SLEEP_PROCESSING( x )
+#define configPOST_SLEEP_PROCESSING( x )
+#endif
 
 /* The following constant describe the hardware */
 #define configINTERRUPT_CONTROLLER_BASE_ADDRESS 		GIC_DIST_BASE

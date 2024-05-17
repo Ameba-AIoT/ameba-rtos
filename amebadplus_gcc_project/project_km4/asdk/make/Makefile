@@ -37,7 +37,9 @@ COMPONENT_CLEAN += wlan
 ifeq ($(CONFIG_AS_INIC_AP), y)
 COMPONENT += api
 COMPONENT += application
+ifneq ($(CONFIG_MP_INCLUDED),y)
 COMPONENT += network
+endif
 COMPONENT += utilities
 COMPONENT += utilities_example
 #COMPONENT += wlan_encrypt
@@ -58,7 +60,9 @@ COMPONENT_CLEAN += api
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
 COMPONENT += api
 COMPONENT += application
+ifneq ($(CONFIG_MP_INCLUDED),y)
 COMPONENT += network
+endif
 COMPONENT += utilities
 COMPONENT += utilities_example
 #COMPONENT += wlan_encrypt

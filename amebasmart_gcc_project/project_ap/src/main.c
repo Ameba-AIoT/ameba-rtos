@@ -137,7 +137,9 @@ int main(void)
 
 	app_pmu_init();
 
+#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
+#endif
 
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED

@@ -51,23 +51,23 @@ static int rtw_inetaddr_notifier_call(struct notifier_block *nb, unsigned long a
 #ifdef CONFIG_IPV6
 static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long action, void *data)
 {
-	struct in_ifaddr *ifa = (struct in_ifaddr *)data;
+	struct inet6_ifaddr *inet6_ifa = (struct inet6_ifaddr *)data;
 	struct net_device *ndev;
 
-	if (!ifa || !ifa->ifa_dev || !ifa->ifa_dev->dev) {
+	if (!inet6_ifa || !inet6_ifa->idev || !inet6_ifa->idev->dev) {
 		return NOTIFY_DONE;
 	}
 
-	ndev = ifa->ifa_dev->dev;
+	ndev = inet6_ifa->idev->dev;
 
 	switch (action) {
 	case NETDEV_UP:
-		memcpy(global_idev.ipv6_addr, &ifa->ifa_address, RTW_IPv6_ADDR_LEN);
-		dev_dbg(global_idev.fullmac_dev, "%s[%s]: up IP: [%pI4]\n", __func__, ifa->ifa_label, global_idev.ip_addr);
+		memcpy(global_idev.ipv6_addr, &inet6_ifa->addr, RTW_IPv6_ADDR_LEN);
+		dev_dbg(global_idev.fullmac_dev, "%s: up IP: [%pI6]\n", __func__, global_idev.ipv6_addr);
 		break;
 	case NETDEV_DOWN:
 		memset(global_idev.ipv6_addr, 0, RTW_IPv6_ADDR_LEN);
-		dev_dbg(global_idev.fullmac_dev, "%s[%s]: down IP: [%pI4]\n", __func__, ifa->ifa_label, global_idev.ip_addr);
+		dev_dbg(global_idev.fullmac_dev, "%s: down IP: [%pI6]\n", __func__, global_idev.ipv6_addr);
 		break;
 	default:
 		dev_dbg(global_idev.fullmac_dev, "%s: default action\n", __func__);
@@ -148,6 +148,10 @@ int rtw_netdev_probe(struct device *pdev)
 
 	rtw_regd_init();
 	rtw_drv_proc_init();
+
+#ifdef CONFIG_WAR_OFFLOAD
+	rtw_proxy_init();
+#endif
 
 	return 0; /* probe success */
 

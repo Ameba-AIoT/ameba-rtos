@@ -30,7 +30,7 @@ typedef enum {
  * @param[in] p_pcm_buf: pointer of pcm data
  * @param[in] p_len: data length
  */
-typedef uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len);
+typedef uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);
 
 /**
  * @typedef rtk_bt_audio_codec_conf_t
@@ -47,14 +47,14 @@ typedef struct {
  * @brief   structure of audio track configuration
  */
 typedef struct {
-	struct list_head        list;                                               /*!< list head */
-	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len);                   /*!< callback pcm data to APP */
-	void                    *audio_track_hdl;                                   /*!< RTAudioTrack pointer */
-	uint32_t                channels;                                           /*!< indicate channels */
-	uint32_t                channel_allocation;                                 /*!< indicate mono or dual mode(1 left channel, 2 right channel, 3 dual mode) */
-	uint32_t                rate;                                               /*!< sample rate */
-	uint32_t                bits;                                               /*!< bit per sample */
-	int32_t                 track_num;                                          /*!< indicate enqueued audio data numbers */
+	struct list_head        list;                                                           /*!< list head */
+	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);   /*!< callback pcm data to APP */
+	void                    *audio_track_hdl;                                               /*!< RTAudioTrack pointer */
+	uint32_t                channels;                                                       /*!< indicate channels */
+	uint32_t                channel_allocation;                                             /*!< indicate mono or dual mode(1 left channel, 2 right channel, 3 dual mode) */
+	uint32_t                rate;                                                           /*!< sample rate */
+	uint32_t                bits;                                                           /*!< bit per sample */
+	int32_t                 track_num;                                                      /*!< indicate enqueued audio data numbers */
 } rtk_bt_audio_track_t;
 
 /**

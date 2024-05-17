@@ -816,7 +816,7 @@ int ble_peripheral_main(uint8_t enable)
 {
 	rtk_bt_app_conf_t bt_app_conf = {0};
 	rtk_bt_le_addr_t bd_addr = {(rtk_bt_le_addr_type_t)0, {0}};
-	rtk_bt_le_adv_filter_t adv_filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
+	bool adv_filter_whitelist = false;
 	char addr_str[30] = {0};
 	char name[30] = {0};
 #if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
@@ -886,7 +886,7 @@ int ble_peripheral_main(uint8_t enable)
 				adv_param.own_addr_type = 2;
 #endif
 				if (privacy_whitelist) {
-					adv_filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
+					adv_filter_whitelist = true;
 				}
 			}
 		}
@@ -905,14 +905,18 @@ int ble_peripheral_main(uint8_t enable)
 #endif
 
 #if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
-		ext_adv_param.filter_policy = adv_filter_policy;
+		if (adv_filter_whitelist) {
+			ext_adv_param.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
+		}
 		BT_APP_PROCESS(rtk_bt_le_gap_create_ext_adv(&ext_adv_param, &adv_handle));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_ext_adv_data(adv_handle, ext_adv_data, sizeof(ext_adv_data)));
 		BT_APP_PROCESS(rtk_bt_le_gap_start_ext_adv(adv_handle, 0, 0));
 #else
 		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data, sizeof(adv_data)));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_rsp_data(scan_rsp_data, sizeof(scan_rsp_data)));
-		adv_param.filter_policy = adv_filter_policy;
+		if (adv_filter_whitelist) {
+			adv_param.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
+		}
 		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 #endif
 

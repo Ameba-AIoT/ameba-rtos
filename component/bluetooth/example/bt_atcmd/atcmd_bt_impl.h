@@ -76,8 +76,6 @@ int atcmd_bt_a2dp_hfp(int argc, char *argv[]);
 
 int atcmd_ble_iso(int argc, char *argv[]);
 
-int atcmd_ble_audio(int argc, char *argv[]);
-
 int atcmd_bt_bap(int argc, char *argv[]);
 
 int atcmd_bt_cap(int argc, char *argv[]);

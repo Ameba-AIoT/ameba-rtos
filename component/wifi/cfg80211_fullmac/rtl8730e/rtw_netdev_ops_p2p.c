@@ -118,9 +118,7 @@ int rtw_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wlan_id
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
 		llhw_wifi_init_ap();
 		global_idev.p2p_global.pd_wlan_idx = 1;
-		llhw_wifi_set_mac_addr(1, global_idev.pndev[0]->dev_addr); //switch port0 and port1 MAC
-		llhw_wifi_set_mac_addr(0, global_idev.pndev[1]->dev_addr);
-		rtw_netdev_idx(global_idev.pndev[0]) = 1;
+		rtw_p2p_driver_macaddr_switch();//switch port0 and port1 MAC
 	}
 
 	/* step4: register netdev */
@@ -249,6 +247,16 @@ void rtw_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev)
 	global_idev.p2p_global.p2p_role = P2P_ROLE_DISABLE;
 
 	return;
+}
+
+/*netdev0: driver_wlanidx_1, port1_MAC=efuse_mac
+  netdev1: driver_wlanidx_0, port0_MAC=efuse_mac+1 */
+void rtw_p2p_driver_macaddr_switch(void)
+{
+	llhw_wifi_set_mac_addr(1, global_idev.pndev[0]->dev_addr);
+	llhw_wifi_set_mac_addr(0, global_idev.pndev[1]->dev_addr);
+	rtw_netdev_idx(global_idev.pndev[0]) = 1;
+	rtw_netdev_idx(global_idev.pndev[1]) = 0;
 }
 
 void rtw_p2p_gc_intf_revert(u8 need_if2_deinit)

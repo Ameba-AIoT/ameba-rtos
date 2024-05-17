@@ -349,6 +349,51 @@ void gap_config_deinit_flow(uint8_t deinit_flow);
   * @}
   */
 
+/** @addtogroup GAP_BREDR GAP BREDR Module
+  * @{
+  */
+
+/** @addtogroup GAP_BREDR_CONFIG GAP BREDR Config Module
+  * @{
+  */
+
+/*============================================================================*
+ *                         Functions
+ *============================================================================*/
+/** @defgroup GAP_BREDR_CONFIG_Exported_Functions GAP BREDR Config Exported Functions
+  * @brief
+  * @{
+  */
+
+#if F_BT_BREDR_SUPPORT
+/**
+ * @brief   Configure BREDR link number.
+ *
+ * @param[in]      br_link_num   BREDR link number
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    void bt_stack_config_init(void)
+    {
+        gap_config_br_link_num(2);
+    }
+ * \endcode
+ */
+void gap_config_br_link_num(uint8_t br_link_num);
+#endif
+
+/** End of GAP_BREDR_CONFIG_Exported_Functions
+  * @}
+  */
+
+/** End of GAP_BREDR_CONFIG
+  * @}
+  */
+
+/** End of GAP_BREDR
+  * @}
+  */
+
 /** End of GAP
   * @}
   */

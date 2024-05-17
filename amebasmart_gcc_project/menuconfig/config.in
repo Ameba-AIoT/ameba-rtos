@@ -138,6 +138,28 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 				bool "    BLE Audio Public Broadcast Profile"			CONFIG_BT_PBP_MENU
 				bool "    BLE Audio Telephony and Media Audio Profile"	CONFIG_BT_TMAP_MENU
 				bool "    BLE Audio Gaming Audio Profile"				CONFIG_BT_GMAP_MENU
+				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_BAP_FOR_AP y
+					define_bool CONFIG_BT_BAP_SUPPORT_FOR_AP y
+				fi
+				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_CAP_FOR_AP y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
+				fi
+				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_PBP_FOR_AP y
+					define_bool CONFIG_BT_PBP_SUPPORT_FOR_AP y
+				fi
+				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_TMAP_FOR_AP y
+					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_AP y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
+				fi
+				if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_GMAP_FOR_AP y
+					define_bool CONFIG_BT_GMAP_SUPPORT_FOR_AP y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
+				fi
 			fi
 			bool "  BT A2DP"											CONFIG_BT_A2DP_MENU
 			bool "  BT HFP"												CONFIG_BT_HFP_MENU
@@ -148,28 +170,6 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			bool "  BT A2DP and BLE Scatternet"							CONFIG_BT_A2DP_SCATTERNET_MENU
 			bool "  BT A2DP and BLE Audio PBP"							CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
 			bool "  BT A2DP and BLE Audio TMAP"							CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_BAP_FOR_AP y
-				define_bool CONFIG_BT_BAP_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_CAP_FOR_AP y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_PBP_FOR_AP y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_TMAP_FOR_AP y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_GMAP_FOR_AP y
-				define_bool CONFIG_BT_GMAP_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
-			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
 				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_AP y
 				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_AP y
@@ -293,6 +293,28 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 				bool "    BLE Audio Public Broadcast Profile"			CONFIG_BT_PBP_MENU
 				bool "    BLE Audio Telephony and Media Audio Profile"	CONFIG_BT_TMAP_MENU
 				bool "    BLE Audio Gaming Audio Profile"				CONFIG_BT_GMAP_MENU
+				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_BAP_FOR_HP y
+					define_bool CONFIG_BT_BAP_SUPPORT_FOR_HP y
+				fi
+				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_CAP_FOR_HP y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
+				fi
+				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_PBP_FOR_HP y
+					define_bool CONFIG_BT_PBP_SUPPORT_FOR_HP y
+				fi
+				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_TMAP_FOR_HP y
+					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_HP y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
+				fi
+				if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_GMAP_FOR_HP y
+					define_bool CONFIG_BT_GMAP_SUPPORT_FOR_HP y
+					define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
+				fi
 			fi
 			bool "  BT A2DP"											CONFIG_BT_A2DP_MENU
 			bool "  BT HFP"												CONFIG_BT_HFP_MENU
@@ -303,28 +325,6 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			bool "  BT A2DP and BLE Scatternet"							CONFIG_BT_A2DP_SCATTERNET_MENU
 			bool "  BT A2DP and BLE Audio PBP"							CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
 			bool "  BT A2DP and BLE Audio TMAP"							CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_BAP_FOR_HP y
-				define_bool CONFIG_BT_BAP_SUPPORT_FOR_HP y
-			fi
-			if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_CAP_FOR_HP y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
-			fi
-			if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_PBP_FOR_HP y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_HP y
-			fi
-			if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_TMAP_FOR_HP y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
-			fi
-			if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_GMAP_FOR_HP y
-				define_bool CONFIG_BT_GMAP_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
-			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
 				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_HP y
 				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_HP y
@@ -429,14 +429,22 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_AP y
 		define_bool CONFIG_AS_INIC_AP_FOR_AP y
-		define_bool CONFIG_LWIP_LAYER_FOR_AP y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_AP n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_AP y
+		fi
 		define_bool CONFIG_WLAN_FOR_HP y
 		define_bool CONFIG_AS_INIC_NP_FOR_HP y
 
 	fi
 	if [ "$CONFIG_SINGLE_CORE_WIFI_KM4" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_HP y
-		define_bool CONFIG_LWIP_LAYER_FOR_HP y
+		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+			define_bool CONFIG_LWIP_LAYER_FOR_HP n
+		else
+			define_bool CONFIG_LWIP_LAYER_FOR_HP y
+		fi
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_HP y
 	fi
 	bool "Enable HIGH TP FOR HP"	CONFIG_HIGH_TP_TEST_FOR_HP
@@ -461,7 +469,8 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	bool "Enable 11K"		CONFIG_WIFI_11K_ENABLE
 	bool "Enable 11V"		CONFIG_WIFI_11V_ENABLE
 	bool "Enable 11R"		CONFIG_WIFI_11R_ENABLE
-
+	bool "Enable WIFI SPEAKER"	CONFIG_WIFI_SPEAKER_ENABLE
+	
 	mainmenu_option next_comment
 	comment '< CONFIG LWIP'
 	if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then

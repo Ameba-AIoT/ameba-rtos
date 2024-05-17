@@ -278,6 +278,8 @@ void llhw_event_task(struct work_struct *data)
 	struct wireless_dev *wdev = NULL;
 #endif
 
+	dev_dbg(global_idev.fullmac_dev, "-----DEVICE CALLING API %d START\n", p_recv_msg->api_id);
+
 	switch (p_recv_msg->api_id) {
 
 	/* receive callback indication */
@@ -371,6 +373,7 @@ void llhw_event_task(struct work_struct *data)
 	/* free rx_event_msg */
 	llhw_free_rxbuf((u8 *)p_recv_msg);
 
+	dev_dbg(global_idev.fullmac_dev, "-----DEVICE CALLING API %d END\n", p_recv_msg->api_id);
 	return;
 }
 

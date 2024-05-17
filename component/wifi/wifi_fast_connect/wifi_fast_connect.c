@@ -20,7 +20,7 @@
 
 #include "os_wrapper.h"
 #include "flash_api.h"
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 extern struct netif xnetif[NET_IF_NUM];
 #endif
@@ -144,7 +144,7 @@ int wifi_do_fast_connect(void)
 	rtw_network_info_t wifi = {0};
 	struct psk_info PSK_INFO = {0};
 
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	netifapi_netif_set_up(&xnetif[0]);
 #endif
 
@@ -261,7 +261,7 @@ WIFI_RETRY_LOOP:
 				goto WIFI_RETRY_LOOP;
 			}
 		}
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 		if (ret == RTW_SUCCESS) {
 			LwIP_DHCP(0, DHCP_START);
 		}

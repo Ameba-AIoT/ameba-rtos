@@ -266,14 +266,14 @@ struct wpa_sae_param_t {
 	u8					h2e;
 };
 
-#ifdef CONFIG_OWE_SUPPORT
 struct rtw_owe_param_t {
+#ifdef CONFIG_OWE_SUPPORT
 	u16 group;
 	u8 pub_key[RTW_OWE_KEY_LEN];/*32(Temporarily support group 19 with 256 bit public key)*/
 	u8 pub_key_len;
 	u8 peer_mac[6];
-};
 #endif
+};
 
 struct rtw_kvr_param_t {
 #if defined(CONFIG_RTW_WNM) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
@@ -990,7 +990,7 @@ struct wifi_user_conf {
 	unsigned char ap_polling_sta;
 
 	/*!	Refer to ameba_wifi_country_code_table_usrcfg.c, e.g. China: country_code[0] = 'C', country_code[1] = 'N'.\n
-		Specical value: country_code[0]~[1] = 0x0000: follow efuse, country_code[0]~[1] = 0xffff: WORLDWIDE */
+		Specical value: country_code[0]~[1] = 0x0000: follow efuse; country_code[0]='0', country_code[1]='0' : WORLDWIDE */
 	s8 country_code[2];
 
 	/*!	Bandwidth 40MHz, some IC hardware does not support*/
@@ -1047,6 +1047,13 @@ struct wifi_user_conf {
 
 	/*!	in ms */
 	unsigned int wps_retry_interval;
+
+	/*!	For wifi speaker configuration\n
+		BIT0: main switch, BIT1: enable tsf interrupt, BIT2: enable audio tsf */
+	unsigned char wifi_speaker_feature;
+
+	/*STA mode will periodically send null packet to AP to keepalive, unit: second */
+	unsigned char keepalive_interval;
 };
 /** @} */
 #ifdef __cplusplus

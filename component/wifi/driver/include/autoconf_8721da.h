@@ -63,12 +63,10 @@
 #define CONFIG_BT_COEXIST
 #define RX_SHORTCUT
 #define TX_SHORTCUT
-
 //#define SW_WEP_TKIP
 
 #define RTL8721DA_SPECIFIC
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR
-#define RTL8721DA_WL_TODO
 #define CONFIG_ADDRESS_CAM
 //#define CONFIG_RELAY_MESH
 /* enable csi function */
@@ -115,11 +113,9 @@
 #endif
 
 #ifdef CONFIG_WIFI_VERIFY
-#define RTL8721DA_WIFI_TEST 1  // add wifi testcode for debug
 #define WIFI_TEST 1
 #endif
 
-#define CONFIG_REG_ENABLE_KFREE 0	// 0: Depend on efuse(flash), 1: enable, 2: disable
 /* debug log level */
 #undef RELEASE_WIFI
 
@@ -133,18 +129,29 @@
 
 //#define CONFIG_AUDIO_TSF
 /*************************** Config for MP_MODE *******************************/
-//#define CONFIG_MP_INCLUDED
 #ifdef CONFIG_MP_INCLUDED
-#define MP_DRIVER 1
-#undef CONFIG_REG_ENABLE_KFREE
-#define CONFIG_REG_ENABLE_KFREE 1	 // 1: enable, 2: disable
+#undef RX_SHORTCUT
+#undef TX_SHORTCUT
+#undef CONFIG_DFS
+#undef CONFIG_FW_C2H_PKT
+#undef CONFIG_IEEE80211W
+#undef CONFIG_WIFI_RA
+#undef CONFIG_WIFI_DIG
+#undef CONFIG_WIFI_TDMA_DIG /*for softap*/
+#undef CONFIG_WIFI_EDCCA
+#undef CONFIG_WIFI_ANTDIV
+#undef RA_RX_ACK_RSSI
+#undef CONFIG_FW_C2H_PKT
+#undef CONFIG_CSI
+
+#define DISABLE_FW
+
 #define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
-#define CONFIG_PHYDM_DEBUG_FUNCTION
-#define DBG 1 /* for phydm debug */
-#else /* undef CONFIG_MP_INCLUDED  */
-#define MP_DRIVER 0
-#define DBG 0
-#endif /* #ifdef CONFIG_MP_INCLUDED */
+#define CONFIG_PHYDM_MP_DISABLE
+//#define CONFIG_PHYDM_DEBUG_FUNCTION
+#endif
+
+#define DBG 0 /* for phydm debug */
 /************************* Config for MP_MODE end *****************************/
 
 /*Config for SKB Size*/

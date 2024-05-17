@@ -26,6 +26,10 @@ vpath %.c $(shell find $(DIR)/ -type d)
 GLOBAL_CFLAGS += -D__RTOS__
 GLOBAL_CFLAGS += -DNDEBUG -UDEBUG -Wno-multichar -Werror
 
+ifeq ($(CONFIG_WIFI_AUDIO),y)
+GLOBAL_CFLAGS += -DCONFIG_WL_AUDIO
+endif
+
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#

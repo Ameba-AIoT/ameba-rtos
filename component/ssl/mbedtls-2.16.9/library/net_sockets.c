@@ -110,7 +110,7 @@
 static int wsa_init_done = 0;
 
 #elif defined(__ICCARM__) || defined(__CC_ARM) || defined ( __GNUC__ )
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 #include "lwipconf.h"
 #endif
 #include <errno.h>
