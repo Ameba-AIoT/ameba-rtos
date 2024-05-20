@@ -76,4 +76,6 @@ The image download only erase the flash fields with images programmed. If you wa
 * Set the start address and size you want to erase.
 * Click the Erase button and erase operation begins. You would get the operation result from the log window.
 
-# Resources
+# Feedback
+
+If you have any issues or suggestions during project development, please login [RealMCU](https://www.realmcu.com/en/Account/Login?ReturnUrl=%2FCommunity%2Fcima%2F3187aedd-cb0d-444b-aa0c-284fd82cc501) and give feedback.
