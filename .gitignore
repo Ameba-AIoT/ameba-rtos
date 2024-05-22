@@ -1,19 +1,45 @@
-*.dep
-*.ewt
 *.d
 *.o
 *.su
 *.i
 *.ii
 *.s
-libsrc
-*@tmp
-toolchain/
+
+# project build files
+/**/image/
+/**/image_mp/
+/**/build/
+
+# all bin files
+*.bin
+
+# project library files
+
+# log files
+*.log
+
+# menuconfig lxdialog files
+/**/lxdialog/
+/**/menuconfig/.config.old
+
+# wlan makefile
+/**/make/wlan/
+
+# fiptool
+/**/fiptool/
+
+# git files
 .repo/
 .git/
-build_tfm/
-*.a
-*.bin
-*.axf
-*.map
-*.asm
+
+# trusted-firmware-m build files
+/**/build_tfm/
+
+# build info
+build_info.h
+
+# IAR
+*.dep
+*.ewt
+/**/EWARM-RELEASE/Debug/
+EWARM-RELEASE/settings/
