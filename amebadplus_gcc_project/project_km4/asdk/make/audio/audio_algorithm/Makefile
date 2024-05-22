@@ -16,7 +16,7 @@ OBJS =
 # Define the Rules to build the core targets
 lib: CORE_TARGETS
 	make -C sonic lib
-	make -C plc lib
+	#make -C plc lib
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
@@ -31,5 +31,5 @@ CORE_TARGETS: $(OBJS)
 #*****************************************************************************#
 clean:
 	make -C sonic clean
-	make -C plc clean
+	#make -C plc clean
 -include $(DEPS)

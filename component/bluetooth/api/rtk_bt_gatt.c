@@ -17,9 +17,6 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -42,9 +39,6 @@ uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -59,9 +53,6 @@ uint16_t rtk_bt_gatts_indicate(rtk_bt_gatts_ntf_and_ind_param_t *param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -76,9 +67,6 @@ uint16_t rtk_bt_gatts_read_resp(rtk_bt_gatts_read_resp_param_t *param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -93,9 +81,6 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -122,10 +107,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t 
 		.srv_uuid = srv_uuid,
 	};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_REGISTER_PROFILE,
 						  &param, sizeof(rtk_bt_gattc_register_t));
 
@@ -136,10 +117,6 @@ uint16_t rtk_bt_gattc_discover_all(uint16_t conn_handle)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_DISCOVER,
 						  (void *)&conn_handle, sizeof(uint16_t));
 
@@ -149,10 +126,6 @@ uint16_t rtk_bt_gattc_discover_all(uint16_t conn_handle)
 uint16_t rtk_bt_gattc_find(rtk_bt_gattc_find_param_t *p_find_param)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_FIND,
 						  (void *)p_find_param, sizeof(rtk_bt_gattc_find_param_t));
@@ -167,10 +140,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id)
 	uint16_t ret = 0;
 	uint16_t profile_id_local = profile_id;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_REGISTER_PROFILE,
 						  (void *)&profile_id_local, 2);
 
@@ -180,9 +149,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id)
 uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_EXCHANGE_MTU,
 						  (void *)&conn_handle, sizeof(uint16_t));
@@ -194,9 +160,6 @@ uint16_t rtk_bt_gattc_discover(rtk_bt_gattc_discover_param_t *p_dis_param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!p_dis_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -213,9 +176,6 @@ uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!p_read_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -230,9 +190,6 @@ uint16_t rtk_bt_gattc_write(rtk_bt_gattc_write_param_t *p_write_param)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!p_write_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -248,9 +205,6 @@ uint16_t rtk_bt_gattc_enable_notify_or_indicate(
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!p_update_cccd_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -266,9 +220,6 @@ uint16_t rtk_bt_gattc_disable_notify_or_indicate(
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!p_update_cccd_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}

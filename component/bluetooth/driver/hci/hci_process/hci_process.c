@@ -153,6 +153,7 @@ static uint8_t hci_process_update_baudrate(uint16_t opcode)
 #if defined(hci_platform_MP_RESET_BAUDRATE) && hci_platform_MP_RESET_BAUDRATE
 static uint8_t hci_process_reset_baudrate(uint16_t opcode)
 {
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 	/* OpCode: 0xFC17, Data Len: Cmd(7), Event(6) */
 	uint8_t buf_raw[RESERVE_LEN + 7];
 	uint8_t *buf = buf_raw + RESERVE_LEN;
@@ -182,6 +183,10 @@ static uint8_t hci_process_reset_baudrate(uint16_t opcode)
 	} else {
 		return HCI_IGNORE;
 	}
+#else
+	(void)opcode;
+	return HCI_IGNORE;
+#endif
 }
 #endif
 

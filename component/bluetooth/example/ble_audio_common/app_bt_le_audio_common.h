@@ -212,6 +212,7 @@ typedef struct {
 	uint32_t last_decode_offset;
 	rtk_bt_le_audio_iso_data_path_direction_t path_direction;   /**< @ref rtk_bt_le_audio_iso_data_path_direction_t.*/
 	rtk_bt_le_audio_cfg_codec_t codec;                          /**< @ref rtk_bt_le_audio_cfg_codec_t*/
+	uint32_t time_stamp;
 } app_lea_iso_data_path_t;
 
 typedef struct {

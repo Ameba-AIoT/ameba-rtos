@@ -28,9 +28,9 @@ CSRC += $(PHY)/common/radio_algorithm/rx/rx_ch_est.c \
         $(PHY)/hal/rtl8730A/rtl8730A_radio_gdma.c \
         $(PHY)/hal/rtl8730A/rtl8730A_radio_interrupt.c \
         $(PHY)/hal/rtl8730A/rtl8730A_radio_trx_api.c \
-        $(PHY)/common/radio_mp/rtw_802154_radio_mp_test.c \
-		$(PHY)/common/radio_api/rtw_802154_radio.c \
-		$(PHY)/common/radio_api/rtw_802154_radio_coex.c
+        $(PHY)/common/radio_mp/rtk_802154_radio_mp_test.c \
+		$(PHY)/common/radio_api/rtk_802154_radio.c \
+		$(PHY)/common/radio_api/rtk_802154_radio_coex.c
 
 MODULE_IFLAGS += -I$(PHY)/common/radio_algorithm/include/
 MODULE_IFLAGS += -I$(PHY)/common/radio_api/

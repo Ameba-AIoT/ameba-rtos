@@ -54,10 +54,6 @@ uint16_t rtk_bt_spp_connect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -71,10 +67,6 @@ uint16_t rtk_bt_spp_connect(uint8_t *bd_addr)
 uint16_t rtk_bt_spp_disconnect(rtk_bt_spp_disconn_req_t *p_disconn_req_t)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_disconn_req_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -90,10 +82,6 @@ uint16_t rtk_bt_spp_disconnect_all(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -108,10 +96,6 @@ uint16_t rtk_bt_spp_send_data(rtk_bt_spp_send_data_t *p_send_data_t)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!p_send_data_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -125,10 +109,6 @@ uint16_t rtk_bt_spp_send_data(rtk_bt_spp_send_data_t *p_send_data_t)
 uint16_t rtk_bt_spp_credits_give(rtk_bt_spp_credits_give_t *p_credits_give_t)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_credits_give_t) {
 		return RTK_BT_ERR_POINTER_INVALID;

@@ -200,6 +200,10 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	u32 ssid_len = 0;
 	u32 channel_num = 0;
 
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
 	wdev = request->wdev;
 	pnetdev = wdev_to_ndev(wdev);
 #ifdef CONFIG_P2P
@@ -462,6 +466,10 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	struct element *target_ptr;
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
 
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
 	if (sme->bssid == NULL) {
 		dev_err(global_idev.fullmac_dev, "=> bssid is NULL!\n");
 		ret = -EINVAL;
@@ -650,6 +658,10 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s ---", __func__);
 
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
 	if (wps_info.wps_phase) {
 		/* KM4 disable wps */
 		llhw_wifi_set_wps_phase(0);
@@ -683,6 +695,10 @@ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy, struct wireless_dev *wd
 static int cfg80211_rtw_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bool enabled, int timeout)
 {
 	dev_dbg(global_idev.fullmac_dev, "%s: enable = %d, timeout = %d", __func__, enabled, timeout);
+
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
 
 	/* A timeout value of -1 allows the driver to adjust the dynamic ps timeout value. Power save 2s timeout. */
 	llhw_wifi_set_lps_enable(enabled);
@@ -758,6 +774,10 @@ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy, struct cfg80211
 
 static int cfg80211_rtw_external_auth_status(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params)
 {
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
 	if (rtw_netdev_idx(dev) == 0) {
 		dev_dbg(global_idev.fullmac_dev, "[STA]: %s: auth_status=%d\n", __func__, params->status);
 		/* interface change later. */
@@ -854,6 +874,11 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy, struct wireless_d
 	global_idev.p2p_global.roch_cookie++;
 	*cookie = global_idev.p2p_global.roch_cookie;
 
+	if (global_idev.p2p_global.p2p_role == P2P_ROLE_DISABLE) { /* enable P2P role first */
+		global_idev.p2p_global.p2p_role = P2P_ROLE_DEVICE;
+		llhw_wifi_set_p2p_role(P2P_ROLE_DEVICE);
+	}
+
 	llhw_wifi_set_p2p_remain_on_ch(wlan_idx, 1);
 	ret = llhw_wifi_scan(&scan_param, 0, 0);
 	if (ret < 0) {
@@ -902,6 +927,10 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev, 
 	u8 need_wait_ack = 0;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
 
 #ifdef CONFIG_P2P
 	if (wdev == global_idev.p2p_global.pd_pwdev) {/*P2P Device intf not have ndev, wlanidx need fetch from other way*/

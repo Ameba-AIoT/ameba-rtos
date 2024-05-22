@@ -98,6 +98,7 @@ struct inic_device {
 	u8						ip_addr[RTW_IP_ADDR_LEN];
 	u8						ipv6_addr[RTW_IPv6_ADDR_LEN];
 	u8						wowlan_state; /* 0: resume, 1: suspend */
+	u8				mp_fw; /* 0: normal, 1: mp */
 
 	/* wifi user config */
 	struct  wifi_user_conf	wifi_user_config;

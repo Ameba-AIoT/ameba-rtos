@@ -572,23 +572,6 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA1_HS_HandShake_Interface
-  * @brief  Not supported in amebaD.
-  * @{
-  */
-#define GDMA_HANDSHAKE_TIMER_CAPTURE_UP		  (0)
-#define GDMA_HANDSHAKE_TIMER_CAPTURE_CH0	  (1)
-#define GDMA_HANDSHAKE_TIMER_PWM_UP			    (2)
-#define GDMA_HANDSHAKE_TIMER_PWM_CH0		    (3)
-#define GDMA_HANDSHAKE_TIMER_PWM_CH1		    (4)
-#define GDMA_HANDSHAKE_TIMER_PWM_CH2	    	(5)
-#define GDMA_HANDSHAKE_TIMER_PWM_CH3		    (6)
-#define GDMA_HANDSHAKE_TIMER_PWM_CH4	    	(7)
-#define GDMA_HANDSHAKE_TIMER_PWM_CH5		    (8)
-/**
-  * @}
-  */
-
 /**
   * @}
   */

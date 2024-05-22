@@ -160,6 +160,22 @@
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT
 #undef TX_SHORTCUT
+
+#define DRV_BB_DBG_TRACE_DISABLE
+#define DRV_BB_PMAC_TX_DISABLE
+#define DRV_BB_CMN_RPT_DISABLE
+#define DRV_BB_STATISTICS_DISABLE
+#define DRV_BB_DGB_SUPPORT_DISABLE
+#define DRV_RF_DBG_TRACE_DISABLE
+#define DRV_BB_CH_INFO_DISABLE
+#define DRV_BB_CFO_TRK_DISABLE
+#define DRV_BB_ENV_MNTR_DISABLE
+#define DRV_BB_PHYSTS_PARSING_DISABLE
+#define DRV_BB_TIMER_SUPPORT_DISABLE
+#define DRV_RF_PWR_TBL_DISABLE
+#endif
+
+#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W
@@ -169,9 +185,9 @@
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
 #define DISABLE_FW
-
 #endif
 /************************* Config for MP_MODE end *****************************/
+
 #ifndef CONFIG_PHYDM_CMD
 #define DRV_BB_DBG_TRACE_DISABLE
 #define DRV_BB_PMAC_TX_DISABLE
@@ -180,7 +196,6 @@
 #define DRV_BB_DGB_SUPPORT_DISABLE
 #define DRV_RF_DBG_TRACE_DISABLE
 #endif
-
 /*Config for SKB Size*/
 #define SKB_CACHE_SZ	64/*max(AP_Core_Cache, NP_Core_Cache)*/
 #define SKB_ALIGNMENT	__attribute__((aligned(SKB_CACHE_SZ)))

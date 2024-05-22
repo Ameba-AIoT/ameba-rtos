@@ -43,6 +43,7 @@
     }
 
 uint32_t hci_cfg_sw_val = 0xFF;    // Open BT Trace log & FW log use 0xDD
+uint8_t hci_mp_flag = 0;
 uint8_t bt_ant_switch = 0xFF;      // Select BT RF Patch
 
 extern const unsigned char rtlbt_fw[];
@@ -325,17 +326,18 @@ bool hci_platform_check_lmp_subver(uint16_t lmp_subver)
 	}
 }
 
+void hci_platform_set_mp(uint8_t flag)
+{
+	hci_mp_flag = flag;
+}
+
 uint8_t hci_platform_check_mp(void)
 {
-#if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (wifi_driver_is_mp()) {
+	if (hci_mp_flag) {
 		return HCI_SUCCESS;
 	} else {
 		return HCI_FAIL;
 	}
-#else
-	return HCI_FAIL;
-#endif
 }
 
 static uint8_t hci_platform_read_efuse(void)
@@ -603,10 +605,12 @@ bool rtk_bt_pre_enable(void)
 			return false;
 		}
 
+#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
 		if (!hci_platform_check_mp()) {
 			wifi_set_lps_enable(FALSE);
 			wifi_set_ips_internal(FALSE);
 		}
+#endif
 	}
 #endif
 
@@ -631,10 +635,12 @@ bool rtk_bt_post_enable(void)
 
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (bt_ant_switch == ANT_S1) {
+#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
 		if (!hci_platform_check_mp()) {
 			wifi_set_lps_enable(wifi_user_config.lps_enable);
 			wifi_set_ips_internal(wifi_user_config.ips_enable);
 		}
+#endif
 	}
 #endif
 
@@ -707,7 +713,11 @@ uint8_t hci_platform_deinit(void)
 
 void hci_platform_record_chipid(uint8_t chipid)
 {
-	hci_chipid_in_fw = chipid;
+	if (chipid == 2 && hci_platform_get_rom_ver() == 3) {
+		hci_chipid_in_fw = 3;
+	} else {
+		hci_chipid_in_fw = chipid;
+	}
 }
 
 void hci_platform_get_baudrate(uint8_t *baudrate, uint8_t len, uint8_t init_or_work)
@@ -947,9 +957,10 @@ static uint8_t hci_platform_get_patch_info(void)
 	uint32_t fw_len;
 
 	if (CHECK_CFG_SW(CFG_SW_USE_FLASH_PATCH)) {
-#if defined(CONFIG_BT_EXCLUDE_MP_FUNCTION) && CONFIG_BT_EXCLUDE_MP_FUNCTION
-		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
-		patch_info->patch_len = rtlbt_fw_len;
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
+		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_mp_fw;
+		patch_info->patch_len = rtlbt_mp_fw_len;
 #else
 		if (hci_platform_check_mp()) {
 			patch_info->patch_buf = (uint8_t *)(void *)rtlbt_mp_fw;
@@ -958,6 +969,10 @@ static uint8_t hci_platform_get_patch_info(void)
 			patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
 			patch_info->patch_len = rtlbt_fw_len;
 		}
+#endif
+#else
+		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
+		patch_info->patch_len = rtlbt_fw_len;
 #endif
 		ext_section_check = true;
 	} else {

@@ -22,10 +22,6 @@ static int atcmd_bt_gatts_notify(int argc, char **argv)
 	uint16_t ret = 0;
 	rtk_bt_gatts_ntf_and_ind_param_t ntf_param = {0};
 
-	if (argc != 5 && argc != 6) {
-		AT_PRINTK("[ATBC] GATTS notify failed, wrong args num!");
-		return -1;
-	}
 	ntf_param.conn_handle = str_to_int(argv[0]);
 	ntf_param.app_id = str_to_int(argv[1]);
 	ntf_param.index = str_to_int(argv[2]);
@@ -59,10 +55,6 @@ static int atcmd_bt_gatts_indicate(int argc, char **argv)
 	uint16_t ret = 0;
 	rtk_bt_gatts_ntf_and_ind_param_t ntf_param = {0};
 
-	if (argc != 5 && argc != 6) {
-		AT_PRINTK("[ATBC] GATTS notify failed, wrong args num!");
-		return -1;
-	}
 	ntf_param.conn_handle = str_to_int(argv[0]);
 	ntf_param.app_id = str_to_int(argv[1]);
 	ntf_param.index = str_to_int(argv[2]);
@@ -160,11 +152,6 @@ static int atcmd_bt_gatts_cte_set_param(int argc, char **argv)
 {
 	int ret = 0;
 	CTE_SRV_PARAM_TYPE_e param_type;
-
-	if (argc < 2) {
-		AT_PRINTK("[ATBC] GATTS CTE set param failed: wrong argc num!");
-		return -1;
-	}
 
 	param_type = str_to_int(argv[0]);
 

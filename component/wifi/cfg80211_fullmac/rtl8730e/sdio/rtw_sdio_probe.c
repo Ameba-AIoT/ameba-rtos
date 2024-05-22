@@ -577,6 +577,97 @@ static void rtw_sdio_remove(struct sdio_func *func)
 	rtw_sdio_deinit(priv);
 }
 
+static int rtw_sdio_suspend(struct device *dev)
+{
+	u32 ret = 0;
+	struct sdio_func *func = container_of(dev, struct sdio_func, dev);
+
+	dev_dbg(global_idev.fullmac_dev, "%s", __func__);
+
+	if (rtw_netdev_priv_is_on(global_idev.pndev[1])) {
+		/* AP is up, stop to suspend */
+		return -EPERM;
+	}
+
+	/* staion mode */
+	if (llhw_wifi_is_connected_to_ap() == 0) {
+		/* wowlan */
+		ret = llhw_wifi_update_ip_addr_in_wowlan();
+		if (ret == 0) {
+			/* update ip address success, to suspend */
+			/* set wowlan_state, to not schedule rx work */
+			global_idev.wowlan_state = 1;
+			netif_tx_stop_all_queues(global_idev.pndev[0]);
+		} else {
+			/* not suspend */
+		}
+	}
+
+	if (func) {
+		mmc_pm_flag_t pm_flag = sdio_get_host_pm_caps(func);
+		dev_dbg(global_idev.fullmac_dev, "pm_flag:0x%x\n", pm_flag);
+		if (!(pm_flag & MMC_PM_KEEP_POWER)) {
+			dev_dbg(global_idev.fullmac_dev, "%s: can't remain alive while host is suspended\n", sdio_func_id(func));
+			return -ENOSYS;
+		} else {
+			sdio_set_host_pm_flags(func,  MMC_PM_WAKE_SDIO_IRQ); //MMC_PM_KEEP_POWER
+			dev_dbg(global_idev.fullmac_dev, "suspend with MMC_PM_WAKE_SDIO_IRQ\n");
+		}
+
+		/* release irq */
+		if (inic_sdio_priv.irq_alloc) {
+			sdio_claim_host(func);
+			if (sdio_release_irq(func)) {
+				dev_err(global_idev.fullmac_dev, "%s: sdio_release_irq fail\n", __func__);
+			} else {
+				inic_sdio_priv.irq_alloc = 0;
+			}
+			sdio_release_host(func);
+		}
+
+	}
+
+	return (int)ret;
+}
+
+static int rtw_sdio_resume(struct device *dev)
+{
+	int err;
+	struct sdio_func *func = container_of(dev, struct sdio_func, dev);
+
+	dev_dbg(global_idev.fullmac_dev, "%s", __func__);
+
+	/* set block size */
+	sdio_claim_host(func);
+	err = sdio_set_block_size(func, 512);
+	if (err) {
+		dev_err(global_idev.fullmac_dev, "%s: sdio_set_block_size FAIL(%d)!\n", __func__, err);
+		sdio_release_host(func);
+		return false;
+	}
+	sdio_release_host(func);
+
+	/* alloc irq */
+	rtw_sdio_alloc_irq(&inic_sdio_priv);
+
+	netif_tx_start_all_queues(global_idev.pndev[0]);
+	netif_tx_wake_all_queues(global_idev.pndev[0]);
+
+	global_idev.wowlan_state = 0;
+
+	/* wakeup recv work */
+	if (!work_pending(&(global_idev.msg_priv.msg_work))) {
+		schedule_work(&(global_idev.msg_priv.msg_work));
+	}
+
+	return 0;
+}
+
+struct dev_pm_ops sdio_pm_ops = {
+	.suspend = rtw_sdio_suspend,
+	.resume = rtw_sdio_resume,
+};
+
 static const struct sdio_device_id sdio_ids[] = {
 	{ SDIO_DEVICE(0x024c, 0x8722), .driver_data = 0},
 };
@@ -586,11 +677,13 @@ static struct sdio_driver inic_sdio_driver = {
 	.remove	= rtw_sdio_remove,
 	.name	= "INIC_SDIO",
 	.id_table	= sdio_ids,
+	.drv = {
+		.pm = &sdio_pm_ops,
+	},
 };
 
 static int __init rtw_sdio_init_module(void)
 {
-
 	int ret = 0;
 
 	printk("%s\n", __func__);

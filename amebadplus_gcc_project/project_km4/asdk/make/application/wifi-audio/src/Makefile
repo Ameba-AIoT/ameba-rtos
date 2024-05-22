@@ -6,7 +6,6 @@ include $(MAKE_INCLUDE_GEN)
 #                               VARIABLES	                              #
 #*****************************************************************************#
 DIR = $(BASEDIR)/component/application/wifi-audio
-WIFI_USRCFG_DIR = $(DIR)/pal/amebadplus/usrcfg
 
 MODULE_IFLAGS += \
     -I$(BASEDIR)/component/audio/base/osal/osal_c/interfaces \
@@ -17,7 +16,7 @@ MODULE_IFLAGS += \
 
 
 vpath %.cpp $(shell find $(DIR) -type d)
-vpath %.c $(shell find $(WIFI_USRCFG_DIR) $(DIR) -type d)
+vpath %.c $(shell find $(DIR) -type d)
 #*****************************************************************************#
 #                               CFLAGS                                        #
 #*****************************************************************************#
@@ -27,8 +26,7 @@ GLOBAL_CFLAGS += -D__RTOS__ -Wno-multichar -Wno-unused-parameter -Wno-unused-con
 #                               Source FILE LIST                              #
 #*****************************************************************************#
 CSRC = \
-    $(DIR)/cmd/audiofi_example.c \
-    $(WIFI_USRCFG_DIR)/ameba_wificfg.c
+    $(DIR)/cmd/audiofi_example.c
 
 CPPSRC  = \
     $(DIR)/cmd/audiofi_cmd.cpp \

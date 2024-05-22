@@ -1079,7 +1079,7 @@ void cmd_wps(int argc, char **argv)
 			if (argc == 2) {
 				char device_pin[10];
 				pin_val = wps_generate_pin();
-				snprintf(device_pin, sizeof(device_pin), "%08d", pin_val);
+				DiagSnPrintf(device_pin, sizeof(device_pin), "%08d", pin_val);
 				/* Display PIN 3 times to prevent to be overwritten by logs from other tasks */
 				DiagPrintf("\n\rWPS: Start WPS PIN Display. PIN: [%s]\n\r", device_pin);
 				DiagPrintf("\n\rWPS: Start WPS PIN Display. PIN: [%s]\n\r", device_pin);

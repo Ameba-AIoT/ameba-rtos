@@ -1,3 +1,5 @@
+GLOBAL_CFLAGS += -Wno-implicit-fallthrough
+
 include $(MAKE_INCLUDE_GEN)
 
 .PHONY: all clean

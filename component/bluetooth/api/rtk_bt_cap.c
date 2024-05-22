@@ -30,10 +30,6 @@ uint16_t rtk_bt_mcp_media_send(uint16_t char_uuid, int32_t track_value)
 	rtk_bt_le_audio_mcp_server_send_data_param_t info = {0};
 	uint16_t ret = RTK_BT_FAIL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	/* choose uuid */
 	switch (char_uuid) {
 	case RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME:
@@ -77,10 +73,6 @@ uint16_t rtk_bt_mcp_media_discover(uint16_t conn_handle)
 {
 	uint16_t ret = RTK_BT_FAIL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	printf("%s dicover all for conn_handle=%d\r\n", __func__, conn_handle);
 	ret = rtk_bt_gattc_discover_all(conn_handle);
 	if (RTK_BT_OK != ret) {
@@ -95,10 +87,6 @@ uint16_t rtk_bt_mcp_media_write(uint16_t conn_handle, uint8_t opcode, int32_t op
 {
 	uint16_t ret = RTK_BT_FAIL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	printf("%s mcs_client_write_media_cp conn_handle=%d opcode=0x%x,op_param=%d\r\n", __func__, conn_handle, opcode, (int)op_param);
 	ret = rtk_bt_le_audio_mcs_client_write_media_cp(conn_handle, 0, true, true, opcode, &op_param);
 	return ret;
@@ -108,10 +96,6 @@ uint16_t rtk_bt_mcp_media_read(uint16_t conn_handle, uint16_t char_uuid)
 {
 	uint16_t ret = RTK_BT_FAIL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	printf("%s rtk_bt_le_audio_mcs_client_read_char_value conn_handle=%d opcode=0x%x\r\n", __func__, conn_handle, char_uuid);
 	ret = rtk_bt_le_audio_mcs_client_read_char_value(conn_handle, 0, true, char_uuid);
 	return ret;
@@ -120,10 +104,6 @@ uint16_t rtk_bt_mcp_media_read(uint16_t conn_handle, uint16_t char_uuid)
 uint16_t rtk_bt_mcp_media_cccd(uint16_t conn_handle, uint32_t cfg_cccd, bool enable)
 {
 	uint16_t ret = RTK_BT_FAIL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	printf("%s mcs_client_cfg_cccd for conn_handle=%d cfg_cccd=0x%x enable=%d\r\n", __func__, conn_handle, (unsigned int)cfg_cccd, enable);
 	ret = rtk_bt_le_audio_mcs_client_cfg_cccd(conn_handle, 0, true, cfg_cccd, enable);
@@ -136,10 +116,6 @@ uint16_t rtk_bt_mcp_media_cccd(uint16_t conn_handle, uint32_t cfg_cccd, bool ena
 uint16_t rtk_bt_vcp_server_get(rtk_bt_le_audio_vcs_param_t *p_vcs_param)
 {
 	uint16_t ret = RTK_BT_FAIL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_vcs_param) {
 		printf("%s input p_vcs_param is NULL \r\n", __func__);
@@ -163,10 +139,6 @@ uint16_t rtk_bt_vcp_client_gmute(uint8_t group_idx, rtk_bt_le_audio_vcs_mute_sta
 	uint16_t ret = RTK_BT_FAIL;
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (vcs_mute > 1) {
 		printf("%s: vcs_mute value (%d) error\r\n", __func__, vcs_mute);
 		return RTK_BT_FAIL;
@@ -186,10 +158,6 @@ uint16_t rtk_bt_vcp_client_gvolume(uint8_t group_idx, uint8_t volume_setting)
 	uint16_t ret = RTK_BT_FAIL;
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
 	if (!group_handle) {
 		printf("%s: group_idx (%d) not find\r\n", __func__, group_idx);
@@ -207,10 +175,6 @@ uint16_t rtk_bt_vcp_client_write(uint16_t conn_handle, rtk_bt_le_audio_vcs_cp_op
 	rtk_bt_le_audio_vcs_cp_param_t cp_param = {
 		.volume_setting = RTK_BLE_AUDIO_DEFAULT_VCS_VOL_SETTING
 	};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (cp_op >= RTK_BT_LE_AUDIO_VCS_CP_MAX) {
 		printf("%s: cp_op value (%d) error for write\r\n", __func__, cp_op);
@@ -242,10 +206,6 @@ uint16_t rtk_bt_vcp_client_get(uint16_t conn_handle, rtk_bt_le_audio_vcs_volume_
 {
 	uint16_t ret = RTK_BT_FAIL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!p_volume_state) {
 		printf("%s p_volume_state is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -266,10 +226,6 @@ uint16_t rtk_bt_vcp_client_get(uint16_t conn_handle, rtk_bt_le_audio_vcs_volume_
 uint16_t rtk_bt_micp_server_get(rtk_bt_le_audio_mics_param_t *p_mics_param)
 {
 	uint16_t ret = RTK_BT_FAIL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_mics_param) {
 		printf("%s p_mics_param is NULL \r\n", __func__);
@@ -292,10 +248,6 @@ uint16_t rtk_bt_micp_client_gmute(uint8_t group_idx, rtk_bt_le_audio_mics_mute_s
 	uint16_t ret = RTK_BT_FAIL;
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (mic_mute > 2) {
 		printf("%s: mic_mute value (%d) error\r\n", __func__, mic_mute);
 		return RTK_BT_FAIL;
@@ -314,10 +266,6 @@ uint16_t rtk_bt_micp_client_set_mute(uint16_t conn_handle, rtk_bt_le_audio_mics_
 {
 	uint16_t ret = RTK_BT_FAIL;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (mic_mute > 2) {
 		printf("%s: mic_mute value (%d) error\r\n", __func__, mic_mute);
@@ -347,10 +295,6 @@ uint16_t rtk_bt_micp_client_get_mute(uint16_t conn_handle, rtk_bt_le_audio_mics_
 {
 	uint16_t ret = RTK_BT_FAIL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!p_mic_mute) {
 		printf("%s p_mic_mute is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -367,10 +311,6 @@ uint16_t rtk_bt_micp_client_get_mute(uint16_t conn_handle, rtk_bt_le_audio_mics_
 uint16_t rtk_bt_vocs_server_get(rtk_bt_le_audio_vocs_param_t *p_vocs_param)
 {
 	uint16_t ret = RTK_BT_FAIL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_vocs_param) {
 		printf("%s p_vocs_param is NULL \r\n", __func__);
@@ -404,10 +344,6 @@ uint16_t rtk_bt_vocs_client_write(uint16_t conn_handle, rtk_bt_le_audio_vocs_cp_
 		.change_counter = 0,
 		.volume_offset = 0,
 	};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	p_device_info = app_bt_le_audio_group_list_find_dev_by_conn_handle(conn_handle);
 	if (p_device_info == NULL) {
@@ -443,10 +379,6 @@ uint16_t rtk_bt_vocs_client_gwrite(uint8_t group_idx, rtk_bt_le_audio_vocs_cp_op
 		.volume_offset = 0,
 	};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
 	if (group_handle == NULL) {
 		printf("%s: group_idx (%d) not find\r\n", __func__, group_idx);
@@ -469,10 +401,6 @@ uint16_t rtk_bt_vocs_client_wdes(uint16_t conn_handle, uint8_t srv_instance_id, 
 	uint16_t ret = RTK_BT_FAIL;
 	uint8_t des_str_len = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!des_str) {
 		printf("%s des_str is NULL for wdes\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -490,10 +418,6 @@ uint16_t rtk_bt_vocs_client_get_srv(uint16_t conn_handle, rtk_bt_le_audio_vocs_s
 	uint16_t ret = RTK_BT_FAIL;
 	uint8_t srv_instance_id = 0;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_srv_data) {
 		printf("%s p_srv_data is NULL \r\n", __func__);
@@ -532,10 +456,6 @@ uint16_t rtk_bt_vocs_client_get_char(uint16_t conn_handle)
 	uint8_t vocs_char_type = 0;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	p_device_info = app_bt_le_audio_group_list_find_dev_by_conn_handle(conn_handle);
 	if (p_device_info == NULL) {
 		printf("%s: conn_handle (%d) not find\r\n", __func__, conn_handle);
@@ -562,10 +482,6 @@ uint16_t rtk_bt_aics_server_get(void)
 	uint16_t ret = RTK_BT_FAIL;
 	uint8_t srv_instance_id = 0, aics_param_type = 0;
 	uint8_t value_len = 0, *p_value = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	for (aics_param_type = RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE; aics_param_type < RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_DES; aics_param_type++) {
 		switch (aics_param_type) {
@@ -638,10 +554,6 @@ uint16_t rtk_bt_aics_client_write(uint16_t conn_handle, rtk_bt_le_audio_aics_cp_
 		.gaining_setting = 0,
 	};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	p_device_info = app_bt_le_audio_group_list_find_dev_by_conn_handle(conn_handle);
 	if (p_device_info == NULL) {
 		printf("%s: conn_handle (%d) not find\r\n", __func__, conn_handle);
@@ -674,10 +586,6 @@ uint16_t rtk_bt_aics_client_gwrite(uint8_t group_idx, rtk_bt_le_audio_aics_cp_op
 		.gaining_setting = 0,
 	};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
 	if (group_handle == NULL) {
 		printf("%s: group_idx (%d) not find\r\n", __func__, group_idx);
@@ -699,10 +607,6 @@ uint16_t rtk_bt_aics_client_wdes(uint16_t conn_handle, uint8_t srv_instance_id, 
 {
 	uint16_t ret = RTK_BT_FAIL;
 	uint8_t des_str_len = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (srv_instance_id >= RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM) {
 		printf("%s srv_instance_id (%d) > max (%d) for wdes\r\n", __func__, srv_instance_id, RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM);
@@ -731,10 +635,6 @@ uint16_t rtk_bt_aics_client_get_srv(uint16_t conn_handle, rtk_bt_le_audio_aics_s
 	uint16_t ret = RTK_BT_FAIL;
 	uint8_t srv_instance_id = 0;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_srv_data) {
 		printf("%s p_srv_data is NULL \r\n", __func__);
@@ -775,10 +675,6 @@ uint16_t rtk_bt_aics_client_get_char(uint16_t conn_handle)
 	uint8_t srv_instance_id = 0;
 	uint8_t aics_char_type = 0;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	p_device_info = app_bt_le_audio_group_list_find_dev_by_conn_handle(conn_handle);
 	if (p_device_info == NULL) {

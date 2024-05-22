@@ -8,7 +8,7 @@
 #define __ATCMD_WIFI_H__
 #include "main.h"
 #include "rtw_wifi_constants.h"
-
+#include "FreeRTOS.h"
 /* TODO */
 #define ENABLE_SET_MAC_ADDRESS                 0
 

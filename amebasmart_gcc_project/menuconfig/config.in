@@ -42,6 +42,9 @@ endmenu
 mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
+if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+    bool "Enable MP SHRINK"			CONFIG_MP_SHRINK
+fi
 endmenu
 
 mainmenu_option next_comment
@@ -112,7 +115,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		fi
 		bool "BT Advanced Feature"										CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT MP Function"								CONFIG_BT_EXCLUDE_MP_FUNCTION_FOR_AP
+			bool "  BT Temp Config"										CONFIG_BT_TEMP_CONFIG_FOR_AP
 #			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR_MENU
 			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
 				define_bool CONFIG_BT_ZEPHYR_FOR_AP y
@@ -267,7 +270,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		fi
 		bool "BT Advanced Feature"										CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT MP Function"								CONFIG_BT_EXCLUDE_MP_FUNCTION_FOR_HP
+			bool "  BT Temp Config"										CONFIG_BT_TEMP_CONFIG_FOR_HP
 #			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR_MENU
 			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
 				define_bool CONFIG_BT_ZEPHYR_FOR_HP y
@@ -429,7 +432,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_AP y
 		define_bool CONFIG_AS_INIC_AP_FOR_AP y
-		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+		if [ "$CONFIG_MP_SHRINK" = "y" ]; then
 			define_bool CONFIG_LWIP_LAYER_FOR_AP n
 		else
 			define_bool CONFIG_LWIP_LAYER_FOR_AP y
@@ -440,7 +443,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	fi
 	if [ "$CONFIG_SINGLE_CORE_WIFI_KM4" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_HP y
-		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+		if [ "$CONFIG_MP_SHRINK" = "y" ]; then
 			define_bool CONFIG_LWIP_LAYER_FOR_HP n
 		else
 			define_bool CONFIG_LWIP_LAYER_FOR_HP y
@@ -470,18 +473,6 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	bool "Enable 11V"		CONFIG_WIFI_11V_ENABLE
 	bool "Enable 11R"		CONFIG_WIFI_11R_ENABLE
 	bool "Enable WIFI SPEAKER"	CONFIG_WIFI_SPEAKER_ENABLE
-	
-	mainmenu_option next_comment
-	comment '< CONFIG LWIP'
-	if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then
-		bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_AP
-	fi
-
-	if [ "$CONFIG_SINGLE_CORE_WIFI_KM4" = "y" ]; then
-		bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_HP
-	fi
-	endmenu
-
 else
 	define_bool CONFIG_WLAN n
 	define_bool CONFIG_AS_INIC_AP_FOR_AP y
@@ -490,7 +481,57 @@ else
 fi
 endmenu
 
+mainmenu_option next_comment
+comment '< CONFIG LWIP'
+if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then
+	bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_AP
+fi
 
+if [ "$CONFIG_SINGLE_CORE_WIFI_KM4" = "y" ]; then
+	bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_HP
+fi
+
+bool "Enable LWIP Debug"		CONFIG_LWIP_DEBUG
+if [ "$CONFIG_LWIP_DEBUG" = "y" ]; then
+	mainmenu_option next_comment
+	comment '< CONFIG LWIP DEBUG'
+		bool "Enable ETHARP DEBUG"				CONFIG_ETHARP_DEBUG
+		bool "Enable NETIF DEBUG"				CONFIG_NETIF_DEBUG
+		bool "Enable PBUF DEBUG"				CONFIG_PBUF_DEBUG
+		bool "Enable API LIB DEBUG"				CONFIG_API_LIB_DEBUG
+		bool "Enable API MSG DEBUG"				CONFIG_API_MSG_DEBUG
+		bool "Enable SOCKETS DEBUG"				CONFIG_SOCKETS_DEBUG
+		bool "Enable ICMP DEBUG"				CONFIG_ICMP_DEBUG
+		bool "Enable IPNAT DEBUG"				CONFIG_IPNAT_DEBUG
+		bool "Enable IGMP DEBUG"				CONFIG_IGMP_DEBUG
+		bool "Enable INET DEBUG"				CONFIG_INET_DEBUG
+		bool "Enable IP DEBUG"					CONFIG_IP_DEBUG
+		bool "Enable IP REASS DEBUG"			CONFIG_IP_REASS_DEBUG
+		bool "Enable RAW DEBUG"					CONFIG_RAW_DEBUG
+		bool "Enable MEM DEBUG"					CONFIG_MEM_DEBUG
+		bool "Enable MEMP DEBUG"				CONFIG_MEMP_DEBUG
+		bool "Enable SYS DEBUG"					CONFIG_SYS_DEBUG
+		bool "Enable TIMERS DEBUG"				CONFIG_TIMERS_DEBUG
+		bool "Enable TCP DEBUG"					CONFIG_TCP_DEBUG
+		bool "Enable TCP INPUT DEBUG"			CONFIG_TCP_INPUT_DEBUG
+		bool "Enable TCP FR DEBUG"				CONFIG_TCP_FR_DEBUG
+		bool "Enable TCP RTO DEBUG"				CONFIG_TCP_RTO_DEBUG
+		bool "Enable TCP CWND DEBUG"			CONFIG_TCP_CWND_DEBUG
+		bool "Enable TCP WND DEBUG"				CONFIG_TCP_WND_DEBUG
+		bool "Enable TCP OUTPUT DEBUG"			CONFIG_TCP_OUTPUT_DEBUG
+		bool "Enable TCP RST DEBUG"				CONFIG_TCP_RST_DEBUG
+		bool "Enable TCP QLEN DEBUG"			CONFIG_TCP_QLEN_DEBUG
+		bool "Enable UDP DEBUG"					CONFIG_UDP_DEBUG
+		bool "Enable TCPIP DEBUG"				CONFIG_TCPIP_DEBUG
+		bool "Enable SLIP DEBUG"				CONFIG_SLIP_DEBUG
+		bool "Enable DHCP DEBUG"				CONFIG_DHCP_DEBUG
+		bool "Enable AUTOIP DEBUG"				CONFIG_AUTOIP_DEBUG
+		bool "Enable DNS DEBUG"					CONFIG_DNS_DEBUG
+		bool "Enable IP6 DEBUG"					CONFIG_IP6_DEBUG
+		bool "Enable DHCP6 DEBUG"				CONFIG_DHCP6_DEBUG
+	endmenu
+fi
+endmenu
 
 separator "GeneralEnd"
 separator "LPStart"

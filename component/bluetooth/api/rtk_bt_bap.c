@@ -27,10 +27,6 @@ extern app_bt_le_audio_unicast_server_info_t g_uni_ser_info;
 /* common function */
 uint16_t rtk_bt_bap_ext_scan(bool enable)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (enable) {
 		if (rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param)) {
 			printf("%s rtk_bt_le_gap_ext_scan_set_param fail \r\n", __func__);
@@ -56,10 +52,6 @@ uint16_t rtk_bt_bap_bass_scan(bool enable, bool remote_scan_enable, uint8_t grou
 	rtk_bt_le_audio_group_device_info_t *p_dev_tbl = NULL;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (remote_scan_enable) {
 		group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
@@ -135,9 +127,6 @@ uint16_t rtk_bt_bap_broadcast_source_start(void)
 	rtk_bt_le_audio_qos_cfg_preferred_t qos_cfg_preferred = {0};
 	app_bt_le_audio_bap_broadcast_source_info_t *p_bap_bro_sour_info = &app_bap_bro_sour_info;
 	rtk_bt_le_audio_qos_cfg_preferred_t *p_prefer_qos = &bap_broadcast_source_cfg.prefer_qos;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	/* get prefer codec */
 	if (rtk_bt_le_audio_get_prefer_codec_cfg(bap_broadcast_source_cfg.cfg_codec_index, &codec_cfg)) {
@@ -236,10 +225,6 @@ uint16_t rtk_bt_bap_broadcast_source_start(void)
 uint16_t rtk_bt_bap_broadcast_source_stop(void)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (app_bap_bro_sour_info.broadcast_source_handle == NULL) {
 		printf("%s: broadcast_source_handle is NULL!\r\n", __func__);
@@ -386,10 +371,6 @@ uint16_t rtk_bt_bap_broadcast_sync_start(rtk_bt_bap_bass_scan_dev_info_t *p_info
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 	char addr_str[32] = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!p_info) {
 		printf("%s p_info is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -476,10 +457,6 @@ uint16_t rtk_bt_bap_broadcast_sync_term(rtk_bt_le_addr_t *padv_addr)
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 	char addr_str[32] = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!padv_addr) {
 		printf("%s padv_addr is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -558,10 +535,6 @@ uint16_t rtk_bt_bap_broadcast_assistant_sync_start(rtk_bt_bap_bass_scan_dev_info
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 	char addr_str[32] = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!p_info) {
 		printf("%s p_info is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -625,10 +598,6 @@ uint16_t rtk_bt_bap_broadcast_assistant_sync_term(rtk_bt_le_addr_t *padv_addr)
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 	char addr_str[32] = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!padv_addr) {
 		printf("%s padv_addr is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -663,10 +632,6 @@ uint16_t rtk_bt_bap_broadcast_assistant_reception_start(rtk_bt_le_addr_t *padv_a
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!padv_addr) {
 		printf("%s padv_addr is NULL \r\n", __func__);
@@ -761,10 +726,6 @@ uint16_t rtk_bt_bap_broadcast_assistant_reception_stop(rtk_bt_le_addr_t *padv_ad
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!padv_addr) {
 		printf("%s padv_addr is NULL \r\n", __func__);
 		return RTK_BT_FAIL;
@@ -846,10 +807,6 @@ uint16_t rtk_bt_bap_broadcast_assistant_reception_remove(rtk_bt_le_addr_t *padv_
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 	app_bt_le_audio_device_info_t *p_device_info = NULL;
 	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!padv_addr) {
 		printf("%s padv_addr is NULL \r\n", __func__);
@@ -1350,10 +1307,6 @@ uint16_t rtk_bt_bap_unicast_client_start(uint8_t group_idx, rtk_bt_le_audio_play
 	uint8_t device_handle_tbl_len = 0;
 	rtk_bt_le_audio_device_handle_t *p_device_handle_tbl = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	group_num = app_bt_le_audio_group_list_get_num();
 	if (!group_num) {
 		printf("%s: group num is %d, maybe discovery not start or not done\r\n", __func__, group_num);
@@ -1460,10 +1413,6 @@ uint16_t rtk_bt_bap_unicast_client_stop(uint8_t group_idx)
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 	app_bt_le_audio_group_info_t *p_group_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
 	if (!group_handle) {
 		printf("%s: group_handle is NULL\r\n", __func__);
@@ -1493,10 +1442,6 @@ uint16_t rtk_bt_bap_unicast_client_release(uint8_t group_idx)
 {
 	rtk_bt_le_audio_group_handle_t group_handle = NULL;
 	app_bt_le_audio_group_info_t *p_group_info = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
 	if (!group_handle) {

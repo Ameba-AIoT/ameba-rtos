@@ -66,7 +66,7 @@ extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 
 #if CONFIG_WLAN
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS

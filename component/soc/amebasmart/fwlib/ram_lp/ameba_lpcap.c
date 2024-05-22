@@ -330,7 +330,7 @@ void ap_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_aptickless_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	.Rxfunc = ap_tickless_ipc_int,
 #else
 	.Rxfunc = NULL,

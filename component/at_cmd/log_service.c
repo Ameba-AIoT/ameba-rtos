@@ -12,6 +12,9 @@
 #endif
 #include "log_service.h"
 #include "main.h"
+#ifdef CONFIG_LWIP_LAYER
+#include "atcmd_lwip.h"
+#endif
 
 #ifdef SUPPORT_LOG_SERVICE
 //======================================================
@@ -40,9 +43,17 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #include "lwip_netconf.h"
 
 extern void at_sys_init(void);
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 extern void at_wifi_init(void);
+#endif
+#ifndef CONFIG_MP_INCLUDED
 extern void at_mqtt_init(void);
+#endif
+#ifdef CONFIG_LWIP_LAYER
+extern void at_tcpip_init(void);
+#ifdef SUPPORT_LOG_SERVICE
+extern char log_buf[UART_LOG_CMD_BUFLEN];
+#endif
 #endif
 #if defined(CONFIG_BT) && CONFIG_BT
 extern void at_bt_init(void);
@@ -69,7 +80,7 @@ log_init_t *__log_init_begin__;
 log_init_t *__log_init_end__;
 log_init_t log_init_table[] = {
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #if CONFIG_WLAN
 	at_wifi_init,
 #endif
@@ -91,6 +102,9 @@ log_init_t log_init_table[] = {
 #ifdef CONFIG_NEW_ATCMD
 #ifndef CONFIG_MP_INCLUDED
 	at_mqtt_init,
+#endif
+#ifdef CONFIG_LWIP_LAYER
+	at_tcpip_init,
 #endif
 #endif
 };
@@ -362,10 +376,10 @@ void print_help_msg(void)
 {
 #ifdef CONFIG_NEW_ATCMD /* TODO: Delete this later. */
 	print_system_help();
-#ifndef CONFIG_MP_INCLUDED
-#if CONFIG_WLAN
+#if !defined(CONFIG_MP_SHRINK) && CONFIG_WLAN
 	print_wlan_help();
 #endif
+#ifndef CONFIG_MP_INCLUDED
 	print_mqtt_help();
 #endif
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -414,6 +428,16 @@ int print_help_handler(char *cmd)
 
 void log_service(char *line_buf)
 {
+#if ((defined CONFIG_NEW_ATCMD) && (defined CONFIG_LWIP_LAYER) && (defined SUPPORT_LOG_SERVICE))
+	if (atcmd_lwip_tt_mode == TRUE) {
+		atcmd_lwip_tt_datasize = strlen(log_buf);
+		atcmd_lwip_tt_lasttickcnt = rtos_time_get_current_system_time_ms();
+		if (atcmd_lwip_tt_sema != NULL) {
+			rtos_sema_give(atcmd_lwip_tt_sema);
+		}
+		return;
+	}
+#endif
 	if (log_handler((char *)line_buf) == NULL) {
 #ifdef CONFIG_MP_INCLUDED
 		if (mp_commnad_handler((char *)line_buf) < 0)

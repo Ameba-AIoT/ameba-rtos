@@ -23,6 +23,9 @@
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #include "atcmd_bt_mp.h"
 #endif
+#ifdef CONFIG_LWIP_LAYER
+#include "atcmd_lwip.h"
+#endif
 #endif
 
 //#include "FreeRTOS.h"
@@ -335,12 +338,10 @@ void at_list(void *arg)
 	print_wifi_at();
 #endif
 
-#if 0
-#if CONFIG_LWIP_LAYER
+#ifdef CONFIG_LWIP_LAYER
 	/* TCP/IP commands. */
 	at_printf("TCP/IP AT Command:\r\n");
-	print_tcpip_at();
-#endif
+	print_lwip_at();
 #endif
 
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -373,6 +374,36 @@ void at_rst(void *arg)
 	at_printf("\r\n%sOK\r\n", "+RST:");
 	sys_reset();
 }
+
+/****************************************************************
+AT command process:
+	AT+RST
+	[+RST]: OK
+	Then the board should re-start right now.
+****************************************************************/
+extern u32 total_heap_size;
+void at_state(void *arg)
+{
+	UNUSED(arg);
+#if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1)
+	{
+		signed char pcWriteBuffer[1024];
+		vTaskList((char *)pcWriteBuffer);
+		at_printf("Task List: \n\r%s\n\r", pcWriteBuffer);
+	}
+#endif
+
+	HeapStats_t pxHeapStats;
+	vPortGetHeapStats(&pxHeapStats);
+	at_printf("HeapStats: \n\r");
+	at_printf("Total Heap:\t%u\n\r", total_heap_size);
+	at_printf("Heap Free Now:\t%u\n\r", pxHeapStats.xAvailableHeapSpaceInBytes);
+	at_printf("Heap Used Now:\t%u\n\r", total_heap_size - pxHeapStats.xAvailableHeapSpaceInBytes);
+	at_printf("Heap Used Max:\t%u\n\r", total_heap_size - pxHeapStats.xMinimumEverFreeBytesRemaining);
+
+	at_printf("\r\n%sOK\r\n", "+STATE:");
+}
+
 
 /****************************************************************
 AT command process:
@@ -577,6 +608,7 @@ log_item_t at_sys_items[] = {
 	{"+TEST", at_test, {NULL, NULL}},
 	{"+LIST", at_list, {NULL, NULL}},
 	{"+RST", at_rst, {NULL, NULL}},
+	{"+STATE", at_state, {NULL, NULL}},
 	{"+GMR", at_gmr, {NULL, NULL}},
 	{"+LOG", at_log, {NULL, NULL}},
 	{"+RREG", at_rreg, {NULL, NULL}},

@@ -146,6 +146,9 @@ int rtw_netdev_probe(struct device *pdev)
 		goto os_ndevs_deinit;
 	}
 
+	global_idev.mp_fw = llhw_wifi_driver_is_mp();
+	dev_info(global_idev.fullmac_dev, "%s Wi-Fi driver!", global_idev.mp_fw ? "MP" : "Normal");
+
 	rtw_regd_init();
 	rtw_drv_proc_init();
 

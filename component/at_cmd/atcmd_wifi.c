@@ -17,7 +17,7 @@
 #include <wifi_intf_drv_to_upper.h>
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_LWIP_LAYER
 struct static_ip_config user_static_ip;
 extern struct netif xnetif[NET_IF_NUM];
@@ -963,14 +963,6 @@ void at_wlstate(void *arg)
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
 	ipnat_dump();
 #endif
-
-#if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1)
-	{
-		signed char pcWriteBuffer[1024];
-		vTaskList((char *)pcWriteBuffer);
-		at_printf("Task List: \r\n%s\r\n", pcWriteBuffer);
-	}
-#endif
 }
 
 static void at_wlautoconn_help(void)
@@ -1723,7 +1715,7 @@ void at_wifi_init(void)
 #ifdef CONFIG_WLAN
 	init_wifi_struct();
 #endif
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	log_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
 #endif
 }
@@ -1731,4 +1723,4 @@ void at_wifi_init(void)
 #ifdef SUPPORT_LOG_SERVICE
 log_module_init(at_wifi_init);
 #endif
-#endif /* CONFIG_MP_INCLUDED */
+#endif /* CONFIG_MP_SHRINK */

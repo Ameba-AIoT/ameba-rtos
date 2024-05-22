@@ -929,12 +929,12 @@ enum rtw_event_indicate {
 	WIFI_EVENT_OWE_PEER_KEY_RECV,
 #endif
 	/* kvr event */
-#if defined(CONFIG_RTW_WNM) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
 	WIFI_EVENT_KVR_CAP_UPDATE,
-#if defined(CONFIG_RTW_WNM) || defined(CONFIG_IEEE80211K)
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
 	WIFI_EVENT_NB_RESP_RECV,
 #endif
-#ifdef CONFIG_RTW_WNM
+#ifdef CONFIG_IEEE80211V
 	WIFI_EVENT_BTM_REQ_RECV,
 	WIFI_EVENT_BTM_DEBUG_CMD,
 #endif

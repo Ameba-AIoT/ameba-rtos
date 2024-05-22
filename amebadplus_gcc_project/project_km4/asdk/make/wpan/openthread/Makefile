@@ -97,22 +97,22 @@ endif
 include Makefile_td
 
 #OpenThread platform
-CSRC += $(RTK_OT_SUPPORT)/alarm.c \
-		$(RTK_OT_SUPPORT)/entropy.c \
-		$(RTK_OT_SUPPORT)/flash.c \
-		$(RTK_OT_SUPPORT)/logging.c \
-		$(RTK_OT_SUPPORT)/misc.c \
-		$(RTK_OT_SUPPORT)/system.c \
-		$(RTK_OT_SUPPORT)/crypto.c \
-		$(RTK_OT_SUPPORT)/uart.c \
-		$(RTK_OT_SUPPORT)/settings.c \
-		$(RTK_OT_SUPPORT)/cli_uart.c
+CSRC += $(RTK_OT_SUPPORT)/rtk_ot_alarm.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_entropy.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_flash.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_logging.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_misc.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_system.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_crypto.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_uart.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_settings.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_cli_uart.c
 
 include Makefile_spinel
 CPPSRC += $(THREADDIR)/openthread/src/lib/spinel/radio_spinel.cpp
 #OpenThread radio
-CPPSRC += $(RTK_OT_SUPPORT)/radio/rcp_radio/radio.cpp
-CPPSRC += $(RTK_OT_SUPPORT)/radio/rcp_radio/hdlc_interface.cpp
+CPPSRC += $(RTK_OT_SUPPORT)/radio/rcp_radio/rtk_ot_radio.cpp
+CPPSRC += $(RTK_OT_SUPPORT)/radio/rcp_radio/rtk_ot_hdlc_interface.cpp
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #

@@ -7,6 +7,7 @@ CSRC += $(RTK_OT_BR)/rtk_otbr.c \
 		$(RTK_OT_BR)/rtk_otbr_infra_if.c \
 		$(RTK_OT_BR)/rtk_otbr_multicast_routing.c \
 		$(RTK_OT_BR)/rtk_otbr_nat64.c \
+		$(RTK_OT_BR)/rtk_otbr_nat66.c \
 		$(RTK_OT_BR)/rtk_otbr_border_agent.c \
 		$(RTK_OT_BR)/rtk_otbr_srp_server.c \
 		$(RTK_OT_BR)/rtk_otbr_discovery.c \

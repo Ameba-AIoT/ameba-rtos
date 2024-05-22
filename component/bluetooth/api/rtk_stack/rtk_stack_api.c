@@ -70,7 +70,6 @@ static void bt_stack_api_taskentry(void *ctx)
 	(void)ctx;
 	uint8_t event;
 	T_IO_MSG io_msg;
-	rtk_bt_cmd_t *api_cmd;
 
 	osif_sem_give(api_task_sem);
 
@@ -85,12 +84,8 @@ static void bt_stack_api_taskentry(void *ctx)
 					if (true == osif_msg_recv(api_task_io_msg_q, &io_msg, BT_TIMEOUT_NONE)) {
 						switch (io_msg.type) {
 						case IO_MSG_TYPE_API_SYS_CALL:
-							api_cmd = (rtk_bt_cmd_t *)io_msg.u.buf;
-
 							/* Check if need to exit task*/
-							if (RTK_BT_API_TASK_EXIT == api_cmd->group) {
-								api_cmd->ret = 0;
-								osif_sem_give(api_cmd->psem);
+							if (io_msg.subtype == RTK_BT_API_TASK_EXIT) {
 								goto out;
 							}
 							bt_stack_act_handler((rtk_bt_cmd_t *)io_msg.u.buf);
@@ -562,12 +557,15 @@ static void bt_stack_api_stop(void)
 
 static uint16_t bt_stack_api_deinit(void)
 {
-	uint16_t ret = 0;
+	uint8_t event = EVENT_IO_TO_APP;
+	T_IO_MSG io_msg = {
+		.type = IO_MSG_TYPE_API_SYS_CALL,
+		.subtype = RTK_BT_API_TASK_EXIT,
+	};
 
 	/* indicate bt api task to kill itself */
-	ret = rtk_bt_send_cmd(RTK_BT_API_TASK_EXIT, 0, NULL, 0);
-	if (ret) {
-		return ret;
+	if (!osif_msg_send(api_task_io_msg_q, &io_msg, 0) || !osif_msg_send(api_task_evt_msg_q, &event, 0)) {
+		return RTK_BT_ERR_OS_OPERATION;
 	}
 
 	if (false == osif_sem_take(api_task_sem, BT_TIMEOUT_FOREVER)) {
@@ -937,11 +935,8 @@ uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg)
 	osif_unlock(flags);
 
 	if (!api_task_running) {
-		/* send EXIT as last msg to kill task */
-		if (type != IO_MSG_TYPE_API_SYS_CALL || ((rtk_bt_cmd_t *)msg)->group != RTK_BT_API_TASK_EXIT) {
-			ret = RTK_BT_ERR_NOT_READY;
-			goto end;
-		}
+		ret = RTK_BT_ERR_NOT_READY;
+		goto end;
 	}
 
 	io_msg.type = type;

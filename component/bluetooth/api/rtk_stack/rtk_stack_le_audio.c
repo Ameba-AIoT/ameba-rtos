@@ -4259,10 +4259,6 @@ uint16_t bt_stack_le_audio_data_send(void *data)
 	T_GAP_CAUSE cause = GAP_CAUSE_SUCCESS;
 	rtk_bt_le_audio_iso_data_send_info_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4321,10 +4317,6 @@ static uint16_t bt_stack_le_audio_get_prefer_codec_cfg(void *data)
 	T_CODEC_CFG codec_cfg = {0};
 	rtk_bt_le_audio_get_prefer_codec_cfg_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4359,10 +4351,6 @@ static uint16_t bt_stack_le_audio_get_prefer_qos_cfg(void *data)
 	T_QOS_CFG_PREFERRED qos_cfg_preferred = {0};
 	rtk_bt_le_audio_get_prefer_qos_cfg_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4396,10 +4384,6 @@ static uint16_t bt_stack_le_audio_pacs_get_info(void *data)
 	T_BAP_PACS_INFO pacs_info = {0};
 	rtk_bt_le_audio_pacs_get_info_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4424,10 +4408,6 @@ static uint16_t bt_stack_le_audio_pacs_get_pac_record(void *data)
 	uint16_t pac_tbl_size = 0;
 	rtk_bt_le_audio_pacs_get_pac_record_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4484,10 +4464,6 @@ static uint16_t bt_stack_le_audio_pacs_get_lc3_table_mask(void *data)
 	uint32_t lc3_table_mask = 0;
 	rtk_bt_le_audio_pacs_get_lc3_table_mask_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4516,10 +4492,6 @@ static uint16_t bt_stack_le_audio_pacs_get_bis_array_by_sync_info(void *data)
 	uint32_t bis_array = 0;
 	rtk_bt_le_audio_pacs_get_bis_array_by_sync_info_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4541,10 +4513,6 @@ static uint16_t bt_stack_le_audio_sync_allocate(void *data)
 	T_BLE_AUDIO_SYNC_HANDLE sync_handle = NULL;
 	rtk_bt_le_audio_sync_allocate_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4571,10 +4539,6 @@ static uint16_t bt_stack_le_audio_sync_release(void *data)
 {
 	rtk_bt_le_audio_sync_handle_t sync_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4597,10 +4561,6 @@ static uint16_t bt_stack_le_audio_sync_find(void *data)
 	T_BLE_AUDIO_SYNC_HANDLE sync_handle = NULL;
 	rtk_bt_le_audio_sync_find_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4619,10 +4579,6 @@ static uint16_t bt_stack_le_audio_pa_sync_establish(void *data)
 {
 	rtk_bt_le_audio_pa_sync_establish_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4646,10 +4602,6 @@ static uint16_t bt_stack_le_audio_pa_sync_terminate(void *data)
 {
 	rtk_bt_le_audio_sync_handle_t sync_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4670,10 +4622,6 @@ static uint16_t bt_stack_le_audio_sync_get_sync_info(void *data)
 	T_BLE_AUDIO_SYNC_INFO sync_info = {0};
 	rtk_bt_le_audio_sync_get_sync_info_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4712,10 +4660,6 @@ static uint16_t bt_stack_le_audio_sync_get_bis_codec_cfg(void *data)
 	T_CODEC_CFG codec_parsed_data = {0};
 	rtk_bt_le_audio_sync_get_bis_codec_cfg_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4753,10 +4697,6 @@ static uint16_t bt_stack_le_audio_big_sync_establish(void *data)
 	rtk_bt_le_audio_big_sync_establish_param_t *p_param = NULL;
 	T_BIG_MGR_SYNC_RECEIVER_BIG_CREATE_SYNC_PARAM sync_param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4786,10 +4726,6 @@ static uint16_t bt_stack_le_audio_big_sync_terminate(void *data)
 {
 	rtk_bt_le_audio_sync_handle_t sync_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4813,10 +4749,6 @@ static uint16_t bt_stack_le_audio_sync_get_bis_info(void *data)
 	T_BLE_AUDIO_BIS_INFO bis_info = {0};
 	rtk_bt_le_audio_sync_get_bis_info_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4877,10 +4809,6 @@ static uint16_t bt_stack_le_audio_sync_get_support_bis_array(void *data)
 	uint8_t i = 0, j = 0;
 	rtk_bt_le_audio_sync_get_support_bis_array_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4931,10 +4859,6 @@ static uint16_t bt_stack_le_audio_sync_setup_data_path(void *data)
 {
 	rtk_bt_le_audio_sync_setup_data_path_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -4959,10 +4883,6 @@ static uint16_t bt_stack_le_audio_sync_remove_data_path(void *data)
 {
 	rtk_bt_le_audio_sync_remove_data_path_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5099,10 +5019,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_create(void *data)
 	uint32_t presentation_delay = 0;
 	rtk_bt_le_audio_broadcast_source_create_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5211,10 +5127,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_get_info(void *data)
 	rtk_bt_le_audio_broadcast_source_info_get_param_t *p_param = NULL;
 	T_BROADCAST_SOURCE_INFO info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5244,10 +5156,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_config(void *data)
 	uint16_t pa_data_len = 0;
 	uint8_t *pa_data = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5333,10 +5241,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_enable(void *data)
 	rtk_bt_le_audio_broadcast_source_create_big_t *p_create_big = NULL;
 	T_BIG_MGR_ISOC_BROADCASTER_CREATE_BIG_PARAM big_param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5360,10 +5264,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_disable(void *data)
 {
 	rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5383,10 +5283,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_release(void *data)
 {
 	rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5406,10 +5302,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_setup_data_path(void *data)
 {
 	rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5434,10 +5326,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_remove_data_path(void *data)
 {
 	rtk_bt_le_audio_broadcast_source_remove_data_path_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5459,10 +5347,6 @@ static uint16_t bt_stack_le_audio_broadcast_source_reconfig(void *data)
 	uint8_t *pa_data = NULL;
 	rtk_bt_le_audio_broadcast_source_reconfig_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5502,10 +5386,6 @@ static uint16_t bt_stack_le_audio_bass_client_get_brs_data(void *data)
 	T_BASS_BRS_DATA *p_brs_data = NULL;
 	rtk_bt_le_audio_bass_client_get_brs_data_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5549,10 +5429,6 @@ static uint16_t bt_stack_le_audio_bass_client_cp_add_source_by_sync_info(void *d
 {
 	rtk_bt_le_audio_bass_client_cp_add_source_by_sync_info_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5578,10 +5454,6 @@ static uint16_t bt_stack_le_audio_bass_client_cp_modify_source_by_sync_info(void
 {
 	rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5609,10 +5481,6 @@ static uint16_t bt_stack_le_audio_bass_client_write_cp_op(void *data)
 {
 	rtk_bt_le_audio_bass_client_write_cp_op_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -5717,10 +5585,6 @@ static uint16_t bt_stack_le_audio_bass_client_past(void *data)
 	T_BASS_PAST_SRV_DATA srv_data = {0};
 	rtk_bt_le_audio_bass_client_past_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6183,10 +6047,7 @@ static void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_
 static uint16_t bt_stack_le_audio_group_allocate(void *data)
 {
 	T_BLE_AUDIO_GROUP_HANDLE group_handle = NULL;
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6213,10 +6074,7 @@ static uint16_t bt_stack_le_audio_group_allocate(void *data)
 static uint16_t bt_stack_le_audio_group_release(void *data)
 {
 	T_BLE_AUDIO_GROUP_HANDLE group_handle = NULL;
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6240,11 +6098,6 @@ static uint16_t bt_stack_le_audio_group_add_device(void *data)
 	uint8_t addr_val[RTK_BD_ADDR_LEN] = {0};
 	T_BLE_AUDIO_DEV_HANDLE device_handle = NULL;
 	rtk_bt_le_audio_group_add_device_param_t *p_param = NULL;
-
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
@@ -6278,10 +6131,6 @@ static uint16_t bt_stack_le_audio_group_delete_device(void *data)
 {
 	rtk_bt_le_audio_group_delete_device_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6303,10 +6152,6 @@ static uint16_t bt_stack_le_audio_group_find_device(void *data)
 	T_BLE_AUDIO_DEV_HANDLE device_handle = NULL;
 	rtk_bt_le_audio_group_find_device_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6330,10 +6175,6 @@ static uint16_t bt_stack_le_audio_group_find_device_by_conn_handle(void *data)
 	T_BLE_AUDIO_DEV_HANDLE device_handle = NULL;
 	rtk_bt_le_audio_group_find_device_by_conn_handle_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6357,10 +6198,6 @@ static uint16_t bt_stack_le_audio_group_get_device_num(void *data)
 	uint8_t device_num = 0;
 	rtk_bt_le_audio_group_get_device_num_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6380,10 +6217,6 @@ static uint16_t bt_stack_le_audio_group_get_used_device_num(void *data)
 	uint8_t used_device_num  = 0;
 	rtk_bt_le_audio_group_get_used_device_num_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6404,10 +6237,6 @@ static uint16_t bt_stack_le_audio_group_get_device_info(void *data)
 	rtk_bt_le_audio_group_get_device_info_param_t *p_param = NULL;
 	rtk_bt_le_audio_group_device_info_t *p_device_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6445,10 +6274,6 @@ static uint16_t bt_stack_le_audio_group_get_all_device_info(void *data)
 	rtk_bt_le_audio_group_get_all_device_info_param_t *p_param = NULL;
 	rtk_bt_le_audio_group_device_info_t *p_device_info_tbl = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6485,10 +6310,6 @@ static uint16_t bt_stack_le_audio_stream_session_allocate(void *data)
 	T_AUDIO_STREAM_SESSION_HANDLE stream_session_handle = NULL;
 	rtk_bt_le_audio_stream_session_allocate_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6513,10 +6334,6 @@ static uint16_t bt_stack_le_audio_stream_session_release(void *data)
 {
 	rtk_bt_le_audio_stream_session_handle_t stream_session_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6537,10 +6354,6 @@ static uint16_t bt_stack_le_audio_stream_session_get_group_handle(void *data)
 	T_BLE_AUDIO_GROUP_HANDLE group_handle = NULL;
 	rtk_bt_le_audio_stream_session_get_group_handle_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6564,10 +6377,6 @@ static uint16_t bt_stack_le_audio_unicast_get_session_info(void *data)
 	rtk_bt_le_audio_unicast_get_session_info_param_t *p_param = NULL;
 	uint8_t i = 0, j = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6636,10 +6445,6 @@ static uint16_t bt_stack_le_audio_unicast_get_cfg_mask(void *data)
 	uint32_t cfg_mask = 0;
 	rtk_bt_le_audio_unicast_get_cfg_mask_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6663,10 +6468,6 @@ static uint16_t bt_stack_le_audio_unicast_get_cis_info(void *data)
 	T_AUDIO_STREAM_CIS_INFO stream_cis_info = {0};
 	rtk_bt_le_audio_unicast_get_cis_info_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6703,10 +6504,6 @@ static uint16_t bt_stack_le_audio_unicast_config(void *data)
 {
 	rtk_bt_le_audio_unicast_config_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6734,10 +6531,6 @@ static uint16_t bt_stack_le_audio_unicast_cfg_ase_codec(void *data)
 	T_AUDIO_ASE_CODEC_CFG cfg = {0};
 	rtk_bt_le_audio_unicast_cfg_ase_codec_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6764,10 +6557,6 @@ static uint16_t bt_stack_le_audio_unicast_remove_config(void *data)
 {
 	rtk_bt_le_audio_stream_session_handle_t stream_session_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6789,10 +6578,6 @@ static uint16_t bt_stack_le_audio_unicast_get_session_qos(void *data)
 	T_AUDIO_SESSION_QOS_CFG cfg = {0};
 	rtk_bt_le_audio_unicast_get_session_qos_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6829,10 +6614,6 @@ static uint16_t bt_stack_le_audio_unicast_get_ase_qos(void *data)
 	T_AUDIO_ASE_QOS_CFG cfg = {0};
 	rtk_bt_le_audio_unicast_get_ase_qos_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6858,10 +6639,6 @@ static uint16_t bt_stack_le_audio_unicast_cfg_ase_qos(void *data)
 	T_AUDIO_ASE_QOS_CFG cfg = {0};
 	rtk_bt_le_audio_unicast_cfg_ase_qos_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6886,10 +6663,6 @@ static uint16_t bt_stack_le_audio_unicast_start(void *data)
 {
 	rtk_bt_le_audio_stream_session_handle_t stream_session_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6909,10 +6682,6 @@ static uint16_t bt_stack_le_audio_unicast_stop(void *data)
 {
 	rtk_bt_le_audio_unicast_stop_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6932,10 +6701,6 @@ static uint16_t bt_stack_le_audio_unicast_release(void *data)
 {
 	rtk_bt_le_audio_stream_session_handle_t stream_session_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6955,10 +6720,6 @@ static uint16_t bt_stack_le_audio_unicast_update(void *data)
 {
 	rtk_bt_le_audio_stream_session_handle_t stream_session_handle = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -6980,10 +6741,6 @@ static uint16_t bt_stack_le_audio_csis_gen_rsi(void *data)
 {
 	rtk_bt_le_audio_csis_gen_rsi_info_t *p_csis_gen_rsi_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7004,10 +6761,6 @@ static uint16_t bt_stack_le_audio_csis_update_sirk(void *data)
 	T_ATTR_UUID srv_uuid = {0};
 	rtk_bt_le_audio_csis_update_sirk_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7050,10 +6803,6 @@ static uint16_t bt_stack_le_audio_csis_update_size(void *data)
 	T_ATTR_UUID srv_uuid = {0};
 	rtk_bt_le_audio_csis_update_size_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7094,10 +6843,6 @@ static uint16_t bt_stack_le_audio_csis_set_coordinator_check_adv_rsi(void *data)
 {
 	rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi_info_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7117,10 +6862,6 @@ static uint16_t bt_stack_le_audio_csis_set_coordinator_cfg_discover(void *data)
 {
 	rtk_bt_le_audio_csis_set_coordinator_cfg_discover_info_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7140,10 +6881,6 @@ static uint16_t bt_stack_le_audio_csis_set_coordinator_add_group(void *data)
 	rtk_bt_le_audio_csis_set_coordinator_add_group_info_t *p_info = NULL;
 	T_CSIS_SET_MEM_INFO mem_info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7175,10 +6912,6 @@ static uint16_t bt_stack_le_audio_csis_set_coordinator_add_device(void *data)
 	rtk_bt_le_audio_csis_set_coordinator_add_device_info_t *p_info = NULL;
 	T_CSIS_SET_MEM_INFO mem_info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7209,10 +6942,6 @@ static uint16_t bt_stack_le_audio_csis_set_coordinator_write_lock(void *data)
 {
 	rtk_bt_le_audio_csis_set_coordinator_write_lock_info_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7242,10 +6971,6 @@ static uint16_t bt_stack_le_audio_mcp_client_write_media_cp(void *data)
 	T_MCP_CLIENT_WRITE_MEDIA_CP_PARAM mcp_param = {0};
 	rtk_bt_le_audio_mcp_client_write_media_cp_info_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7267,10 +6992,6 @@ static uint16_t bt_stack_le_audio_mcp_client_read_char_value(void *data)
 {
 	rtk_bt_le_audio_mcp_client_read_char_value_info_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7293,10 +7014,6 @@ static uint16_t bt_stack_le_audio_mcp_client_cfg_cccd(void *data)
 {
 	rtk_bt_le_audio_mcp_client_cfg_cccd_info_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7319,10 +7036,6 @@ static uint16_t bt_stack_le_audio_mcp_server_set_param(void *data)
 	T_MCP_SERVER_SET_PARAM set_param = {0};
 	rtk_bt_le_audio_mcp_server_set_param_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7348,10 +7061,6 @@ static uint16_t bt_stack_le_audio_mcp_server_send_data(void *data)
 	T_MCP_SERVER_SEND_DATA_PARAM send_param = {0};
 	rtk_bt_le_audio_mcp_server_send_data_param_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7386,10 +7095,6 @@ static uint16_t bt_stack_le_audio_mcp_server_read_cfm(void *data)
 	T_MCP_SERVER_READ_CFM read_cfm = {0};
 	rtk_bt_le_audio_mcp_server_read_confirm_param_t *p_info = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7454,10 +7159,6 @@ static uint16_t bt_stack_le_audio_vcs_param_set(void *data)
 	T_VCS_PARAM vcs_param = {0};
 	rtk_bt_le_audio_vcs_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7484,10 +7185,6 @@ static uint16_t bt_stack_le_audio_vcs_param_get(void *data)
 	T_VCS_PARAM vcs_param = {0};
 	rtk_bt_le_audio_vcs_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7516,10 +7213,6 @@ static uint16_t bt_stack_le_audio_vcs_write_cp(void *data)
 	T_VCS_VOLUME_CP_PARAM cp_param = {0};
 	rtk_bt_le_audio_vcs_write_cp_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7547,10 +7240,6 @@ static uint16_t bt_stack_le_audio_vcs_get_volume_state(void *data)
 	rtk_bt_le_audio_vcs_volume_state_t *p_vcs_volume_state = NULL;
 	rtk_bt_le_audio_vcs_get_volume_state_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7579,10 +7268,6 @@ static uint16_t bt_stack_le_audio_vcs_change_mute(void *data)
 	T_LE_AUDIO_CAUSE cause = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vcs_change_mute_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7606,10 +7291,6 @@ static uint16_t bt_stack_le_audio_vcs_change_volume(void *data)
 	T_LE_AUDIO_CAUSE cause = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vcs_change_volume_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7633,10 +7314,6 @@ static uint16_t bt_stack_le_audio_mics_change_mute(void *data)
 	T_LE_AUDIO_CAUSE cause = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_mics_change_mute_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7657,10 +7334,6 @@ static uint16_t bt_stack_le_audio_mics_set_mute_value(void *data)
 {
 	rtk_bt_le_audio_mics_set_mute_value_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7683,10 +7356,6 @@ static uint16_t bt_stack_le_audio_mics_get_mute_value(void *data)
 	rtk_bt_le_audio_mics_get_mute_value_param_t *p_param = NULL;
 	T_MICS_MUTE mic_mute = MICS_RFU;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7712,10 +7381,6 @@ static uint16_t bt_stack_le_audio_mics_set_param(void *data)
 	T_MICS_PARAM mics_param = {0};
 	rtk_bt_le_audio_mics_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7738,10 +7403,6 @@ static uint16_t bt_stack_le_audio_mics_get_param(void *data)
 	T_MICS_PARAM mics_param = {0};
 	rtk_bt_le_audio_mics_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7766,10 +7427,6 @@ static uint16_t bt_stack_le_audio_vocs_set_param(void *data)
 	T_VOCS_PARAM_SET vocs_param = {0};
 	rtk_bt_le_audio_vocs_set_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7797,10 +7454,6 @@ static uint16_t bt_stack_le_audio_vocs_get_param(void *data)
 	T_VOCS_PARAM_GET vocs_param = {0};
 	rtk_bt_le_audio_vocs_get_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7830,10 +7483,6 @@ static uint16_t bt_stack_le_audio_vocs_cfg_cccd(void *data)
 {
 	rtk_bt_le_audio_vocs_cfg_cccd_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7852,10 +7501,6 @@ static uint16_t bt_stack_le_audio_vocs_read_char_value(void *data)
 {
 	rtk_bt_le_audio_vocs_read_char_value_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7876,10 +7521,6 @@ static uint16_t bt_stack_le_audio_vocs_write_cp(void *data)
 	T_VOCS_CP_PARAM cp_param = {0};
 	rtk_bt_le_audio_vocs_write_cp_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7906,10 +7547,6 @@ static uint16_t bt_stack_le_audio_vocs_write_cp_by_group(void *data)
 	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vocs_write_cp_by_group_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7936,10 +7573,6 @@ static uint16_t bt_stack_le_audio_vocs_write_audio_location(void *data)
 	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vocs_write_audio_location_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7964,10 +7597,6 @@ static uint16_t bt_stack_le_audio_vocs_write_output_des(void *data)
 	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vocs_write_output_des_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -7991,10 +7620,6 @@ static uint16_t bt_stack_le_audio_vocs_get_srv_data(void *data)
 	T_VOCS_SRV_DATA value = {0};
 	rtk_bt_le_audio_vocs_get_srv_data_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8029,10 +7654,6 @@ static uint16_t bt_stack_le_audio_aics_set_param(void *data)
 {
 	rtk_bt_le_audio_aics_set_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8055,10 +7676,6 @@ static uint16_t bt_stack_le_audio_aics_get_param(void *data)
 {
 	rtk_bt_le_audio_aics_get_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8084,10 +7701,6 @@ static uint16_t bt_stack_le_audio_aics_cfg_cccd(void *data)
 {
 	rtk_bt_le_audio_aics_cfg_cccd_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8106,10 +7719,6 @@ static uint16_t bt_stack_le_audio_aics_read_char_value(void *data)
 {
 	rtk_bt_le_audio_aics_read_char_value_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8130,10 +7739,6 @@ static uint16_t bt_stack_le_audio_aics_write_cp(void *data)
 	T_AICS_CP_PARAM cp_param = {0};
 	rtk_bt_le_audio_aics_write_cp_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8160,10 +7765,6 @@ static uint16_t bt_stack_le_audio_aics_write_cp_by_group(void *data)
 	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_aics_write_cp_by_group_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8190,10 +7791,6 @@ static uint16_t bt_stack_le_audio_aics_write_input_des(void *data)
 	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_aics_write_input_des_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8217,10 +7814,6 @@ static uint16_t bt_stack_le_audio_aics_get_srv_data(void *data)
 	T_AICS_SRV_DATA value = {0};
 	rtk_bt_le_audio_aics_get_srv_data_param_t *p_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8261,10 +7854,6 @@ static uint16_t bt_stack_le_audio_tmas_client_read_role(void *data)
 {
 	uint16_t p_conn_handle = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8288,10 +7877,6 @@ static uint16_t bt_stack_le_audio_gmas_client_read_role(void *data)
 {
 	uint16_t p_conn_handle = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -8312,10 +7897,7 @@ static uint16_t bt_stack_le_audio_gmas_client_read_role(void *data)
 static uint16_t bt_stack_le_audio_gmas_client_read_features(void *data)
 {
 	uint16_t char_uuid;
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;

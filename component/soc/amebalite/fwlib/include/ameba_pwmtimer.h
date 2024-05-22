@@ -14,7 +14,7 @@
   */
 
 /** @defgroup PWMTIMER
-  * @brief Timer driver modules
+  * @brief PWMTIMER driver modules
   * @{
   */
 

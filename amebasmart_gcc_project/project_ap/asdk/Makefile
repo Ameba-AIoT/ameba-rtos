@@ -346,6 +346,7 @@ endif
 	@echo "========== Image manipulating end =========="
 
 code_analyze:
+ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
@@ -355,6 +356,9 @@ code_analyze:
 	fi
 
 	@echo "========== Image analyze end =========="
+else
+	@echo "daily build"
+endif
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #
 #*****************************************************************************#

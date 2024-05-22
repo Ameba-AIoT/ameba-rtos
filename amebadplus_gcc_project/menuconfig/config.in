@@ -71,6 +71,9 @@ endmenu
 mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
+if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+    bool "Enable MP SHRINK"			CONFIG_MP_SHRINK
+fi
 endmenu
 
 mainmenu_option next_comment
@@ -120,7 +123,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_AS_INIC_NP_FOR_KM0 y
 		define_bool CONFIG_AS_INIC_AP_FOR_KM4 y
-		if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+		if [ "$CONFIG_MP_SHRINK" = "y" ]; then
 			define_bool CONFIG_LWIP_LAYER_FOR_KM4 n
 		else
 			define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
@@ -138,7 +141,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	fi
 
 #	KM0 firmware follow WLAN menu	
-	if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
+	if [ "$CONFIG_MP_SHRINK" = "y" ]; then
 		define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
 	else
 		define_bool CONFIG_WIFI_FW_EN_FOR_KM0 y
@@ -164,17 +167,6 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	bool "Enable 11V"		CONFIG_WIFI_11V_ENABLE
 	bool "Enable 11R"		CONFIG_WIFI_11R_ENABLE
 	bool "Enable WIFI SPEAKER"		CONFIG_WIFI_SPEAKER_ENABLE
-	
-	mainmenu_option next_comment
-	comment '< CONFIG LWIP'
-	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
-		bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_KM4
-	fi
-	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
-		bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_KM4
-	fi
-	endmenu
-
 else
 	define_bool CONFIG_WLAN n
 	define_bool CONFIG_AS_INIC_AP_FOR_KM4 y
@@ -197,7 +189,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 	define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
 	bool "BT Advanced Feature"					CONFIG_BT_ADVANCED_FEATURE_MENU
 	if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-		bool "  Exclude BT MP Function"			CONFIG_BT_EXCLUDE_MP_FUNCTION_FOR_KM4
+		bool "  BT Temp Config"					CONFIG_BT_TEMP_CONFIG_FOR_KM4
 	fi
 	bool "BT Example Demo"						CONFIG_BT_EXAMPLE_DEMO_MENU
 	if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
@@ -226,6 +218,57 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
 		fi
 	fi
+fi
+endmenu
+
+mainmenu_option next_comment
+comment '< CONFIG LWIP'
+if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
+	bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_KM4
+fi
+if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
+	bool "Enable Fast DHCP"		CONFIG_FAST_DHCP_FOR_KM4
+fi
+
+bool "Enable LWIP Debug"		CONFIG_LWIP_DEBUG
+if [ "$CONFIG_LWIP_DEBUG" = "y" ]; then
+	mainmenu_option next_comment
+	comment '< CONFIG LWIP DEBUG'
+		bool "Enable ETHARP DEBUG"				CONFIG_ETHARP_DEBUG
+		bool "Enable NETIF DEBUG"				CONFIG_NETIF_DEBUG
+		bool "Enable PBUF DEBUG"				CONFIG_PBUF_DEBUG
+		bool "Enable API LIB DEBUG"				CONFIG_API_LIB_DEBUG
+		bool "Enable API MSG DEBUG"				CONFIG_API_MSG_DEBUG
+		bool "Enable SOCKETS DEBUG"				CONFIG_SOCKETS_DEBUG
+		bool "Enable ICMP DEBUG"				CONFIG_ICMP_DEBUG
+		bool "Enable IPNAT DEBUG"				CONFIG_IPNAT_DEBUG
+		bool "Enable IGMP DEBUG"				CONFIG_IGMP_DEBUG
+		bool "Enable INET DEBUG"				CONFIG_INET_DEBUG
+		bool "Enable IP DEBUG"					CONFIG_IP_DEBUG
+		bool "Enable IP REASS DEBUG"			CONFIG_IP_REASS_DEBUG
+		bool "Enable RAW DEBUG"					CONFIG_RAW_DEBUG
+		bool "Enable MEM DEBUG"					CONFIG_MEM_DEBUG
+		bool "Enable MEMP DEBUG"				CONFIG_MEMP_DEBUG
+		bool "Enable SYS DEBUG"					CONFIG_SYS_DEBUG
+		bool "Enable TIMERS DEBUG"				CONFIG_TIMERS_DEBUG
+		bool "Enable TCP DEBUG"					CONFIG_TCP_DEBUG
+		bool "Enable TCP INPUT DEBUG"			CONFIG_TCP_INPUT_DEBUG
+		bool "Enable TCP FR DEBUG"				CONFIG_TCP_FR_DEBUG
+		bool "Enable TCP RTO DEBUG"				CONFIG_TCP_RTO_DEBUG
+		bool "Enable TCP CWND DEBUG"			CONFIG_TCP_CWND_DEBUG
+		bool "Enable TCP WND DEBUG"				CONFIG_TCP_WND_DEBUG
+		bool "Enable TCP OUTPUT DEBUG"			CONFIG_TCP_OUTPUT_DEBUG
+		bool "Enable TCP RST DEBUG"				CONFIG_TCP_RST_DEBUG
+		bool "Enable TCP QLEN DEBUG"			CONFIG_TCP_QLEN_DEBUG
+		bool "Enable UDP DEBUG"					CONFIG_UDP_DEBUG
+		bool "Enable TCPIP DEBUG"				CONFIG_TCPIP_DEBUG
+		bool "Enable SLIP DEBUG"				CONFIG_SLIP_DEBUG
+		bool "Enable DHCP DEBUG"				CONFIG_DHCP_DEBUG
+		bool "Enable AUTOIP DEBUG"				CONFIG_AUTOIP_DEBUG
+		bool "Enable DNS DEBUG"					CONFIG_DNS_DEBUG
+		bool "Enable IP6 DEBUG"					CONFIG_IP6_DEBUG
+		bool "Enable DHCP6 DEBUG"				CONFIG_DHCP6_DEBUG
+	endmenu
 fi
 endmenu
 
@@ -603,27 +646,6 @@ bool "Enable Audio Framework"		CONFIG_AUDIO_FWK_FOR_KM4
 if [ "$CONFIG_AUDIO_FWK_FOR_KM4" = "y" ]; then
 	choice 'Select Audio Interfaces' "Mixer	CONFIG_AUDIO_MIXER_FOR_KM4 \
 								PassThrough	CONFIG_AUDIO_PASSTHROUGH_FOR_KM4"
-fi
-
-bool "Enable Media Framework"	CONFIG_MEDIA_PLAYER_FOR_KM4
-if [ "$CONFIG_MEDIA_PLAYER_FOR_KM4" = "y" ]; then
-	if [ "$CONFIG_AUDIO_FWK_FOR_KM4" = "n" ]; then
-		define_bool CONFIG_AUDIO_FWK_FOR_KM4 y
-		define_bool CONFIG_AUDIO_MIXER_FOR_KM4 y
-	fi
-	mainmenu_option next_comment
-	comment '< Demux'
-		bool "Demux WAV"	CONFIG_MEDIA_DEMUX_WAV_FOR_KM4
-		bool "Demux MP3"	CONFIG_MEDIA_DEMUX_MP3_FOR_KM4
-		bool "Demux AAC"	CONFIG_MEDIA_DEMUX_AAC_FOR_KM4
-		bool "Demux M4A"	CONFIG_MEDIA_DEMUX_MP4_FOR_KM4
-	endmenu
-	mainmenu_option next_comment
-	comment '< Codec'
-		bool "Codec PCM"	CONFIG_MEDIA_CODEC_PCM_FOR_KM4
-		bool "Codec MP3"	CONFIG_MEDIA_CODEC_MP3_FOR_KM4
-		bool "Codec AAC"	CONFIG_MEDIA_CODEC_HAAC_FOR_KM4
-	endmenu
 fi
 endmenu
 

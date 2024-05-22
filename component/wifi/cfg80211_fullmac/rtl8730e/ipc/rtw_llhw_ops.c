@@ -877,7 +877,7 @@ int llhw_wifi_del_custom_ie(unsigned char wlan_idx)
 	return ret;
 }
 
-int llhw_wifi_update_custom_ie(u8 *ie, int ie_index)
+int llhw_wifi_update_custom_ie(u8 *ie, int ie_index, u8 type)
 {
 	int ret = 0;
 	u32 param_buf[3];
@@ -891,7 +891,7 @@ int llhw_wifi_update_custom_ie(u8 *ie, int ie_index)
 		dev_err(global_idev.fullmac_dev, "%s: malloc custom ie failed.", __func__);
 		return -ENOMEM;
 	}
-	cus_ie_array->type = ie[0];
+	cus_ie_array->type = type;
 	ie_vir = rtw_malloc(ie[1] + 2, &ie_phy);
 	if (!ie_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: malloc custom sub ie failed.", __func__);
@@ -1086,4 +1086,9 @@ int llhw_wifi_get_country_code(struct country_code_table_t *table)
 	kfree(virt_addr);
 
 	return ret;
+}
+
+int llhw_wifi_driver_is_mp(void)
+{
+	return llhw_ipc_send_msg(INIC_API_WIFI_DRIVE_IS_MP, NULL, 0);
 }

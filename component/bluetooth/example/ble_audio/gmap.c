@@ -1455,7 +1455,6 @@ static void app_bt_le_audio_iso_data_tx_statistics(app_lea_iso_data_path_t *p_is
 static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_path, uint8_t *p_data, uint16_t data_len)
 {
 	uint16_t ret = RTK_BT_OK;
-	uint32_t sdu_interval_us = 0;
 	rtk_bt_le_audio_iso_data_send_info_t send_info = {0};
 
 	if (!p_iso_path || !p_data) {
@@ -1465,10 +1464,9 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 	send_info.data_len = data_len;
 	send_info.iso_conn_handle = p_iso_path->iso_conn_handle;
 	send_info.pkt_seq_num = p_iso_path->pkt_seq_num;
-	send_info.ts_flag = false;
+	send_info.ts_flag = true;
 	if (send_info.ts_flag) {
-		sdu_interval_us = (p_iso_path->codec.frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500;
-		send_info.time_stamp = p_iso_path->pkt_seq_num * sdu_interval_us;
+		send_info.time_stamp = p_iso_path->time_stamp;
 	}
 
 	ret = rtk_bt_le_audio_iso_data_send(&send_info);
@@ -1818,6 +1816,9 @@ static void app_bt_le_audio_send_timer_handler(void *arg)
 {
 	(void)arg;
 	uint8_t i = 0, tx_iso_data_path_num = 0;
+	uint32_t sample_rate = 0;
+	uint32_t frame_duration_us = 0;
+	uint16_t frame_num = 0;
 	tx_iso_data_path_num = app_bt_le_audio_iso_data_path_get_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
 	app_lea_iso_data_path_t *p_iso_path = NULL;
 	if (g_app_lea_encode_task.run) {
@@ -1828,6 +1829,10 @@ static void app_bt_le_audio_send_timer_handler(void *arg)
 				continue;
 			}
 			p_iso_path->pkt_seq_num ++;
+			sample_rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_iso_path->codec.sample_frequency);
+			frame_duration_us = (p_iso_path->codec.frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500;
+			frame_num = p_iso_path->codec.codec_frame_blocks_per_sdu;
+			p_iso_path->time_stamp += sample_rate * frame_duration_us * frame_num / 1000 / 1000;
 		}
 		if (g_app_lea_encode_sem) {
 			osif_sem_give(g_app_lea_encode_sem);

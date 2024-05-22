@@ -38,10 +38,6 @@ uint16_t rtk_bt_br_gap_get_bd_addr(rtk_bt_br_bd_addr_t *paddr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!paddr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -54,9 +50,6 @@ uint16_t rtk_bt_br_gap_get_bd_addr(rtk_bt_br_bd_addr_t *paddr)
 uint16_t rtk_bt_br_gap_set_device_name(const uint8_t *name)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!name) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -90,10 +83,6 @@ uint16_t rtk_bt_br_gap_cfg_page_param(uint8_t type, uint16_t interval, uint16_t 
 	uint16_t ret = 0;
 	rtk_bt_br_page_param_t page_t = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	page_t.pagescan_type = type;
 	page_t.pagescan_interval = interval;
 	page_t.pagescan_window = window;
@@ -125,10 +114,6 @@ uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16
 	uint16_t ret = 0;
 	rtk_bt_br_inquiry_param_t inquiry_t = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	inquiry_t.inquiryscan_type = type;
 	inquiry_t.inquiryscan_interval = interval;
 	inquiry_t.inquiryscan_window = window;
@@ -140,10 +125,6 @@ uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16
 uint16_t rtk_bt_br_sm_set_security_param(rtk_bt_br_security_param_t *p_sec_param)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_sec_param ||
 		p_sec_param->io_cap >= RTK_BR_IO_CAP_MAX ||
@@ -161,9 +142,6 @@ uint16_t rtk_bt_br_sm_set_security_param(rtk_bt_br_security_param_t *p_sec_param
 uint16_t rtk_bt_br_gap_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -177,9 +155,6 @@ uint16_t rtk_bt_br_gap_disconnect(uint8_t *bd_addr)
 uint16_t rtk_bt_br_gap_start_inquiry(rtk_bt_br_inquiry_start_t *inquiry_start_param)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!inquiry_start_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -193,9 +168,6 @@ uint16_t rtk_bt_br_gap_start_inquiry(rtk_bt_br_inquiry_start_t *inquiry_start_pa
 uint16_t rtk_bt_br_gap_get_remote_name(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -209,9 +181,6 @@ uint16_t rtk_bt_br_gap_get_remote_name(uint8_t *bd_addr)
 uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!pmax_bond_num) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -225,9 +194,6 @@ uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num)
 uint16_t rtk_bt_br_gap_bond_num_get(uint8_t *pbond_num)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!pbond_num) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -242,10 +208,6 @@ uint16_t rtk_bt_br_gap_bond_addr_get(uint8_t priority, uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 	rtk_bt_br_bond_addr_t bond_addr_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -265,10 +227,6 @@ uint16_t rtk_bt_br_gap_bond_index_get(uint8_t *pindex, uint8_t *bd_addr)
 	uint16_t ret = 0;
 	rtk_bt_br_bond_index_t bond_index_t = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!pindex || !bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -286,10 +244,6 @@ uint16_t rtk_bt_br_gap_bond_key_get(uint8_t *bd_addr, uint8_t *key_type, uint8_t
 {
 	uint16_t ret = 0;
 	rtk_bt_br_bond_key_t bond_key_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr || !key_type || !bond_key) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -309,10 +263,6 @@ uint16_t rtk_bt_br_gap_bond_key_set(rtk_bt_br_bond_key_t *pbond_key_t)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!pbond_key_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -325,10 +275,6 @@ uint16_t rtk_bt_br_gap_bond_key_set(rtk_bt_br_bond_key_t *pbond_key_t)
 uint16_t rtk_bt_br_gap_bond_priority_set(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -343,10 +289,6 @@ uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -359,9 +301,6 @@ uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr)
 uint16_t rtk_bt_br_gap_bond_clear()
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACT_BOND_CLEAR, NULL, 0);
 
@@ -371,9 +310,6 @@ uint16_t rtk_bt_br_gap_bond_clear()
 uint16_t rtk_bt_br_gap_set_pincode(uint8_t *pin_code, uint32_t length)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!pin_code) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -387,9 +323,6 @@ uint16_t rtk_bt_br_gap_set_pincode(uint8_t *pin_code, uint32_t length)
 uint16_t rtk_bt_br_gap_set_radio_mode(uint8_t radio_mode)
 {
 	uint16_t ret = 0;
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACT_SET_RADIO_MODE, (void *)&radio_mode, sizeof(uint8_t));
 
@@ -401,9 +334,6 @@ uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t
 {
 	uint16_t ret = 0;
 	rtk_bt_br_sniff_mode_t sniff_mode_t = {0};
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	sniff_mode_t.enable = enable;
 	memcpy((void *)sniff_mode_t.bd_addr, (void *)bd_addr, 6);

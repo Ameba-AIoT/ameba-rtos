@@ -49,15 +49,9 @@ int atcmd_bt_audio_mp_test(int argc, char *argv[])
 int ble_central_main(uint8_t enable);
 int atcmd_bt_central(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	/* It's neccessary to judge if the args num(argc) is correct, otherwise it may
-	    be hardfault because the address of argv[x] may be NULL */
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for central!", op);
@@ -76,13 +70,9 @@ int atcmd_bt_central(int argc, char *argv[])
 int ble_peripheral_main(uint8_t enable);
 int atcmd_bt_peripheral(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for peripheral!", op);
@@ -101,13 +91,9 @@ int atcmd_bt_peripheral(int argc, char *argv[])
 int ble_scatternet_main(uint8_t enable);
 int atcmd_bt_scatternet(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for scatternet!", op);
@@ -129,11 +115,6 @@ int atcmd_bt_throughput(int argc, char *argv[])
 {
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc < 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if ((strcmp("conn", argv[0]) == 0) || (strcmp("test_start", argv[0]) == 0) ||
 		(strcmp("test_stop", argv[0]) == 0)) {
@@ -160,13 +141,10 @@ int atcmd_bt_throughput(int argc, char *argv[])
 int ble_mesh_provisioner_main(uint8_t enable);
 int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 	op = (uint8_t)str_to_int(argv[0]);
 	if (op > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for mesh provisioner!", op);
@@ -185,13 +163,10 @@ int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 int ble_mesh_device_main(uint8_t enable);
 int atcmd_bt_mesh_device(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 	op = (uint8_t)str_to_int(argv[0]);
 	if (op > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for mesh device!", op);
@@ -213,11 +188,6 @@ int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 {
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc < 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if (!strcmp("start", argv[0]) || !strcmp("result", argv[0]) || !strcmp("cmd", argv[0])) {
 		atcmd_bt_mesh_performence_test(argc, argv);
@@ -243,13 +213,10 @@ int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 int ble_mesh_device_test_main(uint8_t enable);
 int atcmd_bt_mesh_device_test(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 	op = (uint8_t)str_to_int(argv[0]);
 	if (op > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for mesh device!", op);
@@ -268,13 +235,10 @@ int atcmd_bt_mesh_device_test(int argc, char *argv[])
 int ble_mesh_provisioner_scatternet_main(uint8_t enable);
 int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 	op = (uint8_t)str_to_int(argv[0]);
 	if (op > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for mesh provisioner scatternet!", op);
@@ -293,13 +257,10 @@ int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 int ble_mesh_device_scatternet_main(uint8_t enable);
 int atcmd_bt_mesh_device_scatternet(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 	op = (uint8_t)str_to_int(argv[0]);
 	if (op > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for mesh device scatternet!", op);
@@ -590,44 +551,18 @@ int ble_cis_acceptor_main(int argc, char *argv[]);
 int ble_cis_initiator_main(int argc, char *argv[]);
 int ble_bis_broadcaster_main(int argc, char *argv[]);
 int ble_bis_receiver_main(int argc, char *argv[]);
-int atcmd_ble_iso(int argc, char *argv[])
+static const cmd_table_t ble_iso_example_table[] = {
+	{"acceptor",     ble_cis_acceptor_main,    2, 7},
+	{"initiator",    ble_cis_initiator_main,   2, 7},
+	{"broadcaster",  ble_bis_broadcaster_main, 2, 7},
+	{"receiver",     ble_bis_receiver_main,    2, 3},
+	{NULL,},
+};
+
+int atcmd_ble_iso(int argc, char **argv)
 {
-	int ret = 0;
-
-	if (argc < 2) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for cis!", argc);
-		return -1;
-	}
-
-	if (strcmp(argv[0], "acceptor") == 0) {
-		ret =  ble_cis_acceptor_main(argc - 1, argv + 1); //{"disable", "enable"}
-		if (ret != 0) {
-			AT_PRINTK("[ATBE] Error: ble cis acceptor example %s failed! ret= %d", argv[1], ret);
-		}
-
-	} else if (strcmp(argv[0], "initiator") == 0) {
-		ret =  ble_cis_initiator_main(argc - 1, argv + 1); //{"disable", "enable"}
-		if (ret != 0) {
-			AT_PRINTK("[ATBE] Error: ble cis initiator example %s failed! ret= %d", argv[1], ret);
-		}
-
-	} else if (strcmp(argv[0], "broadcaster") == 0) {
-		ret =  ble_bis_broadcaster_main(argc - 1, argv + 1); //{"disable", "enable", "send"}
-		if (ret != 0) {
-			AT_PRINTK("[ATBE] Error: ble bis broadcaster example %s failed! ret= %d", argv[1], ret);
-		}
-
-	} else if (strcmp(argv[0], "receiver") == 0) {
-		ret =  ble_bis_receiver_main(argc - 1, argv + 1); //{"disable", "enable"}
-		if (ret != 0) {
-			AT_PRINTK("[ATBE] Error: ble bis receiver example %s failed! ret= %d", argv[1], ret);
-		}
-	} else {
-		AT_PRINTK("[ATBE] Error: wrong arg (%s) for ISO!", argv[0]);
-		return -1;
-	}
-
-	return ret;
+	atcmd_bt_excute(argc, &argv[0], ble_iso_example_table, "[ATBE][iso]");
+	return 0;
 }
 
 int bt_bap_main(uint8_t role, uint8_t enable);
@@ -637,11 +572,6 @@ int atcmd_bt_bap(int argc, char *argv[])
 	uint8_t role;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc < 3) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for basic audio profile!", argc);
-		return -1;
-	}
 
 	if (strcmp(argv[0], "broadcast") == 0) {
 		if (strcmp(argv[1], "source") == 0) {
@@ -702,11 +632,6 @@ int atcmd_bt_cap(int argc, char *argv[])
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc < 2) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for basic audio profile!", argc);
-		return -1;
-	}
-
 	if (strcmp(argv[0], "initiator") == 0) {
 		/* RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR */
 		role = 0x01;
@@ -744,11 +669,6 @@ int atcmd_bt_pbp(int argc, char *argv[])
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc < 2) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for pulic broadcast profile!", argc);
-		return -1;
-	}
-
 	if (strcmp(argv[0], "source") == 0) {
 		/* RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_SOURCE */
 		role = 0x01;
@@ -785,11 +705,6 @@ int atcmd_bt_tmap(int argc, char *argv[])
 	uint8_t role;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc < 2) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for pulic broadcast profile!", argc);
-		return -1;
-	}
 
 	if (strcmp(argv[0], "cg") == 0) {
 		/* RTK_BT_LE_AUDIO_TMAP_CALL_GATEWAY_ROLE */
@@ -840,11 +755,6 @@ int atcmd_bt_gmap(int argc, char *argv[])
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
 
-	if (argc < 2) {
-		AT_PRINTK("[ATBE] Error: wrong arg number (%d) for gaming audio profile!", argc);
-		return -1;
-	}
-
 	if (strcmp(argv[0], "ugg") == 0) {
 		/* RTK_BT_LE_AUDIO_GMAP_ROLE_UGG */
 		role = 0x01;
@@ -881,14 +791,9 @@ int atcmd_bt_gmap(int argc, char *argv[])
 int bt_config_main(uint8_t enable);
 int atcmd_bt_config(int argc, char *argv[])
 {
+	(void)argc;
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
-
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		AT_PRINTK("[ATBE] Error: wrong value (%d) for bt config!", op);
@@ -909,11 +814,6 @@ int atcmd_bt_pts(int argc, char *argv[])
 {
 	uint8_t op;
 	char *action[] = {"disable", "enable"};
-
-	if (argc < 1 || argc > 3) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if (!strcmp("adv_data", argv[0])) {
 		atcmd_bt_pts_cmd(argc, argv);

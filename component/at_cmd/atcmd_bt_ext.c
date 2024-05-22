@@ -422,54 +422,21 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 	atcmd_bt_help_common(argc, argv, "ATBV", help_usage, vendor_help_table);
 	return 0;
 }
-
-#else   /* BT_ATCMD_HELP */
-char *atcmd_help_warning = "BT ATcmd help usage need to open macro BT_ATCMD_HELP\r\n";
-
-static int atcmd_bt_cmd_help(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] %s", atcmd_help_warning);
-	return -1;
-}
-
-static int atcmd_bt_example_help(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBE] %s", atcmd_help_warning);
-	return -1;
-}
-
-static int atcmd_bt_vendor_help(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBV] %s", atcmd_help_warning);
-	return -1;
-}
 #endif  /* BT_ATCMD_HELP */
 
-static int atcmd_bt_get_heap_size(int argc, char **argv)
-{
-	(void)argc;
-	(void)argv;
-
-	uint32_t size = rtos_mem_get_free_heap_size();
-	AT_PRINTK("[ATBC] The free heap size is %ld", size);
-
-	return 0;
-}
-
 static const cmd_table_t cmd_table[] = {
+#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
 	{"help",        atcmd_bt_cmd_help,             1, 3},
+#endif
 	{"bt",          atcmd_bt_device,               2, 2},
 	{"le_gap",      atcmd_bt_le_gap,               2, 21},
+#if defined(RTK_BLE_GATTS) && RTK_BLE_GATTS
 	{"gatts",       atcmd_bt_gatts,                3, 16},
+#endif
+#if defined(RTK_BLE_GATTC) && RTK_BLE_GATTC
 	{"gattc",       atcmd_bt_gattc,                3, 14},
+#endif
 	{"gap",         atcmd_bt_gap,                  1, 13},
-	{"heap_size",   atcmd_bt_get_heap_size,        1, 1},
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	{"mesh_stack",  atcmd_bt_mesh_stack,           2, 8},
 	{"mesh_data",   atcmd_bt_mesh_datatrans_model, 5, 6},
@@ -504,16 +471,22 @@ static const cmd_table_t cmd_table[] = {
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
+#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
 	{"cap_cmd",     atcmd_bt_cap_cmd,              3, 10},
+#endif
 	{"pbp_cmd",     atcmd_bt_pbp_cmd,              3, 10},
 	{"tmap_cmd",    atcmd_bt_tmap_cmd,             3, 10},
+#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
 	{"gmap_cmd",    atcmd_bt_gmap_cmd,             3, 10},
+#endif
 #endif
 	{NULL,},
 };
 
 static const cmd_table_t example_table[] = {
+#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
 	{"help",             atcmd_bt_example_help,     1, 3},
+#endif
 #if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
 	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
 #endif
@@ -593,7 +566,7 @@ static const cmd_table_t example_table[] = {
 	{"gmap",             atcmd_bt_gmap,             3, 3},
 #endif
 #if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
-	{"pts",              atcmd_bt_pts,              1, 5},
+	{"pts",              atcmd_bt_pts,              2, 4},
 #endif
 	// {"bt_config",        atcmd_bt_config,           2, 2},
 	// {"demo",             atcmd_bt_demo,             1, 1},
@@ -601,7 +574,9 @@ static const cmd_table_t example_table[] = {
 };
 
 static const cmd_table_t vendor_table[] = {
+#if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
 	{"help",             atcmd_bt_vendor_help,      1, 3},
+#endif
 	{"tx_power_gain",    atcmd_bt_tx_power_gain,    2, 5},
 	{"hci_debug_enable", atcmd_bt_hci_debug_enable, 1, 1},
 	{"sleep",            atcmd_bt_sleep_mode,       2, 2},
@@ -765,5 +740,9 @@ void print_bt_help(void)
 
 void at_bt_init(void)
 {
+#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
 	log_service_add_table(at_bt_items, sizeof(at_bt_items) / sizeof(at_bt_items[0]));
+#else
+	(void)at_bt_items;
+#endif
 }

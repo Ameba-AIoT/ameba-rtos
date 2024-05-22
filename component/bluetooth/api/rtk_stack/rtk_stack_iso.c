@@ -9,7 +9,6 @@
 #include "bt_api_config.h"
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 #include "trace_app.h"
-#include "os_msg.h"
 #include "gap_le.h"
 #include "app_msg.h"
 #include "rtk_stack_internal.h"
@@ -239,12 +238,7 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 	uint32_t time_stamp = 0;
 	struct list_head *plist = NULL;
 	rtk_stack_iso_send_info_t *p_stack_iso_send_info = NULL;
-#if defined(RTK_BT_LE_ISO_DATA_SEND_ASYNC) && RTK_BT_LE_ISO_DATA_SEND_ASYNC
-	rtk_bt_le_iso_data_send_done_t *send_done = NULL;
-	rtk_bt_evt_t *p_evt = NULL;
-#else
 	rtk_bt_cmd_t *p_cmd = NULL;
-#endif
 	static uint16_t send_fail_count = 0;
 
 	//get the first send info node
@@ -281,18 +275,6 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 
 	//send iso data send complete event to app after send the last fragment
 	if (p_stack_iso_send_info->is_last_flag) {
-#if defined(RTK_BT_LE_ISO_DATA_SEND_ASYNC) && RTK_BT_LE_ISO_DATA_SEND_ASYNC
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
-									RTK_BT_LE_ISO_EVT_DATA_SEND_DONE,
-									sizeof(rtk_bt_le_iso_data_send_done_t));
-		send_done = (rtk_bt_le_iso_data_send_done_t *)p_evt->data;
-		send_done->cause = (send_fail_count == 0) ? GAP_CAUSE_SUCCESS : cause;
-
-		send_done->iso_conn_handle = p_stack_iso_send_info->iso_conn_handle;
-		send_done->data_len = p_stack_iso_send_info->data_len;
-		send_done->p_data = p_stack_iso_send_info->p_data;
-		rtk_bt_evt_indicate(p_evt, NULL);
-#else
 		p_cmd = bt_stack_pending_cmd_search(RTK_BT_LE_ISO_ACT_ISO_DATA_SEND);
 		if (p_cmd) {
 			bt_stack_pending_cmd_delete(p_cmd);
@@ -301,7 +283,6 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 		} else {
 			BT_API_PRINT(BT_API_ERROR, "[%s] RTK_BT_LE_ISO_ACT_ISO_DATA_SEND: find no pending command \r\n", __func__);
 		}
-#endif
 		send_fail_count = 0;
 	}
 	//remove and free the send info list node
@@ -338,17 +319,8 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	rtk_bt_le_iso_data_send_info_t *send_info = NULL;
 	uint32_t time_stamp = 0;
-#if defined(RTK_BT_LE_ISO_DATA_SEND_ASYNC) && RTK_BT_LE_ISO_DATA_SEND_ASYNC
-	rtk_bt_le_iso_data_send_done_t *send_done = NULL;
-	rtk_bt_evt_t *p_evt = NULL;
-#else
 	rtk_bt_cmd_t *p_cmd = NULL;
-#endif
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!info) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -369,18 +341,6 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 	if (GAP_CAUSE_SUCCESS != cause) {
 		BT_API_PRINT(BT_API_ERROR, "%s gap_iso_send_data (cause = 0x%x,iso_conn_handle = 0x%x)\r\n", __func__, cause, send_info->iso_conn_handle);
 	}
-#if defined(RTK_BT_LE_ISO_DATA_SEND_ASYNC) && RTK_BT_LE_ISO_DATA_SEND_ASYNC
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
-								RTK_BT_LE_ISO_EVT_DATA_SEND_DONE,
-								sizeof(rtk_bt_le_iso_data_send_done_t));
-	send_done = (rtk_bt_le_iso_data_send_done_t *)p_evt->data;
-	send_done->cause = (send_fail_count == 0) ? GAP_CAUSE_SUCCESS : cause;
-
-	send_done->iso_conn_handle = p_stack_iso_send_info->iso_conn_handle;
-	send_done->data_len = p_stack_iso_send_info->data_len;
-	send_done->p_data = p_stack_iso_send_info->p_data;
-	rtk_bt_evt_indicate(p_evt, NULL);
-#else
 	p_cmd = bt_stack_pending_cmd_search(RTK_BT_LE_ISO_ACT_ISO_DATA_SEND);
 	if (p_cmd) {
 		bt_stack_pending_cmd_delete(p_cmd);
@@ -389,7 +349,6 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 	} else {
 		BT_API_PRINT(BT_API_ERROR, "[%s] RTK_BT_LE_ISO_ACT_ISO_DATA_SEND: find no pending command \r\n", __func__);
 	}
-#endif
 	return RTK_BT_OK;
 }
 #endif
@@ -400,9 +359,6 @@ void bt_stack_le_iso_handle_io_msg(T_IO_MSG *p_io_msg)
 	uint16_t subtype = 0;
 	rtk_bt_le_iso_io_msg_buf_t *io_msg_buf = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-	}
 	if (!p_io_msg) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 	}
@@ -533,10 +489,6 @@ static uint16_t bt_stack_le_iso_data_send(void *data)
 	bool ret = true;
 #endif
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -643,10 +595,6 @@ static uint16_t bt_stack_le_iso_cig_get_conn_handle(void *data)
 	uint8_t conn_id = 0;
 	rtk_bt_le_iso_cig_get_conn_handle_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -673,10 +621,6 @@ static uint16_t bt_stack_le_iso_cig_get_cis_info(void *data)
 	T_CIS_INFO *p_info = NULL;
 	rtk_bt_le_iso_cig_get_cis_info_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -731,10 +675,6 @@ static uint16_t bt_stack_le_iso_cig_setup_path(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	rtk_bt_le_iso_setup_path_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -762,10 +702,6 @@ static uint16_t bt_stack_le_iso_cig_remove_path(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	rtk_bt_le_iso_remove_path_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -794,12 +730,7 @@ static uint16_t bt_stack_le_iso_cig_disconnect(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint8_t reason = HCI_ERR_REMOTE_USER_TERMINATE;
 	uint16_t cis_conn_handle = 0;
-#if 0
-	if (!rtk_bt_is_enable()) {
-		API_PRINT("%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
-#endif
+
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -820,10 +751,6 @@ static uint16_t bt_stack_le_iso_cig_read_iso_tx_sync(void *data)
 	rtk_bt_le_iso_cig_read_iso_tx_sync_t *param = NULL;
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -852,10 +779,6 @@ static uint16_t bt_stack_le_iso_cig_read_link_quality(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	rtk_bt_le_iso_cig_read_link_quality_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -884,10 +807,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_add_cis(void *data)
 	uint8_t cis_id = 0;
 	rtk_bt_le_iso_cig_cis_info_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -921,10 +840,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_set_cig_param(void *data)
 	T_CIG_CFG_PARAM cig_param = {0};
 	rtk_bt_le_iso_cig_initiator_set_cig_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -972,10 +887,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_set_cis_param(void *data)
 	T_CIS_CFG_PARAM cis_param = {0};
 	rtk_bt_le_iso_cig_initiator_set_cis_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1014,10 +925,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_start_setting(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint8_t cig_id = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1048,10 +955,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_set_cis_acl_link(void *data)
 	uint8_t conn_id = 0;
 	rtk_bt_le_iso_cig_initiator_set_cis_acl_link_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1087,10 +990,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_create_cis_by_cig_id(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint8_t cig_id = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1120,10 +1019,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_create_cis_by_cis_conn_handle(void
 	uint16_t *p_cis_conn_handle = NULL;
 	rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1154,12 +1049,7 @@ static uint16_t bt_stack_le_iso_cig_initiator_get_cis_conn_handle(void *data)
 	uint8_t cis_id = 0;
 	uint16_t *p_cis_conn_handle = 0;
 	rtk_bt_le_iso_cig_initiator_get_cis_handle_param_t *param = NULL;
-#if 0
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
-#endif
+
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1215,10 +1105,6 @@ static uint16_t bt_stack_le_iso_cig_acceptor_accept_cis(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint16_t cis_conn_handle = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1242,10 +1128,6 @@ static uint16_t bt_stack_le_iso_cig_acceptor_reject_cis(void *data)
 	uint8_t reason = 0;
 	rtk_bt_le_iso_cig_acceptor_reject_cis_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1275,10 +1157,6 @@ static uint16_t bt_stack_le_iso_cig_acceptor_config_sdu_param(void *data)
 	uint16_t max_sdu_s_m = 0;
 	rtk_bt_le_iso_cig_acceptor_config_sdu_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1305,10 +1183,6 @@ static uint16_t  bt_stack_le_iso_cig_acceptor_config_cis_req_action(void *data)
 {
 	rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t action = (rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t)0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1713,10 +1587,6 @@ static uint16_t bt_stack_le_iso_cig_initiator_register_callback(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint8_t cig_id = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2102,11 +1972,6 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 
 static uint16_t bt_stack_le_iso_cig_acceptor_register_callback(void *data)
 {
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	UNUSED(data);
 
 	g_bt_stack_le_iso_role = RTK_BLE_ISO_ROLE_CIS_ACCEPTOR;
@@ -2325,10 +2190,6 @@ static uint16_t bt_stack_le_iso_big_broadcaster_init(void *data)
 	rtk_bt_le_iso_big_init_param_t *param = NULL;
 	uint8_t big_num = 0, bis_num = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2361,10 +2222,6 @@ static uint16_t bt_stack_le_iso_big_broadcaster_create(void *data)
 	T_BIG_MGR_ISOC_BROADCASTER_CREATE_BIG_PARAM create_big_param = {0};
 	rtk_bt_le_iso_big_broadcaster_create_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2399,10 +2256,6 @@ static uint16_t bt_stack_le_iso_big_broadcaster_terminate(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint8_t big_handle = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2424,10 +2277,6 @@ static uint16_t bt_stack_le_iso_big_broadcaster_read_tx_sync(void *data)
 	rtk_bt_le_iso_big_broadcaster_read_tx_sync_t *param = NULL;
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2664,10 +2513,6 @@ static uint16_t bt_stack_le_iso_big_receiver_init(void *data)
 	rtk_bt_le_iso_big_init_param_t *param = NULL;
 	uint8_t big_num = 0, bis_num = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2701,10 +2546,6 @@ static uint16_t bt_stack_le_iso_big_receiver_create_sync(void *data)
 	T_BIG_MGR_SYNC_RECEIVER_BIG_CREATE_SYNC_PARAM big_create_sync_param = {0};
 	rtk_bt_le_iso_big_receiver_create_sync_param_t *p_sync_param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2745,10 +2586,6 @@ static uint16_t bt_stack_le_iso_big_receiver_terminate_sync(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	uint8_t big_handle = 0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2774,10 +2611,6 @@ static uint16_t bt_stack_le_iso_big_receiver_read_link_quality(void *data)
 	rtk_bt_le_iso_big_receiver_read_link_quality_t *param = NULL;
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2804,10 +2637,6 @@ static uint16_t bt_stack_le_iso_big_setup_path(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	rtk_bt_le_iso_setup_path_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -2833,10 +2662,6 @@ static uint16_t bt_stack_le_iso_big_remove_path(void *data)
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
 	rtk_bt_le_iso_remove_path_param_t *param = NULL;
 
-	if (!rtk_bt_is_enable()) {
-		BT_API_PRINT(BT_API_ERROR, "%s fail: bt is not enable\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
-	}
 	if (!data) {
 		BT_API_PRINT(BT_API_ERROR, "%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -3040,15 +2865,10 @@ uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_LE_ISO_ACT_ISO_DATA_SEND:
 		BT_API_PRINT(BT_API_DUMP, "RTK_BT_LE_ISO_ACT_ISO_DATA_SEND \r\n");
-#if defined(RTK_BT_LE_ISO_DATA_SEND_ASYNC) && RTK_BT_LE_ISO_DATA_SEND_ASYNC
-		ret = bt_stack_le_iso_data_send(p_cmd->param);
-		break;
-#else
 		p_cmd->user_data = RTK_BT_LE_ISO_ACT_ISO_DATA_SEND;
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_iso_data_send(p_cmd->param);
 		goto async_handle;
-#endif
 
 	default:
 		BT_API_PRINT(BT_API_ERROR, "bt_stack_le_iso_act_handle: unknown act: %d \r\n", p_cmd->act);

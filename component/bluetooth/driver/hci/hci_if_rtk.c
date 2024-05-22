@@ -106,14 +106,11 @@ static uint8_t rtk_stack_recv(hci_rx_t *info)
 
 static void _hci_if_open_indicate(void)
 {
-	if (hci_platform_check_mp() == HCI_SUCCESS) {
-		if (hci_if_rtk.cb) {
-			hci_if_rtk.cb(HCI_IF_EVT_OPENED, false, NULL, 0);   //If in MP mode, do not start upper stack
-		}
+	if (hci_platform_check_mp() == HCI_SUCCESS) {    //If in MP mode, do not start upper stack
 		HCI_PRINT("Not start upper stack for MP test\r\n");
-	} else {
+	} else {                                         //If in normal mode, start upper stack
 		if (hci_if_rtk.cb) {
-			hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);    //If in normal mode, start upper stack
+			hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);
 		}
 		HCI_PRINT("Start upper stack\r\n");
 	}

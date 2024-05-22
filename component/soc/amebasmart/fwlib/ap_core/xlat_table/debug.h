@@ -8,6 +8,8 @@
 #define DEBUG_H
 
 #include "utils_def.h"
+#include "log.h"
+
 
 int printf(const char *fmt, ...);
 
@@ -96,8 +98,9 @@ int printf(const char *fmt, ...);
 
 #define panic()	while(1);
 
+
 #define assert(e)	if((e) == 0) { 	\
-					printf("assert err! file: %s, line: %d\n", __FILE__, __LINE__);\
+					RTK_LOGI("#","assert err! file: %s, line: %d\n", __FILE__, __LINE__); \
 					while(1);	\
 				}
 

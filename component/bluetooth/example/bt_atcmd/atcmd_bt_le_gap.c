@@ -272,12 +272,8 @@ static int atcmd_ble_gap_get_bd_addr(int argc, char **argv)
 
 static int atcmd_ble_gap_set_dev_name(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if (strlen(argv[0]) == 0 || strlen(argv[0]) > 39) {
 		AT_PRINTK("[ATBC] GAP set device name failed! too long!");
@@ -296,13 +292,9 @@ static int atcmd_ble_gap_set_dev_name(int argc, char **argv)
 
 static int atcmd_ble_gap_set_appearance(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t appearance = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	appearance = str_to_int(argv[0]);
 
@@ -318,13 +310,9 @@ static int atcmd_ble_gap_set_appearance(int argc, char **argv)
 
 static int atcmd_ble_gap_set_preferred_conn_param(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_preferred_conn_param_t preferred_conn_param = {0};
-
-	if (argc < 4) {
-		AT_PRINTK("[ATBC] GAP set preferred conn param failed! argc number(%d) error!", argc);
-		return -1;
-	}
 
 	preferred_conn_param.conn_interval_min = str_to_int(argv[0]);
 	preferred_conn_param.conn_interval_max = str_to_int(argv[1]);
@@ -355,11 +343,6 @@ static int atcmd_ble_gap_set_rand_addr(int argc, char **argv)
 	bool auto_generate;
 	char addr_str[20];
 
-	if (argc != 1 && argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
-
 	if (argc == 1) {
 		if (hexdata_str_to_bd_addr(argv[0], addr, RTK_BD_ADDR_LEN) == false) {
 			return -1;
@@ -389,11 +372,6 @@ static int atcmd_ble_gap_set_channel_map(int argc, char **argv)
 	uint16_t ret = 0;
 	uint8_t chan_map[RTK_BT_LE_CHAN_MAP_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
-
 	if (false == hexnum_str_to_array(argv[0], chan_map, 5) ||
 		(ret = rtk_bt_le_gap_set_channels(chan_map)) != RTK_BT_OK) {
 		AT_PRINTK("[ATBC] GAP set host channel failed! err: 0x%x", ret);
@@ -409,11 +387,6 @@ static int atcmd_ble_gap_set_adv_data(int argc, char **argv)
 	uint16_t ret = 0;
 	uint8_t adv_data[RTK_BT_LE_MAX_ADV_DATA_LEN] = {0};
 	uint16_t adv_len  = 0;
-
-	if (argc != 0 && argc != 1) {
-		AT_PRINTK("[ATBC] GAP set adv data failed! wrong args num!");
-		return -1;
-	}
 
 	if (argc == 0) {
 		ret = rtk_bt_le_gap_set_adv_data(def_adv_data, sizeof(def_adv_data));
@@ -446,11 +419,6 @@ static int atcmd_ble_gap_op_adv(int argc, char **argv)
 	rtk_bt_le_adv_param_t adv_param;
 	uint16_t ret = 0;
 	int en;
-
-	if (argc != 1 && argc != 4 && argc != 6 && argc != 9) {
-		AT_PRINTK("[ATBC] GAP adv op failed! wrong args num!");
-		return -1;
-	}
 
 	en = str_to_int(argv[0]);
 	if (0 == en) {
@@ -501,11 +469,6 @@ static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 	uint32_t scan_resp_len = 0;
 	uint8_t scan_resp_data[32] = {0};
 
-	if (argc != 0 && argc != 1) {
-		AT_PRINTK("[ATBC] GAP set scan resp data failed! wrong args num!");
-		return -1;
-	}
-
 	if (argc == 0) {
 		ret = rtk_bt_le_gap_set_scan_rsp_data(def_scan_rsp_data, sizeof(def_scan_rsp_data));
 		if (ret) {
@@ -533,9 +496,9 @@ static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	uint8_t *pdata = (uint8_t *)def_ext_adv_data;
@@ -561,17 +524,10 @@ static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP set ext adv(%d) data success", adv_handle);
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support extended ADV.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_op_ext_adv(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 	rtk_bt_le_ext_adv_param_t adv_param;
 	uint16_t ret = 0;
 	uint8_t operation;
@@ -674,18 +630,10 @@ static int atcmd_ble_gap_op_ext_adv(int argc, char **argv)
 	}
 
 	return 0;
-
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support extended ADV.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	uint8_t *pdata = (uint8_t *)def_ext_scan_data;
@@ -711,18 +659,12 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP set ext scan resp data(%d) success", adv_handle);
 	return 0;
-
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support extended ADV.");
-	return -1;
-#endif
 }
+#endif
 
+#if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 static int atcmd_ble_gap_pa_adv(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 	uint16_t ret = 0;
 	uint8_t operation, adv_handle = 0;
 	rtk_bt_le_pa_param_t param;
@@ -773,17 +715,10 @@ static int atcmd_ble_gap_pa_adv(int argc, char **argv)
 		AT_PRINTK("[ATBC] GAP periodic adv operation failed: wrong operation value: %d!", operation);
 		return -1;
 	}
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support Periodic ADV.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_pa_adv_update(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	bool update_DID_only = true;
@@ -811,18 +746,12 @@ static int atcmd_ble_gap_pa_adv_update(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP update periodic adv(%d) success", adv_handle);
 	return 0;
-
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support Periodic ADV.");
-	return -1;
-#endif
 }
+#endif
 
+#if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 	uint16_t ret = 0;
 	uint8_t op;
 	rtk_bt_le_addr_t addr;
@@ -851,17 +780,10 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 	AT_PRINTK("[ATBC] GAP modify PA sync adv list Success!");
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support Periodic ADV Sync.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_pa_sync_op(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 	uint16_t ret = 0;
 	uint8_t op;
 	uint8_t sync_id;
@@ -928,17 +850,12 @@ static int atcmd_ble_gap_pa_sync_op(int argc, char **argv)
 	}
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support Periodic ADV Sync.");
-	return -1;
-#endif
 }
+#endif
 
+#if defined(RTK_BLE_5_1_PAST_SENDER_SUPPORT) && RTK_BLE_5_1_PAST_SENDER_SUPPORT
 static int atcmd_ble_gap_past_send(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_PAST_SENDER_SUPPORT) && RTK_BLE_5_1_PAST_SENDER_SUPPORT
 	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle;
@@ -957,17 +874,12 @@ static int atcmd_ble_gap_past_send(int argc, char **argv)
 	AT_PRINTK("[ATBC] GAP PAST transfer success!");
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support PAST.");
-	return -1;
-#endif
 }
+#endif
 
+#if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 static int atcmd_ble_gap_past_recv(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_past_recv_param_t param = {
 		.conn_handle = 0,
@@ -1005,17 +917,10 @@ static int atcmd_ble_gap_past_recv(int argc, char **argv)
 	AT_PRINTK("[ATBC] GAP PAST recipient set params success! conn_handle: %d", param.conn_handle);
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support PAST.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_default_past_recv(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_past_recv_param_t param = {
 		.conn_handle = 0,
@@ -1024,9 +929,6 @@ static int atcmd_ble_gap_default_past_recv(int argc, char **argv)
 		.skip = 0,
 		.sync_timeout = 0x1000,
 	};
-
-	// if(argc > 0)
-	//     param.conn_handle = str_to_int(argv[0]);
 
 	if (argc > 0) {
 		param.mode = str_to_int(argv[0]);
@@ -1052,13 +954,8 @@ static int atcmd_ble_gap_default_past_recv(int argc, char **argv)
 	AT_PRINTK("[ATBC] GAP PAST recipient set default params success!");
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support PAST.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_set_scan_param(int argc, char **argv)
 {
@@ -1127,9 +1024,9 @@ static int atcmd_ble_gap_op_scan(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_ext_scan_param_t scan_param;
 	uint8_t scan_phys;
@@ -1182,18 +1079,10 @@ static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP set scan param success");
 	return 0;
-
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support extended ADV.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_op_ext_scan(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 	(void)argc;
 	uint16_t ret = 0;
 
@@ -1219,13 +1108,8 @@ static int atcmd_ble_gap_op_ext_scan(int argc, char **argv)
 	}
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support extended ADV.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_connect(int argc, char **argv)
 {
@@ -1233,10 +1117,6 @@ static int atcmd_ble_gap_connect(int argc, char **argv)
 	uint16_t ret = 0;
 	rtk_bt_le_create_conn_param_t conn_param;
 
-	if (argc != 2 && argc != 4 && argc != 10) {
-		AT_PRINTK("[ATBC] GAP connect op failed! wrong args num!");
-		return -1;
-	}
 	memcpy(&conn_param, &def_conn_param, sizeof(rtk_bt_le_create_conn_param_t));
 	if (argc >= 2) {
 		conn_param.peer_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
@@ -1269,13 +1149,9 @@ static int atcmd_ble_gap_connect(int argc, char **argv)
 
 static int atcmd_ble_gap_connect_cancel(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_addr_t addr;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 
@@ -1289,19 +1165,15 @@ static int atcmd_ble_gap_connect_cancel(int argc, char **argv)
 	return 0;
 }
 
+#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 static int atcmd_ble_gap_ext_connect(int argc, char **argv)
 {
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 	char addr_str[30] = {0};
 	rtk_bt_le_ext_create_conn_param_t ext_conn_param;
 	int i = 0;
 	uint8_t phys_bit_mask = 0;
 	uint16_t ret = 0;
 
-	if (argc != 3 && argc != 5 && argc != 11) {
-		AT_PRINTK("[ATBC] GAP connect op failed! wrong args num!");
-		return -1;
-	}
 	memcpy(&ext_conn_param, &def_ext_conn_param,
 		   sizeof(rtk_bt_le_ext_create_conn_param_t));
 
@@ -1370,24 +1242,15 @@ static int atcmd_ble_gap_ext_connect(int argc, char **argv)
 	rtk_bt_le_addr_to_str(&ext_conn_param.peer_addr, addr_str, sizeof(addr_str));
 	AT_PRINTK("[ATBC] GAP extended connecting to device %s ...", addr_str);
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support extended connection.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_get_conn_rssi(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	int8_t rssi_val = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_read_rssi(conn_handle, &rssi_val)) != RTK_BT_OK) {
@@ -1442,14 +1305,10 @@ static int atcmd_ble_gap_get_active_conn(int argc, char **argv)
 
 static int atcmd_ble_gap_get_conn_handle_by_addr(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0xFF;
 	rtk_bt_le_addr_t addr = {0};
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	addr.type = str_to_int(argv[0]);
 
@@ -1465,15 +1324,11 @@ static int atcmd_ble_gap_get_conn_handle_by_addr(int argc, char **argv)
 
 static int atcmd_ble_gap_get_conn_info(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle;
 	char bd_addr_str[30] = {0};
 	rtk_bt_le_conn_info_t conn_info;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_get_conn_info(conn_handle, &conn_info)) != RTK_BT_OK) {
@@ -1494,14 +1349,10 @@ static int atcmd_ble_gap_get_conn_info(int argc, char **argv)
 
 static int atcmd_ble_gap_get_mtu_size(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle;
 	uint16_t mtu_size = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_get_mtu_size(conn_handle, &mtu_size)) != RTK_BT_OK) {
@@ -1515,13 +1366,9 @@ static int atcmd_ble_gap_get_mtu_size(int argc, char **argv)
 
 static int atcmd_ble_gap_set_max_mtu_size(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t mtu_size = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	mtu_size = str_to_int(argv[0]);
 	ret = rtk_bt_le_gap_set_max_mtu_size(mtu_size);
@@ -1536,13 +1383,9 @@ static int atcmd_ble_gap_set_max_mtu_size(int argc, char **argv)
 
 static int atcmd_ble_gap_update_conn(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_update_conn_param_t up_conn_param;
-
-	if (argc != 5) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	up_conn_param.conn_handle = str_to_int(argv[0]);
 	up_conn_param.conn_interval_min = str_to_int(argv[1]);
@@ -1560,16 +1403,12 @@ static int atcmd_ble_gap_update_conn(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 static int atcmd_ble_gap_set_conn_data_len(int argc, char **argv)
 {
-#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_set_datalen_param_t data_len_param;
-
-	if (argc != 3) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	data_len_param.conn_handle = str_to_int(argv[0]);
 	data_len_param.max_tx_octets = str_to_int(argv[1]);
@@ -1582,24 +1421,15 @@ static int atcmd_ble_gap_set_conn_data_len(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP setting connection data len ...");
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support set data len.");
-	return -1;
-#endif
 }
+#endif
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 static int atcmd_ble_gap_set_conn_phy(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_set_phy_param_t conn_phy_param = {0};
-
-	if (argc != 5) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_phy_param.conn_handle = str_to_int(argv[0]);
 	conn_phy_param.all_phys = str_to_int(argv[1]);
@@ -1615,23 +1445,14 @@ static int atcmd_ble_gap_set_conn_phy(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP setting connection PHY ...");
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support set PHY.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_disconnect(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_disconnect(conn_handle)) != 0) {
@@ -1645,13 +1466,9 @@ static int atcmd_ble_gap_disconnect(int argc, char **argv)
 
 static int atcmd_ble_gap_disconnect_with_reason(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t reason;
 	uint16_t conn_handle, ret = 0;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	reason = str_to_int(argv[1]);
@@ -1666,13 +1483,9 @@ static int atcmd_ble_gap_disconnect_with_reason(int argc, char **argv)
 
 static int atcmd_ble_gap_add_whitelist(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_modify_wl_param_t wl_op_param;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	wl_op_param.op = RTK_BT_LE_WHITELIST_ADD;
 	wl_op_param.addr.type = str_to_int(argv[0]);
@@ -1689,13 +1502,9 @@ static int atcmd_ble_gap_add_whitelist(int argc, char **argv)
 
 static int atcmd_ble_gap_remove_whitelist(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_modify_wl_param_t wl_op_param;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	wl_op_param.op = RTK_BT_LE_WHITELIST_REMOVE;
 	wl_op_param.addr.type = str_to_int(argv[0]);
@@ -1776,13 +1585,9 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 
 static int atcmd_ble_gap_security(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_sm_start_security(conn_handle)) != RTK_BT_OK) {
@@ -1796,13 +1601,9 @@ static int atcmd_ble_gap_security(int argc, char **argv)
 
 static int atcmd_ble_gap_confirm_pair(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_pair_cfm_t pair_cfm_param;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	pair_cfm_param.conn_handle = str_to_int(argv[0]);
 	if ((pair_cfm_param.confirm = str_to_int(argv[1])) > 1 ||
@@ -1817,13 +1618,9 @@ static int atcmd_ble_gap_confirm_pair(int argc, char **argv)
 
 static int atcmd_ble_gap_input_auth_key(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_auth_key_input_t auth_key_param;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	auth_key_param.conn_handle = str_to_int(argv[0]);
 	if ((auth_key_param.passkey = atoi(argv[1])) > 999999 ||
@@ -1838,13 +1635,9 @@ static int atcmd_ble_gap_input_auth_key(int argc, char **argv)
 
 static int atcmd_ble_gap_confirm_auth_key(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_auth_key_confirm_t auth_keycfm_param;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	auth_keycfm_param.conn_handle = str_to_int(argv[0]);
 	if ((auth_keycfm_param.confirm = str_to_int(argv[1])) > 1 ||
@@ -1857,9 +1650,9 @@ static int atcmd_ble_gap_confirm_auth_key(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_SMP_OOB_SUPPORT) && RTK_BLE_SMP_OOB_SUPPORT
 static int atcmd_ble_gap_input_auth_oob(int argc, char **argv)
 {
-#if defined(RTK_BLE_SMP_OOB_SUPPORT) && RTK_BLE_SMP_OOB_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_set_oob_key_t auth_oob_param = {0};
 
@@ -1877,13 +1670,8 @@ static int atcmd_ble_gap_input_auth_oob(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] GAP input auth OOB TK OK!");
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support OOB TK.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_get_bond_num(int argc, char **argv)
 {
@@ -1949,13 +1737,9 @@ out:
 
 static int atcmd_ble_gap_delete_bond(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_addr_t addr;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 
@@ -1985,18 +1769,14 @@ static int atcmd_ble_gap_clear_bond(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 static int atcmd_ble_gap_set_privacy_mode(int argc, char **argv)
 {
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_ident_addr_type_t ident_type;
 	rtk_bt_le_privacy_mode_t privacy_mode;
 	uint8_t peer_ident[RTK_BD_ADDR_LEN] = {0};
-
-	if (argc != 3) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	ident_type = (rtk_bt_le_ident_addr_type_t)str_to_int(argv[0]);
 	if (false == hexdata_str_to_bd_addr(argv[1], peer_ident, RTK_BD_ADDR_LEN)) {
@@ -2011,27 +1791,15 @@ static int atcmd_ble_gap_set_privacy_mode(int argc, char **argv)
 	}
 	AT_PRINTK("[ATBC] GAP set privacy mode success");
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support privacy.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_read_local_rpa(int argc, char **argv)
 {
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_ident_addr_type_t ident_type = RTK_BT_LE_IDENT_ADDR_PUBLIC;
 	uint8_t peer_ident[RTK_BD_ADDR_LEN] = {0};
 	uint8_t local_rpa[RTK_BD_ADDR_LEN] = {0};
 	char addr_str[20];
-
-	if (argc > 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	if (argc >= 1) {
 		ident_type = (rtk_bt_le_ident_addr_type_t)str_to_int(argv[0]);
@@ -2050,27 +1818,16 @@ static int atcmd_ble_gap_read_local_rpa(int argc, char **argv)
 	rtk_bt_addr_val_to_str(local_rpa, addr_str, sizeof(addr_str));
 	AT_PRINTK("[ATBC] GAP read local rpa success, %s ", addr_str);
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support privacy.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_read_peer_rpa(int argc, char **argv)
 {
-#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_ident_addr_type_t ident_type;
 	uint8_t peer_ident[RTK_BD_ADDR_LEN] = {0};
 	uint8_t peer_rpa[RTK_BD_ADDR_LEN] = {0};
 	char addr_str[20];
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	ident_type = (rtk_bt_le_ident_addr_type_t)str_to_int(argv[0]);
 	if (false == hexdata_str_to_bd_addr(argv[1], peer_ident, RTK_BD_ADDR_LEN)) {
@@ -2084,23 +1841,14 @@ static int atcmd_ble_gap_read_peer_rpa(int argc, char **argv)
 	rtk_bt_addr_val_to_str(peer_rpa, addr_str, sizeof(addr_str));
 	AT_PRINTK("[ATBC] GAP read peer rpa success, %s ", addr_str);
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support privacy.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_tx_pending_num(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0, tx_pending_num = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	ret = rtk_bt_le_gap_get_tx_pending_num(conn_handle, &tx_pending_num);
@@ -2113,9 +1861,9 @@ static int atcmd_ble_gap_tx_pending_num(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 static int atcmd_ble_gap_txpower_read(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 	(void)argc;
 	uint16_t conn_handle, ret = 0;
 	uint8_t type, phy;
@@ -2142,17 +1890,10 @@ static int atcmd_ble_gap_txpower_read(int argc, char **argv)
 	}
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support Power Control.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_txpower_report_set(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 	(void)argc;
 	uint16_t conn_handle, ret = 0;
 	bool local_enable, remote_enable;
@@ -2168,13 +1909,8 @@ static int atcmd_ble_gap_txpower_report_set(int argc, char **argv)
 	}
 	AT_PRINTK("[ATBC] Tx power reporting set Success!");
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support Power Control.");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_ble_gap_scan_info_filter(int argc, char **argv)
 {
@@ -2207,19 +1943,14 @@ static int atcmd_ble_gap_scan_info_filter(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 static int atcmd_ble_gap_cte_conn_rx_set(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	(void)argc;
 	uint16_t conn_handle, ret = 0;
 	uint8_t enable;
 
 	rtk_bt_le_gap_conn_cte_rx_param_t rx_params = {0, RTK_BLE_GAP_CTE_LEN_MAX, RTK_BT_LE_GAP_CTE_TYPE_AOA, RTK_BT_LE_GAP_SLOT_DURATIONS_2US, 0, NULL};
-
-	if (argc < 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	enable = str_to_int(argv[0]);
 	conn_handle = str_to_int(argv[1]);
@@ -2266,28 +1997,16 @@ static int atcmd_ble_gap_cte_conn_rx_set(int argc, char **argv)
 	}
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support cte connection rx.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_cte_connless_rx_set(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	(void)argc;
 	uint16_t ret = 0;
 	uint8_t sync_id;
 	uint8_t enable;
 
 	rtk_bt_le_gap_connless_cte_rx_param_t params = {RTK_BT_LE_GAP_SLOT_DURATIONS_2US, 0, 0, NULL};
-
-	if (argc < 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	enable = str_to_int(argv[0]);
 	sync_id = str_to_int(argv[1]);
@@ -2327,19 +2046,12 @@ static int atcmd_ble_gap_cte_connless_rx_set(int argc, char **argv)
 		AT_PRINTK("[ATBC] GAP connectionless cte rx stop success");
 	}
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support cte connectionless rx.");
-	return -1;
-#endif
 }
 
 static int atcmd_ble_gap_get_antenna_info(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
-#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	uint16_t ret;
 	rtk_bt_le_gap_antenna_info_t antenna_info;
 
@@ -2356,11 +2068,8 @@ static int atcmd_ble_gap_get_antenna_info(int argc, char **argv)
 			  antenna_info.max_cte_length);
 
 	return 0;
-#else
-	AT_PRINTK("[ATBC] Platform not support to get antenna.");
-	return -1;
-#endif
 }
+#endif
 
 static const cmd_table_t le_gap_cmd_table[] = {
 	{"version",      atcmd_ble_gap_get_version,        1, 1},
@@ -2387,8 +2096,12 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"conn_rssi",    atcmd_ble_gap_get_conn_rssi,      2, 2},
 	{"conn_info",    atcmd_ble_gap_get_conn_info,      2, 2},
 	{"conn_update",  atcmd_ble_gap_update_conn,        6, 6},
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	{"conn_phy",     atcmd_ble_gap_set_conn_phy,       6, 6},
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	{"conn_datalen", atcmd_ble_gap_set_conn_data_len,  4, 4},
+#endif
 	{"disconn",      atcmd_ble_gap_disconnect,         2, 2},
 	{"disconn_reason", atcmd_ble_gap_disconnect_with_reason,   3, 3},
 	{"wl_add",       atcmd_ble_gap_add_whitelist,      3, 3},
@@ -2399,32 +2112,54 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"pair_cfm",     atcmd_ble_gap_confirm_pair,       3, 3},
 	{"auth_key",     atcmd_ble_gap_input_auth_key,     3, 3},
 	{"auth_keycfm",  atcmd_ble_gap_confirm_auth_key,   3, 3},
+#if defined(RTK_BLE_SMP_OOB_SUPPORT) && RTK_BLE_SMP_OOB_SUPPORT
 	{"auth_oob",     atcmd_ble_gap_input_auth_oob,     3, 3},
+#endif
 	{"bond_num",     atcmd_ble_gap_get_bond_num,       1, 1},
 	{"bond_info",    atcmd_ble_gap_get_bond_info,      1, 1},
 	{"bond_del",     atcmd_ble_gap_delete_bond,        3, 3},
 	{"bond_clear",   atcmd_ble_gap_clear_bond,         1, 1},
+#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 	{"set_privacy_mode", atcmd_ble_gap_set_privacy_mode, 4, 4},
 	{"read_local_rpa", atcmd_ble_gap_read_local_rpa,   1, 3},
 	{"read_peer_rpa",  atcmd_ble_gap_read_peer_rpa,    3, 3},
+#endif
+#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 	{"eadv_data",    atcmd_ble_gap_set_ext_adv_data,   1, 3},
 	{"escan_rsp",    atcmd_ble_gap_set_ext_scan_resp,  1, 3},
 	{"eadv",         atcmd_ble_gap_op_ext_adv,         2, 13},
+#endif
+#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 	{"escan_param",  atcmd_ble_gap_ext_scan_set_param, 1, 13},
 	{"escan",        atcmd_ble_gap_op_ext_scan,        2, 2},
+#endif
+#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 	{"econn",        atcmd_ble_gap_ext_connect,        4, 12},
+#endif
+#if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 	{"pa_adv",       atcmd_ble_gap_pa_adv,             2, 6},
 	{"pa_update",    atcmd_ble_gap_pa_adv_update,      2, 4},
+#endif
+#if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 	{"pa_sync_list", atcmd_ble_gap_pa_sync_modify_list, 2, 5},
 	{"pa_sync",      atcmd_ble_gap_pa_sync_op,         2, 9},
+#endif
+#if defined(RTK_BLE_5_1_PAST_SENDER_SUPPORT) && RTK_BLE_5_1_PAST_SENDER_SUPPORT
 	{"past_send",    atcmd_ble_gap_past_send,          5, 5},
+#endif
+#if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 	{"past_recv",    atcmd_ble_gap_past_recv,          1, 6},
 	{"def_past_recv",    atcmd_ble_gap_default_past_recv,          1, 5},
+#endif
+#if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 	{"txpower_read", atcmd_ble_gap_txpower_read,       4, 4},
 	{"txpower_report", atcmd_ble_gap_txpower_report_set, 4, 4},
+#endif
+#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	{"cte_conn_rx",  atcmd_ble_gap_cte_conn_rx_set,    3, 20},
 	{"cte_connless_rx", atcmd_ble_gap_cte_connless_rx_set, 3, 18},
 	{"get_antenna",  atcmd_ble_gap_get_antenna_info,   1, 1},
+#endif
 	{NULL,},
 };
 

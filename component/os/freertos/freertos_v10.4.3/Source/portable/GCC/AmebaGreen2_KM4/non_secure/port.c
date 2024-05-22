@@ -1039,7 +1039,7 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	sysactive_timeout_flag = 0;
 	pmu_set_sysactive_time(2);
 
-	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == 1) ? "NP" : "AP", ms_passed);
+	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == NP_CPU_ID) ? "NP" : "AP", ms_passed);
 }
 
 /* NVIC will power off under sleep power gating mode, so we can */

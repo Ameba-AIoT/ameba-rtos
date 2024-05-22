@@ -841,18 +841,19 @@ int llhw_wifi_del_custom_ie(unsigned char wlan_idx)
 	return ret;
 }
 
-int llhw_wifi_update_custom_ie(u8 *ie, int ie_index)
+int llhw_wifi_update_custom_ie(u8 *ie, int ie_index, u8 type)
 {
 	int ret = 0;
 	u32 size = 0;
 	u8 *ptr, *param;
 
-	size = 2 + 2 + ie[1];
+	size = 3 + 2 + ie[1];
 	ptr = param = (u8 *)kzalloc(size, GFP_KERNEL);
 
 	ptr[0] = 1;
 	ptr[1] = (u8)ie_index;
-	ptr += 2;
+	ptr[2] = type;
+	ptr += 3;
 
 	memcpy(ptr, ie, 2 + ie[1]);
 
@@ -1014,3 +1015,11 @@ int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm)
 	return ret;
 }
 
+int llhw_wifi_driver_is_mp(void)
+{
+	int ret = 0;
+
+	llhw_send_msg(INIC_API_WIFI_DRIVE_IS_MP, NULL, 0, (u8 *)&ret, sizeof(int));
+
+	return ret;
+}

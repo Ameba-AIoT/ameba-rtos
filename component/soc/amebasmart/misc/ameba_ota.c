@@ -805,10 +805,12 @@ int download_packet_process(ota_context *ctx, u8 *buf, int len)
 	otaCtrl->RemainBytes -= len;
 	if (otaCtrl->RemainBytes < 0) {
 		otaCtrl->NextImgLen = -otaCtrl->RemainBytes;
-		otaCtrl->NextImgFg = 1;
 		len = len - (-otaCtrl->RemainBytes);
 		/* next firmware content */
-		_memcpy((void *)otaCtrl->NextImgBuf, (void *)(buf + len), otaCtrl->NextImgLen);
+		if (otaCtrl->NextImgLen > 0) {
+			_memcpy((void *)otaCtrl->NextImgBuf, (void *)(buf + len), otaCtrl->NextImgLen);
+			otaCtrl->NextImgFg = 1;
+		}
 	}
 
 	/* skip bootloader */
@@ -972,10 +974,12 @@ int ota_update_s1_prepare(ota_context *ctx, u8 *buf, int len)
 		return -1;
 	}
 
-	memset(ctx->otactrl->NextImgBuf, 0, BUF_SIZE);
-	_memcpy((void *)ctx->otactrl->NextImgBuf, (void *)(buf + RevHdrLen), writelen - RevHdrLen);
-	ctx->otactrl->NextImgFg = 1;
 	ctx->otactrl->NextImgLen = writelen - RevHdrLen;
+	if (ctx->otactrl->NextImgLen > 0) {
+		memset(ctx->otactrl->NextImgBuf, 0, BUF_SIZE);
+		_memcpy((void *)ctx->otactrl->NextImgBuf, (void *)(buf + RevHdrLen), writelen - RevHdrLen);
+		ctx->otactrl->NextImgFg = 1;
+	}
 
 	return writelen;
 }

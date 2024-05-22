@@ -132,6 +132,12 @@
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT
 #undef TX_SHORTCUT
+
+#define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
+//#define CONFIG_PHYDM_DEBUG_FUNCTION
+#endif
+
+#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W
@@ -145,10 +151,6 @@
 #undef CONFIG_CSI
 
 #define DISABLE_FW
-
-#define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
-#define CONFIG_PHYDM_MP_DISABLE
-//#define CONFIG_PHYDM_DEBUG_FUNCTION
 #endif
 
 #define DBG 0 /* for phydm debug */

@@ -8,6 +8,7 @@ include ../config.mk
 #*****************************************************************************#
 WFA_DIR = $(BASEDIR)/component/application/wifi-audio
 DIR = $(WFA_DIR)/pal/common
+WIFI_USRCFG_DIR = $(WFA_DIR)/pal/amebadplus/usrcfg
 
 MODULE_IFLAGS += \
     -I$(WFA_DIR)/pal/include
@@ -18,7 +19,7 @@ MODULE_IFLAGS += \
     -I$(WFA_DIR)/base/utils/include \
     -I$(WFA_DIR)/foundation/include
 
-vpath %.c $(DIR) $(shell find $(DIR) -type d)
+vpath %.c $(shell find $(WIFI_USRCFG_DIR) $(DIR) -type d)
 vpath %.cpp $(DIR) $(shell find $(DIR) -type d)
 
 #*****************************************************************************#
@@ -26,7 +27,8 @@ vpath %.cpp $(DIR) $(shell find $(DIR) -type d)
 #*****************************************************************************#
 CSRC += \
     $(DIR)/wifi_manager.c \
-    $(DIR)/system_time.c
+    $(DIR)/system_time.c \
+    $(WIFI_USRCFG_DIR)/ameba_wificfg.c
 
 #*****************************************************************************#
 #                               Include Dependency                            #

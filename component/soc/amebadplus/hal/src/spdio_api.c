@@ -317,7 +317,7 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 			RTK_LOGS_LVL(TAG, RTK_LOG_WARN, "SDIO TX Overflow Case: Reg DMA_CTRL==0x%x %x %x %x\n", (reg >> 24) & 0xff, (reg >> 16) & 0xff, (reg >> 8) & 0xff,
 						 (reg) & 0xff);
 		} else {
-			RTK_LOGS_LVL(TAG, RTK_LOG_WARN, "SDIO TX Data Read False Triggered!!, TXBDWPtr=0x%x\n", TxBDWPtr);
+			//RTK_LOGS_LVL(TAG, RTK_LOG_INFO, "SDIO TX Data Read False Triggered!!, TXBDWPtr=0x%x\n", TxBDWPtr);
 			goto exit;
 		}
 	}

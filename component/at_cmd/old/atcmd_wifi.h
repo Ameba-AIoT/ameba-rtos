@@ -8,6 +8,7 @@
 #define __ATCMD_WIFI_H__
 #include "main.h"
 #include "rtw_wifi_constants.h"
+#include "FreeRTOS.h"
 #ifdef CONFIG_LWIP_LAYER
 //#include "lwip_netconf.h"
 #endif

@@ -1199,7 +1199,7 @@ IPC_TABLE_DATA_SECTION
 
 const IPC_INIT_TABLE ipc_nptickless_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	.Rxfunc = np_tickless_ipc_int,
 #else
 	.Rxfunc = NULL,

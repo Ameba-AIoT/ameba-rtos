@@ -46,6 +46,7 @@
     }
 
 uint32_t hci_cfg_sw_val = 0xFF;                  // Open BT Trace log & FW log use 0xDD
+uint8_t hci_mp_flag = 0;
 bt_voltage_t bt_voltage_switch = VOLTAGE_3V3;    // Select BT voltage
 
 extern const unsigned char rtlbt_fw[];
@@ -440,9 +441,14 @@ void hci_platform_set_tx_power_gain_index(uint32_t index)
 	bt_manual_gain_index = (uint8_t)(index & 0xFF);
 }
 
+void hci_platform_set_mp(uint8_t flag)
+{
+	hci_mp_flag = flag;
+}
+
 uint8_t hci_platform_check_mp(void)
 {
-	if (wifi_driver_is_mp()) {
+	if (hci_mp_flag) {
 		return HCI_SUCCESS;
 	} else {
 		return HCI_FAIL;
@@ -645,10 +651,12 @@ bool rtk_bt_pre_enable(void)
 		return false;
 	}
 
+#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
 	if (!hci_platform_check_mp()) {
 		wifi_set_lps_enable(FALSE);
 		wifi_set_ips_internal(FALSE);
 	}
+#endif
 
 	lock_status = pmu_get_wakelock_status();
 	if (!(lock_status & ((0x01) << PMU_BT_DEVICE))) {
@@ -669,10 +677,12 @@ bool rtk_bt_post_enable(void)
 		pmu_release_wakelock(PMU_BT_DEVICE);
 	}
 
+#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
 	if (!hci_platform_check_mp()) {
 		wifi_set_lps_enable(wifi_user_config.lps_enable);
 		wifi_set_ips_internal(wifi_user_config.ips_enable);
 	}
+#endif
 
 	return true;
 }
@@ -986,9 +996,10 @@ static uint8_t hci_platform_get_patch_info(void)
 	uint32_t fw_len;
 
 	if (CHECK_CFG_SW(CFG_SW_USE_FLASH_PATCH)) {
-#if defined(CONFIG_BT_EXCLUDE_MP_FUNCTION) && CONFIG_BT_EXCLUDE_MP_FUNCTION
-		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
-		patch_info->patch_len = rtlbt_fw_len;
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
+		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_mp_fw;
+		patch_info->patch_len = rtlbt_mp_fw_len;
 #else
 		if (hci_platform_check_mp()) {
 			patch_info->patch_buf = (uint8_t *)(void *)rtlbt_mp_fw;
@@ -997,6 +1008,10 @@ static uint8_t hci_platform_get_patch_info(void)
 			patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
 			patch_info->patch_len = rtlbt_fw_len;
 		}
+#endif
+#else
+		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
+		patch_info->patch_len = rtlbt_fw_len;
 #endif
 		ext_section_check = true;
 	} else {

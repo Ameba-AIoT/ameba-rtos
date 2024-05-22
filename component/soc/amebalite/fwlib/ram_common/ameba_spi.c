@@ -56,16 +56,19 @@ static const char *TAG = "SPI";
   * @{
   */
 
+/** @defgroup SPI_Exported_Constants SPI Exported Constants
+  * @{
+  */
 const SPI_DevTable SPI_DEV_TABLE[2] = {
 	{SPI0_DEV, GDMA_HANDSHAKE_INTERFACE_SPI0_TX, GDMA_HANDSHAKE_INTERFACE_SPI0_RX, SPI0_IRQ},
 	{SPI1_DEV, GDMA_HANDSHAKE_INTERFACE_SPI1_TX, GDMA_HANDSHAKE_INTERFACE_SPI1_RX, SPI1_IRQ},
 };
+/** @} */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SPI_Exported_Functions SPI Exported Functions
   * @{
   */
-
 /**
   * @brief  Fills each SSI_InitStruct member with its default value.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure which will be

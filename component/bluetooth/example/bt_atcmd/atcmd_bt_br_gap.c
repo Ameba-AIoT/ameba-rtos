@@ -17,119 +17,11 @@
 #include <atcmd_bt_impl.h>
 #include <rtk_bt_common.h>
 
-_WEAK uint16_t rtk_bt_br_gap_start_inquiry(rtk_bt_br_inquiry_start_t *inquiry_start_param)
-{
-	(void)inquiry_start_param;
-	AT_PRINTK("[ATBC] BR GAP not support inquiry");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_disconnect(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] BR GAP not support disconnect");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_cfg_page_param(uint8_t type, uint16_t interval, uint16_t window)
-{
-	(void)type;
-	(void)interval;
-	(void)window;
-	AT_PRINTK("[ATBE] BR GAP not support cfg page param");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16_t window)
-{
-	(void)type;
-	(void)interval;
-	(void)window;
-	AT_PRINTK("[ATBE] BR GAP not support cfg inquiry param");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_bond_clear(void)
-{
-	AT_PRINTK("[ATBC] BR GAP not support bond clear");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_set_radio_mode(uint8_t radio_mode)
-{
-	(void)radio_mode;
-	AT_PRINTK("[ATBC] BR GAP not support radio mode");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t min_interval, uint16_t max_interval, uint16_t sniff_attempt,
-											uint16_t sniff_timeout)
-{
-	(void)enable;
-	(void)bd_addr;
-	(void)min_interval;
-	(void)max_interval;
-	(void)sniff_attempt;
-	(void)sniff_timeout;
-	AT_PRINTK("[ATBC] BR GAP not support sniff mode");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num)
-{
-	(void)pmax_bond_num;
-	AT_PRINTK("[ATBC] BR GAP not support max bond num get");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_bond_num_get(uint8_t *pbond_num)
-{
-	(void)pbond_num;
-	AT_PRINTK("[ATBC] BR GAP not support bond num get");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_bond_addr_get(uint8_t priority, uint8_t *bd_addr)
-{
-	(void)priority;
-	(void)bd_addr;
-	AT_PRINTK("[ATBC] BR GAP not support bond addr get");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_bond_index_get(uint8_t *pindex, uint8_t *bd_addr)
-{
-	(void)pindex;
-	(void)bd_addr;
-	AT_PRINTK("[ATBC] BR GAP not support bond index get");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_bond_key_get(uint8_t *bd_addr, uint8_t *key_type, uint8_t *bond_key)
-{
-	(void)bd_addr;
-	(void)key_type;
-	(void)bond_key;
-	AT_PRINTK("[ATBC] BR GAP not support bond key get");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBC] BR GAP not support bond key delete");
-	return -1;
-}
-
 static int atcmd_br_gap_inquiry_start(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	rtk_bt_br_inquiry_start_t inquiry_start_param = {0};
-
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] BR GAP inquiry start op failed! wrong args num!");
-		return -1;
-	}
 
 	inquiry_start_param.limited_inquiry = (bool)str_to_int(argv[0]);
 	inquiry_start_param.timeout = (uint8_t)str_to_int(argv[1]);
@@ -192,13 +84,10 @@ static int atcmd_br_gap_set_security_param(int argc, char **argv)
 
 static int atcmd_br_gap_disconnect(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BR GAP disconnect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_br_gap_disconnect(bd_addr)) {
 		AT_PRINTK("[ATBC] BR GAP disconnect fail \r\n");
@@ -212,15 +101,11 @@ static int atcmd_br_gap_disconnect(int argc, char **argv)
 
 static int atcmd_br_gap_cfg_page_param(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t type = 0;
 	uint16_t interval = 0;
 	uint16_t window = 0;
-
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] BR GAP cfg page param failed! wrong args num!");
-		return -1;
-	}
 
 	type = (uint8_t)str_to_int(argv[0]);
 	interval = (uint16_t)str_to_int(argv[1]);
@@ -237,15 +122,11 @@ static int atcmd_br_gap_cfg_page_param(int argc, char **argv)
 
 static int atcmd_br_gap_cfg_inquiry_param(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t type = 0;
 	uint16_t interval = 0;
 	uint16_t window = 0;
-
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] BR GAP cfg inquiry param failed! wrong args num!");
-		return -1;
-	}
 
 	type = (uint8_t)str_to_int(argv[0]);
 	interval = (uint16_t)str_to_int(argv[1]);
@@ -279,13 +160,9 @@ static int atcmd_br_gap_bond_clear(int argc, char **argv)
 
 static int atcmd_br_gap_radio_mode(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t mode = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BR GAP radio mode failed! wrong args num!");
-		return -1;
-	}
 
 	mode = (uint8_t)str_to_int(argv[0]);
 
@@ -365,14 +242,10 @@ static int atcmd_br_gap_bond_num(int argc, char **argv)
 
 static int atcmd_br_gap_bond_addr_get(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t priority = 0;
 	uint8_t bd_addr[6] = {0};
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BR GAP Bond addr get failed! wrong args num!");
-		return -1;
-	}
 
 	priority = (uint8_t)str_to_int(argv[0]);
 
@@ -389,14 +262,10 @@ static int atcmd_br_gap_bond_addr_get(int argc, char **argv)
 
 static int atcmd_br_gap_bond_index_get(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t bd_addr[6] = {0};
 	uint8_t index = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BR GAP Bond index get failed! wrong args num!");
-		return -1;
-	}
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
 	ret = rtk_bt_br_gap_bond_index_get(&index, bd_addr);
@@ -411,15 +280,11 @@ static int atcmd_br_gap_bond_index_get(int argc, char **argv)
 
 static int atcmd_br_gap_bond_key_get(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t bd_addr[6] = {0};
 	uint8_t key_type = 0;
 	uint8_t key[16] = {0};
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BR GAP Bond key get failed! wrong args num!");
-		return -1;
-	}
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
 	ret = rtk_bt_br_gap_bond_key_get(bd_addr, &key_type, key);
@@ -437,13 +302,9 @@ static int atcmd_br_gap_bond_key_get(int argc, char **argv)
 
 static int atcmd_br_gap_bond_delete(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 1;
 	uint8_t bd_addr[6] = {0};
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BR GAP Bond delete failed! wrong args num!");
-		return -1;
-	}
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
 	ret = rtk_bt_br_gap_bond_delete(bd_addr);
@@ -458,20 +319,20 @@ static int atcmd_br_gap_bond_delete(int argc, char **argv)
 }
 
 static const cmd_table_t br_gap_cmd_table[] = {
-	{"inquiry_start",      atcmd_br_gap_inquiry_start,        1, 3},
-	{"disc",               atcmd_br_gap_disconnect,           1, 2},
-	{"cfg_page",           atcmd_br_gap_cfg_page_param,       1, 4},
-	{"cfg_inquiry",        atcmd_br_gap_cfg_inquiry_param,    1, 4},
+	{"inquiry_start",      atcmd_br_gap_inquiry_start,        3, 3},
+	{"disc",               atcmd_br_gap_disconnect,           2, 2},
+	{"cfg_page",           atcmd_br_gap_cfg_page_param,       4, 4},
+	{"cfg_inquiry",        atcmd_br_gap_cfg_inquiry_param,    4, 4},
 	{"sec_param",          atcmd_br_gap_set_security_param,  1, 8},
 	{"bond_clear",         atcmd_br_gap_bond_clear,           1, 1},
-	{"radio_mode",         atcmd_br_gap_radio_mode,           1, 2},
+	{"radio_mode",         atcmd_br_gap_radio_mode,           2, 2},
 	{"sniff_mode",         atcmd_br_gap_sniff_mode,           3, 7},
 	{"bond_max_num",       atcmd_br_gap_bond_max_num,         1, 1},
 	{"bond_num",           atcmd_br_gap_bond_num,             1, 1},
-	{"bond_addr_get",      atcmd_br_gap_bond_addr_get,        1, 2},
-	{"bond_index_get",     atcmd_br_gap_bond_index_get,       1, 2},
-	{"bond_key_get",       atcmd_br_gap_bond_key_get,         1, 2},
-	{"bond_delete",        atcmd_br_gap_bond_delete,          1, 2},
+	{"bond_addr_get",      atcmd_br_gap_bond_addr_get,        2, 2},
+	{"bond_index_get",     atcmd_br_gap_bond_index_get,       2, 2},
+	{"bond_key_get",       atcmd_br_gap_bond_key_get,         2, 2},
+	{"bond_delete",        atcmd_br_gap_bond_delete,          2, 2},
 	{NULL,},
 };
 

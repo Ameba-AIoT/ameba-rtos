@@ -60,7 +60,6 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.lps_enable = 1;
 	wifi_user_config.lps_mode = PS_MODE_LEGACY;
 	wifi_user_config.legacy_ps_listen_interval = 0;
-	wifi_user_config.legacy_ps_use_ps_poll = 2;
 
 	/* Softap related */
 	wifi_user_config.g_user_ap_sta_num = 7;

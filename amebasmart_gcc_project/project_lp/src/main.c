@@ -69,7 +69,7 @@ void app_pmu_init(void)
 	pmu_acquire_deepwakelock(PMU_OS);
 	pmu_release_deepwakelock(PMU_KM4_RUN);
 	pmu_release_deepwakelock(PMU_AP_RUN);
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 
 	SOCPS_WakeEvent_Init();
 	SOCPS_SleepInit();

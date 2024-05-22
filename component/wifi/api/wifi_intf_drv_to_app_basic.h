@@ -276,7 +276,7 @@ struct rtw_owe_param_t {
 };
 
 struct rtw_kvr_param_t {
-#if defined(CONFIG_RTW_WNM) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
 	u8 nb_active;
 	u8 btm_active;
 	unsigned char 		peer_mac[6];
@@ -946,9 +946,6 @@ struct wifi_user_conf {
 
 	/*!	In LPS, the sta wakes up every legacy_ps_listen_interval* 102.4ms to receive beacon*/
 	unsigned char legacy_ps_listen_interval;
-
-	/*!	0 or 1: use ps poll, 2: use NULL0 NULL1 pkt */
-	unsigned char legacy_ps_use_ps_poll;
 
 	/*!	0: NO_LIMIT, 1: TWO_MSDU, 2: FOUR_MSDU, 3: SIX_MSDU */
 	unsigned char uapsd_max_sp_len;

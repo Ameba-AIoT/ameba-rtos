@@ -17,81 +17,12 @@
 #include <atcmd_bt_impl.h>
 #include <rtk_bt_br_gap.h>
 
-_WEAK uint16_t rtk_bt_hfp_connect(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] HFP not support connect");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_disconnect(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] HFP not support disconnect");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_sco_connect(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] HFP not support sco connect");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_sco_disconnect(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] HFP not support sco disconnect");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] HFP not support call answer");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr)
-{
-	(void)bd_addr;
-	AT_PRINTK("[ATBE] HFP not support call terminate");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_batt_level_report(uint8_t *bd_addr, uint8_t power_level)
-{
-	(void)bd_addr;
-	(void)power_level;
-	AT_PRINTK("[ATBE] HFP not support batt level report");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain)
-{
-	(void)bd_addr;
-	(void)gain;
-	AT_PRINTK("[ATBE] HFP not support speaker gain report");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain)
-{
-	(void)bd_addr;
-	(void)gain;
-	AT_PRINTK("[ATBE] HFP not support microphone gain report");
-	return -1;
-}
-
 static int atcmd_bt_hfp_connect(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] HFP connect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hfp_connect(bd_addr)) {
 		AT_PRINTK("[ATBC] HFP connect fail \r\n");
@@ -105,13 +36,10 @@ static int atcmd_bt_hfp_connect(int argc, char **argv)
 
 static int atcmd_bt_hfp_disconnect(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] HFP disconnect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hfp_disconnect(bd_addr)) {
 		AT_PRINTK("[ATBC] HFP disconnect fail \r\n");
@@ -125,13 +53,10 @@ static int atcmd_bt_hfp_disconnect(int argc, char **argv)
 
 static int atcmd_bt_hfp_sco_connect(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] HFP sco connect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hfp_sco_connect(bd_addr)) {
 		AT_PRINTK("[ATBC] HFP sco connect fail \r\n");
@@ -145,13 +70,10 @@ static int atcmd_bt_hfp_sco_connect(int argc, char **argv)
 
 static int atcmd_bt_hfp_sco_disconnect(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] HFP sco disconnect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hfp_sco_disconnect(bd_addr)) {
 		AT_PRINTK("[ATBC] HFP sco disconnect fail \r\n");
@@ -165,13 +87,10 @@ static int atcmd_bt_hfp_sco_disconnect(int argc, char **argv)
 
 static int atcmd_bt_hfp_call_income(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] HFP call income op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (strlen(argv[1]) > 20) {
 		AT_PRINTK("[ATBC] HFP call income phone illegal \r\n");
@@ -189,13 +108,10 @@ static int atcmd_bt_hfp_call_income(int argc, char **argv)
 
 static int atcmd_bt_hfp_call_answer_req(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] HFP call answer req op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hfp_call_answer(bd_addr)) {
 		AT_PRINTK("[ATBC] HFP call answer req fail \r\n");
@@ -209,13 +125,10 @@ static int atcmd_bt_hfp_call_answer_req(int argc, char **argv)
 
 static int atcmd_bt_hfp_call_terminate_req(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] HFP call terminate req op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hfp_call_terminate(bd_addr)) {
 		AT_PRINTK("[ATBC] HFP call terminate req fail \r\n");
@@ -229,14 +142,11 @@ static int atcmd_bt_hfp_call_terminate_req(int argc, char **argv)
 
 static int atcmd_bt_hfp_batt_level_report(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 	uint8_t power_level = 0;
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] HFP connect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	power_level = (uint8_t)str_to_int(argv[1]);
 	if (rtk_bt_hfp_batt_level_report(bd_addr, power_level)) {
@@ -251,14 +161,11 @@ static int atcmd_bt_hfp_batt_level_report(int argc, char **argv)
 
 static int atcmd_bt_hfp_speaker_gain_report(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 	uint8_t gain = 0;
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] HFP connect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	gain = (uint8_t)str_to_int(argv[1]);
 
@@ -274,14 +181,11 @@ static int atcmd_bt_hfp_speaker_gain_report(int argc, char **argv)
 
 static int atcmd_bt_hfp_microphone_gain_report(int argc, char **argv)
 {
+	(void)argc;
 	char addr_str[30] = {0};
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 	uint8_t gain = 0;
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] HFP connect op failed! wrong args num!");
-		return -1;
-	}
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	gain = (uint8_t)str_to_int(argv[1]);
 	if (rtk_bt_hfp_microphone_gain_report(bd_addr, gain)) {
@@ -295,11 +199,11 @@ static int atcmd_bt_hfp_microphone_gain_report(int argc, char **argv)
 }
 
 static const cmd_table_t hfp_cmd_table[] = {
-	{"conn",                    atcmd_bt_hfp_connect,                  1, 2},
-	{"disconn",                 atcmd_bt_hfp_disconnect,               1, 2},
-	{"sco_conn",                atcmd_bt_hfp_sco_connect,              1, 2},
-	{"sco_disconn",             atcmd_bt_hfp_sco_disconnect,           1, 2},
-	{"call_income",             atcmd_bt_hfp_call_income,              1, 4},
+	{"conn",                    atcmd_bt_hfp_connect,                  2, 2},
+	{"disconn",                 atcmd_bt_hfp_disconnect,               2, 2},
+	{"sco_conn",                atcmd_bt_hfp_sco_connect,              2, 2},
+	{"sco_disconn",             atcmd_bt_hfp_sco_disconnect,           2, 2},
+	{"call_income",             atcmd_bt_hfp_call_income,              4, 4},
 	{"call_answer",             atcmd_bt_hfp_call_answer_req,          2, 2},
 	{"call_terminate",          atcmd_bt_hfp_call_terminate_req,       2, 2},
 	{"batt_level_report",       atcmd_bt_hfp_batt_level_report,        3, 3},

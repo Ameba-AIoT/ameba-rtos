@@ -8,7 +8,8 @@
 #include "log_service.h"
 
 GDMA_InitTypeDef GDMA_InitStruct;
-volatile u32 dma_tx_busy = 0;
+volatile u8 dma_tx_busy = 0;
+volatile u8 uart_tx_busy = 0;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -59,6 +60,7 @@ u32 uart_dma_cb(void *buf)
 	uart_dma_free();
 	rtos_mem_free(buf);
 	dma_tx_busy = 0;
+	uart_tx_busy = 0;
 
 	return 0;
 }
@@ -98,12 +100,16 @@ void atio_uart_out_polling(char *buf, int len)
 
 void atio_uart_output(char *buf, int len)
 {
+	do {} while (uart_tx_busy);
+	uart_tx_busy = 1;
+
 	if (len > POLL_LEN_MAX) {
 		// tx by dma
 		atio_uart_out_dma(buf, len);
 	} else {
 		// tx by polling
 		atio_uart_out_polling(buf, len);
+		uart_tx_busy = 0;
 	}
 }
 

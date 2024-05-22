@@ -17,10 +17,10 @@ vpath %.c $(FLASH) $(shell find $(FLASH) -type d)
 #                               Source FILE LIST                              #
 #*****************************************************************************#
 #802154 timer
-CSRC += $(TIMER)/rtw_802154_timer.c \
-		$(TIMER)/rtw_802154_timer_sched.c
+CSRC += $(TIMER)/rtk_802154_timer.c \
+		$(TIMER)/rtk_802154_timer_sched.c
 		
-CSRC += $(FLASH)/rtw_802154_flash.c
+CSRC += $(FLASH)/rtk_802154_flash.c
 
 MODULE_IFLAGS += -I$(TIMER)/
 MODULE_IFLAGS += -I$(FLASH)/

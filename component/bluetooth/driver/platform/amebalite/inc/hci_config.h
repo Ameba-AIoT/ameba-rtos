@@ -7,6 +7,8 @@
 #ifndef _BT_CONFIG_H_
 #define _BT_CONFIG_H_
 
+#include "platform_autoconf.h"
+
 #if !defined(CONFIG_USE_ZEPHYR_BT_STACK) || !CONFIG_USE_ZEPHYR_BT_STACK
 #define CONFIG_USE_RTK_BT_STACK   1
 #endif

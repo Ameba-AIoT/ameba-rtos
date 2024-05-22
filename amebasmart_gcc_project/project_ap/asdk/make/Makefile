@@ -31,7 +31,7 @@ ifeq ($(CONFIG_WLAN),y)
 	@make -C wlan all
 # WIFI INIC AP build
 ifeq ($(CONFIG_AS_INIC_AP), y)
-ifneq ($(CONFIG_MP_INCLUDED),y)
+ifneq ($(CONFIG_MP_SHRINK),y)
 	@make -C network all
 	@make -C api all
 endif
