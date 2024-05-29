@@ -24,9 +24,11 @@ See the ApplicationNote chapter **Build Environment** from above links for a det
 
 ## Setup Build Environment
 
+The toolchain will be intalled in `/opt/rtk-toolchain` by default. If an error of the toolchain, just like the log "Error: No Toolchain in `/opt/rtk-toolchain/vsdk-10.3.1/linux/newlib`" appears when building the project, please refer to ApplicationNote chapter **Build Environment/Installing Toolchain** from documentation links for more details and re-install the toolchain.
+
 * Linux platform is supported for now, Ubuntu version 16.04 64-bit or higher is required.
 * Windows built with VScode will be supported in the future.
-* Python version 3.7 or higher is required.
+* Python version 3.7 or higher is required. Run `python --version` to check the version. If error `Command 'python' not found` is encounterred, please run `sudo ln -s /usr/bin/python3 /usr/bin/python` to link `python3` to `python`.
 
 ## Finding the Project
 
