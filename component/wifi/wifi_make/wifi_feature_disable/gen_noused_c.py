@@ -125,6 +125,7 @@ def gen_new_file(asms, cfile, result_file):
         for line in cfile.read_text().splitlines():
             if line.strip().startswith("#include"):
                 new_file_lines.append(line)
+        new_file_lines.append("u16 call_noused = 0;")
         new_file_lines.append("\n")
 
         for func_name, func in c_funcs.items():

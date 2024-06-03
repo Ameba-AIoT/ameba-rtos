@@ -63,7 +63,7 @@ void wlan_initialize(void)
 	wifi_fast_connect_enable(1);
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 2) != SUCCESS) {
-		RTK_LOGE(TAG, "%s rtos_task_create(init_thread) failed\n", __FUNCTION__);
+		RTK_LOGE(TAG, "wlan_initialize failed\n");
 	}
 }
 
@@ -110,7 +110,7 @@ void wlan_initialize(void)
 	wifi_fast_connect_enable(1);
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 5) != SUCCESS) {
-		RTK_LOGE(TAG, "%s rtos_task_create(init_thread) failed\n", __FUNCTION__);
+		RTK_LOGE(TAG, "wlan_initialize failed\n");
 	}
 }
 

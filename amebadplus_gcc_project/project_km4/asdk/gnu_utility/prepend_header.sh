@@ -77,6 +77,9 @@ if [ "$IMAGE_FILENAME_NEW" == "ram_1.bin" ]; then
 elif [ "$IMAGE_FILENAME_NEW" == "xip_boot.bin" ]; then
     MakeFixedWidthHeaderString $PATTERN_1   8  HEADER_FINAL 0
     MakeFixedWidthHeaderString $PATTERN_2   8  HEADER_FINAL 0
+elif [ "$IMAGE_FILENAME_NEW" == "entry_1.bin" ]; then
+    MakeFixedWidthHeaderString $PATTERN_1   8  HEADER_FINAL 0
+    MakeFixedWidthHeaderString $PATTERN_2   8  HEADER_FINAL 0
 else
     MakeFixedWidthHeaderString $IMG2SIGN    16  HEADER_FINAL 0
 fi

@@ -338,7 +338,6 @@ uint16_t rtk_bt_hid_mouse_control(rtk_bt_hid_mouse_report_t *pmouse_t)
 	return ret;
 }
 
-extern bool rtk_bt_pre_enable(void);
 /**
  * @brief  process hid main init/ deinit.
  * @param  enable[in]: 1: init. 0 deinit
@@ -356,10 +355,7 @@ int bt_hid_main(uint8_t role, uint8_t enable)
 			printf("%s Already init! \r\n", __func__);
 			return -1;
 		}
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
-			return -1;
-		}
+
 		//set GAP configuration
 		bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HID | \
 											RTK_BT_PROFILE_SDP;

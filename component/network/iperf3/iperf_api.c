@@ -1266,6 +1266,7 @@ int
 iperf_send(struct iperf_test *test, fd_set *write_setP)
 {
 
+
 	register int multisend, r, streams_active;
 	register struct iperf_stream *sp;
 	struct timeval now;
@@ -2789,7 +2790,6 @@ iperf_print_intermediate(struct iperf_test *test)
 static void
 iperf_print_results(struct iperf_test *test)
 {
-
 	cJSON *json_summary_streams = NULL;
 	cJSON *json_summary_stream = NULL;
 	int total_retransmits = 0;
@@ -3877,9 +3877,11 @@ iperf_printf(struct iperf_test *test, const char *format, ...)
 	 * easily exceed the size of the line buffer, but which don't need
 	 * to be buffered up anyway.
 	 */
+
 	if (test->role == 'c') {
 		if (test->title) {
-			fprintf(test->outfile, "%s:  ", test->title);
+			//fprintf(test->outfile, "%s:  ", test->title);
+			RTK_LOGS(NOTAG, "%s", test->title);
 		}
 		va_start(argp, format);
 		r = vfprintf(test->outfile, format, argp);
@@ -3889,8 +3891,8 @@ iperf_printf(struct iperf_test *test, const char *format, ...)
 		va_start(argp, format);
 		r = vsnprintf(linebuffer, sizeof(linebuffer), format, argp);
 		va_end(argp);
-		fprintf(test->outfile, "%s", linebuffer);
-
+		//fprintf(test->outfile, "%s", linebuffer);
+		RTK_LOGS(NOTAG, "%s", linebuffer);
 		if (test->role == 's' && iperf_get_test_get_server_output(test)) {
 			struct iperf_textline *l = (struct iperf_textline *) malloc(sizeof(struct iperf_textline));
 			l->line = strdup(linebuffer);

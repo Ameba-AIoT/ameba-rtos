@@ -8,6 +8,7 @@
 #include "FreeRTOS.h"
 
 u8 heap_index = 0;
+u32 total_heap_size = 0;
 //HeapRegion Addresses need to be sorted from smallest to largest
 HeapRegion_t xHeapRegions[] = {
 	{ NULL, 0 },			// Defines a block in bd_ram,	 start and length will be corrected in os_heap_init()
@@ -50,18 +51,22 @@ void os_heap_init(void)
 {
 #ifdef SRAM_HEAP0_START 		// Defines a block in bd_ram
 	os_heap_add((uint8_t *)SRAM_HEAP0_START, (size_t)SRAM_HEAP0_SIZE);
+	total_heap_size += (u32)SRAM_HEAP0_SIZE;
 #endif
 
 #ifdef SRAM_HEAP1_START			// Defines a block in sram
 	os_heap_add((uint8_t *)SRAM_HEAP1_START, (size_t)SRAM_HEAP1_SIZE);
+	total_heap_size += (u32)SRAM_HEAP1_SIZE;
 #endif
 
 #ifdef PSRAM_HEAP0_START		// Defines a block in bd_psram
 	os_heap_add((uint8_t *)PSRAM_HEAP0_START, (size_t)PSRAM_HEAP0_SIZE);
+	total_heap_size += (u32)PSRAM_HEAP0_SIZE;
 #endif
 
 #ifdef PSRAM_HEAP1_START		// Defines a block in psram
 	os_heap_add((uint8_t *)PSRAM_HEAP1_START, (size_t)PSRAM_HEAP1_SIZE);
+	total_heap_size += (u32)PSRAM_HEAP1_SIZE;
 #endif
 
 	if (heap_index > 0) {

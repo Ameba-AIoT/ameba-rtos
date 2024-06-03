@@ -380,9 +380,13 @@ endif
 
 linker_image2_ns: linker_image2_raw
 	$(ECHO) "  BIN      km4_image2_all.bin"
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(FROMELF) -j .sram_image2.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
+else
 	$(Q)$(FROMELF) -j .ram_image2.entry -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/entry.bin
 	$(Q)$(FROMELF) -j .sram_image2.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
 
+endif
 	@#let .ARM.extab/.ARM.exidx +- 1GB can jump to *(.text*)
 	$(Q)ARMExAddr=0x$(shell grep __exidx_end $(IMAGE_TARGET_FOLDER)/target_img2.map | awk '{print $$1}'); \
 	if [[ $$ARMExAddr -gt 0x60000000 ]] ; then \
@@ -416,14 +420,21 @@ endif
 	@# 32Bytes aligned for rsip #
 	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
 
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __image2_entry_func__  $(IMAGE_TARGET_FOLDER)/target_img2.map
+	$(Q)cat $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin
+	$(Q)sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin $(BUILD_TYPE);
+
+else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/entry.bin  __image2_entry_func__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __sram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin  __psram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin  __flash_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
-
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/entry_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin
-	
 	$(Q)sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE);
+
+endif
+
 
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
@@ -451,8 +462,13 @@ linker_loader:
 	$(Q)$(STRIP) $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf
 
 	$(ECHO) "  BIN      km4_boot_all.bin"
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(FROMELF) -j .ram_image1.entry -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/entry_1.bin
+	$(Q)$(FROMELF) -j .ram_image1.text -j .ram_image1.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/ram_1.bin
+else
 	$(Q)$(FROMELF) -j .ram_image1.entry  -j .ram_image1.text -j .ram_image1.data \
 	-Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/ram_1.bin
+endif
 
 	$(Q)$(FROMELF) -j .xip_image1.text \
 	-Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/xip_boot.bin
@@ -471,10 +487,22 @@ linker_loader:
 	@echo "========== linker end =========="
 
 	@echo "========== Image manipulating start =========="
-
+ifeq ($(CONFIG_MP_SHRINK), y)
+	##entry 1k for flashloader
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/entry_1.bin 992
+endif
 	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/ram_1.bin 32
 	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_boot.bin 32
 
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/entry_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin  __ram_image1_text_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
+
+	$(Q)cat $(IMAGE_TARGET_FOLDER)/entry_1_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_boot.bin
+
+	sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot.bin $(BUILD_TYPE); \
+
+else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
 	@if [ ${IMGTOOL_LOADER} == "YES" ]; then \
 		sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE); \
@@ -483,10 +511,11 @@ linker_loader:
 		cat $(IMAGE_TARGET_FOLDER)/xip_boot_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_boot.bin; \
 		sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot.bin $(BUILD_TYPE); \
 	fi
-
+endif
 	@echo "========== Image manipulating end =========="
 	
 code_analyze:
+ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
@@ -495,6 +524,9 @@ code_analyze:
 		$(STATIC_ANALYZE_PYTHON); \
 	fi
 	@echo "========== Image analyze end =========="
+else
+	@echo "daily build"
+endif
 
 code_extract:
 	@echo "========== Image extract start =========="
@@ -619,7 +651,11 @@ clean_all: clean
 #              PACKAGE COPY link script file-ld                               #
 #*****************************************************************************#
 copy_ld_img1:
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q) $(CC) -E -P -xc -c ./ld/ameba_img1_all_mp.ld -o ./ld/ameba_img1.ld
+else
 	$(Q) $(CC) -E -P -xc -c ./ld/ameba_img1_all.ld -o ./ld/ameba_img1.ld
+endif
 	$(Q)$(MOVE) ./ld/ameba_img1.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_floader:
@@ -627,7 +663,11 @@ copy_ld_floader:
 	$(Q)$(MOVE) ./ld/ameba_floader.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img2:
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(CC) -E -P -xc -c $(ROOTDIR)/ld/ameba_img2_all_mp.ld  -o $(ROOTDIR)/ld/ameba_img2.ld
+else
 	$(Q) $(CC) -E -P -xc -c $(ROOTDIR)/ld/ameba_img2_all.ld  -o $(ROOTDIR)/ld/ameba_img2.ld
+endif
 	$(Q)$(MOVE) $(ROOTDIR)/ld/ameba_img2.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 ifeq ($(CONFIG_TRUSTZONE), y)
 	$(Q)cat $(LINK_ROM_SYMBOL_NS) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld

@@ -479,9 +479,9 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
    ---------- DEBUG options ----------
    -----------------------------------
 */
-
-//#define LWIP_DEBUG                      1
-
+#ifdef CONFIG_LWIP_DEBUG
+#define LWIP_DEBUG                      1
+#endif
 
 /*
    ---------------------------------

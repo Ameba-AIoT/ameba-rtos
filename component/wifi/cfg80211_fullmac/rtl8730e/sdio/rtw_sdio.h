@@ -25,6 +25,15 @@ struct inic_sdio;
 
 #define MAX_RX_AGG_NUM 6
 
+#define SDIO_HOST_FAKE_SLEEP
+
+#define PWR_STATE_ACTIVE	0
+#define PWR_STATE_SLEEP		1
+
+enum RPWM2_EVENT {
+	RPWM2_PWR_SUSPEND		= 0,		// Clock Gated
+	RPWM2_PWR_RESUME		= 1,		// Wakeup event
+};
 struct inic_sdio {
 	struct mutex	lock; /* mutex to protect send host event_priv message */
 
@@ -35,7 +44,8 @@ struct inic_sdio {
 
 	u32 		sdio_himr;
 	u32 		sdio_hisr;
-	u16		txbd_size;
+	u16			txbd_size;
+	u16			rxbd_num;
 	u16 		SdioTxBDFreeNum;
 	u32 		SdioTxMaxSZ; //The Size of Single Tx buf addressed by TX_BD
 	u8			SdioRxFIFOCnt;
@@ -51,7 +61,11 @@ struct inic_sdio {
 
 	atomic_t continual_io_error;
 
+	u8 dev_state;
+
 };
+
+extern struct inic_sdio inic_sdio_priv;
 
 void rtw_sdio_send_msg(u8 *buf, u32 len);
 void rtw_sdio_free_rxbuf(u8 *rx_payload);

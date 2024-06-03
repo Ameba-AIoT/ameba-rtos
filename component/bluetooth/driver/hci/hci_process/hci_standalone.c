@@ -6,6 +6,7 @@
 #include <osif.h>
 #include "hci/hci_transport.h"
 #include "hci/hci_process.h"
+#include "hci/hci_common.h"
 
 static void *recv_sem = NULL;
 static uint8_t *hci_buf;
@@ -33,9 +34,9 @@ uint8_t hci_sa_recv(hci_rx_t *info)
 	return HCI_SUCCESS;
 }
 
-uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, uint8_t is_sync)
+uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 {
-	if (HCI_NOT_SYNC == is_sync) {
+	if (!is_sync) {
 		if (len != hci_transport_send(type, buf, len, 1)) {
 			return HCI_FAIL;
 		}

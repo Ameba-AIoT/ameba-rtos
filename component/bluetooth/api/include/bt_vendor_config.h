@@ -118,7 +118,7 @@ extern "C"
  * Error Platform
  */
 #else
-#error Please choose a corret platform
+#error "Please choose a corret platform"
 #endif
 
 #ifdef __cplusplus

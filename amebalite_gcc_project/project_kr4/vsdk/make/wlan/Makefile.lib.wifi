@@ -10,9 +10,10 @@ ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_ap_mp.a
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_ap.a
+endif
+ifneq ($(CONFIG_MP_SHRINK), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
 endif
-
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP), y)
 ifeq ($(CONFIG_AMEBADPLUS), y)
@@ -37,7 +38,7 @@ endif
 # Single Core Link Library
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
 endif
 ifeq ($(CONFIG_MP_INCLUDED), y)
@@ -71,7 +72,7 @@ ifeq ($(CONFIG_WLAN), y)
 
 # build AP libs
 ifeq ($(CONFIG_AS_INIC_AP), y)
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 	@+$(MAKE) -C $(WIFI_MAKE_DIR)/wpa_lite lib
 endif
 	@+$(MAKE) -C $(WIFI_MAKE_DIR)/inic lib_ipc
@@ -87,7 +88,7 @@ else ifeq ($(CONFIG_AS_INIC_NP), y)
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 	@+$(MAKE) -C $(WIFI_MAKE_DIR) lib
 
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 	@+$(MAKE) -C $(WIFI_MAKE_DIR)/wpa_lite lib
 endif
 endif

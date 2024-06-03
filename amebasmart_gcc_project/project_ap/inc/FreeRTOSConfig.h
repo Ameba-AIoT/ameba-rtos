@@ -177,7 +177,7 @@ void vConfigureSMPSendIPI(uint32_t ulCoreID);
 #define configYieldOtherCore(x) vConfigureSMPSendIPI(x)
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #define configPRE_SLEEP_PROCESSING( x )                        ( pmu_pre_sleep_processing((uint32_t *)&x) )
 #define configPOST_SLEEP_PROCESSING( x )                       ( pmu_post_sleep_processing((uint32_t *)&x) )
 #else

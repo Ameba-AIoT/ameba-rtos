@@ -48,10 +48,6 @@ uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -65,10 +61,6 @@ uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr)
 uint16_t rtk_bt_a2dp_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -84,10 +76,6 @@ uint16_t rtk_bt_a2dp_start(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -102,10 +90,6 @@ uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -119,10 +103,6 @@ uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr)
 uint16_t rtk_bt_a2dp_data_send(rtk_bt_a2dp_stream_data_send_t *p_data_send_t)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!p_data_send_t) {
 		return RTK_BT_ERR_POINTER_INVALID;

@@ -1184,6 +1184,7 @@ typedef struct {
 
 	__IO u32 IMQ2_HEAP_ADDR;
 	__IO u8 IMQ2_INIT_DONE;
+	__IO u8 RRAM_RSVD1[3];
 	__IO u32 AP_WAKEUP_STATUS;
 	__IO u32 PSRAM_CKSL_BK;
 
@@ -1202,13 +1203,17 @@ typedef struct {
 	__IO u8 PMC_CORE_ROLE_Flag;
 	__IO u8 kr4_BackupTbl_Done;
 	__IO u8 CHIP_INFO;
+	__IO u8 RRAM_RSVD2[3];
 	__IO u32 psram_backup[6];
 
 	__IO u32 DSPIMG_DTCM0_ADDR;
 	__IO u32 DSPIMG_DTCM1_ADDR;
 
-	__IO u8 RRAM_USER_RSVD[155];
+	__IO u8 RRAM_USER_RSVD[148];
 } RRAM_TypeDef;
+
+Compile_Assert(sizeof(RRAM_TypeDef) == 512, "RRAM_TypeDef size shall be 512");
+
 /** @} */
 
 #define SHARE_MEM_BTOFF_E0_ADDRESS		0x22000000

@@ -167,6 +167,5 @@ void inic_msg_q_deinit(void)
 
 	dma_free_coherent(global_idev.ipc_dev, sizeof(struct inic_ipc_ex_msg), msg_priv->p_inic_ipc_msg, msg_priv->ipc_msg_phy_addr);
 
-	/* de initialize queue, todo */
 	mutex_destroy(&(msg_priv->msg_work_lock));
 }

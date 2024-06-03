@@ -13,7 +13,6 @@
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you dont like!
  */
-#include "platform_stdlib.h"
 #include "basic_types.h"
 #include "diag.h"
 #include "os_wrapper.h"
@@ -30,6 +29,7 @@
 #define MAX_ARGC 23
 #endif
 
+#ifndef CONFIG_NEW_ATCMD
 #define AT_BIT(n)           (1<<n)
 #define AT_FLAG_DUMP        AT_BIT(0)
 #define AT_FLAG_EDIT        AT_BIT(1)
@@ -53,6 +53,7 @@ enum {
 
 extern unsigned char  gDbgLevel;
 extern unsigned int   gDbgFlag;
+#endif /* CONFIG_NEW_ATCMD */
 
 #define AT_PRINTK(...)			\
 		do{							\
@@ -110,14 +111,5 @@ int at_printf(const char *fmt, ...);
   Because that, in function log_handler ( ), the top 2-letter "AT" has been drawn already.
   This should be deleted once the new format commands are ready. */
 #define ATCMD_BT_CUT_DOWN       1
-
-#ifndef CONFIG_MP_INCLUDED
-extern void print_mqtt_help(void);
-extern void print_wlan_help(void);
-#endif
-extern void print_system_help(void);
-#if defined(CONFIG_BT) && CONFIG_BT
-extern void print_bt_help(void);
-#endif
 
 #endif

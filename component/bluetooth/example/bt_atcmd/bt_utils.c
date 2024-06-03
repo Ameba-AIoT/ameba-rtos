@@ -28,6 +28,23 @@ static uint8_t ctoi(char c)
 	return 0xFF;
 }
 
+/* hexnum means string with 0x or 0X */
+static int hexnum_str_to_int(char *str)
+{
+	uint32_t str_len = strlen(str);
+	int result = 0;
+	uint32_t n = 2;
+
+	if ((str_len < 3) || (str[0] != '0') || ((str[1] != 'x') && (str[1] != 'X'))) {
+		AT_PRINTK("[%s]Error: Hexnum is not begin with 0x or 0X !!!\r\n", __func__);
+		return -1;
+	}
+	while (n < str_len) {
+		result = (result << 4) | (ctoi(str[n++]));
+	}
+	return result;
+}
+
 /* parse string to integer, if string begin with 0x or 0X, treat as hex,
    else treat as decimal */
 int str_to_int(char *str)
@@ -43,23 +60,6 @@ int str_to_int(char *str)
 	} else {
 		return atoi(str);
 	}
-}
-
-/* hexnum means string with 0x or 0X */
-int hexnum_str_to_int(char *str)
-{
-	uint32_t str_len = strlen(str);
-	int result = 0;
-	uint32_t n = 2;
-
-	if ((str_len < 3) || (str[0] != '0') || ((str[1] != 'x') && (str[1] != 'X'))) {
-		AT_PRINTK("[%s]Error: Hexnum is not begin with 0x or 0X !!!\r\n", __func__);
-		return -1;
-	}
-	while (n < str_len) {
-		result = (result << 4) | (ctoi(str[n++]));
-	}
-	return result;
 }
 
 /* hexdata means string without 0x or 0X, the addr 123456789a transformed to addr array

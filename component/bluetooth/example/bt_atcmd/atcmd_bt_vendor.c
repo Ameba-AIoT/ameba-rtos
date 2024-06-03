@@ -111,7 +111,7 @@ int atcmd_bt_sleep_mode(int argc, char *argv[])
 {
 	(void)argc;
 
-	unsigned int mode = (unsigned int)hexnum_str_to_int(argv[0]);
+	unsigned int mode = (unsigned int)str_to_int(argv[0]);
 
 	AT_PRINTK("[ATBV]set fw sleep mode to 0x%x.", mode);
 

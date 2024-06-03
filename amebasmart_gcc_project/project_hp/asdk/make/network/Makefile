@@ -8,9 +8,7 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 COMPONENT := xip
 COMPONENT += sram
-ifeq ($(CONFIG_MQTT_EN),y)
 COMPONENT += mqtt
-endif
 #COMPONENT += rtsp
 
 COMPONENT_CLEAN := xip

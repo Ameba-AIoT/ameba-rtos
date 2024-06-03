@@ -38,7 +38,6 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32
 	if (event == WIFI_EVENT_DISCONNECT) {
 		memcpy(&disassoc_reason, buf + ETH_ALEN, 2);
 		dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
-		/* LINUX_TODO: locally_generated always set to 1, need test, whether exists bug */
 		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
 			cfg80211_rtw_disconnect_indicate(disassoc_reason, 1);
 		}
@@ -202,7 +201,6 @@ static u8 llhw_event_get_network_info(struct event_priv_t *event_priv, u32 *para
 		rsp_len = ETH_ALEN;
 		break;
 	case INIC_WLAN_IS_VALID_IP:
-		/* todo in future */
 		return 0;
 	}
 

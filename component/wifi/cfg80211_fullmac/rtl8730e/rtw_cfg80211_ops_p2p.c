@@ -23,7 +23,7 @@ static int cfg80211_rtw_start_p2p_device(struct wiphy *wiphy, struct wireless_de
 
 static void cfg80211_rtw_stop_p2p_device(struct wiphy *wiphy, struct wireless_dev *wdev)
 {
-	llhw_wifi_scan_abort(1); //P2P_TODO: only P2P scan need be aborted, check if need blocked
+	llhw_wifi_scan_abort(1);
 	global_idev.p2p_global.p2p_role = P2P_ROLE_DISABLE;
 	llhw_wifi_set_p2p_role(P2P_ROLE_DISABLE);
 }

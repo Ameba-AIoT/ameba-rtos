@@ -19,20 +19,6 @@
 #include <rtk_bt_le_gap.h>
 #include <rtk_bt_le_audio.h>
 
-_WEAK uint16_t rtk_bt_bap_unicast_server_cfg(uint8_t channel)
-{
-	(void)channel;
-	AT_PRINTK("[ATBE] bap unicast server not support cfg");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_bap_broadcast_sink_cfg(uint8_t channel)
-{
-	(void)channel;
-	AT_PRINTK("[ATBE] bap broadcast sink not support cfg");
-	return -1;
-}
-
 static int atcmd_bt_bap_broadcast_source_start(int argc, char **argv)
 {
 	(void)argc;
@@ -63,12 +49,8 @@ static int atcmd_bt_bap_broadcast_source_stop(int argc, char **argv)
 
 static int atcmd_bt_bap_broadcast_source_qos_cfg(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_audio_qos_cfg_type_t qos_type;
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] wrong input param number %d, should be 1 \r\n", argc);
-		return -1;
-	}
 
 	qos_type = str_to_int(argv[0]);
 
@@ -90,12 +72,9 @@ static int atcmd_bt_bap_broadcast_source_qos_cfg(int argc, char **argv)
 
 static int atcmd_bt_bap_ext_scan(int argc, char **argv)
 {
+	(void)argc;
 	bool enable = false;
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BAP escan op failed! wrong args num!");
-		return -1;
-	}
 	enable = (bool)str_to_int(argv[0]);
 	if (rtk_bt_bap_ext_scan(enable)) {
 		AT_PRINTK("[ATBC] BAP ext scan fail \r\n");
@@ -108,12 +87,9 @@ static int atcmd_bt_bap_ext_scan(int argc, char **argv)
 
 static int atcmd_bt_bap_broadcast_sink_sync_start(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_bap_bass_scan_dev_info_t info = {0};
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] BAP broadcast sink op failed! wrong args num!");
-		return -1;
-	}
 	info.adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)info.adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	if (rtk_bt_bap_broadcast_sync_start(&info)) {
@@ -127,12 +103,9 @@ static int atcmd_bt_bap_broadcast_sink_sync_start(int argc, char **argv)
 
 static int atcmd_bt_bap_broadcast_sink_sync_term(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_addr_t addr = {0};
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] BAP broadcast sink op failed! wrong args num!");
-		return -1;
-	}
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN);
 	if (rtk_bt_bap_broadcast_sync_term(&addr)) {
@@ -144,14 +117,12 @@ static int atcmd_bt_bap_broadcast_sink_sync_term(int argc, char **argv)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
 static int atcmd_bt_bap_broadcast_sink_cfg(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t channel = 0;
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BAP broadcast sink op failed! wrong args num!");
-		return -1;
-	}
 	if (strcmp(argv[0], "left") == 0) {
 		/* RTK_BT_LE_AUDIO_LEFT */
 		channel = 1;
@@ -173,17 +144,15 @@ static int atcmd_bt_bap_broadcast_sink_cfg(int argc, char **argv)
 
 	return 0;
 }
+#endif
 
 static int atcmd_bt_bap_bass_scan(int argc, char **argv)
 {
+	(void)argc;
 	bool enable = false;
 	bool remote_scan_enable = false;
 	uint8_t group_idx = 0;
 
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] BAP bap op failed! wrong args num!");
-		return -1;
-	}
 	enable = (bool)str_to_int(argv[0]);
 	remote_scan_enable = (bool)str_to_int(argv[1]);
 	group_idx = (uint8_t)str_to_int(argv[2]);
@@ -198,12 +167,9 @@ static int atcmd_bt_bap_bass_scan(int argc, char **argv)
 
 static int atcmd_bt_broadcast_assistant_sync_start(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_bap_bass_scan_dev_info_t info = {0};
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] BAP broadcast assistant op failed! wrong args num!");
-		return -1;
-	}
 	info.adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)info.adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	if (rtk_bt_bap_broadcast_assistant_sync_start(&info)) {
@@ -217,12 +183,9 @@ static int atcmd_bt_broadcast_assistant_sync_start(int argc, char **argv)
 
 static int atcmd_bt_broadcast_assistant_sync_term(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_addr_t addr = {0};
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] BAP broadcast assistant op failed! wrong args num!");
-		return -1;
-	}
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN);
 	if (rtk_bt_bap_broadcast_assistant_sync_term(&addr)) {
@@ -236,13 +199,10 @@ static int atcmd_bt_broadcast_assistant_sync_term(int argc, char **argv)
 
 static int atcmd_bt_broadcast_assistant_reception_start(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_addr_t addr = {0};
 	uint8_t group_idx = 0;
 
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] BAP broadcast assistant op failed! wrong args num!");
-		return -1;
-	}
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN);
 	group_idx = (uint8_t)str_to_int(argv[2]);
@@ -257,13 +217,10 @@ static int atcmd_bt_broadcast_assistant_reception_start(int argc, char **argv)
 
 static int atcmd_bt_broadcast_assistant_reception_stop(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_addr_t addr = {0};
 	uint8_t group_idx = 0;
 
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] BAP broadcast assistant op failed! wrong args num!");
-		return -1;
-	}
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN);
 	group_idx = (uint8_t)str_to_int(argv[2]);
@@ -278,13 +235,10 @@ static int atcmd_bt_broadcast_assistant_reception_stop(int argc, char **argv)
 
 static int atcmd_bt_broadcast_assistant_reception_remove(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_addr_t addr = {0};
 	uint8_t group_idx = 0;
 
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] BAP broadcast assistant op failed! wrong args num!");
-		return -1;
-	}
 	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN);
 	group_idx = (uint8_t)str_to_int(argv[2]);
@@ -299,13 +253,10 @@ static int atcmd_bt_broadcast_assistant_reception_remove(int argc, char **argv)
 
 static int atcmd_bt_bap_unicast_client_start(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t group_idx = 0;
 	uint8_t play_mode = 0;
 
-	if (argc != 2) {
-		AT_PRINTK("[ATBC] BAP unicast client op failed! wrong args num!");
-		return -1;
-	}
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	play_mode = (uint8_t)str_to_int(argv[1]);
 	if (rtk_bt_bap_unicast_client_start(group_idx, (rtk_bt_le_audio_play_mode_t)play_mode)) {
@@ -319,12 +270,9 @@ static int atcmd_bt_bap_unicast_client_start(int argc, char **argv)
 
 static int atcmd_bt_bap_unicast_client_stop(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t group_idx = 0;
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BAP unicast client op failed! wrong args num!");
-		return -1;
-	}
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	if (rtk_bt_bap_unicast_client_stop(group_idx)) {
 		AT_PRINTK("[ATBC] BAP unicast client stop fail \r\n");
@@ -337,12 +285,9 @@ static int atcmd_bt_bap_unicast_client_stop(int argc, char **argv)
 
 static int atcmd_bt_bap_unicast_client_release(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t group_idx = 0;
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BAP unicast client op failed! wrong args num!");
-		return -1;
-	}
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	if (rtk_bt_bap_unicast_client_release(group_idx)) {
 		AT_PRINTK("[ATBC] BAP unicast client release fail \r\n");
@@ -355,12 +300,8 @@ static int atcmd_bt_bap_unicast_client_release(int argc, char **argv)
 
 static int atcmd_bt_bap_unicast_client_prefer_qos_cfg(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_audio_qos_cfg_type_t prefer_qos_type;
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] input parameter number should be 1 \r\n");
-		return -1;
-	}
 
 	prefer_qos_type = (rtk_bt_le_audio_qos_cfg_type_t)str_to_int(argv[0]);
 
@@ -382,12 +323,8 @@ static int atcmd_bt_bap_unicast_client_prefer_qos_cfg(int argc, char **argv)
 
 static int atcmd_bt_bap_unicast_client_ase_target_qos_cfg(int argc, char **argv)
 {
+	(void)argc;
 	rtk_bt_le_audio_ascs_ase_target_latency_t target_qos;
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] input parameter number should be 1 \r\n");
-		return -1;
-	}
 
 	target_qos = (rtk_bt_le_audio_ascs_ase_target_latency_t)str_to_int(argv[0]);
 
@@ -408,14 +345,12 @@ static int atcmd_bt_bap_unicast_client_ase_target_qos_cfg(int argc, char **argv)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
 static int atcmd_bt_bap_unicast_server_cfg(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t channel = 0;
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BAP unicast server op failed! wrong args num!");
-		return -1;
-	}
 	if (strcmp(argv[0], "left") == 0) {
 		/* RTK_BT_LE_AUDIO_LEFT */
 		channel = 1;
@@ -437,29 +372,32 @@ static int atcmd_bt_bap_unicast_server_cfg(int argc, char **argv)
 
 	return 0;
 }
+#endif
 
 static const cmd_table_t bap_broadcast_source_cmd_table[] = {
-	{"start",       atcmd_bt_bap_broadcast_source_start,       1, 2},
-	{"stop",        atcmd_bt_bap_broadcast_source_stop,        1, 2},
+	{"start",       atcmd_bt_bap_broadcast_source_start,       1, 1},
+	{"stop",        atcmd_bt_bap_broadcast_source_stop,        1, 1},
 	{"qos_cfg",     atcmd_bt_bap_broadcast_source_qos_cfg,     2, 2},
 	{NULL,},
 };
 
 static const cmd_table_t bap_broadcast_sink_cmd_table[] = {
-	{"escan",       atcmd_bt_bap_ext_scan,                      1, 2},
-	{"sync_start",  atcmd_bt_bap_broadcast_sink_sync_start,     1, 3},
-	{"sync_term",   atcmd_bt_bap_broadcast_sink_sync_term,      1, 3},
-	{"cfg",         atcmd_bt_bap_broadcast_sink_cfg,            1, 2},
+	{"escan",       atcmd_bt_bap_ext_scan,                      2, 2},
+	{"sync_start",  atcmd_bt_bap_broadcast_sink_sync_start,     3, 3},
+	{"sync_term",   atcmd_bt_bap_broadcast_sink_sync_term,      3, 3},
+#if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
+	{"cfg",         atcmd_bt_bap_broadcast_sink_cfg,            2, 2},
+#endif
 	{NULL,},
 };
 
 static const cmd_table_t bap_broadcast_assistant_cmd_table[] = {
-	{"bass_scan",         atcmd_bt_bap_bass_scan,                        1, 4},
-	{"sync_start",        atcmd_bt_broadcast_assistant_sync_start,       1, 3},
-	{"sync_term",         atcmd_bt_broadcast_assistant_sync_term,        1, 3},
-	{"reception_start",   atcmd_bt_broadcast_assistant_reception_start,  1, 4},
-	{"reception_stop",    atcmd_bt_broadcast_assistant_reception_stop,   1, 4},
-	{"reception_remove",  atcmd_bt_broadcast_assistant_reception_remove, 1, 4},
+	{"bass_scan",         atcmd_bt_bap_bass_scan,                        4, 4},
+	{"sync_start",        atcmd_bt_broadcast_assistant_sync_start,       3, 3},
+	{"sync_term",         atcmd_bt_broadcast_assistant_sync_term,        3, 3},
+	{"reception_start",   atcmd_bt_broadcast_assistant_reception_start,  4, 4},
+	{"reception_stop",    atcmd_bt_broadcast_assistant_reception_stop,   4, 4},
+	{"reception_remove",  atcmd_bt_broadcast_assistant_reception_remove, 4, 4},
 	{NULL,},
 };
 
@@ -468,26 +406,24 @@ static const cmd_table_t bap_scan_delegate_cmd_table[] = {
 };
 
 static const cmd_table_t bap_unicast_client_cmd_table[] = {
-	{"start",       atcmd_bt_bap_unicast_client_start,                1, 3},
-	{"escan",       atcmd_bt_bap_ext_scan,                            1, 2},
-	{"stop",        atcmd_bt_bap_unicast_client_stop,                 1, 2},
-	{"release",     atcmd_bt_bap_unicast_client_release,              1, 2},
+	{"start",       atcmd_bt_bap_unicast_client_start,                3, 3},
+	{"escan",       atcmd_bt_bap_ext_scan,                            2, 2},
+	{"stop",        atcmd_bt_bap_unicast_client_stop,                 2, 2},
+	{"release",     atcmd_bt_bap_unicast_client_release,              2, 2},
 	{"session_qos", atcmd_bt_bap_unicast_client_prefer_qos_cfg,       2, 2},
 	{"ase_qos",     atcmd_bt_bap_unicast_client_ase_target_qos_cfg,   2, 2},
 	{NULL,},
 };
 
 static const cmd_table_t bap_unicast_server_cmd_table[] = {
-	{"cfg",         atcmd_bt_bap_unicast_server_cfg,          1, 2},
+#if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
+	{"cfg",         atcmd_bt_bap_unicast_server_cfg,          2, 2},
+#endif
 	{NULL,},
 };
 
 int atcmd_bt_bap_cmd(int argc, char *argv[])
 {
-	if (argc < 2) {
-		AT_PRINTK("[%s]Error: bap atcmd should have at least 2 parameters broadcast/unicast and role !!!\r\n", __func__);
-		return -1;
-	}
 	if (strcmp(argv[0], "broadcast") == 0) {
 		if (strcmp(argv[1], "source") == 0) {
 			AT_PRINTK("[ATBC] Set bap broadcast source");

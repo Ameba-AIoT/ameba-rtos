@@ -8,9 +8,10 @@
 #include <stdbool.h>
 #include "ameba_soc.h"
 #include "hci_uart.h"
-#include "hci_dbg.h"
+#include "bt_debug.h"
 #include "hal_platform.h"
 #include "hci_platform.h"
+#include "hci/hci_common.h"
 
 #define HCI_UART_DEV             (UART3_DEV)
 #define HCI_UART_IRQ             (UART3_BT_IRQ)
@@ -54,7 +55,7 @@ void amebalite_uart_bridge_open(bool flag)
 	if (amebalite_uart) {
 		amebalite_uart->bridge_flag = flag;
 	} else {
-		HCI_ERR("amebalite_uart is NULL!");
+		BT_LOGE("amebalite_uart is NULL!\r\n");
 	}
 }
 
@@ -71,7 +72,7 @@ void amebalite_uart_hci_to_bridge(uint8_t rc)
 static uint8_t amebalite_uart_set_bdrate(uint32_t baudrate)
 {
 	UART_SetBaud(HCI_UART_DEV, baudrate);
-	HCI_INFO("Set baudrate to %ld success!", baudrate);
+	BT_LOGA("Set baudrate to %d success!\r\n", baudrate);
 	return HCI_SUCCESS;
 }
 
@@ -104,28 +105,6 @@ static inline uint8_t amebalite_uart_irq_rx_ready(void)
 static inline uint8_t amebalite_uart_irq_is_pending(void)
 {
 	return (amebalite_uart_irq_tx_ready() | amebalite_uart_irq_rx_ready());
-}
-
-static uint32_t cal_bit_shift(uint32_t Mask)
-{
-	uint32_t i;
-	for (i = 0; i < 31; i++) {
-		if (((Mask >> i) & 0x1) == 1) {
-			break;
-		}
-	}
-	return (i);
-}
-
-static void set_reg_value(uint32_t reg_address, uint32_t Mask, uint32_t val)
-{
-	uint32_t shift = 0;
-	uint32_t data = 0;
-	data = HAL_READ32(reg_address, 0);
-	shift = cal_bit_shift(Mask);
-	data = ((data & (~Mask)) | (val << shift));
-	HAL_WRITE32(reg_address, 0, data);
-	data = HAL_READ32(reg_address, 0);
 }
 
 static inline void transmit_chars(void)
@@ -186,7 +165,7 @@ static inline void receive_chars(void)
 		if (!amebalite_uart->rx_disabled && amebalite_uart_rx_to_write_space() < HCI_UART_RX_DISABLE_SIZE) {
 			UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, DISABLE);
 			amebalite_uart->rx_disabled = 1;
-			HCI_INFO("amebalite_uart rx disable!");
+			BT_LOGA("amebalite_uart rx disable!\r\n");
 		}
 
 		if (amebalite_uart->rx_ind) {
@@ -236,7 +215,7 @@ static uint32_t amebalite_uart_irq(void *data)
 static uint16_t amebalite_uart_send(uint8_t *buf, uint16_t len)
 {
 	if (!amebalite_uart) {
-		HCI_ERR("amebalite_uart is NULL!");
+		BT_LOGE("amebalite_uart is NULL!\r\n");
 		return 0;
 	}
 
@@ -248,7 +227,7 @@ static uint16_t amebalite_uart_send(uint8_t *buf, uint16_t len)
 
 	if (amebalite_uart->tx_done_sem) {
 		if (osif_sem_take(amebalite_uart->tx_done_sem, 0xFFFFFFFF) == false) {
-			HCI_ERR("amebalite_uart->tx_done_sem take fail!");
+			BT_LOGE("amebalite_uart->tx_done_sem take fail!\r\n");
 			return 0;
 		}
 	}
@@ -277,7 +256,7 @@ static uint16_t amebalite_uart_read(uint8_t *buf, uint16_t len)
 	if (amebalite_uart->rx_disabled && amebalite_uart_rx_to_read_space() < HCI_UART_RX_ENABLE_SIZE) {
 		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
 		amebalite_uart->rx_disabled = 0;
-		HCI_INFO("amebalite_uart rx enable!");
+		BT_LOGA("amebalite_uart rx enable!\r\n");
 	}
 
 	return read_len;
@@ -300,7 +279,7 @@ static uint8_t amebalite_uart_open(void)
 	if (!amebalite_uart) {
 		amebalite_uart = (struct amebalite_uart_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct amebalite_uart_t));
 		if (!amebalite_uart) {
-			HCI_ERR("amebalite_uart is NULL!");
+			BT_LOGE("amebalite_uart is NULL!\r\n");
 			return HCI_FAIL;
 		}
 		memset(amebalite_uart, 0, sizeof(struct amebalite_uart_t));
@@ -308,7 +287,7 @@ static uint8_t amebalite_uart_open(void)
 	if (!amebalite_uart->ring_buffer) {
 		amebalite_uart->ring_buffer = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, HCI_UART_RX_BUF_SIZE, 4);
 		if (!amebalite_uart->ring_buffer) {
-			HCI_ERR("amebalite_uart->ring_buffer is NULL!");
+			BT_LOGE("amebalite_uart->ring_buffer is NULL!\r\n");
 			return HCI_FAIL;
 		}
 		memset(amebalite_uart->ring_buffer, 0, sizeof(HCI_UART_RX_BUF_SIZE));
@@ -319,7 +298,7 @@ static uint8_t amebalite_uart_open(void)
 	amebalite_uart->rx_disabled = 0;
 
 	if (osif_sem_create(&amebalite_uart->tx_done_sem, 0, 1) == false) {
-		HCI_ERR("amebalite_uart->tx_done_sem create fail!");
+		BT_LOGE("amebalite_uart->tx_done_sem create fail!\r\n");
 		return HCI_FAIL;
 	}
 
@@ -360,7 +339,7 @@ static uint8_t amebalite_uart_open(void)
 static uint8_t amebalite_uart_close(void)
 {
 	if (!amebalite_uart) {
-		HCI_ERR("amebalite_uart is NULL!");
+		BT_LOGE("amebalite_uart is NULL!\r\n");
 		return HCI_FAIL;
 	}
 
@@ -375,7 +354,7 @@ static uint8_t amebalite_uart_close(void)
 static uint8_t amebalite_uart_free(void)
 {
 	if (!amebalite_uart) {
-		HCI_ERR("amebalite_uart is NULL!");
+		BT_LOGE("amebalite_uart is NULL!\r\n");
 		return HCI_FAIL;
 	}
 

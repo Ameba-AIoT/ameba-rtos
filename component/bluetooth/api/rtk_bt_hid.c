@@ -39,10 +39,6 @@ uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -56,10 +52,6 @@ uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
 uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -75,10 +67,6 @@ uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t le
 {
 	uint16_t ret = 0;
 	rtk_bt_hid_input_data_t data_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr || !data) {
 		return RTK_BT_ERR_POINTER_INVALID;

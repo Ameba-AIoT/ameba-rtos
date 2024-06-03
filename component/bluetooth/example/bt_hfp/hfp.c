@@ -909,7 +909,6 @@ static rtk_bt_hfp_hf_conf_t demo_hf_conf = {
 	.hf_supported_codecs = RTK_BT_HFP_HF_CODEC_TYPE_CVSD
 };
 
-extern bool rtk_bt_pre_enable(void);
 /**
  * @brief  process hfp main init/ deinit.
  * @param  enable[in]: 1: init. 0 deinit
@@ -927,10 +926,7 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 			printf("%s Already init! \r\n", __func__);
 			return -1;
 		}
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
-			return -1;
-		}
+
 		//set GAP configuration
 		bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
 											RTK_BT_PROFILE_SDP;

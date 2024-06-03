@@ -249,11 +249,14 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	ret = llhw_wifi_scan_abort(0);
-	if (ret) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
-		return -EPERM;
+	if (!global_idev.mp_fw) {
+		ret = llhw_wifi_scan_abort(0);
+		if (ret) {
+			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
+			return -EPERM;
+		}
 	}
+
 	if (global_idev.mlme_priv.pscan_req_global) {
 		memset(&info, 0, sizeof(info));;
 		info.aborted = 1;
@@ -271,8 +274,11 @@ int rtw_ndev_open_ap(struct net_device *pnetdev)
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
 	rtw_netdev_priv_is_on(pnetdev) = true;
-	/* if2 init(SW + part of HW) */
-	llhw_wifi_init_ap();
+
+	if (!global_idev.mp_fw) {
+		/* if2 init(SW + part of HW) */
+		llhw_wifi_init_ap();
+	}
 
 	netif_tx_start_all_queues(pnetdev);
 	netif_tx_wake_all_queues(pnetdev);
@@ -287,8 +293,10 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 	netif_tx_stop_all_queues(pnetdev);
 	netif_carrier_off(pnetdev);
 
-	/* if2 deinit (SW) */
-	llhw_wifi_deinit_ap();
+	if (!global_idev.mp_fw) {
+		/* if2 deinit (SW) */
+		llhw_wifi_deinit_ap();
+	}
 	rtw_netdev_priv_is_on(pnetdev) = false;
 
 	return 0;
@@ -466,7 +474,6 @@ exit:
 int rtw_ndev_alloc(void)
 {
 	int i, ret = false;
-	/* TODO: Customer names, get them from dts instead. */
 	struct net_device *ndev = NULL;
 	struct wireless_dev *wdev;
 
@@ -489,7 +496,6 @@ int rtw_ndev_alloc(void)
 		}
 		wdev->wiphy = global_idev.pwiphy_global;
 		wdev->netdev = ndev;
-		/* TODO: iftype. */
 		wdev->iftype = (i ? NL80211_IFTYPE_AP : NL80211_IFTYPE_STATION);
 		ndev->ieee80211_ptr = wdev;
 		global_idev.pwdev_global[i] = wdev;

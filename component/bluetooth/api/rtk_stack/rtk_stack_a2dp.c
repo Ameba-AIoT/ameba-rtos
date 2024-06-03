@@ -25,6 +25,7 @@
 rtk_bt_a2dp_media_codec_sbc_t rtk_codec_sbc = {0};
 rtk_bt_a2dp_media_codec_aac_t rtk_codec_aac = {0};
 static uint8_t a2dp_role;
+static uint8_t a2dp_remote_role;
 static uint8_t remote_addr[6] = {0};
 extern T_APP_DB app_db;
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
@@ -54,7 +55,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 	case BT_EVENT_SDP_ATTR_INFO: {
 		rtk_bt_a2dp_sdp_attr_info_t *p_info = NULL;
 		T_BT_SDP_ATTR_INFO *sdp_info = &param->sdp_attr_info.info;
-		bt_a2dp_connect_req(param->sdp_attr_info.bd_addr, sdp_info->protocol_version);
+		bt_a2dp_connect_req(param->sdp_attr_info.bd_addr, sdp_info->protocol_version, a2dp_remote_role);
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_A2DP, RTK_BT_A2DP_EVT_SDP_ATTR_INFO, sizeof(rtk_bt_a2dp_sdp_attr_info_t));
 			if (!p_evt) {
@@ -544,9 +545,12 @@ static uint16_t bt_stack_a2dp_stream_data_send(void *param)
 	}
 	do {
 		if (bt_a2dp_stream_data_send(p_data_send_t->bd_addr,
+									 p_data_send_t->seq_num,
+									 p_data_send_t->time_stamp,
 									 p_data_send_t->frame_num,
 									 p_data_send_t->frame_buf,
-									 p_data_send_t->len)) {
+									 p_data_send_t->len,
+									 p_data_send_t->flush)) {
 			return RTK_BT_OK;
 		}
 		osif_delay(1);
@@ -599,14 +603,17 @@ uint16_t bt_stack_a2dp_init(uint8_t role)
 {
 	printf("[A2DP]app_a2dp_init\n");
 
-	if (!bt_a2dp_init(1, 280)) {
+	if (!bt_a2dp_init(1, 280, BT_A2DP_CAPABILITY_MEDIA_TRANSPORT | \
+					  BT_A2DP_CAPABILITY_CONTENT_PROTECTION | \
+					  BT_A2DP_CAPABILITY_MEDIA_CODEC | \
+					  BT_A2DP_CAPABILITY_DELAY_REPORTING)) {
 		printf("[A2DP]bt_a2dp_init FAIL\n");
 		return RTK_BT_FAIL;
 	}
-	bt_a2dp_role_set((T_BT_A2DP_ROLE)role);
 	{
 		T_BT_A2DP_STREAM_ENDPOINT sep;
 
+		sep.role = (T_BT_A2DP_ROLE)role;
 		sep.codec_type = BT_A2DP_CODEC_TYPE_SBC;
 		sep.u.codec_sbc.sampling_frequency_mask = rtk_codec_sbc.sampling_frequency_mask;
 		sep.u.codec_sbc.channel_mode_mask = rtk_codec_sbc.channel_mode_mask;
@@ -621,6 +628,11 @@ uint16_t bt_stack_a2dp_init(uint8_t role)
 		}
 	}
 	a2dp_role = (T_BT_A2DP_ROLE)role;
+	if (a2dp_role == BT_A2DP_ROLE_SRC) {
+		a2dp_remote_role = BT_A2DP_ROLE_SNK;
+	} else {
+		a2dp_remote_role = BT_A2DP_ROLE_SRC;
+	}
 #if 0
 	{
 		T_BT_A2DP_STREAM_ENDPOINT sep;

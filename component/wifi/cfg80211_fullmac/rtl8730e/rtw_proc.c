@@ -132,6 +132,13 @@ static int proc_read_curr_ant(struct seq_file *m, void *v)
 	return ret;
 }
 
+
+static int proc_read_mp_fw(struct seq_file *m, void *v)
+{
+	seq_printf(m, "%d\n", global_idev.mp_fw);
+
+	return 0;
+}
 /*
 * rtw_ndev_ap_proc
 */
@@ -140,6 +147,7 @@ const struct rtw_proc_hdl ndev_ap_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("edcca_mode", proc_read_edcca_mode, proc_write_edcca_mode),
 	RTW_PROC_HDL_SSEQ("antdiv_mode", proc_read_antdiv_mode, NULL),
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
+	RTW_PROC_HDL_SSEQ("mp_fw", proc_read_mp_fw, NULL),
 };
 
 const int ndev_ap_proc_hdls_num = sizeof(ndev_ap_proc_hdls) / sizeof(struct rtw_proc_hdl);
@@ -293,8 +301,12 @@ const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("edcca_mode", proc_read_edcca_mode, proc_write_edcca_mode),
 	RTW_PROC_HDL_SSEQ("antdiv_mode", proc_read_antdiv_mode, NULL),
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
+	RTW_PROC_HDL_SSEQ("mp_fw", proc_read_mp_fw, NULL),
+#ifdef CONFIG_FULLMAC_HCI_SDIO
 #if defined(CONFIG_OFFLOAD_MDNS_V4) || defined(CONFIG_OFFLOAD_MDNS_V6)
 	RTW_PROC_HDL_SSEQ("mdns_offload", NULL, proc_set_mdns_offload),
+#endif
+	RTW_PROC_HDL_SSEQ("wow_mode", NULL, proc_set_wow_mode),
 #endif
 };
 

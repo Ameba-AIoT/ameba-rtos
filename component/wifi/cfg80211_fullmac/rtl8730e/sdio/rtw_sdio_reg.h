@@ -46,15 +46,11 @@
 #define SDIO_REG_RX_AGG_CFG					0xD8 // 2 bytes, SDIO bus Rx Aggregation config register
 
 //READ-ONLY for driver, Modify by FW
-#define SDIO_REG_RXBD_NUM					0x1B4 // 2 bytes
-#define SDIO_REG_CPU_INT_MASK				0x1C0 // 2 bytes
-#define SDIO_REG_CPU_INT						0x1C2 // 2 bytes
-#define SDIO_REG_CCPWM						0x1C4 // 1 bytes, sync with HCPWM
-#define SDIO_REG_CCPWM2						0x1C6 // 1 bytes, sync with HCPWM2
-#define SDIO_REG_AHB_DMA_CTRL				0x1D4 // 4 bytes
-#define SDIO_REG_TXBUF_UNIT_SZ				0x1D9 // 1 bytes
-#define SDIO_REG_FREE_RXBD_CNT				0x1DA // 2 bytes
-
+#define SPDIO_REG_TXBD_NUM					0x1A4
+#define SPDIO_REG_TXBD_WPTR					0x1A8
+#define SPDIO_REG_TXBD_RPTR					0x1AC
+#define SPDIO_REG_RXBD_NUM					0x1B4 // 2 bytes
+#define SPDIO_REG_TXBUF_UNIT_SZ				0x1D9 // 1 bytes
 
 /************************************************
 *
@@ -123,4 +119,10 @@
 #define SDIO_HCPWM_RPS_ST			(BIT(2))
 #define SDIO_HCPWM_WWLAN			(BIT(3))
 #define SDIO_HCPWM_TOGGLE			(BIT(7))
+
+// Register RPWM2
+#define RPWM2_ACT_BIT			(0x00000001 << 0)	// Active
+#define RPWM2_CG_BIT			(0x00000001 << 1)	// Clock Gated
+#define RPWM2_TOGGLE_BIT		(0x00000001 << 15)	// Toggle bit
+
 #endif

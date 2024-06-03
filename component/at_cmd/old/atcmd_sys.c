@@ -363,7 +363,7 @@ log_item_t at_sys_items[] = {
 	{"ATSC", fATSC, {NULL, NULL}},	// Clear OTA signature
 	{"ATSR", fATSR, {NULL, NULL}},	// Recover OTA signature
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #if (configGENERATE_RUN_TIME_STATS == 1)
 	{"ATSP", fATSP, {NULL, NULL}},
 //	{"ATSS", fATSS, {NULL, NULL}},	// Show CPU stats==》改成开始和停止输出信息，以及秒级间隔。

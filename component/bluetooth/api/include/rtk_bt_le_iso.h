@@ -1251,8 +1251,7 @@ uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle, rtk_bt_le_iso_d
 /**
  * @fn        uint16_t rtk_bt_le_iso_data_send(rtk_bt_le_iso_data_send_info_t *info)
  * @brief     Send ISO data [ASYNC/SYNC].
- *            If sending request operation is success, the result will be returned by RTK_BT_LE_ISO_EVT_DATA_SEND_DONE
- *            when enable RTK_BT_LE_ISO_DATA_SEND_ASYNC, otherwise the result will be returned when the API is done.
+ *            If sending request operation is success, the result will be returned when the API is done.
  * @param[in] info: The info of iso send data
  * @return
  *            - RTK_BT_OK  : Succeed

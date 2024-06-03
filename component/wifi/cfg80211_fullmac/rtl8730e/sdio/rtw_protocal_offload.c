@@ -426,6 +426,36 @@ error:
 
 }
 
+ssize_t proc_set_wow_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+{
+	char tmp[10] = {0};
+	struct inic_sdio *priv = &inic_sdio_priv;
+
+	if (NULL == buffer) {
+		dev_err(global_idev.fullmac_dev, "input buffer is NULL");
+		return -EFAULT;
+	}
+
+	if (count < 1) {
+		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
+		return -EFAULT;
+	}
+
+	if (buffer && !copy_from_user(tmp, buffer, count)) {
+		if (memcmp(tmp, "enable", count - 1) == 0) {
+			dev_info(global_idev.fullmac_dev, "enable wow_mode");
+			rtw_sdio_suspend(&priv->func->dev);
+		} else if (memcmp(tmp, "disable", count - 1) == 0) {
+			dev_info(global_idev.fullmac_dev, "disable wow_mode");
+			rtw_sdio_resume(&priv->func->dev);
+		} else {
+			dev_err(global_idev.fullmac_dev, "should input enable or disable");
+		}
+	}
+
+	return count;
+}
+
 ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct H2C_WAROFFLOAD_PARM offload_parm = {0};

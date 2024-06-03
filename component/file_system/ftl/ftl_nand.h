@@ -120,7 +120,7 @@ typedef enum {
 
 #define NAND_FTL_PRINTF(LEVEL, pFormat, ...)     do {\
    if (LEVEL <= NAND_FTL_PRINT_LEVEL)\
-        printf("["#LEVEL"]:"pFormat, ##__VA_ARGS__);\
+        RTK_LOGA(#LEVEL, pFormat"\r\n", ##__VA_ARGS__);\
 }while(0)
 
 

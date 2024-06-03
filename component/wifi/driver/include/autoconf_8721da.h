@@ -105,11 +105,9 @@
 
 /*Wifi verification*/
 #if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined (CONFIG_WIFI_VERIFY_ASIC)
-#define DISABLE_BB_RF 0
+// #define DISABLE_BB_RF
 #elif defined (CONFIG_WIFI_VERIFY_PSPHY)
-#define DISABLE_BB_RF 1
-#else
-#define DISABLE_BB_RF 0
+#define DISABLE_BB_RF
 #endif
 
 #ifdef CONFIG_WIFI_VERIFY
@@ -121,17 +119,19 @@
 
 #define RA_RX_ACK_RSSI
 
-//#define CONFIG_SPEAKER_TEST
-#ifdef CONFIG_SPEAKER_TEST
-//#define CONFIG_SPEAKER_TSF_INT
 //#define CONFIG_SPEAKER_ENCRYPT
-#endif
 
 //#define CONFIG_AUDIO_TSF
 /*************************** Config for MP_MODE *******************************/
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT
 #undef TX_SHORTCUT
+
+#define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
+//#define CONFIG_PHYDM_DEBUG_FUNCTION
+#endif
+
+#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W
@@ -143,12 +143,8 @@
 #undef RA_RX_ACK_RSSI
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_CSI
-
+#define DRV_RF_PWR_TBL_DISABLE
 #define DISABLE_FW
-
-#define CONFIG_PHYDM_CMD  /*disable it in normal driver,lite can save 172KB code size, smart need check*/
-#define CONFIG_PHYDM_MP_DISABLE
-//#define CONFIG_PHYDM_DEBUG_FUNCTION
 #endif
 
 #define DBG 0 /* for phydm debug */

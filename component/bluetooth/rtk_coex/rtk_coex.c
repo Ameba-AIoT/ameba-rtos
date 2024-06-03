@@ -323,21 +323,32 @@ static void bt_coex_handle_disconnection_complete_evt(uint8_t *pdata)
 	if (!p_conn) {
 		return;
 	}
-
-	if (p_conn->type == HCI_CONN_TYPE_CIS) {
-		bt_coex_update_profile_info(p_conn, PROFILE_LE_AUDIO, false);
-	}
-
-	if (!list_empty(&p_conn->profile_list)) {
-		plist = p_conn->profile_list.next;
-		while (plist != &p_conn->profile_list) {
-			p_profile = (rtk_bt_coex_profile_info_t *)plist;
-			bt_coex_update_profile_info(p_conn, p_profile->idx, false);
-			plist = plist->next;
-			list_del(&p_profile->list);
-			osif_mem_free(p_profile);
+	switch (p_conn->type) {
+	case HCI_CONN_TYPE_L2CAP:
+		if (!list_empty(&p_conn->profile_list)) {
+			plist = p_conn->profile_list.next;
+			while (plist != &p_conn->profile_list) {
+				p_profile = (rtk_bt_coex_profile_info_t *)plist;
+				bt_coex_update_profile_info(p_conn, p_profile->idx, false);
+				plist = plist->next;
+				list_del(&p_profile->list);
+				osif_mem_free(p_profile);
+			}
 		}
+		break;
+	case HCI_CONN_TYPE_SCO_ESCO:
+		bt_coex_update_profile_info(p_conn, PROFILE_SCO, false);
+		break;
+	case HCI_CONN_TYPE_LE:
+		bt_coex_update_profile_info(p_conn, PROFILE_HID, false);
+		break;
+	case HCI_CONN_TYPE_CIS:
+		bt_coex_update_profile_info(p_conn, PROFILE_LE_AUDIO, false);
+		break;
+	default:
+		break;
 	}
+
 	list_del(&p_conn->list);
 	osif_mem_free(p_conn);
 

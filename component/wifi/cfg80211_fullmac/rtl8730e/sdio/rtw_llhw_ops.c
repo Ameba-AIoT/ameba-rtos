@@ -722,13 +722,6 @@ int llhw_wifi_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
 
 	return ret;
 }
-
-#ifdef NAN_TODO
-int llhw_cfgvendor_nandow_entry(const void *data, int len)
-{
-
-}
-#endif
 #endif
 
 int llhw_wifi_set_pmf_mode(u8 pmf_mode)
@@ -841,18 +834,19 @@ int llhw_wifi_del_custom_ie(unsigned char wlan_idx)
 	return ret;
 }
 
-int llhw_wifi_update_custom_ie(u8 *ie, int ie_index)
+int llhw_wifi_update_custom_ie(u8 *ie, int ie_index, u8 type)
 {
 	int ret = 0;
 	u32 size = 0;
 	u8 *ptr, *param;
 
-	size = 2 + 2 + ie[1];
+	size = 3 + 2 + ie[1];
 	ptr = param = (u8 *)kzalloc(size, GFP_KERNEL);
 
 	ptr[0] = 1;
 	ptr[1] = (u8)ie_index;
-	ptr += 2;
+	ptr[2] = type;
+	ptr += 3;
 
 	memcpy(ptr, ie, 2 + ie[1]);
 
@@ -985,10 +979,7 @@ int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm)
 
 	memcpy(ptr, global_idev.ip_addr, RTW_IP_ADDR_LEN);
 	ptr += RTW_IP_ADDR_LEN;
-
-	/* TODO: copy IPv6 addr to send*/
 	ptr += IPv6_ALEN;
-
 	if (offload_parm->offload_en) {
 		if (offload_parm->sd_mdns_v4_rsp_en || offload_parm->sd_mdns_v4_wake_en ||
 			offload_parm->sd_mdns_v6_rsp_en || offload_parm->sd_mdns_v6_wake_en) {
@@ -1014,3 +1005,11 @@ int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm)
 	return ret;
 }
 
+int llhw_wifi_driver_is_mp(void)
+{
+	int ret = 0;
+
+	llhw_send_msg(INIC_API_WIFI_DRIVE_IS_MP, NULL, 0, (u8 *)&ret, sizeof(int));
+
+	return ret;
+}

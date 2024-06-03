@@ -16,9 +16,9 @@
 #include <atcmd_bt_impl.h>
 #include <rtk_bt_gap.h>
 
+#if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
 static int atcmd_bt_gap_ecfc(int argc, char **argv)
 {
-#if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
 	char *op = argv[0];
 
 	if (memcmp(op, "reg", 4) == 0) {
@@ -190,23 +190,14 @@ static int atcmd_bt_gap_ecfc(int argc, char **argv)
 	}
 
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("This platform NOT support ECFC!\r\n");
-	return -1;
-#endif
 }
+#endif
 
 static int atcmd_bt_gap_vendor_cmd_req(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_gap_vendor_cmd_param_t vendor_param = {0};
-
-	if (argc != 3) {
-		AT_PRINTK("[ATBC] GAP vendor cmd request failed, wrong args num");
-		return -1;
-	}
 
 	vendor_param.op = (uint16_t)str_to_int(argv[0]);
 
@@ -227,7 +218,9 @@ static int atcmd_bt_gap_vendor_cmd_req(int argc, char **argv)
 }
 
 static const cmd_table_t gap_cmd_table[] = {
+#if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
 	{"ecfc",          atcmd_bt_gap_ecfc,              2, 12},
+#endif
 	{"vendor_cmd",    atcmd_bt_gap_vendor_cmd_req,    4, 4},
 	{NULL,},
 };

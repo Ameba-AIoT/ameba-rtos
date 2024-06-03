@@ -5,6 +5,7 @@
 #*****************************************************************************#
 OBJS =
 
+CONFIG_DISPLAY ?= 1
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
@@ -57,7 +58,7 @@ clean:
 
 menuconfig:
 	make -C ./menuconfig/scripts/lxdialog clean all
-	$(CONFIG_SHELL) ./menuconfig/scripts/Menuconfig ./menuconfig/config.in
+	$(CONFIG_SHELL) ./menuconfig/scripts/Menuconfig ./menuconfig/config.in $(CONFIG_DISPLAY)
 	@if [ ! -f  ./menuconfig/.config ]; then \
 		echo; \
 		echo "You have not saved your config, please re-run make config"; \

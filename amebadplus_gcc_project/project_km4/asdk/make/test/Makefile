@@ -8,7 +8,7 @@ include $(MAKE_INCLUDE_GEN)
 #                               VARIABLES	                              #
 #*****************************************************************************#
 COMPONENT :=  
-ifneq ($(CONFIG_PER_TEST)_$(CONFIG_PER_TEST),)
+ifeq ($(CONFIG_PER_TEST),y)
 COMPONENT += verification
 COMPONENT_CLEAN += verification
 endif

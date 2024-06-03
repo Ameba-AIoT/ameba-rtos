@@ -66,7 +66,7 @@ extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 
 #if CONFIG_WLAN
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
@@ -1430,7 +1430,7 @@ log_item_t at_wifi_items[ ] = {
 #endif
 void at_wifi_init(void)
 {
-#if CONFIG_WLAN && !defined(CONFIG_MP_INCLUDED)
+#if CONFIG_WLAN && !defined(CONFIG_MP_SHRINK)
 	init_wifi_struct();
 #endif
 	log_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));

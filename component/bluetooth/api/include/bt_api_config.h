@@ -31,6 +31,8 @@ extern "C"
 #define RTK_BLE_SET_TX_QUEUE_NUM            0
 #define RTK_BLE_TX_SOF_EOF_INDICATION       0
 
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
@@ -79,6 +81,8 @@ extern "C"
 #endif
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
@@ -120,6 +124,8 @@ extern "C"
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
 
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
@@ -148,6 +154,8 @@ extern "C"
 #define RTK_BLE_SUPPORT                     1
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
@@ -176,6 +184,8 @@ extern "C"
 #define RTK_BLE_SUPPORT                     1
 #define RTK_BT_POWER_CONTROL_SUPPORT        1
 
+#define RTK_BLE_GATTS                       1
+#define RTK_BLE_GATTC                       1
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
@@ -200,13 +210,24 @@ extern "C"
  * Error Platform
  */
 #else
-#error Please choose a corret platform
+#error "Please choose a corret platform"
 #endif
 
 #if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
 #define RTK_BLE_ISO_CIS_SUPPORT             0
 #define RTK_BLE_ISO_BIS_SUPPORT             0
 #define RTK_BLE_ISO_SUPPORT                 (RTK_BLE_ISO_CIS_SUPPORT || RTK_BLE_ISO_BIS_SUPPORT)
+
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+#undef RTK_BLE_5_0_AE_ADV_SUPPORT
+#undef RTK_BLE_5_0_AE_SCAN_SUPPORT
+#undef RTK_BLE_5_0_PA_ADV_SUPPORT
+#undef RTK_BLE_5_0_PA_SYNC_SUPPORT
+#define RTK_BLE_5_0_AE_ADV_SUPPORT          1
+#define RTK_BLE_5_0_AE_SCAN_SUPPORT         1
+#define RTK_BLE_5_0_PA_ADV_SUPPORT          1
+#define RTK_BLE_5_0_PA_SYNC_SUPPORT         1
+#endif
 
 #if (defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT) || \
     (defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT) || \
@@ -256,12 +277,12 @@ extern "C"
 #if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST) && (defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT) || \
      (!defined(RTK_BLE_5_0_PA_ADV_SUPPORT) || !RTK_BLE_5_0_PA_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) || !RTK_BLE_5_0_PA_SYNC_SUPPORT))
-#error Please enable AE, AE Scan, PA, PA Sync for corret platform when enable ISO BIS!
+#error "Please enable AE, AE Scan, PA, PA Sync for corret platform when enable ISO BIS"
 #endif
 
 #if (defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT))
-#error Please enable AE, AE Scan for corret platform when enable LE AUDIO!
+#error "Please enable AE, AE Scan for corret platform when enable LE AUDIO"
 #endif
 
 #if (defined(CONFIG_AMEBASMART) && CONFIG_AMEBASMART) && defined(__ICCARM__) && (defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT)

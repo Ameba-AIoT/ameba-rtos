@@ -27,7 +27,7 @@ See the ApplicationNote chapter **Build Environment** from above links for a det
 * The toolchain will be intalled in `/opt/rtk-toolchain` by default. If an error "Error: No Toolchain in `/opt/rtk-toolchain/vsdk-10.3.1/linux/newlib`" encounters when building the project, please refer to ApplicationNote section **Installing Toolchain** for more details.
 * Linux platform is supported for now, Ubuntu version 16.04 64-bit or higher is required.
 * Windows built with VScode will be supported in the future.
-* Python version 3.7 or higher is required. Run `python --version` to check the version. If an error "Command 'python' not found" encounters, please run `sudo ln -s /usr/bin/python3 /usr/bin/python` to link `python3` to `python`.
+* Python version 3.7 or higher is required. Run `python --version` to check the version. If an error "Command `python` not found" encounters, please refer to ApplicationNote section **Preparing GCC Environment** install python3. If still error appears, please run `sudo ln -s /usr/bin/python3 /usr/bin/python` to create symbolic link from `/usr/bin/python3` to `/usr/bin/python`.
 
 ## Finding the Project
 
@@ -80,3 +80,4 @@ The image download only erase the flash fields with images programmed. If you wa
 # Feedback
 
 If you have any issues or suggestions during project development, please login [RealMCU](https://www.realmcu.com/en/Account/Login?ReturnUrl=%2FCommunity%2Fcima%2F3187aedd-cb0d-444b-aa0c-284fd82cc501) and give feedback.
+

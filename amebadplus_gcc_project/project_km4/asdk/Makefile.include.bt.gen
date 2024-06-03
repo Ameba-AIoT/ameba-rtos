@@ -18,7 +18,7 @@ IFLAGS += \
 	-I$(BLEDIR)/rtk_stack/inc/bluetooth/profile \
 	-I$(BLEDIR)/rtk_stack/inc/bluetooth/profile/client \
 	-I$(BLEDIR)/rtk_stack/inc/bluetooth/profile/server \
-	-I$(BLEDIR)/rtk_stack/platform/amebadplus/inc \
+	-I$(BLEDIR)/rtk_stack/platform/common \
 	-I$(BLEDIR)/rtk_stack/platform/amebadplus/lib \
 	-I$(BLEDIR)/rtk_stack/src/mesh/cmd \
 	-I$(BLEDIR)/rtk_stack/src/mesh/common \

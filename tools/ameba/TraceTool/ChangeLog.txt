@@ -65,3 +65,4 @@ ChangeLog:
 20240122  v2.1.30 Fix BT log loss issue
 20240425  v2.1.31 (1) Fix compiling warnings
 				  (2) Rename chips for internal version
+20240521  v2.1.32 Change ATWZ to AT+WLDBG

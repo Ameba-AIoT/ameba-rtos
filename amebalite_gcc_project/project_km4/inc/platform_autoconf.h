@@ -27,7 +27,9 @@
 /*
  * < CONFIG Shell CMD
  */
-#undef  CONFIG_NEW_ATCMD
+#define CONFIG_NEW_ATCMD 1
+#define CONFIG_ATCMD_IO_LOGUART 1
+#undef  CONFIG_ATCMD_IO_UART
 #undef  CONFIG_LONGER_CMD
 
 /*

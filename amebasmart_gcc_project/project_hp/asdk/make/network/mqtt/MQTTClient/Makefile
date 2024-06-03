@@ -6,6 +6,11 @@ include $(MAKE_INCLUDE_GEN)
 #                               VARIABLES	                              #
 #*****************************************************************************#
 DIR = $(BASEDIR)/component/network/mqtt/MQTTClient
+
+MODULE_IFLAGS               += -I$(FREERTOSDIR)/include/
+MODULE_IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/non_secure
+MODULE_IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/secure
+
 vpath %.c $(DIR)
 
 #*****************************************************************************#

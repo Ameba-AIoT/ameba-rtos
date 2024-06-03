@@ -123,7 +123,6 @@ void cmd_wifi_p2p_start(int argc, char **argv)
 	os_get_random((u8 *) &r, sizeof(r));
 	op_ch = 1 + (r % 3) * 5;
 #endif
-	wifi_off();
 	os_sleep(0, 20000);
 	wifi_on(RTW_MODE_P2P);
 	wifi_p2p_init(LwIP_GetMAC(0), go_intent, listen_ch, op_ch);
@@ -162,7 +161,6 @@ int cmd_wifi_p2p_auto_go_start(int argc, char **argv)
 void cmd_wifi_p2p_stop(int argc, char **argv)
 {
 	wifi_p2p_deinit();
-	wifi_off();
 }
 
 void cmd_p2p_listen(int argc, char **argv)

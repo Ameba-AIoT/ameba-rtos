@@ -93,12 +93,13 @@ int llhw_wifi_set_wpa_mode(rtw_wpa_mode wpa_mode);
 int llhw_wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 int llhw_wifi_add_custom_ie(const struct element **elem, u8 num, u16 type);
 int llhw_wifi_del_custom_ie(unsigned char wlan_idx);
-int llhw_wifi_update_custom_ie(u8 *ie, int ie_index);
+int llhw_wifi_update_custom_ie(u8 *ie, int ie_index, u8 type);
 int llhw_wifi_set_edcca_mode(u8 edcca_mode);
 int llhw_wifi_get_edcca_mode(u8 *edcca_mode);
 int llhw_wifi_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
 int llhw_wifi_set_country_code(char *cc);
 int llhw_wifi_get_country_code(struct country_code_table_t *table);
+int llhw_wifi_driver_is_mp(void);
 
 void *rtw_malloc(size_t size, dma_addr_t *paddr);
 void rtw_mfree(size_t size, void *vaddr, dma_addr_t paddr);
@@ -138,7 +139,11 @@ void rtw_set_wowlan_offload_ctrl(u32 value);
 void rtw_proxy_init(void);
 void rtw_proxy_mdns_parms_init(u8 is_set_default);
 ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+ssize_t proc_set_wow_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 void rtw_wow_prepare_mdns_para(u8 *pframe, u32 *plen);
+int rtw_sdio_suspend(struct device *dev);
+int rtw_sdio_resume(struct device *dev);
+int rtw_resume_common(struct inic_sdio *priv);
 
 #endif
 
