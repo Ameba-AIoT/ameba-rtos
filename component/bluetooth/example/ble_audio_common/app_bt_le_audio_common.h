@@ -212,6 +212,7 @@ typedef struct {
 	uint32_t last_decode_offset;
 	rtk_bt_le_audio_iso_data_path_direction_t path_direction;   /**< @ref rtk_bt_le_audio_iso_data_path_direction_t.*/
 	rtk_bt_le_audio_cfg_codec_t codec;                          /**< @ref rtk_bt_le_audio_cfg_codec_t*/
+	uint32_t time_stamp;
 } app_lea_iso_data_path_t;
 
 typedef struct {
@@ -668,36 +669,6 @@ app_bt_le_audio_sync_dev_info_t *app_bt_le_audio_sync_dev_list_find_by_idx(uint8
 uint16_t app_bt_le_audio_sync_dev_list_remove_all(void);
 uint16_t app_bt_le_audio_cmd_cfg(int argc, char *argv[], uint8_t *p_sound_channel, uint8_t *p_csis_neighbor_addr, uint8_t *p_device_name);
 #endif
-
-//for debug
-#define CONFIG_BT_APP_DEBUG 1
-
-#if defined(CONFIG_BT_APP_DEBUG) && CONFIG_BT_APP_DEBUG
-extern void *g_app_printf_mtx;
-enum {
-	BT_APP_ERROR, BT_APP_WARNING, BT_APP_INFO, BT_APP_DEBUG, BT_APP_DUMP
-};
-#define BT_APP_DEBUG_LEVEL  BT_APP_INFO
-#define BT_APP_PRINT(level,...) \
-    do { \
-        if (level <= BT_APP_DEBUG_LEVEL) { \
-            { \
-                if(g_app_printf_mtx) { osif_mutex_take(g_app_printf_mtx, BT_TIMEOUT_FOREVER);} \
-                printf("[LEA_APP] "); \
-                printf(__VA_ARGS__); \
-                if(g_app_printf_mtx) { osif_mutex_give(g_app_printf_mtx);} \
-            } \
-        } \
-    }while(0)
-void BT_APP_DUMPBUF(uint8_t level, const char *func, uint8_t *buf, uint16_t len);
-#else
-#define BT_APP_PRINT(level,...) \
-            do {\
-                printf("[APP] "); \
-                printf(__VA_ARGS__); \
-            } while(0)
-#define BT_APP_DUMPBUF(level, func, buf, len)  do {} while (0)
-#endif /* CONFIG_BT_APP_DEBUG */
 
 #ifdef __cplusplus
 }

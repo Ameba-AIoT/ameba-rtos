@@ -701,6 +701,7 @@ static rtk_bt_a2dp_media_codec_sbc_t codec_sbc = {
 
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
 static int16_t pcm_buffer[512] = {0};
+static uint16_t a2dp_demo_send_data_seq = 0;
 
 static void app_a2dp_src_send_data(void)
 {
@@ -714,9 +715,12 @@ static void app_a2dp_src_send_data(void)
 			if (penc_codec_buffer_t) {
 				memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
 				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+				data_send_t.seq_num = a2dp_demo_send_data_seq++;
 				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
 				data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+				data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
 				data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+				data_send_t.flush = false;
 				if (rtk_bt_a2dp_data_send(&data_send_t)) {
 					printf("[A2DP] data send fail \r\n");
 				} else {
@@ -735,6 +739,7 @@ static void app_a2dp_src_send_data(void)
 }
 #else
 static uint32_t pcm_offset = 0;
+static uint16_t a2dp_demo_send_data_seq = 0;
 
 static void app_a2dp_src_send_data(void)
 {
@@ -750,9 +755,12 @@ static void app_a2dp_src_send_data(void)
 				if (penc_codec_buffer_t) {
 					memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
 					memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+					data_send_t.seq_num = a2dp_demo_send_data_seq++;
 					data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
 					data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+					data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
 					data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+					data_send_t.flush = false;
 					if (rtk_bt_a2dp_data_send(&data_send_t)) {
 						printf("[A2DP] data send fail \r\n");
 					} else {
@@ -768,9 +776,12 @@ static void app_a2dp_src_send_data(void)
 				if (penc_codec_buffer_t) {
 					memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
 					memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+					data_send_t.seq_num = a2dp_demo_send_data_seq++;
 					data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
 					data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+					data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
 					data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+					data_send_t.flush = false;
 					if (rtk_bt_a2dp_data_send(&data_send_t)) {
 						printf("[A2DP] data send fail \r\n");
 					} else {
@@ -1760,7 +1771,6 @@ static void a2dp_demo_reconnect_timer_handle(void *arg)
 	}
 }
 
-extern bool rtk_bt_pre_enable(void);
 /**
  * @brief  process a2dp main init/ deinit.
  * @param  enable[in]: 1: init. 0 deinit
@@ -1776,10 +1786,6 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 	if (1 == enable) {
 		if (a2dp_demo_init_flag) {
 			printf("%s Already init! \r\n", __func__);
-			return -1;
-		}
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
 			return -1;
 		}
 		//set GAP configuration

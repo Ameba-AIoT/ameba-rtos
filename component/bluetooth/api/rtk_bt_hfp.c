@@ -52,10 +52,6 @@ uint16_t rtk_bt_hfp_connect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -69,10 +65,6 @@ uint16_t rtk_bt_hfp_connect(uint8_t *bd_addr)
 uint16_t rtk_bt_hfp_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -88,10 +80,6 @@ uint16_t rtk_bt_hfp_sco_connect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -105,10 +93,6 @@ uint16_t rtk_bt_hfp_sco_connect(uint8_t *bd_addr)
 uint16_t rtk_bt_hfp_sco_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -124,10 +108,6 @@ uint16_t rtk_bt_hfp_call_incoming(uint8_t *bd_addr, const char *call_num, uint8_
 {
 	uint16_t ret = 0;
 	rtk_bt_hfp_call_incoming_t call_incoming_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr || !call_num) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -153,10 +133,6 @@ uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -170,10 +146,6 @@ uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr)
 uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -189,10 +161,6 @@ uint16_t rtk_bt_hfp_data_send(rtk_bt_hfp_sco_data_send_t *p_data_send_t)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!p_data_send_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -207,10 +175,6 @@ uint16_t rtk_bt_hfp_batt_level_report(uint8_t *bd_addr, uint8_t power_level)
 {
 	uint16_t ret = 0;
 	rtk_bt_hfp_batt_level_t batt_level_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -229,10 +193,6 @@ uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain)
 	uint16_t ret = 0;
 	rtk_bt_hfp_speaker_gain_t param_t = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -249,10 +209,6 @@ uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain)
 {
 	uint16_t ret = 0;
 	rtk_bt_hfp_microphone_gain_t param_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;

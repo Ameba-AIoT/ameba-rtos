@@ -10,6 +10,7 @@
 
 #include <rtw_cfg80211_fullmac.h>
 
+#define CH_PLAN_VERSION "R67"
 /* sync to WS-240223-Willis-Efuse_Channel_Plan_new_define-R67.xlsx */
 #define RTL_RR_2G_01 REG_RULE(2412-10, 2462+10, 40, 0, 20, 0), REG_RULE(2467-10, 2472+10, 40, 0, 20, NL80211_RRF_NO_IR)
 #define RTL_NRR_2G_01 2
@@ -1394,7 +1395,7 @@ void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 		_rtl_reg_set_country_code(wiphy, request->alpha2);
 		break;
 	default:
-		/* todo */
+		/* do nothing */
 		break;
 	}
 
@@ -1423,12 +1424,16 @@ int rtw_regd_init(void)
 	}
 
 	regd = _rtl_reg_get_regd(table.channel_plan);
-	if ((table.char2[0] == 0xff) && (table.char2[1] == 0xff)) {
+	if ((table.char2[0] == '0') && (table.char2[1] == '0')) {
 		memcpy((void *)&regd->alpha2[0], &ww_char2[0], 2);
-		dev_dbg(global_idev.fullmac_dev, "%s world wide\n", __func__);
+		dev_info(global_idev.fullmac_dev,
+				 "Willis-Efuse_Channel_Plan Version: %s, world wide.\n",
+				 CH_PLAN_VERSION);
 	} else {
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
-		dev_dbg(global_idev.fullmac_dev, "%s country: %s\n", __func__, table.char2);
+		dev_info(global_idev.fullmac_dev,
+				 "Willis-Efuse_Channel_Plan Version: %s, country: %c%c.\n",
+				 CH_PLAN_VERSION, table.char2[0], table.char2[1]);
 	}
 
 	wiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;

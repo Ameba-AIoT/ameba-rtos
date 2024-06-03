@@ -1409,6 +1409,8 @@ CONFIG_IN=$SCRIPTS_FATHER_CONFIG_PATH/config.in
 #	CONFIG_IN=$1
 #fi
 
+CONFIG_DISPLAY=$2
+
 DEFAULTS=arch/$ARCH/defconfig
 if [ -f $SCRIPTS_FATHER_CONFIG_NAME/.config ]; then
   DEFAULTS=$SCRIPTS_FATHER_CONFIG_NAME/.config
@@ -1456,13 +1458,18 @@ echo "done."
 #
 # Start the ball rolling from the top.
 #
+if [ $CONFIG_DISPLAY == 1 ]; then
 activate_menu MCmenu0
-
+fi
 #
 # All done!
 #
 cleanup1
-
+if [ $CONFIG_DISPLAY == 0 ]; then
+save_configuration
+echo
+exit 0
+fi
 #
 # Confirm and Save
 #

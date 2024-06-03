@@ -21,10 +21,6 @@ uint16_t rtk_bt_le_audio_gmas_client_read_role(uint16_t conn_handle)
 	uint16_t info = 0;
 	info = conn_handle;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_GMAS_READ_ROLE,
 						   (void *)&info, sizeof(uint16_t));
 }
@@ -32,9 +28,7 @@ uint16_t rtk_bt_le_audio_gmas_client_read_role(uint16_t conn_handle)
 uint16_t rtk_bt_le_audio_gmas_client_read_features(uint16_t conn_handle, uint8_t gmap_role)
 {
 	rtk_bt_le_audio_gmas_client_read_role_result_t info = {0};
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	info.conn_handle = conn_handle;
 	info.gmap_role = gmap_role;
 

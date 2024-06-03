@@ -16,10 +16,6 @@
 
 uint16_t rtk_bt_le_audio_iso_data_send(rtk_bt_le_audio_iso_data_send_info_t *info)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!info || !info->iso_conn_handle || !info->data_len || !info->p_data) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -30,10 +26,6 @@ uint16_t rtk_bt_le_audio_iso_data_send(rtk_bt_le_audio_iso_data_send_info_t *inf
 uint16_t rtk_bt_le_audio_get_prefer_codec_cfg(uint8_t item, rtk_bt_le_audio_cfg_codec_t *p_cfg_codec)
 {
 	rtk_bt_le_audio_get_prefer_codec_cfg_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.item = item;
 	param.p_cfg_codec = p_cfg_codec;
@@ -47,10 +39,6 @@ uint16_t rtk_bt_le_audio_qos_preferred_cfg_get(rtk_bt_le_audio_codec_cfg_item_t 
 {
 	rtk_bt_le_audio_get_prefer_qos_cfg_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.codec_cfg_item = codec_cfg_item;
 	param.qos_cfg_type = qos_cfg_type;
 	param.p_qos_cfg = p_qos_cfg;
@@ -63,10 +51,6 @@ uint16_t rtk_bt_le_audio_pacs_get_info(uint16_t conn_handle, rtk_bt_le_audio_bap
 {
 	rtk_bt_le_audio_pacs_get_info_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.p_pacs_info = p_pacs_info;
 
@@ -78,10 +62,6 @@ uint16_t rtk_bt_le_audio_pacs_get_pac_record(uint16_t conn_handle, rtk_bt_le_aud
 											 rtk_bt_le_audio_bap_pacs_pac_record_t  *p_pac_tbl)
 {
 	rtk_bt_le_audio_pacs_get_pac_record_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.audio_role = audio_role;
@@ -97,10 +77,6 @@ uint16_t rtk_bt_le_audio_pacs_get_lc3_table_mask(uint16_t conn_handle, rtk_bt_le
 {
 	rtk_bt_le_audio_pacs_get_lc3_table_mask_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.audio_role = audio_role;
 	param.pref_audio_contexts = pref_audio_contexts;
@@ -115,10 +91,6 @@ uint16_t rtk_bt_le_audio_pacs_get_bis_array_by_sync_info(uint16_t conn_handle, r
 {
 	rtk_bt_le_audio_pacs_get_bis_array_by_sync_info_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.sync_handle = sync_handle;
 	param.filter = filter;
@@ -132,10 +104,6 @@ uint16_t rtk_bt_le_audio_sync_allocate(uint8_t adv_sid, rtk_bt_le_addr_t adv_add
 									   rtk_bt_le_audio_sync_handle_t *p_broadcast_sync_handle)
 {
 	rtk_bt_le_audio_sync_allocate_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (broadcast_id == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -156,10 +124,6 @@ uint16_t rtk_bt_le_audio_sync_allocate(uint8_t adv_sid, rtk_bt_le_addr_t adv_add
 
 uint16_t rtk_bt_le_audio_sync_release(rtk_bt_le_audio_sync_handle_t sync_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_SYNC_RELEASE,
 						   (void *)&sync_handle, sizeof(rtk_bt_le_audio_sync_handle_t));
 }
@@ -167,10 +131,6 @@ uint16_t rtk_bt_le_audio_sync_release(rtk_bt_le_audio_sync_handle_t sync_handle)
 uint16_t rtk_bt_le_audio_sync_find(uint8_t adv_sid, uint8_t *broadcast_id, rtk_bt_le_audio_sync_handle_t *p_broadcast_sync_handle)
 {
 	rtk_bt_le_audio_sync_find_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (broadcast_id == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -192,10 +152,6 @@ uint16_t rtk_bt_le_audio_pa_sync_establish(rtk_bt_le_audio_sync_handle_t sync_ha
 {
 	rtk_bt_le_audio_pa_sync_establish_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_establish->skip > 0x01F3) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -213,10 +169,6 @@ uint16_t rtk_bt_le_audio_pa_sync_establish(rtk_bt_le_audio_sync_handle_t sync_ha
 
 uint16_t rtk_bt_le_audio_pa_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_PA_SYNC_TERMINATE,
 						   (void *)&sync_handle, sizeof(rtk_bt_le_audio_sync_handle_t));
 }
@@ -224,10 +176,6 @@ uint16_t rtk_bt_le_audio_pa_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_ha
 uint16_t rtk_bt_le_audio_sync_get_sync_info(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_sync_info_t *p_sync_info)
 {
 	rtk_bt_le_audio_sync_get_sync_info_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (sync_handle == NULL || p_sync_info == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -244,10 +192,6 @@ uint16_t rtk_bt_le_audio_sync_get_bis_sync_codec_cfg(rtk_bt_le_audio_sync_handle
 {
 	rtk_bt_le_audio_sync_get_bis_codec_cfg_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_codec_cfg == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -263,9 +207,6 @@ uint16_t rtk_bt_le_audio_sync_get_bis_sync_codec_cfg(rtk_bt_le_audio_sync_handle
 uint16_t rtk_bt_le_audio_big_sync_establish(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_big_sync_establish_t *p_establish)
 {
 	rtk_bt_le_audio_big_sync_establish_param_t param = {0};
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_establish == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -280,10 +221,6 @@ uint16_t rtk_bt_le_audio_big_sync_establish(rtk_bt_le_audio_sync_handle_t sync_h
 
 uint16_t rtk_bt_le_audio_big_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_BIG_SYNC_TERMINATE,
 						   (void *)&sync_handle, sizeof(rtk_bt_le_audio_sync_handle_t));
 }
@@ -291,10 +228,6 @@ uint16_t rtk_bt_le_audio_big_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_h
 uint16_t rtk_bt_le_audio_sync_get_bis_info(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_bis_info_t *p_bis_info)
 {
 	rtk_bt_le_audio_sync_get_bis_info_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_bis_info == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -309,10 +242,6 @@ uint16_t rtk_bt_le_audio_sync_get_bis_info(rtk_bt_le_audio_sync_handle_t sync_ha
 uint16_t rtk_bt_le_audio_sync_get_support_bis_array(rtk_bt_le_audio_sync_handle_t sync_handle, uint32_t sink_audio_location, uint32_t *p_support_bis_array)
 {
 	rtk_bt_le_audio_sync_get_support_bis_array_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (sync_handle == NULL || p_support_bis_array == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -330,10 +259,6 @@ uint16_t rtk_bt_le_audio_sync_setup_data_path(rtk_bt_le_audio_sync_handle_t sync
 {
 	rtk_bt_le_audio_sync_setup_data_path_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_setup_param == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -350,10 +275,6 @@ uint16_t rtk_bt_le_audio_sync_remove_data_path(rtk_bt_le_audio_sync_handle_t syn
 {
 	rtk_bt_le_audio_sync_remove_data_path_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.sync_handle = sync_handle;
 	param.bis_idx = bis_idx;
 
@@ -365,10 +286,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_create(uint8_t num_groups, rtk_bt_le_a
 												 rtk_bt_le_audio_broadcast_source_handle_t *p_broadcast_source_handle)
 {
 	rtk_bt_le_audio_broadcast_source_create_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (num_groups > RTK_BT_LE_AUDIO_BROADCASTER_GROUP_MAX_NUM) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -387,10 +304,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_get_info(rtk_bt_le_audio_broadcast_sou
 {
 	rtk_bt_le_audio_broadcast_source_info_get_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_info == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -406,10 +319,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_config(rtk_bt_le_audio_broadcast_sourc
 												 uint8_t *p_broadcast_audio_announcements, uint16_t p_announcements_len, rtk_bt_le_audio_broadcast_source_config_t *p_config)
 {
 	rtk_bt_le_audio_broadcast_source_config_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_config == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -431,10 +340,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_enable(rtk_bt_le_audio_broadcast_sourc
 {
 	rtk_bt_le_audio_broadcast_source_enable_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_create_big == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -448,20 +353,12 @@ uint16_t rtk_bt_le_audio_broadcast_source_enable(rtk_bt_le_audio_broadcast_sourc
 
 uint16_t rtk_bt_le_audio_broadcast_source_disable(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_DISABLE,
 						   (void *)&broadcast_source_handle, sizeof(rtk_bt_le_audio_broadcast_source_handle_t));
 }
 
 uint16_t rtk_bt_le_audio_broadcast_source_release(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_RELEASE,
 						   (void *)&broadcast_source_handle, sizeof(rtk_bt_le_audio_broadcast_source_handle_t));
 }
@@ -470,10 +367,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_setup_data_path(rtk_bt_le_audio_broadc
 														  rtk_bt_le_audio_bis_data_path_param_t *p_setup_param, uint16_t *p_bis_conn_handle)
 {
 	rtk_bt_le_audio_broadcast_source_setup_data_path_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_setup_param == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -492,10 +385,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_remove_data_path(rtk_bt_le_audio_broad
 {
 	rtk_bt_le_audio_broadcast_source_remove_data_path_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.broadcast_source_handle = broadcast_source_handle;
 	param.bis_idx = bis_idx;
 
@@ -507,10 +396,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_reconfig(rtk_bt_le_audio_broadcast_sou
 												   uint8_t metadata_len, uint8_t *p_metadata)
 {
 	rtk_bt_le_audio_broadcast_source_reconfig_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.broadcast_source_handle = broadcast_source_handle;
 	param.group_idx = group_idx;
@@ -525,10 +410,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_reconfig(rtk_bt_le_audio_broadcast_sou
 uint16_t rtk_bt_le_audio_bass_get_brs_data(uint16_t conn_handle, uint8_t char_instance_id, bool is_get_bis_info, rtk_bt_le_audio_bass_brs_data_t *p_brs_data)
 {
 	rtk_bt_le_audio_bass_client_get_brs_data_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_brs_data == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -548,10 +429,6 @@ uint16_t rtk_bt_le_audio_bass_client_cp_add_source_by_sync_info(uint16_t conn_ha
 {
 	rtk_bt_le_audio_bass_client_cp_add_source_by_sync_info_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.sync_handle = sync_handle;
 	param.pa_sync = pa_sync;
@@ -565,10 +442,6 @@ uint16_t rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info(uint16_t conn
 																   uint8_t pa_sync, uint32_t bis_array, bool is_req)
 {
 	rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.sync_handle = sync_handle;
@@ -585,10 +458,6 @@ uint16_t rtk_bt_le_audio_bass_client_write_cp_op(uint16_t conn_handle, uint8_t o
 {
 	rtk_bt_le_audio_bass_client_write_cp_op_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.is_req = is_req;
 	param.opcode = opcode;
@@ -604,10 +473,6 @@ uint16_t rtk_bt_le_audio_bass_client_past(uint8_t past_type, void *handle, uint1
 {
 	rtk_bt_le_audio_bass_client_past_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.past_type = past_type;
 	param.handle = handle;
 	param.conn_handle = conn_handle;
@@ -619,20 +484,12 @@ uint16_t rtk_bt_le_audio_bass_client_past(uint8_t past_type, void *handle, uint1
 
 uint16_t rtk_bt_le_audio_group_allocate(rtk_bt_le_audio_group_handle_t *p_group_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_GROUP_ALLOCATE,
 						   p_group_handle, sizeof(rtk_bt_le_audio_group_handle_t));
 }
 
 uint16_t rtk_bt_le_audio_group_release(rtk_bt_le_audio_group_handle_t group_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -644,10 +501,6 @@ uint16_t rtk_bt_le_audio_group_release(rtk_bt_le_audio_group_handle_t group_hand
 uint16_t rtk_bt_le_audio_group_add_device(rtk_bt_le_audio_group_handle_t group_handle, uint16_t conn_handle, rtk_bt_le_audio_device_handle_t *p_device_handle)
 {
 	rtk_bt_le_audio_group_add_device_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -665,10 +518,6 @@ uint16_t rtk_bt_le_audio_group_delete_device(rtk_bt_le_audio_group_handle_t grou
 {
 	rtk_bt_le_audio_group_delete_device_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.group_handle = group_handle;
 	param.device_handle = device_handle;
 
@@ -679,10 +528,6 @@ uint16_t rtk_bt_le_audio_group_find_device(rtk_bt_le_audio_group_handle_t group_
 										   rtk_bt_le_audio_device_handle_t *p_device_handle)
 {
 	rtk_bt_le_audio_group_find_device_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -700,10 +545,6 @@ uint16_t rtk_bt_le_audio_group_find_device_by_conn_handle(rtk_bt_le_audio_group_
 {
 	rtk_bt_le_audio_group_find_device_by_conn_handle_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -719,10 +560,6 @@ uint16_t rtk_bt_le_audio_group_get_device_num(rtk_bt_le_audio_group_handle_t gro
 {
 	rtk_bt_le_audio_group_get_device_num_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -736,10 +573,6 @@ uint16_t rtk_bt_le_audio_group_get_device_num(rtk_bt_le_audio_group_handle_t gro
 uint16_t rtk_bt_le_audio_group_get_used_device_num(rtk_bt_le_audio_group_handle_t group_handle, bool check_conn, uint8_t *p_used_device_num)
 {
 	rtk_bt_le_audio_group_get_used_device_num_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -758,10 +591,6 @@ uint16_t rtk_bt_le_audio_group_get_device_info(rtk_bt_le_audio_group_handle_t gr
 {
 	rtk_bt_le_audio_group_get_device_info_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (group_handle == NULL || device_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -777,10 +606,6 @@ uint16_t rtk_bt_le_audio_group_get_all_device_info(rtk_bt_le_audio_group_handle_
 												   rtk_bt_le_audio_group_device_info_t *p_device_info_tbl)
 {
 	rtk_bt_le_audio_group_get_all_device_info_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (group_handle == NULL || device_num == NULL || p_device_info_tbl == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -798,10 +623,6 @@ uint16_t rtk_bt_le_audio_stream_session_allocate(rtk_bt_le_audio_group_handle_t 
 {
 	rtk_bt_le_audio_stream_session_allocate_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -815,10 +636,6 @@ uint16_t rtk_bt_le_audio_stream_session_allocate(rtk_bt_le_audio_group_handle_t 
 
 uint16_t rtk_bt_le_audio_stream_session_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -831,10 +648,6 @@ uint16_t rtk_bt_le_audio_stream_session_get_group_handle(rtk_bt_le_audio_stream_
 														 rtk_bt_le_audio_group_handle_t *p_group_handle)
 {
 	rtk_bt_le_audio_stream_session_get_group_handle_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -851,10 +664,6 @@ uint16_t rtk_bt_le_audio_unicast_get_session_info(rtk_bt_le_audio_stream_session
 {
 	rtk_bt_le_audio_unicast_get_session_info_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL || p_session_info == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -870,10 +679,6 @@ uint16_t rtk_bt_le_audio_unicast_get_cfg_mask(rtk_bt_le_audio_stream_session_han
 											  rtk_bt_le_audio_device_handle_t *p_device_handle_tbl, uint32_t *p_cfg_mask)
 {
 	rtk_bt_le_audio_unicast_get_cfg_mask_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -894,10 +699,6 @@ uint16_t rtk_bt_le_audio_unicast_get_cis_info(rtk_bt_le_audio_stream_session_han
 {
 	rtk_bt_le_audio_unicast_get_cis_info_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL || device_handle == NULL || p_cis_infos == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -914,10 +715,6 @@ uint16_t rtk_bt_le_audio_unicast_config(rtk_bt_le_audio_stream_session_handle_t 
 										uint8_t device_num, rtk_bt_le_audio_device_handle_t *p_device_handle_tbl)
 {
 	rtk_bt_le_audio_unicast_config_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -936,10 +733,6 @@ uint16_t rtk_bt_le_audio_unicast_cfg_ase_codec(rtk_bt_le_audio_stream_session_ha
 {
 	rtk_bt_le_audio_unicast_cfg_ase_codec_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -954,10 +747,6 @@ uint16_t rtk_bt_le_audio_unicast_cfg_ase_codec(rtk_bt_le_audio_stream_session_ha
 }
 uint16_t rtk_bt_le_audio_unicast_remove_config(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -970,10 +759,6 @@ uint16_t rtk_bt_le_audio_unicast_get_session_qos(rtk_bt_le_audio_stream_session_
 												 rtk_bt_le_audio_unicast_session_qos_t *p_session_qos)
 {
 	rtk_bt_le_audio_unicast_get_session_qos_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (stream_session_handle == NULL || p_session_qos == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -990,10 +775,6 @@ uint16_t rtk_bt_le_audio_unicast_cfg_ase_qos(rtk_bt_le_audio_stream_session_hand
 											 uint8_t ase_id, rtk_bt_le_audio_unicast_ase_qos_t ase_qos)
 {
 	rtk_bt_le_audio_unicast_cfg_ase_qos_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (stream_session_handle == NULL || device_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1012,10 +793,6 @@ uint16_t rtk_bt_le_audio_unicast_get_ase_qos(rtk_bt_le_audio_stream_session_hand
 {
 	rtk_bt_le_audio_unicast_get_ase_qos_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL || device_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1030,10 +807,6 @@ uint16_t rtk_bt_le_audio_unicast_get_ase_qos(rtk_bt_le_audio_stream_session_hand
 }
 uint16_t rtk_bt_le_audio_unicast_start(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1044,10 +817,6 @@ uint16_t rtk_bt_le_audio_unicast_start(rtk_bt_le_audio_stream_session_handle_t s
 uint16_t rtk_bt_le_audio_unicast_stop(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, uint32_t cis_timeout_ms)
 {
 	rtk_bt_le_audio_unicast_stop_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1061,10 +830,6 @@ uint16_t rtk_bt_le_audio_unicast_stop(rtk_bt_le_audio_stream_session_handle_t st
 }
 uint16_t rtk_bt_le_audio_unicast_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1074,10 +839,6 @@ uint16_t rtk_bt_le_audio_unicast_release(rtk_bt_le_audio_stream_session_handle_t
 }
 uint16_t rtk_bt_le_audio_unicast_update(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (stream_session_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1091,10 +852,6 @@ uint16_t rtk_bt_le_audio_csis_gen_rsi(uint8_t *p_sirk, uint8_t *p_rsi)
 {
 	rtk_bt_le_audio_csis_gen_rsi_info_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	memcpy(info.sirk, p_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
 	info.p_rsi = p_rsi;
 
@@ -1105,10 +862,6 @@ uint16_t rtk_bt_le_audio_csis_gen_rsi(uint8_t *p_sirk, uint8_t *p_rsi)
 uint16_t rtk_bt_le_audio_csis_update_sirk(rtk_bt_le_audio_csis_sirk_type_t sirk_type, uint8_t *p_sirk)
 {
 	rtk_bt_le_audio_csis_update_sirk_param_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	info.sirk_type = sirk_type;
 	memcpy(info.sirk, p_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
@@ -1121,10 +874,6 @@ uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size)
 {
 	rtk_bt_le_audio_csis_update_size_param_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	info.csis_size = csis_size;
 
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIRK,
@@ -1135,10 +884,6 @@ uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size)
 uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv_addr, uint8_t report_data_len, uint8_t *p_report_data)
 {
 	rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi_info_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (report_data_len != 0 && p_report_data == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1155,10 +900,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv
 uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group_handle_t group_handle, bool discover, uint32_t timeout_ms)
 {
 	rtk_bt_le_audio_csis_set_coordinator_cfg_discover_info_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1177,10 +918,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_add_group(rtk_bt_le_audio_csis_set
 {
 	rtk_bt_le_audio_csis_set_coordinator_add_group_info_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_mem_info == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1198,10 +935,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_add_device(rtk_bt_le_audio_group_h
 {
 	rtk_bt_le_audio_csis_set_coordinator_add_device_info_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1216,10 +949,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_add_device(rtk_bt_le_audio_group_h
 uint16_t rtk_bt_le_audio_csis_set_coordinator_write_lock(rtk_bt_le_audio_group_handle_t group_handle, bool lock)
 {
 	rtk_bt_le_audio_csis_set_coordinator_write_lock_info_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (group_handle == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1236,20 +965,12 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_write_lock(rtk_bt_le_audio_group_h
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT
 uint16_t rtk_bt_le_audio_vcs_set_param(rtk_bt_le_audio_vcs_param_t *param)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_VCS_SET_PARAM,
 						   (void *)param, sizeof(rtk_bt_le_audio_vcs_param_t));
 }
 
 uint16_t rtk_bt_le_audio_vcs_get_param(rtk_bt_le_audio_vcs_param_t *param)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_VCS_GET_PARAM,
 						   (void *)param, sizeof(rtk_bt_le_audio_vcs_param_t));
 }
@@ -1258,10 +979,6 @@ uint16_t rtk_bt_le_audio_vcs_get_param(rtk_bt_le_audio_vcs_param_t *param)
 uint16_t rtk_bt_le_audio_vcs_write_cp(uint16_t conn_handle, rtk_bt_le_audio_vcs_cp_op_t cp_op, rtk_bt_le_audio_vcs_cp_param_t *cp_param)
 {
 	rtk_bt_le_audio_vcs_write_cp_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.cp_op = cp_op;
@@ -1274,10 +991,6 @@ uint16_t rtk_bt_le_audio_vcs_get_volume_state(uint16_t conn_handle, rtk_bt_le_au
 {
 	rtk_bt_le_audio_vcs_get_volume_state_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.p_vcs_volume_state = p_vcs_volume_state;
 
@@ -1288,10 +1001,6 @@ uint16_t rtk_bt_le_audio_vcs_change_mute(rtk_bt_le_audio_group_handle_t group_ha
 {
 	rtk_bt_le_audio_vcs_change_mute_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.group_handle = group_handle;
 	param.mute = mute;
 
@@ -1301,10 +1010,6 @@ uint16_t rtk_bt_le_audio_vcs_change_mute(rtk_bt_le_audio_group_handle_t group_ha
 uint16_t rtk_bt_le_audio_vcs_change_volume(rtk_bt_le_audio_group_handle_t group_handle, uint8_t volume_setting)
 {
 	rtk_bt_le_audio_vcs_change_volume_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.group_handle = group_handle;
 	param.volume_setting = volume_setting;
@@ -1318,10 +1023,6 @@ uint16_t rtk_bt_le_audio_mics_change_mute(rtk_bt_le_audio_group_handle_t group_h
 {
 	rtk_bt_le_audio_mics_change_mute_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.group_handle = group_handle;
 	param.mic_mute = mic_mute;
 
@@ -1331,10 +1032,6 @@ uint16_t rtk_bt_le_audio_mics_change_mute(rtk_bt_le_audio_group_handle_t group_h
 uint16_t rtk_bt_le_audio_mics_set_mute_value(uint16_t conn_handle, rtk_bt_le_audio_mics_mute_state_t mic_mute)
 {
 	rtk_bt_le_audio_mics_set_mute_value_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.mic_mute = mic_mute;
@@ -1347,10 +1044,6 @@ uint16_t rtk_bt_le_audio_mics_get_mute_value(uint16_t conn_handle, rtk_bt_le_aud
 {
 	rtk_bt_le_audio_mics_get_mute_value_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.p_mic_mute = p_mic_mute;
 
@@ -1361,20 +1054,12 @@ uint16_t rtk_bt_le_audio_mics_get_mute_value(uint16_t conn_handle, rtk_bt_le_aud
 #if defined(RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT
 uint16_t rtk_bt_le_audio_mics_set_param(rtk_bt_le_audio_mics_param_t *param)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_MICS_SET_PARAM,
 						   (void *)param, sizeof(rtk_bt_le_audio_mics_param_t));
 }
 
 uint16_t rtk_bt_le_audio_mics_get_param(rtk_bt_le_audio_mics_param_t *param)
 {
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_MICS_GET_PARAM,
 						   (void *)param, sizeof(rtk_bt_le_audio_mics_param_t));
 }
@@ -1384,10 +1069,6 @@ uint16_t rtk_bt_le_audio_mics_get_param(rtk_bt_le_audio_mics_param_t *param)
 uint16_t rtk_bt_le_audio_vocs_set_param(uint8_t srv_instance_id, uint8_t set_mask, rtk_bt_le_audio_vocs_param_t *p_vocs_param)
 {
 	rtk_bt_le_audio_vocs_set_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_vocs_param == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1409,10 +1090,6 @@ uint16_t rtk_bt_le_audio_vocs_get_param(uint8_t srv_instance_id, rtk_bt_le_audio
 {
 	rtk_bt_le_audio_vocs_get_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_vocs_param == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1428,10 +1105,6 @@ uint16_t rtk_bt_le_audio_vocs_cfg_cccd(uint16_t conn_handle, uint8_t srv_instanc
 {
 	rtk_bt_le_audio_vocs_cfg_cccd_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.cfg_flags = cfg_flags;
@@ -1445,10 +1118,6 @@ uint16_t rtk_bt_le_audio_vocs_read_char_value(uint16_t conn_handle, uint8_t srv_
 {
 	rtk_bt_le_audio_vocs_read_char_value_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.type = type;
@@ -1461,10 +1130,6 @@ uint16_t rtk_bt_le_audio_vocs_write_cp(uint16_t conn_handle, uint8_t srv_instanc
 									   rtk_bt_le_audio_vocs_cp_param_t cp_param)
 {
 	rtk_bt_le_audio_vocs_write_cp_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
@@ -1480,10 +1145,6 @@ uint16_t rtk_bt_le_audio_vocs_write_cp_by_group(rtk_bt_le_audio_group_handle_t g
 {
 	rtk_bt_le_audio_vocs_write_cp_by_group_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.group_handle = group_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.cp_op = cp_op;
@@ -1496,10 +1157,6 @@ uint16_t rtk_bt_le_audio_vocs_write_audio_location(uint16_t conn_handle, uint8_t
 {
 	rtk_bt_le_audio_vocs_write_audio_location_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.audio_location = audio_location;
@@ -1510,10 +1167,6 @@ uint16_t rtk_bt_le_audio_vocs_write_audio_location(uint16_t conn_handle, uint8_t
 uint16_t rtk_bt_le_audio_vocs_write_output_des(uint16_t conn_handle, uint8_t srv_instance_id, uint16_t output_des_len, uint8_t *p_output_des)
 {
 	rtk_bt_le_audio_vocs_write_output_des_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
@@ -1526,10 +1179,6 @@ uint16_t rtk_bt_le_audio_vocs_write_output_des(uint16_t conn_handle, uint8_t srv
 uint16_t rtk_bt_le_audio_vocs_get_srv_data(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_vocs_srv_data_t *p_srv_data)
 {
 	rtk_bt_le_audio_vocs_get_srv_data_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_srv_data == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1550,10 +1199,6 @@ uint16_t rtk_bt_le_audio_aics_set_param(uint8_t srv_instance_id, rtk_bt_le_audio
 {
 	rtk_bt_le_audio_aics_set_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_value == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1572,10 +1217,6 @@ uint16_t rtk_bt_le_audio_aics_get_param(uint8_t srv_instance_id, rtk_bt_le_audio
 {
 	rtk_bt_le_audio_aics_get_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (p_value == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -1593,10 +1234,6 @@ uint16_t rtk_bt_le_audio_aics_cfg_cccd(uint16_t conn_handle, uint8_t srv_instanc
 {
 	rtk_bt_le_audio_aics_cfg_cccd_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.cfg_flags = cfg_flags;
@@ -1610,10 +1247,6 @@ uint16_t rtk_bt_le_audio_aics_read_char_value(uint16_t conn_handle, uint8_t srv_
 {
 	rtk_bt_le_audio_aics_read_char_value_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.type = type;
@@ -1626,10 +1259,6 @@ uint16_t rtk_bt_le_audio_aics_write_cp(uint16_t conn_handle, uint8_t srv_instanc
 									   rtk_bt_le_audio_aics_cp_param_t cp_param)
 {
 	rtk_bt_le_audio_aics_write_cp_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
@@ -1645,10 +1274,6 @@ uint16_t rtk_bt_le_audio_aics_write_cp_by_group(rtk_bt_le_audio_group_handle_t g
 {
 	rtk_bt_le_audio_aics_write_cp_by_group_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.group_handle = group_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.cp_op = cp_op;
@@ -1662,10 +1287,6 @@ uint16_t rtk_bt_le_audio_aics_write_input_des(uint16_t conn_handle, uint8_t srv_
 {
 	rtk_bt_le_audio_aics_write_input_des_param_t param = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	param.conn_handle = conn_handle;
 	param.srv_instance_id = srv_instance_id;
 	param.input_des_len = input_des_len;
@@ -1678,10 +1299,6 @@ uint16_t rtk_bt_le_audio_aics_write_input_des(uint16_t conn_handle, uint8_t srv_
 uint16_t rtk_bt_le_audio_aics_get_srv_data(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_aics_srv_data_t *p_srv_data)
 {
 	rtk_bt_le_audio_aics_get_srv_data_param_t param = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (p_srv_data == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1702,10 +1319,6 @@ uint16_t rtk_bt_le_audio_mcs_client_write_media_cp(uint16_t conn_handle, uint8_t
 {
 	rtk_bt_le_audio_mcp_client_write_media_cp_info_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	info.conn_handle = conn_handle;
 	info.srv_instance_id = srv_instance_id;
 	info.general_mcs = general_mcs;
@@ -1721,10 +1334,6 @@ uint16_t rtk_bt_le_audio_mcs_client_write_media_cp(uint16_t conn_handle, uint8_t
 uint16_t rtk_bt_le_audio_mcs_client_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, bool general_mcs, uint16_t char_uuid)
 {
 	rtk_bt_le_audio_mcp_client_read_char_value_info_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME && char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_TITLE &&
 		char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_DURATION && char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_POSITION &&
@@ -1745,10 +1354,6 @@ uint16_t rtk_bt_le_audio_mcs_client_cfg_cccd(uint16_t conn_handle, uint8_t srv_i
 {
 	rtk_bt_le_audio_mcp_client_cfg_cccd_info_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	info.conn_handle = conn_handle;
 	info.srv_instance_id = srv_instance_id;
 	info.general_mcs = general_mcs;
@@ -1765,10 +1370,6 @@ uint16_t rtk_bt_le_audio_mcs_server_set_param(uint8_t service_id, uint16_t char_
 {
 	rtk_bt_le_audio_mcp_server_set_param_t info = {0};
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	info.service_id = service_id;
 	info.char_uuid = char_uuid;
 	memcpy(&info.param, p_param, sizeof(info.param));
@@ -1780,10 +1381,6 @@ uint16_t rtk_bt_le_audio_mcs_server_set_param(uint8_t service_id, uint16_t char_
 uint16_t rtk_bt_le_audio_mcs_server_send_data(uint8_t service_id, uint16_t char_uuid, void *p_param)
 {
 	rtk_bt_le_audio_mcp_server_send_data_param_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME && char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_TITLE &&
 		char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_DURATION && char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_POSITION &&
@@ -1802,10 +1399,6 @@ uint16_t rtk_bt_le_audio_mcs_server_send_data(uint8_t service_id, uint16_t char_
 uint16_t rtk_bt_le_audio_mcs_server_read_confirm(uint16_t conn_handle, uint16_t cid, uint8_t service_id, uint16_t char_uuid, uint16_t offset, void *p_param)
 {
 	rtk_bt_le_audio_mcp_server_read_confirm_param_t info = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME && char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_TITLE &&
 		char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_DURATION && char_uuid != RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_POSITION &&

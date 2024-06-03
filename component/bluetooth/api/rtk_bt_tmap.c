@@ -22,10 +22,6 @@ uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle)
 	uint16_t info = 0;
 	info = conn_handle;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_AUDIO, RTK_BT_LE_AUDIO_ACT_TMAS_READ_ROLE,
 						   (void *)&info, sizeof(uint16_t));
 }

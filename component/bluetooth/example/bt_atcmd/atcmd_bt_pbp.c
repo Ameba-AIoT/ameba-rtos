@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <bt_api_config.h>
-#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+#if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
 #include <stdlib.h>
 #include <stdio.h>
 #include <osif.h>
@@ -17,21 +17,11 @@
 #include <rtk_bt_pbp.h>
 #include <atcmd_bt_impl.h>
 
-_WEAK uint16_t rtk_bt_pbp_broadcast_sink_cfg(uint8_t channel)
-{
-	(void)channel;
-	AT_PRINTK("[ATBE] pbp broadcast sink not support cfg");
-	return -1;
-}
-
 static int atcmd_bt_pbp_broadcast_sink_cfg(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t channel = 0;
 
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] PBP broadcast sink op failed! wrong args num!");
-		return -1;
-	}
 	if (strcmp(argv[0], "left") == 0) {
 		/* RTK_BT_LE_AUDIO_LEFT */
 		channel = 1;
@@ -55,16 +45,12 @@ static int atcmd_bt_pbp_broadcast_sink_cfg(int argc, char **argv)
 }
 
 static const cmd_table_t pbp_broadcast_sink_cmd_table[] = {
-	{"cfg",       atcmd_bt_pbp_broadcast_sink_cfg,        1, 2},
+	{"cfg",       atcmd_bt_pbp_broadcast_sink_cfg,        2, 2},
 	{NULL,},
 };
 
 int atcmd_bt_pbp_cmd(int argc, char *argv[])
 {
-	if (argc < 2) {
-		AT_PRINTK("[%s]Error: pbp atcmd should have at least 2 parameters !!!\r\n", __func__);
-		return -1;
-	}
 	if (strcmp(argv[0], "sink") == 0) {
 		AT_PRINTK("[ATBC] Set pbp broadcast sink cmd");
 		atcmd_bt_excute(argc - 1, &argv[1], pbp_broadcast_sink_cmd_table, "[ATBC][pbp][sink]");

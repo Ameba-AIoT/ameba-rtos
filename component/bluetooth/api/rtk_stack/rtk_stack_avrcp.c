@@ -651,9 +651,11 @@ uint16_t bt_stack_avrcp_init(uint8_t role)
 
 	bt_avrcp_init(1);
 	if (role == 0x01) {
-		bt_avrcp_supported_features_set(BT_AVRCP_FEATURE_CATEGORY_1 | BT_AVRCP_FEATURE_CATEGORY_2, BT_AVRCP_FEATURE_CATEGORY_1);
-	} else {
+		/* A2DP SNK */
 		bt_avrcp_supported_features_set(BT_AVRCP_FEATURE_CATEGORY_1, BT_AVRCP_FEATURE_CATEGORY_2);
+	} else {
+		/* A2DP SOURCE */
+		bt_avrcp_supported_features_set(BT_AVRCP_FEATURE_CATEGORY_1 | BT_AVRCP_FEATURE_CATEGORY_2, BT_AVRCP_FEATURE_CATEGORY_1);
 	}
 	bt_mgr_cback_register(app_avrcp_bt_cback);
 

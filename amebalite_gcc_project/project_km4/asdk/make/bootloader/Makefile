@@ -22,9 +22,13 @@ vpath %.c $(DIR) $(CFGDIR) $(DRVDIR) $(DRVCOM) $(LOGDIR)
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
-CSRC = \
-	$(DIR)/bootloader_km4.c \
-	$(DIR)/boot_ota_km4.c \
+ifeq ($(CONFIG_MP_SHRINK), y)
+CSRC = 	$(DIR)/bootloader_km4_mp.c
+else
+CSRC = 	$(DIR)/bootloader_km4.c
+endif
+
+CSRC += $(DIR)/boot_ota_km4.c \
 	$(DIR)/boot_security_km4.c \
 	$(CFGDIR)/ameba_boot_trustzonecfg.c \
 	$(CFGDIR)/ameba_bootcfg.c \

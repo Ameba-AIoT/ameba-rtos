@@ -406,11 +406,12 @@ u8 rltk_mii_recv_data_check(u8 *mac)
 	UNUSED(mac);
 	u8 check_res = TRUE;
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-	u8 *pbuf = RX_BUFFER;
-	u8 multi_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 #if defined(CONFIG_ETHERNET_BRIDGE) && CONFIG_ETHERNET_BRIDGE
 	return check_res;
 #else
+	u8 *pbuf = RX_BUFFER;
+	u8 multi_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
 	if (memcmp(mac, pbuf, ETH_ALEN) == 0 || memcmp(multi_mac, pbuf, ETH_ALEN) == 0) {
 		check_res = TRUE;
 	} else {
@@ -446,7 +447,7 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 
 	if (FALSE == rltk_mii_recv_data_check(macstr)) {
 		RTK_LOG_ETHERNET("rltk_mii_recv_data_check fail\n");
-		for(int i = 0; i < total_len; i++)
+		for(u32 i = 0; i < total_len; i++)
 		{
 			RTK_LOG_ETHERNET("%02x ", *((u8*)RX_BUFFER + i));
 		}

@@ -63,29 +63,30 @@ void app_pmu_init(void)
 void app_IWDG_refresh(void *arg)
 {
 	UNUSED(arg);
-	u32 current_time;
-	static u32 last_time = 0;
+	WDG_Refresh(IWDG_DEV);
+}
 
-	/* feed the watchdog every 500ms*/
-	current_time = rtos_time_get_current_system_time_ms();
-	if ((u32)(current_time - last_time) <  500) {
-		return;
-	}
-
+void app_IWDG_int(void)
+{
 	/* usually IWDG will enable by HW, and the bark interval is 4095ms by default */
 	if (0 == (HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN) & APBPeriph_IWDG)) {
 		return;
 	}
 
-	/*for first time ,disable LP Enable*/
-	if (last_time == 0) {
-		IWDG_LP_Enable(IWDG_DEV, DISABLE);
-		RTK_LOGI(TAG, "IWDG refresh on!\n");
+	IWDG_LP_Enable(IWDG_DEV, DISABLE);
+	RTK_LOGI(TAG, "IWDG refresh on!\n");
+
+	/* Due to inaccurate of Aon clk(50% precision), IWDG should be refreshed every 2S with the lowest priority level thread. */
+	/* Writing to FLASH during OTA makes SYSTICK stop and run frequently,
+	and SYSTICK may be 3-4 times slower than expected, so reduce refresh period to 1/4 of 2s. */
+	rtos_timer_t xTimer = NULL;
+	rtos_timer_create(&xTimer, "WDG_Timer", NULL, 500, TRUE, app_IWDG_refresh);
+
+	if (xTimer == NULL) {
+		RTK_LOGE(TAG, "IWDG refresh error\n");
+	} else {
+		rtos_timer_start(xTimer, 0);
 	}
-
-	last_time = current_time;
-	WDG_Refresh(IWDG_DEV);
-
 }
 
 _WEAK void app_example(void)
@@ -124,6 +125,8 @@ int main(void)
 #ifdef CONFIG_WLAN
 	wlan_initialize();
 #endif
+
+	app_IWDG_int();
 
 	/* Execute application example */
 	app_example();

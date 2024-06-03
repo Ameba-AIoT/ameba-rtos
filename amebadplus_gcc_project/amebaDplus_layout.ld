@@ -166,10 +166,13 @@ MEMORY
 
 	/* mp sram temp  temp use now */
 	KM4_FLOADER_RAM_MP (rwx) :               ORIGIN = 0x3000A020, LENGTH = 0x30012000 - 0x3000A020	/* KM4 ImgTool Flash Loader RAM: 32k */
-	KM4_BOOTLOADER_RAM_MP (rwx) :            ORIGIN = 0x30012000 + IMAGE_HEADER_LEN, LENGTH = 0x3001A000 - 0x30012000 - IMAGE_HEADER_LEN	/* KM4 BootLoader RAM: 32k */
 
-	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20033000 - 0x2001A000 - IMAGE_HEADER_LEN	/* KM4 BD RAM: TZ off,100K*/
-	KM0_BD_RAM_MP (rwx) :                   ORIGIN = 0x20033000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20080000 - 0x20033000 - IMAGE_HEADER_LEN	/* KM0 BD RAM: 320 */
+	KM4_BOOTLOADER_ENTRY (rwx) :             ORIGIN = 0x3000A020, LENGTH = 0x3000A400 - 0x3000A020	/* KM4 IMG1 Entry: 1024B aligned for flashloader */
+	KM4_BOOTLOADER_RAM_MP (rwx) :            ORIGIN = 0x30013400 + IMAGE_HEADER_LEN, LENGTH = 0x3001A000 - 0x30013400 - IMAGE_HEADER_LEN	/* KM4 BootLoader RAM: 32k */
+
+
+	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A000 + IMAGE_HEADER_LEN,   	LENGTH = 0x2003F800 - 0x2001A000 - IMAGE_HEADER_LEN	/* KM4 BD RAM: TZ off,150K*/
+	KM0_BD_RAM_MP (rwx) :                   ORIGIN = 0x2003F800 + IMAGE_HEADER_LEN,   	LENGTH = 0x20080000 - 0x2003F800 - IMAGE_HEADER_LEN	/* KM0 BD RAM: 270k */
 
 }
 
@@ -193,5 +196,6 @@ __km4_psram_tz_entry_end__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) + LENGTH(KM4_BD_PSRAM
 __km4_bd_psram_start__ = ORIGIN(KM4_BD_PSRAM) - IMAGE_HEADER_LEN;
 
 /* mp used */
+__km4_bd_boot_download_addr__ = 0x30012000;
 __km0_bd_ram_mp_start__ = ORIGIN(KM0_BD_RAM_MP);
 __km0_image2_entry_func_mp__ = ORIGIN(KM0_IMG2_ENTRY);

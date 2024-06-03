@@ -7,11 +7,6 @@
 LE Audio Configuration
 ~~~~~~~~~~~
 Configure the following Macros in bt_api_config.h
-    RTK_BLE_5_0_AE_ADV_SUPPORT                    to                1
-    RTK_BLE_5_0_AE_SCAN_SUPPORT                   to                1
-    RTK_BLE_5_0_PA_ADV_SUPPORT                    to                1
-    RTK_BLE_5_0_PA_SYNC_SUPPORT                   to                1
-
     RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT   to                1
     RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT     to                1
 

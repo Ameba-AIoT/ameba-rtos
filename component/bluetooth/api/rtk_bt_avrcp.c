@@ -16,10 +16,6 @@ uint16_t rtk_bt_avrcp_connect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -33,10 +29,6 @@ uint16_t rtk_bt_avrcp_connect(uint8_t *bd_addr)
 uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -52,10 +44,6 @@ uint16_t rtk_bt_avrcp_play(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -69,10 +57,6 @@ uint16_t rtk_bt_avrcp_play(uint8_t *bd_addr)
 uint16_t rtk_bt_avrcp_pause(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -88,10 +72,6 @@ uint16_t rtk_bt_avrcp_stop(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -105,10 +85,6 @@ uint16_t rtk_bt_avrcp_stop(uint8_t *bd_addr)
 uint16_t rtk_bt_avrcp_forward(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -124,10 +100,6 @@ uint16_t rtk_bt_avrcp_backward(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -141,10 +113,6 @@ uint16_t rtk_bt_avrcp_backward(uint8_t *bd_addr)
 uint16_t rtk_bt_avrcp_rewind_start(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -160,10 +128,6 @@ uint16_t rtk_bt_avrcp_rewind_stop(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -177,10 +141,6 @@ uint16_t rtk_bt_avrcp_rewind_stop(uint8_t *bd_addr)
 uint16_t rtk_bt_avrcp_fast_forward_start(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -196,10 +156,6 @@ uint16_t rtk_bt_avrcp_fast_forward_stop(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
 
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
@@ -214,10 +170,6 @@ uint16_t rtk_bt_avrcp_absolute_volume_set(uint8_t *bd_addr, uint8_t volume)
 {
 	uint16_t ret = 0;
 	rtk_bt_avrcp_absolute_volume_set_t volume_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -236,10 +188,6 @@ uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume)
 {
 	uint16_t ret = 0;
 	rtk_bt_avrcp_volume_change_req_t volume_t = {0};
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;

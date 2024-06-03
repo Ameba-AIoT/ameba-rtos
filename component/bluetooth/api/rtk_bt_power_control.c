@@ -6,6 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <bt_api_config.h>
+#include "bt_debug.h"
 #if defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT
 #include <stdio.h>
 #include <string.h>
@@ -25,7 +26,7 @@ _WEAK void hci_platform_force_uart_rts(bool op)
 static bool rtk_bt_get_power_save_status(void)
 {
 	uint32_t lock_status = pmu_get_wakelock_status();
-	printf("[BT_PS] lock_status = 0x%lx\r\n", lock_status);
+	BT_LOGA("[BT_PS] lock_status = 0x%lx\r\n", lock_status);
 
 	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
 		return true;    //Already acquire bt wake lock
@@ -37,20 +38,20 @@ static bool rtk_bt_get_power_save_status(void)
 void rtk_bt_enable_power_save(void)
 {
 	if (rtk_bt_get_power_save_status() == true) {
-		printf("[BT_PS] pmu_release_wakelock PMU_BT_DEVICE\r\n");
+		BT_LOGA("[BT_PS] pmu_release_wakelock PMU_BT_DEVICE\r\n");
 		pmu_release_wakelock(PMU_BT_DEVICE);
 	} else {
-		printf("[BT_PS] already release PMU_BT_DEVICE\r\n");
+		BT_LOGA("[BT_PS] already release PMU_BT_DEVICE\r\n");
 	}
 }
 
 void rtk_bt_disable_power_save(void)
 {
 	if (rtk_bt_get_power_save_status() == false) {
-		printf("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
+		BT_LOGA("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
 		pmu_acquire_wakelock(PMU_BT_DEVICE);
 	} else {
-		printf("[BT_PS] already acquire PMU_BT_DEVICE\r\n");
+		BT_LOGA("[BT_PS] already acquire PMU_BT_DEVICE\r\n");
 	}
 }
 
@@ -79,7 +80,7 @@ static uint32_t rtk_bt_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
-	printf("[BT_PS] Enter rtk_bt_suspend\r\n");
+	BT_LOGA("[BT_PS] Enter rtk_bt_suspend\r\n");
 
 	hci_platform_force_uart_rts(true);
 
@@ -97,7 +98,7 @@ static uint32_t rtk_bt_resume(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
-	printf("[BT_PS] Enter rtk_bt_resume\r\n");
+	BT_LOGA("[BT_PS] Enter rtk_bt_resume\r\n");
 
 	rtk_bt_disable_power_save();
 

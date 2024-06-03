@@ -21,11 +21,7 @@ rtk_bt_app_conf_t app_conf = {
 
 int atcmd_bt_device(int argc, char *argv[])
 {
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] BT input wrong args number!");
-		return -1;
-	}
-
+	(void)argc;
 	int en = str_to_int(argv[0]);
 	if (1 == en) {
 		if (RTK_BT_FAIL == rtk_bt_enable(&app_conf)) {

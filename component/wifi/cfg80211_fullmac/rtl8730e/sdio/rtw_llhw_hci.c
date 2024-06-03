@@ -13,6 +13,17 @@ void llhw_free_rxbuf(u8 *rxbuf)
 
 void llhw_host_send(u8 *buf, u32 len)
 {
+	struct inic_sdio *priv = &inic_sdio_priv;
+	struct inic_device *idev = &global_idev;
+
+	if (priv->dev_state == PWR_STATE_SLEEP) {
+		dev_dbg(idev->fullmac_dev, "%s: wakeup device", __func__);
+		if (rtw_resume_common(priv)) {
+			dev_err(idev->fullmac_dev, "%s: fail to wakeup device, stop send", __func__);
+			return;
+		}
+	}
+
 	rtw_sdio_send_msg(buf, len);
 }
 
@@ -42,7 +53,7 @@ int llhw_init(void)
 
 	llhw_xmit_init();
 
-	/* tell KM4 to do wifi on? wifi on when insmod ? */
+	/* tell KM4 to open wifi */
 	llhw_wifi_on();
 
 	return 0;

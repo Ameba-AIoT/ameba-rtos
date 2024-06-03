@@ -48,7 +48,6 @@ free_ipc_ch:
 
 void llhw_ipc_data_ch_deinit(void)
 {
-	/* TODO: Fullfill deinit process after confirm init process. */
 	if (!global_idev.data_ch) {
 		dev_err(global_idev.fullmac_dev, "ERROR: event ch has been deinit.");
 		return;
@@ -94,7 +93,6 @@ free_ipc_ch:
 
 void llhw_ipc_event_ch_deinit(void)
 {
-	/* TODO: Fullfill deinit process after confirm init process. */
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.fullmac_dev, "ERROR: event ch has been deinit.");
 		return;
@@ -128,8 +126,6 @@ int llhw_init(void)
 		goto ipc_deinit;
 	}
 
-	/* TODO: position. */
-	/* TODO: bottom of this line should unregister ipc channel if error occurs. */
 	ret = llhw_event_init(idev);
 	if (ret < 0) {
 		dev_err(global_idev.fullmac_dev, "ipc host: init ipc host event_priv error(%d).\n", ret);
@@ -150,7 +146,7 @@ int llhw_init(void)
 		goto ipc_deinit;
 	}
 
-	/* tell KM4 to do wifi on? wifi on when insmod ? */
+	/* tell KM4 to open wifi */
 	llhw_wifi_on();
 
 	return 0;

@@ -11,6 +11,7 @@
 #include <dlist.h>
 #include <basic_types.h>
 #include <bt_app_config.h>
+#include <bt_debug.h>
 
 #ifdef __cplusplus
 extern "C"

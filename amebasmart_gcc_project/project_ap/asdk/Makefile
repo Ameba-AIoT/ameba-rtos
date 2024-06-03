@@ -87,7 +87,11 @@ LINK_APP_LIB += $(APP_LIB)
 
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP),y)
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
 endif
 endif
 
@@ -346,6 +350,7 @@ endif
 	@echo "========== Image manipulating end =========="
 
 code_analyze:
+ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
@@ -355,6 +360,9 @@ code_analyze:
 	fi
 
 	@echo "========== Image analyze end =========="
+else
+	@echo "daily build"
+endif
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #
 #*****************************************************************************#

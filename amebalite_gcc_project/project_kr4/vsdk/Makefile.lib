@@ -24,24 +24,32 @@ LINK_APP_LIB += $(APP_LIB)
 
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP), y)
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
 endif
 ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
 
 
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
 
 
 # Single Core Library
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 LINK_APP_LIB += $(APP_LIB)
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
 endif
 ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
 
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
 
 ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
@@ -150,7 +158,7 @@ ifeq ($(CONFIG_AS_INIC_AP), y)
 
 # build NP libs
 else ifeq ($(CONFIG_AS_INIC_NP), y)
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 	@+$(MAKE) -C make/target/wifi_fw all
 endif
 	@+$(MAKE) -C make/rtk_coex all
@@ -164,7 +172,7 @@ else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 	#@+$(MAKE) -C make/network/eap all
 	#@+$(MAKE) -C make/network/http2 all
 	@+$(MAKE) -C make/network/tftp all
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 	@+$(MAKE) -C make/target/wifi_fw all
 endif
 	@+$(MAKE) -C make/rtk_coex all

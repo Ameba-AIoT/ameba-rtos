@@ -3,16 +3,11 @@ ENTRY(Reset_Handler)
 #include "../../../amebaDplus_layout.ld"
 #include "../../inc/platform_autoconf.h"
 /* define common load memory address */
-#ifdef  GENERATE_FLOADER_LD
-	#define OUTSECTION ram_image1
-	#define IMG1_LMA_REGION 	KM4_FLOADER_RAM_MP
-	#define KM4_LOADER_LMA	 	KM4_FLOADER_RAM_MP
-#else
-	#define KM4_LOADER_LMA  	KM4_BOOTLOADER_RAM_MP
 
-	#define OUTSECTION ram_image1
-	#define IMG1_LMA_REGION 	KM4_BOOTLOADER_RAM_MP
-#endif
+#define KM4_LOADER_LMA  	KM4_BOOTLOADER_RAM_MP
+
+#define OUTSECTION ram_image1
+#define IMG1_LMA_REGION 	KM4_BOOTLOADER_RAM_MP
 
 /* define trustzone load memory address */
 #ifdef CONFIG_IMG3_SRAM
@@ -28,18 +23,18 @@ SECTIONS
 	/* image1 entry, this section should in RAM and fixed address for ROM */
 	.ram_image1.entry :
 	{
-		__ram_image1_text_start__ = .;
 		__ram_start_table_start__ = .;
 		KEEP(*(SORT(.image1.entry.data*)))
 		KEEP(*(.image1.validate.rodata*))
 		*(.image1.export.symb)
-	} > KM4_LOADER_LMA
+	} > KM4_BOOTLOADER_ENTRY
 
 	/*  Add . to assign the start address of the section */
 	/*  to prevent the change of the start address by ld doing section alignment */
 	.ram_image1.text :
 	{
 		/* image1 text */
+		__ram_image1_text_start__ = .;
 		/* If there is any code that must be placed in RAM, please use .sramdram.only.text section*/
 		*(.sramdram.only.text*)
 		. = ALIGN (32);

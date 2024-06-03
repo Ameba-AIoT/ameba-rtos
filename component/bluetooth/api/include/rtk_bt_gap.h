@@ -312,17 +312,6 @@ typedef struct {
  */
 
 /**
- * @fn        void rtk_bt_gap_ecfc_print_cid(uint16_t *cid, uint8_t num)
- * @brief     Print ECFC channel id.
- * @param[in] cid: Channel id array.
- * @param[in] num: Channel id number.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-void rtk_bt_gap_ecfc_print_cid(uint16_t *cid, uint8_t num);
-
-/**
  * @fn        uint16_t rtk_bt_gap_ecfc_set_param(rtk_bt_gap_ecfc_param_t type, uint16_t value)
  * @brief     Set ECFC paramter.
  * @param[in] type: Parameter type.

@@ -21,6 +21,7 @@
 #include <rtk_bt_mesh_generic_model.h>
 #include <rtk_bt_mesh_sensor_model.h>
 #include <rtk_bt_mesh_health_model.h>
+#include <bt_utils.h>
 
 #define BT_APP_PROCESS(func)                                \
     do {                                                    \
@@ -61,6 +62,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		printf("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
 			   le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 			   scan_res_ind->adv_report.len);
+		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
+					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+					scan_res_ind->adv_report.len);
 		break;
 	}
 	case RTK_BT_LE_GAP_EVT_SCAN_START_IND: {
@@ -97,6 +101,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 			printf("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
 				   conn_ind->err, le_addr);
 		}
+		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
 		break;
 	}
 
@@ -106,6 +111,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		role = disconn_ind->role ? "slave" : "master";
 		printf("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
 			   disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
+					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		break;
 	}
 
@@ -115,6 +122,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		if (conn_update_ind->err) {
 			printf("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
 				   conn_update_ind->conn_handle, conn_update_ind->err);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
 			printf("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
 				   "conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
@@ -122,6 +130,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 				   conn_update_ind->conn_interval,
 				   conn_update_ind->conn_latency,
 				   conn_update_ind->supv_timeout);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
+						conn_update_ind->conn_handle,
+						conn_update_ind->conn_interval,
+						conn_update_ind->conn_latency,
+						conn_update_ind->supv_timeout);
 		}
 		break;
 	}
@@ -147,6 +160,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 			   data_len_change->max_tx_time,
 			   data_len_change->max_rx_octets,
 			   data_len_change->max_rx_time);
+		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
+					data_len_change->conn_handle,
+					data_len_change->max_tx_octets,
+					data_len_change->max_tx_time,
+					data_len_change->max_rx_octets,
+					data_len_change->max_rx_time);
 		break;
 	}
 
@@ -2381,7 +2400,6 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	return RTK_BT_EVT_CB_OK;
 }
 
-extern bool rtk_bt_pre_enable(void);
 int ble_mesh_device_main(uint8_t enable)
 {
 	rtk_bt_app_conf_t bt_app_conf = {0};
@@ -2389,11 +2407,6 @@ int ble_mesh_device_main(uint8_t enable)
 	char addr_str[30] = {0};
 
 	if (1 == enable) {
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
-			return -1;
-		}
-
 		//set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_MESH | RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_GATTC;
 		bt_app_conf.bt_mesh_app_conf.bt_mesh_role = RTK_BT_MESH_ROLE_DEVICE;

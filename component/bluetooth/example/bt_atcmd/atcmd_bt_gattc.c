@@ -25,19 +25,14 @@
 
 static int atcmd_bt_gattc_exchange_mtu(int argc, char **argv)
 {
-#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	(void)argc;
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	(void)argv;
 	AT_PRINTK("[ATBC] GATTC exchange MTU is not support!");
 	return -1;
 #else
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] GATTC exchange MTU failed! wrong args num!");
-		return -1;
-	}
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	ret = rtk_bt_gattc_exchange_mtu(conn_handle);
@@ -53,13 +48,10 @@ static int atcmd_bt_gattc_exchange_mtu(int argc, char **argv)
 static int atcmd_bt_gattc_discover(int argc, char **argv)
 {
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+	(void)argc;
 	uint16_t ret = 0;
 
 	AT_PRINTK("[ATBC] GATT Client based on ble_mgr\r\n");
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	ret = rtk_bt_gattc_discover_all(str_to_int(argv[0]));
 	if (RTK_BT_OK != ret) {
@@ -176,11 +168,6 @@ static int atcmd_bt_gattc_read(int argc, char **argv)
 #endif
 	rtk_bt_gattc_read_param_t read_param = {0};
 
-	if (argc < 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
-
 	read_param.conn_handle = str_to_int(argv[0]);
 	read_param.profile_id = GCS_CLIENT_PROFILE_ID;
 	read_param.type = str_to_int(argv[1]);
@@ -253,13 +240,9 @@ WRONG_ARG_NUM:
 
 static int atcmd_bt_gattc_write(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_gattc_write_param_t write_param = {0};
-
-	if (argc != 5) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	write_param.conn_handle = str_to_int(argv[0]);
 	write_param.profile_id = GCS_CLIENT_PROFILE_ID;
@@ -296,14 +279,10 @@ WRONG_ARG_LEN:
 
 static int atcmd_bt_gattc_enable_cccd(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_gattc_update_cccd_param_t en_cccd = {0};
 	uint16_t cccd_bit = 0;
-
-	if (argc != 4) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	en_cccd.conn_handle = str_to_int(argv[0]);
 	en_cccd.profile_id = GCS_CLIENT_PROFILE_ID;
@@ -335,14 +314,10 @@ static int atcmd_bt_gattc_enable_cccd(int argc, char **argv)
 
 static int atcmd_bt_gattc_disable_cccd(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_gattc_update_cccd_param_t dis_cccd = {0};
 	uint16_t cccd_bit = 0;
-
-	if (argc != 4) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	dis_cccd.conn_handle = str_to_int(argv[0]);
 	dis_cccd.profile_id = GCS_CLIENT_PROFILE_ID;
@@ -382,11 +357,6 @@ static int atcmd_bas_client_srv_discover(int argc, char **argv)
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
-
 	conn_handle = str_to_int(argv[0]);
 	ret = bas_client_srv_discover(conn_handle);
 	if (RTK_BT_OK != ret) {
@@ -401,13 +371,9 @@ static int atcmd_bas_client_srv_discover(int argc, char **argv)
 
 static int atcmd_bas_client_read_battery_level(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	ret = bas_client_read_battery_level(conn_handle);
@@ -422,14 +388,10 @@ static int atcmd_bas_client_read_battery_level(int argc, char **argv)
 
 static int atcmd_bas_client_set_notify(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	bool enable = true;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	enable = (str_to_int(argv[1]) ? true : false);
@@ -447,13 +409,9 @@ static int atcmd_bas_client_set_notify(int argc, char **argv)
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 static int atcmd_gaps_client_srv_discover(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	ret = gaps_client_srv_discover(conn_handle);
@@ -469,14 +427,10 @@ static int atcmd_gaps_client_srv_discover(int argc, char **argv)
 
 static int atcmd_gaps_client_read_char(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	uint16_t char_index = 0;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	char_index = str_to_int(argv[1]);
@@ -494,13 +448,9 @@ static int atcmd_gaps_client_read_char(int argc, char **argv)
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 static int atcmd_simple_ble_client_srv_discover(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	ret = simple_ble_client_srv_discover(conn_handle);
@@ -516,13 +466,9 @@ static int atcmd_simple_ble_client_srv_discover(int argc, char **argv)
 
 static int atcmd_simple_ble_client_read_charac_v0(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	ret = simple_ble_client_read_charac_v0(conn_handle);
@@ -537,14 +483,10 @@ static int atcmd_simple_ble_client_read_charac_v0(int argc, char **argv)
 
 static int atcmd_simple_ble_client_write_charac_v1(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	uint16_t data_len = 0;
-
-	if (argc != 3) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	data_len = str_to_int(argv[1]);
@@ -566,14 +508,10 @@ static int atcmd_simple_ble_client_write_charac_v1(int argc, char **argv)
 
 static int atcmd_simple_ble_client_set_notify_charac_v2(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	bool enable = true;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	enable = (str_to_int(argv[1]) ? true : false);
@@ -589,14 +527,10 @@ static int atcmd_simple_ble_client_set_notify_charac_v2(int argc, char **argv)
 
 static int atcmd_simple_ble_client_set_indicate_charac_v3(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	bool enable = 0;
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	enable = (str_to_int(argv[1]) ? true : false);
@@ -610,18 +544,13 @@ static int atcmd_simple_ble_client_set_indicate_charac_v3(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
-
 static int atcmd_cte_client_srv_discover(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-
-	if (argc != 1) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	ret = cte_client_srv_discover(conn_handle);
@@ -632,29 +561,17 @@ static int atcmd_cte_client_srv_discover(int argc, char **argv)
 
 	AT_PRINTK("[ATBC] CTE client discovering ...");
 	return 0;
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support cte client service discover.");
-	return -1;
-#endif/* RTK_BLE_5_1_CTE_SUPPORT  */
 }
-
 #endif  /* RTK_BLE_MGR_LIB  */
 
 static int atcmd_cte_client_write_charac(int argc, char **argv)
 {
-#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
+	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
 	uint16_t data_len = 0;
 	void *data;
 	cte_charac_index_e char_idx;
-
-	if (argc != 4) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	conn_handle = str_to_int(argv[0]);
 	char_idx = str_to_int(argv[1]);
@@ -672,14 +589,8 @@ static int atcmd_cte_client_write_charac(int argc, char **argv)
 	osif_mem_free(data);
 	AT_PRINTK("[ATBC] CTE client writing characteristic index %u ...", char_idx);
 	return 0;
-
-#else
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support cte client characteristic write.");
-	return -1;
-#endif/* RTK_BLE_5_1_CTE_SUPPORT  */
 }
+#endif/* RTK_BLE_5_1_CTE_SUPPORT  */
 
 #endif /* CONFIG_BT_CENTRAL || CONFIG_BT_SCATTERNET */
 
@@ -713,10 +624,12 @@ static const cmd_table_t gattc_cmd_table[] = {
 	{"simble_set_notify",     atcmd_simple_ble_client_set_notify_charac_v2, 3, 3},
 	{"simble_set_indicate",     atcmd_simple_ble_client_set_indicate_charac_v3, 3, 3},
 	/* cte client related */
+#if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 	{"cte_disc",        atcmd_cte_client_srv_discover, 2, 2},
 #endif
 	{"cte_write",       atcmd_cte_client_write_charac, 5, 5},
+#endif
 #endif /* CONFIG_BT_CENTRAL || CONFIG_BT_SCATTERNET */
 
 	{NULL,},

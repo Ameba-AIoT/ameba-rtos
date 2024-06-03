@@ -11,20 +11,21 @@ vpath %.c $(DIR)/driver/hci \
 		$(DIR)/driver/hci/hci_process \
 		$(DIR)/driver/hci/hci_transport \
 		$(DIR)/driver/platform/amebadplus/hci \
-		$(DIR)/rtk_stack/platform/amebadplus/src \
+		$(DIR)/rtk_stack/platform/common \
 		$(DIR)/osif
 
 CSRC += \
 	$(DIR)/driver/hci/hci_process/hci_process.c \
+	$(DIR)/driver/hci/hci_process/hci_common.c \
 	$(DIR)/driver/hci/hci_process/hci_standalone.c \
 	$(DIR)/driver/hci/hci_transport/hci_h4.c \
 	$(DIR)/driver/hci/hci_if_rtk.c \
 	$(DIR)/driver/platform/amebadplus/hci/bt_normal_patch.c \
-	$(DIR)/driver/platform/amebadplus/hci/hci_dbg.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_uart.c \
-	$(DIR)/rtk_stack/platform/amebadplus/src/platform_utils.c \
-	$(DIR)/rtk_stack/platform/amebadplus/src/trace_uart.c \
+	$(DIR)/rtk_stack/platform/common/platform_utils.c \
+	$(DIR)/rtk_stack/platform/common/trace_uart.c \
+	$(DIR)/osif/bt_debug.c \
 	$(DIR)/osif/osif.c
 
 ifneq ($(CONFIG_BT_EXCLUDE_MP_FUNCTION), y)

@@ -1,7 +1,5 @@
 #include <rtw_cfg80211_fullmac.h>
 
-extern struct inic_sdio inic_sdio_priv;
-
 //
 // Description:
 //	The following mapping is for SDIO host local register space.
@@ -374,7 +372,7 @@ u32 sdio_write_port(
 }
 
 /*
- * Todo: align address to 4 bytes.
+ * align address to 4 bytes in future.
  */
 s32 sdio_local_read(
 	struct inic_sdio *priv,
@@ -415,7 +413,7 @@ s32 sdio_local_read(
 }
 
 /*
- * Todo: align address to 4 bytes.
+ * align address to 4 bytes in future.
  */
 s32 sdio_local_write(
 	struct inic_sdio *priv,

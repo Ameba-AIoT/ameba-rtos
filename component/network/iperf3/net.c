@@ -67,7 +67,7 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen,
 	//struct pollfd pfd;
 	socklen_t optlen;
 	int flags, optval;
-	int ret = -1;
+	int ret = 0;
 	int result = 0;
 
 	flags = 0;
@@ -310,16 +310,23 @@ Nread(int fd, char *buf, size_t count, int prot)
 
 	register ssize_t r;
 	register size_t nleft = count;
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
 
 	while (nleft > 0) {
 		r = read(fd, buf, nleft);
 		if (r < 0) {
+#if 0
+			int so_error = 0;
+			socklen_t errlen = sizeof(so_error);
 			getsockopt(fd, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
 			//printf("Nread,so_error:%d\n",so_error);
 			//if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
 			if (so_error == EINTR || so_error == EAGAIN || so_error == EWOULDBLOCK || so_error == 0) {
+				break;
+			} else {
+				return NET_HARDERROR;
+			}
+#endif
+			if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK || errno == 0) {
 				break;
 			} else {
 				return NET_HARDERROR;
@@ -345,15 +352,17 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
 	/* To avoid gcc warnings */
 	(void) prot;
 
-	register ssize_t r;
+	register ssize_t r = 0;
 	register size_t nleft = count;
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
 
 	while (nleft > 0) {
 		r = write(fd, buf, nleft);
 		if (r < 0) {
+#if 0
+			int so_error = 0;
+			socklen_t errlen = sizeof(so_error);
 			getsockopt(fd, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
+			printf("\n%s ,so_error=%d\n", __FUNCTION__, so_error);
 			switch (so_error) {
 			case EINTR:
 			case EAGAIN:
@@ -368,9 +377,18 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
 			default:
 				return NET_HARDERROR;
 			}
+#endif
+			if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+				return count - nleft;
+			} else if (errno == ENOBUFS) {
+				return NET_SOFTERROR;
+			} else {
+				return NET_HARDERROR;
+			}
 		} else if (r == 0) {
 			return NET_SOFTERROR;
 		}
+
 		nleft -= r;
 		buf += r;
 	}

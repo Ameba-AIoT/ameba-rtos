@@ -212,12 +212,12 @@ static int cfg80211_rtw_change_beacon(struct wiphy *wiphy, struct net_device *nd
 
 	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, info->beacon_ies, info->beacon_ies_len);
 	if (target_ptr) {
-		llhw_wifi_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_wps_ie_idx + 1));
+		llhw_wifi_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_wps_ie_idx + 1), (BEACON | PROBE_RSP));
 	}
 
 	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, info->beacon_ies, info->beacon_ies_len);
 	if (target_ptr) {
-		llhw_wifi_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_p2p_ie_idx + 1));
+		llhw_wifi_update_custom_ie((u8 *)target_ptr, (global_idev.p2p_global.beacon_p2p_ie_idx + 1), (BEACON | PROBE_RSP));
 	}
 #endif
 
@@ -291,6 +291,10 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 	u8 WPS_OUI[4] = {0x00, 0x50, 0xf2, 0x04};
 #endif
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Start Softap\n", FUNC_NDEV_ARG(ndev));
+
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
 
 	memcpy(softAP_config.ssid.val, (u8 *)settings->ssid, settings->ssid_len);
 	softAP_config.ssid.len = settings->ssid_len;
@@ -410,6 +414,10 @@ static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev
 	int ret = 0;
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Stop Softap\n", FUNC_NDEV_ARG(ndev));
 
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
 	ret = llhw_wifi_stop_ap();
 
 	netif_carrier_off(ndev);
@@ -422,6 +430,10 @@ int cfg80211_rtw_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *requ
 	struct _rtw_scan_param_t scan_param = {0};
 
 	dev_dbg(global_idev.fullmac_dev, "cfg80211_rtw_scan enter\n");
+
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 

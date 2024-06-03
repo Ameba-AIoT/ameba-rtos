@@ -4,7 +4,7 @@
 # Library
 ################
 Usage() {
-    echo "Usage: $0 [Image2 Name] [Boot Image Name][option] [Image3 Name][option] [DSP Image Name][option]"
+    echo "Usage: $0 [Image2 Name] [Boot Image Name][option] [option]"
 }
 
 # Parameter:
@@ -85,13 +85,10 @@ OFFSET=32
 IMAGE_ID=0xFFFFFFFF
 IMAGE_FILENAME_1=""
 IMAGE_FILENAME_2=""
-IMAGE_FILENAME_3=""
 IMAGE_FILENAME_1_NEW=""
 IMAGE_FILENAME_2_NEW=""
-IMAGE_FILENAME_3_NEW=""
 IMAGE_LEN_1=0
 IMAGE_LEN_2=0
-IMAGE_LEN_3=0
 ENDFLAG=0
 
 
@@ -109,22 +106,6 @@ if [ "$#" == 2 ]; then
 	IMAGE_FILENAME_1_NEW=$(basename $IMAGE_FILENAME_1)
 	OFFSET=56
 	OTA_NUM=2
-elif [ "$#" == 3 ]; then
-	IMAGE_FILENAME_1=$2
-	IMAGE_FILENAME_2=$3
-	IMAGE_FILENAME_1_NEW=$(basename $IMAGE_FILENAME_1)
-	IMAGE_FILENAME_2_NEW=$(basename $IMAGE_FILENAME_2)
-	OFFSET=80
-	OTA_NUM=3
-elif [ "$#" == 4 ]; then
-	IMAGE_FILENAME_1=$2
-	IMAGE_FILENAME_2=$3
-	IMAGE_FILENAME_3=$4
-	IMAGE_FILENAME_1_NEW=$(basename $IMAGE_FILENAME_1)
-	IMAGE_FILENAME_2_NEW=$(basename $IMAGE_FILENAME_2)
-	IMAGE_FILENAME_3_NEW=$(basename $IMAGE_FILENAME_3)
-	OFFSET=104
-	OTA_NUM=4
 fi
 
 CURR_PATH=$(dirname $IMAGE2_FILENAME)
@@ -132,11 +113,15 @@ CURR_PATH=$(dirname $IMAGE2_FILENAME)
 IMAGE_FILENAME_PREPEND=$CURR_PATH/OTA_All.bin
 IMAGE_FILENAME_NEW=$(basename $IMAGE2_FILENAME)
 
+if [ "$IMAGE_FILENAME_NEW" == "km0_km4_app_ns.bin" ]; then
+	IMAGE_FILENAME_PREPEND=$CURR_PATH/OTA_All_ns.bin
+fi
+
 HEADER_FINAL=''
 MakeFixedWidthHeaderString $VERSION   8  HEADER_FINAL 0
 MakeFixedWidthHeaderString $OTA_NUM   8  HEADER_FINAL 1
 
-if [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all.bin" ]; then
+if [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all.bin" ] || [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all_ns.bin" ]; then
 	IMAGE_ID=0
 	if [ "$COMPILEOS" != "Darwin" ]; then
 		IMAGE_LEN_1=$(du -b $IMAGE_FILENAME_1 | cut -f 1)
@@ -169,89 +154,11 @@ if [ "$IMAGE_FILENAME_NEW" == "km0_km4_app.bin" ] || [ "$IMAGE_FILENAME_NEW" == 
 	MakeFixedWidthHeaderString $IMAGE_ID    8  HEADER_FINAL 1
 fi
 
-if [ "$IMAGE_FILENAME_1_NEW" == "km4_image3_all.bin" ]; then
-	IMAGE_ID=2
-	let OFFSET=$OFFSET+$IMAGE_LEN
-	if [ "$COMPILEOS" != "Darwin" ]; then
-		IMAGE_LEN_1=$(du -b $IMAGE_FILENAME_1 | cut -f 1)
-	else
-		IMAGE_LEN_1=$(stat -f%z $IMAGE_FILENAME_1)
-	fi
-    MakeFixedWidthHeaderString $OTA_SIGN   8  HEADER_FINAL 0
-    MakeFixedWidthHeaderString $HEADER_LEN   8  HEADER_FINAL 1
-    MakeFixedWidthHeaderString $CHECKSUM    8  HEADER_FINAL 1
-	MakeFixedWidthHeaderString $IMAGE_LEN_1    8  HEADER_FINAL 1
-	MakeFixedWidthHeaderString $OFFSET    8  HEADER_FINAL 1
-	MakeFixedWidthHeaderString $IMAGE_ID    8  HEADER_FINAL 1	
-elif [ "$IMAGE_FILENAME_1_NEW" == "dsp_all.bin" ]; then
-	IMAGE_ID=3
-	let OFFSET=$OFFSET+$IMAGE_LEN
-	if [ "$COMPILEOS" != "Darwin" ]; then
-		IMAGE_LEN_1=$(du -b $IMAGE_FILENAME_1 | cut -f 1)
-	else
-		IMAGE_LEN_1=$(stat -f%z $IMAGE_FILENAME_1)
-	fi
-    MakeFixedWidthHeaderString $OTA_SIGN   8  HEADER_FINAL 0
-    MakeFixedWidthHeaderString $HEADER_LEN   8  HEADER_FINAL 1
-    MakeFixedWidthHeaderString $CHECKSUM    8  HEADER_FINAL 1
-	MakeFixedWidthHeaderString $IMAGE_LEN_1    8  HEADER_FINAL 1
-	MakeFixedWidthHeaderString $OFFSET    8  HEADER_FINAL 1
-	MakeFixedWidthHeaderString $IMAGE_ID    8  HEADER_FINAL 1	
-	ENDFLAG=1
-fi
 
-if [ $ENDFLAG != 1 ]; then
-	if [ "$IMAGE_FILENAME_2_NEW" == "km4_image3_all.bin" ]; then
-		IMAGE_ID=2
-		let OFFSET=$OFFSET+$IMAGE_LEN
-		if [ "$COMPILEOS" != "Darwin" ]; then
-			IMAGE_LEN_2=$(du -b $IMAGE_FILENAME_2 | cut -f 1)
-		else
-			IMAGE_LEN_2=$(stat -f%z $IMAGE_FILENAME_2)
-		fi
-		MakeFixedWidthHeaderString $OTA_SIGN   8  HEADER_FINAL 0
-		MakeFixedWidthHeaderString $HEADER_LEN   8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $CHECKSUM    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $IMAGE_LEN_2    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $OFFSET    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $IMAGE_ID    8  HEADER_FINAL 1	
-	elif [ "$IMAGE_FILENAME_2_NEW" == "dsp_all.bin" ]; then
-		IMAGE_ID=3
-		let OFFSET=$OFFSET+$IMAGE_LEN
-		if [ "$COMPILEOS" != "Darwin" ]; then
-			IMAGE_LEN_2=$(du -b $IMAGE_FILENAME_2 | cut -f 1)
-		else
-			IMAGE_LEN_2=$(stat -f%z $IMAGE_FILENAME_2)
-		fi
-		MakeFixedWidthHeaderString $OTA_SIGN   8  HEADER_FINAL 0
-		MakeFixedWidthHeaderString $HEADER_LEN   8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $CHECKSUM    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $IMAGE_LEN_2    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $OFFSET    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $IMAGE_ID    8  HEADER_FINAL 1	
-		ENDFLAG=1
-	fi
-fi
+
 
 #echo "$ENDFLAG"
 
-if [ $ENDFLAG != 1 ]; then
-	if [ "$IMAGE_FILENAME_3_NEW" == "dsp_all.bin" ]; then
-		IMAGE_ID=3
-		let OFFSET=$OFFSET+$IMAGE_LEN_2
-		if [ "$COMPILEOS" != "Darwin" ]; then
-			IMAGE_LEN_3=$(du -b $IMAGE_FILENAME_3 | cut -f 1)
-		else
-			IMAGE_LEN_3=$(stat -f%z $IMAGE_FILENAME_3)
-		fi
-		MakeFixedWidthHeaderString $OTA_SIGN   8  HEADER_FINAL 0
-		MakeFixedWidthHeaderString $HEADER_LEN   8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $CHECKSUM    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $IMAGE_LEN_3    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $OFFSET    8  HEADER_FINAL 1
-		MakeFixedWidthHeaderString $IMAGE_ID    8  HEADER_FINAL 1	
-	fi
-fi
 
 if [ "$#" == 2 ]; then
 	IMAGE_FILENAME_1=$2
@@ -259,38 +166,17 @@ if [ "$#" == 2 ]; then
 	IMAGE_FILENAME_1_NEW=$(basename $IMAGE_FILENAME_1)
 	OFFSET=56
 	OTA_NUM=2
-	if [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all.bin" ]; then
+	if [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all.bin" ] || [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all_ns.bin" ]; then
 		echo -n -e $HEADER_FINAL | cat - $IMAGE_FILENAME_1 $IMAGE2_FILENAME > $IMAGE_FILENAME_PREPEND
 		#checksum
-		$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 16
-		$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 40
+		$KM4_IMG_DIR$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 16
+		$KM4_IMG_DIR$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 40
 	else
 		echo -n -e $HEADER_FINAL | cat - $IMAGE2_FILENAME $IMAGE_FILENAME_1  > $IMAGE_FILENAME_PREPEND
 		#checksum
-		$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 16
-		$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 40
+		$KM4_IMG_DIR$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 16
+		$KM4_IMG_DIR$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 40
 	fi
-elif [ "$#" == 3 ]; then
-	if [ "$IMAGE_FILENAME_1_NEW" == "km4_boot_all.bin" ]; then
-		echo -n -e $HEADER_FINAL | cat - $IMAGE_FILENAME_1 $IMAGE2_FILENAME $IMAGE_FILENAME_2 > $IMAGE_FILENAME_PREPEND
-		#checksum
-		$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 16
-		$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 40
-		$CHECKSUMTOOL $IMAGE_FILENAME_2 $IMAGE_FILENAME_PREPEND 64
-	else
-		echo -n -e $HEADER_FINAL | cat - $IMAGE2_FILENAME $IMAGE_FILENAME_1 $IMAGE_FILENAME_2 > $IMAGE_FILENAME_PREPEND
-		#checksum
-		$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 16
-		$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 40
-		$CHECKSUMTOOL $IMAGE_FILENAME_2 $IMAGE_FILENAME_PREPEND 64
-	fi
-elif [ "$#" == 4 ]; then
-	echo -n -e $HEADER_FINAL | cat - $IMAGE_FILENAME_1 $IMAGE2_FILENAME $IMAGE_FILENAME_2 $IMAGE_FILENAME_3 > $IMAGE_FILENAME_PREPEND
-	#checksum
-	$CHECKSUMTOOL $IMAGE_FILENAME_1 $IMAGE_FILENAME_PREPEND 16
-	$CHECKSUMTOOL $IMAGE2_FILENAME $IMAGE_FILENAME_PREPEND 40
-	$CHECKSUMTOOL $IMAGE_FILENAME_2 $IMAGE_FILENAME_PREPEND 64
-	$CHECKSUMTOOL $IMAGE_FILENAME_3 $IMAGE_FILENAME_PREPEND 88
 else
 	echo -n -e $HEADER_FINAL | cat - $IMAGE2_FILENAME > $IMAGE_FILENAME_PREPEND
 	#checksum

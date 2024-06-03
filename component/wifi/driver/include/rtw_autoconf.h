@@ -94,7 +94,7 @@
 #include "autoconf_eap.h"
 /************************ For EAP auth configurations *************************/
 /* KVR macro is default opened, but actually not working. To use it, need turn on the switch in menuconfig */
-#define CONFIG_RTW_WNM
+#define CONFIG_IEEE80211V
 #define CONFIG_IEEE80211R
 #define CONFIG_IEEE80211K
 #if WIFI_LOGO_CERTIFICATION
@@ -109,22 +109,22 @@
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
 //#define CONFIG_FRAME_DEFRAG // support frame defragmentaion
-
 #ifdef CONFIG_MP_INCLUDED
+#endif
+
+#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_PS_EN
 #undef CONFIG_AUTO_RECONNECT
-
 #undef CONFIG_IEEE80211W
 #undef CONFIG_OWE_SUPPORT
 #undef CONFIG_SAE_SUPPORT
 #undef CONFIG_SAE_DH_SUPPORT
-#undef CONFIG_RTW_WNM
+#undef CONFIG_IEEE80211V
 #undef CONFIG_IEEE80211R
 #undef CONFIG_IEEE80211K
 #undef CONFIG_RTW_MBO
 
 #define CONFIG_AUTO_RECONNECT 0
 #endif
-
 
 #endif //WLANCONFIG_H

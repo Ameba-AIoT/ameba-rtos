@@ -26,6 +26,7 @@
 #include <rtk_hids_kb.h>
 #include <rtk_gls.h>
 #include <rtk_long_uuid_service.h>
+#include <bt_utils.h>
 
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 #include <rtk_cte_service.h>
@@ -231,7 +232,7 @@ static rtk_bt_evt_cb_ret_t peripheral_gap_app_callback(uint8_t evt_code, void *p
 			printf("[APP] ECFC connection established OK. %s\r\n", addr_str);
 			printf("[APP] proto_id(%d) conn_handle(%d) remote_mtu(%d) local_mtu(%d) local_mps(%d)\r\n",
 				   p_ind->proto_id, p_ind->conn_handle, p_ind->remote_mtu, p_ind->local_mtu, p_ind->local_mps);
-			rtk_bt_gap_ecfc_print_cid(p_ind->cid, p_ind->cid_num);
+			BT_DUMP16A("[APP] cid: ", p_ind->cid, p_ind->cid_num);
 		}
 		break;
 	}
@@ -248,7 +249,7 @@ static rtk_bt_evt_cb_ret_t peripheral_gap_app_callback(uint8_t evt_code, void *p
 		printf("[APP] ECFC connection requset. %s\r\n", addr_str);
 		printf("[APP] proto_id(%d) conn_handle(%d) remote_mtu(%d) identity_id(%d)\r\n",
 			   p_ind->proto_id, p_ind->conn_handle, p_ind->remote_mtu, p_ind->identity_id);
-		rtk_bt_gap_ecfc_print_cid(p_ind->cid, p_ind->cid_num);
+		BT_DUMP16A("[APP] cid: ", p_ind->cid, p_ind->cid_num);
 		break;
 	}
 	case RTK_BT_GAP_EVT_ECFC_DISCONN_IND: {
@@ -261,7 +262,7 @@ static rtk_bt_evt_cb_ret_t peripheral_gap_app_callback(uint8_t evt_code, void *p
 		rtk_bt_ecfc_reconf_req_ind_t *p_ind = (rtk_bt_ecfc_reconf_req_ind_t *)param;
 		printf("[APP] ECFC reconfigure requset. proto_id(%d) conn_handle(%d) remote_mtu(%d) remote_mps(%d)\r\n",
 			   p_ind->proto_id, p_ind->conn_handle, p_ind->remote_mtu, p_ind->remote_mps);
-		rtk_bt_gap_ecfc_print_cid(p_ind->cid, p_ind->cid_num);
+		BT_DUMP16A("[APP] cid: ", p_ind->cid, p_ind->cid_num);
 		if (p_ind->remote_mtu < RTK_BT_GAP_ECFC_MIN_MTU || p_ind->remote_mps < RTK_BT_GAP_ECFC_MIN_MPS) {
 			ret = RTK_BT_EVT_CB_REJECT;
 			printf("[APP] Reject!\r\n");
@@ -278,7 +279,7 @@ static rtk_bt_evt_cb_ret_t peripheral_gap_app_callback(uint8_t evt_code, void *p
 		} else {
 			printf("[APP] ECFC reconfigure OK, local_mtu(%d) local mps(%d)\r\n",
 				   p_ind->local_mtu, p_ind->local_mps);
-			rtk_bt_gap_ecfc_print_cid(p_ind->cid, p_ind->cid_num);
+			BT_DUMP16A("[APP] cid: ", p_ind->cid, p_ind->cid_num);
 		}
 		break;
 	}
@@ -313,6 +314,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			printf("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -323,6 +325,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			printf("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -342,6 +345,10 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 				printf("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
 			}
 		}
+		BT_AT_PRINT("+BLEGAP:eadv,%s,%d,%d\r\n",
+					ext_adv_ind->is_start ? "start" : "stop",
+					(ext_adv_ind->err == 0) ? 0 : -1,
+					ext_adv_ind->adv_handle);
 		break;
 	}
 #endif
@@ -364,6 +371,10 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		} else if (pa_ind->state == RTK_BT_LE_PA_STATE_WAIT_EXT_ADV_ADVERTISING) {
 			printf("[APP] Periodic ADV(%d) waiting for ext adv start, cause 0x%x\r\n", pa_ind->adv_handle, pa_ind->cause);
 		}
+		BT_AT_PRINT("+BLEGAP:pa_adv,%s,%d,%d\r\n",
+					((pa_ind->state == RTK_BT_LE_PA_STATE_IDLE) ? "stop" : ((pa_ind->state == RTK_BT_LE_PA_STATE_ADVERTISING) ? "start" : "wait_eadv")),
+					((pa_ind->state == RTK_BT_LE_PA_STATE_WAIT_EXT_ADV_ADVERTISING) ? 0 : ((pa_ind->cause == 0) ? 0 : -1)),
+					pa_ind->adv_handle);
 		break;
 	}
 #endif
@@ -376,6 +387,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			printf("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
 		break;
 	}
 
@@ -384,6 +396,9 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
 		printf("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i\r\n",
 			   le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi);
+		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
+					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+					scan_res_ind->adv_report.len);
 		break;
 	}
 
@@ -394,6 +409,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			printf("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
 		break;
 	}
 #endif
@@ -409,6 +425,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			printf("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
 				   conn_ind->err, le_addr);
 		}
+		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
 		break;
 	}
 
@@ -418,6 +435,8 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		role = disconn_ind->role ? "slave" : "master";
 		printf("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
 			   disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
+					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 
 #if !defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT
 		rtk_bt_le_gap_dev_state_t dev_state;
@@ -464,6 +483,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		if (conn_update_ind->err) {
 			printf("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
 				   conn_update_ind->conn_handle, conn_update_ind->err);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
 			printf("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
 				   "conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
@@ -471,6 +491,11 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 				   conn_update_ind->conn_interval,
 				   conn_update_ind->conn_latency,
 				   conn_update_ind->supv_timeout);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
+						conn_update_ind->conn_handle,
+						conn_update_ind->conn_interval,
+						conn_update_ind->conn_latency,
+						conn_update_ind->supv_timeout);
 		}
 		break;
 	}
@@ -501,6 +526,12 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			   data_len_change->max_tx_time,
 			   data_len_change->max_rx_octets,
 			   data_len_change->max_rx_time);
+		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
+					data_len_change->conn_handle,
+					data_len_change->max_tx_octets,
+					data_len_change->max_tx_time,
+					data_len_change->max_rx_octets,
+					data_len_change->max_rx_time);
 		break;
 	}
 
@@ -511,11 +542,16 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			printf("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
 				   phy_update_ind->conn_handle,
 				   phy_update_ind->err);
+			BT_AT_PRINT("+BLEGAP:conn_phy,%d,-1\r\n", phy_update_ind->conn_handle);
 		} else {
 			printf("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
 				   phy_update_ind->conn_handle,
 				   phy_update_ind->tx_phy,
 				   phy_update_ind->rx_phy);
+			BT_AT_PRINT("+BLEGAP:conn_phy,%d,0,%d,%d\r\n",
+						phy_update_ind->conn_handle,
+						phy_update_ind->tx_phy,
+						phy_update_ind->rx_phy);
 		}
 		break;
 	}
@@ -525,6 +561,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			(rtk_bt_le_auth_pair_cfm_ind_t *)param;
 		APP_PROMOTE("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
 					pair_cfm_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:pair_cfm,%d\r\n", pair_cfm_ind->conn_handle);
 		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
 		uint16_t ret = 0;
 		pair_cfm_param.conn_handle = pair_cfm_ind->conn_handle;
@@ -542,6 +579,9 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		APP_PROMOTE("[APP] Auth passkey display: %ld, conn_handle:%d\r\n",
 					key_dis_ind->passkey,
 					key_dis_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
+					(int)key_dis_ind->conn_handle,
+					(int)key_dis_ind->passkey);
 		break;
 	}
 
@@ -550,6 +590,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			(rtk_bt_le_auth_key_input_ind_t *)param;
 		APP_PROMOTE("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
 					key_input_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:passkey_input,%d\r\n", key_input_ind->conn_handle);
 		break;
 	}
 
@@ -560,6 +601,9 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 					"Please comfirm if the passkeys are equal!\r\n",
 					key_cfm_ind->passkey,
 					key_cfm_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:passkey_cfm,%d,%d\r\n",
+					(int)key_cfm_ind->conn_handle,
+					(int)key_cfm_ind->passkey);
 		break;
 	}
 
@@ -568,12 +612,16 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			(rtk_bt_le_auth_oob_input_ind_t *)param;
 		APP_PROMOTE("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
 					oob_input_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:oobkey_input,%d\r\n", oob_input_ind->conn_handle);
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND: {
 		rtk_bt_le_auth_complete_ind_t *auth_cplt_ind =
 			(rtk_bt_le_auth_complete_ind_t *)param;
+		BT_AT_PRINT("+BLEGAP:sec,%d,%d\r\n",
+					auth_cplt_ind->conn_handle,
+					(auth_cplt_ind->err == 0) ? 0 : -1);
 		if (auth_cplt_ind->err) {
 			printf("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
 				   auth_cplt_ind->err, auth_cplt_ind->conn_handle);
@@ -596,6 +644,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->ident_addr), ident_addr, sizeof(ident_addr));
 		printf("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n",
 			   bond_mdf_ind->op, le_addr, ident_addr);
+		BT_AT_PRINT("+BLEGAP:bond_modify,%d,%s,%s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
 
 		break;
 	}
@@ -613,10 +662,13 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 				printf("[APP] Resolving list %s %s fail, cause:%x.\r\n",
 					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
 					   le_addr, p_ind->err);
+				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,-1\r\n", p_ind->op);
 			} else {
 				printf("[APP] Resolving list %s %s success, %s privacy mode.\r\n",
 					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
 					   le_addr, p_ind->entry.device_mode ? "device" : "network");
+				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,0,%s,%s\r\n",
+							p_ind->op, le_addr, p_ind->entry.device_mode ? "device" : "network");
 			}
 		} else if (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_CLEAR) {
 			if (p_ind->err) {
@@ -624,6 +676,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			} else {
 				printf("[APP] Resolving list clear success.\r\n");
 			}
+			BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,%d\r\n", p_ind->op, (p_ind->err == 0) ? 0 : -1);
 		}
 		break;
 	}
@@ -634,6 +687,10 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			   (p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_ADV) ? 1 : 0,
 			   (p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_SCAN) ? 1 : 0,
 			   (p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_CONNECT) ? 1 : 0);
+		BT_AT_PRINT("+BLEGAP:resolv_list_pending,%d,%d,%d\r\n",
+					(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_ADV) ? 1 : 0,
+					(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_SCAN) ? 1 : 0,
+					(p_ind->reason & RTK_BT_LE_RESOLV_LIST_PEND_BY_CONNECT) ? 1 : 0);
 		break;
 	}
 #endif
@@ -649,6 +706,8 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			rtk_bt_le_addr_to_str(&p_info->addr, le_addr, sizeof(le_addr));
 			printf("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
 				   le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
+			BT_AT_PRINT("+BLEGAP:pa_sync,%s,0x%x,%d,%d\r\n",
+						le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
 		}
 		break;
 	}
@@ -658,6 +717,9 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		printf("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
 			   pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
 			   pa_report->cte_type, pa_report->data_status, pa_report->data_len);
+		BT_AT_PRINT("+BLEGAP:pa_report,%d,0x%x,%d,%d,%d,0x%x,%d\r\n",
+					pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
+					pa_report->cte_type, pa_report->data_status, pa_report->data_len);
 		break;
 	}
 #endif
@@ -667,6 +729,8 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		rtk_bt_le_txpower_ind_t *txpower_ind = (rtk_bt_le_txpower_ind_t *)param;
 		printf("[APP] TX power report: conn_handle %d, type %d, txpower %d\r\n",
 			   txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
+		BT_AT_PRINT("+BLEGAP:txpower_report,%d,%d,%d\r\n",
+					txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
 		break;
 	}
 #endif
@@ -675,6 +739,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_CONNLESS_CTE_TX_STATE_IND: {
 		rtk_bt_le_gap_connless_cte_tx_ind_t *tx_ind = (rtk_bt_le_gap_connless_cte_tx_ind_t *)param;
 		printf("[APP] Connectionless CTE transmit adv_handle %u, cause %u, ", tx_ind->adv_handle, tx_ind->cause);
+		BT_AT_PRINT("+BLEGAP:connless_cte_tx,%d,%d\r\n", tx_ind->adv_handle, tx_ind->state);
 		switch (tx_ind->state) {
 		case RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_IDLE:
 			printf("state STATE_IDLE\r\n");
@@ -811,7 +876,6 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gatts_app_callback(uint8_t event, void
 	return RTK_BT_EVT_CB_OK;
 }
 
-extern bool rtk_bt_pre_enable(void);
 int ble_peripheral_main(uint8_t enable)
 {
 	rtk_bt_app_conf_t bt_app_conf = {0};
@@ -829,11 +893,6 @@ int ble_peripheral_main(uint8_t enable)
 #endif
 
 	if (1 == enable) {
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
-			return -1;
-		}
-
 		//set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS;
 		bt_app_conf.mtu_size = 180;

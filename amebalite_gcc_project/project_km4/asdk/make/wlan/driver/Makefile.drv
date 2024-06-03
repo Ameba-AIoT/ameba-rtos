@@ -40,7 +40,7 @@ endif
 include ../inic/Makefile.include.dev
 
 
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifndef CONFIG_MP_SHRINK
 CSRC_DRV += $(DIR)/core/rtw_ap.c \
     $(DIR)/core/rtw_ap_xmit.c \
     $(DIR)/core/rtw_shortcut.c \
@@ -59,7 +59,6 @@ CSRC_DRV += $(DIR)/core/rtw_ap.c \
 	$(DIR)/core/rtw_lps.c \
 	$(DIR)/core/rtw_ips.c \
 	$(DIR)/core/rtw_pmksa_cache.c \
-	$(DIR)/core/wifi_performance_monitor.c \
 	$(DIR)/mesh/wifi_mesh.c \
 	$(DIR)/core/rtw_11d.c \
 	$(DIR)/core/rtw_rm.c \
@@ -110,6 +109,8 @@ CSRC_DRV +=  \
     $(DIR)/halcommon/hal_debug.c \
     $(DIR)/halcommon/hal_xmit.c \
     $(DIR)/halcommon/hal_recv.c \
+    $(DIR)/halcommon/hal_dm.c \
+    $(DIR)/halcommon/hal_interrupt.c \
     $(DIR)/phl/phl.c \
     $(DIR)/../wpa_supplicant/src/crypto/dh_groups.c \
 
@@ -118,13 +119,11 @@ CSRC_DRV += $(TARGET_LIB)_git_version.c
 
 ifeq ($(CONFIG_AMEBALITE), y)
 
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_suspend.c	\
 
 endif
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_message_e.c \
-	$(DIR)/core_rom/rom_rtw_message_f.c \
-	$(DIR)/core_rom/rom_rtw_80211w.c \
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_80211w.c \
 	$(DIR)/core_rom/rom_rtw_rate.c \
 	$(DIR)/core_rom/rom_rtw_chbw.c \
 
@@ -189,7 +188,7 @@ endif
 
 ifeq ($(CONFIG_AMEBADPLUS), y)
 
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_suspend.c	\
 
 endif
@@ -253,14 +252,12 @@ CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_xmit.c
 endif
 
 ifeq ($(CONFIG_AMEBASMART), y)
-ifneq ($(CONFIG_MP_INCLUDED), y)
+ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_suspend.c
 
 endif
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_message_e.c \
-       $(DIR)/core_rom/rom_rtw_message_f.c \
-	   $(DIR)/core_rom/rom_rtw_80211w.c \
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_80211w.c \
 	   $(DIR)/core_rom/rom_rtw_psk.c \
 	   $(DIR)/core/rtw_vht.c \
 	   $(DIR)/core_rom/rom_rtw_rate.c \

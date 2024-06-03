@@ -3264,140 +3264,220 @@
  * ETHARP_DEBUG: Enable debugging in etharp.c.
  */
 #if !defined ETHARP_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_ETHARP_DEBUG
+#define ETHARP_DEBUG                    LWIP_DBG_ON
+#else
 #define ETHARP_DEBUG                    LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * NETIF_DEBUG: Enable debugging in netif.c.
  */
 #if !defined NETIF_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_NETIF_DEBUG
+#define NETIF_DEBUG                     LWIP_DBG_ON
+#else
 #define NETIF_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * PBUF_DEBUG: Enable debugging in pbuf.c.
  */
 #if !defined PBUF_DEBUG || defined __DOXYGEN__
-#define PBUF_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_PBUF_DEBUG
+#define PBUF_DEBUG                     LWIP_DBG_ON
+#else
+#define PBUF_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * API_LIB_DEBUG: Enable debugging in api_lib.c.
  */
 #if !defined API_LIB_DEBUG || defined __DOXYGEN__
-#define API_LIB_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_API_LIB_DEBUG
+#define API_LIB_DEBUG                     LWIP_DBG_ON
+#else
+#define API_LIB_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * API_MSG_DEBUG: Enable debugging in api_msg.c.
  */
 #if !defined API_MSG_DEBUG || defined __DOXYGEN__
-#define API_MSG_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_API_MSG_DEBUG
+#define API_MSG_DEBUG                     LWIP_DBG_ON
+#else
+#define API_MSG_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * SOCKETS_DEBUG: Enable debugging in sockets.c.
  */
 #if !defined SOCKETS_DEBUG || defined __DOXYGEN__
-#define SOCKETS_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_SOCKETS_DEBUG
+#define SOCKETS_DEBUG                     LWIP_DBG_ON
+#else
+#define SOCKETS_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * ICMP_DEBUG: Enable debugging in icmp.c.
  */
 #if !defined ICMP_DEBUG || defined __DOXYGEN__
-#define ICMP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_ICMP_DEBUG
+#define ICMP_DEBUG                     LWIP_DBG_ON
+#else
+#define ICMP_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * IPNAT_DEBUG: Enable debugging in lwip_ip4nat.c.
  */
 #if !defined IPNAT_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_IPNAT_DEBUG
+#define IPNAT_DEBUG                     LWIP_DBG_ON
+#else
 #define IPNAT_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * IGMP_DEBUG: Enable debugging in igmp.c.
  */
 #if !defined IGMP_DEBUG || defined __DOXYGEN__
-#define IGMP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_IGMP_DEBUG
+#define IGMP_DEBUG                     LWIP_DBG_ON
+#else
+#define IGMP_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * INET_DEBUG: Enable debugging in inet.c.
  */
 #if !defined INET_DEBUG || defined __DOXYGEN__
-#define INET_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_INET_DEBUG
+#define INET_DEBUG                     LWIP_DBG_ON
+#else
+#define INET_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * IP_DEBUG: Enable debugging for IP.
  */
 #if !defined IP_DEBUG || defined __DOXYGEN__
-#define IP_DEBUG                        LWIP_DBG_OFF
+#ifdef CONFIG_IP_DEBUG
+#define IP_DEBUG                     LWIP_DBG_ON
+#else
+#define IP_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * IP_REASS_DEBUG: Enable debugging in ip_frag.c for both frag & reass.
  */
 #if !defined IP_REASS_DEBUG || defined __DOXYGEN__
-#define IP_REASS_DEBUG                  LWIP_DBG_OFF
+#ifdef CONFIG_IP_REASS_DEBUG
+#define IP_REASS_DEBUG                     LWIP_DBG_ON
+#else
+#define IP_REASS_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * RAW_DEBUG: Enable debugging in raw.c.
  */
 #if !defined RAW_DEBUG || defined __DOXYGEN__
-#define RAW_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_RAW_DEBUG
+#define RAW_DEBUG                     LWIP_DBG_ON
+#else
+#define RAW_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * MEM_DEBUG: Enable debugging in mem.c.
  */
 #if !defined MEM_DEBUG || defined __DOXYGEN__
-#define MEM_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_MEM_DEBUG
+#define MEM_DEBUG                     LWIP_DBG_ON
+#else
+#define MEM_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #if !defined MEMP_DEBUG || defined __DOXYGEN__
-#define MEMP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_MEMP_DEBUG
+#define MEMP_DEBUG                     LWIP_DBG_ON
+#else
+#define MEMP_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * SYS_DEBUG: Enable debugging in sys.c.
  */
 #if !defined SYS_DEBUG || defined __DOXYGEN__
-#define SYS_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_SYS_DEBUG
+#define SYS_DEBUG                     LWIP_DBG_ON
+#else
+#define SYS_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TIMERS_DEBUG: Enable debugging in timers.c.
  */
 #if !defined TIMERS_DEBUG || defined __DOXYGEN__
-#define TIMERS_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_TIMERS_DEBUG
+#define TIMERS_DEBUG                     LWIP_DBG_ON
+#else
+#define TIMERS_DEBUG                     LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_DEBUG: Enable debugging for TCP.
  */
 #if !defined TCP_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_TCP_DEBUG
+#define TCP_DEBUG                       LWIP_DBG_ON
+#else
 #define TCP_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_INPUT_DEBUG: Enable debugging in tcp_in.c for incoming debug.
  */
 #if !defined TCP_INPUT_DEBUG || defined __DOXYGEN__
-#define TCP_INPUT_DEBUG                 LWIP_DBG_OFF
+#ifdef CONFIG_TCP_INPUT_DEBUG
+#define TCP_INPUT_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_INPUT_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_FR_DEBUG: Enable debugging in tcp_in.c for fast retransmit.
  */
 #if !defined TCP_FR_DEBUG || defined __DOXYGEN__
-#define TCP_FR_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_TCP_FR_DEBUG
+#define TCP_FR_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_FR_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
@@ -3405,98 +3485,154 @@
  * timeout.
  */
 #if !defined TCP_RTO_DEBUG || defined __DOXYGEN__
-#define TCP_RTO_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_TCP_RTO_DEBUG
+#define TCP_RTO_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_RTO_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_CWND_DEBUG: Enable debugging for TCP congestion window.
  */
 #if !defined TCP_CWND_DEBUG || defined __DOXYGEN__
-#define TCP_CWND_DEBUG                  LWIP_DBG_OFF
+#ifdef CONFIG_TCP_CWND_DEBUG
+#define TCP_CWND_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_CWND_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_WND_DEBUG: Enable debugging in tcp_in.c for window updating.
  */
 #if !defined TCP_WND_DEBUG || defined __DOXYGEN__
-#define TCP_WND_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_TCP_WND_DEBUG
+#define TCP_WND_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_WND_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_OUTPUT_DEBUG: Enable debugging in tcp_out.c output functions.
  */
 #if !defined TCP_OUTPUT_DEBUG || defined __DOXYGEN__
-#define TCP_OUTPUT_DEBUG                LWIP_DBG_OFF
+#ifdef CONFIG_TCP_OUTPUT_DEBUG
+#define TCP_OUTPUT_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_OUTPUT_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_RST_DEBUG: Enable debugging for TCP with the RST message.
  */
 #if !defined TCP_RST_DEBUG || defined __DOXYGEN__
-#define TCP_RST_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_TCP_RST_DEBUG
+#define TCP_RST_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_RST_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCP_QLEN_DEBUG: Enable debugging for TCP queue lengths.
  */
 #if !defined TCP_QLEN_DEBUG || defined __DOXYGEN__
-#define TCP_QLEN_DEBUG                  LWIP_DBG_OFF
+#ifdef CONFIG_TCP_QLEN_DEBUG
+#define TCP_QLEN_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_QLEN_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * UDP_DEBUG: Enable debugging in UDP.
  */
 #if !defined UDP_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_UDP_DEBUG
+#define UDP_DEBUG                       LWIP_DBG_ON
+#else
 #define UDP_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * TCPIP_DEBUG: Enable debugging in tcpip.c.
  */
 #if !defined TCPIP_DEBUG || defined __DOXYGEN__
-#define TCPIP_DEBUG                     LWIP_DBG_OFF
+#ifdef CONFIG_TCPIP_DEBUG
+#define TCPIP_DEBUG                       LWIP_DBG_ON
+#else
+#define TCPIP_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * SLIP_DEBUG: Enable debugging in slipif.c.
  */
 #if !defined SLIP_DEBUG || defined __DOXYGEN__
-#define SLIP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_SLIP_DEBUG
+#define SLIP_DEBUG                       LWIP_DBG_ON
+#else
+#define SLIP_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * DHCP_DEBUG: Enable debugging in dhcp.c.
  */
 #if !defined DHCP_DEBUG || defined __DOXYGEN__
-#define DHCP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_DHCP_DEBUG
+#define DHCP_DEBUG                       LWIP_DBG_ON
+#else
+#define DHCP_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * AUTOIP_DEBUG: Enable debugging in autoip.c.
  */
 #if !defined AUTOIP_DEBUG || defined __DOXYGEN__
-#define AUTOIP_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_AUTOIP_DEBUG
+#define AUTOIP_DEBUG                       LWIP_DBG_ON
+#else
+#define AUTOIP_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * DNS_DEBUG: Enable debugging for DNS.
  */
 #if !defined DNS_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_DNS_DEBUG
+#define DNS_DEBUG                       LWIP_DBG_ON
+#else
 #define DNS_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * IP6_DEBUG: Enable debugging for IPv6.
  */
 #if !defined IP6_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_IP6_DEBUG
+#define IP6_DEBUG                       LWIP_DBG_ON
+#else
 #define IP6_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 
 /**
  * DHCP6_DEBUG: Enable debugging in dhcp6.c.
  */
 #if !defined DHCP6_DEBUG || defined __DOXYGEN__
-#define DHCP6_DEBUG                     LWIP_DBG_OFF
+#ifdef CONFIG_DHCP6_DEBUG
+#define DHCP6_DEBUG                       LWIP_DBG_ON
+#else
+#define DHCP6_DEBUG                       LWIP_DBG_OFF
+#endif
 #endif
 /**
  * @}

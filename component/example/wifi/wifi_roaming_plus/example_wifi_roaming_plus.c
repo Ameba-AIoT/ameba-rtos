@@ -590,7 +590,7 @@ int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 	roaming_ap.key_idx = setting.key_idx;
 	memcpy(roaming_ap.bssid, setting.bssid, 6);
 
-#if defined(CONFIG_RTW_WNM) || defined(CONFIG_IEEE80211K)
+#if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
 	/*scan specific channels in nb_rpt_ch_list*/
 	if ((ch_num = rtw_roam_nb_ch_num_get()) > 0) {
 		ROAMING_DBG("\r\n %s():try to find a better ap in nb_rpt_ch_list\n", __func__);

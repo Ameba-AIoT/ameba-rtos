@@ -560,20 +560,22 @@
 #define AON_BIT_WIFI_INIC_NP_READY		BIT26
 
 typedef struct {
-	u8 RRAM_SYS_RSVD[256];             /* Rsvd for system */
+	__IO u8 RRAM_SYS_RSVD[256];             /* Rsvd for system */
 
-	u32 IMQ_HEAP_ADDR;
-	u32 IMQ_HEAP_SIZE;
-	u32 IMQ_INIT_DONE;
-	u8 VOL_TYPE;
-	u8 APPLL_STATE;
-	u8 MEM_TYPE;
-	u8 CHIP_INFO;
-	u8 PSRAM_LATENCY;
-	u8 RRAM_USER_RSVD[112];            /* Rsvd for user */
+	__IO u32 IMQ_HEAP_ADDR;
+	__IO u32 IMQ_HEAP_SIZE;
+	__IO u32 IMQ_INIT_DONE;
+	__IO u8 VOL_TYPE;
+	__IO u8 APPLL_STATE;
+	__IO u8 MEM_TYPE;
+	__IO u8 CHIP_INFO;
+	__IO u8 PSRAM_LATENCY;
+	__IO u8 RRAM_USER_RSVD[111];            /* Rsvd for user */
 
-	u8 RRAM_PCR_RSVD[128];             /* Rsvd for PCR */
+	__IO u8 RRAM_PCR_RSVD[128];             /* Rsvd for PCR */
 } RRAM_TypeDef;
+
+Compile_Assert(sizeof(RRAM_TypeDef) == 512, "RRAM_TypeDef size shall be 512");
 
 /* MANUAL_GEN_END */
 

@@ -137,6 +137,9 @@ endif
 	@# $(FROMELF) -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/target_img2.bin
 
 	$(ECHO) "  BIN      kr4_image2_all.bin"
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(FROMELF) -j .boot.entry -j .sram_only.text.data -j .sram_image2.text.data -j .xip_image2.text -j .psram_image2.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
+else
 	$(Q)$(FROMELF) -j .boot.entry -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/boot.bin
 	$(Q)$(FROMELF) -j .sram_only.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_only.bin
 
@@ -146,6 +149,7 @@ endif
 
 	$(Q)$(FROMELF) -j .ram_retention.text -j .ram_retention.entry \
 	-Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/ram_retention.bin
+endif
 
 	@# for Bluetooth trace
 ifeq ($(CONFIG_BT), y)
@@ -169,7 +173,13 @@ endif
 	@echo "========== linker img2 end =========="
 
 	@echo "========== Image manipulating start =========="
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
+	$(Q)cat $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/kr4_image2_all_shrink.bin
 
+	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
+
+else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/boot.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_only.bin __sram_only_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 
@@ -184,7 +194,7 @@ endif
 	sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin
 
 	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
-
+endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin $(KM4_BUILDDIR)/asdk/image/km4_boot_all.bin; \
@@ -209,6 +219,7 @@ endif
 	@echo "========== Image manipulating end =========="
 
 code_analyze:
+ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
@@ -217,6 +228,9 @@ code_analyze:
 		$(STATIC_ANALYZE_PYTHON); \
 	fi
 	@echo "========== Image analyze end =========="
+else
+	@echo "daily build"
+endif
 
 code_extract:
 	@echo "========== Image extract start =========="
@@ -337,7 +351,11 @@ copy_ld_img1:
 	$(Q)$(COPY) $(ROOTDIR)/ld/ameba_boot.ld $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img2:
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q) $(CC) -E -P -xc -c  $(ROOTDIR)/ld/ameba_img2_all_mp.ld -o  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+else
 	$(Q) $(CC) -E -P -xc -c  $(ROOTDIR)/ld/ameba_img2_all.ld -o  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+endif
 	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_floader:
 	$(Q)$(COPY) $(ROOTDIR)/ld/ameba_boot.ld $(BUILD_TARGET_FOLDER)/rlx8721d.ld

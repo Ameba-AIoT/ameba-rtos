@@ -1252,8 +1252,6 @@ void vApplicationIdleHook(void)
 	extern void wififw_task_idle(void);
 	wififw_task_idle();
 #endif
-	extern void app_IWDG_refresh(void *arg);
-	app_IWDG_refresh(NULL);
 }
 
 #include "diag.h"

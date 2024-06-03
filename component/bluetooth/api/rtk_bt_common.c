@@ -160,6 +160,11 @@ uint16_t rtk_bt_send_cmd(uint8_t group, uint8_t act, void *param, uint32_t param
 	uint16_t ret = RTK_BT_FAIL;
 	rtk_bt_cmd_t *pcmd = NULL;
 
+	if (!rtk_bt_is_enable()) {
+		ret = RTK_BT_ERR_NOT_READY;
+		goto end;
+	}
+
 	pcmd = (rtk_bt_cmd_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_bt_cmd_t));
 	if (!pcmd) {
 		goto end;

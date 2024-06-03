@@ -369,7 +369,7 @@ static COMMAND_TABLE   shell_cmd_table_rom[] = {
 		"\t\t item: uartburn or N/A \n"
 		"\t\t \n"
 	},
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	{
 		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
 		"\t\t wmap addr len data\n"

@@ -107,7 +107,7 @@
 #if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined(CONFIG_WIFI_VERIFY_PSPHY)
 #define WIFI_TEST 1
 #define DISABLE_FW
-#define DISABLE_BB_RF 1
+#define DISABLE_BB_RF
 #endif
 #ifdef CONFIG_WIFI_VERIFY_ASIC
 #define WIFI_TEST 1
@@ -126,6 +126,21 @@
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT
 #undef TX_SHORTCUT
+
+#define DRV_BB_DBG_TRACE_DISABLE
+#define DRV_BB_PMAC_TX_DISABLE
+#define DRV_BB_CMN_RPT_DISABLE
+#define DRV_BB_STATISTICS_DISABLE
+#define DRV_BB_DGB_SUPPORT_DISABLE
+#define DRV_RF_DBG_TRACE_DISABLE
+#define DRV_BB_CH_INFO_DISABLE
+#define DRV_BB_CFO_TRK_DISABLE
+#define DRV_BB_ENV_MNTR_DISABLE
+#define DRV_BB_PHYSTS_PARSING_DISABLE
+#define DRV_BB_TIMER_SUPPORT_DISABLE
+#endif
+
+#ifdef CONFIG_MP_SHRINK
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W
@@ -135,8 +150,9 @@
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
 #define DISABLE_FW
-
+#define DRV_RF_PWR_TBL_DISABLE
 #endif
+
 /************************* Config for MP_MODE end *****************************/
 
 #ifndef CONFIG_PHYDM_CMD

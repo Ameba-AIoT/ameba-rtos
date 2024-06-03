@@ -14,7 +14,7 @@ extern "C" {
 extern struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 //================functions=================
-_WEAK void wifi_set_user_config(void);
+void wifi_set_user_config(void);
 
 #ifdef __cplusplus
 }

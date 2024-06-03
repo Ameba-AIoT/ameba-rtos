@@ -22,16 +22,14 @@ void wifi_hal_csi_deinit(void *a)
 	UNUSED(a);
 }
 
-s32 wifi_hal_csi_cfg(void *a, void *b)
+s32 wifi_hal_csi_cfg(void *b)
 {
-	UNUSED(a);
 	UNUSED(b);
 	return -1;
 }
 
-s32 wifi_hal_csi_en(void *a, void *b)
+s32 wifi_hal_csi_en(void *b)
 {
-	UNUSED(a);
 	UNUSED(b);
 	return -1;
 }
@@ -45,9 +43,8 @@ s32 wifi_hal_csi_report(void *a, u32 buf_len, void *c, void *d)
 	return -1;
 }
 
-void wifi_hal_csi_pkt_hdl(void *a, void *b, void *c)
+void wifi_hal_csi_pkt_hdl(void *b, void *c)
 {
-	UNUSED(a);
 	UNUSED(b);
 	UNUSED(c);
 }

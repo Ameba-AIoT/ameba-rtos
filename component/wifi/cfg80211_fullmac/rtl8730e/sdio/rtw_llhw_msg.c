@@ -110,7 +110,6 @@ void inic_msg_q_deinit(struct msg_priv_t *priv)
 	/* assign the haddle function to NULL */
 	priv->task_hdl = NULL;
 
-	/* de initialize queue, todo */
 	mutex_destroy(&(priv->msg_work_mutex));
 }
 
