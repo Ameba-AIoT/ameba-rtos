@@ -74,6 +74,7 @@ void wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
 								int (*rand_func)(void *, unsigned char *, size_t));
 void wifi_heap_statistics(u8 start);
 void wifi_ram_statistic_print(u8 print_detail);
+void wifi_set_rom_func(void);
 
 extern int rtw_disconnect(void);
 extern int rtw_joinbss_start_api(struct _rtw_network_info_t *connect_param);

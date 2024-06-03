@@ -69,27 +69,12 @@ typedef struct {
   * @}
   */
 
-
 /** @defgroup SDIO_RPWM_definitions
   * @brief The SDIO RPWM definations
   * @{
   */
 #define RPWM2_ACT_BIT			(0x00000001 << 0)	// Active
-#define RPWM2_SLEEP_BIT			0					// Sleep
-#define RPWM2_DSTANDBY_BIT		(0x00000001 << 1)	// Deep Standby
-#define RPWM2_PG_BIT			0					// Power Gated
-#define RPWM2_FBOOT_BIT			(0x00000001 << 2)	// fast reboot
-#define RPWM2_NBOOT_BIT			0					// normal reboot
-#define RPWM2_WKPIN_0_BIT		(0x00000001 << 3)	// enable GPIO wakeup pin 0
-#define RPWM2_WKPIN_1_BIT		(0x00000001 << 4)	// enable GPIO wakeup pin 1
-#define RPWM2_WKPIN_2_BIT		(0x00000001 << 5)	// enable GPIO wakeup pin 2
-#define RPWM2_WKPIN_3_BIT		(0x00000001 << 6)	// enable GPIO wakeup pin 3
-#define RPWM2_WKPIN_0_LV_BIT	(0x00000001 << 7)	// GPIO wakeup pin 0 wakeup level
-#define RPWM2_WKPIN_1_LV_BIT	(0x00000001 << 8)	// GPIO wakeup pin 1 wakeup level
-#define RPWM2_WKPIN_2_LV_BIT	(0x00000001 << 9)	// GPIO wakeup pin 2 wakeup level
-#define RPWM2_WKPIN_3_LV_BIT	(0x00000001 << 10)	// GPIO wakeup pin 3 wakeup level
-#define RPWM2_CG_BIT			(0x00000001 << 11)	// Clock Gated
-#define RPWM2_ACK_BIT			(0x00000001 << 14)	// Acknowledge
+#define RPWM2_CG_BIT			(0x00000001 << 1)	// Clock Gated
 #define RPWM2_TOGGLE_BIT		(0x00000001 << 15)	// Toggle bit
 /**
   * @}

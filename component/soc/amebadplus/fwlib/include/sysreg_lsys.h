@@ -1229,20 +1229,22 @@ enum CORE_Vol_TYPE {
  * @ the Max space for RRAM_TypeDef is 0x80, user can alloc space from RRAM_USER_RSVD
  *****************************************************************************/
 typedef struct {
-	u8 RRAM_SYS_RSVD[256];/* resvd for system */
-	u8 AP_WAKEUP_STATUS;
-	u32 Memory_Type;
-	u8 CORE_Vol_Flag;
-	u8 SWRCALIB_AON_LDO_09;
-	u8 SWRCALIB_PWM_135;
-	u8 SWRCALIB_CORE_LDO_10;
-	u8 SWRCALIB_PWM_10;
+	__IO u8 RRAM_SYS_RSVD[256];/* resvd for system */
+	__IO u32 Memory_Type;
 	__IO u32 psram_backup[6];
+	__IO u8 AP_WAKEUP_STATUS;
+
+	__IO u8 CORE_Vol_Flag;
+	__IO u8 SWRCALIB_AON_LDO_09;
+	__IO u8 SWRCALIB_PWM_135;
+	__IO u8 SWRCALIB_CORE_LDO_10;
+	__IO u8 SWRCALIB_PWM_10;
+
 
 	u8 RRAM_USER_RSVD[222];
 } RRAM_TypeDef;
 
-Compile_Assert(sizeof(RRAM_TypeDef) != 512, "RRAM_TypeDef size shall be 512");
+Compile_Assert(sizeof(RRAM_TypeDef) == 512, "RRAM_TypeDef size shall be 512");
 /** @} */
 
 /* MANUAL_GEN_END */

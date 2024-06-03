@@ -24,7 +24,7 @@
 #define MBEDTLS_VERSION		MBEDTLS_VERSION_CONVERT(2,16,9)
 #endif
 #if defined(CONFIG_802154_THREAD_EN)
-#include <mbedtls-config.h>
+#include "mbedtls/config_thread.h"
 #elif defined(CONFIG_SSL_ROM)
 #include <section_config.h>
 #include "platform_stdlib.h"

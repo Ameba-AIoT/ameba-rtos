@@ -1,6 +1,6 @@
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: all clean test lib
+.PHONY: all clean
 
 #*****************************************************************************#
 #                               VARIABLES	                              #
@@ -10,10 +10,7 @@ DIR = $(BASEDIR)/component/application/wifi-audio
 MODULE_IFLAGS += \
     -I$(BASEDIR)/component/audio/base/osal/osal_c/interfaces \
     -I$(BASEDIR)/component/audio/interfaces \
-    -I$(BASEDIR)/component/application/wifi-audio/base/log/include \
-    -I$(BASEDIR)/component/application/wifi-audio/base/cutils/include \
     -I$(DIR)/interfaces
-
 
 vpath %.cpp $(shell find $(DIR) -type d)
 vpath %.c $(shell find $(DIR) -type d)
@@ -46,8 +43,6 @@ OBJS += $(notdir $(CSRC:.c=.o))
 COPY_RAM_OBJS: CORE_TARGETS
 all: COPY_RAM_OBJS
 
-lib: COPY_RAM_OBJS
-	$(COPY) $(OBJS) ../xip/
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE

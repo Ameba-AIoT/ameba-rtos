@@ -35,7 +35,7 @@ static int atcmd_bt_gatts_notify(int argc, char **argv)
 	hexdata_str_to_array(argv[4], (uint8_t *)ntf_param.data, ntf_param.len);
 
 	if (argc == 6) {
-		ntf_param.cid = atoi(argv[5]);
+		ntf_param.cid = (uint16_t)str_to_int(argv[5]);
 	}
 
 	ret = rtk_bt_gatts_notify(&ntf_param);
@@ -68,7 +68,7 @@ static int atcmd_bt_gatts_indicate(int argc, char **argv)
 	hexdata_str_to_array(argv[4], (uint8_t *)ntf_param.data, ntf_param.len);
 
 	if (argc == 6) {
-		ntf_param.cid = atoi(argv[5]);
+		ntf_param.cid = (uint16_t)str_to_int(argv[5]);
 	}
 
 	ret = rtk_bt_gatts_indicate(&ntf_param);

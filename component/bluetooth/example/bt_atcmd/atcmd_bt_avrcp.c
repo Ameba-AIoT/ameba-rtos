@@ -208,6 +208,26 @@ static int atcmd_bt_avrcp_volume_change_req(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_avrcp_connect(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	if (argc != 1) {
+		AT_PRINTK("[ATBC] AVRCP connect op failed! wrong args num!");
+		return -1;
+	}
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_avrcp_connect(bd_addr)) {
+		AT_PRINTK("[ATBC] AVRCP connect fail \r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	AT_PRINTK("[ATBC] AVRCP connecting to device %s ...", addr_str);
+
+	return 0;
+}
+
 static int atcmd_bt_avrcp_disconnect(int argc, char **argv)
 {
 	(void)argc;
@@ -237,6 +257,7 @@ static const cmd_table_t avrcp_cmd_table[] = {
 	{"fast_forward_stop",    atcmd_bt_avrcp_fast_forward_stop,     2, 2},
 	{"volume_set",           atcmd_bt_avrcp_volume_set,            3, 3},
 	{"volume_change_req",    atcmd_bt_avrcp_volume_change_req,     3, 3},
+	{"conn",                 atcmd_bt_avrcp_connect,               1, 2},
 	{"disconn",              atcmd_bt_avrcp_disconnect,            3, 2},
 	{NULL,},
 };

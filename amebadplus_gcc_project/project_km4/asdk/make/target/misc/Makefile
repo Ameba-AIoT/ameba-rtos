@@ -17,8 +17,7 @@ vpath %.c $(DIR)
 #*****************************************************************************#
 CSRC += $(DIR)/ameba_pmu.c
 
-
-ifeq ($(CONFIG_AS_INIC_AP), y)
+ifeq ($(findstring y, $(CONFIG_AS_INIC_AP) $(CONFIG_SINGLE_CORE_WIFI)), y)
 CSRC += $(DIR)/ameba_ota.c
 endif
 

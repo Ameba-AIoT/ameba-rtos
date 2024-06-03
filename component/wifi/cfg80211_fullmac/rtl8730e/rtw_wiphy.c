@@ -290,7 +290,6 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.mcs.rx_mask[0] = 0xFF;
 	pwiphy->bands[NL80211_BAND_5GHZ]->ht_cap.mcs.rx_highest = 72;
 
-	//todo: VHT and HE cap init
 	return ret;
 }
 

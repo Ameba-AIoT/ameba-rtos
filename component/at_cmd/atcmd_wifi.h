@@ -12,7 +12,7 @@
 /* TODO */
 #define ENABLE_SET_MAC_ADDRESS                 0
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 extern void print_wifi_at(void);
 #endif
 

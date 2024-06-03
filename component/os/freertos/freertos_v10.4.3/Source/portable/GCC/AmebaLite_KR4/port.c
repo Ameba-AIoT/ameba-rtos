@@ -262,8 +262,6 @@ void vApplicationIdleHook(void)
 		the value of configTOTAL_HEAP_SIZE in FreeRTOSConfig.h can be
 		reduced accordingly. */
 	}
-	extern void app_IWDG_refresh(void *);
-	app_IWDG_refresh(NULL);
 }
 
 void vApplicationMallocFailedHook(void)

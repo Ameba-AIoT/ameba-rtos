@@ -21,6 +21,7 @@
 #define TAG_WLAN_DRV   "WLAN"
 #define TAG_WLAN_COEX  "COEX"
 #define TAG_WLAN_INIC  "INIC"
+#define TAG_WLAN_NAN   "NAN"
 
 /**
   * @brief  The enumeration lists all the network mode.

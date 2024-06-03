@@ -375,19 +375,19 @@ uart_irqhandler(
 	if ((reg_lsr & UART_ALL_RX_ERR) && (reg_ier & RUART_BIT_ELSI)) {
 
 		if (reg_lsr & RUART_BIT_OVR_ERR) {
-			printf("%s: LSR over run interrupt\n", __FUNCTION__);
+			RTK_LOGI(NOTAG, "%s: LSR over run interrupt\n", __FUNCTION__);
 		}
 
 		if (reg_lsr & RUART_BIT_PAR_ERR) {
-			printf("%s: LSR parity error interrupt\n", __FUNCTION__);
+			RTK_LOGI(NOTAG, "%s: LSR parity error interrupt\n", __FUNCTION__);
 		}
 
 		if (reg_lsr & RUART_BIT_FRM_ERR) {
-			printf("%s: LSR frame error(stop bit error) interrupt\n", __FUNCTION__);
+			RTK_LOGI(NOTAG, "%s: LSR frame error(stop bit error) interrupt\n", __FUNCTION__);
 		}
 
 		if (reg_lsr & RUART_BIT_BREAK_INT) {
-			printf("%s: LSR break error interrupt\n", __FUNCTION__);
+			RTK_LOGI(NOTAG, "%s: LSR break error interrupt\n", __FUNCTION__);
 		}
 		/* clear Receiver Line Status */
 		UART_INT_Clear(puart_adapter->UARTx, RUART_BIT_RLSICF);
@@ -423,7 +423,7 @@ uart_gtimer_handle(
 				/* rx stop 5ms, packet complete */
 				RTIM_Cmd(TIMx[UART_TIMER_ID], DISABLE);
 
-				//printf("%s:UART DMA TO Current_Addr:%x start_addr:%x RxCount: %d\n",
+				//RTK_LOGI(NOTAG, "%s:UART DMA TO Current_Addr:%x start_addr:%x RxCount: %d\n",
 				//	__func__, Current_Addr, puart_adapter->pRxBuf, puart_adapter->RxCount);
 
 				puart_adapter->RxCount = puart_adapter->RxCount - (Current_Addr - (u32)puart_adapter->pRxBuf);
@@ -438,7 +438,7 @@ uart_gtimer_handle(
 
 				GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
-				//printf("UART DMA TO RxCount: %d\n", puart_adapter->RxCount);
+				//RTK_LOGI(NOTAG, "UART DMA TO RxCount: %d\n", puart_adapter->RxCount);
 			} else {
 				puart_adapter->last_dma_addr = Current_Addr;
 			}

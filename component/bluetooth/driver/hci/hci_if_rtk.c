@@ -10,7 +10,7 @@
 #include "hci/hci_transport.h"
 #include "hci_uart.h"
 #include "hci_platform.h"
-#include "hci_dbg.h"
+#include "bt_debug.h"
 #include "dlist.h"
 
 #define H4_HDR_LEN          (1)
@@ -106,13 +106,13 @@ static uint8_t rtk_stack_recv(hci_rx_t *info)
 
 static void _hci_if_open_indicate(void)
 {
-	if (hci_platform_check_mp() == HCI_SUCCESS) {    //If in MP mode, do not start upper stack
-		HCI_PRINT("Not start upper stack for MP test\r\n");
+	if (hci_is_mp_mode()) {    //If in MP mode, do not start upper stack
+		BT_LOGA("Not start upper stack for MP test\r\n");
 	} else {                                         //If in normal mode, start upper stack
 		if (hci_if_rtk.cb) {
 			hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);
 		}
-		HCI_PRINT("Start upper stack\r\n");
+		BT_LOGA("Start upper stack\r\n");
 	}
 }
 
@@ -120,13 +120,13 @@ static bool _hci_if_open(void)
 {
 	/* BT Board Init */
 	if (HCI_FAIL == hci_platform_init()) {
-		HCI_ERR("hci_platform_init fail!");
+		BT_LOGE("hci_platform_init fail!\r\n");
 		return false;
 	}
 
 	/* HCI Transport */
 	if (HCI_FAIL == hci_transport_open()) {
-		HCI_ERR("hci_transport_open fail!");
+		BT_LOGE("hci_transport_open fail!\r\n");
 		return false;
 	}
 
@@ -138,7 +138,7 @@ static bool _hci_if_open(void)
 	hci_uart_set_rx_ind(hci_transport_recv_ind);
 
 	if (HCI_FAIL == hci_process()) {
-		HCI_ERR("hci_process fail!");
+		BT_LOGE("hci_process fail!\r\n");
 		return false;
 	}
 
@@ -199,7 +199,7 @@ static bool _tx_list_add(uint8_t *buf, uint32_t len, uint8_t flag)
 				hci_if_rtk.cb(HCI_IF_EVT_DATA_XMIT, false, buf, len);
 			}
 		}
-		HCI_ERR("pkt alloc fail!");
+		BT_LOGE("pkt alloc fail!\r\n");
 		goto end;
 	}
 
@@ -284,7 +284,7 @@ bool hci_if_open(HCI_IF_CALLBACK callback)
 	hci_if_rtk.cb = callback;
 
 	if (hci_if_rtk.status) {
-		HCI_DBG("Hci Driver Already Open!");
+		BT_LOGD("Hci Driver Already Open!\r\n");
 		_hci_if_open_indicate();
 		return true;
 	}
@@ -350,7 +350,7 @@ void hci_if_deinit(void)
 
 	if (HCI_FAIL == hci_uart_free() ||       /* UART Free */
 		HCI_FAIL == hci_transport_free()) {  /* HCI Transport Free */
-		HCI_ERR("hci_if_deinit fail!");
+		BT_LOGE("hci_if_deinit fail!\r\n");
 	}
 }
 
@@ -387,6 +387,6 @@ void hci_if_wait_patch_download(void)
 	while (!hci_if_rtk.status) {
 		osif_delay(1);
 	}
-	HCI_INFO("Patch download End!");
+	BT_LOGA("Patch download End!\r\n");
 }
 

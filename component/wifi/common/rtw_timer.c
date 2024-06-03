@@ -39,7 +39,7 @@ void deinit_timer_wrapper(void)
 	_list *plist;
 
 	if (timer_used_num > 0) {
-		RTK_LOGI(TAG, "Need to delete %d timer_entry.\n", timer_used_num);
+		RTK_LOGI(TAG, "del timer entry %d\n", timer_used_num);
 	}
 
 	rtos_critical_enter();
@@ -113,7 +113,7 @@ void init_timer(struct timer_list *timer, const char *name)
 void mod_timer(struct timer_list *timer, u32 delay_time_ms)
 {
 	if (timer->timer_hdl == NULL) {
-		RTK_LOGS(TAG, "mod_timer: the timer is not init, need init first.\n");
+		RTK_LOGS(TAG, "ModTimer: not init.\n");
 	} else if (rtos_timer_is_timer_active(timer->timer_hdl) == TRUE) {
 		rtos_timer_stop(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 	}
@@ -121,7 +121,7 @@ void mod_timer(struct timer_list *timer, u32 delay_time_ms)
 	//Set Timer period
 	if (timer->timer_hdl != NULL)
 		if (rtos_timer_change_period(timer->timer_hdl, delay_time_ms, RTOS_TIMER_MAX_DELAY) == FAIL) {
-			RTK_LOGS(TAG, "Fail to set timer period.\n");
+			RTK_LOGS(TAG, "ModTimer fail\n");
 		}
 }
 
@@ -148,7 +148,7 @@ void  cancel_timer_ex(struct timer_list *timer)
 	rtos_critical_exit();
 
 	if (plist == &timer_table) {
-		RTK_LOGS(TAG, "Fail to find the timer_entry(%x) in timer table.\n", (unsigned int)timer->timer_hdl);
+		RTK_LOGS(TAG, "CancelTimer Fail(%x)\n", (unsigned int)timer->timer_hdl);
 	} else {
 		rtos_timer_stop(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 	}
@@ -178,7 +178,7 @@ void  del_timer_sync(struct timer_list *timer)
 	rtos_critical_exit();
 
 	if (plist == &timer_table) {
-		RTK_LOGS(TAG, "Fail to find the timer_entry in timer table.\n");
+		RTK_LOGS(TAG, "DelTimer Fail\n");
 	} else {
 		rtos_timer_delete_static(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 		timer->timer_hdl = NULL;

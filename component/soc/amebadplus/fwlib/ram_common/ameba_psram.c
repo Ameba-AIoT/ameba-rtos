@@ -710,8 +710,10 @@ void set_psram_sleep_mode(u32 type)
 	if (type == PSRAM_TYPE_APM) {
 		psram_halfsleep[0] = 0xF0;
 		psram_halfsleep[1] = 0xF0;
+
 		/*enable apm slow refresh*/
-		mr4[0] = PSRAM_WRITE_LATENCY_CODE(APM_WR_INIT_LATENCY_SPEC[PsramInfo.Psram_Latency_Set - 3]) | PSRAM_ENABLE_SLOW_REFRESH;
+		PSRAM_REG_Read(0, 0x4, 2, mr4, 1);
+		mr4[0] |= PSRAM_ENABLE_SLOW_REFRESH;
 		mr4[1] = mr4[0];
 		PSRAM_REG_Write(0, 0x4, 2, mr4);
 		PSRAM_REG_Write(0, 0x06, 2, psram_halfsleep);
@@ -778,7 +780,8 @@ void set_psram_wakeup_mode(u32 type)
 
 	/*7. disable apm slow refresh*/
 	if (type == PSRAM_TYPE_APM) {
-		mr4[0] = PSRAM_WRITE_LATENCY_CODE(APM_WR_INIT_LATENCY_SPEC[PsramInfo.Psram_Latency_Set - 3]);
+		PSRAM_REG_Read(0, 0x4, 2, mr4, 1);
+		mr4[0] &= ~PSRAM_ENABLE_SLOW_REFRESH;
 		mr4[1] = mr4[0];
 		PSRAM_REG_Write(0, 0x4, 2, mr4);
 	}

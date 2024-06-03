@@ -15,20 +15,6 @@
 #include <rtk_bt_device.h>
 
 #if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
-void rtk_bt_gap_ecfc_print_cid(uint16_t *cid, uint8_t num)
-{
-	int i;
-	if (num > RTK_BT_GAP_ECFC_CHANN_MAX_NUM) {
-		return;
-	}
-
-	printf("[APP] cid_num(%d):", num);
-	for (i = 0; i < num; i++) {
-		printf(" %d", cid[i]);
-	}
-	printf("\r\n");
-}
-
 uint16_t rtk_bt_gap_ecfc_set_param(rtk_bt_gap_ecfc_param_t type, uint16_t value)
 {
 	uint16_t ret = 0;

@@ -15,6 +15,7 @@
 #include "rtk_bt_def.h"
 #include "rtk_bt_vendor.h"
 #include "rtk_bt_le_gap.h"
+#include "bt_debug.h"
 #if defined(RTK_BLE_TX_SOF_EOF_INDICATION) && RTK_BLE_TX_SOF_EOF_INDICATION
 #include "wifi_reg_page0.h"
 #include "ameba_soc.h"
@@ -26,18 +27,18 @@ static p_func_cb g_rtk_bt_scoreboard_isr_cb = NULL;
 _WEAK void hci_platform_set_tx_power_gain_index(uint32_t index)
 {
 	(void)index;
-	printf("Set tx power gain is not supported on this platform!\r\n");
+	BT_LOGE("Set tx power gain is not supported!\r\n");
 }
 
 _WEAK void hci_platform_set_antenna(uint8_t ant)
 {
 	(void)ant;
-	printf("Set antenna is not supported on this platform!\r\n");
+	BT_LOGE("Set antenna is not supported!\r\n");
 }
 
-_WEAK void hci_debug_enable(void)
+_WEAK void hci_platform_debug_enable(void)
 {
-	printf("HCI debug is not supported on this platform!\r\n");
+	BT_LOGE("HCI debug is not supported!\r\n");
 }
 
 /* -------------------------------- Functions ------------------------------*/
@@ -54,7 +55,7 @@ void rtk_bt_set_bt_antenna(uint8_t ant)
 
 void rtk_bt_hci_debug_enable(void)
 {
-	hci_debug_enable();
+	hci_platform_debug_enable();
 }
 
 void rtk_bt_sleep_mode(unsigned int mode)
@@ -75,7 +76,7 @@ void rtk_bt_sleep_mode(unsigned int mode)
 	rtk_bt_gap_vendor_cmd_req(&param);
 #else
 	(void)mode;
-	printf("[Vendor CMD] BT sleep mode is not supported on this platform!\r\n");
+	BT_LOGE("Set sleep mode is not supported!\r\n");
 #endif
 }
 
@@ -93,7 +94,7 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 	} else if (1 == tx_power->tx_power_type) {
 		uint8_t conn_id = 0;
 		if (RTK_BT_OK != rtk_bt_le_gap_get_conn_id(tx_power->conn_tx_power.conn_handle, &conn_id)) {
-			printf("%s: conn_handle %d is not connect!\r\n", __func__, tx_power->conn_tx_power.conn_handle);
+			BT_LOGE("%s: conn_handle %d is not connect!\r\n", __func__, tx_power->conn_tx_power.conn_handle);
 			return RTK_BT_FAIL;
 		}
 		data[0] = SUB_CMD_SET_CONN_TX_POWER;
@@ -103,7 +104,7 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 		data[4] = tx_power->tx_gain;
 		param.len = 5;
 	} else {
-		printf("%s: wrong tx power type!\r\n", __func__);
+		BT_LOGE("%s: wrong tx power type!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
@@ -113,7 +114,7 @@ uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power)
 	return rtk_bt_gap_vendor_cmd_req(&param);
 #else
 	(void)tx_power;
-	printf("[Vendor CMD] BT set tx power is not supported on this platform!\r\n");
+	BT_LOGE("Set tx power is not supported!\r\n");
 	return RTK_BT_FAIL;
 #endif
 }
@@ -137,7 +138,7 @@ uint16_t rtk_bt_le_sof_eof_ctrl(uint16_t conn_handle, uint8_t enable)
 #else
 	(void)conn_handle;
 	(void)enable;
-	printf("[Vendor CMD] BT SOF and EOF control is not supported on this platform!\r\n");
+	BT_LOGE("SOF and EOF control is not supported!\r\n");
 	return RTK_BT_FAIL;
 #endif
 }
@@ -152,7 +153,7 @@ void rtk_bt_scoreboard_isr_handler(void)
 		value = HAL_READ32(WIFI_REG_BASE, REG_SCOREBOARD_RD_BT2WL);
 		//SCOREBOARD: bit 17: 0:SOF, 1:EOF; bit 17 is valid when bit 18 is 1
 		//            bit 18: 0:disable, 1:enable
-		//printf("[KM4] BT2WL dedicated SCB int data is: 0x%x\r\n", value);
+		//BT_LOGA("[KM4] BT2WL dedicated SCB int data is: 0x%x\r\n", value);
 		if (value & BIT18) {
 			if (value & BIT17) {
 				ind = RTK_BT_LE_TX_EOF;
@@ -162,7 +163,7 @@ void rtk_bt_scoreboard_isr_handler(void)
 			if (g_rtk_bt_scoreboard_isr_cb) {
 				g_rtk_bt_scoreboard_isr_cb((uint8_t)ind);
 			} else {
-				printf("g_rtk_bt_scoreboard_isr_cb is not defined\r\n");
+				BT_LOGE("g_rtk_bt_scoreboard_isr_cb is not defined\r\n");
 			}
 		}
 	}
@@ -176,20 +177,20 @@ static bool rtk_bt_scoreboard_isr_enable(void)
 
 	/****BT_SCB_IRQ (67# NP/AP INT VECTOR)*****/
 	if (false == InterruptRegister((IRQ_FUN)rtk_bt_scoreboard_isr_handler, BT_SCB_IRQ, (uint32_t)NULL, BT_SCB_IRQ_PRIO)) {
-		printf("InterruptRegister for BT_SCB_IRQ fail\r\n");
+		BT_LOGE("InterruptRegister for BT_SCB_IRQ fail\r\n");
 		return false;
 	}
 	InterruptEn(BT_SCB_IRQ, BT_SCB_IRQ_PRIO);
 
 	//value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_HSYS_HP_CKE);
-	//printf("%s REG_HSYS_HP_CKE 0x%x = 0x%x\r\n",__func__,(unsigned int)(SYSTEM_CTRL_BASE_LP + REG_HSYS_HP_CKE), (unsigned int)value);
+	//BT_LOGA("%s REG_HSYS_HP_CKE 0x%x = 0x%x\r\n",__func__,(unsigned int)(SYSTEM_CTRL_BASE_LP + REG_HSYS_HP_CKE), (unsigned int)value);
 #if 1 //FIXME: use leave ips instead now
 	//set 0x42008218[5] = 1, APBPeriph_WMAC_CLOCK
 	value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
 	if ((value & BIT5) == 0) {
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1, value | APBPeriph_WMAC_CLOCK);
 		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
-		printf("%s set APBPeriph_WMAC_CLOCK, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_CKE_GRP1), (unsigned int)value);
+		BT_LOGA("%s set APBPeriph_WMAC_CLOCK, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_CKE_GRP1), (unsigned int)value);
 		need_reset_wmac_clk = true;
 	}
 
@@ -198,7 +199,7 @@ static bool rtk_bt_scoreboard_isr_enable(void)
 	if ((value & BIT7) == 0) {
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0, value | APBPeriph_WLON);
 		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
-		printf("%s set APBPeriph_WLON , 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_FEN_GRP0), (unsigned int)value);
+		BT_LOGA("%s set APBPeriph_WLON , 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_FEN_GRP0), (unsigned int)value);
 		need_reset_wlon = true;
 	}
 #else
@@ -207,13 +208,13 @@ static bool rtk_bt_scoreboard_isr_enable(void)
 	//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
 	HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
 	value = HAL_READ32(WIFI_REG_BASE, REG_FSISR_V1);
-	printf("%s Clear BT dedicated SCB int ISR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSISR_V1), (unsigned int)value);
+	BT_LOGA("%s Clear BT dedicated SCB int ISR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSISR_V1), (unsigned int)value);
 
 	//Enable BT dedicated SCB int IMR, MAC Reg 0x40[0]
 	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
 	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, value | BIT_FS_BTON_STS_UPDATE_INT_EN);
 	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
-	printf("%s Enable BT dedicated SCB int IMR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSIMR_V1), (unsigned int)value);
+	BT_LOGA("%s Enable BT dedicated SCB int IMR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSIMR_V1), (unsigned int)value);
 
 	return true;
 }
@@ -229,27 +230,27 @@ static bool rtk_bt_scoreboard_isr_disable(void)
 	//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
 	HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
 	value = HAL_READ32(WIFI_REG_BASE, REG_FSISR_V1);
-	printf("%s Clear BT dedicated SCB int ISR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSISR_V1), (unsigned int)value);
+	BT_LOGA("%s Clear BT dedicated SCB int ISR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSISR_V1), (unsigned int)value);
 
 	//Disable BT dedicated SCB int IMR, MAC Reg 0x40[0] = 0
 	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
 	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, value & ~BIT_FS_BTON_STS_UPDATE_INT_EN);
 	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
-	printf("%s Disable BT dedicated SCB int IMR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSIMR_V1), (unsigned int)value);
+	BT_LOGA("%s Disable BT dedicated SCB int IMR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSIMR_V1), (unsigned int)value);
 
 #if 1 //FIXME: use leave ips instead now
 	if (need_reset_wlon) {
 		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0, value & (~BIT7));
 		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
-		printf("%s reset APBPeriph_WLON, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_FEN_GRP0), (unsigned int)value);
+		BT_LOGA("%s reset APBPeriph_WLON, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_FEN_GRP0), (unsigned int)value);
 	}
 
 	if (need_reset_wmac_clk) {
 		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1, value & (~BIT5));
 		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
-		printf("%s reset APBPeriph_WMAC_CLOCK, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_CKE_GRP1), (unsigned int)value);
+		BT_LOGA("%s reset APBPeriph_WMAC_CLOCK, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_CKE_GRP1), (unsigned int)value);
 	}
 #else
 	wifi_set_ips_internal(TRUE);
@@ -263,13 +264,13 @@ uint16_t rtk_bt_le_sof_eof_ind(uint16_t conn_handle, uint8_t enable, void *cb)
 	uint8_t conn_id = 0;
 
 	if (0 != rtk_bt_le_gap_get_conn_id(conn_handle, &conn_id)) {
-		printf("%s: conn_handle %d is not connect!\r\n", __func__, conn_handle);
+		BT_LOGE("%s: conn_handle %d is not connect!\r\n", __func__, conn_handle);
 		return RTK_BT_FAIL;
 	}
 
 	if (enable == 1) {
 		if (g_rtk_bt_scoreboard_isr_cb) {
-			printf("bt_scoreboard_isr is enabled!\r\n");
+			BT_LOGE("bt_scoreboard_isr is enabled!\r\n");
 			return RTK_BT_OK;
 		}
 		//enable bt scoreboard isr
@@ -282,7 +283,7 @@ uint16_t rtk_bt_le_sof_eof_ind(uint16_t conn_handle, uint8_t enable, void *cb)
 
 	} else if (enable == 0) {
 		if (g_rtk_bt_scoreboard_isr_cb == NULL) {
-			printf("bt_scoreboard_isr not enable!\r\n");
+			BT_LOGE("bt_scoreboard_isr not enable!\r\n");
 			return RTK_BT_OK;
 		}
 
@@ -294,14 +295,14 @@ uint16_t rtk_bt_le_sof_eof_ind(uint16_t conn_handle, uint8_t enable, void *cb)
 			return RTK_BT_FAIL;
 		}
 	} else {
-		printf("%s unsupport value %d!\r\n", __func__, enable);
+		BT_LOGE("%s unsupport value %d!\r\n", __func__, enable);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	//set the vendor cmd to inform fw start indicate sof and eof
 	ret = rtk_bt_le_sof_eof_ctrl(conn_handle, enable);
 	if (ret != RTK_BT_OK) {
-		printf("%s rtk_bt_le_sof_eof_ctrl fail, ret = 0x%x\r\n", __func__, ret);
+		BT_LOGE("%s rtk_bt_le_sof_eof_ctrl fail, ret = 0x%x\r\n", __func__, ret);
 		return ret;
 	}
 

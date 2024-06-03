@@ -139,7 +139,11 @@ void rtw_set_wowlan_offload_ctrl(u32 value);
 void rtw_proxy_init(void);
 void rtw_proxy_mdns_parms_init(u8 is_set_default);
 ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+ssize_t proc_set_wow_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 void rtw_wow_prepare_mdns_para(u8 *pframe, u32 *plen);
+int rtw_sdio_suspend(struct device *dev);
+int rtw_sdio_resume(struct device *dev);
+int rtw_resume_common(struct inic_sdio *priv);
 
 #endif
 

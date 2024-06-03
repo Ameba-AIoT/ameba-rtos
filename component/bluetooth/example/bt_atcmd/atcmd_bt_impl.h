@@ -13,6 +13,24 @@ extern "C"
 #endif
 
 #include <basic_types.h>
+#include <bt_debug.h>
+
+#if defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD
+
+#if defined(ATCMD_BT_CUT_DOWN) && ATCMD_BT_CUT_DOWN
+#define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBE] "fmt, ##args)
+#define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
+#else /* ATCMD_BT_CUT_DOWN */
+#define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
+#define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
+#endif
+
+#else /* CONFIG_NEW_ATCMD */
+
+#define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBE] "fmt, ##args)
+#define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
+
+#endif
 
 typedef int (*cmd_func_t)(int argc, char *argv[]);
 
@@ -29,7 +47,7 @@ typedef struct cmd_help_tbl {
 	struct cmd_help_tbl *sub_tbl;
 } cmd_help_table_t;
 
-void atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const char *tag);
+int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const char *tag);
 
 /* bt example cmd implementation */
 int atcmd_bt_demo(int argc, char *argv[]);

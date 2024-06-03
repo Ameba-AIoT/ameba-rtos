@@ -43,7 +43,9 @@ mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
 if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-    bool "Enable MP SHRINK"			CONFIG_MP_SHRINK
+	choice 'Enable MP SHRINK'	"normal			CONFIG_MP_NORMAL \
+								shrink			CONFIG_MP_SHRINK	\
+								" shrink
 fi
 endmenu
 
@@ -115,7 +117,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		fi
 		bool "BT Advanced Feature"										CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  BT Temp Config"										CONFIG_BT_TEMP_CONFIG_FOR_AP
+			bool "  Exclude BT AT Command"								CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_AP
 #			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR_MENU
 			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
 				define_bool CONFIG_BT_ZEPHYR_FOR_AP y
@@ -270,7 +272,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		fi
 		bool "BT Advanced Feature"										CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  BT Temp Config"										CONFIG_BT_TEMP_CONFIG_FOR_HP
+			bool "  Exclude BT AT Command"								CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_HP
 #			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR_MENU
 			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
 				define_bool CONFIG_BT_ZEPHYR_FOR_HP y

@@ -37,7 +37,7 @@ IFLAGS += \
 	-I$(BLEDIR)/rtk_stack/inc/ble_mgr \
 	-I$(BLEDIR)/rtk_stack/inc/framework/bt_mgr_inc \
 	-I$(BLEDIR)/rtk_stack/inc/framework/sysm_inc \
-	-I$(BLEDIR)/rtk_stack/platform/amebasmart/inc \
+	-I$(BLEDIR)/rtk_stack/platform/common \
 	-I$(BLEDIR)/rtk_stack/src/ble/gatt_client \
 	-I$(BLEDIR)/rtk_stack/src/ble/vector \
 	-I$(BLEDIR)/rtk_stack/src/mesh/cmd \

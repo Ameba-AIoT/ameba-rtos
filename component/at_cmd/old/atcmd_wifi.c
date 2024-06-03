@@ -493,7 +493,9 @@ void fATWx(void *arg)
 #if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1)
 	{
 		signed char pcWriteBuffer[1024];
-		vTaskList((char *)pcWriteBuffer);
+		// TODO
+		// vTaskList((char *)pcWriteBuffer);
+		pcWriteBuffer[0] = 0;
 		RTK_LOGI(NOTAG, "Task List: \n\r%s\n\r", pcWriteBuffer);
 	}
 #endif
@@ -1430,7 +1432,7 @@ log_item_t at_wifi_items[ ] = {
 #endif
 void at_wifi_init(void)
 {
-#if CONFIG_WLAN && !defined(CONFIG_MP_INCLUDED)
+#if CONFIG_WLAN && !defined(CONFIG_MP_SHRINK)
 	init_wifi_struct();
 #endif
 	log_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));

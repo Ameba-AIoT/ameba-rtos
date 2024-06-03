@@ -243,7 +243,7 @@ endif
 ifeq ($(CONFIG_802154_THREAD_EN), y)
 IFLAGS               += -I$(BASEDIR)/component/wpan/openthread/openthread/include
 IFLAGS               += -I$(BASEDIR)/component/wpan/openthread/openthread/src/core
-IFLAGS               += -I$(BASEDIR)/component/wpan/openthread/rtk_ot_support/config
+IFLAGS               += -I$(BASEDIR)/component/wpan/openthread/config
 IFLAGS               += -I$(BASEDIR)/component/wpan/openthread/openthread/third_party/mbedtls
 GLOBAL_CFLAGS += -DOPENTHREAD_CONFIG_CORE_USER_CONFIG_HEADER_ENABLE
 endif
@@ -427,16 +427,18 @@ check_toolchain:
 	@if [ ! -x $(UTILITYDIR)/image_tool/imagetool.sh ]; then \
 		chmod 777 $(UTILITYDIR)/image_tool/imagetool.sh; \
 	fi
+	@if [ ! "$(shell which python)" ]; then \
+		echo "Command python not found"; \
+		echo "Please refer to AN900 Chapter 1.2(Preparing GCC Environment) install python3. If still error appears, please run: sudo ln -s /usr/bin/python3 /usr/bin/python"; \
+		exit 1; \
+	fi
 
 #*****************************************************************************#
 #              COPYING OBJECT FILES TO THE BUILD DIRECTORY                    #
 #*****************************************************************************#
 
 COPY_RAM_OBJS:
-	@echo "=============================================================" \
-	       >> $(ROOTDIR)/ram_size.txt;\
-	$(CC_SIZE) -t $(OBJS) >> $(ROOTDIR)/ram_size.txt;\
-	for i in  $(OBJS) $(ASM_OBJS); do \
+	@for i in  $(OBJS) $(ASM_OBJS); do \
 		echo $$i >> $(ROOTDIR)/obj_list.txt;\
 		$(COPY)  $$i $(BUILD_TARGET_RAM_FOLDER) -f;\
 		done \

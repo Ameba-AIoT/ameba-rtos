@@ -65,7 +65,11 @@ ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
 endif
 
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
 
 # Single Core Library
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
@@ -73,7 +77,11 @@ LINK_APP_LIB += $(APP_LIB)
 ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
 endif
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
 endif
 
 endif
@@ -91,8 +99,13 @@ LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_crashdump.a
 
 #audio
 ifeq ($(CONFIG_WIFI_AUDIO),y)
-LINK_THIRD_APP_LIB += -Wl,--whole-archive $(APP_LIB_DIR)/lib_wfa_audio_hal.a -Wl,--no-whole-archive
-LINK_THIRD_APP_LIB += -Wl,--whole-archive $(APP_LIB_DIR)/lib_wifi_audio.a -Wl,--no-whole-archive
+LINK_THIRD_APP_LIB += -Wl,--whole-archive $(BASEDIR)/component/application/wifi-audio/lib/lib_wfa_pal.a -Wl,--no-whole-archive
+LINK_THIRD_APP_LIB += $(BASEDIR)/component/application/wifi-audio/lib/lib_wifi_audio.a
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_flac.a
+endif
+ifeq ($(CONFIG_WFA_SRC),y)
+LINK_THIRD_APP_LIB += -Wl,--whole-archive $(APP_LIB_DIR)/lib_wfa_pal.a -Wl,--no-whole-archive
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_wifi_audio.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_flac.a
 endif
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
@@ -197,8 +210,8 @@ ifeq ($(CONFIG_AUDIO_EN),y)
 endif
 	@+$(MAKE) -C make/usb_otg/device/lib all
 # build wifi-audio lib
-ifeq ($(CONFIG_WIFI_AUDIO),y)
-	@+$(MAKE) -C make/application/wifi-audio lib
+ifeq ($(CONFIG_WFA_SRC),y)
+	@+$(MAKE) -C make/application/wifi-audio-src lib
 endif
 
 ifeq ($(CONFIG_WLAN), y)

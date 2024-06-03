@@ -102,14 +102,9 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	DCache_Invalidate(addr, sizeof(UART_LOG_BUF));
 	_memcpy(pUartLogBuf, (u32 *)addr, sizeof(UART_LOG_BUF));
 
-	if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[0], LIB_INFO_CMD) == 0) {
-		ChipInfo_GetLibVersion();
-		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-	} else {
-		shell_ctl.ExecuteCmd = _TRUE;
-		if (shell_ctl.shell_task_rdy) {
-			shell_ctl.GiveSema();
-		}
+	shell_ctl.ExecuteCmd = _TRUE;
+	if (shell_ctl.shell_task_rdy) {
+		shell_ctl.GiveSema();
 	}
 }
 
@@ -185,8 +180,13 @@ void shell_loguartRx_dispatch(void)
 
 	if (CpuId == ALL_CPU_RECV) {
 		//1. logurat recv CPU Printf Info
-		ChipInfo_GetSocName();
-		ChipInfo_GetLibVersion();
+		u32 buflen = 1024;
+		char *buf = rtos_mem_malloc(buflen);
+		ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
+		RTK_LOGS(NOTAG, "%s", buf);
+		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+		RTK_LOGS(NOTAG, "%s", buf);
+		rtos_mem_free(buf);
 
 		//2. Other CPU Pintf Lib Info
 		LOGUART_WaitTxComplete();
@@ -201,7 +201,19 @@ void shell_loguartRx_dispatch(void)
 	}
 }
 #else
-#define shell_loguartRx_dispatch()
+void shell_loguartRx_dispatch(void)
+{
+	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
+	if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[0], LIB_INFO_CMD) == 0) {
+		u32 buflen = 1024;
+		char *buf = rtos_mem_malloc(buflen);
+		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+		RTK_LOGS(NOTAG, "%s", buf);
+		rtos_mem_free(buf);
+		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
+		shell_ctl.ExecuteCmd = _FALSE;
+	}
+}
 #endif
 
 static void shell_task_ram(void *Data)

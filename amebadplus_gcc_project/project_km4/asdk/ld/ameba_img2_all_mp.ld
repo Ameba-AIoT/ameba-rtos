@@ -141,7 +141,7 @@ SECTIONS
 	} > BTRACE
 }
 
-__bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM) + LENGTH(KM4_BD_RAM) - __bdram_heap_buffer_start__;
+__bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __bdram_heap_buffer_start__;
 
 
 __psram_image2_start__ = .;

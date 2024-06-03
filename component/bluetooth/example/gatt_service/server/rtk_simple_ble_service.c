@@ -76,17 +76,16 @@ static struct rtk_bt_gatt_service simple_ble_srv = RTK_BT_GATT_SERVICE(simple_bl
 
 void simple_ble_service_callback(uint8_t event, void *data)
 {
-	uint32_t i = 0;
 	uint16_t ret = 0;
 
 	switch (event) {
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *p_gatts_reg_ind = (rtk_bt_gatts_reg_ind_t *)data;
 		if (p_gatts_reg_ind->reg_status == RTK_BT_OK) {
-			printf("[APP] simple ble service register succeed!\r\n");
+			BT_LOGA("[APP] simple ble service register succeed!\r\n");
 		} else
-			printf("[APP] simple ble service register failed, err: 0x%x\r\n",
-				   p_gatts_reg_ind->reg_status);
+			BT_LOGE("[APP] simple ble service register failed, err: 0x%x\r\n",
+					p_gatts_reg_ind->reg_status);
 		break;
 	}
 	case RTK_BT_GATTS_EVT_READ_IND: {
@@ -102,15 +101,15 @@ void simple_ble_service_callback(uint8_t event, void *data)
 			read_resp.data = &simple_ble_read_val[offset];
 			read_resp.len = actual_len;
 		} else {
-			printf("[APP] Simple BLE read event unknown index: %d\r\n", p_read_ind->index);
+			BT_LOGE("[APP] Simple BLE read event unknown index: %d\r\n", p_read_ind->index);
 			read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 		ret = rtk_bt_gatts_read_resp(&read_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] Simple BLE respond for client read success, offset: %d\r\n", offset);
+			BT_LOGA("[APP] Simple BLE respond for client read success, offset: %d\r\n", offset);
 		} else {
-			printf("[APP] Simple BLE respond for client read failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] Simple BLE respond for client read failed, err: 0x%x\r\n", ret);
 		}
 		break;
 	}
@@ -124,32 +123,26 @@ void simple_ble_service_callback(uint8_t event, void *data)
 		write_resp.type = p_write_ind->type;
 
 		if (!p_write_ind->len || !p_write_ind->value) {
-			printf("[APP] Simple BLE write value is empty!\r\n");
+			BT_LOGA("[APP] Simple BLE write value is empty!\r\n");
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 			goto send_write_rsp;
 		}
 
 		if (SIMPLE_BLE_WRITE_INDEX == p_write_ind->index) {
-			printf("[APP] Simple BLE write event, len: %d, type: %d, data: ",
-				   p_write_ind->len, p_write_ind->type);
-			for (i = 0; i < p_write_ind->len; i++) {
-				if (0 == i % 16) {
-					printf("\n\r");
-				}
-				printf("%02x ", *(p_write_ind->value + i));
-			}
-			printf("\r\n");
+			BT_LOGA("[APP] Simple BLE write event, len: %d, type: %d, data: ",
+					p_write_ind->len, p_write_ind->type);
+			BT_DUMPA("", p_write_ind->value, p_write_ind->len);
 		} else {
-			printf("[APP] Simple BLE write event unknown index: %d\r\n", p_write_ind->index);
+			BT_LOGE("[APP] Simple BLE write event unknown index: %d\r\n", p_write_ind->index);
 			write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 send_write_rsp:
 		ret = rtk_bt_gatts_write_resp(&write_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] Simple BLE response for client write success!\r\n");
+			BT_LOGA("[APP] Simple BLE response for client write success!\r\n");
 		} else {
-			printf("[APP] Simple BLE response for client write failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] Simple BLE response for client write failed, err: 0x%x\r\n", ret);
 		}
 		break;
 	}
@@ -165,19 +158,19 @@ send_write_rsp:
 		case SIMPLE_BLE_NOTIFY_CCCD_INDEX:
 			if (p_cccd_ind->value & RTK_BT_GATT_CCC_NOTIFY) {
 				simple_ble_cccd_ntf_en_map[conn_id] = 1;
-				printf("[APP] Simple BLE notify cccd, notify bit enable\r\n");
+				BT_LOGA("[APP] Simple BLE notify cccd, notify bit enable\r\n");
 			} else {
 				simple_ble_cccd_ntf_en_map[conn_id] = 0;
-				printf("[APP] Simple BLE notify cccd, notify bit disable\r\n");
+				BT_LOGA("[APP] Simple BLE notify cccd, notify bit disable\r\n");
 			}
 			break;
 		case SIMPLE_BLE_INDICATE_CCCD_INDEX:
 			if (p_cccd_ind->value & RTK_BT_GATT_CCC_INDICATE) {
 				simple_ble_cccd_ind_en_map[conn_id] = 1;
-				printf("[APP] Simple BLE indicate cccd, indicate bit enable\r\n");
+				BT_LOGA("[APP] Simple BLE indicate cccd, indicate bit enable\r\n");
 			} else {
 				simple_ble_cccd_ind_en_map[conn_id] = 0;
-				printf("[APP] Simple BLE indicate cccd, indicate bit disable\r\n");
+				BT_LOGA("[APP] Simple BLE indicate cccd, indicate bit disable\r\n");
 			}
 			break;
 		default:
@@ -188,18 +181,18 @@ send_write_rsp:
 	case RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ntf_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ntf_ind->err_code) {
-			printf("[APP] Simple BLE notify succeed!\r\n");
+			BT_LOGA("[APP] Simple BLE notify succeed!\r\n");
 		} else {
-			printf("[APP] Simple BLE notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
+			BT_LOGE("[APP] Simple BLE notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
 		}
 		break;
 	}
 	case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind_ind->err_code) {
-			printf("[APP] Simple BLE indicate succeed!\r\n");
+			BT_LOGA("[APP] Simple BLE indicate succeed!\r\n");
 		} else {
-			printf("[APP] Simple BLE indicate failed, err: 0x%x\r\n", p_ind_ind->err_code);
+			BT_LOGE("[APP] Simple BLE indicate failed, err: 0x%x\r\n", p_ind_ind->err_code);
 		}
 		break;
 	}

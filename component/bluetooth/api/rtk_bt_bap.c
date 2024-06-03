@@ -782,11 +782,11 @@ uint16_t rtk_bt_bap_broadcast_assistant_reception_stop(rtk_bt_le_addr_t *padv_ad
 					ret = rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info(p_dev_tbl[i].conn_handle, p_sync_dev_info->sync_handle,
 																					p_device_info->brs_char_tbl[j].source_id,
 																					RTK_BT_LE_AUDIO_BASS_PA_NOT_SYNC, 0, false);
-					BT_APP_PRINT(BT_APP_INFO, "%s bass modify source by sync_info for sync_handle %p %s, ret: 0x%x\r\n", __func__, p_sync_dev_info->sync_handle,
-								 ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
+					BT_LOGA("%s bass modify source by sync_info for sync_handle %p %s, ret: 0x%x\r\n", __func__, p_sync_dev_info->sync_handle,
+							((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				} else {
-					BT_APP_PRINT(BT_APP_ERROR, "%s not find sync_handle %p in brs_char_tbl for conn_handle=%d\r\n", __func__, p_sync_dev_info->sync_handle,
-								 p_dev_tbl[i].conn_handle);
+					BT_LOGE("%s not find sync_handle %p in brs_char_tbl for conn_handle=%d\r\n", __func__, p_sync_dev_info->sync_handle,
+							p_dev_tbl[i].conn_handle);
 				}
 			}
 		}
@@ -1085,7 +1085,7 @@ static uint16_t rtk_bt_bap_unicast_client_codec_cfg(rtk_bt_le_audio_group_handle
 				if (sup_src_ase_mask & 0x01) {
 					if (src_codec_idx == RTK_BT_LE_CODEC_CFG_ITEM_32_2) {
 						BT_APP_PROCESS(rtk_bt_le_audio_get_prefer_codec_cfg(src_codec_idx, &src_ase_codec));
-						BT_APP_PRINT(BT_APP_INFO, "%s: source ase prefer_codec_cfg idx is %d\r\n", __func__, src_codec_idx);
+						BT_LOGA("%s: source ase prefer_codec_cfg idx is %d\r\n", __func__, src_codec_idx);
 						memcpy(&app_lea_source_ase_prefer_codec.codec_cfg, &src_ase_codec, sizeof(rtk_bt_le_audio_cfg_codec_t));
 						break;
 					}
@@ -1104,7 +1104,7 @@ static uint16_t rtk_bt_bap_unicast_client_codec_cfg(rtk_bt_le_audio_group_handle
 			if (sup_snk_mask & 0x01) {
 				if (idx == RTK_BT_LE_CODEC_CFG_ITEM_48_4) {
 					BT_APP_PROCESS(rtk_bt_le_audio_get_prefer_codec_cfg(idx, &codec_cfg));
-					BT_APP_PRINT(BT_APP_INFO, "%s prefer_codec_cfg idx is %d\r\n", __func__, idx);
+					BT_LOGA("%s prefer_codec_cfg idx is %d\r\n", __func__, idx);
 					break;
 				}
 			}

@@ -474,8 +474,12 @@ static const cmd_table_t cmd_table[] = {
 #if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
 	{"cap_cmd",     atcmd_bt_cap_cmd,              3, 10},
 #endif
+#if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
 	{"pbp_cmd",     atcmd_bt_pbp_cmd,              3, 10},
+#endif
+#if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
 	{"tmap_cmd",    atcmd_bt_tmap_cmd,             3, 10},
+#endif
 #if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
 	{"gmap_cmd",    atcmd_bt_gmap_cmd,             3, 10},
 #endif
@@ -680,11 +684,7 @@ static void fATBT(void *arg)
 
 	AT_PRINTK("[ATBT] %s ", cmd_str);
 	for (int i = 1; i < param_num; i++) {
-		if (argv[i + 1][0] == '0' && (argv[i + 1][1] == 'x' || argv[i + 1][1] == 'X')) {
-			param[i] = hexnum_str_to_int(argv[i + 1]);
-		} else {
-			param[i] = atoi(argv[i + 1]);
-		}
+		param[i] = str_to_int(argv[i + 1]);
 		AT_PRINTK("%d ", param[i]);
 	}
 	AT_PRINTK("\r\n");
@@ -723,9 +723,10 @@ static log_item_t at_bt_items[] = {
 
 void at_bt_init(void)
 {
-#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
-	log_service_add_table(at_bt_items, sizeof(at_bt_items) / sizeof(at_bt_items[0]));
-#else
+#if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
+	((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
 	(void)at_bt_items;
+#else
+	log_service_add_table(at_bt_items, sizeof(at_bt_items) / sizeof(at_bt_items[0]));
 #endif
 }

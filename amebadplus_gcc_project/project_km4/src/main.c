@@ -199,7 +199,7 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
-#if defined(CONFIG_WLAN) && defined(CONFIG_INIC_INTF_IPC)
+#if defined(CONFIG_WLAN) && (defined(CONFIG_INIC_INTF_IPC) || defined(CONFIG_SDIO_BRIDGE))
 	wlan_initialize();
 #endif
 

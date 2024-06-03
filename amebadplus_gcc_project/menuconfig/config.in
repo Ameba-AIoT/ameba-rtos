@@ -72,7 +72,9 @@ mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
 if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-    bool "Enable MP SHRINK"			CONFIG_MP_SHRINK
+	choice 'Enable MP SHRINK'	"normal			CONFIG_MP_NORMAL \
+								shrink			CONFIG_MP_SHRINK	\
+								" shrink
 fi
 endmenu
 
@@ -111,6 +113,7 @@ comment '< CONFIG WIFI'
 bool "Enable Wifi"                CONFIG_WLAN_MENU
 if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	choice 'Processor Role'		"INIC	CONFIG_KM0_NP_KM4_AP \
+								SDIO_BRIDGE		CONFIG_SDIO_BRIDGE_FOR_KM4 \
 								"
 	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
 		choice 'INIC_Interface'	"IPC	CONFIG_INIC_INTF_IPC \
@@ -129,6 +132,13 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
 		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 y
+	fi
+	if [ "$CONFIG_SDIO_BRIDGE_FOR_KM4" = "y" ]; then
+		define_bool CONFIG_WLAN_FOR_KM4 y
+		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
+		define_bool CONFIG_INIC_INTF_SDIO_FOR_KM4 y
+		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
 	fi
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
@@ -189,7 +199,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 	define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
 	bool "BT Advanced Feature"					CONFIG_BT_ADVANCED_FEATURE_MENU
 	if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-		bool "  BT Temp Config"					CONFIG_BT_TEMP_CONFIG_FOR_KM4
+		bool "  Exclude BT AT Command"			CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KM4
 	fi
 	bool "BT Example Demo"						CONFIG_BT_EXAMPLE_DEMO_MENU
 	if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
@@ -657,7 +667,8 @@ endmenu
 mainmenu_option next_comment
 comment '< Wifi Audio Config'
 bool "Enable WIFI AUDIO"           CONFIG_WIFI_AUDIO_FOR_KM4
-if [ "$CONFIG_WIFI_AUDIO_FOR_KM4" = "y" ]; then
+bool "Enable WFA SRC"              CONFIG_WFA_SRC_FOR_KM4
+if [ "$CONFIG_WIFI_AUDIO_FOR_KM4" = "y" -o "$CONFIG_WFA_SRC_FOR_KM4" = "y" ]; then
 	define_bool CONFIG_AUDIO_FWK_FOR_KM4 y
 	define_bool CONFIG_AUDIO_PASSTHROUGH_FOR_KM4 y
 	bool "Enable FEC USE SRAM"        CONFIG_WFA_FEC_USE_SRAM

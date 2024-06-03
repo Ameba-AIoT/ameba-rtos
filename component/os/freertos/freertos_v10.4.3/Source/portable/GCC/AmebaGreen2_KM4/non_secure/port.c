@@ -45,10 +45,11 @@
 /* Portasm includes. */
 #include "portasm.h"
 #include "log.h"
+#include "diag.h"
 
 /* PMC includes */
 #include "ameba_pmu.h"
-#include "cmsis_gcc.h"
+#include "cmsis/cmsis_gcc.h"
 
 #if( configENABLE_TRUSTZONE == 1 )
 /* Secure components includes. */
@@ -934,7 +935,6 @@ void vApplicationIdleHook(void)
 #endif
 }
 
-#include "diag.h"
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
 	/* To avoid gcc warnings */

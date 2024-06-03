@@ -109,11 +109,12 @@
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
 //#define CONFIG_FRAME_DEFRAG // support frame defragmentaion
+#ifdef CONFIG_MP_INCLUDED
+#endif
 
 #ifdef CONFIG_MP_SHRINK
 #undef CONFIG_PS_EN
 #undef CONFIG_AUTO_RECONNECT
-
 #undef CONFIG_IEEE80211W
 #undef CONFIG_OWE_SUPPORT
 #undef CONFIG_SAE_SUPPORT

@@ -474,7 +474,6 @@ exit:
 int rtw_ndev_alloc(void)
 {
 	int i, ret = false;
-	/* TODO: Customer names, get them from dts instead. */
 	struct net_device *ndev = NULL;
 	struct wireless_dev *wdev;
 
@@ -497,7 +496,6 @@ int rtw_ndev_alloc(void)
 		}
 		wdev->wiphy = global_idev.pwiphy_global;
 		wdev->netdev = ndev;
-		/* TODO: iftype. */
 		wdev->iftype = (i ? NL80211_IFTYPE_AP : NL80211_IFTYPE_STATION);
 		ndev->ieee80211_ptr = wdev;
 		global_idev.pwdev_global[i] = wdev;

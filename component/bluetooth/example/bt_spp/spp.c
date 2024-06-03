@@ -513,7 +513,6 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	return RTK_BT_EVT_CB_OK;
 }
 
-extern bool rtk_bt_pre_enable(void);
 /**
  * @brief  process spp main init/ deinit.
  * @param  role[in]: 1:spp server. 0: spp client
@@ -527,11 +526,6 @@ int bt_spp_main(uint8_t role, uint8_t enable)
 	char addr_str[30] = {0};
 
 	if (1 == enable) {
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
-			return -1;
-		}
-
 		//set SPP demo role
 		if (RTK_BT_SPP_ROLE_CLIENT == role) {
 			spp_demo_role = RTK_BT_SPP_ROLE_CLIENT;

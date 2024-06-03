@@ -82,7 +82,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wps_retry_count = 4;
 	wifi_user_config.wps_retry_interval = 5000;
 
-#ifdef CONFIG_INIC_INTF_SDIO
+#if defined(CONFIG_INIC_INTF_SDIO)  && (!defined (CONFIG_SDIO_BRIDGE))
 	/* Linux wifi supports cfg80211 ops. */
 	wifi_user_config.cfg80211 = 1;
 #else

@@ -128,7 +128,7 @@ int rtw_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wlan_id
 		dev_err(global_idev.fullmac_dev, "dev_alloc_name, fail!\n");
 	}
 	netif_carrier_off(global_idev.pndev[wlan_idx]);
-	ret = (register_netdevice(global_idev.pndev[wlan_idx]) == 0) ? true : false; //P2P_TODO: rtnl_lock check
+	ret = (register_netdevice(global_idev.pndev[wlan_idx]) == 0) ? true : false;
 
 	if (ret != true) {
 		dev_err(global_idev.fullmac_dev, "netdevice register fail!\n");
@@ -178,8 +178,8 @@ int rtw_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 	} else if (type == NL80211_IFTYPE_P2P_DEVICE) {
 		memset(&(global_idev.p2p_global), 0, sizeof(struct p2p_priv_t));
 		/*step0: unregister original softap netdev and wdev for later P2P GO usage*/
-		if (global_idev.pwdev_global[1]) { /*P2P_TODO: may need better solution for softap intf*/
-			unregister_netdevice(global_idev.pndev[1]);//P2P_TODO: rtnl_lock check
+		if (global_idev.pwdev_global[1]) {
+			unregister_netdevice(global_idev.pndev[1]);
 			kfree((u8 *)global_idev.pwdev_global[1]);
 			global_idev.pwdev_global[1] = NULL;
 			/* remove wireless_dev in ndev. */
@@ -233,7 +233,7 @@ void rtw_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev)
 		}
 
 		if (global_idev.pndev[1]) {
-			unregister_netdevice(global_idev.pndev[1]); /* P2P_TODO: rtnl_lock check */
+			unregister_netdevice(global_idev.pndev[1]);
 			if (global_idev.pwdev_global[1]) { //wdev
 				kfree((u8 *)global_idev.pwdev_global[1]);
 				global_idev.pwdev_global[1] = NULL;

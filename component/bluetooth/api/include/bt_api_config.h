@@ -177,7 +177,7 @@ extern "C"
 #endif /* RTK_BLE_5_0_SUPPORT */
 
 /*
- * PLATFORM_RTL8720F (AmebaGreen2)
+ * PLATFORM_AMEBAGREEN2 (AmebaGreen2)
  */
 #elif defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2
 #define RTK_BLE_GAP_MAX_LINKS               4

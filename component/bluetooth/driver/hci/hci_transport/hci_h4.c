@@ -9,7 +9,7 @@
 #include "hci/hci_common.h"
 #include "hci/hci_transport.h"
 #include "hci_platform.h"
-#include "hci_dbg.h"
+#include "bt_debug.h"
 #include "rtk_coex.h"
 #include <string.h>
 
@@ -133,7 +133,7 @@ static void h4_rx_thread(void *context)
 		} else if (type == H4_SCO) {
 			hdr_len = sizeof(struct bt_hci_sco_hdr);
 		} else {
-			HCI_ERR("wrong HCI H4 type %d", type);
+			BT_LOGE("wrong HCI H4 type %d\r\n", type);
 			break;
 		}
 		/* Read HCI Header */
@@ -147,7 +147,7 @@ static void h4_rx_thread(void *context)
 				/* The first event parameter is always a subevent code identifying the specific event for LE meta event.
 				   So the len should not be 0. */
 				if (body_len == 0) {
-					HCI_ERR("HCI meta event length zero");
+					BT_LOGE("HCI meta event length zero\r\n");
 					break;
 				}
 
@@ -170,7 +170,7 @@ static void h4_rx_thread(void *context)
 		}
 
 		if (body_len == 0xDEAD) { /* to avoid 0xDEADBEEF received */
-			HCI_ERR("ERROR!!!, type %d, len %d", type, body_len);
+			BT_LOGE("ERROR!!!, type %d, len %d\r\n", type, body_len);
 			break;
 		}
 
@@ -183,7 +183,7 @@ static void h4_rx_thread(void *context)
 				}
 				continue;
 			} else {
-				HCI_ERR("Hci RX alloc fail");
+				BT_LOGE("Hci RX alloc fail\r\n");
 				break;
 			}
 		}
@@ -203,11 +203,9 @@ static void h4_rx_thread(void *context)
 			break;
 		}
 
-#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
-		if (!hci_platform_check_mp()) {
+		if (!hci_is_mp_mode()) {
 			bt_coex_process_rx_frame(type, buf, hdr_len + body_len);
 		}
-#endif
 
 		if (hci_h4->recv) {
 			hci_h4->recv(&info);
@@ -236,11 +234,9 @@ static uint16_t h4_send(uint8_t type, uint8_t *buf, uint16_t len, uint8_t is_res
 		return 0;
 	}
 
-#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
-	if (!hci_platform_check_mp()) {
+	if (!hci_is_mp_mode()) {
 		bt_coex_process_tx_frame(type, buf, len);
 	}
-#endif
 
 	if (is_reserved) {
 		*(buf - 1) = type;
@@ -264,11 +260,9 @@ static uint8_t h4_open(void)
 		memset(hci_h4, 0, sizeof(struct hci_h4_t));
 	}
 
-#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
-	if (!hci_platform_check_mp()) {
+	if (!hci_is_mp_mode()) {
 		bt_coex_init();
 	}
-#endif
 
 	osif_sem_create(&hci_h4->rx_ind_sema, 0, 1);
 	osif_sem_create(&hci_h4->rx_run_sema, 0, 1);
@@ -289,11 +283,9 @@ static uint8_t h4_close(void)
 	osif_sem_give(hci_h4->rx_ind_sema);
 	osif_sem_take(hci_h4->rx_run_sema, BT_TIMEOUT_FOREVER);
 
-#if (!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) || (!defined(CONFIG_MP_SHRINK) || !CONFIG_MP_SHRINK)
-	if (!hci_platform_check_mp()) {
+	if (!hci_is_mp_mode()) {
 		bt_coex_deinit();
 	}
-#endif
 
 	return HCI_SUCCESS;
 }

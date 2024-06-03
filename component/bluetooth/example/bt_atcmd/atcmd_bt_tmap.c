@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <bt_api_config.h>
-#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+#if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
 #include <stdlib.h>
 #include <stdio.h>
 #include <osif.h>
@@ -17,31 +17,12 @@
 #include <rtk_bt_tmap.h>
 #include <atcmd_bt_impl.h>
 
-_WEAK uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t channel, uint8_t *p_neighbor_addr)
-{
-	(void)channel;
-	(void)p_neighbor_addr;
-	AT_PRINTK("[ATBE] tmap broadcast media receiver not support cfg");
-	return -1;
-}
-
-_WEAK uint16_t rtk_bt_tmap_unicast_media_receiver_cfg(uint8_t channel, uint8_t *p_neighbor_addr)
-{
-	(void)channel;
-	(void)p_neighbor_addr;
-	AT_PRINTK("[ATBE] tmap unicast media receiver not support cfg");
-	return -1;
-}
-
 static int atcmd_bt_tmap_broadcast_media_receiver_cfg(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t channel = 0;
 	uint8_t neighbor_addr[6] = {0};
 
-	if ((argc != 1) && (argc != 2)) {
-		AT_PRINTK("[ATBC] TMAP broadcast media receiver cfg op failed! wrong args num!");
-		return -1;
-	}
 	if (strcmp(argv[0], "left") == 0) {
 		/* RTK_BT_LE_AUDIO_LEFT */
 		channel = 1;
@@ -76,13 +57,10 @@ static int atcmd_bt_tmap_broadcast_media_receiver_cfg(int argc, char **argv)
 
 static int atcmd_bt_tmap_unicast_media_receiver_cfg(int argc, char **argv)
 {
+	(void)argc;
 	uint8_t channel = 0;
 	uint8_t neighbor_addr[6] = {0};
 
-	if ((argc != 1) && (argc != 2)) {
-		AT_PRINTK("[ATBC] TMAP unicast media receiver cfg op failed! wrong args num!");
-		return -1;
-	}
 	if (strcmp(argv[0], "left") == 0) {
 		/* RTK_BT_LE_AUDIO_LEFT */
 		channel = 1;
@@ -115,21 +93,17 @@ static int atcmd_bt_tmap_unicast_media_receiver_cfg(int argc, char **argv)
 }
 
 static const cmd_table_t tmap_broadcast_media_receiver_cmd_table[] = {
-	{"cfg",       atcmd_bt_tmap_broadcast_media_receiver_cfg,        1, 3},
+	{"cfg",       atcmd_bt_tmap_broadcast_media_receiver_cfg,        2, 3},
 	{NULL,},
 };
 
 static const cmd_table_t tmap_unicast_media_receiver_cmd_table[] = {
-	{"cfg",       atcmd_bt_tmap_unicast_media_receiver_cfg,          1, 3},
+	{"cfg",       atcmd_bt_tmap_unicast_media_receiver_cfg,          2, 3},
 	{NULL,},
 };
 
 int atcmd_bt_tmap_cmd(int argc, char *argv[])
 {
-	if (argc < 2) {
-		AT_PRINTK("[%s]Error: tmap atcmd should have at least 2 parameters !!!\r\n", __func__);
-		return -1;
-	}
 	if (strcmp(argv[0], "bmr") == 0) {
 		AT_PRINTK("[ATBC] Set tmap broadcast media receiver cmd");
 		atcmd_bt_excute(argc - 1, &argv[1], tmap_broadcast_media_receiver_cmd_table, "[ATBC][tmap][bmr]");

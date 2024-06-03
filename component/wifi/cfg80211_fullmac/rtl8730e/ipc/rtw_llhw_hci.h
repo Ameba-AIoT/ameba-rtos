@@ -25,7 +25,6 @@
 #define RTW_IP_ADDR_LEN 4
 #define RTW_IPv6_ADDR_LEN 16
 
-/* TODO: typeof */
 /* Layer 2 structs. */
 
 /* Layer 1 structs. */
@@ -128,7 +127,7 @@ struct inic_device {
 	struct p2p_priv_t		p2p_global;
 #endif
 };
-/* TODO: kzalloc to platform device private data instead of axi_data. */
+
 extern struct inic_device global_idev;
 
 #define MAX_NUM_WLAN_PORT		(2)

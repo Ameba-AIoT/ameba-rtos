@@ -114,6 +114,7 @@ path_halbb_8720e := $(path_halbb_d1)/halbb_8720e
 CSRC_PHY += $(path_halbb_8720e)/halbb_8720e.o \
 	$(path_halbb_8720e)/halbb_8720e_api.o \
 	$(path_halbb_8720e)/halbb_hwimg_8720e.o \
+	$(path_halbb_8720e)/halbb_hwimg_bcnmode_8720e.o \
 	$(path_halbb_8720e)/halbb_reg_cfg_8720e.o
 
 path_halrf_8720e := $(path_halrf_d1)/halrf_8720e

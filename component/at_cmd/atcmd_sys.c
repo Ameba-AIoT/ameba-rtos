@@ -4,35 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <platform_autoconf.h>
+#include "ameba_soc.h"
 
-#include <gpio_api.h>   // mbed
 #include <sys_api.h>
 #include <flash_api.h>
 
-#if !defined(CONFIG_AMEBASMART) && !defined(CONFIG_AMEBALITE) && !defined(CONFIG_AMEBADPLUS) && !defined(CONFIG_AMEBAGREEN2)
-#include <rtl_lib.h>
-#endif
 #include <build_info.h>
 #include "log_service.h"
 #include "atcmd_sys.h"
-#include "main.h"
 #include "atcmd_wifi.h"
 #ifdef CONFIG_NEW_ATCMD
 #include "atcmd_mqtt.h"
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #include "atcmd_bt_mp.h"
-#endif
 #ifdef CONFIG_LWIP_LAYER
 #include "atcmd_lwip.h"
 #endif
-#endif
-
-//#include "FreeRTOS.h"
-//#include "task.h"
-
-#if defined(configUSE_WAKELOCK_PMU) && (configUSE_WAKELOCK_PMU == 1)
-#include "ameba_pmu.h"
 #endif
 
 extern u32 cmd_dump_word(u16 argc, u8  *argv[]);
@@ -120,7 +106,7 @@ void print_delta(int delta_tick)
 	char CPU_decimal_string[3] = {0};
 	int CPU_1000, CPU_integer, CPU_decimal;
 
-	at_printf("%-32s\t%6s\t%6s\t%s\n\r", "task name", "state", "prio", "CPU%");
+	at_printf("%s\t%s\t%s\t%s\n\r", "task name", "state", "prio", "CPU%");
 	for (int i = 0; i < TASK_CNT; i++) {
 		memset(CPU_decimal_string, 0, sizeof(CPU_decimal_string));
 		CPU_1000 = (float)task_status->delta[i].running_tick * 100 / (float)delta_tick * 100;
@@ -134,7 +120,7 @@ void print_delta(int delta_tick)
 		}
 
 		if (task_status->delta[i].task != NULL) {
-			at_printf("%-32s\t%6c\t%6d\t%d.%s\r\n", task_status->delta[i].bak_name, c_state[task_status->delta[i].state], task_status->delta[i].priority,
+			at_printf("%s\t%c\t%d\t%d.%s\r\n", task_status->delta[i].bak_name, c_state[task_status->delta[i].state], task_status->delta[i].priority,
 					  CPU_integer, CPU_decimal_string);
 		}
 	}
@@ -181,8 +167,8 @@ AT command process:
 void at_otaclear(void *arg)
 {
 	UNUSED(arg);
-	at_printf("\r\n%sOK\r\n", "+OTACLEAR:");
 	sys_clear_ota_signature();
+	at_printf("\r\n%sOK\r\n", "+OTACLEAR:");
 }
 
 /****************************************************************
@@ -194,8 +180,8 @@ AT command process:
 void at_otarecover(void *arg)
 {
 	UNUSED(arg);
-	at_printf("\r\n%sOK\r\n", "+OTARECOVER:");
 	sys_recover_ota_signature();
+	at_printf("\r\n%sOK\r\n", "+OTARECOVER:");
 }
 
 #if (configGENERATE_RUN_TIME_STATS == 1)
@@ -294,7 +280,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+CPULOAD:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+CPULOAD:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+CPULOAD:", error_no);
 		if (error_no == 1 || error_no == 3) {
 			at_cpuload_help();
 		}
@@ -332,7 +318,7 @@ void at_list(void *arg)
 	at_printf("Common AT Command:\r\n");
 	print_system_at();
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	/* Wifi commands. */
 	at_printf("Wi-Fi AT Command:\r\n");
 	print_wifi_at();
@@ -377,9 +363,9 @@ void at_rst(void *arg)
 
 /****************************************************************
 AT command process:
-	AT+RST
-	[+RST]: OK
-	Then the board should re-start right now.
+	AT+STATE
+	[+STATE]: OK
+	Show the task list, and heap state.
 ****************************************************************/
 extern u32 total_heap_size;
 void at_state(void *arg)
@@ -395,11 +381,11 @@ void at_state(void *arg)
 
 	HeapStats_t pxHeapStats;
 	vPortGetHeapStats(&pxHeapStats);
-	at_printf("HeapStats: \n\r");
-	at_printf("Total Heap:\t%u\n\r", total_heap_size);
-	at_printf("Heap Free Now:\t%u\n\r", pxHeapStats.xAvailableHeapSpaceInBytes);
-	at_printf("Heap Used Now:\t%u\n\r", total_heap_size - pxHeapStats.xAvailableHeapSpaceInBytes);
-	at_printf("Heap Used Max:\t%u\n\r", total_heap_size - pxHeapStats.xMinimumEverFreeBytesRemaining);
+	at_printf("HeapStats: \r\n");
+	at_printf("Total Heap:\t%u\r\n", total_heap_size);
+	at_printf("Heap Free Now:\t%u\r\n", pxHeapStats.xAvailableHeapSpaceInBytes);
+	at_printf("Heap Used Now:\t%u\r\n", total_heap_size - pxHeapStats.xAvailableHeapSpaceInBytes);
+	at_printf("Heap Used Max:\t%u\r\n", total_heap_size - pxHeapStats.xMinimumEverFreeBytesRemaining);
 
 	at_printf("\r\n%sOK\r\n", "+STATE:");
 }
@@ -418,8 +404,13 @@ void at_gmr(void *arg)
 
 	UNUSED(arg);
 
-	ChipInfo_GetSocName();
-	ChipInfo_GetLibVersion();
+	u32 buflen = 1024;
+	char *buf = rtos_mem_malloc(buflen);
+	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
+	at_printf("%s", buf);
+	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+	at_printf("%s", buf);
+	rtos_mem_free(buf);
 
 	strncpy(at_buf, ATCMD_VERSION"."ATCMD_SUBVERSION"."ATCMD_REVISION, sizeof(at_buf));
 	strncpy(fw_buf, SDK_VERSION, sizeof(fw_buf));
@@ -524,7 +515,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+LOG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+LOG:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+LOG:", error_no);
 		at_log_help();
 	}
 }
@@ -559,7 +550,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+RREG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+RREG:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+RREG:", error_no);
 	}
 }
 
@@ -593,7 +584,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WREG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WREG:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WREG:", error_no);
 	}
 }
 
@@ -624,20 +615,6 @@ void print_system_at(void)
 	for (index = 0; index < cmd_len; index++) {
 		at_printf("AT%s\r\n", at_sys_items[index].log_cmd);
 	}
-}
-
-void print_system_help(void)
-{
-	at_printf("AT+OTACLEAR=\r\n");
-	at_printf("AT+OTARECOVER\r\n");
-	at_printf("AT+CPULOAD=<mode>,<time_inteval>,<count>\r\n");
-	at_printf("AT+TEST\r\n");
-	at_printf("AT+LIST\r\n");
-	at_printf("AT+GMR\r\n");
-	at_printf("AT+LOG=<set_or_get>[,<module_name>,<log_level>]\r\n");
-	at_printf("AT+RREG=<flash_address>[,<length>,<in_byte>]\r\n");
-	at_printf("AT+WREG=<flash_address>,<value>\r\n");
-	at_printf("\r\n");
 }
 
 void at_sys_init(void)

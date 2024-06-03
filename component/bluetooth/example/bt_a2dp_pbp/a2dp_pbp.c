@@ -30,6 +30,7 @@
 #include "kv.h"
 #include <dlist.h>
 #include "bt_audio_resample.h"
+#include <bt_utils.h>
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_DEV_NAME                      "a2dp sink pbp source"
@@ -43,30 +44,52 @@
 #define RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS   2
 
 #if defined(RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE) && RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE
+#if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
+#define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 48000
+#define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 2
+#else
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 16000
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 2
+#endif
 #else
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 48000
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 1
 #endif
 
-//In one time, we can callback 512 bytes 44.1KHZ 2 channels pcm data from rtk_bt_a2dp_decode_pcm_data_callback
-#define A2DP_SINK_PCM_DATA_MAX_LEN                  512*20
-#define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920*30
+/*
+    A2DP sink will receive 595 bytes encode data per 14.5 ms from source, approximately 6.89 packets of 595 bytes per 100 milliseconds.
+    When the sample rate is 44.1KHz, the above 595 bytes encode data will be parsing to 5 frames,
+    which can be decoded to 512 bytes, 2560 bytes pcm data in total.
+    In one time, we can callback 512 bytes 44.1KHZ 2 channels pcm data from rtk_bt_a2dp_decode_pcm_data_callback.
+
+    The A2DP sink RX rate is not constant and depended on the A2DP source.But LE Aduio TX rate is constant.
+    So we should leave a proper water level in pbp_convert_pcm_queue maintain average rate.
+    The water level can cause extra delay, but will not run out if set proper value.
+*/
+
+// PBP broadcast TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.
+#define PBP_BROADCAST_TX_WATER_LEVEL                200
+// Actual PBP broadcast TX water level length
+#define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10
+
+// Set enough length to store a2dp sink decode data.The unit is in short.
+#define A2DP_SINK_PCM_DATA_MAX_LEN                  2560 * PBP_BROADCAST_TX_WATER_LEVEL* 7 / 100
+/*
+    Set enough length to store resample data.The unit is in short.
+    1920 bytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds.
+*/
+#define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10
+
+/*
+    Resample water level, default data bytes of 10 ms.
+    The smaller this value, the shorter the work interval of the resample task.
+*/
+#define RESAMPLE_WATER_LEVEL                         1
 
 #define SOXR_IN_FRAME_BUF_MAX_LEN                   441*4*4
 #define SOXR_OUT_FRAME_BUF_MAX_LEN                  480*4*4
-
-/*
-    The rate of LE Audio encode task dequeue pcm data is faster than convert task enqueue pcm data.
-    So we should leave a proper water level in pbp_convert_pcm_queue but not exceed the queue max length 2*PBP_SOURCE_PCM_DATA_MAX_LEN.
-    The water level will cause extra delay and run out sooner or later.
-    1920 bytes is the encode bytes that LE Audio once encode 48 khz,2 channels pcm data.
-*/
-#define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       1920*8
-
-#define CONVERT_PCM_TASK_STACK_SIZE         10*1024
-#define CONVERT_PCM_TASK_PRIORITY           4
+#define CONVERT_PCM_TASK_STACK_SIZE                 10*1024
+#define CONVERT_PCM_TASK_PRIORITY                   4
 /* -------------------------------- LE Audio PBP Part --------------------------------- */
 /***************************************common resources******************************************/
 /* Define PBP broadcast name length*/
@@ -773,7 +796,7 @@ uint16_t a2dp_pbp_demo_pcm_data_enqueue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	queue_max_len = p_queue->queue_max_len;
 
 	if (a2dp_pbp_demo_enqueue_is_full(p_queue, enqueue_size)) {
-		BT_APP_PRINT(BT_APP_INFO, "%s No enough space! queue size now is %d\r\n", __func__, (int)(p_queue->queue_size));
+		BT_LOGA("[APP] %s No enough space! queue size now is %d\r\n", __func__, (int)(p_queue->queue_size));
 		return RTK_BT_FAIL;
 	}
 
@@ -784,7 +807,7 @@ uint16_t a2dp_pbp_demo_pcm_data_enqueue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 			p_queue->q_read = 0;
 			memcpy((void *)p_que, (void *)in_buf, enqueue_size);
 			p_queue->queue_size += enqueue_size;
-			BT_APP_PRINT(BT_APP_DEBUG, "%s queue is empty!\r\n", __func__);
+			BT_LOGD("[APP] %s queue is empty!\r\n", __func__);
 			return RTK_BT_OK;
 		}
 	}
@@ -814,8 +837,8 @@ uint16_t a2dp_pbp_demo_pcm_data_enqueue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	p_queue->q_write = (p_queue->q_write + enqueue_size / 2) % queue_max_len;
 	p_queue->queue_size += enqueue_size;
 
-	BT_APP_PRINT(BT_APP_DEBUG, "%s enqueue %lu success! queue_size: %lu q_write: %d q_read: %d\r\n", __func__, enqueue_size, p_queue->queue_size, p_queue->q_write,
-				 p_queue->q_read);
+	BT_LOGD("[APP] %s enqueue %lu success! queue_size: %lu q_write: %d q_read: %d\r\n", __func__, enqueue_size, p_queue->queue_size, p_queue->q_write,
+			p_queue->q_read);
 	return RTK_BT_OK;
 }
 
@@ -831,21 +854,21 @@ uint16_t a2dp_pbp_demo_pcm_data_dequeue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	queue_max_len = p_queue->queue_max_len;
 
 	if (a2dp_pbp_demo_queue_is_empty(p_queue)) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s dequeue failed !!! queue is empty\r\n", __func__);
+		BT_LOGE("[APP] %s dequeue failed !!! queue is empty\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
 	if (!a2dp_pbp_demo_dequeue_num_is_enough(p_queue, dequeue_size)) {
-		BT_APP_PRINT(BT_APP_DEBUG, "%s dequeue num is not enough!!!\r\n", __func__);
+		BT_LOGD("[APP] %s dequeue num is not enough!!!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
 	if (!out_buf) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s out buf is NULL!\r\n", __func__);
+		BT_LOGE("[APP] %s out buf is NULL!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	if (!dequeue_size) {
-		BT_APP_PRINT(BT_APP_WARNING, "%s dequeue_size is 0!\r\n", __func__);
+		BT_LOGE("[APP] %s dequeue_size is 0!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
@@ -872,8 +895,8 @@ uint16_t a2dp_pbp_demo_pcm_data_dequeue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	p_queue->q_read = (p_queue->q_read + dequeue_size / 2) % queue_max_len;
 	p_queue->queue_size -= dequeue_size;
 
-	BT_APP_PRINT(BT_APP_DEBUG, "%s dequeue %lu success! queue_size: %lu q_write: %d q_read: %d\r\n", __func__, dequeue_size, p_queue->queue_size, p_queue->q_write,
-				 p_queue->q_read);
+	BT_LOGD("[APP] %s dequeue %lu success! queue_size: %lu q_write: %d q_read: %d\r\n", __func__, dequeue_size, p_queue->queue_size, p_queue->q_write,
+			p_queue->q_read);
 	return RTK_BT_OK;
 
 }
@@ -884,10 +907,10 @@ uint16_t a2dp_pbp_demo_queue_pcm_data_flush(a2dp_pbp_demo_queue_t *p_queue)
 		p_queue->q_write = -1;
 		p_queue->q_read = -1;
 		p_queue->queue_size = 0;
-		BT_APP_PRINT(BT_APP_DEBUG, "%s success\r\n", __func__);
+		BT_LOGD("[APP] %s success\r\n", __func__);
 		return RTK_BT_OK;
 	}
-	BT_APP_PRINT(BT_APP_WARNING, "%s failed \r\n", __func__);
+	BT_LOGE("[APP] %s failed \r\n", __func__);
 	return RTK_BT_FAIL;
 }
 
@@ -902,10 +925,10 @@ uint16_t a2dp_pbp_demo_queue_init(a2dp_pbp_demo_queue_t *p_queue, short *queue, 
 		if (p_queue->mtx == NULL) {
 			osif_mutex_create(&p_queue->mtx);
 		}
-		BT_APP_PRINT(BT_APP_INFO, "%s queue init success\r\n", __func__);
+		BT_LOGA("[APP] %s queue init success\r\n", __func__);
 		return RTK_BT_OK;
 	}
-	BT_APP_PRINT(BT_APP_WARNING, "%s queue init failed\r\n", __func__);
+	BT_LOGE("[APP] %s queue init failed\r\n", __func__);
 	return RTK_BT_FAIL;
 }
 
@@ -1170,23 +1193,23 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_re
 	uint32_t out_frames = 0;
 
 	if (p_resample_t == NULL || bq_t == NULL) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s p_resample_t or bq_t has not init!\r\n", __func__);
+		BT_LOGE("[APP] %s p_resample_t or bq_t has not init!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
 	//if pbp broadcast has not started, flush queue
 	if (g_pbp_bsrc_info.status != RTK_BLE_AUDIO_BROADCAST_SOURCE_START) {
-		BT_APP_PRINT(BT_APP_WARNING, "PBP broadcast has not started!\r\n");
+		BT_LOGE("[APP] PBP broadcast has not started!\r\n");
 		p_dequeue_mtx = a2dp_decode_pcm_queue.mtx;
 		p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
 		if (p_dequeue_mtx == NULL || p_enqueue_mtx == NULL) {
-			BT_APP_PRINT(BT_APP_ERROR, "%s warning! mtx is NULL!\r\n", __func__);
+			BT_LOGE("[APP] %s warning! mtx is NULL!\r\n", __func__);
 			goto failed;
 		}
 		// flush a2dp_decode_pcm_queue
 		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
 		a2dp_pbp_demo_queue_pcm_data_flush(&a2dp_decode_pcm_queue);
-		BT_APP_PRINT(BT_APP_INFO, "a2dp_decode_pcm_queue flush!\r\n");
+		BT_LOGA("[APP] a2dp_decode_pcm_queue flush!\r\n");
 		osif_mutex_give(p_dequeue_mtx);
 
 		// flush pbp_convert_pcm_queue
@@ -1194,31 +1217,31 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_re
 		dequeue_size = pbp_convert_pcm_queue.queue_size;
 		if (dequeue_size) {
 			a2dp_pbp_demo_queue_pcm_data_flush(&pbp_convert_pcm_queue);
-			BT_APP_PRINT(BT_APP_INFO, "pbp_convert_pcm_queue flush!\r\n");
+			BT_LOGA("[APP] pbp_convert_pcm_queue flush!\r\n");
 			pbp_broadcast_dequeue_flag = false;
 		}
 		osif_mutex_give(p_enqueue_mtx);
 		return RTK_BT_FAIL;
 	}
 
-	BT_APP_PRINT(BT_APP_DEBUG, "%s in_frames:%lu \r\n", __func__, in_frames);
+	BT_LOGD("[APP] %s in_frames:%lu \r\n", __func__, in_frames);
 
 	//dequeue
 	p_dequeue_mtx = a2dp_decode_pcm_queue.mtx;
 	dequeue_size = in_frames * p_resample_t->in_frame_size;
 
 	if (dequeue_size > SOXR_IN_FRAME_BUF_MAX_LEN) {
-		BT_APP_PRINT(BT_APP_ERROR, "dequeue_size: %lu exceed the max len !\r\n", dequeue_size);
+		BT_LOGE("[APP] dequeue_size: %lu exceed the max len !\r\n", dequeue_size);
 		goto failed;
 	}
 
 	while (a2dp_decode_pcm_queue.queue_size < dequeue_size) {
-		// BT_APP_PRINT(BT_APP_WARNING,"a2dp_decode_pcm_queue dequeue num is not enough!\r\n");
+		// BT_LOGE("[APP] a2dp_decode_pcm_queue dequeue num is not enough!\r\n");
 		osif_delay(2);
 	}
 	osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
 	if (RTK_BT_OK != a2dp_pbp_demo_pcm_data_dequeue(&a2dp_decode_pcm_queue, in_frame_buf, dequeue_size)) {
-		BT_APP_PRINT(BT_APP_WARNING, "a2dp_decode_pcm_queue dequeue fail !\r\n");
+		BT_LOGE("[APP] a2dp_decode_pcm_queue dequeue fail !\r\n");
 		goto failed;
 	}
 	osif_mutex_give(p_dequeue_mtx);
@@ -1231,23 +1254,23 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_re
 											 demo_in_rate,
 											 demo_out_rate);
 	time_stamp_after = osif_sys_time_get();
-	BT_APP_PRINT(BT_APP_DEBUG, "%s: time_stamp before :%lu,time_stamp after:%lu,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
-				 (int)(time_stamp_after - time_stamp_before));
-	BT_APP_PRINT(BT_APP_DEBUG, "in_frames:%lu out_frames:%lu odone: %lu\r\n", in_frames, out_frames, odone);
+	BT_LOGD("[APP] %s: time_stamp before :%lu,time_stamp after:%lu,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
+			(int)(time_stamp_after - time_stamp_before));
+	BT_LOGD("[APP] in_frames:%lu out_frames:%lu odone: %lu\r\n", in_frames, out_frames, odone);
 
 	//enqueue
 	p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
 	enqueue_size = out_frames * p_resample_t->out_frame_size;
 
 	if (enqueue_size > SOXR_OUT_FRAME_BUF_MAX_LEN) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s enqueue_size: %lu exceed the max len!\r\n", __func__, enqueue_size);
+		BT_LOGE("[APP] %s enqueue_size: %lu exceed the max len!\r\n", __func__, enqueue_size);
 		goto failed;
 	}
 
 	osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
 	if (RTK_BT_OK != a2dp_pbp_demo_pcm_data_enqueue(&pbp_convert_pcm_queue, out_frame_buf, enqueue_size)) {
 		//queue is full
-		BT_APP_PRINT(BT_APP_ERROR, "%s pbp_convert_pcm_queue is full!\r\n", __func__);
+		BT_LOGE("[APP] %s pbp_convert_pcm_queue is full!\r\n", __func__);
 		goto failed;
 	}
 
@@ -1295,13 +1318,13 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	}
 	osif_mutex_take(pmtx, BT_TIMEOUT_FOREVER);
 	if (a2dp_pbp_demo_pcm_data_enqueue(&a2dp_decode_pcm_queue, (int8_t *)p_pcm_data, p_len) != RTK_BT_OK) {
-		BT_APP_PRINT(BT_APP_WARNING, "%s: a2dp_decode_pcm_queue is full\r\n", __func__);
+		BT_LOGE("[APP] %s: a2dp_decode_pcm_queue is full\r\n", __func__);
 	}
 	queue_size = a2dp_decode_pcm_queue.queue_size;
 	//if reach enough convert num, send sem to inform pcm convert thread
 	if (g_audio_resample_t) {
 		if (!a2dp_decoded_pcm_buffer_threshold_enable) {
-			if (queue_size >= 6 * g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
+			if (queue_size >= RESAMPLE_WATER_LEVEL * g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
 				a2dp_decoded_pcm_buffer_threshold_enable = 1;
 			}
 		} else {
@@ -1333,8 +1356,8 @@ static void exmaple_convert_pcm_data_task_entry(void *ctx)
 			time_stamp_before = osif_sys_time_get();
 			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(g_audio_resample_t, &bq_t, resample_in_frames);
 			time_stamp_after = osif_sys_time_get();
-			BT_APP_PRINT(BT_APP_DEBUG, "%s: time_stamp before :%lu,time_stamp after:%lu,convert delt_time:%d, delt_time:%d \r\n", __func__, time_stamp_before,
-						 time_stamp_after, (int)(time_stamp_after - time_stamp_before), (int)(time_stamp_before - tmp_time));
+			BT_LOGD("[APP] %s: time_stamp before :%lu,time_stamp after:%lu,convert delt_time:%d, delt_time:%d \r\n", __func__, time_stamp_before,
+					time_stamp_after, (int)(time_stamp_after - time_stamp_before), (int)(time_stamp_before - tmp_time));
 			tmp_time = time_stamp_before;
 		}
 	}
@@ -1956,10 +1979,10 @@ static void app_bt_le_audio_pbp_update_broadcast_audio_announcements(uint8_t *pb
 	uint8_t broadcast_name_len = strlen((const char *)pbp_broadcast_name);
 
 	if (broadcast_name_len > RTK_LE_AUDIO_PBP_BROADCAST_NAME_LEN_MAX) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s pbp broadcast name too long, name len = %d\r\n", __func__, broadcast_name_len);
+		BT_LOGE("[APP] %s pbp broadcast name too long, name len = %d\r\n", __func__, broadcast_name_len);
 		return ;
 	} else if (broadcast_name_len < RTK_LE_AUDIO_PBP_BROADCAST_NAME_LEN_MIN) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s pbp broadcast name too short, name len = %d\r\n", __func__, broadcast_name_len);
+		BT_LOGE("[APP] %s pbp broadcast name too short, name len = %d\r\n", __func__, broadcast_name_len);
 		return ;
 	}
 	p_announcements_data[idx] = 0x09; // pbp len
@@ -2002,7 +2025,7 @@ static void app_bt_le_audio_pbp_update_broadcast_audio_announcements(uint8_t *pb
 	p_announcements_data[features_offset] = feature;
 
 	if (idx > RTK_LE_AUDIO_BROADCAST_AUDIO_ANNOUNCEMENT_LEN_MAX) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s broadcast audio_announcements length %d is too long\r\n", __func__, idx);
+		BT_LOGE("[APP] %s broadcast audio_announcements length %d is too long\r\n", __func__, idx);
 		return ;
 	}
 	*p_announcements_data_len = idx;
@@ -2017,15 +2040,14 @@ static uint16_t app_bt_le_audio_pbp_bsrc_setup_data_path(app_bt_le_audio_bap_bro
 	app_bt_le_audio_broadcast_source_get_codec_from_level2(bap_broadcast_source_codec_level2,
 														   bap_broadcast_source_codec_level2_len,
 														   p_bis_codec_cfg);
-	BT_APP_PRINT(BT_APP_INFO,
-				 "%s: type_exist 0x%x, frame_duration 0x%x, sample_frequency 0x%x, codec_frame_blocks_per_sdu 0x%x, octets_per_codec_frame 0x%x, audio_channel_allocation 0x%x\r\n",
-				 __func__,
-				 p_bis_codec_cfg->type_exist,
-				 p_bis_codec_cfg->frame_duration,
-				 p_bis_codec_cfg->sample_frequency,
-				 p_bis_codec_cfg->codec_frame_blocks_per_sdu,
-				 p_bis_codec_cfg->octets_per_codec_frame,
-				 (unsigned int)p_bis_codec_cfg->audio_channel_allocation);
+	BT_LOGA("[APP] %s: type_exist 0x%x, frame_duration 0x%x, sample_frequency 0x%x, codec_frame_blocks_per_sdu 0x%x, octets_per_codec_frame 0x%x, audio_channel_allocation 0x%x\r\n",
+			__func__,
+			p_bis_codec_cfg->type_exist,
+			p_bis_codec_cfg->frame_duration,
+			p_bis_codec_cfg->sample_frequency,
+			p_bis_codec_cfg->codec_frame_blocks_per_sdu,
+			p_bis_codec_cfg->octets_per_codec_frame,
+			(unsigned int)p_bis_codec_cfg->audio_channel_allocation);
 
 	//set up iso data path
 	rtk_bt_le_audio_bis_data_path_param_t setup_path_param = {
@@ -2038,12 +2060,12 @@ static uint16_t app_bt_le_audio_pbp_bsrc_setup_data_path(app_bt_le_audio_bap_bro
 		bis_idx = p_bsrc_info->bis_info.bis_conn_info[i].bis_idx;
 		ret = rtk_bt_le_audio_broadcast_source_setup_data_path(p_bsrc_info->broadcast_source_handle, bis_idx, &setup_path_param,
 															   &p_bsrc_info->bis_info.bis_conn_info[i].bis_conn_handle);
-		BT_APP_PRINT(BT_APP_INFO, "broadcast source setup data path %s for broadcast_source_handle 0x%p bis_index %d,bis_conn_handle 0x%x, ret: 0x%x\r\n",
-					 ((RTK_BT_OK != ret) ? "fail" : "ok"),
-					 p_bsrc_info->broadcast_source_handle,
-					 bis_idx,
-					 p_bsrc_info->bis_info.bis_conn_info[i].bis_conn_handle,
-					 ret);
+		BT_LOGA("[APP] broadcast source setup data path %s for broadcast_source_handle 0x%p bis_index %d,bis_conn_handle 0x%x, ret: 0x%x\r\n",
+				((RTK_BT_OK != ret) ? "fail" : "ok"),
+				p_bsrc_info->broadcast_source_handle,
+				bis_idx,
+				p_bsrc_info->bis_info.bis_conn_info[i].bis_conn_handle,
+				ret);
 
 		if (bis_idx == 1) {
 #if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
@@ -2058,7 +2080,7 @@ static uint16_t app_bt_le_audio_pbp_bsrc_setup_data_path(app_bt_le_audio_bap_bro
 		}
 #endif
 		else {
-			BT_APP_PRINT(BT_APP_ERROR, "%s unsupport bis_idx %d\r\n", __func__, bis_idx);
+			BT_LOGE("[APP] %s unsupport bis_idx %d\r\n", __func__, bis_idx);
 		}
 		if (ret == RTK_BT_OK) {
 			app_bt_le_audio_iso_data_path_add(RTK_BT_LE_AUDIO_BIS_MODE, bis_idx, RTK_BLE_AUDIO_ISO_DATA_PATH_TX,
@@ -2084,7 +2106,7 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_handler(void *arg)
 		for (i = 0 ; i < tx_iso_data_path_num; i++) {
 			p_iso_path = app_bt_le_audio_iso_data_path_find_by_idx(i, RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
 			if (p_iso_path == NULL) {
-				BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+				BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
 				continue;
 			}
 			p_iso_path->pkt_seq_num ++;
@@ -2104,15 +2126,15 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_handler(void *arg)
 static void app_bt_le_audio_pbp_bsrc_send_timer_init(void)
 {
 #if defined(RTK_BLE_AUDIO_USE_HW_GTIMER) && RTK_BLE_AUDIO_USE_HW_GTIMER
-	BT_APP_PRINT(BT_APP_DEBUG, "%s hw timer id %d,time_interval_us = %d\r\n", __func__, PBP_BRAODCAST_SOURCE_SEND_TIMER_ID, (int)g_pbp_bsrc_send_timer_interval_us);
+	BT_LOGD("[APP] %s hw timer id %d,time_interval_us = %d\r\n", __func__, PBP_BRAODCAST_SOURCE_SEND_TIMER_ID, (int)g_pbp_bsrc_send_timer_interval_us);
 	if (g_lea_pbp_bsrc_send_timer.handler == NULL) {
 		gtimer_init(&g_lea_pbp_bsrc_send_timer, PBP_BRAODCAST_SOURCE_SEND_TIMER_ID);
 		gtimer_start_periodical(&g_lea_pbp_bsrc_send_timer, g_pbp_bsrc_send_timer_interval_us, (void *)app_bt_le_audio_pbp_bsrc_send_timer_handler, NULL);
 	}
 #else
-	BT_APP_PRINT(BT_APP_DEBUG, "%s sw time_interval_us = %d\r\n", __func__, (int)g_pbp_bsrc_send_timer_interval_us);
+	BT_LOGD("[APP] %s sw time_interval_us = %d\r\n", __func__, (int)g_pbp_bsrc_send_timer_interval_us);
 	if (g_pbp_bsrc_send_timer_interval_us % 1000 != 0) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s error: interval %d(us) cannot use sw timer, please use hw timer instead\r\n", __func__, (int)g_pbp_bsrc_send_timer_interval_us);
+		BT_LOGE("[APP] %s error: interval %d(us) cannot use sw timer, please use hw timer instead\r\n", __func__, (int)g_pbp_bsrc_send_timer_interval_us);
 		return;
 	}
 	if (!g_lea_pbp_bsrc_send_timer) {
@@ -2122,12 +2144,12 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_init(void)
 									   g_pbp_bsrc_send_timer_interval_us / 1000,
 									   true,
 									   app_bt_le_audio_pbp_bsrc_send_timer_handler)) {
-			BT_APP_PRINT(BT_APP_ERROR, "%s osif_timer_create fail\r\n", __func__);
+			BT_LOGE("[APP] %s osif_timer_create fail\r\n", __func__);
 			return;
 		}
 	}
 	if (false == osif_timer_start(&g_lea_pbp_bsrc_send_timer)) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s osif_timer_start fail\r\n", __func__);
+		BT_LOGE("[APP] %s osif_timer_start fail\r\n", __func__);
 		return;
 	}
 #endif
@@ -2144,10 +2166,10 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_deinit(void)
 #else
 	if (g_lea_pbp_bsrc_send_timer) {
 		if (false == osif_timer_stop(&g_lea_pbp_bsrc_send_timer)) {
-			BT_APP_PRINT(BT_APP_ERROR, "%s osif_timer_stop fail \r\n", __func__);
+			BT_LOGE("[APP] %s osif_timer_stop fail \r\n", __func__);
 		}
 		if (false == osif_timer_delete(&g_lea_pbp_bsrc_send_timer)) {
-			BT_APP_PRINT(BT_APP_ERROR, "%s osif_timer_delete fail \r\n", __func__);
+			BT_LOGE("[APP] %s osif_timer_delete fail \r\n", __func__);
 		}
 		g_lea_pbp_bsrc_send_timer = NULL;
 	}
@@ -2161,8 +2183,8 @@ static void app_bt_le_audio_iso_data_tx_statistics(app_lea_iso_data_path_t *p_is
 	}
 
 	if (p_iso_path->status_ok_cnt % 100 == 0) {
-		BT_APP_PRINT(BT_APP_WARNING, "iso_conn_handle 0x%x: tx ok cnt %d,tx retry cnt %d,tx fail cnt %d, FreeHeap %d\r\n", p_iso_path->iso_conn_handle,
-					 (int)p_iso_path->status_ok_cnt, (int)p_iso_path->status_retry_cnt, (int)p_iso_path->status_fail_cnt, osif_mem_peek(RAM_TYPE_DATA_ON));
+		BT_LOGE("[APP] iso_conn_handle 0x%x: tx ok cnt %d,tx retry cnt %d,tx fail cnt %d, FreeHeap %d\r\n", p_iso_path->iso_conn_handle,
+				(int)p_iso_path->status_ok_cnt, (int)p_iso_path->status_retry_cnt, (int)p_iso_path->status_fail_cnt, osif_mem_peek(RAM_TYPE_DATA_ON));
 	}
 }
 
@@ -2185,13 +2207,13 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 
 	ret = rtk_bt_le_audio_iso_data_send(&send_info);
 	if (ret == RTK_BT_OK) {
-		BT_APP_PRINT(BT_APP_DUMP, "%s ok, iso_conn_handle 0x%x, seq_num %d, available heap %d sys_time %d\r\n", __func__, p_iso_path->iso_conn_handle,
-					 p_iso_path->pkt_seq_num, osif_mem_peek(RAM_TYPE_DATA_ON), (int)osif_sys_time_get());
-		BT_APP_DUMPBUF(BT_APP_DUMP, __func__, p_data, data_len);
+		BT_LOGD("[APP] %s ok, iso_conn_handle 0x%x, seq_num %d, available heap %d sys_time %d\r\n", __func__, p_iso_path->iso_conn_handle,
+				p_iso_path->pkt_seq_num, osif_mem_peek(RAM_TYPE_DATA_ON), (int)osif_sys_time_get());
+		BT_DUMPD(__func__, p_data, data_len);
 		p_iso_path->status_ok_cnt ++;
 	} else {
-		BT_APP_PRINT(BT_APP_ERROR, "%s failed, iso_conn_handle 0x%x, seq_num %d, ret 0x%x\r\n", __func__, p_iso_path->iso_conn_handle, p_iso_path->pkt_seq_num, ret);
-		BT_APP_DUMPBUF(BT_APP_DEBUG, __func__, p_data, data_len);
+		BT_LOGE("[APP] %s failed, iso_conn_handle 0x%x, seq_num %d, ret 0x%x\r\n", __func__, p_iso_path->iso_conn_handle, p_iso_path->pkt_seq_num, ret);
+		BT_DUMPD(__func__, p_data, data_len);
 		p_iso_path->status_fail_cnt++;
 	}
 	app_bt_le_audio_iso_data_tx_statistics(p_iso_path);
@@ -2211,7 +2233,7 @@ static uint16_t app_bt_le_audio_encode_a2dp_data(app_lea_iso_data_path_t *p_iso_
 	uint16_t ret = 0;
 
 	if (!p_iso_path) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+		BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
 		return RTK_BT_FAIL;
 	} else {
 		p_iso_path->is_processing = true;
@@ -2219,7 +2241,7 @@ static uint16_t app_bt_le_audio_encode_a2dp_data(app_lea_iso_data_path_t *p_iso_
 		p_codec = &p_iso_path->codec;
 	}
 	if (!p_codec) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s p_codec is NULL\r\n", __func__);
+		BT_LOGE("[APP] %s p_codec is NULL\r\n", __func__);
 		goto exit;
 	}
 	sample_rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency); // default 48K
@@ -2230,7 +2252,7 @@ static uint16_t app_bt_le_audio_encode_a2dp_data(app_lea_iso_data_path_t *p_iso_
 	if (p_iso_path->p_encode_data == NULL) {
 		p_iso_path->p_encode_data = (short *)osif_mem_alloc(RAM_TYPE_DATA_ON, encode_byte);
 		if (p_iso_path->p_encode_data == NULL) {
-			BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path->p_encode_data alloc fail\r\n", __func__);
+			BT_LOGE("[APP] %s p_iso_path->p_encode_data alloc fail\r\n", __func__);
 			goto exit;
 		}
 		memset(p_iso_path->p_encode_data, 0, encode_byte);
@@ -2242,16 +2264,16 @@ static uint16_t app_bt_le_audio_encode_a2dp_data(app_lea_iso_data_path_t *p_iso_
 	ret = a2dp_pbp_demo_pcm_data_dequeue(&pbp_convert_pcm_queue, (int8_t *)p_iso_path->p_encode_data, encode_byte);
 	queue_size = pbp_convert_pcm_queue.queue_size;
 	osif_mutex_give(pmtx);
-	BT_APP_PRINT(BT_APP_DEBUG, "%s: time_stamp before: %lu, queue_size: %lu\r\n", __func__, time_stamp_before, queue_size);
+	BT_LOGD("[APP] %s: time_stamp before: %lu, queue_size: %lu\r\n", __func__, time_stamp_before, queue_size);
 	if (RTK_BT_OK != ret) {
-		BT_APP_PRINT(BT_APP_WARNING, "%s: dequeue num %d is not enough set buf 0!\r\n", __func__, (int)encode_byte);
+		BT_LOGE("[APP] %s: dequeue num %d is not enough set buf 0!\r\n", __func__, (int)encode_byte);
 		memset(p_iso_path->p_encode_data, 0, encode_byte);
 	}
 	p_iso_path->encode_byte = encode_byte;
 	/* encode */
 	penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_LC3, p_iso_path->codec_entity, p_iso_path->p_encode_data, p_iso_path->encode_byte);
 	if (penc_codec_buffer_t == NULL) {
-		BT_APP_PRINT(BT_APP_ERROR, "%s rtk_bt_audio_data_encode fail\r\n", __func__);
+		BT_LOGE("[APP] %s rtk_bt_audio_data_encode fail\r\n", __func__);
 		goto exit;
 	}
 	p_iso_path->p_enc_codec_buffer_t = penc_codec_buffer_t;
@@ -2277,22 +2299,22 @@ static void app_bt_le_audio_pbp_encode_task_entry(void *ctx)
 		if (g_pbp_brc_encode_data_sem) {
 			osif_sem_take(g_pbp_brc_encode_data_sem, BT_TIMEOUT_FOREVER);
 		}
-		BT_APP_PRINT(BT_APP_DUMP, "%s sys_time %d\r\n", __func__, (int)osif_sys_time_get());
+		BT_LOGD("[APP] %s sys_time %d\r\n", __func__, (int)osif_sys_time_get());
 		tx_iso_data_path_num = app_bt_le_audio_iso_data_path_get_num(RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
 		for (i = 0 ; i < tx_iso_data_path_num; i++) {
 			p_iso_path = app_bt_le_audio_iso_data_path_find_by_idx(i, RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
 			if (p_iso_path == NULL) {
-				BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+				BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
 				continue;
 			}
 			//skip removing iso path
 			if (p_iso_path->is_removing) {
-				BT_APP_PRINT(BT_APP_DEBUG, "%s p_iso_path(%p) is removing\r\n", __func__, p_iso_path);
+				BT_LOGD("[APP] %s p_iso_path(%p) is removing\r\n", __func__, p_iso_path);
 				continue;
 			}
 			//wait if encode task is fast and send task is slow
 			if (p_iso_path->iso_data_tx_queue_num > 128) {
-				BT_APP_PRINT(BT_APP_DEBUG, "%s encode is fast iso_data_tx_queue_num = %d, wait\r\n", __func__, p_iso_path->iso_data_tx_queue_num);
+				BT_LOGD("[APP] %s encode is fast iso_data_tx_queue_num = %d, wait\r\n", __func__, p_iso_path->iso_data_tx_queue_num);
 				continue;
 			}
 			{
@@ -2314,7 +2336,7 @@ static void app_bt_le_audio_pbp_encode_task_entry(void *ctx)
 		for (i = 0 ; i < tx_iso_data_path_num; i++) {
 			p_iso_path = app_bt_le_audio_iso_data_path_find_by_idx(i, RTK_BLE_AUDIO_ISO_DATA_PATH_TX);
 			if (p_iso_path == NULL) {
-				BT_APP_PRINT(BT_APP_ERROR, "%s p_iso_path is NULL\r\n", __func__);
+				BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
 				continue;
 			}
 			/* send */
@@ -2327,7 +2349,7 @@ static void app_bt_le_audio_pbp_encode_task_entry(void *ctx)
 			}
 		}
 	}
-	BT_APP_PRINT(BT_APP_DEBUG, "%s task_delete\r\n", __func__);
+	BT_LOGD("[APP] %s task_delete\r\n", __func__);
 	osif_sem_give(g_pbp_bsrc_encode_task.sem);
 	g_pbp_bsrc_encode_task.run = 0;
 	g_pbp_bsrc_encode_task.hdl = NULL;
@@ -2338,7 +2360,7 @@ static void app_bt_le_audio_pbp_encode_data_control(bool enable)
 {
 	if (enable) {
 		if (g_pbp_brc_task_enable == true) {
-			BT_APP_PRINT(BT_APP_WARNING, "%s: encode task is alreay enabled\r\n", __func__);
+			BT_LOGE("[APP] %s: encode task is alreay enabled\r\n", __func__);
 			return ;
 		}
 
@@ -2355,14 +2377,14 @@ static void app_bt_le_audio_pbp_encode_data_control(bool enable)
 		if (g_pbp_bsrc_encode_task.hdl == NULL) {
 			if (false == osif_task_create(&g_pbp_bsrc_encode_task.hdl, ((const char *)"pbp_bsrc_encode_task"), app_bt_le_audio_pbp_encode_task_entry,
 										  NULL, PBP_BROADCAST_SOURCE_ENCODE_TASK_STACK_SIZE, PBP_BROADCAST_SOURCE_ENCODE_TASK_PRIO)) {
-				BT_APP_PRINT(BT_APP_ERROR, "%s xTaskCreate(lea_encode_task) failed\r\n", __func__);
+				BT_LOGE("[APP] %s xTaskCreate(lea_encode_task) failed\r\n", __func__);
 				return ;
 			}
 		}
 		app_bt_le_audio_pbp_bsrc_send_timer_init();
 	} else {
 		if (g_pbp_brc_task_enable == false) {
-			BT_APP_PRINT(BT_APP_WARNING, "%s: encode task is alreay disabled\r\n", __func__);
+			BT_LOGE("[APP] %s: encode task is alreay disabled\r\n", __func__);
 			return ;
 		}
 		g_pbp_brc_task_enable = false;
@@ -2412,6 +2434,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			printf("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -2422,6 +2445,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			printf("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -2441,6 +2465,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 				printf("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
 			}
 		}
+		BT_AT_PRINT("+BLEGAP:eadv,%s,%d,%d\r\n",
+					ext_adv_ind->is_start ? "start" : "stop",
+					(ext_adv_ind->err == 0) ? 0 : -1,
+					ext_adv_ind->adv_handle);
 		break;
 	}
 #endif
@@ -2452,6 +2480,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			printf("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
 		break;
 	}
 
@@ -2461,6 +2490,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		printf("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
 			   le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 			   scan_res_ind->adv_report.len);
+		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
+					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+					scan_res_ind->adv_report.len);
 		break;
 	}
 
@@ -2474,6 +2506,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 			   (scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
 			   scan_res_ind->tx_power, scan_res_ind->len);
 #endif
+		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%i,0x%x,%d,%d\r\n",
+					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
+					(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
+					scan_res_ind->tx_power, scan_res_ind->len);
 		if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_ASSISTANT == pbp_role) {
 			app_bt_le_audio_scan_report_handle(scan_res_ind);
 		}
@@ -2492,6 +2528,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			printf("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
 		break;
 	}
 
@@ -2514,6 +2551,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			printf("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n", conn_ind->err, le_addr);
 		}
+		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
 		break;
 	}
 
@@ -2523,6 +2561,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		role = disconn_ind->role ? "slave" : "master";
 		printf("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
 			   disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
+					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_SINK == pbp_role) {
 			rtk_bt_le_gap_start_ext_adv(pbp_bsink_ext_adv_handle, 0, 0);
 		} else if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_ASSISTANT == pbp_role) {
@@ -2537,6 +2577,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		if (conn_update_ind->err) {
 			printf("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
 				   conn_update_ind->conn_handle, conn_update_ind->err);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
 			printf("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "\
 				   "conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
@@ -2544,6 +2585,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 				   conn_update_ind->conn_interval,
 				   conn_update_ind->conn_latency,
 				   conn_update_ind->supv_timeout);
+			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
+						conn_update_ind->conn_handle,
+						conn_update_ind->conn_interval,
+						conn_update_ind->conn_latency,
+						conn_update_ind->supv_timeout);
 		}
 		break;
 	}
@@ -2572,6 +2618,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 			   data_len_change->max_tx_time,
 			   data_len_change->max_rx_octets,
 			   data_len_change->max_rx_time);
+		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
+					data_len_change->conn_handle,
+					data_len_change->max_tx_octets,
+					data_len_change->max_tx_time,
+					data_len_change->max_rx_octets,
+					data_len_change->max_rx_time);
 		break;
 	}
 
@@ -2582,11 +2634,16 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 			printf("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
 				   phy_update_ind->conn_handle,
 				   phy_update_ind->err);
+			BT_AT_PRINT("+BLEGAP:conn_phy,%d,-1\r\n", phy_update_ind->conn_handle);
 		} else {
 			printf("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
 				   phy_update_ind->conn_handle,
 				   phy_update_ind->tx_phy,
 				   phy_update_ind->rx_phy);
+			BT_AT_PRINT("+BLEGAP:conn_phy,%d,0,%d,%d\r\n",
+						phy_update_ind->conn_handle,
+						phy_update_ind->tx_phy,
+						phy_update_ind->rx_phy);
 		}
 		break;
 	}
@@ -2596,6 +2653,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_auth_pair_cfm_ind_t *pair_cfm_ind = (rtk_bt_le_auth_pair_cfm_ind_t *)param;
 		APP_PROMOTE("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
 					pair_cfm_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:pair_cfm,%d\r\n", pair_cfm_ind->conn_handle);
 		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
 		pair_cfm_param.conn_handle = pair_cfm_ind->conn_handle;
 		pair_cfm_param.confirm = 1;
@@ -2611,6 +2669,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		APP_PROMOTE("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
 					(int)key_dis_ind->passkey,
 					(int)key_dis_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
+					(int)key_dis_ind->conn_handle,
+					(int)key_dis_ind->passkey);
 		break;
 	}
 
@@ -2618,6 +2679,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_auth_key_input_ind_t *key_input_ind = (rtk_bt_le_auth_key_input_ind_t *)param;
 		APP_PROMOTE("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
 					key_input_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:passkey_input,%d\r\n", key_input_ind->conn_handle);
 		break;
 	}
 
@@ -2627,6 +2689,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 					"Please comfirm if the passkeys are equal!\r\n",
 					(int)key_cfm_ind->passkey,
 					(int)key_cfm_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:passkey_cfm,%d,%d\r\n",
+					(int)key_cfm_ind->conn_handle,
+					(int)key_cfm_ind->passkey);
 		break;
 	}
 
@@ -2634,11 +2699,15 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_auth_oob_input_ind_t *oob_input_ind = (rtk_bt_le_auth_oob_input_ind_t *)param;
 		APP_PROMOTE("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
 					oob_input_ind->conn_handle);
+		BT_AT_PRINT("+BLEGAP:oobkey_input,%d\r\n", oob_input_ind->conn_handle);
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND: {
 		rtk_bt_le_auth_complete_ind_t *auth_cplt_ind = (rtk_bt_le_auth_complete_ind_t *)param;
+		BT_AT_PRINT("+BLEGAP:sec,%d,%d\r\n",
+					auth_cplt_ind->conn_handle,
+					(auth_cplt_ind->err == 0) ? 0 : -1);
 		if (auth_cplt_ind->err) {
 			printf("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
 				   auth_cplt_ind->err, auth_cplt_ind->conn_handle);
@@ -2668,6 +2737,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->remote_addr), le_addr, sizeof(le_addr));
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->ident_addr), ident_addr, sizeof(ident_addr));
 		printf("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
+		BT_AT_PRINT("+BLEGAP:bond_modify,%d,%s,%s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
 		break;
 	}
 
@@ -2684,10 +2754,13 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 				printf("[APP] Resolving list %s %s fail, cause:%x.\r\n",
 					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
 					   le_addr, p_ind->err);
+				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,-1\r\n", p_ind->op);
 			} else {
 				printf("[APP] Resolving list %s %s success, %s privacy mode.\r\n",
 					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
 					   le_addr, p_ind->entry.device_mode ? "device" : "network");
+				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,0,%s,%s\r\n",
+							p_ind->op, le_addr, p_ind->entry.device_mode ? "device" : "network");
 			}
 		} else if (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_CLEAR) {
 			if (p_ind->err) {
@@ -2695,6 +2768,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 			} else {
 				printf("[APP] Resolving list clear success.\r\n");
 			}
+			BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,%d\r\n", p_ind->op, (p_ind->err == 0) ? 0 : -1);
 		}
 		break;
 	}
@@ -2711,6 +2785,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 			rtk_bt_le_addr_to_str(&p_info->addr, le_addr, sizeof(le_addr));
 			printf("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
 				   le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
+			BT_AT_PRINT("+BLEGAP:pa_sync,%s,0x%x,%d,%d\r\n",
+						le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
 		}
 		break;
 	}
@@ -2720,6 +2796,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		printf("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
 			   pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
 			   pa_report->cte_type, pa_report->data_status, pa_report->data_len);
+		BT_AT_PRINT("+BLEGAP:pa_report,%d,0x%x,%d,%d,%d,0x%x,%d\r\n",
+					pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
+					pa_report->cte_type, pa_report->data_status, pa_report->data_len);
 		break;
 	}
 #endif
@@ -2729,6 +2808,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_txpower_ind_t *txpower_ind = (rtk_bt_le_txpower_ind_t *)param;
 		printf("[APP] TX power report: conn_handle %d, type %d, txpower %d\r\n",
 			   txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
+		BT_AT_PRINT("+BLEGAP:txpower_report,%d,%d,%d\r\n",
+					txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
 		break;
 	}
 #endif
@@ -2751,37 +2832,37 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_pbp_app_callback(uint8_t evt_code, vo
 	/*********************************************pbp_broadcast_source_event**********************************************/
 	case RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND: {
 		rtk_bt_le_audio_broadcast_source_state_ind_t *param = (rtk_bt_le_audio_broadcast_source_state_ind_t *)data;
-		BT_APP_PRINT(BT_APP_DEBUG, "broadcast source state change: broadcast_source_handle: %p, broadcast_source_state 0x%x, cause: 0x%x\r\n",
-					 param->broadcast_source_handle, param->broadcast_source_state, param->cause);
+		BT_LOGD("[APP] broadcast source state change: broadcast_source_handle: %p, broadcast_source_state 0x%x, cause: 0x%x\r\n",
+				param->broadcast_source_handle, param->broadcast_source_state, param->cause);
 		// update broadcast state
 		p_bsrc_info->broadcast_source_state = param->broadcast_source_state;
 		if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_IDLE) {
-			BT_APP_PRINT(BT_APP_INFO, "broadcast source idle \r\n");
+			BT_LOGA("[APP] broadcast source idle \r\n");
 		} else if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_CONFIGURED) {
-			BT_APP_PRINT(BT_APP_INFO, "broadcast source configured \r\n");
+			BT_LOGA("[APP] broadcast source configured \r\n");
 			if (param->cause == 0) {
 				memcpy(def_le_audio_broadcast_source_create_big_param.broadcast_code, app_lea_def_broadcast_code, RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN);
 				ret = rtk_bt_le_audio_broadcast_source_enable(p_bsrc_info->broadcast_source_handle, &def_le_audio_broadcast_source_create_big_param);
 				if (ret != RTK_BT_OK) {
-					BT_APP_PRINT(BT_APP_ERROR, "rtk_bt_le_audio_broadcast_source_enable fail,ret = 0x%x\r\n", ret);
+					BT_LOGE("[APP] rtk_bt_le_audio_broadcast_source_enable fail,ret = 0x%x\r\n", ret);
 					break;
 				}
 			}
 		} else if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_STREAMING) {
-			BT_APP_PRINT(BT_APP_INFO, "broadcast source streaming\r\n");
+			BT_LOGA("[APP] broadcast source streaming\r\n");
 			if (param->cause == 0) {
 				ret = app_bt_le_audio_pbp_bsrc_setup_data_path(p_bsrc_info);
 				if (ret != RTK_BT_OK) {
-					BT_APP_PRINT(BT_APP_ERROR, "app_bt_le_audio_pbp_bsrc_setup_data_path fail,ret = 0x%x\r\n", ret);
+					BT_LOGE("[APP] app_bt_le_audio_pbp_bsrc_setup_data_path fail,ret = 0x%x\r\n", ret);
 					break;
 				}
 				app_bt_le_audio_pbp_encode_data_control(true);
 			}
 		} else if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_STREAMING_STARTING) {
-			BT_APP_PRINT(BT_APP_INFO, "broadcast source streaming starting \r\n");
+			BT_LOGA("[APP] broadcast source streaming starting \r\n");
 			g_pbp_bsrc_info.status = RTK_BLE_AUDIO_BROADCAST_SOURCE_START;
 		} else if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_STREAMING_STOPPING) {
-			BT_APP_PRINT(BT_APP_INFO, "broadcast source streaming stopping \r\n");
+			BT_LOGA("[APP] broadcast source streaming stopping \r\n");
 			g_pbp_bsrc_info.status = RTK_BLE_AUDIO_BROADCAST_SOURCE_STOP;
 		}
 		break;
@@ -2794,7 +2875,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_pbp_app_callback(uint8_t evt_code, vo
 	/*********************************************pbp_broadcast_assistant event**********************************************/
 	/*********************************************pbp_broadcast_assistant event**********************************************/
 	default: {
-		BT_APP_PRINT(BT_APP_DEBUG, "%s default evt_code 0x%04x\r\n", __func__, evt_code);
+		BT_LOGD("[APP] %s default evt_code 0x%04x\r\n", __func__, evt_code);
 		ret = RTK_BT_ERR_UNHANDLED;
 		break;
 	}
@@ -2803,7 +2884,6 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_pbp_app_callback(uint8_t evt_code, vo
 	return RTK_BT_EVT_CB_OK;
 }
 
-extern bool rtk_bt_pre_enable(void);
 /**
  * @brief  process a2dp sink pbp source main init/ deinit.
  * @param  argc[in]
@@ -2817,14 +2897,12 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			printf("%s Already init! \r\n", __func__);
 			return -1;
 		}
-		if (rtk_bt_pre_enable() == false) {
-			BT_APP_PRINT(BT_APP_ERROR, "%s fail!\r\n", __func__);
-			return -1;
-		}
+
 		pbp_role = RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_SOURCE;
 		a2dp_demo_role = RTK_BT_A2DP_ROLE_SNK;
 		/* pbp broadcast source init*/
 		{
+			uint16_t tx_water_level = 0;
 			rtk_bt_br_bd_addr_t bd_addr = {0};
 			char addr_str[30] = {0};
 			char dev_name[30] = {0};
@@ -2855,6 +2933,7 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.max_tx_octets = 0x40;
 			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.a2dp_role = a2dp_demo_role;
 			bt_app_conf.le_audio_app_conf = g_pbp_bsrc_info.lea_app_conf;
 
 			/* A2DP part */
@@ -2888,7 +2967,7 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			BT_APP_PROCESS(rtk_bt_br_gap_set_radio_mode(RTK_BT_BR_GAP_RADIO_MODE_VISIBLE_CONNECTABLE));
 			BT_APP_PROCESS(rtk_bt_br_gap_get_bd_addr(&bd_addr));
 			rtk_bt_br_addr_to_str(bd_addr.addr, addr_str, sizeof(addr_str));
-			BT_APP_PRINT(BT_APP_INFO, "BD_ADDR: %s\r\n", addr_str);
+			BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 
 			/* Initilize GAP part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, rtk_bt_le_audio_gap_callback));
@@ -2919,6 +2998,8 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			/* pcm queue init */
 			a2dp_pbp_demo_queue_init(&a2dp_decode_pcm_queue, a2dp_pcm_queue, sizeof(a2dp_pcm_queue) / 2);
 			a2dp_pbp_demo_queue_init(&pbp_convert_pcm_queue, pcm_convert_queue, sizeof(pcm_convert_queue) / 2);
+			tx_water_level = PBP_BROADCAST_TX_WATER_LEVEL;
+			printf("[APP] PBP broadcast tx_water_level: %d ms\r\n", tx_water_level);
 			/* pcm data convert task init */
 			if (convert_task_flag) {
 				if (false == osif_sem_create(&convert_pcm_data_task.sem, 0, 1)) {
@@ -3025,11 +3106,11 @@ failed:
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_AUDIO));
 			if (g_pbp_bsrc_info.status == RTK_BLE_AUDIO_BROADCAST_SOURCE_DISABLE) {
-				BT_APP_PRINT(BT_APP_ERROR, "%s: already disabled \r\n", __func__);
+				BT_LOGE("[APP] %s: already disabled \r\n", __func__);
 				return -1;
 			}
 			if (g_pbp_bsrc_info.status == RTK_BLE_AUDIO_BROADCAST_SOURCE_START) {
-				BT_APP_PRINT(BT_APP_ERROR, "%s: please stop broadcast first before disable \r\n", __func__);
+				BT_LOGE("[APP] %s: please stop broadcast first before disable \r\n", __func__);
 				return -1;
 			}
 			app_bt_le_audio_pbp_broadcast_source_deinit();

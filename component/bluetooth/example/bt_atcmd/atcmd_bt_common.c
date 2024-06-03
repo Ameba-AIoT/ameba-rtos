@@ -7,6 +7,7 @@
 #include <osif.h>
 #include <log_service.h>
 #include <atcmd_bt_impl.h>
+#include <bt_utils.h>
 
 static bool check_str_whitespace(char *str)
 {
@@ -20,7 +21,7 @@ static bool check_str_whitespace(char *str)
 }
 
 /* validate arg num and find cmd in cmd_table, then excute it */
-void atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const char *tag)
+int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const char *tag)
 {
 	char *cmd_str = argv[0];
 	int i = 0, j = 0;
@@ -28,10 +29,10 @@ void atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const
 	for (j = 0; j < argc; j++) {
 		if (NULL == argv[j]) {
 			AT_PRINTK("[%s]Error: Atcmd has NULL param !!!\r\n", __func__);
-			return;
+			return -1;
 		}
 		if (check_str_whitespace(argv[j])) {
-			return;
+			return -1;
 		}
 	}
 
@@ -40,14 +41,14 @@ void atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const
 			if (argc < cmd_table[i].argc_min || argc > cmd_table[i].argc_max) {
 				AT_PRINTK("%s %s failed: wrong args number: %d, right range: [%d-%d]!",
 						  tag, cmd_str, argc, cmd_table[i].argc_min, cmd_table[i].argc_max);
-				return;
+				return -1;
 			}
 
-			cmd_table[i].cmd_func(argc - 1, &argv[1]);
-			return;
+			return cmd_table[i].cmd_func(argc - 1, &argv[1]);
 		}
 		i++;
 	}
 
 	AT_PRINTK("%s Error: Cant find this cmd %s\r\n", tag, cmd_str);
+	return -1;
 }

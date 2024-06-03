@@ -390,7 +390,7 @@ void BOOT_Log_Init(void)
 		}
 	}
 
-	/* open LP log */
+	/* open KM0 log */
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 

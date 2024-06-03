@@ -115,3 +115,4 @@ ChangeLog:
 20240419  v2.5.22 (1) Fix handshake fail in incidental case
                   (2) Add detail debug log in xmodem api
                   (3) Add retry for some cmds
+20240523  v2.5.23 Rename chips with soc names

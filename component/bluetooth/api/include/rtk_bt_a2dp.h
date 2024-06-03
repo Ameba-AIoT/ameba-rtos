@@ -63,8 +63,8 @@ extern "C"
  * @brief     a2dp role
  */
 typedef enum {
-	RTK_BT_A2DP_ROLE_SNK = 0x00,                    /*!< BT A2DP SINK */
-	RTK_BT_A2DP_ROLE_SRC = 0x01,                    /*!< BT A2DP SOURCE */
+	RTK_BT_A2DP_ROLE_SRC = 0x00,                    /*!< BT A2DP SINK */
+	RTK_BT_A2DP_ROLE_SNK = 0x01,                    /*!< BT A2DP SOURCE */
 } rtk_bt_a2dp_role_t;
 
 /**
@@ -162,9 +162,12 @@ typedef struct {
  */
 typedef struct {
 	uint8_t  bd_addr[6];                                /*!< address */
+	uint16_t seq_num;                                   /*!< The sequence number of the stream data*/
+	uint32_t time_stamp;                                /*!< The sampling instant of the first octet which determined from the sampling clock is to be used.*/
 	uint8_t  frame_num;                                 /*!< frame number */
-	uint16_t len;                                       /*!< data length */
 	uint8_t  *frame_buf;                                /*!< frame buffer */
+	uint16_t len;                                       /*!< data length */
+	bool     flush;                                     /*!< Auto flush option for current stream data */
 } rtk_bt_a2dp_stream_data_send_t;
 
 /**

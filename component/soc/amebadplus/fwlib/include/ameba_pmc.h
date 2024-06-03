@@ -167,6 +167,8 @@ enum SLEEP_TYPE {
   */
 #define FW_NPWAP_IPC			0
 #define TIMER_NPWAP_IPC			1
+#define SDIO_NPSAP_IPC      2
+#define SDIO_NPWAP_IPC       3
 
 /**
   * @}

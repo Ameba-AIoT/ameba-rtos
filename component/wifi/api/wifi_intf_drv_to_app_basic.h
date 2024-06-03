@@ -301,10 +301,10 @@ typedef struct _rtw_phy_statistics_t {
 	signed char	data_rssi;          /*!<average data rssi in 1 sec (for STA mode) */
 	signed char	beacon_rssi;          /*!<average beacon rssi in 1 sec (for STA mode) */
 	signed char	snr;          /*!< average snr in 1 sec (not include cck rate, for STA mode)*/
-	unsigned int	false_alarm_cck;
-	unsigned int	false_alarm_ofdm;
-	unsigned int	cca_cck;
-	unsigned int	cca_ofdm;
+	unsigned int
+	cca_clm; /*<channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result>*/
+	unsigned int	edcca_clm; /*<channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result>*/
+	unsigned int	clm_channel; /*<channel corresponding to the latest clm result.>*/
 	unsigned int	tx_retry;
 	unsigned short	tx_drop;
 	unsigned int	rx_drop;
@@ -749,15 +749,6 @@ extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
  * @return  RTW_ERROR: if the WiFi chip initialization failed.
  */
 int wifi_on(enum rtw_mode_type mode);
-
-/**
- * @brief  Disable Wi-Fi.
- * @param  None
- * @return  RTW_SUCCESS: deinit success,
- * 	wifi mode is changed to RTW_MODE_NONE.
- * @return  RTW_ERROR: otherwise.
- */
-int wifi_off(void);
 
 /**
  * @brief  Check if the specified wlan interface  is running.

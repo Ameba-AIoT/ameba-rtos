@@ -129,7 +129,7 @@
 #if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined(CONFIG_WIFI_VERIFY_PSPHY)
 #define WIFI_TEST 1
 #define DISABLE_FW
-#define DISABLE_BB_RF 1
+#define DISABLE_BB_RF
 #endif
 #ifdef CONFIG_WIFI_VERIFY_ASIC
 #define WIFI_TEST 1
@@ -172,7 +172,6 @@
 #define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_PHYSTS_PARSING_DISABLE
 #define DRV_BB_TIMER_SUPPORT_DISABLE
-#define DRV_RF_PWR_TBL_DISABLE
 #endif
 
 #ifdef CONFIG_MP_SHRINK
@@ -185,6 +184,7 @@
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
 #define DISABLE_FW
+#define DRV_RF_PWR_TBL_DISABLE
 #endif
 /************************* Config for MP_MODE end *****************************/
 

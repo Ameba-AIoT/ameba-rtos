@@ -41,7 +41,7 @@ all: CLEAN_OBJS COPY_NOUSED_API CORE_TARGETS COPY_RAM_OBJS
 #*****************************************************************************#
 COPY_NOUSED_API:
 ifeq ($(CONFIG_AS_INIC_NP), y)
-ifeq ($(CONFIG_AMEBADPLUS), y)
+ifneq ($(CONFIG_AMEBALITE), y)
 ifneq ($(CONFIG_INIC_INTF_SDIO), y)
 	python ./gen_noused_c.py -a $(IMAGE_TARGET_FOLDER)/target_img2_otrcore.asm -c $(DIR)/wifi_intf_drv_to_app_ext_strong.c -r ./wifi_intf_drv_to_app_ext_noused.c
 CSRC += ./wifi_intf_drv_to_app_ext_noused.c

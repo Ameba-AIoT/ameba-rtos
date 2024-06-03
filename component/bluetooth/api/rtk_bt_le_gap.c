@@ -178,7 +178,7 @@ uint16_t rtk_bt_le_gap_start_adv(rtk_bt_le_adv_param_t *padv_param)
 	/* When extended adv supported, ext adv apis are used to send legacy adv.
 	   Ext adv parameter needs random address, but rtk_bt_le_adv_param_t does not include own address */
 	if ((padv_param->own_addr_type == RTK_BT_LE_ADDR_TYPE_RANDOM) || (padv_param->own_addr_type == RTK_BT_LE_ADDR_TYPE_RPA_RANDOM)) {
-		printf("Please use ext adv api when using random address!");
+		BT_LOGE("Use ext adv api for random addr!\r\n");
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 #endif
@@ -387,7 +387,8 @@ uint16_t rtk_bt_le_gap_start_pa(rtk_bt_le_pa_param_t *param)
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_START_PA, param, sizeof(rtk_bt_le_pa_param_t));
 
 	if (ret) {
-		printf("Please check if Advertising_Event_Properties is RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_UNDIRECTED or RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_DIRECTED\r\n");
+		/* PA needs RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_UNDIRECTED or RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_DIRECTED */
+		BT_LOGE("Check if EA event prop is valid for PA.\r\n");
 	}
 
 	return ret;

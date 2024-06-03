@@ -192,8 +192,9 @@ static int cdc_ecm_cb_bulk_send(usbh_urb_state_t state)
 //add parse to get the ethernet status
 static int cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 {
-	//RTK_LOGD(TAG, "[USBH] INTR RX len=%d\n", length);
+	//RTK_LOGD(TAG, "INTR RX len(%d)\n", length);
 	if (buf && length >= 8) {
+		//RTK_LOGI(TAG, "Data(%02x %02x %02x %02x )\n",buf[0],buf[1],buf[2],buf[3]);
 		/*A1 00 00 00 01 00 00 00 */
 		if (length == 8 && buf[0] == 0xA1 && buf[1] == CDC_ECM_NOTIFY_NETWORK_CONNECTION) {
 			usbh_cdc_ecm_host_user.ecm_hw_connect = buf[2];
@@ -248,14 +249,9 @@ static void ecm_intr_rx_thread(void *param)
 				usb_os_sleep_ms(1000);
 				continue;
 			}
-			if (!usbh_cdc_ecm_intr_in_processing()) {
-				usbh_cdc_ecm_intr_receive(cdc_ecm_intr_rx_buf, USBH_CDC_ECM_INTR_BUF_SIZE);
+			if (HAL_OK != usbh_cdc_ecm_intr_receive(cdc_ecm_intr_rx_buf, USBH_CDC_ECM_INTR_BUF_SIZE)) {
+				usb_os_sleep_ms(usbh_cdc_ecm_get_intr_interval());
 			}
-			//bInterval is the number of frames(microframes) that need to wait to resend next intoken request
-			//FS does not need to be adjust
-			//HS binterval should be divided by 8 to ms
-			// in order to reduce CPU payloding, sleep more time
-			usb_os_sleep_ms(usbh_cdc_ecm_get_intr_interval());
 		} while (1);
 	}
 
@@ -281,16 +277,13 @@ static void ecm_bulk_rx_thread(void *param)
 				usb_os_sleep_ms(1000);
 				continue;
 			}
+			//wait ECM connect success
 			if (!usbh_cdc_ecm_get_connect_status()) {
 				usb_os_sleep_ms(2000);
 				continue;
 			}
-			if (!usbh_cdc_ecm_bulk_in_processing()) {
-				if (HAL_OK != usbh_cdc_ecm_bulk_receive()) {
-					usb_os_sleep_ms(1);
-				}
-			} else {
-				usb_os_sleep_ms(1);
+			if (HAL_OK != usbh_cdc_ecm_bulk_receive()) {
+				usb_os_sleep_ms(500);
 			}
 		} while (1);
 	}

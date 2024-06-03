@@ -30,8 +30,8 @@ ifeq ($(CONFIG_DHRYSTONE_TEST),y)
 endif
 ifeq ($(CONFIG_PER_TEST),y)
 	make -C std_lib all
-endif
 	make -C verification all
+endif
 #*****************************************************************************#
 #              GENERATE OBJECT FILE 
 #*****************************************************************************#

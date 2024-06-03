@@ -50,7 +50,7 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy, struct net_device *nde
 		return 0;
 	}
 #endif
-#ifdef CONFIG_P2P //P2P_TODO: check if other cases needed
+#ifdef CONFIG_P2P
 	if (type == NL80211_IFTYPE_P2P_GO) {
 		if (ndev_to_wdev(ndev)->iftype == NL80211_IFTYPE_P2P_CLIENT) { /*change from GC to GO*/
 			rtw_p2p_gc_intf_revert(0);
@@ -59,7 +59,7 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy, struct net_device *nde
 		llhw_wifi_set_p2p_role(P2P_ROLE_GO);
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
 		if (ndev_to_wdev(ndev)->iftype == NL80211_IFTYPE_P2P_GO) {
-			/*change from GO to GC(P2P_TODO: below setting not suitable when STA port connected)*/
+			/*change from GO to GC: below setting not suitable when STA port connected)*/
 			global_idev.p2p_global.pd_wlan_idx = 1;
 			rtw_p2p_driver_macaddr_switch();
 		}
@@ -74,7 +74,6 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy, struct net_device *nde
 
 int cfg80211_rtw_scan_done_indicate(unsigned int scanned_AP_num, void *user_data)
 {
-	//LINUX_TODO: aborted need to be realized
 	struct cfg80211_scan_info info;
 
 	if (!rtw_netdev_priv_is_on(global_idev.pndev[0]) && !rtw_netdev_priv_is_on(global_idev.pndev[1])) {
@@ -153,7 +152,7 @@ void cfg80211_rtw_inform_bss(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_ad
 		memcpy(pwlanhdr->addr1, bc_addr, ETH_ALEN);
 		set_frame_sub_type(pbuf, BIT(7));
 	} else {
-		memcpy(pwlanhdr->addr1, global_idev.pndev[0]->dev_addr, ETH_ALEN);//P2P_TODO: may not always pndev[0]
+		memcpy(pwlanhdr->addr1, global_idev.pndev[0]->dev_addr, ETH_ALEN);
 		set_frame_sub_type(pbuf, BIT(6) | BIT(4));
 	}
 
@@ -231,7 +230,6 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 		scan_param.options |= RTW_SCAN_WITH_P2P;
 	}
 #endif
-	//LINUX_TODO: do we need to support multi ssid scan?
 	for (i = 0; i < request->n_ssids && ssids && i < RTW_SSID_SCAN_AMOUNT; i++) {
 		if (ssids[i].ssid_len) {
 			ssid_vir = rtw_malloc(ssids[0].ssid_len, &ssid_phy);
@@ -494,7 +492,6 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 
 	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
 	connect_param.security_type = 0;
-	// Todo: WPA3_SERITY_ENTERPRISE EAP
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3) {
 		connect_param.security_type |= WPA3_SECURITY;
 	}
@@ -560,7 +557,7 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	}
 
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_SAE) {
-		/*SAE need request wpa_suppilcant to do auth*/
+		/*SAE need request wpa_suppilcant to auth*/
 		memcpy(auth_ext_para->ssid.ssid, (u8 *)sme->ssid, sme->ssid_len);
 		auth_ext_para->ssid.ssid_len = sme->ssid_len;
 		llhw_wifi_set_wpa_mode(WPA3_ONLY_MODE);
@@ -686,9 +683,7 @@ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy, struct wireless_dev *wd
 {
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	/* BB REG 0x1C78[8:0] is tx_power * 4. Unit of tx_power is dBm. (axi_mem_start + 0x11c78) */
-	/* Value sometimes 0, sometimes not realtime, return -EINVAL to make TX-Power disappear. */
-
+	/* Operation not permitted */
 	return -EPERM;
 }
 
@@ -704,67 +699,6 @@ static int cfg80211_rtw_set_power_mgmt(struct wiphy *wiphy, struct net_device *n
 	llhw_wifi_set_lps_enable(enabled);
 	return 0;
 }
-
-#ifdef FULLMAC_TODO
-static int cfg80211_rtw_get_channel(struct wiphy *wiphy, struct wireless_dev *wdev, struct cfg80211_chan_def *chandef)
-{
-	int retval = 1;
-	int i, j = 0;
-	struct ieee80211_supported_band *sband = NULL;
-	int cfreq;
-	struct ieee80211_channel *ieee_chan = NULL;
-	int is_connected = -1;
-	struct net_device *pnetdev = NULL;
-	int wlan_idx = -1;
-	u8 ch = 0;
-
-	//LINUX_TODO: for monitor mode, just reutn retval=1
-	pnetdev = wdev_to_ndev(wdev);
-	if (pnetdev && rtw_netdev_priv_is_on(pnetdev)) {
-		wlan_idx = rtw_netdev_idx(pnetdev);
-		if (wlan_idx == 0) { //STA mode
-			is_connected = llhw_wifi_is_connected_to_ap();
-			if (is_connected != 0) { /* 0 correspond to RTW_SUCCESS*/
-				return retval;
-			}
-		}
-	} else {
-		return retval;
-	}
-
-	llhw_wifi_get_channel(wlan_idx, &ch);
-	dev_dbg(global_idev.fullmac_dev, "%s %d channel=%d\n", __FUNCTION__, __LINE__, ch);
-	memset(chandef, 0, sizeof(*chandef));
-
-	cfreq = rtw_ch2freq(ch);
-
-	for (i = 0; i < 2; i++) {
-		sband = wiphy->bands[i];
-		if (!sband) {
-			continue;
-		}
-
-		for (j = 0; j < sband->n_channels; j++) {
-			if (sband->channels[j].hw_value == ch) {
-				ieee_chan = &sband->channels[j];
-				break;
-			}
-		}
-		if (ieee_chan) {
-			break;
-		}
-	}
-
-	//LINUX_TODO: ht ? NL80211_CHAN_WIDTH_20 : NL80211_CHAN_WIDTH_20_NOHT;
-	chandef->width = NL80211_CHAN_WIDTH_20;
-	chandef->chan = ieee_chan;
-	chandef->center_freq1 = cfreq;
-	//dev_dbg(global_idev.fullmac_dev, "%s %d chandef=%d %d %d\n", __FUNCTION__, __LINE__, chandef->width, chandef->chan, chandef->center_freq1);
-	retval = 0;
-
-	return retval;
-}
-#endif // FULLMAC_TODO
 
 static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy, struct cfg80211_chan_def *chandef)
 {
@@ -955,7 +889,6 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev, 
 	if (frame_styp == IEEE80211_STYPE_AUTH) {
 		dev_dbg(global_idev.fullmac_dev, "wpa_s tx auth\n");
 		//dev_dbg(global_idev.fullmac_dev, "tx_ch=%d, no_cck=%u, da="MAC_FMT"\n", tx_ch, no_cck, MAC_ARG(GetAddr1Ptr(buf)));
-		/*LINUX_TODO, AP mode needs queue confirm frame until external auth status update*/
 		goto dump;
 	} else if (frame_styp == IEEE80211_STYPE_ACTION) {
 		dev_dbg(global_idev.fullmac_dev, "issue action.\n");
@@ -967,11 +900,9 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev, 
 	}
 #endif
 	else {
-		dev_dbg(global_idev.fullmac_dev, "mgmt tx todo, frame_type:0x%x\n", frame_styp);
+		dev_dbg(global_idev.fullmac_dev, "mgmt tx frame_type:0x%x\n", frame_styp);
 		return ret;
 	}
-
-	/*LINUX_TODO, action frame, probe response*/
 dump:
 #ifdef CONFIG_P2P
 	if (params->dont_wait_for_ack == 0) {
@@ -1047,9 +978,6 @@ void cfg80211_rtw_ops_sta_init(void)
 	ops->set_tx_power = cfg80211_rtw_set_txpower;
 	ops->get_tx_power = cfg80211_rtw_get_txpower;
 	ops->set_power_mgmt = cfg80211_rtw_set_power_mgmt;
-#ifdef FULLMAC_TODO
-	ops->get_channel = cfg80211_rtw_get_channel;
-#endif
 	ops->set_monitor_channel = cfg80211_rtw_set_monitor_channel;
 	ops->remain_on_channel = cfg80211_rtw_remain_on_channel;
 	ops->cancel_remain_on_channel = cfg80211_rtw_cancel_remain_on_channel;

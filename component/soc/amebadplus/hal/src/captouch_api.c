@@ -60,7 +60,7 @@ static u32 captouch_irq_handler(void *data)
 
 	for (ch = 0; ch < CT_CHANNEL_NUM; ch++) {
 		if (IntStatus & CT_CHX_PRESS_INT(ch)) {
-			printf("Key	%x press \n", ch);
+			RTK_LOGI(NOTAG, "Key	%x press \n", ch);
 
 			if (obj->irq_handler_press) {
 				handler_press = (ctc_irq_handler)obj->irq_handler_press;
@@ -69,7 +69,7 @@ static u32 captouch_irq_handler(void *data)
 		}
 
 		if (IntStatus & CT_CHX_RELEASE_INT(ch)) {
-			printf("Key	%x release \n", ch);
+			RTK_LOGI(NOTAG, "Key	%x release \n", ch);
 
 			if (obj->irq_handler_release) {
 				handler_release = (ctc_irq_handler)obj->irq_handler_release;
