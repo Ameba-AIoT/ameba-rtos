@@ -97,10 +97,10 @@ void BOOT_Image1(void)
 
 	/* Initial Global Variable */
 	BOOT_ROM_InitDebugFlg();
-
+#ifndef CONFIG_MP_SHRINK
 	/* Get flash_init_para address for KR4 */
 	_memcpy((void *)&flash_init_para, (const void *)HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_FLASH_PARA_ADDR), sizeof(FLASH_InitTypeDef));
-
+#endif
 	/* goto IMG2 */
 	Image2EntryFun = (PRAM_START_FUNCTION)(void *)__image2_entry_func__;
 	Image2EntryFun->RamStartFun();

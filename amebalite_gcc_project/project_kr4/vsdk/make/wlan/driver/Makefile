@@ -97,8 +97,12 @@ ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 else
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_np$(LIB_NAME_MP_SUFFIX).a
 endif
+else ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
+ifeq ($(CONFIG_SDIO_BRIDGE),y)
+	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_sdio_bridge$(LIB_NAME_MP_SUFFIX).a
 else
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_single_core$(LIB_NAME_MP_SUFFIX).a
+endif
 endif
 	$(REMOVE) $(TARGET_LIB)_git_version.*
 

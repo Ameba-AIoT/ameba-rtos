@@ -496,7 +496,6 @@ int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 #ifdef  CONFIG_CONCURRENT_MODE
 	if (idx > 0) {
 		sta_linked = wifi_get_setting(WLAN0_IDX, &setting);
-		wifi_off();
 		rtos_time_delay_ms(20);
 		wifi_on(RTW_MODE_STA);
 	} else

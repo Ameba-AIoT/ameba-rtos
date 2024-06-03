@@ -85,28 +85,33 @@ void app_pmu_init(void)
 void app_IWDG_refresh(void *arg)
 {
 	UNUSED(arg);
-	u32 current_time;
-	static u32 last_time = 0;
-
-	/* feed the watchdog every 500ms*/
-	current_time = rtos_time_get_current_system_time_ms();
-	if ((u32)(current_time - last_time) <  500) {
-		return;
-	}
-
-	/* usually IWDG will enable by HW, and the bark interval is 4095ms by default */
-	if (0 == (HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN) & APBPeriph_IWDG)) {
-		return;
-	}
-
-	/*for first time ,disable LP Enable*/
-	if (last_time == 0) {
-		IWDG_LP_Enable(IWDG_DEV, DISABLE);
-		RTK_LOGI(TAG, "IWDG refresh on!\n");
-	}
-
-	last_time = current_time;
 	WDG_Refresh(IWDG_DEV);
+}
+
+void app_IWDG_int(void)
+{
+	/*usually IWDG will enable by HW, and the bark interval is 4S
+	 * Due to inaccurate of Aon clk, IWDG should be refreshed
+	 * every 2S with  the lowest priority level thread.
+	*/
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN);
+	if ((Temp & APBPeriph_IWDG) == 0) {
+		return;
+	} else {
+		RTK_LOGI(TAG, "IWDG refresh on!\n");
+
+		rtos_timer_t xTimer = NULL;
+
+		/* Writing to FLASH during OTA makes SYSTICK stop and run frequently,
+		and SYSTICK may be 3-4 times slower than expected, so reduce refresh period to 1/4 of 2s. */
+		rtos_timer_create(&xTimer, "WDG_Timer", NULL, 500, TRUE, app_IWDG_refresh);
+
+		if (xTimer == NULL) {
+			RTK_LOGE(TAG, "IWDG refresh error\n");
+		} else {
+			rtos_timer_start(xTimer, 0);
+		}
+	}
 }
 
 extern int rt_kv_init(void);
@@ -188,6 +193,8 @@ int main(void)
 	app_init_debug();
 
 	app_pmu_init();
+
+	app_IWDG_int();
 
 	/* Execute application example */
 	app_example();

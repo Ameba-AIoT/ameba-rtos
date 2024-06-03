@@ -17,7 +17,7 @@ OBJS =
 all: CORE_TARGETS
 	make -C api all
 ifeq ($(CONFIG_AS_INIC_NP), y)
-ifeq ($(CONFIG_AMEBADPLUS), y)
+ifneq ($(CONFIG_AMEBALITE), y)
 	echo > wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
 endif
 endif

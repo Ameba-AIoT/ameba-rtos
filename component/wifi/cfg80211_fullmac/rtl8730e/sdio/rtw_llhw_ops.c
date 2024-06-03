@@ -722,13 +722,6 @@ int llhw_wifi_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
 
 	return ret;
 }
-
-#ifdef NAN_TODO
-int llhw_cfgvendor_nandow_entry(const void *data, int len)
-{
-
-}
-#endif
 #endif
 
 int llhw_wifi_set_pmf_mode(u8 pmf_mode)
@@ -986,10 +979,7 @@ int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm)
 
 	memcpy(ptr, global_idev.ip_addr, RTW_IP_ADDR_LEN);
 	ptr += RTW_IP_ADDR_LEN;
-
-	/* TODO: copy IPv6 addr to send*/
 	ptr += IPv6_ALEN;
-
 	if (offload_parm->offload_en) {
 		if (offload_parm->sd_mdns_v4_rsp_en || offload_parm->sd_mdns_v4_wake_en ||
 			offload_parm->sd_mdns_v6_rsp_en || offload_parm->sd_mdns_v6_wake_en) {

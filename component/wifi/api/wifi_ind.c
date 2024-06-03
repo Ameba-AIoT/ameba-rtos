@@ -102,7 +102,7 @@ void wifi_reg_event_handler(unsigned int event_cmds, rtw_event_handler_t handler
 			}
 		}
 		//there is no empty position for new handler
-		RTK_LOGS(TAG_WLAN_INIC, "wifi_reg_event_handler failed: event %d can only register %d handlers at most\n", event_cmds, WIFI_EVENT_MAX_ROW);
+		RTK_LOGS(TAG_WLAN_INIC, "WifiEvtReg fail: %d %d \n", event_cmds, WIFI_EVENT_MAX_ROW);
 	}
 }
 
@@ -127,7 +127,7 @@ void init_event_callback_list(void)
 
 void wifi_join_status_indicate(enum rtw_join_status_type join_status)
 {
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 #ifndef CONFIG_AS_INIC_NP
 	struct deauth_info  *deauth_data, *deauth_data_pre;
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

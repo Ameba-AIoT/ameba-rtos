@@ -234,10 +234,12 @@ endif
 
 linker_image2_ns: linker_image2_raw
 	$(ECHO) "  BIN      km4_image2_all.bin"
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(FROMELF) -j .boot.entry -j .sram_only.text.data -j .sram_image2.text.data  -j .psram_image2.text.data  -j .xip_image2.text -j .ARM.extab -j .ARM.exidx -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
+else
 	$(Q)$(FROMELF) -j .boot.entry -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/boot.bin
 	$(Q)$(FROMELF) -j .sram_only.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_only.bin
 	$(Q)$(FROMELF) -j .sram_image2.text.data  -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
-
 	@#let .ARM.extab/.ARM.exidx +- 1GB can jump to *(.text*)
 	$(Q)ARMExAddr=0x$(shell grep __exidx_end $(IMAGE_TARGET_FOLDER)/target_img2.map | awk '{print $$1}'); \
 	if [[ $$ARMExAddr -gt 0x60000000 ]] ; then \
@@ -247,6 +249,7 @@ linker_image2_ns: linker_image2_raw
 		$(FROMELF) -j .psram_image2.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/psram_2.bin; \
 		$(FROMELF) -j .xip_image2.text -j .ARM.extab -j .ARM.exidx -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/xip_image2.bin; \
 	fi
+endif
 
 	@# for Bluetooth trace
 ifeq ($(CONFIG_BT), y)
@@ -272,6 +275,18 @@ endif
 	@echo "========== Image manipulating start =========="
 
 	# 32Bytes aligned for rsip #
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
+	$(Q)cat  $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin
+ifeq ($(CONFIG_AP_CORE_KM4), y)
+	$(Q) sh $(UTILITYDIR)/binary_pading.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin 120
+else
+	$(Q) sh $(UTILITYDIR)/binary_pading.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin 248
+endif
+
+	$(Q) sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR);
+else
 	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_only.bin
 	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin
 	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/psram_2.bin
@@ -289,6 +304,7 @@ endif
 	
 	$(Q) sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR); \
 
+endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
@@ -325,9 +341,13 @@ linker_loader:
 	$(Q)$(STRIP) $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf
 
 	$(ECHO) "  BIN      km4_boot_all.bin"
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(FROMELF) -j .ram_image1.entry -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/entry_1.bin
+	$(Q)$(FROMELF) -j .ram_image1.text -j .ram_image1.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/ram_1.bin
+else
 	$(Q)$(FROMELF) -j .ram_image1.entry  -j .ram_image1.text -j .ram_image1.data \
 	-Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/ram_1.bin
-
+endif
 	$(Q)$(FROMELF) -j .xip_image1.text \
 	-Obinary $(IMAGE_TARGET_FOLDER)/target_pure_loader.axf $(IMAGE_TARGET_FOLDER)/xip_boot.bin
 
@@ -345,10 +365,22 @@ linker_loader:
 	@echo "========== linker end =========="
 
 	@echo "========== Image manipulating start =========="
-
+ifeq ($(CONFIG_MP_SHRINK), y)
+	##entry 1k for flashloader
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/entry_1.bin 992
+endif
 	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/ram_1.bin
 	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/xip_boot.bin
 
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/entry_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin  __ram_image1_text_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
+
+	$(Q)cat $(IMAGE_TARGET_FOLDER)/entry_1_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin
+
+	sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
+
+else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
 	@if [ ${IMGTOOL_LOADER} == "YES" ]; then \
 		sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE); \
@@ -358,6 +390,7 @@ linker_loader:
 		sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
 	fi
 
+endif
 	@echo "========== Image manipulating end =========="
 
 code_analyze:
@@ -492,13 +525,22 @@ clean_all: clean
 #              PACKAGE COPY link script file-ld                               #
 #*****************************************************************************#
 copy_ld_img1:
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q) $(CC) -E -P -xc -c $(ROOTDIR)/ld/ameba_img1_all_mp.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+else
 	$(Q) $(CC) -E -P -xc -c $(ROOTDIR)/ld/ameba_img1_all.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+endif
 copy_ld_floader:
 	$(Q) $(CC) -E -P -xc -c -DGENERATE_FLOADER_LD  $(ROOTDIR)/ld/ameba_img1_all.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img2:
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q) $(CC) -E -P -xc -c  $(ROOTDIR)/ld/ameba_img2_all_mp.ld -o  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+else
 	$(Q) $(CC) -E -P -xc -c  $(ROOTDIR)/ld/ameba_img2_all.ld -o  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+endif
 ifeq ($(CONFIG_TRUSTZONE), y)
 	$(Q)cat $(LINK_ROM_SYMBOL_NS) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 else

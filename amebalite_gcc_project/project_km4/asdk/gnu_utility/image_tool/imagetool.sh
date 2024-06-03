@@ -20,6 +20,19 @@ cd ../../project_km4/asdk/gnu_utility/image_tool
 # Get Parameters
 COMPILEOS=$(uname -o)
 
+function binary_pading()
+{
+	form_file=$1
+	to_file=$2
+	size=$3
+
+	dd if=$form_file ibs=1k count=$size >  temp.bin
+	dd if=/dev/zero ibs=1k count=$size >> temp.bin
+	dd if=temp.bin ibs=1k count=$size > $to_file
+
+	rm temp.bin
+}
+
 if [ "$COMPILEOS" == "GNU/Linux" ]; then
 	IMAGE_FULLNAME=$1
 	BUILD_TYPE=$2
@@ -108,6 +121,33 @@ if [ "$IMAGE_FILENAME" == "kr4_image2_all.bin" ] || [ "$IMAGE_FILENAME" == "km4_
 		fi
 	fi
 fi
+
+if [ "$IMAGE_FILENAME" == "kr4_image2_all_shrink.bin" ] || [ "$IMAGE_FILENAME" == "km4_image2_all_shrink.bin" ]; then
+	if [ -f $KR4_IMG_DIR/kr4_image2_all_shrink.bin ]; then
+		if [ ! -d $KM4_IMG_DIR ]; then
+			mkdir -p $KM4_IMG_DIR
+		fi
+		cp $KR4_IMG_DIR/kr4_image2_all_shrink.bin $KM4_IMG_DIR
+	fi
+
+	if [ ! -f $KM4_IMG_DIR/km4_image2_all_shrink.bin ]; then
+		exit
+	fi
+	
+	if [ ! -f $KM4_IMG_DIR/km4_image2_all_shrink.bin ]; then
+		exit
+	fi
+
+	cat $KM4_IMG_DIR/km4_image2_all_shrink.bin $KM4_IMG_DIR/kr4_image2_all_shrink.bin > $KM4_IMG_DIR/kr4_km4_app.bin
+
+
+	if [ $BUILD_TYPE == "MFG" ]; then
+		if [ -f $KM4_IMG_DIR/kr4_km4_app.bin ]; then
+			mv $KM4_IMG_DIR/kr4_km4_app.bin $KM4_IMG_DIR/kr4_km4_app_mp.bin
+		fi
+	fi
+fi
+
 
 if [ "$IMAGE_FILENAME" == "km4_boot_all.bin" ]; then
 	$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km4_boot_all.bin $KM4_IMG_DIR/manifest.bin boot

@@ -45,6 +45,9 @@ else
 ifneq ($(CONFIG_AMEBADPLUS), y)
 CSRC += $(CSRC_SEC)
 TARGET_LIB = lib_wifi_com_sec
+else ifeq ($(CONFIG_SDIO_BRIDGE), y)
+CSRC += $(CSRC_SEC)
+TARGET_LIB = lib_wifi_com_sec
 endif
 endif
 

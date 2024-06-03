@@ -240,14 +240,17 @@ static int atcmd_ble_gap_get_version(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_get_version(&version);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get version failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get version failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get version, hci_revision: 0x%x, lmp_subversion: 0x%x, "
-			  "btgap_revision: 0x%x, btgap_buildnum: 0x%x ",
-			  version.hci_revision, version.lmp_subversion,
-			  version.btgap_revision, version.btgap_buildnum);
+	BLEGAP_AT_PRINTK("GAP get version, hci_revision: 0x%x, lmp_subversion: 0x%x, "
+					 "btgap_revision: 0x%x, btgap_buildnum: 0x%x ",
+					 version.hci_revision, version.lmp_subversion,
+					 version.btgap_revision, version.btgap_buildnum);
+	BT_AT_PRINT("+BLEGAP:version,0x%x,0x%x,0x%x,0x%x\r\n",
+				version.hci_revision, version.lmp_subversion,
+				version.btgap_revision, version.btgap_buildnum);
 	return 0;
 }
 
@@ -261,12 +264,13 @@ static int atcmd_ble_gap_get_bd_addr(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_get_bd_addr(&addr);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get bd_addr failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get bd_addr failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	rtk_bt_le_addr_to_str(&addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] GAP get bd_addr: %s", addr_str);
+	BLEGAP_AT_PRINTK("GAP get bd_addr: %s", addr_str);
+	BT_AT_PRINT("+BLEGAP:addr,%s\r\n", addr_str);
 	return 0;
 }
 
@@ -276,17 +280,17 @@ static int atcmd_ble_gap_set_dev_name(int argc, char **argv)
 	uint16_t ret = 0;
 
 	if (strlen(argv[0]) == 0 || strlen(argv[0]) > 39) {
-		AT_PRINTK("[ATBC] GAP set device name failed! too long!");
+		BLEGAP_AT_PRINTK("GAP set device name failed! too long!");
 		return -1;
 	}
 
 	ret = rtk_bt_le_gap_set_device_name((const uint8_t *)argv[0]);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set device name failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set device name failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set device name success");
+	BLEGAP_AT_PRINTK("GAP set device name success");
 	return 0;
 }
 
@@ -300,11 +304,11 @@ static int atcmd_ble_gap_set_appearance(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_set_appearance(appearance);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set device appearance failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set device appearance failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set device appearance success");
+	BLEGAP_AT_PRINTK("GAP set device appearance success");
 	return 0;
 }
 
@@ -319,19 +323,19 @@ static int atcmd_ble_gap_set_preferred_conn_param(int argc, char **argv)
 	preferred_conn_param.slave_latency = str_to_int(argv[2]);
 	preferred_conn_param.supv_timeout =  str_to_int(argv[3]);
 
-	AT_PRINTK("[ATBC] conn_interval_min=0x%x,conn_interval_max=0x%x,slave_latency=0x%x,supervision_timeout=0x%x",
-			  preferred_conn_param.conn_interval_min,
-			  preferred_conn_param.conn_interval_max,
-			  preferred_conn_param.slave_latency,
-			  preferred_conn_param.supv_timeout);
+	BLEGAP_AT_PRINTK("conn_interval_min=0x%x,conn_interval_max=0x%x,slave_latency=0x%x,supervision_timeout=0x%x",
+					 preferred_conn_param.conn_interval_min,
+					 preferred_conn_param.conn_interval_max,
+					 preferred_conn_param.slave_latency,
+					 preferred_conn_param.supv_timeout);
 
 	ret = rtk_bt_le_gap_set_preferred_conn_param(&preferred_conn_param);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set preferred conn param failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set preferred conn param failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set preferred conn param success");
+	BLEGAP_AT_PRINTK("GAP set preferred conn param success");
 	return 0;
 }
 
@@ -355,12 +359,12 @@ static int atcmd_ble_gap_set_rand_addr(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_set_rand_addr(auto_generate, type, addr);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set random address failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set random address failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	rtk_bt_addr_val_to_str(addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] GAP set random address success, auto_generate: %d, random_addr: %s", auto_generate, addr_str);
+	BLEGAP_AT_PRINTK("GAP set random address success, auto_generate: %d, random_addr: %s", auto_generate, addr_str);
 
 	return 0;
 }
@@ -374,11 +378,11 @@ static int atcmd_ble_gap_set_channel_map(int argc, char **argv)
 
 	if (false == hexnum_str_to_array(argv[0], chan_map, 5) ||
 		(ret = rtk_bt_le_gap_set_channels(chan_map)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP set host channel failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set host channel failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set channel map success");
+	BLEGAP_AT_PRINTK("GAP set channel map success");
 	return 0;
 }
 
@@ -391,26 +395,26 @@ static int atcmd_ble_gap_set_adv_data(int argc, char **argv)
 	if (argc == 0) {
 		ret = rtk_bt_le_gap_set_adv_data(def_adv_data, sizeof(def_adv_data));
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP set default adv data failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP set default adv data failed! err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP set default adv data success");
+		BLEGAP_AT_PRINTK("GAP set default adv data success");
 		return 0;
 	}
 
 	adv_len = strlen(argv[0]) / 2;
 	if (adv_len > 31) {
-		AT_PRINTK("[ATBC] GAP set adv data failed! too long!");
+		BLEGAP_AT_PRINTK("GAP set adv data failed! too long!");
 		return -1;
 	}
 
 	if (false == hexdata_str_to_array(argv[0], adv_data, adv_len) ||
 		(ret = rtk_bt_le_gap_set_adv_data(adv_data, adv_len)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP set adv data failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set adv data failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set adv data success");
+	BLEGAP_AT_PRINTK("GAP set adv data success");
 	return 0;
 }
 
@@ -424,10 +428,10 @@ static int atcmd_ble_gap_op_adv(int argc, char **argv)
 	if (0 == en) {
 		ret = rtk_bt_le_gap_stop_adv();
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP stop adv failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP stop adv failed! err: 0x%x", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP stopping adv ...");
+			BLEGAP_AT_PRINTK("GAP stopping adv ...");
 			return 0;
 		}
 	} else if (1 == en) {
@@ -450,12 +454,12 @@ static int atcmd_ble_gap_op_adv(int argc, char **argv)
 		}
 		ret = rtk_bt_le_gap_start_adv(&adv_param);
 		if (ret != RTK_BT_OK) {
-			AT_PRINTK("[ATBC] GAP start adv failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP start adv failed! err: 0x%x", ret);
 			return -1;
 		} else {
 			/* here, we use [starting] and with [...] means it is on processing(async operation),
 			and the result still need to be get from the callback */
-			AT_PRINTK("[ATBC] GAP starting adv ...");
+			BLEGAP_AT_PRINTK("GAP starting adv ...");
 		}
 	}
 
@@ -472,27 +476,27 @@ static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 	if (argc == 0) {
 		ret = rtk_bt_le_gap_set_scan_rsp_data(def_scan_rsp_data, sizeof(def_scan_rsp_data));
 		if (ret) {
-			AT_PRINTK("[ATBC] GAP set default scan resp data failed! err: %d", ret);
+			BLEGAP_AT_PRINTK("GAP set default scan resp data failed! err: %d", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP set def scan resp data success");
+			BLEGAP_AT_PRINTK("GAP set def scan resp data success");
 			return 0;
 		}
 	}
 
 	scan_resp_len = strlen(argv[0]) / 2;
 	if (scan_resp_len > 31) {
-		AT_PRINTK("[ATBC] GAP set scan resp data failed! too long!");
+		BLEGAP_AT_PRINTK("GAP set scan resp data failed! too long!");
 		return -1;
 	}
 
 	if (false == hexdata_str_to_array(argv[0], scan_resp_data, scan_resp_len) ||
 		(ret = rtk_bt_le_gap_set_scan_rsp_data(scan_resp_data, scan_resp_len)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP set scan resp data failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set scan resp data failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set scan resp data success");
+	BLEGAP_AT_PRINTK("GAP set scan resp data success");
 	return 0;
 }
 
@@ -511,18 +515,18 @@ static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 	if (argc == 2) {
 		len = str_to_int(argv[1]);
 		if (len > sizeof(def_ext_adv_data)) {
-			AT_PRINTK("[ATBC] GAP set ext adv data failed! Length too long!");
+			BLEGAP_AT_PRINTK("GAP set ext adv data failed! Length too long!");
 			return -1;
 		}
 	}
 
 	ret = rtk_bt_le_gap_set_ext_adv_data(adv_handle, pdata, len);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP set ext adv(%d) data failed! err: 0x%x", adv_handle, ret);
+		BLEGAP_AT_PRINTK("GAP set ext adv(%d) data failed! err: 0x%x", adv_handle, ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set ext adv(%d) data success", adv_handle);
+	BLEGAP_AT_PRINTK("GAP set ext adv(%d) data success", adv_handle);
 	return 0;
 }
 
@@ -542,10 +546,10 @@ static int atcmd_ble_gap_op_ext_adv(int argc, char **argv)
 		}
 		ret = rtk_bt_le_gap_stop_ext_adv(adv_handle);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP stop ext adv(%d) failed! err: 0x%x", adv_handle, ret);
+			BLEGAP_AT_PRINTK("GAP stop ext adv(%d) failed! err: 0x%x", adv_handle, ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP stopping ext adv(%d) ...", adv_handle);
+			BLEGAP_AT_PRINTK("GAP stopping ext adv(%d) ...", adv_handle);
 		}
 	} else if (1 == operation) { //start ext adv
 		if (argc > 1) {
@@ -559,10 +563,10 @@ static int atcmd_ble_gap_op_ext_adv(int argc, char **argv)
 		}
 		ret = rtk_bt_le_gap_start_ext_adv(adv_handle, duration, num_vents);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP start ext adv(%d) failed! err: 0x%x", adv_handle, ret);
+			BLEGAP_AT_PRINTK("GAP start ext adv(%d) failed! err: 0x%x", adv_handle, ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP starting ext adv(%d) ...", adv_handle);
+			BLEGAP_AT_PRINTK("GAP starting ext adv(%d) ...", adv_handle);
 		}
 	} else if (2 == operation) { //create ext adv handle
 		memcpy(&adv_param, &def_ext_adv_param, sizeof(rtk_bt_le_ext_adv_param_t));
@@ -608,10 +612,10 @@ static int atcmd_ble_gap_op_ext_adv(int argc, char **argv)
 		ret = rtk_bt_le_gap_create_ext_adv(&adv_param, &adv_handle);
 
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP create ext adv failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP create ext adv failed! err: 0x%x", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP create ext adv success! adv handle: %d", adv_handle);
+			BLEGAP_AT_PRINTK("GAP create ext adv success! adv handle: %d", adv_handle);
 		}
 	} else if (3 == operation) { //delete ext adv handle
 		if (argc > 1) {
@@ -619,13 +623,13 @@ static int atcmd_ble_gap_op_ext_adv(int argc, char **argv)
 		}
 		ret = rtk_bt_le_gap_remove_ext_adv(adv_handle);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP remove ext adv(%d) failed! err: 0x%x", adv_handle, ret);
+			BLEGAP_AT_PRINTK("GAP remove ext adv(%d) failed! err: 0x%x", adv_handle, ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP remove ext adv(%d) success!", adv_handle);
+			BLEGAP_AT_PRINTK("GAP remove ext adv(%d) success!", adv_handle);
 		}
 	} else {
-		AT_PRINTK("[ATBC] GAP ext adv operation failed: wrong operation value: %d!", operation);
+		BLEGAP_AT_PRINTK("GAP ext adv operation failed: wrong operation value: %d!", operation);
 		return -1;
 	}
 
@@ -646,18 +650,18 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 	if (argc == 2) {
 		len = str_to_int(argv[1]);
 		if (len > sizeof(def_ext_scan_data)) {
-			AT_PRINTK("[ATBC] GAP set ext scan resp data failed! Length too long!");
+			BLEGAP_AT_PRINTK("GAP set ext scan resp data failed! Length too long!");
 			return -1;
 		}
 	}
 
 	ret = rtk_bt_le_gap_set_ext_scan_rsp_data(adv_handle, pdata, len);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set ext scan resp data(%d) failed! err: %d", adv_handle, ret);
+		BLEGAP_AT_PRINTK("GAP set ext scan resp data(%d) failed! err: %d", adv_handle, ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set ext scan resp data(%d) success", adv_handle);
+	BLEGAP_AT_PRINTK("GAP set ext scan resp data(%d) success", adv_handle);
 	return 0;
 }
 #endif
@@ -692,10 +696,10 @@ static int atcmd_ble_gap_pa_adv(int argc, char **argv)
 
 		ret = rtk_bt_le_gap_start_pa(&param);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP start periodic adv(%d) failed! err: 0x%x", param.adv_handle, ret);
+			BLEGAP_AT_PRINTK("GAP start periodic adv(%d) failed! err: 0x%x", param.adv_handle, ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP starting periodic adv(%d) ...", param.adv_handle);
+		BLEGAP_AT_PRINTK("GAP starting periodic adv(%d) ...", param.adv_handle);
 
 		return 0;
 	} else if (operation == 0) { //stop pa
@@ -705,14 +709,14 @@ static int atcmd_ble_gap_pa_adv(int argc, char **argv)
 
 		ret = rtk_bt_le_gap_stop_pa(adv_handle);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP stop periodic adv(%d) failed! err: 0x%x", adv_handle, ret);
+			BLEGAP_AT_PRINTK("GAP stop periodic adv(%d) failed! err: 0x%x", adv_handle, ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP stopping periodic adv(%d) ...", adv_handle);
+		BLEGAP_AT_PRINTK("GAP stopping periodic adv(%d) ...", adv_handle);
 
 		return 0;
 	} else {
-		AT_PRINTK("[ATBC] GAP periodic adv operation failed: wrong operation value: %d!", operation);
+		BLEGAP_AT_PRINTK("GAP periodic adv operation failed: wrong operation value: %d!", operation);
 		return -1;
 	}
 }
@@ -728,7 +732,7 @@ static int atcmd_ble_gap_pa_adv_update(int argc, char **argv)
 	adv_handle = str_to_int(argv[0]);
 
 	if (argc != 1 && argc != 3) {
-		AT_PRINTK("[ATBC] GAP set scan paramters failed! wrong args num!");
+		BLEGAP_AT_PRINTK("GAP set scan paramters failed! wrong args num!");
 		return -1;
 	}
 
@@ -740,11 +744,11 @@ static int atcmd_ble_gap_pa_adv_update(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_update_pa(adv_handle, update_DID_only, data, len);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP Update periodic adv(%d) failed! err: 0x%x", adv_handle, ret);
+		BLEGAP_AT_PRINTK("GAP Update periodic adv(%d) failed! err: 0x%x", adv_handle, ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP update periodic adv(%d) success", adv_handle);
+	BLEGAP_AT_PRINTK("GAP update periodic adv(%d) success", adv_handle);
 	return 0;
 }
 #endif
@@ -761,7 +765,7 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 
 	if (op != RTK_BT_LE_PA_SYNC_ADV_LIST_OP_CLEAR) {
 		if (argc != 4) {
-			AT_PRINTK("[ATBC] Wrong args num!");
+			BLEGAP_AT_PRINTK("Wrong args num!");
 			return -1;
 		}
 
@@ -774,10 +778,10 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_pa_sync_modify_adv_list(op, addr, adv_sid);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP modify PA sync adv list failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP modify PA sync adv list failed! err: 0x%x", ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] GAP modify PA sync adv list Success!");
+	BLEGAP_AT_PRINTK("GAP modify PA sync adv list Success!");
 
 	return 0;
 }
@@ -831,22 +835,22 @@ static int atcmd_ble_gap_pa_sync_op(int argc, char **argv)
 
 		ret = rtk_bt_le_gap_pa_sync_create(&create);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP PA sync create fail! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP PA sync create fail! err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP PA sync create success, sync_id = %d!", sync_id);
+		BLEGAP_AT_PRINTK("GAP PA sync create success, sync_id = %d!", sync_id);
 	} else if (op == 0) {
 		if (argc != 2) {
-			AT_PRINTK("[ATBC] Wrong args num!");
+			BLEGAP_AT_PRINTK("Wrong args num!");
 			return -1;
 		}
 		sync_id = str_to_int(argv[1]);
 		ret = rtk_bt_le_gap_pa_sync_terminate(sync_id);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP PA sync terminate fail! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP PA sync terminate fail! err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP PA sync terminate success, sync_id = %d!", sync_id);
+		BLEGAP_AT_PRINTK("GAP PA sync terminate success, sync_id = %d!", sync_id);
 	}
 
 	return 0;
@@ -868,10 +872,10 @@ static int atcmd_ble_gap_past_send(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_past_send(conn_handle, service_data, use_sync_id ? true : false, idx);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP PAST transfer fail! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP PAST transfer fail! err: 0x%x", ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] GAP PAST transfer success!");
+	BLEGAP_AT_PRINTK("GAP PAST transfer success!");
 
 	return 0;
 }
@@ -911,10 +915,10 @@ static int atcmd_ble_gap_past_recv(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_past_recipient_set(&param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP PAST recipient set params fail! conn_handle: %d, err: 0x%x", param.conn_handle, ret);
+		BLEGAP_AT_PRINTK("GAP PAST recipient set params fail! conn_handle: %d, err: 0x%x", param.conn_handle, ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] GAP PAST recipient set params success! conn_handle: %d", param.conn_handle);
+	BLEGAP_AT_PRINTK("GAP PAST recipient set params success! conn_handle: %d", param.conn_handle);
 
 	return 0;
 }
@@ -948,10 +952,10 @@ static int atcmd_ble_gap_default_past_recv(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_default_past_recipient_set(&param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP PAST recipient set default params fail! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP PAST recipient set default params fail! err: 0x%x", ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] GAP PAST recipient set default params success!");
+	BLEGAP_AT_PRINTK("GAP PAST recipient set default params success!");
 
 	return 0;
 }
@@ -964,7 +968,7 @@ static int atcmd_ble_gap_set_scan_param(int argc, char **argv)
 	rtk_bt_le_scan_param_t scan_param;
 
 	if (argc != 0 && argc != 4 && argc != 6) {
-		AT_PRINTK("[ATBC] GAP set scan paramters failed! wrong args num!");
+		BLEGAP_AT_PRINTK("GAP set scan paramters failed! wrong args num!");
 		return -1;
 	}
 
@@ -984,40 +988,37 @@ static int atcmd_ble_gap_set_scan_param(int argc, char **argv)
 	}
 	ret = rtk_bt_le_gap_set_scan_param(&scan_param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP set scan param failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set scan param failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set scan param success");
+	BLEGAP_AT_PRINTK("GAP set scan param success");
 	return 0;
 }
 
 static int atcmd_ble_gap_op_scan(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
-	if (argc != 1) {
-		AT_PRINTK("[ATBC] GAP scan op failed! wrong args num!");
-		return -1;
-	}
 
 	if (1 == str_to_int(argv[0])) {
 		ret = rtk_bt_le_gap_start_scan();
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP start scan failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP start scan failed! err: 0x%x", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP starting scan ...");
+			BLEGAP_AT_PRINTK("GAP starting scan ...");
 		}
 	} else if (0 == str_to_int(argv[0])) {
 		ret = rtk_bt_le_gap_stop_scan();
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP stop scan failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP stop scan failed! err: 0x%x", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP stopping scan ...");
+			BLEGAP_AT_PRINTK("GAP stopping scan ...");
 		}
 	} else {
-		AT_PRINTK("[ATBC] GAP scan op failed! wrong args!");
+		BLEGAP_AT_PRINTK("GAP scan op failed! wrong args!");
 		return -1;
 	}
 
@@ -1032,17 +1033,17 @@ static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 	uint8_t scan_phys;
 
 	if (argc != 0 && argc != 3 && argc != 6 && argc != 9 && argc != 12) {
-		AT_PRINTK("[ATBC] GAP set scan paramters failed! wrong args num!");
+		BLEGAP_AT_PRINTK("GAP set scan paramters failed! wrong args num!");
 		return -1;
 	}
 
 	if (argc == 0) {
 		ret = rtk_bt_le_gap_ext_scan_set_param(&def_ext_scan_param);
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP set default ext scan paramters failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP set default ext scan paramters failed! err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP set default ext scan paramters success");
+		BLEGAP_AT_PRINTK("GAP set default ext scan paramters success");
 		return 0;
 	}
 
@@ -1073,11 +1074,11 @@ static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 	}
 	ret = rtk_bt_le_gap_ext_scan_set_param(&scan_param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP set scan param failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set scan param failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set scan param success");
+	BLEGAP_AT_PRINTK("GAP set scan param success");
 	return 0;
 }
 
@@ -1089,21 +1090,21 @@ static int atcmd_ble_gap_op_ext_scan(int argc, char **argv)
 	if (1 == str_to_int(argv[0])) {
 		ret = rtk_bt_le_gap_ext_scan_start();
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP start ext scan failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP start ext scan failed! err: 0x%x", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP starting ext scan ...");
+			BLEGAP_AT_PRINTK("GAP starting ext scan ...");
 		}
 	} else if (0 == str_to_int(argv[0])) {
 		ret = rtk_bt_le_gap_ext_scan_stop();
 		if (RTK_BT_OK != ret) {
-			AT_PRINTK("[ATBC] GAP stop ext scan failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP stop ext scan failed! err: 0x%x", ret);
 			return -1;
 		} else {
-			AT_PRINTK("[ATBC] GAP stopping ext scan ...");
+			BLEGAP_AT_PRINTK("GAP stopping ext scan ...");
 		}
 	} else {
-		AT_PRINTK("[ATBC] GAP ext scan op failed! wrong args!");
+		BLEGAP_AT_PRINTK("GAP ext scan op failed! wrong args!");
 		return -1;
 	}
 
@@ -1138,12 +1139,12 @@ static int atcmd_ble_gap_connect(int argc, char **argv)
 	}
 	ret = rtk_bt_le_gap_connect(&conn_param);
 	if (ret != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP connect ops failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP connect ops failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	rtk_bt_le_addr_to_str(&conn_param.peer_addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] GAP connecting to device %s ...", addr_str);
+	BLEGAP_AT_PRINTK("GAP connecting to device %s ...", addr_str);
 	return 0;
 }
 
@@ -1157,11 +1158,11 @@ static int atcmd_ble_gap_connect_cancel(int argc, char **argv)
 
 	if (false == hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN) ||
 		(ret = rtk_bt_le_gap_connect_cancel(&addr)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP create connection cancel failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP create connection cancel failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP create connection cancel success");
+	BLEGAP_AT_PRINTK("GAP create connection cancel success");
 	return 0;
 }
 
@@ -1215,8 +1216,8 @@ static int atcmd_ble_gap_ext_connect(int argc, char **argv)
 					   ((ext_conn_param.init_phys[1] == true) ? 1 : 0) +
 					   ((ext_conn_param.init_phys[2] == true) ? 1 : 0);
 		if (argc != (init_phy_num) * 6 + 3) {
-			AT_PRINTK("[ATBC] GAP ext connection failed! wrong args num: %d, %d init phys "
-					  "need %d args!", argc, init_phy_num, (init_phy_num) * 6 + 3);
+			BLEGAP_AT_PRINTK("GAP ext connection failed! wrong args num: %d, %d init phys "
+							 "need %d args!", argc, init_phy_num, (init_phy_num) * 6 + 3);
 			return -1;
 		}
 
@@ -1236,11 +1237,11 @@ static int atcmd_ble_gap_ext_connect(int argc, char **argv)
 #endif
 
 	if ((ret = rtk_bt_le_gap_ext_connect(&ext_conn_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP ext connect failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP ext connect failed! err: 0x%x", ret);
 		return -1;
 	}
 	rtk_bt_le_addr_to_str(&ext_conn_param.peer_addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] GAP extended connecting to device %s ...", addr_str);
+	BLEGAP_AT_PRINTK("GAP extended connecting to device %s ...", addr_str);
 	return 0;
 }
 #endif
@@ -1254,11 +1255,12 @@ static int atcmd_ble_gap_get_conn_rssi(int argc, char **argv)
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_read_rssi(conn_handle, &rssi_val)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP read rssi failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP read rssi failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP read rssi, conn_hanlde: %d, value: %d", conn_handle, rssi_val);
+	BLEGAP_AT_PRINTK("GAP read rssi, conn_hanlde: %d, value: %d", conn_handle, rssi_val);
+	BT_AT_PRINT("+BLEGAP:conn_rssi,%d,%d\r\n", conn_handle, rssi_val);
 	return 0;
 }
 
@@ -1271,13 +1273,16 @@ static int atcmd_ble_gap_get_dev_state(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_get_dev_state(&dev_state);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP get dev state failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get dev state failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP dev state, init_state: %d, adv_state: %d, scan_state: %d, conn_state: %d",
-			  dev_state.gap_init_state, dev_state.gap_adv_state,
-			  dev_state.gap_scan_state, dev_state.gap_conn_state);
+	BLEGAP_AT_PRINTK("GAP dev state, init_state: %d, adv_state: %d, scan_state: %d, conn_state: %d",
+					 dev_state.gap_init_state, dev_state.gap_adv_state,
+					 dev_state.gap_scan_state, dev_state.gap_conn_state);
+	BT_AT_PRINT("+BLEGAP:dev_state,%d,%d,%d,%d\r\n",
+				dev_state.gap_init_state, dev_state.gap_adv_state,
+				dev_state.gap_scan_state, dev_state.gap_conn_state);
 	return 0;
 }
 
@@ -1291,15 +1296,18 @@ static int atcmd_ble_gap_get_active_conn(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_get_active_conn(&active_conn);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get active conn num failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get active conn num failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get active conn, num: %d, conn_handle:", active_conn.conn_num);
+	BLEGAP_AT_PRINTK("GAP get active conn, num: %d, conn_handle:", active_conn.conn_num);
+	BT_AT_PRINT("+BLEGAP:get_active_conn");
 	for (i = 0; i < active_conn.conn_num; i++) {
 		AT_PRINTK(" %d,", active_conn.conn_handle[i]);
+		BT_AT_PRINT(",%d", active_conn.conn_handle[i]);
 	}
 	AT_PRINTK("\r\n");
+	BT_AT_PRINT("\r\n");
 	return 0;
 }
 
@@ -1314,11 +1322,12 @@ static int atcmd_ble_gap_get_conn_handle_by_addr(int argc, char **argv)
 
 	if (false == hexdata_str_to_bd_addr(argv[1], addr.addr_val, RTK_BD_ADDR_LEN) ||
 		(ret = rtk_bt_le_gap_get_conn_handle_by_addr(&addr, &conn_handle)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP get conn handle by addr failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get conn handle by addr failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get conn handle by addr: %d", conn_handle);
+	BLEGAP_AT_PRINTK("GAP get conn handle by addr: %d", conn_handle);
+	BT_AT_PRINT("+BLEGAP:get_conn_handle,%d\r\n", conn_handle);
 	return 0;
 }
 
@@ -1332,18 +1341,23 @@ static int atcmd_ble_gap_get_conn_info(int argc, char **argv)
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_get_conn_info(conn_handle, &conn_info)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP get connection info failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get connection info failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	rtk_bt_le_addr_to_str(&conn_info.remote, bd_addr_str, sizeof(bd_addr_str));
-	AT_PRINTK("[ATBC] GAP get connection info: \n\r"
-			  "conn_handle: %d, local role: %s, peer bd_addr: (%s), \n\r"
-			  "interval: 0x%x, latency: 0x%x, supv_timeout: 0x%x, tx_phy: 0x%x, rx_phy: 0x%x",
-			  conn_handle, (conn_info.role == RTK_BT_LE_ROLE_MASTER) ?
-			  "master" : ((conn_info.role == RTK_BT_LE_ROLE_SLAVE) ? "slave" : "unknown"),
-			  bd_addr_str, conn_info.interval, conn_info.latency,
-			  conn_info.supv_timeout, conn_info.tx_phy, conn_info.rx_phy);
+	BLEGAP_AT_PRINTK("GAP get connection info: \n\r"
+					 "conn_handle: %d, local role: %s, peer bd_addr: (%s), \n\r"
+					 "interval: 0x%x, latency: 0x%x, supv_timeout: 0x%x, tx_phy: 0x%x, rx_phy: 0x%x",
+					 conn_handle, (conn_info.role == RTK_BT_LE_ROLE_MASTER) ?
+					 "master" : ((conn_info.role == RTK_BT_LE_ROLE_SLAVE) ? "slave" : "unknown"),
+					 bd_addr_str, conn_info.interval, conn_info.latency,
+					 conn_info.supv_timeout, conn_info.tx_phy, conn_info.rx_phy);
+	BT_AT_PRINT("+BLEGAP:conn_info,%d,%s,%s,0x%x,0x%x,0x%x,0x%x,0x%x\r\n",
+				conn_handle, (conn_info.role == RTK_BT_LE_ROLE_MASTER) ?
+				"master" : ((conn_info.role == RTK_BT_LE_ROLE_SLAVE) ? "slave" : "unknown"),
+				bd_addr_str, conn_info.interval, conn_info.latency,
+				conn_info.supv_timeout, conn_info.tx_phy, conn_info.rx_phy);
 	return 0;
 }
 
@@ -1356,11 +1370,12 @@ static int atcmd_ble_gap_get_mtu_size(int argc, char **argv)
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_get_mtu_size(conn_handle, &mtu_size)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP get mtu size failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get mtu size failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get mtu size, conn_handle: %d, mtu_size: %d", conn_handle, mtu_size);
+	BLEGAP_AT_PRINTK("GAP get mtu size, conn_handle: %d, mtu_size: %d", conn_handle, mtu_size);
+	BT_AT_PRINT("+BLEGAP:mtu_size,%d,%d\r\n", conn_handle, mtu_size);
 	return 0;
 }
 
@@ -1373,11 +1388,11 @@ static int atcmd_ble_gap_set_max_mtu_size(int argc, char **argv)
 	mtu_size = str_to_int(argv[0]);
 	ret = rtk_bt_le_gap_set_max_mtu_size(mtu_size);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set max MTU size failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set max MTU size failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set max MTU size success");
+	BLEGAP_AT_PRINTK("GAP set max MTU size success");
 	return 0;
 }
 
@@ -1395,11 +1410,11 @@ static int atcmd_ble_gap_update_conn(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_update_conn_param(&up_conn_param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP update connect parameters ops failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP update connect parameters ops failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP updating connection parameters ...");
+	BLEGAP_AT_PRINTK("GAP updating connection parameters ...");
 	return 0;
 }
 
@@ -1415,11 +1430,11 @@ static int atcmd_ble_gap_set_conn_data_len(int argc, char **argv)
 	data_len_param.max_tx_time = str_to_int(argv[2]);
 	ret = rtk_bt_le_gap_set_data_len(&data_len_param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP set connection data len ops failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set connection data len ops failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP setting connection data len ...");
+	BLEGAP_AT_PRINTK("GAP setting connection data len ...");
 	return 0;
 }
 #endif
@@ -1439,11 +1454,11 @@ static int atcmd_ble_gap_set_conn_phy(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_set_phy(&conn_phy_param);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] GAP set connection PHY ops failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set connection PHY ops failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP setting connection PHY ...");
+	BLEGAP_AT_PRINTK("GAP setting connection PHY ...");
 	return 0;
 }
 #endif
@@ -1456,11 +1471,11 @@ static int atcmd_ble_gap_disconnect(int argc, char **argv)
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_gap_disconnect(conn_handle)) != 0) {
-		AT_PRINTK("[ATBC] GAP disconnect ops failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP disconnect ops failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP disconnecting ...");
+	BLEGAP_AT_PRINTK("GAP disconnecting ...");
 	return 0;
 }
 
@@ -1473,11 +1488,11 @@ static int atcmd_ble_gap_disconnect_with_reason(int argc, char **argv)
 	conn_handle = str_to_int(argv[0]);
 	reason = str_to_int(argv[1]);
 	if ((ret = rtk_bt_le_gap_disconnect_with_reason(conn_handle, reason)) != 0) {
-		AT_PRINTK("[ATBC] GAP disconnect with reason ops failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP disconnect with reason ops failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP disconnecting with reason ...");
+	BLEGAP_AT_PRINTK("GAP disconnecting with reason ...");
 	return 0;
 }
 
@@ -1492,11 +1507,11 @@ static int atcmd_ble_gap_add_whitelist(int argc, char **argv)
 
 	if (false == hexdata_str_to_bd_addr(argv[1], (uint8_t *)wl_op_param.addr.addr_val, RTK_BD_ADDR_LEN) ||
 		(ret = rtk_bt_le_gap_modify_whitelist(&wl_op_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP whitelist add failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP whitelist add failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP whitelist add success");
+	BLEGAP_AT_PRINTK("GAP whitelist add success");
 	return 0;
 }
 
@@ -1511,11 +1526,11 @@ static int atcmd_ble_gap_remove_whitelist(int argc, char **argv)
 
 	if (false == hexdata_str_to_bd_addr(argv[1], (uint8_t *)wl_op_param.addr.addr_val, RTK_BD_ADDR_LEN) ||
 		(ret = rtk_bt_le_gap_modify_whitelist(&wl_op_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP whitelist remove failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP whitelist remove failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP whitelist remove success");
+	BLEGAP_AT_PRINTK("GAP whitelist remove success");
 	return 0;
 }
 
@@ -1529,11 +1544,11 @@ static int atcmd_ble_gap_clear_whitelist(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_modify_whitelist(&wl_op_param);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP whitelist clear failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP whitelist clear failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get whitelist clear success");
+	BLEGAP_AT_PRINTK("GAP get whitelist clear success");
 	return 0;
 }
 
@@ -1541,7 +1556,7 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 {
 	uint16_t ret = 0;
 	if (argc != 0 && argc != 7) {
-		AT_PRINTK("[ATBC] GAP set security paramters failed! wrong args num!");
+		BLEGAP_AT_PRINTK("GAP set security paramters failed! wrong args num!");
 		return -1;
 	}
 
@@ -1557,10 +1572,10 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 		};
 		ret = rtk_bt_le_sm_set_security_param(&def_sec_param);
 		if (ret) {
-			AT_PRINTK("[ATBC] GAP set default security paramters failed! err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP set default security paramters failed! err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP set def security paramters sucess");
+		BLEGAP_AT_PRINTK("GAP set def security paramters sucess");
 		return 0;
 	}
 
@@ -1571,15 +1586,15 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 	sec_param.mitm_flag = (uint8_t)str_to_int(argv[3]);
 	sec_param.sec_pair_flag = (uint8_t)str_to_int(argv[4]);
 	sec_param.use_fixed_key = (uint8_t)str_to_int(argv[5]);
-	sec_param.fixed_key = atoi(argv[6]);
+	sec_param.fixed_key = (uint32_t)str_to_int(argv[6]);
 
 	ret = rtk_bt_le_sm_set_security_param(&sec_param);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set security paramters failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set security paramters failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP set security paramters sucess");
+	BLEGAP_AT_PRINTK("GAP set security paramters sucess");
 	return 0;
 }
 
@@ -1591,11 +1606,11 @@ static int atcmd_ble_gap_security(int argc, char **argv)
 
 	conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_le_sm_start_security(conn_handle)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP start security flow failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP start security flow failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP starting security flow ...");
+	BLEGAP_AT_PRINTK("GAP starting security flow ...");
 	return 0;
 }
 
@@ -1608,11 +1623,11 @@ static int atcmd_ble_gap_confirm_pair(int argc, char **argv)
 	pair_cfm_param.conn_handle = str_to_int(argv[0]);
 	if ((pair_cfm_param.confirm = str_to_int(argv[1])) > 1 ||
 		(ret = rtk_bt_le_sm_pairing_confirm(&pair_cfm_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP pair confirm failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP pair confirm failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP pair confirm OK!");
+	BLEGAP_AT_PRINTK("GAP pair confirm OK!");
 	return 0;
 }
 
@@ -1623,13 +1638,13 @@ static int atcmd_ble_gap_input_auth_key(int argc, char **argv)
 	rtk_bt_le_auth_key_input_t auth_key_param;
 
 	auth_key_param.conn_handle = str_to_int(argv[0]);
-	if ((auth_key_param.passkey = atoi(argv[1])) > 999999 ||
+	if ((auth_key_param.passkey = (uint32_t)str_to_int(argv[1])) > 999999 ||
 		(ret = rtk_bt_le_sm_passkey_entry(&auth_key_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP input auth key failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP input auth key failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP input auth key OK!");
+	BLEGAP_AT_PRINTK("GAP input auth key OK!");
 	return 0;
 }
 
@@ -1642,33 +1657,29 @@ static int atcmd_ble_gap_confirm_auth_key(int argc, char **argv)
 	auth_keycfm_param.conn_handle = str_to_int(argv[0]);
 	if ((auth_keycfm_param.confirm = str_to_int(argv[1])) > 1 ||
 		(ret = rtk_bt_le_sm_passkey_confirm(&auth_keycfm_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP auth key confirm failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP auth key confirm failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP auth key confirm OK!");
+	BLEGAP_AT_PRINTK("GAP auth key confirm OK!");
 	return 0;
 }
 
 #if defined(RTK_BLE_SMP_OOB_SUPPORT) && RTK_BLE_SMP_OOB_SUPPORT
 static int atcmd_ble_gap_input_auth_oob(int argc, char **argv)
 {
+	(void)argc;
 	uint16_t ret = 0;
 	rtk_bt_le_set_oob_key_t auth_oob_param = {0};
-
-	if (argc != 2) {
-		AT_PRINTK("%s, wrong args num: %d", __func__, argc);
-		return -1;
-	}
 
 	auth_oob_param.conn_handle = str_to_int(argv[0]);
 	if (false == hexnum_str_to_array(argv[1], (uint8_t *)auth_oob_param.oob_key, RTK_BT_LE_SM_OOB_KEY_LEN) ||
 		(ret = rtk_bt_le_sm_set_oob_tk(&auth_oob_param)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP input auth OOB TK failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP input auth OOB TK failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP input auth OOB TK OK!");
+	BLEGAP_AT_PRINTK("GAP input auth OOB TK OK!");
 	return 0;
 }
 #endif
@@ -1682,11 +1693,12 @@ static int atcmd_ble_gap_get_bond_num(int argc, char **argv)
 
 	ret = rtk_bt_le_sm_get_bond_num(&bond_num);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get bond number failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get bond number failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get bond number: %d", bond_num);
+	BLEGAP_AT_PRINTK("GAP get bond number: %d", bond_num);
+	BT_AT_PRINT("+BLEGAP:bond_num,%d\r\n", bond_num);
 	return 0;
 }
 
@@ -1701,12 +1713,12 @@ static int atcmd_ble_gap_get_bond_info(int argc, char **argv)
 
 	ret = rtk_bt_le_sm_get_bond_num(&bond_size);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get bond number failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get bond number failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	if (!bond_size) {
-		AT_PRINTK("[ATBC] GAP no bond device!");
+		BLEGAP_AT_PRINTK("GAP no bond device!");
 		return 0;
 	}
 
@@ -1716,17 +1728,19 @@ static int atcmd_ble_gap_get_bond_info(int argc, char **argv)
 	memset(bond_info, 0, bond_size * sizeof(rtk_bt_le_bond_info_t));
 	ret = rtk_bt_le_sm_get_bond_info(bond_info, &bond_size);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get bond info failed! err:0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get bond info failed! err:0x%x", ret);
 		goto out;
 	}
 
-	AT_PRINTK("[ATBC] GAP get bond info: \n\r");
+	BLEGAP_AT_PRINTK("GAP get bond info: \n\r");
+	BT_AT_PRINT("+BLEGAP:bond_info");
 	for (int i = 0; i < bond_size; i++) {
 		rtk_bt_le_addr_to_str(&bond_info[i].remote_addr, addr_str, sizeof(addr_str));
 		rtk_bt_le_addr_to_str(&bond_info[i].ident_addr, ident_addr_str, sizeof(ident_addr_str));
 		AT_PRINTK("[%d] %s, resolved: %s", i, addr_str, ident_addr_str);
+		BT_AT_PRINT(",%d,%s,%s", i, addr_str, ident_addr_str);
 	}
-
+	BT_AT_PRINT("\r\n");
 out:
 	if (bond_info) {
 		osif_mem_free(bond_info);
@@ -1745,11 +1759,11 @@ static int atcmd_ble_gap_delete_bond(int argc, char **argv)
 
 	if (false == hexdata_str_to_bd_addr(argv[1], (uint8_t *)addr.addr_val, RTK_BD_ADDR_LEN) ||
 		(ret = rtk_bt_le_sm_delete_bond_device(&addr)) != RTK_BT_OK) {
-		AT_PRINTK("[ATBC] GAP remove bond device failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP remove bond device failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP removing bond device ...");
+	BLEGAP_AT_PRINTK("GAP removing bond device ...");
 	return 0;
 }
 
@@ -1761,11 +1775,11 @@ static int atcmd_ble_gap_clear_bond(int argc, char **argv)
 
 	ret = rtk_bt_le_sm_clear_bond_list();
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP clear bond info failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP clear bond info failed! err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP clearing bond info ...");
+	BLEGAP_AT_PRINTK("GAP clearing bond info ...");
 	return 0;
 }
 
@@ -1786,10 +1800,10 @@ static int atcmd_ble_gap_set_privacy_mode(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_set_privacy_mode(ident_type, peer_ident, privacy_mode);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP set privacy mode failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP set privacy mode failed! err: 0x%x", ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] GAP set privacy mode success");
+	BLEGAP_AT_PRINTK("GAP set privacy mode success");
 	return 0;
 }
 
@@ -1812,11 +1826,12 @@ static int atcmd_ble_gap_read_local_rpa(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_read_local_resolv_addr(ident_type, peer_ident, local_rpa);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP read local rpa failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP read local rpa failed! err: 0x%x", ret);
 		return -1;
 	}
 	rtk_bt_addr_val_to_str(local_rpa, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] GAP read local rpa success, %s ", addr_str);
+	BLEGAP_AT_PRINTK("GAP read local rpa success, %s ", addr_str);
+	BT_AT_PRINT("+BLEGAP:read_local_rpa,%s\r\n", addr_str);
 	return 0;
 }
 
@@ -1835,11 +1850,12 @@ static int atcmd_ble_gap_read_peer_rpa(int argc, char **argv)
 	}
 	ret = rtk_bt_le_gap_read_peer_resolv_addr(ident_type, peer_ident, peer_rpa);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP read peer rpa failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP read peer rpa failed! err: 0x%x", ret);
 		return -1;
 	}
 	rtk_bt_addr_val_to_str(peer_rpa, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] GAP read peer rpa success, %s ", addr_str);
+	BLEGAP_AT_PRINTK("GAP read peer rpa success, %s ", addr_str);
+	BT_AT_PRINT("+BLEGAP:read_peer_rpa,%s\r\n", addr_str);
 	return 0;
 }
 #endif
@@ -1853,10 +1869,11 @@ static int atcmd_ble_gap_tx_pending_num(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	ret = rtk_bt_le_gap_get_tx_pending_num(conn_handle, &tx_pending_num);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get tx pending number failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get tx pending number failed! err: 0x%x", ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] GAP get tx pending number, conn_handle: %d tx_pending_num: %d", conn_handle, tx_pending_num);
+	BLEGAP_AT_PRINTK("GAP get tx pending number, conn_handle: %d tx_pending_num: %d", conn_handle, tx_pending_num);
+	BT_AT_PRINT("+BLEGAP:tx_pending_num,%d,%d\r\n", conn_handle, tx_pending_num);
 
 	return 0;
 }
@@ -1880,14 +1897,15 @@ static int atcmd_ble_gap_txpower_read(int argc, char **argv)
 	}
 
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] Read tx power failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("Read tx power failed! err: 0x%x", ret);
 		return -1;
 	}
 	if (type == 0) {
-		AT_PRINTK("[ATBC] Read local tx power Success! curr: %d, max: %d", cur_txpower, max_txpower);
+		BLEGAP_AT_PRINTK("Read local tx power Success! curr: %d, max: %d", cur_txpower, max_txpower);
 	} else {
-		AT_PRINTK("[ATBC] Read remote tx power Success!");
+		BLEGAP_AT_PRINTK("Read remote tx power Success!");
 	}
+	BT_AT_PRINT("+BLEGAP:txpower_read,%d,%d,%d\r\n", conn_handle, cur_txpower, max_txpower);
 
 	return 0;
 }
@@ -1904,10 +1922,10 @@ static int atcmd_ble_gap_txpower_report_set(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_tx_power_report_set(conn_handle, local_enable, remote_enable);
 	if (RTK_BT_OK != ret) {
-		AT_PRINTK("[ATBC] Tx power reporting set failed! err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("Tx power reporting set failed! err: 0x%x", ret);
 		return -1;
 	}
-	AT_PRINTK("[ATBC] Tx power reporting set Success!");
+	BLEGAP_AT_PRINTK("Tx power reporting set Success!");
 	return 0;
 }
 #endif
@@ -1919,7 +1937,7 @@ static int atcmd_ble_gap_scan_info_filter(int argc, char **argv)
 
 	if (str_to_int(argv[0])) {
 		if (argc != 3) {
-			AT_PRINTK("[ATBC] GAP scan info filter set failed, wrong args num");
+			BLEGAP_AT_PRINTK("GAP scan info filter set failed, wrong args num");
 			return -1;
 		}
 		info_filter.enable = true;
@@ -1933,12 +1951,12 @@ static int atcmd_ble_gap_scan_info_filter(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_scan_info_filter(&info_filter);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP scan info filter set failed, err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP scan info filter set failed, err: 0x%x", ret);
 		osif_mem_free(info_filter.p_filter);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP scan info filter set success");
+	BLEGAP_AT_PRINTK("GAP scan info filter set success");
 	osif_mem_free(info_filter.p_filter);
 	return 0;
 }
@@ -1979,21 +1997,21 @@ static int atcmd_ble_gap_cte_conn_rx_set(int argc, char **argv)
 
 		ret = rtk_bt_le_gap_conn_cte_rx_start(conn_handle, &rx_params);
 		if (ret) {
-			AT_PRINTK("[ATBC] GAP connection cte rx start fail, err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP connection cte rx start fail, err: 0x%x", ret);
 			osif_mem_free(rx_params.ant_ids);
 			return -1;
 		}
 
-		AT_PRINTK("[ATBC] GAP connection cte rx start success");
+		BLEGAP_AT_PRINTK("GAP connection cte rx start success");
 		osif_mem_free(rx_params.ant_ids);
 	} else {
-		AT_PRINTK("[ATBC] GAP connection cte rx stop");
+		BLEGAP_AT_PRINTK("GAP connection cte rx stop");
 		ret = rtk_bt_le_gap_conn_cte_rx_stop(conn_handle);
 		if (ret) {
-			AT_PRINTK("[ATBC] GAP connection cte rx stop fail, err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP connection cte rx stop fail, err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP connection cte rx stop success");
+		BLEGAP_AT_PRINTK("GAP connection cte rx stop success");
 	}
 
 	return 0;
@@ -2029,21 +2047,21 @@ static int atcmd_ble_gap_cte_connless_rx_set(int argc, char **argv)
 
 		ret = rtk_bt_le_gap_connless_cte_rx_start(sync_id, &params);
 		if (ret) {
-			AT_PRINTK("[ATBC] GAP connectionless cte rx start fail, err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP connectionless cte rx start fail, err: 0x%x", ret);
 			osif_mem_free(params.ant_ids);
 			return -1;
 		}
 
-		AT_PRINTK("[ATBC] GAP connectionless cte rx start success");
+		BLEGAP_AT_PRINTK("GAP connectionless cte rx start success");
 		osif_mem_free(params.ant_ids);
 
 	} else {
 		ret = rtk_bt_le_gap_connless_cte_rx_stop(sync_id);
 		if (ret) {
-			AT_PRINTK("[ATBC] GAP connectionless cte rx stop fail, err: 0x%x", ret);
+			BLEGAP_AT_PRINTK("GAP connectionless cte rx stop fail, err: 0x%x", ret);
 			return -1;
 		}
-		AT_PRINTK("[ATBC] GAP connectionless cte rx stop success");
+		BLEGAP_AT_PRINTK("GAP connectionless cte rx stop success");
 	}
 	return 0;
 }
@@ -2057,15 +2075,20 @@ static int atcmd_ble_gap_get_antenna_info(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_get_antenna_info(&antenna_info);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP get antenna information supported fail, err: 0x%x", ret);
+		BLEGAP_AT_PRINTK("GAP get antenna information supported fail, err: 0x%x", ret);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP get antenna information supported success, supported_switching_sampling_rates=%u, num_antenna=%u, max_switching_pattern_length=%u, max_cte_length=%u\r\n",
-			  antenna_info.supported_switching_sampling_rates,
-			  antenna_info.num_antennae,
-			  antenna_info.max_switching_pattern_length,
-			  antenna_info.max_cte_length);
+	BLEGAP_AT_PRINTK("GAP get antenna information supported success, supported_switching_sampling_rates=%u, num_antenna=%u, max_switching_pattern_length=%u, max_cte_length=%u\r\n",
+					 antenna_info.supported_switching_sampling_rates,
+					 antenna_info.num_antennae,
+					 antenna_info.max_switching_pattern_length,
+					 antenna_info.max_cte_length);
+	BT_AT_PRINT("+BLEGAP:get_antenna,%u,%u,%u,%u\r\n",
+				antenna_info.supported_switching_sampling_rates,
+				antenna_info.num_antennae,
+				antenna_info.max_switching_pattern_length,
+				antenna_info.max_cte_length);
 
 	return 0;
 }
@@ -2165,6 +2188,9 @@ static const cmd_table_t le_gap_cmd_table[] = {
 
 int atcmd_bt_le_gap(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[ATBC][le_gap]");
-	return 0;
+#if defined(ATCMD_BT_CUT_DOWN) && ATCMD_BT_CUT_DOWN
+	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[ATBC][le_gap]");
+#else
+	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[AT+BLEGAP]");
+#endif
 }

@@ -11,7 +11,7 @@ THREADDIR           = $(BASEDIR)/component/wpan/openthread
 TIMER 				= $(BASEDIR)/component/wpan/platform/timer
 FLASH 				= $(BASEDIR)/component/wpan/platform/flash
 PLATFORM_CONFIG 	= $(BASEDIR)/component/wpan/platform/config
-RTK_OT_SUPPORT      = $(BASEDIR)/component/wpan/openthread/rtk_ot_support/src
+RTK_OT_SUPPORT      = $(BASEDIR)/component/wpan/openthread/rtk_ot_support
 RTK_OT_BR			= $(BASEDIR)/component/wpan/openthread/rtk_otbr
 
 DIR 				= $(THREADDIR)/openthread/src/core
@@ -56,7 +56,7 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/component/os/os_dep/
 MODULE_IFLAGS += -I$(TIMER)/
 MODULE_IFLAGS += -I$(FLASH)/
 MODULE_IFLAGS += -I$(PLATFORM_CONFIG)/
-MODULE_IFLAGS += -I$(THREADDIR)/rtk_ot_support/config/
+MODULE_IFLAGS += -I$(THREADDIR)/config/
 MODULE_IFLAGS += -I$(THREADDIR)/rtk_otbr/
 MODULE_IFLAGS += -I$(THREADDIR)/openthread/src/
 MODULE_IFLAGS += -I$(THREADDIR)/openthread/src/core/

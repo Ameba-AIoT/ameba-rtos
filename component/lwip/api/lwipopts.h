@@ -679,7 +679,7 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
 #define MDNS_RESP_USENETIF_EXTCALLBACK  1
 #define MDNS_MAX_SERVICES               10
-#define MEMP_NUM_SYS_TIMEOUT            15
+#define MEMP_NUM_SYS_TIMEOUT            20
 #endif
 
 #define MEM_LIBC_MALLOC                 1

@@ -87,7 +87,11 @@ LINK_APP_LIB += $(APP_LIB)
 
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP),y)
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
+endif
 endif
 endif
 

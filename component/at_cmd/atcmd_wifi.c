@@ -27,6 +27,9 @@ extern void cmd_ping(int argc, char **argv);
 #endif
 
 #ifdef CONFIG_WLAN
+#if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
+extern void cmd_wps(int argc, char **argv);
+#endif
 static rtw_network_info_t wifi = {0};
 static rtw_softap_info_t ap = {0};
 static unsigned char password[129] = {0};
@@ -149,7 +152,9 @@ static void print_scan_result(rtw_scan_result_t *record)
 #else
 	at_printf("%s\t ", (record->bss_type == RTW_BSS_TYPE_ADHOC) ? "Adhoc" : "Infra");
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
-	at_printf(" %d\t ", record->signal_strength);
+	/* cal complement for logs */
+	record->signal_strength = (0xFFFF - record->signal_strength + 1);
+	at_printf(" -%d\t ", record->signal_strength);
 	at_printf(" %d\t  ", record->channel);
 	at_printf(" %d\t  ", (unsigned int)record->wps_type);
 	at_printf("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open               " :
@@ -229,7 +234,7 @@ static void at_wlconn_help(void)
 	at_printf("\t<ssid>:\t The wifi ssid, this parameter can not be empty\r\n");
 	at_printf("\t<pwd>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
 	at_printf("\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
-	at_printf("\t<bssid>:\tA hexnumber of 6 bytes, e.g. \"11aa22cc33ee\"\r\n");
+	at_printf("\t<bssid>:\t6 bytes separated by colons, e.g. \"11:aa:22:cc:33:ee\"\r\n");
 }
 
 /****************************************************************
@@ -296,7 +301,7 @@ void at_wlconn(void *arg)
 
 	/* BSSID (maybe not exist) */
 	if ((argc > bssid_idx) && (argv[bssid_idx] != NULL)) {
-		if (strlen(argv[bssid_idx]) != 12) {
+		if (strlen(argv[bssid_idx]) != 17) {
 			RTK_LOGW(NOTAG, "[+WLCONN] Invalid BSSID\r\n");
 			error_no = 2;
 			goto end;
@@ -382,7 +387,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLCONN:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLCONN:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLCONN:", error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlconn_help();
 		}
@@ -450,7 +455,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLDISCONN:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLDISCONN:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLDISCONN:", error_no);
 	}
 }
 
@@ -519,7 +524,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSCAN:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLSCAN:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLSCAN:", error_no);
 		if (error_no == 1) {
 			at_wlscan_help();
 		}
@@ -606,7 +611,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSCANSSID:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLSCANSSID:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLSCANSSID:", error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlscanssid_help();
 		}
@@ -628,9 +633,11 @@ void at_wlrssi(void *arg)
 
 	RTK_LOGI(NOTAG, "[WLRSSI] _AT_WLAN_GET_RSSI_\r\n");
 	wifi_fetch_phy_statistic(&phy_statistics);
-	at_printf("rssi = %d\r\n", phy_statistics.rssi);
-	at_printf("data rssi = %d\r\n", phy_statistics.data_rssi);
-	at_printf("beacon rssi = %d\r\n", phy_statistics.beacon_rssi);
+
+	/* cal complement for logs */
+	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.rssi + 1));
+	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.data_rssi + 1));
+	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.beacon_rssi + 1));
 	at_printf("\r\n%sOK\r\n", "+WLRSSI:");
 }
 
@@ -840,7 +847,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSTARTAP:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLSTARTAP:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLSTARTAP:", error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlstartap_help();
 		}
@@ -886,7 +893,7 @@ void at_wlstate(void *arg)
 	p_wifi_setting = (struct _rtw_wifi_setting_t *)rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
 	if (p_wifi_setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTATE]: alloc p_wifi_setting fail \r\n");
-		at_printf("\r\n%sERROR: %d\r\n", "+WLSTATE:", 1);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLSTATE:", 1);
 		return;
 	}
 
@@ -1013,7 +1020,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLAUTOCONN:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLAUTOCONN:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLAUTOCONN:", error_no);
 		at_wlautoconn_help();
 	}
 }
@@ -1105,7 +1112,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLMAC:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLMAC:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLMAC:", error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlmac_help();
 		}
@@ -1173,7 +1180,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLPROMISC:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLPROMISC:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLPROMISC:", error_no);
 		at_wlpromisc_help();
 	}
 }
@@ -1240,7 +1247,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLDBG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLDBG:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLDBG:", error_no);
 		if (error_no == 1) {
 			at_wldbg_help();
 		}
@@ -1264,7 +1271,7 @@ void at_wlwps(void *arg)
 {
 	int error_no = 0;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
-	int argc = 0, wps_argc = 0;
+	int argc = 0;
 	char *argv[MAX_ARGC] = {0};
 	char *wps_argv[4];
 
@@ -1274,15 +1281,16 @@ void at_wlwps(void *arg)
 		goto end;
 	}
 	argc = parse_param(arg, argv);
-	if (argc != 2 || argv[1] == NULL) {
+	if (argc < 2 || argv[1] == NULL) {
 		RTK_LOGW(NOTAG, "[WLWPS]: Should be pbc or pin here\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	wps_argv[wps_argc++] = "wifi_wps";
-	wps_argv[wps_argc++] = argv[1];
-	cmd_wps(wps_argc, wps_argv);
+	wps_argv[0] = "wifi_wps";
+	wps_argv[1] = argv[1];
+	wps_argv[2] = argv[2];  /* Maybe NULL, but does not matter. */
+	cmd_wps(argc, wps_argv);
 
 #else
 	UNUSED(arg);
@@ -1296,7 +1304,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLWPS:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLWPS:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLWPS:", error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlwps_help();
 		}
@@ -1358,7 +1366,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLPWRMODE:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLPWRMODE:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLPWRMODE:", error_no);
 		at_wlpwrmode_help();
 	}
 }
@@ -1409,7 +1417,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLSTATICIP:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+WLSTATICIP:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+WLSTATICIP:", error_no);
 		at_wlstaticip_help();
 	}
 }
@@ -1464,7 +1472,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+PING:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+PING:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+PING:", error_no);
 		at_ping_help();
 	}
 }
@@ -1573,7 +1581,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+IPERF:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+IPERF:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+IPERF:", error_no);
 		at_iperf_help();
 	}
 	if (input) {
@@ -1641,7 +1649,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+IPERF3:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+IPERF3:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+IPERF3:", error_no);
 		at_iperf3_help();
 	}
 }
@@ -1686,28 +1694,6 @@ void print_wifi_at(void)
 	for (index = 0; index < cmd_len; index++) {
 		at_printf("AT%s\r\n", at_wifi_items[index].log_cmd);
 	}
-}
-
-void print_wlan_help(void)
-{
-	at_printf("AT+WLCONN=<ss_id>[,passwd,key_id,bss_id]\r\n");
-	at_printf("AT+WLDISCONN\r\n");
-	at_printf("AT+WLSTARTAP=<ss_id>,<channel>,<open/wep/tkip/wpa2/wpa3>,<password>\r\n");
-	at_printf("AT+WLSTOPAP\r\n");
-	at_printf("AT+WLSCAN\r\n");
-	at_printf("AT+WLSCANSSID=<ssid>[,chnl_0,chnl_1,...]\r\n");
-	at_printf("AT+WLSTATE\r\n");
-	at_printf("AT+WLRSSI\r\n");
-	at_printf("AT+WLPROMISC=<enable/disable>[,<all/apall>]\r\n");
-	at_printf("AT+WLWPS=<pbc/pin>\r\n");
-	at_printf("AT+WLSTATICIP=<ip>[,<gateway>,<mask>]\r\n");
-	at_printf("AT+PING=[host],[options]\r\n");
-	at_printf("AT+IPERF=[-s|-c,host|stop],[options]\r\n");
-	at_printf("AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
-	at_printf("AT+UDP=[-s|-c,host|stop],[options]\r\n");
-	at_printf("AT+WLDBG=COMMAND[PARAMETERS]\r\n");
-	at_printf("AT+WLPWRMODE=lps/ips/dtim[mode]\r\n");
-	at_printf("\r\n");
 }
 
 void at_wifi_init(void)

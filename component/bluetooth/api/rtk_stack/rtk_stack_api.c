@@ -281,7 +281,7 @@ static uint16_t bt_stack_init(void *app_config)
 #endif
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 	if (false == gap_config_credits_num(default_conf.max_stack_tx_pending_num)) {
-		printf("%s: gap_config_credits_num fail(max_stack_tx_pending_num is %d)\r\n", __func__, default_conf.max_stack_tx_pending_num);
+		BT_LOGE("%s: gap_config_credits_num fail(%d)\r\n", __func__, default_conf.max_stack_tx_pending_num);
 	}
 #endif
 
@@ -1008,20 +1008,3 @@ void bt_stack_pending_cmd_init(void)
 {
 	INIT_LIST_HEAD(&g_cmd_pending_list);
 }
-
-#if defined(CONFIG_BT_API_DEBUG) && CONFIG_BT_API_DEBUG
-void BT_API_DUMPBUF(uint8_t level, const char *func, uint8_t *buf, uint16_t len)
-{
-	int i = 0;
-	if (level <= BT_API_DEBUG_LEVEL) {
-		BT_API_PRINT(level, "%s:buf %p, buf len is %d\r\n", func, buf, len);
-		for (i = 0; i < len; i++) {
-			printf("%02x ", buf[i]);
-			if ((i + 1) % 16 == 0) {
-				printf("\r\n");
-			}
-		}
-		printf("\r\n");
-	}
-}
-#endif

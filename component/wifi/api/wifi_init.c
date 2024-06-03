@@ -63,7 +63,7 @@ void wlan_initialize(void)
 	wifi_fast_connect_enable(1);
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 2) != SUCCESS) {
-		RTK_LOGE(TAG, "%s rtos_task_create(init_thread) failed\n", __FUNCTION__);
+		RTK_LOGE(TAG, "wlan_initialize failed\n");
 	}
 }
 
@@ -93,6 +93,9 @@ void _init_thread(void *param)
 	/* Initilaize the LwIP stack */
 	LwIP_Init();
 #endif
+#ifdef CONFIG_SDIO_BRIDGE
+	inic_dev_init();
+#endif
 	wifi_set_user_config();
 
 	wifi_on(RTW_MODE_STA);
@@ -110,7 +113,7 @@ void wlan_initialize(void)
 	wifi_fast_connect_enable(1);
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 5) != SUCCESS) {
-		RTK_LOGE(TAG, "%s rtos_task_create(init_thread) failed\n", __FUNCTION__);
+		RTK_LOGE(TAG, "wlan_initialize failed\n");
 	}
 }
 

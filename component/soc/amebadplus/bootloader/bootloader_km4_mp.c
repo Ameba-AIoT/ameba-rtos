@@ -15,6 +15,9 @@
 
 static const char *TAG = "BOOT";
 
+/* no mmu when mp shrink, use phy addr */
+#define img2_mp_addr		0x08014000
+#define img2_km4_size		(150 * 1024)
 PRAM_START_FUNCTION BOOT_SectionInit(void)
 {
 	return (PRAM_START_FUNCTION)__image2_entry_func__;
@@ -274,6 +277,98 @@ void BOOT_Enable_KM0(void)
 
 }
 
+u8 BOOT_LoadSubImage_mp(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
+{
+	IMAGE_HEADER ImgHdr;
+	u32 DstAddr, Len;
+	u32 i;
+
+	for (i = 0; i < Num; i++) {
+		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
+
+		if ((ImgHdr.signature[0] != 0x35393138) || (ImgHdr.signature[1] != 0x31313738)) {
+			if (ErrLog == _TRUE) {
+				RTK_LOGI(TAG, "%s Invalid\n", ImgName[i]);
+			}
+			return _FALSE;
+		}
+
+		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
+		Len = ImgHdr.image_size + IMAGE_HEADER_LEN;
+
+		/* If not XIP sub-image, then copy it to specific address (include the IMAGE_HEADER)*/
+		if ((!IS_FLASH_ADDR(DstAddr)) && (Len > IMAGE_HEADER_LEN)) {
+			_memcpy((void *)DstAddr, (void *)StartAddr, Len);
+			DCache_CleanInvalidate(DstAddr, Len);
+		}
+
+		/* empty Image, Just put in flash, for image hash later */
+		if (Len == IMAGE_HEADER_LEN) {
+			DstAddr = StartAddr;
+		}
+		if (SubImgInfo != NULL) {
+			SubImgInfo[i].Addr = DstAddr;
+			SubImgInfo[i].Len = Len;
+
+			RTK_LOGI(TAG, "%s[%08lx:%lx]\n", ImgName[i], DstAddr, Len);
+		}
+
+		StartAddr += Len;
+	}
+
+	return _TRUE;
+}
+
+u8 BOOT_LOAD_IMG(void)
+{
+	PRAM_FUNCTION_START_TABLE pRamStartFun = (PRAM_FUNCTION_START_TABLE)__ram_start_table_start__;
+	SubImgInfo_TypeDef SubImgInfo[2];
+	u32 PhyAddr, ImgAddr, TotalLen = 0;
+	u8 Cnt;
+	u8 i;
+	u32 Index = 0;
+
+	/* img in flash, or =1 when download to ram in flashloader */
+	if (pRamStartFun->RamStartFun != NULL) {
+		return _TRUE;
+	}
+
+	char *Km0Label[] = {"KM0 SRAM"};
+	char *Km4Label[] = {"KM4 SRAM"};
+
+	/* KM0 SRAM only */
+	Cnt = 1;
+	PhyAddr = img2_mp_addr;
+	if (BOOT_LoadSubImage_mp(&SubImgInfo[Index], PhyAddr, Cnt, Km4Label, _TRUE) == FALSE) {
+		return FALSE;
+	}
+
+	for (i = 0; i < Cnt; i++) {
+		TotalLen += SubImgInfo[i].Len;
+	}
+	Index += Cnt;
+
+	/* remap KM4 XIP image */
+	PhyAddr += img2_km4_size;
+
+	/* KM4 XIP & SRAM, read with virtual addr in case of encryption */
+	Cnt = sizeof(Km4Label) / sizeof(char *);
+	ImgAddr = PhyAddr;
+	if (BOOT_LoadSubImage_mp(&SubImgInfo[Index], ImgAddr, Cnt, Km0Label, _TRUE) == FALSE) {
+		return FALSE;
+	}
+
+	/* Get RDP image Addr */
+	for (i = 0; i < Cnt; i++) {
+		PhyAddr += SubImgInfo[Index + i].Len;
+	}
+	Index += Cnt;
+
+	assert_param(Index <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
+
+	return TRUE;
+}
+
 //3 Image 1
 void BOOT_Image1(void)
 {
@@ -282,14 +377,6 @@ void BOOT_Image1(void)
 	u32 *vector_table = NULL;
 
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
-
-	/* for debug only */
-	int cnt = 15;
-	while (cnt > 0) {
-		cnt--;
-		DelayMs(1000);
-		DiagPrintf("MP bootloader \r\n");
-	}
 
 	BOOT_ReasonSet();
 
@@ -320,6 +407,9 @@ void BOOT_Image1(void)
 	BOOT_VerCheck();
 
 	BOOT_OTPCheck();
+
+	/* Load from OTA and ECC check for Certificate and IMG2/IMG3*/
+	BOOT_LOAD_IMG();
 
 	/* set sw patch reg to 0 for security, this reg seure access only */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SW_PATCH, 0);

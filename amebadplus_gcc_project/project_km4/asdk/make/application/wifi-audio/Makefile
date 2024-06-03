@@ -1,6 +1,6 @@
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: all lib clean
+.PHONY: all clean
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #
@@ -17,22 +17,10 @@ OBJS =
 all: CORE_TARGETS
 	make -C src all
 
-lib: CORE_TARGETS
-	make -C libs lib
-	make -C audio_hal lib
-	make -C xip lib
-	make -C audio_hal_xip lib
-
-test: CORE_TARGETS
-	make -C tests test
-
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
 #*****************************************************************************#
 CORE_TARGETS: $(OBJS)
-
-
-
 
 #*****************************************************************************#
 #                        RULES TO CLEAN TARGETS                               #
@@ -40,8 +28,5 @@ CORE_TARGETS: $(OBJS)
 clean: CLEAN_OBJS
 	$(call CLEAN_FUNC)
 	make -C src clean
-	make -C xip clean
-	make -C libs clean
-	make -C audio_hal clean
-	make -C audio_hal_xip clean
+
 -include $(DEPS)

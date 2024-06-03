@@ -44,7 +44,7 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 	make -C audio_hal lib
 	make -C base lib
 endif
-ifeq ($(CONFIG_WIFI_AUDIO),y)
+ifneq ($(CONFIG_WIFI_AUDIO)$(CONFIG_WFA_SRC),)
 	make -C third_party wfa
 endif
 

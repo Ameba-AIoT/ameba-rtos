@@ -73,36 +73,36 @@ static uint16_t simple_ble_client_char_find(uint16_t conn_handle)
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_READ_V0].char_val_handle = char_handle;
-		printf("[APP] Read V0 handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] Read V0 handle is 0x%04x.\r\n", char_handle);
 	} else {
-		printf("Find read v0 characteristic fail.\r\n");
+		BT_LOGE("Find read v0 characteristic fail.\r\n");
 	}
 
 	char_uuid.p.uuid16 = SIMPLE_BLE_UUID_CHAR_VAL_WRITE;
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_WRITE_V1].char_val_handle = char_handle;
-		printf("[APP] Write V1 handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] Write V1 handle is 0x%04x.\r\n", char_handle);
 	} else {
-		printf("Find write v1 characteristic fail.\r\n");
+		BT_LOGE("Find write v1 characteristic fail.\r\n");
 	}
 
 	char_uuid.p.uuid16 = SIMPLE_BLE_UUID_CHAR_VAL_NOTIFY;
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_NOTIFY_V2].char_val_handle = char_handle;
-		printf("[APP] Notify V2 handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] Notify V2 handle is 0x%04x.\r\n", char_handle);
 	} else {
-		printf("Find notify v2 characteristic fail.\r\n");
+		BT_LOGE("Find notify v2 characteristic fail.\r\n");
 	}
 
 	char_uuid.p.uuid16 = SIMPLE_BLE_UUID_CHAR_VAL_INDICATE;
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_INDICATE_V3].char_val_handle = char_handle;
-		printf("[APP] Indicate V3 handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] Indicate V3 handle is 0x%04x.\r\n", char_handle);
 	} else {
-		printf("Find indicate v3 characteristic fail.\r\n");
+		BT_LOGE("Find indicate v3 characteristic fail.\r\n");
 	}
 
 	return RTK_BT_OK;
@@ -140,14 +140,14 @@ static uint16_t simple_ble_client_cccd_find(uint16_t conn_handle)
 	find_param.find_char_cccd.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_NOTIFY_V2].cccd_handle = cccd_handle;
-		printf("[APP] Notify V2 CCCD handle is 0x%04x.\r\n", cccd_handle);
+		BT_LOGA("[APP] Notify V2 CCCD handle is 0x%04x.\r\n", cccd_handle);
 	}
 
 	char_uuid.p.uuid16 = SIMPLE_BLE_UUID_CHAR_VAL_INDICATE;
 	find_param.find_char_cccd.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_INDICATE_V3].cccd_handle = cccd_handle;
-		printf("[APP] Indicate V3 CCCD handle is 0x%04x.\r\n", cccd_handle);
+		BT_LOGA("[APP] Indicate V3 CCCD handle is 0x%04x.\r\n", cccd_handle);
 	}
 	return RTK_BT_OK;
 }
@@ -235,7 +235,7 @@ static void simple_ble_client_discover_res_hdl(void *data)
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
 
 	if (disc_res->is_found) {
-		printf("\r\n[APP] Simple ble client discover all success\r\n");
+		BT_LOGA("\r\n[APP] Simple ble client discover all success\r\n");
 		simple_ble_client_attach_conn(disc_res->conn_handle);
 		simple_ble_client_char_find(disc_res->conn_handle);
 		simple_ble_client_cccd_find(disc_res->conn_handle);
@@ -317,7 +317,7 @@ static void simple_ble_client_discover_res_hdl(void *data)
 		case RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID:
 			if (0 == conn_simble_db->start_handle && 0 == conn_simble_db->end_handle) {
 				conn_simble_db->disc_state = DISC_FAILED;
-				printf("[APP] Simple ble client discover service failed\r\n");
+				BT_LOGE("[APP] Simple ble client discover service failed\r\n");
 			} else {
 				simple_ble_client_charac_discover(conn_handle);
 			}
@@ -327,7 +327,7 @@ static void simple_ble_client_discover_res_hdl(void *data)
 			break;
 		case RTK_BT_GATT_DISCOVER_DESCRIPTORS_ALL:
 			conn_simble_db->disc_state = DISC_DONE;
-			printf("[APP] Simple ble client discover all success\r\n");
+			BT_LOGA("[APP] Simple ble client discover all success\r\n");
 			break;
 		default:
 			break;
@@ -370,7 +370,7 @@ static void simple_ble_client_read_res_hdl(void *data)
 
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	if (RTK_BT_STATUS_DONE != read_status) {
-		printf("[APP] Simple ble client read fail\r\n");
+		BT_LOGE("[APP] Simple ble client read fail\r\n");
 		return;
 	}
 #else
@@ -380,7 +380,7 @@ static void simple_ble_client_read_res_hdl(void *data)
 #endif
 
 	if (!len || !value) {
-		printf("[APP] Simple ble client read value is empty!\r\n");
+		BT_LOGE("[APP] Simple ble client read value is empty!\r\n");
 		return;
 	}
 	if (att_handle == conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_READ_V0].char_val_handle) {
@@ -392,7 +392,7 @@ static void simple_ble_client_read_res_hdl(void *data)
 		memcpy(char_data, value, len);
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_READ_V0].char_data = char_data;
 		conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_READ_V0].data_len = len;
-		printf("[APP] Simple ble client read charac v0: %s\r\n ", (char *)char_data);
+		BT_LOGA("[APP] Simple ble client read charac v0: %s\r\n ", (char *)char_data);
 	}
 }
 
@@ -416,7 +416,7 @@ static void simple_ble_client_write_res_hdl(void *data)
 	}
 	if (RTK_BT_STATUS_DONE == write_status) {
 		if (att_handle == conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_WRITE_V1].char_val_handle) {
-			printf("[APP] Simple ble client write charac v1 success\r\n");
+			BT_LOGA("[APP] Simple ble client write charac v1 success\r\n");
 		}
 	}
 }
@@ -440,12 +440,12 @@ static void simple_ble_client_notify_hdl(void *data)
 	}
 
 	if (!ntf_ind->len || !ntf_ind->value) {
-		printf("[APP] Simple ble client notify value is empty!\r\n");
+		BT_LOGE("[APP] Simple ble client notify value is empty!\r\n");
 		return;
 	}
 
-	printf("[APP] Simple ble client charac v2 notify received\r\n");
-	gattc_dump(ntf_ind->len, ntf_ind->value, (uint8_t *)"notify event");
+	BT_LOGA("[APP] Simple ble client charac v2 notify received\r\n");
+	BT_DUMPA("[APP] Simple ble client notify event:", ntf_ind->value, ntf_ind->len);
 }
 
 static void simple_ble_client_indicate_hdl(void *data)
@@ -468,12 +468,12 @@ static void simple_ble_client_indicate_hdl(void *data)
 	}
 
 	if (!indicate_ind->len || !indicate_ind->value) {
-		printf("[APP] Simple ble client indicate value is empty!\r\n");
+		BT_LOGE("[APP] Simple ble client indicate value is empty!\r\n");
 		return;
 	}
 
-	printf("[APP] Simple ble client charac v3 indicate received\r\n");
-	gattc_dump(indicate_ind->len, indicate_ind->value, (uint8_t *)"indicate event");
+	BT_LOGA("[APP] Simple ble client charac v3 indicate received\r\n");
+	BT_DUMPA("[APP] GATTC indicate event:", indicate_ind->value, indicate_ind->len);
 }
 
 static void simple_ble_client_cccd_enable_hdl(void *data)
@@ -497,17 +497,17 @@ static void simple_ble_client_cccd_enable_hdl(void *data)
 
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	if (cccd_update->uuid.p.uuid16 == SIMPLE_BLE_UUID_CHAR_VAL_NOTIFY) {
-		printf("[APP] Simple ble client enable char v2 notify succeed\r\n");
+		BT_LOGA("[APP] Simple ble client enable char v2 notify succeed\r\n");
 	} else if (cccd_update->uuid.p.uuid16 == SIMPLE_BLE_UUID_CHAR_VAL_INDICATE) {
-		printf("[APP] Simple ble client enable char v3 indicate succeed\r\n");
+		BT_LOGA("[APP] Simple ble client enable char v3 indicate succeed\r\n");
 	}
 #else
 	if (conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_NOTIFY_V2].cccd_handle
 		== cccd_update->cccd_handle) {
-		printf("[APP] Simple ble client enable char v2 notify succeed\r\n");
+		BT_LOGA("[APP] Simple ble client enable char v2 notify succeed\r\n");
 	} else if (conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_INDICATE_V3].cccd_handle
 			   == cccd_update->cccd_handle) {
-		printf("[APP] Simple ble client enable char v3 indicate succeed\r\n");
+		BT_LOGA("[APP] Simple ble client enable char v3 indicate succeed\r\n");
 	}
 #endif
 }
@@ -533,17 +533,17 @@ static void simple_ble_client_cccd_disable_hdl(void *data)
 
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	if (cccd_update->uuid.p.uuid16 == SIMPLE_BLE_UUID_CHAR_VAL_NOTIFY) {
-		printf("[APP] Simple ble client disable char v2 notify succeed\r\n");
+		BT_LOGA("[APP] Simple ble client disable char v2 notify succeed\r\n");
 	} else if (cccd_update->uuid.p.uuid16 == SIMPLE_BLE_UUID_CHAR_VAL_INDICATE) {
-		printf("[APP] Simple ble client disable char v3 indicate succeed\r\n");
+		BT_LOGA("[APP] Simple ble client disable char v3 indicate succeed\r\n");
 	}
 #else
 	if (conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_NOTIFY_V2].cccd_handle
 		== cccd_update->cccd_handle) {
-		printf("[APP] Simple ble client disable char v2 notify succeed\r\n");
+		BT_LOGA("[APP] Simple ble client disable char v2 notify succeed\r\n");
 	} else if (conn_simple_ble_db->char_db[SIMPLE_BLE_CHAR_INDICATE_V3].cccd_handle
 			   == cccd_update->cccd_handle) {
-		printf("[APP] Simple ble client disable char v3 indicate succeed\r\n");
+		BT_LOGA("[APP] Simple ble client disable char v3 indicate succeed\r\n");
 	}
 #endif
 }
@@ -711,7 +711,7 @@ uint16_t simple_ble_client_read_charac_v0(uint16_t conn_handle)
 	}
 
 	if (conn_simple_ble_db->disc_state != DISC_DONE) {
-		printf("[APP] Simple ble client need discover service before read charac !!!\r\n");
+		BT_LOGE("[APP] Simple ble client need discover service before read charac !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 
@@ -741,7 +741,7 @@ uint16_t simple_ble_client_write_charac_v1(uint16_t conn_handle, uint8_t *data, 
 	}
 
 	if (conn_simple_ble_db->disc_state != DISC_DONE) {
-		printf("[APP] Simple ble client need discover service before write charac !!!\r\n");
+		BT_LOGE("[APP] Simple ble client need discover service before write charac !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 
@@ -774,7 +774,7 @@ uint16_t simple_ble_client_set_notify_charac_v2(uint16_t conn_handle, bool enabl
 	}
 
 	if (conn_simple_ble_db->disc_state != DISC_DONE) {
-		printf("[APP] Simple ble client need discover service before wrtie cccd !!!\r\n");
+		BT_LOGE("[APP] Simple ble client need discover service before wrtie cccd !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 
@@ -823,7 +823,7 @@ uint16_t simple_ble_client_set_indicate_charac_v3(uint16_t conn_handle, bool ena
 	}
 
 	if (conn_simple_ble_db->disc_state != DISC_DONE) {
-		printf("[APP] Simple ble client need discover service before wrtie cccd !!!\r\n");
+		BT_LOGE("[APP] Simple ble client need discover service before wrtie cccd !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 

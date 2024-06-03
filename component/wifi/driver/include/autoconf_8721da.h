@@ -105,11 +105,9 @@
 
 /*Wifi verification*/
 #if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined (CONFIG_WIFI_VERIFY_ASIC)
-#define DISABLE_BB_RF 0
+// #define DISABLE_BB_RF
 #elif defined (CONFIG_WIFI_VERIFY_PSPHY)
-#define DISABLE_BB_RF 1
-#else
-#define DISABLE_BB_RF 0
+#define DISABLE_BB_RF
 #endif
 
 #ifdef CONFIG_WIFI_VERIFY
@@ -121,11 +119,7 @@
 
 #define RA_RX_ACK_RSSI
 
-//#define CONFIG_SPEAKER_TEST
-#ifdef CONFIG_SPEAKER_TEST
-//#define CONFIG_SPEAKER_TSF_INT
 //#define CONFIG_SPEAKER_ENCRYPT
-#endif
 
 //#define CONFIG_AUDIO_TSF
 /*************************** Config for MP_MODE *******************************/
@@ -149,7 +143,7 @@
 #undef RA_RX_ACK_RSSI
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_CSI
-
+#define DRV_RF_PWR_TBL_DISABLE
 #define DISABLE_FW
 #endif
 

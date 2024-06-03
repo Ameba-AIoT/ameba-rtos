@@ -17,6 +17,7 @@
 
 #include "objects.h"
 #include "gpio_irq_api.h"
+#include "wait_api.h"
 
 /** @addtogroup Ameba_Mbed_API
   * @{
@@ -37,7 +38,7 @@
   * @param  pin: PinName according to pinmux spec.
   * @param  handler: Interrupt handler to be assigned to the specified pin.
   * @param  id: Handler parameter.
-  * @return 0 if initialization is ok or -1 if error happens.
+  * @return 0 if initialization is ok.
   */
 int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32_t id)
 {
@@ -156,6 +157,9 @@ void gpio_irq_set(gpio_irq_t *obj, gpio_irq_event event, uint32_t enable)
   */
 void gpio_irq_enable(gpio_irq_t *obj)
 {
+	/* debounce is enabled by default, delay 2 dbclk is needed to avoid asserting intr unexpectly */
+	wait_us(61);
+
 	GPIO_INTConfig(obj->pin, ENABLE);
 }
 

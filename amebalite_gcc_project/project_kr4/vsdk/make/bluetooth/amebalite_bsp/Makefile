@@ -11,7 +11,7 @@ vpath %.c $(DIR)/driver/hci \
 		$(DIR)/driver/hci/hci_process \
 		$(DIR)/driver/hci/hci_transport \
 		$(DIR)/driver/platform/amebalite/hci \
-		$(DIR)/rtk_stack/platform/amebalite/src \
+		$(DIR)/rtk_stack/platform/common \
 		$(DIR)/osif
 
 MODULE_IFLAGS += \
@@ -27,12 +27,14 @@ MODULE_IFLAGS += \
 
 CSRC += \
 	$(DIR)/driver/hci/hci_process/hci_process.c \
+	$(DIR)/driver/hci/hci_process/hci_common.c \
 	$(DIR)/driver/hci/hci_process/hci_standalone.c \
 	$(DIR)/driver/hci/hci_transport/hci_h4.c \
 	$(DIR)/driver/platform/amebalite/hci/bt_normal_patch.c \
-	$(DIR)/driver/platform/amebalite/hci/hci_dbg.c \
+	$(DIR)/driver/platform/amebalite/hci/bt_mp_patch.c \
 	$(DIR)/driver/platform/amebalite/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebalite/hci/hci_uart.c \
+	$(DIR)/osif/bt_debug.c \
 	$(DIR)/osif/osif.c
 
 ifeq ($(CONFIG_BT_ZEPHYR), y)
@@ -41,12 +43,8 @@ CSRC += \
 else
 CSRC += \
 	$(DIR)/driver/hci/hci_if_rtk.c \
-	$(DIR)/rtk_stack/platform/amebalite/src/platform_utils.c \
-	$(DIR)/rtk_stack/platform/amebalite/src/trace_uart.c
-endif
-
-ifneq ($(CONFIG_BT_EXCLUDE_MP_FUNCTION), y)
-CSRC += $(DIR)/driver/platform/amebalite/hci/bt_mp_patch.c
+	$(DIR)/rtk_stack/platform/common/platform_utils.c \
+	$(DIR)/rtk_stack/platform/common/trace_uart.c
 endif
 
 OBJS = $(notdir $(CSRC:.c=.o))

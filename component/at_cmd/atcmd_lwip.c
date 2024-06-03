@@ -985,7 +985,7 @@ static void server_start(void *param)
 			error_no = 21;
 			goto end;
 		} else {
-			at_printf("\r\n%s con_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
+			at_printf("\r\n%scon_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
 		}
 		RTK_LOGI(NOTAG, "The SSL SERVER START OK!\r\n");
 		/***********************************************************
@@ -1112,7 +1112,7 @@ static void server_start(void *param)
 					error_no = 9;
 					goto end;
 				} else {
-					at_printf("\r\n%s OK con_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
+					at_printf("\r\n%sOK\r\ncon_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
 				}
 			}
 
@@ -1181,7 +1181,7 @@ static void server_start(void *param)
 					error_no = 12;
 					goto end;
 				}
-				at_printf("\r\n%s OK con_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
+				at_printf("\r\n%sOK\r\ncon_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
 				//task will exit itself
 				ServerNodeUsed->handletask = NULL;
 			}
@@ -1196,7 +1196,7 @@ end:
 			ServerNodeUsed->handletask = NULL;
 			delete_list_node(ServerNodeUsed);
 		}
-		at_printf("\r\n%s ERROR:%d\r\n", "+SKTSERVER:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTSERVER:", error_no);
 	}
 }
 
@@ -1281,7 +1281,7 @@ end:
 		at_printf("\r\n%sOK\r\n", "+SKTSERVER:");
 	} else {
 		delete_list_node(servernode);
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTSERVER:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTSERVER:", error_no);
 	}
 }
 
@@ -1433,7 +1433,7 @@ static void client_start(void *param)
 			error_no = 23;
 			goto end;
 		}
-		at_printf("%scon_id = %d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
+		at_printf("%scon_id=%d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
 	} else
 #endif
 	{
@@ -1455,7 +1455,7 @@ static void client_start(void *param)
 						error_no = 8;
 						goto end;
 					}
-					at_printf("%scon_id = %d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
+					at_printf("%scon_id=%d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
 				}
 			} else {
 				/***********************************************************
@@ -1528,7 +1528,7 @@ static void client_start(void *param)
 					error_no = 10;
 					goto end;
 				}
-				at_printf("%scon_id = %d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
+				at_printf("%scon_id=%d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
 			}
 		}
 	}
@@ -1540,7 +1540,7 @@ end:
 		rtos_mem_free(conf);
 #endif
 		delete_list_node(ClientNodeUsed);
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTCLIENT:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTCLIENT:", error_no);
 	}
 }
 
@@ -1663,7 +1663,7 @@ end:
 		at_printf("\r\n%sOK\r\n", "+SKTCLIENT:");
 	} else {
 		delete_list_node(clientnode);
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTCLIENT:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTCLIENT:", error_no);
 	}
 }
 
@@ -1698,7 +1698,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+SKTDEL:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTDEL:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTDEL:", error_no);
 	}
 }
 
@@ -1751,7 +1751,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+SKTTT:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTTT:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTTT:", error_no);
 	}
 }
 
@@ -1826,7 +1826,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+SKTSEND:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTSEND:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTSEND:", error_no);
 	}
 }
 
@@ -1894,7 +1894,7 @@ end:
 		}
 		at_printf("\r\n%sOK\r\n", "+SKTREAD:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTREAD:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTREAD:", error_no);
 	}
 }
 
@@ -1950,7 +1950,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+SKTRECVCFG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTRECVCFG:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTRECVCFG:", error_no);
 	}
 }
 
@@ -2050,7 +2050,7 @@ end:
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+SKTAUTOLINK:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+SKTAUTOLINK:", error_no);
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTAUTOLINK:", error_no);
 	}
 }
 #endif

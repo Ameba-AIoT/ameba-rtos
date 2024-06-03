@@ -2019,7 +2019,6 @@ static rtk_bt_hfp_hf_conf_t demo_hf_conf = {
 	RTK_BT_HFP_HF_LOCAL_REMOTE_VOLUME_CONTROL
 };
 
-extern bool rtk_bt_pre_enable(void);
 /**
     * @brief  process bt audio mp test init/ deinit.
     * @param  enable[in]: 1: init. 0 deinit
@@ -2035,10 +2034,6 @@ int bt_audio_mp_test_main(uint8_t enable)
 	if (1 == enable) {
 		if (bt_audio_mp_test_init_flag) {
 			printf("%s Already init! \r\n", __func__);
-			return -1;
-		}
-		if (rtk_bt_pre_enable() == false) {
-			printf("%s fail!\r\n", __func__);
 			return -1;
 		}
 

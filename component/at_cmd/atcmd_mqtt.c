@@ -108,7 +108,7 @@ void mqtt_main(void *param)
 			if (MQTT_OK == resultNo) {
 				at_printf("ACK\r\n");
 			} else {
-				at_printf("ERROR: %d\r\n", resultNo);
+				at_printf("ERROR:%d\r\n", resultNo);
 			}
 		}
 	}
@@ -268,7 +268,7 @@ end:
 			mqtt_del_handle_cb(&mqttCb);
 			mqtt_set_handle_cb(tcpConnId, mqttCb);
 		}
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTOPEN:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTOPEN:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttopen_help();
 		}
@@ -382,7 +382,7 @@ end:
 	mqtt_set_handle_cb(tcpConnId, mqttCb);
 
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTCLOSE:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTCLOSE:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttclose_help();
 		}
@@ -556,7 +556,7 @@ void at_mqttconn(void *arg)
 
 end:
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTCONN:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTCONN:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttconn_help();
 		}
@@ -649,7 +649,7 @@ end:
 	}
 
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTDISCONN:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTDISCONN:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttdisconn_help();
 		}
@@ -780,7 +780,7 @@ end:
 			rtos_mem_free(mqttCb->topic[j]);
 			mqttCb->topic[j] = NULL;
 		}
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTSUB:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTSUB:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttsub_help();
 		}
@@ -888,7 +888,7 @@ end:
 		mqttCb->client.messageHandlers[j].fp = NULL;
 	}
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTUNSUB:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTUNSUB:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttunsub_help();
 		}
@@ -1055,7 +1055,7 @@ end:
 		}
 	}
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTPUB:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTPUB:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttpub_help();
 		}
@@ -1284,7 +1284,7 @@ end:
 	if (MQTT_OK == resultNo) {
 		at_printf("\r\n%sOK\r\n", "+MQTTCFG:");
 	} else {
-		at_printf("\r\n%sERROR: %d\r\n", "+MQTTCFG:", resultNo);
+		at_printf("\r\n%sERROR:%d\r\n", "+MQTTCFG:", resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttcfg_help();
 		}
@@ -2012,21 +2012,6 @@ void print_mqtt_at(void)
 	for (i = 0; cmdSize > i; i++) {
 		at_printf("AT%s\r\n", at_mqtt_items[i].log_cmd);
 	}
-}
-
-void print_mqtt_help(void)
-{
-	at_printf("AT+MQTTOPEN=<conn_id>,<host>[,<port>]\r\n");
-	at_printf("AT+MQTTCLOSE=<conn_id>\r\n");
-	at_printf("AT+MQTTCONN=<conn_id>,<op>[,<string_val>]\r\n");
-	at_printf("AT+MQTTDISCONN=<conn_id>\r\n");
-	at_printf("AT+MQTTSUB=<conn_id>,<string_val>[,<QoS>]\r\n");
-	at_printf("AT+MQTTUNSUB=<conn_id>,<string_val>\r\n");
-	at_printf("AT+MQTTPUB=<conn_id>,<message_id>,<op>[,<op_value>]\r\n");
-	at_printf("AT+MQTTCFG=<conn_id>,?\r\n");
-	at_printf("AT+MQTTCFG=<conn_id>,<param>,<param_val>\r\n");
-	at_printf("AT+MQTTRESET\r\n");
-	at_printf("\r\n");
 }
 
 void at_mqtt_init(void)

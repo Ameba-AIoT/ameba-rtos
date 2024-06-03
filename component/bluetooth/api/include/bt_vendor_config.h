@@ -104,7 +104,7 @@ extern "C"
 #endif
 
 /*
- * PLATFORM_RTL8720F (AmebaGreen2)
+ * PLATFORM_AMEBAGREEN2 (AmebaGreen2)
  */
 #elif defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2
 #define VENDOR_CMD_READ_BT_REGISTER_SUPPORT    1

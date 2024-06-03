@@ -9,7 +9,11 @@
 /* Wakeup entry can be set to WAKEUP_NULL/WAKEUP_KM4/WAKEUP_KM0 */
 WakeEvent_TypeDef sleep_wevent_config[] = {
 //  	Module								Wakeup
+#ifdef CONFIG_INIC_INTF_SDIO
+	{WAKE_SRC_SDIO,							WAKEUP_KM0},
+#else
 	{WAKE_SRC_SDIO,							WAKEUP_NULL},
+#endif
 	{WAKE_SRC_AON_WAKEPIN,					WAKEUP_NULL},
 	{WAKE_SRC_AON_TIM,						WAKEUP_NULL},
 	{WAKE_SRC_Keyscan,						WAKEUP_NULL},

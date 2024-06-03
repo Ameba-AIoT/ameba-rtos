@@ -724,13 +724,6 @@ int llhw_wifi_nan_cfgvendor_cmd(u16 vendor_cmd, const void *data, int len)
 	dma_unmap_single(pdev, dma_data, len, DMA_TO_DEVICE);
 	return ret;
 }
-
-#if NAN_TODO
-int llhw_cfgvendor_nandow_entry(const void *data, int len)
-{
-
-}
-#endif
 #endif
 
 #ifdef CONFIG_P2P

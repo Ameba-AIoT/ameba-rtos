@@ -138,8 +138,13 @@ endif
 
 linker_image2: linker_image2_raw
 	$(ECHO) "  BIN      km0_image2_all.bin"
+
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(FROMELF) -j .ram_image2.entry -j .sram_image2.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
+else
 	$(Q)$(FROMELF) -j .ram_image2.entry -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/entry.bin
 	$(Q)$(FROMELF) -j .sram_image2.text.data -Obinary $(IMAGE_TARGET_FOLDER)/target_pure_img2.axf $(IMAGE_TARGET_FOLDER)/sram_2.bin
+endif
 
 	@#let .ARM.extab/.ARM.exidx +- 1GB can jump to *(.text*)
 	$(Q)ARMExAddr=0x$(shell grep __exidx_end $(IMAGE_TARGET_FOLDER)/target_img2.map | awk '{print $$1}'); \
@@ -175,18 +180,28 @@ linker_image2: linker_image2_raw
 	@# 32Bytes aligned for rsip #
 	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
 
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __img2_entry_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
+	$(Q)cat $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin
+	#$(Q)sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin 1024
+
+	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin $(BUILD_TYPE)
+
+else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/entry.bin  __img2_entry_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	@#$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_retention.bin  __retention_entry_func__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __sram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin  __psram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin  __flash_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
-
 	@# pad to 4K-aligned for RSIP/MMU address 4K-alignment restriction
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_2_prepend.bin \
 			$(IMAGE_TARGET_FOLDER)/entry_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin
 	$(Q)sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin 4096
 
 	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin $(BUILD_TYPE)
+
+endif
+
 
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@echo "========== cl generate OTA_All.bin with bootloader km0=========="
@@ -338,7 +353,11 @@ copy_ld_img1:
 	$(Q)$(COPY) $(ROOTDIR)/ld/ameba_boot.ld $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img2:
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(Q)$(CC) -E -P -xc -c $(ROOTDIR)/ld/ameba_img2_all_mp.ld  -o $(ROOTDIR)/ld/ameba_img2.ld
+else
 	$(Q)$(CC) -E -P -xc -c $(ROOTDIR)/ld/ameba_img2_all.ld  -o $(ROOTDIR)/ld/ameba_img2.ld
+endif
 	$(Q)$(MOVE) $(ROOTDIR)/ld/ameba_img2.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_floader:

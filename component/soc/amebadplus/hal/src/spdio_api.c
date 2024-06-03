@@ -138,6 +138,20 @@ s8 spdio_tx_done_cb(void *padapter, IN u8 *data)
 	return SUCCESS;
 }
 
+s8 spdio_rpwm_cb(void *padapter)
+{
+	struct spdio_t *obj = (struct spdio_t *)padapter;
+
+	u16 rpwm2 = SDIO_RPWM2_Get();
+
+	if (obj) {
+		return obj->rpwm_cb(obj, rpwm2);
+	} else {
+		RTK_LOGS_LVL(TAG, RTK_LOG_ERROR, "spdio rpwm callback function is null!");
+	}
+	return SUCCESS;
+}
+
 s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 {
 	DCache_CleanInvalidate((u32)pbuf->buf_allocated, pbuf->size_allocated);
@@ -461,6 +475,10 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 
 		if (IntStatus & BIT_H2C_MSG_INT) {
 			SDIO_H2C_MSG_Get();
+		}
+
+		if (IntStatus & BIT_RPWM2_INT) {
+			spdio_rpwm_cb((struct spdio_t *)pgSPDIODev->spdio_priv);
 		}
 
 		if (IntStatus & BIT_H2C_DMA_OK || pgSPDIODev->WaitForTxbuf) {

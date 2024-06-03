@@ -11,6 +11,7 @@
 #include <dlist.h>
 #include <basic_types.h>
 #include <bt_app_config.h>
+#include <bt_debug.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -1167,6 +1168,28 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret);
 
 void rtk_bt_event_free(rtk_bt_evt_t *pevt);
 
+#define LE_TO_U32(_a)                                   \
+        (((uint32_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 1)) << 8)  |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 2)) << 16) |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 3)) << 24))
+
+#define LE_TO_U16(_a)                           \
+        (((uint16_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
+         ((uint16_t)(*((uint8_t *)(_a) + 1)) << 8))
+
+#define U32_TO_LE(_a, _data) {                          \
+        *((uint8_t *)(_a) + 0) = ((_data) >> 0) & 0xFF; \
+        *((uint8_t *)(_a) + 1) = ((_data) >> 8) & 0xFF; \
+        *((uint8_t *)(_a) + 2) = ((_data) >> 16) & 0xFF;\
+        *((uint8_t *)(_a) + 3) = ((_data) >> 24) & 0xFF;\
+    }
+
+#define U16_TO_LE(_a, _data) {                          \
+        *((uint8_t *)(_a) + 0) = ((_data) >> 0) & 0xFF; \
+        *((uint8_t *)(_a) + 1) = ((_data) >> 8) & 0xFF; \
+    }
+
 /* for api log print */
 #if 1
 #define API_PRINT(...)
@@ -1181,23 +1204,6 @@ void rtk_bt_event_free(rtk_bt_evt_t *pevt);
 #ifndef LO_WORD
 #define LO_WORD(x)      ((uint8_t)(x))
 #endif
-
-#ifndef UUID128_STR
-#define UUID128_STR "%08lx-%04x-%04x-%04x-%04x%08lx"
-#endif
-
-/* uuid128 shall be a pointer of (uint8_t *) */
-#ifndef UUID128_VAL
-#define UUID128_VAL(uuid128) \
-    *(uint32_t*)(uuid128+12), *(uint16_t*)(uuid128+10), \
-    *(uint16_t*)(uuid128+8), *(uint16_t*)(uuid128+6), \
-    *(uint16_t*)(uuid128+4), *(uint32_t*)uuid128
-#endif
-
-#define APP_PRINT_SEPARATOR()                                                               \
-    do {                                                                                    \
-        printf("############################################################\r\n \r\n");    \
-    } while (0)
 
 #define APP_PROMOTE(...)                                                                \
     do {                                                                                \

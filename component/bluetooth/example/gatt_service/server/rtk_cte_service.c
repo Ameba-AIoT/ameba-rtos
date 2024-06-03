@@ -230,10 +230,10 @@ static void cte_connless_start_timer(void)
 	osif_timer_create(&cte_connless_timer_hdl, "bt_cte_connless_start_timer", NULL, cte_connless_duration * 1000, false,
 					  cte_connless_timeout_handler);
 	if (cte_connless_timer_hdl == NULL) {
-		printf("[CTE Service] cte_connless_start_timer create failed!\r\n");
+		BT_LOGE("[CTE Service] cte_connless_start_timer create failed!\r\n");
 
 	} else {
-		printf("[CTE Service] cte_connless_timer start succeed!\r\n");
+		BT_LOGA("[CTE Service] cte_connless_timer start succeed!\r\n");
 		osif_timer_start(&cte_connless_timer_hdl);
 	}
 
@@ -301,7 +301,7 @@ static bool cte_char_value_range_check(uint16_t index, uint16_t len, uint8_t *va
 	bool ret = false;
 
 	if (!value) {
-		printf("%s: value\r\n", __func__);
+		BT_LOGE("%s: value\r\n", __func__);
 		return ret;
 	}
 
@@ -337,7 +337,7 @@ static bool cte_char_value_range_check(uint16_t index, uint16_t len, uint8_t *va
 		}
 		break;
 	default:
-		printf("%s: unsupport char index %u\r\n", __func__, index);
+		BT_LOGE("%s: unsupport char index %u\r\n", __func__, index);
 		break;
 	}
 
@@ -365,7 +365,7 @@ static uint16_t cte_adv_enable(uint8_t enable)
 	uint16_t ret = RTK_BT_OK;
 
 	if (enable && cte_connless_enable_info.enable) {
-		printf("[CTE Service] CTE connectionless tx has started already\r\n");
+		BT_LOGE("[CTE Service] CTE connectionless tx has started already\r\n");
 		return ret;
 	}
 
@@ -375,7 +375,7 @@ static uint16_t cte_adv_enable(uint8_t enable)
 												  &ext_adv_param,
 												  &pa_param,
 												  &cte_connless_enable_info.adv_handle);
-		printf("[CTE Service] CTE connectionless tx start, adv_handle %u, ret %u\r\n", cte_connless_enable_info.adv_handle, ret);
+		BT_LOGA("[CTE Service] CTE connectionless tx start, adv_handle %u, ret %u\r\n", cte_connless_enable_info.adv_handle, ret);
 
 		if (!ret) {
 			cte_connless_enable_info.enable = true;
@@ -391,7 +391,7 @@ static uint16_t cte_adv_enable(uint8_t enable)
 			ret = rtk_bt_le_gap_connless_cte_tx_stop(cte_connless_enable_info.adv_handle);
 			memset(&cte_connless_enable_info, 0, sizeof(cte_connless_enable_info));
 
-			printf("[CTE Service] CTE connectionless tx stop, adv_handle %u, ret %u\r\n", cte_connless_enable_info.adv_handle, ret);
+			BT_LOGA("[CTE Service] CTE connectionless tx stop, adv_handle %u, ret %u\r\n", cte_connless_enable_info.adv_handle, ret);
 #endif
 			if (cte_connless_timer_hdl) {
 				cte_connless_stop_timer();
@@ -418,7 +418,7 @@ uint16_t cte_conn_enable(uint8_t enable, uint16_t conn_handle)
 	if (enable) {
 		if (!cte_conn_enable_map[conn_id]) {
 			ret = rtk_bt_le_gap_conn_cte_tx_start(conn_handle, &cte_conn_param);
-			printf("[CTE Service] CTE connection tx start ret %u\r\n", ret);
+			BT_LOGA("[CTE Service] CTE connection tx start ret %u\r\n", ret);
 
 			if (!ret) {
 				cte_conn_enable_map[conn_id] = true;
@@ -429,7 +429,7 @@ uint16_t cte_conn_enable(uint8_t enable, uint16_t conn_handle)
 			ret = rtk_bt_le_gap_conn_cte_tx_stop(conn_handle);
 			cte_conn_enable_map[conn_id] = false;
 
-			printf("[CTE Service] CTE connection tx stop ret %u\r\n", ret);
+			BT_LOGA("[CTE Service] CTE connection tx stop ret %u\r\n", ret);
 		}
 	}
 
@@ -617,7 +617,7 @@ static void cte_write_hdl(void *data)
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_HANDLE;
 		} else if (!cte_char_value_range_check(p_write_ind->index, p_write_ind->len, p_write_ind->value)) {
 			write_resp.err_code = RTK_BT_ATT_ERR_OUT_OF_RANGE;
-			printf("[APP] CTE write index %u out of range\r\n", p_write_ind->index);
+			BT_LOGE("[APP] CTE write index %u out of range\r\n", p_write_ind->index);
 		} else {
 			ret = cte_write_ind_post_proc(p_write_ind->conn_handle, p_write_ind->index, p_write_ind->value);
 			if (ret != RTK_BT_OK) {
@@ -630,9 +630,9 @@ static void cte_write_hdl(void *data)
 
 	ret = rtk_bt_gatts_write_resp(&write_resp);
 	if (RTK_BT_OK == ret) {
-		printf("[APP] CTE response for client write succeed, index:%d\r\n", p_write_ind->index);
+		BT_LOGA("[APP] CTE response for client write succeed, index:%d\r\n", p_write_ind->index);
 	} else {
-		printf("[APP] CTE response for client write failed, err: 0x%x\r\n", ret);
+		BT_LOGE("[APP] CTE response for client write failed, err: 0x%x\r\n", ret);
 	}
 }
 
@@ -644,9 +644,9 @@ void cte_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;
 		if (RTK_BT_OK == reg_srv_res->reg_status) {
-			printf("[APP] CTE register service succeed!\r\n");
+			BT_LOGA("[APP] CTE register service succeed!\r\n");
 		} else {
-			printf("[APP] CTE register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
+			BT_LOGE("[APP] CTE register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
 		}
 		break;
 	}
@@ -658,14 +658,14 @@ void cte_srv_callback(uint8_t event, void *data)
 		read_resp.conn_handle = p_read_ind->conn_handle;
 		read_resp.cid = p_read_ind->cid;
 		read_resp.index = p_read_ind->index;
-		printf("[APP] CTE read event, while no readable attr, unknown index: %d\r\n", p_read_ind->index);
+		BT_LOGE("[APP] CTE read event, while no readable attr, unknown index: %d\r\n", p_read_ind->index);
 		read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 
 		ret = rtk_bt_gatts_read_resp(&read_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] CTE response for client read succeed!\r\n");
+			BT_LOGA("[APP] CTE response for client read succeed!\r\n");
 		} else {
-			printf("[APP] CTE response for client read failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] CTE response for client read failed, err: 0x%x\r\n", ret);
 		}
 		break;
 	}
@@ -676,7 +676,7 @@ void cte_srv_callback(uint8_t event, void *data)
 	}
 
 	default:
-		printf("[APP] CTE NO corresponding event: %d\r\n", event);
+		BT_LOGE("[APP] CTE NO corresponding event: %d\r\n", event);
 		break;
 	}
 }
@@ -765,7 +765,7 @@ static bool cte_srv_param_value_range_check(CTE_SRV_PARAM_TYPE_e param_type, uin
 		}
 		break;
 	default:
-		printf("%s: cte srv set param type unsupport\r\n", __func__);
+		BT_LOGE("%s: cte srv set param type unsupport\r\n", __func__);
 		break;
 	}
 
@@ -777,12 +777,12 @@ uint16_t cte_srv_set_params(CTE_SRV_PARAM_TYPE_e param_type, uint16_t len, void 
 	uint16_t ret = RTK_BT_OK;
 
 	if (!value) {
-		printf("[APP] CTE service set param invalid value\r\n");
+		BT_LOGE("[APP] CTE service set param invalid value\r\n");
 		return RTK_BT_FAIL;
 	}
 
 	if (!cte_srv_param_value_range_check(param_type, len, value)) {
-		printf("[APP] CTE service set param value check failed\r\n");
+		BT_LOGE("[APP] CTE service set param value check failed\r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -849,12 +849,12 @@ uint16_t cte_srv_set_params(CTE_SRV_PARAM_TYPE_e param_type, uint16_t len, void 
 		break;
 	}
 	default: {
-		printf("%s: unsupported param type %u\r\n", __func__, param_type);
+		BT_LOGE("%s: unsupported param type %u\r\n", __func__, param_type);
 		break;
 	}
 	}
 
-	printf("[APP] CTE service set param type %u %s\r\n", param_type, (ret == RTK_BT_OK) ? "succeed" : "failed");
+	BT_LOGA("[APP] CTE service set param type %u %s\r\n", param_type, (ret == RTK_BT_OK) ? "succeed" : "failed");
 
 	return ret;
 }

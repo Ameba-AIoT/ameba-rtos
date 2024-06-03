@@ -35,4 +35,18 @@ void rtos_time_delay_us(uint32_t us);
  */
 uint32_t rtos_time_get_current_system_time_ms(void);
 
+/**
+ * @brief  Rreturn value to in microseconds.
+ * @note   This interface does not consider systick overflow issues.
+ * @retval
+ */
+uint64_t rtos_time_get_current_system_time_us(void);
+
+/**
+ * @brief  Rreturn value to in nanoseconds.
+ * @note   This interface does not consider systick overflow issues. The accuracy is the clk frequency of the CPU
+ * @retval
+ */
+uint64_t rtos_time_get_current_system_time_ns(void);
+
 #endif

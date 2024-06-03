@@ -76,6 +76,8 @@ extern u8 __retention_entry_func__[];
 extern u8 __kr4_start_table_backup_addr__[];
 extern u8 __kr4_boot_entry_addr__[];
 
+extern u8 __kr4_bd_ram_mp_start__[];
+
 extern u8 __kr4_flash_text_start__[];
 extern u8 __kr4_ipc_memory_start__[];
 extern u8 __km4_flash_text_start__[];

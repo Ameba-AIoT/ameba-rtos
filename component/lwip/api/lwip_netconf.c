@@ -456,6 +456,16 @@ void LwIP_ethernetif_recv(uint8_t idx, int total_len)
 	ethernetif_recv(&xnetif[idx], total_len);
 }
 
+void LwIP_ethernetif_recv_inic(uint8_t idx, struct pbuf *p_buf)
+{
+	err_enum_t error = ERR_OK;
+	error = xnetif[idx].input(p_buf, &xnetif[idx]);
+	if (error != ERR_OK) {
+		RTK_LOGS(TAG_WLAN_INIC, "lwip input err (%d)\n", error);
+		pbuf_free(p_buf);
+	}
+}
+
 int LwIP_netif_is_valid_IP(int idx, unsigned char *ip_dest)
 {
 #if defined(CONFIG_LWIP_LAYER) && (CONFIG_LWIP_LAYER == 1)

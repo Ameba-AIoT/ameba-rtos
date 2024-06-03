@@ -366,14 +366,6 @@ int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
 int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
 /**
- * @brief  Set ble scan duty when coex.
- * @param[in]  duty: the desired scan duty for ble
- * @return  1: if the scan duty is successfully set
- * 	-1: if the scan duty is not successfully set.
- */
-int wifi_btcoex_set_ble_scan_duty(u8 duty);
-
-/**
  * @brief  Setup custom ie list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.

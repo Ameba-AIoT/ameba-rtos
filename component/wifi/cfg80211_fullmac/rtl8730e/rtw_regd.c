@@ -1395,7 +1395,7 @@ void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 		_rtl_reg_set_country_code(wiphy, request->alpha2);
 		break;
 	default:
-		/* todo */
+		/* do nothing */
 		break;
 	}
 

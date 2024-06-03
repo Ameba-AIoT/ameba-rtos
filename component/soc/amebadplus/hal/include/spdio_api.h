@@ -126,6 +126,15 @@ struct spdio_t {
 	 *@retval SUCCESS or FAIL
 	 */
 	char (*tx_done_cb)(void *priv, void *pbuf);
+
+	/**
+	 *@brief pointer to callback function defined by user
+	 *@param priv: a pointer to spdio_t structure which is used to initilize spdio interface
+	 *@param value: rpwm2 value
+	 *@retval SUCCESS or FAIL
+	 */
+	char (*rpwm_cb)(void *priv, u16 value);
+
 };
 
 /** @}*/

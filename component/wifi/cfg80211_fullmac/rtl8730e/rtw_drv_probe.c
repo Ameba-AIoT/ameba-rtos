@@ -197,30 +197,17 @@ static void platform_device_init(struct platform_device *pdev)
 {
 	u32 status = false;
 	struct resource *res_mem = NULL;
-	struct device_node *sys_node = NULL, *ocp_node = NULL;
 	unsigned long pmem_len = 0;
-	struct resource res_sys = {0};
 	struct axi_data *axi_data;
 
-	/* TODO: axi_data useless in fullmac, clear later. */
 	axi_data = (struct axi_data *)kzalloc(sizeof(struct axi_data), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 	if (!axi_data) {
 		pr_err("Can't get axi_data\n");
 		goto exit;
 	}
 	paxi_data_global = axi_data;
-
-	ocp_node = of_get_parent(pdev->dev.of_node);
-	sys_node = of_get_compatible_child(ocp_node, "realtek,amebad2-system-ctrl-ls");
-	if (!sys_node) {
-		pr_err("Can't get sys_node\n");
-		goto free_dvobj;
-	}
-
 	axi_data->pdev = pdev;
-	//platform_set_drvdata(pdev, dvobj); //LINUX_TODO
 
-	/* TODO: SYS REG map, useless here. */
 	res_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res_mem) {
 		pr_err("Can't get axi IORESOURCE_MEM\n");
@@ -229,7 +216,6 @@ static void platform_device_init(struct platform_device *pdev)
 
 	pmem_len = res_mem->end - res_mem->start + 1;
 
-	/* TODO: MAC REG map, useless here. */
 	axi_data->axi_mem_start = (unsigned long)devm_ioremap_resource(&pdev->dev, res_mem);
 	if (!axi_data->axi_mem_start) {
 		pr_err("Can't map CTRL mem\n");
@@ -239,24 +225,6 @@ static void platform_device_init(struct platform_device *pdev)
 
 	pr_info("Memory mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
 			(unsigned long)res_mem->start, pmem_len, axi_data->axi_mem_start);
-
-	if (of_address_to_resource(sys_node, 0, &res_sys)) {
-		pr_err("Can't get sys IORESOURCE_MEM\n");
-		goto free_dvobj;
-	}
-
-	pmem_len = res_sys.end - res_sys.start + 1;
-
-	axi_data->axi_sys_mem_start = 0;
-	axi_data->axi_sys_mem_start = (unsigned long)ioremap(res_sys.start, pmem_len);
-	if (!axi_data->axi_sys_mem_start) {
-		pr_err("Can't map CTRL mem\n");
-		goto exit;
-	}
-	axi_data->axi_sys_mem_end = axi_data->axi_sys_mem_start + pmem_len;
-
-	pr_info("Memory mapped sys space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
-			(unsigned long)res_sys.start, pmem_len, axi_data->axi_sys_mem_start);
 
 	status = true;
 
@@ -274,11 +242,6 @@ static void platform_device_deinit(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 	if (axi_data) {
-		if (axi_data->axi_sys_mem_start != 0) {
-			iounmap((void *)axi_data->axi_sys_mem_start);
-			axi_data->axi_sys_mem_start = 0;
-		}
-
 		if (axi_data->axi_mem_start != 0) {
 			devm_iounmap(&pdev->dev, (void *)axi_data->axi_mem_start);
 			axi_data->axi_mem_start = 0;
