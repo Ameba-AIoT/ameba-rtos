@@ -201,8 +201,8 @@ static uint8_t hci_platform_read_efuse(void)
 		OTP_Read8((HCI_PHY_EFUSE_OFFSET + i), (hci_phy_efuse + i));
 	}
 #if 0
-	BT_DUMPA("Read Logic Efuse:", hci_lgc_efuse, HCI_LGC_EFUSE_LEN);
-	BT_DUMPA("Read Phy Efuse:", hci_phy_efuse, HCI_PHY_EFUSE_LEN);
+	BT_DUMPA("Read Logic Efuse:\r\n", hci_lgc_efuse, HCI_LGC_EFUSE_LEN);
+	BT_DUMPA("Read Phy Efuse:\r\n", hci_phy_efuse, HCI_PHY_EFUSE_LEN);
 #endif
 	if (pbuf) {
 		osif_mem_free(pbuf);

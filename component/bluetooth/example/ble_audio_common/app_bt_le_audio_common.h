@@ -28,14 +28,6 @@ extern "C" {
 #define MAX(a, b) (a > b ? a : b)
 #endif
 #define CODEC_DFG_TEST 0
-#define BT_APP_PROCESS(func)            \
-    do {                                \
-        uint16_t __func_ret = func;     \
-        if (RTK_BT_OK != __func_ret) {  \
-            printf("[APP] %s failed! line: %d, err: 0x%x\r\n", __func__, __LINE__, __func_ret);   \
-            return -1;                  \
-        }                               \
-    } while (0)
 
 /* Define Audio channel.*/
 #define RTK_BT_LE_AUDIO_LEFT            1

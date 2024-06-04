@@ -41,12 +41,6 @@
 /* ----------------------------- Avrcp Related ------------------------------ */
 #define VOL_MAX     0x7f
 #define VOL_MIN     0x00
-#define BT_APP_PROCESS(process)                       \
-    if (RTK_BT_OK != process)                         \
-    {                                                 \
-        printf("[APP] %s failed!\r\n", __FUNCTION__); \
-        return -1;                                    \
-    }
 
 /* ---------------------------- Global Variables ---------------------------- */
 static uint8_t curr_volume = RTK_BT_DEFAULT_ABSOLUTE_VOLUME;
@@ -710,7 +704,7 @@ static void app_a2dp_src_send_data(void)
 
 	if (src_a2dp_credits) {
 		if (demo_uart_read((uint8_t *)pcm_buffer)) {
-			// printf("[A2DP SRC Demo]: uart buffer read success \r\n");
+			// BT_LOGA("[A2DP SRC Demo]: uart buffer read success \r\n");
 			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer, (uint32_t)1024);
 			if (penc_codec_buffer_t) {
 				memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
@@ -722,19 +716,19 @@ static void app_a2dp_src_send_data(void)
 				data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
 				data_send_t.flush = false;
 				if (rtk_bt_a2dp_data_send(&data_send_t)) {
-					printf("[A2DP] data send fail \r\n");
+					BT_LOGE("[A2DP] data send fail \r\n");
 				} else {
 					src_a2dp_credits --;
 				}
 				rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
 			} else {
-				printf("[A2DP SRC Demo]: Encode fail \r\n");
+				BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
 			}
 		} else {
-			// printf("[A2DP SRC Demo]: uart buffer length is not enough \r\n");
+			// BT_LOGE("[A2DP SRC Demo]: uart buffer length is not enough \r\n");
 		}
 	} else {
-		// printf("[A2DP] waiting src_a2dp_credits \r\n");
+		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
 	}
 }
 #else
@@ -762,13 +756,13 @@ static void app_a2dp_src_send_data(void)
 					data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
 					data_send_t.flush = false;
 					if (rtk_bt_a2dp_data_send(&data_send_t)) {
-						printf("[A2DP] data send fail \r\n");
+						BT_LOGE("[A2DP] data send fail \r\n");
 					} else {
 						src_a2dp_credits --;
 					}
 					rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
 				} else {
-					printf("[A2DP SRC Demo]: Encode fail \r\n");
+					BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
 				}
 			} else {
 				pdata = (short *)(birds_sing + pcm_offset);
@@ -783,13 +777,13 @@ static void app_a2dp_src_send_data(void)
 					data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
 					data_send_t.flush = false;
 					if (rtk_bt_a2dp_data_send(&data_send_t)) {
-						printf("[A2DP] data send fail \r\n");
+						BT_LOGE("[A2DP] data send fail \r\n");
 					} else {
 						src_a2dp_credits --;
 					}
 					rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
 				} else {
-					printf("[A2DP SRC Demo]: Encode fail \r\n");
+					BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
 				}
 			}
 			pcm_offset += 512;
@@ -797,7 +791,7 @@ static void app_a2dp_src_send_data(void)
 			pcm_offset = 0;
 		}
 	} else {
-		// printf("[A2DP] waiting src_a2dp_credits \r\n");
+		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
 	}
 }
 #endif
@@ -912,27 +906,27 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 			/* do flush action */
 			/* 1. get bond number */
 			if (rtk_bt_br_gap_bond_num_get(&temp_bond_num)) {
-				printf("[A2DP Demo] Get Bond Number fail\r\n");
+				BT_LOGE("[A2DP Demo] Get Bond Number fail\r\n");
 				continue;
 			}
-			printf("[A2DP Demo] Get Bond Number %d \r\n", temp_bond_num);
+			BT_LOGA("[A2DP Demo] Get Bond Number %d \r\n", temp_bond_num);
 			/* 2. get bond mac address accord to bond number */
 			for (uint8_t i = 0; i < temp_bond_num; i ++) {
 				/* gap bond priority start frmo 1, so i + 1 */
 				ret = rtk_bt_br_gap_bond_addr_get(i + 1, bd_addr);
 				if (ret) {
-					printf("[A2DP Demo] Get bond addr failed! err: 0x%x", ret);
+					BT_LOGE("[A2DP Demo] Get bond addr failed! err: 0x%x", ret);
 					continue;
 				}
-				printf("[A2DP Demo] Get Bond addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-					   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+				BT_LOGA("[A2DP Demo] Get Bond addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+						bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 				/* 3. sync with a2dp_demo_bond_table */
 				pbond_info = a2dp_demo_find_bond_info_by_mac_addr(bd_addr);
 				if (!pbond_info) {
 					/* allocate new bond info unit */
 					pbond_info = get_free_bond_table_unit();
 					if (!pbond_info) {
-						printf("[A2DP Demo] Get free bond table unit fail \r\n");
+						BT_LOGE("[A2DP Demo] Get free bond table unit fail \r\n");
 						continue;
 					}
 					memcpy((void *)pbond_info->bd_addr, (void *)bd_addr, 6);
@@ -983,14 +977,14 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 					}
 				}
 				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
-					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
+					BT_LOGA("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 				} else {
-					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
+					BT_LOGE("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
 				}
 			}
 			a2dp_demo_bond_num = temp_bond_num;
 		} else {
-			printf("[A2DP Demo] Bond info flush thread recv msg fail\r\n");
+			BT_LOGE("[A2DP Demo] Bond info flush thread recv msg fail\r\n");
 		}
 		osif_delay(3);
 	}
@@ -1003,22 +997,22 @@ static void a2dp_demo_bond_info_dump(void)
 {
 	a2dp_demo_bond_info_t *pbond_info = NULL;
 
-	printf("[A2DP Demo] Bond Info List\r\n");
+	BT_LOGA("[A2DP Demo] Bond Info List\r\n");
 	for (uint8_t i = 0; i < a2dp_demo_bond_num; i ++) {
 		pbond_info = a2dp_demo_find_bond_info_by_priority(i + 1);
 		if (pbond_info) {
-			printf(">> %d. ", (int)(i + 1));
-			printf(" mac addr %02X:%02X:%02X:%02X:%02X:%02X  ", pbond_info->bd_addr[5],
-				   pbond_info->bd_addr[4],
-				   pbond_info->bd_addr[3],
-				   pbond_info->bd_addr[2],
-				   pbond_info->bd_addr[1],
-				   pbond_info->bd_addr[0]);
-			printf(" name ");
+			BT_LOGA(">> %d. ", (int)(i + 1));
+			BT_LOGA(" mac addr %02X:%02X:%02X:%02X:%02X:%02X  ", pbond_info->bd_addr[5],
+					pbond_info->bd_addr[4],
+					pbond_info->bd_addr[3],
+					pbond_info->bd_addr[2],
+					pbond_info->bd_addr[1],
+					pbond_info->bd_addr[0]);
+			BT_LOGA(" name ");
 			if (pbond_info->name_contained) {
-				printf(" %s", pbond_info->name);
+				BT_LOGA(" %s", pbond_info->name);
 			}
-			printf(" \r\n");
+			BT_LOGA(" \r\n");
 		}
 	}
 }
@@ -1037,9 +1031,9 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		printf("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
-			   p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
-			   p_result->name);
+		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+				p_result->name);
 		break;
 	}
 
@@ -1052,10 +1046,10 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 				memcpy((void *)pbond_info->name, (void *)p_name_rsp->name, RTK_BT_GAP_DEVICE_NAME_LEN);
 				pbond_info->name_contained = 1;
 				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
-					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
+					BT_LOGA("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 					a2dp_demo_bond_info_dump();
 				} else {
-					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
+					BT_LOGE("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
 				}
 			}
 		}
@@ -1064,8 +1058,8 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
@@ -1074,32 +1068,32 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_auto_reconnect) {
 			/* write reconnect info to file system */
 			if (rt_kv_set(a2dp_demo_filesystem_key, (void *)bd_addr, 6) == 6) {
-				printf("[A2DP Demo] Save a2dp demo reconnect data success \r\n");
+				BT_LOGA("[A2DP Demo] Save a2dp demo reconnect data success \r\n");
 			} else {
-				printf("[A2DP Demo] Fail to save a2dp reconnect data \r\n");
+				BT_LOGE("[A2DP Demo] Fail to save a2dp reconnect data \r\n");
 			}
 			a2dp_demo_auto_reconnect_try_count = 0;
 			osif_timer_stop(&reconnect_timer);
 		}
-		printf("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
-		printf("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_sniff->bd_addr[5], p_sniff->bd_addr[4],
-			   p_sniff->bd_addr[3], p_sniff->bd_addr[2],
-			   p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
-		printf("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
+		BT_LOGA("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_sniff->bd_addr[5], p_sniff->bd_addr[4],
+				p_sniff->bd_addr[3], p_sniff->bd_addr[2],
+				p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_ACTIVE: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
@@ -1108,7 +1102,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_bond_info_flush && found) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
 		}
-		printf("[BR GAP] Link Key Request received and found is 0x%x \r\n", found);
+		BT_LOGA("[BR GAP] Link Key Request received and found is 0x%x \r\n", found);
 		break;
 	}
 
@@ -1118,28 +1112,28 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_bond_info_flush) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
 		}
-		printf("[BR GAP] Set link key of %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] Set link key of %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		printf("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
-			   p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
-			   p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
-		printf("[BR GAP] ACL disc cause 0x%x \r\n", p_acl_disc_event->cause);
+		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL disc cause 0x%x \r\n", p_acl_disc_event->cause);
 		/* cause 0x113 -> Remote User Terminate*/
 		/* cause 0x108 -> Conn Timeout*/
 		if (a2dp_demo_auto_reconnect) {
 			if ((RTK_BT_ERR_HCI_GROUP | RTK_BT_HCI_ERR_REMOTE_USER_TERMINATE) == p_acl_disc_event->cause) {
-				printf("[A2DP Demo] Deleting a2dp demo reconnect config \r\n");
+				BT_LOGA("[A2DP Demo] Deleting a2dp demo reconnect config \r\n");
 				if (rt_kv_delete(a2dp_demo_filesystem_key) == 0) {
-					printf("[A2DP Demo] Delete a2dp demo reconnect config success \r\n");
+					BT_LOGA("[A2DP Demo] Delete a2dp demo reconnect config success \r\n");
 				}
 			} else if ((RTK_BT_ERR_HCI_GROUP | RTK_BT_HCI_ERR_CONN_TIMEOUT) == p_acl_disc_event->cause) {
-				printf("[A2DP Demo] Start reconnect \r\n");
+				BT_LOGA("[A2DP Demo] Start reconnect \r\n");
 				a2dp_demo_auto_reconnect_try_count = RTK_BT_DEMO_RECONNECT_COUNT;
 				a2dp_demo_disconnection_reconnecting = 1;
 				/* avoid another device inquiry req and paging our dut */
@@ -1154,7 +1148,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	}
 
 	default:
-		printf("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 
@@ -1169,8 +1163,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	switch (evt_code) {
 	case RTK_BT_AVRCP_EVT_CONN_IND: {
 		memcpy((void *)bd_addr, param, 6);
-		printf("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
@@ -1182,7 +1176,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		printf("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
 		break;
 	}
 
@@ -1191,7 +1185,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		uint8_t volume = pvolume_t->volume;
 
 		curr_volume = volume;
-		printf("[AVRCP] Volume changed %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume changed %d \r\n", curr_volume);
 		break;
 	}
 
@@ -1201,7 +1195,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		} else {
 			curr_volume = VOL_MAX;
 		}
-		printf("[AVRCP] Volume up to %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume up to %d \r\n", curr_volume);
 		break;
 	}
 
@@ -1211,7 +1205,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		} else {
 			curr_volume = VOL_MIN;
 		}
-		printf("[AVRCP] Volume down to %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume down to %d \r\n", curr_volume);
 		break;
 	}
 
@@ -1223,12 +1217,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		printf("[AVRCP] volume request set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] volume request set %.2f \r\n", audio_track_volume);
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_CONN_CMPL: {
-		printf("[AVRCP] Connection Completion \r\n");
+		BT_LOGA("[AVRCP] Connection Completion \r\n");
 		break;
 	}
 
@@ -1236,12 +1230,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		rtk_bt_avrcp_sub_event_t *psub_event = (rtk_bt_avrcp_sub_event_t *)param;
 		switch (psub_event->avrcp_play_status) {
 		case 0x00: {
-			printf("[AVRCP]: Stopped \r\n");
+			BT_LOGA("[AVRCP]: Stopped \r\n");
 			break;
 		}
 
 		case 0x01: {
-			printf("[AVRCP]: Playing \r\n");
+			BT_LOGA("[AVRCP]: Playing \r\n");
 			if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 				if (a2dp_task.run) {
 					app_a2dp_src_send_flag = true;
@@ -1251,7 +1245,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		}
 
 		case 0x02: {
-			printf("[AVRCP]: Paused \r\n");
+			BT_LOGA("[AVRCP]: Paused \r\n");
 			if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 				if (a2dp_task.run) {
 					app_a2dp_src_send_flag = false;
@@ -1266,22 +1260,22 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		}
 
 		case 0x03: {
-			printf("[AVRCP]: FWD_SEEK \r\n");
+			BT_LOGA("[AVRCP]: FWD_SEEK \r\n");
 			break;
 		}
 
 		case 0x04: {
-			printf("[AVRCP]: REV_SEEK \r\n");
+			BT_LOGA("[AVRCP]: REV_SEEK \r\n");
 			break;
 		}
 
 		case 0xFF: {
-			printf("[AVRCP]: ERROR \r\n");
+			BT_LOGE("[AVRCP]: ERROR \r\n");
 		}
 		break;
 
 		default: {
-			printf("[AVRCP]: Default 0x%x \r\n", psub_event->avrcp_play_status);
+			BT_LOGE("[AVRCP]: Default 0x%x \r\n", psub_event->avrcp_play_status);
 		}
 		break;
 		}
@@ -1289,7 +1283,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	}
 
 	case RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT: {
-		printf("[AVRCP]: Play req \r\n");
+		BT_LOGA("[AVRCP]: Play req \r\n");
 		if (a2dp_task.run) {
 			app_a2dp_src_send_flag = true;
 		}
@@ -1297,7 +1291,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	}
 
 	case RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT: {
-		printf("[AVRCP]: Pause req \r\n");
+		BT_LOGA("[AVRCP]: Pause req \r\n");
 		if (a2dp_task.run) {
 			app_a2dp_src_send_flag = false;
 		}
@@ -1309,37 +1303,37 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	}
 
 	case RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT: {
-		printf("[AVRCP]: Forward req \r\n");
+		BT_LOGA("[AVRCP]: Forward req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT: {
-		printf("[AVRCP]: Backward req \r\n");
+		BT_LOGA("[AVRCP]: Backward req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT: {
-		printf("[AVRCP]: Fast forward start req \r\n");
+		BT_LOGA("[AVRCP]: Fast forward start req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Fast forward stop req \r\n");
+		BT_LOGA("[AVRCP]: Fast forward stop req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT: {
-		printf("[AVRCP]: Rewind start req \r\n");
+		BT_LOGA("[AVRCP]: Rewind start req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Rewind stop req \r\n");
+		BT_LOGA("[AVRCP]: Rewind stop req \r\n");
 		break;
 	}
 
 	default: {
-		printf("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 	}
@@ -1379,7 +1373,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		channels = 2;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
+		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.sampling_frequency) {
@@ -1396,7 +1390,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->sampling_frequency = (uint32_t)48000;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -1413,7 +1407,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->block_length = 16;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
@@ -1422,7 +1416,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	a2dp_demo_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_SBC, (float)DEFAULT_AUDIO_LEFT_VOLUME, (float)DEFAULT_AUDIO_RIGHT_VOLUME, channels,
 													   psbc_decoder_t->sampling_frequency, 0, NULL, true);
 	if (!a2dp_demo_audio_track_hdl) {
-		printf("[A2DP] bt audio track add fail \r\n");
+		BT_LOGE("[A2DP] bt audio track add fail \r\n");
 		return 1;
 	}
 
@@ -1455,7 +1449,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->channel_mode = SBC_CHANNEL_MODE_JOINT_STEREO;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
+		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.sampling_frequency) {
@@ -1472,7 +1466,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->sample_rate = (uint32_t)48000;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -1489,7 +1483,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->blocks = 16;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support block_length %x \r\n", pa2dp_codec->sbc.block_length);
+		BT_LOGE("[A2DP] RTK Audio not support block_length %x \r\n", pa2dp_codec->sbc.block_length);
 		return 1;
 	}
 	psbc_encoder_t->bitpool = pa2dp_codec->sbc.max_bitpool;
@@ -1522,7 +1516,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 //          paac_decoder_t->sample_freq = 48000;
 //          break;
 //      default:
-//          printf("[A2DP] RTK Audio not support frequency 11.025, 12, 22.05, 24, 64, 88.2, 96KHz \r\n");
+//          BT_LOGE("[A2DP] RTK Audio not support frequency 11.025, 12, 22.05, 24, 64, 88.2, 96KHz \r\n");
 //          return 1;
 //  }
 //  switch (pa2dp_codec->aac.object_type) {
@@ -1543,7 +1537,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 //          break;
 
 //      default:
-//          printf("[A2DP] RTK Audio only support object type MP2_AAC_LC/MP4_AAC_LC/MP4_AAC_LTP/MP4_AAC_SCALABLE \r\n");
+//          BT_LOGE("[A2DP] RTK Audio only support object type MP2_AAC_LC/MP4_AAC_LC/MP4_AAC_LTP/MP4_AAC_SCALABLE \r\n");
 //          return 1;
 //  }
 //  paac_decoder_t->bit_rate = pa2dp_codec->aac.bit_rate;
@@ -1562,18 +1556,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 
 	case RTK_BT_A2DP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_a2dp_sdp_attr_info_t *p_info = (rtk_bt_a2dp_sdp_attr_info_t *)param;
-		printf("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   p_info->bd_addr[5], p_info->bd_addr[4],
-			   p_info->bd_addr[3], p_info->bd_addr[2],
-			   p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_CONN_IND: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1581,8 +1575,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
 		memcpy((void *)remote_bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
 	}
 	break;
 
@@ -1590,11 +1584,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_disconn_ind_t *disconn_ind = (rtk_bt_a2dp_disconn_ind_t *)param;
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			if (a2dp_task.hdl) {
-				printf("[A2DP Demo] Delete Test Demo \r\n");
+				BT_LOGA("[A2DP Demo] Delete Test Demo \r\n");
 				app_a2dp_src_send_flag = false;
 				a2dp_task.run = 0;
 				if (false == osif_sem_take(a2dp_task.sem, 0xffffffff)) {
-					printf("[A2DP Demo] take a2dp_task.sem fail \r\n");
+					BT_LOGE("[A2DP Demo] take a2dp_task.sem fail \r\n");
 					break;
 				}
 				osif_sem_delete(a2dp_task.sem);
@@ -1607,8 +1601,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		printf("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1616,11 +1610,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		uint16_t ret = 1;
 		rtk_bt_a2dp_codec_t *pa2dp_codec = (rtk_bt_a2dp_codec_t *)param;
 		if ((pa2dp_codec->codec_type & RTK_BT_AUDIO_CODEC_SBC/* | RTK_BT_AUDIO_CODEC_AAC */) == 0) {
-			printf("[A2DP] Not support codec %d \r\n", pa2dp_codec->codec_type);
+			BT_LOGE("[A2DP] Not support codec %d \r\n", pa2dp_codec->codec_type);
 			break;
 		}
 		if (rtk_bt_audio_init()) {
-			printf("[A2DP] rtk_bt_audio_init fail \r\n");
+			BT_LOGE("[A2DP] rtk_bt_audio_init fail \r\n");
 			break;
 		}
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SNK) {
@@ -1636,7 +1630,7 @@ audio_codec_conf.param = (void *)&aac_codec_t;
 audio_codec_conf.param_len = sizeof(aac_codec_t);
 } */
 			if (ret) {
-				printf("[A2DP] RTK_BT_A2DP_EVT_CONFIG_CMPL Fail \r\n");
+				BT_LOGE("[A2DP] RTK_BT_A2DP_EVT_CONFIG_CMPL Fail \r\n");
 				rtk_bt_audio_deinit();
 				a2dp_demo_audio_track_hdl = NULL;
 				a2dp_demo_codec_entity = NULL;
@@ -1652,20 +1646,20 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 		}
 		a2dp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_codec_conf);
 		// bt_a2dp_sink_event_handle(A2DP_SINK_STREAM_DATA_HANDLE_INIT, A2DP_SBC_CODEC, 0, NULL);
-		printf("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
+		BT_LOGA("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_OPEN: {
-		printf("[A2DP] A2DP STREAM is opened \r\n");
+		BT_LOGA("[A2DP] A2DP STREAM is opened \r\n");
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_START_IND: {
 		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
 
-		printf("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-			   pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
+				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
@@ -1675,16 +1669,16 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_START_RSP: {
 		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
 
-		printf("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-			   pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
+				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 
 		{
 			if (a2dp_task.hdl) {
-				printf("[A2DP Demo] Start Test Demo \r\n");
+				BT_LOGA("[A2DP Demo] Start Test Demo \r\n");
 			} else {
-				printf("[A2DP Demo] Create Test Demo \r\n");
+				BT_LOGA("[A2DP Demo] Create Test Demo \r\n");
 				if (false == osif_sem_create(&a2dp_task.sem, 0, 1)) {
-					printf("[A2DP Demo] Create a2dp_task.sem fail \r\n");
+					BT_LOGE("[A2DP Demo] Create a2dp_task.sem fail \r\n");
 					break;
 				}
 				a2dp_task.run = 1;
@@ -1693,7 +1687,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 											  2048, 4)) {
 					osif_sem_delete(a2dp_task.sem);
 					a2dp_task.run = 0;
-					printf("[A2DP Demo] Create a2dp_task fail \r\n");
+					BT_LOGE("[A2DP Demo] Create a2dp_task fail \r\n");
 					break;
 				}
 				osif_sem_take(a2dp_task.sem, 0xffffffff);
@@ -1706,8 +1700,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_STOP: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			app_a2dp_src_send_flag = false;
 		}
@@ -1720,8 +1714,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			app_a2dp_src_send_flag = false;
 		}
@@ -1732,7 +1726,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 		rtk_bt_a2dp_stream_data_ind_t *pdata_in = (rtk_bt_a2dp_stream_data_ind_t *)param;
 
 		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length)) {
-			printf("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
+			BT_LOGE("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
 		}
 	}
 	break;
@@ -1748,7 +1742,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	break;
 
 	default: {
-		printf("[A2DP]: default evt_code 0x%04x \r\n", evt_code);
+		BT_LOGE("[A2DP]: default evt_code 0x%04x \r\n", evt_code);
 	}
 	break;
 	}
@@ -1761,8 +1755,8 @@ static void a2dp_demo_reconnect_timer_handle(void *arg)
 	(void)arg;
 
 	if (a2dp_demo_auto_reconnect_try_count --) {
-		printf("[A2DP]: try reconnect to %02X:%02X:%02X:%02X:%02X:%02X\r\n", remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2],
-			   remote_bd_addr[1], remote_bd_addr[0]);
+		BT_LOGA("[A2DP]: try reconnect to %02X:%02X:%02X:%02X:%02X:%02X\r\n", remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2],
+				remote_bd_addr[1], remote_bd_addr[0]);
 		rtk_bt_a2dp_connect(remote_bd_addr);
 		osif_timer_restart(&reconnect_timer, RTK_BT_DEMO_RECONNECT_TIMER_INTERVAL);
 	} else {
@@ -1785,7 +1779,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 
 	if (1 == enable) {
 		if (a2dp_demo_init_flag) {
-			printf("%s Already init! \r\n", __func__);
+			BT_LOGE("%s Already init! \r\n", __func__);
 			return -1;
 		}
 		//set GAP configuration
@@ -1819,7 +1813,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)a2dp_src_sdp_record, sizeof(a2dp_src_sdp_record)));
 			a2dp_demo_role = RTK_BT_A2DP_ROLE_SRC;
 		} else {
-			printf("[APP] Wrong A2DP role %d \r\n", role);
+			BT_LOGE("[APP] Wrong A2DP role %d \r\n", role);
 			return 1;
 		}
 		BT_APP_PROCESS(rtk_sdp_record_add((void *)avrcp_ct_sdp_record, sizeof(avrcp_ct_sdp_record)));
@@ -1835,7 +1829,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 
 		BT_APP_PROCESS(rtk_bt_br_gap_get_bd_addr(&bd_addr));
 		rtk_bt_br_addr_to_str(bd_addr.addr, addr_str, sizeof(addr_str));
-		printf("[APP] BD_ADDR: %s\r\n", addr_str);
+		BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
 		demo_uart_init();
 #endif
@@ -1853,12 +1847,12 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_A2DP, rtk_bt_a2dp_app_callback));
 		/* auto reconnect init */
 		if (a2dp_demo_auto_reconnect) {
-			printf("[A2DP Demo] Create auto reaconnect timer \r\n");
+			BT_LOGA("[A2DP Demo] Create auto reaconnect timer \r\n");
 			if (false == osif_timer_create(&reconnect_timer, "a2dp_demo_reconnect_timer", NULL,
 										   RTK_BT_DEMO_RECONNECT_TIMER_INTERVAL,
 										   false,
 										   a2dp_demo_reconnect_timer_handle)) {
-				printf("[APP Demo] Create reconnect timer fail \r\n");
+				BT_LOGE("[APP Demo] Create reconnect timer fail \r\n");
 				a2dp_demo_auto_reconnect = 0;
 				return 1;
 			} else {
@@ -1866,29 +1860,29 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 			}
 			/* Load reconnect info from file system */
 			if (rt_kv_get(a2dp_demo_filesystem_key, (void *)remote_bd_addr, 6) == 6) {
-				printf("[A2DP Demo] Load a2dp demo reconnect data success \r\n");
+				BT_LOGA("[A2DP Demo] Load a2dp demo reconnect data success \r\n");
 				/* avoid another device inquiry req and paging our dut */
 				rtk_bt_br_gap_set_radio_mode(RTK_BT_BR_GAP_RADIO_MODE_CONNECTABLE);
 				osif_timer_start(&reconnect_timer);
 			} else {
-				printf("[A2DP Demo] Fail to load a2dp reconnect data \r\n");
+				BT_LOGE("[A2DP Demo] Fail to load a2dp reconnect data \r\n");
 			}
 		}
 		/* bond info flush thread init */
 		if (a2dp_demo_bond_info_flush) {
 			if (rtk_bt_br_gap_bond_num_get(&a2dp_demo_bond_num)) {
-				printf("[A2DP Demo] Get Bond Number fail\r\n");
+				BT_LOGE("[A2DP Demo] Get Bond Number fail\r\n");
 				goto failed;
 			}
 			/* Load reconnect info from file system */
 			if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
-				printf("[A2DP Demo] Load a2dp demo bond info table success \r\n");
+				BT_LOGA("[A2DP Demo] Load a2dp demo bond info table success \r\n");
 				/* dump bond info */
 				a2dp_demo_bond_info_dump();
 			} else {
-				printf("[A2DP Demo] Fail to load a2dp bond table \r\n");
+				BT_LOGE("[A2DP Demo] Fail to load a2dp bond table \r\n");
 			}
-			printf("[A2DP Demo] Create bond info flush thread \r\n");
+			BT_LOGA("[A2DP Demo] Create bond info flush thread \r\n");
 			if (false == osif_sem_create(&bond_info_flush_task.sem, 0, 1)) {
 				goto failed;
 			}
@@ -1910,7 +1904,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		a2dp_demo_init_flag = 1;
 	} else if (0 == enable) {
 		if (!a2dp_demo_init_flag) {
-			printf("%s No need deinit! \r\n", __func__);
+			BT_LOGE("%s No need deinit! \r\n", __func__);
 			return -1;
 		}
 		/* auto reconnect deinit */
@@ -1935,11 +1929,11 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		/* a2dp source demo send task delete */
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			if (a2dp_task.hdl) {
-				printf("[A2DP Demo] Delete Test Demo \r\n");
+				BT_LOGA("[A2DP Demo] Delete Test Demo \r\n");
 				app_a2dp_src_send_flag = false;
 				a2dp_task.run = 0;
 				if (false == osif_sem_take(a2dp_task.sem, 0xffffffff)) {
-					printf("[A2DP Demo] take a2dp_task.sem fail \r\n");
+					BT_LOGE("[A2DP Demo] take a2dp_task.sem fail \r\n");
 					return -1;
 				}
 				osif_sem_delete(a2dp_task.sem);

@@ -631,11 +631,10 @@ if [ "$CONFIG_802154_EN_FOR_KM4" = "y" ]; then
 							MTD			        CONFIG_802154_THREAD_MTD_EN_FOR_KM4 \
 							"
 		fi
-		bool "USE FLASH FOR OPENTHREAD SETTING" CONFIG_802154_THREAD_FLASH_API_EN_FOR_KM4
-		bool "STABILITY TEST"                	CONFIG_802154_THREAD_STABILITY_TEST_EN_FOR_KM4
+		bool "Low Layer Function Test"                	CONFIG_802154_THREAD_LLF_TEST_EN_FOR_KM4
 	fi
-	bool "Enable 802154 Test"               CONFIG_802154_TEST_EN_FOR_KM4
-	if [ "$CONFIG_802154_TEST_EN_FOR_KM4" = "y" ]; then
+	bool "Enable 802154 Platform Test"               CONFIG_802154_PLATFORM_TEST_EN_FOR_KM4
+	if [ "$CONFIG_802154_PLATFORM_TEST_EN_FOR_KM4" = "y" ]; then
 		define_bool CONFIG_802154_THREAD_EN_FOR_KM4 n
 	fi
 fi

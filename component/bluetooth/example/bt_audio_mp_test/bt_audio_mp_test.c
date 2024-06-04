@@ -55,12 +55,6 @@
 /* ----------------------------- Avrcp Related ------------------------------ */
 #define VOL_MAX     0x7f
 #define VOL_MIN     0x00
-#define BT_APP_PROCESS(process)                       \
-    if (RTK_BT_OK != process)                         \
-    {                                                 \
-        printf("[APP] %s failed!\r\n", __FUNCTION__); \
-        return -1;                                    \
-    }
 
 /* ---------------------------- Global Variables ---------------------------- */
 static uint8_t curr_volume = 0x05;
@@ -764,54 +758,54 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		printf("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
-			   p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
-			   p_result->name);
+		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+				p_result->name);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_SUCCESS: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
-		printf("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_sniff->bd_addr[5], p_sniff->bd_addr[4],
-			   p_sniff->bd_addr[3], p_sniff->bd_addr[2],
-			   p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
-		printf("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
+		BT_LOGA("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_sniff->bd_addr[5], p_sniff->bd_addr[4],
+				p_sniff->bd_addr[3], p_sniff->bd_addr[2],
+				p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_ACTIVE: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		printf("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
-			   p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
-			   p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
 		break;
 	}
 
 	default:
-		printf("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 
@@ -826,8 +820,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	switch (evt_code) {
 	case RTK_BT_AVRCP_EVT_CONN_IND: {
 		memcpy((void *)bd_addr, param, 6);
-		printf("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
@@ -839,7 +833,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		printf("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
 		break;
 	}
 
@@ -848,7 +842,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		uint8_t volume = pvolume_t->volume;
 
 		curr_volume = volume;
-		printf("[AVRCP] Volume changed %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume changed %d \r\n", curr_volume);
 		break;
 	}
 
@@ -858,7 +852,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		} else {
 			curr_volume = VOL_MAX;
 		}
-		printf("[AVRCP] Volume up to %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume up to %d \r\n", curr_volume);
 		break;
 	}
 
@@ -868,7 +862,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		} else {
 			curr_volume = VOL_MIN;
 		}
-		printf("[AVRCP] Volume down to %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume down to %d \r\n", curr_volume);
 		break;
 	}
 
@@ -880,12 +874,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		printf("[AVRCP] volume request set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] volume request set %.2f \r\n", audio_track_volume);
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_CONN_CMPL: {
-		printf("[AVRCP] Connection Completion \r\n");
+		BT_LOGA("[AVRCP] Connection Completion \r\n");
 		break;
 	}
 
@@ -893,37 +887,37 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		rtk_bt_avrcp_sub_event_t *psub_event = (rtk_bt_avrcp_sub_event_t *)param;
 		switch (psub_event->avrcp_play_status) {
 		case 0x00: {
-			printf("[AVRCP]: Stopped \r\n");
+			BT_LOGA("[AVRCP]: Stopped \r\n");
 			break;
 		}
 
 		case 0x01: {
-			printf("[AVRCP]: Playing \r\n");
+			BT_LOGA("[AVRCP]: Playing \r\n");
 			break;
 		}
 
 		case 0x02: {
-			printf("[AVRCP]: Paused \r\n");
+			BT_LOGA("[AVRCP]: Paused \r\n");
 			break;
 		}
 
 		case 0x03: {
-			printf("[AVRCP]: FWD_SEEK \r\n");
+			BT_LOGA("[AVRCP]: FWD_SEEK \r\n");
 			break;
 		}
 
 		case 0x04: {
-			printf("[AVRCP]: REV_SEEK \r\n");
+			BT_LOGA("[AVRCP]: REV_SEEK \r\n");
 			break;
 		}
 
 		case 0xFF: {
-			printf("[AVRCP]: ERROR \r\n");
+			BT_LOGE("[AVRCP]: ERROR \r\n");
 		}
 		break;
 
 		default: {
-			printf("[AVRCP]: Default 0x%x \r\n", psub_event->avrcp_play_status);
+			BT_LOGE("[AVRCP]: Default 0x%x \r\n", psub_event->avrcp_play_status);
 		}
 		break;
 		}
@@ -931,52 +925,52 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	}
 
 	case RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT: {
-		printf("[AVRCP]: Play req \r\n");
+		BT_LOGA("[AVRCP]: Play req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT: {
-		printf("[AVRCP]: Pause req \r\n");
+		BT_LOGA("[AVRCP]: Pause req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Stop req \r\n");
+		BT_LOGA("[AVRCP]: Stop req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT: {
-		printf("[AVRCP]: Forward req \r\n");
+		BT_LOGA("[AVRCP]: Forward req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT: {
-		printf("[AVRCP]: Backward req \r\n");
+		BT_LOGA("[AVRCP]: Backward req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT: {
-		printf("[AVRCP]: Fast forward start req \r\n");
+		BT_LOGA("[AVRCP]: Fast forward start req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Fast forward stop req \r\n");
+		BT_LOGA("[AVRCP]: Fast forward stop req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT: {
-		printf("[AVRCP]: Rewind start req \r\n");
+		BT_LOGA("[AVRCP]: Rewind start req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Rewind stop req \r\n");
+		BT_LOGA("[AVRCP]: Rewind stop req \r\n");
 		break;
 	}
 
 	default: {
-		printf("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 	}
@@ -1026,7 +1020,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		channels = 2;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
+		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.sampling_frequency) {
@@ -1043,7 +1037,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->sampling_frequency = (uint32_t)48000;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -1060,7 +1054,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->block_length = 16;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
@@ -1069,7 +1063,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	a2dp_demo_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_SBC, (float)DEFAULT_AUDIO_LEFT_VOLUME, (float)DEFAULT_AUDIO_RIGHT_VOLUME, channels,
 													   psbc_decoder_t->sampling_frequency, 0, NULL, true);
 	if (!a2dp_demo_audio_track_hdl) {
-		printf("[A2DP] bt audio track add fail \r\n");
+		BT_LOGE("[A2DP] bt audio track add fail \r\n");
 		return 1;
 	}
 
@@ -1085,18 +1079,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 
 	case RTK_BT_A2DP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_a2dp_sdp_attr_info_t *p_info = (rtk_bt_a2dp_sdp_attr_info_t *)param;
-		printf("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   p_info->bd_addr[5], p_info->bd_addr[4],
-			   p_info->bd_addr[3], p_info->bd_addr[2],
-			   p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_CONN_IND: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1104,8 +1098,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
 		memcpy((void *)remote_bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1121,8 +1115,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		printf("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1130,11 +1124,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		uint16_t ret = 1;
 		rtk_bt_a2dp_codec_t *pa2dp_codec = (rtk_bt_a2dp_codec_t *)param;
 		if ((pa2dp_codec->codec_type & RTK_BT_AUDIO_CODEC_SBC) == 0) {
-			printf("[A2DP] Not support codec %d \r\n", pa2dp_codec->codec_type);
+			BT_LOGE("[A2DP] Not support codec %d \r\n", pa2dp_codec->codec_type);
 			break;
 		}
 		if (rtk_bt_audio_init()) {
-			printf("[A2DP] rtk_bt_audio_init fail \r\n");
+			BT_LOGE("[A2DP] rtk_bt_audio_init fail \r\n");
 			break;
 		}
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SNK) {
@@ -1145,7 +1139,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 				audio_a2dp_codec_conf.param_len = sizeof(sbc_codec_t);
 			}
 			if (ret) {
-				printf("[A2DP] RTK_BT_A2DP_EVT_CONFIG_CMPL Fail \r\n");
+				BT_LOGE("[A2DP] RTK_BT_A2DP_EVT_CONFIG_CMPL Fail \r\n");
 				if (!hfp_demo_audio_track_hdl) {
 					rtk_bt_audio_track_del(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl);
 				} else {
@@ -1157,20 +1151,20 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 			}
 		}
 		a2dp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_a2dp_codec_conf);
-		printf("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
+		BT_LOGA("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_OPEN: {
-		printf("[A2DP] A2DP STREAM is opened \r\n");
+		BT_LOGA("[A2DP] A2DP STREAM is opened \r\n");
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_START_IND: {
 		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
 
-		printf("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-			   pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
+				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
@@ -1180,16 +1174,16 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_A2DP_EVT_STREAM_START_RSP: {
 		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
 
-		printf("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-			   pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
+				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_STOP: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
@@ -1199,8 +1193,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1208,13 +1202,13 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_stream_data_ind_t *pdata_in = (rtk_bt_a2dp_stream_data_ind_t *)param;
 
 		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length)) {
-			printf("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
+			BT_LOGE("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
 		}
 	}
 	break;
 
 	default: {
-		printf("[A2DP]: default evt_code 0x%04x \r\n", evt_code);
+		BT_LOGE("[A2DP]: default evt_code 0x%04x \r\n", evt_code);
 	}
 	break;
 	}
@@ -1230,12 +1224,12 @@ static uint16_t rtk_bt_hfp_cvsd_parse_decoder_struct(rtk_bt_hfp_codec_t *phfp_co
 	hfp_demo_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_CVSD, (float)DEFAULT_AUDIO_LEFT_VOLUME, (float)0, pcvsd_decoder_t->channel_num,
 													  pcvsd_decoder_t->sample_rate, 0, NULL, true);
 	if (!hfp_demo_audio_track_hdl) {
-		printf("[HFP] bt audio track add fail \r\n");
+		BT_LOGE("[HFP] bt audio track add fail \r\n");
 		return 1;
 	}
 	hfp_demo_audio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_CVSD, 1, 8000, 0);
 	if (!hfp_demo_audio_record_hdl) {
-		printf("[HFP] bt audio record add fail \r\n");
+		BT_LOGE("[HFP] bt audio record add fail \r\n");
 		rtk_bt_audio_track_del(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_track_hdl);
 		hfp_demo_audio_track_hdl = NULL;
 		return 1;
@@ -1264,11 +1258,11 @@ static void hfp_task_entry(void *ctx)
 			read_size = 0;
 		}
 		osif_delay(1);
-		// printf("get size %d \r\n", read_size);
+		// BT_LOGA("get size %d \r\n", read_size);
 		if (read_size) {
 			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_codec_entity, voice_buffer, read_size / 2);
 			if (!penc_codec_buffer_t) {
-				printf("[HFP]get encode buffer fail \r\n");
+				BT_LOGE("[HFP]get encode buffer fail \r\n");
 				continue;
 			}
 			memcpy((void *)sco_data_t.bd_addr, (void *)remote_bd_addr, 6);
@@ -1309,17 +1303,17 @@ static void hfp_alert_timer_handle(void *arg)
 
 static void app_hfp_ring_alert_start(void)
 {
-	printf("[HFP] Create alert timer \r\n");
+	BT_LOGA("[HFP] Create alert timer \r\n");
 	if (false == osif_timer_create(&alert_timer, "hfp_alert_timer", NULL,
 								   1000,
 								   false,
 								   hfp_alert_timer_handle)) {
-		printf("[HFP] Create alert timer fail \r\n");
+		BT_LOGE("[HFP] Create alert timer fail \r\n");
 		return;
 	}
 	alert_track_hdl = rtk_bt_audio_track_init((uint32_t)2, (uint32_t)44100, (uint32_t)0, 1024, 0);
 	if (!alert_track_hdl) {
-		printf("[HFP]alert track init fail \r\n");
+		BT_LOGE("[HFP]alert track init fail \r\n");
 		osif_timer_delete(&alert_timer);
 		return;
 	}
@@ -1354,10 +1348,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 
 	case RTK_BT_HFP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_hfp_sdp_attr_info_t *p_info = (rtk_bt_hfp_sdp_attr_info_t *)param;
-		printf("[HFP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   p_info->bd_addr[5], p_info->bd_addr[4],
-			   p_info->bd_addr[3], p_info->bd_addr[2],
-			   p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[HFP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
 	}
 	break;
 
@@ -1368,42 +1362,42 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		} else {
 			ring_alert_inband = false;
 		}
-		printf("[HFP] ring alert inband is %d \r\n", ring_alert_inband);
+		BT_LOGA("[HFP] ring alert inband is %d \r\n", ring_alert_inband);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_CONN_IND: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[HFP] Receive HFP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive HFP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_CONN_CMPL: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[HFP] Receive HFP connection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive HFP connection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_CALL_STATUS: {
 		rtk_bt_hfp_call_status_ind_t *p_hfp_call_status_ind = (rtk_bt_hfp_call_status_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_call_status_ind->bd_addr, 6);
-		printf("[HFP] Receive HFP call status change from %d to %d from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   p_hfp_call_status_ind->prev_status,
-			   p_hfp_call_status_ind->curr_status,
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive HFP call status change from %d to %d from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_hfp_call_status_ind->prev_status,
+				p_hfp_call_status_ind->curr_status,
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		call_curr_status = p_hfp_call_status_ind->curr_status;
 		if ((RTK_BT_HFP_CALL_INCOMING != p_hfp_call_status_ind->prev_status) && (RTK_BT_HFP_CALL_INCOMING == p_hfp_call_status_ind->curr_status)) {
 			if (!ring_alert_inband) {
-				printf("[HFP] ring alert outband active \r\n");
+				BT_LOGA("[HFP] ring alert outband active \r\n");
 				app_hfp_ring_alert_start();
 			}
 		} else if ((RTK_BT_HFP_CALL_INCOMING == p_hfp_call_status_ind->prev_status) && (RTK_BT_HFP_CALL_INCOMING != p_hfp_call_status_ind->curr_status)) {
 			if (!ring_alert_inband) {
-				printf("[HFP] ring alert outband inactive \r\n");
+				BT_LOGA("[HFP] ring alert outband inactive \r\n");
 				app_hfp_ring_alert_stop();
 			}
 		}
@@ -1413,17 +1407,17 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_CALLER_ID_IND: {
 		rtk_bt_hfp_caller_id_ind_t *p_hfp_caller_id_ind = (rtk_bt_hfp_caller_id_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_caller_id_ind->bd_addr, 6);
-		printf("[HFP] Receive HFP caller id indication from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-		printf("[HFP] caller number is %s \r\n", p_hfp_caller_id_ind->number);
+		BT_LOGA("[HFP] Receive HFP caller id indication from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] caller number is %s \r\n", p_hfp_caller_id_ind->number);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_DISCONN_CMPL: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		printf("[HFP] HFP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] HFP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1431,8 +1425,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
 		memcpy((void *)remote_bd_addr, conn_ind->bd_addr, 6);
-		printf("[HFP] Receive HFP SCO connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive HFP SCO connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1441,8 +1435,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_hfp_hf_speaker_volume_changed_ind_t *p_param_t = (rtk_bt_hfp_hf_speaker_volume_changed_ind_t *)param;
 		memcpy((void *)bd_addr, p_param_t->bd_addr, 6);
 		audio_track_volume = 1.0 * p_param_t->volume / 15;
-		printf("[HFP] Receive speaker volume changed from %02X:%02X:%02X:%02X:%02X:%02X, %.2f \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], audio_track_volume);
+		BT_LOGA("[HFP] Receive speaker volume changed from %02X:%02X:%02X:%02X:%02X:%02X, %.2f \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], audio_track_volume);
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
 	}
 	break;
@@ -1452,14 +1446,14 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_hfp_hf_mic_volume_changed_ind_t *p_param_t = (rtk_bt_hfp_hf_mic_volume_changed_ind_t *)param;
 		memcpy((void *)bd_addr, p_param_t->bd_addr, 6);
 		audio_mic_volume = 0xaf * p_param_t->volume / 15;
-		printf("[HFP] Receive mic volume changed from %02X:%02X:%02X:%02X:%02X:%02X, 0x%x \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], (unsigned int)audio_mic_volume);
+		BT_LOGA("[HFP] Receive mic volume changed from %02X:%02X:%02X:%02X:%02X:%02X, 0x%x \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], (unsigned int)audio_mic_volume);
 		rtk_bt_audio_record_set_capture_volume(4, audio_mic_volume);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_SCO_CONN_CMPL: {
-		printf("[HFP] Receive HFP SCO connection completion \r\n");
+		BT_LOGA("[HFP] Receive HFP SCO connection completion \r\n");
 		/* do audio hal init */
 		{
 			uint16_t ret = 1;
@@ -1469,11 +1463,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 				rtk_bt_avrcp_pause(remote_bd_addr);
 			}
 			if ((phfp_codec->codec_type & (RTK_BT_AUDIO_CODEC_CVSD /* | RTK_BT_AUDIO_CODEC_mSBC */)) == 0) {
-				printf("[HFP] Not support codec %d \r\n", phfp_codec->codec_type);
+				BT_LOGE("[HFP] Not support codec %d \r\n", phfp_codec->codec_type);
 				break;
 			}
 			if (rtk_bt_audio_init()) {
-				printf("[HFP] rtk_bt_audio_init fail \r\n");
+				BT_LOGE("[HFP] rtk_bt_audio_init fail \r\n");
 				break;
 			}
 			if (hfp_demo_role == RTK_BT_AUDIO_HFP_ROLE_HF) {
@@ -1484,7 +1478,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 					audio_hfp_codec_conf.param_len = sizeof(cvsd_codec_t);
 				}
 				if (ret) {
-					printf("[HFP] RTK_BT_HFP_EVT_SCO_CONN_CMPL Fail \r\n");
+					BT_LOGE("[HFP] RTK_BT_HFP_EVT_SCO_CONN_CMPL Fail \r\n");
 					if (a2dp_demo_audio_track_hdl) {
 						rtk_bt_audio_track_del(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_track_hdl);
 						rtk_bt_audio_record_del(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_record_hdl);
@@ -1498,12 +1492,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 				}
 			}
 			hfp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_hfp_codec_conf);
-			printf("[HFP] Configure Complete CODEC %d \r\n", phfp_codec->codec_type);
+			BT_LOGA("[HFP] Configure Complete CODEC %d \r\n", phfp_codec->codec_type);
 			/* config audio record thread */
 			{
-				printf("[HFP Demo] Create Record Demo \r\n");
+				BT_LOGA("[HFP Demo] Create Record Demo \r\n");
 				if (false == osif_sem_create(&hfp_task.sem, 0, 1)) {
-					printf("[HFP Demo] Create Record Demo Fail\r\n");
+					BT_LOGE("[HFP Demo] Create Record Demo Fail\r\n");
 					return 1;
 				}
 				hfp_task.run = 1;
@@ -1523,7 +1517,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_hfp_sco_data_ind_t *pdata_in = (rtk_bt_hfp_sco_data_ind_t *)param;
 
 		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_track_hdl, hfp_demo_codec_entity, pdata_in->data, pdata_in->length)) {
-			printf("[HFP] SCO Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_CVSD);
+			BT_LOGE("[HFP] SCO Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_CVSD);
 		}
 	}
 	break;
@@ -1531,8 +1525,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		printf("[HFP] HFP receive sco disconnected from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] HFP receive sco disconnected from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		hfp_task.run = 0;
 		if (false == osif_sem_take(hfp_task.sem, 0xffffffffUL)) {
 			return 1;
@@ -1558,32 +1552,32 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_CONN_IND: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[HFP] Receive AG connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_CONN_CMPL: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[HFP] Receive AG connection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG connection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_DISCONN_CMPL: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		printf("[HFP] Receive AG disconnection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG disconnection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_INDICATORS_STATUS_REQ: {
 		rtk_bt_hfp_ag_indicators_status_req_t *p_ag_ind_status_req = (rtk_bt_hfp_ag_indicators_status_req_t *)param;
 		memcpy((void *)bd_addr, p_ag_ind_status_req->bd_addr, 6);
-		printf("[HFP] Receive AG indicators req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG indicators req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		/* CONFIG indicator for return value */
 	}
 	break;
@@ -1592,8 +1586,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		/* query call list */
 		rtk_bt_hfp_ag_curr_calls_list_query_t *p_ag_query_calls_list_ind = (rtk_bt_hfp_ag_curr_calls_list_query_t *)param;
 		memcpy((void *)bd_addr, p_ag_query_calls_list_ind->bd_addr, 6);
-		printf("[HFP] Receive AG query call list req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG query call list req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		/* send call list */
 	}
 	break;
@@ -1601,39 +1595,39 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_DIAL_LAST_NUMBER: {
 		rtk_bt_hfp_ag_dial_last_number_ind_t *p_ag_dial_last_num_ind = (rtk_bt_hfp_ag_dial_last_number_ind_t *)param;
 		memcpy((void *)bd_addr, p_ag_dial_last_num_ind->bd_addr, 6);
-		printf("[HFP] Receive AG dial last number req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG dial last number req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_CALL_ANSWER_REQ: {
 		rtk_bt_hfp_ag_call_answer_req_ind_t *p_ag_call_answer_req_ind = (rtk_bt_hfp_ag_call_answer_req_ind_t *)param;
 		memcpy((void *)bd_addr, p_ag_call_answer_req_ind->bd_addr, 6);
-		printf("[HFP] Receive AG call answer req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG call answer req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_CALL_TERMINATE_REQ: {
 		rtk_bt_hfp_ag_call_terminate_req_ind_t *p_ag_call_terminate_req_ind = (rtk_bt_hfp_ag_call_terminate_req_ind_t *)param;
 		memcpy((void *)bd_addr, p_ag_call_terminate_req_ind->bd_addr, 6);
-		printf("[HFP] Receive AG terminate req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG terminate req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_CALL_STATUS: {
 		rtk_bt_hfp_call_status_ind_t *p_hfp_call_status_ind = (rtk_bt_hfp_call_status_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_call_status_ind->bd_addr, 6);
-		printf("[HFP] Receive AG call status change from %d to %d from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   p_hfp_call_status_ind->prev_status,
-			   p_hfp_call_status_ind->curr_status,
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[HFP] Receive AG call status change from %d to %d from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_hfp_call_status_ind->prev_status,
+				p_hfp_call_status_ind->curr_status,
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	default: {
-		printf("[HFP]: default evt_code 0x%04x \r\n", evt_code);
+		BT_LOGE("[HFP]: default evt_code 0x%04x \r\n", evt_code);
 	}
 	break;
 	}
@@ -1649,8 +1643,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
     */
 static void spp_tx_test(uint8_t *rmt_bd_addr, uint8_t server_chann)
 {
-	printf("[SPP] SPP TX test to %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
-		   rmt_bd_addr[5], rmt_bd_addr[4], rmt_bd_addr[3], rmt_bd_addr[2], rmt_bd_addr[1], rmt_bd_addr[0], server_chann);
+	BT_LOGA("[SPP] SPP TX test to %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
+			rmt_bd_addr[5], rmt_bd_addr[4], rmt_bd_addr[3], rmt_bd_addr[2], rmt_bd_addr[1], rmt_bd_addr[0], server_chann);
 
 	rtk_bt_spp_send_data_t send_data_t = {0};
 
@@ -1663,10 +1657,10 @@ static void spp_tx_test(uint8_t *rmt_bd_addr, uint8_t server_chann)
 	send_data_t.len = sizeof(spp_tx_data);
 
 	if (rtk_bt_spp_send_data(&send_data_t) != RTK_BT_OK) {
-		printf("[SPP] Send SPP tx test data falied\r\n");
+		BT_LOGE("[SPP] Send SPP tx test data falied\r\n");
 		return ;
 	}
-	printf("[SPP] Send SPP tx test data success\r\n");
+	BT_LOGA("[SPP] Send SPP tx test data success\r\n");
 }
 
 /**
@@ -1678,17 +1672,17 @@ static void spp_tx_test(uint8_t *rmt_bd_addr, uint8_t server_chann)
     */
 static void spp_rx_test(uint8_t *bd_addr, uint8_t *buf, uint16_t len)
 {
-	printf("[SPP] SPP RX test from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-		   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+	BT_LOGA("[SPP] SPP RX test from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+			bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	for (uint16_t i = 0; i < len; i++) {
-		printf("[SPP] Receive SPP tx test data: buf[%d] 0x%02x\r\n", i, buf[i]);
+		BT_LOGA("[SPP] Receive SPP tx test data: buf[%d] 0x%02x\r\n", i, buf[i]);
 	}
 }
 
 static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 {
 	if (buf_len <= 6) {
-		printf("[SPP] parsing cmd failed: cmd length is too short !!!\r\n");
+		BT_LOGE("[SPP] parsing cmd failed: cmd length is too short !!!\r\n");
 		return ;
 	}
 
@@ -1698,7 +1692,7 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 	// Sync word
 	uint8_t sync_word = cmd_buf[0];
 	if (sync_word != 0xAA) {
-		printf("[SPP] parsing cmd failed: incompatible Sync word !!!\r\n");
+		BT_LOGE("[SPP] parsing cmd failed: incompatible Sync word !!!\r\n");
 		return ;
 	}
 	// Sequence number
@@ -1710,7 +1704,7 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 	uint16_t payload_len = ((uint16_t)len_highbyte << 8) + (uint16_t)len_lowbyte;
 	// Sync word + Sequence number + payload length = 4 bytes
 	if (payload_len != buf_len - 4) {
-		printf("[SPP] parsing cmd failed: wrong payload length !!!\r\n");
+		BT_LOGE("[SPP] parsing cmd failed: wrong payload length !!!\r\n");
 		return ;
 	}
 	// param_len = payload length - cmd/evt opcode len(fixed 2 bytes)
@@ -1725,7 +1719,7 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 	uint16_t param = 0;
 
 	if (param_len > 2) {
-		printf("[SPP] parsing cmd failed: param length is too long !!!\r\n");
+		BT_LOGE("[SPP] parsing cmd failed: param length is too long !!!\r\n");
 		return ;
 	}
 
@@ -1734,41 +1728,41 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 	} else if (param_len == 2) {
 		param = (uint16_t)cmd_buf[7] + ((uint16_t)cmd_buf[6] << 8);
 	} else if (param_len == 0) {
-		printf("[SPP] parsing cmd failed: param length is 0 !!!\r\n");
+		BT_LOGE("[SPP] parsing cmd failed: param length is 0 !!!\r\n");
 		return ;
 	}
 
 	switch (cmd_op) {
 	case CMD_MIC_SWITCH: {
 		if (param != AMIC1 && param != AMIC2 && param != AMIC_OFF) {
-			printf("[SPP] parsing cmd failed: CMD_MIC_SWITCH wrong parameter !!!\r\n");
+			BT_LOGE("[SPP] parsing cmd failed: CMD_MIC_SWITCH wrong parameter !!!\r\n");
 			return ;
 		}
 		reacord_flag = false;
 		rtk_bt_audio_record_stop(hfp_demo_audio_record_hdl);
-		printf("[SPP] record stop.. \r\n");
+		BT_LOGA("[SPP] record stop.. \r\n");
 		if (param == AMIC1) {
 			if (rtk_bt_audio_record_set_parameters(hfp_demo_audio_record_hdl, "ch0_sel_amic=1")) {
-				printf("[SPP] Set Mic failed !!! \r\n");
+				BT_LOGE("[SPP] Set Mic failed !!! \r\n");
 				return;
 			}
-			printf("[SPP] Set MIC: %d success \r\n", param);
+			BT_LOGA("[SPP] Set MIC: %d success \r\n", param);
 			evt_MicSwitch[6] = AMIC1;
 			rtk_bt_audio_record_start(hfp_demo_audio_record_hdl);
 			reacord_flag = true;
-			printf("[SPP] record start.. \r\n");
+			BT_LOGA("[SPP] record start.. \r\n");
 		} else if (param == AMIC2) {
 			if (rtk_bt_audio_record_set_parameters(hfp_demo_audio_record_hdl, "ch0_sel_amic=2")) {
-				printf("[SPP] Set MIC failed !!! \r\n");
+				BT_LOGE("[SPP] Set MIC failed !!! \r\n");
 				return;
 			}
-			printf("[SPP] Set MIC: %d success \r\n", param);
+			BT_LOGA("[SPP] Set MIC: %d success \r\n", param);
 			evt_MicSwitch[6] = AMIC2;
 			rtk_bt_audio_record_start(hfp_demo_audio_record_hdl);
 			reacord_flag = true;
-			printf("[SPP] record start.. \r\n");
+			BT_LOGA("[SPP] record start.. \r\n");
 		} else if (param == AMIC_OFF) {
-			printf("[SPP] Turn off the MIC..\r\n");
+			BT_LOGA("[SPP] Turn off the MIC..\r\n");
 			evt_MicSwitch[6] = 0;
 		}
 		// send SPP event to peer device
@@ -1778,10 +1772,10 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 		send_data_t.data = evt_MicSwitch;
 		send_data_t.len = sizeof(evt_MicSwitch);
 		if (rtk_bt_spp_send_data(&send_data_t) != RTK_BT_OK) {
-			printf("[SPP] Send CMD_MIC_SWITCH event falied\r\n");
+			BT_LOGE("[SPP] Send CMD_MIC_SWITCH event falied\r\n");
 			return ;
 		}
-		printf("[SPP] Send CMD_MIC_SWITCH event success\r\n");
+		BT_LOGA("[SPP] Send CMD_MIC_SWITCH event success\r\n");
 		break;
 	}
 
@@ -1792,38 +1786,38 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 		uint8_t bstG_val = (uint8_t)param;
 
 		if (mic_index != AMIC1 && mic_index != AMIC2) {
-			printf("[SPP] parsing cmd failed: CMD_SET_BST_GAIN wrong parameter !!!\r\n");
+			BT_LOGE("[SPP] parsing cmd failed: CMD_SET_BST_GAIN wrong parameter !!!\r\n");
 			return ;
 		}
 
 		if (bstG_val > 8) {
-			printf("[SPP] CMD_SET_BST_GAIN failed: exceed the max value !!!\r\n ");
+			BT_LOGE("[SPP] CMD_SET_BST_GAIN failed: exceed the max value !!!\r\n ");
 			return ;
 		}
 		// stop audio record
 		reacord_flag = false;
 		rtk_bt_audio_record_stop(hfp_demo_audio_record_hdl);
-		printf("[SPP] record stop.. \r\n");
+		BT_LOGA("[SPP] record stop.. \r\n");
 
 		if (mic_index == AMIC1) {
 			evt_BstG[6] = AMIC1;
 			if (rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, (uint32_t)bstG_val)) {
-				printf("[SPP] Set MicBstGain failed !!! \r\n");
+				BT_LOGE("[SPP] Set MicBstGain failed !!! \r\n");
 				return;
 			}
-			printf("[SPP] Set Mic %d BstGain: %d db success !!! \r\n", mic_index, bstG_val *= 5);
+			BT_LOGA("[SPP] Set Mic %d BstGain: %d db success !!! \r\n", mic_index, bstG_val *= 5);
 		} else if (mic_index == AMIC2) {
 			evt_BstG[6] = AMIC2;
 			if (rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC2, (uint32_t)bstG_val)) {
-				printf("[SPP] Set MicBstGain failed !!! \r\n");
+				BT_LOGE("[SPP] Set MicBstGain failed !!! \r\n");
 				return;
 			}
-			printf("[SPP] Set Mic %d BstGain: %d db success !!! \r\n", mic_index, bstG_val *= 5);
+			BT_LOGA("[SPP] Set Mic %d BstGain: %d db success !!! \r\n", mic_index, bstG_val *= 5);
 		}
 		// start audio record
 		rtk_bt_audio_record_start(hfp_demo_audio_record_hdl);
 		reacord_flag = true;
-		printf("[SPP] record start.. \r\n");
+		BT_LOGA("[SPP] record start.. \r\n");
 
 		// send SPP event to peer device
 		rtk_bt_spp_send_data_t send_data_t = {0};
@@ -1832,15 +1826,15 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
 		send_data_t.data = evt_BstG;
 		send_data_t.len = sizeof(evt_BstG);
 		if (rtk_bt_spp_send_data(&send_data_t) != RTK_BT_OK) {
-			printf("[SPP] Send CMD_SET_BST_GAIN event falied\r\n");
+			BT_LOGE("[SPP] Send CMD_SET_BST_GAIN event falied\r\n");
 			return ;
 		}
-		printf("[SPP] Send CMD_SET_BST_GAIN event success\r\n");
+		BT_LOGA("[SPP] Send CMD_SET_BST_GAIN event success\r\n");
 		break;
 	}
 
 	default:
-		printf("[SPP] %s, Unknown SPP cmd: 0x%x\r\n", __func__, cmd_op);
+		BT_LOGE("[SPP] %s, Unknown SPP cmd: 0x%x\r\n", __func__, cmd_op);
 		break;
 	}
 }
@@ -1855,8 +1849,8 @@ static void bt_spp_parsing_recv_cmd(uint8_t *recv_buf, uint16_t buf_len)
     */
 static void SPP_Audio_MIC_Switch_rx_test(uint8_t *bd_addr, uint8_t server_chann, uint8_t *buf, uint16_t len)
 {
-	printf("[SPP] SPP_Audio_Mic_Switch_rx_test from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-		   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+	BT_LOGA("[SPP] SPP_Audio_Mic_Switch_rx_test from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+			bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 
 	memcpy((void *)remote_bd_addr, bd_addr, 6);
 	local_server_chann = server_chann;
@@ -1874,26 +1868,22 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_SPP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_spp_attr_info_t *p_info = (rtk_bt_spp_attr_info_t *)param;
 		memcpy((void *)bd_addr, p_info->bd_addr, 6);
-		printf("[SPP] SPP sdp attr info from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[SPP] SPP sdp attr info from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 
 		/* Print UUID*/
 		if (p_info->srv_class_uuid_type == SPP_UUID128) {
-			printf("[SPP] UUID type is uuid128\r\n");
+			BT_LOGA("[SPP] UUID type is uuid128\r\n");
 			uint8_t *uuid_128 = p_info->srv_class_uuid_data.uuid_128;
-			printf("[SPP] uuid128 is : ");
-			for (uint16_t i = 0; i < 16; i++) {
-				printf("0x%x ", uuid_128[i]);
-			}
-			printf("\r\n");
+			BT_DUMPA("[SPP] uuid128 is : ", uuid_128, 16);
 		} else if (p_info->srv_class_uuid_type == SPP_UUID16) {
 			uint16_t uuid_16 = p_info->srv_class_uuid_data.uuid_16;
-			printf("[SPP] UUID type is uuid16\r\n");
-			printf("[SPP] uuid16 is : 0x%x\r\n", uuid_16);
+			BT_LOGA("[SPP] UUID type is uuid16\r\n");
+			BT_LOGA("[SPP] uuid16 is : 0x%x\r\n", uuid_16);
 		} else if (p_info->srv_class_uuid_type == SPP_UUID32) {
 			uint32_t uuid_32 = p_info->srv_class_uuid_data.uuid_32;
-			printf("[SPP] UUID type is uuid32\r\n");
-			printf("[SPP] uuid32 is : 0x%lx\r\n", uuid_32);
+			BT_LOGA("[SPP] UUID type is uuid32\r\n");
+			BT_LOGA("[SPP] uuid32 is : 0x%x\r\n", uuid_32);
 		}
 
 	}
@@ -1902,27 +1892,27 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_SPP_EVT_SDP_DISCOV_CMPL: {
 		rtk_bt_spp_sdp_discov_cmpl_t *p_discov = (rtk_bt_spp_sdp_discov_cmpl_t *)param;
 		memcpy((void *)bd_addr, p_discov->bd_addr, 6);
-		printf("[SPP] SPP sdp discov cmpl from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[SPP] SPP sdp discov cmpl from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_SPP_EVT_CONN_IND: {
 		rtk_bt_spp_conn_ind_t *p_conn_ind = (rtk_bt_spp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, p_conn_ind->bd_addr, 6);
-		printf("[SPP] Receive SPP connection from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_conn_ind->local_server_chann, p_conn_ind->frame_size);
+		BT_LOGA("[SPP] Receive SPP connection from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_conn_ind->local_server_chann, p_conn_ind->frame_size);
 	}
 	break;
 
 	case RTK_BT_SPP_EVT_CONN_COMPL: {
 		rtk_bt_spp_conn_cmpl_t *p_conn_cmpl = (rtk_bt_spp_conn_cmpl_t *)param;
 		memcpy((void *)bd_addr, p_conn_cmpl->bd_addr, 6);
-		printf("[SPP] SPP connection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d, link credit: %d\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_conn_cmpl->local_server_chann, p_conn_cmpl->frame_size,
-			   p_conn_cmpl->link_credit);
+		BT_LOGA("[SPP] SPP connection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d, link credit: %d\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_conn_cmpl->local_server_chann, p_conn_cmpl->frame_size,
+				p_conn_cmpl->link_credit);
 
 		/* Then tx data */
 		if (spp_demo_role == RTK_BT_SPP_ROLE_SERVER) {
@@ -1938,17 +1928,17 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 			// memcpy((void *)p_disconn_req_t.bd_addr, p_conn_cmpl->bd_addr, 6);
 			// p_disconn_req_t.local_server_chann = p_conn_cmpl->local_server_chann;
 			// if (rtk_bt_spp_disconnect(&p_disconn_req_t) != RTK_BT_OK) {
-			//     printf("[SPP] SPP server send spp disconnection request failed\r\n");
+			//     BT_LOGE("[SPP] SPP server send spp disconnection request failed\r\n");
 			//     break;
 			// }
-			// printf("[SPP] SPP server send spp disconnection request to channel 0x%x success!!\r\n", p_conn_cmpl->local_server_chann);
+			// BT_LOGA("[SPP] SPP server send spp disconnection request to channel 0x%x success!!\r\n", p_conn_cmpl->local_server_chann);
 
 			// /* disconnect all spp channel*/
 			// if (rtk_bt_spp_disconnect_all(p_conn_cmpl->bd_addr) != RTK_BT_OK) {
-			//     printf("[SPP] SPP server send spp disconnection all request failed\r\n");
+			//     BT_LOGE("[SPP] SPP server send spp disconnection all request failed\r\n");
 			//     break;
 			// }
-			// printf("[SPP] SPP server send spp disconnection request to all channel success!!\r\n");
+			// BT_LOGA("[SPP] SPP server send spp disconnection request to all channel success!!\r\n");
 
 		}
 	}
@@ -1957,18 +1947,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_SPP_EVT_DISCONN_CMPL: {
 		rtk_bt_spp_disconn_ind_t *p_disconn_ind = (rtk_bt_spp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, p_disconn_ind->bd_addr, 6);
-		printf("[SPP] SPP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_disconn_ind->local_server_chann);
+		BT_LOGA("[SPP] SPP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_disconn_ind->local_server_chann);
 	}
 	break;
 
 	case RTK_BT_SPP_EVT_CREDIT_RCVD: {
 		rtk_bt_spp_credit_rcvd_t *p_credit_rcvd = (rtk_bt_spp_credit_rcvd_t *)param;
 		memcpy((void *)bd_addr, p_credit_rcvd->bd_addr, 6);
-		printf("[SPP] Receive %d link credit from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n", p_credit_rcvd->link_credit,
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2],
-			   bd_addr[1], bd_addr[0], p_credit_rcvd->local_server_chann);
+		BT_LOGA("[SPP] Receive %d link credit from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n", p_credit_rcvd->link_credit,
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2],
+				bd_addr[1], bd_addr[0], p_credit_rcvd->local_server_chann);
 	}
 	break;
 
@@ -1976,9 +1966,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_spp_data_ind_t *p_data_ind = (rtk_bt_spp_data_ind_t *)param;
 
 		memcpy((void *)bd_addr, p_data_ind->bd_addr, 6);
-		printf("[SPP] Receive data from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_data_ind->local_server_chann);
+		BT_LOGA("[SPP] Receive data from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_data_ind->local_server_chann);
 
 		/* Then rx test */
 		spp_rx_test(bd_addr, p_data_ind->data, p_data_ind->len);
@@ -1989,19 +1979,19 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 		credits_give.local_server_chann = p_data_ind->local_server_chann;
 		credits_give.credits = 1;
 		if (rtk_bt_spp_credits_give(&credits_give)) {
-			printf("[SPP] Send %d link credits to server channel 0x%x failed\r\n",
-				   credits_give.credits, credits_give.local_server_chann);
+			BT_LOGE("[SPP] Send %d link credits to server channel 0x%x failed\r\n",
+					credits_give.credits, credits_give.local_server_chann);
 			break;
 		}
-		printf("[SPP] Send %d link credits to server channel 0x%x success\r\n",
-			   credits_give.credits, credits_give.local_server_chann);
+		BT_LOGA("[SPP] Send %d link credits to server channel 0x%x success\r\n",
+				credits_give.credits, credits_give.local_server_chann);
 
 		SPP_Audio_MIC_Switch_rx_test(bd_addr, p_data_ind->local_server_chann, p_data_ind->data, p_data_ind->len);
 	}
 	break;
 
 	default:
-		printf("%s, Unknown RTK_BT_BR_SPP_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown RTK_BT_BR_SPP_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 
@@ -2033,7 +2023,7 @@ int bt_audio_mp_test_main(uint8_t enable)
 
 	if (1 == enable) {
 		if (bt_audio_mp_test_init_flag) {
-			printf("%s Already init! \r\n", __func__);
+			BT_LOGE("%s Already init! \r\n", __func__);
 			return -1;
 		}
 
@@ -2088,7 +2078,7 @@ int bt_audio_mp_test_main(uint8_t enable)
 
 		BT_APP_PROCESS(rtk_bt_br_gap_get_bd_addr(&bd_addr));
 		rtk_bt_br_addr_to_str(bd_addr.addr, addr_str, sizeof(addr_str));
-		printf("[APP] BD_ADDR: %s\r\n", addr_str);
+		BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 
 		/* Initilize GAP part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_GAP, br_gap_app_callback));
@@ -2107,7 +2097,7 @@ int bt_audio_mp_test_main(uint8_t enable)
 		bt_audio_mp_test_init_flag = 1;
 	} else if (0 == enable) {
 		if (!bt_audio_mp_test_init_flag) {
-			printf("%s No need deinit! \r\n", __func__);
+			BT_LOGE("%s No need deinit! \r\n", __func__);
 			return -1;
 		}
 		/* stop outband ring alert */

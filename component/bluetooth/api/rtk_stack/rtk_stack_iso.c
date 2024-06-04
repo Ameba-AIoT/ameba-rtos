@@ -95,7 +95,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 				(unsigned int)p_data->p_bt_direct_iso->time_stamp,
 				p_data->p_bt_direct_iso->iso_sdu_len, p_data->p_bt_direct_iso->p_buf, p_data->p_bt_direct_iso->offset);
 		if (p_data->p_bt_direct_iso->iso_sdu_len) {
-			BT_DUMPD(__func__, p_data->p_bt_direct_iso->p_buf + p_data->p_bt_direct_iso->offset, p_data->p_bt_direct_iso->iso_sdu_len);
+			BT_DUMPD("", p_data->p_bt_direct_iso->p_buf + p_data->p_bt_direct_iso->offset, p_data->p_bt_direct_iso->iso_sdu_len);
 		}
 		/* Send event */
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
@@ -259,7 +259,7 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 			__func__,
 			p_stack_iso_send_info->iso_conn_handle, p_stack_iso_send_info->pkt_seq_num, (unsigned int)time_stamp, p_stack_iso_send_info->p_frag,
 			p_stack_iso_send_info->frag_len, (int)p_stack_iso_send_info->sdu_interval);
-	BT_DUMPD(__func__, p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
+	BT_DUMPD("", p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
 	cause = gap_iso_send_data(p_stack_iso_send_info->p_frag,
 							  p_stack_iso_send_info->iso_conn_handle,
 							  p_stack_iso_send_info->frag_len,
@@ -330,7 +330,7 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 	time_stamp = (send_info->time_stamp + send_info->pkt_seq_num) * (send_info->sdu_interval * 1000);
 	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_data=%p, data_len=%d, sdu_interval=%d\r\n", __func__,
 			send_info->iso_conn_handle, send_info->pkt_seq_num, (unsigned int)time_stamp, send_info->p_data, send_info->data_len, send_info->sdu_interval);
-	BT_DUMPD(__func__, send_info->p_data, send_info->data_len);
+	BT_DUMPD("", send_info->p_data, send_info->data_len);
 	cause = gap_iso_send_data(send_info->p_data,
 							  send_info->iso_conn_handle,
 							  send_info->data_len,
@@ -498,7 +498,7 @@ static uint16_t bt_stack_le_iso_data_send(void *data)
 	max_sdu_m_to_s = bt_stack_le_iso_get_max_sdu_m_to_s(send_info->iso_conn_handle);
 	BT_LOGD("%s iso_conn_handle = 0x%x p_data = 0x%p data_len=%d max_sdu_m_to_s=%d\r\n", __func__, send_info->iso_conn_handle, send_info->p_data,
 			send_info->data_len, max_sdu_m_to_s);
-	BT_DUMPD(__func__, send_info->p_data, send_info->data_len);
+	BT_DUMPD("", send_info->p_data, send_info->data_len);
 
 #if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
 	//fragment when data_len > max_sdu
@@ -532,7 +532,7 @@ static uint16_t bt_stack_le_iso_data_send(void *data)
 			data_len = 0;
 		}
 		BT_LOGD("%s p_frag = 0x%p,frag_len=%d!\r\n", __func__, p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
-		BT_DUMPD(__func__, p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
+		BT_DUMPD("", p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
 		osif_mutex_take(g_iso_send_info_list_mtx, 0xFFFFFFFF);
 		list_add_tail(&p_stack_iso_send_info->list, &g_iso_send_info_list_head);/* insert list */
 		osif_mutex_give(g_iso_send_info_list_mtx);

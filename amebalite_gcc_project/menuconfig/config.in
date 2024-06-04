@@ -800,8 +800,7 @@ endmenu
 		# if [ "$CONFIG_802154_THREAD_RCP_EN_FOR_KM4" = "n" ]; then
 			# bool "RCP AS RADIO"                	CONFIG_802154_THREAD_RADIO_RCP_EN_FOR_KM4
 		# fi
-		# bool "USE FLASH FOR OPENTHREAD SETTING" CONFIG_802154_THREAD_FLASH_API_EN_FOR_KM4
-		# bool "STABILITY TEST"                	CONFIG_802154_THREAD_STABILITY_TEST_EN_FOR_KM4
+		# bool "Low Layer Function Test"                	CONFIG_802154_THREAD_LLF_TEST_EN_FOR_KM4
 	# fi
 	# bool "Enable ZIGBEE"                	CONFIG_802154_ZIGBEE_EN_FOR_KM4
 	# if [ "$CONFIG_802154_ZIGBEE_EN_FOR_KM4" = "y" ]; then
@@ -834,8 +833,8 @@ endmenu
 			# fi
 		# fi
 	# fi
-	# bool "Enable 802154 Test"               CONFIG_802154_TEST_EN_FOR_KM4
-	# if [ "$CONFIG_802154_TEST_EN_FOR_KM4" = "y" ]; then
+	# bool "Enable 802154 Platform Test"               CONFIG_802154_PLATFORM_TEST_EN_FOR_KM4
+	# if [ "$CONFIG_802154_PLATFORM_TEST_EN_FOR_KM4" = "y" ]; then
 		# define_bool CONFIG_802154_THREAD_EN_FOR_KM4 n
 		# define_bool CONFIG_802154_ZIGBEE_EN_FOR_KM4 n
 	# fi

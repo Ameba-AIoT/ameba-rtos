@@ -743,8 +743,7 @@ extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
  * @brief  Enable Wi-Fi.
  * - Bring the Wireless interface "Up".
  * @param[in]  mode: Decide to enable WiFi in which mode.
- * 	The optional modes are RTW_MODE_STA, RTW_MODE_AP,
- * 	RTW_MODE_STA_AP, RTW_MODE_PROMISC.
+ * 	The optional modes are RTW_MODE_STA, RTW_MODE_AP.
  * @return  RTW_SUCCESS: if the WiFi chip initialized successfully.
  * @return  RTW_ERROR: if the WiFi chip initialization failed.
  */

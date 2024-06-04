@@ -93,7 +93,6 @@ uint16_t bt_mesh_generic_level_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -157,7 +156,6 @@ uint16_t bt_mesh_generic_power_on_off_client_model_act_handle(rtk_bt_cmd_t *p_cm
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -271,7 +269,6 @@ uint16_t bt_mesh_generic_power_level_client_model_act_handle(rtk_bt_cmd_t *p_cmd
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -327,7 +324,6 @@ uint16_t bt_mesh_generic_battery_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -410,7 +406,6 @@ uint16_t bt_mesh_generic_location_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -591,7 +586,6 @@ uint16_t bt_mesh_generic_property_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -1130,7 +1124,6 @@ uint16_t bt_mesh_generic_user_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -1257,7 +1250,6 @@ uint16_t bt_mesh_generic_admin_property_server_model_act_handle(rtk_bt_cmd_t *p_
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -1380,7 +1372,6 @@ uint16_t bt_mesh_generic_manu_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);

@@ -70,7 +70,6 @@ uint16_t bt_mesh_generic_onoff_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);

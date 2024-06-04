@@ -11,7 +11,6 @@
 
 #define ACCESS_OPCODE_SIZE(opcode)              ((opcode) >= 0xc00000 ? 3 : ((opcode) >= 0x8000 ? 2 : 1))
 
-#define RTK_BT_STACK_MESH_ERROR_FLAG    0x0100
 #define RTK_BT_MESH_EVT_MEM_OP_MAX_SIZE    0xffffffff
 
 #define COMPANY_ID        0x005D
@@ -193,11 +192,6 @@ typedef struct {
 	uint8_t   bt_mesh_dev_key_num;      /*!< Device key num for provisioner */
 #endif
 } rtk_bt_mesh_app_conf_t;
-
-#define MESH_LE_EXTRN2WORD(p) (((*(p)) & 0xff) + ((*((p)+1)) << 8))
-
-#define MESH_LE_EXTRN2DWORD(p) (((unsigned long)(*((p)+0)) & 0xff) + ((unsigned long)(*((p)+1)) << 8) \
-                           + ((unsigned long)(*((p)+2)) << 16)  + ((unsigned long)(*((p)+3)) << 24))
 
 /**
  * @typedef GENERIC_TYPES_TYPES Generic Types

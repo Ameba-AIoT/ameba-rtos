@@ -129,7 +129,7 @@ void simple_ble_service_callback(uint8_t event, void *data)
 		}
 
 		if (SIMPLE_BLE_WRITE_INDEX == p_write_ind->index) {
-			BT_LOGA("[APP] Simple BLE write event, len: %d, type: %d, data: ",
+			BT_LOGA("[APP] Simple BLE write event, len: %d, type: %d, data:\r\n",
 					p_write_ind->len, p_write_ind->type);
 			BT_DUMPA("", p_write_ind->value, p_write_ind->len);
 		} else {

@@ -113,7 +113,7 @@ CSRC_DRV +=  \
     $(DIR)/halcommon/hal_interrupt.c \
     $(DIR)/phl/phl.c \
     $(DIR)/../wpa_supplicant/src/crypto/dh_groups.c \
-	$(DIR)/intf/wifi_intf_drv_wrap_func.c \
+	$(DIR)/intf/wifi_intf_rom_to_flash.c \
 
 CSRC_DRV += $(TARGET_LIB)_git_version.c
 

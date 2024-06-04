@@ -55,8 +55,8 @@ extern rtk_log_tag_t rtk_log_tag_array[LOG_TAG_CACHE_ARRAY_SIZE];
 
 extern void rtk_log_array_clear(void);
 extern rtk_log_level_t rtk_log_level_get(const char *tag);
-extern void rtk_log_level_set(const char *tag, rtk_log_level_t level);
-extern void rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
+extern int rtk_log_level_set(const char *tag, rtk_log_level_t level);
+extern int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
 extern void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...);
 //6. Memory dump API
 #define DISPLAY_NUMBER 8
