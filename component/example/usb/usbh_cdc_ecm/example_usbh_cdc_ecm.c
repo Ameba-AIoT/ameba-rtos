@@ -62,6 +62,7 @@ static unsigned char dump_psRAMHeap[configTOTAL_PSRAM_HEAP_SIZE_TEST];
 
 static u8 dhcp_done = 0;
 extern struct netif xnetif[NET_IF_NUM];
+extern struct netif eth_netif;
 
 static int cdc_ecm_do_init(void)
 {
@@ -88,13 +89,13 @@ static void ecm_link_change_thread(void *param)
 			printf("will do dhcp \n");
 			ethernet_unplug = ETH_STATUS_INIT;
 			mac = (u8 *)usbh_cdc_ecm_process_mac_str();
-			memcpy(xnetif[NET_IF_NUM - 1].hwaddr, mac, 6);
+			memcpy(eth_netif.hwaddr, mac, 6);
 			printf("mac[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-			netif_set_link_up(&xnetif[NET_IF_NUM - 1]);
+			netif_set_link_up(&eth_netif);
 
-			dhcp_status = LwIP_DHCP(NET_IF_NUM - 1, DHCP_START);
+			dhcp_status = LwIP_DHCP(2, DHCP_START);
 			if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-				netifapi_netif_set_default(&xnetif[NET_IF_NUM - 1]);	//Set default gw to ether netif
+				netifapi_netif_set_default(&eth_netif);	//Set default gw to ether netif
 				dhcp_done = 1;
 			}
 			printf("switch to link !!\n");

@@ -231,7 +231,6 @@ uint16_t bt_mesh_sensor_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -432,7 +431,6 @@ uint16_t bt_mesh_sensor_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -515,10 +513,10 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 		p_get_data->property_id = p_data->property_id;
 		p_get_data->cadence = cadence_value;
 		rtk_bt_evt_indicate(p_evt, &cb_ret);
-		// uint16_t len = MESH_LE_EXTRN2WORD(&cadence_value[0]);
+		// uint16_t len = LE_TO_U16(&cadence_value[0]);
 		/****dump cadence data to p_data*****/
 		/*reserve 2 bytes to store msg length for ipc and direct calling*/
-		if (MESH_LE_EXTRN2WORD(&cadence_value[0]) != 0) {
+		if (LE_TO_U16(&cadence_value[0]) != 0) {
 			cadence_transfer.raw_value_len = cadence_value[2];
 			cadence_transfer.fast_cadence_period_divisor = cadence_value[3] & 0x7F;
 			cadence_transfer.status_trigger_type = (cadence_value[3] & 0x80) >> 7;
@@ -613,7 +611,6 @@ uint16_t bt_mesh_sensor_setup_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);

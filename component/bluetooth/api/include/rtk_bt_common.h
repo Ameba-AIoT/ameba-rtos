@@ -1205,13 +1205,13 @@ void rtk_bt_event_free(rtk_bt_evt_t *pevt);
 #define LO_WORD(x)      ((uint8_t)(x))
 #endif
 
-#define APP_PROMOTE(...)                                                                \
-    do {                                                                                \
-        printf("\r\n");                                                                 \
-        printf("############################################################\r\n");     \
-        printf(__VA_ARGS__);                                                            \
-        printf("############################################################\r\n");     \
-        printf("\r\n");                                                                 \
+#define BT_APP_PROCESS(func)                                \
+    do {                                                    \
+        uint16_t __func_ret = func;                         \
+        if (RTK_BT_OK != __func_ret) {                      \
+            BT_LOGE("[APP] %s failed! line: %d, err: 0x%x\r\n", __func__, __LINE__, __func_ret);   \
+            return -1;                                      \
+        }                                                   \
     } while (0)
 
 #ifdef __cplusplus

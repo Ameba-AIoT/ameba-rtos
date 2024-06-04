@@ -124,7 +124,6 @@ uint16_t bt_mesh_health_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -252,7 +251,7 @@ static int32_t health_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		// current_store style: 1 byte(length) + 1 byte(test id) + 2 byte(company id) + n bytes(faults)
 		// faults length = length - 1
 		p_get_data->test_id = current_store[1];
-		p_get_data->company_id = MESH_LE_EXTRN2WORD(&current_store[2]);
+		p_get_data->company_id = LE_TO_U16(&current_store[2]);
 		p_get_data->fault_count = current_store[0] - 3;
 		memcpy(p_get_data->fault_array, &current_store[4], current_store[0] - 3);
 		return 0;
@@ -321,7 +320,6 @@ uint16_t bt_mesh_health_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);

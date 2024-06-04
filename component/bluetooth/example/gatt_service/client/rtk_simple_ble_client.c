@@ -445,7 +445,7 @@ static void simple_ble_client_notify_hdl(void *data)
 	}
 
 	BT_LOGA("[APP] Simple ble client charac v2 notify received\r\n");
-	BT_DUMPA("[APP] Simple ble client notify event:", ntf_ind->value, ntf_ind->len);
+	BT_DUMPA("[APP] Simple ble client notify event:\r\n", ntf_ind->value, ntf_ind->len);
 }
 
 static void simple_ble_client_indicate_hdl(void *data)
@@ -473,7 +473,7 @@ static void simple_ble_client_indicate_hdl(void *data)
 	}
 
 	BT_LOGA("[APP] Simple ble client charac v3 indicate received\r\n");
-	BT_DUMPA("[APP] GATTC indicate event:", indicate_ind->value, indicate_ind->len);
+	BT_DUMPA("[APP] GATTC indicate event:\r\n", indicate_ind->value, indicate_ind->len);
 }
 
 static void simple_ble_client_cccd_enable_hdl(void *data)

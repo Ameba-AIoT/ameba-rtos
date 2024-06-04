@@ -401,7 +401,7 @@ static void hids_write_hdl(void *data)
 		break;
 	}
 
-	BT_LOGA("[APP] HIDS write event data(index: %d): ", index);
+	BT_LOGA("[APP] HIDS write event data(index: %d):\r\n", index);
 	BT_DUMPA("", p_write_ind->value, p_write_ind->len);
 
 send_rsp:

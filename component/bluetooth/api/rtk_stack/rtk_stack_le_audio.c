@@ -552,7 +552,7 @@ static uint16_t rtk_stack_ascs_handle_msg(T_LE_AUDIO_MSG msg, void *buf)
 					i, p_data->param[i].data.ase_id,
 					p_data->param[i].data.target_latency,
 					p_data->param[i].data.target_phy);
-			BT_DUMPD(__func__, p_data->param[i].data.codec_id, 5);
+			BT_DUMPD("", p_data->param[i].data.codec_id, 5);
 			BT_LOGD(
 				"ase param[%d]: type_exist 0x%x, frame_duration 0x%x, sample_frequency 0x%x, codec_frame_blocks_per_sdu %d, octets_per_codec_frame %d, audio_channel_allocation 0x%x\r\n",
 				i, p_data->param[i].codec_parsed_data.type_exist,
@@ -675,7 +675,7 @@ static uint16_t rtk_stack_ascs_handle_msg(T_LE_AUDIO_MSG msg, void *buf)
 							TRACE_BINARY(p_data->param[i].metadata_length, p_data->param[i].p_metadata));
 			BT_LOGD("ase param[%d]: ase_id %d\r\n",
 					i, p_data->param[i].ase_id);
-			BT_DUMPD(__func__, p_data->param[i].p_metadata, p_data->param[i].metadata_length);
+			BT_DUMPD("", p_data->param[i].p_metadata, p_data->param[i].metadata_length);
 		}
 		rtk_bt_le_audio_ascs_cp_enable_ind_t *p_enable = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_AUDIO,
@@ -740,7 +740,7 @@ static uint16_t rtk_stack_ascs_handle_msg(T_LE_AUDIO_MSG msg, void *buf)
 							TRACE_BINARY(p_data->param[i].metadata_length, p_data->param[i].p_metadata));
 			BT_LOGD("ase param[%d]: ase_id %d\r\n",
 					i, p_data->param[i].ase_id);
-			BT_DUMPD(__func__, p_data->param[i].p_metadata, p_data->param[i].metadata_length);
+			BT_DUMPD("", p_data->param[i].p_metadata, p_data->param[i].metadata_length);
 		}
 		break;
 	}
@@ -1681,7 +1681,7 @@ static uint16_t rtk_stack_bass_cp_action(T_BASS_CP_IND *p_data)
 		memcpy(p_ind->op_param.set_broadcast_code_param.broadcast_code, p_data->p_cp_data->param.set_broadcast_code.broadcast_code, RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN);
 #if 1
 		/* The scan delegator will set broadcast code from broadcast assistant. */
-		BT_DUMPD(__func__, p_data->p_cp_data->param.set_broadcast_code.broadcast_code, RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN);
+		BT_DUMPD("", p_data->p_cp_data->param.set_broadcast_code.broadcast_code, RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN);
 		if (false == bass_cfg_broadcast_code(p_data->p_cp_data->param.set_broadcast_code.source_id, p_data->p_cp_data->param.set_broadcast_code.broadcast_code)) {
 			BT_LOGE("%s: bass_cfg_broadcast_code fail!\r\n", __func__);
 		}
@@ -2078,7 +2078,7 @@ static uint16_t rtk_stack_bass_client_handle_msg(T_LE_AUDIO_MSG msg, void *buf)
 						p_data->p_brs_data->bis_info_size,
 						(unsigned int)p_data->p_brs_data->p_cp_bis_info[0].bis_sync,
 						p_data->p_brs_data->p_cp_bis_info[0].metadata_len);
-				BT_DUMPD(__func__, p_data->p_brs_data->p_cp_bis_info[0].p_metadata, p_data->p_brs_data->p_cp_bis_info[0].metadata_len);
+				BT_DUMPD("", p_data->p_brs_data->p_cp_bis_info[0].p_metadata, p_data->p_brs_data->p_cp_bis_info[0].metadata_len);
 			}
 		}
 
@@ -3599,7 +3599,7 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			(unsigned int)p_data->p_bt_direct_iso->time_stamp,
 			p_data->p_bt_direct_iso->iso_sdu_len, p_data->p_bt_direct_iso->p_buf, p_data->p_bt_direct_iso->offset);
 		if (p_data->p_bt_direct_iso->iso_sdu_len) {
-			BT_DUMPD(__func__, p_data->p_bt_direct_iso->p_buf + p_data->p_bt_direct_iso->offset, p_data->p_bt_direct_iso->iso_sdu_len);
+			BT_DUMPD("", p_data->p_bt_direct_iso->p_buf + p_data->p_bt_direct_iso->offset, p_data->p_bt_direct_iso->iso_sdu_len);
 			BT_LOGD("%s pkt_seq_num=%d\r\n", __func__, p_data->p_bt_direct_iso->pkt_seq_num);
 		}
 		/* Send event */
@@ -3706,7 +3706,7 @@ static uint16_t bt_stack_le_audio_pacs_init(rtk_bt_le_audio_pacs_init_param_t *p
 	if (p_default_pac_sink_codec) {
 		memcpy(p_default_pac_sink_codec, p_pac_sink_codec, pac_sink_codec_len);
 	}
-	BT_DUMPD(__func__, p_default_pac_sink_codec, pac_sink_codec_len);
+	BT_DUMPD("", p_default_pac_sink_codec, pac_sink_codec_len);
 	*p_pacs->p_sink_pac_id = pacs_pac_add(SERVER_AUDIO_SINK, p_default_pac_sink_codec, pac_sink_codec_len, true);
 
 	//register pac source codec
@@ -3725,7 +3725,7 @@ static uint16_t bt_stack_le_audio_pacs_init(rtk_bt_le_audio_pacs_init_param_t *p
 	if (p_default_pac_source_codec) {
 		memcpy(p_default_pac_source_codec, p_pac_source_codec, pac_source_codec_len);
 	}
-	BT_DUMPD(__func__, p_default_pac_source_codec, pac_source_codec_len);
+	BT_DUMPD("", p_default_pac_source_codec, pac_source_codec_len);
 	*p_pacs->p_source_pac_id = pacs_pac_add(SERVER_AUDIO_SOURCE, p_default_pac_source_codec, pac_source_codec_len, true);
 
 	if (pacs_init(&pacs_params) == false) {
@@ -3883,7 +3883,7 @@ uint16_t bt_stack_le_audio_cap_init(rtk_bt_le_audio_app_conf_t *p_le_audio_app_c
 		}
 
 		BT_LOGD("%s:cap_init_param.cas.csis_feature 0x%x, cap_init_param.cas.csis_sirk:\r\n", __func__, cap_init_param.cas.csis_feature);
-		BT_DUMPD(__func__, cap_init_param.cas.csis_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
+		BT_DUMPD("", cap_init_param.cas.csis_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
 #endif
 	}
 	if (p_le_audio_app_conf->cap_param.cap_role & RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR ||
@@ -4442,7 +4442,7 @@ static uint16_t bt_stack_le_audio_pacs_get_pac_record(void *data)
 		param->p_pac_tbl[i].lc3_sup_cfg_bits = p_pac_tbl[i].lc3_sup_cfg_bits;
 		param->p_pac_tbl[i].pref_audio_contexts = p_pac_tbl[i].pref_audio_contexts;
 		if (p_pac_tbl[i].metadata_length) {
-			BT_DUMPD(__func__, p_pac_tbl[i].p_metadata, p_pac_tbl[i].metadata_length);
+			BT_DUMPD("", p_pac_tbl[i].p_metadata, p_pac_tbl[i].metadata_length);
 			if (p_pac_tbl[i].metadata_length <= RTK_BT_LE_AUDIO_METADATA_MAX_LEN) {
 				param->p_pac_tbl[i].metadata_length = p_pac_tbl[i].metadata_length;
 				memcpy(param->p_pac_tbl[i].metadata, p_pac_tbl[i].p_metadata, p_pac_tbl[i].metadata_length);
@@ -5089,8 +5089,8 @@ static uint16_t bt_stack_le_audio_broadcast_source_create(void *data)
 		for (j = 0; j < num_subgroups; j++) {
 			num_bis = p_param->group[i].subgroup[j].num_bis;
 			BT_LOGD("%s num_bis = %d \r\n", __func__, num_bis);
-			BT_DUMPD(__func__, p_param->group[i].subgroup[j].p_codec_cfg_l2, p_param->group[i].subgroup[j].codec_cfg_l2_len);
-			BT_DUMPD(__func__, p_param->group[i].subgroup[j].p_metadata, p_param->group[i].subgroup[j].metadata_len);
+			BT_DUMPD("", p_param->group[i].subgroup[j].p_codec_cfg_l2, p_param->group[i].subgroup[j].codec_cfg_l2_len);
+			BT_DUMPD("", p_param->group[i].subgroup[j].p_metadata, p_param->group[i].subgroup[j].metadata_len);
 			if (false == base_data_add_subgroup(&subgroup_idx, group_idx,
 												p_param->group[i].subgroup[j].codec_id,
 												p_param->group[i].subgroup[j].codec_cfg_l2_len,
@@ -5180,7 +5180,7 @@ static uint16_t bt_stack_le_audio_broadcast_source_config(void *data)
 	broadcast_id = broadcast_audio_announcements + id_offset;
 	memcpy(broadcast_id, src_info.broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 
-	BT_DUMPD(__func__, broadcast_audio_announcements, p_param->p_announcements_len);
+	BT_DUMPD("", broadcast_audio_announcements, p_param->p_announcements_len);
 
 	if (false == broadcast_source_set_eadv_param(p_param->broadcast_source_handle,
 												 p_param->adv_sid,
@@ -5204,7 +5204,7 @@ static uint16_t bt_stack_le_audio_broadcast_source_config(void *data)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-	BT_DUMPD(__func__, pa_data, pa_data_len);
+	BT_DUMPD("", pa_data, pa_data_len);
 
 	if (false == broadcast_source_set_pa_param(p_param->broadcast_source_handle, p_config->periodic_adv_interval_min,
 											   p_config->periodic_adv_interval_max, p_config->periodic_adv_prop,
@@ -5907,7 +5907,7 @@ static void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_
 				metadata_len = sizeof(default_metadata);
 				memcpy(metadata, default_metadata, metadata_len);
 			}
-			BT_DUMPD(__func__, metadata, metadata_len);
+			BT_DUMPD("", metadata, metadata_len);
 			if (false == bap_unicast_audio_cfg_ase_metadata(p_data->handle, p_data->dev_handle, p_data->ase_id, metadata_len, metadata)) {
 				BT_LOGE("%s: bap_unicast_audio_cfg_ase_metadata fail!\r\n", __func__);
 			}
@@ -6775,7 +6775,7 @@ static uint16_t bt_stack_le_audio_csis_update_sirk(void *data)
 	}
 
 	BT_LOGD("%s:p_param->sirk_type:%d\r\n", __func__, p_param->sirk_type);
-	BT_DUMPD(__func__, p_param->sirk, RTK_BT_LE_CSIS_SIRK_LEN);
+	BT_DUMPD("", p_param->sirk, RTK_BT_LE_CSIS_SIRK_LEN);
 
 	srv_uuid.is_uuid16 = true;
 	srv_uuid.p.uuid16 = GATT_UUID_CAS;

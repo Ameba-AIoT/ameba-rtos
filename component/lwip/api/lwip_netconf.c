@@ -52,6 +52,7 @@
 #endif
 
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+struct netif eth_netif;
 extern err_t ethernetif_mii_init(struct netif *netif);
 #endif
 
@@ -102,27 +103,27 @@ void LwIP_Init(void)
 			IP4_ADDR(ip_2_ip4(&netmask), AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 			IP4_ADDR(ip_2_ip4(&gw), AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 		}
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-		if (idx == NET_IF_NUM - 1) {
-			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
-		}
-#endif
+
 		xnetif[idx].name[0] = 'r';
 		xnetif[idx].name[1] = '0' + idx;
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-		if (idx == NET_IF_NUM - 1) {
-			netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_mii_init, &tcpip_input);
-		} else {
-			netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init, &tcpip_input);
-		}
-#else
+
 		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init, &tcpip_input);
-#endif
+
 		RTK_LOGS(NOTAG, "interface %d is initialized\n", idx);
 
 	}
+
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+	eth_netif.name[0] = 'r';
+	eth_netif.name[1] = '2';
+	IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
+	IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
+	IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
+
+	netifapi_netif_add(&eth_netif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_mii_init, &tcpip_input);
+
+	RTK_LOGS(NOTAG, "interface 2 is initialized\n");
+#endif
 
 	/*  Registers the default network interface. */
 	netifapi_netif_set_default(&xnetif[0]);
@@ -184,6 +185,13 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 	}
 
 	pnetif = &xnetif[idx];
+
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+	if (idx > 1) {
+		pnetif = &eth_netif;
+	}
+#endif
+
 	if (DHCP_state == 0) {
 		ip_addr_set_zero(&pnetif->ip_addr);
 		ip_addr_set_zero(&pnetif->netmask);
@@ -301,7 +309,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 #endif
 
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-					if (idx == NET_IF_NUM - 1) { // This is the ethernet interface, set it up for static ip address
+					if (idx > 1) { // This is the ethernet interface, set it up for static ip address
 						netifapi_netif_set_up(pnetif);
 					}
 #endif

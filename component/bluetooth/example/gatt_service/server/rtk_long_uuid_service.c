@@ -106,7 +106,7 @@ void long_uuid_service_callback(uint8_t event, void *data)
 		}
 
 		if (LONG_UUID_WRITE_INDEX == p_write_ind->index) {
-			BT_LOGA("[APP] Long uuid service write event, len: %d, type: %d, data: ",
+			BT_LOGA("[APP] Long uuid service write event, len: %d, type: %d, data:\r\n",
 					p_write_ind->len, p_write_ind->type);
 			BT_DUMPA("", p_write_ind->value, p_write_ind->len);
 		} else {
