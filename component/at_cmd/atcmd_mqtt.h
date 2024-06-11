@@ -159,12 +159,12 @@ typedef struct MQTT_AT_HANDLE_t {
 }
 MQTT_AT_HANDLE;
 
-extern void mqtt_main(void *param);
+void mqtt_main(void *param);
+void print_mqtt_at(void);
+void at_mqtt_init(void);
 
 extern MQTT_AT_HANDLE mqtt_at_handle;
 extern MQTTPacket_connectData mqtt_default_conn_data;
-
-extern void print_mqtt_at(void);
 
 extern int keepalive(MQTTClient *c);
 extern int sendPacket(MQTTClient *c, int length, Timer *timer);

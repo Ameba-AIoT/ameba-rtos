@@ -16,6 +16,7 @@
 #include <rtk_client_config.h>
 #include <rtk_gaps_client.h>
 #include <rtk_gcs_client.h>
+#include <bt_utils.h>
 
 #define GAP_SRV_UUID                    0x1800
 #define DEVICE_NAME_CHAR_UUID           0x2A00
@@ -110,6 +111,11 @@ static uint16_t gaps_client_char_find(uint16_t conn_handle)
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].char_val_handle = char_handle;
 		BT_LOGA("[APP] device name handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
 		BT_LOGE("Find device name characteristic fail.\r\n");
 	}
@@ -119,6 +125,11 @@ static uint16_t gaps_client_char_find(uint16_t conn_handle)
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_val_handle = char_handle;
 		BT_LOGA("[APP] apperance handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
 		BT_LOGE("Find apperance characteristic fail.\r\n");
 	}
@@ -128,6 +139,11 @@ static uint16_t gaps_client_char_find(uint16_t conn_handle)
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_val_handle = char_handle;
 		BT_LOGA("[APP] PPCP handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
 		BT_LOGE("Find PPCP characteristic fail.\r\n");
 	}
@@ -137,6 +153,11 @@ static uint16_t gaps_client_char_find(uint16_t conn_handle)
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].char_val_handle = char_handle;
 		BT_LOGA("[APP] central addr resolution handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
 		BT_LOGE("Find central addr resolution characteristic fail.\r\n");
 	}
@@ -326,6 +347,8 @@ static void gaps_client_read_res_hdl(void *data)
 		conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].data_len = len;
 		BT_LOGA("[APP] GAPS client read device name: %s\r\n", (char *)char_data);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,%s\r\n",
+					conn_handle, att_handle, len, (char *)char_data);
 
 	} else if (att_handle == conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_val_handle) {
 		char_data = conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_data;
@@ -337,6 +360,8 @@ static void gaps_client_read_res_hdl(void *data)
 		conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].data_len = len;
 		BT_LOGA("[APP] GAPS client read appearance: 0x%x\r\n", *(uint16_t *)char_data);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,0x%x\r\n",
+					conn_handle, att_handle, len, *(uint16_t *)char_data);
 
 	} else if (att_handle == conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_val_handle) {
 		char_data = conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_data;
@@ -350,6 +375,11 @@ static void gaps_client_read_res_hdl(void *data)
 		BT_LOGA("[APP] GAPS client read peripheral preferred connection parameters, "
 				"conn_interval_max: 0x%x, slave_latency: 0x%x, supervision_timeout: 0x%x\r\n",
 				*(uint16_t *)char_data, *(uint16_t *)((char *)char_data + 2), *(uint16_t *)((char *)char_data + 4));
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,0x%x,0x%x,0x%x\r\n",
+					conn_handle, att_handle, len,
+					*(uint16_t *)char_data,
+					*(uint16_t *)((char *)char_data + 2),
+					*(uint16_t *)((char *)char_data + 4));
 
 	} else if (att_handle ==
 			   conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].char_val_handle) {
@@ -362,6 +392,8 @@ static void gaps_client_read_res_hdl(void *data)
 		conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].data_len = len;
 		BT_LOGA("[APP] GAPS client read central address resolution: %d\r\n", *(uint16_t *)char_data);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,%d\r\n",
+					conn_handle, att_handle, len, *(uint16_t *)char_data);
 	}
 
 #if (defined(GAPS_CLIENT_SHOW_DETAIL) && GAPS_CLIENT_SHOW_DETAIL) && (!defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB)

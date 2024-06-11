@@ -435,9 +435,7 @@ void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 {
 	u32 i = 0;
 
-	ADC->ADC_CLR_FIFO = 1;
-	while (ADC->ADC_FLR != 0);
-	ADC->ADC_CLR_FIFO = 0;
+	ADC_ClearFIFO();
 
 	ADC_AutoCSwCmd(ENABLE);
 
@@ -456,6 +454,7 @@ void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 void ADC_ClearFIFO(void)
 {
 	ADC->ADC_CLR_FIFO = ADC_BIT_CLR_FIFO;
+	while (ADC->ADC_FLR != 0);
 	ADC->ADC_CLR_FIFO = 0;
 }
 
@@ -492,22 +491,27 @@ u32 ADC_GetStatus(void)
   * @note  1. Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
   *			    Every time a conversion is done, software MUST clear this bit manually.
   *		  2. Used in Sotfware Trigger Mode
-  *		  3. Sync time: 4*(1/131.072khz)+5*(1/adc_clk)
+  *		  3. Sync time: 6 ~ 7*sample_clk
   */
 void ADC_SWTrigCmd(u32 NewState)
 {
 	ADC_TypeDef	*adc = ADC;
 	u8 div = adc->ADC_CLK_DIV;
-	u8 sync_time[7] = {36, 41, 51, 61, 71, 111, 191};
+	u8 sync_time[7] = {1, 2, 4, 6, 8, 16, 32};
 
 	if (NewState != DISABLE) {
 		adc->ADC_SW_TRIG = ADC_BIT_SW_TRIG;
+
+		/* Wait to sync signal */
+		/* power_on delay: 220us */
+		DelayUs(220 + sync_time[div] * 7);
 	} else {
 		adc->ADC_SW_TRIG = 0;
-	}
 
-	/* Wait to sync signal */
-	DelayUs(sync_time[div]);
+		/* Wait to sync signal */
+		/* power_off delay: 2*sample_clk + 4*128k */
+		DelayUs(32 + sync_time[div] * 2 > sync_time[div] * 7 ? 32 + sync_time[div] * 2 : sync_time[div] * 7);
+	}
 }
 
 /**
@@ -519,22 +523,27 @@ void ADC_SWTrigCmd(u32 NewState)
   *			If an automatic channel switch is in progess, writing 0 will terminate the automatic channel switch.
   * @retval  None.
   * @note  Used in Automatic Mode
-  * @note1 Sync time: 4*(1/131.072khz)+5*(1/adc_clk)
+  * @note  Sync time: 6 ~ 7*sample_clk
   */
 void ADC_AutoCSwCmd(u32 NewState)
 {
 	ADC_TypeDef	*adc = ADC;
 	u8 div = adc->ADC_CLK_DIV;
-	u8 sync_time[7] = {36, 41, 51, 61, 71, 111, 191};
+	u8 sync_time[7] = {1, 2, 4, 6, 8, 16, 32};
 
 	if (NewState != DISABLE) {
 		adc->ADC_AUTO_CSW_CTRL = ADC_BIT_AUTO_CSW_EN;
+
+		/* Wait to sync signal */
+		/* power_on delay: 220us */
+		DelayUs(220 + sync_time[div] * 7);
 	} else {
 		adc->ADC_AUTO_CSW_CTRL = 0;
-	}
 
-	/* Wait to sync signal */
-	DelayUs(sync_time[div]);
+		/* Wait to sync signal */
+		/* power_off delay: 2*sample_clk + 4*128k */
+		DelayUs(32 + sync_time[div] * 2 > sync_time[div] * 7 ? 32 + sync_time[div] * 2 : sync_time[div] * 7);
+	}
 }
 
 /**

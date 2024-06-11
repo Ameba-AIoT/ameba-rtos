@@ -9,12 +9,14 @@ IFLAGS               += -I$(BASEDIR)/component/wifi/common/secure
 #*****************************************************************************#
 COMDIR = $(BASEDIR)/component/wifi/common
 SECDIR = $(BASEDIR)/component/wifi/common/secure
-vpath %.c $(COMDIR) $(SECDIR) $(shell find $(SECDIR) -type d)
+HALCOMDIR = $(BASEDIR)/component/wifi/driver/halcommon_rom
+vpath %.c $(COMDIR) $(SECDIR) $(HALCOMDIR) $(shell find $(SECDIR) -type d)
 
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
 # The following files are needed by all cores except dplus km0
+# no need in green2 ap and np (share rom)
 CSRC_SEC += $(SECDIR)/rom_sha1.c \
 	$(SECDIR)/rom_md5.c \
 	$(SECDIR)/rom_aes.c \
@@ -30,14 +32,22 @@ CSRC_SEC += $(SECDIR)/rom_sha1.c \
 	$(SECDIR)/rom_rtw_security.c \
 	$(TARGET_LIB)_git_version.c
 
+CSRC_ROM = 	$(COMDIR)/rom_rtw_queue.c
+CSRC_ROM += $(HALCOMDIR)/rom_hal_rom_to_flash.c
+
 # The following files are needed by network cores/single core
+# only CSRC_COM in green2
 CSRC_COM += $(COMDIR)/rtw_timer.c \
-	$(COMDIR)/rtw_queue.c \
 	$(COMDIR)/rtw_wakelock.c \
 	$(COMDIR)/rtw_atomic.c
 
 CSRC += $(CSRC_COM)
 TARGET_LIB = lib_wifi_common
+
+ifeq ($(CONFIG_AMEBAGREEN2),y)
+TARGET_LIB = lib_wifi_common
+else
+CSRC += $(CSRC_ROM)
 ifeq ($(CONFIG_AS_INIC_AP), y)
 CSRC += $(CSRC_SEC)
 TARGET_LIB = lib_wifi_com_sec
@@ -45,12 +55,12 @@ else
 ifneq ($(CONFIG_AMEBADPLUS), y)
 CSRC += $(CSRC_SEC)
 TARGET_LIB = lib_wifi_com_sec
-else ifeq ($(CONFIG_SDIO_BRIDGE), y)
+else ifeq ($(findstring y, $(CONFIG_SINGLE_CORE_WIFI) $(CONFIG_KM4_AS_NP)), y)
 CSRC += $(CSRC_SEC)
 TARGET_LIB = lib_wifi_com_sec
 endif
 endif
-
+endif
 #*****************************************************************************#
 #                               Object FILE LIST                              #
 #*****************************************************************************#

@@ -480,6 +480,20 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
  * @return  null.
  */
 void wifi_speaker_setting(u8 mode, u8 thresh, u8 relay_en);
+
+/**
+ * @brief  for user to set tx power
+ * 1. Currently will TX with the set power,  regardless of power by rate and power by limit.
+ * 2. Afterwards, it can be extended to specify rate, or power by limit needs to be considered.
+ * @param[in]  txpwr_ctrl_info: the pointer of rtw_tx_power_ctl_info_t
+ *    b_tx_pwr_force_enbale: 1 for enable, 0 for disable.
+ *    tx_pwr_force: unit 0.25dBm.
+ * @note:
+ *    For amebadplus, the power range varies for different channels or IC, the recommended power range is -2 ~ 23 dBm,
+ *    if exceeds the power range, the power may be inaccurate, and will be changed to the boundary value.
+ * @return  RTW_SUCCESS or RTW_ERROR
+ */
+int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
 /**
   * @}
   */

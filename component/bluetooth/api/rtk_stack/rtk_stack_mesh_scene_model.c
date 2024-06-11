@@ -48,7 +48,7 @@ static int32_t scene_client_data(const mesh_model_info_p pmodel_info,
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -65,7 +65,7 @@ uint16_t bt_mesh_scene_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -99,7 +99,7 @@ uint16_t bt_mesh_scene_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
 end:
@@ -202,7 +202,7 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -224,7 +224,7 @@ uint16_t bt_mesh_scene_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -236,7 +236,7 @@ uint16_t bt_mesh_scene_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
 end:
@@ -335,7 +335,7 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -357,7 +357,7 @@ uint16_t bt_mesh_scene_setup_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -369,7 +369,7 @@ uint16_t bt_mesh_scene_setup_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
 end:

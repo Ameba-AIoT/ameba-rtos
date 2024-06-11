@@ -72,7 +72,7 @@ void wifi_indication(enum rtw_event_indicate event, char *buf, int buf_len, int 
 	//		not available for the following operations.
 	//		ex: using semaphore to notice another thread.
 
-#if defined(CONFIG_AS_INIC_NP)
+#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_SDIO_BRIDGE)
 	inic_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 

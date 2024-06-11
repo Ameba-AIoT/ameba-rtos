@@ -30,24 +30,23 @@ CSRC +=$(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
 	   $(DIR)/wififw_h2c.c \
        $(DIR)/wififw_txpkt.c \
        $(DIR)/wififw_pwrctrl.c \
-       $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR)/wififw_interrupt_ctrl.c \
 	   $(DIR)/wififw_media.c \
-	   $(DIR)/wififw_gtimer.c \
+	   $(DIR_COMMON)/wififw_gtimer_common.c \
        $(DIR)/wififw_ps_state.c \
 	   $(DIR)/wififw_ps_bcnhdl.c \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
        $(DIR)/wififw_wowlan.c     \
 	   $(DIR)/wififw_disconchk.c     \
-	   $(DIR)/wififw_keepalive.c     \
+	   $(DIR_COMMON)/wififw_keepalive_common.c     \
 	   $(DIR)/wififw_c2h.c     \
 	   $(DIR)/wififw_lpsofld.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR)/wififw_periodcca.c \
 	   $(DIR)/wififw_ra_new.c \
-	   $(DIR)/wififw_ps_twt.c \
+	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR_COMMON)/wififw_task_common.c \
 	   $(DIR)/wififw_ps_dbg.c \
 	   $(DIR_COMMON)/wififw_ra_debug.c \

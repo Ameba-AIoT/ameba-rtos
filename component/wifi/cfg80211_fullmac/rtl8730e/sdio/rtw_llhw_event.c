@@ -6,6 +6,7 @@
 
 static void llhw_event_scan_report_indicate(struct event_priv_t *event_priv, u32 *param_buf)
 {
+#ifndef CONFIG_SDIO_BRIDGE
 	u32 channel = param_buf[0];
 	u32 frame_is_bcn = param_buf[1];
 	s32 rssi = (s32)param_buf[2];
@@ -14,12 +15,14 @@ static void llhw_event_scan_report_indicate(struct event_priv_t *event_priv, u32
 	unsigned char *IEs = mac_addr + ETH_ALEN;
 
 	cfg80211_rtw_inform_bss(channel, frame_is_bcn, rssi, mac_addr, IEs, ie_len);
-
+#endif
 	return;
 }
 
+
 static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32 *param_buf)
 {
+#ifndef CONFIG_SDIO_BRIDGE
 	enum rtw_event_indicate event = (enum rtw_event_indicate)param_buf[0];
 	int flags = (int)param_buf[1];
 	int buf_len = (int)param_buf[2];
@@ -105,7 +108,11 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32
 		cfg80211_rx_mgmt(wdev, rtw_ch2freq(channel), 0, buf, buf_len, 0);
 	}
 
+#else
+	llhw_sdio_bridge_event_join_status_indicate(event_priv, param_buf);
+#endif
 	return;
+
 }
 
 static void llhw_event_set_netif_info(struct event_priv_t *event_priv, u32 *param_buf)
@@ -267,7 +274,7 @@ void llhw_event_task(struct work_struct *data)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	u8 already_ret = 0;
-	struct inic_api_info *p_recv_msg = (struct inic_api_info *)event_priv->rx_api_msg;
+	struct inic_api_info *p_recv_msg = (struct inic_api_info *)(event_priv->rx_api_msg->data + SIZE_RX_DESC);
 	u32 *param_buf = (u32 *)(p_recv_msg + 1);
 	struct inic_api_info *ret_msg;
 	u8 *buf;
@@ -295,9 +302,13 @@ void llhw_event_task(struct work_struct *data)
 			break;
 		}
 #endif
+#ifdef CONFIG_SDIO_BRIDGE
+		llhw_sdio_bridge_get_scan_result(param_buf[0]);
+#else
 		/* If user callback provided as NULL, param_buf[1] appears NULL here. Do not make ptr. */
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		cfg80211_rtw_scan_done_indicate(param_buf[0], NULL);
+#endif
 		break;
 	case INIC_API_SCAN_EACH_REPORT_USER_CALLBACK:
 		//iiha_scan_each_report_cb_hdl(event_priv, p_recv_msg);
@@ -368,10 +379,11 @@ void llhw_event_task(struct work_struct *data)
 		}
 	}
 
-	/* free rx_event_msg */
-	llhw_free_rxbuf((u8 *)p_recv_msg);
-
 	dev_dbg(global_idev.fullmac_dev, "-----DEVICE CALLING API %d END\n", p_recv_msg->api_id);
+
+	/* free rx_event_msg */
+	kfree_skb(event_priv->rx_api_msg);
+
 	return;
 }
 

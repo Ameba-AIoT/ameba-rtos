@@ -44,7 +44,7 @@ int16_t *get_sbc_pcm_buffer(void)
 	int16_t *ppcm_data = NULL;
 
 	if (list_empty(phead)) {
-		printf("%s: No enough pcm data buffer, used is %d \r\n", __func__, (int)sbc_pcm_data_used_num);
+		BT_LOGE("%s: No enough pcm data buffer, used is %d \r\n", __func__, (int)sbc_pcm_data_used_num);
 		return NULL;
 	}
 	plist = phead->next;
@@ -67,7 +67,7 @@ static void release_pcm_buffer(int16_t *pcm_data)
 static bool bt_stack_sbc_decoder_init(sbc_decoder_state_t *pstate, sbc_mode_t mode, void *pcontext)
 {
 	if (psbc_decoder_state_singleton) {
-		printf("%s : sbc decoder has already been initialized \r\n", __func__);
+		BT_LOGE("%s : sbc decoder has already been initialized \r\n", __func__);
 		return false;
 	}
 	OI_STATUS status = OI_STATUS_SUCCESS;
@@ -86,7 +86,7 @@ static bool bt_stack_sbc_decoder_init(sbc_decoder_state_t *pstate, sbc_mode_t mo
 	}
 
 	if (status != OI_STATUS_SUCCESS) {
-		printf("%s : error during reset %d \r\n", __func__, status);
+		BT_LOGE("%s : error during reset %d \r\n", __func__, status);
 		return false;
 	}
 
@@ -112,14 +112,14 @@ static bool bt_stack_sbc_encoder_init(sbc_encoder_state_t *pstate, sbc_mode_t mo
 {
 
 	if (psbc_encoder_state_singleton && (psbc_encoder_state_singleton != pstate)) {
-		printf("%s : SBC encoder: different sbc decoder state is allready registered \r\n", __func__);
+		BT_LOGE("%s : SBC encoder: different sbc decoder state is allready registered \r\n", __func__);
 		return false;
 	}
 
 	psbc_encoder_state_singleton = pstate;
 
 	if (!psbc_encoder_state_singleton) {
-		printf("%s : SBC encoder init: sbc state is NULL \r\n", __func__);
+		BT_LOGE("%s : SBC encoder init: sbc state is NULL \r\n", __func__);
 		return false;
 	}
 
@@ -182,12 +182,12 @@ static uint16_t sbc_codec_init(void *pentity, void *param)
 	rtk_bt_sbc_codec_t *psbc_codec_t = (rtk_bt_sbc_codec_t *)param;
 
 	if (!psbc_codec_t) {
-		printf("%s : No rtk_bt_sbc_codec_t configure \r\n", __func__);
+		BT_LOGE("%s : No rtk_bt_sbc_codec_t configure \r\n", __func__);
 		return 1;
 	}
 	/* 3rdparty decoder init */
 	if (bt_stack_sbc_decoder_init(&priv_decode_state, (sbc_mode_t)psbc_codec_t->decoder_t.sbc_dec_mode, NULL) == false) {
-		printf("%s : bt_stack_sbc_decoder_init error \r\n", __func__);
+		BT_LOGE("%s : bt_stack_sbc_decoder_init error \r\n", __func__);
 		return 1;
 	}
 	/* pbluedroid_decode_state = (bludroid_decoder_state_t *)priv_decode_state.decoder_state; */
@@ -199,7 +199,7 @@ static uint16_t sbc_codec_init(void *pentity, void *param)
 								  psbc_codec_t->encoder_t.alloc_method, psbc_codec_t->encoder_t.sample_rate,
 								  psbc_codec_t->encoder_t.bitpool,
 								  psbc_codec_t->encoder_t.channel_mode) == false) {
-		printf("%s : bt_stack_sbc_encoder_init error \r\n", __func__);
+		BT_LOGE("%s : bt_stack_sbc_encoder_init error \r\n", __func__);
 		return 1;
 	}
 
@@ -300,9 +300,9 @@ static void sbc_decoder_process_msbc_data(sbc_decoder_state_t *state, int packet
 			}
 #ifdef LOG_FRAME_STATUS
 			if (zero_seq_found) {
-				printf("%d : ZERO FRAME\n", decoder_state->h2_sequence_nr);
+				BT_LOGE("%d : ZERO FRAME\n", decoder_state->h2_sequence_nr);
 			} else {
-				printf("%d : BAD FRAME\n", decoder_state->h2_sequence_nr);
+				BT_LOGE("%d : BAD FRAME\n", decoder_state->h2_sequence_nr);
 			}
 #endif
 			// retry after dropoing 3 byte sync
@@ -422,20 +422,20 @@ static uint16_t sbc_decoder_process_sbc_data(sbc_decoder_state_t *state, uint8_t
 		case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
 		case OI_CODEC_SBC_NOT_ENOUGH_BODY_DATA:
 		case OI_CODEC_SBC_NOT_ENOUGH_AUDIO_DATA: {
-			printf("%s : frame_buffer too small for frame \r\n", __func__);
+			BT_LOGE("%s : frame_buffer too small for frame \r\n", __func__);
 			keep_decoding = 0;
 		}
 		break;
 		case OI_CODEC_SBC_NO_SYNCWORD: {
 			/* This means the entire frame_buffer did not contain the syncword.
 			Discard the frame_buffer contents. */
-			printf("%s : no syncword found \r\n", __func__);
+			BT_LOGE("%s : no syncword found \r\n", __func__);
 			keep_decoding = 0;
 		}
 		break;
 		case OI_CODEC_SBC_CHECKSUM_MISMATCH: {
 			/* The next frame is somehow corrupt. */
-			printf("%s : checksum error \r\n", __func__);
+			BT_LOGE("%s : checksum error \r\n", __func__);
 			keep_decoding = 0;
 		}
 		break;
@@ -443,10 +443,10 @@ static uint16_t sbc_decoder_process_sbc_data(sbc_decoder_state_t *state, uint8_t
 			/* This caused by corrupt frames.
 			The codec apparently does not recover from this.
 			Re-initialize the codec. */
-			printf("%s : invalid parameters: resetting codec \r\n", __func__);
+			BT_LOGE("%s : invalid parameters: resetting codec \r\n", __func__);
 			if (OI_CODEC_SBC_DecoderReset(&(decoder_state->decoder_context), decoder_state->decoder_data, sizeof(decoder_state->decoder_data), 2, 2,
 										  FALSE) != OI_STATUS_SUCCESS) {
-				printf("%s : resetting codec failed \r\n", __func__);
+				BT_LOGE("%s : resetting codec failed \r\n", __func__);
 			}
 		}
 		break;
@@ -454,7 +454,7 @@ static uint16_t sbc_decoder_process_sbc_data(sbc_decoder_state_t *state, uint8_t
 			/* Anything else went wrong.
 			Skip a few bytes and try again. */
 			keep_decoding = 0;
-			printf("%s : unknown status %d \r\n", __func__, status);
+			BT_LOGE("%s : unknown status %d \r\n", __func__, status);
 		}
 		break;
 		}
@@ -512,13 +512,13 @@ static uint16_t sbc_encode_process_mono_data(int16_t *data, uint32_t size, struc
 											 uint32_t *p_actual_len)
 {
 	if (size > (uint32_t)max_input_mono_mode_pcm_size_in_bytes) {
-		printf("%s : input length max is %d in bytes\r\n", __func__, (int)max_input_mono_mode_pcm_size_in_bytes);
+		BT_LOGE("%s : input length max is %d in bytes\r\n", __func__, (int)max_input_mono_mode_pcm_size_in_bytes);
 		return 1;
 	}
 	memset((void *)pcm_frame_mono, 0, max_input_mono_mode_pcm_size_in_bytes);
 	memcpy((void *)pcm_frame_mono, (void *)data, size);
 	if (!psbc_encoder_state_singleton) {
-		printf("%s : SBC encoder: sbc state is NULL, call btstack_sbc_encoder_init to initialize it \r\n", __func__);
+		BT_LOGE("%s : SBC encoder: sbc state is NULL, call btstack_sbc_encoder_init to initialize it \r\n", __func__);
 		return 1;
 	}
 	SBC_ENC_PARAMS *context = &((bludroid_encoder_state_t *)psbc_encoder_state_singleton->encoder_state)->context;
@@ -543,13 +543,13 @@ static uint16_t sbc_encode_process_dual_data(int16_t *data, uint32_t size, struc
 											 uint32_t *p_actual_len)
 {
 	if (size > (uint32_t)max_input_dual_mode_pcm_size_in_bytes) {
-		printf("%s : input length max is %d in bytes \r\n", __func__, (int)max_input_dual_mode_pcm_size_in_bytes);
+		BT_LOGE("%s : input length max is %d in bytes \r\n", __func__, (int)max_input_dual_mode_pcm_size_in_bytes);
 		return 1;
 	}
 	memset((void *)pcm_frame_dual, 0, max_input_dual_mode_pcm_size_in_bytes);
 	memcpy((void *)pcm_frame_dual, (void *)data, size);
 	if (!psbc_encoder_state_singleton) {
-		printf("%s : SBC encoder: sbc state is NULL, call btstack_sbc_encoder_init to initialize it \r\n", __func__);
+		BT_LOGE("%s : SBC encoder: sbc state is NULL, call btstack_sbc_encoder_init to initialize it \r\n", __func__);
 		return 1;
 	}
 	SBC_ENC_PARAMS *context = &((bludroid_encoder_state_t *)psbc_encoder_state_singleton->encoder_state)->context;
@@ -598,7 +598,7 @@ static uint8_t read_sbc_header(uint8_t *packet, int size, int *offset, avdtp_sbc
 	}
 
 	if (size - pos < sbc_header_len) {
-		printf("%s: Not enough data to read SBC header, expected %d, received %d\n", __func__, sbc_header_len, size - pos);
+		BT_LOGE("%s: Not enough data to read SBC header, expected %d, received %d\n", __func__, sbc_header_len, size - pos);
 		return 0;
 	}
 	sbc_header->fragmentation = get_bit16(packet[pos], 7);
@@ -622,7 +622,7 @@ static int read_frame_header(uint8_t *packet, int size, int *offset, sbc_frame_h
 	int pos = *offset;
 
 	if (size - pos < sbc_frame_header_len) {
-		printf("%s: Not enough data to read SBC frame header, expected %d, received %d\n", __func__, sbc_frame_header_len, size - pos);
+		BT_LOGE("%s: Not enough data to read SBC frame header, expected %d, received %d\n", __func__, sbc_frame_header_len, size - pos);
 		return 1;
 	}
 	sbc_frame_header->syncword = packet[pos];
@@ -723,6 +723,7 @@ static unsigned int caculate_sbc_frame_size(sbc_frame_header_t *psbc_frame_heade
 	} else if (psbc_frame_header->sampling_frequency == 3) {
 		paudio_param->rate = 48000;
 	}
+	paudio_param->bits = 16;
 
 	return frame_size;
 }
@@ -741,7 +742,7 @@ static uint16_t sbc_audio_handle_media_data_packet(void *pentity, uint8_t *packe
 
 	/* decode sbc frame header */
 	if (read_frame_header(packet, size - pos, &pos, &sbc_frame_header)) {
-		printf("%s: read sbc frame header fail \r\n", __func__);
+		BT_LOGE("%s: read sbc frame header fail \r\n", __func__);
 		return 1;
 	}
 
@@ -768,12 +769,12 @@ static struct dec_codec_buffer *sbc_decoder_buffer_get(void *pentity)
 
 	ppcm_buffer = get_sbc_pcm_buffer();
 	if (ppcm_buffer == NULL) {
-		printf("%s: allocate pcm_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pcm_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pdecoder_buffer = (struct dec_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct dec_codec_buffer));
 	if (pdecoder_buffer == NULL) {
-		printf("%s: allocate pdecoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pdecoder_buffer fail \r\n", __func__);
 		release_pcm_buffer(ppcm_buffer);
 		return NULL;
 	}
@@ -801,7 +802,7 @@ static struct enc_codec_buffer *sbc_encoder_buffer_get(void *pentity)
 
 	pencoder_buffer = (struct enc_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct enc_codec_buffer));
 	if (pencoder_buffer == NULL) {
-		printf("%s: allocate pencoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pencoder_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pencoder_buffer->pbuffer = NULL;
@@ -822,7 +823,7 @@ static int sbc_decoder_num_samples_per_frame(void *pentity)
 	(void)pentity;
 
 	if (!psbc_decoder_state_singleton) {
-		printf("%s: sbc entity has not been inited \r\n", __func__);
+		BT_LOGE("%s: sbc entity has not been inited \r\n", __func__);
 		return 0xFF;
 	}
 	bludroid_decoder_state_t *decoder_state = (bludroid_decoder_state_t *) psbc_decoder_state_singleton->decoder_state;
@@ -834,7 +835,7 @@ static int sbc_decoder_num_channels(void *pentity)
 	(void)pentity;
 
 	if (!psbc_decoder_state_singleton) {
-		printf("%s: sbc entity has not been inited \r\n", __func__);
+		BT_LOGE("%s: sbc entity has not been inited \r\n", __func__);
 		return 0xFF;
 	}
 	bludroid_decoder_state_t *decoder_state = (bludroid_decoder_state_t *) psbc_decoder_state_singleton->decoder_state;
@@ -846,7 +847,7 @@ static int sbc_decoder_sample_rate(void *pentity)
 	(void)pentity;
 
 	if (!psbc_decoder_state_singleton) {
-		printf("%s: sbc entity has not been inited \r\n", __func__);
+		BT_LOGE("%s: sbc entity has not been inited \r\n", __func__);
 		return 0xFF;
 	}
 	bludroid_decoder_state_t *decoder_state = (bludroid_decoder_state_t *) psbc_decoder_state_singleton->decoder_state;
@@ -860,7 +861,7 @@ uint16_t rtk_bt_audio_sbc_register(uint32_t type, PAUDIO_CODEC_ENTITY p_entity)
 
 	DBG_BAD("%s:Enter \r\n", __func__);
 	if (p_entity == NULL) {
-		printf("%s:NULL entity pointer \r\n", __func__);
+		BT_LOGE("%s:NULL entity pointer \r\n", __func__);
 		return ret;
 	}
 	lock_flag = osif_lock();

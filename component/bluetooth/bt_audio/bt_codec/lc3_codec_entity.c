@@ -63,14 +63,14 @@ static int get_sample_rate(uint8_t sample_index)
 	while (1) {
 		if (le_audio_sample_rate_tab[i].sample_rate_index == sample_index) {
 			if (!le_audio_sample_rate_tab[i].support_flag) {
-				printf("%s: !!!! lc3 codec not support srate %d \r\n", __func__, le_audio_sample_rate_tab[i].sample_rate);
+				BT_LOGE("%s: !!!! lc3 codec not support srate %d \r\n", __func__, le_audio_sample_rate_tab[i].sample_rate);
 			} else {
 				sample_rate = le_audio_sample_rate_tab[i].sample_rate;
 			}
 			break;
 		}
 		if (le_audio_sample_rate_tab[i].sample_rate_index == 0xFF) {
-			printf("%s: cannot find matched sample rate \r\n", __func__);
+			BT_LOGE("%s: cannot find matched sample rate \r\n", __func__);
 			break;
 		}
 		i++;
@@ -89,7 +89,7 @@ static uint32_t get_lea_chnl_num(uint32_t audio_channel_allocation)
 		audio_channel_allocation &= (audio_channel_allocation - 1);
 	}
 
-	//printf("%s audio_channel_allocation = 0x%x, channels=%d\r\n",__func__,(unsigned int)audio_channel_allocation,channels);
+	//BT_LOGE("%s audio_channel_allocation = 0x%x, channels=%d\r\n",__func__,(unsigned int)audio_channel_allocation,channels);
 	return channels;
 }
 
@@ -232,7 +232,7 @@ uint16_t lc3_decoder_process_data(void *p_entity, uint8_t *data, uint32_t size, 
 	frame_bytes = entity->lc3.compress_bytes;
 #endif
 	if ((frame_bytes * entity->lc3.channels) > size) {
-		printf("%s: input lc3 data size (%d) is not matched with lc3 framesize (%d) \r\n", __func__, (int)size, frame_bytes);
+		BT_LOGE("%s: input lc3 data size (%d) is not matched with lc3 framesize (%d) \r\n", __func__, (int)size, frame_bytes);
 		return RTK_BT_AUDIO_FAIL;
 	} else {
 		memcpy((void *)lc3_decoder_input_buff, data, size);
@@ -274,8 +274,8 @@ uint16_t lc3_encoder_process_data(void *p_entity, int16_t *data, uint32_t size, 
 	frame_bytes = entity->lc3.compress_bytes;
 #endif
 	if ((entity->lc3.channels * pcm_sbytes * frame_samples) > size) {
-		printf("%s: input pcm data size (%d) is not matched with lc3 required (%d) \r\n", __func__, (int)size,
-			   (int)(entity->lc3.channels * pcm_sbytes * frame_samples));
+		BT_LOGE("%s: input pcm data size (%d) is not matched with lc3 required (%d) \r\n", __func__, (int)size,
+				(int)(entity->lc3.channels * pcm_sbytes * frame_samples));
 		return RTK_BT_AUDIO_FAIL;
 	} else {
 		memcpy((void *)lc3_encoder_input_buff, data, size);
@@ -320,7 +320,7 @@ struct dec_codec_buffer *lc3_decoder_buffer_get(void *p_entity)
 
 	pdecoder_buffer = (struct dec_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct dec_codec_buffer));
 	if (pdecoder_buffer == NULL) {
-		printf("%s:: allocate pbuffer fial \r\n", __func__);
+		BT_LOGE("%s:: allocate pbuffer fial \r\n", __func__);
 		return NULL;
 	}
 	pdecoder_buffer->pbuffer = NULL;
@@ -346,7 +346,7 @@ struct enc_codec_buffer *lc3_encoder_buffer_get(void *p_entity)
 
 	pencoder_buffer = (struct enc_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct enc_codec_buffer));
 	if (pencoder_buffer == NULL) {
-		printf("%s: allocate pencoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pencoder_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pencoder_buffer->pbuffer = NULL;

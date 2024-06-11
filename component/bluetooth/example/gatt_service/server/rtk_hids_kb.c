@@ -17,6 +17,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
 #include <rtk_hids_kb.h>
+#include <bt_utils.h>
 
 #define HID_SRV_UUID                            0x1812
 #define PROTOCOL_MODE_CHAR_UUID                 0x2A4E
@@ -345,6 +346,11 @@ static void hids_read_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] HIDS response for client read failed, err: 0x%x\r\n", ret);
 	}
+
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 static void hids_write_hdl(void *data)
@@ -403,6 +409,9 @@ static void hids_write_hdl(void *data)
 
 	BT_LOGA("[APP] HIDS write event data(index: %d):\r\n", index);
 	BT_DUMPA("", p_write_ind->value, p_write_ind->len);
+	BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u\r\n",
+				p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+				p_write_ind->len, p_write_ind->type);
 
 send_rsp:
 	if (RTK_BT_GATTS_WRITE_NO_RESP == p_write_ind->type  ||
@@ -416,6 +425,10 @@ send_rsp:
 	} else {
 		BT_LOGE("[APP] HIDS response for client write failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+				write_resp.conn_handle, write_resp.index,
+				write_resp.type, write_resp.err_code);
 }
 
 static void hids_cccd_update_hdl(void *data)
@@ -434,11 +447,17 @@ static void hids_cccd_update_hdl(void *data)
 	case REPORT_INPUT_CHAR_CCCD_INDEX:
 		report_input_cccd_ntf_en_map[conn_id] = cccd_ntf;
 		BT_LOGA("[APP] HIDS report input charac cccd bit, notify: %d\r\n", cccd_ntf);
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					cccd_ntf, p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 		break;
 
 	case BOOT_KB_IN_REPORT_CHAR_CCCD_INDEX:
 		BT_LOGA("[APP] HIDS boot keyboard input charac cccd bit, notify: %d\r\n", cccd_ntf);
 		boot_kb_in_cccd_ntf_en_map[conn_id] = cccd_ntf;
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					cccd_ntf, p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 		break;
 
 	default:
@@ -468,6 +487,9 @@ void hid_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] HIDS indicate failed, err: 0x%x\r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
 
 		break;
 	}
@@ -479,6 +501,9 @@ void hid_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] HIDS notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ntf_ind->err_code) ? 0 : -1, p_ntf_ind->app_id,
+					p_ntf_ind->conn_handle, p_ntf_ind->index);
 
 		break;
 	}

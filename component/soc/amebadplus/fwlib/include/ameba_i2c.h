@@ -831,8 +831,7 @@ _LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
 /* I2C_Exported_Master_Functions I2C Exported Master Functions */
 _LONG_CALL_ void I2C_MasterSendNullData(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR);
 _LONG_CALL_ void I2C_MasterSend(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR);
-_LONG_CALL_ void I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ u32 I2C_MasterWriteBrk(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ void I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ void I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen);
@@ -840,14 +839,14 @@ _LONG_CALL_ void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address);
 _LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
 _LONG_CALL_ void I2C_MasterISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
-_LONG_CALL_ u8 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u32 ms);
-_LONG_CALL_ u8 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u32 ms);
+_LONG_CALL_ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
+_LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
 _LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
 _LONG_CALL_ u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
 
 /* I2C_Exported_Slave_Functions I2C Exported Slave Functions */
 _LONG_CALL_ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ void I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data);
 
 /* I2C_Exported_PowerSave_Functions I2C Exported PowerSave Functions */

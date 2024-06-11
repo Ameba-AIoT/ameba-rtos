@@ -53,7 +53,7 @@ int16_t *get_aac_pcm_buffer(void)
 	int16_t *ppcm_data = NULL;
 
 	if (list_empty(phead)) {
-		printf("%s: No enough pcm data buffer, used is %d \r\n", __func__, (int)aac_pcm_data_used_num);
+		BT_LOGE("%s: No enough pcm data buffer, used is %d \r\n", __func__, (int)aac_pcm_data_used_num);
 		return NULL;
 	}
 	plist = phead->next;
@@ -77,7 +77,7 @@ static bool bt_stack_aac_decoder_init(void)
 {
 	paac_decoder_handle = aacDecoder_Open((TRANSPORT_TYPE)RTK_AAC_TT_MP4_LATM_MCP1, number_of_layers);
 	if (!paac_decoder_handle) {
-		printf("%s: paac_decoder_handle is NULL \r\n", __func__);
+		BT_LOGE("%s: paac_decoder_handle is NULL \r\n", __func__);
 		return false;
 	}
 	min_data_size = aac_seg_start_seq_len + aac_seg_end_seq_len + header_length_bytes + 2;
@@ -89,52 +89,52 @@ static bool bt_stack_aac_encoder_init(rtk_bt_aac_encode_t *pencoder_t)
 {
 	// /* init flow */
 	// if (AACENC_OK != aacEncOpen(&paac_encoder_handle, 0, 0)) {
-	//  printf("%s: mAacDecoderHandle is NULL \r\n", __func__);
+	//  BT_LOGE("%s: mAacDecoderHandle is NULL \r\n", __func__);
 	//  return false;
 	// }
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_AOT, pencoder_t->object_type)) {
-	//  printf("%s: AACENC_AOT set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_AOT set failed \r\n", __func__);
 	//  return false;
 	// };
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_SBR_MODE, 0)) {
-	//  printf("%s: AACENC_SBR_MODE set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_SBR_MODE set failed \r\n", __func__);
 	//  return false;
 	// };
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_SAMPLERATE, pencoder_t->sample_freq)) {
-	//  printf("%s: AACENC_SAMPLERATE set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_SAMPLERATE set failed \r\n", __func__);
 	//  return false;
 	// };
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_CHANNELMODE, pencoder_t->channels)) {
-	//  printf("%s: AACENC_CHANNELMODE set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_CHANNELMODE set failed \r\n", __func__);
 	//  return false;
 	// };
 	// /* AACENC_CHANNELORDER 1 WAV */
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_CHANNELORDER, 1)) {
-	//  printf("%s: AACENC_CHANNELORDER set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_CHANNELORDER set failed \r\n", __func__);
 	//  return false;
 	// };
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_BITRATEMODE, 0)) {
-	//  printf("%s: AACENC_BITRATEMODE set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_BITRATEMODE set failed \r\n", __func__);
 	//  return false;
 	// };
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_BITRATE, pencoder_t->bit_rate)) {
-	//  printf("%s: AACENC_BITRATE set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_BITRATE set failed \r\n", __func__);
 	//  return false;
 	// };
 
 	// if (aacEncoder_SetParam(paac_encoder_handle, AACENC_TRANSMUX, TT_MP4_ADTS)) {
-	//  printf("%s: AACENC_TRANSMUX set failed \r\n", __func__);
+	//  BT_LOGE("%s: AACENC_TRANSMUX set failed \r\n", __func__);
 	//  return false;
 	// };
 	// /* Call aacEncEncode() with NULL parameters to initialize encoder instance with present parameter set */
 	// if (aacEncEncode(paac_encoder_handle, NULL, NULL, NULL, NULL)) {
-	//  printf("%s: init encoder instance failed \r\n", __func__);
+	//  BT_LOGE("%s: init encoder instance failed \r\n", __func__);
 	//  return false;
 	// };
 
@@ -149,19 +149,19 @@ static uint16_t aac_codec_init(void *p_entity, void *param)
 	rtk_bt_aac_codec_t *paac_codec_t = (rtk_bt_aac_codec_t *)param;
 
 	if (!paac_codec_t) {
-		printf("%s : No rtk_bt_aac_codec_t configure \r\n", __func__);
+		BT_LOGE("%s : No rtk_bt_aac_codec_t configure \r\n", __func__);
 		return 1;
 	}
 	/* initialize decoder pcm buffer */
 	init_aac_pcm_free_data();
 	/* 3rdparty decoder init */
 	if (bt_stack_aac_decoder_init() == false) {
-		printf("%s : bt_stack_aac_decoder_init error \r\n", __func__);
+		BT_LOGE("%s : bt_stack_aac_decoder_init error \r\n", __func__);
 		return 1;
 	}
 	/* 3rdparty encoder init */
 	if (bt_stack_aac_encoder_init(&paac_codec_t->encoder_t) == false) {
-		printf("%s : bt_stack_aac_encoder_init error \r\n", __func__);
+		BT_LOGE("%s : bt_stack_aac_encoder_init error \r\n", __func__);
 		return 1;
 	}
 
@@ -231,17 +231,17 @@ static uint16_t aac_decoder_process_data(void *p_entity, uint8_t *data, uint32_t
 	// uint8_t decoded_num = 0;
 
 	if (!paac_decoder_handle) {
-		printf("%s : Decoder has not been inited \r\n", __func__);
+		BT_LOGE("%s : Decoder has not been inited \r\n", __func__);
 		return 0;
 	}
 	if (size > 1024) {
-		printf("%s : Decoder max pcm size si 1024 \r\n", __func__);
+		BT_LOGE("%s : Decoder max pcm size si 1024 \r\n", __func__);
 		return 0;
 	}
-	printf("length is %d \r\n", size);
+	BT_LOGA("length is %d \r\n", size);
 	headerSize = getHeaderSize(data, size);
 	if (headerSize != 0) {
-		printf("has header \r\n");
+		BT_LOGA("has header \r\n");
 		data += aac_seg_start_seq_len + header_length_bytes;
 		size -= aac_seg_start_seq_len + header_length_bytes;
 		aacDecoder_ConfigRaw(paac_decoder_handle, &data, &headerSize);
@@ -252,7 +252,7 @@ static uint16_t aac_decoder_process_data(void *p_entity, uint8_t *data, uint32_t
 		CStreamInfo *p_si = NULL;
 		mErrorCode = aacDecoder_Fill(paac_decoder_handle, &data, &buffer_size, &bytes_valid);
 		if (mErrorCode != AAC_DEC_OK) {
-			printf("%s : accDecoder_Fill fail ! \r\n", __func__);
+			BT_LOGE("%s : accDecoder_Fill fail ! \r\n", __func__);
 			return 1;
 		}
 		/* do decode until return no AAC_DEC_NOT_ENOUGH_BITS */
@@ -261,11 +261,11 @@ static uint16_t aac_decoder_process_data(void *p_entity, uint8_t *data, uint32_t
 				aacDecoder_DecodeFrame(paac_decoder_handle, decode_buffer->pbuffer, decode_buffer->total_size /*size in number of short, not bytes*/, 0);
 			if (mErrorCode == AAC_DEC_NOT_ENOUGH_BITS) {
 				/* input aac data is not enough, waiting for more data input */
-				printf("Done \r\n");
+				BT_LOGA("Done \r\n");
 				break;
 			}
 			if (mErrorCode != AAC_DEC_OK) {
-				printf("%s : decode error %d ! \r\n", __func__, mErrorCode);
+				BT_LOGE("%s : decode error %d ! \r\n", __func__, mErrorCode);
 				memset((void *)decode_buffer->pbuffer, 0, decode_buffer->total_size * 2);
 				*ppcm_size = 0;
 				break;
@@ -274,7 +274,7 @@ static uint16_t aac_decoder_process_data(void *p_entity, uint8_t *data, uint32_t
 				// if (decoded_num ++ < 1) {
 				p_si = aacDecoder_GetStreamInfo(paac_decoder_handle);
 				if (!p_si || p_si->sampleRate <= 0) {
-					printf("%s : get stream info error ! \r\n", __func__);
+					BT_LOGE("%s : get stream info error ! \r\n", __func__);
 					memset((void *)decode_buffer->pbuffer, 0, decode_buffer->total_size * 2);
 					*ppcm_size = 0;
 					break;
@@ -288,7 +288,7 @@ static uint16_t aac_decoder_process_data(void *p_entity, uint8_t *data, uint32_t
 				paudio_param->bits = 0;
 				*ppcm_size = p_si->frameSize * p_si->numChannels;
 				// } else {
-				//  printf("%s : Only allow one aac packet ! \r\n", __func__);
+				//  BT_LOGE("%s : Only allow one aac packet ! \r\n", __func__);
 				//  memset((void *)decode_buffer->pbuffer, 0, decode_buffer->total_size * 2);
 				//  *ppcm_size = 0;
 				//  break;
@@ -316,7 +316,7 @@ static uint16_t aac_encoder_process_data(void *p_entity, int16_t *data, uint32_t
 	int out_sl_size = sizeof(uint8_t);
 
 	if (!paac_encoder_handle) {
-		printf("%s : Decoder has not been inited \r\n", __func__);
+		BT_LOGE("%s : Decoder has not been inited \r\n", __func__);
 		return 0;
 	}
 
@@ -348,21 +348,21 @@ static uint16_t aac_encoder_process_data(void *p_entity, int16_t *data, uint32_t
 		if (outargs.numOutBytes == 0) {
 			*p_frame_num = 0;
 			*p_actual_len = 0;
-			printf("%s : This pcm frame encode has no aac output \r\n", __func__);
+			BT_LOGE("%s : This pcm frame encode has no aac output \r\n", __func__);
 			break;
 		} else {
 			uint32_t audioConsumed = outargs.numInSamples * sizeof(int16_t);
 			if (audio_size != audioConsumed) {
 				*p_frame_num = 0;
 				*p_actual_len = 0;
-				printf("%s : Not support multiple encode \r\n", __func__);
+				BT_LOGE("%s : Not support multiple encode \r\n", __func__);
 				break;
 			}
 			if (outargs.numOutBytes > AAX_ENCODE_MAX_OUT_BUFFER_SIZE) {
-				printf("%s :Encoder buffer size (%d) is not enough, required (%d) \r\n",
-					   __func__,
-					   AAX_ENCODE_MAX_OUT_BUFFER_SIZE,
-					   outargs.numOutBytes);
+				BT_LOGE("%s :Encoder buffer size (%d) is not enough, required (%d) \r\n",
+						__func__,
+						AAX_ENCODE_MAX_OUT_BUFFER_SIZE,
+						outargs.numOutBytes);
 				*p_frame_num = 0;
 				*p_actual_len = 0;
 			} else {
@@ -404,12 +404,12 @@ static struct dec_codec_buffer *aac_decoder_buffer_get(void *p_entity)
 
 	ppcm_buffer = get_aac_pcm_buffer();
 	if (ppcm_buffer == NULL) {
-		printf("%s: allocate pcm_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pcm_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pdecoder_buffer = (struct dec_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct dec_codec_buffer));
 	if (pdecoder_buffer == NULL) {
-		printf("%s: allocate pdecoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pdecoder_buffer fail \r\n", __func__);
 		release_pcm_buffer(ppcm_buffer);
 		return NULL;
 	}
@@ -437,7 +437,7 @@ static struct enc_codec_buffer *aac_encoder_buffer_get(void *p_entity)
 
 	pencoder_buffer = (struct enc_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct enc_codec_buffer));
 	if (pencoder_buffer == NULL) {
-		printf("%s: allocate pencoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pencoder_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pencoder_buffer->pbuffer = NULL;
@@ -481,7 +481,7 @@ uint16_t rtk_bt_audio_aac_register(uint32_t type, PAUDIO_CODEC_ENTITY p_entity)
 
 	DBG_BAD("%s:Enter \r\n", __func__);
 	if (p_entity == NULL) {
-		printf("%s:NULL entity pointer \r\n", __func__);
+		BT_LOGE("%s:NULL entity pointer \r\n", __func__);
 		return ret;
 	}
 	lock_flag = osif_lock();

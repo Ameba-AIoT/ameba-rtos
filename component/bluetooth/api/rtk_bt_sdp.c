@@ -22,12 +22,12 @@ uint16_t rtk_sdp_record_add(void *record, uint32_t length)
 	}
 	/* Check validity */
 	if (!record) {
-		printf("rtk_sdp_record_add: record is NULL \r\n");
+		BT_LOGE("rtk_sdp_record_add: record is NULL \r\n");
 		return RTK_BT_ERR_NO_PERM;
 	}
 	/* length check */
 	if (length > RTK_BT_SDK_MAX_RECORD_LENGTH) {
-		printf("rtk_sdp_record_add: SDP record length %d is over max record memory \r\n", (int)length);
+		BT_LOGE("rtk_sdp_record_add: SDP record length %d is over max record memory \r\n", (int)length);
 		return RTK_BT_FAIL;
 	}
 

@@ -219,13 +219,19 @@ void at_cpuload(void *arg)
 	}
 	if (argc == 3) {
 		top_mode = atoi(argv[1]);
-		para_in.time = (atoi(argv[2])) > 0 ? (atoi(argv[2])) : 1;
+		if (0 != strlen(argv[2])) {
+			para_in.time = (atoi(argv[2])) > 0 ? (atoi(argv[2])) : 1;
+		}
 	} else if (argc == 2) {
 		top_mode = atoi(argv[1]);
 	} else {/* argc == 4 */
 		top_mode = atoi(argv[1]);
-		para_in.time = (atoi(argv[2])) > 0 ? (atoi(argv[2])) : 1;
-		para_in.count = (atoi(argv[3])) > 0 ? (atoi(argv[3])) - 1 : -1;
+		if (0 != strlen(argv[2])) {
+			para_in.time = (atoi(argv[2])) > 0 ? (atoi(argv[2])) : 1;
+		}
+		if (0 != strlen(argv[3])) {
+			para_in.count = (atoi(argv[3])) > 0 ? (atoi(argv[3])) - 1 : -1;
+		}
 	}
 
 	if (NULL == task_status) {
@@ -375,7 +381,7 @@ void at_state(void *arg)
 	{
 		signed char pcWriteBuffer[1024];
 		vTaskList((char *)pcWriteBuffer);
-		at_printf("Task List: \n\r%s\n\r", pcWriteBuffer);
+		at_printf("Task List: \r\n%s\r\n", pcWriteBuffer);
 	}
 #endif
 
@@ -451,7 +457,7 @@ void at_log(void *arg)
 
 	/* Get. */
 	if (mode == 0) {
-		if ((argc != 3) || (argv[2] == NULL)) {
+		if ((argc != 3) || (strlen(argv[2]) == 0)) {
 			RTK_LOGA(NOTAG, "[LOG] Invalid get parameters.\r\n");
 			error_no = 1;
 			goto end;
@@ -462,7 +468,7 @@ void at_log(void *arg)
 
 	/* Set. */
 	else if (mode == 1) {
-		if ((argc != 4) || (argv[2] == NULL) || (argv[3] == NULL)) {
+		if ((argc != 4) || (strlen(argv[2]) == 0) || (strlen(argv[3]) == 0)) {
 			RTK_LOGA(NOTAG, "[LOG] Invalid set parameters.\r\n");
 			error_no = 1;
 			goto end;

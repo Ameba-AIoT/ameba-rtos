@@ -14,6 +14,9 @@
 
 #define RTW_PRIV_DGB_CMD (SIOCDEVPRIVATE)
 #define RTW_PRIV_MP_CMD (SIOCDEVPRIVATE + 1)
+#ifdef CONFIG_SDIO_BRIDGE
+#define RTW_PRIV_BRIDGE_CMD (SIOCDEVPRIVATE + 2)
+#endif
 #define WIFI_MP_MSG_BUF_SIZE (4096)
 
 struct rtw_priv_ioctl {
@@ -186,6 +189,11 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd_id)
 	case RTW_PRIV_MP_CMD:
 		ret = llhw_wifi_mp_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
 		break;
+#ifdef CONFIG_SDIO_BRIDGE
+	case RTW_PRIV_BRIDGE_CMD:
+		ret = llhw_sdio_bridge_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
+		break;
+#endif
 	default:
 		ret = -EOPNOTSUPP;
 		break;
@@ -223,6 +231,12 @@ out:
 
 int rtw_ndev_init(struct net_device *pnetdev)
 {
+#ifdef CONFIG_SDIO_BRIDGE
+	/*force a fixed address to netdev*/
+	u8 mac[6] = {0x00, 0xe2, 0x4c, 0x55, 0x55, 0x55};
+	memcpy((void *)global_idev.pndev[0]->dev_addr, mac, ETH_ALEN);
+	llhw_sdio_bridge_sync_host_mac(mac);
+#endif
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 	return 0;
 }
@@ -475,7 +489,9 @@ int rtw_ndev_alloc(void)
 {
 	int i, ret = false;
 	struct net_device *ndev = NULL;
+#ifndef CONFIG_SDIO_BRIDGE
 	struct wireless_dev *wdev;
+#endif
 
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
 		/* alloc and init netdev */
@@ -489,6 +505,7 @@ int rtw_ndev_alloc(void)
 		ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
 		SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
 
+#ifndef CONFIG_SDIO_BRIDGE
 		/* alloc and init wireless_dev */
 		wdev = (struct wireless_dev *)kzalloc(sizeof(struct wireless_dev), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 		if (!wdev) {
@@ -499,6 +516,7 @@ int rtw_ndev_alloc(void)
 		wdev->iftype = (i ? NL80211_IFTYPE_AP : NL80211_IFTYPE_STATION);
 		ndev->ieee80211_ptr = wdev;
 		global_idev.pwdev_global[i] = wdev;
+#endif
 	}
 	global_idev.mlme_priv.b_in_scan = false;
 
@@ -506,11 +524,12 @@ int rtw_ndev_alloc(void)
 
 fail:
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
+#ifndef CONFIG_SDIO_BRIDGE
 		if (global_idev.pwdev_global[i]) { //wdev
 			kfree((u8 *)global_idev.pwdev_global[i]);
 			global_idev.pwdev_global[i] = NULL;
 		}
-
+#endif
 		if (global_idev.pndev[i]) {
 			free_netdev(global_idev.pndev[i]);
 			global_idev.pndev[i] = NULL;

@@ -88,6 +88,7 @@
 /* ipc driver. */
 #include <ameba_ipc/ameba_ipc.h>
 #include "inic_ipc.h"
+#include "rtw_llhw_msg.h"
 #else
 #include <linux/mmc/sdio_func.h>
 #include "inic_sdio.h"
@@ -101,7 +102,6 @@
 #include "rtw_ethtool_ops.h"
 #include "rtw_llhw_hci.h"
 #include "rtw_llhw_ops.h"
-#include "rtw_llhw_msg.h"
 #include "rtw_functions.h"
 #include "rtw_cfgvendor.h"
 #include "rtw_proc.h"
@@ -109,7 +109,11 @@
 /******************************************************************/
 /********** Definitions between Linux and FULLMAC. **************/
 /******************************************************************/
+#ifdef CONFIG_SDIO_BRIDGE
+#define TOTAL_IFACE_NUM			1
+#else
 #define TOTAL_IFACE_NUM			2
+#endif
 #define ETH_ALEN			6
 #define FUNC_NDEV_FMT			"%s(%s)"
 #define FUNC_NDEV_ARG(ndev)		__func__, ndev->name

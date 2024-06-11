@@ -108,6 +108,16 @@ typedef struct {
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
 } rtk_bt_a2dp_disconn_ind_t;
+
+/**
+ * @struct    rtk_bt_a2dp_stream_open_t
+ * @brief     a2dp stream open event.
+ */
+typedef struct {
+	uint8_t bd_addr[6];                                 /*!< address */
+	uint16_t max_pkt_len;                               /*!< max packet length */
+} rtk_bt_a2dp_stream_open_t;
+
 /**
  * @struct    rtk_bt_a2dp_codec_param_t
  * @brief     Bluetooth A2DP stream data indication.

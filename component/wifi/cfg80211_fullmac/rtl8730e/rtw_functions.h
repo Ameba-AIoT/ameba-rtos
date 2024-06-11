@@ -125,12 +125,13 @@ int llhw_ipc_send_msg(u32 id, u32 *param_buf, u32 buf_len);
 int inic_msg_q_init(struct msg_priv_t *priv, void (*task_hdl)(void *));
 int inic_msg_enqueue(struct msg_priv_t *priv, void *msg);
 void inic_msg_q_deinit(struct msg_priv_t *priv);
-unsigned int llhw_recv_handler(u8 *rxbuf);
 void llhw_event_task(struct work_struct *data);
-void llhw_recv_pkts(void *msg);
 int llhw_xmit_entry(int idx, struct sk_buff *pskb);
 int llhw_xmit_init(void);
 int llhw_xmit_deinit(void);
+void llhw_recv_notify(void);
+void llhw_recv_init(void);
+void llhw_recv_deinit(void);
 int llhw_event_init(struct inic_device *idev);
 void llhw_event_deinit(void);
 void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len);
@@ -141,10 +142,22 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default);
 ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 ssize_t proc_set_wow_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 void rtw_wow_prepare_mdns_para(u8 *pframe, u32 *plen);
+u32 rtw_sdio_init(struct inic_sdio *priv);
+void rtw_sdio_deinit(struct inic_sdio *priv);
 int rtw_sdio_suspend(struct device *dev);
 int rtw_sdio_resume(struct device *dev);
 int rtw_resume_common(struct inic_sdio *priv);
+void rtw_sdio_init_txavailbd_threshold(struct inic_sdio *priv);
+u8 rtw_sdio_query_txbd_status(struct inic_sdio *priv);
+int rtw_sdio_alloc_irq(struct inic_sdio *priv);
 
+#endif
+
+#ifdef CONFIG_SDIO_BRIDGE
+int llhw_sdio_bridge_sync_host_mac(u8 *addr);
+int llhw_sdio_bridge_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
+void llhw_sdio_bridge_get_scan_result(u32 ap_num);
+void llhw_sdio_bridge_event_join_status_indicate(void *event_priv, u32 *param_buf);
 #endif
 
 #endif // __RTW_FUNCTIONS_H__

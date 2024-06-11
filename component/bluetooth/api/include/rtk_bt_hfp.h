@@ -305,6 +305,7 @@ typedef struct {
  * @brief     Bluetooth HFP codec status.
  */
 typedef struct {
+	uint8_t bd_addr[6];                                 /*!< address */
 	uint8_t codec_type;                                 /*!< indicate codec */
 	union {
 		struct {

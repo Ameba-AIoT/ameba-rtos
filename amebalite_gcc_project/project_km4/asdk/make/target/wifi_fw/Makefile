@@ -22,10 +22,9 @@ vpath %.c $(DIR_TEST)
 #*****************************************************************************#
 ifeq ($(CONFIG_AS_INIC_NP),y)
 CSRC =$(DIR)/wififw_init.c \
-       $(DIR)/wififw_txpkt.c \
+       $(DIR)/wififw_txpkt_common.c \
 	   $(DIR)/wififw_bcnmode.c \
        $(DIR)/wififw_pwrctrl.c \
-	   $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
@@ -38,8 +37,7 @@ CSRC =$(DIR)/wififw_init.c \
 	   $(DIR)/wififw_ra_new.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR)/wififw_periodcca.c \
-	   $(DIR)/wififw_ps_twt.c \
-	   $(DIR)/wififw_h2c.c \
+	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR)/wififw_ps_dbg.c \
 	   $(DIR_COMMON)/wififw_h2c_common.c     \
 	   $(DIR_COMMON)/wififw_c2h_common.c \

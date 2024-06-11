@@ -4,6 +4,7 @@
 *******************************************************************************
 */
 #include <stdio.h>
+#include <bt_debug.h>
 #include <bt_audio_record_api.h>
 #include <bt_audio_debug.h>
 #include "audio/audio_record.h"
@@ -16,7 +17,7 @@ void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer
 
 	audio_record = RTAudioRecord_Create();
 	if (!audio_record) {
-		printf("%s :new AudioRecord failed", __func__);
+		BT_LOGE("%s :new AudioRecord failed", __func__);
 		return NULL;
 	}
 	/* record config */
@@ -40,7 +41,7 @@ uint16_t rtk_bt_audio_record_deinit(void *record_hdl)
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 1;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -56,7 +57,7 @@ uint16_t rtk_bt_audio_record_start(void *record_hdl)
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 1;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -73,7 +74,7 @@ uint16_t rtk_bt_audio_record_stop(void *record_hdl)
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 1;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -88,7 +89,7 @@ uint16_t rtk_bt_audio_record_set_sample_rate(void *record_hdl, uint32_t sample_r
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 1;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -105,7 +106,7 @@ uint32_t rtk_bt_audio_record_get_sample_rate(void *record_hdl)
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 0;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -118,7 +119,7 @@ uint16_t rtk_bt_audio_record_set_channel_count(void *record_hdl, uint32_t channe
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 1;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -134,7 +135,7 @@ uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl)
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 0;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -147,7 +148,7 @@ uint16_t rtk_bt_audio_record_set_parameters(void *record_hdl, const char *strs)
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 1;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -192,7 +193,7 @@ int rtk_bt_audio_record_read(void *record_hdl, void *buffer, int size, bool bloc
 	struct RTAudioRecord *audio_record = NULL;
 
 	if (!record_hdl) {
-		printf("%s: audio record is NULL", __func__);
+		BT_LOGE("%s: audio record is NULL", __func__);
 		return 0;
 	} else {
 		audio_record = (struct RTAudioRecord *)record_hdl;
@@ -204,7 +205,7 @@ int rtk_bt_audio_record_read(void *record_hdl, void *buffer, int size, bool bloc
 void rtk_bt_audio_record_set_mute(uint32_t channel, bool muted)
 {
 	if (0 != RTAudioControl_SetRecordMute(channel, muted)) {
-		printf("audio track mute fail!! ");
+		BT_LOGE("audio track mute fail!! ");
 	}
 }
 

@@ -54,7 +54,7 @@ static uint32_t generic_random_value_for_authentication(uint8_t size)
 	uint8_t i;
 	uint32_t max = 0;
 	if (size > 4) {
-		printf("[%s] size(%d) > 4, only generic 4 bytes random number", __func__, size);
+		BT_LOGE("[%s] size(%d) > 4, only generic 4 bytes random number", __func__, size);
 		size = 4;
 	}
 	for (i = 0; i < size; i++) {
@@ -64,7 +64,7 @@ static uint32_t generic_random_value_for_authentication(uint8_t size)
 }
 
 /******************************************************************
- * @fn      store_data_use_big_endian
+ * @fn      BT_LOGE
  * @brief   Store the random value use big endian for oob in Authentication.
  *
  * @param   num  -  the random number
@@ -76,7 +76,7 @@ static bool store_data_use_big_endian(uint32_t num, uint8_t *p_data, uint8_t siz
 {
 	uint8_t i, *p;
 	if (size > sizeof(uint32_t)) {
-		printf("[%s] The size %d exceed max capability %d, fail\r\n", __func__, size, sizeof(uint32_t));
+		BT_LOGE("[%s] The size %d exceed max capability %d, fail\r\n", __func__, size, sizeof(uint32_t));
 		return false;
 	}
 	p = (uint8_t *)&num;
@@ -140,7 +140,7 @@ static bool prov_check_method(prov_capabilities_p p_capability)
 			}
 			break;
 		default:
-			printf("[%s] Unknown input_oob_action:%d\r\n", __func__, expect_prov_meshod_for_provisioner.auth_action.input_oob_action);
+			BT_LOGE("[%s] Unknown input_oob_action:%d\r\n", __func__, expect_prov_meshod_for_provisioner.auth_action.input_oob_action);
 			break;
 		}
 		break;
@@ -175,7 +175,7 @@ static bool prov_check_method(prov_capabilities_p p_capability)
 			}
 			break;
 		default:
-			printf("[%s] Unknown output_oob_action:%d\r\n", __func__, expect_prov_meshod_for_provisioner.auth_action.output_oob_action);
+			BT_LOGE("[%s] Unknown output_oob_action:%d\r\n", __func__, expect_prov_meshod_for_provisioner.auth_action.output_oob_action);
 			break;
 		}
 		break;
@@ -277,8 +277,8 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 
 		memcpy((void *)rand, (void *)prov_check_conf.rand, sizeof(rand));
 		memcpy((void *)confirmation, (void *)prov_check_conf.conf, sizeof(confirmation));
-		printf("confimation %02x %02x %02x %02x %02x %02x \r\n", confirmation[0], confirmation[1], confirmation[2], confirmation[3], confirmation[4], confirmation[5]);
-		printf("rand %02x %02x %02x %02x %02x %02x \r\n", rand[0], rand[1], rand[2], rand[3], rand[4], rand[5]);
+		BT_LOGA("confimation %02x %02x %02x %02x %02x %02x \r\n", confirmation[0], confirmation[1], confirmation[2], confirmation[3], confirmation[4], confirmation[5]);
+		BT_LOGA("rand %02x %02x %02x %02x %02x %02x \r\n", rand[0], rand[1], rand[2], rand[3], rand[4], rand[5]);
 
 		/* if confirmation from device is correct invoke prov_send_prov_data() */
 		/* if confirmation from device is wrong invoke prov_reject() */
@@ -308,14 +308,14 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 	case PROV_CB_TYPE_PUBLIC_KEY: {
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		if (MESH_ROLE_PROVISIONER == mesh_role) {
-			printf("[%s] Get the public key from the device\r\n", __func__);
+			BT_LOGA("[%s] Get the public key from the device\r\n", __func__);
 			uint8_t public_key[64] = {0xf4, 0x65, 0xe4, 0x3f, 0xf2, 0x3d, 0x3f, 0x1b, 0x9d, 0xc7, 0xdf, 0xc0, 0x4d, 0xa8, 0x75, 0x81, 0x84, 0xdb, 0xc9, 0x66, 0x20, 0x47, 0x96, 0xec, 0xcf, 0x0d, 0x6c, 0xf5, 0xe1, 0x65, 0x00, 0xcc, 0x02, 0x01, 0xd0, 0x48, 0xbc, 0xbb, 0xd8, 0x99, 0xee, 0xef, 0xc4, 0x24, 0x16, 0x4e, 0x33, 0xc2, 0x01, 0xc2, 0xb0, 0x10, 0xca, 0x6b, 0x4d, 0x43, 0xa8, 0xa1, 0x55, 0xca, 0xd8, 0xec, 0xb2, 0x79};
 			prov_device_public_key_set(public_key);
 		}
 #endif
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 		if (MESH_ROLE_DEVICE == mesh_role) {
-			printf("[%s] Set the public key\r\n", __func__);
+			BT_LOGA("[%s] Set the public key\r\n", __func__);
 			uint8_t public_key[64] = {0xf4, 0x65, 0xe4, 0x3f, 0xf2, 0x3d, 0x3f, 0x1b, 0x9d, 0xc7, 0xdf, 0xc0, 0x4d, 0xa8, 0x75, 0x81, 0x84, 0xdb, 0xc9, 0x66, 0x20, 0x47, 0x96, 0xec, 0xcf, 0x0d, 0x6c, 0xf5, 0xe1, 0x65, 0x00, 0xcc, 0x02, 0x01, 0xd0, 0x48, 0xbc, 0xbb, 0xd8, 0x99, 0xee, 0xef, 0xc4, 0x24, 0x16, 0x4e, 0x33, 0xc2, 0x01, 0xc2, 0xb0, 0x10, 0xca, 0x6b, 0x4d, 0x43, 0xa8, 0xa1, 0x55, 0xca, 0xd8, 0xec, 0xb2, 0x79};
 			uint8_t private_key[32] = {0x52, 0x9a, 0xa0, 0x67, 0x0d, 0x72, 0xcd, 0x64, 0x97, 0x50, 0x2e, 0xd4, 0x73, 0x50, 0x2b, 0x03, 0x7e, 0x88, 0x03, 0xb5, 0xc6, 0x08, 0x29, 0xa5, 0xa3, 0xca, 0xa2, 0x19, 0x50, 0x55, 0x30, 0xba};
 			prov_params_set(PROV_PARAMS_PUBLIC_KEY, public_key, sizeof(public_key));
@@ -329,7 +329,7 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 		prov_start_p pprov_start = cb_data.pprov_start;
 		// prov_auth_value_type_t prov_auth_value_type = prov_auth_value_type_get(pprov_start);
 		// /* use cmd to set auth data */
-		// printf("auth method=%d[nsoi] action=%d size=%d type=%d[nbNa]\r\n>",
+		// BT_LOGA("auth method=%d[nsoi] action=%d size=%d type=%d[nbNa]\r\n>",
 		//     pprov_start->auth_method,
 		//     pprov_start->auth_action, pprov_start->auth_size, prov_auth_value_type);
 		uint8_t auth_data[16] = STATIC_OOB_VALUE_FOR_AUTHENTICATION;
@@ -381,7 +381,7 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 				break;
 			}
 			default:
-				printf("[%s] pprov_start->auth_action.output_oob_action:%d can not support\r\n", __func__, pprov_start->auth_action.output_oob_action);
+				BT_LOGE("[%s] pprov_start->auth_action.output_oob_action:%d can not support\r\n", __func__, pprov_start->auth_action.output_oob_action);
 				break;
 			}
 			//prov_auth_value_set(auth_data, pprov_start->auth_size.output_oob_size);
@@ -420,7 +420,7 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 				break;
 			}
 			default:
-				printf("[%s] pprov_start->auth_action.input_oob_action:%d can not support\r\n", __func__, pprov_start->auth_action.input_oob_action);
+				BT_LOGE("[%s] pprov_start->auth_action.input_oob_action:%d can not support\r\n", __func__, pprov_start->auth_action.input_oob_action);
 				break;
 			}
 			//prov_auth_value_set(auth_data, pprov_start->auth_size.input_oob_size);
@@ -437,7 +437,7 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 		break;
 	}
 	default:
-		printf("[%s] Unknown cb_type:%d\r\n", __func__, cb_type);
+		BT_LOGE("[%s] Unknown cb_type:%d\r\n", __func__, cb_type);
 		break;
 	}
 	return true;
@@ -471,7 +471,7 @@ static void device_info_cb(uint8_t bt_addr[6], uint8_t bt_addr_type, int8_t rssi
 		memcpy((uint8_t *)&device_info_proxy->proxy, (uint8_t *)&pinfo->pservice_data->proxy, device_info_proxy->len);
 		break;
 	default:
-		printf("[%s] Unknown adv type:%d\r\n", __func__, pinfo->type);
+		BT_LOGE("[%s] Unknown adv type:%d\r\n", __func__, pinfo->type);
 		return ;
 		break;
 	}
@@ -518,7 +518,7 @@ static void hb_cb(hb_data_type_t type, void *pargs)
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, type);
 		break;
 	}
 }
@@ -991,7 +991,7 @@ static uint8_t rtk_bt_mesh_save_info(void *data)
 	}
 #endif
 	if ((RTK_BT_MESH_ROLE_PROVISIONER != mesh_app_conf->bt_mesh_role) && (RTK_BT_MESH_ROLE_DEVICE != mesh_app_conf->bt_mesh_role)) {
-		printf("[%s] Unkown mesh role:%d\r\n", __func__, mesh_app_conf->bt_mesh_role);
+		BT_LOGE("[%s] Unkown mesh role:%d\r\n", __func__, mesh_app_conf->bt_mesh_role);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	}
 	return 0;
@@ -1038,7 +1038,7 @@ static bool rtk_bt_mesh_one_shot_adv_deinit(void)
 	is_advertising_flag = 0;
 	memset(&default_adv, 0, sizeof(rtk_bt_mesh_stack_act_send_adv_t));
 	if (!osif_timer_delete(&mesh_one_shot_adv_timer_handle)) {
-		printf("[%s] Delete one shot adv timer fail\r\n", __func__);
+		BT_LOGE("[%s] Delete one shot adv timer fail\r\n", __func__);
 		return false;
 	}
 	mesh_one_shot_adv_timer_handle = NULL;
@@ -1085,7 +1085,7 @@ uint8_t rtk_bt_mesh_stack_start_adv(rtk_bt_le_adv_param_t *adv_param)
 	p_start_adv = (rtk_bt_mesh_stack_evt_start_adv_t *)p_evt->data;
 	default_adv.adv_type = adv_param->type;
 	if (adv_param->own_addr_type > RTK_BT_LE_ADDR_TYPE_RANDOM) {
-		printf("[%s] Addr type %d for mesh adv is not support, use the default addr type.\r\n", __func__, default_adv.addr_type);
+		BT_LOGE("[%s] Addr type %d for mesh adv is not support, use the default addr type.\r\n", __func__, default_adv.addr_type);
 	} else {
 		default_adv.addr_type = adv_param->own_addr_type;
 	}
@@ -1113,7 +1113,7 @@ uint8_t rtk_bt_mesh_stack_stop_adv(void)
 	if (osif_timer_stop(&mesh_one_shot_adv_timer_handle)) {
 		ret = RTK_BT_MESH_STACK_API_SUCCESS;
 	} else {
-		printf("[%s] Stop one shot adv timer fail\r\n", __func__);
+		BT_LOGE("[%s] Stop one shot adv timer fail\r\n", __func__);
 		ret = RTK_BT_MESH_STACK_API_FAIL;
 	}
 	p_stop_adv->result = ret;
@@ -1125,7 +1125,7 @@ static uint16_t rtk_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *ad
 {
 	uint8_t *padv_data = gap_sched_task_get();
 	if (NULL == padv_data) {
-		printf("[%s] Allocate padv_data fail ! \n\r", __func__);
+		BT_LOGE("[%s] Allocate padv_data fail ! \n\r", __func__);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	}
 	memcpy(padv_data, adv_param->adv_raw_data, adv_param->adv_data_len);
@@ -1172,13 +1172,13 @@ static uint16_t rtk_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t 
 	mesh_element_p p_element = mesh_element_get(model_sub->element_index);
 	mesh_model_p pmodel = mesh_model_get_by_model_id(p_element, model_sub->model_id);
 	if (pmodel == NULL || MESH_NOT_SUBSCRIBE_ADDR(model_sub->sub_addr)) {
-		printf("[%s] Can not get model info or sub addr(0x%x) is not correct!\r\n", __func__, model_sub->sub_addr);
+		BT_LOGE("[%s] Can not get model info or sub addr(0x%x) is not correct!\r\n", __func__, model_sub->sub_addr);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	} else {
 		if (mesh_model_sub(pmodel, model_sub->sub_addr)) {
 			return RTK_BT_MESH_STACK_API_SUCCESS;
 		} else {
-			printf("[%s] Set model subscribe fail!\r\n", __func__);
+			BT_LOGE("[%s] Set model subscribe fail!\r\n", __func__);
 			return RTK_BT_MESH_STACK_API_FAIL;
 		}
 	}
@@ -1207,7 +1207,7 @@ static void friendship_fn_callback(uint8_t frnd_index, fn_cb_type_t type, uint16
 		fn_cb->cb_type = RTK_BT_MESH_FN_CB_TYPE_FRND_LOST;
 		break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, type);
 		break;
 	}
 	rtk_bt_evt_indicate(p_evt, NULL);
@@ -1232,25 +1232,25 @@ static bool rtk_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *p
 	if (param->ttl != 1 && param->ttl <= 127) {
 		mesh_node.ttl = param->ttl;
 	} else {
-		printf("TTL is out of the range, range is 0, 2-127 \r\n");
+		BT_LOGE("TTL is out of the range, range is 0, 2-127 \r\n");
 	}
 	if (param->net_retrans_count <= 7) {
 		mesh_node.net_trans_count = param->net_retrans_count;
 	} else {
-		printf("Network Trans Count is out of the range, range is 0-7 \r\n");
+		BT_LOGE("Network Trans Count is out of the range, range is 0-7 \r\n");
 	}
 	if (param->relay_retrans_count <= 7) {
 		mesh_node.relay_retrans_count = param->relay_retrans_count;
 	} else {
-		printf("Relay Retrans Count is out of the range, range is 0-7 \r\n");
+		BT_LOGE("Relay Retrans Count is out of the range, range is 0-7 \r\n");
 	}
 	if (param->trans_retrans_count <= 10) {
 		mesh_node.trans_retrans_count = param->trans_retrans_count;
 	} else {
-		printf("Transport Retrans Count is too large, range is 0-10 \r\n");
+		BT_LOGE("Transport Retrans Count is too large, range is 0-10 \r\n");
 	}
-	printf("Set node net trans count %d, relay retrans count %d, ttl %d, trans retrans count %d, Success!\r\n",
-		   mesh_node.net_trans_count, mesh_node.relay_retrans_count, mesh_node.ttl, mesh_node.trans_retrans_count);
+	BT_LOGA("Set node net trans count %d, relay retrans count %d, ttl %d, trans retrans count %d, Success!\r\n",
+			mesh_node.net_trans_count, mesh_node.relay_retrans_count, mesh_node.ttl, mesh_node.trans_retrans_count);
 	return RTK_BT_MESH_STACK_API_SUCCESS;
 }
 
@@ -1265,7 +1265,7 @@ static void rtk_stack_provisioner_init_setting(rtk_bt_mesh_stack_act_provisioner
 	mesh_node.node_state = PROV_NODE;
 
 	if (gap_get_param(GAP_PARAM_BD_ADDR, bt_addr)) {
-		printf("[%s] Get bt addr fail\r\n", __func__);
+		BT_LOGE("[%s] Get bt addr fail\r\n", __func__);
 	}
 
 	if (p_data->unicast_addr) {
@@ -1332,12 +1332,12 @@ static uint16_t rtk_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt
 	conn_req_param.supv_tout = p_conn_param->supv_timeout;
 	conn_req_param.ce_len_min = 2 * (p_conn_param->conn_interval_min - 1);
 	conn_req_param.ce_len_max = 2 * (p_conn_param->conn_interval_max - 1);
-	API_PRINT("Legacy conn, scan_interval: 0x%x, scan_window: 0x%x, conn_interval_min: 0x%x, conn_interval_max: 0x%x"
-			  " conn_latency: 0x%x, supv_tout: 0x%x, ce_len_min: 0x%x, ce_len_max: 0x%x\r\n",
-			  conn_req_param.scan_interval, conn_req_param.scan_window,
-			  conn_req_param.conn_interval_min, conn_req_param.conn_interval_max,
-			  conn_req_param.conn_latency, conn_req_param.supv_tout,
-			  conn_req_param.ce_len_min, conn_req_param.ce_len_max);
+	BT_LOGD("Legacy conn, scan_interval: 0x%x, scan_window: 0x%x, conn_interval_min: 0x%x, conn_interval_max: 0x%x"
+			" conn_latency: 0x%x, supv_tout: 0x%x, ce_len_min: 0x%x, ce_len_max: 0x%x\r\n",
+			conn_req_param.scan_interval, conn_req_param.scan_window,
+			conn_req_param.conn_interval_min, conn_req_param.conn_interval_max,
+			conn_req_param.conn_latency, conn_req_param.supv_tout,
+			conn_req_param.ce_len_min, conn_req_param.ce_len_max);
 	cause = le_set_conn_param(GAP_CONN_PARAM_1M, &conn_req_param);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -1408,7 +1408,7 @@ static uint16_t rtk_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_
 	uint16_t ret;
 	uint8_t conn_id;
 	if (bt_stack_le_gap_get_conn_id(prov_dis->conn_handle, &conn_id)) {
-		printf("[%s] Get connection id fail\r\n", __func__);
+		BT_LOGE("[%s] Get connection id fail\r\n", __func__);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	}
 	if (prov_client_start_discovery(conn_id)) {
@@ -1441,7 +1441,7 @@ static uint16_t rtk_stack_proxy_service_discovery(rtk_bt_mesh_stack_act_proxy_di
 	uint16_t ret;
 	uint8_t conn_id;
 	if (bt_stack_le_gap_get_conn_id(proxy_dis->conn_handle, &conn_id)) {
-		printf("[%s] Get connection id fail\r\n", __func__);
+		BT_LOGE("[%s] Get connection id fail\r\n", __func__);
 		return RTK_BT_MESH_STACK_API_FAIL;
 	}
 	if (proxy_client_start_discovery(conn_id)) {
@@ -1504,7 +1504,7 @@ static void friendship_lpn_callback(uint8_t frnd_index, lpn_cb_type_t type, uint
 		}
 		break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, type);
 		lpn_cb->cb_type = RTK_BT_MESH_LPN_CB_TYPE_UNKNOWN;
 		break;
 	}
@@ -1527,7 +1527,7 @@ static rtk_bt_mesh_stack_lpn_req_result_type rtk_stack_lpn_req(rtk_bt_mesh_stack
 		// If the device is proxy server, do not enable establish friendship as LPN role;
 		// The LPN will disable scan between every poll request with FN node;
 		// If LPN establish friendship as proxy server, it could not relay message for proxy client between every poll
-		printf("[%s] Have BLE active link, cannot establish friendship\r\n", __func__);
+		BT_LOGE("[%s] Have BLE active link, cannot establish friendship\r\n", __func__);
 		return RTK_BT_MESH_LPN_REQ_REASON_PROXY_SERVER_DO_NOT_SUPPORT_LPN;
 	}
 	mesh_node.frnd_rx_delay = lpn->frnd_rx_delay;
@@ -1558,7 +1558,7 @@ static rtk_bt_mesh_stack_lpn_req_result_type rtk_stack_lpn_req(rtk_bt_mesh_stack
 		rtk_req_result = RTK_BT_MESH_LPN_REQ_REASON_RESOURCE_INSUFFICIENT;
 		break;
 	default:
-		printf("[%s] Unknown req result:%d\r\n", __func__, req_result);
+		BT_LOGE("[%s] Unknown req result:%d\r\n", __func__, req_result);
 		break;
 	}
 	return rtk_req_result;
@@ -1593,7 +1593,7 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_STACK_API_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -1709,7 +1709,7 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif // end of RTK_BLE_MESH_LPN_SUPPORT
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
 end:

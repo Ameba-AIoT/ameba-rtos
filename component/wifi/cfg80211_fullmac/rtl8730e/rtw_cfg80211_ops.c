@@ -45,6 +45,18 @@ static int cfg80211_rtw_get_station(struct wiphy *wiphy, struct net_device *ndev
 
 static int cfg80211_rtw_change_iface(struct wiphy *wiphy, struct net_device *ndev, enum nl80211_iftype type, struct vif_params *params)
 {
+	u32 widx = rtw_netdev_idx(ndev);
+
+	/* The port0 workes as sation only in fullmac firmware and port1 workes
+	 * as AP mode only. So to add this conditon to stop to change the mode
+	 * of interface. */
+	if ((widx == 0) && ((type == NL80211_IFTYPE_AP) || (type == NL80211_IFTYPE_AP_VLAN))) {
+		dev_err(global_idev.fullmac_dev, "Port0 no AP mode!\n");
+		return -EPERM;
+	} else if ((widx == 1) && (type == NL80211_IFTYPE_STATION)) {
+		dev_err(global_idev.fullmac_dev, "Port1 no STA mode!\n");
+		return -EPERM;
+	}
 #ifdef CONFIG_NAN
 	if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_NAN) {
 		return 0;
@@ -468,6 +480,10 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 		return -EPERM;
 	}
 
+	if (rtw_netdev_idx(ndev) == 1) {
+		return -EPERM;
+	}
+
 	if (sme->bssid == NULL) {
 		dev_err(global_idev.fullmac_dev, "=> bssid is NULL!\n");
 		ret = -EINVAL;
@@ -656,6 +672,10 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
 	dev_dbg(global_idev.fullmac_dev, "[fullmac] --- %s ---", __func__);
 
 	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
+	if (rtw_netdev_idx(ndev) == 1) {
 		return -EPERM;
 	}
 

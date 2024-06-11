@@ -9,11 +9,17 @@
 
 #include <dlist.h>
 #include <basic_types.h>
+#include <bt_audio_track_api.h>
+#include <bt_audio_record_api.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#define RTK_BT_AUDIO_TRACK_PRES_MAX_COUNT 100 /* 10ms duration for 1s */
+#define RTK_BT_AUDIO_TRACK_PRES_DELTA_THRESHOLD_NS 1000000
+#define RTK_BT_AUDIO_DELAY_START_BUFFER_COUNT 4
 
 /**
  * @typedef   rtk_bt_audio_role_t
@@ -23,6 +29,15 @@ typedef enum {
 	RTK_BT_AUDIO_ROLE_TRACK = 0x00,                     /*!< Audio Track */
 	RTK_BT_AUDIO_ROLE_RECORD = 0x01,                    /*!< Audio Record */
 } rtk_bt_audio_role_t;
+
+/**
+ * @typedef   rtk_bt_audio_pres_comp_t
+ * @brief     presentation compensation status
+ */
+typedef enum {
+	RTK_BT_AUDIO_TRACK_PRES_INIT = 0x00,                /*!< Audio hal start or overflow handling(wait two count buffers before invoking rtk_bt_audio_track_hw_start()) */
+	RTK_BT_AUDIO_TRACK_PRES_LOCKED = 0x01,              /*!< Compensation locked */
+} rtk_bt_audio_pres_comp_t;
 
 /**
  * @typedef   rtk_bt_audio_pcm_cb_t
@@ -43,18 +58,42 @@ typedef struct {
 } rtk_bt_audio_codec_conf_t;
 
 /**
+ * @typedef rtk_bt_audio_delay_start_t
+ * @brief   structure of bt audio delay start
+ */
+typedef struct {
+	uint8_t                 *buff;                                              /*!< delay start buffer */
+	uint32_t                size;                                               /*!< audio parameter */
+	uint32_t                used;                                               /*!< param length */
+} rtk_bt_audio_delay_start_t;
+
+/**
  * @typedef rtk_bt_audio_track_t
  * @brief   structure of audio track configuration
  */
 typedef struct {
-	struct list_head        list;                                                           /*!< list head */
-	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);   /*!< callback pcm data to APP */
-	void                    *audio_track_hdl;                                               /*!< RTAudioTrack pointer */
-	uint32_t                channels;                                                       /*!< indicate channels */
-	uint32_t                channel_allocation;                                             /*!< indicate mono or dual mode(1 left channel, 2 right channel, 3 dual mode) */
-	uint32_t                rate;                                                           /*!< sample rate */
-	uint32_t                bits;                                                           /*!< bit per sample */
-	int32_t                 track_num;                                                      /*!< indicate enqueued audio data numbers */
+	struct list_head        list;                                                              /*!< list head */
+	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);      /*!< callback pcm data to APP */
+	void                       *audio_track_hdl;                                               /*!< RTAudioTrack pointer */
+	uint32_t                   channels;                                                       /*!< indicate channels */
+	uint32_t                   channel_allocation;                                             /*!< indicate mono or dual mode(1 left channel, 2 right channel, 3 dual mode) */
+	uint32_t                   rate;                                                           /*!< sample rate */
+	uint32_t                   bits;                                                           /*!< bit per sample */
+	uint32_t                   format;                                                         /*!< audio format */
+	int32_t                    track_num;                                                      /*!< indicate enqueued audio data numbers */
+	bool                       audio_sync_flag;                                                /*!< indicate whether audio sync is need */
+	uint8_t                    pres_comp_event;                                                /*!< indicate presentation delay compensation events */
+	uint32_t                   sdu_interval;                                                   /*!< record sdu interval(micro second) */
+	uint32_t                   pres_us;                                                        /*!< indicate presentation delay value */
+	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
+	int64_t                    trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
+	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
+	int64_t                    pres_delta_sum;                                                 /*!< record sum of render data time delta */
+	uint32_t                   pre_drop_cnt_left;                                              /*!< indicate left drop packets number */
+	uint8_t                    audio_hal_buff_count;                                           /*!< count audio hal buffer numbers */
+	void                       *audio_delay_start_timer;                                       /*!< delay start timer */
+	void                       *audio_sync_mutex;                                              /*!< audio sync mutex */
+	rtk_bt_audio_delay_start_t audio_delay_start_buff;                                         /*!< rtk_bt_audio_delay_start_t*/
 } rtk_bt_audio_track_t;
 
 /**
@@ -78,6 +117,7 @@ typedef struct {
 	void                    *entity;                /*!< indicate audio codec entity */
 	uint8_t                 *data;                  /*!< indicate audio stream buffer */
 	uint16_t                size;                   /*!< indicate audio stream length */
+	uint32_t                ts_us;                  /*!< indicate audio stream timestamp microseconds */
 } T_AUDIO_STREAM_MSG;
 
 /********************************* Functions Declaration *******************************/
@@ -155,14 +195,18 @@ int rtk_bt_audio_record_data_get(uint32_t type, rtk_bt_audio_record_t *record, v
  * @param[in] right_volume: right init volume
  * @param[in] channels: channels
  * @param[in] rate: sample rate
- * @param[in] bits: bits (not used)
+ * @param[in] format: audio format(ref bt_audio_fmt_t)
+ * @param[in] duration: define duration time between two continuous audio packets
+ *                      this number should be 0 for common bt audio demo
+ *                      this number should be equal to ISO duration value(micro seconds) in le audio demo
  * @param[in] cb: data directly calling back function (no need to play)
+ * @param[in] play_flag: indicate whether this track need to be played
  * @return
  *            - NULL  : Fail
  *            - others: Track Handle
  */
-rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, float right_volume, uint32_t channels, uint32_t rate, uint32_t bits,
-											 pcm_data_cb cb, bool play_flag);
+rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, float right_volume, uint32_t channels, uint32_t rate, uint32_t format,
+											 uint32_t duration, pcm_data_cb cb, bool play_flag);
 
 /**
  * @fn        rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels, uint32_t rate, uint32_t buffer_bytes);
@@ -248,19 +292,20 @@ uint16_t rtk_bt_audio_codec_remove(uint32_t type, void *pentity);
 uint16_t rtk_bt_audio_codec_remove_all(void);
 
 /**
- * @fn        uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *pdata, uint32_t len)
+ * @fn        uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *pdata, uint32_t len, uint32_t ts_us)
  * @brief     enqueue received audio data
  * @param[in] type: audio data codec type (refer to rtk_bt_common.h rtk_bt_audio_codec_t)
  * @param[in] track: track handle
  * @param[in] entity: entity handle
  * @param[in] pdata: pointer of audio data
  * @param[in] len: data length
+ * @param[in] ts_us:time stamp for audio sync
  * @return
  *            - 0  : Succeed
  *            - 0xEF: BT Audio Framework buffer is not enough(AUDIO_STREAM_MSG_QUEUE_SIZE)
  *            - others: Error code
  */
-uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *pdata, uint32_t len);
+uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *pdata, uint32_t len, uint32_t ts_us);
 
 /**
  * @fn        uint16_t rtk_bt_audio_init(void)

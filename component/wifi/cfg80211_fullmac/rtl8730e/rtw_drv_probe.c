@@ -114,6 +114,7 @@ int rtw_netdev_probe(struct device *pdev)
 
 	dev_dbg(global_idev.fullmac_dev, "rtw_dev_probe start\n");
 
+#ifndef CONFIG_SDIO_BRIDGE
 	/*step1: alloc and init wiphy */
 	ret = rtw_wiphy_init();
 	if (ret == false) {
@@ -126,7 +127,7 @@ int rtw_netdev_probe(struct device *pdev)
 		dev_err(global_idev.fullmac_dev, "wiphy register fail");
 		goto os_ndevs_deinit;
 	}
-
+#endif
 	/*step4: register netdev */
 	ret = rtw_ndev_alloc();
 	if (ret < 0) {
@@ -148,8 +149,9 @@ int rtw_netdev_probe(struct device *pdev)
 
 	global_idev.mp_fw = llhw_wifi_driver_is_mp();
 	dev_info(global_idev.fullmac_dev, "%s Wi-Fi driver!", global_idev.mp_fw ? "MP" : "Normal");
-
+#ifndef CONFIG_SDIO_BRIDGE
 	rtw_regd_init();
+#endif
 	rtw_drv_proc_init();
 
 #ifdef CONFIG_WAR_OFFLOAD
@@ -160,10 +162,11 @@ int rtw_netdev_probe(struct device *pdev)
 
 os_ndevs_deinit:
 	rtw_ndev_unregister();
+#ifndef CONFIG_SDIO_BRIDGE
 	rtw_wiphy_deinit();
 
 exit:
-
+#endif
 	return -ENODEV;
 }
 
@@ -173,11 +176,12 @@ int rtw_netdev_remove(struct device *pdev)
 
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
-
+#ifndef CONFIG_SDIO_BRIDGE
 	rtw_regd_deinit();
 	wiphy_unregister(global_idev.pwiphy_global);
 
 	rtw_wiphy_deinit();
+#endif
 	dev_dbg(global_idev.fullmac_dev, "unregister and deinit wiphy done.");
 
 	llhw_deinit();

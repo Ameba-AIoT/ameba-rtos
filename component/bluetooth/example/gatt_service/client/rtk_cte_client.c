@@ -15,6 +15,8 @@
 #include <rtk_bt_gattc.h>
 #include <rtk_client_config.h>
 #include <rtk_cte_client.h>
+#include <rtk_gcs_client.h>
+#include <bt_utils.h>
 
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 
@@ -76,7 +78,7 @@ static uint16_t cte_client_char_find(uint16_t conn_handle)
 		.is_uuid16 = true,
 	};
 	uint8_t conn_id;
-	simple_ble_client_db_t *conn_cte_db;
+	cte_client_db_t *conn_cte_db;
 
 	if (rtk_bt_le_gap_get_conn_id(conn_handle, &conn_id) != RTK_BT_OK) {
 		return RTK_BT_FAIL;
@@ -99,6 +101,11 @@ static uint16_t cte_client_char_find(uint16_t conn_handle)
 		if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 			conn_cte_db->char_db[i].char_val_handle = char_handle;
 			BT_LOGA("[APP] CTE characteristic uuid %u handle is 0x%04x.\r\n", char_uuid.p.uuid16, char_handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+						find_param.type, find_param.conn_handle,
+						find_param.find_char.srv_uuid.p.uuid16,
+						find_param.find_char.char_uuid.p.uuid16,
+						char_handle);
 		} else {
 			BT_LOGE("[APP] Find CTE characteristic uuid %u fail.\r\n");
 		}
@@ -305,6 +312,9 @@ static void cte_client_discover_res_hdl(void *data)
 		}
 	}
 
+#if defined(CTE_CLIENT_SHOW_DETAIL) && CTE_CLIENT_SHOW_DETAIL
+	general_client_discover_res_hdl(data);
+#endif
 #endif /* #if RTK_BLE_MGR_LIB */
 }
 
@@ -332,6 +342,8 @@ static void cte_client_write_res_hdl(void *data)
 		for (i = 0; i < CTE_CHAR_NUM; ++i) {
 			if (att_handle == conn_cte_db->char_db[i].char_val_handle) {
 				BT_LOGA("[APP] CTE client write characteristic uuid 0x%04x success\r\n", cte_char_uuid_arr[i]);
+				BT_AT_PRINT("+BLEGATTC:write,%u,0x%04x,%u\r\n",
+							conn_handle, write_res->handle, write_status);
 				break;
 			}
 		}

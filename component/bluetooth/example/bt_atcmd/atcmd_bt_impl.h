@@ -20,17 +20,23 @@ extern "C"
 #if defined(ATCMD_BT_CUT_DOWN) && ATCMD_BT_CUT_DOWN
 #define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBE] "fmt, ##args)
 #define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
+#define GATTS_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
+#define GATTC_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
 #else /* ATCMD_BT_CUT_DOWN */
 #define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
 #define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
-#endif
+#define GATTS_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEGATTS] "fmt, ##args)
+#define GATTC_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEGATTC] "fmt, ##args)
+#endif /* ATCMD_BT_CUT_DOWN */
 
 #else /* CONFIG_NEW_ATCMD */
 
 #define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBE] "fmt, ##args)
 #define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
+#define GATTS_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
+#define GATTC_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
 
-#endif
+#endif /* CONFIG_NEW_ATCMD */
 
 typedef int (*cmd_func_t)(int argc, char *argv[]);
 

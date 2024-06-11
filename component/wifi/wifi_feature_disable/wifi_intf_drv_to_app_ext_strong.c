@@ -415,3 +415,10 @@ void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)
 	call_noused = __LINE__;
 }
 
+int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info)
+{
+	UNUSED(txpwr_ctrl_info);
+	call_noused = __LINE__;
+	return -1;
+}
+

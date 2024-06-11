@@ -163,6 +163,7 @@ IFLAGS               += -I$(BASEDIR)/component/example
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core_rom
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/halcommon_rom
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/halcommon
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/include
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phl
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_reg/rtl8721da

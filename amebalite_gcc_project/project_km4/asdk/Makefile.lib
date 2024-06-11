@@ -5,6 +5,7 @@ WIFI_MAKE_DIR = make/wlan
 ifeq ($(CONFIG_BT), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btcodec.a
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btaudiosync.a
 endif
 ifneq ($(CONFIG_BT_ZEPHYR), y)
 ifeq ($(CONFIG_BT_BLE_ONLY), y)
@@ -199,6 +200,7 @@ endif
 ifeq ($(CONFIG_BT), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
 	@+$(MAKE) -C make/bluetooth/bt_audio/bt_codec all
+	@+$(MAKE) -C make/bluetooth/bt_audio/audio_sync all
 endif
 endif
 

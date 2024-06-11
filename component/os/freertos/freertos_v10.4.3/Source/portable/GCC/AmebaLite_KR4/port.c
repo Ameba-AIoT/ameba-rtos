@@ -242,14 +242,14 @@ void vApplicationIdleHook(void)
 	does nothing useful, other than report the amount of FreeRTOS heap that
 	remains unallocated. */
 	xFreeStackSpace = xPortGetFreeHeapSize();
-#if !defined(CONFIG_MP_INCLUDED) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 	extern u32 driver_suspend_ret;
 #if defined (CONFIG_WLAN)
 	extern u32 wlan_driver_check_and_suspend(void);
 	driver_suspend_ret = wlan_driver_check_and_suspend();
 #endif
 #endif
-#if !defined(CONFIG_MP_INCLUDED) && defined (CONFIG_WLAN)
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_WLAN)
 #if defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
 	extern void wififw_task_idle(void);
 	wififw_task_idle();

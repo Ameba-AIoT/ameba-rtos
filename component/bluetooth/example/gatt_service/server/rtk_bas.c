@@ -17,6 +17,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_bas.h>
 #include <rtk_bt_def.h>
+#include <bt_utils.h>
 
 #define BATTERY_UUID_SRV                        0x180F
 #define BATTERY_UUID_CHAR_VAL_LEVEL             0x2A19
@@ -88,6 +89,9 @@ void battery_service_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] BAS indicate failed, err: 0x%x \r\n", p_ind_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind_ind->err_code) ? 0 : -1, p_ind_ind->app_id,
+					p_ind_ind->conn_handle, p_ind_ind->index);
 		break;
 	}
 
@@ -98,6 +102,9 @@ void battery_service_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] BAS notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ntf_ind->err_code) ? 0 : -1, p_ntf_ind->app_id,
+					p_ntf_ind->conn_handle, p_ntf_ind->index);
 		break;
 	}
 
@@ -122,6 +129,10 @@ void battery_service_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] BAS response for client read failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+					read_resp.conn_handle, read_resp.index,
+					read_resp.err_code);
 		break;
 	}
 
@@ -142,6 +153,10 @@ void battery_service_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] BAS response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 	case RTK_BT_GATTS_EVT_CCCD_IND: {
@@ -166,9 +181,13 @@ void battery_service_callback(uint8_t event, void *data)
 				battery_cccd_ntf_en_map[conn_id] = 0;
 				BT_LOGA("[APP] BAS notify cccd, notify bit disable\r\n");
 			}
+			BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+						battery_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+						p_cccd_ind->conn_handle, p_cccd_ind->index);
 			break;
 		default:
 			BT_LOGE("[APP] BAS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+			BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 			break;
 		}
 		break;

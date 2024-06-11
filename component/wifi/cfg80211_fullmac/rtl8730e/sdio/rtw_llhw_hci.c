@@ -6,19 +6,13 @@
 
 struct inic_device global_idev;
 
-void llhw_free_rxbuf(u8 *rxbuf)
-{
-	rtw_sdio_free_rxbuf(rxbuf);
-}
-
 void llhw_host_send(u8 *buf, u32 len)
 {
-	struct inic_sdio *priv = &inic_sdio_priv;
 	struct inic_device *idev = &global_idev;
 
-	if (priv->dev_state == PWR_STATE_SLEEP) {
+	if (idev->sdio_priv->dev_state == PWR_STATE_SLEEP) {
 		dev_dbg(idev->fullmac_dev, "%s: wakeup device", __func__);
-		if (rtw_resume_common(priv)) {
+		if (rtw_resume_common(idev->sdio_priv)) {
 			dev_err(idev->fullmac_dev, "%s: fail to wakeup device, stop send", __func__);
 			return;
 		}
@@ -32,15 +26,9 @@ int llhw_init(void)
 	int ret = 0;
 	struct inic_device *idev = &global_idev;
 
-	/* Enable interrupt that will call the worker */
-	//enable_irq(idev->spidev->irq);
+	idev->sdio_priv = &inic_sdio_priv;
 
-	/* initialize the message queue, and assign the task haddle function */
-	ret = inic_msg_q_init(&idev->msg_priv, llhw_recv_pkts);
-	if (ret < 0) {
-		dev_err(idev->fullmac_dev, "msg queue init fail.");
-		goto exit;
-	}
+	llhw_recv_init();
 
 	ret = llhw_event_init(idev);
 	if (ret < 0) {
@@ -68,6 +56,6 @@ void llhw_deinit(void)
 
 	llhw_event_deinit();
 
-	inic_msg_q_deinit(&global_idev.msg_priv);
+	llhw_recv_deinit();
 }
 

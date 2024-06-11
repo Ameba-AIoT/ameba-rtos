@@ -167,7 +167,7 @@ void at_mqttopen(void *arg)
 
 	/* connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -193,7 +193,7 @@ void at_mqttopen(void *arg)
 	}
 
 	/* hostName. */
-	if (NULL == argv[hostIndex] || MQTT_MAX_HOSTNAME_LEN < strlen(argv[hostIndex]) || 0 == strlen(argv[hostIndex])) {
+	if (0 == strlen(argv[hostIndex]) || MQTT_MAX_HOSTNAME_LEN < strlen(argv[hostIndex]) || 0 == strlen(argv[hostIndex])) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttopen] Invalid hostName.");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -201,7 +201,7 @@ void at_mqttopen(void *arg)
 	hostName = argv[hostIndex];
 
 	/* Port is optional. */
-	if (4 == i && NULL != argv[portIndex]) {
+	if (4 == i && 0 != strlen(argv[portIndex])) {
 		res = atoi(argv[portIndex]);
 		if (0 >= res || 0xFFFF < res) {
 			RTK_LOGI(NOTAG, "\r\n[at_mqttopen] Invalid port.");
@@ -314,7 +314,7 @@ void at_mqttclose(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -432,7 +432,7 @@ void at_mqttconn(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -455,7 +455,7 @@ void at_mqttconn(void *arg)
 			/* Client ID. */
 			if (MQTT_CONNECT_CLEINT_ID == j) {
 				/* No client ID, or length is invalid. */
-				if (4 != i || NULL == argv[valueIndex] || 0 == strlen(argv[valueIndex]) || MQTT_MAX_CLIENT_ID_LEN < strlen(argv[valueIndex])) {
+				if (4 != i || 0 == strlen(argv[valueIndex]) || MQTT_MAX_CLIENT_ID_LEN < strlen(argv[valueIndex])) {
 					RTK_LOGI(NOTAG, "\r\n[at_mqttconn] Invalid client ID");
 					resultNo = MQTT_CLIENTID_REJECTED_ERROR;
 					goto end;
@@ -468,7 +468,7 @@ void at_mqttconn(void *arg)
 			/* username. */
 			else if (MQTT_CONNECT_USERNAME == j) {
 				/* No username, or length is invalid. */
-				if (4 != i || NULL == argv[valueIndex] || 0 == strlen(argv[valueIndex]) || MQTT_MAX_USERNAME_LEN < strlen(argv[valueIndex])) {
+				if (4 != i || 0 == strlen(argv[valueIndex]) || MQTT_MAX_USERNAME_LEN < strlen(argv[valueIndex])) {
 					RTK_LOGI(NOTAG, "\r\n[at_mqttconn] Invalid username");
 					resultNo = MQTT_CLIENTID_REJECTED_ERROR;
 					goto end;
@@ -481,7 +481,7 @@ void at_mqttconn(void *arg)
 			/* password. */
 			else if (MQTT_CONNECT_PASSWORD == j) {
 				/* No password, or length is invalid. */
-				if (4 != i || NULL == argv[valueIndex] || 0 == strlen(argv[valueIndex]) || MQTT_MAX_PASSWORD_LEN < strlen(argv[valueIndex])) {
+				if (4 != i || 0 == strlen(argv[valueIndex]) || MQTT_MAX_PASSWORD_LEN < strlen(argv[valueIndex])) {
 					RTK_LOGI(NOTAG, "\r\n[at_mqttconn] Invalid password");
 					resultNo = MQTT_CLIENTID_REJECTED_ERROR;
 					goto end;
@@ -600,7 +600,7 @@ void at_mqttdisconn(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -689,7 +689,7 @@ void at_mqttsub(void *arg)
 		goto end;
 	}
 
-	i = parse_param(arg, argv);
+	i = parse_param_advance(arg, argv);
 	if (3 > i || 4 < i) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttsub] Usage : at_mqttsub=<tcpconnectid>,<msgid>,<topic>,<qos>");
 		resultNo = MQTT_ARGS_ERROR;
@@ -698,7 +698,7 @@ void at_mqttsub(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -716,7 +716,7 @@ void at_mqttsub(void *arg)
 	}
 
 	/* topic. */
-	if (NULL == argv[topicIndex] || 0 == strlen(argv[topicIndex]) || MQTT_MAX_TOPIC_LEN < strlen(argv[topicIndex])) {
+	if (0 == strlen(argv[topicIndex]) || MQTT_MAX_TOPIC_LEN < strlen(argv[topicIndex])) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttsub] Invalid topic");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -745,7 +745,7 @@ void at_mqttsub(void *arg)
 
 	/* QoS. This is optional, if not including here, it should be QOS2. */
 	if (4 == i) {
-		res = (NULL != argv[qosIndex]) ? atoi(argv[qosIndex]) : -1;
+		res = (0 != strlen(argv[qosIndex])) ? atoi(argv[qosIndex]) : -1;
 		if (QOS0 > res || QOS2 < res) {
 			RTK_LOGI(NOTAG, "\r\n[at_mqttsub] Invalid QoS");
 			resultNo = MQTT_ARGS_ERROR;
@@ -817,7 +817,7 @@ void at_mqttunsub(void *arg)
 		goto end;
 	}
 
-	i = parse_param(arg, argv);
+	i = parse_param_advance(arg, argv);
 	if (3 != i) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttunsub] Usage : at_mqttunsub=<tcpconnectid>,<topic>");
 		resultNo = MQTT_ARGS_ERROR;
@@ -826,7 +826,7 @@ void at_mqttunsub(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -844,7 +844,7 @@ void at_mqttunsub(void *arg)
 	}
 
 	/* topic. */
-	if (NULL == argv[topicIndex] || 0 == strlen(argv[topicIndex]) || MQTT_MAX_TOPIC_LEN < strlen(argv[topicIndex])) {
+	if (0 == strlen(argv[topicIndex]) || MQTT_MAX_TOPIC_LEN < strlen(argv[topicIndex])) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttunsub] Invalid topic");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -930,7 +930,7 @@ void at_mqttpub(void *arg)
 		goto end;
 	}
 
-	i = parse_param(arg, argv);
+	i = parse_param_advance(arg, argv);
 	if (4 > i || 5 < i) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Usage : at_mqttpub=<tcpconnectid>,<msgid>,<param>,<paramValue> or at_mqttpub=<tcpconnectid>,<msgid>,send");
 		resultNo = MQTT_ARGS_ERROR;
@@ -939,7 +939,7 @@ void at_mqttpub(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -957,7 +957,7 @@ void at_mqttpub(void *arg)
 	}
 
 	/* msg ID. */
-	res = (NULL != argv[msgidIndex]) ? atoi(argv[msgidIndex]) : -1;
+	res = (0 != strlen(argv[msgidIndex])) ? atoi(argv[msgidIndex]) : -1;
 	if (0 >= res || 0xFFFF <= res) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttunsub] Invalid msg ID");
 		resultNo = MQTT_ARGS_ERROR;
@@ -970,7 +970,7 @@ void at_mqttpub(void *arg)
 			RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Publish action: %s", mqtt_pub_string[j]);
 			/* QoS. */
 			if (MQTT_PUBLISH_QOS == j) {
-				res = (5 == i && NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+				res = (5 == i && 0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 				if (QOS0 > res || QOS2 < res) {
 					RTK_LOGI(NOTAG, "\r\n[at_mqttunsub] Invalid QoS");
 					resultNo = MQTT_ARGS_ERROR;
@@ -980,7 +980,7 @@ void at_mqttpub(void *arg)
 			}
 			/* retain. */
 			else if (MQTT_PUBLISH_RETAIN == j) {
-				res = (5 == i && NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+				res = (5 == i && 0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 				if (0 > res || 1 < res) {
 					RTK_LOGI(NOTAG, "\r\n[at_mqttunsub] Invalid retain");
 					resultNo = MQTT_ARGS_ERROR;
@@ -990,7 +990,7 @@ void at_mqttpub(void *arg)
 			}
 			/* topic. */
 			else if (MQTT_PUBLISH_TOPIC == j) {
-				if (5 == i && NULL != argv[valueIndex] && 0 != strlen(argv[valueIndex]) && MQTT_MAX_TOPIC_LEN >= strlen(argv[valueIndex])) {
+				if (5 == i && 0 != strlen(argv[valueIndex]) && MQTT_MAX_TOPIC_LEN >= strlen(argv[valueIndex])) {
 					resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[valueIndex], strlen(argv[valueIndex]));
 					if (MQTT_OK != resultNo) {
 						goto end;
@@ -999,7 +999,7 @@ void at_mqttpub(void *arg)
 			}
 			/* msg. */
 			else if (MQTT_PUBLISH_MSG == j) {
-				if (5 == i && NULL != argv[valueIndex] && 0 != strlen(argv[valueIndex]) && MQTT_MAX_MSG_LEN >= strlen(argv[valueIndex])) {
+				if (5 == i && 0 != strlen(argv[valueIndex]) && MQTT_MAX_MSG_LEN >= strlen(argv[valueIndex])) {
 					resultNo = mqtt_string_copy(&mqttCb->pubData.msg, argv[valueIndex], strlen(argv[valueIndex]));
 					if (MQTT_OK != resultNo) {
 						goto end;
@@ -1111,7 +1111,7 @@ void at_mqttcfg(void *arg)
 
 	/* Connect ID. */
 	res = -1;
-	if (NULL != argv[idIndex] && 1 == strlen(argv[idIndex])
+	if (1 == strlen(argv[idIndex])
 		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
 		res = argv[idIndex][0] - '0';
 	}
@@ -1159,7 +1159,7 @@ void at_mqttcfg(void *arg)
 				resultNo = MQTT_ARGS_ERROR;
 				goto end;
 			}
-			res = (NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+			res = (0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 			if (3 != res && 4 != res) {
 				RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Invalid version number");
 				resultNo = MQTT_ARGS_ERROR;
@@ -1175,7 +1175,7 @@ void at_mqttcfg(void *arg)
 				resultNo = MQTT_ARGS_ERROR;
 				goto end;
 			}
-			res = (NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+			res = (0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 			if (0 >= res || 3600 < res) {
 				RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Invalid keepalive");
 				resultNo = MQTT_ARGS_ERROR;
@@ -1191,7 +1191,7 @@ void at_mqttcfg(void *arg)
 				resultNo = MQTT_ARGS_ERROR;
 				goto end;
 			}
-			res = (NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+			res = (0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 			if (0 != res && 1 != res) {
 				RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Invalid session");
 				resultNo = MQTT_ARGS_ERROR;
@@ -1207,7 +1207,7 @@ void at_mqttcfg(void *arg)
 				resultNo = MQTT_ARGS_ERROR;
 				goto end;
 			}
-			res = (NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+			res = (0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 			if (10000 > res || 60000 < res) {
 				RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Invalid timeout");
 				resultNo = MQTT_ARGS_ERROR;
@@ -1223,7 +1223,7 @@ void at_mqttcfg(void *arg)
 				resultNo = MQTT_ARGS_ERROR;
 				goto end;
 			}
-			res = (NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+			res = (0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 			if (0 == res) {
 				mqttCb->connectData.willFlag = 0;
 			} else if (1 == res) {
@@ -1258,7 +1258,7 @@ void at_mqttcfg(void *arg)
 				resultNo = MQTT_ARGS_ERROR;
 				goto end;
 			}
-			res = (NULL != argv[valueIndex]) ? atoi(argv[valueIndex]) : -1;
+			res = (0 != strlen(argv[valueIndex])) ? atoi(argv[valueIndex]) : -1;
 			if (0 != res && 1 != res) {
 				RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Invalid ssl");
 				resultNo = MQTT_ARGS_ERROR;

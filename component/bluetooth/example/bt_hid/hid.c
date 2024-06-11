@@ -277,7 +277,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hid_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HID_EVT_DISCONN_CMPL: {
 		rtk_bt_hid_disconn_ind_t *p_ind_t = (rtk_bt_hid_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, p_ind_t->bd_addr, 6);
-		BT_LOGA("[HID] Receive HID connection from %02X:%02X:%02X:%02X:%02X:%02X, cause 0x%x \r\n",
+		BT_LOGA("[HID] HID disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X, cause 0x%x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], p_ind_t->cause);
 		break;
 	}

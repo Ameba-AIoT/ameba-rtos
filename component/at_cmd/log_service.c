@@ -8,60 +8,39 @@
 #include <string.h>
 #include <stdio.h>
 #include "log_service.h"
+
+#ifdef SUPPORT_LOG_SERVICE
+#include "atcmd_sys.h"
 #ifdef CONFIG_LWIP_LAYER
 #include "atcmd_lwip.h"
 #endif
+#ifndef CONFIG_MP_INCLUDED
+#include "atcmd_mqtt.h"
+#endif
+#ifndef CONFIG_MP_SHRINK
+#include "atcmd_wifi.h"
+#endif
+#if defined(CONFIG_BT) && CONFIG_BT
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#include "atcmd_bt_mp.h"
+#endif
+#endif
 
-#ifdef SUPPORT_LOG_SERVICE
 //======================================================
 struct list_head log_hash[ATC_INDEX_NUM];
-
-extern void at_fs_init(void);
-//extern void at_app_init(void);
-extern void at_mp_init(void);
-#if defined(CONFIG_BT) && CONFIG_BT
-extern void at_bt_init(void);
-#endif
-#if defined(CONFIG_802154_ZIGBEE_EN)
-extern void at_wpan_init(void);
-#endif
-
-#ifdef CONFIG_MP_INCLUDED
-#ifdef CONFIG_AS_INIC_AP
-extern void inic_mp_command(char *token, unsigned int cmd_len, int show_msg);
-#else
-extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
-#endif
-#endif
 
 #ifdef CONFIG_NEW_ATCMD
 #include "at_intf_uart.h"
 #include "lwip_netconf.h"
 
-extern void at_sys_init(void);
-#ifndef CONFIG_MP_SHRINK
-extern void at_wifi_init(void);
-#endif
-#ifndef CONFIG_MP_INCLUDED
-extern void at_mqtt_init(void);
-#endif
 #ifdef CONFIG_LWIP_LAYER
-extern void at_tcpip_init(void);
 #ifdef SUPPORT_LOG_SERVICE
 extern char log_buf[UART_LOG_CMD_BUFLEN];
 #endif
 #endif
-#if defined(CONFIG_BT) && CONFIG_BT
-extern void at_bt_init(void);
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
-extern void at_mp_init(void);
-#endif
-#endif
-
 
 #else
 /* apply old atcmd, which should be deleted after new version is ready */
-#include "atcmd_wifi.h"
 extern void at_wifi_init(void);
 extern void at_sys_init(void);
 #endif /* CONFIG_NEW_ATCMD */
@@ -74,10 +53,6 @@ log_init_t log_init_table[] = {
 #if CONFIG_WLAN
 	at_wifi_init,
 #endif
-#endif
-
-#if 0 /* defined(CONFIG_802154_ZIGBEE_EN) */
-	at_wpan_init,
 #endif
 
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -272,69 +247,101 @@ void *log_handler(char *cmd)
 
 }
 
+/****************************************************************
+  Single parameter divided by comma.
+  The argv[0] is reserved as NULL, argv[1] is the 1st paramerter, argv[2] is the 2nd
+  parameter, and son on.
+  If there are consecutive commas, it means there are parameter(s) ignored.
+  So that, the mandatory parameters' length should be checked not equal to 0.
+  The optional parameters' length can be 0, which means absent.
+  e.g.
+  AT+XXX=param1,param2		<-	There are 2 parameters.
+  AT+XXX=param1,,param3		<-	The param2 has length == 0, but argv[2] is not NULL.
+  If you need let the comma(s) be part(s) of parameter, use parse_param_advance instead.
+****************************************************************/
 int parse_param(char *buf, char **argv)
 {
-	/* The argv[0] is ignored, so that the argc is 1 at least. */
 	int argc = 1;
-	char str_buf[LOG_SERVICE_BUFLEN];
-	memset(str_buf, 0, LOG_SERVICE_BUFLEN);
-	int str_count = 0;
-	int buf_cnt = 0;
-	/* Should use static here, so that the argv list can be read outside. */
-	static char temp_buf[LOG_SERVICE_BUFLEN];
-	char *buf_pos = temp_buf;
-	memset(temp_buf, 0, sizeof(temp_buf));
+	char *temp = NULL;
 
 	if (buf == NULL) {
 		goto exit;
 	}
-	strncpy(temp_buf, buf, LOG_SERVICE_BUFLEN - 1);
+	temp = buf;
 
-	while ((argc < MAX_ARGC) && (*buf_pos != '\0')) {
-		/* The segmentation is comma or square bracket. */
-		while ((*buf_pos == ',') || (*buf_pos == '[') || (*buf_pos == ']')) {
-			*buf_pos = '\0';
-			buf_pos++;
-		}
-
-		if (*buf_pos == '\0') {
-			break;
-		}
-		/* Double quotes will be considered as a string head / tail. */
-		else if (*buf_pos == '"') {
-			memset(str_buf, '\0', LOG_SERVICE_BUFLEN);
-			str_count = 0;
-			buf_cnt = 0;
-			*buf_pos = '\0';
-			buf_pos ++;
-			if (*buf_pos == '\0') {
-				break;
-			}
-			/* argv[argc] is a part of temp_buf. */
-			argv[argc] = buf_pos;
-			while ((*buf_pos != '"') && (*buf_pos != '\0')) {
-				if (*buf_pos == '\\') {
-					buf_pos ++;
-					buf_cnt++;
-				}
-				str_buf[str_count] = *buf_pos;
-				str_count++;
-				buf_cnt++;
-				buf_pos ++;
-			}
-			*buf_pos = '\0';
-			memcpy(buf_pos - buf_cnt, str_buf, buf_cnt);
-		} else {
-			/* argv[argc] is a part of temp_buf. */
-			argv[argc] = buf_pos;
-		}
-		argc++;
-		buf_pos++;
-
-		while ((*buf_pos != ',') && (*buf_pos != '\0') && (*buf_pos != '[') && (*buf_pos != ']')) {
-			buf_pos++;
+	for (; argc < MAX_ARGC; argc++) {
+		argv[argc] = strsep(&temp, ",");
+		if (argv[argc] == NULL) {
+			goto exit;
 		}
 	}
+
+exit:
+	return argc;
+}
+
+/****************************************************************
+  If the string parameter need include comma(s), use this one instead of parse_param.
+  The argv[0] is reserved as NULL, argv[1] is the 1st paramerter, argv[2] is the 2nd
+  parameter, and son on.
+  If return value argc == -1, it means there are invalid datas inside.
+  e.g.
+    AT+XXX=param1,head\,tail,param3		<- The 2nd parameter is string "head,tail".
+	AT+XXX=param1,head\\tail,param3		<- The 2nd parameter is string "head\tail".
+  The single backslash is not allowed, in other words, you should use double backslashes
+  such as "\\" to express single backslash.
+****************************************************************/
+int parse_param_advance(char *buf, char **argv)
+{
+	int argc = 1;
+	int buf_pos = 0, temp_pos = 0, length = 0;
+	static char temp_buf[LOG_SERVICE_BUFLEN];
+	char *segment = temp_buf;
+
+	if (buf == NULL) {
+		goto exit;
+	}
+	length = strlen(buf);
+	if (length == 0) {
+		goto exit;
+	}
+	/* If the length is longer than LOG_SERVICE_BUFLEN - 1, the tail will be cut. */
+	length = MIN(length, LOG_SERVICE_BUFLEN - 1);
+
+	while (buf_pos < length) {
+		/* Escape charactor. */
+		if (buf[buf_pos] == '\\') {
+			buf_pos++;
+			/* There are 2 escape charactors supported right now. */
+			if ((buf[buf_pos] == ',') || (buf[buf_pos] == '\\')) {
+				temp_buf[temp_pos] = buf[buf_pos];
+				temp_pos++;
+			} else {
+				argc = -1;
+				goto exit;
+			}
+		}
+		/* Comma is considered as segmentasion. */
+		else if (buf[buf_pos] == ',') {
+			temp_buf[temp_pos] = '\0';
+			temp_pos++;
+			argv[argc] = segment;
+			argc++;
+			segment = &temp_buf[temp_pos];
+		}
+		/* Other characters. */
+		else {
+			temp_buf[temp_pos] = buf[buf_pos];
+			temp_pos++;
+		}
+		buf_pos++;
+	}
+
+	/* The last one. */
+	temp_buf[temp_pos] = '\0';
+	argv[argc] = segment;
+	argc++;
+
 exit:
 	return argc;
 }
@@ -394,5 +401,4 @@ void log_service(char *line_buf)
 	RTK_LOGS(NOTAG, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
 	RTK_LOGS(NOTAG, "\r\n\n#\r\n"); //"#" is needed for mp tool
 }
-
 #endif

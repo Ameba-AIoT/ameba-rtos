@@ -51,8 +51,6 @@ int test_sha256_hmac(u32 OTPkey)
 	memset(&ctx, 0, sizeof(hw_sha_context));
 	timeout = 0xFFF;
 
-	rtl_crypto_hmac_sha2_init(SHA2_256, (u8 *)secret, strlen(secret), &ctx);
-
 	/*take sema to obtain the right to crypto engine*/
 	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != _TRUE) {
 		printf("ipsec get hw sema fail\n");
@@ -63,10 +61,13 @@ int test_sha256_hmac(u32 OTPkey)
 	} else {
 		CRYPTO_OTPKey_SHA_Init(OTPkey, ENABLE);
 	}
+
+	rtl_crypto_hmac_sha2_init(SHA2_256, (u8 *)secret, strlen(secret), &ctx);
 	rtl_crypto_hmac_sha2_update((u8 *)hmac_buf[0], strlen(hmac_buf[0]), &ctx);
 	rtl_crypto_hmac_sha2_update((u8 *)hmac_buf[1], strlen(hmac_buf[1]), &ctx);
 	rtl_crypto_hmac_sha2_update((u8 *)hmac_buf[2], strlen(hmac_buf[2]), &ctx);
 	rtl_crypto_hmac_sha2_final(mac, &ctx);
+
 	IPC_SEMFree(IPC_SEM_CRYPTO);
 
 	if (OTPkey > 1) {
@@ -83,8 +84,6 @@ int test_sha256_hmac(u32 OTPkey)
 			printf("hamc sha256 otp key digest result failed\r\n");
 			dump_buf("\n  hw hmac-sha-256 mac:", mac, sizeof(mac));
 		}
-
-
 	}
 
 	return 0;

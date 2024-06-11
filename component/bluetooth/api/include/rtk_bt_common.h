@@ -823,6 +823,7 @@ typedef enum {
 	RTK_BT_AVRCP_EVT_VOLUME_DOWN,                   /*!< AVRCP volume down */
 	RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED,            /*!< AVRCP volume reg changed */
 	RTK_BT_AVRCP_EVT_CONN_CMPL,                     /*!< AVRCP conn completion */
+	RTK_BT_AVRCP_EVT_DISCONN_CMPL,                  /*!< AVRCP disconn completion */
 	RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ,   /*!< AVRCP play status changed */
 	RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT,                /*!< AVRCP play request event */
 	RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT,               /*!< AVRCP pause request event */
@@ -1189,13 +1190,6 @@ void rtk_bt_event_free(rtk_bt_evt_t *pevt);
         *((uint8_t *)(_a) + 0) = ((_data) >> 0) & 0xFF; \
         *((uint8_t *)(_a) + 1) = ((_data) >> 8) & 0xFF; \
     }
-
-/* for api log print */
-#if 1
-#define API_PRINT(...)
-#else
-#define API_PRINT   printf
-#endif
 
 #ifndef HI_WORD
 #define HI_WORD(x)      ((uint8_t)((x & 0xFF00) >> 8))

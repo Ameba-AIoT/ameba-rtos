@@ -208,7 +208,7 @@ void km4_resume(void)
 		if (!dsp_status_on()) {
 			SOCPS_AP_resume_config(km4_sleep_type, ENABLE);
 		}
-#if !defined(CONFIG_MP_INCLUDED) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 		//request FW leave 32k and wakeup driver, by rpwm int
 		wifi_hal_system_resume_wlan();
 #endif
@@ -282,7 +282,7 @@ uint32_t pmu_get_km4sleeptime(void)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_tickless_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	.Rxfunc = km4_tickless_ipc_int,
 #else
 	.Rxfunc = NULL,

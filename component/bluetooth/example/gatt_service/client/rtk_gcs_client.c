@@ -12,17 +12,23 @@
 #include <rtk_bt_att_defs.h>
 #include <rtk_bt_gattc.h>
 #include <rtk_client_config.h>
+#include <bt_utils.h>
 
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 void _print_uuid(uint8_t type, uint8_t *uuid)
 {
 	if (type == BT_UUID_TYPE_16) {
 		BT_LOGA("%04x\r\n", LE_TO_U16(uuid));
+		BT_AT_PRINT("%04x\r\n", LE_TO_U16(uuid));
 	} else if (type == BT_UUID_TYPE_128) {
 		BT_LOGA("%08x-%04x-%04x-%04x-%04x%08x\r\n",
 				LE_TO_U32(uuid + 12), LE_TO_U16(uuid + 10),
 				LE_TO_U16(uuid + 8), LE_TO_U16(uuid + 6),
 				LE_TO_U16(uuid + 4), LE_TO_U32(uuid));
+		BT_AT_PRINT("%08x-%04x-%04x-%04x-%04x%08x\r\n",
+					LE_TO_U32(uuid + 12), LE_TO_U16(uuid + 10),
+					LE_TO_U16(uuid + 8), LE_TO_U16(uuid + 6),
+					LE_TO_U16(uuid + 4), LE_TO_U32(uuid));
 	}
 }
 
@@ -36,17 +42,27 @@ void general_client_discover_res_hdl(void *data)
 		case RTK_BT_GATT_DISCOVER_PRIMARY_ALL:
 			BT_LOGA("[APP] GATTC discover primary result: start_handle: 0x%04x, end_handle: 0x%04x, UUID: ",
 					disc_res->disc_primary_all_per.start_handle, disc_res->disc_primary_all_per.end_handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,0x%04x,",
+						disc_status, disc_res->type, disc_res->conn_handle,
+						disc_res->disc_primary_all_per.start_handle, disc_res->disc_primary_all_per.end_handle);
 			_print_uuid(disc_res->disc_primary_all_per.uuid_type, disc_res->disc_primary_all_per.uuid);
 			break;
 
 		case RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID:
 			BT_LOGA("[APP] GATTC discover primary by uuid result: start_handle: 0x%04x, end_handle: 0x%04x\r\n",
 					disc_res->disc_primary_by_uuid_per.start_handle, disc_res->disc_primary_by_uuid_per.end_handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,0x%04x\r\n",
+						disc_status, disc_res->type, disc_res->conn_handle,
+						disc_res->disc_primary_by_uuid_per.start_handle, disc_res->disc_primary_by_uuid_per.end_handle);
 			break;
 
 		case RTK_BT_GATT_DISCOVER_INCLUDE:
 			BT_LOGA("[APP] GATTC discover include result: handle: 0x%04x, start_handle: 0x%04x, end_handle: 0x%04x, UUID: ",
 					disc_res->disc_inc_per.handle, disc_res->disc_inc_per.start_handle, disc_res->disc_inc_per.end_handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,0x%04x,0x%04x,",
+						disc_status, disc_res->type, disc_res->conn_handle,
+						disc_res->disc_inc_per.handle, disc_res->disc_inc_per.start_handle,
+						disc_res->disc_inc_per.end_handle);
 			_print_uuid(disc_res->disc_inc_per.uuid_type, disc_res->disc_inc_per.uuid);
 			break;
 
@@ -55,12 +71,19 @@ void general_client_discover_res_hdl(void *data)
 			BT_LOGA("[APP] GATTC discover characteritic of a service result: handle: 0x%04x, "
 					"properties: 0x%02x, value_handle: 0x%04x, UUID: ", disc_res->disc_char_all_per.handle,
 					disc_res->disc_char_all_per.properties, disc_res->disc_char_all_per.value_handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,0x%02x,0x%04x,",
+						disc_status, disc_res->type, disc_res->conn_handle,
+						disc_res->disc_char_all_per.handle, disc_res->disc_char_all_per.properties,
+						disc_res->disc_char_all_per.value_handle);
 			_print_uuid(disc_res->disc_char_all_per.uuid_type, disc_res->disc_char_all_per.uuid);
 			break;
 
 		case RTK_BT_GATT_DISCOVER_DESCRIPTORS_ALL:
 			BT_LOGA("[APP] GATTC discover discriptor all result: handle: 0x%04x, UUID: ",
 					disc_res->disc_descriptor_per.handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,",
+						disc_status, disc_res->type, disc_res->conn_handle,
+						disc_res->disc_descriptor_per.handle);
 			_print_uuid(disc_res->disc_descriptor_per.uuid_type, disc_res->disc_descriptor_per.uuid);
 			break;
 
@@ -71,10 +94,15 @@ void general_client_discover_res_hdl(void *data)
 	} else if (RTK_BT_STATUS_DONE == disc_status) {
 		BT_LOGA("[APP] GATTC discover completed. profile_id: %d, conn_handle: %d, type: %d\r\n",
 				disc_res->profile_id, disc_res->conn_handle, disc_res->type);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%d,%d\r\n",
+					disc_status, disc_res->profile_id, disc_res->conn_handle, disc_res->type);
 		return;
 	} else {
 		BT_LOGE("[APP] GATTC discover failed! profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
 				disc_res->profile_id, disc_res->conn_handle, disc_res->type, disc_res->err_code);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%d,%d,0x%x\r\n",
+					disc_status, disc_res->profile_id, disc_res->conn_handle, disc_res->type,
+					disc_res->err_code);
 		return;
 	}
 }
@@ -88,6 +116,9 @@ void general_client_read_res_hdl(void *data)
 	if (RTK_BT_STATUS_FAIL == read_status) {
 		BT_LOGA("[APP] GATTC read failed, profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
 				read_res->profile_id, read_res->conn_handle, read_res->type, read_res->err_code);
+		BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%x\r\n",
+					read_status, read_res->profile_id, read_res->conn_handle,
+					read_res->type, read_res->err_code);
 		return;
 	} else if (RTK_BT_STATUS_CONTINUE == read_status) {
 		if (!read_res->by_handle.len || !read_res->by_handle.value) {
@@ -100,6 +131,9 @@ void general_client_read_res_hdl(void *data)
 			BT_LOGA("[APP] GATT client read result, profile_id: %d, conn_handle: %d, type: %d, status: %d, handle: 0x%04x\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type, read_status, handle);
 			BT_DUMPA("[APP] GATTC read result:\r\n", read_res->by_handle.value, read_res->by_handle.len);
+			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%04x\r\n",
+						read_status, read_res->profile_id, read_res->conn_handle,
+						read_res->type, handle);
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_BY_UUID:
@@ -107,12 +141,18 @@ void general_client_read_res_hdl(void *data)
 			BT_LOGA("[APP] GATT client read result, profile_id: %d, conn_handle: %d, type: %d, status: %d, handle: 0x%04x\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type, read_status, handle);
 			BT_DUMPA("[APP] GATTC read result:\r\n", read_res->by_uuid_per.value, read_res->by_uuid_per.len);
+			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%04x\r\n",
+						read_status, read_res->profile_id, read_res->conn_handle,
+						read_res->type, handle);
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
 			BT_LOGA("[APP] GATT client read result, profile_id: %d, conn_handle: %d, type: %d, status: %d\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type, read_status);
 			BT_DUMPA("[APP] GATTC read result:\r\n", read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
+			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d\r\n",
+						read_status, read_res->profile_id,
+						read_res->conn_handle, read_res->type);
 			break;
 
 		default:
@@ -121,6 +161,9 @@ void general_client_read_res_hdl(void *data)
 	} else if (RTK_BT_STATUS_DONE == read_status) {
 		BT_LOGA("[APP] GATTC read completed, profile_id: %d, conn_handle: %d, type: %d\r\n",
 				read_res->profile_id, read_res->conn_handle, read_res->type);
+		BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d\r\n",
+					read_status, read_res->profile_id,
+					read_res->conn_handle, read_res->type);
 	}
 
 }
@@ -133,10 +176,16 @@ void general_client_write_res_hdl(void *data)
 	if (RTK_BT_STATUS_FAIL == write_status) {
 		BT_LOGE("[APP] GATTC write failed, profile_id: %d, conn_handle: %d, type: %d, err: 0x%x\r\n",
 				write_res->profile_id, write_res->conn_handle, write_res->type, write_res->err_code);
+		BT_AT_PRINT("+BLEGATTC:write,%d,%d,%d,%d,0x%x\r\n",
+					write_status, write_res->profile_id, write_res->conn_handle,
+					write_res->type, write_res->err_code);
 		return;
 	} else if (RTK_BT_STATUS_DONE == write_status) {
 		BT_LOGA("[APP] GATTC write completed, profile_id: %d, conn_handle: %d, type: %d, handle: 0x%x\r\n",
 				write_res->profile_id, write_res->conn_handle, write_res->type, write_res->handle);
+		BT_AT_PRINT("+BLEGATTC:write,%d,%d,%d,%d,0x%x\r\n",
+					write_status, write_res->profile_id, write_res->conn_handle,
+					write_res->type, write_res->handle);
 	} else {
 		return;
 	}
@@ -153,6 +202,8 @@ void general_client_notify_hdl(void *data)
 	BT_LOGA("[APP] GATTC notify received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			ntf_ind->profile_id, ntf_ind->conn_handle, ntf_ind->value_handle);
 	BT_DUMPA("[APP] GATTC notify event:\r\n", ntf_ind->value, ntf_ind->len);
+	BT_AT_PRINT("+BLEGATTC:notify,%d,%d,0x%x\r\n",
+				ntf_ind->profile_id, ntf_ind->conn_handle, ntf_ind->value_handle);
 }
 
 void general_client_indicate_hdl(void *data)
@@ -166,6 +217,8 @@ void general_client_indicate_hdl(void *data)
 	BT_LOGA("[APP] GATTC indicate received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			indicate_ind->profile_id, indicate_ind->conn_handle, indicate_ind->value_handle);
 	BT_DUMPA("[APP] GATTC indicate event:\r\n", indicate_ind->value, indicate_ind->len);
+	BT_AT_PRINT("+BLEGATTC:indicate,%d,%d,0x%x\r\n",
+				indicate_ind->profile_id, indicate_ind->conn_handle, indicate_ind->value_handle);
 }
 
 void general_client_cccd_enable_hdl(void *data)
@@ -176,10 +229,16 @@ void general_client_cccd_enable_hdl(void *data)
 	if (RTK_BT_STATUS_DONE == status) {
 		BT_LOGA("[APP] GATTC enable cccd succeed, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 				cccd_update->profile_id, cccd_update->conn_handle, cccd_update->cccd_handle);
+		BT_AT_PRINT("+BLEGATTC:en_cccd,0,%d,%d,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle);
 	} else {
 		BT_LOGE("[APP] GATTC enable cccd failed, profile_id: %d, conn_handle: %d, handle: 0x%x, err: 0x%x\r\n",
 				cccd_update->profile_id, cccd_update->conn_handle,
 				cccd_update->cccd_handle, cccd_update->err_code);
+		BT_AT_PRINT("+BLEGATTC:en_cccd,-1,%d,%d,0x%x,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle, cccd_update->err_code);
 	}
 }
 
@@ -190,9 +249,15 @@ void general_client_cccd_disable_hdl(void *data)
 	if (RTK_BT_STATUS_DONE == status) {
 		BT_LOGA("[APP] GATTC disable cccd succeed, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 				cccd_update->profile_id, cccd_update->conn_handle, cccd_update->cccd_handle);
+		BT_AT_PRINT("+BLEGATTC:dis_cccd,0,%d,%d,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle);
 	} else {
 		BT_LOGE("[APP] GATTC disable cccd failed, profile_id: %d, conn_handle: %d, handle: 0x%x, err: 0x%x\r\n",
 				cccd_update->profile_id, cccd_update->conn_handle, cccd_update->cccd_handle, cccd_update->err_code);
+		BT_AT_PRINT("+BLEGATTC:dis_cccd,-1,%d,%d,0x%x,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle, cccd_update->err_code);
 	}
 }
 

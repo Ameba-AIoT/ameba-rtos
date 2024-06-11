@@ -13,6 +13,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
 #include <rtk_ias.h>
+#include <bt_utils.h>
 
 #define IMMEDIATE_ALERT_SRV_UUID            0x1802
 #define ALERT_LEVEL_CHAR_UUID               0x2A06
@@ -67,6 +68,10 @@ void immediate_alert_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] IAS response for client read failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+					read_resp.conn_handle, read_resp.index,
+					read_resp.err_code);
 		break;
 	}
 
@@ -90,6 +95,9 @@ void immediate_alert_srv_callback(uint8_t event, void *data)
 			value = (uint8_t *)(p_write_ind->value);
 			BT_LOGA("[APP] IAS write by remote, value: %d, type: %d\r\n",
 					*value, p_write_ind->type);
+			BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u,%u\r\n",
+						p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+						p_write_ind->len, p_write_ind->type, *value);
 		} else {
 			BT_LOGE("[APP] IAS write event unknown index: %d\r\n", p_write_ind->index);
 			write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
@@ -102,6 +110,10 @@ send_write_rsp:
 		} else {
 			BT_LOGE("[APP] IAS response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 

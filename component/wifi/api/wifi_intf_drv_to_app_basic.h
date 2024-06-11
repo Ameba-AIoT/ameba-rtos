@@ -293,6 +293,11 @@ struct rtw_kvr_param_t {
 #endif
 };
 
+struct rtw_tx_power_ctl_info_t {
+	s8	tx_pwr_force; /* Currently user can specify tx power for all rate. unit 0.25dbm*/
+	u8	b_tx_pwr_force_enbale : 1;
+};
+
 /**
   * @brief  The structure is used to describe the phy statistics
   */
