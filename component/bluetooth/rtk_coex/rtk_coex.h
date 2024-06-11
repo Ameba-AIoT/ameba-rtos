@@ -57,16 +57,12 @@
 #define CONFIG_BT_COEX_DEBUG 0
 
 #if defined(CONFIG_BT_COEX_DEBUG) && CONFIG_BT_COEX_DEBUG
-#define _dbgdump    printf("\n\r"); printf
-#define PREFIX  "[BT_COEX] "
-#if defined (_dbgdump)
-#undef DBG_BT_COEX
-#define DBG_BT_COEX(...)     do {\
-        _dbgdump(PREFIX __VA_ARGS__);\
-    }while(0)
-#endif
+#include "bt_debug.h"
+#define DBG_BT_COEX(...) BT_LOGA("[BT_COEX] " __VA_ARGS__)
+#define DBG_BT_COEX_DUMP(_str, _buf, _len) BT_DUMPA("[BT_COEX] " _str, _buf, _len)
 #else
-#define DBG_BT_COEX(x, ...) do {} while(0)
+#define DBG_BT_COEX(...) {}
+#define DBG_BT_COEX_DUMP(_str, _buf, _len) {}
 #endif /* CONFIG_BT_COEX_DEBUG */
 
 enum __hci_conn_type {

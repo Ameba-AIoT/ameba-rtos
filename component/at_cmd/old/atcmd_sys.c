@@ -357,9 +357,9 @@ void fATSx(void *arg)
 	u32 buflen = 1024;
 	char *buf = rtos_mem_malloc(buflen);
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
-	at_printf("%s", buf);
+	AT_PRINTK("%s", buf);
 	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-	at_printf("%s", buf);
+	AT_PRINTK("%s", buf);
 	rtos_mem_free(buf);
 }
 

@@ -32,17 +32,17 @@ uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t sound_channel, uint8_t
 	uint16_t ret = RTK_BT_OK;
 	/* should only be invoked before BT enable */
 	if (rtk_bt_is_enable()) {
-		printf("%s: should not be invoked after bt enable \r\n", __func__);
+		BT_LOGE("%s: should not be invoked after bt enable \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	if (sound_channel < 1 || sound_channel > 3) {
-		printf("%s: wrong channel(%d) should be within [1-3] \r\n", __func__, sound_channel);
+		BT_LOGE("%s: wrong channel(%d) should be within [1-3] \r\n", __func__, sound_channel);
 		return RTK_BT_FAIL;
 	}
 	//update device name
 	uint8_t device_name_len = strlen((char *)g_tmap_bmr_info.device_name);
 	if (device_name_len > RTK_BT_GAP_DEVICE_NAME_LEN) {
-		printf("device_name_len(%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
+		BT_LOGE("device_name_len(%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
 	}
 	if (sound_channel == RTK_BT_LE_AUDIO_LEFT) {
 		ch = 'L';
@@ -52,7 +52,7 @@ uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t sound_channel, uint8_t
 		ch = 'S';
 	} else {
 		ch = 'L';
-		printf("%s: wrong sound channel \r\n", __func__);
+		BT_LOGE("%s: wrong sound channel \r\n", __func__);
 	}
 	g_tmap_bmr_info.device_name[device_name_len - 1] = ch;
 	g_tmap_bmr_info.sound_channel = sound_channel;
@@ -70,17 +70,17 @@ uint16_t rtk_bt_tmap_unicast_media_receiver_cfg(uint8_t channel, uint8_t *p_neig
 	uint8_t device_name_len = 0;
 	/* Check bt enable status (rtk_bt_tmap_unicast_media_receiver_cfg should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("%s: should not be invoked after bt enable \r\n", __func__);
+		BT_LOGE("%s: should not be invoked after bt enable \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
 	if (channel < 1 || channel > 3) {
-		printf("%s: channel should be within 1 - 3 \r\n", __func__);
+		BT_LOGE("%s: channel should be within 1 - 3 \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	device_name_len = strlen((char *)g_tmap_umr_info.device_name);
 	if (device_name_len > RTK_BT_GAP_DEVICE_NAME_LEN) {
-		printf("%s: device_name_len (%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", __func__, device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
+		BT_LOGE("%s: device_name_len (%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", __func__, device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
 		return RTK_BT_FAIL;
 	}
 	switch (channel) {
@@ -94,7 +94,7 @@ uint16_t rtk_bt_tmap_unicast_media_receiver_cfg(uint8_t channel, uint8_t *p_neig
 		ch = 'S';
 		break;
 	default:
-		printf("%s: unknown channel allocation \r\n", __func__);
+		BT_LOGE("%s: unknown channel allocation \r\n", __func__);
 		break;
 	}
 	g_tmap_umr_info.device_name[device_name_len - 1] = ch;

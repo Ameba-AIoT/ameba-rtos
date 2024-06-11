@@ -519,9 +519,11 @@ u32 ADC_GetStatus(void)
   * @note  1. Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
   *			    Every time a conversion is done, software MUST clear this bit manually.
   *		  2. Used in Sotfware Trigger Mode
+  *		  3. Sync time: 4*adc_clk + 1.5*sample_clk
   */
 void ADC_SWTrigCmd(u32 NewState)
 {
+#if 0
 	ADC_TypeDef	*adc = ADC;
 
 	if (TrustZone_IsSecure()) {
@@ -529,16 +531,24 @@ void ADC_SWTrigCmd(u32 NewState)
 	}
 
 	u8 div = adc->ADC_CLK_DIV;
-	u8 sync_time[7] = {2, 4, 8, 12, 16, 32, 64};
+	u8 sync_time[7] = {3, 4, 7, 10, 13, 25, 49};
 
 	if (NewState != DISABLE) {
 		adc->ADC_SW_TRIG = ADC_BIT_SW_TRIG;
+
+		/* Wait to sync signal */
+		/* power_on delay: 300us */
+		DelayUs(300 + sync_time[div]);
 	} else {
 		adc->ADC_SW_TRIG = 0;
-	}
 
-	/* Wait 2 clock to sync signal */
-	DelayUs(sync_time[div]);
+		/* Wait to sync signal */
+		/* power_off delay: 4us */
+		DelayUs(sync_time[div] > 4 ? sync_time[div] : 4);
+	}
+#else
+	ADC_AutoCSwCmd(NewState);
+#endif
 }
 
 /**
@@ -550,6 +560,7 @@ void ADC_SWTrigCmd(u32 NewState)
   *			If an automatic channel switch is in progess, writing 0 will terminate the automatic channel switch.
   * @retval  None.
   * @note  Used in Automatic Mode
+  * @note  Sync time: 4*adc_clk + 1.5*sample_clk
   */
 void ADC_AutoCSwCmd(u32 NewState)
 {
@@ -560,18 +571,29 @@ void ADC_AutoCSwCmd(u32 NewState)
 	}
 
 	u8 div = adc->ADC_CLK_DIV;
-	u8 sync_time[7] = {2, 4, 8, 12, 16, 32, 64};
+	u8 sync_time[7] = {3, 4, 7, 10, 13, 25, 49};
+	u32 value;
 
 	if (NewState != DISABLE) {
 		adc->ADC_AUTO_CSW_CTRL = ADC_BIT_AUTOSW_EN;
-	} else {
-		adc->ADC_AUTO_CSW_CTRL = 0;
-	}
 
-	/* Wait 2 clock to sync signal */
-	DelayUs(sync_time[div]);
+		/* Wait to sync signal */
+		/* power_on delay: 300us */
+		DelayUs(300 + sync_time[div]);
+	} else {
+		value = PLL_BASE->PLL_LPAD0;
+		value &= ~(PLL_BIT_POW_REF | PLL_BIT_POW | PLL_BIT_POW_LDO);
+		PLL_BASE->PLL_LPAD0 = value;
+
+		adc->ADC_AUTO_CSW_CTRL = 0;
+
+		/* Wait to sync signal */
+		/* power_off delay: 4us */
+		DelayUs(sync_time[div] > 4 ? sync_time[div] : 4);
+	}
 }
 
+#if 0
 /**
   * @brief	Initialize the trigger timer when in ADC Timer-Trigger Mode.
   * @param  Tim_Idx: The timer index would be used to make ADC module do a conversion.
@@ -583,8 +605,10 @@ void ADC_AutoCSwCmd(u32 NewState)
   * @retval  None.
   * @note  Used in Timer-Trigger Mode, period range: 1ms ~ 131071ms.
   */
+#endif
 void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 {
+#if 0
 	ADC_TypeDef	*adc = ADC;
 
 	if (TrustZone_IsSecure()) {
@@ -608,6 +632,13 @@ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 	} else {
 		RTIM_Cmd(TIMx[Tim_Idx], DISABLE);
 	}
+#else
+	UNUSED(Tim_Idx);
+	UNUSED(PeriodMs);
+	UNUSED(NewState);
+
+	RTK_LOGS(NOTAG, "NOTE: ADC timer-trigger mode is not supported!!!\n");
+#endif
 }
 
 /**

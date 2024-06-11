@@ -613,7 +613,6 @@ uint16_t app_bt_le_audio_device_list_remove(uint16_t conn_handle);
 uint16_t app_bt_le_audio_new_device_add_in_group(uint16_t conn_handle, rtk_bt_le_audio_group_handle_t *p_group_handle);
 rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_codec);
 uint16_t app_bt_le_audio_track_remove(void *audio_track_hdl);
-uint16_t app_bt_le_audio_track_recv_data(rtk_bt_audio_track_t *track_hdl, void *codec_entity, uint8_t *pdata, uint32_t len);
 void *app_bt_le_audio_lc3_codec_entity_add(rtk_bt_le_audio_cfg_codec_t *p_codec);
 uint16_t app_bt_le_audio_lc3_codec_entity_remove(void *codec_entity);
 rtk_bt_audio_record_t *app_bt_le_audio_record_add(rtk_bt_le_audio_cfg_codec_t *p_codec);

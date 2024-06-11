@@ -1622,7 +1622,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 											   p_iso_path->track_hdl,
 											   p_iso_path->codec_entity,
 											   p_bt_direct_iso->p_buf + p_bt_direct_iso->offset,
-											   p_bt_direct_iso->iso_sdu_len)) {
+											   p_bt_direct_iso->iso_sdu_len,
+											   0)) {
 					BT_LOGE("[APP] %s Stream Data receive Fail! \r\n", __func__);
 					p_iso_path->status_fail_cnt++;
 				} else {

@@ -15,6 +15,7 @@
 #include <rtk_bt_att_defs.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_dis.h>
+#include <bt_utils.h>
 
 #define DEVICE_INFORMATION_SRV_UUID                 0x180A
 #define SYSTEM_ID_CHAR_UUID                         0x2A23
@@ -331,6 +332,11 @@ void dis_read_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] DIS response for client read failed, err: 0x%x\r\n", ret);
 	}
+
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 void device_info_srv_callback(uint8_t event, void *data)
@@ -355,6 +361,9 @@ void device_info_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] DIS indicate failed, err: 0x%x\r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
 		break;
 	}
 
@@ -365,6 +374,9 @@ void device_info_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] DIS notify failed, err: 0x%x\r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
 		break;
 	}
 
@@ -390,12 +402,17 @@ void device_info_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] DIS response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 
 	case RTK_BT_GATTS_EVT_CCCD_IND: {
 		rtk_bt_gatts_cccd_ind_t *p_cccd_ind = (rtk_bt_gatts_cccd_ind_t *)data;
 		BT_LOGE("[APP] DIS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 		break;
 	}
 

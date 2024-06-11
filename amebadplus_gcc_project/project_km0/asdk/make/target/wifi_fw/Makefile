@@ -21,10 +21,9 @@ vpath %.c $(DIR_TEST)
 CSRC = $(TARGET_LIB)_git_version.c
 
 CSRC +=$(DIR)/wififw_init.c \
-       $(DIR)/wififw_txpkt.c \
+       $(DIR)/wififw_txpkt_common.c \
 	   $(DIR)/wififw_bcnmode.c \
        $(DIR)/wififw_pwrctrl.c \
-	   $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
 	   $(DIR)/wififw_interrupt_handle.c \
@@ -33,11 +32,10 @@ CSRC +=$(DIR)/wififw_init.c \
 	   $(DIR_COMMON)/wififw_ps_bcnhdl_common.c \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
        $(DIR)/wififw_wowlan.c     \
-	   $(DIR)/wififw_h2c.c     \
 	   $(DIR_COMMON)/wififw_h2c_common.c     \
 	   $(DIR)/wififw_ra_new.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
-	   $(DIR)/wififw_ps_twt.c \
+	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR)/wififw_periodcca.c \
 	   $(DIR)/wififw_lpsofld.c \
 	   $(DIR)/wififw_ps_dbg.c \

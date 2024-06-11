@@ -481,7 +481,7 @@ static uint16_t rtk_bt_hfp_cvsd_parse_decoder_struct(rtk_bt_hfp_codec_t *phfp_co
 	pcvsd_decoder_t->sample_rate = phfp_codec->cvsd.sample_rate;
 	pcvsd_decoder_t->frame_duration = phfp_codec->cvsd.frame_duration;
 	hfp_demo_audio_track_hdl = rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_CVSD, (float)DEFAULT_AUDIO_LEFT_VOLUME, (float)0, pcvsd_decoder_t->channel_num,
-													  pcvsd_decoder_t->sample_rate, 0, NULL, true);
+													  pcvsd_decoder_t->sample_rate, BT_AUDIO_FORMAT_PCM_16_BIT, 0, NULL, true);
 	if (!hfp_demo_audio_track_hdl) {
 		BT_LOGE("[HFP] bt audio track add fail \r\n");
 		return 1;
@@ -564,7 +564,7 @@ static void app_hfp_ring_alert_start(void)
 		BT_LOGE("[HFP] Create alert timer fail \r\n");
 		return;
 	}
-	alert_track_hdl = rtk_bt_audio_track_init((uint32_t)2, (uint32_t)44100, (uint32_t)0, 1024, 0);
+	alert_track_hdl = rtk_bt_audio_track_init((uint32_t)2, (uint32_t)44100, BT_AUDIO_FORMAT_PCM_16_BIT, 1024, 0, 0);
 	if (!alert_track_hdl) {
 		BT_LOGE("[HFP]alert track init fail \r\n");
 		osif_timer_delete(&alert_timer);
@@ -714,50 +714,49 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	break;
 
 	case RTK_BT_HFP_EVT_SCO_CONN_CMPL: {
-		BT_LOGA("[HFP] Receive HFP SCO connection completion \r\n");
-		/* do audio hal init */
+		uint16_t ret = 1;
+		rtk_bt_hfp_codec_t *phfp_codec = (rtk_bt_hfp_codec_t *)param;
+
+		BT_LOGA("[HFP] Receive HFP SCO connection completion with %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				phfp_codec->bd_addr[5], phfp_codec->bd_addr[4], phfp_codec->bd_addr[3], phfp_codec->bd_addr[2], phfp_codec->bd_addr[1], phfp_codec->bd_addr[0]);
+		if ((phfp_codec->codec_type & (RTK_BT_AUDIO_CODEC_CVSD /* | RTK_BT_AUDIO_CODEC_mSBC */)) == 0) {
+			BT_LOGE("[HFP] Not support codec %d \r\n", phfp_codec->codec_type);
+			break;
+		}
+		if (rtk_bt_audio_init()) {
+			BT_LOGE("[HFP] rtk_bt_audio_init fail \r\n");
+			break;
+		}
+		if (phfp_codec->codec_type == RTK_BT_AUDIO_CODEC_CVSD) {
+			ret = rtk_bt_hfp_cvsd_parse_decoder_struct(phfp_codec, &cvsd_codec_t.decoder_t);
+			audio_codec_conf.codec_index = RTK_BT_AUDIO_CODEC_CVSD;
+			audio_codec_conf.param = (void *)&cvsd_codec_t;
+			audio_codec_conf.param_len = sizeof(cvsd_codec_t);
+		}
+		if (ret) {
+			BT_LOGE("[HFP] RTK_BT_HFP_EVT_SCO_CONN_CMPL Fail \r\n");
+			rtk_bt_audio_deinit();
+			hfp_demo_audio_track_hdl = NULL;
+			hfp_demo_audio_record_hdl = NULL;
+			break;
+		}
+		hfp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_codec_conf);
+		BT_LOGA("[HFP] Configure Complete CODEC %d \r\n", phfp_codec->codec_type);
+		/* config audio record thread */
 		{
-			uint16_t ret = 1;
-			rtk_bt_hfp_codec_t *phfp_codec = (rtk_bt_hfp_codec_t *)param;
-			if ((phfp_codec->codec_type & (RTK_BT_AUDIO_CODEC_CVSD /* | RTK_BT_AUDIO_CODEC_mSBC */)) == 0) {
-				BT_LOGE("[HFP] Not support codec %d \r\n", phfp_codec->codec_type);
-				break;
+			BT_LOGA("[HFP Demo] Create Record Demo \r\n");
+			if (false == osif_sem_create(&hfp_task.sem, 0, 1)) {
+				BT_LOGE("[HFP Demo] Create Record Demo Fail\r\n");
+				return 1;
 			}
-			if (rtk_bt_audio_init()) {
-				BT_LOGE("[HFP] rtk_bt_audio_init fail \r\n");
-				break;
+			hfp_task.run = 1;
+			if (false == osif_task_create(&hfp_task.hdl, "hfp_task",
+											hfp_task_entry, NULL,
+											2048, 4)) {
+				osif_sem_delete(hfp_task.sem);
+				return 1;
 			}
-			if (phfp_codec->codec_type == RTK_BT_AUDIO_CODEC_CVSD) {
-				ret = rtk_bt_hfp_cvsd_parse_decoder_struct(phfp_codec, &cvsd_codec_t.decoder_t);
-				audio_codec_conf.codec_index = RTK_BT_AUDIO_CODEC_CVSD;
-				audio_codec_conf.param = (void *)&cvsd_codec_t;
-				audio_codec_conf.param_len = sizeof(cvsd_codec_t);
-			}
-			if (ret) {
-				BT_LOGE("[HFP] RTK_BT_HFP_EVT_SCO_CONN_CMPL Fail \r\n");
-				rtk_bt_audio_deinit();
-				hfp_demo_audio_track_hdl = NULL;
-				hfp_demo_audio_record_hdl = NULL;
-				break;
-			}
-			hfp_demo_codec_entity = rtk_bt_audio_codec_add(&audio_codec_conf);
-			BT_LOGA("[HFP] Configure Complete CODEC %d \r\n", phfp_codec->codec_type);
-			/* config audio record thread */
-			{
-				BT_LOGA("[HFP Demo] Create Record Demo \r\n");
-				if (false == osif_sem_create(&hfp_task.sem, 0, 1)) {
-					BT_LOGE("[HFP Demo] Create Record Demo Fail\r\n");
-					return 1;
-				}
-				hfp_task.run = 1;
-				if (false == osif_task_create(&hfp_task.hdl, "hfp_task",
-											  hfp_task_entry, NULL,
-											  2048, 4)) {
-					osif_sem_delete(hfp_task.sem);
-					return 1;
-				}
-				osif_sem_take(hfp_task.sem, 0xffffffff);
-			}
+			osif_sem_take(hfp_task.sem, 0xffffffff);
 		}
 	}
 	break;
@@ -765,8 +764,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_SCO_DATA_IND: {
 		rtk_bt_hfp_sco_data_ind_t *pdata_in = (rtk_bt_hfp_sco_data_ind_t *)param;
 
-		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_track_hdl, hfp_demo_codec_entity, pdata_in->data, pdata_in->length)) {
-			BT_LOGA("[HFP] SCO Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_CVSD);
+		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_CVSD, hfp_demo_audio_track_hdl, hfp_demo_codec_entity, pdata_in->data, pdata_in->length, 0)) {
+			BT_LOGE("[HFP] SCO Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_CVSD);
 		}
 	}
 	break;

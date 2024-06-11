@@ -4136,7 +4136,7 @@ uint16_t bt_stack_le_audio_init(rtk_bt_app_conf_t *papp_conf, void *io_msg_q, vo
 
 	if ((papp_conf->app_profile_support & RTK_BT_PROFILE_GATTS) == 0) {
 		if (!gatt_svc_init(GATT_SVC_USE_EXT_SERVER, RTK_BT_GATTS_SERVICE_NUM)) {
-			printf("gatt_svc_init fail \r\n");
+			BT_LOGE("gatt_svc_init fail \r\n");
 		}
 	}
 

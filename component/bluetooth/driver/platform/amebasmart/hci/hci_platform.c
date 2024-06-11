@@ -220,6 +220,11 @@ void hci_platform_set_tx_power_gain_index(uint32_t index)
 	bt_manual_gain_index_edr3m = (uint8_t)((index >> 24) & 0xFF);
 }
 
+void hci_platform_set_antenna(uint8_t ant)
+{
+	bt_ant_switch = ant;
+}
+
 static uint8_t hci_platform_parse_config(void)
 {
 	uint8_t *p, i;

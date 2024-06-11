@@ -309,7 +309,7 @@ SECTIONS
     PROVIDE(CTS2SelfSetting_8730E_ROM = 0x6325);
     PROVIDE(IssueCTS2Self_8730E_ROM = 0x6341);
     PROVIDE(IssueRsvdPagePacketSetting_8730E_ROM = 0x63d9);
-    PROVIDE(wififw_wowlan_read_rxbuff = 0x64bd);
+    PROVIDE(ReadRxBuff_8730E_ROM = 0x64bd);
     PROVIDE(wififw_txpkt_wait_cpumgq_empty = 0x64e1);
     PROVIDE(PollingReg_8730E_ROM = 0x6511);
     PROVIDE(wififw_ps_set_power_state = 0x6551);
@@ -338,8 +338,8 @@ SECTIONS
     PROVIDE(DisWoWLAN_8730E_ROM = 0x6b29);
     PROVIDE(H2CHDL_WoWLAN_8730E_ROM = 0x6b65);
     PROVIDE(DropDecision_8730E_ROM = 0x6c69);
-    PROVIDE(wififw_disconchk_wakeuphost = 0x6c81);
-    PROVIDE(wififw_wowlan_destination_match = 0x6ca5);
+    PROVIDE(FwDisConnectWakeUpHost_8730E_ROM = 0x6c81);
+    PROVIDE(DestinationMatch_8730E_ROM = 0x6ca5);
     PROVIDE(PassSecurityInfoToDriver_8730E_ROM = 0x6ce5);
     PROVIDE(GetRemoteControlInfo_8730E_ROM = 0x6d59);
     PROVIDE(wififw_wowlan_get_arp_info = 0x6e31);
@@ -355,7 +355,7 @@ SECTIONS
     PROVIDE(H2CHDL_AOACRsvdpage1_8730E_ROM = 0x7551);
     PROVIDE(H2CHDL_AOACRsvdpage2_8730E_ROM = 0x758d);
     PROVIDE(H2CHDL_AOACRsvdpage3_8730E_ROM = 0x75c9);
-    PROVIDE(wififw_wowlan_get_addr = 0x75e9);
+    PROVIDE(GetAddr_8730E_ROM = 0x75e9);
     PROVIDE(ARP_hdl_8730E_ROM = 0x7615);
     PROVIDE(NDP_hdl_8730E_ROM = 0x7631);
     PROVIDE(InitDisconnectDecision_8730E_ROM = 0x764d);
@@ -437,7 +437,7 @@ SECTIONS
     PROVIDE(CTS2SelfSetting_8730E_PTR = 0x230007d4);
     PROVIDE(IssueCTS2Self_8730E_PTR = 0x230007d8);
     PROVIDE(IssueRsvdPagePacketSetting_8730E_PTR = 0x230007dc);
-    PROVIDE(ReadRxBuff_8730E_PTR = 0x230007e0);
+    PROVIDE(wififw_wowlan_read_rxbuff_ptr = 0x230007e0);
     PROVIDE(wififw_txpkt_wait_cpumgq_empty_ptr = 0x230007e4);
     PROVIDE(PollingReg_8730E_PTR = 0x230007e8);
     PROVIDE(wififw_ps_set_power_state_ptr = 0x230007ec);

@@ -41,7 +41,7 @@ static struct list_head *rtk_sdp_record_list_dequeue(void)
 	struct list_head *plist = NULL;
 
 	if (list_empty(&rtk_sdp_record_list)) {
-		printf("%s(): rtk_sdp_record_list is empty !\r\n", __func__);
+		BT_LOGE("%s(): rtk_sdp_record_list is empty !\r\n", __func__);
 		return NULL;
 	} else {
 		plist = rtk_sdp_record_list.next;
@@ -57,7 +57,7 @@ uint16_t bt_stack_sdp_record_add(void *record, uint32_t length)
 	/* allocate record mem */
 	p_temp_record_t = (rtk_sdp_record_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_sdp_record_t));
 	if (!p_temp_record_t) {
-		printf("%s(): p_temp_record_t allocate fail !\r\n", __func__);
+		BT_LOGE("%s(): p_temp_record_t allocate fail !\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	/* memcpy record data */
@@ -74,11 +74,11 @@ uint16_t bt_stack_sdp_record_add(void *record, uint32_t length)
 uint16_t bt_stack_sdp_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	int16_t ret = 0;
-	API_PRINT("bt_stack_sdp_act_handle: act = %d \r\n", p_cmd->act);
+	BT_LOGD("bt_stack_sdp_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 
 	default:
-		printf("bt_stack_sdp_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_sdp_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = 0;
 		break;
 	}
@@ -91,14 +91,14 @@ uint16_t bt_stack_sdp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_sdp_init(void)
 {
-	printf("[SDP]app_sdp_init\n");
+	BT_LOGA("[SDP]app_sdp_init\n");
 
 	struct list_head *plist = NULL;
 	struct list_head *plist_next = NULL;
 	rtk_sdp_record_t *precord = NULL;
 
 	if (list_empty(&rtk_sdp_record_list)) {
-		printf("%s(): rtk_sdp_record_list is empty !\r\n", __func__);
+		BT_LOGE("%s(): rtk_sdp_record_list is empty !\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	plist = rtk_sdp_record_list.next;
@@ -123,11 +123,11 @@ void bt_stack_sdp_deinit(void)
 	struct list_head *plist = NULL;
 	rtk_sdp_record_t *precord = NULL;
 
-	printf("[SDP]app_sdp_deinit\n");
+	BT_LOGA("[SDP]app_sdp_deinit\n");
 	rtk_sdp_record_init_flag = 0;
 	while (1) {
 		if (list_empty(&rtk_sdp_record_list)) {
-			printf("%s(): rtk_sdp_record_list is empty !\r\n", __func__);
+			BT_LOGE("%s(): rtk_sdp_record_list is empty !\r\n", __func__);
 			break;
 		}
 		plist = rtk_sdp_record_list_dequeue();

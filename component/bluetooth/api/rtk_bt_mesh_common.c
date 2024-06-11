@@ -42,7 +42,7 @@ uint16_t rtk_bt_mesh_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *a
 	uint16_t ret;
 
 	if (adv_param->adv_data_len > RTK_BT_LE_MAX_ADV_DATA_LEN) {
-		printf("[%s] adv_len(%d) > RTK_BT_LE_MAX_ADV_DATA_LEN(%d), fail\r\n", __func__, adv_param->adv_data_len, RTK_BT_LE_MAX_ADV_DATA_LEN);
+		BT_LOGE("[%s] adv_len(%d) > RTK_BT_LE_MAX_ADV_DATA_LEN(%d), fail\r\n", __func__, adv_param->adv_data_len, RTK_BT_LE_MAX_ADV_DATA_LEN);
 		return RTK_BT_FAIL;
 	}
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_ACT_SEND_ONE_SHOT_ADV, adv_param, sizeof(rtk_bt_mesh_stack_act_send_adv_t));

@@ -42,7 +42,8 @@ extern void rtk_bt_mp_power_on(void);
 extern void rtk_bt_mp_power_off(void);
 extern void rtk_bt_set_bt_antenna(uint8_t ant);
 
-extern void print_bt_mp_at(void);
+void print_bt_mp_at(void);
+void at_mp_init(void);
 
 #endif /* #if CONFIG_ATCMD_MP */
 #endif /* #if CONFIG_BT */

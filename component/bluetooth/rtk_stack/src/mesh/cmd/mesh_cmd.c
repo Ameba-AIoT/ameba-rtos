@@ -37,7 +37,7 @@ static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t d
 {
 	// Copy a val to memory using little endian
 	if (!p || data_len > 4) {
-		// printf("[%s] copy data to memory fail\r\n", __func__);
+		// BT_LOGE("[%s] copy data to memory fail\r\n", __func__);
 		return false;
 	}
 	for (uint8_t i = 0; i < data_len; i++) {
@@ -55,7 +55,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 	uint8_t list_copy[USER_CMD_LIST_MAX_LEN];
 	uint8_t *p_data = (uint8_t *)list_copy;
 	uint32_t offset = 0;
-	// printf("MeshState:\t%d\r\n", mesh_node.node_state);
+	// BT_LOGA("MeshState:\t%d\r\n", mesh_node.node_state);
 	// Indicate event data struct : type(1 byte) + length(1 byte) + value(n bytes) + type +len + val ......
 	// Add mesh state
 	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MESH_STATE;
@@ -64,7 +64,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 	offset++;
 	*(p_data + offset) = mesh_node.node_state;
 	offset ++;
-	// printf("DevUUID:\t");
+	// BT_LOGA("DevUUID:\t");
 	// data_uart_dump(mesh_node.dev_uuid, 16);
 	// Add device uuid 16 bytes
 	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_DEV_UUID;
@@ -75,7 +75,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 	offset += 16;
     uint8_t bt_addr[6];
     gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-	// printf("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
+	// BT_LOGA("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
 	// 	   bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
 	// Add bt address
 	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR;
@@ -86,7 +86,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 	offset += 6;
 	for (uint16_t index = 0; index < mesh_node.dev_key_num; index++) {
 		if (mesh_node.dev_key_list[index].used && mesh_node.dev_key_list[index].element_num != 0) {
-			// printf("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
+			// BT_LOGA("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
 			// 	   mesh_node.dev_key_list[index].element_num);
 			// data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
 			// Add bt dev key
@@ -106,13 +106,13 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
     }
 	for (uint16_t index = 0; index < mesh_node.app_key_num; index++) {
 		if (mesh_node.app_key_list[index].key_state != MESH_KEY_STATE_INVALID) {
-			// printf("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
+			// BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
 			// 	   mesh_node.app_key_list[index].app_key_index_g, mesh_node.app_key_list[index].key_state,
 			// 	   key_state_to_tx_loop(mesh_node.app_key_list[index].key_state),
 			// 	   mesh_node.app_key_list[index].net_key_binding);
 			for (uint8_t loop = 0; loop < 2; loop++) {
 				if (mesh_node.app_key_list[index].papp_key[loop] != NULL) {
-					// printf("\t\t");
+					// BT_LOGA("\t\t");
 					// data_uart_dump(mesh_node.app_key_list[index].papp_key[loop]->app_key, 16);
 					// Add bt app key
 					*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_APP_KEY;
@@ -138,7 +138,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
     }
 	for (uint16_t index = 0; index < mesh_node.net_key_num; index++) {
 		if (mesh_node.net_key_list[index].key_state != MESH_KEY_STATE_INVALID) {
-			// printf("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
+			// BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
 			// 	   mesh_node.net_key_list[index].net_key_index_g, mesh_node.net_key_list[index].key_state,
 			// 	   key_state_to_tx_loop(mesh_node.net_key_list[index].key_state),
 			// 	   key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state));
@@ -147,7 +147,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
             }
 			for (uint8_t loop = 0; loop < 2; loop++) {
 				if (mesh_node.net_key_list[index].pnet_key[loop] != NULL) {
-					// printf("\t\t");
+					// BT_LOGA("\t\t");
 					// data_uart_dump(mesh_node.net_key_list[index].pnet_key[loop]->net_key, 16);
 					// Add bt net key
 					*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_NET_KEY;
@@ -172,9 +172,9 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
             }
         }
     }
-	// printf("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, (unsigned int)mesh_node.iv_index);
-	// printf("Seq:\t\t0x%06x\r\n", (unsigned int)mesh_node.seq);
-	// printf("NodeAddr:\t0x%04x-%d-%d\r\n", mesh_node.unicast_addr,
+	// BT_LOGA("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, (unsigned int)mesh_node.iv_index);
+	// BT_LOGA("Seq:\t\t0x%06x\r\n", (unsigned int)mesh_node.seq);
+	// BT_LOGA("NodeAddr:\t0x%04x-%d-%d\r\n", mesh_node.unicast_addr,
 	// 	   (int)mesh_node.element_queue.count, mesh_node.model_num);
 	// Add bt normal vals
 	*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS;
@@ -195,7 +195,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 	offset++;
     mesh_element_p pelement = (mesh_element_p)mesh_node.element_queue.pfirst;
 	while (pelement != NULL) {
-		// printf("Element:\t%d-%d\r\n", pelement->element_index, (int)pelement->model_queue.count);
+		// BT_LOGA("Element:\t%d-%d\r\n", pelement->element_index, (int)pelement->model_queue.count);
 		// Add mesh element info
 		*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_ELEMENT_INFO;
 		offset++;
@@ -207,7 +207,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 		offset += 4;
         mesh_model_p pmodel = (mesh_model_p)pelement->model_queue.pfirst;
 		while (pmodel != NULL) {
-			// printf("Model:\t\t%d-%d-0x%08x", pmodel->pmodel_info->model_index,
+			// BT_LOGA("Model:\t\t%d-%d-0x%08x", pmodel->pmodel_info->model_index,
 			// 	   pmodel->model_index, (unsigned int)pmodel->pmodel_info->model_id);
 			// Add mesh model info
 			*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_INFO;
@@ -226,9 +226,9 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 					mesh_node.app_key_list[index].key_state != MESH_KEY_STATE_INVALID) {
 					if (key_flag) {
                         key_flag = false;
-						// printf("-(key:%d", index);
+						// BT_LOGA("-(key:%d", index);
 					} else {
-						// printf("-%d", index);
+						// BT_LOGA("-%d", index);
                     }
 					// Add mesh model app key
 					*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY;
@@ -240,10 +240,10 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
                     }
                 }
 			if (!key_flag) {
-				// printf(")");
+				// BT_LOGA(")");
             }
 			if (MESH_NOT_UNASSIGNED_ADDR(pmodel->pub_params.pub_addr)) {
-				// printf("-(pub:0x%04x-%d-%d)", pmodel->pub_params.pub_addr, pmodel->pub_params.pub_ttl,
+				// BT_LOGA("-(pub:0x%04x-%d-%d)", pmodel->pub_params.pub_addr, pmodel->pub_params.pub_ttl,
 				// 	   pmodel->pub_params.pub_key_info.app_key_index);
 				// Add mesh model pub info
 				*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO;
@@ -266,11 +266,11 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 			while (paddr_element != NULL) {
 				if (paddr_element == (mesh_addr_member_p)pmodelb->sub_queue.pfirst) {
 					if (pmodelb != pmodel) {
-						// printf("-(sub:-%d-%d-0x%04x",
+						// BT_LOGA("-(sub:-%d-%d-0x%04x",
                         //                 ((mesh_model_p)pmodel->pmodel_info->pmodel_bound->pmodel)->model_index,
                         //                 pmodelb->model_index, paddr_element->mesh_addr);
 					} else {
-						// printf("-(sub:0x%04x", paddr_element->mesh_addr);
+						// BT_LOGA("-(sub:0x%04x", paddr_element->mesh_addr);
 						// Add mesh model sub info
 						*(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO;
 						offset++;
@@ -281,23 +281,23 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 						offset += 2;
                     }
 				} else {
-					// printf("-0x%04x", paddr_element->mesh_addr);
+					// BT_LOGA("-0x%04x", paddr_element->mesh_addr);
                     *(p_data + len_offset) += 2;  // len = len+2
                     memcpy(p_data + offset, &paddr_element->mesh_addr, 2);  // type:uint16_t
 					offset += 2;
                 }
                 paddr_element = paddr_element->pnext;
 				if (paddr_element == NULL) {
-					// printf(")");
+					// BT_LOGA(")");
                 }
             }
             pmodel = pmodel->pnext;
-			// printf("\r\n");
+			// BT_LOGA("\r\n");
         }
         pelement = pelement->pnext;
     }
 	if (offset > USER_CMD_LIST_MAX_LEN) {
-		// printf("[%s] Len %d of copy data extend the max val:%d\r\n", __func__, (int)offset, USER_CMD_LIST_MAX_LEN);
+		// BT_LOGA("[%s] Len %d of copy data extend the max val:%d\r\n", __func__, (int)offset, USER_CMD_LIST_MAX_LEN);
 		// Indicate event to app
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LIST_INFO, 0);

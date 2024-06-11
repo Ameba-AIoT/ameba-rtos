@@ -46,10 +46,9 @@ typedef struct status_cmd_para_s {
 #endif /* configGENERATE_RUN_TIME_STATS */
 #endif /* CONFIG_INIC_NO_FLASH */
 
-extern void print_system_at(void);
-
 extern void print_bt_ext_at(void);
-
 extern void sys_reset(void);
 
+void at_sys_init(void);
+void print_system_at(void);
 #endif

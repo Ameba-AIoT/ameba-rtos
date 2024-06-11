@@ -109,7 +109,8 @@ typedef struct _atcmd_lwip_conf {
 } atcmd_lwip_conf;
 #endif /* ENABLE_TCPIP_AUTOLINK */
 
-extern void print_lwip_at(void);
+void print_lwip_at(void);
+void at_tcpip_init(void);
 
 extern rtos_sema_t atcmd_lwip_tt_sema;
 extern volatile int atcmd_lwip_tt_mode;

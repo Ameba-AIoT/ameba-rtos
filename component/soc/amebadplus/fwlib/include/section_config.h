@@ -53,5 +53,7 @@
 #define WLAN_ROM_BSS_SECTION
 #ifndef CONFIG_BUILD_ROM //for KM4 compile original rom code
 #define HAL_ROM_BSS_SECTION
+#define HAL_ROM_TEXT_SECTION
+#define HAL_ROM_DATA_SECTION
 #endif
 #endif //_SECTION_CONFIG_H_

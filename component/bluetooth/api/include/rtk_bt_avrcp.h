@@ -59,11 +59,27 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_avrcp_conn_ind_t
- * @brief     avrcp connection connection indication.
+ * @brief     avrcp connection indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                             /*!< address */
 } rtk_bt_avrcp_conn_ind_t;
+
+/**
+ * @struct    rtk_bt_avrcp_conn_cmpl_t
+ * @brief     avrcp connection completion indication.
+ */
+typedef struct {
+	uint8_t bd_addr[6];                             /*!< address */
+} rtk_bt_avrcp_conn_cmpl_t;
+
+/**
+ * @struct    rtk_bt_avrcp_disconn_cmpl_t
+ * @brief     avrcp disconnection completion indication.
+ */
+typedef struct {
+	uint8_t bd_addr[6];                             /*!< address */
+} rtk_bt_avrcp_disconn_cmpl_t;
 
 /* ------------------------------ Functions Declaration ------------------------------ */
 /**

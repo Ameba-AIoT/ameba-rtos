@@ -924,6 +924,20 @@ uint16_t app_bt_le_audio_iso_data_path_add(uint8_t iso_mode, uint8_t iso_idx, ui
 			p_codec->sample_frequency, p_codec->codec_frame_blocks_per_sdu,
 			p_codec->octets_per_codec_frame, (unsigned int)p_codec->audio_channel_allocation);
 	if (path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_RX) {
+#if 0
+		uint8_t channels = 0;
+		uint32_t rate = 0;
+
+		rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency);
+		channels = app_bt_le_audio_get_lea_chnl_num(p_codec->audio_channel_allocation);
+		p_iso_path->track_hdl = app_bt_le_audio_track_add(p_codec);
+		p_iso_path->track_hdl->audio_sync_flag = true;
+		p_iso_path->track_hdl->sdu_interval = p_codec->frame_duration * 1000; // micro seconds
+		p_iso_path->track_hdl->pres_us = 20000;
+		p_iso_path->track_hdl->audio_delay_start_buff.size = RTK_BT_AUDIO_DELAY_START_BUFFER_COUNT * p_codec->frame_duration * (rate * channels * (16 / 8)) / 1000;
+		p_iso_path->track_hdl->audio_delay_start_buff.buff = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_iso_path->track_hdl->audio_delay_start_buff.size);
+		memset((void *)p_iso_path->track_hdl->audio_delay_start_buff.buff, 0, p_iso_path->track_hdl->audio_delay_start_buff.size);
+#endif
 		p_iso_path->track_hdl = app_bt_le_audio_track_add(p_codec);
 	}
 	if (path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_RX && p_iso_path->track_hdl != NULL) {
@@ -2573,8 +2587,14 @@ rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_c
 	uint8_t channels = 0;
 	uint32_t audio_chnl = 0;
 	uint32_t rate = 0;
+	uint32_t duration = 0;
 
 	rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency);
+	if (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
+		duration = 10000;
+	} else {
+		duration = 7500;
+	}
 #if 1
 	channels = app_bt_le_audio_get_lea_chnl_num(p_codec->audio_channel_allocation);
 	audio_chnl = app_bt_le_audio_translate_le_chnl_to_audio_chnl(p_codec->audio_channel_allocation);
@@ -2591,17 +2611,12 @@ rtk_bt_audio_track_t *app_bt_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_c
 #endif
 
 	return rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_LC3, (float)left_volume, (float)right_volume,
-								  channels, rate, DEFAULT_PCM_BIT_WIDTH, NULL, true);
+								  channels, rate, BT_AUDIO_FORMAT_PCM_16_BIT, duration, NULL, true);
 }
 
 uint16_t app_bt_le_audio_track_remove(void *audio_track_hdl)
 {
 	return rtk_bt_audio_track_del(RTK_BT_AUDIO_CODEC_LC3, audio_track_hdl);
-}
-
-uint16_t app_bt_le_audio_track_recv_data(rtk_bt_audio_track_t *track_hdl, void *codec_entity, uint8_t *pdata, uint32_t len)
-{
-	return rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3, track_hdl, codec_entity, pdata, len);
 }
 
 rtk_bt_audio_record_t *app_bt_le_audio_record_add(rtk_bt_le_audio_cfg_codec_t *p_codec)

@@ -40,7 +40,7 @@ void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		goto exit;
 	}
 
-	ret_msg = (struct inic_api_info *)event_priv->rx_api_ret_msg;
+	ret_msg = (struct inic_api_info *)(event_priv->rx_api_ret_msg->data + SIZE_RX_DESC);
 	if (ret_msg != NULL) {
 		/* check api_id of return msg */
 		if (ret_msg->api_id != id) {
@@ -53,7 +53,7 @@ void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		}
 
 		/* free rx buffer */
-		llhw_free_rxbuf((u8 *)ret_msg);
+		kfree_skb(event_priv->rx_api_ret_msg);
 		event_priv->rx_api_ret_msg = NULL;
 	} else {
 		dev_err(global_idev.fullmac_dev, "Linux API return value is NULL!\n");
@@ -193,8 +193,9 @@ int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char b
 
 	/*clear for last connect status */
 	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
+#ifndef CONFIG_SDIO_BRIDGE
 	cfg80211_rtw_connect_indicate(RTW_JOINSTATUS_STARTING, NULL, 0);
-
+#endif
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
 		block_param = (struct internal_join_block_param *)kzalloc(sizeof(struct internal_join_block_param), GFP_KERNEL);
@@ -294,7 +295,13 @@ error:
 	}
 
 	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL) {
+#ifdef CONFIG_SDIO_BRIDGE
+		if (global_idev.mlme_priv.join_block_param && global_idev.mlme_priv.join_block_param->block) {
+			complete(&global_idev.mlme_priv.join_block_param->join_sema);
+		}
+#else
 		cfg80211_rtw_connect_indicate(RTW_JOINSTATUS_FAIL, NULL, 0);
+#endif
 	}
 
 	return ret;
@@ -1013,3 +1020,4 @@ int llhw_wifi_driver_is_mp(void)
 
 	return ret;
 }
+

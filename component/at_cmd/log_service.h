@@ -84,6 +84,7 @@ typedef struct _at_command_item_ {
 
 void log_service_add_table(log_item_t *tbl, int len);
 int parse_param(char *buf, char **argv);
+int parse_param_advance(char *buf, char **argv);
 
 #define C_NUM_AT_CMD			4 //"ATxx", 4 characters
 #define C_NUM_AT_CMD_DLT		1 //"=", 1 charater
@@ -112,4 +113,15 @@ int at_printf(const char *fmt, ...);
   This should be deleted once the new format commands are ready. */
 #define ATCMD_BT_CUT_DOWN       1
 
+#ifdef CONFIG_MP_INCLUDED
+#ifdef CONFIG_AS_INIC_AP
+extern void inic_mp_command(char *token, unsigned int cmd_len, int show_msg);
+#else
+extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #endif
+#endif
+#if defined(CONFIG_BT) && CONFIG_BT
+extern void at_bt_init(void);
+#endif
+
+#endif /* LOG_SERVICE_H */

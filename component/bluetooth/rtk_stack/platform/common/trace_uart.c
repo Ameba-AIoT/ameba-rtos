@@ -15,7 +15,7 @@ bool bt_trace_init(void)
 	if (!CHECK_CFG_SW(CFG_SW_BT_TRACE_LOG)) {
 		osif_mutex_create(&trace_mutex);
 		rtk_bt_trace_log_open();
-		printf("bt_trace_init: TRACE LOG OPEN\r\n");
+		BT_LOGA("bt_trace_init: TRACE LOG OPEN\r\n");
 	}
 
 	return true;

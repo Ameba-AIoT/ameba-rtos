@@ -72,7 +72,7 @@ void app_pmu_init(void)
 {
 	DBG_INFO_MSG_ON(MODULE_PMC);
 	DBG_INFO_MSG_ON(MODULE_KM4);
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	SOCPS_sleepInit();
 #endif
 	/* if wake from deepsleep, that means we have released wakelock last time */
@@ -172,7 +172,7 @@ int main(void)
 
 //only NP can init FW
 #if defined(CONFIG_WLAN)
-#if !defined(CONFIG_MP_INCLUDED) && defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
+#if !defined(CONFIG_MP_SHRINK) && defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
 	wififw_task_create();
 #endif
 

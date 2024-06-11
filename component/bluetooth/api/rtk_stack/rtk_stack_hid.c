@@ -47,11 +47,11 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		if (p_link != NULL) {
 			bt_hid_connect_cfm(p_link->bd_addr, true);
 			APP_PRINT_INFO0("HID p_link confirmed");
-			printf("app_hid_bt_cback: HID p_link confirmed \r\n");
+			BT_LOGA("app_hid_bt_cback: HID p_link confirmed \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_HID_EVT_CONN_CMPL, sizeof(rtk_bt_hid_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hid_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hid_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -65,7 +65,7 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HID p_link is NULL");
-			printf("app_hid_bt_cback: HID p_link is NULL \r\n");
+			BT_LOGE("app_hid_bt_cback: HID p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -73,14 +73,14 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	case BT_EVENT_HID_CONN_CMPL: {
 		rtk_bt_hid_conn_ind_t *p_hid_conn_ind = NULL;
 
-		printf("app_hid_bt_cback: HID Connected \r\n");
+		BT_LOGA("app_hid_bt_cback: HID Connected \r\n");
 		p_link = app_find_br_link(param->hid_conn_cmpl.bd_addr);
 		if (p_link != NULL) {
 			memcpy((void *)remote_addr, (void *)param->hid_conn_cmpl.bd_addr, 6);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_A2DP_EVT_CONN_CMPL, sizeof(rtk_bt_hid_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hid_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hid_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -94,7 +94,7 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HID p_link is NULL");
-			printf("app_hid_bt_cback: no acl link found \r\n");
+			BT_LOGE("app_hid_bt_cback: no acl link found \r\n");
 		}
 	}
 	break;
@@ -102,11 +102,11 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	case BT_EVENT_HID_DISCONN_CMPL: {
 		rtk_bt_hid_disconn_ind_t *p_hid_disconn_ind = NULL;
 		{
-			printf("app_hid_bt_cback: HID Disconnected \r\n");
+			BT_LOGA("app_hid_bt_cback: HID Disconnected \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HID, RTK_BT_HID_EVT_DISCONN_CMPL, sizeof(rtk_bt_hid_disconn_ind_t));
 				if (!p_evt) {
-					printf("app_hid_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hid_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -124,12 +124,12 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	break;
 
 	case BT_EVENT_HID_CONTROL_DATA_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_CONTROL_DATA_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_CONTROL_DATA_IND \r\n");
 	}
 	break;
 
 	case BT_EVENT_HID_GET_REPORT_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_GET_REPORT_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_GET_REPORT_IND \r\n");
 		if (hid_data) {
 			osif_mem_free(hid_data);
 		}
@@ -138,37 +138,38 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		hid_data[0] = param->hid_get_report_ind.report_id;
 		report_type = (T_BT_HID_REPORT_TYPE)param->hid_get_report_ind.report_type;
 		memcpy(&hid_data[1], data, param->hid_get_report_ind.report_size);
+		BT_LOGA("app_hid_bt_cback: report_id %d , report_type %d \r\n", (int)hid_data[0], (int)report_type);
 	}
 	break;
 
 	case BT_EVENT_HID_SET_REPORT_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_SET_REPORT_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_SET_REPORT_IND \r\n");
 	}
 	break;
 
 	case BT_EVENT_HID_GET_PROTOCOL_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_GET_PROTOCOL_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_GET_PROTOCOL_IND \r\n");
 	}
 	break;
 
 	case BT_EVENT_HID_SET_PROTOCOL_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_SET_PROTOCOL_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_SET_PROTOCOL_IND \r\n");
 	}
 	break;
 
 	case BT_EVENT_HID_SET_IDLE_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_SET_IDLE_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_SET_IDLE_IND \r\n");
 	}
 	break;
 
 	case BT_EVENT_HID_INTERRUPT_DATA_IND: {
-		printf("app_hid_bt_cback: BT_EVENT_HID_INTERRUPT_DATA_IND \r\n");
+		BT_LOGA("app_hid_bt_cback: BT_EVENT_HID_INTERRUPT_DATA_IND \r\n");
 	}
 	break;
 
 	default: {
 		APP_PRINT_INFO1("app_hid_bt_cback: default event_type 0x%04x", event_type);
-		// printf("app_hid_bt_cback: default event_type 0x%04x \r\n", event_type);
+		// BT_LOGA("app_hid_bt_cback: default event_type 0x%04x \r\n", event_type);
 		handle = false;
 	}
 	break;
@@ -176,7 +177,7 @@ static void app_hid_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 
 	if (handle == true) {
 		// APP_PRINT_INFO1("app_hid_bt_cback: event_type 0x%04x", event_type);
-		// printf("app_hid_bt_cback: event_type 0x%04x \r\n", event_type);
+		// BT_LOGA("app_hid_bt_cback: event_type 0x%04x \r\n", event_type);
 	}
 }
 
@@ -202,6 +203,10 @@ static uint16_t bt_stack_hid_get_report_rsp(void *param)
 
 	p_link = app_find_br_link(bd_addr);
 	if (p_link != NULL) {
+		if (!hid_data) {
+			BT_LOGE("%s(): hid_data is NULL !\r\n", __func__);
+			return RTK_BT_FAIL;
+		}
 		if (bt_hid_control_get_report_rsp(bd_addr,
 										  report_type,
 										  hid_data,
@@ -232,13 +237,13 @@ static uint16_t bt_stack_hid_input_data_send(void *param)
 uint16_t bt_stack_hid_descriptor_add(void *des, uint32_t length)
 {
 	if (pdescriptor) {
-		printf("%s(): pdescriptor is not NULL !\r\n", __func__);
+		BT_LOGE("%s(): pdescriptor is not NULL !\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	/* allocate descriptor mem */
 	pdescriptor = (rtk_bt_hid_des_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_bt_hid_des_t));
 	if (!pdescriptor) {
-		printf("%s(): pdescriptor allocate fail !\r\n", __func__);
+		BT_LOGE("%s(): pdescriptor allocate fail !\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	/* memcpy record data */
@@ -251,7 +256,7 @@ uint16_t bt_stack_hid_descriptor_add(void *des, uint32_t length)
 uint16_t bt_stack_hid_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
-	API_PRINT("bt_stack_hid_act_handle: act = %d \r\n", p_cmd->act);
+	BT_LOGD("bt_stack_hid_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 
 	case RTK_BT_HID_ACT_DISCONNECT:
@@ -267,7 +272,7 @@ uint16_t bt_stack_hid_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 
 	default:
-		printf("bt_stack_hid_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_hid_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = 0;
 		break;
 	}
@@ -280,14 +285,14 @@ uint16_t bt_stack_hid_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_hid_init(uint8_t role)
 {
-	printf("[HID]app_hid_init\n");
+	BT_LOGA("[HID]app_hid_init\n");
 
 	if (!pdescriptor) {
-		printf("%s(): pdescriptor is NULL !\r\n", __func__);
+		BT_LOGE("%s(): pdescriptor is NULL !\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	if (!bt_hid_init(1, true)) {
-		printf("[HID]bt_hid_init FAIL\n");
+		BT_LOGE("[HID]bt_hid_init FAIL\n");
 		return RTK_BT_FAIL;
 	}
 	bt_hid_descriptor_set(pdescriptor->des, pdescriptor->len);
@@ -299,7 +304,7 @@ uint16_t bt_stack_hid_init(uint8_t role)
 
 void bt_stack_hid_deinit(void)
 {
-	printf("[HID]app_hid_init need to do\n");
+	BT_LOGA("[HID]app_hid_init need to do\n");
 	if (pdescriptor) {
 		osif_mem_free((void *)pdescriptor);
 	}

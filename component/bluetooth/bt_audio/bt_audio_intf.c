@@ -15,8 +15,7 @@
 #include <bt_audio_config.h>
 #include <bt_audio_codec_wrapper.h>
 #include <bt_audio_debug.h>
-#include <bt_audio_track_api.h>
-#include <bt_audio_record_api.h>
+#include <bt_audio_sync.h>
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_AUDIO_STREAM_HANDLE_TASK_EXIT    0xFF
@@ -179,7 +178,53 @@ exit:
 	return ret;
 }
 
-static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *data, uint16_t size)
+static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t* data, uint16_t size)
+{
+	int32_t write_bytes;
+
+	write_bytes = rtk_bt_audio_track_play(track->audio_track_hdl, (void *)data, size);
+	/* empty buffer */
+	if (write_bytes > 0) {
+		track->trans_bytes += write_bytes;
+	} else if (write_bytes == -32) { // OSAL_ERR_DEAD_OBJECT
+		rtk_bt_audio_handle_xrun(track, data, size);
+	}
+}
+
+static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size)
+{
+	uint16_t ret = 1;
+
+	if (track->pre_drop_cnt_left) {
+		uint32_t cnt_drop;
+		/* RTAUDIO_FORMAT_PCM_16_BIT -> 2bytes */
+		cnt_drop = track->pre_drop_cnt_left;
+		if (cnt_drop > *pdata_size) {
+			track->pre_drop_cnt_left = cnt_drop - *pdata_size;
+			BT_LOGA("[BT AUDIO] drop %d data to speed up audio track rendering, left %d \r\n", (int)*pdata_size, (int)track->pre_drop_cnt_left);
+			*pdata_size = 0;
+		} else {
+			*ppdata += cnt_drop; // offset
+			*pdata_size -= cnt_drop;
+			track->pre_drop_cnt_left = 0;
+			BT_LOGA("[BT AUDIO] drop %d data to speed up audio track rendering \r\n", (int)cnt_drop);
+			do_audio_track_write(track, *ppdata, *pdata_size);
+		}
+	} else {
+		if (track->audio_sync_flag) {
+			ret = rtk_bt_audio_presentation_compensation(track, ts_us, ppdata, pdata_size);
+			if (!ret) {
+				do_audio_track_write(track, *ppdata, *pdata_size);
+			}
+		}
+		/* first frame */
+		if (packet_index == 0) {
+			track->prev_ts_us = ts_us;
+		}
+	}
+}
+
+static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *data, uint16_t size, uint32_t ts_us)
 {
 	struct bt_audio_intf_priv *p_intf_priv = NULL;
 	struct bt_audio_codec_priv *p_codec_priv = NULL;
@@ -195,25 +240,25 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		goto exit;
 	}
 	p_intf_priv = get_audio_intf_priv_data(type);
 	if (!p_intf_priv) {
-		printf("[BT AUDIO] audio intf illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] audio intf illegal codec type %d \r\n", (int)type);
 		goto exit;
 	}
 	p_codec_priv = get_audio_codec_priv_data(type);
 	if (!p_codec_priv) {
-		printf("[BT AUDIO] codec intf illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] codec intf illegal codec type %d \r\n", (int)type);
 		goto exit;
 	}
 	if (!check_audio_track(p_intf_priv, track)) {
-		printf("[BT AUDIO] %s Track handle not match \r\n", __func__);
+		BT_LOGE("[BT AUDIO] %s Track handle not match \r\n", __func__);
 		goto exit;
 	}
 	if (!check_codec_entity(p_codec_priv, entity)) {
-		printf("[BT AUDIO] Codec entity not match \r\n");
+		BT_LOGE("[BT AUDIO] Codec entity not match \r\n");
 		goto exit;
 	}
 	while (size) {
@@ -222,7 +267,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 			DBG_BAD("%s: media packet dismatch codec type %d ! \r\n", __func__, (int)type);
 			goto exit;
 		}
-		DBG_BAD("%s: frame_size %d,  frame_num %d, %d ! \r\n", __func__, (int)frame_size, (int)frame_num, (int)type);
+		DBG_BAD("%s: frame_size %d, frame_num %d, %d ! \r\n", __func__, (int)frame_size, (int)frame_num, (int)type);
 		if (!frame_num) {
 			break;
 		}
@@ -230,12 +275,12 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 		for (uint8_t i = 0; i < frame_num; i++) {
 			pdecode_frame_buffer = bt_audio_get_decode_buffer(entity);
 			if (pdecode_frame_buffer == NULL) {
-				printf("[BT_AUDIO] %d fail to get decode buffer ! \r\n", (int)type);
+				BT_LOGE("[BT_AUDIO] %d fail to get decode buffer ! \r\n", (int)type);
 				continue;
 			}
 			err = rtk_bt_audio_decode_data((void *)entity, pdecode_frame_buffer, &data[i * frame_size + codec_header_flag], frame_size, &pcm_data_size, (void *)&param);
 			if (err) {
-				printf("[BT_AUDIO] %d decode fail ! \r\n", (int)type);
+				BT_LOGE("[BT_AUDIO] %d decode fail ! \r\n", (int)type);
 				bt_audio_free_decode_buffer(entity, pdecode_frame_buffer);
 				continue;
 			}
@@ -247,23 +292,27 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 			private_param.bits = track->bits;
 			if (memcmp((void *)&private_param, (void *)&param, sizeof(struct audio_param))) {
 				/* change channel number or frequence */
-				printf("[BT AUDIO] received audio format mismatch \r\n");
-				printf("[BT AUDIO] private_param channels=%d,channel_allocation=%d,rate=%d,bits=%d\r\n",
-					   (int)private_param.channels,
-					   (int)private_param.channel_allocation,
-					   (int)private_param.rate,
-					   (int)private_param.bits);
-				printf("[BT AUDIO] param channels=%d,channel_allocation=%d,rate=%d,bits=%d\r\n",
-					   (int)param.channels,
-					   (int)param.channel_allocation,
-					   (int)param.rate,
-					   (int)param.bits);
+				BT_LOGE("[BT AUDIO] received audio format mismatch \r\n");
+				BT_LOGE("[BT AUDIO] private_param channels=%d,channel_allocation=%d,rate=%d,bits=%d\r\n",
+						(int)private_param.channels,
+						(int)private_param.channel_allocation,
+						(int)private_param.rate,
+						(int)private_param.bits);
+				BT_LOGE("[BT AUDIO] param channels=%d,channel_allocation=%d,rate=%d,bits=%d\r\n",
+						(int)param.channels,
+						(int)param.channel_allocation,
+						(int)param.rate,
+						(int)param.bits);
 			} else {
 				if (track->pcm_data_cb) {
 					track->pcm_data_cb(pdecode_frame_buffer->pbuffer, pcm_data_size, (void *)entity, (void *)track);
 				}
 				if (track->audio_track_hdl) {
-					rtk_bt_audio_track_play(track->audio_track_hdl, pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
+					if (!track->audio_sync_flag) {
+						do_audio_track_write(track, (uint8_t*)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
+					} else {
+						do_audio_sync_flow(track, i, ts_us, (uint8_t **)&pdecode_frame_buffer->pbuffer, &pcm_data_size);
+					}
 				}
 			}
 			/* free buffer */
@@ -303,17 +352,17 @@ static void rtk_bt_audio_stream_handle_thread(void *ctx)
 						osif_delay(2);
 					}
 					render_buffer_flag = 0;
-					printf("buffer %d numbers \r\n", audio_stream_enqueue_num);
+					BT_LOGE("buffer %d numbers \r\n", audio_stream_enqueue_num);
 				} else {
 					if (audio_stream_enqueue_num == 1) {
 						render_buffer_flag = 1;
-						printf("1 number active buffer flag \r\n");
+						BT_LOGE("1 number active buffer flag \r\n");
 					}
 				}
 #endif
 				pentity = (PAUDIO_CODEC_ENTITY)stream_msg.entity;
 				track = (rtk_bt_audio_track_t *)stream_msg.track;
-				bt_audio_parsing_recv_stream(stream_msg.type, stream_msg.track, stream_msg.entity, stream_msg.data, stream_msg.size);
+				bt_audio_parsing_recv_stream(stream_msg.type, stream_msg.track, stream_msg.entity, stream_msg.data, stream_msg.size, stream_msg.ts_us);
 				if (stream_msg.size) {
 					osif_mem_free(stream_msg.data);
 				}
@@ -346,12 +395,12 @@ static void rtk_bt_audio_stream_handle_thread(void *ctx)
 		}
 	}
 
-	printf("[BT AUDIO] bt audio stream handle task exit\r\n");
+	BT_LOGA("[BT AUDIO] bt audio stream handle task exit\r\n");
 	osif_sem_give(audio_stream_handle_task_sem);
 	osif_task_delete(NULL);
 }
 
-static uint16_t bt_audio_msg_send(uint32_t type, rtk_bt_audio_track_t *track, void *entity, void *pdata, uint16_t size)
+static uint16_t bt_audio_msg_send(uint32_t type, rtk_bt_audio_track_t *track, void *entity, void *pdata, uint16_t size, uint32_t ts_us)
 {
 	static uint32_t stream_overflow_cout = 0;
 	T_AUDIO_STREAM_MSG stream_msg;
@@ -362,9 +411,10 @@ static uint16_t bt_audio_msg_send(uint32_t type, rtk_bt_audio_track_t *track, vo
 	stream_msg.type = type;
 	stream_msg.track = track;
 	stream_msg.entity = entity;
+	stream_msg.ts_us = ts_us;
 
 	while (audio_stream_enqueue_num >= AUDIO_STREAM_MSG_QUEUE_SIZE) {
-		// printf("%s:enqueue stream data too fast %d %d %d ! \r\n", __func__, (int)audio_stream_enqueue_num, (int)stream_overflow_cout, (int)type);
+		// BT_LOGE("%s:enqueue stream data too fast %d %d %d ! \r\n", __func__, (int)audio_stream_enqueue_num, (int)stream_overflow_cout, (int)type);
 		osif_delay(5);
 		stream_overflow_cout ++;
 	}
@@ -420,7 +470,7 @@ failed:
 static uint16_t bt_audio_app_data_handle_deinit(void)
 {
 	/* indicate bt audio stream handle task to kill itself */
-	if (bt_audio_msg_send(RTK_BT_AUDIO_STREAM_HANDLE_TASK_EXIT, NULL, NULL, NULL, 0)) {
+	if (bt_audio_msg_send(RTK_BT_AUDIO_STREAM_HANDLE_TASK_EXIT, NULL, NULL, NULL, 0, 0)) {
 		return RTK_BT_AUDIO_FAIL;
 	}
 
@@ -442,7 +492,7 @@ static uint16_t bt_audio_codec_init(rtk_bt_audio_codec_conf_t *paudio_codec_conf
 	uint32_t codec_index = 0;
 
 	if (!paudio_codec_conf || !pentity) {
-		printf("[BT_AUDIO] audio configuration or entity is empty \r\n");
+		BT_LOGE("[BT_AUDIO] audio configuration or entity is empty \r\n");
 		return err;
 	}
 	codec_index = paudio_codec_conf->codec_index;
@@ -450,28 +500,28 @@ static uint16_t bt_audio_codec_init(rtk_bt_audio_codec_conf_t *paudio_codec_conf
 #if defined(CONFIG_BT_AUDIO_CODEC_SBC) && CONFIG_BT_AUDIO_CODEC_SBC
 	/* sbc codec */
 	if (RTK_BT_AUDIO_CODEC_SBC == codec_index) {
-		printf("[BT_AUDIO] sbc codec init  \r\n");
+		BT_LOGE("[BT_AUDIO] sbc codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_SBC, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
 	/* aac codec */
 	if (RTK_BT_AUDIO_CODEC_AAC == codec_index) {
-		printf("[BT_AUDIO] aac codec init  \r\n");
+		BT_LOGE("[BT_AUDIO] aac codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_AAC, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_LC3) && CONFIG_BT_AUDIO_CODEC_LC3
 	/* lc3 codec */
 	if (RTK_BT_AUDIO_CODEC_LC3 == codec_index) {
-		printf("[BT_AUDIO] lc3 codec init  \r\n");
+		BT_LOGE("[BT_AUDIO] lc3 codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_LC3, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_CVSD) && CONFIG_BT_AUDIO_CODEC_CVSD
 	/* cvsd codec */
 	if (RTK_BT_AUDIO_CODEC_CVSD == codec_index) {
-		printf("[BT_AUDIO] cvsd codec init  \r\n");
+		BT_LOGE("[BT_AUDIO] cvsd codec init  \r\n");
 		err = bt_audio_register_codec(RTK_BT_AUDIO_CODEC_CVSD, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 	}
 #endif
@@ -484,34 +534,34 @@ static uint16_t bt_audio_codec_deinit(uint32_t codec_index, PAUDIO_CODEC_ENTITY 
 	uint16_t err = RTK_BT_AUDIO_FAIL;
 
 	if (!pentity) {
-		printf("[BT_AUDIO] Codec entity is empty \r\n");
+		BT_LOGE("[BT_AUDIO] Codec entity is empty \r\n");
 		return err;
 	}
 #if defined(CONFIG_BT_AUDIO_CODEC_SBC) && CONFIG_BT_AUDIO_CODEC_SBC
 	/* sbc codec */
 	if (RTK_BT_AUDIO_CODEC_SBC == codec_index) {
-		printf("[BT_AUDIO] sbc codec deinit  \r\n");
+		BT_LOGE("[BT_AUDIO] sbc codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_SBC, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_AAC) && CONFIG_BT_AUDIO_CODEC_AAC
 	/* aac codec */
 	if (RTK_BT_AUDIO_CODEC_AAC == codec_index) {
-		printf("[BT_AUDIO] aac codec deinit  \r\n");
+		BT_LOGE("[BT_AUDIO] aac codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_AAC, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_LC3) && CONFIG_BT_AUDIO_CODEC_LC3
 	/* lc3 codec */
 	if (RTK_BT_AUDIO_CODEC_LC3 == codec_index) {
-		printf("[BT_AUDIO] lc3 codec deinit  \r\n");
+		BT_LOGE("[BT_AUDIO] lc3 codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_LC3, pentity);
 	}
 #endif
 #if defined(CONFIG_BT_AUDIO_CODEC_CVSD) && CONFIG_BT_AUDIO_CODEC_CVSD
 	/* cvsd codec */
 	if (RTK_BT_AUDIO_CODEC_CVSD == codec_index) {
-		printf("[BT_AUDIO] cvsd codec deinit  \r\n");
+		BT_LOGE("[BT_AUDIO] cvsd codec deinit  \r\n");
 		err = bt_audio_unregister_codec(RTK_BT_AUDIO_CODEC_CVSD, pentity);
 	}
 #endif
@@ -529,7 +579,7 @@ struct enc_codec_buffer *rtk_bt_audio_data_encode(uint32_t type, void *entity, i
 	uint32_t flags = 0;
 
 	if (!entity) {
-		printf("%s: empty entity handle \r\n", __func__);
+		BT_LOGE("%s: empty entity handle \r\n", __func__);
 		return NULL;
 	} else {
 		flags = osif_lock();
@@ -538,25 +588,25 @@ struct enc_codec_buffer *rtk_bt_audio_data_encode(uint32_t type, void *entity, i
 	}
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		goto exit;
 	}
 	priv = get_audio_codec_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		goto exit;
 	}
 	if (!check_codec_entity(priv, entity)) {
-		printf("[BT AUDIO] %s Track handle not match \r\n", __func__);
+		BT_LOGE("[BT AUDIO] %s Track handle not match \r\n", __func__);
 		goto exit;
 	}
 	pencoder_buffer = bt_audio_get_encode_buffer((PAUDIO_CODEC_ENTITY)entity);
 	if (!pencoder_buffer) {
-		printf("[BT_AUDIO] get audio encode buffer fail \r\n");
+		BT_LOGE("[BT_AUDIO] get audio encode buffer fail \r\n");
 		goto exit;
 	}
 	if (bt_audio_encode_process_data((PAUDIO_CODEC_ENTITY)entity, pencoder_buffer, pdata, len, &frame_num, &actual_len)) {
-		printf("[BT_AUDIO] bt_audio_encode_process_data fail \r\n");
+		BT_LOGE("[BT_AUDIO] bt_audio_encode_process_data fail \r\n");
 		bt_audio_free_encode_buffer((PAUDIO_CODEC_ENTITY)entity, pencoder_buffer);
 		pencoder_buffer = NULL;
 	}
@@ -573,16 +623,16 @@ uint16_t rtk_bt_audio_free_encode_buffer(uint32_t type, void *entity, struct enc
 	struct bt_audio_codec_priv *priv = NULL;
 
 	if (!entity) {
-		printf("%s: empty entity handle \r\n", __func__);
+		BT_LOGE("%s: empty entity handle \r\n", __func__);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	priv = get_audio_codec_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	if (!check_codec_entity(priv, entity)) {
-		printf("[BT AUDIO] %s Track handle not match \r\n", __func__);
+		BT_LOGE("[BT AUDIO] %s Track handle not match \r\n", __func__);
 		return RTK_BT_AUDIO_FAIL;
 	}
 
@@ -598,7 +648,7 @@ uint16_t rtk_bt_audio_decode_data(void *entity, void *pparam, uint8_t *data, uin
 	uint32_t flags = 0;
 
 	if (!pparam || !pentity) {
-		printf("[BT_AUDIO] pparam is NULL ! \r\n");
+		BT_LOGE("[BT_AUDIO] pparam is NULL ! \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	} else {
 		flags = osif_lock();
@@ -614,7 +664,7 @@ uint16_t rtk_bt_audio_decode_data(void *entity, void *pparam, uint8_t *data, uin
 	return ret;
 }
 
-uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *pdata, uint32_t len)
+uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, void *entity, uint8_t *pdata, uint32_t len, uint32_t ts_us)
 {
 	uint8_t *pdata_buffer = NULL;
 	struct bt_audio_intf_priv *p_intf_priv = NULL;
@@ -632,25 +682,25 @@ uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, 
 	}
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		goto exit;
 	}
 	p_intf_priv = get_audio_intf_priv_data(type);
 	if (!p_intf_priv) {
-		printf("[BT AUDIO] intf priv illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] intf priv illegal codec type %d \r\n", (int)type);
 		goto exit;
 	}
 	p_codec_priv = get_audio_codec_priv_data(type);
 	if (!p_codec_priv) {
-		printf("[BT AUDIO] codec priv illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] codec priv illegal codec type %d \r\n", (int)type);
 		goto exit;
 	}
 	if (!check_audio_track(p_intf_priv, track)) {
-		printf("[BT AUDIO] %s Track handle not match \r\n", __func__);
+		BT_LOGE("[BT AUDIO] %s Track handle not match \r\n", __func__);
 		goto exit;
 	}
 	if (!check_codec_entity(p_codec_priv, pentity)) {
-		printf("[BT AUDIO] %s Codec entity not match \r\n", __func__);
+		BT_LOGE("[BT AUDIO] %s Codec entity not match \r\n", __func__);
 		goto exit;
 	}
 	/* memcpying data if receiving data from ipc helps to free ipc resources */
@@ -661,7 +711,10 @@ uint16_t rtk_bt_audio_recvd_data_in(uint32_t type, rtk_bt_audio_track_t *track, 
 		memset((void *)pdata_buffer, 0, len);
 	}
 	memcpy((void *)pdata_buffer, (void *)pdata, len);
-	if (bt_audio_msg_send(type, track, pentity, pdata_buffer, len)) {
+	if (ts_us && !track->audio_sync_flag) {
+		track->audio_sync_flag = true;
+	}
+	if (bt_audio_msg_send(type, track, pentity, pdata_buffer, len, ts_us)) {
 		osif_mem_free(pdata_buffer);
 		goto exit;
 	}
@@ -683,7 +736,7 @@ int rtk_bt_audio_record_data_get(uint32_t type, rtk_bt_audio_record_t *record, v
 	uint32_t flags = 0;
 
 	if (!record || !buffer || !pentity) {
-		printf("%s: empty record or buffer \r\n", __func__);
+		BT_LOGE("%s: empty record or buffer \r\n", __func__);
 		return 0;
 	} else {
 		flags = osif_lock();
@@ -692,21 +745,21 @@ int rtk_bt_audio_record_data_get(uint32_t type, rtk_bt_audio_record_t *record, v
 		osif_unlock(flags);
 	}
 	if (!record->audio_record_hdl) {
-		printf("%s: record hdl null \r\n", __func__);
+		BT_LOGE("%s: record hdl null \r\n", __func__);
 		goto exit;
 	}
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		goto exit;
 	}
 	priv = get_audio_intf_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		goto exit;
 	}
 	if (!check_audio_record(priv, record)) {
-		printf("[BT AUDIO] record handle not match \r\n");
+		BT_LOGE("[BT AUDIO] record handle not match \r\n");
 		goto exit;
 	}
 	readsize = rtk_bt_audio_record_read(record->audio_record_hdl, buffer, size, blocking);
@@ -719,89 +772,150 @@ exit:
 	return readsize;
 }
 
-rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, float right_volume, uint32_t channels, uint32_t rate, uint32_t bits,
-											 pcm_data_cb cb, bool play_flag)
+rtk_bt_audio_track_t *rtk_bt_get_audio_track(void *timer, uint32_t type)
+{
+	struct bt_audio_intf_priv *priv = NULL;
+	rtk_bt_audio_track_t *ptrack = NULL;
+	struct list_head *plist = NULL;
+
+	/* judge whether already initialized */
+	if (!bt_audio_init_flag) {
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
+		return ptrack;
+	}
+	priv = get_audio_intf_priv_data(type);
+	if (!priv) {
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		return ptrack;
+	}
+	if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
+		BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+		return ptrack;
+	}
+	/* foreach priv */
+	if (list_empty(&priv->track_list)) {
+		goto exit;
+	}
+	plist = priv->track_list.next;
+	while (plist != &priv->track_list) {
+		rtk_bt_audio_track_t *track_tmp = (rtk_bt_audio_track_t *)plist;
+		if (track_tmp->audio_delay_start_timer == timer) {
+			ptrack = track_tmp;
+			goto exit;
+		}
+		plist = plist->next;
+	}
+
+exit:
+	osif_mutex_give(bt_audio_intf_priv_mutex);
+	return ptrack;
+}
+
+rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, float right_volume, uint32_t channels, uint32_t rate, uint32_t format,
+											 uint32_t duration, pcm_data_cb cb, bool play_flag)
 {
 	struct bt_audio_intf_priv *priv = NULL;
 	rtk_bt_audio_track_t *ptrack = NULL;
 
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		return NULL;
 	}
 	priv = get_audio_intf_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return NULL;
 	}
 #if defined(CONFIG_AUDIO_PASSTHROUGH) && CONFIG_AUDIO_PASSTHROUGH
 	if (priv->curr_track_num > 0) {
-		printf("[BT AUDIO] Audio Framework Passthrough only allow one audio track \r\n");
+		BT_LOGE("[BT AUDIO] Audio Framework Passthrough only allow one audio track \r\n");
 		return NULL;
 	}
-	printf("[BT AUDIO] Audio Framework Passthrough try to add one audio track \r\n");
+	BT_LOGE("[BT AUDIO] Audio Framework Passthrough try to add one audio track \r\n");
 #elif defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 	if (priv->curr_track_num == priv->max_track_num) {
-		printf("[BT AUDIO] Audio Framework Mixer has no more remaing track num, curr audio track num is %d \r\n", (int)priv->curr_track_num);
+		BT_LOGE("[BT AUDIO] Audio Framework Mixer has no more remaing track num, curr audio track num is %d \r\n", (int)priv->curr_track_num);
 		return NULL;
 	}
-	printf("[BT AUDIO] Audio Framework Mixer try to add one audio track \r\n");
+	BT_LOGE("[BT AUDIO] Audio Framework Mixer try to add one audio track \r\n");
 #else
-	printf("[BT AUDIO] Audio Framework need to be enable for bt audio(Mixer or Passthrough) \r\n");
+	BT_LOGE("[BT AUDIO] Audio Framework need to be enable for bt audio(Mixer or Passthrough) \r\n");
 
 	return NULL;
 #endif
 	ptrack = (rtk_bt_audio_track_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_bt_audio_track_t));
 	if (!ptrack) {
-		printf("[BT AUDIO] Allocate bt audio track handle fail \r\n");
+		BT_LOGE("[BT AUDIO] Allocate bt audio track handle fail \r\n");
 		return NULL;
 	} else {
 		memset((void *)ptrack, 0, sizeof(rtk_bt_audio_track_t));
 		INIT_LIST_HEAD(&ptrack->list);
 	}
-	printf("[BT AUDIO] audio track init audio channels %d, rate %d, bits %d, left_volume %.2f, right_volume %.2f ! \r\n",
-		   (int)channels,
-		   (int)rate,
-		   (int)bits,
-		   left_volume,
-		   right_volume);
+	BT_LOGE("[BT AUDIO] audio track init audio channels %d, rate %d, format %d, left_volume %.2f, right_volume %.2f ! \r\n",
+			(int)channels,
+			(int)rate,
+			(int)format,
+			left_volume,
+			right_volume);
 	if (cb) {
 		ptrack->pcm_data_cb = cb;
-		printf("[BT AUDIO] pcm data callback is registered \r\n");
+		BT_LOGE("[BT AUDIO] pcm data callback is registered \r\n");
 	} else {
 		ptrack->pcm_data_cb = NULL;
-		printf("[BT AUDIO] pcm data callback is NULL \r\n");
+		BT_LOGE("[BT AUDIO] pcm data callback is NULL \r\n");
+	}
+	osif_mutex_create(&ptrack->audio_sync_mutex);
+	if (!ptrack->audio_sync_mutex) {
+		BT_LOGE("[BT AUDIO] ptrack->audio_sync_mutex create failed!\r\n");
+		osif_mem_free(ptrack);
+		return NULL;
 	}
 	if (play_flag) {
-		ptrack->audio_track_hdl = rtk_bt_audio_track_init((uint32_t)channels, (uint32_t)rate, (uint32_t)bits, 1024, 0);
+		ptrack->audio_track_hdl = rtk_bt_audio_track_init((uint32_t)channels, (uint32_t)rate, (uint32_t)format, 1024, 0, duration);
 		if (!ptrack->audio_track_hdl) {
-			printf("[BT AUDIO] rtk_bt_audio_track_init fail \r\n");
+			BT_LOGE("[BT AUDIO] rtk_bt_audio_track_init fail \r\n");
+			osif_mutex_delete(ptrack->audio_sync_mutex);
 			osif_mem_free(ptrack);
 			return NULL;
 		}
-		printf("[BT AUDIO] Complete allocating audio track \r\n");
+		BT_LOGE("[BT AUDIO] Complete allocating audio track \r\n");
 	} else {
 		ptrack->audio_track_hdl = NULL;
-		printf("[BT AUDIO] audio_track_hdl is NULL \r\n");
+		BT_LOGE("[BT AUDIO] audio_track_hdl is NULL \r\n");
 	}
 	ptrack->channels = channels;
 	ptrack->rate = rate;
-	ptrack->bits = bits;
+	ptrack->format = format;
+	switch (format) {
+		case BT_AUDIO_FORMAT_PCM_8_BIT:
+			ptrack->bits = 8;
+			break;
+		case BT_AUDIO_FORMAT_PCM_16_BIT:
+			ptrack->bits = 16;
+			break;
+		case BT_AUDIO_FORMAT_PCM_32_BIT:
+			ptrack->bits = 32;
+			break;
+		default:
+			ptrack->bits = 16;
+			break; 
+	}
 	if (channels == 1) {
 		if (left_volume == 0) {
 			ptrack->channel_allocation = 2;
 		} else if (right_volume == 0) {
 			ptrack->channel_allocation = 1;
 		} else {
-			printf("[BT AUDIO] Wrong volume allocation \r\n");
+			BT_LOGE("[BT AUDIO] Wrong volume allocation \r\n");
 		}
 	} else if (channels == 2) {
 		ptrack->channel_allocation = 3;
 	}
 	if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
-		printf("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+		BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
 		rtk_bt_audio_track_deinit(ptrack->audio_track_hdl);
+		osif_mutex_delete(ptrack->audio_sync_mutex);
 		osif_mem_free(ptrack);
 		return NULL;
 	}
@@ -822,43 +936,43 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		return NULL;
 	}
 	priv = get_audio_intf_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return NULL;
 	}
 #if defined(CONFIG_AUDIO_PASSTHROUGH) && CONFIG_AUDIO_PASSTHROUGH
 	if (priv->curr_record_num > 0) {
-		printf("[BT AUDIO] Audio Framework Passthrough only allow one audio record \r\n");
+		BT_LOGE("[BT AUDIO] Audio Framework Passthrough only allow one audio record \r\n");
 		return NULL;
 	}
-	printf("[BT AUDIO] Audio Framework Passthrough try to add one audio record \r\n");
+	BT_LOGE("[BT AUDIO] Audio Framework Passthrough try to add one audio record \r\n");
 #elif defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 	if (priv->curr_record_num == priv->max_record_num) {
-		printf("[BT AUDIO] Audio Framework Mixer has no more remaing record num, curr audio record num is %d \r\n", (int)priv->curr_record_num);
+		BT_LOGE("[BT AUDIO] Audio Framework Mixer has no more remaing record num, curr audio record num is %d \r\n", (int)priv->curr_record_num);
 		return NULL;
 	}
-	printf("[BT AUDIO] Audio Framework Mixer try to add one audio record \r\n");
+	BT_LOGE("[BT AUDIO] Audio Framework Mixer try to add one audio record \r\n");
 #else
-	printf("[BT AUDIO] Audio Framework need to be enable for bt audio(Mixer or Passthrough) \r\n");
+	BT_LOGE("[BT AUDIO] Audio Framework need to be enable for bt audio(Mixer or Passthrough) \r\n");
 
 	return NULL;
 #endif
 	precord = (rtk_bt_audio_record_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_bt_audio_record_t));
 	if (!precord) {
-		printf("[BT AUDIO] Allocate bt audio record handle fail \r\n");
+		BT_LOGE("[BT AUDIO] Allocate bt audio record handle fail \r\n");
 		return NULL;
 	} else {
 		memset((void *)precord, 0, sizeof(rtk_bt_audio_record_t));
 		INIT_LIST_HEAD(&precord->list);
 	}
-	printf("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %ld! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
+	BT_LOGE("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %ld! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
 	precord->audio_record_hdl = rtk_bt_audio_record_init((uint32_t)channels, (uint32_t)rate, (uint32_t)buffer_bytes);
 	if (!precord->audio_record_hdl) {
-		printf("[BT AUDIO] rtk_bt_audio_record_init fail \r\n");
+		BT_LOGE("[BT AUDIO] rtk_bt_audio_record_init fail \r\n");
 		osif_mem_free(precord);
 		return NULL;
 	} else {
@@ -867,7 +981,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		precord->buffer_bytes = buffer_bytes;
 		precord->record_num = 0;
 		if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
-			printf("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+			BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
 			rtk_bt_audio_record_deinit(precord->audio_record_hdl);
 			osif_mem_free(precord);
 			return NULL;
@@ -888,20 +1002,20 @@ uint16_t rtk_bt_audio_track_del(uint32_t type, rtk_bt_audio_track_t *ptrack)
 	struct bt_audio_intf_priv *priv = NULL;
 
 	if (!ptrack) {
-		printf("[BT_AUDIO] Ptrack is NULL \r\n");
+		BT_LOGE("[BT_AUDIO] Ptrack is NULL \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
 	while (ptrack->track_num) {
-		printf("[BT AUDIO] track num %d \r\n", (int)ptrack->track_num);
+		BT_LOGE("[BT AUDIO] track num %d \r\n", (int)ptrack->track_num);
 		osif_delay(5);
 	}
 	priv = get_audio_intf_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	if (!check_audio_track(priv, ptrack)) {
-		printf("[BT AUDIO] %s Track handle not match \r\n", __func__);
+		BT_LOGE("[BT AUDIO] %s Track handle not match \r\n", __func__);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	if (ptrack->audio_track_hdl) {
@@ -911,11 +1025,17 @@ uint16_t rtk_bt_audio_track_del(uint32_t type, rtk_bt_audio_track_t *ptrack)
 		ptrack->pcm_data_cb = NULL;
 	}
 	if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
-		printf("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+		BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	list_del(&ptrack->list);
 	priv->curr_track_num --;
+	if (ptrack->audio_delay_start_timer) {
+		osif_timer_delete(&ptrack->audio_delay_start_timer);
+	}
+	if (ptrack->audio_sync_mutex) {
+		osif_mutex_delete(ptrack->audio_sync_mutex);
+	}
 	osif_mem_free(ptrack);
 	osif_mutex_give(bt_audio_intf_priv_mutex);
 
@@ -955,26 +1075,26 @@ uint16_t rtk_bt_audio_record_del(uint32_t type, rtk_bt_audio_record_t *precord)
 	struct bt_audio_intf_priv *priv = NULL;
 
 	if (!precord) {
-		printf("[BT_AUDIO] Precord is NULL \r\n");
+		BT_LOGE("[BT_AUDIO] Precord is NULL \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
 	while (precord->record_num) {
-		printf("[BT AUDIO] record num %d \r\n", (int)precord->record_num);
+		BT_LOGE("[BT AUDIO] record num %d \r\n", (int)precord->record_num);
 		osif_delay(5);
 	}
 	priv = get_audio_intf_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	if (!check_audio_record(priv, precord)) {
-		printf("[BT AUDIO] Record handle not match \r\n");
+		BT_LOGE("[BT AUDIO] Record handle not match \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
 	rtk_bt_audio_record_stop(precord->audio_record_hdl);
 	rtk_bt_audio_record_deinit(precord->audio_record_hdl);
 	if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
-		printf("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+		BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	list_del(&precord->list);
@@ -1020,42 +1140,42 @@ void *rtk_bt_audio_codec_add(rtk_bt_audio_codec_conf_t *paudio_codec_conf)
 	uint32_t type = 0;
 
 	if (!paudio_codec_conf) {
-		printf("[BT AUDIO] paudio_codec_conf is null \r\n");
+		BT_LOGE("[BT AUDIO] paudio_codec_conf is null \r\n");
 		return NULL;
 	}
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] BT audio has not be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
 		return NULL;
 	}
 	type = paudio_codec_conf->codec_index;
 	priv = get_audio_codec_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return NULL;
 	}
 	if (priv->curr_entity_num == priv->max_entity_num) {
-		printf("[BT AUDIO] Has no more remaing entity num, curr codec entity num is %d \r\n", (int)priv->curr_entity_num);
+		BT_LOGE("[BT AUDIO] Has no more remaing entity num, curr codec entity num is %d \r\n", (int)priv->curr_entity_num);
 		return NULL;
 	}
-	printf("[BT AUDIO] BT codec try to add one codec \r\n");
+	BT_LOGE("[BT AUDIO] BT codec try to add one codec \r\n");
 	pentity = (PAUDIO_CODEC_ENTITY)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(AUDIO_CODEC_ENTITY));
 	if (!pentity) {
-		printf("[BT AUDIO] Allocate bt audio codec entity fail \r\n");
+		BT_LOGE("[BT AUDIO] Allocate bt audio codec entity fail \r\n");
 		return NULL;
 	} else {
 		memset((void *)pentity, 0, sizeof(AUDIO_CODEC_ENTITY));
 		INIT_LIST_HEAD(&pentity->list);
 	}
-	printf("[BT AUDIO] add codec type %d ! \r\n", (int)type);
+	BT_LOGE("[BT AUDIO] add codec type %d ! \r\n", (int)type);
 	/* init codec entity */
 	if (bt_audio_codec_init(paudio_codec_conf, pentity)) {
-		printf("[BT AUDIO] Fail to add codec type%d ! \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Fail to add codec type%d ! \r\n", (int)type);
 		osif_mem_free(pentity);
 		return NULL;
 	}
 	if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
-		printf("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+		BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
 		osif_mem_free(pentity);
 		return NULL;
 	}
@@ -1073,25 +1193,25 @@ uint16_t rtk_bt_audio_codec_remove(uint32_t type, void *pentity)
 
 	priv = get_audio_codec_priv_data(type);
 	if (!priv) {
-		printf("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
+		BT_LOGE("[BT AUDIO] Illegal codec type %d \r\n", (int)type);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	if (!pentity) {
-		printf("[BT AUDIO] Pentity is null \r\n");
+		BT_LOGE("[BT AUDIO] Pentity is null \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
 	entity = (PAUDIO_CODEC_ENTITY)pentity;
 	while (entity->encode_num || entity->decode_num || entity->track_num || entity->record_num) {
-		printf("[BT AUDIO] tarck num %d record num %d \r\n", (int)entity->track_num, (int)entity->record_num);
+		BT_LOGE("[BT AUDIO] tarck num %d record num %d \r\n", (int)entity->track_num, (int)entity->record_num);
 		osif_delay(5);
 	}
 	if (!check_codec_entity(priv, entity)) {
-		printf("[BT AUDIO] Codec entity not match \r\n");
+		BT_LOGE("[BT AUDIO] Codec entity not match \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
 	bt_audio_codec_deinit(type, entity);
 	if (!osif_mutex_take(bt_audio_intf_priv_mutex, 0xFFFFFFFFUL)) {
-		printf("[BT_AUDIO] %s get mutex failed \r\n", __func__);
+		BT_LOGE("[BT_AUDIO] %s get mutex failed \r\n", __func__);
 		return RTK_BT_AUDIO_FAIL;
 	}
 	list_del(&entity->list);
@@ -1137,7 +1257,7 @@ uint16_t rtk_bt_audio_init(void)
 
 	/* judge whether already initialized */
 	if (bt_audio_init_flag) {
-		printf("[BT_AUDIO] Already be initialized \r\n");
+		BT_LOGE("[BT_AUDIO] Already be initialized \r\n");
 		return RTK_BT_AUDIO_OK;
 	}
 	/* init audio stream handle task */
@@ -1164,7 +1284,7 @@ uint16_t rtk_bt_audio_init(void)
 		i++;
 	}
 	if (false == osif_mutex_create(&bt_audio_intf_priv_mutex)) {
-		printf("[BT AUDIO] audio intf priv mutex create fail \r\n");
+		BT_LOGE("[BT AUDIO] audio intf priv mutex create fail \r\n");
 		err = RTK_BT_AUDIO_FAIL;
 	}
 	bt_audio_init_flag = 1;
@@ -1178,7 +1298,7 @@ uint16_t rtk_bt_audio_deinit(void)
 
 	/* judge whether already initialized */
 	if (!bt_audio_init_flag) {
-		printf("[BT_AUDIO] No need to do deinit \r\n");
+		BT_LOGE("[BT_AUDIO] No need to do deinit \r\n");
 		return RTK_BT_AUDIO_FAIL;
 	} else {
 		bt_audio_init_flag = 0;
@@ -1192,12 +1312,12 @@ uint16_t rtk_bt_audio_deinit(void)
 	/* deinit audio stream handle task */
 	err = bt_audio_app_data_handle_deinit();
 	if (err) {
-		printf("[BT_AUDIO] bt_audio_app_data_handle_deinit fail \r\n");
+		BT_LOGE("[BT_AUDIO] bt_audio_app_data_handle_deinit fail \r\n");
 		return err;
 	}
 	osif_mutex_delete(bt_audio_intf_priv_mutex);
 	bt_audio_intf_priv_mutex = NULL;
-	printf("[BT_AUDIO] deinit complete ! \r\n");
+	BT_LOGA("[BT_AUDIO] deinit complete ! \r\n");
 
 	return err;
 }

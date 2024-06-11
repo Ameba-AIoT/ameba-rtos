@@ -22,21 +22,25 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5;
+
+#ifdef CONFIG_INIC_INTF_SDIO
+	wifi_user_config.skb_num_np = 18;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
+	wifi_user_config.skb_num_ap = 0;
+	wifi_user_config.rx_ampdu_num = 8;
+#else
+
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
 	wifi_user_config.skb_num_np = 14;
 	wifi_user_config.skb_num_ap = 5;
 	wifi_user_config.rx_ampdu_num = 8;
 #else
-#ifdef CONFIG_INIC_INTF_SDIO
-	wifi_user_config.skb_num_np = 18;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
-#else
 	wifi_user_config.skb_num_np = 10;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx*/
-#endif
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
 #ifdef CONFIG_SINGLE_CORE_WIFI
 	wifi_user_config.skb_num_ap = 0;
+#endif
 #endif
 	wifi_user_config.wifi_wpa_mode_force = WPA_AUTO_MODE;
 

@@ -164,6 +164,9 @@ static void print_scan_result(rtw_scan_result_t *record)
 				 (record->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
 				 (record->security == (WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA3 Enterprise" :
 #endif
+#ifdef CONFIG_SAE_SUPPORT
+				 (record->security == RTW_SECURITY_WPA3_OWE) ? "WPA3-OWE" :
+#endif
 				 "Unknown            ");
 
 	RTW_API_INFO(" %s ", record->SSID.val);
@@ -280,6 +283,10 @@ static void print_wifi_setting(unsigned char wlan_idx, rtw_wifi_setting_t *pSett
 		RTW_API_INFO("  SECURITY => WPA2/WPA3-SAE AES\n\r");
 	} else if (pSetting->security_type == (WPA3_SECURITY | ENTERPRISE_ENABLED)) {
 		RTW_API_INFO("  SECURITY => WPA3 ENTERPRISE\n\r");
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+	} else if (pSetting->security_type == RTW_SECURITY_WPA3_OWE) {
+		RTW_API_INFO("  SECURITY => WPA3-OWE\n\r");
 #endif
 	} else {
 		RTW_API_INFO("  SECURITY => UNKNOWN\n\r");

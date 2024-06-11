@@ -42,17 +42,17 @@ uint16_t rtk_bt_gmap_broadcast_game_receiver_cfg(uint8_t channel, uint8_t *p_nei
 	uint16_t ret = RTK_BT_OK;
 	/* should only be invoked before BT enable */
 	if (rtk_bt_is_enable()) {
-		printf("%s: should not be invoked after bt enable \r\n", __func__);
+		BT_LOGE("%s: should not be invoked after bt enable \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	if (channel < 1 || channel > 3) {
-		printf("%s: wrong channel(%d) should be within [1-3] \r\n", __func__, channel);
+		BT_LOGE("%s: wrong channel(%d) should be within [1-3] \r\n", __func__, channel);
 		return RTK_BT_FAIL;
 	}
 	//update device name
 	uint8_t device_name_len = strlen((char *)g_gmap_bgr_info.device_name);
 	if (device_name_len > RTK_BT_GAP_DEVICE_NAME_LEN) {
-		printf("device_name_len(%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
+		BT_LOGE("device_name_len(%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
 		return RTK_BT_FAIL;
 	}
 	switch (channel) {
@@ -66,7 +66,7 @@ uint16_t rtk_bt_gmap_broadcast_game_receiver_cfg(uint8_t channel, uint8_t *p_nei
 		ch = 'S';
 		break;
 	default:
-		printf("%s: wrong sound channel \r\n", __func__);
+		BT_LOGE("%s: wrong sound channel \r\n", __func__);
 		break;
 	}
 	g_gmap_bgr_info.device_name[device_name_len - 1] = ch;
@@ -85,17 +85,17 @@ uint16_t rtk_bt_gmap_unicast_game_terminal_cfg(uint8_t channel, uint8_t *p_neigh
 	uint16_t ret = RTK_BT_OK;
 	/* should only be invoked before BT enable */
 	if (rtk_bt_is_enable()) {
-		printf("%s: should not be invoked after bt enable \r\n", __func__);
+		BT_LOGE("%s: should not be invoked after bt enable \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	if (channel < 1 || channel > 3) {
-		printf("%s: wrong channel(%d) should be within [1-3] \r\n", __func__, channel);
+		BT_LOGE("%s: wrong channel(%d) should be within [1-3] \r\n", __func__, channel);
 		return RTK_BT_FAIL;
 	}
 	//update device name
 	uint8_t device_name_len = strlen((char *)g_gmap_ugt_info.device_name);
 	if (device_name_len > RTK_BT_GAP_DEVICE_NAME_LEN) {
-		printf("device_name_len(%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
+		BT_LOGE("device_name_len(%d) > RTK_BT_GAP_DEVICE_NAME_LEN(%d)\r\n", device_name_len, RTK_BT_GAP_DEVICE_NAME_LEN);
 		return RTK_BT_FAIL;
 	}
 	switch (channel) {
@@ -109,7 +109,7 @@ uint16_t rtk_bt_gmap_unicast_game_terminal_cfg(uint8_t channel, uint8_t *p_neigh
 		ch = 'S';
 		break;
 	default:
-		printf("%s: wrong sound channel \r\n", __func__);
+		BT_LOGE("%s: wrong sound channel \r\n", __func__);
 		break;
 	}
 	g_gmap_ugt_info.device_name[device_name_len - 1] = ch;

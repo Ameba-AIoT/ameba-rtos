@@ -1541,12 +1541,23 @@ static rtk_bt_evt_cb_ret_t app_bt_avrcp_callback(uint8_t evt_code, void *param, 
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		BT_LOGA("[AVRCP] volume request set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] volume request set %d \r\n", (int)(audio_track_volume * 100));
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_CONN_CMPL: {
 		BT_LOGA("[AVRCP] Connection Completion \r\n");
+		rtk_bt_avrcp_conn_cmpl_t *conn_cmpl = (rtk_bt_avrcp_conn_cmpl_t *)param;
+		BT_LOGA("[AVRCP] AVRCP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3], conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_DISCONN_CMPL: {
+		BT_LOGA("[AVRCP] Disconnection Completion \r\n");
+		rtk_bt_avrcp_disconn_cmpl_t *disconn_cmpl = (rtk_bt_avrcp_disconn_cmpl_t *)param;
+		BT_LOGA("[AVRCP] AVRCP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3], disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
 		break;
 	}
 
@@ -1722,6 +1733,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 													   (float)DEFAULT_A2DP_TMAP_AUDIO_RIGHT_VOLUME,
 													   channels,
 													   psbc_decoder_t->sampling_frequency,
+													   BT_AUDIO_FORMAT_PCM_16_BIT,
 													   0,
 													   (pcm_data_cb)rtk_bt_a2dp_decode_pcm_data_callback, false);
 	if (!a2dp_demo_audio_track_hdl) {
@@ -1824,6 +1836,10 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 
 	case RTK_BT_A2DP_EVT_STREAM_OPEN: {
 		BT_LOGA("[A2DP] A2DP STREAM is opened \r\n");
+		rtk_bt_a2dp_stream_open_t *p_stream_open_t = (rtk_bt_a2dp_stream_open_t *)param;
+		BT_LOGA("[A2DP] A2DP stream open with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3], p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP stream open max packet length is %d \r\n", (int)p_stream_open_t->max_pkt_len);
 	}
 	break;
 
@@ -1909,7 +1925,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_DATA_IND: { //BT api shall not be called here
 		rtk_bt_a2dp_stream_data_ind_t *pdata_in = (rtk_bt_a2dp_stream_data_ind_t *)param;
 
-		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length)) {
+		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length, 0)) {
 			BT_LOGE("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
 		}
 	}

@@ -20,7 +20,7 @@ uint16_t rtk_bt_a2dp_codec_cfg(uint8_t codec_type, void *codec_t, uint32_t lengt
 {
 	/* Check bt enable status (rtk_bt_a2dp_codec_cfg should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("[A2DP]: rtk_bt_a2dp_codec_cfg should not be invoked after bt enable \r\n");
+		BT_LOGE("[A2DP]: rtk_bt_a2dp_codec_cfg should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -36,7 +36,7 @@ uint16_t rtk_bt_a2dp_codec_cfg(uint8_t codec_type, void *codec_t, uint32_t lengt
 	break;
 
 	default : {
-		printf("[A2DP]: Unknown codec type %d \r\n", codec_type);
+		BT_LOGE("[A2DP]: Unknown codec type %d \r\n", codec_type);
 	}
 	break;
 	}

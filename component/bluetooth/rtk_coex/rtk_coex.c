@@ -65,20 +65,6 @@ static rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
 	}
 }
 
-/*static void bt_coex_dbg_dump(uint8_t *pbuf, uint32_t len)
-{
-    uint32_t i = 0;
-
-    printf("bt_coex_dbg_dump: length = 0x%lx  \r\n",len);
-    for(i=0;i<len;i++){
-        printf("0x%x   ",pbuf[i]);
-        if((i+1)%16 == 0)
-            printf("\r\n");
-    }
-
-    printf("\r\n");
-}*/
-
 static void bt_coex_send_vendor_cmd(uint8_t *pbuf, uint8_t len)
 {
 	DBG_BT_COEX("bt_coex_send_vendor_cmd -----> \r\n");
@@ -89,11 +75,7 @@ static void bt_coex_send_vendor_cmd(uint8_t *pbuf, uint8_t len)
 	pbuf[3] = len - 4;
 
 	DBG_BT_COEX("bt_coex_send_vendor_cmd: len = %d\r\n", len);
-	DBG_BT_COEX("bt_coex_send_vendor_cmd: pbuf = ");
-	for (uint8_t i = 0; i < len; i++) {
-		DBG_BT_COEX("0x%02x ", *(pbuf + i));
-	}
-	DBG_BT_COEX("\r\n");
+	DBG_BT_COEX_DUMP("bt_coex_send_vendor_cmd: pbuf = ", pbuf, len);
 
 	hci_if_write_internal(pbuf, len);
 
@@ -158,7 +140,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 		}
 	}
 
-	//bt_coex_dbg_dump(pbuf, offset + 4);
+	//BT_DUMPA("", pbuf, offset + 4);
 
 	bt_coex_send_vendor_cmd(pbuf, offset + 4);
 
@@ -922,21 +904,10 @@ static void bt_coex_packet_counter_handle(rtk_bt_coex_conn_t *p_conn, uint16_t c
 
 void bt_coex_dump_frame(uint8_t *pdata, uint32_t len)
 {
-#if defined(CONFIG_BT_COEX_DEBUG) && CONFIG_BT_COEX_DEBUG
-	uint32_t i = 0;
-
-	printf("dump frame: len = 0x%lx \r\n", len);
-	for (i = 0; i < len; i++) {
-		printf("0x%x  ", pdata[i]);
-		if ((i + 1) % 16 == 0) {
-			printf("\r\n");
-		}
-	}
-	printf("\r\n");
-#else
 	(void)pdata;
 	(void)len;
-#endif
+	DBG_BT_COEX("dump frame: len = 0x%x \r\n", len);
+	DBG_BT_COEX_DUMP("", pdata, len);
 }
 
 static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)

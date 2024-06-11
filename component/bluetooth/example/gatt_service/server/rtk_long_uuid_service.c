@@ -11,6 +11,7 @@
 #include <rtk_bt_att_defs.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
+#include <bt_utils.h>
 
 static struct bt_uuid_128 service_uuid = BT_UUID_INIT_128(
 											 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
@@ -87,6 +88,10 @@ void long_uuid_service_callback(uint8_t event, void *data)
 		else {
 			BT_LOGE("[APP] Long uuid service response for client read failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+					read_resp.conn_handle, read_resp.index,
+					read_resp.err_code);
 		break;
 	}
 
@@ -109,6 +114,9 @@ void long_uuid_service_callback(uint8_t event, void *data)
 			BT_LOGA("[APP] Long uuid service write event, len: %d, type: %d, data:\r\n",
 					p_write_ind->len, p_write_ind->type);
 			BT_DUMPA("", p_write_ind->value, p_write_ind->len);
+			BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u\r\n",
+						p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+						p_write_ind->len, p_write_ind->type);
 		} else {
 			BT_LOGE("[APP] Long uuid service write event unknown index: %d\r\n",
 					p_write_ind->index);
@@ -123,6 +131,10 @@ send_write_rsp:
 		else {
 			BT_LOGE("[APP] Long uuid service response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 

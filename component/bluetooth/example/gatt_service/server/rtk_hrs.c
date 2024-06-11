@@ -17,6 +17,7 @@
 #include <bt_api_config.h>
 #include <rtk_service_config.h>
 #include <rtk_hrs.h>
+#include <bt_utils.h>
 
 #define Heart_Rate_Value_Format_UINT8       0
 #define Heart_Rate_Value_Format_UINT16      1
@@ -218,6 +219,10 @@ void hrs_read_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] HRS response for client read failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 void hrs_write_hdl(void *data)
@@ -240,6 +245,9 @@ void hrs_write_hdl(void *data)
 		hrs_ctrl_point_val = *(uint8_t *)p_write_ind->value;
 		BT_LOGA("[APP] HRS write event value: %d, type: %d\r\n", hrs_ctrl_point_val,
 				p_write_ind->type);
+		BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u,%u\r\n",
+					p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+					p_write_ind->len, p_write_ind->type, hrs_ctrl_point_val);
 		if (hrs_ctrl_point_val) {
 			heart_rate_measurement_val.energy_expended = 0;
 			energy_expended_reset_time = osif_sys_time_get();
@@ -260,6 +268,10 @@ send_rsp:
 	} else {
 		BT_LOGE("[APP] HRS response for client write failed!\r\n");
 	}
+	BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+				write_resp.conn_handle, write_resp.index,
+				write_resp.type, write_resp.err_code);
 }
 
 void hrs_cccd_update_hdl(void *data)
@@ -275,8 +287,12 @@ void hrs_cccd_update_hdl(void *data)
 	if (HEART_RATE_MEASUREMENT_CHAR_CCCD_INDEX == p_cccd_ind->index) {
 		hr_msmnt_cccd_ntf_en_map[conn_id] = cccd_ntf;
 		BT_LOGA("[APP] HRS measurement value cccd, notify bit: %d\r\n", cccd_ntf);
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					hr_msmnt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else {
 		BT_LOGE("[APP] HRS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 	}
 }
 
@@ -301,7 +317,9 @@ void heart_rate_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] HRS indicate failed \r\n");
 		}
-
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind_ind->err_code) ? 0 : -1, p_ind_ind->app_id,
+					p_ind_ind->conn_handle, p_ind_ind->index);
 		break;
 	}
 	case RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND: {
@@ -311,7 +329,9 @@ void heart_rate_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] HRS notify failed, local error \r\n");
 		}
-
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ntf_ind->err_code) ? 0 : -1, p_ntf_ind->app_id,
+					p_ntf_ind->conn_handle, p_ntf_ind->index);
 		break;
 	}
 

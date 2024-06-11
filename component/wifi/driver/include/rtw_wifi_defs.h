@@ -121,6 +121,7 @@
 #define WSEC_SWFLAG		0x0008		/**< WSEC SWFLAG */
 #define AES_CMAC_ENABLED	0x0010		/**< aes cmac enable */
 #define ENTERPRISE_ENABLED	0x0020		/**< enterprise enable */
+#define OWE_ENABLED		0X0040		/**< owe enable */
 #define SHARED_ENABLED		0x00008000	/**< shared enable */
 #define WPA_SECURITY		0x00200000	/**< wpa */
 #define WPA2_SECURITY		0x00400000	/**< wpa2 */
@@ -475,7 +476,8 @@ enum rtw_security {
 	RTW_SECURITY_WPA_WPA2_TKIP_PSK  = (WPA_SECURITY | WPA2_SECURITY | TKIP_ENABLED),                /**< WPA/WPA2 Security with TKIP             */
 	RTW_SECURITY_WPA_WPA2_AES_PSK   = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED),                 /**< WPA/WPA2 Security with AES              */
 	RTW_SECURITY_WPA_WPA2_MIXED_PSK = (WPA_SECURITY  | WPA2_SECURITY | TKIP_ENABLED | AES_ENABLED), /**< WPA/WPA2 Security with AES & TKIP       */
-	RTW_SECURITY_WPA3_AES_PSK	 = (WPA3_SECURITY | AES_ENABLED),				  /**< WPA3-SAE with AES security			   */
+	RTW_SECURITY_WPA3_AES_PSK	 = (WPA3_SECURITY | AES_ENABLED),				/**< WPA3-SAE with AES security			   */
+	RTW_SECURITY_WPA3_OWE	 = (WPA3_SECURITY | OWE_ENABLED | AES_ENABLED),				/**< WPA3-OWE with AES security			   */
 	RTW_SECURITY_WPA2_WPA3_MIXED = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED), /**< WPA3-SAE/WPA2 with AES security		   */
 	RTW_SECURITY_WPA2_AES_CMAC      = (WPA2_SECURITY | AES_CMAC_ENABLED),                           /**< WPA2 Security with AES and Management Frame Protection */
 };

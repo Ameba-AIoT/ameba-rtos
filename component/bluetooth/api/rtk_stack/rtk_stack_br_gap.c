@@ -97,9 +97,9 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		memcpy(app_db.factory_addr.addr, param->ready.bd_addr, 6);
 		APP_PRINT_INFO1("bt_stack_mgr_cback: bt_ready, bd_addr %b",
 						TRACE_BDADDR(param->ready.bd_addr));
-		printf("bt_stack_mgr_cback: bt_ready, bd_addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   param->ready.bd_addr[5], param->ready.bd_addr[4], param->ready.bd_addr[3], param->ready.bd_addr[2],
-			   param->ready.bd_addr[1], param->ready.bd_addr[0]);
+		BT_LOGA("bt_stack_mgr_cback: bt_ready, bd_addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				param->ready.bd_addr[5], param->ready.bd_addr[4], param->ready.bd_addr[3], param->ready.bd_addr[2],
+				param->ready.bd_addr[1], param->ready.bd_addr[0]);
 		bt_stack_br_gap_ready = true;
 	}
 	break;
@@ -112,7 +112,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_INQUIRY_RESULT, sizeof(rtk_bt_br_inquiry_result_t));
 				if (!p_evt) {
-					printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+					BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -131,16 +131,16 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	case BT_EVENT_REMOTE_NAME_RSP: {
 		rtk_bt_br_remote_name_rsp_t *p_name_rsp = NULL;
 		T_APP_BR_LINK *p_link = NULL;
-		printf("bt_stack_mgr_cback: BT_EVENT_REMOTE_NAME_RSP \r\n");
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_REMOTE_NAME_RSP \r\n");
 		p_link = app_find_br_link(param->acl_conn_ind.bd_addr);
 		if (!p_link) {
-			printf("bt_stack_mgr_cback: no link found \r\n");
+			BT_LOGE("bt_stack_mgr_cback: no link found \r\n");
 			break;
 		}
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_REMOTE_NAME_RSP, sizeof(rtk_bt_br_remote_name_rsp_t));
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -160,7 +160,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		p_link = app_find_br_link(param->acl_conn_ind.bd_addr);
 		if (p_link != NULL) {
 			bt_acl_conn_reject(param->acl_conn_ind.bd_addr, BT_ACL_REJECT_UNACCEPTABLE_ADDR);
-			printf("bt_stack_mgr_cback: already allocated link \r\n");
+			BT_LOGE("bt_stack_mgr_cback: already allocated link \r\n");
 			break;
 		} else {
 			bt_acl_conn_accept(param->acl_conn_ind.bd_addr, BT_LINK_ROLE_SLAVE);
@@ -169,7 +169,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_CONN_IND, 6);
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -184,7 +184,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	break;
 
 	case BT_EVENT_LINK_KEY_REQ: {
-		printf("bt_stack_mgr_cback: BT_EVENT_LINK_KEY_REQ \r\n");
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_LINK_KEY_REQ \r\n");
 		uint8_t found = 0;
 		uint8_t link_key[16];
 		T_BT_LINK_KEY_TYPE type;
@@ -199,7 +199,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_LINK_KEY_REQ, sizeof(uint8_t));
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -227,17 +227,17 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		T_APP_BR_LINK *p_link = NULL;
 		p_link = app_alloc_br_link(param->acl_conn_success.bd_addr);
 		if (!p_link) {
-			printf("bt_stack_mgr_cback: link alloc fail \r\n");
+			BT_LOGE("bt_stack_mgr_cback: link alloc fail \r\n");
 			break;
 		}
 		APP_PRINT_INFO0("link alloc success");
-		printf("bt_stack_mgr_cback: link alloc success, hadnle 0x%x \r\n", param->acl_conn_success.handle);
+		BT_LOGA("bt_stack_mgr_cback: link alloc success, hadnle 0x%x \r\n", param->acl_conn_success.handle);
 		gap_br_set_radio_mode(GAP_RADIO_MODE_NONE_DISCOVERABLE, false, 0);
 		memcpy((void *)&p_link->handle, (void *)&param->acl_conn_success.handle, sizeof(uint16_t));
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_CONN_SUCCESS, 6);
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -255,16 +255,16 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		T_APP_BR_LINK *p_link = NULL;
 		p_link = app_find_br_link(param->acl_conn_sniff.bd_addr);
 		if (!p_link) {
-			printf("bt_stack_mgr_cback: no link found \r\n");
+			BT_LOGE("bt_stack_mgr_cback: no link found \r\n");
 			break;
 		}
 		APP_PRINT_INFO0("BT_EVENT_ACL_CONN_SNIFF");
-		printf("bt_stack_mgr_cback: BT_EVENT_ACL_CONN_SNIFF \r\n");
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_ACL_CONN_SNIFF \r\n");
 		{
 			rtk_bt_br_acl_sniff_t *p_sniff = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_SNIFF, sizeof(rtk_bt_br_acl_sniff_t));
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -284,15 +284,15 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		T_APP_BR_LINK *p_link = NULL;
 		p_link = app_find_br_link(param->acl_conn_active.bd_addr);
 		if (!p_link) {
-			printf("bt_stack_mgr_cback: no link found \r\n");
+			BT_LOGE("bt_stack_mgr_cback: no link found \r\n");
 			break;
 		}
 		APP_PRINT_INFO0("BT_EVENT_ACL_CONN_ACTIVE");
-		printf("bt_stack_mgr_cback: BT_EVENT_ACL_CONN_ACTIVE \r\n");
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_ACL_CONN_ACTIVE \r\n");
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_ACTIVE, 6);
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -310,7 +310,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		T_APP_BR_LINK *p_link = NULL;
 		p_link = app_find_br_link(param->acl_conn_disconn.bd_addr);
 		if (!p_link) {
-			printf("bt_stack_mgr_cback: no link found \r\n");
+			BT_LOGE("bt_stack_mgr_cback: no link found \r\n");
 			break;
 		}
 		app_free_br_link(p_link);
@@ -320,7 +320,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_DISCONN, sizeof(rtk_bt_br_acl_disc_t));
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -339,13 +339,13 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	case BT_EVENT_LINK_KEY_INFO: {
 		rtk_bt_br_bond_key_t *pbond_key_t = NULL;
 		APP_PRINT_INFO0("BT_EVENT_LINK_KEY_INFO");
-		printf("bt_stack_mgr_cback: BT_EVENT_LINK_KEY_INFO \r\n");
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_LINK_KEY_INFO \r\n");
 		bt_bond_key_set(param->link_key_info.bd_addr, param->link_key_info.link_key,
 						param->link_key_info.key_type);
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_LINK_KEY_INFO, sizeof(rtk_bt_br_bond_key_t));
 			if (!p_evt) {
-				printf("bt_stack_mgr_cback: evt_t allocate fail \r\n");
+				BT_LOGE("bt_stack_mgr_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -369,7 +369,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 
 	if (handle == true) {
 		// APP_PRINT_INFO1("bt_stack_mgr_cback: event_type 0x%04x", event_type);
-		// printf("bt_stack_mgr_cback: event_type 0x%04x \r\n", event_type);
+		// BT_LOGA("bt_stack_mgr_cback: event_type 0x%04x \r\n", event_type);
 	}
 }
 
@@ -390,7 +390,7 @@ static void bt_stack_br_gap_config(void *evt_msg_q)
 
 	memset(&app_db, 0, sizeof(T_APP_DB));
 
-	// printf("[LEGACY GAP]bt_gap_init\n");
+	// BT_LOGA("[LEGACY GAP]bt_gap_init\n");
 
 	// legacy_set_gap_param(GAP_PARAM_LEGACY_NAME, GAP_DEVICE_NAME_LEN, device_name_legacy);
 	gap_set_param(GAP_PARAM_BOND_BR_PAIRING_MODE, sizeof(uint8_t), &pair_mode);
@@ -422,7 +422,7 @@ extern void gap_br_register_cb(P_GAP_BR_CBACK cback);
 
 static void bt_stack_br_app_gap_init(void)
 {
-	// printf("[LEGACY GAP]app_gap_init\n");
+	// BT_LOGA("[LEGACY GAP]app_gap_init\n");
 	bt_mgr_cback_register(bt_stack_mgr_cback);
 }
 
@@ -472,7 +472,7 @@ static uint16_t bt_stack_br_gap_get_device_addr(void *param)
 
 	cause = gap_get_param(GAP_PARAM_BD_ADDR, (void *)paddr->addr);
 	if (cause) {
-		API_PRINT("bt_stack_br_gap_get_device_addr: cause = %x \r\n", cause);
+		BT_LOGD("bt_stack_br_gap_get_device_addr: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -486,7 +486,7 @@ static uint16_t bt_stack_br_gap_set_device_name(void *param)
 
 	cause = gap_br_set_dev_name((uint8_t *)pname, strlen((const char *)pname));
 	if (cause) {
-		API_PRINT("bt_stack_br_gap_set_device_name: cause = %x \r\n", cause);
+		BT_LOGD("bt_stack_br_gap_set_device_name: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -503,7 +503,7 @@ static uint16_t bt_stack_br_gap_cfg_page_param(void *param)
 
 	cause = gap_br_cfg_page_scan_param(pagescan_type, pagescan_interval, pagescan_window);
 	if (cause) {
-		API_PRINT("bt_stack_br_gap_cfg_page_param: cause = %x \r\n", cause);
+		BT_LOGD("bt_stack_br_gap_cfg_page_param: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -520,7 +520,7 @@ static uint16_t bt_stack_br_gap_cfg_inquiry_param(void *param)
 
 	cause = gap_br_cfg_inquiry_scan_param(inquiryscan_type, inquiryscan_interval, inquiryscan_window);
 	if (cause) {
-		API_PRINT("bt_stack_br_gap_cfg_inquiry_param: cause = %x \r\n", cause);
+		BT_LOGD("bt_stack_br_gap_cfg_inquiry_param: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -699,7 +699,7 @@ static uint16_t bt_stack_br_gap_bond_clear(void *param)
 static uint16_t bt_stack_br_gap_set_pincode(void *param, uint32_t length)
 {
 	if (length > 4) {
-		printf("bt_stack_br_gap_set_pincode: length is invalid %d \r\n", (int)length);
+		BT_LOGE("bt_stack_br_gap_set_pincode: length is invalid %d \r\n", (int)length);
 		return 1;
 	}
 	memcpy((void *)pin_code, param, length);
@@ -713,14 +713,14 @@ static uint16_t bt_stack_br_gap_set_radio_mode(void *param)
 	uint8_t radio_mode = *((uint8_t *)param);
 
 	if ((radio_mode == 0) || (radio_mode > 0x04)) {
-		printf("bt_stack_br_gap_set_radio_mode: radio mode error 0x%x \r\n", radio_mode);
+		BT_LOGE("bt_stack_br_gap_set_radio_mode: radio mode error 0x%x \r\n", radio_mode);
 		return 1;
 	}
 	cause = gap_br_set_radio_mode(radio_mode, false, 0);
 	if (GAP_CAUSE_SUCCESS == cause) {
 		return 0;
 	} else {
-		printf("bt_stack_br_gap_set_radio_mode: error 0x%x \r\n", cause);
+		BT_LOGE("bt_stack_br_gap_set_radio_mode: error 0x%x \r\n", cause);
 		return 1;
 	}
 }
@@ -731,21 +731,21 @@ static uint16_t bt_stack_br_gap_set_sniff_mode(void *param)
 	rtk_bt_br_sniff_mode_t *p_sniff_mode_t = (rtk_bt_br_sniff_mode_t *)param;
 
 	if (p_sniff_mode_t->enable) {
-		printf("bt_stack_br_gap_set_sniff_mode: enable \r\n");
+		BT_LOGE("bt_stack_br_gap_set_sniff_mode: enable \r\n");
 		cause = gap_br_enter_sniff_mode(p_sniff_mode_t->bd_addr,
 										p_sniff_mode_t->min_interval,
 										p_sniff_mode_t->max_interval,
 										p_sniff_mode_t->sniff_attempt,
 										p_sniff_mode_t->sniff_timeout);
 	} else {
-		printf("bt_stack_br_gap_set_sniff_mode: disable \r\n");
+		BT_LOGE("bt_stack_br_gap_set_sniff_mode: disable \r\n");
 		cause = gap_br_exit_sniff_mode(p_sniff_mode_t->bd_addr);
 	}
 
 	if (GAP_CAUSE_SUCCESS == cause) {
 		return 0;
 	} else {
-		printf("bt_stack_br_gap_set_sniff_mode: error 0x%x \r\n", cause);
+		BT_LOGE("bt_stack_br_gap_set_sniff_mode: error 0x%x \r\n", cause);
 		return 1;
 	}
 }
@@ -753,111 +753,111 @@ static uint16_t bt_stack_br_gap_set_sniff_mode(void *param)
 uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
-	API_PRINT("bt_stack_br_gap_act_handle: act = %d \r\n", p_cmd->act);
+	BT_LOGD("bt_stack_br_gap_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 
 	case RTK_BT_BR_GAP_ACT_GET_DEVICE_ADDR:
-		API_PRINT("RTK_BT_BR_GAP_ACT_GET_DEVICE_ADDR \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_GET_DEVICE_ADDR \r\n");
 		ret = bt_stack_br_gap_get_device_addr(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_SET_DEVICE_NAME:
-		API_PRINT("RTK_BT_BR_GAP_ACT_SET_DEVICE_NAME \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_DEVICE_NAME \r\n");
 		ret = bt_stack_br_gap_set_device_name(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_CFG_PAGE_PARAM:
-		API_PRINT("RTK_BT_BR_GAP_ACT_CFG_PAGE_PARAM \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_CFG_PAGE_PARAM \r\n");
 		ret = bt_stack_br_gap_cfg_page_param(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_CFG_INQUIRY_PARAM:
-		API_PRINT("RTK_BT_BR_GAP_ACT_CFG_INQUIRY_PARAM \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_CFG_INQUIRY_PARAM \r\n");
 		ret = bt_stack_br_gap_cfg_inquiry_param(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_DISCONNECT:
-		API_PRINT("RTK_BT_BR_GAP_ACT_DISCONNECT \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_DISCONNECT \r\n");
 		ret = bt_stack_br_gap_disconnect(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_START_INQUIRY:
-		API_PRINT("RTK_BT_BR_GAP_ACT_START_INQUIRY \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_START_INQUIRY \r\n");
 		ret = bt_stack_br_gap_start_inquiry(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_SET_SEC_PARAM:
-		API_PRINT("RTK_BT_BR_GAP_ACT_SET_SEC_PARAM \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_SEC_PARAM \r\n");
 		ret = bt_stack_br_sm_set_security_param(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_GET_REMOTE_NAME:
-		API_PRINT("RTK_BT_BR_GAP_ACT_GET_REMOTE_NAME \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_GET_REMOTE_NAME \r\n");
 		ret = bt_stack_br_gap_get_remote_name(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_MAX_BOND_NUM_GET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_MAX_BOND_NUM_GET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_MAX_BOND_NUM_GET \r\n");
 		ret = bt_stack_br_gap_max_bond_num_get(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_NUM_GET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_NUM_GET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_NUM_GET \r\n");
 		ret = bt_stack_br_gap_bond_num_get(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_ADDR_GET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_ADDR_GET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_ADDR_GET \r\n");
 		ret = bt_stack_br_gap_bond_addr_get(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_INDEX_GET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_INDEX_GET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_INDEX_GET \r\n");
 		ret = bt_stack_br_gap_bond_index_get(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_KEY_GET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_KEY_GET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_KEY_GET \r\n");
 		ret = bt_stack_br_gap_bond_key_get(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_KEY_SET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_KEY_SET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_KEY_SET \r\n");
 		ret = bt_stack_br_gap_bond_key_set(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_PRIORITY_SET:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_PRIORITY_SET \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_PRIORITY_SET \r\n");
 		ret = bt_stack_br_gap_bond_priority_set(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_DELETE:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_DELETE \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_DELETE \r\n");
 		ret = bt_stack_br_gap_bond_delete(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_BOND_CLEAR:
-		API_PRINT("RTK_BT_BR_GAP_ACT_BOND_CLEAR \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_BOND_CLEAR \r\n");
 		ret = bt_stack_br_gap_bond_clear(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_SET_PINCODE:
-		API_PRINT("RTK_BT_BR_GAP_ACT_SET_PINCODE \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_PINCODE \r\n");
 		ret = bt_stack_br_gap_set_pincode(p_cmd->param, p_cmd->param_len);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_SET_RADIO_MODE:
-		API_PRINT("RTK_BT_BR_GAP_ACT_SET_RADIO_MODE \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_RADIO_MODE \r\n");
 		ret = bt_stack_br_gap_set_radio_mode(p_cmd->param);
 		break;
 
 	case RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE:
-		API_PRINT("RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE \r\n");
+		BT_LOGD("RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE \r\n");
 		ret = bt_stack_br_gap_set_sniff_mode(p_cmd->param);
 		break;
 
 	default:
-		printf("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = 0;
 		break;
 	}

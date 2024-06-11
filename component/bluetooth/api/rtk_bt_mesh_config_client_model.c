@@ -379,7 +379,7 @@ uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_set(rtk_bt_mesh_confi
 {
 	uint16_t ret;
 
-	printf("enter rtk_bt_mesh_config_client_model_key_refresh_phase_set \r\n");
+	BT_LOGE("enter rtk_bt_mesh_config_client_model_key_refresh_phase_set \r\n");
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL, RTK_BT_MESH_CONFIG_MODEL_KEY_REFRESH_PHASE_SET, key_refresh_phase_set,
 						  sizeof(rtk_bt_mesh_config_client_model_key_refresh_phase_set_t));
 

@@ -13,7 +13,8 @@
 #define ENABLE_SET_MAC_ADDRESS                 0
 
 #ifndef CONFIG_MP_SHRINK
-extern void print_wifi_at(void);
+void print_wifi_at(void);
+void at_wifi_init(void);
 #endif
 
 #endif

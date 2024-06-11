@@ -17,6 +17,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
 #include <rtk_gls.h>
+#include <bt_utils.h>
 
 #define GLUCOSE_SRV_UUID                    0x1808
 #define GLC_MEASUREMENT_CHAR_UUID           0x2A18
@@ -817,6 +818,10 @@ void gls_read_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] GLS response for client read failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 
@@ -854,6 +859,10 @@ void gls_write_hdl(void *data)
 	} else {
 		BT_LOGE("[APP] GLS response for client write failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+				write_resp.conn_handle, write_resp.index,
+				write_resp.type, write_resp.err_code);
 }
 
 
@@ -874,6 +883,9 @@ void gls_cccd_update_hdl(void *data)
 			glc_msmt_cccd_ntf_en_map[conn_id] = 0;
 			BT_LOGE("[APP] GLS glc measurement cccd, notify bit disable\r\n");
 		}
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					glc_msmt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else if (GLC_MEASUREMENT_CHAR_CCCD_INDEX == p_cccd_ind->index) {
 		if (p_cccd_ind->value & RTK_BT_GATT_CCC_NOTIFY) {
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 1;
@@ -882,6 +894,9 @@ void gls_cccd_update_hdl(void *data)
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 0;
 			BT_LOGE("[APP] GLS glc measurement context cccd, notify bit disable\r\n");
 		}
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					glc_msmt_ctxt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else if (GLC_RACP_CHAR_CCCD_INDEX == p_cccd_ind->index) {
 		if (p_cccd_ind->value & RTK_BT_GATT_CCC_INDICATE) {
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 1;
@@ -890,8 +905,12 @@ void gls_cccd_update_hdl(void *data)
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 0;
 			BT_LOGE("[APP] GLS record access control point cccd, indicate bit disable\r\n");
 		}
+		BT_AT_PRINT("+BLEGATTS:cccd,indicate,%d,%u,%u,%u\r\n",
+					glc_msmt_ctxt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else {
 		BT_LOGE("[APP] GLS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 	}
 }
 
@@ -915,6 +934,10 @@ void glucose_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] GLS indicate failed, err: 0x%x \r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
+
 		break;
 	}
 
@@ -925,6 +948,10 @@ void glucose_srv_callback(uint8_t event, void *data)
 		} else {
 			BT_LOGE("[APP] GLS notify failed, err: 0x%x \r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
+
 		break;
 	}
 
