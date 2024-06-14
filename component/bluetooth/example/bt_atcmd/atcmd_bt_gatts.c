@@ -28,7 +28,7 @@ static int atcmd_bt_gatts_notify(int argc, char **argv)
 	ntf_param.len = str_to_int(argv[3]);
 
 	if (ntf_param.len != strlen(argv[4]) / 2) {
-		AT_PRINTK("[ATBC] GATTS notify failed, notify data len is wrong!");
+		GATTS_AT_PRINTK("GATTS notify failed, notify data len is wrong!");
 		return -1;
 	}
 	ntf_param.data = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, ntf_param.len);
@@ -41,12 +41,12 @@ static int atcmd_bt_gatts_notify(int argc, char **argv)
 	ret = rtk_bt_gatts_notify(&ntf_param);
 	if (RTK_BT_OK != ret) {
 		osif_mem_free((void *)ntf_param.data);
-		AT_PRINTK("[ATBC] GATTS notify failed! err: 0x%x", ret);
+		GATTS_AT_PRINTK("GATTS notify failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	osif_mem_free((void *)ntf_param.data);
-	AT_PRINTK("[ATBC] GATTS notify sending ...");
+	GATTS_AT_PRINTK("GATTS notify sending ...");
 	return 0;
 }
 
@@ -61,7 +61,7 @@ static int atcmd_bt_gatts_indicate(int argc, char **argv)
 	ntf_param.len = str_to_int(argv[3]);
 
 	if (ntf_param.len != strlen(argv[4]) / 2) {
-		AT_PRINTK("[ATBC] GATTS indicate failed: indicate data len is wrong!");
+		GATTS_AT_PRINTK("GATTS indicate failed: indicate data len is wrong!");
 		return -1;
 	}
 	ntf_param.data = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, ntf_param.len);
@@ -74,35 +74,41 @@ static int atcmd_bt_gatts_indicate(int argc, char **argv)
 	ret = rtk_bt_gatts_indicate(&ntf_param);
 	if (RTK_BT_OK != ret) {
 		osif_mem_free((void *)ntf_param.data);
-		AT_PRINTK("[ATBC] GATTS indicate failed! err: 0x%x", ret);
+		GATTS_AT_PRINTK("GATTS indicate failed! err: 0x%x", ret);
 		return -1;
 	}
 
 	osif_mem_free((void *)ntf_param.data);
-	AT_PRINTK("[ATBC] GATTS indicate sending ...");
+	GATTS_AT_PRINTK("GATTS indicate sending ...");
 	return 0;
 }
 
 #if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
 /* add for EMC test */
-uint8_t gatts_loop_send_task_running = 0;
+struct gatts_tx_loop_param {
+	uint16_t conn_handle;
+	uint16_t interval;
+	uint32_t tx_count;
+};
+static struct gatts_tx_loop_param gatts_tx = {0};
+
+static uint8_t gatts_loop_send_task_running = 0;
 static void gatts_loop_send_task_entry(void *ctx)
 {
-	uint32_t param = (uint32_t)ctx;
-	uint16_t conn_handle = param & 0xFFFF;
-	uint16_t interval = (param >> 16) & 0xFFFF;
+	struct gatts_tx_loop_param *param = (struct gatts_tx_loop_param *)ctx;
+	uint32_t cnt = 0;
 
 	while (true) {
-		simple_ble_srv_cccd_indicate(conn_handle);
-		simple_ble_srv_cccd_notify(conn_handle);
-		battery_cccd_notify(conn_handle);
-		heart_rate_measurement_cccd_notify(conn_handle);
+		simple_ble_srv_cccd_notify(param->conn_handle);
 		if (!gatts_loop_send_task_running) {
 			break;
 		}
-
-		osif_delay(interval);
+		cnt++;
+		if (param->tx_count && cnt >= param->tx_count) {
+			break;
+		}
+		osif_delay(param->interval);
 	}
 	gatts_loop_send_task_running = 2;
 	osif_task_delete(NULL);
@@ -110,27 +116,27 @@ static void gatts_loop_send_task_entry(void *ctx)
 
 static int atcmd_bt_gatts_loop_send(int argc, char **argv)
 {
-	(void)argc;
 	void *handle;
 	uint8_t enable;
-	uint16_t conn_handle;
-	uint16_t interval;
-	uint32_t param;
 
 	enable = str_to_int(argv[0]);
 
 	if (enable) {
-		conn_handle = str_to_int(argv[1]);
-		interval = str_to_int(argv[2]);
+		gatts_tx.conn_handle = str_to_int(argv[1]);
+		gatts_tx.interval = str_to_int(argv[2]);
+		if (argc >= 4) {
+			gatts_tx.tx_count = str_to_int(argv[3]);
+		} else {
+			gatts_tx.tx_count = 0;
+		}
 
-		param = (interval << 16) | conn_handle;
 		gatts_loop_send_task_running = 1;
 
 		if (false == osif_task_create(&handle, "gatts_loop_send_task",
-									  gatts_loop_send_task_entry, (void *)param,
+									  gatts_loop_send_task_entry, (void *)(&gatts_tx),
 									  1024, 2))  {
 			gatts_loop_send_task_running = 0;
-			AT_PRINTK("[ATBC] GATTS loop send task create failed");
+			GATTS_AT_PRINTK("GATTS loop send task create failed");
 			return -1;
 		}
 	} else {
@@ -143,7 +149,7 @@ static int atcmd_bt_gatts_loop_send(int argc, char **argv)
 		gatts_loop_send_task_running = 0;
 	}
 
-	AT_PRINTK("[ATBC] loop send %s.", enable ? "start" : "stop");
+	GATTS_AT_PRINTK("loop send %s.", enable ? "start" : "stop");
 	return 0;
 }
 
@@ -170,7 +176,7 @@ static int atcmd_bt_gatts_cte_set_param(int argc, char **argv)
 	case CTE_SRV_PARAM_TYPE_ENABLE_CONN_CTE: {
 		cte_conn_enable_t param;
 		if (argc < 3) {
-			AT_PRINTK("[ATBC] GATTS CTE set param failed: wrong argc num!");
+			GATTS_AT_PRINTK("GATTS CTE set param failed: wrong argc num!");
 			ret = -1;
 			break;
 		}
@@ -189,7 +195,7 @@ static int atcmd_bt_gatts_cte_set_param(int argc, char **argv)
 	case CTE_SRV_PARAM_TYPE_ADV_ANTENNA: {
 		cte_antenna_t ant;
 		if (argc < 2 || argc > (RTK_BLE_CTE_NUM_ANT_ID_MAX + 2)) {
-			AT_PRINTK("[ATBC] GATTS CTE set param failed: wrong argc num!");
+			GATTS_AT_PRINTK("GATTS CTE set param failed: wrong argc num!");
 			ret = -1;
 			break;
 		}
@@ -204,7 +210,7 @@ static int atcmd_bt_gatts_cte_set_param(int argc, char **argv)
 		break;
 	}
 	default: {
-		AT_PRINTK("[ATBC] GATTS CTE set param type %u, not supported", param_type);
+		GATTS_AT_PRINTK("GATTS CTE set param type %u, not supported", param_type);
 		ret = -1;
 		break;
 	}
@@ -221,7 +227,7 @@ static const cmd_table_t gatts_cmd_table[] = {
 	{"indicate",    atcmd_bt_gatts_indicate,    6, 7},
 #if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
-	{"loop_send",   atcmd_bt_gatts_loop_send,   2, 4},
+	{"loop_send",   atcmd_bt_gatts_loop_send,   2, 5},
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	{"cte_set_param",   atcmd_bt_gatts_cte_set_param,   3, 15},
 #endif
@@ -231,6 +237,9 @@ static const cmd_table_t gatts_cmd_table[] = {
 
 int atcmd_bt_gatts(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, gatts_cmd_table, "[ATBC][gatts]");
-	return 0;
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, gatts_cmd_table, "[AT+BLEGATTS]");
+#else
+	return atcmd_bt_excute(argc, argv, gatts_cmd_table, "[ATBC][gatts]");
+#endif
 }

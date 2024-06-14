@@ -15,22 +15,33 @@ extern "C"
 #include <basic_types.h>
 #include <bt_debug.h>
 
-#if defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 
-#if defined(ATCMD_BT_CUT_DOWN) && ATCMD_BT_CUT_DOWN
-#define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBE] "fmt, ##args)
-#define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
-#else /* ATCMD_BT_CUT_DOWN */
-#define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
-#define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
-#endif
+#define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
+#define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
+#define GATTS_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEGATTS] "fmt, ##args)
+#define GATTC_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEGATTC] "fmt, ##args)
+#define BRGAP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BRGAP] "fmt, ##args)
+#define BTA2DP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTA2DP] "fmt, ##args)
+#define BTAVRCP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BTAVRCP] "fmt, ##args)
+#define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTSPP] "fmt, ##args)
+#define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHID] "fmt, ##args)
+#define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHFP] "fmt, ##args)
 
-#else /* CONFIG_NEW_ATCMD */
+#else /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
 
-#define BTDEMO_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBE] "fmt, ##args)
-#define BLEGAP_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBE] "fmt, ##args)
+#define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
+#define GATTS_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define GATTC_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define BRGAP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTA2DP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTAVRCP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
 
-#endif
+#endif /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
 
 typedef int (*cmd_func_t)(int argc, char *argv[]);
 

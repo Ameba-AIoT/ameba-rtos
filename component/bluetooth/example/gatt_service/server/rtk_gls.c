@@ -17,6 +17,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
 #include <rtk_gls.h>
+#include <bt_utils.h>
 
 #define GLUCOSE_SRV_UUID                    0x1808
 #define GLC_MEASUREMENT_CHAR_UUID           0x2A18
@@ -89,9 +90,9 @@ bool gls_abort_by_app_flag = false;
 
 void gls_prepare_new_record(void)
 {
-	printf("gls_prepare_new_record database head: %d, tail: %d, num: %d, seq_num: %d\n",
-		   glc_racp.record_db.head, glc_racp.record_db.tail, glc_racp.record_db.record_num,
-		   glc_racp.record_db.seq_num);
+	BT_LOGA("gls_prepare_new_record database head: %d, tail: %d, num: %d, seq_num: %d\n",
+			glc_racp.record_db.head, glc_racp.record_db.tail, glc_racp.record_db.record_num,
+			glc_racp.record_db.seq_num);
 	p_new_record = &(glc_racp.record_db.records[glc_racp.record_db.tail]);
 	memset(p_new_record, 0, sizeof(*p_new_record));
 	glc_racp.record_db.seq_num++;
@@ -109,9 +110,9 @@ void gls_push_new_record(void)
 		glc_racp.record_db.tail = (glc_racp.record_db.tail + 1) % GLC_RACP_DATABASE_SIZE;
 		glc_racp.record_db.record_num++;
 	}
-	printf("gls_push_new_record database head: %d, tail: %d, num: %d, seq_num: %d\n",
-		   glc_racp.record_db.head, glc_racp.record_db.tail, glc_racp.record_db.record_num,
-		   glc_racp.record_db.seq_num);
+	BT_LOGA("gls_push_new_record database head: %d, tail: %d, num: %d, seq_num: %d\n",
+			glc_racp.record_db.head, glc_racp.record_db.tail, glc_racp.record_db.record_num,
+			glc_racp.record_db.seq_num);
 }
 
 
@@ -205,8 +206,8 @@ uint16_t glc_msmt_ctxt_val_regroup(uint8_t *dst, T_GLC_MEASUREMENT_CONTEXT *src)
 int time_cmp(const TIMESTAMP time1, const TIMESTAMP time2)
 {
 	uint16_t year1, year2;
-	LE_ARRAY_TO_UINT16(year1, (uint8_t *) time1);
-	LE_ARRAY_TO_UINT16(year2, (uint8_t *) time2);
+	year1 = LE_TO_U16(time1);
+	year2 = LE_TO_U16(time2);
 	if (year1 < year2) {
 		return -1;
 	} else if (year1 > year2) {
@@ -229,7 +230,7 @@ bool gls_abort_success_response(uint16_t conn_handle)
 {
 	glc_racp.ctrl_point.op_code = GLC_RACP_OPCODE_ABORT_OPERATION;
 
-	printf("gls_abort_success_response gls racp procedure has been aborted!");
+	BT_LOGA("gls_abort_success_response gls racp procedure has been aborted!");
 
 	return gls_racp_response(conn_handle, GLC_RACP_RESP_SUCCESS);
 }
@@ -238,8 +239,8 @@ T_GLC_CTRL_POINT_RESP_CODES gls_racp_check(void)
 {
 	T_GLC_CTRL_POINT_RESP_CODES ret = GLC_RACP_RESP_SUCCESS;
 
-	printf("gls_racp_check glucose racp: opcode = %d, operator = %d, length = %d \n",
-		   glc_racp.ctrl_point.op_code, glc_racp.ctrl_point.op, glc_racp.cp_length);
+	BT_LOGA("gls_racp_check glucose racp: opcode = %d, operator = %d, length = %d \n",
+			glc_racp.ctrl_point.op_code, glc_racp.ctrl_point.op, glc_racp.cp_length);
 
 	if (glc_racp.ctrl_point.op == GLC_RACP_OPERATOR_NULL) {
 		ret = GLC_RACP_RESP_INVALID_OPERATOR;
@@ -258,8 +259,8 @@ T_GLC_CTRL_POINT_RESP_CODES gls_racp_check(void)
 			if (glc_racp.ctrl_point.op == GLC_RACP_OPERATOR_RANGE) {
 				uint16_t min_seq;
 				uint16_t max_seq;
-				LE_ARRAY_TO_UINT16(min_seq, &glc_racp.ctrl_point.operand[1]);
-				LE_ARRAY_TO_UINT16(max_seq, &glc_racp.ctrl_point.operand[1 + sizeof(uint16_t)]);
+				min_seq = LE_TO_U16(&glc_racp.ctrl_point.operand[1]);
+				max_seq = LE_TO_U16(&glc_racp.ctrl_point.operand[1 + sizeof(uint16_t)]);
 				if (min_seq > max_seq) {
 					ret = GLC_RACP_RESP_INVALID_OPERAND;
 				}
@@ -366,7 +367,7 @@ T_GLC_CTRL_POINT_RESP_CODES gls_find_records(uint16_t *p_num, int *p_first, int 
 			find1 = glc_racp.record_db.head;
 			if (glc_racp.ctrl_point.operand[0] == GLC_RACP_FILTER_TYPE_SEQ_NBR) {
 				uint16_t seq;
-				LE_ARRAY_TO_UINT16(seq, &glc_racp.ctrl_point.operand[1]);
+				seq = LE_TO_U16(&glc_racp.ctrl_point.operand[1]);
 				find2 = gls_find_records_by_seq_num(GLC_RACP_OPERATOR_LT_EQ, seq);
 			} else if (glc_racp.ctrl_point.operand[0] == GLC_RACP_FILTER_TYPE_TIME) {
 				find2 = gls_find_records_by_time(GLC_RACP_OPERATOR_LT_EQ, &glc_racp.ctrl_point.operand[1]);
@@ -382,7 +383,7 @@ T_GLC_CTRL_POINT_RESP_CODES gls_find_records(uint16_t *p_num, int *p_first, int 
 		} else if (glc_racp.ctrl_point.op == GLC_RACP_OPERATOR_GT_EQ) {
 			if (glc_racp.ctrl_point.operand[0] == GLC_RACP_FILTER_TYPE_SEQ_NBR) {
 				uint16_t seq;
-				LE_ARRAY_TO_UINT16(seq, &glc_racp.ctrl_point.operand[1]);
+				seq = LE_TO_U16(&glc_racp.ctrl_point.operand[1]);
 				find1 = gls_find_records_by_seq_num(GLC_RACP_OPERATOR_GT_EQ, seq);
 			} else if (glc_racp.ctrl_point.operand[0] == GLC_RACP_FILTER_TYPE_TIME) {
 				find1 = gls_find_records_by_time(GLC_RACP_OPERATOR_GT_EQ, &glc_racp.ctrl_point.operand[1]);
@@ -396,8 +397,8 @@ T_GLC_CTRL_POINT_RESP_CODES gls_find_records(uint16_t *p_num, int *p_first, int 
 			if (glc_racp.ctrl_point.operand[0] == GLC_RACP_FILTER_TYPE_SEQ_NBR) {
 				uint16_t seq1;
 				uint16_t seq2;
-				LE_ARRAY_TO_UINT16(seq1, &glc_racp.ctrl_point.operand[1]);
-				LE_ARRAY_TO_UINT16(seq2, &glc_racp.ctrl_point.operand[1 + 2]);
+				seq1 = LE_TO_U16(&glc_racp.ctrl_point.operand[1]);
+				seq2 = LE_TO_U16(&glc_racp.ctrl_point.operand[1 + 2]);
 
 				find1 = gls_find_records_by_seq_num(GLC_RACP_OPERATOR_GT_EQ, seq1);
 				find2 = gls_find_records_by_seq_num(GLC_RACP_OPERATOR_LT_EQ, seq2);
@@ -444,8 +445,8 @@ T_GLC_CTRL_POINT_RESP_CODES gls_find_records(uint16_t *p_num, int *p_first, int 
 		if (p_last != 0) {
 			*p_last = find2;
 		}
-		printf("gls_find_records glucose find records: num = %d, start = %d, end = %d\n",
-			   num_of_records, find1, find2);
+		BT_LOGA("gls_find_records glucose find records: num = %d, start = %d, end = %d\n",
+				num_of_records, find1, find2);
 	}
 	return ret;
 }
@@ -454,8 +455,8 @@ bool gls_report_records_task(uint16_t conn_handle)
 {
 	bool ret = true;
 	if (gls_abort_flag == true) {
-		printf("gls_report_records_task  Glucose current record = %d, total = %d, procedure abort successfully!\n",
-			   gls_current_record_to_report, gls_num_records_to_report);
+		BT_LOGA("gls_report_records_task  Glucose current record = %d, total = %d, procedure abort successfully!\n",
+				gls_current_record_to_report, gls_num_records_to_report);
 		gls_current_record_to_report = gls_num_records_to_report; // stop transmitting any data
 		ret = gls_abort_success_response(conn_handle);
 		gls_abort_flag = false;
@@ -464,16 +465,16 @@ bool gls_report_records_task(uint16_t conn_handle)
 	}
 
 	if (gls_abort_by_app_flag == true) {
-		printf("gls_report_records_task  Glucose current record = %d, total = %d, procedure abort by app successfully!\n",
-			   gls_current_record_to_report, gls_num_records_to_report);
+		BT_LOGA("gls_report_records_task  Glucose current record = %d, total = %d, procedure abort by app successfully!\n",
+				gls_current_record_to_report, gls_num_records_to_report);
 		gls_current_record_to_report = gls_num_records_to_report; // stop transmitting any data
 		ret = gls_racp_response(conn_handle, GLC_RACP_RESP_PROC_NOT_COMPLETED);
 		gls_abort_by_app_flag = false;
 		return ret;
 	}
 
-	printf("gls_report_records_task  Glucose report records, current = %d, total = %d, gls_send_data_flag = %d\n",
-		   gls_current_record_to_report, gls_num_records_to_report, gls_send_data_flag);
+	BT_LOGA("gls_report_records_task  Glucose report records, current = %d, total = %d, gls_send_data_flag = %d\n",
+			gls_current_record_to_report, gls_num_records_to_report, gls_send_data_flag);
 
 	if (gls_send_data_flag == 1) {
 #if defined(GLC_MEASUREMENT_CONTEXT_SUPPORT) && GLC_MEASUREMENT_CONTEXT_SUPPORT
@@ -540,8 +541,8 @@ void gls_delete_records(uint16_t conn_handle)
 	int find1, find2;
 	ret = gls_find_records(&num_of_records, &find1, &find2);
 
-	printf("gls_delete_records glucose delete records: num = %d, start = %d, end = %d\n",
-		   num_of_records, find1, find2);
+	BT_LOGA("gls_delete_records glucose delete records: num = %d, start = %d, end = %d\n",
+			num_of_records, find1, find2);
 	if (ret == GLC_RACP_RESP_SUCCESS) {
 		if (num_of_records > 0) {
 			if (glc_racp.ctrl_point.op == GLC_RACP_OPERATOR_ALL_RECS) {
@@ -610,11 +611,11 @@ bool gls_glc_measurement_notify(uint16_t conn_handle, uint8_t index)
 	uint8_t temp_glc_measurement[sizeof(T_GLC_MEASUREMENT_VALUE)];
 
 	if (index >= glc_racp.record_db.record_num) {
-		printf("gls_glc_measurement_notify glucose measurement value access overflow!");
+		BT_LOGE("gls_glc_measurement_notify glucose measurement value access overflow!");
 		return false;
 	}
 	if (current == glc_racp.record_db.tail) {
-		printf("gls_glc_measurement_notify glucose measurement database: empty!");
+		BT_LOGE("gls_glc_measurement_notify glucose measurement database: empty!");
 		return false;
 	}
 
@@ -641,11 +642,11 @@ bool gls_glc_measurement_context_notify(uint16_t conn_handle, uint8_t index)
 	uint8_t temp_glc_measurement_ctxt[sizeof(T_GLC_MEASUREMENT_CONTEXT)];
 
 	if (index >= glc_racp.record_db.record_num) {
-		printf("gls_glc_measurement_context_notify glucose measurement context access overflow!");
+		BT_LOGE("gls_glc_measurement_context_notify glucose measurement context access overflow!");
 		return false;
 	}
 	if (current == glc_racp.record_db.tail) {
-		printf("gls_glc_measurement_context_notify glucose measurement database: Empty!");
+		BT_LOGE("gls_glc_measurement_context_notify glucose measurement database: Empty!");
 		return false;
 	}
 
@@ -682,7 +683,7 @@ bool gls_racp_response(uint16_t conn_handle, uint8_t rsp_code)
 	ind_param.len = glc_racp.cp_length;
 	rtk_bt_gatts_indicate(&ind_param);
 
-	printf("gls_racp_response  glucose racp resp: %d \n", rsp_code);
+	BT_LOGA("gls_racp_response  glucose racp resp: %d \n", rsp_code);
 
 	glc_racp.ctrl_point.op_code = GLC_RACP_OPCODE_RESERVED;
 
@@ -697,7 +698,7 @@ bool gls_racp_num_response(uint16_t conn_handle, uint16_t num)
 	gls_send_data_flag = 3;
 
 	uint16_t attrib_index = GLC_RACP_CHAR_VAL_INDEX;
-	LE_UINT16_TO_ARRAY(glc_racp.ctrl_point.operand, num);
+	U16_TO_LE(glc_racp.ctrl_point.operand, num);
 	glc_racp.ctrl_point.op_code = GLC_RACP_OPCODE_NBR_OF_RECS_RESP;
 	glc_racp.ctrl_point.op = GLC_RACP_OPERATOR_NULL;
 
@@ -711,7 +712,7 @@ bool gls_racp_num_response(uint16_t conn_handle, uint16_t num)
 	ind_param.len = glc_racp.cp_length;
 	rtk_bt_gatts_indicate(&ind_param);
 
-	printf("gls_racp_num_response glucose racp num response: %d \n", num);
+	BT_LOGA("gls_racp_num_response glucose racp num response: %d \n", num);
 
 	glc_racp.ctrl_point.op_code = GLC_RACP_OPCODE_RESERVED;
 
@@ -807,16 +808,20 @@ void gls_read_hdl(void *data)
 		read_resp.data = (uint8_t *) &features;
 		read_resp.len = sizeof(features);
 	} else {
-		printf("[APP] GLS read event unknown index: %d\r\n", p_read_ind->index);
+		BT_LOGE("[APP] GLS read event unknown index: %d\r\n", p_read_ind->index);
 		read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 	}
 
 	ret = rtk_bt_gatts_read_resp(&read_resp);
 	if (RTK_BT_OK == ret) {
-		printf("[APP] GLS response for client read succeed!\r\n");
+		BT_LOGA("[APP] GLS response for client read succeed!\r\n");
 	} else {
-		printf("[APP] GLS response for client read failed, err: 0x%x\r\n", ret);
+		BT_LOGE("[APP] GLS response for client read failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 
@@ -836,7 +841,7 @@ void gls_write_hdl(void *data)
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 		} else if (GLC_RACP_OPERATION_ACTIVE(glc_racp.ctrl_point.op_code) &&
 				   (p_write_ind->value[0] != GLC_RACP_OPCODE_ABORT_OPERATION)) {
-			printf("GLC_ERR_PROC_ALREADY_IN_PROGRESS\r\n");
+			BT_LOGA("GLC_ERR_PROC_ALREADY_IN_PROGRESS\r\n");
 			write_resp.err_code = 0x80;
 		} else if (!gls_check_cccd(p_write_ind->conn_handle)) {
 			write_resp.err_code = 0x81;
@@ -850,10 +855,14 @@ void gls_write_hdl(void *data)
 
 	ret = rtk_bt_gatts_write_resp(&write_resp);
 	if (RTK_BT_OK == ret) {
-		printf("[APP] GLS response for client write succeed, index:%d\r\n", p_write_ind->index);
+		BT_LOGA("[APP] GLS response for client write succeed, index:%d\r\n", p_write_ind->index);
 	} else {
-		printf("[APP] GLS response for client write failed, err: 0x%x\r\n", ret);
+		BT_LOGE("[APP] GLS response for client write failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+				write_resp.conn_handle, write_resp.index,
+				write_resp.type, write_resp.err_code);
 }
 
 
@@ -869,29 +878,39 @@ void gls_cccd_update_hdl(void *data)
 	if (GLC_MEASUREMENT_CHAR_CCCD_INDEX == p_cccd_ind->index) {
 		if (p_cccd_ind->value & RTK_BT_GATT_CCC_NOTIFY) {
 			glc_msmt_cccd_ntf_en_map[conn_id] = 1;
-			printf("[APP] GLS glc measurement cccd, notify bit enable\r\n");
+			BT_LOGA("[APP] GLS glc measurement cccd, notify bit enable\r\n");
 		} else {
 			glc_msmt_cccd_ntf_en_map[conn_id] = 0;
-			printf("[APP] GLS glc measurement cccd, notify bit disable\r\n");
+			BT_LOGE("[APP] GLS glc measurement cccd, notify bit disable\r\n");
 		}
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					glc_msmt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else if (GLC_MEASUREMENT_CHAR_CCCD_INDEX == p_cccd_ind->index) {
 		if (p_cccd_ind->value & RTK_BT_GATT_CCC_NOTIFY) {
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 1;
-			printf("[APP] GLS glc measurement context cccd, notify bit enable\r\n");
+			BT_LOGA("[APP] GLS glc measurement context cccd, notify bit enable\r\n");
 		} else {
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 0;
-			printf("[APP] GLS glc measurement context cccd, notify bit disable\r\n");
+			BT_LOGE("[APP] GLS glc measurement context cccd, notify bit disable\r\n");
 		}
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					glc_msmt_ctxt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else if (GLC_RACP_CHAR_CCCD_INDEX == p_cccd_ind->index) {
 		if (p_cccd_ind->value & RTK_BT_GATT_CCC_INDICATE) {
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 1;
-			printf("[APP] GLS record access control point cccd, indicate bit enable\r\n");
+			BT_LOGA("[APP] GLS record access control point cccd, indicate bit enable\r\n");
 		} else {
 			glc_msmt_ctxt_cccd_ntf_en_map[conn_id] = 0;
-			printf("[APP] GLS record access control point cccd, indicate bit disable\r\n");
+			BT_LOGE("[APP] GLS record access control point cccd, indicate bit disable\r\n");
 		}
+		BT_AT_PRINT("+BLEGATTS:cccd,indicate,%d,%u,%u,%u\r\n",
+					glc_msmt_ctxt_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 	} else {
-		printf("[APP] GLS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_LOGE("[APP] GLS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 	}
 }
 
@@ -901,9 +920,9 @@ void glucose_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;
 		if (RTK_BT_OK == reg_srv_res->reg_status) {
-			printf("[APP] GLS register service succeed!\r\n");
+			BT_LOGA("[APP] GLS register service succeed!\r\n");
 		} else {
-			printf("[APP] GLS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
+			BT_LOGE("[APP] GLS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
 		}
 
 		break;
@@ -911,20 +930,28 @@ void glucose_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind->err_code) {
-			printf("[APP] GLS indicate succeed!\r\n");
+			BT_LOGA("[APP] GLS indicate succeed!\r\n");
 		} else {
-			printf("[APP] GLS indicate failed, err: 0x%x \r\n", p_ind->err_code);
+			BT_LOGE("[APP] GLS indicate failed, err: 0x%x \r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
+
 		break;
 	}
 
 	case RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind->err_code) {
-			printf("[APP] GLS notify succeed!\r\n");
+			BT_LOGA("[APP] GLS notify succeed!\r\n");
 		} else {
-			printf("[APP] GLS notify failed, err: 0x%x \r\n", p_ind->err_code);
+			BT_LOGE("[APP] GLS notify failed, err: 0x%x \r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
+
 		break;
 	}
 
@@ -953,7 +980,7 @@ uint16_t gls_set_parameter(T_GLS_PARAM_TYPE param_type, uint8_t len, void *p_val
 
 	case GLS_PARAM_GLC_FEATURES:
 		if (len == 2) {
-			LE_ARRAY_TO_UINT16(features, (uint8_t *) p_value);
+			features = LE_TO_U16((uint8_t *)p_value);
 		} else {
 			ret = RTK_BT_FAIL;
 		}
@@ -1139,7 +1166,7 @@ uint16_t gls_get_parameter(T_GLS_PARAM_TYPE param_type, uint8_t *len, void *p_va
 	switch (param_type) {
 	case GLS_PARAM_GLC_FEATURES:
 		*len = sizeof(uint16_t);
-		LE_UINT16_TO_ARRAY(p_value, features);
+		U16_TO_LE(p_value, features);
 		break;
 	case GLS_PARAM_RECORD_NUM:
 		*len = sizeof(int);

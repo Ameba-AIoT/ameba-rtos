@@ -20,11 +20,11 @@ uint16_t rtk_bt_hfp_cfg(uint8_t role, void *p_conf_t)
 {
 	/* Check bt enable status (rtk_bt_hfp_cfg should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("[HFP]: rtk_bt_hfp_cfg should not be invoked after bt enable \r\n");
+		BT_LOGE("[HFP]: rtk_bt_hfp_cfg should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 	if (!p_conf_t) {
-		printf("[HFP]: p_conf_t is NULL \r\n");
+		BT_LOGE("[HFP]: p_conf_t is NULL \r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -40,7 +40,7 @@ uint16_t rtk_bt_hfp_cfg(uint8_t role, void *p_conf_t)
 	break;
 
 	default : {
-		printf("[HFP]: Unknown role %d \r\n", role);
+		BT_LOGE("[HFP]: Unknown role %d \r\n", role);
 	}
 	break;
 	}

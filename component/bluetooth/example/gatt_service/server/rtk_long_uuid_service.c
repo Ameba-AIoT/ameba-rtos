@@ -11,6 +11,7 @@
 #include <rtk_bt_att_defs.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
+#include <bt_utils.h>
 
 static struct bt_uuid_128 service_uuid = BT_UUID_INIT_128(
 											 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
@@ -52,16 +53,15 @@ static struct rtk_bt_gatt_service long_uuid_srv =
 void long_uuid_service_callback(uint8_t event, void *data)
 {
 	uint16_t ret = 0;
-	int i = 0;
 
 	switch (event) {
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *p_gatts_reg_ind = (rtk_bt_gatts_reg_ind_t *)data;
 		if (p_gatts_reg_ind->reg_status == RTK_BT_OK) {
-			printf("[APP] Long uuid service register succeed!\r\n");
+			BT_LOGA("[APP] Long uuid service register succeed!\r\n");
 		} else
-			printf("[APP] Long uuid service register failed, err: 0x%x\r\n",
-				   p_gatts_reg_ind->reg_status);
+			BT_LOGE("[APP] Long uuid service register failed, err: 0x%x\r\n",
+					p_gatts_reg_ind->reg_status);
 		break;
 	}
 
@@ -76,18 +76,22 @@ void long_uuid_service_callback(uint8_t event, void *data)
 			read_resp.data = long_uuid_srv_read_val;
 			read_resp.len = sizeof(long_uuid_srv_read_val);
 		} else {
-			printf("[APP] Long uuid service read event unknown index: %d\r\n",
-				   p_read_ind->index);
+			BT_LOGE("[APP] Long uuid service read event unknown index: %d\r\n",
+					p_read_ind->index);
 			read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 		ret = rtk_bt_gatts_read_resp(&read_resp);
 		if (RTK_BT_OK == ret)
-			printf("[APP] Long uuid service response for client read succeed, index: %d\r\n",
-				   p_read_ind->index);
+			BT_LOGA("[APP] Long uuid service response for client read succeed, index: %d\r\n",
+					p_read_ind->index);
 		else {
-			printf("[APP] Long uuid service response for client read failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] Long uuid service response for client read failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+					read_resp.conn_handle, read_resp.index,
+					read_resp.err_code);
 		break;
 	}
 
@@ -101,35 +105,36 @@ void long_uuid_service_callback(uint8_t event, void *data)
 		write_resp.type = p_write_ind->type;
 
 		if (!p_write_ind->len || !p_write_ind->value) {
-			printf("[APP] Long uuid service write value is empty!\r\n");
+			BT_LOGE("[APP] Long uuid service write value is empty!\r\n");
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 			goto send_write_rsp;
 		}
 
 		if (LONG_UUID_WRITE_INDEX == p_write_ind->index) {
-			printf("[APP] Long uuid service write event, len: %d, type: %d, data: ",
-				   p_write_ind->len, p_write_ind->type);
-			for (i = 0; i < p_write_ind->len; i++) {
-				if (0 == i % 16) {
-					printf("\n\r");
-				}
-				printf("%02x ", *(p_write_ind->value + i));
-			}
-			printf("\r\n");
+			BT_LOGA("[APP] Long uuid service write event, len: %d, type: %d, data:\r\n",
+					p_write_ind->len, p_write_ind->type);
+			BT_DUMPA("", p_write_ind->value, p_write_ind->len);
+			BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u\r\n",
+						p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+						p_write_ind->len, p_write_ind->type);
 		} else {
-			printf("[APP] Long uuid service write event unknown index: %d\r\n",
-				   p_write_ind->index);
+			BT_LOGE("[APP] Long uuid service write event unknown index: %d\r\n",
+					p_write_ind->index);
 			write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 send_write_rsp:
 		ret = rtk_bt_gatts_write_resp(&write_resp);
 		if (RTK_BT_OK == ret)
-			printf("[APP] Long uuid service response for client write succeed, index: %d\r\n",
-				   p_write_ind->index);
+			BT_LOGA("[APP] Long uuid service response for client write succeed, index: %d\r\n",
+					p_write_ind->index);
 		else {
-			printf("[APP] Long uuid service response for client write failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] Long uuid service response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 

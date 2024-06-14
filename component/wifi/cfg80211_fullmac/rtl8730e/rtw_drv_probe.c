@@ -31,6 +31,10 @@ static int rtw_inetaddr_notifier_call(struct notifier_block *nb, unsigned long a
 	}
 
 	ndev = ifa->ifa_dev->dev;
+	if (rtw_netdev_label(ndev) != WIFI_FULLMAC_LABEL) {
+		dev_dbg(global_idev.fullmac_dev, "%s is not fullmac dev\n", ifa->ifa_label);
+		return NOTIFY_DONE;
+	}
 
 	switch (action) {
 	case NETDEV_UP:
@@ -59,6 +63,10 @@ static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long 
 	}
 
 	ndev = inet6_ifa->idev->dev;
+	if (rtw_netdev_label(ndev) != WIFI_FULLMAC_LABEL) {
+		dev_dbg(global_idev.fullmac_dev, "Not fullmac dev\n");
+		return NOTIFY_DONE;
+	}
 
 	switch (action) {
 	case NETDEV_UP:

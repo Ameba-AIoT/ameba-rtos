@@ -13,6 +13,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
 #include <rtk_ias.h>
+#include <bt_utils.h>
 
 #define IMMEDIATE_ALERT_SRV_UUID            0x1802
 #define ALERT_LEVEL_CHAR_UUID               0x2A06
@@ -43,9 +44,9 @@ void immediate_alert_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;
 		if (RTK_BT_OK == reg_srv_res->reg_status) {
-			printf("[APP] IAS register service succeed!\r\n");
+			BT_LOGA("[APP] IAS register service succeed!\r\n");
 		} else {
-			printf("[APP] IAS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
+			BT_LOGE("[APP] IAS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
 		}
 
 		break;
@@ -58,15 +59,19 @@ void immediate_alert_srv_callback(uint8_t event, void *data)
 		read_resp.conn_handle = p_read_ind->conn_handle;
 		read_resp.cid = p_read_ind->cid;
 		read_resp.index = p_read_ind->index;
-		printf("[APP] IAS read event, while no readable attr, unknown index: %d\r\n", p_read_ind->index);
+		BT_LOGE("[APP] IAS read event, while no readable attr, unknown index: %d\r\n", p_read_ind->index);
 		read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 
 		ret = rtk_bt_gatts_read_resp(&read_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] IAS response for client read succeed!\r\n");
+			BT_LOGA("[APP] IAS response for client read succeed!\r\n");
 		} else {
-			printf("[APP] IAS response for client read failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] IAS response for client read failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+					read_resp.conn_handle, read_resp.index,
+					read_resp.err_code);
 		break;
 	}
 
@@ -81,27 +86,34 @@ void immediate_alert_srv_callback(uint8_t event, void *data)
 		write_resp.type = p_write_ind->type;
 
 		if (!p_write_ind->len || !p_write_ind->value) {
-			printf("[APP] IAS write value is empty!\r\n");
+			BT_LOGE("[APP] IAS write value is empty!\r\n");
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 			goto send_write_rsp;
 		}
 
 		if (ALERT_LEVEL_CHAR_VAL_INDEX == p_write_ind->index) {
 			value = (uint8_t *)(p_write_ind->value);
-			printf("[APP] IAS write by remote, value: %d, type: %d\r\n",
-				   *value, p_write_ind->type);
+			BT_LOGA("[APP] IAS write by remote, value: %d, type: %d\r\n",
+					*value, p_write_ind->type);
+			BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u,%u\r\n",
+						p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+						p_write_ind->len, p_write_ind->type, *value);
 		} else {
-			printf("[APP] IAS write event unknown index: %d\r\n", p_write_ind->index);
+			BT_LOGE("[APP] IAS write event unknown index: %d\r\n", p_write_ind->index);
 			write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 send_write_rsp:
 		ret = rtk_bt_gatts_write_resp(&write_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] IAS response for client write success!\r\n");
+			BT_LOGA("[APP] IAS response for client write success!\r\n");
 		} else {
-			printf("[APP] IAS response for client write failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] IAS response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 

@@ -73,7 +73,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 				{
 					p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SDP_ATTR_INFO, sizeof(rtk_bt_hfp_sdp_attr_info_t));
 					if (!p_evt) {
-						printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+						BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 						handle = false;
 						break;
 					}
@@ -107,18 +107,18 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			p_link->remote_hfp_brsf_capability = param->hfp_supported_features_ind.ag_bitmap;
 			if (param->hfp_supported_features_ind.ag_bitmap & BT_HFP_HF_REMOTE_CAPABILITY_INBAND_RINGING) {
 				p_link->is_inband_ring = true;
-				printf("app_hfp_bt_cback: support inband ring \r\n");
+				BT_LOGA("app_hfp_bt_cback: support inband ring \r\n");
 			} else {
 				p_link->is_inband_ring = false;
-				printf("app_hfp_bt_cback: not support inband ring, use outband ring alert \r\n");
+				BT_LOGE("app_hfp_bt_cback: not support inband ring, use outband ring alert \r\n");
 			}
 			APP_PRINT_INFO1("app_audio_bt_cback: BT_EVENT_HFP_SUPPORTED_FEATURES_IND, remote_hfp_brsf_capability 0x%04x",
 							p_link->remote_hfp_brsf_capability);
-			printf("app_hfp_bt_cback: remote_hfp_brsf_capability 0x%04x \r\n", p_link->remote_hfp_brsf_capability);
+			BT_LOGA("app_hfp_bt_cback: remote_hfp_brsf_capability 0x%04x \r\n", p_link->remote_hfp_brsf_capability);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SUPPORTED_FEATURES_IND, sizeof(rtk_bt_hfp_ag_features_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -132,7 +132,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -144,11 +144,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		if (p_link != NULL) {
 			bt_hfp_connect_cfm(p_link->bd_addr, true);
 			APP_PRINT_INFO0("BT_EVENT_HFP_CONN_IND");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_CONN_IND \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_CONN_IND \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_CONN_IND, sizeof(rtk_bt_hfp_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -162,7 +162,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -173,11 +173,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_conn_cmpl.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_CONN_CMPL");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_CONN_CMPL \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_CONN_CMPL \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_CONN_CMPL, sizeof(rtk_bt_hfp_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -194,7 +194,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			bt_hfp_microphone_gain_level_report(p_link->bd_addr, microphone_gain);
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -205,11 +205,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_call_status.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_CALL_STATUS");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_CALL_STATUS \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_CALL_STATUS \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_CALL_STATUS, sizeof(rtk_bt_hfp_call_status_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -225,7 +225,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -236,11 +236,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_caller_id_ind.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_CALLER_ID_IND");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_CALLER_ID_IND \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_CALLER_ID_IND \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_CALLER_ID_IND, sizeof(rtk_bt_hfp_caller_id_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -256,7 +256,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -267,11 +267,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_disconn_cmpl.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_DISCONN_CMPL");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_DISCONN_CMPL \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_DISCONN_CMPL \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_DISCONN_CMPL, sizeof(rtk_bt_hfp_disconn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -285,7 +285,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -296,11 +296,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_battery_ind.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_BATTERY_IND");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_BATTERY_IND \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_BATTERY_IND \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_HF_BATTERY_IND, sizeof(rtk_bt_hfp_hf_battery_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -313,12 +313,12 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 					handle = false;
 					break;
 				}
-				printf("app_hfp_bt_cback: get battery power %d \r\n", (int)battery_power);
+				BT_LOGA("app_hfp_bt_cback: get battery power %d \r\n", (int)battery_power);
 				bt_hfp_batt_level_report(p_link->bd_addr, battery_power);
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -329,11 +329,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_spk_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_SPK_VOLUME_CHANGED");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_SPK_VOLUME_CHANGED %d \r\n", param->hfp_spk_volume_changed.volume);
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_SPK_VOLUME_CHANGED %d \r\n", param->hfp_spk_volume_changed.volume);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_HF_SPEAKER_VOL_CHANGED_IND, sizeof(rtk_bt_hfp_hf_speaker_volume_changed_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -348,7 +348,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -359,11 +359,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_mic_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_MIC_VOLUME_CHANGED");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_MIC_VOLUME_CHANGED %d \r\n", param->hfp_mic_volume_changed.volume);
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_MIC_VOLUME_CHANGED %d \r\n", param->hfp_mic_volume_changed.volume);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND, sizeof(rtk_bt_hfp_hf_mic_volume_changed_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -378,7 +378,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -390,11 +390,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		if (p_link != NULL) {
 			bt_sco_conn_cfm(p_link->bd_addr, true);
 			APP_PRINT_INFO0("BT_EVENT_SCO_CONN_IND");
-			printf("app_hfp_bt_cback: BT_EVENT_SCO_CONN_IND \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_SCO_CONN_IND \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_CONN_IND, sizeof(rtk_bt_hfp_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -408,7 +408,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -419,11 +419,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->sco_conn_cmpl.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_SCO_CONN_CMPL");
-			printf("app_hfp_bt_cback: BT_EVENT_SCO_CONN_CMPL sco handle %x \r\n", param->sco_conn_cmpl.handle);
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_SCO_CONN_CMPL sco handle %x \r\n", param->sco_conn_cmpl.handle);
 			p_link->sco_handle = param->sco_conn_cmpl.handle;
 			if (param->sco_conn_cmpl.air_mode == 3) {
 				APP_PRINT_INFO0("HFP config: mSBC ");
-				printf("app_hfp_bt_cback: HFP config: mSBC \r\n");
+				BT_LOGA("app_hfp_bt_cback: HFP config: mSBC \r\n");
 				p_link->hfp_codec_type = RTK_BT_AUDIO_CODEC_mSBC;
 				p_link->hfp_sco_codec_info.msbc.channel_mode = 1;
 				p_link->hfp_sco_codec_info.msbc.sample_rate = 16000;
@@ -433,7 +433,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 				p_link->hfp_sco_codec_info.msbc.block_length = 15;
 			} else if (param->sco_conn_cmpl.air_mode == 2) {
 				APP_PRINT_INFO0("HFP config: CVSD ");
-				printf("app_hfp_bt_cback: HFP config: CVSD \r\n");
+				BT_LOGA("app_hfp_bt_cback: HFP config: CVSD \r\n");
 				p_link->hfp_codec_type = RTK_BT_AUDIO_CODEC_CVSD;
 				p_link->hfp_sco_codec_info.cvsd.channel_num = 1;
 				p_link->hfp_sco_codec_info.cvsd.sample_rate = 8000;
@@ -444,17 +444,18 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 				}
 			} else {
 				APP_PRINT_INFO0("HFP config: unknow ");
-				printf("app_hfp_bt_cback: HFP unknow \r\n");
+				BT_LOGE("app_hfp_bt_cback: HFP unknow \r\n");
 				break;
 			}
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_CONN_CMPL, sizeof(rtk_bt_hfp_codec_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
 				p_hfp_codec_t = (rtk_bt_hfp_codec_t *)p_evt->data;
+				memcpy((void *)p_hfp_codec_t->bd_addr, (void *)p_link->bd_addr, 6);
 				p_hfp_codec_t->codec_type = p_link->hfp_codec_type;
 				if (p_hfp_codec_t->codec_type == RTK_BT_AUDIO_CODEC_mSBC) {
 					p_hfp_codec_t->msbc.channel_mode = p_link->hfp_sco_codec_info.msbc.channel_mode;
@@ -476,7 +477,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -487,16 +488,16 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->sco_data_ind.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_SCO_DATA_IND");
-			// printf("app_hfp_bt_cback: BT_EVENT_SCO_DATA_IND \r\n");
+			// BT_LOGA("app_hfp_bt_cback: BT_EVENT_SCO_DATA_IND \r\n");
 			if (param->sco_data_ind.status != BT_SCO_PKT_STATUS_OK) {
-				printf("app_hfp_bt_cback: sco data ind status error %d \r\n", param->sco_data_ind.status);
+				BT_LOGE("app_hfp_bt_cback: sco data ind status error %d \r\n", param->sco_data_ind.status);
 				break;
 			}
 			{
 				uint8_t cb_ret = 0;
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_DATA_IND, sizeof(rtk_bt_hfp_sco_data_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -511,7 +512,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -522,12 +523,12 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->sco_disconnected.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_SCO_DISCONNECTED");
-			printf("app_hfp_bt_cback: BT_EVENT_SCO_DISCONNECTED \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_SCO_DISCONNECTED \r\n");
 			p_link->sco_handle = 0;
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND, sizeof(rtk_bt_hfp_disconn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -541,7 +542,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -553,11 +554,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		if (p_link != NULL) {
 			bt_hfp_ag_connect_cfm(p_link->bd_addr, true);
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_CONN_IND");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_CONN_IND \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_CONN_IND \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_CONN_IND, sizeof(rtk_bt_hfp_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -571,7 +572,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -582,11 +583,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_conn_cmpl.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_CONN_CMPL");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_CONN_CMPL \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_CONN_CMPL \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_CONN_CMPL, sizeof(rtk_bt_hfp_conn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -600,7 +601,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -611,11 +612,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_disconn_cmpl.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_DISCONN_CMPL");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_DISCONN_CMPL \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_DISCONN_CMPL \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_DISCONN_CMPL, sizeof(rtk_bt_hfp_disconn_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -629,7 +630,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -641,11 +642,11 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_indicators_status_req.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_INDICATORS_STATUS_REQ");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_INDICATORS_STATUS_REQ \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_INDICATORS_STATUS_REQ \r\n");
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_INDICATORS_STATUS_REQ, sizeof(rtk_bt_hfp_ag_indicators_status_req_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -669,7 +670,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -680,12 +681,12 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_curr_calls_list_query.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_CURR_CALLS_LIST_QUERY");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_CURR_CALLS_LIST_QUERY \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_CURR_CALLS_LIST_QUERY \r\n");
 			bt_hfp_ag_ok_send(p_link->bd_addr);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_CURR_CALLS_LIST_QUERY, sizeof(rtk_bt_hfp_ag_curr_calls_list_query_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -699,7 +700,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -710,14 +711,14 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_dial_last_number.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_DIAL_LAST_NUMBER");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_DIAL_LAST_NUMBER \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_DIAL_LAST_NUMBER \r\n");
 			bt_hfp_ag_ok_send(p_link->bd_addr);
 			bt_hfp_ag_call_dial(p_link->bd_addr);
 			bt_hfp_ag_audio_connect_req(p_link->bd_addr);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_DIAL_LAST_NUMBER, sizeof(rtk_bt_hfp_ag_dial_last_number_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -731,7 +732,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -742,13 +743,13 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_call_answer_req.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_CALL_ANSWER_REQ");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_CALL_ANSWER_REQ \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_CALL_ANSWER_REQ \r\n");
 			bt_hfp_ag_call_answer(p_link->bd_addr);
 			bt_hfp_ag_audio_connect_req(p_link->bd_addr);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_CALL_ANSWER_REQ, sizeof(rtk_bt_hfp_ag_call_answer_req_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -762,7 +763,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -773,12 +774,12 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_call_answer_req.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_CALL_TERMINATE_REQ");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_CALL_TERMINATE_REQ \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_CALL_TERMINATE_REQ \r\n");
 			bt_hfp_ag_call_terminate(p_link->bd_addr);
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_CALL_TERMINATE_REQ, sizeof(rtk_bt_hfp_ag_call_terminate_req_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -792,7 +793,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
@@ -803,14 +804,14 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 		p_link = app_find_br_link(param->hfp_ag_call_status_changed.bd_addr);
 		if (p_link != NULL) {
 			APP_PRINT_INFO0("BT_EVENT_HFP_AG_CALL_STATUS_CHANGED");
-			printf("app_hfp_bt_cback: BT_EVENT_HFP_AG_CALL_STATUS_CHANGED \r\n");
+			BT_LOGA("app_hfp_bt_cback: BT_EVENT_HFP_AG_CALL_STATUS_CHANGED \r\n");
 			if (param->hfp_ag_call_status_changed.curr_status == BT_HFP_AG_CALL_IDLE) {
 				bt_hfp_ag_audio_disconnect_req(param->hfp_ag_call_status_changed.bd_addr);
 			}
 			{
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_AG_CALL_STATUS, sizeof(rtk_bt_hfp_call_status_ind_t));
 				if (!p_evt) {
-					printf("app_hfp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -826,14 +827,14 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			}
 		} else {
 			APP_PRINT_INFO0("HFP p_link is NULL");
-			printf("app_hfp_bt_cback: HFP p_link is NULL \r\n");
+			BT_LOGE("app_hfp_bt_cback: HFP p_link is NULL \r\n");
 		}
 	}
 	break;
 
 	default: {
 		APP_PRINT_INFO1("app_hfp_bt_cback: default event_type 0x%04x", event_type);
-		// printf("app_hfp_bt_cback: default event_type 0x%04x \r\n", event_type);
+		// BT_LOGA("app_hfp_bt_cback: default event_type 0x%04x \r\n", event_type);
 		handle = false;
 	}
 	break;
@@ -841,7 +842,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 
 	if (handle == true) {
 		// APP_PRINT_INFO1("app_hfp_bt_cback: event_type 0x%04x", event_type);
-		// printf("app_hfp_bt_cback: event_type 0x%04x \r\n", event_type);
+		// BT_LOGA("app_hfp_bt_cback: event_type 0x%04x \r\n", event_type);
 	}
 }
 
@@ -983,7 +984,7 @@ static uint16_t bt_stack_hfp_data_send(void *param)
 
 	p_link = app_find_br_link(p_data_send_t->bd_addr);
 	if (!p_link) {
-		printf("bt_stack_hfp_data_send: No link found \r\n");
+		BT_LOGE("bt_stack_hfp_data_send: No link found \r\n");
 		return RTK_BT_FAIL;
 	}
 	do {
@@ -993,7 +994,7 @@ static uint16_t bt_stack_hfp_data_send(void *param)
 		osif_delay(1);
 	} while (p_link->sco_handle);
 	APP_PRINT_INFO0("bt_stack_hfp_data_send fail");
-	printf("send fail %d %d \r\n", p_data_send_t->seq_num, p_data_send_t->len);
+	BT_LOGE("send fail %d %d \r\n", p_data_send_t->seq_num, p_data_send_t->len);
 
 	return RTK_BT_FAIL;
 }
@@ -1034,7 +1035,7 @@ static uint16_t bt_stack_hfp_report_microphone_gain(void *param)
 uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
-	API_PRINT("bt_stack_hfp_act_handle: act = %d \r\n", p_cmd->act);
+	BT_LOGD("bt_stack_hfp_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 
 	case RTK_BT_HFP_ACT_CONNECT:
@@ -1082,7 +1083,7 @@ uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 
 	default:
-		printf("bt_stack_hfp_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_hfp_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = 0;
 		break;
 	}
@@ -1095,7 +1096,7 @@ uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_hfp_init(uint8_t role)
 {
-	printf("[HFP]app_hfp_init\n");
+	BT_LOGA("[HFP]app_hfp_init\n");
 
 	hfp_role = role;
 	if (role == RTK_BT_AUDIO_HFP_ROLE_AG) {
@@ -1104,7 +1105,7 @@ uint16_t bt_stack_hfp_init(uint8_t role)
 						   ag_conf.rfc_hsp_ag_chann_num,
 						   ag_conf.ag_supported_features,
 						   ag_conf.ag_supported_codecs, NULL) == false) {
-			printf("[HFP]bt_hfp_ag_init FAIL \n");
+			BT_LOGE("[HFP]bt_hfp_ag_init FAIL \n");
 			return RTK_BT_FAIL;
 		}
 	} else if (role == RTK_BT_AUDIO_HFP_ROLE_HF) {
@@ -1113,11 +1114,11 @@ uint16_t bt_stack_hfp_init(uint8_t role)
 						hf_conf.rfc_hsp_chann_num,
 						hf_conf.hf_supported_features,
 						hf_conf.hf_supported_codecs) == false) {
-			printf("[HFP]bt_hfp_init FAIL \n");
+			BT_LOGE("[HFP]bt_hfp_init FAIL \n");
 			return RTK_BT_FAIL;
 		}
 	} else {
-		printf("[HFP]unknown role %d \n", role);
+		BT_LOGE("[HFP]unknown role %d \n", role);
 		return RTK_BT_FAIL;
 	}
 
@@ -1131,7 +1132,7 @@ extern void hfp_ag_deinit(void);
 
 void bt_stack_hfp_deinit(void)
 {
-	printf("[HFP]app_hfp_init\n");
+	BT_LOGA("[HFP]app_hfp_init\n");
 	if (hfp_role == RTK_BT_AUDIO_HFP_ROLE_AG) {
 		hfp_ag_deinit();
 	} else {

@@ -66,7 +66,7 @@ void BOOT_Image1(void)
 	/* Initial Global Variable */
 	BOOT_ROM_InitDebugFlg();
 
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	/* Get flash_init_para address for KM0 */
 	_memcpy((void *)&flash_init_para, (const void *)HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_FLASH_PARA_ADDR), sizeof(FLASH_InitTypeDef));
 #endif

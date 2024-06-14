@@ -485,6 +485,7 @@ int rtw_ndev_alloc(void)
 		}
 		global_idev.pndev[i] = ndev;
 		rtw_netdev_idx(ndev) = i;
+		rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
 		ndev->netdev_ops = (i ? &rtw_ndev_ops_ap : &rtw_ndev_ops);
 		ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
 		SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);

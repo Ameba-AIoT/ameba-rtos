@@ -165,7 +165,7 @@ void km4_resume(void)
 
 	SOCPS_AP_resume_config(ENABLE);
 
-#if !defined(CONFIG_MP_INCLUDED) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 	extern void wifi_hal_system_resume_wlan(void);
 	//request FW leave 32k and wakeup driver, by rpwm int
 	wifi_hal_system_resume_wlan();
@@ -222,7 +222,7 @@ void km4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_tickless_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	.Rxfunc = km4_tickless_ipc_int,
 #else
 	.Rxfunc = NULL,

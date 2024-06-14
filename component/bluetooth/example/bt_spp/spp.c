@@ -17,6 +17,7 @@
 #include <rtk_bt_sdp.h>
 #include <rtk_bt_device.h>
 #include <rtk_bt_spp.h>
+#include <bt_utils.h>
 
 /* -------------------------------- Defines -------------------------------- */
 #define SPP_DEFAULT_PAGESCAN_WINDOW             0x48
@@ -47,15 +48,6 @@
 
 /* Max length of device name, if device name length exceeds it, it will be truncated */
 #define GAP_DEVICE_NAME_LEN                     40
-
-#define BT_APP_PROCESS(func)                                \
-    do {                                                    \
-        uint16_t __fun_ret = func;                          \
-        if (RTK_BT_OK != __fun_ret) {                       \
-            printf("[APP] %s failed! line: %d, err: 0x%x\r\n",__func__, __LINE__, __fun_ret); \
-            return -1;                                      \
-        }                                                   \
-    } while (0)
 
 /* ---------------------------- Static Variables ---------------------------- */
 
@@ -250,8 +242,8 @@ static const uint8_t rtk_vendor_spp_sdp_record[] = {
  */
 static void spp_tx_test(uint8_t *rmt_bd_addr, uint8_t server_chann)
 {
-	printf("[SPP] SPP TX test to %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
-		   rmt_bd_addr[5], rmt_bd_addr[4], rmt_bd_addr[3], rmt_bd_addr[2], rmt_bd_addr[1], rmt_bd_addr[0], server_chann);
+	BT_LOGA("[SPP] SPP TX test to %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
+			rmt_bd_addr[5], rmt_bd_addr[4], rmt_bd_addr[3], rmt_bd_addr[2], rmt_bd_addr[1], rmt_bd_addr[0], server_chann);
 
 	rtk_bt_spp_send_data_t send_data_t = {0};
 
@@ -264,10 +256,10 @@ static void spp_tx_test(uint8_t *rmt_bd_addr, uint8_t server_chann)
 	send_data_t.len = sizeof(spp_tx_data);
 
 	if (rtk_bt_spp_send_data(&send_data_t) != RTK_BT_OK) {
-		printf("[SPP] Send SPP tx test data falied\r\n");
+		BT_LOGE("[SPP] Send SPP tx test data falied\r\n");
 		return ;
 	}
-	printf("[SPP] Send SPP tx test data success\r\n");
+	BT_LOGA("[SPP] Send SPP tx test data success\r\n");
 }
 
 /**
@@ -279,10 +271,10 @@ static void spp_tx_test(uint8_t *rmt_bd_addr, uint8_t server_chann)
  */
 static void spp_rx_test(uint8_t *bd_addr, uint8_t *buf, uint16_t len)
 {
-	printf("[SPP] SPP RX test from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-		   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+	BT_LOGA("[SPP] SPP RX test from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+			bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	for (uint16_t i = 0; i < len; i++) {
-		printf("[SPP] Receive SPP tx test data: buf[%d] 0x%02x\r\n", i, buf[i]);
+		BT_LOGA("[SPP] Receive SPP tx test data: buf[%d] 0x%02x\r\n", i, buf[i]);
 	}
 }
 
@@ -294,9 +286,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		printf("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
-			   p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2],
-			   p_result->bd_addr[1], p_result->bd_addr[0], p_result->name);
+		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2],
+				p_result->bd_addr[1], p_result->bd_addr[0], p_result->name);
+		BT_AT_PRINT("+BRGAP:inquiry_result,%02X:%02X:%02X:%02X:%02X:%02X,%s\r\n",
+					p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+					p_result->name);
 		// if spp server role, and the remote device name is "spp client", send spp connect request (stop inquiry and start sdp discov)
 		// if (spp_demo_role == RTK_BT_SPP_ROLE_SERVER) {
 		//  if (memcmp("spp client", p_result->name, 10) == 0)
@@ -304,11 +299,11 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		//      memcpy((void *)client_bd_addr, p_result->bd_addr, 6);
 		//      if (rtk_bt_spp_connect(client_bd_addr))
 		//      {
-		//          printf("[BR GAP] Send spp connect request failed\r\n");
+		//          BT_LOGE("[BR GAP] Send spp connect request failed\r\n");
 		//          break;
 		//      }
-		//      printf("[BR GAP] Send spp connect request success\r\n");
-		//      printf("[BR GAP] wait for sdp discv info...\r\n");
+		//      BT_LOGA("[BR GAP] Send spp connect request success\r\n");
+		//      BT_LOGA("[BR GAP] wait for sdp discv info...\r\n");
 		//  }
 		// }
 		break;
@@ -316,46 +311,51 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		printf("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
-			   p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
-			   p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
+		BT_AT_PRINT("+BRGAP:disc,%02X:%02X:%02X:%02X:%02X:%02X,0x%x\r\n",
+					p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+					p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+					p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0],
+					p_acl_disc_event->cause);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_SUCCESS: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
-		printf("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_sniff->bd_addr[5], p_sniff->bd_addr[4],
-			   p_sniff->bd_addr[3], p_sniff->bd_addr[2],
-			   p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
-		printf("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
+		BT_LOGA("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_sniff->bd_addr[5], p_sniff->bd_addr[4],
+				p_sniff->bd_addr[3], p_sniff->bd_addr[2],
+				p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL sniff interval 0x%x \r\n", p_sniff->interval);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_ACTIVE: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	default:
-		printf("%s, Unknown RTK_BT_BR_GAP_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown RTK_BT_BR_GAP_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 
@@ -373,26 +373,22 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_SPP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_spp_attr_info_t *p_info = (rtk_bt_spp_attr_info_t *)param;
 		memcpy((void *)bd_addr, p_info->bd_addr, 6);
-		printf("[SPP] SPP sdp attr info from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[SPP] SPP sdp attr info from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 
 		/* Print UUID*/
 		if (p_info->srv_class_uuid_type == SPP_UUID128) {
-			printf("[SPP] UUID type is uuid128\r\n");
+			BT_LOGA("[SPP] UUID type is uuid128\r\n");
 			uint8_t *uuid_128 = p_info->srv_class_uuid_data.uuid_128;
-			printf("[SPP] uuid128 is : ");
-			for (uint16_t i = 0; i < 16; i++) {
-				printf("0x%x ", uuid_128[i]);
-			}
-			printf("\r\n");
+			BT_DUMPA("[SPP] uuid128 is : ", uuid_128, 16);
 		} else if (p_info->srv_class_uuid_type == SPP_UUID16) {
 			uint16_t uuid_16 = p_info->srv_class_uuid_data.uuid_16;
-			printf("[SPP] UUID type is uuid16\r\n");
-			printf("[SPP] uuid16 is : 0x%x\r\n", uuid_16);
+			BT_LOGA("[SPP] UUID type is uuid16\r\n");
+			BT_LOGA("[SPP] uuid16 is : 0x%x\r\n", uuid_16);
 		} else if (p_info->srv_class_uuid_type == SPP_UUID32) {
 			uint32_t uuid_32 = p_info->srv_class_uuid_data.uuid_32;
-			printf("[SPP] UUID type is uuid32\r\n");
-			printf("[SPP] uuid32 is : 0x%lx\r\n", uuid_32);
+			BT_LOGA("[SPP] UUID type is uuid32\r\n");
+			BT_LOGA("[SPP] uuid32 is : 0x%x\r\n", uuid_32);
 		}
 
 	}
@@ -401,27 +397,31 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_SPP_EVT_SDP_DISCOV_CMPL: {
 		rtk_bt_spp_sdp_discov_cmpl_t *p_discov = (rtk_bt_spp_sdp_discov_cmpl_t *)param;
 		memcpy((void *)bd_addr, p_discov->bd_addr, 6);
-		printf("[SPP] SPP sdp discov cmpl from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[SPP] SPP sdp discov cmpl from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_SPP_EVT_CONN_IND: {
 		rtk_bt_spp_conn_ind_t *p_conn_ind = (rtk_bt_spp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, p_conn_ind->bd_addr, 6);
-		printf("[SPP] Receive SPP connection from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_conn_ind->local_server_chann, p_conn_ind->frame_size);
+		BT_LOGA("[SPP] Receive SPP connection from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_conn_ind->local_server_chann, p_conn_ind->frame_size);
 	}
 	break;
 
 	case RTK_BT_SPP_EVT_CONN_COMPL: {
 		rtk_bt_spp_conn_cmpl_t *p_conn_cmpl = (rtk_bt_spp_conn_cmpl_t *)param;
 		memcpy((void *)bd_addr, p_conn_cmpl->bd_addr, 6);
-		printf("[SPP] SPP connection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d, link credit: %d\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_conn_cmpl->local_server_chann, p_conn_cmpl->frame_size,
-			   p_conn_cmpl->link_credit);
+		BT_LOGA("[SPP] SPP connection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x, frame size: %d, link credit: %d\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_conn_cmpl->local_server_chann, p_conn_cmpl->frame_size,
+				p_conn_cmpl->link_credit);
+		BT_AT_PRINT("+BTSPP:conn,%02X:%02X:%02X:%02X:%02X:%02X,0x%x,%d,%d\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+					p_conn_cmpl->local_server_chann, p_conn_cmpl->frame_size,
+					p_conn_cmpl->link_credit);
 
 		/* Then tx data */
 		if (spp_demo_role == RTK_BT_SPP_ROLE_SERVER) {
@@ -437,17 +437,17 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 			// memcpy((void *)p_disconn_req_t.bd_addr, p_conn_cmpl->bd_addr, 6);
 			// p_disconn_req_t.local_server_chann = p_conn_cmpl->local_server_chann;
 			// if (rtk_bt_spp_disconnect(&p_disconn_req_t) != RTK_BT_OK) {
-			//     printf("[SPP] SPP server send spp disconnection request failed\r\n");
+			//     BT_LOGE("[SPP] SPP server send spp disconnection request failed\r\n");
 			//     break;
 			// }
-			// printf("[SPP] SPP server send spp disconnection request to channel 0x%x success!!\r\n", p_conn_cmpl->local_server_chann);
+			// BT_LOGA("[SPP] SPP server send spp disconnection request to channel 0x%x success!!\r\n", p_conn_cmpl->local_server_chann);
 
 			// /* disconnect all spp channel*/
 			// if (rtk_bt_spp_disconnect_all(p_conn_cmpl->bd_addr) != RTK_BT_OK) {
-			//     printf("[SPP] SPP server send spp disconnection all request failed\r\n");
+			//     BT_LOGE("[SPP] SPP server send spp disconnection all request failed\r\n");
 			//     break;
 			// }
-			// printf("[SPP] SPP server send spp disconnection request to all channel success!!\r\n");
+			// BT_LOGA("[SPP] SPP server send spp disconnection request to all channel success!!\r\n");
 
 		}
 	}
@@ -456,18 +456,21 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_SPP_EVT_DISCONN_CMPL: {
 		rtk_bt_spp_disconn_ind_t *p_disconn_ind = (rtk_bt_spp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, p_disconn_ind->bd_addr, 6);
-		printf("[SPP] SPP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_disconn_ind->local_server_chann);
+		BT_LOGA("[SPP] SPP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_disconn_ind->local_server_chann);
+		BT_AT_PRINT("+BTSPP:disconn,%02X:%02X:%02X:%02X:%02X:%02X,0x%x\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+					p_disconn_ind->local_server_chann);
 	}
 	break;
 
 	case RTK_BT_SPP_EVT_CREDIT_RCVD: {
 		rtk_bt_spp_credit_rcvd_t *p_credit_rcvd = (rtk_bt_spp_credit_rcvd_t *)param;
 		memcpy((void *)bd_addr, p_credit_rcvd->bd_addr, 6);
-		printf("[SPP] Receive %d link credit from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n", p_credit_rcvd->link_credit,
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2],
-			   bd_addr[1], bd_addr[0], p_credit_rcvd->local_server_chann);
+		BT_LOGA("[SPP] Receive %d link credit from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n", p_credit_rcvd->link_credit,
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2],
+				bd_addr[1], bd_addr[0], p_credit_rcvd->local_server_chann);
 	}
 	break;
 
@@ -475,9 +478,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_spp_data_ind_t *p_data_ind = (rtk_bt_spp_data_ind_t *)param;
 
 		memcpy((void *)bd_addr, p_data_ind->bd_addr, 6);
-		printf("[SPP] Receive data from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
-			   p_data_ind->local_server_chann);
+		BT_LOGA("[SPP] Receive data from %02X:%02X:%02X:%02X:%02X:%02X, server channel: 0x%x\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0],
+				p_data_ind->local_server_chann);
 
 		/* Then rx test */
 		spp_rx_test(bd_addr, p_data_ind->data, p_data_ind->len);
@@ -488,12 +491,12 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 		credits_give.local_server_chann = p_data_ind->local_server_chann;
 		credits_give.credits = 1;
 		if (rtk_bt_spp_credits_give(&credits_give)) {
-			printf("[SPP] Send %d link credits to server channel 0x%x failed\r\n",
-				   credits_give.credits, credits_give.local_server_chann);
+			BT_LOGE("[SPP] Send %d link credits to server channel 0x%x failed\r\n",
+					credits_give.credits, credits_give.local_server_chann);
 			break;
 		}
-		printf("[SPP] Send %d link credits to server channel 0x%x success\r\n",
-			   credits_give.credits, credits_give.local_server_chann);
+		BT_LOGA("[SPP] Send %d link credits to server channel 0x%x success\r\n",
+				credits_give.credits, credits_give.local_server_chann);
 
 		// if (spp_demo_role == RTK_BT_SPP_ROLE_CLIENT)
 		// {
@@ -506,7 +509,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param
 	break;
 
 	default:
-		printf("%s, Unknown RTK_BT_BR_SPP_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown RTK_BT_BR_SPP_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 
@@ -530,15 +533,15 @@ int bt_spp_main(uint8_t role, uint8_t enable)
 		if (RTK_BT_SPP_ROLE_CLIENT == role) {
 			spp_demo_role = RTK_BT_SPP_ROLE_CLIENT;
 			bt_app_conf.spp_role = RTK_BT_SPP_ROLE_CLIENT;
-			printf("[APP] spp demo role : SPP Client\r\n");
+			BT_LOGA("[APP] spp demo role : SPP Client\r\n");
 			memcpy((void *)rtk_bt_dev_name, (void *)"spp client", 10);
 		} else if (RTK_BT_SPP_ROLE_SERVER == role) {
 			spp_demo_role = RTK_BT_SPP_ROLE_SERVER;
 			bt_app_conf.spp_role = RTK_BT_SPP_ROLE_SERVER;
 			memcpy((void *)rtk_bt_dev_name, (void *)"spp server", 10);
-			printf("[APP] spp demo role : SPP Server\r\n");
+			BT_LOGA("[APP] spp demo role : SPP Server\r\n");
 		} else {
-			printf("[APP] Wrong SPP role: %d \r\n", role);
+			BT_LOGE("[APP] Wrong SPP role: %d \r\n", role);
 			return 1;
 		}
 
@@ -576,7 +579,7 @@ int bt_spp_main(uint8_t role, uint8_t enable)
 
 		BT_APP_PROCESS(rtk_bt_br_gap_get_bd_addr(&bd_addr));
 		rtk_bt_br_addr_to_str(bd_addr.addr, addr_str, sizeof(addr_str));
-		printf("[APP] BD_ADDR: %s\r\n", addr_str);
+		BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 
 		/* Initialize GAP part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_GAP, br_gap_app_callback));
@@ -587,15 +590,15 @@ int bt_spp_main(uint8_t role, uint8_t enable)
 
 		// if role is SPP server, start inquiry and then wait for inquiry result callback
 		if (spp_demo_role == RTK_BT_SPP_ROLE_SERVER) {
-			printf("[APP] SPP server start inquiry...\r\n");
+			BT_LOGA("[APP] SPP server start inquiry...\r\n");
 			rtk_bt_br_inquiry_start_t inquiry_start_param = {0};
 			inquiry_start_param.limited_inquiry = false;
 			inquiry_start_param.timeout = 10;
 
 			if (rtk_bt_br_gap_start_inquiry(&inquiry_start_param)) {
-				printf("[APP] Start inquiry failed\r\n");
+				BT_LOGE("[APP] Start inquiry failed\r\n");
 			}
-			printf("[APP] Start inquiry success\r\n");
+			BT_LOGA("[APP] Start inquiry success\r\n");
 		}
 	} else if (0 == enable) {
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));

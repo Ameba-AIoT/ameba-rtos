@@ -35,7 +35,7 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 	make -C audio_control lib
 	make -C audio_stream lib
 	make -C audio_xip lib
-	make -C audio_hal all
+	make -C audio_hal lib
 	make -C base lib
 endif
 

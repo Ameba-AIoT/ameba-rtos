@@ -201,8 +201,8 @@ static uint8_t hci_platform_read_efuse(void)
 		OTP_Read8((HCI_PHY_EFUSE_OFFSET + i), (hci_phy_efuse + i));
 	}
 #if 0
-	BT_DUMPA("Read Logic Efuse:", hci_lgc_efuse, HCI_LGC_EFUSE_LEN);
-	BT_DUMPA("Read Phy Efuse:", hci_phy_efuse, HCI_PHY_EFUSE_LEN);
+	BT_DUMPA("Read Logic Efuse:\r\n", hci_lgc_efuse, HCI_LGC_EFUSE_LEN);
+	BT_DUMPA("Read Phy Efuse:\r\n", hci_phy_efuse, HCI_PHY_EFUSE_LEN);
 #endif
 	if (pbuf) {
 		osif_mem_free(pbuf);
@@ -218,6 +218,11 @@ void hci_platform_set_tx_power_gain_index(uint32_t index)
 	bt_manual_gain_index_br = (uint8_t)((index >> 8) & 0xFF);
 	bt_manual_gain_index_edr2m = (uint8_t)((index >> 16) & 0xFF);
 	bt_manual_gain_index_edr3m = (uint8_t)((index >> 24) & 0xFF);
+}
+
+void hci_platform_set_antenna(uint8_t ant)
+{
+	bt_ant_switch = ant;
 }
 
 static uint8_t hci_platform_parse_config(void)

@@ -121,6 +121,7 @@
 #define WSEC_SWFLAG		0x0008		/**< WSEC SWFLAG */
 #define AES_CMAC_ENABLED	0x0010		/**< aes cmac enable */
 #define ENTERPRISE_ENABLED	0x0020		/**< enterprise enable */
+#define OWE_ENABLED		0X0040		/**< owe enable */
 #define SHARED_ENABLED		0x00008000	/**< shared enable */
 #define WPA_SECURITY		0x00200000	/**< wpa */
 #define WPA2_SECURITY		0x00400000	/**< wpa2 */
@@ -475,7 +476,8 @@ enum rtw_security {
 	RTW_SECURITY_WPA_WPA2_TKIP_PSK  = (WPA_SECURITY | WPA2_SECURITY | TKIP_ENABLED),                /**< WPA/WPA2 Security with TKIP             */
 	RTW_SECURITY_WPA_WPA2_AES_PSK   = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED),                 /**< WPA/WPA2 Security with AES              */
 	RTW_SECURITY_WPA_WPA2_MIXED_PSK = (WPA_SECURITY  | WPA2_SECURITY | TKIP_ENABLED | AES_ENABLED), /**< WPA/WPA2 Security with AES & TKIP       */
-	RTW_SECURITY_WPA3_AES_PSK	 = (WPA3_SECURITY | AES_ENABLED),				  /**< WPA3-SAE with AES security			   */
+	RTW_SECURITY_WPA3_AES_PSK	 = (WPA3_SECURITY | AES_ENABLED),				/**< WPA3-SAE with AES security			   */
+	RTW_SECURITY_WPA3_OWE	 = (WPA3_SECURITY | OWE_ENABLED | AES_ENABLED),				/**< WPA3-OWE with AES security			   */
 	RTW_SECURITY_WPA2_WPA3_MIXED = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED), /**< WPA3-SAE/WPA2 with AES security		   */
 	RTW_SECURITY_WPA2_AES_CMAC      = (WPA2_SECURITY | AES_CMAC_ENABLED),                           /**< WPA2 Security with AES and Management Frame Protection */
 };
@@ -653,6 +655,53 @@ enum mgn_rate_type {
 	MGN_UNKNOWN
 };
 
+/**
+  * @brief csi trig management frame subtype.
+  */
+enum trig_frame_mgnt_type {
+	CSI_TRIG_ASSOCREQ   = BIT(0),
+	CSI_TRIG_ASSOCRSP   = BIT(1),
+	CSI_TRIG_REASSOCREQ = BIT(2),
+	CSI_TRIG_REASSOCRSP = BIT(3),
+	CSI_TRIG_PROBEREQ   = BIT(4),
+	CSI_TRIG_PROBERSP   = BIT(5),
+	CSI_TRIG_BEACON     = BIT(8),
+	CSI_TRIG_ATIM       = BIT(9),
+	CSI_TRIG_DISASSOC   = BIT(10),
+	CSI_TRIG_AUTH       = BIT(11),
+	CSI_TRIG_DEAUTH     = BIT(12),
+	CSI_TRIG_ACTION     = BIT(13)
+};
+
+/**
+  * @brief csi trig control frame subtype.
+  */
+enum trig_frame_ctrl_type {
+	CSI_TRIG_TRIGGER     = BIT(2),
+	CSI_TRIG_BA          = BIT(9),
+	CSI_TRIG_PSPOLL      = BIT(10),
+	CSI_TRIG_RTS         = BIT(11),
+	CSI_TRIG_CTS         = BIT(12),
+	CSI_TRIG_ACK         = BIT(13),
+	CSI_TRIG_CFEND       = BIT(14),
+	CSI_TRIG_CFEND_CFACK = BIT(15)
+};
+
+/**
+  * @brief csi trig data frame subtype.
+  */
+enum trig_frame_data_type {
+	CSI_TRIG_DATA           = BIT(0),
+	CSI_TRIG_DATA_CFACK     = BIT(1),
+	CSI_TRIG_DATA_CFPOLL    = BIT(2),
+	CSI_TRIG_DATA_CFACKPOLL = BIT(3),
+	CSI_TRIG_DATA_NULL      = BIT(4),
+	CSI_TRIG_CF_ACK         = BIT(5),
+	CSI_TRIG_CF_POLL        = BIT(6),
+	CSI_TRIG_CF_ACKPOLL     = BIT(7),
+	CSI_TRIG_QOS_DATA       = BIT(8),
+	CSI_TRIG_QOS_DATA_NULL	= BIT(12)
+};
 
 /**
   * @brief csi enable or config

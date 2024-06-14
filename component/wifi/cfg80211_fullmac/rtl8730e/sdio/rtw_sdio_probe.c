@@ -138,7 +138,7 @@ static struct recv_buf *rtw_sdio_recv_rxfifo(struct inic_sdio *priv, u32 size)
 		precvbuf->pskb = rtw_skb_alloc(MAX_RECVBUF_SZ + RECVBUFF_ALIGN_SZ);
 
 		if (precvbuf->pskb) {
-			precvbuf->pskb->dev = padapter->pnetdev;
+			precvbuf->pskb->dev = rtw_get_netdev(get_iface_type(padapter));
 
 			tmpaddr = (SIZE_PTR)precvbuf->pskb->data;
 			alignment = tmpaddr & (RECVBUFF_ALIGN_SZ - 1);

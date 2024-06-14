@@ -17,113 +17,71 @@
 uint16_t rtk_bt_mesh_health_fault_get(rtk_bt_mesh_health_fault_get_t *health_fault_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_GET, health_fault_get,
 						  sizeof(rtk_bt_mesh_health_fault_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
-	printf("ret %d \r\n", ret);
+
+	BT_LOGE("ret %d \r\n", ret);
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_fault_clear(rtk_bt_mesh_health_fault_clear_t *health_fault_clear)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_CLEAR, health_fault_clear,
 						  sizeof(rtk_bt_mesh_health_fault_clear_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_fault_test(rtk_bt_mesh_health_fault_test_t *health_fault_test)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_TEST, health_fault_test,
 						  sizeof(rtk_bt_mesh_health_fault_test_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_period_get(rtk_bt_mesh_health_period_get_t *health_period_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_PERIOD_GET, health_period_get,
 						  sizeof(rtk_bt_mesh_health_period_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_period_set(rtk_bt_mesh_health_period_set_t *health_period_set)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_PERIOD_SET, health_period_set,
 						  sizeof(rtk_bt_mesh_health_period_set_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_attn_get(rtk_bt_mesh_health_attn_get_t *health_attn_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_ATTN_GET, health_attn_get,
 						  sizeof(rtk_bt_mesh_health_attn_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_attn_set(rtk_bt_mesh_health_attn_set_t *health_attn_set)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_ATTN_SET, health_attn_set,
 						  sizeof(rtk_bt_mesh_health_attn_set_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 #endif  // RTK_BLE_MESH_PROVISIONER_SUPPORT
@@ -132,80 +90,50 @@ uint16_t rtk_bt_mesh_health_attn_set(rtk_bt_mesh_health_attn_set_t *health_attn_
 uint16_t rtk_bt_mesh_health_server_fault_register(rtk_bt_mesh_health_server_fault_register_act_t *health_fault_register)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_FAULT_REGISTER, health_fault_register,
 						  sizeof(rtk_bt_mesh_health_server_fault_register_act_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_server_fault_clear(rtk_bt_mesh_health_server_fault_clear_act_t *health_fault_clear)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CURRENT_FAULT_CLEAR, health_fault_clear,
 						  sizeof(rtk_bt_mesh_health_server_fault_clear_act_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_server_fault_clear_all(void)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CURRENT_FAULT_CLEAR_ALL, NULL,
 						  0);
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_server_fault_count(rtk_bt_mesh_health_server_count_fault_act_t *fault_count)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_FAULT_COUNT, fault_count,
 						  sizeof(rtk_bt_mesh_health_server_count_fault_act_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_health_server_fault_check(rtk_bt_mesh_health_server_check_fault_act_t *health_fault_check)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CHECK_FAULT_IS_SET, health_fault_check,
 						  sizeof(rtk_bt_mesh_health_server_check_fault_act_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 

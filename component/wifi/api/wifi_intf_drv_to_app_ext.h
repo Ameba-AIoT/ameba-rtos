@@ -366,14 +366,6 @@ int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
 int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
 /**
- * @brief  Set ble scan duty when coex.
- * @param[in]  duty: the desired scan duty for ble
- * @return  1: if the scan duty is successfully set
- * 	-1: if the scan duty is not successfully set.
- */
-int wifi_btcoex_set_ble_scan_duty(u8 duty);
-
-/**
  * @brief  Setup custom ie list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.
@@ -488,6 +480,22 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
  * @return  null.
  */
 void wifi_speaker_setting(u8 mode, u8 thresh, u8 relay_en);
+
+/**
+ * @brief  for user to set tx power
+ * 1. Currently will TX with the set power,  regardless of power by rate and power by limit.
+ * 2. Afterwards, it can be extended to specify rate, or power by limit needs to be considered.
+ * @param[in]  txpwr_ctrl_info: the pointer of rtw_tx_power_ctl_info_t
+ *    b_tx_pwr_force_enbale: 1 for enable, 0 for disable.
+ *    tx_pwr_force: unit 0.25dBm.
+ * @note:
+ *    For amebadplus, the power range varies for different channels or IC, the recommended power range is -2 ~ 23 dBm,
+ *    if exceeds the power range, the power may be inaccurate, and will be changed to the boundary value.
+ *    For amebasmart&amebalite, the recommended power range is -24 ~ 24 dBm.
+ *    For both, we suggest setting the power not to exceed the power by rate table.
+ * @return  RTW_SUCCESS or RTW_ERROR
+ */
+int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
 /**
   * @}
   */

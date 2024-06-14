@@ -530,7 +530,9 @@ typedef struct {
 #define CT_ALL_INT_EN					(CT_MASK_TOUCH_PRESS_INTR_EN | \
 											CT_MASK_TOUCH_RELEASE_INTR_EN | \
 											CT_BIT_OVER_P_NOISE_TH_INTR_EN |\
+											CT_BIT_AFIFO_OVERFLOW_INTR_EN |\
 											CT_BIT_OVER_N_NOISE_TH_INTR_EN |\
+											CT_BIT_AFIFO_OVERLVL_INTR_EN |\
 											CT_BIT_CTC_BRK_BY_ADC_INTR_EN)
 
 #define IS_CT_INT_EN(IT)				(((IT) & ~CT_ALL_INT_EN) == 0)

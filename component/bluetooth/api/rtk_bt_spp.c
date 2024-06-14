@@ -25,7 +25,7 @@ extern uint8_t default_credits;
 uint16_t rtk_bt_spp_init_cfg(uint8_t max_link_num, uint8_t max_service_num, uint16_t mtu_size, uint8_t credits)
 {
 	if (rtk_bt_is_enable()) {
-		printf("[SPP]: rtk_bt_spp_init_cfg should not be invoked after bt enable \r\n");
+		BT_LOGE("[SPP]: rtk_bt_spp_init_cfg should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -40,7 +40,7 @@ uint16_t rtk_bt_spp_init_cfg(uint8_t max_link_num, uint8_t max_service_num, uint
 uint16_t rtk_bt_service_register_cfg(void *spp_service_class_uuid, uint32_t length, uint8_t local_server_chann)
 {
 	if (rtk_bt_is_enable()) {
-		printf("[SPP]: rtk_bt_service_register_cfg should not be invoked after bt enable \r\n");
+		BT_LOGE("[SPP]: rtk_bt_service_register_cfg should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 

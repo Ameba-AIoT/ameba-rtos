@@ -62,6 +62,7 @@ void adc_swtrig_demo(void)
 		/* SW trigger to switch channel and sample */
 		ADC_SWTrigCmd(ENABLE);
 		while (ADC_Readable() == 0);
+		ADC_SWTrigCmd(DISABLE);
 
 		while (ADC_Readable()) {
 
@@ -73,7 +74,6 @@ void adc_swtrig_demo(void)
 
 			printf("AD%lu:0x%lxx => %ldmV\n", adc_idx, adc_data, adc_vol);
 		}
-		ADC_SWTrigCmd(DISABLE);
 
 		DelayMs(500);
 	}

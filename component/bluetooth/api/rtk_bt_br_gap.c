@@ -65,7 +65,7 @@ uint16_t rtk_bt_br_gap_set_page_param(rtk_bt_br_page_param_t *page_param)
 {
 	/* Check bt enable status (rtk_bt_br_gap_set_page_param should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("[BR GAP]: rtk_bt_br_gap_set_page_param should not be invoked after bt enable \r\n");
+		BT_LOGE("[BR GAP]: rtk_bt_br_gap_set_page_param should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -96,7 +96,7 @@ uint16_t rtk_bt_br_gap_set_inquiry_param(rtk_bt_br_inquiry_param_t *inquiry_para
 {
 	/* Check bt enable status (rtk_bt_br_gap_set_inquiry_param should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("[BR GAP]: rtk_bt_br_gap_set_inquiry_param should not be invoked after bt enable \r\n");
+		BT_LOGE("[BR GAP]: rtk_bt_br_gap_set_inquiry_param should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -351,11 +351,11 @@ uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod)
 {
 	/* Check bt enable status (rtk_bt_br_gap_set_cod should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("[BR GAP]: rtk_bt_br_gap_set_cod should not be invoked after bt enable \r\n");
+		BT_LOGE("[BR GAP]: rtk_bt_br_gap_set_cod should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 	if (!bt_cod) {
-		printf("[BR GAP]: bt_cod is NULL \r\n");
+		BT_LOGE("[BR GAP]: bt_cod is NULL \r\n");
 		return RTK_BT_FAIL;
 	}
 
@@ -368,11 +368,11 @@ uint16_t rtk_bt_br_gap_set_supvisiontimeout(uint16_t *supv_timeout)
 {
 	/* Check bt enable status (rtk_bt_br_gap_set_supvisiontimeout should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		printf("[BR GAP]: rtk_bt_br_gap_set_supvisiontimeout should not be invoked after bt enable \r\n");
+		BT_LOGE("[BR GAP]: rtk_bt_br_gap_set_supvisiontimeout should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 	if (!supv_timeout) {
-		printf("[BR GAP]: supv_timeout is NULL \r\n");
+		BT_LOGE("[BR GAP]: supv_timeout is NULL \r\n");
 		return RTK_BT_FAIL;
 	}
 

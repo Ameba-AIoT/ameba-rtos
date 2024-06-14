@@ -61,16 +61,11 @@ void raw_gpio_level_irq_demo(void)
 	GPIO_INTConfig(GPIO_IRQ_LEVEL_PIN, DISABLE);
 	GPIO_InitStruct_IRQ.GPIO_Pin = GPIO_IRQ_LEVEL_PIN;
 	GPIO_InitStruct_IRQ.GPIO_Mode = GPIO_Mode_INT;
+	GPIO_InitStruct_IRQ.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStruct_IRQ.GPIO_ITTrigger = GPIO_INT_Trigger_LEVEL;
 	GPIO_InitStruct_IRQ.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_LOW;
 	GPIO_InitStruct_IRQ.GPIO_ITDebounce = GPIO_INT_DEBOUNCE_ENABLE;
 	GPIO_Init(&GPIO_InitStruct_IRQ);
-
-	if (GPIO_InitStruct_IRQ.GPIO_ITPolarity == GPIO_INT_POLARITY_ACTIVE_LOW) {
-		PAD_PullCtrl(GPIO_IRQ_LEVEL_PIN, GPIO_PuPd_UP);
-	} else {
-		PAD_PullCtrl(GPIO_IRQ_LEVEL_PIN, GPIO_PuPd_DOWN);
-	}
 
 	port_num = PORT_NUM(GPIO_IRQ_LEVEL_PIN);
 	InterruptRegister((IRQ_FUN)GPIO_INTHandler, GPIO_IrqNum[port_num], (u32)GPIO_RegBase[port_num], 6);

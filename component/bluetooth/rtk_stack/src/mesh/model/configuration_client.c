@@ -532,7 +532,7 @@ bool cfg_client_receive(mesh_msg_p pmesh_msg)
 		rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_BEACON_STAT,
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_BEACON_STAT),
 				sizeof(cfg_beacon_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_BEACON_STAT));
-		// printf("length:%d\r\n", sizeof(cfg_beacon_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_BEACON_STAT));
+		// BT_LOGA("length:%d\r\n", sizeof(cfg_beacon_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_BEACON_STAT));
             // cfg_beacon_stat_t *pmsg = (cfg_beacon_stat_t *)pbuffer;
             // data_uart_debug("beacon state: %d\r\n", pmsg->state);
         }
@@ -607,7 +607,7 @@ bool cfg_client_receive(mesh_msg_p pmesh_msg)
                 break;
 compo_data_end:
                 parse = FALSE;
-			// printf("cdp0 of 0x%04x invalid!\r\n", pmesh_msg->src);
+			// BT_LOGE("cdp0 of 0x%04x invalid!\r\n", pmesh_msg->src);
 			pdata_test.flag = 0;
 			rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT,
 					(uint8_t *)(&pdata_test) + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT),
@@ -621,7 +621,7 @@ compo_data_end:
 				sizeof(cfg_default_ttl_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_DEFAULT_TTL_STAT));
             parse = TRUE;
 		//  cfg_default_ttl_stat_t *pmsg = (cfg_default_ttl_stat_t *)pbuffer;
-		//  printf("default ttl: %d\r\n", pmsg->ttl);
+		//  BT_LOGA("default ttl: %d\r\n", pmsg->ttl);
         }
         break;
     case MESH_MSG_CFG_PROXY_STAT:
@@ -631,7 +631,7 @@ compo_data_end:
 				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_PROXY_STAT),
 				sizeof(cfg_proxy_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_PROXY_STAT));
 		//	cfg_proxy_stat_t *pmsg = (cfg_proxy_stat_t *)pbuffer;
-		//	printf("proxy state: %d\r\n", pmsg->state);
+		//	BT_LOGA("proxy state: %d\r\n", pmsg->state);
         }
         break;
 	case MESH_MSG_CFG_RELAY_STAT: {
@@ -640,7 +640,7 @@ compo_data_end:
 				sizeof(cfg_relay_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_RELAY_STAT));
             parse = TRUE;
 		// cfg_relay_stat_t *pmsg = (cfg_relay_stat_t *)pbuffer;
-		// printf("relay state: %d, count = %d step = %d\r\n", pmsg->state, pmsg->count, pmsg->steps);
+		// BT_LOGA("relay state: %d, count = %d step = %d\r\n", pmsg->state, pmsg->count, pmsg->steps);
         }
         break;
 	case MESH_MSG_CFG_NET_TRANS_STAT: {
@@ -649,7 +649,7 @@ compo_data_end:
 				sizeof(cfg_net_transmit_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_NET_TRANS_STAT));
             parse = TRUE;
 		// cfg_net_transmit_stat_t *pmsg = (cfg_net_transmit_stat_t *)pbuffer;
-		// printf("net transmit state: count = %d step = %d\r\n", pmsg->count, pmsg->steps);
+		// BT_LOGA("net transmit state: count = %d step = %d\r\n", pmsg->count, pmsg->steps);
         }
         break;
 	case MESH_MSG_CFG_MODEL_PUB_STAT: {
@@ -659,9 +659,9 @@ compo_data_end:
             cfg_model_pub_stat_t *pmsg = (cfg_model_pub_stat_t *)pbuffer;
 		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
             parse = TRUE;
-			// printf("Pub stat: pub addr = 0x%04x ttl = %d!\r\n", pmsg->pub_addr, pmsg->pub_ttl);
+			// BT_LOGA("Pub stat: pub addr = 0x%04x ttl = %d!\r\n", pmsg->pub_addr, pmsg->pub_ttl);
 		} else {
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -672,9 +672,9 @@ compo_data_end:
             cfg_model_sub_stat_t *pmsg = (cfg_model_sub_stat_t *)pbuffer;
 		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
                 parse = TRUE;
-			// printf("Success!\r\n");
+			// BT_LOGA("Success!\r\n");
 		} else {
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -692,7 +692,7 @@ compo_data_end:
                 parse = TRUE;
                 uint32_t model_id = pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST ?
                                     MESH_MODEL_TRANSFORM(pmsg->model_id) : pmsg->model_id;
-			//	printf("Model sub list: sr 0x%04x element idx %d model id 0x%08x\r\n\t", pmesh_msg->src,
+			//	BT_LOGA("Model sub list: sr 0x%04x element idx %d model id 0x%08x\r\n\t", pmesh_msg->src,
 			//		   pmsg->element_addr - pmesh_msg->src, (unsigned int)model_id);
                 uint16_t len = MEMBER_OFFSET(cfg_model_sub_list_t,
                                              model_id) + (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST ? 2 : 4);
@@ -710,12 +710,12 @@ compo_data_end:
 			model_sub_list[7] = addr_count;
 			uint8_t count = 0;
 			for (uint8_t loop = 0; loop < pmesh_msg->msg_len - len; loop += 2, count++) {
-				// printf(" 0x%04x", LE_EXTRN2WORD(pbuffer + loop));
+				// BT_LOGA(" 0x%04x", LE_EXTRN2WORD(pbuffer + loop));
 				model_sub_list[count + 8] = LE_EXTRN2WORD(pbuffer + loop); 
                 }
 			uint32_t length = sizeof(uint16_t) * (addr_count + 8); 
 			rtk_bt_mesh_config_client_model_indicate_event(event_code, &model_sub_list, length);
-			// printf("\r\n");
+			// BT_LOGA("\r\n");
 		} else {
 
 			uint16_t model_sub_list[4];
@@ -724,7 +724,7 @@ compo_data_end:
 			uint32_t *len_call = (uint32_t *) & model_sub_list[2];
 			*len_call = sizeof(uint16_t) * 4;
 			rtk_bt_mesh_config_client_model_indicate_event(event_code, &model_sub_list, sizeof(uint16_t) * 4);
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -737,9 +737,9 @@ compo_data_end:
                 if (pmsg->stat == MESH_MSG_STAT_SUCCESS)
                 {
                     parse = TRUE;
-				//printf("Success!\r\n");
+				//BT_LOGA("Success!\r\n");
 			} else {
-				//printf("Fail, status = %d!\r\n", pmsg->stat);
+				//BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
                 }
                 }
             }
@@ -763,7 +763,7 @@ compo_data_end:
 			uint32_t *len_call = (uint32_t *) & net_key_list[2]; 
 			*len_call = length; 
 			uint16_t count_flag = 4; 
-			// printf("NetKey List: num = %d!\r\n\t", key_count);
+			// BT_LOGA("NetKey List: num = %d!\r\n\t", key_count);
 			for (uint16_t loop = 0; loop < key_count; loop++) {
                     uint16_t offset = (loop >> 1) * 3;
                     uint16_t key_index;
@@ -776,10 +776,10 @@ compo_data_end:
 					net_key_list[count_flag] = key_index;
                     }
 				count_flag++;
-				// printf(" 0x%03x", key_index);
+				// BT_LOGA(" 0x%03x", key_index);
                 }
 			rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_NET_KEY_LIST, &net_key_list, length);
-			// printf("\r\n");
+			// BT_LOGA("\r\n");
 		} else {
 			uint16_t net_key_list[4];
 			net_key_list[0] = 0;
@@ -787,7 +787,7 @@ compo_data_end:
 			uint32_t *len_call = (uint32_t *) & net_key_list[2];
 			*len_call = 8;
 			rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_NET_KEY_LIST, &net_key_list, 8);
-			// printf("Fail, len = %d!\r\n", len);
+			// BT_LOGE("Fail, len = %d!\r\n", len);
             }
             }
         break;
@@ -799,9 +799,9 @@ compo_data_end:
                 if (pmsg->stat == MESH_MSG_STAT_SUCCESS)
                 {
                     parse = TRUE;
-				// printf("Success!\r\n");
+				// BT_LOGA("Success!\r\n");
 			} else {
-				// printf("Fail, status = %d!\r\n", pmsg->stat);
+				// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
                 }
                 }
             }
@@ -824,7 +824,7 @@ compo_data_end:
 			*len_call = sizeof(uint16_t) * (key_count + 5);
 			app_key_list[4] = key_count;
 
-			// printf("AppKey List: NetKeyIndex = 0x%03x num = %d!\r\n\t", pmsg->net_key_index,
+			// BT_LOGA("AppKey List: NetKeyIndex = 0x%03x num = %d!\r\n\t", pmsg->net_key_index,
             //                     key_count);
 			uint16_t count_flag = 5; 
 			for (uint16_t loop = 0; loop < key_count; loop++) {
@@ -838,12 +838,12 @@ compo_data_end:
                         key_index = LE_EXTRN2WORD(pbuffer + offset + 1) >> 4;
 					app_key_list[count_flag] = key_index;
                     }
-				// printf(" 0x%03x", key_index);
+				// BT_LOGA(" 0x%03x", key_index);
 				count_flag++;
                 }
 			uint32_t length = sizeof(uint16_t) * (key_count + 5); 
 			rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_APP_KEY_LIST, &app_key_list, length);
-			// printf("\r\n");
+			// BT_LOGA("\r\n");
 		} else {
 			uint16_t app_key_list[5];
 			app_key_list[0] = 0;
@@ -852,7 +852,7 @@ compo_data_end:
 			*len_call = sizeof(uint16_t) * 5;
 			app_key_list[4] = len;
 			rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_APP_KEY_LIST, &app_key_list, 10);
-			// printf("Fail, stat = %d len = %d!\r\n", pmsg->stat, len);
+			// BT_LOGE("Fail, stat = %d len = %d!\r\n", pmsg->stat, len);
             }
             }
         break;
@@ -864,10 +864,10 @@ compo_data_end:
 				sizeof(cfg_node_identity_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_NODE_IDENTITY_STAT));
 		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
                 parse = TRUE;
-			//	printf("node identity state: %d on NetKeyIndex 0x%03x\r\n", pmsg->identity,
+			//	BT_LOGA("node identity state: %d on NetKeyIndex 0x%03x\r\n", pmsg->identity,
 			//					pmsg->net_key_index);
 		} else {
-			//	printf("Fail, stat = %d!\r\n", pmsg->stat);
+			//	BT_LOGE("Fail, stat = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -879,9 +879,9 @@ compo_data_end:
             if (pmsg->stat == MESH_MSG_STAT_SUCCESS)
             {
                 parse = TRUE;
-			// printf("Success!\r\n");
+			// BT_LOGA("Success!\r\n");
 		} else {
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -915,7 +915,7 @@ compo_data_end:
 			uint32_t *model_id_pointer = (uint32_t *) & model_app_list[4];
 			*model_id_pointer = model_id;
 			model_app_list[6] = key_count;
-			// printf("Model AppKey List: Element Index = %d model id = 0x%08x num = %d!\r\n\t",
+			// BT_LOGA("Model AppKey List: Element Index = %d model id = 0x%08x num = %d!\r\n\t",
 			// 	   pmsg->element_addr - pmesh_msg->src, (unsigned int)model_id, key_count);
 			uint16_t count_flag = 7; 
 			for (uint16_t loop = 0; loop < key_count; loop++) {
@@ -929,12 +929,12 @@ compo_data_end:
                         key_index = LE_EXTRN2WORD(pbuffer + offset + 1) >> 4;
 					model_app_list[count_flag] = key_index;
                     }
-				// printf(" 0x%03x", key_index);
+				// BT_LOGA(" 0x%03x", key_index);
 				count_flag++;
                 }
 			uint32_t length = sizeof(uint16_t) * (key_count + 7); 
 			rtk_bt_mesh_config_client_model_indicate_event(event_code, &model_app_list, length);
-			// printf("\r\n");
+			// BT_LOGA("\r\n");
 		} else {
 			uint16_t model_app_list[5];
 			model_app_list[0] = 0;
@@ -945,7 +945,7 @@ compo_data_end:
 			uint32_t length = sizeof(uint16_t) * 5;
 
 			rtk_bt_mesh_config_client_model_indicate_event(event_code, &model_app_list, length);
-			// printf("Fail, stat = %d len = %d!\r\n", pmsg->stat, len);
+			// BT_LOGE("Fail, stat = %d len = %d!\r\n", pmsg->stat, len);
             }
             }
         break;
@@ -953,7 +953,7 @@ compo_data_end:
 		rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_NODE_RESET_STAT, &(pmesh_msg->src),
 				sizeof(rtk_bt_mesh_config_client_model_node_reset_stat_t));
             parse = TRUE;
-		// printf("Node 0x%04x reseted!\r\n", pmesh_msg->src);
+		// BT_LOGA("Node 0x%04x reseted!\r\n", pmesh_msg->src);
             /* the device key of the node can be deleted here */
         }
         break;
@@ -973,12 +973,12 @@ compo_data_end:
 				sizeof(cfg_lpn_poll_timeout_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_LPN_POLL_TO_STAT));
             parse = TRUE;
 		//	cfg_lpn_poll_timeout_stat_t *pmsg = (cfg_lpn_poll_timeout_stat_t *)pbuffer;
-		//	printf("fn = 0x%04x lpn = 0x%04x poll_timeout = %d00ms\r\n", pmsg->lpn_addr,
+		//	BT_LOGA("fn = 0x%04x lpn = 0x%04x poll_timeout = %d00ms\r\n", pmsg->lpn_addr,
 		//					pmsg->poll_to[0] + (pmsg->poll_to[1] << 8) + (pmsg->poll_to[2] << 16));
         }
         break;
 	case MESH_MSG_CFG_KEY_REFRESH_PHASE_STAT: { //maybe need create a new struct to callback src
-		// printf("receive key refresh phase stat stat\r\n");
+		// BT_LOGA("receive key refresh phase stat stat\r\n");
             cfg_key_refresh_phase_stat_t *pmsg = (cfg_key_refresh_phase_stat_t *)pbuffer;
 		cfg_key_refresh_phase_stat_t_call pdata;
 		pdata.stat = pmsg->stat;
@@ -990,10 +990,10 @@ compo_data_end:
 				sizeof(cfg_key_refresh_phase_stat_t_call) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_KEY_REFRESH_PHASE_STAT));
 		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
                 parse = TRUE;
-			// printf("Node 0x%04x: NetKeyIndex = 0x%03x state = %d\r\n", pmesh_msg->src,
+			// BT_LOGA("Node 0x%04x: NetKeyIndex = 0x%03x state = %d\r\n", pmesh_msg->src,
             //                     pmsg->net_key_index, pmsg->state);
 		} else {
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -1005,10 +1005,10 @@ compo_data_end:
 				sizeof(cfg_hb_pub_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_HB_PUB_STAT));
 		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
                 parse = TRUE;
-			// printf("Hb: pub dst = 0x%04x ttl = %d NetKeyIndex = 0x%03x\r\n", pmsg->dst, pmsg->ttl,
+			// BT_LOGA("Hb: pub dst = 0x%04x ttl = %d NetKeyIndex = 0x%03x\r\n", pmsg->dst, pmsg->ttl,
             //                     pmsg->net_key_index);
 		} else {
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -1020,10 +1020,10 @@ compo_data_end:
 				sizeof(cfg_hb_sub_stat_t) - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_HB_SUB_STAT));
 		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
                 parse = TRUE;
-			// printf("Hb: sub src = 0x%04x dst = 0x%04x hops range = [%d, %d]r\n", pmsg->src, pmsg->dst,
+			// BT_LOGA("Hb: sub src = 0x%04x dst = 0x%04x hops range = [%d, %d]r\n", pmsg->src, pmsg->dst,
             //                     pmsg->min_hops, pmsg->max_hops);
 		} else {
-			// printf("Fail, status = %d!\r\n", pmsg->stat);
+			// BT_LOGE("Fail, status = %d!\r\n", pmsg->stat);
             }
             }
         break;
@@ -1034,7 +1034,7 @@ compo_data_end:
 
 	if (ret == TRUE) {
 		if (parse == FALSE) {
-			printf("cfg_client_receive: opcode = 0x%x, len = %d, value = ", (unsigned int)pmesh_msg->access_opcode,
+			BT_LOGA("cfg_client_receive: opcode = 0x%x, len = %d, value = ", (unsigned int)pmesh_msg->access_opcode,
                             pmesh_msg->msg_len);
             data_uart_dump(pbuffer, pmesh_msg->msg_len);
         }

@@ -225,6 +225,9 @@ u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);
 /* Get device descriptor data */
 usbh_dev_desc_t *usbh_get_device_descriptor(usb_host_t *host);
 
+/* Get device speed */
+u32 usbh_get_device_speed(usb_host_t *host);
+
 /* Get current sof number */
 u32 usbh_get_current_frame(usb_host_t *host);
 

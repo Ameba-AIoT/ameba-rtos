@@ -17,144 +17,90 @@
 uint16_t rtk_bt_mesh_sensor_descriptor_get(rtk_bt_mesh_sensor_descriptor_get_t *sensor_descriptor_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_DESCRIPTOR_CLIENT_MODEL_GET, sensor_descriptor_get,
 						  sizeof(rtk_bt_mesh_sensor_descriptor_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_cadence_get(rtk_bt_mesh_sensor_cadence_get_t *sensor_cadence_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_GET, sensor_cadence_get,
 						  sizeof(rtk_bt_mesh_sensor_cadence_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_cadence_set(rtk_bt_mesh_sensor_cadence_set_t *sensor_cadence_set)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_SET, sensor_cadence_set,
 						  sizeof(rtk_bt_mesh_sensor_cadence_set_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_settings_get(rtk_bt_mesh_sensor_settings_get_t *sensor_settings_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTINGS_CLIENT_MODEL_GET, sensor_settings_get,
 						  sizeof(rtk_bt_mesh_sensor_settings_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_setting_get(rtk_bt_mesh_sensor_setting_get_t *sensor_setting_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_GET, sensor_setting_get,
 						  sizeof(rtk_bt_mesh_sensor_setting_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_setting_set(rtk_bt_mesh_sensor_setting_set_t *sensor_setting_set)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_SET, sensor_setting_set,
 						  sizeof(rtk_bt_mesh_sensor_setting_set_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_get(rtk_bt_mesh_sensor_get_t *sensor_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CLIENT_MODEL_GET, sensor_get,
 						  sizeof(rtk_bt_mesh_sensor_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_column_get(rtk_bt_mesh_sensor_column_get_t *sensor_column_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_COLUMN_CLIENT_MODEL_GET, sensor_column_get,
 						  sizeof(rtk_bt_mesh_sensor_column_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 
 uint16_t rtk_bt_mesh_sensor_series_get(rtk_bt_mesh_sensor_series_get_t *sensor_series_get)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SERIES_CLIENT_MODEL_GET, sensor_series_get,
 						  sizeof(rtk_bt_mesh_sensor_series_get_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 #endif  // BT_MESH_ENABLE_SENSOR_CLIENT_MODEL
@@ -163,16 +109,10 @@ uint16_t rtk_bt_mesh_sensor_series_get(rtk_bt_mesh_sensor_series_get_t *sensor_s
 uint16_t rtk_bt_mesh_sensor_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *sensor_db_set)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_ACT_DB_SET, sensor_db_set,
 						  sizeof(rtk_bt_mesh_sensor_server_db_set_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 #endif // BT_MESH_ENABLE_SENSOR_SERVER_MODEL
@@ -181,16 +121,10 @@ uint16_t rtk_bt_mesh_sensor_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *se
 uint16_t rtk_bt_mesh_sensor_setup_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *sensor_db_set)
 {
 	uint16_t ret;
-	if (!rtk_bt_mesh_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SETUP_SERVER_MODEL_ACT_DB_SET, sensor_db_set,
 						  sizeof(rtk_bt_mesh_sensor_server_db_set_t));
-	if (ret & RTK_BT_STACK_MESH_ERROR_FLAG) {
-		ret = ret & 0xff;
-	} else {
-		printf("other error:0x%x\r\n", ret);
-	}
+
 	return ret;
 }
 #endif // BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL

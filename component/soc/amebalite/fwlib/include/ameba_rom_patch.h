@@ -24,6 +24,7 @@
   */
 
 // add your function statements here
+_LONG_CALL_ void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct);
 _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 _LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);

@@ -19,6 +19,7 @@
 /* Macro defines -----------------------------------------------------------*/
 #define ECM_ENABLE_PACKETFILTER                                 (0)
 
+/* for RTL8156BG, use this to allow ping/UDP data transfer */
 #define ECM_ENABLE_RCR_CONFIGURATION                            (0)
 
 /* Exported defines ----------------------------------------------------------*/
@@ -240,6 +241,7 @@ typedef struct {
 	u32                                 bulk_data_out_len;
 	u8                                  bulk_out_zlp;
 	u8                                  *bulk_data_out_buf;
+	u32                                 bulk_out_idle_tick;
 	u32                                 bulk_data_out_state;
 
 	u8                                  *bulk_data_in_buf;
@@ -272,12 +274,10 @@ int usbh_cdc_ecm_get_ethernet_statistic(u16 selector);
 #endif
 #if ECM_ENABLE_RCR_CONFIGURATION
 int usbh_cdc_ecm_get_rcr(void);
-int usbh_cdc_ecm_set_rcr(void)
+int usbh_cdc_ecm_set_rcr(void);
 #endif
 int usbh_cdc_ecm_set_ethernet_start_transfer(void);
 int usbh_cdc_ecm_alt_setting(void);
-int usbh_cdc_ecm_bulk_in_processing(void);
-int usbh_cdc_ecm_intr_in_processing(void);
 
 int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
 int usbh_cdc_ecm_bulk_receive(void);

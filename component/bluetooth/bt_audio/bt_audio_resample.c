@@ -4,6 +4,7 @@
 *******************************************************************************
 */
 #include <osif.h>
+#include <bt_debug.h>
 #include "bt_audio_resample.h"
 
 #define SRC_MIN_RATIO_DIFF      (1e-20)
@@ -67,7 +68,7 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(float in_rate, float out_ra
 
 	presample = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_bt_audio_resample_t));
 	if (!presample) {
-		printf("%s allocate bt audio resample struct fail \r\n", __func__);
+		BT_LOGE("%s allocate bt audio resample struct fail \r\n", __func__);
 		return NULL;
 	} else {
 		memset((void *)presample, 0, sizeof(rtk_bt_audio_resample_t));
@@ -92,7 +93,7 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(float in_rate, float out_ra
 void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample)
 {
 	if (!presample) {
-		printf("%s presample is NULL \r\n", __func__);
+		BT_LOGE("%s presample is NULL \r\n", __func__);
 		return;
 	}
 	osif_mem_free(presample);
@@ -107,7 +108,7 @@ uint16_t rtk_bt_audio_bq_config(rtk_bt_audio_biquad_t *filter, int type, float g
 	double a0, a1, a2, b0, b1, b2;
 
 	if (!filter) {
-		printf("%s input bq filter is NULL \r\n", __func__);
+		BT_LOGE("%s input bq filter is NULL \r\n", __func__);
 		return 1;
 	}
 	/* setup variables */
@@ -191,7 +192,7 @@ uint16_t rtk_bt_audio_bq_config(rtk_bt_audio_biquad_t *filter, int type, float g
 	break;
 
 	default:
-		printf("%s unkonw filter type %d \r\n", __func__, type);
+		BT_LOGE("%s unkonw filter type %d \r\n", __func__, type);
 		return 1;
 	}
 	filter->a0 = b0 / a0;
@@ -228,7 +229,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 	int output_frames = 0;
 
 	if (!presample || !input || !output) {
-		printf("%s input or output or presample is NULL \r\n", __func__);
+		BT_LOGE("%s input or output or presample is NULL \r\n", __func__);
 		return 0;
 	}
 	output_frames = (int)((float)out_rate / (float)in_rate + 1) * input_frames;
@@ -238,7 +239,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 	temp_src_ratio = presample->last_ratio;
 	input_index = presample->last_position;
 
-	// printf ("%s in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 
 	while (input_index < 1.0 && out_gen < out_count) {
@@ -258,7 +259,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 	rem = fmod_one(input_index);
 	in_used += channels * lrint(input_index - rem);
 	input_index = rem;
-	// printf ("%s Main in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Main in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	/* Main processing loop. */
 	while (out_gen < out_count && in_used + channels * input_index < in_count) {
@@ -267,7 +268,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 		}
 
 		if (in_used < (long)channels && input_index < 1.0) {
-			printf("%s Something unexpected happened in_used : %ld     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
+			BT_LOGE("%s Something unexpected happened in_used : %ld     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
 			return 0;
 		};
 
@@ -281,7 +282,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 		in_used += channels * lrint(input_index - rem);
 		input_index = rem;
 	};
-	// printf ("%s Out in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Out in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	if (in_used > in_count) {
 		input_index += (in_used - in_count) / channels;
@@ -310,7 +311,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 	int output_frames = 0;
 
 	if (!presample || !input || !output) {
-		printf("%s input or output or presample is NULL \r\n", __func__);
+		BT_LOGE("%s input or output or presample is NULL \r\n", __func__);
 		return 0;
 	}
 	output_frames = (int)((float)out_rate / (float)in_rate + 1) * input_frames;
@@ -320,7 +321,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 	temp_src_ratio = presample->last_ratio;
 	input_index = presample->last_position;
 
-	// printf ("%s in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 
 	while (input_index < 1.0 && out_gen < out_count) {
@@ -340,7 +341,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 	rem = fmod_one(input_index);
 	in_used += channels * lrint(input_index - rem);
 	input_index = rem;
-	// printf ("%s Main in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Main in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	/* Main processing loop. */
 	while (out_gen < out_count && in_used + channels * input_index < in_count) {
@@ -349,7 +350,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 		}
 
 		if (in_used < (long)channels && input_index < 1.0) {
-			printf("%s Something unexpected happened in_used : %ld     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
+			BT_LOGE("%s Something unexpected happened in_used : %ld     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
 			return 0;
 		};
 
@@ -363,7 +364,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 		in_used += channels * lrint(input_index - rem);
 		input_index = rem;
 	};
-	// printf ("%s Out in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Out in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	if (in_used > in_count) {
 		input_index += (in_used - in_count) / channels;

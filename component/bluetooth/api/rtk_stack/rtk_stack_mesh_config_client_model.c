@@ -35,7 +35,7 @@ uint16_t bt_mesh_config_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -208,7 +208,7 @@ uint16_t bt_mesh_config_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 								 mesh_node.net_key_list[app_key_update->net_key_index].net_key_index_g,
 								 mesh_node.app_key_list[app_key_update->app_key_index].app_key_index_g,
 								 app_key_update->app_key);
-		printf("ret:%d", ret);
+		BT_LOGA("ret:%d", ret);
 		break;
 	}
 	case RTK_BT_MESH_CONFIG_MODEL_APP_KEY_DELETE: {
@@ -279,7 +279,7 @@ uint16_t bt_mesh_config_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		key_refresh_phase_set = (rtk_bt_mesh_config_client_model_key_refresh_phase_set_t *)p_cmd->param;
 		ret = cfg_key_refresh_phase_set(key_refresh_phase_set->dst, mesh_node.net_key_list[key_refresh_phase_set->net_key_index].net_key_index_g,
 										key_refresh_phase_set->state);
-		printf("ret:%d", ret);
+		BT_LOGA("ret:%d", ret);
 		break;
 	}
 	case RTK_BT_MESH_CONFIG_MODEL_HB_PUB_GET: {
@@ -311,10 +311,9 @@ uint16_t bt_mesh_config_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);

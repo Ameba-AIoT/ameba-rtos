@@ -177,6 +177,7 @@ ifeq ($(CONFIG_BT_LE_AUDIO), y)
 	make -C ble_audio clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_ISO_TEST), y)
 	make -C ble_iso clean
@@ -188,16 +189,19 @@ ifeq ($(CONFIG_BT_A2DP), y)
 	make -C bt_a2dp clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_A2DP_PROVISIONER_SCATTERNET), y)
 	make -C bt_a2dp_provisioner_scatternet clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_A2DP_HFP), y)
 	make -C bt_a2dp_hfp clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_SPP), y)
 	make -C bt_spp clean
@@ -209,28 +213,33 @@ ifeq ($(CONFIG_BT_HFP), y)
 	make -C bt_hfp clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_A2DP_SCATTERNET), y)
 	make -C bt_a2dp_scatternet clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_AUDIO_MP_TEST), y)
 	make -C bt_audio_mp_test clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_PBP), y)
 	make -C ble_audio_common clean
 	make -C bt_a2dp_pbp clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_A2DP_LE_AUDIO_TMAP), y)
 	make -C ble_audio_common clean
 	make -C bt_a2dp_tmap clean
 	make -C bt_audio clean
 	make -C bt_audio/bt_codec clean
+	make -C bt_audio/audio_sync clean
 endif
 ifeq ($(CONFIG_BT_PTS), y)
 	make -C bt_pts clean

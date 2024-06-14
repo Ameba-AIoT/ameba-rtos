@@ -18,8 +18,8 @@
 #include <stdio.h>
 
 #define TEST_BUF_SIZE		2048
-#define SCLK_FREQ			1000000
-#define TEST_LOOP			100
+#define SCLK_FREQ			100000
+#define TEST_LOOP			10
 
 #if SPI_IS_AS_MASTER
 spi_t spi_master;
@@ -164,13 +164,10 @@ void spi_multislave_task(void)
 			i++;
 		}
 		printf("SPI Master Write Done!!\r\n");
-		if (Counter % 2) {
-			gpio_write(&spi_cs0, 1);
-			gpio_write(&spi_cs1, 0);
-		} else {
-			gpio_write(&spi_cs0, 0);
-			gpio_write(&spi_cs1, 1);
-		}
+
+		gpio_write(&spi_cs0, 1);
+		gpio_write(&spi_cs1, 1);
+
 		wait_ms(4000);
 		Counter++;
 	}
@@ -202,8 +199,11 @@ void spi_multislave_task(void)
 		while (TrDone == 0) {
 			wait_ms(100);
 			i++;
-			if (i > 150) {
+			if (i > 60) {
 				printf("SPI Slave Wait Timeout\r\n");
+
+				/* clear sw_busy_flag, to fix slave register interrupt assert warning after timeout happened */
+				spi_slave.state &= ~SPI_STATE_RX_BUSY;
 				break;
 			}
 		}

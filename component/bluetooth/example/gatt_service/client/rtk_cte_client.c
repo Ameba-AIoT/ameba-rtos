@@ -15,6 +15,8 @@
 #include <rtk_bt_gattc.h>
 #include <rtk_client_config.h>
 #include <rtk_cte_client.h>
+#include <rtk_gcs_client.h>
+#include <bt_utils.h>
 
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 
@@ -76,7 +78,7 @@ static uint16_t cte_client_char_find(uint16_t conn_handle)
 		.is_uuid16 = true,
 	};
 	uint8_t conn_id;
-	simple_ble_client_db_t *conn_cte_db;
+	cte_client_db_t *conn_cte_db;
 
 	if (rtk_bt_le_gap_get_conn_id(conn_handle, &conn_id) != RTK_BT_OK) {
 		return RTK_BT_FAIL;
@@ -98,9 +100,14 @@ static uint16_t cte_client_char_find(uint16_t conn_handle)
 		find_param.find_char.char_uuid = char_uuid;
 		if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 			conn_cte_db->char_db[i].char_val_handle = char_handle;
-			printf("[APP] CTE characteristic uuid %u handle is 0x%04x.\r\n", char_uuid.p.uuid16, char_handle);
+			BT_LOGA("[APP] CTE characteristic uuid %u handle is 0x%04x.\r\n", char_uuid.p.uuid16, char_handle);
+			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+						find_param.type, find_param.conn_handle,
+						find_param.find_char.srv_uuid.p.uuid16,
+						find_param.find_char.char_uuid.p.uuid16,
+						char_handle);
 		} else {
-			printf("[APP] Find CTE characteristic uuid %u fail.\r\n");
+			BT_LOGE("[APP] Find CTE characteristic uuid %u fail.\r\n");
 		}
 	}
 
@@ -211,7 +218,7 @@ static void cte_client_discover_res_hdl(void *data)
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
 
 	if (disc_res->is_found) {
-		printf("[APP] CTE client discover all success\r\n");
+		BT_LOGA("[APP] CTE client discover all success\r\n");
 		cte_client_attach_conn(disc_res->conn_handle);
 		cte_client_char_find(disc_res->conn_handle);
 	}
@@ -251,27 +258,27 @@ static void cte_client_discover_res_hdl(void *data)
 			switch (uuid) {
 			case CTE_ENABLE_CHAR_UUID:
 				char_db = &conn_cte_db->char_db[CTE_CHAR_CTE_ENABLE];
-				printf("[APP] CTE_ENABLE_CHAR_UUID discover success\r\n");
+				BT_LOGA("[APP] CTE_ENABLE_CHAR_UUID discover success\r\n");
 				break;
 			case CTE_ADV_INTERVAL_CHAR_UUID:
 				char_db = &conn_cte_db->char_db[CTE_CHAR_CTE_ADV_INTERVAL];
-				printf("[APP] CTE_ADV_INTERVAL_CHAR_UUID discover success\r\n");
+				BT_LOGA("[APP] CTE_ADV_INTERVAL_CHAR_UUID discover success\r\n");
 				break;
 			case CTE_ADV_MIN_LEN_CHAR_UUID:
 				char_db = &conn_cte_db->char_db[CTE_CHAR_CTE_ADV_MIN_LEN];
-				printf("[APP] CTE_ADV_MIN_LEN_CHAR_UUID discover success\r\n");
+				BT_LOGA("[APP] CTE_ADV_MIN_LEN_CHAR_UUID discover success\r\n");
 				break;
 			case CTE_ADV_MIN_TX_CNT_CHAR_UUID:
 				char_db = &conn_cte_db->char_db[CTE_CHAR_CTE_ADV_MIN_TX_CNT];
-				printf("[APP] CTE_ADV_MIN_TX_CNT_CHAR_UUID discover success\r\n");
+				BT_LOGA("[APP] CTE_ADV_MIN_TX_CNT_CHAR_UUID discover success\r\n");
 				break;
 			case CTE_ADV_PHY_CHAR_UUID:
 				char_db = &conn_cte_db->char_db[CTE_CHAR_CTE_ADV_PHY];
-				printf("[APP] CTE_ADV_PHY_CHAR_UUID discover success\r\n");
+				BT_LOGA("[APP] CTE_ADV_PHY_CHAR_UUID discover success\r\n");
 				break;
 			case CTE_ADV_TX_DURATION_CHAR_UUID:
 				char_db = &conn_cte_db->char_db[CTE_CHAR_CTE_ADV_TX_DURATION];
-				printf("[APP] CTE_ADV_TX_DURATION_CHAR_UUID discover success\r\n");
+				BT_LOGA("[APP] CTE_ADV_TX_DURATION_CHAR_UUID discover success\r\n");
 				break;
 			default:
 				break;
@@ -291,20 +298,23 @@ static void cte_client_discover_res_hdl(void *data)
 		case RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID:
 			if (0 == conn_cte_db->start_handle && 0 == conn_cte_db->end_handle) {
 				conn_cte_db->disc_state = DISC_FAILED;
-				printf("[APP] CTE client discover service failed\r\n");
+				BT_LOGE("[APP] CTE client discover service failed\r\n");
 			} else {
 				cte_client_charac_discover(conn_handle);
 			}
 			break;
 		case RTK_BT_GATT_DISCOVER_CHARACTERISTIC_ALL:
 			conn_cte_db->disc_state = DISC_DONE;
-			printf("[APP] CTE client discover all success\r\n");
+			BT_LOGA("[APP] CTE client discover all success\r\n");
 			break;
 		default:
 			break;
 		}
 	}
 
+#if defined(CTE_CLIENT_SHOW_DETAIL) && CTE_CLIENT_SHOW_DETAIL
+	general_client_discover_res_hdl(data);
+#endif
 #endif /* #if RTK_BLE_MGR_LIB */
 }
 
@@ -331,12 +341,14 @@ static void cte_client_write_res_hdl(void *data)
 		uint8_t i;
 		for (i = 0; i < CTE_CHAR_NUM; ++i) {
 			if (att_handle == conn_cte_db->char_db[i].char_val_handle) {
-				printf("[APP] CTE client write characteristic uuid 0x%04x success\r\n", cte_char_uuid_arr[i]);
+				BT_LOGA("[APP] CTE client write characteristic uuid 0x%04x success\r\n", cte_char_uuid_arr[i]);
+				BT_AT_PRINT("+BLEGATTC:write,%u,0x%04x,%u\r\n",
+							conn_handle, write_res->handle, write_status);
 				break;
 			}
 		}
 	} else if (RTK_BT_STATUS_FAIL == write_status) {
-		printf("[APP] CTE client write characteristic fail, err_code %u\r\n", write_res->err_code);
+		BT_LOGE("[APP] CTE client write characteristic fail, err_code %u\r\n", write_res->err_code);
 	}
 }
 
@@ -414,7 +426,7 @@ uint16_t cte_client_write_charac(uint16_t conn_handle,
 	}
 
 	if (conn_cte_db->disc_state != DISC_DONE) {
-		printf("[APP] CTE client need discover service before write charac !!!\r\n");
+		BT_LOGE("[APP] CTE client need discover service before write charac !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 

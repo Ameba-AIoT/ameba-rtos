@@ -32,6 +32,7 @@ CSRC = $(XM_DIR)/floader_fw_update.c \
 	$(RAM_COM_DIR)/ameba_ipc_ram.c \
 	$(DRVDIR)/ameba_arch.c \
 	$(RAM_COM_DIR)/ameba_reset.c \
+	$(RAM_COM_DIR)/ameba_codec.c \
 	$(SWLIB_DIR)/log.c \
 	$(TAR_DIR)/floader_nor_ftl.c \
 	$(TAR_DIR)/ameba_floader.c \

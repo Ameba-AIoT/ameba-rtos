@@ -45,10 +45,18 @@ extern void *bt_log_mtx;
 #define BT_LOGA(fmt,...)  BT_LOG_PRINT(BT_LOG_LEVEL_ALWAYS, fmt, ##__VA_ARGS__)
 #define BT_LOGE(fmt,...)  BT_LOG_PRINT(BT_LOG_LEVEL_ERROR, fmt, ##__VA_ARGS__)
 #define BT_LOGD(fmt,...)  BT_LOG_PRINT(BT_LOG_LEVEL_DEBUG, fmt, ##__VA_ARGS__)
+
+/* [60344458] 01 02 0a 0b ...*/
 #define BT_DUMPD(_str, _buf, _len) BT_BUF_PRINT(BT_LOG_LEVEL_DEBUG, _str, _buf, _len)
+/* 01 02 0a 0b ...*/
 #define BT_DUMPA(_str, _buf, _len) rtk_bt_log_dump(1, _str, _buf, _len)
+/* 0201 0b0a ...*/
 #define BT_DUMP16A(_str, _buf, _len) rtk_bt_log_dump(2, _str, _buf, _len)
+/* 04030201 0d0c0b0a ...*/
 #define BT_DUMP32A(_str, _buf, _len) rtk_bt_log_dump(4, _str, _buf, _len)
+
+/* if _inverse is true, dump from high address to low address. otherwise dump from low address to high address */
+#define BT_DUMPHEXA(_str, _buf, _len, _inverse) rtk_bt_log_dumphex(_str, _buf, _len, _inverse)
 
 
 #define CFG_SW_USE_FLASH_PATCH   BIT0
@@ -66,6 +74,7 @@ extern uint32_t hci_cfg_sw_val;
 void rtk_bt_log_init(void);
 void rtk_bt_log_deinit(void);
 void rtk_bt_log_dump(uint8_t unit, const char *str, void *buf, uint16_t len);
+void rtk_bt_log_dumphex(const char *str, void *buf, uint16_t len, bool reverse);
 
 void rtk_bt_fw_log_open(void);
 void rtk_bt_fw_log_close(void);

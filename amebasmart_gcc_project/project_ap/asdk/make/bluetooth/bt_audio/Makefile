@@ -20,6 +20,7 @@ MODULE_IFLAGS += \
 	-I$(BT_DIR)/rtk_stack/inc/bluetooth/leaudio \
 	-I$(BT_AUDIO_DIR)/include \
 	-I$(BT_AUDIO_DIR)/bt_codec \
+	-I$(BT_AUDIO_DIR)/audio_sync \
 	-I$(AUDIO_HAL_DIR)/interfaces \
 	-I$(AUDIO_HAL_DIR)/base/osal/osal_c/interfaces \
 	-I$(BT_CODEC_SBC)/decoder/include \

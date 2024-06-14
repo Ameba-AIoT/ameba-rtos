@@ -144,7 +144,8 @@ void kfree_skb(struct sk_buff *skb);
 struct sk_buff *skb_clone(struct sk_buff *skb, int gfp_mask);
 struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int reserve_len);
 void dev_kfree_skb_any(struct sk_buff *skb);
-void init_skb_pool(void);
+void init_skb_pool(uint32_t skb_num_np);
 void deinit_skb_pool(void);
-
+void *get_buf_from_poll(struct list_head *phead, int *count, u8 is_skb_data);
+void release_buf_to_poll(unsigned char *buf, struct list_head *phead, int *count, u8 is_skb_data);
 #endif //__SKBUFF_H__

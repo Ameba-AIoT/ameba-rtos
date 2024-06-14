@@ -135,6 +135,10 @@ static void print_wifi_setting(unsigned char wlan_idx, rtw_wifi_setting_t *pSett
 	} else if (pSetting->security_type == (WPA3_SECURITY | ENTERPRISE_ENABLED)) {
 		at_printf("  SECURITY => WPA3 ENTERPRISE\r\n");
 #endif
+#ifdef CONFIG_OWE_SUPPORT
+	} else if (pSetting->security_type == RTW_SECURITY_WPA3_OWE) {
+		at_printf("  SECURITY => WPA3-OWE\r\n");
+#endif
 	} else {
 		at_printf("  SECURITY => UNKNOWN\r\n");
 	}
@@ -181,6 +185,9 @@ static void print_scan_result(rtw_scan_result_t *record)
 			  (record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WPA3-SAE AES" :
 			  (record->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
 			  (record->security == (WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA3 Enterprise" :
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+			  (record->security == RTW_SECURITY_WPA3_OWE) ? "WPA3-OWE" :
 #endif
 			  "Unknown            ");
 
@@ -230,11 +237,13 @@ static rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *u
 static void at_wlconn_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLCONN=<ssid>,<pwd>[,<key_id>,<bssid>]\r\n");
-	at_printf("\t<ssid>:\t The wifi ssid, this parameter can not be empty\r\n");
-	at_printf("\t<pwd>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
+	at_printf("AT+WLCONN=[<type>,<value>,<type>,<value>......]\r\n");
+	at_printf("\t<type>:\tA string as \"ssid\",\"bssid\",\"pw\",\"key_id\",\"ch\"\r\n");
+	at_printf("\t<value>:\tAny type of <ssid>, <bssid>, <pw>, <key_id>, <channel>\r\n");
+	at_printf("\t<ssid>:\tA string SSID name\r\n");
+	at_printf("\t<bssid>:\tA hex-number string with colons, e.g. 1a:2b:3c:4d:5e:6f\r\n");
+	at_printf("\t<pw>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
 	at_printf("\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
-	at_printf("\t<bssid>:\tA hexnumber of 6 bytes, e.g. \"11aa22cc33ee\"\r\n");
 }
 
 /****************************************************************
@@ -246,13 +255,10 @@ AT command process:
 ****************************************************************/
 void at_wlconn(void *arg)
 {
-	const int ssid_idx = 1, password_idx = 2, keyid_idx = 3, bssid_idx = 4, channel_idx = 5;
-	int argc = 0, error_no = 0, ret = 0, i = 0;
-	unsigned char channel = 0;
+	int argc = 0, error_no = 0, ret = 0, i = 0, j = 0, k = 0;
 	unsigned int mac[ETH_ALEN];
 	char *argv[MAX_ARGC] = {0};
 	char empty_bssid[6] = {0};
-	char assoc_by_bssid = 0;
 	unsigned long tick1 = rtos_time_get_current_system_time_ms();
 	unsigned long tick2;
 #ifdef CONFIG_LWIP_LAYER
@@ -267,58 +273,72 @@ void at_wlconn(void *arg)
 	}
 
 	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 6)) {
+	if ((argc < 2) || (argc > 11)) {
 		RTK_LOGW(NOTAG, "[+WLCONN] The parameters format ERROR\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	/* SSID */
-	wifi.ssid.len = strlen(argv[ssid_idx]);
-	if ((argv[ssid_idx] == NULL) || (wifi.ssid.len >= INIC_MAX_SSID_LENGTH)) {
-		RTK_LOGW(NOTAG, "[+WLCONN] Invalid SSID\r\n");
-		error_no = 2;
-		goto end;
-	}
-	strncpy((char *)wifi.ssid.val, argv[ssid_idx], sizeof(wifi.ssid.val) - 1);
-
-	/* Password (maybe not exist) */
-	if ((argc > password_idx) && (argv[password_idx] != NULL)) {
-		strncpy((char *)password, argv[password_idx], sizeof(password) - 1);
-		wifi.password = password;
-		wifi.password_len = strlen(argv[password_idx]);
-	}
-
-	/* KEYID (maybe not exist) */
-	if ((argc > keyid_idx) && (argv[keyid_idx] != NULL)) {
-		if ((strlen(argv[keyid_idx]) != 1) || (*(char *)argv[keyid_idx] < '0' || *(char *)argv[keyid_idx] > '3')) {
-			RTK_LOGW(NOTAG, "[+WLCONN] Invalid KEYID\r\n");
+	/* The parameters appear by pairs, so i += 2. */
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* next i. */
+		/* SSID. */
+		if (0 == strcmp("ssid", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= INIC_MAX_SSID_LENGTH)) {
+				RTK_LOGW(NOTAG, "[+WLCONN] Invalid SSID\r\n");
+				error_no = 2;
+				goto end;
+			}
+			wifi.ssid.len = strlen(argv[j]);
+			strncpy((char *)wifi.ssid.val, argv[j], sizeof(wifi.ssid.val) - 1);
+		}
+		/* BSSID. */
+		else if (0 == strcmp("bssid", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) != 17)) {
+				RTK_LOGW(NOTAG, "[+WLCONN] Invalid BSSID\r\n");
+				error_no = 2;
+				goto end;
+			}
+			_sscanf_ss(argv[j], MAC_FMT, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+			for (k = 0; k < ETH_ALEN; k++) {
+				wifi.bssid.octet[k] = mac[k] & 0xFF;
+			}
+		}
+		/* password. */
+		else if (0 == strcmp("pw", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) == 0)) {
+				RTK_LOGW(NOTAG, "[+WLCONN] Invalid password\r\n");
+				error_no = 2;
+				goto end;
+			}
+			strncpy((char *)password, argv[j], sizeof(password) - 1);
+			wifi.password = password;
+			wifi.password_len = strlen(argv[j]);
+		}
+		/* Key ID. */
+		else if (0 == strcmp("key_id", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) != 1)
+				|| (*(char *)argv[j] < '0') || (*(char *)argv[j] > '3')) {
+				RTK_LOGW(NOTAG, "[+WLCONN] Invalid KEYID\r\n");
+				error_no = 2;
+				goto end;
+			}
+			wifi.key_id = atoi(argv[j]);
+		}
+		/* Channel. */
+		else if (0 == strcmp("ch", argv[i])) {
+			if ((argc > j) && (strlen(argv[j]) != 0)) {
+				wifi.channel = (unsigned char)atoi(argv[j]);
+			}
+		}
+		/* Invalid input. */
+		else {
+			RTK_LOGW(NOTAG, "[+WLCONN] Invalid parameter type\r\n");
 			error_no = 2;
 			goto end;
 		}
-		wifi.key_id = atoi(argv[keyid_idx]);
 	}
 
-	/* BSSID (maybe not exist) */
-	if ((argc > bssid_idx) && (argv[bssid_idx] != NULL)) {
-		if (strlen(argv[bssid_idx]) != 12) {
-			RTK_LOGW(NOTAG, "[+WLCONN] Invalid BSSID\r\n");
-			error_no = 2;
-			goto end;
-		}
-		_sscanf_ss(argv[bssid_idx], MAC_FMT, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-		for (i = 0; i < ETH_ALEN; i++) {
-			wifi.bssid.octet[i] = mac[i] & 0xFF;
-		}
-	}
-
-	/* Channel (maybe not exist) */
-	if ((argc > channel_idx) && (argv[channel_idx] != NULL)) {
-		channel = (unsigned char)atoi(argv[channel_idx]);
-	}
-	wifi.channel = channel;
-
-	/* Connect to network */
 	p_wifi_setting = (struct _rtw_wifi_setting_t *)rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
 	if (p_wifi_setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLCONN] alloc p_wifi_setting fail\r\n");
@@ -326,10 +346,8 @@ void at_wlconn(void *arg)
 		goto end;
 	}
 
-	/* Check bssid */
-	if (memcmp(wifi.bssid.octet, empty_bssid, sizeof(empty_bssid))) {
-		assoc_by_bssid = 1;
-	} else if (wifi.ssid.val[0] == 0) {
+	/* Check bssid is empty && ssid is null */
+	if (!memcmp(wifi.bssid.octet, empty_bssid, sizeof(empty_bssid)) && (wifi.ssid.val[0] == 0)) {
 		RTK_LOGW(NOTAG, "[+WLCONN] SSID should exist here\r\n");
 		error_no = 3;
 		goto end;
@@ -356,11 +374,6 @@ void at_wlconn(void *arg)
 	}
 
 	/* Connecting ...... */
-	if (assoc_by_bssid) {
-		RTK_LOGI(NOTAG, "Joining BSS by BSSID "MAC_FMT" ...\r\n", MAC_ARG(wifi.bssid.octet));
-	} else {
-		RTK_LOGI(NOTAG, "Joining BSS by SSID %s...\r\n", (char *)wifi.ssid.val);
-	}
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTW_SUCCESS) {
 		if (ret == RTW_INVALID_KEY) {
@@ -463,8 +476,44 @@ void at_wlscan_help(void)
 {
 	at_printf("\r\n");
 	at_printf("AT+WLSCAN\r\n");
-	at_printf("AT+WLSCAN=<num_channel>[,chl1,chl2,chl3,......]\r\n");
-	at_printf("\tIf add parameters, the length of chlx list must be same as <num_channel>\r\n");
+	at_printf("AT+WLSCAN=[<type>,<ssid>,<type>,<chl1>:<chl2>:<chl3>:......]\r\n");
+	at_printf("\t<type>:\tIt may be \"ssid\" or \"ch\"\r\n");
+	at_printf("\t\tIf the <type> is \"ssid\", it should be the 1st parameter\r\n");
+	at_printf("\t\tIf the <type> is \"ch\", it is followed by channel list\r\n");
+	at_printf("\t\tThe colon \':\' is the segmentation of chennel list\r\n");
+}
+
+static int count_get_channel_list(char *arg, u8 *channel_list)
+{
+	int i = 0, j = 0;
+	u8 val = 0;
+
+	for (i = 0; arg[i] != '\0'; i++) {
+		if (':' == arg[i]) {
+			/* Record the jth val. */
+			if (channel_list != NULL) {
+				channel_list[j] = val;
+				val = 0;
+			}
+			/* Parse the colon as segmentation. */
+			j++;
+		}
+		/* Should be digital 0~9, otherwise, return an invalid -1. */
+		else if ('0' > arg[i] || '9' < arg[i]) {
+			j = -1;
+			goto end;
+		} else if (channel_list != NULL) {
+			val = val * 10 + (arg[i] - '0');
+		}
+	}
+	/* The final val. */
+	if (channel_list != NULL) {
+		channel_list[j] = val;
+	}
+	j++;
+
+end:
+	return j;
 }
 
 /****************************************************************
@@ -478,37 +527,65 @@ void at_wlscan(void *arg)
 {
 	u8 *channel_list = NULL;
 	int num_channel = 0;
-	int i, argc = 0;
+	int i = 0, j = 0, argc = 0;
 	int error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
-	struct _rtw_scan_param_t scan_param = {RTW_SCAN_NOUSE, 0, 0, 0, {0}, 0, 0, 0, 0};
+	struct _rtw_scan_param_t scan_param;
 	enum rtw_join_status_type join_status = RTW_JOINSTATUS_UNKNOWN;
+
+	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
 	join_status = wifi_get_join_status();
 	if ((join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
-		error_no = 1;
+		RTK_LOGW(NOTAG, "[+WLSCAN] Connecting now, forbid scanning\r\n");
+		error_no = 2;
 		goto end;
 	}
 
-	if (arg != NULL) {
-		argc = parse_param(arg, argv);
-		if (argc < 2) {
+	argc = parse_param(arg, argv);
+
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* Next i. */
+		/* SSID. */
+		if (0 == strcmp("ssid", argv[i])) {
+			if ((argc <= j) || (0 == strlen(argv[j]))
+				|| (INIC_MAX_SSID_LENGTH <= strlen(argv[j]))) {
+				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid ssid\r\n");
+				error_no = 1;
+				goto end;
+			}
+			wifi.ssid.len = strlen(argv[j]);
+			strncpy((char *)wifi.ssid.val, argv[j], sizeof(wifi.ssid.val) - 1);
+			scan_param.ssid = (char *)wifi.ssid.val;
+		}
+		/* Channel list. */
+		else if (0 == strcmp("ch", argv[i])) {
+			if ((argc <= j) || (0 == strlen(argv[j]))) {
+				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid channel list\r\n");
+				error_no = 1;
+				goto end;
+			}
+			num_channel = count_get_channel_list(argv[j], NULL);
+			if (0 >= num_channel) {
+				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid channel list\r\n");
+				error_no = 1;
+				goto end;
+			}
+			channel_list = (u8 *)rtos_mem_zmalloc(num_channel);
+			if (channel_list == NULL) {
+				RTK_LOGW(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for channel list\r\n");
+				error_no = 3;
+				goto end;
+			}
+			scan_param.channel_list_num = count_get_channel_list(argv[j], channel_list);
+			scan_param.channel_list = channel_list;
+		}
+		/* Invalid input. */
+		else {
+			RTK_LOGW(NOTAG, "[+WLSCAN] Invalid input\r\n");
 			error_no = 1;
 			goto end;
 		}
-		num_channel = atoi(argv[1]);
-		channel_list = (u8 *)rtos_mem_zmalloc(num_channel);
-		if (channel_list == NULL) {
-			RTK_LOGW(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for channel list\r\n");
-			error_no = 3;
-			goto end;
-		}
-		/* parse channel list */
-		for (i = 2; i <= argc - 1 ; i++) {
-			*(channel_list + i - 2) = (u8)atoi(argv[i]);
-		}
-		scan_param.channel_list = channel_list;
-		scan_param.channel_list_num = num_channel;
 	}
 
 	scan_param.scan_user_callback = app_scan_result_handler;
@@ -531,93 +608,6 @@ end:
 	}
 }
 
-void at_wlscanssid_help(void)
-{
-	at_printf("\r\n");
-	at_printf("AT+WLSCANSSID\r\n");
-	at_printf("AT+WLSCANSSID=<num_channel>,[chl1,chl2,chl3,......]\r\n");
-	at_printf("\t<num_channel>:\tThe channel number it will scan\r\n");
-	at_printf("\t[list......]:\tThe channel list should be same length as num_channel\r\n");
-}
-
-/****************************************************************
-AT command process:
-	AT+WLSCANSSID
-	Wifi AT Command:
-	Scan the specific SSID.
-	[+WLSCANSSID]:OK
-****************************************************************/
-void at_wlscanssid(void *arg)
-{
-	const int ssid_idx = 1, channel_start = 2;
-	int argc = 0, i = 0, ret = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-	u8 *channel_list = NULL;
-	int num_channel = 0;
-	rtw_scan_param_t scan_param;
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLSCANSSID] NULL parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if (argc < 2) {
-		RTK_LOGW(NOTAG, "[+WLSCANSSID] Invalid parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	/* SSID */
-	wifi.ssid.len = strlen(argv[ssid_idx]);
-	if ((argv[ssid_idx] == NULL) || (wifi.ssid.len >= INIC_MAX_SSID_LENGTH)) {
-		RTK_LOGW(NOTAG, "[+WLSCANSSID] Invalid SSID\r\n");
-		error_no = 2;
-		goto end;
-	}
-	strncpy((char *)wifi.ssid.val, argv[ssid_idx], sizeof(wifi.ssid.val) - 1);
-
-	/* Channel list */
-	if (argc > channel_start) {
-		num_channel = argc - channel_start;
-		channel_list = (u8 *)rtos_mem_malloc(num_channel);
-		if (channel_list == NULL) {
-			RTK_LOGW(NOTAG, "[+WLSCANSSID] Memory Failure\r\n");
-			error_no = 3;
-			goto end;
-		}
-		/* Get channel list */
-		for (i = channel_start; i < argc; i++) {
-			channel_list[i - channel_start] = (u8)atoi(argv[i]);
-		}
-	}
-
-	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
-	scan_param.ssid = (char *)wifi.ssid.val;
-	scan_param.scan_user_callback = app_scan_result_handler;
-	scan_param.channel_list = channel_list;
-	scan_param.channel_list_num = num_channel;
-	ret = wifi_scan_networks(&scan_param, 0);
-	if (ret != RTW_SUCCESS) {
-		RTK_LOGI(NOTAG, "[WLSCANSSID]ERROR: wifi scan failed\r\n");
-		error_no = 4;
-		goto end;
-	}
-
-end:
-	init_wifi_struct();
-	rtos_mem_free((void *)channel_list);
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLSCANSSID:");
-	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLSCANSSID:", error_no);
-		if (error_no == 1 || error_no == 2) {
-			at_wlscanssid_help();
-		}
-	}
-}
-
 /****************************************************************
 AT command process:
 	AT+WLRSSI
@@ -633,20 +623,25 @@ void at_wlrssi(void *arg)
 
 	RTK_LOGI(NOTAG, "[WLRSSI] _AT_WLAN_GET_RSSI_\r\n");
 	wifi_fetch_phy_statistic(&phy_statistics);
-	at_printf("rssi = %d\r\n", phy_statistics.rssi);
-	at_printf("data rssi = %d\r\n", phy_statistics.data_rssi);
-	at_printf("beacon rssi = %d\r\n", phy_statistics.beacon_rssi);
+
+	/* cal complement for logs */
+	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.rssi + 1));
+	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.data_rssi + 1));
+	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.beacon_rssi + 1));
 	at_printf("\r\n%sOK\r\n", "+WLRSSI:");
 }
 
 void at_wlstartap_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLSTARTAP=<ssid>[,<channel>,<open/wep/tkip/wpa2/wpa3>,<password>]\r\n");
+	at_printf("AT+WLSTARTAP=[<type>,<value>,<type>,<value>......]\r\n");
+	at_printf("\t<type>:\tA string as \"ssid\",\"ch\",\"pw\",\"sec\"\r\n");
+	at_printf("\t<value>:\tAny type of <ssid>, <ch>, <pw>, <sec>\r\n");
 	at_printf("\t<ssid>:\tThe ssid of AP, could not be empty\r\n");
-	at_printf("\t<channel>:\t[1,11]\r\n");
-	at_printf("\t<open/wep/tkip/wpa2/wpa3>:\t[0,3]\r\n");
-	at_printf("\t<password>:\tWith length in [8,64]\r\n");
+	at_printf("\t<ch>:\t[1,11]\r\n");
+	at_printf("\t<sec>:\topen/wep/tkip/wpa2/wpa3\r\n");
+	at_printf("\t<pw>:\tWith length in [8,64]\r\n");
+	at_printf("\te.g.\r\nAT+WLSTARTAP=ssid,test_ssid,pw,12345678,sec,wpa2\r\n");
 }
 
 /****************************************************************
@@ -658,8 +653,7 @@ AT command process:
 ****************************************************************/
 void at_wlstartap(void *arg)
 {
-	const int ssid_idx = 1, channel_idx = 2, security_idx = 3, password_idx = 4;
-	int argc = 0, error_no = 0, ret = 0;
+	int argc = 0, error_no = 0, ret = 0, i = 0, j = 0;
 	char *argv[MAX_ARGC] = {0};
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
@@ -675,75 +669,65 @@ void at_wlstartap(void *arg)
 	}
 
 	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 5)) {
+	if ((argc < 2) || (argc > 9)) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] command format error\r\n");
 		error_no = 2;
 		goto end;
 	}
 
-	/* SSID */
-	if (argv[ssid_idx] != NULL) {
-		ap.ssid.len = strlen(argv[ssid_idx]);
-		if (ap.ssid.len >= INIC_MAX_SSID_LENGTH) {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid SSID length\r\n");
-			error_no = 2;
-			goto end;
-		}
-		strncpy((char *)ap.ssid.val, argv[ssid_idx], sizeof(ap.ssid.val) - 1);
-	} else {
-		RTK_LOGW(NOTAG, "[+WLSTARTAP] NULL SSID\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-	/* Channel */
-	if (argc > channel_idx) {
-		if (argv[channel_idx] != NULL) {
-			ap.channel = atoi(argv[channel_idx]);
-		} else {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid channel\r\n");
-			error_no = 2;
-			goto end;
-		}
-	}
-
-	/* Security <open/wep/tkip/wpa2/wpa3> (maybe not exist) */
-	if (argc > security_idx) {
-		if (argv[security_idx] == NULL) {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] ERROR <open/wep/tkip/wpa2/wpa3>\r\n");
-			error_no = 2;
-			goto end;
-		}
-		if (0 == strcmp("open", argv[security_idx])) {
-			security = 0;
-		} else if (0 == strcmp("wep", argv[security_idx])) {
-			security = 1;
-		} else if (0 == strcmp("tpic", argv[security_idx])) {
-			security = 2;
-		} else if (0 == strcmp("wpa2", argv[security_idx])) {
-			security = 3;
-		} else if (0 == strcmp("wpa3", argv[security_idx])) {
-			security = 4;
-		} else {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid security value\r\n");
-			error_no = 2;
-			goto end;
-		}
-	}
-
-	/* Password (maybe not exist) */
-	if (argc > password_idx) {
-		if (argv[password_idx] != NULL) {
-			ap.password_len = strlen(argv[password_idx]);
-			if (ap.password_len > 64) {
-				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password length\r\n");
+	/* The parameters appear by pairs, so i += 2. */
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* next i. */
+		/* SSID */
+		if (0 == strcmp("ssid", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= INIC_MAX_SSID_LENGTH)) {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid SSID length\r\n");
 				error_no = 2;
 				goto end;
 			}
-			strncpy((char *)password, argv[password_idx], sizeof(password) - 1);
+			ap.ssid.len = strlen(argv[j]);
+			strncpy((char *)ap.ssid.val, argv[j], sizeof(ap.ssid.val) - 1);
+		}
+		/* password */
+		else if (0 == strcmp("pw", argv[i])) {
+			if ((argc <= j) || (0 == strlen(argv[j])) || (64 < strlen(argv[j]))) {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid password\r\n");
+				error_no = 2;
+				goto end;
+			}
+			ap.password_len = strlen(argv[j]);
+			strncpy((char *)password, argv[j], sizeof(password) - 1);
 			ap.password = password;
-		} else {
-			RTK_LOGW(NOTAG, "[+WLSTARTAP] NULL password\r\n");
+		}
+		/* Security */
+		else if (0 == strcmp("sec", argv[i])) {
+			if (argc > j) {
+				if (0 == strcmp("open", argv[j])) {
+					security = 0;
+				} else if (0 == strcmp("wep", argv[j])) {
+					security = 1;
+				} else if (0 == strcmp("tkip", argv[j])) {
+					security = 2;
+				} else if (0 == strcmp("wpa2", argv[j])) {
+					security = 3;
+				} else if (0 == strcmp("wpa3", argv[j])) {
+					security = 4;
+				} else {
+					RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid security value\r\n");
+					error_no = 2;
+					goto end;
+				}
+			}
+		}
+		/* channel */
+		else if (0 == strcmp("ch", argv[i])) {
+			if ((argc > j) && (0 != strlen(argv[j]))) {
+				ap.channel = atoi(argv[j]);
+			}
+		}
+		/* Invalid input. */
+		else {
+			RTK_LOGW(NOTAG, "[+WLSTARTAP] command format error\r\n");
 			error_no = 2;
 			goto end;
 		}
@@ -1003,6 +987,11 @@ void at_wlautoconn(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[1]) == 0) {
+		RTK_LOGW(NOTAG, "[+WLAUTOCONN] missing enable\r\n");
+		error_no = 1;
+		goto end;
+	}
 	mode = atoi(argv[1]);
 	if (mode == 0) {
 		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Disable autoreconnect\r\n");
@@ -1077,7 +1066,7 @@ void at_wlmac(void *arg)
 	}
 
 	/* Efuse or RAM. If this parameter is absent, use default 0 (RAM). */
-	if ((argc > er_idx) && (argv[er_idx] != NULL)) {
+	if ((argc > er_idx) && (strlen(argv[er_idx]) != 0)) {
 		efuse_ram = atoi(argv[er_idx]);
 		if ((efuse_ram != 0) && (efuse_ram != 1)) {
 			RTK_LOGW(NOTAG, "[+WLMAC] Invalid efuse_ram value\r\n");
@@ -1087,7 +1076,7 @@ void at_wlmac(void *arg)
 	}
 
 	/* Index */
-	if ((argc > i_idx) && (argv[i_idx] != NULL)) {
+	if ((argc > i_idx) && (strlen(argv[i_idx]) != 0)) {
 		i = atoi(argv[i_idx]);
 		if ((i < 0) || (i >= NET_IF_NUM)) {
 			RTK_LOGW(NOTAG, "[+WLMAC] Invalid Index value\r\n");
@@ -1143,7 +1132,7 @@ void at_wlpromisc(void *arg)
 
 	argc = parse_param(arg, argv);
 	if (argc > 1) {
-		if (argv[1] == NULL) {
+		if (strlen(argv[1]) == 0) {
 			RTK_LOGW(NOTAG, "[WLPROMISC]: Input ERROR parameter\r\n");
 			error_no = 1;
 			goto end;
@@ -1279,7 +1268,7 @@ void at_wlwps(void *arg)
 		goto end;
 	}
 	argc = parse_param(arg, argv);
-	if (argc < 2 || argv[1] == NULL) {
+	if (argc < 2 || strlen(argv[1]) == 0) {
 		RTK_LOGW(NOTAG, "[WLWPS]: Should be pbc or pin here\r\n");
 		error_no = 1;
 		goto end;
@@ -1313,8 +1302,8 @@ end:
 static void at_wlpwrmode_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLPWRMODE=<lps_ips>,<enable>");
-	at_printf("\t<lps_ips>:\tShould be either \"lps\" or \"ips\"\r\n");
+	at_printf("AT+WLPWRMODE=<mode>,<enable>[,<mode>,<enable>]");
+	at_printf("\t<mode>:\tShould be either \"lps\" or \"ips\"\r\n");
 	at_printf("\t<enable>:\t0: disable, 1: enable\r\n");
 }
 
@@ -1328,6 +1317,7 @@ void at_wlpwrmode(void *arg)
 {
 	int error_no = 0;
 	int argc = 0;
+	int i = 0, j = 0;
 	char *argv[MAX_ARGC] = {0};
 	int ps_en;
 
@@ -1346,18 +1336,31 @@ void at_wlpwrmode(void *arg)
 		goto end;
 	}
 
-	if (strcmp(argv[1], "lps") == 0) {
-		ps_en = atoi(argv[2]);
-		wifi_set_lps_enable(ps_en);
-		RTK_LOGW(NOTAG, "lps %s\r\n", (ps_en == 0) ? "disable" : "enable");
-	} else if (strcmp(argv[1], "ips") == 0) {
-		ps_en = atoi(argv[2]);
-		wifi_set_ips_internal(ps_en);
-		RTK_LOGW(NOTAG, "ips %s\r\n", (ps_en == 0) ? "disable" : "enable");
-	} else {
-		RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
-		error_no = 2;
-		goto end;
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* Next i. */
+		if (strcmp(argv[i], "lps") == 0) {
+			if ((argc <= j) || (strlen(argv[j]) == 0)) {
+				RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
+				error_no = 2;
+				goto end;
+			}
+			ps_en = atoi(argv[j]);
+			wifi_set_lps_enable(ps_en);
+			RTK_LOGW(NOTAG, "lps %s\r\n", (ps_en == 0) ? "disable" : "enable");
+		} else if (strcmp(argv[i], "ips") == 0) {
+			if ((argc <= j) || (strlen(argv[j]) == 0)) {
+				RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
+				error_no = 2;
+				goto end;
+			}
+			ps_en = atoi(argv[j]);
+			wifi_set_ips_internal(ps_en);
+			RTK_LOGW(NOTAG, "ips %s\r\n", (ps_en == 0) ? "disable" : "enable");
+		} else {
+			RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
+			error_no = 2;
+			goto end;
+		}
 	}
 
 end:
@@ -1492,8 +1495,8 @@ static void at_iperf_help(void)
 	at_printf("\tAT+IPERF=-s,-p,5002\r\n");
 	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
 	at_printf("\tExample for UDP:\r\n");
-	at_printf("\tAT+UDP=-s,-p,5002,-u\r\n");
-	at_printf("\tAT+UDP=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
+	at_printf("\tAT+IPERF=-s,-p,5002,-u\r\n");
+	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
 }
 
 /****************************************************************
@@ -1665,7 +1668,6 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLCONN", at_wlconn, {NULL, NULL}},
 	{"+WLDISCONN", at_wldisconn, {NULL, NULL}},
 	{"+WLSCAN", at_wlscan, {NULL, NULL}},
-	{"+WLSCANSSID", at_wlscanssid, {NULL, NULL}},
 	{"+WLRSSI", at_wlrssi, {NULL, NULL}},
 	{"+WLSTARTAP", at_wlstartap, {NULL, NULL}},
 	{"+WLSTOPAP", at_wlstopap, {NULL, NULL}},

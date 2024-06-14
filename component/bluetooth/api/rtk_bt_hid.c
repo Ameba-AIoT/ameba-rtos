@@ -23,12 +23,12 @@ uint16_t rtk_hid_descriptor_add(void *des, uint32_t length)
 	}
 	/* Check validity */
 	if (!des) {
-		printf("rtk_hid_descriptor_add: descriptor is NULL \r\n");
+		BT_LOGE("rtk_hid_descriptor_add: descriptor is NULL \r\n");
 		return RTK_BT_ERR_NO_PERM;
 	}
 	/* length check */
 	if (length > RTK_BT_HID_MAX_DESCRIPTOR_LENGTH) {
-		printf("rtk_hid_descriptor_add: HID des length %d is over max descriptor memory \r\n", (int)length);
+		BT_LOGE("rtk_hid_descriptor_add: HID des length %d is over max descriptor memory \r\n", (int)length);
 		return RTK_BT_FAIL;
 	}
 
@@ -73,7 +73,7 @@ uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t le
 	}
 
 	if (len > RTK_BT_HID_MAX_INPUT_DATA_LENGTH) {
-		printf("%s: input data length is too large \r\n", __func__);
+		BT_LOGE("%s: input data length is too large \r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 

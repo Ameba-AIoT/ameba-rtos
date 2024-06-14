@@ -102,7 +102,8 @@ int wifi_set_ips_internal(u8 enable);
 
 void inic_api_init_dev(void);
 void inic_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
-void inic_autoreconnect_indicate(rtw_security_t security_type, u8 *ssid, int ssid_len, u8 *password, int password_len, int key_id, char is_wps_trigger);
+void inic_autoreconnect_indicate(rtw_security_t security_type, u8 *ssid, int ssid_len, u8 *bssid, u8 *password, int password_len, int key_id,
+								 char is_wps_trigger);
 void inic_eap_autoreconnect_indicate(u8 saved_eap_method);
 void inic_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void inic_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);

@@ -162,6 +162,7 @@ endif
 ifeq ($(CONFIG_BT), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btcodec.a
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btaudiosync.a
 endif
 ifneq ($(CONFIG_BT_ZEPHYR), y)
 ifeq ($(CONFIG_BT_BLE_ONLY), y)
@@ -253,6 +254,7 @@ endif
 ifeq ($(CONFIG_BT), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
 	@+$(MAKE) -C make/bluetooth/bt_audio/bt_codec all
+	@+$(MAKE) -C make/bluetooth/bt_audio/audio_sync all
 endif
 endif
 
@@ -350,7 +352,6 @@ endif
 	@echo "========== Image manipulating end =========="
 
 code_analyze:
-ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
@@ -360,9 +361,6 @@ ifeq ($(DAILY_BUILD), 0)
 	fi
 
 	@echo "========== Image analyze end =========="
-else
-	@echo "daily build"
-endif
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #
 #*****************************************************************************#

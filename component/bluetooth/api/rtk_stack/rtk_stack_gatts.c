@@ -418,7 +418,7 @@ static bool _register_service(struct rtk_bt_gatt_service *node)
 	} else {
 		bt_stack_gatts_free_srv_tbl((T_ATTRIB_APPL *)database, node->attr_count);
 		bt_stack_gatts_delete_service_node(node);
-		printf("register service to stack failed \r\n");
+		BT_LOGE("register service to stack failed \r\n");
 		g_rtk_bt_gatts_priv->srv_registering = 0;
 	}
 
@@ -434,12 +434,12 @@ static T_APP_RESULT _register_service_complete_cb(T_SERVER_ID srv_id, uint16_t c
 
 	node = bt_stack_gatts_find_service_node_by_server_id(srv_id);
 	if (!node) {
-		printf("Cannot get the app_id from srv_id in SRV_REGISTERING srv\r\n");
+		BT_LOGE("Cannot get the app_id from srv_id in SRV_REGISTERING srv\r\n");
 		return APP_RESULT_REJECT;
 	}
 
 	if (cause) {
-		printf("result is fail: cause = 0x%x \r\n", cause);
+		BT_LOGE("result is fail: cause = 0x%x \r\n", cause);
 		if (node->user_data) {
 			bt_stack_gatts_free_srv_tbl(node->user_data, node->attr_count);
 		}
@@ -448,7 +448,7 @@ static T_APP_RESULT _register_service_complete_cb(T_SERVER_ID srv_id, uint16_t c
 	} else {
 		/* Change register status */
 		node->register_status = SRV_REGISTERED;
-		// printf("result is successfully \r\n");
+		// BT_LOGA("result is successfully \r\n");
 		ret = APP_RESULT_SUCCESS;
 	}
 
@@ -460,7 +460,7 @@ static T_APP_RESULT _register_service_complete_cb(T_SERVER_ID srv_id, uint16_t c
 
 		rtk_bt_evt_indicate(p_gatts_evt, NULL);
 	} else {
-		printf("p_gatts_evt alloc fail \r\n");
+		BT_LOGE("p_gatts_evt alloc fail \r\n");
 	}
 
 	g_rtk_bt_gatts_priv->srv_registering = 0;
@@ -667,7 +667,7 @@ uint16_t  bt_stack_gatts_init(rtk_bt_app_conf_t *app_conf)
 	}
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	if (!gatt_svc_init(GATT_SVC_USE_EXT_SERVER, svc_num)) {
-		printf("gatt_svc_init fail \r\n");
+		BT_LOGE("gatt_svc_init fail \r\n");
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 	gatt_svc_register_general_cb(bt_stack_gatts_general_callback);
@@ -761,7 +761,7 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		if (BT_UUID_TYPE_16 == uuid_type) {
 			uuid = (uint8_t *) & (BT_UUID_16((struct bt_uuid *)p_app_gatt_attr->user_data)->val);
 			p_stack_gatt_attr->flags = (ATTRIB_FLAG_VALUE_INCL | gatt_type);
-			// printf("uuid16 case p_stack_gatt_attr->flags = 0x%x \r\n",p_stack_gatt_attr->flags);
+			// BT_LOGA("uuid16 case p_stack_gatt_attr->flags = 0x%x \r\n",p_stack_gatt_attr->flags);
 			p_stack_gatt_attr->type_value[2] = uuid[0];
 			p_stack_gatt_attr->type_value[3] = uuid[1];
 			p_stack_gatt_attr->p_value_context = NULL;
@@ -785,7 +785,7 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 		T_ATTRIB_APPL *p_bt_stack_attr_tbl = NULL;
 		p_gatts_srv_node = bt_stack_gatts_find_service_node_by_app_id(p_incl_srv->app_id);
 		if (!p_gatts_srv_node) {
-			// printf("include srv is null case \r\n");
+			// BT_LOGE("include srv is null case \r\n");
 			p_gatts_srv_node = (struct rtk_bt_gatt_service *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct rtk_bt_gatt_service));
 			if (!p_gatts_srv_node) {
 				return RTK_BT_ERR_NO_MEMORY;
@@ -798,7 +798,7 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 				return RTK_BT_ERR_NO_MEMORY;
 			}
 
-			// printf("p_incl_srv->attr_count: %d \r\n",p_incl_srv->attr_count);
+			// BT_LOGA("p_incl_srv->attr_count: %d \r\n",p_incl_srv->attr_count);
 			memset(p_bt_stack_attr_tbl, 0, p_incl_srv->attr_count * sizeof(T_ATTRIB_APPL));
 			p_gatts_srv_node->app_id = p_incl_srv->app_id;
 			p_gatts_srv_node->register_status = SRV_ALLOC_FOR_INCLUDE;
@@ -1024,7 +1024,7 @@ static uint16_t bt_stack_gatts_register_service(void  *p_gatts_srv)
 		} else if (BT_UUID_TYPE_128 == app_attr->uuid->type) {
 			ret = bt_stack_uuid128_attr_convert(gatt_type, app_attr, attr);
 		} else {
-			printf("unknown uuid type: 0x%x \r\n", app_attr->uuid->type);
+			BT_LOGE("unknown uuid type: 0x%x \r\n", app_attr->uuid->type);
 		}
 		if (ret) {
 			return ret;
@@ -1193,7 +1193,7 @@ static uint16_t bt_stack_gatts_send_data(void *param, bool notify)
 
 	/* Save memory when high throughput */
 	if (queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
-		// printf("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
+		// BT_LOGA("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
 	}
 
@@ -1266,7 +1266,7 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = RTK_BT_OK;
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_GATTS)) {
-		printf("Error: Gatts profile is not initiated\r\n");
+		BT_LOGE("Error: Gatts profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -1287,7 +1287,7 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gatts_send_data(p_cmd->param, false);
 		break;
 	default:
-		printf("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}

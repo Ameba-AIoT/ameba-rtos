@@ -3,9 +3,29 @@
 
 ifeq ($(CONFIG_WLAN),y)
 
+#common lib
+ifeq ($(CONFIG_AMEBADPLUS), y)
+ifeq ($(CONFIG_AS_INIC_NP), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
+else
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+endif
+endif
+
+ifeq ($(CONFIG_AMEBASMART), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+endif
+
+ifeq ($(CONFIG_AMEBALITE), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+endif
+
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
+endif
+
 # AP Link Library
 ifeq ($(CONFIG_AS_INIC_AP), y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
 ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_ap_mp.a
 else
@@ -16,11 +36,6 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
 endif
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP), y)
-ifeq ($(CONFIG_AMEBADPLUS), y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
-else
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
-endif
 ifeq ($(CONFIG_MP_INCLUDED), y)
 ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_sdio_np_mp.a
@@ -37,7 +52,6 @@ endif
 
 # Single Core Link Library
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
 ifneq ($(CONFIG_MP_SHRINK), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
 endif

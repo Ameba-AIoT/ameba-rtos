@@ -66,6 +66,7 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 
 	switch (setting.security_type) {
 	case RTW_SECURITY_OPEN:
+	case RTW_SECURITY_WPA3_OWE:
 		memcpy(wifi_data_to_flash.psk_essid, setting.ssid, strlen((const char *)setting.ssid));
 		wifi_data_to_flash.security_type = RTW_SECURITY_OPEN;
 		break;

@@ -364,7 +364,7 @@
 	} while(0)
 
 #define get_tofr_ds(pframe)	((GetToDs(pframe) << 1) | GetFrDs(pframe))
-
+#define is_qos(pframe)	(get_frame_sub_type(pframe) & BIT(7))
 
 #define SetMFrag(pbuf)	\
 	do	{	\

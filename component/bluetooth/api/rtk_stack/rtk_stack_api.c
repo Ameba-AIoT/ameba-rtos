@@ -129,7 +129,7 @@ static void bt_stack_api_taskentry(void *ctx)
 	}
 
 out:
-	API_PRINT("[BT api task] bt api task exit\r\n");
+	BT_LOGD("[BT api task] bt api task exit\r\n");
 	osif_sem_give(api_task_sem);
 	osif_task_delete(NULL);
 }
@@ -389,7 +389,7 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 	}
 
 	if (app_profile_support & RTK_BT_PROFILE_GATTS) {
-		API_PRINT("GATTS Profile init  \r\n");
+		BT_LOGD("GATTS Profile init  \r\n");
 		ret = bt_stack_gatts_init(app_conf);
 		if (ret) {
 			return ret;
@@ -588,240 +588,240 @@ static uint16_t bt_stack_api_deinit(void)
 uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
-	API_PRINT("bt_stack_act_handler: group = %d, act = %d \r\n", p_cmd->group, p_cmd->act);
+	BT_LOGD("bt_stack_act_handler: group = %d, act = %d \r\n", p_cmd->group, p_cmd->act);
 	switch (p_cmd->group) {
 	case RTK_BT_LE_GP_GAP:
-		API_PRINT("RTK_BT_LE_GP_GAP group \r\n");
+		BT_LOGD("RTK_BT_LE_GP_GAP group \r\n");
 		bt_stack_le_gap_act_handle(p_cmd);
 		break;
 	case RTK_BT_LE_GP_GATTS:
-		API_PRINT("RTK_BT_LE_GP_GATTS group \r\n");
+		BT_LOGD("RTK_BT_LE_GP_GATTS group \r\n");
 		bt_stack_gatts_act_handle(p_cmd);
 		break;
 	case RTK_BT_LE_GP_GATTC:
-		API_PRINT("RTK_BT_LE_GP_GATTC group \r\n");
+		BT_LOGD("RTK_BT_LE_GP_GATTC group \r\n");
 		bt_stack_gattc_act_handle(p_cmd);
 		break;
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	case RTK_BT_LE_GP_MESH_STACK:
-		API_PRINT("RTK_BT_LE_GP_MESH_STACK group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_STACK group");
 		bt_mesh_stack_act_handle(p_cmd);
 		break;
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	case RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL group");
 		bt_mesh_config_client_model_act_handle(p_cmd);
 		break;
 #if defined(BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL group");
 		bt_mesh_generic_onoff_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL) && BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL group");
 		bt_mesh_remote_prov_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_LIGHT_LIGHTNESS_CLIENT_MODEL) && BT_MESH_ENABLE_LIGHT_LIGHTNESS_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL group");
 		bt_mesh_light_lightness_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_LIGHT_CTL_CLIENT_MODEL) && BT_MESH_ENABLE_LIGHT_CTL_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_LIGHT_CTL_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_LIGHT_CTL_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_LIGHT_CTL_CLIENT_MODEL group");
 		bt_mesh_light_ctl_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_LIGHT_HSL_CLIENT_MODEL) && BT_MESH_ENABLE_LIGHT_HSL_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_LIGHT_HSL_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_LIGHT_HSL_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_LIGHT_HSL_CLIENT_MODEL group");
 		bt_mesh_light_hsl_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_LIGHT_XYL_CLIENT_MODEL) && BT_MESH_ENABLE_LIGHT_XYL_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_LIGHT_XYL_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_LIGHT_XYL_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_LIGHT_XYL_CLIENT_MODEL group");
 		bt_mesh_light_xyl_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_LIGHT_LC_CLIENT_MODEL) && BT_MESH_ENABLE_LIGHT_LC_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_LIGHT_LC_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_LIGHT_LC_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_LIGHT_LC_CLIENT_MODEL group");
 		bt_mesh_light_lc_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_TIME_CLIENT_MODEL) && BT_MESH_ENABLE_TIME_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL group");
 		bt_mesh_time_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SCHEDULER_CLIENT_MODEL) && BT_MESH_ENABLE_SCHEDULER_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL group");
 		bt_mesh_scheduler_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SCENE_CLIENT_MODEL) && BT_MESH_ENABLE_SCENE_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL group");
 		bt_mesh_scene_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL group");
 		bt_mesh_generic_default_transition_time_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_LEVEL_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_LEVEL_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_LEVEL_CLIENT_MODEL group");
 		bt_mesh_generic_level_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_POWER_ONOFF_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_POWER_ONOFF_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL group");
 		bt_mesh_generic_power_on_off_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_POWER_LEVEL_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_POWER_LEVEL_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL group");
 		bt_mesh_generic_power_level_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_BATTERY_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_BATTERY_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_BATTERY_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_BATTERY_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_BATTERY_CLIENT_MODEL group");
 		bt_mesh_generic_battery_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_LOCATION_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_LOCATION_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL group");
 		bt_mesh_generic_location_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_PROPERTY_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_PROPERTY_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL group");
 		bt_mesh_generic_property_client_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SENSOR_CLIENT_MODEL) && BT_MESH_ENABLE_SENSOR_CLIENT_MODEL
 	case RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL group");
 		bt_mesh_sensor_client_model_act_handle(p_cmd);
 		break;
 #endif
 	case RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL group");
 		bt_mesh_health_client_model_act_handle(p_cmd);
 		break;
 #endif  // RTK_BLE_MESH_PROVISIONER_SUPPORT
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 #if defined(BT_MESH_ENABLE_GENERIC_USER_PROPERTY_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_USER_PROPERTY_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL group");
 		bt_mesh_generic_user_property_server_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_ADMIN_PROPERTY_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_ADMIN_PROPERTY_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL group");
 		bt_mesh_generic_admin_property_server_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_MANUFACTURER_PROPERTY_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_MANUFACTURER_PROPERTY_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL group");
 		bt_mesh_generic_manu_property_server_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SCENE_SERVER_MODEL) && BT_MESH_ENABLE_SCENE_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL group");
 		bt_mesh_scene_server_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL) && BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL group");
 		bt_mesh_scene_setup_server_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SENSOR_SERVER_MODEL) && BT_MESH_ENABLE_SENSOR_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL group");
 		bt_mesh_sensor_server_model_act_handle(p_cmd);
 		break;
 #endif
 #if defined(BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL) && BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL
 	case RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL group");
 		bt_mesh_sensor_setup_server_model_act_handle(p_cmd);
 		break;
 #endif
 	case RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL group");
 		bt_mesh_health_server_model_act_handle(p_cmd);
 		break;
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 #if defined(BT_MESH_ENABLE_DATATRANS_MODEL) && BT_MESH_ENABLE_DATATRANS_MODEL
 	case RTK_BT_LE_GP_MESH_DATATRANS_MODEL:
-		API_PRINT("RTK_BT_LE_GP_MESH_DATATRANS_MODEL group");
+		BT_LOGD("RTK_BT_LE_GP_MESH_DATATRANS_MODEL group");
 		bt_mesh_datatrans_model_act_handle(p_cmd);
 		break;
 #endif
 #endif  // RTK_BLE_MESH_SUPPORT
 	case RTK_BT_BR_GP_GAP:
-		API_PRINT("RTK_BT_BR_GP_GAP group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_GAP group \r\n");
 		bt_stack_br_gap_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_AVRCP:
-		API_PRINT("RTK_BT_BR_GP_AVRCP group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_AVRCP group \r\n");
 		bt_stack_avrcp_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_A2DP:
-		API_PRINT("RTK_BT_BR_GP_A2DP group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_A2DP group \r\n");
 		bt_stack_a2dp_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_SPP:
-		API_PRINT("RTK_BT_BR_GP_SPP group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_SPP group \r\n");
 		bt_stack_spp_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_HID:
-		API_PRINT("RTK_BT_BR_GP_HID group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_HID group \r\n");
 		bt_stack_hid_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_HFP:
-		API_PRINT("RTK_BT_BR_GP_HFP group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_HFP group \r\n");
 		bt_stack_hfp_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_SDP:
-		API_PRINT("RTK_BT_BR_GP_SDP group \r\n");
+		BT_LOGD("RTK_BT_BR_GP_SDP group \r\n");
 		bt_stack_sdp_act_handle(p_cmd);
 		break;
 	case RTK_BT_LE_GP_ISO:
-		API_PRINT("RTK_BT_LE_GP_ISO group \r\n");
+		BT_LOGD("RTK_BT_LE_GP_ISO group \r\n");
 		bt_stack_le_iso_act_handle(p_cmd);
 		break;
 	case RTK_BT_LE_GP_AUDIO:
-		API_PRINT("RTK_BT_LE_GP_AUDIO group \r\n");
+		BT_LOGD("RTK_BT_LE_GP_AUDIO group \r\n");
 		bt_stack_le_audio_act_handle(p_cmd);
 		break;
 	case RTK_BT_COMMON_GP_GAP:
-		API_PRINT("RTK_BT_COMMON_GP_GAP group \r\n");
+		BT_LOGD("RTK_BT_COMMON_GP_GAP group \r\n");
 		bt_stack_gap_act_handle(p_cmd);
 		break;
 	default:
-		API_PRINT("bt_stack_le_act_handle:unknown group: %d \r\n", p_cmd->group);
+		BT_LOGE("bt_stack_le_act_handle:unknown group: %d \r\n", p_cmd->group);
 		break;
 	}
 
@@ -978,14 +978,14 @@ rtk_bt_cmd_t *bt_stack_pending_cmd_search(uint32_t msg_type)
 
 void bt_stack_pending_cmd_insert(rtk_bt_cmd_t *p_cmd)
 {
-	API_PRINT("insert cmd: msg_type = 0x%x\r\n", (unsigned int)p_cmd->user_data);
+	BT_LOGD("insert cmd: msg_type = 0x%x\r\n", (unsigned int)p_cmd->user_data);
 	list_add_tail(&p_cmd->list, &g_cmd_pending_list);
 }
 
 void bt_stack_pending_cmd_delete(rtk_bt_cmd_t *p_cmd)
 {
 	rtk_bt_cmd_t *cmd, *next;
-	API_PRINT("delete cmd: msg_type = 0x%x\r\n", (unsigned int)p_cmd->user_data);
+	BT_LOGD("delete cmd: msg_type = 0x%x\r\n", (unsigned int)p_cmd->user_data);
 	list_for_each_entry_safe(cmd, next, &g_cmd_pending_list, list, rtk_bt_cmd_t) {
 		if (p_cmd == cmd) {
 			list_del(&p_cmd->list);
@@ -996,7 +996,7 @@ void bt_stack_pending_cmd_delete(rtk_bt_cmd_t *p_cmd)
 void bt_stack_pending_cmd_deinit(void)
 {
 	rtk_bt_cmd_t *cmd, *next;
-	API_PRINT("delete cmd pending list\r\n");
+	BT_LOGD("delete cmd pending list\r\n");
 
 	list_for_each_entry_safe(cmd, next, &g_cmd_pending_list, list, rtk_bt_cmd_t) {
 		osif_sem_give(cmd->psem);

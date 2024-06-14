@@ -17,6 +17,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_service_config.h>
 #include <rtk_hids_kb.h>
+#include <bt_utils.h>
 
 #define HID_SRV_UUID                            0x1812
 #define PROTOCOL_MODE_CHAR_UUID                 0x2A4E
@@ -341,15 +342,19 @@ static void hids_read_hdl(void *data)
 
 	ret = rtk_bt_gatts_read_resp(&read_resp);
 	if (RTK_BT_OK == ret) {
-		printf("[APP] HIDS response for client read succeed, index: %d\r\n", read_resp.index);
+		BT_LOGA("[APP] HIDS response for client read succeed, index: %d\r\n", read_resp.index);
 	} else {
-		printf("[APP] HIDS response for client read failed, err: 0x%x\r\n", ret);
+		BT_LOGE("[APP] HIDS response for client read failed, err: 0x%x\r\n", ret);
 	}
+
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 static void hids_write_hdl(void *data)
 {
-	uint32_t i;
 	uint16_t ret = 0;
 	rtk_bt_gatts_write_ind_t *p_write_ind = (rtk_bt_gatts_write_ind_t *)data;
 	rtk_bt_gatts_write_resp_param_t write_resp = {0};
@@ -363,7 +368,7 @@ static void hids_write_hdl(void *data)
 	write_resp.type = p_write_ind->type;
 
 	if (!len || !p_value) {
-		printf("[APP] HIDS write value is empty!\r\n");
+		BT_LOGE("[APP] HIDS write value is empty!\r\n");
 		write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 		goto send_rsp;
 	}
@@ -402,14 +407,11 @@ static void hids_write_hdl(void *data)
 		break;
 	}
 
-	printf("[APP] HIDS write event data(index: %d): ", index);
-	for (i = 0; i < p_write_ind->len; i++) {
-		if (0 == i % 16) {
-			printf("\r\n");
-		}
-		printf("%02x ", *(p_write_ind->value + i));
-	}
-	printf("\r\n");
+	BT_LOGA("[APP] HIDS write event data(index: %d):\r\n", index);
+	BT_DUMPA("", p_write_ind->value, p_write_ind->len);
+	BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u\r\n",
+				p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
+				p_write_ind->len, p_write_ind->type);
 
 send_rsp:
 	if (RTK_BT_GATTS_WRITE_NO_RESP == p_write_ind->type  ||
@@ -419,10 +421,14 @@ send_rsp:
 
 	ret = rtk_bt_gatts_write_resp(&write_resp);
 	if (RTK_BT_OK == ret) {
-		printf("[APP] HIDS response for client write succeed, index: %d\r\n", index);
+		BT_LOGA("[APP] HIDS response for client write succeed, index: %d\r\n", index);
 	} else {
-		printf("[APP] HIDS response for client write failed, err: 0x%x\r\n", ret);
+		BT_LOGE("[APP] HIDS response for client write failed, err: 0x%x\r\n", ret);
 	}
+	BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+				write_resp.conn_handle, write_resp.index,
+				write_resp.type, write_resp.err_code);
 }
 
 static void hids_cccd_update_hdl(void *data)
@@ -440,12 +446,18 @@ static void hids_cccd_update_hdl(void *data)
 	switch (index) {
 	case REPORT_INPUT_CHAR_CCCD_INDEX:
 		report_input_cccd_ntf_en_map[conn_id] = cccd_ntf;
-		printf("[APP] HIDS report input charac cccd bit, notify: %d\r\n", cccd_ntf);
+		BT_LOGA("[APP] HIDS report input charac cccd bit, notify: %d\r\n", cccd_ntf);
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					cccd_ntf, p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 		break;
 
 	case BOOT_KB_IN_REPORT_CHAR_CCCD_INDEX:
-		printf("[APP] HIDS boot keyboard input charac cccd bit, notify: %d\r\n", cccd_ntf);
+		BT_LOGA("[APP] HIDS boot keyboard input charac cccd bit, notify: %d\r\n", cccd_ntf);
 		boot_kb_in_cccd_ntf_en_map[conn_id] = cccd_ntf;
+		BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+					cccd_ntf, p_cccd_ind->app_id,
+					p_cccd_ind->conn_handle, p_cccd_ind->index);
 		break;
 
 	default:
@@ -460,9 +472,9 @@ void hid_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;
 		if (RTK_BT_OK == reg_srv_res->reg_status) {
-			printf("[APP] HIDS register service succeed!\r\n");
+			BT_LOGA("[APP] HIDS register service succeed!\r\n");
 		} else {
-			printf("[APP] HIDS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
+			BT_LOGE("[APP] HIDS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
 		}
 
 		break;
@@ -471,10 +483,13 @@ void hid_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind->err_code) {
-			printf("[APP] HIDS indicate succeed!\r\n");
+			BT_LOGA("[APP] HIDS indicate succeed!\r\n");
 		} else {
-			printf("[APP] HIDS indicate failed, err: 0x%x\r\n", p_ind->err_code);
+			BT_LOGE("[APP] HIDS indicate failed, err: 0x%x\r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
 
 		break;
 	}
@@ -482,10 +497,13 @@ void hid_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ntf_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ntf_ind->err_code) {
-			printf("[APP] HIDS notify succeed!\r\n");
+			BT_LOGA("[APP] HIDS notify succeed!\r\n");
 		} else {
-			printf("[APP] HIDS notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
+			BT_LOGE("[APP] HIDS notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ntf_ind->err_code) ? 0 : -1, p_ntf_ind->app_id,
+					p_ntf_ind->conn_handle, p_ntf_ind->index);
 
 		break;
 	}

@@ -23,7 +23,7 @@ __attribute__((unused)) static const char *TAG = "WLAN";
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include "lwip_netconf.h"
 #endif
-
+extern void wifi_set_rom2flash(void);
 #if defined(CONFIG_AS_INIC_AP)
 #include "wifi_fast_connect.h"
 
@@ -58,6 +58,7 @@ void _init_thread(void *param)
 
 void wlan_initialize(void)
 {
+	wifi_set_rom2flash();
 	inic_host_init();
 
 	wifi_fast_connect_enable(1);
@@ -71,6 +72,7 @@ void wlan_initialize(void)
 void wlan_initialize(void)
 {
 	u32 value;
+	wifi_set_rom2flash();
 	inic_dev_init();
 
 	/* set AON_BIT_WIFI_INIC_NP_READY=1 to indicate inic_ipc_device is ready */
@@ -107,6 +109,7 @@ void _init_thread(void *param)
 
 void wlan_initialize(void)
 {
+	wifi_set_rom2flash();
 	wifi_fast_connect_enable(1);
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 5) != SUCCESS) {

@@ -15,6 +15,8 @@ extern "C" {
 
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 
+#define CTE_CLIENT_SHOW_DETAIL      1
+
 typedef enum {
 	CTE_CHAR_CTE_ENABLE = 0,
 	CTE_CHAR_CTE_ADV_MIN_LEN = 1,

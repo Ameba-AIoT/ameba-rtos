@@ -44,30 +44,52 @@
 #define RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS   2
 
 #if defined(RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE) && RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE
+#if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
+#define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 48000
+#define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 2
+#else
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 16000
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 2
+#endif
 #else
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 48000
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 1
 #endif
 
-//In one time, we can callback 512 bytes 44.1KHZ 2 channels pcm data from rtk_bt_a2dp_decode_pcm_data_callback
-#define A2DP_SINK_PCM_DATA_MAX_LEN                  512*20
-#define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920*30
+/*
+    A2DP sink will receive 595 bytes encode data per 14.5 ms from source, approximately 6.89 packets of 595 bytes per 100 milliseconds.
+    When the sample rate is 44.1KHz, the above 595 bytes encode data will be parsing to 5 frames,
+    which can be decoded to 512 bytes, 2560 bytes pcm data in total.
+    In one time, we can callback 512 bytes 44.1KHZ 2 channels pcm data from rtk_bt_a2dp_decode_pcm_data_callback.
+
+    The A2DP sink RX rate is not constant and depended on the A2DP source.But LE Aduio TX rate is constant.
+    So we should leave a proper water level in pbp_convert_pcm_queue maintain average rate.
+    The water level can cause extra delay, but will not run out if set proper value.
+*/
+
+// PBP broadcast TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.
+#define PBP_BROADCAST_TX_WATER_LEVEL                200
+// Actual PBP broadcast TX water level length
+#define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10
+
+// Set enough length to store a2dp sink decode data.The unit is in short.
+#define A2DP_SINK_PCM_DATA_MAX_LEN                  2560 * PBP_BROADCAST_TX_WATER_LEVEL* 7 / 100
+/*
+    Set enough length to store resample data.The unit is in short.
+    1920 bytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds.
+*/
+#define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10
+
+/*
+    Resample water level, default data bytes of 10 ms.
+    The smaller this value, the shorter the work interval of the resample task.
+*/
+#define RESAMPLE_WATER_LEVEL                         1
 
 #define SOXR_IN_FRAME_BUF_MAX_LEN                   441*4*4
 #define SOXR_OUT_FRAME_BUF_MAX_LEN                  480*4*4
-
-/*
-    The rate of LE Audio encode task dequeue pcm data is faster than convert task enqueue pcm data.
-    So we should leave a proper water level in pbp_convert_pcm_queue but not exceed the queue max length 2*PBP_SOURCE_PCM_DATA_MAX_LEN.
-    The water level will cause extra delay and run out sooner or later.
-    1920 bytes is the encode bytes that LE Audio once encode 48 khz,2 channels pcm data.
-*/
-#define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       1920*8
-
-#define CONVERT_PCM_TASK_STACK_SIZE         10*1024
-#define CONVERT_PCM_TASK_PRIORITY           4
+#define CONVERT_PCM_TASK_STACK_SIZE                 10*1024
+#define CONVERT_PCM_TASK_PRIORITY                   4
 /* -------------------------------- LE Audio PBP Part --------------------------------- */
 /***************************************common resources******************************************/
 /* Define PBP broadcast name length*/
@@ -1012,27 +1034,27 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 			/* do flush action */
 			/* 1. get bond number */
 			if (rtk_bt_br_gap_bond_num_get(&temp_bond_num)) {
-				printf("[A2DP Demo] Get Bond Number fail\r\n");
+				BT_LOGE("[A2DP Demo] Get Bond Number fail\r\n");
 				continue;
 			}
-			printf("[A2DP Demo] Get Bond Number %d \r\n", temp_bond_num);
+			BT_LOGA("[A2DP Demo] Get Bond Number %d \r\n", temp_bond_num);
 			/* 2. get bond mac address accord to bond number */
 			for (uint8_t i = 0; i < temp_bond_num; i ++) {
 				/* gap bond priority start frmo 1, so i + 1 */
 				ret = rtk_bt_br_gap_bond_addr_get(i + 1, bd_addr);
 				if (ret) {
-					printf("[A2DP Demo] Get bond addr failed! err: 0x%x", ret);
+					BT_LOGE("[A2DP Demo] Get bond addr failed! err: 0x%x", ret);
 					continue;
 				}
-				printf("[A2DP Demo] Get Bond addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-					   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+				BT_LOGA("[A2DP Demo] Get Bond addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+						bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 				/* 3. sync with a2dp_demo_bond_table */
 				pbond_info = a2dp_demo_find_bond_info_by_mac_addr(bd_addr);
 				if (!pbond_info) {
 					/* allocate new bond info unit */
 					pbond_info = get_free_bond_table_unit();
 					if (!pbond_info) {
-						printf("[A2DP Demo] Get free bond table unit fail \r\n");
+						BT_LOGE("[A2DP Demo] Get free bond table unit fail \r\n");
 						continue;
 					}
 					memcpy((void *)pbond_info->bd_addr, (void *)bd_addr, 6);
@@ -1083,14 +1105,14 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 					}
 				}
 				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
-					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
+					BT_LOGA("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 				} else {
-					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
+					BT_LOGE("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
 				}
 			}
 			a2dp_demo_bond_num = temp_bond_num;
 		} else {
-			printf("[A2DP Demo] Bond info flush thread recv msg fail\r\n");
+			BT_LOGE("[A2DP Demo] Bond info flush thread recv msg fail\r\n");
 		}
 		osif_delay(3);
 	}
@@ -1103,22 +1125,22 @@ static void a2dp_demo_bond_info_dump(void)
 {
 	a2dp_demo_bond_info_t *pbond_info = NULL;
 
-	printf("[A2DP Demo] Bond Info List\r\n");
+	BT_LOGA("[A2DP Demo] Bond Info List\r\n");
 	for (uint8_t i = 0; i < a2dp_demo_bond_num; i ++) {
 		pbond_info = a2dp_demo_find_bond_info_by_priority(i + 1);
 		if (pbond_info) {
-			printf(">> %d. ", (int)(i + 1));
-			printf(" mac addr %02X:%02X:%02X:%02X:%02X:%02X  ", pbond_info->bd_addr[5],
-				   pbond_info->bd_addr[4],
-				   pbond_info->bd_addr[3],
-				   pbond_info->bd_addr[2],
-				   pbond_info->bd_addr[1],
-				   pbond_info->bd_addr[0]);
-			printf(" name ");
+			BT_LOGA(">> %d. ", (int)(i + 1));
+			BT_LOGA(" mac addr %02X:%02X:%02X:%02X:%02X:%02X  ", pbond_info->bd_addr[5],
+					pbond_info->bd_addr[4],
+					pbond_info->bd_addr[3],
+					pbond_info->bd_addr[2],
+					pbond_info->bd_addr[1],
+					pbond_info->bd_addr[0]);
+			BT_LOGA(" name ");
 			if (pbond_info->name_contained) {
-				printf(" %s", pbond_info->name);
+				BT_LOGA(" %s", pbond_info->name);
 			}
-			printf(" \r\n");
+			BT_LOGA(" \r\n");
 		}
 	}
 }
@@ -1291,7 +1313,7 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	//44.khz pcm data enqueue
 	pmtx = a2dp_decode_pcm_queue.mtx;
 	if (pmtx == NULL) {
-		printf("%s warning! ptmx == NULL!\r\n", __func__);
+		BT_LOGE("%s warning! ptmx == NULL!\r\n", __func__);
 		return -1;
 	}
 	osif_mutex_take(pmtx, BT_TIMEOUT_FOREVER);
@@ -1302,7 +1324,7 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	//if reach enough convert num, send sem to inform pcm convert thread
 	if (g_audio_resample_t) {
 		if (!a2dp_decoded_pcm_buffer_threshold_enable) {
-			if (queue_size >= 6 * g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
+			if (queue_size >= RESAMPLE_WATER_LEVEL * g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
 				a2dp_decoded_pcm_buffer_threshold_enable = 1;
 			}
 		} else {
@@ -1357,9 +1379,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		printf("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
-			   p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
-			   p_result->name);
+		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+				p_result->name);
+		BT_AT_PRINT("+BRGAP:inquiry_result,%02X:%02X:%02X:%02X:%02X:%02X,%s\r\n",
+					p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+					p_result->name);
 		break;
 	}
 
@@ -1372,10 +1397,10 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 				memcpy((void *)pbond_info->name, (void *)p_name_rsp->name, RTK_BT_GAP_DEVICE_NAME_LEN);
 				pbond_info->name_contained = 1;
 				if (rt_kv_set(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
-					printf("[A2DP Demo] Save a2dp demo bond info table success \r\n");
+					BT_LOGA("[A2DP Demo] Save a2dp demo bond info table success \r\n");
 					a2dp_demo_bond_info_dump();
 				} else {
-					printf("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
+					BT_LOGE("[A2DP Demo] Fail to save a2dp demo bond info table \r\n");
 				}
 			}
 		}
@@ -1384,15 +1409,15 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_SUCCESS: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		printf("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
@@ -1401,7 +1426,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_bond_info_flush && found) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
 		}
-		printf("[BR GAP] Link Key Request received and found is 0x%x \r\n", found);
+		BT_LOGA("[BR GAP] Link Key Request received and found is 0x%x \r\n", found);
 		break;
 	}
 
@@ -1411,18 +1436,23 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_bond_info_flush) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
 		}
-		printf("[BR GAP] Set link key of %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[BR GAP] Set link key of %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		printf("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
-			   p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
-			   p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
-			   p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
-		printf("[BR GAP] ACL disc cause 0x%x \r\n", p_acl_disc_event->cause);
+		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
+		BT_LOGA("[BR GAP] ACL disc cause 0x%x \r\n", p_acl_disc_event->cause);
+		BT_AT_PRINT("+BRGAP:disc,%02X:%02X:%02X:%02X:%02X:%02X,0x%x\r\n",
+					p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+					p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+					p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0],
+					p_acl_disc_event->cause);
 
 		if (a2dp_demo_bond_info_flush) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
@@ -1431,7 +1461,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	}
 
 	default:
-		printf("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 
@@ -1446,8 +1476,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	switch (evt_code) {
 	case RTK_BT_AVRCP_EVT_CONN_IND: {
 		memcpy((void *)bd_addr, param, 6);
-		printf("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
@@ -1459,7 +1489,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		printf("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
 		break;
 	}
 
@@ -1468,7 +1498,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		uint8_t volume = pvolume_t->volume;
 
 		curr_volume = volume;
-		printf("[AVRCP] Volume changed %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume changed %d \r\n", curr_volume);
 		break;
 	}
 
@@ -1478,7 +1508,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		} else {
 			curr_volume = VOL_MAX;
 		}
-		printf("[AVRCP] Volume up to %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume up to %d \r\n", curr_volume);
 		break;
 	}
 
@@ -1488,7 +1518,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		} else {
 			curr_volume = VOL_MIN;
 		}
-		printf("[AVRCP] Volume down to %d \r\n", curr_volume);
+		BT_LOGA("[AVRCP] Volume down to %d \r\n", curr_volume);
 		break;
 	}
 
@@ -1500,50 +1530,69 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		printf("[AVRCP] volume request set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] volume request set %d \r\n", (int)(audio_track_volume * 100));
+		BT_AT_PRINT("+BTAVRCP:volume_change,%d\r\n", (int)(audio_track_volume * 100));
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_CONN_CMPL: {
-		printf("[AVRCP] Connection Completion \r\n");
+		BT_LOGA("[AVRCP] Connection Completion \r\n");
+		rtk_bt_avrcp_conn_cmpl_t *conn_cmpl = (rtk_bt_avrcp_conn_cmpl_t *)param;
+		BT_LOGA("[AVRCP] AVRCP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3], conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
+		BT_AT_PRINT("+BTAVRCP:conn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+					conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3],
+					conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_DISCONN_CMPL: {
+		BT_LOGA("[AVRCP] Disconnection Completion \r\n");
+		rtk_bt_avrcp_disconn_cmpl_t *disconn_cmpl = (rtk_bt_avrcp_disconn_cmpl_t *)param;
+		BT_LOGA("[AVRCP] AVRCP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3], disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
+		BT_AT_PRINT("+BTAVRCP:disconn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+					disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3],
+					disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ: {
 		rtk_bt_avrcp_sub_event_t *psub_event = (rtk_bt_avrcp_sub_event_t *)param;
+		BT_AT_PRINT("+BTAVRCP:status,%u\r\n", psub_event->avrcp_play_status);
 		switch (psub_event->avrcp_play_status) {
 		case 0x00: {
-			printf("[AVRCP]: Stopped \r\n");
+			BT_LOGA("[AVRCP]: Stopped \r\n");
 			break;
 		}
 
 		case 0x01: {
-			printf("[AVRCP]: Playing \r\n");
+			BT_LOGA("[AVRCP]: Playing \r\n");
 			break;
 		}
 
 		case 0x02: {
-			printf("[AVRCP]: Paused \r\n");
+			BT_LOGA("[AVRCP]: Paused \r\n");
 			break;
 		}
 
 		case 0x03: {
-			printf("[AVRCP]: FWD_SEEK \r\n");
+			BT_LOGA("[AVRCP]: FWD_SEEK \r\n");
 			break;
 		}
 
 		case 0x04: {
-			printf("[AVRCP]: REV_SEEK \r\n");
+			BT_LOGA("[AVRCP]: REV_SEEK \r\n");
 			break;
 		}
 
 		case 0xFF: {
-			printf("[AVRCP]: ERROR \r\n");
+			BT_LOGE("[AVRCP]: ERROR \r\n");
 		}
 		break;
 
 		default: {
-			printf("[AVRCP]: Default 0x%x \r\n", psub_event->avrcp_play_status);
+			BT_LOGE("[AVRCP]: Default 0x%x \r\n", psub_event->avrcp_play_status);
 		}
 		break;
 		}
@@ -1551,52 +1600,52 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	}
 
 	case RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT: {
-		printf("[AVRCP]: Play req \r\n");
+		BT_LOGA("[AVRCP]: Play req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT: {
-		printf("[AVRCP]: Pause req \r\n");
+		BT_LOGA("[AVRCP]: Pause req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Stop req \r\n");
+		BT_LOGA("[AVRCP]: Stop req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT: {
-		printf("[AVRCP]: Forward req \r\n");
+		BT_LOGA("[AVRCP]: Forward req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT: {
-		printf("[AVRCP]: Backward req \r\n");
+		BT_LOGA("[AVRCP]: Backward req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT: {
-		printf("[AVRCP]: Fast forward start req \r\n");
+		BT_LOGA("[AVRCP]: Fast forward start req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Fast forward stop req \r\n");
+		BT_LOGA("[AVRCP]: Fast forward stop req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT: {
-		printf("[AVRCP]: Rewind start req \r\n");
+		BT_LOGA("[AVRCP]: Rewind start req \r\n");
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT: {
-		printf("[AVRCP]: Rewind stop req \r\n");
+		BT_LOGA("[AVRCP]: Rewind stop req \r\n");
 		break;
 	}
 
 	default: {
-		printf("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
 	}
 	}
@@ -1636,7 +1685,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		channels = 2;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
+		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.sampling_frequency) {
@@ -1653,7 +1702,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->sampling_frequency = (uint32_t)48000;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -1670,7 +1719,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->block_length = 16;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
@@ -1681,11 +1730,12 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 													   (float)DEFAULT_A2DP_PBP_AUDIO_RIGHT_VOLUME,
 													   channels,
 													   psbc_decoder_t->sampling_frequency,
+													   BT_AUDIO_FORMAT_PCM_16_BIT,
 													   0,
 													   (pcm_data_cb)rtk_bt_a2dp_decode_pcm_data_callback,
 													   false);
 	if (!a2dp_demo_audio_track_hdl) {
-		printf("[A2DP] bt audio track add fail \r\n");
+		BT_LOGE("[A2DP] bt audio track add fail \r\n");
 		return 1;
 	}
 
@@ -1718,7 +1768,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->channel_mode = SBC_CHANNEL_MODE_JOINT_STEREO;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
+		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.sampling_frequency) {
@@ -1735,7 +1785,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->sample_rate = (uint32_t)48000;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -1752,7 +1802,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->blocks = 16;
 		break;
 	default:
-		printf("[A2DP] RTK Audio not support block_length %x \r\n", pa2dp_codec->sbc.block_length);
+		BT_LOGE("[A2DP] RTK Audio not support block_length %x \r\n", pa2dp_codec->sbc.block_length);
 		return 1;
 	}
 	psbc_encoder_t->bitpool = pa2dp_codec->sbc.max_bitpool;
@@ -1772,18 +1822,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 
 	case RTK_BT_A2DP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_a2dp_sdp_attr_info_t *p_info = (rtk_bt_a2dp_sdp_attr_info_t *)param;
-		printf("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   p_info->bd_addr[5], p_info->bd_addr[4],
-			   p_info->bd_addr[3], p_info->bd_addr[2],
-			   p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_CONN_IND: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1791,8 +1841,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
 		memcpy((void *)remote_bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
+		BT_AT_PRINT("+BTA2DP:conn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+					remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
 	}
 	break;
 
@@ -1805,8 +1857,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		printf("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTA2DP:disconn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -1814,11 +1868,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		uint16_t ret = 1;
 		rtk_bt_a2dp_codec_t *pa2dp_codec = (rtk_bt_a2dp_codec_t *)param;
 		if ((pa2dp_codec->codec_type & RTK_BT_AUDIO_CODEC_SBC/* | RTK_BT_AUDIO_CODEC_AAC */) == 0) {
-			printf("[A2DP] Not support codec %d \r\n", pa2dp_codec->codec_type);
+			BT_LOGE("[A2DP] Not support codec %d \r\n", pa2dp_codec->codec_type);
 			break;
 		}
 		if (rtk_bt_audio_init()) {
-			printf("[A2DP] rtk_bt_audio_init fail \r\n");
+			BT_LOGE("[A2DP] rtk_bt_audio_init fail \r\n");
 			break;
 		}
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SNK) {
@@ -1834,7 +1888,7 @@ audio_codec_conf.param = (void *)&aac_codec_t;
 audio_codec_conf.param_len = sizeof(aac_codec_t);
 } */
 			if (ret) {
-				printf("[A2DP] RTK_BT_A2DP_EVT_CONFIG_CMPL Fail \r\n");
+				BT_LOGE("[A2DP] RTK_BT_A2DP_EVT_CONFIG_CMPL Fail \r\n");
 				rtk_bt_audio_deinit();
 				a2dp_demo_audio_track_hdl = NULL;
 				a2dp_demo_codec_entity = NULL;
@@ -1852,20 +1906,31 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 		// bt_a2dp_sink_event_handle(A2DP_SINK_STREAM_DATA_HANDLE_INIT, A2DP_SBC_CODEC, 0, NULL);
 		/* pcm convert engine init */
 		rtk_bt_a2dp_pbp_demo_audio_resample_alloc(&g_audio_resample_t, sbc_codec_t.decoder_t.sampling_frequency, ((sbc_codec_t.decoder_t.channel_mode != 0) ? 2 : 1));
-		printf("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
+		BT_LOGA("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_OPEN: {
-		printf("[A2DP] A2DP STREAM is opened \r\n");
+		BT_LOGA("[A2DP] A2DP STREAM is opened \r\n");
+		rtk_bt_a2dp_stream_open_t *p_stream_open_t = (rtk_bt_a2dp_stream_open_t *)param;
+		BT_LOGA("[A2DP] A2DP stream open with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3], p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1],
+				p_stream_open_t->bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP stream open max packet length is %d \r\n", (int)p_stream_open_t->max_pkt_len);
+		BT_AT_PRINT("+BTA2DP:stream_open,%02X:%02X:%02X:%02X:%02X:%02X,%d\r\n",
+					p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3],
+					p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0],
+					(int)p_stream_open_t->max_pkt_len);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_START_IND: {
 		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
 
-		printf("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
-			   pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
+				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_AT_PRINT("+BTA2DP:start,%d,%d\r\n",
+					pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
@@ -1874,8 +1939,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 
 	case RTK_BT_A2DP_EVT_STREAM_START_RSP: {
 		rtk_bt_a2dp_stream_start_t *pa2dp_stream = (rtk_bt_a2dp_stream_start_t *)param;
-		printf("[A2DP] RTK_BT_A2DP_EVT_STREAM_START_RSP active_a2dp_idx %d, streaming_fg %d \r\n",
-			   pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_LOGA("[A2DP] RTK_BT_A2DP_EVT_STREAM_START_RSP active_a2dp_idx %d, streaming_fg %d \r\n",
+				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 
 	}
 	break;
@@ -1883,8 +1948,10 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_STOP: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTA2DP:stop,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		a2dp_play_flag = false;
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_demo_audio_track_hdl->audio_track_hdl);
@@ -1914,16 +1981,16 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(&g_audio_resample_t);
 		}
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		printf("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-			   bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_LOGA("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_A2DP_EVT_STREAM_DATA_IND: { //BT api shall not be called here
 		rtk_bt_a2dp_stream_data_ind_t *pdata_in = (rtk_bt_a2dp_stream_data_ind_t *)param;
 
-		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length)) {
-			printf("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
+		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length, 0)) {
+			BT_LOGE("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
 		}
 	}
 	break;
@@ -1939,7 +2006,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	break;
 
 	default: {
-		printf("[A2DP]: default evt_code 0x%04x \r\n", evt_code);
+		BT_LOGE("[A2DP]: default evt_code 0x%04x \r\n", evt_code);
 	}
 	break;
 	}
@@ -2187,11 +2254,11 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 	if (ret == RTK_BT_OK) {
 		BT_LOGD("[APP] %s ok, iso_conn_handle 0x%x, seq_num %d, available heap %d sys_time %d\r\n", __func__, p_iso_path->iso_conn_handle,
 				p_iso_path->pkt_seq_num, osif_mem_peek(RAM_TYPE_DATA_ON), (int)osif_sys_time_get());
-		BT_DUMPD(__func__, p_data, data_len);
+		BT_DUMPD("", p_data, data_len);
 		p_iso_path->status_ok_cnt ++;
 	} else {
 		BT_LOGE("[APP] %s failed, iso_conn_handle 0x%x, seq_num %d, ret 0x%x\r\n", __func__, p_iso_path->iso_conn_handle, p_iso_path->pkt_seq_num, ret);
-		BT_DUMPD(__func__, p_data, data_len);
+		BT_DUMPD("", p_data, data_len);
 		p_iso_path->status_fail_cnt++;
 	}
 	app_bt_le_audio_iso_data_tx_statistics(p_iso_path);
@@ -2305,7 +2372,7 @@ static void app_bt_le_audio_pbp_encode_task_entry(void *ctx)
 					output_channels = 1;
 				}
 				if (RTK_BT_OK != app_bt_le_audio_encode_a2dp_data(p_iso_path, output_channels)) {
-					printf("[APP] %s app_bt_le_audio_send_a2dp_data fail\r\n", __func__);
+					BT_LOGE("[APP] %s app_bt_le_audio_send_a2dp_data fail\r\n", __func__);
 					continue;
 				}
 			}
@@ -2408,9 +2475,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_ADV_START_IND: {
 		rtk_bt_le_adv_start_ind_t *adv_start_ind = (rtk_bt_le_adv_start_ind_t *)param;
 		if (!adv_start_ind->err) {
-			printf("[APP]ADV started: adv_type %d \r\n", adv_start_ind->adv_type);
+			BT_LOGA("[APP]ADV started: adv_type %d \r\n", adv_start_ind->adv_type);
 		} else {
-			printf("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
+			BT_LOGE("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
@@ -2419,9 +2486,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_ADV_STOP_IND: {
 		rtk_bt_le_adv_stop_ind_t *adv_stop_ind = (rtk_bt_le_adv_stop_ind_t *)param;
 		if (!adv_stop_ind->err) {
-			printf("[APP]ADV stopped: reason 0x%x \r\n", adv_stop_ind->stop_reason);
+			BT_LOGA("[APP]ADV stopped: reason 0x%x \r\n", adv_stop_ind->stop_reason);
 		} else {
-			printf("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
+			BT_LOGE("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
@@ -2432,15 +2499,15 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
 		if (!ext_adv_ind->err) {
 			if (ext_adv_ind->is_start) {
-				printf("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
+				BT_LOGA("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
 			} else {
-				printf("[APP] Ext ADV(%d) stopped: reason 0x%x \r\n", ext_adv_ind->adv_handle, ext_adv_ind->stop_reason);
+				BT_LOGA("[APP] Ext ADV(%d) stopped: reason 0x%x \r\n", ext_adv_ind->adv_handle, ext_adv_ind->stop_reason);
 			}
 		} else {
 			if (ext_adv_ind->is_start) {
-				printf("[APP] Ext ADV(%d) started failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+				BT_LOGE("[APP] Ext ADV(%d) started failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
 			} else {
-				printf("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+				BT_LOGE("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
 			}
 		}
 		BT_AT_PRINT("+BLEGAP:eadv,%s,%d,%d\r\n",
@@ -2454,9 +2521,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_SCAN_START_IND: {
 		rtk_bt_le_scan_start_ind_t *scan_start_ind = (rtk_bt_le_scan_start_ind_t *)param;
 		if (!scan_start_ind->err) {
-			printf("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
+			BT_LOGA("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
 		} else {
-			printf("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
+			BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
 		break;
@@ -2465,9 +2532,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
-		printf("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
-			   le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-			   scan_res_ind->adv_report.len);
+		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
+				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+				scan_res_ind->adv_report.len);
 		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
 					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 					scan_res_ind->adv_report.len);
@@ -2479,10 +2546,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
 #if 0
-		printf("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %i, PHY: 0x%x, TxPower: %d, Len: %d\r\n",
-			   le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
-			   (scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-			   scan_res_ind->tx_power, scan_res_ind->len);
+		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %i, PHY: 0x%x, TxPower: %d, Len: %d\r\n",
+				le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
+				(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
+				scan_res_ind->tx_power, scan_res_ind->len);
 #endif
 		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%i,0x%x,%d,%d\r\n",
 					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
@@ -2502,9 +2569,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_SCAN_STOP_IND: {
 		rtk_bt_le_scan_stop_ind_t *scan_stop_ind = (rtk_bt_le_scan_stop_ind_t *)param;
 		if (!scan_stop_ind->err) {
-			printf("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
+			BT_LOGA("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
 		} else {
-			printf("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
+			BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
 		break;
@@ -2515,19 +2582,19 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
 		if (!conn_ind->err) {
 			role = conn_ind->role ? "slave" : "master";
-			printf("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
-				   (int)conn_ind->conn_handle, role, le_addr);
+			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
+					(int)conn_ind->conn_handle, role, le_addr);
 			if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_ASSISTANT == pbp_role) {
 				app_bt_le_audio_broadcast_assistant_info_t *p_bro_assi_info = &g_pbp_bro_assi_info;
 				p_bro_assi_info->status = RTK_BLE_AUDIO_BROADCAST_ASSISTANT_CONN;
 				uint16_t ret = RTK_BT_OK;
 				if ((ret = rtk_bt_le_sm_start_security(conn_ind->conn_handle)) != RTK_BT_OK) {
-					printf("[APP] GAP start security flow failed! err: 0x%x", ret);
+					BT_LOGE("[APP] GAP start security flow failed! err: 0x%x", ret);
 					break;
 				}
 			}
 		} else {
-			printf("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n", conn_ind->err, le_addr);
+			BT_LOGE("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n", conn_ind->err, le_addr);
 		}
 		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
 		break;
@@ -2537,8 +2604,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_disconn_ind_t *disconn_ind = (rtk_bt_le_disconn_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(disconn_ind->peer_addr), le_addr, sizeof(le_addr));
 		role = disconn_ind->role ? "slave" : "master";
-		printf("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
-			   disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		BT_LOGA("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
+				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_SINK == pbp_role) {
@@ -2553,16 +2620,16 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND: {
 		rtk_bt_le_conn_update_ind_t *conn_update_ind = (rtk_bt_le_conn_update_ind_t *)param;
 		if (conn_update_ind->err) {
-			printf("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
-				   conn_update_ind->conn_handle, conn_update_ind->err);
+			BT_LOGE("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
+					conn_update_ind->conn_handle, conn_update_ind->err);
 			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
-			printf("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "\
-				   "conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
-				   conn_update_ind->conn_handle,
-				   conn_update_ind->conn_interval,
-				   conn_update_ind->conn_latency,
-				   conn_update_ind->supv_timeout);
+			BT_LOGA("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "\
+					"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
+					conn_update_ind->conn_handle,
+					conn_update_ind->conn_interval,
+					conn_update_ind->conn_latency,
+					conn_update_ind->supv_timeout);
 			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
 						conn_update_ind->conn_handle,
 						conn_update_ind->conn_interval,
@@ -2574,28 +2641,28 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 
 	case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND: { //BT api shall not be called here
 		rtk_bt_le_remote_conn_update_req_ind_t *rmt_update_req = (rtk_bt_le_remote_conn_update_req_ind_t *)param;
-		printf("[APP] Remote device request a change in conn param, conn_handle: %d, "\
-			   "conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "\
-			   "timeout: 0x%x. The host stack accept it.\r\n",
-			   rmt_update_req->conn_handle,
-			   rmt_update_req->conn_interval_max,
-			   rmt_update_req->conn_interval_min,
-			   rmt_update_req->conn_latency,
-			   rmt_update_req->supv_timeout);
+		BT_LOGA("[APP] Remote device request a change in conn param, conn_handle: %d, "\
+				"conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "\
+				"timeout: 0x%x. The host stack accept it.\r\n",
+				rmt_update_req->conn_handle,
+				rmt_update_req->conn_interval_max,
+				rmt_update_req->conn_interval_min,
+				rmt_update_req->conn_latency,
+				rmt_update_req->supv_timeout);
 		return RTK_BT_EVT_CB_ACCEPT;
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change = (rtk_bt_le_data_len_change_ind_t *)param;
-		printf("[APP] Data len is updated, conn_handle: %d, "       \
-			   "max_tx_octets: 0x%x, max_tx_time: 0x%x, "        \
-			   "max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
-			   data_len_change->conn_handle,
-			   data_len_change->max_tx_octets,
-			   data_len_change->max_tx_time,
-			   data_len_change->max_rx_octets,
-			   data_len_change->max_rx_time);
+		BT_LOGA("[APP] Data len is updated, conn_handle: %d, "       \
+				"max_tx_octets: 0x%x, max_tx_time: 0x%x, "        \
+				"max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
+				data_len_change->conn_handle,
+				data_len_change->max_tx_octets,
+				data_len_change->max_tx_time,
+				data_len_change->max_rx_octets,
+				data_len_change->max_rx_time);
 		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
 					data_len_change->conn_handle,
 					data_len_change->max_tx_octets,
@@ -2609,15 +2676,15 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		rtk_bt_le_phy_update_ind_t *phy_update_ind =
 			(rtk_bt_le_phy_update_ind_t *)param;
 		if (phy_update_ind->err) {
-			printf("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
-				   phy_update_ind->conn_handle,
-				   phy_update_ind->err);
+			BT_LOGE("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
+					phy_update_ind->conn_handle,
+					phy_update_ind->err);
 			BT_AT_PRINT("+BLEGAP:conn_phy,%d,-1\r\n", phy_update_ind->conn_handle);
 		} else {
-			printf("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
-				   phy_update_ind->conn_handle,
-				   phy_update_ind->tx_phy,
-				   phy_update_ind->rx_phy);
+			BT_LOGA("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
+					phy_update_ind->conn_handle,
+					phy_update_ind->tx_phy,
+					phy_update_ind->rx_phy);
 			BT_AT_PRINT("+BLEGAP:conn_phy,%d,0,%d,%d\r\n",
 						phy_update_ind->conn_handle,
 						phy_update_ind->tx_phy,
@@ -2629,24 +2696,24 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 	case RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND: {
 		uint16_t ret = 0;
 		rtk_bt_le_auth_pair_cfm_ind_t *pair_cfm_ind = (rtk_bt_le_auth_pair_cfm_ind_t *)param;
-		APP_PROMOTE("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
-					pair_cfm_ind->conn_handle);
+		BT_LOGA("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
+				pair_cfm_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:pair_cfm,%d\r\n", pair_cfm_ind->conn_handle);
 		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
 		pair_cfm_param.conn_handle = pair_cfm_ind->conn_handle;
 		pair_cfm_param.confirm = 1;
 		ret = rtk_bt_le_sm_pairing_confirm(&pair_cfm_param);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] Just work pairing auto confirm succcess\r\n");
+			BT_LOGA("[APP] Just work pairing auto confirm succcess\r\n");
 		}
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND: {
 		rtk_bt_le_auth_key_display_ind_t *key_dis_ind = (rtk_bt_le_auth_key_display_ind_t *)param;
-		APP_PROMOTE("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
-					(int)key_dis_ind->passkey,
-					(int)key_dis_ind->conn_handle);
+		BT_LOGA("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
+				(int)key_dis_ind->passkey,
+				(int)key_dis_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
 					(int)key_dis_ind->conn_handle,
 					(int)key_dis_ind->passkey);
@@ -2655,18 +2722,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND: {
 		rtk_bt_le_auth_key_input_ind_t *key_input_ind = (rtk_bt_le_auth_key_input_ind_t *)param;
-		APP_PROMOTE("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
-					key_input_ind->conn_handle);
+		BT_LOGA("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
+				key_input_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_input,%d\r\n", key_input_ind->conn_handle);
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
 		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind = (rtk_bt_le_auth_key_cfm_ind_t *)param;
-		APP_PROMOTE("[APP] Auth passkey confirm: %d, conn_handle: %d. "  \
-					"Please comfirm if the passkeys are equal!\r\n",
-					(int)key_cfm_ind->passkey,
-					(int)key_cfm_ind->conn_handle);
+		BT_LOGA("[APP] Auth passkey confirm: %d, conn_handle: %d. "  \
+				"Please comfirm if the passkeys are equal!\r\n",
+				(int)key_cfm_ind->passkey,
+				(int)key_cfm_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_cfm,%d,%d\r\n",
 					(int)key_cfm_ind->conn_handle,
 					(int)key_cfm_ind->passkey);
@@ -2675,8 +2742,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 
 	case RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND: {
 		rtk_bt_le_auth_oob_input_ind_t *oob_input_ind = (rtk_bt_le_auth_oob_input_ind_t *)param;
-		APP_PROMOTE("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
-					oob_input_ind->conn_handle);
+		BT_LOGA("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
+				oob_input_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:oobkey_input,%d\r\n", oob_input_ind->conn_handle);
 		break;
 	}
@@ -2687,22 +2754,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 					auth_cplt_ind->conn_handle,
 					(auth_cplt_ind->err == 0) ? 0 : -1);
 		if (auth_cplt_ind->err) {
-			printf("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
-				   auth_cplt_ind->err, auth_cplt_ind->conn_handle);
+			BT_LOGE("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
+					auth_cplt_ind->err, auth_cplt_ind->conn_handle);
 		} else {
-			printf("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
-			printf("[APP] long term key is 0x");
-			for (uint8_t i = 1; i <= auth_cplt_ind->dev_ltk_length; i++) {
-				printf("%02x", auth_cplt_ind->dev_ltk[auth_cplt_ind->dev_ltk_length - i]); //End size conversion
-			}
-			printf("\r\n");
+			BT_LOGA("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
+			BT_DUMPHEXA("[APP] long term key is 0x", auth_cplt_ind->dev_ltk, auth_cplt_ind->dev_ltk_length, true);
 			if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_ASSISTANT == pbp_role) {
 				uint16_t ret = rtk_bt_gattc_discover_all(auth_cplt_ind->conn_handle);
 				if (RTK_BT_OK != ret) {
-					printf("[APP] GATTC Discover failed! err: 0x%x\r\n", ret);
+					BT_LOGE("[APP] GATTC Discover failed! err: 0x%x\r\n", ret);
 					break;
 				} else {
-					printf("[APP] GATTC Discover Start, waiting ...\r\n");
+					BT_LOGA("[APP] GATTC Discover Start, waiting ...\r\n");
 				}
 			}
 		}
@@ -2714,7 +2777,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		char ident_addr[30] = {0};
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->remote_addr), le_addr, sizeof(le_addr));
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->ident_addr), ident_addr, sizeof(ident_addr));
-		printf("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
+		BT_LOGA("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
 		BT_AT_PRINT("+BLEGAP:bond_modify,%d,%s,%s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
 		break;
 	}
@@ -2729,22 +2792,22 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 			memcpy(addr.addr_val, p_ind->entry.addr, RTK_BD_ADDR_LEN);
 			rtk_bt_le_addr_to_str(&addr, le_addr, sizeof(le_addr));
 			if (p_ind->err) {
-				printf("[APP] Resolving list %s %s fail, cause:%x.\r\n",
-					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
-					   le_addr, p_ind->err);
+				BT_LOGE("[APP] Resolving list %s %s fail, cause:%x.\r\n",
+						(p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
+						le_addr, p_ind->err);
 				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,-1\r\n", p_ind->op);
 			} else {
-				printf("[APP] Resolving list %s %s success, %s privacy mode.\r\n",
-					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
-					   le_addr, p_ind->entry.device_mode ? "device" : "network");
+				BT_LOGA("[APP] Resolving list %s %s success, %s privacy mode.\r\n",
+						(p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD) ? "add" : "remove",
+						le_addr, p_ind->entry.device_mode ? "device" : "network");
 				BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,0,%s,%s\r\n",
 							p_ind->op, le_addr, p_ind->entry.device_mode ? "device" : "network");
 			}
 		} else if (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_CLEAR) {
 			if (p_ind->err) {
-				printf("[APP] Resolving list clear fail, cause:%x.\r\n", p_ind->err);
+				BT_LOGE("[APP] Resolving list clear fail, cause:%x.\r\n", p_ind->err);
 			} else {
-				printf("[APP] Resolving list clear success.\r\n");
+				BT_LOGA("[APP] Resolving list clear success.\r\n");
 			}
 			BT_AT_PRINT("+BLEGAP:resolv_list_modify,%d,%d\r\n", p_ind->op, (p_ind->err == 0) ? 0 : -1);
 		}
@@ -2755,14 +2818,14 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 #if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND: {
 		rtk_bt_le_pa_sync_ind_t *pa_sync_ind = (rtk_bt_le_pa_sync_ind_t *)param;
-		printf("[APP] PA sync state change: sync_id: %d, state = %d, cause: 0x%x\r\n",
-			   pa_sync_ind->sync_id, pa_sync_ind->state, pa_sync_ind->cause);
+		BT_LOGA("[APP] PA sync state change: sync_id: %d, state = %d, cause: 0x%x\r\n",
+				pa_sync_ind->sync_id, pa_sync_ind->state, pa_sync_ind->cause);
 
 		if (pa_sync_ind->state == RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED) {
 			rtk_bt_le_pa_synced_info_t *p_info = &pa_sync_ind->info;
 			rtk_bt_le_addr_to_str(&p_info->addr, le_addr, sizeof(le_addr));
-			printf("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
-				   le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
+			BT_LOGA("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
+					le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
 			BT_AT_PRINT("+BLEGAP:pa_sync,%s,0x%x,%d,%d\r\n",
 						le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
 		}
@@ -2771,9 +2834,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 
 	case RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND: {
 		rtk_bt_le_pa_adv_report_ind_t *pa_report = (rtk_bt_le_pa_adv_report_ind_t *)param;
-		printf("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
-			   pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
-			   pa_report->cte_type, pa_report->data_status, pa_report->data_len);
+		BT_LOGA("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
+				pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
+				pa_report->cte_type, pa_report->data_status, pa_report->data_len);
 		BT_AT_PRINT("+BLEGAP:pa_report,%d,0x%x,%d,%d,%d,0x%x,%d\r\n",
 					pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
 					pa_report->cte_type, pa_report->data_status, pa_report->data_len);
@@ -2784,8 +2847,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 #if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 	case RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND: {
 		rtk_bt_le_txpower_ind_t *txpower_ind = (rtk_bt_le_txpower_ind_t *)param;
-		printf("[APP] TX power report: conn_handle %d, type %d, txpower %d\r\n",
-			   txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
+		BT_LOGA("[APP] TX power report: conn_handle %d, type %d, txpower %d\r\n",
+				txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
 		BT_AT_PRINT("+BLEGAP:txpower_report,%d,%d,%d\r\n",
 					txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
 		break;
@@ -2793,7 +2856,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 #endif
 
 	default:
-		printf("[APP] Unkown gap cb evt type: %d\r\n", evt_code);
+		BT_LOGE("[APP] Unkown gap cb evt type: %d\r\n", evt_code);
 		break;
 	}
 
@@ -2872,7 +2935,7 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 {
 	if (1 == enable) {
 		if (a2dp_pbp_demo_init_flag) {
-			printf("%s Already init! \r\n", __func__);
+			BT_LOGE("%s Already init! \r\n", __func__);
 			return -1;
 		}
 
@@ -2880,6 +2943,7 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 		a2dp_demo_role = RTK_BT_A2DP_ROLE_SNK;
 		/* pbp broadcast source init*/
 		{
+			uint16_t tx_water_level = 0;
 			rtk_bt_br_bd_addr_t bd_addr = {0};
 			char addr_str[30] = {0};
 			char dev_name[30] = {0};
@@ -2975,6 +3039,8 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			/* pcm queue init */
 			a2dp_pbp_demo_queue_init(&a2dp_decode_pcm_queue, a2dp_pcm_queue, sizeof(a2dp_pcm_queue) / 2);
 			a2dp_pbp_demo_queue_init(&pbp_convert_pcm_queue, pcm_convert_queue, sizeof(pcm_convert_queue) / 2);
+			tx_water_level = PBP_BROADCAST_TX_WATER_LEVEL;
+			BT_LOGA("[APP] PBP broadcast tx_water_level: %d ms\r\n", tx_water_level);
 			/* pcm data convert task init */
 			if (convert_task_flag) {
 				if (false == osif_sem_create(&convert_pcm_data_task.sem, 0, 1)) {
@@ -2993,18 +3059,18 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			/* bond info flush thread init */
 			if (a2dp_demo_bond_info_flush) {
 				if (rtk_bt_br_gap_bond_num_get(&a2dp_demo_bond_num)) {
-					printf("[A2DP Demo] Get Bond Number fail\r\n");
+					BT_LOGE("[A2DP Demo] Get Bond Number fail\r\n");
 					goto failed;
 				}
 				/* Load reconnect info from file system */
 				if (rt_kv_get(a2dp_demo_bond_info_key, (void *)a2dp_demo_bond_table, sizeof(a2dp_demo_bond_table)) == sizeof(a2dp_demo_bond_table)) {
-					printf("[A2DP Demo] Load a2dp demo bond info table success \r\n");
+					BT_LOGA("[A2DP Demo] Load a2dp demo bond info table success \r\n");
 					/* dump bond info */
 					a2dp_demo_bond_info_dump();
 				} else {
-					printf("[A2DP Demo] Fail to load a2dp bond table \r\n");
+					BT_LOGE("[A2DP Demo] Fail to load a2dp bond table \r\n");
 				}
-				printf("[A2DP Demo] Create bond info flush thread \r\n");
+				BT_LOGA("[A2DP Demo] Create bond info flush thread \r\n");
 				if (false == osif_sem_create(&bond_info_flush_task.sem, 0, 1)) {
 					goto failed;
 				}
@@ -3045,7 +3111,7 @@ failed:
 		}
 	} else if (0 == enable) {
 		if (!a2dp_pbp_demo_init_flag) {
-			printf("%s No need deinit! \r\n", __func__);
+			BT_LOGE("%s No need deinit! \r\n", __func__);
 			return -1;
 		}
 		if (convert_task_flag && convert_pcm_data_task.hdl) {
@@ -3099,6 +3165,6 @@ failed:
 		}
 		return 0;
 	}
-	printf("%s Error parameter 0x%x ! \r\n", __func__, enable);
+	BT_LOGE("%s Error parameter 0x%x ! \r\n", __func__, enable);
 	return -1;
 }
