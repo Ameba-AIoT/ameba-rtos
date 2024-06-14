@@ -35,13 +35,13 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_conn_ind_t *p_avrcp_conn_ind = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_CONN_IND");
-		printf("app_avrcp_bt_cback: T_EVENT_AVRCP_CONN_IND \r\n");
+		BT_LOGA("app_avrcp_bt_cback: T_EVENT_AVRCP_CONN_IND \r\n");
 		p_link = app_find_br_link(param->avrcp_conn_ind.bd_addr);
 		if (p_link != NULL) {
 			bt_avrcp_connect_cfm(p_link->bd_addr, true);
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_CONN_IND, sizeof(rtk_bt_avrcp_conn_ind_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -57,37 +57,57 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	break;
 
 	case BT_EVENT_AVRCP_CONN_CMPL: {
+		rtk_bt_avrcp_conn_cmpl_t *p_avrcp_conn_cmpl_ind = NULL;
+
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_CONN_CMPL");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_CONN_CMPL \r\n");
-		p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_CONN_CMPL, 0);
-		if (!p_evt) {
-			printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
-			handle = false;
-			break;
-		}
-		/* Send event */
-		if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
-			handle = false;
-			break;
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_CONN_CMPL \r\n");
+		p_link = app_find_br_link(param->avrcp_conn_cmpl.bd_addr);
+		if (p_link != NULL) {
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_CONN_CMPL, sizeof(rtk_bt_avrcp_conn_cmpl_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_avrcp_conn_cmpl_ind = (rtk_bt_avrcp_conn_cmpl_t *)p_evt->data;
+			memcpy((void *)p_avrcp_conn_cmpl_ind->bd_addr, (void *)p_link->bd_addr, 6);
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
 		}
 	}
 	break;
 
 	case BT_EVENT_AVRCP_DISCONN_CMPL: {
-		p_link = app_find_br_link(param->avrcp_disconn_cmpl.bd_addr);
-		if (!p_link) {
-			printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_DISCONN_CMPL no link found \r\n");
-			break;
-		}
-		p_link->avrcp_play_status = BT_AVRCP_PLAY_STATUS_STOPPED;
+		rtk_bt_avrcp_disconn_cmpl_t *p_avrcp_disconn_cmpl_ind = NULL;
+
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_DISCONN_CMPL");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_DISCONN_CMPL \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_DISCONN_CMPL \r\n");
+		p_link = app_find_br_link(param->avrcp_disconn_cmpl.bd_addr);
+		if (p_link != NULL) {
+			p_link->avrcp_play_status = BT_AVRCP_PLAY_STATUS_STOPPED;
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_DISCONN_CMPL, sizeof(rtk_bt_avrcp_disconn_cmpl_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_avrcp_disconn_cmpl_ind = (rtk_bt_avrcp_disconn_cmpl_t *)p_evt->data;
+			memcpy((void *)p_avrcp_disconn_cmpl_ind->bd_addr, (void *)p_link->bd_addr, 6);
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
 	}
 	break;
 
 	case BT_EVENT_AVRCP_PLAY_STATUS_CHANGED_REG_REQ: {
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_PLAY_STATUS_CHANGED_REG_REQ");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY_STATUS_CHANGED_REG_REQ \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY_STATUS_CHANGED_REG_REQ \r\n");
 		p_link = app_find_br_link(param->avrcp_reg_play_status_changed.bd_addr);
 		if (p_link != NULL) {
 			if (p_link->is_streaming) {
@@ -104,14 +124,14 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_sub_event_t *p_avrcp_sub_event_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_PLAY_STATUS_CHANGED");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY_STATUS_CHANGED \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY_STATUS_CHANGED \r\n");
 		p_link = app_find_br_link(param->avrcp_play_status_changed.bd_addr);
 		if (p_link != NULL) {
 			if (p_link->avrcp_play_status != param->avrcp_play_status_changed.play_status) {
 				p_link->avrcp_play_status = param->avrcp_play_status_changed.play_status;
 				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ, sizeof(rtk_bt_avrcp_sub_event_t));
 				if (!p_evt) {
-					printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+					BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;
 					break;
 				}
@@ -131,12 +151,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_PLAY");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PLAY \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -155,12 +175,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_PAUSE");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_PAUSE \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_PAUSE \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -179,12 +199,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_STOP");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_STOP \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_STOP \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_STOP_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -203,12 +223,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_FORWARD");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_FORWARD \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_FORWARD \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -227,12 +247,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_BACKWARD");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_BACKWARD \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_BACKWARD \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -251,12 +271,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_FAST_FORWARD_START");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_FAST_FORWARD_START \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_FAST_FORWARD_START \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -275,12 +295,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_FAST_FORWARD_STOP");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_FAST_FORWARD_STOP \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_FAST_FORWARD_STOP \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -299,12 +319,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_REWIND_START");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_REWIND_START \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_REWIND_START \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -323,12 +343,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_digital_interface_command_t *p_passthrough_cmd_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_REWIND_STOP");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_REWIND_STOP \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_REWIND_STOP \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT, sizeof(rtk_bt_avrcp_digital_interface_command_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -347,12 +367,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_absolute_volume_set_t *p_avrcp_absolute_volume_set_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_ABSOLUTE_VOLUME_SET");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_ABSOLUTE_VOLUME_SET \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_ABSOLUTE_VOLUME_SET \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET, sizeof(rtk_bt_avrcp_absolute_volume_set_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -372,12 +392,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_avrcp_volume_t *p_avrcp_volume_t = NULL;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_VOLUME_CHANGED");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_VOLUME_CHANGED \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_VOLUME_CHANGED \r\n");
 		p_link = app_find_br_link(param->avrcp_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_VOLUME_CHANGED, sizeof(rtk_bt_avrcp_volume_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -397,12 +417,12 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		uint8_t cb_ret = 0;
 
 		APP_PRINT_INFO0("BT_EVENT_AVRCP_REG_VOLUME_CHANGED");
-		printf("app_avrcp_bt_cback: BT_EVENT_AVRCP_REG_VOLUME_CHANGED \r\n");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_REG_VOLUME_CHANGED \r\n");
 		p_link = app_find_br_link(param->avrcp_reg_volume_changed.bd_addr);
 		if (p_link != NULL) {
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED, sizeof(rtk_bt_avrcp_volume_change_req_t));
 			if (!p_evt) {
-				printf("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
 				handle = false;
 				break;
 			}
@@ -427,7 +447,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	if (handle == true) {
 		APP_PRINT_INFO1("app_avrcp_bt_cback: event_type 0x%04x", event_type);
-		printf("app_avrcp_bt_cback: event_type 0x%04x \r\n", event_type);
+		BT_LOGE("app_avrcp_bt_cback: event_type 0x%04x \r\n", event_type);
 	}
 }
 
@@ -634,7 +654,7 @@ uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 
 	default:
-		printf("bt_stack_avrcp_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_avrcp_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = 0;
 		break;
 	}
@@ -647,7 +667,7 @@ uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_avrcp_init(uint8_t role)
 {
-	printf("[AVRCP]app_avrcp_init\n");
+	BT_LOGA("[AVRCP]app_avrcp_init\n");
 
 	bt_avrcp_init(1);
 	if (role == 0x01) {
@@ -666,7 +686,7 @@ extern void avrcp_deinit(void);
 
 void bt_stack_avrcp_deinit(void)
 {
-	printf("[AVRCP]app_avrcp_deinit\n");
+	BT_LOGA("[AVRCP]app_avrcp_deinit\n");
 
 	avrcp_deinit();
 }

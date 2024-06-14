@@ -36,9 +36,9 @@ void bt_config_service_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *p_gatts_reg_ind = (rtk_bt_gatts_reg_ind_t *)data;
 		if (p_gatts_reg_ind->reg_status == RTK_BT_OK) {
-			printf("[APP] bt config service register succeed!\r\n");
+			BT_LOGA("[APP] bt config service register succeed!\r\n");
 		} else {
-			printf("[APP] bt config service register failed, err: 0x%x\r\n", p_gatts_reg_ind->reg_status);
+			BT_LOGE("[APP] bt config service register failed, err: 0x%x\r\n", p_gatts_reg_ind->reg_status);
 		}
 		break;
 	}
@@ -57,15 +57,15 @@ void bt_config_service_callback(uint8_t event, void *data)
 			read_resp.data = read_buf;
 			read_resp.len = read_buf_len;
 		} else {
-			printf("[APP] BT Config read event unknown index: %d\r\n", p_read_ind->index);
+			BT_LOGE("[APP] BT Config read event unknown index: %d\r\n", p_read_ind->index);
 			read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 		ret = rtk_bt_gatts_read_resp(&read_resp);
 		if (RTK_BT_OK == ret) {
-			//printf("[APP] BT Config respond for client read success, offset: %d\r\n", offset);
+			//BT_LOGA("[APP] BT Config respond for client read success, offset: %d\r\n", offset);
 		} else {
-			printf("[APP] BT Config respond for client read failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] BT Config respond for client read failed, err: 0x%x\r\n", ret);
 		}
 		break;
 	}
@@ -79,7 +79,7 @@ void bt_config_service_callback(uint8_t event, void *data)
 		write_resp.type = p_write_ind->type;
 
 		if (!p_write_ind->len || !p_write_ind->value) {
-			printf("[ATBC] BT Config write value is empty!\r\n");
+			BT_LOGE("[ATBC] BT Config write value is empty!\r\n");
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 			goto send_write_rsp;
 		}
@@ -88,16 +88,16 @@ void bt_config_service_callback(uint8_t event, void *data)
 			rtk_bt_config_send_cmd(p_write_ind->value, p_write_ind->len);
 			write_resp.err_code = 0;
 		} else {
-			printf("[APP] BT Config write event unknown index: %d\r\n", p_write_ind->index);
+			BT_LOGE("[APP] BT Config write event unknown index: %d\r\n", p_write_ind->index);
 			write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 send_write_rsp:
 		ret = rtk_bt_gatts_write_resp(&write_resp);
 		if (RTK_BT_OK == ret) {
-			//printf("[APP] BT Config response for client write success!\r\n");
+			//BT_LOGA("[APP] BT Config response for client write success!\r\n");
 		} else {
-			printf("[APP] BT Config response for client write failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] BT Config response for client write failed, err: 0x%x\r\n", ret);
 		}
 		break;
 	}

@@ -308,7 +308,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 			if (NULL != pmodel_info->model_data_cb) {
 				pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_GET_ATTENTION, &attn_value);
 			}
-			// printf("Attenetion get from app: %d \r\n",attn_value.attn);
+			// BT_LOGA("Attenetion get from app: %d \r\n",attn_value.attn);
             health_attn_stat(pmesh_msg, attn_timer_get(pmesh_msg->pmodel_info->element_index), delay_rsp_time);
         }
         break;
@@ -352,7 +352,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 			if (NULL != pmodel_info->model_data_cb) {
 				pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_GET_PERIOD, &period_value);
 			}
-			// printf("Period get from app: %d \r\n",period_value.fast_period_divisor);
+			// BT_LOGA("Period get from app: %d \r\n",period_value.fast_period_divisor);
             health_period_stat(pmesh_msg, phealth_info->fast_period_divisor, delay_rsp_time);
         }
         break;
@@ -403,12 +403,8 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 				if (NULL != pmodel_info->model_data_cb) {
 					pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_GET_FAULT, &fault_status);
 				}
-				// printf("fault array:");
-				// for (int i = 0; i < fault_status.fault_array[0]; i++)
-				// {
-				// 	printf("%d ",fault_status.fault_array[i + 1]);
-				// }
-				// printf(" \r\n ");
+				// BT_LOGA("fault array:");
+				// BT_DUMPA("", &fault_status.fault_array[1], fault_status.fault_array[0]);
                 health_fault_stat(pmesh_msg, phealth_info->recently_test_id, phealth_info->company_id,
                                   phealth_info->registered_faults, delay_rsp_time);
             }
@@ -437,12 +433,8 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 					if (NULL != pmodel_info->model_data_cb) {
 						pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_CLEAR_FAULT, &fault_status);
 					}
-					// printf("fault array:");
-					// for (int i = 0; i < fault_status.fault_array[0]; i++)
-					// {
-					// 	printf("%d ",fault_status.fault_array[i + 1]);
-					// }
-					// printf(" \r\n ");
+                    // BT_LOGA("fault array:");
+                    // BT_DUMPA("", &fault_status.fault_array[1], fault_status.fault_array[0]);
                     health_fault_stat(pmesh_msg, phealth_info->recently_test_id, phealth_info->company_id,
                                       phealth_info->registered_faults, delay_rsp_time);
                 }
@@ -491,12 +483,8 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
 				if (NULL != pmodel_info->model_data_cb) {
 					pmodel_info->model_data_cb(pmodel_info, HEALTH_SERVER_TEST_FAULT, &fault_status);
             }
-				// printf("fault array:");
-				// for (int i = 0; i < fault_status.fault_array[0]; i++)
-				// {
-				// 	printf("%d ",fault_status.fault_array[i + 1]);
-				// }
-				// printf(" \r\n ");
+				// BT_LOGA("fault array:");
+				// BT_DUMPA("", &fault_status.fault_array[1], fault_status.fault_array[0]);
         }
 		}
         break;

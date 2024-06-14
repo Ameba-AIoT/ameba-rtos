@@ -17,6 +17,7 @@
 #include <rtk_bt_gatts.h>
 #include <rtk_bas.h>
 #include <rtk_bt_def.h>
+#include <bt_utils.h>
 
 #define BATTERY_UUID_SRV                        0x180F
 #define BATTERY_UUID_CHAR_VAL_LEVEL             0x2A19
@@ -74,9 +75,9 @@ void battery_service_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;
 		if (RTK_BT_OK == reg_srv_res->reg_status) {
-			printf("[APP] BAS register service succeed!\r\n");
+			BT_LOGA("[APP] BAS register service succeed!\r\n");
 		} else {
-			printf("[APP] BAS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
+			BT_LOGE("[APP] BAS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
 		}
 		break;
 	}
@@ -84,20 +85,26 @@ void battery_service_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind_ind->err_code) {
-			printf("[APP] BAS indicate succeed!\r\n");
+			BT_LOGA("[APP] BAS indicate succeed!\r\n");
 		} else {
-			printf("[APP] BAS indicate failed, err: 0x%x \r\n", p_ind_ind->err_code);
+			BT_LOGE("[APP] BAS indicate failed, err: 0x%x \r\n", p_ind_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind_ind->err_code) ? 0 : -1, p_ind_ind->app_id,
+					p_ind_ind->conn_handle, p_ind_ind->index);
 		break;
 	}
 
 	case RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ntf_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ntf_ind->err_code) {
-			printf("[APP] BAS notify succeed!\r\n");
+			BT_LOGA("[APP] BAS notify succeed!\r\n");
 		} else {
-			printf("[APP] BAS notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
+			BT_LOGE("[APP] BAS notify failed, err: 0x%x\r\n", p_ntf_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ntf_ind->err_code) ? 0 : -1, p_ntf_ind->app_id,
+					p_ntf_ind->conn_handle, p_ntf_ind->index);
 		break;
 	}
 
@@ -112,16 +119,20 @@ void battery_service_callback(uint8_t event, void *data)
 			read_resp.data = &battery_level;
 			read_resp.len = 1;
 		} else {
-			printf("[APP] BAS read event unknown index: %d\r\n", p_read_ind->index);
+			BT_LOGE("[APP] BAS read event unknown index: %d\r\n", p_read_ind->index);
 			read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		}
 
 		ret = rtk_bt_gatts_read_resp(&read_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] BAS response for client read succeed!\r\n");
+			BT_LOGA("[APP] BAS response for client read succeed!\r\n");
 		} else {
-			printf("[APP] BAS response for client read failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] BAS response for client read failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+					read_resp.conn_handle, read_resp.index,
+					read_resp.err_code);
 		break;
 	}
 
@@ -133,15 +144,19 @@ void battery_service_callback(uint8_t event, void *data)
 		write_resp.cid = p_write_ind->cid;
 		write_resp.index = p_write_ind->index;
 		write_resp.type = p_write_ind->type;
-		printf("[APP] BAS write event, while no writable attr, unkown index: %d\r\n", p_write_ind->index);
+		BT_LOGE("[APP] BAS write event, while no writable attr, unkown index: %d\r\n", p_write_ind->index);
 		write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 
 		ret = rtk_bt_gatts_write_resp(&write_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] BAS response for client write success!\r\n");
+			BT_LOGA("[APP] BAS response for client write success!\r\n");
 		} else {
-			printf("[APP] BAS response for client write failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] BAS response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 	case RTK_BT_GATTS_EVT_CCCD_IND: {
@@ -156,19 +171,23 @@ void battery_service_callback(uint8_t event, void *data)
 		case BAS_NOTIFY_CCCD_INDEX:
 			/* ONLY notify bit can be set! */
 			if (p_cccd_ind->value & RTK_BT_GATT_CCC_INDICATE) {
-				printf("[APP] BAS notify cccd set in error, value: 0x%04x\r\n", p_cccd_ind->value);
+				BT_LOGE("[APP] BAS notify cccd set in error, value: 0x%04x\r\n", p_cccd_ind->value);
 			}
 
 			if (p_cccd_ind->value & RTK_BT_GATT_CCC_NOTIFY) {
 				battery_cccd_ntf_en_map[conn_id] = 1;
-				printf("[APP] BAS notify cccd, notify bit enable\r\n");
+				BT_LOGA("[APP] BAS notify cccd, notify bit enable\r\n");
 			} else {
 				battery_cccd_ntf_en_map[conn_id] = 0;
-				printf("[APP] BAS notify cccd, notify bit disable\r\n");
+				BT_LOGA("[APP] BAS notify cccd, notify bit disable\r\n");
 			}
+			BT_AT_PRINT("+BLEGATTS:cccd,notify,%d,%u,%u,%u\r\n",
+						battery_cccd_ntf_en_map[conn_id], p_cccd_ind->app_id,
+						p_cccd_ind->conn_handle, p_cccd_ind->index);
 			break;
 		default:
-			printf("[APP] BAS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+			BT_LOGE("[APP] BAS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+			BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 			break;
 		}
 		break;

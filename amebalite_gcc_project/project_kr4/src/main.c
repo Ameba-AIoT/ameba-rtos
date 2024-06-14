@@ -183,7 +183,7 @@ int main(void)
 
 //only NP can init FW
 #ifdef CONFIG_WLAN
-#if !defined(CONFIG_MP_INCLUDED) && ((defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP) || (defined(CONFIG_SINGLE_CORE_WIFI) && CONFIG_SINGLE_CORE_WIFI))
+#if !defined(CONFIG_MP_SHRINK) && ((defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP) || (defined(CONFIG_SINGLE_CORE_WIFI) && CONFIG_SINGLE_CORE_WIFI))
 	wififw_task_create();
 #endif
 

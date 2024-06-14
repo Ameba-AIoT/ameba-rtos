@@ -20,6 +20,7 @@ CSRC += \
 	$(DIR)/driver/hci/hci_process/hci_standalone.c \
 	$(DIR)/driver/hci/hci_transport/hci_h4.c \
 	$(DIR)/driver/platform/amebasmart/hci/bt_normal_patch.c \
+	$(DIR)/driver/platform/amebasmart/hci/bt_mp_patch.c \
 	$(DIR)/driver/platform/amebasmart/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebasmart/hci/hci_uart.c \
 	$(DIR)/osif/bt_debug.c \
@@ -33,10 +34,6 @@ CSRC += \
 	$(DIR)/driver/hci/hci_if_rtk.c \
 	$(DIR)/rtk_stack/platform/common/platform_utils.c \
 	$(DIR)/rtk_stack/platform/common/trace_uart.c
-endif
-
-ifneq ($(CONFIG_BT_EXCLUDE_MP_FUNCTION), y)
-CSRC += $(DIR)/driver/platform/amebasmart/hci/bt_mp_patch.c
 endif
 
 OBJS = $(notdir $(CSRC:.c=.o))

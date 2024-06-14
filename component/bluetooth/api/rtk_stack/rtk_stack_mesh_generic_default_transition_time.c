@@ -31,7 +31,7 @@ static int32_t generic_default_transition_time_client_data(const mesh_model_info
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -49,7 +49,7 @@ uint16_t bt_mesh_generic_default_transition_time_client_model_act_handle(rtk_bt_
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -68,10 +68,9 @@ uint16_t bt_mesh_generic_default_transition_time_client_model_act_handle(rtk_bt_
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -112,7 +111,7 @@ static int32_t generic_default_transition_time_server_data(const mesh_model_info
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;

@@ -36,7 +36,7 @@ static int32_t generic_level_client_data(const mesh_model_info_p pmodel_info,
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -53,7 +53,7 @@ uint16_t bt_mesh_generic_level_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -90,10 +90,9 @@ uint16_t bt_mesh_generic_level_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -118,7 +117,7 @@ static int32_t generic_power_on_off_client_data(const mesh_model_info_p pmodel_i
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -135,7 +134,7 @@ uint16_t bt_mesh_generic_power_on_off_client_model_act_handle(rtk_bt_cmd_t *p_cm
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -154,10 +153,9 @@ uint16_t bt_mesh_generic_power_on_off_client_model_act_handle(rtk_bt_cmd_t *p_cm
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -206,7 +204,7 @@ static int32_t generic_power_level_client_data(const mesh_model_info_p pmodel_in
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -223,7 +221,7 @@ uint16_t bt_mesh_generic_power_level_client_model_act_handle(rtk_bt_cmd_t *p_cmd
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -268,10 +266,9 @@ uint16_t bt_mesh_generic_power_level_client_model_act_handle(rtk_bt_cmd_t *p_cmd
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -296,7 +293,7 @@ static int32_t generic_battery_client_data(const mesh_model_info_p pmodel_info,
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -313,7 +310,7 @@ uint16_t bt_mesh_generic_battery_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -324,10 +321,9 @@ uint16_t bt_mesh_generic_battery_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -360,7 +356,7 @@ static int32_t generic_location_client_data(const mesh_model_info_p pmodel_info,
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -377,7 +373,7 @@ uint16_t bt_mesh_generic_location_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -407,10 +403,9 @@ uint16_t bt_mesh_generic_location_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -510,7 +505,7 @@ static int32_t generic_property_client_data(const mesh_model_info_p pmodel_info,
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 
@@ -527,7 +522,7 @@ uint16_t bt_mesh_generic_property_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -588,10 +583,9 @@ uint16_t bt_mesh_generic_property_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -653,7 +647,7 @@ static int32_t generic_level_server_data(const mesh_model_info_p pmodel_info, ui
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -687,7 +681,7 @@ static int32_t generic_power_on_off_server_data(const mesh_model_info_p pmodel_i
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -723,7 +717,7 @@ static int32_t generic_power_on_off_setup_server_data(const mesh_model_info_p pm
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -811,7 +805,7 @@ static int32_t generic_power_level_server_data(const mesh_model_info_p pmodel_in
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -857,7 +851,7 @@ static int32_t generic_power_level_setup_server_data(const mesh_model_info_p pmo
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -890,7 +884,7 @@ static int32_t generic_battery_server_data(const mesh_model_info_p pmodel_info, 
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -933,7 +927,7 @@ static int32_t generic_location_server_data(const mesh_model_info_p pmodel_info,
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -1000,7 +994,7 @@ static int32_t generic_location_setup_server_data(const mesh_model_info_p pmodel
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -1094,7 +1088,7 @@ static int32_t generic_user_property_server_data(const mesh_model_info_p pmodel_
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -1115,7 +1109,7 @@ uint16_t bt_mesh_generic_user_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -1127,10 +1121,9 @@ uint16_t bt_mesh_generic_user_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -1221,7 +1214,7 @@ static int32_t generic_admin_property_server_data(const mesh_model_info_p pmodel
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -1242,7 +1235,7 @@ uint16_t bt_mesh_generic_admin_property_server_model_act_handle(rtk_bt_cmd_t *p_
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -1254,10 +1247,9 @@ uint16_t bt_mesh_generic_admin_property_server_model_act_handle(rtk_bt_cmd_t *p_
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -1344,7 +1336,7 @@ static int32_t generic_manu_property_server_data(const mesh_model_info_p pmodel_
 	}
 	break;
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;
@@ -1365,7 +1357,7 @@ uint16_t bt_mesh_generic_manu_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -1377,10 +1369,9 @@ uint16_t bt_mesh_generic_manu_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 		break;
 	}
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -1417,7 +1408,7 @@ static int32_t generic_client_property_server_data(const mesh_model_info_p pmode
 	break;
 
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 	return 0;

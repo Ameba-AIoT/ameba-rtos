@@ -269,12 +269,15 @@ uint16_t rtk_bt_vocs_client_get_char(uint16_t conn_handle);
 /**
  * @fn        uint16_t rtk_bt_aics_server_get(void)
  * @brief     aics get parameters
- * @param[in] conn_handle: connect handle
+ * @param[in] srv_instance_id: service instance id
+ * @param[in] aics_param_type: aics param type
+ * @param[in] value_len: length of value
+ * @param[out] p_value: returned value
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_aics_server_get(void);
+uint16_t rtk_bt_aics_server_get(uint8_t srv_instance_id, uint8_t aics_param_type, uint8_t value_len, uint8_t *p_value);
 
 /**
  * @fn        uint16_t rtk_bt_aics_client_write(uint16_t conn_handle, rtk_bt_le_audio_aics_cp_op_t cp_op, int8_t gaining_setting)

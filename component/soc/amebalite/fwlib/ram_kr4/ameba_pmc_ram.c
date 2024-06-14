@@ -37,7 +37,7 @@ void SOCPS_KM4WKR4_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_KM4WKR4_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
-#ifndef CONFIG_MP_INCLUDED
+#ifndef CONFIG_MP_SHRINK
 	.Rxfunc = SOCPS_KM4WKR4_ipc_int,
 #else
 	.Rxfunc = NULL,

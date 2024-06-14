@@ -16,6 +16,7 @@
 #include <rtk_client_config.h>
 #include <rtk_gaps_client.h>
 #include <rtk_gcs_client.h>
+#include <bt_utils.h>
 
 #define GAP_SRV_UUID                    0x1800
 #define DEVICE_NAME_CHAR_UUID           0x2A00
@@ -109,36 +110,56 @@ static uint16_t gaps_client_char_find(uint16_t conn_handle)
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].char_val_handle = char_handle;
-		printf("[APP] device name handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] device name handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
-		printf("Find device name characteristic fail.\r\n");
+		BT_LOGE("Find device name characteristic fail.\r\n");
 	}
 
 	char_uuid.p.uuid16 = APPEARANCE_CHAR_UUID;
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_val_handle = char_handle;
-		printf("[APP] apperance handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] apperance handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
-		printf("Find apperance characteristic fail.\r\n");
+		BT_LOGE("Find apperance characteristic fail.\r\n");
 	}
 
 	char_uuid.p.uuid16 = PPCP_CHAR_UUID;
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_val_handle = char_handle;
-		printf("[APP] PPCP handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] PPCP handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
-		printf("Find PPCP characteristic fail.\r\n");
+		BT_LOGE("Find PPCP characteristic fail.\r\n");
 	}
 
 	char_uuid.p.uuid16 = CENTRAL_ADDR_RES_CHAR_UUID;
 	find_param.find_char.char_uuid = char_uuid;
 	if (rtk_bt_gattc_find(&find_param) == RTK_BT_OK) {
 		conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].char_val_handle = char_handle;
-		printf("[APP] central addr resolution handle is 0x%04x.\r\n", char_handle);
+		BT_LOGA("[APP] central addr resolution handle is 0x%04x.\r\n", char_handle);
+		BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+					find_param.type, find_param.conn_handle,
+					find_param.find_char.srv_uuid.p.uuid16,
+					find_param.find_char.char_uuid.p.uuid16,
+					char_handle);
 	} else {
-		printf("Find central addr resolution characteristic fail.\r\n");
+		BT_LOGE("Find central addr resolution characteristic fail.\r\n");
 	}
 
 	return RTK_BT_OK;
@@ -186,7 +207,7 @@ static void gaps_client_discover_res_hdl(void *data)
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
 
 	if (disc_res->is_found) {
-		printf("\r\n[APP] GAPS client discover all success\r\n");
+		BT_LOGA("\r\n[APP] GAPS client discover all success\r\n");
 		gaps_client_attach_conn(disc_res->conn_handle);
 		gaps_client_char_find(disc_res->conn_handle);
 	}
@@ -252,14 +273,14 @@ static void gaps_client_discover_res_hdl(void *data)
 		case RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID:
 			if (0 == conn_gaps_db->start_handle && 0 == conn_gaps_db->end_handle) {
 				conn_gaps_db->disc_state = DISC_FAILED;
-				printf("[APP] GAPS client discover service failed\r\n");
+				BT_LOGE("[APP] GAPS client discover service failed\r\n");
 			} else {
 				gaps_client_char_discover(conn_handle);
 			}
 			break;
 		case RTK_BT_GATT_DISCOVER_CHARACTERISTIC_ALL:
 			conn_gaps_db->disc_state = DISC_DONE;
-			printf("[APP] GAPS client discover all success\r\n");
+			BT_LOGA("[APP] GAPS client discover all success\r\n");
 			break;
 		default:
 			break;
@@ -303,7 +324,7 @@ static void gaps_client_read_res_hdl(void *data)
 
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	if (RTK_BT_STATUS_DONE != read_status) {
-		printf("[APP] GAPS client read fail.\r\n");
+		BT_LOGE("[APP] GAPS client read fail.\r\n");
 		return;
 	}
 #else
@@ -313,7 +334,7 @@ static void gaps_client_read_res_hdl(void *data)
 #endif
 
 	if (!len || !value) {
-		printf("[APP] GAPS client read value is empty!\r\n");
+		BT_LOGE("[APP] GAPS client read value is empty!\r\n");
 		return;
 	}
 	if (att_handle == conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].char_val_handle) {
@@ -325,7 +346,9 @@ static void gaps_client_read_res_hdl(void *data)
 		memcpy(char_data, value, len);
 		conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_DEVICE_NAME].data_len = len;
-		printf("[APP] GAPS client read device name: %s\r\n", (char *)char_data);
+		BT_LOGA("[APP] GAPS client read device name: %s\r\n", (char *)char_data);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,%s\r\n",
+					conn_handle, att_handle, len, (char *)char_data);
 
 	} else if (att_handle == conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_val_handle) {
 		char_data = conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_data;
@@ -336,7 +359,9 @@ static void gaps_client_read_res_hdl(void *data)
 		memcpy(char_data, value, len);
 		conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_APPEARANCE].data_len = len;
-		printf("[APP] GAPS client read appearance: 0x%x\r\n", *(uint16_t *)char_data);
+		BT_LOGA("[APP] GAPS client read appearance: 0x%x\r\n", *(uint16_t *)char_data);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,0x%x\r\n",
+					conn_handle, att_handle, len, *(uint16_t *)char_data);
 
 	} else if (att_handle == conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_val_handle) {
 		char_data = conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_data;
@@ -347,11 +372,14 @@ static void gaps_client_read_res_hdl(void *data)
 		memcpy(char_data, value, len);
 		conn_gaps_db->char_db[GAPS_CHAR_PPCP].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_PPCP].data_len = len;
-		printf("[APP] GAPS client read peripheral preferred connection parameters, "
-			   "conn_interval_max: 0x%x, slave_latency: 0x%x, supervision_timeout: 0x%x\r\n",
-			   *(uint16_t *)char_data,
-			   *(uint16_t *)((char *)char_data + 2),
-			   *(uint16_t *)((char *)char_data + 4));
+		BT_LOGA("[APP] GAPS client read peripheral preferred connection parameters, "
+				"conn_interval_max: 0x%x, slave_latency: 0x%x, supervision_timeout: 0x%x\r\n",
+				*(uint16_t *)char_data, *(uint16_t *)((char *)char_data + 2), *(uint16_t *)((char *)char_data + 4));
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,0x%x,0x%x,0x%x\r\n",
+					conn_handle, att_handle, len,
+					*(uint16_t *)char_data,
+					*(uint16_t *)((char *)char_data + 2),
+					*(uint16_t *)((char *)char_data + 4));
 
 	} else if (att_handle ==
 			   conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].char_val_handle) {
@@ -363,8 +391,9 @@ static void gaps_client_read_res_hdl(void *data)
 		memcpy(char_data, value, len);
 		conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].char_data = char_data;
 		conn_gaps_db->char_db[GAPS_CHAR_CEN_ADDR_RES].data_len = len;
-		printf("[APP] GAPS client read central address resolution: %d\r\n",
-			   *(uint16_t *)char_data);
+		BT_LOGA("[APP] GAPS client read central address resolution: %d\r\n", *(uint16_t *)char_data);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,%d\r\n",
+					conn_handle, att_handle, len, *(uint16_t *)char_data);
 	}
 
 #if (defined(GAPS_CLIENT_SHOW_DETAIL) && GAPS_CLIENT_SHOW_DETAIL) && (!defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB)
@@ -493,7 +522,7 @@ uint16_t gaps_client_char_read(uint16_t conn_handle, gaps_charac_index_t char_in
 	}
 
 	if (conn_gaps_db->disc_state != DISC_DONE) {
-		printf("[APP] GAPS client need discover service before read charac !!!\r\n");
+		BT_LOGE("[APP] GAPS client need discover service before read charac !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 

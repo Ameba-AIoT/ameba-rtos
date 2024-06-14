@@ -83,6 +83,13 @@ CSRC_DRV += $(DIR)/core/rtw_ap.c \
 
 endif
 
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
+	$(DIR)/core_rom/rom_rtw_recv_part2.c \
+
+CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit.c \
+	$(DIR)/halcommon_rom/rom_hal_structs.c \
+
 CSRC_DRV +=  \
 	$(DIR)/core/rtw_debug.c \
 	$(DIR)/core/rtw_task.c \
@@ -113,6 +120,7 @@ CSRC_DRV +=  \
     $(DIR)/halcommon/hal_interrupt.c \
     $(DIR)/phl/phl.c \
     $(DIR)/../wpa_supplicant/src/crypto/dh_groups.c \
+	$(DIR)/intf/wifi_intf_rom_to_flash.c \
 
 CSRC_DRV += $(TARGET_LIB)_git_version.c
 
@@ -165,8 +173,6 @@ CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
 
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c
-
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 	$(DIR)/core_rom/rom_rtw_ieee80211_part2.c \
 	$(DIR)/core_rom/rom_rtw_probe.c \
@@ -180,6 +186,7 @@ CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 	$(DIR)/core_rom/rom_rtw_assoc.c \
 	$(DIR)/core_rom/rom_rtw_vht.c \
 	$(DIR)/core_rom/rom_rtw_he.c \
+	$(DIR)/core_rom/rom_rtw_skbuff.c \
 
 CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_xmit.c
 CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_rf_onoff.c
@@ -236,7 +243,8 @@ CSRC_DRV += $(DIR)/halcommon/hal_antdiv_phydm.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_phydm.c
 CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
 
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c
+# in rom after green2
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_skbuff.c
 
 #relay mesh
 CSRC_DRV += $(DIR)/forward_mesh/relay/relay_intfs.c \
@@ -317,8 +325,6 @@ CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
 
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c
-
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 	$(DIR)/core_rom/rom_rtw_probe.c \
 	$(DIR)/core_rom/rom_rtw_auth.c \
@@ -330,7 +336,8 @@ CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 	$(DIR)/core_rom/rom_rtw_beacon.c \
 	$(DIR)/core_rom/rom_rtw_assoc.c \
 	$(DIR)/core_rom/rom_rtw_vht.c \
-	$(DIR)/core_rom/rom_rtw_he.c 
+	$(DIR)/core_rom/rom_rtw_he.c \
+	$(DIR)/core_rom/rom_rtw_skbuff.c \
 
 CSRC_DRV += $(DIR)/core/rtw_mbo.c \
 

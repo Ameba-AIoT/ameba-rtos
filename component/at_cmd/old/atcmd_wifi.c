@@ -160,6 +160,9 @@ static void print_scan_result(rtw_scan_result_t *record)
 				 (record->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
 				 (record->security == (WPA3_SECURITY | ENTERPRISE_ENABLED)) ? "WPA3 Enterprise" :
 #endif
+#ifdef CONFIG_SAE_SUPPORT
+				 (record->security == RTW_SECURITY_WPA3_OWE) ? "WPA3-OWE" :
+#endif
 				 "Unknown            ");
 
 	RTW_API_INFO(" %s ", record->SSID.val);
@@ -276,6 +279,10 @@ static void print_wifi_setting(unsigned char wlan_idx, rtw_wifi_setting_t *pSett
 		RTW_API_INFO("  SECURITY => WPA2/WPA3-SAE AES\n\r");
 	} else if (pSetting->security_type == (WPA3_SECURITY | ENTERPRISE_ENABLED)) {
 		RTW_API_INFO("  SECURITY => WPA3 ENTERPRISE\n\r");
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+	} else if (pSetting->security_type == RTW_SECURITY_WPA3_OWE) {
+		RTW_API_INFO("  SECURITY => WPA3-OWE\n\r");
 #endif
 	} else {
 		RTW_API_INFO("  SECURITY => UNKNOWN\n\r");
@@ -802,7 +809,7 @@ void fATWC(void *arg)
 	rtw_wifi_setting_t *p_wifi_setting = NULL;
 	unsigned long tick1 = rtos_time_get_current_system_time_ms();
 	unsigned long tick2, tick3;
-	char empty_bssid[6] = {0}, assoc_by_bssid = 0;
+	char empty_bssid[6] = {0};
 	char buf[32] = {0};
 	char *argv[MAX_ARGC] = {0};
 	int argc = 0;
@@ -830,9 +837,7 @@ void fATWC(void *arg)
 
 	wifi.channel = channel;
 
-	if (memcmp(wifi.bssid.octet, empty_bssid, 6)) {
-		assoc_by_bssid = 1;
-	} else if (wifi.ssid.val[0] == 0) {
+	if (!memcmp(wifi.bssid.octet, empty_bssid, 6) && (wifi.ssid.val[0] == 0)) {
 		RTK_LOGI(NOTAG, "[ATWC]Error: SSID can't be empty\n\r");
 		ret = RTW_BADARG;
 		goto EXIT;
@@ -860,14 +865,7 @@ void fATWC(void *arg)
 		}
 	}
 
-	if (assoc_by_bssid) {
-		RTK_LOGI(NOTAG, "Joining BSS by BSSID "MAC_FMT" ...\n\r", MAC_ARG(wifi.bssid.octet));
-	} else {
-		RTK_LOGI(NOTAG, "Joining BSS by SSID %s...\n\r", (char *)wifi.ssid.val);
-	}
 	ret = wifi_connect(&wifi, 1);
-
-
 	if (ret != RTW_SUCCESS) {
 		if (ret == RTW_INVALID_KEY) {
 			RTK_LOGI(NOTAG, "ERROR:Invalid Key \n\r");

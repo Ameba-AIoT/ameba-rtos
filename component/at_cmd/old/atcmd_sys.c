@@ -354,8 +354,13 @@ void fATSx(void *arg)
 
 	AT_PRINTK("[ATS?]: _AT_SYSTEM_HELP_");
 
-	ChipInfo_GetSocName();
-	ChipInfo_GetLibVersion();
+	u32 buflen = 1024;
+	char *buf = rtos_mem_malloc(buflen);
+	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
+	AT_PRINTK("%s", buf);
+	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+	AT_PRINTK("%s", buf);
+	rtos_mem_free(buf);
 }
 
 log_item_t at_sys_items[] = {

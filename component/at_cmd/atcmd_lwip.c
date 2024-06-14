@@ -7,8 +7,6 @@
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
 #include "log_service.h"
-#include "atcmd_wifi.h"
-#include "atcmd_lwip.h"
 #if ENABLE_TCPIP_SSL
 #include "mbedtls/config.h"
 #include "mbedtls/net.h"
@@ -115,6 +113,19 @@ static char *atcmd_lwip_itoa(int value)
 	return val_str;
 }
 #endif /* ENABLE_TCPIP_SSL */
+
+int atcmd_lwip_tt_proc(void)
+{
+	if (atcmd_lwip_tt_mode == TRUE) {
+		atcmd_lwip_tt_datasize = strlen(log_buf);
+		atcmd_lwip_tt_lasttickcnt = rtos_time_get_current_system_time_ms();
+		if (atcmd_lwip_tt_sema != NULL) {
+			rtos_sema_give(atcmd_lwip_tt_sema);
+		}
+		return SUCCESS;
+	}
+	return FAIL;
+}
 
 static int atcmd_lwip_is_autorecv_mode(void)
 {
@@ -1238,6 +1249,11 @@ void at_sktserver(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[mode_idx]) == 0) {
+		RTK_LOGW(NOTAG, "[+SKTSERVER] missing mode\r\n");
+		error_no = 1;
+		goto end;
+	}
 	mode = atoi(argv[mode_idx]);
 #if ENABLE_TCPIP_SSL
 	if ((mode < NODE_MODE_TCP) || (mode > NODE_MODE_SSL))
@@ -1250,8 +1266,13 @@ void at_sktserver(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[port_idx]) == 0) {
+		RTK_LOGW(NOTAG, "[+SKTSERVER] missing port\r\n");
+		error_no = 2;
+		goto end;
+	}
 	local_port = atoi(argv[port_idx]);
-	if ((local_port < 0) || (local_port > 65535)) {
+	if ((local_port <= 0) || (local_port > 65535)) {
 		RTK_LOGW(NOTAG, "[+SKTSERVER] Invalid local port\r\n");
 		error_no = 2;
 		goto end;
@@ -1484,7 +1505,7 @@ static void client_start(void *param)
 #endif
 #if LWIP_IGMP
 				ip_addr_t dst_addr;
-				dst_addr.addr = c_serv_addr.sin_addr.s_addr;
+				ip_2_ip4(&dst_addr)->addr = c_serv_addr.sin_addr.s_addr;
 				if (ip_addr_ismulticast(&dst_addr)) {
 					struct ip_mreq imr;
 					struct in_addr intfAddr;
@@ -1594,6 +1615,11 @@ void at_sktclient(void *arg)
 	}
 
 	/* tcp / udp / ssl. */
+	if (strlen(argv[mode_idx]) == 0) {
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] missing mode\r\n");
+		error_no = 17;
+		goto end;
+	}
 	mode = atoi(argv[mode_idx]);
 #if ENABLE_TCPIP_SSL
 	if (mode < NODE_MODE_TCP || mode > NODE_MODE_SSL)
@@ -1606,6 +1632,11 @@ void at_sktclient(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[rmt_port_idx]) == 0) {
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] missing remote port\r\n");
+		error_no = 3;
+		goto end;
+	}
 	remote_port = atoi(argv[rmt_port_idx]);
 	if (remote_port < 0 || remote_port > 65535) {
 		RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid port\r\n");
@@ -1626,11 +1657,15 @@ void at_sktclient(void *arg)
 			error_no = 2;
 			goto end;
 		}
+	} else {
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid addr\r\n");
+		error_no = 2;
+		goto end;
 	}
 
-	if (argc > lcl_port_idx && argv[lcl_port_idx] != NULL) {
+	if (argc > lcl_port_idx && strlen(argv[lcl_port_idx]) != 0) {
 		local_port = atoi(argv[lcl_port_idx]);
-		if (local_port < 0 || local_port > 65535) {
+		if (local_port <= 0 || local_port > 65535) {
 			RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid port\r\n");
 			error_no = 11;
 			goto end;
@@ -1723,6 +1758,11 @@ void at_skttt(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[1]) == 0) {
+		RTK_LOGI(NOTAG, "[SKTTT] Missing enable\r\n");
+		error_no = 1;
+		goto end;
+	}
 	enable = atoi(argv[1]);
 	if (enable == 1) {
 		if (mainlist->next == NULL) {
@@ -1772,7 +1812,7 @@ void at_sktsend(void *arg)
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
+	argc = parse_param_advance(arg, argv);
 	if ((argc != 3) && (argc != 5)) {
 		RTK_LOGI(NOTAG, "[at_sktsend] Invalid parameter number\r\n");
 		error_no = 1;
@@ -1852,6 +1892,11 @@ void at_sktread(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[1]) == 0) {
+		RTK_LOGI(NOTAG, "[at_sktread] missing con_id\r\n");
+		error_no = 9;
+		goto end;
+	}
 	con_id = atoi((char *)argv[1]);
 	if (con_id <= 0 || con_id > NUM_NS) {
 		RTK_LOGI(NOTAG, "[at_sktread] Invalid con_id\r\n");
@@ -1859,6 +1904,11 @@ void at_sktread(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[2]) == 0) {
+		RTK_LOGI(NOTAG, "[at_sktread] missing packet_size\r\n");
+		error_no = 2;
+		goto end;
+	}
 	packet_size = atoi((char *)argv[2]);
 	if (packet_size <= 0 || packet_size > MAX_BUFFER) {
 		RTK_LOGI(NOTAG, "[at_sktread] Invalid packet_size\r\n");
@@ -1917,6 +1967,11 @@ void at_sktrecvcfg(void *arg)
 		goto end;
 	}
 
+	if (strlen(argv[1]) == 0) {
+		RTK_LOGI(NOTAG, "[at_sktrecvcfg] missing enable\r\n");
+		error_no = 1;
+		goto end;
+	}
 	enable = atoi((char *)argv[1]);
 	/* Start autorecv. */
 	if (enable == 1) {
@@ -2026,7 +2081,7 @@ void at_sktautolink(void *arg)
 	}
 
 	argc = parse_param(arg, argv);
-	if (argc != 2 || argv[1] == NULL) {
+	if (argc != 2 || strlen(argv[1]) == 0) {
 		RTK_LOGI(NOTAG, "[at_sktautolink] Invalid parameter number\r\n");
 		error_no = 2;
 		goto end;

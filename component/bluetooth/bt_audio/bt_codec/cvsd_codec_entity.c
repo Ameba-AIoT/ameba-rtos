@@ -19,7 +19,7 @@ static uint16_t cvsd_codec_init(void *p_entity, void *param)
 	rtk_bt_cvsd_codec_t *pcvsd_codec_t = (rtk_bt_cvsd_codec_t *)param;
 
 	if (!pcvsd_codec_t) {
-		printf("%s : No rtk_bt_cvsd_codec_t configure \r\n", __func__);
+		BT_LOGE("%s : No rtk_bt_cvsd_codec_t configure \r\n", __func__);
 		return 1;
 	}
 
@@ -43,7 +43,7 @@ static uint16_t cvsd_encoder_process_data(void *p_entity, int16_t *data, uint32_
 	(void)p_entity;
 
 	if (size > CVSD_FRAME_SIZE / 2) {
-		printf("%s : inpute size is large than 256 \r\n", __func__);
+		BT_LOGE("%s : inpute size is large than 256 \r\n", __func__);
 		return 1;
 	}
 	pencoder_buffer->pbuffer = (uint8_t *)data;
@@ -62,7 +62,7 @@ static uint16_t cvsd_decoder_process_data(void *p_entity, uint8_t *data, uint32_
 	(void)paudio_param;
 
 	if (size > CVSD_FRAME_SIZE) {
-		printf("%s : inpute size is large than 256 \r\n", __func__);
+		BT_LOGE("%s : inpute size is large than 256 \r\n", __func__);
 		return 1;
 	}
 	decode_buffer->pbuffer = (int16_t *)data;
@@ -83,7 +83,7 @@ static uint16_t cvsd_audio_handle_media_data_packet(void *p_entity, uint8_t *pac
 	paudio_param->channels = cvsd_codec_t.decoder_t.channel_num;
 	paudio_param->channel_allocation = 1;
 	paudio_param->rate = cvsd_codec_t.decoder_t.sample_rate;;
-	paudio_param->bits = 0;
+	paudio_param->bits = 16;
 
 	return 0;
 }
@@ -95,7 +95,7 @@ static struct dec_codec_buffer *cvsd_decoder_buffer_get(void *p_entity)
 
 	pdecoder_buffer = (struct dec_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct dec_codec_buffer));
 	if (pdecoder_buffer == NULL) {
-		printf("%s: allocate pdecoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pdecoder_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pdecoder_buffer->pbuffer = NULL;
@@ -120,7 +120,7 @@ static struct enc_codec_buffer *cvsd_encoder_buffer_get(void *p_entity)
 
 	pencoder_buffer = (struct enc_codec_buffer *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct enc_codec_buffer));
 	if (pencoder_buffer == NULL) {
-		printf("%s: allocate pencoder_buffer fail \r\n", __func__);
+		BT_LOGE("%s: allocate pencoder_buffer fail \r\n", __func__);
 		return NULL;
 	}
 	pencoder_buffer->pbuffer = NULL;
@@ -166,7 +166,7 @@ uint16_t rtk_bt_audio_cvsd_register(uint32_t type, PAUDIO_CODEC_ENTITY p_entity)
 
 	DBG_BAD("%s:Enter \r\n", __func__);
 	if (p_entity == NULL) {
-		printf("%s:NULL entity pointer \r\n", __func__);
+		BT_LOGE("%s:NULL entity pointer \r\n", __func__);
 		return ret;
 	}
 	lock_flag = osif_lock();

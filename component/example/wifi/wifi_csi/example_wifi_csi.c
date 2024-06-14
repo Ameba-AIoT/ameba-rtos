@@ -37,6 +37,9 @@ static void wifi_csi_thread(void *param)
 	act_param.accuracy = 0;
 	act_param.trig_period = 200;  /* units: depend on ICs */
 	act_param.data_rate = 0xC;  /* ofdm 6 mpbs*/
+	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
+	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
+	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
 //	act_param.mac_addr = {0x00, 0xe0, 0x4c, 0x81, 0x92, 0xbb};
 
 	while (1) {

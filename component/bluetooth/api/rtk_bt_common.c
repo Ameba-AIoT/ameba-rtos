@@ -266,8 +266,7 @@ static void rtk_bt_evt_taskentry(void *ctx)
 			rtk_bt_event_free(pevt);
 		}
 	}
-	// printf("[Bt evt task]: exit bt evt task\r\n");
-	API_PRINT("[BT evt task] bt evt task exit\r\n");
+	BT_LOGD("[BT evt task] bt evt task exit\r\n");
 	osif_sem_give(g_evt_task_sem);
 	osif_task_delete(NULL);
 }
@@ -356,7 +355,7 @@ uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
 	bool b_is_br_mode = false;
 	bool b_is_common = false;
 
-	API_PRINT("--------------> rtk_bt_evt_register_callback: group = 0x%x \r\n", group);
+	BT_LOGD("--------------> rtk_bt_evt_register_callback: group = 0x%x \r\n", group);
 
 	if (group < RTK_BT_LE_GP_MAX) {
 		b_is_le_mode = true;
@@ -387,7 +386,7 @@ uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
 	bool b_is_br_mode = false;
 	bool b_is_common = false;
 
-	API_PRINT("--------------> rtk_bt_evt_unregister_callback \r\n");
+	BT_LOGD("--------------> rtk_bt_evt_unregister_callback \r\n");
 	if (true != rtk_bt_is_enable()) {
 		return RTK_BT_ERR_NOT_READY;
 	}

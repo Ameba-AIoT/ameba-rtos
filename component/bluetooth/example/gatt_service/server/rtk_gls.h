@@ -18,16 +18,6 @@ extern "C"  {
 #define GLC_RACP_MAX_NBR_OF_STORED_RECS         10
 #define GLC_RACP_DATABASE_SIZE                  (GLC_RACP_MAX_NBR_OF_STORED_RECS + 1)
 
-#define LE_UINT16_TO_ARRAY(a, u16)  {                   \
-        *((uint8_t *)(a) + 0) = (uint8_t)((u16) >> 0);  \
-        *((uint8_t *)(a) + 1) = (uint8_t)((u16) >> 8);  \
-    }
-
-#define LE_ARRAY_TO_UINT16(u16, a)  {                   \
-        u16 = ((uint16_t)(*(a + 0)) << 0) +             \
-              ((uint16_t)(*(a + 1)) << 8);              \
-    }
-
 #define GLC_FEATURES_LOW_BATTERY                0x0001
 #define GLC_FEATURES_SENSOR_MALFUNCTION         0x0002
 #define GLC_FEATURES_SENSOR_SAMPLE_SIZE         0x0004

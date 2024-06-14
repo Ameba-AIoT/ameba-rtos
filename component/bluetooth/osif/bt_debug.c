@@ -2,9 +2,17 @@
 #include <string.h>
 #include <basic_types.h>
 #include "ameba.h"
-#include "ameba_vector.h"
-#include "ameba_loguart.h"
 #include <bt_debug.h>
+
+#define _LE_TO_U32(_a)                                  \
+        (((uint32_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 1)) << 8)  |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 2)) << 16) |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 3)) << 24))
+
+#define _LE_TO_U16(_a)                                  \
+        (((uint16_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
+         ((uint16_t)(*((uint8_t *)(_a) + 1)) << 8))
 
 
 #if defined(BT_LOG_USE_MUTEX) && BT_LOG_USE_MUTEX
@@ -35,13 +43,17 @@ void rtk_bt_log_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
 	int i = 0;
 	int num = 16 / unit;
 
+	if (!buf || !len) {
+		return;
+	}
+
 	BT_LOG_MUTEX_TAKE
-	RTK_LOGS(NOTAG, "%s\r\n", str);
+	RTK_LOGS(NOTAG, str);
 	for (i = 0; i < len; i++) {
 		if (unit == 4) {
-			RTK_LOGS(NOTAG, "%08x ", *((uint32_t *)buf + i));
+			RTK_LOGS(NOTAG, "%08x ", _LE_TO_U32((uint8_t *)buf + i * 4)); /* *(buf + i) may crash at AmebaLite when (buf + i) isn't aligned with 4.*/
 		} else if (unit == 2) {
-			RTK_LOGS(NOTAG, "%04x ", *((uint16_t *)buf + i));
+			RTK_LOGS(NOTAG, "%04x ", _LE_TO_U16((uint8_t *)buf + i * 2));
 		} else {
 			RTK_LOGS(NOTAG, "%02x ", *((uint8_t *)buf + i));
 		}
@@ -49,6 +61,27 @@ void rtk_bt_log_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
 			RTK_LOGS(NOTAG, "\r\n");
 		}
 	}
+	BT_LOG_MUTEX_GIVE
+}
+
+void rtk_bt_log_dumphex(const char *str, void *buf, uint16_t len, bool reverse)
+{
+	int i = 0;
+
+	if (!buf || !len) {
+		return;
+	}
+
+	BT_LOG_MUTEX_TAKE
+	RTK_LOGS(NOTAG, str);
+	for (i = 0; i < len; i++) {
+		if (reverse) {
+			RTK_LOGS(NOTAG, "%02x", *((uint8_t *)(buf) + len - 1 - i));
+		} else {
+			RTK_LOGS(NOTAG, "%02x", *((uint8_t *)(buf) + i));
+		}
+	}
+	RTK_LOGS(NOTAG, "\r\n");
 	BT_LOG_MUTEX_GIVE
 }
 

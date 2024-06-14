@@ -15,6 +15,7 @@
 #include <rtk_bt_att_defs.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_dis.h>
+#include <bt_utils.h>
 
 #define DEVICE_INFORMATION_SRV_UUID                 0x180A
 #define SYSTEM_ID_CHAR_UUID                         0x2A23
@@ -320,17 +321,22 @@ void dis_read_hdl(void *data)
 		break;
 
 	default:
-		printf("[APP] DIS read event unknown index: %d\r\n", evt_read->index);
+		BT_LOGE("[APP] DIS read event unknown index: %d\r\n", evt_read->index);
 		read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 		break;
 	}
 
 	ret = rtk_bt_gatts_read_resp(&read_resp);
 	if (RTK_BT_OK == ret) {
-		printf("[APP] DIS response for client read succeed!\r\n");
+		BT_LOGA("[APP] DIS response for client read succeed!\r\n");
 	} else {
-		printf("[APP] DIS response for client read failed, err: 0x%x\r\n", ret);
+		BT_LOGE("[APP] DIS response for client read failed, err: 0x%x\r\n", ret);
 	}
+
+	BT_AT_PRINT("+BLEGATTS:read_rsp,%d,%u,%u,%u,%d\r\n",
+				(RTK_BT_OK == ret) ? 0 : -1, read_resp.app_id,
+				read_resp.conn_handle, read_resp.index,
+				read_resp.err_code);
 }
 
 void device_info_srv_callback(uint8_t event, void *data)
@@ -341,9 +347,9 @@ void device_info_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
 		rtk_bt_gatts_reg_ind_t *reg_srv_res = (rtk_bt_gatts_reg_ind_t *)data;
 		if (RTK_BT_OK == reg_srv_res->reg_status) {
-			printf("[APP] DIS register service succeed!\r\n");
+			BT_LOGA("[APP] DIS register service succeed!\r\n");
 		} else {
-			printf("[APP] DIS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
+			BT_LOGE("[APP] DIS register service failed, err: 0x%x\r\n", reg_srv_res->reg_status);
 		}
 		break;
 	}
@@ -351,20 +357,26 @@ void device_info_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind->err_code) {
-			printf("[APP] DIS indicate succeed!\r\n");
+			BT_LOGA("[APP] DIS indicate succeed!\r\n");
 		} else {
-			printf("[APP] DIS indicate failed, err: 0x%x\r\n", p_ind->err_code);
+			BT_LOGE("[APP] DIS indicate failed, err: 0x%x\r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:indicate,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
 		break;
 	}
 
 	case RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND: {
 		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
 		if (RTK_BT_OK == p_ind->err_code) {
-			printf("[APP] DIS notify succeed!\r\n");
+			BT_LOGA("[APP] DIS notify succeed!\r\n");
 		} else {
-			printf("[APP] DIS notify failed, err: 0x%x\r\n", p_ind->err_code);
+			BT_LOGE("[APP] DIS notify failed, err: 0x%x\r\n", p_ind->err_code);
 		}
+		BT_AT_PRINT("+BLEGATTS:notify,%d,%u,%u,%u\r\n",
+					(RTK_BT_OK == p_ind->err_code) ? 0 : -1, p_ind->app_id,
+					p_ind->conn_handle, p_ind->index);
 		break;
 	}
 
@@ -381,26 +393,31 @@ void device_info_srv_callback(uint8_t event, void *data)
 		write_resp.cid = p_write_ind->cid;
 		write_resp.index = p_write_ind->index;
 		write_resp.type = p_write_ind->type;
-		printf("[APP] DIS write event, while no writable attr, unknown index: %d\r\n", p_write_ind->index);
+		BT_LOGE("[APP] DIS write event, while no writable attr, unknown index: %d\r\n", p_write_ind->index);
 		write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
 
 		ret = rtk_bt_gatts_write_resp(&write_resp);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] DIS response for client write success!\r\n");
+			BT_LOGA("[APP] DIS response for client write success!\r\n");
 		} else {
-			printf("[APP] DIS response for client write failed, err: 0x%x\r\n", ret);
+			BT_LOGE("[APP] DIS response for client write failed, err: 0x%x\r\n", ret);
 		}
+		BT_AT_PRINT("+BLEGATTS:write_rsp,%d,%u,%u,%u,%d,%d\r\n",
+					(RTK_BT_OK == ret) ? 0 : -1, write_resp.app_id,
+					write_resp.conn_handle, write_resp.index,
+					write_resp.type, write_resp.err_code);
 		break;
 	}
 
 	case RTK_BT_GATTS_EVT_CCCD_IND: {
 		rtk_bt_gatts_cccd_ind_t *p_cccd_ind = (rtk_bt_gatts_cccd_ind_t *)data;
-		printf("[APP] DIS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_LOGE("[APP] DIS CCCD event unknown index: %d\r\n", p_cccd_ind->index);
+		BT_AT_PRINT("+BLEGATTS:cccd,unknown_index\r\n");
 		break;
 	}
 
 	default:
-		printf("[APP] DIS NO corresponding event: %d\r\n", event);
+		BT_LOGE("[APP] DIS NO corresponding event: %d\r\n", event);
 		break;
 	}
 }

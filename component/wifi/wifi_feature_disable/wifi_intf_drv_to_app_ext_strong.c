@@ -23,13 +23,6 @@ int wifi_scan_abort(u8 block)
 	return -1;
 }
 
-int wifi_btcoex_set_ble_scan_duty(u8 duty)
-{
-	(void)duty;
-	call_noused = __LINE__;
-	return -1;
-}
-
 int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsigned char *group_key)
 {
 	UNUSED(wlan_idx);
@@ -419,5 +412,12 @@ void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)
 {
 	UNUSED(owe_param);
 	call_noused = __LINE__;
+}
+
+int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info)
+{
+	UNUSED(txpwr_ctrl_info);
+	call_noused = __LINE__;
+	return -1;
 }
 

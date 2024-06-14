@@ -16,6 +16,7 @@
 #include <rtk_client_config.h>
 #include <rtk_bas_client.h>
 #include <rtk_gcs_client.h>
+#include <bt_utils.h>
 
 #define BATTERY_SRV_UUID                        0x180F
 #define BATTERY_LEVEL_CHAR_UUID                 0x2A19
@@ -75,7 +76,12 @@ static uint16_t bas_client_char_find(uint16_t conn_handle)
 	}
 
 	conn_bas_db->char_val_handle = battery_level_handle;
-	printf("[APP] Battery Level handle is 0x%04x.\r\n", battery_level_handle);
+	BT_LOGA("[APP] Battery Level handle is 0x%04x.\r\n", battery_level_handle);
+	BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+				find_param.type, find_param.conn_handle,
+				find_param.find_char.srv_uuid.p.uuid16,
+				find_param.find_char.char_uuid.p.uuid16,
+				battery_level_handle);
 	return RTK_BT_OK;
 }
 
@@ -113,7 +119,12 @@ static uint16_t bas_client_cccd_find(uint16_t conn_handle)
 	}
 
 	conn_bas_db->cccd_handle = cccd_handle;
-	printf("[APP] Battery Level CCCD handle is 0x%04x.\r\n", cccd_handle);
+	BT_LOGA("[APP] Battery Level CCCD handle is 0x%04x.\r\n", cccd_handle);
+	BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%04x,%04x,0x%04x\r\n",
+				find_param.type, find_param.conn_handle,
+				find_param.find_char.srv_uuid.p.uuid16,
+				find_param.find_char.char_uuid.p.uuid16,
+				cccd_handle);
 	return RTK_BT_OK;
 }
 
@@ -195,7 +206,7 @@ static void bas_client_discover_res_hdl(void *data)
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
 
 	if (disc_res->is_found) {
-		printf("\r\n[APP] BAS client discover all success\r\n");
+		BT_LOGA("\r\n[APP] BAS client discover all success\r\n");
 		bas_client_attach_conn(disc_res->conn_handle);
 		bas_client_char_find(disc_res->conn_handle);
 		bas_client_cccd_find(disc_res->conn_handle);
@@ -255,7 +266,7 @@ static void bas_client_discover_res_hdl(void *data)
 			break;
 		case RTK_BT_GATT_DISCOVER_DESCRIPTORS_ALL:
 			conn_bas_db->disc_state = DISC_DONE;
-			printf("[APP] BAS client discover all success\r\n");
+			BT_LOGA("[APP] BAS client discover all success\r\n");
 			break;
 		default:
 			break;
@@ -301,19 +312,23 @@ static void bas_client_read_res_hdl(void *data)
 	/* When gattc read, only if read_status == RTK_BT_STATUS_CONTINUE, the check of len and value is meaningful,
 	    because when read_status != RTK_BT_STATUS_CONTINUE, len and value is always 0/NULL */
 	if (!len || !value) {
-		printf("[APP] BAS client read value is empty!\r\n");
+		BT_LOGE("[APP] BAS client read value is empty!\r\n");
 		return;
 	}
 	if (att_handle == conn_bas_db->char_val_handle) {
 		conn_bas_db->battery_level = *value;
-		printf("[APP] BAS client read battery level: %d\r\n", conn_bas_db->battery_level);
+		BT_LOGA("[APP] BAS client read battery level: %d\r\n", conn_bas_db->battery_level);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,%d\r\n",
+					conn_handle, att_handle, len, conn_bas_db->battery_level);
 	} else if (att_handle == conn_bas_db->cccd_handle) {
 		if (*(uint16_t *)value & RTK_BT_GATT_CCC_NOTIFY) {
 			conn_bas_db->notify_enable = true;
 		} else {
 			conn_bas_db->notify_enable = false;
 		}
-		printf("[APP] BAS client read notify bit: %d\r\n", conn_bas_db->notify_enable);
+		BT_LOGA("[APP] BAS client read notify bit: %d\r\n", conn_bas_db->notify_enable);
+		BT_AT_PRINT("+BLEGATTC:read,%u,0x%04x,%u,%d\r\n",
+					conn_handle, att_handle, len, conn_bas_db->notify_enable);
 	}
 #if (defined(BAS_CLIENT_SHOW_DETAIL) && BAS_CLIENT_SHOW_DETAIL) && (!defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB)
 	general_client_read_res_hdl(data);
@@ -340,7 +355,9 @@ static void bas_client_write_res_hdl(void *data)
 	}
 
 	if (write_res->handle == conn_bas_db->cccd_handle) {
-		printf("[APP] BAS client set notify success\r\n");
+		BT_LOGA("[APP] BAS client set notify success\r\n");
+		BT_AT_PRINT("+BLEGATTC:write,%u,0x%04x,%u\r\n",
+					conn_handle, write_res->handle, write_status);
 	}
 
 #if (defined(BAS_CLIENT_SHOW_DETAIL) && BAS_CLIENT_SHOW_DETAIL) && (!defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB)
@@ -366,11 +383,13 @@ static void bas_client_notify_hdl(void *data)
 		return;
 	}
 	if (!notify_ind->len || !notify_ind->value) {
-		printf("[APP] BAS client notify value is empty!\r\n");
+		BT_LOGE("[APP] BAS client notify value is empty!\r\n");
 		return;
 	}
 	if (notify_ind->value_handle == conn_bas_db->char_val_handle) {
-		printf("[APP] BAS client notify battery level: %d\r\n", *notify_ind->value);
+		BT_LOGA("[APP] BAS client notify battery level: %d\r\n", *notify_ind->value);
+		BT_AT_PRINT("+BLEGATTC:notify,%d,%d,0x%x\r\n",
+					notify_ind->profile_id, notify_ind->conn_handle, notify_ind->value_handle);
 	}
 
 	return;
@@ -405,9 +424,27 @@ static void bas_client_cccd_enable_hdl(void *data)
 #endif
 
 	if (RTK_BT_STATUS_DONE == status && cccd_update->bnotify) {
-		printf("[APP] BAS client enable notify succeed\r\n");
+		BT_LOGA("[APP] BAS client enable notify succeed\r\n");
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		BT_AT_PRINT("+BLEGATTC:en_cccd,0,%d,%d,%04x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->uuid.p.uuid16);
+#else
+		BT_AT_PRINT("+BLEGATTC:en_cccd,0,%d,%d,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle);
+#endif
 	} else {
-		printf("[APP] BAS client enable notify failed\r\n");
+		BT_LOGE("[APP] BAS client enable notify failed\r\n");
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		BT_AT_PRINT("+BLEGATTC:en_cccd,-1,%d,%d,0x%x,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->uuid.p.uuid16, cccd_update->err_code);
+#else
+		BT_AT_PRINT("+BLEGATTC:en_cccd,-1,%d,%d,0x%x,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle, cccd_update->err_code);
+#endif
 	}
 }
 
@@ -440,9 +477,27 @@ static void bas_client_cccd_disable_hdl(void *data)
 #endif
 
 	if (RTK_BT_STATUS_DONE == status && cccd_update->bnotify) {
-		printf("[APP] BAS client disable notify succeed\r\n");
+		BT_LOGA("[APP] BAS client disable notify succeed\r\n");
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		BT_AT_PRINT("+BLEGATTC:dis_cccd,0,%d,%d,%04x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->uuid.p.uuid16);
+#else
+		BT_AT_PRINT("+BLEGATTC:dis_cccd,0,%d,%d,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle);
+#endif
 	} else {
-		printf("[APP] BAS client disable notify failed\r\n");
+		BT_LOGE("[APP] BAS client disable notify failed\r\n");
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
+		BT_AT_PRINT("+BLEGATTC:dis_cccd,-1,%d,%d,0x%x,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->uuid.p.uuid16, cccd_update->err_code);
+#else
+		BT_AT_PRINT("+BLEGATTC:dis_cccd,-1,%d,%d,0x%x,0x%x\r\n",
+					cccd_update->profile_id, cccd_update->conn_handle,
+					cccd_update->cccd_handle, cccd_update->err_code);
+#endif
 	}
 }
 
@@ -585,7 +640,7 @@ uint16_t bas_client_read_battery_level(uint16_t conn_handle)
 	}
 
 	if (conn_bas_db->disc_state != DISC_DONE) {
-		printf("[APP] BAS client need discover service before read battery level !!!\r\n");
+		BT_LOGE("[APP] BAS client need discover service before read battery level !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 
@@ -614,7 +669,7 @@ uint16_t bas_client_set_notify(uint16_t conn_handle, bool enable)
 		return RTK_BT_ERR_NO_ENTRY;
 	}
 	if (conn_bas_db->disc_state != DISC_DONE) {
-		printf("[APP] BAS client need discover service before set notify !!!\r\n");
+		BT_LOGE("[APP] BAS client need discover service before set notify !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 
@@ -659,7 +714,7 @@ uint16_t bas_client_read_notify(uint16_t conn_handle)
 		return RTK_BT_ERR_NO_ENTRY;
 	}
 	if (conn_bas_db->disc_state != DISC_DONE) {
-		printf("[APP] BAS client need discover service before read notify !!!\r\n");
+		BT_LOGE("[APP] BAS client need discover service before read notify !!!\r\n");
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 

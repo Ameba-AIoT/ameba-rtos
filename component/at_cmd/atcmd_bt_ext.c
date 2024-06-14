@@ -1208,7 +1208,7 @@ enum cmd_index {
 #endif /* RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	ATCMD_BR_GAP_IDX,
-	ATCMD_AD2P_IDX,
+	ATCMD_A2DP_IDX,
 	ATCMD_AVRCP_IDX,
 	ATCMD_SPP_IDX,
 	ATCMD_HID_IDX,
@@ -1467,18 +1467,38 @@ static inline void fBLEGATTC(void *arg)
 	atcmd_bt_cmd(arg, ATCMD_GATTC_IDX, "[AT+BLEGATTC]");
 }
 
-static inline void fBTBRGAP(void *arg)
-{
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-	atcmd_bt_cmd(arg, ATCMD_BR_GAP_IDX, "[AT+BTBRGAP]");
-#else
-	(void)arg;
-	AT_PRINTK("[AT+BTBRGAP] Error: not supported\r\n");
-	BT_AT_PRINTERROR();
-#endif
+static inline void fBRGAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_BR_GAP_IDX, "[AT+BRGAP]");
 }
 
+static inline void fBTA2DP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_A2DP_IDX, "[AT+BTA2DP]");
+}
 
+static inline void fBTAVRCP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_AVRCP_IDX, "[AT+BTAVRCP]");
+}
+
+static inline void fBTSPP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_SPP_IDX, "[AT+BTSPP]");
+}
+
+static inline void fBTHID(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_HID_IDX, "[AT+BTHID]");
+}
+
+static inline void fBTHFP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_HFP_IDX, "[AT+BTHFP]");
+}
+
+#endif /* RTK_BREDR_SUPPORT */
 
 
 #endif /* ATCMD_BT_CUT_DOWN */
@@ -1494,8 +1514,16 @@ static log_item_t at_bt_items[] = {
 	{"+BLEGAP",   fBLEGAP,   {NULL, NULL}},
 	{"+BLEGATTS", fBLEGATTS, {NULL, NULL}},
 	{"+BLEGATTC", fBLEGATTC, {NULL, NULL}},
-	{"+BTBRGAP",  fBTBRGAP,  {NULL, NULL}},
-	{},
+#if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
+	{"+BRGAP",    fBRGAP,    {NULL, NULL}},
+	{"+BTA2DP",   fBTA2DP,   {NULL, NULL}},
+	{"+BTAVRCP",  fBTAVRCP,  {NULL, NULL}},
+	{"+BTSPP",    fBTSPP,    {NULL, NULL}},
+	{"+BTHID",    fBTHID,    {NULL, NULL}},
+	{"+BTHFP",    fBTHFP,    {NULL, NULL}},
+#endif
+
+
 #endif
 };
 

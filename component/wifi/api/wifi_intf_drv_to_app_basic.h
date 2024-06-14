@@ -293,6 +293,11 @@ struct rtw_kvr_param_t {
 #endif
 };
 
+struct rtw_tx_power_ctl_info_t {
+	s8	tx_pwr_force; /* Currently user can specify tx power for all rate. unit 0.25dbm*/
+	u8	b_tx_pwr_force_enbale : 1;
+};
+
 /**
   * @brief  The structure is used to describe the phy statistics
   */
@@ -301,10 +306,10 @@ typedef struct _rtw_phy_statistics_t {
 	signed char	data_rssi;          /*!<average data rssi in 1 sec (for STA mode) */
 	signed char	beacon_rssi;          /*!<average beacon rssi in 1 sec (for STA mode) */
 	signed char	snr;          /*!< average snr in 1 sec (not include cck rate, for STA mode)*/
-	unsigned int	false_alarm_cck;
-	unsigned int	false_alarm_ofdm;
-	unsigned int	cca_cck;
-	unsigned int	cca_ofdm;
+	unsigned int
+	cca_clm; /*<channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result>*/
+	unsigned int	edcca_clm; /*<channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result>*/
+	unsigned int	clm_channel; /*<channel corresponding to the latest clm result.>*/
 	unsigned int	tx_retry;
 	unsigned short	tx_drop;
 	unsigned int	rx_drop;
@@ -504,7 +509,7 @@ struct rx_pkt_info {
 typedef int (*wifi_do_fast_connect_ptr)(void);
 typedef int (*write_fast_connect_info_ptr)(unsigned int data1, unsigned int data2);
 typedef void (*ap_channel_switch_callback_t)(unsigned char channel, enum rtw_channel_switch_res ret);
-typedef void (*p_wlan_autoreconnect_hdl_t)(enum rtw_security, char *, int, char *, int, int, char);
+typedef void (*p_wlan_autoreconnect_hdl_t)(enum rtw_security, char *, int, char *, char *, int, int, char);
 
 typedef void (*wifi_jioninfo_free_ptr)(u8 iface_type);
 
@@ -615,6 +620,9 @@ typedef struct _rtw_csi_action_parm_t {
 	enum rtw_csi_op_role csi_role; /* indicate csi operation role */
 	enum rtw_csi_mode_type mode;
 	enum rtw_csi_action_type act;
+	unsigned short trig_frame_mgnt; /* indicate management frame subtype of rx csi triggering frame for fetching csi*/
+	unsigned short trig_frame_ctrl; /* indicate control frame subtype of rx csi triggering frame for fetching csi*/
+	unsigned short trig_frame_data; /* indicate data frame subtype of rx csi triggering frame for fetching csi*/
 	unsigned char enable;
 	unsigned char trig_period;
 	unsigned char data_rate;
@@ -743,8 +751,7 @@ extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
  * @brief  Enable Wi-Fi.
  * - Bring the Wireless interface "Up".
  * @param[in]  mode: Decide to enable WiFi in which mode.
- * 	The optional modes are RTW_MODE_STA, RTW_MODE_AP,
- * 	RTW_MODE_STA_AP, RTW_MODE_PROMISC.
+ * 	The optional modes are RTW_MODE_STA, RTW_MODE_AP.
  * @return  RTW_SUCCESS: if the WiFi chip initialized successfully.
  * @return  RTW_ERROR: if the WiFi chip initialization failed.
  */

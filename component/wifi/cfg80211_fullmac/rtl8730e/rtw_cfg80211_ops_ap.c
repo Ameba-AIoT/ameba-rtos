@@ -296,6 +296,10 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 		return -EPERM;
 	}
 
+	if (rtw_netdev_idx(ndev) == 0) {
+		return -EPERM;
+	}
+
 	memcpy(softAP_config.ssid.val, (u8 *)settings->ssid, settings->ssid_len);
 	softAP_config.ssid.len = settings->ssid_len;
 	softAP_config.channel = (u8) ieee80211_frequency_to_channel(settings->chandef.chan->center_freq);
@@ -415,6 +419,10 @@ static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev
 	dev_dbg(global_idev.fullmac_dev, "=>"FUNC_NDEV_FMT" - Stop Softap\n", FUNC_NDEV_ARG(ndev));
 
 	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
+	if (rtw_netdev_idx(ndev) == 0) {
 		return -EPERM;
 	}
 

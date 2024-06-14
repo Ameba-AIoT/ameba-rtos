@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "atcmd_bt_mp.h"
+#include "log_service.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 

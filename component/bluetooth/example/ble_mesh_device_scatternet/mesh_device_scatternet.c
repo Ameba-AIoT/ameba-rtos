@@ -39,15 +39,6 @@
 #include <rtk_bt_mesh_health_model.h>
 #include <bt_utils.h>
 
-#define BT_APP_PROCESS(func)                                \
-    do {                                                    \
-        uint16_t __func_ret = func;                         \
-        if (RTK_BT_OK != __func_ret) {                      \
-            printf("[APP] %s failed!!! line: %d, err: 0x%x\r\n", __func__, __LINE__, __func_ret);   \
-            return -1;                                      \
-        }                                                   \
-    } while (0)
-
 static uint8_t adv_data[] = {
 	0x02, //AD len
 	RTK_BT_LE_GAP_ADTYPE_FLAGS, //AD types
@@ -84,11 +75,7 @@ static void mesh_data_uart_dump(uint8_t *pbuffer, uint32_t len)
 	if (i == len) {
 		return;
 	}
-	printf("0x");
-	for (uint32_t i = 0; i < len; i++) {
-		printf("%02X", pbuffer[i]);
-	}
-	printf("\r\n");
+	BT_DUMPHEXA("0x", pbuffer, len, false);
 }
 
 static void app_server_disconnect(uint16_t conn_handle)
@@ -116,9 +103,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
-		printf("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
-			   le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
-			   scan_res_ind->adv_report.len);
+		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
+				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
+				scan_res_ind->adv_report.len);
 		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
 					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 					scan_res_ind->adv_report.len);
@@ -128,9 +115,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		/*  Do not report scan start event for LPN, because it could auto start and stop scan in every FRIEND POLL interval
 		        rtk_bt_le_scan_start_ind_t *scan_start_ind = (rtk_bt_le_scan_start_ind_t *)param;
 		        if (!scan_start_ind->err) {
-		            printf("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
+		            BT_LOGA("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
 		        } else {
-		            printf("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
+		            BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		        }
 		*/
 		break;
@@ -140,9 +127,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		/*  Do not report scan stop event for LPN, because it could auto start and stop scan in every FRIEND POLL interval
 		        rtk_bt_le_scan_stop_ind_t *scan_stop_ind = (rtk_bt_le_scan_stop_ind_t *)param;
 		        if (!scan_stop_ind->err) {
-		            printf("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
+		            BT_LOGA("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
 		        } else {
-		            printf("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
+		            BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		        }
 		*/
 		break;
@@ -152,8 +139,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
 		if (!conn_ind->err) {
 			role = conn_ind->role ? "slave" : "master";
-			printf("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
-				   conn_ind->conn_handle, role, le_addr);
+			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
+					conn_ind->conn_handle, role, le_addr);
 			if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
 				// Stop mesh custom ADV
 				rtk_bt_le_gap_stop_adv();
@@ -165,19 +152,19 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 				RTK_BT_OK == bas_client_attach_conn(conn_ind->conn_handle) &&
 				RTK_BT_OK == gaps_client_attach_conn(conn_ind->conn_handle) &&
 				RTK_BT_OK == simple_ble_client_attach_conn(conn_ind->conn_handle)) {
-				printf("[APP] GATTC Profiles attach connection success, conn_handle: %d\r\n",
-					   conn_ind->conn_handle);
+				BT_LOGA("[APP] GATTC Profiles attach connection success, conn_handle: %d\r\n",
+						conn_ind->conn_handle);
 			}
 #endif
 			/* central action */
 			if (RTK_BT_LE_ROLE_MASTER == conn_ind->role &&
 				rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr)) {
-				printf("[APP] Bonded device, start link encryption procedure\r\n");
+				BT_LOGA("[APP] Bonded device, start link encryption procedure\r\n");
 				rtk_bt_le_sm_start_security(conn_ind->conn_handle);
 			}
 		} else {
-			printf("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
-				   conn_ind->err, le_addr);
+			BT_LOGE("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
+					conn_ind->err, le_addr);
 		}
 		BT_AT_PRINT("+BLEGAP:conn,%d,%d,%s\r\n", (conn_ind->err == 0) ? 0 : -1, (int)conn_ind->conn_handle, le_addr);
 		break;
@@ -187,8 +174,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		rtk_bt_le_disconn_ind_t *disconn_ind = (rtk_bt_le_disconn_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(disconn_ind->peer_addr), le_addr, sizeof(le_addr));
 		role = disconn_ind->role ? "slave" : "master";
-		printf("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
-			   disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+		BT_LOGA("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
+				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		BT_AT_PRINT("+BLEGAP:disconn,0x%x,%d,%s,%s\r\n",
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
@@ -202,8 +189,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 			RTK_BT_OK == bas_client_detach_conn(disconn_ind->conn_handle) &&
 			RTK_BT_OK == gaps_client_detach_conn(disconn_ind->conn_handle) &&
 			RTK_BT_OK == simple_ble_client_detach_conn(disconn_ind->conn_handle)) {
-			printf("[APP] GATTC Profiles detach connection success, conn_handle: %d\r\n",
-				   disconn_ind->conn_handle);
+			BT_LOGA("[APP] GATTC Profiles detach connection success, conn_handle: %d\r\n",
+					disconn_ind->conn_handle);
 		}
 		break;
 	}
@@ -212,16 +199,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		rtk_bt_le_conn_update_ind_t *conn_update_ind =
 			(rtk_bt_le_conn_update_ind_t *)param;
 		if (conn_update_ind->err) {
-			printf("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
-				   conn_update_ind->conn_handle, conn_update_ind->err);
+			BT_LOGE("[APP] Update conn param failed, conn_handle: %d, err: 0x%x\r\n",
+					conn_update_ind->conn_handle, conn_update_ind->err);
 			BT_AT_PRINT("+BLEGAP:conn_update,%d,-1\r\n", conn_update_ind->conn_handle);
 		} else {
-			printf("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
-				   "conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
-				   conn_update_ind->conn_handle,
-				   conn_update_ind->conn_interval,
-				   conn_update_ind->conn_latency,
-				   conn_update_ind->supv_timeout);
+			BT_LOGA("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
+					"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
+					conn_update_ind->conn_handle,
+					conn_update_ind->conn_interval,
+					conn_update_ind->conn_latency,
+					conn_update_ind->supv_timeout);
 			BT_AT_PRINT("+BLEGAP:conn_update,%d,0,0x%x,0x%x,0x%x\r\n",
 						conn_update_ind->conn_handle,
 						conn_update_ind->conn_interval,
@@ -233,14 +220,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND: { //BT api shall not be called here
 		rtk_bt_le_remote_conn_update_req_ind_t *rmt_update_req =
 			(rtk_bt_le_remote_conn_update_req_ind_t *)param;
-		printf("[APP] Remote device request a change in conn param, conn_handle: %d, "      \
-			   "conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "      \
-			   "timeout: 0x%x. The host stack accept it.\r\n",
-			   rmt_update_req->conn_handle,
-			   rmt_update_req->conn_interval_max,
-			   rmt_update_req->conn_interval_min,
-			   rmt_update_req->conn_latency,
-			   rmt_update_req->supv_timeout);
+		BT_LOGA("[APP] Remote device request a change in conn param, conn_handle: %d, "      \
+				"conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "      \
+				"timeout: 0x%x. The host stack accept it.\r\n",
+				rmt_update_req->conn_handle,
+				rmt_update_req->conn_interval_max,
+				rmt_update_req->conn_interval_min,
+				rmt_update_req->conn_latency,
+				rmt_update_req->supv_timeout);
 		return RTK_BT_EVT_CB_ACCEPT;
 		break;
 	}
@@ -248,9 +235,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_ADV_STOP_IND: {
 		rtk_bt_le_adv_stop_ind_t *adv_stop_ind = (rtk_bt_le_adv_stop_ind_t *)param;
 		if (!adv_stop_ind->err) {
-			printf("[APP] ADV stopped: reason 0x%x \r\n", adv_stop_ind->stop_reason);
+			BT_LOGA("[APP] ADV stopped: reason 0x%x \r\n", adv_stop_ind->stop_reason);
 		} else {
-			printf("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
+			BT_LOGE("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
 		break;
 	}
@@ -258,14 +245,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change =
 			(rtk_bt_le_data_len_change_ind_t *)param;
-		printf("[APP] Data len is updated, conn_handle: %d, "       \
-			   "max_tx_octets: 0x%x, max_tx_time: 0x%x, "        \
-			   "max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
-			   data_len_change->conn_handle,
-			   data_len_change->max_tx_octets,
-			   data_len_change->max_tx_time,
-			   data_len_change->max_rx_octets,
-			   data_len_change->max_rx_time);
+		BT_LOGA("[APP] Data len is updated, conn_handle: %d, "       \
+				"max_tx_octets: 0x%x, max_tx_time: 0x%x, "        \
+				"max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
+				data_len_change->conn_handle,
+				data_len_change->max_tx_octets,
+				data_len_change->max_tx_time,
+				data_len_change->max_rx_octets,
+				data_len_change->max_rx_time);
 		BT_AT_PRINT("+BLEGAP:conn_datalen,%d,0x%x,0x%x,0x%x,0x%x\r\n",
 					data_len_change->conn_handle,
 					data_len_change->max_tx_octets,
@@ -278,15 +265,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		rtk_bt_le_phy_update_ind_t *phy_update_ind =
 			(rtk_bt_le_phy_update_ind_t *)param;
 		if (phy_update_ind->err) {
-			printf("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
-				   phy_update_ind->conn_handle,
-				   phy_update_ind->err);
+			BT_LOGE("[APP] Update PHY failed, conn_handle: %d, err: 0x%x\r\n",
+					phy_update_ind->conn_handle,
+					phy_update_ind->err);
 			BT_AT_PRINT("+BLEGAP:conn_phy,%d,-1\r\n", phy_update_ind->conn_handle);
 		} else {
-			printf("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
-				   phy_update_ind->conn_handle,
-				   phy_update_ind->tx_phy,
-				   phy_update_ind->rx_phy);
+			BT_LOGA("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
+					phy_update_ind->conn_handle,
+					phy_update_ind->tx_phy,
+					phy_update_ind->rx_phy);
 			BT_AT_PRINT("+BLEGAP:conn_phy,%d,0,%d,%d\r\n",
 						phy_update_ind->conn_handle,
 						phy_update_ind->tx_phy,
@@ -300,8 +287,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		char ident_addr[30] = {0};
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->remote_addr), le_addr, sizeof(le_addr));
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->ident_addr), ident_addr, sizeof(ident_addr));
-		printf("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n",
-			   bond_mdf_ind->op, le_addr, ident_addr);
+		BT_LOGA("[APP] Bond info modified, op: %d, addr: %s, ident_addr: %s\r\n",
+				bond_mdf_ind->op, le_addr, ident_addr);
 		BT_AT_PRINT("+BLEGAP:bond_modify,%d,%s,%s\r\n", bond_mdf_ind->op, le_addr, ident_addr);
 		break;
 	}
@@ -312,31 +299,27 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 					auth_cplt_ind->conn_handle,
 					(auth_cplt_ind->err == 0) ? 0 : -1);
 		if (auth_cplt_ind->err) {
-			printf("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
-				   auth_cplt_ind->err, auth_cplt_ind->conn_handle);
+			BT_LOGE("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n",
+					auth_cplt_ind->err, auth_cplt_ind->conn_handle);
 		} else {
-			printf("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
-			printf("[APP] long term key is 0x");
-			for (uint8_t i = 1; i <= auth_cplt_ind->dev_ltk_length; i++) {
-				printf("%02x", auth_cplt_ind->dev_ltk[auth_cplt_ind->dev_ltk_length - i]); //End size conversion
-			}
-			printf("\r\n");
+			BT_LOGA("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
+			BT_DUMPHEXA("[APP] long term key is 0x", auth_cplt_ind->dev_ltk, auth_cplt_ind->dev_ltk_length, true);
 		}
 		break;
 	}
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND: {
 		rtk_bt_le_auth_key_input_ind_t *key_input_ind =
 			(rtk_bt_le_auth_key_input_ind_t *)param;
-		APP_PROMOTE("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
-					key_input_ind->conn_handle);
+		BT_LOGA("[APP] Please input the auth passkey get from remote, conn_handle: %d\r\n",
+				key_input_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_input,%d\r\n", key_input_ind->conn_handle);
 		break;
 	}
 	case RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND: {
 		rtk_bt_le_auth_pair_cfm_ind_t *pair_cfm_ind =
 			(rtk_bt_le_auth_pair_cfm_ind_t *)param;
-		APP_PROMOTE("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
-					pair_cfm_ind->conn_handle);
+		BT_LOGA("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n",
+				pair_cfm_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:pair_cfm,%d\r\n", pair_cfm_ind->conn_handle);
 		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
 		uint16_t ret = 0;
@@ -344,16 +327,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		pair_cfm_param.confirm = 1;
 		ret = rtk_bt_le_sm_pairing_confirm(&pair_cfm_param);
 		if (RTK_BT_OK == ret) {
-			printf("[APP] Just work pairing auto confirm succcess\r\n");
+			BT_LOGA("[APP] Just work pairing auto confirm succcess\r\n");
 		}
 		break;
 	}
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND: {
 		rtk_bt_le_auth_key_display_ind_t *key_dis_ind =
 			(rtk_bt_le_auth_key_display_ind_t *)param;
-		APP_PROMOTE("[APP] Auth passkey display: %ld, conn_handle:%d\r\n",
-					key_dis_ind->passkey,
-					key_dis_ind->conn_handle);
+		BT_LOGA("[APP] Auth passkey display: %ld, conn_handle:%d\r\n",
+				key_dis_ind->passkey,
+				key_dis_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
 					(int)key_dis_ind->conn_handle,
 					(int)key_dis_ind->passkey);
@@ -362,10 +345,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
 		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind =
 			(rtk_bt_le_auth_key_cfm_ind_t *)param;
-		APP_PROMOTE("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
-					"Please comfirm if the passkeys are equal!\r\n",
-					key_cfm_ind->passkey,
-					key_cfm_ind->conn_handle);
+		BT_LOGA("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
+				"Please comfirm if the passkeys are equal!\r\n",
+				key_cfm_ind->passkey,
+				key_cfm_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_cfm,%d,%d\r\n",
 					(int)key_cfm_ind->conn_handle,
 					(int)key_cfm_ind->passkey);
@@ -374,14 +357,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND: {
 		rtk_bt_le_auth_oob_input_ind_t *oob_input_ind =
 			(rtk_bt_le_auth_oob_input_ind_t *)param;
-		APP_PROMOTE("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
-					oob_input_ind->conn_handle);
+		BT_LOGA("[APP] Bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
+				oob_input_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:oobkey_input,%d\r\n", oob_input_ind->conn_handle);
 		break;
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -419,7 +402,7 @@ static uint16_t app_get_gatts_app_id(uint8_t event, void *data)
 		break;
 	}
 	default:
-		printf("[%s] Unknown event:%d\r\n", __func__, event);
+		BT_LOGE("[%s] Unknown event:%d\r\n", __func__, event);
 		break;
 	}
 	return app_id;
@@ -433,10 +416,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gatts_app_callback(uint8_t event, void *data
 	if (RTK_BT_GATTS_EVT_MTU_EXCHANGE == event) {
 		rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
 		if (p_gatt_mtu_ind->result == RTK_BT_OK) {
-			printf("[APP] GATTS mtu exchange successfully, mtu_size: %d, conn_handle: %d \r\n",
-				   p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
+			BT_LOGA("[APP] GATTS mtu exchange successfully, mtu_size: %d, conn_handle: %d \r\n",
+					p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
 		} else {
-			printf("[APP] GATTS mtu exchange fail \r\n");
+			BT_LOGE("[APP] GATTS mtu exchange fail \r\n");
 		}
 		return RTK_BT_EVT_CB_OK;
 	}
@@ -444,8 +427,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gatts_app_callback(uint8_t event, void *data
 	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
-			printf("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
-				   p_ind->conn_handle, p_ind->features);
+			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
+					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
 	}
@@ -477,7 +460,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gatts_app_callback(uint8_t event, void *data
 		long_uuid_service_callback(event, data);
 		break;
 	default:
-		printf("[%s] Unknown app_id:0x%x\r\n", __func__, app_id);
+		BT_LOGE("[%s] Unknown app_id:0x%x\r\n", __func__, app_id);
 		break;
 	}
 
@@ -517,7 +500,7 @@ static uint16_t app_get_gattc_profile_id(uint8_t event, void *data)
 		break;
 	}
 	default:
-		printf("[%s] Unknown event:%d\r\n", __func__, event);
+		BT_LOGE("[%s] Unknown event:%d\r\n", __func__, event);
 		break;
 	}
 
@@ -532,10 +515,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gattc_app_callback(uint8_t event, void *data
 	if (RTK_BT_GATTC_EVT_MTU_EXCHANGE == event) {
 		rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
 		if (p_gatt_mtu_ind->result == RTK_BT_OK) {
-			printf("[APP] GATTC mtu exchange success, mtu_size: %d, conn_handle: %d \r\n",
-				   p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
+			BT_LOGA("[APP] GATTC mtu exchange success, mtu_size: %d, conn_handle: %d \r\n",
+					p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
 		} else {
-			printf("[APP] GATTC mtu exchange fail \r\n");
+			BT_LOGE("[APP] GATTC mtu exchange fail \r\n");
 		}
 		return RTK_BT_EVT_CB_OK;
 	}
@@ -555,25 +538,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gattc_app_callback(uint8_t event, void *data
 		simple_ble_client_app_callback(event, data);
 		break;
 	default:
-		printf("[%s] Unknown profile_id:0x%x\r\n", __func__, profile_id);
+		BT_LOGE("[%s] Unknown profile_id:0x%x\r\n", __func__, profile_id);
 		break;
 	}
 
 	return RTK_BT_EVT_CB_OK;
-}
-
-static unsigned int get_data_from_memory_byte_by_byte(uint8_t *p, uint8_t data_len)
-{
-	// Get the data on memory using little endian
-	if (!p || data_len > 4) {
-		printf("[%s] copy data fail\r\n", __func__);
-		return 0;
-	}
-	uint32_t i, val = 0;
-	for (i = 0; i < data_len; i++) {
-		val += *p++ << (i * 8);
-	}
-	return val;
 }
 
 static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *param, uint32_t len)
@@ -584,9 +553,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_evt_scan_switch_t *scan_switch;
 		scan_switch = (rtk_bt_mesh_stack_evt_scan_switch_t *)param;
 		if (scan_switch->scan_enable) {
-			printf("[APP] Ble mesh scan enable SUCCESS\r\n\r\n");
+			BT_LOGA("[APP] Ble mesh scan enable SUCCESS\r\n\r\n");
 		} else {
-			printf("[APP] Ble mesh scan disable SUCCESS\r\n\r\n");
+			BT_LOGA("[APP] Ble mesh scan disable SUCCESS\r\n\r\n");
 		}
 		break;
 	}
@@ -594,9 +563,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_evt_start_adv_t *start_adv;
 		start_adv = (rtk_bt_mesh_stack_evt_start_adv_t *)param;
 		if (RTK_BT_MESH_STACK_API_SUCCESS == start_adv->result) {
-			printf("[APP] Ble mesh start ADV SUCCESS\r\n");
+			BT_LOGA("[APP] Ble mesh start ADV SUCCESS\r\n");
 		} else {
-			printf("[APP] Ble mesh start ADV fail!\r\n");
+			BT_LOGE("[APP] Ble mesh start ADV fail!\r\n");
 		}
 		break;
 	}
@@ -604,39 +573,39 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_evt_stop_adv_t *stop_adv;
 		stop_adv = (rtk_bt_mesh_stack_evt_stop_adv_t *)param;
 		if (RTK_BT_MESH_STACK_API_SUCCESS == stop_adv->result) {
-			printf("[APP] Ble mesh stop ADV SUCCESS\r\n");
+			BT_LOGA("[APP] Ble mesh stop ADV SUCCESS\r\n");
 		} else {
-			printf("[APP] Ble mesh stop ADV fail!\r\n");
+			BT_LOGE("[APP] Ble mesh stop ADV fail!\r\n");
 		}
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_UDB_DISPLAY: {
 		rtk_bt_mesh_stack_evt_dev_info_udb_t *udb_info;
 		udb_info = (rtk_bt_mesh_stack_evt_dev_info_udb_t *)param;
-		printf("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", udb_info->dev_info.bt_addr[5], udb_info->dev_info.bt_addr[4],
-			   udb_info->dev_info.bt_addr[3], udb_info->dev_info.bt_addr[2], udb_info->dev_info.bt_addr[1], udb_info->dev_info.bt_addr[0], udb_info->dev_info.bt_addr_type,
-			   udb_info->dev_info.rssi);
-		printf("udb=");
+		BT_LOGA("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", udb_info->dev_info.bt_addr[5], udb_info->dev_info.bt_addr[4],
+				udb_info->dev_info.bt_addr[3], udb_info->dev_info.bt_addr[2], udb_info->dev_info.bt_addr[1], udb_info->dev_info.bt_addr[0], udb_info->dev_info.bt_addr_type,
+				udb_info->dev_info.rssi);
+		BT_LOGA("udb=");
 		mesh_data_uart_dump(udb_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY: {
 		rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *prov_info;
 		prov_info = (rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *)param;
-		printf("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4],
-			   prov_info->dev_info.bt_addr[3], prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
-			   prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
-		printf("prov=");
+		BT_LOGA("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4],
+				prov_info->dev_info.bt_addr[3], prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
+				prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
+		BT_LOGA("prov=");
 		mesh_data_uart_dump(prov_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY: {
 		rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t *proxy_info;
 		proxy_info = (rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t *)param;
-		printf("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4],
-			   proxy_info->dev_info.bt_addr[3], proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
-			   proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
-		printf("proxy=");
+		BT_LOGA("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4],
+				proxy_info->dev_info.bt_addr[3], proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
+				proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
+		BT_LOGA("proxy=");
 		mesh_data_uart_dump((uint8_t *)&proxy_info->proxy, proxy_info->len);
 		break;
 	}
@@ -644,9 +613,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_hb_data_timer_state_t *hb_timer_state;
 		hb_timer_state = (rtk_bt_mesh_stack_hb_data_timer_state_t *)param;
 		if (RTK_BT_MESH_STACK_HB_TIMER_STATE_START == hb_timer_state->timer_state) {
-			printf("[APP] Heartbeat publish timer start, period = %d\r\n", hb_timer_state->period);
+			BT_LOGA("[APP] Heartbeat publish timer start, period = %d\r\n", hb_timer_state->period);
 		} else {
-			printf("[APP] Heartbeat publish timer stop\r\n");
+			BT_LOGA("[APP] Heartbeat publish timer stop\r\n");
 		}
 		break;
 	}
@@ -654,30 +623,30 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_hb_data_timer_state_t *hb_timer_state;
 		hb_timer_state = (rtk_bt_mesh_stack_hb_data_timer_state_t *)param;
 		if (RTK_BT_MESH_STACK_HB_TIMER_STATE_START == hb_timer_state->timer_state) {
-			printf("[APP] Heartbeat subscription timer start, period = %d\r\n", hb_timer_state->period);
+			BT_LOGA("[APP] Heartbeat subscription timer start, period = %d\r\n", hb_timer_state->period);
 		} else {
-			printf("[APP] Heartbeat subscription timer stop\r\n");
+			BT_LOGA("[APP] Heartbeat subscription timer stop\r\n");
 		}
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_HB_PUB_COUNT_UPDATE: {
 		rtk_bt_mesh_stack_hb_pub_count_update_t *hb_pub_count;
 		hb_pub_count = (rtk_bt_mesh_stack_hb_pub_count_update_t *)param;
-		printf("[APP] Heartbeat publish count update: %d\r\n", hb_pub_count->count);
+		BT_LOGA("[APP] Heartbeat publish count update: %d\r\n", hb_pub_count->count);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_HB_SUB_PERIOD_UPDATE: {
 		rtk_bt_mesh_stack_hb_sub_period_update_t *hb_sub_period;
 		hb_sub_period = (rtk_bt_mesh_stack_hb_sub_period_update_t *)param;
-		printf("[APP] Heartbeat subscription period update: %d\r\n", hb_sub_period->period);
+		BT_LOGA("[APP] Heartbeat subscription period update: %d\r\n", hb_sub_period->period);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_HB_SUB_RECEIVE: {
 		rtk_bt_mesh_stack_hb_data_sub_receive_t *hb_sub_receive;
 		hb_sub_receive = (rtk_bt_mesh_stack_hb_data_sub_receive_t *)param;
-		printf("[APP] Receive heartbeat: src = 0x%x, init_ttl = %d, actual ttl = %d, features = %d-%d-%d-%d\r\n",
-			   hb_sub_receive->src, hb_sub_receive->init_ttl, hb_sub_receive->ttl, hb_sub_receive->features.relay,
-			   hb_sub_receive->features.proxy, hb_sub_receive->features.frnd, hb_sub_receive->features.lpn);
+		BT_LOGA("[APP] Receive heartbeat: src = 0x%x, init_ttl = %d, actual ttl = %d, features = %d-%d-%d-%d\r\n",
+				hb_sub_receive->src, hb_sub_receive->init_ttl, hb_sub_receive->ttl, hb_sub_receive->features.relay,
+				hb_sub_receive->features.proxy, hb_sub_receive->features.frnd, hb_sub_receive->features.lpn);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE: {
@@ -685,13 +654,13 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		pb_adv_link_state = (rtk_bt_mesh_prov_generic_cb_type_t *)param;
 		switch (*pb_adv_link_state) {
 		case RTK_BT_MESH_PB_GENERIC_CB_LINK_OPENED:
-			printf("[APP] PB-ADV link opened\r\n");
+			BT_LOGA("[APP] PB-ADV link opened\r\n");
 			break;
 		case RTK_BT_MESH_PB_GENERIC_CB_LINK_OPEN_FAILED:
-			printf("[APP] PB-ADV link open Failed\r\n");
+			BT_LOGA("[APP] PB-ADV link open Failed\r\n");
 			break;
 		case RTK_BT_MESH_PB_GENERIC_CB_LINK_CLOSED:
-			printf("[APP] PB-ADV link closed\r\n");
+			BT_LOGA("[APP] PB-ADV link closed\r\n");
 			break;
 		default:
 			break;
@@ -701,40 +670,36 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 	case RTK_BT_MESH_STACK_EVT_PROV_COMPLETE: {
 		rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
 		prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)param;
-		printf("[APP] Provisioning complete,unicast address:0x%x\r\n", prov_complete->unicast_addr);
+		BT_LOGA("[APP] Provisioning complete,unicast address:0x%x\r\n", prov_complete->unicast_addr);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_PROV_FAIL: {
 		rtk_bt_mesh_stack_evt_prov_fail_t *prov_fail;
 		prov_fail = (rtk_bt_mesh_stack_evt_prov_fail_t *)param;
-		printf("[APP] Provisioning fail,reason:%d\r\n", prov_fail->fail_reason);
+		BT_LOGE("[APP] Provisioning fail,reason:%d\r\n", prov_fail->fail_reason);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_START_PROVED: {
-		printf("[APP] Being Provisioned\r\n");
+		BT_LOGA("[APP] Being Provisioned\r\n");
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_UNPROVISIONED_DEVICE: {
-		printf("[APP] Unprovisioned Device\r\n");
+		BT_LOGA("[APP] Unprovisioned Device\r\n");
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_PROVISIONED_DEVICE: {
 		rtk_bt_mesh_stack_evt_provisioned_device_t *provisioned_dev;
 		provisioned_dev = (rtk_bt_mesh_stack_evt_provisioned_device_t *)param;
-		printf("[APP] Provisioned Device,unicast addr:0x%x\r\n", provisioned_dev->unicast_addr);
+		BT_LOGA("[APP] Provisioned Device,unicast addr:0x%x\r\n", provisioned_dev->unicast_addr);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_SET_AUTH_VALUE_FOR_STATIC_OOB: {
 		rtk_bt_mesh_stack_set_auth_value_for_static_oob *static_oob;
 		static_oob = (rtk_bt_mesh_stack_set_auth_value_for_static_oob *)param;
 		if (static_oob->status) {
-			printf("[APP] Set auth value for static oob success:\r\n");
-			for (int i = 0; i < 16; i++) {
-				printf("%02x ", static_oob->data[i]);
-			}
-			printf("\r\n");
+			BT_DUMPA("[APP] Set auth value for static oob success:\r\n", static_oob->data, 16);
 		} else {
-			printf("[APP] Set auth value for static oob fail\r\n");
+			BT_LOGE("[APP] Set auth value for static oob fail\r\n");
 		}
 		break;
 	}
@@ -742,33 +707,33 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_set_auth_value_for_oob_data *output_oob;
 		output_oob = (rtk_bt_mesh_stack_set_auth_value_for_oob_data *)param;
 		if (output_oob->status) {
-			printf("[APP] Set auth value for output oob success, output random value:%d\r\n", (int)output_oob->random);
+			BT_LOGA("[APP] Set auth value for output oob success, output random value:%d\r\n", (int)output_oob->random);
 		} else {
-			printf("[APP] Set auth value for output oob fail\r\n");
+			BT_LOGE("[APP] Set auth value for output oob fail\r\n");
 		}
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_NOTIFY_FOR_INPUT_OOB_VALUE: {
-		printf("[APP] Please input the random value display on remote provisioner\r\n");
+		BT_LOGA("[APP] Please input the random value display on remote provisioner\r\n");
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_FN_CB: {
 		rtk_bt_mesh_stack_evt_fn_t *fn_cb = (rtk_bt_mesh_stack_evt_fn_t *)param;
 		switch (fn_cb->cb_type) {
 		case RTK_BT_MESH_FN_CB_TYPE_ESTABLISHING:
-			printf("[APP] Establishing friendship with LPN: 0x%04x\r\n", fn_cb->lpn_addr);
+			BT_LOGA("[APP] Establishing friendship with LPN: 0x%04x\r\n", fn_cb->lpn_addr);
 			break;
 		case RTK_BT_MESH_FN_CB_TYPE_ESTABLISH_FAIL_NO_POLL:
-			printf("[APP] Not receive poll LPN: 0x%04x\r\n", fn_cb->lpn_addr);
+			BT_LOGA("[APP] Not receive poll LPN: 0x%04x\r\n", fn_cb->lpn_addr);
 			break;
 		case RTK_BT_MESH_FN_CB_TYPE_ESTABLISH_SUCCESS:
-			printf("[APP] Established friendship with LPN: 0x%04x success\r\n", fn_cb->lpn_addr);
+			BT_LOGA("[APP] Established friendship with LPN: 0x%04x success\r\n", fn_cb->lpn_addr);
 			break;
 		case RTK_BT_MESH_FN_CB_TYPE_FRND_LOST:
-			printf("[APP] Lost friendship with LPN: 0x%04x\r\n", fn_cb->lpn_addr);
+			BT_LOGA("[APP] Lost friendship with LPN: 0x%04x\r\n", fn_cb->lpn_addr);
 			break;
 		default:
-			printf("[%s] Unknown cb type:%d\r\n", __func__, fn_cb->cb_type);
+			BT_LOGE("[%s] Unknown cb type:%d\r\n", __func__, fn_cb->cb_type);
 			break;
 		}
 		break;
@@ -777,19 +742,19 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_evt_lpn_t *lpn_cb = (rtk_bt_mesh_stack_evt_lpn_t *)param;
 		switch (lpn_cb->cb_type) {
 		case RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_SUCCESS:
-			printf("[APP] Established friendship with FN: 0x%04x success\r\n", lpn_cb->fn_addr);
+			BT_LOGA("[APP] Established friendship with FN: 0x%04x success\r\n", lpn_cb->fn_addr);
 			break;
 		case RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_FAIL_NO_OFFER:
-			printf("[APP] No frnd offer\r\n");
+			BT_LOGA("[APP] No frnd offer\r\n");
 			break;
 		case RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_FAIL_NO_UPDATE:
-			printf("[APP] No frnd update\r\n");
+			BT_LOGA("[APP] No frnd update\r\n");
 			break;
 		case RTK_BT_MESH_LPN_CB_TYPE_FRIENDSHIP_LOST:
-			printf("[APP] Lost friendship with FN: 0x%04x\r\n", lpn_cb->fn_addr);
+			BT_LOGA("[APP] Lost friendship with FN: 0x%04x\r\n", lpn_cb->fn_addr);
 			break;
 		default:
-			printf("[%s] Unknown cb type:%d\r\n", __func__, lpn_cb->cb_type);
+			BT_LOGE("[%s] Unknown cb type:%d\r\n", __func__, lpn_cb->cb_type);
 			break;
 		}
 		break;
@@ -809,79 +774,79 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 			}
 			switch (type) {
 			case RTK_BT_MESH_STACK_USER_LIST_MESH_STATE:
-				printf("Mesh State:\t%d\r\n", *(p_data + offset));
+				BT_LOGA("Mesh State:\t%d\r\n", *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_UUID:
-				printf("Device UUID:\t");
+				BT_LOGA("Device UUID:\t");
 				mesh_data_uart_dump(p_data + offset, data_len);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR:
-				printf("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
-					   *(p_data + offset + 5), *(p_data + offset + 4), *(p_data + offset + 3), *(p_data + offset + 2), *(p_data + offset + 1), *(p_data + offset));
+				BT_LOGA("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
+						*(p_data + offset + 5), *(p_data + offset + 4), *(p_data + offset + 3), *(p_data + offset + 2), *(p_data + offset + 1), *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_KEY:
-				printf("DevKey:\t\t%d-0x%04x-%d-", *(p_data + offset), get_data_from_memory_byte_by_byte(p_data + offset + 1, 2), *(p_data + offset + 3));
+				BT_LOGA("DevKey:\t\t%d-0x%04x-%d-", *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
 				mesh_data_uart_dump(p_data + offset + 4, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY:
-				printf("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), get_data_from_memory_byte_by_byte(p_data + offset + 1, 2), \
-					   * (p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
+				BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
+						* (p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
 				mesh_data_uart_dump(p_data + offset + 6, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
-				printf("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), get_data_from_memory_byte_by_byte(p_data + offset + 1, 2), \
-					   * (p_data + offset + 3), *(p_data + offset + 4), get_data_from_memory_byte_by_byte(p_data + offset + 5, 2));
+				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
+						* (p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
 				mesh_data_uart_dump(p_data + offset + 7, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS:
-				printf("IVindex:\t%d-0x%x\r\n", *(p_data + offset), get_data_from_memory_byte_by_byte(p_data + offset + 1, 4));
-				printf("Seq:\t\t0x%06x\r\n", get_data_from_memory_byte_by_byte(p_data + offset + 5, 4));
-				printf("NodeAddr:\t0x%04x-%d-%d\r\n", get_data_from_memory_byte_by_byte(p_data + offset + 9, 2),
-					   get_data_from_memory_byte_by_byte(p_data + offset + 11, 4), *(p_data + offset + 15));
+				BT_LOGA("IVindex:\t%d-0x%x\r\n", *(p_data + offset), LE_TO_U32(p_data + offset + 1));
+				BT_LOGA("Seq:\t\t0x%06x\r\n", LE_TO_U32(p_data + offset + 5));
+				BT_LOGA("NodeAddr:\t0x%04x-%d-%d\r\n", LE_TO_U16(p_data + offset + 9),
+						LE_TO_U32(p_data + offset + 11), *(p_data + offset + 15));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_ELEMENT_INFO:
-				printf("Element:\t%d-%d", *(p_data + offset), get_data_from_memory_byte_by_byte(p_data + offset + 1, 4));
+				BT_LOGA("Element:\t%d-%d", *(p_data + offset), LE_TO_U32(p_data + offset + 1));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_INFO:
-				printf("\r\nModel:\t\t%d-%d-0x%08x", *(p_data + offset), *(p_data + offset + 1), get_data_from_memory_byte_by_byte(p_data + offset + 2, 4));
+				BT_LOGA("\r\nModel:\t\t%d-%d-0x%08x", *(p_data + offset), *(p_data + offset + 1), LE_TO_U32(p_data + offset + 2));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY:
-				printf("(app key:%d)", *(p_data + offset));
+				BT_LOGA("(app key:%d)", *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO:
-				printf("(pub to:0x%04x-%d-%d)", get_data_from_memory_byte_by_byte(p_data + offset, 2), *(p_data + offset + 2),
-					   get_data_from_memory_byte_by_byte(p_data + offset + 3, 2));
+				BT_LOGA("(pub to:0x%04x-%d-%d)", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+						LE_TO_U16(p_data + offset + 3));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO: {
 				uint16_t sub_addr_num = data_len / 2;
 				uint16_t temp_offset = offset;
-				printf("(sub to:");
+				BT_LOGA("(sub to:");
 				for (uint16_t i = 0; i < sub_addr_num; i++) {
-					printf("0x%04x", get_data_from_memory_byte_by_byte(p_data + temp_offset, 2));
+					BT_LOGA("0x%04x", LE_TO_U16(p_data + temp_offset));
 					temp_offset += 2;
 					if (i == sub_addr_num - 1) {
-						printf(")");
+						BT_LOGA(")");
 					} else {
-						printf("-");
+						BT_LOGA("-");
 					}
 				}
 				break;
 			}
 			default:
-				printf("[%s] Unknown data type %d for RTK_BT_MESH_STACK_EVT_LIST_INFO\r\n", __func__, (int)type);
+				BT_LOGE("[%s] Unknown data type %d for RTK_BT_MESH_STACK_EVT_LIST_INFO\r\n", __func__, (int)type);
 				return RTK_BT_EVT_CB_OK;
 				break;
 			}
 			offset += data_len;
 		}
-		printf("\r\n\r\n");
+		BT_LOGA("\r\n\r\n");
 		if (!len) {
-			printf("[APP] Print user cmd list fail, len==0\r\n");
+			BT_LOGE("[APP] Print user cmd list fail, len==0\r\n");
 		}
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -899,21 +864,21 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_onoff_server_app_callback(uint8_t ev
 		onoff_set = (rtk_bt_mesh_generic_onoff_server_evt_set_t *)param;
 		if (onoff_set->on_off == RTK_BT_MESH_GENERIC_ON) {
 			on_off = RTK_BT_MESH_GENERIC_ON;
-			printf("[APP] Turn light ON");
+			BT_LOGA("[APP] Turn light ON");
 			if (0 != onoff_set->remaining_time.num_steps) {
-				printf(", total time(steps:%d, resolution:%d), remain time(steps:%d, resolution:%d)\r\n",
-					   onoff_set->total_time.num_steps, onoff_set->total_time.step_resolution, onoff_set->remaining_time.num_steps, onoff_set->remaining_time.step_resolution);
+				BT_LOGA(", total time(steps:%d, resolution:%d), remain time(steps:%d, resolution:%d)\r\n",
+						onoff_set->total_time.num_steps, onoff_set->total_time.step_resolution, onoff_set->remaining_time.num_steps, onoff_set->remaining_time.step_resolution);
 			} else {
-				printf("\r\n");
+				BT_LOGA("\r\n");
 			}
 		} else if (onoff_set->on_off == RTK_BT_MESH_GENERIC_OFF) {
 			on_off = RTK_BT_MESH_GENERIC_OFF;
-			printf("[APP] Turn light OFF");
+			BT_LOGA("[APP] Turn light OFF");
 			if (0 != onoff_set->remaining_time.num_steps) {
-				printf(", total time(steps:%d, resolution:%d), remain time(steps:%d, resolution:%d)\r\n",
-					   onoff_set->total_time.num_steps, onoff_set->total_time.step_resolution, onoff_set->remaining_time.num_steps, onoff_set->remaining_time.step_resolution);
+				BT_LOGA(", total time(steps:%d, resolution:%d), remain time(steps:%d, resolution:%d)\r\n",
+						onoff_set->total_time.num_steps, onoff_set->total_time.step_resolution, onoff_set->remaining_time.num_steps, onoff_set->remaining_time.step_resolution);
 			} else {
-				printf("\r\n");
+				BT_LOGA("\r\n");
 			}
 		}
 		break;
@@ -925,7 +890,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_onoff_server_app_callback(uint8_t ev
 		break;
 	}
 	default:
-		printf("[%s] Uneknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGA("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -946,25 +911,25 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		        // Avoid compile warning: data_len(uint8_t) always <= DATA_TRANS_DATA_MAX_LEN(0xff)
 		        if (p_data_write->data_len > DATA_TRANS_DATA_MAX_LEN) {
 		            p_data_write->data_len = DATA_TRANS_DATA_MAX_LEN;
-		            printf("[APP] Datatrans write message len is %d,extend max val %d,only write %d bytes\r\n", p_data_write->data_len, DATA_TRANS_DATA_MAX_LEN,
+		            BT_LOGA("[APP] Datatrans write message len is %d,extend max val %d,only write %d bytes\r\n", p_data_write->data_len, DATA_TRANS_DATA_MAX_LEN,
 		                   DATA_TRANS_DATA_MAX_LEN);
 		        }
 		*/
 		memcpy(datatrans_sample_data, p_data_write->data, p_data_write->data_len);
-		printf("[APP] Datatrans model receive msg: Remote write %d bytes: ", p_data_write->data_len);
+		BT_LOGA("[APP] Datatrans model receive msg: Remote write %d bytes: ", p_data_write->data_len);
 		mesh_data_uart_dump(p_data_write->data, p_data_write->data_len);
 		break;
 	}
 
 	case RTK_BT_MESH_DATATRANS_MODEL_EVT_CLIENT_WRITE_STATUS: {
 		rtk_bt_mesh_datatrans_client_write_event_t *p_write_status = (rtk_bt_mesh_datatrans_client_write_event_t *)param;
-		printf("[APP] Datatrans model receive msg: Src %d ,written %d bytes, status:%d\r\n", p_write_status->src, p_write_status->written_len, p_write_status->status);
+		BT_LOGA("[APP] Datatrans model receive msg: Src %d ,written %d bytes, status:%d\r\n", p_write_status->src, p_write_status->written_len, p_write_status->status);
 		break;
 	}
 
 	case RTK_BT_MESH_DATATRANS_MODEL_EVT_CLIENT_READ_RESULT: {
 		rtk_bt_mesh_datatrans_client_read_event_t *p_read_date = (rtk_bt_mesh_datatrans_client_read_event_t *)param;
-		printf("[APP] Datatrans model receive msg: Read %d bytes date from remote src %d :\r\n", p_read_date->data_len, p_read_date->src);
+		BT_LOGA("[APP] Datatrans model receive msg: Read %d bytes date from remote src %d :\r\n", p_read_date->data_len, p_read_date->src);
 		mesh_data_uart_dump(p_read_date->data, p_read_date->data_len);
 		break;
 	}
@@ -975,17 +940,17 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		        // Avoid compile warning: data_len(uint8_t) always <= DATA_TRANS_DATA_MAX_LEN(0xff)
 		        if (server_read->data_len > DATA_TRANS_DATA_MAX_LEN) {
 		            server_read->data_len = DATA_TRANS_DATA_MAX_LEN;
-		            printf("[APP] Datatrans read message len is %d, extend max val %d, only read %d bytes\r\n", server_read->data_len, DATA_TRANS_DATA_MAX_LEN,
+		            BT_LOGA("[APP] Datatrans read message len is %d, extend max val %d, only read %d bytes\r\n", server_read->data_len, DATA_TRANS_DATA_MAX_LEN,
 		                   DATA_TRANS_DATA_MAX_LEN);
 		        }
 		*/
 		memcpy(server_read->data, datatrans_sample_data, server_read->data_len);
-		printf("[APP] Remote read %d bytes data\r\n", server_read->data_len);
+		BT_LOGA("[APP] Remote read %d bytes data\r\n", server_read->data_len);
 		break;
 	}
 
 	default:
-		printf("[%s] Unknown event code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown event code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1046,10 +1011,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_server_app_callback(uint8_t 
 				lightness_set->lightness - (lightness_set->lightness - pre_lightness) * ((double)lightness.remaining_time.num_steps) /
 				lightness.total_time.num_steps;
 		}
-		printf("[APP] light lightness server receive: set lightness %d, total_time %d, remaining_time %d \r\n",
-			   lightness.lightness,
-			   lightness.total_time.num_steps,
-			   lightness.remaining_time.num_steps);
+		BT_LOGA("[APP] light lightness server receive: set lightness %d, total_time %d, remaining_time %d \r\n",
+				lightness.lightness,
+				lightness.total_time.num_steps,
+				lightness.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_LINEAR_SERVER_MODEL_SET: {
@@ -1069,21 +1034,21 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_server_app_callback(uint8_t 
 				linear_cal_value - (linear_cal_value - pre_linear_lightness) * ((double)linear_lightness.remaining_time.num_steps) /
 				linear_lightness.total_time.num_steps;
 		}
-		printf("[APP] light lightness server receive: set linear lightness %d, total_time %d, remaining_time %d \r\n",
-			   linear_lightness.lightness,
-			   (linear_set->total_time).num_steps,
-			   (linear_set->remaining_time).num_steps);
+		BT_LOGA("[APP] light lightness server receive: set linear lightness %d, total_time %d, remaining_time %d \r\n",
+				linear_lightness.lightness,
+				(linear_set->total_time).num_steps,
+				(linear_set->remaining_time).num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_LAST_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_lightness_server_get_t *last_set = (rtk_bt_mesh_light_lightness_server_get_t *)param;
-		printf("[APP] light lightness server receive: set last lightness %d \r\n", last_set->lightness);
+		BT_LOGA("[APP] light lightness server receive: set last lightness %d \r\n", last_set->lightness);
 		last_lightness.lightness = last_set->lightness;
 		break;
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1099,22 +1064,22 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_setup_server_app_callback(ui
 	switch (evt_code) {
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_DEFAULT_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_lightness_server_set_default_t *default_set = (rtk_bt_mesh_light_lightness_server_set_default_t *)param;
-		printf("[APP] light lightness server receive: set default lightness %d \r\n", default_set->lightness);
+		BT_LOGA("[APP] light lightness server receive: set default lightness %d \r\n", default_set->lightness);
 		default_setup_lightness.lightness = default_set->lightness;
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_RANGE_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_lightness_server_set_range_t *range_set = (rtk_bt_mesh_light_lightness_server_set_range_t *)param;
-		printf("[APP] light lightness server receive: set lightness_max %d, lightness_min %d \r\n",
-			   range_set->range_max,
-			   range_set->range_min);
+		BT_LOGA("[APP] light lightness server receive: set lightness_max %d, lightness_min %d \r\n",
+				range_set->range_max,
+				range_set->range_min);
 		lightness_setup_range.range_max = range_set->range_max;
 		lightness_setup_range.range_min = range_set->range_min;
 		break;
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1176,16 +1141,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_server_app_callback(uint8_t evt_co
 				ctl_set->delta_uv - (ctl_set->delta_uv - pre_ctl_delta_uv) * ((double)ctl_lightness_set.remaining_time.num_steps) /
 				ctl_lightness_set.total_time.num_steps;
 		}
-		printf("[APP] lighting ctl server receive: set delta_uv %d, lightness %d, remaining_time %d, temperature %d, total_time %d \r\n",
-			   ctl_lightness_set.delta_uv,
-			   ctl_lightness_set.lightness,
-			   ctl_lightness_set.remaining_time.num_steps,
-			   ctl_lightness_set.temperature,
-			   ctl_lightness_set.total_time.num_steps);
+		BT_LOGA("[APP] lighting ctl server receive: set delta_uv %d, lightness %d, remaining_time %d, temperature %d, total_time %d \r\n",
+				ctl_lightness_set.delta_uv,
+				ctl_lightness_set.lightness,
+				ctl_lightness_set.remaining_time.num_steps,
+				ctl_lightness_set.temperature,
+				ctl_lightness_set.total_time.num_steps);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1201,26 +1166,26 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_setup_server_app_callback(uint8_t 
 	switch (evt_code) {
 	case RTK_BT_MESH_LIGHT_CTL_SERVER_MODEL_TEMPERATURE_RANGE_SET: {
 		rtk_bt_mesh_light_ctl_server_set_temperature_range_t *ctl_temp_range_set = (rtk_bt_mesh_light_ctl_server_set_temperature_range_t *)param;
-		printf("[APP] lighting ctl setup server receive: set temperature range_max %d, range_min %d \r\n",
-			   ctl_temp_range_set->range_max,
-			   ctl_temp_range_set->range_min);
+		BT_LOGA("[APP] lighting ctl setup server receive: set temperature range_max %d, range_min %d \r\n",
+				ctl_temp_range_set->range_max,
+				ctl_temp_range_set->range_min);
 		ctl_setup_range.range_max = ctl_temp_range_set->range_max;
 		ctl_setup_range.range_min = ctl_temp_range_set->range_min;
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_CTL_SERVER_MODEL_DEFAULT_SET: {
 		rtk_bt_mesh_light_ctl_server_set_default_t *ctl_default_set = (rtk_bt_mesh_light_ctl_server_set_default_t *)param;
-		printf("[APP] lighting ctl setup server receive: set default delta_uv %d, lightness %d, temperature %d \r\n",
-			   ctl_default_set->delta_uv,
-			   ctl_default_set->lightness,
-			   ctl_default_set->temperature);
+		BT_LOGA("[APP] lighting ctl setup server receive: set default delta_uv %d, lightness %d, temperature %d \r\n",
+				ctl_default_set->delta_uv,
+				ctl_default_set->lightness,
+				ctl_default_set->temperature);
 		ctl_setup_default.delta_uv = ctl_default_set->delta_uv;
 		ctl_setup_default.lightness = ctl_default_set->lightness;
 		ctl_setup_default.temperature = ctl_default_set->temperature;
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1265,11 +1230,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_temperature_server_app_callback(ui
 				temp_set->delta_uv - (temp_set->delta_uv - pre_delta_uv) * ((double)ctl_temp_set.remaining_time.num_steps) /
 				ctl_temp_set.total_time.num_steps;
 		}
-		printf("[APP] lighting ctl temperature server receive: set temperature %d, delta_uv %d, total_time %d, remaining_time %d \r\n",
-			   ctl_temp_set.temperature,
-			   ctl_temp_set.delta_uv,
-			   ctl_temp_set.total_time.num_steps,
-			   ctl_temp_set.remaining_time.num_steps);
+		BT_LOGA("[APP] lighting ctl temperature server receive: set temperature %d, delta_uv %d, total_time %d, remaining_time %d \r\n",
+				ctl_temp_set.temperature,
+				ctl_temp_set.delta_uv,
+				ctl_temp_set.total_time.num_steps,
+				ctl_temp_set.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_CTL_SERVER_MODEL_TEMPERATURE_RANGE_GET_T: {
@@ -1278,7 +1243,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_temperature_server_app_callback(ui
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1342,16 +1307,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_server_app_callback(uint8_t evt_co
 				hsl_set->saturation - (hsl_set->saturation - pre_hsl_saturation) * ((double)hsl_value.remaining_time.num_steps) /
 				hsl_value.total_time.num_steps;
 		}
-		printf("[APP] lighting hsl server receive: set hue %d, saturation %d, lightness %d, remaining_time %d, total_time %d \r\n",
-			   hsl_value.hue,
-			   hsl_value.saturation,
-			   hsl_value.lightness,
-			   hsl_value.remaining_time.num_steps,
-			   hsl_value.total_time.num_steps);
+		BT_LOGA("[APP] lighting hsl server receive: set hue %d, saturation %d, lightness %d, remaining_time %d, total_time %d \r\n",
+				hsl_value.hue,
+				hsl_value.saturation,
+				hsl_value.lightness,
+				hsl_value.remaining_time.num_steps,
+				hsl_value.total_time.num_steps);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1389,10 +1354,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_hue_server_app_callback(uint8_t ev
 				hue_set->hue - (hue_set->hue - pre_hue) * ((double)hue_store.remaining_time.num_steps) /
 				hue_store.total_time.num_steps;
 		}
-		printf("[APP] lighting hsl hue server receive: set hue %d, remaining_time %d, total_time %d \r\n",
-			   hue_store.hue,
-			   hue_store.remaining_time.num_steps,
-			   hue_store.total_time.num_steps);
+		BT_LOGA("[APP] lighting hsl hue server receive: set hue %d, remaining_time %d, total_time %d \r\n",
+				hue_store.hue,
+				hue_store.remaining_time.num_steps,
+				hue_store.total_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_HSL_RANGE_SERVER_MODEL_GET_H: {
@@ -1401,7 +1366,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_hue_server_app_callback(uint8_t ev
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1439,10 +1404,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_saturation_server_app_callback(uin
 				saturation_set->saturation - (saturation_set->saturation - pre_saturation) * ((double)saturation_store.remaining_time.num_steps) /
 				saturation_store.total_time.num_steps;
 		}
-		printf("[APP] lighting hsl saturation server receive: set saturation %d, remaining_time %d, total_time %d \r\n",
-			   saturation_store.saturation,
-			   saturation_store.remaining_time.num_steps,
-			   saturation_store.total_time.num_steps);
+		BT_LOGA("[APP] lighting hsl saturation server receive: set saturation %d, remaining_time %d, total_time %d \r\n",
+				saturation_store.saturation,
+				saturation_store.remaining_time.num_steps,
+				saturation_store.total_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_HSL_RANGE_SERVER_MODEL_GET_S: {
@@ -1452,7 +1417,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_saturation_server_app_callback(uin
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1468,10 +1433,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_setup_server_app_callback(uint8_t 
 	switch (evt_code) {
 	case RTK_BT_MESH_LIGHT_HSL_DEFAULT_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_hsl_server_set_default_t *default_set = (rtk_bt_mesh_light_hsl_server_set_default_t *)param;
-		printf("[APP] lighting hsl setup server receive: set default lightness %d, hue %d, saturation %d \r\n",
-			   default_set->lightness,
-			   default_set->hue,
-			   default_set->saturation);
+		BT_LOGA("[APP] lighting hsl setup server receive: set default lightness %d, hue %d, saturation %d \r\n",
+				default_set->lightness,
+				default_set->hue,
+				default_set->saturation);
 		hsl_setup_default.lightness = default_set->lightness;
 		hsl_setup_default.hue = default_set->hue;
 		hsl_setup_default.saturation = default_set->saturation;
@@ -1479,11 +1444,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_setup_server_app_callback(uint8_t 
 	}
 	case RTK_BT_MESH_LIGHT_HSL_RANGE_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_hsl_server_set_range_t *range_set = (rtk_bt_mesh_light_hsl_server_set_range_t *)param;
-		printf("[APP] lighting hsl setup server receive: set hue_range_min %d, hue_range_max %d, saturation_range_min %d, saturation_range_max %d \r\n",
-			   range_set->hue_range_min,
-			   range_set->hue_range_max,
-			   range_set->saturation_range_min,
-			   range_set->saturation_range_max);
+		BT_LOGA("[APP] lighting hsl setup server receive: set hue_range_min %d, hue_range_max %d, saturation_range_min %d, saturation_range_max %d \r\n",
+				range_set->hue_range_min,
+				range_set->hue_range_max,
+				range_set->saturation_range_min,
+				range_set->saturation_range_max);
 		hsl_setup_range.hue_range_min = range_set->hue_range_min;
 		hsl_setup_range.hue_range_max = range_set->hue_range_max;
 		hsl_setup_range.saturation_range_min = range_set->saturation_range_min;
@@ -1492,7 +1457,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_setup_server_app_callback(uint8_t 
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1551,17 +1516,17 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_server_app_callback(uint8_t evt_co
 				(xyl_set->xyl).xyl_lightness - ((xyl_set->xyl).xyl_lightness - pre_xyl_lightness) * ((double)xyl_value.remaining_time.num_steps) /
 				xyl_value.total_time.num_steps;
 		}
-		printf("[APP] lighting xyl server receive: set xyl_x %d, xyl_y %d, xyl_lightness %d, total_time %d, remaining_time %d \r\n",
-			   xyl_value.xyl.xyl_x,
-			   xyl_value.xyl.xyl_y,
-			   xyl_value.xyl.xyl_lightness,
-			   (xyl_set->total_time).num_steps,
-			   (xyl_set->remaining_time).num_steps);
+		BT_LOGA("[APP] lighting xyl server receive: set xyl_x %d, xyl_y %d, xyl_lightness %d, total_time %d, remaining_time %d \r\n",
+				xyl_value.xyl.xyl_x,
+				xyl_value.xyl.xyl_y,
+				xyl_value.xyl.xyl_lightness,
+				(xyl_set->total_time).num_steps,
+				(xyl_set->remaining_time).num_steps);
 		break;
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1580,10 +1545,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_setup_server_app_callback(uint8_t 
 		xyl_setup_default.xyl_lightness = default_set->xyl_lightness;
 		xyl_setup_default.xyl_x = default_set->xyl_x;
 		xyl_setup_default.xyl_y = default_set->xyl_y;
-		printf("[APP] lighting xyl server receive: default xyl_lightness %d, xyl_x %d, xyl_y %d \r\n",
-			   default_set->xyl_lightness,
-			   default_set->xyl_x,
-			   default_set->xyl_y);
+		BT_LOGA("[APP] lighting xyl server receive: default xyl_lightness %d, xyl_x %d, xyl_y %d \r\n",
+				default_set->xyl_lightness,
+				default_set->xyl_x,
+				default_set->xyl_y);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_XYL_RANGE_SERVER_MODEL_SET: {
@@ -1592,16 +1557,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_setup_server_app_callback(uint8_t 
 		xyl_setup_range.xyl_x_range_min = range_set->xyl_x_range_min;
 		xyl_setup_range.xyl_y_range_max = range_set->xyl_y_range_max;
 		xyl_setup_range.xyl_y_range_min = range_set->xyl_y_range_min;
-		printf("[APP] lighting xyl setup server receive: set xyl_x_range_max %d, xyl_x_range_min %d, xyl_y_range_max %d, xyl_y_range_min %d \r\n",
-			   range_set->xyl_x_range_max,
-			   range_set->xyl_x_range_min,
-			   range_set->xyl_y_range_max,
-			   range_set->xyl_y_range_min);
+		BT_LOGA("[APP] lighting xyl setup server receive: set xyl_x_range_max %d, xyl_x_range_min %d, xyl_y_range_max %d, xyl_y_range_min %d \r\n",
+				range_set->xyl_x_range_max,
+				range_set->xyl_x_range_min,
+				range_set->xyl_y_range_max,
+				range_set->xyl_y_range_min);
 		break;
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1625,8 +1590,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 	}
 	case RTK_BT_MESH_LIGHT_LC_SERVER_MODEL_MODE_SET: {
 		rtk_bt_mesh_light_lc_server_set_mode_t *mode_set = (rtk_bt_mesh_light_lc_server_set_mode_t *)param;
-		printf("[APP] lighting lc server receive: set light_lc mode %d \r\n",
-			   mode_set->mode);
+		BT_LOGA("[APP] lighting lc server receive: set light_lc mode %d \r\n",
+				mode_set->mode);
 		lc_mode.mode = mode_set->mode;
 		break;
 	}
@@ -1637,8 +1602,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 	}
 	case RTK_BT_MESH_LIGHT_LC_SERVER_MODEL_OM_SET: {
 		rtk_bt_mesh_light_lc_server_set_om_t *om_set = (rtk_bt_mesh_light_lc_server_set_om_t *)param;
-		printf("[APP] lighting lc server receive: set light_lc om %d \r\n",
-			   om_set->mode);
+		BT_LOGA("[APP] lighting lc server receive: set light_lc om %d \r\n",
+				om_set->mode);
 		lc_om.mode = om_set->mode;
 		break;
 	}
@@ -1662,23 +1627,23 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 		if (lc_onoff.total_time.num_steps == 0 ||
 			lc_onoff.remaining_time.num_steps == 0) {
 			lc_onoff.light_on_off = light_set->light_on_off;
-			printf("[APP] lighting lc server receive: set light_on_off %d, total_time %d, remaining_time %d \r\n",
-				   lc_onoff.light_on_off,
-				   (light_set->total_time).num_steps,
-				   (light_set->remaining_time).num_steps);
+			BT_LOGA("[APP] lighting lc server receive: set light_on_off %d, total_time %d, remaining_time %d \r\n",
+					lc_onoff.light_on_off,
+					(light_set->total_time).num_steps,
+					(light_set->remaining_time).num_steps);
 		} else if (lc_onoff.total_time.num_steps == lc_onoff.remaining_time.num_steps) {
 			if (light_set->light_on_off == RTK_BT_MESH_GENERIC_ON  && lc_onoff.light_on_off != light_set->light_on_off) {
 				lc_onoff.light_on_off = light_set->light_on_off;
 			}
-			printf("[APP] lighting lc server receive: set light_on_off %d, total_time %d, remaining_time %d \r\n",
-				   lc_onoff.light_on_off,
-				   (light_set->total_time).num_steps,
-				   (light_set->remaining_time).num_steps);
+			BT_LOGA("[APP] lighting lc server receive: set light_on_off %d, total_time %d, remaining_time %d \r\n",
+					lc_onoff.light_on_off,
+					(light_set->total_time).num_steps,
+					(light_set->remaining_time).num_steps);
 		}
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1694,7 +1659,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_setup_server_app_callback(uint8_t e
 	switch (evt_code) {
 	case RTK_BT_MESH_LIGHT_LC_SERVER_MODEL_PROPERTY_GET: {
 		rtk_bt_mesh_light_lc_server_direct_get_property_t *property_get = (rtk_bt_mesh_light_lc_server_direct_get_property_t *)param;
-		printf("[APP] Light lc setup server model get property id: 0x%x \r\n", property_get->property_id);
+		BT_LOGA("[APP] Light lc setup server model get property id: 0x%x \r\n", property_get->property_id);
 		rtk_bt_mesh_light_lc_server_direct_get_property_para_t property;
 		if ((property_get->property_id >= 0x2E) && (property_get->property_id <= 0x30)) {
 			property.property_value = property_store[0].property_value;
@@ -1710,9 +1675,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_setup_server_app_callback(uint8_t e
 	}
 	case RTK_BT_MESH_LIGHT_LC_SERVER_MODEL_PROPERTY_SET: {
 		rtk_bt_mesh_light_lc_server_set_property_t *property_set = (rtk_bt_mesh_light_lc_server_set_property_t *)param;
-		printf("[APP] Light lc setup server receive: set property id %d, property value %ld \r\n",
-			   property_set->property_id,
-			   property_set->property_value);
+		BT_LOGA("[APP] Light lc setup server receive: set property id %d, property value %ld \r\n",
+				property_set->property_id,
+				property_set->property_value);
 		if ((property_set->property_id >= 0x2E) && (property_set->property_id <= 0x30)) {
 			property_store[0].property_value = property_set->property_value;
 			property_store[0].value_len = 2;
@@ -1723,7 +1688,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_setup_server_app_callback(uint8_t e
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1763,11 +1728,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_server_app_callback(uint8_t evt_code, v
 		time_store.uncertainty = time_set->uncertainty;
 		time_store.tai_utc_delta = time_set->tai_utc_delta;
 		time_store.time_zone_offset = time_set->time_zone_offset;
-		printf("[APP] Time server receive: set subsecond %d uncertainty %d tai_utc_delta %d time_zone_offset %d\r\n",
-			   time_store.subsecond,
-			   time_store.uncertainty,
-			   time_store.tai_utc_delta,
-			   time_store.time_zone_offset);
+		BT_LOGA("[APP] Time server receive: set subsecond %d uncertainty %d tai_utc_delta %d time_zone_offset %d\r\n",
+				time_store.subsecond,
+				time_store.uncertainty,
+				time_store.tai_utc_delta,
+				time_store.time_zone_offset);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SERVER_MODEL_ROLE_GET: {
@@ -1776,7 +1741,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_server_app_callback(uint8_t evt_code, v
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1796,30 +1761,30 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_SET: {
 		rtk_bt_mesh_time_server_set_t *time_set = (rtk_bt_mesh_time_server_set_t *)param;
 		memcpy(&time_setup_store, time_set, sizeof(rtk_bt_mesh_time_server_set_t));
-		printf("[APP] Time setup server receive: set subsecond %d uncertainty %d tai_utc_delta %d time_zone_offset %d time_authority %d\r\n",
-			   time_setup_store.subsecond,
-			   time_setup_store.uncertainty,
-			   time_setup_store.tai_utc_delta,
-			   time_setup_store.time_zone_offset,
-			   time_setup_store.time_authority);
-		printf("tai_seconds[4]%d tai_seconds[3]%d tai_seconds[2]%d tai_seconds[1]%d tai_seconds[0]%d \r\n",
-			   time_setup_store.tai_seconds[4],
-			   time_setup_store.tai_seconds[3],
-			   time_setup_store.tai_seconds[2],
-			   time_setup_store.tai_seconds[1],
-			   time_setup_store.tai_seconds[0]);
+		BT_LOGA("[APP] Time setup server receive: set subsecond %d uncertainty %d tai_utc_delta %d time_zone_offset %d time_authority %d\r\n",
+				time_setup_store.subsecond,
+				time_setup_store.uncertainty,
+				time_setup_store.tai_utc_delta,
+				time_setup_store.time_zone_offset,
+				time_setup_store.time_authority);
+		BT_LOGA("tai_seconds[4]%d tai_seconds[3]%d tai_seconds[2]%d tai_seconds[1]%d tai_seconds[0]%d \r\n",
+				time_setup_store.tai_seconds[4],
+				time_setup_store.tai_seconds[3],
+				time_setup_store.tai_seconds[2],
+				time_setup_store.tai_seconds[1],
+				time_setup_store.tai_seconds[0]);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ZONE_SET: {
 		rtk_bt_mesh_time_server_set_zone_t *time_zone_set = (rtk_bt_mesh_time_server_set_zone_t *)param;
 		memcpy(&time_zone_store, time_zone_set, sizeof(rtk_bt_mesh_time_server_set_zone_t));
-		printf("[APP] Time setup server receive: set time_zone_offset %d \r\n", time_zone_store.time_zone_offset_new);
-		printf("tai_of_zone_change[4]%d tai_of_zone_change[3]%d tai_of_zone_change[2]%d tai_of_zone_change[1]%d tai_of_zone_change[0]%d \r\n",
-			   time_zone_store.tai_of_zone_change[4],
-			   time_zone_store.tai_of_zone_change[3],
-			   time_zone_store.tai_of_zone_change[2],
-			   time_zone_store.tai_of_zone_change[1],
-			   time_zone_store.tai_of_zone_change[0]);
+		BT_LOGA("[APP] Time setup server receive: set time_zone_offset %d \r\n", time_zone_store.time_zone_offset_new);
+		BT_LOGA("tai_of_zone_change[4]%d tai_of_zone_change[3]%d tai_of_zone_change[2]%d tai_of_zone_change[1]%d tai_of_zone_change[0]%d \r\n",
+				time_zone_store.tai_of_zone_change[4],
+				time_zone_store.tai_of_zone_change[3],
+				time_zone_store.tai_of_zone_change[2],
+				time_zone_store.tai_of_zone_change[1],
+				time_zone_store.tai_of_zone_change[0]);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ROLE_GET: {
@@ -1830,19 +1795,19 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ROLE_SET: {
 		rtk_bt_mesh_time_server_set_role_t *time_role_set = (rtk_bt_mesh_time_server_set_role_t *)param;
 		role_store = time_role_set->role;
-		printf("[APP] Time setup server receive: set role %d \r\n", role_store);
+		BT_LOGA("[APP] Time setup server receive: set role %d \r\n", role_store);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_TAI_UTC_DELTA_SET: {
 		rtk_bt_mesh_time_server_set_tai_utc_delta_t *delta_set = (rtk_bt_mesh_time_server_set_tai_utc_delta_t *)param;
 		memcpy(&time_delta_store, delta_set, sizeof(rtk_bt_mesh_time_server_set_tai_utc_delta_t));
-		printf("[APP] Time setup server receive: set tai_utc_delta_new %d \r\n", time_delta_store.tai_utc_delta_new);
-		printf("tai_of_delta_change[4]%d tai_of_delta_change[3]%d tai_of_delta_change[2]%d tai_of_delta_change[1]%d tai_of_delta_change[0]%d \r\n",
-			   time_delta_store.tai_of_delta_change[4],
-			   time_delta_store.tai_of_delta_change[3],
-			   time_delta_store.tai_of_delta_change[2],
-			   time_delta_store.tai_of_delta_change[1],
-			   time_delta_store.tai_of_delta_change[0]);
+		BT_LOGA("[APP] Time setup server receive: set tai_utc_delta_new %d \r\n", time_delta_store.tai_utc_delta_new);
+		BT_LOGA("tai_of_delta_change[4]%d tai_of_delta_change[3]%d tai_of_delta_change[2]%d tai_of_delta_change[1]%d tai_of_delta_change[0]%d \r\n",
+				time_delta_store.tai_of_delta_change[4],
+				time_delta_store.tai_of_delta_change[3],
+				time_delta_store.tai_of_delta_change[2],
+				time_delta_store.tai_of_delta_change[1],
+				time_delta_store.tai_of_delta_change[0]);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ZONE_GET: {
@@ -1865,7 +1830,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1895,7 +1860,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scheduler_server_app_callback(uint8_t evt_co
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1912,14 +1877,13 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scheduler_setup_server_app_callback(uint8_t 
 	case RTK_BT_MESH_SCHEDULER_ACTION_SERVER_MODEL_SET: {
 		rtk_bt_mesh_scheduler_server_set_action_t *scheduler_set = (rtk_bt_mesh_scheduler_server_set_action_t *)param;
 		memcpy(&scheduler_setup_store, scheduler_set, sizeof(rtk_bt_mesh_scheduler_register_t));
-		printf(
-			"[APP] scheduler client receive: " \
-			"index = %d, year = %d, month = %d, day = %d, hour = %d, minute = %d, second = %d, " \
-			"day_of_week = %d, action = %d, num_steps = %d, step_resolution = %d, scene_number = %d\r\n", \
-			scheduler_setup_store.index, scheduler_setup_store.year, scheduler_setup_store.month, \
-			scheduler_setup_store.day, scheduler_setup_store.hour, scheduler_setup_store.minute, scheduler_setup_store.second, \
-			scheduler_setup_store.day_of_week, scheduler_setup_store.action, scheduler_setup_store.num_steps, \
-			scheduler_setup_store.step_resolution, scheduler_setup_store.scene_number);
+		BT_LOGA("[APP] scheduler client receive: " \
+				"index = %d, year = %d, month = %d, day = %d, hour = %d, minute = %d, second = %d, " \
+				"day_of_week = %d, action = %d, num_steps = %d, step_resolution = %d, scene_number = %d\r\n", \
+				scheduler_setup_store.index, scheduler_setup_store.year, scheduler_setup_store.month, \
+				scheduler_setup_store.day, scheduler_setup_store.hour, scheduler_setup_store.minute, scheduler_setup_store.second, \
+				scheduler_setup_store.day_of_week, scheduler_setup_store.action, scheduler_setup_store.num_steps, \
+				scheduler_setup_store.step_resolution, scheduler_setup_store.scene_number);
 		break;
 	}
 	case RTK_BT_MESH_SCHEDULER_SETUP_SERVER_MODEL_GET_ACTION: {
@@ -1928,7 +1892,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scheduler_setup_server_app_callback(uint8_t 
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -1955,12 +1919,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_server_app_callback(uint8_t evt_code, 
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_RECALL: {
 		rtk_bt_mesh_scene_server_recall_t *scene_recall = (rtk_bt_mesh_scene_server_recall_t *)param;
 		memcpy(&recall_store, scene_recall, sizeof(rtk_bt_mesh_scene_server_recall_t));
-		printf("[APP] scene server receive: scene number:%d, total time:%d , remain time %d \r\n",
-			   recall_store.scene_number, recall_store.total_time.num_steps, recall_store.remaining_time.num_steps);
+		BT_LOGA("[APP] scene server receive: scene number:%d, total time:%d , remain time %d \r\n",
+				recall_store.scene_number, recall_store.total_time.num_steps, recall_store.remaining_time.num_steps);
 		current_scene = recall_store.scene_number;
 		uint8_t *pmemory = (uint8_t *)param + 4;
 		mesh_data_uart_dump(pmemory, SCENE_DATA_MAX_LEN);
-		printf("\r\n");
+		BT_LOGA("\r\n");
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_GET_REGISTER_STATUS: {
@@ -1980,12 +1944,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_server_app_callback(uint8_t evt_code, 
 	}
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_GET_STATUS_RECALL: {
 		rtk_bt_mesh_scene_server_get_status_recall_t *status_register_get = (rtk_bt_mesh_scene_server_get_status_recall_t *)param;
-		printf("[APP] scene server receive: scene number: %d \r\n", status_register_get->scene_number);
+		BT_LOGA("[APP] scene server receive: scene number: %d \r\n", status_register_get->scene_number);
 		memcpy(status_register_get->status_recall, &recall_status, sizeof(rtk_bt_mesh_scene_status_code_t));
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2006,15 +1970,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_setup_server_app_callback(uint8_t evt_
 	switch (evt_code) {
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_STORE: {
 		rtk_bt_mesh_scene_server_store_t *store_set = (rtk_bt_mesh_scene_server_store_t *)param;
-		memcpy(store_set->pmemory, &store_scene_value, MESH_LE_EXTRN2WORD(store_scene_value) + 2);
-		printf("[APP] scene setup server receive: status:%d, scene number:%d \r\n",
-			   store_set->status, store_set->scene_number);
+		memcpy(store_set->pmemory, &store_scene_value, LE_TO_U16(store_scene_value) + 2);
+		BT_LOGA("[APP] scene setup server receive: status:%d, scene number:%d \r\n",
+				store_set->status, store_set->scene_number);
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_DELETE: {
 		rtk_bt_mesh_scene_server_delete_t *scene_delete = (rtk_bt_mesh_scene_server_delete_t *)param;
 		memcpy(&delete_store, scene_delete, sizeof(rtk_bt_mesh_scene_server_delete_t));
-		printf("[APP] scene setup server receive: scene number:%d \r\n", delete_store.scene_number);
+		BT_LOGA("[APP] scene setup server receive: scene number:%d \r\n", delete_store.scene_number);
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET: {
@@ -2034,12 +1998,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_setup_server_app_callback(uint8_t evt_
 	}
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET_STATUS_REGISTER: {
 		rtk_bt_mesh_scene_setup_server_get_register_status_t *status_register_get = (rtk_bt_mesh_scene_setup_server_get_register_status_t *)param;
-		printf("[APP] scene setup server receive: scene number: %d \r\n", status_register_get->scene_number);
+		BT_LOGA("[APP] scene setup server receive: scene number: %d \r\n", status_register_get->scene_number);
 		memcpy(status_register_get->status, &setup_register_status, sizeof(rtk_bt_mesh_scene_status_code_t));
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2061,12 +2025,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_default_transition_time_server_app_c
 	case RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL_SET: {
 		rtk_bt_mesh_generic_default_transition_time_server_set_t *time_set = (rtk_bt_mesh_generic_default_transition_time_server_set_t *)param;
 		memcpy(&trans_store, &(time_set->trans_time), sizeof(rtk_bt_mesh_generic_transition_time_t));
-		printf("[APP] generic default transition time server receive: resolution %d, num steps %d \r\n",
-			   trans_store.step_resolution, trans_store.num_steps);
+		BT_LOGA("[APP] generic default transition time server receive: resolution %d, num steps %d \r\n",
+				trans_store.step_resolution, trans_store.num_steps);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2101,21 +2065,21 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_level_server_app_callback(uint8_t ev
 			level_store.level =
 				level_set->level - (level_set->level - pre_level) * ((double)level_store.remaining_time.num_steps) / level_store.total_time.num_steps;
 		}
-		printf("[APP] generic level server receive: level %d, total time %d, reamining time %d \r\n",
-			   level_store.level, level_store.total_time.num_steps, level_store.remaining_time.num_steps);
+		BT_LOGA("[APP] generic level server receive: level %d, total time %d, reamining time %d \r\n",
+				level_store.level, level_store.total_time.num_steps, level_store.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_SET_MOVE: {
 		rtk_bt_mesh_generic_level_server_set_move_t *move_set = (rtk_bt_mesh_generic_level_server_set_move_t *)param;
 		memcpy(&move_store, move_set, sizeof(rtk_bt_mesh_generic_level_server_set_move_t));
-		printf("[APP] generic level server receive: move delta %d, target level %d, total time %d, remaining time %d \r\n",
-			   move_store.move_delta, move_store.target_level,
-			   move_store.total_time.num_steps, move_store.remaining_time.num_steps);
+		BT_LOGA("[APP] generic level server receive: move delta %d, target level %d, total time %d, remaining time %d \r\n",
+				move_store.move_delta, move_store.target_level,
+				move_store.total_time.num_steps, move_store.remaining_time.num_steps);
 		pre_level = level_store.level;
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2135,7 +2099,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_on_off_server_app_callback(uin
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2151,12 +2115,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_on_off_setup_server_app_callba
 	case RTK_BT_MESH_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL_SET: {
 		rtk_bt_mesh_generic_power_on_off_server_set_t *gpoo_set = (rtk_bt_mesh_generic_power_on_off_server_set_t *)param;
 		on_power_up_setup_store = gpoo_set->on_power_up;
-		printf("[APP] generic power on off setup server receive: on power up %d \r\n",
-			   on_power_up_setup_store);
+		BT_LOGA("[APP] generic power on off setup server receive: on power up %d \r\n",
+				on_power_up_setup_store);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2193,8 +2157,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_server_app_callback(uint
 			power_level_store.power =
 				gpl_set->power - (gpl_set->power - pre_power_level) * ((double)power_level_store.remaining_time.num_steps) / power_level_store.total_time.num_steps;
 		}
-		printf("[APP] Generic power level server model receive :set power %d, total time %d, remaining time %d \r\n",
-			   power_level_store.power, power_level_store.total_time.num_steps, power_level_store.remaining_time.num_steps);
+		BT_LOGA("[APP] Generic power level server model receive: set power %d, total time %d, remaining time %d \r\n",
+				power_level_store.power, power_level_store.total_time.num_steps, power_level_store.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_LAST_GET: {
@@ -2218,7 +2182,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_server_app_callback(uint
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2235,19 +2199,19 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_setup_server_app_callbac
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL_DEFAULT_SET: {
 		rtk_bt_mesh_generic_power_level_server_set_default_t *gpld_set = (rtk_bt_mesh_generic_power_level_server_set_default_t *)param;
 		default_power_setup_store = gpld_set->power;
-		printf("[APP] generic power level setup server receive: set default %d \r\n",
-			   default_power_setup_store);
+		BT_LOGA("[APP] generic power level setup server receive: set default %d \r\n",
+				default_power_setup_store);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL_RANGE_SET: {
 		rtk_bt_mesh_generic_power_level_server_set_range_t *gplr_set = (rtk_bt_mesh_generic_power_level_server_set_range_t *)param;
 		memcpy(&power_level_range_setup_store, gplr_set, sizeof(rtk_bt_mesh_generic_power_level_server_get_range_t));
-		printf("[APP] generic power level setup server receive: set range min %d range max %d \r\n",
-			   power_level_range_setup_store.range_min, power_level_range_setup_store.range_max);
+		BT_LOGA("[APP] generic power level setup server receive: set range min %d range max %d \r\n",
+				power_level_range_setup_store.range_min, power_level_range_setup_store.range_max);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2264,16 +2228,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_battery_server_app_callback(uint8_t 
 	case RTK_BT_MESH_GENERIC_BATTERY_SERVER_MODEL_GET: {
 		rtk_bt_mesh_generic_battery_server_direct_get_t *gb_get = (rtk_bt_mesh_generic_battery_server_direct_get_t *)param;
 		memcpy(gb_get->value, &battery_store, sizeof(rtk_bt_mesh_generic_battery_server_get_t));
-		printf("[APP] generic battery server receive: get battery level = %d, time to discharge = %ld, \
+		BT_LOGA("[APP] generic battery server receive: get battery level = %d, time to discharge = %ld, \
 time to charge = %ld, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
-			   (gb_get->value)->battery_level,
-			   (gb_get->value)->time_to_discharge, (gb_get->value)->time_to_charge,
-			   (gb_get->value)->flags.presence, (gb_get->value)->flags.indicator, (gb_get->value)->flags.charging,
-			   (gb_get->value)->flags.serviceability);
+				(gb_get->value)->battery_level,
+				(gb_get->value)->time_to_discharge, (gb_get->value)->time_to_charge,
+				(gb_get->value)->flags.presence, (gb_get->value)->flags.indicator, (gb_get->value)->flags.charging,
+				(gb_get->value)->flags.serviceability);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2299,7 +2263,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_server_app_callback(uint8_t
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2327,27 +2291,27 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_setup_server_app_callback(u
 	case RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_GLOBAL_SET: {
 		rtk_bt_mesh_generic_location_server_set_global_t *global_set = (rtk_bt_mesh_generic_location_server_set_global_t *)param;
 		memcpy(&global_location_setup_store, global_set, sizeof(rtk_bt_mesh_generic_location_server_get_global_t));
-		printf("[APP] Generic location setup server receive: set global_latitude %ld , global_longitude %ld , lobal_altitude %d\r\n",
-			   global_location_setup_store.global_latitude,
-			   global_location_setup_store.global_longitude,
-			   global_location_setup_store.global_altitude);
+		BT_LOGA("[APP] Generic location setup server receive: set global_latitude %ld , global_longitude %ld , lobal_altitude %d\r\n",
+				global_location_setup_store.global_latitude,
+				global_location_setup_store.global_longitude,
+				global_location_setup_store.global_altitude);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_LOCAL_SET: {
 		rtk_bt_mesh_generic_location_server_set_local_t *local_set = (rtk_bt_mesh_generic_location_server_set_local_t *)param;
 		memcpy(&local_location_setup_store, local_set, sizeof(rtk_bt_mesh_generic_location_server_get_local_t));
-		printf("[APP] Generic location setup server receive: set local_north %d , local_east %d , local_altitude %d , floor_num %d , stationary %d , precision %d , update_time %d \r\n",
-			   local_location_setup_store.local_north,
-			   local_location_setup_store.local_east,
-			   local_location_setup_store.local_altitude,
-			   local_location_setup_store.floor_num,
-			   local_location_setup_store.uncertainty.stationary,
-			   local_location_setup_store.uncertainty.precision,
-			   local_location_setup_store.uncertainty.update_time);
+		BT_LOGA("[APP] Generic location setup server receive: set local_north %d , local_east %d , local_altitude %d , floor_num %d , stationary %d , precision %d , update_time %d \r\n",
+				local_location_setup_store.local_north,
+				local_location_setup_store.local_east,
+				local_location_setup_store.local_altitude,
+				local_location_setup_store.floor_num,
+				local_location_setup_store.uncertainty.stationary,
+				local_location_setup_store.uncertainty.precision,
+				local_location_setup_store.uncertainty.update_time);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2365,20 +2329,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_user_property_server_app_callback(ui
 	(void)len;
 	switch (evt_code) {
 	case RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_PROPERTY_SET: {
-		uint16_t property_id = MESH_LE_EXTRN2WORD((uint8_t *)param);
-		uint16_t value_len = MESH_LE_EXTRN2WORD((uint8_t *)param + 2);
+		uint16_t property_id = LE_TO_U16((uint8_t *)param);
+		uint16_t value_len = LE_TO_U16((uint8_t *)param + 2);
 		uint8_t *pvalue = (uint8_t *)param + 4;
-		printf("[APP] Generic user property server model receive: property id %d", property_id);
-		printf(", value: ");
-		for (int i = 0; i < value_len; i++) {
-			printf(" %d ", pvalue[i]);
-		}
-		printf("\r\n");
+		BT_LOGA("[APP] Generic user property server model receive: property id %d\r\n", property_id);
+		BT_DUMPA("value: ", pvalue, value_len);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_PARAMETER_GET: {
 		rtk_bt_mesh_generic_property_server_para_get_t *user_para_get = (rtk_bt_mesh_generic_property_server_para_get_t *)param;
-		printf("[APP] Generic user property server model get parameter, property id = %d \r\n", user_para_get->property_id);
+		BT_LOGA("[APP] Generic user property server model get parameter, property id = %d \r\n", user_para_get->property_id);
 		memcpy(user_para_get->pvalue, &user_para_store, sizeof(rtk_bt_mesh_generic_property_server_para_t));
 		break;
 	}
@@ -2400,7 +2360,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_user_property_server_app_callback(ui
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2418,21 +2378,17 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_admin_property_server_app_callback(u
 	(void)len;
 	switch (evt_code) {
 	case RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_PROPERTY_SET: {
-		uint16_t property_id = MESH_LE_EXTRN2WORD((uint8_t *)param);
+		uint16_t property_id = LE_TO_U16((uint8_t *)param);
 		uint8_t property_access = *((uint8_t *)param + 2);
-		uint16_t value_len = MESH_LE_EXTRN2WORD((uint8_t *)param + 3);
+		uint16_t value_len = LE_TO_U16((uint8_t *)param + 3);
 		uint8_t *pvalue = (uint8_t *)param + 5;
-		printf("[APP] Generic admin property server model receive: property id %d, property access %d", property_id, property_access);
-		printf(", value: ");
-		for (int i = 0; i < value_len; i++) {
-			printf(" %d ", pvalue[i]);
-		}
-		printf("\r\n");
+		BT_LOGA("[APP] Generic admin property server model receive: property id %d, property access %d\r\n", property_id, property_access);
+		BT_DUMPA("value: ", pvalue, value_len);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_PARAMETER_GET: {
 		rtk_bt_mesh_generic_property_server_para_get_t *admin_para_get = (rtk_bt_mesh_generic_property_server_para_get_t *)param;
-		printf("[APP] Generic admin property server model get parameter, property id = %d \r\n", admin_para_get->property_id);
+		BT_LOGA("[APP] Generic admin property server model get parameter, property id = %d \r\n", admin_para_get->property_id);
 		memcpy(admin_para_get->pvalue, &admin_para_store, sizeof(rtk_bt_mesh_generic_property_server_para_t));
 		break;
 	}
@@ -2454,7 +2410,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_admin_property_server_app_callback(u
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2475,14 +2431,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_manu_property_server_app_callback(ui
 	case RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_PROPERTY_SET: {
 		rtk_bt_mesh_generic_manu_property_server_set_t *manu_property_set = (rtk_bt_mesh_generic_manu_property_server_set_t *)param;
 		memcpy(&manu_property_set_store, manu_property_set, sizeof(rtk_bt_mesh_generic_manu_property_server_set_t));
-		printf("[APP] Generic manufacturer server model receive: property id %d, property_access %d\r\n",
-			   manu_property_set_store.property_id,
-			   manu_property_set_store.property_access);
+		BT_LOGA("[APP] Generic manufacturer server model receive: property id %d, property_access %d\r\n",
+				manu_property_set_store.property_id,
+				manu_property_set_store.property_access);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_PARAMETER_GET: {
 		rtk_bt_mesh_generic_property_server_para_get_t *manu_para_get = (rtk_bt_mesh_generic_property_server_para_get_t *)param;
-		printf("[APP] Generic manufacturer property server model get parameter, property id = %d \r\n", manu_para_get->property_id);
+		BT_LOGA("[APP] Generic manufacturer property server model get parameter, property id = %d \r\n", manu_para_get->property_id);
 		memcpy(manu_para_get->pvalue, &manu_para_store, sizeof(rtk_bt_mesh_generic_property_server_para_t));
 		break;
 	}
@@ -2503,7 +2459,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_manu_property_server_app_callback(ui
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2526,7 +2482,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_client_property_server_app_callback(
 	}
 
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2557,8 +2513,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_COLUMN_GET: {
 		rtk_bt_mesh_sensor_server_direct_get_column_t *column_get = (rtk_bt_mesh_sensor_server_direct_get_column_t *)param;
-		printf("[APP] Sensor server receive : property id:%d, raw value x len:%d, raw value x: \r\n",
-			   column_get->property_id, column_get->raw_value_x_len);
+		BT_LOGA("[APP] Sensor server receive: property id:%d, raw value x len:%d, raw value x: \r\n",
+				column_get->property_id, column_get->raw_value_x_len);
 		mesh_data_uart_dump(column_get->raw_value_x, column_get->raw_value_x_len);
 		memcpy(column_get->value, &column_length, 2);
 		memcpy((uint8_t *)column_get->value + 2, sensor_raw_data, column_length);
@@ -2566,14 +2522,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_SERIES_GET: {
 		rtk_bt_mesh_sensor_server_direct_get_series_t *series_get = (rtk_bt_mesh_sensor_server_direct_get_series_t *)param;
-		printf("[APP] Sensor server receive : property id:%d, raw value x len:%d, raw value x1: \r\n",
-			   series_get->property_id, series_get->raw_value_x_len);
+		BT_LOGA("[APP] Sensor server receive: property id:%d, raw value x len:%d, raw value x1: \r\n",
+				series_get->property_id, series_get->raw_value_x_len);
 		if (series_get->raw_value_x_len == 0) {
-			printf("Sensor client need get all series information \r\n");
+			BT_LOGA("Sensor client need get all series information \r\n");
 		}
 
 		mesh_data_uart_dump(series_get->raw_value_x1, series_get->raw_value_x_len);
-		printf("raw value x2:\r\n");
+		BT_LOGA("raw value x2:\r\n");
 		mesh_data_uart_dump(series_get->raw_value_x2, series_get->raw_value_x_len);
 		memcpy(series_get->value, &series_length, 2);
 		memcpy((uint8_t *)series_get->value + 2, sensor_raw_data, series_length);
@@ -2581,24 +2537,24 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_COMPARE_CADENCE: {
 		rtk_bt_mesh_sensor_server_compare_cadence_t *compare_get = (rtk_bt_mesh_sensor_server_compare_cadence_t *)param;
-		printf("[APP] Sensor server receive : property id:%d \r\n", compare_get->property_id);
+		BT_LOGA("[APP] Sensor server receive: property id:%d \r\n", compare_get->property_id);
 		*(compare_get->need_fast_divisor) = need_divisior;
 		break;
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_NUM_GET: {
 		rtk_bt_mesh_sensor_server_get_descriptor_num_t *des_num_get = (rtk_bt_mesh_sensor_server_get_descriptor_num_t *)param;
-		printf("[APP] Sensor server receive : property id:%d \r\n", des_num_get->property_id);
+		BT_LOGA("[APP] Sensor server receive: property id:%d \r\n", des_num_get->property_id);
 		*(des_num_get->descriptor_num) = des_num_store;
 		break;
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_GET: {
 		rtk_bt_mesh_sensor_server_get_descriptor_t *des_get = (rtk_bt_mesh_sensor_server_get_descriptor_t *)param;
-		printf("[APP] Sensor server receive : property id:%d \r\n", des_get->property_id);
+		BT_LOGA("[APP] Sensor server receive: property id:%d \r\n", des_get->property_id);
 		memcpy(des_get->descriptor, descriptors_store, sizeof(rtk_bt_mesh_sensor_descriptor_t) * des_get->descriptor_num);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2623,8 +2579,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 	switch (evt_code) {
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_SET: {
 		uint8_t *pdata = (uint8_t *)param;
-		uint16_t property_id = MESH_LE_EXTRN2WORD(pdata);
-		printf("[APP] Sensor setup server receive: set property id %d \r\n", property_id);
+		uint16_t property_id = LE_TO_U16(pdata);
+		BT_LOGA("[APP] Sensor setup server receive: set property id %d \r\n", property_id);
 		pdata += 2;
 		uint8_t raw_value_len = *pdata;
 		app_store_raw_value_len = raw_value_len;
@@ -2632,8 +2588,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		divisionr_trigger = *pdata;
 		uint8_t fast_cadence_period_divisor = (*(pdata)) & 0x7F;
 		uint8_t status_trigger_type = ((*(pdata)) & 0x80) >> 7;
-		printf("fast_cadence_period_divisor: %d, status_trigger_type :%d \r\n",
-			   fast_cadence_period_divisor, status_trigger_type);
+		BT_LOGA("fast_cadence_period_divisor: %d, status_trigger_type :%d \r\n",
+				fast_cadence_period_divisor, status_trigger_type);
 		pdata++;
 		uint8_t trigger_len;
 		if (status_trigger_type == 0) {
@@ -2642,31 +2598,31 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 			trigger_len = 2;
 		}
 		if (status_trigger_type) {
-			printf("status_trigger_delta_down: %d\r\n", MESH_LE_EXTRN2WORD(pdata));
+			BT_LOGA("status_trigger_delta_down: %d\r\n", LE_TO_U16(pdata));
 			memcpy(delta_down, pdata, trigger_len);
 			pdata += trigger_len;
-			printf("status_trigger_delta_up: %d\r\n", MESH_LE_EXTRN2WORD(pdata));
+			BT_LOGA("status_trigger_delta_up: %d\r\n", LE_TO_U16(pdata));
 			memcpy(delta_up, pdata, trigger_len);
 			pdata += trigger_len;
 		} else {
-			printf("status_trigger_delta_down: \r\n");
+			BT_LOGA("status_trigger_delta_down: \r\n");
 			mesh_data_uart_dump(pdata, trigger_len);
 			memcpy(delta_down, pdata, trigger_len);
 			pdata += trigger_len;
-			printf("status_trigger_delta_up: \r\n");
+			BT_LOGA("status_trigger_delta_up: \r\n");
 			mesh_data_uart_dump(pdata, trigger_len);
 			memcpy(delta_up, pdata, trigger_len);
 			pdata += trigger_len;
 		}
 		uint8_t status_min_interval = *pdata;
 		app_store_status_min_interval = status_min_interval;
-		printf("status_min_interval: %d \r\n", status_min_interval);
+		BT_LOGA("status_min_interval: %d \r\n", status_min_interval);
 		pdata++;
-		printf("fast_cadence_low: \r\n");
+		BT_LOGA("fast_cadence_low: \r\n");
 		mesh_data_uart_dump(pdata, raw_value_len);
 		memcpy(cadence_low, pdata, raw_value_len);
 		pdata += raw_value_len;
-		printf("fast_cadence_high: \r\n");
+		BT_LOGA("fast_cadence_high: \r\n");
 		mesh_data_uart_dump(pdata, raw_value_len);
 		memcpy(cadence_high, pdata, raw_value_len);
 		app_store_cadence_len = 2 * trigger_len + 2 * raw_value_len + 3;
@@ -2674,17 +2630,17 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_SET: {
 		uint8_t *pdata = (uint8_t *)param;
-		uint16_t property_id = MESH_LE_EXTRN2WORD(pdata);
+		uint16_t property_id = LE_TO_U16(pdata);
 		pdata += 2;
-		uint16_t setting_property_id = MESH_LE_EXTRN2WORD(pdata);
+		uint16_t setting_property_id = LE_TO_U16(pdata);
 		pdata += 2;
 		rtk_bt_mesh_sensor_setting_access_t access = (rtk_bt_mesh_sensor_setting_access_t)(*pdata);
 		pdata++;
-		printf("[APP] Sensor setup server receive: set property id %d, setting property id %d, access %d \r\n",
-			   property_id, setting_property_id, access);
+		BT_LOGA("[APP] Sensor setup server receive: set property id %d, setting property id %d, access %d \r\n",
+				property_id, setting_property_id, access);
 		uint8_t raw_len = *pdata;
 		pdata++;
-		printf("setting value: ");
+		BT_LOGA("setting value: ");
 		mesh_data_uart_dump(pdata, raw_len);
 		memcpy(app_setting_store, &access, 1);
 		memcpy(&app_setting_store[1], &raw_len, 1);
@@ -2694,10 +2650,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_GET: {
 		rtk_bt_mesh_sensor_server_get_cadence_t *pdata = (rtk_bt_mesh_sensor_server_get_cadence_t *)param;
 		uint16_t property_id = pdata->property_id;
-		printf("[APP] Sensor setup server receive: property id %d \r\n", property_id);
+		BT_LOGA("[APP] Sensor setup server receive: property id %d \r\n", property_id);
 		uint8_t *cadence_data = pdata->cadence;
 		memcpy(cadence_data, &app_store_cadence_len, 2);
-		printf("app_store_cadence_len %d \r\n", app_store_cadence_len);
+		BT_LOGA("app_store_cadence_len %d \r\n", app_store_cadence_len);
 		if (app_store_cadence_len != 0) {
 			memcpy(cadence_data + 2, &app_store_raw_value_len, 1);
 			memcpy(cadence_data + 3, &divisionr_trigger, 1);// fast_cadence_period_divisor + status_trigger_type
@@ -2719,7 +2675,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTINGS_GET: {
 		rtk_bt_mesh_sensor_server_get_settings_t *pdata = (rtk_bt_mesh_sensor_server_get_settings_t *)param;
 		uint16_t property_id = pdata->property_id;
-		printf("[APP] Sensor setup server receive: property id %d \r\n", property_id);
+		BT_LOGA("[APP] Sensor setup server receive: property id %d \r\n", property_id);
 		memcpy(pdata->settings_data, app_settings_store, 2);
 		memcpy(pdata->settings_data + 1, &app_settings_store[1], app_settings_store[0] * 2);
 		break;
@@ -2728,12 +2684,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		rtk_bt_mesh_sensor_server_get_setting_t *pdata = (rtk_bt_mesh_sensor_server_get_setting_t *)param;
 		uint16_t property_id = pdata->property_id;
 		uint16_t setting_id = pdata->setting_property_id;
-		printf("[APP] Sensor setup server receive: property id %d, setting property id %d \r\n", property_id, setting_id);
+		BT_LOGA("[APP] Sensor setup server receive: property id %d, setting property id %d \r\n", property_id, setting_id);
 		memcpy(pdata->setting_data, app_setting_store, app_setting_store[1] + 2);
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2753,19 +2709,19 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	switch (evt_code) {
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_GET: {
 		rtk_bt_mesh_health_server_fault_get_t *fault_get = (rtk_bt_mesh_health_server_fault_get_t *)param;
-		printf("[APP] Health server receive: company id %04x \r\n", fault_get->company_id);
+		BT_LOGA("[APP] Health server receive: company id %04x \r\n", fault_get->company_id);
 		memcpy(fault_get->fault_array, app_fault_array, app_fault_array[0] + 1);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_CLEAR: {
 		rtk_bt_mesh_health_server_fault_clear_t *fault_clear = (rtk_bt_mesh_health_server_fault_clear_t *)param;
-		printf("[APP] Health server receive: company id %04x \r\n", fault_clear->company_id);
+		BT_LOGA("[APP] Health server receive: company id %04x \r\n", fault_clear->company_id);
 		memcpy(fault_clear->fault_array, app_clear_array, app_clear_array[0] + 1);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_TEST: {
 		rtk_bt_mesh_health_server_fault_test_t *fault_test = (rtk_bt_mesh_health_server_fault_test_t *)param;
-		printf("[APP] Health server receive: test id %d company id %04x \r\n", fault_test->test_id, fault_test->company_id);
+		BT_LOGA("[APP] Health server receive: test id %d company id %04x \r\n", fault_test->test_id, fault_test->company_id);
 		/*call related customer test cb*/
 		memcpy(fault_test->fault_array, app_fault_array, app_fault_array[0] + 1);
 		break;
@@ -2778,7 +2734,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_PERIOD_SET: {
 		rtk_bt_mesh_health_server_period_set_t *period = (rtk_bt_mesh_health_server_period_set_t *)param;
 		app_health_period = (period->fast_period_divisor);
-		printf("[APP] Health server receive: set fast period divisor %d \r\n", app_health_period);
+		BT_LOGA("[APP] Health server receive: set fast period divisor %d \r\n", app_health_period);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_ATTN_GET: {
@@ -2790,7 +2746,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_ATTN_SET: {
 		rtk_bt_mesh_health_server_attn_set_t *attn = (rtk_bt_mesh_health_server_attn_set_t *)param;
 		app_attn = attn->attn;
-		printf("[APP] Health server receive: set attention timer %d \r\n", app_attn);
+		BT_LOGA("[APP] Health server receive: set attention timer %d \r\n", app_attn);
 		/*****If needed, customer create the attention timer here******/
 		break;
 	}
@@ -2800,7 +2756,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 		break;
 	}
 	default:
-		printf("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
 	}
 	return RTK_BT_EVT_CB_OK;
@@ -2831,7 +2787,7 @@ int ble_mesh_device_scatternet_main(uint8_t enable)
 
 		BT_APP_PROCESS(rtk_bt_le_gap_get_bd_addr(&bd_addr));
 		rtk_bt_le_addr_to_str(&bd_addr, addr_str, sizeof(addr_str));
-		printf("[APP] BD_ADDR: %s\r\n", addr_str);
+		BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 
 		BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 

@@ -21,16 +21,13 @@ CSRC += \
 	$(DIR)/driver/hci/hci_transport/hci_h4.c \
 	$(DIR)/driver/hci/hci_if_rtk.c \
 	$(DIR)/driver/platform/amebadplus/hci/bt_normal_patch.c \
+	$(DIR)/driver/platform/amebadplus/hci/bt_mp_patch.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_uart.c \
 	$(DIR)/rtk_stack/platform/common/platform_utils.c \
 	$(DIR)/rtk_stack/platform/common/trace_uart.c \
 	$(DIR)/osif/bt_debug.c \
 	$(DIR)/osif/osif.c
-
-ifneq ($(CONFIG_BT_EXCLUDE_MP_FUNCTION), y)
-CSRC += $(DIR)/driver/platform/amebadplus/hci/bt_mp_patch.c
-endif
 
 OBJS = $(notdir $(CSRC:.c=.o))
 

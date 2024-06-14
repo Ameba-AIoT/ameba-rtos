@@ -43,8 +43,8 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	switch (msg) {
 	case GAP_ECFC_PROTO_REG_RSP: {
 		T_GAP_ECFC_PROTO_REG_RSP *p_rsp = (T_GAP_ECFC_PROTO_REG_RSP *)p_buf;
-		API_PRINT("GAP_ECFC_PROTO_REG_RSP: proto_id %d, psm 0x%x, cause 0x%x\r\n",
-				  p_rsp->proto_id, p_rsp->psm, p_rsp->cause);
+		BT_LOGD("GAP_ECFC_PROTO_REG_RSP: proto_id %d, psm 0x%x, cause 0x%x\r\n",
+				p_rsp->proto_id, p_rsp->psm, p_rsp->cause);
 		p_cmd = bt_stack_pending_cmd_search(msg);
 		if (p_cmd) {
 			rtk_bt_gap_ecfc_register_t *param = (rtk_bt_gap_ecfc_register_t *)p_cmd->param;
@@ -59,8 +59,8 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	}
 	case GAP_ECFC_SEC_REG_RSP: {
 		T_GAP_ECFC_SEC_REG_RSP *p_rsp = (T_GAP_ECFC_SEC_REG_RSP *)p_buf;
-		API_PRINT("GAP_ECFC_SEC_REG_RSP: is_le %d, psm 0x%x, active %d, uuid 0x%x, cause 0x%x\r\n",
-				  p_rsp->is_le, p_rsp->psm, p_rsp->active, p_rsp->uuid, p_rsp->cause);
+		BT_LOGD("GAP_ECFC_SEC_REG_RSP: is_le %d, psm 0x%x, active %d, uuid 0x%x, cause 0x%x\r\n",
+				p_rsp->is_le, p_rsp->psm, p_rsp->active, p_rsp->uuid, p_rsp->cause);
 		p_cmd = bt_stack_pending_cmd_search(msg);
 		if (p_cmd) {
 			rtk_bt_gap_ecfc_sec_reg_req_t *param = (rtk_bt_gap_ecfc_sec_reg_req_t *)p_cmd->param;
@@ -75,11 +75,11 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_CONN_IND: {
 		rtk_bt_ecfc_conn_req_ind_t *p_ind = NULL;
 		T_GAP_ECFC_CONN_IND *p_info = (T_GAP_ECFC_CONN_IND *)p_buf;
-		API_PRINT("GAP_ECFC_CONN_IND: proto_id %d, conn_handle %d, remote_mtu %d, cid_num %d, cid %d %d %d %d %d, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x, identity_id %d\r\n",
-				  p_info->proto_id, p_info->conn_handle, p_info->remote_mtu, p_info->cid_num,
-				  p_info->cid[0], p_info->cid[1], p_info->cid[2], p_info->cid[3], p_info->cid[4],
-				  p_info->bd_addr[5], p_info->bd_addr[4], p_info->bd_addr[3], p_info->bd_addr[2], p_info->bd_addr[1], p_info->bd_addr[0],
-				  p_info->bd_type, p_info->identity_id);
+		BT_LOGD("GAP_ECFC_CONN_IND: proto_id %d, conn_handle %d, remote_mtu %d, cid_num %d, cid %d %d %d %d %d, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x, identity_id %d\r\n",
+				p_info->proto_id, p_info->conn_handle, p_info->remote_mtu, p_info->cid_num,
+				p_info->cid[0], p_info->cid[1], p_info->cid[2], p_info->cid[3], p_info->cid[4],
+				p_info->bd_addr[5], p_info->bd_addr[4], p_info->bd_addr[3], p_info->bd_addr[2], p_info->bd_addr[1], p_info->bd_addr[0],
+				p_info->bd_type, p_info->identity_id);
 		p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_ECFC_CONN_REQ_IND,
 									sizeof(rtk_bt_ecfc_conn_req_ind_t));
 		p_ind = (rtk_bt_ecfc_conn_req_ind_t *)p_evt->data;
@@ -89,10 +89,10 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	}
 	case GAP_ECFC_CONN_RSP: {
 		T_GAP_ECFC_CONN_RSP *p_rsp = (T_GAP_ECFC_CONN_RSP *)p_buf;
-		API_PRINT("GAP_ECFC_CONN_RSP: proto_id %d, cid_num %d, cause 0x%x, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x\r\n",
-				  p_rsp->proto_id, p_rsp->cid_num, p_rsp->cause,
-				  p_rsp->bd_addr[5], p_rsp->bd_addr[4], p_rsp->bd_addr[3], p_rsp->bd_addr[2], p_rsp->bd_addr[1], p_rsp->bd_addr[0],
-				  p_rsp->bd_type);
+		BT_LOGD("GAP_ECFC_CONN_RSP: proto_id %d, cid_num %d, cause 0x%x, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x\r\n",
+				p_rsp->proto_id, p_rsp->cid_num, p_rsp->cause,
+				p_rsp->bd_addr[5], p_rsp->bd_addr[4], p_rsp->bd_addr[3], p_rsp->bd_addr[2], p_rsp->bd_addr[1], p_rsp->bd_addr[0],
+				p_rsp->bd_type);
 		p_cmd = bt_stack_pending_cmd_search(msg);
 		if (p_cmd) {
 			rtk_bt_gap_ecfc_conn_req_t *param = (rtk_bt_gap_ecfc_conn_req_t *)p_cmd->param;
@@ -107,15 +107,12 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_CONN_CMPL: {
 		rtk_bt_ecfc_conn_cmpl_ind_t *p_ind = NULL;
 		T_GAP_ECFC_CONN_CMPL_INFO *p_info = (T_GAP_ECFC_CONN_CMPL_INFO *)p_buf;
-		API_PRINT("GAP_ECFC_CONN_CMPL: proto_id %d, cause 0x%x, conn_handle %d, ds_data_offset %d, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x\r\n",
-				  p_info->proto_id, p_info->cause, p_info->conn_handle, p_info->ds_data_offset,
-				  p_info->bd_addr[5], p_info->bd_addr[4], p_info->bd_addr[3], p_info->bd_addr[2], p_info->bd_addr[1], p_info->bd_addr[0],
-				  p_info->bd_type);
-		API_PRINT("GAP_ECFC_CONN_CMPL: remote_mtu %d, local_mtu %d, local_mps %d\r\n",
-				  p_info->remote_mtu, p_info->local_mtu, p_info->local_mps);
-		for (uint8_t i = 0; i < p_info->cid_num; i++) {
-			API_PRINT("GAP_ECFC_CONN_CMPL: cid[%d] %d\r\n", i, p_info->cid[i]);
-		}
+		BT_LOGD("GAP_ECFC_CONN_CMPL: proto_id %d, cause 0x%x, conn_handle %d, ds_data_offset %d, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x\r\n",
+				p_info->proto_id, p_info->cause, p_info->conn_handle, p_info->ds_data_offset,
+				p_info->bd_addr[5], p_info->bd_addr[4], p_info->bd_addr[3], p_info->bd_addr[2], p_info->bd_addr[1], p_info->bd_addr[0],
+				p_info->bd_type);
+		BT_LOGD("GAP_ECFC_CONN_CMPL: remote_mtu %d, local_mtu %d, local_mps %d\r\n",
+				p_info->remote_mtu, p_info->local_mtu, p_info->local_mps);
 		p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_ECFC_CONN_CMPL_IND,
 									sizeof(rtk_bt_ecfc_conn_cmpl_ind_t));
 		p_ind = (rtk_bt_ecfc_conn_cmpl_ind_t *)p_evt->data;
@@ -126,8 +123,8 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_DATA_IND: {
 		rtk_bt_ecfc_data_ind_t *p_ind = NULL;
 		T_GAP_ECFC_DATA_IND *p_info = (T_GAP_ECFC_DATA_IND *)p_buf;
-		API_PRINT("GAP_ECFC_DATA_IND: proto_id %d, conn_handle %d, cid %d, length %d\r\n",
-				  p_info->proto_id, p_info->conn_handle, p_info->cid, p_info->length);
+		BT_LOGD("GAP_ECFC_DATA_IND: proto_id %d, conn_handle %d, cid %d, length %d\r\n",
+				p_info->proto_id, p_info->conn_handle, p_info->cid, p_info->length);
 		p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_ECFC_DATA_IND,
 									sizeof(rtk_bt_ecfc_data_ind_t) + p_info->length);
 		p_ind = (rtk_bt_ecfc_data_ind_t *)p_evt->data;
@@ -142,8 +139,8 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	}
 	case GAP_ECFC_DATA_RSP: {
 		T_GAP_ECFC_DATA_RSP *p_rsp = (T_GAP_ECFC_DATA_RSP *)p_buf;
-		API_PRINT("GAP_ECFC_DATA_RSP: proto_id %d, conn_handle %d, cid %d, cause 0x%x\r\n",
-				  p_rsp->proto_id, p_rsp->conn_handle, p_rsp->cid, p_rsp->cause);
+		BT_LOGD("GAP_ECFC_DATA_RSP: proto_id %d, conn_handle %d, cid %d, cause 0x%x\r\n",
+				p_rsp->proto_id, p_rsp->conn_handle, p_rsp->cid, p_rsp->cause);
 		p_cmd = bt_stack_pending_cmd_search(msg);
 		if (p_cmd) {
 			rtk_bt_gap_ecfc_send_data_t *param = (rtk_bt_gap_ecfc_send_data_t *)p_cmd->param;
@@ -158,8 +155,8 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_DISCONN_IND: {
 		rtk_bt_ecfc_disconn_ind_t *p_ind = NULL;
 		T_GAP_ECFC_DISCONN_IND *p_info = (T_GAP_ECFC_DISCONN_IND *)p_buf;
-		API_PRINT("GAP_ECFC_DISCONN_IND: proto_id %d, conn_handle 0x%d, cid 0x%x, cause 0x%x\r\n",
-				  p_info->proto_id, p_info->conn_handle, p_info->cid, p_info->cause);
+		BT_LOGD("GAP_ECFC_DISCONN_IND: proto_id %d, conn_handle 0x%d, cid 0x%x, cause 0x%x\r\n",
+				p_info->proto_id, p_info->conn_handle, p_info->cid, p_info->cause);
 		p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_ECFC_DISCONN_IND,
 									sizeof(rtk_bt_ecfc_disconn_ind_t));
 		p_ind = (rtk_bt_ecfc_disconn_ind_t *)p_evt->data;
@@ -169,8 +166,8 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	}
 	case GAP_ECFC_DISCONN_RSP: {
 		T_GAP_ECFC_DISCONN_RSP *p_rsp = (T_GAP_ECFC_DISCONN_RSP *)p_buf;
-		API_PRINT("GAP_ECFC_DISCONN_RSP: proto_id %d, conn_handle 0x%x, cid 0x%x, cause 0x%x\r\n",
-				  p_rsp->proto_id, p_rsp->conn_handle, p_rsp->cid, p_rsp->cause);
+		BT_LOGD("GAP_ECFC_DISCONN_RSP: proto_id %d, conn_handle 0x%x, cid 0x%x, cause 0x%x\r\n",
+				p_rsp->proto_id, p_rsp->conn_handle, p_rsp->cid, p_rsp->cause);
 		p_cmd = bt_stack_pending_cmd_search(msg);
 		if (p_cmd) {
 			rtk_bt_gap_ecfc_disconn_req_t *param = (rtk_bt_gap_ecfc_disconn_req_t *)p_cmd->param;
@@ -186,9 +183,9 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 		rtk_bt_ecfc_reconf_req_ind_t *p_ind = NULL;
 		uint8_t reconf_ret = 0;
 		T_GAP_ECFC_RECONFIGURE_IND *p_info = (T_GAP_ECFC_RECONFIGURE_IND *)p_buf;
-		API_PRINT("GAP_ECFC_RECONFIGURE_IND: proto_id %d, conn_handle %d, remote_mtu %d, remote_mps %d, cid_num %d, cid %d %d %d %d %d\r\n",
-				  p_info->proto_id, p_info->conn_handle, p_info->remote_mtu, p_info->remote_mps, p_info->cid_num,
-				  p_info->cid[0], p_info->cid[1], p_info->cid[2], p_info->cid[3], p_info->cid[4]);
+		BT_LOGD("GAP_ECFC_RECONFIGURE_IND: proto_id %d, conn_handle %d, remote_mtu %d, remote_mps %d, cid_num %d, cid %d %d %d %d %d\r\n",
+				p_info->proto_id, p_info->conn_handle, p_info->remote_mtu, p_info->remote_mps, p_info->cid_num,
+				p_info->cid[0], p_info->cid[1], p_info->cid[2], p_info->cid[3], p_info->cid[4]);
 		p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND,
 									sizeof(rtk_bt_ecfc_reconf_req_ind_t));
 		p_ind = (rtk_bt_ecfc_reconf_req_ind_t *)p_evt->data;
@@ -204,9 +201,9 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_RECONFIGURE_RSP: {
 		rtk_bt_ecfc_reconf_rsp_ind_t *p_ind = NULL;
 		T_GAP_ECFC_RECONFIGURE_RSP *p_rsp = (T_GAP_ECFC_RECONFIGURE_RSP *)p_buf;
-		API_PRINT("GAP_ECFC_RECONFIGURE_RSP: proto_id %d, cause 0x%x, conn_handle 0x%x, local_mtu %d, local_mps %d,cid_num %d, cid %d %d %d %d %d\r\n",
-				  p_rsp->proto_id, p_rsp->cause, p_rsp->conn_handle, p_rsp->local_mtu, p_rsp->local_mps, p_rsp->cid_num,
-				  p_rsp->cid[0], p_rsp->cid[1], p_rsp->cid[2], p_rsp->cid[3], p_rsp->cid[4]);
+		BT_LOGD("GAP_ECFC_RECONFIGURE_RSP: proto_id %d, cause 0x%x, conn_handle 0x%x, local_mtu %d, local_mps %d,cid_num %d, cid %d %d %d %d %d\r\n",
+				p_rsp->proto_id, p_rsp->cause, p_rsp->conn_handle, p_rsp->local_mtu, p_rsp->local_mps, p_rsp->cid_num,
+				p_rsp->cid[0], p_rsp->cid[1], p_rsp->cid[2], p_rsp->cid[3], p_rsp->cid[4]);
 		p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_ECFC_RECONF_RSP_IND,
 									sizeof(rtk_bt_ecfc_reconf_rsp_ind_t));
 		p_ind = (rtk_bt_ecfc_reconf_rsp_ind_t *)p_evt->data;
@@ -329,55 +326,55 @@ uint16_t bt_stack_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_FAIL;
 	bool async_handle = false;
-	API_PRINT("bt_stack_gap_act_handle: act = %d \r\n", p_cmd->act);
+	BT_LOGD("bt_stack_gap_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 
 #if (defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT) && (defined(F_BT_5_2_L2C_ECFC_SUPPORT) && F_BT_5_2_L2C_ECFC_SUPPORT)
 	case RTK_BT_GAP_ACT_ECFC_SET_PARAM:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_SET_PARAM \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_SET_PARAM \r\n");
 		ret = bt_stack_gap_ecfc_set_param(p_cmd->param);
 		break;
 	case RTK_BT_GAP_ACT_ECFC_SEC_REG_REQ:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_SEC_REG_REQ \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_SEC_REG_REQ \r\n");
 		p_cmd->user_data = GAP_ECFC_SEC_REG_RSP;
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_gap_ecfc_send_sec_reg_req(p_cmd->param);
 		async_handle = true;
 		break;
 	case RTK_BT_GAP_ACT_ECFC_REGISTER:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_REGISTER \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_REGISTER \r\n");
 		p_cmd->user_data = GAP_ECFC_PROTO_REG_RSP;
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_gap_ecfc_register(p_cmd->param);
 		async_handle = true;
 		break;
 	case RTK_BT_GAP_ACT_ECFC_CONN_REQ:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_CONN_REQ \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_CONN_REQ \r\n");
 		p_cmd->user_data = GAP_ECFC_CONN_RSP;
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_gap_ecfc_send_conn_req(p_cmd->param);
 		async_handle = true;
 		break;
 	case RTK_BT_GAP_ACT_ECFC_CONN_CFM:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_CONN_CFM \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_CONN_CFM \r\n");
 		ret = bt_stack_gap_ecfc_send_conn_cfm(p_cmd->param);
 		break;
 	case RTK_BT_GAP_ACT_ECFC_DISCONN_REQ:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_DISCONN_REQ \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_DISCONN_REQ \r\n");
 		p_cmd->user_data = GAP_ECFC_DISCONN_RSP;
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_gap_ecfc_send_disconn_req(p_cmd->param);
 		async_handle = true;
 		break;
 	case RTK_BT_GAP_ACT_ECFC_SEND_DATA:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_SEND_DATA \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_SEND_DATA \r\n");
 		p_cmd->user_data = GAP_ECFC_DATA_RSP;
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_gap_ecfc_send_data(p_cmd->param);
 		async_handle = true;
 		break;
 	case RTK_BT_GAP_ACT_ECFC_RECONF_REQ:
-		API_PRINT("RTK_BT_GAP_ACT_ECFC_RECONF_REQ \r\n");
+		BT_LOGD("RTK_BT_GAP_ACT_ECFC_RECONF_REQ \r\n");
 		ret = bt_stack_gap_ecfc_send_reconf_req(p_cmd->param);
 		break;
 #endif
@@ -386,7 +383,7 @@ uint16_t bt_stack_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 
 	default:
-		printf("bt_stack_gap_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_gap_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}

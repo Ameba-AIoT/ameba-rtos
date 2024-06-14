@@ -278,12 +278,6 @@ typedef enum {
 //No current track or the start of the track is not well defined in Generic Media Control Service (GMCS) or Media Control Service (MCS)
 #define RTK_BT_LE_AUDIO_MCS_TRACK_POSITION_CHAR_VALUE_UNAVAILABLE 0xFFFFFFFF
 
-/** Little Endian uint16 to array */
-#define LE_UINT16_TO_ARRAY(a, u16)  {                   \
-        *((uint8_t *)(a) + 0) = (uint8_t)((u16) >> 0);  \
-        *((uint8_t *)(a) + 1) = (uint8_t)((u16) >> 8);  \
-    }
-
 /**
  * @typedef    rtk_bt_le_audio_pacs_char_value_exist_t
  * @brief     Bluetooth LE AUDIO PACS Characteristic Value Exist Mask.

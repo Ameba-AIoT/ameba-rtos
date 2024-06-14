@@ -239,18 +239,78 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
+	uint8_t value_len = 0;
+	uint8_t *p_value = NULL;
 
-	if (rtk_bt_aics_server_get()) {
+	if (argc != 2) {
+		AT_PRINTK("%s: wrong argc:%d \r\n", __func__, argc);
+		return -1;
+	}
+
+	uint8_t srv_instance_id = (uint8_t)str_to_int(argv[0]);
+	uint8_t aics_param_type = (uint8_t)str_to_int(argv[1]);
+
+	switch (aics_param_type) {
+	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE:
+		value_len = sizeof(rtk_bt_le_audio_aics_input_state_t);
+		break;
+	case RTK_BT_LE_AUDIO_AICS_PARAM_GAIN_SETTING_PROP:
+		value_len = sizeof(rtk_bt_le_audio_aics_gain_setting_prop_t);
+		break;
+	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_TYPE:
+		value_len = 1;
+		break;
+	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATUS:
+		value_len = 1;
+		break;
+	default:
+		AT_PRINTK("%s: not support aics_param_type %d for get \r\n", __func__, aics_param_type);
+		return -1;
+	}
+
+	p_value = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_len);
+	if (p_value == NULL) {
+		AT_PRINTK("%s: osif_mem_alloc len %d fail\r\n", __func__, value_len);
+		return RTK_BT_ERR_NO_RESOURCE;
+	}
+
+	if (rtk_bt_aics_server_get(srv_instance_id, aics_param_type, value_len, p_value)) {
 		AT_PRINTK("[ATBC] aics server get fail \r\n");
 		return -1;
 	}
+	switch (aics_param_type) {
+	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE: {
+		rtk_bt_le_audio_aics_input_state_t *p_input_state = (rtk_bt_le_audio_aics_input_state_t *)p_value;
+		AT_PRINTK("aics param: srv_instance_id %d, gain_setting %d, mute %d, gain_mode %d,change_counter %d\r\n",
+				  srv_instance_id, p_input_state->gain_setting, p_input_state->mute, p_input_state->gain_mode, p_input_state->change_counter);
+		break;
+	}
+	case RTK_BT_LE_AUDIO_AICS_PARAM_GAIN_SETTING_PROP: {
+		rtk_bt_le_audio_aics_gain_setting_prop_t *p_setting_prop = (rtk_bt_le_audio_aics_gain_setting_prop_t *)p_value;
+		AT_PRINTK("aics param: srv_instance_id %d, gain_setting_units %d, gain_setting_min %d, gain_setting_max %d\r\n",
+				  srv_instance_id, p_setting_prop->gain_setting_units, p_setting_prop->gain_setting_min, p_setting_prop->gain_setting_max);
+		break;
+	}
+	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_TYPE:
+		AT_PRINTK("aics param: srv_instance_id %d, input type %d\r\n", srv_instance_id, *(uint8_t *)p_value);
+		break;
+	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATUS:
+		AT_PRINTK("aics param: srv_instance_id %d, input status %d\r\n", srv_instance_id, *(uint8_t *)p_value);
+		break;
+	default:
+		break;
+	}
+	if (p_value) {
+		osif_mem_free((void *)p_value);
+	}
+
 	AT_PRINTK("[ATBC] aics server get successfully \r\n");
 
 	return 0;
 }
 
 static const cmd_table_t cap_aics_server_cmd_table[] = {
-	{"get",    atcmd_bt_aics_server_get,   1, 1},
+	{"get",    atcmd_bt_aics_server_get,   3, 3},
 	{NULL,},
 };
 
@@ -698,7 +758,7 @@ static const cmd_table_t cap_acceptor_cmd_table[] = {
 	{"vocs",        atcmd_bt_vocs_server_act,               2, 2},
 #endif
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
-	{"aics",        atcmd_bt_aics_server_act,               2, 2},
+	{"aics",        atcmd_bt_aics_server_act,               4, 4},
 #endif
 	{"cfg",         atcmd_bt_cap_acceptor_cfg,              2, 3},
 	{NULL,},

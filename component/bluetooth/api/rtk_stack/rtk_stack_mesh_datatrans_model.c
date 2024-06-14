@@ -19,12 +19,12 @@ uint16_t bt_mesh_datatrans_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
-		printf("Error: BLE MESH profile is not initiated\r\n");
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
 	if (!p_cmd) {
-		printf("[%s] param is NULL!\r\n", __func__);
+		BT_LOGE("[%s] param is NULL!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	switch (p_cmd->act) {
@@ -39,10 +39,9 @@ uint16_t bt_mesh_datatrans_model_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	break;
 	default:
-		printf("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
+		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;
 	}
-	ret = ret | RTK_BT_STACK_MESH_ERROR_FLAG;
 end:
 	p_cmd->ret = ret;
 	osif_sem_give(p_cmd->psem);
@@ -63,7 +62,7 @@ static int32_t bt_mesh_datatrans_model_data_callback(const mesh_model_info_p pmo
 		p_data_write = (rtk_bt_mesh_datatrans_server_write_event_t *)p_evt->data;
 		p_data_write->status = pdata->status;
 		if (pdata->data_len > DATA_TRANS_DATA_MAX_LEN) {
-			printf("[%s] The len of datatrans receive data is %d, extend max DATA_TRANS_DATA_MAX_LEN:%d\r\n", __func__, pdata->data_len, DATA_TRANS_DATA_MAX_LEN);
+			BT_LOGA("[%s] The len of datatrans receive data is %d, extend max DATA_TRANS_DATA_MAX_LEN:%d\r\n", __func__, pdata->data_len, DATA_TRANS_DATA_MAX_LEN);
 			p_data_write->data_len = DATA_TRANS_DATA_MAX_LEN;
 		} else {
 			p_data_write->data_len = pdata->data_len;
@@ -118,7 +117,7 @@ static int32_t bt_mesh_datatrans_model_data_callback(const mesh_model_info_p pmo
 		break;
 	}
 	default:
-		printf("[%s] Unknown type:%d\r\n", __func__, (int)type);
+		BT_LOGE("[%s] Unknown type:%d\r\n", __func__, (int)type);
 		break;
 	}
 

@@ -171,7 +171,9 @@ CAP demo ATCMD:
     2.4 vcs server get param                                    ATBC=cap_cmd,acceptor,vcp,get
     2.5 mics server get param                                   ATBC=cap_cmd,acceptor,micp,get
     2.6 vocs server get param                                   ATBC=cap_cmd,acceptor,vocs,get
-    2.7 aics server get param                                   ATBC=cap_cmd,acceptor,aics,get
+    2.7 aics server get param                                   ATBC=cap_cmd,acceptor,aics,get,<srv_instance_id>,<param_type> 
+                                                                                                -->srv_instance_id <= RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM 
+                                                                                                -->param_type: refer to rtk_bt_le_audio_aics_param_type_t except RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_DES
     2.8 mcs client discovery                                    ATBC=cap_cmd,acceptor,mcp,dis,<conn_handle>
     2.9 mcs client read characteristic:MEDIA_PLAYER_NAME        ATBC=cap_cmd,acceptor,mcp,read,<conn_handle>,0x2B93
     2.10 mcs client read characteristic:TRACK_TITLE             ATBC=cap_cmd,acceptor,mcp,read,<conn_handle>,0x2B97
@@ -556,7 +558,9 @@ GMAP demo ATCMD:
     2.4 vcs server get param                                    ATBC=cap_cmd,acceptor,vcp,get
     2.5 mics server get param                                   ATBC=cap_cmd,acceptor,micp,get
     2.6 vocs server get param                                   ATBC=cap_cmd,acceptor,vocs,get
-    2.7 aics server get param                                   ATBC=cap_cmd,acceptor,aics,get
+    2.7 aics server get param                                   ATBC=cap_cmd,acceptor,aics,get,<srv_instance_id>,<param_type> 
+                                                                                                -->srv_instance_id <= RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM 
+                                                                                                -->param_type: refer to rtk_bt_le_audio_aics_param_type_t except RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_DES
 
 3.GMAP Broadcast Game Sender
     For the GMAP BGS only support sample rate 48kHz and 32kHz
