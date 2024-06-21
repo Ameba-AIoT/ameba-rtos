@@ -35,7 +35,7 @@ Setup Guide
         2. Type command "make all EXAMPLE=usbd_msc" under auto_build to build the images.
         3. Download the generated images under auto_build to Ameba board.
         4. Plugin Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-			USBD MSC demo started
+			[MSC] USBD MSC demo start
         5. Connect the USB port of Ameba board to USB host (PC or another Ameba board as USB MSC host) with USB cable.
         6. USB host will recognize Ameba board as MSC device, and the data on SD card can be accessed.
 		

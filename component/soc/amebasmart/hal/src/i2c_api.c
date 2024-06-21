@@ -201,6 +201,7 @@ int i2c_read_timeout(i2c_t *obj, int address, char *data, int length, int stop, 
 {
 	/* To avoid gcc warnings */
 	(void) stop;
+	int rlen;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
 		/* Deinit I2C first */
@@ -215,7 +216,24 @@ int i2c_read_timeout(i2c_t *obj, int address, char *data, int length, int stop, 
 		I2C_Cmd(obj->I2Cx, ENABLE);
 	}
 
-	return (I2C_MasterRead_TimeOut(obj->I2Cx, (unsigned char *)data, length, timeout_ms));
+	rlen = I2C_MasterRead_TimeOut(obj->I2Cx, (unsigned char *)data, length, timeout_ms);
+
+	if (rlen != length) {
+		/* Wait for i2c enter trap state from trap_stop state*/
+		DelayUs(100);
+
+		/* Deinit I2C first */
+		i2c_reset(obj);
+
+		/* Load the user defined I2C target slave address */
+		i2c_target_addr[obj->i2c_idx] = address;
+		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
+
+		/* Init I2C now */
+		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
+		I2C_Cmd(obj->I2Cx, ENABLE);
+	}
+	return rlen;
 
 }
 
@@ -286,7 +304,7 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 	if (!master_addr_retry) {
 		I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
 	} else {
-		while (0 == I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) {
+		while (length  != (int)I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) {
 			/* Wait for i2c enter trap state from trap_stop state*/
 			DelayUs(100);
 
@@ -331,7 +349,7 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 	}
 
 	if ((!restart_enable) | (1 == stop)) {
-		return I2C_MasterWriteBrk(obj->I2Cx, (unsigned char *)data, length);
+		return I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length);
 	} else {
 		i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 	}

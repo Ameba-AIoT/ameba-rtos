@@ -35,11 +35,12 @@
 #include "inic_sdio_dev_trx.h"
 #include "inic_sdio_msg_queue.h"
 #include "inic_sdio_dev.h"
-
+#ifdef CONFIG_SDIO_BRIDGE
+#include "inic_sdio_dev_bridge.h"
+#endif
 #endif
 
 #include "inic_sdio_protocal_offload.h"
-
 /* -------------------------------- Macros ---------------------------------- */
 #define FLAG_WLAN_IF_NOT_RUNNING		0xFFFFFFFF
 

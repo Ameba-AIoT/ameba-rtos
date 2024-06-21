@@ -439,7 +439,7 @@ int llhw_wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return ret;
 }
 
-u32 llhw_wifi_update_ip_addr_in_wowlan(void)
+u32 llhw_wifi_update_ip_addr(void)
 {
 	int ret = 0;
 	struct event_priv_t *event_priv = &global_idev.event_priv;

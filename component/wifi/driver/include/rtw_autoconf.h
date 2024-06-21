@@ -127,4 +127,8 @@
 #define CONFIG_AUTO_RECONNECT 0
 #endif
 
+#ifdef CONFIG_AS_INIC_NP
+#define INIC_SKIP_NP_MSG_TASK
+#endif
+
 #endif //WLANCONFIG_H

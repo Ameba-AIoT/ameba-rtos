@@ -19,6 +19,7 @@
 /* Exported defines ----------------------------------------------------------*/
 
 #define CONFIG_CDC_ACM_NOTIFY                       0
+#define CONFIG_CDC_ACM_NOTIFY_LOOP_TEST             0
 
 /*  CDC definitions */
 #define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
@@ -108,28 +109,28 @@ typedef struct {
 } usbd_cdc_acm_cb_t;
 
 typedef struct {
-	u8 *ctrl_buf;
 	usb_setup_req_t ctrl_req;
-
-	u8 *bulk_out_buf;
-	u32 bulk_out_buf_size;
-	u8 bulk_out_zlp;
-
-	u8 *bulk_in_buf;
-	u32 bulk_in_buf_size;
-	__IO u8 bulk_in_state;
-	__IO u8 is_bulk_in_busy;
-
+	usb_dev_t *dev;
+	usbd_cdc_acm_cb_t *cb;
 #if CONFIG_CDC_ACM_NOTIFY
 	usbd_cdc_acm_ntf_t *intr_in_buf;
-	__IO u8 intr_in_state;
-	__IO u8 is_intr_in_busy;
 #endif
-
-	__IO u8 is_ready;
-
-	usbd_cdc_acm_cb_t *cb;
-	usb_dev_t *dev;
+	u32 bulk_out_buf_size;
+	u32 bulk_in_buf_size;
+	u8 *bulk_out_buf;
+	u8 *bulk_in_buf;
+	u8 *ctrl_buf;
+#if CONFIG_CDC_ACM_NOTIFY
+	u16 intr_notify_idx;
+#endif
+	u8 bulk_out_zlp : 1;
+	__IO u8 is_bulk_in_busy : 1;
+	__IO u8 is_ready : 1;
+	__IO u8 bulk_in_state : 1;
+#if CONFIG_CDC_ACM_NOTIFY
+	__IO u8 is_intr_in_busy : 1;
+	__IO u8 intr_in_state : 1;
+#endif
 } usbd_cdc_acm_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

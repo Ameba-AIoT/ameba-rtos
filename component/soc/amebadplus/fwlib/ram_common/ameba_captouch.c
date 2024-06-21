@@ -310,8 +310,6 @@ void CapTouch_SetClkPara(CAPTOUCH_TypeDef *CapTouch, u8 ClkSrc, u8 ClkDiv)
 	assert_param(IS_CTC_CLK_SRC(ClkSrc));
 	assert_param(IS_CTC_CLK_DIV(ClkDiv));
 
-	CapTouch_Cmd(CAPTOUCH_DEV, DISABLE);
-
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
 	if (ClkSrc == CTC_CLK_OSC) {
 		TempVal &= ~LSYS_BIT_CKSL_ADC4M;
@@ -324,8 +322,6 @@ void CapTouch_SetClkPara(CAPTOUCH_TypeDef *CapTouch, u8 ClkSrc, u8 ClkDiv)
 	TempVal &= ~CT_MASK_CTC_CLK_DIV;
 	TempVal |= CT_CTC_CLK_DIV(ClkDiv);
 	CAPTOUCH_DEV->CT_CTC_SAMPLE_CTRL = TempVal;
-
-	CapTouch_Cmd(CAPTOUCH_DEV, ENABLE);
 }
 
 /**

@@ -58,11 +58,7 @@ struct skb_raw_para {
 };
 
 struct dev_sk_buff {
-	/* These two members must be first. */
-	struct dev_sk_buff	*next;		/* Next buffer in list */
-	struct dev_sk_buff	*prev;		/* Previous buffer in list */
-
-	struct dev_sk_buff_head	*list;		/* List we are on */
+	struct list_head	list;
 	unsigned char		*head;		/* Head of buffer */
 	unsigned char		*data;		/* Data head pointer */
 	unsigned char		*tail;		/* Tail pointer	*/
@@ -74,18 +70,13 @@ struct dev_sk_buff {
 	unsigned char		busy;
 	unsigned char		no_free;
 	struct skb_raw_para		tx_raw;
-};
+} SKB_ALIGNMENT;
 
 struct skb_data {
 	struct list_head        list;
 	unsigned char           buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;
 	atomic_t ref;
 };
-
-struct skb_info {
-	struct list_head	list;
-	struct dev_sk_buff	skb;
-} SKB_ALIGNMENT;
 
 static inline unsigned char *dev_skb_put(struct dev_sk_buff *skb, unsigned int len)
 {

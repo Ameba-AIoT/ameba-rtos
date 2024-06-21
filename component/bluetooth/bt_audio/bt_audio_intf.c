@@ -178,7 +178,7 @@ exit:
 	return ret;
 }
 
-static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t* data, uint16_t size)
+static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t *data, uint16_t size)
 {
 	int32_t write_bytes;
 
@@ -309,7 +309,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 				}
 				if (track->audio_track_hdl) {
 					if (!track->audio_sync_flag) {
-						do_audio_track_write(track, (uint8_t*)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
+						do_audio_track_write(track, (uint8_t *)pdecode_frame_buffer->pbuffer, (uint16_t)pcm_data_size);
 					} else {
 						do_audio_sync_flow(track, i, ts_us, (uint8_t **)&pdecode_frame_buffer->pbuffer, &pcm_data_size);
 					}
@@ -888,18 +888,18 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 	ptrack->rate = rate;
 	ptrack->format = format;
 	switch (format) {
-		case BT_AUDIO_FORMAT_PCM_8_BIT:
-			ptrack->bits = 8;
-			break;
-		case BT_AUDIO_FORMAT_PCM_16_BIT:
-			ptrack->bits = 16;
-			break;
-		case BT_AUDIO_FORMAT_PCM_32_BIT:
-			ptrack->bits = 32;
-			break;
-		default:
-			ptrack->bits = 16;
-			break; 
+	case BT_AUDIO_FORMAT_PCM_8_BIT:
+		ptrack->bits = 8;
+		break;
+	case BT_AUDIO_FORMAT_PCM_16_BIT:
+		ptrack->bits = 16;
+		break;
+	case BT_AUDIO_FORMAT_PCM_32_BIT:
+		ptrack->bits = 32;
+		break;
+	default:
+		ptrack->bits = 16;
+		break;
 	}
 	if (channels == 1) {
 		if (left_volume == 0) {
@@ -969,7 +969,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		memset((void *)precord, 0, sizeof(rtk_bt_audio_record_t));
 		INIT_LIST_HEAD(&precord->list);
 	}
-	BT_LOGE("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %ld! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
+	BT_LOGE("[BT AUDIO] audio record init channels %d, rate %d , buffer_bytes %d! \r\n", (int)channels, (int)rate, (uint32_t)buffer_bytes);
 	precord->audio_record_hdl = rtk_bt_audio_record_init((uint32_t)channels, (uint32_t)rate, (uint32_t)buffer_bytes);
 	if (!precord->audio_record_hdl) {
 		BT_LOGE("[BT AUDIO] rtk_bt_audio_record_init fail \r\n");

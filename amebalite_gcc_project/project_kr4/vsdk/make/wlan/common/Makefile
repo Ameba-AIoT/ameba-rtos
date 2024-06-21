@@ -55,6 +55,9 @@ else
 ifneq ($(CONFIG_AMEBADPLUS), y)
 CSRC += $(CSRC_SEC)
 TARGET_LIB = lib_wifi_com_sec
+else ifeq ($(findstring y, $(CONFIG_SINGLE_CORE_WIFI) $(CONFIG_KM4_AS_NP)), y)
+CSRC += $(CSRC_SEC)
+TARGET_LIB = lib_wifi_com_sec
 endif
 endif
 endif

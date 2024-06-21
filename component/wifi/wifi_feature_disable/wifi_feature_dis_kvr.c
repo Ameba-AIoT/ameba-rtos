@@ -59,7 +59,7 @@ void rtw_roam_nb_discover(void)
 
 }
 
-int rm_post_event(void *a, u32 rmid, u8 evid)
+int rm_post_event(u8 a, u32 rmid, u8 evid)
 {
 	UNUSED(a);
 	UNUSED(rmid);

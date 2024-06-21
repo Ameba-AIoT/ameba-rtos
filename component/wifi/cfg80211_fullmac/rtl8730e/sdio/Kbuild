@@ -23,9 +23,9 @@ fullmac_sdio-y := rtw_sdio_drvio.o \
 		rtw_llhw_event.o \
 		rtw_llhw_recv.o \
 		rtw_llhw_xmit.o \
-		rtw_llhw_msg.o \
 		rtw_llhw_hci.o \
 		rtw_llhw_memory.o \
-		rtw_protocal_offload.o
+		rtw_protocal_offload.o \
+		rtw_ioctl.o
 
 obj-m += fullmac_sdio.o

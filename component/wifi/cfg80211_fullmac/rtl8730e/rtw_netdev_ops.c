@@ -223,6 +223,12 @@ out:
 
 int rtw_ndev_init(struct net_device *pnetdev)
 {
+#ifdef CONFIG_SDIO_BRIDGE
+	/*force a fixed address to netdev*/
+	u8 mac[6] = {0x00, 0xe2, 0x4c, 0x55, 0x55, 0x55};
+	memcpy((void *)global_idev.pndev[0]->dev_addr, mac, ETH_ALEN);
+	llhw_sdio_bridge_sync_host_mac(mac);
+#endif
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 	return 0;
 }
@@ -475,7 +481,9 @@ int rtw_ndev_alloc(void)
 {
 	int i, ret = false;
 	struct net_device *ndev = NULL;
+#ifndef CONFIG_SDIO_BRIDGE
 	struct wireless_dev *wdev;
+#endif
 
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
 		/* alloc and init netdev */
@@ -488,8 +496,17 @@ int rtw_ndev_alloc(void)
 		rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
 		ndev->netdev_ops = (i ? &rtw_ndev_ops_ap : &rtw_ndev_ops);
 		ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
+#ifndef CONFIG_FULLMAC_HCI_IPC
+		ndev->needed_headroom = max(SIZE_RX_DESC, SIZE_TX_DESC) + sizeof(struct inic_msg_info) + 4;
+#ifdef CONFIG_WIRELESS_EXT
+		if (i == 0) {
+			ndev->wireless_handlers = (struct iw_handler_def *)&rtw_handlers_def;
+		}
+#endif
+#endif
 		SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
 
+#ifndef CONFIG_SDIO_BRIDGE
 		/* alloc and init wireless_dev */
 		wdev = (struct wireless_dev *)kzalloc(sizeof(struct wireless_dev), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 		if (!wdev) {
@@ -500,6 +517,7 @@ int rtw_ndev_alloc(void)
 		wdev->iftype = (i ? NL80211_IFTYPE_AP : NL80211_IFTYPE_STATION);
 		ndev->ieee80211_ptr = wdev;
 		global_idev.pwdev_global[i] = wdev;
+#endif
 	}
 	global_idev.mlme_priv.b_in_scan = false;
 
@@ -507,11 +525,12 @@ int rtw_ndev_alloc(void)
 
 fail:
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
+#ifndef CONFIG_SDIO_BRIDGE
 		if (global_idev.pwdev_global[i]) { //wdev
 			kfree((u8 *)global_idev.pwdev_global[i]);
 			global_idev.pwdev_global[i] = NULL;
 		}
-
+#endif
 		if (global_idev.pndev[i]) {
 			free_netdev(global_idev.pndev[i]);
 			global_idev.pndev[i] = NULL;

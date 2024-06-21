@@ -97,7 +97,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		memcpy(app_db.factory_addr.addr, param->ready.bd_addr, 6);
 		APP_PRINT_INFO1("bt_stack_mgr_cback: bt_ready, bd_addr %b",
 						TRACE_BDADDR(param->ready.bd_addr));
-		BT_LOGA("bt_stack_mgr_cback: bt_ready, bd_addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("bt_stack_mgr_cback: bt_ready, bd_addr %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				param->ready.bd_addr[5], param->ready.bd_addr[4], param->ready.bd_addr[3], param->ready.bd_addr[2],
 				param->ready.bd_addr[1], param->ready.bd_addr[0]);
 		bt_stack_br_gap_ready = true;

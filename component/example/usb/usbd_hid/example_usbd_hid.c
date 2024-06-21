@@ -18,7 +18,7 @@
 #include "example_usbd_hid.h"
 
 /* Private defines -----------------------------------------------------------*/
-
+static const char *TAG = "HID";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_HID_HOTPLUG						1
@@ -139,7 +139,7 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 
 static usbd_config_t hid_cfg = {
 	.speed = CONFIG_USBD_HID_SPEED,
-	.dma_enable = 0U,
+	.dma_enable = 1U,
 	.isr_priority = CONFIG_USBD_HID_ISR_THREAD_PRIORITY,
 };
 
@@ -158,12 +158,12 @@ static usbd_hid_usr_cb_t hid_usr_cb = {
 
 static void hid_cb_init(void)
 {
-	printf("[HID] User callback: hid device init\n");
+	RTK_LOGS(TAG, "[HID] INIT\n");
 }
 
 static void hid_cb_deinit(void)
 {
-	printf("[HID] User callback: hid device deinit\n");
+	RTK_LOGS(TAG, "[HID] DEINIT\n");
 }
 
 static void hid_cb_setup(void)
@@ -174,7 +174,7 @@ static void hid_cb_setup(void)
 static void hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
-	//printf("User callback: transmit status %d\n", status);
+
 	rtos_sema_give(hid_transmit_sema);
 }
 
@@ -183,11 +183,11 @@ static void hid_cb_received(u8 *buf, u32 len)
 {
 	UNUSED(buf);
 	u32 i = 0;
-	printf("[HID] User callback: receive len =%ld\n", len);
+	RTK_LOGS(TAG, "[HID] RX %dB\n", len);
 	for (i = 0; i < len ; i++) {
-		printf(" 0x%x ", buf[i]);
+		RTK_LOGS(TAG, " 0x%x ", buf[i]);
 		if ((i + 1) % 10 == 0) {
-			printf("\n");
+			RTK_LOGS(TAG, "\n");
 		}
 	}
 }
@@ -195,7 +195,7 @@ static void hid_cb_received(u8 *buf, u32 len)
 
 static void hid_cb_status_changed(u8 status)
 {
-	printf("\n[HID] USB status changed: %d\n", status);
+	RTK_LOGS(TAG, "[HID] Status change: %d\n", status);
 #if CONFIG_USBD_HID_HOTPLUG
 	hid_attach_status = status;
 	rtos_sema_give(hid_attach_status_changed_sema);
@@ -209,8 +209,8 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 	usbd_hid_mouse_data_t data;
 
 	if (argc == 0U) {
-		printf("[HID] Invalid arguments, usage:\n"
-			   "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
+		RTK_LOGS(TAG, "[HID] Invalid arguments, usage:\n"
+				 "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -240,7 +240,7 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 		data.wheel = strtoul((const char *)(argv[5]), (char **)NULL, 10);
 	}
 
-	printf("[HID] Send HID mouse data\n");
+	RTK_LOGS(TAG, "[HID] Send mouse data\n");
 
 	hid_send_device_data(&data);
 
@@ -301,32 +301,30 @@ static void hid_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(hid_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if (hid_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-				printf("\n[HID] USB DETACHED\n");
+				RTK_LOGS(TAG, "[HID] DETACHED\n");
 				usbd_hid_deinit();
 				usbd_deinit();
 
 				rtos_time_delay_ms(100);
-				printf("\n[HID] Free heap size: 0x%lx\n", rtos_mem_get_free_heap_size());
+				RTK_LOGS(TAG, "[HID] Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 
 				ret = usbd_init(&hid_cfg);
 				if (ret != 0) {
-					printf("\n[HID] Fail to re-init USBD driver\n");
 					break;
 				}
 				ret = usbd_hid_init(512, &hid_usr_cb);
 				if (ret != 0) {
-					printf("\n[HID] Fail to re-init USB HID class\n");
 					usbd_deinit();
 					break;
 				}
 			} else if (hid_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
-				printf("\n[HID] USB ATTACHED\n");
+				RTK_LOGS(TAG, "[HID] ATTACHED\n");
 			} else {
-				printf("\n[HID] USB INIT\n");
+				RTK_LOGS(TAG, "[HID] INIT\n");
 			}
 		}
 	}
-
+	RTK_LOGS(TAG, "[HID] Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_HID_HOTPLUG
@@ -343,7 +341,7 @@ static void example_usbd_hid_thread(void *param)
 #endif
 
 	UNUSED(param);
-	printf("[HID] USBD HID demo start\n");
+	RTK_LOGS(TAG, "[HID] USBD HID demo start\n");
 
 	rtos_sema_create(&hid_connect_sema, 0U, 1U);
 	rtos_sema_create(&hid_transmit_sema, 0U, 1U);
@@ -354,13 +352,11 @@ static void example_usbd_hid_thread(void *param)
 
 	ret = usbd_init(&hid_cfg);
 	if (ret != 0) {
-		printf("[HID] Fail to init USBD controller\n");
 		goto example_usbd_hid_device_thread_fail;
 	}
 
 	ret = usbd_hid_init(512, &hid_usr_cb);
 	if (ret != 0) {
-		printf("[HID] Fail to init HID class\n");
 		usbd_deinit();
 		goto example_usbd_hid_device_thread_fail;
 	}
@@ -368,7 +364,6 @@ static void example_usbd_hid_thread(void *param)
 #if CONFIG_USBD_HID_HOTPLUG
 	ret = rtos_task_create(&task, "hid_hotplug_thread", hid_hotplug_thread, NULL, 1024U, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("[HID] Fail to create USBD HID hotplug thread\n");
 		usbd_hid_deinit();
 		usbd_deinit();
 		goto example_usbd_hid_device_thread_fail;
@@ -386,15 +381,15 @@ static void example_usbd_hid_thread(void *param)
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
 	array_len = sizeof(mdata) / sizeof(usbd_hid_mouse_data_t);
 	delaytime = 1000 ;
-	printf("[HID] Constant mouse data transmit test started\n");
+	RTK_LOGS(TAG, "[HID] Mouse data TX test start\n");
 #else
 	array_len = sizeof(mdata) / sizeof(usbd_hid_keyboard_data_t);
 	delaytime = 50 ;
-	printf("[HID] Constant keyboard data transmit test started\n");
+	RTK_LOGS(TAG, "[HID] Keyboard data TX test start\n");
 #endif
 
 	do {
-		printf("[HID] Test round %d/%d\n", loop + 1, CONFIG_USBD_HID_CONSTANT_LOOP);
+		RTK_LOGS(TAG, "[HID] Test round %d/%d\n", loop + 1, CONFIG_USBD_HID_CONSTANT_LOOP);
 		for (i = 0; i < array_len; i++) {
 			rtos_sema_take(hid_transmit_sema, RTOS_SEMA_MAX_COUNT);
 			hid_send_device_data(&mdata[i]);
@@ -403,7 +398,7 @@ static void example_usbd_hid_thread(void *param)
 		rtos_time_delay_ms(5 * 1000); //next loop
 	} while (++loop < CONFIG_USBD_HID_CONSTANT_LOOP);
 
-	printf("[HID] Constant data transmit test done\n");
+	RTK_LOGS(TAG, "[HID] Test done\n");
 
 #endif
 
@@ -427,6 +422,6 @@ void example_usbd_hid(void)
 
 	ret = rtos_task_create(&task, "example_usbd_hid_thread", example_usbd_hid_thread, NULL, 1024, CONFIG_USBD_HID_INIT_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("\nFail to create USBD hid thread\n");
+		RTK_LOGS(TAG, "[HID] Create USBD HID thread fail\n");
 	}
 }

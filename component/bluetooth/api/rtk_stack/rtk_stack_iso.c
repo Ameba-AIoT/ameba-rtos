@@ -89,7 +89,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 
 	switch (cb_type) {
 	case BT_DIRECT_MSG_ISO_DATA_IND: {
-		BT_LOGD("BT_DIRECT_MSG_ISO_DATA_IND, conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf %p, offset %d\r\n",
+		BT_LOGD("BT_DIRECT_MSG_ISO_DATA_IND, conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf %08x, offset %d\r\n",
 				p_data->p_bt_direct_iso->conn_handle, p_data->p_bt_direct_iso->pkt_status_flag,
 				p_data->p_bt_direct_iso->pkt_seq_num, p_data->p_bt_direct_iso->ts_flag,
 				(unsigned int)p_data->p_bt_direct_iso->time_stamp,
@@ -192,7 +192,7 @@ void bt_stack_le_iso_deinit(void)
 			p_send_info_list = (rtk_stack_iso_send_info_t *)plist;
 			if (p_send_info_list) {
 				osif_mem_free(p_send_info_list);
-				BT_LOGE("%s p_send_info_list 0x%p not send, just free it here!\r\n", __func__, p_send_info_list);
+				BT_LOGE("%s p_send_info_list 0x%08x not send, just free it here!\r\n", __func__, p_send_info_list);
 			}
 			plist = plist->next;
 		}
@@ -216,7 +216,7 @@ void bt_stack_le_iso_deinit(void)
 			p_iso_io_msg = (rtk_bt_le_iso_io_msg_buf_t *)plist;
 			if (p_iso_io_msg) {
 				osif_mem_free(p_iso_io_msg);
-				BT_LOGE("%s p_iso_io_msg 0x%p not send, just free it here!\r\n", __func__, p_iso_io_msg);
+				BT_LOGE("%s p_iso_io_msg 0x%08x not send, just free it here!\r\n", __func__, p_iso_io_msg);
 			}
 			plist = plist->next;
 		}
@@ -255,7 +255,7 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 
 	//ISO data send
 	time_stamp = (p_stack_iso_send_info->time_stamp + p_stack_iso_send_info->pkt_seq_num) * (p_stack_iso_send_info->sdu_interval * 1000);
-	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_stack_iso_send_info->p_frag=%p, frag_len=%d, sdu_interval=%d\r\n",
+	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_stack_iso_send_info->p_frag=%08x, frag_len=%d, sdu_interval=%d\r\n",
 			__func__,
 			p_stack_iso_send_info->iso_conn_handle, p_stack_iso_send_info->pkt_seq_num, (unsigned int)time_stamp, p_stack_iso_send_info->p_frag,
 			p_stack_iso_send_info->frag_len, (int)p_stack_iso_send_info->sdu_interval);
@@ -328,7 +328,7 @@ static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
 	send_info = (rtk_bt_le_iso_data_send_info_t *)info;
 	//ISO data send
 	time_stamp = (send_info->time_stamp + send_info->pkt_seq_num) * (send_info->sdu_interval * 1000);
-	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_data=%p, data_len=%d, sdu_interval=%d\r\n", __func__,
+	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_data=%08x, data_len=%d, sdu_interval=%d\r\n", __func__,
 			send_info->iso_conn_handle, send_info->pkt_seq_num, (unsigned int)time_stamp, send_info->p_data, send_info->data_len, send_info->sdu_interval);
 	BT_DUMPD("", send_info->p_data, send_info->data_len);
 	cause = gap_iso_send_data(send_info->p_data,
@@ -388,7 +388,7 @@ void bt_stack_le_iso_handle_io_msg(T_IO_MSG *p_io_msg)
 				if (io_msg_buf == (rtk_bt_le_iso_io_msg_buf_t *)plist) {
 					list_del_init(&io_msg_buf->list);
 					if (io_msg_buf) {
-						BT_LOGD("%s free io_msg_buf 0x%p\r\n", __func__, io_msg_buf);
+						BT_LOGD("%s free io_msg_buf 0x%08x\r\n", __func__, io_msg_buf);
 						osif_mem_free(io_msg_buf);
 						io_msg_buf = NULL;
 						break;
@@ -496,7 +496,7 @@ static uint16_t bt_stack_le_iso_data_send(void *data)
 	//send_info = *(rtk_bt_le_iso_data_send_info_t **)data;
 	send_info = (rtk_bt_le_iso_data_send_info_t *)data;
 	max_sdu_m_to_s = bt_stack_le_iso_get_max_sdu_m_to_s(send_info->iso_conn_handle);
-	BT_LOGD("%s iso_conn_handle = 0x%x p_data = 0x%p data_len=%d max_sdu_m_to_s=%d\r\n", __func__, send_info->iso_conn_handle, send_info->p_data,
+	BT_LOGD("%s iso_conn_handle = 0x%x p_data = 0x%08x data_len=%d max_sdu_m_to_s=%d\r\n", __func__, send_info->iso_conn_handle, send_info->p_data,
 			send_info->data_len, max_sdu_m_to_s);
 	BT_DUMPD("", send_info->p_data, send_info->data_len);
 
@@ -531,7 +531,7 @@ static uint16_t bt_stack_le_iso_data_send(void *data)
 			p_stack_iso_send_info->p_frag = p_data;
 			data_len = 0;
 		}
-		BT_LOGD("%s p_frag = 0x%p,frag_len=%d!\r\n", __func__, p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
+		BT_LOGD("%s p_frag = 0x%08x,frag_len=%d!\r\n", __func__, p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
 		BT_DUMPD("", p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
 		osif_mutex_take(g_iso_send_info_list_mtx, 0xFFFFFFFF);
 		list_add_tail(&p_stack_iso_send_info->list, &g_iso_send_info_list_head);/* insert list */
@@ -579,7 +579,7 @@ static uint16_t bt_stack_le_iso_data_send(void *data)
 
 	bt_stack_msg_send(IO_MSG_TYPE_LE_MGR, IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA, (void *)p_io_msg_buf);
 
-	BT_LOGD("%s alloc p_io_msg_buf 0x%p\r\n", __func__, p_io_msg_buf);
+	BT_LOGD("%s alloc p_io_msg_buf 0x%08x\r\n", __func__, p_io_msg_buf);
 	osif_mutex_take(g_bt_stack_iso_io_msg_list_mtx, 0xFFFFFFFF);
 	list_add_tail(&p_io_msg_buf->list, &g_bt_stack_iso_io_msg_list_head);/* insert list */
 	osif_mutex_give(g_bt_stack_iso_io_msg_list_mtx);

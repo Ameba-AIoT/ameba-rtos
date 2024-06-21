@@ -67,23 +67,22 @@
     The water level can cause extra delay, but will not run out if set proper value.
 */
 
-// PBP broadcast TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.
-#define PBP_BROADCAST_TX_WATER_LEVEL                200
-// Actual PBP broadcast TX water level length
+#if RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1
+/* PBP broadcast source TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.*/
+#define PBP_BROADCAST_TX_WATER_LEVEL                100
+/* Actual PBP broadcast TX water level length */
 #define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10
+/* Set enough length to store resample data.The unit is in short. 1920 b--------ytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds. */
+#define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10 * 2
+#else
+#define PBP_BROADCAST_TX_WATER_LEVEL                100
+#define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       960 * PBP_BROADCAST_TX_WATER_LEVEL / 10
+#define PBP_SOURCE_PCM_DATA_MAX_LEN                 960 * PBP_BROADCAST_TX_WATER_LEVEL / 10 * 2
+#endif
 
-// Set enough length to store a2dp sink decode data.The unit is in short.
-#define A2DP_SINK_PCM_DATA_MAX_LEN                  2560 * PBP_BROADCAST_TX_WATER_LEVEL* 7 / 100
-/*
-    Set enough length to store resample data.The unit is in short.
-    1920 bytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds.
-*/
-#define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10
-
-/*
-    Resample water level, default data bytes of 10 ms.
-    The smaller this value, the shorter the work interval of the resample task.
-*/
+/* Set enough length to store a2dp sink decode data.The unit is in short.*/
+#define A2DP_SINK_PCM_DATA_MAX_LEN                  2560 * PBP_BROADCAST_TX_WATER_LEVEL* 7 / 100 * 2
+/* Resample water level, default data bytes of 10 ms. The smaller this value, the shorter the work interval of the resample task.*/
 #define RESAMPLE_WATER_LEVEL                         1
 
 #define SOXR_IN_FRAME_BUF_MAX_LEN                   441*4*4
@@ -796,7 +795,7 @@ uint16_t a2dp_pbp_demo_pcm_data_enqueue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	queue_max_len = p_queue->queue_max_len;
 
 	if (a2dp_pbp_demo_enqueue_is_full(p_queue, enqueue_size)) {
-		BT_LOGA("[APP] %s No enough space! queue size now is %d\r\n", __func__, (int)(p_queue->queue_size));
+		BT_LOGE("[APP] %s No enough space! queue size now is %d\r\n", __func__, (int)(p_queue->queue_size));
 		return RTK_BT_FAIL;
 	}
 
@@ -837,7 +836,7 @@ uint16_t a2dp_pbp_demo_pcm_data_enqueue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	p_queue->q_write = (p_queue->q_write + enqueue_size / 2) % queue_max_len;
 	p_queue->queue_size += enqueue_size;
 
-	BT_LOGD("[APP] %s enqueue %lu success! queue_size: %lu q_write: %d q_read: %d\r\n", __func__, enqueue_size, p_queue->queue_size, p_queue->q_write,
+	BT_LOGD("[APP] %s enqueue %u success! queue_size: %u q_write: %d q_read: %d\r\n", __func__, enqueue_size, p_queue->queue_size, p_queue->q_write,
 			p_queue->q_read);
 	return RTK_BT_OK;
 }
@@ -895,7 +894,7 @@ uint16_t a2dp_pbp_demo_pcm_data_dequeue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	p_queue->q_read = (p_queue->q_read + dequeue_size / 2) % queue_max_len;
 	p_queue->queue_size -= dequeue_size;
 
-	BT_LOGD("[APP] %s dequeue %lu success! queue_size: %lu q_write: %d q_read: %d\r\n", __func__, dequeue_size, p_queue->queue_size, p_queue->q_write,
+	BT_LOGD("[APP] %s dequeue %u success! queue_size: %u q_write: %d q_read: %d\r\n", __func__, dequeue_size, p_queue->queue_size, p_queue->q_write,
 			p_queue->q_read);
 	return RTK_BT_OK;
 
@@ -1046,7 +1045,7 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 					BT_LOGE("[A2DP Demo] Get bond addr failed! err: 0x%x", ret);
 					continue;
 				}
-				BT_LOGA("[A2DP Demo] Get Bond addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				BT_LOGA("[A2DP Demo] Get Bond addr %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 						bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 				/* 3. sync with a2dp_demo_bond_table */
 				pbond_info = a2dp_demo_find_bond_info_by_mac_addr(bd_addr);
@@ -1130,7 +1129,7 @@ static void a2dp_demo_bond_info_dump(void)
 		pbond_info = a2dp_demo_find_bond_info_by_priority(i + 1);
 		if (pbond_info) {
 			BT_LOGA(">> %d. ", (int)(i + 1));
-			BT_LOGA(" mac addr %02X:%02X:%02X:%02X:%02X:%02X  ", pbond_info->bd_addr[5],
+			BT_LOGA(" mac addr %02x:%02x:%02x:%02x:%02x:%02x  ", pbond_info->bd_addr[5],
 					pbond_info->bd_addr[4],
 					pbond_info->bd_addr[3],
 					pbond_info->bd_addr[2],
@@ -1209,7 +1208,7 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_re
 		// flush a2dp_decode_pcm_queue
 		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
 		a2dp_pbp_demo_queue_pcm_data_flush(&a2dp_decode_pcm_queue);
-		BT_LOGA("[APP] a2dp_decode_pcm_queue flush!\r\n");
+		BT_LOGE("[APP] a2dp_decode_pcm_queue flush!\r\n");
 		osif_mutex_give(p_dequeue_mtx);
 
 		// flush pbp_convert_pcm_queue
@@ -1217,21 +1216,21 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_re
 		dequeue_size = pbp_convert_pcm_queue.queue_size;
 		if (dequeue_size) {
 			a2dp_pbp_demo_queue_pcm_data_flush(&pbp_convert_pcm_queue);
-			BT_LOGA("[APP] pbp_convert_pcm_queue flush!\r\n");
+			BT_LOGE("[APP] pbp_convert_pcm_queue flush!\r\n");
 			pbp_broadcast_dequeue_flag = false;
 		}
 		osif_mutex_give(p_enqueue_mtx);
 		return RTK_BT_FAIL;
 	}
 
-	BT_LOGD("[APP] %s in_frames:%lu \r\n", __func__, in_frames);
+	BT_LOGD("[APP] %s in_frames:%u \r\n", __func__, in_frames);
 
 	//dequeue
 	p_dequeue_mtx = a2dp_decode_pcm_queue.mtx;
 	dequeue_size = in_frames * p_resample_t->in_frame_size;
 
 	if (dequeue_size > SOXR_IN_FRAME_BUF_MAX_LEN) {
-		BT_LOGE("[APP] dequeue_size: %lu exceed the max len !\r\n", dequeue_size);
+		BT_LOGE("[APP] dequeue_size: %u exceed the max len !\r\n", dequeue_size);
 		goto failed;
 	}
 
@@ -1254,16 +1253,16 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_re
 											 demo_in_rate,
 											 demo_out_rate);
 	time_stamp_after = osif_sys_time_get();
-	BT_LOGD("[APP] %s: time_stamp before :%lu,time_stamp after:%lu,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
+	BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
 			(int)(time_stamp_after - time_stamp_before));
-	BT_LOGD("[APP] in_frames:%lu out_frames:%lu odone: %lu\r\n", in_frames, out_frames, odone);
+	BT_LOGD("[APP] in_frames:%u out_frames:%u odone: %u\r\n", in_frames, out_frames, odone);
 
 	//enqueue
 	p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
 	enqueue_size = out_frames * p_resample_t->out_frame_size;
 
 	if (enqueue_size > SOXR_OUT_FRAME_BUF_MAX_LEN) {
-		BT_LOGE("[APP] %s enqueue_size: %lu exceed the max len!\r\n", __func__, enqueue_size);
+		BT_LOGE("[APP] %s enqueue_size: %u exceed the max len!\r\n", __func__, enqueue_size);
 		goto failed;
 	}
 
@@ -1356,7 +1355,7 @@ static void exmaple_convert_pcm_data_task_entry(void *ctx)
 			time_stamp_before = osif_sys_time_get();
 			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(g_audio_resample_t, &bq_t, resample_in_frames);
 			time_stamp_after = osif_sys_time_get();
-			BT_LOGD("[APP] %s: time_stamp before :%lu,time_stamp after:%lu,convert delt_time:%d, delt_time:%d \r\n", __func__, time_stamp_before,
+			BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,convert delt_time:%d, delt_time:%d \r\n", __func__, time_stamp_before,
 					time_stamp_after, (int)(time_stamp_after - time_stamp_before), (int)(time_stamp_before - tmp_time));
 			tmp_time = time_stamp_before;
 		}
@@ -1379,10 +1378,10 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+		BT_LOGA("[BR GAP] Scan %02x:%02x:%02x:%02x:%02x:%02x Name %s \r\n",
 				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
 				p_result->name);
-		BT_AT_PRINT("+BRGAP:inquiry_result,%02X:%02X:%02X:%02X:%02X:%02X,%s\r\n",
+		BT_AT_PRINT("+BRGAP:inquiry_result,%02x:%02x:%02x:%02x:%02x:%02x,%s\r\n",
 					p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
 					p_result->name);
 		break;
@@ -1409,14 +1408,14 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL connection indication %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_SUCCESS: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL connection success %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
@@ -1436,19 +1435,19 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_bond_info_flush) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
 		}
-		BT_LOGA("[BR GAP] Set link key of %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] Set link key of %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL disconnection %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
 				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
 				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
 		BT_LOGA("[BR GAP] ACL disc cause 0x%x \r\n", p_acl_disc_event->cause);
-		BT_AT_PRINT("+BRGAP:disc,%02X:%02X:%02X:%02X:%02X:%02X,0x%x\r\n",
+		BT_AT_PRINT("+BRGAP:disc,%02x:%02x:%02x:%02x:%02x:%02x,0x%x\r\n",
 					p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
 					p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
 					p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0],
@@ -1476,7 +1475,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	switch (evt_code) {
 	case RTK_BT_AVRCP_EVT_CONN_IND: {
 		memcpy((void *)bd_addr, param, 6);
-		BT_LOGA("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[AVRCP] Receive AVRCP connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
@@ -1489,7 +1488,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		BT_LOGA("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] absolute volume set %d \r\n", (int)(audio_track_volume * 100));
 		break;
 	}
 
@@ -1538,9 +1537,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_AVRCP_EVT_CONN_CMPL: {
 		BT_LOGA("[AVRCP] Connection Completion \r\n");
 		rtk_bt_avrcp_conn_cmpl_t *conn_cmpl = (rtk_bt_avrcp_conn_cmpl_t *)param;
-		BT_LOGA("[AVRCP] AVRCP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[AVRCP] AVRCP connection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3], conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
-		BT_AT_PRINT("+BTAVRCP:conn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_AT_PRINT("+BTAVRCP:conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3],
 					conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
 		break;
@@ -1549,9 +1548,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_AVRCP_EVT_DISCONN_CMPL: {
 		BT_LOGA("[AVRCP] Disconnection Completion \r\n");
 		rtk_bt_avrcp_disconn_cmpl_t *disconn_cmpl = (rtk_bt_avrcp_disconn_cmpl_t *)param;
-		BT_LOGA("[AVRCP] AVRCP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[AVRCP] AVRCP disconnection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3], disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
-		BT_AT_PRINT("+BTAVRCP:disconn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_AT_PRINT("+BTAVRCP:disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3],
 					disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
 		break;
@@ -1561,28 +1560,38 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		rtk_bt_avrcp_sub_event_t *psub_event = (rtk_bt_avrcp_sub_event_t *)param;
 		BT_AT_PRINT("+BTAVRCP:status,%u\r\n", psub_event->avrcp_play_status);
 		switch (psub_event->avrcp_play_status) {
-		case 0x00: {
+		case RTK_BT_AVRCP_STATUS_STOPPED: {
 			BT_LOGA("[AVRCP]: Stopped \r\n");
 			break;
 		}
 
-		case 0x01: {
+		case RTK_BT_AVRCP_STATUS_PLAYING: {
 			BT_LOGA("[AVRCP]: Playing \r\n");
 			break;
 		}
 
-		case 0x02: {
+		case RTK_BT_AVRCP_STATUS_PAUSED: {
 			BT_LOGA("[AVRCP]: Paused \r\n");
 			break;
 		}
 
-		case 0x03: {
+		case RTK_BT_AVRCP_STATUS_FWD_SEEK: {
 			BT_LOGA("[AVRCP]: FWD_SEEK \r\n");
 			break;
 		}
 
-		case 0x04: {
+		case RTK_BT_AVRCP_STATUS_REV_SEEK: {
 			BT_LOGA("[AVRCP]: REV_SEEK \r\n");
+			break;
+		}
+
+		case RTK_BT_AVRCP_STATUS_FAST_FWD: {
+			BT_LOGA("[AVRCP]: FAST_FWD \r\n");
+			break;
+		}
+
+		case RTK_BT_AVRCP_STATUS_REWIND: {
+			BT_LOGA("[AVRCP]: REWIND \r\n");
 			break;
 		}
 
@@ -1822,7 +1831,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 
 	case RTK_BT_A2DP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_a2dp_sdp_attr_info_t *p_info = (rtk_bt_a2dp_sdp_attr_info_t *)param;
-		BT_LOGA("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] SDP Scan %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				p_info->bd_addr[5], p_info->bd_addr[4],
 				p_info->bd_addr[3], p_info->bd_addr[2],
 				p_info->bd_addr[1], p_info->bd_addr[0]);
@@ -1832,7 +1841,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_A2DP_EVT_CONN_IND: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] Receive A2DP connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -1841,9 +1850,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
 		memcpy((void *)remote_bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] A2DP connection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
-		BT_AT_PRINT("+BTA2DP:conn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_AT_PRINT("+BTA2DP:conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
 	}
 	break;
@@ -1857,9 +1866,9 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] A2DP disconnection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-		BT_AT_PRINT("+BTA2DP:disconn,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_AT_PRINT("+BTA2DP:disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -1913,11 +1922,11 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_OPEN: {
 		BT_LOGA("[A2DP] A2DP STREAM is opened \r\n");
 		rtk_bt_a2dp_stream_open_t *p_stream_open_t = (rtk_bt_a2dp_stream_open_t *)param;
-		BT_LOGA("[A2DP] A2DP stream open with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] A2DP stream open with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3], p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1],
 				p_stream_open_t->bd_addr[0]);
 		BT_LOGA("[A2DP] A2DP stream open max packet length is %d \r\n", (int)p_stream_open_t->max_pkt_len);
-		BT_AT_PRINT("+BTA2DP:stream_open,%02X:%02X:%02X:%02X:%02X:%02X,%d\r\n",
+		BT_AT_PRINT("+BTA2DP:stream_open,%02x:%02x:%02x:%02x:%02x:%02x,%d\r\n",
 					p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3],
 					p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0],
 					(int)p_stream_open_t->max_pkt_len);
@@ -1948,9 +1957,9 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_STOP: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] Stream stop from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-		BT_AT_PRINT("+BTA2DP:stop,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_AT_PRINT("+BTA2DP:stop,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		a2dp_play_flag = false;
 		if (a2dp_demo_audio_track_hdl) {
@@ -1981,7 +1990,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(&g_audio_resample_t);
 		}
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] Stream close from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -2105,7 +2114,7 @@ static uint16_t app_bt_le_audio_pbp_bsrc_setup_data_path(app_bt_le_audio_bap_bro
 		bis_idx = p_bsrc_info->bis_info.bis_conn_info[i].bis_idx;
 		ret = rtk_bt_le_audio_broadcast_source_setup_data_path(p_bsrc_info->broadcast_source_handle, bis_idx, &setup_path_param,
 															   &p_bsrc_info->bis_info.bis_conn_info[i].bis_conn_handle);
-		BT_LOGA("[APP] broadcast source setup data path %s for broadcast_source_handle 0x%p bis_index %d,bis_conn_handle 0x%x, ret: 0x%x\r\n",
+		BT_LOGA("[APP] broadcast source setup data path %s for broadcast_source_handle 0x%08x bis_index %d,bis_conn_handle 0x%x, ret: 0x%x\r\n",
 				((RTK_BT_OK != ret) ? "fail" : "ok"),
 				p_bsrc_info->broadcast_source_handle,
 				bis_idx,
@@ -2309,7 +2318,7 @@ static uint16_t app_bt_le_audio_encode_a2dp_data(app_lea_iso_data_path_t *p_iso_
 	ret = a2dp_pbp_demo_pcm_data_dequeue(&pbp_convert_pcm_queue, (int8_t *)p_iso_path->p_encode_data, encode_byte);
 	queue_size = pbp_convert_pcm_queue.queue_size;
 	osif_mutex_give(pmtx);
-	BT_LOGD("[APP] %s: time_stamp before: %lu, queue_size: %lu\r\n", __func__, time_stamp_before, queue_size);
+	BT_LOGD("[APP] %s: time_stamp before: %u, queue_size: %u\r\n", __func__, time_stamp_before, queue_size);
 	if (RTK_BT_OK != ret) {
 		BT_LOGE("[APP] %s: dequeue num %d is not enough set buf 0!\r\n", __func__, (int)encode_byte);
 		memset(p_iso_path->p_encode_data, 0, encode_byte);
@@ -2354,7 +2363,7 @@ static void app_bt_le_audio_pbp_encode_task_entry(void *ctx)
 			}
 			//skip removing iso path
 			if (p_iso_path->is_removing) {
-				BT_LOGD("[APP] %s p_iso_path(%p) is removing\r\n", __func__, p_iso_path);
+				BT_LOGD("[APP] %s p_iso_path(%08x) is removing\r\n", __func__, p_iso_path);
 				continue;
 			}
 			//wait if encode task is fast and send task is slow
@@ -2873,8 +2882,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_pbp_app_callback(uint8_t evt_code, vo
 	/*********************************************pbp_broadcast_source_event**********************************************/
 	case RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND: {
 		rtk_bt_le_audio_broadcast_source_state_ind_t *param = (rtk_bt_le_audio_broadcast_source_state_ind_t *)data;
-		BT_LOGD("[APP] broadcast source state change: broadcast_source_handle: %p, broadcast_source_state 0x%x, cause: 0x%x\r\n",
+		BT_LOGD("[APP] broadcast source state change: broadcast_source_handle: %08x, broadcast_source_state 0x%x, cause: 0x%x\r\n",
 				param->broadcast_source_handle, param->broadcast_source_state, param->cause);
+		BT_AT_PRINT("+BLEBAP:broadcast,source,state,%p,0x%x,0x%x\r\n",
+					param->broadcast_source_handle, param->broadcast_source_state, param->cause);
 		// update broadcast state
 		p_bsrc_info->broadcast_source_state = param->broadcast_source_state;
 		if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_IDLE) {

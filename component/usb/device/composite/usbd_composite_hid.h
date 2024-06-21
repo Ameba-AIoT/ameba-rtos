@@ -51,15 +51,13 @@ typedef struct {
 } usbd_composite_hid_usr_cb_t;
 
 typedef struct {
-	u16 intr_in_buf_size;
-	u8 *intr_in_buf;
-
-	__IO u8 intr_in_state;
-	__IO u8 is_intr_in_busy;
-	__IO u8 is_ready;
-
 	usbd_composite_hid_usr_cb_t *cb;
 	usbd_composite_dev_t *cdev;
+	u8 *intr_in_buf;
+	u16 intr_in_buf_size;
+	__IO u8 intr_in_state;
+	__IO u8 is_intr_in_busy : 1;
+	__IO u8 is_ready : 1;
 } usbd_composite_hid_device_t;
 
 /* Exported macros -----------------------------------------------------------*/

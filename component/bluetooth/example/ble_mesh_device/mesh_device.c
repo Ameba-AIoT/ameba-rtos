@@ -1274,7 +1274,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_setup_server_app_callback(uint8_t e
 	}
 	case RTK_BT_MESH_LIGHT_LC_SERVER_MODEL_PROPERTY_SET: {
 		rtk_bt_mesh_light_lc_server_set_property_t *property_set = (rtk_bt_mesh_light_lc_server_set_property_t *)param;
-		BT_LOGA("[APP] Light lc setup server receive: set property id %d, property value %ld \r\n",
+		BT_LOGA("[APP] Light lc setup server receive: set property id %d, property value %d \r\n",
 				property_set->property_id,
 				property_set->property_value);
 		if ((property_set->property_id >= 0x2E) && (property_set->property_id <= 0x30)) {
@@ -1827,8 +1827,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_battery_server_app_callback(uint8_t 
 	case RTK_BT_MESH_GENERIC_BATTERY_SERVER_MODEL_GET: {
 		rtk_bt_mesh_generic_battery_server_direct_get_t *gb_get = (rtk_bt_mesh_generic_battery_server_direct_get_t *)param;
 		memcpy(gb_get->value, &battery_store, sizeof(rtk_bt_mesh_generic_battery_server_get_t));
-		BT_LOGA("[APP] generic battery server receive: get battery level = %d, time to discharge = %ld, \
-time to charge = %ld, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
+		BT_LOGA("[APP] generic battery server receive: get battery level = %d, time to discharge = %d, \
+time to charge = %d, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
 				(gb_get->value)->battery_level,
 				(gb_get->value)->time_to_discharge, (gb_get->value)->time_to_charge,
 				(gb_get->value)->flags.presence, (gb_get->value)->flags.indicator, (gb_get->value)->flags.charging,
@@ -1890,7 +1890,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_setup_server_app_callback(u
 	case RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_GLOBAL_SET: {
 		rtk_bt_mesh_generic_location_server_set_global_t *global_set = (rtk_bt_mesh_generic_location_server_set_global_t *)param;
 		memcpy(&global_location_setup_store, global_set, sizeof(rtk_bt_mesh_generic_location_server_get_global_t));
-		BT_LOGA("[APP] Generic location setup server receive: set global_latitude %ld , global_longitude %ld , lobal_altitude %d\r\n",
+		BT_LOGA("[APP] Generic location setup server receive: set global_latitude %d , global_longitude %d , lobal_altitude %d\r\n",
 				global_location_setup_store.global_latitude,
 				global_location_setup_store.global_longitude,
 				global_location_setup_store.global_altitude);

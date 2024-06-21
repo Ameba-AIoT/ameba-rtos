@@ -391,7 +391,6 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 	UNUSED(dev);
 
 	if (hid->ctrl_req.bRequest != 0xFFU) {
-		RTK_LOGD(TAG, "EP0 out bRequest=0x%02X wLength=%d\n", hid->ctrl_req.bRequest, hid->ctrl_req.wLength);
 		hid->ctrl_req.bRequest = 0xFFU;
 		ret = HAL_OK;
 	}
@@ -402,10 +401,8 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 {
 	usbd_hid_t *hid = &hid_device;
-
 	UNUSED(dev);
 
-	RTK_LOGD(TAG, "EP%02X out len=%d/0x%x\n", ep_addr, len, hid->intr_out_buf[0]);
 	if (hid->cb->received && (ep_addr == USBD_HID_INTERRUPT_OUT_EP_ADDRESS)) {
 		hid->cb->received(hid->intr_out_buf, len);
 	}
@@ -425,8 +422,8 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	u16 len = 0;
 	u8 *buf = NULL;
 
-	RTK_LOGD(TAG, "HID setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
+	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
@@ -455,11 +452,9 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 		case USB_REQ_GET_DESCRIPTOR:
 			if (req->wValue >> 8 == USBD_HID_REPORT_DESC) {
-				RTK_LOGD(TAG, "Get HID report descriptor\n");
 				len = MIN(USBD_HID_DEV_REPORT_DESC_SIZE, req->wLength);
 				buf = usbd_hid_report_desc;
 			} else if (req->wValue >> 8 == USBD_HID_DESC) {
-				RTK_LOGD(TAG, "Get HID descriptor\n");
 				/* HID Descriptor */
 				len = MIN(USBD_HID_DESC_SIZE, req->wLength);
 				buf = usbd_hid_desc;
@@ -561,9 +556,9 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	UNUSED(dev);
 
 	if (status == HAL_OK) {
-		RTK_LOGD(TAG, "EP%02X TX done\n", ep_addr);
+		/*TX done*/
 	} else {
-		RTK_LOGW(TAG, "EP%02X TX error: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, "[HID] EP%02x TX err: %d\n", ep_addr, status);
 	}
 
 	hid->cb->transmitted(status);
@@ -578,24 +573,17 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 	u8 *desc = hid_device.ctrl_buf;
 
 	dev->self_powered = USBD_HID_SELF_POWERED;
-	RTK_LOGD(TAG,
-			 "hid_get_descriptor speed=%d bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			 speed,
-			 req->bmRequestType,
-			 req->bRequest,
-			 req->wLength,
-			 req->wValue);
+	//RTK_LOGD(TAG, "Get desc：speed=%d bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//		 speed, req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch ((req->wValue >> 8) & 0xFF) {
 
 	case USB_DESC_TYPE_DEVICE:
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE\n");
 		buf = usbd_hid_dev_desc;
 		*len = sizeof(usbd_hid_dev_desc);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_CONFIGURATION\n");
 		if (speed == USB_SPEED_HIGH) {
 			buf = usbd_hid_hs_config_desc;
 			*len = sizeof(usbd_hid_hs_config_desc);
@@ -611,7 +599,6 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION\n");
 		if (speed == USB_SPEED_HIGH) {
 			buf = usbd_hid_fs_config_desc;
 			*len = sizeof(usbd_hid_fs_config_desc);
@@ -627,17 +614,14 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
 		case USBD_IDX_LANGID_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_LANGID_STR\n");
 			buf = usbd_hid_lang_id_desc;
 			*len = sizeof(usbd_hid_lang_id_desc);
 			break;
 		case USBD_IDX_MFC_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MFC_STR\n");
 			usbd_get_str_desc(USBD_HID_MFG_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_PRODUCT_STR\n");
 			if (speed == USB_SPEED_HIGH) {
 				usbd_get_str_desc(USBD_HID_PROD_HS_STRING, desc, len);
 			} else {
@@ -646,16 +630,14 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 			buf = desc;
 			break;
 		case USBD_IDX_SERIAL_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_SERIAL_STR\n");
 			usbd_get_str_desc(USBD_HID_SN_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_MS_OS_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MS_OS_STR, not supported\n");
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGW(TAG, "Get descriptor failed, invalid string index %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, "[HID] Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -795,7 +777,7 @@ int usbd_hid_send_data(u8 *data, u16 len)
 	usbd_hid_t *hid = &hid_device;
 
 	if (!hid->is_ready) {
-		RTK_LOGI(TAG, "EP%02X TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
+		RTK_LOGS(TAG, "[HID] EP%02x TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
 		return ret;
 	}
 
@@ -807,21 +789,19 @@ int usbd_hid_send_data(u8 *data, u16 len)
 		if (hid->is_ready) { // In case deinit when plug out
 			hid->is_tx_busy = 1U;
 			hid->intr_in_state = 1U;
-			RTK_LOGD(TAG, "EP%02X TX %d\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
 			usb_os_memcpy((void *)hid->intr_in_buf, (void *)data, len);
 			if (hid->is_ready) { // In case deinit when plug out
 				usbd_ep_transmit(hid->dev, USBD_HID_INTERRUPT_IN_EP_ADDRESS, hid->intr_in_buf, len);
 				ret = HAL_OK;
 			} else {
 				hid->intr_in_state = 0U;
-				RTK_LOGD(TAG, "EP%02X TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
 			}
 			hid->is_tx_busy = 0U;
 		} else {
-			RTK_LOGD(TAG, "EP%02X TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
+			/*TX not ready*/
 		}
 	} else {
-		RTK_LOGD(TAG, "EP%02X TX %d BUSY\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
+		/*TX busy*/
 		ret = HAL_BUSY;
 	}
 

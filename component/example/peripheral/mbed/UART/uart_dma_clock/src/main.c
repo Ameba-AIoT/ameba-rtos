@@ -72,7 +72,6 @@ void uart_clock_on(void)
 void uart_clock_off(void)
 {
 	is_stop = 1;
-	serial_send_stream_abort(&sobj_clk);
 }
 
 void uart_clock_demo(void)

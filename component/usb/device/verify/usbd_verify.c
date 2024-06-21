@@ -38,7 +38,7 @@ static int usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "VERIFY";
+static const char *TAG = "VRY";
 
 static const char *TEXT_CTRL = "CTRL";
 static const char *TEXT_BULK = "BULK";
@@ -203,9 +203,8 @@ static int usbd_verify_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	int ret = HAL_OK;
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 
-	RTK_LOGD(TAG, "USBD bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			 req->bmRequestType, req->bRequest,
-			 req->wLength, req->wValue);
+	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//	 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
@@ -284,7 +283,6 @@ static u8 *usbd_verify_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 
 	case USB_DESC_TYPE_DEVICE:
 		*len = sizeof(usbd_verify_dev_desc);
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE len=%d\n", *len);
 		buf = usbd_verify_dev_desc;
 		usb_os_memcpy((void *)desc, (void *)buf, *len);
 		buf = desc;
@@ -294,19 +292,16 @@ static u8 *usbd_verify_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 		if (usbd_verify_dev.cb->get_config_desc != NULL) {
 			buf = usbd_verify_dev.cb->get_config_desc(len);
 		}
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_CONFIGURATION len=%d\n", *len);
 		break;
 
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		*len = sizeof(usbd_verify_device_qualifier_desc);
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER len=%d\n", *len);
 		buf = usbd_verify_device_qualifier_desc;
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (usbd_verify_dev.cb->get_config_desc != NULL) {
 			usbd_verify_dev.cb->get_config_desc(len);
-			RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION len=%d\n", *len);
 			usb_os_memcpy((void *)desc, (void *)buf, *len);
 			desc[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 			buf = desc;
@@ -316,17 +311,14 @@ static u8 *usbd_verify_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
 		case USBD_IDX_LANGID_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_LANGID_STR\n");
 			buf = usbd_verify_lang_id_desc;
 			*len = sizeof(usbd_verify_lang_id_desc);
 			break;
 		case USBD_IDX_MFC_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MFC_STR\n");
 			usbd_get_str_desc(USBD_VERIFY_MFG_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_PRODUCT_STR\n");
 			if (speed == USB_SPEED_HIGH) {
 				usbd_get_str_desc(USBD_VERIFY_HS_STRING, desc, len);
 			} else {
@@ -335,16 +327,15 @@ static u8 *usbd_verify_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 			buf = desc;
 			break;
 		case USBD_IDX_SERIAL_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_SERIAL_STR\n");
 			usbd_get_str_desc(USBD_VERIFY_SN_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_MS_OS_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MS_OS_STR, not supported\n");
+			/*Not support*/
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGW(TAG, "Get descriptor failed, invalid string index %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, "[VRY] Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -362,7 +353,6 @@ static int usbd_verify_handle_ep0_data_in(usb_dev_t *dev, u8 status)
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 
 	if (status != HAL_OK) {
-		RTK_LOGD(TAG, "EP0 TX sttaus=%d\n", status);
 		return status;
 	}
 
@@ -397,7 +387,6 @@ static int usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 
 	if (status != HAL_OK) {
-		RTK_LOGD(TAG, "EP%02X TX status=%d\n", ep_addr, status);
 		return status;
 	}
 
@@ -420,7 +409,7 @@ static int usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 
 	if (len == 0) {
-		RTK_LOGD(TAG, "EP%02X RX %d\n", ep_addr, len);
+		/*RX ZLP*/
 		return ret;
 	}
 
@@ -491,11 +480,10 @@ int usbd_verify_ep_enable(usb_dev_t *dev, usbd_verify_ep_t *ep)
 {
 	usbd_verify_ep_basic_t *ep_infor = &(ep->ep_infor);
 	if (ep->ep_init == 0) {
-		RTK_LOGD(TAG, "Enable EP%02X \n", ep_infor->ep_addr);
 		usbd_ep_init(dev, ep_infor->ep_addr, ep_infor->ep_type, ep_infor->mps);
 		ep->ep_init = 1;
 	} else {
-		RTK_LOGD(TAG, "EP%02X has inited\n", ep_infor->ep_addr);
+		/*EP has inited*/
 	}
 	return HAL_OK;
 }
@@ -504,11 +492,10 @@ int usbd_verify_ep_disable(usb_dev_t *dev, usbd_verify_ep_t *ep)
 {
 	usbd_verify_ep_basic_t *ep_infor = &(ep->ep_infor);
 	if (ep->ep_init == 1) {
-		RTK_LOGD(TAG, "Disable EP%02X \n", ep_infor->ep_addr);
 		usbd_ep_deinit(dev, ep_infor->ep_addr);
 		ep->ep_init = 0;
 	} else {
-		RTK_LOGD(TAG, "EP%02X has disable\n", ep_infor->ep_addr);
+		/*EP has dis*/
 	}
 	return HAL_OK;
 }
@@ -562,7 +549,7 @@ int usbd_verify_transmit_zlp(u8 addr)
 {
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 
-	RTK_LOGI(TAG, "TX ZLP\n");
+	RTK_LOGS(TAG, "[VRY] TX ZLP\n");
 	usbd_ep_transmit(cdev->dev, addr, NULL, 0);
 
 	return HAL_OK;
@@ -579,7 +566,6 @@ int usbd_verify_transmit_ctrl_data(u8 *buf, u16 len)
 		len = ep_mps;
 	}
 	if (ep->state == VERIFY_TRANSFER_STATE_IDLE) {
-		RTK_LOGD(TAG, "CTRL TX len=%d\n", len);
 		usb_os_memcpy(ep->buf, buf, len);
 		usbd_ep0_transmit(dev, ep->buf, len);
 	} else {
@@ -605,7 +591,6 @@ int usbd_verify_transmit_data(usbd_verify_ep_t *ep)
 		usbd_ep_transmit(cdev->dev, ep_infor->ep_addr, ep->buf, ep_infor->trans_len);
 	} else {
 		ep->drop_count ++;
-		RTK_LOGD(TAG, "EP%02X drop(%ld)\n", ep_infor->ep_addr, ep->drop_count);
 		ret = HAL_BUSY;
 	}
 
@@ -649,7 +634,7 @@ void usbd_verify_dump_ep(usbd_verify_ep_t *ep)
 	usbd_verify_ep_basic_t *ep_infor;
 	if (ep && cdev->enable_dump) {
 		ep_infor = &(ep->ep_infor);
-		RTK_LOGD(TAG, "[type=%s-%s]EP%02X/%02X:mps(%d)/xferlen%d/state(%d)zlp(%d)\n",
+		RTK_LOGS(TAG, "[VRY] [type=%s-%s]EP%02x/%02x:mps(%d)/xferlen%d/state(%d)zlp(%d)\n",
 				 usbd_verify_get_xfer_type_text(ep_infor->ep_type),
 				 ((USB_EP_IS_IN(ep_infor->ep_addr)) ? ("IN") : ("OUT")),
 				 ep_infor->ep_addr, ep_infor->match_addr,
@@ -664,18 +649,18 @@ void usbd_verify_dump_buf(u8 *type, u8 *buf, u32 length, u32 count)
 	u32 len = ((length <= DUMP_DATA_MAX_LEN) ? (length) : (DUMP_DATA_MAX_LEN));
 
 	if (cdev->enable_dump) {
-		RTK_LOGD(TAG, "usb %s count=%ld[buf=%02x]\n", type, count, buf[0]);
+		RTK_LOGS(TAG, "[VRY] type %s cnt=%d[buf=%02x]\n", type, count, buf[0]);
 		for (i = 0; i < len;) {
 			if (i + 10 <= len) {
-				RTK_LOGD(TAG, "%3d %3d %3d %3d %3d %3d %3d %3d %3d %3d\n", buf[i], buf[i + 1], buf[i + 2], buf[i + 3], buf[i + 4], buf[i + 5],
+				RTK_LOGS(TAG, "[VRY] %3d %3d %3d %3d %3d %3d %3d %3d %3d %3d\n", buf[i], buf[i + 1], buf[i + 2], buf[i + 3], buf[i + 4], buf[i + 5],
 						 buf[i + 6], buf[i + 7], buf[i + 8],
 						 buf[i + 9]);
 				i += 10;
 			} else {
 				for (; i < len; i++) {
-					RTK_LOGD(TAG, "%3d ", buf[i]);
+					RTK_LOGS(TAG, "%3d ", buf[i]);
 				}
-				RTK_LOGD(TAG, "\n");
+				RTK_LOGS(TAG, "\n");
 				break;
 			}
 		}

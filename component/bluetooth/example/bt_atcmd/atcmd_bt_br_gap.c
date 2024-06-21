@@ -257,9 +257,9 @@ static int atcmd_br_gap_bond_addr_get(int argc, char **argv)
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP Bond addr %02X:%02X:%02X:%02X:%02X:%02X ",
+	BRGAP_AT_PRINTK("BR GAP Bond addr %02x:%02x:%02x:%02x:%02x:%02x ",
 					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
-	BT_AT_PRINT("+BRGAP:bond_addr_get,%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+	BT_AT_PRINT("+BRGAP:bond_addr_get,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	return 0;
 }

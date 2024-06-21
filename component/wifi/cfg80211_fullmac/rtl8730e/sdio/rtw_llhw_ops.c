@@ -40,7 +40,7 @@ void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		goto exit;
 	}
 
-	ret_msg = (struct inic_api_info *)event_priv->rx_api_ret_msg;
+	ret_msg = (struct inic_api_info *)(event_priv->rx_api_ret_msg->data + SIZE_RX_DESC);
 	if (ret_msg != NULL) {
 		/* check api_id of return msg */
 		if (ret_msg->api_id != id) {
@@ -53,7 +53,7 @@ void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		}
 
 		/* free rx buffer */
-		llhw_free_rxbuf((u8 *)ret_msg);
+		kfree_skb(event_priv->rx_api_ret_msg);
 		event_priv->rx_api_ret_msg = NULL;
 	} else {
 		dev_err(global_idev.fullmac_dev, "Linux API return value is NULL!\n");
@@ -193,8 +193,9 @@ int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char b
 
 	/*clear for last connect status */
 	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
+#ifndef CONFIG_SDIO_BRIDGE
 	cfg80211_rtw_connect_indicate(RTW_JOINSTATUS_STARTING, NULL, 0);
-
+#endif
 	/* step2: malloc and set synchronous connection related variables*/
 	if (block) {
 		block_param = (struct internal_join_block_param *)kzalloc(sizeof(struct internal_join_block_param), GFP_KERNEL);
@@ -294,7 +295,13 @@ error:
 	}
 
 	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL) {
+#ifdef CONFIG_SDIO_BRIDGE
+		if (global_idev.mlme_priv.join_block_param && global_idev.mlme_priv.join_block_param->block) {
+			complete(&global_idev.mlme_priv.join_block_param->join_sema);
+		}
+#else
 		cfg80211_rtw_connect_indicate(RTW_JOINSTATUS_FAIL, NULL, 0);
+#endif
 	}
 
 	return ret;
@@ -500,11 +507,15 @@ int llhw_wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return ret;
 }
 
-u32 llhw_wifi_update_ip_addr_in_wowlan(void)
+u32 llhw_wifi_update_ip_addr(void)
 {
 	u32 ret = 0;
+	u8 param[RTW_IP_ADDR_LEN + RTW_IPv6_ADDR_LEN];
 
-	llhw_send_msg(INIC_API_WIFI_IP_UPDATE, global_idev.ip_addr, RTW_IP_ADDR_LEN, (u8 *)&ret, sizeof(u32));
+	memcpy(param, global_idev.ip_addr, RTW_IP_ADDR_LEN);
+	memcpy(param + RTW_IP_ADDR_LEN, global_idev.ipv6_addr, RTW_IPv6_ADDR_LEN);
+
+	llhw_send_msg(INIC_API_WIFI_IP_UPDATE, param, sizeof(param), (u8 *)&ret, sizeof(u32));
 
 	return ret;
 }
@@ -965,45 +976,39 @@ int llhw_wifi_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 }
 #endif
 
-int llhw_war_offload_ctrl(struct H2C_WAROFFLOAD_PARM *offload_parm)
+#ifndef CONFIG_SDIO_BRIDGE
+int llhw_war_offload_ctrl(u8 offload_en, u32 offload_ctrl)
 {
 	int ret = 0;
-	u32 size = 0, mdns_para_len = 0;
-	u8 *ptr, *param;
+	struct H2C_WAROFFLOAD_PARM param;
 
-	size = sizeof(struct H2C_WAROFFLOAD_PARM) + RTW_IP_ADDR_LEN + IPv6_ALEN + 4096;
-	ptr = param = (u8 *)kzalloc(size, GFP_KERNEL);
+	param.offload_en = offload_en;
+	param.offload_ctrl = offload_ctrl;
 
-	memcpy(ptr, offload_parm, sizeof(struct H2C_WAROFFLOAD_PARM));
-	ptr += sizeof(struct H2C_WAROFFLOAD_PARM);
+	llhw_send_msg(INIC_API_WAR_OFFLOAD_CTRL, (u8 *)&param, sizeof(struct H2C_WAROFFLOAD_PARM), (u8 *)&ret, sizeof(int));
 
-	memcpy(ptr, global_idev.ip_addr, RTW_IP_ADDR_LEN);
-	ptr += RTW_IP_ADDR_LEN;
-	ptr += IPv6_ALEN;
-	if (offload_parm->offload_en) {
-		if (offload_parm->sd_mdns_v4_rsp_en || offload_parm->sd_mdns_v4_wake_en ||
-			offload_parm->sd_mdns_v6_rsp_en || offload_parm->sd_mdns_v6_wake_en) {
-			rtw_wow_prepare_mdns_para(ptr + 4, &mdns_para_len);
-		} else {
-			mdns_para_len = 0;
-		}
-	} else {
-		mdns_para_len = 0;
-	}
+	return ret;
+}
 
-	printk("%s, mdns_para_len:%d\n", __func__, mdns_para_len);
+int llhw_war_set_mdns_param(u8 *pframe, u32 len)
+{
+	int ret = 0;
+	u32 size = 0;
+	u8 *param;
 
-	*(u32 *)ptr = mdns_para_len;
-	size = size - 4096 + (mdns_para_len + 4);
+	size = 4 + len;
+	param = (u8 *)kzalloc(size, GFP_KERNEL);
 
-	print_hex_dump_bytes("mdns_para: ", DUMP_PREFIX_NONE, param, size);
+	memcpy(param, &len, sizeof(len));
+	memcpy(param + 4, pframe, len);
 
-	llhw_send_msg(INIC_API_WAR_OFFLOAD_CTRL, param, size, (u8 *)&ret, sizeof(int));
+	llhw_send_msg(INIC_API_WAR_SET_MDNS_PARA, param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
 
 	return ret;
 }
+#endif
 
 int llhw_wifi_driver_is_mp(void)
 {
@@ -1013,3 +1018,4 @@ int llhw_wifi_driver_is_mp(void)
 
 	return ret;
 }
+

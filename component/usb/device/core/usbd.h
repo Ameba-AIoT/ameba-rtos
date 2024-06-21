@@ -67,28 +67,8 @@ typedef enum {
 
 /* USB configuration structure */
 typedef struct {
-	u8 speed;				/* USB speed:
-							   USB_SPEED_HIGH: USB 2.0 PHY, e.g. AmebaD/AmebaSmart
-							   USB_SPEED_HIGH_IN_FULL: USB 2.0 PHY in full speed mode, e.g. AmebaD/AmebaSmart
-							   USB_SPEED_FULL: USB 1.1 transceiver, e.g. AmebaDPlus */
-	u8 dma_enable;			/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
-	u8 isr_priority;		/* USB ISR thread priority */
-	u8 intr_use_ptx_fifo;	/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode */
-
-	/* For shared FIFO mode, e.g. AmabeD, AmebaSmart and AmebaDplus, the DFIFO limitation:
-			RxFIFO <= 512, default 512 if set to 0 or no specified, for all the OUT transfers
-			NPTxFIFO <=256, default 256 if set to 0 or no specified, for all the non-periodic CTRL/BULK/INTR IN transfers
-			PTxFIFO <= 256, default 256 if set to 0 or no specified, for periodic ISOC/INTR IN transfers
-			Total DFIFO = RxFIFO + NPTxFIFO + PTxFIFO = 1016
-	   Specially, if rx_fifo_depth, nptx_fifo_depth and ptx_fifo_depth are all set to 0 or not specified:
-			RxFIFO = 512
-			NPTxFIFO = 256
-			PTxFIFO = 248   // Total DFIFO - RxFIFO - NPTxFIFO
-	*/
-	u32 rx_fifo_depth;		/* RX FIFO depth in dword, for shared FIFO mode */
-	u32 nptx_fifo_depth;	/* Non-Periodical TX FIFO depth in dword, for shared FIFO mode */
-	u32 ptx_fifo_depth;		/* Periodical TX FIFO depth in dword, for shared FIFO mode */
-
+	u32 nptx_max_err_cnt[USB_MAX_ENDPOINTS]; /* Max Non-Periodical TX transfer error count allowed, if transfer
+							   error count is higher than this value, the transfer status will be determined as failed */
 	u32 ext_intr_en;		/* allow class to enable some interrupts*/
 	u32 nptx_max_epmis_cnt; /* Max Non-Periodical TX transfer epmis count allowed, if transfer
 							   epmis count is higher than this value,the EMIPS interrupt will be handled.
@@ -96,36 +76,50 @@ typedef struct {
 							   make sure you has configed the appropriate value,
 							   a few epmis are possible and do not need to handle, it is not error
 							   but when we get a lot of epmis, it is a true Endpoint Mismatch. */
-	u32 nptx_max_err_cnt[USB_MAX_ENDPOINTS]; /* Max Non-Periodical TX transfer error count allowed, if transfer
-							   error count is higher than this value, the transfer status will be determined as failed */
+	u8 speed;				/* USB speed:
+							   USB_SPEED_HIGH: USB 2.0 PHY, e.g. AmebaD/AmebaSmart
+							   USB_SPEED_HIGH_IN_FULL: USB 2.0 PHY in full speed mode, e.g. AmebaD/AmebaSmart
+							   USB_SPEED_FULL: USB 1.1 transceiver, e.g. AmebaDPlus */
+	u8 isr_priority;		/* USB ISR thread priority */
+	u8 dma_enable : 1;			/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
+	u8 intr_use_ptx_fifo : 1;	/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode */
+	/* For shared FIFO mode, e.g. AmabeD, AmebaSmart and AmebaDplus, the total DFIFO depth is 1016,
+	 and it is shared by RxFIFO, NPTxFIFO and PTxFIFO.
+	 This parameter specifies whether to assign a full PTxFIFO depth to support 1024 byte periodic transfer package size:
+		ptx_fifo_first = 0:
+			RxFIFO = 512
+			NPTxFIFO = 256
+			PTxFIFO = 248
+
+		ptx_fifo_first = 1:
+			RxFIFO = 504
+			NPTxFIFO = 256
+			PTxFIFO = 256  // Total DFIFO - RxFIFO - NPTxFIFO
+		*/
+	u8 ptx_fifo_first : 1;
 } usbd_config_t;
 
 struct _usbd_class_driver_t;
 
 /* USB device */
 typedef struct {
+	struct _usbd_class_driver_t *driver;	/* Class driver */
+	u32 ep0_xfer_total_len;					/* The total data length to transfer */
+	u32 ep0_xfer_rem_len;					/* The remain data length to transfer */
+	u32 ep0_recv_rem_len;					/* The remain data length to receive */
+	u8 *ctrl_buf;							/* Buffer for control transfer */
+	void *pcd;								/* PCD handle */
+	u16 ep0_data_len;						/* EP0 data length */
+	u8 ep0_state;							/* EP0 state */
 	u8 dev_config;							/* Device config index */
 	u8 dev_speed;							/* Device speed, usb_speed_type_t */
 	u8 dev_state;							/* Device state, usbd_state_t */
 	u8 dev_old_state;						/* Device old state, usbd_state_t */
 	u8 dev_attach_status;					/* Device attach status, usbd_attach_status_t */
-
-	u8 ep0_state;							/* EP0 state */
-	u16 ep0_data_len;						/* EP0 data length */
-	u32 ep0_xfer_total_len;					/* The total data length to transfer */
-	u32 ep0_xfer_rem_len;					/* The remain data length to transfer */
-	u32 ep0_recv_rem_len;					/* The remain data length to receive */
-
 	u8 test_mode;							/* Test mode */
-
-	u8 self_powered;						/* Self powered or not, 0-bus powered, 1-self powered */
-	u8 remote_wakeup_en;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
-	u8 remote_wakeup;						/* Remote wakeup */
-
-	u8 *ctrl_buf;							/* Buffer for control transfer */
-
-	void *pcd;								/* PCD handle */
-	struct _usbd_class_driver_t *driver;	/* Class driver */
+	u8 self_powered : 1;						/* Self powered or not, 0-bus powered, 1-self powered */
+	u8 remote_wakeup_en : 1;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
+	u8 remote_wakeup : 1;						/* Remote wakeup */
 } usb_dev_t;
 
 /* USB class driver */

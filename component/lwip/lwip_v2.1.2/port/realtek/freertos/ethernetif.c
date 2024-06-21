@@ -85,6 +85,7 @@
 #define IF2NAME1 '2'
 
 extern struct netif xnetif[NET_IF_NUM];
+extern struct netif eth_netif;
 extern signed char rltk_mii_send(struct eth_drv_sg *sg_list, int sg_len, int total_len);
 
 static void arp_timer(void *arg);
@@ -433,8 +434,8 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 	int sg_len = 0;
 	u32 total_len = 0;
 
-	struct netif *netif = &xnetif[NET_IF_NUM - 1];
-	u8 *macstr = LwIP_GetMAC(NET_IF_NUM - 1);
+	struct netif *netif = &eth_netif;
+	u8 *macstr = (u8 *)(netif->hwaddr);
 
 	if (frame_len > MAX_ETH_MSG) {
 		frame_len = MAX_ETH_MSG;

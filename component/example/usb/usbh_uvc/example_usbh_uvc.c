@@ -17,7 +17,7 @@
 #include "ringbuffer.h"
 
 /* Private defines -----------------------------------------------------------*/
-
+static const char *TAG = "UVC";
 /*Just capture and abandon frame*/
 #define USBH_UVC_APP_SIMPLE	1
 
@@ -128,26 +128,26 @@ static usbh_uvc_cb_t uvc_cb = {
 
 static int uvc_cb_init(void)
 {
-	printf("UVC init\n");
+	RTK_LOGS(TAG, "[UVC] INIT\n");
 	return HAL_OK;
 }
 
 static int uvc_cb_deinit(void)
 {
-	printf("UVC deinit\n");
+	RTK_LOGS(TAG, "[UVC] DEINIT\n");
 	return HAL_OK;
 }
 
 static int uvc_cb_attach(void)
 {
-	printf("UVC attach\n");
+	RTK_LOGS(TAG, "[UVC] ATTACH\n");
 	rtos_sema_give(uvc_conn_sema);
 	return HAL_OK;
 }
 
 static int uvc_cb_detach(void)
 {
-	printf("UVC detach\n");
+	RTK_LOGS(TAG, "[UVC] DETACH\n");
 	rtos_sema_give(uvc_disconn_sema);
 	return HAL_OK;
 }
@@ -161,9 +161,9 @@ static void uvc_img_prepare(uvc_frame_t *frame)
 	}
 
 	len = frame->byteused;
-	printf("Capture len=%ld\n", len);
+	RTK_LOGS(TAG, "[UVC] Capture len=%d\n", len);
 	if (len > USBH_UVC_BUF_SIZE) {
-		printf("\nImage len overflow!\n");
+		RTK_LOGS(TAG, "[UVC] Image len overflow!\n");
 		return;
 	}
 
@@ -215,7 +215,7 @@ static void uvc_vfs_thread(void *param)
 
 	while (uvc_vfs_is_init) {
 		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
-			printf("\nFail to take uvc_vfs_save_img_sema\n");
+			RTK_LOGS(TAG, "[UVC] Fail to take img_sema\n");
 			continue;
 		}
 		memset(filename, 0, 64);
@@ -224,20 +224,20 @@ static void uvc_vfs_thread(void *param)
 		strcat(filename, f_num);
 		strcat(filename, ".jpeg");
 		snprintf(path, sizeof(path), "%s:%s", prefix, filename);
-		printf("Create image file: %s\n", path);
+		RTK_LOGS(TAG, "[UVC] Create image file: %s\n", path);
 
 		finfo = (vfs_file *)fopen(path, "w");
 		if (finfo == NULL) {
-			printf("Image file fopen failed \r\n");
+			RTK_LOGS(TAG, "[UVC]  fopen image fail\n");
 			goto exit;
 		}
 
 		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == SUCCESS) {
 			res = fwrite(uvc_buf, uvc_buf_size, 1, (FILE *)finfo);
 			if (res != 1) {
-				printf("UVC buffer fwrite failed, err is %d!!\r\n", res);
+				RTK_LOGS(TAG, "[UVC] buf fwrite fail: %d\n", res);
 			} else {
-				//printf("UVC buffer fwrite succeeded !!!\r\n");
+				//RTK_LOGS(TAG, "[UVC] buf fwrite succeed\n");
 			}
 
 			rtos_mutex_give(uvc_buf_mutex);
@@ -274,11 +274,11 @@ static void uvc_vfs_thread(void *param)
 	strcat(filename, ".h264");
 
 	snprintf(path, sizeof(path), "%s:%s", prefix, filename);
-	printf("Create image file: %s\n", path);
+	RTK_LOGS(TAG, "[UVC] Create image file: %s\n", path);
 
 	finfo = (vfs_file *)fopen(path, "wb+");
 	if (finfo == NULL) {
-		printf("Image file fopen failed \r\n");
+		RTK_LOGS(TAG, "[UVC] fopen image fail\n");
 		goto exit;
 	}
 
@@ -289,7 +289,7 @@ static void uvc_vfs_thread(void *param)
 			rtos_mutex_give(uvc_buf_mutex);
 			res = fwrite(buffer_h264, USBH_UVC_VFS_WRITE_SIZE, 1, (FILE *)finfo);
 			if (res != 1) {
-				printf("UVC buffer fwrite failed, err is %d!!\r\n", res);
+				RTK_LOGS(TAG, "[UVC] buf fwrite fail: %d\n", res);
 				goto exit;
 			}
 			total_len += USBH_UVC_VFS_WRITE_SIZE;
@@ -317,7 +317,7 @@ static int uvc_vfs_start(void)
 
 	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 8, 1U);
 	if (ret != SUCCESS) {
-		printf("\nFail to create USB host UVC vfs thread\n");
+		RTK_LOGS(TAG, "[UVC] Create vfs thread fail\n");
 		ret = 1;
 	} else {
 		ret = 0;
@@ -370,7 +370,7 @@ static void uvc_httpc_thread(void *param)
 	conn = httpc_conn_new(USBH_UVC_HTTPC_SECURE, NULL, NULL, NULL);
 
 	while (1) {
-		printf("try to conn\n");
+		RTK_LOGS(TAG, "[UVC] Try to conn\n");
 		ret = httpc_conn_connect(conn, USBH_UVC_HTTPC_SERVER, USBH_UVC_HTTPC_PORT, 0);
 		if (ret == 0) {
 			break;
@@ -378,7 +378,7 @@ static void uvc_httpc_thread(void *param)
 		rtos_time_delay_ms(1000);
 	}
 
-	printf("start httpc\n");
+	RTK_LOGS(TAG, "[UVC] Start httpc\n");
 
 	rtos_time_delay_ms(2000);
 
@@ -408,7 +408,7 @@ static void uvc_httpc_thread(void *param)
 
 		ret = httpc_request_write_data(conn, uvc_buf, uvc_buf_size);
 		if (ret < 0) {
-			printf("\nFail to send %s request: %d\n", USBH_UVC_HTTP_TAG, ret);
+			RTK_LOGS(TAG, "[UVC] Send %s request fail: %d\n", USBH_UVC_HTTP_TAG, ret);
 		}
 
 		rtos_mutex_give(uvc_buf_mutex);
@@ -459,7 +459,7 @@ static void uvc_httpc_thread(void *param)
 	conn = httpc_conn_new(USBH_UVC_HTTPC_SECURE, NULL, NULL, NULL);
 
 	while (1) {
-		printf("try to connect http server\n");
+		RTK_LOGS(TAG, "[UVC] Try to connect http server\n");
 		ret = httpc_conn_connect(conn, USBH_UVC_HTTPC_SERVER, USBH_UVC_HTTPC_PORT, 0);
 		if (ret == 0) {
 			break;
@@ -467,7 +467,7 @@ static void uvc_httpc_thread(void *param)
 		rtos_time_delay_ms(1000);
 	}
 
-	printf("start httpc\n");
+	RTK_LOGS(TAG, "[UVC] Start httpc\n");
 	rtos_time_delay_ms(2000);
 	uvc_httpc_is_init = 1;
 
@@ -497,7 +497,7 @@ static void uvc_httpc_thread(void *param)
 			rtos_mutex_give(uvc_buf_mutex);
 			ret = httpc_request_write_data(conn, buffer_h264, USBH_UVC_HTTPC_WRITE_SIZE);
 			if (ret < 0) {
-				printf("\nFail to send %s request: %d\n", USBH_UVC_HTTP_TAG, ret);
+				RTK_LOGS(TAG, "[UVC] Send %s request fail: %d\n", USBH_UVC_HTTP_TAG, ret);
 			}
 			total_len += USBH_UVC_HTTPC_WRITE_SIZE;
 		} else {
@@ -527,7 +527,7 @@ static int uvc_httpc_start(void)
 	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, 0);
 
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != 0))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(TAG, "[UVC] Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(1000);
 	}
 
@@ -535,7 +535,7 @@ static int uvc_httpc_start(void)
 
 	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 1024 * 8, 2);
 	if (ret != SUCCESS) {
-		printf("\nFail to create USB host UVC %s client thread\n", USBH_UVC_HTTP_TAG);
+		RTK_LOGS(TAG, "[UVC] Create %s client thread fail\n", USBH_UVC_HTTP_TAG);
 		rtos_sema_delete(&uvc_httpc_save_img_sema);
 	}
 
@@ -553,7 +553,6 @@ static void example_usbh_uvc_task(void *param)
 
 	ret = usbh_init(&usbh_cfg, NULL);
 	if (ret != HAL_OK) {
-		printf("\nFail to init USB\n");
 		goto exit;
 	}
 
@@ -563,7 +562,6 @@ static void example_usbh_uvc_task(void *param)
 
 	ret = usbh_uvc_init(&uvc_cb);
 	if (ret) {
-		printf("\nFail to init UVC driver\n");
 		goto exit1;
 	}
 
@@ -574,31 +572,29 @@ static void example_usbh_uvc_task(void *param)
 
 	rtos_sema_take(uvc_conn_sema, RTOS_SEMA_MAX_COUNT);
 
-	printf("\nSet UVC parameters\n");
+	RTK_LOGS(TAG, "[UVC] Set parameters\n");
 	ret = usbh_uvc_set_param(&uvc_ctx, USBH_UVC_IF_NUM_0);
 	if (ret) {
-		printf("\nFail to set UVC parameters: %d\n", ret);
 		goto exit1;
 	} else {
-		printf("\nUVC para: %d*%d@%dfps\n", uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
+		RTK_LOGS(TAG, "[UVC] Para: %d*%d@%dfps\n", uvc_ctx.width, uvc_ctx.height, uvc_ctx.frame_rate);
 
 		if (uvc_ctx.fmt_type == UVC_FORMAT_MJPEG) {
-			printf("MJPEG Stream\n");
+			RTK_LOGS(TAG, "[UVC] MJPEG Stream\n");
 		} else if (uvc_ctx.fmt_type == UVC_FORMAT_H264) {
-			printf("H264 Stream\n");
+			RTK_LOGS(TAG, "[UVC] H264 Stream\n");
 		} else if (uvc_ctx.fmt_type == UVC_FORMAT_YUV) {
-			printf("YUV Stream\n");
+			RTK_LOGS(TAG, "[UVC] YUV Stream\n");
 		} else {
-			printf("Unsupport Stream\n");
+			RTK_LOGS(TAG, "[UVC] Unsupport Stream\n");
 			goto exit1;
 		}
 	}
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
-	printf("\nStart vfs service\n");
+	RTK_LOGS(TAG, "[UVC] Start vfs service\n");
 	ret = uvc_vfs_start();
 	if (ret != 0) {
-		printf("\nFail to start vfs: %d\n", ret);
 		goto exit1;
 	}
 
@@ -608,10 +604,9 @@ static void example_usbh_uvc_task(void *param)
 #endif
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
-	printf("\nStart %s client\n", USBH_UVC_HTTP_TAG);
+	RTK_LOGS(TAG, "[UVC] Start %s client\n", USBH_UVC_HTTP_TAG);
 	ret = uvc_httpc_start();
 	if (ret != 0) {
-		printf("\nFail to start %s client: %d\n", USBH_UVC_HTTP_TAG, ret);
 		goto exit1;
 	}
 
@@ -629,10 +624,9 @@ static void example_usbh_uvc_task(void *param)
 		rtos_sema_give(uvc_disconn_sema);
 	}
 
-	printf("\nUVC stream on\n");
+	RTK_LOGS(TAG, "[UVC] Stream on\n");
 	ret = usbh_uvc_stream_on(USBH_UVC_IF_NUM_0);
 	if (ret) {
-		printf("\nFail to turn on UVC stream: %d\n", ret);
 		goto exit2;
 	}
 
@@ -643,10 +637,9 @@ static void example_usbh_uvc_task(void *param)
 #else
 	while (1) {
 #endif
-		printf("Get frame %d\n", img_cnt);
+		RTK_LOGS(TAG, "[UVC] Get frame %d\n", img_cnt);
 		buf = usbh_uvc_get_frame(USBH_UVC_IF_NUM_0);
 		if (buf == NULL) {
-			printf("\nFail to dequeue UVC buffer\n");
 			ret = 1;
 		} else {
 			ret = 0;
@@ -656,7 +649,7 @@ static void example_usbh_uvc_task(void *param)
 			uvc_img_prepare(buf);
 		}
 
-		printf("Put frame\n");
+		RTK_LOGS(TAG, "[UVC] Put frame\n");
 		usbh_uvc_put_frame(buf, USBH_UVC_IF_NUM_0);
 
 		if (!usbh_get_status()) {
@@ -667,10 +660,10 @@ static void example_usbh_uvc_task(void *param)
 		img_cnt ++;
 	}
 
-	printf("\nStop capturing images\n");
+	RTK_LOGS(TAG, "[UVC] Stop capturing images\n");
 	usbh_uvc_stream_off(USBH_UVC_IF_NUM_0);
 
-	//printf("\nFree heap size 0x%x bytes\n\n",  rtos_mem_get_free_heap_size());
+	//RTK_LOGS(TAG, "[UVC] Free heap 0x%x bytes\n",  rtos_mem_get_free_heap_size());
 
 exit2:
 	usbh_uvc_deinit();
@@ -680,6 +673,7 @@ exit1:
 	rtos_sema_delete(uvc_disconn_sema);
 	usbh_deinit();
 exit:
+	RTK_LOGS(TAG, "[UVC] USBH UVC demo stop\n");
 	rtos_task_delete(NULL);
 }
 
@@ -690,11 +684,11 @@ void example_usbh_uvc(void)
 	int status;
 	rtos_task_t task;
 
-	printf("\n[UVC] USB host uvc demo started...\n");
+	RTK_LOGS(TAG, "[UVC] USBH UVC demo start\n");
 
 	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 1024 * 16U, 1U);
 	if (status != SUCCESS) {
-		printf("\n[UVC] Fail to create USB host uvc thread: %d\n", status);
+		RTK_LOGS(TAG, "[UVC] Create thread fail\n");
 	}
 }
 

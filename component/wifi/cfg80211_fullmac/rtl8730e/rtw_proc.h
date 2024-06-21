@@ -40,5 +40,15 @@ struct rtw_proc_hdl {
 
 int rtw_drv_proc_init(void);
 void rtw_drv_proc_deinit(void);
+int proc_get_offload_enable(struct seq_file *m, void *v);
+ssize_t proc_set_offload_enable(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+int proc_get_offload_mdns_domain_name(struct seq_file *m, void *v);
+ssize_t proc_set_offload_mdns_domain_name(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+int proc_get_offload_mdns_machine_name(struct seq_file *m, void *v);
+ssize_t proc_set_offload_mdns_machine_name(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+int proc_get_offload_mdns_service_info(struct seq_file *m, void *v);
+ssize_t proc_set_offload_mdns_service_info(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+int proc_get_offload_mdns_txt_rsp(struct seq_file *m, void *v);
+ssize_t proc_set_offload_mdns_txt_rsp(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 
 #endif

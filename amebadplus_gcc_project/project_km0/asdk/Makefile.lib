@@ -2,11 +2,11 @@
 APP_LIB_DIR = $(ROOTDIR)/lib/application
 WIFI_MAKE_DIR = make/wlan
 
-ifeq ($(CONFIG_WLAN),y)
 ifeq ($(CONFIG_WIFI_FW_EN),y) 
 image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
 endif
 
+ifeq ($(CONFIG_WLAN),y)
 # NP Link Library
 ifeq ($(CONFIG_AS_INIC_NP), y)
 ifeq ($(CONFIG_MP_INCLUDED), y)
@@ -39,10 +39,10 @@ make_subdirs_lib_img2:
 	@+$(MAKE) -C make_lib/chipinfo_lib all
 	@+$(MAKE) -C make_lib/crashdump_lib all
 
-ifeq ($(CONFIG_WLAN), y)
 ifeq ($(CONFIG_WIFI_FW_EN),y) 
 	@+$(MAKE) -C make/target/wifi_fw all
 endif
+ifeq ($(CONFIG_WLAN), y)
 ifeq ($(CONFIG_AS_INIC_NP), y)
 	@+$(MAKE) -C make/rtk_coex all
 endif

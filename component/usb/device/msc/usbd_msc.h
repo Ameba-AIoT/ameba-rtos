@@ -130,28 +130,28 @@ typedef struct {
 } usbd_msc_cb_t;
 
 typedef struct {
-	u8 phase_error;
-	u8 is_open;
-	u8 ro;
-	u8 bot_state;
-	u8 bot_status;
-	u32 data_length;
-	u8 *data;
-	u8 *ctrl_buf;
-	usbd_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH];
-	u8 scsi_sense_head;
-	u8 scsi_sense_tail;
-	__IO u8 is_ready;
-	u32 num_sectors;
-	u32 lba; // logic block address
-	u32 blkbits; /* bits of logical block size of bound block device */
-	u32 blksize;
-	u32 blklen;
 	usbd_msc_cbw_t *cbw;
 	usbd_msc_csw_t *csw;
 	usbd_msc_disk_ops_t disk_ops;
 	usbd_msc_cb_t *cb;
 	usb_dev_t *dev;
+	usbd_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH];
+	u32 num_sectors;
+	u32 lba; // logic block address
+	u32 blkbits; /* bits of logical block size of bound block device */
+	u32 blksize;
+	u32 blklen;
+	u32 data_length;
+	u8 *data;
+	u8 *ctrl_buf;
+	u8 ro;
+	u8 bot_state;
+	u8 bot_status;
+	u8 scsi_sense_head;
+	u8 scsi_sense_tail;
+	__IO u8 is_ready : 1;
+	u8 is_open : 1;
+	u8 phase_error : 1;
 } usbd_msc_dev_t;
 
 int usbd_msc_init(usbd_msc_cb_t *cb);

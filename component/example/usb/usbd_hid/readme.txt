@@ -36,7 +36,7 @@ Setup Guide
         3. Type command "make all EXAMPLE=usbd_hid" under auto_build to build the images.
         4. Download the generated images under auto_build to Ameba board.
         5. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-			USBD HID demo start
+			[HID] USBD HID demo start
         6. Connect the USB port of Ameba board to PC with USB cable.
         7. Test with HID device:
            1) For HID mouse:

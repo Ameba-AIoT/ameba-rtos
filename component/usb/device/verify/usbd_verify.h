@@ -74,26 +74,24 @@ typedef enum {
 } usbd_verify_state_t;
 
 typedef struct {
+	u16          mps;	//buf length, packet MPS
+	u16          trans_len;	//transfor data length
 	u8           ep_addr;
 	u8           match_addr;
 	u8           ep_type;
 	u8           ep_interval;
-	u16          mps;	//buf length, packet MPS
-	u16          trans_len;	//transfor data length
 } usbd_verify_ep_basic_t;
 
 typedef struct {
 	usbd_verify_ep_basic_t ep_infor;
-
-	u8           in_start;
-	u8           ep_init;
-	u8           zlp;
-	__IO u8      state;
-	u8           *buf;
-
 	__IO u32     done_count ; //transfor packet success count
 	__IO u32     send_count ; //transfor packet count
 	__IO u32     drop_count ; //transfor packet drop count
+	u8           *buf;
+	__IO u8      state;
+	u8           in_start;
+	u8           ep_init : 1;
+	u8           zlp : 1;
 } usbd_verify_ep_t;
 
 
@@ -113,14 +111,12 @@ typedef struct {
 } usbd_verify_cb_t;
 
 typedef struct {
-	u8                   ctrl_req;
-	u8                   alt_setting; //
 	usbd_verify_ep_t     ctrl_ep0;
-
 	usb_dev_t            *dev;
 	usbd_verify_cb_t     *cb;
-
-	u8                   enable_dump;
+	u8                   ctrl_req;
+	u8                   alt_setting;
+	u8                   enable_dump : 1;
 } usbd_verify_device_t;
 
 /* Exported macros -----------------------------------------------------------*/
