@@ -6,7 +6,11 @@ ifeq ($(CONFIG_WLAN),y)
 #common lib
 ifeq ($(CONFIG_AMEBADPLUS), y)
 ifeq ($(CONFIG_AS_INIC_NP), y)
+ifeq ($(CONFIG_KM4_AS_NP), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
+endif
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_com_sec.a
 endif
@@ -55,10 +59,18 @@ else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wpa_lite.a
 endif
+ifeq ($(CONFIG_SDIO_BRIDGE), y)
+ifeq ($(CONFIG_MP_INCLUDED), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_sdio_bridge_mp.a
+else
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_sdio_bridge.a
+endif
+else
 ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_single_core_mp.a
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_single_core.a
+endif
 endif
 endif
 

@@ -14,7 +14,7 @@
 #include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
-
+static const char *TAG = "VND";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_VENDOR_HOTPLUG						1
@@ -58,18 +58,10 @@
 #define CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY
 #define CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY			6U // Should be lower than CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY
 
-// Enable trace log, set to 0 for better performance
-#define CONFIG_USBD_VENDOR_LOG_EN						1
-
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
 
-#if CONFIG_USBD_VENDOR_LOG_EN
-#define USBD_VENDOR_LOG(fmt, args...)			printf("\n\r%s: " fmt, __FUNCTION__, ## args)
-#else
-#define USBD_VENDOR_LOG(fmt, args...)
-#endif
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -95,10 +87,8 @@ static void vendor_cb_status_changed(u8 status);
 
 static usbd_config_t vendor_cfg = {
 	.speed = CONFIG_USBD_VENDOR_SPEED,
-	.dma_enable = 0U,
-	.rx_fifo_depth = 504U,
-	.nptx_fifo_depth = 256U,
-	.ptx_fifo_depth = 256U,
+	.dma_enable = 1U,
+	.ptx_fifo_first = 1U,
 	.isr_priority = CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY,
 	.ext_intr_en =  USBD_EOPF_INTR | USBD_ICII_INTR,
 	.intr_use_ptx_fifo = 0U,
@@ -245,12 +235,10 @@ static int vendor_cb_set_config(void)
 static int vendor_cb_intr_received(u8 *buf, u32 len)
 {
 #if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
-	USBD_VENDOR_LOG("INTR RX len=%ld data=%d\n", len, buf[0]);
 	vendor_intr_tx_buf = buf;
 	vendor_intr_tx_len = len;
 	rtos_sema_give(vendor_intr_async_xfer_sema);
 #else
-	USBD_VENDOR_LOG("INTR RX/TX len=%ld data=%d\n", len, buf[0]);
 	usbd_vendor_transmit_intr_data(buf, len);
 #endif // CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 	return usbd_vendor_receive_intr_data();
@@ -278,7 +266,6 @@ static void vendor_intr_xfer_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(vendor_intr_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if ((vendor_intr_tx_buf != NULL) && (vendor_intr_tx_len != 0)) {
-				USBD_VENDOR_LOG("INTR TX len=%ld data=%d\n", vendor_intr_tx_len, vendor_intr_tx_buf[0]);
 				usbd_vendor_transmit_intr_data(vendor_intr_tx_buf, vendor_intr_tx_len);
 			}
 		}
@@ -298,12 +285,10 @@ static void vendor_intr_xfer_thread(void *param)
 static int vendor_cb_isoc_received(u8 *buf, u32 len)
 {
 #if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
-	USBD_VENDOR_LOG("ISOC RX len=%ld data=%d\n", len, buf[0]);
 	vendor_isoc_tx_buf = buf;
 	vendor_isoc_tx_len = len;
 	rtos_sema_give(vendor_isoc_async_xfer_sema);
 #else
-	USBD_VENDOR_LOG("ISOC RX/TX len=%ld data=%d\n", len, buf[0]);
 	usbd_vendor_transmit_isoc_data(buf, len);
 #endif // CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
 	return usbd_vendor_receive_isoc_data();
@@ -317,7 +302,6 @@ static void vendor_isoc_xfer_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(vendor_isoc_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if ((vendor_isoc_tx_buf != NULL) && (vendor_isoc_tx_len != 0)) {
-				USBD_VENDOR_LOG("ISOC TX len=%ld data=%d\n", vendor_isoc_tx_len, vendor_isoc_tx_buf[0]);
 				usbd_vendor_transmit_isoc_data(vendor_isoc_tx_buf, vendor_isoc_tx_len);
 			}
 		}
@@ -338,12 +322,10 @@ static void vendor_isoc_xfer_thread(void *param)
 static int vendor_cb_bulk_received(u8 *buf, u32 len)
 {
 #if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
-	USBD_VENDOR_LOG("BULK RX len=%ld data=%d\n", len, buf[0]);
 	vendor_bulk_tx_buf = buf;
 	vendor_bulk_tx_len = len;
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
 #else
-	USBD_VENDOR_LOG("BULK RX/TX len=%ld data=%d\n", len, buf[0]);
 	usbd_vendor_transmit_bulk_data(buf, len);
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
 	return usbd_vendor_receive_bulk_data();
@@ -357,7 +339,6 @@ static void vendor_bulk_xfer_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(vendor_bulk_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if ((vendor_bulk_tx_buf != NULL) && (vendor_bulk_tx_len != 0)) {
-				USBD_VENDOR_LOG("BULK TX len=%ld data=%d\n", vendor_bulk_tx_len, vendor_bulk_tx_buf[0]);
 				usbd_vendor_transmit_bulk_data(vendor_bulk_tx_buf, vendor_bulk_tx_len);
 			}
 		}
@@ -369,7 +350,7 @@ static void vendor_bulk_xfer_thread(void *param)
 
 static void vendor_cb_status_changed(u8 status)
 {
-	printf("\nUSB status changed: %d\n", status);
+	RTK_LOGS(TAG, "[VND] Status change: %d\n", status);
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	vendor_attach_status = status;
 	rtos_sema_give(vendor_attach_status_changed_sema);
@@ -386,33 +367,30 @@ static void vendor_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(vendor_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if (vendor_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-				printf("\nUSB DETACHED\n");
+				RTK_LOGS(TAG, "[VND] DETACHED\n");
 				usbd_vendor_deinit();
 				ret = usbd_deinit();
 				if (ret != 0) {
-					printf("\nFail to de-init USBD driver\n");
 					break;
 				}
-				printf("\nFree heap size: 0x%lx\n", rtos_mem_get_free_heap_size());
+				RTK_LOGS(TAG, "[VND] Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&vendor_cfg);
 				if (ret != 0) {
-					printf("\nFail to re-init USBD driver\n");
 					break;
 				}
 				ret = usbd_vendor_init(&vendor_cb);
 				if (ret != 0) {
-					printf("\nFail to re-init USBD VENDOR class\n");
 					usbd_deinit();
 					break;
 				}
 			} else if (vendor_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
-				printf("\nUSB ATTACHED\n");
+				RTK_LOGS(TAG, "[VND] ATTACHED\n");
 			} else {
-				printf("\nUSB INIT\n");
+				RTK_LOGS(TAG, "[VND] INIT\n");
 			}
 		}
 	}
-
+	RTK_LOGS(TAG, "[VND] Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_VENDOR_HOTPLUG
@@ -441,20 +419,17 @@ static void example_usbd_vendor_thread(void *param)
 
 	ret = usbd_init(&vendor_cfg);
 	if (ret != HAL_OK) {
-		printf("\nFail to init USB device driver\n");
 		goto exit;
 	}
 
 	ret = usbd_vendor_init(&vendor_cb);
 	if (ret != HAL_OK) {
-		printf("\nFail to init USB vendor class\n");
 		goto clear_usb_driver_exit;
 	}
 
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	ret = rtos_task_create(&check_status_task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U, CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("\nFail to create usbd vendor hotplug thread\n");
 		goto clear_usb_class_exit;
 	}
 #endif // CONFIG_USBD_VENDOR_HOTPLUG
@@ -462,7 +437,6 @@ static void example_usbd_vendor_thread(void *param)
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&intr_async_xfer_task, "vendor_intr_xfer_thread", vendor_intr_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("\nFail to create vendor intr transfer thread\n");
 		goto clear_check_status_task;
 	}
 #endif // CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
@@ -470,7 +444,6 @@ static void example_usbd_vendor_thread(void *param)
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&isoc_async_xfer_task, "vendor_isoc_xfer_thread", vendor_isoc_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("\nFail to create vendor isoc transfer thread\n");
 		goto clear_intr_async_task;
 	}
 #endif // CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
@@ -478,14 +451,13 @@ static void example_usbd_vendor_thread(void *param)
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&bulk_async_xfer_task, "vendor_bulk_xfer_thread", vendor_bulk_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("\nFail to create vendor bulk transfer thread\n");
 		goto clear_isoc_async_task;
 	}
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
 
 	rtos_time_delay_ms(100);
 
-	printf("\nUSB device vendor demo started...\n");
+	RTK_LOGS(TAG, "[VND] USBD vendor demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -516,6 +488,7 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
+	RTK_LOGS(TAG, "[VND] USBD vendor demo stop\n");
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	rtos_sema_delete(vendor_attach_status_changed_sema);
 #endif
@@ -531,7 +504,7 @@ void example_usbd_vendor(void)
 
 	status = rtos_task_create(&task, "example_usbd_vendor_thread", example_usbd_vendor_thread, NULL, 1024U, CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY);
 	if (status != SUCCESS) {
-		printf("\nFail to create USB vendor device thread: %d\n", status);
+		RTK_LOGS(TAG, "[VND] Create USBD vendor thread fail\n");
 	}
 }
 

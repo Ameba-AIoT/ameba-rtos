@@ -302,11 +302,16 @@ const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("antdiv_mode", proc_read_antdiv_mode, NULL),
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
 	RTW_PROC_HDL_SSEQ("mp_fw", proc_read_mp_fw, NULL),
+
 #ifdef CONFIG_FULLMAC_HCI_SDIO
+	RTW_PROC_HDL_SSEQ("offload_enable", proc_get_offload_enable, proc_set_offload_enable),
+
 #if defined(CONFIG_OFFLOAD_MDNS_V4) || defined(CONFIG_OFFLOAD_MDNS_V6)
-	RTW_PROC_HDL_SSEQ("mdns_offload", NULL, proc_set_mdns_offload),
-#endif
-	RTW_PROC_HDL_SSEQ("wow_mode", NULL, proc_set_wow_mode),
+	RTW_PROC_HDL_SSEQ("offload_mdns_domain_name", proc_get_offload_mdns_domain_name, proc_set_offload_mdns_domain_name),
+	RTW_PROC_HDL_SSEQ("offload_mdns_machine_name", proc_get_offload_mdns_machine_name, proc_set_offload_mdns_machine_name),
+	RTW_PROC_HDL_SSEQ("offload_mdns_service_info", proc_get_offload_mdns_service_info, proc_set_offload_mdns_service_info),
+	RTW_PROC_HDL_SSEQ("offload_mdns_service_info_txt_rsp", proc_get_offload_mdns_txt_rsp, proc_set_offload_mdns_txt_rsp),
+#endif /* CONFIG_OFFLOAD_MDNS_V4 || CONFIG_OFFLOAD_MDNS_V6 */
 #endif
 };
 

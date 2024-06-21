@@ -17,15 +17,19 @@ static volatile uint32_t rtk_log_entry_count = 0;
 *
 *  @param	rtk_log_tag_array cache array
 *
-*  @return	None
+*  @return	success,0; fail,-1
 *
 ***/
-void rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
+int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
-	for (uint32_t i = 0; i < index; i++) {
-		RTK_LOGS(TAG, "[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
+	if (rtk_log_tag_array != NULL) {
+		for (uint32_t i = 0; i < index; i++) {
+			RTK_LOGS(TAG, "[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
+		}
+		return SUCCESS;
 	}
+	return FAIL;
 }
 
 /***
@@ -74,6 +78,7 @@ void rtk_log_array_clear(void)
 rtk_log_level_t rtk_log_level_get(const char *tag)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
+	assert_param(tag != NULL);
 	// Look for the tag in cache first
 	for (uint32_t i = 0; i < index; i++) {
 		if (_strcmp(rtk_log_tag_array[i].tag, tag) == 0) {
@@ -91,18 +96,21 @@ rtk_log_level_t rtk_log_level_get(const char *tag)
 *
 *  @param	level The level of the label to set
 *
-*  @return	None
+*  @return	success,0; fail,-1
 *
 *  @note
 ***/
-void rtk_log_level_set(const char *tag, rtk_log_level_t level)
+int rtk_log_level_set(const char *tag, rtk_log_level_t level)
 {
 	uint32_t i = 0;
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
+	if ((tag == NULL) || (level > RTK_LOG_DEBUG)) {
+		return FAIL;
+	}
 	// for wildcard tag, remove all array items and clear the cache
 	if (_strcmp(tag, "*") == 0) {
 		rtk_log_default_level = level;
-		return;
+		return SUCCESS;
 	}
 	// search in the cache and update the entry it if exists
 	for (i = 0; i < index; i++) {
@@ -119,6 +127,7 @@ void rtk_log_level_set(const char *tag, rtk_log_level_t level)
 	if (i >= index) { //
 		rtk_log_array_add(tag, level);
 	}
+	return SUCCESS;
 }
 
 /***

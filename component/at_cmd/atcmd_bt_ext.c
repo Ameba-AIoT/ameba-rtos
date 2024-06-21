@@ -1500,6 +1500,34 @@ static inline void fBTHFP(void *arg)
 
 #endif /* RTK_BREDR_SUPPORT */
 
+#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+
+static inline void fBLEBAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_BAP_IDX, "[AT+BLEBAP]");
+}
+
+static inline void fBLECAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_CAP_IDX, "[AT+BLECAP]");
+}
+
+static inline void fBLEPBP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_PBP_IDX, "[AT+BLEPBP]");
+}
+
+static inline void fBLETMAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_TMAP_IDX, "[AT+BLETMAP]");
+}
+
+static inline void fBLEGMAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_GMAP_IDX, "[AT+BLEGMAP]");
+}
+
+#endif /* RTK_BLE_AUDIO_SUPPORT */
 
 #endif /* ATCMD_BT_CUT_DOWN */
 
@@ -1522,7 +1550,13 @@ static log_item_t at_bt_items[] = {
 	{"+BTHID",    fBTHID,    {NULL, NULL}},
 	{"+BTHFP",    fBTHFP,    {NULL, NULL}},
 #endif
-
+#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+	{"+BLEBAP",   fBLEBAP,   {NULL, NULL}},
+	{"+BLECAP",   fBLECAP,   {NULL, NULL}},
+	{"+BLEPBP",   fBLEPBP,   {NULL, NULL}},
+	{"+BLETMAP",  fBLETMAP,  {NULL, NULL}},
+	{"+BLEGMAP",  fBLEGMAP,  {NULL, NULL}},
+#endif
 
 #endif
 };

@@ -465,7 +465,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_WIFI_KR4_SINGLE_CORE y
 		fi
 	fi
-	bool "Enable HIGH TP for INIC"	CONFIG_HIGH_TP_TEST
+	bool "Enable HIGH TP"	CONFIG_HIGH_TP_TEST
 	if [ "$CONFIG_WLAN_KR4_AP_KM4_NP" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KR4 y
 		define_bool CONFIG_WLAN_FOR_KM4 y

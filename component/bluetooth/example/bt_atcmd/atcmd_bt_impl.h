@@ -27,6 +27,11 @@ extern "C"
 #define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTSPP] "fmt, ##args)
 #define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHID] "fmt, ##args)
 #define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHFP] "fmt, ##args)
+#define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEBAP] "fmt, ##args)
+#define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLECAP] "fmt, ##args)
+#define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEPBP] "fmt, ##args)
+#define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLETMAP] "fmt, ##args)
+#define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLEGMAP] "fmt, ##args)
 
 #else /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
 
@@ -40,6 +45,11 @@ extern "C"
 #define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
 #define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
 #define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
+#define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
+#define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
+#define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
+#define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
 
 #endif /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
 

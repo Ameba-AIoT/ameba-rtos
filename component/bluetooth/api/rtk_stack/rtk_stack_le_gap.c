@@ -427,7 +427,7 @@ static void bt_stack_le_gap_handle_ext_adv_state_evt(uint8_t adv_handle, T_GAP_E
 	BT_LOGD("[ext_adv_state_change] new_state: 0x%d, cause: 0x%x\r\n", new_state, cause);
 	if (EXT_ADV_STATE_IDLE == new_state) {
 		if (EXT_ADV_STATE_START == pre_state) {
-			BT_LOGD("[ext_adv_state_change]: Ext ADV started failed, cause: 0x%04X\r\n", cause);
+			BT_LOGD("[ext_adv_state_change]: Ext ADV started failed, cause: 0x%04x\r\n", cause);
 		} else {
 			if (cause == (HCI_ERR | HCI_ERR_OPERATION_CANCELLED_BY_HOST)) {
 				p_ext_adv_ind->stop_reason = RTK_BT_LE_ADV_STOP_BY_HOST;
@@ -446,7 +446,7 @@ static void bt_stack_le_gap_handle_ext_adv_state_evt(uint8_t adv_handle, T_GAP_E
 		if (EXT_ADV_STATE_START == pre_state) {
 			BT_LOGD("[ext_adv_state_change]: Ext ADV started success\r\n");
 		} else if (EXT_ADV_STATE_STOP == pre_state) {
-			BT_LOGD("[ext_adv_state_change]: Ext ADV stopped failed, cause: 0x%04X\r\n", cause);
+			BT_LOGD("[ext_adv_state_change]: Ext ADV stopped failed, cause: 0x%04x\r\n", cause);
 			p_ext_adv_ind->is_start = false;
 		}
 	}
@@ -497,7 +497,7 @@ static void bt_stack_le_gap_handle_pa_state_evt(uint8_t adv_handle, T_GAP_PA_ADV
 	if (PA_ADV_STATE_IDLE == new_state) {
 		p_pa_ind->state = RTK_BT_LE_PA_STATE_IDLE;
 		if (PA_ADV_STATE_START == pre_state || PA_ADV_STATE_START_EXT_ADV_STATE_IDLE == pre_state) {
-			BT_LOGD("[pa_state_change]: Periodic ADV started failed, cause: 0x%04X\r\n", cause);
+			BT_LOGD("[pa_state_change]: Periodic ADV started failed, cause: 0x%04x\r\n", cause);
 			p_pa_ind->cause = cause;
 		} else if (GAP_ADV_STATE_STOP == pre_state) {
 			if (cause == (HCI_ERR | HCI_ERR_OPERATION_CANCELLED_BY_HOST)) {
@@ -509,7 +509,7 @@ static void bt_stack_le_gap_handle_pa_state_evt(uint8_t adv_handle, T_GAP_PA_ADV
 	} else if (PA_ADV_STATE_ADVERTISING == new_state) {
 		p_pa_ind->state = RTK_BT_LE_PA_STATE_ADVERTISING;
 		if (PA_ADV_STATE_STOP == pre_state) {
-			BT_LOGD("[pa_state_change]: Periodic ADV stopped failed, cause: 0x%04X\r\n", cause);
+			BT_LOGD("[pa_state_change]: Periodic ADV stopped failed, cause: 0x%04x\r\n", cause);
 			p_pa_ind->cause = cause;
 		} else {
 			BT_LOGD("[pa_state_change]: Periodic ADV started success\r\n");
@@ -648,7 +648,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 				p_info->event_type & GAP_EXT_ADV_REPORT_BIT_SCAN_RESPONSE,
 				p_info->event_type & GAP_EXT_ADV_REPORT_BIT_USE_LEGACY_ADV,
 				p_info->data_status);
-		BT_LOGD("GAP_MSG_LE_EXT_ADV_REPORT_INFO:event_type 0x%x, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, addr_type %d, rssi %d, data_len %d\r\n",
+		BT_LOGD("GAP_MSG_LE_EXT_ADV_REPORT_INFO:event_type 0x%x, bd_addr %02x:%02x:%02x:%02x:%02x:%02x, addr_type %d, rssi %d, data_len %d\r\n",
 				p_info->event_type,
 				p_info->bd_addr[5], p_info->bd_addr[4],
 				p_info->bd_addr[3], p_info->bd_addr[2],
@@ -665,7 +665,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 					p_info->peri_adv_interval);
 		}
 		if (p_info->event_type & GAP_EXT_ADV_REPORT_BIT_DIRECTED_ADV) {
-			BT_LOGD("GAP_MSG_LE_EXT_ADV_REPORT_INFO:direct_addr_type 0x%x, direct_addr %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+			BT_LOGD("GAP_MSG_LE_EXT_ADV_REPORT_INFO:direct_addr_type 0x%x, direct_addr %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 					p_info->direct_addr_type,
 					p_info->direct_addr[5], p_info->direct_addr[4],
 					p_info->direct_addr[3], p_info->direct_addr[2],
@@ -934,7 +934,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 		BT_LOGD("GAP_MSG_LE_PAST_RECIPIENT_PERIODIC_ADV_SYNC_TRANSFER_RECEIVED_INFO: ");
 		BT_LOGD("cause 0x%x, conn_id %d, sync_id %d, sync_handle 0x%x, service_data 0x%x, ",
 				p_info->cause, p_info->conn_id, p_info->sync_id, p_info->sync_handle, p_info->service_data);
-		BT_LOGD(" adv_sid 0x%x, adv_addr_type %d, adv_addr %02X:%02X:%02X:%02X:%02X:%02X ",
+		BT_LOGD(" adv_sid 0x%x, adv_addr_type %d, adv_addr %02x:%02x:%02x:%02x:%02x:%02x ",
 				p_info->adv_sid, p_info->adv_addr_type, p_info->adv_addr[5], p_info->adv_addr[4],
 				p_info->adv_addr[3], p_info->adv_addr[2], p_info->adv_addr[1], p_info->adv_addr[0]);
 		BT_LOGD("adv_phy %d, periodic_adv_interval 0x%x, adv_clock_accuracy %d",
@@ -2083,7 +2083,7 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 		le_get_conn_addr(conn_id, bt_stack_le_link_tbl[conn_id].peer_addr,
 						 (void *)&bt_stack_le_link_tbl[conn_id].bd_type);
 
-		BT_LOGD("GAP_CONN_STATE_CONNECTED:remote_bd %02X:%02X:%02X:%02X:%02X:%02X, remote_addr_type %d\r\n",
+		BT_LOGD("GAP_CONN_STATE_CONNECTED:remote_bd %02x:%02x:%02x:%02x:%02x:%02x, remote_addr_type %d\r\n",
 				bt_stack_le_link_tbl[conn_id].peer_addr[5],
 				bt_stack_le_link_tbl[conn_id].peer_addr[4],
 				bt_stack_le_link_tbl[conn_id].peer_addr[3],
@@ -2691,7 +2691,7 @@ static void bt_stack_ble_ext_adv_callback(uint8_t cb_type, void *p_cb_data)
 		p_ext_adv_ind->adv_handle = adv_handle;
 		p_ext_adv_ind->err = 0;
 		if (BLE_EXT_ADV_MGR_ADV_DISABLED == new_state) {
-			BT_LOGD("[BLE_EXT_ADV_STATE_CHANGE]: Ext ADV stopped, stop_cause: 0x%04X\r\n", p_info->stop_cause);
+			BT_LOGD("[BLE_EXT_ADV_STATE_CHANGE]: Ext ADV stopped, stop_cause: 0x%04x\r\n", p_info->stop_cause);
 			if (p_info->stop_cause == BLE_EXT_ADV_STOP_CAUSE_ENABLE_FAILED) {
 				BT_LOGD("[BLE_EXT_ADV_STATE_CHANGE]: Ext ADV start fail\r\n");
 				p_ext_adv_ind->err = 1;
@@ -2765,10 +2765,10 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 	BT_LOGD("primary_adv_interval_max=%d\r\n", padv_param->primary_adv_interval_max);
 	BT_LOGD("primary_adv_channel_map=%d\r\n", padv_param->primary_adv_channel_map);
 	BT_LOGD("own_address_type=%d\r\n", padv_param->own_addr.type);
-	BT_LOGD("own_address=%02X:%02X:%02X:%02X:%02X:%02X\r\n", padv_param->own_addr.addr_val[5], padv_param->own_addr.addr_val[4], padv_param->own_addr.addr_val[3],
+	BT_LOGD("own_address=%02x:%02x:%02x:%02x:%02x:%02x\r\n", padv_param->own_addr.addr_val[5], padv_param->own_addr.addr_val[4], padv_param->own_addr.addr_val[3],
 			padv_param->own_addr.addr_val[2], padv_param->own_addr.addr_val[1], padv_param->own_addr.addr_val[0]);
 	BT_LOGD("peer_address_type=%d\r\n", padv_param->peer_addr.type);
-	BT_LOGD("peer_address=%02X:%02X:%02X:%02X:%02X:%02X\r\n", padv_param->peer_addr.addr_val[5], padv_param->peer_addr.addr_val[4],
+	BT_LOGD("peer_address=%02x:%02x:%02x:%02x:%02x:%02x\r\n", padv_param->peer_addr.addr_val[5], padv_param->peer_addr.addr_val[4],
 			padv_param->peer_addr.addr_val[3], padv_param->peer_addr.addr_val[2], padv_param->peer_addr.addr_val[1], padv_param->peer_addr.addr_val[0]);
 	BT_LOGD("filter_policy=%d\r\n", padv_param->filter_policy);
 	BT_LOGD("tx_power=%d\r\n", padv_param->tx_power);
@@ -4297,7 +4297,7 @@ static void privacy_handle_resolv_list_int(void)
 	for (i = 0; i < bond_storage_num; i++) {
 		if (privacy_table[i].is_used && privacy_table[i].state != PRIVACY_RESOLVING_LIST_IDLE) {
 			if (privacy_table[i].state == PRIVACY_RESOLVING_LIST_ADD_PENDING) {
-				BT_LOGD("[PRIVACY] Add: i %d, BD %02X:%02X:%02X:%02X:%02X:%02X, type %d\r\n", i,
+				BT_LOGD("[PRIVACY] Add: i %d, BD %02x:%02x:%02x:%02x:%02x:%02x, type %d\r\n", i,
 						privacy_table[i].addr[5], privacy_table[i].addr[4],
 						privacy_table[i].addr[3], privacy_table[i].addr[2],
 						privacy_table[i].addr[1], privacy_table[i].addr[0],
@@ -4326,7 +4326,7 @@ static void privacy_handle_resolv_list_int(void)
 					return;
 				}
 			} else {
-				BT_LOGD("[PRIVACY] Remove: i %d, BD %02X:%02X:%02X:%02X:%02X:%02X, type %d\r\n", i,
+				BT_LOGD("[PRIVACY] Remove: i %d, BD %02x:%02x:%02x:%02x:%02x:%02x, type %d\r\n", i,
 						privacy_table[i].addr[5], privacy_table[i].addr[4],
 						privacy_table[i].addr[3], privacy_table[i].addr[2],
 						privacy_table[i].addr[1], privacy_table[i].addr[0],
@@ -4433,7 +4433,7 @@ static void privacy_modify_resolving_list(T_GAP_RESOLV_LIST_OP op, T_GAP_IDENT_A
 
 	case GAP_RESOLV_LIST_OP_ADD: {
 		uint8_t i;
-		BT_LOGD("[PRIVACY] privacy_modify_resolving_list add: addr %02X:%02X:%02X:%02X:%02X:%02X, addr type %d\r\n",
+		BT_LOGD("[PRIVACY] privacy_modify_resolving_list add: addr %02x:%02x:%02x:%02x:%02x:%02x, addr type %d\r\n",
 				addr[5], addr[4], addr[3], addr[2], addr[1], addr[0], addr_type);
 		for (i = 0; i < bond_storage_num; i++) {
 			if (privacy_table[i].is_used) {
@@ -4460,7 +4460,7 @@ static void privacy_modify_resolving_list(T_GAP_RESOLV_LIST_OP op, T_GAP_IDENT_A
 
 	case GAP_RESOLV_LIST_OP_REMOVE: {
 		uint8_t i;
-		BT_LOGD("[PRIVACY] privacy_add_device remove: addr %02X:%02X:%02X:%02X:%02X:%02X, addr type %d\r\n",
+		BT_LOGD("[PRIVACY] privacy_add_device remove: addr %02x:%02x:%02x:%02x:%02x:%02x, addr type %d\r\n",
 				addr[5], addr[4], addr[3], addr[2], addr[1], addr[0], addr_type);
 		for (i = 0; i < bond_storage_num; i++) {
 			if (privacy_table[i].is_used) {
@@ -5032,7 +5032,7 @@ static uint16_t bt_stack_le_gap_connless_cte_rx_start(void *param)
 					p_start->param->num_ant_ids,
 					p_start->param->ant_ids);
 		BT_LOGD("[LE GAP] Connectionless cte rx start slot_durations %u, "    \
-				"max_sampled_ctes %u, num_ant_ids %u, ant_ids 0x%p\r\n",
+				"max_sampled_ctes %u, num_ant_ids %u, ant_ids 0x%08x\r\n",
 				p_start->param->slot_durations,
 				p_start->param->max_sampled_ctes,
 				p_start->param->num_ant_ids,
@@ -5112,7 +5112,7 @@ static uint16_t bt_stack_le_gap_conn_cte_rx_start(void *param)
 												   p_start->p_rx_param->slot_durations,
 												   p_start->p_rx_param->num_ant_ids,
 												   p_start->p_rx_param->ant_ids);
-		BT_LOGD("[LE GAP] Connection cte rx start conn_id %u, slot_durations %u, num_ant_ids %u, ant_ids 0x%p \r\n",
+		BT_LOGD("[LE GAP] Connection cte rx start conn_id %u, slot_durations %u, num_ant_ids %u, ant_ids 0x%08x \r\n",
 				conn_id, p_start->p_rx_param->slot_durations,
 				p_start->p_rx_param->num_ant_ids, p_start->p_rx_param->ant_ids);
 	}
@@ -5174,7 +5174,7 @@ static uint16_t bt_stack_le_gap_conn_cte_tx_start(void *param)
 												p_start->param->cte_types,
 												p_start->param->num_ant_ids,
 												p_start->param->ant_ids);
-	BT_LOGD("[LE GAP] Connection cte tx start conn_id %u, cte_types %u, num_ant_ids %u, ant_ids 0x%p \r\n",
+	BT_LOGD("[LE GAP] Connection cte tx start conn_id %u, cte_types %u, num_ant_ids %u, ant_ids 0x%08x \r\n",
 			conn_id, p_start->param->cte_types, p_start->param->num_ant_ids, p_start->param->ant_ids);
 
 	if (cause)  {
@@ -5239,7 +5239,7 @@ static uint16_t bt_stack_le_gap_connless_cte_tx_start(void *param)
 																	p_start->param->ant_ids);
 	}
 	BT_LOGD("[LE GAP] Connectionless cte tx start adv_handle=%u, cte_len=%u, cte_type=%u, "   \
-			"cte_count=%u, num_ant_ids=%u, ant_ids=%p\r\n",
+			"cte_count=%u, num_ant_ids=%u, ant_ids=%08x\r\n",
 			p_start->adv_handle, p_start->param->cte_len, p_start->param->cte_type,
 			p_start->param->cte_count, p_start->param->num_ant_ids, p_start->param->ant_ids);
 

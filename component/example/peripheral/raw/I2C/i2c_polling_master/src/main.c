@@ -201,7 +201,7 @@ int i2c_Write(i2c_t *obj, int address, const char *data, int length, int stop)
 	}
 
 	if ((!restart_enable) || (1 == stop)) {
-		return (I2C_MasterWriteBrk(obj->I2Cx, (unsigned char *)data, length));
+		return (I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length));
 	} else {
 		i2c_Send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 	}

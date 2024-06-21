@@ -300,8 +300,8 @@ static int composite_cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_composite_dev_t *cdev = cdc->cdev;
 	int ret = HAL_OK;
 
-	RTK_LOGD(TAG, "[CDC] Setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
+	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_CLASS:
@@ -320,7 +320,7 @@ static int composite_cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		RTK_LOGW(TAG, "[CDC] Invalid bRequest 0x%02X\n", req->bRequest);
+		RTK_LOGS(TAG, "[COMP] Invalid bRequest 0x%02x\n", req->bRequest);
 		ret = HAL_ERR_HW;
 		break;
 	}
@@ -337,7 +337,6 @@ static int composite_cdc_acm_transmit_zlp(void)
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 	usb_dev_t *dev = cdc->cdev->dev;
 
-	RTK_LOGD(TAG, "[CDC] EP%02X TX ZLP\n", USBD_COMP_CDC_BULK_IN_EP);
 	usbd_ep_transmit(dev, USBD_COMP_CDC_BULK_IN_EP, NULL, 0);
 
 	return HAL_OK;
@@ -356,8 +355,7 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
 	UNUSED(dev);
 
 	if (status == HAL_OK) {
-		RTK_LOGD(TAG, "[CDC] EP%02X TX done\n", ep_addr);
-
+		/*TX done*/
 		if (ep_addr == USBD_COMP_CDC_BULK_IN_EP) {
 			if (cdc->bulk_out_zlp) {
 				cdc->bulk_out_zlp = 0;
@@ -372,7 +370,7 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
 		}
 #endif
 	} else {
-		RTK_LOGW(TAG, "[CDC] EP%02X TX fail: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX fail: %d\n", ep_addr, status);
 		if (ep_addr == USBD_COMP_CDC_BULK_IN_EP) {
 			cdc->bulk_in_state = 0U;
 		}
@@ -486,7 +484,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usbd_composite_cdc_acm_ntf_t *ntf = cdc->intr_in_buf;
 
 	if (!cdc->is_ready) {
-		RTK_LOGI(TAG, "[CDC] EP%02X TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
 		return ret;
 	}
 
@@ -512,15 +510,14 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 				ret = HAL_OK;
 			} else {
 				cdc->intr_in_state = 0U;
-				RTK_LOGD(TAG, "[CDC] EP%02X TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
 			}
 
 			cdc->is_intr_in_busy = 0U;
 		} else  {
-			RTK_LOGD(TAG, "[CDC] EP%02X TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
+			/* TX not ready*/
 		}
 	} else {
-		RTK_LOGW(TAG, "[CDC] EP%02X TX: %d BUSY\n", USBD_COMP_CDC_INTR_IN_EP, len);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX %d busy\n", USBD_COMP_CDC_INTR_IN_EP, len);
 		ret = HAL_BUSY;
 	}
 
@@ -656,7 +653,7 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 	usb_dev_t *dev = cdc->cdev->dev;
 
 	if (!cdc->is_ready) {
-		RTK_LOGI(TAG, "[CDC] EP%02X TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
 		return ret;
 	}
 
@@ -678,8 +675,6 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 			cdc->is_bulk_in_busy = 1U;
 			cdc->bulk_in_state = 1U;
 
-			RTK_LOGD(TAG, "[CDC] EP%02X TX: %d\n", USBD_COMP_CDC_BULK_IN_EP, len);
-
 			usb_os_memcpy((void *)cdc->bulk_in_buf, (void *)buf, len);
 
 			if (cdc->is_ready) {
@@ -687,15 +682,14 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 				ret = HAL_OK;
 			} else {
 				cdc->bulk_in_state = 0U;
-				RTK_LOGD(TAG, "[CDC] EP%02X TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
 			}
 
 			cdc->is_bulk_in_busy = 0U;
 		} else  {
-			RTK_LOGD(TAG, "[CDC] EP%02X TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
+			/*TX not ready*/
 		}
 	} else {
-		RTK_LOGW(TAG, "[CDC] EP%02X TX: %d BUSY\n", USBD_COMP_CDC_BULK_IN_EP, len);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX %d busy\n", USBD_COMP_CDC_BULK_IN_EP, len);
 		ret = HAL_BUSY;
 	}
 

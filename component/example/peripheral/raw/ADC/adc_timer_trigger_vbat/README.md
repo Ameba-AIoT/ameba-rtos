@@ -13,9 +13,6 @@ In this example, ADC is configured to sample data in `vbat channel`.
 * On AmebaSmart
 	- Connect `VBAT_MEAS` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
-* On AmebaDplus
-	- Connect `VBAT_MEAS` to `to-be-measured signal`
-	- Connect `GND` to `GND` of to-be-measured device
 
 For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 

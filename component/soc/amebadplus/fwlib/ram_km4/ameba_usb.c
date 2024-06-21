@@ -68,7 +68,7 @@ int usb_chip_init(void)
 
 	usb_clk = pll_clk / (div + 1);
 	if ((usb_clk < USB_UTMIFS_CLK - USB_UTMIFS_CLK_MAX_ERROR) || (usb_clk > USB_UTMIFS_CLK + USB_UTMIFS_CLK_MAX_ERROR)) {
-		RTK_LOGE(TAG, "USB clock %luHz out of range: pll_clk=%luHz div=%d\n", usb_clk, pll_clk, div + 1);
+		RTK_LOGS(TAG, "[USB] Clock %dHz out of range: pll_clk=%dHz div=%d\n", usb_clk, pll_clk, div + 1);
 	}
 
 	reg &= ~LSYS_MASK_CKD_UTMIFS;

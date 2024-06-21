@@ -287,7 +287,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND: {
 		rtk_bt_le_auth_key_display_ind_t *key_dis_ind =
 			(rtk_bt_le_auth_key_display_ind_t *)param;
-		BT_LOGA("[APP] Auth passkey display: %ld, conn_handle:%d\r\n",
+		BT_LOGA("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
 				key_dis_ind->passkey,
 				key_dis_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
@@ -298,7 +298,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
 		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind =
 			(rtk_bt_le_auth_key_cfm_ind_t *)param;
-		BT_LOGA("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
+		BT_LOGA("[APP] Auth passkey confirm: %d, conn_handle: %d. "  \
 				"Please comfirm if the passkeys are equal!\r\n",
 				key_cfm_ind->passkey,
 				key_cfm_ind->conn_handle);
@@ -379,7 +379,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gatts_app_callback(uint8_t event, void *data
 	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
-			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
+			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02x. Remote client supports EATT.\r\n",
 					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
@@ -1500,7 +1500,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_client_model_app_callback(uint8_t e
 	case RTK_BT_MESH_LIGHT_LC_PROPERTY_CLIENT_MODEL_STATUS: {
 		rtk_bt_mesh_light_lc_client_property_status_t *lc_property_status;
 		lc_property_status = (rtk_bt_mesh_light_lc_client_property_status_t *)param;
-		BT_LOGA("[APP] light lc client receive: src %d, property id 0x%x, property value %ld\r\n",
+		BT_LOGA("[APP] light lc client receive: src %d, property id 0x%x, property value %d\r\n",
 				lc_property_status->src, lc_property_status->property_id, lc_property_status->property_value);
 	}
 	break;
@@ -1760,8 +1760,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_battery_client_model_app_callback(ui
 	case RTK_BT_MESH_GENERIC_BATTERY_CLIENT_MODEL_STATUS: {
 		rtk_bt_mesh_generic_battery_client_status_t *gb_status;
 		gb_status = (rtk_bt_mesh_generic_battery_client_status_t *)param;
-		BT_LOGA("[APP] generic battery client receive: src = %d, battery level = %d, time to discharge = %ld, \
-time to charge = %ld, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
+		BT_LOGA("[APP] generic battery client receive: src = %d, battery level = %d, time to discharge = %d, \
+time to charge = %d, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
 				gb_status->src,
 				gb_status->battery_level,
 				gb_status->time_to_discharge, gb_status->time_to_charge,
@@ -1785,7 +1785,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_client_model_app_callback(u
 	case RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_GLOBAL_STATUS: {
 		rtk_bt_mesh_generic_location_client_status_global_t *global_status;
 		global_status = (rtk_bt_mesh_generic_location_client_status_global_t *)param;
-		BT_LOGA("[APP] Generic location client receive: src = %d, latitude = %ld, longitude = %ld, altitude = %d\r\n",
+		BT_LOGA("[APP] Generic location client receive: src = %d, latitude = %d, longitude = %d, altitude = %d\r\n",
 				global_status->src,
 				global_status->global.global_latitude,
 				global_status->global.global_longitude,

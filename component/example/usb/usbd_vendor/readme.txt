@@ -34,7 +34,7 @@ Setup Guide
         2. Type command "make all EXAMPLE=usbd_vendor" under auto_build to build the images.
         3. Download the generated images under auto_build to Ameba board.
         4. Plugin Reset the board, following log shall be printed on the LOGUART console:
-			USB device vendor demo started...
+			[VND] USBD vendor demo start
         5. Connect the USB port of Ameba board to USB vendor host (another Ameba board as USB vendor host) with USB cable.
         6. Reset and check the log via LOGUART console, make sure there is no error reported, the test result will be printed
            on the LOGUART console of USB vendor host, refer to the readme.txt of USB vendor host for details.

@@ -99,6 +99,9 @@ void rtw_cfgvendor_cmd_process(u16 vendor_cmd, void *data, u32 len);
 void rtw_p2p_set_role(enum rtw_p2p_role role);
 int rtw_p2p_remain_on_ch(u8 wlan_idx, u8 enable);
 #endif
+#ifdef INIC_SKIP_NP_MSG_TASK
+void rtw_single_thread_wakeup(void);
+#endif
 #ifdef	__cplusplus
 }
 #endif

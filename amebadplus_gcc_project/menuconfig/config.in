@@ -112,15 +112,18 @@ mainmenu_option next_comment
 comment '< CONFIG WIFI'
 bool "Enable Wifi"                CONFIG_WLAN_MENU
 if [ "$CONFIG_WLAN_MENU" = "y" ]; then
-	choice 'Processor Role'		"INIC	CONFIG_KM0_NP_KM4_AP \
+	choice 'INIC Mode'		"INIC_IPC	CONFIG_KM0_NP_KM4_AP \
+								SDIO_FULLMAC		CONFIG_SDIO_FULLMAC	\
+								SDIO_BRIDGE		CONFIG_SDIO_BRIDGE_FOR_KM4 \
 								"
-	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
-		choice 'INIC_Interface'	"IPC	CONFIG_INIC_INTF_IPC \
-						SDIO	CONFIG_INIC_INTF_SDIO \
+	if [ "$CONFIG_SDIO_FULLMAC" = "y" ]; then
+		choice 'WIFI Driver Location'	"KM0	CONFIG_KM0_AS_NP \
+						KM4	CONFIG_KM4_AS_NP \
 						"
 	fi
-	bool "Enable HIGH TP for INIC"	CONFIG_HIGH_TP_TEST
+	bool "Enable HIGH TP"	CONFIG_HIGH_TP_TEST
 	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
+		define_bool CONFIG_INIC_INTF_IPC y
 		define_bool CONFIG_WLAN_FOR_KM0 y
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_AS_INIC_NP_FOR_KM0 y
@@ -132,6 +135,35 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 y
 	fi
+	if [ "$CONFIG_SDIO_FULLMAC" = "y" ]; then
+		define_bool CONFIG_INIC_INTF_SDIO y
+		if [ "$CONFIG_KM0_AS_NP" = "y" ]; then
+			define_bool CONFIG_WLAN_FOR_KM0 y
+			define_bool CONFIG_AS_INIC_NP_FOR_KM0 y
+			define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 y
+			define_bool CONFIG_WIFI_FW_EN_FOR_KM0 y
+		else
+			define_bool CONFIG_WLAN_FOR_KM4 y
+			define_bool CONFIG_AS_INIC_NP_FOR_KM4 y
+			define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM4 y
+			define_bool CONFIG_WIFI_FW_EN_FOR_KM4 y
+		fi
+	else
+		#	KM0 firmware follow WLAN menu	
+		if [ "$CONFIG_MP_SHRINK" = "y" ]; then
+			define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
+		else
+			define_bool CONFIG_WIFI_FW_EN_FOR_KM0 y
+		fi
+	fi
+
+	if [ "$CONFIG_SDIO_BRIDGE_FOR_KM4" = "y" ]; then
+		define_bool CONFIG_WLAN_FOR_KM4 y
+		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
+		define_bool CONFIG_INIC_INTF_SDIO_FOR_KM4 y
+		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
+		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
+	fi
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
@@ -140,13 +172,6 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	fi
 	if [ "$CONFIG_MAC_LBK" = "y" ]; then
 		define_bool CONFIG_LWIP_LAYER_FOR_KM4 n
-	fi
-
-#	KM0 firmware follow WLAN menu	
-	if [ "$CONFIG_MP_SHRINK" = "y" ]; then
-		define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
-	else
-		define_bool CONFIG_WIFI_FW_EN_FOR_KM0 y
 	fi
 
 	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then

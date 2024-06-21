@@ -122,6 +122,7 @@ int rtw_netdev_probe(struct device *pdev)
 
 	dev_dbg(global_idev.fullmac_dev, "rtw_dev_probe start\n");
 
+#ifndef CONFIG_SDIO_BRIDGE
 	/*step1: alloc and init wiphy */
 	ret = rtw_wiphy_init();
 	if (ret == false) {
@@ -134,7 +135,7 @@ int rtw_netdev_probe(struct device *pdev)
 		dev_err(global_idev.fullmac_dev, "wiphy register fail");
 		goto os_ndevs_deinit;
 	}
-
+#endif
 	/*step4: register netdev */
 	ret = rtw_ndev_alloc();
 	if (ret < 0) {
@@ -156,22 +157,26 @@ int rtw_netdev_probe(struct device *pdev)
 
 	global_idev.mp_fw = llhw_wifi_driver_is_mp();
 	dev_info(global_idev.fullmac_dev, "%s Wi-Fi driver!", global_idev.mp_fw ? "MP" : "Normal");
-
+#ifndef CONFIG_SDIO_BRIDGE
 	rtw_regd_init();
+#endif
 	rtw_drv_proc_init();
 
 #ifdef CONFIG_WAR_OFFLOAD
 	rtw_proxy_init();
 #endif
-
+#ifdef CONFIG_SDIO_BRIDGE
+	rtw_sdio_bridge_register_genl_family();
+#endif
 	return 0; /* probe success */
 
 os_ndevs_deinit:
 	rtw_ndev_unregister();
+#ifndef CONFIG_SDIO_BRIDGE
 	rtw_wiphy_deinit();
 
 exit:
-
+#endif
 	return -ENODEV;
 }
 
@@ -181,11 +186,12 @@ int rtw_netdev_remove(struct device *pdev)
 
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
-
+#ifndef CONFIG_SDIO_BRIDGE
 	rtw_regd_deinit();
 	wiphy_unregister(global_idev.pwiphy_global);
 
 	rtw_wiphy_deinit();
+#endif
 	dev_dbg(global_idev.fullmac_dev, "unregister and deinit wiphy done.");
 
 	llhw_deinit();
@@ -195,7 +201,9 @@ int rtw_netdev_remove(struct device *pdev)
 
 	pr_info("%s done\n", __func__);
 	memset(&global_idev, 0, sizeof(struct inic_device));
-
+#ifdef CONFIG_SDIO_BRIDGE
+	rtw_sdio_bridge_unregister_genl_family();
+#endif
 	return 0;
 }
 
@@ -302,7 +310,7 @@ static int rtw_dev_suspend(struct platform_device *pdev, pm_message_t state)
 	/* staion mode */
 	if (llhw_wifi_is_connected_to_ap() == 0) {
 		/* wowlan */
-		ret = llhw_wifi_update_ip_addr_in_wowlan();
+		ret = llhw_wifi_update_ip_addr();
 		if (ret == 0) {
 			/* update ip address success, to suspend */
 			/* set wowlan_state, to not schedule rx work */

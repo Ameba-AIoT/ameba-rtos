@@ -135,30 +135,27 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_dev_t *cdev = hid->cdev;
 
-	RTK_LOGD(TAG, "[HID] Setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
+	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_GET_DESCRIPTOR:
 			if (req->wValue >> 8 == COMP_HID_REPORT_DESC) {
-				RTK_LOGD(TAG, "[HID] USB_REQ_GET_DESCRIPTOR COMP_HID_REPORT_DESC\n");
 				len = MIN(COMP_HID_REPORT_DESC_SIZE, req->wLength);
 				buf = composite_hid_mouse_report_desc;
 				usbd_ep0_transmit(dev, buf, len);
 			} else if (req->wValue >> 8 == COMP_HID_DESC) {
-				RTK_LOGD(TAG, "[HID] USB_REQ_GET_DESCRIPTOR COMP_HID_DESC\n");
 				len = MIN(sizeof(usbd_composite_hid_desc), req->wLength);
 				buf = usbd_composite_hid_desc;
 				usbd_ep0_transmit(dev, buf, len);
 			} else {
-				RTK_LOGD(TAG, "[HID] USB_REQ_GET_DESCRIPTOR 0x%04X\n", req->wValue);
 				ret = HAL_ERR_PARA;
 			}
 			break;
 		default:
-			RTK_LOGW(TAG, "[HID] Invalid bRequest 0x%02X\n", req->bRequest);
+			RTK_LOGS(TAG, "[COMP] Invalid bRequest 0x%02x\n", req->bRequest);
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -179,7 +176,7 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		RTK_LOGW(TAG, "[HID] Invalid bmRequestType 0x%02X\n", req->bmRequestType);
+		RTK_LOGS(TAG, "[COMP] Invalid bmRequestType 0x%02x\n", req->bmRequestType);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -226,9 +223,9 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 	UNUSED(dev);
 
 	if (status == HAL_OK) {
-		RTK_LOGD(TAG, "[HID] EP%02X TX done\n", ep_addr);
+		/*TX done*/
 	} else {
-		RTK_LOGW(TAG, "[HID] EP%02X TX error: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX err: %d\n", ep_addr, status);
 	}
 
 	if (hid->cb->transmitted) {
@@ -273,13 +270,11 @@ static u8 *composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, us
 	switch ((req->wValue >> 8) & 0xFF) {
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		RTK_LOGD(TAG, "[HID] Get configuration descriptor\n");
 		buf = usbd_composite_hid_itf_desc;
 		*len = sizeof(usbd_composite_hid_itf_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		RTK_LOGD(TAG, "[HID] Get other speed configuration descriptor\n");
 		buf = usbd_composite_hid_itf_desc;
 		*len = sizeof(usbd_composite_hid_itf_desc);
 		break;
@@ -357,7 +352,7 @@ int usbd_composite_hid_send_data(u8 *data, u16 len)
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 
 	if (!hid->is_ready) {
-		RTK_LOGI(TAG, "EP%02X TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
+		RTK_LOGS(TAG, "[COMP] EP%02x TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
 		return ret;
 	}
 
@@ -369,21 +364,20 @@ int usbd_composite_hid_send_data(u8 *data, u16 len)
 		if (hid->is_ready) { // In case deinit when plug out
 			hid->is_intr_in_busy = 1U;
 			hid->intr_in_state = 1U;
-			RTK_LOGD(TAG, "[HID] EP%02X TX %d\n", USBD_COMP_HID_INTR_IN_EP, len);
+
 			usb_os_memcpy((void *)hid->intr_in_buf, (void *)data, len);
 			if (hid->is_ready) { // In case deinit when plug out
 				usbd_ep_transmit(hid->cdev->dev, USBD_COMP_HID_INTR_IN_EP, hid->intr_in_buf, len);
 				ret = HAL_OK;
 			} else {
 				hid->intr_in_state = 0U;
-				RTK_LOGD(TAG, "[HID] EP%02X TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
 			}
 			hid->is_intr_in_busy = 0U;
 		} else {
-			RTK_LOGD(TAG, "[HID] EP%02X TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
+			/*TX not ready*/
 		}
 	} else {
-		RTK_LOGD(TAG, "[HID] EP%02X TX %d BUSY\n", USBD_COMP_HID_INTR_IN_EP, len);
+		/*TX busy*/
 		ret = HAL_BUSY;
 	}
 

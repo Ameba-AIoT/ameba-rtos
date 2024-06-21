@@ -80,6 +80,10 @@ extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+extern struct netif eth_netif;
+#endif
+
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
 extern void ipnat_dump(void);
 #endif
@@ -437,7 +441,7 @@ void fATWx(void *arg)
 
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
-				RTK_LOGI(NOTAG, "max_skbinfo_used_num=%d, skbinfo_used_num=%d\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
+				RTK_LOGI(NOTAG, "max_skbbuff_used_num=%d, skbbuff_used_num=%d\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
 				RTK_LOGI(NOTAG, "max_skbdata_used_num=%d, skbdata_used_num=%d\n\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
@@ -473,24 +477,21 @@ void fATWx(void *arg)
 				}
 			}
 		}
-// show the ethernet interface info
-		else {
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-			if (i == NET_IF_NUM - 1) {
-#ifdef CONFIG_LWIP_LAYER
-				mac = LwIP_GetMAC(i);
-				ip = LwIP_GetIP(i);
-				gw = LwIP_GetGW(i);
-				RTK_LOGI(NOTAG, "Interface ethernet\n\r");
-				RTK_LOGI(NOTAG, "==============================\n\r");
-				RTK_LOGI(NOTAG, "\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\n\r", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
-				RTK_LOGI(NOTAG, "\tIP  => %d.%d.%d.%d\n\r", ip[0], ip[1], ip[2], ip[3]);
-				RTK_LOGI(NOTAG, "\tGW  => %d.%d.%d.%d\n\r\n\r", gw[0], gw[1], gw[2], gw[3]);
-#endif // end CONFIG_LWIP_LAYER
-			}
-#endif // end CONFIG_ETHERNET
-		}
 	}
+
+// show the ethernet interface info
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#ifdef CONFIG_LWIP_LAYER
+	mac = (uint8_t *)(eth_netif.hwaddr);
+	ip = (uint8_t *) & (eth_netif.ip_addr);
+	gw = (uint8_t *) & (eth_netif.gw);
+	RTK_LOGI(NOTAG, "Interface ethernet\n\r");
+	RTK_LOGI(NOTAG, "==============================\n\r");
+	RTK_LOGI(NOTAG, "\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\n\r", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
+	RTK_LOGI(NOTAG, "\tIP  => %d.%d.%d.%d\n\r", ip[0], ip[1], ip[2], ip[3]);
+	RTK_LOGI(NOTAG, "\tGW  => %d.%d.%d.%d\n\r\n\r", gw[0], gw[1], gw[2], gw[3]);
+#endif // end CONFIG_LWIP_LAYER
+#endif // end CONFIG_ETHERNET
 
 	rtos_mem_free((u8 *)p_wifi_setting);
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
@@ -500,7 +501,9 @@ void fATWx(void *arg)
 #if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1)
 	{
 		signed char pcWriteBuffer[1024];
-		vTaskList((char *)pcWriteBuffer);
+		// TODO
+		// vTaskList((char *)pcWriteBuffer);
+		pcWriteBuffer[0] = 0;
 		RTK_LOGI(NOTAG, "Task List: \n\r%s\n\r", pcWriteBuffer);
 	}
 #endif

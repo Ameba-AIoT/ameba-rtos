@@ -95,6 +95,11 @@ void _init_thread(void *param)
 	/* Initilaize the LwIP stack */
 	LwIP_Init();
 #endif
+
+#ifdef CONFIG_SDIO_BRIDGE
+	wifi_fast_connect_enable(0);
+	inic_dev_init();
+#endif
 	wifi_set_user_config();
 
 	wifi_on(RTW_MODE_STA);

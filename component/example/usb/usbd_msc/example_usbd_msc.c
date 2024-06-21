@@ -14,7 +14,7 @@
 #include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
-
+static const char *TAG = "MSC";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_MSC_HOTPLUG						1
@@ -61,7 +61,7 @@ static rtos_sema_t msc_attach_status_changed_sema;
 
 static void msc_cb_status_changed(u8 status)
 {
-	printf("\n[MSC] USB status changed: %d\n", status);
+	RTK_LOGS(TAG, "[MSC] Status change: %d\n", status);
 #if CONFIG_USBD_MSC_HOTPLUG
 	msc_attach_status = status;
 	rtos_sema_give(msc_attach_status_changed_sema);
@@ -78,33 +78,30 @@ static void msc_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(msc_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if (msc_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-				printf("\n[MSC] USB DETACHED\n");
+				RTK_LOGS(TAG, "[MSC] DETACHED\n");
 				usbd_msc_deinit();
 				ret = usbd_deinit();
 				if (ret != 0) {
-					printf("\n[MSC] Fail to de-init USBD driver\n");
 					break;
 				}
-				printf("\n[MSC] Free heap size: 0x%lx\n", rtos_mem_get_free_heap_size());
+				RTK_LOGS(TAG, "[MSC] Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&msc_cfg);
 				if (ret != 0) {
-					printf("\n[MSC] Fail to re-init USBD driver\n");
 					break;
 				}
 				ret = usbd_msc_init(&msc_cb);
 				if (ret != 0) {
-					printf("\n[MSC] Fail to re-init MSC class\n");
 					usbd_deinit();
 					break;
 				}
 			} else if (msc_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
-				printf("\n[MSC] USB ATTACHED\n");
+				RTK_LOGS(TAG, "[MSC] ATTACHED\n");
 			} else {
-				printf("\n[MSC] USB INIT\n");
+				RTK_LOGS(TAG, "[MSC] INIT\n");
 			}
 		}
 	}
-
+	RTK_LOGS(TAG, "[MSC] Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_MSC_HOTPLUG
@@ -124,13 +121,13 @@ static void example_usbd_msc_thread(void *param)
 
 	status = usbd_init(&msc_cfg);
 	if (status != HAL_OK) {
-		printf("\n[MSC] USB device driver init fail\n");
+		RTK_LOGS(TAG, "[MSC] Init USBD fail\n");
 		goto example_usbd_msc_thread_fail;
 	}
 
 	status = usbd_msc_init(&msc_cb);
 	if (status != HAL_OK) {
-		printf("\n[MSC] USB MSC init fail\n");
+		RTK_LOGS(TAG, "[MSC] Init class fail\n");
 		usbd_deinit();
 		goto example_usbd_msc_thread_fail;
 	}
@@ -138,14 +135,14 @@ static void example_usbd_msc_thread(void *param)
 #if CONFIG_USBD_MSC_HOTPLUG
 	status = rtos_task_create(&task, "msc_hotplug_thread", msc_hotplug_thread, NULL, 1024U, CONFIG_USBD_MSC_HOTPLUG_THREAD_PRIORITY);
 	if (status != SUCCESS) {
-		printf("\n[MSC] USB create hotplug thread fail\n");
+		RTK_LOGS(TAG, "[MSC] Create hotplug thread fail\n");
 		usbd_msc_deinit();
 		usbd_deinit();
 		goto example_usbd_msc_thread_fail;
 	}
 #endif // CONFIG_USBD_MSC_HOTPLUG
 
-	printf("\n[MSC] USBD MSC demo started\n");
+	RTK_LOGS(TAG, "[MSC] USBD MSC demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -168,7 +165,7 @@ void example_usbd_msc(void)
 
 	ret = rtos_task_create(&task, "example_usbd_msc_thread", example_usbd_msc_thread, NULL, 1024, CONFIG_USBD_MSC_INIT_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("\n[MSC] USBD MSC create thread fail\n");
+		RTK_LOGS(TAG, "[MSC] Create USBD MSC thread fail\n");
 	}
 }
 

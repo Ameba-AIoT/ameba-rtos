@@ -90,25 +90,23 @@ typedef struct {
 } usbd_composite_cdc_acm_usr_cb_t;
 
 typedef struct {
-	u8 *bulk_out_buf;
-	u16 bulk_out_buf_size;
-	u8 bulk_out_zlp;
-
-	u8 *bulk_in_buf;
-	u16 bulk_in_buf_size;
-	__IO u8 bulk_in_state;
-	__IO u8 is_bulk_in_busy;
-
+	usbd_composite_dev_t *cdev;
+	usbd_composite_cdc_acm_usr_cb_t *cb;
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 	usbd_composite_cdc_acm_ntf_t *intr_in_buf;
-	__IO u8 intr_in_state;
-	__IO u8 is_intr_in_busy;
 #endif
-
-	__IO u8 is_ready;
-
-	usbd_composite_cdc_acm_usr_cb_t *cb;
-	usbd_composite_dev_t *cdev;
+	u8 *bulk_in_buf;
+	u8 *bulk_out_buf;
+	u16 bulk_in_buf_size;
+	u16 bulk_out_buf_size;
+	__IO u8 bulk_in_state : 1;
+#if CONFIG_COMP_CDC_ACM_NOTIFY
+	__IO u8 intr_in_state : 1;
+	__IO u8 is_intr_in_busy : 1;
+#endif
+	__IO u8 is_bulk_in_busy : 1;
+	__IO u8 is_ready : 1;
+	u8 bulk_out_zlp : 1;
 } usbd_composite_cdc_acm_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

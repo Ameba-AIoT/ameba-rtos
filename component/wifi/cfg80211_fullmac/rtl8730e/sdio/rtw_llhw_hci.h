@@ -22,25 +22,28 @@ struct event_priv_t {
 	struct work_struct			api_work; /* event_priv task to haddle event_priv msg */
 	struct mutex				send_mutex; /* mutex to protect send host event_priv message */
 
-	u8						*rx_api_msg;
-	u8						*rx_api_ret_msg;
+	struct sk_buff				*rx_api_msg;
+	struct sk_buff				*rx_api_ret_msg;
+
 	struct completion			api_ret_sema; /* sema to wait for API calling done */
+#ifdef CONFIG_SDIO_BRIDGE
+	struct completion			bridge_scan_done_sema; /* sema to wait for scan done */
+#endif
 };
 
-struct msg_priv_t {
-	struct list_head		queue_head; /* msg queue */
-	spinlock_t			lock; /* queue lock */
-	atomic_t				msg_num;
-
-	struct work_struct		msg_work; /* message task in linux */
-	struct mutex			msg_work_mutex; /* message task lock */
-
-	void	(*task_hdl)(void *);    /* the haddle function of task */
-	bool					b_queue_working; /* flag to notice the queue is working */
+struct recv_priv_t {
+	struct task_struct			*sdio_rx_thread;
+	struct semaphore			sdio_rx_sema;
 };
 
 struct xmit_priv_t {
-	struct msg_priv_t			tx_msg_priv;
+	struct list_head		queue_head; /* msg queue */
+	spinlock_t				lock; /* queue lock */
+
+	atomic_t				msg_num;
+
+	struct task_struct 		*sdio_tx_thread;
+	struct semaphore 		sdio_tx_sema;
 };
 
 /* Scan and Join related parameters. */
@@ -86,10 +89,10 @@ struct inic_device {
 	struct ethtool_ops			rtw_ethtool_ops;
 
 	/* Interface related parameters. */
-	//struct spi_device			*spidev;
+	struct inic_sdio			*sdio_priv;
 
-	struct event_priv_t		event_priv;
-	struct msg_priv_t			msg_priv;
+	struct event_priv_t			event_priv;
+	struct recv_priv_t			recv_priv;
 	struct xmit_priv_t			xmit_priv;
 
 	/* fullmac status management. */
@@ -113,7 +116,6 @@ extern struct inic_device global_idev;
 
 #define MAX_NUM_WLAN_PORT		(2)
 
-void llhw_free_rxbuf(u8 *rx_payload);
 void llhw_host_send(u8 *buf, u32 len);
 
 

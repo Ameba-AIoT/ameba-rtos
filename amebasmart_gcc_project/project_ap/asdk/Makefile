@@ -34,11 +34,7 @@ else
         Q:=@
 	ECHO:=@echo
 endif
-ifeq (${V},3)
-DAILY_BUILD = 1
-else
-DAILY_BUILD = 0
-endif
+DAILY_BUILD = ${V}
 export ABS_ROOTDIR MAKE_INCLUDE_GEN HOSTCC Q ECHO
 
 
@@ -357,7 +353,7 @@ code_analyze:
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
 	fi
 	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
-         $(STATIC_ANALYZE_PYTHON); \
+         $(STATIC_ANALYZE_PYTHON) $(DAILY_BUILD); \
 	fi
 
 	@echo "========== Image analyze end =========="

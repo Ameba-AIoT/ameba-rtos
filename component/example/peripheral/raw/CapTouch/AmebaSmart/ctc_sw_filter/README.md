@@ -23,7 +23,8 @@ In this example, press and release is detected by software based on filtered Cap
 4. Filtered data will be checked every `BASE_UPD_CYCLE` cycles and each cycle consists of `PBUF_NUM` scan intervals.
 5. When diff data or accumulated diff data is over `BASE_UPD_THRE`, baseline will be updated immediately and step value is `BASE_UPD_STEP`.
 6. Key press or key release will be decided only when it takes place over `CTC_DBC_CNT` consecutive times.
-7. How to use:
+7. `CTC_DATA_DBG` can be configured to control data debug. When `CTC_DATA_DBG` is set to 1, raw data/median data/iir data/average data/baseline data can all be dumped from assigned address. `CTC_DBG_SZ` can be modified to set debug data size. If `CTC_DBG_SZ` is too big, compiling errors will occur.
+8. How to use:
     * Copy `main.c` to path`amebasmart_gcc_project\project_xx\src\`, and replace old main.c.
     * Run `make all` and `download` image to board.
 

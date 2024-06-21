@@ -43,6 +43,10 @@ extern int wifi_set_ips_internal(u8 enable);
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 #endif
 
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+extern struct netif eth_netif;
+#endif
+
 static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
@@ -156,9 +160,7 @@ static void print_scan_result(rtw_scan_result_t *record)
 #else
 	at_printf("%s\t ", (record->bss_type == RTW_BSS_TYPE_ADHOC) ? "Adhoc" : "Infra");
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
-	/* cal complement for logs */
-	record->signal_strength = (0xFFFF - record->signal_strength + 1);
-	at_printf(" -%d\t ", record->signal_strength);
+	at_printf(" %d\t ", record->signal_strength);
 	at_printf(" %d\t  ", record->channel);
 	at_printf(" %d\t  ", (unsigned int)record->wps_type);
 	at_printf("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open               " :
@@ -893,7 +895,7 @@ void at_wlstate(void *arg)
 
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
-				at_printf("max_skbinfo_used_num=%d, skbinfo_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
+				at_printf("max_skbbuff_used_num=%d, skbbuff_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
 				at_printf("max_skbdata_used_num=%d, skbdata_used_num=%d\r\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
@@ -927,24 +929,22 @@ void at_wlstate(void *arg)
 					at_printf("\r\n");
 				}
 			}
-		} else {
-			/* show the ethernet interface info */
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-			if (i == NET_IF_NUM - 1) {
-#ifdef CONFIG_LWIP_LAYER
-				mac = LwIP_GetMAC(i);
-				ip = LwIP_GetIP(i);
-				gw = LwIP_GetGW(i);
-				at_printf("Interface ethernet\r\n");
-				at_printf("==============================\r\n");
-				at_printf("\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
-				at_printf("\tIP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
-				at_printf("\tGW  => %d.%d.%d.%d\r\n\r\n", gw[0], gw[1], gw[2], gw[3]);
-#endif /* CONFIG_LWIP_LAYER */
-			}
-#endif /* CONFIG_ETHERNET */
 		}
 	}
+
+	/* show the ethernet interface info */
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#ifdef CONFIG_LWIP_LAYER
+	mac = (uint8_t *)(eth_netif.hwaddr);
+	ip = (uint8_t *) & (eth_netif.ip_addr);
+	gw = (uint8_t *) & (eth_netif.gw);
+	at_printf("Interface ethernet\r\n");
+	at_printf("==============================\r\n");
+	at_printf("\tMAC => %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
+	at_printf("\tIP  => %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
+	at_printf("\tGW  => %d.%d.%d.%d\r\n\r\n", gw[0], gw[1], gw[2], gw[3]);
+#endif /* CONFIG_LWIP_LAYER */
+#endif /* CONFIG_ETHERNET */
 
 	rtos_mem_free((void *)p_wifi_setting);
 	at_printf("\r\n%sOK\r\n", "+WLSTATE:");

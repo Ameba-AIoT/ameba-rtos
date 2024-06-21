@@ -1,15 +1,14 @@
 
 include $(MAKE_INCLUDE_GEN)
-MODULE_IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/amebalite/include
 
 .PHONY: all clean
 
 #*****************************************************************************#
 #                               VARIABLES	                              #
 #*****************************************************************************#
-DIR = $(WIFIFWDIR)/amebalite/ram
+DIR = $(WIFIFWDIR)/amebadplus/ram
 DIR_COMMON= $(WIFIFWDIR)/common
-DIR_TEST = $(WIFIFWDIR)/amebalite/test/src
+DIR_TEST = $(WIFIFWDIR)/amebadplus/test/src
 TARGET_LIB = lib_wifi_fw
 
 vpath %.c $(DIR)
@@ -26,22 +25,21 @@ CSRC =$(DIR)/wififw_init.c \
        $(DIR)/wififw_pwrctrl.c \
 	   $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
+       $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
        $(DIR)/wififw_interrupt_handle.c \
-	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
        $(DIR)/wififw_ps_state.c \
 	   $(DIR_COMMON)/wififw_ps_state_common.c \
 	   $(DIR_COMMON)/wififw_ps_bcnhdl_common.c \
-	   $(DIR)/wififw_ps_twt.c \
-	   $(DIR)/wififw_periodcca.c    \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
-	   $(DIR)/wififw_dma_ram.c	\
        $(DIR)/wififw_wowlan.c     \
 	   $(DIR)/wififw_h2c.c \
-	   $(DIR_COMMON)/wififw_h2c_common.c     \	   
+	   $(DIR_COMMON)/wififw_h2c_common.c     \
+	   $(DIR)/wififw_ra_new.c \
+	   $(DIR_COMMON)/wififw_phy_common.c \
+	   $(DIR)/wififw_ps_twt.c \
+	   $(DIR)/wififw_periodcca.c \
 	   $(DIR)/wififw_lpsofld.c \
 	   $(DIR)/wififw_ps_dbg.c \
-       $(DIR)/wififw_ra_new.c \
-	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR_COMMON)/wififw_c2h_common.c \
 	   $(DIR_COMMON)/wififw_gtimer_common.c \
 	   $(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
@@ -54,24 +52,22 @@ CSRC =$(DIR)/wififw_init.c \
 	   $(DIR_COMMON)/wififw_wowlan_common.c \
 	   $(DIR_COMMON)/wififw_keepalive_common.c \
 	   $(DIR_COMMON)/wififw_disconchk_common.c \
-	   $(DIR_COMMON)/wififw_media_common.c \
-	   $(TARGET_LIB)_git_version.c 
+	   $(DIR_COMMON)/wififw_media_common.c
+
 ifeq ($(CONFIG_WIFI_FW_VERIFY),y)
 CSRC +=	$(DIR_TEST)/wififw_serial_io_test.c \
+		$(DIR_TEST)/wififw_util_test.c \
+	   $(DIR_TEST)/wififw_loopback_test.c \
        $(DIR_TEST)/wififw_buf_test.c \
-       $(DIR_TEST)/wififw_ddma_test.c \
-       $(DIR_TEST)/wififw_efuse_test.c \
        $(DIR_TEST)/wififw_int_test.c \
        $(DIR_TEST)/wififw_iopath_test.c \
        $(DIR_TEST)/wififw_reg_test.c    \
        $(DIR_TEST)/wififw_fwlbk_test.c \
 	   $(DIR_TEST)/wififw_coex_test.c \
-       $(DIR_TEST)/wififw_test.c \
-	   $(DIR_TEST)/wififw_loopback_test.c \
-       $(DIR_TEST)/wififw_util_test.c \
-	   $(DIR_TEST)/wififw_phycfg_test.c
+	   $(DIR_TEST)/wififw_phycfg_test.c \
+       $(DIR_TEST)/wififw_test.c
 endif
-endif
+
 #*****************************************************************************#
 #                               Object FILE LIST                              #
 #*****************************************************************************#

@@ -219,6 +219,8 @@ usbh_if_desc_t *usbh_get_interface_descriptor(usb_host_t *host, u8 if_num, u8 al
 
 /* Get the interval value */
 u32 usbh_get_interval(usb_host_t *host, u8 ep_type, u8 binterval);
+/* Get the tick difference */
+u32 usbh_get_elapsed_ticks(usb_host_t *host, u32 tick);
 /* Get raw configuration descriptor data */
 u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);
 

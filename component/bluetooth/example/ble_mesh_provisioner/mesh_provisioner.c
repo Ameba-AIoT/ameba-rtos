@@ -1114,7 +1114,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_client_model_app_callback(uint8_t e
 	case RTK_BT_MESH_LIGHT_LC_PROPERTY_CLIENT_MODEL_STATUS: {
 		rtk_bt_mesh_light_lc_client_property_status_t *lc_property_status;
 		lc_property_status = (rtk_bt_mesh_light_lc_client_property_status_t *)param;
-		BT_LOGA("[APP] light lc client receive: src %d, property id 0x%x, property value %ld\r\n",
+		BT_LOGA("[APP] light lc client receive: src %d, property id 0x%x, property value %d\r\n",
 				lc_property_status->src, lc_property_status->property_id, lc_property_status->property_value);
 	}
 	break;
@@ -1374,8 +1374,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_battery_client_model_app_callback(ui
 	case RTK_BT_MESH_GENERIC_BATTERY_CLIENT_MODEL_STATUS: {
 		rtk_bt_mesh_generic_battery_client_status_t *gb_status;
 		gb_status = (rtk_bt_mesh_generic_battery_client_status_t *)param;
-		BT_LOGA("[APP] generic battery client receive: src = %d, battery level = %d, time to discharge = %ld, \
-time to charge = %ld, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
+		BT_LOGA("[APP] generic battery client receive: src = %d, battery level = %d, time to discharge = %d, \
+time to charge = %d, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
 				gb_status->src,
 				gb_status->battery_level,
 				gb_status->time_to_discharge, gb_status->time_to_charge,
@@ -1399,7 +1399,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_client_model_app_callback(u
 	case RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_GLOBAL_STATUS: {
 		rtk_bt_mesh_generic_location_client_status_global_t *global_status;
 		global_status = (rtk_bt_mesh_generic_location_client_status_global_t *)param;
-		BT_LOGA("[APP] Generic location client receive: src = %d, latitude = %ld, longitude = %ld, altitude = %d\r\n",
+		BT_LOGA("[APP] Generic location client receive: src = %d, latitude = %d, longitude = %d, altitude = %d\r\n",
 				global_status->src,
 				global_status->global.global_latitude,
 				global_status->global.global_longitude,

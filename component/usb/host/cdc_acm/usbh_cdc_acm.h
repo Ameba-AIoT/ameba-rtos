@@ -54,6 +54,8 @@ typedef enum {
 	CDC_ACM_TRANSFER_STATE_TX_BUSY,
 	CDC_ACM_TRANSFER_STATE_RX,
 	CDC_ACM_TRANSFER_STATE_RX_BUSY,
+	CDC_ACM_TRANSFER_STATE_NOTIFY_RX,
+	CDC_ACM_TRANSFER_STATE_NOTIFY_RX_BUSY,
 } usbh_cdc_acm_transfer_state_t;
 
 /* CDC ACM state */
@@ -61,6 +63,7 @@ typedef enum {
 	CDC_ACM_STATE_IDLE = 0U,
 	CDC_ACM_STATE_SET_LINE_CODING,
 	CDC_ACM_STATE_GET_LINE_CODING,
+	CDC_ACM_STATE_SET_CONTROL_LINE_STATE,
 	CDC_ACM_STATE_TRANSFER,
 	CDC_ACM_STATE_ERROR,
 } usbh_cdc_acm_state_t;
@@ -97,6 +100,7 @@ typedef struct {
 	u8  intr_in_pipe;
 	u8  intr_in_ep;
 	u16 intr_in_packet_size;
+	u32 intr_in_ep_interval;
 } usbh_cdc_acm_comm_if_t ;
 
 /* CDC ACM data interface */
@@ -116,6 +120,7 @@ typedef struct {
 	int(* attach)(void);
 	int(* detach)(void);
 	int(* setup)(void);
+	int(* notify)(u8 *buf, u32 len);
 	int(* receive)(u8 *buf, u32 len);
 	int(* transmit)(usbh_urb_state_t state);
 	int(* line_coding_changed)(usbh_cdc_acm_line_coding_t *line_coding);
@@ -128,11 +133,20 @@ typedef struct {
 
 	u32                           tx_len;
 	u8                            *tx_buf;
+	u8                            tx_zlp;
 	usbh_cdc_acm_transfer_state_t data_tx_state;
+	u32                           tx_idle_tick;
 
 	u32                           rx_len;
 	u8                            *rx_buf;
 	usbh_cdc_acm_transfer_state_t data_rx_state;
+	u32                           rx_idle_tick;
+
+	u32                           intr_in_idle_tick;
+	u32                           intr_in_busy_tick;
+	u32                           intr_rx_len;
+	u8                            *intr_rx_buf;
+	usbh_cdc_acm_transfer_state_t intr_data_rx_state;
 
 	usbh_cdc_acm_line_coding_t    *line_coding;
 	usbh_cdc_acm_line_coding_t    *user_line_coding;
@@ -154,9 +168,13 @@ int usbh_cdc_acm_deinit(void);
 
 int usbh_cdc_acm_set_line_coding(usbh_cdc_acm_line_coding_t *lc);
 int usbh_cdc_acm_get_line_coding(usbh_cdc_acm_line_coding_t *lc);
+int usbh_cdc_acm_set_control_line_state(void);
 
 int usbh_cdc_acm_transmit(u8 *buf, u32 len);
 int usbh_cdc_acm_receive(u8 *buf, u32 len);
+int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
+
+u16 usbh_cdc_acm_get_bulk_ep_mps(void);
 
 #endif  /* USBD_CDC_ACM_H */
 
