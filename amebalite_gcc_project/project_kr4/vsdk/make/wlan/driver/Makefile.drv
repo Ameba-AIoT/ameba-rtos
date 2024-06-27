@@ -37,12 +37,22 @@ vpath %.c $(DIR)/nan \
 
 endif
 
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+vpath %.c $(DIR)/nan \
+		$(DIR)/p2p \
+		$(DIR)/rtl8720f \
+		$(DIR)/rtl8720f_rom \
+		$(DIR)/intf/g6_intf/rtl8720f \
+		$(DIR)/../wpa_supplicant \
+		$(DIR)/../wpa_supplicant/src \
+
+endif
+
 include ../inic/Makefile.include.dev
 
 
 ifndef CONFIG_MP_SHRINK
 CSRC_DRV += $(DIR)/core/rtw_ap.c \
-    $(DIR)/core/rtw_ap_xmit.c \
     $(DIR)/core/rtw_shortcut.c \
     $(DIR)/core/rtw_autoreconnect.c \
 	$(DIR)/core/rtw_join.c \
@@ -53,7 +63,6 @@ CSRC_DRV += $(DIR)/core/rtw_ap.c \
 	$(DIR)/core/rtw_sitesurvey.c \
 	$(DIR)/core/rtw_sitesurvey_report.c \
 	$(DIR)/core/rtw_80211w.c \
-	$(DIR)/core_rom/rom_rtw_11d.c \
 	$(DIR)/core/rtw_dfs.c \
 	$(DIR)/core/rtw_lps.c \
 	$(DIR)/core/rtw_ips.c \
@@ -78,25 +87,7 @@ CSRC_DRV += $(DIR)/core/rtw_ap.c \
     $(DIR)/halcommon/hal_h2c.c \
     $(DIR)/halcommon/hal_recv.c
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
-	$(DIR)/core_rom/rom_rtw_network.c \
-	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
-	$(DIR)/core_rom/rom_rtw_11d_part2.c \
-	$(DIR)/core_rom/rom_rtw_he_part2.c \
-	$(DIR)/core_rom/rom_rtw_shortcut.c \
-	$(DIR)/core_rom/rom_rtw_setkey.c
-
 endif
-
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
-	$(DIR)/core_rom/rom_rtw_recv_part2.c \
-	$(DIR)/core_rom/rom_rtw_recv_reorder.c
-
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit.c \
-	$(DIR)/halcommon_rom/rom_hal_structs.c \
-	$(DIR)/halcommon_rom/rom_hal_recv.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c.c \
 
 CSRC_DRV +=  \
 	$(DIR)/core/rtw_debug.c \
@@ -137,7 +128,40 @@ ifeq ($(CONFIG_AMEBALITE), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_suspend.c	\
 
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
+	$(DIR)/core_rom/rom_rtw_network.c \
+	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
+	$(DIR)/core_rom/rom_rtw_11d.c \
+	$(DIR)/core_rom/rom_rtw_11d_part2.c \
+	$(DIR)/core_rom/rom_rtw_he_part2.c \
+	$(DIR)/core_rom/rom_rtw_shortcut.c \
+	$(DIR)/core_rom/rom_rtw_setkey.c \
+	$(DIR)/core_rom/rom_rtw_beacon_part2.c    \
+	$(DIR)/core_rom/rom_rtw_sitesurvey_report.c \
+	$(DIR)/core_rom/rom_rtw_ap_xmit.c \
+	$(DIR)/core_rom/rom_rtw_addba.c \
+	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
+	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
+
 endif
+
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
+	$(DIR)/core_rom/rom_rtw_recv_part2.c \
+	$(DIR)/core_rom/rom_rtw_recv_reorder.c \
+	$(DIR)/core_rom/rom_rtw_mgnt.c \
+	$(DIR)/core_rom/rom_rtw_recv_defrag.c \
+	$(DIR)/core_rom/rom_rtw_state.c \
+	$(DIR)/core_rom/rom_rtw_sta_mgt.c \
+	$(DIR)/core_rom/rom_rtw_ap.c \
+
+CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit_g1.c \
+	$(DIR)/halcommon_rom/rom_hal_structs.c \
+	$(DIR)/halcommon_rom/rom_hal_recv.c \
+	$(DIR)/halcommon_rom/rom_hal_h2c.c \
+	$(DIR)/halcommon_rom/rom_hal_h2c_g1.c \
+
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_80211w.c \
 	$(DIR)/core_rom/rom_rtw_rate.c \
 	$(DIR)/core_rom/rom_rtw_chbw.c \
@@ -205,7 +229,40 @@ ifeq ($(CONFIG_AMEBADPLUS), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_suspend.c	\
 
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
+	$(DIR)/core_rom/rom_rtw_network.c \
+	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
+	$(DIR)/core_rom/rom_rtw_11d.c \
+	$(DIR)/core_rom/rom_rtw_11d_part2.c \
+	$(DIR)/core_rom/rom_rtw_he_part2.c \
+	$(DIR)/core_rom/rom_rtw_shortcut.c \
+	$(DIR)/core_rom/rom_rtw_setkey.c \
+	$(DIR)/core_rom/rom_rtw_beacon_part2.c    \
+	$(DIR)/core_rom/rom_rtw_sitesurvey_report.c \
+	$(DIR)/core_rom/rom_rtw_ap_xmit.c \
+	$(DIR)/core_rom/rom_rtw_addba.c \
+	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
+	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
+
 endif
+
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
+	$(DIR)/core_rom/rom_rtw_recv_part2.c \
+	$(DIR)/core_rom/rom_rtw_recv_reorder.c \
+	$(DIR)/core_rom/rom_rtw_mgnt.c \
+	$(DIR)/core_rom/rom_rtw_recv_defrag.c \
+	$(DIR)/core_rom/rom_rtw_state.c \
+	$(DIR)/core_rom/rom_rtw_sta_mgt.c \
+	$(DIR)/core_rom/rom_rtw_ap.c \
+
+CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit_g1.c \
+	$(DIR)/halcommon_rom/rom_hal_structs.c \
+	$(DIR)/halcommon_rom/rom_hal_recv.c \
+	$(DIR)/halcommon_rom/rom_hal_h2c.c \
+	$(DIR)/halcommon_rom/rom_hal_h2c_g1.c \
+
 #nan
 CSRC_DRV += $(DIR)/nan/rtw_nan.c \
 	   $(DIR)/nan/rtw_nan_security.c \
@@ -303,11 +360,44 @@ ifeq ($(CONFIG_AMEBASMART), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_suspend.c
 
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
+	$(DIR)/core_rom/rom_rtw_network.c \
+	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
+	$(DIR)/core_rom/rom_rtw_11d.c \
+	$(DIR)/core_rom/rom_rtw_11d_part2.c \
+	$(DIR)/core_rom/rom_rtw_he_part2.c \
+	$(DIR)/core_rom/rom_rtw_shortcut.c \
+	$(DIR)/core_rom/rom_rtw_setkey.c \
+	$(DIR)/core_rom/rom_rtw_beacon_part2.c    \
+	$(DIR)/core_rom/rom_rtw_sitesurvey_report.c \
+	$(DIR)/core_rom/rom_rtw_ap_xmit.c \
+	$(DIR)/core_rom/rom_rtw_addba.c \
+	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
+	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
+
 endif
+
+CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
+	$(DIR)/core_rom/rom_rtw_recv_part2.c \
+	$(DIR)/core_rom/rom_rtw_recv_reorder.c \
+	$(DIR)/core_rom/rom_rtw_mgnt.c \
+	$(DIR)/core_rom/rom_rtw_recv_defrag.c \
+	$(DIR)/core_rom/rom_rtw_state.c \
+	$(DIR)/core_rom/rom_rtw_sta_mgt.c \
+	$(DIR)/core_rom/rom_rtw_ap.c \
+
+CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit.c \
+	$(DIR)/halcommon_rom/rom_hal_xmit_g1.c \
+	$(DIR)/halcommon_rom/rom_hal_structs.c \
+	$(DIR)/halcommon_rom/rom_hal_recv.c \
+	$(DIR)/halcommon_rom/rom_hal_h2c.c \
+	$(DIR)/halcommon_rom/rom_hal_h2c_g1.c \
 
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_80211w.c \
 	   $(DIR)/core_rom/rom_rtw_psk.c \
 	   $(DIR)/core/rtw_vht.c \
+	   $(DIR)/core_rom/rom_rtw_vht_part2.c \
 	   $(DIR)/core_rom/rom_rtw_rate.c \
        $(DIR)/core_rom/rom_rtw_chbw.c \
 
@@ -387,6 +477,50 @@ CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_rf_onoff.c
 
 endif
 
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_halinit.c \
+	$(DIR)/rtl8720f/wifi_hal_interrupt.c \
+	$(DIR)/rtl8720f/wifi_hal_suspend.c	\
+	$(DIR)/rtl8720f/wifi_hal_recv.c \
+
+CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_h2c.c \
+	$(DIR)/rtl8720f/wifi_hal_dm.c \
+	$(DIR)/rtl8720f/wifi_hal_ops.c \
+	$(DIR)/rtl8720f/wifi_hal_mp.c \
+	$(DIR)/rtl8720f/wifi_hal_phycfg.c \
+	$(DIR)/rtl8720f/wifi_hal_txpower.c \
+	$(DIR)/rtl8720f/wifi_hal_rxdesc.c \
+	$(DIR)/rtl8720f/wifi_hal_txdesc.c \
+	$(DIR)/rtl8720f/wifi_hal_debug.c \
+	$(DIR)/rtl8720f/wifi_hal_hci_intfs.c \
+	$(DIR)/rtl8720f/wifi_hal_mcc.c
+
+CSRC_DRV += $(DIR)/intf/g6_intf/rtl8720f/wifi_intf_hal_to_g6_bb.c \
+	$(DIR)/intf/g6_intf/rtl8720f/wifi_intf_hal_to_g6_mac.c
+
+CSRC_DRV += $(DIR)/nan/rtw_nan.c \
+	   $(DIR)/nan/rtw_nan_security.c \
+	   $(DIR)/nan/rtw_nan_disc_engine.c \
+	   $(DIR)/nan/rtw_nan_scheduler.c \
+	   $(DIR)/nan/rtw_nan_data_engine.c \
+	   $(DIR)/nan/rtw_nan_vendor_api.c
+CSRC_DRV += $(DIR)/intf/wifi_intf_drv_to_nan.c
+CSRC_DRV += $(DIR)/halcommon/hal_nan.c
+CSRC_DRV += $(DIR)/halcommon/hal_nan_scheduler.c
+CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_nan_ctrl.c
+
+CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
+CSRC_DRV += $(DIR)/phl/rtl8720f_phl.c
+CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
+CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
+CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
+
+CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_xmit.c
+CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_rf_onoff.c
+
+CSRC_DRV += $(DIR)/core/rtw_vht.c \
+
+endif
 
 OBJS_DRV = $(notdir $(CSRC_DRV:.c=.o))
 

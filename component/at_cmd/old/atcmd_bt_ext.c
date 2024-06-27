@@ -468,6 +468,7 @@ static const cmd_table_t cmd_table[] = {
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
 	{"hid_cmd",     atcmd_bt_hid_cmd,              1, 23},
 	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
+	{"pbap_cmd",    atcmd_bt_pbap_cmd,             1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},

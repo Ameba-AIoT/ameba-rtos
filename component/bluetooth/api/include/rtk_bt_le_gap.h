@@ -2651,32 +2651,32 @@ uint16_t rtk_bt_le_gap_stop_scan(void);
 
 #if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_gap_ext_scan_set_param(rtk_bt_le_ext_scan_param_t *p_param)
+ * @fn        uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
  * @brief     Set ext scan paramters.
  * @param[in] p_param: Ext Scan paramters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_le_gap_ext_scan_set_param(rtk_bt_le_ext_scan_param_t *p_param);
+uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_gap_ext_scan_start(void)
+ * @fn        uint16_t rtk_bt_le_gap_start_ext_scan(void)
  * @brief     Stop ext scan, will cause event @ref RTK_BT_LE_GAP_EVT_SCAN_START_IND
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_le_gap_ext_scan_start(void);
+uint16_t rtk_bt_le_gap_start_ext_scan(void);
 
 /**
- * @fn        uint16_t rtk_bt_le_gap_ext_scan_stop(void)
+ * @fn        uint16_t rtk_bt_le_gap_stop_ext_scan(void)
  * @brief     Stop ext scan, will cause event @ref RTK_BT_LE_GAP_EVT_SCAN_STOP_IND
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_le_gap_ext_scan_stop(void);
+uint16_t rtk_bt_le_gap_stop_ext_scan(void);
 #endif
 
 /**

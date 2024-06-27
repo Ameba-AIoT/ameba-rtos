@@ -409,8 +409,8 @@
 #define TIMER7_REG_BASE_S          0x5200BE00
 #define OTPC_REG_BASE_S            0x52000000
 #define PMC_BASE                   0x42008300
-#define IPC_SEMA_BASE			   0x42008300
-#define IPC_IPC_SEMA_BASE			0x420082F4
+#define IPC_SEMA_BASE              0x420083c0
+#define IPC_IPC_SEMA_BASE          0x420082F4
 
 
 

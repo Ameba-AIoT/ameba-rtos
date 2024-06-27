@@ -74,9 +74,6 @@ static usbh_config_t usbh_cfg = {
 	.dma_enable = 1U,
 	.main_task_priority = 4U,
 	.isr_task_priority  = 5U,
-	.rx_fifo_size   = 512U,
-	.nptx_fifo_size = 256U,
-	.ptx_fifo_size  = 248U,
 };
 
 static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {

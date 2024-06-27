@@ -75,7 +75,7 @@ void raw_gpio_port_demo(void)
 
 int main(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "RAW_GPIO_PORT_TASK", (rtos_task_t)raw_gpio_port_demo, (void *)NULL, 128 * 4,
+	if (SUCCESS != rtos_task_create(NULL, "RAW_GPIO_PORT_TASK", (rtos_task_t)raw_gpio_port_demo, (void *)NULL, 3072,
 									(1))) {
 		printf("Create RAW_GPIO_PORT_TASK Err!!!\n");
 	}

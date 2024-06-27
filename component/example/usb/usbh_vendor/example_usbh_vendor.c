@@ -38,10 +38,8 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
 	.main_task_priority = 3U,
-	.isr_task_priority = 4U,
-	.rx_fifo_size = 0x200U,
-	.nptx_fifo_size = 0x100U,
-	.ptx_fifo_size = 0x100U,
+	.isr_task_priority  = 4U,
+	.ptx_fifo_first     = 1U,
 };
 
 static usbh_vendor_cb_t vendor_usr_cb = {

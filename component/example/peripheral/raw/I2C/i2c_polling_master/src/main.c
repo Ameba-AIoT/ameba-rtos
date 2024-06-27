@@ -369,7 +369,7 @@ void i2c_dual_master_task(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "I2C DULE MASTER DEMO", (rtos_task_t)i2c_dual_master_task, NULL, (2048 / 4), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "I2C DULE MASTER DEMO", (rtos_task_t)i2c_dual_master_task, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create i2c_dual_master_task demo task\n\r");
 	}
 

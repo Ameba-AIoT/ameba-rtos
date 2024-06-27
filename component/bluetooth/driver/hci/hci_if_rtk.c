@@ -56,6 +56,7 @@ static struct {
 #endif
 };
 
+#if !defined(CONFIG_BT_ENABLE_FAST_MP) || !CONFIG_BT_ENABLE_FAST_MP
 static uint8_t _rx_offset(uint8_t type)
 {
 	uint8_t offset = H4_HDR_LEN;
@@ -69,40 +70,51 @@ static uint8_t _rx_offset(uint8_t type)
 	return offset;
 }
 
-static bool rtk_stack_get_buf(hci_rx_t *info, uint32_t timeout)
+static uint16_t new_packet_buflen = 0;
+static uint8_t *new_packet_buf = NULL;
+
+static uint8_t *rtk_stack_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t timeout)
 {
 	(void)timeout;
+	(void)hdr;
 	uint8_t *buf = NULL;
-	uint8_t offset = _rx_offset(info->type);
+	uint8_t offset = _rx_offset(type);
 
-	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, info->len + offset, 4);
-	memset(buf, 0, info->len + offset);
+	new_packet_buflen = len + offset;
 
-	info->data = buf + offset;
-	info->arg = buf;
-	return true;
+	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, new_packet_buflen, 4);
+	memset(buf, 0, new_packet_buflen);
+	buf[0] = type;
+
+	new_packet_buf = buf;
+
+	return buf + offset;
 }
 
-static void rtk_stack_free_buf(hci_rx_t *info)
+static void rtk_stack_cancel(void)
 {
-	hci_if_confirm((uint8_t *)info->arg);
+	osif_mem_aligned_free(new_packet_buf);
+	new_packet_buf = NULL;
 }
 
-static uint8_t rtk_stack_recv(hci_rx_t *info)
+static void rtk_stack_recv(void)
 {
-	uint8_t offset = _rx_offset(info->type);
-	uint8_t *buf = (uint8_t *)info->arg;
-
-	buf[0] = info->type;
-
-	if (hci_if_rtk.cb) {
-		if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, buf, info->len + offset)) {
-			hci_if_confirm(buf);    /* when indicate fail, free memory here. */
-		}
+	if (!new_packet_buf || !hci_if_rtk.cb) {
+		return;
 	}
 
-	return HCI_SUCCESS;
+	/* If indicate OK, stack will call hci_if_confirm when process of the packet is completed. */
+	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, new_packet_buf, new_packet_buflen)) {
+		osif_mem_aligned_free(new_packet_buf);    /* when indicate fail, free memory here. */
+	}
 }
+
+static struct hci_transport_cb rtk_stack_cb = {
+	.get_buf = rtk_stack_get_buf,
+	.recv = rtk_stack_recv,
+	.cancel = rtk_stack_cancel,
+};
+#endif
 
 static void _hci_if_open_indicate(void)
 {
@@ -131,24 +143,17 @@ static bool _hci_if_open(void)
 	}
 
 	/* HCI Transport Bridge to StandAlone */
-	hci_transport_set_buf_ops(hci_sa_recv_get_buf, NULL);
-	hci_transport_set_recv(hci_sa_recv);
-
-	/* HCI UART Bridge to Transport */
-	hci_uart_set_rx_ind(hci_transport_recv_ind);
+	hci_transport_register(&hci_sa_cb);
 
 	if (HCI_FAIL == hci_process()) {
 		BT_LOGE("hci_process fail!\r\n");
 		return false;
 	}
 
-	/* HCI Transport Bridge to RTK Stack
-	 * (Stop and Start rx_ind for this Moment)
-	 */
-	hci_uart_set_rx_ind(NULL);
-	hci_transport_set_buf_ops(rtk_stack_get_buf, rtk_stack_free_buf);
-	hci_transport_set_recv(rtk_stack_recv);
-	hci_uart_set_rx_ind(hci_transport_recv_ind);
+#if !defined(CONFIG_BT_ENABLE_FAST_MP) || !CONFIG_BT_ENABLE_FAST_MP
+	/* HCI Transport Bridge to RTK Stack */
+	hci_transport_register(&rtk_stack_cb);
+#endif
 
 	hci_if_rtk.status = 1;
 	_hci_if_open_indicate();
@@ -164,7 +169,7 @@ static void _hci_if_send(uint8_t *buf, uint32_t len, bool from_stack)
 		offset += HCI_H4_TX_ACL_PKT_BUF_OFFSET;
 	}
 
-	hci_transport_send(buf[0], buf + offset, len - offset, 1);
+	hci_transport_send(buf[0], buf + offset, len - offset, true);
 	if (from_stack) {
 		if (hci_if_rtk.cb) {
 			hci_if_rtk.cb(HCI_IF_EVT_DATA_XMIT, true, buf, len);

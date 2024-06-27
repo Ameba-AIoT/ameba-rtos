@@ -214,7 +214,7 @@ void gdma_multiblock_transfer_task(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "GDMA MULTI BLOCK TRANSFER DEMO", (rtos_task_t)gdma_multiblock_transfer_task, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "GDMA MULTI BLOCK TRANSFER DEMO", (rtos_task_t)gdma_multiblock_transfer_task, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create dma_multiblock_transfer_task demo task\n\r");
 	}
 

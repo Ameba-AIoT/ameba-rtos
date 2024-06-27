@@ -27,11 +27,13 @@ extern "C"
 #define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTSPP] "fmt, ##args)
 #define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHID] "fmt, ##args)
 #define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHFP] "fmt, ##args)
+#define BTPBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTHFP] "fmt, ##args)
 #define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEBAP] "fmt, ##args)
 #define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLECAP] "fmt, ##args)
 #define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEPBP] "fmt, ##args)
 #define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLETMAP] "fmt, ##args)
 #define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLEGMAP] "fmt, ##args)
+#define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BTVENDOR] "fmt, ##args)
 
 #else /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
 
@@ -45,11 +47,13 @@ extern "C"
 #define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
 #define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
 #define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTPBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBV] "fmt, ##args)
 
 #endif /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
 
@@ -230,6 +234,9 @@ int atcmd_bt_hid_cmd(int argc, char *argv[]);
 
 /* hfp cmd impl */
 int atcmd_bt_hfp_cmd(int argc, char *argv[]);
+
+/* pbap cmd impl */
+int atcmd_bt_pbap_cmd(int argc, char *argv[]);
 
 /* le audio bap */
 int atcmd_bt_bap_cmd(int argc, char *argv[]);

@@ -130,7 +130,7 @@ int main(void)
 {
 	DBG_ERR_MSG_ON(MODULE_SDIO);
 
-	if (SUCCESS != rtos_task_create(NULL, "RAW_SD_HOST_TASK", (rtos_task_t)raw_sd_host_demo, (void *)NULL, (2048), (1))) {
+	if (SUCCESS != rtos_task_create(NULL, "RAW_SD_HOST_TASK", (rtos_task_t)raw_sd_host_demo, (void *)NULL, (3072), (1))) {
 		printf("Create RAW_SD_HOST_TASK Err!!\n");
 	}
 

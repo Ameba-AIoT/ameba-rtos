@@ -5,7 +5,6 @@ WIFI_MAKE_DIR = make/wlan
 APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
 	$(APP_LIB_DIR)/lib_httpd.a \
 	$(APP_LIB_DIR)/lib_websocket.a \
-    $(APP_LIB_DIR)/lib_wps.a \
 	$(APP_LIB_DIR)/lib_tftp.a
 	#$(APP_LIB_DIR)/lib_mdns.a 
 	#$(APP_LIB_DIR)/lib_coap.a
@@ -31,7 +30,11 @@ ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
 
 
 ifeq ($(CONFIG_MP_INCLUDED), y)
+ifeq ($(CONFIG_MP_SHRINK), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp_shrink.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+endif
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
 endif
@@ -46,14 +49,15 @@ endif
 ucps_image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_ucps_fw.a
 
 ifeq ($(CONFIG_MP_INCLUDED), y)
+ifeq ($(CONFIG_MP_SHRINK), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp_shrink.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+endif
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
 endif
 
-ifeq ($(CONFIG_MP_INCLUDED), y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
-endif
 endif
 
 endif
@@ -149,7 +153,6 @@ ifeq ($(CONFIG_WLAN), y)
 
 # build AP libs
 ifeq ($(CONFIG_AS_INIC_AP), y)
-	@+$(MAKE) -C make/wps all
 	@+$(MAKE) -C make/network/httpc all
 	@+$(MAKE) -C make/network/httpd all
 	@+$(MAKE) -C make/network/websocket all
@@ -166,7 +169,6 @@ endif
 # build single core wifi libs
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 
-	@+$(MAKE) -C make/wps all
 	@+$(MAKE) -C make/network/httpc all
 	@+$(MAKE) -C make/network/httpd all
 	@+$(MAKE) -C make/network/websocket all

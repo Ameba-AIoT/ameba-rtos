@@ -129,7 +129,7 @@ LCDC_IRQInfo LcdcIrqInfo = {
  * Line Time  : 20us
  * Frame Rate : 60hz
  */
-static LCM_setting_table_t ST7701S_init_cmd_g[] = {/* DCS Write Long */
+static const LCM_setting_table_t ST7701S_init_cmd_g[] = {/* DCS Write Long */
 	/* ST7701S Reset Sequence */
 	/* LCD_Nreset (1); Delayms (1); */
 	/* LCD_Nreset (0); Delayms (1); */
@@ -325,7 +325,7 @@ void MipiDsi_ST7701S_isr(void)
 	}
 }
 
-void MipiDsi_ST7701S_Send_DCS(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, u8 *para_list)
+void MipiDsi_ST7701S_Send_DCS(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list)
 {
 	u32 word0, word1, addr, idx;
 	u8 cmd_addr[128];
@@ -357,12 +357,12 @@ void MipiDsi_ST7701S_Send_DCS(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, u8 *p
 	MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_LONG_WRITE, payload_len, 0);
 }
 
-void MipiDsi_ST7701S_Send_Cmd(MIPI_TypeDef *MIPIx, LCM_setting_table_t *table)
+void MipiDsi_ST7701S_Send_Cmd(MIPI_TypeDef *MIPIx, const LCM_setting_table_t *table)
 {
 	static u8 send_cmd_idx_s = 0;
 	u32 payload_len;
 	u8 cmd, send_flag = FALSE;
-	u8 *cmd_addr;
+	const u8 *cmd_addr;
 
 	while (1) {
 		cmd = table[send_cmd_idx_s].cmd;
@@ -391,7 +391,7 @@ void MipiDsi_ST7701S_Send_Cmd(MIPI_TypeDef *MIPIx, LCM_setting_table_t *table)
 	}
 }
 
-void MipiDsi_ST7701S_push_table(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct, LCM_setting_table_t *table)
+void MipiDsi_ST7701S_push_table(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct, const LCM_setting_table_t *table)
 {
 	MIPI_DSI_TO1_Set(MIPIx, DISABLE, 0);
 	MIPI_DSI_TO2_Set(MIPIx, ENABLE, 0x7FFFFFFF);

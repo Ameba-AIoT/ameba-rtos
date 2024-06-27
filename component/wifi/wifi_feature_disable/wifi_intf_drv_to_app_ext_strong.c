@@ -194,9 +194,8 @@ int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *sw_sta
 	return -1;
 }
 
-int wifi_del_station(unsigned char wlan_idx, unsigned char *hwaddr)
+int wifi_del_station(unsigned char *hwaddr)
 {
-	UNUSED(wlan_idx);
 	UNUSED(hwaddr);
 	call_noused = __LINE__;
 	return -1;

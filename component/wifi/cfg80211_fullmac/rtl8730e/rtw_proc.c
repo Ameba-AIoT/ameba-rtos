@@ -303,6 +303,7 @@ const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
 	RTW_PROC_HDL_SSEQ("mp_fw", proc_read_mp_fw, NULL),
 
+#ifndef CONFIG_SDIO_BRIDGE
 #ifdef CONFIG_FULLMAC_HCI_SDIO
 	RTW_PROC_HDL_SSEQ("offload_enable", proc_get_offload_enable, proc_set_offload_enable),
 
@@ -312,6 +313,7 @@ const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("offload_mdns_service_info", proc_get_offload_mdns_service_info, proc_set_offload_mdns_service_info),
 	RTW_PROC_HDL_SSEQ("offload_mdns_service_info_txt_rsp", proc_get_offload_mdns_txt_rsp, proc_set_offload_mdns_txt_rsp),
 #endif /* CONFIG_OFFLOAD_MDNS_V4 || CONFIG_OFFLOAD_MDNS_V6 */
+#endif
 #endif
 };
 

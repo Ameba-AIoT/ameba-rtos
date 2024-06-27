@@ -663,13 +663,14 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
 	/*timout 5S*/
-	u32 timeout = 2500000;
+	u32 timeout ;
 
 	if ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE)) {
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RX_DONE);
 	}
 
 	for (cnt = 0; cnt < len; cnt++) {
+		timeout = 2500000;
 		while (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RD_REQ) == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) == 0)) {
 			DelayUs(2);
 			if (timeout == 0) {
@@ -708,9 +709,10 @@ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 	u32 cnt = 0;
 
 	/*timout 5S*/
-	u32 timeout = 2500000;
+	u32 timeout;
 
 	for (cnt = 0; cnt < len; cnt++) {
+		timeout = 2500000;
 		/* Check I2C RX FIFO status */
 		while ((I2C_CheckFlagState(I2Cx, (I2C_BIT_RFNE | I2C_BIT_RFF))) == 0) {
 			DelayUs(2);

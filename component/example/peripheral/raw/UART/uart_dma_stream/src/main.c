@@ -199,7 +199,7 @@ void uart_dma_demo(void)
 
 int main(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_dma_demo", (rtos_task_t)uart_dma_demo, (void *)NULL, (512 * 4), (1))) {
+	if (SUCCESS != rtos_task_create(NULL, "uart_dma_demo", (rtos_task_t)uart_dma_demo, (void *)NULL, (512 * 6), (1))) {
 		printf("Create uart_dma_demo Err!!\r\n");
 	}
 

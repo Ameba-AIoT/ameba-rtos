@@ -45,10 +45,7 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
 	.main_task_priority = 3U,
-	.isr_task_priority = 4U,
-	.rx_fifo_size = 0x200U,
-	.nptx_fifo_size = 0x100U,
-	.ptx_fifo_size = 0x100U,
+	.isr_task_priority  = 4U,
 };
 
 static usbh_msc_cb_t msc_usr_cb = {
@@ -173,7 +170,7 @@ void example_usbh_msc_thread(void *param)
 			}
 		}
 
-		sprintf(&path[3], "TEST%d.DAT", filenum);
+		sprintf(&path[3], "TEST%ld.DAT", filenum);
 		RTK_LOGS(TAG, "[MSC] Open file: %s\n", path);
 		// open test file
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);

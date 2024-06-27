@@ -1038,7 +1038,7 @@ static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 	}
 
 	if (argc == 0) {
-		ret = rtk_bt_le_gap_ext_scan_set_param(&def_ext_scan_param);
+		ret = rtk_bt_le_gap_set_ext_scan_param(&def_ext_scan_param);
 		if (RTK_BT_OK != ret) {
 			BLEGAP_AT_PRINTK("GAP set default ext scan paramters failed! err: 0x%x", ret);
 			return -1;
@@ -1072,7 +1072,7 @@ static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 		scan_param.interval[1] = str_to_int(argv[10]);
 		scan_param.window[1] = str_to_int(argv[11]);
 	}
-	ret = rtk_bt_le_gap_ext_scan_set_param(&scan_param);
+	ret = rtk_bt_le_gap_set_ext_scan_param(&scan_param);
 	if (RTK_BT_OK != ret) {
 		BLEGAP_AT_PRINTK("GAP set scan param failed! err: 0x%x", ret);
 		return -1;
@@ -1088,7 +1088,7 @@ static int atcmd_ble_gap_op_ext_scan(int argc, char **argv)
 	uint16_t ret = 0;
 
 	if (1 == str_to_int(argv[0])) {
-		ret = rtk_bt_le_gap_ext_scan_start();
+		ret = rtk_bt_le_gap_start_ext_scan();
 		if (RTK_BT_OK != ret) {
 			BLEGAP_AT_PRINTK("GAP start ext scan failed! err: 0x%x", ret);
 			return -1;
@@ -1096,7 +1096,7 @@ static int atcmd_ble_gap_op_ext_scan(int argc, char **argv)
 			BLEGAP_AT_PRINTK("GAP starting ext scan ...");
 		}
 	} else if (0 == str_to_int(argv[0])) {
-		ret = rtk_bt_le_gap_ext_scan_stop();
+		ret = rtk_bt_le_gap_stop_ext_scan();
 		if (RTK_BT_OK != ret) {
 			BLEGAP_AT_PRINTK("GAP stop ext scan failed! err: 0x%x", ret);
 			return -1;

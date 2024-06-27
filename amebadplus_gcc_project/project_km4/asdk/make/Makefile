@@ -35,7 +35,6 @@ COMPONENT_CLEAN += wlan
 
 # AP
 ifeq ($(CONFIG_AS_INIC_AP), y)
-COMPONENT += api
 COMPONENT += application
 ifneq ($(CONFIG_MP_SHRINK),y)
 COMPONENT += network
@@ -44,7 +43,6 @@ COMPONENT += utilities
 COMPONENT += utilities_example
 #COMPONENT += wlan_encrypt
 
-COMPONENT_CLEAN += api
 COMPONENT_CLEAN += application
 COMPONENT_CLEAN += network
 COMPONENT_CLEAN += utilities

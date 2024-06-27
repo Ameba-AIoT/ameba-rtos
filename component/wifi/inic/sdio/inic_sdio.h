@@ -40,7 +40,9 @@
 #endif
 #endif
 
+#ifndef CONFIG_SDIO_BRIDGE
 #include "inic_sdio_protocal_offload.h"
+#endif
 /* -------------------------------- Macros ---------------------------------- */
 #define FLAG_WLAN_IF_NOT_RUNNING		0xFFFFFFFF
 

@@ -138,10 +138,12 @@ static int rtw_sdio_bridge_cmd_process(struct sk_buff *skb, struct genl_info *in
 			pwd = (char *)nla_data(info->attrs[BRIDGE_ATTR_PWD]);
 		}
 		ret = llhw_sdio_bridge_connect(ssid, pwd);
-		rtw_sdio_bridge_cmd_connect_rsp(info, ret);
-	} else if (cmd == CMD_TRIGGER_DHCP) {
-		llhw_sdio_bridge_dhcp();
-		rtw_sdio_bridge_cmd_getip_rsp(info);
+		if (ret == 0) {
+			llhw_sdio_bridge_dhcp();
+		}
+		rtw_sdio_bridge_connect_rsp(info, ret);
+	} else if (cmd == CMD_GET_IP) {
+		rtw_sdio_bridge_getip_rsp(info);
 	} else if (cmd == CMD_WIFI_SCAN) {
 		memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 		scan_param.scan_user_callback = (enum _rtw_result_t(*)(unsigned int, void *))0xFFFFFFFF;
@@ -150,7 +152,7 @@ static int rtw_sdio_bridge_cmd_process(struct sk_buff *skb, struct genl_info *in
 			dev_err(global_idev.fullmac_dev, "wait scan done timeout\n");
 		}
 	} else if (cmd == CMD_GET_SCAN_RES) {
-		rtw_sdio_bridge_cmd_scanres_rsp(info);
+		rtw_sdio_bridge_scanres_rsp(info);
 	} else if (cmd == CMD_WIFI_DISCONNECT) {
 		llhw_wifi_disconnect();
 	}
@@ -180,7 +182,7 @@ static struct genl_family rtw_sdio_bridge_gnl_family = {
 	.maxattr = 6,
 	.policy = rtw_sdio_bridge_cmd_policy,
 	.ops = rtw_sdio_bridge_cmd_gnl_ops,
-	.n_ops = ARRAY_SIZE(bridge_cmd_gnl_ops),
+	.n_ops = ARRAY_SIZE(rtw_sdio_bridge_cmd_gnl_ops),
 	.netnsok = true,
 	.module = THIS_MODULE,
 };

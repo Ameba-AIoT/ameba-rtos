@@ -48,6 +48,15 @@ IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/non_secure
 IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/secure
 endif
 
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720f
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720f_rom
+IFLAGS               += -I$(BASEDIR)/component/soc/amebagreen2/rom/include
+IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/amebagreen2/include
+endif
+
 .PHONY: lib lib_mp clean make_objs_drv make_objs_phy make_objs_btc
 #*****************************************************************************#
 #                                   VARIABLES                                 #
@@ -55,7 +64,11 @@ endif
 DIR = $(BASEDIR)/component/wifi/driver
 
 ifeq ($(CONFIG_MP_INCLUDED), y)
+ifeq ($(CONFIG_MP_SHRINK), y)
+LIB_NAME_MP_SUFFIX = _mp_shrink
+else
 LIB_NAME_MP_SUFFIX = _mp
+endif
 endif
 # OBJS_CONFIG: code run flash or sram based on config
 # OBJS: Flash code

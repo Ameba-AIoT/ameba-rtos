@@ -442,7 +442,6 @@ void fATWx(void *arg)
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
 				RTK_LOGI(NOTAG, "max_skbbuff_used_num=%d, skbbuff_used_num=%d\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
-				RTK_LOGI(NOTAG, "max_skbdata_used_num=%d, skbdata_used_num=%d\n\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);

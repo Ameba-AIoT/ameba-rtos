@@ -564,7 +564,7 @@ void i2c_dma_test(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "I2C DMA DEMO", (rtos_task_t)i2c_dma_test, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "I2C DMA DEMO", (rtos_task_t)i2c_dma_test, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create i2c_dma_test demo task\n\r");
 	}
 

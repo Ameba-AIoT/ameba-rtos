@@ -15,6 +15,7 @@
 #include <rtk_bt_br_gap.h>
 #include <rtk_bt_sdp.h>
 #include <rtk_bt_hfp.h>
+#include <rtk_bt_pbap.h>
 #include <bt_audio_intf.h>
 #include <bt_audio_track_api.h>
 #include <bt_audio_record_api.h>
@@ -405,6 +406,53 @@ static const uint8_t hfp_ag_sdp_record[] = {
 	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
 	(uint8_t)(0x012F >> 8),
 	(uint8_t)(0x012F)
+};
+
+const uint8_t pbap_pce_sdp_record[] = {
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x36,
+	//attribute SDP_ATTR_SRV_CLASS_ID_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_SRV_CLASS_ID_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_SRV_CLASS_ID_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x03,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PBAP_PCE >> 8),
+	(uint8_t)(RTK_BT_UUID_PBAP_PCE),
+
+	//attribute SDP_ATTR_BROWSE_GROUP_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_BROWSE_GROUP_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_BROWSE_GROUP_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x03,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PUBLIC_BROWSE_GROUP >> 8),
+	(uint8_t)RTK_BT_UUID_PUBLIC_BROWSE_GROUP,
+
+	//attribute SDP_ATTR_PROFILE_DESC_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_PROFILE_DESC_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_PROFILE_DESC_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x08,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x06,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PBAP >> 8),
+	(uint8_t)RTK_BT_UUID_PBAP,
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	0x01,//version 1.2
+	0x02,
+
+	//attribute SDP_ATTR_SRV_NAME
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)((RTK_BT_SDP_ATTR_SRV_NAME + RTK_BT_SDP_BASE_LANG_OFFSET) >> 8),
+	(uint8_t)(RTK_BT_SDP_ATTR_SRV_NAME + RTK_BT_SDP_BASE_LANG_OFFSET),
+	RTK_BT_SDP_STRING_HDR,
+	0x14,
+	0x50, 0x68, 0x6f, 0x6e, 0x65, 0x62, 0x6f, 0x6f, 0x6b, 0x20, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x20, 0x50, 0x43, 0x45 //"Phonebook Access PCE"
 };
 
 static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
@@ -901,6 +949,89 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	return RTK_BT_EVT_CB_OK;
 }
 
+static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+
+	switch (evt_code) {
+
+	case RTK_BT_PBAP_EVT_CONN_CMPL: {
+		rtk_bt_pbap_conn_ind_t *p_pbap_conn_ind = (rtk_bt_pbap_conn_ind_t *)param;
+		BT_LOGA("[PBAP] Receive PBAP connection completion from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_pbap_conn_ind->bd_addr[5], p_pbap_conn_ind->bd_addr[4], p_pbap_conn_ind->bd_addr[3], p_pbap_conn_ind->bd_addr[2], p_pbap_conn_ind->bd_addr[1], p_pbap_conn_ind->bd_addr[0]);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_CONN_FAIL: {
+		rtk_bt_pbap_conn_fail_ind_t *p_pbap_conn_fail_ind = (rtk_bt_pbap_conn_fail_ind_t *)param;
+		BT_LOGA("[PBAP] PBAP connection fail with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%02x \r\n",
+				p_pbap_conn_fail_ind->bd_addr[5], p_pbap_conn_fail_ind->bd_addr[4], p_pbap_conn_fail_ind->bd_addr[3], p_pbap_conn_fail_ind->bd_addr[2], p_pbap_conn_fail_ind->bd_addr[1], p_pbap_conn_fail_ind->bd_addr[0],
+				p_pbap_conn_fail_ind->cause);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_DISCONN_CMPL: {
+		rtk_bt_pbap_disconn_cmpl_t *p_pbap_disc_cmpl_ind = (rtk_bt_pbap_disconn_cmpl_t *)param;
+		BT_LOGA("[PBAP] PBAP disconnect completion with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%02x \r\n",
+				p_pbap_disc_cmpl_ind->bd_addr[5], p_pbap_disc_cmpl_ind->bd_addr[4], p_pbap_disc_cmpl_ind->bd_addr[3], p_pbap_disc_cmpl_ind->bd_addr[2], p_pbap_disc_cmpl_ind->bd_addr[1], p_pbap_disc_cmpl_ind->bd_addr[0],
+				p_pbap_disc_cmpl_ind->cause);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL: {
+		rtk_bt_pbap_set_pb_cmpl_t *p_pbap_set_pb_cmpl = (rtk_bt_pbap_set_pb_cmpl_t *)param;
+		BT_LOGA("[PBAP] PBAP set phone book completion with %02x:%02x:%02x:%02x:%02x:%02x, result is %d, path is 0x%02x \r\n",
+				p_pbap_set_pb_cmpl->bd_addr[5], p_pbap_set_pb_cmpl->bd_addr[4], p_pbap_set_pb_cmpl->bd_addr[3], p_pbap_set_pb_cmpl->bd_addr[2], p_pbap_set_pb_cmpl->bd_addr[1], p_pbap_set_pb_cmpl->bd_addr[0],
+				(int)p_pbap_set_pb_cmpl->result,
+				(uint8_t)p_pbap_set_pb_cmpl->path);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL: {
+		rtk_bt_pbap_get_pb_cmpl_t *p_pbap_get_pb_cmpl = (rtk_bt_pbap_get_pb_cmpl_t *)param;
+		BT_LOGA("[PBAP] PBAP get phone book completion with %02x:%02x:%02x:%02x:%02x:%02x, data_len is %d, pb_size is %d, new_missed_calls is %d, data_end %d \r\n",
+				p_pbap_get_pb_cmpl->bd_addr[5], p_pbap_get_pb_cmpl->bd_addr[4], p_pbap_get_pb_cmpl->bd_addr[3], p_pbap_get_pb_cmpl->bd_addr[2], p_pbap_get_pb_cmpl->bd_addr[1], p_pbap_get_pb_cmpl->bd_addr[0],
+				(int)p_pbap_get_pb_cmpl->data_len,
+				(int)p_pbap_get_pb_cmpl->pb_size,
+				(int)p_pbap_get_pb_cmpl->new_missed_calls,
+				(int)p_pbap_get_pb_cmpl->data_end);
+		if (p_pbap_get_pb_cmpl->data_len) {
+			BT_LOGA(" phone book detail \r\n ");
+			BT_LOGA(" %s \r\n", p_pbap_get_pb_cmpl->p_data);
+			osif_mem_free(p_pbap_get_pb_cmpl->p_data);
+		}
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_CALLER_ID_NAME: {
+		rtk_bt_pbap_caller_id_name_t *p_pbap_caller_id_name = (rtk_bt_pbap_caller_id_name_t *)param;
+		if (p_pbap_caller_id_name->name_len) {
+			BT_LOGA("[PBAP] PBAP pull caller id name with %02x:%02x:%02x:%02x:%02x:%02x, name is %s \r\n",
+					p_pbap_caller_id_name->bd_addr[5], p_pbap_caller_id_name->bd_addr[4], p_pbap_caller_id_name->bd_addr[3], p_pbap_caller_id_name->bd_addr[2], p_pbap_caller_id_name->bd_addr[1], p_pbap_caller_id_name->bd_addr[0],
+					(char *)p_pbap_caller_id_name->name_ptr);
+			osif_mem_free(p_pbap_caller_id_name->name_ptr);
+		}
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_GET_PHONE_BOOK_SIZE_CMPL: {
+		rtk_bt_pbap_get_pb_size_cmpl *p_pbap_get_pb_size = (rtk_bt_pbap_get_pb_size_cmpl *)param;
+		BT_LOGA("[PBAP] PBAP get phone book size with %02x:%02x:%02x:%02x:%02x:%02x, pb_size is %d, new_missed_calls is %d \r\n",
+				p_pbap_get_pb_size->bd_addr[5], p_pbap_get_pb_size->bd_addr[4], p_pbap_get_pb_size->bd_addr[3], p_pbap_get_pb_size->bd_addr[2], p_pbap_get_pb_size->bd_addr[1], p_pbap_get_pb_size->bd_addr[0],
+				(int)p_pbap_get_pb_size->pb_size,
+				(int)p_pbap_get_pb_size->new_missed_calls);
+	}
+	break;
+
+	default: {
+		BT_LOGE("[PBAP]: default evt_code 0x%04x \r\n", evt_code);
+	}
+	break;
+	}
+
+	return RTK_BT_EVT_CB_OK;
+}
+
 static rtk_bt_hfp_ag_conf_t demo_ag_conf = {
 	.link_num = 1,
 	.rfc_hfp_ag_chann_num = RTK_BT_RFC_HFP_AG_CHANN_NUM,
@@ -942,8 +1073,14 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		}
 
 		//set GAP configuration
-		bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
-											RTK_BT_PROFILE_SDP;
+		if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
+			bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
+												RTK_BT_PROFILE_SDP | \
+												RTK_BT_PROFILE_PBAP;
+		} else {
+			bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
+												RTK_BT_PROFILE_SDP;
+		}
 		bt_app_conf.mtu_size = 180;
 		bt_app_conf.prefer_all_phy = 0;
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
@@ -970,6 +1107,7 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 			hfp_demo_role = RTK_BT_AUDIO_HFP_ROLE_AG;
 		} else if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)hfp_sdp_record, sizeof(hfp_sdp_record)));
+			BT_APP_PROCESS(rtk_sdp_record_add((void *)pbap_pce_sdp_record, sizeof(pbap_pce_sdp_record)));
 			BT_APP_PROCESS(rtk_bt_hfp_cfg((uint8_t)RTK_BT_AUDIO_HFP_ROLE_HF, (void *)&demo_hf_conf));
 			hfp_demo_role = RTK_BT_AUDIO_HFP_ROLE_HF;
 		} else {
@@ -992,6 +1130,9 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
 		/* Initilize hfp part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_HFP, rtk_bt_hfp_app_callback));
+		if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
+			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_PBAP, rtk_bt_pbap_app_callback));
+		}
 		hfp_demo_init_flag = 1;
 	} else if (0 == enable) {
 		if (!hfp_demo_init_flag) {

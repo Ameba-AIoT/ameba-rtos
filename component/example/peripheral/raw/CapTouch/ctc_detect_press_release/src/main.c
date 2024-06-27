@@ -198,7 +198,7 @@ void ctc_press_release_task(void) {
 }
 
 int main(void) {
-	if (rtos_task_create(NULL, "CTC_TOUCH_RELEASE_DEMO", (rtos_task_t)ctc_press_release_task, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "CTC_TOUCH_RELEASE_DEMO", (rtos_task_t)ctc_press_release_task, NULL, 3072, (1)) != SUCCESS) {
 		printf("Cannot create CTC_TOUCH_RELEASE_DEMO\r\n");
 	}
 

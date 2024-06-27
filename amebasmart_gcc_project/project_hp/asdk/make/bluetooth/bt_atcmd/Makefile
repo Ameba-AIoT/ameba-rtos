@@ -31,6 +31,7 @@ CSRC += \
 	$(DIR)/bt_atcmd/atcmd_bt_spp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_hid.c \
 	$(DIR)/bt_atcmd/atcmd_bt_hfp.c \
+	$(DIR)/bt_atcmd/atcmd_bt_pbap.c \
 	$(DIR)/bt_atcmd/atcmd_bt_bap.c \
 	$(DIR)/bt_atcmd/atcmd_bt_cap.c \
 	$(DIR)/bt_atcmd/atcmd_bt_pbp.c \

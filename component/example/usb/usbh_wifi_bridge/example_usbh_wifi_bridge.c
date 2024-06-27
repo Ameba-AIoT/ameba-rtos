@@ -29,16 +29,15 @@
 /* Private defines -----------------------------------------------------------*/
 extern void rltk_mii_init(void);
 
+
+#define ECMBDEBUG  0
+
 #define BOOTP_PORT		(68)
 #define ETH_ILEN		(6)
 
 struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
 
-static const char *TAG = "USBH_WIFI_BRIDGE";
-#define ECM_DEBUG		(0)
-#define RTK_LOG_ECM(format, ...) do {               \
-        if ( ECM_DEBUG ) DiagPrintf(format, ##__VA_ARGS__); \
-    } while(0);
+static const char *TAG = "ECMB";
 
 /* Private types -------------------------------------------------------------*/
 
@@ -127,13 +126,13 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		arph = (struct etharp_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8 *) & (arph->sipaddr);
 		dst_ip = (u8 *) & (arph->dipaddr);
-		RTK_LOG_ECM("%s(%d), dstip:%d,%d,%d,%d\n", __func__, __LINE__, (uint8_t) * (dst_ip + 0), (uint8_t) * (dst_ip + 1), (uint8_t) * (dst_ip + 2),
-					(uint8_t) * (dst_ip + 3));
+		//RTK_LOGS(TAG, "[ECMB] %s(%d), dstip:%d,%d,%d,%d\n", __func__, __LINE__, (uint8_t) * (dst_ip + 0), (uint8_t) * (dst_ip + 1), (uint8_t) * (dst_ip + 2),
+		//			(uint8_t) * (dst_ip + 3));
 	}
 
-	RTK_LOG_ECM("%s(%d)flags=%x, smac:%02x:%02x:%02x:%02x:%02x:%02x, dmac:%02x:%02x:%02x:%02x:%02x:%02x, p->len = %d\n", __func__, __LINE__, flags,
-				src_addr->addr[0], src_addr->addr[1], src_addr->addr[2], src_addr->addr[3], src_addr->addr[4], src_addr->addr[5],
-				dst_addr->addr[0], dst_addr->addr[1], dst_addr->addr[2], dst_addr->addr[3], dst_addr->addr[4], dst_addr->addr[5], p->len);
+	//RTK_LOGS(TAG, "[ECMB] %s(%d)flags=%x, smac:%02x:%02x:%02x:%02x:%02x:%02x, dmac:%02x:%02x:%02x:%02x:%02x:%02x, p->len = %d\n", __func__, __LINE__, flags,
+	//			src_addr->addr[0], src_addr->addr[1], src_addr->addr[2], src_addr->addr[3], src_addr->addr[4], src_addr->addr[5],
+	//			dst_addr->addr[0], dst_addr->addr[1], dst_addr->addr[2], dst_addr->addr[3], dst_addr->addr[4], dst_addr->addr[5], p->len);
 
 	pattrib->protocol = protocol;
 	pattrib->src_port = src_port;
@@ -152,26 +151,21 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 {
-	RTK_LOG_ECM("%s(%d) out>toap\n", __func__, __LINE__);
+	//RTK_LOGS(TAG, "[ECMB] %s(%d) out>toap\n", __func__, __LINE__);
 
 	if (pattrib->protocol == lwip_htons(ETH_P_ARP)) {
 		memcpy(&host_mac, (u8 *)p->payload + ETH_ALEN, ETH_ALEN);
 	}
 
 	memcpy((u8 *)p->payload + ETH_ALEN, xnetif[0].hwaddr, ETH_ALEN);
-
-	RTK_LOG_ECM("%s(%d) src_port = %d\n", __func__, __LINE__, pattrib->src_port);
-	if (pattrib->src_port == BOOTP_PORT) {
-		for (int i = 0; i < p->len; i++) {
-			RTK_LOG_ECM("%02x ", *((u8 *)p->payload + i));
-		}
-		RTK_LOG_ECM("\n");
-	}
+#if ECMBDEBUG
+	RTK_LOGS(TAG, "[ECMB] %s(%d) src_port = %d\n", __func__, __LINE__, pattrib->src_port);
 
 	for (int i = 0; i < p->len; i++) {
-		RTK_LOG_ECM("%02x ", *((u8 *)p->payload + i));
+		RTK_LOGS(TAG, "%02x ", *((u8 *)p->payload + i));
 	}
-	RTK_LOG_ECM("\n");
+	RTK_LOGS(TAG, "\n");
+#endif
 
 	/* send to etharp_output */
 	if (pattrib->protocol == lwip_htons(ETH_P_IP)) {
@@ -181,7 +175,7 @@ static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 
 	xnetif[0].linkoutput(&xnetif[0], p);
 
-	RTK_LOG_ECM("%s[%d]\n", __func__, __LINE__);
+	//RTK_LOGS(TAG, "[ECMB] %s[%d]\n", __func__, __LINE__);
 
 	return 0;
 }
@@ -192,7 +186,7 @@ static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 
 	eth_netif.linkoutput(&eth_netif, p);
 
-	RTK_LOG_ECM("%s(%d) out>tousb\n", __func__, __LINE__);
+	//RTK_LOGS(TAG, "[ECMB] %s(%d) out>tousb\n", __func__, __LINE__);
 
 	return 0;
 }
@@ -203,31 +197,26 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 	pkt_attrib_t *pattrib;
 
 	if (p == NULL || netif == NULL) {
-		RTK_LOG_ECM("%s(%d)\n", __func__, __LINE__);
+		RTK_LOGS(TAG, "[ECMB] %s(%d)\n", __func__, __LINE__);
 		return ERR_VAL;
 	}
 
 	pattrib = (pkt_attrib_t *)malloc(sizeof(pkt_attrib_t));
 	get_packet_attrib(p, pattrib);
 
-	RTK_LOG_ECM("%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
+	//RTK_LOGS(TAG, "[ECMB] %s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
 
 	if (pattrib->protocol == lwip_htons(ETH_P_IPV6)) {
-		/*
-			defined in lwip/api/lwip_netconf.c:LwIP_ethernetif_recv_inic
-			while return fail, LwIP_ethernetif_recv_inic will free the p handle
-			while return OK, LwIP_ethernetif_recv_inic will not do the free, it is released in this function
-		*/
-		//pbuf_free(p);
+		pbuf_free(p);
 		free(pattrib);
-		return ERR_VAL;
+		return ERR_OK;
 	}
 	pattrib->port_idx = netif->num;
 
-	RTK_LOG_ECM("\n\r%s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
-				__func__, __LINE__, pattrib->port_idx, pattrib->protocol, pattrib->dst_mac.addr[0], pattrib->dst_mac.addr[1], pattrib->dst_mac.addr[2],
-				pattrib->dst_mac.addr[3], pattrib->dst_mac.addr[4], pattrib->dst_mac.addr[5], pattrib->src_mac.addr[0], pattrib->src_mac.addr[1],
-				pattrib->src_mac.addr[2], pattrib->src_mac.addr[3], pattrib->src_mac.addr[4], pattrib->src_mac.addr[5]);
+	//RTK_LOGS(TAG, "[ECMB] %s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	//			__func__, __LINE__, pattrib->port_idx, pattrib->protocol, pattrib->dst_mac.addr[0], pattrib->dst_mac.addr[1], pattrib->dst_mac.addr[2],
+	//			pattrib->dst_mac.addr[3], pattrib->dst_mac.addr[4], pattrib->dst_mac.addr[5], pattrib->src_mac.addr[0], pattrib->src_mac.addr[1],
+	//			pattrib->src_mac.addr[2], pattrib->src_mac.addr[3], pattrib->src_mac.addr[4], pattrib->src_mac.addr[5]);
 
 	send_to_wifi(pattrib, p);
 
@@ -242,35 +231,32 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	pkt_attrib_t *pattrib;
 
 	if (p == NULL || netif == NULL) {
-		RTK_LOGS(NOTAG, "%s(%d)\n", __func__, __LINE__);
+		RTK_LOGS(TAG, "[ECMB] %s(%d)\n", __func__, __LINE__);
 		return ERR_VAL;
 	}
 
 	pattrib = (pkt_attrib_t *)malloc(sizeof(pkt_attrib_t));
 	get_packet_attrib(p, pattrib);
-	RTK_LOG_ECM("%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
+	//RTK_LOGS(TAG, "[ECMB] %s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
 
 	if (pattrib->protocol == lwip_htons(ETH_P_IPV6)) {
-		/*
-			defined in lwip/api/lwip_netconf.c:LwIP_ethernetif_recv_inic
-			while return fail, LwIP_ethernetif_recv_inic will free the p handle
-			while return OK, LwIP_ethernetif_recv_inic will not do the free, it is released in this function
-		*/
-		//pbuf_free(p);
+		pbuf_free(p);
 		free(pattrib);
-		return ERR_VAL;
+		return ERR_OK;
 	}
 	pattrib->port_idx = netif->num;
 
-	RTK_LOG_ECM("\n\r%s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
-				__func__, __LINE__, pattrib->port_idx, pattrib->protocol, pattrib->dst_mac.addr[0], pattrib->dst_mac.addr[1], pattrib->dst_mac.addr[2],
-				pattrib->dst_mac.addr[3], pattrib->dst_mac.addr[4], pattrib->dst_mac.addr[5], pattrib->src_mac.addr[0], pattrib->src_mac.addr[1],
-				pattrib->src_mac.addr[2], pattrib->src_mac.addr[3], pattrib->src_mac.addr[4], pattrib->src_mac.addr[5]);
+#if ECMBDEBUG
+	RTK_LOGS(TAG, "[ECMB] %s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
+			 __func__, __LINE__, pattrib->port_idx, pattrib->protocol, pattrib->dst_mac.addr[0], pattrib->dst_mac.addr[1], pattrib->dst_mac.addr[2],
+			 pattrib->dst_mac.addr[3], pattrib->dst_mac.addr[4], pattrib->dst_mac.addr[5], pattrib->src_mac.addr[0], pattrib->src_mac.addr[1],
+			 pattrib->src_mac.addr[2], pattrib->src_mac.addr[3], pattrib->src_mac.addr[4], pattrib->src_mac.addr[5]);
 
 	for (int i = 0; i < p->len; i++) {
-		RTK_LOG_ECM("%02x ", *((u8 *)p->payload + i));
+		RTK_LOGS(TAG, "%02x ", *((u8 *)p->payload + i));
 	}
-	RTK_LOG_ECM("\n");
+	RTK_LOGS(TAG, "\n");
+#endif
 
 	if (pattrib->protocol == lwip_htons(ETH_P_ARP)) {
 		memcpy((u8 *)p->payload + ETH_HLEN + 18, &host_mac, ETH_ALEN);
@@ -308,7 +294,7 @@ static void ecm_example_monitor_link_change_thread(void *param)
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_unplug = ETH_STATUS_DEINIT;
 			netif_set_default(&xnetif[0]);
-			RTK_LOGW(TAG, "swicth to unlink !!\n");
+			RTK_LOGS(TAG, "[ECMB] Swicth to unlink !!\n");
 		} else {
 			rtos_time_delay_ms(1000);
 		}
@@ -319,11 +305,11 @@ static void ecm_example_bridge_thread(void *param)
 {
 	UNUSED(param);
 
-	RTK_LOGW(TAG, "\nbridge example \n");
+	RTK_LOGS(TAG, "[ECMB] Bridge example \n");
 
 	while (!(wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS)) {
-		RTK_LOGW(TAG, "Wait for WIFI connection ...\n");
-		RTK_LOGW(TAG, "Please use ATW0=ssid, ATW1=password, ATWC to connect AP first time\n");
+		RTK_LOGS(TAG, "[ECMB] Wait for WIFI connection ...\n");
+		RTK_LOGS(TAG, "[ECMB] Please use ATW0=ssid, ATW1=password, ATWC or AT+WLCONN to connect AP first time\n");
 		rtos_time_delay_ms(2000);
 	}
 
@@ -340,15 +326,15 @@ void example_usbh_wifi_bridge(void)
 	rtos_task_t monitor_task;
 	rtos_task_t bridge_task;
 
-	RTK_LOGW(TAG, "\n[CDC_ECM] USB host usbh_wifi_bridge demo started...\n");
+	RTK_LOGS(TAG, "[ECMB] USB host usbh_wifi_bridge demo started\n");
 
 	status = rtos_task_create(&monitor_task, "ecm_example_link_change_thread", ecm_example_monitor_link_change_thread, NULL, 1024U * 2, 3U);
 	if (status != SUCCESS) {
-		RTK_LOGW(TAG, "\n[CDC_ECM] Fail to create USB host monitor_link_change thread: %d\n", status);
+		RTK_LOGS(TAG, "[ECMB] Fail to create USB host monitor_link_change thread: %d\n", status);
 	}
 
 	status = rtos_task_create(&bridge_task, "cdc_ecm_bridge_task", ecm_example_bridge_thread, NULL, 1024U * 2, 2U);
 	if (status != SUCCESS) {
-		RTK_LOGW(TAG, "\n[USBH] Fail to create USBH cdc_ecm_bridge_task thread\n");
+		RTK_LOGS(TAG, "[ECMB] Fail to create USBH cdc_ecm_bridge_task thread\n");
 	}
 }

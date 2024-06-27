@@ -31,17 +31,14 @@ ifeq ($(CONFIG_AS_INIC_AP), y)
 ifneq ($(CONFIG_MP_SHRINK),y)
 COMPONENT += network
 endif
-COMPONENT += api
 COMPONENT += utilities
 
 # NP
 else ifeq ($(CONFIG_AS_INIC_NP),y)
-COMPONENT += api
 COMPONENT += wlan
 
 # Single core
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
-COMPONENT += api
 COMPONENT += wlan
 COMPONENT += utilities
 ifneq ($(CONFIG_MP_SHRINK),y)
@@ -66,7 +63,6 @@ COMPONENT_CLEAN += usb_otg
 endif
 
 COMPONENT_CLEAN += network
-COMPONENT_CLEAN += api
 COMPONENT_CLEAN += utilities
 COMPONENT_CLEAN += wlan
 COMPONENT_CLEAN += wps

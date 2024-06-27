@@ -65,10 +65,13 @@ uint16_t bt_stack_sdp_init(void);
 void bt_stack_sdp_deinit(void);
 uint16_t bt_stack_hfp_init(uint8_t role);
 void bt_stack_hfp_deinit(void);
+uint16_t bt_stack_pbap_init(uint8_t role);
+void bt_stack_pbap_deinit(void);
 
 uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_a2dp_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_pbap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_sdp_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_spp_act_handle(rtk_bt_cmd_t *p_cmd);
@@ -161,6 +164,17 @@ static inline void bt_stack_hfp_deinit(void)
 
 }
 
+static inline uint16_t bt_stack_pbap_init(uint8_t role)
+{
+	(void)role;
+	return RTK_BT_OK;
+}
+
+static inline void bt_stack_pbap_deinit(void)
+{
+
+}
+
 static inline uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	(void)p_cmd;
@@ -174,6 +188,12 @@ static inline uint16_t bt_stack_a2dp_act_handle(rtk_bt_cmd_t *p_cmd)
 }
 
 static inline uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	(void)p_cmd;
+	return RTK_BT_OK;
+}
+
+static inline uint16_t bt_stack_pbap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	(void)p_cmd;
 	return RTK_BT_OK;

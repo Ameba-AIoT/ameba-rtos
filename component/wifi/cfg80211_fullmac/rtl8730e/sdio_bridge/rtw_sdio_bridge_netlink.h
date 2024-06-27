@@ -8,7 +8,7 @@ enum sdiobridge_api_id {
 	CMD_WIFI_DISCONNECT,
 	CMD_WIFI_SCAN,
 	CMD_GET_SCAN_RES,
-	CMD_TRIGGER_DHCP,
+	CMD_GET_IP,
 };
 
 enum sdiobridge_cmd_type {

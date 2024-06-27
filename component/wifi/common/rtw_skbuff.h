@@ -62,28 +62,19 @@ struct sk_buff {
 	unsigned char	no_free;
 
 	struct skb_raw_para	tx_raw;
-} SKB_ALIGNMENT; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
 
-struct skb_data {
-	struct list_head list;
 	unsigned char buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;/* buf start address and size alignmengt for pre allocate skb*/
 	atomic_t ref;
-};
+}; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
 
 struct skb_priv_t {
-	/*skb_data for store data*/
-	struct skb_data *skb_data_pool;
-	struct list_head skb_data_list;
-	int skb_data_num;
-	int skb_buf_max_size;
-	int skb_data_used;
-	int skb_data_max_used;
-	/*skb_buff for managing skb_data*/
+	/*skb_buff for managing and store skb data*/
 	struct sk_buff *skb_buff_pool;
 	struct list_head skb_buff_list;
 	int skb_buff_num;
 	int skb_buff_used;
 	int skb_buff_max_used;
+	int skb_buf_max_size;
 	int skb_fail_tx;
 	int skb_fail_rx;
 };
@@ -136,8 +127,8 @@ void kfree_skb(struct sk_buff *skb);
 struct sk_buff *skb_clone(struct sk_buff *skb, int gfp_mask);
 struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int reserve_len);
 void dev_kfree_skb_any(struct sk_buff *skb);
-void init_skb_pool(uint32_t skb_num_np, uint32_t skb_buf_size);
+void init_skb_pool(uint32_t skb_num_np, uint32_t skb_buf_size, unsigned char skb_cache_zise);
 void deinit_skb_pool(void);
-void *get_buf_from_poll(struct list_head *phead, int *count, u8 is_skb_data);
-void release_buf_to_poll(unsigned char *buf, struct list_head *phead, int *count, u8 is_skb_data);
+struct sk_buff *get_buf_from_poll(void);
+void release_buf_to_poll(struct sk_buff *skb);
 #endif //__SKBUFF_H__

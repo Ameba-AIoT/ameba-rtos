@@ -4,6 +4,7 @@ IFLAGS += \
 	-I$(BASEDIR)/component/soc/amebadplus/fwlib/include \
 	-I$(BLEDIR)/rtk_coex \
 	-I$(BLEDIR)/driver \
+	-I$(BLEDIR)/driver/dtm \
 	-I$(BLEDIR)/driver/hci \
 	-I$(BLEDIR)/driver/inc \
 	-I$(BLEDIR)/driver/inc/hci \

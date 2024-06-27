@@ -217,6 +217,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 	bool "BT Advanced Feature"					CONFIG_BT_ADVANCED_FEATURE_MENU
 	if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
 		bool "  Exclude BT AT Command"			CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KM4
+		bool "  Enable BT Fast MP"				CONFIG_BT_ENABLE_FAST_MP_FOR_KM4
 	fi
 	bool "BT Example Demo"						CONFIG_BT_EXAMPLE_DEMO_MENU
 	if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then

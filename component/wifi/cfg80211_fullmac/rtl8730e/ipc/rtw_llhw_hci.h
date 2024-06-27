@@ -56,8 +56,6 @@ struct ipc_msg_q_priv {
 struct xmit_priv_t {
 	struct dev_sk_buff		*host_skb_buff;
 	dma_addr_t			host_skb_buff_phy;
-	struct skb_data			*host_skb_data;
-	dma_addr_t			host_skb_data_phy;
 	atomic_t				skb_free_num;
 	u32				skb_idx;
 	spinlock_t			skb_lock;
