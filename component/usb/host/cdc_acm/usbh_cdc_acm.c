@@ -632,7 +632,7 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 		if (cb->init != NULL) {
 			ret = cb->init();
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, "[ACM] User init err: %d\n", ret);
+				RTK_LOGS(TAG, "[ACM] User init err %d\n", ret);
 				return ret;
 			}
 		}
@@ -640,12 +640,12 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 
 	cdc->line_coding = (usbh_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_cdc_acm_line_coding_t));
 	if (cdc->line_coding == NULL) {
-		RTK_LOGS(TAG, "[ACM] Malloc line coding fail\n");
+		RTK_LOGS(TAG, "[ACM] Malloc line code fail\n");
 		return HAL_ERR_MEM;
 	}
 	cdc->user_line_coding = (usbh_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_cdc_acm_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
-		RTK_LOGS(TAG, "[ACM] Malloc user line coding fail\n");
+		RTK_LOGS(TAG, "[ACM] Malloc user line code fail\n");
 		usb_os_mfree(cdc->line_coding);
 		cdc->line_coding = NULL;
 		return HAL_ERR_MEM;
@@ -831,7 +831,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 
 		/* the user buf len < MPS, update the rx buf length */
 		if (len < cdc->comm_if.intr_in_packet_size) {
-			RTK_LOGS(TAG, "[ACM] Pls enlarge the inbuf len(%ld-%d)\n", len, cdc->comm_if.intr_in_packet_size);
+			RTK_LOGS(TAG, "[ACM] Pls inc inbuf len %d-%d\n", len, cdc->comm_if.intr_in_packet_size);
 			cdc->comm_if.intr_in_packet_size = len;
 		}
 

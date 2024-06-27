@@ -470,6 +470,7 @@ static const cmd_table_t cmd_table[] = {
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
 	{"hid_cmd",     atcmd_bt_hid_cmd,              1, 23},
 	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
+	{"pbap_cmd",    atcmd_bt_pbap_cmd,             1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
@@ -1119,12 +1120,12 @@ static int atcmd_bt_example_help(int argc, char *argv[])
 
 static int atcmd_bt_vendor_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[ATBV] help: show ATBV cmds usage and discription\n\r"
-							  "usage: ATBV=help,[cmd]\n\r"
-							  "       ATBV=help,[cmd],[subcmd]\n\r"
+	const char *help_usage =  "[AT+BTVENDOR] help: show ATBV cmds usage and discription\n\r"
+							  "usage: AT+BTVENDOR=help,[cmd]\n\r"
+							  "       AT+BTVENDOR=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <tx_power_gain, hci_debug_enable, dlps>\n\r"
-							  "[subcmd] = 'use ATBV=help,[cmd] to show subcmds'";
-	atcmd_bt_help_common(argc, argv, "ATBV", help_usage, vendor_help_table);
+							  "[subcmd] = 'use AT+BTVENDOR=help,[cmd] to show subcmds'";
+	atcmd_bt_help_common(argc, argv, "AT+BTVENDOR", help_usage, vendor_help_table);
 	return 0;
 }
 
@@ -1151,7 +1152,7 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBV] %s", atcmd_help_warning);
+	AT_PRINTK("[AT+BTVENDOR] %s", atcmd_help_warning);
 	return -1;
 }
 #endif  /* BT_ATCMD_HELP */
@@ -1268,6 +1269,7 @@ static const cmd_table_t cmd_table[] = {
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
 	{"hid_cmd",     atcmd_bt_hid_cmd,              1, 23},
 	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
+	{"pbap_cmd",    atcmd_bt_pbap_cmd,             1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
@@ -1419,7 +1421,7 @@ static inline int atcmd_bt_example(int argc, char *argv[])
 
 static inline int atcmd_bt_vendor(int argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, vendor_table, "[ATBV]");
+	return atcmd_bt_excute(argc, argv, vendor_table, "[AT+BTVENDOR]");
 }
 
 static void fBTDEMO(void *arg)
@@ -1529,6 +1531,36 @@ static inline void fBLEGMAP(void *arg)
 
 #endif /* RTK_BLE_AUDIO_SUPPORT */
 
+static void fBTVENDOR(void *arg)
+{
+	int argc = 0;
+	char *argv[MAX_ARGC] = {0};
+	int ret = 0;
+
+	if (!arg) {
+		AT_PRINTK("[AT+BTVENDOR] Error: No input args number!");
+		goto exit;
+	}
+
+	argc = parse_param(arg, argv);
+	if (argc < 2) {
+		AT_PRINTK("[AT+BTVENDOR] Error: Wrong input args number!");
+		goto exit;
+	}
+
+	ret = atcmd_bt_vendor(argc - 1, &argv[1]);
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR();
+	}
+	return;
+
+exit:
+	AT_PRINTK("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help");
+	BT_AT_PRINTERROR();
+}
+
 #endif /* ATCMD_BT_CUT_DOWN */
 
 static log_item_t at_bt_items[] = {
@@ -1549,14 +1581,15 @@ static log_item_t at_bt_items[] = {
 	{"+BTSPP",    fBTSPP,    {NULL, NULL}},
 	{"+BTHID",    fBTHID,    {NULL, NULL}},
 	{"+BTHFP",    fBTHFP,    {NULL, NULL}},
-#endif
+#endif /* RTK_BREDR_SUPPORT */
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"+BLEBAP",   fBLEBAP,   {NULL, NULL}},
 	{"+BLECAP",   fBLECAP,   {NULL, NULL}},
 	{"+BLEPBP",   fBLEPBP,   {NULL, NULL}},
 	{"+BLETMAP",  fBLETMAP,  {NULL, NULL}},
 	{"+BLEGMAP",  fBLEGMAP,  {NULL, NULL}},
-#endif
+#endif /* RTK_BLE_AUDIO_SUPPORT */
+	{"+BTVENDOR", fBTVENDOR, {NULL, NULL}},
 
 #endif
 };

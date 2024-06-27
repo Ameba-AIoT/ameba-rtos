@@ -38,10 +38,10 @@ endif
 ifeq ($(CONFIG_WLAN),y)
 # NP
 ifeq ($(CONFIG_AS_INIC_NP),y)
-COMPONENT += api
+
 COMPONENT += wlan
 
-COMPONENT_CLEAN += api
+
 COMPONENT_CLEAN += wlan
 endif
 endif

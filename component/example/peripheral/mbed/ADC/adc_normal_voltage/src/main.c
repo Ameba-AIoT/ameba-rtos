@@ -50,7 +50,7 @@ void adc_analogin_voltage(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "MBED_ADC_VOLTAGE_TASK", (rtos_task_t)adc_analogin_voltage, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "MBED_ADC_VOLTAGE_TASK", (rtos_task_t)adc_analogin_voltage, NULL, 3072, (1)) != SUCCESS) {
 		printf("Cannot create MBED_ADC_VOLTAGE_TASK \r\n");
 	}
 

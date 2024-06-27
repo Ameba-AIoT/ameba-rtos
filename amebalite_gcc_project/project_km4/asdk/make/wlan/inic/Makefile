@@ -70,7 +70,11 @@ lib_ipc: CORE_TARGETS
 	$(AR) rvs lib_inic.a $(OBJS)
 	$(FROMELF) -g -D lib_inic.a
 ifeq ($(CONFIG_MP_INCLUDED), y)
+ifeq ($(CONFIG_MP_SHRINK), y)
+	$(MOVE) -f lib_inic.a $(ROOTDIR)/lib/application/lib_wifi_inic_ap_mp_shrink.a
+else
 	$(MOVE) -f lib_inic.a $(ROOTDIR)/lib/application/lib_wifi_inic_ap_mp.a
+endif
 else
 	$(MOVE) -f lib_inic.a $(ROOTDIR)/lib/application/lib_wifi_inic_ap.a
 endif

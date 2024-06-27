@@ -7,7 +7,6 @@
 /* -------------------------------- Includes -------------------------------- */
 #include <bt_api_config.h>
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-#include <rtk_bt_le_gap.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
 #include <stdio.h>
@@ -21,6 +20,7 @@
 #include <trace_app.h>
 #include <remote.h>
 #include <bt_a2dp.h>
+#include <bt_sdp.h>
 
 rtk_bt_a2dp_media_codec_sbc_t rtk_codec_sbc = {0};
 rtk_bt_a2dp_media_codec_aac_t rtk_codec_aac = {0};
@@ -469,7 +469,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 static uint16_t bt_stack_a2dp_connect(void *param)
 {
 	uint8_t *bd_addr = (uint8_t *)param;
-	T_GAP_UUID_DATA uuid;
+	T_BT_SDP_UUID_DATA uuid;
 
 	if (a2dp_role == BT_A2DP_ROLE_SRC) {
 		uuid.uuid_16 = UUID_AUDIO_SINK;
@@ -477,7 +477,7 @@ static uint16_t bt_stack_a2dp_connect(void *param)
 		uuid.uuid_16 = UUID_AUDIO_SOURCE;
 	}
 
-	if (gap_br_start_sdp_discov(bd_addr, GAP_UUID16, uuid) == GAP_CAUSE_SUCCESS) {
+	if (bt_sdp_discov_start(bd_addr, BT_SDP_UUID16, uuid)) {
 		return RTK_BT_OK;
 	}
 

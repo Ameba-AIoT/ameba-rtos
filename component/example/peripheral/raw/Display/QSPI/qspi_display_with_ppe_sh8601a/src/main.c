@@ -217,7 +217,7 @@ static void qspi_display_with_ppe_sh8601a(void *para)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "qspi_display_with_ppe_sh8601a", (rtos_task_t)qspi_display_with_ppe_sh8601a, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "qspi_display_with_ppe_sh8601a", (rtos_task_t)qspi_display_with_ppe_sh8601a, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create qspi_display_with_ppe_sh8601a demo task\n\r");
 	}
 

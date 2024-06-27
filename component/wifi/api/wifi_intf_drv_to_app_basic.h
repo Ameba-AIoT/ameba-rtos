@@ -547,8 +547,6 @@ typedef struct _pwr_lmt_regu_remap {
 typedef struct _rtw_sw_statistics_t { /* software statistics for tx and rx*/
 	unsigned int    max_skbbuf_used_number; /*!< max skb buffer used number       */
 	unsigned int    skbbuf_used_number;     /*!< current used skbbuf number       */
-	unsigned int    max_skbdata_used_number;/*!< max skb data used number       */
-	unsigned int    skbdata_used_number;    /*!< current used skbdata number       */
 } rtw_sw_statistics_t;
 
 /**
@@ -700,6 +698,7 @@ typedef struct _rtw_client_list_t {
 struct net_device {
 	void			*priv;		/* pointer to private data */
 	unsigned char		dev_addr[6];	/* set during bootup */
+	u8 iface_type;
 };
 
 /**
@@ -1009,6 +1008,11 @@ struct wifi_user_conf {
 	/*!	These buffer are used for tx data packtes in INIC mode, not used in single core mode.\n
 		For higher throughput or a large number of STAs connected to softap, skb_num_ap can be increased */
 	int skb_num_ap;
+
+	/*!	Specify the trx buffer size of each skb.\n
+		Cache size(32 for amebadplus&amebalite and 64 for amebasmart)alignment will be applied to the input size.\n
+		0: use default size*/
+	int skb_buf_size;
 
 	/*!	Every data tx is forced to start with cts2self */
 	unsigned char force_cts2self;

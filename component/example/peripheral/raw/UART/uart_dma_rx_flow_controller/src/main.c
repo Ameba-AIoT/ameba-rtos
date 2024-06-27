@@ -184,7 +184,7 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 
 int main(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_stream_rx_dma_flow_ctrl_demo", (rtos_task_t)uart_stream_rx_dma_flow_ctrl_demo, (void *)NULL, (2048),
+	if (SUCCESS != rtos_task_create(NULL, "uart_stream_rx_dma_flow_ctrl_demo", (rtos_task_t)uart_stream_rx_dma_flow_ctrl_demo, (void *)NULL, (3072),
 									(1))) {
 		printf("Create uart_stream_rx_dma_flow_ctrl_demo Err!!\n");
 	}

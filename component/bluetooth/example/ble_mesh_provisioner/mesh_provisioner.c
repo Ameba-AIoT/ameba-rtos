@@ -390,6 +390,13 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		}
 		break;
 	}
+	case RTK_BT_MESH_STACK_EVT_RETRANS_PARAM_SETTING_RESULT: {
+		rtk_bt_mesh_stack_set_retrans_param_t *result;
+		result = (rtk_bt_mesh_stack_set_retrans_param_t *)param;
+		BT_LOGA("Set node net trans count %d, relay retrans count %d, ttl %d, trans retrans count %d, Success!\r\n",
+				result->net_retrans_count, result->relay_retrans_count, result->ttl, result->trans_retrans_count);
+		break;
+	}
 	default:
 		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
@@ -1694,7 +1701,7 @@ int ble_mesh_provisioner_main(uint8_t enable)
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 2;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
-
+		BT_LOGA("Before Enable BT\r\n");
 		/* Enable BT */
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 

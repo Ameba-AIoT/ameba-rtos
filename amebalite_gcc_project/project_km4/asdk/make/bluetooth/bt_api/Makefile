@@ -44,6 +44,7 @@ CSRC += \
 	$(BT_API_DIR)/rtk_bt_spp.c \
 	$(BT_API_DIR)/rtk_bt_hid.c \
 	$(BT_API_DIR)/rtk_bt_hfp.c \
+	$(BT_API_DIR)/rtk_bt_pbap.c \
 	$(BT_API_DIR)/rtk_bt_mesh_common.c \
 	$(BT_API_DIR)/rtk_bt_mesh_config_client_model.c \
 	$(BT_API_DIR)/rtk_bt_mesh_datatrans_model.c \
@@ -105,6 +106,7 @@ CSRC += \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_spp.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_hid.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_hfp.c \
+	$(BT_API_DIR)/rtk_stack/rtk_stack_pbap.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_common.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_config_client_model.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_datatrans_model.c \

@@ -22,13 +22,13 @@
 #define HCI_UART_RX_ENABLE_SIZE  (512)      /* Only 512 left to read */
 #define HCI_UART_RX_DISABLE_SIZE (128)      /* Only 128 left to write */
 
-static struct amebadplus_uart_t {
+static struct hci_uart_t {
 	/* UART */
 	UART_InitTypeDef UART_InitStruct;
 
 	/* UART RX RingBuf */
-	uint8_t         *ring_buffer;
-	uint32_t         ring_buffer_size;
+	uint8_t         *ring;
+	uint32_t         ring_size;
 	uint32_t         write_ptr;
 	uint32_t         read_ptr;
 	uint8_t          rx_disabled;
@@ -40,71 +40,44 @@ static struct amebadplus_uart_t {
 	uint8_t         *tx_buf;
 	uint16_t         tx_len;
 	void            *tx_done_sem;
+} *g_uart = NULL;
 
-	/* UART Bridge */
-	bool             bridge_flag;
-} *amebadplus_uart = NULL;
-
-_WEAK void bt_uart_bridge_putc(uint8_t tx_data)
-{
-	(void)tx_data;
-}
-
-void amebadplus_uart_bridge_open(bool flag)
-{
-	if (amebadplus_uart) {
-		amebadplus_uart->bridge_flag = flag;
-	} else {
-		BT_LOGE("amebadplus_uart is NULL!\r\n");
-	}
-}
-
-void amebadplus_uart_bridge_to_hci(uint8_t rc)
-{
-	UART_CharPut(HCI_UART_DEV, rc);
-}
-
-void amebadplus_uart_hci_to_bridge(uint8_t rc)
-{
-	bt_uart_bridge_putc(rc);
-}
-
-static uint8_t amebadplus_uart_set_bdrate(uint32_t baudrate)
+uint8_t hci_uart_set_bdrate(uint32_t baudrate)
 {
 	UART_SetBaud(HCI_UART_DEV, baudrate);
 	BT_LOGA("Set baudrate to %d success!\r\n", baudrate);
 	return HCI_SUCCESS;
 }
 
-static uint8_t amebadplus_uart_set_rx_ind(HCI_RECV_IND rx_ind)
+uint8_t hci_uart_set_rx_ind(HCI_RECV_IND rx_ind)
 {
-	amebadplus_uart->rx_ind = rx_ind;
+	g_uart->rx_ind = rx_ind;
 	return HCI_SUCCESS;
 }
 
-static inline uint16_t amebadplus_uart_rx_to_read_space(void)
+static inline uint16_t _rx_to_read_space(void)
 {
-	return (amebadplus_uart->write_ptr + amebadplus_uart->ring_buffer_size - amebadplus_uart->read_ptr) % amebadplus_uart->ring_buffer_size;
+	return (g_uart->write_ptr + g_uart->ring_size - g_uart->read_ptr) % g_uart->ring_size;
 }
 
-static inline uint16_t amebadplus_uart_rx_to_write_space(void)
+static inline uint16_t _rx_to_write_space(void)
 {
-	return (amebadplus_uart->read_ptr + amebadplus_uart->ring_buffer_size - amebadplus_uart->write_ptr - 1) % amebadplus_uart->ring_buffer_size;
+	return (g_uart->read_ptr + g_uart->ring_size - g_uart->write_ptr - 1) % g_uart->ring_size;
 }
 
-static inline uint8_t amebadplus_uart_irq_tx_ready(void)
+static inline uint8_t _irq_tx_ready(void)
 {
 	return (UART_LineStatusGet(HCI_UART_DEV) & RUART_BIT_ETBEI);
 }
 
-static inline uint8_t amebadplus_uart_irq_rx_ready(void)
+static inline uint8_t _irq_rx_ready(void)
 {
 	return (UART_LineStatusGet(HCI_UART_DEV) & (RUART_BIT_ERBI | RUART_BIT_ETOI));
 }
 
-static inline uint8_t amebauart_uart_irq_is_pending(void)
+static inline uint8_t _irq_is_pending(void)
 {
-	return (amebadplus_uart_irq_tx_ready() | amebadplus_uart_irq_rx_ready());
+	return (_irq_tx_ready() | _irq_rx_ready());
 }
 
 static inline void transmit_chars(void)
@@ -125,10 +98,10 @@ static inline void transmit_chars(void)
 		}
 	}
 
-	while (amebadplus_uart->tx_len > 0 && max_count-- > 0) {
-		UART_CharPut(HCI_UART_DEV, *(amebadplus_uart->tx_buf));
-		amebadplus_uart->tx_buf++;
-		amebadplus_uart->tx_len--;
+	while (g_uart->tx_len > 0 && max_count-- > 0) {
+		UART_CharPut(HCI_UART_DEV, *(g_uart->tx_buf));
+		g_uart->tx_buf++;
+		g_uart->tx_len--;
 	}
 
 	if (!HCI_BT_KEEP_WAKE) {
@@ -136,10 +109,10 @@ static inline void transmit_chars(void)
 		set_reg_value(0x41008280, BIT13 | BIT14, 0); // disable HOST_WAKE_BT No GPIO | HOST_WAKE_BT
 	}
 
-	if (amebadplus_uart->tx_len == 0) {
+	if (g_uart->tx_len == 0) {
 		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, DISABLE);
-		if (amebadplus_uart->tx_done_sem) {
-			osif_sem_give(amebadplus_uart->tx_done_sem);
+		if (g_uart->tx_done_sem) {
+			osif_sem_give(g_uart->tx_done_sem);
 		}
 	}
 }
@@ -147,34 +120,27 @@ static inline void transmit_chars(void)
 static inline void receive_chars(void)
 {
 	uint8_t ch;
-	uint16_t write_len = amebadplus_uart_rx_to_write_space();
+	uint16_t write_len = _rx_to_write_space();
 	uint16_t max_count = (write_len > HCI_UART_RX_FIFO_SIZE) ? HCI_UART_RX_FIFO_SIZE : write_len;
 
-	if (amebadplus_uart->bridge_flag) {
-		while (UART_Readable(HCI_UART_DEV) && max_count-- > 0) {
-			UART_CharGet(HCI_UART_DEV, &ch);
-			amebadplus_uart_hci_to_bridge(ch);
-		}
-	} else {
-		while (UART_Readable(HCI_UART_DEV) && max_count-- > 0) {
-			UART_CharGet(HCI_UART_DEV, &ch);
-			amebadplus_uart->ring_buffer[amebadplus_uart->write_ptr++] = ch;
-			amebadplus_uart->write_ptr %= amebadplus_uart->ring_buffer_size;
-		}
+	while (UART_Readable(HCI_UART_DEV) && max_count-- > 0) {
+		UART_CharGet(HCI_UART_DEV, &ch);
+		g_uart->ring[g_uart->write_ptr++] = ch;
+		g_uart->write_ptr %= g_uart->ring_size;
+	}
 
-		if (!amebadplus_uart->rx_disabled && amebadplus_uart_rx_to_write_space() < HCI_UART_RX_DISABLE_SIZE) {
-			UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, DISABLE);
-			amebadplus_uart->rx_disabled = 1;
-			BT_LOGA("amebadplus_uart rx disable!\r\n");
-		}
+	if (!g_uart->rx_disabled && _rx_to_write_space() < HCI_UART_RX_DISABLE_SIZE) {
+		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, DISABLE);
+		g_uart->rx_disabled = 1;
+		BT_LOGA("g_uart rx disable!\r\n");
+	}
 
-		if (amebadplus_uart->rx_ind) {
-			amebadplus_uart->rx_ind();
-		}
+	if (g_uart->rx_ind) {
+		g_uart->rx_ind();
 	}
 }
 
-static uint32_t amebadplus_uart_irq(void *data)
+static uint32_t _uart_irq(void *data)
 {
 	(void)data;
 	uint32_t reg_lsr = UART_LineStatusGet(HCI_UART_DEV);
@@ -212,22 +178,22 @@ static uint32_t amebadplus_uart_irq(void *data)
 	return 0;
 }
 
-static uint16_t amebadplus_uart_send(uint8_t *buf, uint16_t len)
+uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 {
-	if (!amebadplus_uart) {
-		BT_LOGE("amebadplus_uart is NULL!\r\n");
+	if (!g_uart) {
+		BT_LOGE("g_uart is NULL!\r\n");
 		return 0;
 	}
 
 	/* UART_SendData() does not work */
-	amebadplus_uart->tx_buf = buf;
-	amebadplus_uart->tx_len = len;
+	g_uart->tx_buf = buf;
+	g_uart->tx_len = len;
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, ENABLE);
 
-	if (amebadplus_uart->tx_done_sem) {
-		if (osif_sem_take(amebadplus_uart->tx_done_sem, 0xFFFFFFFF) == false) {
-			BT_LOGE("amebadplus_uart->tx_done_sem take fail!\r\n");
+	if (g_uart->tx_done_sem) {
+		if (osif_sem_take(g_uart->tx_done_sem, 0xFFFFFFFF) == false) {
+			BT_LOGE("g_uart->tx_done_sem take fail!\r\n");
 			return 0;
 		}
 	}
@@ -236,33 +202,33 @@ static uint16_t amebadplus_uart_send(uint8_t *buf, uint16_t len)
 	return len;
 }
 
-static uint16_t amebadplus_uart_read(uint8_t *buf, uint16_t len)
+uint16_t hci_uart_read(uint8_t *buf, uint16_t len)
 {
-	uint16_t read_len = amebadplus_uart_rx_to_read_space();
+	uint16_t read_len = _rx_to_read_space();
 	read_len = (read_len > len) ? len : read_len;
 
 	if (0 == read_len) {
 		return 0;
 	}
 
-	if (read_len > amebadplus_uart->ring_buffer_size - amebadplus_uart->read_ptr) {
-		read_len = amebadplus_uart->ring_buffer_size - amebadplus_uart->read_ptr;
+	if (read_len > g_uart->ring_size - g_uart->read_ptr) {
+		read_len = g_uart->ring_size - g_uart->read_ptr;
 	}
 
-	memcpy(buf, &amebadplus_uart->ring_buffer[amebadplus_uart->read_ptr], read_len);
-	amebadplus_uart->read_ptr += read_len;
-	amebadplus_uart->read_ptr %= amebadplus_uart->ring_buffer_size;
+	memcpy(buf, &g_uart->ring[g_uart->read_ptr], read_len);
+	g_uart->read_ptr += read_len;
+	g_uart->read_ptr %= g_uart->ring_size;
 
-	if (amebadplus_uart->rx_disabled && amebadplus_uart_rx_to_read_space() < HCI_UART_RX_ENABLE_SIZE) {
+	if (g_uart->rx_disabled && _rx_to_read_space() < HCI_UART_RX_ENABLE_SIZE) {
 		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
-		amebadplus_uart->rx_disabled = 0;
-		BT_LOGA("amebadplus_uart rx enable!\r\n");
+		g_uart->rx_disabled = 0;
+		BT_LOGA("g_uart rx enable!\r\n");
 	}
 
 	return read_len;
 }
 
-static void amebadplus_uart_force_rts(bool op)
+void hci_uart_force_rts(bool op)
 {
 	if (op == true) {
 		UART_RTSForceCmd(HCI_UART_DEV, ENABLE);
@@ -271,32 +237,32 @@ static void amebadplus_uart_force_rts(bool op)
 	}
 }
 
-static uint8_t amebadplus_uart_open(void)
+uint8_t hci_uart_open(void)
 {
-	/* Init amebadplus_uart */
-	if (!amebadplus_uart) {
-		amebadplus_uart = (struct amebadplus_uart_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct amebadplus_uart_t));
-		if (!amebadplus_uart) {
-			BT_LOGE("amebadplus_uart is NULL!\r\n");
+	/* Init g_uart */
+	if (!g_uart) {
+		g_uart = (struct hci_uart_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct hci_uart_t));
+		if (!g_uart) {
+			BT_LOGE("g_uart is NULL!\r\n");
 			return HCI_FAIL;
 		}
-		memset(amebadplus_uart, 0, sizeof(struct amebadplus_uart_t));
+		memset(g_uart, 0, sizeof(struct hci_uart_t));
 	}
-	if (!amebadplus_uart->ring_buffer) {
-		amebadplus_uart->ring_buffer = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, HCI_UART_RX_BUF_SIZE, 4);
-		if (!amebadplus_uart->ring_buffer) {
-			BT_LOGE("amebadplus_uart->ring_buffer is NULL!\r\n");
+	if (!g_uart->ring) {
+		g_uart->ring = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, HCI_UART_RX_BUF_SIZE, 4);
+		if (!g_uart->ring) {
+			BT_LOGE("g_uart->ring is NULL!\r\n");
 			return HCI_FAIL;
 		}
-		memset(amebadplus_uart->ring_buffer, 0, sizeof(HCI_UART_RX_BUF_SIZE));
+		memset(g_uart->ring, 0, sizeof(HCI_UART_RX_BUF_SIZE));
 	}
-	amebadplus_uart->ring_buffer_size = HCI_UART_RX_BUF_SIZE;
-	amebadplus_uart->read_ptr = 0;
-	amebadplus_uart->write_ptr = 0;
-	amebadplus_uart->rx_disabled = 0;
+	g_uart->ring_size = HCI_UART_RX_BUF_SIZE;
+	g_uart->read_ptr = 0;
+	g_uart->write_ptr = 0;
+	g_uart->rx_disabled = 0;
 
-	if (osif_sem_create(&amebadplus_uart->tx_done_sem, 0, 1) == false) {
-		BT_LOGE("amebadplus_uart->tx_done_sem create fail!\r\n");
+	if (osif_sem_create(&g_uart->tx_done_sem, 0, 1) == false) {
+		BT_LOGE("g_uart->tx_done_sem create fail!\r\n");
 		return HCI_FAIL;
 	}
 
@@ -307,7 +273,7 @@ static uint8_t amebadplus_uart_open(void)
 	 * Use Flow Control (When rx FIFO reaches level, RTS will be pulled high)
 	 * Use Baudrate 115200 (Default)
 	 */
-	UART_InitTypeDef *pUARTStruct = &amebadplus_uart->UART_InitStruct;
+	UART_InitTypeDef *pUARTStruct = &g_uart->UART_InitStruct;
 	UART_StructInit(pUARTStruct);
 	pUARTStruct->WordLen = RUART_WLS_8BITS;
 	pUARTStruct->StopBit = RUART_STOP_BIT_1;
@@ -322,7 +288,7 @@ static uint8_t amebadplus_uart_open(void)
 	/* Disable and Enable UART Interrupt */
 	InterruptDis(HCI_UART_IRQ);
 	InterruptUnRegister(HCI_UART_IRQ);
-	InterruptRegister((IRQ_FUN)amebadplus_uart_irq, HCI_UART_IRQ, NULL, HCI_UART_IRQ_PRIO);
+	InterruptRegister((IRQ_FUN)_uart_irq, HCI_UART_IRQ, NULL, HCI_UART_IRQ_PRIO);
 	InterruptEn(HCI_UART_IRQ, HCI_UART_IRQ_PRIO);
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, DISABLE);
@@ -334,10 +300,10 @@ static uint8_t amebadplus_uart_open(void)
 	return HCI_SUCCESS;
 }
 
-static uint8_t amebadplus_uart_close(void)
+uint8_t hci_uart_close(void)
 {
-	if (!amebadplus_uart) {
-		BT_LOGE("amebadplus_uart is NULL!\r\n");
+	if (!g_uart) {
+		BT_LOGE("g_uart is NULL!\r\n");
 		return HCI_FAIL;
 	}
 
@@ -349,38 +315,25 @@ static uint8_t amebadplus_uart_close(void)
 	return HCI_SUCCESS;
 }
 
-static uint8_t amebadplus_uart_free(void)
+uint8_t hci_uart_free(void)
 {
-	if (!amebadplus_uart) {
-		BT_LOGE("amebadplus_uart is NULL!\r\n");
+	if (!g_uart) {
+		BT_LOGE("g_uart is NULL!\r\n");
 		return HCI_FAIL;
 	}
 
-	if (amebadplus_uart->tx_done_sem) {
-		osif_sem_delete(amebadplus_uart->tx_done_sem);
-		amebadplus_uart->tx_done_sem = NULL;
+	if (g_uart->tx_done_sem) {
+		osif_sem_delete(g_uart->tx_done_sem);
+		g_uart->tx_done_sem = NULL;
 	}
 
 	/* Deinit UART Ringbuf */
-	if (amebadplus_uart->ring_buffer) {
-		osif_mem_aligned_free(amebadplus_uart->ring_buffer);
+	if (g_uart->ring) {
+		osif_mem_aligned_free(g_uart->ring);
 	}
 
-	osif_mem_free(amebadplus_uart);
-	amebadplus_uart = NULL;
+	osif_mem_free(g_uart);
+	g_uart = NULL;
 
 	return HCI_SUCCESS;
 }
-
-HCI_UART_OPS hci_uart_ops = {
-	.open          = amebadplus_uart_open,
-	.close         = amebadplus_uart_close,
-	.free_ops      = amebadplus_uart_free,
-	.send          = amebadplus_uart_send,
-	.read          = amebadplus_uart_read,
-	.set_rx_ind    = amebadplus_uart_set_rx_ind,
-	.set_bdrate    = amebadplus_uart_set_bdrate,
-	.bridge_open   = amebadplus_uart_bridge_open,
-	.bridge_to_hci = amebadplus_uart_bridge_to_hci,
-	.force_rts     = amebadplus_uart_force_rts,
-};

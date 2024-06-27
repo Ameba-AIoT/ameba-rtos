@@ -74,9 +74,7 @@ Result description
 		[USB-I] * main_task_priority: 3
 		[USB-I] * isr_task_priority: 4
 		[USB-I] * alt_max: 25
-		[USB-I] * rx_fifo_size: 512
-		[USB-I] * nptx_fifo_size: 256
-		[USB-I] * ptx_fifo_size: 256
+		[USB-I] * ptx_fifo_first: 1
 		[USB-I] GSNPSID = 0x4F54310A
 		UVC init
 		[USB-I] USB Device Attached

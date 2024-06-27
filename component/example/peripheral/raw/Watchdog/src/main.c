@@ -155,7 +155,7 @@ void watchdog_task(void)
 int main(void)
 {
 	DelayMs(50);
-	if (SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 4), (1))) {
+	if (SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 6), (1))) {
 		printf("Create watchdog_task Err!!\r\n");
 	}
 

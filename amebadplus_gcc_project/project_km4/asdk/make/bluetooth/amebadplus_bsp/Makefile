@@ -11,6 +11,7 @@ vpath %.c $(DIR)/driver/hci \
 		$(DIR)/driver/hci/hci_process \
 		$(DIR)/driver/hci/hci_transport \
 		$(DIR)/driver/platform/amebadplus/hci \
+		$(DIR)/driver/dtm \
 		$(DIR)/rtk_stack/platform/common \
 		$(DIR)/osif
 
@@ -24,6 +25,7 @@ CSRC += \
 	$(DIR)/driver/platform/amebadplus/hci/bt_mp_patch.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_uart.c \
+	$(DIR)/driver/dtm/hci_dtm.c \
 	$(DIR)/rtk_stack/platform/common/platform_utils.c \
 	$(DIR)/rtk_stack/platform/common/trace_uart.c \
 	$(DIR)/osif/bt_debug.c \

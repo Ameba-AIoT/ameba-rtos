@@ -9,8 +9,6 @@
 #include "main.h"
 #include "rtw_wifi_constants.h"
 #include "FreeRTOS.h"
-/* TODO */
-#define ENABLE_SET_MAC_ADDRESS                 0
 
 #ifndef CONFIG_MP_SHRINK
 void print_wifi_at(void);

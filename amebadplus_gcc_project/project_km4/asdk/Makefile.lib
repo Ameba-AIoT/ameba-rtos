@@ -36,8 +36,7 @@ LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/ameb
 endif
 endif
 
-APP_LIB = $(APP_LIB_DIR)/lib_wps.a \
-	$(APP_LIB_DIR)/lib_httpc.a \
+APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
 	$(APP_LIB_DIR)/lib_httpd.a \
 	$(APP_LIB_DIR)/lib_websocket.a \
 	$(APP_LIB_DIR)/lib_ipnat.a \
@@ -61,9 +60,6 @@ LINK_APP_LIB += $(APP_LIB)
 
 # NP Link Library
 else ifeq ($(CONFIG_AS_INIC_NP), y)
-ifeq ($(CONFIG_MP_INCLUDED), y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
-endif
 
 ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
@@ -74,9 +70,6 @@ endif
 # Single Core Library
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 LINK_APP_LIB += $(APP_LIB)
-ifeq ($(CONFIG_MP_INCLUDED), y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_wps.a
-endif
 ifeq ($(CONFIG_MP_INCLUDED), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
 else
@@ -153,7 +146,6 @@ ifeq ($(CONFIG_WLAN), y)
 
 # build AP libs
 ifeq ($(CONFIG_AS_INIC_AP), y)
-	@+$(MAKE) -C make/wps all
 	@+$(MAKE) -C make/network/httpc all
 	@+$(MAKE) -C make/network/httpd all
 	@+$(MAKE) -C make/network/websocket all
@@ -168,7 +160,6 @@ else ifeq ($(CONFIG_AS_INIC_NP), y)
 # build single core wifi libs
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 
-	@+$(MAKE) -C make/wps all
 	@+$(MAKE) -C make/network/httpc all
 	@+$(MAKE) -C make/network/httpd all
 	@+$(MAKE) -C make/network/websocket all

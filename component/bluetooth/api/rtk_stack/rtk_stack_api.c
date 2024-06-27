@@ -445,6 +445,12 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 			return ret;
 		}
 	}
+	if (app_profile_support & RTK_BT_PROFILE_PBAP) {
+		ret = bt_stack_pbap_init(papp_conf->hfp_role);
+		if (ret) {
+			return ret;
+		}
+	}
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_LEAUDIO) {
 		ret = bt_stack_le_audio_init(papp_conf, api_task_io_msg_q, api_task_evt_msg_q);
@@ -486,6 +492,9 @@ static uint16_t bt_stack_profile_deinit(void)
 	}
 	if (profile_conf & RTK_BT_PROFILE_HFP) {
 		bt_stack_hfp_deinit();
+	}
+	if (profile_conf & RTK_BT_PROFILE_PBAP) {
+		bt_stack_pbap_deinit();
 	}
 	if (profile_conf & RTK_BT_PROFILE_SDP) {
 		bt_stack_sdp_deinit();
@@ -803,6 +812,10 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_BR_GP_HFP:
 		BT_LOGD("RTK_BT_BR_GP_HFP group \r\n");
 		bt_stack_hfp_act_handle(p_cmd);
+		break;
+	case RTK_BT_BR_GP_PBAP:
+		BT_LOGD("RTK_BT_BR_GP_PBAP group \r\n");
+		bt_stack_pbap_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_SDP:
 		BT_LOGD("RTK_BT_BR_GP_SDP group \r\n");

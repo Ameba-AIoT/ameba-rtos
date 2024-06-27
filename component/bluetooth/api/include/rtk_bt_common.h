@@ -146,8 +146,9 @@ typedef enum {
 	RTK_BT_PROFILE_LEAUDIO  =  BIT5,
 	RTK_BT_PROFILE_SPP      =  BIT6,
 	RTK_BT_PROFILE_HFP      =  BIT7,
-	RTK_BT_PROFILE_MESH     =  BIT8,
-	RTK_BT_PROFILE_HID      =  BIT9,
+	RTK_BT_PROFILE_PBAP     =  BIT8,
+	RTK_BT_PROFILE_MESH     =  BIT9,
+	RTK_BT_PROFILE_HID      =  BIT10,
 } rtk_bt_profile_t;
 
 /***************************************BLE group************************************/
@@ -703,6 +704,7 @@ typedef enum {
 	RTK_BT_BR_GP_HFP,                             /*!< BR/EDR hfp group */
 	RTK_BT_BR_GP_SDP,                             /*!< BR/EDR sdp group */
 	RTK_BT_BR_GP_HID,                             /*!< BR/EDR hid group */
+	RTK_BT_BR_GP_PBAP,                            /*!< BR/EDR phone book access profile */
 	RTK_BT_BR_GP_MAX,
 } rtk_bt_br_group_t;
 
@@ -961,6 +963,36 @@ typedef enum {
 	RTK_BT_HFP_EVT_AG_CALL_STATUS,                     /*!< HFP ag call status incoming */
 	RTK_BT_HFP_EVT_MAX,
 } rtk_bt_hfp_evt_t;
+
+/**
+ * @typedef   rtk_bt_pbap_act_t
+ * @brief     Bluetooth PBAP action
+ */
+typedef enum {
+	RTK_BT_PBAP_ACT_CONNECT = 1,
+	RTK_BT_PBAP_ACT_DISCONNECT,
+	RTK_BT_PBAP_ACT_SET_PHONE_BOOK,
+	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL,
+	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_CONTINUE,
+	RTK_BT_PBAP_ACT_PHONE_BOOK_SIZE_GET,
+	RTK_BT_PBAP_ACT_PULL_CALLER_ID_NAME,
+	RTK_BT_PBAP_ACT_MAX,
+} rtk_bt_pbap_act_t;
+
+/**
+ * @typedef   rtk_bt_pbap_evt_t
+ * @brief     Bluetooth PBAP event indication
+ */
+typedef enum {
+	RTK_BT_PBAP_EVT_CONN_CMPL = 1,                  /*!< PBAP connection completion */
+	RTK_BT_PBAP_EVT_CONN_FAIL,                      /*!< PBAP connection fail */
+	RTK_BT_PBAP_EVT_DISCONN_CMPL,                   /*!< PBAP disconnectoin completion */
+	RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL,            /*!< PBAP set phone book completion */
+	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL,            /*!< PBAP get phone book completion */
+	RTK_BT_PBAP_EVT_CALLER_ID_NAME,                 /*!< PBAP caller id name indication */
+	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_SIZE_CMPL,       /*!< PBAP get phone book size completion */
+	RTK_BT_PBAP_EVT_MAX,
+} rtk_bt_pbap_evt_t;
 
 /***************************************BT gap common group************************************/
 /**

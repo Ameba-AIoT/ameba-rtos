@@ -38,6 +38,7 @@ _WEAK void wifi_set_user_config(void)
 #ifdef CONFIG_SINGLE_CORE_WIFI
 	wifi_user_config.skb_num_ap = 0;
 #endif
+	wifi_user_config.skb_buf_size = 0;
 	wifi_user_config.wifi_wpa_mode_force = WPA_AUTO_MODE;
 
 	/*Regulatory related*/

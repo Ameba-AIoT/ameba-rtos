@@ -25,9 +25,9 @@ static void aontimer_dslp_handler(void)
 
 static void wakepin_dslp_handler(void)
 {
+	u32 pinidx;
 	printf("dslp wake from wakepin\n");
 
-	u32 pinidx;
 	pinidx = SOCPS_WakePinCheck();
 	SOCPS_WakePinClearINT(pinidx);
 }
@@ -38,7 +38,7 @@ static void dslp_wake_handler(void)
 
 	BootReason = SOCPS_AONWakeReason();
 	printf("DSLP WAKE REASON: %lx \n", BootReason);
-
+	printf("BKUP_REG1's value = 0x%08lx \n", BKUP_Read(BKUP_REG1));
 	if (BootReason & AON_BIT_TIM_ISR_EVT) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		SOCPS_AONTimerINT_EN(ENABLE);
@@ -89,6 +89,9 @@ void pmu_deepsleep_wakeup_task(void)
 
 	printf("\nAP start enter deepsleep mode ============>\n");
 
+	BKUP_Write(BKUP_REG1, 0x12345678);
+	printf("Save 0x12345678 into BKUP_REG1\n");
+
 	sleep_param.sleep_time = 0;
 	switch (wakeup_source) {
 	case AON_TIMER_WAKEUP:
@@ -126,7 +129,7 @@ int main(void)
 
 	/*for one round test, will keep active after wake from dslp */
 	if ((BOOT_Reason() & AON_BIT_RSTF_DSLP) == 0) {
-		if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_deepsleep_wakeup_task, NULL, 2048, (1)) != SUCCESS) {
+		if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_deepsleep_wakeup_task, NULL, 3072, (1)) != SUCCESS) {
 			printf("Cannot create pmu_deepsleep_wakeup_task demo task\n\r");
 		}
 	}

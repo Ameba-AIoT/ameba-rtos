@@ -28,16 +28,16 @@ extern app_bt_le_audio_unicast_server_info_t g_uni_ser_info;
 uint16_t rtk_bt_bap_ext_scan(bool enable)
 {
 	if (enable) {
-		if (rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param)) {
-			BT_LOGE("%s rtk_bt_le_gap_ext_scan_set_param fail \r\n", __func__);
+		if (rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param)) {
+			BT_LOGE("%s rtk_bt_le_gap_set_ext_scan_param fail \r\n", __func__);
 			return RTK_BT_FAIL;
 		}
-		if (rtk_bt_le_gap_ext_scan_start()) {
-			BT_LOGE("%s rtk_bt_le_gap_ext_scan_set_param fail \r\n", __func__);
+		if (rtk_bt_le_gap_start_ext_scan()) {
+			BT_LOGE("%s rtk_bt_le_gap_set_ext_scan_param fail \r\n", __func__);
 			return RTK_BT_FAIL;
 		}
 	} else {
-		rtk_bt_le_gap_ext_scan_stop();
+		rtk_bt_le_gap_stop_ext_scan();
 		app_bt_le_audio_bass_scan_dev_list_remove_all();
 	}
 
@@ -63,17 +63,17 @@ uint16_t rtk_bt_bap_bass_scan(bool enable, bool remote_scan_enable, uint8_t grou
 		BT_LOGA("%s no remote scan \r\n", __func__);
 	}
 	if (enable) {
-		if (rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param)) {
-			BT_LOGE("%s rtk_bt_le_gap_ext_scan_set_param fail \r\n", __func__);
+		if (rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param)) {
+			BT_LOGE("%s rtk_bt_le_gap_set_ext_scan_param fail \r\n", __func__);
 			return RTK_BT_FAIL;
 		}
-		rtk_bt_le_gap_ext_scan_start();
+		rtk_bt_le_gap_start_ext_scan();
 		opcode = RTK_BT_LE_AUDIO_BASS_CP_REMOTE_SCAN_START;
 		if (!group_handle) {
 			return RTK_BT_OK;
 		}
 	} else {
-		rtk_bt_le_gap_ext_scan_stop();
+		rtk_bt_le_gap_stop_ext_scan();
 		opcode = RTK_BT_LE_AUDIO_BASS_CP_REMOTE_SCAN_STOP;
 		if (!group_handle) {
 			return RTK_BT_OK;
@@ -423,22 +423,22 @@ uint16_t rtk_bt_bap_broadcast_sync_start(rtk_bt_bap_bass_scan_dev_info_t *p_info
 		p_sync_dev_info->adv_sid = p_bscan_dev_info->adv_sid;
 		memcpy(&p_sync_dev_info->adv_addr, &p_info->adv_addr, sizeof(rtk_bt_le_addr_t));
 		memcpy(p_sync_dev_info->broadcast_id, p_bscan_dev_info->broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
-		ret = rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param);
+		ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
 		if (ret != RTK_BT_OK) {
-			BT_LOGE("%s rtk_bt_le_gap_ext_scan_set_param fail for addr_str (%s)\r\n", __func__, addr_str);
+			BT_LOGE("%s rtk_bt_le_gap_set_ext_scan_param fail for addr_str (%s)\r\n", __func__, addr_str);
 			return ret;
 		}
-		/* if ext scan is stop previous, rtk_bt_le_gap_ext_scan_start() will be scuess */
-		/* else if ext scan is started previous, rtk_bt_le_gap_ext_scan_start() will be fail cause currently is started */
-		/* so there is no need to judge return value of rtk_bt_le_gap_ext_scan_start() */
-		/* if rtk_bt_le_gap_ext_scan_start() finally fail due to other reason, the flow will also be terminated by rtk_bt_le_audio_broadcast_sink_big_sync() following */
-		rtk_bt_le_gap_ext_scan_start();
+		/* if ext scan is stop previous, rtk_bt_le_gap_start_ext_scan() will be scuess */
+		/* else if ext scan is started previous, rtk_bt_le_gap_start_ext_scan() will be fail cause currently is started */
+		/* so there is no need to judge return value of rtk_bt_le_gap_start_ext_scan() */
+		/* if rtk_bt_le_gap_start_ext_scan() finally fail due to other reason, the flow will also be terminated by rtk_bt_le_audio_broadcast_sink_big_sync() following */
+		rtk_bt_le_gap_start_ext_scan();
 	}
 	if (app_bap_bro_sink_info.big_info_ind_sem) {
 		osif_sem_take(app_bap_bro_sink_info.big_info_ind_sem, 1000);
 		ret = rtk_bt_le_audio_broadcast_sink_big_sync(&app_bap_bro_sink_info, p_info->adv_addr);
 		if (ret) {
-			rtk_bt_le_gap_ext_scan_stop();
+			rtk_bt_le_gap_stop_ext_scan();
 		}
 	}
 
@@ -587,16 +587,16 @@ uint16_t rtk_bt_bap_broadcast_assistant_sync_start(rtk_bt_bap_bass_scan_dev_info
 		p_sync_dev_info->adv_sid = p_bscan_dev_info->adv_sid;
 		memcpy(&p_sync_dev_info->adv_addr, &p_info->adv_addr, sizeof(rtk_bt_le_addr_t));
 		memcpy(p_sync_dev_info->broadcast_id, p_bscan_dev_info->broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
-		ret = rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param);
+		ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
 		if (ret != RTK_BT_OK) {
-			BT_LOGE("%s rtk_bt_le_gap_ext_scan_set_param fail for addr_str (%s)\r\n", __func__, addr_str);
+			BT_LOGE("%s rtk_bt_le_gap_set_ext_scan_param fail for addr_str (%s)\r\n", __func__, addr_str);
 			return ret;
 		}
-		/* if ext scan is stop previous, rtk_bt_le_gap_ext_scan_start() will be scuess */
-		/* else if ext scan is started previous, rtk_bt_le_gap_ext_scan_start() will be fail cause currently is started */
-		/* so there is no need to judge return value of rtk_bt_le_gap_ext_scan_start() */
-		/* if rtk_bt_le_gap_ext_scan_start() finally fail due to other reason, the flow will also be terminated by rtk_bt_le_audio_broadcast_sink_big_sync() following */
-		rtk_bt_le_gap_ext_scan_start();
+		/* if ext scan is stop previous, rtk_bt_le_gap_start_ext_scan() will be scuess */
+		/* else if ext scan is started previous, rtk_bt_le_gap_start_ext_scan() will be fail cause currently is started */
+		/* so there is no need to judge return value of rtk_bt_le_gap_start_ext_scan() */
+		/* if rtk_bt_le_gap_start_ext_scan() finally fail due to other reason, the flow will also be terminated by rtk_bt_le_audio_broadcast_sink_big_sync() following */
+		rtk_bt_le_gap_start_ext_scan();
 	}
 	if (app_bap_bro_assi_info.pa_sync_ind_sem) {
 		osif_sem_take(app_bap_bro_assi_info.pa_sync_ind_sem, 1000);

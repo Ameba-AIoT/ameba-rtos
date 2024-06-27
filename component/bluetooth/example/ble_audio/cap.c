@@ -290,7 +290,7 @@ static void cap_ext_scan_timer_handle(void *arg)
 		BT_LOGA("[APP] %s: cap_ini_ext_scan_time_remaining = %d\r\n", __func__, cap_ini_ext_scan_time_remaining);
 	} else {
 		/* ext scan time out and close ext scan */
-		rtk_bt_le_gap_ext_scan_stop();
+		rtk_bt_le_gap_stop_ext_scan();
 		BT_LOGA("[APP] %s: Time out and stop ext scan\r\n", __func__);
 	}
 }
@@ -313,7 +313,7 @@ static void cap_comm_ext_scan_timer_handle(void *arg)
 		BT_LOGA("[APP] %s: cap_comm_ext_scan_time_remaining = %d\r\n", __func__, cap_comm_ext_scan_time_remaining);
 	} else {
 		/* ext scan time out and close ext scan */
-		rtk_bt_le_gap_ext_scan_stop();
+		rtk_bt_le_gap_stop_ext_scan();
 		BT_LOGA("[APP] %s: Time out and stop ext scan\r\n", __func__);
 	}
 }
@@ -1829,9 +1829,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 				csip_discover_flag = true;
 				// transfer to ext scanning state
 				app_bt_le_audio_scan_dev_list_remove_all();
-				ret = rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param);
+				ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
 				if (RTK_BT_OK == ret) {
-					ret = rtk_bt_le_gap_ext_scan_start();
+					ret = rtk_bt_le_gap_start_ext_scan();
 				}
 				BT_LOGA("[APP] %s: start ext scan in csis group(%08x) %s \r\n", __func__, param->group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
 				// set ext scan time out
@@ -1850,9 +1850,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 				csip_discover_flag = true;
 				// transfer to ext scanning state
 				app_bt_le_audio_scan_dev_list_remove_all();
-				ret = rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param);
+				ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
 				if (RTK_BT_OK == ret) {
-					ret = rtk_bt_le_gap_ext_scan_start();
+					ret = rtk_bt_le_gap_start_ext_scan();
 				}
 				BT_LOGA("[APP] %s: start ext scan in csis group(%08x) %s \r\n", __func__, param->group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
 				// set ext scan time out
@@ -2176,8 +2176,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 					break;
 				}
 				//stop ext scan
-				rtk_bt_le_gap_ext_scan_stop();
-				BT_LOGD("[APP] rtk_bt_le_gap_ext_scan_stop %s after pa sync synchronized! ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
+				rtk_bt_le_gap_stop_ext_scan();
+				BT_LOGD("[APP] rtk_bt_le_gap_stop_ext_scan %s after pa sync synchronized! ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				//give sem to show pa sync list
 				if (p_bap_bro_assi_info->pa_sync_ind_sem) {
 					osif_sem_give(p_bap_bro_assi_info->pa_sync_ind_sem);
@@ -2267,8 +2267,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 				BT_LOGA("[APP] rtk_bt_le_audio_pa_sync_terminate %s after big sync synchronized! ret: 0x%x\r\n",
 						((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				//stop ext scan
-				ret = rtk_bt_le_gap_ext_scan_stop();
-				BT_LOGA("[APP] rtk_bt_le_gap_ext_scan_stop %s after big sync synchronized! ret: 0x%x\r\n",
+				ret = rtk_bt_le_gap_stop_ext_scan();
+				BT_LOGA("[APP] rtk_bt_le_gap_stop_ext_scan %s after big sync synchronized! ret: 0x%x\r\n",
 						((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			}
 			app_bt_le_audio_cap_decode_data_control(true);
@@ -2802,9 +2802,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 						BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", group_handle);
 						app_bt_le_audio_scan_dev_list_remove_all();
 						csip_discover_flag = true;
-						ret = rtk_bt_le_gap_ext_scan_set_param(&app_lea_def_ext_scan_param);
+						ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
 						if (RTK_BT_OK == ret) {
-							ret = rtk_bt_le_gap_ext_scan_start();
+							ret = rtk_bt_le_gap_start_ext_scan();
 						}
 						BT_LOGA("[APP] %s: start ext scan in csis group(%08x) %s \r\n", __func__, group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
 					}
@@ -2858,7 +2858,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		if (cap_comm_ext_scan_timer) {
 			osif_timer_stop(&cap_comm_ext_scan_timer);
 		}
-		ret = rtk_bt_le_gap_ext_scan_stop();
+		ret = rtk_bt_le_gap_stop_ext_scan();
 		BT_LOGA("[APP] %s: stop ext scan in csis group(%08x) %s \r\n", __func__, param->group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
 		break;
 	}

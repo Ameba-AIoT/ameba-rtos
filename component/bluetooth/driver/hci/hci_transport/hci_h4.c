@@ -55,9 +55,7 @@ static struct hci_h4_t {
 	void    *rx_run_sema;
 	void    *rx_thread_hdl;
 	uint8_t  rx_run;
-	HCI_RECV recv;
-	HCI_GET_BUF get_buf;
-	HCI_FREE_BUF free_buf;
+	struct hci_transport_cb *cb;
 } *hci_h4 = NULL;
 
 static uint8_t h4_recv_ind(void)
@@ -92,20 +90,19 @@ static uint16_t h4_recv_data(uint8_t *buf, uint16_t len)
 	return read_len;
 }
 
-static bool h4_get_buf(hci_rx_t *info, uint32_t timeout)
+static uint8_t *h4_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t timeout)
 {
-	if (hci_h4->get_buf && hci_h4->recv) {
-		return hci_h4->get_buf(info, timeout);
+	if (hci_h4->cb->get_buf && hci_h4->cb->recv) {
+		return hci_h4->cb->get_buf(type, hdr, len, timeout);
 	}
 
-	return false;
+	return NULL;
 }
 
 static void h4_rx_thread(void *context)
 {
 	(void)context;
-	hci_rx_t info = {0};
-	HCI_HDR *hdr = (HCI_HDR *)info.hdr;
+	HCI_HDR hdr;
 	uint8_t buffer[CONFIG_HCI_RX_BUF_LEN];
 	uint8_t type, hdr_len, discardable, sub_event, *buf;
 	uint16_t body_len, discard_len;
@@ -118,7 +115,7 @@ static void h4_rx_thread(void *context)
 		sub_event = 0;
 		buf = 0;
 
-		memset(&info, 0, sizeof(hci_rx_t));
+		memset(&hdr, 0, sizeof(HCI_HDR));
 		/* Read H4 Type */
 		if (sizeof(type) != h4_recv_data(&type, sizeof(type))) {
 			break;
@@ -137,13 +134,13 @@ static void h4_rx_thread(void *context)
 			break;
 		}
 		/* Read HCI Header */
-		if (hdr_len != h4_recv_data((uint8_t *)hdr, hdr_len)) {
+		if (hdr_len != h4_recv_data((uint8_t *)&hdr, hdr_len)) {
 			break;
 		}
 
 		if (type == H4_EVT) {
-			body_len = hdr->evt.len;
-			if (BT_HCI_EVT_LE_META_EVENT == hdr->evt.evt) {
+			body_len = hdr.evt.len;
+			if (BT_HCI_EVT_LE_META_EVENT == hdr.evt.evt) {
 				/* The first event parameter is always a subevent code identifying the specific event for LE meta event.
 				   So the len should not be 0. */
 				if (body_len == 0) {
@@ -162,11 +159,11 @@ static void h4_rx_thread(void *context)
 				}
 			}
 		} else if (type == H4_ACL) {
-			body_len = hdr->acl.len;
+			body_len = hdr.acl.len;
 		} else if (type == H4_ISO) {
-			body_len = hdr->iso.len;
+			body_len = hdr.iso.len;
 		} else { /* if (type == H4_SCO) */
-			body_len = hdr->sco.len;
+			body_len = hdr.sco.len;
 		}
 
 		if (body_len == 0xDEAD) { /* to avoid 0xDEADBEEF received */
@@ -174,9 +171,8 @@ static void h4_rx_thread(void *context)
 			break;
 		}
 
-		info.type = type;
-		info.len = hdr_len + body_len;
-		if (!h4_get_buf(&info, discardable ? 0 : BT_TIMEOUT_FOREVER) || !info.data) {
+		buf = h4_get_buf(type, &hdr, hdr_len + body_len, discardable ? 0 : BT_TIMEOUT_FOREVER);
+		if (!buf) {
 			if (discardable) {
 				if (discard_len != h4_recv_data(buffer, discard_len)) { /* only hci event may be discarded, buffer size is enought. */
 					break;
@@ -187,9 +183,9 @@ static void h4_rx_thread(void *context)
 				break;
 			}
 		}
-		buf = info.data;
-		memcpy(buf, hdr, hdr_len);
-		if (H4_EVT == type && BT_HCI_EVT_LE_META_EVENT == hdr->evt.evt) {
+
+		memcpy(buf, &hdr, hdr_len);
+		if (H4_EVT == type && BT_HCI_EVT_LE_META_EVENT == hdr.evt.evt) {
 			buf[hdr_len] = sub_event;
 			hdr_len++;
 			body_len--;
@@ -197,8 +193,8 @@ static void h4_rx_thread(void *context)
 
 		/* Read HCI Body */
 		if (body_len != h4_recv_data(buf + hdr_len, body_len)) {
-			if (hci_h4->free_buf) {
-				hci_h4->free_buf(&info);
+			if (hci_h4->cb->cancel) {
+				hci_h4->cb->cancel();
 			}
 			break;
 		}
@@ -207,8 +203,8 @@ static void h4_rx_thread(void *context)
 			bt_coex_process_rx_frame(type, buf, hdr_len + body_len);
 		}
 
-		if (hci_h4->recv) {
-			hci_h4->recv(&info);
+		if (hci_h4->cb->recv) {
+			hci_h4->cb->recv();
 		}
 	}
 
@@ -217,18 +213,14 @@ static void h4_rx_thread(void *context)
 	osif_task_delete(NULL);
 }
 
-static void h4_set_recv(HCI_RECV hci_recv)
+void hci_transport_register(struct hci_transport_cb *cb)
 {
-	hci_h4->recv = hci_recv;
+	hci_uart_set_rx_ind(NULL);
+	hci_h4->cb = cb;
+	hci_uart_set_rx_ind(h4_recv_ind);
 }
 
-static void h4_set_buf_ops(HCI_GET_BUF get_buf, HCI_FREE_BUF free_buf)
-{
-	hci_h4->get_buf = get_buf;
-	hci_h4->free_buf = free_buf;
-}
-
-static uint16_t h4_send(uint8_t type, uint8_t *buf, uint16_t len, uint8_t is_reserved)
+uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_rsvd_byte)
 {
 	if (type <= H4_NONE || type > H4_ISO) {
 		return 0;
@@ -238,7 +230,7 @@ static uint16_t h4_send(uint8_t type, uint8_t *buf, uint16_t len, uint8_t is_res
 		bt_coex_process_tx_frame(type, buf, len);
 	}
 
-	if (is_reserved) {
+	if (has_rsvd_byte) {
 		*(buf - 1) = type;
 		/* Caller only send size of 'len' bytes, so return 'len' */
 		return (hci_uart_send(buf - 1, len + 1) - 1);
@@ -250,7 +242,7 @@ static uint16_t h4_send(uint8_t type, uint8_t *buf, uint16_t len, uint8_t is_res
 	}
 }
 
-static uint8_t h4_open(void)
+uint8_t hci_transport_open(void)
 {
 	if (!hci_h4) {
 		hci_h4 = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct hci_h4_t));
@@ -273,7 +265,7 @@ static uint8_t h4_open(void)
 	return HCI_SUCCESS;
 }
 
-static uint8_t h4_close(void)
+uint8_t hci_transport_close(void)
 {
 	if (!hci_h4) {
 		return HCI_FAIL;
@@ -290,7 +282,7 @@ static uint8_t h4_close(void)
 	return HCI_SUCCESS;
 }
 
-static uint8_t h4_free(void)
+uint8_t hci_transport_free(void)
 {
 	if (!hci_h4) {
 		return HCI_FAIL;
@@ -306,13 +298,3 @@ static uint8_t h4_free(void)
 
 	return HCI_SUCCESS;
 }
-
-HCI_TRANSPORT_OPS hci_transport_ops = {
-	.open        = h4_open,
-	.close       = h4_close,
-	.free_ops    = h4_free,
-	.send        = h4_send,
-	.set_recv    = h4_set_recv,
-	.set_buf_ops = h4_set_buf_ops,
-	.recv_ind    = h4_recv_ind,
-};

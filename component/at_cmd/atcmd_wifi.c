@@ -35,9 +35,6 @@ static rtw_softap_info_t ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
-#if ENABLE_SET_MAC_ADDRESS
-extern int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
-#endif
 extern int wifi_set_ips_internal(u8 enable);
 #ifdef CONFIG_AS_INIC_AP
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
@@ -896,7 +893,6 @@ void at_wlstate(void *arg)
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
 				at_printf("max_skbbuff_used_num=%d, skbbuff_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
-				at_printf("max_skbdata_used_num=%d, skbdata_used_num=%d\r\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);
@@ -1011,101 +1007,6 @@ end:
 		at_wlautoconn_help();
 	}
 }
-
-#if ENABLE_SET_MAC_ADDRESS
-static void at_wlmac_help(void)
-{
-	at_printf("\r\n");
-	at_printf("AT+WLMAC=<mac_addr>[,<er_idx>,<i_idx>]");
-	at_printf("\t<mac_addr>:\tA hexnumber of 6 bytes, e.g. 2c033ad355f1\r\n");
-	at_printf("\t<er_idx>:\tStore in efuse or RAM? 0 in RAM, 1 in efuse\r\n");
-	at_printf("\t<i_idx>:\tNet device index\r\n");
-}
-
-/****************************************************************
-AT command process:
-	AT+WLMAC
-	Wifi AT Command:
-	Set MAC address.
-	[+WLMAC]:OK
-****************************************************************/
-void at_wlmac(void *arg)
-{
-	const int mac_idx = 1, er_idx = 2, i_idx = 3;
-	int argc = 0, ret = 0, error_no = 0;
-	int i = 0, efuse_ram = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLMAC] Invalid parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 4)) {
-		RTK_LOGW(NOTAG, "[+WLMAC] Invalid parameter number\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	if (strlen(argv[mac_idx]) != 12) {
-		RTK_LOGW(NOTAG, "[+WLMAC] Invalid MAC address\r\n");
-		error_no = 1;
-		goto end;
-	}
-	for (i = 0; i < 12; i++) {
-		/* Ensure it is a valid MAC address. */
-		if (!(('0' <= argv[mac_idx][i] && '9' >= argv[mac_idx][i])
-			  || ('a' <= argv[mac_idx][i] && 'f' >= argv[mac_idx][i])
-			  || ('A' <= argv[mac_idx][i] && 'F' >= argv[mac_idx][i]))) {
-			RTK_LOGW(NOTAG, "[+WLMAC] Invalid MAC address string\r\n");
-			error_no = 1;
-			goto end;
-		}
-	}
-
-	/* Efuse or RAM. If this parameter is absent, use default 0 (RAM). */
-	if ((argc > er_idx) && (strlen(argv[er_idx]) != 0)) {
-		efuse_ram = atoi(argv[er_idx]);
-		if ((efuse_ram != 0) && (efuse_ram != 1)) {
-			RTK_LOGW(NOTAG, "[+WLMAC] Invalid efuse_ram value\r\n");
-			error_no = 2;
-			goto end;
-		}
-	}
-
-	/* Index */
-	if ((argc > i_idx) && (strlen(argv[i_idx]) != 0)) {
-		i = atoi(argv[i_idx]);
-		if ((i < 0) || (i >= NET_IF_NUM)) {
-			RTK_LOGW(NOTAG, "[+WLMAC] Invalid Index value\r\n");
-			error_no = 2;
-			goto end;
-		}
-	} else {
-		/* Default idx = 0 */
-		i = 0;
-	}
-
-	ret = wifi_set_mac_address(i, (unsigned char *)argv[mac_idx], efuse_ram);
-	if (ret != RTW_SUCCESS) {
-		RTK_LOGW(NOTAG, "[+WLMAC] wifi_set_mac_address failed\r\n");
-		error_no = 3;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLMAC:");
-	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLMAC:", error_no);
-		if (error_no == 1 || error_no == 2) {
-			at_wlmac_help();
-		}
-	}
-}
-#endif
 
 static void at_wlpromisc_help(void)
 {
@@ -1299,21 +1200,21 @@ end:
 }
 #endif
 
-static void at_wlpwrmode_help(void)
+static void at_wlps_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLPWRMODE=<mode>,<enable>[,<mode>,<enable>]");
+	at_printf("AT+WLPS=<mode>,<enable>[,<mode>,<enable>]");
 	at_printf("\t<mode>:\tShould be either \"lps\" or \"ips\"\r\n");
 	at_printf("\t<enable>:\t0: disable, 1: enable\r\n");
 }
 
 /****************************************************************
 AT command process:
-	AT+WLPWRMODE
+	AT+WLPS
 	Wifi AT Command:
-	[+WLPWRMODE]:OK
+	[+WLPS]:OK
 ****************************************************************/
-void at_wlpwrmode(void *arg)
+void at_wlps(void *arg)
 {
 	int error_no = 0;
 	int argc = 0;
@@ -1321,17 +1222,17 @@ void at_wlpwrmode(void *arg)
 	char *argv[MAX_ARGC] = {0};
 	int ps_en;
 
-	RTK_LOGI(NOTAG, "[WLPWRMODE]: _AT_WLAN_POWER_MODE_\r\n");
+	RTK_LOGI(NOTAG, "[WLPS]: _AT_WLAN_POWER_SAVE_MODE_\r\n");
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLPWRMODE] Usage: AT+WLPWRMODE=lps/ips/dtim[mode]\r\n");
+		RTK_LOGW(NOTAG, "[WLPS] Usage: AT+WLPS=lps/ips[mode]\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 3) {
-		RTK_LOGW(NOTAG, "[WLPWRMODE] Usage: AT+WLPWRMODE=lps/ips/dtim[mode]\r\n");
+		RTK_LOGW(NOTAG, "[WLPS] Usage: AT+WLPS=lps/ips/[mode]\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1340,7 +1241,7 @@ void at_wlpwrmode(void *arg)
 		j = i + 1;  /* Next i. */
 		if (strcmp(argv[i], "lps") == 0) {
 			if ((argc <= j) || (strlen(argv[j]) == 0)) {
-				RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
+				RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
 				error_no = 2;
 				goto end;
 			}
@@ -1349,7 +1250,7 @@ void at_wlpwrmode(void *arg)
 			RTK_LOGW(NOTAG, "lps %s\r\n", (ps_en == 0) ? "disable" : "enable");
 		} else if (strcmp(argv[i], "ips") == 0) {
 			if ((argc <= j) || (strlen(argv[j]) == 0)) {
-				RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
+				RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
 				error_no = 2;
 				goto end;
 			}
@@ -1357,7 +1258,7 @@ void at_wlpwrmode(void *arg)
 			wifi_set_ips_internal(ps_en);
 			RTK_LOGW(NOTAG, "ips %s\r\n", (ps_en == 0) ? "disable" : "enable");
 		} else {
-			RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
+			RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
 			error_no = 2;
 			goto end;
 		}
@@ -1365,10 +1266,10 @@ void at_wlpwrmode(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLPWRMODE:");
+		at_printf("\r\n%sOK\r\n", "+WLPS:");
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLPWRMODE:", error_no);
-		at_wlpwrmode_help();
+		at_printf("\r\n%sERROR:%d\r\n", "+WLPS:", error_no);
+		at_wlps_help();
 	}
 }
 #endif /* CONFIG_WLAN */
@@ -1673,15 +1574,12 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLSTOPAP", at_wlstopap, {NULL, NULL}},
 	{"+WLSTATE", at_wlstate, {NULL, NULL}},
 	{"+WLAUTOCONN", at_wlautoconn, {NULL, NULL}},
-#if ENABLE_SET_MAC_ADDRESS
-	{"+WLMAC", at_wlmac, {NULL, NULL}},
-#endif
 	{"+WLPROMISC", at_wlpromisc, {NULL, NULL}},
 	{"+WLDBG", at_wldbg, {NULL, NULL}},
 #ifdef CONFIG_WPS
 	{"+WLWPS", at_wlwps, {NULL, NULL}},
 #endif
-	{"+WLPWRMODE", at_wlpwrmode, {NULL, NULL}},
+	{"+WLPS", at_wlps, {NULL, NULL}},
 #endif /* CONFIG_WLAN */
 };
 

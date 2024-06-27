@@ -1400,8 +1400,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_pbp_app_callback(uint8_t evt_code, vo
 			BT_LOGA("[APP] broadcast sink pa sync synchronized\r\n");
 			if (RTK_BT_LE_AUDIO_PBP_ROLE_BROADCAST_ASSISTANT == pbp_role) {
 				//stop ext scan
-				ret = rtk_bt_le_gap_ext_scan_stop();
-				BT_LOGD("[APP] rtk_bt_le_gap_ext_scan_stop %s after pa sync synchronized! ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
+				ret = rtk_bt_le_gap_stop_ext_scan();
+				BT_LOGD("[APP] rtk_bt_le_gap_stop_ext_scan %s after pa sync synchronized! ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				//give sem to show pa sync list
 				app_bt_le_audio_bap_broadcast_assistant_info_t *p_bro_assi_info = g_pbp_bro_assi_info.p_bap_bro_assi_info;
 				if (p_bro_assi_info->pa_sync_ind_sem) {
@@ -1496,8 +1496,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_pbp_app_callback(uint8_t evt_code, vo
 				BT_LOGA("[APP] rtk_bt_le_audio_pa_sync_terminate %s after big sync synchronized! ret: 0x%x\r\n",
 						((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				//stop ext scan
-				ret = rtk_bt_le_gap_ext_scan_stop();
-				BT_LOGA("[APP] rtk_bt_le_gap_ext_scan_stop %s after big sync synchronized! ret: 0x%x\r\n",
+				ret = rtk_bt_le_gap_stop_ext_scan();
+				BT_LOGA("[APP] rtk_bt_le_gap_stop_ext_scan %s after big sync synchronized! ret: 0x%x\r\n",
 						((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			}
 			//init rx thread

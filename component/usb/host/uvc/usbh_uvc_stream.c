@@ -19,6 +19,7 @@
 #include "usbh_uvc.h"
 
 /* Private defines -----------------------------------------------------------*/
+#define USBH_UVC_DEBUG 0
 
 /* Private types -------------------------------------------------------------*/
 
@@ -95,15 +96,16 @@ static void usbh_uvc_set_alt(uvc_stream_t *stream)
 		}
 	}
 
-	RTK_LOGD(TAG, "stream->cur_setting.altsetting:%x\n",  stream->cur_setting.altsetting);
-	RTK_LOGD(TAG, "stream->cur_setting.bAlternateSetting:%d\n", stream->cur_setting.bAlternateSetting);
-	RTK_LOGD(TAG, "stream->cur_setting.ep_addr:%d\n", stream->cur_setting.ep_addr);
-	RTK_LOGD(TAG, "stream->cur_setting.ep_size:%d\n", stream->cur_setting.ep_size);
-	RTK_LOGD(TAG, "stream->cur_setting.mps:%d\n", stream->cur_setting.mps);
-	RTK_LOGD(TAG, "stream->cur_setting.interval:%d\n", stream->cur_setting.interval);
-	RTK_LOGD(TAG, "stream->cur_setting.ep_type:%d\n", stream->cur_setting.ep_type);
-	RTK_LOGD(TAG, "stream->cur_setting.bInterfaceNumber:%d\n", stream->cur_setting.bInterfaceNumber);
-
+#if USBH_UVC_DEBUG
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.altsetting:%x\n",  stream->cur_setting.altsetting);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.bAlternateSetting:%d\n", stream->cur_setting.bAlternateSetting);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.ep_addr:%d\n", stream->cur_setting.ep_addr);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.ep_size:%d\n", stream->cur_setting.ep_size);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.mps:%d\n", stream->cur_setting.mps);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.interval:%d\n", stream->cur_setting.interval);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.ep_type:%d\n", stream->cur_setting.ep_type);
+	RTK_LOGS(TAG, "[UVC] Steam->cur_set.bInterfaceNumber:%d\n", stream->cur_setting.bInterfaceNumber);
+#endif
 }
 
 /**
@@ -124,7 +126,7 @@ static void usbh_uvc_set_buf(uvc_stream_t *stream)
 
 	npkt = UVC_URB_SIZE / maxpktsize;
 
-	RTK_LOGD(TAG, "maxpktsize:%d, npkt:%d\n", maxpktsize, npkt);
+	//RTK_LOGS(TAG, "[UVC] MPS:%d, npkt:%d\n", maxpktsize, npkt);
 
 	/*init urb*/
 	stream->urb_buffer_size = npkt * maxpktsize;
@@ -151,7 +153,7 @@ static void usbh_uvc_set_buf(uvc_stream_t *stream)
 		if (usb_os_queue_send(stream->urb_giveback_queue, (void *)&stream->urb[i], RTOS_MAX_TIMEOUT) != HAL_OK) {
 			usb_os_queue_delete(stream->urb_wait_queue);
 			usb_os_queue_delete(stream->urb_giveback_queue);
-			RTK_LOGE(TAG, "Push to urb_giveback_queue fail\n");
+			RTK_LOGS(TAG, "[UVC] Push to giveback Q fail\n");
 			return;
 		}
 	}
@@ -202,7 +204,7 @@ static void usbh_uvc_decode_thread(void *param)
 		usbh_uvc_decode_urb(stream, urb_tmp);
 
 		while (usb_os_queue_send(stream->urb_giveback_queue, (void *)&urb_tmp, giveback_send_timeout) != HAL_OK) {
-			RTK_LOGE(TAG, "Fail to push urb\n");
+			RTK_LOGS(TAG, "[UVC] Fail to push urb\n");
 		}
 	}
 
@@ -244,19 +246,19 @@ static void usbh_uvc_decode_thread_deinit(uvc_stream_t *stream)
 static int usbh_uvc_decode_thread_init(uvc_stream_t *stream)
 {
 	if (usb_os_queue_create(&stream->urb_wait_queue, sizeof(uvc_urb_t *), UVC_URB_NUMS) != HAL_OK) {
-		RTK_LOGE(TAG, "Init urb_wait_queue fail\n");
+		RTK_LOGS(TAG, "[UVC] Init wait Q fail\n");
 		return -1;
 	}
 
 	if (usb_os_queue_create(&stream->urb_giveback_queue, sizeof(uvc_urb_t *), UVC_URB_NUMS) != HAL_OK) {
 		usb_os_queue_delete(stream->urb_wait_queue);
-		RTK_LOGE(TAG, "Init urb_giveback_queue fail\n");
+		RTK_LOGS(TAG, "[UVC] Init giveback Q fail\n");
 		return -1;
 	}
 
 	if (rtos_task_create(&stream->decode_task, "usbh_uvc_decode_thread", usbh_uvc_decode_thread, (void *)stream, UVC_DECODE_TASK_STACK,
 						 UVC_DECODE_TASK_PRIORITY) != SUCCESS) {
-		RTK_LOGE(TAG, "Fail to create uvc complete handle thread\n");
+		RTK_LOGS(TAG, "[UVC] Fail to create uvc decode thread\n");
 		return -1;
 	}
 
@@ -279,7 +281,7 @@ static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t
 		buf->err = 0;
 		buf->byteused = 0;
 		stream->err_frame_cnt ++;
-		RTK_LOGW(TAG, "Drop error frame\n");
+		RTK_LOGS(TAG, "[UVC] Drop err frame\n");
 		return buf;
 	}
 
@@ -293,7 +295,7 @@ static uvc_frame_t *usbh_uvc_next_frame_buffer(uvc_stream_t *stream, uvc_frame_t
 	if (!list_empty(&stream->frame_empty)) {
 		frame_buffer = list_first_entry(&stream->frame_empty, uvc_frame_t, list);
 	} else {
-		RTK_LOGW(TAG, "No free uvc buffer 3\n");
+		RTK_LOGS(TAG, "[UVC] No free uvc buffer 3\n");
 		return NULL;
 	}
 
@@ -323,7 +325,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 	if (!list_empty(&stream->frame_empty)) {
 		frame_buffer = list_first_entry(&stream->frame_empty, uvc_frame_t, list);
 	} else {
-		RTK_LOGW(TAG, "No free uvc buffer\n");
+		RTK_LOGS(TAG, "[UVC] No free uvc buffer\n");
 		return;
 	}
 
@@ -336,13 +338,13 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 		header = (uvc_vs_payload_header_t *)data;
 
 		if (length < header->bHeaderLength) {
-			RTK_LOGE(TAG, "Error: payload length(%ld) < header length(%d)\n", length, header->bHeaderLength);
+			RTK_LOGS(TAG, "[UVC] Err: payload len(%dd) < header len(%d)\n", length, header->bHeaderLength);
 			return;
 		}
 
 		if (header->bmHeaderInfo.b.err == 1) {
 			/* Note: it need to send request if want to get error reason */
-			RTK_LOGW(TAG, "bmHeaderInfo.b.err = 1, drop this packet\n");
+			RTK_LOGS(TAG, "[UVC] Err:bmHeaderInfo.b.err = 1, drop pkt\n");
 			frame_buffer->err = 1;
 			continue;
 		}
@@ -353,7 +355,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 			if (frame_buffer->byteused != 0) {
 				frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 				if (!frame_buffer) {
-					RTK_LOGW(TAG, "No free uvc buffer 1\n");
+					RTK_LOGS(TAG, "[UVC] No free uvc buffer 1\n");
 					return ;
 				}
 			}
@@ -372,7 +374,7 @@ static void usbh_uvc_decode_urb(uvc_stream_t *stream, uvc_urb_t *urb)
 		if (header->bmHeaderInfo.b.eof == 1) {
 			frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 			if (!frame_buffer) {
-				RTK_LOGW(TAG, "No free uvc buffer 2\n");
+				RTK_LOGS(TAG, "[UVC] No free uvc buffer 2\n");
 				return;
 			}
 			stream->last_fid = fid;
@@ -426,7 +428,7 @@ int usbh_uvc_process_rx(uvc_stream_t *stream)
 			*packet_index = 0;
 			urb = usbh_uvc_urb_complete(stream, stream->urb[*urb_index]);
 			if (!urb) {
-				RTK_LOGE(TAG, "URB complete fail\n");
+				RTK_LOGS(TAG, "[UVC] URB complete fail\n");
 				return HAL_TIMEOUT;
 			}
 
@@ -508,7 +510,7 @@ uvc_urb_t *usbh_uvc_urb_complete(uvc_stream_t *stream, uvc_urb_t *urb)
 	}
 
 	if (usb_os_queue_send(stream->urb_wait_queue, (void *)&urb_tmp, wait_send_timeout) != HAL_OK) {
-		RTK_LOGE(TAG, "Fail to push urb\n");
+		RTK_LOGS(TAG, "[UVC] Fail to push urb\n");
 		return NULL;
 	}
 
@@ -516,7 +518,7 @@ uvc_urb_t *usbh_uvc_urb_complete(uvc_stream_t *stream, uvc_urb_t *urb)
 
 	if (usb_os_queue_receive(stream->urb_giveback_queue, (void *)&urb_tmp, giveback_recv_timeout) != HAL_OK) {
 		if (!urb_tmp) {
-			RTK_LOGE(TAG, "Fail to pop urb\n");
+			RTK_LOGS(TAG, "[UVC] Fail to pop urb\n");
 		}
 	}
 
@@ -615,21 +617,23 @@ int usbh_uvc_get_video(uvc_stream_t *stream, int probe, u16 request)
 	usb_os_memcpy((void *) ctrl, (void *)data, size);
 	usb_os_mfree(data);
 
-	RTK_LOGD(TAG, "bmHint: %d\n", ctrl->bmHint);
-	RTK_LOGD(TAG, "bFormatIndex: %d\n", ctrl->bFormatIndex);
-	RTK_LOGD(TAG, "bFrameIndex: %d\n", ctrl->bFrameIndex);
-	RTK_LOGD(TAG, "dwFrameInterval: %d\n", ctrl->dwFrameInterval);
-	RTK_LOGD(TAG, "wKeyFrameRate: %d\n", ctrl->wKeyFrameRate);
-	RTK_LOGD(TAG, "wPFrameRate: %d\n", ctrl->wPFrameRate);
-	RTK_LOGD(TAG, "wCompQuality: %d\n", ctrl->wCompQuality);
-	RTK_LOGD(TAG, "wCompWindowSize: %d\n", ctrl->wCompWindowSize);
-	RTK_LOGD(TAG, "dwMaxVideoFrameSize: %d\n", ctrl->dwMaxVideoFrameSize);
-	RTK_LOGD(TAG, "dwMaxPayloadTransferSize: %d\n", ctrl->dwMaxPayloadTransferSize);
-	RTK_LOGD(TAG, "dwClockFrequency: %d\n", ctrl->dwClockFrequency);
-	RTK_LOGD(TAG, "bmFramingInfo: %d\n", ctrl->bmFramingInfo);
-	RTK_LOGD(TAG, "bPreferedVersion: %d\n", ctrl->bPreferedVersion);
-	RTK_LOGD(TAG, "bMinVersion: %d\n", ctrl->bMinVersion);
-	RTK_LOGD(TAG, "bMaxVersion: %d\n", ctrl->bMaxVersion);
+#if USBH_UVC_DEBUG
+	RTK_LOGS(TAG, "[UVC] bmHint: %d\n", ctrl->bmHint);
+	RTK_LOGS(TAG, "[UVC] bFormatIndex: %d\n", ctrl->bFormatIndex);
+	RTK_LOGS(TAG, "[UVC] bFrameIndex: %d\n", ctrl->bFrameIndex);
+	RTK_LOGS(TAG, "[UVC] dwFrameInterval: %d\n", ctrl->dwFrameInterval);
+	RTK_LOGS(TAG, "[UVC] wKeyFrameRate: %d\n", ctrl->wKeyFrameRate);
+	RTK_LOGS(TAG, "[UVC] wPFrameRate: %d\n", ctrl->wPFrameRate);
+	RTK_LOGS(TAG, "[UVC] wCompQuality: %d\n", ctrl->wCompQuality);
+	RTK_LOGS(TAG, "[UVC] wCompWindowSize: %d\n", ctrl->wCompWindowSize);
+	RTK_LOGS(TAG, "[UVC] dwMaxVideoFrameSize: %d\n", ctrl->dwMaxVideoFrameSize);
+	RTK_LOGS(TAG, "[UVC] dwMaxPayloadTransferSize: %d\n", ctrl->dwMaxPayloadTransferSize);
+	RTK_LOGS(TAG, "[UVC] dwClockFrequency: %d\n", ctrl->dwClockFrequency);
+	RTK_LOGS(TAG, "[UVC] bmFramingInfo: %d\n", ctrl->bmFramingInfo);
+	RTK_LOGS(TAG, "[UVC] bPreferedVersion: %d\n", ctrl->bPreferedVersion);
+	RTK_LOGS(TAG, "[UVC] bMinVersion: %d\n", ctrl->bMinVersion);
+	RTK_LOGS(TAG, "[UVC] bMaxVersion: %d\n", ctrl->bMaxVersion);
+#endif
 
 	return HAL_OK;
 }

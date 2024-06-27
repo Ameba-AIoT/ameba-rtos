@@ -70,10 +70,7 @@ struct dev_sk_buff {
 	unsigned char		busy;
 	unsigned char		no_free;
 	struct skb_raw_para		tx_raw;
-} SKB_ALIGNMENT;
 
-struct skb_data {
-	struct list_head        list;
 	unsigned char           buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;
 	atomic_t ref;
 };

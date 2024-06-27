@@ -181,6 +181,7 @@ static void delete_list_node(struct _node *n)
 	SYS_ARCH_PROTECT(lev);
 
 	if (n == NULL) {
+		SYS_ARCH_UNPROTECT(lev);
 		return;
 	}
 
@@ -2063,7 +2064,7 @@ void at_sktstate(void *arg)
 		n = n->next;
 	}
 
-	at_printf("\r\n%sOK\r\n", "+SKTSTATE");
+	at_printf("\r\n%sOK\r\n", "+SKTSTATE:");
 }
 
 #if ENABLE_TCPIP_AUTOLINK

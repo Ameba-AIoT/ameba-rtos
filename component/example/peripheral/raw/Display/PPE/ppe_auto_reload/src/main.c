@@ -199,7 +199,7 @@ static void ppe_auto_reload(void *para)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "ppe_auto_reload", (rtos_task_t)ppe_auto_reload, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "ppe_auto_reload", (rtos_task_t)ppe_auto_reload, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create ppe_auto_reload demo task\n\r");
 	}
 

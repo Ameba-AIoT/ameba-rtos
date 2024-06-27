@@ -72,7 +72,7 @@ void dma_singleblock_transfer_task(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "GDMA SINGLE BLOCK TRANSFER DEMO", (rtos_task_t)dma_singleblock_transfer_task, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "GDMA SINGLE BLOCK TRANSFER DEMO", (rtos_task_t)dma_singleblock_transfer_task, NULL, 3072, (1)) != SUCCESS) {
 		printf("Cannot create dma_singleblock_task demo task\n\r");
 	}
 

@@ -231,7 +231,7 @@ int bridge_trigger_disconnect(int fd, int family_id)
 	}
 }
 
-int bridge_trigger_dhcp(int fd, int family_id)
+int bridge_trigger_getip(int fd, int family_id)
 {
 	int ret = 0;
 	struct msgtemplate msg;
@@ -243,7 +243,7 @@ int bridge_trigger_dhcp(int fd, int family_id)
 	__u8 iptab[4];
 
 	bridge_fill_nlhdr(&msg, family_id, getpid(), BRIDGE_CMD_ECHO);
-	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_TRIGGER_DHCP);
+	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_GET_IP);
 
 	msg.n.nlmsg_len += ptr - msg.buf;
 	ret = bridge_send_buf(fd, (char *)&msg, msg.n.nlmsg_len);
@@ -405,8 +405,8 @@ int main(int argc, char **argv)
 			pwd = argv[3];
 		}
 		bridge_trigger_wifi_connect(nl_fd, nl_family_id, argv[2], pwd);
-	} else if (strcmp(argv[1], "dhcp") == 0) {
-		bridge_trigger_dhcp(nl_fd, nl_family_id);
+	} else if (strcmp(argv[1], "getip") == 0) {
+		bridge_trigger_getip(nl_fd, nl_family_id);
 	} else if (strcmp(argv[1], "scan") == 0) {
 		bridge_trigger_scan(nl_fd, nl_family_id);
 	} else if (strcmp(argv[1], "scanres") == 0) {
