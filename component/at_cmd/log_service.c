@@ -10,20 +10,23 @@
 #include "log_service.h"
 
 #ifdef SUPPORT_LOG_SERVICE
+
+#ifndef CONFIG_NEW_ATCMD
 #include "atcmd_sys.h"
 #ifdef CONFIG_LWIP_LAYER
 #include "atcmd_lwip.h"
-#endif
-#ifndef CONFIG_MP_INCLUDED
-#include "atcmd_mqtt.h"
-#endif
-#ifndef CONFIG_MP_SHRINK
-#include "atcmd_wifi.h"
 #endif
 #if defined(CONFIG_BT) && CONFIG_BT
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #include "atcmd_bt_mp.h"
 #endif
+#endif
+#endif /* !CONFIG_NEW_ATCMD */
+#ifndef CONFIG_MP_INCLUDED
+#include "atcmd_mqtt.h"
+#endif
+#ifndef CONFIG_MP_SHRINK
+#include "atcmd_wifi.h"
 #endif
 
 //======================================================
@@ -32,13 +35,6 @@ struct list_head log_hash[ATC_INDEX_NUM];
 #ifdef CONFIG_NEW_ATCMD
 #include "at_intf_uart.h"
 #include "lwip_netconf.h"
-
-#ifdef CONFIG_LWIP_LAYER
-#ifdef SUPPORT_LOG_SERVICE
-extern char log_buf[UART_LOG_CMD_BUFLEN];
-#endif
-#endif
-
 #else
 /* apply old atcmd, which should be deleted after new version is ready */
 extern void at_wifi_init(void);
@@ -204,17 +200,21 @@ void *log_action(char *cmd)
 
 void *log_handler(char *cmd)
 {
+	const char *mp_start = "iwpriv ";
 	log_act_t action = NULL;
-	char buf[LOG_SERVICE_BUFLEN];
-	memset(buf, 0, LOG_SERVICE_BUFLEN);
-	char *copy = buf;
+	char *copy = cmd;
 	char *token = NULL;
 	char *param = NULL;
 	char tok[33] = {0};//'\0'
 #ifdef CONFIG_NEW_ATCMD
 	char *tokSearch = NULL;
 #endif
-	strncpy(copy, cmd, LOG_SERVICE_BUFLEN - 1);
+	int mp_length = strlen(mp_start);
+
+	/* It is a mp_command, which will not be executed here. */
+	if (strncmp(cmd, mp_start, mp_length) == 0) {
+		return NULL;
+	}
 
 	token = strsep(&copy, "=");
 	param = strsep(&copy, "\0");
@@ -352,23 +352,16 @@ unsigned int   gDbgFlag  = 0xFFFFFFFF;
 #endif
 
 #if CONFIG_WLAN
-int mp_commnad_handler(char *cmd)
+int mp_command_handler(char *cmd)
 {
-	char buf[128];
-	char *pbuf = buf;
-	char *token = NULL;
-	memset(buf, 0, 128);
-
-	//strncpy(buf, cmd, sizeof(buf));
-	strncpy(buf, cmd, (128 - 1));
-	token = strsep(&pbuf, " ");
-	if (token && (strcmp(buf, "iwpriv") == 0)) {
-		token = strsep(&pbuf, "");
+	char *start = "iwpriv ";
+	int len = strlen(start);
+	if (strncmp(cmd, start, len) == 0) {
 #ifdef CONFIG_MP_INCLUDED
-#ifdef CONFIG_AS_INIC_AP
-		inic_mp_command(token, sizeof(buf), 1);
-#else
-		wext_private_command(token, 1, NULL);
+#if defined(CONFIG_AS_INIC_AP)
+		inic_mp_command(cmd + len, strlen(cmd + len), 1);
+#elif defined(CONFIG_SINGLE_CORE_WIFI)
+		wext_private_command(cmd + len, 1, NULL);
 #endif
 #endif
 		return 0;
@@ -379,19 +372,15 @@ int mp_commnad_handler(char *cmd)
 
 void log_service(char *line_buf)
 {
-#if ((defined CONFIG_NEW_ATCMD) && (defined CONFIG_LWIP_LAYER) && (defined SUPPORT_LOG_SERVICE))
-	if (atcmd_lwip_tt_mode == TRUE) {
-		atcmd_lwip_tt_datasize = strlen(log_buf);
-		atcmd_lwip_tt_lasttickcnt = rtos_time_get_current_system_time_ms();
-		if (atcmd_lwip_tt_sema != NULL) {
-			rtos_sema_give(atcmd_lwip_tt_sema);
-		}
+#if ((defined CONFIG_NEW_ATCMD) && (defined CONFIG_LWIP_LAYER))
+	if (atcmd_lwip_tt_proc() == SUCCESS) {
 		return;
 	}
 #endif
+
 	if (log_handler((char *)line_buf) == NULL) {
 #ifdef CONFIG_MP_INCLUDED
-		if (mp_commnad_handler((char *)line_buf) < 0)
+		if (mp_command_handler((char *)line_buf) < 0)
 #endif
 		{
 			RTK_LOGS(NOTAG, "\r\nunknown command '%s'", line_buf);
@@ -401,4 +390,4 @@ void log_service(char *line_buf)
 	RTK_LOGS(NOTAG, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
 	RTK_LOGS(NOTAG, "\r\n\n#\r\n"); //"#" is needed for mp tool
 }
-#endif
+#endif /* SUPPORT_LOG_SERVICE */

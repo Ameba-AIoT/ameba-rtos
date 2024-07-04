@@ -294,6 +294,7 @@ void CapTouch_ChCmd(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
   * @param ClkDiv: xtal 2m divider for captouch core, which can be 2~16.
   * @retval None
   * @note CTC core clock can be divided only when it is from xtal2m.
+  * @note Set ctc core clock when APB periph clock and function is disabled.
   */
 void CapTouch_SetClkPara(CAPTOUCH_TypeDef *CapTouch, u8 ClkSrc, u8 ClkDiv)
 {
@@ -306,21 +307,18 @@ void CapTouch_SetClkPara(CAPTOUCH_TypeDef *CapTouch, u8 ClkSrc, u8 ClkDiv)
 	TempVal0 = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
 	TempVal1 = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP1);
 
-	CapTouch_Cmd(CAPTOUCH_DEV, DISABLE);
-
 	if (ClkSrc == CTC_CLK_OSC) {
 		TempVal0 &= ~LSYS_BIT_CKSL_CTC_CORE;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, TempVal0);
 	} else  {
 		TempVal1 &= ~LSYS_MASK_CKD_XTAL2M_CTC;
 		TempVal1 |= LSYS_CKD_XTAL2M_CTC(ClkDiv - 1);
+		TempVal1 |= LSYS_BIT_CKD_XTAL_2M_EN;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP1, TempVal1);
 
 		TempVal0 |= LSYS_BIT_CKSL_CTC_CORE;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, TempVal0);
 	}
-
-	CapTouch_Cmd(CAPTOUCH_DEV, ENABLE);
 }
 
 /**

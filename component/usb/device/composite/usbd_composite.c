@@ -160,8 +160,8 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	int ret = HAL_OK;
 
-	RTK_LOGD(TAG, "Setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
+	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
@@ -206,7 +206,7 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		} else if (req->wIndex == USBD_COMP_HID_ITF) {
 			ret = cdev->hid->setup(dev, req);
 		} else {
-			RTK_LOGW(TAG, "Invalid class request\n");
+			RTK_LOGS(TAG, "[COMP] Invalid class req\n");
 		}
 		break;
 	default:
@@ -313,14 +313,12 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 	switch ((req->wValue >> 8) & 0xFF) {
 
 	case USB_DESC_TYPE_DEVICE:
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE\n");
 		buf = usbd_composite_dev_desc;
 		*len = USB_LEN_DEV_DESC;
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_CONFIGURATION\n");
 		usb_os_memcpy((void *)desc, (void *)usbd_composite_config_desc, USB_LEN_CFG_DESC);
 		desc += USB_LEN_CFG_DESC;
 		total_len += USB_LEN_CFG_DESC;
@@ -341,7 +339,6 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		break;
 
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER\n");
 		buf = usbd_composite_device_qualifier_desc;
 		*len = sizeof(usbd_composite_device_qualifier_desc);
 		break;
@@ -349,27 +346,22 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
 		case USBD_IDX_LANGID_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_LANGID_STR\n");
 			buf = usbd_composite_lang_id_desc;
 			*len = sizeof(usbd_composite_lang_id_desc);
 			break;
 		case USBD_IDX_MFC_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MFC_STR\n");
 			usbd_get_str_desc(USBD_COMP_MFG_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_PRODUCT_STR\n");
 			usbd_get_str_desc(USBD_COMP_PROD_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_SERIAL_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_SERIAL_STR\n");
 			usbd_get_str_desc(USBD_COMP_SN_STRING, desc, len);
 			buf = desc;
 			break;
 		case USBD_IDX_CDC_ITF_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_CDC_ITF_STR\n");
 			if (speed == USB_SPEED_HIGH) {
 				usbd_get_str_desc(USBD_COMP_CDC_HS_ITF_STRING, desc, len);
 			} else {
@@ -378,7 +370,6 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 			buf = desc;
 			break;
 		case USBD_IDX_HID_ITF_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_HID_ITF_STR\n");
 			if (speed == USB_SPEED_HIGH) {
 				usbd_get_str_desc(USBD_COMP_HID_HS_ITF_STRING, desc, len);
 			} else {
@@ -387,11 +378,11 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 			buf = desc;
 			break;
 		case USBD_IDX_MS_OS_STR:
-			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MS_OS_STR, not supported\n");
+			/*Not support*/
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGW(TAG, "Get descriptor failed, invalid string index %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, "[COMP] Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -418,7 +409,7 @@ int usbd_composite_init(u16 cdc_bulk_out_xfer_size, u16 cdc_bulk_in_xfer_size, u
 
 	if ((cdc_cb == NULL) || (hid_cb == NULL)) {
 		ret = HAL_ERR_PARA;
-		RTK_LOGE(TAG, "Invalid user callback\n");
+		RTK_LOGS(TAG, "[COMP] Invalid user CB\n");
 		return ret;
 	}
 
@@ -429,20 +420,20 @@ int usbd_composite_init(u16 cdc_bulk_out_xfer_size, u16 cdc_bulk_in_xfer_size, u
 	cdev->ctrl_buf = (u8 *)usb_os_malloc(COMP_CDC_ACM_CTRL_BUF_SIZE);
 	if (cdev->ctrl_buf == NULL) {
 		ret = HAL_ERR_MEM;
-		RTK_LOGE(TAG, "Fail to allocate control buffer\n");
+		RTK_LOGS(TAG, "[COMP] Alloc ctrl buf fail\n");
 		return ret;
 	}
 
 	ret = usbd_composite_cdc_acm_init(cdev, cdc_bulk_out_xfer_size, cdc_bulk_in_xfer_size, cdc_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Fail to init CDC ACM interface %d\n", ret);
+		RTK_LOGS(TAG, "[COMP] Init CDC ACM itf fail: %d\n", ret);
 		usb_os_mfree(cdev->ctrl_buf);
 		return ret;
 	}
 
 	ret = usbd_composite_hid_init(cdev, hid_intr_in_xfer_size, hid_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGE(TAG, "Fail to init HID interface %d\n", ret);
+		RTK_LOGS(TAG, "[COMP] Init HID itf fail: %d\n", ret);
 		usbd_composite_cdc_acm_deinit();
 		usb_os_mfree(cdev->ctrl_buf);
 		return ret;

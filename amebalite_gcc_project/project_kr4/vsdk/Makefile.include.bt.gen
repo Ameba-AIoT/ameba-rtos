@@ -18,6 +18,7 @@ IFLAGS += \
 	-I$(BLEDIR)/zephyr \
 	-I$(BLEDIR)/zephyr/hci_driver \
 	-I$(BLEDIR)/zephyr/include \
+	-I$(BLEDIR)/zephyr/stack \
 	-I$(BLEDIR)/zephyr/stack/host \
 	-I$(BLEDIR)/zephyr/settings \
 	-I$(BLEDIR)/zephyr/port

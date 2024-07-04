@@ -436,6 +436,7 @@ int cfg80211_rtw_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *requ
 {
 	int ret = 0;
 	struct _rtw_scan_param_t scan_param = {0};
+	struct cfg80211_scan_info info;
 
 	dev_dbg(global_idev.fullmac_dev, "cfg80211_rtw_scan enter\n");
 
@@ -449,21 +450,34 @@ int cfg80211_rtw_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *requ
 	scan_param.scan_user_callback = (enum _rtw_result_t (*)(unsigned int,  void *))0xffffffff;
 	scan_param.ssid = NULL;
 
-	ret = llhw_wifi_scan(&scan_param, 0, 0);
-	if (ret < 0) {
-		//_rtw_cfg80211_surveydone_event_callback(padapter, request);
-		struct cfg80211_scan_info info;
+	if (global_idev.mlme_priv.b_in_scan) {
 		memset(&info, 0, sizeof(info));
 		info.aborted = 0;
 		cfg80211_scan_done(request, &info);
-		dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
-		if (!global_idev.mlme_priv.b_in_scan) {
-			global_idev.mlme_priv.pscan_req_global = NULL;
-		}
+		dev_dbg(global_idev.fullmac_dev, "%s: scan is in progress..", __FUNCTION__);
 	} else {
 		global_idev.mlme_priv.b_in_scan = true;
-		global_idev.mlme_priv.pscan_req_global = request;
-		dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) start.", __FUNCTION__, request);
+
+		ret = llhw_wifi_scan(&scan_param, 0, 0);
+		if (ret < 0) {
+			memset(&info, 0, sizeof(info));
+			info.aborted = 0;
+			cfg80211_scan_done(request, &info);
+			dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
+
+			global_idev.mlme_priv.b_in_scan = false;
+			global_idev.mlme_priv.pscan_req_global = NULL;
+
+#ifndef CONFIG_FULLMAC_HCI_IPC
+			/* wakeup xmit thread if there are pending packets */
+			if (llhw_xmit_pending_q_num() > 0) {
+				llhw_xmit_wakeup_thread();
+			}
+#endif
+		} else {
+			global_idev.mlme_priv.pscan_req_global = request;
+			dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) start.", __FUNCTION__, request);
+		}
 	}
 
 	return ret;

@@ -38,18 +38,18 @@ u32 ctc_irq_handler(void *para)
 
 	for (i = 0; i < CT_CHANNEL_NUM; i++) {
 		if (IntStatus & CT_CHX_PRESS_INT(i)) {
-			printf("Key %d pressed \n", i);
+			RTK_LOGS(NOTAG, "Key %d pressed \n", i);
 		} else if (IntStatus & CT_CHX_RELEASE_INT(i)) {
-			printf("Key %d released \n", i);
+			RTK_LOGS(NOTAG, "Key %d released \n", i);
 		}
 	}
 
 	if (IntStatus & CT_BIT_OVER_N_NOISE_TH_INTR) {
-		printf("CT_BIT_OVER_N_NOISE_TH_INTR \n");
+		RTK_LOGS(NOTAG, "CT_BIT_OVER_N_NOISE_TH_INTR \n");
 	}
 
 	if (IntStatus & CT_BIT_OVER_P_NOISE_TH_INTR) {
-		printf("CT_BIT_OVER_P_NOISE_TH_INTR \n");
+		RTK_LOGS(NOTAG, "CT_BIT_OVER_P_NOISE_TH_INTR \n");
 	}
 
 	CapTouch_INTClearPendingBit(CAPTOUCH_DEV, IntStatus);
@@ -107,13 +107,17 @@ void ctc_filter_task(void)
 
 	CapTouch_Cmd(CAPTOUCH_DEV, ENABLE);
 
-	printf("CapTouch init done\n");
+	RTK_LOGS(NOTAG, "CapTouch init done\n");
+
+	while (1) {
+		rtos_task_delete(NULL);
+	}
 }
 
 int main(void)
 {
 	if (rtos_task_create(NULL, "CTC_FILTER_DEMO", (rtos_task_t)ctc_filter_task, NULL, 2048, (1)) != SUCCESS) {
-		printf("Cannot create CTC_FILTER_DEMO\r\n");
+		RTK_LOGS(NOTAG, "Cannot create CTC_FILTER_DEMO\r\n");
 	}
 
 	rtos_sched_start();

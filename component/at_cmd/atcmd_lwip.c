@@ -7,8 +7,6 @@
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
 #include "log_service.h"
-#include "atcmd_wifi.h"
-#include "atcmd_lwip.h"
 #if ENABLE_TCPIP_SSL
 #include "mbedtls/config.h"
 #include "mbedtls/net.h"
@@ -116,6 +114,19 @@ static char *atcmd_lwip_itoa(int value)
 }
 #endif /* ENABLE_TCPIP_SSL */
 
+int atcmd_lwip_tt_proc(void)
+{
+	if (atcmd_lwip_tt_mode == TRUE) {
+		atcmd_lwip_tt_datasize = strlen(log_buf);
+		atcmd_lwip_tt_lasttickcnt = rtos_time_get_current_system_time_ms();
+		if (atcmd_lwip_tt_sema != NULL) {
+			rtos_sema_give(atcmd_lwip_tt_sema);
+		}
+		return SUCCESS;
+	}
+	return FAIL;
+}
+
 static int atcmd_lwip_is_autorecv_mode(void)
 {
 	return (atcmd_lwip_auto_recv == TRUE);
@@ -170,6 +181,7 @@ static void delete_list_node(struct _node *n)
 	SYS_ARCH_PROTECT(lev);
 
 	if (n == NULL) {
+		SYS_ARCH_UNPROTECT(lev);
 		return;
 	}
 
@@ -2052,7 +2064,7 @@ void at_sktstate(void *arg)
 		n = n->next;
 	}
 
-	at_printf("\r\n%sOK\r\n", "+SKTSTATE");
+	at_printf("\r\n%sOK\r\n", "+SKTSTATE:");
 }
 
 #if ENABLE_TCPIP_AUTOLINK

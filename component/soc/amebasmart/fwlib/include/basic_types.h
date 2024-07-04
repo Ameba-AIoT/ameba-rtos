@@ -51,17 +51,25 @@
 #endif
 
 #define Compile_Assert(exp, str) extern char __ct_[(exp) ? 1 : -1]
-#define DIV_ROUND_UP(x, y)	(((x) + (y) - 1) / (y))
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
 #ifdef __GNUC__
-#define __weak                  __attribute__((weak))
-#define likely(x)               __builtin_expect ((x), 1)
-#define unlikely(x)             __builtin_expect ((x), 0)
-
+#ifndef __weak
+#define __weak __attribute__((weak))
+#endif
+#ifndef likely
+#define likely(x) __builtin_expect((x), 1)
+#endif
+#ifndef unlikely
+#define unlikely(x) __builtin_expect((x), 0)
+#endif
 #elif defined(__ICCARM__)
-#define likely(x)               (x)
-#define unlikely(x)             (x)
-
+#ifndef likely
+#define likely(x) (x)
+#endif
+#ifndef unlikely
+#define unlikely(x) (x)
+#endif
 #endif
 
 #ifndef UNUSED

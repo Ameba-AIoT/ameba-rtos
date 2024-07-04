@@ -13,27 +13,23 @@ Configure the following Macros in bt_api_config.h
 A2DP sink + TMAP Unicast Media Sender Configuration
 ~~~~~~~~~~~
 1. CIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
-    1.1 change LEA_SOURCE_FIX_SAMPLE_FREQUENCY    to   RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
-    1.2 Config  bap_unicast_client_cfg in app_bt_le_audio_common.c
-        1.2.1  bap_unicast_client_cfg.cfg_qos_type = RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY;
+    1.1 Config the following Macros in app_bt_le_audio_common.h
+          change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+          change   LEA_CIG_ISO_INTERVAL_CONFIG                   to         ISO_INTERVAL_20_MS
+          change   RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE      to         0
 
 2. CIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 10 ms
-    1.1 change LEA_SOURCE_FIX_SAMPLE_FREQUENCY    to   RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+    1.1 Config the following Macros in app_bt_le_audio_common.h
+          change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+          change RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE        to         0
 
 A2DP sink + TMAP Broadcast Media Sender Configuration
 ~~~~~~~~~~~
 1. BIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
-    1.1 Config bap_broadcast_source_cfg in app_bt_le_audio_common.c
-            bap_broadcast_source_cfg.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_48_2;
-            bap_broadcast_source_cfg.cfg_qos_type = RTK_BT_LE_QOS_CFG_BIS_HIG_RELIABILITY;
-    1.2 Config the following Macros in app_bt_le_audio_common.h
-            change   RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM     to         1
-            change   RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE  to         0
-    1.3 Config max_transport_latency in function rtk_bt_bap_broadcast_source_start() in rtk_bt_bap.c
-            change:
-                def_le_audio_broadcast_source_create_big_param.max_transport_latency = qos_cfg_preferred.max_transport_latency;
-            to:
-                def_le_audio_broadcast_source_create_big_param.max_transport_latency = 60;
+    1.1 Config the following Macros in app_bt_le_audio_common.h
+          change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+          change   RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE  to         0
+          change   LEA_BIG_ISO_INTERVAL_CONFIG                   to         ISO_INTERVAL_20_MS
 
 GCC menuconfig 
 ~~~~~~~~~~~

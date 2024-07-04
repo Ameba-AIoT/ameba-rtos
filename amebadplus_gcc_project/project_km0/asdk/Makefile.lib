@@ -10,7 +10,11 @@ ifeq ($(CONFIG_WLAN),y)
 # NP Link Library
 ifeq ($(CONFIG_AS_INIC_NP), y)
 ifeq ($(CONFIG_MP_INCLUDED), y)
+ifeq ($(CONFIG_MP_SHRINK), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp_shrink.a
+else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex_mp.a
+endif
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_coex.a
 endif

@@ -25,6 +25,7 @@ typedef struct {
 
 
 #define I2C_ID 0
+static const char *TAG = "I2C";
 
 #define I2C_SLAVE_ADDR0    0x23
 
@@ -42,17 +43,17 @@ void i2c_rx_check(void)
 	int     i2clocalcnt;
 	int     result = 0;
 
-	printf("check slave source data>>>\n");
+	RTK_LOGI(TAG, "check slave source data>>>\n");
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 1) {
-		printf("%s%02X%s", i2clocalcnt % 16 == 0 ? "\n     " : " ",
-			   i2cdatasrc[i2clocalcnt], i2clocalcnt == I2C_DATA_LENGTH - 1 ? "\n" : "");
+		RTK_LOGI(TAG, "%s%02X%s", i2clocalcnt % 16 == 0 ? "\n     " : " ",
+				 i2cdatasrc[i2clocalcnt], i2clocalcnt == I2C_DATA_LENGTH - 1 ? "\n" : "");
 	}
 
-	printf("check slave received data>>>\n");
+	RTK_LOGI(TAG, "check slave received data>>>\n");
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH - 1; i2clocalcnt += 1) {
 
-		printf("%s%02X%s", i2clocalcnt % 16 == 0 ? "\n	  " : " ",
-			   i2cdatadst[i2clocalcnt], i2clocalcnt == I2C_DATA_LENGTH - 1 ? "\n" : "");
+		RTK_LOGI(TAG, "%s%02X%s", i2clocalcnt % 16 == 0 ? "\n	  " : " ",
+				 i2cdatadst[i2clocalcnt], i2clocalcnt == I2C_DATA_LENGTH - 1 ? "\n" : "");
 	}
 
 	// verify result
@@ -63,7 +64,7 @@ void i2c_rx_check(void)
 			break;
 		}
 	}
-	printf("\r\nSLAVE receive: Result is %s\r\n", (result) ? "success" : "fail");
+	RTK_LOGI(TAG, "SLAVE receive: Result is %s\r\n", (result) ? "success" : "fail");
 }
 
 static void I2CISRHandleTxEmpty(IN i2c_ts *obj)
@@ -184,7 +185,7 @@ static u32 I2CISRHandle(IN void *Data)
 
 	/* I2C TX Abort Intr */
 	if (intr_status & I2C_BIT_R_TX_ABRT) {
-		printf("I2C_BIT_R_TX_ABRT\n");
+		RTK_LOGI(TAG, "I2C_BIT_R_TX_ABRT\n");
 		I2C_ClearAllINT(obj->I2Cint.I2Cx);
 		I2C_Cmd(obj->I2Cint.I2Cx, DISABLE);
 		uint32_t temp = obj->I2Cint.I2Cx->IC_CON;
@@ -262,7 +263,7 @@ static void RtkI2CInit(i2c_ts *obj1, uint8_t sda, uint8_t scl)
 		break;
 #endif
 	default:
-		printf("I2C id error\r\n");
+		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
 
@@ -284,8 +285,8 @@ static void RtkI2CInit(i2c_ts *obj1, uint8_t sda, uint8_t scl)
 	PAD_PullCtrl(scl, GPIO_PuPd_UP);
 
 
-	InterruptRegister((IRQ_FUN)I2CISRHandle, I2C_DEV_TABLE[i2c_idx].IrqNum, (u32)(obj), 7);
-	InterruptEn(I2C_DEV_TABLE[i2c_idx].IrqNum, 7);
+	InterruptRegister((IRQ_FUN)I2CISRHandle, I2C_DEV_TABLE[i2c_idx].IrqNum, (u32)(obj), 5);
+	InterruptEn(I2C_DEV_TABLE[i2c_idx].IrqNum, 5);
 
 	/* I2C HAL Initialization */
 	I2C_Init(obj->I2Cint.I2Cx, &I2CInitData[i2c_idx]);
@@ -308,7 +309,7 @@ void i2c_interrupt_mode_task(void)
 		i2cdatasrc[i2clocalcnt] = i2clocalcnt + 0x2;
 	}
 
-	printf("Slave addr=%x\n", I2C_SLAVE_ADDR0);
+	RTK_LOGI(TAG, "Slave addr=%x\n", I2C_SLAVE_ADDR0);
 	_memset(&i2cslave, 0x00, sizeof(i2c_ts));
 
 	i2cslave.I2Cint.i2c_idx = I2C_ID;
@@ -366,7 +367,7 @@ void i2c_interrupt_mode_task(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "I2C INTERRUPT DEMO", (rtos_task_t)i2c_interrupt_mode_task, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "I2C INTERRUPT DEMO", (rtos_task_t)i2c_interrupt_mode_task, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create i2c_interrupt_mode_task demo task\n\r");
 	}
 

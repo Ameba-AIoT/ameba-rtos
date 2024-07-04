@@ -314,7 +314,7 @@ cmd_help_table_t example_help_table[] = {
 	{
 		"throughput", "[ATBE] throughput: run as a Throughput scatternet\n\r"
 		"usage: ATBE=throughput,[act],[val]\n\r"
-		"[act] = <1, 0, set_mtu, conn, test_start, test_stop>\n\r"
+		"[act] = <1, 0, conn, test_start, test_stop>\n\r"
 		"[val] = DEPENDS ON DIFFERENT ACTS",
 		NULL
 	},
@@ -470,6 +470,7 @@ static const cmd_table_t cmd_table[] = {
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
 	{"hid_cmd",     atcmd_bt_hid_cmd,              1, 23},
 	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
+	{"pbap_cmd",    atcmd_bt_pbap_cmd,             1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
@@ -1017,7 +1018,7 @@ cmd_help_table_t example_help_table[] = {
 	{
 		"throughput", "[AT+BTDEMO] throughput: run as a Throughput scatternet\n\r"
 		"usage: AT+BTDEMO=throughput,[act],[val]\n\r"
-		"[act] = <1, 0, set_mtu, conn, test_start, test_stop>\n\r"
+		"[act] = <1, 0, conn, test_start, test_stop>\n\r"
 		"[val] = DEPENDS ON DIFFERENT ACTS",
 		NULL
 	},
@@ -1119,41 +1120,15 @@ static int atcmd_bt_example_help(int argc, char *argv[])
 
 static int atcmd_bt_vendor_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[ATBV] help: show ATBV cmds usage and discription\n\r"
-							  "usage: ATBV=help,[cmd]\n\r"
-							  "       ATBV=help,[cmd],[subcmd]\n\r"
+	const char *help_usage =  "[AT+BTVENDOR] help: show ATBV cmds usage and discription\n\r"
+							  "usage: AT+BTVENDOR=help,[cmd]\n\r"
+							  "       AT+BTVENDOR=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <tx_power_gain, hci_debug_enable, dlps>\n\r"
-							  "[subcmd] = 'use ATBV=help,[cmd] to show subcmds'";
-	atcmd_bt_help_common(argc, argv, "ATBV", help_usage, vendor_help_table);
+							  "[subcmd] = 'use AT+BTVENDOR=help,[cmd] to show subcmds'";
+	atcmd_bt_help_common(argc, argv, "AT+BTVENDOR", help_usage, vendor_help_table);
 	return 0;
 }
 
-#else   /* BT_ATCMD_HELP */
-char *atcmd_help_warning = "BT ATcmd help usage need to open macro BT_ATCMD_HELP\r\n";
-
-static int atcmd_bt_cmd_help(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBC] %s", atcmd_help_warning);
-	return -1;
-}
-
-static int atcmd_bt_example_help(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[AT+BTDEMO] %s", atcmd_help_warning);
-	return -1;
-}
-
-static int atcmd_bt_vendor_help(int argc, char *argv[])
-{
-	(void)argc;
-	(void)argv;
-	AT_PRINTK("[ATBV] %s", atcmd_help_warning);
-	return -1;
-}
 #endif  /* BT_ATCMD_HELP */
 
 static int atcmd_bt_get_heap_size(int argc, char **argv)
@@ -1208,7 +1183,7 @@ enum cmd_index {
 #endif /* RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	ATCMD_BR_GAP_IDX,
-	ATCMD_AD2P_IDX,
+	ATCMD_A2DP_IDX,
 	ATCMD_AVRCP_IDX,
 	ATCMD_SPP_IDX,
 	ATCMD_HID_IDX,
@@ -1268,6 +1243,7 @@ static const cmd_table_t cmd_table[] = {
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
 	{"hid_cmd",     atcmd_bt_hid_cmd,              1, 23},
 	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
+	{"pbap_cmd",    atcmd_bt_pbap_cmd,             1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
@@ -1419,7 +1395,7 @@ static inline int atcmd_bt_example(int argc, char *argv[])
 
 static inline int atcmd_bt_vendor(int argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, vendor_table, "[ATBV]");
+	return atcmd_bt_excute(argc, argv, vendor_table, "[AT+BTVENDOR]");
 }
 
 static void fBTDEMO(void *arg)
@@ -1467,19 +1443,211 @@ static inline void fBLEGATTC(void *arg)
 	atcmd_bt_cmd(arg, ATCMD_GATTC_IDX, "[AT+BLEGATTC]");
 }
 
-static inline void fBTBRGAP(void *arg)
-{
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-	atcmd_bt_cmd(arg, ATCMD_BR_GAP_IDX, "[AT+BTBRGAP]");
-#else
-	(void)arg;
-	AT_PRINTK("[AT+BTBRGAP] Error: not supported\r\n");
-	BT_AT_PRINTERROR();
-#endif
+static inline void fBRGAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_BR_GAP_IDX, "[AT+BRGAP]");
 }
 
+static inline void fBTA2DP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_A2DP_IDX, "[AT+BTA2DP]");
+}
 
+static inline void fBTAVRCP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_AVRCP_IDX, "[AT+BTAVRCP]");
+}
 
+static inline void fBTSPP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_SPP_IDX, "[AT+BTSPP]");
+}
+
+static inline void fBTHID(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_HID_IDX, "[AT+BTHID]");
+}
+
+static inline void fBTHFP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_HFP_IDX, "[AT+BTHFP]");
+}
+
+#endif /* RTK_BREDR_SUPPORT */
+
+#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+
+static inline void fBLEBAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_BAP_IDX, "[AT+BLEBAP]");
+}
+
+static inline void fBLECAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_CAP_IDX, "[AT+BLECAP]");
+}
+
+static inline void fBLEPBP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_PBP_IDX, "[AT+BLEPBP]");
+}
+
+static inline void fBLETMAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_TMAP_IDX, "[AT+BLETMAP]");
+}
+
+static inline void fBLEGMAP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_GMAP_IDX, "[AT+BLEGMAP]");
+}
+
+#endif /* RTK_BLE_AUDIO_SUPPORT */
+
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+
+static inline void fBLEMESHSTACK(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_STACK_IDX, "[AT+BLEMESHSTACK]");
+}
+
+static inline void fBLEMESHDATA(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_DATA_IDX, "[AT+BLEMESHDATA]");
+}
+
+static inline void fBLEMESHCONFIG(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_CONFIG_IDX, "[AT+BLEMESHCONFIG]");
+}
+
+static inline void fBLEMESHGOO(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GOO_IDX, "[AT+BLEMESHGOO]");
+}
+
+static inline void fBLEMESHRMT(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_RMT_IDX, "[AT+BLEMESHRMT]");
+}
+
+static inline void fBLEMESHLL(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_LL_IDX, "[AT+BLEMESHLL]");
+}
+
+static inline void fBLEMESHLCTL(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_LCTL_IDX, "[AT+BLEMESHLCTL]");
+}
+
+static inline void fBLEMESHLHSL(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_LHSL_IDX, "[AT+BLEMESHLHSL]");
+}
+
+static inline void fBLEMESHLXYL(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_LXYL_IDX, "[AT+BLEMESHLXYL]");
+}
+
+static inline void fBLEMESHLLC(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_LLC_IDX, "[AT+BLEMESHLLC]");
+}
+
+static inline void fBLEMESHTIME(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_TIME_IDX, "[AT+BLEMESHTIME]");
+}
+
+static inline void fBLEMESHSCHEDULER(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_SCHEDULER_IDX, "[AT+BLEMESHSCHEDULER]");
+}
+
+static inline void fBLEMESHSCENE(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_SCENE_IDX, "[AT+BLEMESHSCENE]");
+}
+
+static inline void fBLEMESHGDTT(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GDTT_IDX, "[AT+BLEMESHGDTT]");
+}
+
+static inline void fBLEMESHGLE(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GLE_IDX, "[AT+BLEMESHGLE]");
+}
+
+static inline void fBLEMESHGPOO(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GPOO_IDX, "[AT+BLEMESHGPOO]");
+}
+
+static inline void fBLEMESHGPL(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GPL_IDX, "[AT+BLEMESHGPL]");
+}
+
+static inline void fBLEMESHGB(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GB_IDX, "[AT+BLEMESHGB]");
+}
+
+static inline void fBLEMESHGLO(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GLO_IDX, "[AT+BLEMESHGLO]");
+}
+
+static inline void fBLEMESHGP(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_GP_IDX, "[AT+BLEMESHGP]");
+}
+
+static inline void fBLEMESHSENSOR(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_SENSOR_IDX, "[AT+BLEMESHSENSOR]");
+}
+
+static inline void fBLEMESHHEALTH(void *arg)
+{
+	atcmd_bt_cmd(arg, ATCMD_MESH_HEALTH_IDX, "[AT+BLEMESHHEALTH]");
+}
+
+#endif /* RTK_BLE_MESH_SUPPORT */
+
+static void fBTVENDOR(void *arg)
+{
+	int argc = 0;
+	char *argv[MAX_ARGC] = {0};
+	int ret = 0;
+
+	if (!arg) {
+		AT_PRINTK("[AT+BTVENDOR] Error: No input args number!");
+		goto exit;
+	}
+
+	argc = parse_param(arg, argv);
+	if (argc < 2) {
+		AT_PRINTK("[AT+BTVENDOR] Error: Wrong input args number!");
+		goto exit;
+	}
+
+	ret = atcmd_bt_vendor(argc - 1, &argv[1]);
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR();
+	}
+	return;
+
+exit:
+	AT_PRINTK("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help");
+	BT_AT_PRINTERROR();
+}
 
 #endif /* ATCMD_BT_CUT_DOWN */
 
@@ -1489,14 +1657,54 @@ static log_item_t at_bt_items[] = {
 	{"BE", fATBE, {NULL, NULL}},
 	{"BV", fATBV, {NULL, NULL}},
 	{"BT", fATBT, {NULL, NULL}},
-#else
-	{"+BTDEMO",   fBTDEMO,   {NULL, NULL}},
-	{"+BLEGAP",   fBLEGAP,   {NULL, NULL}},
-	{"+BLEGATTS", fBLEGATTS, {NULL, NULL}},
-	{"+BLEGATTC", fBLEGATTC, {NULL, NULL}},
-	{"+BTBRGAP",  fBTBRGAP,  {NULL, NULL}},
-	{},
-#endif
+#else /* ATCMD_BT_CUT_DOWN */
+	{"+BTDEMO",             fBTDEMO,   {NULL, NULL}},
+	{"+BLEGAP",             fBLEGAP,   {NULL, NULL}},
+	{"+BLEGATTS",           fBLEGATTS, {NULL, NULL}},
+	{"+BLEGATTC",           fBLEGATTC, {NULL, NULL}},
+#if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
+	{"+BRGAP",              fBRGAP,               {NULL, NULL}},
+	{"+BTA2DP",             fBTA2DP,              {NULL, NULL}},
+	{"+BTAVRCP",            fBTAVRCP,             {NULL, NULL}},
+	{"+BTSPP",              fBTSPP,               {NULL, NULL}},
+	{"+BTHID",              fBTHID,               {NULL, NULL}},
+	{"+BTHFP",              fBTHFP,               {NULL, NULL}},
+#endif /* RTK_BREDR_SUPPORT */
+#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+	{"+BLEBAP",             fBLEBAP,              {NULL, NULL}},
+	{"+BLECAP",             fBLECAP,              {NULL, NULL}},
+	{"+BLEPBP",             fBLEPBP,              {NULL, NULL}},
+	{"+BLETMAP",            fBLETMAP,             {NULL, NULL}},
+	{"+BLEGMAP",            fBLEGMAP,             {NULL, NULL}},
+#endif /* RTK_BLE_AUDIO_SUPPORT */
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+	{"+BLEMESHSTACK",       fBLEMESHSTACK,        {NULL, NULL}},
+	{"+BLEMESHDATA",        fBLEMESHDATA,         {NULL, NULL}},
+	{"+BLEMESHCONFIG",      fBLEMESHCONFIG,       {NULL, NULL}},
+	{"+BLEMESHGOO",         fBLEMESHGOO,          {NULL, NULL}},
+	{"+BLEMESHRMT",         fBLEMESHRMT,          {NULL, NULL}},
+	{"+BLEMESHLL",          fBLEMESHLL,           {NULL, NULL}},
+	{"+BLEMESHLCTL",        fBLEMESHLCTL,         {NULL, NULL}},
+	{"+BLEMESHLHSL",        fBLEMESHLHSL,         {NULL, NULL}},
+	{"+BLEMESHLXYL",        fBLEMESHLXYL,         {NULL, NULL}},
+	{"+BLEMESHLLC",         fBLEMESHLLC,          {NULL, NULL}},
+	{"+BLEMESHTIME",        fBLEMESHTIME,         {NULL, NULL}},
+	{"+BLEMESHSCHEDULER",   fBLEMESHSCHEDULER,    {NULL, NULL}},
+	{"+BLEMESHSCENE",       fBLEMESHSCENE,        {NULL, NULL}},
+	{"+BLEMESHGDTT",        fBLEMESHGDTT,         {NULL, NULL}},
+	{"+BLEMESHGLE",         fBLEMESHGLE,          {NULL, NULL}},
+	{"+BLEMESHGPOO",        fBLEMESHGPOO,         {NULL, NULL}},
+	{"+BLEMESHGPL",         fBLEMESHGPL,          {NULL, NULL}},
+	{"+BLEMESHGB",          fBLEMESHGB,           {NULL, NULL}},
+	{"+BLEMESHGLO",         fBLEMESHGLO,          {NULL, NULL}},
+	{"+BLEMESHGP",          fBLEMESHGP,           {NULL, NULL}},
+	{"+BLEMESHSENSOR",      fBLEMESHSENSOR,       {NULL, NULL}},
+	{"+BLEMESHHEALTH",      fBLEMESHHEALTH,       {NULL, NULL}},
+#endif /* RTK_BLE_MESH_SUPPORT */
+
+	{"+BTVENDOR",           fBTVENDOR,            {NULL, NULL}},
+
+#endif /* ATCMD_BT_CUT_DOWN */
 };
 
 /* TODO: A part of AT command "AT+LIST". */

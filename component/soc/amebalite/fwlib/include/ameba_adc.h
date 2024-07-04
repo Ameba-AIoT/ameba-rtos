@@ -629,7 +629,7 @@ typedef struct {
 	s32 cal_a;
 	s32 cal_b;
 	s32 cal_c;
-	BOOL init_done; // calibration parameter init done
+	u8 init_done; // calibration parameter init done
 } ADC_CalParaTypeDef;
 /**
   * @}

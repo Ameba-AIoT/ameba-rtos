@@ -20,6 +20,7 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
+#define USBH_MSC_DEBUG 0
 
 /* Private types -------------------------------------------------------------*/
 
@@ -69,7 +70,7 @@ static int usbh_msc_attach(usb_host_t *host)
 
 	interface = usbh_get_interface(host, MSC_CLASS_CODE, USBH_MSC_TRANSPARENT, USBH_MSC_BOT);
 	if (interface == 0xFFU) {
-		RTK_LOGE(TAG, "Fail to get the interface for MSC class\n");
+		RTK_LOGS(TAG, "[MSC] Get itf fail\n");
 		return status;
 	}
 
@@ -78,7 +79,7 @@ static int usbh_msc_attach(usb_host_t *host)
 
 	msc_if_desc = usbh_get_interface_descriptor(host, interface, 0);
 	if (msc_if_desc == NULL) {
-		RTK_LOGE(TAG, "Fail to get the interface descriptor for MSC class\n");
+		RTK_LOGS(TAG, "[MSC] Get itf desc fail\n");
 		return status;
 	}
 
@@ -106,7 +107,7 @@ static int usbh_msc_attach(usb_host_t *host)
 	if (pipe_num != 0xFFU) {
 		msc->bulk_out_pipe = pipe_num;
 	} else {
-		RTK_LOGE(TAG, "Fail to allocate BULK OUT pipe for MSC class\n");
+		RTK_LOGS(TAG, "[MSC] Alloc BULK out pipe fail\n");
 		return HAL_ERR_MEM;
 	}
 
@@ -115,7 +116,7 @@ static int usbh_msc_attach(usb_host_t *host)
 	if (pipe_num != 0xFFU) {
 		msc->bulk_in_pipe = pipe_num;
 	} else {
-		RTK_LOGE(TAG, "Fail to allocate BULK IN pipe for MSC class\n");
+		RTK_LOGS(TAG, "[MSC] Alloc BULK in pipe fail\n");
 		usbh_free_pipe(host, msc->bulk_out_pipe);
 		return HAL_ERR_MEM;
 	}
@@ -218,7 +219,7 @@ static int usbh_msc_setup(usb_host_t *host)
 
 		if (status == HAL_OK) {
 			msc->max_lun = (msc->max_lun > USBH_MSC_MAX_LUN) ? USBH_MSC_MAX_LUN : (msc->max_lun + 1U);
-			RTK_LOGD(TAG, "Number of supported LUN: %ld\n", msc->max_lun);
+			RTK_LOGS(TAG, "[MSC] Max lun %d\n", msc->max_lun);
 
 			for (i = 0U; i < msc->max_lun; i++) {
 				msc->unit[i].prev_ready_state = HAL_ERR_UNKNOWN;
@@ -230,7 +231,7 @@ static int usbh_msc_setup(usb_host_t *host)
 	case MSC_REQ_ERROR :
 		/* a Clear Feature should be issued here */
 		if (usbh_ctrl_clear_feature(host, 0x00U) == HAL_OK) {
-			RTK_LOGE(TAG, "Fail to clear feature for MSC requst error\n");
+			RTK_LOGS(TAG, "[MSC] TX clear feature fail\n");
 		}
 		break;
 
@@ -259,7 +260,7 @@ static int usbh_msc_process(usb_host_t *host)
 			/* Switch MSC REQ state machine */
 			switch (msc->unit[msc->current_lun].state) {
 			case MSC_INIT:
-				RTK_LOGD(TAG, "LUN #%d\n", msc->current_lun);
+				RTK_LOGS(TAG, "[MSC] Lun %d\n", msc->current_lun);
 				msc->unit[msc->current_lun].state = MSC_READ_INQUIRY;
 				msc->tick = host->tick;
 				break;
@@ -268,9 +269,11 @@ static int usbh_msc_process(usb_host_t *host)
 				scsi_status = usbh_scsi_inquiry(msc, (u8)msc->current_lun, &msc->unit[msc->current_lun].inquiry);
 
 				if (scsi_status == HAL_OK) {
-					RTK_LOGD(TAG, "Inquiry vendor: %s\n", msc->unit[msc->current_lun].inquiry.vendor_id);
-					RTK_LOGD(TAG, "Inquiry product: %s\n", msc->unit[msc->current_lun].inquiry.product_id);
-					RTK_LOGD(TAG, "Inquiry version: %s\n", msc->unit[msc->current_lun].inquiry.revision_id);
+#if USBH_MSC_DEBUG
+					RTK_LOGS(TAG, "[MSC] Inq ven %s\n", msc->unit[msc->current_lun].inquiry.vendor_id);
+					RTK_LOGS(TAG, "[MSC] Inq prod %s\n", msc->unit[msc->current_lun].inquiry.product_id);
+					RTK_LOGS(TAG, "[MSC] Inq ver %s\n", msc->unit[msc->current_lun].inquiry.revision_id);
+#endif
 					msc->unit[msc->current_lun].state = MSC_TEST_UNIT_READY;
 				}
 				if (scsi_status == HAL_ERR_UNKNOWN) {
@@ -289,7 +292,7 @@ static int usbh_msc_process(usb_host_t *host)
 				if (scsi_status == HAL_OK) {
 					if (msc->unit[msc->current_lun].prev_ready_state != HAL_OK) {
 						msc->unit[msc->current_lun].state_changed = 1U;
-						RTK_LOGD(TAG, "MSC device ready\n");
+						//RTK_LOGS(TAG, "[MSC] Device ready\n");
 					} else {
 						msc->unit[msc->current_lun].state_changed = 0U;
 					}
@@ -301,7 +304,7 @@ static int usbh_msc_process(usb_host_t *host)
 					/* Media not ready, so try to check again during 10s */
 					if (msc->unit[msc->current_lun].prev_ready_state != HAL_ERR_UNKNOWN) {
 						msc->unit[msc->current_lun].state_changed = 1U;
-						RTK_LOGW(TAG, "MSC device NOT ready\n");
+						RTK_LOGS(TAG, "[MSC] Device not ready\n");
 					} else {
 						msc->unit[msc->current_lun].state_changed = 0U;
 					}
@@ -321,10 +324,12 @@ static int usbh_msc_process(usb_host_t *host)
 
 				if (scsi_status == HAL_OK) {
 					if (msc->unit[msc->current_lun].state_changed == 1U) {
-						RTK_LOGD(TAG, "MSC device capacity: %ld Bytes\n",
+#if USBH_MSC_DEBUG
+						RTK_LOGS(TAG, "[MSC] Capacity %dB\n",
 								 (msc->unit[msc->current_lun].capacity.block_nbr * msc->unit[msc->current_lun].capacity.block_size));
-						RTK_LOGD(TAG, "Block number: %ld\n", msc->unit[msc->current_lun].capacity.block_nbr);
-						RTK_LOGD(TAG, "Block size: %d\n", msc->unit[msc->current_lun].capacity.block_size);
+						RTK_LOGS(TAG, "[MSC] Block num %d\n", msc->unit[msc->current_lun].capacity.block_nbr);
+						RTK_LOGS(TAG, "[MSC] Block size %d\n", msc->unit[msc->current_lun].capacity.block_size);
+#endif
 					}
 					msc->unit[msc->current_lun].state = MSC_IDLE;
 					msc->unit[msc->current_lun].error = MSC_OK;
@@ -352,14 +357,16 @@ static int usbh_msc_process(usb_host_t *host)
 						}
 					}
 
-					RTK_LOGD(TAG, "Sense key: %x\n", msc->unit[msc->current_lun].sense.key);
-					RTK_LOGD(TAG, "Additional sense code: %x\n", msc->unit[msc->current_lun].sense.asc);
-					RTK_LOGD(TAG, "Additional sense code qualifier: %x\n", msc->unit[msc->current_lun].sense.ascq);
+#if USBH_MSC_DEBUG
+					RTK_LOGS(TAG, "[MSC] Sense key %x\n", msc->unit[msc->current_lun].sense.key);
+					RTK_LOGS(TAG, "[MSC] Sense code %x\n", msc->unit[msc->current_lun].sense.asc);
+					RTK_LOGS(TAG, "[MSC] Sense code qua %x\n", msc->unit[msc->current_lun].sense.ascq);
+#endif
 					msc->unit[msc->current_lun].state = MSC_IDLE;
 					msc->current_lun++;
 				}
 				if (scsi_status == HAL_ERR_UNKNOWN) {
-					RTK_LOGW(TAG, "MSC device NOT ready\n");
+					RTK_LOGS(TAG, "[MSC] Device not ready\n");
 					msc->unit[msc->current_lun].state = MSC_UNRECOVERED_ERROR;
 				} else {
 					if (scsi_status == HAL_ERR_HW) {
@@ -466,16 +473,18 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 		scsi_status = usbh_scsi_request_sense(msc, lun, &msc->unit[lun].sense);
 
 		if (scsi_status == HAL_OK) {
-			RTK_LOGD(TAG, "Sense key: %x\n", msc->unit[lun].sense.key);
-			RTK_LOGD(TAG, "Additional sense code: %x\n", msc->unit[lun].sense.asc);
-			RTK_LOGD(TAG, "Additional sense code qualifier: %x\n", msc->unit[lun].sense.ascq);
+#if USBH_MSC_DEBUG
+			RTK_LOGS(TAG, "[MSC] Sense key: %x\n", msc->unit[lun].sense.key);
+			RTK_LOGS(TAG, "[MSC] Sense code: %x\n", msc->unit[lun].sense.asc);
+			RTK_LOGS(TAG, "[MSC] Sense code qua: %x\n", msc->unit[lun].sense.ascq);
+#endif
 			msc->unit[lun].state = MSC_IDLE;
 			msc->unit[lun].error = MSC_ERROR;
 
 			status = HAL_ERR_UNKNOWN;
 		}
 		if (scsi_status == HAL_ERR_UNKNOWN) {
-			RTK_LOGW(TAG, "MSC device NOT ready\n");
+			RTK_LOGS(TAG, "[MSC] Device not ready\n");
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
 				msc->unit[lun].state = MSC_UNRECOVERED_ERROR;

@@ -282,8 +282,8 @@ typedef struct _DSLP_RETENTION_FUNC_TABLE_ {
 	u32	PatchLen;
 } DSLP_RETENTION_FUNC_TABLE, *PDSLP_RETENTION_FUNC_TABLE;
 
-#if defined (ARM_CORE_CM4)
-#define NS_ENTRY    __attribute__((cmse_nonsecure_entry))
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+#define NS_ENTRY __attribute__((cmse_nonsecure_entry))
 #ifdef __ICCARM__
 typedef __cmse_nonsecure_call void nsfunc(void);
 #else

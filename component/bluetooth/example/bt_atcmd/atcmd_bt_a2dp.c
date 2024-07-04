@@ -25,11 +25,11 @@ static int atcmd_bt_a2dp_connect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_connect(bd_addr)) {
-		AT_PRINTK("[ATBC] A2DP connect fail \r\n");
+		BTA2DP_AT_PRINTK("A2DP connect fail \r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] A2DP connecting to device %s ...", addr_str);
+	BTA2DP_AT_PRINTK("A2DP connecting to device %s ...", addr_str);
 
 	return 0;
 }
@@ -42,11 +42,11 @@ static int atcmd_bt_a2dp_disconnect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_disconnect(bd_addr)) {
-		AT_PRINTK("[ATBC] A2DP disconnect fail \r\n");
+		BTA2DP_AT_PRINTK("A2DP disconnect fail \r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] A2DP disconnecting to device %s ...", addr_str);
+	BTA2DP_AT_PRINTK("A2DP disconnecting to device %s ...", addr_str);
 
 	return 0;
 }
@@ -59,11 +59,11 @@ static int atcmd_bt_a2dp_start(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_start(bd_addr)) {
-		AT_PRINTK("[ATBC] A2DP start fail \r\n");
+		BTA2DP_AT_PRINTK("A2DP start fail \r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] A2DP starting to device %s ...", addr_str);
+	BTA2DP_AT_PRINTK("A2DP starting to device %s ...", addr_str);
 
 	return 0;
 }
@@ -76,11 +76,11 @@ static int atcmd_bt_a2dp_suspend(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_suspend(bd_addr)) {
-		AT_PRINTK("[ATBC] A2DP suspend fail \r\n");
+		BTA2DP_AT_PRINTK("A2DP suspend fail \r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	AT_PRINTK("[ATBC] A2DP suspending to device %s ...", addr_str);
+	BTA2DP_AT_PRINTK("A2DP suspending to device %s ...", addr_str);
 
 	return 0;
 }
@@ -95,6 +95,9 @@ static const cmd_table_t a2dp_cmd_table[] = {
 
 int atcmd_bt_a2dp_cmd(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, a2dp_cmd_table, "[ATBC][a2dp]");
-	return 0;
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, a2dp_cmd_table, "[AT+BTA2DP]");
+#else
+	return atcmd_bt_excute(argc, argv, a2dp_cmd_table, "[ATBC][a2dp]");
+#endif
 }

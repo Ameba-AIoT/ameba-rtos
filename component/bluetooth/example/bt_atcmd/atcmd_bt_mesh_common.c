@@ -157,7 +157,7 @@ static int atcmd_ble_mesh_fn_init(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support friend feature.");
+	MESHSTACK_AT_PRINTK("Platform not support friend feature.");
 	return -1;
 #endif
 }
@@ -176,7 +176,7 @@ static int atcmd_ble_mesh_fn_deinit(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support friend feature.");
+	MESHSTACK_AT_PRINTK("Platform not support friend feature.");
 	return -1;
 #endif
 }
@@ -200,7 +200,7 @@ static int atcmd_ble_mesh_pbadvcon(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -218,7 +218,7 @@ static int atcmd_ble_mesh_pbadv_discon(int argc, char **argv)
 	}
 	return 0;
 #else
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -265,7 +265,7 @@ static int atcmd_ble_mesh_pb_gatt_con(int argc, char **argv)
 #else
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -289,14 +289,14 @@ static int atcmd_ble_mesh_pb_gatt_discon(int argc, char **argv)
 		break;
 	}
 	if ((ret = rtk_bt_mesh_stack_prov_pb_gatt_discon(&gatt_discon)) != 0) {
-		AT_PRINTK("[ATBC] Pb gatt disconnect failed! err: 0x%x", ret);
+		MESHSTACK_AT_PRINTK("Pb gatt disconnect failed! err: 0x%x", ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -322,7 +322,7 @@ static int atcmd_ble_mesh_start_provisioning(int argc, char **argv)
 #else
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -354,7 +354,7 @@ static int atcmd_ble_mesh_method_choose_for_prov(int argc, char **argv)
 #else
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -374,7 +374,7 @@ static int atcmd_ble_mesh_prov_service_disvery(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -394,7 +394,7 @@ static int atcmd_ble_mesh_prov_service_set_notify(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -414,7 +414,7 @@ static int atcmd_ble_mesh_proxy_service_disvery(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -434,7 +434,7 @@ static int atcmd_ble_mesh_proxy_service_set_notify(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
 	return -1;
 #endif
 }
@@ -454,7 +454,7 @@ static int atcmd_ble_mesh_lpn_init(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not device role or not suppport low power feature, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
 	return -1;
 #endif
 }
@@ -490,7 +490,7 @@ static int atcmd_ble_mesh_lpn_req(int argc, char **argv)
 #else
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not device role or not suppport low power feature, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
 	return -1;
 #endif
 }
@@ -512,7 +512,7 @@ static int atcmd_ble_mesh_lpn_sub(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not device role or not suppport low power feature, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
 	return -1;
 #endif
 }
@@ -532,7 +532,7 @@ static int atcmd_ble_mesh_lpn_clear(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not device role or not suppport low power feature, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
 	return -1;
 #endif
 }
@@ -551,7 +551,7 @@ static int atcmd_ble_mesh_lpn_deinit(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not device role or not suppport low power feature, do not support this function.");
+	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
 	return -1;
 #endif
 }
@@ -586,7 +586,10 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 
 int atcmd_bt_mesh_stack(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_stack_cmd_table, "[ATBC][mesh_stack]");
-	return 0;
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_stack_cmd_table, "[AT+BLEMESHSTACK]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_stack_cmd_table, "[ATBC][mesh_stack]");
+#endif
 }
 #endif // end of RTK_BLE_MESH_SUPPORT

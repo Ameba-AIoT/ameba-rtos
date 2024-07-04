@@ -39,7 +39,7 @@ Setup Guide
 	4. Download the generated images under auto_build to Ameba board.
 	5. Plugin Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related
 	error reported:
-		[UVC] USB host uvc demo started...
+		[UVC] USBH UVC demo start
 	6. Ameba board will recoganize the USB camera and start to capture MJPEG frames at the rate of one frame per second.
 		
 	To run USB UVC host application on HP:
@@ -74,9 +74,7 @@ Result description
 		[USB-I] * main_task_priority: 3
 		[USB-I] * isr_task_priority: 4
 		[USB-I] * alt_max: 25
-		[USB-I] * rx_fifo_size: 512
-		[USB-I] * nptx_fifo_size: 256
-		[USB-I] * ptx_fifo_size: 256
+		[USB-I] * ptx_fifo_first: 1
 		[USB-I] GSNPSID = 0x4F54310A
 		UVC init
 		[USB-I] USB Device Attached

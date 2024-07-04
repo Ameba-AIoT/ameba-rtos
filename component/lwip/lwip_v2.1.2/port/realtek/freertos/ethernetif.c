@@ -105,6 +105,7 @@ static const char *TAG = "ETHERNET";
 #define SRC_MAC_LEN			(6)
 #define PROTO_TYPE_LEN		(2)  // protocol type
 #define IP_LEN_OFFSET		(2)  // offset of total length field in IP packet
+#define ETHERNET_REASSEMBLE_PACKET	(0)
 
 static rtos_mutex_t mii_tx_mutex;
 static u8 TX_BUFFER[MAX_BUFFER_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));;
@@ -357,6 +358,7 @@ void rltk_mii_recv(struct eth_drv_sg *sg_list, int sg_len)
 #endif
 }
 
+#if defined(ETHERNET_REASSEMBLE_PACKET) && ETHERNET_REASSEMBLE_PACKET
 u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 {
 	UNUSED(buf);
@@ -372,9 +374,13 @@ u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 
 	if (0 == pkt_total_len) { //first packet
 		pbuf = RX_BUFFER;
-		memcpy((void *)pbuf, buf, frame_length);
-		if (frame_length%usb_receive_mps != 0) { //should finish
+		if (frame_length > 0) {
+			memcpy((void *)pbuf, buf, frame_length);
+		}
+		if ((0 == frame_length) || (frame_length % usb_receive_mps != 0)) { //should finish
 			*total_len = frame_length;
+			rx_buffer_saved_data_len = 0;
+			pkt_total_len = 0;
 			return TRUE;
 		} else { //get the total length
 			rx_buffer_saved_data_len = frame_length;
@@ -386,14 +392,22 @@ u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 			}
 		}
 	} else {
+		if (rx_buffer_saved_data_len + frame_length > MAX_BUFFER_SIZE) {
+			RTK_LOGS(NOTAG, "frame_length(%d) and rx_buffer_saved_data_len(%d) is too long, MAX_BUFFER_SIZE = %d !\n", frame_length, rx_buffer_saved_data_len,
+					 MAX_BUFFER_SIZE);
+			//drop packet
+			rx_buffer_saved_data_len = 0;
+		}
+
 		pbuf = RX_BUFFER + rx_buffer_saved_data_len;
 		if (frame_length > 0) {
 			memcpy((void *)pbuf, buf, frame_length);
 		}
 		rx_buffer_saved_data_len += frame_length;
-		if (frame_length%usb_receive_mps != 0) {
+		if ((0 == frame_length) || (frame_length % usb_receive_mps != 0)) {
 			//should finish
 			*total_len = rx_buffer_saved_data_len;
+			rx_buffer_saved_data_len = 0;
 			pkt_total_len = 0;
 			return TRUE;
 		}
@@ -401,6 +415,7 @@ u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 #endif
 	return FALSE;
 }
+#endif
 
 u8 rltk_mii_recv_data_check(u8 *mac)
 {
@@ -437,15 +452,24 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 	struct netif *netif = &eth_netif;
 	u8 *macstr = (u8 *)(netif->hwaddr);
 
-	if (frame_len > MAX_ETH_MSG) {
-		frame_len = MAX_ETH_MSG;
+	if (frame_len > MAX_BUFFER_SIZE) {
+		RTK_LOGS(NOTAG, "recv data len is %d\n", frame_len);
+		return;
 	}
 
+#if defined(ETHERNET_REASSEMBLE_PACKET) && ETHERNET_REASSEMBLE_PACKET 
 	RTK_LOG_ETHERNET("%s %d will rltk_mii_recv_data\n", __func__, __LINE__);
 	if (FALSE == rltk_mii_recv_data(buf, frame_len, &total_len)) {
 		return;
 	}
-
+#else
+	if(0 == frame_len) {
+		RTK_LOGS(NOTAG, "recv data len is 0\n");
+		return;
+	}
+	total_len = frame_len;
+	memcpy((u8*)RX_BUFFER, buf, frame_len);
+#endif
 	if (FALSE == rltk_mii_recv_data_check(macstr)) {
 		RTK_LOG_ETHERNET("rltk_mii_recv_data_check fail\n");
 		for(u32 i = 0; i < total_len; i++)

@@ -21,7 +21,7 @@ uint16_t rtk_bt_mesh_health_fault_get(rtk_bt_mesh_health_fault_get_t *health_fau
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_GET, health_fault_get,
 						  sizeof(rtk_bt_mesh_health_fault_get_t));
 
-	BT_LOGE("ret %d \r\n", ret);
+	BT_LOGA("ret %d \r\n", ret);
 	return ret;
 }
 

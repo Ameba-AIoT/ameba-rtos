@@ -9,6 +9,7 @@
 #if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <osif.h>
 #include <log_service.h>
 #include <bt_utils.h>
@@ -32,14 +33,14 @@ static int atcmd_bt_pbp_broadcast_sink_cfg(int argc, char **argv)
 		/* RTK_BT_LE_AUDIO_STEREO */
 		channel = 3;
 	} else {
-		AT_PRINTK("[ATBC] Unknown channel allocation");
+		BLEPBP_AT_PRINTK("Unknown channel allocation");
 		return -1;
 	}
 	if (rtk_bt_pbp_broadcast_sink_cfg(channel)) {
-		AT_PRINTK("[ATBC] PBP broadcast sink config channel fail \r\n");
+		BLEPBP_AT_PRINTK("PBP broadcast sink config channel fail \r\n");
 		return -1;
 	}
-	AT_PRINTK("[ATBC] PBP broadcast sink config channel 0x%x successfully \r\n", channel);
+	BLEPBP_AT_PRINTK("PBP broadcast sink config channel 0x%x successfully \r\n", channel);
 
 	return 0;
 }
@@ -51,14 +52,20 @@ static const cmd_table_t pbp_broadcast_sink_cmd_table[] = {
 
 int atcmd_bt_pbp_cmd(int argc, char *argv[])
 {
+	int ret = 0;
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	char tag[80] = "[AT+BLEPBP][sink]";
+#else
+	char tag[80] = "[ATBC][pbp][sink]";
+#endif
 	if (strcmp(argv[0], "sink") == 0) {
-		AT_PRINTK("[ATBC] Set pbp broadcast sink cmd");
-		atcmd_bt_excute(argc - 1, &argv[1], pbp_broadcast_sink_cmd_table, "[ATBC][pbp][sink]");
+		BLEPBP_AT_PRINTK("Set pbp broadcast sink cmd");
+		ret = atcmd_bt_excute(argc - 1, &argv[1], pbp_broadcast_sink_cmd_table, tag);
 	} else {
 		AT_PRINTK("[%s]Error: pbp do not support  %s \r\n", __func__, argv[0]);
-		return -1;
+		ret = -1;
 	}
 
-	return 0;
+	return ret;
 }
 #endif

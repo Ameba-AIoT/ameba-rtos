@@ -33,7 +33,6 @@ ifeq ($(CONFIG_WLAN),y)
 ifeq ($(CONFIG_AS_INIC_AP), y)
 ifneq ($(CONFIG_MP_SHRINK),y)
 	@make -C network all
-	@make -C api all
 endif
 	@make -C utilities all
 
@@ -75,7 +74,6 @@ clean:
 	@make -C at_cmd clean
 	@make -C test clean
 	@make -C mbedtls clean
-	@make -C api clean
 	@make -C network clean
 	@make -C utilities clean
 	@make -C wps clean

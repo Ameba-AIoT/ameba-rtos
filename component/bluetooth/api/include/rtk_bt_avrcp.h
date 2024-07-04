@@ -15,6 +15,22 @@ extern "C"
 
 #define RTK_BT_DEFAULT_ABSOLUTE_VOLUME 0x64
 /* ------------------------------- Data Types ------------------------------- */
+
+/**
+ * @typedef   rtk_bt_avrcp_play_status_t
+ * @brief     avrcp play status
+ */
+typedef enum {
+	RTK_BT_AVRCP_STATUS_STOPPED = 0x00,                    /*!< stop */
+	RTK_BT_AVRCP_STATUS_PLAYING = 0x01,                    /*!< play */
+	RTK_BT_AVRCP_STATUS_PAUSED = 0x02,                     /*!< pause */
+	RTK_BT_AVRCP_STATUS_FWD_SEEK = 0x03,                   /*!< forward seek */
+	RTK_BT_AVRCP_STATUS_REV_SEEK = 0x04,                   /*!< rewind seek */
+	RTK_BT_AVRCP_STATUS_FAST_FWD = 0x05,                   /*!< fast forward */
+	RTK_BT_AVRCP_STATUS_REWIND = 0x06,                     /*!< rewind */
+	RTK_BT_AVRCP_STATUS_ERROR = 0xFF,                      /*!< error */
+} rtk_bt_avrcp_play_status_t;
+
 /**
  * @struct    rtk_bt_avrcp_absolute_volume_set_t
  * @brief     Bluetooth AVRCP absolute volume set.

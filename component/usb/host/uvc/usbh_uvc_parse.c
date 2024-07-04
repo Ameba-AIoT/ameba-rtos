@@ -151,7 +151,7 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 		break;
 
 	default:
-		RTK_LOGE(TAG, "Wrong entity type!");
+		RTK_LOGS(TAG, "[UVC] Wrong entity type");
 		break;
 	}
 
@@ -188,7 +188,7 @@ static u8 usbh_uvc_parse_vc(u8 *pbuf, u32 *length)
 		case USB_DESC_TYPE_CS_INTERFACE:
 			ret = usbh_uvc_parse_entity((u8 *)desc);
 			if (ret) {
-				RTK_LOGE(TAG, "Fail to parse entity\n");
+				RTK_LOGS(TAG, "[UVC] Fail to parse entity\n");
 				return ret;
 			}
 			break;
@@ -197,7 +197,7 @@ static u8 usbh_uvc_parse_vc(u8 *pbuf, u32 *length)
 			if (((usbh_ep_desc_t *)desc)->bmAttributes == USB_CH_EP_TYPE_INTR) {
 				vc_intf->intr_ep = desc;
 			} else {
-				RTK_LOGE(TAG, "Wrong endpoint type\n");
+				RTK_LOGS(TAG, "[UVC] Wrong endpoint type\n");
 			}
 			break;
 
@@ -206,7 +206,7 @@ static u8 usbh_uvc_parse_vc(u8 *pbuf, u32 *length)
 				((uvc_vc_intr_ep_desc_t *)desc)->bDescriptorSubType == USB_CH_EP_TYPE_INTR) {
 				vc_intf->cs_intr_desc = desc;
 			} else {
-				RTK_LOGE(TAG, "Wrong class-specific vc intr descriptor\n");
+				RTK_LOGS(TAG, "[UVC] Wrong cs vc intr desc\n");
 			}
 			break;
 
@@ -214,7 +214,7 @@ static u8 usbh_uvc_parse_vc(u8 *pbuf, u32 *length)
 			return 0;
 
 		default:
-			RTK_LOGE(TAG, "Wrong descriptor type: %d\n", ((uvc_desc_header_t *) desc)->bDescriptorType);
+			RTK_LOGS(TAG, "[UVC] Wrong desc type: %d\n", ((uvc_desc_header_t *) desc)->bDescriptorType);
 			return 0;
 		}
 	}
@@ -242,7 +242,7 @@ static u8 usbh_uvc_parse_format(uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	uvc_vs_frame_t *tmp_frame;
 
 	if (desc[2] != UVC_VS_INPUT_HEADER) {
-		RTK_LOGE(TAG, "Header is no vs input header\n");
+		RTK_LOGS(TAG, "[UVC] Header is no vs input\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -289,7 +289,7 @@ static u8 usbh_uvc_parse_format(uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 				vs_intf->has_h264 = 1;
 			} else {
 				vs_intf->has_h264 = 0;
-				RTK_LOGW(TAG, "GUID is not H264. It could not be supported!");
+				RTK_LOGS(TAG, "[UVC] GUID is not H264, not support\n");
 			}
 			nformat++;
 			break;
@@ -307,7 +307,7 @@ static u8 usbh_uvc_parse_format(uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		default:
-			RTK_LOGE(TAG, "Unsupported vs Format Type!");
+			RTK_LOGS(TAG, "[UVC] Unsupported vs format desc");
 			break;
 		}
 		/*find next descripter*/
@@ -381,7 +381,7 @@ static u8 usbh_uvc_parse_format(uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		default:
-			RTK_LOGE(TAG, "Unsupported Format Type!");
+			RTK_LOGS(TAG, "[UVC] Unsupported vs format len");
 			break;
 
 		}
@@ -393,7 +393,7 @@ static u8 usbh_uvc_parse_format(uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 	/* Some camera wTotalLength from vs input desc is not right, we use real len */
 	if (real_len != totallen) {
-		RTK_LOGW(TAG, "Invalid interface size 0x%x, should be 0x%x\n", totallen, real_len);
+		RTK_LOGS(TAG, "[UVC] Invalid itf size 0x%x, should be 0x%x\n", totallen, real_len);
 	}
 
 	*length = real_len;
@@ -418,7 +418,7 @@ static u8 usbh_uvc_parse_vs(u8 *pbuf, u32 *length)
 	uvc->uvc_desc.vs_num++;
 
 	if (uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC) {
-		RTK_LOGW(TAG, "Warning: too much VS interface!\n");
+		RTK_LOGS(TAG, "[UVC] Warn: too much VS itf %d-%d\n", uvc->uvc_desc.vs_num > USBH_MAX_NUM_VS_DESC);
 	}
 
 	vs_intf->p = desc;
@@ -448,7 +448,7 @@ static u8 usbh_uvc_parse_vs(u8 *pbuf, u32 *length)
 					desc = desc + len;
 					vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)desc;
 				} else {
-					RTK_LOGW(TAG, "Warning: too much alt setting!\n");
+					RTK_LOGS(TAG, "[UVC] Warn: too much alt set %d-%d\n", bAlternateSetting, USBH_MAX_NUM_VS_ALTS);
 				}
 
 				len = ((uvc_desc_header_t *) desc)->bLength;
@@ -460,7 +460,7 @@ static u8 usbh_uvc_parse_vs(u8 *pbuf, u32 *length)
 			break;
 
 		default:
-			RTK_LOGD(TAG, "bDescriptorType: %d\n", ((uvc_desc_header_t *) desc)->bDescriptorType);
+			RTK_LOGS(TAG, "[UVC] Err:bDescriptorType: %d\n", ((uvc_desc_header_t *) desc)->bDescriptorType);
 			return 0;
 		}
 	}
@@ -490,7 +490,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 			case USB_SUBCLASS_VIDEOCONTROL:
 				ret = usbh_uvc_parse_vc((u8 *)pbuf, &len);
 				if (ret) {
-					RTK_LOGE(TAG, "UVC parse video control fail\n");
+					RTK_LOGS(TAG, "[UVC] UVC parse video ctrl fail\n");
 					return ret;
 				}
 				pbuf = (usbh_if_desc_t *)((u8 *) pbuf + len);
@@ -501,7 +501,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 				if (pbuf->bAlternateSetting == 0) {
 					ret = usbh_uvc_parse_vs((u8 *)pbuf, &len);
 					if (ret) {
-						RTK_LOGE(TAG, "UVC parse video streaming fail\n");
+						RTK_LOGS(TAG, "[UVC] UVC parse video stream fail\n");
 						return ret;
 					}
 
@@ -511,7 +511,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 				break;
 
 			default:
-				RTK_LOGE(TAG, "subclass(%d) is not VC or VS\n", pbuf->bInterfaceClass);
+				RTK_LOGS(TAG, "[UVC] Subclass(%d) is not VC or VS\n", pbuf->bInterfaceClass);
 				return HAL_ERR_PARA;
 
 			}

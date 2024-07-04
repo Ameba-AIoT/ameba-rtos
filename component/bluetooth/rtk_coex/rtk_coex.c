@@ -257,7 +257,7 @@ static void bt_coex_handle_connection_complet_evt(uint8_t *p_evt_data)
 	}
 
 	conn_handle = (uint16_t)((p_evt_data[2] << 8) | p_evt_data[1]);
-	DBG_BT_COEX("bt_coex_handle_connection_complet_evt: conn_handle = 0x%02X \r\n", conn_handle);
+	DBG_BT_COEX("bt_coex_handle_connection_complet_evt: conn_handle = 0x%02x \r\n", conn_handle);
 
 	p_conn = bt_coex_find_link_by_handle(conn_handle);
 

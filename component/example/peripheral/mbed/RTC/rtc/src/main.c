@@ -62,7 +62,7 @@ void mbed_rtc_demo(void)
 
 int main(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "MBED_RTC_DEMO_TASK", (rtos_task_t)mbed_rtc_demo, (void *)NULL, 2048, (1))) {
+	if (SUCCESS != rtos_task_create(NULL, "MBED_RTC_DEMO_TASK", (rtos_task_t)mbed_rtc_demo, (void *)NULL, 3072, (1))) {
 		printf("Create MBED_RTC_DEMO_TASK Err!!\n");
 	}
 

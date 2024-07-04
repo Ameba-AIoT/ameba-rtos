@@ -452,8 +452,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		fi
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_HP y
 	fi
-	bool "Enable HIGH TP FOR HP"	CONFIG_HIGH_TP_TEST_FOR_HP
-	bool "Enable HIGH TP FOR AP"	CONFIG_HIGH_TP_TEST_FOR_AP
+	bool "Enable HIGH TP"	CONFIG_HIGH_TP_TEST
 
 	if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then
 		bool "Enable WPS"		CONFIG_ENABLE_WPS_FOR_AP

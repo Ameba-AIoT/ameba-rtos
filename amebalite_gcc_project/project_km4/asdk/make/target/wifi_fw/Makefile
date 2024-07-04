@@ -25,10 +25,10 @@ CSRC =$(DIR)/wififw_init.c \
        $(DIR)/wififw_txpkt_common.c \
 	   $(DIR)/wififw_bcnmode.c \
        $(DIR)/wififw_pwrctrl.c \
+   	   $(DIR_COMMON)/wififw_pwrctrl_common.c \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
-       $(DIR)/wififw_ps_state.c \
 	   $(DIR_COMMON)/wififw_ps_state_common.c \
 	   $(DIR_COMMON)/wififw_ps_bcnhdl_common.c \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
@@ -38,7 +38,6 @@ CSRC =$(DIR)/wififw_init.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR)/wififw_periodcca.c \
 	   $(DIR_COMMON)/wififw_ps_twt.c \
-	   $(DIR)/wififw_ps_dbg.c \
 	   $(DIR_COMMON)/wififw_h2c_common.c     \
 	   $(DIR_COMMON)/wififw_c2h_common.c \
 	   $(DIR_COMMON)/wififw_gtimer_common.c \

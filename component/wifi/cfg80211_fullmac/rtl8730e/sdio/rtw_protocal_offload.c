@@ -150,21 +150,42 @@ void rtw_proxy_mdns_parms_init(u8 is_set_default)
 	}
 }
 
-void rtw_set_wowlan_offload_ctrl(u32 value)
+void rtw_set_offload_ctrl(u32 value)
 {
 	struct proxy_priv *pwrctl = &proxypriv;
+	u32 mdns_para_len;
+	u8 *mdns_para;
 
 	pwrctl->wowlan_war_offload_ctrl = value;
+	pwrctl->wowlan_war_offload_mode = value ? true : false;
+
+	/* send offload control bits to device, enable/disable offload */
+	llhw_war_offload_ctrl(pwrctl->wowlan_war_offload_mode, pwrctl->wowlan_war_offload_ctrl);
+
+	/* update ip address */
+	llhw_wifi_update_ip_addr();
+
+	if (pwrctl->wowlan_war_offload_mode) {
+		/* for mdns, update mdns parameters to device */
+		if (pwrctl->wowlan_war_offload_ctrl & WAR_MDNS_EN) {
+			mdns_para = (u8 *)kzalloc(4096, GFP_KERNEL);
+
+			/* prepare mdns parameters */
+			rtw_wow_prepare_mdns_para(mdns_para, &mdns_para_len);
+
+			/* send mdns para to device*/
+			llhw_war_set_mdns_param(mdns_para, mdns_para_len);
+
+			kfree((void *)mdns_para);
+		}
+	}
 }
 
 void rtw_wow_prepare_mdns_para(u8 *pframe, u32 *plen)
 {
 	struct proxy_priv *pwrctl = &proxypriv;
 
-	if ((WAR_MDNS_V4_RSP_EN & pwrctl->wowlan_war_offload_ctrl) ||
-		(WAR_MDNS_V6_RSP_EN & pwrctl->wowlan_war_offload_ctrl) ||
-		(WAR_MDNS_V4_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) ||
-		(WAR_MDNS_V6_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl)) {
+	if (pwrctl->wowlan_war_offload_ctrl & WAR_MDNS_EN) {
 
 		struct war_mdns_service_info *psinfo = pwrctl->wowlan_war_offload_mdns_service;
 		u8 txt_in_ptr[31] = { 0xc0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -426,40 +447,135 @@ error:
 
 }
 
-ssize_t proc_set_wow_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+int proc_get_offload_enable(struct seq_file *m, void *v)
 {
-	char tmp[10] = {0};
-	struct inic_sdio *priv = &inic_sdio_priv;
+	struct proxy_priv *pwrctl = &proxypriv;
 
-	if (NULL == buffer) {
-		dev_err(global_idev.fullmac_dev, "input buffer is NULL");
-		return -EFAULT;
-	}
+	if (true == pwrctl->wowlan_war_offload_mode) {
+		seq_printf(m, "\n[ Offload Feature Enabled ]\n");
 
-	if (count < 1) {
-		dev_err(global_idev.fullmac_dev, "input length is 0!\n");
-		return -EFAULT;
-	}
-
-	if (buffer && !copy_from_user(tmp, buffer, count)) {
-		if (memcmp(tmp, "enable", count - 1) == 0) {
-			dev_info(global_idev.fullmac_dev, "enable wow_mode");
-			rtw_sdio_suspend(&priv->func->dev);
-		} else if (memcmp(tmp, "disable", count - 1) == 0) {
-			dev_info(global_idev.fullmac_dev, "disable wow_mode");
-			rtw_sdio_resume(&priv->func->dev);
-		} else {
-			dev_err(global_idev.fullmac_dev, "should input enable or disable");
+		if (WAR_ARP_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n ARP Reponse offload enabled\n");
 		}
+#ifdef CONFIG_OFFLOAD_ICMP_NS
+		if (WAR_ICMPV6_NS_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n IPv6 ICMP NS Reponse offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_ICMP_NS */
+#ifdef CONFIG_OFFLOAD_ICMP_V4
+		if (WAR_ICMPV4_ECHO_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n IPv4 ICMP Echo Reponse offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_ICMP_V4 */
+#ifdef CONFIG_OFFLOAD_ICMP_V6
+		if (WAR_ICMPV6_ECHO_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n IPv6 ICMP Echo Reponse offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_ICMP_V6 */
+#ifdef CONFIG_OFFLOAD_NETBIOS
+		if (WAR_NETBIOS_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n NetBIOS Name Resolution Reponse offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_NETBIOS */
+#ifdef CONFIG_OFFLOAD_LLMNR_V4
+		if (WAR_LLMNR_V4_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n LLMNR v4 Reponse offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_LLMNR_v4 */
+#ifdef CONFIG_OFFLOAD_LLMNR_V6
+		if (WAR_LLMNR_V6_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n LLMNR v6 Reponse offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_LLMNR_V6 */
+
+#ifdef CONFIG_OFFLOAD_SNMP_V4
+		if (WAR_SNMP_V4_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SNMP v4 Reponse offload enabled\n");
+		}
+		if (WAR_SNMP_V4_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SNMP v4 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_SNMP_v4 */
+#ifdef CONFIG_OFFLOAD_SNMP_V6
+		if (WAR_SNMP_V6_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SNMP v6 Reponse offload enabled\n");
+		}
+		if (WAR_SNMP_V6_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SNMP v6 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_SNMP_V6 */
+#ifdef CONFIG_OFFLOAD_MDNS_V4
+		if (WAR_MDNS_V4_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n MDNS v4 Reponse offload enabled\n");
+		}
+		if (WAR_MDNS_V4_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n MDNS v4 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_MDNS_v4 */
+#ifdef CONFIG_OFFLOAD_MDNS_V6
+		if (WAR_MDNS_V6_RSP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n MDNS v6 Reponse offload enabled\n");
+		}
+		if (WAR_MDNS_V6_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n MDNS v6 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_MDNS_V6 */
+
+#ifdef CONFIG_OFFLOAD_SSDP_V4
+		if (WAR_SSDP_V4_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SSDP v4 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_SSDP_V4 */
+#ifdef CONFIG_OFFLOAD_SSDP_V6
+		if (WAR_SSDP_V6_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SSDP v6 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_SSDP_V6 */
+#ifdef CONFIG_OFFLOAD_WSD_V4
+		if (WAR_WSD_V4_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n WSD v4 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_WSD_V4 */
+#ifdef CONFIG_OFFLOAD_WSD_V6
+		if (WAR_WSD_V6_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n WSD v6 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_WSD_V6 */
+#ifdef CONFIG_OFFLOAD_SLP_V4
+		if (WAR_SLP_V4_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SLP v4 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_SLP_V4 */
+#ifdef CONFIG_OFFLOAD_SLP_V6
+		if (WAR_SLP_V6_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n SLP v6 Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_SLP_V6 */
+#ifdef CONFIG_OFFLOAD_DESIGNATED_MAC
+		if (WAR_DESIGNATED_MAC_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n Designated MAC Wakeup offload enabled\n");
+		}
+#endif /* CONFIG_OFFLOAD_DESIGNATED_MAC */
+#ifdef CONFIG_OFFLOAD_LLTD
+		if (WAR_LLTD_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n LLTD Wakeup offload enabled\n");
+		}
+#endif
+		if (WAR_ARP_WAKEUP_EN & pwrctl->wowlan_war_offload_ctrl) {
+			seq_printf(m, "\n ARP Request wakeup enabled\n");
+		}
+
+	} else {
+		seq_printf(m, "\n[ Offload Feature Disabled ]\n");
 	}
 
-	return count;
+	return 0;
 }
 
-ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ssize_t proc_set_offload_enable(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
-	struct H2C_WAROFFLOAD_PARM offload_parm = {0};
 	char tmp[10];
+	u32 offload_cfg = 0;
 
 	if (NULL == buffer) {
 		dev_err(global_idev.fullmac_dev, "input buffer is NULL");
@@ -472,22 +588,12 @@ ssize_t proc_set_mdns_offload(struct file *file, const char __user *buffer, size
 	}
 
 	if (buffer && !copy_from_user(tmp, buffer, count)) {
-		if (memcmp(tmp, "enable", count) == 0) {
-			rtw_set_wowlan_offload_ctrl(WAR_MDNS_V4_RSP_EN | WAR_MDNS_V6_RSP_EN);
-
-			offload_parm.offload_en = 1;
-			offload_parm.sd_mdns_v4_rsp_en = 1;
-			offload_parm.sd_mdns_v6_rsp_en = 1;
-			llhw_war_offload_ctrl(&offload_parm);
-		} else if (memcmp(tmp, "disable", count) == 0) {
-			rtw_set_wowlan_offload_ctrl(0);
-			llhw_war_offload_ctrl(&offload_parm);
-		} else {
-			dev_err(global_idev.fullmac_dev, "should input enable or disable");
-		}
+		sscanf(tmp, "%x", &offload_cfg);
+		rtw_set_offload_ctrl(offload_cfg);
 	}
 
 	return count;
+
 }
 
 int proc_get_offload_mdns_domain_name(struct seq_file *m, void *v)

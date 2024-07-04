@@ -1,0 +1,27 @@
+{
+  "ChipName": "AmebaLite",
+  "CapChannels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "ClockSources": ["OSC", "XTAL"],
+  "XTALDividers": [
+      {"Name": "1 MHz", "Val": 2},
+      {"Name": "500 KHz", "Val": 4},
+      {"Name": "250 KHz", "Val": 8},
+      {"Name": "167 KHz", "Val": 12},
+      {"Name": "125 KHz", "Val": 16},
+      {"Name": "62.5 KHz", "Val": 32},
+      {"Name": "31.25 KHz", "Val": 64}
+  ],
+  "FilterEnable": 0,
+  "MaxMbias":63,
+  "DebugEnable": 0
+}

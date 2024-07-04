@@ -87,26 +87,23 @@ typedef struct {
 } usbd_hid_usr_cb_t;
 
 typedef struct {
-	u32 intr_in_state;
-	u16 intr_in_buf_len;
-	u8 *intr_in_buf;
-
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
-	u32 intr_out_buf_size;
-	u8  *intr_out_buf;
-#endif
-
-	u8 protocol;
-	u8 idle_rate;
-
-	__IO u8 is_ready;
-	__IO u8 is_tx_busy;
-
-	u8 *ctrl_buf;
 	usb_setup_req_t ctrl_req;
-
 	usbd_hid_usr_cb_t *cb;
 	usb_dev_t *dev;
+#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+	u32 intr_out_buf_size;
+#endif
+	u8 *intr_in_buf;
+	u8 *ctrl_buf;
+#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+	u8  *intr_out_buf;
+#endif
+	u16 intr_in_buf_len;
+	u8 protocol;
+	u8 idle_rate;
+	__IO u8 is_ready : 1;
+	__IO u8 is_tx_busy : 1;
+	u8 intr_in_state : 1;
 } usbd_hid_t;
 
 int usbd_hid_init(u16 tx_buf_len, usbd_hid_usr_cb_t *cb);

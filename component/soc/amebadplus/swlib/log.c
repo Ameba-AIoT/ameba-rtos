@@ -5,7 +5,7 @@
 
 static const char *TAG = "LOG";
 /* Define default log-display level*/
-rtk_log_level_t rtk_log_default_level = CONFIG_LOG_DEFAULT_LEVEL;
+rtk_log_level_t rtk_log_default_level = RTK_LOG_DEFAULT_LEVEL;
 
 /* Define cache aray*/
 rtk_log_tag_t rtk_log_tag_array[LOG_TAG_CACHE_ARRAY_SIZE] = {0};

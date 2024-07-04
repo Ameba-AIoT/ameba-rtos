@@ -473,7 +473,7 @@ int main(void)
 	}
 
 	if (SUCCESS != rtos_task_create(NULL, (const char *const)"IR_learning_THREAD", (rtos_task_t)IR_learning_thread,
-									NULL, 256 * 4, 5)) {
+									NULL, 3072, 5)) {
 		printf("create IR RX thread error\n");
 
 		rtos_sema_delete(IR_learn_sema);

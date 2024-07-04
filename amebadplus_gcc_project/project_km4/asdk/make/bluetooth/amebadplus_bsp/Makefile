@@ -11,6 +11,7 @@ vpath %.c $(DIR)/driver/hci \
 		$(DIR)/driver/hci/hci_process \
 		$(DIR)/driver/hci/hci_transport \
 		$(DIR)/driver/platform/amebadplus/hci \
+		$(DIR)/driver/dtm \
 		$(DIR)/rtk_stack/platform/common \
 		$(DIR)/osif
 
@@ -19,15 +20,23 @@ CSRC += \
 	$(DIR)/driver/hci/hci_process/hci_common.c \
 	$(DIR)/driver/hci/hci_process/hci_standalone.c \
 	$(DIR)/driver/hci/hci_transport/hci_h4.c \
-	$(DIR)/driver/hci/hci_if_rtk.c \
 	$(DIR)/driver/platform/amebadplus/hci/bt_normal_patch.c \
 	$(DIR)/driver/platform/amebadplus/hci/bt_mp_patch.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebadplus/hci/hci_uart.c \
-	$(DIR)/rtk_stack/platform/common/platform_utils.c \
-	$(DIR)/rtk_stack/platform/common/trace_uart.c \
+	$(DIR)/driver/dtm/hci_dtm.c \
 	$(DIR)/osif/bt_debug.c \
 	$(DIR)/osif/osif.c
+
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+CSRC += \
+	$(DIR)/driver/hci/hci_if_zephyr.c
+else
+CSRC += \
+	$(DIR)/driver/hci/hci_if_rtk.c \
+	$(DIR)/rtk_stack/platform/common/platform_utils.c \
+	$(DIR)/rtk_stack/platform/common/trace_uart.c
+endif
 
 OBJS = $(notdir $(CSRC:.c=.o))
 

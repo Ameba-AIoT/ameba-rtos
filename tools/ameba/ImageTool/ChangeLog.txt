@@ -126,3 +126,5 @@ ChangeLog:
 20231214  v2.7.14 (1) Eliminate unnecessary read delay to speed up flash download process
 				  (2) Update floaders to sync to latest SDK
 20240425  v2.7.15 Rename chips with SoC names
+20240611 v2.7.16  (1) Support dpuls/lite download image to sram
+                  (2) Fix checksum error in dplus uart download mode

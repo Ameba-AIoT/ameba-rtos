@@ -184,7 +184,6 @@
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
 #define DISABLE_FW
-#define DRV_RF_PWR_TBL_DISABLE
 #endif
 /************************* Config for MP_MODE end *****************************/
 

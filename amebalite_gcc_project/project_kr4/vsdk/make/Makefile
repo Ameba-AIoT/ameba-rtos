@@ -43,7 +43,6 @@ COMPONENT_CLEAN += wlan
 ifeq ($(CONFIG_AS_INIC_AP), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 COMPONENT += network
-COMPONENT += api
 endif
 
 COMPONENT += application
@@ -54,14 +53,12 @@ COMPONENT += utilities_example
 
 # NP
 else ifeq ($(CONFIG_AS_INIC_NP),y)
-COMPONENT += api
 
 
 #Single Core
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 COMPONENT += network
-COMPONENT += api
 endif
 COMPONENT += application
 COMPONENT += utilities
@@ -80,7 +77,6 @@ endif
 
 COMPONENT_CLEAN += at_cmd
 
-COMPONENT_CLEAN += api
 COMPONENT_CLEAN += application
 COMPONENT_CLEAN += network
 COMPONENT_CLEAN += utilities

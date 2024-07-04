@@ -96,6 +96,9 @@ int rtw_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wlan_id
 	rtw_netdev_idx(ndev) = (type == NL80211_IFTYPE_P2P_GO) ? 1 : 0;
 	ndev->netdev_ops = &rtw_ndev_ops_p2p;
 	ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
+#ifndef CONFIG_FULLMAC_HCI_IPC
+	ndev->needed_headroom = max(SIZE_RX_DESC, SIZE_TX_DESC) + sizeof(struct inic_msg_info) + 4;
+#endif
 	SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
 	global_idev.pndev[wlan_idx] = ndev;
 

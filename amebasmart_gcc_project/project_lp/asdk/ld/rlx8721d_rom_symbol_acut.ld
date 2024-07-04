@@ -267,7 +267,7 @@ SECTIONS
     PROVIDE(H2CHDL_WL_Port_ID_8730E_ROM = 0x5171);
     PROVIDE(C2HBTLoopback_8730E_ROM = 0x518d);
     PROVIDE(C2HBTMpRpt_8730E_ROM = 0x51d5);
-    PROVIDE(wififw_c2h_bt_mailbox_status = 0x5235);
+    PROVIDE(C2HBTMailBoxStatus_8730E_ROM = 0x5235);
     PROVIDE(InitBTCoexTimer_8730E_ROM = 0x5269);
     PROVIDE(wififw_btc_write_reg778 = 0x5285);
     PROVIDE(wififw_btc_change_coex_table = 0x52c5);
@@ -347,7 +347,7 @@ SECTIONS
     PROVIDE(GetNDPInfo_8730E_ROM = 0x7059);
     PROVIDE(wififw_wowlan_ipv6_match = 0x707d);
     PROVIDE(OnNS_8730E_ROM = 0x70b1);
-    PROVIDE(wififw_wowlan_ipv4_match = 0x728d);
+    PROVIDE(Ipv4Match_8730E_ROM = 0x728d);
     PROVIDE(MatchUnicastFilter_8730E_ROM = 0x72fd);
     PROVIDE(WakeUpHostDecision_8730E_ROM = 0x73b5);
     PROVIDE(CheckIV_8730E_ROM = 0x7415);
@@ -425,7 +425,7 @@ SECTIONS
     PROVIDE(wififw_c2h_pkt_fill_ptr = 0x230007a4);
     PROVIDE(IssueC2HPKT_8730E_PTR = 0x230007a8);
     PROVIDE(C2HDeQueue_8730E_PTR = 0x230007ac);
-    PROVIDE(wififw_c2h_inqueue_ptr = 0x230007b0);
+    PROVIDE(C2HInQueue_8730E_PTR = 0x230007b0);
     PROVIDE(CheckMaxMacidNum_8730E_PTR = 0x230007b4);
     PROVIDE(SetMediaStatus_8730E_PTR = 0x230007b8);
     PROVIDE(GetMediaStatus_8730E_PTR = 0x230007bc);
@@ -553,7 +553,7 @@ SECTIONS
     PROVIDE(H2CCmdFunc_8730E_PTR = 0x230009a4);
     PROVIDE(UpdateISRSys_8730E_PTR = 0x230009a8);
     PROVIDE(ISRSendSignalCommon_8730E_PTR = 0x230009ac);
-    PROVIDE(wififw_task_send_signal_ptr = 0x230009b0);
+    PROVIDE(SendSignalCommon_8730E_PTR = 0x230009b0);
     PROVIDE(wififw_task_os_send_signal_ptr = 0x230009b4);
     PROVIDE(pDisconnectParm = 0x230009b8);
     PROVIDE(pRemoteWakeupCtrl = 0x230009bc);
@@ -588,7 +588,7 @@ SECTIONS
     PROVIDE(pC2HEvt = 0x23000a30);
     PROVIDE(pH2CEvt = 0x23000a34);
     PROVIDE(pRPL = 0x23000a38);
-    PROVIDE(pIntHdl = 0x23000a3c);
+    PROVIDE(pIntCtrl = 0x23000a3c);
     PROVIDE(TaskBitMap = 0x23000a40);
     PROVIDE(__rom_bss_end__ = 0x23000a44);
     PROVIDE(__km0_image2_entry_func__ = 0x23002020);

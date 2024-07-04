@@ -439,7 +439,7 @@ int llhw_wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return ret;
 }
 
-u32 llhw_wifi_update_ip_addr_in_wowlan(void)
+u32 llhw_wifi_update_ip_addr(void)
 {
 	int ret = 0;
 	struct event_priv_t *event_priv = &global_idev.event_priv;
@@ -1003,7 +1003,6 @@ int llhw_wifi_set_country_code(char *cc)
 	int ret = 0;
 	u32 param_buf[1];
 	dma_addr_t phy_addr = 0;
-	char *virt_addr = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
 	if (strlen(cc) != 2) {
@@ -1011,33 +1010,15 @@ int llhw_wifi_set_country_code(char *cc)
 		return -EINVAL;
 	}
 
-	if ((cc[0] == '0') && (cc[1] == '0')) {
-		virt_addr = kzalloc(2, GFP_KERNEL);
-		if (virt_addr == NULL) {
-			dev_err(global_idev.fullmac_dev, "%s: allocate memory failed!\n", __func__);
-			return -EPERM;
-		}
-		virt_addr[0] = 0xff;
-		virt_addr[1] = 0xff;
-	} else {
-		virt_addr = cc;
-	}
-
-	phy_addr = dma_map_single(pdev, virt_addr, 2, DMA_TO_DEVICE);
+	phy_addr = dma_map_single(pdev, cc, 2, DMA_TO_DEVICE);
 	if (dma_mapping_error(pdev, phy_addr)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		if (virt_addr != cc) {
-			kfree(virt_addr);
-		}
 		return -EPERM;
 	}
 
 	param_buf[0] = (u32)phy_addr;
 	ret = llhw_ipc_send_msg(INIC_API_WIFI_SET_COUNTRY_CODE, param_buf, 1);
 	dma_unmap_single(pdev, phy_addr, 2, DMA_TO_DEVICE);
-	if (virt_addr != cc) {
-		kfree(virt_addr);
-	}
 
 	return ret;
 }

@@ -178,6 +178,10 @@ SECTIONS
 
 __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __bdram_heap_buffer_start__;
 
+/* secure to ns addr */
+__sram_floader_mp_start__ = ORIGIN(KM4_FLOADER_RAM_MP) - IMAGE_HEADER_LEN - 0x10000000;
+__sram_floader_mp_size__ = LENGTH(KM4_FLOADER_RAM_MP) + IMAGE_HEADER_LEN;
+
 __psram_image2_start__ = .;
 
 __psram_heap_buffer_start__ = .;

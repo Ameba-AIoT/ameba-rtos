@@ -935,7 +935,7 @@ static uint16_t bt_stack_hfp_call_incoming(void *param)
 			return RTK_BT_OK;
 		}
 	} else {
-		if (bt_hfp_dial_last_number_req(p_call_incoming_t->bd_addr)) {
+		if (bt_hfp_dial_with_number_req(p_call_incoming_t->bd_addr, p_call_incoming_t->call_num)) {
 			return RTK_BT_OK;
 		}
 	}

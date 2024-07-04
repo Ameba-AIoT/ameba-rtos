@@ -24,7 +24,7 @@
 
 #define FTL_PRINTF(LEVEL, pFormat, ...)     do {\
    if (LEVEL <= FTL_PRINT_LEVEL)\
-        RTK_LOGA(#LEVEL, pFormat"\r\n", ##__VA_ARGS__);\
+        RTK_LOGS(#LEVEL, pFormat"\r\n", ##__VA_ARGS__);\
 }while(0)
 
 //////////////////////////////////////////////////

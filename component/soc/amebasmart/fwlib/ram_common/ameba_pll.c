@@ -15,12 +15,12 @@
 */
 
 /** @defgroup PLL_Exported_Functions PLL Exported Functions
-  * @{
-  */
+ * @{
+ */
 /**
   * @brief  PLL divider set
   * @param  Sportx: sport index, 0/1/2/3
-			div: Division
+		 div: Division
   */
 void PLL_I2S_Div(int Sportx, u32 div)
 {
@@ -64,7 +64,7 @@ void PLL_I2S_98P304M(u32 NewState)
 	if (NewState == ENABLE) {
 		//avoid repeated enabling operations
 		if ((pll->PLL_STATE) & PLL_BIT_CKRDY_I2S1) {
-			return ;
+			return;
 		}
 		//Check BandGap power on
 		if ((pll->PLL_AUX_BG & PLL_BG_POW_MASK) == 0) {
@@ -92,8 +92,8 @@ void PLL_I2S_98P304M(u32 NewState)
 
 	} else {
 
-		pll->PLL_I2SPLL1_CTRL0 &= ~ PLL_BIT_IPLL1_POW_PLL;
-		pll->PLL_I2SPLL1_CTRL0 &= ~ PLL_BIT_IPLL1_POW_ERC;
+		pll->PLL_I2SPLL1_CTRL0 &= ~PLL_BIT_IPLL1_POW_PLL;
+		pll->PLL_I2SPLL1_CTRL0 &= ~PLL_BIT_IPLL1_POW_ERC;
 		pll->PLL_AUX_BG &= ~(PLL_BIT_POW_BG | PLL_BIT_POW_I | PLL_BIT_POW_MBIAS);
 
 	}
@@ -111,7 +111,7 @@ void PLL_I2S_45P158M(u32 NewState)
 	if (NewState == ENABLE) {
 		//avoid repeated enabling operations
 		if ((pll->PLL_STATE) & PLL_BIT_CKRDY_I2S2) {
-			return ;
+			return;
 		}
 
 		//Check BandGap power on
@@ -119,7 +119,7 @@ void PLL_I2S_45P158M(u32 NewState)
 			pll->PLL_AUX_BG |= (PLL_BIT_POW_BG | PLL_BIT_POW_MBIAS);
 			DelayUs(20);
 
-			pll->PLL_AUX_BG |=  PLL_BIT_POW_I;
+			pll->PLL_AUX_BG |= PLL_BIT_POW_I;
 			DelayUs(140);
 		}
 
@@ -139,8 +139,8 @@ void PLL_I2S_45P158M(u32 NewState)
 		while (!(pll->PLL_STATE & PLL_BIT_CKRDY_I2S2));
 	} else {
 
-		pll->PLL_I2SPLL2_CTRL0 &= ~ PLL_BIT_IPLL2_POW_PLL;
-		pll->PLL_I2SPLL2_CTRL0 &= ~ PLL_BIT_IPLL2_POW_ERC;
+		pll->PLL_I2SPLL2_CTRL0 &= ~PLL_BIT_IPLL2_POW_PLL;
+		pll->PLL_I2SPLL2_CTRL0 &= ~PLL_BIT_IPLL2_POW_ERC;
 		pll->PLL_AUX_BG &= ~(PLL_BIT_POW_BG | PLL_BIT_POW_I | PLL_BIT_POW_MBIAS);
 
 	}
@@ -158,7 +158,7 @@ void PLL_I2S_24P576M(u32 NewState)
 	if (NewState == ENABLE) {
 		//avoid repeated enabling operations
 		if ((pll->PLL_STATE) & PLL_BIT_CKRDY_I2S1) {
-			return ;
+			return;
 		}
 
 		//Check BandGap power on
@@ -185,8 +185,8 @@ void PLL_I2S_24P576M(u32 NewState)
 
 	} else {
 
-		pll->PLL_I2SPLL1_CTRL0 &= ~ PLL_BIT_IPLL1_POW_PLL;
-		pll->PLL_I2SPLL1_CTRL0 &= ~ PLL_BIT_IPLL1_POW_ERC;
+		pll->PLL_I2SPLL1_CTRL0 &= ~PLL_BIT_IPLL1_POW_PLL;
+		pll->PLL_I2SPLL1_CTRL0 &= ~PLL_BIT_IPLL1_POW_ERC;
 		pll->PLL_AUX_BG &= ~(PLL_BIT_POW_BG | PLL_BIT_POW_I | PLL_BIT_POW_MBIAS);
 
 	}
@@ -209,34 +209,31 @@ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
 	u32 F0F_new;
 	assert_param(ppm <= 4535);
 	float real_ppm = 0;
-
-	PLL_BASE -> PLL_I2SPLL1_CTRL1 &= (~PLL_MASK_IPLL1_DIVN_SDM);
-	PLL_BASE -> PLL_I2SPLL1_CTRL1 |= (PLL_IPLL1_DIVN_SDM(7));
+	double step = 1.552204518467353;
+	u32 F0F_base = 5269;
 
 	if (action == PLL_FASTER) {
-		F0F_new = 5269 + (u32)(ppm / 1.55220);
+		F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		F0F_new = 5269 - (u32)(ppm / 1.55220);
+		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
-		F0F_new = 5269;
+		F0F_new = F0F_base;
 	}
 
-	PLL_BASE -> PLL_I2SPLL1_CTRL3 &= (~PLL_MASK_IPLL1_F0F_SDM);
-	PLL_BASE -> PLL_I2SPLL1_CTRL3 |= (PLL_IPLL1_F0F_SDM(F0F_new));
+	PLL_BASE->PLL_I2SPLL1_CTRL3 &= (~PLL_MASK_IPLL1_F0F_SDM);
+	PLL_BASE->PLL_I2SPLL1_CTRL3 |= (PLL_IPLL1_F0F_SDM(F0F_new));
 
-	PLL_BASE -> PLL_I2SPLL1_CTRL3 &= (~PLL_MASK_IPLL1_F0N_SDM);
-	PLL_BASE -> PLL_I2SPLL1_CTRL3 |= (PLL_IPLL1_F0N_SDM(6));
+	PLL_BASE->PLL_I2SPLL1_CTRL3 &= (~PLL_MASK_IPLL1_F0N_SDM);
+	PLL_BASE->PLL_I2SPLL1_CTRL3 |= (PLL_IPLL1_F0N_SDM(6));
 
-	PLL_BASE ->	PLL_I2SPLL1_CTRL1 |= (PLL_BIT_IPLL1_TRIG_FREQ);
-	PLL_BASE ->	PLL_I2SPLL1_CTRL1 &= (~PLL_BIT_IPLL1_TRIG_FREQ);
-
-	real_ppm = (double)((double)F0F_new - (double)5269) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)6 + (double)5269 /
-			   (double)8192) / (double)8);
+	PLL_BASE->PLL_I2SPLL1_CTRL1 |= (PLL_BIT_IPLL1_TRIG_FREQ);
+	PLL_BASE->PLL_I2SPLL1_CTRL1 &= (~PLL_BIT_IPLL1_TRIG_FREQ);
 
 	return real_ppm;
 
 }
-
 
 /**
   * @brief  I2S2 PLL output adjust by ppm.
@@ -253,30 +250,28 @@ float PLL_I2S_45P158M_ClkTune(float ppm, u32 action)
 	u32 F0F_new;
 	float real_ppm = 0;
 	assert_param(ppm <= 3507);
-
-	PLL_BASE -> PLL_I2SPLL2_CTRL1 &= (~PLL_MASK_IPLL2_DIVN_SDM);
-	PLL_BASE -> PLL_I2SPLL2_CTRL1 |= (PLL_IPLL2_DIVN_SDM(7));
-
+	double step = 1.689474573407670;
+	u32 F0F_base = 2076;
 
 	if (action == PLL_FASTER) {
-		F0F_new = 2076 + (u32)(ppm / 1.68948);
+		F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		F0F_new = 2076 - (u32)(ppm / 1.68948);
+		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
-		F0F_new = 2076;
+		F0F_new = F0F_base;
 	}
 
-	PLL_BASE -> PLL_I2SPLL2_CTRL3 &= (~PLL_MASK_IPLL2_F0F_SDM);
-	PLL_BASE -> PLL_I2SPLL2_CTRL3 |= (PLL_IPLL2_F0F_SDM(F0F_new));
+	PLL_BASE->PLL_I2SPLL2_CTRL3 &= (~PLL_MASK_IPLL2_F0F_SDM);
+	PLL_BASE->PLL_I2SPLL2_CTRL3 |= (PLL_IPLL2_F0F_SDM(F0F_new));
 
-	PLL_BASE -> PLL_I2SPLL2_CTRL3 &= (~PLL_MASK_IPLL2_F0N_SDM);
-	PLL_BASE -> PLL_I2SPLL2_CTRL3 |= (PLL_IPLL2_F0N_SDM(0));
+	PLL_BASE->PLL_I2SPLL2_CTRL3 &= (~PLL_MASK_IPLL2_F0N_SDM);
+	PLL_BASE->PLL_I2SPLL2_CTRL3 |= (PLL_IPLL2_F0N_SDM(0));
 
-	PLL_BASE ->	PLL_I2SPLL2_CTRL1 |= (PLL_BIT_IPLL2_TRIG_FREQ);
-	PLL_BASE ->	PLL_I2SPLL2_CTRL1 &= (~PLL_BIT_IPLL2_TRIG_FREQ);
+	PLL_BASE->PLL_I2SPLL2_CTRL1 |= (PLL_BIT_IPLL2_TRIG_FREQ);
+	PLL_BASE->PLL_I2SPLL2_CTRL1 &= (~PLL_BIT_IPLL2_TRIG_FREQ);
 
-	real_ppm = (double)((double)F0F_new - (double)2076) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)0 + (double)2076 /
-			   (double)8192) / (double)8);
 	return real_ppm;
 
 }

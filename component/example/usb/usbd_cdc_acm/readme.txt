@@ -34,7 +34,7 @@ Setup Guide
         2. Type command "make all EXAMPLE=usbd_cdc_acm" under auto_build to build the images.
         3. Download the generated images under auto_build to Ameba board.
         4. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-			[CDC] CDC ACM demo started
+			[ACM] USBD CDC ACM demo start
         5. Connect the USB port of Ameba board to USB host (PC or another Ameba board as USB CDC ACM host) with USB cable.
         6. Launch any serial port tool (e.g. Realtek Trace Tool), open the virtual serial port against the USB port of
            Ameba board, send messages to the Ameba board and the board will echo back the received messages.

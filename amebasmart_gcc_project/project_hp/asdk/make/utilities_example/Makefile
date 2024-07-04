@@ -32,6 +32,7 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/cdc_ecm
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/msc
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/vendor
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/uvc
+MODULE_IFLAGS += -I$(BASEDIR)/component/utils/ringbuffer
 endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)

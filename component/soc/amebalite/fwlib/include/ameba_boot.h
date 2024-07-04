@@ -95,6 +95,12 @@ extern u8 __psram_heap_buffer_size__[];
 extern u8 __psram_heap_extend_start__[];
 extern u8 __psram_heap_extend_size__[];
 
+#ifdef CONFIG_MP_SHRINK
+extern u8 __sram_floader_mp_start__[];
+extern u8 __sram_floader_mp_size__[];
+extern u8 __sram_bootloader_mp_start__[];
+extern u8 __sram_bootloader_mp_size__[];
+#endif
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];
 extern u8 __rom_stdlib_bss_end__[];
@@ -262,8 +268,8 @@ typedef struct _DSLP_RETENTION_FUNC_TABLE_ {
 	u32	PatchLen;
 } DSLP_RETENTION_FUNC_TABLE, *PDSLP_RETENTION_FUNC_TABLE;
 
-#if defined (ARM_CORE_CM4)
-#define NS_ENTRY    __attribute__((cmse_nonsecure_entry))
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+#define NS_ENTRY __attribute__((cmse_nonsecure_entry))
 #ifdef __ICCARM__
 typedef __cmse_nonsecure_call void nsfunc(void);
 #else

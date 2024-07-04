@@ -128,7 +128,7 @@ int rtw_suspend_common(struct inic_sdio *priv)
 	/* staion mode */
 	if (llhw_wifi_is_connected_to_ap() == 0) {
 		/* update ip address success */
-		if (llhw_wifi_update_ip_addr_in_wowlan()) {
+		if (llhw_wifi_update_ip_addr()) {
 			return -EPERM;
 		}
 	}

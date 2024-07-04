@@ -30,6 +30,17 @@ CONFIG_PHY_G6 = y
 
 endif
 
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+vpath %.c $(DIR)/phy_g6 \
+		$(DIR)/phy_g6/bb \
+		$(DIR)/phy_g6/bb/halbb_8720f \
+		$(DIR)/phy_g6/rf \
+		$(DIR)/phy_g6/rf/halrf_8720f
+
+CONFIG_PHY_G6 = y
+
+endif
+
 ifeq ($(CONFIG_PHYDM), y)
 
 CSRC_PHY +=  \
@@ -136,7 +147,6 @@ endif
 ifeq ($(CONFIG_AMEBADPLUS), y)
 
 CSRC_PHY += $(DIR)/phydm/rtl8721da/halhwimg_bb.c \
-	$(DIR)/phydm/rtl8721da/halhwimg_bb_BCNmode.c \
 	$(DIR)/phydm/rtl8721da/phydm_hal_api8721da.c \
 	$(DIR)/phydm/rtl8721da/phydm_regconfig8721da.c
 
@@ -170,6 +180,31 @@ CSRC_PHY += $(path_halrf_8730e)/halrf_8730e.o \
 	$(path_halrf_8730e)/halrf_tssi_8730e.o\
 	$(path_halrf_8730e)/halrf_kfree_8730e.o\
 	$(path_halrf_8730e)/halrf_psd_8730e.o
+
+endif
+
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+
+path_halbb_8720f := $(path_halbb_d1)/halbb_8720f
+CSRC_PHY += $(path_halbb_8720f)/halbb_8720f.o \
+	$(path_halbb_8720f)/halbb_8720f_api.o \
+	$(path_halbb_8720f)/halbb_hwimg_8720f.o \
+	$(path_halbb_8720f)/halbb_hwimg_bcnmode_8720f.o \
+	$(path_halbb_8720f)/halbb_reg_cfg_8720f.o
+
+path_halrf_8720f := $(path_halrf_d1)/halrf_8720f
+CSRC_PHY += $(path_halrf_8720f)/halrf_8720f.o \
+	$(path_halrf_8720f)/halrf_8720f_api.o \
+	$(path_halrf_8720f)/halrf_hwimg_8720f.o\
+	$(path_halrf_8720f)/halrf_iqk_8720f.o\
+	$(path_halrf_8720f)/halrf_reg_cfg_8720f.o\
+	$(path_halrf_8720f)/halrf_dpk_8720f.o\
+	$(path_halrf_8720f)/halrf_txgapk_8720f.o\
+	$(path_halrf_8720f)/halrf_dack_8720f.o\
+	$(path_halrf_8720f)/halrf_set_pwr_table_8720f.o\
+	$(path_halrf_8720f)/halrf_tssi_8720f.o\
+	$(path_halrf_8720f)/halrf_kfree_8720f.o\
+	$(path_halrf_8720f)/halrf_psd_8720f.o
 
 endif
 

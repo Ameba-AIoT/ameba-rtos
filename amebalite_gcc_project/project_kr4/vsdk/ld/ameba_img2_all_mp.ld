@@ -204,6 +204,10 @@ __global_pointer$ = MIN(__sdata_start__ + 0x800, __sbss_end__);
 
 __bdram_heap_buffer_size__ = ORIGIN(KR4_BD_RAM_MP) + LENGTH(KR4_BD_RAM_MP) - __bdram_heap_buffer_start__;
 
+/* cert + mainfest = 5k, and secure to ns addr */
+__sram_bootloader_mp_start__ = ORIGIN(KM4_BOOTLOADER_RAM_MP) - IMAGE_HEADER_LEN - 0x1400 - 0x10000000;
+__sram_bootloader_mp_size__ = LENGTH(KM4_BOOTLOADER_RAM_MP) + IMAGE_HEADER_LEN + 0x1400;
+
 __psram_image2_start__ = .;
 
 __psram_heap_buffer_start__ = .;

@@ -70,6 +70,9 @@ void app_pmu_init(void)
 	DBG_INFO_MSG_ON(MODULE_PMC);
 	pmu_set_sleep_type(SLEEP_PG);
 	pmu_init_wakeup_timer();
+#ifndef CONFIG_MP_SHRINK
+	SOCPS_sleepInit();
+#endif
 }
 
 void app_calc_new_time(RTCIO_TimeInfo *pTimeInfoPre, RTC_TimeTypeDef *pTimeInfoPost)

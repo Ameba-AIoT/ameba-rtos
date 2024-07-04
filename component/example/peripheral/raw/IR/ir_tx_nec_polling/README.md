@@ -7,7 +7,7 @@ This example does not support the loguart command response.
 
 # HW Configuration
 
-Logic Analyser or oscilloscope.
+Logic Analyzer or oscilloscope.
 
 # SW configuration
 
@@ -24,8 +24,7 @@ Logic Analyser or oscilloscope.
      - `IR_TX_DATA_INVERSE`: carrier symbol from low to high; non-carrier symbol default high
      - `IR_TX_DATA_CARRIER_NORMAL`: default carrier and non-carrier waveform
      - `IR_TX_DATA_CARRIER_INVERSE`: there is a pulse from carrier to non-carrier
-4. Other IR protocol configuration, refer to `component\soc\amebasmart\verification\IR\protocol\ir_nec_protocol.c`
-
+4. Other IR protocol configuration, refer to `sdk\component\soc\amebaXXXX\fwlib\ameba_ir.c`
    - struct and macros:
 
      - `IR_ProtocolTypeDef`: the struct of IR protocol data format, which depends on the IR protocol custom choose
@@ -42,7 +41,23 @@ Logic Analyser or oscilloscope.
 
 # Expect result
 
-   When LA or oscilloscope is connected to `IR_PINMUX_S1_TX` pin, tx data will be captured.
+  - When Logic Analyzer or oscilloscope is connected to `IR_PINMUX_S1_TX` pin, and the **NEC Protocal** should be selected, then the tx data will be captured.
+
+  - About Tx Data:
+    - If keep the macro `IR_LOOP_TEST` default setting `1`:
+      - The 2bytes data of ir_code[1] and ir_code[0] will be updated in each loop, and the 2bytes's data can be traced in Serial Port Tool
+        - The real tx data contain 4bytes in sequence of:
+          - ir_code[0], ~ir_code[0], ir_code[1], ~ir_code[1] 
+          - For example: 
+            - The first loop ir_code[1] is 0x0, ir_code[0] is 0x1
+            - Then the real tx data in is: 0x1, 0xfe, 0x0, 0xff
+    - If modify the macro `IR_LOOP_TEST` to `0`:
+      - The 2bytes data ir_code[1] and ir_code[0] will keep the same in each loop
+        - The real tx data contain 4Bytes in sequence of:
+          - ir_code[0], ~ir_code[0], ir_code[1], ~ir_code[1] 
+          - In this example:
+            - The ir_code[1] is 0x34, and ir_code[0] is 0x12
+            - Then the real tx data in is: 0x12, 0xed, 0x34, 0xcb
 
 # Note
 
@@ -54,8 +69,8 @@ Logic Analyser or oscilloscope.
   - rx stop threshold is controlled by received `IR_RxCntThrType`(default Low level) count > `IR_RxCntThr`(default 0xa1644, that is about 66ms)
   - decoding tolerance is 30% by default.
   - When using IR receiver module, set ir rx pin no-pull state.
-- On AmebaSmart: Pin in example is only supported as `IR_TX` or `IR_RX` function.
-- On AmebaDplus: Pin in example is supported as both `IR_TX ` and `IR_RX` function.
+- On AmebaDplus: Pin in example is only supported as `IR_TX` or `IR_RX` function.
+- On AmebaSmart: Pin in example is supported as both `IR_TX ` and `IR_RX` function.
 
 # Supported IC
 

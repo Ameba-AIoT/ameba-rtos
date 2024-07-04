@@ -28,11 +28,7 @@ endif
 ifeq (${V},2)
 CODE_ANA ?= 1
 endif
-ifeq (${V},3)
-DAILY_BUILD = 1
-else
-DAILY_BUILD = 0
-endif
+DAILY_BUILD = ${V}
 export ABS_ROOTDIR MAKE_INCLUDE_GEN HOSTCC ECHO Q
 
 
@@ -206,9 +202,8 @@ endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@echo "========== cl generate OTA_All.bin with bootloader km0=========="
 	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ]; then \
-		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin \
-		$(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all.bin; \
-		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all_ns.bin; \
+		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all.bin; \
+		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_ns.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all_ns.bin; \
 	fi
 else
 	@echo "========== cl generate OTA_All.bin km0 ========== "
@@ -221,18 +216,14 @@ endif
 	@echo "========== Image manipulating end =========="
 	
 code_analyze:
-ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 	    $(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
 	fi
 	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
-		$(STATIC_ANALYZE_PYTHON); \
+		$(STATIC_ANALYZE_PYTHON) $(DAILY_BUILD); \
 	fi
 	@echo "========== Image analyze end =========="
-else
-	@echo "daily build"
-endif
 
 code_extract:
 	@echo "========== Image extract start =========="

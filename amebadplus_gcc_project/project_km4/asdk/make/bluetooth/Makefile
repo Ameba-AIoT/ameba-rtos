@@ -26,6 +26,9 @@ all: CORE_TARGETS
 	make -C bt_atcmd all
 
 	#make -C bt_demo all
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+	make -C bt_zephyr all
+endif
 ifeq ($(CONFIG_BT_PERIPHERAL), y)
 	make -C ble_peripheral all
 endif
@@ -39,7 +42,9 @@ ifeq ($(CONFIG_BT_THROUGHPUT), y)
 	make -C ble_throughput all
 endif
 ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
+ifneq ($(CONFIG_BT_ZEPHYR), y)
 	make -C ble_mesh_stack all
+endif
 endif
 ifeq ($(CONFIG_BT_MESH_PROVISIONER), y)
 	make -C ble_mesh_provisioner all
@@ -69,6 +74,9 @@ clean:
 	make -C bt_atcmd clean
 
 	#make -C bt_demo clean
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+	make -C bt_zephyr clean
+endif
 ifeq ($(CONFIG_BT_PERIPHERAL), y)
 	make -C ble_peripheral clean
 endif

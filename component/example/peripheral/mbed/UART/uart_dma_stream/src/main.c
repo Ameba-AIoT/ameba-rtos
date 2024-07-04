@@ -105,7 +105,7 @@ void uart_stream_dma(void)
 
 int main(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_stream_dma", (rtos_task_t)uart_stream_dma, (void *)NULL, 2048, (1))) {
+	if (SUCCESS != rtos_task_create(NULL, "uart_stream_dma", (rtos_task_t)uart_stream_dma, (void *)NULL, 3072, (1))) {
 		printf("Create uart_stream_dma Err!!\r\n");
 	}
 

@@ -1,0 +1,21 @@
+ChangeLog:
+20221129  v1.0.0  Initial Version.
+20230718  v1.0.1  (1) Select view adjustment according to ETC enable value.
+                  (2) Tiny change in modify board display.
+                  (3) Add Chip difference profiles.
+                  (4) Add calibration logic in monitor thread.
+                  (5) Add filter in general configuration (Only supported in AmebaDplus).
+                  (6) Add Iref calibration and threshold calibration.
+20230908  v1.0.2  (1) Auto adjust y-axis interval of chart.
+                  (2) Add XTAL divider differences.
+                  (3) Add debug mode in monitor board.
+20231103  v1.0.3  (1) Fix wrong port (eg UART) connection error.
+                  (2) Add GUI spec and test spec.
+                  (3) Add median wave filter in threshold calculation.
+                  (4) Move all calibration post work to monitor thread.
+                  (5) Add channel setup procress for diff data vs diff threshold chart when calibration.
+                  (6) Unify chip filenames to Chips. 
+20231115  v1.0.4  (1) Disable the way to select profiles and auto load chip profiles.
+                  (2) Rename AmebaSmart to AmebaD2.
+                  (3) Disable debug mode for AmebaSmart.
+20240506  v1.0.5  Bug fix: Query config timeout error for AmebaDplus.

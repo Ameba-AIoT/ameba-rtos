@@ -55,12 +55,12 @@ typedef struct {
 } usbd_composite_cb_t;
 
 typedef struct {
-	u8 *ctrl_buf;
 	usb_setup_req_t ctrl_req;
 	usbd_class_driver_t *cdc;
 	usbd_class_driver_t *hid;
 	usbd_composite_cb_t *cb;
 	usb_dev_t *dev;
+	u8 *ctrl_buf;
 } usbd_composite_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

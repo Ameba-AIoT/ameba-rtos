@@ -77,11 +77,11 @@ void bod_reset_test(void)
 int main(void)
 {
 #if BOD_INTR_MODE
-	if (rtos_task_create(NULL, "BOD_INTR_TASK", (rtos_task_t)bod_intr_test, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "BOD_INTR_TASK", (rtos_task_t)bod_intr_test, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create BOD_INTR_TASK\r\n");
 	}
 #else
-	if (rtos_task_create(NULL, "BOD_RESET_TASK", (rtos_task_t)bod_reset_test, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "BOD_RESET_TASK", (rtos_task_t)bod_reset_test, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create BOD_RESET_TASK\r\n");
 	}
 #endif

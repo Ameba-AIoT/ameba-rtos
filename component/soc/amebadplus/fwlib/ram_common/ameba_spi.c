@@ -893,11 +893,29 @@ u32 SSI_SendData(SPI_TypeDef *spi_dev,
 }
 
 /**
+  * @brief  Get Masks or unmasks SPIx interrupt.
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @retval  SSI_IT: This parameter can be one of the following values or mixed:
+  *            @arg SPI_BIT_TXEIM
+  *            @arg SPI_BIT_TXOIM
+  *            @arg SPI_BIT_RXUIM
+  *            @arg SPI_BIT_RXOIM
+  *            @arg SPI_BIT_RXFIM
+  *            @arg SPI_BIT_MSTIM_FAEIM
+  *            @arg SPI_BIT_TXUIM
+  *            @arg SPI_BIT_SSRIM
+  * @note  BITx is 1 means the corrsponding intr is enabled, otherwise is disabled.
+  */
+u32 SPI_GetINTConfig(SPI_TypeDef *spi_dev)
+{
+	return spi_dev->SPI_IMR;
+}
+
+/**
   * @brief Get SPIx the number of valid entries in receive FIFO.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval  The number of valid entries in receive FIFO.Value range:0-64.
   */
-
 u32 SSI_GetRxCount(SPI_TypeDef *spi_dev)
 {
 	return spi_dev->SPI_RXFLR & SPI_MASK_RXTFL;
@@ -908,7 +926,6 @@ u32 SSI_GetRxCount(SPI_TypeDef *spi_dev)
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval  The number of valid entries in transmit FIFO.Value range:0-64.
   */
-
 u32 SSI_GetTxCount(SPI_TypeDef *spi_dev)
 {
 	return spi_dev->SPI_TXFLR & SPI_MASK_TXTFL;

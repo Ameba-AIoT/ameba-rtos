@@ -349,6 +349,81 @@ static int atcmd_bt_gattc_disable_cccd(int argc, char **argv)
 
 #if (defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET)
+/**************************** GATTC client loop send related *****************************/
+struct gattc_tx_loop_param {
+	uint16_t conn_handle;
+	uint16_t interval;
+	uint32_t tx_count;
+};
+static struct gattc_tx_loop_param gattc_tx = {0};
+static uint8_t gattc_write_data[] = "GATTC loop test data";
+
+static uint8_t gattc_loop_send_task_running = 0;
+static void gattc_loop_send_task_entry(void *ctx)
+{
+	struct gattc_tx_loop_param *param = (struct gattc_tx_loop_param *)ctx;
+	uint32_t cnt = 0;
+	uint16_t ret = 0;
+
+	while (true) {
+		ret = simple_ble_client_write_charac_v1(param->conn_handle,
+												gattc_write_data,
+												sizeof(gattc_write_data));
+		if (RTK_BT_OK != ret) {
+			GATTC_AT_PRINTK("GATTC loop send write failed! err: 0x%x", ret);
+		}
+		if (!gattc_loop_send_task_running) {
+			break;
+		}
+		cnt++;
+		if (param->tx_count && cnt >= param->tx_count) {
+			break;
+		}
+		osif_delay(param->interval);
+	}
+
+	gattc_loop_send_task_running = 2;
+	osif_task_delete(NULL);
+}
+
+static int atcmd_bt_gattc_loop_send(int argc, char **argv)
+{
+	void *handle;
+	uint8_t enable;
+
+	enable = str_to_int(argv[0]);
+
+	if (enable) {
+		gattc_tx.conn_handle = str_to_int(argv[1]);
+		gattc_tx.interval = str_to_int(argv[2]);
+		if (argc >= 4) {
+			gattc_tx.tx_count = str_to_int(argv[3]);
+		} else {
+			gattc_tx.tx_count = 0;
+		}
+
+		gattc_loop_send_task_running = 1;
+		if (false == osif_task_create(&handle, "gattc_loop_send_task",
+									  gattc_loop_send_task_entry, (void *)(&gattc_tx),
+									  1024, 2)) {
+			gattc_loop_send_task_running = 0;
+			GATTC_AT_PRINTK("GATTC loop send task create failed");
+			return -1;
+		}
+	} else {
+		if (gattc_loop_send_task_running == 1) {
+			gattc_loop_send_task_running = 0;
+			while (!gattc_loop_send_task_running) {
+				osif_delay(100);
+			}
+		}
+		gattc_loop_send_task_running = 0;
+	}
+
+	GATTC_AT_PRINTK("loop send %s.", enable ? "start" : "stop");
+	return 0 ;
+}
+
 /**************************** BAS client related *****************************/
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 static int atcmd_bas_client_srv_discover(int argc, char **argv)
@@ -569,24 +644,21 @@ static int atcmd_cte_client_write_charac(int argc, char **argv)
 	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0;
-	uint16_t data_len = 0;
-	void *data;
+	uint16_t len = 0;
+	int value;
 	cte_charac_index_e char_idx;
 
 	conn_handle = str_to_int(argv[0]);
 	char_idx = str_to_int(argv[1]);
-	data_len = str_to_int(argv[2]);
-	data = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, data_len);
-	hexdata_str_to_array(argv[3], (uint8_t *)data, data_len);
+	len = str_to_int(argv[2]);
+	value = str_to_int(argv[3]);
 
-	ret = cte_client_write_charac(conn_handle, char_idx, data_len, data);
+	ret = cte_client_write_charac(conn_handle, char_idx, len, (uint8_t *)(&value));
 	if (RTK_BT_OK != ret) {
 		GATTC_AT_PRINTK("CTE client write characteristic index %u failed! err: 0x%x", ret, char_idx);
-		osif_mem_free(data);
 		return -1;
 	}
 
-	osif_mem_free(data);
 	GATTC_AT_PRINTK("CTE client writing characteristic index %u ...", char_idx);
 	return 0;
 }
@@ -601,9 +673,9 @@ static const cmd_table_t gattc_cmd_table[] = {
 	{"write",   atcmd_bt_gattc_write,        6, 6},
 	{"en_cccd",    atcmd_bt_gattc_enable_cccd,    5, 5},
 	{"dis_cccd",    atcmd_bt_gattc_disable_cccd,    5, 5},
-
 #if (defined(CONFIG_BT_CENTRAL) && CONFIG_BT_CENTRAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET)
+	{"loop_send",  atcmd_bt_gattc_loop_send,      2, 5},
 	/* bas client related */
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 	{"bas_disc",    atcmd_bas_client_srv_discover,    2, 2},

@@ -19,7 +19,7 @@
 
 #define PWM_PERIOD				40000000/32000
 
-u32 timout_cnt = 0;
+u32 timout_cnt = 0, freq = 0, freq_nums = 0;
 u32 value1, value2;
 
 u32 tim8_capture_ISR(void *data)
@@ -33,10 +33,17 @@ u32 tim8_capture_ISR(void *data)
 		value2 = RTIM_CCRxGet(TIM8, TIM8_CAPTURE_CHNL);
 		timout_cnt = 0;
 		if (value2 > value1) {
-			printf("frequency: %lu\n", 40000000 / (value2 - value1));
+			freq += 40000000 / (value2 - value1);
+			freq_nums ++;
 		} else {
-			printf("frequency: %lu\n", 40000000 / (PWM_PERIOD - value1 + value2));
+			freq += 40000000 / (PWM_PERIOD - value1 + value2);
+			freq_nums ++;
 		}
+	}
+
+	if (((freq_nums % 16000) == 0) & (freq_nums > 0)) {
+		printf("frequency: %lu\n", freq / freq_nums);
+		freq = freq_nums = 0;
 	}
 
 	RTIM_INTClear(TIM8);
