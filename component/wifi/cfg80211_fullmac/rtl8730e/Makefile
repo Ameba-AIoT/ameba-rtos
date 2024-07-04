@@ -3,6 +3,7 @@ export CONFIG_NAN = n
 export CONFIG_P2P = n
 export CONFIG_FULLMAC_HCI_IPC = y
 export CONFIG_FULLMAC_HCI_SDIO = n
+export CONFIG_SDIO_BRIDGE = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
@@ -38,11 +39,19 @@ KDIR ?= /lib/modules/$(shell uname -r)/build
 M := $(CURDIR)
 B := $(abspath $O/$M)
 
+ifneq ($(CONFIG_SDIO_BRIDGE),y)
 default:
 	$(MAKE) -C $(KDIR) M=$(M)/sdio
 modules modules_install clean help kernelrelease:
 	$(MAKE) -C $(KDIR) M=$(M) $@
 	$(MAKE) -C $(KDIR) M=$(M)/sdio $@
 
+else
+default:
+	$(MAKE) -C $(KDIR) M=$(M)/sdio_bridge
+modules modules_install clean help kernelrelease:
+	$(MAKE) -C $(KDIR) M=$(M) $@
+	$(MAKE) -C $(KDIR) M=$(M)/sdio_bridge $@
+endif
 endif
 

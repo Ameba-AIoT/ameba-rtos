@@ -19,6 +19,7 @@
 
 
 /* Private defines -----------------------------------------------------------*/
+#define USBH_UVC_DEBUG 0
 
 /* Private types -------------------------------------------------------------*/
 
@@ -67,7 +68,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 
 	status = usbh_uvc_parse_cfgdesc(host);
 	if (status) {
-		RTK_LOGE(TAG, "Fail to parse uvc class specific descriptor\n");
+		RTK_LOGS(TAG, "[UVC] Parse uvc desc fail\n");
 		return status;
 	}
 
@@ -96,14 +97,16 @@ static int usbh_uvc_attach(usb_host_t *host)
 		stream->cur_setting.valid = 1;
 		stream->cur_setting.pipe = usbh_alloc_pipe(host, stream->cur_setting.ep_addr);
 
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.altsetting:%d\n", i, stream->cur_setting.altsetting);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.bAlternateSetting:%d\n", i, stream->cur_setting.bAlternateSetting);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.ep_addr:%d\n", i, stream->cur_setting.ep_addr);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.ep_size:%d\n", i, stream->cur_setting.ep_size);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.mps:%d\n", i, stream->cur_setting.mps);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.interval:%d\n", i, stream->cur_setting.interval);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.ep_type:%d\n", i, stream->cur_setting.ep_type);
-		RTK_LOGD(TAG, "stream[%d]->cur_setting.bInterfaceNumber:%d\n", i, stream->cur_setting.bInterfaceNumber);
+#if USBH_UVC_DEBUG
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.altsetting:%d\n", i, stream->cur_setting.altsetting);
+		TK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.bAlternateSetting:%d\n", i, stream->cur_setting.bAlternateSetting);
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.ep_addr:%d\n", i, stream->cur_setting.ep_addr);
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.ep_size:%d\n", i, stream->cur_setting.ep_size);
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.mps:%d\n", i, stream->cur_setting.mps);
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.interval:%d\n", i, stream->cur_setting.interval);
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.ep_type:%d\n", i, stream->cur_setting.ep_type);
+		RTK_LOGS(TAG, "[UVC] Stream[%d]->cur_set.bInterfaceNumber:%d\n", i, stream->cur_setting.bInterfaceNumber);
+#endif
 	}
 
 	stream->stream_data_state = STREAM_STATE_IDLE;
@@ -183,7 +186,7 @@ static int usbh_uvc_process(usb_host_t *host)
 		if (uvc->stream[i].stream_data_state == STREAM_DATA_IN) {
 			status = usbh_uvc_process_rx(&uvc->stream[i]);
 			if (status) {
-				RTK_LOGE(TAG, "Process rx error\n");
+				RTK_LOGS(TAG, "[UVC] Process rx err\n");
 			}
 		}
 	}

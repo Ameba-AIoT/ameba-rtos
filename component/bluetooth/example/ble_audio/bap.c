@@ -858,7 +858,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_unicast_server_gatts_callback(uint8_t
 	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
-			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
+			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02x. Remote client supports EATT.\r\n",
 					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
@@ -900,7 +900,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_scan_delegator_gatts_callback(uint8_t
 	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
-			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
+			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02x. Remote client supports EATT.\r\n",
 					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
@@ -1231,7 +1231,7 @@ static void app_bt_le_audio_encode_task_entry(void *ctx)
 			}
 			//skip removing iso path
 			if (p_iso_path->is_removing) {
-				BT_LOGD("[APP] %s p_iso_path(%p) is removing\r\n", __func__, p_iso_path);
+				BT_LOGD("[APP] %s p_iso_path(%08x) is removing\r\n", __func__, p_iso_path);
 				continue;
 			}
 			//wait if encode task is fast and send task is slow
@@ -1502,7 +1502,7 @@ static uint16_t app_bt_le_audio_broadcast_source_setup_data_path(app_bt_le_audio
 		bis_idx = p_bap_bro_sour_info->bis_info.bis_conn_info[i].bis_idx;
 		ret = rtk_bt_le_audio_broadcast_source_setup_data_path(p_bap_bro_sour_info->broadcast_source_handle, bis_idx, &setup_path_param,
 															   &p_bap_bro_sour_info->bis_info.bis_conn_info[i].bis_conn_handle);
-		BT_LOGA("[APP] broadcast source setup data path %s for broadcast_source_handle 0x%p bis_index %d,bis_conn_handle 0x%x, ret: 0x%x\r\n",
+		BT_LOGA("[APP] broadcast source setup data path %s for broadcast_source_handle 0x%08x bis_index %d,bis_conn_handle 0x%x, ret: 0x%x\r\n",
 				((RTK_BT_OK != ret) ? "fail" : "ok"), p_bap_bro_sour_info->broadcast_source_handle, bis_idx, p_bap_bro_sour_info->bis_info.bis_conn_info[i].bis_conn_handle,
 				ret);
 		if (bis_idx == 1) {
@@ -1553,7 +1553,7 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 
 	p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(sync_handle);
 	if (!p_sync_dev_info) {
-		BT_LOGE("[APP] %s not find sync dev info for sync_handle %p\r\n", __func__, sync_handle);
+		BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, sync_handle);
 		return RTK_BT_FAIL;
 	}
 
@@ -1570,7 +1570,7 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 			BT_LOGE("[APP] rtk_bt_le_audio_sync_get_bis_sync_codec_cfg fail,ret = 0x%x\r\n", ret);
 			continue;
 		} else {
-			BT_LOGD("[APP] rtk_bt_le_audio_sync_get_bis_sync_codec_cfg ok (sync_handle %p, bis_idx %d,", sync_handle, bis_idx);
+			BT_LOGD("[APP] rtk_bt_le_audio_sync_get_bis_sync_codec_cfg ok (sync_handle %08x, bis_idx %d,", sync_handle, bis_idx);
 			BT_LOGA("[APP] type_exist 0x%x, frame_duration 0x%x, sample_frequency 0x%x, codec_frame_blocks_per_sdu 0x%x, octets_per_codec_frame 0x%x, audio_channel_allocation 0x%x)\r\n",
 					bis_codec_cfg.type_exist, bis_codec_cfg.frame_duration,
 					bis_codec_cfg.sample_frequency, bis_codec_cfg.codec_frame_blocks_per_sdu,
@@ -1581,7 +1581,7 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 	for (i = 0; i < bis_info.num_bis; i++) {
 		bis_idx = bis_info.bis_conn_info[i].bis_idx;
 		ret = rtk_bt_le_audio_sync_setup_data_path(sync_handle, bis_idx, &param);
-		BT_LOGA("[APP] broadcast sink setup data path %s for sync_handle 0x%p bis_index %d, ret: 0x%x\r\n",
+		BT_LOGA("[APP] broadcast sink setup data path %s for sync_handle 0x%08x bis_index %d, ret: 0x%x\r\n",
 				((RTK_BT_OK != ret) ? "fail" : "ok"), sync_handle, bis_idx, ret);
 
 		if (ret != RTK_BT_OK) {
@@ -1607,7 +1607,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		rtk_bt_le_audio_direct_iso_data_ind_t *p_bt_direct_iso = (rtk_bt_le_audio_direct_iso_data_ind_t *)data;
 		app_lea_iso_data_path_t *p_iso_path = NULL;
 		if (p_bt_direct_iso->iso_sdu_len) {
-			BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND, sys_time=%d,iso_conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf %p, buf_len %d, offset %d\r\n",
+			BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND, sys_time=%d,iso_conn_handle 0x%x, pkt_status_flag 0x%x, pkt_seq_num 0x%x, ts_flag 0x%x, time_stamp 0x%x,iso_sdu_len 0x%x, p_buf %08x, buf_len %d, offset %d\r\n",
 					(int)osif_sys_time_get(), p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_status_flag,
 					p_bt_direct_iso->pkt_seq_num, p_bt_direct_iso->ts_flag,
 					(unsigned int)p_bt_direct_iso->time_stamp, p_bt_direct_iso->iso_sdu_len, p_bt_direct_iso->p_buf, p_bt_direct_iso->buf_len, p_bt_direct_iso->offset);
@@ -1640,11 +1640,15 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND: {
 		rtk_bt_le_audio_pa_sync_state_ind_t *param = (rtk_bt_le_audio_pa_sync_state_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink pa sync state change: sync_handle: %p, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
+		BT_LOGD("[APP] broadcast sink pa sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
 				param->sync_handle, param->sync_state, param->action, param->cause);
+		BT_AT_PRINT("+BLEBAP:broadcast,%s,sync_state,%p,0x%x,0x%x,0x%x\r\n",
+					(bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) ? "sink" : "assistant",
+					param->sync_handle, param->sync_state, param->action, param->cause);
+
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 		if (!p_sync_dev_info) {
-			BT_LOGE("[APP] %s not find sync dev info for sync_handle %p\r\n", __func__, param->sync_handle);
+			BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, param->sync_handle);
 			break;
 		}
 		p_sync_dev_info->pa_sync_state = param->sync_state;
@@ -1654,8 +1658,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 				app_bt_le_audio_broadcast_assistant_info_t *p_bro_assi_info = &g_bro_assi_info;
 				app_bt_le_audio_bap_broadcast_assistant_info_t *p_bap_bro_assi_info = p_bro_assi_info->p_bap_bro_assi_info;
 				//stop ext scan
-				rtk_bt_le_gap_ext_scan_stop();
-				BT_LOGD("[APP] rtk_bt_le_gap_ext_scan_stop %s after pa sync synchronized! ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
+				rtk_bt_le_gap_stop_ext_scan();
+				BT_LOGD("[APP] rtk_bt_le_gap_stop_ext_scan %s after pa sync synchronized! ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				//give sem to show pa sync list
 				if (p_bap_bro_assi_info->pa_sync_ind_sem) {
 					osif_sem_give(p_bap_bro_assi_info->pa_sync_ind_sem);
@@ -1669,14 +1673,14 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_PA_BIG_INFO_IND: {
 		rtk_bt_le_audio_pa_biginfo_ind_t *param = (rtk_bt_le_audio_pa_biginfo_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink pa biginfo indication: sync_handle: %p, num_bis 0x%x, sync_id 0x%x, pa_sync_handle 0x%x, encryption 0x%x\r\n",
+		BT_LOGD("[APP] broadcast sink pa biginfo indication: sync_handle: %08x, num_bis 0x%x, sync_id 0x%x, pa_sync_handle 0x%x, encryption 0x%x\r\n",
 				param->sync_handle, param->biginfo.num_bis, param->biginfo.sync_id, param->biginfo.pa_sync_handle, param->biginfo.encryption);
 		if (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) {
 			app_bt_le_audio_broadcast_sink_info_t *p_bro_sink_info = &g_bro_sink_info;
 			app_bt_le_audio_bap_broadcast_sink_info_t *p_bap_bro_sink_info = p_bro_sink_info->p_bap_bro_sink_info;
 			p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 			if (!p_sync_dev_info) {
-				BT_LOGE("[APP] %s not find sync dev info for sync_handle %p\r\n", __func__, param->sync_handle);
+				BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, param->sync_handle);
 				break;
 			}
 			p_sync_dev_info->is_encryption = param->biginfo.encryption;
@@ -1699,33 +1703,35 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_PA_ADV_REPORT_IND: {
 		rtk_bt_le_audio_pa_adv_report_ind_t *param = (rtk_bt_le_audio_pa_adv_report_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink pa adv report: sync_handle: %p,sync_id %d, pa_sync_handle 0x%x,tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
+		BT_LOGD("[APP] broadcast sink pa adv report: sync_handle: %08x,sync_id %d, pa_sync_handle 0x%x,tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
 				param->sync_handle, param->sync_id, param->pa_sync_handle, param->tx_power, param->rssi, param->cte_type, param->data_status, param->data_len);
 		break;
 	}
 
 	case RTK_BT_LE_AUDIO_EVT_BASE_DATA_MAPPING_MODIFY_IND: {
 		rtk_bt_le_audio_base_data_mapping_modify_ind_t *param = (rtk_bt_le_audio_base_data_mapping_modify_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink base data modify: sync_handle: %p, base_data_mapping %p,\r\n", param->sync_handle, param->base_data_mapping);
+		BT_LOGD("[APP] broadcast sink base data modify: sync_handle: %08x, base_data_mapping %08x,\r\n", param->sync_handle, param->base_data_mapping);
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 		if (!p_sync_dev_info) {
-			BT_LOGE("[APP] %s not find sync dev info for sync_handle %p\r\n", __func__, param->sync_handle);
+			BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, param->sync_handle);
 			break;
 		}
 		if (param->base_data_mapping != p_sync_dev_info->base_data_mapping) {
 			p_sync_dev_info->base_data_mapping = param->base_data_mapping;
-			BT_LOGD("[APP] save new base_data_mapping %p for sync_handle %p\r\n", param->base_data_mapping, param->sync_handle);
+			BT_LOGD("[APP] save new base_data_mapping %08x for sync_handle %08x\r\n", param->base_data_mapping, param->sync_handle);
 		}
 		break;
 	}
 
 	case RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND: {
 		rtk_bt_le_audio_big_sync_state_ind_t *param = (rtk_bt_le_audio_big_sync_state_ind_t *)data;
-		BT_LOGD("[APP] broadcast sink big sync state change: sync_handle: %p, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
+		BT_LOGD("[APP] broadcast sink big sync state change: sync_handle: %08x, sync_state 0x%x, action 0x%x, cause: 0x%x\r\n",
 				param->sync_handle, param->sync_state, param->action, param->cause);
+		BT_AT_PRINT("+BLEBAP:broadcast,sink,sync_state,%p,0x%x,0x%x,0x%x\r\n",
+					param->sync_handle, param->sync_state, param->action, param->cause);
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 		if (!p_sync_dev_info) {
-			BT_LOGE("[APP] %s not find sync dev info for sync_handle %p\r\n", __func__, param->sync_handle);
+			BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, param->sync_handle);
 			break;
 		}
 		p_sync_dev_info->big_sync_state = param->sync_state;
@@ -1744,8 +1750,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 				BT_LOGA("[APP] rtk_bt_le_audio_pa_sync_terminate %s after big sync synchronized! ret: 0x%x\r\n",
 						((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 				//stop ext scan
-				ret = rtk_bt_le_gap_ext_scan_stop();
-				BT_LOGA("[APP] rtk_bt_le_gap_ext_scan_stop %s after big sync synchronized! ret: 0x%x\r\n",
+				ret = rtk_bt_le_gap_stop_ext_scan();
+				BT_LOGA("[APP] rtk_bt_le_gap_stop_ext_scan %s after big sync synchronized! ret: 0x%x\r\n",
 						((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			}
 			app_bt_le_audio_bap_decode_data_control(true);
@@ -1770,8 +1776,10 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 	case RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND: {
 		app_bt_le_audio_bap_broadcast_source_info_t *p_bap_bro_sour_info = g_bro_sour_info.p_bap_bro_sour_info;
 		rtk_bt_le_audio_broadcast_source_state_ind_t *param = (rtk_bt_le_audio_broadcast_source_state_ind_t *)data;
-		BT_LOGD("[APP] broadcast source state change: broadcast_source_handle: %p, broadcast_source_state 0x%x, cause: 0x%x\r\n",
+		BT_LOGD("[APP] broadcast source state change: broadcast_source_handle: %08x, broadcast_source_state 0x%x, cause: 0x%x\r\n",
 				param->broadcast_source_handle, param->broadcast_source_state, param->cause);
+		BT_AT_PRINT("+BLEBAP:broadcast,source,state,%p,0x%x,0x%x\r\n",
+					param->broadcast_source_handle, param->broadcast_source_state, param->cause);
 		p_bap_bro_sour_info->broadcast_source_state = param->broadcast_source_state;
 		if (param->broadcast_source_state == RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STATE_IDLE) {
 			BT_LOGA("[APP] broadcast source idle\r\n");
@@ -1814,6 +1822,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		rtk_bt_le_audio_bass_client_brs_data_ind_t *param = (rtk_bt_le_audio_bass_client_brs_data_ind_t *) data;
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CLIENT_BRS_DATA_IND: conn_handle 0x%x, notify %d, read_cause 0x%x, char_instance_id %d\r\n",
 				param->conn_handle, param->notify, param->read_cause, param->char_instance_id);
+		BT_AT_PRINT("+BLEBAP:broadcast,assistant,reception_stop,0x%x,%d,0x%x,%d\r\n",
+					param->conn_handle, param->notify, param->read_cause, param->char_instance_id);
+
 		if (param->p_brs_data && param->p_brs_data->brs_is_used) {
 			BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CLIENT_BRS_DATA_IND: source_id %d, source_adv_sid %d, pa_sync_state %d, big_encryption %d\r\n",
 					param->p_brs_data->source_id, param->p_brs_data->source_adv_sid, param->p_brs_data->pa_sync_state, param->p_brs_data->big_encryption);
@@ -1844,6 +1855,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		rtk_bt_le_audio_bass_client_sync_info_req_ind_t *param = (rtk_bt_le_audio_bass_client_sync_info_req_ind_t *)data;
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CLIENT_SYNC_INFO_REQ_IND: conn_handle 0x%x, char_instance_id %d\r\n", param->conn_handle,
 				param->char_instance_id);
+		BT_AT_PRINT("+BLEBAP:broadcast,assistant,reception_start,0x%x,%d\r\n",
+					param->conn_handle, param->char_instance_id);
+
 		p_device_info = app_bt_le_audio_group_list_find_dev_by_conn_handle(param->conn_handle);
 		if (p_device_info && p_device_info->bass_is_found) {
 			if (param->p_brs_data) {
@@ -1892,6 +1906,11 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 					param->conn_handle, param->op_param.add_source_param.adv_addr.type, addr_str,
 					param->op_param.add_source_param.broadcast_id[2], param->op_param.add_source_param.broadcast_id[1], param->op_param.add_source_param.broadcast_id[0],
 					param->op_param.add_source_param.pa_sync, param->op_param.add_source_param.pa_interval, param->op_param.add_source_param.num_subgroups);
+			BT_AT_PRINT("+BLEBAP:broadcast,sink,bass,add_source,%d,%d,%s,%x%x%x,%d,%d,%d\r\n",
+						param->conn_handle, param->op_param.add_source_param.adv_addr.type, addr_str,
+						param->op_param.add_source_param.broadcast_id[2], param->op_param.add_source_param.broadcast_id[1], param->op_param.add_source_param.broadcast_id[0],
+						param->op_param.add_source_param.pa_sync, param->op_param.add_source_param.pa_interval, param->op_param.add_source_param.num_subgroups);
+
 			if (param->op_param.add_source_param.num_subgroups) {
 				BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CP_IND: bis_info_size %d, bis_sync_state %d, metadata_len %d\r\n",
 						param->op_param.add_source_param.bis_info_size, (unsigned int)param->op_param.add_source_param.p_cp_bis_info[0].bis_sync_state,
@@ -1905,6 +1924,11 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CP_IND: conn_handle %d RTK_BT_LE_AUDIO_BASS_CP_MODIFY_SOURCE,source_id %d,pa_sync %d,pa_interval %d,num_subgroups %d\r\n",
 					param->conn_handle, param->op_param.modify_source_param.source_id,
 					param->op_param.modify_source_param.pa_sync, param->op_param.modify_source_param.pa_interval, param->op_param.modify_source_param.num_subgroups);
+			BT_AT_PRINT("+BLEBAP:broadcast,sink,bass,modify_source,%d,%d,%d,%d,%d\r\n",
+						param->conn_handle, param->op_param.modify_source_param.source_id,
+						param->op_param.modify_source_param.pa_sync, param->op_param.modify_source_param.pa_interval,
+						param->op_param.modify_source_param.num_subgroups);
+
 			if (param->op_param.modify_source_param.num_subgroups) {
 				BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CP_IND: bis_info_size %d, bis_sync_state %d, metadata_len %d\r\n",
 						param->op_param.modify_source_param.bis_info_size, (unsigned int)param->op_param.modify_source_param.p_cp_bis_info[0].bis_sync_state,
@@ -1917,6 +1941,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		case RTK_BT_LE_AUDIO_BASS_CP_REMOVE_SOURCE: {
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BASS_CP_IND: conn_handle %d RTK_BT_LE_AUDIO_BASS_CP_REMOVE_SOURCE source_id %d\r\n", param->conn_handle,
 					param->op_param.remove_source_param.source_id);
+			BT_AT_PRINT("+BLEBAP:broadcast,sink,bass,remove_source,%d,%d\r\n",
+						param->conn_handle, param->op_param.remove_source_param.source_id);
+
 			p_sync_dev_info = app_bt_le_audio_sync_dev_list_find_by_source_id(param->op_param.remove_source_param.source_id);
 			if (!p_sync_dev_info) {
 				BT_LOGE("[APP] %s app_bt_le_audio_sync_dev_list_find fail\r\n", __func__);
@@ -1939,7 +1966,10 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BASS_BRS_MODIFY_IND: {
 		rtk_bt_le_audio_bass_brs_modify_ind_t *param = (rtk_bt_le_audio_bass_brs_modify_ind_t *) data;
-		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BASS_BRS_MODIFY_IND: sync_handle %p, source_id %d\r\n", param->sync_handle, param->source_id);
+		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BASS_BRS_MODIFY_IND: sync_handle %08x, source_id %d\r\n", param->sync_handle, param->source_id);
+		BT_AT_PRINT("+BLEBAP:broadcast,sink,bass,brs_modify,%08x,%d\r\n",
+					param->sync_handle, param->source_id);
+
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 		if (!p_sync_dev_info) {
 			BT_LOGE("[APP] %s app_bt_le_audio_sync_dev_list_find fail\r\n", __func__);
@@ -1964,7 +1994,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BASS_BA_ADD_SOURCE_IND: {
 		rtk_bt_le_audio_bass_ba_add_source_ind_t *param = (rtk_bt_le_audio_bass_ba_add_source_ind_t *)data;
-		BT_LOGA("[APP] scan delegator ba add source ind: sync_handle: %p,source_id %d\r\n", param->sync_handle, param->source_id);
+		BT_LOGA("[APP] scan delegator ba add source ind: sync_handle: %08x,source_id %d\r\n", param->sync_handle, param->source_id);
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_add(param->sync_handle);
 		if (!p_sync_dev_info) {
 			BT_LOGE("[APP] %s app_bt_le_audio_sync_dev_list_add fail\r\n", __func__);
@@ -1982,7 +2012,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			.past_timeout = RTK_LE_AUDIO_SYNC_TIMEOUT
 		};
 		rtk_bt_le_audio_bass_get_pa_sync_param_ind_t *param = (rtk_bt_le_audio_bass_get_pa_sync_param_ind_t *)data;
-		BT_LOGA("[APP] broadcast sink get pa sync param ind: sync_handle: %p,source_id %d,is_past: %d,pa_interval %d\r\n",
+		BT_LOGA("[APP] broadcast sink get pa sync param ind: sync_handle: %08x,source_id %d,is_past: %d,pa_interval %d\r\n",
 				param->sync_handle, param->source_id, param->is_past, param->pa_interval);
 		if (param->is_past) {
 			p_sync_dev_info = app_bt_le_audio_sync_dev_list_add(param->sync_handle);
@@ -2005,14 +2035,14 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			.big_sync_timeout = RTK_LE_AUDIO_SYNC_TIMEOUT
 		};
 		rtk_bt_le_audio_bass_get_big_sync_param_ind_t *param = (rtk_bt_le_audio_bass_get_big_sync_param_ind_t *)data;
-		BT_LOGA("[APP] broadcast sink get big sync param ind: sync_handle: %p,source_id %d\r\n", param->sync_handle, param->source_id);
+		BT_LOGA("[APP] broadcast sink get big sync param ind: sync_handle: %08x,source_id %d\r\n", param->sync_handle, param->source_id);
 		memcpy(param->p_big_sync_param, &big_sync_param, sizeof(rtk_bt_le_audio_bass_big_sync_param_t));
 		break;
 	}
 
 	case RTK_BT_LE_AUDIO_EVT_BASS_GET_BROADCAST_CODE_IND: { //BT api shall not be called here
 		rtk_bt_le_audio_bass_get_broadcast_code_ind_t *param = (rtk_bt_le_audio_bass_get_broadcast_code_ind_t *)data;
-		BT_LOGA("[APP] broadcast sink get broadcast code ind: sync_handle: %p,source_id %d\r\n", param->sync_handle, param->source_id);
+		BT_LOGA("[APP] broadcast sink get broadcast code ind: sync_handle: %08x,source_id %d\r\n", param->sync_handle, param->source_id);
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 		if (!p_sync_dev_info) {
 			BT_LOGE("[APP] %s app_bt_le_audio_sync_dev_list_find fail\r\n", __func__);
@@ -2025,7 +2055,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BASS_GET_PREFER_BIS_SYNC_IND: { //BT api shall not be called here
 		rtk_bt_le_audio_bass_get_prefer_bis_sync_ind_t *param = (rtk_bt_le_audio_bass_get_prefer_bis_sync_ind_t *)data;
-		BT_LOGA("[APP] broadcast sink set prefer bis sync ind: sync_handle: %p,source_id %d\r\n",
+		BT_LOGA("[APP] broadcast sink set prefer bis sync ind: sync_handle: %08x,source_id %d\r\n",
 				param->sync_handle, param->source_id);
 		p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(param->sync_handle);
 		if (p_sync_dev_info) {
@@ -2083,7 +2113,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BAP_STATE_IND: {
 		rtk_bt_le_audio_bap_state_ind_t *param = (rtk_bt_le_audio_bap_state_ind_t *)data;
-		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BAP_STATE_IND(cause 0x%x, group_handle %p,stream_session_handle %p, curr_action %d, stream_state = %d, result= 0x%x), heap %d\r\n",
+		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BAP_STATE_IND(cause 0x%x, group_handle %08x,stream_session_handle %08x, curr_action %d, stream_state = %d, result= 0x%x), heap %d\r\n",
 				param->cause, param->group_handle, param->stream_session_handle, param->curr_action, param->stream_state, param->result, osif_mem_peek(RAM_TYPE_DATA_ON));
 		p_group_info = app_bt_le_audio_group_list_find(param->group_handle);
 		if (p_group_info == NULL) {
@@ -2118,7 +2148,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND: {
 		rtk_bt_le_audio_bap_start_qos_cfg_ind_t *param = (rtk_bt_le_audio_bap_start_qos_cfg_ind_t *)data;
-		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND(group handle %p, session handle %p, sink presentation delay(0x%x-0x%x),source presentation delay(0x%x-0x%x), sink latency 0x%x, source latency 0x%x),",
+		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND(group handle %08x, session handle %08x, sink presentation delay(0x%x-0x%x),source presentation delay(0x%x-0x%x), sink latency 0x%x, source latency 0x%x),",
 				param->group_handle, param->stream_session_handle,
 				(unsigned int)param->sink_presentation_delay_min, (unsigned int)param->sink_presentation_delay_max,
 				(unsigned int)param->source_presentation_delay_min, (unsigned int)param->source_presentation_delay_max,
@@ -2138,7 +2168,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND: {
 		rtk_bt_le_audio_bap_start_metadata_cfg_ind_t *param = (rtk_bt_le_audio_bap_start_metadata_cfg_ind_t *)data;
-		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND(group handle %p, session handle %p, dev_handle %p, ase_id %d)\r\n",
+		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND(group handle %08x, session handle %08x, dev_handle %08x, ase_id %d)\r\n",
 				param->group_handle, param->stream_session_handle, param->device_handle, param->ase_id);
 		*param->p_metadata_len = app_lea_def_metadata_len;
 		memcpy(param->p_metadata, app_lea_def_metadata, app_lea_def_metadata_len);
@@ -2147,19 +2177,22 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND: {
 		rtk_bt_le_audio_bap_setup_data_path_ind_t *param = (rtk_bt_le_audio_bap_setup_data_path_ind_t *)data;
-		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND(group handle %p, session handle %p, dev_handle %p, ase_id %d,path_direction=%d,cis_conn_handle=0x%x \r\n",
+		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND(group handle %08x, session handle %08x, dev_handle %08x, ase_id %d,path_direction=%d,cis_conn_handle=0x%x \r\n",
 				param->group_handle, param->stream_session_handle, param->device_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
 		BT_LOGD("[APP] type_exist 0x%x, frame_duration %d, sample_frequency %d, codec_frame_blocks_per_sdu %d,octets_per_codec_frame=%d,audio_channel_allocation=0x%x)\r\n",
 				param->codec_parsed_data.type_exist, param->codec_parsed_data.frame_duration, param->codec_parsed_data.sample_frequency,
 				param->codec_parsed_data.codec_frame_blocks_per_sdu, param->codec_parsed_data.octets_per_codec_frame,
 				(unsigned int)param->codec_parsed_data.audio_channel_allocation);
+		BT_AT_PRINT("+BLEBAP:unicast,client,start,%p,%p,%p,%d,%d,0x%x\r\n",
+					param->group_handle, param->stream_session_handle, param->device_handle,
+					param->ase_id, param->path_direction, param->cis_conn_handle);
 		// get ase qos
 		rtk_bt_le_audio_unicast_ase_qos_t ase_qos = {0};
 		if (rtk_bt_le_audio_unicast_get_ase_qos(param->stream_session_handle, param->device_handle, param->ase_id, &ase_qos)) {
 			BT_LOGE("[APP] %s: get ase qos failed \r\n", __func__);
 			break;
 		}
-		BT_LOGA("[APP] group handle %p, session handle %p, dev_handle %p, ase_id %d, phy=0x%x, max_sdu=%d, retransmission_number=%u \r\n",
+		BT_LOGA("[APP] group handle %08x, session handle %08x, dev_handle %08x, ase_id %d, phy=0x%x, max_sdu=%d, retransmission_number=%u \r\n",
 				param->group_handle, param->stream_session_handle, param->device_handle, param->ase_id, ase_qos.phy, ase_qos.max_sdu, ase_qos.retransmission_number);
 		//add the iso data path when data path setup
 		if (!app_bt_le_audio_iso_data_path_add(RTK_BT_LE_AUDIO_CIS_MODE, 0, param->path_direction, param->cis_conn_handle, &param->codec_parsed_data)) {
@@ -2172,8 +2205,11 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_BAP_REMOVE_DATA_PATH_IND: {
 		rtk_bt_le_audio_bap_remove_data_path_ind_t *param = (rtk_bt_le_audio_bap_remove_data_path_ind_t *) data;
-		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BAP_REMOVE_DATA_PATH_IND(group handle %p, session handle %p, dev_handle %p, ase_id %d,path_direction=%d,cis_conn_handle=0x%x,cause=0x%x)\r\n",
+		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_BAP_REMOVE_DATA_PATH_IND(group handle %08x, session handle %08x, dev_handle %08x, ase_id %d,path_direction=%d,cis_conn_handle=0x%x,cause=0x%x)\r\n",
 				param->group_handle, param->stream_session_handle, param->device_handle, param->ase_id, param->path_direction, param->cis_conn_handle, param->cause);
+		BT_AT_PRINT("+BLEBAP:unicast,client,stop,%p,%p,%p,%d,%d,0x%x,0x%x\r\n",
+					param->group_handle, param->stream_session_handle, param->device_handle,
+					param->ase_id, param->path_direction, param->cis_conn_handle, param->cause);
 		//remove the iso conn handle when tx data path remove
 		app_bt_le_audio_iso_data_path_remove(param->cis_conn_handle, param->path_direction);
 		break;
@@ -2181,7 +2217,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 
 	case RTK_BT_LE_AUDIO_EVT_GROUP_DEV_MSG_IND: {
 		rtk_bt_le_audio_group_dev_msg_ind_t *param = (rtk_bt_le_audio_group_dev_msg_ind_t *)data;
-		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_GROUP_DEV_MSG_IND:msg_type 0x%x, cause 0x%x, group_handle %p, dev_handle %p\r\n",
+		BT_LOGD("[APP] RTK_BT_LE_AUDIO_EVT_GROUP_DEV_MSG_IND:msg_type 0x%x, cause 0x%x, group_handle %08x, dev_handle %08x\r\n",
 				param->msg_type, param->cause, param->group_handle, param->device_handle);
 		p_group_info = app_bt_le_audio_group_list_find(param->group_handle);
 		if (p_group_info == NULL) {
@@ -2205,7 +2241,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE\r\n");
 			ret = rtk_bt_le_audio_group_delete_device(param->group_handle, param->device_handle);
 			app_bt_le_audio_group_list_remove_dev(param->group_handle, param->device_handle);
-			BT_LOGD("[APP] %s: delete device in group %s (group_handle=%p,device_handle=%p) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok",
+			BT_LOGD("[APP] %s: delete device in group %s (group_handle=%08x,device_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok",
 					param->group_handle, param->device_handle);
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_CLEAR:
@@ -2417,6 +2453,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		rtk_bt_le_audio_ascs_setup_data_path_ind_t *param = (rtk_bt_le_audio_ascs_setup_data_path_ind_t *) data;
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND(conn_handle %d, ase_id 0x%x, path_direction 0x%x, cis_conn_handle 0x%x\r\n",
 				param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
+		BT_AT_PRINT("+BLEBAP:unicast,server,ascs,setup_data_path,%d,0x%x,0x%x,0x%x\r\n",
+					param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
 		BT_LOGD("[APP] type_exist 0x%x, frame_duration 0x%x, sample_frequency 0x%x, codec_frame_blocks_per_sdu 0x%x, octets_per_codec_frame 0x%x, audio_channel_allocation 0x%x)\r\n",
 				param->codec_cfg.type_exist, param->codec_cfg.frame_duration, param->codec_cfg.sample_frequency, param->codec_cfg.codec_frame_blocks_per_sdu,
 				param->codec_cfg.octets_per_codec_frame, (unsigned int)param->codec_cfg.audio_channel_allocation);
@@ -2435,6 +2473,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		rtk_bt_le_audio_ascs_remove_data_path_ind_t *param = (rtk_bt_le_audio_ascs_remove_data_path_ind_t *) data;
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_ASCS_REMOVE_DATA_PATH_IND(conn_handle %d, ase_id 0x%x, path_direction 0x%x, cis_conn_handle 0x%x\r\n",
 				param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
+		BT_AT_PRINT("+BLEBAP:unicast,server,ascs,remove_data_path,%d,0x%x,0x%x,0x%x\r\n",
+					param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
 		//remove the iso conn handle when tx data path remove
 		app_bt_le_audio_iso_data_path_remove(param->cis_conn_handle, param->path_direction);
 		g_uni_ser_info.status = RTK_BLE_AUDIO_UNICAST_SERVER_STOP;

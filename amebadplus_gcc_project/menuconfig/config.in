@@ -120,8 +120,13 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		choice 'WIFI Driver Location'	"KM0	CONFIG_KM0_AS_NP \
 						KM4	CONFIG_KM4_AS_NP \
 						"
+		mainmenu_option next_comment
+		comment '< CONFIG WIFI MODE'
+			bool "Enable NAN"		CONFIG_NAN
+			bool "Enable P2P"		CONFIG_P2P
+		endmenu
 	fi
-	bool "Enable HIGH TP for INIC"	CONFIG_HIGH_TP_TEST
+	bool "Enable HIGH TP"	CONFIG_HIGH_TP_TEST
 	if [ "$CONFIG_KM0_NP_KM4_AP" = "y" ]; then
 		define_bool CONFIG_INIC_INTF_IPC y
 		define_bool CONFIG_WLAN_FOR_KM0 y
@@ -164,6 +169,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
 	fi
+	
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
@@ -217,6 +223,11 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 	bool "BT Advanced Feature"					CONFIG_BT_ADVANCED_FEATURE_MENU
 	if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
 		bool "  Exclude BT AT Command"			CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KM4
+#		bool "  Use Zephyr BT Stack"			CONFIG_BT_ZEPHYR_MENU
+		if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
+			define_bool CONFIG_BT_ZEPHYR_FOR_KM4 y
+		fi
+		bool "  Enable BT Fast MP"				CONFIG_BT_ENABLE_FAST_MP_FOR_KM4
 	fi
 	bool "BT Example Demo"						CONFIG_BT_EXAMPLE_DEMO_MENU
 	if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then

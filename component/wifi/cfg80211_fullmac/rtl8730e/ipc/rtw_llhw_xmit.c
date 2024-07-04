@@ -28,7 +28,7 @@ static struct dev_sk_buff *llhw_find_one_free_skb(u32 *skb_index, bool *b_droppe
 
 	do {
 		*skb_index = (*skb_index + 1) % skb_num_ap;
-		skb = &global_idev.xmit_priv.host_skb_info[*skb_index].skb;
+		skb = &global_idev.xmit_priv.host_skb_buff[*skb_index];
 		if (skb->busy == 0) {
 			return skb;
 		}
@@ -42,7 +42,6 @@ static struct dev_sk_buff *llhw_find_one_free_skb(u32 *skb_index, bool *b_droppe
 int llhw_xmit_entry(int idx, struct sk_buff *pskb)
 {
 	struct dev_sk_buff *skb = NULL;
-	struct skb_data *skb_data = NULL;
 	dma_addr_t skb_data_phy = 0, skb_phy = 0;
 	int ret = NETDEV_TX_OK;
 	u32 skb_index = 0;
@@ -66,7 +65,7 @@ int llhw_xmit_entry(int idx, struct sk_buff *pskb)
 	/*s2. get a skb, use spinklock to prevent more than one threads get a same skb*/
 	spin_lock(&(global_idev.xmit_priv.skb_lock));
 	skb_index = global_idev.xmit_priv.skb_idx;
-	skb = &global_idev.xmit_priv.host_skb_info[skb_index].skb;
+	skb = &global_idev.xmit_priv.host_skb_buff[skb_index];
 	/*next skb may be busy if NP release skb out of order when tx in different ACs or under softap mode*/
 	if ((skb->busy) && ((skb = llhw_find_one_free_skb(&skb_index, &b_dropped)) == NULL)) {
 		spin_unlock(&(global_idev.xmit_priv.skb_lock));
@@ -78,18 +77,17 @@ int llhw_xmit_entry(int idx, struct sk_buff *pskb)
 	spin_unlock(&(global_idev.xmit_priv.skb_lock));
 
 	/*s3. config skb*/
-	skb_phy = global_idev.xmit_priv.host_skb_info_phy + sizeof(struct skb_info) * skb_index + sizeof(struct list_head);
+	skb_phy = global_idev.xmit_priv.host_skb_buff_phy + sizeof(struct dev_sk_buff) * skb_index;
 	size = SKB_DATA_ALIGN(pskb->len + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
-	skb_data = &global_idev.xmit_priv.host_skb_data[skb_index];
-	skb_data_phy = global_idev.xmit_priv.host_skb_data_phy + sizeof(struct skb_data) * skb_index + ((u32)(skb_data->buf) - (u32)skb_data);
-	memcpy(skb_data->buf + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN), pskb->data, pskb->len);
+	skb_data_phy = global_idev.xmit_priv.host_skb_buff_phy + sizeof(struct dev_sk_buff) * skb_index + ((u32)(skb->buf) - (u32)skb);
+	memcpy(skb->buf + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN), pskb->data, pskb->len);
 	skb->head = (unsigned char *)skb_data_phy;
 	skb->end = (unsigned char *)(skb_data_phy + size);
 	skb->data = (unsigned char *)(skb_data_phy + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
 	skb->tail = (unsigned char *)(skb_data_phy + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
 	skb->no_free = 1;
 	skb->len = 0;
-	atomic_set(&skb_data->ref, 1);
+	atomic_set(&skb->ref, 1);
 	dev_skb_put(skb, pskb->len);
 
 	/*s4 send to NP*/
@@ -117,26 +115,18 @@ int llhw_xmit_init(void)
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
 	int skb_num_ap = global_idev.wifi_user_config.skb_num_ap;
 
-	if (xmit_priv->host_skb_data || xmit_priv->host_skb_info) {
-		dev_err(global_idev.fullmac_dev, "host_skb_info or host_skb_data not mfree|\n");
+	if (xmit_priv->host_skb_buff) {
+		dev_err(global_idev.fullmac_dev, "host_skb_buff not mfree|\n");
 		return -ENOMEM;
 	}
 
-	xmit_priv->host_skb_info = (struct skb_info *)dmam_alloc_coherent(pdev, sizeof(struct skb_info) * skb_num_ap, &xmit_priv->host_skb_info_phy, GFP_KERNEL);
-	if (!xmit_priv->host_skb_info) {
+	xmit_priv->host_skb_buff = (struct dev_sk_buff *)dmam_alloc_coherent(pdev, sizeof(struct dev_sk_buff) * skb_num_ap, &xmit_priv->host_skb_buff_phy, GFP_KERNEL);
+	if (!xmit_priv->host_skb_buff) {
 		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
 	}
 
-	xmit_priv->host_skb_data = (struct skb_data *)dmam_alloc_coherent(pdev, sizeof(struct skb_data) * skb_num_ap, &xmit_priv->host_skb_data_phy, GFP_KERNEL);
-	if (!xmit_priv->host_skb_data) {
-		dev_err(global_idev.fullmac_dev, "%s: malloc failed, free former one and return -ENOMEM.", __func__);
-		dma_free_coherent(pdev, sizeof(struct skb_info) * skb_num_ap, xmit_priv->host_skb_info, xmit_priv->host_skb_info_phy);
-		return -ENOMEM;
-	}
-
-	memset(xmit_priv->host_skb_info, 0, sizeof(struct skb_info) * skb_num_ap);
-	memset(xmit_priv->host_skb_data, 0, sizeof(struct skb_data) * skb_num_ap);
+	memset(xmit_priv->host_skb_buff, 0, sizeof(struct dev_sk_buff) * skb_num_ap);
 	spin_lock_init(&(xmit_priv->skb_lock));
 	atomic_set(&global_idev.xmit_priv.skb_free_num, skb_num_ap);
 
@@ -149,9 +139,8 @@ void llhw_xmit_deinit(void)
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
 	int skb_num_ap = global_idev.wifi_user_config.skb_num_ap;
 
-	if (xmit_priv->host_skb_data || xmit_priv->host_skb_info) {
-		dma_free_coherent(pdev, sizeof(struct skb_info) * skb_num_ap, xmit_priv->host_skb_info, xmit_priv->host_skb_info_phy);
-		dma_free_coherent(pdev, sizeof(struct skb_data) * skb_num_ap, xmit_priv->host_skb_data, xmit_priv->host_skb_data_phy);
+	if (xmit_priv->host_skb_buff) {
+		dma_free_coherent(pdev, sizeof(struct dev_sk_buff) * skb_num_ap, xmit_priv->host_skb_buff, xmit_priv->host_skb_buff_phy);
 		memset(&global_idev.xmit_priv, 0, sizeof(struct xmit_priv_t));
 	}
 }

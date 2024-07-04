@@ -35,7 +35,7 @@ static int usbh_vendor_setup(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "VENDOR";
+static const char *TAG = "VEN";
 
 /* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_vendor_driver = {
@@ -123,19 +123,15 @@ static usbh_xfer_func usbh_get_xfer_func(usbh_vendor_xfer_t *xfer)
 
 static int usbh_vendor_init_ep(usbh_vendor_xfer_t *xfer, usbh_ep_desc_t *ep_desc)
 {
+	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 	char *xfer_type = usbh_get_xfer_type_text(xfer);
 
 	xfer->ep_num = ep_desc->bEndpointAddress;
 	xfer->ep_mps = ep_desc->wMaxPacketSize;
 	xfer->ep_type = ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK;
-	if ((xfer->ep_type == USB_CH_EP_TYPE_INTR) || (xfer->ep_type == USB_CH_EP_TYPE_ISOC)) {
-		xfer->ep_interval = 1 << (MIN((MAX(ep_desc->bInterval, 1)), 16) - 1);
-	} else {
-		xfer->ep_interval = 0;
-	}
+	xfer->ep_interval = usbh_get_interval(vendor->host, xfer->ep_type, ep_desc->bInterval);
 
-	RTK_LOGD(TAG, "%s EP%02X MPS=%d bInterval=%d interval=%ld\n",
-			 xfer_type, xfer->ep_num, xfer->ep_mps, ep_desc->bInterval, xfer->ep_interval);
+	RTK_LOGS(TAG, "[VEN] %s EP%02x MPS %d intv %d %d\n", xfer_type, xfer->ep_num, xfer->ep_mps, ep_desc->bInterval, xfer->ep_interval);
 
 	return HAL_OK;
 }
@@ -399,7 +395,7 @@ static void usbh_vendor_ctrl_process(usb_host_t *host)
 			usbh_vendor_dump_buf(vendor->ctrl_buf, USB_CTRL_BUF_LENGTH);
 		} else if (ret != HAL_BUSY) {
 			vendor->state = VENDOR_STATE_ERROR;
-			RTK_LOGE(TAG, "Fail to send control request, ret: %d\n", ret);
+			RTK_LOGS(TAG, "[VEN] Send CTRL fail, ret: %d\n", ret);
 		}
 		break;
 
@@ -428,12 +424,12 @@ static int usbh_vendor_init_xfer(usb_host_t *host, usbh_vendor_xfer_t *xfer, u16
 	if (pipe_num != 0xFFU) {
 		xfer->pipe_num = pipe_num;
 	} else {
-		RTK_LOGE(TAG, "Fail to allocate pipe for %s EP%02X\n", xfer_type, xfer->ep_num);
+		RTK_LOGS(TAG, "[VEN] Fail to alloc pipe for %s EP%02x\n", xfer_type, xfer->ep_num);
 		status = HAL_ERR_MEM;
 		goto exit;
 	}
 
-	RTK_LOGI(TAG, "Allocate pipe %d for %s EP%02X\n", pipe_num, xfer_type, xfer->ep_num);
+	//RTK_LOGS(TAG, "[ECMH] Alloc pipe %d for %s EP%02x\n", pipe_num, xfer_type, xfer->ep_num);
 
 	xfer->xfer_buf = (u8 *)usb_os_malloc(xfer_len);
 	if (xfer->xfer_buf == NULL) {
@@ -510,7 +506,7 @@ static int usbh_vendor_set_interface(usb_host_t *host, u8 if_num, u8 if_alt)
 		if (ret == HAL_OK) {
 			return HAL_OK ;
 		} else if (ret != HAL_BUSY) {
-			RTK_LOGE(TAG, "Fail to send control request, ret: %d\n", ret);
+			RTK_LOGS(TAG, "[VEN] Set CTRL itf fail %d\n", ret);
 			return ret;
 		}
 	} while (1);
@@ -534,7 +530,7 @@ static int usbh_vendor_attach(usb_host_t *host)
 	/* Get interface index */
 	interface = usbh_get_interface(host, VENDOR_CLASS_CODE, VENDOR_SUBCLASS_CODE, VENDOR_PROTOCOL);
 	if (interface == 0xFFU) {
-		RTK_LOGE(TAG, "Fail to find the interface for Vendor Class.");
+		RTK_LOGS(TAG, "[VEN] Get itf fail\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -551,12 +547,12 @@ static int usbh_vendor_attach(usb_host_t *host)
 
 	status = usbh_vendor_set_interface(host, interface, vendor->interface_id);
 	if (status != HAL_OK) {
-		RTK_LOGE(TAG, "Fail to set interface for Vendor Class.");
+		RTK_LOGS(TAG, "[VEN] Set itf fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
 	vendor_if_desc = usbh_get_interface_descriptor(host, interface, vendor->interface_id);
 	if (vendor_if_desc == NULL) {
-		RTK_LOGE(TAG, "Fail to get the interface descriptor for Vendor Class.");
+		RTK_LOGS(TAG, "[VEN] Get itf desc fail\n");
 		return HAL_ERR_PARA;
 	}
 

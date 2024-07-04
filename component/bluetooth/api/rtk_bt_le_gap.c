@@ -623,7 +623,7 @@ uint16_t rtk_bt_le_gap_stop_scan(void)
 }
 
 #if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
-uint16_t rtk_bt_le_gap_ext_scan_set_param(rtk_bt_le_ext_scan_param_t *p_param)
+uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 {
 	uint16_t ret = 0;
 
@@ -689,7 +689,7 @@ uint16_t rtk_bt_le_gap_ext_scan_set_param(rtk_bt_le_ext_scan_param_t *p_param)
 	return ret;
 }
 
-uint16_t rtk_bt_le_gap_ext_scan_start(void)
+uint16_t rtk_bt_le_gap_start_ext_scan(void)
 {
 	uint16_t ret = 0;
 
@@ -698,7 +698,7 @@ uint16_t rtk_bt_le_gap_ext_scan_start(void)
 	return ret;
 }
 
-uint16_t rtk_bt_le_gap_ext_scan_stop(void)
+uint16_t rtk_bt_le_gap_stop_ext_scan(void)
 {
 	uint16_t ret = 0;
 
@@ -1517,7 +1517,7 @@ static uint16_t rtk_bt_le_gap_connless_cte_tx_enable(uint8_t adv_handle, rtk_bt_
 
 	aod = (params->cte_type == RTK_BT_LE_GAP_CTE_TYPE_AOD_1US) || (params->cte_type == RTK_BT_LE_GAP_CTE_TYPE_AOD_2US);
 	if (aod && (!params->ant_ids || !RTK_BLE_GAP_CTE_NUM_ANT_IDS_VALUE_IN_RANGE(params->num_ant_ids))) {
-		BT_LOGD("CTE connectionless tx param antenna invalid, num_ant_ids=%u, ant_ids=%p\r\n", params->num_ant_ids, params->ant_ids);
+		BT_LOGD("CTE connectionless tx param antenna invalid, num_ant_ids=%u, ant_ids=%08x\r\n", params->num_ant_ids, params->ant_ids);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 

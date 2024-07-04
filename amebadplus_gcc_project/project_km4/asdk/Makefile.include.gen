@@ -193,6 +193,8 @@ IFLAGS               += -I$(BASEDIR)/component/wifi/common
 IFLAGS               += -I$(BASEDIR)/component/wifi/common/secure
 IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite
 IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite/rom
+#NAN
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/nan
 
 #INIC
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic

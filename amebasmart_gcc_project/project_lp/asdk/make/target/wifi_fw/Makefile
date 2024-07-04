@@ -29,7 +29,9 @@ CSRC +=$(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
        $(DIR)/wififw_init.c \
 	   $(DIR)/wififw_h2c.c \
        $(DIR)/wififw_txpkt.c \
+	   $(DIR)/wififw_bcnmode.c \
        $(DIR)/wififw_pwrctrl.c \
+   	   $(DIR_COMMON)/wififw_pwrctrl_common.c \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR)/wififw_interrupt_ctrl.c \
@@ -48,7 +50,6 @@ CSRC +=$(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
 	   $(DIR)/wififw_ra_new.c \
 	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR_COMMON)/wififw_task_common.c \
-	   $(DIR)/wififw_ps_dbg.c \
 	   $(DIR_COMMON)/wififw_ra_debug.c \
 	   $(DIR_COMMON)/wififw_ra_hl.c \
 	   $(DIR_COMMON)/wififw_ra_ll.c \

@@ -84,19 +84,20 @@ u32 uart_irq(void *data)
 
 	/* tx FIFO empty */
 	if (reg_lsr & RUART_BIT_TX_EMPTY) {
-		while (uart_obj->TxCount > 0) {
+		while (uart_obj->TxCount > 0 && UART_Writable(UART_DEV)) {
 			UART_CharPut(UART_DEV, *uart_obj->pTxBuf);
 			uart_obj->TxCount --;
 			uart_obj->pTxBuf ++;
 		}
 
-		if (0 == uart_obj->TxCount) {
+		/* TX_EMPTY: unmask status before amebagreen2 */
+		if (0 == uart_obj->TxCount && 1 == tx_busy) {
 			uart_send_string_done();
 		}
 	}
 
 	/* rx FIFO not empty and rx timeout */
-	if (reg_lsr & RUART_BIT_TIMEOUT_INT) {
+	if (reg_lsr & RUART_BIT_RXFIFO_INT || reg_lsr & RUART_BIT_TIMEOUT_INT) {
 		TransCnt = UART_ReceiveDataTO(UART_DEV, (u8 *)uart_obj->pRxBuf, uart_obj->RxCount, 1);
 		uart_obj->RxCount -= TransCnt;
 		uart_obj->pRxBuf += TransCnt;

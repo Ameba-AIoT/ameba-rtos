@@ -34,11 +34,7 @@ else
         Q:=@
 	ECHO:=@echo
 endif
-ifeq (${V},3)
-DAILY_BUILD = 1
-else
-DAILY_BUILD = 0
-endif
+DAILY_BUILD = ${V}
 export ABS_ROOTDIR MAKE_INCLUDE_GEN HOSTCC Q ECHO
 
 
@@ -70,8 +66,7 @@ LINK_APP_LIB =
 LINK_THIRD_APP_LIB =
 .PHONY: all build_target_folder menuconfig clean build_libraries make_wifi_lib
 
-APP_LIB = $(APP_LIB_DIR)/lib_wps.a \
-	$(APP_LIB_DIR)/lib_httpc.a \
+APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
 	$(APP_LIB_DIR)/lib_httpd.a \
 	$(APP_LIB_DIR)/lib_websocket.a \
 	$(APP_LIB_DIR)/lib_ipnat.a \
@@ -225,7 +220,6 @@ make_subdirs_lib_img2:
 ifeq ($(CONFIG_WLAN),y)
 # build AP libs
 ifeq ($(CONFIG_AS_INIC_AP), y)
-	@make -C make/wps all
 	@make -C make/network/httpc all
 	@make -C make/network/httpd all
 	@make -C make/network/websocket all
@@ -352,19 +346,15 @@ endif
 	@echo "========== Image manipulating end =========="
 
 code_analyze:
-ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
 	fi
 	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
-         $(STATIC_ANALYZE_PYTHON); \
+         $(STATIC_ANALYZE_PYTHON) $(DAILY_BUILD); \
 	fi
 
 	@echo "========== Image analyze end =========="
-else
-	@echo "daily build"
-endif
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #
 #*****************************************************************************#

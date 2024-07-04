@@ -39,7 +39,7 @@ Setup Guide
 	2. Type command "make all EXAMPLE=usbh_vendor" under auto_build to build the images.
 	3. Download the generated images under auto_build to Ameba board.
 	4. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-		[VENDOR] USB host vendor demo started...
+		[VND] USBH vendor demo start
 	5. Connect the vendor-specific USB device (e.g. another Ameba board running usbd_vendor_new application) to the USB port of
 	the board with USB cable.
 	6. Reset and check the test log via LOGUART console, make sure there is no error reported and the transfer success rate is

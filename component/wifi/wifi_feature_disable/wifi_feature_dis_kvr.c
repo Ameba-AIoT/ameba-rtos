@@ -59,7 +59,7 @@ void rtw_roam_nb_discover(void)
 
 }
 
-int rm_post_event(void *a, u32 rmid, u8 evid)
+int rm_post_event(u8 a, u32 rmid, u8 evid)
 {
 	UNUSED(a);
 	UNUSED(rmid);
@@ -137,6 +137,12 @@ void rtw_set_to_roam(u8 to_roam)
 #endif
 
 #ifndef CONFIG_WIFI_11R_ENABLE
+u8 rtw_ft_check_en(void *a)
+{
+	UNUSED(a);
+	return 0;
+}
+
 void rtw_ft_info_init(void)
 {
 

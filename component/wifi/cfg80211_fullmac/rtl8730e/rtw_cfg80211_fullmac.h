@@ -93,6 +93,7 @@
 #include <linux/mmc/sdio_func.h>
 #include "inic_sdio.h"
 #include "rtw_sdio.h"
+#include "rtw_ioctl.h"
 #endif
 
 #include "rtw_llhw_event.h"
@@ -117,6 +118,10 @@
 #define ETH_ALEN			6
 #define FUNC_NDEV_FMT			"%s(%s)"
 #define FUNC_NDEV_ARG(ndev)		__func__, ndev->name
+
+#ifdef CONFIG_FULLMAC_HCI_SDIO
+#define CONFIG_WOWLAN
+#endif
 
 /******************************************************************/
 /***************** Definitions for cfg80211_ops. ******************/

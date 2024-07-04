@@ -12,7 +12,9 @@
 #include "os_wrapper_specific.h"
 #include <assert.h>
 
+#ifndef PLATFORM_FREERTOS_ROM
 static_assert(RTOS_TICK_RATE_HZ == configTICK_RATE_HZ, "Incorrect RTOS_TICK_RATE_HZ value config");
+#endif
 
 /* defines for systick timer */
 #if (defined ARM_CORE_CM4) || (defined ARM_CORE_CM0)

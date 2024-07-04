@@ -37,8 +37,8 @@ By default, BOD works `under interrupt mode`.
 * On AmebaSmart
   - Under interrupt mode
 	1. After Boot-up, log `"Supply voltage under 2.67V triggers bod interrupt!!!"` will be displayed.
-	2. Change supply voltage `from 3.3V to 1.80V~2.67V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called.
-	3. Recover supply voltage to `above 2.87V`.
+	2. Change supply voltage `from 3.3V to 1.80V~2.67V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called, log "BOD interrupt" will be displayed.
+	3. Recover supply voltage to `above 2.87V` to make the circuit work properly.
 
   - Under reset mode
 	1. After Boot-up, log `"Supply voltage under 2.67V and recover it to above 2.87V causes bod reset!!!"` will be displayed.
@@ -47,8 +47,8 @@ By default, BOD works `under interrupt mode`.
 * On AmebaLite
   - Under interrupt mode
 	1. After Boot-up, log `"Supply voltage under 2.54V triggers bod interrupt!!!"` will be displayed.
-	2. Change supply voltage `from 3.3V to 1.80V~2.54V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called.
-	3. Recover supply voltage to `above 2.83V`.
+	2. Change supply voltage `from 3.3V to 1.80V~2.54V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called, log "BOD interrupt" will be displayed.
+	3. Recover supply voltage to `above 2.83V` to make the circuit work properly.
 
   - Under reset mode
 	1. After Boot-up, log `"Supply voltage under 2.54V and recover it to above 2.83V causes bod reset!!!"` will be displayed.
@@ -58,8 +58,8 @@ By default, BOD works `under interrupt mode`.
 * On AmebaDplus
   - Under interrupt mode
 	1. After Boot-up, log `"Supply voltage under 2.21V triggers bod interrupt!!!"` will be displayed.
-	2. Change supply voltage `from 3.3V to 1.80V~2.21V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called.
-	3. Recover supply voltage to `above 2.50V`.
+	2. Change supply voltage `from 3.3V to 1.80V~2.21V` to `trigger bod interrupt`, and registered `"bor_irq_handler"` will be called, log "BOD interrupt" will be displayed.
+	3. Recover supply voltage to `above 2.50V` to make the circuit work properly.
 
   - Under reset mode
 	1. After Boot-up, log `"Supply voltage under 2.21V and recover it to above 2.50V causes bod reset!!!"` will be displayed.

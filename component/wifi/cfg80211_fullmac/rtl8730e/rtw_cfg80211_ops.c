@@ -107,6 +107,13 @@ int cfg80211_rtw_scan_done_indicate(unsigned int scanned_AP_num, void *user_data
 	global_idev.mlme_priv.pscan_req_global = NULL;
 	global_idev.mlme_priv.b_in_scan = false;
 
+#ifndef CONFIG_FULLMAC_HCI_IPC
+	/* wakeup xmit thread if there are pending packets */
+	if (llhw_xmit_pending_q_num() > 0) {
+		llhw_xmit_wakeup_thread();
+	}
+#endif
+
 	return 0;
 }
 
@@ -199,6 +206,7 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
 	struct _rtw_scan_param_t scan_param = {0};
+	struct cfg80211_scan_info info;
 
 	/* coherent alloc: revise vir addr will be mapped to phy addr. Send phy addr to rtos by ipc. */
 	u8 *channel_list_vir = NULL;
@@ -306,21 +314,34 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 		llhw_wifi_set_gen_ie(wlan_idx, wps_info.wps_probe_ie, wps_info.wps_probe_ielen, P2PWPS_PROBE_REQ_IE);
 	}
 
-	ret = llhw_wifi_scan(&scan_param, ssid_len, 0);
-	if (ret < 0) {
-		//_rtw_cfg80211_surveydone_event_callback(padapter, request);
-		struct cfg80211_scan_info info;
+	if (global_idev.mlme_priv.b_in_scan) {
 		memset(&info, 0, sizeof(info));
 		info.aborted = 0;
 		cfg80211_scan_done(request, &info);
-		dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
-		if (!global_idev.mlme_priv.b_in_scan) {
-			global_idev.mlme_priv.pscan_req_global = NULL;
-		}
+		dev_dbg(global_idev.fullmac_dev, "%s: scan is in progress..", __FUNCTION__);
 	} else {
 		global_idev.mlme_priv.b_in_scan = true;
-		global_idev.mlme_priv.pscan_req_global = request;
-		dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) start.", __FUNCTION__, request);
+
+		ret = llhw_wifi_scan(&scan_param, ssid_len, 0);
+		if (ret < 0) {
+			memset(&info, 0, sizeof(info));
+			info.aborted = 0;
+			cfg80211_scan_done(request, &info);
+			dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
+
+			global_idev.mlme_priv.b_in_scan = false;
+			global_idev.mlme_priv.pscan_req_global = NULL;
+
+#ifndef CONFIG_FULLMAC_HCI_IPC
+			/* wakeup xmit thread if there are pending packets */
+			if (llhw_xmit_pending_q_num() > 0) {
+				llhw_xmit_wakeup_thread();
+			}
+#endif
+		} else {
+			global_idev.mlme_priv.pscan_req_global = request;
+			dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) start.", __FUNCTION__, request);
+		}
 	}
 
 	if (ssid_vir) {
@@ -503,8 +524,8 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 			sme->ssid, sme->ssid_len, sme->channel->center_freq,
 			sme->bssid[0], sme->bssid[1], sme->bssid[2], sme->bssid[3], sme->bssid[4], sme->bssid[5],
 			sme->privacy, sme->key, sme->key_len, sme->key_idx, sme->auth_type);
-	dev_dbg(global_idev.fullmac_dev, " ciphers_pairwise=0x%x, cipher_group=0x%x,, akm_suites=0x%x\n",
-			sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
+	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x,, akm_suites=0x%x\n",
+			sme->crypto.wpa_versions, sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
 
 	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
 	connect_param.security_type = 0;
@@ -529,7 +550,14 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 		connect_param.security_type |= WEP_ENABLED;
 	} else if ((sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_CCMP)
 			   || (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_CCMP_256)) {
-		connect_param.security_type |= AES_ENABLED;
+
+		if (sme->crypto.wpa_versions == NL80211_WPA_VERSION_1) {
+			dev_err(global_idev.fullmac_dev, "not support CCMP cipher for WPA, use TKIP instead\n");
+			return -EPERM;
+		} else {
+			connect_param.security_type |= AES_ENABLED;
+		}
+
 	} else if (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_TKIP) {
 		connect_param.security_type |= TKIP_ENABLED;
 	} else if (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_AES_CMAC) {

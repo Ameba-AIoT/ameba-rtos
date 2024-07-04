@@ -640,6 +640,7 @@ _LONG_CALL_ void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex);
 _LONG_CALL_ u32 SSI_Busy(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_Writeable(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_Readable(SPI_TypeDef *spi_dev);
+_LONG_CALL_ u32 SPI_GetINTConfig(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetRxCount(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetTxCount(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetStatus(SPI_TypeDef *spi_dev);

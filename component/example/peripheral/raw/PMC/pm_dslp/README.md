@@ -26,10 +26,10 @@ AON_WAKEPIN_WAKEUP wakeup operation:
 	* On AmebaDplus, WAKEPIN_0 for PB_30, WAKEPIN_1 for PB_31
 
 3. How to compile :
-	- Copy main.c under folder src to project\realtek_amebaxxx_va0_example\src\src_xxx
-		* On AmebaSmart, src_xxx should be src_ap
-		* On AmebaLite, src_xxx should be src_KM4 if KM4 is AP core, or src_xxx should be src_KR4 if KR4 is AP core
-		* On AmebaDplus,src_xxx should be src_KM4
+	- Copy main.c under folder src to amebaxxx_gcc_project\project_xxx\src
+		* On AmebaSmart, project_xxx should be project_ap
+		* On AmebaLite, project_xxx should be project_km4 if KM4 is AP core, or project_xxx should be project_kr4 if KR4 is AP core
+		* On AmebaDplus, project_xxx should be project_km4
 
 
 # Expected Result
@@ -42,14 +42,17 @@ AON_WAKEPIN_WAKEUP wakeup operation:
 # Note
 
 1. if AON wakepin is wakeup source, sleep_wakepin_config[] in ameba_sleepcfg.c and pmap_func in ameba_pimapcfg.c also need be set.
-	- for wakepin high level wakeup
-		* set "config" attribute of corresponding wakepin to HIGH_LEVEL_WAKEUP in sleep_wakepin_config[]
-		* set Func PU/PD and Slp PU/PD of of corresponding wakepin to GPIO_PuPd_DOWN in pmap_func[]
-	- for wakepin low level wakeup
-		* set "config" attribute of corresponding wakepin to LOW_LEVEL_WAKEUP in sleep_wakepin_config[]
-		* set Func PU/PD and Slp PU/PD of of corresponding wakepin to GPIO_PuPd_UP in pmap_func[]
-2. For AmebaSmart, enter cmd "~tickps dslp" firstly after boot, let KM4 release lock is needed.
+  - for wakepin high level wakeup
+
+  	* set "config" attribute of corresponding wakepin to HIGH_LEVEL_WAKEUP in sleep_wakepin_config[]
+  	* set Func PU/PD and Slp PU/PD of of corresponding wakepin to GPIO_PuPd_DOWN in pmap_func[]
+  - for wakepin low level wakeup
+
+  	* set "config" attribute of corresponding wakepin to LOW_LEVEL_WAKEUP in sleep_wakepin_config[]
+  	* set Func PU/PD and Slp PU/PD of of corresponding wakepin to GPIO_PuPd_UP in pmap_func[]
+2. For AmebaSmart, enter cmd `~tickps dslp` firstly after boot, let KM4 release lock is needed.
 3. This example will not run in loop, which means it will keep active after wake up once.
+4. If there is any information that needs to be saved before the system sleeps, it can be saved in the three registers BKUP1 ~ BKUP3. BKUP0 has a special purpose and cannot be used to store information.
 
 # Supported IC
 

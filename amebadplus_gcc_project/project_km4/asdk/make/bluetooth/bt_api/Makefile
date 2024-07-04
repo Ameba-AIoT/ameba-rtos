@@ -8,8 +8,13 @@ include $(MAKE_INCLUDE_GEN)
 DIR = $(BASEDIR)/component/bluetooth
 BT_API_DIR = $(DIR)/api
 
-vpath %.c $(DIR)/api \
-		$(BT_API_DIR)/rtk_stack
+vpath %.c $(DIR)/api
+
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+vpath %.c $(BT_API_DIR)/zephyr_stack
+else
+vpath %.c $(BT_API_DIR)/rtk_stack
+endif
 
 CSRC += \
 	$(BT_API_DIR)/rtk_bt_common.c \
@@ -34,6 +39,14 @@ CSRC += \
 	$(BT_API_DIR)/rtk_bt_mesh_health_model.c \
 	$(BT_API_DIR)/rtk_bt_mesh_sensor_model.c
 
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+CSRC += \
+	$(BT_API_DIR)/zephyr_stack/zephyr_stack_api.c \
+	$(BT_API_DIR)/zephyr_stack/zephyr_stack_resource.c \
+	$(BT_API_DIR)/zephyr_stack/zephyr_stack_le_gap.c \
+	$(BT_API_DIR)/zephyr_stack/zephyr_stack_gattc.c \
+	$(BT_API_DIR)/zephyr_stack/zephyr_stack_gatts.c
+else
 CSRC += \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_api.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_le_gap.c \
@@ -54,6 +67,7 @@ CSRC += \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_generic_model.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_health_model.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_sensor_model.c
+endif
 
 OBJS = $(notdir $(CSRC:.c=.o))
 
@@ -73,7 +87,7 @@ all: CORE_TARGETS COPY_RAM_OBJS
 	# $(REMOVE) *.d
 
 #*****************************************************************************#
-#              GENERATE OBJECT FILE
+#                         GENERATE OBJECT FILE                                #
 #*****************************************************************************#
 CORE_TARGETS: $(OBJS)
 

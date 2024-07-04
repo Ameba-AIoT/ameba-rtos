@@ -38,7 +38,7 @@ Setup Guide
 	2. Type command "make all EXAMPLE=usbh_cdc_acm" under auto_build to build the images.
 	3. Download the generated images under auto_build to Ameba board.
 	4. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-		[CDC_ACM] USB host cdc_acm demo started...
+		[ACM] USBH CDC ACM demo start
 	5. Connect the specific USB CDC ACM device (e.g. another Ameba board running usbd_cdc_acm_new application) to the USB port of
 	the board with USB cable.
 	6. Reset and check the test log via LOGUART console, make sure there is no error reported.
@@ -58,6 +58,14 @@ Setup Guide
 Parameter Setting and Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	None.
+
+Result description
+~~~~~~~~~~~~~~~~~~
+    On the serial console, USB CDC ACM host log will be printed
+        make sure there is no error reported. if the test run success, the console will show:
+        [ACM] Ctrl test PASS
+        [ACM] Bulk loopback test start, loopback times:100, size: 1024
+        [ACM] Bulk loopback test PASS
 
 Other Reference
 ~~~~~~~~~~~~~~~

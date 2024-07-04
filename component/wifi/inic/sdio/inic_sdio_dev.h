@@ -24,6 +24,7 @@ struct inic_sdio_priv_t {
 void inic_dev_init(void);
 void inic_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
 void inic_dev_send(struct spdio_buf_t *pbuf);
+u8 inic_dev_tx_path_avail(void);
 
 #endif
 

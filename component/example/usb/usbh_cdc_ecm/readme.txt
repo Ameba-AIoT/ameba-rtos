@@ -44,7 +44,7 @@ Setup Guide
 	5. Download the generated images under amebasmart_gcc_project/project_hp/asdk/image to Ameba board.
 	6. Reset the board, following log shall be printed on the LOGUART console and HDCP will start, make sure there is no
 	USB related error reported:
-		[CDC_ECM] USB host cdc_ecm demo started...
+		[ECM] USBH ECM demo start
 
 	To run USB CDC ECM host application on AP:
 	1. Type command "make menuconfig" under amebasmart_gcc_project and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:

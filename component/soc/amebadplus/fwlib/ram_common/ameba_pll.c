@@ -45,8 +45,8 @@ bool PLL_Calibration(u32 dst_clk)
 
 	/* calculate compensation normalized step */
 	target_per = (KILO_MUL * 1.0) / des_clk;
-	base_per   = (KILO_MUL * 1.0 * pll_sdm_reg) / (sys_pll / MILLION_DIV);
-	intp_per   = (KILO_MUL * 1.0 * (pll_sdm_reg + 1)) / (sys_pll / MILLION_DIV);
+	base_per = (KILO_MUL * 1.0 * pll_sdm_reg) / (sys_pll / MILLION_DIV);
+	intp_per = (KILO_MUL * 1.0 * (pll_sdm_reg + 1)) / (sys_pll / MILLION_DIV);
 
 	err_accu = target_per - base_per;
 	err_comp = intp_per - target_per;
@@ -250,39 +250,29 @@ u32 PLL_I2S_CLKGet(void)
   */
 float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
 {
-	u32 Temp;
-	u32 FOF_new;
+	u32 F0F_new;
 	float real_ppm = 0;
+	double step = 0.886973813872093;
+	u32 F0F_base = 5125;
 
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
 
-	/* set div.N */
-	Temp = PLL->PLL_CTRL1;
-	Temp &= ~PLL_MASK_DIVN_SDM;
-	Temp |= PLL_DIVN_SDM(15);
-	PLL->PLL_CTRL1 = Temp;
-
-	/* adjust fo.N, fo.f */
-	Temp = PLL->PLL_CTRL3;
-
 	if (action == PLL_FASTER) {                    /* VCO:688P128M VCO/7=98.304M */
-		FOF_new = 5125 + (u32)(ppm / 0.88697);     /* maximum of register is 8191,so ppm<=2719 */
+		F0F_new = F0F_base + (u32)(ppm / step + 0.5);     /* maximum of register is 8191,so ppm<=2719 */
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		FOF_new = 5125 - (u32)(ppm / 0.88697);
+		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
-		FOF_new = 5125;
+		F0F_new = F0F_base;
 	}
 
-	Temp &= ~(PLL_MASK_F0F_SDM | PLL_MASK_F0N_SDM);
-	Temp |= PLL_F0F_SDM(FOF_new) | PLL_F0N_SDM(1);
-	PLL->PLL_CTRL3 = Temp;
+	PLL->PLL_CTRL3 &= ~(PLL_MASK_F0F_SDM | PLL_MASK_F0N_SDM);
+	PLL->PLL_CTRL3 |= PLL_F0F_SDM(F0F_new) | PLL_F0N_SDM(1);
 
 	/* reset BIT_PLL_I2S_TRIG_RREQ_EN */
 	PLL->PLL_CTRL1 |= PLL_BIT_TRIG_FREQ;
 	PLL->PLL_CTRL1 &= ~PLL_BIT_TRIG_FREQ;
-
-	real_ppm = (double)fabs((double)FOF_new - (double)5125) * (double)1000000 / (double)8192 / (double)8 / (double)((double)17 + ((double)1 + (double)5125 /
-			   (double)8192) / (double)8);
 
 	return real_ppm;
 }
@@ -298,39 +288,29 @@ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
   */
 float PLL_I2S_45P1584M_ClkTune(float ppm, u32 action)
 {
-	u32 Temp;
-	u32 FOF_new;
+	u32 F0F_new;
 	float real_ppm = 0;
+	double step = 0.901052699869257;
+	u32 F0F_base = 3893;
 
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
 
-	/* set div.N */
-	Temp = PLL->PLL_CTRL1;
-	Temp &= ~PLL_MASK_DIVN_SDM;
-	Temp |= PLL_DIVN_SDM(14);
-	PLL->PLL_CTRL1 = Temp;
-
-	/* adjust fo.N, fo.f */
-	Temp = PLL->PLL_CTRL3;
-
 	if (action == PLL_FASTER) {                  /* VCO:677P376M VCO/15=45.1584M */
-		FOF_new = 3893 + (u32)(ppm / 0.90105);   /* maximum of register is 8191,so ppm<=3872 */
+		F0F_new = F0F_base + (u32)(ppm / step + 0.5);   /* maximum of register is 8191,so ppm<=3872 */
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		FOF_new = 3893 - (u32)(ppm / 0.90105);
+		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
-		FOF_new = 3893;
+		F0F_new = F0F_base;
 	}
 
-	Temp &= ~(PLL_MASK_F0F_SDM | PLL_MASK_F0N_SDM);
-	Temp |= PLL_F0F_SDM(FOF_new) | PLL_F0N_SDM(7);
-	PLL->PLL_CTRL3 = Temp;
+	PLL->PLL_CTRL3 &= ~(PLL_MASK_F0F_SDM | PLL_MASK_F0N_SDM);
+	PLL->PLL_CTRL3 |= PLL_F0F_SDM(F0F_new) | PLL_F0N_SDM(7);
 
 	/* reset BIT_PLL_I2S_TRIG_RREQ_EN */
 	PLL->PLL_CTRL1 |= PLL_BIT_TRIG_FREQ;
 	PLL->PLL_CTRL1 &= ~PLL_BIT_TRIG_FREQ;
-
-	real_ppm = (double)fabs((double)FOF_new - (double)3893) * (double)1000000 / (double)8192 / (double)8 / (double)((double)16 + ((double)7 + (double)3893 /
-			   (double)8192) / (double)8);
 
 	return real_ppm;
 }
@@ -383,10 +363,10 @@ void PLL_ClkSet(u32 PllClk)
 
 	if (PllClk > PLL_600M) {
 		//PLL increased to 700M.
-		PLL->PLL_CTRL0 &= ~ PLL_MASK_REG_RS_SET;
+		PLL->PLL_CTRL0 &= ~PLL_MASK_REG_RS_SET;
 		PLL->PLL_CTRL0 |= PLL_REG_RS_SET(PLL_RS_5K);
 	} else {
-		PLL->PLL_CTRL0 &= ~ PLL_MASK_REG_RS_SET;
+		PLL->PLL_CTRL0 &= ~PLL_MASK_REG_RS_SET;
 		PLL->PLL_CTRL0 |= PLL_REG_RS_SET(PLL_RS_3K_XTAL_26M);
 	}
 

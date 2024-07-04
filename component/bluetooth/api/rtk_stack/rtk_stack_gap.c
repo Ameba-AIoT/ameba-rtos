@@ -75,7 +75,7 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_CONN_IND: {
 		rtk_bt_ecfc_conn_req_ind_t *p_ind = NULL;
 		T_GAP_ECFC_CONN_IND *p_info = (T_GAP_ECFC_CONN_IND *)p_buf;
-		BT_LOGD("GAP_ECFC_CONN_IND: proto_id %d, conn_handle %d, remote_mtu %d, cid_num %d, cid %d %d %d %d %d, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x, identity_id %d\r\n",
+		BT_LOGD("GAP_ECFC_CONN_IND: proto_id %d, conn_handle %d, remote_mtu %d, cid_num %d, cid %d %d %d %d %d, bd_addr %02x:%02x:%02x:%02x:%02x:%02x, bd_type 0x%x, identity_id %d\r\n",
 				p_info->proto_id, p_info->conn_handle, p_info->remote_mtu, p_info->cid_num,
 				p_info->cid[0], p_info->cid[1], p_info->cid[2], p_info->cid[3], p_info->cid[4],
 				p_info->bd_addr[5], p_info->bd_addr[4], p_info->bd_addr[3], p_info->bd_addr[2], p_info->bd_addr[1], p_info->bd_addr[0],
@@ -89,7 +89,7 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	}
 	case GAP_ECFC_CONN_RSP: {
 		T_GAP_ECFC_CONN_RSP *p_rsp = (T_GAP_ECFC_CONN_RSP *)p_buf;
-		BT_LOGD("GAP_ECFC_CONN_RSP: proto_id %d, cid_num %d, cause 0x%x, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x\r\n",
+		BT_LOGD("GAP_ECFC_CONN_RSP: proto_id %d, cid_num %d, cause 0x%x, bd_addr %02x:%02x:%02x:%02x:%02x:%02x, bd_type 0x%x\r\n",
 				p_rsp->proto_id, p_rsp->cid_num, p_rsp->cause,
 				p_rsp->bd_addr[5], p_rsp->bd_addr[4], p_rsp->bd_addr[3], p_rsp->bd_addr[2], p_rsp->bd_addr[1], p_rsp->bd_addr[0],
 				p_rsp->bd_type);
@@ -107,7 +107,7 @@ uint16_t app_ecfc_callback(void *p_buf, T_GAP_ECFC_MSG msg)
 	case GAP_ECFC_CONN_CMPL: {
 		rtk_bt_ecfc_conn_cmpl_ind_t *p_ind = NULL;
 		T_GAP_ECFC_CONN_CMPL_INFO *p_info = (T_GAP_ECFC_CONN_CMPL_INFO *)p_buf;
-		BT_LOGD("GAP_ECFC_CONN_CMPL: proto_id %d, cause 0x%x, conn_handle %d, ds_data_offset %d, bd_addr %02X:%02X:%02X:%02X:%02X:%02X, bd_type 0x%x\r\n",
+		BT_LOGD("GAP_ECFC_CONN_CMPL: proto_id %d, cause 0x%x, conn_handle %d, ds_data_offset %d, bd_addr %02x:%02x:%02x:%02x:%02x:%02x, bd_type 0x%x\r\n",
 				p_info->proto_id, p_info->cause, p_info->conn_handle, p_info->ds_data_offset,
 				p_info->bd_addr[5], p_info->bd_addr[4], p_info->bd_addr[3], p_info->bd_addr[2], p_info->bd_addr[1], p_info->bd_addr[0],
 				p_info->bd_type);

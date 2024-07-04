@@ -239,7 +239,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 	temp_src_ratio = presample->last_ratio;
 	input_index = presample->last_position;
 
-	// BT_LOGA("%s in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s in_count: %d, out_count: %d, in_used: %d, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 
 	while (input_index < 1.0 && out_gen < out_count) {
@@ -259,7 +259,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 	rem = fmod_one(input_index);
 	in_used += channels * lrint(input_index - rem);
 	input_index = rem;
-	// BT_LOGA("%s Main in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Main in_count: %d, out_count: %d, in_used: %d, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	/* Main processing loop. */
 	while (out_gen < out_count && in_used + channels * input_index < in_count) {
@@ -268,7 +268,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 		}
 
 		if (in_used < (long)channels && input_index < 1.0) {
-			BT_LOGE("%s Something unexpected happened in_used : %ld     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
+			BT_LOGE("%s Something unexpected happened in_used : %d     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
 			return 0;
 		};
 
@@ -282,7 +282,7 @@ static uint32_t resample_process_f32(rtk_bt_audio_resample_t *presample, float *
 		in_used += channels * lrint(input_index - rem);
 		input_index = rem;
 	};
-	// BT_LOGA("%s Out in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Out in_count: %d, out_count: %d, in_used: %d, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	if (in_used > in_count) {
 		input_index += (in_used - in_count) / channels;
@@ -321,7 +321,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 	temp_src_ratio = presample->last_ratio;
 	input_index = presample->last_position;
 
-	// BT_LOGA("%s in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s in_count: %d, out_count: %d, in_used: %d, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 
 	while (input_index < 1.0 && out_gen < out_count) {
@@ -341,7 +341,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 	rem = fmod_one(input_index);
 	in_used += channels * lrint(input_index - rem);
 	input_index = rem;
-	// BT_LOGA("%s Main in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Main in_count: %d, out_count: %d, in_used: %d, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	/* Main processing loop. */
 	while (out_gen < out_count && in_used + channels * input_index < in_count) {
@@ -350,7 +350,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 		}
 
 		if (in_used < (long)channels && input_index < 1.0) {
-			BT_LOGE("%s Something unexpected happened in_used : %ld     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
+			BT_LOGE("%s Something unexpected happened in_used : %d     channels : %d     input_index : %f \r\n", __func__, in_used, (int)channels, input_index);
 			return 0;
 		};
 
@@ -364,7 +364,7 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 		in_used += channels * lrint(input_index - rem);
 		input_index = rem;
 	};
-	// BT_LOGA("%s Out in_count: %ld, out_count: %ld, in_used: %ld, src_ratio: %f, input_index: %f \r\n ", __func__,
+	// BT_LOGA("%s Out in_count: %d, out_count: %d, in_used: %d, src_ratio: %f, input_index: %f \r\n ", __func__,
 	//  in_count, out_count, in_used, temp_src_ratio, input_index);
 	if (in_used > in_count) {
 		input_index += (in_used - in_count) / channels;

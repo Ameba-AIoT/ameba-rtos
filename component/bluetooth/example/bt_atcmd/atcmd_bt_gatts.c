@@ -86,23 +86,29 @@ static int atcmd_bt_gatts_indicate(int argc, char **argv)
 #if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
 /* add for EMC test */
-uint8_t gatts_loop_send_task_running = 0;
+struct gatts_tx_loop_param {
+	uint16_t conn_handle;
+	uint16_t interval;
+	uint32_t tx_count;
+};
+static struct gatts_tx_loop_param gatts_tx = {0};
+
+static uint8_t gatts_loop_send_task_running = 0;
 static void gatts_loop_send_task_entry(void *ctx)
 {
-	uint32_t param = (uint32_t)ctx;
-	uint16_t conn_handle = param & 0xFFFF;
-	uint16_t interval = (param >> 16) & 0xFFFF;
+	struct gatts_tx_loop_param *param = (struct gatts_tx_loop_param *)ctx;
+	uint32_t cnt = 0;
 
 	while (true) {
-		simple_ble_srv_cccd_indicate(conn_handle);
-		simple_ble_srv_cccd_notify(conn_handle);
-		battery_cccd_notify(conn_handle);
-		heart_rate_measurement_cccd_notify(conn_handle);
+		simple_ble_srv_cccd_notify(param->conn_handle);
 		if (!gatts_loop_send_task_running) {
 			break;
 		}
-
-		osif_delay(interval);
+		cnt++;
+		if (param->tx_count && cnt >= param->tx_count) {
+			break;
+		}
+		osif_delay(param->interval);
 	}
 	gatts_loop_send_task_running = 2;
 	osif_task_delete(NULL);
@@ -110,24 +116,24 @@ static void gatts_loop_send_task_entry(void *ctx)
 
 static int atcmd_bt_gatts_loop_send(int argc, char **argv)
 {
-	(void)argc;
 	void *handle;
 	uint8_t enable;
-	uint16_t conn_handle;
-	uint16_t interval;
-	uint32_t param;
 
 	enable = str_to_int(argv[0]);
 
 	if (enable) {
-		conn_handle = str_to_int(argv[1]);
-		interval = str_to_int(argv[2]);
+		gatts_tx.conn_handle = str_to_int(argv[1]);
+		gatts_tx.interval = str_to_int(argv[2]);
+		if (argc >= 4) {
+			gatts_tx.tx_count = str_to_int(argv[3]);
+		} else {
+			gatts_tx.tx_count = 0;
+		}
 
-		param = (interval << 16) | conn_handle;
 		gatts_loop_send_task_running = 1;
 
 		if (false == osif_task_create(&handle, "gatts_loop_send_task",
-									  gatts_loop_send_task_entry, (void *)param,
+									  gatts_loop_send_task_entry, (void *)(&gatts_tx),
 									  1024, 2))  {
 			gatts_loop_send_task_running = 0;
 			GATTS_AT_PRINTK("GATTS loop send task create failed");
@@ -221,7 +227,7 @@ static const cmd_table_t gatts_cmd_table[] = {
 	{"indicate",    atcmd_bt_gatts_indicate,    6, 7},
 #if ((defined(CONFIG_BT_PERIPHERAL) && CONFIG_BT_PERIPHERAL) || \
     (defined(CONFIG_BT_SCATTERNET) && CONFIG_BT_SCATTERNET))
-	{"loop_send",   atcmd_bt_gatts_loop_send,   2, 4},
+	{"loop_send",   atcmd_bt_gatts_loop_send,   2, 5},
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	{"cte_set_param",   atcmd_bt_gatts_cte_set_param,   3, 15},
 #endif

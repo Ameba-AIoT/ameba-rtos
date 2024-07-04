@@ -24,8 +24,8 @@ static const char *TAG = "CODEC";
 
 /* Exported functions ------------------------------------------------------------*/
 /** @defgroup AUDIO_CODEC_Exported_Functions AUDIO_CODEC Exported Functions
-  * @{
-  */
+* @{
+*/
 
 /**
   * @brief	Get audio codec base address.
@@ -34,9 +34,9 @@ static const char *TAG = "CODEC";
 AUDIO_CODEC_TypeDef *AUDIO_CODEC_GetAddr(void)
 {
 	if (TrustZone_IsSecure()) {
-		return (AUDIO_CODEC_TypeDef *) AUDIO_REG_BASE_S;
+		return (AUDIO_CODEC_TypeDef *)AUDIO_REG_BASE_S;
 	} else {
-		return (AUDIO_CODEC_TypeDef *) AUDIO_REG_BASE;
+		return (AUDIO_CODEC_TypeDef *)AUDIO_REG_BASE;
 	}
 }
 
@@ -211,17 +211,57 @@ void AUDIO_CODEC_SetADCSRSrc(u32 src, u32 sr)
 
 	Tmp = audio_base->CODEC_CLOCK_CONTROL_4;
 	if (src == SOURCE0) {
-		Tmp &= ~ AUD_MASK_SAMPLE_RATE_0;
+		Tmp &= ~AUD_MASK_SAMPLE_RATE_0;
 		Tmp |= AUD_SAMPLE_RATE_0(sr);
 	} else {
-		Tmp &= ~ AUD_MASK_SAMPLE_RATE_1;
+		Tmp &= ~AUD_MASK_SAMPLE_RATE_1;
 		Tmp |= AUD_SAMPLE_RATE_1(sr);
 	}
 	audio_base->CODEC_CLOCK_CONTROL_4 = Tmp;
 }
 
 /**
-  * @brief  Enable or disable per AD and AD fifo channel clock.
+  * @brief  Enable or disable per AD fifo channel clock.
+  * @param  ad_chn: select ad channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ADCHN1
+  *			   @arg ADCHN2
+  * @param  newstate: enable or disable per ad channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ENABLE
+  *			   @arg DISABLE
+  * @return  None
+  */
+void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate)
+{
+	AUDIO_CODEC_TypeDef *audio_base = AUDIO_CODEC_GetAddr();
+	assert_param(IS_CODEC_ADCHN_SEL(ad_chn));
+
+	switch (ad_chn) {
+
+	case ADCHN1:
+		if (newstate == ENABLE) {
+			audio_base->CODEC_CLOCK_CONTROL_1 |= AUD_BIT_AD_0_FIFO_EN;
+		} else {
+			audio_base->CODEC_CLOCK_CONTROL_1 &= ~AUD_BIT_AD_0_FIFO_EN;
+		}
+		break;
+	case ADCHN2:
+		if (newstate == ENABLE) {
+			audio_base->CODEC_CLOCK_CONTROL_1 |= AUD_BIT_AD_1_FIFO_EN;
+		} else {
+			audio_base->CODEC_CLOCK_CONTROL_1 &= ~AUD_BIT_AD_1_FIFO_EN;
+		}
+		break;
+
+	default:
+		break;
+
+	}
+}
+
+/**
+  * @brief  Enable or disable per AD channel clock.
   * @param  ad_chn: select ad channel.
   *			 This parameter can be one of the following values:
   *			   @arg ADCHN1
@@ -242,17 +282,17 @@ void AUDIO_CODEC_EnableADC(u32 ad_chn, u32 newstate)   //enable adc
 
 	case ADCHN1:
 		if (newstate == ENABLE) {
-			audio_base->CODEC_CLOCK_CONTROL_1 |= AUD_BIT_AD_0_EN | AUD_BIT_AD_0_FIFO_EN;
+			audio_base->CODEC_CLOCK_CONTROL_1 |= AUD_BIT_AD_0_EN;
 		} else {
-			audio_base->CODEC_CLOCK_CONTROL_1 &= ~(AUD_BIT_AD_0_EN | AUD_BIT_AD_0_FIFO_EN);
+			audio_base->CODEC_CLOCK_CONTROL_1 &= ~AUD_BIT_AD_0_EN;
 		}
 		break;
 	case ADCHN2:
 
 		if (newstate == ENABLE) {
-			audio_base->CODEC_CLOCK_CONTROL_1 |= AUD_BIT_AD_1_EN | AUD_BIT_AD_1_FIFO_EN;
+			audio_base->CODEC_CLOCK_CONTROL_1 |= AUD_BIT_AD_1_EN;
 		} else {
-			audio_base->CODEC_CLOCK_CONTROL_1 &= ~(AUD_BIT_AD_1_EN | AUD_BIT_AD_1_FIFO_EN);
+			audio_base->CODEC_CLOCK_CONTROL_1 &= ~AUD_BIT_AD_1_EN;
 		}
 		break;
 
@@ -284,7 +324,7 @@ void AUDIO_CODEC_SetADCVolume(u32 adc_sel, u32 gain)
 
 	Tmp = audio_base->CODEC_ADC_CH_CTRL[adc_sel - 1].CODEC_ADC_x_CONTROL_1;
 	Tmp &= ~AUD_MASK_ADC_x_AD_GAIN;
-	Tmp |= AUD_ADC_x_AD_GAIN(gain) ;
+	Tmp |= AUD_ADC_x_AD_GAIN(gain);
 	audio_base->CODEC_ADC_CH_CTRL[adc_sel - 1].CODEC_ADC_x_CONTROL_1 = Tmp;
 }
 
@@ -419,7 +459,7 @@ void AUDIO_CODEC_SetADCMute(u32 adc_sel, u32 newstate)
 
 /**
   * @brief  Set per adc mix mute ad input path to mute or unmute.
-  * @param  ad_chn: select adc input path channel
+  * @param  adc_num: select adc input path channel
   *			 This parameter can be one of the following values:
   *			   @arg ADC1
   *			   @arg ADC2
@@ -452,7 +492,7 @@ void AUDIO_CODEC_SetADCMixMute(u32 adc_num, u32 type, u32 newstate)
 
 /**
   * @brief  Enable per dmic channel filter clock.
-  * @param  dmic_num: select dmic channel
+  * @param  adc_num: adc filter channel
   *			 This parameter can be one of the following values:
   *			   @arg ADC1
   *			   @arg ADC2
@@ -530,12 +570,12 @@ void AUDIO_CODEC_SetDmicClk(u32 clk, u32 newstate)
 }
 
 /**
-  * @brief  select DMIC input ADC channel.
-  * @param  dmic_num: select adc input path channel
+  * @brief  select DMIC source of input ADC channel.
+  * @param  ad_chn: select adc input path channel
   *			 This parameter can be one of the following values:
   *			   @arg ADCHN1
   *			   @arg ADCHN2
-  * @param  newstate: select DMIC number.
+  * @param  dmic_num: select DMIC number.
   *			 This parameter can be one of the following values:
   *			   @arg DMIC1
   *			   @arg DMIC2
@@ -636,11 +676,11 @@ void AUDIO_CODEC_SetADCEQFilter(u32 ad_chn, u32 band_sel, CODEC_EQFilterCoef *EQ
 	}
 
 	if (eq_base_addr) {
-		eq_base_addr[band_sel].CODEC_BIQUAD_H0_x  = EQFilterCoefPoint->H0_Q;
-		eq_base_addr[band_sel].CODEC_BIQUAD_B1_x  = EQFilterCoefPoint->B1_Q;
-		eq_base_addr[band_sel].CODEC_BIQUAD_B2_x  = EQFilterCoefPoint->B2_Q;
-		eq_base_addr[band_sel].CODEC_BIQUAD_A1_x  = EQFilterCoefPoint->A1_Q;
-		eq_base_addr[band_sel].CODEC_BIQUAD_A2_x  = EQFilterCoefPoint->A2_Q;
+		eq_base_addr[band_sel].CODEC_BIQUAD_H0_x = EQFilterCoefPoint->H0_Q;
+		eq_base_addr[band_sel].CODEC_BIQUAD_B1_x = EQFilterCoefPoint->B1_Q;
+		eq_base_addr[band_sel].CODEC_BIQUAD_B2_x = EQFilterCoefPoint->B2_Q;
+		eq_base_addr[band_sel].CODEC_BIQUAD_A1_x = EQFilterCoefPoint->A1_Q;
+		eq_base_addr[band_sel].CODEC_BIQUAD_A2_x = EQFilterCoefPoint->A2_Q;
 	} else {
 		RTK_LOGE(TAG, "please check audio codec register!\n");
 	}
@@ -829,6 +869,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 	if (I2S_InitStruct->CODEC_SelRxI2STdm == I2S_NOTDM) {
 		AUDIO_CODEC_EnableADC(ADCHN1, ENABLE);
 		AUDIO_CODEC_EnableADC(ADCHN2, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN1, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN2, ENABLE);
 		AUDIO_CODEC_SetADCVolume(ADC1, 0X2F);
 		AUDIO_CODEC_SetADCVolume(ADC2, 0X2F);
 		AUDIO_CODEC_SetADCHPF(ADC1, 3, ENABLE);

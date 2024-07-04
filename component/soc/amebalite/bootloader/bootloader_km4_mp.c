@@ -497,6 +497,8 @@ void BOOT_Image1(void)
 	/* Set SOC Clock according to core voltage */
 	BOOT_SocClk_Update();
 
+	LDO_PSRAM(ENABLE);
+
 	BOOT_Log_Init();
 
 	RTK_LOGI(TAG, "IMG1 ENTER MSP:[%08lx]\n", __get_MSP());

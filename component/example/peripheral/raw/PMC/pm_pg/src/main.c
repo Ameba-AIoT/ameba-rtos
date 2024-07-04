@@ -113,7 +113,7 @@ int main(void)
 {
 	app_pmu_init();
 
-	if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_aontimer_wakeup_task, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_aontimer_wakeup_task, NULL, 3072, (1)) != SUCCESS) {
 		printf("Cannot create pmu_aontimer_wakeup_task demo task\n\r");
 	}
 

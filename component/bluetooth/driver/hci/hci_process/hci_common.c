@@ -245,7 +245,7 @@ static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
 			case OPCODE_CONTROLLER_RSVD:
 				break;
 			default:
-				BT_LOGE("Unknown opcode 0x%lx\r\n", opcode);
+				BT_LOGE("Unknown opcode 0x%x\r\n", opcode);
 				break;
 			}
 			p_section += sizeof(opcode) + sizeof(length) + length;

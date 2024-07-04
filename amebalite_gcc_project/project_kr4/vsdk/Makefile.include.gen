@@ -183,6 +183,7 @@ IFLAGS               += -I$(BASEDIR)/component/lwip/api
 IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/src
 IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/src/crypto
 IFLAGS               += -I$(BASEDIR)/component/os_dep
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/nan
 IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_supplicant
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fast_connect
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/amebalite/include

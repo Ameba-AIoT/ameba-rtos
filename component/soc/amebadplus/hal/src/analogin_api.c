@@ -82,6 +82,7 @@ void analogin_init(analogin_t *obj, PinName pin)
 
 	/* Initialize ADC */
 	ADC_StructInit(&ADC_InitStruct);
+	ADC_InitStruct.ADC_OpMode = ADC_AUTO_MODE;
 	ADC_InitStruct.ADC_CvlistLen = 0;
 	ADC_Init(&ADC_InitStruct);
 
@@ -106,10 +107,10 @@ float analogin_read(analogin_t *obj)
 	/* Clear FIFO */
 	ADC_ClearFIFO();
 
-	/* SW trigger to sample */
-	ADC_SWTrigCmd(ENABLE);
+	/* Sample under auto mode */
+	ADC_AutoCSwCmd(ENABLE);
 	while (ADC_Readable() == 0);
-	ADC_SWTrigCmd(DISABLE);
+	ADC_AutoCSwCmd(DISABLE);
 
 	data = ADC_Read();
 	value = (float)(ADC_GET_DATA_GLOBAL(data)) / (float)(AnalogDatFull);
@@ -133,10 +134,10 @@ uint16_t analogin_read_u16(analogin_t *obj)
 	/* Clear FIFO */
 	ADC_ClearFIFO();
 
-	/* SW trigger to sample */
-	ADC_SWTrigCmd(ENABLE);
+	/* Sample under auto mode */
+	ADC_AutoCSwCmd(ENABLE);
 	while (ADC_Readable() == 0);
-	ADC_SWTrigCmd(DISABLE);
+	ADC_AutoCSwCmd(DISABLE);
 
 	data = ADC_Read();
 

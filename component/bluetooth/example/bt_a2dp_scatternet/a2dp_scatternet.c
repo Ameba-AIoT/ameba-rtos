@@ -1286,7 +1286,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND: {
 		rtk_bt_le_auth_key_display_ind_t *key_dis_ind =
 			(rtk_bt_le_auth_key_display_ind_t *)param;
-		BT_LOGA("[APP] Auth passkey display: %ld, conn_handle:%d\r\n",
+		BT_LOGA("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
 				key_dis_ind->passkey,
 				key_dis_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
@@ -1307,7 +1307,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
 		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind =
 			(rtk_bt_le_auth_key_cfm_ind_t *)param;
-		BT_LOGA("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
+		BT_LOGA("[APP] Auth passkey confirm: %d, conn_handle: %d. "  \
 				"Please comfirm if the passkeys are equal!\r\n",
 				key_cfm_ind->passkey,
 				key_cfm_ind->conn_handle);
@@ -1506,7 +1506,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gatts_app_callback(uint8_t event, void
 	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
-			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
+			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02x. Remote client supports EATT.\r\n",
 					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
@@ -1614,7 +1614,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gattc_app_callback(uint8_t event, void
 				p_ind->conn_handle, p_ind->is_found, p_ind->load_from_storage);
 		if ((p_ind->char_flag & RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG) &&
 			(p_ind->server_features[0] & RTK_BT_GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT)) {
-			BT_LOGA("[APP] Server supported features: 0x%02X, support EATT.\r\n", p_ind->server_features[0]);
+			BT_LOGA("[APP] Server supported features: 0x%02x, support EATT.\r\n", p_ind->server_features[0]);
 		}
 
 		return RTK_BT_EVT_CB_OK;
@@ -1828,7 +1828,7 @@ static void a2dp_demo_bond_flush_thread(void *ctx)
 					BT_LOGE("[A2DP Demo] Get bond addr failed! err: 0x%x", ret);
 					continue;
 				}
-				BT_LOGA("[A2DP Demo] Get Bond addr %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+				BT_LOGA("[A2DP Demo] Get Bond addr %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 						bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 				/* 3. sync with a2dp_demo_bond_table */
 				pbond_info = a2dp_demo_find_bond_info_by_mac_addr(bd_addr);
@@ -1912,7 +1912,7 @@ static void a2dp_demo_bond_info_dump(void)
 		pbond_info = a2dp_demo_find_bond_info_by_priority(i + 1);
 		if (pbond_info) {
 			BT_LOGA(">> %d. ", (int)(i + 1));
-			BT_LOGA(" mac addr %02X:%02X:%02X:%02X:%02X:%02X  ", pbond_info->bd_addr[5],
+			BT_LOGA(" mac addr %02x:%02x:%02x:%02x:%02x:%02x  ", pbond_info->bd_addr[5],
 					pbond_info->bd_addr[4],
 					pbond_info->bd_addr[3],
 					pbond_info->bd_addr[2],
@@ -1941,9 +1941,12 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+		BT_LOGA("[BR GAP] Scan %02x:%02x:%02x:%02x:%02x:%02x Name %s \r\n",
 				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
 				p_result->name);
+		BT_AT_PRINT("+BRGAP:inquiry_result,%02x:%02x:%02x:%02x:%02x:%02x,%s\r\n",
+					p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+					p_result->name);
 		break;
 	}
 
@@ -1968,7 +1971,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL connection indication %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
@@ -1985,14 +1988,14 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 			a2dp_demo_auto_reconnect_try_count = 0;
 			osif_timer_stop(&reconnect_timer);
 		}
-		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL connection success %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
-		BT_LOGA("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL sniff mode from %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				p_sniff->bd_addr[5], p_sniff->bd_addr[4],
 				p_sniff->bd_addr[3], p_sniff->bd_addr[2],
 				p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
@@ -2002,7 +2005,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_ACTIVE: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL active %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
@@ -2022,18 +2025,23 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 		if (a2dp_demo_bond_info_flush) {
 			a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_FLUSH_EVENT);
 		}
-		BT_LOGA("[BR GAP] Set link key of %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] Set link key of %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL disconnection %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
 				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
 				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
 		BT_LOGA("[BR GAP] ACL disc cause 0x%x \r\n", p_acl_disc_event->cause);
+		BT_AT_PRINT("+BRGAP:disc,%02x:%02x:%02x:%02x:%02x:%02x,0x%x\r\n",
+					p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+					p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+					p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0],
+					p_acl_disc_event->cause);
 		/* cause 0x113 -> Remote User Terminate*/
 		/* cause 0x108 -> Conn Timeout*/
 		if (a2dp_demo_auto_reconnect) {
@@ -2073,7 +2081,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 	switch (evt_code) {
 	case RTK_BT_AVRCP_EVT_CONN_IND: {
 		memcpy((void *)bd_addr, param, 6);
-		BT_LOGA("[AVRCP] Receive AVRCP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[AVRCP] Receive AVRCP connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
@@ -2086,7 +2094,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		curr_volume = volume;
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
-		BT_LOGA("[AVRCP] absolute volume set %.2f \r\n", audio_track_volume);
+		BT_LOGA("[AVRCP] absolute volume set %d \r\n", (int)(audio_track_volume * 100));
 		break;
 	}
 
@@ -2128,34 +2136,42 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		audio_track_volume = 1.0 * curr_volume / VOL_MAX;
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
 		BT_LOGA("[AVRCP] volume request set %d \r\n", (int)(audio_track_volume * 100));
+		BT_AT_PRINT("+BTAVRCP:volume_change,%d\r\n", (int)(audio_track_volume * 100));
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_CONN_CMPL: {
 		BT_LOGA("[AVRCP] Connection Completion \r\n");
 		rtk_bt_avrcp_conn_cmpl_t *conn_cmpl = (rtk_bt_avrcp_conn_cmpl_t *)param;
-		BT_LOGA("[AVRCP] AVRCP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[AVRCP] AVRCP connection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3], conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
+		BT_AT_PRINT("+BTAVRCP:conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					conn_cmpl->bd_addr[5], conn_cmpl->bd_addr[4], conn_cmpl->bd_addr[3],
+					conn_cmpl->bd_addr[2], conn_cmpl->bd_addr[1], conn_cmpl->bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_DISCONN_CMPL: {
 		BT_LOGA("[AVRCP] Disconnection Completion \r\n");
 		rtk_bt_avrcp_disconn_cmpl_t *disconn_cmpl = (rtk_bt_avrcp_disconn_cmpl_t *)param;
-		BT_LOGA("[AVRCP] AVRCP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[AVRCP] AVRCP disconnection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3], disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
+		BT_AT_PRINT("+BTAVRCP:disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					disconn_cmpl->bd_addr[5], disconn_cmpl->bd_addr[4], disconn_cmpl->bd_addr[3],
+					disconn_cmpl->bd_addr[2], disconn_cmpl->bd_addr[1], disconn_cmpl->bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ: {
 		rtk_bt_avrcp_sub_event_t *psub_event = (rtk_bt_avrcp_sub_event_t *)param;
+		BT_AT_PRINT("+BTAVRCP:status,%u\r\n", psub_event->avrcp_play_status);
 		switch (psub_event->avrcp_play_status) {
-		case 0x00: {
+		case RTK_BT_AVRCP_STATUS_STOPPED: {
 			BT_LOGA("[AVRCP]: Stopped \r\n");
 			break;
 		}
 
-		case 0x01: {
+		case RTK_BT_AVRCP_STATUS_PLAYING: {
 			BT_LOGA("[AVRCP]: Playing \r\n");
 			if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 				if (a2dp_task.run) {
@@ -2165,7 +2181,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			break;
 		}
 
-		case 0x02: {
+		case RTK_BT_AVRCP_STATUS_PAUSED: {
 			BT_LOGA("[AVRCP]: Paused \r\n");
 			if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 				if (a2dp_task.run) {
@@ -2180,13 +2196,23 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			break;
 		}
 
-		case 0x03: {
+		case RTK_BT_AVRCP_STATUS_FWD_SEEK: {
 			BT_LOGA("[AVRCP]: FWD_SEEK \r\n");
 			break;
 		}
 
-		case 0x04: {
+		case RTK_BT_AVRCP_STATUS_REV_SEEK: {
 			BT_LOGA("[AVRCP]: REV_SEEK \r\n");
+			break;
+		}
+
+		case RTK_BT_AVRCP_STATUS_FAST_FWD: {
+			BT_LOGA("[AVRCP]: FAST_FWD \r\n");
+			break;
+		}
+
+		case RTK_BT_AVRCP_STATUS_REWIND: {
+			BT_LOGA("[AVRCP]: REWIND \r\n");
 			break;
 		}
 
@@ -2482,7 +2508,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 
 	case RTK_BT_A2DP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_a2dp_sdp_attr_info_t *p_info = (rtk_bt_a2dp_sdp_attr_info_t *)param;
-		BT_LOGA("[A2DP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] SDP Scan %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				p_info->bd_addr[5], p_info->bd_addr[4],
 				p_info->bd_addr[3], p_info->bd_addr[2],
 				p_info->bd_addr[1], p_info->bd_addr[0]);
@@ -2492,7 +2518,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_A2DP_EVT_CONN_IND: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] Receive A2DP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] Receive A2DP connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -2501,8 +2527,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		src_a2dp_credits = RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS;
 		memcpy((void *)remote_bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] A2DP connection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] A2DP connection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
+		BT_AT_PRINT("+BTA2DP:conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2], remote_bd_addr[1], remote_bd_addr[0]);
 	}
 	break;
 
@@ -2527,8 +2555,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] A2DP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] A2DP disconnection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTA2DP:disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
@@ -2579,9 +2609,14 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_OPEN: {
 		BT_LOGA("[A2DP] A2DP STREAM is opened \r\n");
 		rtk_bt_a2dp_stream_open_t *p_stream_open_t = (rtk_bt_a2dp_stream_open_t *)param;
-		BT_LOGA("[A2DP] A2DP stream open with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-				p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3], p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0]);
+		BT_LOGA("[A2DP] A2DP stream open with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3], p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1],
+				p_stream_open_t->bd_addr[0]);
 		BT_LOGA("[A2DP] A2DP stream open max packet length is %d \r\n", (int)p_stream_open_t->max_pkt_len);
+		BT_AT_PRINT("+BTA2DP:stream_open,%02x:%02x:%02x:%02x:%02x:%02x,%d\r\n",
+					p_stream_open_t->bd_addr[5], p_stream_open_t->bd_addr[4], p_stream_open_t->bd_addr[3],
+					p_stream_open_t->bd_addr[2], p_stream_open_t->bd_addr[1], p_stream_open_t->bd_addr[0],
+					(int)p_stream_open_t->max_pkt_len);
 	}
 	break;
 
@@ -2590,6 +2625,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 
 		BT_LOGA("[A2DP] BT_EVENT_A2DP_STREAM_START_IND active_a2dp_idx %d, streaming_fg %d \r\n",
 				pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
+		BT_AT_PRINT("+BTA2DP:start,%d,%d\r\n",
+					pa2dp_stream->active_a2dp_link_index, pa2dp_stream->stream_cfg);
 		if (a2dp_demo_audio_track_hdl) {
 			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
@@ -2630,8 +2667,10 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_STOP: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] Stream stop from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] Stream stop from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTA2DP:stop,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			app_a2dp_src_send_flag = false;
 		}
@@ -2644,7 +2683,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[A2DP] Stream close from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[A2DP] Stream close from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SRC) {
 			app_a2dp_src_send_flag = false;
@@ -2685,7 +2724,7 @@ static void a2dp_demo_reconnect_timer_handle(void *arg)
 	(void)arg;
 
 	if (a2dp_demo_auto_reconnect_try_count --) {
-		BT_LOGA("[A2DP]: try reconnect to %02X:%02X:%02X:%02X:%02X:%02X\r\n", remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2],
+		BT_LOGA("[A2DP]: try reconnect to %02x:%02x:%02x:%02x:%02x:%02x\r\n", remote_bd_addr[5], remote_bd_addr[4], remote_bd_addr[3], remote_bd_addr[2],
 				remote_bd_addr[1], remote_bd_addr[0]);
 		rtk_bt_a2dp_connect(remote_bd_addr);
 		osif_timer_restart(&reconnect_timer, RTK_BT_DEMO_RECONNECT_TIMER_INTERVAL);

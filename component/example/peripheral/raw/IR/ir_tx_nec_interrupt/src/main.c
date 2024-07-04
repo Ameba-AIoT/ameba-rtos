@@ -39,7 +39,7 @@ void IR_tx_done_callback(void)
 		}
 	}
 
-	printf("TX %2x%2x\n", ir_code[1], ir_code[0]);
+	printf("TX 0x%02x%02x\n", ir_code[1], ir_code[0]);
 
 	/* Encode by NEC protocol */
 	data[0] = ir_code[0];
@@ -84,10 +84,10 @@ u32 IR_irq_handler(void *data)
 
 			if (buf_index == MAX_TX_SIZE) {
 				/* make sure IR has enough time to send TX FIFO data */
-				DelayMs(50);
-
+				// DelayMs(50);
+				while (IR_FSMRunning(IR_DEV) && !(IR_GetINTStatus(IR_DEV) & IR_BIT_TX_FIFO_EMPTY));
 				IR_Cmd(IR_DEV, IR_InitStruct.IR_Mode, DISABLE);
-				DelayMs(1);
+				DelayMs(80);
 				if (tx_done != _TRUE) {
 					IR_tx_done_callback();
 				}
@@ -187,7 +187,7 @@ void IR_TX_thread(void)
 	IR_MaskINTConfig(IR_DEV, IR_BIT_TX_FIFO_LEVEL_INT_MASK, DISABLE);
 	IR_ClearINTPendingBit(IR_DEV, IR_BIT_TX_FIFO_LEVEL_INT_CLR);
 
-	printf("start TX %2x%2x\n", ir_code[1], ir_code[0]);
+	printf("start TX \n 0x%02x%02x\n", ir_code[1], ir_code[0]);
 
 	/* Encode by NEC protocol */
 	data[0] = ir_code[0];
@@ -212,7 +212,7 @@ int main(void)
 {
 	Board_IR_Init(PINMUX_S1);
 
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"IR_TX_THREAD", (rtos_task_t)IR_TX_thread, NULL, 256 * 4, 5)) {
+	if (SUCCESS != rtos_task_create(NULL, (const char *const)"IR_TX_THREAD", (rtos_task_t)IR_TX_thread, NULL, 1024 * 3, 5)) {
 		printf("create IR TX thread error\n");
 	}
 

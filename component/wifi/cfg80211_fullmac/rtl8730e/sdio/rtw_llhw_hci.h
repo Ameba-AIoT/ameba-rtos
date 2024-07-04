@@ -26,20 +26,10 @@ struct event_priv_t {
 	struct sk_buff				*rx_api_ret_msg;
 
 	struct completion			api_ret_sema; /* sema to wait for API calling done */
+#ifdef CONFIG_SDIO_BRIDGE
+	struct completion			bridge_scan_done_sema; /* sema to wait for scan done */
+#endif
 };
-
-struct msg_priv_t {
-	struct list_head		queue_head; /* msg queue */
-	spinlock_t			lock; /* queue lock */
-	atomic_t				msg_num;
-
-	struct work_struct		msg_work; /* message task in linux */
-	struct mutex			msg_work_mutex; /* message task lock */
-
-	void	(*task_hdl)(void *);    /* the haddle function of task */
-	bool					b_queue_working; /* flag to notice the queue is working */
-};
-
 
 struct recv_priv_t {
 	struct task_struct			*sdio_rx_thread;

@@ -21,12 +21,13 @@ Description
 Setup Guide
 ~~~~~~~~~~~
 	GCC:use CMD "make all EXAMPLE=wifi_csi" to compile wifi_csi example(under ap project or single core project).
+	Before compile imgae, use CMD "make menuconfig" and select CONFIG WIFI->Enable WIFI CSI.
 
 Parameter Setting and Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	1. Enviornment setup: Wifi csi test need at least two device.
-		1.1 DUT_IC as softap or softap + sta mode: another board for slave node must be required.
-		1.2 DUT_IC as sta mode: another board for master node must be required.
+		1.1 DUT_IC as softap or softap + sta mode: another board(ameba IC as sta mode or others) for slave node must be required.
+		1.2 DUT_IC as sta mode: another board(ameba IC as softap mode or realAP) for master node must be required.
 
 	2. For DUT_IC.
 		2.1 download the image

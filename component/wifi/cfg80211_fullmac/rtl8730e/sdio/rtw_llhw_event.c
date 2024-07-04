@@ -394,7 +394,9 @@ int llhw_event_init(struct inic_device *idev)
 	/* initialize the mutex to send event_priv message. */
 	mutex_init(&(event_priv->send_mutex));
 	init_completion(&event_priv->api_ret_sema);
-
+#ifdef CONFIG_SDIO_BRIDGE
+	init_completion(&event_priv->bridge_scan_done_sema);
+#endif
 	/* initialize event tasklet */
 	INIT_WORK(&(event_priv->api_work), llhw_event_task);
 
@@ -409,7 +411,9 @@ void llhw_event_deinit(void)
 	mutex_destroy(&(event_priv->send_mutex));
 
 	complete_release(&event_priv->api_ret_sema);
-
+#ifdef CONFIG_SDIO_BRIDGE
+	complete_release(&event_priv->bridge_scan_done_sema);
+#endif
 	return;
 }
 

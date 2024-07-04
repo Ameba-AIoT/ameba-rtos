@@ -15,7 +15,7 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-
+static const char *TAG = "VND";
 #define CONFIG_USBH_VENDOR_HOT_PLUG_TEST 1     /* Hot plug / memory leak test */
 
 /* Private types -------------------------------------------------------------*/
@@ -38,10 +38,8 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
 	.main_task_priority = 3U,
-	.isr_task_priority = 4U,
-	.rx_fifo_size = 0x200U,
-	.nptx_fifo_size = 0x100U,
-	.ptx_fifo_size = 0x100U,
+	.isr_task_priority  = 4U,
+	.ptx_fifo_first     = 1U,
 };
 
 static usbh_vendor_cb_t vendor_usr_cb = {
@@ -57,7 +55,7 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 static int vendor_cb_detach(void)
 {
-	printf("\n[VENDOR] DETACH\n");
+	RTK_LOGS(TAG, "[VND] DETACH\n");
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	rtos_sema_give(vendor_detach_sema);
 #endif
@@ -66,7 +64,7 @@ static int vendor_cb_detach(void)
 
 static int vendor_cb_setup(void)
 {
-	printf("\n[VENDOR] SETUP\n");
+	RTK_LOGS(TAG, "[VND] SETUP\n");
 	vendor_is_ready = 1;
 	return HAL_OK;
 }
@@ -105,17 +103,17 @@ static void vendor_hotplug_thread(void *param)
 
 			rtos_time_delay_ms(10);
 
-			printf("\n[VENDOR] Free heap size: 0x%08lX\n", rtos_mem_get_free_heap_size());
+			RTK_LOGS(TAG, "[VND] Free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 			if (ret != HAL_OK) {
-				printf("\n[VENDOR] Fail to init USB host controller: %d\n", ret);
+				RTK_LOGS(TAG, "[VND] Init USBH fail: %d\n", ret);
 				break;
 			}
 
 			ret = usbh_vendor_init(&vendor_usr_cb);
 			if (ret != HAL_OK) {
-				printf("\n[VENDOR] Fail to init USB host vendor driver: %d\n", ret);
+				RTK_LOGS(TAG, "[VND] Init vendor fail: %d\n", ret);
 				usbh_deinit();
 				break;
 			}
@@ -138,13 +136,11 @@ void example_usbh_vendor_thread(void *param)
 	rtos_sema_create(&vendor_detach_sema, 0U, 1U);
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (status != HAL_OK) {
-		printf("\n[VENDOR] Fail to init USB host controller: %d\n", status);
 		goto error_exit;
 	}
 
 	status = usbh_vendor_init(&vendor_usr_cb);
 	if (status < 0) {
-		printf("\n[VENDOR] Fail to init USB host vendor driver: %d\n", status);
 		usbh_deinit();
 		goto error_exit;
 	}
@@ -152,7 +148,6 @@ void example_usbh_vendor_thread(void *param)
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	status = rtos_task_create(&task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U * 2, 2U);
 	if (status != SUCCESS) {
-		printf("\n[VENDOR] Fail to create USBH vendor hotplug memory leak check thread\n");
 		usbh_vendor_deinit();
 		usbh_deinit();
 		goto error_exit;
@@ -164,6 +159,7 @@ void example_usbh_vendor_thread(void *param)
 error_exit:
 	rtos_sema_delete(vendor_detach_sema);
 example_exit:
+	RTK_LOGS(TAG, "[VND] USBH vendor demo stop\n");
 	rtos_task_delete(NULL);
 }
 
@@ -174,10 +170,10 @@ void example_usbh_vendor(void)
 	int status;
 	rtos_task_t task;
 
-	printf("\n[VENDOR] USB host vendor demo started...\n");
+	RTK_LOGS(TAG, "[VND] USBH vendor demo start\n");
 	status = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL, 1024U * 2, 2U);
 	if (status != SUCCESS) {
-		printf("\n[VENDOR] Fail to create USB host vendor thread: %d\n", status);
+		RTK_LOGS(TAG, "[VND] Create thread fail\n");
 	}
 }
 

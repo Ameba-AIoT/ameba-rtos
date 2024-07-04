@@ -158,14 +158,13 @@ int wifi_get_disconn_reason_code(unsigned short *reason_code);
 int wifi_get_associated_client_list(rtw_client_list_t	*client_list_buffer);
 
 /**
- * @brief  delete a STA
- * @param[in]  wlan_idx: the wlan interface index, should be SOFTAP_WLAN_INDEX.
+ * @brief  delete a STA for softap
  * @param[in]  hwaddr: the pointer to the MAC address of the STA
  * 	which will be deleted
  * @return  RTW_SUCCESS or RTW_ERROR
  * @note  this function should be used when operating as AP
  */
-int wifi_del_station(unsigned char wlan_idx, unsigned char *hwaddr);
+int wifi_del_station(unsigned char *hwaddr);
 
 /**
  * @brief  set channel
@@ -491,6 +490,8 @@ void wifi_speaker_setting(u8 mode, u8 thresh, u8 relay_en);
  * @note:
  *    For amebadplus, the power range varies for different channels or IC, the recommended power range is -2 ~ 23 dBm,
  *    if exceeds the power range, the power may be inaccurate, and will be changed to the boundary value.
+ *    For amebasmart&amebalite, the recommended power range is -24 ~ 24 dBm.
+ *    For both, we suggest setting the power not to exceed the power by rate table.
  * @return  RTW_SUCCESS or RTW_ERROR
  */
 int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);

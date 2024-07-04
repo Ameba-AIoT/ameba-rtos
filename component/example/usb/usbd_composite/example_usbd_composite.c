@@ -14,7 +14,7 @@
 #include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
-
+static const char *TAG = "COMP";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_COMPOSITE_HOTPLUG							1
@@ -64,7 +64,7 @@ static void composite_cb_status_changed(u8 status);
 
 static usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
-	.dma_enable = 0U,
+	.dma_enable = 1U,
 	.isr_priority = CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY,
 	.intr_use_ptx_fifo = 0U,
 	.nptx_max_epmis_cnt = 100U,
@@ -103,8 +103,8 @@ static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 	composite_hid_mouse_data_t data;
 
 	if (argc == 0U) {
-		printf("[USB] Invalid arguments, usage:\n"
-			   "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
+		RTK_LOGS(TAG, "[COMP] Invalid arguments, usage:\n"
+				 "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -134,7 +134,7 @@ static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 		data.wheel = _strtoul((const char *)(argv[5]), (char **)NULL, 10);
 	}
 
-	printf("[USB] Send HID mouse data\n");
+	RTK_LOGS(TAG, "[COMP] Send mouse data\n");
 
 	composite_hid_send_device_data(&data);
 
@@ -191,7 +191,6 @@ static int composite_cdc_acm_cb_deinit(void)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	//printf("\n[USB] RX data0=0x%02x,len=%d bytes\n", buf[0], len);
 	return usbd_composite_cdc_acm_transmit(buf, len);
 }
 
@@ -229,7 +228,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case COMP_CDC_SET_LINE_CODING:
-		printf("[USB] COMP_CDC_SET_LINE_CODING\n");
 		if (req->wLength == COMP_CDC_ACM_LINE_CODING_SIZE) {
 			lc->bitrate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
 			lc->format = buf[4];
@@ -239,7 +237,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case COMP_CDC_GET_LINE_CODING:
-		printf("[USB] COMP_CDC_GET_LINE_CODING\n");
 		buf[0] = (u8)(lc->bitrate & 0xFF);
 		buf[1] = (u8)((lc->bitrate >> 8) & 0xFF);
 		buf[2] = (u8)((lc->bitrate >> 16) & 0xFF);
@@ -250,7 +247,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case COMP_CDC_SET_CONTROL_LINE_STATE:
-		printf("[USB] COMP_CDC_SET_CONTROL_LINE_STATE\n");
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -259,7 +255,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		*/
 		composite_cdc_acm_ctrl_line_state = req->wValue;
 		if (composite_cdc_acm_ctrl_line_state & 0x01) {
-			printf("[USB] VCOM port activated\n");
+			RTK_LOGS(TAG, "[COMP] VCOM port activate\n");
 		}
 		break;
 
@@ -268,7 +264,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	default:
-		printf("[USB] Invalid CDC bRequest 0x%02X\n", req->bRequest);
+		RTK_LOGS(TAG, "[COMP] Invalid CDC bRequest 0x%02x\n", req->bRequest);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -282,26 +278,21 @@ static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 	switch (req->bRequest) {
 	case COMP_HID_SET_PROTOCOL:
-		printf("[USB] COMP_HID_SET_PROTOCOL\n");
 		composite_hid_protocol = req->wValue;
 		break;
 	case COMP_HID_GET_PROTOCOL:
-		printf("[USB] COMP_HID_GET_PROTOCOL\n");
 		buf[0] = (u8)(composite_hid_protocol & 0xFF);
 		break;
 	case COMP_HID_SET_REPORT:
-		printf("[USB] COMP_HID_SET_REPORT\n");
 		break;
 	case COMP_HID_SET_IDLE:
-		printf("[USB] COMP_HID_SET_IDLE\n");
 		composite_hid_idle_state = req->wValue >> 8;
 		break;
 	case COMP_HID_GET_IDLE:
-		printf("[USB] COMP_HID_GET_IDLE\n");
 		buf[0] = (u8)(composite_hid_idle_state & 0xFF);
 		break;
 	default:
-		printf("[USB] Invalid HID bRequest 0x%02X\n", req->bRequest);
+		RTK_LOGS(TAG, "[COMP] Invalid HID bRequest 0x%02x\n", req->bRequest);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -348,7 +339,7 @@ static void composite_hid_send_device_data(void *pdata)
 
 static void composite_cb_status_changed(u8 status)
 {
-	printf("\n[USB] USB status changed: %d\n", status);
+	RTK_LOGS(TAG, "[COMP] Status change: %d\n", status);
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);
@@ -365,17 +356,15 @@ static void composite_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-				printf("\n[USB] USB DETACHED\n");
+				RTK_LOGS(TAG, "[COMP] DETACHED\n");
 				usbd_composite_deinit();
 				ret = usbd_deinit();
 				if (ret != 0) {
-					printf("\n[USB] Fail to de-init USBD driver\n");
 					break;
 				}
-				printf("\n[USB] Free heap size: 0x%lx\n", rtos_mem_get_free_heap_size());
+				RTK_LOGS(TAG, "[COMP] Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&composite_cfg);
 				if (ret != 0) {
-					printf("\n[USB] Fail to re-init USBD driver\n");
 					break;
 				}
 				ret = usbd_composite_init(CONFIG_USBD_COMPOSITE_HID_CDC_ACM_BULK_OUT_XFER_SIZE,
@@ -385,18 +374,17 @@ static void composite_hotplug_thread(void *param)
 										  &composite_hid_usr_cb,
 										  &composite_cb);
 				if (ret != 0) {
-					printf("\n[USB] Fail to re-init USB composite class\n");
 					usbd_deinit();
 					break;
 				}
 			} else if (composite_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
-				printf("\n[USB] USB ATTACHED\n");
+				RTK_LOGS(TAG, "[COMP] ATTACHED\n");
 			} else {
-				printf("\n[USB] USB INIT\n");
+				RTK_LOGS(TAG, "[COMP] INIT\n");
 			}
 		}
 	}
-
+	RTK_LOGS(TAG, "[COMP] Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_COMPOSITE_HOTPLUG
@@ -416,7 +404,6 @@ static void example_usbd_composite_thread(void *param)
 
 	ret = usbd_init(&composite_cfg);
 	if (ret != HAL_OK) {
-		printf("[USB] Fail to init USB device driver\n");
 		goto exit_usbd_init_fail;
 	}
 
@@ -427,7 +414,6 @@ static void example_usbd_composite_thread(void *param)
 							  &composite_hid_usr_cb,
 							  &composite_cb);
 	if (ret != HAL_OK) {
-		printf("[USB] Fail to init USB composite class\n");
 		goto exit_usbd_composite_init_fail;
 	}
 
@@ -435,14 +421,13 @@ static void example_usbd_composite_thread(void *param)
 	ret = rtos_task_create(&task, "composite_hotplug_thread", composite_hotplug_thread, NULL,
 						   1024, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("[USB] Fail to create hotplug thread\n");
 		goto exit_create_check_task_fail;
 	}
 #endif
 
 	rtos_time_delay_ms(100);
 
-	printf("[USB] Composite demo started\n");
+	RTK_LOGS(TAG, "[COMP] USBD COMP demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -457,6 +442,7 @@ exit_usbd_composite_init_fail:
 	usbd_deinit();
 
 exit_usbd_init_fail:
+	RTK_LOGS(TAG, "[COMP] USBD COMP demo stop\n");
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	rtos_sema_delete(composite_attach_status_changed_sema);
 #endif
@@ -477,7 +463,7 @@ void example_usbd_composite(void)
 
 	ret = rtos_task_create(&task, "example_usbd_composite_thread", example_usbd_composite_thread, NULL, 1024, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		printf("[USB] Fail to create composite thread\n");
+		RTK_LOGS(TAG, "[COMP] Create USBD COMP thread fail\n");
 	}
 }
 

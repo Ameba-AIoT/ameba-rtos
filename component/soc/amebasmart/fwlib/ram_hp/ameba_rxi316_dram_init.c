@@ -905,11 +905,10 @@ gp_reg_config:
 	//ddrc->DDRC_IOCR |= DDRC_DYN_SRE(1);
 
 	if (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) {
-		ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
 		// start to init
 		/* ddrc drive cke here --> low */
 		ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
-
+		ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
 		// enable PWDPAN15N when phy and controller ready
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  | LSYS_BIT_PWDPAD15N_DQ | LSYS_BIT_PWDPAD15N_CA));
 

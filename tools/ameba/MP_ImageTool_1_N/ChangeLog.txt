@@ -116,3 +116,6 @@ ChangeLog:
                   (2) Add detail debug log in xmodem api
                   (3) Add retry for some cmds
 20240523  v2.5.23 Rename chips with soc names
+20240613  v2.5.24 (1) Support Dplus/Lite download image to sram
+                  (2) Fix download error in CLI mode
+                  (3) Update ChipErase command

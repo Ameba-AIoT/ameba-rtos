@@ -910,6 +910,9 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 
 	}
 
+	/*enable fs phase diver64*/
+	SPORTx->SP_RX_COUNTER1 |= SP_BIT_FS_PHASE_EN_D64;
+
 }
 
 /**
@@ -1567,7 +1570,9 @@ u32 AUDIO_SP_GetTXCounterVal(u32 index)
 u32 AUDIO_SP_GetTXPhaseVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	u32 tx_phase = (SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_FS_PHASE_RPT;
+	u32 tx_phase1 = (SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_FS_PHASE_RPT;
+	u32 tx_phase2 = ((SPORTx->SP_RX_LRCLK) & SP_BIT_TX_FS_PHASE_RPT_B5) >> 27;
+	u32 tx_phase = tx_phase1 + tx_phase2 * 32;
 	return tx_phase;
 }
 
@@ -1631,7 +1636,9 @@ u32 AUDIO_SP_GetRXCounterVal(u32 index)
 u32 AUDIO_SP_GetRXPhaseVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	u32 rx_phase = (SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_FS_PHASE_RPT;
+	u32 rx_phase1 = (SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_FS_PHASE_RPT;
+	u32 rx_phase2 = ((SPORTx->SP_RX_COUNTER1) & SP_BIT_RX_FS_PHASE_RPT_B5) >> 27;
+	u32 rx_phase = rx_phase1 + rx_phase2 * 32;
 	return rx_phase;
 }
 
@@ -1646,6 +1653,21 @@ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir)
 	SPORTx_DIR->SP_CTRL1 |= SP_BIT_DIRECT_MODE_EN;
 	SPORTx_DIR->SP_CTRL1 &= ~SP_MASK_DIRECT_SRC_SEL;
 	SPORTx_DIR->SP_CTRL1 |= SP_DIRECT_SRC_SEL(index_src);
+}
+
+/**
+  * @brief  Set SPORT WIFI TSFT phase latch mode.
+  * @param  index: select SPORT.
+  * @param  state: enable or disable.
+  */
+void AUDIO_SP_SetTSFTPhaseLatch(u32 index, u32 state)
+{
+	AUDIO_SPORT_TypeDef *SPORTx_DIR = AUDIO_DEV_TABLE[index].SPORTx;
+	if (state == ENABLE) {
+		SPORTx_DIR->SP_RX_BCLK |= SP_BIT_EN_TSFT_TRIG_LATCH;
+	} else {
+		SPORTx_DIR->SP_RX_BCLK &= ~SP_BIT_EN_TSFT_TRIG_LATCH;
+	}
 }
 
 /**

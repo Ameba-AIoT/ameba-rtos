@@ -31,11 +31,7 @@ endif
 ifeq (${V},2)
 CODE_ANA ?= 1
 endif
-ifeq (${V},3)
-DAILY_BUILD = 1
-else
-DAILY_BUILD = 0
-endif
+DAILY_BUILD = ${V}
 export ABS_ROOTDIR MAKE_INCLUDE_GEN HOSTCC ECHO Q
 
 
@@ -348,18 +344,14 @@ linker_loader:
 	@echo "========== Image manipulating end =========="
 	
 code_analyze:
-ifeq ($(DAILY_BUILD), 0)
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
 		$(CODE_ANALYZE_PYTHON) $(ANALYZE_MP_IMG) $(DAILY_BUILD); \
 	fi
 	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
-		$(STATIC_ANALYZE_PYTHON); \
+		$(STATIC_ANALYZE_PYTHON) $(DAILY_BUILD); \
 	fi
 	@echo "========== Image analyze end =========="
-else
-	@echo "daily build"
-endif
 
 code_extract:
 	@echo "========== Image extract start =========="

@@ -32,6 +32,15 @@ extern void *bt_log_mtx;
         }\
     }while(0)
 
+#define BT_LOG_PRINTS(level,...)     \
+    do {\
+        if (level <= BT_LOG_DEBUG_LEVEL) {\
+            BT_LOG_MUTEX_TAKE \
+            RTK_LOGS(NOTAG, __VA_ARGS__); \
+            BT_LOG_MUTEX_GIVE \
+        }\
+    }while(0)
+
 #define BT_BUF_PRINT(level, _str, _buf, _len)     \
     do {\
         if (level <= BT_LOG_DEBUG_LEVEL) {\
@@ -42,9 +51,9 @@ extern void *bt_log_mtx;
         }\
     }while(0)
 
-#define BT_LOGA(fmt,...)  BT_LOG_PRINT(BT_LOG_LEVEL_ALWAYS, fmt, ##__VA_ARGS__)
-#define BT_LOGE(fmt,...)  BT_LOG_PRINT(BT_LOG_LEVEL_ERROR, fmt, ##__VA_ARGS__)
-#define BT_LOGD(fmt,...)  BT_LOG_PRINT(BT_LOG_LEVEL_DEBUG, fmt, ##__VA_ARGS__)
+#define BT_LOGA(fmt,...)  BT_LOG_PRINTS(BT_LOG_LEVEL_ALWAYS, fmt, ##__VA_ARGS__)
+#define BT_LOGE(fmt,...)  BT_LOG_PRINTS(BT_LOG_LEVEL_ERROR, fmt, ##__VA_ARGS__)
+#define BT_LOGD(fmt,...)  BT_LOG_PRINTS(BT_LOG_LEVEL_DEBUG, fmt, ##__VA_ARGS__)
 
 /* [60344458] 01 02 0a 0b ...*/
 #define BT_DUMPD(_str, _buf, _len) BT_BUF_PRINT(BT_LOG_LEVEL_DEBUG, _str, _buf, _len)

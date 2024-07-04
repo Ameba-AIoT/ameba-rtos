@@ -8,6 +8,7 @@ MODULE_IFLAGS               += -I$(BASEDIR)/component/network/coap/include
 #                               VARIABLES	                              #
 #*****************************************************************************#
 LWIPDIR = $(BASEDIR)/component/lwip/lwip_v2.1.2
+LWIPAPI = $(BASEDIR)/component/lwip/api
 NETWORK = $(BASEDIR)/component/network
 
 vpath %.c $(NETWORK)/sntp \
@@ -20,7 +21,8 @@ vpath %.c $(NETWORK)/sntp \
 		$(LWIPDIR)/src/api \
 		$(NETWORK)/httpc \
 		$(NETWORK)/httpd \
-		$(NETWORK)/mDNS 
+		$(NETWORK)/mDNS \
+		$(LWIPAPI)
 
 #*****************************************************************************#
 #                               Source FILE LIST                              #
@@ -52,6 +54,7 @@ CSRC +=	\
 		$(LWIPDIR)/src/core/stats.c \
 		$(LWIPDIR)/src/core/sys.c \
 
+CSRC += $(LWIPAPI)/lwip_netconf.c
 
 #ifeq ($(CONFIG_HIGH_TP),y)
 #OBJS = 

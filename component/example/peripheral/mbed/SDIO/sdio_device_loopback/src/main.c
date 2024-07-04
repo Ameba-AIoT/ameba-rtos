@@ -111,18 +111,19 @@ void ex_spdio_thread(void *param)
 	UNUSED(param);
 	u32 i;
 
-	PAD_PullCtrl(_PB_23, GPIO_PuPd_UP);  //D2
-	PAD_PullCtrl(_PB_24, GPIO_PuPd_UP);  //D3
-	PAD_PullCtrl(_PB_25, GPIO_PuPd_UP);  //cmd
-	PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);  //clk
-	PAD_PullCtrl(_PB_27, GPIO_PuPd_UP);  //D0
-	PAD_PullCtrl(_PB_28, GPIO_PuPd_UP);  //D1
-	Pinmux_Config(_PB_23, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_24, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_25, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_26, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_27, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_28, PINMUX_FUNCTION_SDIO);
+	/* Group3 */
+	PAD_PullCtrl(_PB_6, GPIO_PuPd_UP);  //D2
+	PAD_PullCtrl(_PB_7, GPIO_PuPd_UP);  //D3
+	PAD_PullCtrl(_PB_8, GPIO_PuPd_UP);  //cmd
+	PAD_PullCtrl(_PB_9, GPIO_PuPd_UP);  //clk
+	PAD_PullCtrl(_PB_13, GPIO_PuPd_UP);  //D0
+	PAD_PullCtrl(_PB_14, GPIO_PuPd_UP);  //D1
+	Pinmux_Config(_PB_6, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_7, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_8, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_9, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_13, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_14, PINMUX_FUNCTION_SDIO);
 
 	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);
 

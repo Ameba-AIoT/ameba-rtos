@@ -632,7 +632,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND: {
 		rtk_bt_le_auth_key_display_ind_t *key_dis_ind =
 			(rtk_bt_le_auth_key_display_ind_t *)param;
-		BT_LOGA("[APP] Auth passkey display: %ld, conn_handle:%d\r\n",
+		BT_LOGA("[APP] Auth passkey display: %d, conn_handle:%d\r\n",
 				key_dis_ind->passkey,
 				key_dis_ind->conn_handle);
 		BT_AT_PRINT("+BLEGAP:passkey_display,%d,%d\r\n",
@@ -653,7 +653,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
 		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind =
 			(rtk_bt_le_auth_key_cfm_ind_t *)param;
-		BT_LOGA("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
+		BT_LOGA("[APP] Auth passkey confirm: %d, conn_handle: %d. "  \
 				"Please comfirm if the passkeys are equal!\r\n",
 				key_cfm_ind->passkey,
 				key_cfm_ind->conn_handle);
@@ -956,7 +956,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gatts_app_callback(uint8_t event, void
 	if (RTK_BT_GATTS_EVT_CLIENT_SUPPORTED_FEATURES == event) {
 		rtk_bt_gatts_client_supported_features_ind_t *p_ind = (rtk_bt_gatts_client_supported_features_ind_t *)data;
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
-			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT.\r\n",
+			BT_LOGA("[APP] Client Supported features is writed: conn_handle %d, features 0x%02x. Remote client supports EATT.\r\n",
 					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
@@ -1069,7 +1069,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gattc_app_callback(uint8_t event, void
 				p_ind->conn_handle, p_ind->is_found, p_ind->load_from_storage);
 		if ((p_ind->char_flag & RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG) &&
 			(p_ind->server_features[0] & RTK_BT_GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT)) {
-			BT_LOGA("[APP] Server supported features: 0x%02X, support EATT.\r\n", p_ind->server_features[0]);
+			BT_LOGA("[APP] Server supported features: 0x%02x, support EATT.\r\n", p_ind->server_features[0]);
 		}
 
 		return RTK_BT_EVT_CB_OK;

@@ -796,9 +796,12 @@ BaseType_t xPortStartScheduler(void)   /* PRIVILEGED_FUNCTION */
 #endif /* configENABLE_MPU */
 
 	/* Set system related IRQ */
-    __NVIC_SetVector((IRQn_Type)SVCall_IRQn, (u32)(void *)vPortSVCHandler);
-    __NVIC_SetVector((IRQn_Type)PendSV_IRQn, (u32)(void *)xPortPendSVHandler);
-    __NVIC_SetVector((IRQn_Type)SysTick_IRQn, (u32)(void *)xPortSysTickHandler);
+    //__NVIC_SetVector((IRQn_Type)SVCall_IRQn, (u32)(void *)vPortSVCHandler);
+    //__NVIC_SetVector((IRQn_Type)PendSV_IRQn, (u32)(void *)xPortPendSVHandler);
+    //__NVIC_SetVector((IRQn_Type)SysTick_IRQn, (u32)(void *)xPortSysTickHandler);
+	SVCall_irqfunc_set(vPortSVCHandler);
+	PendSV_irqfunc_set(xPortPendSVHandler);
+	Systick_irqfunc_set(xPortSysTickHandler);
 
 	/* Start the timer that generates the tick ISR. Interrupts are disabled
 	 * here already. */

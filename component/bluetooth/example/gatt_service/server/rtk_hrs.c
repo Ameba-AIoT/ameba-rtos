@@ -227,6 +227,7 @@ void hrs_read_hdl(void *data)
 
 void hrs_write_hdl(void *data)
 {
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_gatts_write_ind_t *p_write_ind = (rtk_bt_gatts_write_ind_t *)data;
 	rtk_bt_gatts_write_resp_param_t write_resp = {0};
 	write_resp.app_id = p_write_ind->app_id;
@@ -263,7 +264,8 @@ send_rsp:
 		return;
 	}
 
-	if (RTK_BT_OK == rtk_bt_gatts_write_resp(&write_resp)) {
+	ret = rtk_bt_gatts_write_resp(&write_resp);
+	if (RTK_BT_OK == ret) {
 		BT_LOGA("[APP] HRS response for client write succeed!\r\n");
 	} else {
 		BT_LOGE("[APP] HRS response for client write failed!\r\n");

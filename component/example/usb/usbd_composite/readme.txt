@@ -34,7 +34,7 @@ Setup Guide
         2. Type command "make all EXAMPLE=usbd_composite" under auto_build to build the images.
         3. Download the generated images under auto_build to Ameba board.
         4. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-			[USB] Composite demo started
+			[COMP] USBD COMP demo start
         5. Connect the USB port of Ameba board to PC with USB cable.
         6. Launch any serial port tool (e.g. Realtek Trace Tool), open the virtual serial port against the USB port of
            Ameba board, send messages to the Ameba board and the board will echo back the received messages.

@@ -52,8 +52,8 @@ Or it will echo:
 
 #  Note
 
-- Realtek SDIO host driver should be compiled into Kernel and set to loopback mode. Refer to SDIO application note to get more information.
-- SDIO Host send 2048 bytes, include 16 bytes tx descriptor and 2032 bytes payload.
+- Refer to sdio_loopback_test_guide.pdf to get more information about running SDIO host.
+- SDIO host sends 2048 bytes, including 16-byte tx descriptor and 2032-byte payload.
 
 #  Supported IC
 * AmebaDplus

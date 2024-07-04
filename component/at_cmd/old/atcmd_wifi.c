@@ -441,8 +441,7 @@ void fATWx(void *arg)
 
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
-				RTK_LOGI(NOTAG, "max_skbinfo_used_num=%d, skbinfo_used_num=%d\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
-				RTK_LOGI(NOTAG, "max_skbdata_used_num=%d, skbdata_used_num=%d\n\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
+				RTK_LOGI(NOTAG, "max_skbbuff_used_num=%d, skbbuff_used_num=%d\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);
@@ -812,7 +811,7 @@ void fATWC(void *arg)
 	rtw_wifi_setting_t *p_wifi_setting = NULL;
 	unsigned long tick1 = rtos_time_get_current_system_time_ms();
 	unsigned long tick2, tick3;
-	char empty_bssid[6] = {0}, assoc_by_bssid = 0;
+	char empty_bssid[6] = {0};
 	char buf[32] = {0};
 	char *argv[MAX_ARGC] = {0};
 	int argc = 0;
@@ -840,9 +839,7 @@ void fATWC(void *arg)
 
 	wifi.channel = channel;
 
-	if (memcmp(wifi.bssid.octet, empty_bssid, 6)) {
-		assoc_by_bssid = 1;
-	} else if (wifi.ssid.val[0] == 0) {
+	if (!memcmp(wifi.bssid.octet, empty_bssid, 6) && (wifi.ssid.val[0] == 0)) {
 		RTK_LOGI(NOTAG, "[ATWC]Error: SSID can't be empty\n\r");
 		ret = RTW_BADARG;
 		goto EXIT;
@@ -870,14 +867,7 @@ void fATWC(void *arg)
 		}
 	}
 
-	if (assoc_by_bssid) {
-		RTK_LOGI(NOTAG, "Joining BSS by BSSID "MAC_FMT" ...\n\r", MAC_ARG(wifi.bssid.octet));
-	} else {
-		RTK_LOGI(NOTAG, "Joining BSS by SSID %s...\n\r", (char *)wifi.ssid.val);
-	}
 	ret = wifi_connect(&wifi, 1);
-
-
 	if (ret != RTW_SUCCESS) {
 		if (ret == RTW_INVALID_KEY) {
 			RTK_LOGI(NOTAG, "ERROR:Invalid Key \n\r");

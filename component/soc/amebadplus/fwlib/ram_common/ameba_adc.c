@@ -8,7 +8,7 @@
 
 ADC_CalParaTypeDef CalParaNorm;
 ADC_CalParaTypeDef CalParaVBat;
-BOOL vref_init_done = _FALSE;
+u8 vref_init_done = _FALSE;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -510,6 +510,7 @@ u32 ADC_GetStatus(void)
 	return adc->ADC_BUSY_STS;
 }
 
+#if 0
 /**
   * @brief  Control the ADC module to do a conversion. Used as a start-convert event which is controlled by software.
   * @param  NewState: can be one of the following value:
@@ -521,6 +522,7 @@ u32 ADC_GetStatus(void)
   *		  2. Used in Sotfware Trigger Mode
   *		  3. Sync time: 4*adc_clk + 1.5*sample_clk
   */
+#endif
 void ADC_SWTrigCmd(u32 NewState)
 {
 #if 0
@@ -547,7 +549,9 @@ void ADC_SWTrigCmd(u32 NewState)
 		DelayUs(sync_time[div] > 4 ? sync_time[div] : 4);
 	}
 #else
-	ADC_AutoCSwCmd(NewState);
+	UNUSED(NewState);
+
+	RTK_LOGS(NOTAG, "NOTE: ADC software-trigger mode is not supported!!!\n");
 #endif
 }
 
@@ -725,7 +729,7 @@ void ADC_SetOverSample(u8 OS_Shift, u8 OS_Ratio, u8 OS_Mode)
   *        @arg _FALSE: Calibration parameter belongs to normal channel.
   * @retval None.
   */
-void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, BOOL IsVBatChan)
+void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
 {
 	u8 index;
 	u8 EfuseBuf[6];

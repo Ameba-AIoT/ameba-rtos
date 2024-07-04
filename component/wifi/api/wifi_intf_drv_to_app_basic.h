@@ -267,12 +267,10 @@ struct wpa_sae_param_t {
 };
 
 struct rtw_owe_param_t {
-#ifdef CONFIG_OWE_SUPPORT
 	u16 group;
 	u8 pub_key[RTW_OWE_KEY_LEN];/*32(Temporarily support group 19 with 256 bit public key)*/
 	u8 pub_key_len;
 	u8 peer_mac[6];
-#endif
 };
 
 struct rtw_kvr_param_t {
@@ -509,12 +507,13 @@ struct rx_pkt_info {
 typedef int (*wifi_do_fast_connect_ptr)(void);
 typedef int (*write_fast_connect_info_ptr)(unsigned int data1, unsigned int data2);
 typedef void (*ap_channel_switch_callback_t)(unsigned char channel, enum rtw_channel_switch_res ret);
-typedef void (*p_wlan_autoreconnect_hdl_t)(enum rtw_security, char *, int, char *, int, int, char);
+typedef void (*p_wlan_autoreconnect_hdl_t)(enum rtw_security, char *, int, char *, char *, int, int, char);
 
 typedef void (*wifi_jioninfo_free_ptr)(u8 iface_type);
 
 /**
   * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
+  * @note	size can't be changed
   */
 typedef struct _rtw_wifi_setting_t {
 	enum rtw_mode_type			mode;   /**< the mode of current wlan interface */
@@ -547,8 +546,6 @@ typedef struct _pwr_lmt_regu_remap {
 typedef struct _rtw_sw_statistics_t { /* software statistics for tx and rx*/
 	unsigned int    max_skbbuf_used_number; /*!< max skb buffer used number       */
 	unsigned int    skbbuf_used_number;     /*!< current used skbbuf number       */
-	unsigned int    max_skbdata_used_number;/*!< max skb data used number       */
-	unsigned int    skbdata_used_number;    /*!< current used skbdata number       */
 } rtw_sw_statistics_t;
 
 /**
@@ -620,6 +617,9 @@ typedef struct _rtw_csi_action_parm_t {
 	enum rtw_csi_op_role csi_role; /* indicate csi operation role */
 	enum rtw_csi_mode_type mode;
 	enum rtw_csi_action_type act;
+	unsigned short trig_frame_mgnt; /* indicate management frame subtype of rx csi triggering frame for fetching csi*/
+	unsigned short trig_frame_ctrl; /* indicate control frame subtype of rx csi triggering frame for fetching csi*/
+	unsigned short trig_frame_data; /* indicate data frame subtype of rx csi triggering frame for fetching csi*/
 	unsigned char enable;
 	unsigned char trig_period;
 	unsigned char data_rate;
@@ -697,6 +697,7 @@ typedef struct _rtw_client_list_t {
 struct net_device {
 	void			*priv;		/* pointer to private data */
 	unsigned char		dev_addr[6];	/* set during bootup */
+	u8 iface_type;
 };
 
 /**
@@ -1006,6 +1007,11 @@ struct wifi_user_conf {
 	/*!	These buffer are used for tx data packtes in INIC mode, not used in single core mode.\n
 		For higher throughput or a large number of STAs connected to softap, skb_num_ap can be increased */
 	int skb_num_ap;
+
+	/*!	Specify the trx buffer size of each skb.\n
+		Cache size(32 for amebadplus&amebalite and 64 for amebasmart)alignment will be applied to the input size.\n
+		0: use default size*/
+	int skb_buf_size;
 
 	/*!	Every data tx is forced to start with cts2self */
 	unsigned char force_cts2self;

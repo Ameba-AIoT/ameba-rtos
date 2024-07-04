@@ -35,9 +35,6 @@ static rtw_softap_info_t ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
-#if ENABLE_SET_MAC_ADDRESS
-extern int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
-#endif
 extern int wifi_set_ips_internal(u8 enable);
 #ifdef CONFIG_AS_INIC_AP
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
@@ -160,9 +157,7 @@ static void print_scan_result(rtw_scan_result_t *record)
 #else
 	at_printf("%s\t ", (record->bss_type == RTW_BSS_TYPE_ADHOC) ? "Adhoc" : "Infra");
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
-	/* cal complement for logs */
-	record->signal_strength = (0xFFFF - record->signal_strength + 1);
-	at_printf(" -%d\t ", record->signal_strength);
+	at_printf(" %d\t ", record->signal_strength);
 	at_printf(" %d\t  ", record->channel);
 	at_printf(" %d\t  ", (unsigned int)record->wps_type);
 	at_printf("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open               " :
@@ -263,7 +258,6 @@ void at_wlconn(void *arg)
 	unsigned int mac[ETH_ALEN];
 	char *argv[MAX_ARGC] = {0};
 	char empty_bssid[6] = {0};
-	char assoc_by_bssid = 0;
 	unsigned long tick1 = rtos_time_get_current_system_time_ms();
 	unsigned long tick2;
 #ifdef CONFIG_LWIP_LAYER
@@ -351,10 +345,8 @@ void at_wlconn(void *arg)
 		goto end;
 	}
 
-	/* Check bssid */
-	if (memcmp(wifi.bssid.octet, empty_bssid, sizeof(empty_bssid))) {
-		assoc_by_bssid = 1;
-	} else if (wifi.ssid.val[0] == 0) {
+	/* Check bssid is empty && ssid is null */
+	if (!memcmp(wifi.bssid.octet, empty_bssid, sizeof(empty_bssid)) && (wifi.ssid.val[0] == 0)) {
 		RTK_LOGW(NOTAG, "[+WLCONN] SSID should exist here\r\n");
 		error_no = 3;
 		goto end;
@@ -381,11 +373,6 @@ void at_wlconn(void *arg)
 	}
 
 	/* Connecting ...... */
-	if (assoc_by_bssid) {
-		RTK_LOGI(NOTAG, "Joining BSS by BSSID "MAC_FMT" ...\r\n", MAC_ARG(wifi.bssid.octet));
-	} else {
-		RTK_LOGI(NOTAG, "Joining BSS by SSID %s...\r\n", (char *)wifi.ssid.val);
-	}
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTW_SUCCESS) {
 		if (ret == RTW_INVALID_KEY) {
@@ -648,11 +635,12 @@ void at_wlstartap_help(void)
 	at_printf("\r\n");
 	at_printf("AT+WLSTARTAP=[<type>,<value>,<type>,<value>......]\r\n");
 	at_printf("\t<type>:\tA string as \"ssid\",\"ch\",\"pw\",\"sec\"\r\n");
-	at_printf("\t<value>:\tAny type of <ssid>, <channel>, <pw>, <security>\r\n");
+	at_printf("\t<value>:\tAny type of <ssid>, <ch>, <pw>, <sec>\r\n");
 	at_printf("\t<ssid>:\tThe ssid of AP, could not be empty\r\n");
-	at_printf("\t<channel>:\t[1,11]\r\n");
-	at_printf("\t<security>:\topen/wep/tkip/wpa2/wpa3\r\n");
+	at_printf("\t<ch>:\t[1,11]\r\n");
+	at_printf("\t<sec>:\topen/wep/tkip/wpa2/wpa3\r\n");
 	at_printf("\t<pw>:\tWith length in [8,64]\r\n");
+	at_printf("\te.g.\r\nAT+WLSTARTAP=ssid,test_ssid,pw,12345678,sec,wpa2\r\n");
 }
 
 /****************************************************************
@@ -717,7 +705,7 @@ void at_wlstartap(void *arg)
 					security = 0;
 				} else if (0 == strcmp("wep", argv[j])) {
 					security = 1;
-				} else if (0 == strcmp("tpic", argv[j])) {
+				} else if (0 == strcmp("tkip", argv[j])) {
 					security = 2;
 				} else if (0 == strcmp("wpa2", argv[j])) {
 					security = 3;
@@ -904,8 +892,7 @@ void at_wlstate(void *arg)
 
 			wifi_get_sw_statistic(i, &stats);
 			if (i == 0) {
-				at_printf("max_skbinfo_used_num=%d, skbinfo_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
-				at_printf("max_skbdata_used_num=%d, skbdata_used_num=%d\r\n", stats.max_skbdata_used_number, stats.skbdata_used_number);
+				at_printf("max_skbbuff_used_num=%d, skbbuff_used_num=%d\r\n", stats.max_skbbuf_used_number, stats.skbbuf_used_number);
 			}
 			wifi_get_setting(i, p_wifi_setting);
 			print_wifi_setting(i, p_wifi_setting);
@@ -963,158 +950,79 @@ void at_wlstate(void *arg)
 #endif
 }
 
-static void at_wlautoconn_help(void)
+static void at_wlreconn_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLAUTOCONN=<mode>");
-	at_printf("\t<mode>:\t1: disable auto-reconnect, 2: clear stored flash data\r\n");
+	at_printf("AT+WLRECONN=<command>,<parameter>\r\n");
+	at_printf("<command>:\tauto: auto reconnect when wifi disconnect or connect fail\r\n");
+	at_printf("\t<parameter>:\t0: disable auto-reconnect, 1: enable auto-reconnect\r\n");
+	at_printf("<command>:\tfast: fast reconnect when wifi power on\r\n");
+	at_printf("\t<parameter>:\t0: clear stored flash data and disable fast reconnect, 1: enable fast reconnect\r\n");
+
 }
 
 /****************************************************************
 AT command process:
-	AT+WLAUTOCONN
+	AT+WLRECONN
 	Wifi AT Command:
 	Set auto-connection.
-	[+WLAUTOCONN]:OK
+	[+WLRECONN]:OK
 ****************************************************************/
-void at_wlautoconn(void *arg)
+void at_wlreconn(void *arg)
 {
 	int error_no = 0;
 	int argc = 0, mode = 0;
 	char *argv[MAX_ARGC] = {0};
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLAUTOCONN] Invalid parameter\r\n");
+		RTK_LOGW(NOTAG, "[+WLRECONN] Invalid parameter\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
-	if (argc != 2 || argv[1] == NULL) {
-		RTK_LOGW(NOTAG, "[+WLAUTOCONN] Invalid parameter number\r\n");
+	if (argc != 3 || argv[1] == NULL || argv[2] == NULL) {
+		RTK_LOGW(NOTAG, "[+WLRECONN] Invalid parameter number\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	if (strlen(argv[1]) == 0) {
-		RTK_LOGW(NOTAG, "[+WLAUTOCONN] missing enable\r\n");
-		error_no = 1;
-		goto end;
-	}
-	mode = atoi(argv[1]);
-	if (mode == 0) {
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Disable autoreconnect\r\n");
-		wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
-	} else if (mode == 1) {
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Enable autoreconnect\r\n");
-		wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
+	mode = atoi(argv[2]);
+	if (0 == strcmp("auto", argv[1])) {
+		if (mode == 0) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Disable autoreconnect\r\n");
+			wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
+		} else if (mode == 1) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Enable autoreconnect\r\n");
+			wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
+		} else {
+			error_no = 2;
+		}
+	} else if (0 == strcmp("fast", argv[1])) {
+		extern void wifi_fast_connect_enable(unsigned char enable);
+		if (mode == 0) {
+			extern int32_t rt_kv_delete(const char *key);
+			RTK_LOGI(NOTAG, "[+WLRECONN] Erase wifi flash and disable fast reconnect\r\n");
+			rt_kv_delete("wlan_data");
+			wifi_fast_connect_enable(0);
+		} else if (mode == 1) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Enable fast reconnect\r\n");
+			wifi_fast_connect_enable(1);
+		} else {
+			error_no = 2;
+		}
 	} else {
-		error_no = 2;
+		error_no = 1;
 	}
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLAUTOCONN:");
+		at_printf("\r\n%sOK\r\n", "+WLRECONN:");
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLAUTOCONN:", error_no);
-		at_wlautoconn_help();
+		at_printf("\r\n%sERROR:%d\r\n", "+WLRECONN:", error_no);
+		at_wlreconn_help();
 	}
 }
-
-#if ENABLE_SET_MAC_ADDRESS
-static void at_wlmac_help(void)
-{
-	at_printf("\r\n");
-	at_printf("AT+WLMAC=<mac_addr>[,<er_idx>,<i_idx>]");
-	at_printf("\t<mac_addr>:\tA hexnumber of 6 bytes, e.g. 2c033ad355f1\r\n");
-	at_printf("\t<er_idx>:\tStore in efuse or RAM? 0 in RAM, 1 in efuse\r\n");
-	at_printf("\t<i_idx>:\tNet device index\r\n");
-}
-
-/****************************************************************
-AT command process:
-	AT+WLMAC
-	Wifi AT Command:
-	Set MAC address.
-	[+WLMAC]:OK
-****************************************************************/
-void at_wlmac(void *arg)
-{
-	const int mac_idx = 1, er_idx = 2, i_idx = 3;
-	int argc = 0, ret = 0, error_no = 0;
-	int i = 0, efuse_ram = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLMAC] Invalid parameter\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 4)) {
-		RTK_LOGW(NOTAG, "[+WLMAC] Invalid parameter number\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	if (strlen(argv[mac_idx]) != 12) {
-		RTK_LOGW(NOTAG, "[+WLMAC] Invalid MAC address\r\n");
-		error_no = 1;
-		goto end;
-	}
-	for (i = 0; i < 12; i++) {
-		/* Ensure it is a valid MAC address. */
-		if (!(('0' <= argv[mac_idx][i] && '9' >= argv[mac_idx][i])
-			  || ('a' <= argv[mac_idx][i] && 'f' >= argv[mac_idx][i])
-			  || ('A' <= argv[mac_idx][i] && 'F' >= argv[mac_idx][i]))) {
-			RTK_LOGW(NOTAG, "[+WLMAC] Invalid MAC address string\r\n");
-			error_no = 1;
-			goto end;
-		}
-	}
-
-	/* Efuse or RAM. If this parameter is absent, use default 0 (RAM). */
-	if ((argc > er_idx) && (strlen(argv[er_idx]) != 0)) {
-		efuse_ram = atoi(argv[er_idx]);
-		if ((efuse_ram != 0) && (efuse_ram != 1)) {
-			RTK_LOGW(NOTAG, "[+WLMAC] Invalid efuse_ram value\r\n");
-			error_no = 2;
-			goto end;
-		}
-	}
-
-	/* Index */
-	if ((argc > i_idx) && (strlen(argv[i_idx]) != 0)) {
-		i = atoi(argv[i_idx]);
-		if ((i < 0) || (i >= NET_IF_NUM)) {
-			RTK_LOGW(NOTAG, "[+WLMAC] Invalid Index value\r\n");
-			error_no = 2;
-			goto end;
-		}
-	} else {
-		/* Default idx = 0 */
-		i = 0;
-	}
-
-	ret = wifi_set_mac_address(i, (unsigned char *)argv[mac_idx], efuse_ram);
-	if (ret != RTW_SUCCESS) {
-		RTK_LOGW(NOTAG, "[+WLMAC] wifi_set_mac_address failed\r\n");
-		error_no = 3;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLMAC:");
-	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLMAC:", error_no);
-		if (error_no == 1 || error_no == 2) {
-			at_wlmac_help();
-		}
-	}
-}
-#endif
 
 static void at_wlpromisc_help(void)
 {
@@ -1308,62 +1216,76 @@ end:
 }
 #endif
 
-static void at_wlpwrmode_help(void)
+static void at_wlps_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLPWRMODE=<lps_ips>,<enable>");
-	at_printf("\t<lps_ips>:\tShould be either \"lps\" or \"ips\"\r\n");
+	at_printf("AT+WLPS=<mode>,<enable>[,<mode>,<enable>]");
+	at_printf("\t<mode>:\tShould be either \"lps\" or \"ips\"\r\n");
 	at_printf("\t<enable>:\t0: disable, 1: enable\r\n");
 }
 
 /****************************************************************
 AT command process:
-	AT+WLPWRMODE
+	AT+WLPS
 	Wifi AT Command:
-	[+WLPWRMODE]:OK
+	[+WLPS]:OK
 ****************************************************************/
-void at_wlpwrmode(void *arg)
+void at_wlps(void *arg)
 {
 	int error_no = 0;
 	int argc = 0;
+	int i = 0, j = 0;
 	char *argv[MAX_ARGC] = {0};
 	int ps_en;
 
-	RTK_LOGI(NOTAG, "[WLPWRMODE]: _AT_WLAN_POWER_MODE_\r\n");
+	RTK_LOGI(NOTAG, "[WLPS]: _AT_WLAN_POWER_SAVE_MODE_\r\n");
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLPWRMODE] Usage: AT+WLPWRMODE=lps/ips/dtim[mode]\r\n");
+		RTK_LOGW(NOTAG, "[WLPS] Usage: AT+WLPS=lps/ips[mode]\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 3) {
-		RTK_LOGW(NOTAG, "[WLPWRMODE] Usage: AT+WLPWRMODE=lps/ips/dtim[mode]\r\n");
+		RTK_LOGW(NOTAG, "[WLPS] Usage: AT+WLPS=lps/ips/[mode]\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	if (strcmp(argv[1], "lps") == 0) {
-		ps_en = atoi(argv[2]);
-		wifi_set_lps_enable(ps_en);
-		RTK_LOGW(NOTAG, "lps %s\r\n", (ps_en == 0) ? "disable" : "enable");
-	} else if (strcmp(argv[1], "ips") == 0) {
-		ps_en = atoi(argv[2]);
-		wifi_set_ips_internal(ps_en);
-		RTK_LOGW(NOTAG, "ips %s\r\n", (ps_en == 0) ? "disable" : "enable");
-	} else {
-		RTK_LOGW(NOTAG, "[WLPWRMODE] Invalid parameter");
-		error_no = 2;
-		goto end;
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* Next i. */
+		if (strcmp(argv[i], "lps") == 0) {
+			if ((argc <= j) || (strlen(argv[j]) == 0)) {
+				RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
+				error_no = 2;
+				goto end;
+			}
+			ps_en = atoi(argv[j]);
+			wifi_set_lps_enable(ps_en);
+			RTK_LOGW(NOTAG, "lps %s\r\n", (ps_en == 0) ? "disable" : "enable");
+		} else if (strcmp(argv[i], "ips") == 0) {
+			if ((argc <= j) || (strlen(argv[j]) == 0)) {
+				RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
+				error_no = 2;
+				goto end;
+			}
+			ps_en = atoi(argv[j]);
+			wifi_set_ips_internal(ps_en);
+			RTK_LOGW(NOTAG, "ips %s\r\n", (ps_en == 0) ? "disable" : "enable");
+		} else {
+			RTK_LOGW(NOTAG, "[WLPS] Invalid parameter");
+			error_no = 2;
+			goto end;
+		}
 	}
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLPWRMODE:");
+		at_printf("\r\n%sOK\r\n", "+WLPS:");
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLPWRMODE:", error_no);
-		at_wlpwrmode_help();
+		at_printf("\r\n%sERROR:%d\r\n", "+WLPS:", error_no);
+		at_wlps_help();
 	}
 }
 #endif /* CONFIG_WLAN */
@@ -1473,8 +1395,10 @@ end:
 	}
 }
 
-/* The command iperf3 will be implemented later. */
-static void cmd_iperf3(int argc, char **argv)
+/*
+ * To aviod compile error when cmd_iperf3 is not implemented
+ */
+_WEAK void cmd_iperf3(int argc, char **argv)
 {
 	UNUSED(argc);
 	UNUSED(argv);
@@ -1490,8 +1414,8 @@ static void at_iperf_help(void)
 	at_printf("\tAT+IPERF=-s,-p,5002\r\n");
 	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
 	at_printf("\tExample for UDP:\r\n");
-	at_printf("\tAT+UDP=-s,-p,5002,-u\r\n");
-	at_printf("\tAT+UDP=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
+	at_printf("\tAT+IPERF=-s,-p,5002,-u\r\n");
+	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
 }
 
 /****************************************************************
@@ -1616,6 +1540,7 @@ void at_iperf3(void *arg)
 		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
 		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
 		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
+		RTK_LOGI(NOTAG, "	 -u    #		use UDP protocol (default TCP)\r\n");
 		RTK_LOGI(NOTAG, "	Server specific:\r\n");
 		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
 		RTK_LOGI(NOTAG, "	Client specific:\r\n");
@@ -1667,16 +1592,13 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLSTARTAP", at_wlstartap, {NULL, NULL}},
 	{"+WLSTOPAP", at_wlstopap, {NULL, NULL}},
 	{"+WLSTATE", at_wlstate, {NULL, NULL}},
-	{"+WLAUTOCONN", at_wlautoconn, {NULL, NULL}},
-#if ENABLE_SET_MAC_ADDRESS
-	{"+WLMAC", at_wlmac, {NULL, NULL}},
-#endif
+	{"+WLRECONN", at_wlreconn, {NULL, NULL}},
 	{"+WLPROMISC", at_wlpromisc, {NULL, NULL}},
 	{"+WLDBG", at_wldbg, {NULL, NULL}},
 #ifdef CONFIG_WPS
 	{"+WLWPS", at_wlwps, {NULL, NULL}},
 #endif
-	{"+WLPWRMODE", at_wlpwrmode, {NULL, NULL}},
+	{"+WLPS", at_wlps, {NULL, NULL}},
 #endif /* CONFIG_WLAN */
 };
 

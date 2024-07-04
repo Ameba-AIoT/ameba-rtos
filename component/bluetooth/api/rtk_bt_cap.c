@@ -477,68 +477,35 @@ uint16_t rtk_bt_vocs_client_get_char(uint16_t conn_handle)
 
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 /* aics server */
-uint16_t rtk_bt_aics_server_get(void)
+uint16_t rtk_bt_aics_server_get(uint8_t srv_instance_id, uint8_t aics_param_type, uint8_t value_len, uint8_t *p_value)
 {
 	uint16_t ret = RTK_BT_FAIL;
-	uint8_t srv_instance_id = 0, aics_param_type = 0;
-	uint8_t value_len = 0, *p_value = NULL;
-
-	for (aics_param_type = RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE; aics_param_type < RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_DES; aics_param_type++) {
+	ret = rtk_bt_le_audio_aics_get_param(srv_instance_id, aics_param_type, value_len, p_value);
+	if (ret == RTK_BT_OK) {
 		switch (aics_param_type) {
-		case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE:
-			value_len = sizeof(rtk_bt_le_audio_aics_input_state_t);
+		case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE: {
+			rtk_bt_le_audio_aics_input_state_t *p_input_state = (rtk_bt_le_audio_aics_input_state_t *)p_value;
+			BT_LOGA("aics param: srv_instance_id %d, gain_setting %d, mute %d, gain_mode %d,change_counter %d\r\n",
+					srv_instance_id, p_input_state->gain_setting, p_input_state->mute, p_input_state->gain_mode, p_input_state->change_counter);
 			break;
-		case RTK_BT_LE_AUDIO_AICS_PARAM_GAIN_SETTING_PROP:
-			value_len = sizeof(rtk_bt_le_audio_aics_gain_setting_prop_t);
+		}
+		case RTK_BT_LE_AUDIO_AICS_PARAM_GAIN_SETTING_PROP: {
+			rtk_bt_le_audio_aics_gain_setting_prop_t *p_setting_prop = (rtk_bt_le_audio_aics_gain_setting_prop_t *)p_value;
+			BT_LOGA("aics param: srv_instance_id %d, gain_setting_units %d, gain_setting_min %d, gain_setting_max %d\r\n",
+					srv_instance_id, p_setting_prop->gain_setting_units, p_setting_prop->gain_setting_min, p_setting_prop->gain_setting_max);
 			break;
+		}
 		case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_TYPE:
-			value_len = 1;
+			BT_LOGA("aics param: srv_instance_id %d, input type %d\r\n", srv_instance_id, *(uint8_t *)p_value);
 			break;
 		case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATUS:
-			value_len = 1;
+			BT_LOGA("aics param: srv_instance_id %d, input status %d\r\n", srv_instance_id, *(uint8_t *)p_value);
 			break;
 		default:
-			BT_LOGE("%s: not support aics_param_type %d for get \r\n", __func__, aics_param_type);
 			break;
 		}
-		p_value = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_len);
-		if (p_value == NULL) {
-			BT_LOGE("%s: osif_mem_alloc len %d fail\r\n", __func__, value_len);
-			return RTK_BT_ERR_NO_RESOURCE;
-		}
-		memset(p_value, 0, value_len);
-		for (srv_instance_id = 0; srv_instance_id < RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM; srv_instance_id++) {
-			ret = rtk_bt_le_audio_aics_get_param(srv_instance_id, aics_param_type, value_len, p_value);
-			if (ret == RTK_BT_OK) {
-				switch (aics_param_type) {
-				case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE: {
-					rtk_bt_le_audio_aics_input_state_t *p_input_state = (rtk_bt_le_audio_aics_input_state_t *)p_value;
-					BT_LOGA("aics param: srv_instance_id %d, gain_setting %d, mute %d, gain_mode %d,change_counter %d\r\n",
-							srv_instance_id, p_input_state->gain_setting, p_input_state->mute, p_input_state->gain_mode, p_input_state->change_counter);
-					break;
-				}
-				case RTK_BT_LE_AUDIO_AICS_PARAM_GAIN_SETTING_PROP: {
-					rtk_bt_le_audio_aics_gain_setting_prop_t *p_setting_prop = (rtk_bt_le_audio_aics_gain_setting_prop_t *)p_value;
-					BT_LOGA("aics param: srv_instance_id %d, gain_setting_units %d, gain_setting_min %d, gain_setting_max %d\r\n",
-							srv_instance_id, p_setting_prop->gain_setting_units, p_setting_prop->gain_setting_min, p_setting_prop->gain_setting_max);
-					break;
-				}
-				case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_TYPE:
-					BT_LOGA("aics param: srv_instance_id %d, input type %d\r\n", srv_instance_id, *(uint8_t *)p_value);
-					break;
-				case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATUS:
-					BT_LOGA("aics param: srv_instance_id %d, input status %d\r\n", srv_instance_id, *(uint8_t *)p_value);
-					break;
-				default:
-					break;
-				}
-			} else {
-				BT_LOGE("%s: aics get param fail,aics_param_type %d \r\n", __func__, aics_param_type);
-			}
-		}
-		if (p_value) {
-			osif_mem_free(p_value);
-		}
+	} else {
+		BT_LOGE("%s: aics get param fail,aics_param_type %d \r\n", __func__, aics_param_type);
 	}
 
 	return ret;

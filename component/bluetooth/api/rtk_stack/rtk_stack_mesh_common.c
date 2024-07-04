@@ -1249,8 +1249,16 @@ static bool rtk_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *p
 	} else {
 		BT_LOGE("Transport Retrans Count is too large, range is 0-10 \r\n");
 	}
-	BT_LOGA("Set node net trans count %d, relay retrans count %d, ttl %d, trans retrans count %d, Success!\r\n",
-			mesh_node.net_trans_count, mesh_node.relay_retrans_count, mesh_node.ttl, mesh_node.trans_retrans_count);
+
+	rtk_bt_mesh_stack_set_retrans_param_t *result;
+	rtk_bt_evt_t *p_evt = NULL;
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_RETRANS_PARAM_SETTING_RESULT, sizeof(rtk_bt_mesh_stack_set_retrans_param_t));
+	result = (rtk_bt_mesh_stack_set_retrans_param_t *)p_evt->data;
+	result->net_retrans_count = mesh_node.net_trans_count;
+	result->relay_retrans_count = mesh_node.relay_retrans_count;
+	result->ttl = mesh_node.ttl;
+	result->trans_retrans_count = mesh_node.trans_retrans_count;
+	rtk_bt_evt_indicate(p_evt, NULL);
 	return RTK_BT_MESH_STACK_API_SUCCESS;
 }
 

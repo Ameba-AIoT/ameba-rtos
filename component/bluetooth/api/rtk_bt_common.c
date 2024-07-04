@@ -50,6 +50,7 @@ static uint32_t rtk_bt_br_hfp_evt_direct_calling_flag =
 	((1 << RTK_BT_HFP_EVT_SCO_DATA_IND) |
 	 (1 << RTK_BT_HFP_EVT_HF_BATTERY_IND) |
 	 (1 << RTK_BT_HFP_EVT_AG_INDICATORS_STATUS_REQ));
+static uint32_t rtk_bt_br_pbap_evt_direct_calling_flag = 0;
 static uint32_t rtk_bt_le_audio_evt_direct_calling_flag =
 	((1 << RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND) |
 	 (1 << RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND) |
@@ -483,6 +484,11 @@ bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
 		break;
 	case RTK_BT_BR_GP_HFP:
 		if (rtk_bt_br_hfp_evt_direct_calling_flag & (1 << evt_code)) {
+			ret = true;
+		}
+		break;
+	case RTK_BT_BR_GP_PBAP:
+		if (rtk_bt_br_pbap_evt_direct_calling_flag & (1 << evt_code)) {
 			ret = true;
 		}
 		break;

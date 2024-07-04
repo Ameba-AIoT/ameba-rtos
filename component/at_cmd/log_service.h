@@ -17,6 +17,16 @@
 #include "diag.h"
 #include "os_wrapper.h"
 
+#ifdef CONFIG_NEW_ATCMD
+#include "atcmd_sys.h"
+#include "atcmd_lwip.h"
+#if defined(CONFIG_BT) && CONFIG_BT
+#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
+#include "atcmd_bt_mp.h"
+#endif
+#endif
+#endif /* CONFIG_NEW_ATCMD */
+
 #define log_module_init(fn)
 
 #define ATC_INDEX_NUM 32

@@ -110,7 +110,7 @@ void sha256_hmac(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "sha256_hmac", (rtos_task_t)sha256_hmac, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "sha256_hmac", (rtos_task_t)sha256_hmac, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create sha256_hmac task\n\r");
 	}
 

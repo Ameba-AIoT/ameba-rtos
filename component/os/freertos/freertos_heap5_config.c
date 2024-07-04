@@ -40,6 +40,7 @@ bool os_heap_add(u8 *start_addr, size_t heap_size)
 	xHeapRegions[heap_index].pucStartAddress = start_addr;
 	xHeapRegions[heap_index].xSizeInBytes = (size_t)heap_size;
 	if (xHeapRegions[heap_index].xSizeInBytes != 0) {
+		total_heap_size += heap_size;
 		heap_index++;
 		return TRUE;
 	}
@@ -51,22 +52,22 @@ void os_heap_init(void)
 {
 #ifdef SRAM_HEAP0_START 		// Defines a block in bd_ram
 	os_heap_add((uint8_t *)SRAM_HEAP0_START, (size_t)SRAM_HEAP0_SIZE);
-	total_heap_size += (u32)SRAM_HEAP0_SIZE;
 #endif
 
 #ifdef SRAM_HEAP1_START			// Defines a block in sram
 	os_heap_add((uint8_t *)SRAM_HEAP1_START, (size_t)SRAM_HEAP1_SIZE);
-	total_heap_size += (u32)SRAM_HEAP1_SIZE;
 #endif
 
 #ifdef PSRAM_HEAP0_START		// Defines a block in bd_psram
 	os_heap_add((uint8_t *)PSRAM_HEAP0_START, (size_t)PSRAM_HEAP0_SIZE);
-	total_heap_size += (u32)PSRAM_HEAP0_SIZE;
 #endif
 
 #ifdef PSRAM_HEAP1_START		// Defines a block in psram
 	os_heap_add((uint8_t *)PSRAM_HEAP1_START, (size_t)PSRAM_HEAP1_SIZE);
-	total_heap_size += (u32)PSRAM_HEAP1_SIZE;
+#endif
+
+#ifdef SRAM_HEAP2_START 		// Defines a block in bd_ram
+	os_heap_add((uint8_t *)SRAM_HEAP2_START, (size_t)SRAM_HEAP2_SIZE);
 #endif
 
 	if (heap_index > 0) {

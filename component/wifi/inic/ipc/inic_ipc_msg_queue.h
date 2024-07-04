@@ -28,7 +28,7 @@
 #define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
 
 #if defined(CONFIG_AS_INIC_AP)
-#define WIFI_STACK_SIZE_INIC_MSG_Q	(336 + 128 + CONTEXT_SAVE_SIZE)
+#define WIFI_STACK_SIZE_INIC_MSG_Q	(600 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
 #elif defined(CONFIG_AS_INIC_NP)
 #define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
 #endif

@@ -78,7 +78,7 @@ extern "C" {
     If want to start 2-channels stereo audio in one CIS,please config:
     RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE       to     1
 */
-#define RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE            0
+#define RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE            1
 
 /*
    Only apply in RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION mode.
@@ -105,6 +105,9 @@ extern "C" {
 #define RTK_BLE_AUDIO_DEFAULT_PHY_CODED                     (4) /**< bit 2:LE Coded PHY used. */
 #define RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT             (10000)
 #define RTK_BLE_AUDIO_DEFAULT_BROADCAST_SOURCE_ADV_SID      0
+#define ISO_INTERVAL_10_MS                                  0x01
+#define ISO_INTERVAL_20_MS                                  0x02
+#define ISO_INTERVAL_30_MS                                  0x03
 /* Define broadcast audio announcement max length */
 #define RTK_LE_AUDIO_BROADCAST_AUDIO_ANNOUNCEMENT_LEN_MAX       100
 /* Define broadcast audio announcement default length */
@@ -112,6 +115,8 @@ extern "C" {
 /* Define default sample frequecy in source for audio test.*/
 #define LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K  //now support 8k,16k,24k,32k,48k birds sing array
 #define LEA_SOURCE_FIX_FRAME_DUARTION                   RTK_BT_LE_FRAME_DURATION_CFG_10_MS   //support 10ms and 7.5ms 
+#define LEA_BIG_ISO_INTERVAL_CONFIG                     ISO_INTERVAL_10_MS // if config 30ms, only support sample rate 48 KHz bis stereo mode
+#define LEA_CIG_ISO_INTERVAL_CONFIG                     ISO_INTERVAL_10_MS // now only support 10ms and 20ms
 
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT (RTK_BT_LE_UNICAST_AUDIO_CFG_1_BIT |RTK_BT_LE_UNICAST_AUDIO_CFG_6_I_BIT | \
                                     RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT)

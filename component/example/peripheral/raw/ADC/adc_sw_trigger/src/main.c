@@ -72,7 +72,7 @@ void adc_swtrig_demo(void)
 			adc_data = ADC_GET_DATA_GLOBAL(value);
 			adc_vol = ADC_GetVoltage(adc_data);
 
-			printf("AD%lu:0x%lxx => %ldmV\n", adc_idx, adc_data, adc_vol);
+			printf("AD%lu:0x%lx => %ldmV\n", adc_idx, adc_data, adc_vol);
 		}
 
 		DelayMs(500);
@@ -81,7 +81,7 @@ void adc_swtrig_demo(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "RAW_ADC_SW_TRIG_TASK", (rtos_task_t)adc_swtrig_demo, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RAW_ADC_SW_TRIG_TASK", (rtos_task_t)adc_swtrig_demo, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create RAW_ADC_SW_TRIG_TASK \r\n");
 	}
 

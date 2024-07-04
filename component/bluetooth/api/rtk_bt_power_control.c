@@ -26,7 +26,7 @@ _WEAK void hci_platform_force_uart_rts(bool op)
 static bool rtk_bt_get_power_save_status(void)
 {
 	uint32_t lock_status = pmu_get_wakelock_status();
-	BT_LOGA("[BT_PS] lock_status = 0x%lx\r\n", lock_status);
+	BT_LOGA("[BT_PS] lock_status = 0x%x\r\n", lock_status);
 
 	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
 		return true;    //Already acquire bt wake lock

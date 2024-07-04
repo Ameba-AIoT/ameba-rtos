@@ -54,7 +54,7 @@ I2C_InitTypeDef I2CInitData[2];
 
 #define I2C_0 0
 #define I2C_1 1
-
+static const char *TAG = "I2C";
 
 /*if defined 1, master send, slave read mode.
  else master read slave send mode.*/
@@ -74,7 +74,7 @@ I2CTXGDMAISRHandle(
 	PGDMA_InitTypeDef   GDMA_InitStruct = &obj->I2CTxGdmaInitStruct;
 	I2C_TypeDef *I2Cx = obj->I2Cint.I2Cx;
 
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 
 	I2C_DMAControl(I2Cx, I2C_BIT_TDMAE, DISABLE);
 
@@ -135,7 +135,7 @@ I2CRXGDMAISRHandle(
 	PGDMA_InitTypeDef   GDMA_InitStruct = &obj->I2CRxGdmaInitStruct;
 	I2C_TypeDef *I2Cx = obj->I2Cint.I2Cx;
 
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 
 	I2C_ClearAllINT(I2Cx);
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
@@ -179,7 +179,7 @@ RtkI2CSendDmaMaster(
 	IN  i2c_dma_t *obj
 )
 {
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 	uint32_t i2c_idx = obj->I2Cint.i2c_idx;
 	I2C_InitTypeDef   *I2C_InitStruct = &I2CInitData[i2c_idx];
 	PGDMA_InitTypeDef   GDMA_InitStruct = &obj->I2CTxGdmaInitStruct;
@@ -212,7 +212,7 @@ RtkI2CSendDmaSlave(
 	PGDMA_InitTypeDef   GDMA_InitStruct = &obj->I2CTxGdmaInitStruct;
 	I2C_TypeDef *I2Cx = obj->I2Cint.I2Cx;
 
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 
 	I2C_TXGDMA_Init(i2c_idx, GDMA_InitStruct, obj,
 					(IRQ_FUN)(I2CTXGDMAISRHandle), obj->ptxbuf.pbuf, obj->ptxbuf.datalen);
@@ -239,7 +239,7 @@ RtkI2CDmaSend(i2c_dma_t *obj, uint16_t devaddr)
 	I2C_InitTypeDef   *I2C_InitStruct = &I2CInitData[i2c_idx];
 	I2C_TypeDef *I2Cx = obj->I2Cint.I2Cx;
 
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 
 	/* Check if it's Master Mode */
 	if (I2C_InitStruct->I2CMaster == I2C_MASTER_MODE) {
@@ -275,7 +275,7 @@ RtkI2CReceiveDmaMaster(
 	PGDMA_InitTypeDef   GDMA_InitStruct = &obj->I2CRxGdmaInitStruct;
 	I2C_TypeDef *I2Cx = obj->I2Cint.I2Cx;
 
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 
 	I2C_RXGDMA_Init(i2c_idx, GDMA_InitStruct, obj,
 					(IRQ_FUN)(I2CRXGDMAISRHandle), obj->prxbuf.pbuf, obj->prxbuf.datalen);
@@ -305,7 +305,7 @@ RtkI2CReceiveDmaSlave(
 	PGDMA_InitTypeDef   GDMA_InitStruct = &obj->I2CRxGdmaInitStruct;
 	I2C_TypeDef *I2Cx = obj->I2Cint.I2Cx;
 
-	printf("%s\n", __func__);
+	RTK_LOGI(TAG, "%s\n", __func__);
 
 	if (obj->prxbuf.datalen <= I2C_DMA_DATA_RX_LENGTH) {
 		I2C_RXGDMA_Init(i2c_idx, GDMA_InitStruct, obj,
@@ -389,12 +389,13 @@ u32 dma_tx_callback(void *data)
 {
 	i2c_dma_t *obj = (i2c_dma_t *)data;
 
-	printf("DMA Tx Done!!\r\n");
+	RTK_LOGI(TAG, "DMA Tx Done!!\r\n");
+
 
 	for (int i = 0; i < obj->ptxbuf.datalen; i++) {
-		printf("%02x ", *(obj->ptxbuf.pbuf + i));
+		RTK_LOGI(TAG, "%02x", *(obj->ptxbuf.pbuf + i));
 	}
-	printf("\n");
+	RTK_LOGI(TAG, "\n");
 
 	return 0;
 }
@@ -403,12 +404,12 @@ u32 dma_rx_callback(void *data)
 {
 	i2c_dma_t *obj = (i2c_dma_t *)data;
 
-	printf("DMA Rx Done!!\r\n");
+	RTK_LOGI(TAG, "DMA Rx Done!!\r\n");
 
 	for (int i = 0; i < obj->prxbuf.datalen; i++) {
-		printf("%02x ", *(obj->prxbuf.pbuf + i));
+		RTK_LOGI(TAG, "%02x", *(obj->prxbuf.pbuf + i));
 	}
-	printf("\n");
+	RTK_LOGI(TAG, "\n");
 
 	return 0;
 }
@@ -433,10 +434,10 @@ void i2c_dma_test(void)
 		i2cdatasrc[i2clocalcnt] = i2clocalcnt + 0x2;
 	}
 
-	printf("\ni2c dma mode demo\n");
+	RTK_LOGI(TAG, "i2c dma mode demo\n");
+	RTK_LOGI(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 
 #if I2C_MASTER_DEVICE
-	printf("Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 	_memset(&i2cdmamaster, 0x00, sizeof(i2c_dma_t));
 //	i2c_StructInit(&i2cdmamaster.I2Cint, I2C_0, MBED_I2C_MTR_SDA, MBED_I2C_MTR_SCL, I2C_MASTER_MODE);
 //
@@ -453,7 +454,7 @@ void i2c_dma_test(void)
 
 	I2C_Cmd(i2cdmamaster.I2Cint.I2Cx, ENABLE);
 	// Master write - Slave read
-	printf("\r\nMaster write>>>\n");
+	RTK_LOGI(TAG, "Master write>>>\n");
 
 	i2cdmamaster.ptxbuf.pbuf = i2cdatasrc;
 	i2cdmamaster.ptxbuf.datalen = length;
@@ -464,7 +465,6 @@ void i2c_dma_test(void)
 	RtkI2CDmaSend(&i2cdmamaster, MBED_I2C_SLAVE_ADDR0);
 
 #else //I2C_SLAVE_DEVICE
-	printf("Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 	_memset(&i2cdmaslave, 0x00, sizeof(i2c_dma_t));
 
 	i2cdmaslave.I2Cint.i2c_idx = I2C_0;
@@ -476,7 +476,7 @@ void i2c_dma_test(void)
 	RtkI2CInit(&i2cdmaslave, MBED_I2C_SLV_SDA, MBED_I2C_SLV_SCL);
 
 	// Master write - Slave read
-	printf("\r\nSlave read>>>\n");
+	RTK_LOGI(TAG, "Slave read>>>\n");
 
 	i2cdmaslave.prxbuf.pbuf = i2cdatadst;
 	i2cdmaslave.prxbuf.datalen = length;
@@ -507,10 +507,10 @@ void i2c_dma_test(void)
 		i2cdatasrc[i2clocalcnt] = i2clocalcnt + 0x2;
 	}
 
-	printf("\ni2c dma mode demo\n");
+	RTK_LOGI(TAG, "i2c dma mode demo\n");
+	RTK_LOGI(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 
 #if I2C_MASTER_DEVICE
-	printf("Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 	_memset(&i2cdmamaster, 0x00, sizeof(i2c_dma_t));
 
 	i2cdmamaster.I2Cint.i2c_idx = I2C_0;
@@ -524,7 +524,7 @@ void i2c_dma_test(void)
 	RtkI2CInit(&i2cdmamaster, MBED_I2C_MTR_SDA, MBED_I2C_MTR_SCL);
 
 	// Master read - Slave write
-	printf("\r\nMaster read>>>\n");
+	RTK_LOGI(TAG, "Master read>>>\n");
 
 	i2cdmamaster.prxbuf.pbuf = i2cdatadst;
 	i2cdmamaster.prxbuf.datalen = length;
@@ -533,7 +533,6 @@ void i2c_dma_test(void)
 	RtkI2CDmaReceive(&i2cdmamaster, MBED_I2C_SLAVE_ADDR0);
 
 #else //I2C_SLAVE_DEVICE
-	printf("Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 	_memset(&i2cdmaslave, 0x00, sizeof(i2c_dma_t));
 
 	i2cdmaslave.I2Cint.i2c_idx = I2C_0;
@@ -547,7 +546,7 @@ void i2c_dma_test(void)
 	RtkI2CInit(&i2cdmaslave, MBED_I2C_SLV_SDA, MBED_I2C_SLV_SCL);
 
 	// Master read - Slave write
-	printf("\r\nSlave write>>>\n");
+	RTK_LOGI(TAG, "Slave write>>>\n");
 
 	i2cdmaslave.ptxbuf.pbuf = i2cdatasrc;
 	i2cdmaslave.ptxbuf.datalen = length;
@@ -564,7 +563,7 @@ void i2c_dma_test(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "I2C DMA DEMO", (rtos_task_t)i2c_dma_test, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "I2C DMA DEMO", (rtos_task_t)i2c_dma_test, NULL, (3072), (1)) != SUCCESS) {
 		printf("Cannot create i2c_dma_test demo task\n\r");
 	}
 

@@ -40,7 +40,7 @@ void mbed_adc_vbat_demo(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "MBED_ADC_VBAT_TASK", (rtos_task_t)mbed_adc_vbat_demo, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "MBED_ADC_VBAT_TASK", (rtos_task_t)mbed_adc_vbat_demo, NULL, 3072, (1)) != SUCCESS) {
 		printf("Cannot create MBED_ADC_VBAT_TASK\r\n");
 	}
 

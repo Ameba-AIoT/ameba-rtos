@@ -16,10 +16,6 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 	- Connect `ADC_CH0_PIN(_PB_5)` to `to-be-measured signal`
 	- Connect `ADC_CH1_PIN(_PB_4)` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
-* On AmebaDplus
-	- Connect `ADC_CH0_PIN(_PB_19)` to `to-be-measured signal`
-	- Connect `ADC_CH1_PIN(_PB_18)` to `to-be-measured signal`
-	- Connect `GND` to `GND` of to-be-measured device
 
 # SW Configuration
 
@@ -45,8 +41,6 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 	`0 ~ 1.8V`
 * On AmebaLite
 	`0 ~ 3.3V`
-* On AmebaDplus
-	`0 ~ 3.3V`
 
 2. Each ADC channel has a unique corresponding pad. If `ADC_CHAN` is modified, `ADC_PAD` must be modified accordingly.
 
@@ -54,4 +48,3 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 
 * AmebaSmart
 * AmebaLite
-* AmebaDplus

@@ -120,7 +120,6 @@ void uart_clock_off(void)
 {
 	is_stop = 1;
 	UART_INTConfig(UART_DEV, RUART_BIT_ETBEI, DISABLE);
-	dma_free();
 	UART_ClearTxFifo(UART_DEV);
 }
 

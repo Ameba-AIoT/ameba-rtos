@@ -52,7 +52,6 @@
 #define WLAN_RAM_MAP_SECTION
 #define WLAN_ROM_BSS_SECTION
 
-#if defined(ARM_CORE_CA32)
 #define	HAL_ROM_TEXT_SECTION
 #define	HAL_ROM_DATA_SECTION
 #define	HAL_ROM_BSS_SECTION
@@ -63,7 +62,6 @@
 #define SHELL_ROM_TEXT_SECTION
 #define SHELL_ROM_BSS_SECTION
 #define SHELL_ROM_DATA_SECTION
-#endif
 
 #define BOOT_RAM_TEXT_SECTION				SECTION(".boot.ram.text")
 #define BOOT_RAM_RODATA_SECTION				SECTION(".boot.rodata")

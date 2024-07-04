@@ -15,11 +15,13 @@
 #include <rtk_bt_br_gap.h>
 #include <rtk_bt_sdp.h>
 #include <rtk_bt_hfp.h>
+#include <rtk_bt_pbap.h>
 #include <bt_audio_intf.h>
 #include <bt_audio_track_api.h>
 #include <bt_audio_record_api.h>
 #include <app_audio_data.h>
 #include <cvsd_codec_entity.h>
+#include <bt_utils.h>
 
 /* -------------------------------- Defines --------------------------------- */
 #define RTK_BT_DEV_NAME "RTK_BT_HFP_HF"
@@ -406,6 +408,53 @@ static const uint8_t hfp_ag_sdp_record[] = {
 	(uint8_t)(0x012F)
 };
 
+const uint8_t pbap_pce_sdp_record[] = {
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x36,
+	//attribute SDP_ATTR_SRV_CLASS_ID_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_SRV_CLASS_ID_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_SRV_CLASS_ID_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x03,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PBAP_PCE >> 8),
+	(uint8_t)(RTK_BT_UUID_PBAP_PCE),
+
+	//attribute SDP_ATTR_BROWSE_GROUP_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_BROWSE_GROUP_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_BROWSE_GROUP_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x03,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PUBLIC_BROWSE_GROUP >> 8),
+	(uint8_t)RTK_BT_UUID_PUBLIC_BROWSE_GROUP,
+
+	//attribute SDP_ATTR_PROFILE_DESC_LIST
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)(RTK_BT_SDP_ATTR_PROFILE_DESC_LIST >> 8),
+	(uint8_t)RTK_BT_SDP_ATTR_PROFILE_DESC_LIST,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x08,
+	RTK_BT_SDP_DATA_ELEM_SEQ_HDR,
+	0x06,
+	RTK_BT_SDP_UUID16_HDR,
+	(uint8_t)(RTK_BT_UUID_PBAP >> 8),
+	(uint8_t)RTK_BT_UUID_PBAP,
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	0x01,//version 1.2
+	0x02,
+
+	//attribute SDP_ATTR_SRV_NAME
+	RTK_BT_SDP_UNSIGNED_TWO_BYTE,
+	(uint8_t)((RTK_BT_SDP_ATTR_SRV_NAME + RTK_BT_SDP_BASE_LANG_OFFSET) >> 8),
+	(uint8_t)(RTK_BT_SDP_ATTR_SRV_NAME + RTK_BT_SDP_BASE_LANG_OFFSET),
+	RTK_BT_SDP_STRING_HDR,
+	0x14,
+	0x50, 0x68, 0x6f, 0x6e, 0x65, 0x62, 0x6f, 0x6f, 0x6b, 0x20, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x20, 0x50, 0x43, 0x45 //"Phonebook Access PCE"
+};
+
 static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -420,22 +469,25 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_INQUIRY_RESULT: {
 		rtk_bt_br_inquiry_result_t *p_result = (rtk_bt_br_inquiry_result_t *)param;
-		BT_LOGA("[BR GAP] Scan %02X:%02X:%02X:%02X:%02X:%02X Name %s \r\n",
+		BT_LOGA("[BR GAP] Scan %02x:%02x:%02x:%02x:%02x:%02x Name %s \r\n",
 				p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
 				p_result->name);
+		BT_AT_PRINT("+BRGAP:inquiry_result,%02x:%02x:%02x:%02x:%02x:%02x,%s\r\n",
+					p_result->bd_addr[5], p_result->bd_addr[4], p_result->bd_addr[3], p_result->bd_addr[2], p_result->bd_addr[1], p_result->bd_addr[0],
+					p_result->name);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_IND: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL connection indication %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL connection indication %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_CONN_SUCCESS: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL connection success %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL connection success %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		memcpy((void *)remote_bd_addr, bd_addr, 6);
 		break;
@@ -443,7 +495,7 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_SNIFF: {
 		rtk_bt_br_acl_sniff_t *p_sniff = (rtk_bt_br_acl_sniff_t *)param;
-		BT_LOGA("[BR GAP] ACL sniff mode from %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL sniff mode from %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				p_sniff->bd_addr[5], p_sniff->bd_addr[4],
 				p_sniff->bd_addr[3], p_sniff->bd_addr[2],
 				p_sniff->bd_addr[1], p_sniff->bd_addr[0]);
@@ -453,17 +505,22 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 
 	case RTK_BT_BR_GAP_ACL_ACTIVE: {
 		uint8_t *bd_addr = (uint8_t *)param;
-		BT_LOGA("[BR GAP] ACL active %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL active %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		break;
 	}
 
 	case RTK_BT_BR_GAP_ACL_DISCONN: {
 		rtk_bt_br_acl_disc_t *p_acl_disc_event = (rtk_bt_br_acl_disc_t *)param;
-		BT_LOGA("[BR GAP] ACL disconnection %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[BR GAP] ACL disconnection %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
 				p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
 				p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0]);
+		BT_AT_PRINT("+BRGAP:disc,%02x:%02x:%02x:%02x:%02x:%02x,0x%x\r\n",
+					p_acl_disc_event->bd_addr[5], p_acl_disc_event->bd_addr[4],
+					p_acl_disc_event->bd_addr[3], p_acl_disc_event->bd_addr[2],
+					p_acl_disc_event->bd_addr[1], p_acl_disc_event->bd_addr[0],
+					p_acl_disc_event->cause);
 		break;
 	}
 
@@ -601,7 +658,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 
 	case RTK_BT_HFP_EVT_SDP_ATTR_INFO: {
 		rtk_bt_hfp_sdp_attr_info_t *p_info = (rtk_bt_hfp_sdp_attr_info_t *)param;
-		BT_LOGA("[HFP] SDP Scan %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] SDP Scan %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				p_info->bd_addr[5], p_info->bd_addr[4],
 				p_info->bd_addr[3], p_info->bd_addr[2],
 				p_info->bd_addr[1], p_info->bd_addr[0]);
@@ -622,7 +679,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_CONN_IND: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive HFP connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive HFP connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -630,7 +687,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_CONN_CMPL: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive HFP connection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive HFP connection completion from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -638,7 +695,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_CALL_STATUS: {
 		rtk_bt_hfp_call_status_ind_t *p_hfp_call_status_ind = (rtk_bt_hfp_call_status_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_call_status_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive HFP call status change from %d to %d from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive HFP call status change from %d to %d from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				p_hfp_call_status_ind->prev_status,
 				p_hfp_call_status_ind->curr_status,
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
@@ -660,7 +717,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_CALLER_ID_IND: {
 		rtk_bt_hfp_caller_id_ind_t *p_hfp_caller_id_ind = (rtk_bt_hfp_caller_id_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_caller_id_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive HFP caller id indication from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive HFP caller id indication from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		BT_LOGA("[HFP] caller number is %s type is %d \r\n", p_hfp_caller_id_ind->number, p_hfp_caller_id_ind->type);
 	}
@@ -669,7 +726,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_DISCONN_CMPL: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] HFP disconnection completion with %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] HFP disconnection completion with %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -677,7 +734,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_SCO_CONN_IND: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive HFP SCO connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive HFP SCO connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -685,7 +742,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_HF_BATTERY_IND: {
 		rtk_bt_hfp_hf_battery_ind_t *p_hfp_batt_ind = (rtk_bt_hfp_hf_battery_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_batt_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive HFP BATTERY IND REQ from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive HFP BATTERY IND REQ from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		*p_hfp_batt_ind->ret_info = battery_power;
 	}
@@ -696,7 +753,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_hfp_hf_speaker_volume_changed_ind_t *p_param_t = (rtk_bt_hfp_hf_speaker_volume_changed_ind_t *)param;
 		memcpy((void *)bd_addr, p_param_t->bd_addr, 6);
 		audio_track_volume = 1.0 * p_param_t->volume / 15;
-		BT_LOGA("[HFP] Receive speaker volume changed from %02X:%02X:%02X:%02X:%02X:%02X, %.2f \r\n",
+		BT_LOGA("[HFP] Receive speaker volume changed from %02x:%02x:%02x:%02x:%02x:%02x, %.2f \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], audio_track_volume);
 		rtk_bt_audio_track_set_hardware_volume(audio_track_volume, audio_track_volume);
 	}
@@ -707,7 +764,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		rtk_bt_hfp_hf_mic_volume_changed_ind_t *p_param_t = (rtk_bt_hfp_hf_mic_volume_changed_ind_t *)param;
 		memcpy((void *)bd_addr, p_param_t->bd_addr, 6);
 		audio_mic_volume = 0xaf * p_param_t->volume / 15;
-		BT_LOGA("[HFP] Receive mic volume changed from %02X:%02X:%02X:%02X:%02X:%02X, 0x%x \r\n",
+		BT_LOGA("[HFP] Receive mic volume changed from %02x:%02x:%02x:%02x:%02x:%02x, 0x%x \r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0], (unsigned int)audio_mic_volume);
 		rtk_bt_audio_record_set_capture_volume(4, audio_mic_volume);
 	}
@@ -717,8 +774,11 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		uint16_t ret = 1;
 		rtk_bt_hfp_codec_t *phfp_codec = (rtk_bt_hfp_codec_t *)param;
 
-		BT_LOGA("[HFP] Receive HFP SCO connection completion with %02X:%02X:%02X:%02X:%02X:%02X \r\n",
+		BT_LOGA("[HFP] Receive HFP SCO connection completion with %02x:%02x:%02x:%02x:%02x:%02x \r\n",
 				phfp_codec->bd_addr[5], phfp_codec->bd_addr[4], phfp_codec->bd_addr[3], phfp_codec->bd_addr[2], phfp_codec->bd_addr[1], phfp_codec->bd_addr[0]);
+		BT_AT_PRINT("+BTHFP:sco_conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					phfp_codec->bd_addr[5], phfp_codec->bd_addr[4], phfp_codec->bd_addr[3],
+					phfp_codec->bd_addr[2], phfp_codec->bd_addr[1], phfp_codec->bd_addr[0]);
 		if ((phfp_codec->codec_type & (RTK_BT_AUDIO_CODEC_CVSD /* | RTK_BT_AUDIO_CODEC_mSBC */)) == 0) {
 			BT_LOGE("[HFP] Not support codec %d \r\n", phfp_codec->codec_type);
 			break;
@@ -751,8 +811,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 			}
 			hfp_task.run = 1;
 			if (false == osif_task_create(&hfp_task.hdl, "hfp_task",
-											hfp_task_entry, NULL,
-											2048, 4)) {
+										  hfp_task_entry, NULL,
+										  4096, 4)) {
 				osif_sem_delete(hfp_task.sem);
 				return 1;
 			}
@@ -773,8 +833,10 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		BT_LOGE("[HFP] HFP receive sco disconnected from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGE("[HFP] HFP receive sco disconnected from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTHFP:sco_disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		hfp_task.run = 0;
 		if (false == osif_sem_take(hfp_task.sem, 0xffffffffUL)) {
 			return 1;
@@ -795,7 +857,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_CONN_IND: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG connection from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG connection from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -803,23 +865,27 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_CONN_CMPL: {
 		rtk_bt_hfp_conn_ind_t *conn_ind = (rtk_bt_hfp_conn_ind_t *)param;
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG connection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG connection completion from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTHFP:conn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_DISCONN_CMPL: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG disconnection completion from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG disconnection completion from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTHFP:disconn,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_HFP_EVT_AG_INDICATORS_STATUS_REQ: {
 		rtk_bt_hfp_ag_indicators_status_req_t *p_ag_ind_status_req = (rtk_bt_hfp_ag_indicators_status_req_t *)param;
 		memcpy((void *)bd_addr, p_ag_ind_status_req->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG indicators req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG indicators req from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		/* CONFIG indicator for return value */
 		memcpy((void *)p_ag_ind_status_req->ret_info, &demo_ag_call_status_t, sizeof(rtk_bt_hfp_ag_indicators_status_t));
@@ -830,7 +896,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 		/* query call list */
 		rtk_bt_hfp_ag_curr_calls_list_query_t *p_ag_query_calls_list_ind = (rtk_bt_hfp_ag_curr_calls_list_query_t *)param;
 		memcpy((void *)bd_addr, p_ag_query_calls_list_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG query call list req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG query call list req from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 		/* send call list */
 	}
@@ -839,7 +905,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_DIAL_LAST_NUMBER: {
 		rtk_bt_hfp_ag_dial_last_number_ind_t *p_ag_dial_last_num_ind = (rtk_bt_hfp_ag_dial_last_number_ind_t *)param;
 		memcpy((void *)bd_addr, p_ag_dial_last_num_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG dial last number req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG dial last number req from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -847,7 +913,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_CALL_ANSWER_REQ: {
 		rtk_bt_hfp_ag_call_answer_req_ind_t *p_ag_call_answer_req_ind = (rtk_bt_hfp_ag_call_answer_req_ind_t *)param;
 		memcpy((void *)bd_addr, p_ag_call_answer_req_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG call answer req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG call answer req from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -855,7 +921,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_CALL_TERMINATE_REQ: {
 		rtk_bt_hfp_ag_call_terminate_req_ind_t *p_ag_call_terminate_req_ind = (rtk_bt_hfp_ag_call_terminate_req_ind_t *)param;
 		memcpy((void *)bd_addr, p_ag_call_terminate_req_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG terminate req from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG terminate req from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
@@ -863,15 +929,102 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	case RTK_BT_HFP_EVT_AG_CALL_STATUS: {
 		rtk_bt_hfp_call_status_ind_t *p_hfp_call_status_ind = (rtk_bt_hfp_call_status_ind_t *)param;
 		memcpy((void *)bd_addr, p_hfp_call_status_ind->bd_addr, 6);
-		BT_LOGA("[HFP] Receive AG call status change from %d to %d from %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+		BT_LOGA("[HFP] Receive AG call status change from %d to %d from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				p_hfp_call_status_ind->prev_status,
 				p_hfp_call_status_ind->curr_status,
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+		BT_AT_PRINT("+BTHFP:call_status,%d,%d,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_hfp_call_status_ind->prev_status,
+					p_hfp_call_status_ind->curr_status,
+					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	}
 	break;
 
 	default: {
 		BT_LOGE("[HFP]: default evt_code 0x%04x \r\n", evt_code);
+	}
+	break;
+	}
+
+	return RTK_BT_EVT_CB_OK;
+}
+
+static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+
+	switch (evt_code) {
+
+	case RTK_BT_PBAP_EVT_CONN_CMPL: {
+		rtk_bt_pbap_conn_ind_t *p_pbap_conn_ind = (rtk_bt_pbap_conn_ind_t *)param;
+		BT_LOGA("[PBAP] Receive PBAP connection completion from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_pbap_conn_ind->bd_addr[5], p_pbap_conn_ind->bd_addr[4], p_pbap_conn_ind->bd_addr[3], p_pbap_conn_ind->bd_addr[2], p_pbap_conn_ind->bd_addr[1], p_pbap_conn_ind->bd_addr[0]);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_CONN_FAIL: {
+		rtk_bt_pbap_conn_fail_ind_t *p_pbap_conn_fail_ind = (rtk_bt_pbap_conn_fail_ind_t *)param;
+		BT_LOGA("[PBAP] PBAP connection fail with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%02x \r\n",
+				p_pbap_conn_fail_ind->bd_addr[5], p_pbap_conn_fail_ind->bd_addr[4], p_pbap_conn_fail_ind->bd_addr[3], p_pbap_conn_fail_ind->bd_addr[2], p_pbap_conn_fail_ind->bd_addr[1], p_pbap_conn_fail_ind->bd_addr[0],
+				p_pbap_conn_fail_ind->cause);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_DISCONN_CMPL: {
+		rtk_bt_pbap_disconn_cmpl_t *p_pbap_disc_cmpl_ind = (rtk_bt_pbap_disconn_cmpl_t *)param;
+		BT_LOGA("[PBAP] PBAP disconnect completion with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%02x \r\n",
+				p_pbap_disc_cmpl_ind->bd_addr[5], p_pbap_disc_cmpl_ind->bd_addr[4], p_pbap_disc_cmpl_ind->bd_addr[3], p_pbap_disc_cmpl_ind->bd_addr[2], p_pbap_disc_cmpl_ind->bd_addr[1], p_pbap_disc_cmpl_ind->bd_addr[0],
+				p_pbap_disc_cmpl_ind->cause);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL: {
+		rtk_bt_pbap_set_pb_cmpl_t *p_pbap_set_pb_cmpl = (rtk_bt_pbap_set_pb_cmpl_t *)param;
+		BT_LOGA("[PBAP] PBAP set phone book completion with %02x:%02x:%02x:%02x:%02x:%02x, result is %d, path is 0x%02x \r\n",
+				p_pbap_set_pb_cmpl->bd_addr[5], p_pbap_set_pb_cmpl->bd_addr[4], p_pbap_set_pb_cmpl->bd_addr[3], p_pbap_set_pb_cmpl->bd_addr[2], p_pbap_set_pb_cmpl->bd_addr[1], p_pbap_set_pb_cmpl->bd_addr[0],
+				(int)p_pbap_set_pb_cmpl->result,
+				(uint8_t)p_pbap_set_pb_cmpl->path);
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL: {
+		rtk_bt_pbap_get_pb_cmpl_t *p_pbap_get_pb_cmpl = (rtk_bt_pbap_get_pb_cmpl_t *)param;
+		BT_LOGA("[PBAP] PBAP get phone book completion with %02x:%02x:%02x:%02x:%02x:%02x, data_len is %d, pb_size is %d, new_missed_calls is %d, data_end %d \r\n",
+				p_pbap_get_pb_cmpl->bd_addr[5], p_pbap_get_pb_cmpl->bd_addr[4], p_pbap_get_pb_cmpl->bd_addr[3], p_pbap_get_pb_cmpl->bd_addr[2], p_pbap_get_pb_cmpl->bd_addr[1], p_pbap_get_pb_cmpl->bd_addr[0],
+				(int)p_pbap_get_pb_cmpl->data_len,
+				(int)p_pbap_get_pb_cmpl->pb_size,
+				(int)p_pbap_get_pb_cmpl->new_missed_calls,
+				(int)p_pbap_get_pb_cmpl->data_end);
+		if (p_pbap_get_pb_cmpl->data_len) {
+			BT_LOGA(" phone book detail \r\n ");
+			BT_LOGA(" %s \r\n", p_pbap_get_pb_cmpl->p_data);
+			osif_mem_free(p_pbap_get_pb_cmpl->p_data);
+		}
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_CALLER_ID_NAME: {
+		rtk_bt_pbap_caller_id_name_t *p_pbap_caller_id_name = (rtk_bt_pbap_caller_id_name_t *)param;
+		if (p_pbap_caller_id_name->name_len) {
+			BT_LOGA("[PBAP] PBAP pull caller id name with %02x:%02x:%02x:%02x:%02x:%02x, name is %s \r\n",
+					p_pbap_caller_id_name->bd_addr[5], p_pbap_caller_id_name->bd_addr[4], p_pbap_caller_id_name->bd_addr[3], p_pbap_caller_id_name->bd_addr[2], p_pbap_caller_id_name->bd_addr[1], p_pbap_caller_id_name->bd_addr[0],
+					(char *)p_pbap_caller_id_name->name_ptr);
+			osif_mem_free(p_pbap_caller_id_name->name_ptr);
+		}
+	}
+	break;
+
+	case RTK_BT_PBAP_EVT_GET_PHONE_BOOK_SIZE_CMPL: {
+		rtk_bt_pbap_get_pb_size_cmpl *p_pbap_get_pb_size = (rtk_bt_pbap_get_pb_size_cmpl *)param;
+		BT_LOGA("[PBAP] PBAP get phone book size with %02x:%02x:%02x:%02x:%02x:%02x, pb_size is %d, new_missed_calls is %d \r\n",
+				p_pbap_get_pb_size->bd_addr[5], p_pbap_get_pb_size->bd_addr[4], p_pbap_get_pb_size->bd_addr[3], p_pbap_get_pb_size->bd_addr[2], p_pbap_get_pb_size->bd_addr[1], p_pbap_get_pb_size->bd_addr[0],
+				(int)p_pbap_get_pb_size->pb_size,
+				(int)p_pbap_get_pb_size->new_missed_calls);
+	}
+	break;
+
+	default: {
+		BT_LOGE("[PBAP]: default evt_code 0x%04x \r\n", evt_code);
 	}
 	break;
 	}
@@ -920,8 +1073,14 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		}
 
 		//set GAP configuration
-		bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
-											RTK_BT_PROFILE_SDP;
+		if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
+			bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
+												RTK_BT_PROFILE_SDP | \
+												RTK_BT_PROFILE_PBAP;
+		} else {
+			bt_app_conf.app_profile_support =   RTK_BT_PROFILE_HFP | \
+												RTK_BT_PROFILE_SDP;
+		}
 		bt_app_conf.mtu_size = 180;
 		bt_app_conf.prefer_all_phy = 0;
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
@@ -948,6 +1107,7 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 			hfp_demo_role = RTK_BT_AUDIO_HFP_ROLE_AG;
 		} else if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
 			BT_APP_PROCESS(rtk_sdp_record_add((void *)hfp_sdp_record, sizeof(hfp_sdp_record)));
+			BT_APP_PROCESS(rtk_sdp_record_add((void *)pbap_pce_sdp_record, sizeof(pbap_pce_sdp_record)));
 			BT_APP_PROCESS(rtk_bt_hfp_cfg((uint8_t)RTK_BT_AUDIO_HFP_ROLE_HF, (void *)&demo_hf_conf));
 			hfp_demo_role = RTK_BT_AUDIO_HFP_ROLE_HF;
 		} else {
@@ -970,6 +1130,9 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
 		/* Initilize hfp part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_HFP, rtk_bt_hfp_app_callback));
+		if (RTK_BT_AUDIO_HFP_ROLE_HF == role) {
+			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_PBAP, rtk_bt_pbap_app_callback));
+		}
 		hfp_demo_init_flag = 1;
 	} else if (0 == enable) {
 		if (!hfp_demo_init_flag) {

@@ -655,6 +655,53 @@ enum mgn_rate_type {
 	MGN_UNKNOWN
 };
 
+/**
+  * @brief csi trig management frame subtype.
+  */
+enum trig_frame_mgnt_type {
+	CSI_TRIG_ASSOCREQ   = BIT(0),
+	CSI_TRIG_ASSOCRSP   = BIT(1),
+	CSI_TRIG_REASSOCREQ = BIT(2),
+	CSI_TRIG_REASSOCRSP = BIT(3),
+	CSI_TRIG_PROBEREQ   = BIT(4),
+	CSI_TRIG_PROBERSP   = BIT(5),
+	CSI_TRIG_BEACON     = BIT(8),
+	CSI_TRIG_ATIM       = BIT(9),
+	CSI_TRIG_DISASSOC   = BIT(10),
+	CSI_TRIG_AUTH       = BIT(11),
+	CSI_TRIG_DEAUTH     = BIT(12),
+	CSI_TRIG_ACTION     = BIT(13)
+};
+
+/**
+  * @brief csi trig control frame subtype.
+  */
+enum trig_frame_ctrl_type {
+	CSI_TRIG_TRIGGER     = BIT(2),
+	CSI_TRIG_BA          = BIT(9),
+	CSI_TRIG_PSPOLL      = BIT(10),
+	CSI_TRIG_RTS         = BIT(11),
+	CSI_TRIG_CTS         = BIT(12),
+	CSI_TRIG_ACK         = BIT(13),
+	CSI_TRIG_CFEND       = BIT(14),
+	CSI_TRIG_CFEND_CFACK = BIT(15)
+};
+
+/**
+  * @brief csi trig data frame subtype.
+  */
+enum trig_frame_data_type {
+	CSI_TRIG_DATA           = BIT(0),
+	CSI_TRIG_DATA_CFACK     = BIT(1),
+	CSI_TRIG_DATA_CFPOLL    = BIT(2),
+	CSI_TRIG_DATA_CFACKPOLL = BIT(3),
+	CSI_TRIG_DATA_NULL      = BIT(4),
+	CSI_TRIG_CF_ACK         = BIT(5),
+	CSI_TRIG_CF_POLL        = BIT(6),
+	CSI_TRIG_CF_ACKPOLL     = BIT(7),
+	CSI_TRIG_QOS_DATA       = BIT(8),
+	CSI_TRIG_QOS_DATA_NULL	= BIT(12)
+};
 
 /**
   * @brief csi enable or config
@@ -779,7 +826,8 @@ enum rtw_antdiv_mode {
 */
 enum rtw_802_11_band {
 	RTW_802_11_BAND_5GHZ   = 0, /**< Denotes 5GHz radio band */
-	RTW_802_11_BAND_2_4GHZ = 1  /**< Denotes 2.4GHz radio band */
+	RTW_802_11_BAND_2_4GHZ = 1,  /**< Denotes 2.4GHz radio band */
+	RTW_802_11_BAND_NOUSE = 0xFFFFFFFF
 };
 
 /**
@@ -789,7 +837,7 @@ enum rtw_bss_type {
 	RTW_BSS_TYPE_INFRASTRUCTURE 	= 0, /**< Denotes infrastructure network                  */
 	RTW_BSS_TYPE_ADHOC          		= 1, /**< Denotes an 802.11 ad-hoc IBSS network           */
 	RTW_BSS_TYPE_ANY            			= 2, /**< Denotes either infrastructure or ad-hoc network */
-	RTW_BSS_TYPE_UNKNOWN        		= -1 /**< May be returned by scan function if BSS type is unknown. Do not pass this to the Join function */
+	RTW_BSS_TYPE_UNKNOWN        		= 0xFFFFFFFF /**< May be returned by scan function if BSS type is unknown. Do not pass this to the Join function */
 };
 
 /**
@@ -816,7 +864,7 @@ enum rtw_wps_type {
 	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 0x0005,	/**< register specified type */
 	RTW_WPS_TYPE_NONE                   		= 0x0006, 	/**< none */
 	RTW_WPS_TYPE_WSC                    		= 0x0007,	/**< wsc type */
-	RTW_WPS_TYPE_NOUSE					= 0x00ff		/**< unsed type */
+	RTW_WPS_TYPE_NOUSE					= 0xffffffff		/**< unsed type */
 };
 
 /**
