@@ -51,12 +51,11 @@ COMPONENT_CLEAN += wlan_encrypt
 COMPONENT_CLEAN += wps
 # NP
 else ifeq ($(CONFIG_AS_INIC_NP),y)
-COMPONENT += api
+#COMPONENT += api
 
-COMPONENT_CLEAN += api
+#COMPONENT_CLEAN += api
 #Single Core
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
-COMPONENT += api
 COMPONENT += application
 ifneq ($(CONFIG_MP_SHRINK),y)
 COMPONENT += network
@@ -65,7 +64,6 @@ COMPONENT += utilities
 COMPONENT += utilities_example
 #COMPONENT += wlan_encrypt
 
-COMPONENT_CLEAN += api
 COMPONENT_CLEAN += application
 COMPONENT_CLEAN += network
 COMPONENT_CLEAN += utilities

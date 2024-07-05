@@ -950,61 +950,77 @@ void at_wlstate(void *arg)
 #endif
 }
 
-static void at_wlautoconn_help(void)
+static void at_wlreconn_help(void)
 {
 	at_printf("\r\n");
-	at_printf("AT+WLAUTOCONN=<mode>");
-	at_printf("\t<mode>:\t1: disable auto-reconnect, 2: clear stored flash data\r\n");
+	at_printf("AT+WLRECONN=<command>,<parameter>\r\n");
+	at_printf("<command>:\tauto: auto reconnect when wifi disconnect or connect fail\r\n");
+	at_printf("\t<parameter>:\t0: disable auto-reconnect, 1: enable auto-reconnect\r\n");
+	at_printf("<command>:\tfast: fast reconnect when wifi power on\r\n");
+	at_printf("\t<parameter>:\t0: clear stored flash data and disable fast reconnect, 1: enable fast reconnect\r\n");
+
 }
 
 /****************************************************************
 AT command process:
-	AT+WLAUTOCONN
+	AT+WLRECONN
 	Wifi AT Command:
 	Set auto-connection.
-	[+WLAUTOCONN]:OK
+	[+WLRECONN]:OK
 ****************************************************************/
-void at_wlautoconn(void *arg)
+void at_wlreconn(void *arg)
 {
 	int error_no = 0;
 	int argc = 0, mode = 0;
 	char *argv[MAX_ARGC] = {0};
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+WLAUTOCONN] Invalid parameter\r\n");
+		RTK_LOGW(NOTAG, "[+WLRECONN] Invalid parameter\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
-	if (argc != 2 || argv[1] == NULL) {
-		RTK_LOGW(NOTAG, "[+WLAUTOCONN] Invalid parameter number\r\n");
+	if (argc != 3 || argv[1] == NULL || argv[2] == NULL) {
+		RTK_LOGW(NOTAG, "[+WLRECONN] Invalid parameter number\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	if (strlen(argv[1]) == 0) {
-		RTK_LOGW(NOTAG, "[+WLAUTOCONN] missing enable\r\n");
-		error_no = 1;
-		goto end;
-	}
-	mode = atoi(argv[1]);
-	if (mode == 0) {
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Disable autoreconnect\r\n");
-		wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
-	} else if (mode == 1) {
-		RTK_LOGI(NOTAG, "[+WLAUTOCONN] Enable autoreconnect\r\n");
-		wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
+	mode = atoi(argv[2]);
+	if (0 == strcmp("auto", argv[1])) {
+		if (mode == 0) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Disable autoreconnect\r\n");
+			wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
+		} else if (mode == 1) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Enable autoreconnect\r\n");
+			wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
+		} else {
+			error_no = 2;
+		}
+	} else if (0 == strcmp("fast", argv[1])) {
+		extern void wifi_fast_connect_enable(unsigned char enable);
+		if (mode == 0) {
+			extern int32_t rt_kv_delete(const char *key);
+			RTK_LOGI(NOTAG, "[+WLRECONN] Erase wifi flash and disable fast reconnect\r\n");
+			rt_kv_delete("wlan_data");
+			wifi_fast_connect_enable(0);
+		} else if (mode == 1) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Enable fast reconnect\r\n");
+			wifi_fast_connect_enable(1);
+		} else {
+			error_no = 2;
+		}
 	} else {
-		error_no = 2;
+		error_no = 1;
 	}
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLAUTOCONN:");
+		at_printf("\r\n%sOK\r\n", "+WLRECONN:");
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLAUTOCONN:", error_no);
-		at_wlautoconn_help();
+		at_printf("\r\n%sERROR:%d\r\n", "+WLRECONN:", error_no);
+		at_wlreconn_help();
 	}
 }
 
@@ -1379,8 +1395,10 @@ end:
 	}
 }
 
-/* The command iperf3 will be implemented later. */
-static void cmd_iperf3(int argc, char **argv)
+/*
+ * To aviod compile error when cmd_iperf3 is not implemented
+ */
+_WEAK void cmd_iperf3(int argc, char **argv)
 {
 	UNUSED(argc);
 	UNUSED(argv);
@@ -1522,6 +1540,7 @@ void at_iperf3(void *arg)
 		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
 		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
 		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
+		RTK_LOGI(NOTAG, "	 -u    #		use UDP protocol (default TCP)\r\n");
 		RTK_LOGI(NOTAG, "	Server specific:\r\n");
 		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
 		RTK_LOGI(NOTAG, "	Client specific:\r\n");
@@ -1573,7 +1592,7 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLSTARTAP", at_wlstartap, {NULL, NULL}},
 	{"+WLSTOPAP", at_wlstopap, {NULL, NULL}},
 	{"+WLSTATE", at_wlstate, {NULL, NULL}},
-	{"+WLAUTOCONN", at_wlautoconn, {NULL, NULL}},
+	{"+WLRECONN", at_wlreconn, {NULL, NULL}},
 	{"+WLPROMISC", at_wlpromisc, {NULL, NULL}},
 	{"+WLDBG", at_wldbg, {NULL, NULL}},
 #ifdef CONFIG_WPS

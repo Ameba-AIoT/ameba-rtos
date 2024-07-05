@@ -40,6 +40,7 @@ extern "C"
 #define RTK_BLE_5_1_SUPPORT                 1
 #define RTK_BLE_5_2_SUPPORT                 1
 #define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
@@ -90,6 +91,7 @@ extern "C"
 #define RTK_BLE_5_1_SUPPORT                 1
 #define RTK_BLE_5_2_SUPPORT                 1
 #define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
@@ -163,6 +165,7 @@ extern "C"
 #define RTK_BLE_5_1_SUPPORT                 1
 #define RTK_BLE_5_2_SUPPORT                 0
 #define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 0
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT

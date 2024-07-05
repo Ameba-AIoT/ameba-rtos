@@ -105,7 +105,7 @@ typedef struct {
 
 u8 NAND_FTL_Init(void);
 u8 NAND_FTL_ReadPage(u32 addr, u8 *buf);
-u8 NAND_FTL_EraseBlock(unsigned int addr, u8 force);
+u8 NAND_FTL_EraseBlock(u32 addr, u8 force);
 u8 NAND_FTL_WritePage(u32 addr, const u8 *buf, u8 do_erase);
 u8 NAND_FTL_MfgInit(NAND_FTL_DeviceTypeDef *nand);
 

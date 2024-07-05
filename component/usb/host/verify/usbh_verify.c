@@ -19,12 +19,14 @@
 #include "usbh_verify.h"
 
 /* Private defines -----------------------------------------------------------*/
-/* Private types -------------------------------------------------------------*/
-#define DUMP_DATA_MAX_LEN (32)
 
+/* Private types -------------------------------------------------------------*/
 typedef int(* usbh_xfer_func)(usb_host_t *host, u8 *buf, u16 len, u8 pipe_id);
 
 /* Private macros ------------------------------------------------------------*/
+#define DUMP_DATA_MAX_LEN (32)
+
+#define USBH_DUMP_EP_MSG    0
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -133,13 +135,17 @@ static usbh_xfer_func usbh_verify_get_xfer_func(usbh_verify_xfer_t *xfer)
 
 static void usbh_verify_dump_ep_info(usbh_verify_xfer_t *xfer)
 {
+#if USBH_DUMP_EP_MSG
 	char *xfer_type = usbh_verify_get_xfer_type_text(xfer);
 	char *direction = (USB_EP_IS_IN(xfer->ep_addr)) ? ("IN") : ("OUT") ;
-	//RTK_LOGS(TAG, "[VFY] Dump: %s[%s] mask=0x%08x state=%d EP%02x/pipe=%d MPS=%d transize=%d type=%d interval=%d\n",
-	//		 xfer_type, direction, xfer->test_mask,
-	//		 xfer->state, xfer->ep_addr,
-	//		 xfer->pipe_id, xfer->ep_mps, xfer->trans_size,
-	//		 xfer->ep_type, xfer->ep_interval);
+	RTK_LOGS(TAG, "[VFY] Dump: %s-%s mask=0x%08x state=%d EP%02x/pipe=%d MPS=%d transize=%d type=%d interval=%d\n",
+			 xfer_type, direction, xfer->test_mask,
+			 xfer->state, xfer->ep_addr,
+			 xfer->pipe_id, xfer->ep_mps, xfer->trans_size,
+			 xfer->ep_type, xfer->ep_interval);
+#else
+	UNUSED(xfer);
+#endif
 }
 
 static void usbh_verify_dump_buf(u8 *buf, u32 len)

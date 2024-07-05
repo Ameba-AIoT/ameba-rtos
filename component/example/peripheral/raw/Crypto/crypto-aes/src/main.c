@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 // vector : AES ECB 256 bit :
-static unsigned char aes_test_key[32] = {
+static unsigned char aes_test_key[32]  ALIGNMTO(0x4) = {
 	0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x00, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,
 	0x39, 0x87, 0x92, 0x66, 0x85, 0x74, 0x65, 0x68, 0x34, 0x92, 0x90, 0x01, 0x83, 0x91, 0x74, 0x98
 };
@@ -66,8 +66,6 @@ int test_aes_ecb(u32 OTPkey)
 	message = (unsigned char *)aes_test_ecb_buf;
 	msglen = sizeof(aes_test_ecb_buf);
 
-	rtl_crypto_aes_ecb_init(key, keylen);
-
 	/*take sema to obtain the right to crypto engine*/
 	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != _TRUE) {
 		printf("ipsec get hw sema fail\n");
@@ -78,6 +76,8 @@ int test_aes_ecb(u32 OTPkey)
 	} else {
 		CRYPTO_OTPKey_Init(OTPkey, ENABLE);
 	}
+
+	rtl_crypto_aes_ecb_init(key, keylen);
 
 	rtl_crypto_aes_ecb_encrypt(message, msglen, pIv, ivlen, pResult);
 
@@ -90,6 +90,7 @@ int test_aes_ecb(u32 OTPkey)
 			printf("AES ECB sw key encrypt result success\r\n");
 		} else {
 			printf("AES ECB sw key encrypt result failed\r\n");
+			dump_buf("====encrypt result=====\r\n", pResult, msglen);
 		}
 	} else {
 		if (_memcmp(aes_test_ecb_hwkey_enc, pResult, msglen) == 0) {
@@ -134,7 +135,7 @@ void aes_test(void)
 {
 	printf("CRYPTO API Demo...\r\n");
 
-	if (rtl_cryptoEngine_init() != 0) {
+	if (CRYPTO_Init(NULL) != 0) {
 		printf("crypto engine init failed\r\n");
 	} else {
 		printf("init success\n");

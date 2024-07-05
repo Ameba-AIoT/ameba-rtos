@@ -70,59 +70,60 @@ float PLL_I2S_98P304M_ClkTune(u32 pll_sel, float ppm, u32 action)
 	u32 F0F_new;
 	assert_param(ppm <= 1000);
 	float real_ppm = 0;
+	double step = 0;
+	u32 F0F_base = 0;
 
 	if (pll_sel == CKSL_I2S_CPUPLL) {
-		PLL_BASE -> PLL_CPUPLL_CTRL1 &= (~PLL_MASK_CPUPLL_DIVN_SDM);
-		PLL_BASE -> PLL_CPUPLL_CTRL1 |= (PLL_CPUPLL_DIVN_SDM(7));
+		step = 1.552204518467353;
+		F0F_base = 5269;
 
 		if (action == PLL_FASTER) {
-			F0F_new = 5269 + (u32)(ppm / 1.55220);
+			F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else if (action == PLL_SLOWER) {
-			F0F_new = 5269 - (u32)(ppm / 1.55220);
+			F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else {
-			F0F_new = 5269;
+			F0F_new = F0F_base;
 		}
 
-		PLL_BASE -> PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0F_SDM);
-		PLL_BASE -> PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0F_SDM(F0F_new));
+		PLL_BASE->PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0F_SDM);
+		PLL_BASE->PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0F_SDM(F0F_new));
 
-		PLL_BASE -> PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0N_SDM);
-		PLL_BASE -> PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0N_SDM(6));
+		PLL_BASE->PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0N_SDM);
+		PLL_BASE->PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0N_SDM(6));
 
-		PLL_BASE ->	PLL_CPUPLL_CTRL1 |= (PLL_BIT_CPUPLL_TRIG_FREQ);
-		PLL_BASE ->	PLL_CPUPLL_CTRL1 &= (~PLL_BIT_CPUPLL_TRIG_FREQ);
+		PLL_BASE->PLL_CPUPLL_CTRL1 |= (PLL_BIT_CPUPLL_TRIG_FREQ);
+		PLL_BASE->PLL_CPUPLL_CTRL1 &= (~PLL_BIT_CPUPLL_TRIG_FREQ);
 
-		real_ppm = (double)((double)F0F_new - (double)5269) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)6 + (double)5269 /
-				   (double)8192) / (double)8);
 	} else {
-		PLL_BASE -> PLL_PERIPLL_CTRL1 &= (~PLL_MASK_PERIPLL_DIVN_SDM);
-		PLL_BASE -> PLL_PERIPLL_CTRL1 |= (PLL_PERIPLL_DIVN_SDM(10));
+		step = 1.241764000268221;
+		F0F_base = 2490;
 
 		if (action == PLL_FASTER) {
-			F0F_new = 2490 + (u32)(ppm / 1.24176);
+			F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else if (action == PLL_SLOWER) {
-			F0F_new = 2490 - (u32)(ppm / 1.24176);
+			F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else {
-			F0F_new = 2490;
+			F0F_new = F0F_base;
 		}
 
-		PLL_BASE -> PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0F_SDM);
-		PLL_BASE -> PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0F_SDM(F0F_new));
+		PLL_BASE->PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0F_SDM);
+		PLL_BASE->PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0F_SDM(F0F_new));
 
-		PLL_BASE -> PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0N_SDM);
-		PLL_BASE -> PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0N_SDM(2));
+		PLL_BASE->PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0N_SDM);
+		PLL_BASE->PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0N_SDM(2));
 
-		PLL_BASE ->	PLL_PERIPLL_CTRL1 |= (PLL_BIT_PERIPLL_TRIG_FREQ);
-		PLL_BASE ->	PLL_PERIPLL_CTRL1 &= (~PLL_BIT_PERIPLL_TRIG_FREQ);
+		PLL_BASE->PLL_PERIPLL_CTRL1 |= (PLL_BIT_PERIPLL_TRIG_FREQ);
+		PLL_BASE->PLL_PERIPLL_CTRL1 &= (~PLL_BIT_PERIPLL_TRIG_FREQ);
 
-		real_ppm = (double)((double)F0F_new - (double)2490) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)6 + (double)5269 /
-				   (double)8192) / (double)8);
 	}
 
 	return real_ppm;
 
 }
-
 
 /**
   * @brief  I2S2 PLL output adjust by ppm.
@@ -139,53 +140,55 @@ float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action)
 	u32 F0F_new;
 	assert_param(ppm <= 1000);
 	float real_ppm = 0;
+	double step = 0;
+	u32 F0F_base = 0;
 
 	if (pll_sel == CKSL_I2S_CPUPLL) {
-		PLL_BASE -> PLL_CPUPLL_CTRL1 &= (~PLL_MASK_CPUPLL_DIVN_SDM);
-		PLL_BASE -> PLL_CPUPLL_CTRL1 |= (PLL_CPUPLL_DIVN_SDM(7));
+		step = 1.689474573407670;
+		F0F_base = 2076;
 
 		if (action == PLL_FASTER) {
-			F0F_new = 2076 + (u32)(ppm / 1.68946);
+			F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else if (action == PLL_SLOWER) {
-			F0F_new = 2076 - (u32)(ppm / 1.68946);
+			F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else {
-			F0F_new = 2076;
+			F0F_new = F0F_base;
 		}
 
-		PLL_BASE -> PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0F_SDM);
-		PLL_BASE -> PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0F_SDM(F0F_new));
+		PLL_BASE->PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0F_SDM);
+		PLL_BASE->PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0F_SDM(F0F_new));
 
-		PLL_BASE -> PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0N_SDM);
-		PLL_BASE -> PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0N_SDM(0));
+		PLL_BASE->PLL_CPUPLL_CTRL3 &= (~PLL_MASK_CPUPLL_F0N_SDM);
+		PLL_BASE->PLL_CPUPLL_CTRL3 |= (PLL_CPUPLL_F0N_SDM(0));
 
-		PLL_BASE ->	PLL_CPUPLL_CTRL1 |= (PLL_BIT_CPUPLL_TRIG_FREQ);
-		PLL_BASE ->	PLL_CPUPLL_CTRL1 &= (~PLL_BIT_CPUPLL_TRIG_FREQ);
+		PLL_BASE->PLL_CPUPLL_CTRL1 |= (PLL_BIT_CPUPLL_TRIG_FREQ);
+		PLL_BASE->PLL_CPUPLL_CTRL1 &= (~PLL_BIT_CPUPLL_TRIG_FREQ);
 
-		real_ppm = (double)((double)F0F_new - (double)2076) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)6 + (double)5269 /
-				   (double)8192) / (double)8);
 	} else {
-		PLL_BASE -> PLL_PERIPLL_CTRL1 &= (~PLL_MASK_PERIPLL_DIVN_SDM);
-		PLL_BASE -> PLL_PERIPLL_CTRL1 |= (PLL_PERIPLL_DIVN_SDM(10));
+		step = 1.228708025797954;
+		F0F_base = 2855;
 
 		if (action == PLL_FASTER) {
-			F0F_new = 2855 + (u32)(ppm / 1.22870);
+			F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else if (action == PLL_SLOWER) {
-			F0F_new = 2855 - (u32)(ppm / 1.22870);
+			F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+			real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 		} else {
-			F0F_new = 2855;
+			F0F_new = F0F_base;
 		}
 
-		PLL_BASE -> PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0F_SDM);
-		PLL_BASE -> PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0F_SDM(F0F_new));
+		PLL_BASE->PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0F_SDM);
+		PLL_BASE->PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0F_SDM(F0F_new));
 
-		PLL_BASE -> PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0N_SDM);
-		PLL_BASE -> PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0N_SDM(3));
+		PLL_BASE->PLL_PERIPLL_CTRL3 &= (~PLL_MASK_PERIPLL_F0N_SDM);
+		PLL_BASE->PLL_PERIPLL_CTRL3 |= (PLL_PERIPLL_F0N_SDM(3));
 
-		PLL_BASE ->	PLL_PERIPLL_CTRL1 |= (PLL_BIT_PERIPLL_TRIG_FREQ);
-		PLL_BASE ->	PLL_PERIPLL_CTRL1 &= (~PLL_BIT_PERIPLL_TRIG_FREQ);
+		PLL_BASE->PLL_PERIPLL_CTRL1 |= (PLL_BIT_PERIPLL_TRIG_FREQ);
+		PLL_BASE->PLL_PERIPLL_CTRL1 &= (~PLL_BIT_PERIPLL_TRIG_FREQ);
 
-		real_ppm = (double)((double)F0F_new - (double)2855) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)6 + (double)5269 /
-				   (double)8192) / (double)8);
 	}
 
 	return real_ppm;
@@ -358,6 +361,6 @@ void PLL_ClkSet(u8 pll_type, u32 PllClk)
 		DelayUs(30);
 	} else {
 		/* error param return */
-		return ;
+		return;
 	}
 }

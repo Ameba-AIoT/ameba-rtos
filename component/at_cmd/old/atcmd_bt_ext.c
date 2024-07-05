@@ -312,7 +312,7 @@ cmd_help_table_t example_help_table[] = {
 	{
 		"throughput", "[ATBE] throughput: run as a Throughput scatternet\n\r"
 		"usage: ATBE=throughput,[act],[val]\n\r"
-		"[act] = <1, 0, set_mtu, conn, test_start, test_stop>\n\r"
+		"[act] = <1, 0, conn, test_start, test_stop>\n\r"
 		"[val] = DEPENDS ON DIFFERENT ACTS",
 		NULL
 	},

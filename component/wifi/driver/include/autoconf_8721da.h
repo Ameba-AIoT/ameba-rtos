@@ -143,7 +143,6 @@
 #undef RA_RX_ACK_RSSI
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_CSI
-#define DRV_RF_PWR_TBL_DISABLE
 #define DISABLE_FW
 #endif
 

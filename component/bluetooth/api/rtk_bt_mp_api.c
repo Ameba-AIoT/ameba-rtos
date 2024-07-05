@@ -275,11 +275,21 @@ uint8_t rtk_bt_mp_dtm_tx_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
 
 uint8_t rtk_bt_mp_dtm_test_end(uint16_t *p_num_pkts)
 {
+	if (p_num_pkts == NULL) {
+		BT_MP_ARG_LOGE("p_num_pkts");
+		return 0;
+	}
+
 	return hci_dtm_test_end(p_num_pkts);
 }
 
 uint8_t rtk_bt_mp_dtm_get_rx_report(int8_t *p_rssi)
 {
+	if (p_rssi == NULL) {
+		BT_MP_ARG_LOGE("p_rssi");
+		return 0;
+	}
+
 	return hci_dtm_vendor_get_receiver_report(NULL, NULL, NULL, NULL, NULL, p_rssi);
 }
 
@@ -305,6 +315,11 @@ uint8_t rtk_bt_mp_set_tx_flatnessk(uint32_t tx_flastness_k)
 
 uint8_t rtk_bt_mp_read_thermal(uint8_t *p_thermal_value)
 {
+	if (p_thermal_value == NULL) {
+		BT_MP_ARG_LOGE("p_thermal_value");
+		return 0;
+	}
+
 	return hci_dtm_vendor_read_thermal_meter_data(p_thermal_value);
 }
 

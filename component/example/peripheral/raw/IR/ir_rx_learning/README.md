@@ -24,6 +24,11 @@ Connect the rx pin to another board's tx pin defined in `ir_ext.h`.
   6. Display the carrier symbol data to space symbol data.
      Note: when the non-carrier symbol is large enough, there may bring caculation overflow. when this happens, force (uint64_t)detect_time or (uint64_t)frequency data type to uint64_t.
 
+- If you choose another tx signal, then this step can be ignored. As well, a tx image should be build as following:
+  - By means of example located in sdk/component/example/peripheral/raw/IR/ir_tx_nec_polling/src, some modifications are necessary:
+    - Define `IR_LOOP_TEST` to  `0`
+    - Define `IR_TEST_LEARNNING` to `1`
+    - Rebuild the image as descriped in sdk/component/example/peripheral/raw/IR/ir_tx_nec_polling/README.md
 # Expect result
 
 This example will print out detect_time and frequency of received data.

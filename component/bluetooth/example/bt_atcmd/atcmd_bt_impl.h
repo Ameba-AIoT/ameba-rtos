@@ -33,6 +33,9 @@ extern "C"
 #define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEPBP] "fmt, ##args)
 #define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLETMAP] "fmt, ##args)
 #define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLEGMAP] "fmt, ##args)
+#define MESHSTACK_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BLEMESHSTACK] "fmt, ##args)
+
+
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BTVENDOR] "fmt, ##args)
 
 #else /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
@@ -53,6 +56,9 @@ extern "C"
 #define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
 #define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
+#define MESHSTACK_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBV] "fmt, ##args)
+
+
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBV] "fmt, ##args)
 
 #endif /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */

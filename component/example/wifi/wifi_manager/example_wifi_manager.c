@@ -88,7 +88,7 @@ static void wifi_manager_thread(void *param)
 //Wifi association done callback
 void example_wifi_manager_connect_cb(char *buf, int buf_len, int flags, void *userdata)
 {
-	rtos_sema_give(&wm_assoc_sema);
+	rtos_sema_give(wm_assoc_sema);
 	printf("\n\rWifi association done!!\n");
 	return;
 }
@@ -96,7 +96,7 @@ void example_wifi_manager_connect_cb(char *buf, int buf_len, int flags, void *us
 //Wifi disconnect callback
 void example_wifi_manager_disconnect_cb(char *buf, int buf_len, int flags, void *userdata)
 {
-	rtos_sema_give(&wm_discon_sema);
+	rtos_sema_give(wm_discon_sema);
 	printf("\n\rWifi disconnect!!\n");
 	return;
 }

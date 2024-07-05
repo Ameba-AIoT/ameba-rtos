@@ -604,6 +604,46 @@ static rtk_bt_evt_cb_ret_t ble_central_gap_app_callback(uint8_t evt_code, void *
 	}
 #endif
 
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	case RTK_BT_LE_GAP_EVT_COC_CONNECT_IND: {
+		rtk_bt_le_coc_conn_state_ind_t *coc_conn_ind = (rtk_bt_le_coc_conn_state_ind_t *)param;
+		if (!coc_conn_ind->err) {
+			BT_LOGA("[APP] LE COC connected, conn_handle: %d, cid: 0x%x\r\n",
+					coc_conn_ind->conn_handle, coc_conn_ind->cid);
+		} else {
+			BT_LOGE("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND: {
+		rtk_bt_le_coc_conn_state_ind_t *coc_disconn_ind = (rtk_bt_le_coc_conn_state_ind_t *)param;
+		if (!coc_disconn_ind->err) {
+			BT_LOGA("[APP] LE COC disconnected, conn_handle: %d, cid: 0x%x\r\n",
+					coc_disconn_ind->conn_handle, coc_disconn_ind->cid);
+		} else {
+			BT_LOGE("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND: {
+		rtk_bt_le_coc_send_data_res_ind_t *res_ind = (rtk_bt_le_coc_send_data_res_ind_t *)param;
+		BT_LOGA("[APP] LE COC send data completed, conn_handle: %d, cid: 0x%x, credit: %d, err: 0x%x\r\n",
+				res_ind->conn_handle, res_ind->cid, res_ind->credit, res_ind->err);
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_RECEIVE_DATA_IND: {
+		rtk_bt_le_coc_receive_data_ind_t *data_ind = (rtk_bt_le_coc_receive_data_ind_t *)param;
+		BT_LOGA("[APP] LE COC receive data, conn_handle: %d, cid: 0x%x, len: %d\r\n",
+				data_ind->conn_handle, data_ind->cid, data_ind->len);
+		BT_DUMPA("[HEX]: ", data_ind->data, data_ind->len);
+		break;
+	}
+#endif /* RTK_BLE_COC_SUPPORT */
 
 	default:
 		BT_LOGE("[APP] Unkown gap cb evt type: %d\r\n", evt_code);

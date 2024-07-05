@@ -188,7 +188,7 @@ typedef struct {
 /**
  * @defgroup  bt_pbap BT PBAP APIs
  * @brief     BT PBAP related function APIs
- * @ingroup   BT_PBAPs
+ * @ingroup   BT_APIs
  * @{
  */
 
