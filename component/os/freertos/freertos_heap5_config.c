@@ -66,6 +66,10 @@ void os_heap_init(void)
 	os_heap_add((uint8_t *)PSRAM_HEAP1_START, (size_t)PSRAM_HEAP1_SIZE);
 #endif
 
+#ifdef SRAM_HEAP2_START 		// Defines a block in bd_ram
+	os_heap_add((uint8_t *)SRAM_HEAP2_START, (size_t)SRAM_HEAP2_SIZE);
+#endif
+
 	if (heap_index > 0) {
 		os_heap_sort();
 	}

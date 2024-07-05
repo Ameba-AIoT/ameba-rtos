@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 
 ADC_CalParaTypeDef CalParaNorm;
-BOOL vref_init_done = _FALSE;
+u8 vref_init_done = _FALSE;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{

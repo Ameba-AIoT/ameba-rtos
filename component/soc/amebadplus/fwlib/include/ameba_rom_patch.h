@@ -36,6 +36,7 @@ _LONG_CALL_ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
 _LONG_CALL_ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
 _LONG_CALL_ void LOGUART_INT_NP2AP(void);
 _LONG_CALL_ void LOGUART_INT_AP2NP(void);
+_LONG_CALL_ u8 LOGUART_Writable(void);
 _LONG_CALL_ u32 OTP_LogicalMap_CHK(void);
 _LONG_CALL_ int TRNG_get_random_bytes(void *dst, u32 size);
 _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);

@@ -85,7 +85,6 @@ CSRC_DRV += $(DIR)/core/rtw_ap.c \
     $(DIR)/halcommon/hal_edcca.c \
     $(DIR)/halcommon/hal_csi.c \
     $(DIR)/halcommon/hal_h2c.c \
-    $(DIR)/halcommon/hal_recv.c
 
 endif
 
@@ -109,7 +108,6 @@ CSRC_DRV +=  \
     $(DIR)/intf/wifi_intf_drv_to_mp.c \
 	$(DIR)/intf/wifi_intf_drv_to_upper.c \
     $(DIR)/intf/wifi_intf_drv_to_bt.c \
-    $(DIR)/halcommon/hal_xmit.c \
     $(DIR)/halcommon/hal_phycfg.c \
     $(DIR)/halcommon/hal_debug.c \
     $(DIR)/halcommon/hal_xmit.c \
@@ -126,7 +124,9 @@ CSRC_DRV += $(TARGET_LIB)_git_version.c
 ifeq ($(CONFIG_AMEBALITE), y)
 
 ifneq ($(CONFIG_MP_SHRINK), y)
-CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_suspend.c	\
+CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_suspend.c
+CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
 
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
 	$(DIR)/core_rom/rom_rtw_network.c \
@@ -142,6 +142,11 @@ CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
 	$(DIR)/core_rom/rom_rtw_addba.c \
 	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
 	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
+	$(DIR)/core_rom/rom_rtw_action_part2.c  \
+	$(DIR)/core_rom/rom_rtw_join.c  \
+	$(DIR)/core_rom/rom_rtw_join_result.c  \
+	$(DIR)/core_rom/rom_rtw_assoc_part2.c \
+	$(DIR)/core_rom/rom_rtw_security_part2.c \
 
 endif
 
@@ -203,6 +208,8 @@ CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
+CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
 
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 	$(DIR)/core_rom/rom_rtw_ieee80211_part2.c \
@@ -227,7 +234,9 @@ endif
 ifeq ($(CONFIG_AMEBADPLUS), y)
 
 ifneq ($(CONFIG_MP_SHRINK), y)
-CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_suspend.c	\
+CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_suspend.c
+CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
 
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
 	$(DIR)/core_rom/rom_rtw_network.c \
@@ -243,6 +252,11 @@ CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
 	$(DIR)/core_rom/rom_rtw_addba.c \
 	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
 	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
+	$(DIR)/core_rom/rom_rtw_action_part2.c  \
+	$(DIR)/core_rom/rom_rtw_join.c  \
+	$(DIR)/core_rom/rom_rtw_join_result.c  \
+	$(DIR)/core_rom/rom_rtw_assoc_part2.c \
+	$(DIR)/core_rom/rom_rtw_security_part2.c \
 
 endif
 
@@ -310,6 +324,8 @@ CSRC_DRV += $(DIR)/halcommon/hal_dig_phydm.c
 CSRC_DRV += $(DIR)/halcommon/hal_antdiv_phydm.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_phydm.c
 CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
+CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
 
 # in rom after green2
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_skbuff.c
@@ -359,6 +375,8 @@ endif
 ifeq ($(CONFIG_AMEBASMART), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_suspend.c
+CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
 
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
 	$(DIR)/core_rom/rom_rtw_network.c \
@@ -374,6 +392,11 @@ CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
 	$(DIR)/core_rom/rom_rtw_addba.c \
 	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
 	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
+	$(DIR)/core_rom/rom_rtw_action_part2.c  \
+	$(DIR)/core_rom/rom_rtw_join.c  \
+	$(DIR)/core_rom/rom_rtw_join_result.c  \
+	$(DIR)/core_rom/rom_rtw_assoc_part2.c \
+	$(DIR)/core_rom/rom_rtw_security_part2.c \
 
 endif
 
@@ -455,6 +478,8 @@ CSRC_DRV += $(DIR)/halcommon/hal_nan_scheduler.c
 CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
+CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
 
 CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 	$(DIR)/core_rom/rom_rtw_probe.c \
@@ -514,6 +539,10 @@ CSRC_DRV += $(DIR)/phl/rtl8720f_phl.c
 CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
 CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
+CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
+CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
 
 CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_xmit.c
 CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_rf_onoff.c

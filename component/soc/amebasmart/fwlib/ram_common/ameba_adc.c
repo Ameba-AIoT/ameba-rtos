@@ -8,7 +8,7 @@
 
 ADC_CalParaTypeDef CalParaNorm;
 ADC_CalParaTypeDef CalParaVBat;
-BOOL vref_init_done = _FALSE;
+u8 vref_init_done = _FALSE;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -619,7 +619,7 @@ void ADC_TimerTrigCntCmd(u8 Tim_Idx, u32 Tim_Cnt, u32 NewState)
   *        @arg _FALSE: Calibration parameter belongs to normal channel.
   * @retval None.
   */
-void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, BOOL IsVBatChan)
+void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
 {
 	u8 index;
 	u8 EfuseBuf[6];

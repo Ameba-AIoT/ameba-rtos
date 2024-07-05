@@ -129,22 +129,20 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	}
 }
 
+_OPTIMIZE_NONE_
 void np_set_ddr_sre(void)
 {
 	DDRC_TypeDef *ddrc = DDRC_DEV;
 	u32 temp;
 	RTK_LOGI(TAG, "np_set_ddr_sre enter\n");
-
-	temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
-	temp &= (~(HSYS_BIT_PWDPAD_DQ_EN | HSYS_BIT_PI_PWROFF_EN)); //don't write 1 if user mode
-	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0, temp);
-	DelayUs(1);
-
-	ddrc->DDRC_IOCR &= (~DDRC_BIT_DYN_SRE);
+	u32 dummy_value;
+	/* dummy read to wake up device first */
+	DCache_Invalidate(0x60000000, 32);
+	dummy_value = HAL_READ32(0x60000000, 0);
 
 	/* update IOCR reg */
+	ddrc->DDRC_IOCR &= (~DDRC_BIT_DYN_SRE);
 	ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
-
 	/*disable refresh function*/
 	//ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
 	ddrc->DDRC_CSR = (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE | DDRC_BIT_MEM_IDLE);
@@ -166,7 +164,6 @@ void np_set_ddr_sre(void)
 
 	//disable SRE here for idle state may take some time, and should before enter Dpin mode
 	ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
-	ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
 
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
 	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
@@ -212,6 +209,10 @@ void np_set_ddr_sre(void)
 
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
 	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
+	if (dummy_value != 0x35393138) {
+		RTK_LOGI(TAG, "DDR Check error \r\n");
+	}
+
 	RTK_LOGI(TAG, "np_set_ddr_sre exit\n");
 }
 

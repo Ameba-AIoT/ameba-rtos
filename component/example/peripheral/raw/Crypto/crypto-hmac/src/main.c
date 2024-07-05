@@ -46,7 +46,7 @@ int test_sha256_hmac(u32 OTPkey)
 {
 	u32 timeout;
 	uint8_t mac[32] ALIGNMTO(CACHE_LINE_SIZE);
-	char *secret = "abcdefghijklmnopqrstuvwxyz123456";
+	char secret[32] ALIGNMTO(0x4) = "abcdefghijklmnopqrstuvwxyz123456";
 	hw_sha_context ctx;
 	memset(&ctx, 0, sizeof(hw_sha_context));
 	timeout = 0xFFF;

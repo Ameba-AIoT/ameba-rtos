@@ -267,12 +267,10 @@ struct wpa_sae_param_t {
 };
 
 struct rtw_owe_param_t {
-#ifdef CONFIG_OWE_SUPPORT
 	u16 group;
 	u8 pub_key[RTW_OWE_KEY_LEN];/*32(Temporarily support group 19 with 256 bit public key)*/
 	u8 pub_key_len;
 	u8 peer_mac[6];
-#endif
 };
 
 struct rtw_kvr_param_t {
@@ -515,6 +513,7 @@ typedef void (*wifi_jioninfo_free_ptr)(u8 iface_type);
 
 /**
   * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
+  * @note	size can't be changed
   */
 typedef struct _rtw_wifi_setting_t {
 	enum rtw_mode_type			mode;   /**< the mode of current wlan interface */

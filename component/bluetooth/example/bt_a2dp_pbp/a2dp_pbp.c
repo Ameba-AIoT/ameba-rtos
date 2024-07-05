@@ -85,7 +85,6 @@
 /* Resample water level, default data bytes of 10 ms. The smaller this value, the shorter the work interval of the resample task.*/
 #define RESAMPLE_WATER_LEVEL                         1
 
-#define SOXR_IN_FRAME_BUF_MAX_LEN                   441*4*4
 #define SOXR_OUT_FRAME_BUF_MAX_LEN                  480*4*4
 #define CONVERT_PCM_TASK_STACK_SIZE                 10*1024
 #define CONVERT_PCM_TASK_PRIORITY                   4
@@ -189,7 +188,6 @@ bool pbp_broadcast_dequeue_flag = false;// used to indicate the converted pcm da
 bool a2dp_play_flag = false;// used for HW timer to judge whether send semaphone to wake up LE Audio TX thread
 
 /* ---------------------------- Static Variables ---------------------------- */
-static uint8_t convert_task_flag = 1;
 
 struct a2dp_pbp_demo_task_t {
 	void *hdl;
@@ -197,31 +195,11 @@ struct a2dp_pbp_demo_task_t {
 	uint8_t run;
 };
 
-static struct a2dp_pbp_demo_task_t convert_pcm_data_task = {
-	.hdl = NULL,
-	.sem = NULL,
-	.run = 0,
-};
-
 /*
     1.Storage 44.KHZ pcm data from a2dp decode task
     2.Send it to pbp convert task when reach a suitable water level.
 */
-static short a2dp_pcm_queue[A2DP_SINK_PCM_DATA_MAX_LEN] = {0};
-/*
-    1.Storage 48KHz PCM data from convert_pcm_data_task;
-    2.Send it to LE audio encode task when reach a suitable water level.
-*/
 static short pcm_convert_queue[PBP_SOURCE_PCM_DATA_MAX_LEN] = {0};
-
-static a2dp_pbp_demo_queue_t a2dp_decode_pcm_queue = {
-	.q_write = 0,
-	.q_read = 0,
-	.mtx = NULL,
-	.queue = NULL,
-	.queue_size = 0,
-	.queue_max_len = 0,
-};
 
 
 /* ---------------------------- Global Variables ---------------------------- */
@@ -858,7 +836,7 @@ uint16_t a2dp_pbp_demo_pcm_data_dequeue(a2dp_pbp_demo_queue_t *p_queue, int8_t *
 	}
 
 	if (!a2dp_pbp_demo_dequeue_num_is_enough(p_queue, dequeue_size)) {
-		BT_LOGD("[APP] %s dequeue num is not enough!!!\r\n", __func__);
+		BT_LOGE("[APP] %s dequeue num is not enough!!!\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 
@@ -1150,7 +1128,6 @@ static rtk_bt_audio_resample_t *g_audio_resample_t = NULL;
 static uint32_t resample_out_frames, resample_in_frames = 0;
 static uint32_t demo_in_rate = 44100;//input sample rate
 static uint32_t demo_out_rate = RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE;//output sample rate
-static int8_t in_frame_buf[SOXR_IN_FRAME_BUF_MAX_LEN] = {0};
 static int8_t out_frame_buf[SOXR_OUT_FRAME_BUF_MAX_LEN] = {0};
 
 static uint16_t rtk_bt_a2dp_pbp_demo_audio_resample_alloc(rtk_bt_audio_resample_t **pp_sample_t, uint32_t sample_rate_in, uint8_t in_channels)
@@ -1181,187 +1158,57 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(rtk_bt_audio_res
 	return RTK_BT_OK;
 }
 
-static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(rtk_bt_audio_resample_t *p_resample_t, rtk_bt_audio_biquad_t *bq_t, uint32_t in_frames)
+/* ------------------------------------ End -------------------------------------- */
+
+/*
+    1.Used to callback 44.1khz pcm data from bt_audio_intf.c
+    2.resample pcm data
+    3.enqueue pcm data
+*/
+
+static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len, void *pentity, void *track)
 {
-	uint32_t odone = 0;//the real output frame number
-	uint32_t dequeue_size = 0;
+	(void)pentity;
+	(void)track;
 	uint32_t enqueue_size = 0;
 	void *p_enqueue_mtx = NULL;
-	void *p_dequeue_mtx = NULL;
 	uint32_t time_stamp_before, time_stamp_after = 0;
 	uint32_t out_frames = 0;
 
-	if (p_resample_t == NULL || bq_t == NULL) {
-		BT_LOGE("[APP] %s p_resample_t or bq_t has not init!\r\n", __func__);
-		return RTK_BT_FAIL;
-	}
-
-	//if pbp broadcast has not started, flush queue
-	if (g_pbp_bsrc_info.status != RTK_BLE_AUDIO_BROADCAST_SOURCE_START) {
-		BT_LOGE("[APP] PBP broadcast has not started!\r\n");
-		p_dequeue_mtx = a2dp_decode_pcm_queue.mtx;
-		p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
-		if (p_dequeue_mtx == NULL || p_enqueue_mtx == NULL) {
-			BT_LOGE("[APP] %s warning! mtx is NULL!\r\n", __func__);
-			goto failed;
-		}
-		// flush a2dp_decode_pcm_queue
-		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
-		a2dp_pbp_demo_queue_pcm_data_flush(&a2dp_decode_pcm_queue);
-		BT_LOGE("[APP] a2dp_decode_pcm_queue flush!\r\n");
-		osif_mutex_give(p_dequeue_mtx);
-
-		// flush pbp_convert_pcm_queue
-		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
-		dequeue_size = pbp_convert_pcm_queue.queue_size;
-		if (dequeue_size) {
-			a2dp_pbp_demo_queue_pcm_data_flush(&pbp_convert_pcm_queue);
-			BT_LOGE("[APP] pbp_convert_pcm_queue flush!\r\n");
-			pbp_broadcast_dequeue_flag = false;
-		}
-		osif_mutex_give(p_enqueue_mtx);
-		return RTK_BT_FAIL;
-	}
-
-	BT_LOGD("[APP] %s in_frames:%u \r\n", __func__, in_frames);
-
-	//dequeue
-	p_dequeue_mtx = a2dp_decode_pcm_queue.mtx;
-	dequeue_size = in_frames * p_resample_t->in_frame_size;
-
-	if (dequeue_size > SOXR_IN_FRAME_BUF_MAX_LEN) {
-		BT_LOGE("[APP] dequeue_size: %u exceed the max len !\r\n", dequeue_size);
-		goto failed;
-	}
-
-	while (a2dp_decode_pcm_queue.queue_size < dequeue_size) {
-		// BT_LOGE("[APP] a2dp_decode_pcm_queue dequeue num is not enough!\r\n");
-		osif_delay(2);
-	}
-	osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
-	if (RTK_BT_OK != a2dp_pbp_demo_pcm_data_dequeue(&a2dp_decode_pcm_queue, in_frame_buf, dequeue_size)) {
-		BT_LOGE("[APP] a2dp_decode_pcm_queue dequeue fail !\r\n");
-		goto failed;
-	}
-	osif_mutex_give(p_dequeue_mtx);
-	//resample process
+	/* 1. resample */
 	time_stamp_before = osif_sys_time_get();
-	out_frames = rtk_bt_audio_resample_entry(p_resample_t, bq_t,
-											 (uint8_t *)in_frame_buf,
-											 in_frames,
+	out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
+											 (uint8_t *)p_pcm_data,
+											 p_len / (g_audio_resample_t->in_frame_size),
 											 (uint8_t *)out_frame_buf,
 											 demo_in_rate,
 											 demo_out_rate);
 	time_stamp_after = osif_sys_time_get();
 	BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
 			(int)(time_stamp_after - time_stamp_before));
-	BT_LOGD("[APP] in_frames:%u out_frames:%u odone: %u\r\n", in_frames, out_frames, odone);
-
-	//enqueue
+	BT_LOGD("[APP] in_frames:%u out_frames:%u \r\n", p_len / (g_audio_resample_t->in_frame_size), out_frames);
+	/* 2. enqueue */
 	p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
-	enqueue_size = out_frames * p_resample_t->out_frame_size;
-
+	enqueue_size = out_frames * g_audio_resample_t->out_frame_size;
 	if (enqueue_size > SOXR_OUT_FRAME_BUF_MAX_LEN) {
 		BT_LOGE("[APP] %s enqueue_size: %u exceed the max len!\r\n", __func__, enqueue_size);
-		goto failed;
+		return 1;
 	}
-
 	osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
 	if (RTK_BT_OK != a2dp_pbp_demo_pcm_data_enqueue(&pbp_convert_pcm_queue, out_frame_buf, enqueue_size)) {
 		//queue is full
 		BT_LOGE("[APP] %s pbp_convert_pcm_queue is full!\r\n", __func__);
-		goto failed;
+		return 1;
 	}
-
 	if (pbp_convert_pcm_queue.queue_size >= A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL && pbp_broadcast_dequeue_flag == false) {
 		pbp_broadcast_dequeue_flag = true;
 	}
-
 	osif_mutex_give(p_enqueue_mtx);
-	return RTK_BT_OK;
-
-failed:
-	if (p_dequeue_mtx) {
-		osif_mutex_give(p_dequeue_mtx);
-	}
-	if (p_enqueue_mtx) {
-		osif_mutex_give(p_enqueue_mtx);
-	}
-
-	return RTK_BT_FAIL;
-}
-
-/* ------------------------------------ End -------------------------------------- */
-
-/*
-    1.Used to callback 44.1khz pcm data from bt_audio_intf.c
-    2.Enqueue pcm data into a2dp_decode_pcm_queue
-    3.Send sem to notify pcm convert task to convert 44.1khz pcm to 48khz
-*/
-uint8_t a2dp_decoded_pcm_buffer_threshold_enable = 0;
-
-static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len, void *pentity, void *track)
-{
-	(void)p_pcm_data;
-	(void)p_len;
-	(void)pentity;
-	(void)track;
-	void *pmtx = NULL;
-	uint32_t queue_size = 0;
-
-	//44.khz pcm data enqueue
-	pmtx = a2dp_decode_pcm_queue.mtx;
-	if (pmtx == NULL) {
-		BT_LOGE("%s warning! ptmx == NULL!\r\n", __func__);
-		return -1;
-	}
-	osif_mutex_take(pmtx, BT_TIMEOUT_FOREVER);
-	if (a2dp_pbp_demo_pcm_data_enqueue(&a2dp_decode_pcm_queue, (int8_t *)p_pcm_data, p_len) != RTK_BT_OK) {
-		BT_LOGE("[APP] %s: a2dp_decode_pcm_queue is full\r\n", __func__);
-	}
-	queue_size = a2dp_decode_pcm_queue.queue_size;
-	//if reach enough convert num, send sem to inform pcm convert thread
-	if (g_audio_resample_t) {
-		if (!a2dp_decoded_pcm_buffer_threshold_enable) {
-			if (queue_size >= RESAMPLE_WATER_LEVEL * g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
-				a2dp_decoded_pcm_buffer_threshold_enable = 1;
-			}
-		} else {
-			if (queue_size < g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
-				a2dp_decoded_pcm_buffer_threshold_enable = 0;
-			}
-		}
-	}
-	osif_mutex_give(pmtx);
-
 	if (a2dp_play_flag == false) {
 		a2dp_play_flag = true;
 	}
 
 	return 0;
-}
-
-static uint32_t tmp_time = 0;
-static void exmaple_convert_pcm_data_task_entry(void *ctx)
-{
-	(void)ctx;
-	uint32_t time_stamp_before, time_stamp_after = 0;
-	osif_sem_give(convert_pcm_data_task.sem);
-
-	while (convert_pcm_data_task.run) {
-		if (!a2dp_decoded_pcm_buffer_threshold_enable) {
-			osif_delay(2);
-		} else {
-			time_stamp_before = osif_sys_time_get();
-			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_generate(g_audio_resample_t, &bq_t, resample_in_frames);
-			time_stamp_after = osif_sys_time_get();
-			BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,convert delt_time:%d, delt_time:%d \r\n", __func__, time_stamp_before,
-					time_stamp_after, (int)(time_stamp_after - time_stamp_before), (int)(time_stamp_before - tmp_time));
-			tmp_time = time_stamp_before;
-		}
-	}
-	osif_sem_give(convert_pcm_data_task.sem);
-	osif_task_delete(NULL);
 }
 
 static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
@@ -1825,7 +1672,6 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 	(void)len;
 	uint8_t bd_addr[6];
 	void *p_enqueue_mtx = NULL;
-	void *p_dequeue_mtx = NULL;
 	uint32_t dequeue_size;
 	switch (evt_code) {
 
@@ -1971,11 +1817,6 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		a2dp_play_flag = false;
-		// flush a2dp_decode_pcm_queue
-		p_dequeue_mtx = a2dp_decode_pcm_queue.mtx;
-		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
-		a2dp_pbp_demo_queue_pcm_data_flush(&a2dp_decode_pcm_queue);
-		osif_mutex_give(p_dequeue_mtx);
 		// flush pbp_convert_pcm_queue
 		p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
 		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
@@ -1985,7 +1826,6 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 			pbp_broadcast_dequeue_flag = false;
 		}
 		osif_mutex_give(p_enqueue_mtx);
-		a2dp_decoded_pcm_buffer_threshold_enable = 0;
 		if (g_audio_resample_t) {
 			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(&g_audio_resample_t);
 		}
@@ -3048,25 +2888,9 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			app_bt_le_audio_pbp_broadcast_source_init();
 			p_bap_bsrc_info->status = RTK_BLE_AUDIO_BROADCAST_SOURCE_ENABLE;
 			/* pcm queue init */
-			a2dp_pbp_demo_queue_init(&a2dp_decode_pcm_queue, a2dp_pcm_queue, sizeof(a2dp_pcm_queue) / 2);
 			a2dp_pbp_demo_queue_init(&pbp_convert_pcm_queue, pcm_convert_queue, sizeof(pcm_convert_queue) / 2);
 			tx_water_level = PBP_BROADCAST_TX_WATER_LEVEL;
 			BT_LOGA("[APP] PBP broadcast tx_water_level: %d ms\r\n", tx_water_level);
-			/* pcm data convert task init */
-			if (convert_task_flag) {
-				if (false == osif_sem_create(&convert_pcm_data_task.sem, 0, 1)) {
-					goto failed;
-				}
-				convert_pcm_data_task.run = 1;
-				if (false == osif_task_create(&convert_pcm_data_task.hdl, "example_convert_pcm_data_task",
-											  exmaple_convert_pcm_data_task_entry, NULL,
-											  CONVERT_PCM_TASK_STACK_SIZE, CONVERT_PCM_TASK_PRIORITY)) {
-					osif_sem_delete(convert_pcm_data_task.sem);
-					goto failed;
-				}
-				//wait for task run
-				osif_sem_take(convert_pcm_data_task.sem, 0xffffffff);
-			}
 			/* bond info flush thread init */
 			if (a2dp_demo_bond_info_flush) {
 				if (rtk_bt_br_gap_bond_num_get(&a2dp_demo_bond_num)) {
@@ -3103,12 +2927,6 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 			a2dp_pbp_demo_init_flag = true;
 			return 0;
 failed:
-			if (convert_pcm_data_task.hdl) {
-				osif_task_delete(convert_pcm_data_task.hdl);
-			}
-			if (convert_pcm_data_task.sem) {
-				osif_sem_delete(convert_pcm_data_task.sem);
-			}
 			if (bond_info_flush_task.hdl) {
 				osif_task_delete(bond_info_flush_task.hdl);
 			}
@@ -3124,16 +2942,6 @@ failed:
 		if (!a2dp_pbp_demo_init_flag) {
 			BT_LOGE("%s No need deinit! \r\n", __func__);
 			return -1;
-		}
-		if (convert_task_flag && convert_pcm_data_task.hdl) {
-			convert_pcm_data_task.run = 0;
-			/* wait for task exit */
-			if (false == osif_sem_take(convert_pcm_data_task.sem, 0xffffffff)) {
-				return -1;
-			}
-			osif_sem_delete(convert_pcm_data_task.sem);
-			convert_pcm_data_task.sem = NULL;
-			convert_pcm_data_task.hdl = NULL;
 		}
 		if (g_audio_resample_t) {
 			BT_APP_PROCESS(rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(&g_audio_resample_t));

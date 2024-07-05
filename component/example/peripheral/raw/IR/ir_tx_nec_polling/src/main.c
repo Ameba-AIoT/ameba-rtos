@@ -15,7 +15,7 @@
 
 IR_InitTypeDef IR_InitStruct;
 #define IR_LOOP_TEST	1
-
+#define IR_TEST_LEARNNING	0
 /**
   * @brief  initialization of pinmux settings and pad settings.
   * @param  group: IR pinmux selection.
@@ -102,7 +102,7 @@ void IR_TX_thread(void)
 			ir_code[1]++;
 		}
 #endif
-		printf("TX %2x%2x\n", ir_code[1], ir_code[0]);
+		printf("TX BYTE1%2x BYTE0%2x\n", ir_code[1], ir_code[0]);
 
 		/* Encode by NEC protocol */
 		data[0] = ir_code[0];
@@ -131,6 +131,11 @@ void IR_TX_thread(void)
 
 		rtos_time_delay_ms(1000); //delay 1s
 		IR_Cmd(IR_DEV, IR_InitStruct.IR_Mode, DISABLE);
+
+#if defined(IR_TEST_LEARNNING) && (IR_TEST_LEARNNING == 1)
+		break;
+#endif
+
 	} while (1);
 
 }

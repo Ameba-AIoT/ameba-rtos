@@ -1041,14 +1041,12 @@ enum gen_ie_type {
 	P2PWPS_ASSOC_RSP_IE
 };
 
-#ifdef CONFIG_WMMPS_STA
 enum UAPSD_MAX_SP {
 	NO_LIMIT,
 	TWO_MSDU,
 	FOUR_MSDU,
 	SIX_MSDU
 };
-#endif
 /**
   * @}
   */

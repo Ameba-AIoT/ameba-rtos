@@ -146,7 +146,6 @@ endif
 ifeq ($(CONFIG_AMEBADPLUS), y)
 
 CSRC_PHY += $(DIR)/phydm/rtl8721da/halhwimg_bb.c \
-	$(DIR)/phydm/rtl8721da/halhwimg_bb_BCNmode.c \
 	$(DIR)/phydm/rtl8721da/phydm_hal_api8721da.c \
 	$(DIR)/phydm/rtl8721da/phydm_regconfig8721da.c
 

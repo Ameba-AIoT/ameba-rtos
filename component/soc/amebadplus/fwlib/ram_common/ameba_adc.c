@@ -8,7 +8,7 @@
 
 ADC_CalParaTypeDef CalParaNorm;
 ADC_CalParaTypeDef CalParaVBat;
-BOOL vref_init_done = _FALSE;
+u8 vref_init_done = _FALSE;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -729,7 +729,7 @@ void ADC_SetOverSample(u8 OS_Shift, u8 OS_Ratio, u8 OS_Mode)
   *        @arg _FALSE: Calibration parameter belongs to normal channel.
   * @retval None.
   */
-void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, BOOL IsVBatChan)
+void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
 {
 	u8 index;
 	u8 EfuseBuf[6];

@@ -53,5 +53,5 @@
 #define WLAN_ROM_BSS_SECTION
 
 #define	HAL_ROM_DATA_SECTION
-
+#define HAL_ROM_BSS_SECTION
 #endif //_SECTION_CONFIG_H_

@@ -137,6 +137,12 @@ void rtw_set_to_roam(u8 to_roam)
 #endif
 
 #ifndef CONFIG_WIFI_11R_ENABLE
+u8 rtw_ft_check_en(void *a)
+{
+	UNUSED(a);
+	return 0;
+}
+
 void rtw_ft_info_init(void)
 {
 

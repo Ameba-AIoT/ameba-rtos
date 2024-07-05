@@ -123,19 +123,15 @@ static usbh_xfer_func usbh_get_xfer_func(usbh_vendor_xfer_t *xfer)
 
 static int usbh_vendor_init_ep(usbh_vendor_xfer_t *xfer, usbh_ep_desc_t *ep_desc)
 {
+	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 	char *xfer_type = usbh_get_xfer_type_text(xfer);
 
 	xfer->ep_num = ep_desc->bEndpointAddress;
 	xfer->ep_mps = ep_desc->wMaxPacketSize;
 	xfer->ep_type = ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK;
-	if ((xfer->ep_type == USB_CH_EP_TYPE_INTR) || (xfer->ep_type == USB_CH_EP_TYPE_ISOC)) {
-		xfer->ep_interval = 1 << (MIN((MAX(ep_desc->bInterval, 1)), 16) - 1);
-	} else {
-		xfer->ep_interval = 0;
-	}
+	xfer->ep_interval = usbh_get_interval(vendor->host, xfer->ep_type, ep_desc->bInterval);
 
-	//RTK_LOGS(TAG, "[VEN] %s EP%02x MPS=%d bInterval=%d interval=%d\n",
-	//		 xfer_type, xfer->ep_num, xfer->ep_mps, ep_desc->bInterval, xfer->ep_interval);
+	RTK_LOGS(TAG, "[VEN] %s EP%02x MPS %d intv %d %d\n", xfer_type, xfer->ep_num, xfer->ep_mps, ep_desc->bInterval, xfer->ep_interval);
 
 	return HAL_OK;
 }

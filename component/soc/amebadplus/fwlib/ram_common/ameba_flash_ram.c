@@ -132,7 +132,7 @@ void FLASH_Write_Lock(void)
 	rtos_sched_suspend();
 
 	while (IPC_SEMTake(IPC_SEM_FLASH, 1000) != _TRUE) {
-		RTK_LOGE(TAG, "FLASH_Write_Lock get hw sema fail\n");
+		RTK_LOGS(TAG, "FLASH_Write_Lock get hw sema fail\n");
 	}
 #ifdef ARM_CORE_CM4
 	/* Sent IPC to KM0 */

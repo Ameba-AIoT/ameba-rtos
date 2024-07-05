@@ -202,9 +202,8 @@ endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@echo "========== cl generate OTA_All.bin with bootloader km0=========="
 	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ]; then \
-		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin \
-		$(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all.bin; \
-		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all_ns.bin; \
+		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all.bin; \
+		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_ns.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all_ns.bin; \
 	fi
 else
 	@echo "========== cl generate OTA_All.bin km0 ========== "

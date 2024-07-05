@@ -42,14 +42,15 @@ void IR_RX_recv(void)
 		data = IR_ReceiveData(IR_DEV);
 		duration = data & 0x7fffffff;
 
-		if (IR_DataStruct.bufLen >= 67) {
+		if (IR_DataStruct.bufLen > 67) {//67
 			printf("the waveform is inverse, you should set: \n");
 			printf("IR_InitStruct.IR_RxCntThrType = IR_RX_COUNT_HIGH_LEVEL \n");
-			printf("#define INVERSE_DATA in Ir_nec_protocol.h \n");
+			printf("#define INVERSE_DATA in Ir_nec_protocol.h \n\n");
 			break;
 		}
 
 		if ((IR_DataStruct.bufLen == 0) && (IR_DataStruct.irBuf[0] == 0)) {
+			// printf("data0x%x, duration0x%x \r\n", data, duration);
 			IR_DataStruct.irBuf[0] = data;
 		} else {
 			if (duration > MAX_CARRIER) {
@@ -60,6 +61,7 @@ void IR_RX_recv(void)
 				IR_DataStruct.irBuf[IR_DataStruct.bufLen] += duration;
 			}
 		}
+
 		if (duration > MAX_CARRIER) {
 			continue_filter = 0;
 		} else {
@@ -79,7 +81,6 @@ void IR_RX_recv(void)
 void IR_irq_handler(void)
 {
 	u32 IntStatus, IntMask;
-	//portBASE_TYPE taskWoken = pdFALSE;
 
 	IntStatus = IR_GetINTStatus(IR_DEV);
 	IntMask = IR_GetIMR(IR_DEV);
@@ -105,7 +106,6 @@ void IR_irq_handler(void)
 		}
 
 		if (IntStatus & IR_BIT_RX_CNT_THR_INT_STATUS) {
-			//taskWoken = pdFALSE;
 			IR_ClearINTPendingBit(IR_DEV, IR_BIT_RX_CNT_THR_INT_CLR);
 			rtos_sema_give(IR_Recv_end_sema);
 		}
@@ -181,7 +181,7 @@ void Driver_IR_Init(void)
 	IR_InitStruct.IR_Freq = 10000000; //sample frequency :Hz
 	IR_InitStruct.IR_RxFIFOThrLevel = 5;
 	IR_InitStruct.IR_RxCntThrType = IR_RX_COUNT_LOW_LEVEL;
-	IR_InitStruct.IR_RxCntThr = 0xa1644;
+	IR_InitStruct.IR_RxCntThr = 0xa1644;//66ms
 	IR_Init(IR_DEV, &IR_InitStruct);
 
 	/* Configure interrrupt if need */
@@ -216,7 +216,7 @@ void IR_RX_thread(void)
 			result = IR_NECDecode(IR_InitStruct.IR_Freq, (uint8_t *)&data, &IR_DataStruct);
 			ir_code[0] = data[0];
 			ir_code[1] = data[2];
-			printf("result %lu RX %2x%2x\n", result, ir_code[1], ir_code[0]);
+			printf("result %lu RX 0x%02x%02x\n", result, ir_code[1], ir_code[0]);
 		} else {
 			printf("rx timeout\n");
 		}

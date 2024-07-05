@@ -33,6 +33,7 @@ uint8_t i2cdatadst[I2C_DATA_LENGTH];
 uint8_t i2cdatardsrc[I2C_DATA_LENGTH];
 uint8_t i2cdatarddst[I2C_DATA_LENGTH];
 I2C_InitTypeDef I2CInitData[2];
+static const char *TAG = "I2C";
 
 
 /* RESTART verification */
@@ -79,7 +80,7 @@ void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t scl, ui
 	PAD_PullCtrl(sda, GPIO_PuPd_UP);
 	PAD_PullCtrl(scl, GPIO_PuPd_UP);
 
-	printf("i2c_idx:%lx\n", i2c_idx);
+	RTK_LOGI(TAG, "i2c_idx:%x\n", i2c_idx);
 
 	obj->i2c_idx = i2c_idx;
 	obj->I2Cx = I2C_DEV_TABLE[i2c_idx].I2Cx;
@@ -262,9 +263,9 @@ void i2c_master_rx_check(void)
 	int     i2clocalcnt;
 	int     result = 0;
 
-	printf("check master received data>>>\n");
+	RTK_LOGI(TAG, "check master received data>>>\n");
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
-//		printf("i2c data: %02x \t %02x\n",i2cdatarddst[i2clocalcnt],i2cdatarddst[i2clocalcnt+1]);
+//		RTK_LOGI(TAG,"i2c data: %02x \t %02x\n",i2cdatarddst[i2clocalcnt],i2cdatarddst[i2clocalcnt+1]);
 	}
 
 	// verify result
@@ -275,8 +276,7 @@ void i2c_master_rx_check(void)
 			break;
 		}
 	}
-	printf("\r\nMaster receive: Result is %s\r\n", (result) ? "success" : "fail");
-
+	RTK_LOGI(TAG, "\r\nMaster receive: Result is %s\r\n", (result) ? "success" : "fail");
 }
 
 void i2c_dual_master_task(void)
@@ -297,7 +297,7 @@ void i2c_dual_master_task(void)
 		break;
 #endif
 	default:
-		printf("I2C id error\r\n");
+		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
 
@@ -316,7 +316,7 @@ void i2c_dual_master_task(void)
 	}
 
 
-	printf("Slave addr=%x\n", I2C_SLAVE_ADDR0);
+	RTK_LOGI(TAG, "Slave addr=%x\n", I2C_SLAVE_ADDR0);
 	_memset(&i2cmaster, 0x00, sizeof(i2c_t));
 	i2c_StructInit(&i2cmaster, I2C_ID, I2C_MTR_SDA, I2C_MTR_SCL, I2C_MASTER_MODE);
 
@@ -326,7 +326,7 @@ void i2c_dual_master_task(void)
 	I2C_Cmd(i2cmaster.I2Cx, ENABLE);
 
 	// Master write - Slave read
-	printf("\r\nMaster polling write>>>\n");
+	RTK_LOGI(TAG, "\r\nMaster polling write>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[1], (I2C_DATA_LENGTH - 1), 1);
@@ -337,7 +337,7 @@ void i2c_dual_master_task(void)
 
 
 	// Master read - Slave write
-	printf("Master polling read>>>\n");
+	RTK_LOGI(TAG, "Master polling read>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 #endif
@@ -346,17 +346,17 @@ void i2c_dual_master_task(void)
 
 #ifdef I2C_LOOP_TEST
 
-	printf("\r\nMaster polling write2>>>\n");
+	RTK_LOGI(TAG, "\r\nMaster polling write2>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
-	printf("Master polling read2>>>\n");
+	RTK_LOGI(TAG, "Master polling read2>>>\n");
 	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
 
-	printf("\r\nMaster polling write3>>>\n");
+	RTK_LOGI(TAG, "\r\nMaster polling write3>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
-	printf("Master polling read3>>>\n");
+	RTK_LOGI(TAG, "Master polling read3>>>\n");
 	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
 
@@ -370,7 +370,7 @@ void i2c_dual_master_task(void)
 int main(void)
 {
 	if (rtos_task_create(NULL, "I2C DULE MASTER DEMO", (rtos_task_t)i2c_dual_master_task, NULL, (3072), (1)) != SUCCESS) {
-		printf("Cannot create i2c_dual_master_task demo task\n\r");
+		RTK_LOGI(TAG, "Cannot create i2c_dual_master_task demo task\n\r");
 	}
 
 	rtos_sched_start();

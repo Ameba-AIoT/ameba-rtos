@@ -587,6 +587,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				udb_info->dev_info.rssi);
 		BT_LOGA("udb=");
 		mesh_data_uart_dump(udb_info->dev_uuid, 16);
+		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,udb,",
+					udb_info->dev_info.bt_addr[5], udb_info->dev_info.bt_addr[4], udb_info->dev_info.bt_addr[3],
+					udb_info->dev_info.bt_addr[2], udb_info->dev_info.bt_addr[1], udb_info->dev_info.bt_addr[0],
+					udb_info->dev_info.bt_addr_type, udb_info->dev_info.rssi);
+		MESH_DATA_IOUART_DUMP(udb_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY: {
@@ -597,6 +602,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
 		BT_LOGA("prov=");
 		mesh_data_uart_dump(prov_info->dev_uuid, 16);
+		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,prov,",
+					prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4], prov_info->dev_info.bt_addr[3],
+					prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
+					prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
+		MESH_DATA_IOUART_DUMP(prov_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY: {
@@ -607,6 +617,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
 		BT_LOGA("proxy=");
 		mesh_data_uart_dump((uint8_t *)&proxy_info->proxy, proxy_info->len);
+		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,proxy,",
+					proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4], proxy_info->dev_info.bt_addr[3],
+					proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
+					proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
+		MESH_DATA_IOUART_DUMP((uint8_t *)&proxy_info->proxy, proxy_info->len);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_HB_PUB_TIMER_STATE: {
@@ -652,6 +667,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 	case RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE: {
 		rtk_bt_mesh_prov_generic_cb_type_t *pb_adv_link_state;
 		pb_adv_link_state = (rtk_bt_mesh_prov_generic_cb_type_t *)param;
+		BT_AT_PRINT("+BLEMESHSTACK:pbadv_state,%d\r\n", *pb_adv_link_state);
 		switch (*pb_adv_link_state) {
 		case RTK_BT_MESH_PB_GENERIC_CB_LINK_OPENED:
 			BT_LOGA("[APP] PB-ADV link opened\r\n");
@@ -671,12 +687,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
 		prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)param;
 		BT_LOGA("[APP] Provisioning complete,unicast address:0x%x\r\n", prov_complete->unicast_addr);
+		BT_AT_PRINT("+BLEMESHSTACK:prov,0,0x%x\r\n", prov_complete->unicast_addr);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_PROV_FAIL: {
 		rtk_bt_mesh_stack_evt_prov_fail_t *prov_fail;
 		prov_fail = (rtk_bt_mesh_stack_evt_prov_fail_t *)param;
 		BT_LOGE("[APP] Provisioning fail,reason:%d\r\n", prov_fail->fail_reason);
+		BT_AT_PRINT("+BLEMESHSTACK:prov,-1,%d\r\n", prov_fail->fail_reason);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_START_PROVED: {
@@ -743,15 +761,19 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		switch (lpn_cb->cb_type) {
 		case RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_SUCCESS:
 			BT_LOGA("[APP] Established friendship with FN: 0x%04x success\r\n", lpn_cb->fn_addr);
+			BT_AT_PRINT("+BLEMESHSTACK:lpn,%d,0x%04x\r\n", lpn_cb->cb_type, lpn_cb->fn_addr);
 			break;
 		case RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_FAIL_NO_OFFER:
 			BT_LOGA("[APP] No frnd offer\r\n");
+			BT_AT_PRINT("+BLEMESHSTACK:lpn,%d\r\n", lpn_cb->cb_type);
 			break;
 		case RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_FAIL_NO_UPDATE:
 			BT_LOGA("[APP] No frnd update\r\n");
+			BT_AT_PRINT("+BLEMESHSTACK:lpn,%d\r\n", lpn_cb->cb_type);
 			break;
 		case RTK_BT_MESH_LPN_CB_TYPE_FRIENDSHIP_LOST:
 			BT_LOGA("[APP] Lost friendship with FN: 0x%04x\r\n", lpn_cb->fn_addr);
+			BT_AT_PRINT("+BLEMESHSTACK:lpn,%d,0x%04x\r\n", lpn_cb->cb_type, lpn_cb->fn_addr);
 			break;
 		default:
 			BT_LOGE("[%s] Unknown cb type:%d\r\n", __func__, lpn_cb->cb_type);
@@ -775,59 +797,90 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 			switch (type) {
 			case RTK_BT_MESH_STACK_USER_LIST_MESH_STATE:
 				BT_LOGA("Mesh State:\t%d\r\n", *(p_data + offset));
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d\r\n", type, *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_UUID:
 				BT_LOGA("Device UUID:\t");
 				mesh_data_uart_dump(p_data + offset, data_len);
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,", type);
+				MESH_DATA_IOUART_DUMP(p_data + offset, data_len);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR:
 				BT_LOGA("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
 						*(p_data + offset + 5), *(p_data + offset + 4), *(p_data + offset + 3), *(p_data + offset + 2), *(p_data + offset + 1), *(p_data + offset));
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,0x%02x%02x%02x%02x%02x%02x\r\n",
+							type, *(p_data + offset + 5), *(p_data + offset + 4), *(p_data + offset + 3),
+							*(p_data + offset + 2), *(p_data + offset + 1), *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_KEY:
 				BT_LOGA("DevKey:\t\t%d-0x%04x-%d-", *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
 				mesh_data_uart_dump(p_data + offset + 4, 16);
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-",
+							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
+				MESH_DATA_IOUART_DUMP(p_data + offset + 4, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY:
 				BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
 						* (p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
 				mesh_data_uart_dump(p_data + offset + 6, 16);
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
+							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
+							*(p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
+				MESH_DATA_IOUART_DUMP(p_data + offset + 6, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
 				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
 						* (p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
 				mesh_data_uart_dump(p_data + offset + 7, 16);
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
+							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
+							*(p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
+				MESH_DATA_IOUART_DUMP(p_data + offset + 7, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS:
 				BT_LOGA("IVindex:\t%d-0x%x\r\n", *(p_data + offset), LE_TO_U32(p_data + offset + 1));
 				BT_LOGA("Seq:\t\t0x%06x\r\n", LE_TO_U32(p_data + offset + 5));
 				BT_LOGA("NodeAddr:\t0x%04x-%d-%d\r\n", LE_TO_U16(p_data + offset + 9),
 						LE_TO_U32(p_data + offset + 11), *(p_data + offset + 15));
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%x,0x%06x,0x%04x-%d-%d\r\n",
+							type, *(p_data + offset), LE_TO_U32(p_data + offset + 1),
+							LE_TO_U32(p_data + offset + 5), LE_TO_U16(p_data + offset + 9),
+							LE_TO_U32(p_data + offset + 11), *(p_data + offset + 15));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_ELEMENT_INFO:
 				BT_LOGA("Element:\t%d-%d", *(p_data + offset), LE_TO_U32(p_data + offset + 1));
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-%d",
+							type, *(p_data + offset), LE_TO_U32(p_data + offset + 1));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_INFO:
 				BT_LOGA("\r\nModel:\t\t%d-%d-0x%08x", *(p_data + offset), *(p_data + offset + 1), LE_TO_U32(p_data + offset + 2));
+				BT_AT_PRINT("\r\n+BLEMESHSTACK:list,%d,%d-%d-0x%08x",
+							type, *(p_data + offset), *(p_data + offset + 1), LE_TO_U32(p_data + offset + 2));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY:
 				BT_LOGA("(app key:%d)", *(p_data + offset));
+				BT_AT_PRINT(",%d,%d", type, *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO:
 				BT_LOGA("(pub to:0x%04x-%d-%d)", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
 						LE_TO_U16(p_data + offset + 3));
+				BT_AT_PRINT(",%d,0x%04x-%d-%d", type, LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+							LE_TO_U16(p_data + offset + 3));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO: {
 				uint16_t sub_addr_num = data_len / 2;
 				uint16_t temp_offset = offset;
 				BT_LOGA("(sub to:");
+				BT_AT_PRINT(",%d,", type);
 				for (uint16_t i = 0; i < sub_addr_num; i++) {
 					BT_LOGA("0x%04x", LE_TO_U16(p_data + temp_offset));
+					BT_AT_PRINT("0x%04x", LE_TO_U16(p_data + temp_offset));
 					temp_offset += 2;
 					if (i == sub_addr_num - 1) {
 						BT_LOGA(")");
 					} else {
 						BT_LOGA("-");
+						BT_AT_PRINT("-");
 					}
 				}
 				break;
@@ -840,6 +893,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 			offset += data_len;
 		}
 		BT_LOGA("\r\n\r\n");
+		BT_AT_PRINT("\r\n");
 		if (!len) {
 			BT_LOGE("[APP] Print user cmd list fail, len==0\r\n");
 		}
@@ -850,6 +904,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		result = (rtk_bt_mesh_stack_set_retrans_param_t *)param;
 		BT_LOGA("Set node net trans count %d, relay retrans count %d, ttl %d, trans retrans count %d, Success!\r\n",
 				result->net_retrans_count, result->relay_retrans_count, result->ttl, result->trans_retrans_count);
+		BT_AT_PRINT("+BLEMESHSTACK:retran_set,%d,%d,%d,%d\r\n",
+					result->net_retrans_count, result->relay_retrans_count,
+					result->ttl, result->trans_retrans_count);
 		break;
 	}
 	default:

@@ -353,20 +353,6 @@ enum VCS_TYPE {
 #define INFO_ELEMENT_SIZE       128
 
 /* SECCAM sec_type define */
-#if defined(CONFIG_AMEBAZ6)
-#define _NO_PRIVACY_	0x0
-#define _AES_		0x1	//_CCMP_128_
-#define _GCMP_		0x2	//_GCMP_128_
-#define _GCM_WAPI_	0x3	//_GCM_WAPI_
-#define _CCMP_256_	(_AES_ | BIT(2))	//0x5
-#define _GCMP_256_	(_GCMP_ | BIT(2))	//0x6
-#define _SMS4_		(_GCM_WAPI_ | BIT(2))	//_WAPI_, 0x7
-/* costdown HW not support WEP & TKIP, following define is used for SW */
-#define _WEP40_		0x9
-#define _TKIP_		0xa
-#define _TKIP_WTMIC_	0xb
-#define _WEP104_	0xc
-#else
 #define _NO_PRIVACY_	0x0
 #define _WEP40_		0x1
 #define _TKIP_		0x2
@@ -378,7 +364,6 @@ enum VCS_TYPE {
 #define _GCMP_256_	(_GCMP_ | BIT(3))
 #define _CCMP_256_	(_AES_ | BIT(3))
 #define _GCM_WAPI_	(_SMS4_ | BIT(3))		//_GCM_WAPI_
-#endif
 #define _BIP_		0x8
 
 #define BW_CAP_5M		BIT0

@@ -18,6 +18,7 @@
 
 #define I2C_DATA_LENGTH     127
 
+static const char *TAG = "I2C";
 uint8_t	i2cdatasrc[I2C_DATA_LENGTH];
 u32 datalength = I2C_DATA_LENGTH;
 u8 *pdatabuf;
@@ -27,8 +28,11 @@ rtos_sema_t rxSemaphore = NULL;
 
 static void i2c_give_sema(u32 IsWrite)
 {
-	UNUSED(IsWrite);
-	rtos_sema_give(rxSemaphore);
+	if (IsWrite) {
+		rtos_sema_give(txSemaphore);
+	} else {
+		rtos_sema_give(rxSemaphore);
+	}
 }
 
 static void i2c_take_sema(u32 IsWrite)
@@ -61,7 +65,7 @@ void i2c_int_task(void)
 		break;
 #endif
 	default:
-		printf("I2C id error\r\n");
+		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
 
@@ -108,8 +112,8 @@ void i2c_int_task(void)
 	/* I2C HAL Initialization */
 	I2C_Init(i2c_intctrl.I2Cx, &i2C_master);
 
-	InterruptRegister((IRQ_FUN)I2C_ISRHandle, I2C_DEV_TABLE[I2C_MTR_ID].IrqNum, (u32)&i2c_intctrl, 7);
-	InterruptEn(I2C_DEV_TABLE[I2C_MTR_ID].IrqNum, 7);
+	InterruptRegister((IRQ_FUN)I2C_ISRHandle, I2C_DEV_TABLE[I2C_MTR_ID].IrqNum, (u32)&i2c_intctrl, 5);
+	InterruptEn(I2C_DEV_TABLE[I2C_MTR_ID].IrqNum, 5);
 
 	/* I2C Enable Module */
 	I2C_Cmd(i2c_intctrl.I2Cx, ENABLE);
@@ -138,7 +142,7 @@ void i2c_int_task(void)
 int main(void)
 {
 	if (rtos_task_create(NULL, "i2c_task DEMO", (rtos_task_t)i2c_int_task, NULL, (2048), (1)) != SUCCESS) {
-		printf("Cannot create i2c_int_task demo task\n\r");
+		RTK_LOGI(TAG, "Cannot create i2c_int_task demo task\n\r");
 	}
 
 	rtos_sched_start();

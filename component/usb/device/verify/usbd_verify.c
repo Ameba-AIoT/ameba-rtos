@@ -403,15 +403,10 @@ static int usbd_verify_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+int usbd_verify_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 {
 	int ret = HAL_OK;
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
-
-	if (len == 0) {
-		/*RX ZLP*/
-		return ret;
-	}
 
 	if (cdev->cb->ep_data_out != NULL) {
 		ret = cdev->cb->ep_data_out(dev, ep_addr, len);
@@ -505,7 +500,7 @@ int usbd_verify_ep_init(usbd_verify_ep_t *ep, u8 type, u8 epaddr, u8 intervalue,
 	usbd_verify_ep_basic_t *ep_infor = &(ep->ep_infor);
 	usb_os_memset(ep, 0x00, sizeof(usbd_verify_ep_t));
 
-	ep->buf = (u8 *)usb_os_malloc(mps);
+	ep->buf = (u8 *)usb_os_malloc(trans_size);
 	if (ep->buf == NULL) {
 		return HAL_ERR_MEM;
 	}
@@ -527,6 +522,7 @@ int usbd_verify_ep_deinit(usbd_verify_ep_t *ep)
 {
 	if (ep && ep->buf != NULL) {
 		usb_os_mfree(ep->buf);
+		ep->buf = NULL;
 	}
 
 	return HAL_OK;
@@ -536,7 +532,7 @@ int usbd_verify_receive_data(usbd_verify_ep_t *ep)
 {
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 	usbd_verify_ep_basic_t *ep_infor = &(ep->ep_infor);
-	usbd_ep_receive(cdev->dev, ep_infor->ep_addr, ep->buf, ep_infor->mps);
+	usbd_ep_receive(cdev->dev, ep_infor->ep_addr, ep->buf, ep_infor->trans_len);
 
 	return HAL_OK;
 }
@@ -549,7 +545,6 @@ int usbd_verify_transmit_zlp(u8 addr)
 {
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 
-	RTK_LOGS(TAG, "[VRY] TX ZLP\n");
 	usbd_ep_transmit(cdev->dev, addr, NULL, 0);
 
 	return HAL_OK;
@@ -579,14 +574,18 @@ int usbd_verify_transmit_data(usbd_verify_ep_t *ep)
 	int ret = HAL_OK;
 	usbd_verify_device_t *cdev = &usbd_verify_dev;
 	usbd_verify_ep_basic_t *ep_infor = &(ep->ep_infor);
-	if ((USB_CH_EP_TYPE_BULK == ep_infor->ep_type) && ((ep_infor->trans_len % ep_infor->mps) == 0)) {
+
+	if (((USB_CH_EP_TYPE_BULK == ep_infor->ep_type) || (USB_CH_EP_TYPE_INTR == ep_infor->ep_type)) && ((ep_infor->trans_len % ep_infor->mps) == 0) &&
+		(ep_infor->trans_len > 0)) {
 		ep->zlp = 1;
 	} else {
 		ep->zlp = 0;
 	}
 	if (ep->state == VERIFY_TRANSFER_STATE_IDLE) {
 		ep->state = VERIFY_TRANSFER_STATE_TX;
-		ep->send_count ++;
+		if (ep_infor->trans_len > 0) {
+			ep->send_count ++;
+		}
 		//usbd_verify_dump_ep(ep);
 		usbd_ep_transmit(cdev->dev, ep_infor->ep_addr, ep->buf, ep_infor->trans_len);
 	} else {

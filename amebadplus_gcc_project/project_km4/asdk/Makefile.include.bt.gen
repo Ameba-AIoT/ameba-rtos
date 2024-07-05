@@ -9,7 +9,21 @@ IFLAGS += \
 	-I$(BLEDIR)/driver/inc \
 	-I$(BLEDIR)/driver/inc/hci \
 	-I$(BLEDIR)/driver/platform/amebadplus/inc \
-	-I$(BLEDIR)/osif \
+	-I$(BLEDIR)/osif
+
+ifeq ($(CONFIG_BT_ZEPHYR), y)
+IFLAGS += \
+	-I$(BLEDIR)/api/zephyr_stack \
+	-I$(BLEDIR)/zephyr \
+	-I$(BLEDIR)/zephyr/hci_driver \
+	-I$(BLEDIR)/zephyr/include \
+	-I$(BLEDIR)/zephyr/stack \
+	-I$(BLEDIR)/zephyr/stack/host \
+	-I$(BLEDIR)/zephyr/settings \
+	-I$(BLEDIR)/zephyr/port
+else
+IFLAGS += \
+	-I$(BLEDIR)/api/rtk_stack \
 	-I$(BLEDIR)/rtk_stack/example \
 	-I$(BLEDIR)/rtk_stack/inc/app \
 	-I$(BLEDIR)/rtk_stack/inc/os \
@@ -32,11 +46,11 @@ IFLAGS += \
 	-I$(BLEDIR)/rtk_stack/src/mesh/platform \
 	-I$(BLEDIR)/rtk_stack/src/mesh/profile \
 	-I$(BLEDIR)/rtk_stack/src/mesh/utility
+endif
 
 IFLAGS += \
 	-I$(BLEDIR)/api \
 	-I$(BLEDIR)/api/include \
-	-I$(BLEDIR)/api/rtk_stack \
 	-I$(BLEDIR)/example/bt_atcmd \
 	-I$(BLEDIR)/example/gatt_service/server \
 	-I$(BLEDIR)/example/gatt_service/client \

@@ -52,29 +52,17 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType);
 * @param  read_data: pointer to a byte array which is used to save received data.
 * @retval none
 */
+SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
 	u8 rd_cmd = cmd;
 	u32 rx_num = 0;
 	u32 value;
-	u32 ctrl0;
 
-	if (rd_cmd == 0) {
-		rd_cmd = flash_init_para.FLASH_cur_cmd;
-	}
-
-	/* Enter user mode */
-	FLASH_UserMode_Enter();
-	/* Backup bitmode */
-	ctrl0 = spi_flash->CTRLR0;
-	/* Set OneBit Mode */
 	FLASH_SetSpiMode(&flash_init_para, SpicOneBitMode);
-	/* set CTRLR0: RX_mode */
-	spi_flash->CTRLR0 |= TMOD(3);
+	FLASH_UserMode_Enter();
 
-	/* Set RX_NDF: frame number of receiving data. TX_NDF should be set in both transmit mode and receive mode.
-		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
 	spi_flash->RX_NDF = RX_NDF(read_len);
 	spi_flash->TX_NDF = 0;
 
@@ -85,11 +73,8 @@ void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 	} else {
 		value |= USER_ADDR_LENGTH(flash_init_para.FLASH_addr_phase_len);
 	}
-
 	spi_flash->USER_LENGTH = value;
-
-	/* Set target slave */
-	spi_flash->SER = 1;
+	spi_flash->CTRLR0 = ((spi_flash->CTRLR0 & 0xFFF0FFFF) | TMOD(3));
 
 	/* set flash_cmd: write cmd & address to fifo & addr is MSB */
 	spi_flash->DR[0].BYTE = rd_cmd;
@@ -118,13 +103,9 @@ void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 	}
 
 	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
-	FLASH_WaitBusy(WAIT_TRANS_COMPLETE);
-
-	/* Exit user mode */
+	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
 	FLASH_UserMode_Exit();
-	/* Restore bitmode */
-	spi_flash->CTRLR0 = ctrl0;
-
+	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 }
 
 /**
@@ -135,6 +116,7 @@ void FLASH_RxCmd_Patch(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
   * @param  TransmitData: pointer to a byte array that is to be sent.
   * @retval none
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_TxCmd_Patch(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -192,15 +174,12 @@ void FLASH_TxCmd_Patch(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData)
 	}
 
 	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
-	FLASH_WaitBusy(WAIT_TRANS_COMPLETE);
+	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
 
 	/* Restore bitmode */
 	spi_flash->CTRLR0 = ctrl0;
 
-	/* The result of calling this function:
-		1) wait flash busy done (wip=0)
-		2) restore SPIC to auto mode */
-	FLASH_WaitBusy(WAIT_FLASH_BUSY);
+	FLASH_WaitBusy_InUserMode(WAIT_FLASH_BUSY);
 	FLASH_UserMode_Exit();
 }
 /**

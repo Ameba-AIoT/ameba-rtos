@@ -10,6 +10,16 @@
 #include <log_service.h>
 #include <bt_utils.h>
 
+#define LE_TO_U32(_a)                                  \
+        (((uint32_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 1)) << 8)  |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 2)) << 16) |   \
+         ((uint32_t)(*((uint8_t *)(_a) + 3)) << 24))
+
+#define LE_TO_U16(_a)                                  \
+        (((uint16_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
+         ((uint16_t)(*((uint8_t *)(_a) + 1)) << 8))
+
 static uint8_t ctoi(char c)
 {
 	if ((c >= 'A') && (c <= 'F')) {
@@ -160,3 +170,47 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 
 	return TRUE;
 }
+
+#if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+
+void bt_iouart_dump_hex(const char *str, void *buf, uint16_t len, bool reverse)
+{
+	int i = 0;
+
+	if (!buf || !len) {
+		return;
+	}
+
+	at_printf("%s", str);
+	for (i = 0; i < len; i++) {
+		if (reverse) {
+			at_printf("%02x", *((uint8_t *)(buf) + len - 1 - i));
+		} else {
+			at_printf("%02x", *((uint8_t *)(buf) + i));
+		}
+	}
+	at_printf("\r\n");
+}
+
+void bt_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
+{
+	int i = 0;
+
+	if (!buf || !len) {
+		return;
+	}
+
+	at_printf("%s", str);
+	for (i = 0; i < len; i++) {
+		if (unit == 4) {
+			at_printf(",%08x", LE_TO_U32((uint8_t *)buf + i * 4)); /* *(buf + i) may crash at AmebaLite when (buf + i) isn't aligned with 4.*/
+		} else if (unit == 2) {
+			at_printf(",%04x", LE_TO_U16((uint8_t *)buf + i * 2));
+		} else {
+			at_printf(",%02x", *((uint8_t *)buf + i));
+		}
+	}
+	at_printf("\r\n");
+}
+
+#endif
