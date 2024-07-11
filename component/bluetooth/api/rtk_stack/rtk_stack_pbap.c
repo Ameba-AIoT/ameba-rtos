@@ -24,7 +24,6 @@
 
 static uint8_t hfp_role;
 static uint8_t remote_addr[6] = {0};
-// extern T_APP_DB app_db;
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
 
 static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t buf_len)

@@ -81,7 +81,9 @@ endif
 include Makefile.drv
 include Makefile.phy
 include Makefile.btc
-
+ifneq ($(CONFIG_AMEBAGREEN2), y)
+include Makefile.drv.rom2024
+endif
 CSRC += $(CSRC_DRV) $(CSRC_PHY) $(CSRC_BTC)
 
 #*****************************************************************************#

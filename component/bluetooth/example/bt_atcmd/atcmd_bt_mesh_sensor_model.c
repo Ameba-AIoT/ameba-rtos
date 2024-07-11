@@ -34,13 +34,13 @@ static int atcmd_ble_mesh_sensor_descriptor_get(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_sensor_descriptor_get(&sensor_descriptor_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor descriptor failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor descriptor failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -56,13 +56,13 @@ static int atcmd_ble_mesh_sensor_cadence_get(int argc, char **argv)
 	sensor_cadence_get.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_sensor_cadence_get(&sensor_cadence_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor cadence failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor cadence failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -95,13 +95,13 @@ static int atcmd_ble_mesh_sensor_cadence_set(int argc, char **argv)
 	hexdata_str_to_array(argv[11], sensor_cadence_set.cadence_high, len);
 	ret = rtk_bt_mesh_sensor_cadence_set(&sensor_cadence_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set sensor cadence failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Set sensor cadence failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -117,13 +117,13 @@ static int atcmd_ble_mesh_sensor_settings_get(int argc, char **argv)
 	sensor_settings_get.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_sensor_settings_get(&sensor_settings_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor settings failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor settings failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -140,13 +140,13 @@ static int atcmd_ble_mesh_sensor_setting_get(int argc, char **argv)
 	sensor_setting_get.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_sensor_setting_get(&sensor_setting_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor setting failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor setting failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -168,13 +168,13 @@ static int atcmd_ble_mesh_sensor_setting_set(int argc, char **argv)
 	hexdata_str_to_array(argv[5], sensor_setting_set.setting_raw, len);
 	ret = rtk_bt_mesh_sensor_setting_set(&sensor_setting_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set sensor setting failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Set sensor setting failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -194,13 +194,13 @@ static int atcmd_ble_mesh_sensor_get(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_sensor_get(&sensor_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -220,13 +220,13 @@ static int atcmd_ble_mesh_sensor_column_get(int argc, char **argv)
 	hexdata_str_to_array(argv[3], sensor_column_get.raw_value_x, len);
 	ret = rtk_bt_mesh_sensor_column_get(&sensor_column_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor column failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor column failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -244,12 +244,12 @@ static int atcmd_ble_mesh_sensor_series_get(int argc, char **argv)
 	sensor_series_get.app_key_index = str_to_int(argv[2]);
 	if (argc > 3) {
 		if (argc != 5) {
-			AT_PRINTK("[%s] Input data number is uncorrent.\r\n", __func__);
+			MESHSENSOR_AT_PRINTK("[%s] Input data number is uncorrent.\r\n", __func__);
 		}
 		len = strlen(argv[3]);
 		len2 = strlen(argv[4]);
 		if (len / 2 != len2 / 2) {
-			AT_PRINTK("[%s] Input data length is uncorrent.\r\n", __func__);
+			MESHSENSOR_AT_PRINTK("[%s] Input data length is uncorrent.\r\n", __func__);
 		}
 		sensor_series_get.raw_value_x_len = len / 2;
 		hexdata_str_to_array(argv[3], sensor_series_get.raw_value_x1, len);
@@ -259,13 +259,13 @@ static int atcmd_ble_mesh_sensor_series_get(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_sensor_series_get(&sensor_series_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get sensor series failed! reason: 0x%x", __func__, ret);
+		MESHSENSOR_AT_PRINTK("[%s] Get sensor series failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support sensor client model.");
+	MESHSENSOR_AT_PRINTK("Platform not support sensor client model.");
 	return -1;
 #endif
 }
@@ -285,8 +285,11 @@ static const cmd_table_t mesh_sensor_cmd_table[] = {
 
 int atcmd_bt_mesh_sensor(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_sensor_cmd_table, "[ATBC][mesh_sensor]");
-	return 0;
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_sensor_cmd_table, "[AT+BLEMESHSENSOR]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_sensor_cmd_table, "[ATBC][mesh_sensor]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

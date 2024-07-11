@@ -32,7 +32,7 @@ Setup Guide
 	To run USB CDC ACM host application on AP:
 	1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] CDC ACM
 	Save and exit.
 	2. Type command "make all EXAMPLE=usbh_cdc_acm" under auto_build to build the images.
@@ -46,7 +46,7 @@ Setup Guide
 	To run USB CDC ACM host application on HP:
 	1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] CDC ACM
 	Save and exit.
 	2. Type command "make all" under auto_build and type "make EXAMPLE=usbh_cdc_acm" under project_hp to build the images.

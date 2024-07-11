@@ -463,6 +463,7 @@ static const cmd_table_t cmd_table[] = {
 #endif  // end of RTK_BLE_MESH_SUPPORT
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{"br_gap",      atcmd_bt_br_gap,               2, 13},
+	{"sdp_cmd",     atcmd_bt_sdp_cmd,              1, 3},
 	{"a2dp_cmd",    atcmd_bt_a2dp_cmd,             1, 8},
 	{"avrcp_cmd",   atcmd_bt_avrcp_cmd,            1, 4},
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},

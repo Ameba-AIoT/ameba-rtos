@@ -96,6 +96,9 @@ endif
 ifeq ($(findstring y, $(CONFIG_USB_HOST_EN)), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_usbh.a
 endif
+ifeq ($(findstring y, $(CONFIG_USB_DRD_EN)), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_usb.a
+endif
 ifeq ($(CONFIG_CORE_NUM),1)
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc.a
 else
@@ -180,10 +183,11 @@ include ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi
 make_subdirs_lib_img2: make_wifi_lib
 endif
 
+prebuild: build_target_folder check_toolchain build_info.h
 #all: check_toolchain copy_ld_sheipa make_atf make_rtos linker_rtos gen_image
-bootloader: build_target_folder check_toolchain make_atf
-image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2 fip_image code_analyze
-lib_image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs_lib_img2
+bootloader: prebuild make_atf
+image2: prebuild copy_ld_img2 make_subdirs linker_image2 fip_image code_analyze
+lib_image2: prebuild copy_ld_img2 make_subdirs_lib_img2
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
 #*****************************************************************************#
@@ -215,6 +219,7 @@ make_subdirs_lib_img2:
 
 	@+$(MAKE) -C make/usb_otg/device/lib all
 	@+$(MAKE) -C make/usb_otg/host/lib all
+	@+$(MAKE) -C make/usb_otg/drd/lib all
 
 
 ifeq ($(CONFIG_WLAN),y)

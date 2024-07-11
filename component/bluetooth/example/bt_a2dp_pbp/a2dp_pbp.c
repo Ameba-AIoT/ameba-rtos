@@ -1174,7 +1174,11 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	void *p_enqueue_mtx = NULL;
 	uint32_t time_stamp_before, time_stamp_after = 0;
 	uint32_t out_frames = 0;
-
+	//if pbp broadcast has not started, stop resample
+	if (g_pbp_bsrc_info.status != RTK_BLE_AUDIO_BROADCAST_SOURCE_START) {
+		BT_LOGE("[APP] PBP broadcast has not started!\r\n");
+		return 1;
+	}
 	/* 1. resample */
 	time_stamp_before = osif_sys_time_get();
 	out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
@@ -1189,25 +1193,25 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	BT_LOGD("[APP] in_frames:%u out_frames:%u \r\n", p_len / (g_audio_resample_t->in_frame_size), out_frames);
 	/* 2. enqueue */
 	p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
-	enqueue_size = out_frames * g_audio_resample_t->out_frame_size;
-	if (enqueue_size > SOXR_OUT_FRAME_BUF_MAX_LEN) {
-		BT_LOGE("[APP] %s enqueue_size: %u exceed the max len!\r\n", __func__, enqueue_size);
+	if (p_enqueue_mtx == NULL) {
+		BT_LOGE("[APP] %s p_enqueue_mtx is NULL\r\n", __func__);
 		return 1;
 	}
+	enqueue_size = out_frames * g_audio_resample_t->out_frame_size;
+	BT_LOGD("[APP] %s enqueue_size\r\n", __func__, enqueue_size);
 	osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
 	if (RTK_BT_OK != a2dp_pbp_demo_pcm_data_enqueue(&pbp_convert_pcm_queue, out_frame_buf, enqueue_size)) {
 		//queue is full
 		BT_LOGE("[APP] %s pbp_convert_pcm_queue is full!\r\n", __func__);
+		osif_mutex_give(p_enqueue_mtx);
 		return 1;
 	}
-	if (pbp_convert_pcm_queue.queue_size >= A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL && pbp_broadcast_dequeue_flag == false) {
+	if (pbp_convert_pcm_queue.queue_size >= A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL) {
 		pbp_broadcast_dequeue_flag = true;
+	} else {
+		pbp_broadcast_dequeue_flag = false;
 	}
 	osif_mutex_give(p_enqueue_mtx);
-	if (a2dp_play_flag == false) {
-		a2dp_play_flag = true;
-	}
-
 	return 0;
 }
 
@@ -1309,6 +1313,35 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	default:
 		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
+	}
+
+	return RTK_BT_EVT_CB_OK;
+}
+
+static rtk_bt_evt_cb_ret_t rtk_bt_sdp_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+
+	switch (evt_code) {
+	case RTK_BT_SDP_EVT_DID_ATTR_INFO: {
+		rtk_sdp_did_attr_info *p_info = (rtk_sdp_did_attr_info *)param;
+		BT_LOGA("[SDP] SDP DID ATTR %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[SDP] specific_id 0x%04x, vendor_id 0x%04x, vendor_src 0x%04x, product_id 0x%04x, version 0x%04x \r\n",
+				p_info->specific_id,
+				p_info->vendor_id,
+				p_info->vendor_src,
+				p_info->product_id,
+				p_info->version);
+		break;
+	}
+
+	default: {
+		BT_LOGE("%s, Unknown SDP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		break;
+	}
 	}
 
 	return RTK_BT_EVT_CB_OK;
@@ -1837,7 +1870,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 
 	case RTK_BT_A2DP_EVT_STREAM_DATA_IND: { //BT api shall not be called here
 		rtk_bt_a2dp_stream_data_ind_t *pdata_in = (rtk_bt_a2dp_stream_data_ind_t *)param;
-
+		a2dp_play_flag = true;
 		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length, 0)) {
 			BT_LOGE("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
 		}
@@ -2328,7 +2361,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			BT_LOGE("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -2339,7 +2372,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			BT_LOGE("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -2877,6 +2910,8 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 				strcpy(dev_name, RTK_BT_DEV_NAME);
 				snprintf(&dev_name[strlen(RTK_BT_DEV_NAME)], 7, "(%02X%02X)", bd_addr.addr[1], bd_addr.addr[0]);
 				BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
+				/* Initilize SDP part */
+				BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SDP, rtk_bt_sdp_app_callback));
 				/* Initialize avrcp part */
 				BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_AVRCP, rtk_bt_avrcp_app_callback));
 				/* Initialize a2dp part */
@@ -2962,6 +2997,7 @@ failed:
 		{
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GAP));
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
+			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_SDP));
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_AVRCP));
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
 			BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_AUDIO));

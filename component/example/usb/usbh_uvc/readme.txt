@@ -32,7 +32,7 @@ Setup Guide
 	1. Attach an USB camera to the USB port of the Ameba board.
 	2. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] UVC
 	Save and exit.
 	3. Type command "make all EXAMPLE=usbh_uvc" under auto_build to build the images.
@@ -45,7 +45,7 @@ Setup Guide
 	To run USB UVC host application on HP:
 	1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] UVC
 	Save and exit.
 	2. Type command "make all" under auto_build and type "make EXAMPLE=usbh_uvc" under project_hp to build the images.

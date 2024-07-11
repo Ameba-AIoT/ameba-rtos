@@ -1487,6 +1487,35 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	return RTK_BT_EVT_CB_OK;
 }
 
+static rtk_bt_evt_cb_ret_t rtk_bt_sdp_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+
+	switch (evt_code) {
+	case RTK_BT_SDP_EVT_DID_ATTR_INFO: {
+		rtk_sdp_did_attr_info *p_info = (rtk_sdp_did_attr_info *)param;
+		BT_LOGA("[SDP] SDP DID ATTR %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[SDP] specific_id 0x%04x, vendor_id 0x%04x, vendor_src 0x%04x, product_id 0x%04x, version 0x%04x \r\n",
+				p_info->specific_id,
+				p_info->vendor_id,
+				p_info->vendor_src,
+				p_info->product_id,
+				p_info->version);
+		break;
+	}
+
+	default: {
+		BT_LOGE("%s, Unknown SDP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		break;
+	}
+	}
+
+	return RTK_BT_EVT_CB_OK;
+}
+
 static rtk_bt_evt_cb_ret_t app_bt_avrcp_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -2549,7 +2578,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 		} else {
 			BT_LOGE("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -2560,7 +2589,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 		} else {
 			BT_LOGE("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -3470,6 +3499,8 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 				strcpy(dev_name, RTK_BT_DEV_NAME);
 				snprintf(&dev_name[strlen(RTK_BT_DEV_NAME)], 7, "(%02X%02X)", br_addr.addr[1], br_addr.addr[0]);
 				BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
+				/* Initilize SDP part */
+				BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SDP, rtk_bt_sdp_app_callback));
 				/* Initialize avrcp part */
 				BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_AVRCP, app_bt_avrcp_callback));
 				/* Initialize a2dp part */
@@ -3631,6 +3662,8 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 				strcpy(dev_name, RTK_BT_DEV_NAME);
 				snprintf(&dev_name[strlen(RTK_BT_DEV_NAME)], 7, "(%02X%02X)", br_addr.addr[1], br_addr.addr[0]);
 				BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
+				/* Initilize SDP part */
+				BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SDP, rtk_bt_sdp_app_callback));
 				/* Initialize avrcp part */
 				BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_AVRCP, app_bt_avrcp_callback));
 				/* Initialize a2dp part */
@@ -3770,6 +3803,7 @@ failed:
 			{
 				BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GAP));
 				BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
+				BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_SDP));
 				BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_AVRCP));
 				BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
 				BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_COMMON_GP_GAP));

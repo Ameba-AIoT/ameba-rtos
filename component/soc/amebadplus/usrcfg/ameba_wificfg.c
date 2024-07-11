@@ -24,7 +24,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 
 #ifdef CONFIG_INIC_INTF_SDIO
-	wifi_user_config.skb_num_np = 18;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
+	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
 #else

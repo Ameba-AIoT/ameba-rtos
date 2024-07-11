@@ -7,8 +7,6 @@
 #define __INIC_DEV_TX_H__
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_INIC_DEV_XMIT_PRI 6
-
 #define INIC_MSG_QUEUE_WARNING_DEPTH (4)
 
 /* ------------------------------- Data Types ------------------------------- */

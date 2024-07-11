@@ -912,6 +912,7 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_SDP_ACT_RECORD_ADD = 1,
+	RTK_BT_SDP_ACT_DISCOV_START,
 	RTK_BT_SDP_ACT_MAX,
 } rtk_bt_sdp_act_t;
 
@@ -920,7 +921,8 @@ typedef enum {
  * @brief     Bluetooth SDP event indication
  */
 typedef enum {
-	RTK_BT_SDP_EVT_MAX = 1,
+	RTK_BT_SDP_EVT_DID_ATTR_INFO = 1,
+	RTK_BT_SDP_EVT_MAX,
 } rtk_bt_sdp_evt_t;
 
 /**

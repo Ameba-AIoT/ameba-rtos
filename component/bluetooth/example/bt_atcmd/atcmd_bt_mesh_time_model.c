@@ -35,7 +35,7 @@ static int atcmd_ble_mesh_time_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -56,7 +56,7 @@ static int atcmd_ble_mesh_time_zone_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -77,7 +77,7 @@ static int atcmd_ble_mesh_time_tai_utc_delta_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -98,7 +98,7 @@ static int atcmd_ble_mesh_time_role_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -135,7 +135,7 @@ static int atcmd_ble_mesh_time_set(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -168,7 +168,7 @@ static int atcmd_ble_mesh_time_zone_set(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -201,7 +201,7 @@ static int atcmd_ble_mesh_time_tai_utc_delta_set(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -223,7 +223,7 @@ static int atcmd_ble_mesh_time_role_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support time client model.");
+	MESHTIME_AT_PRINTK("Platform not support time client model.");
 	return -1;
 #endif
 }
@@ -243,8 +243,11 @@ static const cmd_table_t mesh_time_cmd_table[] = {
 
 int atcmd_bt_mesh_time(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_time_cmd_table, "[ATBC][mesh_time]");
-	return 0;
+#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_time_cmd_table, "[AT+BLEMESHTIME]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_time_cmd_table, "[ATBC][mesh_time]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

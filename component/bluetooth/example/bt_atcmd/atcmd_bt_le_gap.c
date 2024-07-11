@@ -2163,6 +2163,7 @@ static int atcmd_ble_gap_coc_get_param(int argc, char *argv[])
 	}
 
 	BLEGAP_AT_PRINTK("GAP coc get chan param success, value: %d", value);
+	BT_AT_PRINT("+BLEGAP:coc_get_param,%d\r\n", value);
 	return 0;
 }
 

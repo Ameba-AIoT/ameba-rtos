@@ -8,17 +8,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <log_service.h>
+#include <rtk_bt_common.h>
 #include <bt_utils.h>
 
-#define LE_TO_U32(_a)                                  \
-        (((uint32_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
-         ((uint32_t)(*((uint8_t *)(_a) + 1)) << 8)  |   \
-         ((uint32_t)(*((uint8_t *)(_a) + 2)) << 16) |   \
-         ((uint32_t)(*((uint8_t *)(_a) + 3)) << 24))
-
-#define LE_TO_U16(_a)                                  \
-        (((uint16_t)(*((uint8_t *)(_a) + 0)) << 0)  |   \
-         ((uint16_t)(*((uint8_t *)(_a) + 1)) << 8))
 
 static uint8_t ctoi(char c)
 {
@@ -173,15 +165,17 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 
 #if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 
-void bt_iouart_dump_hex(const char *str, void *buf, uint16_t len, bool reverse)
+void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str)
 {
 	int i = 0;
 
 	if (!buf || !len) {
+		// print "\r\n" or ""
+		at_printf("%s", end_str);
 		return;
 	}
 
-	at_printf("%s", str);
+	at_printf("%s", start_str);
 	for (i = 0; i < len; i++) {
 		if (reverse) {
 			at_printf("%02x", *((uint8_t *)(buf) + len - 1 - i));
@@ -189,10 +183,10 @@ void bt_iouart_dump_hex(const char *str, void *buf, uint16_t len, bool reverse)
 			at_printf("%02x", *((uint8_t *)(buf) + i));
 		}
 	}
-	at_printf("\r\n");
+	at_printf("%s", end_str);
 }
 
-void bt_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
+void bt_at_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
 {
 	int i = 0;
 

@@ -1067,7 +1067,7 @@ void at_mqttcfg(void *arg)
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
+	argc = parse_param_advance(arg, argv);
 	if (3 > argc) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttcfg] Input wrong parameter");
 		resultNo = MQTT_ARGS_ERROR;
@@ -1721,11 +1721,10 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 				res = FAILURE;
 			}
 			*needAtOutpput = 1;
+		} else if (PINGRESP == packet_type) {
+			mqttCb->client.ping_outstanding = 0;
 		} else if (TimerIsExpired(&mqttCb->client.cmd_timer)) {
-			*needAtOutpput = 1;
-			RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] MQTT connect timeout");
-			resultNo = MQTT_WAITACK_TIMEOUT_ERROR;
-			res = FAILURE;
+			keepalive(&mqttCb->client);
 		}
 		if (FAILURE == res) {
 			RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] MQTT connected ERROR (%d)", mqttCb->client.isconnected);
