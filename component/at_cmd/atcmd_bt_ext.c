@@ -465,6 +465,7 @@ static const cmd_table_t cmd_table[] = {
 #endif  // end of RTK_BLE_MESH_SUPPORT
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{"br_gap",      atcmd_bt_br_gap,               2, 13},
+	{"sdp_cmd",     atcmd_bt_sdp_cmd,              1, 3},
 	{"a2dp_cmd",    atcmd_bt_a2dp_cmd,             1, 8},
 	{"avrcp_cmd",   atcmd_bt_avrcp_cmd,            1, 4},
 	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
@@ -1142,115 +1143,117 @@ static int atcmd_bt_get_heap_size(int argc, char **argv)
 	return 0;
 }
 
-/* Atcmd index in cmd_table */
-enum cmd_index {
+#define CMD_NAME_BT_DEMO         "+BTDEMO"
+#define CMD_NAME_BT_VENDOR       "+BTVENDOR"
 #if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
-	ATCMD_HELP_IDX = 0,
+#define CMD_NAME_HELP            "+BTCMDHELP"
 #endif
-	ATCMD_BT_IDX,
-	ATCMD_LE_GAP_IDX,
+#define CMD_NAME_BT              "+BTENABLE"
+#define CMD_NAME_BLE_GAP         "+BLEGAP"
 #if defined(RTK_BLE_GATTS) && RTK_BLE_GATTS
-	ATCMD_GATTS_IDX,
+#define CMD_NAME_GATTS           "+BLEGATTS"
 #endif
 #if defined(RTK_BLE_GATTC) && RTK_BLE_GATTC
-	ATCMD_GATTC_IDX,
+#define CMD_NAME_GATTC           "+BLEGATTC"
 #endif
-	ATCMD_GAP_IDX,
-	ATCMD_HEAP_SIZE_IDX,
+#define CMD_NAME_GAP             "+BTGAP"
+#define CMD_NAME_HEAP_SIZE       "+BTHEAPSIZE"
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-	ATCMD_MESH_STACK_IDX,
-	ATCMD_MESH_DATA_IDX,
-	ATCMD_MESH_CONFIG_IDX,
-	ATCMD_MESH_GOO_IDX,
-	ATCMD_MESH_RMT_IDX,
-	ATCMD_MESH_LL_IDX,
-	ATCMD_MESH_LCTL_IDX,
-	ATCMD_MESH_LHSL_IDX,
-	ATCMD_MESH_LXYL_IDX,
-	ATCMD_MESH_LLC_IDX,
-	ATCMD_MESH_TIME_IDX,
-	ATCMD_MESH_SCHEDULER_IDX,
-	ATCMD_MESH_SCENE_IDX,
-	ATCMD_MESH_GDTT_IDX,
-	ATCMD_MESH_GLE_IDX,
-	ATCMD_MESH_GPOO_IDX,
-	ATCMD_MESH_GPL_IDX,
-	ATCMD_MESH_GB_IDX,
-	ATCMD_MESH_GLO_IDX,
-	ATCMD_MESH_GP_IDX,
-	ATCMD_MESH_SENSOR_IDX,
-	ATCMD_MESH_HEALTH_IDX,
+#define CMD_NAME_MESH_STACK      "+BLEMESHSTACK"
+#define CMD_NAME_MESH_DATA       "+BLEMESHDATA"
+#define CMD_NAME_MESH_CONFIG     "+BLEMESHCONFIG"
+#define CMD_NAME_MESH_GOO        "+BLEMESHGOO"
+#define CMD_NAME_MESH_RMT        "+BLEMESHRMT"
+#define CMD_NAME_MESH_LL         "+BLEMESHLL"
+#define CMD_NAME_MESH_LCTL       "+BLEMESHLCTL"
+#define CMD_NAME_MESH_LHSL       "+BLEMESHLHSL"
+#define CMD_NAME_MESH_LXYL       "+BLEMESHLXYL"
+#define CMD_NAME_MESH_LLC        "+BLEMESHLLC"
+#define CMD_NAME_MESH_TIME       "+BLEMESHTIME"
+#define CMD_NAME_MESH_SCHEDULER  "+BLEMESHSCHEDULER"
+#define CMD_NAME_MESH_SCENE      "+BLEMESHSCENE"
+#define CMD_NAME_MESH_GDTT       "+BLEMESHGDTT"
+#define CMD_NAME_MESH_GLE        "+BLEMESHGLE"
+#define CMD_NAME_MESH_GPOO       "+BLEMESHGPOO"
+#define CMD_NAME_MESH_GPL        "+BLEMESHGPL"
+#define CMD_NAME_MESH_GB         "+BLEMESHGB"
+#define CMD_NAME_MESH_GLO        "+BLEMESHGLO"
+#define CMD_NAME_MESH_GP         "+BLEMESHGP"
+#define CMD_NAME_MESH_SENSOR     "+BLEMESHSENSOR"
+#define CMD_NAME_MESH_HEALTH     "+BLEMESHHEALTH"
 #endif /* RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-	ATCMD_BR_GAP_IDX,
-	ATCMD_A2DP_IDX,
-	ATCMD_AVRCP_IDX,
-	ATCMD_SPP_IDX,
-	ATCMD_HID_IDX,
-	ATCMD_HFP_IDX,
+#define CMD_NAME_BR_GAP          "+BRGAP"
+#define CMD_NAME_SDP             "+BTSDP"
+#define CMD_NAME_A2DP            "+BTA2DP"
+#define CMD_NAME_AVRCP           "+BTAVRCP"
+#define CMD_NAME_SPP             "+BTSPP"
+#define CMD_NAME_HID             "+BTHID"
+#define CMD_NAME_HFP             "+BTHFP"
+#define CMD_NAME_PBAP            "+BTPBAP"
 #endif /* RTK_BREDR_SUPPORT */
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	ATCMD_BAP_IDX,
-	ATCMD_CAP_IDX,
-	ATCMD_PBP_IDX,
-	ATCMD_TMAP_IDX,
-	ATCMD_GMAP_IDX,
+#define CMD_NAME_BAP             "+BLEBAP"
+#define CMD_NAME_CAP             "+BLECAP"
+#define CMD_NAME_PBP             "+BLEPBP"
+#define CMD_NAME_TMAP            "+BLETMAP"
+#define CMD_NAME_GMAP            "+BLEGMAP"
 #endif /* RTK_BLE_AUDIO_SUPPORT */
-};
 
 static const cmd_table_t cmd_table[] = {
 #if defined(BT_ATCMD_HELP) && BT_ATCMD_HELP
-	{"help",        atcmd_bt_cmd_help,             1, 3},
+	{CMD_NAME_HELP,             atcmd_bt_cmd_help,                              1, 3},
 #endif
-	{"bt",          atcmd_bt_device,               2, 2},
-	{"le_gap",      atcmd_bt_le_gap,               2, 21},
+	{CMD_NAME_BT,               atcmd_bt_device,                                2, 2},
+	{CMD_NAME_BLE_GAP,          atcmd_bt_le_gap,                                2, 21},
 #if defined(RTK_BLE_GATTS) && RTK_BLE_GATTS
-	{"gatts",       atcmd_bt_gatts,                3, 16},
+	{CMD_NAME_GATTS,            atcmd_bt_gatts,                                 3, 16},
 #endif
 #if defined(RTK_BLE_GATTC) && RTK_BLE_GATTC
-	{"gattc",       atcmd_bt_gattc,                3, 14},
+	{CMD_NAME_GATTC,            atcmd_bt_gattc,                                 3, 14},
 #endif
-	{"gap",         atcmd_bt_gap,                  1, 13},
-	{"heap_size",   atcmd_bt_get_heap_size,        1, 1},
+	{CMD_NAME_GAP,              atcmd_bt_gap,                                   1, 13},
+	{CMD_NAME_HEAP_SIZE,        atcmd_bt_get_heap_size,                         1, 1},
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-	{"mesh_stack",  atcmd_bt_mesh_stack,           2, 8},
-	{"mesh_data",   atcmd_bt_mesh_datatrans_model, 5, 6},
-	{"mesh_config", atcmd_bt_mesh_config,          3, 13},
-	{"mesh_goo",    atcmd_bt_mesh_generic_onoff,   4, 9},
-	{"mesh_rmt",    atcmd_bt_mesh_remote_prov_client_model, 4, 7},
-	{"mesh_ll",     atcmd_bt_mesh_light_lightness, 4, 9},
-	{"mesh_lctl",   atcmd_bt_mesh_light_ctl,       4, 11},
-	{"mesh_lhsl",   atcmd_bt_mesh_light_hsl,       4, 11},
-	{"mesh_lxyl",   atcmd_bt_mesh_light_xyl,       4, 11},
-	{"mesh_llc",    atcmd_bt_mesh_light_lc,        4, 9},
-	{"mesh_time",   atcmd_bt_mesh_time,            4, 10},
-	{"mesh_scheduler",   atcmd_bt_mesh_scheduler,  4, 17},
-	{"mesh_scene",  atcmd_bt_mesh_scene,           4, 9},
-	{"mesh_gdtt",   atcmd_bt_mesh_generic_default_transition_time,  4, 7},
-	{"mesh_gle",    atcmd_bt_mesh_generic_level,   4, 9},
-	{"mesh_gpoo",   atcmd_bt_mesh_generic_power_on_off,   4, 6},
-	{"mesh_gpl",    atcmd_bt_mesh_generic_power_level,   4, 9},
-	{"mesh_gb",    atcmd_bt_mesh_generic_battery,   4, 4},
-	{"mesh_glo",    atcmd_bt_mesh_generic_location,   4, 13},
-	{"mesh_gp",    atcmd_bt_mesh_generic_property,   4, 8},
-	{"mesh_sensor",    atcmd_bt_mesh_sensor,   4, 14},
-	{"mesh_health",    atcmd_bt_mesh_health,   4, 7},
+	{CMD_NAME_MESH_STACK,       atcmd_bt_mesh_stack,                            2, 8},
+	{CMD_NAME_MESH_DATA,        atcmd_bt_mesh_datatrans_model,                  5, 6},
+	{CMD_NAME_MESH_CONFIG,      atcmd_bt_mesh_config,                           3, 13},
+	{CMD_NAME_MESH_GOO,         atcmd_bt_mesh_generic_onoff,                    4, 9},
+	{CMD_NAME_MESH_RMT,         atcmd_bt_mesh_remote_prov_client_model,         4, 7},
+	{CMD_NAME_MESH_LL,          atcmd_bt_mesh_light_lightness,                  4, 9},
+	{CMD_NAME_MESH_LCTL,        atcmd_bt_mesh_light_ctl,                        4, 11},
+	{CMD_NAME_MESH_LHSL,        atcmd_bt_mesh_light_hsl,                        4, 11},
+	{CMD_NAME_MESH_LXYL,        atcmd_bt_mesh_light_xyl,                        4, 11},
+	{CMD_NAME_MESH_LLC,         atcmd_bt_mesh_light_lc,                         4, 9},
+	{CMD_NAME_MESH_TIME,        atcmd_bt_mesh_time,                             4, 10},
+	{CMD_NAME_MESH_SCHEDULER,   atcmd_bt_mesh_scheduler,                        4, 17},
+	{CMD_NAME_MESH_SCENE,       atcmd_bt_mesh_scene,                            4, 9},
+	{CMD_NAME_MESH_GDTT,        atcmd_bt_mesh_generic_default_transition_time,  4, 7},
+	{CMD_NAME_MESH_GLE,         atcmd_bt_mesh_generic_level,                    4, 9},
+	{CMD_NAME_MESH_GPOO,        atcmd_bt_mesh_generic_power_on_off,             4, 6},
+	{CMD_NAME_MESH_GPL,         atcmd_bt_mesh_generic_power_level,              4, 9},
+	{CMD_NAME_MESH_GB,          atcmd_bt_mesh_generic_battery,                  4, 4},
+	{CMD_NAME_MESH_GLO,         atcmd_bt_mesh_generic_location,                 4, 13},
+	{CMD_NAME_MESH_GP,          atcmd_bt_mesh_generic_property,                 4, 8},
+	{CMD_NAME_MESH_SENSOR,      atcmd_bt_mesh_sensor,                           4, 14},
+	{CMD_NAME_MESH_HEALTH,      atcmd_bt_mesh_health,                           4, 7},
 #endif  // end of RTK_BLE_MESH_SUPPORT
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-	{"br_gap",      atcmd_bt_br_gap,               2, 13},
-	{"a2dp_cmd",    atcmd_bt_a2dp_cmd,             1, 8},
-	{"avrcp_cmd",   atcmd_bt_avrcp_cmd,            1, 4},
-	{"spp_cmd",     atcmd_bt_spp_cmd,              1, 8},
-	{"hid_cmd",     atcmd_bt_hid_cmd,              1, 23},
-	{"hfp_cmd",     atcmd_bt_hfp_cmd,              1, 8},
-	{"pbap_cmd",    atcmd_bt_pbap_cmd,             1, 8},
+	{CMD_NAME_BR_GAP,           atcmd_bt_br_gap,                                2, 13},
+	{CMD_NAME_SDP,              atcmd_bt_sdp_cmd,                               1, 3},
+	{CMD_NAME_A2DP,             atcmd_bt_a2dp_cmd,                              1, 8},
+	{CMD_NAME_AVRCP,            atcmd_bt_avrcp_cmd,                             1, 4},
+	{CMD_NAME_SPP,              atcmd_bt_spp_cmd,                               1, 8},
+	{CMD_NAME_HID,              atcmd_bt_hid_cmd,                               1, 23},
+	{CMD_NAME_HFP,              atcmd_bt_hfp_cmd,                               1, 8},
+	{CMD_NAME_PBAP,             atcmd_bt_pbap_cmd,                              1, 8},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	{"bap_cmd",     atcmd_bt_bap_cmd,              3, 10},
-	{"cap_cmd",     atcmd_bt_cap_cmd,              3, 10},
-	{"pbp_cmd",     atcmd_bt_pbp_cmd,              3, 10},
-	{"tmap_cmd",    atcmd_bt_tmap_cmd,             3, 10},
-	{"gmap_cmd",    atcmd_bt_gmap_cmd,             3, 10},
+	{CMD_NAME_BAP,              atcmd_bt_bap_cmd,                               3, 10},
+	{CMD_NAME_CAP,              atcmd_bt_cap_cmd,                               3, 10},
+	{CMD_NAME_PBP,              atcmd_bt_pbp_cmd,                               3, 10},
+	{CMD_NAME_TMAP,             atcmd_bt_tmap_cmd,                              3, 10},
+	{CMD_NAME_GMAP,             atcmd_bt_gmap_cmd,                              3, 10},
 #endif
 	{NULL,},
 };
@@ -1358,24 +1361,25 @@ static const cmd_table_t vendor_table[] = {
 	{NULL,},
 };
 
-static void atcmd_bt_cmd(void *arg, int idx, char *tag)
+static void atcmd_bt_cmd(void *arg, char *cmd_name, char *tag)
 {
 	int argc = 0;
 	char *argv[MAX_ARGC] = {0};
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("[%s] Error: No input args number!", tag);
+		AT_PRINTK("%s Error: No input args number!", tag);
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("[%s] Error: Wrong input args number!", tag);
+		AT_PRINTK("%s Error: Wrong input args number!", tag);
 		goto exit;
 	}
 
-	ret = cmd_table[idx].cmd_func(argc - 1, &argv[1]);
+	argv[0] = cmd_name;
+	ret = atcmd_bt_excute(argc, &argv[0], cmd_table, tag);
 	if (ret == 0) {
 		BT_AT_PRINTOK();
 	} else {
@@ -1384,7 +1388,7 @@ static void atcmd_bt_cmd(void *arg, int idx, char *tag)
 	return;
 
 exit:
-	AT_PRINTK("[%s] Info: Use '%s=help' to help", tag, tag);
+	AT_PRINTK("%s Info: Use '%s=help' to help", tag, tag);
 	BT_AT_PRINTERROR();
 }
 
@@ -1430,48 +1434,48 @@ exit:
 
 static inline void fBLEGAP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_LE_GAP_IDX, "[AT+BLEGAP]");
+	atcmd_bt_cmd(arg, CMD_NAME_BLE_GAP, "[AT+BLEGAP]");
 }
 
 static inline void fBLEGATTS(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_GATTS_IDX, "[AT+BLEGATTS]");
+	atcmd_bt_cmd(arg, CMD_NAME_GATTS, "[AT+BLEGATTS]");
 }
 
 static inline void fBLEGATTC(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_GATTC_IDX, "[AT+BLEGATTC]");
+	atcmd_bt_cmd(arg, CMD_NAME_GATTC, "[AT+BLEGATTC]");
 }
 
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 static inline void fBRGAP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_BR_GAP_IDX, "[AT+BRGAP]");
+	atcmd_bt_cmd(arg, CMD_NAME_BR_GAP, "[AT+BRGAP]");
 }
 
 static inline void fBTA2DP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_A2DP_IDX, "[AT+BTA2DP]");
+	atcmd_bt_cmd(arg, CMD_NAME_A2DP, "[AT+BTA2DP]");
 }
 
 static inline void fBTAVRCP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_AVRCP_IDX, "[AT+BTAVRCP]");
+	atcmd_bt_cmd(arg, CMD_NAME_AVRCP, "[AT+BTAVRCP]");
 }
 
 static inline void fBTSPP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_SPP_IDX, "[AT+BTSPP]");
+	atcmd_bt_cmd(arg, CMD_NAME_SPP, "[AT+BTSPP]");
 }
 
 static inline void fBTHID(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_HID_IDX, "[AT+BTHID]");
+	atcmd_bt_cmd(arg, CMD_NAME_HID, "[AT+BTHID]");
 }
 
 static inline void fBTHFP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_HFP_IDX, "[AT+BTHFP]");
+	atcmd_bt_cmd(arg, CMD_NAME_HFP, "[AT+BTHFP]");
 }
 
 #endif /* RTK_BREDR_SUPPORT */
@@ -1480,27 +1484,27 @@ static inline void fBTHFP(void *arg)
 
 static inline void fBLEBAP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_BAP_IDX, "[AT+BLEBAP]");
+	atcmd_bt_cmd(arg, CMD_NAME_BAP, "[AT+BLEBAP]");
 }
 
 static inline void fBLECAP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_CAP_IDX, "[AT+BLECAP]");
+	atcmd_bt_cmd(arg, CMD_NAME_CAP, "[AT+BLECAP]");
 }
 
 static inline void fBLEPBP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_PBP_IDX, "[AT+BLEPBP]");
+	atcmd_bt_cmd(arg, CMD_NAME_PBP, "[AT+BLEPBP]");
 }
 
 static inline void fBLETMAP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_TMAP_IDX, "[AT+BLETMAP]");
+	atcmd_bt_cmd(arg, CMD_NAME_TMAP, "[AT+BLETMAP]");
 }
 
 static inline void fBLEGMAP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_GMAP_IDX, "[AT+BLEGMAP]");
+	atcmd_bt_cmd(arg, CMD_NAME_GMAP, "[AT+BLEGMAP]");
 }
 
 #endif /* RTK_BLE_AUDIO_SUPPORT */
@@ -1509,112 +1513,112 @@ static inline void fBLEGMAP(void *arg)
 
 static inline void fBLEMESHSTACK(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_STACK_IDX, "[AT+BLEMESHSTACK]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_STACK, "[AT+BLEMESHSTACK]");
 }
 
 static inline void fBLEMESHDATA(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_DATA_IDX, "[AT+BLEMESHDATA]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_DATA, "[AT+BLEMESHDATA]");
 }
 
 static inline void fBLEMESHCONFIG(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_CONFIG_IDX, "[AT+BLEMESHCONFIG]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_CONFIG, "[AT+BLEMESHCONFIG]");
 }
 
 static inline void fBLEMESHGOO(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GOO_IDX, "[AT+BLEMESHGOO]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GOO, "[AT+BLEMESHGOO]");
 }
 
 static inline void fBLEMESHRMT(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_RMT_IDX, "[AT+BLEMESHRMT]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_RMT, "[AT+BLEMESHRMT]");
 }
 
 static inline void fBLEMESHLL(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_LL_IDX, "[AT+BLEMESHLL]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_LL, "[AT+BLEMESHLL]");
 }
 
 static inline void fBLEMESHLCTL(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_LCTL_IDX, "[AT+BLEMESHLCTL]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_LCTL, "[AT+BLEMESHLCTL]");
 }
 
 static inline void fBLEMESHLHSL(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_LHSL_IDX, "[AT+BLEMESHLHSL]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_LHSL, "[AT+BLEMESHLHSL]");
 }
 
 static inline void fBLEMESHLXYL(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_LXYL_IDX, "[AT+BLEMESHLXYL]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_LXYL, "[AT+BLEMESHLXYL]");
 }
 
 static inline void fBLEMESHLLC(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_LLC_IDX, "[AT+BLEMESHLLC]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_LLC, "[AT+BLEMESHLLC]");
 }
 
 static inline void fBLEMESHTIME(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_TIME_IDX, "[AT+BLEMESHTIME]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_TIME, "[AT+BLEMESHTIME]");
 }
 
 static inline void fBLEMESHSCHEDULER(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_SCHEDULER_IDX, "[AT+BLEMESHSCHEDULER]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_SCHEDULER, "[AT+BLEMESHSCHEDULER]");
 }
 
 static inline void fBLEMESHSCENE(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_SCENE_IDX, "[AT+BLEMESHSCENE]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_SCENE, "[AT+BLEMESHSCENE]");
 }
 
 static inline void fBLEMESHGDTT(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GDTT_IDX, "[AT+BLEMESHGDTT]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GDTT, "[AT+BLEMESHGDTT]");
 }
 
 static inline void fBLEMESHGLE(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GLE_IDX, "[AT+BLEMESHGLE]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GLE, "[AT+BLEMESHGLE]");
 }
 
 static inline void fBLEMESHGPOO(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GPOO_IDX, "[AT+BLEMESHGPOO]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GPOO, "[AT+BLEMESHGPOO]");
 }
 
 static inline void fBLEMESHGPL(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GPL_IDX, "[AT+BLEMESHGPL]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GPL, "[AT+BLEMESHGPL]");
 }
 
 static inline void fBLEMESHGB(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GB_IDX, "[AT+BLEMESHGB]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GB, "[AT+BLEMESHGB]");
 }
 
 static inline void fBLEMESHGLO(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GLO_IDX, "[AT+BLEMESHGLO]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GLO, "[AT+BLEMESHGLO]");
 }
 
 static inline void fBLEMESHGP(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_GP_IDX, "[AT+BLEMESHGP]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_GP, "[AT+BLEMESHGP]");
 }
 
 static inline void fBLEMESHSENSOR(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_SENSOR_IDX, "[AT+BLEMESHSENSOR]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_SENSOR, "[AT+BLEMESHSENSOR]");
 }
 
 static inline void fBLEMESHHEALTH(void *arg)
 {
-	atcmd_bt_cmd(arg, ATCMD_MESH_HEALTH_IDX, "[AT+BLEMESHHEALTH]");
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_HEALTH, "[AT+BLEMESHHEALTH]");
 }
 
 #endif /* RTK_BLE_MESH_SUPPORT */
@@ -1658,51 +1662,55 @@ static log_item_t at_bt_items[] = {
 	{"BV", fATBV, {NULL, NULL}},
 	{"BT", fATBT, {NULL, NULL}},
 #else /* ATCMD_BT_CUT_DOWN */
-	{"+BTDEMO",             fBTDEMO,   {NULL, NULL}},
-	{"+BLEGAP",             fBLEGAP,   {NULL, NULL}},
-	{"+BLEGATTS",           fBLEGATTS, {NULL, NULL}},
-	{"+BLEGATTC",           fBLEGATTC, {NULL, NULL}},
+	{CMD_NAME_BT_DEMO,          fBTDEMO,   {NULL, NULL}},
+	{CMD_NAME_BLE_GAP,          fBLEGAP,   {NULL, NULL}},
+#if defined(RTK_BLE_GATTS) && RTK_BLE_GATTS
+	{CMD_NAME_GATTS,            fBLEGATTS, {NULL, NULL}},
+#endif
+#if defined(RTK_BLE_GATTC) && RTK_BLE_GATTC
+	{CMD_NAME_GATTC,            fBLEGATTC, {NULL, NULL}},
+#endif
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-	{"+BRGAP",              fBRGAP,               {NULL, NULL}},
-	{"+BTA2DP",             fBTA2DP,              {NULL, NULL}},
-	{"+BTAVRCP",            fBTAVRCP,             {NULL, NULL}},
-	{"+BTSPP",              fBTSPP,               {NULL, NULL}},
-	{"+BTHID",              fBTHID,               {NULL, NULL}},
-	{"+BTHFP",              fBTHFP,               {NULL, NULL}},
+	{CMD_NAME_BR_GAP,           fBRGAP,               {NULL, NULL}},
+	{CMD_NAME_A2DP,             fBTA2DP,              {NULL, NULL}},
+	{CMD_NAME_AVRCP,            fBTAVRCP,             {NULL, NULL}},
+	{CMD_NAME_SPP,              fBTSPP,               {NULL, NULL}},
+	{CMD_NAME_HID,              fBTHID,               {NULL, NULL}},
+	{CMD_NAME_HFP,              fBTHFP,               {NULL, NULL}},
 #endif /* RTK_BREDR_SUPPORT */
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	{"+BLEBAP",             fBLEBAP,              {NULL, NULL}},
-	{"+BLECAP",             fBLECAP,              {NULL, NULL}},
-	{"+BLEPBP",             fBLEPBP,              {NULL, NULL}},
-	{"+BLETMAP",            fBLETMAP,             {NULL, NULL}},
-	{"+BLEGMAP",            fBLEGMAP,             {NULL, NULL}},
+	{CMD_NAME_BAP,              fBLEBAP,              {NULL, NULL}},
+	{CMD_NAME_CAP,              fBLECAP,              {NULL, NULL}},
+	{CMD_NAME_PBP,              fBLEPBP,              {NULL, NULL}},
+	{CMD_NAME_TMAP,             fBLETMAP,             {NULL, NULL}},
+	{CMD_NAME_GMAP,             fBLEGMAP,             {NULL, NULL}},
 #endif /* RTK_BLE_AUDIO_SUPPORT */
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-	{"+BLEMESHSTACK",       fBLEMESHSTACK,        {NULL, NULL}},
-	{"+BLEMESHDATA",        fBLEMESHDATA,         {NULL, NULL}},
-	{"+BLEMESHCONFIG",      fBLEMESHCONFIG,       {NULL, NULL}},
-	{"+BLEMESHGOO",         fBLEMESHGOO,          {NULL, NULL}},
-	{"+BLEMESHRMT",         fBLEMESHRMT,          {NULL, NULL}},
-	{"+BLEMESHLL",          fBLEMESHLL,           {NULL, NULL}},
-	{"+BLEMESHLCTL",        fBLEMESHLCTL,         {NULL, NULL}},
-	{"+BLEMESHLHSL",        fBLEMESHLHSL,         {NULL, NULL}},
-	{"+BLEMESHLXYL",        fBLEMESHLXYL,         {NULL, NULL}},
-	{"+BLEMESHLLC",         fBLEMESHLLC,          {NULL, NULL}},
-	{"+BLEMESHTIME",        fBLEMESHTIME,         {NULL, NULL}},
-	{"+BLEMESHSCHEDULER",   fBLEMESHSCHEDULER,    {NULL, NULL}},
-	{"+BLEMESHSCENE",       fBLEMESHSCENE,        {NULL, NULL}},
-	{"+BLEMESHGDTT",        fBLEMESHGDTT,         {NULL, NULL}},
-	{"+BLEMESHGLE",         fBLEMESHGLE,          {NULL, NULL}},
-	{"+BLEMESHGPOO",        fBLEMESHGPOO,         {NULL, NULL}},
-	{"+BLEMESHGPL",         fBLEMESHGPL,          {NULL, NULL}},
-	{"+BLEMESHGB",          fBLEMESHGB,           {NULL, NULL}},
-	{"+BLEMESHGLO",         fBLEMESHGLO,          {NULL, NULL}},
-	{"+BLEMESHGP",          fBLEMESHGP,           {NULL, NULL}},
-	{"+BLEMESHSENSOR",      fBLEMESHSENSOR,       {NULL, NULL}},
-	{"+BLEMESHHEALTH",      fBLEMESHHEALTH,       {NULL, NULL}},
+	{CMD_NAME_MESH_STACK,       fBLEMESHSTACK,        {NULL, NULL}},
+	{CMD_NAME_MESH_DATA,        fBLEMESHDATA,         {NULL, NULL}},
+	{CMD_NAME_MESH_CONFIG,      fBLEMESHCONFIG,       {NULL, NULL}},
+	{CMD_NAME_MESH_GOO,         fBLEMESHGOO,          {NULL, NULL}},
+	{CMD_NAME_MESH_RMT,         fBLEMESHRMT,          {NULL, NULL}},
+	{CMD_NAME_MESH_LL,          fBLEMESHLL,           {NULL, NULL}},
+	{CMD_NAME_MESH_LCTL,        fBLEMESHLCTL,         {NULL, NULL}},
+	{CMD_NAME_MESH_LHSL,        fBLEMESHLHSL,         {NULL, NULL}},
+	{CMD_NAME_MESH_LXYL,        fBLEMESHLXYL,         {NULL, NULL}},
+	{CMD_NAME_MESH_LLC,         fBLEMESHLLC,          {NULL, NULL}},
+	{CMD_NAME_MESH_TIME,        fBLEMESHTIME,         {NULL, NULL}},
+	{CMD_NAME_MESH_SCHEDULER,   fBLEMESHSCHEDULER,    {NULL, NULL}},
+	{CMD_NAME_MESH_SCENE,       fBLEMESHSCENE,        {NULL, NULL}},
+	{CMD_NAME_MESH_GDTT,        fBLEMESHGDTT,         {NULL, NULL}},
+	{CMD_NAME_MESH_GLE,         fBLEMESHGLE,          {NULL, NULL}},
+	{CMD_NAME_MESH_GPOO,        fBLEMESHGPOO,         {NULL, NULL}},
+	{CMD_NAME_MESH_GPL,         fBLEMESHGPL,          {NULL, NULL}},
+	{CMD_NAME_MESH_GB,          fBLEMESHGB,           {NULL, NULL}},
+	{CMD_NAME_MESH_GLO,         fBLEMESHGLO,          {NULL, NULL}},
+	{CMD_NAME_MESH_GP,          fBLEMESHGP,           {NULL, NULL}},
+	{CMD_NAME_MESH_SENSOR,      fBLEMESHSENSOR,       {NULL, NULL}},
+	{CMD_NAME_MESH_HEALTH,      fBLEMESHHEALTH,       {NULL, NULL}},
 #endif /* RTK_BLE_MESH_SUPPORT */
 
-	{"+BTVENDOR",           fBTVENDOR,            {NULL, NULL}},
+	{CMD_NAME_BT_VENDOR,        fBTVENDOR,            {NULL, NULL}},
 
 #endif /* ATCMD_BT_CUT_DOWN */
 };

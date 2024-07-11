@@ -37,7 +37,7 @@ Setup Guide
 	Save and exit.
 	3. Type command "make menuconfig" under amebasmart_gcc_project and choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] CDC ECM
 	Save and exit.
 	4. Type command "make all" under amebasmart_gcc_project and type "make EXAMPLE=usbh_cdc_ecm" under project_hp to build the images.
@@ -49,7 +49,7 @@ Setup Guide
 	To run USB CDC ECM host application on AP:
 	1. Type command "make menuconfig" under amebasmart_gcc_project and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] CDC ECM
 	Save and exit.
 	2. Type command "make all" under amebasmart_gcc_project and type "make EXAMPLE=usbh_cdc_ecm" under amebasmart_gcc_project to build the images.

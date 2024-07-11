@@ -318,7 +318,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			BT_LOGE("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -329,7 +329,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			BT_LOGE("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -900,6 +900,8 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 			BT_LOGE("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP:coc_conn,%d,0x%x,%d\r\n", coc_conn_ind->conn_handle, coc_conn_ind->cid,
+					(coc_conn_ind->err == 0) ? 0 : -1);
 		break;
 	}
 
@@ -912,6 +914,8 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 			BT_LOGE("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
 		}
+		BT_AT_PRINT("+BLEGAP:coc_disconn,%d,0x%x,%d\r\n", coc_disconn_ind->conn_handle,
+					coc_disconn_ind->cid, (coc_disconn_ind->err == 0) ? 0 : -1);
 		break;
 	}
 
@@ -919,6 +923,8 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		rtk_bt_le_coc_send_data_res_ind_t *res_ind = (rtk_bt_le_coc_send_data_res_ind_t *)param;
 		BT_LOGA("[APP] LE COC send data completed, conn_handle: %d, cid: 0x%x, credit: %d, err: 0x%x\r\n",
 				res_ind->conn_handle, res_ind->cid, res_ind->credit, res_ind->err);
+		BT_AT_PRINT("+BLEGAP:coc_send,%d,0x%x,%d,%d\r\n", res_ind->conn_handle, res_ind->cid,
+					res_ind->credit, (res_ind->err == 0) ? 0 : -1);
 		break;
 	}
 
@@ -927,6 +933,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		BT_LOGA("[APP] LE COC receive data, conn_handle: %d, cid: 0x%x, len: %d\r\n",
 				data_ind->conn_handle, data_ind->cid, data_ind->len);
 		BT_DUMPA("[HEX]: ", data_ind->data, data_ind->len);
+		BT_AT_PRINT("+BLEGAP:coc_recv,%d,0x%x\r\n", data_ind->conn_handle, data_ind->cid);
 		break;
 	}
 #endif /* RTK_BLE_COC_SUPPORT */

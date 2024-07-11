@@ -27,7 +27,6 @@ rtk_bt_a2dp_media_codec_aac_t rtk_codec_aac = {0};
 static uint8_t a2dp_role;
 static uint8_t a2dp_remote_role;
 static uint8_t remote_addr[6] = {0};
-extern T_APP_DB app_db;
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
 
 static void app_a2dp_src_set_stream_status(T_APP_BR_LINK *p_link, bool streaming)

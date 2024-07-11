@@ -13,9 +13,13 @@ endif
 ifeq ($(CONFIG_USB_HOST_EN),y)
 COMPONENT += host
 endif
+ifeq ($(CONFIG_USB_DRD_EN),y)
+COMPONENT += drd
+endif
 
 COMPONENT_CLEAN := device
 COMPONENT_CLEAN += host
+COMPONENT_CLEAN += drd
 
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #

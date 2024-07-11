@@ -81,8 +81,10 @@ endif
 
 .PHONY: all build_target_folder menuconfig clean build_libraries std_lib
 
-all: build_target_folder copy_ld_ram check_toolchain build_info.h make_subdirs linker_image2 code_analyze
-image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2 code_analyze
+prebuild: build_target_folder check_toolchain build_info.h
+
+all: prebuild copy_ld_ram make_subdirs linker_image2 code_analyze
+image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
 analysis_extract: code_extract
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #

@@ -362,6 +362,35 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	return RTK_BT_EVT_CB_OK;
 }
 
+static rtk_bt_evt_cb_ret_t rtk_bt_sdp_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+
+	switch (evt_code) {
+	case RTK_BT_SDP_EVT_DID_ATTR_INFO: {
+		rtk_sdp_did_attr_info *p_info = (rtk_sdp_did_attr_info *)param;
+		BT_LOGA("[SDP] SDP DID ATTR %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[SDP] specific_id 0x%04x, vendor_id 0x%04x, vendor_src 0x%04x, product_id 0x%04x, version 0x%04x \r\n",
+				p_info->specific_id,
+				p_info->vendor_id,
+				p_info->vendor_src,
+				p_info->product_id,
+				p_info->version);
+		break;
+	}
+
+	default: {
+		BT_LOGE("%s, Unknown SDP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		break;
+	}
+	}
+
+	return RTK_BT_EVT_CB_OK;
+}
+
 static rtk_bt_evt_cb_ret_t rtk_bt_spp_app_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)param;
@@ -584,7 +613,8 @@ int bt_spp_main(uint8_t role, uint8_t enable)
 		/* Initialize GAP part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_GAP, br_gap_app_callback));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)rtk_bt_dev_name));
-
+		/* Initilize SDP part */
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SDP, rtk_bt_sdp_app_callback));
 		/* Initilaize SPP part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SPP, rtk_bt_spp_app_callback));
 
@@ -602,6 +632,7 @@ int bt_spp_main(uint8_t role, uint8_t enable)
 		}
 	} else if (0 == enable) {
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
+		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_SDP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_SPP));
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());

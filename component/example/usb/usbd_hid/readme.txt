@@ -30,7 +30,7 @@ Setup Guide
 		   USBD_HID_KEYBOARD_DEVICE in component/usb/device/hid/usbd_hid.h
         2. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 			[*] Enable USB
-			(DEVICE_MODE) USB Mode
+			(Device) USB Mode
 			[*] HID
            Save and exit.
         3. Type command "make all EXAMPLE=usbd_hid" under auto_build to build the images.
@@ -49,7 +49,7 @@ Setup Guide
 		To run USB HID device application on HP:
         1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 			[*] Enable USB
-			(DEVICE_MODE) USB Mode
+			(Device) USB Mode
 			[*] HID
            Save and exit.
         2. Type command "make all" under auto_build and type "make EXAMPLE=usbd_hid" under project_hp to build the images.

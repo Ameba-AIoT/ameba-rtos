@@ -63,15 +63,17 @@ STATIC_ANALYZE_PYTHON=python $(SCRIPT_DIR)/static_code_analyze.py
 
 .PHONY: all build_target_folder menuconfig clean build_libraries
 
+prebuild: build_target_folder check_toolchain build_info.h
+
 ifeq ($(CONFIG_WIFI_FW_EN),y)
 image2:LINK_APP_LIB += $(ROOTDIR)/lib/application/lib_wifi_fw.a
 endif
 
 image2:LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a $(ROOTDIR)/lib/soc/lib_chipinfo.a $(ROOTDIR)/lib/soc/lib_crashdump.a
 
-all: build_target_folder copy_ld_ram check_toolchain build_info.h make_subdirs linker_image2
-image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2
-lib_image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs_lib
+all: prebuild copy_ld_ram make_subdirs linker_image2
+image2: prebuild copy_ld_img2 make_subdirs linker_image2
+lib_image2: prebuild copy_ld_img2 make_subdirs_lib
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
 #*****************************************************************************#

@@ -9,8 +9,8 @@ include $(MAKE_INCLUDE_GEN)
 DRV_DIR = $(BASEDIR)/component/usb
 COM_DIR = $(DRV_DIR)/common
 HOST_DIR = $(DRV_DIR)/host
-VERCLASS_DIR = $(HOST_DIR)/verify
-VER_DIR = $(DRV_DIR)/verification/host
+VER_DIR = $(HOST_DIR)/verify
+VER_APP_DIR = $(DRV_DIR)/verification/host
 MODULE_IFLAGS += -I$(COM_DIR)
 MODULE_IFLAGS += -I$(HOST_DIR)/core
 DIR =
@@ -40,14 +40,14 @@ DIR += $(UVC_DIR)
 endif
 
 ifeq ($(CONFIG_USBH_VENDOR),y)
-VENDOR_DIR = $(HOST_DIR)/vendor
-MODULE_IFLAGS += -I$(VENDOR_DIR)
-DIR += $(VENDOR_DIR)
+VEN_DIR = $(HOST_DIR)/vendor
+MODULE_IFLAGS += -I$(VEN_DIR)
+DIR += $(VEN_DIR)
 endif
 
 ifeq ($(CONFIG_USBH_VERIFY),y)
-MODULE_IFLAGS += -I$(VER_DIR) -I$(VERCLASS_DIR)
-DIR += $(VER_DIR) $(VERCLASS_DIR)
+MODULE_IFLAGS += -I$(VER_APP_DIR) -I$(VER_DIR)
+DIR += $(VER_APP_DIR) $(VER_DIR)
 endif
 
 vpath %.c $(DIR)
@@ -80,16 +80,16 @@ CSRC += $(UVC_DIR)/usbh_uvc_class.c \
 endif
 
 ifeq ($(CONFIG_USBH_VENDOR),y)
-CSRC += $(VENDOR_DIR)/usbh_vendor.c
+CSRC += $(VEN_DIR)/usbh_vendor.c
 endif
 
 ifeq ($(CONFIG_USBH_VERIFY),y)
-CSRC += $(VER_DIR)/cts.c \
-	$(VER_DIR)/cts_xfer_test.c \
-	$(VER_DIR)/emc.c \
-	$(VER_DIR)/usbh_cmd.c
-CSRC += $(VERCLASS_DIR)/usbh_verify.c \
-	$(VER_DIR)/verify.c
+CSRC += $(VER_DIR)/usbh_verify.c \
+	$(VER_APP_DIR)/usbh_cts.c \
+	$(VER_APP_DIR)/usbh_cts_xfer_test.c \
+	$(VER_APP_DIR)/usbh_emc.c \
+	$(VER_APP_DIR)/usbh_cmd.c \
+	$(VER_APP_DIR)/usbh_verify_test.c
 endif
 
 #*****************************************************************************#
