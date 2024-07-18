@@ -5433,15 +5433,9 @@ static uint16_t bt_stack_le_gap_coc_set_param(void *param)
 {
 	rtk_bt_le_coc_param_set_t *param_set = (rtk_bt_le_coc_param_set_t *)param;
 	T_GAP_CAUSE cause;
-	uint8_t len;
 
-	if (RTK_BT_LE_COC_PARAM_CREDITS_THRESHOLD == param_set->param_type) {
-		len = 1;
-	} else {
-		len = 2;
-	}
 	cause = le_coc_set_param((T_LE_COC_PARAM_TYPE)(param_set->param_type + COC_PARAM_CREDITS_THRESHOLD),
-							 len, (void *)&param_set->value);
+							 2, (void *)&param_set->value);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}

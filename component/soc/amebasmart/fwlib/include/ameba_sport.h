@@ -1108,6 +1108,8 @@ _LONG_CALL_ void AUDIO_SP_ClearRXCounterIrq(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXCounterVal(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXPhaseVal(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir);
+_LONG_CALL_ void AUDIO_SP_SelDirectOutSource(u32 index_src, u32 index_dir);
+_LONG_CALL_ void AUDIO_SP_SetTSFTPhaseLatch(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
 
 

@@ -18,6 +18,7 @@ struct event_priv_t {
 	rtos_sema_t task_wake_sema;
 	rtos_mutex_t send_mutex;
 	rtos_sema_t api_ret_sema;
+	bool b_waiting_for_ret;
 
 	u8 *rx_api_msg;
 	u8 *rx_ret_msg;
@@ -120,6 +121,10 @@ void inic_cfg80211_nan_func_free(u64 data);
 void inic_cfg80211_nan_cfgvendor_event_report(u16 event_id, void *event, int event_len);
 void inic_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
 #endif
+#ifdef CONFIG_P2P
+void inic_cfg80211_indicate_channel_ready(void *scan_userdata);
+#endif
+
 int inic_ip_in_table_indicate(u8 gate, u8 ip);
 
 #endif

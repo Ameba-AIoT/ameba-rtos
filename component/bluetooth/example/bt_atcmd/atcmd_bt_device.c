@@ -8,6 +8,7 @@
 #include <bt_api_config.h>
 #include <rtk_bt_device.h>
 #include <bt_utils.h>
+#include <atcmd_bt_impl.h>
 
 rtk_bt_app_conf_t app_conf = {
 	.app_profile_support = RTK_BT_PROFILE_GATTS,
@@ -25,20 +26,20 @@ int atcmd_bt_device(int argc, char *argv[])
 	int en = str_to_int(argv[0]);
 	if (1 == en) {
 		if (RTK_BT_FAIL == rtk_bt_enable(&app_conf)) {
-			AT_PRINTK("[ATBC] BT enable failed!");
+			BTDEVICE_AT_PRINTK("BT enable failed!");
 			return -1;
 		}
 
-		AT_PRINTK("[ATBC] BT enable OK!");
+		BTDEVICE_AT_PRINTK("BT enable OK!");
 	} else if (0 == en) {
 		if (RTK_BT_FAIL == rtk_bt_disable()) {
-			AT_PRINTK("[ATBC] BT disable failed!");
+			BTDEVICE_AT_PRINTK("BT disable failed!");
 			return -1;
 		}
 
-		AT_PRINTK("[ATBC] BT disable OK!");
+		BTDEVICE_AT_PRINTK("BT disable OK!");
 	} else {
-		AT_PRINTK("[ATBC] BT input wrong args!");
+		BTDEVICE_AT_PRINTK("BT input wrong args!");
 		return -1;
 	}
 

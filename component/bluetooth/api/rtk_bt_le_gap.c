@@ -1646,11 +1646,6 @@ uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	/* the param credits_threshold value is limit to uint8_t in lower stack */
-	if (RTK_BT_LE_COC_PARAM_CREDITS_THRESHOLD == param_type && value > 0xff) {
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
 	rtk_bt_le_coc_param_set_t param = {
 		.param_type = param_type,
 		.value = value,

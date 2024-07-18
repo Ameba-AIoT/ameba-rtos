@@ -11,9 +11,13 @@ ifeq ($(CONFIG_WIFI_AUDIO),y)
 COMPONENT += wifi-audio
 endif
 
+ifeq ($(CONFIG_WFA_SRC),y)
+COMPONENT += wifi-audio-src
+endif
+
 #COMPONENT_CLEAN += realmesh
 COMPONENT_CLEAN += wifi-audio
-
+COMPONENT_CLEAN += wifi-audio-src
 
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #

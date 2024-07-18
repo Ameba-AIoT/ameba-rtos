@@ -334,6 +334,11 @@ AT command process:
 ****************************************************************/
 void at_test(void *arg)
 {
+	if (arg) {
+		at_printf("\r\n arg len = %d \r\n", strlen((char *)arg));
+		at_printf("\r\n arg = %s \r\n", (char *)arg);
+	}
+
 	UNUSED(arg);
 	at_printf("\r\n%sOK\r\n", "+TEST:");
 }

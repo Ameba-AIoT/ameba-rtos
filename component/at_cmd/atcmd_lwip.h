@@ -48,8 +48,6 @@
 
 #define ETH_MAX_MTU                       1500
 
-#define MAX_BUFFER                        LOG_SERVICE_BUFLEN
-
 #define ATCMD_LWIP_TT_MAX_DELAY_TIME_MS   20
 
 #define RECV_SELECT_TIMEOUT_SEC           0
@@ -57,9 +55,6 @@
 
 #define ATCMD_LWIP_CONN_STORE_MAX_NUM     1
 
-/* TODO */
-//#define at_print_data(data, size)         do{__rtl_memDump(data, size, NULL);}while(0)
-#define at_print_data(data, size)         do{UNUSED(data); UNUSED(size);}while(0)
 
 typedef struct _node {
 	int con_id;

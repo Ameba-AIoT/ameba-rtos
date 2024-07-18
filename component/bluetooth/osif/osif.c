@@ -308,6 +308,38 @@ bool osif_mutex_give(void *p_handle)
 }
 
 /****************************************************************************/
+/* Create recursive mutex                                                    */
+/****************************************************************************/
+bool osif_recursive_mutex_create(void **pp_handle)
+{
+	return (rtos_mutex_recursive_create((rtos_mutex_t *)pp_handle) == SUCCESS);
+}
+
+/****************************************************************************/
+/* Delete recursive mutex                                                             */
+/****************************************************************************/
+bool osif_recursive_mutex_delete(void *p_handle)
+{
+	return (rtos_mutex_recursive_delete((rtos_mutex_t)p_handle) == SUCCESS);
+}
+
+/****************************************************************************/
+/* Take recursive mutex                                                               */
+/****************************************************************************/
+bool osif_recursive_mutex_take(void *p_handle, uint32_t wait_ms)
+{
+	return (rtos_mutex_recursive_take((rtos_mutex_t)p_handle, wait_ms) == SUCCESS);
+}
+
+/****************************************************************************/
+/* Give recursive mutex                                                               */
+/****************************************************************************/
+bool osif_recursive_mutex_give(void *p_handle)
+{
+	return (rtos_mutex_recursive_give((rtos_mutex_t)p_handle) == SUCCESS);
+}
+
+/****************************************************************************/
 /* Create inter-thread message queue                                        */
 /****************************************************************************/
 bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size)

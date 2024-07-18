@@ -8,7 +8,7 @@
 #include "ameba_soc.h"
 #include "FreeRTOS.h"
 
-
+static const char *TAG = "#";
 extern void _boot(void);
 extern void vPortRestoreTaskContext(void);
 
@@ -107,7 +107,7 @@ void vPortSecondaryOff(void)
 	do {
 		state  = psci_affinity_info(1, 0);
 		if (state == 1) {
-			printf("cpu1 power off\n");
+			RTK_LOGS(TAG, "cpu1 power off\n");
 			rtk_core1_power_off();
 			return;
 		}
@@ -115,7 +115,7 @@ void vPortSecondaryOff(void)
 		DelayUs(50);
 	} while (count--);
 
-	debug_printf("Secondary core power off fail: %d\n", state);
+	RTK_LOGS(TAG, "Secondary core power off fail: %d\n", state);
 #endif
 }
 
@@ -125,7 +125,7 @@ void vPortSecondaryStart(void)
 	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_RUNNING)
 		while (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED);
 
-	debug_printf("CPU%d: on\n", (int)portGET_CORE_ID());
+	RTK_LOGS(TAG, "CPU%d: on\n", (int)portGET_CORE_ID());
 #if ( configNUM_CORES > 1 )
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardwareSecondary();
@@ -150,7 +150,7 @@ void smp_init(void)
 	BaseType_t err;
 
 #if ( configNUM_CORES > 1 )
-	debug_printf("smp: Bringing up secondary CPUs ...\n");
+	RTK_LOGS(TAG, "smp: Bringing up secondary CPUs ...\n");
 
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_RTLSIM) {//RTL sim shall not use delayus before core1 ready
 		/* power on core1 to avoid km4 not open it */
@@ -170,7 +170,7 @@ void smp_init(void)
 
 		err = psci_cpu_on(xCoreID, (unsigned long)_boot);
 		if (err < 0) {
-			debug_printf("CPU%d: failed to boot: %d\n", (int)xCoreID, (int)err);
+			RTK_LOGS(TAG, "CPU%d: failed to boot: %d\n", (int)xCoreID, (int)err);
 		}
 	}
 

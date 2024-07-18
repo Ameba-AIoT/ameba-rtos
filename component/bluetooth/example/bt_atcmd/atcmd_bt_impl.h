@@ -56,6 +56,8 @@ extern "C"
 #define MESHGP_AT_PRINTK(fmt, args...)      AT_PRINTK("[AT+BLEMESHGP] "fmt, ##args)
 #define MESHSENSOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEMESHSENSOR] "fmt, ##args)
 #define MESHHEALTH_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEMESHHEALTH] "fmt, ##args)
+#define BTDEVICE_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTENABLE] "fmt, ##args)
+#define BTGAP_AT_PRINTK(fmt, args...)       AT_PRINTK("[AT+BTGAP] "fmt, ##args)
 
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BTVENDOR] "fmt, ##args)
 
@@ -100,6 +102,8 @@ extern "C"
 #define MESHGP_AT_PRINTK(fmt, args...)      AT_PRINTK("[ATBC] "fmt, ##args)
 #define MESHSENSOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
 #define MESHHEALTH_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTDEVICE_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
+#define BTGAP_AT_PRINTK(fmt, args...)       AT_PRINTK("[ATBC] "fmt, ##args)
 
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBV] "fmt, ##args)
 

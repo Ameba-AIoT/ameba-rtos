@@ -72,9 +72,9 @@ mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
 if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-	choice 'Enable MP SHRINK'	"normal			CONFIG_MP_NORMAL \
-								shrink			CONFIG_MP_SHRINK	\
-								" shrink
+	choice 'MP Mode'	"expand			CONFIG_MP_EXPAND \
+						shrink			CONFIG_MP_SHRINK	\
+						" shrink
 fi
 endmenu
 
@@ -710,7 +710,8 @@ endmenu
 mainmenu_option next_comment
 comment '< Wifi Audio Config'
 bool "Enable WIFI AUDIO"           CONFIG_WIFI_AUDIO_FOR_KM4
-if [ "$CONFIG_WIFI_AUDIO_FOR_KM4" = "y" ]; then
+bool "Enable WFA SRC"              CONFIG_WFA_SRC_FOR_KM4
+if [ "$CONFIG_WIFI_AUDIO_FOR_KM4" = "y" -o "$CONFIG_WFA_SRC_FOR_KM4" = "y" ]; then
 	define_bool CONFIG_AUDIO_FWK_FOR_KM4 y
 	define_bool CONFIG_AUDIO_PASSTHROUGH_FOR_KM4 y
 	bool "Enable FEC USE SRAM"        CONFIG_WFA_FEC_USE_SRAM
