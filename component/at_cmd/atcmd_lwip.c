@@ -35,12 +35,6 @@ volatile int atcmd_lwip_tt_mode = FALSE; /* Transparent Transfer Mode. */
 volatile int atcmd_lwip_tt_datasize = 0;
 volatile int atcmd_lwip_tt_lasttickcnt = 0;
 
-static unsigned char _tx_buffer[MAX_BUFFER];
-static unsigned char _rx_buffer[MAX_BUFFER];
-static unsigned char *tx_buffer = _tx_buffer;
-static unsigned char *rx_buffer = _rx_buffer;
-int tx_buffer_size = MAX_BUFFER;
-int rx_buffer_size = MAX_BUFFER;
 
 #if ENABLE_TCPIP_SSL
 /* certificate and key for ssl server. */
@@ -487,6 +481,7 @@ int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, u16 buffer_size, 
 		{
 			size = read(curnode->sockfd, buffer, buffer_size);
 		}
+
 		if (size == 0) {
 			RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] Connection closed\r\n");
 			atcmd_lwip_tt_mode = FALSE;
@@ -525,6 +520,12 @@ void atcmd_lwip_receive_task(void *param)
 
 	UNUSED(param);
 
+	u8 *rx_buffer = (u8 *)rtos_mem_zmalloc(UART_LOG_CMD_BUFLEN);
+	if (rx_buffer == NULL) {
+		RTK_LOGI(NOTAG, "[atcmd_lwip_receive_task] rx_buffer malloc fail\r\n");
+		goto end;
+	}
+
 	while (atcmd_lwip_is_autorecv_mode()) {
 		for (i = 0; i < NUM_NS; i++) {
 			node *curnode = NULL;
@@ -550,7 +551,8 @@ void atcmd_lwip_receive_task(void *param)
 			if (atcmd_lwip_tt_mode == TRUE) {
 				if (error_no == 0 && recv_size > 0) {
 					rx_buffer[recv_size] = '\0';
-					at_print_data(rx_buffer, recv_size);
+					at_printf("%s", rx_buffer);
+					//at_printf("\r\n");
 					rtos_time_delay_ms(ATCMD_LWIP_TT_MAX_DELAY_TIME_MS);
 				}
 				continue;
@@ -560,16 +562,22 @@ void atcmd_lwip_receive_task(void *param)
 				if (recv_size > 0) {
 					rx_buffer[recv_size] = '\0';
 					if (curnode->protocol == NODE_MODE_UDP && curnode->role == NODE_ROLE_SERVER) {
-						at_printf("%sOK,%d,%d,%s,%d:\r\n", "+SKTREAD:", recv_size, curnode->con_id, udp_clientaddr, udp_clientport);
+						at_printf("%sOK,%d,%d,%s,%d:", "+SKTREAD:", recv_size, curnode->con_id, udp_clientaddr, udp_clientport);
 					} else {
-						at_printf("%sOK,%d,%d:\r\n", "+SKTREAD:", recv_size, curnode->con_id);
+						at_printf("%sOK,%d,%d:", "+SKTREAD:", recv_size, curnode->con_id);
 					}
-					at_print_data(rx_buffer, recv_size);
+					at_printf("%s", rx_buffer);
+					at_printf("\r\n");
 				}
 			} else {
 				at_printf("%sERROR:%d,%d\r\n", "+SKTREAD:", error_no, curnode->con_id);
 			}
 		}
+	}
+
+end:
+	if (rx_buffer) {
+		rtos_mem_free(rx_buffer);
 	}
 
 	rtos_task_delete(NULL);
@@ -674,6 +682,12 @@ void atcmd_lwip_tt_handler(void *param)
 
 	UNUSED(param);
 
+	u8 *tx_buffer = (u8 *)rtos_mem_zmalloc(UART_LOG_CMD_BUFLEN);
+	if (tx_buffer == NULL) {
+		RTK_LOGI(NOTAG, "[atcmd_lwip_tt_handler] tx_buffer malloc fail\r\n");
+		goto end;
+	}
+
 	while (rtos_sema_take(atcmd_lwip_tt_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 		atcmd_tt_wait_rx_complete();
 
@@ -698,6 +712,9 @@ void atcmd_lwip_tt_handler(void *param)
 	}
 
 end:
+	if (tx_buffer) {
+		rtos_mem_free(tx_buffer);
+	}
 	rtos_sema_delete(atcmd_lwip_tt_sema);
 	atcmd_lwip_tt_sema = NULL;
 	atcmd_lwip_set_autorecv_mode(FALSE);
@@ -1124,7 +1141,7 @@ static void server_start(void *param)
 					error_no = 9;
 					goto end;
 				} else {
-					at_printf("\r\n%sOK\r\ncon_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
+					at_printf("\r\n+SKTSERVER:con_id=%d\r\n", ServerNodeUsed->con_id);
 				}
 			}
 
@@ -1263,7 +1280,7 @@ void at_sktserver(void *arg)
 #endif
 	{
 		RTK_LOGW(NOTAG, "[+SKTSERVER] Unknown connection type\r\n");
-		error_no = 15;
+		error_no = 14;
 		goto end;
 	}
 
@@ -1654,14 +1671,10 @@ void at_sktclient(void *arg)
 		} else
 #endif
 		{
-			RTK_LOGW(NOTAG, "[+SKTCLIENT] Not found\r\n");
+			RTK_LOGW(NOTAG, "[+SKTCLIENT] Host '%s' Not found\r\n", argv[addr_idx]);
 			error_no = 2;
 			goto end;
 		}
-	} else {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid addr\r\n");
-		error_no = 2;
-		goto end;
 	}
 
 	if (argc > lcl_port_idx && strlen(argv[lcl_port_idx]) != 0) {
@@ -1764,29 +1777,38 @@ void at_skttt(void *arg)
 		error_no = 1;
 		goto end;
 	}
+
 	enable = atoi(argv[1]);
+
+	if (enable != 1) {
+		RTK_LOGI(NOTAG, "[SKTTT] Error parameter.\r\n");
+		error_no = 1;
+		goto end;
+	}
+
 	if (enable == 1) {
 		if (mainlist->next == NULL) {
-			RTK_LOGI(NOTAG, "[SKTTT] Nothing found.\r\n");
+			RTK_LOGI(NOTAG, "[SKTTT] No connection found.\r\n");
 			error_no = 2;
 			goto end;
 		} else if (mainlist->next->role == NODE_ROLE_SERVER) {
-			RTK_LOGI(NOTAG, "[SKTTT] No TT mode for server.\r\n");
+			RTK_LOGI(NOTAG, "[SKTTT] Cannot enter TT mode for server.\r\n");
 			error_no = 3;
 			goto end;
 		} else if (mainlist->next->next || mainlist->next->nextseed) {
-			RTK_LOGI(NOTAG, "[SKTTT] More than one found.\r\n");
+			RTK_LOGI(NOTAG, "[SKTTT] More than one connection found.\r\n");
 			error_no = 4;
 			goto end;
 		} else {
 			if (atcmd_lwip_start_tt_task() != 0) {
+				RTK_LOGI(NOTAG, "[SKTTT] Start TT task failed.\r\n");
 				error_no = 5;
 				goto end;
 			}
 		}
-	} else {
+	} /*else {
 		RTK_LOGI(NOTAG, "[SKTTT] Do nothing for %d.\r\n", enable);
-	}
+	}*/
 
 end:
 	if (error_no == 0) {
@@ -1798,47 +1820,61 @@ end:
 
 void at_sktsend(void *arg)
 {
-	const char *sendCmd = "AT+SKTSEND";
 	int argc = 0, error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
 	int con_id = INVALID_CON_ID;
 	node *curnode = NULL;
 	struct sockaddr_in cli_addr;
-	int data_sz, data_pos;
-	u8 *data = NULL;
+	int data_sz;
+	int data_pos = 0;
+	u8 colon_found = 0;  //1 if colon found in argv[argc-1]
 
 	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[at_sktsend] Invalid parameter\r\n");
+		RTK_LOGI(NOTAG, "[at_sktsend] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param_advance(arg, argv);
 	if ((argc != 3) && (argc != 5)) {
-		RTK_LOGI(NOTAG, "[at_sktsend] Invalid parameter number\r\n");
+		RTK_LOGI(NOTAG, "[at_sktsend] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	data_pos = strlen(sendCmd) + 1;
 	data_sz = atoi((char *)argv[1]);
-	if (data_sz > MAX_BUFFER) {
+	if (data_sz > UART_LOG_CMD_BUFLEN) {
 		RTK_LOGI(NOTAG, "[at_sktsend] data_sz is invalid\r\n");
 		error_no = 2;
 		goto end;
 	}
-	data_pos += strlen(argv[1]) + 1;
 
 	con_id = atoi((char *)argv[2]);
 	curnode = seek_list_node(con_id);
 	if (curnode == NULL) {
+		RTK_LOGI(NOTAG, "[at_sktsend] <con_id> is not found\r\n");
 		error_no = 3;
 		goto end;
 	}
-	for (; log_buf[data_pos] <= '9' && log_buf[data_pos] >= '0'; data_pos++) {
-		/* Do nothing, just push index data_pos. */
+
+	while (argv[argc - 1][data_pos]) {
+		if (argv[argc - 1][data_pos] == ':') {
+			colon_found = 1;
+			break;
+		}
+		data_pos++;
 	}
-	data_pos++;
+	if (0 == colon_found) {
+		RTK_LOGI(NOTAG, "[at_sktsend] Incorrect parameter format: missing colon before data\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	if (data_sz != (int)strlen(&argv[argc - 1][data_pos + 1])) {
+		RTK_LOGI(NOTAG, "[at_sktsend] <data_size> does not match the actual <data> length\r\n");
+		error_no = 1;
+		goto end;
+	}
 
 	if ((curnode->protocol == NODE_MODE_UDP)
 		&& (curnode->role == NODE_ROLE_SERVER)) {
@@ -1858,10 +1894,9 @@ void at_sktsend(void *arg)
 			error_no = 4;
 			goto end;
 		}
-		data_pos += strlen(argv[3]) + strlen(argv[4]) + 2;
 	}
-	data = (u8 *)log_buf + data_pos;
-	error_no = atcmd_lwip_send_data(curnode, data, data_sz, cli_addr);
+
+	error_no = atcmd_lwip_send_data(curnode, (u8 *)&argv[argc - 1][data_pos + 1], data_sz, cli_addr);
 
 end:
 	if (error_no == 0) {
@@ -1911,7 +1946,7 @@ void at_sktread(void *arg)
 		goto end;
 	}
 	packet_size = atoi((char *)argv[2]);
-	if (packet_size <= 0 || packet_size > MAX_BUFFER) {
+	if (packet_size <= 0 || packet_size > UART_LOG_CMD_BUFLEN) {
 		RTK_LOGI(NOTAG, "[at_sktread] Invalid packet_size\r\n");
 		error_no = 2;
 		goto end;
@@ -1930,20 +1965,28 @@ void at_sktread(void *arg)
 		goto end;
 	}
 
-	memset(rx_buffer, 0, rx_buffer_size);
-	error_no = atcmd_lwip_receive_data(curnode, rx_buffer, ETH_MAX_MTU, &recv_size, udp_clientaddr, &udp_clientport);
+	u8 *rx_buffer = (u8 *)rtos_mem_zmalloc(packet_size);
+	if (rx_buffer == NULL) {
+		RTK_LOGI(NOTAG, "[at_sktread] rx_buffer malloc fail\r\n");
+		goto end;
+	}
+
+	error_no = atcmd_lwip_receive_data(curnode, rx_buffer, (u16)packet_size, &recv_size, udp_clientaddr, &udp_clientport);
 
 end:
+	if (rx_buffer) {
+		rtos_mem_free(rx_buffer);
+	}
 	if (error_no == 0) {
 		if (curnode->protocol == NODE_MODE_UDP && curnode->role == NODE_ROLE_SERVER) {
-			at_printf("%sOK,%d,%d,%s,%d:\r\n", "+SKTREAD:", recv_size, con_id, udp_clientaddr, udp_clientport);
+			at_printf("%sOK,%d,%d,%s,%d:", "+SKTREAD:", recv_size, con_id, udp_clientaddr, udp_clientport);
 		} else {
-			at_printf("%sOK,%d,%d:\r\n", "+SKTREAD:", recv_size, con_id);
+			at_printf("%sOK,%d,%d:", "+SKTREAD:", recv_size, con_id);
 		}
-		if (0 < recv_size) {
-			at_print_data(rx_buffer, recv_size);
+		if (recv_size > 0) {
+			at_printf("%s", rx_buffer);
 		}
-		at_printf("\r\n%sOK\r\n", "+SKTREAD:");
+		at_printf("\r\n");
 	} else {
 		at_printf("\r\n%sERROR:%d\r\n", "+SKTREAD:", error_no);
 	}
@@ -2019,7 +2062,7 @@ void at_sktstate(void *arg)
 
 	while (n != NULL) {
 		if (n->con_id != INVALID_CON_ID) {
-			at_printf("%s\r\ncon_id:%d,", "+SKTSTATE:", n->con_id);
+			at_printf("con_id:%d,", n->con_id);
 			/* Server or client. */
 			if (n->role == NODE_ROLE_SERVER) {
 				at_printf("server,");

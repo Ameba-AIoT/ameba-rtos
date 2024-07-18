@@ -1859,7 +1859,6 @@ typedef enum {
 } rtk_bt_le_coc_security_mode_t;
 
 typedef enum {
-	RTK_BT_LE_COC_PARAM_CREDITS_THRESHOLD  = 0x0,
 	RTK_BT_LE_COC_PARAM_LOCAL_MTU          = 0x1,
 } rtk_bt_le_coc_param_type_t;
 

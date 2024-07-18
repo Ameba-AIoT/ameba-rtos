@@ -298,12 +298,15 @@ uint16_t rtk_bt_evt_init(void)
 failed:
 	if (g_evt_task_hdl) {
 		osif_task_delete(g_evt_task_hdl);
+		g_evt_task_hdl = NULL;
 	}
 	if (g_evt_queue) {
 		osif_msg_queue_delete(g_evt_queue);
+		g_evt_queue = NULL;
 	}
 	if (g_evt_task_sem) {
 		osif_sem_delete(g_evt_task_sem);
+		g_evt_task_sem = NULL;
 	}
 
 	return RTK_BT_FAIL;

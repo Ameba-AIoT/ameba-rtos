@@ -108,6 +108,11 @@ enum  {
 	PMKSA_FLUSH = 2,
 };
 
+enum SPEAKER_SET_TYPE {
+	SPEAKER_SET_INIT = 0,
+	SPEAKER_SET_LATCH_I2S_COUNT = 1,
+};
+
 /**
  * @brief The enumeration typedef export to user. */
 typedef enum rtw_promisc_level rtw_rcr_level_t;
@@ -348,6 +353,17 @@ typedef struct _rtw_network_info_t {
 } rtw_network_info_t;
 /** @} */
 
+union speaker_set {
+	struct { /*SPEAKER_SET_INIT*/
+		u8 mode;              /* 0 for slave, 1 for master */
+		u8 nav_thresh;        /* unit 128us */
+		u8 relay_en;          /* relay control */
+	} init;
+	struct { /*SPEAKER_SET_LATCH_I2S_COUNT*/
+		u8 port;           /* 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1 */
+		u8 latch_period;      /* 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms */
+	} latch_i2s_count;
+};
 /** @} */
 
 
@@ -686,9 +702,9 @@ typedef struct internal_join_block_param {
   */
 typedef struct _rtw_client_list_t {
 	unsigned int    count;         /**< Number of associated clients in the list    */
-	struct _rtw_mac_t mac_list[AP_STA_NUM];   /**< max length array of MAC addresses */
-	signed char rssi_list[AP_STA_NUM];   /**< max length array of client rssi */
-	unsigned char macid_list[AP_STA_NUM];   /**< max length array of client macid */
+	struct _rtw_mac_t mac_list[MACID_HW_MAX_NUM - 2]; /**< max length array of MAC addresses */
+	signed char rssi_list[MACID_HW_MAX_NUM - 2]; /**< max length array of client rssi */
+	unsigned char macid_list[MACID_HW_MAX_NUM - 2]; /**< max length array of client macid */
 } rtw_client_list_t;
 
 /**
@@ -916,8 +932,8 @@ struct wifi_user_conf {
 		RTW_ANTDIV_DISABLE: antdiv disable */
 	unsigned char antdiv_mode;
 
-	/*!	The maximum number of STAs connected to the softap should not exceed NUM_STA */
-	unsigned char g_user_ap_sta_num;
+	/*!	The maximum number of STAs connected to the softap should not exceed AP_STA_NUM */
+	unsigned char ap_sta_num;
 
 	/*!	IPS(Inactive power save), If disconnected for more than 2 seconds, WIFI will be powered off*/
 	unsigned char ips_enable;

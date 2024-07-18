@@ -456,7 +456,7 @@ void fATWx(void *arg)
 #endif
 			if (p_wifi_setting->mode == RTW_MODE_AP || i == 1) {
 				unsigned int client_number;
-				rtw_client_list_t client_info = {0};
+				struct _rtw_client_list_t client_info = {0};
 				wifi_get_associated_client_list(&client_info);
 
 				RTK_LOGI(NOTAG, "Associated Client List:\n\r");

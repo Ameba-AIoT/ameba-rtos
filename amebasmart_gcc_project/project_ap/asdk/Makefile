@@ -99,10 +99,18 @@ endif
 ifeq ($(findstring y, $(CONFIG_USB_DRD_EN)), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_usb.a
 endif
+ifeq ($(CONFIG_MP_SHRINK), y)
+ifeq ($(CONFIG_CORE_NUM),1)
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc_mp.a
+else
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_mp.a
+endif
+else
 ifeq ($(CONFIG_CORE_NUM),1)
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc.a
 else
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp.a
+endif
 endif
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_chipinfo.a
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a

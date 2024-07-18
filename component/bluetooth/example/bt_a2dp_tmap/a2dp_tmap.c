@@ -55,8 +55,12 @@
 #define A2DP_DEMO_BOND_INFO_THREAD_EXIT 0xFF
 /* ---------------------------- Audio resample related Macros-------------------------- */
 #define RTK_BT_A2DP_TMAP_DEMO_OUPUT_SAMPLE_RATE        48000
-#define RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM        1
 
+#if (RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1) || (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#define RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM        2
+#else
+#define RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM        1
+#endif
 /*
     A2DP sink will receive 595 bytes encode data per 14.5 ms from source, approximately 6.89 packets of 595 bytes per 100 milliseconds.
     When the sample rate is 44.1KHz, the above 595 bytes encode data will be parsing to 5 frames,
@@ -69,32 +73,25 @@
 */
 
 // LE Audio TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.
-#define LE_AUDIO_TX_WATER_LEVEL                       80
+#define LE_AUDIO_TX_WATER_LEVEL                       100
+#if (RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1) || (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
 // Actual LE Audio TX water level length
-#define A2DP_TMAP_ENCODE_PCM_DATA_WATER_LEVEL         960 * LE_AUDIO_TX_WATER_LEVEL / 10
-
-// Set enough length to store a2dp sink decode data.The unit is in short.
-#define A2DP_SINK_PCM_DATA_QUEUE_MAX_LEN              2560 * LE_AUDIO_TX_WATER_LEVEL* 7 / 100 * 2
+#define A2DP_TMAP_ENCODE_PCM_DATA_WATER_LEVEL         1920 * LE_AUDIO_TX_WATER_LEVEL / 10
 /*
     Set enough length to store resample data.The unit is in short.
-    960 bytes is equal to 48 KHz,1 channels pcm data bytes per 10 milliseconds.
+    1920 bytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds.
 */
+#define TMAP_ENCODE_PCM_DATA_QUEUE_MAX_LEN             1920 * LE_AUDIO_TX_WATER_LEVEL / 10 * 2
+#else
+#define A2DP_TMAP_ENCODE_PCM_DATA_WATER_LEVEL          960 * LE_AUDIO_TX_WATER_LEVEL / 10
 #define TMAP_ENCODE_PCM_DATA_QUEUE_MAX_LEN             960 * LE_AUDIO_TX_WATER_LEVEL / 10 * 2
-
-/*
-    Resample water level, default data bytes of 10 ms.
-    The smaller this value, the shorter the work interval of the resample task.
-*/
-#define RESAMPLE_WATER_LEVEL                           1
-
-#define SOXR_IN_FRAME_BUF_MAX_LEN                      480*4*4
+#endif
+/* Fixed length, used for temporary storage of audio data after resampled */
 #define SOXR_OUT_FRAME_BUF_MAX_LEN                     480*4*4
-#define RESAMPLE_TASK_STACK_SIZE                       10*1024
-#define RESAMPLE_TASK_PRIORITY                         4
 /* ------------------------------- TMAP Related Macros ------------------------------- */
 #define TMAP_ENCODE_TASK_PRIO                          4
 #define TMAP_ENCODE_TASK_STACK_SIZE                    (1024 * 5)
-#define A2DP_TMAP_REOPEN_TEST                          0
+#define A2DP_TMAP_REOPEN_TEST                          1
 /* ---------------------------- Global Variables ---------------------------- */
 typedef enum {
 	RTK_BT_LE_AUDIO_PBP_ROLE_UNKNOWN = 0,
@@ -103,7 +100,6 @@ typedef enum {
 } app_bt_le_audio_a2dp_sink_tmap_role_t;
 
 /* ---------------------------- Audio Resample Related Variables-------------------------- */
-static uint8_t resample_task_flag = 1;
 static bool a2dp_play_flag = false; // used for HW timer to judge whether to wake up LE Audio TX thread
 static bool tmap_pcm_data_dequeue_flag = false;// used to indicate the tmap encode task that resample pcm data has reached sufficient number
 
@@ -203,40 +199,12 @@ app_bt_le_audio_initiator_info_t g_bms_info = {
 	.group_handle = NULL,
 	.status = RTK_BLE_AUDIO_INITIATOR_DISABLE
 };
-
 /* ---------------------------- Audio Resample Related Variables-------------------------- */
 /*
-    1.Used to callback 44.1khz pcm data from bt_audio_intf.c
-    2.Enqueue pcm data into a2dp_decoded_pcm_queue
-    3.Send sem to notify audio resample task to convert 44.1khz pcm to 48khz
-*/
-static uint8_t a2dp_decoded_pcm_buffer_threshold_enable = 0;
-
-static struct a2dp_tmap_demo_task_t audio_resample_task = {
-	.hdl = NULL,
-	.sem = NULL,
-	.run = 0,
-};
-
-/*
-    1.Storage 44.KHZ pcm data from a2dp decode task
-    2.Send it to pbp convert task when reach a suitable water level.
-*/
-static short a2dp_pcm_queue[A2DP_SINK_PCM_DATA_QUEUE_MAX_LEN] = {0};
-/*
-    1.Storage 48KHz PCM data from audio_resample_task;
+    1.Storage 48KHz PCM data after resample;
     2.Send it to LE audio encode task when reach a suitable water level.
 */
 static short tmap_resample_queue[TMAP_ENCODE_PCM_DATA_QUEUE_MAX_LEN] = {0};
-
-static a2dp_tmap_demo_queue_t a2dp_decoded_pcm_queue = {
-	.q_write = 0,
-	.q_read = 0,
-	.mtx = NULL,
-	.queue = NULL,
-	.queue_size = 0,
-	.queue_max_len = 0,
-};
 
 static a2dp_tmap_demo_queue_t tmap_resample_pcm_data_queue = {
 	.q_write = 0,
@@ -252,7 +220,6 @@ static rtk_bt_audio_resample_t *g_audio_resample_t = NULL;
 static uint32_t resample_out_frames, resample_in_frames = 0;
 static uint32_t demo_in_rate = 44100;//input sample rate
 static uint32_t demo_out_rate = RTK_BT_A2DP_TMAP_DEMO_OUPUT_SAMPLE_RATE;//output sample rate
-static int8_t in_frame_buf[SOXR_IN_FRAME_BUF_MAX_LEN] = {0};
 static int8_t out_frame_buf[SOXR_OUT_FRAME_BUF_MAX_LEN] = {0};
 
 /* ---------------------------- A2DP Bond Info Manage config -------------------------- */
@@ -969,180 +936,55 @@ static uint16_t a2dp_tmap_demo_queue_deinit(a2dp_tmap_demo_queue_t *p_queue)
 	BT_LOGE("[APP] %s: p_queue is NULL\r\n", __func__);
 	return RTK_BT_FAIL;
 }
-
+static uint32_t fail_cnt;
 static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len, void *pentity, void *track)
 {
-	(void)p_pcm_data;
-	(void)p_len;
 	(void)pentity;
 	(void)track;
-	void *pmtx = NULL;
-	uint32_t queue_size = 0;
-
-	//44.khz pcm data enqueue
-	pmtx = a2dp_decoded_pcm_queue.mtx;
-	if (pmtx == NULL) {
-		BT_LOGE("%s warning! ptmx == NULL!\r\n", __func__);
-		return -1;
-	}
-	osif_mutex_take(pmtx, BT_TIMEOUT_FOREVER);
-	if (a2dp_tmap_demo_pcm_data_enqueue(&a2dp_decoded_pcm_queue, (int8_t *)p_pcm_data, p_len) != RTK_BT_OK) {
-		BT_LOGE("[APP] %s: a2dp_decoded_pcm_queue is full\r\n", __func__);
-	}
-	queue_size = a2dp_decoded_pcm_queue.queue_size;
-	//if reach enough resample frame num, inform resample task
-	if (g_audio_resample_t) {
-		if (!a2dp_decoded_pcm_buffer_threshold_enable) {
-			if (queue_size >= RESAMPLE_WATER_LEVEL * g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
-				a2dp_decoded_pcm_buffer_threshold_enable = 1;
-			}
-		} else {
-			if (queue_size < g_audio_resample_t->input_samples * g_audio_resample_t->in_frame_size) {
-				a2dp_decoded_pcm_buffer_threshold_enable = 0;
-			}
-		}
-	}
-	osif_mutex_give(pmtx);
-
-	if (a2dp_play_flag == false) {
-		a2dp_play_flag = true;
-	}
-
-	return 0;
-}
-
-static uint16_t rtk_bt_a2dp_tmap_demo_resample_generate(rtk_bt_audio_resample_t *p_resample_t, rtk_bt_audio_biquad_t *bq_t, uint32_t in_frames)
-{
-	uint32_t odone = 0;//the real output frame number
-	uint32_t dequeue_size = 0;
-	uint32_t enqueue_size = 0;
 	void *p_enqueue_mtx = NULL;
-	void *p_dequeue_mtx = NULL;
 	uint32_t time_stamp_before, time_stamp_after = 0;
+	uint32_t enqueue_size = 0;
 	uint32_t out_frames = 0;
 
-	if (p_resample_t == NULL || bq_t == NULL) {
-		BT_LOGE("[APP] %s p_resample_t or bq_t has not init!\r\n", __func__);
-		return RTK_BT_FAIL;
-	}
-
-	// if TMAP unicast media sender or TMAP broadcast media sender has not start stream , flush queue
 	if (((a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) && g_ums_info.status != RTK_BLE_AUDIO_INITIATOR_UNICAST_START) || \
 		((a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_BROADCAST_MEDIA_SNEDER) && g_bms_info.status != RTK_BLE_AUDIO_INITIATOR_BROADCAST_START)) {
-		BT_LOGE("[APP] TMAP unicast or broadcast stream has not started!\r\n");
-		p_dequeue_mtx = a2dp_decoded_pcm_queue.mtx;
-		p_enqueue_mtx = tmap_resample_pcm_data_queue.mtx;
-		if (p_dequeue_mtx == NULL || p_enqueue_mtx == NULL) {
-			BT_LOGE("[APP] %s warning! mtx is NULL!\r\n", __func__);
-			goto failed;
+		if (0 == (fail_cnt % 200)) {
+			BT_LOGE("[APP] TMAP unicast or broadcast stream has not started!\r\n");
 		}
-		// flush a2dp_decoded_pcm_queue
-		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
-		a2dp_tmap_demo_queue_pcm_data_flush(&a2dp_decoded_pcm_queue);
-		BT_LOGD("[APP] a2dp_decoded_pcm_queue flush!\r\n");
-		osif_mutex_give(p_dequeue_mtx);
-
-		// flush tmap_resample_pcm_data_queue
-		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
-		dequeue_size = tmap_resample_pcm_data_queue.queue_size;
-		if (dequeue_size) {
-			a2dp_tmap_demo_queue_pcm_data_flush(&tmap_resample_pcm_data_queue);
-			BT_LOGD("[APP] tmap_resample_pcm_data_queue flush!\r\n");
-			tmap_pcm_data_dequeue_flag = false;
-		}
-		osif_mutex_give(p_enqueue_mtx);
+		fail_cnt++;
 		return RTK_BT_FAIL;
 	}
-
-	BT_LOGD("[APP] %s in_frames:%u \r\n", __func__, in_frames);
-
-	//dequeue
-	p_dequeue_mtx = a2dp_decoded_pcm_queue.mtx;
-	dequeue_size = in_frames * p_resample_t->in_frame_size;
-
-	if (dequeue_size > SOXR_IN_FRAME_BUF_MAX_LEN) {
-		BT_LOGE("[APP] dequeue_size: %u exceed the max len !\r\n", dequeue_size);
-		goto failed;
-	}
-
-	while (a2dp_decoded_pcm_queue.queue_size < dequeue_size) {
-		// BT_LOGE("[APP] a2dp_decoded_pcm_queue dequeue num is not enough!\r\n");
-		osif_delay(2);
-	}
-	osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
-	if (RTK_BT_OK != a2dp_tmap_demo_pcm_data_dequeue(&a2dp_decoded_pcm_queue, in_frame_buf, dequeue_size)) {
-		BT_LOGE("[APP] a2dp_decoded_pcm_queue dequeue fail !\r\n");
-		goto failed;
-	}
-	osif_mutex_give(p_dequeue_mtx);
-	//resample process
+	//1.resample process
 	time_stamp_before = osif_sys_time_get();
-	out_frames = rtk_bt_audio_resample_entry(p_resample_t, bq_t,
-											 (uint8_t *)in_frame_buf,
-											 in_frames,
+	out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
+											 (uint8_t *)p_pcm_data,
+											 p_len / (g_audio_resample_t->in_frame_size),
 											 (uint8_t *)out_frame_buf,
 											 demo_in_rate,
 											 demo_out_rate);
 	time_stamp_after = osif_sys_time_get();
 	BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
 			(int)(time_stamp_after - time_stamp_before));
-	BT_LOGD("[APP] in_frames:%u out_frames:%u odone: %u\r\n", in_frames, out_frames, odone);
-
-	//enqueue
+	BT_LOGD("[APP] in_frames:%u out_frames:%u\r\n",  p_len / (g_audio_resample_t->in_frame_size), out_frames);
+	//2.enqueue
 	p_enqueue_mtx = tmap_resample_pcm_data_queue.mtx;
-	enqueue_size = out_frames * p_resample_t->out_frame_size;
-
-	if (enqueue_size > SOXR_OUT_FRAME_BUF_MAX_LEN) {
-		BT_LOGE("[APP] %s enqueue_size: %u exceed the max len!\r\n", __func__, enqueue_size);
-		goto failed;
+	enqueue_size = out_frames * g_audio_resample_t->out_frame_size;
+	if (!p_enqueue_mtx) {
+		BT_LOGE("[APP] %s p_enqueue_mtx is NULL\r\n", __func__);
+		return RTK_BT_FAIL;
 	}
-
 	osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
 	if (RTK_BT_OK != a2dp_tmap_demo_pcm_data_enqueue(&tmap_resample_pcm_data_queue, out_frame_buf, enqueue_size)) {
-		//queue is full
 		BT_LOGE("[APP] %s tmap_resample_pcm_data_queue is full!\r\n", __func__);
-		goto failed;
+		osif_mutex_give(p_enqueue_mtx);
+		return RTK_BT_FAIL;
 	}
-
-	if (tmap_resample_pcm_data_queue.queue_size >= A2DP_TMAP_ENCODE_PCM_DATA_WATER_LEVEL && tmap_pcm_data_dequeue_flag == false) {
+	if (tmap_resample_pcm_data_queue.queue_size >= A2DP_TMAP_ENCODE_PCM_DATA_WATER_LEVEL) {
 		tmap_pcm_data_dequeue_flag = true;
 	}
-
 	osif_mutex_give(p_enqueue_mtx);
+
 	return RTK_BT_OK;
-
-failed:
-	if (p_dequeue_mtx) {
-		osif_mutex_give(p_dequeue_mtx);
-	}
-	if (p_enqueue_mtx) {
-		osif_mutex_give(p_enqueue_mtx);
-	}
-
-	return RTK_BT_FAIL;
-}
-
-static uint32_t tmp_time = 0;
-static void a2dp_tmap_audio_data_resample_task_entry(void *ctx)
-{
-	(void)ctx;
-	uint32_t time_stamp_before, time_stamp_after = 0;
-	osif_sem_give(audio_resample_task.sem);
-
-	while (audio_resample_task.run) {
-		if (!a2dp_decoded_pcm_buffer_threshold_enable) {
-			osif_delay(2);
-		} else {
-			time_stamp_before = osif_sys_time_get();
-			rtk_bt_a2dp_tmap_demo_resample_generate(g_audio_resample_t, &bq_t, resample_in_frames);
-			time_stamp_after = osif_sys_time_get();
-			BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,convert delt_time:%d, delt_time:%d \r\n", __func__, time_stamp_before,
-					time_stamp_after, (int)(time_stamp_after - time_stamp_before), (int)(time_stamp_before - tmp_time));
-			tmp_time = time_stamp_before;
-		}
-	}
-	osif_sem_give(audio_resample_task.sem);
-	osif_task_delete(NULL);
 }
 
 static uint16_t rtk_bt_a2dp_tmap_demo_audio_resample_alloc(rtk_bt_audio_resample_t **pp_sample_t, uint32_t sample_rate_in, uint8_t in_channels)
@@ -1803,7 +1645,6 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 {
 	(void)len;
 	uint8_t bd_addr[6];
-	void *p_dequeue_mtx;
 	void *p_enqueue_mtx;
 	uint32_t dequeue_size;
 
@@ -1842,6 +1683,17 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		rtk_bt_audio_codec_remove(audio_codec_conf.codec_index, a2dp_demo_codec_entity);
 		rtk_bt_audio_track_del(audio_codec_conf.codec_index, a2dp_demo_audio_track_hdl);
 		memset((void *)&audio_codec_conf, 0, sizeof(rtk_bt_audio_codec_conf_t));
+		if (g_audio_resample_t) {
+			rtk_bt_a2dp_tmap_demo_audio_resample_destroy(&g_audio_resample_t);
+		}
+		p_enqueue_mtx = tmap_resample_pcm_data_queue.mtx;
+		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
+		dequeue_size = tmap_resample_pcm_data_queue.queue_size;
+		if (dequeue_size) {
+			a2dp_tmap_demo_queue_pcm_data_flush(&tmap_resample_pcm_data_queue);
+			tmap_pcm_data_dequeue_flag = false;
+		}
+		osif_mutex_give(p_enqueue_mtx);
 		// rtk_bt_audio_deinit();
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
@@ -1918,9 +1770,18 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 			rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 		}
 #if defined(A2DP_TMAP_REOPEN_TEST) && A2DP_TMAP_REOPEN_TEST
-		//restart iso data path
 		if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
 			if (g_ums_info.status == RTK_BLE_AUDIO_INITIATOR_UNICAST_STOP) {
+				//flush pcm data
+				p_enqueue_mtx = tmap_resample_pcm_data_queue.mtx;
+				osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
+				dequeue_size = tmap_resample_pcm_data_queue.queue_size;
+				if (dequeue_size) {
+					a2dp_tmap_demo_queue_pcm_data_flush(&tmap_resample_pcm_data_queue);
+					tmap_pcm_data_dequeue_flag = false;
+				}
+				osif_mutex_give(p_enqueue_mtx);
+				//restart iso data path
 				rtk_bt_bap_unicast_client_start(0, 1);
 			}
 		}
@@ -1965,24 +1826,6 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		a2dp_play_flag = false;
-		p_dequeue_mtx = a2dp_decoded_pcm_queue.mtx;
-		p_enqueue_mtx = tmap_resample_pcm_data_queue.mtx;
-		osif_mutex_take(p_dequeue_mtx, BT_TIMEOUT_FOREVER);
-		a2dp_tmap_demo_queue_pcm_data_flush(&a2dp_decoded_pcm_queue);
-		osif_mutex_give(p_dequeue_mtx);
-
-		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
-		dequeue_size = tmap_resample_pcm_data_queue.queue_size;
-		if (dequeue_size) {
-			a2dp_tmap_demo_queue_pcm_data_flush(&tmap_resample_pcm_data_queue);
-			tmap_pcm_data_dequeue_flag = false;
-		}
-		osif_mutex_give(p_enqueue_mtx);
-
-		a2dp_decoded_pcm_buffer_threshold_enable = 0;
-		if (g_audio_resample_t) {
-			rtk_bt_a2dp_tmap_demo_audio_resample_destroy(&g_audio_resample_t);
-		}
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
 		BT_LOGA("[A2DP] Stream close from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
@@ -1992,7 +1835,7 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 
 	case RTK_BT_A2DP_EVT_STREAM_DATA_IND: { //BT api shall not be called here
 		rtk_bt_a2dp_stream_data_ind_t *pdata_in = (rtk_bt_a2dp_stream_data_ind_t *)param;
-
+		a2dp_play_flag = true;
 		if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_audio_track_hdl, a2dp_demo_codec_entity, pdata_in->data, pdata_in->length, 0)) {
 			BT_LOGE("[A2DP] Stream Data Receiving FAIL %d \r\n", RTK_BT_AUDIO_CODEC_SBC);
 		}
@@ -3515,25 +3358,10 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_tmap_unicast_media_sender_init(p_ums_info);
 
 			/* pcm queue init */
-			a2dp_tmap_demo_queue_init(&a2dp_decoded_pcm_queue, a2dp_pcm_queue, sizeof(a2dp_pcm_queue) / 2);
 			a2dp_tmap_demo_queue_init(&tmap_resample_pcm_data_queue, tmap_resample_queue, sizeof(tmap_resample_queue) / 2);
 			tx_water_level = LE_AUDIO_TX_WATER_LEVEL;
 			BT_LOGA("[APP] TMAP UMS tx_water_level: %d ms\r\n", tx_water_level);
 			/* resample task init */
-			if (resample_task_flag) {
-				if (false == osif_sem_create(&audio_resample_task.sem, 0, 1)) {
-					goto failed;
-				}
-				audio_resample_task.run = 1;
-				if (false == osif_task_create(&audio_resample_task.hdl, "a2dp_tmap_audio_data_resample_task",
-											  a2dp_tmap_audio_data_resample_task_entry, NULL,
-											  RESAMPLE_TASK_STACK_SIZE, RESAMPLE_TASK_PRIORITY)) {
-					osif_sem_delete(audio_resample_task.sem);
-					goto failed;
-				}
-				//wait for task run
-				osif_sem_take(audio_resample_task.sem, 0xffffffff);
-			}
 			/* bond info flush thread init */
 			if (a2dp_demo_bond_info_flush) {
 				if (rtk_bt_br_gap_bond_num_get(&a2dp_demo_bond_num)) {
@@ -3677,25 +3505,9 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_tmap_broadcast_media_sender_init();
 
 			/* pcm queue init */
-			a2dp_tmap_demo_queue_init(&a2dp_decoded_pcm_queue, a2dp_pcm_queue, sizeof(a2dp_pcm_queue) / 2);
 			a2dp_tmap_demo_queue_init(&tmap_resample_pcm_data_queue, tmap_resample_queue, sizeof(tmap_resample_queue) / 2);
 			tx_water_level = LE_AUDIO_TX_WATER_LEVEL;
 			BT_LOGA("[APP] TMAP BMS tx_water_level: %d ms\r\n", tx_water_level);
-			/* resample task init */
-			if (resample_task_flag) {
-				if (false == osif_sem_create(&audio_resample_task.sem, 0, 1)) {
-					goto failed;
-				}
-				audio_resample_task.run = 1;
-				if (false == osif_task_create(&audio_resample_task.hdl, "a2dp_tmap_audio_data_resample_task",
-											  a2dp_tmap_audio_data_resample_task_entry, NULL,
-											  RESAMPLE_TASK_STACK_SIZE, RESAMPLE_TASK_PRIORITY)) {
-					osif_sem_delete(audio_resample_task.sem);
-					goto failed;
-				}
-				//wait for task run
-				osif_sem_take(audio_resample_task.sem, 0xffffffff);
-			}
 			/* bond info flush thread init */
 			if (a2dp_demo_bond_info_flush) {
 				if (rtk_bt_br_gap_bond_num_get(&a2dp_demo_bond_num)) {
@@ -3741,12 +3553,6 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 		}
 		return 0;
 failed:
-		if (audio_resample_task.hdl) {
-			osif_task_delete(audio_resample_task.hdl);
-		}
-		if (audio_resample_task.sem) {
-			osif_sem_delete(audio_resample_task.sem);
-		}
 		if (bond_info_flush_task.hdl) {
 			osif_task_delete(bond_info_flush_task.hdl);
 		}
@@ -3774,19 +3580,6 @@ failed:
 				BT_LOGE("[APP] %s: please stop unicast first before disable \r\n", __func__);
 				return -1;
 			}
-			if (resample_task_flag && audio_resample_task.hdl) {
-				audio_resample_task.run = 0;
-				/* wait for task exit */
-				if (false == osif_sem_take(audio_resample_task.sem, 0xffffffff)) {
-					return -1;
-				}
-				osif_sem_delete(audio_resample_task.sem);
-				audio_resample_task.sem = NULL;
-				audio_resample_task.hdl = NULL;
-			}
-			if (g_audio_resample_t) {
-				BT_APP_PROCESS(rtk_bt_a2dp_tmap_demo_audio_resample_destroy(&g_audio_resample_t));
-			}
 			if (a2dp_demo_bond_info_flush) {
 				/* indicate a2dp demo bond info flush thread to kill itself */
 				a2dp_demo_flush_bond_info(A2DP_DEMO_BOND_INFO_THREAD_EXIT);
@@ -3812,13 +3605,14 @@ failed:
 
 				app_bt_le_audio_tmap_unicast_media_sender_deinit(&g_ums_info);
 
-				a2dp_tmap_demo_queue_deinit(&a2dp_decoded_pcm_queue);
 				a2dp_tmap_demo_queue_deinit(&tmap_resample_pcm_data_queue);
 			}
-
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
 			g_ums_info.status = RTK_BLE_AUDIO_INITIATOR_DISABLE;
+			if (g_audio_resample_t) {
+				BT_APP_PROCESS(rtk_bt_a2dp_tmap_demo_audio_resample_destroy(&g_audio_resample_t));
+			}
 			a2dp_demo_audio_track_hdl = NULL;
 			a2dp_demo_codec_entity = NULL;
 			memset((void *)&audio_codec_conf, 0, sizeof(rtk_bt_audio_codec_conf_t));
@@ -3834,19 +3628,6 @@ failed:
 			if (g_bms_info.status == RTK_BLE_AUDIO_INITIATOR_BROADCAST_START) {
 				BT_LOGE("[APP] %s: please stop broadcast first before disable \r\n", __func__);
 				return -1;
-			}
-			if (resample_task_flag && audio_resample_task.hdl) {
-				audio_resample_task.run = 0;
-				/* wait for task exit */
-				if (false == osif_sem_take(audio_resample_task.sem, 0xffffffff)) {
-					return -1;
-				}
-				osif_sem_delete(audio_resample_task.sem);
-				audio_resample_task.sem = NULL;
-				audio_resample_task.hdl = NULL;
-			}
-			if (g_audio_resample_t) {
-				BT_APP_PROCESS(rtk_bt_a2dp_tmap_demo_audio_resample_destroy(&g_audio_resample_t));
 			}
 			if (a2dp_demo_bond_info_flush) {
 				/* indicate a2dp demo bond info flush thread to kill itself */
@@ -3871,12 +3652,14 @@ failed:
 
 				app_bt_le_audio_tmap_broadcast_media_sender_deinit();
 
-				a2dp_tmap_demo_queue_deinit(&a2dp_decoded_pcm_queue);
 				a2dp_tmap_demo_queue_deinit(&tmap_resample_pcm_data_queue);
 			}
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
 			g_bms_info.status = RTK_BLE_AUDIO_INITIATOR_DISABLE;
+			if (g_audio_resample_t) {
+				BT_APP_PROCESS(rtk_bt_a2dp_tmap_demo_audio_resample_destroy(&g_audio_resample_t));
+			}
 			a2dp_demo_audio_track_hdl = NULL;
 			a2dp_demo_codec_entity = NULL;
 			memset((void *)&audio_codec_conf, 0, sizeof(rtk_bt_audio_codec_conf_t));

@@ -121,7 +121,7 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx)
   */
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit)
 {
-	IPCx->IPC_ISR |= BIT(IPC_Shiftbit);
+	IPCx->IPC_ISR = BIT(IPC_Shiftbit);
 }
 
 /**

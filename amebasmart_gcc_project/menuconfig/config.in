@@ -43,9 +43,9 @@ mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
 if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-	choice 'Enable MP SHRINK'	"normal			CONFIG_MP_NORMAL \
-								shrink			CONFIG_MP_SHRINK	\
-								" shrink
+	choice 'MP Mode'	"expand			CONFIG_MP_EXPAND \
+						shrink			CONFIG_MP_SHRINK	\
+						" shrink
 fi
 endmenu
 

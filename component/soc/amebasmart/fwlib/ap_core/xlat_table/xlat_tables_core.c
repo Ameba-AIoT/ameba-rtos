@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2017-2020, ARM Limited and Contributors. All rights reserved.
  *
@@ -32,11 +33,14 @@ void *memset(void *dst, int val, size_t count);
 
 bool is_dcache_enabled(void);
 
+static const char *TAG = "#";
+
 /* Helper function that cleans the data cache only if it is enabled. */
 static inline __attribute__((unused)) void xlat_clean_dcache_range(uintptr_t addr, size_t size)
 {
-	if (is_dcache_enabled())
+	if (is_dcache_enabled()) {
 		clean_dcache_range(addr, size);
+	}
 }
 
 #if PLAT_XLAT_TABLES_DYNAMIC
@@ -54,8 +58,9 @@ static inline __attribute__((unused)) void xlat_clean_dcache_range(uintptr_t add
 static int xlat_table_get_index(const xlat_ctx_t *ctx, const uint64_t *table)
 {
 	for (int i = 0; i < ctx->tables_num; i++)
-		if (ctx->tables[i] == table)
+		if (ctx->tables[i] == table) {
 			return i;
+		}
 
 	/*
 	 * Maybe we were asked to get the index of the base level table, which
@@ -70,15 +75,16 @@ static int xlat_table_get_index(const xlat_ctx_t *ctx, const uint64_t *table)
 static uint64_t *xlat_table_get_empty(const xlat_ctx_t *ctx)
 {
 	for (int i = 0; i < ctx->tables_num; i++)
-		if (ctx->tables_mapped_regions[i] == 0)
+		if (ctx->tables_mapped_regions[i] == 0) {
 			return ctx->tables[i];
+		}
 
 	return NULL;
 }
 
 /* Increments region count for a given table. */
 static void xlat_table_inc_regions_count(const xlat_ctx_t *ctx,
-					 const uint64_t *table)
+		const uint64_t *table)
 {
 	int idx = xlat_table_get_index(ctx, table);
 
@@ -87,7 +93,7 @@ static void xlat_table_inc_regions_count(const xlat_ctx_t *ctx,
 
 /* Decrements region count for a given table. */
 static void xlat_table_dec_regions_count(const xlat_ctx_t *ctx,
-					 const uint64_t *table)
+		const uint64_t *table)
 {
 	int idx = xlat_table_get_index(ctx, table);
 
@@ -116,7 +122,7 @@ static uint64_t *xlat_table_get_empty(xlat_ctx_t *ctx)
  * Returns a block/page table descriptor for the given level and attributes.
  */
 uint64_t xlat_desc(const xlat_ctx_t *ctx, uint32_t attr,
-		   unsigned long long addr_pa, unsigned int level)
+				   unsigned long long addr_pa, unsigned int level)
 {
 	uint64_t desc;
 	uint32_t mem_type;
@@ -158,7 +164,7 @@ uint64_t xlat_desc(const xlat_ctx_t *ctx, uint32_t attr,
 		}
 	} else {
 		assert((ctx->xlat_regime == EL2_REGIME) ||
-		       (ctx->xlat_regime == EL3_REGIME));
+			   (ctx->xlat_regime == EL3_REGIME));
 		desc |= LOWER_ATTRS(AP_ONE_VA_RANGE_RES1);
 	}
 
@@ -223,8 +229,8 @@ uint64_t xlat_desc(const xlat_ctx_t *ctx, uint32_t attr,
 			 * if BTI mechanism is implemented.
 			 */
 			if (is_armv8_5_bti_present() &&
-			   ((attr & (MT_TYPE_MASK | MT_RW |
-				MT_EXECUTE_NEVER)) == MT_CODE)) {
+				((attr & (MT_TYPE_MASK | MT_RW |
+						  MT_EXECUTE_NEVER)) == MT_CODE)) {
 				desc |= GP;
 			}
 #endif
@@ -269,8 +275,8 @@ typedef enum {
  * mmap region.
  */
 static uintptr_t xlat_tables_find_start_va(mmap_region_t *mm,
-				   const uintptr_t table_base_va,
-				   const unsigned int level)
+		const uintptr_t table_base_va,
+		const unsigned int level)
 {
 	uintptr_t table_idx_va;
 
@@ -289,8 +295,8 @@ static uintptr_t xlat_tables_find_start_va(mmap_region_t *mm,
  * Function that returns table index for the given VA and level arguments.
  */
 static inline unsigned int  xlat_tables_va_to_index(const uintptr_t table_base_va,
-						const uintptr_t va,
-						const unsigned int level)
+		const uintptr_t va,
+		const unsigned int level)
 {
 	return (unsigned int)((va - table_base_va) >> XLAT_ADDR_SHIFT(level));
 }
@@ -309,7 +315,7 @@ static action_t xlat_tables_unmap_region_action(const mmap_region_t *mm,
 	uintptr_t region_end_va = mm->base_va + mm->size - 1U;
 
 	if ((mm->base_va <= table_idx_va) &&
-	    (region_end_va >= table_idx_end_va)) {
+		(region_end_va >= table_idx_end_va)) {
 		/* Region covers all block */
 
 		if (level == 3U) {
@@ -338,7 +344,7 @@ static action_t xlat_tables_unmap_region_action(const mmap_region_t *mm,
 		}
 
 	} else if ((mm->base_va <= table_idx_end_va) ||
-		   (region_end_va >= table_idx_va)) {
+			   (region_end_va >= table_idx_va)) {
 		/*
 		 * Region partially covers block.
 		 *
@@ -363,10 +369,10 @@ static action_t xlat_tables_unmap_region_action(const mmap_region_t *mm,
  * specified region.
  */
 static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
-				     const uintptr_t table_base_va,
-				     uint64_t *const table_base,
-				     const unsigned int table_entries,
-				     const unsigned int level)
+									 const uintptr_t table_base_va,
+									 uint64_t *const table_base,
+									 const unsigned int table_entries,
+									 const unsigned int level)
 {
 	assert((level >= ctx->base_level) && (level <= XLAT_TABLE_LEVEL_MAX));
 
@@ -391,8 +397,8 @@ static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 		uint64_t desc_type = desc & DESC_MASK;
 
 		action_t action = xlat_tables_unmap_region_action(mm,
-				table_idx_va, table_idx_end_va, level,
-				desc_type);
+						  table_idx_va, table_idx_end_va, level,
+						  desc_type);
 
 		if (action == ACTION_WRITE_BLOCK_ENTRY) {
 
@@ -405,11 +411,11 @@ static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 
 			/* Recurse to write into subtable */
 			xlat_tables_unmap_region(ctx, mm, table_idx_va,
-						 subtable, XLAT_TABLE_ENTRIES,
-						 level + 1U);
+									 subtable, XLAT_TABLE_ENTRIES,
+									 level + 1U);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 			xlat_clean_dcache_range((uintptr_t)subtable,
-				XLAT_TABLE_ENTRIES * sizeof(uint64_t));
+									XLAT_TABLE_ENTRIES * sizeof(uint64_t));
 #endif
 			/*
 			 * If the subtable is now empty, remove its reference.
@@ -417,7 +423,7 @@ static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 			if (xlat_table_is_empty(ctx, subtable)) {
 				table_base[table_idx] = INVALID_DESC;
 				xlat_arch_tlbi_va(table_idx_va,
-						  ctx->xlat_regime);
+								  ctx->xlat_regime);
 			}
 
 		} else {
@@ -428,12 +434,14 @@ static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 		table_idx_va += XLAT_BLOCK_SIZE(level);
 
 		/* If reached the end of the region, exit */
-		if (region_end_va <= table_idx_va)
+		if (region_end_va <= table_idx_va) {
 			break;
+		}
 	}
 
-	if (level > ctx->base_level)
+	if (level > ctx->base_level) {
 		xlat_table_dec_regions_count(ctx, table_base);
+	}
 }
 
 #endif /* PLAT_XLAT_TABLES_DYNAMIC */
@@ -448,14 +456,14 @@ static action_t xlat_tables_map_region_action(const mmap_region_t *mm,
 {
 	uintptr_t mm_end_va = mm->base_va + mm->size - 1U;
 	uintptr_t table_entry_end_va =
-			table_entry_base_va + XLAT_BLOCK_SIZE(level) - 1U;
+		table_entry_base_va + XLAT_BLOCK_SIZE(level) - 1U;
 
 	/*
 	 * The descriptor types allowed depend on the current table level.
 	 */
 
 	if ((mm->base_va <= table_entry_base_va) &&
-	    (mm_end_va >= table_entry_end_va)) {
+		(mm_end_va >= table_entry_end_va)) {
 
 		/*
 		 * Table entry is covered by region
@@ -504,11 +512,12 @@ static action_t xlat_tables_map_region_action(const mmap_region_t *mm,
 				 * descriptors. If not, create a table instead.
 				 */
 				if (((dest_pa & XLAT_BLOCK_MASK(level)) != 0U)
-				    || (level < MIN_LVL_BLOCK_DESC) ||
-				    (mm->granularity < XLAT_BLOCK_SIZE(level)))
+					|| (level < MIN_LVL_BLOCK_DESC) ||
+					(mm->granularity < XLAT_BLOCK_SIZE(level))) {
 					return ACTION_CREATE_NEW_TABLE;
-				else
+				} else {
 					return ACTION_WRITE_BLOCK_ENTRY;
+				}
 
 			} else {
 				/*
@@ -522,7 +531,7 @@ static action_t xlat_tables_map_region_action(const mmap_region_t *mm,
 		}
 
 	} else if ((mm->base_va <= table_entry_end_va) ||
-		   (mm_end_va >= table_entry_base_va)) {
+			   (mm_end_va >= table_entry_base_va)) {
 
 		/*
 		 * Region partially covers table entry
@@ -576,10 +585,10 @@ static action_t xlat_tables_map_region_action(const mmap_region_t *mm,
  * should have been mapped.
  */
 static uintptr_t xlat_tables_map_region(xlat_ctx_t *ctx, mmap_region_t *mm,
-				   uintptr_t table_base_va,
-				   uint64_t *const table_base,
-				   unsigned int table_entries,
-				   unsigned int level)
+										uintptr_t table_base_va,
+										uint64_t *const table_base,
+										unsigned int table_entries,
+										unsigned int level)
 {
 	assert((level >= ctx->base_level) && (level <= XLAT_TABLE_LEVEL_MAX));
 
@@ -597,8 +606,9 @@ static uintptr_t xlat_tables_map_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 	table_idx = xlat_tables_va_to_index(table_base_va, table_idx_va, level);
 
 #if PLAT_XLAT_TABLES_DYNAMIC
-	if (level > ctx->base_level)
+	if (level > ctx->base_level) {
 		xlat_table_inc_regions_count(ctx, table_base);
+	}
 #endif
 
 	while (table_idx < table_entries) {
@@ -608,14 +618,14 @@ static uintptr_t xlat_tables_map_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 		table_idx_pa = mm->base_pa + table_idx_va - mm->base_va;
 
 		action_t action = xlat_tables_map_region_action(mm,
-			(uint32_t)(desc & DESC_MASK), table_idx_pa,
-			table_idx_va, level);
+						  (uint32_t)(desc & DESC_MASK), table_idx_pa,
+						  table_idx_va, level);
 
 		if (action == ACTION_WRITE_BLOCK_ENTRY) {
 
 			table_base[table_idx] =
 				xlat_desc(ctx, (uint32_t)mm->attr, table_idx_pa,
-					  level);
+						  level);
 
 		} else if (action == ACTION_CREATE_NEW_TABLE) {
 			uintptr_t end_va;
@@ -632,15 +642,16 @@ static uintptr_t xlat_tables_map_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 
 			/* Recurse to write into subtable */
 			end_va = xlat_tables_map_region(ctx, mm, table_idx_va,
-					       subtable, XLAT_TABLE_ENTRIES,
-					       level + 1U);
+											subtable, XLAT_TABLE_ENTRIES,
+											level + 1U);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 			xlat_clean_dcache_range((uintptr_t)subtable,
-				XLAT_TABLE_ENTRIES * sizeof(uint64_t));
+									XLAT_TABLE_ENTRIES * sizeof(uint64_t));
 #endif
 			if (end_va !=
-				(table_idx_va + XLAT_BLOCK_SIZE(level) - 1U))
+				(table_idx_va + XLAT_BLOCK_SIZE(level) - 1U)) {
 				return end_va;
+			}
 
 		} else if (action == ACTION_RECURSE_INTO_TABLE) {
 			uintptr_t end_va;
@@ -648,15 +659,16 @@ static uintptr_t xlat_tables_map_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 			subtable = (uint64_t *)(uintptr_t)(desc & TABLE_ADDR_MASK);
 			/* Recurse to write into subtable */
 			end_va = xlat_tables_map_region(ctx, mm, table_idx_va,
-					       subtable, XLAT_TABLE_ENTRIES,
-					       level + 1U);
+											subtable, XLAT_TABLE_ENTRIES,
+											level + 1U);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 			xlat_clean_dcache_range((uintptr_t)subtable,
-				XLAT_TABLE_ENTRIES * sizeof(uint64_t));
+									XLAT_TABLE_ENTRIES * sizeof(uint64_t));
 #endif
 			if (end_va !=
-				(table_idx_va + XLAT_BLOCK_SIZE(level) - 1U))
+				(table_idx_va + XLAT_BLOCK_SIZE(level) - 1U)) {
 				return end_va;
+			}
 
 		} else {
 
@@ -668,8 +680,9 @@ static uintptr_t xlat_tables_map_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 		table_idx_va += XLAT_BLOCK_SIZE(level);
 
 		/* If reached the end of the region, exit */
-		if (mm_end_va <= table_idx_va)
+		if (mm_end_va <= table_idx_va) {
 			break;
+		}
 	}
 
 	return table_idx_va - 1U;
@@ -695,8 +708,9 @@ static int mmap_add_region_check(const xlat_ctx_t *ctx, const mmap_region_t *mm)
 	uintptr_t end_va = base_va + size - 1U;
 
 	if (!IS_PAGE_ALIGNED(base_pa) || !IS_PAGE_ALIGNED(base_va) ||
-			!IS_PAGE_ALIGNED(size))
+		!IS_PAGE_ALIGNED(size)) {
 		return -EINVAL;
+	}
 
 	if ((granularity != XLAT_BLOCK_SIZE(1U)) &&
 		(granularity != XLAT_BLOCK_SIZE(2U)) &&
@@ -705,25 +719,29 @@ static int mmap_add_region_check(const xlat_ctx_t *ctx, const mmap_region_t *mm)
 	}
 
 	/* Check for overflows */
-	if ((base_pa > end_pa) || (base_va > end_va))
+	if ((base_pa > end_pa) || (base_va > end_va)) {
 		return -ERANGE;
+	}
 
-	if (end_va > ctx->va_max_address)
+	if (end_va > ctx->va_max_address) {
 		return -ERANGE;
+	}
 
-	if (end_pa > ctx->pa_max_address)
+	if (end_pa > ctx->pa_max_address) {
 		return -ERANGE;
+	}
 
 	/* Check that there is space in the ctx->mmap array */
-	if (ctx->mmap[ctx->mmap_num - 1].size != 0U)
+	if (ctx->mmap[ctx->mmap_num - 1].size != 0U) {
 		return -ENOMEM;
+	}
 
 	/* Check for PAs and VAs overlaps with all other regions */
 	for (const mmap_region_t *mm_cursor = ctx->mmap;
-	     mm_cursor->size != 0U; ++mm_cursor) {
+		 mm_cursor->size != 0U; ++mm_cursor) {
 
 		uintptr_t mm_cursor_end_va = mm_cursor->base_va
-							+ mm_cursor->size - 1U;
+									 + mm_cursor->size - 1U;
 
 		/*
 		 * Check if one of the regions is completely inside the other
@@ -731,9 +749,9 @@ static int mmap_add_region_check(const xlat_ctx_t *ctx, const mmap_region_t *mm)
 		 */
 		bool fully_overlapped_va =
 			((base_va >= mm_cursor->base_va) &&
-					(end_va <= mm_cursor_end_va)) ||
+			 (end_va <= mm_cursor_end_va)) ||
 			((mm_cursor->base_va >= base_va) &&
-						(mm_cursor_end_va <= end_va));
+			 (mm_cursor_end_va <= end_va));
 
 		/*
 		 * Full VA overlaps are only allowed if both regions are
@@ -745,16 +763,19 @@ static int mmap_add_region_check(const xlat_ctx_t *ctx, const mmap_region_t *mm)
 
 #if PLAT_XLAT_TABLES_DYNAMIC
 			if (((mm->attr & MT_DYNAMIC) != 0U) ||
-			    ((mm_cursor->attr & MT_DYNAMIC) != 0U))
+				((mm_cursor->attr & MT_DYNAMIC) != 0U)) {
 				return -EPERM;
+			}
 #endif /* PLAT_XLAT_TABLES_DYNAMIC */
 			if ((mm_cursor->base_va - mm_cursor->base_pa) !=
-							(base_va - base_pa))
+				(base_va - base_pa)) {
 				return -EPERM;
+			}
 
 			if ((base_va == mm_cursor->base_va) &&
-						(size == mm_cursor->size))
+				(size == mm_cursor->size)) {
 				return -EPERM;
+			}
 
 		} else {
 			/*
@@ -764,15 +785,16 @@ static int mmap_add_region_check(const xlat_ctx_t *ctx, const mmap_region_t *mm)
 			 */
 
 			unsigned long long mm_cursor_end_pa =
-				     mm_cursor->base_pa + mm_cursor->size - 1U;
+				mm_cursor->base_pa + mm_cursor->size - 1U;
 
 			bool separated_pa = (end_pa < mm_cursor->base_pa) ||
-				(base_pa > mm_cursor_end_pa);
+								(base_pa > mm_cursor_end_pa);
 			bool separated_va = (end_va < mm_cursor->base_va) ||
-				(base_va > mm_cursor_end_va);
+								(base_va > mm_cursor_end_va);
 
-			if (!separated_va || !separated_pa)
+			if (!separated_va || !separated_pa) {
 				return -EPERM;
+			}
 		}
 	}
 
@@ -789,8 +811,9 @@ void mmap_add_region_ctx(xlat_ctx_t *ctx, const mmap_region_t *mm)
 	int ret;
 
 	/* Ignore empty regions */
-	if (mm->size == 0U)
+	if (mm->size == 0U) {
 		return;
+	}
 
 	/* Static regions must be added before initializing the xlat tables. */
 	assert(!ctx->initialized);
@@ -827,12 +850,12 @@ void mmap_add_region_ctx(xlat_ctx_t *ctx, const mmap_region_t *mm)
 	 */
 
 	while (((mm_cursor->base_va + mm_cursor->size - 1U) < end_va)
-	       && (mm_cursor->size != 0U)) {
+		   && (mm_cursor->size != 0U)) {
 		++mm_cursor;
 	}
 
 	while (((mm_cursor->base_va + mm_cursor->size - 1U) == end_va) &&
-	       (mm_cursor->size != 0U) && (mm_cursor->size < mm->size)) {
+		   (mm_cursor->size != 0U) && (mm_cursor->size < mm->size)) {
 		++mm_cursor;
 	}
 
@@ -854,7 +877,7 @@ void mmap_add_region_ctx(xlat_ctx_t *ctx, const mmap_region_t *mm)
 	/* Make room for new region by moving other regions up by one place */
 	mm_destination = mm_cursor + 1;
 	(void)memmove(mm_destination, mm_cursor,
-		(uintptr_t)mm_last - (uintptr_t)mm_cursor);
+				  (uintptr_t)mm_last - (uintptr_t)mm_cursor);
 
 	/*
 	 * Check we haven't lost the empty sentinel from the end of the array.
@@ -865,10 +888,12 @@ void mmap_add_region_ctx(xlat_ctx_t *ctx, const mmap_region_t *mm)
 
 	*mm_cursor = *mm;
 
-	if (end_pa > ctx->max_pa)
+	if (end_pa > ctx->max_pa) {
 		ctx->max_pa = end_pa;
-	if (end_va > ctx->max_va)
+	}
+	if (end_va > ctx->max_va) {
 		ctx->max_va = end_va;
+	}
 }
 
 /*
@@ -923,8 +948,9 @@ static void mmap_alloc_va_align_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
 	 */
 	for (unsigned int level = ctx->base_level; level <= 2U; ++level) {
 
-		if ((align_check & XLAT_BLOCK_MASK(level)) != 0U)
+		if ((align_check & XLAT_BLOCK_MASK(level)) != 0U) {
 			continue;
+		}
 
 		mm->base_va = round_up(mm->base_va, XLAT_BLOCK_SIZE(level));
 		return;
@@ -966,15 +992,17 @@ int mmap_add_dynamic_region_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
 	int ret;
 
 	/* Nothing to do */
-	if (mm->size == 0U)
+	if (mm->size == 0U) {
 		return 0;
+	}
 
 	/* Now this region is a dynamic one */
 	mm->attr |= MT_DYNAMIC;
 
 	ret = mmap_add_region_check(ctx, mm);
-	if (ret != 0)
+	if (ret != 0) {
 		return ret;
+	}
 
 	/*
 	 * Find the adequate entry in the mmap array in the same way done for
@@ -982,18 +1010,18 @@ int mmap_add_dynamic_region_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
 	 */
 
 	while (((mm_cursor->base_va + mm_cursor->size - 1U) < end_va)
-	       && (mm_cursor->size != 0U)) {
+		   && (mm_cursor->size != 0U)) {
 		++mm_cursor;
 	}
 
 	while (((mm_cursor->base_va + mm_cursor->size - 1U) == end_va) &&
-	       (mm_cursor->size != 0U) && (mm_cursor->size < mm->size)) {
+		   (mm_cursor->size != 0U) && (mm_cursor->size < mm->size)) {
 		++mm_cursor;
 	}
 
 	/* Make room for new region by moving other regions up by one place */
 	(void)memmove(mm_cursor + 1U, mm_cursor,
-		     (uintptr_t)mm_last - (uintptr_t)mm_cursor);
+				  (uintptr_t)mm_last - (uintptr_t)mm_cursor);
 
 	/*
 	 * Check we haven't lost the empty sentinal from the end of the array.
@@ -1010,40 +1038,41 @@ int mmap_add_dynamic_region_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
 	 */
 	if (ctx->initialized) {
 		end_va = xlat_tables_map_region(ctx, mm_cursor,
-				0U, ctx->base_table, ctx->base_table_entries,
-				ctx->base_level);
+										0U, ctx->base_table, ctx->base_table_entries,
+										ctx->base_level);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 		xlat_clean_dcache_range((uintptr_t)ctx->base_table,
-				   ctx->base_table_entries * sizeof(uint64_t));
+								ctx->base_table_entries * sizeof(uint64_t));
 #endif
 		/* Failed to map, remove mmap entry, unmap and return error. */
 		if (end_va != (mm_cursor->base_va + mm_cursor->size - 1U)) {
 			(void)memmove(mm_cursor, mm_cursor + 1U,
-				(uintptr_t)mm_last - (uintptr_t)mm_cursor);
+						  (uintptr_t)mm_last - (uintptr_t)mm_cursor);
 
 			/*
 			 * Check if the mapping function actually managed to map
 			 * anything. If not, just return now.
 			 */
-			if (mm->base_va >= end_va)
+			if (mm->base_va >= end_va) {
 				return -ENOMEM;
+			}
 
 			/*
 			 * Something went wrong after mapping some table
 			 * entries, undo every change done up to this point.
 			 */
 			mmap_region_t unmap_mm = {
-					.base_pa = 0U,
-					.base_va = mm->base_va,
-					.size = end_va - mm->base_va,
-					.attr = 0U
+				.base_pa = 0U,
+				.base_va = mm->base_va,
+				.size = end_va - mm->base_va,
+				.attr = 0U
 			};
 			xlat_tables_unmap_region(ctx, &unmap_mm, 0U,
-				ctx->base_table, ctx->base_table_entries,
-				ctx->base_level);
+									 ctx->base_table, ctx->base_table_entries,
+									 ctx->base_level);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 			xlat_clean_dcache_range((uintptr_t)ctx->base_table,
-				ctx->base_table_entries * sizeof(uint64_t));
+									ctx->base_table_entries * sizeof(uint64_t));
 #endif
 			return -ENOMEM;
 		}
@@ -1057,10 +1086,12 @@ int mmap_add_dynamic_region_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
 		dsbishst();
 	}
 
-	if (end_pa > ctx->max_pa)
+	if (end_pa > ctx->max_pa) {
 		ctx->max_pa = end_pa;
-	if (end_va > ctx->max_va)
+	}
+	if (end_va > ctx->max_va) {
 		ctx->max_va = end_va;
+	}
 
 	return 0;
 }
@@ -1069,8 +1100,9 @@ int mmap_add_dynamic_region_alloc_va_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
 {
 	mm->base_va = ctx->max_va + 1UL;
 
-	if (mm->size == 0U)
+	if (mm->size == 0U) {
 		return 0;
+	}
 
 	mmap_alloc_va_align_ctx(ctx, mm);
 
@@ -1092,7 +1124,7 @@ int mmap_add_dynamic_region_alloc_va_ctx(xlat_ctx_t *ctx, mmap_region_t *mm)
  *    EPERM: Tried to remove a static region.
  */
 int mmap_remove_dynamic_region_ctx(xlat_ctx_t *ctx, uintptr_t base_va,
-				   size_t size)
+								   size_t size)
 {
 	mmap_region_t *mm = ctx->mmap;
 	const mmap_region_t *mm_last = mm + ctx->mmap_num;
@@ -1103,33 +1135,38 @@ int mmap_remove_dynamic_region_ctx(xlat_ctx_t *ctx, uintptr_t base_va,
 	assert(mm[ctx->mmap_num].size == 0U);
 
 	while (mm->size != 0U) {
-		if ((mm->base_va == base_va) && (mm->size == size))
+		if ((mm->base_va == base_va) && (mm->size == size)) {
 			break;
+		}
 		++mm;
 	}
 
 	/* Check that the region was found */
-	if (mm->size == 0U)
+	if (mm->size == 0U) {
 		return -EINVAL;
+	}
 
 	/* If the region is static it can't be removed */
-	if ((mm->attr & MT_DYNAMIC) == 0U)
+	if ((mm->attr & MT_DYNAMIC) == 0U) {
 		return -EPERM;
+	}
 
 	/* Check if this region is using the top VAs or PAs. */
-	if ((mm->base_va + mm->size - 1U) == ctx->max_va)
+	if ((mm->base_va + mm->size - 1U) == ctx->max_va) {
 		update_max_va_needed = 1;
-	if ((mm->base_pa + mm->size - 1U) == ctx->max_pa)
+	}
+	if ((mm->base_pa + mm->size - 1U) == ctx->max_pa) {
 		update_max_pa_needed = 1;
+	}
 
 	/* Update the translation tables if needed */
 	if (ctx->initialized) {
 		xlat_tables_unmap_region(ctx, mm, 0U, ctx->base_table,
-					 ctx->base_table_entries,
-					 ctx->base_level);
+								 ctx->base_table_entries,
+								 ctx->base_level);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 		xlat_clean_dcache_range((uintptr_t)ctx->base_table,
-			ctx->base_table_entries * sizeof(uint64_t));
+								ctx->base_table_entries * sizeof(uint64_t));
 #endif
 		xlat_arch_tlbi_va_sync();
 	}
@@ -1142,8 +1179,9 @@ int mmap_remove_dynamic_region_ctx(xlat_ctx_t *ctx, uintptr_t base_va,
 		ctx->max_va = 0U;
 		mm = ctx->mmap;
 		while (mm->size != 0U) {
-			if ((mm->base_va + mm->size - 1U) > ctx->max_va)
+			if ((mm->base_va + mm->size - 1U) > ctx->max_va) {
 				ctx->max_va = mm->base_va + mm->size - 1U;
+			}
 			++mm;
 		}
 	}
@@ -1152,8 +1190,9 @@ int mmap_remove_dynamic_region_ctx(xlat_ctx_t *ctx, uintptr_t base_va,
 		ctx->max_pa = 0U;
 		mm = ctx->mmap;
 		while (mm->size != 0U) {
-			if ((mm->base_pa + mm->size - 1U) > ctx->max_pa)
+			if ((mm->base_pa + mm->size - 1U) > ctx->max_pa) {
 				ctx->max_pa = mm->base_pa + mm->size - 1U;
+			}
 			++mm;
 		}
 	}
@@ -1162,10 +1201,10 @@ int mmap_remove_dynamic_region_ctx(xlat_ctx_t *ctx, uintptr_t base_va,
 }
 
 void xlat_setup_dynamic_ctx(xlat_ctx_t *ctx, unsigned long long pa_max,
-			    uintptr_t va_max, struct mmap_region *mmap,
-			    unsigned int mmap_num, uint64_t **tables,
-			    unsigned int tables_num, uint64_t *base_table,
-			    int xlat_regime, int *mapped_regions)
+							uintptr_t va_max, struct mmap_region *mmap,
+							unsigned int mmap_num, uint64_t **tables,
+							unsigned int tables_num, uint64_t *base_table,
+							int xlat_regime, int *mapped_regions)
 {
 	ctx->xlat_regime = xlat_regime;
 
@@ -1198,14 +1237,14 @@ void init_xlat_tables_ctx(xlat_ctx_t *ctx)
 	assert(ctx != NULL);
 	assert(!ctx->initialized);
 	assert((ctx->xlat_regime == EL3_REGIME) ||
-	       (ctx->xlat_regime == EL2_REGIME) ||
-	       (ctx->xlat_regime == EL1_EL0_REGIME));
+		   (ctx->xlat_regime == EL2_REGIME) ||
+		   (ctx->xlat_regime == EL1_EL0_REGIME));
 	assert(!is_mmu_enabled_ctx(ctx));
 
 	mmap_region_t *mm = ctx->mmap;
 
 	assert(ctx->va_max_address >=
-		(xlat_get_min_virt_addr_space_size() - 1U));
+		   (xlat_get_min_virt_addr_space_size() - 1U));
 	//assert(ctx->va_max_address <= (MAX_VIRT_ADDR_SPACE_SIZE - 1U));
 	assert(IS_POWER_OF_TWO(ctx->va_max_address + 1U));
 
@@ -1213,29 +1252,31 @@ void init_xlat_tables_ctx(xlat_ctx_t *ctx)
 
 	/* All tables must be zeroed before mapping any region. */
 
-	for (unsigned int i = 0U; i < ctx->base_table_entries; i++)
+	for (unsigned int i = 0U; i < ctx->base_table_entries; i++) {
 		ctx->base_table[i] = INVALID_DESC;
+	}
 
 	for (int j = 0; j < ctx->tables_num; j++) {
 #if PLAT_XLAT_TABLES_DYNAMIC
 		ctx->tables_mapped_regions[j] = 0;
 #endif
-		for (unsigned int i = 0U; i < XLAT_TABLE_ENTRIES; i++)
+		for (unsigned int i = 0U; i < XLAT_TABLE_ENTRIES; i++) {
 			ctx->tables[j][i] = INVALID_DESC;
+		}
 	}
 
 	while (mm->size != 0U) {
 		uintptr_t end_va = xlat_tables_map_region(ctx, mm, 0U,
-				ctx->base_table, ctx->base_table_entries,
-				ctx->base_level);
+						   ctx->base_table, ctx->base_table_entries,
+						   ctx->base_level);
 #if !(HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY)
 		xlat_clean_dcache_range((uintptr_t)ctx->base_table,
-				   ctx->base_table_entries * sizeof(uint64_t));
+								ctx->base_table_entries * sizeof(uint64_t));
 #endif
 		if (end_va != (mm->base_va + mm->size - 1U)) {
-			ERROR("Not enough memory to map region:\n"
-			      " VA:0x%lx  PA:0x%llx  size:0x%zx  attr:0x%x\n",
-			      mm->base_va, mm->base_pa, mm->size, mm->attr);
+			RTK_LOGI(TAG, "Not enough memory to map region:\n"
+					 " VA:0x%lx  PA:0x%llx  size:0x%zx  attr:0x%x\n",
+					 mm->base_va, mm->base_pa, mm->size, mm->attr);
 			panic();
 		}
 

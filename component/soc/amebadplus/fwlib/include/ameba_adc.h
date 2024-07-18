@@ -869,6 +869,7 @@ _LONG_CALL_ void ADC_INTClearPendingBits(u32 ADC_IT);
 _LONG_CALL_ u32 ADC_GetISR(void);
 _LONG_CALL_ u32 ADC_GetRawISR(void);
 _LONG_CALL_ u32 ADC_GetCompStatus(u8 ADC_Channel);
+_LONG_CALL_ void ADC_SetChList(u8 *ChanIdBuf, u8 ChanLen);
 _LONG_CALL_ u32 ADC_GetRxCount(void);
 _LONG_CALL_ u32 ADC_GetLastChan(void);
 _LONG_CALL_ void ADC_SetCompMode(u8 det_mode);

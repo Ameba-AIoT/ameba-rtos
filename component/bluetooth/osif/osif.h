@@ -57,6 +57,10 @@ bool osif_mutex_create(void **pp_handle);
 bool osif_mutex_delete(void *p_handle);
 bool osif_mutex_take(void *p_handle, uint32_t wait_ms);
 bool osif_mutex_give(void *p_handle);
+bool osif_recursive_mutex_create(void **pp_handle);
+bool osif_recursive_mutex_delete(void *p_handle);
+bool osif_recursive_mutex_take(void *p_handle, uint32_t wait_ms);
+bool osif_recursive_mutex_give(void *p_handle);
 
 /* OS message queue interfaces */
 bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size);

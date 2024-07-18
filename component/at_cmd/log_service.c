@@ -359,7 +359,7 @@ int mp_command_handler(char *cmd)
 	if (strncmp(cmd, start, len) == 0) {
 #ifdef CONFIG_MP_INCLUDED
 #if defined(CONFIG_AS_INIC_AP)
-		inic_mp_command(cmd + len, strlen(cmd + len), 1);
+		inic_mp_command(cmd + len, strlen(cmd + len) + 1, 1);
 #elif defined(CONFIG_SINGLE_CORE_WIFI)
 		wext_private_command(cmd + len, 1, NULL);
 #endif

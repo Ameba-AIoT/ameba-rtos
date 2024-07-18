@@ -75,19 +75,12 @@
 /* Set enough length to store resample data.The unit is in short. 1920 b--------ytes is equal to 48 KHz,2 channels pcm data bytes per 10 milliseconds. */
 #define PBP_SOURCE_PCM_DATA_MAX_LEN                 1920 * PBP_BROADCAST_TX_WATER_LEVEL / 10 * 2
 #else
-#define PBP_BROADCAST_TX_WATER_LEVEL                100
+#define PBP_BROADCAST_TX_WATER_LEVEL                300
 #define A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL       960 * PBP_BROADCAST_TX_WATER_LEVEL / 10
 #define PBP_SOURCE_PCM_DATA_MAX_LEN                 960 * PBP_BROADCAST_TX_WATER_LEVEL / 10 * 2
 #endif
-
-/* Set enough length to store a2dp sink decode data.The unit is in short.*/
-#define A2DP_SINK_PCM_DATA_MAX_LEN                  2560 * PBP_BROADCAST_TX_WATER_LEVEL* 7 / 100 * 2
-/* Resample water level, default data bytes of 10 ms. The smaller this value, the shorter the work interval of the resample task.*/
-#define RESAMPLE_WATER_LEVEL                         1
-
+/* Fixed length, used for temporary storage of audio data after resampled */
 #define SOXR_OUT_FRAME_BUF_MAX_LEN                  480*4*4
-#define CONVERT_PCM_TASK_STACK_SIZE                 10*1024
-#define CONVERT_PCM_TASK_PRIORITY                   4
 /* -------------------------------- LE Audio PBP Part --------------------------------- */
 /***************************************common resources******************************************/
 /* Define PBP broadcast name length*/
@@ -1165,7 +1158,7 @@ static uint16_t rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(rtk_bt_audio_res
     2.resample pcm data
     3.enqueue pcm data
 */
-
+static uint32_t fail_cnt;
 static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t p_len, void *pentity, void *track)
 {
 	(void)pentity;
@@ -1176,7 +1169,10 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	uint32_t out_frames = 0;
 	//if pbp broadcast has not started, stop resample
 	if (g_pbp_bsrc_info.status != RTK_BLE_AUDIO_BROADCAST_SOURCE_START) {
-		BT_LOGE("[APP] PBP broadcast has not started!\r\n");
+		if (0 == (fail_cnt % 200)) {
+			BT_LOGE("[APP] PBP broadcast has not started!\r\n");
+		}
+		fail_cnt++;
 		return 1;
 	}
 	/* 1. resample */
@@ -1208,9 +1204,8 @@ static uint16_t rtk_bt_a2dp_decode_pcm_data_callback(void *p_pcm_data, uint16_t 
 	}
 	if (pbp_convert_pcm_queue.queue_size >= A2DP_PBP_CONVERT_PCM_DATA_WATER_LEVEL) {
 		pbp_broadcast_dequeue_flag = true;
-	} else {
-		pbp_broadcast_dequeue_flag = false;
 	}
+
 	osif_mutex_give(p_enqueue_mtx);
 	return 0;
 }
@@ -1741,6 +1736,18 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 		rtk_bt_audio_codec_remove(audio_codec_conf.codec_index, a2dp_demo_codec_entity);
 		rtk_bt_audio_track_del(audio_codec_conf.codec_index, a2dp_demo_audio_track_hdl);
 		memset((void *)&audio_codec_conf, 0, sizeof(rtk_bt_audio_codec_conf_t));
+		if (g_audio_resample_t) {
+			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(&g_audio_resample_t);
+		}
+		// flush pbp_convert_pcm_queue
+		p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
+		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
+		dequeue_size = pbp_convert_pcm_queue.queue_size;
+		if (dequeue_size) {
+			a2dp_pbp_demo_queue_pcm_data_flush(&pbp_convert_pcm_queue);
+			pbp_broadcast_dequeue_flag = false;
+		}
+		osif_mutex_give(p_enqueue_mtx);
 		// rtk_bt_audio_deinit();
 		a2dp_demo_audio_track_hdl = NULL;
 		a2dp_demo_codec_entity = NULL;
@@ -1850,18 +1857,6 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 	case RTK_BT_A2DP_EVT_STREAM_CLOSE: {
 		rtk_bt_a2dp_conn_ind_t *conn_ind = (rtk_bt_a2dp_conn_ind_t *)param;
 		a2dp_play_flag = false;
-		// flush pbp_convert_pcm_queue
-		p_enqueue_mtx = pbp_convert_pcm_queue.mtx;
-		osif_mutex_take(p_enqueue_mtx, BT_TIMEOUT_FOREVER);
-		dequeue_size = pbp_convert_pcm_queue.queue_size;
-		if (dequeue_size) {
-			a2dp_pbp_demo_queue_pcm_data_flush(&pbp_convert_pcm_queue);
-			pbp_broadcast_dequeue_flag = false;
-		}
-		osif_mutex_give(p_enqueue_mtx);
-		if (g_audio_resample_t) {
-			rtk_bt_a2dp_pbp_demo_convert_pcm_engine_destroy(&g_audio_resample_t);
-		}
 		memcpy((void *)bd_addr, conn_ind->bd_addr, 6);
 		BT_LOGA("[A2DP] Stream close from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);

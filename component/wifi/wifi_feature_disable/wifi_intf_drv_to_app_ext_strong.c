@@ -399,11 +399,10 @@ void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para)
 	call_noused = __LINE__;
 }
 
-void wifi_speaker_setting(u8 mode, u8 nav_thresh, u8 relay_en)
+void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *settings)
 {
-	UNUSED(mode);
-	UNUSED(nav_thresh);
-	UNUSED(relay_en);
+	UNUSED(set_type);
+	UNUSED(settings);
 	call_noused = __LINE__;
 }
 

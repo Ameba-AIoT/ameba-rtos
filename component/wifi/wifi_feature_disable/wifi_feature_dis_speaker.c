@@ -36,6 +36,12 @@ u32 wifi_hal_speaker_tsf_interrupt(void *param)
 	return 0;
 }
 
+void wifi_hal_speaker_audio_latch_count(u8 latch_port, u8 latch_period)
+{
+	UNUSED(latch_port);
+	UNUSED(latch_period);
+}
+
 u32 wifi_hal_speaker_dma_interrupt(void *param)
 {
 	UNUSED(param);
