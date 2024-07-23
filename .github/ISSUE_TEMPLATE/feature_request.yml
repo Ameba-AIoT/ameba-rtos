@@ -1,0 +1,53 @@
+name: Feature Request
+description: Suggest an idea for this project.
+title: '[Idea]: Describe the request briefly'
+labels: ['Type: Feature Request']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        * We welcome any ideas or feature requests! It’s helpful if you can explain exactly why the feature would be useful.
+        * There are usually some outstanding feature requests in the [closed](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Feature+Request+is%3Aclosed) and [existing](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Feature+Request+is%3Aopen), feel free to add comments to them.
+        * If you would like to contribute, please read the [contributions guide].
+  - type: input
+    id: branch
+    attributes:
+      label: Ameba-rtos branch.
+      description: On which branch does this issue occur on? Run `git branch -v` to find it.
+      placeholder: ex. master/release/v1.0
+    validations:
+      required: true
+  - type: input
+    id: chip
+    attributes:
+      label: Ameba-rtos chip.
+      description: On which chip does your application run on? Check the build project.
+      placeholder: ex. amebalite/amebadplus/amebasmart
+    validations:
+      required: true
+  - type: input
+    id: fr-area
+    attributes:
+      label: Related technical area
+      description: Please briefly explain the technical area of Feature Request.
+      placeholder: ex. Boards, Peripherals, BT, Wifi, flash, add libraries...
+    validations:
+      required: true
+  - type: textarea
+    id: issue-related
+    attributes:
+      label: Is your feature request related to an un-fixed issue?
+      description: Please provide a clear and concise description of what the issue is.
+      placeholder: ex. I'm always frustrated when ...
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the expected solution/result/output.
+      description: Please provide a clear and concise description of what you want to happen.
+      placeholder: ex. With this request implemented,  xxx will be fully supported ...
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context.
+      description: Please add any other context or screenshots about the feature request here.
+      placeholder: ex. This would work only when ...
