@@ -1,0 +1,120 @@
+name: Bug Report
+description: Report any bugs or issues.
+title: '[Bug]: Describe the issue briefly'
+labels: ['Type: Bug']
+body:
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Answers checklist.
+      description: Before submitting a new issue, please follow the checklist and try to find the answer.
+      options:
+        - label: I have read the documentation from [RealMCU](www.realmcu.com/) and the issue is not addressed there.
+          required: true
+        - label: I have updated my ameba-rtos branch (master or release/v1.0) to the latest version and checked that the issue is present there.
+          required: true
+        - label: I have searched the issue tracker([closed](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Bug+is%3Aopen) and [existing](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Bug+is%3Aclosed)) for a similar issue and not found a similar issue.
+          required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Contact details
+      description: How can we get in touch with you if we need more info?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+  - type: input
+    id: branch
+    attributes:
+      label: Ameba-rtos branch.
+      description: On which branch does this issue occur on? Run `git branch -v` to find it.
+      placeholder: ex. master/release/v1.0
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Ameba-rtos version.
+      description: On which version does this issue occur on? Run `git describe --tags` to find it.
+      placeholder: ex. default
+    validations:
+      required: true
+  - type: input
+    id: chip
+    attributes:
+      label: Ameba-rtos chip.
+      description: On which chip does your application run on? Check the build project.
+      placeholder: ex. amebalite/amebadplus/amebasmart
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: External hardware.
+      description: Any external hardware that Ameba board attached to? 
+      placeholder: eg. third-party extension, plain module on breadboard, customized hardware... please attach a photo if necessary.
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Compile system used.
+      description: On which OS does this issue occur?
+      options:
+        - Linux
+        - Windows
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What is the expected behavior?
+      description: Please provide a clear and concise description of the expected behavior.
+      placeholder: I expected it to...
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What is the actual behavior?
+      description: Please describe actual behavior.
+      placeholder: Instead it...
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Relevant code.
+      description: Please provide sketch/code that can be used to reproduce the bug/issue.
+      render: c
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce.
+      description: 'How do you trigger this bug? Please walk us through it step by step. Please attach your code here.'
+      value: |
+        1. Step
+        2. Step
+        3. Step
+        ...
+    validations:
+      required: true 
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. It should contain the backtrace, as well as the reset source if it is a crash.
+      render: plain
+    validations:
+      required: false 
+  - type: textarea
+    id: more-info
+    attributes:
+      label: More information.
+      description: Do you have any other information from investigating this?
+      placeholder: ex. I tried on other chip/branch/version, and works fine.
+    validations:
+      required: false
