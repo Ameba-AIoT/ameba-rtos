@@ -23,12 +23,15 @@ body:
       placeholder: ex. email@example.com
     validations:
       required: false
-  - type: input
+  - type: dropdown
     id: branch
     attributes:
       label: Ameba-rtos branch.
       description: On which branch does this issue occur on? Run `git branch -v` to find it.
-      placeholder: ex. master/release/v1.0
+      options:
+      - master
+      - release/v1.0
+      default: 0
     validations:
       required: true
   - type: input
@@ -54,7 +57,7 @@ body:
       description: Any external hardware that Ameba board attached to? 
       placeholder: eg. third-party extension, plain module on breadboard, customized hardware... please attach a photo if necessary.
     validations:
-      required: true
+      required: false
   - type: dropdown
     id: system
     attributes:
