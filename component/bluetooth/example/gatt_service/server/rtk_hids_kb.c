@@ -51,7 +51,7 @@
 #define REPORT_OUTPUT_CHAR_VAL_INDEX            8   /* read, write, wr_no_rsp */
 #define REPORT_FEATURE_CHAR_VAL_INDEX           11  /* read, write */
 #define REPORT_MAP_CHAR_VAL_INDEX               14  /* read */
-#define EXT_REPORT_REF_DSCRP_INDEX              15  /* ref discriptor */
+#define EXT_REPORT_REF_DSCRP_INDEX              15  /* ref descriptor */
 #define BOOT_KB_IN_REPORT_CHAR_VAL_INDEX        17  /* read, write, notify */
 #define BOOT_KB_IN_REPORT_CHAR_CCCD_INDEX       18  /* cccd notify */
 #define BOOT_KB_OUT_REPORT_CHAR_VAL_INDEX       20  /* read, write, wr_no_rsp */
@@ -60,7 +60,7 @@
 #define MM_REPORT_INPUT_CHAR_VAL_INDEX          26  /* read, write, notify */
 #define MM_REPORT_INPUT_CHAR_CCCD_INDEX         27  /* cccd notify */
 
-T_HID_INFO hid_info = {0, 0, 0x0100};
+T_HID_INFO hid_info = {0x0100, 0, 0};
 T_HID_PROTOCOL_MODE hid_protocol_mode = BOOT_PROTOCOL_MODE;
 uint8_t hid_suspend_mode = 0;
 uint16_t external_report_refer = 0;

@@ -29,7 +29,7 @@ Setup Guide
 		To run USB MSC device application on AP:
         1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 			[*] Enable USB
-			(DEVICE_MODE) USB Mode
+			(Device) USB Mode
 			[*] MSC
            Save and exit.
         2. Type command "make all EXAMPLE=usbd_msc" under auto_build to build the images.
@@ -42,7 +42,7 @@ Setup Guide
 		To run USB MSC device application on HP:
         1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 			[*] Enable USB
-			(DEVICE_MODE) USB Mode
+			(Device) USB Mode
 			[*] MSC
            Save and exit.
         2. Type command "make all" under auto_build and type "make EXAMPLE=usbd_msc" under project_hp to build the images.

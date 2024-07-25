@@ -13,6 +13,27 @@
  * limitations under the License.
  */
 
+/**
+ * @addtogroup Audio
+ * @{
+ *
+ * @brief Declares APIs for audio framework.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
+/**
+ * @file audio_equalizer.h
+ *
+ * @brief Provides APIs of the audio equalizer.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
 #ifndef AMEBA_COMPONENT_AUDIO_INTERFACES_AUDIO_AUDIO_EQUALIZER_H
 #define AMEBA_COMPONENT_AUDIO_INTERFACES_AUDIO_AUDIO_EQUALIZER_H
 

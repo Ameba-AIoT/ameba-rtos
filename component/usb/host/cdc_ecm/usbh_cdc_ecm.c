@@ -525,9 +525,6 @@ static int usbh_cdc_ecm_process(usb_host_t *host)
 
 	switch (cdc->state) {
 
-	case CDC_ECM_STATE_IDLE:
-		break;
-
 	case CDC_ECM_STATE_PRE_SETTING:
 		req_status = usbh_cdc_ecm_ctrl_setting(host);
 		if (req_status == HAL_OK) {
@@ -554,9 +551,11 @@ static int usbh_cdc_ecm_process(usb_host_t *host)
 		}
 		break;
 
+	case CDC_ECM_STATE_IDLE:
 	default:
+		/* main task in idle/default status, sleep to release CPU */
+		usb_os_sleep_ms(1);
 		break;
-
 	}
 
 	return req_status;

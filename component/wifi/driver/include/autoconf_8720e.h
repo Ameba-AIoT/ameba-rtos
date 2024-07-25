@@ -37,6 +37,7 @@
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
 #define AP_STA_NUM	5
+#define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
 
 /* Configure for bus */
@@ -84,7 +85,6 @@
 #endif
 
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR
-#define NUM_STA (2 + AP_STA_NUM)  // 2 + supported clients
 
 /*enable dynamic mechanism for driver*/
 #define CONFIG_WIFI_RA
@@ -100,7 +100,6 @@
 #define DRV_BB_RUA_DISABLE
 #define DRV_BB_LA_MODE_DISABLE
 #define DRV_BB_PWR_CTRL_DISABLE
-#define PHL_MAX_STA_NUM NUM_STA
 #define PLATFOM_IS_LITTLE_ENDIAN	1/*for halbb use*/
 
 /*Wifi verification*/

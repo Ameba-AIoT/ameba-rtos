@@ -279,6 +279,7 @@ typedef struct {
 
 _LONG_CALL_ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config);
 _LONG_CALL_ SD_RESULT SD_DeInit(void);
+_LONG_CALL_ void SD_CardInit(void);
 _LONG_CALL_ SD_RESULT SD_GetCapacity(u32 *sector_count);
 _LONG_CALL_ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count);
 _LONG_CALL_ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count);

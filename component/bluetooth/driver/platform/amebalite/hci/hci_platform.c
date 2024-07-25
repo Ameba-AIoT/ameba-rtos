@@ -388,11 +388,6 @@ void hci_platform_controller_reset(void)
 	BT_LOGD("BT Reset OK!\r\n");
 }
 
-void hci_platform_config_uart_rx(bool op)
-{
-	hci_uart_config_rx(op);
-}
-
 bool rtk_bt_pre_enable(void)
 {
 	uint32_t lock_status;
@@ -418,7 +413,7 @@ bool rtk_bt_pre_enable(void)
 	return true;
 }
 
-bool rtk_bt_post_enable(void)
+void rtk_bt_post_enable(void)
 {
 	uint32_t lock_status;
 
@@ -434,8 +429,6 @@ bool rtk_bt_post_enable(void)
 		wifi_set_ips_internal(wifi_user_config.ips_enable);
 	}
 #endif
-
-	return true;
 }
 
 uint8_t hci_platform_init(void)
@@ -475,15 +468,11 @@ uint8_t hci_platform_init(void)
 	return HCI_SUCCESS;
 }
 
-uint8_t hci_platform_deinit(void)
+void hci_platform_deinit(void)
 {
 	/* BT Controller Power Off */
-	if (!hci_is_mp_mode()) {
-		hci_platform_config_uart_rx(false);
-		bt_power_off();
-	} else {
-		BT_LOGA("No need to power off BT controller in MP test\r\n");
-	}
+	hci_uart_config_rx(false);
+	bt_power_off();
 
 	/* UART Deinit */
 	hci_uart_close();
@@ -491,8 +480,6 @@ uint8_t hci_platform_deinit(void)
 	if (!CHECK_CFG_SW(CFG_SW_BT_FW_LOG)) {
 		rtk_bt_fw_log_close();
 	}
-
-	return HCI_SUCCESS;
 }
 
 void hci_platform_get_config(uint8_t **buf, uint16_t *len)

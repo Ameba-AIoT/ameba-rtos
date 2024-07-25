@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -34,7 +34,7 @@ static int atcmd_ble_mesh_light_lightness_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -65,7 +65,7 @@ static int atcmd_ble_mesh_light_lightness_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -86,7 +86,7 @@ static int atcmd_ble_mesh_light_lightness_linear_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -117,7 +117,7 @@ static int atcmd_ble_mesh_light_lightness_linear_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -138,7 +138,7 @@ static int atcmd_ble_mesh_light_lightness_last_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -159,7 +159,7 @@ static int atcmd_ble_mesh_light_lightness_default_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -182,7 +182,7 @@ static int atcmd_ble_mesh_light_lightness_default_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -203,7 +203,7 @@ static int atcmd_ble_mesh_light_lightness_range_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -227,7 +227,7 @@ static int atcmd_ble_mesh_light_lightness_range_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light lightness client model.");
+	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
 	return -1;
 #endif
 }
@@ -249,7 +249,7 @@ static int atcmd_ble_mesh_light_ctl_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -282,7 +282,7 @@ static int atcmd_ble_mesh_light_ctl_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -303,7 +303,7 @@ static int atcmd_ble_mesh_light_ctl_temperature_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -335,7 +335,7 @@ static int atcmd_ble_mesh_light_ctl_temperature_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -356,7 +356,7 @@ static int atcmd_ble_mesh_light_ctl_temperature_range_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -380,7 +380,7 @@ static int atcmd_ble_mesh_light_ctl_temperature_range_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -401,7 +401,7 @@ static int atcmd_ble_mesh_light_ctl_default_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -426,7 +426,7 @@ static int atcmd_ble_mesh_light_ctl_default_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light CTL client model.");
+	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
 	return -1;
 #endif
 }
@@ -448,7 +448,7 @@ static int atcmd_ble_mesh_light_hsl_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -481,7 +481,7 @@ static int atcmd_ble_mesh_light_hsl_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -502,7 +502,7 @@ static int atcmd_ble_mesh_light_hsl_target_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -523,7 +523,7 @@ static int atcmd_ble_mesh_light_hsl_hue_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -554,7 +554,7 @@ static int atcmd_ble_mesh_light_hsl_hue_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -575,7 +575,7 @@ static int atcmd_ble_mesh_light_hsl_saturation_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -606,7 +606,7 @@ static int atcmd_ble_mesh_light_hsl_saturation_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -627,7 +627,7 @@ static int atcmd_ble_mesh_light_hsl_default_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -652,7 +652,7 @@ static int atcmd_ble_mesh_light_hsl_default_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -673,7 +673,7 @@ static int atcmd_ble_mesh_light_hsl_range_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -699,7 +699,7 @@ static int atcmd_ble_mesh_light_hsl_range_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light HSL client model.");
+	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
 	return -1;
 #endif
 }
@@ -721,7 +721,7 @@ static int atcmd_ble_mesh_light_xyl_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -754,7 +754,7 @@ static int atcmd_ble_mesh_light_xyl_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -775,7 +775,7 @@ static int atcmd_ble_mesh_light_xyl_target_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -796,7 +796,7 @@ static int atcmd_ble_mesh_light_xyl_default_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -821,7 +821,7 @@ static int atcmd_ble_mesh_light_xyl_default_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -842,7 +842,7 @@ static int atcmd_ble_mesh_light_xyl_range_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -868,7 +868,7 @@ static int atcmd_ble_mesh_light_xyl_range_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light XYL client model.");
+	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
 	return -1;
 #endif
 }
@@ -890,7 +890,7 @@ static int atcmd_ble_mesh_light_lc_mode_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -913,7 +913,7 @@ static int atcmd_ble_mesh_light_lc_mode_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -934,7 +934,7 @@ static int atcmd_ble_mesh_light_lc_om_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -957,7 +957,7 @@ static int atcmd_ble_mesh_light_lc_om_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -978,7 +978,7 @@ static int atcmd_ble_mesh_light_lc_lightonoff_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -1009,7 +1009,7 @@ static int atcmd_ble_mesh_light_lc_lightonoff_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -1031,7 +1031,7 @@ static int atcmd_ble_mesh_light_lc_property_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 }
@@ -1076,7 +1076,7 @@ static int atcmd_ble_mesh_light_lc_property_set(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support light LC client model.");
+	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
 	return -1;
 #endif
 
@@ -1097,8 +1097,11 @@ static const cmd_table_t mesh_light_lightness_cmd_table[] = {
 
 int atcmd_bt_mesh_light_lightness(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[ATBC][mesh_light_lightness]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[AT+BLEMESHLL]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[ATBC][mesh_light_lightness]");
+#endif
 }
 
 static const cmd_table_t mesh_light_ctl_cmd_table[] = {
@@ -1115,8 +1118,11 @@ static const cmd_table_t mesh_light_ctl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_ctl(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[ATBC][mesh_light_ctl]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[AT+BLEMESHLCTL]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[ATBC][mesh_light_ctl]");
+#endif
 }
 
 static const cmd_table_t mesh_light_hsl_cmd_table[] = {
@@ -1136,8 +1142,11 @@ static const cmd_table_t mesh_light_hsl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_hsl(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[ATBC][mesh_light_hsl]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[AT+BLEMESHLHSL]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[ATBC][mesh_light_hsl]");
+#endif
 }
 
 static const cmd_table_t mesh_light_xyl_cmd_table[] = {
@@ -1153,8 +1162,11 @@ static const cmd_table_t mesh_light_xyl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_xyl(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[ATBC][mesh_light_xyl]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[AT+BLEMESHLXYL]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[ATBC][mesh_light_xyl]");
+#endif
 }
 
 static const cmd_table_t mesh_light_lc_cmd_table[] = {
@@ -1171,7 +1183,10 @@ static const cmd_table_t mesh_light_lc_cmd_table[] = {
 
 int atcmd_bt_mesh_light_lc(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[ATBC][mesh_light_lc]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[AT+BLEMESHLLC]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[ATBC][mesh_light_lc]");
+#endif
 }
 #endif // end of RTK_BLE_MESH_SUPPORT

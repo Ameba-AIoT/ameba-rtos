@@ -262,6 +262,12 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 		info.aborted = 1;
 		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
 	}
+#ifdef CONFIG_SDIO_BRIDGE
+	llhw_wifi_disconnect();
+	/* sdio device will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done */
+	global_idev.mlme_priv.b_in_disconnect = true;
+	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
+#endif
 	netif_tx_stop_all_queues(pnetdev);
 	netif_carrier_off(pnetdev);
 	rtw_netdev_priv_is_on(pnetdev) = false;
@@ -516,6 +522,9 @@ int rtw_ndev_alloc(void)
 #endif
 	}
 	global_idev.mlme_priv.b_in_scan = false;
+	global_idev.mlme_priv.b_in_disconnect = false;
+
+	init_completion(&global_idev.mlme_priv.disconnect_done_sema);
 
 	return ret;
 
@@ -540,7 +549,7 @@ int rtw_ndev_register(void)
 {
 	int i, ret = false;
 #ifdef CONFIG_SDIO_BRIDGE
-	char *wlan_name = "eth%d";
+	char *wlan_name = "eth_sta%d";
 #else
 	char *wlan_name = "wlan%d";
 #endif

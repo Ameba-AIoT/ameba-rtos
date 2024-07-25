@@ -13,7 +13,7 @@ DIR = $(BASEDIR)/component/at_cmd
 
 ifeq ($(CONFIG_WLAN),y)
 ifeq ($(findstring y, $(CONFIG_AS_INIC_AP) $(CONFIG_SINGLE_CORE_WIFI)), y)
-GLOBAL_CFLAGS += -DSUPPORT_LOG_SERVICE=1
+GLOBAL_CFLAGS += -DSUPPORT_ATCMD=1
 endif
 endif
 
@@ -30,34 +30,11 @@ ifeq ($(CONFIG_LONGER_CMD),y)
 CSRC += $(APP_DIR)/rom/shell_rom_patch.c
 endif
 
-ifeq ($(CONFIG_WLAN),y)
-# apply old atcmd, which should be deleted after new version is ready
-ifneq ($(CONFIG_NEW_ATCMD),y)
-DIR_OLD = $(BASEDIR)/component/at_cmd/old
-
-vpath %.c $(DIR_OLD) $(DIR)
-MODULE_IFLAGS += -I $(DIR_OLD)
-
-ifeq ($(findstring y, $(CONFIG_AS_INIC_AP) $(CONFIG_SINGLE_CORE_WIFI)), y)
-CSRC +=	$(DIR)/log_service.c
-CSRC +=	$(DIR_OLD)/atcmd_wifi.c \
-		$(DIR_OLD)/atcmd_sys.c \
-		$(DIR_OLD)/atcmd_bt_mp.c \
-		$(DIR_OLD)/atcmd_uart_bridge_old.c
-ifeq ($(CONFIG_BT), y)
-CSRC += $(DIR_OLD)/atcmd_bt_ext.c
-endif
-# zigbee
-ifeq ($(CONFIG_802154_ZIGBEE_EN), y)
-CSRC += $(DIR_OLD)/atcmd_wpan.c
-endif
-endif
-
-else # ifneq ($(CONFIG_NEW_ATCMD),y)
+ifeq ($(CONFIG_AS_INIC_AP),y)
 # note: apply new atcmd, add your config here!!!
 vpath %.c $(DIR)
 
-CSRC += $(DIR)/log_service.c \
+CSRC += $(DIR)/atcmd_service.c \
 		$(DIR)/atcmd_sys.c \
 		$(DIR)/atcmd_wifi.c \
 		$(DIR)/atcmd_mqtt.c \
@@ -69,7 +46,6 @@ endif
 
 ifeq ($(CONFIG_ATCMD_IO_UART), y)
 CSRC += $(DIR)/at_intf_uart.c
-endif
 endif
 endif
 

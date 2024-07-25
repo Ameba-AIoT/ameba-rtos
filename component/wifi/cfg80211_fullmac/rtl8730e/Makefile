@@ -1,19 +1,19 @@
 # SPDX-License-Identifier: GPL-2.0
-export CONFIG_NAN = n
+export CONFIG_NAN = y
 export CONFIG_P2P = n
-export CONFIG_FULLMAC_HCI_IPC = y
-export CONFIG_FULLMAC_HCI_SDIO = n
+export CONFIG_FULLMAC_HCI_IPC = n
+export CONFIG_FULLMAC_HCI_SDIO = y
 export CONFIG_SDIO_BRIDGE = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -DCONFIG_FULLMAC
-ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -I$(srctree)/../../firmware/component/wifi/driver/include
-ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -I$(srctree)/../../firmware/component/wifi/api
-ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -I$(srctree)/../../firmware/component/wifi/inic
+ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -I$(srctree)/../../firmware/source/component/wifi/driver/include
+ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -I$(srctree)/../../firmware/source/component/wifi/api
+ccflags-$(CONFIG_FULLMAC_RTK_RTL8730E) += -I$(srctree)/../../firmware/source/component/wifi/inic
 
-ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/ipc -I$(srctree)/../../firmware/component/wifi/inic/ipc -DCONFIG_FULLMAC_HCI_IPC
+ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/ipc -I$(srctree)/../../firmware/source/component/wifi/inic/ipc -DCONFIG_FULLMAC_HCI_IPC
 
 obj-$(CONFIG_FULLMAC_HCI_IPC)	+= ipc/
 obj-$(CONFIG_FULLMAC_RTK_RTL8730E)	+= fullmac-8730e.o

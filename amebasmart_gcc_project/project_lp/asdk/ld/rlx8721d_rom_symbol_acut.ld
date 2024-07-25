@@ -269,9 +269,9 @@ SECTIONS
     PROVIDE(C2HBTMpRpt_8730E_ROM = 0x51d5);
     PROVIDE(C2HBTMailBoxStatus_8730E_ROM = 0x5235);
     PROVIDE(InitBTCoexTimer_8730E_ROM = 0x5269);
-    PROVIDE(wififw_btc_write_reg778 = 0x5285);
-    PROVIDE(wififw_btc_change_coex_table = 0x52c5);
-    PROVIDE(wififw_btc_bt_null_setting = 0x5305);
+    PROVIDE(Write778_8730E_ROM = 0x5285);
+    PROVIDE(TdmaChangeCoexTable_8730E_ROM = 0x52c5);
+    PROVIDE(BTNullSetting_8730E_ROM = 0x5305);
     PROVIDE(H2CInQueue_8730E_ROM = 0x536d);
     PROVIDE(H2CDeQueue_8730E_ROM = 0x544d);
     PROVIDE(wififw_h2c_c2h_init = 0x54b5);

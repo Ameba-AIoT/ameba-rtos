@@ -140,7 +140,7 @@ struct ieee80211_ht_addt_info {
 RTW_PACK_STRUCT_END
 
 RTW_PACK_STRUCT_BEGIN
-struct HT_info_element {
+struct ht_info_element_t {
 	unsigned char	primary_channel;
 	unsigned char	infos[5];
 	unsigned char	MCS_rate[16];
@@ -148,7 +148,7 @@ struct HT_info_element {
 RTW_PACK_STRUCT_END
 
 RTW_PACK_STRUCT_BEGIN
-struct ADDBA_request {
+struct addba_request {
 	unsigned char		dialog_token;
 	unsigned short	BA_para_set;
 	unsigned short	BA_timeout_value;

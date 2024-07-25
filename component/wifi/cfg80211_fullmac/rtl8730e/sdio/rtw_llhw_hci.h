@@ -25,6 +25,7 @@ struct event_priv_t {
 	struct sk_buff				*rx_api_msg;
 	struct sk_buff				*rx_api_ret_msg;
 
+	bool					b_waiting_for_ret;
 	struct completion			api_ret_sema; /* sema to wait for API calling done */
 #ifdef CONFIG_SDIO_BRIDGE
 	struct completion			bridge_scan_done_sema; /* sema to wait for scan done */
@@ -32,8 +33,8 @@ struct event_priv_t {
 };
 
 struct recv_priv_t {
-	struct task_struct			*sdio_rx_thread;
-	struct semaphore			sdio_rx_sema;
+	struct task_struct			*rx_thread;
+	struct semaphore			rx_sema;
 };
 
 struct xmit_priv_t {
@@ -42,8 +43,8 @@ struct xmit_priv_t {
 
 	atomic_t				msg_num;
 
-	struct task_struct 		*sdio_tx_thread;
-	struct semaphore 		sdio_tx_sema;
+	struct task_struct 		*tx_thread;
+	struct semaphore 		tx_sema;
 };
 
 /* Scan and Join related parameters. */
@@ -60,6 +61,10 @@ struct mlme_priv_t {
 	size_t				assoc_req_ie_len;
 	size_t				assoc_rsp_ie_len;
 	struct cfg80211_external_auth_params auth_ext_para;
+
+	/* disconnect parameters */
+	bool b_in_disconnect;
+	struct completion	disconnect_done_sema;
 };
 
 #ifdef CONFIG_P2P
@@ -77,6 +82,11 @@ struct p2p_priv_t {
 };
 #endif
 
+struct hci_ops_t {
+	void (*send_data)(u8 *buf, u32 len);
+	void (*recv_data_process)(void *intf_priv);
+};
+
 struct inic_device {
 	/* device register to upper layer. */
 	struct device				*fullmac_dev;
@@ -89,7 +99,8 @@ struct inic_device {
 	struct ethtool_ops			rtw_ethtool_ops;
 
 	/* Interface related parameters. */
-	struct inic_sdio			*sdio_priv;
+	void					*intf_priv;
+	struct hci_ops_t		*intf_ops;
 
 	struct event_priv_t			event_priv;
 	struct recv_priv_t			recv_priv;
@@ -115,8 +126,5 @@ struct inic_device {
 extern struct inic_device global_idev;
 
 #define MAX_NUM_WLAN_PORT		(2)
-
-void llhw_host_send(u8 *buf, u32 len);
-
 
 #endif /* __INIC_LINUX_BASE_TYPE__ */

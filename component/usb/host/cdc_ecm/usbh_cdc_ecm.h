@@ -23,7 +23,7 @@
 #define ECM_ENABLE_RCR_CONFIGURATION                            0
 
 /* for RTL8152, config the fifo flow control for data transfer */
-#define ECM_ENABLE_FIFO_FLOW_CTRL                               0
+#define ECM_ENABLE_FIFO_FLOW_CTRL                               1
 
 /* Exported defines ----------------------------------------------------------*/
 

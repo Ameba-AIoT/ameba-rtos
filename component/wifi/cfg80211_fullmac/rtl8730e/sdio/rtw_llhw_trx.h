@@ -23,54 +23,11 @@
 #define MAX_SKB_BUF_SIZE	(((WLAN_HW_INFO_LEN+WLAN_MAX_PROTOCOL_OVERHEAD+WLAN_MAX_ETHFRM_LEN+8)\
 							+ SKB_CACHE_SZ) & ~(SKB_CACHE_SZ-1))
 
-
 #define MAX_LENGTH_OF_TX_QUEUE	(200)
 #define MAX_TIMES_TO_TRY_TX	(5)
 
-/* -------------------------- Function declaration -------------------------- */
-
-/* ---------------------------- Global Variables ---------------------------- */
 #define PKT_DROP_THRES		10
 #define QUEUE_STOP_THRES	7
 #define QUEUE_WAKE_THRES	4
-
-struct  dev_sk_buff_head {
-	struct list_head	*next, *prev;
-	unsigned int 		qlen;
-};
-
-struct skb_raw_para {
-	unsigned char enable;
-	unsigned char rate;
-};
-
-struct dev_sk_buff {
-	struct list_head	list;
-	unsigned char		*head;		/* Head of buffer */
-	unsigned char		*data;		/* Data head pointer */
-	unsigned char		*tail;		/* Tail pointer	*/
-	unsigned char		*end;		/* End pointer */
-	void	*dev;		/* Device we arrived on/are leaving by */
-	unsigned int 		len;		/* Length of actual data */
-
-	int 			dyalloc_flag;
-	unsigned char		busy;
-	unsigned char		no_free;
-	struct skb_raw_para		tx_raw;
-
-	unsigned char           buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;
-	atomic_t ref;
-};
-
-static inline unsigned char *dev_skb_put(struct dev_sk_buff *skb, unsigned int len)
-{
-	unsigned char *tmp = skb->tail;
-	skb->tail += len;
-	skb->len += len;
-	if (unlikely(skb->tail > skb->end)) {
-		panic("%s: skb %p, len %d, data %p, end %p, %p.\n", __func__, skb, len, skb->data, skb->end, __builtin_return_address(0));
-	}
-	return tmp;
-}
 
 #endif /* __RTW_LLHW_TRX_H__ */

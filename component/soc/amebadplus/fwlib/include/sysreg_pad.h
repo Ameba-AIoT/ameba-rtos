@@ -29,7 +29,7 @@
  * @{
  **/
 #define PAD_BIT_Px_DIS              ((u32)0x00000001 << 15)          /*!<R/W 0h  PAD shutdown, only when the whole group's dis signals are all 1, the PAD SHDN will pull down to shutdown the group pad. 1. disable pad 0. enable pad */
-#define PAD_BIT_Px_SR               ((u32)0x00000001 << 13)          /*!<R/W 1h  PAD slew rate control */
+#define PAD_BIT_Px_SR               ((u32)0x00000001 << 13)          /*!<R/W 1h  PAD slew rate control. 1: slow, 0: fast. note: flash pads default 0 (PA0~5, PA12~18); other pads default 1 */
 #define PAD_BIT_Px_SMT              ((u32)0x00000001 << 12)          /*!<R/W 1h  PAD Schmit control */
 #define PAD_BIT_Px_E2               ((u32)0x00000001 << 11)          /*!<R/W 1h  PAD driving ability control. 0: low 1: high The actual driving current is depend on pad type. */
 #define PAD_BIT_Px_PUPDC            ((u32)0x00000001 << 10)          /*!<R/W 0h  Some pad may have two type of PU/PD resistor, this bit can select it. 1: small resistor 0: big resistor */

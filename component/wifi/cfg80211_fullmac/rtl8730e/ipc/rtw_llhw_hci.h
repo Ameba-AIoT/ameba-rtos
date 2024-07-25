@@ -75,6 +75,10 @@ struct mlme_priv_t {
 	size_t				assoc_req_ie_len;
 	size_t				assoc_rsp_ie_len;
 	struct cfg80211_external_auth_params auth_ext_para;
+
+	/* disconnect parameters */
+	bool b_in_disconnect;
+	struct completion	disconnect_done_sema;
 };
 
 #ifdef CONFIG_P2P

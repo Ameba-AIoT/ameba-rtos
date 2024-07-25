@@ -462,10 +462,13 @@ void cfg80211_rtw_disconnect_indicate(u16 reason, u8 locally_generated)
 		wlan_idx = 1;// GC intf is up, then use GC's netdev
 	}
 #endif
-	/* Do it first for tx broadcast pkt after disconnection issue! */
-	netif_carrier_off(global_idev.pndev[wlan_idx]);
-	dev_dbg(global_idev.fullmac_dev, "%s reason:%d\n", __func__, reason);
-	cfg80211_disconnected(global_idev.pndev[wlan_idx], reason, NULL, 0, locally_generated, GFP_ATOMIC);
+
+	if (global_idev.pndev[wlan_idx] != NULL) {
+		/* Do it first for tx broadcast pkt after disconnection issue! */
+		netif_carrier_off(global_idev.pndev[wlan_idx]);
+		dev_dbg(global_idev.fullmac_dev, "%s reason:%d\n", __func__, reason);
+		cfg80211_disconnected(global_idev.pndev[wlan_idx], reason, NULL, 0, locally_generated, GFP_ATOMIC);
+	}
 }
 
 void cfg80211_rtw_external_auth_request(char *buf, int buf_len)
@@ -482,6 +485,23 @@ void cfg80211_rtw_external_auth_request(char *buf, int buf_len)
 	dev_dbg(global_idev.fullmac_dev, "%s, ssid=%s, len=%d\n", __func__, auth_ext_para->ssid.ssid, auth_ext_para->ssid.ssid_len);
 }
 
+void cfg80211_rtw_update_owe_info_event(char *buf, int buf_len)
+{
+	struct cfg80211_update_owe_info owe_info;
+	struct rtw_owe_param_t *owe_param = (struct rtw_owe_param_t *)buf;
+	char owe_ie[RTW_OWE_KEY_LEN + 5];
+
+	owe_ie[0] = WLAN_EID_EXTENSION;
+	owe_ie[1] = RTW_OWE_KEY_LEN + 3; /*WLAN_EID_EXT_OWE_DH_PARAM + group*/
+	owe_ie[2] = WLAN_EID_EXT_OWE_DH_PARAM;
+	memcpy(&owe_ie[3], &owe_param->group, owe_param->pub_key_len + 2);
+	owe_info.ie = (u8 *)&owe_ie;
+	memcpy(owe_info.peer,  owe_param->peer_mac, ETH_ALEN);
+	owe_info.status = WLAN_STATUS_SUCCESS;
+	owe_info.ie_len = RTW_OWE_KEY_LEN + 5;
+	cfg80211_update_owe_info_event(global_idev.pndev[0], &owe_info, GFP_ATOMIC);
+}
+
 static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_connect_params *sme)
 {
 	int ret = 0;
@@ -495,6 +515,7 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	u8 pmf_mode = 0, spp_opt = 0;
 	u8 *prsnx, *prsn;
 	struct element *target_ptr;
+	struct rtw_owe_param_t owe_info;
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
 
 	if (global_idev.mp_fw) {
@@ -550,14 +571,7 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 		connect_param.security_type |= WEP_ENABLED;
 	} else if ((sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_CCMP)
 			   || (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_CCMP_256)) {
-
-		if (sme->crypto.wpa_versions == NL80211_WPA_VERSION_1) {
-			dev_err(global_idev.fullmac_dev, "not support CCMP cipher for WPA, use TKIP instead\n");
-			return -EPERM;
-		} else {
-			connect_param.security_type |= AES_ENABLED;
-		}
-
+		connect_param.security_type |= AES_ENABLED;
 	} else if (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_TKIP) {
 		connect_param.security_type |= TKIP_ENABLED;
 	} else if (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_AES_CMAC) {
@@ -586,6 +600,22 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 		memcpy(connect_param.prev_bssid.octet, sme->prev_bssid, ETH_ALEN);
 		/* Stop upper-layer-data-queue because of re-association. */
 		netif_carrier_off(global_idev.pndev[0]);
+	}
+
+	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_OWE) {
+		connect_param.security_type = 0;
+		target_ptr = (struct element *)cfg80211_find_ext_elem(WLAN_EID_EXT_OWE_DH_PARAM, sme->ie, sme->ie_len);
+		if (target_ptr) {
+			memcpy(&owe_info, target_ptr->data + 1, target_ptr->datalen - 1);
+			owe_info.pub_key_len = target_ptr->datalen - 3;
+			if (owe_info.pub_key_len == RTW_OWE_KEY_LEN) {
+				llhw_wifi_set_owe_param(&owe_info);
+			} else {
+				/* disconent when ask for group 20, 21 */
+				cfg80211_connect_result(ndev, NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
+				return -EINVAL;
+			}
+		}
 	}
 
 	if (sme->key_len) {
@@ -715,6 +745,8 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
 	ret = llhw_wifi_disconnect();
 
 	/* KM4 will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done */
+	global_idev.mlme_priv.b_in_disconnect = true;
+	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
 
 	return ret;
 }

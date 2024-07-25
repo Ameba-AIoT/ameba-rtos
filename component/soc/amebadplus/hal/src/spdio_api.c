@@ -612,7 +612,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	}
 
 	ret = rtos_task_create((rtos_task_t *)&pgSPDIODev->xSDIOIrqTaskHandle, "SPDIO_IRQ_TASK", SPDIO_IRQ_Handler_BH, (void *)pgSPDIODev,
-						   1024 * 4, 1 + 4);
+						   1024 * 4, 1);
 	if (SUCCESS != ret) {
 		RTK_LOGE(TAG, "SDIO_Device_Init: Create IRQ Task Err(%d)!!\n", ret);
 		goto SDIO_INIT_ERR;

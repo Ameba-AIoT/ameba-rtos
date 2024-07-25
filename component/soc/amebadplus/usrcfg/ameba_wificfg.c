@@ -23,8 +23,8 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5;
 
-#ifdef CONFIG_INIC_INTF_SDIO
-	wifi_user_config.skb_num_np = 18;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
+#if (defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_SPI))
+	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
 #else
@@ -67,7 +67,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.legacy_ps_listen_interval = 0;
 
 	/* Softap related */
-	wifi_user_config.g_user_ap_sta_num = 7;
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed AP_STA_NUM */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */

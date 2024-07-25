@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_api_config.h>
 
 #include <rtk_bt_def.h>
@@ -466,6 +466,36 @@ static int atcmd_ble_gap_op_adv(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_ble_gap_get_adv_param(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	uint16_t ret = 0;
+	rtk_bt_le_adv_param_t adv_param = {0};
+	char addr_str[13] = {0};
+	uint8_t *addr_val = NULL;
+
+	ret = rtk_bt_le_gap_get_adv_param(&adv_param);
+	if (RTK_BT_OK != ret) {
+		BLEGAP_AT_PRINTK("GAP get adv param failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	addr_val = adv_param.peer_addr.addr_val;
+	snprintf(addr_str, sizeof(addr_str), "%02x%02x%02x%02x%02x%02x",
+			 addr_val[5], addr_val[4], addr_val[3],
+			 addr_val[2], addr_val[1], addr_val[0]);
+	BLEGAP_AT_PRINTK("GAP get adv param success, param: %d,%d,%d,%d,%s,%d,%d,%d",
+					 adv_param.type, adv_param.own_addr_type, adv_param.filter_policy,
+					 adv_param.peer_addr.type, addr_str, adv_param.interval_min,
+					 adv_param.interval_max, adv_param.channel_map);
+	BT_AT_PRINT("+BLEGAP:get_adv_param,%d,%d,%d,%d,%s,%d,%d,%d\r\n",
+				adv_param.type, adv_param.own_addr_type, adv_param.filter_policy,
+				adv_param.peer_addr.type, addr_str, adv_param.interval_min,
+				adv_param.interval_max, adv_param.channel_map);
+	return 0;
+}
+
 static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 {
 	(void)argc;
@@ -476,7 +506,7 @@ static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 	if (argc == 0) {
 		ret = rtk_bt_le_gap_set_scan_rsp_data(def_scan_rsp_data, sizeof(def_scan_rsp_data));
 		if (ret) {
-			BLEGAP_AT_PRINTK("GAP set default scan resp data failed! err: %d", ret);
+			BLEGAP_AT_PRINTK("GAP set default scan resp data failed! err: 0x%x", ret);
 			return -1;
 		} else {
 			BLEGAP_AT_PRINTK("GAP set def scan resp data success");
@@ -657,7 +687,7 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 
 	ret = rtk_bt_le_gap_set_ext_scan_rsp_data(adv_handle, pdata, len);
 	if (ret) {
-		BLEGAP_AT_PRINTK("GAP set ext scan resp data(%d) failed! err: %d", adv_handle, ret);
+		BLEGAP_AT_PRINTK("GAP set ext scan resp data(%d) failed! err: 0x%x", adv_handle, ret);
 		return -1;
 	}
 
@@ -993,6 +1023,28 @@ static int atcmd_ble_gap_set_scan_param(int argc, char **argv)
 	}
 
 	BLEGAP_AT_PRINTK("GAP set scan param success");
+	return 0;
+}
+
+static int atcmd_ble_gap_get_scan_param(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	uint16_t ret = 0;
+	rtk_bt_le_scan_param_t scan_param = {0};
+
+	ret = rtk_bt_le_gap_get_scan_param(&scan_param);
+	if (RTK_BT_OK != ret) {
+		BLEGAP_AT_PRINTK("GAP get scan param failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP get scan param success, param: %d,%d,%d,%d,%d,%d",
+					 scan_param.type, scan_param.own_addr_type, scan_param.filter_policy,
+					 scan_param.duplicate_opt, scan_param.interval, scan_param.window);
+	BT_AT_PRINT("+BLEGAP:get_scan_param,%d,%d,%d,%d,%d,%d\r\n",
+				scan_param.type, scan_param.own_addr_type, scan_param.filter_policy,
+				scan_param.duplicate_opt, scan_param.interval, scan_param.window);
 	return 0;
 }
 
@@ -1598,6 +1650,28 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_ble_gap_get_security_param(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	uint8_t ret = 0;
+	rtk_bt_le_security_param_t sec_param = {0};
+
+	ret = rtk_bt_le_sm_get_security_param(&sec_param);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP get security paramters failed, err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP get security paramters success, param: %d,%d,%d,%d,%d,%d,%d",
+					 sec_param.io_cap, sec_param.oob_data_flag, sec_param.bond_flag, sec_param.mitm_flag,
+					 sec_param.sec_pair_flag, sec_param.use_fixed_key, sec_param.fixed_key);
+	BT_AT_PRINT("+BLEGAP:get_sec_param,%d,%d,%d,%d,%d,%d,%d\r\n",
+				sec_param.io_cap, sec_param.oob_data_flag, sec_param.bond_flag, sec_param.mitm_flag,
+				sec_param.sec_pair_flag, sec_param.use_fixed_key, sec_param.fixed_key);
+	return 0;
+}
+
 static int atcmd_ble_gap_security(int argc, char **argv)
 {
 	(void)argc;
@@ -2094,6 +2168,135 @@ static int atcmd_ble_gap_get_antenna_info(int argc, char **argv)
 }
 #endif
 
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+static int atcmd_ble_gap_coc_register_psm(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint8_t is_reg = str_to_int(argv[0]);
+	uint16_t psm = str_to_int(argv[1]);
+
+	ret = rtk_bt_le_gap_coc_register_psm(is_reg, psm);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP coc reg or unreg psm failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc reg or unreg psm success");
+	return 0;
+}
+
+static int atcmd_ble_gap_coc_set_psm_security(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint8_t active = str_to_int(argv[0]);
+	uint16_t le_psm = str_to_int(argv[1]);
+	uint8_t sec_mode = str_to_int(argv[2]);
+	uint8_t key_size = str_to_int(argv[3]);
+
+	ret = rtk_bt_le_gap_coc_set_psm_security(le_psm, active, sec_mode, key_size);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP coc se psm security failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc set psm security sucess");
+	return 0;
+}
+
+static int atcmd_ble_gap_coc_set_param(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint8_t param_type = str_to_int(argv[0]);
+	uint16_t value = str_to_int(argv[1]);
+
+	ret = rtk_bt_le_gap_coc_set_param(param_type, value);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP coc set param failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc set param success");
+	return 0;
+}
+
+static int atcmd_ble_gap_coc_get_param(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint8_t param_type = str_to_int(argv[0]);
+	uint16_t cid = str_to_int(argv[1]);
+	uint16_t value = 0;
+
+	ret = rtk_bt_le_gap_coc_get_chan_param(param_type, cid, &value);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP coc get chan param failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc get chan param success, value: %d", value);
+	BT_AT_PRINT("+BLEGAP:coc_get_param,%d\r\n", value);
+	return 0;
+}
+
+static int atcmd_ble_gap_coc_connect(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint16_t le_psm = str_to_int(argv[1]);
+
+	ret = rtk_bt_le_gap_coc_connect(conn_handle, le_psm);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP create coc conn failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc conncting ...");
+	return 0;
+}
+
+static int atcmd_ble_gap_coc_disconnect(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint16_t cid = str_to_int(argv[0]);
+
+	ret = rtk_bt_le_gap_coc_disconnect(cid);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP coc disconn failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc disconnecting ...");
+	return 0;
+}
+
+static int atcmd_ble_gap_coc_send_data(int argc, char *argv[])
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint16_t cid = str_to_int(argv[0]);
+	uint16_t len = str_to_int(argv[1]);
+	uint8_t *data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, len);
+
+	if (false == hexdata_str_to_array(argv[2], data, len)) {
+		return -1;
+	}
+	ret = rtk_bt_le_gap_coc_send_data(cid, len, data);
+	osif_mem_free(data);
+	if (ret) {
+		BLEGAP_AT_PRINTK("GAP coc send data failed! err: 0x%x", ret);
+		return -1;
+	}
+
+	BLEGAP_AT_PRINTK("GAP coc data sending ...");
+	return 0;
+}
+#endif /* RTK_BLE_COC_SUPPORT */
+
 static const cmd_table_t le_gap_cmd_table[] = {
 	{"version",      atcmd_ble_gap_get_version,        1, 1},
 	{"addr",         atcmd_ble_gap_get_bd_addr,        1, 1},
@@ -2107,7 +2310,9 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"adv_data",     atcmd_ble_gap_set_adv_data,       1, 2},
 	{"scan_rsp",     atcmd_ble_gap_set_scan_resp,      1, 2},
 	{"adv",          atcmd_ble_gap_op_adv,             2, 10},
+	{"get_adv_param", atcmd_ble_gap_get_adv_param,     1, 1},
 	{"scan_param",   atcmd_ble_gap_set_scan_param,     1, 7},
+	{"get_scan_param", atcmd_ble_gap_get_scan_param,   1, 1},
 	{"scan_info_filter", atcmd_ble_gap_scan_info_filter,       2, 4},
 	{"scan",         atcmd_ble_gap_op_scan,            2, 2},
 	{"conn",         atcmd_ble_gap_connect,            3, 11},
@@ -2131,6 +2336,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"wl_remove",    atcmd_ble_gap_remove_whitelist,   3, 3},
 	{"wl_clear",     atcmd_ble_gap_clear_whitelist,    1, 1},
 	{"sec_param",    atcmd_ble_gap_set_security_param, 1, 8},
+	{"get_sec_param",    atcmd_ble_gap_get_security_param, 1, 1},
 	{"sec",          atcmd_ble_gap_security,           2, 2},
 	{"pair_cfm",     atcmd_ble_gap_confirm_pair,       3, 3},
 	{"auth_key",     atcmd_ble_gap_input_auth_key,     3, 3},
@@ -2183,12 +2389,21 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"cte_connless_rx", atcmd_ble_gap_cte_connless_rx_set, 3, 18},
 	{"get_antenna",  atcmd_ble_gap_get_antenna_info,   1, 1},
 #endif
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	{"coc_reg_psm",  atcmd_ble_gap_coc_register_psm, 3, 3},
+	{"coc_set_sec",  atcmd_ble_gap_coc_set_psm_security, 5, 5},
+	{"coc_set_param",  atcmd_ble_gap_coc_set_param, 3, 3},
+	{"coc_get_param",  atcmd_ble_gap_coc_get_param, 3, 3},
+	{"coc_conn",     atcmd_ble_gap_coc_connect, 3, 3},
+	{"coc_disconn",  atcmd_ble_gap_coc_disconnect, 2, 2},
+	{"coc_send",     atcmd_ble_gap_coc_send_data, 4, 4},
+#endif
 	{NULL,},
 };
 
 int atcmd_bt_le_gap(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[AT+BLEGAP]");
 #else
 	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[ATBC][le_gap]");

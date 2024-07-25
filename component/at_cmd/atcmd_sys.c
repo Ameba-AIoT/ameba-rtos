@@ -8,9 +8,9 @@
 
 #include <sys_api.h>
 #include <flash_api.h>
-
+#include "ameba_rtos_version.h"
 #include <build_info.h>
-#include "log_service.h"
+#include "atcmd_service.h"
 #ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
 #endif
@@ -334,6 +334,11 @@ AT command process:
 ****************************************************************/
 void at_test(void *arg)
 {
+	if (arg) {
+		at_printf("\r\n arg len = %d \r\n", strlen((char *)arg));
+		at_printf("\r\n arg = %s \r\n", (char *)arg);
+	}
+
 	UNUSED(arg);
 	at_printf("\r\n%sOK\r\n", "+TEST:");
 }
@@ -444,6 +449,7 @@ void at_gmr(void *arg)
 
 	u32 buflen = 1024;
 	char *buf = rtos_mem_malloc(buflen);
+	ameba_rtos_get_version();
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);
 	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
@@ -658,9 +664,5 @@ void print_system_at(void)
 
 void at_sys_init(void)
 {
-	log_service_add_table(at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
+	atcmd_service_add_table(at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
 }
-
-#ifdef SUPPORT_LOG_SERVICE
-log_module_init(at_sys_init);
-#endif

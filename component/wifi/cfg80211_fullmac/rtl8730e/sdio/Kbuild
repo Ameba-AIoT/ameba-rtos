@@ -6,6 +6,7 @@ ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)
 fullmac_sdio-y := rtw_sdio_drvio.o \
 		rtw_sdio_ops.o \
 		rtw_sdio_probe.o \
+		rtw_sdio_init.o	\
 		../rtw_drv_probe.o \
 		../rtw_cfg80211_ops.o \
 		../rtw_wiphy.o \
@@ -20,9 +21,10 @@ fullmac_sdio-y := rtw_sdio_drvio.o \
 		../rtw_cfgvendor.o \
 		../rtw_proc.o \
 		rtw_llhw_ops.o \
-		rtw_llhw_event.o \
-		rtw_llhw_recv.o \
-		rtw_llhw_xmit.o \
+		rtw_llhw_event_tx.o \
+		rtw_llhw_event_rx.o \
+		rtw_llhw_pkt_rx.o \
+		rtw_llhw_pkt_tx.o \
 		rtw_llhw_hci.o \
 		rtw_llhw_memory.o \
 		rtw_protocal_offload.o \

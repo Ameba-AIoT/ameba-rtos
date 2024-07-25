@@ -456,6 +456,12 @@
 //Please add your defination here
 #define WAKE_MASK1_CHECK	0xC0000000
 
+/*for 1M timer wakeup in Dcut version*/
+#define WAKE_SRC_TIMER10 WAKE_SRC_WDG1
+#define WAKE_SRC_TIMER11 WAKE_SRC_WDG2
+#define WAKE_SRC_TIMER12 WAKE_SRC_WDG3
+#define WAKE_SRC_TIMER13 WAKE_SRC_WDG4
+
 /** @defgroup PowerCut_Stable_Time_define
   * @{
   */

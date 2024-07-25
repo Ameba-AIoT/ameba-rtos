@@ -239,8 +239,10 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_SET_SCAN_RSP_DATA,
 	RTK_BT_LE_GAP_ACT_START_ADV,
 	RTK_BT_LE_GAP_ACT_STOP_ADV,
+	RTK_BT_LE_GAP_ACT_GET_ADV_PARAM,
 	RTK_BT_LE_GAP_ACT_SCAN_INFO_FILTER,
 	RTK_BT_LE_GAP_ACT_SET_SCAN_PARAM,
+	RTK_BT_LE_GAP_ACT_GET_SCAN_PARAM,
 	RTK_BT_LE_GAP_ACT_START_SCAN,
 	RTK_BT_LE_GAP_ACT_STOP_SCAN,
 	RTK_BT_LE_GAP_ACT_CONN,
@@ -264,6 +266,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_READ_LOCAL_RESOLV_ADDR,
 	RTK_BT_LE_GAP_ACT_READ_PEER_RESOLV_ADDR,
 	RTK_BT_LE_GAP_ACT_SET_SEC_PARAM,
+	RTK_BT_LE_GAP_ACT_GET_SEC_PARAM,
 	RTK_BT_LE_GAP_ACT_START_SECURITY,
 	RTK_BT_LE_GAP_ACT_PAIRING_CONFIRM,
 	RTK_BT_LE_GAP_ACT_PASSKEY_ENTRY,
@@ -310,6 +313,13 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA,
 	RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA,
 	RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT,
+	RTK_BT_LE_GAP_ACT_COC_REG_PSM,
+	RTK_BT_LE_GAP_ACT_COC_SET_PSM_SECURITY,
+	RTK_BT_LE_GAP_ACT_COC_SET_PARAM,
+	RTK_BT_LE_GAP_ACT_COC_GET_CHAN_PARAM,
+	RTK_BT_LE_GAP_ACT_COC_CONN,
+	RTK_BT_LE_GAP_ACT_COC_DISCONN,
+	RTK_BT_LE_GAP_ACT_COC_SEND_DATA,
 	RTK_BT_LE_GAP_ACT_MAX,
 } rtk_bt_le_gap_act_t;
 
@@ -354,6 +364,10 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_CONN_CTE_REQ_FAIL_IND,        /*!< Indicate LE CTE request fail, with msg @ref rtk_bt_le_gap_cte_req_fail_ind_t */
 	RTK_BT_LE_GAP_EVT_PAWR_DATA_REQ_IND,            /*!< Indicate LE periodic adv subevent data request, with msg @ref rtk_bt_le_gap_pawr_data_req_ind_t */
 	RTK_BT_LE_GAP_EVT_PAWR_RSP_IND,                 /*!< Indicate LE periodic adv response from synced device, with msg @ref rtk_bt_le_gap_pawr_rsp_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_CONNECT_IND,              /*!< Indicate LE l2cap credit based connection-oriented channel(coc) connect complete, with msg @ref rtk_bt_le_coc_conn_state_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND,           /*!< Indicate LE coc chan disconnect complete, with msg @ref rtk_bt_le_coc_conn_state_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND,     /*!< Indicate LE coc send data result, with msg @ref rtk_bt_le_coc_send_data_res_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_RECEIVE_DATA_IND,         /*!< Indicate LE coc receive data from remote, with msg @ref rtk_bt_le_coc_receive_data_ind_t */
 	RTK_BT_LE_GAP_EVT_MAX,
 } rtk_bt_le_gap_evt_t;
 
@@ -623,6 +637,7 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,            /* Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_ASCS_ASE_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND,
+	RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO,
 	RTK_BT_LE_AUDIO_EVT_ASCS_REMOVE_DATA_PATH_IND,
 	RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND,
@@ -901,6 +916,7 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_SDP_ACT_RECORD_ADD = 1,
+	RTK_BT_SDP_ACT_DISCOV_START,
 	RTK_BT_SDP_ACT_MAX,
 } rtk_bt_sdp_act_t;
 
@@ -909,7 +925,8 @@ typedef enum {
  * @brief     Bluetooth SDP event indication
  */
 typedef enum {
-	RTK_BT_SDP_EVT_MAX = 1,
+	RTK_BT_SDP_EVT_DID_ATTR_INFO = 1,
+	RTK_BT_SDP_EVT_MAX,
 } rtk_bt_sdp_evt_t;
 
 /**

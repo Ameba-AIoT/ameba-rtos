@@ -13,10 +13,10 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_nFIQOUT0_OR_nIRQOUT0,			WAKEUP_NULL},
 	{WAKE_SRC_BT_WAKE_HOST,					WAKEUP_NULL},
 	{WAKE_SRC_AON_WAKEPIN,					WAKEUP_LP},
-	{WAKE_SRC_WDG4,							WAKEUP_NULL},
-	{WAKE_SRC_WDG3,							WAKEUP_NULL},
-	{WAKE_SRC_WDG2,							WAKEUP_NULL},
-	{WAKE_SRC_WDG1,							WAKEUP_NULL},
+	{WAKE_SRC_TIMER13,						WAKEUP_NULL},	/* available in Dcut*/
+	{WAKE_SRC_TIMER12,						WAKEUP_NULL},	/* available in Dcut*/
+	{WAKE_SRC_TIMER11,						WAKEUP_NULL},	/* available in Dcut*/
+	{WAKE_SRC_TIMER10,						WAKEUP_NULL},	/* available in Dcut*/
 	{WAKE_SRC_UART2,						WAKEUP_NULL},
 	{WAKE_SRC_UART1,						WAKEUP_NULL},
 	{WAKE_SRC_UART0,						WAKEUP_NULL},

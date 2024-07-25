@@ -33,7 +33,7 @@ Setup Guide
 	To run vendor-specific USB host application on AP:
 	1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] Vendor
 	Save and exit.
 	2. Type command "make all EXAMPLE=usbh_vendor" under auto_build to build the images.
@@ -57,7 +57,7 @@ Setup Guide
 	To run vendor-specific USB host application on HP:
 	1. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] Vendor
 	Save and exit.
 	2. Type command "make all" under auto_build and type "make EXAMPLE=usbh_vendor" under project_hp to build the images.

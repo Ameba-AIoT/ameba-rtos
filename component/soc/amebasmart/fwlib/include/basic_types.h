@@ -38,10 +38,6 @@
 #define _TRUE        TRUE
 #define _FALSE	     FALSE
 
-#ifndef NULL
-#define NULL 0
-#endif
-
 #ifndef MIN
 #define MIN(x, y)			(((x) < (y)) ? (x) : (y))
 #endif

@@ -53,8 +53,14 @@ CMSISMATHLIBDIR  = $(BASEDIR)/component/soc/8711b/fwlib/test/ft_test/cmsis_math
 
 PHERIEXAMPLE	= $(ROOTDIR)/../example/demo_peripheral
 # -----------------------------------------------------------------------------
-PREPENDTOOL		= $(UTILITYDIR)/prepend_header.sh
-OTAPREPENDTOOL  = $(UTILITYDIR)/prepend_ota_header.sh
+IMAGESCRIPTDIR = $(ROOTDIR)/../../../tools/image_scripts
+ifneq ($(shell test -d $(IMAGESCRIPTDIR) && echo 1), 1)
+IMAGESCRIPTDIR = $(ROOTDIR)/../../../../tools/image_scripts
+endif
+PREPENDTOOL		= python $(IMAGESCRIPTDIR)/axf2bin.py prepend_header
+OTAPREPENDTOOL  = python $(IMAGESCRIPTDIR)/axf2bin.py ota_prepend_header
+PADTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py pad
+IMAGETOOL = python $(IMAGESCRIPTDIR)/axf2bin.py imagetool
 LXDIALOG_CYGWIN_STATIC 	= $(UTILITYDIR)/lxdialog_prebuilt/lxdialog_cygwin_x86_static.exe
 COMPILEOS		= $(shell uname -o)
 COMPILEOS_CYGWIN	= $(shell uname -o | cut -c 1-6)
@@ -162,6 +168,7 @@ IFLAGS               += -I$(TARGETDIR)/misc
 IFLAGS               += -I$(TARGETDIR)/hal/include
 IFLAGS               += -I$(TARGETDIR)/hal/src
 IFLAGS               += -I$(TARGETDIR)/usrcfg/include
+IFLAGS               += -I$(BASEDIR)/component/soc/common
 
 IFLAGS               += -I$(INCDIR)
 IFLAGS               += -I$(BASEDIR)/component/lwip/api
@@ -376,6 +383,11 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
+PYTHON ?= python
+define check_python_lib
+    @$(PYTHON) -c "import $(1)" > /dev/null 2>&1 || \
+    (echo "Error: $(1) Python library is not installed.Please install by command: pip install -r {sdk}/tools/image_scripts/requirements.txt"; exit 1)
+endef
 check_toolchain:
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
@@ -403,35 +415,16 @@ check_toolchain:
 		echo "INSTALL SUCCESS"; \
 	fi
 	# check permission
-	@if [ ! -x $(UTILITYDIR)/checksum ]; then \
-		chmod 777 $(UTILITYDIR)/checksum; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/checksum.exe ]; then \
-		chmod 777 $(UTILITYDIR)/checksum.exe; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/pad.sh ]; then \
-		chmod 777 $(UTILITYDIR)/pad.sh; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/prepend_header.sh ]; then \
-		chmod 777 $(UTILITYDIR)/prepend_header.sh; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/prepend_ota_header.sh ]; then \
-		chmod 777 $(UTILITYDIR)/prepend_ota_header.sh; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/image_tool/EncTool ]; then \
-		chmod 777 $(UTILITYDIR)/image_tool/EncTool; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/image_tool/EncTool.exe ]; then \
-		chmod 777 $(UTILITYDIR)/image_tool/EncTool.exe; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/image_tool/imagetool.sh ]; then \
-		chmod 777 $(UTILITYDIR)/image_tool/imagetool.sh; \
-	fi
 	@if [ ! "$(shell which python)" ]; then \
 		echo "Command python not found"; \
 		echo "Please refer to AN900 Chapter 1.2(Preparing GCC Environment) install python3. If still error appears, please run: sudo ln -s /usr/bin/python3 /usr/bin/python"; \
 		exit 1; \
 	fi
+	$(call check_python_lib,mbedtls)
+	$(call check_python_lib,cryptography)
+	$(call check_python_lib,Crypto)
+	$(call check_python_lib,ecdsa)
+	$(call check_python_lib,sslcrypto)
 
 #*****************************************************************************#
 #              COPYING OBJECT FILES TO THE BUILD DIRECTORY                    #

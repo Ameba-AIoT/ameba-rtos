@@ -192,15 +192,15 @@ ifeq ($(CONFIG_TRUSTZONE), y)
 	@echo "========== linker img3 secure end =========="
 
 	@echo "========== Image manipulating start =========="
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/ram_3_s.bin 32
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/ram_3_nsc.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_s.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_nsc.bin 32
 
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_s.bin  __ram_image3_text_start__  $(IMAGE_TARGET_FOLDER)/target_img3.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_nsc.bin  __ram_image3_nsc_start__  $(IMAGE_TARGET_FOLDER)/target_img3.map
 
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/ram_3_s_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_3_nsc_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image3_all.bin
 
-	$(Q)$(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image3_all.bin $(BUILD_TYPE)
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_image3_all.bin $(BUILD_TYPE)
 
 	@echo "========== Image manipulating end =========="
 endif
@@ -265,17 +265,17 @@ endif
 	@echo "========== Image manipulating start =========="
 
 	# 32Bytes aligned for otf en #
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
 
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __sram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin  __psram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin  __flash_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_2_prepend.bin  > $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin
-	@#$(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin 4096
-	$(Q)$(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE);
+	@#$(PADTOOL) $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin 4096
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE);
 
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
@@ -331,14 +331,14 @@ linker_loader:
 
 	@echo "========== Image manipulating start =========="
 
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/ram_1.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin 32
 
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
 	@if [ ${IMGTOOL_LOADER} == "YES" ]; then \
-		$(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE); \
+		$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE); \
 	else \
 		cat $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
-		$(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
+		$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
 	fi
 
 	@echo "========== Image manipulating end =========="
@@ -508,7 +508,7 @@ gen_imgtool_floader:
 		echo Error: No imgtool_flashloader.bin in $(FLOADER_BIN_DIR); exit 1;\
 	fi
 	$(Q)head -zc -4096 $(FLOADER_BIN_DIR)/imgtool_flashloader.bin > $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin
-	$(Q)sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE);
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE);
 ifneq ($(RTLNAME),)
 	$(Q)$(COPY) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin 	$(FLOADER_BIN_DIR)/floader_$(RTLNAME).bin -f;
 else

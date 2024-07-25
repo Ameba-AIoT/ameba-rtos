@@ -313,7 +313,7 @@ static void flash_test_task(void *param)
 	uint8_t StatusRegister2OTP = 0;
 	/*assign values to TransmitDataOTP[]*/
 	for (int i = 0; i < TEST_DATA_SIZE; i++) {
-		TransmitDataOTP[i] = rand();
+		TransmitDataOTP[i] = _rand();
 	}
 	/*initialize ReceiveDataOTP[]*/
 	_memset(ReceiveDataOTP, 0, sizeof(ReceiveDataOTP));

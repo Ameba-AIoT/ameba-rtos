@@ -58,6 +58,9 @@ endif
 ifeq ($(CONFIG_BT_MESH_DEVICE_SCATTERNET), y)
 	make -C ble_mesh_device_scatternet all
 endif
+ifeq ($(CONFIG_BT_ENABLE_FAST_MP), y)
+	make -C bt_fast_mp all
+endif
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
@@ -103,6 +106,9 @@ ifeq ($(CONFIG_BT_MESH_PROVISIONER_SCATTERNET), y)
 endif
 ifeq ($(CONFIG_BT_MESH_DEVICE_SCATTERNET), y)
 	make -C ble_mesh_device_scatternet clean
+endif
+ifeq ($(CONFIG_BT_ENABLE_FAST_MP), y)
+	make -C bt_fast_mp clean
 endif
 
 -include $(DEPS)

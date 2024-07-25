@@ -3,6 +3,7 @@
 #include "main.h"
 #include "vfs.h"
 #include "os_wrapper.h"
+#include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
 
 static const char *TAG = "MAIN";
@@ -170,6 +171,7 @@ void app_filesystem_init(void)
 int main(void)
 {
 	RTK_LOGI(TAG, "KM4 MAIN \n");
+	ameba_rtos_get_version();
 
 	InterruptRegister(IPC_INTHandler, IPC_NP_IRQ, (u32)IPCNP_DEV, 5);
 	InterruptEn(IPC_NP_IRQ, 5);

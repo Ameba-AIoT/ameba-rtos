@@ -53,6 +53,7 @@ void cfg80211_rtw_inform_bss(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_ad
 void cfg80211_rtw_disconnect_indicate(u16 reason, u8 locally_generated);
 void cfg80211_rtw_sta_assoc_indicate(char *buf, int buf_len);
 void cfg80211_rtw_external_auth_request(char *buf, int buf_len);
+void cfg80211_rtw_update_owe_info_event(char *buf, int buf_len);
 void cfg80211_rtw_connect_indicate(unsigned int join_status, void *user_data, size_t user_data_len);
 int cfg80211_rtw_scan_done_indicate(unsigned int scanned_AP_num, void *user_data);
 u64 llhw_wifi_get_tsft(u8 iface_type);
@@ -90,6 +91,7 @@ int rtw_p2p_get_wdex_idx(struct wireless_dev *wdev);
 int llhw_wifi_set_pmf_mode(u8 pmf_mode);
 int llhw_wifi_set_wps_phase(u8 enable);
 int llhw_wifi_set_wpa_mode(rtw_wpa_mode wpa_mode);
+int llhw_wifi_set_owe_param(struct rtw_owe_param_t *owe_param);
 int llhw_wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 int llhw_wifi_add_custom_ie(const struct element **elem, u8 num, u16 type);
 int llhw_wifi_del_custom_ie(unsigned char wlan_idx);
@@ -122,6 +124,8 @@ void llhw_event_deinit(void);
 int llhw_ipc_send_msg(u32 id, u32 *param_buf, u32 buf_len);
 
 #else
+void llhw_send_data(u8 *buf, u32 len);
+void llhw_recv_data_process(void *intf_priv);
 void llhw_event_task(struct work_struct *data);
 int llhw_xmit_entry(int idx, struct sk_buff *pskb);
 int llhw_xmit_init(void);
@@ -129,11 +133,11 @@ int llhw_xmit_deinit(void);
 int llhw_xmit_pending_q_num(void);
 void llhw_xmit_wakeup_thread(void);
 void llhw_recv_notify(void);
+int llhw_recv_process(struct sk_buff *pskb);
 void llhw_recv_init(void);
 void llhw_recv_deinit(void);
 int llhw_event_init(struct inic_device *idev);
 void llhw_event_deinit(void);
-void llhw_send_msg(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len);
 int llhw_war_offload_ctrl(u8 offload_en, u32 offload_ctrl);
 int llhw_war_set_mdns_param(u8 *pframe, u32 len);
 void rtw_set_wowlan_offload_ctrl(u32 value);
@@ -148,7 +152,6 @@ int rtw_resume_common(struct inic_sdio *priv);
 void rtw_sdio_init_txavailbd_threshold(struct inic_sdio *priv);
 u8 rtw_sdio_query_txbd_status(struct inic_sdio *priv);
 int rtw_sdio_alloc_irq(struct inic_sdio *priv);
-
 #endif
 
 #ifdef CONFIG_SDIO_BRIDGE

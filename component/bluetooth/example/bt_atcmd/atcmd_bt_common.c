@@ -5,7 +5,7 @@
  */
 
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <atcmd_bt_impl.h>
 #include <bt_utils.h>
 

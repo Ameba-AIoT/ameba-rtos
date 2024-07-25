@@ -190,7 +190,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					udb_info->dev_info.bt_addr[5], udb_info->dev_info.bt_addr[4], udb_info->dev_info.bt_addr[3],
 					udb_info->dev_info.bt_addr[2], udb_info->dev_info.bt_addr[1], udb_info->dev_info.bt_addr[0],
 					udb_info->dev_info.bt_addr_type, udb_info->dev_info.rssi);
-		MESH_DATA_IOUART_DUMP(udb_info->dev_uuid, 16);
+		BT_AT_DUMP_HEXN(udb_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY: {
@@ -205,7 +205,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4], prov_info->dev_info.bt_addr[3],
 					prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
 					prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
-		MESH_DATA_IOUART_DUMP(prov_info->dev_uuid, 16);
+		BT_AT_DUMP_HEXN(prov_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY: {
@@ -220,7 +220,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4], proxy_info->dev_info.bt_addr[3],
 					proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
 					proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
-		MESH_DATA_IOUART_DUMP((uint8_t *)&proxy_info->proxy, proxy_info->len);
+		BT_AT_DUMP_HEXN((uint8_t *)&proxy_info->proxy, proxy_info->len);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_HB_PUB_TIMER_STATE: {
@@ -402,7 +402,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_LOGA("Device UUID:\t");
 				mesh_data_uart_dump(p_data + offset, data_len);
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,", type);
-				MESH_DATA_IOUART_DUMP(p_data + offset, data_len);
+				BT_AT_DUMP_HEXN(p_data + offset, data_len);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR:
 				BT_LOGA("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
@@ -416,7 +416,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				mesh_data_uart_dump(p_data + offset + 4, 16);
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-",
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
-				MESH_DATA_IOUART_DUMP(p_data + offset + 4, 16);
+				BT_AT_DUMP_HEXN(p_data + offset + 4, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY:
 				BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
@@ -425,7 +425,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
 							*(p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
-				MESH_DATA_IOUART_DUMP(p_data + offset + 6, 16);
+				BT_AT_DUMP_HEXN(p_data + offset + 6, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
 				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
@@ -434,7 +434,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
 							*(p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
-				MESH_DATA_IOUART_DUMP(p_data + offset + 7, 16);
+				BT_AT_DUMP_HEXN(p_data + offset + 7, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS:
 				BT_LOGA("IVindex:\t%d-0x%x\r\n", *(p_data + offset), LE_TO_U32(p_data + offset + 1));
@@ -544,6 +544,13 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_onoff_server_app_callback(uint8_t ev
 				BT_LOGA("\r\n");
 			}
 		}
+		if (0 != onoff_set->remaining_time.num_steps) {
+			BT_AT_PRINT("+BLEMESHGOO:%d,%d,1,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_SERVER, onoff_set->on_off, onoff_set->total_time.num_steps, onoff_set->total_time.step_resolution,
+						onoff_set->remaining_time.num_steps, onoff_set->remaining_time.step_resolution);
+		} else {
+			BT_AT_PRINT("+BLEMESHGOO:%d,%d,0\r\n", BT_AT_MESH_ROLE_SERVER, onoff_set->on_off);
+		}
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_GET: {
@@ -581,12 +588,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		memcpy(datatrans_sample_data, p_data_write->data, p_data_write->data_len);
 		BT_LOGA("[APP] Datatrans model receive msg: Remote write %d bytes: ", p_data_write->data_len);
 		mesh_data_uart_dump(p_data_write->data, p_data_write->data_len);
+		BT_AT_PRINT("+BLEMESHDATA:write,%d,%d,", BT_AT_MESH_ROLE_SERVER, p_data_write->data_len);
+		BT_AT_DUMP_HEXN(p_data_write->data, p_data_write->data_len);
 		break;
 	}
 
 	case RTK_BT_MESH_DATATRANS_MODEL_EVT_CLIENT_WRITE_STATUS: {
 		rtk_bt_mesh_datatrans_client_write_event_t *p_write_status = (rtk_bt_mesh_datatrans_client_write_event_t *)param;
 		BT_LOGA("[APP] Datatrans model receive msg: Src %d ,written %d bytes, status:%d\r\n", p_write_status->src, p_write_status->written_len, p_write_status->status);
+		BT_AT_PRINT("+BLEMESHDATA:write,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, p_write_status->src, p_write_status->written_len, p_write_status->status);
 		break;
 	}
 
@@ -594,6 +605,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		rtk_bt_mesh_datatrans_client_read_event_t *p_read_date = (rtk_bt_mesh_datatrans_client_read_event_t *)param;
 		BT_LOGA("[APP] Datatrans model receive msg: Read %d bytes date from remote src %d :\r\n", p_read_date->data_len, p_read_date->src);
 		mesh_data_uart_dump(p_read_date->data, p_read_date->data_len);
+		BT_AT_PRINT("+BLEMESHDATA:read,%d,%d,%d,",
+					BT_AT_MESH_ROLE_CLIENT, p_read_date->src, p_read_date->data_len);
+		BT_AT_DUMP_HEXN(p_read_date->data, p_read_date->data_len);
 		break;
 	}
 
@@ -609,6 +623,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		*/
 		memcpy(server_read->data, datatrans_sample_data, server_read->data_len);
 		BT_LOGA("[APP] Remote read %d bytes data\r\n", server_read->data_len);
+		BT_AT_PRINT("+BLEMESHDATA:read,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, server_read->data_len);
 		break;
 	}
 
@@ -678,6 +693,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_server_app_callback(uint8_t 
 				lightness.lightness,
 				lightness.total_time.num_steps,
 				lightness.remaining_time.num_steps);
+		BT_AT_PRINT("+BLEMESHLL:ll,%d,%d,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, lightness.lightness,
+					lightness.total_time.num_steps, lightness.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_LINEAR_SERVER_MODEL_SET: {
@@ -701,11 +718,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_server_app_callback(uint8_t 
 				linear_lightness.lightness,
 				(linear_set->total_time).num_steps,
 				(linear_set->remaining_time).num_steps);
+		BT_AT_PRINT("+BLEMESHLL:lll,%d,%d,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, linear_lightness.lightness,
+					(linear_set->total_time).num_steps, (linear_set->remaining_time).num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_LAST_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_lightness_server_get_t *last_set = (rtk_bt_mesh_light_lightness_server_get_t *)param;
 		BT_LOGA("[APP] light lightness server receive: set last lightness %d \r\n", last_set->lightness);
+		BT_AT_PRINT("+BLEMESHLL:llla,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, last_set->lightness);
 		last_lightness.lightness = last_set->lightness;
 		break;
 	}
@@ -728,6 +748,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_setup_server_app_callback(ui
 	case RTK_BT_MESH_LIGHT_LIGHTNESS_DEFAULT_SERVER_MODEL_SET: {
 		rtk_bt_mesh_light_lightness_server_set_default_t *default_set = (rtk_bt_mesh_light_lightness_server_set_default_t *)param;
 		BT_LOGA("[APP] light lightness server receive: set default lightness %d \r\n", default_set->lightness);
+		BT_AT_PRINT("+BLEMESHLL:lld,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, default_set->lightness);
 		default_setup_lightness.lightness = default_set->lightness;
 		break;
 	}
@@ -736,6 +757,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_setup_server_app_callback(ui
 		BT_LOGA("[APP] light lightness server receive: set lightness_max %d, lightness_min %d \r\n",
 				range_set->range_max,
 				range_set->range_min);
+		BT_AT_PRINT("+BLEMESHLL:llr,%d,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER,
+					range_set->range_min, range_set->range_max);
 		lightness_setup_range.range_max = range_set->range_max;
 		lightness_setup_range.range_min = range_set->range_min;
 		break;
@@ -810,6 +833,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_server_app_callback(uint8_t evt_co
 				ctl_lightness_set.remaining_time.num_steps,
 				ctl_lightness_set.temperature,
 				ctl_lightness_set.total_time.num_steps);
+		BT_AT_PRINT("+BLEMESHLCTL:lc,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, ctl_lightness_set.delta_uv, ctl_lightness_set.lightness,
+					ctl_lightness_set.remaining_time.num_steps, ctl_lightness_set.temperature, ctl_lightness_set.total_time.num_steps);
 		break;
 	}
 	default:
@@ -832,6 +858,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_setup_server_app_callback(uint8_t 
 		BT_LOGA("[APP] lighting ctl setup server receive: set temperature range_max %d, range_min %d \r\n",
 				ctl_temp_range_set->range_max,
 				ctl_temp_range_set->range_min);
+		BT_AT_PRINT("+BLEMESHLCTL:lctr,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, ctl_temp_range_set->range_min, ctl_temp_range_set->range_max);
 		ctl_setup_range.range_max = ctl_temp_range_set->range_max;
 		ctl_setup_range.range_min = ctl_temp_range_set->range_min;
 		break;
@@ -842,6 +870,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_setup_server_app_callback(uint8_t 
 				ctl_default_set->delta_uv,
 				ctl_default_set->lightness,
 				ctl_default_set->temperature);
+		BT_AT_PRINT("+BLEMESHLCTL:lcd,%d,%d,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, ctl_default_set->delta_uv,
+					ctl_default_set->lightness, ctl_default_set->temperature);
 		ctl_setup_default.delta_uv = ctl_default_set->delta_uv;
 		ctl_setup_default.lightness = ctl_default_set->lightness;
 		ctl_setup_default.temperature = ctl_default_set->temperature;
@@ -898,6 +928,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_temperature_server_app_callback(ui
 				ctl_temp_set.delta_uv,
 				ctl_temp_set.total_time.num_steps,
 				ctl_temp_set.remaining_time.num_steps);
+		BT_AT_PRINT("+BLEMESHLCTL:lct,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, ctl_temp_set.temperature, ctl_temp_set.delta_uv,
+					ctl_temp_set.total_time.num_steps, ctl_temp_set.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_CTL_SERVER_MODEL_TEMPERATURE_RANGE_GET_T: {
@@ -976,6 +1009,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_server_app_callback(uint8_t evt_co
 				hsl_value.lightness,
 				hsl_value.remaining_time.num_steps,
 				hsl_value.total_time.num_steps);
+		BT_AT_PRINT("+BLEMESHLHSL:lh,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, hsl_value.hue, hsl_value.saturation, hsl_value.lightness,
+					hsl_value.remaining_time.num_steps, hsl_value.total_time.num_steps);
 		break;
 	}
 	default:
@@ -1021,6 +1057,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_hue_server_app_callback(uint8_t ev
 				hue_store.hue,
 				hue_store.remaining_time.num_steps,
 				hue_store.total_time.num_steps);
+		BT_AT_PRINT("+BLEMESHLHSL:lhh,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, hue_store.hue,
+					hue_store.remaining_time.num_steps, hue_store.total_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_HSL_RANGE_SERVER_MODEL_GET_H: {
@@ -1071,6 +1110,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_saturation_server_app_callback(uin
 				saturation_store.saturation,
 				saturation_store.remaining_time.num_steps,
 				saturation_store.total_time.num_steps);
+		BT_AT_PRINT("+BLEMESHLHSL:lhs,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, saturation_store.saturation,
+					saturation_store.remaining_time.num_steps, saturation_store.total_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_HSL_RANGE_SERVER_MODEL_GET_S: {
@@ -1100,6 +1142,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_setup_server_app_callback(uint8_t 
 				default_set->lightness,
 				default_set->hue,
 				default_set->saturation);
+		BT_AT_PRINT("+BLEMESHLHSL:lhd,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, default_set->lightness,
+					default_set->hue, default_set->saturation);
 		hsl_setup_default.lightness = default_set->lightness;
 		hsl_setup_default.hue = default_set->hue;
 		hsl_setup_default.saturation = default_set->saturation;
@@ -1112,6 +1157,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_setup_server_app_callback(uint8_t 
 				range_set->hue_range_max,
 				range_set->saturation_range_min,
 				range_set->saturation_range_max);
+		BT_AT_PRINT("+BLEMESHLHSL:lhr,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, range_set->hue_range_min, range_set->hue_range_max,
+					range_set->saturation_range_min, range_set->saturation_range_max);
 		hsl_setup_range.hue_range_min = range_set->hue_range_min;
 		hsl_setup_range.hue_range_max = range_set->hue_range_max;
 		hsl_setup_range.saturation_range_min = range_set->saturation_range_min;
@@ -1185,6 +1233,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_server_app_callback(uint8_t evt_co
 				xyl_value.xyl.xyl_lightness,
 				(xyl_set->total_time).num_steps,
 				(xyl_set->remaining_time).num_steps);
+		BT_AT_PRINT("+BLEMESHLXYL:lx,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, xyl_value.xyl.xyl_x, xyl_value.xyl.xyl_y, xyl_value.xyl.xyl_lightness,
+					(xyl_set->total_time).num_steps, (xyl_set->remaining_time).num_steps);
 		break;
 	}
 
@@ -1212,6 +1263,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_setup_server_app_callback(uint8_t 
 				default_set->xyl_lightness,
 				default_set->xyl_x,
 				default_set->xyl_y);
+		BT_AT_PRINT("+BLEMESHLXYL:lxd,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, default_set->xyl_lightness, default_set->xyl_x, default_set->xyl_y);
 		break;
 	}
 	case RTK_BT_MESH_LIGHT_XYL_RANGE_SERVER_MODEL_SET: {
@@ -1225,6 +1278,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_setup_server_app_callback(uint8_t 
 				range_set->xyl_x_range_min,
 				range_set->xyl_y_range_max,
 				range_set->xyl_y_range_min);
+		BT_AT_PRINT("+BLEMESHLXYL:lxr,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, range_set->xyl_x_range_min, range_set->xyl_x_range_max,
+					range_set->xyl_y_range_min, range_set->xyl_y_range_max);
 		break;
 	}
 
@@ -1255,6 +1311,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 		rtk_bt_mesh_light_lc_server_set_mode_t *mode_set = (rtk_bt_mesh_light_lc_server_set_mode_t *)param;
 		BT_LOGA("[APP] lighting lc server receive: set light_lc mode %d \r\n",
 				mode_set->mode);
+		BT_AT_PRINT("+BLEMESHLLC:llcm,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, mode_set->mode);
 		lc_mode.mode = mode_set->mode;
 		break;
 	}
@@ -1267,6 +1324,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 		rtk_bt_mesh_light_lc_server_set_om_t *om_set = (rtk_bt_mesh_light_lc_server_set_om_t *)param;
 		BT_LOGA("[APP] lighting lc server receive: set light_lc om %d \r\n",
 				om_set->mode);
+		BT_AT_PRINT("+BLEMESHLLC:llcom,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, om_set->mode);
 		lc_om.mode = om_set->mode;
 		break;
 	}
@@ -1294,6 +1352,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 					lc_onoff.light_on_off,
 					(light_set->total_time).num_steps,
 					(light_set->remaining_time).num_steps);
+			BT_AT_PRINT("+BLEMESHLLC:llcloo,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_SERVER, lc_onoff.light_on_off,
+						(light_set->total_time).num_steps, (light_set->remaining_time).num_steps);
 		} else if (lc_onoff.total_time.num_steps == lc_onoff.remaining_time.num_steps) {
 			if (light_set->light_on_off == RTK_BT_MESH_GENERIC_ON  && lc_onoff.light_on_off != light_set->light_on_off) {
 				lc_onoff.light_on_off = light_set->light_on_off;
@@ -1302,6 +1363,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_server_app_callback(uint8_t evt_cod
 					lc_onoff.light_on_off,
 					(light_set->total_time).num_steps,
 					(light_set->remaining_time).num_steps);
+			BT_AT_PRINT("+BLEMESHLLC:llcloo,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_SERVER, lc_onoff.light_on_off,
+						(light_set->total_time).num_steps, (light_set->remaining_time).num_steps);
 		}
 		break;
 	}
@@ -1323,6 +1387,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_setup_server_app_callback(uint8_t e
 	case RTK_BT_MESH_LIGHT_LC_SERVER_MODEL_PROPERTY_GET: {
 		rtk_bt_mesh_light_lc_server_direct_get_property_t *property_get = (rtk_bt_mesh_light_lc_server_direct_get_property_t *)param;
 		BT_LOGA("[APP] Light lc setup server model get property id: 0x%x \r\n", property_get->property_id);
+		BT_AT_PRINT("+BLEMESHLLC:llcpg,%d,0x%x\r\n", BT_AT_MESH_ROLE_SERVER, property_get->property_id);
 		rtk_bt_mesh_light_lc_server_direct_get_property_para_t property;
 		if ((property_get->property_id >= 0x2E) && (property_get->property_id <= 0x30)) {
 			property.property_value = property_store[0].property_value;
@@ -1341,6 +1406,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_setup_server_app_callback(uint8_t e
 		BT_LOGA("[APP] Light lc setup server receive: set property id %d, property value %d \r\n",
 				property_set->property_id,
 				property_set->property_value);
+		BT_AT_PRINT("+BLEMESHLLC:llcps,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, property_set->property_id, property_set->property_value);
 		if ((property_set->property_id >= 0x2E) && (property_set->property_id <= 0x30)) {
 			property_store[0].property_value = property_set->property_value;
 			property_store[0].value_len = 2;
@@ -1436,6 +1503,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 				time_setup_store.tai_seconds[2],
 				time_setup_store.tai_seconds[1],
 				time_setup_store.tai_seconds[0]);
+		BT_AT_PRINT("+BLEMESHTIME:time,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, time_setup_store.subsecond, time_setup_store.uncertainty,
+					time_setup_store.tai_utc_delta, time_setup_store.time_zone_offset, time_setup_store.time_authority,
+					time_setup_store.tai_seconds[4], time_setup_store.tai_seconds[3], time_setup_store.tai_seconds[2],
+					time_setup_store.tai_seconds[1], time_setup_store.tai_seconds[0]);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ZONE_SET: {
@@ -1448,6 +1520,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 				time_zone_store.tai_of_zone_change[2],
 				time_zone_store.tai_of_zone_change[1],
 				time_zone_store.tai_of_zone_change[0]);
+		BT_AT_PRINT("+BLEMESHTIME:tz,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, time_zone_store.time_zone_offset_new, time_zone_store.tai_of_zone_change[4],
+					time_zone_store.tai_of_zone_change[3], time_zone_store.tai_of_zone_change[2],
+					time_zone_store.tai_of_zone_change[1], time_zone_store.tai_of_zone_change[0]);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ROLE_GET: {
@@ -1459,6 +1535,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 		rtk_bt_mesh_time_server_set_role_t *time_role_set = (rtk_bt_mesh_time_server_set_role_t *)param;
 		role_store = time_role_set->role;
 		BT_LOGA("[APP] Time setup server receive: set role %d \r\n", role_store);
+		BT_AT_PRINT("+BLEMESHTIME:tr,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, role_store);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_TAI_UTC_DELTA_SET: {
@@ -1471,6 +1548,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_setup_server_app_callback(uint8_t evt_c
 				time_delta_store.tai_of_delta_change[2],
 				time_delta_store.tai_of_delta_change[1],
 				time_delta_store.tai_of_delta_change[0]);
+		BT_AT_PRINT("+BLEMESHTIME:ttud,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, time_delta_store.tai_utc_delta_new, time_delta_store.tai_of_delta_change[4],
+					time_delta_store.tai_of_delta_change[3], time_delta_store.tai_of_delta_change[2],
+					time_delta_store.tai_of_delta_change[1], time_delta_store.tai_of_delta_change[0]);
 		break;
 	}
 	case RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ZONE_GET: {
@@ -1547,6 +1628,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scheduler_setup_server_app_callback(uint8_t 
 				scheduler_setup_store.day, scheduler_setup_store.hour, scheduler_setup_store.minute, scheduler_setup_store.second, \
 				scheduler_setup_store.day_of_week, scheduler_setup_store.action, scheduler_setup_store.num_steps, \
 				scheduler_setup_store.step_resolution, scheduler_setup_store.scene_number);
+		BT_AT_PRINT("+BLEMESHSCHEDULER:schea,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, scheduler_setup_store.index, scheduler_setup_store.year,
+					scheduler_setup_store.month, scheduler_setup_store.day, scheduler_setup_store.hour,
+					scheduler_setup_store.minute, scheduler_setup_store.second, scheduler_setup_store.day_of_week,
+					scheduler_setup_store.action, scheduler_setup_store.num_steps, scheduler_setup_store.step_resolution,
+					scheduler_setup_store.scene_number);
 		break;
 	}
 	case RTK_BT_MESH_SCHEDULER_SETUP_SERVER_MODEL_GET_ACTION: {
@@ -1588,6 +1675,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_server_app_callback(uint8_t evt_code, 
 		uint8_t *pmemory = (uint8_t *)param + 4;
 		mesh_data_uart_dump(pmemory, SCENE_DATA_MAX_LEN);
 		BT_LOGA("\r\n");
+		BT_AT_PRINT("+BLEMESHSCENE:sr,%d,%d,%d,%d,",
+					BT_AT_MESH_ROLE_SERVER, recall_store.scene_number,
+					recall_store.total_time.num_steps, recall_store.remaining_time.num_steps);
+		BT_AT_DUMP_HEXN(pmemory, SCENE_DATA_MAX_LEN);
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_GET_REGISTER_STATUS: {
@@ -1636,12 +1727,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_setup_server_app_callback(uint8_t evt_
 		memcpy(store_set->pmemory, &store_scene_value, LE_TO_U16(store_scene_value) + 2);
 		BT_LOGA("[APP] scene setup server receive: status:%d, scene number:%d \r\n",
 				store_set->status, store_set->scene_number);
+		BT_AT_PRINT("+BLEMESHSCENE:ss,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, store_set->status, store_set->scene_number);
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_DELETE: {
 		rtk_bt_mesh_scene_server_delete_t *scene_delete = (rtk_bt_mesh_scene_server_delete_t *)param;
 		memcpy(&delete_store, scene_delete, sizeof(rtk_bt_mesh_scene_server_delete_t));
 		BT_LOGA("[APP] scene setup server receive: scene number:%d \r\n", delete_store.scene_number);
+		BT_AT_PRINT("+BLEMESHSCENE:sd,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, delete_store.scene_number);
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET: {
@@ -1690,6 +1784,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_default_transition_time_server_app_c
 		memcpy(&trans_store, &(time_set->trans_time), sizeof(rtk_bt_mesh_generic_transition_time_t));
 		BT_LOGA("[APP] generic default transition time server receive: resolution %d, num steps %d \r\n",
 				trans_store.step_resolution, trans_store.num_steps);
+		BT_AT_PRINT("+BLEMESHGDTT:gdtt,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, trans_store.step_resolution, trans_store.num_steps);
 		break;
 	}
 	default:
@@ -1730,6 +1826,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_level_server_app_callback(uint8_t ev
 		}
 		BT_LOGA("[APP] generic level server receive: level %d, total time %d, reamining time %d \r\n",
 				level_store.level, level_store.total_time.num_steps, level_store.remaining_time.num_steps);
+		BT_AT_PRINT("+BLEMESHGLE:gl,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, level_store.level, level_store.total_time.num_steps, level_store.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_SET_MOVE: {
@@ -1738,6 +1836,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_level_server_app_callback(uint8_t ev
 		BT_LOGA("[APP] generic level server receive: move delta %d, target level %d, total time %d, remaining time %d \r\n",
 				move_store.move_delta, move_store.target_level,
 				move_store.total_time.num_steps, move_store.remaining_time.num_steps);
+		BT_AT_PRINT("+BLEMESHGLE:glms,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, move_store.move_delta, move_store.target_level,
+					move_store.total_time.num_steps, move_store.remaining_time.num_steps);
 		pre_level = level_store.level;
 		break;
 	}
@@ -1780,6 +1881,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_on_off_setup_server_app_callba
 		on_power_up_setup_store = gpoo_set->on_power_up;
 		BT_LOGA("[APP] generic power on off setup server receive: on power up %d \r\n",
 				on_power_up_setup_store);
+		BT_AT_PRINT("+BLEMESHGPOO:gp,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, on_power_up_setup_store);
 		break;
 	}
 	default:
@@ -1822,6 +1924,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_server_app_callback(uint
 		}
 		BT_LOGA("[APP] Generic power level server model receive: set power %d, total time %d, remaining time %d \r\n",
 				power_level_store.power, power_level_store.total_time.num_steps, power_level_store.remaining_time.num_steps);
+		BT_AT_PRINT("+BLEMESHGPL:gpl,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, power_level_store.power,
+					power_level_store.total_time.num_steps, power_level_store.remaining_time.num_steps);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_LAST_GET: {
@@ -1864,6 +1969,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_setup_server_app_callbac
 		default_power_setup_store = gpld_set->power;
 		BT_LOGA("[APP] generic power level setup server receive: set default %d \r\n",
 				default_power_setup_store);
+		BT_AT_PRINT("+BLEMESHGPL:gpld,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, default_power_setup_store);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL_RANGE_SET: {
@@ -1871,6 +1977,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_setup_server_app_callbac
 		memcpy(&power_level_range_setup_store, gplr_set, sizeof(rtk_bt_mesh_generic_power_level_server_get_range_t));
 		BT_LOGA("[APP] generic power level setup server receive: set range min %d range max %d \r\n",
 				power_level_range_setup_store.range_min, power_level_range_setup_store.range_max);
+		BT_AT_PRINT("+BLEMESHGPL:gplr,%d,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER,
+					power_level_range_setup_store.range_min, power_level_range_setup_store.range_max);
 		break;
 	}
 	default:
@@ -1897,6 +2005,10 @@ time to charge = %d, presence = %d, indicator = %d, charging = %d, serviceabilit
 				(gb_get->value)->time_to_discharge, (gb_get->value)->time_to_charge,
 				(gb_get->value)->flags.presence, (gb_get->value)->flags.indicator, (gb_get->value)->flags.charging,
 				(gb_get->value)->flags.serviceability);
+		BT_AT_PRINT("+BLEMESHGB:gbg,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, (gb_get->value)->battery_level, (gb_get->value)->time_to_discharge,
+					(gb_get->value)->time_to_charge, (gb_get->value)->flags.presence, (gb_get->value)->flags.indicator,
+					(gb_get->value)->flags.charging, (gb_get->value)->flags.serviceability);
 		break;
 	}
 	default:
@@ -1958,6 +2070,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_setup_server_app_callback(u
 				global_location_setup_store.global_latitude,
 				global_location_setup_store.global_longitude,
 				global_location_setup_store.global_altitude);
+		BT_AT_PRINT("+BLEMESHGLO:glg,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, global_location_setup_store.global_latitude,
+					global_location_setup_store.global_longitude, global_location_setup_store.global_altitude);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_LOCAL_SET: {
@@ -1971,6 +2086,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_setup_server_app_callback(u
 				local_location_setup_store.uncertainty.stationary,
 				local_location_setup_store.uncertainty.precision,
 				local_location_setup_store.uncertainty.update_time);
+		BT_AT_PRINT("+BLEMESHGLO:gll,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, local_location_setup_store.local_north, local_location_setup_store.local_east,
+					local_location_setup_store.local_altitude, local_location_setup_store.floor_num,
+					local_location_setup_store.uncertainty.stationary, local_location_setup_store.uncertainty.precision,
+					local_location_setup_store.uncertainty.update_time);
 		break;
 	}
 	default:
@@ -1997,6 +2117,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_user_property_server_app_callback(ui
 		uint8_t *pvalue = (uint8_t *)param + 4;
 		BT_LOGA("[APP] Generic user property server model receive: property id %d\r\n", property_id);
 		BT_DUMPA("value: ", pvalue, value_len);
+		BT_AT_PRINT("+BLEMESHGP:gup,%d,%d", BT_AT_MESH_ROLE_SERVER, property_id);
+		BT_AT_DUMP("", pvalue, value_len);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_PARAMETER_GET: {
@@ -2047,6 +2169,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_admin_property_server_app_callback(u
 		uint8_t *pvalue = (uint8_t *)param + 5;
 		BT_LOGA("[APP] Generic admin property server model receive: property id %d, property access %d\r\n", property_id, property_access);
 		BT_DUMPA("value: ", pvalue, value_len);
+		BT_AT_PRINT("+BLEMESHGP:gap,%d,%d,%d", BT_AT_MESH_ROLE_SERVER, property_id, property_access);
+		BT_AT_DUMP("", pvalue, value_len);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_PARAMETER_GET: {
@@ -2097,6 +2221,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_manu_property_server_app_callback(ui
 		BT_LOGA("[APP] Generic manufacturer server model receive: property id %d, property_access %d\r\n",
 				manu_property_set_store.property_id,
 				manu_property_set_store.property_access);
+		BT_AT_PRINT("+BLEMESHGP:gmp,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_SERVER, manu_property_set_store.property_id, manu_property_set_store.property_access);
 		break;
 	}
 	case RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_PARAMETER_GET: {
@@ -2179,6 +2305,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 		BT_LOGA("[APP] Sensor server receive: property id:%d, raw value x len:%d, raw value x: \r\n",
 				column_get->property_id, column_get->raw_value_x_len);
 		mesh_data_uart_dump(column_get->raw_value_x, column_get->raw_value_x_len);
+		BT_AT_PRINT("+BLEMESHSENSOR:scog,%d,%d,%d,",
+					BT_AT_MESH_ROLE_SERVER, column_get->property_id, column_get->raw_value_x_len);
+		BT_AT_DUMP_HEXN(column_get->raw_value_x, column_get->raw_value_x_len);
 		memcpy(column_get->value, &column_length, 2);
 		memcpy((uint8_t *)column_get->value + 2, sensor_raw_data, column_length);
 		break;
@@ -2187,13 +2316,18 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 		rtk_bt_mesh_sensor_server_direct_get_series_t *series_get = (rtk_bt_mesh_sensor_server_direct_get_series_t *)param;
 		BT_LOGA("[APP] Sensor server receive: property id:%d, raw value x len:%d, raw value x1: \r\n",
 				series_get->property_id, series_get->raw_value_x_len);
+		BT_AT_PRINT("+BLEMESHSENSOR:sseg,%d,%d,%d,",
+					BT_AT_MESH_ROLE_SERVER, series_get->property_id, series_get->raw_value_x_len);
 		if (series_get->raw_value_x_len == 0) {
 			BT_LOGA("Sensor client need get all series information \r\n");
 		}
 
 		mesh_data_uart_dump(series_get->raw_value_x1, series_get->raw_value_x_len);
+		BT_AT_DUMP_HEX(series_get->raw_value_x1, series_get->raw_value_x_len);
 		BT_LOGA("raw value x2:\r\n");
+		BT_AT_PRINT(",");
 		mesh_data_uart_dump(series_get->raw_value_x2, series_get->raw_value_x_len);
+		BT_AT_DUMP_HEXN(series_get->raw_value_x2, series_get->raw_value_x_len);
 		memcpy(series_get->value, &series_length, 2);
 		memcpy((uint8_t *)series_get->value + 2, sensor_raw_data, series_length);
 		break;
@@ -2253,6 +2387,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		uint8_t status_trigger_type = ((*(pdata)) & 0x80) >> 7;
 		BT_LOGA("fast_cadence_period_divisor: %d, status_trigger_type :%d \r\n",
 				fast_cadence_period_divisor, status_trigger_type);
+		BT_AT_PRINT("+BLEMESHSENSOR:sc,%d,%d,%d,%d,",
+					BT_AT_MESH_ROLE_SERVER, property_id, fast_cadence_period_divisor, status_trigger_type);
 		pdata++;
 		uint8_t trigger_len;
 		if (status_trigger_type == 0) {
@@ -2262,31 +2398,40 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		}
 		if (status_trigger_type) {
 			BT_LOGA("status_trigger_delta_down: %d\r\n", LE_TO_U16(pdata));
+			BT_AT_PRINT("%d", LE_TO_U16(pdata));
 			memcpy(delta_down, pdata, trigger_len);
 			pdata += trigger_len;
 			BT_LOGA("status_trigger_delta_up: %d\r\n", LE_TO_U16(pdata));
+			BT_AT_PRINT("%d", LE_TO_U16(pdata));
 			memcpy(delta_up, pdata, trigger_len);
 			pdata += trigger_len;
 		} else {
 			BT_LOGA("status_trigger_delta_down: \r\n");
 			mesh_data_uart_dump(pdata, trigger_len);
+			BT_AT_DUMP_HEX(pdata, trigger_len);
 			memcpy(delta_down, pdata, trigger_len);
 			pdata += trigger_len;
 			BT_LOGA("status_trigger_delta_up: \r\n");
+			BT_AT_PRINT(",");
 			mesh_data_uart_dump(pdata, trigger_len);
+			BT_AT_DUMP_HEX(pdata, trigger_len);
 			memcpy(delta_up, pdata, trigger_len);
 			pdata += trigger_len;
 		}
 		uint8_t status_min_interval = *pdata;
 		app_store_status_min_interval = status_min_interval;
 		BT_LOGA("status_min_interval: %d \r\n", status_min_interval);
+		BT_AT_PRINT(",%d,", status_min_interval);
 		pdata++;
 		BT_LOGA("fast_cadence_low: \r\n");
 		mesh_data_uart_dump(pdata, raw_value_len);
+		BT_AT_DUMP_HEX(pdata, raw_value_len);
 		memcpy(cadence_low, pdata, raw_value_len);
 		pdata += raw_value_len;
 		BT_LOGA("fast_cadence_high: \r\n");
+		BT_AT_PRINT(",");
 		mesh_data_uart_dump(pdata, raw_value_len);
+		BT_AT_DUMP_HEXN(pdata, raw_value_len);
 		memcpy(cadence_high, pdata, raw_value_len);
 		app_store_cadence_len = 2 * trigger_len + 2 * raw_value_len + 3;
 		break;
@@ -2305,6 +2450,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		pdata++;
 		BT_LOGA("setting value: ");
 		mesh_data_uart_dump(pdata, raw_len);
+		BT_AT_PRINT("+BLEMESHSENSOR:ss,%d,%d,%d,%d,",
+					BT_AT_MESH_ROLE_SERVER, property_id, setting_property_id, access);
+		BT_AT_DUMP_HEXN(pdata, raw_len);
 		memcpy(app_setting_store, &access, 1);
 		memcpy(&app_setting_store[1], &raw_len, 1);
 		memcpy(&app_setting_store[2], pdata, raw_len);
@@ -2373,18 +2521,22 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_GET: {
 		rtk_bt_mesh_health_server_fault_get_t *fault_get = (rtk_bt_mesh_health_server_fault_get_t *)param;
 		BT_LOGA("[APP] Health server receive: company id %04x \r\n", fault_get->company_id);
+		BT_AT_PRINT("+BLEMESHHEALTH:hfg,%d,%04x\r\n", BT_AT_MESH_ROLE_SERVER, fault_get->company_id);
 		memcpy(fault_get->fault_array, app_fault_array, app_fault_array[0] + 1);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_CLEAR: {
 		rtk_bt_mesh_health_server_fault_clear_t *fault_clear = (rtk_bt_mesh_health_server_fault_clear_t *)param;
 		BT_LOGA("[APP] Health server receive: company id %04x \r\n", fault_clear->company_id);
+		BT_AT_PRINT("+BLEMESHHEALTH:hfc,%d,%04x\r\n", BT_AT_MESH_ROLE_SERVER, fault_clear->company_id);
 		memcpy(fault_clear->fault_array, app_clear_array, app_clear_array[0] + 1);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_TEST: {
 		rtk_bt_mesh_health_server_fault_test_t *fault_test = (rtk_bt_mesh_health_server_fault_test_t *)param;
 		BT_LOGA("[APP] Health server receive: test id %d company id %04x \r\n", fault_test->test_id, fault_test->company_id);
+		BT_AT_PRINT("+BLEMESHHEALTH:hft,%d,%d,%04x\r\n",
+					BT_AT_MESH_ROLE_SERVER, fault_test->test_id, fault_test->company_id);
 		/*call related customer test cb*/
 		memcpy(fault_test->fault_array, app_fault_array, app_fault_array[0] + 1);
 		break;
@@ -2398,6 +2550,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 		rtk_bt_mesh_health_server_period_set_t *period = (rtk_bt_mesh_health_server_period_set_t *)param;
 		app_health_period = (period->fast_period_divisor);
 		BT_LOGA("[APP] Health server receive: set fast period divisor %d \r\n", app_health_period);
+		BT_AT_PRINT("+BLEMESHHEALTH:hp,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, app_health_period);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_ATTN_GET: {
@@ -2410,6 +2563,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 		rtk_bt_mesh_health_server_attn_set_t *attn = (rtk_bt_mesh_health_server_attn_set_t *)param;
 		app_attn = attn->attn;
 		BT_LOGA("[APP] Health server receive: set attention timer %d \r\n", app_attn);
+		BT_AT_PRINT("+BLEMESHHEALTH:ha,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, app_attn);
 		/*****If needed, customer create the attention timer here******/
 		break;
 	}

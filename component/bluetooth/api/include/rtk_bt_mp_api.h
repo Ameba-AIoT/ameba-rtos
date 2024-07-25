@@ -37,10 +37,6 @@ void rtk_bt_mp_power_on(void);
 void rtk_bt_mp_power_off(void);
 
 /**
- * @}
- */
-
-/**
  * @typedef   rtk_bt_mp_phy_rx_t
  * @brief     Bluetooth LE PHY type for receiver.
  */
@@ -199,11 +195,11 @@ uint8_t rtk_bt_mp_dtm_tx_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
  * @param[in] cte_type: Type of the Constant Tone Extensions in transmitted test reference packets:
                         @ref rtk_bt_mp_cte_type_t.
  * @param[in] sw_pattern_len: The number of Antenna IDs in the pattern and shall be ignored when
-                              cte_type is not set to RTK_BT_MP_CTE_TYPE_AOA.
+                              cte_type is set to RTK_BT_MP_CTE_TYPE_AOA.
                               Range: 0x02 to max_switching_pattern_length supported by controller,
                               max_switching_pattern_length shall be less than or equal to 0x4B.
  * @param[in] p_antenna_ids:  Antenna ID in the pattern and shall be ignored when cte_type
-                              is not set to RTK_BT_MP_CTE_TYPE_AOA.
+                              is set to RTK_BT_MP_CTE_TYPE_AOA.
  * @return
  *      - 0 : Failed
  *      - 1 : Succeed
@@ -223,11 +219,11 @@ uint8_t rtk_bt_mp_dtm_tx_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt
  * @param[in] cte_type: Type of the Constant Tone Extensions in transmitted test reference packets:
                         @ref rtk_bt_mp_cte_type_t.
  * @param[in] sw_pattern_len: The number of Antenna IDs in the pattern and shall be ignored when
-                              cte_type is not set to RTK_BT_MP_CTE_TYPE_AOA.
+                              cte_type is set to RTK_BT_MP_CTE_TYPE_AOA.
                               Range: 0x02 to max_switching_pattern_length supported by controller,
                               max_switching_pattern_length shall be less than or equal to 0x4B.
  * @param[in] p_antenna_ids:  Antenna ID in the pattern and shall be ignored when cte_type
-                              is not set to RTK_BT_MP_CTE_TYPE_AOA.
+                              is set to RTK_BT_MP_CTE_TYPE_AOA.
  * @param[in] tx_power_level: Set transmitter to the specified or the nearest transmit power level.
                               Range: 0xXX Set transmitter to the specified or the nearest transmit power level
                                           from -127 to +20.
@@ -277,7 +273,7 @@ uint8_t rtk_bt_mp_dtm_set_tx_count(uint8_t tx_pkt_cnt);
  *      - 0 : Failed
  *      - 1 : Succeed
  */
-uint8_t rtk_bt_mp_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m);
+uint8_t rtk_bt_mp_dtm_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m);
 
 /**
  * @brief     Set TX Gain K for Fast MP test.
@@ -286,7 +282,7 @@ uint8_t rtk_bt_mp_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m);
  *      - 0 : Failed
  *      - 1 : Succeed
  */
-uint8_t rtk_bt_mp_set_tx_gaink(uint8_t tx_gain_k);
+uint8_t rtk_bt_mp_dtm_set_tx_gaink(uint8_t tx_gain_k);
 
 /**
  * @brief     Set TX Flatness K for Fast MP test.
@@ -295,7 +291,7 @@ uint8_t rtk_bt_mp_set_tx_gaink(uint8_t tx_gain_k);
  *      - 0 : Failed
  *      - 1 : Succeed
  */
-uint8_t rtk_bt_mp_set_tx_flatnessk(uint32_t tx_flastness_k);
+uint8_t rtk_bt_mp_dtm_set_tx_flatnessk(uint32_t tx_flastness_k);
 
 /**
  * @brief     Read thermal meter value for Fast MP test.
@@ -304,7 +300,7 @@ uint8_t rtk_bt_mp_set_tx_flatnessk(uint32_t tx_flastness_k);
  *      - 0 : Failed
  *      - 1 : Succeed
  */
-uint8_t rtk_bt_mp_read_thermal(uint8_t *p_thermal_value);
+uint8_t rtk_bt_mp_dtm_read_thermal(uint8_t *p_thermal_value);
 
 /**
  * @brief     Disable TX power tracking for Fast MP test.
@@ -313,7 +309,11 @@ uint8_t rtk_bt_mp_read_thermal(uint8_t *p_thermal_value);
  *      - 0 : Failed
  *      - 1 : Succeed
  */
-uint8_t rtk_bt_mp_set_disable_tx_power_tracking(void);
+uint8_t rtk_bt_mp_dtm_set_disable_tx_power_tracking(void);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

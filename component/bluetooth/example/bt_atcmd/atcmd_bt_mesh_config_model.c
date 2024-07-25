@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -34,7 +34,7 @@ static int atcmd_ble_mesh_app_key_add(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -57,7 +57,7 @@ static int atcmd_ble_mesh_model_app_bind(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -82,7 +82,7 @@ static int atcmd_ble_mesh_model_sub_add(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -102,7 +102,7 @@ static int atcmd_ble_mesh_ttl_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -123,7 +123,7 @@ static int atcmd_ble_mesh_ttl_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -143,7 +143,7 @@ static int atcmd_ble_mesh_relay_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -166,7 +166,7 @@ static int atcmd_ble_mesh_relay_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -186,7 +186,7 @@ static int atcmd_ble_mesh_net_trans_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -208,7 +208,7 @@ static int atcmd_ble_mesh_net_trans_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -228,7 +228,7 @@ static int atcmd_ble_mesh_node_reset(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -248,7 +248,7 @@ static int atcmd_ble_mesh_beacon_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -269,7 +269,7 @@ static int atcmd_ble_mesh_beacon_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -290,7 +290,7 @@ static int atcmd_ble_mesh_compo_data_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -310,7 +310,7 @@ static int atcmd_ble_mesh_proxy_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -331,7 +331,7 @@ static int atcmd_ble_mesh_proxy_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -353,7 +353,7 @@ static int atcmd_ble_mesh_pub_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -385,7 +385,7 @@ static int atcmd_ble_mesh_pub_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -410,7 +410,7 @@ static int atcmd_ble_mesh_model_sub_delete(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -432,7 +432,7 @@ static int atcmd_ble_mesh_model_sub_delete_all(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -457,7 +457,7 @@ static int atcmd_ble_mesh_model_sub_overwrite(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -479,7 +479,7 @@ static int atcmd_ble_mesh_model_sub_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -500,7 +500,7 @@ static int atcmd_ble_mesh_net_key_add(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -532,7 +532,7 @@ static int atcmd_ble_mesh_net_key_update(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -553,7 +553,7 @@ static int atcmd_ble_mesh_net_key_delete(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -573,7 +573,7 @@ static int atcmd_ble_mesh_net_key_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -606,7 +606,7 @@ static int atcmd_ble_mesh_app_key_update(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -628,7 +628,7 @@ static int atcmd_ble_mesh_app_key_delete(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -649,7 +649,7 @@ static int atcmd_ble_mesh_app_key_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -670,7 +670,7 @@ static int atcmd_ble_mesh_node_identity_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -692,7 +692,7 @@ static int atcmd_ble_mesh_node_identity_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -715,7 +715,7 @@ static int atcmd_ble_mesh_model_app_unbind(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -737,7 +737,7 @@ static int atcmd_ble_mesh_model_app_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -757,7 +757,7 @@ static int atcmd_ble_mesh_frnd_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -778,7 +778,7 @@ static int atcmd_ble_mesh_frnd_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -799,7 +799,7 @@ static int atcmd_ble_mesh_lpn_poll_timeout_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -820,7 +820,7 @@ static int atcmd_ble_mesh_key_refresh_phase_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -842,7 +842,7 @@ static int atcmd_ble_mesh_key_refresh_phase_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -862,7 +862,7 @@ static int atcmd_ble_mesh_hb_pub_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -891,7 +891,7 @@ static int atcmd_ble_mesh_hb_pub_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -911,7 +911,7 @@ static int atcmd_ble_mesh_hb_sub_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -934,7 +934,7 @@ static int atcmd_ble_mesh_hb_sub_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support configuration client model.");
+	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
 	return -1;
 #endif
 }
@@ -986,8 +986,11 @@ static const cmd_table_t mesh_config_cmd_table[] = {
 
 int atcmd_bt_mesh_config(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_config_cmd_table, "[ATBC][mesh_config]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_config_cmd_table, "[AT+BLEMESHCONFIG]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_config_cmd_table, "[ATBC][mesh_config]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

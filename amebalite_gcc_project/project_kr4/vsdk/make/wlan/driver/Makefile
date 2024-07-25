@@ -81,9 +81,9 @@ endif
 #*****************************************************************************#
 
 include Makefile.drv
+include Makefile.drv.common
 include Makefile.phy
 include Makefile.btc
-
 CSRC += $(CSRC_DRV) $(CSRC_PHY) $(CSRC_BTC)
 
 #*****************************************************************************#

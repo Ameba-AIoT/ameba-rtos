@@ -9,7 +9,7 @@
 #include <osif.h>
 
 #include "platform_autoconf.h"
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -207,12 +207,12 @@ static int atcmd_bt_gap_vendor_cmd_req(int argc, char **argv)
 	hexnum_str_to_array(argv[2], vendor_param.cmd_param, vendor_param.len);
 	ret = rtk_bt_gap_vendor_cmd_req(&vendor_param);
 	if (ret) {
-		AT_PRINTK("[ATBC] GAP vendor cmd reqeust failed, err: 0x%x", ret);
+		BTGAP_AT_PRINTK("GAP vendor cmd reqeust failed, err: 0x%x", ret);
 		osif_mem_free(vendor_param.cmd_param);
 		return -1;
 	}
 
-	AT_PRINTK("[ATBC] GAP vendor cmd reqeust success");
+	BTGAP_AT_PRINTK("GAP vendor cmd reqeust success");
 	osif_mem_free(vendor_param.cmd_param);
 	return 0;
 }
@@ -227,6 +227,9 @@ static const cmd_table_t gap_cmd_table[] = {
 
 int atcmd_bt_gap(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, gap_cmd_table, "[ATBC][gap]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, gap_cmd_table, "[AT+BTGAP]");
+#else
+	return atcmd_bt_excute(argc, argv, gap_cmd_table, "[ATBC][gap]");
+#endif
 }

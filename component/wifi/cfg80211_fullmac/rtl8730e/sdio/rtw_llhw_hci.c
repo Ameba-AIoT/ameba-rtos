@@ -6,27 +6,20 @@
 
 struct inic_device global_idev;
 
-void llhw_host_send(u8 *buf, u32 len)
-{
-	struct inic_device *idev = &global_idev;
-
-	if (idev->sdio_priv->dev_state == PWR_STATE_SLEEP) {
-		dev_dbg(idev->fullmac_dev, "%s: wakeup device", __func__);
-		if (rtw_resume_common(idev->sdio_priv)) {
-			dev_err(idev->fullmac_dev, "%s: fail to wakeup device, stop send", __func__);
-			return;
-		}
-	}
-
-	rtw_sdio_send_msg(buf, len);
-}
-
 int llhw_init(void)
 {
 	int ret = 0;
 	struct inic_device *idev = &global_idev;
 
-	idev->sdio_priv = &inic_sdio_priv;
+#if defined(CONFIG_FULLMAC_HCI_SDIO)
+	idev->intf_priv = &inic_sdio_priv;
+	idev->intf_ops = &sdio_intf_ops;
+#elif defined(CONFIG_FULLMAC_HCI_SPI)
+	idev->intf_priv = &inic_spi_priv;
+	idev->intf_ops = &spi_intf_ops;
+#else
+#error Not support other interfaces!
+#endif
 
 	llhw_recv_init();
 

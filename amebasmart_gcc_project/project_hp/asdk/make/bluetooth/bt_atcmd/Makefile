@@ -26,6 +26,7 @@ CSRC += \
 	$(DIR)/bt_atcmd/atcmd_bt_gatts.c \
 	$(DIR)/bt_atcmd/atcmd_bt_gattc.c \
 	$(DIR)/bt_atcmd/atcmd_bt_vendor.c \
+	$(DIR)/bt_atcmd/atcmd_bt_sdp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_a2dp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_avrcp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_spp.c \

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -28,12 +28,12 @@ static int atcmd_ble_mesh_health_fault_get(int argc, char **argv)
 	fault_get.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_health_fault_get(&fault_get);
 	if (ret) {
-		AT_PRINTK("[%s] Health model get fault failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model get fault failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 	return 0;
@@ -51,13 +51,13 @@ static int atcmd_ble_mesh_health_fault_clear(int argc, char **argv)
 	fault_clear.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_health_fault_clear(&fault_clear);
 	if (ret) {
-		AT_PRINTK("[%s] Health model clear fault failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model clear fault failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 }
@@ -75,13 +75,13 @@ static int atcmd_ble_mesh_health_fault_test(int argc, char **argv)
 	fault_test.app_key_index = str_to_int(argv[4]);
 	ret = rtk_bt_mesh_health_fault_test(&fault_test);
 	if (ret) {
-		AT_PRINTK("[%s] Health model test fault failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model test fault failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 }
@@ -96,13 +96,13 @@ static int atcmd_ble_mesh_health_period_get(int argc, char **argv)
 	period_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_health_period_get(&period_get);
 	if (ret) {
-		AT_PRINTK("[%s] Health model get period failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model get period failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 }
@@ -119,13 +119,13 @@ static int atcmd_ble_mesh_health_period_set(int argc, char **argv)
 	period_set.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_health_period_set(&period_set);
 	if (ret) {
-		AT_PRINTK("[%s] Health model set period failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model set period failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 }
@@ -140,13 +140,13 @@ static int atcmd_ble_mesh_health_attn_get(int argc, char **argv)
 	attn_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_health_attn_get(&attn_get);
 	if (ret) {
-		AT_PRINTK("[%s] Health model get attention timer failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model get attention timer failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 }
@@ -163,13 +163,13 @@ static int atcmd_ble_mesh_health_attn_set(int argc, char **argv)
 	attn_set.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_health_attn_set(&attn_set);
 	if (ret) {
-		AT_PRINTK("[%s] Health model set attention timer failed! reason: 0x%x", __func__, ret);
+		MESHHEALTH_AT_PRINTK("[%s] Health model set attention timer failed! reason: 0x%x", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Is not provisioner role, do not support health client model.");
+	MESHHEALTH_AT_PRINTK("Is not provisioner role, do not support health client model.");
 	return -1;
 #endif
 }
@@ -187,8 +187,11 @@ static const cmd_table_t mesh_health_cmd_table[] = {
 
 int atcmd_bt_mesh_health(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_health_cmd_table, "[ATBC][mesh_health]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_health_cmd_table, "[AT+BLEMESHHEALTH]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_health_cmd_table, "[ATBC][mesh_health]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

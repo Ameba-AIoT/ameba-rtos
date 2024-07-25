@@ -37,6 +37,7 @@ CSRC +=$(DIR)/wififw_init.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR)/wififw_periodcca.c \
+	   $(DIR)/wififw_deltatsft_patch.c \
 	   $(DIR)/wififw_lpsofld.c \
 	   $(DIR)/wififw_ps_dbg.c \
 	   $(DIR_COMMON)/wififw_c2h_common.c \

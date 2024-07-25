@@ -231,7 +231,7 @@ void play_sample(uint32_t channels, uint32_t rate, uint32_t bits, uint32_t perio
 		format = RTAUDIO_FORMAT_PCM_16_BIT;
 		break;
 	case 24:
-		format = RTAUDIO_FORMAT_PCM_24_BIT_PACKED;
+		format = RTAUDIO_FORMAT_PCM_24_BIT;
 		break;
 	case 32:
 		format = RTAUDIO_FORMAT_PCM_32_BIT;

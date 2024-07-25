@@ -695,7 +695,11 @@ static const uint8_t a2dp_src_sdp_record[] = {
 };
 
 static rtk_bt_a2dp_media_codec_sbc_t codec_sbc = {
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+	.sampling_frequency_mask = RTK_BT_A2DP_SBC_SAMPLING_FREQUENCY_48KHZ,
+#else
 	.sampling_frequency_mask = 0xf0,
+#endif
 	.channel_mode_mask = 0x0f,
 	.block_length_mask = 0xf0,
 	.subbands_mask = 0x0C,
@@ -980,7 +984,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			BT_LOGE("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -991,7 +995,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			BT_LOGE("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -1643,6 +1647,45 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gattc_app_callback(uint8_t event, void
 }
 /* ---------------------------------- Scatternet(end) -----------------------------------*/
 
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+static int16_t pcm_buffer[512] = {0};
+static uint16_t a2dp_demo_send_data_seq = 0;
+
+static void app_a2dp_src_send_data(void)
+{
+	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
+	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
+
+	if (src_a2dp_credits) {
+		if (demo_uart_read((uint8_t *)pcm_buffer)) {
+			// BT_LOGA("[A2DP SRC Demo]: uart buffer read success \r\n");
+			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer, (uint32_t)1024);
+			if (penc_codec_buffer_t) {
+				memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
+				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+				data_send_t.seq_num = a2dp_demo_send_data_seq++;
+				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
+				data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+				data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
+				data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+				data_send_t.flush = false;
+				if (rtk_bt_a2dp_data_send(&data_send_t)) {
+					BT_LOGE("[A2DP] data send fail \r\n");
+				} else {
+					src_a2dp_credits --;
+				}
+				rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
+			} else {
+				BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
+			}
+		} else {
+			// BT_LOGE("[A2DP SRC Demo]: uart buffer length is not enough \r\n");
+		}
+	} else {
+		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
+	}
+}
+#else
 static uint32_t pcm_offset = 0;
 static uint16_t a2dp_demo_send_data_seq = 0;
 
@@ -1705,6 +1748,7 @@ static void app_a2dp_src_send_data(void)
 		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
 	}
 }
+#endif
 
 static void a2dp_task_entry(void *ctx)
 {
@@ -2068,6 +2112,35 @@ static rtk_bt_evt_cb_ret_t br_gap_app_callback(uint8_t evt_code, void *param, ui
 	default:
 		BT_LOGE("%s, Unknown GAP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
 		break;
+	}
+
+	return RTK_BT_EVT_CB_OK;
+}
+
+static rtk_bt_evt_cb_ret_t rtk_bt_sdp_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+
+	switch (evt_code) {
+	case RTK_BT_SDP_EVT_DID_ATTR_INFO: {
+		rtk_sdp_did_attr_info *p_info = (rtk_sdp_did_attr_info *)param;
+		BT_LOGA("[SDP] SDP DID ATTR %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+				p_info->bd_addr[5], p_info->bd_addr[4],
+				p_info->bd_addr[3], p_info->bd_addr[2],
+				p_info->bd_addr[1], p_info->bd_addr[0]);
+		BT_LOGA("[SDP] specific_id 0x%04x, vendor_id 0x%04x, vendor_src 0x%04x, product_id 0x%04x, version 0x%04x \r\n",
+				p_info->specific_id,
+				p_info->vendor_id,
+				p_info->vendor_src,
+				p_info->product_id,
+				p_info->version);
+		break;
+	}
+
+	default: {
+		BT_LOGE("%s, Unknown SDP RTK_BLE_EVT: %d\r\n", __func__, evt_code);
+		break;
+	}
 	}
 
 	return RTK_BT_EVT_CB_OK;
@@ -2900,12 +2973,17 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 
 		/* bredr gap related */
 		{
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+			demo_uart_init();
+#endif
 			/* Initilize GAP part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_GAP, br_gap_app_callback));
 			/* mix RTK_BT_DEV_NAME with bt mac address */
 			strcpy(dev_name, RTK_BT_DEV_NAME);
 			snprintf(&dev_name[strlen(RTK_BT_DEV_NAME)], 7, "(%02X%02X)", bd_addr.addr[1], bd_addr.addr[0]);
 			BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
+			/* Initilize SDP part */
+			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SDP, rtk_bt_sdp_app_callback));
 
 			/* Initilize avrcp part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_AVRCP, rtk_bt_avrcp_app_callback));
@@ -3024,6 +3102,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_GAP));
+		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_SDP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_AVRCP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
 		/* Disable BT */

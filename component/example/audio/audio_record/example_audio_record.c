@@ -36,6 +36,9 @@
 //to test ppm between system clock and audio clock, please remember
 //to use pll for audio record in ameba_audio_hw_usrcfg.h.
 #define TEST_TIMESTAMP        0
+//if running in mixer architecture, please set 1 here.
+//if running in passthrough architecture, please set 0 here.
+#define TEST_MIXER_ARCH       1
 
 #define EXAMPLE_AUDIO_DEBUG(fmt, args...)    printf("=> D/AudioRecordExample:[%s]: " fmt "\n", __func__, ## args)
 #define EXAMPLE_AUDIO_ERROR(fmt, args...)    printf("=> E/AudioRecordExample:[%s]: " fmt "\n", __func__, ## args)
@@ -63,7 +66,7 @@ static unsigned int  g_record_channel = 2;
 static unsigned int  g_record_mode = 0;
 static unsigned int  g_record_format = 16;
 static unsigned int  g_record_bytes_one_time = 8192;
-static unsigned int  g_record_mic_category = RTPIN_IN_MIC;
+static unsigned int  g_record_mic_category = RTDEVICE_IN_MIC;
 static unsigned int  g_record_channel_src[MAX_CHANNEL_COUNT] = {RTAUDIO_AMIC1};
 static unsigned int  Record_Sample(void);
 static          void Play_Sample(unsigned int channels, unsigned int rate);
@@ -87,7 +90,7 @@ static int GetFormatForBits(void)
 		format = RTAUDIO_FORMAT_PCM_16_BIT;
 		break;
 	case 24:
-		format = RTAUDIO_FORMAT_PCM_24_BIT_PACKED;
+		format = RTAUDIO_FORMAT_PCM_24_BIT;
 		break;
 	case 32:
 		format = RTAUDIO_FORMAT_PCM_32_BIT;
@@ -176,8 +179,6 @@ static unsigned int Record_Sample()
 	}
 	g_audio_record = audio_record;
 
-	//RTAudioControl_SetMicUsage(RTAUDIO_CAPTURE_USAGE_DMIC_REF_AMIC);
-
 	for (unsigned int i = 0; i < MAX_CHANNEL_COUNT; i++) {
 		RTAudioControl_SetChannelMicCategory(i, g_record_channel_src[i]);
 	}
@@ -239,10 +240,12 @@ static unsigned int Record_Sample()
 		if (!g_only_record && bytes_read >= 100 * g_record_rate * g_record_channel * g_record_format / 8 / 1000) {
 			RTAudioTrack_Write(audio_track, buffer, size, true);
 		} else if (!g_only_record && !g_noirq_test) {
+#if !TEST_MIXER_ARCH
 			memset(buffer, 0, size);
 			RTAudioTrack_Write(audio_track, buffer, size, true);
 			//To give another 0 buf at beginning, in case of xrun. For real case, please add ringbuffer between record and track.
 			RTAudioTrack_Write(audio_track, buffer, size, true);
+#endif
 		}
 
 		bytes_read += size;
@@ -482,11 +485,11 @@ void RTAudioRecordTestApp(char **argv)
 			argv++;
 			if (*argv) {
 				if (atoi(*argv) == 1) {
-					g_record_mic_category = RTPIN_IN_DMIC_REF_AMIC;
+					g_record_mic_category = RTDEVICE_IN_DMIC_REF_AMIC;
 				} else if (atoi(*argv) == 2) {
-					g_record_mic_category = RTPIN_IN_I2S;
+					g_record_mic_category = RTDEVICE_IN_I2S;
 				} else {
-					g_record_mic_category = RTPIN_IN_MIC;
+					g_record_mic_category = RTDEVICE_IN_MIC;
 				}
 			}
 		}
@@ -494,12 +497,6 @@ void RTAudioRecordTestApp(char **argv)
 			argv++;
 		}
 	}
-
-	//RTAudioControl_SetHardwareVolume(0.8, 0.8);
-	//RTAudioControl_SetPlaybackDevice(RTAUDIO_DEVICE_HEADPHONE);
-
-	//user can set audio_hw_configs.h's AUDIO_HW_AMPLIFIER_PIN, instead of calling this api.
-	//RTAudioControl_SetAmplifierEnPin(_PB_11);
 
 	if (SUCCESS != rtos_task_create(NULL, ((const char *)"RecordTask"), RecordTask, NULL, 4096 * 4, 5)) {
 		EXAMPLE_AUDIO_ERROR("%s rtos_task_create(RecordTask) failed \n", __FUNCTION__);

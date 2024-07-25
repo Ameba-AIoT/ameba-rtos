@@ -1,6 +1,9 @@
 #ifndef __RTW_LLHW_EVENT_H__
 #define __RTW_LLHW_EVENT_H__
 
+#define RTW_JOIN_TIMEOUT		20000
+#define DEV_REQ_NETWORK_INFO_MAX_LEN	6
+
 /**
  * @brief  The enumeration is join block param.
  */
