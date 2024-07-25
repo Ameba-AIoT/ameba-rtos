@@ -682,6 +682,17 @@ typedef struct {
 } rtk_bt_le_audio_ascs_ase_state_ind_t;
 
 /**
+ * @typedef    rtk_bt_le_audio_ascs_cis_conn_info_t
+ * @brief     structure of LE audio cis connection information
+ */
+typedef struct {
+	uint16_t conn_handle;
+	uint16_t cis_conn_handle;
+	uint8_t  cig_id;
+	uint8_t  cis_id;
+} rtk_bt_le_audio_ascs_cis_conn_info_t;
+
+/**
  * @typedef    rtk_bt_le_audio_ascs_setup_data_path_ind_t
  * @brief     structure of LE audio ascs setup data path indication
  */

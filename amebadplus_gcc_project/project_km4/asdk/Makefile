@@ -63,7 +63,7 @@ else
 exit 1
 endif
 
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
 LINK_ROM_LIB_NS =
 LINK_ROM_SYMBOL_NS = ./ld/ameba_rom_symbol_acut.ld
@@ -183,7 +183,7 @@ build_target_folder:
 	@if [ -d $(BUILD_TARGET_LIB_FOLDER) ]; then echo "$(BUILD_TARGET_LIB_FOLDER) exist"; else $(MKDIR) $(BUILD_TARGET_LIB_FOLDER); fi
 	@if [ -d $(TARGET_LIBAPP_FOLDER) ]; then echo "$(TARGET_LIBAPP_FOLDER) exist"; else $(MKDIR) -p $(TARGET_LIBAPP_FOLDER); fi
 	@if [ -d $(TARGET_LIBSOC_FOLDER) ]; then echo "$(TARGET_LIBSOC_FOLDER) exist"; else $(MKDIR) -p $(TARGET_LIBSOC_FOLDER); fi
-	
+
 #*****************************************************************************#
 #                      RULES TO MAKE SUB DIRS                                 #
 #*****************************************************************************#
@@ -365,7 +365,7 @@ else
 	$(Q)$(LD) $(LD_ARG) target_img2.axf $(RAM_OBJS_LIST) $(LIB_OBJS_LIST) $(LINK_ROM_LIB_NS) $(LINK_THIRD_APP_LIB) \
 	$(ASDK_TOOLCHAIN)/lib/gcc/arm-none-eabi/$(ASDK_VER)/thumb/v8-m.main+fp/fpu/crtbegin.o \
 	$(ASDK_TOOLCHAIN)/lib/gcc/arm-none-eabi/$(ASDK_VER)/thumb/v8-m.main+fp/fpu/crtend.o -lm -lstdc++
-endif	
+endif
 	$(Q)$(MOVE) text.map $(IMAGE_TARGET_FOLDER)/text_image2_ns.map
 	$(Q)$(MOVE) target_img2.axf $(IMAGE_TARGET_FOLDER)
 	$(Q)$(NM) $(IMAGE_TARGET_FOLDER)/target_img2.axf | sort > $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -407,7 +407,7 @@ endif
 	$(Q)$(CC_SIZE) -A --radix=10 $(IMAGE_TARGET_FOLDER)/target_img2.axf
 	$(Q)$(CC_SIZE) -t --radix=10 $(IMAGE_TARGET_FOLDER)/target_img2.axf
 	@echo "========== Image Info DEC =========="
-	
+
 	$(Q)$(RM) -f $(RAM_OBJS_LIST) $(LIB_OBJS_LIST)
 	@echo "========== linker img2_ns end =========="
 
@@ -415,6 +415,8 @@ endif
 
 	@# 32Bytes aligned for rsip #
 	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
 
 ifeq ($(CONFIG_MP_SHRINK), y)
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __image2_entry_func__  $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -509,7 +511,7 @@ else
 	fi
 endif
 	@echo "========== Image manipulating end =========="
-	
+
 code_analyze:
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
@@ -569,7 +571,7 @@ gdb: gdb_prepare
 	$(COPY) $(GNU_SCRIPT)/acut_loader/*  $(GNU_SCRIPT)/
 	$(GNU_SCRIPT)/SetupGDB_FPGA.sh $(GNU_SCRIPT)
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_flash_write.txt
-	
+
 
 gdbboot: gdb_prepare
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_jtag_boot.txt
@@ -638,7 +640,7 @@ clean_xip:
 	@make -C make_ns clean
 
 clean_all: clean
-	
+
 #*****************************************************************************#
 #              PACKAGE COPY link script file-ld                               #
 #*****************************************************************************#
@@ -690,7 +692,7 @@ copy_imgtool_flashloader:
 	$(Q)$(COPY) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin 	$(FLOADER_BIN_DIR)/imgtool_flashloader.bin -f
 	$(Q)$(MOVE) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin 	$(FLOADER_BIN_DIR)/floader_amebadplus.bin -f
 
-gen_imgtool_floader: 
+gen_imgtool_floader:
 	@if [ ! -f $(FLOADER_BIN_DIR)/imgtool_flashloader.bin ]; then \
 		echo Error: No imgtool_flashloader.bin in $(FLOADER_BIN_DIR); exit 1;\
 	fi

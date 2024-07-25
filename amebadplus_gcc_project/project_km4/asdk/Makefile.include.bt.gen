@@ -9,7 +9,8 @@ IFLAGS += \
 	-I$(BLEDIR)/driver/inc \
 	-I$(BLEDIR)/driver/inc/hci \
 	-I$(BLEDIR)/driver/platform/amebadplus/inc \
-	-I$(BLEDIR)/osif
+	-I$(BLEDIR)/osif \
+	-I$(BLEDIR)/application/bt_fast_mp
 
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 IFLAGS += \

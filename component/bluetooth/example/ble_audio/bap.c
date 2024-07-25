@@ -2333,16 +2333,17 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		case RTK_BLE_AUDIO_ASCS_ASE_STATE_IDLE:
 			BT_LOGA("[APP] (ASCS_ASE_STATE_IDLE)\r\n");
 			if (param->audio_role == RTK_BLE_AUDIO_SINK) {
-				if (p_bap_uni_ser_info->enabling_sink_ase_num > 0) {
+				// ASE Streaming state --> ASE Releasing state --> ASE Idle state
+				if (p_bap_uni_ser_info->enabling_sink_ase_num > p_bap_uni_ser_info->streaming_sink_ase_num) {
 					p_bap_uni_ser_info->enabling_sink_ase_num--;
-				} else {
+				} else if (p_bap_uni_ser_info->enabling_sink_ase_num < p_bap_uni_ser_info->streaming_sink_ase_num) {
 					BT_LOGE("[APP] enabling_sink_ase_num is already %d, something is wrong!!\r\n", p_bap_uni_ser_info->enabling_sink_ase_num);
 					break;
 				}
 			} else if (param->audio_role == RTK_BLE_AUDIO_SOURCE) {
-				if (p_bap_uni_ser_info->enabling_source_ase_num > 0) {
+				if (p_bap_uni_ser_info->enabling_source_ase_num > p_bap_uni_ser_info->streaming_source_ase_num) {
 					p_bap_uni_ser_info->enabling_source_ase_num--;
-				} else {
+				} else if (p_bap_uni_ser_info->enabling_source_ase_num < p_bap_uni_ser_info->streaming_source_ase_num) {
 					BT_LOGE("[APP] enabling_source_ase_num is already %d, something is wrong!!\r\n", p_bap_uni_ser_info->enabling_source_ase_num);
 					break;
 				}
@@ -2355,6 +2356,18 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			break;
 		case RTK_BLE_AUDIO_ASCS_ASE_STATE_QOS_CONFIGURED:
 			BT_LOGA("[APP] (ASCS_ASE_STATE_QOS_CONFIGURED)\r\n");
+			if (param->audio_role == RTK_BLE_AUDIO_SINK) {
+				// ASE Streaming state --> ASE Qos Configured state, but not enter ASE releasing state
+				if (p_bap_uni_ser_info->streaming_sink_ase_num > 0 && \
+					p_bap_uni_ser_info->streaming_sink_ase_num == p_bap_uni_ser_info->enabling_sink_ase_num) {
+					p_bap_uni_ser_info->enabling_sink_ase_num--;
+				}
+			} else if (param->audio_role == RTK_BLE_AUDIO_SOURCE) {
+				if (p_bap_uni_ser_info->streaming_source_ase_num > 0 && \
+					p_bap_uni_ser_info->streaming_source_ase_num == p_bap_uni_ser_info->enabling_source_ase_num) {
+					p_bap_uni_ser_info->enabling_source_ase_num--;
+				}
+			}
 			break;
 		case RTK_BLE_AUDIO_ASCS_ASE_STATE_ENABLING:
 			BT_LOGA("[APP] (ASCS_ASE_STATE_ENABLING)\r\n");
@@ -2382,31 +2395,38 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			BT_LOGA("[APP] (ASCS_ASE_STATE_STREAMING)\r\n");
 			if (param->audio_role == RTK_BLE_AUDIO_SINK) {
 				if (p_bap_uni_ser_info->streaming_sink_ase_num < p_bap_uni_ser_info->enabling_sink_ase_num) {
+					// ASE Codec Configured state--> ASE QoS Configured --> ASE Enabling state--> ASE Streaming state
 					p_bap_uni_ser_info->streaming_sink_ase_num++;
+				} else if (p_bap_uni_ser_info->streaming_sink_ase_num == p_bap_uni_ser_info->enabling_sink_ase_num) {
+					// ASE Streaming state--> ASE QoS Configured --> ASE Enabling state--> ASE Streaming state
+					// do nothing
 				} else {
-					BT_LOGE("[APP] streaming_sink_ase_num(%d) >= enabling_sink_ase_num(%d), something is wrong!!\r\n", p_bap_uni_ser_info->streaming_sink_ase_num,
-							p_bap_uni_ser_info->enabling_source_ase_num);
+					BT_LOGE("[APP] streaming_sink_ase_num(%d) > enabling_sink_ase_num(%d), something is wrong!!\r\n", p_bap_uni_ser_info->streaming_sink_ase_num,
+							p_bap_uni_ser_info->enabling_sink_ase_num);
 					break;
 				}
 				BT_LOGA("[APP] streaming_sink_ase_num=%d,enabling_sink_ase_num=%d\r\n", p_bap_uni_ser_info->streaming_sink_ase_num,
 						p_bap_uni_ser_info->enabling_sink_ase_num);
 				if (p_bap_uni_ser_info->streaming_sink_ase_num == p_bap_uni_ser_info->enabling_sink_ase_num) {
 					//init rx thread
+					if (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER) {
+						g_uni_ser_info.status = RTK_BLE_AUDIO_UNICAST_SERVER_START;
+					}
 					app_bt_le_audio_bap_decode_data_control(true);
-				}
-				if (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER) {
-					g_uni_ser_info.status = RTK_BLE_AUDIO_UNICAST_SERVER_START;
 				}
 			} else if (param->audio_role == RTK_BLE_AUDIO_SOURCE) {
 				if (p_bap_uni_ser_info->streaming_source_ase_num < p_bap_uni_ser_info->enabling_source_ase_num) {
 					p_bap_uni_ser_info->streaming_source_ase_num++;
+				} else if (p_bap_uni_ser_info->streaming_source_ase_num == p_bap_uni_ser_info->enabling_source_ase_num) {
+					// ASE Streaming state--> ASE QoS Configured --> ASE Enbabling state--> ASE Streaming state
+					// do nothing
 				} else {
-					BT_LOGE("[APP] streaming_source_ase_num(%d) >= enabling_source_ase_num(%d), something is wrong!!\r\n",
-							p_bap_uni_ser_info->streaming_source_ase_num, p_bap_uni_ser_info->enabling_source_ase_num);
+					BT_LOGE("[APP] streaming_source_ase_num(%d) > enabling_source_ase_num(%d), something is wrong!!\r\n", p_bap_uni_ser_info->streaming_source_ase_num,
+							p_bap_uni_ser_info->enabling_source_ase_num);
 					break;
 				}
 				if (p_bap_uni_ser_info->streaming_source_ase_num == p_bap_uni_ser_info->enabling_source_ase_num) {
-					//init tx thread in at cmd
+					//init tx thread in RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND
 				}
 			}
 			break;
@@ -2478,6 +2498,12 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		//remove the iso conn handle when tx data path remove
 		app_bt_le_audio_iso_data_path_remove(param->cis_conn_handle, param->path_direction);
 		g_uni_ser_info.status = RTK_BLE_AUDIO_UNICAST_SERVER_STOP;
+		break;
+	}
+	case RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO: {
+		rtk_bt_le_audio_ascs_cis_conn_info_t *param = (rtk_bt_le_audio_ascs_cis_conn_info_t *) data;
+		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO: conn_handle %d, cis_conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x\r\n",
+				param->conn_handle, param->cis_conn_handle, param->cig_id, param->cis_id);
 		break;
 	}
 	/*************************************************end bap_uni_server_event**************************************************/
@@ -2737,7 +2763,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 										 &cap_param_t);
 			p_bap_bro_sink_info->config_sink_audio_location = p_lea_app_conf->pacs_param.sink_audio_location;
 			//set GAP configuration
-			bt_app_conf.app_profile_support = RTK_BT_PROFILE_LEAUDIO;
+			bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_LEAUDIO;
 			bt_app_conf.mtu_size = 180;
 			bt_app_conf.master_init_mtu_req = true;
 			bt_app_conf.prefer_all_phy = 0;

@@ -56,9 +56,9 @@ endif
 LINK_ROM_LIB = $(ROM_LIB_DIR)/rom.a
 
 LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
-LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld 
+LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld
 endif
 LINK_ROM_SYMBOL += ./ld/ameba_rom_symbol_stdlib.ld
 
@@ -98,7 +98,7 @@ build_target_folder:
 	@if [ -d $(ROM_LIB_DIR) ]; then echo "$(ROM_LIB_DIR) exist"; else $(MKDIR) -p $(ROM_LIB_DIR); fi
 	@if [ -d $(TARGET_LIBAPP_FOLDER) ]; then echo "$(TARGET_LIBAPP_FOLDER) exist"; else $(MKDIR) -p $(TARGET_LIBAPP_FOLDER); fi
 	@if [ -d $(TARGET_LIBSOC_FOLDER) ]; then echo "$(TARGET_LIBSOC_FOLDER) exist"; else $(MKDIR) -p $(TARGET_LIBSOC_FOLDER); fi
-	
+
 #*****************************************************************************#
 #                      RULES TO MAKE SUB DIRS                                 #
 #*****************************************************************************#
@@ -177,6 +177,8 @@ endif
 
 	@# 32Bytes aligned for rsip #
 	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
 
 ifeq ($(CONFIG_MP_SHRINK), y)
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __img2_entry_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -216,7 +218,7 @@ else
 endif
 
 	@echo "========== Image manipulating end =========="
-	
+
 code_analyze:
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \

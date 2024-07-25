@@ -54,7 +54,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.legacy_ps_listen_interval = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 5;
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed AP_STA_NUM */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */

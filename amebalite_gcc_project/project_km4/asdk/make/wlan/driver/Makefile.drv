@@ -8,6 +8,8 @@ vpath %.c $(DIR)/core_rom \
 		$(DIR)/../api \
 		$(DIR)/../wpa_supplicant/src/crypto \
 		$(DIR)/core_rom2024 \
+		$(DIR)/mcc \
+		$(DIR)/wifi_tunnel/
 
 
 ifeq ($(CONFIG_AMEBALITE), y)
@@ -92,6 +94,10 @@ CSRC_DRV += \
 	$(DIR)/$(HALDIR)/wifi_hal_suspend.c
 endif
 
+MCC_COMMON += \
+	$(DIR)/mcc/rtw_mcc.c \
+	$(DIR)/mcc/rtw_mcc_status.c \
+	$(DIR)/mcc/rtw_mcc_frame.c \
 
 CSRC_WIFI_TUNNEL_COMMON += \
 	$(DIR)/forward_mesh/relay/relay_intfs.c \
@@ -237,6 +243,7 @@ endif
 CSRC_DRV += \
 	$(DIR)/rtl8721da/wifi_hal_odm.c \
 	$(DIR)/rtl8721da/wifi_hal_speaker.c \
+	$(DIR)/hal_common/hal_speaker.c \
 	$(DIR)/rtl8721da/wifi_hal_nan_ctrl.c \
 	$(DIR)/rtl8721da/wifi_hal_p2pps.c \
 	$(DIR)/intf/wifi_intf_drv_to_mp_sdio.c \
@@ -246,6 +253,7 @@ CSRC_DRV += $(CSRC_HAL_PHYDM)
 CSRC_DRV += $(CSRC_HALCOMMON_V1)
 CSRC_DRV += $(CSRC_WIFI_TUNNEL_COMMON)
 CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(MCC_COMMON)
 
 ifeq ($(findstring y, $(CONFIG_SINGLE_CORE_WIFI) $(CONFIG_KM4_AS_NP)), y)
 CSRC_DRV += $(CORE_ROM_DP_START_ADD_DONT_CHANGE)
@@ -276,6 +284,7 @@ CSRC_DRV += \
 	$(DIR)/rtl8730e/wifi_hal_power_save.c \
 	$(DIR)/rtl8730e/wifi_hal_nan_ctrl.c	\
 	$(DIR)/rtl8730e/wifi_hal_speaker.c \
+	$(DIR)/hal_common/hal_speaker.c \
 	$(DIR)/rtl8730e/wifi_hal_p2pps.c
 
 CSRC_DRV += $(CORE_ROM_DP_START_ADD_DONT_CHANGE)

@@ -49,9 +49,9 @@ endif
 LINK_ROM_LIB = $(ROM_LIB_DIR)/rom.a
 
 LINK_ROM_SYMBOL = ./ld/rlx8721d_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
-LINK_ROM_SYMBOL = ./ld/rlx8721d_rom_symbol_acut.ld 
+LINK_ROM_SYMBOL = ./ld/rlx8721d_rom_symbol_acut.ld
 endif
 
 LINK_THIRD_APP_LIB =
@@ -144,6 +144,10 @@ linker_image2:
 	@echo "========== linker img2 end =========="
 
 	@echo "========== Image manipulating start =========="
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/psram_image2.bin 32
+	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+
 	@#$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_retention.bin  __retention_entry_func__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __sram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/psram_image2.bin  __psram_image2_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -151,8 +155,8 @@ linker_image2:
 
 	@# pad to 4K-aligned for RSIP/MMU address 4K-alignment restriction
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_image2_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin
-	$(Q)$(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin
-	
+	$(Q)$(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin 4096
+
 	@if [ -f $(SCRIPT_DIR)/static_code_analyze.py ]; then \
 		$(STATIC_ANALYZE_PYTHON); \
 	fi

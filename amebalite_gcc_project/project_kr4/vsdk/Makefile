@@ -45,7 +45,7 @@ endif
 #
 # Lets work out what the user wants, and if they have configured us yet
 #
-DSP_IMAGE_TARGET_DIR = 
+DSP_IMAGE_TARGET_DIR =
 RAM_OBJS_LIST = ./build/ram/*.o
 LIB_OBJS_LIST = ./build/lib/*.o
 
@@ -56,9 +56,9 @@ endif
 
 LINK_ROM_LIB = $(ROM_LIB_DIR)/rom.a
 LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
-LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld 
+LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld
 endif
 LINK_ROM_SYMBOL += ./ld/ameba_rom_symbol_stdlib.ld
 
@@ -82,7 +82,7 @@ prebuild: build_target_folder check_toolchain build_info.h
 
 all: prebuild copy_ld_ram make_subdirs linker_image2 code_analyze
 image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
-ucps_image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze 
+ucps_image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
 analysis_extract: code_extract
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
@@ -178,6 +178,11 @@ ifeq ($(CONFIG_MP_SHRINK), y)
 	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
 
 else
+	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_only.bin
+	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin
+	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/psram_2.bin
+	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin
+
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/boot.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_only.bin __sram_only_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 

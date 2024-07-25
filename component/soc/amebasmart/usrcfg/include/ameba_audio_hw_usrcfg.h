@@ -165,14 +165,6 @@
 #define AUDIO_OUT_TSTAMP_TYPE           AUDIO_TSTAMP_BY_COUNTER
 
 /*
- *Set 1 to start audio hardware playback by user.
- *Set 0 to start audio hardware playback by HAL.
- *Normally we set it as 0, if user sets 1 here, please
- *remember to start audio sport tx in application.
- */
-#define AUDIO_DELAY_START                      0
-
-/*
  *Set 1 to use native system time for timestamp.
  *Set 0 to use other time for timestamp.
  *Please always use 1.

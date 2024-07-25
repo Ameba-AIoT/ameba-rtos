@@ -53,7 +53,7 @@ static const cmd_table_t pbp_broadcast_sink_cmd_table[] = {
 int atcmd_bt_pbp_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEPBP][sink]";
 #else
 	char tag[80] = "[ATBC][pbp][sink]";

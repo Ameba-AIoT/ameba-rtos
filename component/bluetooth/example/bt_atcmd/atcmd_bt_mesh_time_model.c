@@ -243,7 +243,7 @@ static const cmd_table_t mesh_time_cmd_table[] = {
 
 int atcmd_bt_mesh_time(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_time_cmd_table, "[AT+BLEMESHTIME]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_time_cmd_table, "[ATBC][mesh_time]");

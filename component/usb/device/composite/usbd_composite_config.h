@@ -29,11 +29,19 @@
 #define USBD_COMP_REMOTE_WAKEUP_EN		1U
 
 /* CDC ACM Endpoint parameters */
+#if defined (CONFIG_AMEBAGREEN2)
+#define USBD_COMP_CDC_BULK_IN_EP               0x82U
+#define USBD_COMP_CDC_BULK_OUT_EP              0x02U
+#define USBD_COMP_CDC_INTR_IN_EP               0x83U
+#define USBD_COMP_HID_INTR_OUT_EP              0x05U
+#define USBD_COMP_HID_INTR_IN_EP               0x84U
+#else
 #define USBD_COMP_CDC_BULK_IN_EP		0x81U
 #define USBD_COMP_CDC_BULK_OUT_EP		0x02U
 #define USBD_COMP_CDC_INTR_IN_EP		0x83U
 #define USBD_COMP_HID_INTR_OUT_EP		0x04U
 #define USBD_COMP_HID_INTR_IN_EP		0x85U
+#endif
 
 #define USBD_COMP_CTRL_BUF_SIZE			512U
 

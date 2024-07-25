@@ -33,8 +33,13 @@
 #define USBD_MSC_SN_STRING							"1234567890"
 
 /* MSC Endpoint parameters */
+#if defined (CONFIG_AMEBAGREEN2)
+#define USBD_MSC_BULK_IN_EP							0x82U  /* EP2 for BULK IN */
+#define USBD_MSC_BULK_OUT_EP						0x02U  /* EP2 for BULK OUT */
+#else
 #define USBD_MSC_BULK_IN_EP							0x81U  /* EP1 for BULK IN */
 #define USBD_MSC_BULK_OUT_EP						0x02U  /* EP2 for BULK OUT */
+#endif
 #define USBD_MSC_HS_MAX_PACKET_SIZE					512U   /* High speed BULK IN & OUT packet size */
 #define USBD_MSC_FS_MAX_PACKET_SIZE					64U    /* Full speed BULK IN & OUT packet size */
 
@@ -87,8 +92,6 @@
 #define USBD_MSC_SD_ACCESS_RETRY					3U
 
 typedef struct {
-	int(*disk_init)(void);
-	int(*disk_deinit)(void);
 	int(*disk_getcapacity)(u32 *sectors);
 	int(*disk_read)(u32 sector, u8 *buffer, u32 count);
 	int(*disk_write)(u32 sector, const u8 *buffer, u32 count);
@@ -156,5 +159,6 @@ typedef struct {
 
 int usbd_msc_init(usbd_msc_cb_t *cb);
 void usbd_msc_deinit(void);
-
+int usbd_msc_disk_init(void);
+int usbd_msc_disk_deinit(void);
 #endif // USBD_MSC_H

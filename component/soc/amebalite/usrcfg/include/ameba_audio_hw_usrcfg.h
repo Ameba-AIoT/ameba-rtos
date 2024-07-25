@@ -23,6 +23,12 @@
 #define AUDIO_HW_AMPLIFIER_DISABLE_TIME 1
 
 /*
+ * Set 1 to let hal control amplifier's enable and disable automatically.
+ * Set 0 to let user control amplifier's enable and disable.
+ */
+#define AUDIO_HW_AMPLIFIER_CONTROL_ENABLE  1
+
+/*
  *When no sound playing, should amplifier mute? Set 1 if user wants amplifier mute, set
  *0 if user wants amplifier stay unmute.
  *For d2 and lite demo board, our hardware design makes sure aec noise acceptable, if
@@ -57,7 +63,7 @@
  *Define I2S out sport index, for example, if I2S in using sport3, set 3 as value here.
  *For I2S out, soc always works as master.
  */
-#define AUDIO_I2S_OUT_SPORT_INDEX       1
+#define AUDIO_I2S_OUT_SPORT_INDEX       0
 
 /*
  *Define I2S out pins.

@@ -129,6 +129,19 @@ void RTAudioRecord_Destroy(struct RTAudioRecord *record);
 int32_t RTAudioRecord_Read(struct RTAudioRecord *record, void *buffer, size_t size, bool blocking);
 
 /**
+ * @brief Read audio data.
+ *
+ * @param record is the pointer of struct RTAudioRecord.
+ * @param buffer is the dst buffer of application.
+ * @param size is the dst buffer data bytes.
+ * @param time_out_ms set time_out_ms to audio framework, if read blocks for more than time_out_ms, it will return.
+ * @return size of data read, if timeout, return -ETIMEDOUT.
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioRecord_ReadTimeout(struct RTAudioRecord *record, void *buffer, size_t size, uint32_t time_out_ms);
+
+/**
  * @brief Get buffer bytes for record.
  *
  * @param record is the pointer of struct RTAudioRecord.

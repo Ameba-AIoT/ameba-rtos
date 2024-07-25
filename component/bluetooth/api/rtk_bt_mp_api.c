@@ -10,9 +10,8 @@
 #include <osif.h>
 #include <basic_types.h>
 #include "bt_debug.h"
-#if !defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR
-#include "hci_if_rtk.h"
-#endif
+#include "hci_common.h"
+#include "hci_uart.h"
 #include <rtk_bt_mp_api.h>
 #if defined(CONFIG_BT_ENABLE_FAST_MP) && CONFIG_BT_ENABLE_FAST_MP
 #include "hci_dtm.h"
@@ -21,12 +20,6 @@
 /* ---------------------------------- define -------------------------------*/
 #define BT_MP_ARG_LOGE(str)  BT_LOGE("%s (line: %d) arg NOT IN RANGE! (arg: %s)\r\n", __func__, __LINE__, str)
 
-/* ------------------------------ Global Variables -------------------------*/
-uint8_t need_bt_power_on = 1;       // For download BT MP patch only once
-
-/* -------------------------------- Functions ------------------------------*/
-extern void bt_power_off(void);
-
 /**
  * @brief     BT power on for MP test.
  * @param     None
@@ -34,20 +27,14 @@ extern void bt_power_off(void);
  */
 void rtk_bt_mp_power_on(void)
 {
-	if (need_bt_power_on) {
-#if !defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR
-		hci_set_mp(true);
-		hci_if_open(NULL);
-		hci_if_wait_patch_download();
+	hci_set_mp(true);
+	if (hci_controller_enable()) {
+		BT_LOGA("Patch download End!\r\n");
 		BT_LOGA("After download patch, deinit HCI driver & HCI uart!\r\n");
-		hci_if_close();
-		hci_if_deinit();
-#else
-		BT_LOGE("Zephyr stack, rtk_bt_mp_power_on() is not ready\r\n");
-#endif
-		need_bt_power_on = 0;
-	} else {
-		BT_LOGE("No need to download patch again!\r\n");
+		/* In order to keep controller powerd on, do not use hci_controller_disable() */
+		hci_uart_close();
+		hci_transport_close();
+		hci_controller_free();
 	}
 }
 
@@ -58,43 +45,23 @@ void rtk_bt_mp_power_on(void)
  */
 void rtk_bt_mp_power_off(void)
 {
-#if !defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR
-	bt_power_off();
+	/* just power off controller, uart & transport are already disabled & freed */
+	hci_controller_disable();
 	hci_set_mp(false);
-#else
-	BT_LOGE("Zephyr stack, rtk_bt_mp_power_off() is not ready\r\n");
-#endif
-	need_bt_power_on = 1;
 }
 
 #if defined(CONFIG_BT_ENABLE_FAST_MP) && CONFIG_BT_ENABLE_FAST_MP
 void rtk_bt_mp_dtm_power_on(void)
 {
-	if (need_bt_power_on) {
-#if !defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR
-		hci_set_mp(true);
-		hci_if_open(NULL);
-		hci_if_wait_patch_download();
-#else
-		BT_LOGE("Zephyr stack, rtk_bt_mp_dtm_power_on() is not ready\r\n");
-#endif
-		need_bt_power_on = 0;
-	} else {
-		BT_LOGE("No need to download patch again!\r\n");
-	}
+	hci_set_mp(true);
+	hci_controller_enable();
 }
 
 void rtk_bt_mp_dtm_power_off(void)
 {
-#if !defined(CONFIG_BT_ZEPHYR) || !CONFIG_BT_ZEPHYR
-	hci_if_close();
-	hci_if_deinit();
-	bt_power_off();
+	hci_controller_disable();
+	hci_controller_free();
 	hci_set_mp(false);
-#else
-	BT_LOGE("Zephyr stack, rtk_bt_mp_dtm_power_off() is not ready\r\n");
-#endif
-	need_bt_power_on = 1;
 }
 
 uint8_t rtk_bt_mp_dtm_rx_test_v1(uint8_t rx_chann)
@@ -298,22 +265,22 @@ uint8_t rtk_bt_mp_dtm_set_tx_count(uint8_t tx_pkt_cnt)
 	return hci_dtm_vendor_set_transmitter_count(0x01, tx_pkt_cnt, 0x00, NULL, 0x00);
 }
 
-uint8_t rtk_bt_mp_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m)
+uint8_t rtk_bt_mp_dtm_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m)
 {
 	return hci_dtm_vendor_ctrl_tx_power(0xFF, 0xFF, 0xFF, ble_1m, ble_2m);
 }
 
-uint8_t rtk_bt_mp_set_tx_gaink(uint8_t tx_gain_k)
+uint8_t rtk_bt_mp_dtm_set_tx_gaink(uint8_t tx_gain_k)
 {
 	return hci_dtm_vendor_k_power_setting(0x01, (uint32_t)tx_gain_k, NULL, NULL, NULL);
 }
 
-uint8_t rtk_bt_mp_set_tx_flatnessk(uint32_t tx_flastness_k)
+uint8_t rtk_bt_mp_dtm_set_tx_flatnessk(uint32_t tx_flastness_k)
 {
 	return hci_dtm_vendor_k_power_setting(0x02, tx_flastness_k, NULL, NULL, NULL);
 }
 
-uint8_t rtk_bt_mp_read_thermal(uint8_t *p_thermal_value)
+uint8_t rtk_bt_mp_dtm_read_thermal(uint8_t *p_thermal_value)
 {
 	if (p_thermal_value == NULL) {
 		BT_MP_ARG_LOGE("p_thermal_value");
@@ -323,7 +290,7 @@ uint8_t rtk_bt_mp_read_thermal(uint8_t *p_thermal_value)
 	return hci_dtm_vendor_read_thermal_meter_data(p_thermal_value);
 }
 
-uint8_t rtk_bt_mp_set_disable_tx_power_tracking(void)
+uint8_t rtk_bt_mp_dtm_set_disable_tx_power_tracking(void)
 {
 	return hci_dtm_vendor_enable_tx_power_tracking(0x00, 0x00, NULL);
 }

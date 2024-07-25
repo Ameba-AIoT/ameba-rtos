@@ -31,6 +31,11 @@ uint8_t hci_update_uart_baudrate(bool use_default_rate);
 
 void set_reg_value(uint32_t reg_address, uint32_t Mask, uint32_t val);
 
+bool hci_controller_enable(void);
+void hci_controller_disable(void);
+void hci_controller_free(void);
+bool hci_controller_is_enabled(void);
+
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 #if defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK
 #define hci_is_mp_mode() true

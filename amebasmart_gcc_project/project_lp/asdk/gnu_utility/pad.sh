@@ -4,22 +4,27 @@
 # Library
 ################
 Usage() {
-    echo "Usage: $0 [Image Name]"
+    echo "Usage: $0 [Image Name] [aligned Bytes]"
 }
 
 ################
 # Main
 ################
-if [ "$#" -lt 1 ]; then
+if [ "$#" -lt 2 ]; then
     Usage
     exit 1
 fi
 
 # Get Parameters
 IMAGE_FILENAME=$1
+Aligned_Bytes=$2
 filesize=$(stat -c "%s" $IMAGE_FILENAME)
-newsize=$((((($filesize - 1) >> 12) + 1) << 12))
-padcount=$(($newsize - $filesize))
+if [ $filesize -eq 0 ]; then
+	padcount=0;
+else
+	newsize=$((((($filesize - 1) / $Aligned_Bytes) + 1) * $Aligned_Bytes))
+	padcount=$(($newsize - $filesize))
+fi
 
 for (( i=$padcount; i > 0; i-- ))
 do

@@ -56,12 +56,15 @@
 #include <gmas_client.h>
 #include <gmas_def.h>
 
+#define RTK_BT_LE_AUDIO_SUBGROUP_LEN     2
+#define RTK_BT_LE_AUDIO_BIS_NUM_LEN      4
+
 extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
 
 static T_BROADCAST_SOURCE_HANDLE g_broadcast_source_handle = NULL;
 static uint8_t g_group1_idx = 0xFF;
-static uint8_t g_subgroup_idx[] = {0xFF, 0xFF};
-static uint8_t g_bis_idx[] = {0xFF, 0xFF, 0xFF, 0xFF};
+static uint8_t g_subgroup_idx[RTK_BT_LE_AUDIO_SUBGROUP_LEN] = {0xFF, 0xFF};
+static uint8_t g_bis_idx[RTK_BT_LE_AUDIO_BIS_NUM_LEN] = {0xFF, 0xFF, 0xFF, 0xFF};
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 static uint8_t default_csis_size = 2;
@@ -419,6 +422,31 @@ static uint16_t rtk_stack_ascs_handle_msg(T_LE_AUDIO_MSG msg, void *buf)
 	//BT_LOGD("%s: msg %x\r\n", __func__,msg);
 
 	switch (msg) {
+	case LE_AUDIO_MSG_ASCS_CIS_CONN_INFO: {
+		T_ASCS_CIS_CONN_INFO *p_data = (T_ASCS_CIS_CONN_INFO *)buf;
+		BT_LOGD("LE_AUDIO_MSG_ASCS_CIS_CONN_INFO: conn_handle 0x%x, cis_conn_handle %d cig_id %d cis_id %d\r\n",
+				p_data->conn_handle,
+				p_data->cis_conn_handle,
+				p_data->cig_id,
+				p_data->cis_id);
+		rtk_bt_le_audio_ascs_cis_conn_info_t *p_ind = NULL;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_AUDIO,
+									RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO,
+									sizeof(rtk_bt_le_audio_ascs_cis_conn_info_t));
+		if (!p_evt) {
+			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
+			break;
+		}
+		p_ind = (rtk_bt_le_audio_ascs_cis_conn_info_t *)p_evt->data;
+		p_ind->conn_handle = p_data->conn_handle;
+		p_ind->cis_conn_handle = p_data->cis_conn_handle;
+		p_ind->cig_id = p_data->cig_id;
+		p_ind->cis_id = p_data->cis_id;
+		/* Send event */
+		rtk_bt_evt_indicate(p_evt, NULL);
+	}
+	break;
+
 	case LE_AUDIO_MSG_ASCS_SETUP_DATA_PATH: {
 		T_ASCS_SETUP_DATA_PATH *p_data = (T_ASCS_SETUP_DATA_PATH *)buf;
 		APP_PRINT_INFO4("LE_AUDIO_MSG_ASCS_SETUP_DATA_PATH: conn_handle 0x%x, ase_id %d, path_direction 0x%x, cis_conn_handle 0x%x",
@@ -4248,6 +4276,16 @@ void bt_stack_le_audio_deinit(void)
 	}
 	if (p_default_pac_source_codec != NULL) {
 		osif_mem_free(p_default_pac_source_codec);
+	}
+
+	//broadcast source deinit
+	g_broadcast_source_handle = NULL;
+	g_group1_idx = 0xFF;
+	for (int i = 0; i < RTK_BT_LE_AUDIO_SUBGROUP_LEN; i++) {
+		g_subgroup_idx[i] = 0xFF;
+	}
+	for (int j = 0; j < RTK_BT_LE_AUDIO_BIS_NUM_LEN; j++) {
+		g_bis_idx[j] = 0xFF;
 	}
 
 	gap_register_direct_cb(NULL);

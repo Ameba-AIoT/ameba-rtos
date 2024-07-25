@@ -2,6 +2,7 @@
 #include "main.h"
 #include "vfs.h"
 #include <mbedtls/platform.h>
+#include "ameba_rtos_version.h"
 
 static const char *TAG = "MAIN";
 u32 use_hw_crypto_func;
@@ -139,6 +140,8 @@ int main(void)
 {
 	RTK_LOGI(TAG, "KM4 MAIN \n");
 
+	ameba_rtos_get_version();
+
 	InterruptRegister(IPC_INTHandler, IPC_KM4_IRQ, (u32)IPCKM4_DEV, INT_PRI5);
 	InterruptEn(IPC_KM4_IRQ, INT_PRI5);
 
@@ -166,7 +169,6 @@ int main(void)
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	app_ftl_init();
 #endif
-
 	/* pre-processor of application example */
 	app_pre_example();
 

@@ -148,7 +148,7 @@ static const cmd_table_t mesh_scene_cmd_table[] = {
 
 int atcmd_bt_mesh_scene(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_scene_cmd_table, "[AT+BLEMESHSCENE]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_scene_cmd_table, "[ATBC][mesh_scene]");
