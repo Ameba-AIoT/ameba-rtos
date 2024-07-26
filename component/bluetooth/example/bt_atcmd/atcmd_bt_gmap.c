@@ -108,7 +108,7 @@ static const cmd_table_t gmap_unicast_game_terminal_cmd_table[] = {
 int atcmd_bt_gmap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEGMAP]";
 #else
 	char tag[80] = "[ATBC][gmap]";

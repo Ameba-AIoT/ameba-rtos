@@ -54,7 +54,7 @@ u8 shell_get_argc(const   u8  *string)
 	pStr = (u8 *)string;
 
 	while (*pStr) {
-		if ((*pStr != ' ') && (*pStr)) {
+		if (*pStr != ' ') {
 			argc++;
 			while ((*pStr != ' ') && (*pStr)) {
 				pStr++;
@@ -66,8 +66,8 @@ u8 shell_get_argc(const   u8  *string)
 		pStr++;
 	}
 
-	if (argc >= MAX_ARGV) {
-		argc = MAX_ARGV - 1;
+	if (argc > MAX_ARGV) {
+		argc = MAX_ARGV;
 	}
 
 	return argc;

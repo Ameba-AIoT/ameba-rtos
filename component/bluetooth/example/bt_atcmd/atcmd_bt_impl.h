@@ -15,7 +15,7 @@ extern "C"
 #include <basic_types.h>
 #include <bt_debug.h>
 
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 
 #define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
 #define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
@@ -61,7 +61,7 @@ extern "C"
 
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BTVENDOR] "fmt, ##args)
 
-#else /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
+#else /* !ATCMD_BT_CUT_DOWN */
 
 #define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBE] "fmt, ##args)
 #define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
@@ -107,7 +107,7 @@ extern "C"
 
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBV] "fmt, ##args)
 
-#endif /* CONFIG_NEW_ATCMD && !ATCMD_BT_CUT_DOWN */
+#endif /* !ATCMD_BT_CUT_DOWN */
 
 typedef int (*cmd_func_t)(int argc, char *argv[]);
 
@@ -120,7 +120,7 @@ typedef struct {
 
 typedef struct cmd_help_tbl {
 	const char *name;
-	const char *discriptor;
+	const char *descriptor;
 	struct cmd_help_tbl *sub_tbl;
 } cmd_help_table_t;
 

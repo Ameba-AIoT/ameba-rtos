@@ -197,6 +197,15 @@ uint16_t rtk_bt_le_gap_stop_adv(void)
 	return ret;
 }
 
+uint16_t rtk_bt_le_gap_get_adv_param(rtk_bt_le_adv_param_t *padv_param)
+{
+	uint16_t ret = 0;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_ADV_PARAM, padv_param, sizeof(rtk_bt_le_adv_param_t));
+
+	return ret;
+}
+
 bool rtk_bt_le_gap_adv_is_idle(void)
 {
 	uint16_t ret = 0;
@@ -600,6 +609,15 @@ uint16_t rtk_bt_le_gap_set_scan_param(rtk_bt_le_scan_param_t *p_gap_scan_param)
 	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_SET_SCAN_PARAM, (void *)p_gap_scan_param, sizeof(rtk_bt_le_scan_param_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_le_gap_get_scan_param(rtk_bt_le_scan_param_t *pscan_param)
+{
+	uint16_t ret = 0;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_SCAN_PARAM, pscan_param, sizeof(rtk_bt_le_scan_param_t));
 
 	return ret;
 }
@@ -1094,6 +1112,16 @@ uint16_t rtk_bt_le_sm_set_security_param(rtk_bt_le_security_param_t *p_sec_param
 	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_SET_SEC_PARAM,
+						  p_sec_param, sizeof(rtk_bt_le_security_param_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_le_sm_get_security_param(rtk_bt_le_security_param_t *p_sec_param)
+{
+	uint16_t ret = 0;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_SEC_PARAM,
 						  p_sec_param, sizeof(rtk_bt_le_security_param_t));
 
 	return ret;

@@ -27,9 +27,6 @@ SECTION(".data") u8 *__cmd_table_end__ = 0;
 #define OpenShellRx		2
 
 extern volatile UART_LOG_CTL		shell_ctl;
-extern UART_LOG_BUF				shell_buf;
-
-extern COMMAND_TABLE    shell_cmd_table[];
 
 rtos_sema_t	shell_sema = NULL;
 

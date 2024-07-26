@@ -103,9 +103,9 @@ void mqtt_main(void *param)
 		resultNo = mqtt_clent_data_proc(mqttCb, &read_fds, &needAtOutpput);
 		if (1 == needAtOutpput) {
 			if (MQTT_OK == resultNo) {
-				at_printf("ACK\r\n");
+				at_printf("\r\nACK\r\n");
 			} else {
-				at_printf("ERROR:%d\r\n", resultNo);
+				at_printf("\r\nERROR:%d\r\n", resultNo);
 			}
 		}
 	}
@@ -969,6 +969,16 @@ void at_mqttpub(void *arg)
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
+	for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
+		if (NULL != mqttCb->topic[i] && 0 == strcmp(mqttCb->topic[i], argv[topicIndex])) {
+			break;
+		}
+	}
+	if (MAX_MESSAGE_HANDLERS == i) {
+		RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Has not subscribed");
+		resultNo = MQTT_NOT_SUBSCRIBED_ERROR;
+		goto end;
+	}
 	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[topicIndex], len);
 	if (MQTT_OK != resultNo) {
 		goto end;
@@ -994,7 +1004,7 @@ void at_mqttpub(void *arg)
 	}
 	if (1 != mqttCb->client.isconnected) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Invalid status (%d)", mqttCb->client.isconnected);
-		resultNo = MQTT_NOT_SUBSCRIBED_ERROR;
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
 	MQTTMessage mqttMsg = {.qos = mqttCb->pubData.qos,
@@ -1528,7 +1538,6 @@ static void mqtt_del_client_buf(MQTTClient *client)
 
 static void mqtt_message_arrived(MessageData *data, void *param)
 {
-	MQTT_AT_HANDLE *mqttAtHandle = &mqtt_at_handle;
 	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
 	char *uns_buff = NULL;
 	unsigned int len_out = 0, data_shift = 0, total_data_len = 0;
@@ -1544,16 +1553,7 @@ static void mqtt_message_arrived(MessageData *data, void *param)
 	}
 
 	id = data->message->id;
-
-	for (; MQTT_MAX_CLIENT_NUM > tcpconnectid; tcpconnectid++) {
-		if (mqttCb == mqttAtHandle->mqttCb[tcpconnectid]) {
-			break;
-		}
-	}
-	if (MQTT_MAX_CLIENT_NUM == tcpconnectid) {
-		RTK_LOGI(NOTAG, "\r\n[mqtt_message_arrived] Unknown param.");
-		goto end;
-	}
+	tcpconnectid = mqttCb->tcpConnectId;
 
 	if (data->topicName->cstring != NULL) {
 		topicsrc = data->topicName->cstring;
@@ -1626,12 +1626,22 @@ end:
 
 static void mqtt_clent_alive_fail(MQTT_CONTROL_BLOCK *mqttCb)
 {
+	int i = 0;
+
 	if (NULL == mqttCb) {
 		RTK_LOGI(NOTAG, "\r\n[mqtt_clent_alive_fail] Invalid param");
 		return;
 	}
 
-	mqttCb->client.isconnected = 0;
+	if (1 == mqttCb->client.isconnected) {
+		mqttCb->client.isconnected = 0;
+		mqttCb->offline = 1;
+		for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
+			rtos_mem_free(mqttCb->topic[i]);
+			mqttCb->topic[i] = NULL;
+		}
+		at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
+	}
 	mqttCb->client.ping_outstanding = 0;
 	mqttCb->client.next_packetid = 1;
 
@@ -1667,31 +1677,45 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 	mqttRxEvent = (0 <= mqttCb->client.ipstack->my_socket) ? FD_ISSET(mqttCb->client.ipstack->my_socket, read_fds) : 0;
 
 	if (MQTT_START == mqttStatus) {
-		/* Try re-connect. */
-		if (mqttCb->client.isconnected && NULL != mqttCb->host) {
+		/* Once disconnected, set offline = 1, and release each topic. */
+		if (mqttCb->client.isconnected) {
 			mqttCb->client.isconnected = 0;
-			RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect the work");
-			if (0 >= mqttCb->network.my_socket && 1 == mqttCb->networkConnect && NULL != mqttCb->network.disconnect) {
-				mqttCb->network.disconnect(&mqttCb->network);
-				NetworkInit(&mqttCb->network);
-				mqttCb->networkConnect = 0;
+			mqttCb->offline = 1;
+			for (int i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
+				rtos_mem_free(mqttCb->topic[i]);
+				mqttCb->topic[i] = NULL;
 			}
-			res = NetworkConnect(&mqttCb->network, mqttCb->host, mqttCb->port);
-			if (0 != res) {
-				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect failed");
-				resultNo = MQTT_CONNECTION_ERROR;
-				goto end;
+			at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
+		}
+		/* Try re-connect per second. */
+		if (mqttCb->offline && NULL != mqttCb->host && NULL != mqttCb->clientId) {
+			rtos_time_delay_ms(1000);
+			if (wifi_is_connected_to_ap() == RTW_SUCCESS) {
+				if (0 >= mqttCb->network.my_socket && 1 == mqttCb->networkConnect && NULL != mqttCb->network.disconnect) {
+					mqttCb->network.disconnect(&mqttCb->network);
+					NetworkInit(&mqttCb->network);
+					mqttCb->networkConnect = 0;
+				}
+				res = NetworkConnect(&mqttCb->network, mqttCb->host, mqttCb->port);
+				if (0 != res) {
+					// RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect failed");
+					resultNo = MQTT_CONNECTION_ERROR;
+					goto end;
+				}
+				mqttCb->networkConnect = 1;
+				TimerInit(&mqttCb->client.cmd_timer);
+				TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
+				res = MQTTConnect(&mqttCb->client, &mqttCb->connectData);
+				if (0 != res) {
+					// RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect MQTT failed");
+					resultNo = MQTT_CONNECTION_ERROR;
+					goto end;
+				}
+				mqttCb->client.mqttstatus = MQTT_CONNECT;
+				mqttCb->offline = 0;
+				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect the network OK");
+				at_printf("\r\n%sOK\r\n", "+MQTTREACH:");
 			}
-			mqttCb->networkConnect = 1;
-			TimerInit(&mqttCb->client.cmd_timer);
-			TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
-			res = MQTTConnect(&mqttCb->client, &mqttCb->connectData);
-			if (0 != res) {
-				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Reconnect MQTT failed");
-				resultNo = MQTT_CONNECTION_ERROR;
-				goto end;
-			}
-			mqttCb->client.mqttstatus = MQTT_CONNECT;
 		}
 		goto end;
 	}

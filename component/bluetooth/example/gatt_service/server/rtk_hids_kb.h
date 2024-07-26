@@ -31,10 +31,10 @@ typedef enum {
 } T_HIDS_PARAM_TYPE;
 
 typedef struct {
+	uint16_t bcd_hid;
 	uint8_t  b_country_code;
 	uint8_t  flags;
-	uint16_t bcd_hid;
-} T_HID_INFO;
+} __attribute__((packed)) T_HID_INFO;
 
 typedef enum {
 	HID_INPUT_TYPE   = 1,

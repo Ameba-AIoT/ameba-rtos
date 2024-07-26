@@ -309,7 +309,6 @@ uint8_t hci_uart_open(void)
 uint8_t hci_uart_close(void)
 {
 	if (!g_uart) {
-		BT_LOGE("g_uart is NULL!\r\n");
 		return HCI_FAIL;
 	}
 
@@ -324,7 +323,6 @@ uint8_t hci_uart_close(void)
 uint8_t hci_uart_free(void)
 {
 	if (!g_uart) {
-		BT_LOGE("g_uart is NULL!\r\n");
 		return HCI_FAIL;
 	}
 

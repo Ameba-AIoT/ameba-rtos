@@ -12,6 +12,8 @@
 
 # all bin files
 *.bin
+!/**/gnu_utility/**/*.bin
+!/tools/**/*.bin
 
 # project library files
 

@@ -481,8 +481,11 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
  *          thresh: unit 128us
  *          relay_en: relay control
  *      when set_type == SPEAKER_SET_LATCH_I2S_COUNT
- *          port_id: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1
+ *          port: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1
  *          latch_period: 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms
+ *      when set_type == SPEAKER_SET_TSF_TIMER
+ *          tsft: absolute value for twt timer, unit ms
+ *          port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1
  * @return  null.
  */
 void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *settings);

@@ -150,6 +150,7 @@ IFLAGS               += -I$(TARGETDIR)/misc
 IFLAGS               += -I$(TARGETDIR)/hal/include
 IFLAGS               += -I$(TARGETDIR)/hal/src
 IFLAGS               += -I$(TARGETDIR)/usrcfg/include
+IFLAGS               += -I$(BASEDIR)/component/soc/common
 
 IFLAGS               += -I$(INCDIR) -I$(INCDIR)/..
 IFLAGS               += -I$(BASEDIR)/component/stdlib

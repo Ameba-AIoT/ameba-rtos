@@ -731,7 +731,7 @@ static const cmd_table_t mesh_generic_level_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_level(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_generic_level_cmd_table, "[AT+BLEMESHGLE]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_generic_level_cmd_table, "[ATBC][mesh_gle]");
@@ -746,7 +746,7 @@ static const cmd_table_t mesh_generic_power_on_off_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_power_on_off(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_generic_power_on_off_cmd_table, "[AT+BLEMESHGPOO]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_generic_power_on_off_cmd_table, "[ATBC][mesh_gpoo]");
@@ -766,7 +766,7 @@ static const cmd_table_t mesh_generic_power_level_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_power_level(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_generic_power_level_cmd_table, "[AT+BLEMESHGPL]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_generic_power_level_cmd_table, "[ATBC][mesh_gpl]");
@@ -780,7 +780,7 @@ static const cmd_table_t mesh_generic_battery_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_battery(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_generic_battery_cmd_table, "[AT+BLEMESHGB]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_generic_battery_cmd_table, "[ATBC][mesh_gb]");
@@ -797,7 +797,7 @@ static const cmd_table_t mesh_generic_location_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_location(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_generic_location_cmd_table, "[AT+BLEMESHGLO]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_generic_location_cmd_table, "[ATBC][mesh_glo]");
@@ -820,7 +820,7 @@ static const cmd_table_t mesh_generic_property_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_property(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return  atcmd_bt_excute(argc, argv, mesh_generic_property_cmd_table, "[AT+BLEMESHGP]");
 #else
 	return  atcmd_bt_excute(argc, argv, mesh_generic_property_cmd_table, "[ATBC][mesh_gp]");

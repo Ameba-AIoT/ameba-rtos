@@ -709,7 +709,7 @@ static const cmd_table_t gattc_cmd_table[] = {
 
 int atcmd_bt_gattc(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, gattc_cmd_table, "[AT+BLEGATTC]");
 #else
 	return atcmd_bt_excute(argc, argv, gattc_cmd_table, "[ATBC][gattc]");

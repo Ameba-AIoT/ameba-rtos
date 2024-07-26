@@ -12,15 +12,15 @@
 #define RESERVE_LEN 0
 #endif
 
-#define DTM_ARRAY_TO_UINT16(_array)          \
-        ((uint16_t)(*(_array + 0)) <<  0) |  \
-        ((uint16_t)(*(_array + 1)) <<  8)
+#define DTM_ARRAY_TO_UINT16(_array)           \
+        (((uint16_t)(*(_array + 0)) <<  0) |  \
+         ((uint16_t)(*(_array + 1)) <<  8))
 
-#define DTM_ARRAY_TO_UINT32(_array)          \
-        ((uint32_t)(*(_array + 0)) <<  0) |  \
-        ((uint32_t)(*(_array + 1)) <<  8) |  \
-        ((uint32_t)(*(_array + 2)) << 16) |  \
-        ((uint32_t)(*(_array + 3)) << 24)
+#define DTM_ARRAY_TO_UINT32(_array)           \
+        (((uint32_t)(*(_array + 0)) <<  0) |  \
+         ((uint32_t)(*(_array + 1)) <<  8) |  \
+         ((uint32_t)(*(_array + 2)) << 16) |  \
+         ((uint32_t)(*(_array + 3)) << 24))
 
 uint8_t hci_dtm_reveiver_test_v1(uint8_t rx_chann)
 {

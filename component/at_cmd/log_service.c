@@ -11,17 +11,6 @@
 
 #ifdef SUPPORT_LOG_SERVICE
 
-#ifndef CONFIG_NEW_ATCMD
-#include "atcmd_sys.h"
-#ifdef CONFIG_LWIP_LAYER
-#include "atcmd_lwip.h"
-#endif
-#if defined(CONFIG_BT) && CONFIG_BT
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
-#include "atcmd_bt_mp.h"
-#endif
-#endif
-#endif /* !CONFIG_NEW_ATCMD */
 #ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
 #endif
@@ -32,14 +21,8 @@
 //======================================================
 struct list_head log_hash[ATC_INDEX_NUM];
 
-#ifdef CONFIG_NEW_ATCMD
 #include "at_intf_uart.h"
 #include "lwip_netconf.h"
-#else
-/* apply old atcmd, which should be deleted after new version is ready */
-extern void at_wifi_init(void);
-extern void at_sys_init(void);
-#endif /* CONFIG_NEW_ATCMD */
 
 void at_log_init(void);
 
@@ -60,7 +43,6 @@ log_init_t log_init_table[] = {
 
 	at_sys_init,
 
-#ifdef CONFIG_NEW_ATCMD
 #ifndef CONFIG_MP_INCLUDED
 	at_mqtt_init,
 #endif
@@ -71,12 +53,10 @@ log_init_t log_init_table[] = {
 #ifdef CONFIG_ATCMD_IO_UART
 	atio_uart_init,
 #endif
-#endif
 };
 
 
 //======================================================
-#ifdef CONFIG_NEW_ATCMD
 /* TODO */
 #ifdef CONFIG_ATCMD_IO_UART
 char global_buf[SMALL_BUF];
@@ -134,7 +114,7 @@ fail:
 	return ret;
 }
 #endif
-#endif
+
 
 int hash_index(const char *str)
 {
@@ -179,7 +159,6 @@ void log_service_add_table(log_item_t *tbl, int len)
 
 void *log_action(char *cmd)
 {
-	int search_cnt = 0;
 	int index = hash_index(cmd) % ATC_INDEX_NUM;
 	struct list_head *head = &log_hash[index];
 	struct list_head *iterator;
@@ -188,7 +167,6 @@ void *log_action(char *cmd)
 
 	list_for_each(iterator, head) {
 		item = list_entry(iterator, log_item_t, node);
-		search_cnt++;
 		if (strcmp(item->log_cmd, cmd) == 0) {
 			act = (void *)item->at_act;
 			break;
@@ -206,9 +184,7 @@ void *log_handler(char *cmd)
 	char *token = NULL;
 	char *param = NULL;
 	char tok[33] = {0};//'\0'
-#ifdef CONFIG_NEW_ATCMD
 	char *tokSearch = NULL;
-#endif
 	int mp_length = strlen(mp_start);
 
 	/* It is a mp_command, which will not be executed here. */
@@ -218,7 +194,7 @@ void *log_handler(char *cmd)
 
 	token = strsep(&copy, "=");
 	param = strsep(&copy, "\0");
-#ifdef CONFIG_NEW_ATCMD
+
 	/* The length of command header should be 4 bytes at least */
 	if (token && (strlen(token) > 3)) {
 		strncpy(tok, token, sizeof(tok) - 1);
@@ -231,14 +207,6 @@ void *log_handler(char *cmd)
 		return NULL;
 	}
 	action = (log_act_t)log_action(tokSearch);
-#else /* CONFIG_NEW_ATCMD */
-	if (token && (strlen(token) > 0)) {
-		strncpy(tok, token, sizeof(tok) - 1);
-	} else {
-		return NULL;
-	}
-	action = (log_act_t)log_action(tok);
-#endif /* CONFIG_NEW_ATCMD */
 
 	if (action) {
 		action(param);
@@ -295,7 +263,7 @@ int parse_param_advance(char *buf, char **argv)
 {
 	int argc = 1;
 	int buf_pos = 0, temp_pos = 0, length = 0;
-	static char temp_buf[LOG_SERVICE_BUFLEN];
+	static char temp_buf[UART_LOG_CMD_BUFLEN];
 	char *segment = temp_buf;
 
 	if (buf == NULL) {
@@ -305,8 +273,8 @@ int parse_param_advance(char *buf, char **argv)
 	if (length == 0) {
 		goto exit;
 	}
-	/* If the length is longer than LOG_SERVICE_BUFLEN - 1, the tail will be cut. */
-	length = MIN(length, LOG_SERVICE_BUFLEN - 1);
+	/* If the length is longer than UART_LOG_CMD_BUFLEN - 1, the tail will be cut. */
+	length = MIN(length, UART_LOG_CMD_BUFLEN - 1);
 
 	while (buf_pos < length) {
 		/* Escape charactor. */
@@ -346,11 +314,6 @@ exit:
 	return argc;
 }
 
-#ifndef CONFIG_NEW_ATCMD
-unsigned char  gDbgLevel = AT_DBG_ERROR;
-unsigned int   gDbgFlag  = 0xFFFFFFFF;
-#endif
-
 #if CONFIG_WLAN
 int mp_command_handler(char *cmd)
 {
@@ -372,7 +335,7 @@ int mp_command_handler(char *cmd)
 
 void log_service(char *line_buf)
 {
-#if ((defined CONFIG_NEW_ATCMD) && (defined CONFIG_LWIP_LAYER))
+#ifdef CONFIG_LWIP_LAYER
 	if (atcmd_lwip_tt_proc() == SUCCESS) {
 		return;
 	}

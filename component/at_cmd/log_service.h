@@ -17,7 +17,6 @@
 #include "diag.h"
 #include "os_wrapper.h"
 
-#ifdef CONFIG_NEW_ATCMD
 #include "atcmd_sys.h"
 #include "atcmd_lwip.h"
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -25,45 +24,14 @@
 #include "atcmd_bt_mp.h"
 #endif
 #endif
-#endif /* CONFIG_NEW_ATCMD */
 
 #define log_module_init(fn)
 
 #define ATC_INDEX_NUM 32
 
-//LOG_SERVICE_BUFLEN: default, only 63 bytes could be used for keeping input
-//                                     cmd, the last byte is for string end ('\0').
-#define LOG_SERVICE_BUFLEN 100
-
 #ifndef MAX_ARGC
 #define MAX_ARGC 23
 #endif
-
-#ifndef CONFIG_NEW_ATCMD
-#define AT_BIT(n)           (1<<n)
-#define AT_FLAG_DUMP        AT_BIT(0)
-#define AT_FLAG_EDIT        AT_BIT(1)
-#define AT_FLAG_ADC         AT_BIT(2)
-#define AT_FLAG_GPIO        AT_BIT(3)
-#define AT_FLAG_OTA         AT_BIT(4)
-#define AT_FLAG_NFC         AT_BIT(5)
-#define AT_FLAG_OS          AT_BIT(6)
-#define AT_FLAG_LWIP        AT_BIT(7)
-#define AT_FLAG_COMMON      AT_BIT(8)
-#define AT_FLAG_WIFI        AT_BIT(9)
-#define AT_FLAG_RDP         AT_BIT(10)
-
-enum {
-	AT_DBG_OFF = 0,
-	AT_DBG_ALWAYS,
-	AT_DBG_ERROR,
-	AT_DBG_WARNING,
-	AT_DBG_INFO
-};
-
-extern unsigned char  gDbgLevel;
-extern unsigned int   gDbgFlag;
-#endif /* CONFIG_NEW_ATCMD */
 
 #define AT_PRINTK(...)			\
 		do{							\
@@ -103,7 +71,6 @@ int parse_param_advance(char *buf, char **argv);
 #define SMALL_BUF               128
 #define BIG_BUF                 1024
 
-#ifdef CONFIG_NEW_ATCMD
 /* TODO */
 #ifdef CONFIG_ATCMD_IO_UART
 typedef void (*at_write)(char *buf, int len);
@@ -113,7 +80,6 @@ extern at_write out_buffer;
 int at_printf(const char *fmt, ...);
 #else
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, fmt, ##args)
-#endif
 #endif
 
 /* TODO */

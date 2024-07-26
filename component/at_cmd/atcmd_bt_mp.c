@@ -330,12 +330,10 @@ static int mp_ext2_bt_power(void **argv, int argc)
 
 	if (strcmp(argv[0], "on") == 0) {
 		MP_EXT2_PRINTF("BT power on.\n\r");
-		wifi_btcoex_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
 		rtk_bt_mp_power_on();
 	} else if (strcmp(argv[0], "off") == 0) {
 		MP_EXT2_PRINTF("BT power off.\n\r");
 		rtk_bt_mp_power_off();
-		wifi_btcoex_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
 	}
 
 	return 0;
@@ -407,11 +405,7 @@ void fATM2(void *arg)
 
 //-------- AT MP commands ---------------------------------------------------------------
 log_item_t at_mp_items[] = {
-#if ATCMD_BT_CUT_DOWN
 	{"M2", fATM2, {NULL, NULL}},	// MP ext2 AT command
-#else
-	{"ATM2", fATM2, {NULL, NULL}},	// MP ext2 AT command
-#endif
 };
 
 /* TODO: A part of AT command "AT+LIST". */

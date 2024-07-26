@@ -26,12 +26,12 @@
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
-//#define CONFIG_MCC_MODE
 //#define CONFIG_NAN
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
 #else
+//#define CONFIG_MCC_MODE
 #define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 #endif

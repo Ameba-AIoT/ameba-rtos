@@ -49,7 +49,7 @@ static const cmd_table_t cap_mcp_server_cmd_table[] = {
 
 static int atcmd_bt_mcp_server_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_mcp_server_cmd_table, "[AT+BLECAP][initiator][mcp]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_mcp_server_cmd_table, "[ATBC][cap_cmd][initiator][mcp]");
@@ -142,7 +142,7 @@ static const cmd_table_t cap_mcp_client_cmd_table[] = {
 
 static int atcmd_bt_mcp_client_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_mcp_client_cmd_table, "[AT+BLECAP][acceptor/commander][mcp]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_mcp_client_cmd_table, "[ATBC][cap_cmd][acceptor/commander][mcp]");
@@ -176,7 +176,7 @@ static const cmd_table_t cap_vcp_server_cmd_table[] = {
 
 static int atcmd_bt_vcp_server_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_vcp_server_cmd_table, "[AT+BLECAP][acceptor][vcp]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_vcp_server_cmd_table, "[ATBC][cap_cmd][acceptor][vcp]");
@@ -208,7 +208,7 @@ static const cmd_table_t cap_micp_server_cmd_table[] = {
 
 static int atcmd_bt_micp_server_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_micp_server_cmd_table, "[AT+BLECAP][acceptor][micp]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_micp_server_cmd_table, "[ATBC][cap_cmd][acceptor][micp]");
@@ -249,7 +249,7 @@ static const cmd_table_t cap_vocs_server_cmd_table[] = {
 
 static int atcmd_bt_vocs_server_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_vocs_server_cmd_table, "[AT+BLECAP][acceptor][vocs]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_vocs_server_cmd_table, "[ATBC][cap_cmd][acceptor][vocs]");
@@ -349,7 +349,7 @@ static const cmd_table_t cap_aics_server_cmd_table[] = {
 
 static int atcmd_bt_aics_server_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_aics_server_cmd_table, "[AT+BLECAP][acceptor][aics]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_aics_server_cmd_table, "[ATBC][cap_cmd][acceptor][aics]");
@@ -480,7 +480,7 @@ static const cmd_table_t cap_vcp_client_cmd_table[] = {
 
 static int atcmd_bt_vcp_client_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_vcp_client_cmd_table, "[AT+BLECAP][commander][vcp]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_vcp_client_cmd_table, "[ATBC][cap_cmd][commander][vcp]");
@@ -550,7 +550,7 @@ static const cmd_table_t cap_micp_client_cmd_table[] = {
 
 static int atcmd_bt_micp_client_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_micp_client_cmd_table, "[AT+BLECAP][commander][micp]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_micp_client_cmd_table, "[ATBC][cap_cmd][commander][micp]");
@@ -669,7 +669,7 @@ static const cmd_table_t cap_vocs_client_cmd_table[] = {
 
 static int atcmd_bt_vocs_client_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_vocs_client_cmd_table, "[AT+BLECAP][commander][vocs]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_vocs_client_cmd_table, "[ATBC][cap_cmd][commander][vocs]");
@@ -792,7 +792,7 @@ static const cmd_table_t cap_aics_client_cmd_table[] = {
 
 static int atcmd_bt_aics_client_act(int argc, char **argv)
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, &argv[0], cap_aics_client_cmd_table, "[AT+BLECAP][commander][aics]");
 #else
 	return atcmd_bt_excute(argc, &argv[0], cap_aics_client_cmd_table, "[ATBC][cap_cmd][commander][aics]");
@@ -849,7 +849,7 @@ static const cmd_table_t cap_commander_cmd_table[] = {
 int atcmd_bt_cap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLECAP]";
 #else
 	char tag[80] = "[ATBC][cap_cmd]";

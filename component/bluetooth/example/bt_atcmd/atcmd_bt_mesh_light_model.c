@@ -1097,7 +1097,7 @@ static const cmd_table_t mesh_light_lightness_cmd_table[] = {
 
 int atcmd_bt_mesh_light_lightness(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[AT+BLEMESHLL]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[ATBC][mesh_light_lightness]");
@@ -1118,7 +1118,7 @@ static const cmd_table_t mesh_light_ctl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_ctl(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[AT+BLEMESHLCTL]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[ATBC][mesh_light_ctl]");
@@ -1142,7 +1142,7 @@ static const cmd_table_t mesh_light_hsl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_hsl(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[AT+BLEMESHLHSL]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[ATBC][mesh_light_hsl]");
@@ -1162,7 +1162,7 @@ static const cmd_table_t mesh_light_xyl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_xyl(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[AT+BLEMESHLXYL]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[ATBC][mesh_light_xyl]");
@@ -1183,7 +1183,7 @@ static const cmd_table_t mesh_light_lc_cmd_table[] = {
 
 int atcmd_bt_mesh_light_lc(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[AT+BLEMESHLLC]");
 #else
 	return atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[ATBC][mesh_light_lc]");

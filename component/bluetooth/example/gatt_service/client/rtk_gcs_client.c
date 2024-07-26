@@ -32,6 +32,56 @@ void _print_uuid(uint8_t type, uint8_t *uuid)
 	}
 }
 
+static void prop_str_joint(uint8_t order, char *dst_str, char *src_str)
+{
+	if (order) {
+		strcat(dst_str, "/");
+	}
+	strcat(dst_str, src_str);
+}
+
+static char *gatt_charac_prop_str(uint8_t prop)
+{
+	static char str[90] = {0};
+	uint8_t order = 0;
+
+	memset(str, 0, sizeof(str));
+	if (prop & RTK_BT_GATT_CHRC_BROADCAST) {
+		prop_str_joint(order, str, "broadcast");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_READ) {
+		prop_str_joint(order, str, "read");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
+		prop_str_joint(order, str, "write_cmd");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_WRITE) {
+		prop_str_joint(order, str, "write_req");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_NOTIFY) {
+		prop_str_joint(order, str, "notify");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_INDICATE) {
+		prop_str_joint(order, str, "indicate");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_AUTH) {
+		prop_str_joint(order, str, "write_auth");
+		order++;
+	}
+	if (prop & RTK_BT_GATT_CHRC_EXT_PROP) {
+		prop_str_joint(order, str, "ext_prop");
+		order++;
+	}
+
+	return str;
+}
+
 void general_client_discover_res_hdl(void *data)
 {
 	rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)data;
@@ -68,9 +118,11 @@ void general_client_discover_res_hdl(void *data)
 
 		case RTK_BT_GATT_DISCOVER_CHARACTERISTIC_ALL:
 		case RTK_BT_GATT_DISCOVER_CHARACTERISTIC_BY_UUID:
-			BT_LOGA("[APP] GATTC discover characteritic of a service result: handle: 0x%04x, "
-					"properties: 0x%02x, value_handle: 0x%04x, UUID: ", disc_res->disc_char_all_per.handle,
-					disc_res->disc_char_all_per.properties, disc_res->disc_char_all_per.value_handle);
+			BT_LOGA("[APP] GATTC discover characteristic of a service result: handle: 0x%04x, "
+					"properties: 0x%02x(%s), value_handle: 0x%04x, UUID: ", disc_res->disc_char_all_per.handle,
+					disc_res->disc_char_all_per.properties,
+					gatt_charac_prop_str(disc_res->disc_char_all_per.properties),
+					disc_res->disc_char_all_per.value_handle);
 			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,0x%02x,0x%04x,",
 						disc_status, disc_res->type, disc_res->conn_handle,
 						disc_res->disc_char_all_per.handle, disc_res->disc_char_all_per.properties,
@@ -79,7 +131,7 @@ void general_client_discover_res_hdl(void *data)
 			break;
 
 		case RTK_BT_GATT_DISCOVER_DESCRIPTORS_ALL:
-			BT_LOGA("[APP] GATTC discover discriptor all result: handle: 0x%04x, UUID: ",
+			BT_LOGA("[APP] GATTC discover descriptor all result: handle: 0x%04x, UUID: ",
 					disc_res->disc_descriptor_per.handle);
 			BT_AT_PRINT("+BLEGATTC:disc,%d,%d,%u,0x%04x,",
 						disc_status, disc_res->type, disc_res->conn_handle,

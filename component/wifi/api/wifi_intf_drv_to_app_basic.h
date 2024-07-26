@@ -111,6 +111,7 @@ enum  {
 enum SPEAKER_SET_TYPE {
 	SPEAKER_SET_INIT = 0,
 	SPEAKER_SET_LATCH_I2S_COUNT = 1,
+	SPEAKER_SET_TSF_TIMER = 2,
 };
 
 /**
@@ -363,6 +364,10 @@ union speaker_set {
 		u8 port;           /* 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1 */
 		u8 latch_period;      /* 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms */
 	} latch_i2s_count;
+	struct { /*SPEAKER_SET_TSF_TIMER*/
+		u64 tsft;           /* unit us */
+		u8 port;           /* 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1 */
+	} tsf_timer;
 };
 /** @} */
 
@@ -944,7 +949,7 @@ struct wifi_user_conf {
 	unsigned char ips_level;
 
 	/*!	The driver does not enter the IPS due to 2s disconnection. Instead, API wifi_set_ips_internal controls the IPS\n
-		0: control ips enter/leave, 1: wifi_set_ips_internal control ips enable/disable */
+		0: wifi_set_ips_internal control ips enable/disable, 1: control ips enter/leave */
 	unsigned char ips_ctrl_by_usr;
 
 	/*!	LPS(leisure power save), After connection, with low traffic, part of WIFI can be powered off and woken up upon packet interaction\n

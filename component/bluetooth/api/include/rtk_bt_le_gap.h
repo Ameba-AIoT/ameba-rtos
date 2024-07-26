@@ -2459,6 +2459,16 @@ uint16_t rtk_bt_le_gap_start_adv(rtk_bt_le_adv_param_t *padv_param);
 uint16_t rtk_bt_le_gap_stop_adv(void);
 
 /**
+ * @fn        uint16_t rtk_bt_le_gap_get_adv_param(rtk_bt_le_adv_param_t *padv_param)
+ * @brief     Get BLE advertising parameter
+ * @param[out] padv_param: Advertising parameters
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_get_adv_param(rtk_bt_le_adv_param_t *padv_param);
+
+/**
  * @fn        bool rtk_bt_le_gap_adv_is_idle(void)
  * @brief     Check if BLE GAP advertise is idle
  * @return
@@ -2471,7 +2481,7 @@ bool rtk_bt_le_gap_adv_is_idle(void);
 /**
  * @fn        uint16_t rtk_bt_le_gap_create_ext_adv(rtk_bt_le_ext_adv_param_t *p_adv_param, uint8_t *p_adv_handle)
  * @brief     Create an extended advertising set
- * @param[in] p_adv_handle: Advertising parameters
+ * @param[in] p_adv_param: Advertising parameters
  * @param[in,out] p_adv_handle: Pointer to advertising set handle
  * @return
  *            - 0  : Succeed
@@ -2705,6 +2715,16 @@ uint16_t rtk_bt_le_gap_scan_info_filter(rtk_bt_le_scan_info_filter_param_t *p_sc
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_gap_set_scan_param(rtk_bt_le_scan_param_t *p_gap_scan_param);
+
+/**
+ * @fn        uint16_t rtk_bt_le_gap_get_scan_param(rtk_bt_le_scan_param_t *pscan_param)
+ * @brief     Get scan paramters.
+ * @param[out] pscan_param: Scan paramters
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_get_scan_param(rtk_bt_le_scan_param_t *pscan_param);
 
 /**
  * @fn        uint16_t rtk_bt_le_gap_start_scan(void)
@@ -2991,6 +3011,16 @@ uint16_t rtk_bt_le_gap_read_peer_resolv_addr(rtk_bt_le_ident_addr_type_t peer_id
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_sm_set_security_param(rtk_bt_le_security_param_t *p_sec_param);
+
+/**
+ * @fn        uint16_t rtk_bt_le_sm_get_security_param(rtk_bt_le_security_param_t *p_sec_param)
+ * @brief     Get security paramters.
+ * @param[out] p_sec_param: Security paramters
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_sm_get_security_param(rtk_bt_le_security_param_t *p_sec_param);
 
 /**
  * @fn        uint16_t rtk_bt_le_sm_start_security(uint16_t conn_handle)

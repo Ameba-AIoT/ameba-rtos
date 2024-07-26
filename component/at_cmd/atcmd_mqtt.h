@@ -131,6 +131,7 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 	char        *topic[MAX_MESSAGE_HANDLERS];
 	MQTT_PUB_DATA   pubData;
 	u8          networkConnect;
+	u8          offline;
 	Network         network;
 	MQTTClient  client;
 	MQTTPacket_connectData  connectData;

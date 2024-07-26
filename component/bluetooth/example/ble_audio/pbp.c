@@ -1972,7 +1972,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable)
 			p_pbp_bsink_info->config_sink_audio_location = p_lea_app_conf->pacs_param.sink_audio_location;
 
 			//set GAP configuration
-			bt_app_conf.app_profile_support = RTK_BT_PROFILE_LEAUDIO;
+			bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_LEAUDIO;
 			bt_app_conf.mtu_size = 180;
 			bt_app_conf.master_init_mtu_req = true;
 			bt_app_conf.prefer_all_phy = 0;

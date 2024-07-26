@@ -46,10 +46,8 @@ int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len);
 bool hci_platform_check_lmp_subver(uint16_t lmp_subver);
 
 uint8_t hci_platform_init(void);
-uint8_t hci_platform_deinit(void);
+void hci_platform_deinit(void);
 
-bool rtk_bt_pre_enable(void);
-bool rtk_bt_post_enable(void);
 void hci_platform_force_uart_rts(bool op);
 
 void hci_platform_debug_enable(void);

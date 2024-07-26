@@ -15,6 +15,7 @@ endif
 
 ifeq ($(CONFIG_AMEBALITE), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb/halbb_8720e
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720e
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720e_rom
@@ -39,6 +40,7 @@ ifeq ($(CONFIG_AMEBASMART), y)
 IFLAGS               += -I$(TARGETDIR)/fwlib/ap_core
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb/halbb_8730e
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8730e
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8730e_rom

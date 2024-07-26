@@ -363,7 +363,7 @@ static void atcmd_bt_help_common(int argc, char *argv[],
 	while (cmd_help_table[i].name) {
 		if (0 == strcmp(cmd_str, cmd_help_table[i].name)) {
 			if (argc == 1) {
-				AT_PRINTK("%s", cmd_help_table[i].discriptor);
+				AT_PRINTK("%s", cmd_help_table[i].descriptor);
 			}
 			goto SUB_CMD_HELP;
 		}
@@ -379,7 +379,7 @@ SUB_CMD_HELP:
 		cmd_help_table_t *sub_cmd_tbl = cmd_help_table[i].sub_tbl;
 		while (sub_cmd_tbl[j].name) {
 			if (0 == strcmp(sub_cmd_str, sub_cmd_tbl[j].name)) {
-				AT_PRINTK("%s", sub_cmd_tbl[j].discriptor);
+				AT_PRINTK("%s", sub_cmd_tbl[j].descriptor);
 				break;
 			}
 			j++;
@@ -393,7 +393,7 @@ SUB_CMD_HELP:
 
 static int atcmd_bt_cmd_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[ATBC] help: show ATBC cmds usage and discription\n\r"
+	const char *help_usage =  "[ATBC] help: show ATBC cmds usage and description\n\r"
 							  "usage: ATBC=help,[cmd]\n\r"
 							  "       ATBC=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <bt, le_gap, br_gap, gattc, gatts, mesh_stack, mesh_data, mesh_config, mesh_goo, mesh_rmt\n\r"
@@ -405,7 +405,7 @@ static int atcmd_bt_cmd_help(int argc, char *argv[])
 
 static int atcmd_bt_example_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[ATBE] help: show ATBE cmds usage and discription\n\r"
+	const char *help_usage =  "[ATBE] help: show ATBE cmds usage and description\n\r"
 							  "usage: ATBE=help,[cmd]\n\r"
 							  "       ATBE=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <central, peripheral, scatternet, provisioner, device, provisioner_scatternet, device_scatternet, a2dp, spp, hfp>\n\r"
@@ -416,7 +416,7 @@ static int atcmd_bt_example_help(int argc, char *argv[])
 
 static int atcmd_bt_vendor_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[ATBV] help: show ATBV cmds usage and discription\n\r"
+	const char *help_usage =  "[ATBV] help: show ATBV cmds usage and description\n\r"
 							  "usage: ATBV=help,[cmd]\n\r"
 							  "       ATBV=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <tx_power_gain, hci_debug_enable, dlps>\n\r"
@@ -1076,7 +1076,7 @@ static void atcmd_bt_help_common(int argc, char *argv[],
 	while (cmd_help_table[i].name) {
 		if (0 == strcmp(cmd_str, cmd_help_table[i].name)) {
 			if (argc == 1) {
-				AT_PRINTK("%s", cmd_help_table[i].discriptor);
+				AT_PRINTK("%s", cmd_help_table[i].descriptor);
 			}
 			goto SUB_CMD_HELP;
 		}
@@ -1092,7 +1092,7 @@ SUB_CMD_HELP:
 		cmd_help_table_t *sub_cmd_tbl = cmd_help_table[i].sub_tbl;
 		while (sub_cmd_tbl[j].name) {
 			if (0 == strcmp(sub_cmd_str, sub_cmd_tbl[j].name)) {
-				AT_PRINTK("%s", sub_cmd_tbl[j].discriptor);
+				AT_PRINTK("%s", sub_cmd_tbl[j].descriptor);
 				break;
 			}
 			j++;
@@ -1106,7 +1106,7 @@ SUB_CMD_HELP:
 
 static int atcmd_bt_cmd_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[AT+BTCMDHELP] help: show BT cmds usage and discription\n\r"
+	const char *help_usage =  "[AT+BTCMDHELP] help: show BT cmds usage and description\n\r"
 							  "usage: AT+BTCMDHELP=[cmd]\n\r"
 							  "       AT+BTCMDHELP=[cmd],[subcmd]\n\r"
 							  "[cmd] = <bt, ble_gap, br_gap, gattc, gatts, mesh_stack, mesh_data, mesh_config, mesh_goo, mesh_rmt\n\r"
@@ -1118,7 +1118,7 @@ static int atcmd_bt_cmd_help(int argc, char *argv[])
 
 static int atcmd_bt_example_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[AT+BTDEMO] help: show AT+BTDEMO cmds usage and discription\n\r"
+	const char *help_usage =  "[AT+BTDEMO] help: show AT+BTDEMO cmds usage and description\n\r"
 							  "usage: AT+BTDEMO=help,[cmd]\n\r"
 							  "       AT+BTDEMO=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <central, peripheral, scatternet, provisioner, device, provisioner_scatternet, device_scatternet, a2dp, spp, hfp>\n\r"
@@ -1129,7 +1129,7 @@ static int atcmd_bt_example_help(int argc, char *argv[])
 
 static int atcmd_bt_vendor_help(int argc, char *argv[])
 {
-	const char *help_usage =  "[AT+BTVENDOR] help: show ATBV cmds usage and discription\n\r"
+	const char *help_usage =  "[AT+BTVENDOR] help: show ATBV cmds usage and description\n\r"
 							  "usage: AT+BTVENDOR=help,[cmd]\n\r"
 							  "       AT+BTVENDOR=help,[cmd],[subcmd]\n\r"
 							  "[cmd] = <tx_power_gain, hci_debug_enable, dlps>\n\r"
@@ -1759,7 +1759,7 @@ static void fBTTEST(void *arg)
 #endif /* ATCMD_BT_CUT_DOWN */
 
 static log_item_t at_bt_items[] = {
-#if ATCMD_BT_CUT_DOWN
+#if defined(ATCMD_BT_CUT_DOWN) && ATCMD_BT_CUT_DOWN
 	{"BC", fATBC, {NULL, NULL}},
 	{"BE", fATBE, {NULL, NULL}},
 	{"BV", fATBV, {NULL, NULL}},
@@ -1835,6 +1835,10 @@ static log_item_t at_bt_items[] = {
 /* BT atcmd as a part of AT command "AT+LIST". */
 void print_bt_ext_at(void)
 {
+#if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
+	((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
+	//Print nothing
+#else
 #if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	int index;
 	int num = 0;
@@ -1845,6 +1849,7 @@ void print_bt_ext_at(void)
 			at_printf("AT%s\r\n", at_bt_items[index].log_cmd);
 		}
 	}
+#endif
 #endif
 }
 

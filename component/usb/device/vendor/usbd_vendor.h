@@ -49,12 +49,21 @@
 #define USBD_VENDOR_SN_STRING							"1234567890"
 
 /* Vendor Endpoint parameters */
+#if defined (CONFIG_AMEBAGREEN2)
+#define USBD_VENDOR_BULK_IN_EP							0x82U  /* EP2 for BULK IN */
+#define USBD_VENDOR_BULK_OUT_EP							0x02U  /* EP2 for BULK OUT */
+#define USBD_VENDOR_INTR_IN_EP							0x82U  /* EP2 for INTR IN */
+#define USBD_VENDOR_INTR_OUT_EP							0x02U  /* EP2 for INTR OUT */
+#define USBD_VENDOR_ISOC_IN_EP							0x84U  /* EP4 for ISOC IN */
+#define USBD_VENDOR_ISOC_OUT_EP							0x05U  /* EP5 for ISOC OUT */
+#else
 #define USBD_VENDOR_BULK_IN_EP							0x81U  /* EP1 for BULK IN */
 #define USBD_VENDOR_BULK_OUT_EP							0x02U  /* EP2 for BULK OUT */
 #define USBD_VENDOR_INTR_IN_EP							0x81U  /* EP1 for INTR IN */
 #define USBD_VENDOR_INTR_OUT_EP							0x02U  /* EP2 for INTR OUT */
 #define USBD_VENDOR_ISOC_IN_EP							0x83U  /* EP3 for ISOC IN */
 #define USBD_VENDOR_ISOC_OUT_EP							0x04U  /* EP4 for ISOC OUT */
+#endif
 
 #define USBD_VENDOR_HS_BULK_MPS							64U   /* High speed BULK IN & OUT max packet size */
 #define USBD_VENDOR_FS_BULK_MPS							64U   /* Full speed BULK IN & OUT max packet size */
