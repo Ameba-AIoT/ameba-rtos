@@ -898,6 +898,9 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		SPORTx->SP_FORMAT |= ((SP_CH_LEN_SEL_RX(SP_InitStruct->SP_SelChLen)) | (SP_DATA_FORMAT_SEL_RX(SP_InitStruct->SP_SelDataFormat))
 							  | (SP_DATA_LEN_SEL_RX_0(SP_InitStruct->SP_SelWordLen)));
 
+		SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+		SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(SP_InitStruct->SP_SelDataFormat);
+
 		/* Configure FIFO1 parameters*/
 		SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_RX_1);
 		SPORTx->SP_DIRECT_CTRL1 |= (SP_DATA_LEN_SEL_RX_1(SP_InitStruct->SP_SelWordLen));

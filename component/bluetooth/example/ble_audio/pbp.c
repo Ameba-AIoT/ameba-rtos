@@ -889,7 +889,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			BT_LOGE("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -900,7 +900,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		} else {
 			BT_LOGE("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -1972,7 +1972,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable)
 			p_pbp_bsink_info->config_sink_audio_location = p_lea_app_conf->pacs_param.sink_audio_location;
 
 			//set GAP configuration
-			bt_app_conf.app_profile_support = RTK_BT_PROFILE_LEAUDIO;
+			bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_LEAUDIO;
 			bt_app_conf.mtu_size = 180;
 			bt_app_conf.master_init_mtu_req = true;
 			bt_app_conf.prefer_all_phy = 0;

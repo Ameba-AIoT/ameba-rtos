@@ -1,0 +1,167 @@
+#include <rtw_cfg80211_fullmac.h>
+#include <linux/spi/spi.h>
+#include <linux/of_gpio.h>
+#include <linux/interrupt.h>
+#include <linux/workqueue.h>
+
+struct inic_spi inic_spi_priv = {0};
+
+static irqreturn_t rtw_spi_rx_req_handler(int irq, void *context)
+{
+	if (inic_spi_priv.rx_pending) {
+		dev_err(&inic_spi_priv->spi_dev->dev, "%s: SPI RX_REQ is ongoing!!\n", __func__);
+	} else {
+		inic_spi_priv.rx_pending = true;
+
+		llhw_recv_notify();
+	}
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t rtw_spi_dev_rdy_handler(int irq, void *context)
+{
+	if (gpio_get_value(DEV_READY_PIN)) {
+		inic_spi_priv.dev_state = DEV_READY;
+
+		/* wakeup wait task */
+		up(&inic_spi_priv.dev_rdy_sema);
+	} else {
+		inic_spi_priv.dev_state = DEV_BUSY;
+	}
+}
+
+int rtw_spi_setup_gpio(struct spi_device *spi)
+{
+	int status = 0;
+
+	status = gpio_request(DEV_READY_PIN, "DEV_READY_PIN");
+	if (status) {
+		return status;
+	}
+
+	status = gpio_direction_input(DEV_READY_PIN);
+	if (status) {
+		goto free_dev_rdy_pin;
+	}
+
+	status = request_irq(DEV_READY_IRQ, rtw_spi_dev_rdy_handler,
+						 IRQF_SHARED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+						 "SPI_DEV_READY", spi);
+	if (status) {
+		goto free_dev_rdy_pin;
+	}
+
+	status = gpio_request(RX_REQ_PIN, "RX_REQ_PIN");
+	if (status) {
+		goto free_dev_rdy_irq;
+	}
+
+	status = gpio_direction_input(RX_REQ_PIN);
+	if (status) {
+		goto free_rx_req_pin;
+	}
+
+	status = request_irq(RX_REQ_IRQ, rtw_spi_rx_req_handler,
+						 IRQF_SHARED | IRQF_TRIGGER_RISING,
+						 "SPI_RX_REQ", spi);
+	if (status) {
+		goto free_rx_req_pin;
+	}
+
+	return status;
+
+free_rx_req_pin:
+	gpio_free(RX_REQ_PIN);
+
+free_dev_rdy_irq:
+	free_irq(DEV_READY_IRQ, spi);
+
+free_dev_rdy_pin:
+	gpio_free(DEV_READY_PIN);
+
+	return status;
+
+}
+
+static int rtw_spi_probe(struct spi_device *spi)
+{
+	struct inic_spi *priv = &inic_spi_priv;
+	int rc = 0;
+
+	dev_info(&func->dev, "rtw_sdio_probe: vendor=0x%04x device=0x%04x class=0x%02x\n", func->vendor, func->device, func->class);
+
+	priv->spi_dev = spi;
+	priv->rx_process_func = llhw_recv_process;
+
+	mutex_init(&(priv->lock));
+	sema_init(&priv->dev_rdy_sema, 0);
+
+	/* Setup SPI parameters */
+	dev_info(&spi->dev, "setup mode: %d, %u bits/w, %u Hz max\n",
+			 (int)(spi->mode & (SPI_CPOL | SPI_CPHA)), spi->bits_per_word,
+			 spi->max_speed_hz);
+	dev_info(&spi->dev, "can_dma: %d\n", spi->master->can_dma != NULL);
+
+	spi->bits_per_word = 8;
+#if (KERNEL_VERSION(5, 3, 0) <= LINUX_VERSION_CODE)
+	spi->rt = 1;
+#endif
+
+	/* Setup SPI and put CS line in HIGH state! */
+	if (spi->controller->cleanup) {
+		spi->controller->cleanup(spi);
+	}
+
+	rc = spi_setup(spi);
+	if (rc != 0) {
+		goto exit;
+	}
+
+	/* setupGPIO pin */
+	rc = rtw_spi_setup_gpio(spi);
+	if (rc) {
+		dev_info(&spi->dev, "fail to setup gpio\n");
+	}
+
+	rtw_netdev_probe(&spi->dev);
+
+exit:
+	return rc;
+}
+
+static int rtw_spi_remove(struct spi_device *spi)
+{
+	dev_dbg(&spi->dev, "unloading...");
+	//TODO:
+
+	return 0;
+}
+
+static const struct of_device_id inic_of_ids[] = {
+	{ .compatible = "realtek,inic", .data = NULL },
+	{},
+};
+MODULE_DEVICE_TABLE(of, inic_of_ids);
+
+static const struct spi_device_id inic_spi_ids[] = {
+	{ "inic", NULL },
+	{},
+};
+MODULE_DEVICE_TABLE(spi, inic_spi_ids);
+
+static struct spi_driver inic_spi_driver = {
+	.driver = {
+		.name = "inic",
+		.of_match_table = of_match_ptr(inic_of_ids),
+	},
+	.id_table = inic_spi_ids,
+	.probe = rtw_spi_probe,
+	.remove = rtw_spi_remove,
+};
+module_spi_driver(inic_spi_driver);
+
+MODULE_AUTHOR("Realtek");
+MODULE_DESCRIPTION("RealTek iNIC Fullmac");
+MODULE_LICENSE("GPL");
+MODULE_VERSION("rtl8721da");
+

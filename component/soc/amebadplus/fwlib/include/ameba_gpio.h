@@ -423,6 +423,8 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 /** @} */
 
 /** @} */
+extern GPIO_TypeDef *GPIO_PORTx[2];
+extern GPIO_TypeDef *GPIO_PORTx_S[2];
 
 _LONG_CALL_ void GPIO_WriteBit(u32 GPIO_Pin, u32 BitVal);
 _LONG_CALL_ u32 GPIO_ReadDataBit(u32 GPIO_Pin);
@@ -430,6 +432,8 @@ _LONG_CALL_ void GPIO_DeInit(u32 GPIO_Pin);
 _LONG_CALL_ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData);
 _LONG_CALL_ void GPIO_INTMode(u32 GPIO_Pin, u32 NewState, u32 GPIO_ITTrigger, u32 GPIO_ITPolarity, u32 GPIO_ITDebounce);
 _LONG_CALL_ void GPIO_INTConfig(u32 GPIO_Pin, u32 NewState);
+_LONG_CALL_ u32 GPIO_INTStatusGet(u32 GPIO_Port);
+_LONG_CALL_ void GPIO_INTStatusClearEdge(u32 GPIO_Port);
 _LONG_CALL_ void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct);
 _LONG_CALL_ u32 GPIO_INTHandler(IN void *pData);
 _LONG_CALL_ void GPIO_Direction(u32 GPIO_Pin, u32 data_direction);

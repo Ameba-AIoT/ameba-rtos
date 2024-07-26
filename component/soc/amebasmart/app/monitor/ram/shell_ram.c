@@ -27,16 +27,17 @@ SECTION(".data") u8 *__cmd_table_end__ = 0;
 #define OpenShellRx		2
 
 extern volatile UART_LOG_CTL		shell_ctl;
-extern UART_LOG_BUF				shell_buf;
-
-extern COMMAND_TABLE    shell_cmd_table[];
 
 rtos_sema_t	shell_sema = NULL;
 
-#ifdef SUPPORT_LOG_SERVICE
-char log_buf[UART_LOG_CMD_BUFLEN];
-extern void log_service(char *line_buf);
-extern void log_service_init(void);
+#ifdef CONFIG_SUPPORT_ATCMD
+char atcmd_buf[UART_LOG_CMD_BUFLEN];
+extern int atcmd_service(char *line_buf);
+extern void atcmd_service_init(void);
+#endif
+
+#ifdef CONFIG_MP_INCLUDED
+extern int mp_command_handler(char *cmd);
 #endif
 
 static monitor_cmd_handler shell_get_cmd(char *argv)
@@ -220,7 +221,7 @@ static void shell_task_ram(void *Data)
 {
 	/* To avoid gcc warnings */
 	(void) Data;
-	u32 ret = TRUE;
+	u32 ret = FALSE;
 	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
 
 	//4 Set this for UartLog check cmd history
@@ -235,29 +236,35 @@ static void shell_task_ram(void *Data)
 		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#ifdef SUPPORT_LOG_SERVICE
-			strcpy(log_buf, (const char *)pUartLogBuf->UARTLogBuf);
-#endif
-			ret = shell_cmd_exec_ram(pUartLogBuf->UARTLogBuf); /* UARTLogBuf will be changed */
-			/* normal for LOG service */
+#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_SINGLE_CORE_WIFI) || (defined CONFIG_AS_INIC_AP))
+			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
+			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
+			ret = atcmd_service(atcmd_buf);
+
+#ifdef CONFIG_MP_INCLUDED
 			if (ret == FALSE) {
-#ifdef SUPPORT_LOG_SERVICE
-				log_service(log_buf);
+				ret = mp_command_handler((char *)pUartLogBuf->UARTLogBuf);
+			}
 #endif
+#endif
+			if (ret == FALSE) {
+				if (shell_cmd_exec_ram(pUartLogBuf->UARTLogBuf) == FALSE) {
+					RTK_LOGS(NOTAG, "\r\nunknown command '%s'", pUartLogBuf->UARTLogBuf);
+					RTK_LOGS(NOTAG, "\r\n\n#\r\n");
+				}
 			}
 
 			shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
 			shell_ctl.ExecuteCmd = _FALSE;
-
-			//pmu_set_sysactive_time(10000);
 		}
+
 	} while (1);
 }
 
 void shell_init_ram(void)
 {
-#ifdef SUPPORT_LOG_SERVICE
-	log_service_init();
+#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_SINGLE_CORE_WIFI) || (defined CONFIG_AS_INIC_AP))
+	atcmd_service_init();
 #endif
 
 #if defined ( __ICCARM__ )

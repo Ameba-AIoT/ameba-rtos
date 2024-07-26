@@ -284,6 +284,13 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 #define PAD_DRV_ABILITITY_HIGH			(1)
 /** @} */
 
+/** @defgroup PINMUX_PAD_SlewRate_definitions
+  * @{
+  */
+#define PAD_SlewRate_Fast				(0)
+#define PAD_SlewRate_Slow				(1)
+/** @} */
+
 /** @} */
 
 

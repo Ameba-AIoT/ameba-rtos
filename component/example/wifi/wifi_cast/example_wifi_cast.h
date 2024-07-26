@@ -7,6 +7,7 @@
  *
  *
  ******************************************************************************/
+
 void example_wifi_cast(void);
 
 #endif //#ifndef __EXAMPLE_WIFI_CAST_H__

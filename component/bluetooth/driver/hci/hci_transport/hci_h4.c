@@ -265,10 +265,10 @@ uint8_t hci_transport_open(void)
 	return HCI_SUCCESS;
 }
 
-uint8_t hci_transport_close(void)
+void hci_transport_close(void)
 {
 	if (!hci_h4) {
-		return HCI_FAIL;
+		return;
 	}
 
 	hci_h4->rx_run = 0;
@@ -278,14 +278,12 @@ uint8_t hci_transport_close(void)
 	if (!hci_is_mp_mode()) {
 		bt_coex_deinit();
 	}
-
-	return HCI_SUCCESS;
 }
 
-uint8_t hci_transport_free(void)
+void hci_transport_free(void)
 {
 	if (!hci_h4) {
-		return HCI_FAIL;
+		return;
 	}
 
 	osif_sem_delete(hci_h4->rx_run_sema);
@@ -295,6 +293,4 @@ uint8_t hci_transport_free(void)
 		osif_mem_free(hci_h4);
 	}
 	hci_h4 = NULL;
-
-	return HCI_SUCCESS;
 }

@@ -1,6 +1,7 @@
 #include "osif.h"
 #include "hci_platform.h"
 #include "hci_common.h"
+#include "hci/hci_process.h"
 #include "bt_debug.h"
 #include "dlist.h"
 
@@ -532,4 +533,59 @@ void set_reg_value(uint32_t reg_address, uint32_t Mask, uint32_t val)
 	data = ((data & (~Mask)) | (val << shift));
 	HAL_WRITE32(reg_address, 0, data);
 	data = HAL_READ32(reg_address, 0);
+}
+
+static bool _controller_is_enabled = false;
+bool hci_controller_enable(void)
+{
+	if (_controller_is_enabled) {
+		BT_LOGE("Controller Already enabled!\r\n");
+		return false;
+	}
+
+	/* BT Board Init */
+	if (HCI_FAIL == hci_platform_init()) {
+		BT_LOGE("hci_platform_init fail!\r\n");
+		goto fail;
+	}
+
+	/* HCI Transport */
+	if (HCI_FAIL == hci_transport_open()) {
+		BT_LOGE("hci_transport_open fail!\r\n");
+		goto fail;
+	}
+
+	/* HCI Transport Bridge to StandAlone */
+	hci_transport_register(&hci_sa_cb);
+
+	if (HCI_FAIL == hci_process()) {
+		BT_LOGE("hci_process fail!\r\n");
+		goto fail;
+	}
+
+	_controller_is_enabled = true;
+	return true;
+
+fail:
+	hci_controller_disable();
+	return false;
+}
+
+void hci_controller_disable(void)
+{
+	hci_platform_deinit();  /* Platform Deinit First */
+	hci_transport_close();  /* HCI Transport Close */
+
+	_controller_is_enabled = false;
+}
+
+void hci_controller_free(void)
+{
+	hci_uart_free();        /* UART Free */
+	hci_transport_free();   /* HCI Transport Free */
+}
+
+bool hci_controller_is_enabled(void)
+{
+	return _controller_is_enabled;
 }

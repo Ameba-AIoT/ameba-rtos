@@ -29,19 +29,30 @@
 #endif
 
 #include "basic_types.h"
-#include "os_wrapper.h"
 #include "ameba.h"
+#ifndef CONFIG_FLOADER_USBD_EN
+#include "os_wrapper.h"
+#endif
 
 /* Exported defines ----------------------------------------------------------*/
 
+#ifndef CONFIG_FLOADER_USBD_EN
 #define USB_OS_SEMA_TIMEOUT		(RTOS_SEMA_MAX_COUNT)
+#endif
 
 /* Exported types ------------------------------------------------------------*/
 
+#ifndef CONFIG_FLOADER_USBD_EN
+
 typedef rtos_mutex_t usb_os_lock_t;
-typedef rtos_queue_t usb_os_queue_t;
+
 typedef rtos_sema_t usb_os_sema_t;
+
+typedef rtos_queue_t usb_os_queue_t;
+
 typedef rtos_task_t usb_os_task_t;
+
+#endif
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -110,10 +121,6 @@ int usb_os_sema_delete(usb_os_sema_t sema);
 int usb_os_sema_take(usb_os_sema_t sema, u32 timeout_ms);
 
 int usb_os_sema_give(usb_os_sema_t sema);
-
-void usb_os_critical_enter(void);
-
-void usb_os_critical_exit(void);
 
 int usb_os_queue_create(usb_os_queue_t *queue, u32 msg_num, u32 msg_size);
 

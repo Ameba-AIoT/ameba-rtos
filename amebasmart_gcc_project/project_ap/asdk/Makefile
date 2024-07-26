@@ -96,10 +96,21 @@ endif
 ifeq ($(findstring y, $(CONFIG_USB_HOST_EN)), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_usbh.a
 endif
+ifeq ($(findstring y, $(CONFIG_USB_DRD_EN)), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_usb.a
+endif
+ifeq ($(CONFIG_MP_SHRINK), y)
+ifeq ($(CONFIG_CORE_NUM),1)
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc_mp.a
+else
+LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_mp.a
+endif
+else
 ifeq ($(CONFIG_CORE_NUM),1)
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp_sc.a
 else
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_freertos_smp.a
+endif
 endif
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_chipinfo.a
 LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a
@@ -146,7 +157,6 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_ui_drivers.a
 endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 
@@ -180,10 +190,11 @@ include ./$(WIFI_MAKE_DIR)/Makefile.lib.wifi
 make_subdirs_lib_img2: make_wifi_lib
 endif
 
+prebuild: build_target_folder check_toolchain build_info.h
 #all: check_toolchain copy_ld_sheipa make_atf make_rtos linker_rtos gen_image
-bootloader: build_target_folder check_toolchain make_atf
-image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2 fip_image code_analyze
-lib_image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs_lib_img2
+bootloader: prebuild make_atf
+image2: prebuild copy_ld_img2 make_subdirs linker_image2 fip_image code_analyze
+lib_image2: prebuild copy_ld_img2 make_subdirs_lib_img2
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
 #*****************************************************************************#
@@ -215,6 +226,7 @@ make_subdirs_lib_img2:
 
 	@+$(MAKE) -C make/usb_otg/device/lib all
 	@+$(MAKE) -C make/usb_otg/host/lib all
+	@+$(MAKE) -C make/usb_otg/drd/lib all
 
 
 ifeq ($(CONFIG_WLAN),y)
@@ -315,10 +327,10 @@ fip_image:
 	@echo "========== Image manipulating start =========="
 	@#link ca32_image2_all.bin to gen fip.bin
 	@make -C make/atf image
-	$(Q) sh $(KM4_BUILDDIR)/asdk/gnu_utility/pad.sh $(IMAGE_TARGET_FOLDER)/bl1_sram.bin 32
-	$(Q) sh $(KM4_BUILDDIR)/asdk/gnu_utility/pad.sh $(IMAGE_TARGET_FOLDER)/bl1.bin 32
-	$(Q) sh $(KM4_BUILDDIR)/asdk/gnu_utility/pad.sh $(IMAGE_TARGET_FOLDER)/fip.bin 32
-	$(Q) sh $(KM4_BUILDDIR)/asdk/gnu_utility/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/bl1_sram.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/bl1.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/fip.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
 
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin  __flash_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/bl1_sram.bin  __ca32_bl1_sram_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -326,7 +338,7 @@ fip_image:
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/fip.bin  __ca32_fip_dram_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	@cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/bl1_sram_prepend.bin $(IMAGE_TARGET_FOLDER)/bl1_prepend.bin $(IMAGE_TARGET_FOLDER)/fip_prepend.bin > $(IMAGE_TARGET_FOLDER)/ap_image_all.bin
 
-	$(Q)$(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ap_image_all.bin $(BUILD_TYPE)
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/ap_image_all.bin $(BUILD_TYPE)
 
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app.bin ]; then \

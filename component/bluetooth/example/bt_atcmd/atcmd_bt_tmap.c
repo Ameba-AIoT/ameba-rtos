@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -106,7 +106,7 @@ static const cmd_table_t tmap_unicast_media_receiver_cmd_table[] = {
 int atcmd_bt_tmap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLETMAP]";
 #else
 	char tag[80] = "[ATBC][tmap]";

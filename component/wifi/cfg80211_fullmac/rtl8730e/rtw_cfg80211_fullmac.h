@@ -89,6 +89,7 @@
 #include <ameba_ipc/ameba_ipc.h>
 #include "inic_ipc.h"
 #include "rtw_llhw_msg.h"
+#include "rtw_llhw_ops.h"
 #else
 #include <linux/mmc/sdio_func.h>
 #include "inic_sdio.h"
@@ -102,7 +103,6 @@
 #include "rtw_netdev_ops.h"
 #include "rtw_ethtool_ops.h"
 #include "rtw_llhw_hci.h"
-#include "rtw_llhw_ops.h"
 #include "rtw_functions.h"
 #include "rtw_cfgvendor.h"
 #include "rtw_proc.h"

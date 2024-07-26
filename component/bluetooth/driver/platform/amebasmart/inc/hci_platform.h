@@ -45,10 +45,7 @@ bool hci_platform_check_lmp_subver(uint16_t lmp_subver);
 uint8_t hci_platform_record_chipid(uint8_t chipid);
 
 uint8_t hci_platform_init(void);
-uint8_t hci_platform_deinit(void);
-
-bool rtk_bt_pre_enable(void);
-bool rtk_bt_post_enable(void);
+void hci_platform_deinit(void);
 
 void hci_platform_debug_enable(void);
 #endif

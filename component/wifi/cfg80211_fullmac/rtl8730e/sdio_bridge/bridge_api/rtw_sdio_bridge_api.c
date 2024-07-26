@@ -14,18 +14,21 @@
 #include <net/if.h>
 #include <linux/sockios.h>
 #include <sys/ioctl.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include <linux/genetlink.h>
 #include <rtw_sdio_bridge_netlink.h>
 #include <rtw_scan_res.h>
+#include <rtw_sdio_bridge_api.h>
 
 #define GENLMSG_DATA(glh)	((void *)((char*)NLMSG_DATA(glh) + GENL_HDRLEN))
 #define GENLMSG_PAYLOAD(glh)	(NLMSG_PAYLOAD(glh, 0) - GENL_HDRLEN)
 #define NLA_DATA(na)		((void *)((char*)(na) + NLA_HDRLEN))
 #define NLA_PAYLOAD(len)	(len - NLA_HDRLEN)
 
-#define MAX_MSG_SIZE	1024
-#define IFNAME "eth0"
+#define MAX_MSG_SIZE	512
+#define IFNAME "eth_sta0"
 #define ifreq_offsetof(x)  offsetof(struct ifreq, x)
 
 struct msgtemplate {
@@ -33,6 +36,8 @@ struct msgtemplate {
 	struct genlmsghdr g;
 	unsigned char buf[MAX_MSG_SIZE];
 };
+
+bridge_wifi_event_cb_t     wifi_event_callback_list[BRIDGE_WIFI_EVENT_MAX];
 
 static inline int nla_attr_size(int payload)
 {
@@ -86,7 +91,7 @@ static inline void nla_put_string(unsigned char **pbuf, int attrtype, const char
 /*
  * Create a raw netlink socket and bind
  */
-static int _bridge_create_nl_socket(int protocol)
+static int _bridge_create_nl_socket(int protocol, int pid)
 {
 	int fd;
 	struct sockaddr_nl local;
@@ -99,7 +104,7 @@ static int _bridge_create_nl_socket(int protocol)
 
 	memset(&local, 0, sizeof(local));
 	local.nl_family = AF_NETLINK;
-	local.nl_pid = getpid();
+	local.nl_pid = pid;
 
 	if (bind(fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
 		goto error;
@@ -122,6 +127,7 @@ static void _bridge_fill_nlhdr(struct msgtemplate *msg, __u16 nlmsg_type, __u32 
 	msg->n.nlmsg_pid = nlmsg_pid;
 	msg->g.cmd = genl_cmd;
 	msg->g.version = 1;
+	msg->g.reserved = 0;
 }
 
 static int _bridge_send_buf(int fd, char *buf, int buflen)
@@ -159,7 +165,7 @@ static int _bridge_get_family_id(int fd, char *family_name)
 	unsigned char *ptr = msg.buf;
 
 	/* find family id from family name */
-	_bridge_fill_nlhdr(&msg, GENL_ID_CTRL, getpid(), CTRL_CMD_GETFAMILY);
+	_bridge_fill_nlhdr(&msg, GENL_ID_CTRL, 0, CTRL_CMD_GETFAMILY);
 	nla_put_string(&ptr, CTRL_ATTR_FAMILY_NAME, family_name);
 	msg.n.nlmsg_len += ptr - msg.buf;
 	_bridge_send_buf(fd, (char *)&msg, msg.n.nlmsg_len);
@@ -231,13 +237,13 @@ static int _bridge_get_device_ip(int family_id, int *ip_addr)
 	int nl_fd;
 
 	/* initialize socket */
-	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC);
+	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC, getpid());
 	if (nl_fd < 0) {
 		fprintf(stderr, "failed to create netlink socket\n");
 		return 0;
 	}
 
-	_bridge_fill_nlhdr(&msg, family_id, getpid(), BRIDGE_CMD_ECHO);
+	_bridge_fill_nlhdr(&msg, family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_GET_IP);
 
 	msg.n.nlmsg_len += ptr - msg.buf;
@@ -249,6 +255,7 @@ static int _bridge_get_device_ip(int family_id, int *ip_addr)
 	/*wait response*/
 	rep_len = recv(nl_fd, &ans, sizeof(ans), 0);
 	if (ans.n.nlmsg_type == NLMSG_ERROR || (rep_len < 0) || !NLMSG_OK((&ans.n), rep_len)) {
+		close(nl_fd);
 		return 0;
 	}
 
@@ -263,6 +270,8 @@ static int _bridge_get_device_ip(int family_id, int *ip_addr)
 		memcpy(ip_addr, &ip, 4);
 		printf("IP Address : %d.%d.%d.%d\n", iptab[3], iptab[2], iptab[1], iptab[0]);
 	}
+
+	close(nl_fd);
 }
 
 static int _bridge_config_host_ip(int *ip_addr)
@@ -299,6 +308,129 @@ static int _bridge_config_host_ip(int *ip_addr)
 	close(sockfd);
 }
 
+void _bridge_wifi_event_rx_thread_cleanup(void *arg)
+{
+	int *sockfd = (int *)arg;
+	if (sockfd) {
+		close(*sockfd);
+	}
+}
+
+void *_bridge_wifi_event_rx_thread(void *arg)
+{
+	int nl_fd;
+	int nl_family_id;
+	struct msgtemplate msg;
+	unsigned char *ptr = msg.buf;
+	struct msgtemplate ans;
+	int ret = 0;
+	int event = -1;
+	struct nlattr *na;
+	int rep_len;
+	int pid = 0;
+
+	/* initialize socket */
+	pid = getpid() + rand();
+	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC, pid);
+	if (nl_fd < 0) {
+		printf("failed to create netlink socket\n");
+		return NULL;
+	}
+
+	/* get family id */
+	nl_family_id = _bridge_get_family_id(nl_fd, SDIO_BRIDGE_GENL_NAME);
+	if (!nl_family_id) {
+		printf("Failed to get family id\n");
+		close(nl_fd);
+		return NULL;
+	}
+	_bridge_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
+	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_EVENT_INIT);
+	msg.n.nlmsg_len += ptr - msg.buf;
+	ret = _bridge_send_buf(nl_fd, (char *)&msg, msg.n.nlmsg_len);
+	if (ret < 0) {
+		printf("msg send fail\n");
+	}
+
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+
+	pthread_cleanup_push(_bridge_wifi_event_rx_thread_cleanup, &nl_fd);
+
+	while (1) {
+loop_start:
+		rep_len = recv(nl_fd, &ans, sizeof(struct msgtemplate), 0);
+		if (rep_len > 0) {
+			if (ans.n.nlmsg_type == NLMSG_ERROR || (rep_len < 0) || !NLMSG_OK((&ans.n), rep_len)) {
+				continue;
+			}
+
+			if (ans.g.cmd == BRIDGE_CMD_EVENT) {
+				na = (struct nlattr *) GENLMSG_DATA(&ans);
+				event = *(__u32 *) NLA_DATA(na);
+				if ((event >= 0) && (event < BRIDGE_WIFI_EVENT_MAX)) {
+					if (wifi_event_callback_list[event]) {
+						wifi_event_callback_list[event](event);
+					}
+				}
+			}
+			memset(&ans, 0, sizeof(struct msgtemplate));
+		}
+	}
+
+	pthread_cleanup_pop(1);
+
+	return NULL;
+}
+
+int bridge_wifi_register_event_callback(int event, bridge_wifi_event_cb_t handler_func)
+{
+	if (event < BRIDGE_WIFI_EVENT_MAX) {
+		if (wifi_event_callback_list[event] == NULL) { //there exists an empty position for new handler
+			wifi_event_callback_list[event] = handler_func;
+			return 0;
+		} else if (wifi_event_callback_list[event] == handler_func) {
+			return 0;
+		} else {
+			printf("event callback already existed!\n");
+		}
+	}
+	return -1;
+}
+
+pthread_t *bridge_wifi_event_callback_init(void)
+{
+	/*create thread to recv events from kernel*/
+	pthread_t *thread_handle = (pthread_t *)malloc(sizeof(pthread_t));
+
+	if (!thread_handle) {
+		printf("Falied to allocate thread handle\n");
+		return NULL;
+	}
+
+	if (pthread_create(thread_handle, NULL, _bridge_wifi_event_rx_thread, NULL)) {
+		printf("Failed in pthread_create\n");
+		free(thread_handle);
+		return NULL;
+	}
+	return thread_handle;
+}
+
+void bridge_wifi_event_callback_deinit(pthread_t *thread_handle)
+{
+	printf("thread deinit\n");
+	if (pthread_cancel(*thread_handle) != 0) {
+		printf("fail to cancel thread\n");
+		return;
+	}
+
+	if (pthread_join(*thread_handle, NULL) != 0) {
+		printf("fail to join thread\n");
+	}
+
+	free(thread_handle);
+}
+
 int bridge_wifi_connect(char *ssid, char *pwd)
 {
 	int ret = 0;
@@ -312,7 +444,7 @@ int bridge_wifi_connect(char *ssid, char *pwd)
 	int ip_addr = 0;
 
 	/* initialize socket */
-	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC);
+	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC, getpid());
 	if (nl_fd < 0) {
 		fprintf(stderr, "failed to create netlink socket\n");
 		return 0;
@@ -326,7 +458,7 @@ int bridge_wifi_connect(char *ssid, char *pwd)
 		return -1;
 	}
 
-	_bridge_fill_nlhdr(&msg, nl_family_id, getpid(), BRIDGE_CMD_ECHO);
+	_bridge_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_CONNECT);
 	nla_put_string(&ptr, BRIDGE_ATTR_SSID, ssid);
 	if (pwd) {
@@ -374,7 +506,7 @@ int bridge_wifi_disconnect(void)
 	int nl_family_id = 0;
 
 	/* initialize socket */
-	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC);
+	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC, getpid());
 	if (nl_fd < 0) {
 		fprintf(stderr, "failed to create netlink socket\n");
 		return 0;
@@ -387,7 +519,7 @@ int bridge_wifi_disconnect(void)
 		goto out;
 	}
 
-	_bridge_fill_nlhdr(&msg, nl_family_id, getpid(), BRIDGE_CMD_ECHO);
+	_bridge_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_DISCONNECT);
 
 	msg.n.nlmsg_len += ptr - msg.buf;
@@ -412,7 +544,7 @@ int bridge_wifi_scan(void)
 	int nl_family_id = 0;
 
 	/* initialize socket */
-	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC);
+	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC, getpid());
 	if (nl_fd < 0) {
 		fprintf(stderr, "failed to create netlink socket\n");
 		return 0;
@@ -425,7 +557,7 @@ int bridge_wifi_scan(void)
 		goto out;
 	}
 
-	_bridge_fill_nlhdr(&msg, nl_family_id, getpid(), BRIDGE_CMD_ECHO);
+	_bridge_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_SCAN);
 
 	msg.n.nlmsg_len += ptr - msg.buf;
@@ -454,7 +586,7 @@ int bridge_wifi_get_scanres(void)
 	int nl_family_id = 0;
 
 	/* initialize socket */
-	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC);
+	nl_fd = _bridge_create_nl_socket(NETLINK_GENERIC, getpid());
 	if (nl_fd < 0) {
 		fprintf(stderr, "failed to create netlink socket\n");
 		return 0;
@@ -470,7 +602,7 @@ int bridge_wifi_get_scanres(void)
 	scanbuf = (__u8 *)malloc(64 * sizeof(struct rtw_scan_result));
 	memset(scanbuf, 0, 64 * sizeof(struct rtw_scan_result));
 
-	_bridge_fill_nlhdr(&msg, nl_family_id, getpid(), BRIDGE_CMD_ECHO);
+	_bridge_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_GET_SCAN_RES);
 	nla_put_u64(&ptr, BRIDGE_ATTR_SCAN_RES_ADDR, (__u64)(scanbuf));
 
@@ -503,5 +635,6 @@ int bridge_wifi_get_scanres(void)
 out:
 	close(nl_fd);
 }
+
 
 

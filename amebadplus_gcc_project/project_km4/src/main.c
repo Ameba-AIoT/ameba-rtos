@@ -3,6 +3,7 @@
 #include "os_wrapper.h"
 #include "main.h"
 #include "vfs.h"
+#include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
 static const char *TAG = "MAIN";
 u32 use_hw_crypto_func;
@@ -174,6 +175,7 @@ _WEAK void app_example(void)
 int main(void)
 {
 	RTK_LOGI(TAG, "KM4 MAIN \n");
+	ameba_rtos_get_version();
 	/* Debug log control */
 	app_init_debug();
 

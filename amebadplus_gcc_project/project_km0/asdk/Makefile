@@ -56,9 +56,9 @@ endif
 LINK_ROM_LIB = $(ROM_LIB_DIR)/rom.a
 
 LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
-LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld 
+LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld
 endif
 LINK_ROM_SYMBOL += ./ld/ameba_rom_symbol_stdlib.ld
 
@@ -81,8 +81,10 @@ endif
 
 .PHONY: all build_target_folder menuconfig clean build_libraries std_lib
 
-all: build_target_folder copy_ld_ram check_toolchain build_info.h make_subdirs linker_image2 code_analyze
-image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2 code_analyze
+prebuild: build_target_folder check_toolchain build_info.h
+
+all: prebuild copy_ld_ram make_subdirs linker_image2 code_analyze
+image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
 analysis_extract: code_extract
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
@@ -96,7 +98,7 @@ build_target_folder:
 	@if [ -d $(ROM_LIB_DIR) ]; then echo "$(ROM_LIB_DIR) exist"; else $(MKDIR) -p $(ROM_LIB_DIR); fi
 	@if [ -d $(TARGET_LIBAPP_FOLDER) ]; then echo "$(TARGET_LIBAPP_FOLDER) exist"; else $(MKDIR) -p $(TARGET_LIBAPP_FOLDER); fi
 	@if [ -d $(TARGET_LIBSOC_FOLDER) ]; then echo "$(TARGET_LIBSOC_FOLDER) exist"; else $(MKDIR) -p $(TARGET_LIBSOC_FOLDER); fi
-	
+
 #*****************************************************************************#
 #                      RULES TO MAKE SUB DIRS                                 #
 #*****************************************************************************#
@@ -174,14 +176,17 @@ endif
 	@echo "========== Image manipulating start =========="
 
 	@# 32Bytes aligned for rsip #
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/entry.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
 
 ifeq ($(CONFIG_MP_SHRINK), y)
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __img2_entry_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin
-	#$(Q)sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin 1024
+	#$(Q)$(PADTOOL) $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin 1024
 
-	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin $(BUILD_TYPE)
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km0_image2_all_shrink.bin $(BUILD_TYPE)
 
 else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/entry.bin  __img2_entry_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -192,9 +197,9 @@ else
 	@# pad to 4K-aligned for RSIP/MMU address 4K-alignment restriction
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_2_prepend.bin \
 			$(IMAGE_TARGET_FOLDER)/entry_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin
-	$(Q)sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin 4096
+	$(Q)$(PADTOOL) $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin 4096
 
-	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin $(BUILD_TYPE)
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km0_image2_all.bin $(BUILD_TYPE)
 
 endif
 
@@ -214,7 +219,7 @@ else
 endif
 
 	@echo "========== Image manipulating end =========="
-	
+
 code_analyze:
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \

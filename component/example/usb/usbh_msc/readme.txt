@@ -33,7 +33,7 @@ Setup Guide
 	2. Type command "make menuconfig" under auto_build 
 	   choose MENUCONFIG FOR AP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] MSC
 	   choose CONFIG_VFS:
 		[*] Enable VFS FATFS 
@@ -51,7 +51,7 @@ Setup Guide
 	1. Type command "make menuconfig" under auto_build
 	   choose MENUCONFIG FOR HP CONFIG => CONFIG USB:
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] MSC
 	   choose CONFIG_VFS:
 		[*] Enable VFS FATFS

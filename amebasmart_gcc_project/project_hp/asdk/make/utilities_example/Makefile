@@ -34,6 +34,22 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/vendor
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/uvc
 MODULE_IFLAGS += -I$(BASEDIR)/component/utils/ringbuffer
 endif
+ifeq ($(CONFIG_USB_DRD_EN),y)
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/common
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/core
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/cdc_acm
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/composite
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/hid
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/msc
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/vendor
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/core
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/cdc_acm
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/cdc_ecm
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/msc
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/vendor
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/host/uvc
+MODULE_IFLAGS += -I$(BASEDIR)/component/utils/ringbuffer
+endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio_track

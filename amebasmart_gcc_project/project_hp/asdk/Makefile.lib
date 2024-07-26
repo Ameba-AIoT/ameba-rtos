@@ -100,6 +100,9 @@ endif
 ifeq ($(findstring y, $(CONFIG_USB_DEVICE_EN)), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_usbd.a
 endif
+ifeq ($(findstring y, $(CONFIG_USB_DRD_EN)), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_usb.a
+endif
 
 #soc
 LINK_LOADER_LIB += $(ROOTDIR)/lib/soc/lib_bootloader.a
@@ -139,7 +142,6 @@ ifeq ($(CONFIG_IMQ_EN),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
 endif
 ifneq ($(CONFIG_AUDIO_RPC_AFE)$(CONFIG_AUDIO_LOCAL_AFE)$(CONFIG_AUDIO_FWK),)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 
@@ -216,6 +218,7 @@ ifeq ($(CONFIG_AUDIO_EN),y)
 endif
 	@+$(MAKE) -C make/usb_otg/device/lib all
 	@+$(MAKE) -C make/usb_otg/host/lib all
+	@+$(MAKE) -C make/usb_otg/drd/lib all
 
 ifeq ($(CONFIG_BT), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)

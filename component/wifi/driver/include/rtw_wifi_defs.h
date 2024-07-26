@@ -973,11 +973,9 @@ enum rtw_event_indicate {
 	WIFI_EVENT_WPA_STA_4WAY_RECV,
 	WIFI_EVENT_WPA_AP_4WAY_RECV,
 	WIFI_EVENT_WPA_SET_PSK_INFO,
-#ifdef CONFIG_OWE_SUPPORT
 	/* owe event */
 	WIFI_EVENT_OWE_START_CALC,
 	WIFI_EVENT_OWE_PEER_KEY_RECV,
-#endif
 	/* kvr event */
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
 	WIFI_EVENT_KVR_CAP_UPDATE,
@@ -1041,14 +1039,12 @@ enum gen_ie_type {
 	P2PWPS_ASSOC_RSP_IE
 };
 
-#ifdef CONFIG_WMMPS_STA
 enum UAPSD_MAX_SP {
 	NO_LIMIT,
 	TWO_MSDU,
 	FOUR_MSDU,
 	SIX_MSDU
 };
-#endif
 /**
   * @}
   */

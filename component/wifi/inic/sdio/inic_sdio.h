@@ -53,10 +53,12 @@
 
 /* ------------------------------- Data Types ------------------------------- */
 enum INIC_WIFI_CTRL_TYPE {
-	INIC_WIFI_EVT_XIMT_PKTS,
+	INIC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
 	INIC_WIFI_EVT_RECV_PKTS,
 	INIC_WIFI_EVT_API_CALL,
-	INIC_WIFI_EVT_API_RETURN
+	INIC_WIFI_EVT_API_RETURN,
+
+	INIC_WIFI_EVT_MAX
 };
 
 struct inic_api_info {

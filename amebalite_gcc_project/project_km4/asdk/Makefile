@@ -49,7 +49,7 @@ endif
 #
 # Lets work out what the user wants, and if they have configured us yet
 #
-DSP_IMAGE_TARGET_DIR = 
+DSP_IMAGE_TARGET_DIR =
 RAM_OBJS_LIST = ./build/ram/*.o
 LIB_OBJS_LIST = ./build/lib/*.o
 
@@ -63,7 +63,7 @@ LINK_ROM_LIB_NS = $(ROM_LIB_DIR)/rom_ns.a
 
 LINK_ROM_SYMBOL_NS = ./ld/ameba_rom_symbol_empty.ld
 LINK_ROM_SYMBOL_S = ./ld/ameba_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
 LINK_ROM_LIB_NS =
 LINK_ROM_SYMBOL_NS = ./ld/ameba_rom_symbol_acut.ld
@@ -195,15 +195,15 @@ ifeq ($(CONFIG_TRUSTZONE), y)
 	@echo "========== linker img3 secure end =========="
 
 	@echo "========== Image manipulating start =========="
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/ram_3_s.bin
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/ram_3_nsc.bin
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_s.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_nsc.bin 32
 
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_s.bin  __ram_image3_text_start__  $(IMAGE_TARGET_FOLDER)/target_img3.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_3_nsc.bin  __ram_image3_nsc_start__  $(IMAGE_TARGET_FOLDER)/target_img3.map
 
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/ram_3_s_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_3_nsc_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image3_all.bin
 
-	sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image3_all.bin $(BUILD_TYPE)
+	$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_image3_all.bin $(BUILD_TYPE)
 	@echo "========== Image manipulating end =========="
 endif
 
@@ -264,7 +264,7 @@ endif
 	$(Q)$(CC_SIZE) -A --radix=10 $(IMAGE_TARGET_FOLDER)/target_img2.axf
 	$(Q)$(CC_SIZE) -t --radix=10 $(IMAGE_TARGET_FOLDER)/target_img2.axf
 	@echo "========== Image Info DEC =========="
-	
+
 	$(Q)$(RM) -f $(RAM_OBJS_LIST) $(LIB_OBJS_LIST)
 	@echo "========== linker img2_ns end =========="
 
@@ -272,21 +272,22 @@ endif
 
 	# 32Bytes aligned for rsip #
 ifeq ($(CONFIG_MP_SHRINK), y)
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)cat  $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin
 ifeq ($(CONFIG_AP_CORE_KM4), y)
-	$(Q) sh $(UTILITYDIR)/binary_pading.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin 120
+	$(Q) $(BINARY_PADING) $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin 120
 else
-	$(Q) sh $(UTILITYDIR)/binary_pading.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin 248
+	$(Q) $(BINARY_PADING) $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink_raw.bin $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin 248
 endif
 
-	$(Q) sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR);
+	$(Q) $(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR);
 else
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_only.bin
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/sram_2.bin
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/psram_2.bin
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/xip_image2.bin
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/boot.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_only.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
 
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/boot.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_only.bin __sram_only_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
@@ -296,9 +297,7 @@ else
 
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/boot_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_only_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin
 
-	@# $(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin
-	
-	$(Q) sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR); \
+	$(Q) $(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR); \
 
 endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
@@ -363,10 +362,10 @@ endif
 	@echo "========== Image manipulating start =========="
 ifeq ($(CONFIG_MP_SHRINK), y)
 	##entry 1k for flashloader
-	$(Q) sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/entry_1.bin 992
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/entry_1.bin 992
 endif
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/ram_1.bin
-	$(Q) sh $(UTILITYDIR)/pad16.sh $(IMAGE_TARGET_FOLDER)/xip_boot.bin
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/xip_boot.bin 32
 
 ifeq ($(CONFIG_MP_SHRINK), y)
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/entry_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
@@ -374,16 +373,16 @@ ifeq ($(CONFIG_MP_SHRINK), y)
 
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/entry_1_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin
 
-	sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
+	$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
 
 else
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/ram_1.bin  __ram_start_table_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map
 	@if [ ${IMGTOOL_LOADER} == "YES" ]; then \
-		sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE); \
+		$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE); \
 	else \
 		$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/xip_boot.bin  __km4_boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_loader.map; \
 		cat $(IMAGE_TARGET_FOLDER)/xip_boot_prepend.bin $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin > $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
-		sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
+		$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin $(BUILD_TYPE); \
 	fi
 
 endif
@@ -448,7 +447,7 @@ gdb: gdb_prepare
 	$(COPY) $(GNU_SCRIPT)/acut_loader/*  $(GNU_SCRIPT)/
 	$(GNU_SCRIPT)/SetupGDB_FPGA.sh $(GNU_SCRIPT)
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_flash_write.txt
-	
+
 
 gdbboot: gdb_prepare
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_jtag_boot.txt
@@ -554,12 +553,12 @@ copy_imgtool_flashloader:
 	$(Q)$(COPY) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin 	$(FLOADER_BIN_DIR)/imgtool_flashloader.bin -f
 	$(Q)$(MOVE) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin $(FLOADER_BIN_DIR)/floader_amebalite.bin -f
 
-gen_imgtool_floader: 
+gen_imgtool_floader:
 	@if [ ! -f $(FLOADER_BIN_DIR)/imgtool_flashloader.bin ]; then \
 		echo Error: No imgtool_flashloader.bin in $(FLOADER_BIN_DIR); exit 1;\
 	fi
 	$(Q)head -zc -4096 $(FLOADER_BIN_DIR)/imgtool_flashloader.bin > $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin
-	$(Q)sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE);
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/ram_1_prepend.bin $(BUILD_TYPE);
 ifneq ($(RTLNAME),)
 	$(Q)$(COPY) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin 	$(FLOADER_BIN_DIR)/floader_$(RTLNAME).bin -f;
 else

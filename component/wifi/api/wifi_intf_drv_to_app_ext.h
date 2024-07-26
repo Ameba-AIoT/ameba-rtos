@@ -155,7 +155,7 @@ int wifi_get_disconn_reason_code(unsigned short *reason_code);
  * @return  RTW_SUCCESS: The result is successfully got.
  * @return  RTW_ERROR: The result is not successfully got.
  */
-int wifi_get_associated_client_list(rtw_client_list_t	*client_list_buffer);
+int wifi_get_associated_client_list(struct _rtw_client_list_t	*client_list_buffer);
 
 /**
  * @brief  delete a STA for softap
@@ -473,12 +473,22 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 /**
  * @brief  for wifi speaker setting
- * @param[in]  mode: 0 for slave, 1 for master
- * @param[in]  thresh: unit 128us
- * @param[in]  relay_en: relay control
+ * @param[in]  set_type: wifi speaker setting type
+ * @param[in]  settings: A pointer to the params
+ * @note:
+ *      when set_type == SPEAKER_SET_INIT
+ *          mode: 0 for slave, 1 for master
+ *          thresh: unit 128us
+ *          relay_en: relay control
+ *      when set_type == SPEAKER_SET_LATCH_I2S_COUNT
+ *          port: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1
+ *          latch_period: 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms
+ *      when set_type == SPEAKER_SET_TSF_TIMER
+ *          tsft: absolute value for twt timer, unit ms
+ *          port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1
  * @return  null.
  */
-void wifi_speaker_setting(u8 mode, u8 thresh, u8 relay_en);
+void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *settings);
 
 /**
  * @brief  for user to set tx power

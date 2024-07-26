@@ -13,6 +13,7 @@ static int rtw_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 	init_waitqueue_head(&priv->txbd_wq);
 
 	priv->func = func;
+	priv->rx_process_func = llhw_recv_process;
 	atomic_set(&priv->continual_io_error, 0);
 
 	sdio_set_drvdata(func, (void *)priv);
@@ -105,7 +106,7 @@ u8 rtw_sdio_rpwm_notify(struct inic_sdio *priv, enum RPWM2_EVENT event)
 	rtw_write16(priv, SDIO_REG_HRPWM2, rpwm2);
 
 	/* wait for device response */
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 1000; i++) {
 		fw_ready = rtw_read8(priv, SDIO_REG_CPU_IND);
 		if ((fw_ready & SDIO_SYSTEM_TRX_RDY_IND) == target_cpu_rdy_bit) {
 			break;
@@ -152,7 +153,7 @@ int rtw_sdio_suspend(struct device *dev)
 
 	dev_dbg(dev, "%s", __func__);
 
-	if (rtw_netdev_priv_is_on(global_idev.pndev[1])) {
+	if (global_idev.pndev[1] && rtw_netdev_priv_is_on(global_idev.pndev[1])) {
 		/* AP is up, stop to suspend */
 		return -EPERM;
 	}

@@ -45,7 +45,7 @@ endif
 #
 # Lets work out what the user wants, and if they have configured us yet
 #
-DSP_IMAGE_TARGET_DIR = 
+DSP_IMAGE_TARGET_DIR =
 RAM_OBJS_LIST = ./build/ram/*.o
 LIB_OBJS_LIST = ./build/lib/*.o
 
@@ -56,9 +56,9 @@ endif
 
 LINK_ROM_LIB = $(ROM_LIB_DIR)/rom.a
 LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
-LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld 
+LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_acut.ld
 endif
 LINK_ROM_SYMBOL += ./ld/ameba_rom_symbol_stdlib.ld
 
@@ -78,9 +78,11 @@ endif
 #add all app lib in this file
 include $(MAKE_INCLUDE_LIB)
 
-all: build_target_folder copy_ld_ram check_toolchain build_info.h make_subdirs linker_image2 code_analyze
-image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2 code_analyze
-ucps_image2: build_target_folder copy_ld_img2 check_toolchain build_info.h make_subdirs linker_image2 code_analyze 
+prebuild: build_target_folder check_toolchain build_info.h
+
+all: prebuild copy_ld_ram make_subdirs linker_image2 code_analyze
+image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
+ucps_image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
 analysis_extract: code_extract
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
@@ -173,9 +175,15 @@ ifeq ($(CONFIG_MP_SHRINK), y)
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin > $(IMAGE_TARGET_FOLDER)/kr4_image2_all_shrink.bin
 
-	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/kr4_image2_all_shrink.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
 
 else
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/boot.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_only.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/sram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/psram_2.bin 32
+	$(Q) $(PADTOOL) $(IMAGE_TARGET_FOLDER)/xip_image2.bin 32
+
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/boot.bin  __boot_text_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 	$(Q)$(PREPENDTOOL) $(IMAGE_TARGET_FOLDER)/sram_only.bin __sram_only_start__  $(IMAGE_TARGET_FOLDER)/target_img2.map
 
@@ -187,9 +195,9 @@ else
 	@# pad to 4K-aligned for RSIP/MMU address 4K-alignment restriction
 	$(Q)cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/psram_2_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_2_prepend.bin \
 			$(IMAGE_TARGET_FOLDER)/boot_prepend.bin $(IMAGE_TARGET_FOLDER)/sram_only_prepend.bin > $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin
-	sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin
+	$(PADTOOL) $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin 4096
 
-	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
+	$(Q)$(IMAGETOOL) $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
 endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin ]; then \

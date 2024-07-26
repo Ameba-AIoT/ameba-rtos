@@ -6,10 +6,12 @@
 
 u8 *g_scan_buf = NULL;
 u32 g_scan_ap_num = 0;
+struct genl_info wifi_event_user_genl_info;
 
 void rtw_sdio_bridge_getip_rsp(struct genl_info *info);
 void rtw_sdio_bridge_scanres_rsp(struct genl_info *info);
 void rtw_sdio_bridge_connect_rsp(struct genl_info *info, int connect_ret);
+void rtw_sdio_bridge_wifi_event_indicate(struct genl_info *info, int event);
 
 int llhw_sdio_bridge_connect(char *ssid, char *pwd)
 {
@@ -98,9 +100,14 @@ void llhw_sdio_bridge_event_join_status_indicate(void *event_priv, u32 *param_bu
 			}
 		}
 	} else if (event == WIFI_EVENT_DISCONNECT) {
+		if (global_idev.mlme_priv.b_in_disconnect) {
+			complete(&global_idev.mlme_priv.disconnect_done_sema);
+			global_idev.mlme_priv.b_in_disconnect = false;
+		}
 		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
 			netif_carrier_off(global_idev.pndev[0]);
 		}
+		rtw_sdio_bridge_wifi_event_indicate(&wifi_event_user_genl_info, BRIDGE_WIFI_EVENT_DISCONNECT);
 	}
 
 	return;
@@ -127,7 +134,11 @@ static int rtw_sdio_bridge_cmd_process(struct sk_buff *skb, struct genl_info *in
 		ret = llhw_sdio_bridge_connect(ssid, pwd);
 		if (ret == 0) {
 			llhw_send_msg(INIC_API_WIFI_GET_MAC_ADDR, NULL, 0, (u8 *)dev_mac, ETH_ALEN);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 			memcpy((void *)global_idev.pndev[0]->dev_addr, dev_mac, ETH_ALEN);
+#else
+			eth_hw_addr_set(global_idev.pndev[0], dev_mac);
+#endif
 			llhw_sdio_bridge_dhcp();
 		}
 		rtw_sdio_bridge_connect_rsp(info, ret);
@@ -144,6 +155,8 @@ static int rtw_sdio_bridge_cmd_process(struct sk_buff *skb, struct genl_info *in
 		rtw_sdio_bridge_scanres_rsp(info);
 	} else if (cmd == CMD_WIFI_DISCONNECT) {
 		llhw_wifi_disconnect();
+	} else if (cmd == CMD_EVENT_INIT) {
+		memcpy(&wifi_event_user_genl_info, info, sizeof(struct genl_info));
 	}
 	return 0;
 }
@@ -278,4 +291,28 @@ void rtw_sdio_bridge_scanres_rsp(struct genl_info *info)
 	}
 }
 
+void rtw_sdio_bridge_wifi_event_indicate(struct genl_info *info, int event)
+{
+	struct sk_buff *skb;
+	void *reply;
+	struct genlmsghdr *genlhdr;
+
+	skb = genlmsg_new(nla_total_size(sizeof(u32)), GFP_KERNEL);
+	if (!skb) {
+		return;
+	}
+
+	reply = genlmsg_put_reply(skb, info, &rtw_sdio_bridge_gnl_family, 0, BRIDGE_CMD_EVENT);
+
+	if (reply == NULL) {
+		nlmsg_free(skb);
+		return;
+	}
+	nla_put_u32(skb, BRIDGE_ATTR_API_ID, (u32)event);
+	genlhdr = nlmsg_data(nlmsg_hdr(skb));
+	reply = genlmsg_data(genlhdr);
+	genlmsg_end(skb, reply);
+
+	genlmsg_reply(skb, info);
+}
 #endif

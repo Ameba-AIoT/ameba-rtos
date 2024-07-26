@@ -115,7 +115,7 @@ set {int}(0xE000EE08) = $Temp
 
 b rtl_flash_download.c:81
 
-b rtl_flash_download.c:114
+b rtl_flash_download.c:112
 
 set $pc = 0x9000
 set $sp = 0x30009FFC
@@ -125,11 +125,11 @@ c
 
 #=============================================================================== 
 #flash write
-set $XIPBootSize =19808
+set $XIPBootSize =29120
 set FlashAddrForWrite =0x00000
 flash_write $IMAGE_KM4_BOOT $XIPBootSize
 
-set $FlashFileSize =169056
+set $FlashFileSize =829568
 set FlashAddrForWrite =0x14000
 flash_write $IMAGE_IMG2_ALL $FlashFileSize
 

@@ -11,13 +11,6 @@
 #include <stdbool.h>
 
 /**
- * @defgroup  bt_audio_track BT Audio Track APIs
- * @brief     BT Audio track related function APIs
- * @ingroup   bt_audio_group
- * @{
- */
-
-/**
  * @typedef   bt_audio_fmt_t
  * @brief     audio role
  */
@@ -31,10 +24,17 @@ typedef enum {
 	// /** audio track and audio record data bit format, float per channel per frame*/
 	// BT_AUDIO_FORMAT_PCM_FLOAT         = 0x5u,
 	// /** audio track and audio record data bit format, 24bit packed per channel per frame*/
-	// BT_AUDIO_FORMAT_PCM_24_BIT_PACKED = 0x6u,
+	// BT_AUDIO_FORMAT_PCM_24_BIT = 0x6u,
 	// /** audio record and audio record data bit format, 24+8bit per channel per frame*/
 	// BT_AUDIO_FORMAT_PCM_8_24_BIT      = 0x7u,
 } bt_audio_fmt_t;
+
+/**
+ * @defgroup  bt_audio_track BT Audio Track APIs
+ * @brief     BT Audio track related function APIs
+ * @ingroup   bt_audio_group
+ * @{
+ */
 
 /**
  * @fn void *rtk_bt_audio_track_init(uint32_t channels,

@@ -55,8 +55,8 @@ struct hci_transport_cb {
 void hci_transport_register(struct hci_transport_cb *cb);
 uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_rsvd_byte);
 uint8_t hci_transport_open(void);
-uint8_t hci_transport_close(void);
-uint8_t hci_transport_free(void);
+void hci_transport_close(void);
+void hci_transport_free(void);
 
 extern struct hci_transport_cb hci_sa_cb;
 uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync);

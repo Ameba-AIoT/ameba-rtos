@@ -28,6 +28,7 @@ bool rtk_bt_mesh_is_enable(void)
 }
 #endif
 bool rtk_bt_pre_enable(void);
+void rtk_bt_post_enable(void);
 uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 {
 	uint16_t err = 0;
@@ -63,6 +64,7 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 		return err;
 	}
 
+	rtk_bt_post_enable();
 	rtk_bt_log_init();
 
 	/* set the bt enable flag on */

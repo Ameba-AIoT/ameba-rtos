@@ -17,7 +17,6 @@ struct inic_sdio;
 //#define CONFIG_POWER_SAVING
 //#define CONFIG_PS_DYNAMIC_CHK
 
-//#define CONFIG_LOOPBACK_TEST //to enable loopback test, must disable CONFIG_SDIO_RX_AGGREGATION
 #define SDIO_BLOCK_SIZE		256
 #define ETH_ALEN	6 //ethernet address length
 
@@ -26,7 +25,7 @@ struct inic_sdio;
 
 #define MAX_RX_AGG_NUM 6
 
-#define SDIO_HOST_FAKE_SLEEP
+//#define SDIO_HOST_FAKE_SLEEP
 
 #define PWR_STATE_ACTIVE	0
 #define PWR_STATE_SLEEP		1
@@ -64,10 +63,10 @@ struct inic_sdio {
 
 	u8 dev_state;
 
+	int (*rx_process_func)(struct sk_buff *pskb);
+
 };
 
 extern struct inic_sdio inic_sdio_priv;
-
-void rtw_sdio_send_msg(u8 *buf, u32 len);
 
 #endif  //_RTW_SDIO_H_

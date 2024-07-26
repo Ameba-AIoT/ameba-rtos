@@ -29,7 +29,7 @@ Setup Guide
 	2. Type command "make menuconfig" under auto_build and choose MENUCONFIG FOR KM4 CONFIG => CONFIG USB
 		or choose MENUCONFIG FOR CA32 CONFIG => CONFIG USB :
 		[*] Enable USB
-		(HOST_MODE) USB Mode
+		(Host) USB Mode
 		[*] CDC ECM
 		[*] Enable ethernet bridge
 	Save and exit.

@@ -8,7 +8,7 @@
 #define __ATCMD_BT_MP_H__
 
 #include "platform_autoconf.h"
-#include "log_service.h"
+#include "atcmd_service.h"
 #include "os_wrapper.h"
 #include "wifi_intf_drv_to_bt.h"
 

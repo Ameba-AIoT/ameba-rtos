@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -51,7 +51,7 @@ static int atcmd_ble_mesh_generic_onff_set(int argc, char **argv)
 #else
 	(void)argc;
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support generic on off client model.");
+	MESHGOO_AT_PRINTK("Platform not support generic on off client model.");
 	return -1;
 #endif
 }
@@ -72,7 +72,7 @@ static int atcmd_ble_mesh_generic_onff_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support generic on off client model.");
+	MESHGOO_AT_PRINTK("Platform not support generic on off client model.");
 	return -1;
 #endif
 }
@@ -85,8 +85,11 @@ static const cmd_table_t mesh_generic_onoff_cmd_table[] = {
 
 int atcmd_bt_mesh_generic_onoff(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_generic_onoff_cmd_table, "[ATBC][mesh_goo]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_generic_onoff_cmd_table, "[AT+BLEMESHGOO]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_generic_onoff_cmd_table, "[ATBC][mesh_goo]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

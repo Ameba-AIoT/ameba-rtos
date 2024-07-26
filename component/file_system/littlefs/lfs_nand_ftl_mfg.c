@@ -83,7 +83,6 @@ static u8 NAND_FTL_Winbond_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *d
 
 /* Private variables ---------------------------------------------------------*/
 
-
 static NAND_FTL_MfgOpsTypeDef NandDefaultOps = {
 	.GetEccStatus = NAND_FTL_Common_GetEccStatus,
 	.ReadParameterPage = NAND_FTL_Common_ReadParameterPage
@@ -548,6 +547,7 @@ static u8 NAND_FTL_GigaDevice_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8
 	u8 reg;
 	u8 bk_reg;
 	u8 retry;
+	u8 did;
 	u32 addr;
 
 	UNUSED(nand);
@@ -572,12 +572,16 @@ static u8 NAND_FTL_GigaDevice_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8
 		return HAL_TIMEOUT;
 	}
 
-	if ((nand->MemInfo.DID == 0x81) || (nand->MemInfo.DID == 0x91)  // GD5F1GM7
-		|| (nand->MemInfo.DID == 0x82) || (nand->MemInfo.DID == 0x92)) {  // GD5F2GM7
-		addr = NF_PARAMETER_PAGE_ADDR;
-	} else {
+	/* 38nm models use 0x04 while 24nm and newer models use 0x01 */
+	did = nand->MemInfo.DID;
+	if ((did == 0x21) || (did == 0x31) || (did == 0x41) || (did == 0x51) ||
+		(did == 0x22) || (did == 0x32) || (did == 0x42) || (did == 0x52) ||
+		(did == 0x25) || (did == 0x35) || (did == 0x45) || (did == 0x55)) {
 		addr = NF_PARAMETER_PAGE_GIGADEVICE_ADDR;
+	} else {
+		addr = NF_PARAMETER_PAGE_ADDR;
 	}
+
 	ret = NAND_Page_Read(addr, 0, NF_PARAMETER_PAGE_TOTAL_SIZE, data);
 	if (ret == 0xFFU) {
 		ret = HAL_TIMEOUT;

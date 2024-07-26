@@ -1198,7 +1198,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 		} else {
 			BT_LOGE("[APP]ADV start failed, err 0x%x \r\n", adv_start_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
+		BT_AT_PRINT("+BLEGAP:adv,start,%d,%d\r\n", (adv_start_ind->err == 0) ? 0 : -1, adv_start_ind->adv_type);
 		break;
 	}
 
@@ -1209,7 +1209,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 		} else {
 			BT_LOGE("[APP]ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
 		}
-		BT_AT_PRINT("+BLEGAP=adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
+		BT_AT_PRINT("+BLEGAP:adv,stop,%d,0x%x\r\n", (adv_stop_ind->err == 0) ? 0 : -1, adv_stop_ind->stop_reason);
 		break;
 	}
 
@@ -2742,16 +2742,17 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		case RTK_BLE_AUDIO_ASCS_ASE_STATE_IDLE:
 			BT_LOGA("[APP] (ASCS_ASE_STATE_IDLE)\r\n");
 			if (param->audio_role == RTK_BLE_AUDIO_SINK) {
-				if (p_bap_uni_ser_info->enabling_sink_ase_num > 0) {
+				// ASE Streaming state --> ASE Releasing state --> ASE Idle state
+				if (p_bap_uni_ser_info->enabling_sink_ase_num > p_bap_uni_ser_info->streaming_sink_ase_num) {
 					p_bap_uni_ser_info->enabling_sink_ase_num--;
-				} else {
+				} else if (p_bap_uni_ser_info->enabling_sink_ase_num < p_bap_uni_ser_info->streaming_sink_ase_num) {
 					BT_LOGE("[APP] enabling_sink_ase_num is already %d, something is wrong!!\r\n", p_bap_uni_ser_info->enabling_sink_ase_num);
 					break;
 				}
 			} else if (param->audio_role == RTK_BLE_AUDIO_SOURCE) {
-				if (p_bap_uni_ser_info->enabling_source_ase_num > 0) {
+				if (p_bap_uni_ser_info->enabling_source_ase_num > p_bap_uni_ser_info->streaming_source_ase_num) {
 					p_bap_uni_ser_info->enabling_source_ase_num--;
-				} else {
+				} else if (p_bap_uni_ser_info->enabling_source_ase_num < p_bap_uni_ser_info->streaming_source_ase_num) {
 					BT_LOGE("[APP] enabling_source_ase_num is already %d, something is wrong!!\r\n", p_bap_uni_ser_info->enabling_source_ase_num);
 					break;
 				}
@@ -2765,6 +2766,18 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			break;
 		case RTK_BLE_AUDIO_ASCS_ASE_STATE_QOS_CONFIGURED:
 			BT_LOGA("[APP] (ASCS_ASE_STATE_QOS_CONFIGURED)\r\n");
+			if (param->audio_role == RTK_BLE_AUDIO_SINK) {
+				// ASE Streaming state --> ASE Qos Configured state, but not enter ASE releasing state
+				if (p_bap_uni_ser_info->streaming_sink_ase_num > 0 && \
+					p_bap_uni_ser_info->streaming_sink_ase_num == p_bap_uni_ser_info->enabling_sink_ase_num) {
+					p_bap_uni_ser_info->enabling_sink_ase_num--;
+				}
+			} else if (param->audio_role == RTK_BLE_AUDIO_SOURCE) {
+				if (p_bap_uni_ser_info->streaming_source_ase_num > 0 && \
+					p_bap_uni_ser_info->streaming_source_ase_num == p_bap_uni_ser_info->enabling_source_ase_num) {
+					p_bap_uni_ser_info->enabling_source_ase_num--;
+				}
+			}
 			break;
 		case RTK_BLE_AUDIO_ASCS_ASE_STATE_ENABLING:
 			BT_LOGA("[APP] (ASCS_ASE_STATE_ENABLING)\r\n");
@@ -2792,14 +2805,16 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			BT_LOGA("[APP] (ASCS_ASE_STATE_STREAMING)\r\n");
 			if (param->audio_role == RTK_BLE_AUDIO_SINK) {
 				if (p_bap_uni_ser_info->streaming_sink_ase_num < p_bap_uni_ser_info->enabling_sink_ase_num) {
+					// ASE Codec Configured state--> ASE QoS Configured --> ASE Enabling state--> ASE Streaming state
 					p_bap_uni_ser_info->streaming_sink_ase_num++;
+				} else if (p_bap_uni_ser_info->streaming_sink_ase_num == p_bap_uni_ser_info->enabling_sink_ase_num) {
+					// ASE Streaming state--> ASE QoS Configured --> ASE Enabling state--> ASE Streaming state
+					// do nothing
 				} else {
-					BT_LOGE("[APP] streaming_sink_ase_num(%d) >= enabling_sink_ase_num(%d), something is wrong!!\r\n", p_bap_uni_ser_info->streaming_sink_ase_num,
-							p_bap_uni_ser_info->enabling_source_ase_num);
+					BT_LOGE("[APP] streaming_sink_ase_num(%d) > enabling_sink_ase_num(%d), something is wrong!!\r\n", p_bap_uni_ser_info->streaming_sink_ase_num,
+							p_bap_uni_ser_info->enabling_sink_ase_num);
 					break;
 				}
-				BT_LOGA("[APP] streaming_sink_ase_num=%d,enabling_sink_ase_num=%d\r\n", p_bap_uni_ser_info->streaming_sink_ase_num,
-						p_bap_uni_ser_info->enabling_sink_ase_num);
 				if (p_bap_uni_ser_info->streaming_sink_ase_num == p_bap_uni_ser_info->enabling_sink_ase_num) {
 					//init rx thread
 					g_tmap_umr_info.status = RTK_BLE_AUDIO_ACCEPTOR_START;
@@ -2808,13 +2823,16 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			} else if (param->audio_role == RTK_BLE_AUDIO_SOURCE) {
 				if (p_bap_uni_ser_info->streaming_source_ase_num < p_bap_uni_ser_info->enabling_source_ase_num) {
 					p_bap_uni_ser_info->streaming_source_ase_num++;
+				} else if (p_bap_uni_ser_info->streaming_source_ase_num == p_bap_uni_ser_info->enabling_source_ase_num) {
+					// ASE Streaming state--> ASE QoS Configured --> ASE Enbabling state--> ASE Streaming state
+					// do nothing
 				} else {
-					BT_LOGE("[APP] streaming_source_ase_num(%d) >= enabling_source_ase_num(%d), something is wrong!!\r\n",
-							p_bap_uni_ser_info->streaming_source_ase_num, p_bap_uni_ser_info->enabling_source_ase_num);
+					BT_LOGE("[APP] streaming_source_ase_num(%d) > enabling_source_ase_num(%d), something is wrong!!\r\n", p_bap_uni_ser_info->streaming_source_ase_num,
+							p_bap_uni_ser_info->enabling_source_ase_num);
 					break;
 				}
 				if (p_bap_uni_ser_info->streaming_source_ase_num == p_bap_uni_ser_info->enabling_source_ase_num) {
-					//init tx thread in at cmd
+					//init tx thread in RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND
 				}
 			}
 			break;
@@ -2886,6 +2904,12 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		app_bt_le_audio_iso_data_path_remove(param->cis_conn_handle, param->path_direction);
 		g_tmap_umr_info.status = RTK_BLE_AUDIO_ACCEPTOR_STOP;
 
+		break;
+	}
+	case RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO: {
+		rtk_bt_le_audio_ascs_cis_conn_info_t *param = (rtk_bt_le_audio_ascs_cis_conn_info_t *) data;
+		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO: conn_handle %d, cis_conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x\r\n",
+				param->conn_handle, param->cis_conn_handle, param->cig_id, param->cis_id);
 		break;
 	}
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT

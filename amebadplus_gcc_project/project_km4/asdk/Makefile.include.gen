@@ -43,8 +43,14 @@ WIFIFWDIR	= $(BASEDIR)/component/wifi/wifi_fw
 BUILDDIR	= $(ROOTDIR)/build
 PHERIEXAMPLE	= $(ROOTDIR)/../example/demo_peripheral
 # -----------------------------------------------------------------------------
-PREPENDTOOL		= sh $(UTILITYDIR)/prepend_header.sh
-OTAPREPENDTOOL  = $(UTILITYDIR)/prepend_ota_header.sh
+IMAGESCRIPTDIR = $(ROOTDIR)/../../../tools/image_scripts
+ifneq ($(shell test -d $(IMAGESCRIPTDIR) && echo 1), 1)
+IMAGESCRIPTDIR = $(ROOTDIR)/../../../../tools/image_scripts
+endif
+PREPENDTOOL		= python $(IMAGESCRIPTDIR)/axf2bin.py prepend_header
+OTAPREPENDTOOL  = python $(IMAGESCRIPTDIR)/axf2bin.py ota_prepend_header
+PADTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py pad
+IMAGETOOL = python $(IMAGESCRIPTDIR)/axf2bin.py imagetool
 LXDIALOG_CYGWIN_STATIC 	= $(UTILITYDIR)/lxdialog_prebuilt/lxdialog_cygwin_x86_static.exe
 COMPILEOS		= $(shell uname -o)
 COMPILEOS_CYGWIN	= $(shell uname -o | cut -c 1-6)
@@ -151,12 +157,14 @@ IFLAGS               += -I$(TARGETDIR)/misc
 IFLAGS               += -I$(TARGETDIR)/hal/include
 IFLAGS               += -I$(TARGETDIR)/hal/src
 IFLAGS               += -I$(TARGETDIR)/usrcfg/include
+IFLAGS               += -I$(BASEDIR)/component/soc/common
 
 IFLAGS               += -I$(INCDIR) -I$(INCDIR)/..
 IFLAGS               += -I$(BASEDIR)/component/stdlib
 IFLAGS               += -I$(BASEDIR)/component/wifi/api
 IFLAGS               += -I$(BASEDIR)/component/wifi/simple_config
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fast_connect
+IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_cast
 IFLAGS               += -I$(BASEDIR)/component/example
 
 #WIFI
@@ -195,6 +203,8 @@ IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite
 IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite/rom
 #NAN
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/nan
+#P2P
+IFLAGS               += -I$(BASEDIR)/component/wifi/driver/p2p
 
 #INIC
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic
@@ -457,6 +467,11 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
+PYTHON ?= python
+define check_python_lib
+    @$(PYTHON) -c "import $(1)" > /dev/null 2>&1 || \
+    (echo "Error: $(1) Python library is not installed.Please install by command: pip install -r {sdk}/tools/image_scripts/requirements.txt"; exit 1)
+endef
 check_toolchain:
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
@@ -484,35 +499,16 @@ check_toolchain:
 		echo "INSTALL SUCCESS"; \
 	fi
 	# check permission
-	@if [ ! -x $(UTILITYDIR)/checksum ]; then \
-		chmod 777 $(UTILITYDIR)/checksum; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/checksum.exe ]; then \
-		chmod 777 $(UTILITYDIR)/checksum.exe; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/pad.sh ]; then \
-		chmod 777 $(UTILITYDIR)/pad.sh; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/prepend_header.sh ]; then \
-		chmod 777 $(UTILITYDIR)/prepend_header.sh; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/prepend_ota_header.sh ]; then \
-		chmod 777 $(UTILITYDIR)/prepend_ota_header.sh; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/image_tool/elf2bin ]; then \
-		chmod 777 $(UTILITYDIR)/image_tool/elf2bin; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/image_tool/elf2bin.exe ]; then \
-		chmod 777 $(UTILITYDIR)/image_tool/elf2bin.exe; \
-	fi
-	@if [ ! -x $(UTILITYDIR)/image_tool/imagetool.sh ]; then \
-		chmod 777 $(UTILITYDIR)/image_tool/imagetool.sh; \
-	fi
 	@if [ ! "$(shell which python)" ]; then \
 		echo "Command python not found"; \
 		echo "Please refer to AN900 Chapter 1.2(Preparing GCC Environment) install python3. If still error appears, please run: sudo ln -s /usr/bin/python3 /usr/bin/python"; \
 		exit 1; \
-	fi 
+	fi
+	$(call check_python_lib,mbedtls)
+	$(call check_python_lib,cryptography)
+	$(call check_python_lib,Crypto)
+	$(call check_python_lib,ecdsa)
+	$(call check_python_lib,sslcrypto)	
 
 #*****************************************************************************#
 #              COPYING OBJECT FILES TO THE BUILD DIRECTORY                    #

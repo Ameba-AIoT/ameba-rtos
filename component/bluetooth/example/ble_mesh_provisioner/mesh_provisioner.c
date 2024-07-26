@@ -162,7 +162,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					udb_info->dev_info.bt_addr[5], udb_info->dev_info.bt_addr[4], udb_info->dev_info.bt_addr[3],
 					udb_info->dev_info.bt_addr[2], udb_info->dev_info.bt_addr[1], udb_info->dev_info.bt_addr[0],
 					udb_info->dev_info.bt_addr_type, udb_info->dev_info.rssi);
-		MESH_DATA_IOUART_DUMP(udb_info->dev_uuid, 16);
+		BT_AT_DUMP_HEXN(udb_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY: {
@@ -181,7 +181,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4], prov_info->dev_info.bt_addr[3],
 					prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
 					prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
-		MESH_DATA_IOUART_DUMP(prov_info->dev_uuid, 16);
+		BT_AT_DUMP_HEXN(prov_info->dev_uuid, 16);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY: {
@@ -196,7 +196,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4], proxy_info->dev_info.bt_addr[3],
 					proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
 					proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
-		MESH_DATA_IOUART_DUMP((uint8_t *)&proxy_info->proxy, proxy_info->len);
+		BT_AT_DUMP_HEXN((uint8_t *)&proxy_info->proxy, proxy_info->len);
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE: {
@@ -346,7 +346,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_LOGA("Device UUID:\t");
 				mesh_data_uart_dump(p_data + offset, data_len);
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,", type);
-				MESH_DATA_IOUART_DUMP(p_data + offset, data_len);
+				BT_AT_DUMP_HEXN(p_data + offset, data_len);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_DEV_ADDR:
 				BT_LOGA("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
@@ -360,7 +360,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				mesh_data_uart_dump(p_data + offset + 4, 16);
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-",
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
-				MESH_DATA_IOUART_DUMP(p_data + offset + 4, 16);
+				BT_AT_DUMP_HEXN(p_data + offset + 4, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY:
 				BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
@@ -369,7 +369,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
 							*(p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
-				MESH_DATA_IOUART_DUMP(p_data + offset + 6, 16);
+				BT_AT_DUMP_HEXN(p_data + offset + 6, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
 				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
@@ -378,7 +378,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
 							*(p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
-				MESH_DATA_IOUART_DUMP(p_data + offset + 7, 16);
+				BT_AT_DUMP_HEXN(p_data + offset + 7, 16);
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_NORMAL_VALS:
 				BT_LOGA("IVindex:\t%d-0x%x\r\n", *(p_data + offset), LE_TO_U32(p_data + offset + 1));
@@ -627,7 +627,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_config_client_model_app_callback(uint8_t evt
 			BT_DUMP16A("", &model_sub_list[8], addr_count);
 			BT_AT_PRINT("+BLEMESHCONFIG:msg,%d,0x%04x,%d,0x%08x\r\n",
 						model_sub_list[0], src, element_index, (unsigned int)model_id);
-			BT_AT_DUMP16A("+BLEMESHCONFIG:model_sub_list", &model_sub_list[8], addr_count);
+			BT_AT_DUMP16("+BLEMESHCONFIG:model_sub_list", &model_sub_list[8], addr_count);
 
 		} else {
 			BT_LOGE("[APP] Fail, status = %d!\r\n", model_sub_list[0]);
@@ -654,7 +654,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_config_client_model_app_callback(uint8_t evt
 			BT_LOGA("NetKey List: num = %d!\r\n\t", key_count);
 			BT_DUMP16A("", &net_key_list[4], key_count);
 			BT_AT_PRINT("+BLEMESHCONFIG:nkg,0,%d\r\n", key_count);
-			BT_AT_DUMP16A("+BLEMESHCONFIG:net_key_list", &net_key_list[4], key_count);
+			BT_AT_DUMP16("+BLEMESHCONFIG:net_key_list", &net_key_list[4], key_count);
 		} else {
 			BT_LOGE("[APP] Fail, len = %d!\r\n", net_key_list[1]);
 			BT_AT_PRINT("+BLEMESHCONFIG:nkg,-1,%d\r\n", net_key_list[1]);
@@ -671,7 +671,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_config_client_model_app_callback(uint8_t evt
 					key_count);
 			BT_DUMP16A("", &app_key_list[5], key_count);
 			BT_AT_PRINT("+BLEMESHCONFIG:akg,0,0x%03x,%d\r\n", net_key_index, key_count);
-			BT_AT_DUMP16A("+BLEMESHCONFIG:app_key_list", &app_key_list[5], key_count);
+			BT_AT_DUMP16("+BLEMESHCONFIG:app_key_list", &app_key_list[5], key_count);
 		} else {
 			BT_LOGE("[APP] Fail, stat = %d len = %d!\r\n", app_key_list[1], app_key_list[4]);
 			BT_AT_PRINT("+BLEMESHCONFIG:akg,-1,%d,%d\r\n", app_key_list[1], app_key_list[4]);
@@ -707,7 +707,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_config_client_model_app_callback(uint8_t evt
 			BT_DUMP16A("", &model_app_list[7], key_count);
 			BT_AT_PRINT("+BLEMESHCONFIG:mag,0,%d,0x%08x,%d\r\n",
 						element_index, (unsigned int) model_id, key_count);
-			BT_AT_DUMP16A("+BLEMESHCONFIG:model_app_list", &model_app_list[7], key_count);
+			BT_AT_DUMP16("+BLEMESHCONFIG:model_app_list", &model_app_list[7], key_count);
 		} else {
 			BT_LOGE("[APP] Fail, stat = %d len = %d!\r\n", model_app_list[1], model_app_list[4]);
 			BT_AT_PRINT("+BLEMESHCONFIG:mag,-1,%d,%d\r\n", model_app_list[1], model_app_list[4]);
@@ -795,9 +795,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_onoff_client_model_app_callback(uint
 			BT_LOGA("[APP] Generic on off client model receive message: src = 0x%x, present = %d, target = %d, remain time = step(%d), \
 resolution(%d)\r\n", onoff_status->src, onoff_status->present_on_off, onoff_status->target_on_off,
 					onoff_status->remaining_time.num_steps, onoff_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHGOO:%d,0x%x,%d,1,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, onoff_status->src, onoff_status->present_on_off,
+						onoff_status->target_on_off, onoff_status->remaining_time.num_steps,
+						onoff_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] Generic on off client model receive message: src = 0x%x, present = %d\r\n", onoff_status->src,
 					onoff_status->present_on_off);
+			BT_AT_PRINT("+BLEMESHGOO:%d,0x%x,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, onoff_status->src, onoff_status->present_on_off);
 		}
 		break;
 	}
@@ -829,6 +835,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		memcpy(datatrans_sample_data, p_data_write->data, p_data_write->data_len);
 		BT_LOGA("[APP] Remote write %d bytes: ", p_data_write->data_len);
 		mesh_data_uart_dump(p_data_write->data, p_data_write->data_len);
+		BT_AT_PRINT("+BLEMESHDATA:write,%d,%d,", BT_AT_MESH_ROLE_SERVER, p_data_write->data_len);
+		BT_AT_DUMP_HEXN(p_data_write->data, p_data_write->data_len);
 		break;
 	}
 
@@ -836,6 +844,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		rtk_bt_mesh_datatrans_client_write_event_t *p_write_status = (rtk_bt_mesh_datatrans_client_write_event_t *)param;
 		BT_LOGA("[APP] Datatrans model receive message: Src %d ,written %d bytes, status:%d\r\n", p_write_status->src, p_write_status->written_len,
 				p_write_status->status);
+		BT_AT_PRINT("+BLEMESHDATA:write,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, p_write_status->src, p_write_status->written_len, p_write_status->status);
 		break;
 	}
 
@@ -843,6 +853,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		rtk_bt_mesh_datatrans_client_read_event_t *p_read_date = (rtk_bt_mesh_datatrans_client_read_event_t *)param;
 		BT_LOGA("[APP] Datatrans model receive message,read %d bytes date from remote src %d :\r\n", p_read_date->data_len, p_read_date->src);
 		mesh_data_uart_dump(p_read_date->data, p_read_date->data_len);
+		BT_AT_PRINT("+BLEMESHDATA:read,%d,%d,%d,",
+					BT_AT_MESH_ROLE_CLIENT, p_read_date->src, p_read_date->data_len);
+		BT_AT_DUMP_HEXN(p_read_date->data, p_read_date->data_len);
 		break;
 	}
 
@@ -858,6 +871,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_datatrans_model_app_callback(uint8_t evt_cod
 		*/
 		memcpy(server_read->data, datatrans_sample_data, server_read->data_len);
 		BT_LOGA("[APP] Remote read %d bytes data\r\n", server_read->data_len);
+		BT_AT_PRINT("+BLEMESHDATA:read,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, server_read->data_len);
 		break;
 	}
 
@@ -878,12 +892,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_remote_prov_client_model_app_callback(uint8_
 		rtk_bt_mesh_rmt_prov_client_scan_capa_status_t *scan_capa_status = (rtk_bt_mesh_rmt_prov_client_scan_capa_status_t *)param;
 		BT_LOGA("[APP] Remote prov scan capability status: src 0x%x, max scan items %d, support active scan %d\r\n", scan_capa_status->src, \
 				scan_capa_status->max_scan_items, (int)scan_capa_status->support_active_scan);
+		BT_AT_PRINT("+BLEMESHRMT:scan_capa,0x%x,%d,%d\r\n", scan_capa_status->src,
+					scan_capa_status->max_scan_items, (int)scan_capa_status->support_active_scan);
 		break;
 	}
 	case RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_STATUS: {
 		rtk_bt_mesh_rmt_prov_client_scan_status_t *scan_status = (rtk_bt_mesh_rmt_prov_client_scan_status_t *)param;
 		BT_LOGA("[APP] Remote prov scan status: src 0x%x, status %d, scan state %d, scanned items limit %d, timeout %d\r\n", scan_status->src, \
 				scan_status->prov_status, scan_status->scan_status, scan_status->scanned_items_limit, scan_status->timeout);
+		BT_AT_PRINT("+BLEMESHRMT:scan,0x%x,%d,%d,%d,%d\r\n", scan_status->src, scan_status->prov_status,
+					scan_status->scan_status, scan_status->scanned_items_limit, scan_status->timeout);
 		break;
 	}
 	case RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_REPORT: {
@@ -900,11 +918,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_remote_prov_client_model_app_callback(uint8_
 	case RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_STATUS: {
 		rtk_bt_mesh_rmt_prov_client_link_status_t *link_status = (rtk_bt_mesh_rmt_prov_client_link_status_t *)param;
 		BT_LOGA("[APP] Remote prov link status: src 0x%x, status %d, link state %d \r\n", link_status->src, link_status->prov_status, link_status->link_status);
+		BT_AT_PRINT("+BLEMESHRMT:link_state,0x%x,%d,%d\r\n",
+					link_status->src, link_status->prov_status, link_status->link_status);
 		break;
 	}
 	case RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_REPORT: {
 		rtk_bt_mesh_rmt_prov_client_link_report_t *link_report = (rtk_bt_mesh_rmt_prov_client_link_report_t *)param;
 		BT_LOGA("[APP] Remote prov link report: src 0x%x, status %d, link state %d", link_report->src, link_report->prov_status, link_report->link_status);
+		BT_AT_PRINT("+BLEMESHRMT:link_report,0x%x,%d,%d\r\n",
+					link_report->src, link_report->prov_status, link_report->link_status);
 		if (RTK_BT_MESH_RMT_PROV_LINK_NOT_CLOSE != link_report->close_reason) {
 			BT_LOGA("link close reason:%d\r\n", link_report->close_reason);
 		} else {
@@ -935,9 +957,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_client_model_app_callback(ui
 					lightness_status->target_lightness,
 					lightness_status->remaining_time.num_steps,
 					lightness_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLL:ll,%d,%d,%d,1,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, lightness_status->src,
+						lightness_status->present_lightness, lightness_status->target_lightness,
+						lightness_status->remaining_time.num_steps, lightness_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light lightness client model receive: src %d, present %d\r\n", lightness_status->src,
 					lightness_status->present_lightness);
+			BT_AT_PRINT("+BLEMESHLL:ll,%d,%d,%d,0\r\n", BT_AT_MESH_ROLE_CLIENT,
+						lightness_status->src, lightness_status->present_lightness);
 		}
 		break;
 	}
@@ -952,9 +979,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_client_model_app_callback(ui
 					lightness_linear_status->target_lightness,
 					lightness_linear_status->remaining_time.num_steps,
 					lightness_linear_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLL:lll,%d,%d,%d,1,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, lightness_linear_status->src,
+						lightness_linear_status->present_lightness, lightness_linear_status->target_lightness,
+						lightness_linear_status->remaining_time.num_steps, lightness_linear_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light lightness client model receive: src %d, present %d\r\n", lightness_linear_status->src,
 					lightness_linear_status->present_lightness);
+			BT_AT_PRINT("+BLEMESHLL:lll,%d,%d,%d,0\r\n", BT_AT_MESH_ROLE_CLIENT, lightness_linear_status->src,
+						lightness_linear_status->present_lightness);
 		}
 		break;
 	}
@@ -964,6 +996,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_client_model_app_callback(ui
 		lightness_last_status = (rtk_bt_mesh_light_lightness_client_status_last_t *) param;
 		BT_LOGA("[APP] light lightness client model receive: src %d, lightness %d\r\n", lightness_last_status->src,
 				lightness_last_status->lightness);
+		BT_AT_PRINT("+BLEMESHLL:llla,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT,
+					lightness_last_status->src, lightness_last_status->lightness);
 		break;
 	}
 
@@ -972,6 +1006,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_client_model_app_callback(ui
 		lightness_default_status = (rtk_bt_mesh_light_lightness_client_status_default_t *) param;
 		BT_LOGA("[APP] light lightness client model receive: src %d, lightness %d\r\n", lightness_default_status->src,
 				lightness_default_status->lightness);
+		BT_AT_PRINT("+BLEMESHLL:lld,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT,
+					lightness_default_status->src, lightness_default_status->lightness);
 		break;
 	}
 
@@ -980,6 +1016,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lightness_client_model_app_callback(ui
 		lightness_range_status = (rtk_bt_mesh_light_lightness_client_status_range_t *) param;
 		BT_LOGA("[APP] light lightness client model receive: src %d, status %d, min %d, max %d\r\n",
 				lightness_range_status->src, lightness_range_status->status, lightness_range_status->range_min, lightness_range_status->range_max);
+		BT_AT_PRINT("+BLEMESHLL:llr,%d,%d,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, lightness_range_status->src,
+					lightness_range_status->status, lightness_range_status->range_min, lightness_range_status->range_max);
 		break;
 	}
 	default:
@@ -1006,9 +1044,17 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_client_model_app_callback(uint8_t 
 					ctl_status->target_lightness, ctl_status->target_temperature,
 					ctl_status->remaining_time.num_steps,
 					ctl_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLCTL:lc,%d,%d,%d,%d,1,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, ctl_status->src, ctl_status->present_lightness,
+						ctl_status->present_temperature, ctl_status->target_lightness,
+						ctl_status->target_temperature, ctl_status->remaining_time.num_steps,
+						ctl_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light ctl client model receive: src %d, present lightness %d, present temperature %d\r\n",
 					ctl_status->src, ctl_status->present_lightness, ctl_status->present_temperature);
+			BT_AT_PRINT("+BLEMESHLCTL:lc,%d,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, ctl_status->src,
+						ctl_status->present_lightness, ctl_status->present_temperature);
 		}
 	}
 	break;
@@ -1023,9 +1069,17 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_client_model_app_callback(uint8_t 
 					ctl_temperature_status->target_temperature, ctl_temperature_status->target_delta_uv,
 					ctl_temperature_status->remaining_time.num_steps,
 					ctl_temperature_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLCTL:lct,%d,%d,%d,%d,1,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, ctl_temperature_status->src, ctl_temperature_status->present_temperature,
+						ctl_temperature_status->present_delta_uv, ctl_temperature_status->target_temperature,
+						ctl_temperature_status->target_delta_uv, ctl_temperature_status->remaining_time.num_steps,
+						ctl_temperature_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light ctl client model receive: src %d, present temperature %d, present delta_uv %d\r\n",
 					ctl_temperature_status->src, ctl_temperature_status->present_temperature, ctl_temperature_status->present_delta_uv);
+			BT_AT_PRINT("+BLEMESHLCTL:lct,%d,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, ctl_temperature_status->src,
+						ctl_temperature_status->present_temperature, ctl_temperature_status->present_delta_uv);
 		}
 	}
 	break;
@@ -1035,6 +1089,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_client_model_app_callback(uint8_t 
 		BT_LOGA("[APP] light ctl client model receive: src %d, status %d, min %d, max %d\r\n",
 				ctl_temperature_range_status->src, ctl_temperature_range_status->status,
 				ctl_temperature_range_status->range_min, ctl_temperature_range_status->range_max);
+		BT_AT_PRINT("+BLEMESHLCTL:lctr,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ctl_temperature_range_status->src, ctl_temperature_range_status->status,
+					ctl_temperature_range_status->range_min, ctl_temperature_range_status->range_max);
 	}
 	break;
 	case RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_DEFAULT_STATUS : {
@@ -1042,6 +1099,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_ctl_client_model_app_callback(uint8_t 
 		ctl_default_status = (rtk_bt_mesh_light_ctl_client_status_default_t *) param;
 		BT_LOGA("[APP] light ctl client model receive: src  %d, lightness %d, temperature %d, delta_uv %d\r\n",
 				ctl_default_status->src, ctl_default_status->lightness, ctl_default_status->temperature, ctl_default_status->delta_uv);
+		BT_AT_PRINT("+BLEMESHLCTL:lcd,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ctl_default_status->src, ctl_default_status->lightness,
+					ctl_default_status->temperature, ctl_default_status->delta_uv);
 	}
 	break;
 	default:
@@ -1067,9 +1127,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_client_model_app_callback(uint8_t 
 					hsl_status->hue, hsl_status->saturation,
 					hsl_status->remaining_time.num_steps,
 					hsl_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLHSL:lh,%d,%d,%d,%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_status->src, hsl_status->lightness, hsl_status->hue, hsl_status->saturation,
+						hsl_status->remaining_time.num_steps, hsl_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light hsl client model receive: src %d, present lightness %d, present hue %d, presnet saturation %d\r\n",
 					hsl_status->src, hsl_status->lightness, hsl_status->hue, hsl_status->saturation);
+			BT_AT_PRINT("+BLEMESHLHSL:lh,%d,%d,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_status->src, hsl_status->lightness,
+						hsl_status->hue, hsl_status->saturation);
 		}
 	}
 	break;
@@ -1083,9 +1149,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_client_model_app_callback(uint8_t 
 					hsl_target_status->hue, hsl_target_status->saturation,
 					hsl_target_status->remaining_time.num_steps,
 					hsl_target_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLHSL:lht,%d,%d,%d,%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_target_status->src, hsl_target_status->lightness, hsl_target_status->hue,
+						hsl_target_status->saturation, hsl_target_status->remaining_time.num_steps,
+						hsl_target_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light hsl client model receive: src %d, target lightness %d, target hue %d, target saturation %d\r\n",
 					hsl_target_status->src, hsl_target_status->lightness, hsl_target_status->hue, hsl_target_status->saturation);
+			BT_AT_PRINT("+BLEMESHLHSL:lht,%d,%d,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_target_status->src, hsl_target_status->lightness,
+						hsl_target_status->hue, hsl_target_status->saturation);
 		}
 	}
 	break;
@@ -1099,9 +1172,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_client_model_app_callback(uint8_t 
 					hsl_last_status->target_hue,
 					hsl_last_status->remaining_time.num_steps,
 					hsl_last_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLHSL:lhh,%d,%d,%d,1,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_last_status->src, hsl_last_status->present_hue,
+						hsl_last_status->target_hue, hsl_last_status->remaining_time.num_steps,
+						hsl_last_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light hsl client model receive: src %d, present hue %d\r\n",
 					hsl_last_status->src, hsl_last_status->present_hue);
+			BT_AT_PRINT("+BLEMESHLHSL:lhh,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_last_status->src, hsl_last_status->present_hue);
 		}
 	}
 	break;
@@ -1115,9 +1194,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_client_model_app_callback(uint8_t 
 					hsl_saturation_status->target_saturation,
 					hsl_saturation_status->remaining_time.num_steps,
 					hsl_saturation_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLHSL:lhs,%d,%d,%d,1,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_saturation_status->src, hsl_saturation_status->present_saturation,
+						hsl_saturation_status->target_saturation, hsl_saturation_status->remaining_time.num_steps,
+						hsl_saturation_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light hsl client model receive: src %d, present saturation %d\r\n",
 					hsl_saturation_status->src, hsl_saturation_status->present_saturation);
+			BT_AT_PRINT("+BLEMESHLHSL:lhs,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, hsl_saturation_status->src, hsl_saturation_status->present_saturation);
 		}
 	}
 	break;
@@ -1126,6 +1211,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_client_model_app_callback(uint8_t 
 		hsl_default_status = (rtk_bt_mesh_light_hsl_client_status_default_t *)param;
 		BT_LOGA("[APP] light hsl client receive: src %d, lightness %d, hue %d, saturation %d\r\n",
 				hsl_default_status->src, hsl_default_status->lightness, hsl_default_status->hue, hsl_default_status->saturation);
+		BT_AT_PRINT("+BLEMESHLHSL:lhd,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, hsl_default_status->src, hsl_default_status->lightness,
+					hsl_default_status->hue, hsl_default_status->saturation);
 	}
 	break;
 	case RTK_BT_MESH_LIGHT_HSL_RANGE_CLIENT_MODEL_STATUS: {
@@ -1134,6 +1222,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_hsl_client_model_app_callback(uint8_t 
 		BT_LOGA("[APP] light hsl client receive: src %d, status %d, hue min %d, hue max %d, saturation min %d, saturation max %d\r\n",
 				hsl_range_status->src, hsl_range_status->status, hsl_range_status->hue_range_min, hsl_range_status->hue_range_max,
 				hsl_range_status->saturation_range_min, hsl_range_status->saturation_range_max);
+		BT_AT_PRINT("+BLEMESHLHSL:lhr,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, hsl_range_status->src, hsl_range_status->status, hsl_range_status->hue_range_min,
+					hsl_range_status->hue_range_max, hsl_range_status->saturation_range_min, hsl_range_status->saturation_range_max);
 	}
 	break;
 	default:
@@ -1159,9 +1250,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_client_model_app_callback(uint8_t 
 					xyl_status->xyl.xyl_x, xyl_status->xyl.xyl_y,
 					xyl_status->remaining_time.num_steps,
 					xyl_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLXYL:lx,%d,%d,%d,%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, xyl_status->src, xyl_status->xyl.xyl_lightness, xyl_status->xyl.xyl_x,
+						xyl_status->xyl.xyl_y, xyl_status->remaining_time.num_steps, xyl_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light xyl client receive: src %d, present lightness %d, present xyl_x %d, presnet xyl_y %d\r\n",
 					xyl_status->src, xyl_status->xyl.xyl_lightness, xyl_status->xyl.xyl_x, xyl_status->xyl.xyl_y);
+			BT_AT_PRINT("+BLEMESHLXYL:lx,%d,%d,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, xyl_status->src, xyl_status->xyl.xyl_lightness, xyl_status->xyl.xyl_x,
+						xyl_status->xyl.xyl_y);
 		}
 	}
 	break;
@@ -1175,9 +1272,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_client_model_app_callback(uint8_t 
 					xyl_target_status->xyl.xyl_x, xyl_target_status->xyl.xyl_y,
 					xyl_target_status->remaining_time.num_steps,
 					xyl_target_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLXYL:lxt,%d,%d,%d,%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, xyl_target_status->src, xyl_target_status->xyl.xyl_lightness,
+						xyl_target_status->xyl.xyl_x, xyl_target_status->xyl.xyl_y, xyl_target_status->remaining_time.num_steps,
+						xyl_target_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light xyl client receive: src %d, target lightness %d, target xyl_x %d, target xyl_y %d\r\n",
 					xyl_target_status->src, xyl_target_status->xyl.xyl_lightness, xyl_target_status->xyl.xyl_x, xyl_target_status->xyl.xyl_y);
+			BT_AT_PRINT("+BLEMESHLXYL:lxt,%d,%d,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, xyl_target_status->src, xyl_target_status->xyl.xyl_lightness,
+						xyl_target_status->xyl.xyl_x, xyl_target_status->xyl.xyl_y);
 		}
 	}
 	break;
@@ -1186,6 +1290,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_client_model_app_callback(uint8_t 
 		xyl_default_status = (rtk_bt_mesh_light_xyl_client_status_default_t *)param;
 		BT_LOGA("[APP] light xyl client receive: src %d, lightness %d, xyl_x %d, xyl_y %d\r\n",
 				xyl_default_status->src, xyl_default_status->xyl.xyl_lightness, xyl_default_status->xyl.xyl_x, xyl_default_status->xyl.xyl_y);
+		BT_AT_PRINT("+BLEMESHLXYL:lxd,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, xyl_default_status->src, xyl_default_status->xyl.xyl_lightness,
+					xyl_default_status->xyl.xyl_x, xyl_default_status->xyl.xyl_y);
 	}
 	break;
 	case RTK_BT_MESH_LIGHT_XYL_RANGE_CLIENT_MODEL_STATUS: {
@@ -1194,6 +1301,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_xyl_client_model_app_callback(uint8_t 
 		BT_LOGA("[APP] light xyl client receive: src %d, status %d, xyl_x min %d, xyl_x max %d, xyl_y min %d, xyl_y max %d\r\n",
 				xyl_range_status->src, xyl_range_status->status, xyl_range_status->xyl_x_range_min, xyl_range_status->xyl_x_range_max,
 				xyl_range_status->xyl_y_range_min, xyl_range_status->xyl_y_range_max);
+		BT_AT_PRINT("+BLEMESHLXYL:lxr,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, xyl_range_status->src, xyl_range_status->status, xyl_range_status->xyl_x_range_min,
+					xyl_range_status->xyl_x_range_max, xyl_range_status->xyl_y_range_min, xyl_range_status->xyl_y_range_max);
 	}
 	break;
 	default:
@@ -1213,12 +1323,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_client_model_app_callback(uint8_t e
 		rtk_bt_mesh_light_lc_client_mode_status_t *lc_mode_status;
 		lc_mode_status = (rtk_bt_mesh_light_lc_client_mode_status_t *)param;
 		BT_LOGA("[APP] light lc client receive: src %d, mode %d\r\n", lc_mode_status->src, lc_mode_status->mode);
+		BT_AT_PRINT("+BLEMESHLLC:llcm,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, lc_mode_status->src, lc_mode_status->mode);
 	}
 	break;
 	case RTK_BT_MESH_LIGHT_LC_OM_CLIENT_MODEL_STATUS: {
 		rtk_bt_mesh_light_lc_client_om_status_t *lc_om_status;
 		lc_om_status = (rtk_bt_mesh_light_lc_client_om_status_t *)param;
 		BT_LOGA("[APP] light lc client receive: src %d, occupancy mode %d\r\n", lc_om_status->src, lc_om_status->mode);
+		BT_AT_PRINT("+BLEMESHLLC:llcom,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, lc_om_status->src, lc_om_status->mode);
 	}
 	break;
 	case RTK_BT_MESH_LIGHT_LC_LIGHTONOFF_CLIENT_MODEL_STATUS: {
@@ -1231,9 +1345,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_client_model_app_callback(uint8_t e
 					lc_lightonoff_status->target_on_off,
 					lc_lightonoff_status->remaining_time.num_steps,
 					lc_lightonoff_status->remaining_time.step_resolution);
+			BT_AT_PRINT("+BLEMESHLLC:llcloo,%d,%d,%d,1,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, lc_lightonoff_status->src, lc_lightonoff_status->present_on_off,
+						lc_lightonoff_status->target_on_off, lc_lightonoff_status->remaining_time.num_steps,
+						lc_lightonoff_status->remaining_time.step_resolution);
 		} else {
 			BT_LOGA("[APP] light lc client receive: src %d, present on off %d\r\n",
 					lc_lightonoff_status->src, lc_lightonoff_status->present_on_off);
+			BT_AT_PRINT("+BLEMESHLLC:llcloo,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, lc_lightonoff_status->src, lc_lightonoff_status->present_on_off);
 		}
 	}
 	break;
@@ -1242,6 +1362,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_light_lc_client_model_app_callback(uint8_t e
 		lc_property_status = (rtk_bt_mesh_light_lc_client_property_status_t *)param;
 		BT_LOGA("[APP] light lc client receive: src %d, property id 0x%x, property value %d\r\n",
 				lc_property_status->src, lc_property_status->property_id, lc_property_status->property_value);
+		BT_AT_PRINT("+BLEMESHLLC:llcp,%d,%d,0x%x,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, lc_property_status->src,
+					lc_property_status->property_id, lc_property_status->property_value);
 	}
 	break;
 	default:
@@ -1269,12 +1392,20 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_client_model_app_callback(uint8_t evt_c
 				(time_status->tai_time).tai_seconds[2],
 				(time_status->tai_time).tai_seconds[1],
 				(time_status->tai_time).tai_seconds[0]);
+		BT_AT_PRINT("+BLEMESHTIME:time,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, time_status->src, (time_status->tai_time).subsecond,
+					(time_status->tai_time).uncertainty, (time_status->tai_time).time_authority,
+					(time_status->tai_time).tai_utc_delta, (time_status->tai_time).time_zone_offset,
+					(time_status->tai_time).tai_seconds[4], (time_status->tai_time).tai_seconds[3],
+					(time_status->tai_time).tai_seconds[2], (time_status->tai_time).tai_seconds[1],
+					(time_status->tai_time).tai_seconds[0]);
 	}
 	break;
 	case RTK_BT_MESH_TIME_CLIENT_MODEL_ROLE_STATUS: {
 		rtk_bt_mesh_time_client_status_role_t *role_status;
 		role_status = (rtk_bt_mesh_time_client_status_role_t *)param;
 		BT_LOGA("[APP] time client receive: role %d\r\n", role_status->role);
+		BT_AT_PRINT("+BLEMESHTIME:tr,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, role_status->role);
 	}
 	break;
 	case RTK_BT_MESH_TIME_CLIENT_MODEL_ZONE_STATUS: {
@@ -1288,6 +1419,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_client_model_app_callback(uint8_t evt_c
 				zone_status->tai_of_zone_change[2],
 				zone_status->tai_of_zone_change[1],
 				zone_status->tai_of_zone_change[0]);
+		BT_AT_PRINT("+BLEMESHTIME:tz,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, zone_status->src, zone_status->time_zone_offset_current,
+					zone_status->time_zone_offset_new, zone_status->tai_of_zone_change[4],
+					zone_status->tai_of_zone_change[3], zone_status->tai_of_zone_change[2],
+					zone_status->tai_of_zone_change[1], zone_status->tai_of_zone_change[0]);
 	}
 	break;
 	case RTK_BT_MESH_TIME_CLIENT_MODEL_TAI_UTC_DELTA_STATUS: {
@@ -1301,6 +1437,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_time_client_model_app_callback(uint8_t evt_c
 				delta_status->tai_of_delta_change[2],
 				delta_status->tai_of_delta_change[1],
 				delta_status->tai_of_delta_change[0]);
+		BT_AT_PRINT("+BLEMESHTIME:ttud,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, delta_status->src, delta_status->tai_utc_delta_current,
+					delta_status->tai_utc_delta_new, delta_status->tai_of_delta_change[4],
+					delta_status->tai_of_delta_change[3], delta_status->tai_of_delta_change[2],
+					delta_status->tai_of_delta_change[1], delta_status->tai_of_delta_change[0]);
 	}
 	break;
 	default:
@@ -1321,6 +1462,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scheduler_client_model_app_callback(uint8_t 
 		scheduler_status = (rtk_bt_mesh_scheduler_client_status_t *)param;
 		BT_LOGA("[APP] scheduler client receive: src %d, schedulers 0x%4x\r\n",
 				scheduler_status->src, scheduler_status->schedulers);
+		BT_AT_PRINT("+BLEMESHSCHEDULER:sche,%d,%d,0x%4x\r\n",
+					BT_AT_MESH_ROLE_CLIENT, scheduler_status->src, scheduler_status->schedulers);
 	}
 	break;
 	case RTK_BT_MESH_SCHEDULER_ACTION_CLIENT_MODEL_STATUS: {
@@ -1333,6 +1476,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scheduler_client_model_app_callback(uint8_t 
 				(action_status->scheduler).day, (action_status->scheduler).hour, (action_status->scheduler).minute, (action_status->scheduler).second, \
 				(action_status->scheduler).day_of_week, (action_status->scheduler).action, (action_status->scheduler).num_steps, \
 				(action_status->scheduler).step_resolution, (action_status->scheduler).scene_number);
+		BT_AT_PRINT("+BLEMESHSCHEDULER:schea,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, (action_status->scheduler).index, (action_status->scheduler).year,
+					(action_status->scheduler).month, (action_status->scheduler).day, (action_status->scheduler).hour,
+					(action_status->scheduler).minute, (action_status->scheduler).second, (action_status->scheduler).day_of_week,
+					(action_status->scheduler).action, (action_status->scheduler).num_steps, (action_status->scheduler).step_resolution,
+					(action_status->scheduler).scene_number);
 	}
 	break;
 	default:
@@ -1355,9 +1504,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_client_model_app_callback(uint8_t evt_
 			BT_LOGA("[APP] scene client receive: src %d, status 0x%d, current scene %d, target scene %d, remaining time %d\r\n",
 					scene_status->src, scene_status->status, scene_status->current_scene,
 					scene_status->target_scene, (scene_status->remaining_time).num_steps);
+			BT_AT_PRINT("+BLEMESHSCENE:scene_state,%d,%d,0x%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, scene_status->src, scene_status->status, scene_status->current_scene,
+						scene_status->target_scene, (scene_status->remaining_time).num_steps);
 		} else {
 			BT_LOGA("[APP] scene client receive: src %d, status 0x%d, current scene %d\r\n",
 					scene_status->src, scene_status->status, scene_status->current_scene);
+			BT_AT_PRINT("+BLEMESHSCENE:scene_state,%d,%d,0x%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, scene_status->src, scene_status->status, scene_status->current_scene);
 		}
 
 	}
@@ -1371,6 +1525,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_client_model_app_callback(uint8_t evt_
 		BT_LOGA("[APP] scene client receive: src %d, status 0x%d, current scene %d, scene array len %d, scene array:\r\n",
 				src, status, current_scene, array_len);
 		BT_DUMP16A("", pmemory, array_len);
+		BT_AT_PRINT("+BLEMESHSCENE:scene_register_state,%d,%d,0x%d,%d,%d",
+					BT_AT_MESH_ROLE_CLIENT, src, status, current_scene, array_len);
+		BT_AT_DUMP16("", pmemory, array_len);
 	}
 	break;
 	default:
@@ -1391,6 +1548,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_default_transition_time_client_model
 		transition_status = (rtk_bt_mesh_generic_transition_time_client_status_t *)param;
 		BT_LOGA("[APP] generic default transition time client receive: src %d, resolution %d, num steps %d \r\n",
 				transition_status->src, transition_status->trans_time.step_resolution, transition_status->trans_time.num_steps);
+		BT_AT_PRINT("+BLEMESHGDTT:gdtt,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, transition_status->src,
+					transition_status->trans_time.step_resolution, transition_status->trans_time.num_steps);
 	}
 	break;
 	default:
@@ -1412,9 +1572,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_level_client_model_app_callback(uint
 		if (level_status->optional) {
 			BT_LOGA("[APP] generic level client receive: src %d, present level %d, target level %d, remaining time %d \r\n",
 					level_status->src, level_status->present_level, level_status->target_level, level_status->remaining_time.num_steps);
+			BT_AT_PRINT("+BLEMESHGLE:gl,%d,%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, level_status->src, level_status->present_level,
+						level_status->target_level, level_status->remaining_time.num_steps);
 		} else {
 			BT_LOGA("[APP] generic level client receive: src %d, present level %d \r\n",
 					level_status->src, level_status->present_level);
+			BT_AT_PRINT("+BLEMESHGLE:gl,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, level_status->src, level_status->present_level);
 		}
 	}
 	break;
@@ -1436,6 +1601,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_on_off_client_model_app_callba
 		gpoo_status = (rtk_bt_mesh_generic_power_on_off_client_status_t *)param;
 		BT_LOGA("[APP] generic power on off client receive: src %d, on power up %d \r\n",
 				gpoo_status->src, gpoo_status->on_power_up);
+		BT_AT_PRINT("+BLEMESHGPOO:gp,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, gpoo_status->src, gpoo_status->on_power_up);
 	}
 	break;
 	default:
@@ -1457,9 +1624,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_client_model_app_callbac
 		if (gpl_status->optional) {
 			BT_LOGA("[APP] generic power level client receive: src %d, present power %d, target power %d, remaining time %d \r\n",
 					gpl_status->src, gpl_status->present_power, gpl_status->target_power, gpl_status->remaining_time.num_steps);
+			BT_AT_PRINT("+BLEMESHGPL:gpl,%d,%d,%d,1,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, gpl_status->src, gpl_status->present_power,
+						gpl_status->target_power, gpl_status->remaining_time.num_steps);
 		} else {
 			BT_LOGA("[APP] generic power level client receive: src %d, present power %d \r\n",
 					gpl_status->src, gpl_status->present_power);
+			BT_AT_PRINT("+BLEMESHGPL:gpl,%d,%d,%d,0\r\n",
+						BT_AT_MESH_ROLE_CLIENT, gpl_status->src, gpl_status->present_power);
 		}
 	}
 	break;
@@ -1468,6 +1640,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_client_model_app_callbac
 		gpll_status = (rtk_bt_mesh_generic_power_level_client_status_simple_t *)param;
 		BT_LOGA("[APP] generic power level client receive: src %d, power %d \r\n",
 				gpll_status->src, gpll_status->power);
+		BT_AT_PRINT("+BLEMESHGPL:gpllg,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, gpll_status->src, gpll_status->power);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_DEFAULT_STATUS: {
@@ -1475,6 +1648,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_client_model_app_callbac
 		gpld_status = (rtk_bt_mesh_generic_power_level_client_status_simple_t *)param;
 		BT_LOGA("[APP] generic power level client receive: src %d, power %d \r\n",
 				gpld_status->src, gpld_status->power);
+		BT_AT_PRINT("+BLEMESHGPL:gpld,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, gpld_status->src, gpld_status->power);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_RANGE_STATUS: {
@@ -1482,6 +1656,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_power_level_client_model_app_callbac
 		gplr_status = (rtk_bt_mesh_generic_power_level_client_status_range_t *)param;
 		BT_LOGA("[APP] generic power level client receive: src %d, status %d, range min %d, range max %d \r\n",
 				gplr_status->src, gplr_status->stat, gplr_status->range_min, gplr_status->range_max);
+		BT_AT_PRINT("+BLEMESHGPL:gplr,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, gplr_status->src, gplr_status->stat,
+					gplr_status->range_min, gplr_status->range_max);
 	}
 	break;
 	default:
@@ -1507,6 +1684,10 @@ time to charge = %d, presence = %d, indicator = %d, charging = %d, serviceabilit
 				gb_status->time_to_discharge, gb_status->time_to_charge,
 				gb_status->flags.presence, gb_status->flags.indicator, gb_status->flags.charging,
 				gb_status->flags.serviceability);
+		BT_AT_PRINT("+BLEMESHGB:gbg,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, gb_status->src, gb_status->battery_level,
+					gb_status->time_to_discharge, gb_status->time_to_charge, gb_status->flags.presence,
+					gb_status->flags.indicator, gb_status->flags.charging, gb_status->flags.serviceability);
 	}
 	break;
 	default:
@@ -1530,6 +1711,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_client_model_app_callback(u
 				global_status->global.global_latitude,
 				global_status->global.global_longitude,
 				global_status->global.global_altitude);
+		BT_AT_PRINT("+BLEMESHGLO:glg,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, global_status->src, global_status->global.global_latitude,
+					global_status->global.global_longitude, global_status->global.global_altitude);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_LOCAL_STATUS: {
@@ -1540,6 +1724,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_location_client_model_app_callback(u
 				local_status->local.floor_num,
 				local_status->local.uncertainty.stationary, local_status->local.uncertainty.update_time,
 				local_status->local.uncertainty.precision);
+		BT_AT_PRINT("+BLEMESHGLO:gll,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, local_status->src, local_status->local.local_north,
+					local_status->local.local_east, local_status->local.local_altitude, local_status->local.floor_num,
+					local_status->local.uncertainty.stationary, local_status->local.uncertainty.update_time,
+					local_status->local.uncertainty.precision);
 	}
 	break;
 	default:
@@ -1561,6 +1750,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint8_t *pvalue = (uint8_t *)param + 3;
 		BT_LOGA("[APP] Generic property client receive: src = %d num_ids = %d\r\n", src, num_ids);
 		BT_DUMP16A("user property ids: ", pvalue, num_ids);
+		BT_AT_PRINT("+BLEMESHGP:gups,%d,%d,%d", BT_AT_MESH_ROLE_CLIENT, src, num_ids);
+		BT_AT_DUMP16("", pvalue, num_ids);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTY_STATUS: {
@@ -1572,6 +1763,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint16_t value_len = LE_TO_U16((uint8_t *)param + 5);
 		uint8_t *pvalue = (uint8_t *)param + 7;
 		BT_DUMPA("user property values: ", pvalue, value_len);
+		BT_AT_PRINT("+BLEMESHGP:gup,%d,%d,0x%x,%d",
+					BT_AT_MESH_ROLE_CLIENT, user_property_status->src, user_property_status->property_id, property_access);
+		BT_AT_DUMP("", pvalue, value_len);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTIES_STATUS: {
@@ -1579,6 +1773,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint8_t num_ids = *((uint8_t *)param + 2);
 		BT_LOGA("[APP] Generic property client receive: src = %d num_ids = %d\r\n", src, num_ids);
 		BT_DUMP16A("admin property ids: ", (uint8_t *)param + 3, num_ids);
+		BT_AT_PRINT("+BLEMESHGP:gaps,%d,%d,%d", BT_AT_MESH_ROLE_CLIENT, src, num_ids);
+		BT_AT_DUMP16("", (uint8_t *)param + 3, num_ids);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTY_STATUS: {
@@ -1590,6 +1786,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint16_t value_len = LE_TO_U16((uint8_t *)param + 5);
 		uint8_t *pvalue = (uint8_t *)param + 7;
 		BT_DUMPA("admin property values: ", pvalue, value_len);
+		BT_AT_PRINT("+BLEMESHGP:gap,%d,%d,0x%x,%d",
+					BT_AT_MESH_ROLE_CLIENT, admin_property_status->src, admin_property_status->property_id, property_access);
+		BT_AT_DUMP("", pvalue, value_len);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTIES_STATUS: {
@@ -1598,6 +1797,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint8_t *pvalue = (uint8_t *)param + 3;
 		BT_LOGA("[APP] Generic property client receive: src = %d num_ids = %d\r\n", src, num_ids);
 		BT_DUMP16A("manufacturer property ids: ", pvalue, num_ids);
+		BT_AT_PRINT("+BLEMESHGP:gmps,%d,%d,%d", BT_AT_MESH_ROLE_CLIENT, src, num_ids);
+		BT_AT_DUMP16("", pvalue, num_ids);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTY_STATUS: {
@@ -1609,6 +1810,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint16_t value_len = LE_TO_U16((uint8_t *)param + 5);
 		uint8_t *pvalue = (uint8_t *)param + 7;
 		BT_DUMPA("manufacturer property values: ", pvalue, value_len);
+		BT_AT_PRINT("+BLEMESHGP:gmp,%d,%d,0x%x,%d",
+					BT_AT_MESH_ROLE_CLIENT, manu_property_status->src, manu_property_status->property_id, property_access);
+		BT_AT_DUMP("", pvalue, value_len);
 	}
 	break;
 	case RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_CLIENT_PROPERTY_STATUS: {
@@ -1617,6 +1821,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_property_client_model_app_callback(u
 		uint8_t *pvalue = (uint8_t *)param + 3;
 		BT_LOGA("[APP] Generic property client receive: src = %d num_ids = %d\r\n", src, num_ids);
 		BT_DUMP16A("client property ids: ", pvalue, num_ids);
+		BT_AT_PRINT("+BLEMESHGP:gcps,%d,%d,%d", BT_AT_MESH_ROLE_CLIENT, src, num_ids);
+		BT_AT_DUMP16("", pvalue, num_ids);
 	}
 	break;
 	default:
@@ -1637,6 +1843,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 		descriptor_status = (rtk_bt_mesh_sensor_client_status_descriptor_t *)param;
 		uint8_t *pdata = (uint8_t *)param + 6;
 		rtk_bt_mesh_sensor_descriptor_t descriptor;
+		BT_AT_PRINT("+BLEMESHSENSOR:sdg,%d,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT,
+					descriptor_status->src, descriptor_status->property_id, descriptor_status->num_descriptors);
 		if (descriptor_status->property_id != 0 && descriptor_status->num_descriptors == 0) {
 			BT_LOGA("[APP] Sensor client receive: src %d, property id %d \r\n", descriptor_status->src, descriptor_status->property_id);
 		} else {
@@ -1647,6 +1855,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 						"measurement_period: %d, update_interval: %d \r\n", \
 						descriptor.property_id, descriptor.positive_tolerance, descriptor.negative_tolerance,
 						descriptor.sampling_function, descriptor.measurement_period, descriptor.update_interval);
+				BT_AT_PRINT("+BLEMESHSENSOR:sd,%d,%d,%d,%d,%d,%d,%d\r\n",
+							BT_AT_MESH_ROLE_CLIENT, descriptor.property_id, descriptor.positive_tolerance, descriptor.negative_tolerance,
+							descriptor.sampling_function, descriptor.measurement_period, descriptor.update_interval);
 			}
 		}
 	}
@@ -1662,6 +1873,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 			uint8_t status_trigger_type = ((*(pdata + 1)) & 0x80) >> 7;
 			BT_LOGA("fast_cadence_period_divisor: %d, status_trigger_type :%d \r\n",
 					fast_cadence_period_divisor, status_trigger_type);
+			BT_AT_PRINT("+BLEMESHSENSOR:sc,%d,%d,%d,%d,%d,%d,",
+						BT_AT_MESH_ROLE_CLIENT, cadence_status->src, cadence_status->property_id,
+						cadence_status->flag, fast_cadence_period_divisor, status_trigger_type);
 			uint8_t trigger_len;
 			if (status_trigger_type == 0) {
 				trigger_len = raw_value_len;
@@ -1671,18 +1885,28 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 			pdata += 2;
 			BT_LOGA("status_trigger_delta_down: \r\n");
 			mesh_data_uart_dump(pdata, trigger_len);
+			BT_AT_DUMP_HEX(pdata, trigger_len);
 			pdata += trigger_len;
 			BT_LOGA("status_trigger_delta_up: \r\n");
+			BT_AT_PRINT(",");
 			mesh_data_uart_dump(pdata, trigger_len);
+			BT_AT_DUMP_HEX(pdata, trigger_len);
 			pdata += trigger_len;
 			uint8_t status_min_interval = *pdata;
 			BT_LOGA("status_min_interval: %d \r\n", status_min_interval);
+			BT_AT_PRINT(",%d,", status_min_interval);
 			pdata++;
 			BT_LOGA("fast_cadence_low: \r\n");
 			mesh_data_uart_dump(pdata, raw_value_len);
+			BT_AT_DUMP_HEX(pdata, raw_value_len);
 			pdata += raw_value_len;
 			BT_LOGA("fast_cadence_high: \r\n");
+			BT_AT_PRINT(",");
 			mesh_data_uart_dump(pdata, raw_value_len);
+			BT_AT_DUMP_HEXN(pdata, raw_value_len);
+		} else {
+			BT_AT_PRINT("+BLEMESHSENSOR:sc,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, cadence_status->src, cadence_status->property_id, cadence_status->flag);
 		}
 	}
 	break;
@@ -1690,11 +1914,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 		rtk_bt_mesh_sensor_client_status_settings_t *settings_status;
 		settings_status = (rtk_bt_mesh_sensor_client_status_settings_t *)param;
 		BT_LOGA("[APP] Sensor client receive: src %d, property id %d, ids: \r\n", settings_status->src, settings_status->property_id);
+		BT_AT_PRINT("+BLEMESHSENSOR:sssg,%d,%d,%d",
+					BT_AT_MESH_ROLE_CLIENT, settings_status->src, settings_status->property_id);
 		uint8_t *pdata = (uint8_t *)param + 6;
 		for (int i = 0; i < settings_status->num_ids; i++) {
 			BT_LOGA("%d ", LE_TO_U16(pdata + 2 * i));
+			BT_AT_PRINT(",%d", LE_TO_U16(pdata + 2 * i));
 		}
 		BT_LOGA("\r\n");
+		BT_AT_PRINT("\r\n");
 	}
 	break;
 	case RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_STATUS: {
@@ -1710,6 +1938,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 			pdata++;
 			BT_LOGA("setting access:%d, setting raw: ", setting_access);
 			mesh_data_uart_dump(pdata, raw_len);
+			BT_AT_PRINT("+BLEMESHSENSOR:ss,%d,%d,%d,%d,%d,%d,",
+						BT_AT_MESH_ROLE_CLIENT, setting_status->src, setting_status->property_id,
+						setting_status->setting_property_id, setting_status->flag, setting_access);
+			BT_AT_DUMP_HEXN(pdata, raw_len);
+		} else {
+			BT_AT_PRINT("+BLEMESHSENSOR:ss,%d,%d,%d,%d,%d\r\n",
+						BT_AT_MESH_ROLE_CLIENT, setting_status->src, setting_status->property_id,
+						setting_status->setting_property_id, setting_status->flag);
 		}
 	}
 	break;
@@ -1720,6 +1956,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 		BT_LOGA("[APP] Sensor client receive: src %d, marshalled_sensor_data_len %d, data: \r\n",
 				sensor_status->src, sensor_status->marshalled_sensor_data_len);
 		mesh_data_uart_dump(pdata, sensor_status->marshalled_sensor_data_len);
+		BT_AT_PRINT("+BLEMESHSENSOR:sg,%d,%d,%d,",
+					BT_AT_MESH_ROLE_CLIENT, sensor_status->src, sensor_status->marshalled_sensor_data_len);
+		BT_AT_DUMP_HEXN(pdata, sensor_status->marshalled_sensor_data_len);
 	}
 	break;
 	case RTK_BT_MESH_SENSOR_COLUMN_CLIENT_MODEL_STATUS: {
@@ -1729,6 +1968,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 		BT_LOGA("[APP] Sensor client receive: src %d, property_id %d, column_raw_value_len: %d, column value: \r\n",
 				column_status->src, column_status->property_id, column_status->column_raw_value_len);
 		mesh_data_uart_dump(pdata, column_status->column_raw_value_len);
+		BT_AT_PRINT("+BLEMESHSENSOR:scog,%d,%d,%d,%d,",
+					BT_AT_MESH_ROLE_CLIENT, column_status->src, column_status->property_id, column_status->column_raw_value_len);
+		BT_AT_DUMP_HEXN(pdata, column_status->column_raw_value_len);
 	}
 	break;
 	case RTK_BT_MESH_SENSOR_SERIES_CLIENT_MODEL_STATUS: {
@@ -1738,6 +1980,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_client_model_app_callback(uint8_t evt
 		BT_LOGA("[APP] Sensor client receive: src %d, property_id %d, series_raw_value_len: %d, series value: \r\n",
 				series_status->src, series_status->property_id, series_status->series_raw_value_len);
 		mesh_data_uart_dump(pdata, series_status->series_raw_value_len);
+		BT_AT_PRINT("+BLEMESHSENSOR:sseg,%d,%d,%d,%d,",
+					BT_AT_MESH_ROLE_CLIENT, series_status->src, series_status->property_id, series_status->series_raw_value_len);
+		BT_AT_DUMP_HEXN(pdata, series_status->series_raw_value_len);
 	}
 	break;
 	default:
@@ -1757,6 +2002,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_client_model_app_callback(uint8_t evt
 		attn_status = (rtk_bt_mesh_health_client_status_attention_t *)param;
 		BT_LOGA("[APP] Health client receive: attention = %d \r\n",
 				attn_status->attention);
+		BT_AT_PRINT("+BLEMESHHEALTH:ha,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, attn_status->attention);
 	}
 	break;
 	case RTK_BT_MESH_HEALTH_CLIENT_MODEL_CURT_STATUS: {
@@ -1775,12 +2021,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_client_model_app_callback(uint8_t evt
 				fault_status->src, fault_status->test_id, fault_status->company_id);
 		/*May not work, if not work, need memcpy pointer address*/
 		mesh_data_uart_dump(fault_status->fault_array, fault_status->fault_array_len);
+		BT_AT_PRINT("+BLEMESHHEALTH:hf,%d,%d,%d,0x%04x,",
+					BT_AT_MESH_ROLE_CLIENT, fault_status->src, fault_status->test_id, fault_status->company_id);
+		BT_AT_DUMP_HEXN(fault_status->fault_array, fault_status->fault_array_len);
 	}
 	break;
 	case RTK_BT_MESH_HEALTH_CLIENT_MODEL_PERIOD_STATUS: {
 		rtk_bt_mesh_health_client_status_period_t *period_status;
 		period_status = (rtk_bt_mesh_health_client_status_period_t *)param;
 		BT_LOGA("[APP] Health client receive: fast period divisor = %d \r\n", period_status->fast_period_divisor);
+		BT_AT_PRINT("+BLEMESHHEALTH:hp,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, period_status->fast_period_divisor);
 	}
 	break;
 	default:

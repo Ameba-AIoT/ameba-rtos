@@ -25,7 +25,7 @@ vpath %.c $(DIR_TEST)
 CSRC = $(TARGET_LIB)_git_version.c \
 
 CSRC +=$(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
-	   $(DIR)/wififw_btcoex_tdma.c \
+	   $(DIR_COMMON)/wififw_btcoex_tdma_common.c \
        $(DIR)/wififw_init.c \
 	   $(DIR)/wififw_h2c.c \
        $(DIR)/wififw_txpkt.c \

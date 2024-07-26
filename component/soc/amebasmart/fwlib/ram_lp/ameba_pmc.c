@@ -211,7 +211,16 @@ void SOCPS_SleepPG(void)
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 }
-
+/* Dcut and later versions, wdg1~wdg4 wake-up source can be replaced with timer10-timer13.*/
+static void SOCPS_SwitchWakeSrc(void)
+{
+	u32 temp = 0;
+	if (SYSCFG_CUT_VERSION_D == SYSCFG_RLVersion()) {
+		temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098);
+		temp |= BIT(10) | BIT(11) | BIT(12) | BIT(13);
+		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, temp);
+	}
+}
 /**
   *  @brief set work modules/wake up event after sleep.
   *  @retval None
@@ -220,7 +229,8 @@ void SOCPS_SleepInit(void)
 {
 	int i = 0;
 	static u32 km0cg_pwrmgt_config_val;
-
+	/*replace wdg1~wdg4 wake-up source with timer10-timer13*/
+	SOCPS_SwitchWakeSrc();
 	/*power management setting*/
 	km0cg_pwrmgt_config_val = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 

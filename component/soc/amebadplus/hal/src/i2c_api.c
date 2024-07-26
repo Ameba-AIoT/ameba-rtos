@@ -222,8 +222,6 @@ int i2c_read_timeout(i2c_t *obj, int address, char *data, int length, int stop, 
 	rlen = I2C_MasterRead_TimeOut(obj->I2Cx, (unsigned char *)data, length, timeout_ms);
 
 	if (rlen != length) {
-		/* Wait for i2c enter trap state from trap_stop state*/
-		DelayUs(100);
 
 		/* Deinit I2C first */
 		i2c_reset(obj);
@@ -308,8 +306,6 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 		I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
 	} else {
 		while (length != (int)I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) {
-			/* Wait for i2c enter trap state from trap_stop state*/
-			DelayUs(100);
 
 			/* Deinit I2C first */
 			i2c_reset(obj);
@@ -472,6 +468,8 @@ int i2c_byte_write(i2c_t *obj, int data)
   */
 void i2c_reset(i2c_t *obj)
 {
+	/* Wait for i2c enter trap state from trap_stop state*/
+	DelayUs(100);
 	/* Deinit I2C directly */
 	/* I2C HAL DeInitialization */
 	I2C_Cmd(obj->I2Cx, DISABLE);

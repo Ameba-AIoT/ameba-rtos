@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #if defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART
-#include <log_service.h>
+#include <atcmd_service.h>
 #endif
 
 #ifdef __cplusplus
@@ -21,16 +21,27 @@ extern "C"
 
 #if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 
+#define BT_AT_MESH_ROLE_CLIENT              (0)
+#define BT_AT_MESH_ROLE_SERVER              (1)
+
 #define BT_AT_PRINT(fmt, args...)             at_printf(fmt, ##args)
-#define MESH_DATA_IOUART_DUMP(buf, len)       bt_iouart_dump_hex("0x", buf, len, false)
-/* 0201 0b0a ...*/
-#define BT_AT_DUMP16A(str, buf, len)          bt_iouart_dump(2, str, buf, len)
+/* 0x11223344...\r\n */
+#define BT_AT_DUMP_HEXN(buf, len)             bt_at_iouart_dump_hex("0x", buf, len, false, "\r\n")
+/* 0x11223344... */
+#define BT_AT_DUMP_HEX(buf, len)              bt_at_iouart_dump_hex("0x", buf, len, false, "")
+/* 01,02,0a,0b ...*/
+#define BT_AT_DUMP(str, buf, len)             bt_at_iouart_dump(1, str, buf, len)
+/* 0201,0b0a ...*/
+#define BT_AT_DUMP16(str, buf, len)           bt_at_iouart_dump(2, str, buf, len)
+
 
 #else /* CONFIG_ATCMD_IO_UART && !ATCMD_BT_CUT_DOWN */
 
 #define BT_AT_PRINT(fmt, args...)
-#define MESH_DATA_IOUART_DUMP(buf, len)
-#define BT_AT_DUMP16A(str, buf, len)
+#define BT_AT_DUMP_HEXN(buf, len)
+#define BT_AT_DUMP_HEX(buf, len)
+#define BT_AT_DUMP(str, buf, len)
+#define BT_AT_DUMP16(str, buf, len)
 
 #endif /* CONFIG_ATCMD_IO_UART && !ATCMD_BT_CUT_DOWN */
 
@@ -49,9 +60,9 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len);
 
 #if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 
-void bt_iouart_dump_hex(const char *str, void *buf, uint16_t len, bool reverse);
+void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str);
 
-void bt_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len);
+void bt_at_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len);
 
 #endif
 

@@ -658,8 +658,6 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #undef LWIP_HOOK_IP6_INPUT
 #undef LWIP_HOOK_IP4_INPUT
 #undef LWIP_NETIF_EXT_STATUS_CALLBACK
-#undef MDNS_RESP_USENETIF_EXTCALLBACK
-#undef MDNS_MAX_SERVICES
 #undef MEMP_NUM_SYS_TIMEOUT
 
 #define LWIP_IPV6                       1
@@ -677,8 +675,6 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #define LWIP_HOOK_IP6_INPUT rtk_otbr_lwip_hook_ip6_input
 #define LWIP_HOOK_IP4_INPUT rtk_otbr_lwip_hook_ip4_input
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
-#define MDNS_RESP_USENETIF_EXTCALLBACK  1
-#define MDNS_MAX_SERVICES               10
 #define MEMP_NUM_SYS_TIMEOUT            20
 #endif
 

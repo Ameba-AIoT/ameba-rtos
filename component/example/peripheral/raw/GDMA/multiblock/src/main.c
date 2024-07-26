@@ -71,14 +71,8 @@ u32 gdma_multiblock_irq(void *Data)
 	PGDMA_InitTypeDef GDMA_InitStruct = (PGDMA_InitTypeDef) Data;
 	u8 *pSrcData = NULL, *pDstData = NULL;
 	u32 IsrTypeMap = 0;
-	static u8 one_left = 0;
 
 	if (GDMA_InitStruct->MaxMuliBlock == GDMA_InitStruct->MuliBlockCunt + 2) {
-		one_left = 1;
-	}
-
-	// Clear Auto Reload Bit
-	if (one_left) {
 		GDMA_ChCleanAutoReload(0, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
 	}
 
@@ -118,8 +112,8 @@ u32 gdma_multiblock_irq(void *Data)
 	//Clear Pending ISR, next block will start transfer
 	IsrTypeMap = GDMA_ClearINT(0, GDMA_InitStruct->GDMA_ChNum);
 
-	//printf("DMA INT %08x\n", IsrTypeMap);
-	if (IsrTypeMap & BlockType || one_left) {
+	// printf("DMA INT %08x\n", IsrTypeMap);
+	if (IsrTypeMap & BlockType) {
 		printf("DMA Block %lu Transfer Complete\r\n\r\n", GDMA_InitStruct->MuliBlockCunt++);
 	}
 

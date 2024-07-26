@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <atcmd_bt_impl.h>
 
@@ -42,7 +42,7 @@ static int atcmd_ble_mesh_remote_prov_client_scan_start(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support remote provisioning client model.");
+	MESHRMT_AT_PRINTK("Platform not support remote provisioning client model.");
 	return -1;
 #endif
 }
@@ -63,7 +63,7 @@ static int atcmd_ble_mesh_remote_prov_client_scan_capa_get(int argc, char **argv
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support remote provisioning client model.");
+	MESHRMT_AT_PRINTK("Platform not support remote provisioning client model.");
 	return -1;
 #endif
 }
@@ -90,7 +90,7 @@ static int atcmd_ble_mesh_remote_prov_client_link_open(int argc, char **argv)
 	}
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support remote provisioning client model.");
+	MESHRMT_AT_PRINTK("Platform not support remote provisioning client model.");
 	return -1;
 #endif
 }
@@ -104,8 +104,11 @@ static const cmd_table_t mesh_remote_prov_client_model_cmd_table[] = {
 
 int atcmd_bt_mesh_remote_prov_client_model(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_remote_prov_client_model_cmd_table, "[ATBC][mesh_rmt]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_remote_prov_client_model_cmd_table, "[AT+BLEMESHRMT]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_remote_prov_client_model_cmd_table, "[ATBC][mesh_rmt]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

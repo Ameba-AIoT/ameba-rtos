@@ -294,6 +294,58 @@ u32 ADC_GetRawISR(void)
 }
 
 /**
+  * @brief Set list length and channel ID of ADC channel switch list.
+  * @param ChanIdBuf: Pointer to ADC channel ID buffer, which contains value of @ref ADC_Chn_Selection as following:
+  *				@arg ADC_CH0
+  *				@arg ADC_CH1
+  *				@arg ADC_CH2
+  *				@arg ADC_CH3
+  *				@arg ADC_CH4
+  *				@arg ADC_CH5
+  *				@arg ADC_CH6
+  *				@arg ADC_CH7
+  *				@arg ADC_CH8
+  *				@arg ADC_CH9
+  *				@arg ADC_CH10
+  *				@arg ADC_DUMMY_CYCLE
+  * @param ChanLen: ADC channel list length, which can be 1 ~ 16.
+  * @retval None
+  */
+void ADC_SetChList(u8 *ChanIdBuf, u8 ChanLen)
+{
+	ADC_TypeDef *adc = ADC;
+	u32 value;
+	u8 idx;
+	u8 *pid = ChanIdBuf;
+
+	if (TrustZone_IsSecure()) {
+		adc = ADC_S;
+	}
+
+	assert_param(ChanLen >= 1 && ChanLen <= 16);
+
+	/* Set channel switch list length */
+	value = adc->ADC_CONF;
+	value &= ~ADC_MASK_CVLIST_LEN;
+	value |= ADC_CVLIST_LEN(ChanLen - 1);
+	adc->ADC_CONF = value;
+
+	for (idx = 0; idx < ChanLen; idx++) {
+		if (idx < 8) {
+			value = adc->ADC_CHSW_LIST_0;
+			value &= ~(ADC_MASK_CHSW_0 << ADC_SHIFT_CHSW0(idx));
+			value |= *pid++ << ADC_SHIFT_CHSW0(idx);
+			adc->ADC_CHSW_LIST_0 = value;
+		} else {
+			value = adc->ADC_CHSW_LIST_1;
+			value &= ~(ADC_MASK_CHSW_8 << ADC_SHIFT_CHSW1(idx));
+			value |= *pid++ << ADC_SHIFT_CHSW1(idx);
+			adc->ADC_CHSW_LIST_1 = value;
+		}
+	}
+}
+
+/**
   * @brief  Get the number of valid entries in ADC receive FIFO.
   * @param  None.
   * @retval  The number of valid entries in receive FIFO.

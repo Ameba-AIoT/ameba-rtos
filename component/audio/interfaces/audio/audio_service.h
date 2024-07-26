@@ -13,6 +13,27 @@
  * limitations under the License.
  */
 
+/**
+ * @addtogroup Audio
+ * @{
+ *
+ * @brief Declares APIs for audio framework.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
+/**
+ * @file audio_service.h
+ *
+ * @brief Provides APIs of the audio service.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
 #ifndef AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_SERVICE_H
 #define AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_SERVICE_H
 

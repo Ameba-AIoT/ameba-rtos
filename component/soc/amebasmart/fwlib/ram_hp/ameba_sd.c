@@ -1658,6 +1658,86 @@ SD_RESULT SD_GetCapacity(u32 *sector_count)
 	return SD_ERROR;
 }
 
+void SD_CardInit(void)
+{
+	u32 ret;
+	u8 voltage_mismatch = 0;
+
+	do {
+		/* Card Identification */
+		ret = SD_ResetCard();
+		if (ret != HAL_OK) {
+			break;
+		}
+
+#if defined(SDIO) && (SDIO == SD)
+		ret = SD_VoltageCheck(&voltage_mismatch);
+		if (ret != HAL_OK) {
+			break;
+		}
+#endif
+		ret = SD_GetOCR(voltage_mismatch);
+		if (ret != HAL_OK) {
+			break;
+		}
+
+		ret = SD_GetCID();
+		if (ret != HAL_OK) {
+			break;
+		}
+
+		ret = SD_GetRCA();
+		if (ret != HAL_OK) {
+			break;
+		}
+
+		/* switch to non-initial mode */
+		ret = SDIOH_InitialModeCmd(DISABLE, card_info.sig_level);
+		if (ret != HAL_OK) {
+			break;
+		} else {
+			if (card_info.sig_level == SDIOH_SIG_VOL_18) {
+				card_info.bus_spd = SD_SPEED_SDR12;
+			} else {
+				card_info.bus_spd = SD_SPEED_DS;
+			}
+		}
+
+		ret = SD_GetCSD();
+		if (ret != HAL_OK) {
+			break;
+		}
+
+		ret = SD_SelectDeselect(_TRUE);
+		if (ret != HAL_OK) {
+			break;
+		}
+
+		if (sdioh_config->sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
+			ret = SD_SetBusWidth(SDIOH_BUS_WIDTH_4BIT);
+			if (ret != HAL_OK) {
+				break;
+			}
+		}
+
+		if (sdioh_config->sdioh_bus_speed == SD_SPEED_HS) {
+			ret = SD_SwitchBusSpeed(SD_SPEED_HS);
+			if (ret != HAL_OK) {
+				break;
+			}
+
+		}
+	} while (0);
+
+	if (ret == HAL_OK) {
+		card_info.sd_status = SD_OK;
+		RTK_LOGI(TAG, "SD card is initialized\r\n");
+	} else {
+		card_info.sd_status = SD_INITERR;
+		RTK_LOGE(TAG, "Init FAIL, ret: %lu\n", ret);
+	}
+}
+
 /**
   *  @brief To initialize the SD memory card.
   *  @param  None.
@@ -1666,8 +1746,6 @@ SD_RESULT SD_GetCapacity(u32 *sector_count)
   */
 SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 {
-	u32 ret;
-	u8 voltage_mismatch = 0;
 	IRQn_Type IrqNum;
 
 #if defined (ARM_CORE_CM4)
@@ -1705,79 +1783,8 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 	card_info.sd_status = SD_INSERT;
 	/* Initialize SD card */
 	if (card_info.sd_status == SD_INSERT) {
-		do {
-			/* Card Identification */
-			ret = SD_ResetCard();
-			if (ret != HAL_OK) {
-				break;
-			}
+		SD_CardInit();
 
-#if defined(SDIO) && (SDIO == SD)
-			ret = SD_VoltageCheck(&voltage_mismatch);
-			if (ret != HAL_OK) {
-				break;
-			}
-#endif
-			ret = SD_GetOCR(voltage_mismatch);
-			if (ret != HAL_OK) {
-				break;
-			}
-
-			ret = SD_GetCID();
-			if (ret != HAL_OK) {
-				break;
-			}
-
-			ret = SD_GetRCA();
-			if (ret != HAL_OK) {
-				break;
-			}
-
-			/* switch to non-initial mode */
-			ret = SDIOH_InitialModeCmd(DISABLE, card_info.sig_level);
-			if (ret != HAL_OK) {
-				break;
-			} else {
-				if (card_info.sig_level == SDIOH_SIG_VOL_18) {
-					card_info.bus_spd = SD_SPEED_SDR12;
-				} else {
-					card_info.bus_spd = SD_SPEED_DS;
-				}
-			}
-
-			ret = SD_GetCSD();
-			if (ret != HAL_OK) {
-				break;
-			}
-
-			ret = SD_SelectDeselect(_TRUE);
-			if (ret != HAL_OK) {
-				break;
-			}
-
-			if (sdioh_config->sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
-				ret = SD_SetBusWidth(SDIOH_BUS_WIDTH_4BIT);
-				if (ret != HAL_OK) {
-					break;
-				}
-			}
-
-			if (sdioh_config->sdioh_bus_speed == SD_SPEED_HS) {
-				ret = SD_SwitchBusSpeed(SD_SPEED_HS);
-				if (ret != HAL_OK) {
-					break;
-				}
-
-			}
-		} while (0);
-
-		if (ret == HAL_OK) {
-			card_info.sd_status = SD_OK;
-			RTK_LOGI(TAG, "SD card is initialized\r\n");
-		} else {
-			card_info.sd_status = SD_INITERR;
-			RTK_LOGE(TAG, "Init FAIL, ret: %lu\n", ret);
-		}
 	} else if (card_info.sd_status == SD_PROTECTED) {
 		RTK_LOGE(TAG, "Card is write protected !!\r\n");
 

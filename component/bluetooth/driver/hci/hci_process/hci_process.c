@@ -7,7 +7,6 @@
 #include "osif.h"
 #include "hci_config.h"
 #include "hci/hci_common.h"
-#include "hci/hci_process.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
 

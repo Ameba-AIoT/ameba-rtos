@@ -72,21 +72,21 @@ mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
 if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-	choice 'Enable MP SHRINK'	"normal			CONFIG_MP_NORMAL \
-								shrink			CONFIG_MP_SHRINK	\
-								" shrink
+	choice 'MP Mode'	"expand			CONFIG_MP_EXPAND \
+						shrink			CONFIG_MP_SHRINK	\
+						" shrink
 fi
 endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG Shell CMD'
-bool "Enable New ATCMD"		CONFIG_NEW_ATCMD
-if [ "$CONFIG_NEW_ATCMD" = "y" ]; then
+bool "Enable ATCMD"			CONFIG_SUPPORT_ATCMD
+if [ "$CONFIG_SUPPORT_ATCMD" = "y" ]; then
 choice 'ATCMD IO Type'	"LOGUART	CONFIG_ATCMD_IO_LOGUART \
 						UART		CONFIG_ATCMD_IO_UART \
 						"
-fi
 bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+fi
 endmenu
 
 mainmenu_option next_comment

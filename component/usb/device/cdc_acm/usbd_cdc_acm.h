@@ -56,8 +56,13 @@
 #define CDC_ACM_SN_STRING							"1234567890"
 
 /* CDC ACM Endpoint parameters */
+#if defined (CONFIG_AMEBAGREEN2)
+#define CDC_ACM_BULK_IN_EP                          0x82U  /* EP2 for BULK IN */
+#define CDC_ACM_BULK_OUT_EP                         0x02U  /* EP2 for BULK OUT */
+#else
 #define CDC_ACM_BULK_IN_EP                          0x81U  /* EP1 for BULK IN */
 #define CDC_ACM_BULK_OUT_EP                         0x02U  /* EP2 for BULK OUT */
+#endif
 #define CDC_ACM_INTR_IN_EP                          0x83U  /* EP3 for INTR IN */
 
 #define CDC_ACM_HS_BULK_MAX_PACKET_SIZE             512U   /* High speed BULK IN & OUT packet size */

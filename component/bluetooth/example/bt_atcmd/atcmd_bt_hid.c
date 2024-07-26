@@ -9,7 +9,7 @@
 #include <osif.h>
 
 #include "platform_autoconf.h"
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -140,7 +140,7 @@ static const cmd_table_t hid_cmd_table[] = {
 
 int atcmd_bt_hid_cmd(int argc, char *argv[])
 {
-#if (defined(CONFIG_NEW_ATCMD) && CONFIG_NEW_ATCMD) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, hid_cmd_table, "[AT+BTHID]");
 #else
 	return atcmd_bt_excute(argc, argv, hid_cmd_table, "[ATBC][hid]");

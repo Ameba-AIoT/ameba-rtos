@@ -26,26 +26,26 @@
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
+//#define CONFIG_NAN
+#ifdef CONFIG_NAN
+#define NET_IF_NUM	3
+#define SUPPORT_ADAPTER_NUM	3
+#else
 //#define CONFIG_MCC_MODE
-#define NET_IF_NUM		2
+#define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
+#endif
 /**************** configurations for concurrent mode end **********************/
 
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
 #define AP_STA_NUM	12
+#define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
 
-//#define CONFIG_NAN
 #ifdef CONFIG_NAN
-#undef NET_IF_NUM
-#define NET_IF_NUM	3
 #define CONFIG_NAN_PAIRING
 #define CONFIG_TWT
-#undef SUPPORT_ADAPTER_NUM
-#define SUPPORT_ADAPTER_NUM	3
-#undef AP_STA_NUM
-#define AP_STA_NUM	6
 #endif
 
 /* Configure for bus */
@@ -86,8 +86,6 @@
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR
 #define RTL8730E_WL_TODO
 
-#define NUM_STA (2 + AP_STA_NUM) /*one for bcmc, one for sta mode*/
-
 /*enable dynamic mechanism for driver*/
 #define CONFIG_WIFI_RA
 #define CONFIG_WIFI_DIG
@@ -102,7 +100,6 @@
 #define DRV_BB_PWR_CTRL_DISABLE
 //#define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_DFS_DISABLE
-#define PHL_MAX_STA_NUM NUM_STA
 
 #define CONFIG_80211AC_VHT
 #ifdef CONFIG_80211AC_VHT

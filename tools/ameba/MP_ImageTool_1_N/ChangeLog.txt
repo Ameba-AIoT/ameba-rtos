@@ -119,3 +119,4 @@ ChangeLog:
 20240613  v2.5.24 (1) Support Dplus/Lite download image to sram
                   (2) Fix download error in CLI mode
                   (3) Update ChipErase command
+20240712  v2.5.25 Fix erase flash image bug when download mp to sram

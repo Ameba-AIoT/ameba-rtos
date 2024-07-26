@@ -213,7 +213,6 @@ static SDIOHCFG_TypeDef sd_config = {
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-
 #if USBD_MSC_RAM_DISK
 static u8 *usbd_msc_ram_disk_buf;
 
@@ -303,7 +302,6 @@ static void usbd_msc_sd_sema_deinit(void)
 static int usbd_msc_sd_init(void)
 {
 	SD_RESULT ret;
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
 	RTK_LOGS(TAG, "[MSC] SD init\n");
 
@@ -312,7 +310,6 @@ static int usbd_msc_sd_init(void)
 	ret = SD_Init(&sd_config);
 	if (ret == SD_OK) {
 		usbd_msc_sd_init_status = 1;
-		cdev->is_ready = 1U;
 	} else {
 		RTK_LOGS(TAG, "[MSC] Fail to init SD: %d\n", ret);
 	}
@@ -323,11 +320,9 @@ static int usbd_msc_sd_init(void)
 static int usbd_msc_sd_deinit(void)
 {
 	SD_RESULT ret;
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
 	RTK_LOGS(TAG, "[MSC] SD deinit\n");
 
-	cdev->is_ready = 0U;
 	usbd_msc_sd_init_status = 0;
 	ret = SD_DeInit();
 	if (ret != SD_OK) {
@@ -840,6 +835,39 @@ static void usbd_msc_status_changed(usb_dev_t *dev, u8 status)
 }
 
 /* Exported functions --------------------------------------------------------*/
+int usbd_msc_disk_init(void)
+{
+	SD_RESULT ret;
+
+#if USBD_MSC_RAM_DISK
+	ret = RAM_init();
+#else
+#if defined(CONFIG_AMEBASMART)
+	ret = usbd_msc_sd_init();
+#else
+	ret = SD_Init();
+#endif
+#endif
+
+	return ret;
+}
+
+int usbd_msc_disk_deinit(void)
+{
+	SD_RESULT ret;
+
+#if USBD_MSC_RAM_DISK
+	ret = RAM_deinit();
+#else
+#if defined(CONFIG_AMEBASMART)
+	ret = usbd_msc_sd_deinit();
+#else
+	ret = SD_DeInit();
+#endif
+#endif
+
+	return ret;
+}
 
 /**
   * @brief  Initialize MSC device
@@ -858,21 +886,15 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	}
 
 #if USBD_MSC_RAM_DISK
-	ops->disk_init = RAM_init;
-	ops->disk_deinit = RAM_deinit;
 	ops->disk_getcapacity = RAM_GetCapacity;
 	ops->disk_read = RAM_ReadBlocks;
 	ops->disk_write = RAM_WriteBlocks;
 #else
 #if defined(CONFIG_AMEBASMART)
-	ops->disk_init = usbd_msc_sd_init;
-	ops->disk_deinit = usbd_msc_sd_deinit;
 	ops->disk_getcapacity = usbd_msc_sd_getcapacity;
 	ops->disk_read = usbd_msc_sd_readblocks;
 	ops->disk_write = usbd_msc_sd_writeblocks;
 #else
-	ops->disk_init = SD_Init;
-	ops->disk_deinit = SD_DeInit;
 	ops->disk_getcapacity = SD_GetCapacity;
 	ops->disk_read = SD_ReadBlocks;
 	ops->disk_write = SD_WriteBlocks;
@@ -905,19 +927,10 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 
 	cdev->blkbits = USBD_MSC_BLK_BITS;
 	cdev->blksize = USBD_MSC_BLK_SIZE;
-	if (cdev->disk_ops.disk_init()) {
-		RTK_LOGS(TAG, "[MSC] Disk init fail\n");
-		ret = HAL_ERR_HW;
-		goto disk_init_fail;
-	}
 
 	usbd_register_class(&usbd_msc_driver);
 
 	return HAL_OK;
-
-disk_init_fail:
-	usb_os_mfree(cdev->csw);
-	cdev->csw = NULL;
 
 csw_fail:
 	usb_os_mfree(cdev->cbw);
@@ -948,10 +961,6 @@ void usbd_msc_deinit(void)
 	cdev->is_ready = 0U;
 
 	usbd_unregister_class();
-
-	if (cdev->disk_ops.disk_deinit != NULL) {
-		cdev->disk_ops.disk_deinit();
-	}
 
 	if (cdev->csw != NULL) {
 		usb_os_mfree(cdev->csw);

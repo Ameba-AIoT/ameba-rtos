@@ -38,7 +38,7 @@ void bod_intr_test(void)
 	/* Default debounce delay: 100us(BOR_TDBC = 0x1) */
 	/* It takes 100us for actual BOD output to sync to digital circuit. */
 	DelayUs(100);
-	RCC_PeriphClockCmd(APBPeriph_BOR, NULL, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
 
 #if defined (CONFIG_AMEBASMART)
 	printf("Supply voltage under 2.67V triggers bod interrupt!!!\n");
@@ -61,7 +61,7 @@ void bod_reset_test(void)
 	/* default debounce delay: 100us(BOR_TDBC = 0x1) */
 	/* It takes 100us for actual BOD output to sync to digital circuit. */
 	DelayUs(100);
-	RCC_PeriphClockCmd(APBPeriph_BOR, NULL, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
 
 #if defined (CONFIG_AMEBASMART)
 	printf("Supply voltage under 2.67V and recover it to above 2.87V causes bod reset!!!\n");

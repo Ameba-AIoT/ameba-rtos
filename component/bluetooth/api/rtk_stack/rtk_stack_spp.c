@@ -25,7 +25,6 @@ uint8_t spp_rfc_max_service_num; // SPP maximum service numbers
 uint8_t default_mtu_size; // link default mtu size
 uint8_t default_credits; // link default credits
 
-extern T_APP_DB app_db;
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
 
 static uint8_t client_addr[6];// SPP client bd addr

@@ -21,11 +21,17 @@ COMPILEOS=$(uname -o)
 if [ "$COMPILEOS" == "GNU/Linux" ]; then
 	TOOL_PATH=$0
 	IMAGE_FULLPATH=$1
-	ELF2BIN=./elf2bin
 else
 	TOOL_PATH=$(realpath --relative-to=$(pwd) $0)
 	IMAGE_FULLPATH=$(realpath --relative-to=$(pwd) $1)
-	ELF2BIN=./elf2bin.exe
+fi
+
+IMAGE_SCRIPTS_1=../../../../../../tools/image_scripts
+IMAGE_SCRIPTS_2=../../../../../tools/image_scripts
+if [ -d $IMAGE_SCRIPTS_2 ]; then
+	AXF2BIN=$IMAGE_SCRIPTS_2/axf2bin.py
+else
+	AXF2BIN=$IMAGE_SCRIPTS_1/axf2bin.py
 fi
 IMAGE_FILENAME=$(basename $1)
 TOOL_PATH=$(dirname "$TOOL_PATH")
@@ -73,15 +79,15 @@ function combin_bin_nec(){
 	
 	if [ -f $CA32_IMG_DIR/ap_image_all.bin ]; then
 		cat $KM4_IMG_DIR/km0_km4_app.bin $CA32_IMG_DIR/ap_image_all.bin > $KM4_IMG_DIR/km0_km4_ca32_app.bin
-		$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km0_km4_ca32_app.bin $KM4_IMG_DIR/manifest.bin app
+		python $AXF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km0_km4_ca32_app.bin $KM4_IMG_DIR/manifest.bin app
 	else
-		$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km0_km4_app.bin $KM4_IMG_DIR/manifest.bin app
+		python $AXF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km0_km4_app.bin $KM4_IMG_DIR/manifest.bin app
 	fi
 }
 
 function combin_bin_enc(){
 
-	$ELF2BIN cert $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/cert.bin 0 app
+	python $AXF2BIN cert $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/cert.bin 0 app
 	if [ -f $KM4_IMG_DIR/km4_image3_all_en.bin ]; then
 		cat $KM4_IMG_DIR/cert.bin $KM4_IMG_DIR/manifest.bin $KM4_IMG_DIR/km0_image2_all.bin $KM4_IMG_DIR/km4_image2_all.bin $KM4_IMG_DIR/km4_image3_all.bin > $KM4_IMG_DIR/km0_km4_app_ns.bin
 		cat $KM4_IMG_DIR/cert.bin $KM4_IMG_DIR/manifest.bin $KM4_IMG_DIR/km0_image2_all_en.bin $KM4_IMG_DIR/km4_image2_all_en.bin $KM4_IMG_DIR/km4_image3_all_en.bin > $KM4_IMG_DIR/km0_km4_app.bin
@@ -113,19 +119,19 @@ function copy_to_mp_image(){
 function main_join(){
 
 	if [ -f $KM0_IMG_DIR/km0_image2_all.bin ]; then
-		$ELF2BIN rsip $KM0_IMG_DIR/km0_image2_all.bin $KM0_IMG_DIR/km0_image2_all_en.bin 0x0c000000 $MANIFEST_JSON app
+		python $AXF2BIN rsip $KM0_IMG_DIR/km0_image2_all.bin $KM0_IMG_DIR/km0_image2_all_en.bin 0x0c000000 $MANIFEST_JSON app
 	fi
 	
 	if [ -f $KM0_IMG_DIR/km4_image2_all.bin ]; then
-		$ELF2BIN rsip $KM4_IMG_DIR/km4_image2_all.bin $KM4_IMG_DIR/km4_image2_all_en.bin 0x0d000000 $MANIFEST_JSON app
+		python $AXF2BIN rsip $KM4_IMG_DIR/km4_image2_all.bin $KM4_IMG_DIR/km4_image2_all_en.bin 0x0d000000 $MANIFEST_JSON app
 	fi
 	
 	if [ -f $KM4_IMG_DIR/km4_image3_all.bin ]; then
-		$ELF2BIN rdp enc $KM4_IMG_DIR/km4_image3_all.bin $KM4_IMG_DIR/km4_image3_all_en.bin $MANIFEST_JSON
+		python $AXF2BIN rdp enc $KM4_IMG_DIR/km4_image3_all.bin $KM4_IMG_DIR/km4_image3_all_en.bin $MANIFEST_JSON
 	fi
 	
 	if [ -f $CA32_IMG_DIR/ap_image_all.bin ]; then
-		$ELF2BIN rsip $CA32_IMG_DIR/ap_image_all.bin $CA32_IMG_DIR/ap_image_all_en.bin 0x0e000000 $MANIFEST_JSON app
+		python $AXF2BIN rsip $CA32_IMG_DIR/ap_image_all.bin $CA32_IMG_DIR/ap_image_all_en.bin 0x0e000000 $MANIFEST_JSON app
 	fi
 	combin_bin_nec
 	combin_bin_enc
@@ -140,14 +146,14 @@ function main_bin(){
 		fi
 		if [ -f $KM0_IMG_DIR/km0_image2_all.bin ]; then
 			cp $KM0_IMG_DIR/km0_image2_all.bin $KM4_IMG_DIR
-			$ELF2BIN rsip $KM0_IMG_DIR/km0_image2_all.bin $KM0_IMG_DIR/km0_image2_all_en.bin 0x0c000000 $MANIFEST_JSON app
+			python $AXF2BIN rsip $KM0_IMG_DIR/km0_image2_all.bin $KM0_IMG_DIR/km0_image2_all_en.bin 0x0c000000 $MANIFEST_JSON app
 			cp $KM0_IMG_DIR/km0_image2_all_en.bin $KM4_IMG_DIR
 		fi
 	fi
 
 	if [ "$IMAGE_FILENAME" == "km4_boot_all.bin" ]; then
-		$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km4_boot_all.bin $KM4_IMG_DIR/manifest.bin boot
-		$ELF2BIN rsip $KM4_IMG_DIR/km4_boot_all.bin $KM4_IMG_DIR/km4_boot_all_en.bin 0x0a000000 $MANIFEST_JSON boot
+		python $AXF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km4_boot_all.bin $KM4_IMG_DIR/manifest.bin boot
+		python $AXF2BIN rsip $KM4_IMG_DIR/km4_boot_all.bin $KM4_IMG_DIR/km4_boot_all_en.bin 0x0a000000 $MANIFEST_JSON boot
 	
 		cat $KM4_IMG_DIR/manifest.bin $KM4_IMG_DIR/km4_boot_all.bin > $KM4_IMG_DIR/km4_boot_all_ns.bin
 		cat $KM4_IMG_DIR/manifest.bin $KM4_IMG_DIR/km4_boot_all_en.bin > $KM4_IMG_DIR/km4_boot_all.bin
@@ -156,23 +162,23 @@ function main_bin(){
 	fi
 
 	if [ "$IMAGE_FILENAME" == "ram_1_prepend.bin" ]; then
-		$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/ram_1_prepend.bin $KM4_IMG_DIR/manifest.bin boot
+		python $AXF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/ram_1_prepend.bin $KM4_IMG_DIR/manifest.bin boot
 		cat $KM4_IMG_DIR/ram_1_prepend.bin $KM4_IMG_DIR/manifest.bin > $KM4_IMG_DIR/imgtool_flashloader.bin
 		exit
 	fi
 
 	if [ "$IMAGE_FILENAME" == "km4_image2_all.bin" ]; then
-		$ELF2BIN rsip $KM4_IMG_DIR/km4_image2_all.bin $KM4_IMG_DIR/km4_image2_all_en.bin 0x0d000000 $MANIFEST_JSON app
+		python $AXF2BIN rsip $KM4_IMG_DIR/km4_image2_all.bin $KM4_IMG_DIR/km4_image2_all_en.bin 0x0d000000 $MANIFEST_JSON app
 	fi
 	
 	if [ "$IMAGE_FILENAME" == "km4_image3_all.bin" ]; then
-		$ELF2BIN rdp enc $KM4_IMG_DIR/km4_image3_all.bin $KM4_IMG_DIR/km4_image3_all_en.bin $MANIFEST_JSON
+		python $AXF2BIN rdp enc $KM4_IMG_DIR/km4_image3_all.bin $KM4_IMG_DIR/km4_image3_all_en.bin $MANIFEST_JSON
 		exit
 	fi
 
 	if [ "$IMAGE_FILENAME" == "ap_image_all.bin" ]; then
 		if [ -f $CA32_IMG_DIR/ap_image_all.bin ]; then
-			$ELF2BIN rsip $CA32_IMG_DIR/ap_image_all.bin $CA32_IMG_DIR/ap_image_all_en.bin 0x0e000000 $MANIFEST_JSON app
+			python $AXF2BIN rsip $CA32_IMG_DIR/ap_image_all.bin $CA32_IMG_DIR/ap_image_all_en.bin 0x0e000000 $MANIFEST_JSON app
 		fi
 		exit
 	fi

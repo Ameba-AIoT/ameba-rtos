@@ -110,9 +110,12 @@ static const char *TAG = "ETHERNET";
 static rtos_mutex_t mii_tx_mutex;
 static u8 TX_BUFFER[MAX_BUFFER_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));;
 static u8 RX_BUFFER[MAX_BUFFER_SIZE];
+
+#if defined(ETHERNET_REASSEMBLE_PACKET) && ETHERNET_REASSEMBLE_PACKET
 static u32 pkt_total_len = 0;
 static u32 rx_buffer_saved_data_len = 0;
 static u16 eth_type = 0;
+#endif
 
 extern int usbh_cdc_ecm_send_data(u8 *buf, u32 len);
 extern u16 usbh_cdc_ecm_get_receive_mps(void);
@@ -182,6 +185,9 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	struct pbuf *q;
 #if defined(CONFIG_AS_INIC_AP)
 	int ret = 0;
+	struct eth_hdr *ethhdr = NULL;
+	u8 is_special_pkt = 0;
+	u8 *addr = (u8 *)p->payload;
 #endif
 
 #if CONFIG_WLAN
@@ -191,6 +197,21 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	}
 #endif
 #endif
+
+#if defined(CONFIG_AS_INIC_AP)
+	if (p->len >= ETH_HLEN + 24) {
+		ethhdr = (struct eth_hdr *)p->payload;
+		if (ETH_P_IP == _htons(ethhdr->type)) {
+			addr += ETH_HLEN;
+			if (((addr[21] == 68) && (addr[23] == 67)) ||
+				((addr[21] == 67) && (addr[23] == 68))) {
+				// DHCP packet, 68 : UDP BOOTP client, 67 : UDP BOOTP server
+				is_special_pkt = 1;
+			}
+		}
+	}
+#endif
+
 	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
 		sg_list[sg_len].buf = (unsigned int) q->payload;
 		sg_list[sg_len++].len = q->len;
@@ -199,7 +220,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	if (sg_len) {
 #if CONFIG_WLAN
 #if defined(CONFIG_AS_INIC_AP)
-		ret = inic_host_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL);
+		ret = inic_host_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
 		if (ret == ERR_IF) {
 			return ret;
 		}

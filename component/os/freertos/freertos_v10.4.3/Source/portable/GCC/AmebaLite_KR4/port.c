@@ -250,7 +250,7 @@ void vApplicationIdleHook(void)
 #endif
 #endif
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_WLAN)
-#if defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP
+#if (defined(CONFIG_AS_INIC_NP) && CONFIG_AS_INIC_NP) || (defined(CONFIG_SINGLE_CORE_WIFI) && CONFIG_SINGLE_CORE_WIFI)
 	extern void wififw_task_idle(void);
 	wififw_task_idle();
 #endif

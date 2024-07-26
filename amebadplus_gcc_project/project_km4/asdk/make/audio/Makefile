@@ -17,6 +17,9 @@ OBJS =
 all: open_src config test cmd
 
 open_src: CORE_TARGETS
+ifeq ($(CONFIG_AUDIO_FWK),y)
+	make -C audio_hal all
+endif
 
 cmd: CORE_TARGETS
 ifeq ($(CONFIG_AUDIO_FWK),y)
@@ -41,7 +44,6 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 	make -C audio_control lib
 	make -C audio_stream lib
 	make -C audio_xip lib
-	make -C audio_hal lib
 	make -C base lib
 endif
 ifneq ($(CONFIG_WIFI_AUDIO)$(CONFIG_WFA_SRC),)

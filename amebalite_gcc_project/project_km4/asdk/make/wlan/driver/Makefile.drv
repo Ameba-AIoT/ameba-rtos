@@ -7,342 +7,135 @@ vpath %.c $(DIR)/core_rom \
 		$(DIR)/halcommon \
 		$(DIR)/../api \
 		$(DIR)/../wpa_supplicant/src/crypto \
+		$(DIR)/core_rom2024 \
+		$(DIR)/mcc \
+		$(DIR)/wifi_tunnel/
 
 
 ifeq ($(CONFIG_AMEBALITE), y)
 vpath %.c $(DIR)/rtl8720e \
 		$(DIR)/rtl8720e_rom \
+		$(DIR)/intf/g6_intf \
 		$(DIR)/intf/g6_intf/rtl8720e \
 
+HALDIR=rtl8720e
+HALROMDIR=rtl8720e_rom
 endif
 
 ifeq ($(CONFIG_AMEBADPLUS), y)
 vpath %.c $(DIR)/rtl8721da \
-		$(DIR)/nan \
-		$(DIR)/p2p \
 		$(DIR)/rtl8721da_rom \
-		$(DIR)/forward_mesh/rtl8721da \
-		$(DIR)/forward_mesh/relay
-
+		$(DIR)/wifi_tunnel/rtl8721da \
+HALDIR=rtl8721da
+HALROMDIR=rtl8721da_rom
 endif
 
 ifeq ($(CONFIG_AMEBASMART), y)
-vpath %.c $(DIR)/nan \
-		$(DIR)/p2p \
+vpath %.c $(DIR)/rtl8730e \
 		$(DIR)/rtl8730e \
 		$(DIR)/rtl8730e_rom \
+		$(DIR)/intf/g6_intf \
 		$(DIR)/intf/g6_intf/rtl8730e \
 		$(DIR)/../wpa_supplicant \
 		$(DIR)/../wpa_supplicant/src \
-
+HALDIR=rtl8730e
+HALROMDIR=rtl8730e_rom
 endif
 
 ifeq ($(CONFIG_AMEBAGREEN2), y)
-vpath %.c $(DIR)/nan \
-		$(DIR)/p2p \
+vpath %.c $(DIR)/rtl8720f \
 		$(DIR)/rtl8720f \
 		$(DIR)/rtl8720f_rom \
+		$(DIR)/intf/g6_intf \
 		$(DIR)/intf/g6_intf/rtl8720f \
 		$(DIR)/../wpa_supplicant \
 		$(DIR)/../wpa_supplicant/src \
-
+HALDIR=rtl8720f
+HALROMDIR=rtl8720f_rom
 endif
 
+ifeq ($(CONFIG_AMEBAX), y)
+vpath %.c $(DIR)/rle1331 \
+		$(DIR)/rle1331 \
+		$(DIR)/rle1331_rom \
+		$(DIR)/intf/g6_intf/rle1331 \
+		$(DIR)/../wpa_supplicant \
+		$(DIR)/../wpa_supplicant/src \
+HALDIR=rle1331
+HALROMDIR=rle1331_rom
+endif
+
+#########################COMMON###############################
 include ../inic/Makefile.include.dev
 
-
-ifndef CONFIG_MP_SHRINK
-CSRC_DRV += $(DIR)/core/rtw_ap.c \
-    $(DIR)/core/rtw_shortcut.c \
-    $(DIR)/core/rtw_autoreconnect.c \
-	$(DIR)/core/rtw_join.c \
-	$(DIR)/core/rtw_join_result.c \
-	$(DIR)/core/rtw_security.c \
-	$(DIR)/core/rtw_setkey.c \
-	$(DIR)/core/rtw_dynamic.c \
-	$(DIR)/core/rtw_sitesurvey.c \
-	$(DIR)/core/rtw_sitesurvey_report.c \
-	$(DIR)/core/rtw_80211w.c \
-	$(DIR)/core/rtw_dfs.c \
-	$(DIR)/core/rtw_lps.c \
-	$(DIR)/core/rtw_ips.c \
-	$(DIR)/mesh/wifi_mesh.c \
-	$(DIR)/core/rtw_11d.c \
-	$(DIR)/core/rtw_rm.c \
-	$(DIR)/core/rtw_rm_fsm.c \
-	$(DIR)/core/rtw_rm_util.c \
-	$(DIR)/core/rtw_he.c  \
-	$(DIR)/core/rtw_action.c  \
-	$(DIR)/core/rtw_beacon.c    \
-	$(DIR)/core/rtw_ht.c \
-	$(DIR)/core/rtw_probe.c \
-	$(DIR)/core/rtw_addba.c	\
-	$(DIR)/core/rtw_auth.c  \
-	$(DIR)/core/rtw_assoc.c  \
-	$(DIR)/core/rtw_twt.c \
-    $(DIR)/halcommon/hal_suspend.c \
-    $(DIR)/halcommon/hal_ra.c \
-    $(DIR)/halcommon/hal_edcca.c \
-    $(DIR)/halcommon/hal_csi.c \
-    $(DIR)/halcommon/hal_h2c.c \
-
-endif
-
-CSRC_DRV +=  \
-	$(DIR)/core/rtw_debug.c \
-	$(DIR)/core/rtw_task.c \
-	$(DIR)/core/rtw_mgnt.c \
-	$(DIR)/core/rtw_mp.c \
-	$(DIR)/core/rtw_skbuff.c \
-	$(DIR)/core/rtw_sta_mgt.c \
-	$(DIR)/core/rtw_cmd.c \
-	$(DIR)/core/rtw_drv_init.c \
-	$(DIR)/core/rtw_state.c \
-    $(DIR)/core/rtw_xmit.c	\
-	$(DIR)/core/rtw_recv.c \
-	$(DIR)/core/rtw_recv_defrag.c \
-	$(DIR)/core/rtw_xmitbuff.c \
-	$(DIR)/intf/wifi_intf_drv_to_app_basic.c \
-	$(DIR)/intf/wifi_intf_drv_to_app_ext.c \
-	$(DIR)/intf/wifi_intf_drv_to_lwip.c \
-    $(DIR)/intf/wifi_intf_drv_to_mp.c \
-	$(DIR)/intf/wifi_intf_drv_to_upper.c \
-    $(DIR)/intf/wifi_intf_drv_to_bt.c \
-    $(DIR)/halcommon/hal_phycfg.c \
-    $(DIR)/halcommon/hal_debug.c \
-    $(DIR)/halcommon/hal_xmit.c \
-    $(DIR)/halcommon/hal_recv.c \
-    $(DIR)/halcommon/hal_dm.c \
-    $(DIR)/halcommon/hal_interrupt.c \
-    $(DIR)/phl/phl.c \
-    $(DIR)/../wpa_supplicant/src/crypto/dh_groups.c \
-	$(DIR)/intf/wifi_intf_rom_to_flash.c \
-
-CSRC_DRV += $(TARGET_LIB)_git_version.c
-
-
-ifeq ($(CONFIG_AMEBALITE), y)
+CSRC_DRV += $(DIR)/$(HALDIR)/wifi_hal_h2c.c \
+	$(DIR)/$(HALDIR)/wifi_hal_dm.c \
+	$(DIR)/$(HALDIR)/wifi_hal_io.c \
+	$(DIR)/$(HALDIR)/wifi_hal_ops.c \
+	$(DIR)/$(HALDIR)/wifi_hal_mp.c \
+	$(DIR)/$(HALDIR)/wifi_hal_phycfg.c \
+	$(DIR)/$(HALDIR)/wifi_hal_txpower.c	\
+	$(DIR)/$(HALDIR)/wifi_hal_rxdesc.c \
+	$(DIR)/$(HALDIR)/wifi_hal_txdesc.c \
+	$(DIR)/$(HALDIR)/wifi_hal_debug.c \
+	$(DIR)/$(HALDIR)/wifi_hal_hci_intfs.c \
+	$(DIR)/$(HALDIR)/wifi_hal_mcc.c \
+	$(DIR)/$(HALDIR)/wifi_hal_halinit.c \
+	$(DIR)/$(HALDIR)/wifi_hal_interrupt.c \
+	$(DIR)/$(HALDIR)/wifi_hal_recv.c \
+	$(DIR)/$(HALDIR)/wifi_hal_xmit.c \
+	$(DIR)/$(HALDIR)/wifi_hal_rf_onoff.c \
+	$(DIR)/$(HALDIR)/wifi_hal_rf_onoff.c \
+	$(DIR)/intf/wifi_intf_drv_to_nan.c \
 
 ifneq ($(CONFIG_MP_SHRINK), y)
-CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_suspend.c
-CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
-
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
-	$(DIR)/core_rom/rom_rtw_network.c \
-	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
-	$(DIR)/core_rom/rom_rtw_11d.c \
-	$(DIR)/core_rom/rom_rtw_11d_part2.c \
-	$(DIR)/core_rom/rom_rtw_he_part2.c \
-	$(DIR)/core_rom/rom_rtw_shortcut.c \
-	$(DIR)/core_rom/rom_rtw_setkey.c \
-	$(DIR)/core_rom/rom_rtw_beacon_part2.c    \
-	$(DIR)/core_rom/rom_rtw_sitesurvey_report.c \
-	$(DIR)/core_rom/rom_rtw_ap_xmit.c \
-	$(DIR)/core_rom/rom_rtw_addba.c \
-	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
-	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
-	$(DIR)/core_rom/rom_rtw_action_part2.c  \
-	$(DIR)/core_rom/rom_rtw_join.c  \
-	$(DIR)/core_rom/rom_rtw_join_result.c  \
-	$(DIR)/core_rom/rom_rtw_assoc_part2.c \
-	$(DIR)/core_rom/rom_rtw_security_part2.c \
-
+CSRC_DRV += \
+	$(DIR)/$(HALDIR)/wifi_hal_suspend.c
 endif
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
-	$(DIR)/core_rom/rom_rtw_recv_part2.c \
-	$(DIR)/core_rom/rom_rtw_recv_reorder.c \
-	$(DIR)/core_rom/rom_rtw_mgnt.c \
-	$(DIR)/core_rom/rom_rtw_recv_defrag.c \
-	$(DIR)/core_rom/rom_rtw_state.c \
-	$(DIR)/core_rom/rom_rtw_sta_mgt.c \
-	$(DIR)/core_rom/rom_rtw_ap.c \
+MCC_COMMON += \
+	$(DIR)/mcc/rtw_mcc.c \
+	$(DIR)/mcc/rtw_mcc_status.c \
+	$(DIR)/mcc/rtw_mcc_frame.c \
 
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit_g1.c \
-	$(DIR)/halcommon_rom/rom_hal_structs.c \
-	$(DIR)/halcommon_rom/rom_hal_recv.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c_g1.c \
+CSRC_WIFI_TUNNEL_COMMON += \
+	$(DIR)/wifi_tunnel/wifi_tunnel_intfs.c \
+	$(DIR)/wifi_tunnel/wifi_tunnel_configure.c \
+	$(DIR)/wifi_tunnel/wifi_tunnel_scan.c \
+	$(DIR)/wifi_tunnel/wifi_tunnel_handshake.c \
+	$(DIR)/wifi_tunnel/wifi_tunnel_connect.c \
+	$(DIR)/wifi_tunnel/wifi_tunnel_switch.c
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_80211w.c \
-	$(DIR)/core_rom/rom_rtw_rate.c \
-	$(DIR)/core_rom/rom_rtw_chbw.c \
+CSRC_HAL_PHYDM+= \
+	$(DIR)/halcommon/hal_dig_phydm.c \
+	$(DIR)/halcommon/hal_antdiv_phydm.c \
+	$(DIR)/halcommon/hal_sta_config_phydm.c
 
-CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_halinit.c \
-	$(DIR)/rtl8720e/wifi_hal_interrupt.c \
-	$(DIR)/rtl8720e/wifi_hal_recv.c \
+CSRC_HAL_PHYG6+= \
+	$(DIR)/halcommon/hal_dig_g6.c \
+	$(DIR)/halcommon/hal_antdiv_g6.c \
+	$(DIR)/halcommon/hal_sta_config_g6.c
 
-CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_h2c.c \
-	$(DIR)/rtl8720e/wifi_hal_dm.c \
-	$(DIR)/rtl8720e/wifi_hal_io.c \
-	$(DIR)/rtl8720e/wifi_hal_ops.c \
-	$(DIR)/rtl8720e/wifi_hal_mp.c \
-	$(DIR)/rtl8720e/wifi_hal_phycfg.c \
-	$(DIR)/rtl8720e/wifi_hal_txpower.c	\
-	$(DIR)/rtl8720e/wifi_hal_rxdesc.c \
-	$(DIR)/rtl8720e/wifi_hal_txdesc.c \
-	$(DIR)/rtl8720e/wifi_hal_debug.c \
-	$(DIR)/rtl8720e/wifi_hal_hci_intfs.c \
-	$(DIR)/rtl8720e/wifi_hal_mcc.c
-
-	CSRC_DRV += $(DIR)/intf/g6_intf/rtl8720e/wifi_intf_hal_to_g6_bb.c \
-	$(DIR)/intf/g6_intf/rtl8720e/wifi_intf_hal_to_g6_mac.c \
-	$(DIR)/phl/rtl8720e_phl.c \
-
-CSRC_DRV += $(DIR)/rtl8720e_rom/rom_wifi_hal_ax.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_bcn.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_debug.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_init.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_media_access.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_misc.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_rate.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_secure.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_tsf.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_txdesc.c \
-	$(DIR)/rtl8720e_rom/rom_wifi_hal_rxdesc.c
-
-CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
-CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
-
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
-	$(DIR)/core_rom/rom_rtw_ieee80211_part2.c \
-	$(DIR)/core_rom/rom_rtw_probe.c \
-	$(DIR)/core_rom/rom_rtw_auth.c \
-	$(DIR)/core_rom/rom_rtw_action.c \
-	$(DIR)/core_rom/rom_rtw_psk.c \
-	$(DIR)/core_rom/rom_rtw_pmksa_cache.c \
-	$(DIR)/core_rom/rom_rtw_rf.c \
-	$(DIR)/core_rom/rom_rtw_recv.c \
-	$(DIR)/core_rom/rom_rtw_beacon.c \
-	$(DIR)/core_rom/rom_rtw_assoc.c \
-	$(DIR)/core_rom/rom_rtw_vht.c \
-	$(DIR)/core_rom/rom_rtw_he.c \
-	$(DIR)/core_rom/rom_rtw_skbuff.c \
-
-CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_xmit.c
-CSRC_DRV += $(DIR)/rtl8720e/wifi_hal_rf_onoff.c
-
-endif
-
-ifeq ($(CONFIG_AMEBADPLUS), y)
-
+CSRC_HALCOMMON_V1+= \
+	$(DIR)/halcommon/hal_h2c_g1.c \
+	$(DIR)/halcommon/hal_recv_g1.c \
+	$(DIR)/halcommon/hal_suspend_g1.c \
+	$(DIR)/halcommon/hal_interrupt_g1.c
 ifneq ($(CONFIG_MP_SHRINK), y)
-CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_suspend.c
-CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
-
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
-	$(DIR)/core_rom/rom_rtw_network.c \
-	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
-	$(DIR)/core_rom/rom_rtw_11d.c \
-	$(DIR)/core_rom/rom_rtw_11d_part2.c \
-	$(DIR)/core_rom/rom_rtw_he_part2.c \
-	$(DIR)/core_rom/rom_rtw_shortcut.c \
-	$(DIR)/core_rom/rom_rtw_setkey.c \
-	$(DIR)/core_rom/rom_rtw_beacon_part2.c    \
-	$(DIR)/core_rom/rom_rtw_sitesurvey_report.c \
-	$(DIR)/core_rom/rom_rtw_ap_xmit.c \
-	$(DIR)/core_rom/rom_rtw_addba.c \
-	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
-	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
-	$(DIR)/core_rom/rom_rtw_action_part2.c  \
-	$(DIR)/core_rom/rom_rtw_join.c  \
-	$(DIR)/core_rom/rom_rtw_join_result.c  \
-	$(DIR)/core_rom/rom_rtw_assoc_part2.c \
-	$(DIR)/core_rom/rom_rtw_security_part2.c \
-
+CSRC_HALCOMMON_V1 += \
+	$(DIR)/halcommon/hal_h2c_g1.c \
+	$(DIR)/halcommon/hal_suspend_g1.c
 endif
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
-	$(DIR)/core_rom/rom_rtw_recv_part2.c \
-	$(DIR)/core_rom/rom_rtw_recv_reorder.c \
-	$(DIR)/core_rom/rom_rtw_mgnt.c \
-	$(DIR)/core_rom/rom_rtw_recv_defrag.c \
-	$(DIR)/core_rom/rom_rtw_state.c \
-	$(DIR)/core_rom/rom_rtw_sta_mgt.c \
-	$(DIR)/core_rom/rom_rtw_ap.c \
+CSRC_HALCOMMON_V2 += \
+	$(DIR)/halcommon/hal_h2c_g2.c \
+	$(DIR)/halcommon/hal_recv_g2.c \
+	$(DIR)/halcommon/hal_suspend_g2.c \
+	$(DIR)/halcommon/hal_interrupt_g2.c
 
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit_g1.c \
-	$(DIR)/halcommon_rom/rom_hal_structs.c \
-	$(DIR)/halcommon_rom/rom_hal_recv.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c_g1.c \
-
-#nan
-CSRC_DRV += $(DIR)/nan/rtw_nan.c \
-	   $(DIR)/nan/rtw_nan_security.c \
-	   $(DIR)/nan/rtw_nan_disc_engine.c \
-	   $(DIR)/nan/rtw_nan_scheduler.c \
-	   $(DIR)/nan/rtw_nan_data_engine.c \
-	   $(DIR)/nan/rtw_nan_vendor_api.c
-
-#p2p
-CSRC_DRV += $(DIR)/p2p/rtw_p2p.c \
-
-CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_halinit.c \
-	$(DIR)/rtl8721da/wifi_hal_interrupt.c \
-	$(DIR)/rtl8721da/wifi_hal_recv.c \
-	$(DIR)/rtl8721da_rom/rom_wifi_hal_debug.c \
-
-ifeq ($(CONFIG_AS_INIC_NP), y)
-CSRC_DRV += $(DIR)/rtl8721da_rom/rom_wifi_patch.c
-endif
-
-CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_h2c.c \
-	$(DIR)/rtl8721da/wifi_hal_odm.c \
-	$(DIR)/rtl8721da/wifi_hal_dm.c \
-	$(DIR)/rtl8721da/wifi_hal_io.c \
-	$(DIR)/rtl8721da/wifi_hal_ops.c \
-	$(DIR)/rtl8721da/wifi_hal_mp.c \
-	$(DIR)/rtl8721da/wifi_hal_phycfg.c \
-	$(DIR)/rtl8721da/wifi_hal_txpower.c \
-	$(DIR)/rtl8721da/wifi_hal_rxdesc.c \
-	$(DIR)/rtl8721da/wifi_hal_txdesc.c \
-	$(DIR)/rtl8721da/wifi_hal_debug.c \
-	$(DIR)/rtl8721da/wifi_hal_odm.c \
-	$(DIR)/rtl8721da/wifi_hal_hci_intfs.c \
-	$(DIR)/rtl8721da/wifi_hal_mcc.c \
-	$(DIR)/rtl8721da/wifi_hal_speaker.c \
-	$(DIR)/rtl8721da/wifi_hal_nan_ctrl.c \
-	$(DIR)/rtl8721da/wifi_hal_p2pps.c \
-
-CSRC_DRV += $(DIR)/intf/wifi_intf_drv_to_mp_sdio.c \
-	$(DIR)/intf/wifi_intf_drv_to_nan.c	\
-
-CSRC_DRV += $(DIR)/halcommon/hal_nan.c
-CSRC_DRV += $(DIR)/halcommon/hal_nan_scheduler.c
-CSRC_DRV += $(DIR)/halcommon/hal_dig_phydm.c
-CSRC_DRV += $(DIR)/halcommon/hal_antdiv_phydm.c
-CSRC_DRV += $(DIR)/halcommon/hal_sta_config_phydm.c
-CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
-CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
-
-# in rom after green2
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_skbuff.c
-
-#relay mesh
-CSRC_DRV += $(DIR)/forward_mesh/relay/relay_intfs.c \
-	   $(DIR)/forward_mesh/relay/relay_configure.c \
-	   $(DIR)/forward_mesh/relay/relay_scan.c \
-	   $(DIR)/forward_mesh/relay/relay_handshake.c \
-	   $(DIR)/forward_mesh/relay/relay_connect.c \
-	   $(DIR)/forward_mesh/relay/relay_switch.c \
-	   $(DIR)/forward_mesh/rtl8721da/hal_relay.c
-
-CSRC_DRV += $(DIR)/rtl8721da/wifi_hal_xmit.c
-
-ifeq ($(findstring y, $(CONFIG_SINGLE_CORE_WIFI) $(CONFIG_KM4_AS_NP)), y)
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
+#############common rom files can not change #####################
+CORE_ROM_DP_START_ADD_DONT_CHANGE = \
+		$(DIR)/core_rom/rom_rtw_ieee80211.c \
 		$(DIR)/core_rom/rom_rtw_ieee80211_part2.c \
 		$(DIR)/core_rom/rom_rtw_probe.c \
 		$(DIR)/core_rom/rom_rtw_auth.c \
@@ -359,198 +152,148 @@ CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
 		$(DIR)/core_rom/rom_rtw_rate.c \
 		$(DIR)/core_rom/rom_rtw_chbw.c
 
-CSRC_DRV += $(DIR)/rtl8721da_rom/rom_wifi_hal_bcn.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_init.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_media_access.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_misc.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_rate.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_secure.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_tsf.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_txdesc.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_rxdesc.c \
-		$(DIR)/rtl8721da_rom/rom_wifi_hal_txpower.c
-endif
-endif
+HAL_ROM_DP_START_ADD_DONT_CHANGE += \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_bcn.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_init.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_media_access.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_misc.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_rate.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_secure.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_tsf.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_txdesc.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_rxdesc.c
 
-ifeq ($(CONFIG_AMEBASMART), y)
+HAL_ROM_G2_START_ADD_DONT_CHANGE += \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_ax.c \
+		$(DIR)/$(HALROMDIR)/rom_wifi_hal_debug.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_debug.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_xmit.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_xmit_g1.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_structs.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_recv.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_h2c.c \
+		$(DIR)/$(HALROMDIR)/rom_hal_h2c_g1.c \
+		$(DIR)/core_rom2024/rom_rtw_xmit.c \
+		$(DIR)/core_rom2024/rom_rtw_recv_part2.c \
+		$(DIR)/core_rom2024/rom_rtw_recv_reorder.c \
+		$(DIR)/core_rom2024/rom_rtw_mgnt.c \
+		$(DIR)/core_rom2024/rom_rtw_recv_defrag.c \
+		$(DIR)/core_rom2024/rom_rtw_state.c \
+		$(DIR)/core_rom2024/rom_rtw_sta_mgt.c \
+		$(DIR)/core_rom2024/rom_rtw_ap.c \
+		$(DIR)/core_rom/rom_rtw_skbuff.c \
+		$(DIR)/core_rom2024/rom_rtw_vht_part2.c
 ifneq ($(CONFIG_MP_SHRINK), y)
-CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_suspend.c
-CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
-
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ht.c \
-	$(DIR)/core_rom/rom_rtw_network.c \
-	$(DIR)/core_rom/rom_rtw_pmksa_cache_part2.c \
-	$(DIR)/core_rom/rom_rtw_11d.c \
-	$(DIR)/core_rom/rom_rtw_11d_part2.c \
-	$(DIR)/core_rom/rom_rtw_he_part2.c \
-	$(DIR)/core_rom/rom_rtw_shortcut.c \
-	$(DIR)/core_rom/rom_rtw_setkey.c \
-	$(DIR)/core_rom/rom_rtw_beacon_part2.c    \
-	$(DIR)/core_rom/rom_rtw_sitesurvey_report.c \
-	$(DIR)/core_rom/rom_rtw_ap_xmit.c \
-	$(DIR)/core_rom/rom_rtw_addba.c \
-	$(DIR)/core_rom/rom_rtw_80211w_part2.c \
-	$(DIR)/core_rom/rom_rtw_auth_part2.c  \
-	$(DIR)/core_rom/rom_rtw_action_part2.c  \
-	$(DIR)/core_rom/rom_rtw_join.c  \
-	$(DIR)/core_rom/rom_rtw_join_result.c  \
-	$(DIR)/core_rom/rom_rtw_assoc_part2.c \
-	$(DIR)/core_rom/rom_rtw_security_part2.c \
-
+HAL_ROM_G2_START_ADD_DONT_CHANGE += \
+		$(DIR)/core_rom2024/rom_rtw_ht.c \
+		$(DIR)/core_rom2024/rom_rtw_network.c \
+		$(DIR)/core_rom2024/rom_rtw_pmksa_cache_part2.c \
+		$(DIR)/core_rom2024/rom_rtw_11d.c \
+		$(DIR)/core_rom2024/rom_rtw_11d_part2.c \
+		$(DIR)/core_rom2024/rom_rtw_he_part2.c \
+		$(DIR)/core_rom2024/rom_rtw_shortcut.c \
+		$(DIR)/core_rom2024/rom_rtw_setkey.c \
+		$(DIR)/core_rom2024/rom_rtw_beacon_part2.c    \
+		$(DIR)/core_rom2024/rom_rtw_sitesurvey.c \
+		$(DIR)/core_rom2024/rom_rtw_sitesurvey_report.c \
+		$(DIR)/core_rom2024/rom_rtw_ap_xmit.c \
+		$(DIR)/core_rom2024/rom_rtw_addba.c \
+		$(DIR)/core_rom2024/rom_rtw_80211w_part2.c \
+		$(DIR)/core_rom2024/rom_rtw_auth_part2.c  \
+		$(DIR)/core_rom2024/rom_rtw_action_part2.c  \
+		$(DIR)/core_rom2024/rom_rtw_join.c  \
+		$(DIR)/core_rom2024/rom_rtw_join_result.c  \
+		$(DIR)/core_rom2024/rom_rtw_assoc_part2.c \
+		$(DIR)/core_rom2024/rom_rtw_security_part2.c
 endif
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_xmit.c \
-	$(DIR)/core_rom/rom_rtw_recv_part2.c \
-	$(DIR)/core_rom/rom_rtw_recv_reorder.c \
-	$(DIR)/core_rom/rom_rtw_mgnt.c \
-	$(DIR)/core_rom/rom_rtw_recv_defrag.c \
-	$(DIR)/core_rom/rom_rtw_state.c \
-	$(DIR)/core_rom/rom_rtw_sta_mgt.c \
-	$(DIR)/core_rom/rom_rtw_ap.c \
+#######################CONFIG_AMEBAX##############################
+ifeq ($(CONFIG_AMEBAX), y)
+CSRC_DRV += \
+	$(DIR)/intf/g6_intf/rle1331/wifi_intf_hal_to_g6_bb.c \
+	$(DIR)/intf/g6_intf/rle1331/wifi_intf_hal_to_g6_mac.c \
+	$(DIR)/phl/amebax_phl.c \
+	$(DIR)/rle1331/wifi_hal_nan_ctrl.c \
+	$(DIR)/rle1331/wifi_hal_beacon_xmit.c
 
-CSRC_DRV += $(DIR)/halcommon_rom/rom_hal_debug.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit.c \
-	$(DIR)/halcommon_rom/rom_hal_xmit_g1.c \
-	$(DIR)/halcommon_rom/rom_hal_structs.c \
-	$(DIR)/halcommon_rom/rom_hal_recv.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c.c \
-	$(DIR)/halcommon_rom/rom_hal_h2c_g1.c \
+CSRC_DRV += $(CSRC_HAL_PHYG6)
+CSRC_DRV += $(CSRC_HALCOMMON_V2)
+CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
+endif
 
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_80211w.c \
-	   $(DIR)/core_rom/rom_rtw_psk.c \
-	   $(DIR)/core/rtw_vht.c \
-	   $(DIR)/core_rom/rom_rtw_vht_part2.c \
-	   $(DIR)/core_rom/rom_rtw_rate.c \
-       $(DIR)/core_rom/rom_rtw_chbw.c \
+#######################CONFIG_AMEBAGREEN2##############################
+ifeq ($(CONFIG_AMEBAGREEN2), y)
+CSRC_DRV += \
+	$(DIR)/intf/g6_intf/wifi_intf_hal_to_g6_bb.c \
+	$(DIR)/intf/g6_intf/rtl8720f/wifi_intf_hal_to_g6_mac.c \
+	$(DIR)/phl/rtl8720f_phl.c \
+	$(DIR)/rtl8720f/wifi_hal_nan_ctrl.c
 
-#nan
-CSRC_DRV += $(DIR)/nan/rtw_nan.c \
-	   $(DIR)/nan/rtw_nan_security.c \
-	   $(DIR)/nan/rtw_nan_disc_engine.c \
-	   $(DIR)/nan/rtw_nan_scheduler.c \
-	   $(DIR)/nan/rtw_nan_data_engine.c \
-	   $(DIR)/nan/rtw_nan_vendor_api.c
+CSRC_DRV += $(CSRC_HAL_PHYG6)
+CSRC_DRV += $(CSRC_HALCOMMON_V1)
+endif
 
-#p2p
-CSRC_DRV += $(DIR)/p2p/rtw_p2p.c \
+#######################CONFIG_AMEBADPLUS##############################
+ifeq ($(CONFIG_AMEBADPLUS), y)
+ifeq ($(CONFIG_AS_INIC_NP), y)
+CSRC_DRV += $(DIR)/rtl8721da_rom/rom_wifi_patch.c
+endif
 
-CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_halinit.c \
-	$(DIR)/rtl8730e/wifi_hal_interrupt.c \
-	$(DIR)/rtl8730e/wifi_hal_recv.c \
+CSRC_DRV += \
+	$(DIR)/rtl8721da/wifi_hal_odm.c \
+	$(DIR)/rtl8721da/wifi_hal_speaker.c \
+	$(DIR)/hal_common/hal_speaker.c \
+	$(DIR)/rtl8721da/wifi_hal_nan_ctrl.c \
+	$(DIR)/rtl8721da/wifi_hal_p2pps.c \
+	$(DIR)/intf/wifi_intf_drv_to_mp_sdio.c \
+	$(DIR)/wifi_tunnel/rtl8721da/hal_wifi_tunnel.c
 
-CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_h2c.c \
-	$(DIR)/rtl8730e/wifi_hal_dm.c \
-	$(DIR)/rtl8730e/wifi_hal_io.c \
-	$(DIR)/rtl8730e/wifi_hal_ops.c \
-	$(DIR)/rtl8730e/wifi_hal_mp.c \
-	$(DIR)/rtl8730e/wifi_hal_phycfg.c \
-    $(DIR)/rtl8730e/wifi_hal_txpower.c	\
-	$(DIR)/rtl8730e/wifi_hal_rxdesc.c \
-	$(DIR)/rtl8730e/wifi_hal_txdesc.c \
-	$(DIR)/rtl8730e/wifi_hal_debug.c \
+CSRC_DRV += $(CSRC_HAL_PHYDM)
+CSRC_DRV += $(CSRC_HALCOMMON_V1)
+CSRC_DRV += $(CSRC_WIFI_TUNNEL_COMMON)
+CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(MCC_COMMON)
+
+ifeq ($(findstring y, $(CONFIG_SINGLE_CORE_WIFI) $(CONFIG_KM4_AS_NP)), y)
+CSRC_DRV += $(CORE_ROM_DP_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(HAL_ROM_DP_START_ADD_DONT_CHANGE)
+endif
+endif
+
+#######################CONFIG_AMEBALITE##############################
+ifeq ($(CONFIG_AMEBALITE), y)
+CSRC_DRV += \
+	$(DIR)/intf/g6_intf/wifi_intf_hal_to_g6_bb.c \
+	$(DIR)/intf/g6_intf/rtl8720e/wifi_intf_hal_to_g6_mac.c \
+	$(DIR)/phl/rtl8720e_phl.c \
+
+CSRC_DRV += $(CORE_ROM_DP_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(HAL_ROM_DP_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(CSRC_HAL_PHYG6)
+CSRC_DRV += $(CSRC_HALCOMMON_V1)
+endif
+
+#######################CONFIG_AMEBASMART##############################
+ifeq ($(CONFIG_AMEBASMART), y)
+CSRC_DRV += \
+	$(DIR)/intf/g6_intf/wifi_intf_hal_to_g6_bb.c \
+	$(DIR)/intf/g6_intf/rtl8730e/wifi_intf_hal_to_g6_mac.c \
+	$(DIR)/phl/rtl8730e_phl.c \
 	$(DIR)/rtl8730e/wifi_hal_power_save.c \
-	$(DIR)/rtl8730e/wifi_hal_hci_intfs.c \
 	$(DIR)/rtl8730e/wifi_hal_nan_ctrl.c	\
 	$(DIR)/rtl8730e/wifi_hal_speaker.c \
-	$(DIR)/rtl8730e/wifi_hal_p2pps.c \
+	$(DIR)/hal_common/hal_speaker.c \
+	$(DIR)/rtl8730e/wifi_hal_p2pps.c
 
-CSRC_DRV += $(DIR)/intf/wifi_intf_drv_to_nan.c	\
-	$(DIR)/intf/g6_intf/rtl8730e/wifi_intf_hal_to_g6_bb.c \
-	$(DIR)/intf/g6_intf/rtl8730e/wifi_intf_hal_to_g6_mac.c \
-
-CSRC_DRV += $(DIR)/phl/rtl8730e_phl.c
-
-CSRC_DRV += $(DIR)/rtl8730e_rom/rom_wifi_hal_ax.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_bcn.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_debug.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_init.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_media_access.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_misc.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_rate.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_secure.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_tsf.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_txdesc.c \
-	$(DIR)/rtl8730e_rom/rom_wifi_hal_rxdesc.c
-
-CSRC_DRV += $(DIR)/halcommon/hal_nan.c
-CSRC_DRV += $(DIR)/halcommon/hal_nan_scheduler.c
-CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
-
-CSRC_DRV += $(DIR)/core_rom/rom_rtw_ieee80211.c \
-	$(DIR)/core_rom/rom_rtw_probe.c \
-	$(DIR)/core_rom/rom_rtw_auth.c \
-	$(DIR)/core_rom/rom_rtw_action.c \
-	$(DIR)/core_rom/rom_rtw_ieee80211_part2.c \
-	$(DIR)/core_rom/rom_rtw_pmksa_cache.c \
-	$(DIR)/core_rom/rom_rtw_rf.c \
-	$(DIR)/core_rom/rom_rtw_recv.c \
-	$(DIR)/core_rom/rom_rtw_beacon.c \
-	$(DIR)/core_rom/rom_rtw_assoc.c \
-	$(DIR)/core_rom/rom_rtw_vht.c \
-	$(DIR)/core_rom/rom_rtw_he.c \
-	$(DIR)/core_rom/rom_rtw_skbuff.c \
-
-CSRC_DRV += $(DIR)/core/rtw_mbo.c \
-
-CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_xmit.c
-CSRC_DRV += $(DIR)/rtl8730e/wifi_hal_rf_onoff.c
-
+CSRC_DRV += $(CORE_ROM_DP_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(HAL_ROM_DP_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(CSRC_HAL_PHYG6)
+CSRC_DRV += $(CSRC_HALCOMMON_V1)
 endif
 
-ifeq ($(CONFIG_AMEBAGREEN2), y)
-CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_halinit.c \
-	$(DIR)/rtl8720f/wifi_hal_interrupt.c \
-	$(DIR)/rtl8720f/wifi_hal_suspend.c	\
-	$(DIR)/rtl8720f/wifi_hal_recv.c \
-
-CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_h2c.c \
-	$(DIR)/rtl8720f/wifi_hal_dm.c \
-	$(DIR)/rtl8720f/wifi_hal_ops.c \
-	$(DIR)/rtl8720f/wifi_hal_mp.c \
-	$(DIR)/rtl8720f/wifi_hal_phycfg.c \
-	$(DIR)/rtl8720f/wifi_hal_txpower.c \
-	$(DIR)/rtl8720f/wifi_hal_rxdesc.c \
-	$(DIR)/rtl8720f/wifi_hal_txdesc.c \
-	$(DIR)/rtl8720f/wifi_hal_debug.c \
-	$(DIR)/rtl8720f/wifi_hal_hci_intfs.c \
-	$(DIR)/rtl8720f/wifi_hal_mcc.c
-
-CSRC_DRV += $(DIR)/intf/g6_intf/rtl8720f/wifi_intf_hal_to_g6_bb.c \
-	$(DIR)/intf/g6_intf/rtl8720f/wifi_intf_hal_to_g6_mac.c
-
-CSRC_DRV += $(DIR)/nan/rtw_nan.c \
-	   $(DIR)/nan/rtw_nan_security.c \
-	   $(DIR)/nan/rtw_nan_disc_engine.c \
-	   $(DIR)/nan/rtw_nan_scheduler.c \
-	   $(DIR)/nan/rtw_nan_data_engine.c \
-	   $(DIR)/nan/rtw_nan_vendor_api.c
-CSRC_DRV += $(DIR)/intf/wifi_intf_drv_to_nan.c
-CSRC_DRV += $(DIR)/halcommon/hal_nan.c
-CSRC_DRV += $(DIR)/halcommon/hal_nan_scheduler.c
-CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_nan_ctrl.c
-
-CSRC_DRV += $(DIR)/halcommon/hal_mcc.c
-CSRC_DRV += $(DIR)/phl/rtl8720f_phl.c
-CSRC_DRV += $(DIR)/halcommon/hal_dig_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_antdiv_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_sta_config_g6.c
-CSRC_DRV += $(DIR)/halcommon/hal_h2c_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_recv_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_suspend_g1.c
-CSRC_DRV += $(DIR)/halcommon/hal_interrupt_g1.c
-
-CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_xmit.c
-CSRC_DRV += $(DIR)/rtl8720f/wifi_hal_rf_onoff.c
-
-CSRC_DRV += $(DIR)/core/rtw_vht.c \
-
-endif
-
+######################################################################
 OBJS_DRV = $(notdir $(CSRC_DRV:.c=.o))
 
 make_objs_drv: GLOBAL_CFLAGS += -DCOMPIL_LOG_LEVEL=RTK_LOG_INFO

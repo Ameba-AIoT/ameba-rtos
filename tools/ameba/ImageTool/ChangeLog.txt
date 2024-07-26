@@ -128,3 +128,5 @@ ChangeLog:
 20240425  v2.7.15 Rename chips with SoC names
 20240611 v2.7.16  (1) Support dpuls/lite download image to sram
                   (2) Fix checksum error in dplus uart download mode
+20240717 v2.7.17  (1) Fix download big size to flash error
+                  (2) Increase timeout value when erase flash

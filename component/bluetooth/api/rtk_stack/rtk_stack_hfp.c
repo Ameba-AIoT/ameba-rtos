@@ -50,7 +50,6 @@ rtk_bt_hfp_hf_conf_t hf_conf = {
 	RTK_BT_HFP_HF_CODEC_TYPE_CVSD
 };
 static uint8_t hfp_role;
-extern T_APP_DB app_db;
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
 
 

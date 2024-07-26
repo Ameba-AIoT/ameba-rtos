@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_api_config.h>
 
 #include <rtk_bt_def.h>
@@ -35,7 +35,7 @@ static int atcmd_ble_mesh_scheduler_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support scheduler client model.");
+	MESHSCHE_AT_PRINTK("Platform not support scheduler client model.");
 	return -1;
 #endif
 }
@@ -57,7 +57,7 @@ static int atcmd_ble_mesh_scheduler_action_get(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support scheduler client model.");
+	MESHSCHE_AT_PRINTK("Platform not support scheduler client model.");
 	return -1;
 #endif
 }
@@ -91,7 +91,7 @@ static int atcmd_ble_mesh_scheduler_action_set(int argc, char **argv)
 	return 0;
 #else
 	(void)argv;
-	AT_PRINTK("[ATBC] Platform not support scheduler client model.");
+	MESHSCHE_AT_PRINTK("Platform not support scheduler client model.");
 	return -1;
 #endif
 }
@@ -105,8 +105,11 @@ static const cmd_table_t mesh_scheduler_cmd_table[] = {
 
 int atcmd_bt_mesh_scheduler(int argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_scheduler_cmd_table, "[ATBC][mesh_scheduler]");
-	return 0;
+#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+	return atcmd_bt_excute(argc, argv, mesh_scheduler_cmd_table, "[AT+BLEMESHSCHEDULER]");
+#else
+	return atcmd_bt_excute(argc, argv, mesh_scheduler_cmd_table, "[ATBC][mesh_scheduler]");
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT
