@@ -969,16 +969,6 @@ void at_mqttpub(void *arg)
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
-	for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-		if (NULL != mqttCb->topic[i] && 0 == strcmp(mqttCb->topic[i], argv[topicIndex])) {
-			break;
-		}
-	}
-	if (MAX_MESSAGE_HANDLERS == i) {
-		RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Has not subscribed");
-		resultNo = MQTT_NOT_SUBSCRIBED_ERROR;
-		goto end;
-	}
 	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[topicIndex], len);
 	if (MQTT_OK != resultNo) {
 		goto end;

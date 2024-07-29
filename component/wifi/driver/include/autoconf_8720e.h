@@ -140,6 +140,8 @@
 #endif
 
 #ifdef CONFIG_MP_SHRINK
+#undef CONFIG_TWT
+#undef CONFIG_MCC_MODE
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W

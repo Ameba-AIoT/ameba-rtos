@@ -65,35 +65,19 @@ static inline uint16_t _rx_to_write_space(void)
 	return (g_uart->read_ptr + g_uart->ring_size - g_uart->write_ptr - 1) % g_uart->ring_size;
 }
 
-#if 0//mask for IAR warning(useless code); unmask it when you want use these functions
-static inline uint8_t _irq_tx_ready(void)
-{
-	return (UART_LineStatusGet(HCI_UART_DEV) & RUART_BIT_ETBEI);
-}
-
-static inline uint8_t _irq_rx_ready(void)
-{
-	return (UART_LineStatusGet(HCI_UART_DEV) & (RUART_BIT_ERBI | RUART_BIT_ETOI));
-}
-static inline uint8_t _irq_is_pending(void)
-{
-	return (_irq_tx_ready() | _irq_rx_ready());
-}
-#endif
-
 static inline void transmit_chars(void)
 {
 	uint16_t max_count = HCI_UART_TX_FIFO_SIZE;
 
 	if (!HCI_BT_KEEP_WAKE) {
-		/* acquire host wake up bt */
-		uint32_t data;
-
+		/* acquire host wake bt */
 		set_reg_value(0x42008250, BIT13 | BIT14, 3); // enable HOST_WAKE_BT No GPIO | HOST_WAKE_BT
 		while (1) {
-			data = HAL_READ32(0x42008254, 0) & 0x1F; // 0x42008254 [0:4]
-			if (data == 4) {
+			if ((HAL_READ32(0x42008254, 0) & (BIT4 | BIT3 | BIT2 | BIT1 | BIT0)) == 4) { // 0x42008254[4:0]
 				/* bt active */
+				break;
+			} else if ((HAL_READ32(0x42008208, 0) & BIT13) == 0) { // 0x42008208[13]
+				/* bt power off */
 				break;
 			}
 		}
@@ -106,7 +90,7 @@ static inline void transmit_chars(void)
 	}
 
 	if (!HCI_BT_KEEP_WAKE) {
-		/* release host wake up bt */
+		/* release host wake bt */
 		set_reg_value(0x42008250, BIT13 | BIT14, 0); // disable HOST_WAKE_BT No GPIO | HOST_WAKE_BT
 	}
 

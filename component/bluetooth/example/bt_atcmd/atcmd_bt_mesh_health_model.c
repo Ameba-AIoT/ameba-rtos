@@ -187,11 +187,7 @@ static const cmd_table_t mesh_health_cmd_table[] = {
 
 int atcmd_bt_mesh_health(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_health_cmd_table, "[AT+BLEMESHHEALTH]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_health_cmd_table, "[ATBC][mesh_health]");
-#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

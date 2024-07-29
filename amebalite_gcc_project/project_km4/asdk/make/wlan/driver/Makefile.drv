@@ -58,6 +58,7 @@ ifeq ($(CONFIG_AMEBAX), y)
 vpath %.c $(DIR)/rle1331 \
 		$(DIR)/rle1331 \
 		$(DIR)/rle1331_rom \
+		$(DIR)/intf/g6_intf \
 		$(DIR)/intf/g6_intf/rle1331 \
 		$(DIR)/../wpa_supplicant \
 		$(DIR)/../wpa_supplicant/src \
@@ -95,7 +96,7 @@ endif
 
 MCC_COMMON += \
 	$(DIR)/mcc/rtw_mcc.c \
-	$(DIR)/mcc/rtw_mcc_status.c \
+	$(DIR)/mcc/rtw_mcc_swch.c \
 	$(DIR)/mcc/rtw_mcc_frame.c \
 
 CSRC_WIFI_TUNNEL_COMMON += \
@@ -104,7 +105,8 @@ CSRC_WIFI_TUNNEL_COMMON += \
 	$(DIR)/wifi_tunnel/wifi_tunnel_scan.c \
 	$(DIR)/wifi_tunnel/wifi_tunnel_handshake.c \
 	$(DIR)/wifi_tunnel/wifi_tunnel_connect.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_switch.c
+	$(DIR)/wifi_tunnel/wifi_tunnel_switch.c \
+	$(DIR)/wifi_tunnel/wifi_tunnel_demo.c
 
 CSRC_HAL_PHYDM+= \
 	$(DIR)/halcommon/hal_dig_phydm.c \
@@ -210,9 +212,9 @@ endif
 #######################CONFIG_AMEBAX##############################
 ifeq ($(CONFIG_AMEBAX), y)
 CSRC_DRV += \
-	$(DIR)/intf/g6_intf/rle1331/wifi_intf_hal_to_g6_bb.c \
+	$(DIR)/intf/g6_intf/wifi_intf_hal_to_g6_bb.c \
 	$(DIR)/intf/g6_intf/rle1331/wifi_intf_hal_to_g6_mac.c \
-	$(DIR)/phl/amebax_phl.c \
+	$(DIR)/phl/rle1331_phl.c \
 	$(DIR)/rle1331/wifi_hal_nan_ctrl.c \
 	$(DIR)/rle1331/wifi_hal_beacon_xmit.c
 
@@ -291,6 +293,7 @@ CSRC_DRV += $(HAL_ROM_DP_START_ADD_DONT_CHANGE)
 CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
 CSRC_DRV += $(CSRC_HAL_PHYG6)
 CSRC_DRV += $(CSRC_HALCOMMON_V1)
+CSRC_DRV += $(MCC_COMMON)
 endif
 
 ######################################################################

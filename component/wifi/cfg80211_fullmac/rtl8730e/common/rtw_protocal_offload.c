@@ -639,7 +639,7 @@ ssize_t proc_set_offload_mdns_domain_name(struct file *file, const char __user *
 	}
 
 	if (buffer && !copy_from_user(tmp, buffer, count)) {
-		int num = sscanf(tmp, "%s", domain_name);
+		int num = sscanf(tmp, MAX_MDNS_DOMAIN_NAME_LEN_FOR_SSCAN, domain_name);
 		if (1 == num) {
 			pwrpriv->wowlan_war_offload_mdns_domain_name_len = strlen(domain_name);
 			memset(pwrpriv->wowlan_war_offload_mdns_domain_name, 0x00, MAX_MDNS_DOMAIN_NAME_LEN);

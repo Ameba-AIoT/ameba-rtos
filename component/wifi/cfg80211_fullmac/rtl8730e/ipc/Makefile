@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-
+ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_IPC
 ccflags-y += -I$(srctree)/../../firmware/source/component/wifi/driver/include
 ccflags-y += -I$(srctree)/../../firmware/source/component/wifi/api

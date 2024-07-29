@@ -94,5 +94,8 @@ _WEAK void wifi_set_user_config(void)
 
 	/* wifi speaker */
 	wifi_user_config.wifi_speaker_feature = 0;
+
+	/*Automatic channel selection*/
+	wifi_user_config.acs_en = 0;
 }
 

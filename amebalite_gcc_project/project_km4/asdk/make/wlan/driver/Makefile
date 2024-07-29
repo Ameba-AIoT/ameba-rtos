@@ -29,11 +29,14 @@ IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8721da_rom
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/amebadplus/include
 ifeq ($(CONFIG_INIC_INTF_IPC), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic/ipc
-else
+else ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic/sdio
+else ifeq ($(CONFIG_INIC_INTF_SPI), y)
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/spi
 endif
-IFLAGS               += -I$(FREERTOSDIR)/include/
-IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaDplus_KM0/
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/common
+IFLAGS               += -I$(FREERTOSDIR)/include/
+IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaDplus_KM0/
 endif
 
 ifeq ($(CONFIG_AMEBASMART), y)
@@ -109,6 +112,8 @@ lib: make_objs_drv make_objs_phy make_objs_btc COPY_RAM_OBJS
 ifeq ($(CONFIG_AS_INIC_NP),y)
 ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_sdio_np$(LIB_NAME_MP_SUFFIX).a
+else ifeq ($(CONFIG_INIC_INTF_SPI), y)
+	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_spi_np$(LIB_NAME_MP_SUFFIX).a
 else
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_np$(LIB_NAME_MP_SUFFIX).a
 endif

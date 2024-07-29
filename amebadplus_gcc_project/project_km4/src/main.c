@@ -189,7 +189,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 
-#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_SDIO_FULLMAC))
+#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC))
 	app_filesystem_init();
 #endif
 
@@ -204,7 +204,7 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
-#if defined(CONFIG_SDIO_FULLMAC) && defined(CONFIG_KM4_AS_NP)
+#if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC)) && defined(CONFIG_KM4_AS_NP)
 	wififw_task_create();
 #endif
 

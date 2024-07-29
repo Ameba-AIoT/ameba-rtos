@@ -23,13 +23,13 @@ include $(MENUCONFIG_RELA_PATH)/.config
 export MENUCONFIG_RELA_PATH MENUCONFIG_NAME IC_NAME
 
 ifeq ($(CONFIG_MP_INCLUDED),y)
-kr4_km4_app  := $(CURRENT_PATH)/project_km4/asdk/image_mp/kr4_km4_app_mp.bin
+app_all  := $(CURRENT_PATH)/project_km4/asdk/image_mp/kr4_km4_app_mp.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image_mp/km4_boot_all.bin
 else ifeq ($(CONFIG_DSP_WITHIN_IMG2_EN),y)
-kr4_km4_app  := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_dsp_app.bin
+app_all  := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_dsp_app.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin
 else
-kr4_km4_app	 := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_app.bin
+app_all	 := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_app.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin
 endif
 ota_all		 := $(CURRENT_PATH)/project_km4/asdk/image/OTA_All.bin
@@ -42,10 +42,11 @@ all: REMOVE_TARGETS KM4_TARGET_ALL KR4_TARGET_ALL
 		echo "$(km4_boot_all) Build Fail" ; \
 	fi
 
-	@if [ -f  $(kr4_km4_app) ]; \
-		then cp -f $(kr4_km4_app) ./; \
+	@if [ -f  $(app_all) ]; \
+		then cp -f $(app_all) ./; \
+		echo "$(app_all) Build Success" ; \
 	else \
-		echo "$(kr4_km4_app) Build Fail" ; \
+		echo "$(app_all) Build Fail" ; \
 	fi
 
 	@if [ -f  $(ota_all) ]; \

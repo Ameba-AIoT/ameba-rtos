@@ -95,9 +95,5 @@ static const cmd_table_t a2dp_cmd_table[] = {
 
 int atcmd_bt_a2dp_cmd(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, a2dp_cmd_table, "[AT+BTA2DP]");
-#else
-	return atcmd_bt_excute(argc, argv, a2dp_cmd_table, "[ATBC][a2dp]");
-#endif
 }

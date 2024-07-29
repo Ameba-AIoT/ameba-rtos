@@ -15,7 +15,6 @@ extern "C"
 #include <basic_types.h>
 #include <bt_debug.h>
 
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 
 #define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
 #define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
@@ -61,53 +60,6 @@ extern "C"
 
 #define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BTVENDOR] "fmt, ##args)
 
-#else /* !ATCMD_BT_CUT_DOWN */
-
-#define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBE] "fmt, ##args)
-#define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define GATTS_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define GATTC_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define BRGAP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTSDP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTA2DP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTAVRCP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTPBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
-#define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHSTACK_AT_PRINTK(fmt, args...) AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHDATA_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHCONFIG_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGOO_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHRMT_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHLL_AT_PRINTK(fmt, args...)      AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHLCTL_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHLHSL_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHLXYL_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHLLC_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHTIME_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHSCHE_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHSCENE_AT_PRINTK(fmt, args...)   AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGDTT_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGLE_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGPOO_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGPL_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGB_AT_PRINTK(fmt, args...)      AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGLO_AT_PRINTK(fmt, args...)     AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHGP_AT_PRINTK(fmt, args...)      AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHSENSOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
-#define MESHHEALTH_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTDEVICE_AT_PRINTK(fmt, args...)    AT_PRINTK("[ATBC] "fmt, ##args)
-#define BTGAP_AT_PRINTK(fmt, args...)       AT_PRINTK("[ATBC] "fmt, ##args)
-
-#define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[ATBV] "fmt, ##args)
-
-#endif /* !ATCMD_BT_CUT_DOWN */
 
 typedef int (*cmd_func_t)(int argc, char *argv[]);
 
@@ -184,6 +136,19 @@ int atcmd_bt_gmap(int argc, char *argv[]);
 int atcmd_bt_config(int argc, char *argv[]);
 
 int atcmd_bt_pts(int argc, char *argv[]);
+
+/* bt vendor cmd implementation */
+int atcmd_bt_tx_power_gain(int argc, char *argv[]);
+
+int atcmd_bt_hci_debug_enable(int argc, char *argv[]);
+
+int atcmd_bt_sleep_mode(int argc, char *argv[]);
+
+/*int atcmd_bt_ant(int argc, char *argv[]);*/
+
+int atcmd_bt_set_tx_power(int argc, char *argv[]);
+
+int atcmd_bt_sof_eof_ind(int argc, char *argv[]);
 
 /* device cmd impl */
 int atcmd_bt_device(int argc, char *argv[]);

@@ -25,7 +25,9 @@ static void llhw_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_l
 		api_info->api_id = id;
 
 		/* copy data */
-		memcpy((u8 *)(api_info + 1), param, param_len);
+		if (param) {
+			memcpy((u8 *)(api_info + 1), param, param_len);
+		}
 
 		/* send */
 		llhw_send_data(buf, buf_len);
@@ -704,7 +706,7 @@ int llhw_wifi_add_nan_func(struct rtw_nan_func_info_t *func, void *nan_func_poin
 	memcpy(ptr, func->rx_filters, func->num_rx_filters * sizeof(struct cfg80211_nan_func_filter));
 	ptr += func->num_rx_filters * sizeof(struct cfg80211_nan_func_filter);
 
-	memcpy(ptr, &nan_func_pointer, sizeof(void *));
+	memcpy(ptr, &nan_func_pointer, sizeof(nan_func_pointer));
 
 	llhw_send_event(INIC_API_NAN_ADD_FUNC, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 

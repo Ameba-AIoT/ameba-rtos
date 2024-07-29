@@ -449,7 +449,7 @@ void at_gmr(void *arg)
 
 	u32 buflen = 1024;
 	char *buf = rtos_mem_malloc(buflen);
-	ameba_rtos_get_version();
+	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);
 	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);

@@ -34,6 +34,7 @@ GNU_SCRIPT	= $(UTILITYDIR)/gnu_script
 FLASHDLIMGDIR	= $(GNU_SCRIPT)/acut_loader
 FLASHDLIMGDIR_KM0	= $(KM0_BUILDDIR)/asdk/gnu_utility/gnu_script/acut_loader
 
+WIFIMAKEDIR	= $(BASEDIR)/component/wifi/wifi_make
 
 OSDIR		= $(BASEDIR)/component/os
 FREERTOSDIR	= $(BASEDIR)/component/os/freertos/freertos_v10.5.1/Source
@@ -159,28 +160,14 @@ IFLAGS               += -I$(BASEDIR)/component/soc/common
 
 IFLAGS               += -I$(INCDIR)
 IFLAGS               += -I$(BASEDIR)/component/stdlib
-IFLAGS               += -I$(BASEDIR)/component/wifi/api
-IFLAGS               += -I$(BASEDIR)/component/wifi/simple_config
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fast_connect
+
 IFLAGS               += -I$(BASEDIR)/component/example
 IFLAGS               += -I$(BASEDIR)/component/usb/host/cdc_ecm/
 
-#WIFI
-IFLAGS               += -I$(BASEDIR)/component/wifi/common
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core_rom
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/halcommon_rom
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/include
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_reg/rtl8730e
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_reg/common
+include $(WIFIMAKEDIR)/Makefile.include.gen.wifi
+
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/common
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_cast
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf/g6_intf
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf/g6_intf/rtl8730e
-IFLAGS               += -I$(BASEDIR)/component/wifi/common/secure
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite/rom
+
 IFLAGS               += -I$(BASEDIR)/component/network
 IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/src/include
 #IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/src/include/lwip
@@ -190,16 +177,12 @@ IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/src/include/neti
 IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/port/realtek
 IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/port/realtek/freertos
 IFLAGS               += -I$(BASEDIR)/component/lwip/api
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/src
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/src/crypto
+
 IFLAGS               += -I$(BASEDIR)/component/os_dep
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/nan
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/p2p
+
+
 #IFLAGS               += -I$(BASEDIR)/component/network/http2/nghttp2-1.31.0/includes
 
-#INIC
-IFLAGS               += -I$(BASEDIR)/component/wifi/inic
-IFLAGS               += -I$(BASEDIR)/component/wifi/inic/ipc
 
 #RTSP
 IFLAGS               += -I$(BASEDIR)/component/network/rtsp

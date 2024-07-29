@@ -586,10 +586,6 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 
 int atcmd_bt_mesh_stack(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_stack_cmd_table, "[AT+BLEMESHSTACK]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_stack_cmd_table, "[ATBC][mesh_stack]");
-#endif
 }
 #endif // end of RTK_BLE_MESH_SUPPORT

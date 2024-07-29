@@ -68,5 +68,6 @@ struct inic_sdio {
 };
 
 extern struct inic_sdio inic_sdio_priv;
+extern struct hci_ops_t sdio_intf_ops;
 
 #endif  //_RTW_SDIO_H_

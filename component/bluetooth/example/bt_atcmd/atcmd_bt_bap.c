@@ -426,11 +426,7 @@ static const cmd_table_t bap_unicast_server_cmd_table[] = {
 int atcmd_bt_bap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEBAP]";
-#else
-	char tag[80] = "[ATBC][bap]";
-#endif
 	if (strcmp(argv[0], "broadcast") == 0) {
 		if (strcmp(argv[1], "source") == 0) {
 			BLEBAP_AT_PRINTK("Set bap broadcast source");

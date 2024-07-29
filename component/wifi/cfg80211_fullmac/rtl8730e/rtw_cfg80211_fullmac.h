@@ -90,10 +90,15 @@
 #include "inic_ipc.h"
 #include "rtw_llhw_msg.h"
 #include "rtw_llhw_ops.h"
-#else
+#elif defined(CONFIG_FULLMAC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
-#include "inic_sdio.h"
+#include "inic_dev.h"
 #include "rtw_sdio.h"
+#include "rtw_ioctl.h"
+#elif defined(CONFIG_FULLMAC_HCI_SPI)
+#include <linux/spi/spi.h>
+#include "inic_dev.h"
+#include "rtw_spi.h"
 #include "rtw_ioctl.h"
 #endif
 
@@ -106,6 +111,7 @@
 #include "rtw_functions.h"
 #include "rtw_cfgvendor.h"
 #include "rtw_proc.h"
+#include "rtw_acs.h"
 
 /******************************************************************/
 /********** Definitions between Linux and FULLMAC. **************/

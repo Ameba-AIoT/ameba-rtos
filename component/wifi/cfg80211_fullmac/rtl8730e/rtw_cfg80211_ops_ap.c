@@ -502,6 +502,7 @@ void cfg80211_rtw_ops_ap_init(void)
 	ops->dump_station = cfg80211_rtw_dump_station;
 	ops->change_bss = cfg80211_rtw_change_bss;
 	ops->set_txq_params = cfg80211_rtw_set_txq_params;
+	ops->dump_survey = cfg80211_rtw_dump_survey_params;
 #ifdef CONFIG_CFG80211_SME_OFFLOAD
 	/*
 	 * This is required by AP SAE, otherwise wpa_driver_nl80211_capa() would

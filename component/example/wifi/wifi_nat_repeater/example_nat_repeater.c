@@ -320,7 +320,7 @@ static void example_wlan_repeater_thread(void *param)
 	gw = WIFI_MAKEU32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 
-	printf("\n\r[WLAN_SCENARIO_EXAMPLE] Start DHCP server\n");
+	printf("\n\r[WLAN_REPEATER_EXAMPLE] Start DHCP server\n");
 	dhcps_init(&xnetif[1]);
 	rtos_time_delay_ms(1000);
 

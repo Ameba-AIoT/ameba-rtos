@@ -24,7 +24,7 @@ static const u32 rtw_cipher_suites[] = {
 	WIFI_CIPHER_SUITE_BIP_CMAC_256,
 };
 
-static const struct ieee80211_channel rtw_2ghz_channels[MAX_CHANNEL_NUM_2G] = {
+const struct ieee80211_channel rtw_2ghz_channels[MAX_CHANNEL_NUM_2G] = {
 	CHAN2G(1, 2412, 0),
 	CHAN2G(2, 2417, 0),
 	CHAN2G(3, 2422, 0),
@@ -41,7 +41,7 @@ static const struct ieee80211_channel rtw_2ghz_channels[MAX_CHANNEL_NUM_2G] = {
 	CHAN2G(14, 2484, 0),
 };
 
-static const struct ieee80211_channel rtw_5ghz_a_channels[MAX_CHANNEL_NUM_5G] = {
+const struct ieee80211_channel rtw_5ghz_a_channels[MAX_CHANNEL_NUM_5G] = {
 	CHAN5G(36, 0),	CHAN5G(40, 0),	CHAN5G(44, 0),	CHAN5G(48, 0),
 	CHAN5G(52, 0),	CHAN5G(56, 0),	CHAN5G(60, 0),	CHAN5G(64, 0),
 	CHAN5G(100, 0),	CHAN5G(104, 0),	CHAN5G(108, 0),	CHAN5G(112, 0),

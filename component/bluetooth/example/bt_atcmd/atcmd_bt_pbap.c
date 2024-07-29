@@ -166,9 +166,5 @@ static const cmd_table_t pbap_cmd_table[] = {
 
 int atcmd_bt_pbap_cmd(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, pbap_cmd_table, "[AT+BTPBAP]");
-#else
-	return atcmd_bt_excute(argc, argv, pbap_cmd_table, "[ATBC][pbap]");
-#endif
 }

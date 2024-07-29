@@ -2403,9 +2403,5 @@ static const cmd_table_t le_gap_cmd_table[] = {
 
 int atcmd_bt_le_gap(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[AT+BLEGAP]");
-#else
-	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[ATBC][le_gap]");
-#endif
 }

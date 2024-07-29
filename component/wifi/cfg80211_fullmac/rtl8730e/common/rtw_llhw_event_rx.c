@@ -19,6 +19,29 @@ static void llhw_event_scan_report_indicate(struct event_priv_t *event_priv, u32
 	return;
 }
 
+static void cfg80211_rtw_set_acs_info(u32 *param_buf)
+{
+	extern u8 chanel_idx_max;
+	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
+	extern struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
+
+	u8 idx = 0;
+	struct acs_mntr_rpt *acs_rpt = (struct acs_mntr_rpt *)&param_buf[0];
+
+	if (acs_rpt->channel == 0) {
+		memset(acs_mntr_rpt_tbl, 0, sizeof(struct acs_mntr_rpt)*MAX_CHANNEL_NUM);
+		return;
+	}
+
+	for (idx = 0; idx < MAX_CHANNEL_NUM; idx++) {
+		if (acs_rpt->channel == rtw_chnl_tbl[idx]) {
+			memcpy(&acs_mntr_rpt_tbl[idx], acs_rpt, sizeof(struct acs_mntr_rpt));
+			chanel_idx_max = idx;
+			break;
+		}
+	}
+}
+
 
 static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32 *param_buf)
 {
@@ -318,6 +341,9 @@ void llhw_event_task(struct work_struct *data)
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		cfg80211_rtw_scan_done_indicate(param_buf[0], NULL);
 #endif
+		break;
+	case INIC_API_IP_ACS:
+		cfg80211_rtw_set_acs_info(param_buf);
 		break;
 	case INIC_API_SCAN_EACH_REPORT_USER_CALLBACK:
 		//iiha_scan_each_report_cb_hdl(event_priv, p_recv_msg);

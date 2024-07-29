@@ -80,13 +80,6 @@ int at_printf(const char *fmt, ...);
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, fmt, ##args)
 #endif
 
-/* TODO */
-/* For compatibility with the old Bluetooth command, need cut down 4-letter command
-  into two parts, e.g. Cut the top "AT" of "ATBE=peripheral,1", into "BE=peripheral,1"
-  Because that, in function atcmd_handler ( ), the top 2-letter "AT" has been drawn already.
-  This should be deleted once the new format commands are ready. */
-#define ATCMD_BT_CUT_DOWN       1
-
 #ifdef CONFIG_MP_INCLUDED
 #ifdef CONFIG_AS_INIC_AP
 extern void inic_mp_command(char *token, unsigned int cmd_len, int show_msg);
