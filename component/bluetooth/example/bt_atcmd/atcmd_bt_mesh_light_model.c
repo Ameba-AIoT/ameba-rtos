@@ -1097,11 +1097,7 @@ static const cmd_table_t mesh_light_lightness_cmd_table[] = {
 
 int atcmd_bt_mesh_light_lightness(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[AT+BLEMESHLL]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_light_lightness_cmd_table, "[ATBC][mesh_light_lightness]");
-#endif
 }
 
 static const cmd_table_t mesh_light_ctl_cmd_table[] = {
@@ -1118,11 +1114,7 @@ static const cmd_table_t mesh_light_ctl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_ctl(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[AT+BLEMESHLCTL]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_light_ctl_cmd_table, "[ATBC][mesh_light_ctl]");
-#endif
 }
 
 static const cmd_table_t mesh_light_hsl_cmd_table[] = {
@@ -1142,11 +1134,7 @@ static const cmd_table_t mesh_light_hsl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_hsl(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[AT+BLEMESHLHSL]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_light_hsl_cmd_table, "[ATBC][mesh_light_hsl]");
-#endif
 }
 
 static const cmd_table_t mesh_light_xyl_cmd_table[] = {
@@ -1162,11 +1150,7 @@ static const cmd_table_t mesh_light_xyl_cmd_table[] = {
 
 int atcmd_bt_mesh_light_xyl(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[AT+BLEMESHLXYL]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_light_xyl_cmd_table, "[ATBC][mesh_light_xyl]");
-#endif
 }
 
 static const cmd_table_t mesh_light_lc_cmd_table[] = {
@@ -1183,10 +1167,6 @@ static const cmd_table_t mesh_light_lc_cmd_table[] = {
 
 int atcmd_bt_mesh_light_lc(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[AT+BLEMESHLLC]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_light_lc_cmd_table, "[ATBC][mesh_light_lc]");
-#endif
 }
 #endif // end of RTK_BLE_MESH_SUPPORT

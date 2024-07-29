@@ -57,6 +57,54 @@ func_exit:
 	return;
 }
 
+static void cfg80211_rtw_set_acs_info(struct inic_ipc_dev_req_msg *p_ipc_msg)
+{
+	extern u8 chanel_idx_max;
+	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
+	extern struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
+
+	u8 idx = 0;
+	struct device *pdev = NULL;
+	dma_addr_t dma_acs_rpt = 0;
+	struct acs_mntr_rpt *acs_rpt = phys_to_virt(p_ipc_msg->param_buf[0]);
+
+
+	if (!global_idev.event_ch) {
+		dev_err(global_idev.fullmac_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
+		goto func_exit;
+	}
+
+	pdev = global_idev.ipc_dev;
+	if (!pdev) {
+		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
+		goto func_exit;
+	}
+
+	dma_acs_rpt = dma_map_single(pdev, acs_rpt, sizeof(struct acs_mntr_rpt), DMA_FROM_DEVICE);
+	if (dma_mapping_error(pdev, dma_acs_rpt)) {
+		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+		goto func_exit;
+	}
+
+	if (acs_rpt->channel == 0) {
+		memset(acs_mntr_rpt_tbl, 0, sizeof(struct acs_mntr_rpt)*MAX_CHANNEL_NUM);
+		return;
+	}
+
+	for (idx = 0; idx < MAX_CHANNEL_NUM; idx++) {
+		if (acs_rpt->channel == rtw_chnl_tbl[idx]) {
+			memcpy(&acs_mntr_rpt_tbl[idx], acs_rpt, sizeof(struct acs_mntr_rpt));
+			chanel_idx_max = idx;
+			break;
+		}
+	}
+
+	dma_unmap_single(pdev, dma_acs_rpt, sizeof(struct acs_mntr_rpt), DMA_FROM_DEVICE);
+
+func_exit:
+	return;
+}
+
 static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, struct inic_ipc_dev_req_msg *p_ipc_msg)
 {
 	enum rtw_event_indicate event = (enum rtw_event_indicate)p_ipc_msg->param_buf[0];
@@ -461,6 +509,9 @@ void llhw_event_task(unsigned long data)
 		/* If user callback provided as NULL, param_buf[1] appears NULL here. Do not make ptr. */
 		/* https://jira.realtek.com/browse/AMEBAD2-1543 */
 		cfg80211_rtw_scan_done_indicate(p_recv_msg->param_buf[0], NULL);
+		break;
+	case INIC_API_IP_ACS:
+		cfg80211_rtw_set_acs_info(p_recv_msg);
 		break;
 	case INIC_API_SCAN_EACH_REPORT_USER_CALLBACK:
 		//iiha_scan_each_report_cb_hdl(event_priv, p_recv_msg);

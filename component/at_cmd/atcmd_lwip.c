@@ -1622,14 +1622,14 @@ void at_sktclient(void *arg)
 #endif
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Error parameter\r\n");
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 4 || argc > 5) {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Error parameter number\r\n");
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -2174,6 +2174,48 @@ end:
 }
 #endif
 
+void at_ipdomain(void *arg)
+{
+	int argc, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	struct in_addr addr;
+	struct hostent *host_entry = NULL;
+	char **addr_list;
+
+	if (arg == NULL) {
+		RTK_LOGI(NOTAG, "[at_ipdomain] Input parameter is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	argc = parse_param(arg, argv);
+	if (argc != 2) {
+		RTK_LOGW(NOTAG, "[at_ipdomain] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	memset(&addr, 0, sizeof(struct in_addr));
+
+	host_entry = gethostbyname(argv[1]);
+	if (host_entry != NULL) {
+		for (addr_list = host_entry->h_addr_list; *addr_list != NULL; addr_list++) {
+			memcpy(&addr, *addr_list, sizeof(struct in_addr));
+			at_printf("\r\n+IPDOMAIN:%s\r\n", inet_ntoa(addr));
+		}
+	} else {
+		RTK_LOGW(NOTAG, "[at_ipdomain] Domain Name '%s' Not be resolved\r\n", argv[1]);
+		error_no = 2;
+		goto end;
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf("\r\n%sOK\r\n", "+IPDOMAIN:");
+	} else {
+		at_printf("\r\n%sERROR:%d\r\n", "+IPDOMAIN:", error_no);
+	}
+}
+
 log_item_t at_lwip_items[ ] = {
 	{"+SKTSERVER", at_sktserver, {NULL, NULL}},
 	{"+SKTCLIENT", at_sktclient, {NULL, NULL}},
@@ -2186,6 +2228,7 @@ log_item_t at_lwip_items[ ] = {
 #if ENABLE_TCPIP_AUTOLINK
 	{"+SKTAUTOLINK", at_sktautolink, {NULL, NULL}},
 #endif
+	{"+IPDOMAIN", at_ipdomain, {NULL, NULL}},
 };
 
 void print_lwip_at(void)

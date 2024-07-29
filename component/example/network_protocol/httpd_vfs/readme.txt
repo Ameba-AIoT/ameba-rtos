@@ -29,11 +29,8 @@ Setup Guide
 				./mklittlefs -c html_demo/  -d 0 -b 4096 -p 1024 -s 131072 html.bin
 		   For AmebaDplus or AmebaLite, burn address is 0x08703000 and size is 128KB.
 		   For AmebaSmart, burn address is 0x08623000 and size is 128KB.
-		5. A httpd example thread is started automatically when booting, then you need to set board as ap with the following commands:
-			ATW3=SSID
-			ATW4=PASSWORD
-			ATW5=CHANNEL
-			ATWA
+		5. A httpd example thread is started automatically when booting, then you need to set board as ap with the following command:
+		   AT+WLSTARTAP=ssid,Test_AP,pw,12345678,sec,wpa2
 		6. Connect your device to board. 
 
 

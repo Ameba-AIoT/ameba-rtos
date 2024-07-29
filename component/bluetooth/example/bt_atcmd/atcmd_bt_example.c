@@ -561,12 +561,7 @@ static const cmd_table_t ble_iso_example_table[] = {
 
 int atcmd_ble_iso(int argc, char **argv)
 {
-#if defined(ATCMD_BT_CUT_DOWN) && ATCMD_BT_CUT_DOWN
-	atcmd_bt_excute(argc, &argv[0], ble_iso_example_table, "[ATBE][iso]");
-#else
-	atcmd_bt_excute(argc, &argv[0], ble_iso_example_table, "[AT+BTDEMO][iso]");
-#endif
-	return 0;
+	return atcmd_bt_excute(argc, &argv[0], ble_iso_example_table, "[AT+BTDEMO][iso]");
 }
 
 int bt_bap_main(uint8_t role, uint8_t enable);

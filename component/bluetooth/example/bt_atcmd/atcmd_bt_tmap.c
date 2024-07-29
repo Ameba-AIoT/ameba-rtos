@@ -106,11 +106,7 @@ static const cmd_table_t tmap_unicast_media_receiver_cmd_table[] = {
 int atcmd_bt_tmap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLETMAP]";
-#else
-	char tag[80] = "[ATBC][tmap]";
-#endif
 	if (strcmp(argv[0], "bmr") == 0) {
 		BLETMAP_AT_PRINTK("Set tmap broadcast media receiver cmd");
 		strcat(tag, "[bmr]");

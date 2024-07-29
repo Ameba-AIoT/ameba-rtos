@@ -9,7 +9,7 @@ struct inic_spi inic_spi_priv = {0};
 static irqreturn_t rtw_spi_rx_req_handler(int irq, void *context)
 {
 	if (inic_spi_priv.rx_pending) {
-		dev_err(&inic_spi_priv->spi_dev->dev, "%s: SPI RX_REQ is ongoing!!\n", __func__);
+		dev_err(&inic_spi_priv.spi_dev->dev, "%s: SPI RX_REQ is ongoing!!\n", __func__);
 	} else {
 		inic_spi_priv.rx_pending = true;
 
@@ -28,6 +28,7 @@ static irqreturn_t rtw_spi_dev_rdy_handler(int irq, void *context)
 	} else {
 		inic_spi_priv.dev_state = DEV_BUSY;
 	}
+	return IRQ_HANDLED;
 }
 
 int rtw_spi_setup_gpio(struct spi_device *spi)
@@ -88,7 +89,7 @@ static int rtw_spi_probe(struct spi_device *spi)
 	struct inic_spi *priv = &inic_spi_priv;
 	int rc = 0;
 
-	dev_info(&func->dev, "rtw_sdio_probe: vendor=0x%04x device=0x%04x class=0x%02x\n", func->vendor, func->device, func->class);
+	dev_info(&spi->dev, "%s\n", __func__);
 
 	priv->spi_dev = spi;
 	priv->rx_process_func = llhw_recv_process;
@@ -144,7 +145,7 @@ static const struct of_device_id inic_of_ids[] = {
 MODULE_DEVICE_TABLE(of, inic_of_ids);
 
 static const struct spi_device_id inic_spi_ids[] = {
-	{ "inic", NULL },
+	{ "inic", 0 },
 	{},
 };
 MODULE_DEVICE_TABLE(spi, inic_spi_ids);

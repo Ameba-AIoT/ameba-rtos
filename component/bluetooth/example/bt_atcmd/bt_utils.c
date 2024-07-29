@@ -163,7 +163,7 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 	return TRUE;
 }
 
-#if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART) && (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
+#if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART)
 
 void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str)
 {
@@ -206,5 +206,4 @@ void bt_at_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
 	}
 	at_printf("\r\n");
 }
-
 #endif

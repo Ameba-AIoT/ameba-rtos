@@ -144,6 +144,8 @@ void rtw_set_wowlan_offload_ctrl(u32 value);
 void rtw_proxy_init(void);
 void rtw_proxy_mdns_parms_init(u8 is_set_default);
 void rtw_wow_prepare_mdns_para(u8 *pframe, u32 *plen);
+
+#ifdef CONFIG_FULLMAC_HCI_SDIO
 u32 rtw_sdio_init(struct inic_sdio *priv);
 void rtw_sdio_deinit(struct inic_sdio *priv);
 int rtw_sdio_suspend(struct device *dev);
@@ -152,6 +154,9 @@ int rtw_resume_common(struct inic_sdio *priv);
 void rtw_sdio_init_txavailbd_threshold(struct inic_sdio *priv);
 u8 rtw_sdio_query_txbd_status(struct inic_sdio *priv);
 int rtw_sdio_alloc_irq(struct inic_sdio *priv);
+#elif defined (CONFIG_FULLMAC_HCI_SPI)
+
+
 #endif
 
 #ifdef CONFIG_SDIO_BRIDGE
@@ -160,5 +165,5 @@ void llhw_sdio_bridge_event_join_status_indicate(void *event_priv, u32 *param_bu
 void rtw_sdio_bridge_register_genl_family(void);
 void rtw_sdio_bridge_unregister_genl_family(void);
 #endif
-
+#endif
 #endif // __RTW_FUNCTIONS_H__

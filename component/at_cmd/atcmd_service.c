@@ -320,6 +320,8 @@ int mp_command_handler(char *cmd)
 		wext_private_command(cmd + len, 1, NULL);
 #endif
 #endif
+		RTK_LOGS(NOTAG, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
+		RTK_LOGS(NOTAG, "\r\n\n#\r\n"); //"#" is needed for mp tool
 		return TRUE;
 	}
 

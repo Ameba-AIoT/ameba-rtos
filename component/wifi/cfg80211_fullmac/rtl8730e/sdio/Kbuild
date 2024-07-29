@@ -1,9 +1,12 @@
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
-ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_SDIO
-ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)
+ccflags-$(CONFIG_FULLMAC_HCI_SDIO) += -DCONFIG_FULLMAC_HCI_SDIO
 
-fullmac_sdio-y := rtw_sdio_drvio.o \
+ccflags-y += -DCONFIG_FULLMAC
+ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src) -I$(src)/../common
+
+fullmac_sdio-$(CONFIG_FULLMAC_HCI_SDIO) := \
+		rtw_sdio_drvio.o \
 		rtw_sdio_ops.o \
 		rtw_sdio_probe.o \
 		rtw_sdio_init.o	\
@@ -20,14 +23,15 @@ fullmac_sdio-y := rtw_sdio_drvio.o \
 		../rtw_netdev_ops_p2p.o \
 		../rtw_cfgvendor.o \
 		../rtw_proc.o \
-		rtw_llhw_ops.o \
-		rtw_llhw_event_tx.o \
-		rtw_llhw_event_rx.o \
-		rtw_llhw_pkt_rx.o \
-		rtw_llhw_pkt_tx.o \
-		rtw_llhw_hci.o \
-		rtw_llhw_memory.o \
-		rtw_protocal_offload.o \
-		rtw_ioctl.o
+		../common/rtw_llhw_ops.o \
+		../common/rtw_llhw_event_tx.o \
+		../common/rtw_llhw_event_rx.o \
+		../common/rtw_llhw_pkt_rx.o \
+		../common/rtw_llhw_pkt_tx.o \
+		../common/rtw_llhw_hci.o \
+		../common/rtw_llhw_memory.o \
+		../common/rtw_protocal_offload.o \
+		../common/rtw_ioctl.o \
+		../rtw_acs.o
 
 obj-m += fullmac_sdio.o

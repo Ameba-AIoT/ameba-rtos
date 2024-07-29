@@ -108,11 +108,7 @@ static const cmd_table_t gmap_unicast_game_terminal_cmd_table[] = {
 int atcmd_bt_gmap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEGMAP]";
-#else
-	char tag[80] = "[ATBC][gmap]";
-#endif
 	if (strcmp(argv[0], "bgr") == 0) {
 		BLEGMAP_AT_PRINTK("Set gmap broadcast game receiver cmd");
 		strcat(tag, "[bgr]");

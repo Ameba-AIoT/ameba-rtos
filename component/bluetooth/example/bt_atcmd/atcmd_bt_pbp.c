@@ -53,11 +53,7 @@ static const cmd_table_t pbp_broadcast_sink_cmd_table[] = {
 int atcmd_bt_pbp_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEPBP][sink]";
-#else
-	char tag[80] = "[ATBC][pbp][sink]";
-#endif
 	if (strcmp(argv[0], "sink") == 0) {
 		BLEPBP_AT_PRINTK("Set pbp broadcast sink cmd");
 		ret = atcmd_bt_excute(argc - 1, &argv[1], pbp_broadcast_sink_cmd_table, tag);
