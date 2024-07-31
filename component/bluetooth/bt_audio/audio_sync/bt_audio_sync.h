@@ -39,7 +39,7 @@ typedef enum {
  *            - 0  : do presentation
  *            - 1: no need to do presentation
  */
-uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t* data, uint16_t size);
+uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, uint16_t size);
 
 /**
  * @fn        uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size)

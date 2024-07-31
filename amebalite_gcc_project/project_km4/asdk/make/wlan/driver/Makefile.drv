@@ -96,7 +96,8 @@ endif
 
 MCC_COMMON += \
 	$(DIR)/mcc/rtw_mcc.c \
-	$(DIR)/mcc/rtw_mcc_swch.c \
+	$(DIR)/mcc/rtw_mcc_nan.c \
+	$(DIR)/mcc/rtw_mcc_swch_new.c \
 	$(DIR)/mcc/rtw_mcc_frame.c \
 
 CSRC_WIFI_TUNNEL_COMMON += \

@@ -46,6 +46,7 @@ struct skb_raw_para {
 	unsigned char ac_queue;		/*0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO*/
 	unsigned char sgi;	/* 1 for enable data short */
 	unsigned char agg_en;
+	unsigned char device_id;	/* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. ignore when bmc */
 };
 
 struct sk_buff {

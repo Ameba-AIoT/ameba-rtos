@@ -377,10 +377,7 @@ int pr_audiorecord_config(msg_attrib_t *pattrib)
 		device = RTDEVICE_IN_MIC;
 		break;
 	case 2:
-		device = RTDEVICE_IN_HS_MIC;
-		break;
-	case 3:
-		device = RTDEVICE_IN_LINEIN;
+		device = RTDEVICE_IN_I2S;
 		break;
 	}
 
@@ -1073,11 +1070,7 @@ void pc_recorder_main(void *param)
 	rtos_time_delay_ms(1000);
 
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS))) {
-#if defined(RSICV_CORE_KR4)
-		printf("Please connect to WIFI use @ATW0=ssid, @ATW1=password, @ATWC\n");
-#else
-		printf("Please connect to WIFI use ATW0=ssid, ATW1=password, ATWC\n");
-#endif
+		printf("Please connect to WIFI\n");
 		rtos_time_delay_ms(1000);
 	}
 

@@ -27,6 +27,7 @@ extern "C"
 #define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTSPP] "fmt, ##args)
 #define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHID] "fmt, ##args)
 #define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHFP] "fmt, ##args)
+#define BTISO_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTISO] "fmt, ##args)
 #define BTPBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTHFP] "fmt, ##args)
 #define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEBAP] "fmt, ##args)
 #define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLECAP] "fmt, ##args)
@@ -260,6 +261,9 @@ int atcmd_bt_pbap_cmd(int argc, char *argv[]);
 
 /* le audio bap */
 int atcmd_bt_bap_cmd(int argc, char *argv[]);
+
+/* le audio iso */
+int atcmd_bt_iso_cmd(int argc, char *argv[]);
 
 /* le audio cap */
 int atcmd_bt_cap_cmd(int argc, char *argv[]);

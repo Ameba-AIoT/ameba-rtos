@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -41,13 +41,18 @@ static int atcmd_bt_le_iso_create_cis_by_cig(int argc, char **argv)
 static int atcmd_bt_le_iso_create_cis_by_handle(int argc, char **argv)
 {
 	(void)argc;
-	uint8_t cis_count;
+	uint8_t cis_id;
 	uint8_t cig_id;
+	uint8_t cis_count;
+	uint16_t conn_handle;
 	uint16_t cis_conn_handle;
-	cis_count = (uint8_t)str_to_int(argv[0]);
+	cis_id = (uint8_t)str_to_int(argv[0]);
 	cig_id = (uint8_t)str_to_int(argv[1]);
+	cis_count = (uint8_t)str_to_int(argv[2]);
+	conn_handle = (uint16_t)str_to_int(argv[3]);
+	cis_conn_handle = (uint16_t)str_to_int(argv[4]);
 
-	if (rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(cig_id, cis_count, &cis_conn_handle)) {
+	if (rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(cis_id, cig_id, cis_count, conn_handle, &cis_conn_handle)) {
 		BTISO_AT_PRINTK("LEISO cis create fail \r\n");
 		return -1;
 	}
@@ -56,30 +61,23 @@ static int atcmd_bt_le_iso_create_cis_by_handle(int argc, char **argv)
 	return 0;
 }
 
+extern uint16_t app_le_iso_demo_data_send_start(uint8_t op);
+
 static int atcmd_bt_le_iso_send_data(int argc, char **argv)
 {
 	(void)argc;
-	uint8_t *data = NULL;
-	rtk_bt_le_iso_data_send_info_t iso_data_t = {0};
+	uint8_t op;
+	char *action[] = {"stop", "start"};
 
-	iso_data_t.iso_conn_handle = (uint16_t)str_to_int(argv[0]);
-	iso_data_t.ts_flag = (bool)str_to_int(argv[1]);
-	iso_data_t.time_stamp = (uint32_t)str_to_int(argv[2]);
-	iso_data_t.pkt_seq_num = (uint16_t)str_to_int(argv[3]);
-	iso_data_t.data_len = (uint16_t)str_to_int(argv[4]);
-	data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, iso_data_t.data_len);
-	if (!data) {
-		BTISO_AT_PRINTK("LEISO data allocate fail \r\n");
+	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
+		BTISO_AT_PRINTK("Error: wrong value (%d) for iso data send !", op);
 		return -1;
 	}
-	if (false == hexdata_str_to_array(argv[5], data, iso_data_t.data_len)) {
+	if (app_le_iso_demo_data_send_start(op)) {
+		BTISO_AT_PRINTK("LEISO cis iso data %s send fail \r\n", action[op]);
 		return -1;
 	}
-	if (rtk_bt_le_iso_data_send(&iso_data_t)) {
-		BTISO_AT_PRINTK("LEISO cis iso data send fail \r\n");
-		return -1;
-	}
-	BTISO_AT_PRINTK("LEISO cis iso data send successfully \r\n");
+	BTISO_AT_PRINTK("LEISO cis iso data %s send successfully \r\n", action[op]);
 
 	return 0;
 }
@@ -185,22 +183,22 @@ static int atcmd_bt_le_bis_terminate_sync(int argc, char **argv)
 
 static const cmd_table_t iso_cis_initiator_cmd_table[] = {
 	{"create_cis_by_cig", atcmd_bt_le_iso_create_cis_by_cig,             4, 4},
-	{"create_cis_by_hdl", atcmd_bt_le_iso_create_cis_by_handle,          3, 3},
-	{"sned_data",         atcmd_bt_le_iso_send_data,                     7, 7},
+	{"create_cis_by_hdl", atcmd_bt_le_iso_create_cis_by_handle,          6, 6},
+	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},
 	{NULL,},
 };
 
 static const cmd_table_t iso_cis_acceptor_cmd_table[] = {
-	{"sned_data",         atcmd_bt_le_iso_send_data,                     7, 7},
+	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},
 	{NULL,},
 };
 
 static const cmd_table_t iso_bis_broadcaster_cmd_table[] = {
-	{"sned_data",         atcmd_bt_le_iso_send_data,                     7, 7},
+	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_bis_read_tx_sync,              2, 2},
 	{NULL,},
 };

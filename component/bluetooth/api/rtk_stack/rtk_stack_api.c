@@ -94,11 +94,6 @@ static void bt_stack_api_taskentry(void *ctx)
 						case IO_MSG_TYPE_BT_STATUS:
 							bt_stack_le_gap_handle_io_msg(io_msg.subtype, (void *)&io_msg.u.param);
 							break;
-#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-						case IO_MSG_TYPE_LE_MGR:
-							bt_stack_le_iso_handle_io_msg(&io_msg);
-							break;
-#endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 						case IO_MSG_TYPE_LE_AUDIO:
 							ble_audio_handle_msg(&io_msg);

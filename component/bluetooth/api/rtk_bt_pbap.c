@@ -30,7 +30,7 @@ uint16_t rtk_bt_pbap_connect(uint8_t *bd_addr)
 uint16_t rtk_bt_pbap_disconnect(uint8_t *bd_addr)
 {
 	uint16_t ret = 0;
- 
+
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}

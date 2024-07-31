@@ -547,21 +547,55 @@ int atcmd_bt_hid(int argc, char *argv[])
 	return 0;
 }
 
-int ble_cis_acceptor_main(int argc, char *argv[]);
-int ble_cis_initiator_main(int argc, char *argv[]);
-int ble_bis_broadcaster_main(int argc, char *argv[]);
-int ble_bis_receiver_main(int argc, char *argv[]);
-static const cmd_table_t ble_iso_example_table[] = {
-	{"acceptor",     ble_cis_acceptor_main,    2, 7},
-	{"initiator",    ble_cis_initiator_main,   2, 7},
-	{"broadcaster",  ble_bis_broadcaster_main, 2, 7},
-	{"receiver",     ble_bis_receiver_main,    2, 3},
-	{NULL,},
-};
-
+int bt_le_iso_main(uint8_t role, uint8_t enable);
 int atcmd_ble_iso(int argc, char **argv)
 {
-	return atcmd_bt_excute(argc, &argv[0], ble_iso_example_table, "[AT+BTDEMO][iso]");
+	(void)argc;
+	uint8_t role;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+
+	if (strcmp(argv[0], "bis") == 0) {
+		if (strcmp(argv[1], "broadcaster") == 0) {
+			/* RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR */
+			role = 0x03;
+			BTDEMO_AT_PRINTK("Set bis broadcaster");
+		} else if (strcmp(argv[1], "receiver") == 0) {
+			/* RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK */
+			role = 0x04;
+			BTDEMO_AT_PRINTK("Set bis receiver");
+		} else {
+			BTDEMO_AT_PRINTK("invalid bis role set");
+			return -1;
+		}
+	} else if (strcmp(argv[0], "cis") == 0) {
+		if (strcmp(argv[1], "initiator") == 0) {
+			/* RTK_BT_LE_AUDIO_BAP_ROLE_UNI_CLI */
+			role = 0x01;
+			BTDEMO_AT_PRINTK("Set cis initiator");
+		} else if (strcmp(argv[1], "acceptor") == 0) {
+			/* RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER */
+			role = 0x02;
+			BTDEMO_AT_PRINTK("Set cis acceptor");
+		} else {
+			BTDEMO_AT_PRINTK("invalid cis role set");
+			return -1;
+		}
+	} else {
+		BTDEMO_AT_PRINTK("invalid iso cis / bis set");
+		return -1;
+	}
+	if ((op = (uint8_t)str_to_int(argv[2])) > 2) {
+		BTDEMO_AT_PRINTK("Error: wrong value (%d) for iso demo !", op);
+		return -1;
+	}
+	if (bt_le_iso_main(role, op)) {
+		BTDEMO_AT_PRINTK("Error: iso example %s failed!", action[op]);
+		return -1;
+	}
+
+	BTDEMO_AT_PRINTK("iso example %s OK!", action[op]);
+	return 0;
 }
 
 int bt_bap_main(uint8_t role, uint8_t enable);
