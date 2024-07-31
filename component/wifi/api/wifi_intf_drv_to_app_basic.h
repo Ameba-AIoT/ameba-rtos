@@ -249,8 +249,8 @@ struct rtw_crypt_info {
 	u8 driver_cipher;
 	u8 transition_disable_exist;
 	u8 transition_disable_bitmap;
-	u8 camid: 7;	/**< camid is valid only when force_camid=1*/
-	u8 force_camid: 1;
+	u8 device_id : 7;	/* need convert to camid when force_cam_entry=1 */
+	u8 force_cam_entry : 1;	/* tx raw must set force_cam_entry=1 */
 	u8 rpt_mode;
 };
 
@@ -574,6 +574,7 @@ typedef struct _rtw_sw_statistics_t { /* software statistics for tx and rx*/
   */
 struct raw_frame_desc_t {
 	unsigned char wlan_idx;      /**< index of wlan interface which will transmit */
+	unsigned char device_id;     /**< index of peer device which as a rx role for receiving this pkt, and the bmc pkt(A1=0xff~0xff) ignore the field */
 	unsigned char *buf;          /**< poninter of buf where raw data is stored*/
 	unsigned short buf_len;      /**< the length of raw data*/
 	enum mgn_rate_type tx_rate;

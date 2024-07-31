@@ -16,27 +16,6 @@ extern "C"
 #endif
 
 /**
- * @defgroup  bt_mp_api BT MP APIs
- * @brief     BT MP test function APIs
- * @ingroup   BT_APIs
- * @{
- */
-
-/**
- * @brief     BT power on for MP test.
- * @param     None
- * @return    None
- */
-void rtk_bt_mp_power_on(void);
-
-/**
- * @brief     BT power off for MP test.
- * @param     None
- * @return    None
- */
-void rtk_bt_mp_power_off(void);
-
-/**
  * @typedef   rtk_bt_mp_phy_rx_t
  * @brief     Bluetooth LE PHY type for receiver.
  */
@@ -94,11 +73,32 @@ typedef enum {
 	RTK_BT_MP_PACKET_PAYLOAD_1100     = 0x01,    /**< Repeated '11110000' (in transmission order) sequence. */
 	RTK_BT_MP_PACKET_PAYLOAD_10       = 0x02,    /**< Repeated '10101010' (in transmission order) sequence. */
 	RTK_BT_MP_PACKET_PAYLOAD_PRBS15   = 0x03,    /**< PRBS15 sequence. */
-	RTK_BT_MP_PACKET_PAYLOAD_ALL1     = 0x04,    /**< Repeated '11111111' (in transmission order) sequence. . */
-	RTK_BT_MP_PACKET_PAYLOAD_ALL0     = 0x05,    /**< Repeated '00000000' (in transmission order) sequence. . */
-	RTK_BT_MP_PACKET_PAYLOAD_0011     = 0x06,    /**< Repeated '00001111' (in transmission order) sequence. . */
-	RTK_BT_MP_PACKET_PAYLOAD_01       = 0x07,    /**< Repeated '01010101' (in transmission order) sequence. . */
+	RTK_BT_MP_PACKET_PAYLOAD_ALL1     = 0x04,    /**< Repeated '11111111' (in transmission order) sequence. */
+	RTK_BT_MP_PACKET_PAYLOAD_ALL0     = 0x05,    /**< Repeated '00000000' (in transmission order) sequence. */
+	RTK_BT_MP_PACKET_PAYLOAD_0011     = 0x06,    /**< Repeated '00001111' (in transmission order) sequence. */
+	RTK_BT_MP_PACKET_PAYLOAD_01       = 0x07,    /**< Repeated '01010101' (in transmission order) sequence. */
 } rtk_bt_mp_packet_payload_t;
+
+/**
+ * @defgroup  bt_mp_api BT MP APIs
+ * @brief     BT MP test function APIs
+ * @ingroup   BT_APIs
+ * @{
+ */
+
+/**
+ * @brief     BT power on for MP test.
+ * @param     None
+ * @return    None
+ */
+void rtk_bt_mp_power_on(void);
+
+/**
+ * @brief     BT power off for MP test.
+ * @param     None
+ * @return    None
+ */
+void rtk_bt_mp_power_off(void);
 
 /**
  * @brief     BT power on for Fast MP test.

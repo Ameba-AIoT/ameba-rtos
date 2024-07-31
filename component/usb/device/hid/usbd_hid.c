@@ -403,7 +403,7 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	usbd_hid_t *hid = &hid_device;
 	UNUSED(dev);
 
-	if (hid->cb->received && (ep_addr == USBD_HID_INTERRUPT_OUT_EP_ADDRESS)) {
+	if (hid->cb->received && (ep_addr == USBD_HID_INTERRUPT_OUT_EP_ADDRESS) && (len > 0)) {
 		hid->cb->received(hid->intr_out_buf, len);
 	}
 

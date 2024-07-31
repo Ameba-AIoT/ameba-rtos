@@ -67,7 +67,7 @@ Call `wifi_cast_register_recv_cb()` to register receiving callback function. Cal
 
 ## Application Examples
 
-Examples of sending and receiving ESP-NOW data between two devices:
+Examples of sending and receiving WIFI-CAST data between two devices:
 * [control](wificast_control)
 * [security](wificast_secruity)
 * [uart](wificast_uart)

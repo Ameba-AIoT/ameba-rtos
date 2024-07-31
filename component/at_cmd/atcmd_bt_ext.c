@@ -481,6 +481,9 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_HFP             "+BTHFP"
 #define CMD_NAME_PBAP            "+BTPBAP"
 #endif /* RTK_BREDR_SUPPORT */
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+#define CMD_NAME_ISO             "+BLEISO"
+#endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 #define CMD_NAME_BAP             "+BLEBAP"
 #define CMD_NAME_CAP             "+BLECAP"
@@ -532,6 +535,9 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_HID,              atcmd_bt_hid_cmd,                               1, 23},
 	{CMD_NAME_HFP,              atcmd_bt_hfp_cmd,                               1, 8},
 	{CMD_NAME_PBAP,             atcmd_bt_pbap_cmd,                              1, 8},
+#endif
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+	{CMD_NAME_ISO,              atcmd_bt_iso_cmd,                               1, 9},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{CMD_NAME_BAP,              atcmd_bt_bap_cmd,                               3, 10},
@@ -589,7 +595,7 @@ static const cmd_table_t example_table[] = {
 	{"device_test", atcmd_bt_mesh_device_test, 2, 2},
 #endif
 #if defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST
-	{"iso",              atcmd_ble_iso,             3, 8},
+	{"iso",              atcmd_ble_iso,             4, 4},
 #endif
 #if defined(CONFIG_BT_A2DP) && CONFIG_BT_A2DP
 	{"a2dp",             atcmd_bt_a2dp,             3, 3},
@@ -782,6 +788,13 @@ static inline void fBTPBAP(void *arg)
 }
 
 #endif /* RTK_BREDR_SUPPORT */
+
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+static inline void fBLEISO(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_ISO, "[AT+BLEISO]");
+}
+#endif /* RTK_BLE_ISO_SUPPORT */
 
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 
@@ -1061,7 +1074,7 @@ static log_item_t at_bt_items[] = {
 #if defined(RTK_BLE_GATTC) && RTK_BLE_GATTC
 	{CMD_NAME_GATTC,            fBLEGATTC,            {NULL, NULL}},
 #endif
-	{CMD_NAME_GAP,				fBTGAP,               {NULL, NULL}},
+	{CMD_NAME_GAP,              fBTGAP,               {NULL, NULL}},
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{CMD_NAME_BR_GAP,           fBRGAP,               {NULL, NULL}},
 	{CMD_NAME_SDP,              fBTSDP,               {NULL, NULL}},
@@ -1072,6 +1085,9 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_HFP,              fBTHFP,               {NULL, NULL}},
 	{CMD_NAME_PBAP,             fBTPBAP,              {NULL, NULL}},
 #endif /* RTK_BREDR_SUPPORT */
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+	{CMD_NAME_ISO,              fBLEISO,              {NULL, NULL}},
+#endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{CMD_NAME_BAP,              fBLEBAP,              {NULL, NULL}},
 #if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
@@ -1119,7 +1135,7 @@ static log_item_t at_bt_items[] = {
 void print_bt_ext_at(void)
 {
 #if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
-	((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
+    ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
 	//Print nothing
 #else
 	int index;
@@ -1137,7 +1153,7 @@ void print_bt_ext_at(void)
 void at_bt_init(void)
 {
 #if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
-	((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
+    ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
 	(void)at_bt_items;
 #else
 	atcmd_service_add_table(at_bt_items, sizeof(at_bt_items) / sizeof(at_bt_items[0]));

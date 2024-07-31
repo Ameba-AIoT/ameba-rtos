@@ -24,6 +24,7 @@ COAP_DIR 			= $(DIR)/coap
 COMMON_DIR 			= $(DIR)/common
 CRYPTO_DIR 			= $(DIR)/crypto
 DIAGS_DIR 			= $(DIR)/diags
+INSTANCE_DIR 		= $(DIR)/instance
 MAC_DIR 			= $(DIR)/mac
 MESHCOP_DIR 		= $(DIR)/meshcop
 NET_DIR 			= $(DIR)/net
@@ -106,6 +107,8 @@ CSRC += $(RTK_OT_SUPPORT)/rtk_ot_alarm.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_crypto.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_uart.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_settings.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_multipan.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_ble.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_cli_uart.c
 
 include Makefile_spinel
