@@ -27,10 +27,14 @@ extern volatile UART_LOG_CTL		shell_ctl;
 
 rtos_sema_t	shell_sema = NULL;
 
-#ifdef SUPPORT_LOG_SERVICE
-char log_buf[UART_LOG_CMD_BUFLEN];
-extern void log_service(char *line_buf);
-extern void log_service_init(void);
+#ifdef CONFIG_SUPPORT_ATCMD
+char atcmd_buf[UART_LOG_CMD_BUFLEN];
+extern int atcmd_service(char *line_buf);
+extern void atcmd_service_init(void);
+#endif
+
+#ifdef CONFIG_MP_INCLUDED
+extern int mp_command_handler(char *cmd);
 #endif
 
 static monitor_cmd_handler shell_get_cmd(char *argv)
@@ -87,14 +91,9 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	DCache_Invalidate(addr, sizeof(UART_LOG_BUF));
 	_memcpy(pUartLogBuf, (u32 *)addr, sizeof(UART_LOG_BUF));
 
-	if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[0], LIB_INFO_CMD) == 0) {
-		ChipInfo_GetLibVersion();
-		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-	} else {
-		shell_ctl.ExecuteCmd = _TRUE;
-		if (shell_ctl.shell_task_rdy) {
-			shell_ctl.GiveSema();
-		}
+	shell_ctl.ExecuteCmd = _TRUE;
+	if (shell_ctl.shell_task_rdy) {
+		shell_ctl.GiveSema();
 	}
 }
 
@@ -115,7 +114,7 @@ void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 	ipc_send_message(ipc_dir, ipc_ch, &ipc_msg_temp);
 }
 
-void shell_loguratRx_dispatch(void)
+void shell_loguartRx_dispatch(void)
 {
 	u32 i, CpuId = 0;
 	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
@@ -153,8 +152,13 @@ void shell_loguratRx_dispatch(void)
 
 	if (CpuId == ALL_CPU_RECV) {
 		//1. logurat recv CPU Printf Info
-		ChipInfo_GetSocName();
-		ChipInfo_GetLibVersion();
+		u32 buflen = 1024;
+		char *buf = rtos_mem_malloc(buflen);
+		ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
+		RTK_LOGS(NOTAG, "%s", buf);
+		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+		RTK_LOGS(NOTAG, "%s", buf);
+		rtos_mem_free(buf);
 
 		//2. Other CPU Pintf Lib Info
 		LOGUART_WaitTxComplete();
@@ -167,14 +171,26 @@ void shell_loguratRx_dispatch(void)
 	}
 }
 #else
-#define shell_loguratRx_dispatch()
+void shell_loguartRx_dispatch(void)
+{
+	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
+	if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[0], LIB_INFO_CMD) == 0) {
+		u32 buflen = 1024;
+		char *buf = rtos_mem_malloc(buflen);
+		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+		RTK_LOGS(NOTAG, "%s", buf);
+		rtos_mem_free(buf);
+		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
+		shell_ctl.ExecuteCmd = _FALSE;
+	}
+}
 #endif
 
 static void shell_task_ram(void *Data)
 {
 	/* To avoid gcc warnings */
 	(void) Data;
-	u32 ret;
+	u32 ret = FALSE;
 	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
 
 	//4 Set this for UartLog check cmd history
@@ -185,24 +201,29 @@ static void shell_task_ram(void *Data)
 	do {
 		rtos_sema_take(shell_sema, RTOS_MAX_DELAY);
 
-		shell_loguratRx_dispatch();
+		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#ifdef SUPPORT_LOG_SERVICE
-			strcpy(log_buf, (const char *)pUartLogBuf->UARTLogBuf);
-#endif
-			ret = shell_cmd_exec_ram(pUartLogBuf->UARTLogBuf); /* UARTLogBuf will be changed */
-			/* normal for LOG service */
+#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_AS_INIC_AP)
+			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
+			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
+			ret = atcmd_service(atcmd_buf);
+
+#ifdef CONFIG_MP_INCLUDED
 			if (ret == FALSE) {
-#ifdef SUPPORT_LOG_SERVICE
-				log_service(log_buf);
+				ret = mp_command_handler((char *)pUartLogBuf->UARTLogBuf);
+			}
 #endif
+#endif
+			if (ret == FALSE) {
+				if (shell_cmd_exec_ram(pUartLogBuf->UARTLogBuf) == FALSE) {
+					RTK_LOGS(NOTAG, "\r\nunknown command '%s'", pUartLogBuf->UARTLogBuf);
+					RTK_LOGS(NOTAG, "\r\n\n#\r\n");
+				}
 			}
 
 			shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
 			shell_ctl.ExecuteCmd = _FALSE;
-
-			//pmu_set_sysactive_time(10000);
 		}
 
 	} while (1);
@@ -210,8 +231,8 @@ static void shell_task_ram(void *Data)
 
 void shell_init_ram(void)
 {
-#ifdef SUPPORT_LOG_SERVICE
-	log_service_init();
+#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_AS_INIC_AP)
+	atcmd_service_init();
 #endif
 
 #if defined ( __ICCARM__ )

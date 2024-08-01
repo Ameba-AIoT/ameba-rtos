@@ -13,7 +13,7 @@ DIR = $(BASEDIR)/component/at_cmd
 
 ifeq ($(CONFIG_WLAN),y)
 ifeq ($(findstring y, $(CONFIG_AS_INIC_AP) $(CONFIG_SINGLE_CORE_WIFI)), y)
-GLOBAL_CFLAGS += -DSUPPORT_LOG_SERVICE=1
+GLOBAL_CFLAGS += -DSUPPORT_ATCMD=1
 endif
 endif
 
@@ -31,11 +31,11 @@ else
 CSRC += $(APP_DIR)/rom/shell_rom.c
 endif
 
-ifeq ($(CONFIG_WLAN),y)
+ifeq ($(CONFIG_AS_INIC_AP),y)
 # note: apply new atcmd, add your config here!!!
 vpath %.c $(DIR)
 
-CSRC += $(DIR)/log_service.c \
+CSRC += $(DIR)/atcmd_service.c \
 		$(DIR)/atcmd_sys.c \
 		$(DIR)/atcmd_wifi.c \
 		$(DIR)/atcmd_mqtt.c \

@@ -22,9 +22,9 @@ ifeq ($(CONFIG_MP_INCLUDED),y)
 
 km4_boot_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km4_boot_all.bin
 ifneq ($(CONFIG_LINUX_FW_EN),y)
-km0_image2_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km0_km4_ca32_app_mp.bin
+app_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km0_km4_ca32_app_mp.bin
 else
-km0_image2_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km0_km4_app_mp.bin
+app_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km0_km4_app_mp.bin
 endif
 
 else
@@ -32,10 +32,10 @@ else
 km4_boot_all	:= $(CURRENT_PATH)/project_hp/asdk/image/km4_boot_all.bin
 km4_boot_all_sec	:= $(CURRENT_PATH)/project_hp/asdk/image/km4_boot_all_sec.bin
 ifneq ($(CONFIG_LINUX_FW_EN),y)
-km0_image2_all	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_ca32_app.bin
+app_all	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_ca32_app.bin
 km0_image2_all_sec	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_ca32_app_sec.bin
 else
-km0_image2_all	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_app.bin
+app_all	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_app.bin
 km0_image2_all_sec	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_app_sec.bin
 endif
 endif
@@ -50,10 +50,11 @@ all: REMOVE_TARGETS AP_TARGET_ALL LP_TARGET_ALL HP_TARGET_ALL
 		echo "$(km4_boot_all) Build Fail" ; \
 	fi
 
-	@if [ -f  $(km0_image2_all) ]; \
-		then cp -f $(km0_image2_all) ./; \
+	@if [ -f  $(app_all) ]; \
+		then cp -f $(app_all) ./; \
+		echo "$(app_all) Build Success" ; \
 	else \
-		echo "$(km0_image2_all) Build Fail" ; \
+		echo "$(app_all) Build Fail" ; \
 	fi
 
 	@if [ -f  $(ota_all) ]; \

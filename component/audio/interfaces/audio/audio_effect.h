@@ -13,6 +13,27 @@
  * limitations under the License.
  */
 
+/**
+ * @addtogroup Audio
+ * @{
+ *
+ * @brief Declares APIs for audio framework.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
+/**
+ * @file audio_effect.h
+ *
+ * @brief Provides APIs of the audio effect.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
 #ifndef AMEBA_FWK_MEDIA_AUDIO_AUDIO_LITE_AUDIO_EFFECT_MODULE_H
 #define AMEBA_FWK_MEDIA_AUDIO_AUDIO_LITE_AUDIO_EFFECT_MODULE_H
 

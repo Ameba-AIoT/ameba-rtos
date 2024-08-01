@@ -301,7 +301,7 @@ static u8 *usbd_verify_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (usbd_verify_dev.cb->get_config_desc != NULL) {
-			usbd_verify_dev.cb->get_config_desc(len);
+			buf = usbd_verify_dev.cb->get_config_desc(len);
 			usb_os_memcpy((void *)desc, (void *)buf, *len);
 			desc[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 			buf = desc;

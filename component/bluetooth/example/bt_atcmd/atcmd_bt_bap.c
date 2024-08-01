@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -426,11 +426,7 @@ static const cmd_table_t bap_unicast_server_cmd_table[] = {
 int atcmd_bt_bap_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEBAP]";
-#else
-	char tag[80] = "[ATBC][bap]";
-#endif
 	if (strcmp(argv[0], "broadcast") == 0) {
 		if (strcmp(argv[1], "source") == 0) {
 			BLEBAP_AT_PRINTK("Set bap broadcast source");

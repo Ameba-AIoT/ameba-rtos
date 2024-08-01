@@ -45,7 +45,6 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data);
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd);
-void bt_stack_le_iso_handle_io_msg(T_IO_MSG *p_io_msg);
 #endif
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 uint16_t bt_stack_br_gap_wait_ready(void);
@@ -226,16 +225,11 @@ static inline uint16_t bt_stack_sdp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd);
-void bt_stack_le_iso_handle_io_msg(T_IO_MSG *p_io_msg);
 #else
 static inline uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	(void)p_cmd;
 	return RTK_BT_OK;
-}
-static inline void bt_stack_le_iso_handle_io_msg(T_IO_MSG *p_io_msg)
-{
-	(void)p_io_msg;
 }
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT

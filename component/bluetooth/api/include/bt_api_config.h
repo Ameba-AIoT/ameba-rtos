@@ -216,10 +216,14 @@ extern "C"
 #error "Please choose a corret platform"
 #endif
 
-#if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
-#define RTK_BLE_ISO_CIS_SUPPORT             0
-#define RTK_BLE_ISO_BIS_SUPPORT             0
-#define RTK_BLE_ISO_SUPPORT                 (RTK_BLE_ISO_CIS_SUPPORT || RTK_BLE_ISO_BIS_SUPPORT)
+#if (defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT)
+#if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST)
+#define RTK_BLE_ISO_SUPPORT                 1
+#endif
+#if defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO
+#define RTK_BLE_AUDIO_SUPPORT               1
+#endif
+#endif /* RTK_BLE_5_2_SUPPORT */
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 #undef RTK_BLE_5_0_AE_ADV_SUPPORT
@@ -231,15 +235,6 @@ extern "C"
 #define RTK_BLE_5_0_PA_ADV_SUPPORT          1
 #define RTK_BLE_5_0_PA_SYNC_SUPPORT         1
 #endif
-
-#if (defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT) || \
-    (defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT) || \
-    (defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT) || \
-    (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT) || \
-    (defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT)
-#define RTK_BLE_AUDIO_SUPPORT 1
-#endif
-#endif /* RTK_BLE_5_2_SUPPORT */
 
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 #undef RTK_BLE_5_0_AE_ADV_SUPPORT
@@ -277,10 +272,10 @@ extern "C"
 #define RTK_BLE_MGR_LIB             0
 #endif
 
-#if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST) && (defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT) && \
+#if (defined(CONFIG_BT_ISO_TEST) && CONFIG_BT_ISO_TEST) && (defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT) && \
     ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT) || \
      (!defined(RTK_BLE_5_0_PA_ADV_SUPPORT) || !RTK_BLE_5_0_PA_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) || !RTK_BLE_5_0_PA_SYNC_SUPPORT))
-#error "Please enable AE, AE Scan, PA, PA Sync for corret platform when enable ISO BIS"
+#error "Please enable AE, AE Scan, PA, PA Sync for corret platform when enable ISO DEMO"
 #endif
 
 #if (defined(CONFIG_BT_LE_AUDIO) && CONFIG_BT_LE_AUDIO) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \

@@ -12,6 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * @addtogroup Audio
+ * @{
+ *
+ * @brief Declares APIs for audio framework.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
+/**
+ * @file audio_control.h
+ *
+ * @brief Provides APIs of the audio control, such as volume, mute, input devices.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
 #ifndef AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_CONTROL_H
 #define AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_CONTROL_H
 

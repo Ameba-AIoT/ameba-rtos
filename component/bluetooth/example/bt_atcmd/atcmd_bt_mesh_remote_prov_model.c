@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <atcmd_bt_impl.h>
 
@@ -104,11 +104,7 @@ static const cmd_table_t mesh_remote_prov_client_model_cmd_table[] = {
 
 int atcmd_bt_mesh_remote_prov_client_model(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_remote_prov_client_model_cmd_table, "[AT+BLEMESHRMT]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_remote_prov_client_model_cmd_table, "[ATBC][mesh_rmt]");
-#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

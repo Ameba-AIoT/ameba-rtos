@@ -8569,6 +8569,9 @@ uint16_t bt_stack_le_audio_act_handle(rtk_bt_cmd_t *p_cmd)
 
 async_handle:
 	if (ret) {
+		/*  if bt_stack_xxx failed, shall not wait for callback, and the pending p_cmd
+		    should be deleted here */
+		bt_stack_pending_cmd_delete(p_cmd);
 		p_cmd->ret = ret;
 		osif_sem_give(p_cmd->psem);
 	}

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -986,11 +986,7 @@ static const cmd_table_t mesh_config_cmd_table[] = {
 
 int atcmd_bt_mesh_config(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, mesh_config_cmd_table, "[AT+BLEMESHCONFIG]");
-#else
-	return atcmd_bt_excute(argc, argv, mesh_config_cmd_table, "[ATBC][mesh_config]");
-#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

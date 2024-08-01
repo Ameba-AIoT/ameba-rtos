@@ -249,8 +249,8 @@ struct rtw_crypt_info {
 	u8 driver_cipher;
 	u8 transition_disable_exist;
 	u8 transition_disable_bitmap;
-	u8 camid: 7;	/**< camid is valid only when force_camid=1*/
-	u8 force_camid: 1;
+	u8 device_id : 7;	/* wifi driver will convert to camid when force_cam_entry=1 */
+	u8 force_cam_entry : 1;	/* tx raw must set force_cam_entry=1 */
 	u8 rpt_mode;
 };
 
@@ -574,13 +574,14 @@ typedef struct _rtw_sw_statistics_t { /* software statistics for tx and rx*/
   */
 struct raw_frame_desc_t {
 	unsigned char wlan_idx;      /**< index of wlan interface which will transmit */
-	unsigned char *buf;          /**< poninter of buf where raw data is stored*/
-	unsigned short buf_len;      /**< the length of raw data*/
-	enum mgn_rate_type tx_rate;
-	unsigned char retry_limit;
-	unsigned char ac_queue;		/**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO*/
-	unsigned char sgi;		/* 1 for enable data short */
-	unsigned char agg_en;
+	unsigned char device_id;     /**< index of peer device which as a rx role for receiving this pkt, and the bmc pkt(A1=0xff~0xff) ignore the field */
+	unsigned char *buf;          /**< poninter of buf where raw data is stored */
+	unsigned short buf_len;      /**< the length of raw data */
+	enum mgn_rate_type tx_rate;  /**< tx rate of tx_raw frame */
+	unsigned char retry_limit;   /**< the number of tx retry when tx fail for tx_raw frame */
+	unsigned char ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
+	unsigned char sgi;           /**< 1 for enable data short */
+	unsigned char agg_en;        /**< aggregation of tx_raw frames. 1:enable; 0-disable */
 } ;
 
 /**
@@ -660,6 +661,14 @@ typedef struct _rtw_csa_parm_t {
 	unsigned char bc_action_cnt; /* indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1*/
 	ap_channel_switch_callback_t callback;
 } rtw_csa_parm_t;
+
+struct acs_mntr_rpt {
+	u16 meas_time; /*Measurements time on this channel, unit:ms*/
+	u16 busy_time; /*time that the primary channel was sensed busy, unit:ms*/
+	u16 tx_time; /*time spent transmitting frame on this channel, unit:ms */
+	s8 noise; /*unit: dbm*/
+	u8 channel;
+};
 
 //----------------------------
 /* ie format
@@ -1073,6 +1082,9 @@ struct wifi_user_conf {
 
 	/*STA mode will periodically send null packet to AP to keepalive, unit: second */
 	unsigned char keepalive_interval;
+
+	/*Automatic channel selection*/
+	unsigned char acs_en;
 };
 /** @} */
 #ifdef __cplusplus

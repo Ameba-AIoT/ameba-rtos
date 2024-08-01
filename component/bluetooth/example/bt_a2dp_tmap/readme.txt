@@ -68,56 +68,56 @@ GCC menuconfig
 A2DP sink + TMAP Unicast Media Sender Test ATCMD
 ~~~~~~~~~~~
 1.A2DP sink + TMAP unicast media sender demo
-    1.1 Enable a2dp sink + tmap unicast media sender             ATBE=a2dp_tmap,ums,1
-    1.2 Start ext scan                                           ATBC=bap_cmd,unicast,client,escan,1
-    1.3 Stop ext scan                                            ATBC=bap_cmd,unicast,client,escan,0
-    1.4 Start connect to the LE Audio Music Player               ATBC=le_gap,conn,0,00e04c8002e8
+    1.1 Enable a2dp sink + tmap unicast media sender             AT+BTDEMO=a2dp_tmap,ums,1
+    1.2 Start ext scan                                           AT+BLEBAP=unicast,client,escan,1
+    1.3 Stop ext scan                                            AT+BLEBAP=unicast,client,escan,0
+    1.4 Start connect to the LE Audio Music Player               AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
     1.5 Use Phone to connect to A2DP sink device named "a2dp tmap player"
-    1.6 Start unicast media stream                               ATBC=bap_cmd,unicast,client,start,0,1
+    1.6 Start unicast media stream                               AT+BLEBAP=unicast,client,start,0,1
     1.7 Play music on Phone
-    1.8 vcs client set mute by group                             ATBC=cap_cmd,commander,vcp,gmute,0,1
-    1.9 vcs client set unmute by group                           ATBC=cap_cmd,,commander,vcp,gmute,0,0
+    1.8 vcs client set mute by group                             AT+BLECAP=commander,vcp,gmute,0,1
+    1.9 vcs client set unmute by group                           AT+BLECAP=commander,vcp,gmute,0,0
     1.10 vcs client change volume by group
-    1.11 vcs client get volume state                             ATBC=cap_cmd,commander,vcp,gvolume,<group_id>,<volume_setting> -->group_id is 0, volume_setting is 0~255
-    1.12 vcs client get volume state                             ATBC=cap_cmd,commander,vcp,get,<conn_handle>
-    1.13 vcs client write opcode:Relative Volume Down            ATBC=cap_cmd,commander,vcp,write,<conn_handle>,0
-    1.14 vcs client write opcode: Relative Volume Up             ATBC=cap_cmd,commander,vcp,write,<conn_handle>,1
-    1.15 vcs client write opcode：Unmute/Relative Volume Down    ATBC=cap_cmd,commander,vcp,write,<conn_handle>,2
-    1.16 vcs client write opcode: Unmute/Relative Volume Up      ATBC=cap_cmd,commander,vcp,write,<conn_handle>,3
-    1.17 vcs client write opcode: Set Absolute Volume            ATBC=cap_cmd,commder,vcp,write,<conn_handle>,4,<volume_setting> 
-    1.18 vcs client write opcode:Unmute                          ATBC=cap_cmd,commander,vcp,write,<conn_handle>,5
-    1.19 vcs client write opcode: Mute                           ATBC=cap_cmd,commander,vcp,write,<conn_handle>,6
+    1.11 vcs client get volume state                             AT+BLECAP=commander,vcp,gvolume,<group_id>,<volume_setting> -->group_id is 0, volume_setting is 0~255
+    1.12 vcs client get volume state                             AT+BLECAP=commander,vcp,get,<conn_handle>
+    1.13 vcs client write opcode:Relative Volume Down            AT+BLECAP=commander,vcp,write,<conn_handle>,0
+    1.14 vcs client write opcode: Relative Volume Up             AT+BLECAP=commander,vcp,write,<conn_handle>,1
+    1.15 vcs client write opcode：Unmute/Relative Volume Down    AT+BLECAP=commander,vcp,write,<conn_handle>,2
+    1.16 vcs client write opcode: Unmute/Relative Volume Up      AT+BLECAP=commander,vcp,write,<conn_handle>,3
+    1.17 vcs client write opcode: Set Absolute Volume            AT+BLECAP=commander,vcp,write,<conn_handle>,4,<volume_setting>
+    1.18 vcs client write opcode:Unmute                          AT+BLECAP=commander,vcp,write,<conn_handle>,5
+    1.19 vcs client write opcode: Mute                           AT+BLECAP=commander,vcp,write,<conn_handle>,6
 
 2.TMAP unicast media receiver (peer device)  
     Please Enable "BLE AUDIO Telephony and Media Audio Profile" in Menuconfig
-    2.1  Enable TMAP unicast media receiver                      ATBE=tmap,umr,1
+    2.1  Enable TMAP unicast media receiver                      AT+BTDEMO=tmap,umr,1
 
 A2DP sink + TMAP Broadcast Media Sender Test ATCMD
 ~~~~~~~~~~~
 1.A2DP sink + TMAP broadcast media sender
-    1.1 enable:                                                  ATBE=a2dp_tmap,bms,1
-    1.2 Start ext scan                                           ATBC=bap_cmd,unicast,client,escan,1
-    1.3 Stop ext scan                                            ATBC=bap_cmd,unicast,client,escan,0
-    1.4 Start LE connect to the peer device                      ATBC=le_gap,conn,<address type>,<bd_addr>
+    1.1 enable:                                                  AT+BTDEMO=a2dp_tmap,bms,1
+    1.2 Start ext scan                                           AT+BLEBAP=unicast,client,escan,1
+    1.3 Stop ext scan                                            AT+BLEBAP=unicast,client,escan,0
+    1.4 Start LE connect to the peer device                      AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
     1.5 use Phone to connect BR/EDR device named "a2dp tmap player"
-    1.6 start broadcast:                                         ATBC=bap_cmd,broadcast,source,start
+    1.6 start broadcast:                                         AT+BLEBAP=broadcast,source,start
     1.7 Play music on the Phone
-    1.8 vcs client set mute by group                             ATBC=cap_cmd,commander,vcp,gmute,0,1
-    1.9 vcs client set unmute by group                           ATBC=cap_cmd,commander,vcp,gmute,0,0
+    1.8 vcs client set mute by group                             AT+BLECAP=commander,vcp,gmute,0,1
+    1.9 vcs client set unmute by group                           AT+BLECAP=commander,vcp,gmute,0,0
     1.10 vcs client change volume by group
-    1.11 vcs client get volume state                             ATBC=cap_cmd,commander,vcp,gvolume,<group_id>,<volume_setting> -->group_id is 0, volume_setting is 0~255
-    1.12 vcs client get volume state                             ATBC=cap_cmd,commander,vcp,get,<conn_handle>
-    1.13 vcs client write opcode:Relative Volume Down            ATBC=cap_cmd,commander,vcp,write,<conn_handle>,0
-    1.14 vcs client write opcode: Relative Volume Up             ATBC=cap_cmd,commander,vcp,write,<conn_handle>,1
-    1.15 vcs client write opcode：Unmute/Relative Volume Down    ATBC=cap_cmd,commander,vcp,write,<conn_handle>,2
-    1.16 vcs client write opcode: Unmute/Relative Volume Up      ATBC=cap_cmd,commander,vcp,write,<conn_handle>,3
-    1.17 vcs client write opcode: Set Absolute Volume            ATBC=cap_cmd,commder,vcp,write,<conn_handle>,4,<volume_setting> 
-    1.18 vcs client write opcode: Unmute                         ATBC=cap_cmd,commander,vcp,write,<conn_handle>,5
-    1.19 vcs client write opcode: Mute                           ATBC=cap_cmd,commander,vcp,write,<conn_handle>,6
+    1.11 vcs client get volume state                             AT+BLECAP=commander,vcp,gvolume,<group_id>,<volume_setting> -->group_id is 0, volume_setting is 0~255
+    1.12 vcs client get volume state                             AT+BLECAP=commander,vcp,get,<conn_handle>
+    1.13 vcs client write opcode:Relative Volume Down            AT+BLECAP=commander,vcp,write,<conn_handle>,0
+    1.14 vcs client write opcode: Relative Volume Up             AT+BLECAP=commander,vcp,write,<conn_handle>,1
+    1.15 vcs client write opcode：Unmute/Relative Volume Down    AT+BLECAP=commander,vcp,write,<conn_handle>,2
+    1.16 vcs client write opcode: Unmute/Relative Volume Up      AT+BLECAP=commander,vcp,write,<conn_handle>,3
+    1.17 vcs client write opcode: Set Absolute Volume            AT+BLECAP=commander,vcp,write,<conn_handle>,4,<volume_setting>
+    1.18 vcs client write opcode: Unmute                         AT+BLECAP=commander,vcp,write,<conn_handle>,5
+    1.19 vcs client write opcode: Mute                           AT+BLECAP=commander,vcp,write,<conn_handle>,6
 
 2.TMAP broadcast media receiver (peer device)
     Please Enable "BLE AUDIO Telephony and Media Audio Profile" in Menuconfig
-    2.1 Enable TMAP broadcast media receiver:                    ATBE=tmap,bmr,1
-    2.2 scan for the broadcast:                                  ATBC=bap_cmd,broadcast,sink,escan,1
-    2.3 PA sync to the broadcast stream:                         ATBC=bap_cmd,broadcast,sink,sync_start,<bd_addr type>,<bd_addr>  e.g. ATBC=bap_cmd,broadcast,sink,sync_start,0,00E04C800427
+    2.1 Enable TMAP broadcast media receiver:                    AT+BTDEMO=tmap,bmr,1
+    2.2 scan for the broadcast:                                  AT+BLEBAP=broadcast,sink,escan,1
+    2.3 PA sync to the broadcast stream:                         AT+BLEBAP=broadcast,sink,sync_start,<bd_addr type>,<bd_addr>  e.g. AT+BLEBAP=broadcast,sink,sync_start,0,00E04C800427
 

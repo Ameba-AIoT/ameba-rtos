@@ -237,12 +237,14 @@ void BOOT_ReasonSet(void)
 
 void BOOT_Enable_KM0(void)
 {
+#if 0 //annotation for VSCode Debug KM4 main program
 	/* halt KM0 for warm/wdg reset because of security */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_STATUS, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_STATUS) | LSYS_BIT_KM0_RST_HALT);
 
 	/* reset KM0 to avoid km0 in hardfault */
 	RCC_PeriphClockCmd(APBPeriph_KM0, APBPeriph_KM0_CLOCK, DISABLE);
 	RCC_PeriphClockCmd(APBPeriph_KM0, APBPeriph_KM0_CLOCK, ENABLE);
+#endif
 
 	/* clear KM0 halt */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_STATUS, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_STATUS) & ~LSYS_BIT_KM0_RST_HALT);

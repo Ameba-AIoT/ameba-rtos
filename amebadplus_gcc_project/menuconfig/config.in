@@ -80,10 +80,13 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG Shell CMD'
+bool "Enable ATCMD"			CONFIG_SUPPORT_ATCMD
+if [ "$CONFIG_SUPPORT_ATCMD" = "y" ]; then
 choice 'ATCMD IO Type'	"LOGUART	CONFIG_ATCMD_IO_LOGUART \
 						UART		CONFIG_ATCMD_IO_UART \
 						"
 bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+fi
 endmenu
 
 mainmenu_option next_comment
@@ -110,10 +113,11 @@ comment '< CONFIG WIFI'
 bool "Enable Wifi"                CONFIG_WLAN_MENU
 if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	choice 'INIC Mode'		"INIC_IPC	CONFIG_KM0_NP_KM4_AP \
+								SPI_FULLMAC		CONFIG_SPI_FULLMAC	\
 								SDIO_FULLMAC		CONFIG_SDIO_FULLMAC	\
 								SDIO_BRIDGE		CONFIG_SDIO_BRIDGE_FOR_KM4 \
 								"
-	if [ "$CONFIG_SDIO_FULLMAC" = "y" ]; then
+	if [ "$CONFIG_SDIO_FULLMAC" = "y" -o "$CONFIG_SPI_FULLMAC" = "y" ]; then
 		choice 'WIFI Driver Location'	"KM0	CONFIG_KM0_AS_NP \
 						KM4	CONFIG_KM4_AS_NP \
 						"
@@ -132,8 +136,12 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 y
 	fi
-	if [ "$CONFIG_SDIO_FULLMAC" = "y" ]; then
-		define_bool CONFIG_INIC_INTF_SDIO y
+	if [ "$CONFIG_SDIO_FULLMAC" = "y" -o "$CONFIG_SPI_FULLMAC" = "y" ]; then
+		if [ "$CONFIG_SDIO_FULLMAC" = "y" ]; then
+			define_bool CONFIG_INIC_INTF_SDIO y
+		else
+			define_bool CONFIG_INIC_INTF_SPI y
+		fi
 		if [ "$CONFIG_KM0_AS_NP" = "y" ]; then
 			define_bool CONFIG_WLAN_FOR_KM0 y
 			define_bool CONFIG_AS_INIC_NP_FOR_KM0 y

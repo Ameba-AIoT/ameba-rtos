@@ -5,7 +5,7 @@
  */
 
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_att_defs.h>
@@ -237,9 +237,5 @@ static const cmd_table_t gatts_cmd_table[] = {
 
 int atcmd_bt_gatts(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, gatts_cmd_table, "[AT+BLEGATTS]");
-#else
-	return atcmd_bt_excute(argc, argv, gatts_cmd_table, "[ATBC][gatts]");
-#endif
 }

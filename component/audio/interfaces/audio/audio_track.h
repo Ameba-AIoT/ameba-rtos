@@ -12,6 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * @addtogroup Audio
+ * @{
+ *
+ * @brief Declares APIs for audio framework.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
+/**
+ * @file audio_track.h
+ *
+ * @brief Provides APIs of the audio playback streaming.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
 #ifndef AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_TRACK_H
 #define AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_TRACK_H
 
@@ -43,9 +65,9 @@ typedef struct {
 	uint32_t channel_count;
 	/** format of track, supports
 	 * [mixer] RTAUDIO_FORMAT_PCM_32_BIT, RTAUDIO_FORMAT_PCM_16_BIT,
-	 * RTAUDIO_FORMAT_PCM_24_BIT_PACKED, RTAUDIO_FORMAT_PCM_FLOAT.
+	 * RTAUDIO_FORMAT_PCM_24_BIT, RTAUDIO_FORMAT_PCM_FLOAT.
 	 * [passthrough] RTAUDIO_FORMAT_PCM_32_BIT, RTAUDIO_FORMAT_PCM_16_BIT,
-	 * RTAUDIO_FORMAT_PCM_24_BIT_PACKED, RTAUDIO_FORMAT_PCM_8_24_BIT.
+	 * RTAUDIO_FORMAT_PCM_24_BIT, RTAUDIO_FORMAT_PCM_8_24_BIT.
 	 */
 	uint32_t format;
 	/** bufsize of track */
@@ -166,7 +188,7 @@ int32_t RTAudioTrack_Write(struct RTAudioTrack *track, const void *buffer, size_
  * RTAUDIO_FORMAT_PCM_16_BIT | 16bit data format.
  * RTAUDIO_FORMAT_PCM_32_BIT | 32bit data format.
  * RTAUDIO_FORMAT_PCM_FLOAT | float data format.
- * RTAUDIO_FORMAT_PCM_24_BIT_PACKED | 24bit data format.
+ * RTAUDIO_FORMAT_PCM_24_BIT | 24bit data format.
  * @param channel_count is the channel count of RTAudioTrack.
  * @return {@link RTAudioTrackConfig#buffer_bytes} size of mininum buffer bytes
  * @since 1.0
@@ -210,7 +232,7 @@ uint32_t RTAudioTrack_GetSampleRate(struct RTAudioTrack *track);
  * RTAUDIO_FORMAT_PCM_16_BIT | 16bit data format.
  * RTAUDIO_FORMAT_PCM_32_BIT | 32bit data format.
  * RTAUDIO_FORMAT_PCM_FLOAT | float data format.
- * RTAUDIO_FORMAT_PCM_24_BIT_PACKED | 24bit data format.
+ * RTAUDIO_FORMAT_PCM_24_BIT | 24bit data format.
  * @return Returns a value listed below: \n
  * int32_t | Description
  * ----------------------| -----------------------
@@ -233,7 +255,7 @@ int32_t RTAudioTrack_SetFormat(struct RTAudioTrack *track, uint32_t format);
  * RTAUDIO_FORMAT_PCM_16_BIT | 16bit data format.
  * RTAUDIO_FORMAT_PCM_32_BIT | 32bit data format.
  * RTAUDIO_FORMAT_PCM_FLOAT | float data format.
- * RTAUDIO_FORMAT_PCM_24_BIT_PACKED | 24bit data format.
+ * RTAUDIO_FORMAT_PCM_24_BIT | 24bit data format.
  * @since 1.0
  * @version 1.0
  */

@@ -370,7 +370,7 @@ uint16_t bt_stack_pbap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_PBAP_ACT_CONNECT:
 		ret = bt_stack_pbap_connect(p_cmd->param);
 		break;
-	
+
 	case RTK_BT_PBAP_ACT_DISCONNECT:
 		ret = bt_stack_pbap_disconnect(p_cmd->param);
 		break;

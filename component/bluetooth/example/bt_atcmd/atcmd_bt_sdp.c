@@ -9,7 +9,7 @@
 #include <osif.h>
 
 #include "platform_autoconf.h"
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -41,9 +41,5 @@ static const cmd_table_t sdp_cmd_table[] = {
 
 int atcmd_bt_sdp_cmd(int argc, char *argv[])
 {
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	return atcmd_bt_excute(argc, argv, sdp_cmd_table, "[AT+BTSDP]");
-#else
-	return atcmd_bt_excute(argc, argv, sdp_cmd_table, "[ATBC][sdp]");
-#endif
 }

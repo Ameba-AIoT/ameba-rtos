@@ -568,7 +568,7 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 		printf("\r\n[Wifi roaming plus]: Find a better ap on channel %d, rssi = %d, cur_rssi=%d\n", ap_list->channel, ap_list->rssi, cur_rssi);
 		return 1;
 	}
-	return -1;
+	return 0;
 }
 
 int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)

@@ -397,7 +397,7 @@ static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 
 	UNUSED(dev);
 
 	if (ep_addr == USBD_COMP_CDC_BULK_OUT_EP) {
-		if (cdc->cb->received) {
+		if ((cdc->cb->received) && (len > 0)) {
 			cdc->cb->received(cdc->bulk_out_buf, len);
 		}
 	}

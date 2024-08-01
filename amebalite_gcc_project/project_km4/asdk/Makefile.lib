@@ -109,7 +109,6 @@ ifeq ($(CONFIG_RPC_EN),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
 endif
 ifneq ($(CONFIG_AUDIO_RPC_AFE)$(CONFIG_AUDIO_LOCAL_AFE)$(CONFIG_AUDIO_FWK),)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 ifeq ($(CONFIG_RPC_EN),y)

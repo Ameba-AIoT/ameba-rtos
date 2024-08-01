@@ -20,58 +20,15 @@
 #include "timer_api.h"
 #include "ble_isoch_def.h"
 #include <gap_conn_le.h>
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
 #include "gap_cig_mgr.h"
-#endif
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 #include "gap_big_mgr.h"
 static uint16_t g_bt_stack_le_iso_bis_data_send_max_sdu = RTK_BLE_ISO_MAX_SDU_M_S;
-#endif
 rtk_bt_le_iso_role_t g_bt_stack_le_iso_role = RTK_BLE_ISO_ROLE_UNKNOWN;
 
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-static void *g_bt_stack_iso_io_msg_sem = NULL;//timer handler cannot alloc memory, so use sem
-#else
-static void            *g_bt_stack_iso_io_msg_list_mtx = NULL; //wait sem fail in same api task, so use list
-static struct list_head g_bt_stack_iso_io_msg_list_head = {0};
-#endif
-
-#if defined(CONFIG_MBED_API_EN) && CONFIG_MBED_API_EN
-#define RTK_BLE_ISO_USE_HW_GTIMER               0
-#define RTK_BLE_ISO_HW_GTIMER TIMER2
-#endif
-
-//for data send timer
-#if defined(RTK_BLE_ISO_USE_HW_GTIMER) && RTK_BLE_ISO_USE_HW_GTIMER
-static gtimer_t g_bt_stack_le_iso_data_send_timer;
-#else
-static void *g_bt_stack_le_iso_data_send_timer = NULL;
-#endif
-
 typedef struct {
-#if !defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) || !RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-	struct list_head  list;
-#endif
 	uint32_t param;         /*!< param of the CIS or BIS*/
-	void    *info;          /*!< point to io message info to be sent */
+	void *info;             /*!< point to io message info to be sent */
 } rtk_bt_le_iso_io_msg_buf_t;
-
-//for data send record
-typedef struct {
-	struct list_head  list;
-	uint16_t iso_conn_handle;       /*!< connection handle of the ISO*/
-	bool ts_flag;                   /*!< indicates whether contains time_stamp, true: contain time_stamp; false: not contain time_stamp */
-	uint32_t time_stamp;            /*!< a time in microseconds. time_stamp is used when @ref ts_flag is True */
-	uint16_t pkt_seq_num;           /*!< sequence number of the SDU */
-	uint32_t sdu_interval;          /*!< interval of the SDU */
-	bool is_last_flag;              /*!< last fragment flag if send data length is large than max sdu length*/
-	uint16_t data_len;              /*!< length of the SDU to be sent */
-	uint8_t *p_data;                /*!< point to data to be sent */
-	uint16_t frag_len;              /*!< length of the SDU to be sent */
-	uint8_t *p_frag;                /*!< point to data to be sent */
-} rtk_stack_iso_send_info_t;
-static void            *g_iso_send_info_list_mtx = NULL;
-static struct list_head g_iso_send_info_list_head = {0};
 
 T_APP_RESULT g_cis_request_ind_ret = APP_RESULT_PENDING;
 
@@ -138,7 +95,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 bool bt_stack_le_iso_init(void)
 {
 	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
+	/* cis part */
 	bool cis_flag = true;
 	cause = cig_mgr_init(RTK_BLE_CIG_MAX_NUM, RTK_BLE_CIS_MAX_NUM);
 	if (cause != GAP_CAUSE_SUCCESS) {
@@ -151,8 +108,7 @@ bool bt_stack_le_iso_init(void)
 		BT_LOGE("%s le_set_gap_param fail (cause = 0x%x)\r\n", __func__, cause);
 		return false;
 	}
-#endif
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
+	/* bis part */
 	uint8_t big_handle_num = (RTK_BLE_BIG_BROADCASTER_MAX_NUM > RTK_BLE_BIG_RECEIVER_MAX_NUM) ? RTK_BLE_BIG_BROADCASTER_MAX_NUM : RTK_BLE_BIG_RECEIVER_MAX_NUM;
 	uint8_t bis_num = (RTK_BLE_BIS_BROADCASTER_MAX_NUM > RTK_BLE_BIS_RECEIVER_MAX_NUM) ? RTK_BLE_BIS_BROADCASTER_MAX_NUM : RTK_BLE_BIS_RECEIVER_MAX_NUM;
 	BT_LOGD("%s big_handle_num = 0x%x, bis_num = 0x%x\r\n", __func__, big_handle_num, bis_num);
@@ -161,19 +117,7 @@ bool bt_stack_le_iso_init(void)
 		BT_LOGE("%s cig_mgr_init fail (cause = 0x%x)\r\n", __func__, cause);
 		return false;
 	}
-#endif
 
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-	INIT_LIST_HEAD(&g_iso_send_info_list_head);
-	osif_mutex_create(&g_iso_send_info_list_mtx);
-	if (false == osif_sem_create(&g_bt_stack_iso_io_msg_sem, 0, 1)) {
-		BT_LOGE("%s osif_sem_create g_bt_stack_iso_io_msg_sem fail\r\n", __func__);
-		return false;
-	}
-#else
-	INIT_LIST_HEAD(&g_bt_stack_iso_io_msg_list_head);
-	osif_mutex_create(&g_bt_stack_iso_io_msg_list_mtx);
-#endif
 	g_bt_stack_le_iso_role = RTK_BLE_ISO_ROLE_UNKNOWN;
 	gap_register_direct_cb(bt_stack_le_iso_data_direct_callback);
 
@@ -182,413 +126,69 @@ bool bt_stack_le_iso_init(void)
 
 void bt_stack_le_iso_deinit(void)
 {
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-	struct list_head *plist = NULL;
-	rtk_stack_iso_send_info_t *p_send_info_list = NULL;
-	osif_mutex_take(g_iso_send_info_list_mtx, 0xFFFFFFFF);
-	if (!list_empty(&g_iso_send_info_list_head)) {
-		plist = g_iso_send_info_list_head.next;
-		while (&g_iso_send_info_list_head != plist) {
-			p_send_info_list = (rtk_stack_iso_send_info_t *)plist;
-			if (p_send_info_list) {
-				osif_mem_free(p_send_info_list);
-				BT_LOGE("%s p_send_info_list 0x%08x not send, just free it here!\r\n", __func__, p_send_info_list);
-			}
-			plist = plist->next;
-		}
-	}
-	osif_mutex_give(g_iso_send_info_list_mtx);
-
-	osif_mutex_delete(g_iso_send_info_list_mtx);
-	g_iso_send_info_list_mtx = NULL;
-
-	if (g_bt_stack_iso_io_msg_sem) {
-		osif_sem_delete(g_bt_stack_iso_io_msg_sem);
-		g_bt_stack_iso_io_msg_sem = NULL;
-	}
-#else
-	struct list_head *plist = NULL;
-	rtk_bt_le_iso_io_msg_buf_t *p_iso_io_msg = NULL;
-	osif_mutex_take(g_bt_stack_iso_io_msg_list_mtx, 0xFFFFFFFF);
-	if (!list_empty(&g_bt_stack_iso_io_msg_list_head)) {
-		plist = g_bt_stack_iso_io_msg_list_head.next;
-		while (&g_bt_stack_iso_io_msg_list_head != plist) {
-			p_iso_io_msg = (rtk_bt_le_iso_io_msg_buf_t *)plist;
-			if (p_iso_io_msg) {
-				osif_mem_free(p_iso_io_msg);
-				BT_LOGE("%s p_iso_io_msg 0x%08x not send, just free it here!\r\n", __func__, p_iso_io_msg);
-			}
-			plist = plist->next;
-		}
-	}
-	osif_mutex_give(g_bt_stack_iso_io_msg_list_mtx);
-	osif_mutex_delete(g_bt_stack_iso_io_msg_list_mtx);
-	g_bt_stack_iso_io_msg_list_mtx = NULL;
-#endif
 	g_bt_stack_le_iso_role = RTK_BLE_ISO_ROLE_UNKNOWN;
 	gap_register_direct_cb(NULL);
 }
 
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
-{
-	UNUSED(info);
-	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
-	uint32_t time_stamp = 0;
-	struct list_head *plist = NULL;
-	rtk_stack_iso_send_info_t *p_stack_iso_send_info = NULL;
-	rtk_bt_cmd_t *p_cmd = NULL;
-	static uint16_t send_fail_count = 0;
-
-	//get the first send info node
-	osif_mutex_take(g_iso_send_info_list_mtx, 0xFFFFFFFF);
-	if (!list_empty(&g_iso_send_info_list_head)) {
-		plist = g_iso_send_info_list_head.next;
-		p_stack_iso_send_info = (rtk_stack_iso_send_info_t *)plist;
-	}
-	osif_mutex_give(g_iso_send_info_list_mtx);
-
-	if (!p_stack_iso_send_info) {
-		BT_LOGE("%s g_iso_send_info_list_head is empty\r\n", __func__);
-		return RTK_BT_ERR_POINTER_INVALID;
-	}
-
-	//ISO data send
-	time_stamp = (p_stack_iso_send_info->time_stamp + p_stack_iso_send_info->pkt_seq_num) * (p_stack_iso_send_info->sdu_interval * 1000);
-	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_stack_iso_send_info->p_frag=%08x, frag_len=%d, sdu_interval=%d\r\n",
-			__func__,
-			p_stack_iso_send_info->iso_conn_handle, p_stack_iso_send_info->pkt_seq_num, (unsigned int)time_stamp, p_stack_iso_send_info->p_frag,
-			p_stack_iso_send_info->frag_len, (int)p_stack_iso_send_info->sdu_interval);
-	BT_DUMPD("", p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
-	cause = gap_iso_send_data(p_stack_iso_send_info->p_frag,
-							  p_stack_iso_send_info->iso_conn_handle,
-							  p_stack_iso_send_info->frag_len,
-							  p_stack_iso_send_info->ts_flag,
-							  time_stamp,
-							  p_stack_iso_send_info->pkt_seq_num);
-	if (GAP_CAUSE_SUCCESS != cause) {
-		BT_LOGE("%s gap_iso_send_data (cause = 0x%x,iso_conn_handle = 0x%x)\r\n", __func__, cause, p_stack_iso_send_info->iso_conn_handle);
-		send_fail_count++;
-	}
-	p_stack_iso_send_info->pkt_seq_num++;
-
-	//send iso data send complete event to app after send the last fragment
-	if (p_stack_iso_send_info->is_last_flag) {
-		p_cmd = bt_stack_pending_cmd_search(RTK_BT_LE_ISO_ACT_ISO_DATA_SEND);
-		if (p_cmd) {
-			bt_stack_pending_cmd_delete(p_cmd);
-			p_cmd->ret = (send_fail_count == 0) ? GAP_CAUSE_SUCCESS : cause;
-			osif_sem_give(p_cmd->psem);
-		} else {
-			BT_LOGE("[%s] RTK_BT_LE_ISO_ACT_ISO_DATA_SEND: find no pending command \r\n", __func__);
-		}
-		send_fail_count = 0;
-	}
-	//remove and free the send info list node
-	osif_mutex_take(g_iso_send_info_list_mtx, 0xFFFFFFFF);
-	list_del_init(&p_stack_iso_send_info->list);
-	osif_mutex_give(g_iso_send_info_list_mtx);
-	if (p_stack_iso_send_info) {
-		osif_mem_free(p_stack_iso_send_info);
-		p_stack_iso_send_info = NULL;
-	}
-	//stop and delete time if g_iso_send_info_list_head is empty
-	if (list_empty(&g_iso_send_info_list_head)) {
-#if defined(RTK_BLE_ISO_USE_HW_GTIMER) && RTK_BLE_ISO_USE_HW_GTIMER
-		gtimer_stop(&g_bt_stack_le_iso_data_send_timer);
-		gtimer_deinit(&g_bt_stack_le_iso_data_send_timer);
-#else
-		if (false == osif_timer_stop(&g_bt_stack_le_iso_data_send_timer)) {
-			BT_LOGE("%s osif_timer_stop fail \r\n", __func__);
-		}
-		if (false == osif_timer_delete(&g_bt_stack_le_iso_data_send_timer)) {
-			BT_LOGE("%s osif_timer_delete fail \r\n", __func__);
-		}
-		g_bt_stack_le_iso_data_send_timer = NULL;
-#endif
-	}
-
-	return RTK_BT_OK;
-}
-#else
-
-static uint16_t bt_stack_le_iso_handle_io_msg_data_send(void *info)
-{
-	UNUSED(info);
-	T_GAP_CAUSE cause = (T_GAP_CAUSE)0;
-	rtk_bt_le_iso_data_send_info_t *send_info = NULL;
-	uint32_t time_stamp = 0;
-	rtk_bt_cmd_t *p_cmd = NULL;
-
-	if (!info) {
-		BT_LOGE("%s fail: param error\r\n", __func__);
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
-	send_info = (rtk_bt_le_iso_data_send_info_t *)info;
-	//ISO data send
-	time_stamp = (send_info->time_stamp + send_info->pkt_seq_num) * (send_info->sdu_interval * 1000);
-	BT_LOGD("%s: iso_conn_handle 0x%x pkt_seq_num 0x%x time_stamp = 0x%x,p_data=%08x, data_len=%d, sdu_interval=%d\r\n", __func__,
-			send_info->iso_conn_handle, send_info->pkt_seq_num, (unsigned int)time_stamp, send_info->p_data, send_info->data_len, send_info->sdu_interval);
-	BT_DUMPD("", send_info->p_data, send_info->data_len);
-	cause = gap_iso_send_data(send_info->p_data,
-							  send_info->iso_conn_handle,
-							  send_info->data_len,
-							  send_info->ts_flag,
-							  time_stamp,
-							  send_info->pkt_seq_num);
-	if (GAP_CAUSE_SUCCESS != cause) {
-		BT_LOGE("%s gap_iso_send_data (cause = 0x%x,iso_conn_handle = 0x%x)\r\n", __func__, cause, send_info->iso_conn_handle);
-	}
-	p_cmd = bt_stack_pending_cmd_search(RTK_BT_LE_ISO_ACT_ISO_DATA_SEND);
-	if (p_cmd) {
-		bt_stack_pending_cmd_delete(p_cmd);
-		p_cmd->ret = cause;
-		osif_sem_give(p_cmd->psem);
-	} else {
-		BT_LOGE("[%s] RTK_BT_LE_ISO_ACT_ISO_DATA_SEND: find no pending command \r\n", __func__);
-	}
-	return RTK_BT_OK;
-}
-#endif
-
-
-void bt_stack_le_iso_handle_io_msg(T_IO_MSG *p_io_msg)
-{
-	uint16_t subtype = 0;
-	rtk_bt_le_iso_io_msg_buf_t *io_msg_buf = NULL;
-
-	if (!p_io_msg) {
-		BT_LOGE("%s fail: param error\r\n", __func__);
-	}
-
-	subtype = p_io_msg->subtype;
-	io_msg_buf = (rtk_bt_le_iso_io_msg_buf_t *)p_io_msg->u.buf;
-
-	BT_LOGD("%s subtype=0x%x\r\n", __func__, subtype);
-	switch (subtype) {
-	case IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA: {
-		if (io_msg_buf->param & IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA_PARAM_CIS_BIT ||
-			io_msg_buf->param & IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA_PARAM_BIS_BIT) {
-			bt_stack_le_iso_handle_io_msg_data_send(io_msg_buf->info);
-		} else {
-			BT_LOGE("%s error param 0x%x\r\n", __func__, (unsigned int)io_msg_buf->param);
-		}
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-		if (g_bt_stack_iso_io_msg_sem) {
-			osif_sem_give(g_bt_stack_iso_io_msg_sem);
-		}
-#else
-		//get the first node
-		struct list_head *plist = NULL;
-		osif_mutex_take(g_bt_stack_iso_io_msg_list_mtx, 0xFFFFFFFF);
-		if (!list_empty(&g_bt_stack_iso_io_msg_list_head)) {
-			plist = g_bt_stack_iso_io_msg_list_head.next;
-			while (&g_bt_stack_iso_io_msg_list_head != plist) {
-				if (io_msg_buf == (rtk_bt_le_iso_io_msg_buf_t *)plist) {
-					list_del_init(&io_msg_buf->list);
-					if (io_msg_buf) {
-						BT_LOGD("%s free io_msg_buf 0x%08x\r\n", __func__, io_msg_buf);
-						osif_mem_free(io_msg_buf);
-						io_msg_buf = NULL;
-						break;
-					}
-				} else {
-					plist = plist->next;
-				}
-			}
-		}
-		osif_mutex_give(g_bt_stack_iso_io_msg_list_mtx);
-#endif
-	}
-	break;
-
-	default:
-		break;
-	}
-}
-
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-static void bt_stack_le_iso_sdu_interval_timeout_handler(void *arg)
-{
-	UNUSED(arg);
-	rtk_bt_le_iso_io_msg_buf_t io_msg_buf = {0};
-
-	//restart timer if g_iso_send_info_list_head is not empty
-	if (!list_empty(&g_iso_send_info_list_head)) {
-#if defined(RTK_BLE_ISO_USE_HW_GTIMER) && RTK_BLE_ISO_USE_HW_GTIMER
-		//HW Gtimer start period timer
-#else
-		if (false == osif_timer_start(&g_bt_stack_le_iso_data_send_timer)) {
-			BT_LOGE("%s osif_timer_start fail\r\n", __func__);
-		}
-#endif
-	}
-	if (g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_CIS_INITIATOR || g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_CIS_ACCEPTOR) {
-		io_msg_buf.param |= IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA_PARAM_CIS_BIT;
-	} else if (g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_BIS_BROADCASTER) {
-		io_msg_buf.param |= IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA_PARAM_BIS_BIT;
-	} else {
-		BT_LOGE("%s error iso role = 0x%x\r\n", __func__, g_bt_stack_le_iso_role);
-	}
-	bt_stack_msg_send(IO_MSG_TYPE_LE_MGR, IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA, (void *)&io_msg_buf);
-
-	if (g_bt_stack_iso_io_msg_sem) {
-		osif_sem_take(g_bt_stack_iso_io_msg_sem, 1000);
-	}
-}
-#endif
-
-static uint16_t bt_stack_le_iso_get_max_sdu_m_to_s(uint16_t iso_conn_handle)
-{
-	uint16_t max_sdu_m_to_s = RTK_BLE_ISO_MAX_SDU_M_S;
-	uint16_t cis_max_sdu_m_to_s = 0, bis_max_sdu_m_to_s = 0;
-	if (g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_CIS_INITIATOR || g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_CIS_ACCEPTOR) {
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
-		T_ISOCH_INFO info = {0};
-		if (true != cig_mgr_get_isoch_info(iso_conn_handle, &info)) {
-			BT_LOGE("%s cig_mgr_get_isoch_info fail (iso_conn_handle = 0x%x)\r\n", __func__, iso_conn_handle);
-			return RTK_BT_ERR_LOWER_STACK_API;
-		}
-
-		BT_LOGD("%s max_sdu_m_to_s = 0x%x\r\n", __func__, info.max_sdu_m_to_s);
-		BT_LOGD("%s max_sdu_s_to_m = 0x%x\r\n", __func__, info.max_sdu_s_to_m);
-		BT_LOGD("%s sdu_interval_m_to_s = 0x%x\r\n", __func__, (unsigned int)info.sdu_interval_m_to_s);
-		BT_LOGD("%s sdu_interval_s_to_m = 0x%x\r\n", __func__, (unsigned int)info.sdu_interval_s_to_m);
-		BT_LOGD("%s max_pdu_m_to_s = 0x%x\r\n", __func__, info.max_pdu_m_to_s);
-		BT_LOGD("%s max_pdu_s_to_m = 0x%x\r\n", __func__, info.max_pdu_s_to_m);
-		BT_LOGD("%s iso_interval = 0x%x\r\n", __func__, info.iso_interval);
-		BT_LOGD("%s role = 0x%x\r\n", __func__, info.role);
-		cis_max_sdu_m_to_s =  info.max_sdu_m_to_s;
-#endif
-	} else if (g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_BIS_BROADCASTER) {
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
-		(void)iso_conn_handle;
-		bis_max_sdu_m_to_s = g_bt_stack_le_iso_bis_data_send_max_sdu; //max sdu is same in one BIG
-#endif
-	} else {
-		BT_LOGE("%s error iso role = 0x%x\r\n", __func__, g_bt_stack_le_iso_role);
-	}
-
-	if (cis_max_sdu_m_to_s && bis_max_sdu_m_to_s) {
-		max_sdu_m_to_s = (cis_max_sdu_m_to_s < bis_max_sdu_m_to_s) ? cis_max_sdu_m_to_s : bis_max_sdu_m_to_s;
-	} else if (cis_max_sdu_m_to_s || bis_max_sdu_m_to_s) { //someone is 0
-		max_sdu_m_to_s = (cis_max_sdu_m_to_s > bis_max_sdu_m_to_s) ? cis_max_sdu_m_to_s : bis_max_sdu_m_to_s;
-	}
-
-	return max_sdu_m_to_s;
-}
 
 static uint16_t bt_stack_le_iso_data_send(void *data)
 {
-	uint16_t max_sdu_m_to_s = 0;
-	rtk_bt_le_iso_data_send_info_t *send_info = NULL;
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-	rtk_stack_iso_send_info_t *p_stack_iso_send_info = NULL;
-	bool ret = true;
-#endif
+	T_GAP_CAUSE cause = GAP_CAUSE_SUCCESS;
+	rtk_bt_le_iso_data_send_info_t *param = NULL;
 
 	if (!data) {
 		BT_LOGE("%s fail: param error\r\n", __func__);
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
+	param = (rtk_bt_le_iso_data_send_info_t *)data;
 
-	//send_info = *(rtk_bt_le_iso_data_send_info_t **)data;
-	send_info = (rtk_bt_le_iso_data_send_info_t *)data;
-	max_sdu_m_to_s = bt_stack_le_iso_get_max_sdu_m_to_s(send_info->iso_conn_handle);
-	BT_LOGD("%s iso_conn_handle = 0x%x p_data = 0x%08x data_len=%d max_sdu_m_to_s=%d\r\n", __func__, send_info->iso_conn_handle, send_info->p_data,
-			send_info->data_len, max_sdu_m_to_s);
-	BT_DUMPD("", send_info->p_data, send_info->data_len);
+	BT_DUMPD(__func__, param->p_data, param->data_len);
 
-#if defined(RTK_BLE_ISO_DATA_SEND_TIMER_IN_API) && RTK_BLE_ISO_DATA_SEND_TIMER_IN_API
-	//fragment when data_len > max_sdu
-	uint8_t *p_data = send_info->p_data;
-	uint16_t  data_len = send_info->data_len;
-	do {
-		//alloc the send info list node
-		p_stack_iso_send_info = (rtk_stack_iso_send_info_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_stack_iso_send_info_t));
-		if (!p_stack_iso_send_info) {
-			BT_LOGE("%s osif_mem_alloc (len=%d) fail\r\n", __func__, sizeof(rtk_stack_iso_send_info_t));
-			return RTK_BT_ERR_NO_MEMORY;
+#if 0
+	static bool is_odd = false;
+	static uint32_t last_even_time = 0, now_even_time = 0, last_odd_time = 0, now_odd_time = 0;
+	if (is_odd) {
+		now_odd_time = osif_sys_time_get();
+		if (last_odd_time != 0 && (now_odd_time - last_odd_time > 11 || now_odd_time - last_odd_time < 9)) {
+			BT_LOGE("%s gap_iso_send_data iso_conn_handle = 0x%x,pkt_seq_num %d,last_odd_time %d, now_odd_time %d,delta_time %d\r\n", __func__,
+					param->iso_conn_handle, param->pkt_seq_num, (int)last_odd_time, (int)now_odd_time, (int)(now_odd_time - last_odd_time));
 		}
-		memset(p_stack_iso_send_info, 0, sizeof(rtk_stack_iso_send_info_t));
-		p_stack_iso_send_info->iso_conn_handle = send_info->iso_conn_handle;
-		p_stack_iso_send_info->ts_flag = send_info->ts_flag;
-		p_stack_iso_send_info->time_stamp = send_info->time_stamp;
-		p_stack_iso_send_info->pkt_seq_num = send_info->pkt_seq_num;
-		p_stack_iso_send_info->sdu_interval = send_info->sdu_interval;
-		p_stack_iso_send_info->p_data = send_info->p_data;
-		p_stack_iso_send_info->data_len = send_info->data_len;
-		if (data_len > max_sdu_m_to_s) {
-			p_stack_iso_send_info->is_last_flag = false;
-			p_stack_iso_send_info->frag_len = max_sdu_m_to_s;
-			p_stack_iso_send_info->p_frag = p_data;
-			p_data += max_sdu_m_to_s;
-			data_len -= max_sdu_m_to_s;
-		} else {
-			p_stack_iso_send_info->is_last_flag = true;
-			p_stack_iso_send_info->frag_len = data_len;
-			p_stack_iso_send_info->p_frag = p_data;
-			data_len = 0;
-		}
-		BT_LOGD("%s p_frag = 0x%08x,frag_len=%d!\r\n", __func__, p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
-		BT_DUMPD("", p_stack_iso_send_info->p_frag, p_stack_iso_send_info->frag_len);
-		osif_mutex_take(g_iso_send_info_list_mtx, 0xFFFFFFFF);
-		list_add_tail(&p_stack_iso_send_info->list, &g_iso_send_info_list_head);/* insert list */
-		osif_mutex_give(g_iso_send_info_list_mtx);
-	} while (max_sdu_m_to_s != 0 && data_len > 0);
-
-#if defined(RTK_BLE_ISO_USE_HW_GTIMER) && RTK_BLE_ISO_USE_HW_GTIMER
-	// Initial a periodical timer
-	gtimer_init(&g_bt_stack_le_iso_data_send_timer, RTK_BLE_ISO_HW_GTIMER);
-	gtimer_start_periodical(&g_bt_stack_le_iso_data_send_timer, send_info->sdu_interval * 1000, (void *)bt_stack_le_iso_sdu_interval_timeout_handler, NULL);
-#else
-	//create and start periodic time to send data
-	if (!g_bt_stack_le_iso_data_send_timer) {
-		ret = osif_timer_create(&g_bt_stack_le_iso_data_send_timer, "isosduintervalTimer", 1, send_info->sdu_interval, false,
-								bt_stack_le_iso_sdu_interval_timeout_handler);
-		if (ret == false) {
-			BT_LOGE("%s osif_timer_create fail (ret = 0x%x)\r\n", __func__, ret);
-			return RTK_BT_FAIL;
-		}
-
-		ret = osif_timer_start(&g_bt_stack_le_iso_data_send_timer);
-		if (ret == false) {
-			BT_LOGE("%s osif_timer_start fail (ret = 0x%x)\r\n", __func__, ret);
-			return RTK_BT_FAIL;
-		}
-	}
-#endif
-
-#else   //RTK_BLE_ISO_DATA_SEND_TIMER_IN_API == 0
-	rtk_bt_le_iso_io_msg_buf_t *p_io_msg_buf = (rtk_bt_le_iso_io_msg_buf_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(rtk_bt_le_iso_io_msg_buf_t));
-	memset(p_io_msg_buf, 0, sizeof(rtk_bt_le_iso_io_msg_buf_t));
-	if (send_info->data_len > max_sdu_m_to_s) {
-		BT_LOGE("%s fail: param error, send_info->data_len(%d) > max_sdu_m_to_s(%d)\r\n", __func__, send_info->data_len, max_sdu_m_to_s);
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
-	if (g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_CIS_INITIATOR || g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_CIS_ACCEPTOR) {
-		p_io_msg_buf->param |= IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA_PARAM_CIS_BIT;
-	} else if (g_bt_stack_le_iso_role == RTK_BLE_ISO_ROLE_BIS_BROADCASTER) {
-		p_io_msg_buf->param |= IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA_PARAM_BIS_BIT;
+		last_odd_time = now_odd_time;
+		is_odd = false;
 	} else {
-		BT_LOGE("%s error iso role = 0x%x\r\n", __func__, g_bt_stack_le_iso_role);
+		now_even_time = osif_sys_time_get();
+		if (last_even_time != 0 && (now_even_time - last_even_time > 11 || now_even_time - last_even_time < 9)) {
+			BT_LOGE("%s gap_iso_send_data iso_conn_handle = 0x%x,pkt_seq_num %d,last_even_time %d, now_even_time %d,delta_time %d\r\n", __func__,
+					param->iso_conn_handle, param->pkt_seq_num, (int)last_even_time, (int)now_even_time, (int)(now_even_time - last_even_time));
+		}
+		last_even_time = now_even_time;
+		is_odd = true;
 	}
-	p_io_msg_buf->info = send_info;
-
-	bt_stack_msg_send(IO_MSG_TYPE_LE_MGR, IO_MSG_TYPE_LE_MGR_SUBTYPE_SEND_ISO_DATA, (void *)p_io_msg_buf);
-
-	BT_LOGD("%s alloc p_io_msg_buf 0x%08x\r\n", __func__, p_io_msg_buf);
-	osif_mutex_take(g_bt_stack_iso_io_msg_list_mtx, 0xFFFFFFFF);
-	list_add_tail(&p_io_msg_buf->list, &g_bt_stack_iso_io_msg_list_head);/* insert list */
-	osif_mutex_give(g_bt_stack_iso_io_msg_list_mtx);
 
 #endif
+
+	cause = gap_iso_send_data(param->p_data,
+							  param->iso_conn_handle,
+							  param->data_len,
+							  param->ts_flag,
+							  param->time_stamp,
+							  param->pkt_seq_num);
+	if (GAP_CAUSE_SUCCESS != cause) {
+		if (cause == GAP_CAUSE_ERROR_CREDITS) {
+			BT_LOGE("%s gap_iso_send_data warning (cause = 0x%x,iso_conn_handle = 0x%x)\r\n", __func__, cause, param->iso_conn_handle);
+			return RTK_BT_ERR_NO_CREDITS;
+		} else {
+			BT_LOGE("%s gap_iso_send_data fail (cause = 0x%x,iso_conn_handle = 0x%x)\r\n", __func__, cause, param->iso_conn_handle);
+			return RTK_BT_ERR_LOWER_STACK_API;
+		}
+	} else {
+		BT_LOGD("%s gap_iso_send_data ok,iso_conn_handle=0x%x,pkt_seq_num=%d,time_stamp=%d, time = %d\r\n", __func__, param->iso_conn_handle,
+				param->pkt_seq_num, (int)param->time_stamp, (int)osif_sys_time_get());
+	}
+
 	return RTK_BT_OK;
 }
 
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
 static uint16_t bt_stack_le_iso_cig_get_conn_handle(void *data)
 {
 	uint8_t conn_id = 0;
@@ -1245,7 +845,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 						p_data->p_cig_mgr_start_setting_rsp->cis_count);
 		if ((p_data->p_cig_mgr_start_setting_rsp->cause == GAP_SUCCESS) && p_data->p_cig_mgr_start_setting_rsp->cis_count) {
 			for (uint8_t i = 0; i < p_data->p_cig_mgr_start_setting_rsp->cis_count; i++) {
-				BT_LOGD("MSG_CIG_MGR_START_SETTING: cis_info[%d], cig_id 0x%x, cis_id 0x%x, cis_conn_handle 0x%x\r\n",
+				BT_LOGA("MSG_CIG_MGR_START_SETTING: cis_info[%d], cig_id 0x%x, cis_id 0x%x, cis_conn_handle 0x%x\r\n",
 						i,
 						p_data->p_cig_mgr_start_setting_rsp->cig_id,
 						p_data->p_cig_mgr_start_setting_rsp->cis_info[i].cis_id,
@@ -1269,14 +869,14 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 	break;
 
 	case MSG_CIG_MGR_CREATE_CIS: {
-		BT_LOGD("MSG_CIG_MGR_CREATE_CIS: cause 0x%x, cis_count 0x%x\r\n",
+		BT_LOGA("MSG_CIG_MGR_CREATE_CIS: cause 0x%x, cis_count 0x%x\r\n",
 				p_data->p_cig_mgr_create_cis_rsp->cause,
 				p_data->p_cig_mgr_create_cis_rsp->cis_count);
 		APP_PRINT_INFO2("MSG_CIG_MGR_CREATE_CIS: cause 0x%x, cis_count 0x%x",
 						p_data->p_cig_mgr_create_cis_rsp->cause,
 						p_data->p_cig_mgr_create_cis_rsp->cis_count);
 		for (uint8_t i = 0; i < p_data->p_cig_mgr_create_cis_rsp->cis_count; i++) {
-			BT_LOGD("cis_info[%d]: cig_id 0x%x, cis_id 0x%x, state 0x%x, cis_conn_handle 0x%x\r\n", i,
+			BT_LOGA("cis_info[%d]: cig_id 0x%x, cis_id 0x%x, state 0x%x, cis_conn_handle 0x%x\r\n", i,
 					p_data->p_cig_mgr_create_cis_rsp->cis_info[i].cig_id,
 					p_data->p_cig_mgr_create_cis_rsp->cis_info[i].cis_id,
 					p_data->p_cig_mgr_create_cis_rsp->cis_info[i].state,
@@ -1441,7 +1041,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 	break;
 
 	case MSG_CIG_MGR_READ_ISO_TX_SYNC: {
-		BT_LOGD(
+		BT_LOGA(
 			"MSG_CIG_MGR_READ_ISO_TX_SYNC: cause 0x%x, conn_id %d, cis_conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x, packet_sequence_number 0x%x, time_stamp 0x%x, time_offset 0x%x\r\n",
 			p_data->p_cig_mgr_read_iso_tx_sync_rsp->cause, p_data->p_cig_mgr_read_iso_tx_sync_rsp->conn_id,
 			p_data->p_cig_mgr_read_iso_tx_sync_rsp->cis_conn_handle,
@@ -1980,9 +1580,6 @@ static uint16_t bt_stack_le_iso_cig_acceptor_register_callback(void *data)
 	return RTK_BT_OK;
 }
 
-#endif //end of #if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
-
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 static void rtk_stack_iso_handle_bis_broadcaster_state_evt(uint8_t big_handle, uint8_t adv_handle,
 														   T_GAP_BIG_ISOC_BROADCAST_STATE new_state, uint16_t cause)
 {
@@ -2048,7 +1645,7 @@ T_APP_RESULT bt_stack_le_iso_big_broadcaster_cb(uint8_t big_handle, uint8_t cb_t
 						p_data->p_big_mgr_setup_data_path_rsp->cause,
 						p_data->p_big_mgr_setup_data_path_rsp->big_handle,
 						p_data->p_big_mgr_setup_data_path_rsp->bis_conn_handle);
-		BT_LOGD("MSG_BIG_MGR_SETUP_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x\r\n",
+		BT_LOGA("MSG_BIG_MGR_SETUP_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x\r\n",
 				p_data->p_big_mgr_setup_data_path_rsp->cause,
 				p_data->p_big_mgr_setup_data_path_rsp->big_handle,
 				p_data->p_big_mgr_setup_data_path_rsp->bis_conn_handle);
@@ -2068,7 +1665,7 @@ T_APP_RESULT bt_stack_le_iso_big_broadcaster_cb(uint8_t big_handle, uint8_t cb_t
 						p_data->p_big_mgr_remove_data_path_rsp->cause,
 						p_data->p_big_mgr_remove_data_path_rsp->big_handle,
 						p_data->p_big_mgr_remove_data_path_rsp->bis_conn_handle);
-		BT_LOGD("MSG_BIG_MGR_REMOVE_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x\r\n",
+		BT_LOGA("MSG_BIG_MGR_REMOVE_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x\r\n",
 				p_data->p_big_mgr_remove_data_path_rsp->cause,
 				p_data->p_big_mgr_remove_data_path_rsp->big_handle,
 				p_data->p_big_mgr_remove_data_path_rsp->bis_conn_handle);
@@ -2379,7 +1976,7 @@ T_APP_RESULT bt_stack_le_iso_big_receiver_cb(uint8_t big_handle, uint8_t cb_type
 						p_data->p_big_mgr_setup_data_path_rsp->cause,
 						p_data->p_big_mgr_setup_data_path_rsp->big_handle,
 						p_data->p_big_mgr_setup_data_path_rsp->bis_conn_handle);
-		BT_LOGD("MSG_BIG_MGR_SETUP_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x\r\n",
+		BT_LOGA("MSG_BIG_MGR_SETUP_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x\r\n",
 				p_data->p_big_mgr_setup_data_path_rsp->cause,
 				p_data->p_big_mgr_setup_data_path_rsp->big_handle,
 				p_data->p_big_mgr_setup_data_path_rsp->bis_conn_handle);
@@ -2399,7 +1996,7 @@ T_APP_RESULT bt_stack_le_iso_big_receiver_cb(uint8_t big_handle, uint8_t cb_type
 						p_data->p_big_mgr_remove_data_path_rsp->cause,
 						p_data->p_big_mgr_remove_data_path_rsp->big_handle,
 						p_data->p_big_mgr_remove_data_path_rsp->bis_conn_handle);
-		BT_LOGD("MSG_BIG_MGR_REMOVE_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x",
+		BT_LOGA("MSG_BIG_MGR_REMOVE_DATA_PATH: cause 0x%x, big_handle 0x%x, bis_conn_handle 0x%x",
 				p_data->p_big_mgr_remove_data_path_rsp->cause,
 				p_data->p_big_mgr_remove_data_path_rsp->big_handle,
 				p_data->p_big_mgr_remove_data_path_rsp->bis_conn_handle);
@@ -2561,8 +2158,9 @@ static uint16_t bt_stack_le_iso_big_receiver_create_sync(void *data)
 	big_create_sync_param.mse = p_sync_param->mse;
 	big_create_sync_param.big_sync_timeout = p_sync_param->big_sync_timeout;
 	big_create_sync_param.num_bis = p_sync_param->num_bis;
-	memcpy(big_create_sync_param.bis, p_sync_param->bis, GAP_BIG_MGR_MAX_BIS_NUM);
-
+	for (uint8_t i = 0; i < p_sync_param->num_bis; i ++) {
+		big_create_sync_param.bis[i] = i + 1;
+	}
 	BT_LOGD("%s big_create_sync_param.encryption 0x%x\r\n", __func__, big_create_sync_param.encryption);
 	BT_LOGD("%s big_create_sync_param.broadcast_code[0] 0x%x\r\n", __func__, big_create_sync_param.broadcast_code[0]);
 	BT_LOGD("%s big_create_sync_param.mse 0x%x\r\n", __func__, big_create_sync_param.mse);
@@ -2680,14 +2278,12 @@ static uint16_t bt_stack_le_iso_big_remove_path(void *data)
 
 	return RTK_BT_OK;
 }
-#endif //end of #if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 
 uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = 0;
 	BT_LOGD("bt_stack_le_iso_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
 	case RTK_BT_LE_ISO_ACT_CIG_SETUP_PATH:
 		BT_LOGD("RTK_BT_LE_ISO_ACT_CIG_SETUP_PATH \r\n");
 		p_cmd->user_data = MSG_CIG_MGR_SETUP_DATA_PATH;
@@ -2802,8 +2398,6 @@ uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_ISO_ACT_CIG_INITIATOR_GET_CIS_CONN_HANDLE \r\n");
 		ret = bt_stack_le_iso_cig_initiator_get_cis_conn_handle(p_cmd->param);
 		break;
-#endif
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 	case RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_INIT:
 		BT_LOGD("RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_INIT \r\n");
 		ret = bt_stack_le_iso_big_broadcaster_init(p_cmd->param);
@@ -2860,14 +2454,11 @@ uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_iso_big_remove_path(p_cmd->param);
 		goto async_handle;
-#endif
 
 	case RTK_BT_LE_ISO_ACT_ISO_DATA_SEND:
 		BT_LOGD("RTK_BT_LE_ISO_ACT_ISO_DATA_SEND \r\n");
-		p_cmd->user_data = RTK_BT_LE_ISO_ACT_ISO_DATA_SEND;
-		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_iso_data_send(p_cmd->param);
-		goto async_handle;
+		break;
 
 	default:
 		BT_LOGE("bt_stack_le_iso_act_handle: unknown act: %d \r\n", p_cmd->act);
@@ -2881,10 +2472,12 @@ uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 
 async_handle:
 	if (ret) {
+		/*  if bt_stack_xxx failed, shall not wait for callback, and the pending p_cmd
+		    should be deleted here */
+		bt_stack_pending_cmd_delete(p_cmd);
 		p_cmd->ret = ret;
 		osif_sem_give(p_cmd->psem);
 	}
 	return ret;
-
 }
 #endif //end of #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT

@@ -10,7 +10,7 @@
 
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
-#include "log_service.h"
+#include "atcmd_service.h"
 #include "atcmd_mqtt.h"
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
@@ -967,16 +967,6 @@ void at_mqttpub(void *arg)
 	if (0 == len || MQTT_MAX_TOPIC_LEN < len) {
 		RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Invalid topic");
 		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-		if (NULL != mqttCb->topic[i] && 0 == strcmp(mqttCb->topic[i], argv[topicIndex])) {
-			break;
-		}
-	}
-	if (MAX_MESSAGE_HANDLERS == i) {
-		RTK_LOGI(NOTAG, "\r\n[at_mqttpub] Has not subscribed");
-		resultNo = MQTT_NOT_SUBSCRIBED_ERROR;
 		goto end;
 	}
 	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[topicIndex], len);
@@ -2005,10 +1995,7 @@ void at_mqtt_init(void)
 {
 	mqtt_init_info();
 
-	log_service_add_table(at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
+	atcmd_service_add_table(at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
 }
 
-#ifdef SUPPORT_LOG_SERVICE
-log_module_init(at_mqtt_init);
-#endif
 #endif /* CONFIG_MP_INCLUDED */

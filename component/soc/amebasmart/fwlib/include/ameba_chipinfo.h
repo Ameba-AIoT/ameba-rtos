@@ -150,8 +150,8 @@ _LONG_CALL_ u8 ChipInfo_MemorySize(void);
 _LONG_CALL_ u8 ChipInfo_MemoryVendor(void);
 _LONG_CALL_ u8 ChipInfo_ChipPackage(void);
 _LONG_CALL_ u8 EFUSE_Get_Info(u32 FuncID);
-_LONG_CALL_ void ChipInfo_GetSocName(void);
-_LONG_CALL_ void ChipInfo_GetLibVersion(void);
+_LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);
+_LONG_CALL_ void ChipInfo_GetLibVersion_ToBuf(char *buf, size_t buflen);
 
 /**
   * @}

@@ -1519,30 +1519,32 @@ static void eap_ttls_check_auth_status(struct eap_sm *sm,
 									   struct eap_ttls_data *data,
 									   struct eap_method_ret *ret)
 {
-	if (ret->methodState == METHOD_DONE) {
-		ret->allowNotifications = FALSE;
-		if (ret->decision == DECISION_UNCOND_SUCC ||
-			ret->decision == DECISION_COND_SUCC) {
-			wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
-					   "completed successfully");
-			data->phase2_success = 1;
+	if (ret) {
+		if (ret->methodState == METHOD_DONE) {
+			ret->allowNotifications = FALSE;
+			if (ret->decision == DECISION_UNCOND_SUCC ||
+				ret->decision == DECISION_COND_SUCC) {
+				wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
+						   "completed successfully");
+				data->phase2_success = 1;
 #ifdef EAP_TNC
-			if (!data->ready_for_tnc && !data->tnc_started) {
-				/*
-				 * TNC may be required as the next
-				 * authentication method within the tunnel.
-				 */
-				ret->methodState = METHOD_MAY_CONT;
-				data->ready_for_tnc = 1;
-			}
+				if (!data->ready_for_tnc && !data->tnc_started) {
+					/*
+					* TNC may be required as the next
+					* authentication method within the tunnel.
+					*/
+					ret->methodState = METHOD_MAY_CONT;
+					data->ready_for_tnc = 1;
+				}
 #endif /* EAP_TNC */
+			}
+		} else if (ret->methodState == METHOD_MAY_CONT &&
+				   (ret->decision == DECISION_UNCOND_SUCC ||
+					ret->decision == DECISION_COND_SUCC)) {
+			wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
+					   "completed successfully (MAY_CONT)");
+			data->phase2_success = 1;
 		}
-	} else if (ret->methodState == METHOD_MAY_CONT &&
-			   (ret->decision == DECISION_UNCOND_SUCC ||
-				ret->decision == DECISION_COND_SUCC)) {
-		wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
-				   "completed successfully (MAY_CONT)");
-		data->phase2_success = 1;
 	}
 }
 

@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
-#include "log_service.h"
+#include "atcmd_service.h"
 #if ENABLE_TCPIP_SSL
 #include "mbedtls/config.h"
 #include "mbedtls/net.h"
@@ -35,6 +35,7 @@ volatile int atcmd_lwip_tt_mode = FALSE; /* Transparent Transfer Mode. */
 volatile int atcmd_lwip_tt_datasize = 0;
 volatile int atcmd_lwip_tt_lasttickcnt = 0;
 
+u8 *rx_buffer = NULL;
 
 #if ENABLE_TCPIP_SSL
 /* certificate and key for ssl server. */
@@ -54,10 +55,10 @@ static mbedtls_pk_context *atcmd_ssl_clikey_rsa[NUM_NS] = {NULL};
 
 extern struct netif xnetif[NET_IF_NUM];
 
-#ifdef SUPPORT_LOG_SERVICE
-extern char log_buf[UART_LOG_CMD_BUFLEN];
+#ifdef CONFIG_SUPPORT_ATCMD
+extern char atcmd_buf[UART_LOG_CMD_BUFLEN];
 #else
-char log_buf[UART_LOG_CMD_BUFLEN];
+char atcmd_buf[UART_LOG_CMD_BUFLEN];
 #endif
 
 #if ENABLE_TCPIP_SSL
@@ -111,7 +112,7 @@ static char *atcmd_lwip_itoa(int value)
 int atcmd_lwip_tt_proc(void)
 {
 	if (atcmd_lwip_tt_mode == TRUE) {
-		atcmd_lwip_tt_datasize = strlen(log_buf);
+		atcmd_lwip_tt_datasize = strlen(atcmd_buf);
 		atcmd_lwip_tt_lasttickcnt = rtos_time_get_current_system_time_ms();
 		if (atcmd_lwip_tt_sema != NULL) {
 			rtos_sema_give(atcmd_lwip_tt_sema);
@@ -449,15 +450,15 @@ int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, u16 buffer_size, 
 			u32_t addr_len = sizeof(struct sockaddr_in);
 			memset((char *) &client_addr, 0, sizeof(client_addr));
 			size = recvfrom(curnode->sockfd, buffer, buffer_size, 0, (struct sockaddr *) &client_addr, &addr_len);
-			if (size <= 0) {
-				RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] Not size received\r\n");
+			if (size == 0) {
+				RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
+			} else if (size < 0) {
+				RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
 				error_no = 4;
 			}
 			inet_ntoa_r(client_addr.sin_addr.s_addr, (char *)udp_clientaddr, 16);
 			*udp_clientport = ntohs(client_addr.sin_port);
-		}
-
-		else {
+		} else {
 			struct sockaddr_in serv_addr;
 			u32_t addr_len = sizeof(struct sockaddr_in);
 			memset((char *) &serv_addr, 0, sizeof(serv_addr));
@@ -465,8 +466,10 @@ int atcmd_lwip_receive_data(struct _node *curnode, u8 *buffer, u16 buffer_size, 
 			serv_addr.sin_port = htons(curnode->port);
 			serv_addr.sin_addr.s_addr = htonl(curnode->addr);
 			size = recvfrom(curnode->sockfd, buffer, buffer_size, 0, (struct sockaddr *) &serv_addr, &addr_len);
-			if (size <= 0) {
-				RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] Not size received\r\n");
+			if (size == 0) {
+				RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
+			} else if (size < 0) {
+				RTK_LOGI(NOTAG, "[atcmd_lwip_receive_data] recvfrom() return size = %d\r\n", size);
 				error_no = 5;
 			}
 		}
@@ -518,21 +521,24 @@ void atcmd_lwip_receive_task(void *param)
 	int i = 0;
 	int packet_size = ETH_MAX_MTU;
 
+	node *curnode = NULL;
+	int error_no = 0;
+	int recv_size = 0;
+	u8_t udp_clientaddr[16] = {0};
+	u16_t udp_clientport = 0;
+
 	UNUSED(param);
 
-	u8 *rx_buffer = (u8 *)rtos_mem_zmalloc(UART_LOG_CMD_BUFLEN);
-	if (rx_buffer == NULL) {
-		RTK_LOGI(NOTAG, "[atcmd_lwip_receive_task] rx_buffer malloc fail\r\n");
-		goto end;
+	if (NULL == rx_buffer) {
+		rx_buffer = (u8 *)rtos_mem_zmalloc(packet_size);
+		if (rx_buffer == NULL) {
+			RTK_LOGI(NOTAG, "[atcmd_lwip_receive_task] rx_buffer malloc fail\r\n");
+			goto end;
+		}
 	}
 
 	while (atcmd_lwip_is_autorecv_mode()) {
 		for (i = 0; i < NUM_NS; i++) {
-			node *curnode = NULL;
-			int error_no = 0;
-			int recv_size = 0;
-			u8_t udp_clientaddr[16] = {0};
-			u16_t udp_clientport = 0;
 			curnode = tryget_list_node(i);
 			if (curnode == NULL) {
 				continue;
@@ -578,6 +584,7 @@ void atcmd_lwip_receive_task(void *param)
 end:
 	if (rx_buffer) {
 		rtos_mem_free(rx_buffer);
+		rx_buffer = NULL;
 	}
 
 	rtos_task_delete(NULL);
@@ -697,13 +704,13 @@ void atcmd_lwip_tt_handler(void *param)
 		}
 
 		rtos_critical_enter();
-		if ((atcmd_lwip_tt_datasize >= 4) && (memcmp(log_buf, "----", 4) == 0)) {
+		if ((atcmd_lwip_tt_datasize >= 4) && (memcmp(atcmd_buf, "----", 4) == 0)) {
 			atcmd_lwip_tt_mode = FALSE;
 			atcmd_lwip_tt_datasize = 0;
 			rtos_critical_exit();
 			goto end;
 		}
-		memcpy(tx_buffer, log_buf, atcmd_lwip_tt_datasize);
+		memcpy(tx_buffer, atcmd_buf, atcmd_lwip_tt_datasize);
 		tt_size = atcmd_lwip_tt_datasize;
 		atcmd_lwip_tt_datasize = 0;
 		rtos_critical_exit();
@@ -1119,7 +1126,7 @@ static void server_start(void *param)
 			}
 		}
 	} else
-#endif
+#endif //ENABLE_TCPIP_SSL
 	{
 		if (s_mode == NODE_MODE_TCP) {//TCP MODE
 			/***********************************************************
@@ -1128,6 +1135,7 @@ static void server_start(void *param)
 			ret = listen(s_sockfd, 5);
 			if (ret < 0) {
 				RTK_LOGI(NOTAG, "ERROR on listening\r\n");
+				close(s_sockfd);
 				error_no = 8;
 				goto end;
 			}
@@ -1154,7 +1162,7 @@ static void server_start(void *param)
 				s_newsockfd = accept(s_sockfd, (struct sockaddr *) &s_cli_addr, &s_client);
 				if (s_newsockfd < 0) {
 					if (param != NULL) {
-						RTK_LOGI(NOTAG, "[ATPS] ERROR:ERROR on accept\r\n");
+						RTK_LOGI(NOTAG, "[AT+SKTSERVER] ERROR on accept\r\n");
 					}
 					error_no = 10;
 					goto end;
@@ -1165,7 +1173,7 @@ static void server_start(void *param)
 					if (param != NULL) {
 						struct _node *seednode = create_list_node(s_mode, NODE_ROLE_SEED);
 						if (seednode == NULL) {
-							RTK_LOGI(NOTAG, "[ATPS]create node failed!\r\n");
+							RTK_LOGI(NOTAG, "[AT+SKTSERVER]create node failed!\r\n");
 							error_no = 11;
 							goto end;
 						}
@@ -1210,7 +1218,7 @@ static void server_start(void *param)
 					error_no = 12;
 					goto end;
 				}
-				at_printf("\r\n%sOK\r\ncon_id=%d\r\n", "+SKTSERVER:", ServerNodeUsed->con_id);
+				at_printf("\r\n+SKTSERVER:con_id=%d\r\n", ServerNodeUsed->con_id);
 				//task will exit itself
 				ServerNodeUsed->handletask = NULL;
 			}
@@ -1614,14 +1622,14 @@ void at_sktclient(void *arg)
 #endif
 
 	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Error parameter\r\n");
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 4 || argc > 5) {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Error parameter number\r\n");
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -1965,18 +1973,25 @@ void at_sktread(void *arg)
 		goto end;
 	}
 
-	u8 *rx_buffer = (u8 *)rtos_mem_zmalloc(packet_size);
-	if (rx_buffer == NULL) {
-		RTK_LOGI(NOTAG, "[at_sktread] rx_buffer malloc fail\r\n");
-		goto end;
+	if (atcmd_lwip_is_autorecv_mode()) {
+		RTK_LOGI(NOTAG, "[at_sktread] Command not permitted in auto receive mode \r\n");
+		error_no = 11;
+		at_printf("\r\n%sERROR:%d\r\n", "+SKTREAD:", error_no);
+		return;
+	}
+
+	if (NULL == rx_buffer) {
+		rx_buffer = (u8 *)rtos_mem_zmalloc(packet_size + 1);
+		if (rx_buffer == NULL) {
+			RTK_LOGI(NOTAG, "[at_sktread] rx_buffer malloc fail\r\n");
+			error_no = 10;
+			goto end;
+		}
 	}
 
 	error_no = atcmd_lwip_receive_data(curnode, rx_buffer, (u16)packet_size, &recv_size, udp_clientaddr, &udp_clientport);
 
 end:
-	if (rx_buffer) {
-		rtos_mem_free(rx_buffer);
-	}
 	if (error_no == 0) {
 		if (curnode->protocol == NODE_MODE_UDP && curnode->role == NODE_ROLE_SERVER) {
 			at_printf("%sOK,%d,%d,%s,%d:", "+SKTREAD:", recv_size, con_id, udp_clientaddr, udp_clientport);
@@ -1990,6 +2005,11 @@ end:
 	} else {
 		at_printf("\r\n%sERROR:%d\r\n", "+SKTREAD:", error_no);
 	}
+
+	if (rx_buffer) {
+		rtos_mem_free(rx_buffer);
+		rx_buffer = NULL;
+	}
 }
 
 void at_sktrecvcfg(void *arg)
@@ -1999,14 +2019,14 @@ void at_sktrecvcfg(void *arg)
 	char *argv[MAX_ARGC] = {0};
 
 	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[at_sktrecvcfg] Invalid parameter\r\n");
+		RTK_LOGI(NOTAG, "[at_sktrecvcfg] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc != 2) {
-		RTK_LOGI(NOTAG, "[at_sktrecvcfg] Invalid parameter\r\n");
+		RTK_LOGI(NOTAG, "[at_sktrecvcfg] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -2041,7 +2061,7 @@ void at_sktrecvcfg(void *arg)
 	/* Invalid input. */
 	else {
 		RTK_LOGI(NOTAG, "[at_sktrecvcfg] Invalid enable value\r\n");
-		error_no = 3;
+		error_no = 1;
 		goto end;
 	}
 
@@ -2154,6 +2174,48 @@ end:
 }
 #endif
 
+void at_ipdomain(void *arg)
+{
+	int argc, error_no = 0;
+	char *argv[MAX_ARGC] = {0};
+	struct in_addr addr;
+	struct hostent *host_entry = NULL;
+	char **addr_list;
+
+	if (arg == NULL) {
+		RTK_LOGI(NOTAG, "[at_ipdomain] Input parameter is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	argc = parse_param(arg, argv);
+	if (argc != 2) {
+		RTK_LOGW(NOTAG, "[at_ipdomain] Invalid number of parameters\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	memset(&addr, 0, sizeof(struct in_addr));
+
+	host_entry = gethostbyname(argv[1]);
+	if (host_entry != NULL) {
+		for (addr_list = host_entry->h_addr_list; *addr_list != NULL; addr_list++) {
+			memcpy(&addr, *addr_list, sizeof(struct in_addr));
+			at_printf("\r\n+IPDOMAIN:%s\r\n", inet_ntoa(addr));
+		}
+	} else {
+		RTK_LOGW(NOTAG, "[at_ipdomain] Domain Name '%s' Not be resolved\r\n", argv[1]);
+		error_no = 2;
+		goto end;
+	}
+
+end:
+	if (error_no == 0) {
+		at_printf("\r\n%sOK\r\n", "+IPDOMAIN:");
+	} else {
+		at_printf("\r\n%sERROR:%d\r\n", "+IPDOMAIN:", error_no);
+	}
+}
+
 log_item_t at_lwip_items[ ] = {
 	{"+SKTSERVER", at_sktserver, {NULL, NULL}},
 	{"+SKTCLIENT", at_sktclient, {NULL, NULL}},
@@ -2166,6 +2228,7 @@ log_item_t at_lwip_items[ ] = {
 #if ENABLE_TCPIP_AUTOLINK
 	{"+SKTAUTOLINK", at_sktautolink, {NULL, NULL}},
 #endif
+	{"+IPDOMAIN", at_ipdomain, {NULL, NULL}},
 };
 
 void print_lwip_at(void)
@@ -2183,10 +2246,7 @@ void at_tcpip_init(void)
 	init_node_pool();
 	mainlist = create_list_node(-1, -1);
 
-	log_service_add_table(at_lwip_items, sizeof(at_lwip_items) / sizeof(at_lwip_items[0]));
+	atcmd_service_add_table(at_lwip_items, sizeof(at_lwip_items) / sizeof(at_lwip_items[0]));
 }
 
-#ifdef SUPPORT_LOG_SERVICE
-log_module_init(at_tcpip_init);
-#endif
 #endif /* CONFIG_LWIP_LAYER */

@@ -21,6 +21,17 @@ extern "C" {
 #define UNUSED(x) ((void)(x))
 #endif
 
+#define RTK_BLE_CIG_MAX_NUM 2
+/* due to bt stack restrict, CIS ID need to be different even within different CIG Group */
+/* so current CIG Group Num Should be 2, each group contains 2 cis number*/
+/* CIG 1 -> CIS 1 and CIS 2
+   CIG 2 -> CIS 3 and CIS 4 */
+#define RTK_BLE_CIS_MAX_NUM 4
+#define RTK_BLE_BIG_BROADCASTER_MAX_NUM 1
+#define RTK_BLE_BIS_BROADCASTER_MAX_NUM 1
+#define RTK_BLE_BIG_RECEIVER_MAX_NUM 1
+#define RTK_BLE_BIS_RECEIVER_MAX_NUM 1
+
 #define RTK_BLE_ISO_DATA_SEND_TIMER_IN_API   1
 
 #define RTK_BLE_ISO_DEFAULT_PHY_1M                  (1) /**< bit 0:LE PHY 1M used. */
@@ -105,7 +116,6 @@ typedef struct {
 	bool ts_flag;                   /*!< indicates whether contains time_stamp, true: contain time_stamp; false: not contain time_stamp */
 	uint32_t time_stamp;            /*!< a time in microseconds. time_stamp is used when @ref ts_flag is True */
 	uint16_t pkt_seq_num;           /*!< sequence number of the SDU */
-	uint32_t sdu_interval;          /*!< interval of the SDU */
 	uint16_t data_len;              /*!< length of the SDU to be sent */
 	uint8_t *p_data;                /*!< point to data to be sent */
 } rtk_bt_le_iso_data_send_info_t;
@@ -152,10 +162,6 @@ typedef struct {
 	uint16_t data_len;                          /*!< data length sent */
 	uint8_t *p_data;                            /*!< point to data sent */
 } rtk_bt_le_iso_data_send_done_t;
-
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
-#define RTK_BLE_CIG_MAX_NUM 4
-#define RTK_BLE_CIS_MAX_NUM 4
 
 /**
  * @struct    rtk_bt_le_iso_cig_cis_info_t
@@ -659,13 +665,6 @@ typedef struct {
  * @brief     Bluetooth BLE ISO management CIG reject CIS request for acceptor.
  */
 typedef rtk_bt_le_iso_cig_acceptor_accept_cis_done_t rtk_bt_le_iso_cig_acceptor_reject_cis_done_t  ;
-#endif //end of #if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
-
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
-#define RTK_BLE_BIG_BROADCASTER_MAX_NUM  4 //must less than 4
-#define RTK_BLE_BIS_BROADCASTER_MAX_NUM  4 //must less than 4
-#define RTK_BLE_BIG_RECEIVER_MAX_NUM  4 //must less than 4
-#define RTK_BLE_BIS_RECEIVER_MAX_NUM  4 //must less than 4
 
 /**
  * @struct    rtk_bt_le_iso_bis_role_t
@@ -866,8 +865,6 @@ typedef struct {
 	uint16_t bis_conn_handle;                                               /**< Connection handle of the BIS. */
 	rtk_bt_le_iso_big_receiver_read_link_quality_info_t *p_link_quality_info;   /**< Read link quality info result. */
 } rtk_bt_le_iso_big_receiver_read_link_quality_t;
-#endif //end of #if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
-
 
 /********************************* Functions Declaration *******************************/
 /**
@@ -877,7 +874,6 @@ typedef struct {
  * @{
  */
 
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
 /**
  * @fn        uint16_t rtk_bt_le_iso_cig_init(rtk_bt_le_iso_cig_init_param_t *param)
  * @brief     Initialize the number of CIG and CIS.
@@ -1026,26 +1022,31 @@ uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id);
 uint16_t rtk_bt_le_iso_cig_initiator_set_cis_acl_link(uint8_t cis_id, uint16_t conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cig_id)
- * @brief     Request to create all CISes in a CIG by CIG id.
+ * @fn        uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_t cig_id, uint16_t conn_handle)
+ * @brief     create cis id and link it to acl, and cig.
+ * @param[in] cis_id: Identifier of a CIS
  * @param[in] cig_id: Identifier of a CIG
+ * @param[in] conn_handle: ACL connection handle
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cig_id);
+uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_t cig_id, uint16_t conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cig_id,uint8_t cis_count,uint16_t *p_cis_conn_handle)
+ * @fn        uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_id, uint8_t cig_id, uint8_t cis_count, uint16_t conn_handle, uint16_t *p_cis_conn_handle)
  * @brief     Request to create one or more CISes by cis conn handle.
+ * @param[in] cis_id: Identifier of a CIS
  * @param[in] cig_id: Identifier of a CIG
  * @param[in] cis_count: CIS count
+ * @param[in] conn_handle: ACL connection handle
  * @param[in] p_cis_conn_handle: Connection handle of the CIS
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cig_id, uint8_t cis_count, uint16_t *p_cis_conn_handle);
+uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_id, uint8_t cig_id, uint8_t cis_count, uint16_t conn_handle,
+																   uint16_t *p_cis_conn_handle);
 
 /**
  * @fn        uint16_t rtk_bt_le_iso_cig_initiator_get_cis_conn_handle(uint8_t cis_id, uint16_t *p_cis_conn_handle)
@@ -1134,9 +1135,7 @@ uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acce
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void);
-#endif //end of #if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
 
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 /**
  * @fn        uint16_t rtk_bt_le_iso_big_broadcaster_init(uint8_t big_num,uint8_t bis_num)
  * @brief     Initialize the number of BIG and BIS for Boardcaster.
@@ -1245,8 +1244,6 @@ uint16_t rtk_bt_le_iso_big_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
-
-#endif //end of #if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 
 /**
  * @fn        uint16_t rtk_bt_le_iso_data_send(rtk_bt_le_iso_data_send_info_t *info)

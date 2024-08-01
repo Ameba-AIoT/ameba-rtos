@@ -507,7 +507,7 @@ static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 
 	UNUSED(dev);
 
-	if (ep_addr == CDC_ACM_BULK_OUT_EP) {
+	if ((ep_addr == CDC_ACM_BULK_OUT_EP) && (len > 0)) {
 		cdev->cb->received(cdev->bulk_out_buf, len);
 	}
 

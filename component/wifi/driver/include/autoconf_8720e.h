@@ -30,6 +30,7 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_MCC_MODE
+//#define CONFIG_MCC_NAN_TEST
 #define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 /**************** configurations for concurrent mode end **********************/
@@ -100,6 +101,7 @@
 #define DRV_BB_RUA_DISABLE
 #define DRV_BB_LA_MODE_DISABLE
 #define DRV_BB_PWR_CTRL_DISABLE
+#define DRV_BB_CFO_TRK_DISABLE
 #define PLATFOM_IS_LITTLE_ENDIAN	1/*for halbb use*/
 
 /*Wifi verification*/
@@ -133,13 +135,14 @@
 #define DRV_BB_DGB_SUPPORT_DISABLE
 #define DRV_RF_DBG_TRACE_DISABLE
 #define DRV_BB_CH_INFO_DISABLE
-#define DRV_BB_CFO_TRK_DISABLE
 #define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_PHYSTS_PARSING_DISABLE
 #define DRV_BB_TIMER_SUPPORT_DISABLE
 #endif
 
 #ifdef CONFIG_MP_SHRINK
+#undef CONFIG_TWT
+#undef CONFIG_MCC_MODE
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W

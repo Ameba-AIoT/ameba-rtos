@@ -13,6 +13,27 @@
  * limitations under the License.
  */
 
+/**
+ * @addtogroup Audio
+ * @{
+ *
+ * @brief Declares APIs for audio framework.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
+/**
+ * @file audio_record.h
+ *
+ * @brief Provides APIs of the audio capture streaming.
+ *
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+
 #ifndef AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_RECORD_H
 #define AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_RECORD_H
 
@@ -45,9 +66,9 @@ typedef struct {
 	uint32_t channel_count;
 	/** format of record
 	 * supports RTAUDIO_FORMAT_PCM_16_BIT, RTAUDIO_FORMAT_PCM_32_BIT,
-	 * RTAUDIO_FORMAT_PCM_24_BIT_PACKED, RTAUDIO_FORMAT_PCM_8_24_BIT*/
+	 * RTAUDIO_FORMAT_PCM_24_BIT, RTAUDIO_FORMAT_PCM_8_24_BIT*/
 	uint32_t format;
-	/** device of record, supports RTPIN_IN_MIC and RTPIN_IN_DMIC_REF_AMIC, RTPIN_IN_I2S*/
+	/** device of record, supports RTDEVICE_IN_MIC and RTDEVICE_IN_DMIC_REF_AMIC, RTDEVICE_IN_I2S*/
 	uint32_t device;
 	/** buffer bytes per one period of record*/
 	uint32_t buffer_bytes;

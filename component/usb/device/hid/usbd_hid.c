@@ -143,8 +143,8 @@ static u8 usbd_hid_fs_config_desc[USBD_HID_CONFIG_DESC_SIZ] USB_DMA_ALIGNED = {
 	USB_DESC_TYPE_ENDPOINT,							/*bDescriptorType:*/
 	USBD_HID_INTERRUPT_IN_EP_ADDRESS,				/*bEndpointAddress*/
 	0x03,											/*bmAttributes*/
-	0x40,											/*wMaxPacketSize*/
-	0x00,
+	USB_LOW_BYTE(USBD_HID_FS_INT_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_HID_FS_INT_MAX_PACKET_SIZE),
 	0xA,											/*bInterval*/
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
@@ -153,8 +153,8 @@ static u8 usbd_hid_fs_config_desc[USBD_HID_CONFIG_DESC_SIZ] USB_DMA_ALIGNED = {
 	USB_DESC_TYPE_ENDPOINT,							/*bDescriptorType:*/
 	USBD_HID_INTERRUPT_OUT_EP_ADDRESS,				/*bEndpointAddress*/
 	0x03,											/*bmAttributes*/
-	0x40,											/*wMaxPacketSize*/
-	0x00,
+	USB_LOW_BYTE(USBD_HID_FS_INT_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_HID_FS_INT_MAX_PACKET_SIZE),
 	0xA,											/*bInterval*/
 #endif
 };
@@ -207,8 +207,8 @@ static u8 usbd_hid_hs_config_desc[USBD_HID_CONFIG_DESC_SIZ] USB_DMA_ALIGNED = {
 	USB_DESC_TYPE_ENDPOINT,							/*bDescriptorType*/
 	USBD_HID_INTERRUPT_IN_EP_ADDRESS,				/*bEndpointAddress*/
 	0x03,											/*bmAttributest*/
-	0x40,											/*wMaxPacketSize*/
-	0x00,
+	USB_LOW_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),
 	0xA,											/*bInterval*/
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
@@ -217,8 +217,8 @@ static u8 usbd_hid_hs_config_desc[USBD_HID_CONFIG_DESC_SIZ] USB_DMA_ALIGNED = {
 	USB_DESC_TYPE_ENDPOINT,							/*bDescriptorType:*/
 	USBD_HID_INTERRUPT_OUT_EP_ADDRESS,				/*bEndpointAddress*/
 	0x03,											/*bmAttributes*/
-	0x40,											/*wMaxPacketSize*/
-	0x00,
+	USB_LOW_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),
 	0xA,											/*bInterval*/
 #endif
 };
@@ -403,7 +403,7 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 	usbd_hid_t *hid = &hid_device;
 	UNUSED(dev);
 
-	if (hid->cb->received && (ep_addr == USBD_HID_INTERRUPT_OUT_EP_ADDRESS)) {
+	if (hid->cb->received && (ep_addr == USBD_HID_INTERRUPT_OUT_EP_ADDRESS) && (len > 0)) {
 		hid->cb->received(hid->intr_out_buf, len);
 	}
 
@@ -513,6 +513,7 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
+	u16 ep_mps;
 
 	UNUSED(config);
 
@@ -520,11 +521,13 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	hid->intr_in_state = 0;
 
 	/* Init INTR IN EP */
-	usbd_ep_init(dev, USBD_HID_INTERRUPT_IN_EP_ADDRESS, USB_CH_EP_TYPE_INTR, USBD_HID_DEFAULT_INT_IN_XFER_SIZE);
+	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	usbd_ep_init(dev, USBD_HID_INTERRUPT_IN_EP_ADDRESS, USB_CH_EP_TYPE_INTR, ep_mps);
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	/* Init INTR OUT EP */
-	usbd_ep_init(dev, USBD_HID_INTERRUPT_OUT_EP_ADDRESS, USB_CH_EP_TYPE_INTR, USBD_HID_DEFAULT_INT_OUT_XFER_SIZE);
+	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	usbd_ep_init(dev, USBD_HID_INTERRUPT_OUT_EP_ADDRESS, USB_CH_EP_TYPE_INTR, ep_mps);
 	/* Prepare to receive next INTR OUT packet */
 	usbd_hid_receive();
 #endif

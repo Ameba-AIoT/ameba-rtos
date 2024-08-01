@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
-#include "log_service.h"
+#include "atcmd_service.h"
 #include "atcmd_wifi.h"
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
@@ -1619,11 +1619,8 @@ void at_wifi_init(void)
 	init_wifi_struct();
 #endif
 #ifndef CONFIG_MP_SHRINK
-	log_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
+	atcmd_service_add_table(at_wifi_items, sizeof(at_wifi_items) / sizeof(at_wifi_items[0]));
 #endif
 }
 
-#ifdef SUPPORT_LOG_SERVICE
-log_module_init(at_wifi_init);
-#endif
 #endif /* CONFIG_MP_SHRINK */

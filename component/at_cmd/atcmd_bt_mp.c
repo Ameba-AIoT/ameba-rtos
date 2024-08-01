@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "log_service.h"
+#include "atcmd_service.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
@@ -415,12 +415,8 @@ void print_bt_mp_at(void)
 
 void at_mp_init(void)
 {
-	log_service_add_table(at_mp_items, sizeof(at_mp_items) / sizeof(at_mp_items[0]));
+	atcmd_service_add_table(at_mp_items, sizeof(at_mp_items) / sizeof(at_mp_items[0]));
 }
-
-#ifdef SUPPORT_LOG_SERVICE
-log_module_init(at_mp_init);
-#endif
 
 #endif /* #if CONFIG_ATCMD_MP */
 #endif /* #if CONFIG_BT */
