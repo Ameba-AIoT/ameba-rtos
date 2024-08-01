@@ -17,7 +17,7 @@
  * @addtogroup Audio
  * @{
  *
- * @brief Declares audio types and formats for audio framework.
+ * @brief Declares APIs for audio framework.
  *
  *
  * @since 1.0
@@ -73,31 +73,28 @@ enum {
 	/** invalid audio track and audio record data bit format*/
 	RTAUDIO_FORMAT_INVALID           = 0xFFFFFFFFu,
 	/** audio track and audio record data bit format, 8bit per channel per frame*/
-	RTAUDIO_FORMAT_PCM_8_BIT         = 0x1u,
+	RTAUDIO_FORMAT_PCM_8_BIT         = 0x01u,
 	/** audio track and audio record data bit format, 16bit per channel per frame*/
-	RTAUDIO_FORMAT_PCM_16_BIT        = 0x2u,
+	RTAUDIO_FORMAT_PCM_16_BIT        = 0x02u,
 	/** audio track and audio record data bit format, 32bit per channel per frame*/
-	RTAUDIO_FORMAT_PCM_32_BIT        = 0x4u,
+	RTAUDIO_FORMAT_PCM_32_BIT        = 0x04u,
 	/** audio track and audio record data bit format, float per channel per frame*/
-	RTAUDIO_FORMAT_PCM_FLOAT         = 0x5u,
+	RTAUDIO_FORMAT_PCM_FLOAT         = 0x08u,
 	/** audio track and audio record data bit format, 24bit packed per channel per frame*/
-	RTAUDIO_FORMAT_PCM_24_BIT_PACKED = 0x6u,
+	RTAUDIO_FORMAT_PCM_24_BIT        = 0x10u,
 	/** audio record and audio record data bit format, 24+8bit per channel per frame*/
-	RTAUDIO_FORMAT_PCM_8_24_BIT      = 0x7u,
+	RTAUDIO_FORMAT_PCM_8_24_BIT      = 0x20u,
 };
 
 enum {
-	/** Invalid pin */
-	RTPIN_NONE        = 0x0u,
-	/** Microphone input pin */
-	RTPIN_IN_MIC      = 0x8000001u,
-	/** Wired headset microphone pin for input */
-	RTPIN_IN_HS_MIC   = 0x8000002u,
-	/** Line-in pin */
-	RTPIN_IN_LINEIN   = 0x8000004u,
-	/**< dmic+ref-amic pin */
-	RTPIN_IN_DMIC_REF_AMIC = 0x8000005u,
-	RTPIN_IN_I2S           = 0x8000006u,
+	/** invalid device */
+	RTDEVICE_NONE             = 0x0u,
+	/** input device analog microphone */
+	RTDEVICE_IN_MIC           = 0x8000001u,
+	/** input device digital microphone */
+	RTDEVICE_IN_DMIC_REF_AMIC = 0x8000002u,
+	/** input device i2s */
+	RTDEVICE_IN_I2S           = 0x8000004u,
 };
 
 /**
@@ -107,9 +104,10 @@ enum {
  * @version 1.0
  */
 enum {
+	/** output flag none */
 	RTAUDIO_OUTPUT_FLAG_NONE         = 0x0u,
-	RTAUDIO_OUTPUT_FLAG_OFFLOAD      = 0x1u,
-	RTAUDIO_OUTPUT_FLAG_NOIRQ        = 0x2u,
+	/** output flag no dma irq */
+	RTAUDIO_OUTPUT_FLAG_NOIRQ        = 0x1u,
 };
 
 /**
@@ -119,9 +117,10 @@ enum {
  * @version 1.0
  */
 enum {
+	/** output flag none */
 	RTAUDIO_INPUT_FLAG_NONE         = 0x0u,
-	RTAUDIO_INPUT_FLAG_OFFLOAD      = 0x1u,
-	RTAUDIO_INPUT_FLAG_NOIRQ        = 0x2u,
+	/** output flag no dma irq */
+	RTAUDIO_INPUT_FLAG_NOIRQ        = 0x1u,
 };
 
 /**
@@ -131,9 +130,10 @@ enum {
  * @version 1.0
  */
 enum {
+	/** invalid audio effect */
 	RTAUDIO_EFFECT_INVALID           = 0xFFFFFFFFu,
+	/** audio equalizer of audio effect */
 	RTAUDIO_EFFECT_EQUALIZER         = 0x1u,
-	RTAUDIO_EFFECT_VISUALIZER        = 0x2u,
 };
 
 /**
@@ -143,43 +143,20 @@ enum {
  * @version 1.0
  */
 enum {
+	/** audio effect total bands */
 	RTAUDIO_EFFECT_PARAM_NUM_BANDS       = 0x0u,
+	/** audio effect level range */
 	RTAUDIO_EFFECT_PARAM_LEVEL_RANGE     = 0x1u,
+	/** audio effect band level */
 	RTAUDIO_EFFECT_PARAM_BAND_LEVEL      = 0x2u,
+	/** audio effect center frequency */
 	RTAUDIO_EFFECT_PARAM_CENTER_FREQ     = 0x3u,
+	/** audio effect band frequency range */
 	RTAUDIO_EFFECT_PARAM_BAND_FREQ_RANGE = 0x4u,
+	/** audio effect get band */
 	RTAUDIO_EFFECT_PARAM_GET_BAND        = 0x5u,
-	RTAUDIO_EFFECT_PARAM_QFACTOR         = 0xAu,
-};
-
-/**
- * @brief Defines all the audio convert qualities.
- *
- * @since 1.0
- * @version 1.0
- */
-enum {
-	/** Invalid converter */
-	RTAudio_CONVERT_INVALID        = 0x0u,
-	RTAudio_CONVERT_LOW            = 0x1u,
-	RTAudio_CONVERT_MID            = 0x2u,
-	RTAudio_CONVERT_HIGH           = 0x3u,
-	RTAudio_CONVERT_VERY_HIGH      = 0x4u,
-	RTAudio_CONVERT_MAX            = 0x5u,
-};
-
-/**
- * @brief Defines all the audio resample types.
- *
- * @since 1.0
- * @version 1.0
- */
-enum {
-	/** Invalid converter */
-	RTAudio_RESAMPLE_NONE          = 0x0u,
-	RTAudio_RESAMPLE_SOXR          = 0x1u,
-	RTAudio_RESAMPLE_SPEEX         = 0x2u,
-	RTAudio_RESAMPLE_MAX           = 0x3u,
+	/** audio effect qfactor */
+	RTAUDIO_EFFECT_PARAM_QFACTOR         = 0x6u,
 };
 
 /**
@@ -200,18 +177,18 @@ static inline size_t RTAudio_GetAudioBytesPerSample(int32_t format)
 	size_t size = 0;
 
 	switch (format) {
-	case RTAUDIO_FORMAT_PCM_32_BIT:
-	case RTAUDIO_FORMAT_PCM_8_24_BIT:
-		size = sizeof(int32_t);
-		break;
-	case RTAUDIO_FORMAT_PCM_24_BIT_PACKED:
-		size = sizeof(uint8_t) * 3;
+	case RTAUDIO_FORMAT_PCM_8_BIT:
+		size = sizeof(uint8_t);
 		break;
 	case RTAUDIO_FORMAT_PCM_16_BIT:
 		size = sizeof(int16_t);
 		break;
-	case RTAUDIO_FORMAT_PCM_8_BIT:
-		size = sizeof(uint8_t);
+	case RTAUDIO_FORMAT_PCM_24_BIT:
+		size = sizeof(uint8_t) * 3;
+		break;
+	case RTAUDIO_FORMAT_PCM_8_24_BIT:
+	case RTAUDIO_FORMAT_PCM_32_BIT:
+		size = sizeof(int32_t);
 		break;
 	default:
 		break;

@@ -218,14 +218,16 @@ int ota_update_start(ota_context *ctx);
 #define _OTA_WARN_	2
 #define _OTA_ERR_	1
 
+#define OTA_TAG	"OTA"
+
 #define ota_printf(level, fmt, arg...)     \
 do {\
 	if(level == _OTA_INFO_) \
-		printf("\r\n[OTA INFO]: " fmt, ##arg);\
+		RTK_LOGI(OTA_TAG, fmt"\r\n" , ##arg);\
 	else if(level == _OTA_WARN_) \
-		printf("\r\n[OTA WRAN]: " fmt, ##arg);\
+		RTK_LOGW(OTA_TAG, fmt"\r\n" , ##arg);\
 	else if(level == _OTA_ERR_) \
-		printf("\r\n[OTA ERROR]: " fmt, ##arg);\
+		RTK_LOGE(OTA_TAG, fmt"\r\n" , ##arg);\
 }while(0)
 
 /**

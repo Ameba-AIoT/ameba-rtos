@@ -157,7 +157,6 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_ui_drivers.a
 endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_hal.a
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_base.a
 endif
 

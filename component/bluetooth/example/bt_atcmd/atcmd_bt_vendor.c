@@ -6,9 +6,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
-#include <atcmd_bt_vendor.h>
 #include <rtk_bt_vendor.h>
 #include <rtk_bt_le_gap.h>
 #include <osif.h>

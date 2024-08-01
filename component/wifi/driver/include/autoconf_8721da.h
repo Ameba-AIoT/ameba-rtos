@@ -28,11 +28,12 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_NAN
+//#define CONFIG_MCC_MODE
+//#define CONFIG_MCC_NAN_TEST
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
 #else
-//#define CONFIG_MCC_MODE
 #define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 #endif
@@ -87,6 +88,10 @@
 #undef CONFIG_ADDRESS_CAM
 #endif
 
+#ifdef CONFIG_MCC_MODE
+#define CONFIG_TWT
+#endif
+
 //#define CONFIG_P2P
 
 /*enable dynamic mechanism for driver*/
@@ -130,6 +135,8 @@
 #endif
 
 #ifdef CONFIG_MP_SHRINK
+#undef CONFIG_TWT
+#undef CONFIG_MCC_MODE
 #undef CONFIG_DFS
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W

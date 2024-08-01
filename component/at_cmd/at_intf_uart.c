@@ -5,7 +5,7 @@
  */
 
 #include "at_intf_uart.h"
-#include "log_service.h"
+#include "atcmd_service.h"
 
 GDMA_InitTypeDef GDMA_InitStruct;
 volatile u32 dma_tx_busy = 0;

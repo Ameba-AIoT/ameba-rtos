@@ -62,10 +62,13 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG Shell CMD'
+bool "Enable ATCMD"			CONFIG_SUPPORT_ATCMD
+if [ "$CONFIG_SUPPORT_ATCMD" = "y" ]; then
 choice 'ATCMD IO Type'	"LOGUART	CONFIG_ATCMD_IO_LOGUART \
 						UART		CONFIG_ATCMD_IO_UART \
 						"
 bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+fi
 endmenu
 
 mainmenu_option next_comment

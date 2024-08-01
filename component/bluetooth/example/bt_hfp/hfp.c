@@ -987,14 +987,16 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_PBAP_EVT_CONN_CMPL: {
 		rtk_bt_pbap_conn_ind_t *p_pbap_conn_ind = (rtk_bt_pbap_conn_ind_t *)param;
 		BT_LOGA("[PBAP] Receive PBAP connection completion from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
-				p_pbap_conn_ind->bd_addr[5], p_pbap_conn_ind->bd_addr[4], p_pbap_conn_ind->bd_addr[3], p_pbap_conn_ind->bd_addr[2], p_pbap_conn_ind->bd_addr[1], p_pbap_conn_ind->bd_addr[0]);
+				p_pbap_conn_ind->bd_addr[5], p_pbap_conn_ind->bd_addr[4], p_pbap_conn_ind->bd_addr[3], p_pbap_conn_ind->bd_addr[2], p_pbap_conn_ind->bd_addr[1],
+				p_pbap_conn_ind->bd_addr[0]);
 	}
 	break;
 
 	case RTK_BT_PBAP_EVT_CONN_FAIL: {
 		rtk_bt_pbap_conn_fail_ind_t *p_pbap_conn_fail_ind = (rtk_bt_pbap_conn_fail_ind_t *)param;
 		BT_LOGA("[PBAP] PBAP connection fail with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%02x \r\n",
-				p_pbap_conn_fail_ind->bd_addr[5], p_pbap_conn_fail_ind->bd_addr[4], p_pbap_conn_fail_ind->bd_addr[3], p_pbap_conn_fail_ind->bd_addr[2], p_pbap_conn_fail_ind->bd_addr[1], p_pbap_conn_fail_ind->bd_addr[0],
+				p_pbap_conn_fail_ind->bd_addr[5], p_pbap_conn_fail_ind->bd_addr[4], p_pbap_conn_fail_ind->bd_addr[3], p_pbap_conn_fail_ind->bd_addr[2],
+				p_pbap_conn_fail_ind->bd_addr[1], p_pbap_conn_fail_ind->bd_addr[0],
 				p_pbap_conn_fail_ind->cause);
 	}
 	break;
@@ -1002,7 +1004,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_PBAP_EVT_DISCONN_CMPL: {
 		rtk_bt_pbap_disconn_cmpl_t *p_pbap_disc_cmpl_ind = (rtk_bt_pbap_disconn_cmpl_t *)param;
 		BT_LOGA("[PBAP] PBAP disconnect completion with %02x:%02x:%02x:%02x:%02x:%02x, cause is 0x%02x \r\n",
-				p_pbap_disc_cmpl_ind->bd_addr[5], p_pbap_disc_cmpl_ind->bd_addr[4], p_pbap_disc_cmpl_ind->bd_addr[3], p_pbap_disc_cmpl_ind->bd_addr[2], p_pbap_disc_cmpl_ind->bd_addr[1], p_pbap_disc_cmpl_ind->bd_addr[0],
+				p_pbap_disc_cmpl_ind->bd_addr[5], p_pbap_disc_cmpl_ind->bd_addr[4], p_pbap_disc_cmpl_ind->bd_addr[3], p_pbap_disc_cmpl_ind->bd_addr[2],
+				p_pbap_disc_cmpl_ind->bd_addr[1], p_pbap_disc_cmpl_ind->bd_addr[0],
 				p_pbap_disc_cmpl_ind->cause);
 	}
 	break;
@@ -1010,7 +1013,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL: {
 		rtk_bt_pbap_set_pb_cmpl_t *p_pbap_set_pb_cmpl = (rtk_bt_pbap_set_pb_cmpl_t *)param;
 		BT_LOGA("[PBAP] PBAP set phone book completion with %02x:%02x:%02x:%02x:%02x:%02x, result is %d, path is 0x%02x \r\n",
-				p_pbap_set_pb_cmpl->bd_addr[5], p_pbap_set_pb_cmpl->bd_addr[4], p_pbap_set_pb_cmpl->bd_addr[3], p_pbap_set_pb_cmpl->bd_addr[2], p_pbap_set_pb_cmpl->bd_addr[1], p_pbap_set_pb_cmpl->bd_addr[0],
+				p_pbap_set_pb_cmpl->bd_addr[5], p_pbap_set_pb_cmpl->bd_addr[4], p_pbap_set_pb_cmpl->bd_addr[3], p_pbap_set_pb_cmpl->bd_addr[2], p_pbap_set_pb_cmpl->bd_addr[1],
+				p_pbap_set_pb_cmpl->bd_addr[0],
 				(int)p_pbap_set_pb_cmpl->result,
 				(uint8_t)p_pbap_set_pb_cmpl->path);
 	}
@@ -1019,7 +1023,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL: {
 		rtk_bt_pbap_get_pb_cmpl_t *p_pbap_get_pb_cmpl = (rtk_bt_pbap_get_pb_cmpl_t *)param;
 		BT_LOGA("[PBAP] PBAP get phone book completion with %02x:%02x:%02x:%02x:%02x:%02x, data_len is %d, pb_size is %d, new_missed_calls is %d, data_end %d \r\n",
-				p_pbap_get_pb_cmpl->bd_addr[5], p_pbap_get_pb_cmpl->bd_addr[4], p_pbap_get_pb_cmpl->bd_addr[3], p_pbap_get_pb_cmpl->bd_addr[2], p_pbap_get_pb_cmpl->bd_addr[1], p_pbap_get_pb_cmpl->bd_addr[0],
+				p_pbap_get_pb_cmpl->bd_addr[5], p_pbap_get_pb_cmpl->bd_addr[4], p_pbap_get_pb_cmpl->bd_addr[3], p_pbap_get_pb_cmpl->bd_addr[2], p_pbap_get_pb_cmpl->bd_addr[1],
+				p_pbap_get_pb_cmpl->bd_addr[0],
 				(int)p_pbap_get_pb_cmpl->data_len,
 				(int)p_pbap_get_pb_cmpl->pb_size,
 				(int)p_pbap_get_pb_cmpl->new_missed_calls,
@@ -1036,7 +1041,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 		rtk_bt_pbap_caller_id_name_t *p_pbap_caller_id_name = (rtk_bt_pbap_caller_id_name_t *)param;
 		if (p_pbap_caller_id_name->name_len) {
 			BT_LOGA("[PBAP] PBAP pull caller id name with %02x:%02x:%02x:%02x:%02x:%02x, name is %s \r\n",
-					p_pbap_caller_id_name->bd_addr[5], p_pbap_caller_id_name->bd_addr[4], p_pbap_caller_id_name->bd_addr[3], p_pbap_caller_id_name->bd_addr[2], p_pbap_caller_id_name->bd_addr[1], p_pbap_caller_id_name->bd_addr[0],
+					p_pbap_caller_id_name->bd_addr[5], p_pbap_caller_id_name->bd_addr[4], p_pbap_caller_id_name->bd_addr[3], p_pbap_caller_id_name->bd_addr[2],
+					p_pbap_caller_id_name->bd_addr[1], p_pbap_caller_id_name->bd_addr[0],
 					(char *)p_pbap_caller_id_name->name_ptr);
 			osif_mem_free(p_pbap_caller_id_name->name_ptr);
 		}
@@ -1046,7 +1052,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_pbap_app_callback(uint8_t evt_code, void *para
 	case RTK_BT_PBAP_EVT_GET_PHONE_BOOK_SIZE_CMPL: {
 		rtk_bt_pbap_get_pb_size_cmpl *p_pbap_get_pb_size = (rtk_bt_pbap_get_pb_size_cmpl *)param;
 		BT_LOGA("[PBAP] PBAP get phone book size with %02x:%02x:%02x:%02x:%02x:%02x, pb_size is %d, new_missed_calls is %d \r\n",
-				p_pbap_get_pb_size->bd_addr[5], p_pbap_get_pb_size->bd_addr[4], p_pbap_get_pb_size->bd_addr[3], p_pbap_get_pb_size->bd_addr[2], p_pbap_get_pb_size->bd_addr[1], p_pbap_get_pb_size->bd_addr[0],
+				p_pbap_get_pb_size->bd_addr[5], p_pbap_get_pb_size->bd_addr[4], p_pbap_get_pb_size->bd_addr[3], p_pbap_get_pb_size->bd_addr[2], p_pbap_get_pb_size->bd_addr[1],
+				p_pbap_get_pb_size->bd_addr[0],
 				(int)p_pbap_get_pb_size->pb_size,
 				(int)p_pbap_get_pb_size->new_missed_calls);
 	}

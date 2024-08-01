@@ -8,9 +8,9 @@
 
 #include <sys_api.h>
 #include <flash_api.h>
-
+#include "ameba_rtos_version.h"
 #include <build_info.h>
-#include "log_service.h"
+#include "atcmd_service.h"
 #ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
 #endif
@@ -447,8 +447,14 @@ void at_gmr(void *arg)
 
 	UNUSED(arg);
 
-	ChipInfo_GetSocName();
-	ChipInfo_GetLibVersion();
+	u32 buflen = 1024;
+	char *buf = rtos_mem_malloc(buflen);
+	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
+	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
+	at_printf("%s", buf);
+	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
+	at_printf("%s", buf);
+	rtos_mem_free(buf);
 
 	strncpy(at_buf, ATCMD_VERSION"."ATCMD_SUBVERSION"."ATCMD_REVISION, sizeof(at_buf));
 	strncpy(fw_buf, SDK_VERSION, sizeof(fw_buf));
@@ -653,9 +659,5 @@ void print_system_at(void)
 
 void at_sys_init(void)
 {
-	log_service_add_table(at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
+	atcmd_service_add_table(at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
 }
-
-#ifdef SUPPORT_LOG_SERVICE
-log_module_init(at_sys_init);
-#endif

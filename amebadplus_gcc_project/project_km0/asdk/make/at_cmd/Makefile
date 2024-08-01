@@ -11,14 +11,6 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/network/mqtt/MQTTPacket
 APP_DIR = $(TARGETDIR)/app/monitor
 DIR = $(BASEDIR)/component/at_cmd
 
-ifeq ($(CONFIG_WLAN),y)
-ifeq ($(CONFIG_AS_INIC_AP), y)
-ifneq ($(CONFIG_INIC_INTF_SDIO), y)
-GLOBAL_CFLAGS += -DSUPPORT_LOG_SERVICE=1
-endif
-endif
-endif
-
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
@@ -35,9 +27,6 @@ endif
 ifeq ($(CONFIG_WLAN),y)
 # note: apply new atcmd, add your config here!!!
 vpath %.c $(DIR)
-
-CSRC += $(DIR)/log_service.c \
-		$(DIR)/atcmd_sys.c
 
 ifeq ($(CONFIG_ATCMD_IO_UART), y)
 CSRC += $(DIR)/at_intf_uart.c

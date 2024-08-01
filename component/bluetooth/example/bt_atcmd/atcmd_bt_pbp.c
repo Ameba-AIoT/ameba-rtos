@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <osif.h>
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -53,11 +53,7 @@ static const cmd_table_t pbp_broadcast_sink_cmd_table[] = {
 int atcmd_bt_pbp_cmd(int argc, char *argv[])
 {
 	int ret = 0;
-#if (!defined(ATCMD_BT_CUT_DOWN) || !ATCMD_BT_CUT_DOWN)
 	char tag[80] = "[AT+BLEPBP][sink]";
-#else
-	char tag[80] = "[ATBC][pbp][sink]";
-#endif
 	if (strcmp(argv[0], "sink") == 0) {
 		BLEPBP_AT_PRINTK("Set pbp broadcast sink cmd");
 		ret = atcmd_bt_excute(argc - 1, &argv[1], pbp_broadcast_sink_cmd_table, tag);

@@ -17,7 +17,7 @@
  * @addtogroup Audio
  * @{
  *
- * @brief Declares Timestamp structure for audio framework.
+ * @brief Declares APIs for audio framework.
  *
  *
  * @since 1.0
@@ -27,7 +27,7 @@
 /**
  * @file audio_time.h
  *
- * @brief Provides the the audio timestamp structure.
+ * @brief Provides definition of the audio timestamp structure.
  *
  *
  * @since 1.0

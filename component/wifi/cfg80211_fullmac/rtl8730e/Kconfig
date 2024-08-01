@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0
+config FULLMAC_RTK_RTL8730E
+	tristate "Fullmac for rtl8730e"
+	select CFG80211_DEFAULT_PS
+	select CFG80211_CRDA_SUPPORT
+	select CFG80211_WEXT
+	select WLAN_VENDOR_INTEL
+
+	---help---
+	  Realtek RTL8730E driver.
+	  802.11 a/b/g/n/ac/ax AXI wireless network adapter

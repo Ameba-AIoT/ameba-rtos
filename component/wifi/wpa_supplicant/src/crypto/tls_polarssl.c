@@ -267,7 +267,6 @@ void tls_deinit(void *ssl_ctx)
 		mbedtls_ssl_free(tls_context->ssl);
 		mbedtls_ssl_config_free(tls_context->conf);
 		os_free(ssl_ctx, 0);
-		ssl_ctx = NULL;
 	}
 }
 
@@ -342,7 +341,6 @@ void tls_connection_deinit(void *tls_ctx, struct tls_connection *conn)
 		os_free(conn->buf_in, 0);
 		os_free(conn->buf_out, 0);
 		os_free(conn, 0);
-		conn = NULL;
 	}
 	ErrorCnt = 0;
 }

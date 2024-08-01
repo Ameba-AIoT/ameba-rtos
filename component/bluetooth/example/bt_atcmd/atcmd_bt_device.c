@@ -4,7 +4,7 @@
  *******************************************************************************
  */
 
-#include <log_service.h>
+#include <atcmd_service.h>
 #include <bt_api_config.h>
 #include <rtk_bt_device.h>
 #include <bt_utils.h>

@@ -87,7 +87,7 @@ int get_method_handler(struct httpd_conn *conn)
 
 		sprintf(path, "%s:%s", prefix, page_path);
 		finfo = (vfs_file *)fopen(path, "r");
-		if (ret < 0) {
+		if (finfo == NULL) {
 			printf("[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
 			httpd_response_not_found(conn, NULL);
 			httpd_conn_close(conn);

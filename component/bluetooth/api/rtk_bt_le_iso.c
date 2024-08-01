@@ -6,15 +6,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <osif.h>
-
 #include <bt_api_config.h>
-
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 #include <rtk_bt_le_iso.h>
 #include <rtk_bt_common.h>
 #include <rtk_bt_device.h>
 
-#if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
 uint16_t rtk_bt_le_iso_cig_get_conn_handle(uint16_t cis_conn_handle, uint16_t *p_conn_handle)
 {
 	rtk_bt_le_iso_cig_get_conn_handle_param_t param = {0};
@@ -172,39 +169,53 @@ uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id)
 						   (void *)&cig_id, sizeof(uint8_t));
 }
 
-uint16_t rtk_bt_le_iso_cig_initiator_set_cis_acl_link(uint8_t cis_id, uint16_t conn_handle)
+extern uint16_t app_bt_le_iso_cis_id_availiable_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id);
+
+uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_t cig_id, uint16_t conn_handle)
 {
+	uint16_t ret = RTK_BT_FAIL;
 	rtk_bt_le_iso_cig_initiator_set_cis_acl_link_param_t param = {0};
 
-	if (!cis_id) {
+	if (!cis_id || !cig_id || !conn_handle) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
-
+	/* check whether cis_id and cig_id is legal */
+	ret = app_bt_le_iso_cis_id_availiable_check(RTK_BLE_ISO_ROLE_CIS_INITIATOR, cis_id, cig_id);
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("%s app_bt_le_iso_cis_id_availiable_check fail 0x%x \r\n", __func__, ret);
+		return RTK_BT_FAIL;
+	}
 	param.cis_id = cis_id;
 	param.conn_handle = conn_handle;
-
-	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK,
-						   (void *)&param, sizeof(rtk_bt_le_iso_cig_initiator_set_cis_acl_link_param_t));
-}
-
-uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cig_id)
-{
-	if (!cig_id) {
-		return RTK_BT_ERR_PARAM_INVALID;
+	/* create cis by conn_handle */
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK,
+						  (void *)&param, sizeof(rtk_bt_le_iso_cig_initiator_set_cis_acl_link_param_t));
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("%s RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK Fail 0x%x \r\n", __func__, ret);
 	}
-
+	/* config cis with cig */
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_INITIATOR_CREATE_CIS_BY_CIG_ID,
 						   (void *)&cig_id, sizeof(uint8_t));
 }
 
-uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cig_id, uint8_t cis_count, uint16_t *p_cis_conn_handle)
+uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_id, uint8_t cig_id, uint8_t cis_count, uint16_t conn_handle,
+																   uint16_t *p_cis_conn_handle)
 {
+	uint16_t ret = RTK_BT_FAIL;
+	rtk_bt_le_iso_cig_initiator_set_cis_acl_link_param_t acl_param = {0};
 	rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle_param_t param = {0};
 
-	if (!cig_id || !cis_count || !p_cis_conn_handle) {
+	if (!cis_id || !cig_id || !cis_count || !conn_handle || !p_cis_conn_handle) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
-
+	acl_param.cis_id = cis_id;
+	acl_param.conn_handle = conn_handle;
+	/* create cis by conn_handle */
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK,
+						  (void *)&acl_param, sizeof(rtk_bt_le_iso_cig_initiator_set_cis_acl_link_param_t));
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("%s RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK Fail 0x%x \r\n", __func__, ret);
+	}
 	param.cig_id = cig_id;
 	param.cis_count = cis_count;
 	param.p_cis_conn_handle = p_cis_conn_handle;
@@ -303,8 +314,7 @@ uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void)
 {
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REGISTER_CALLBACK, NULL, NULL);
 }
-#endif //end of #if defined(RTK_BLE_ISO_CIS_SUPPORT) && RTK_BLE_ISO_CIS_SUPPORT
-#if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
+
 uint16_t rtk_bt_le_iso_big_broadcaster_init(uint8_t big_num, uint8_t bis_num)
 {
 	rtk_bt_le_iso_big_init_param_t param = {0};
@@ -440,8 +450,6 @@ uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle, rtk_bt_le_iso_d
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_ACT_BIG_REMOVE_PATH,
 						   (void *)&param, sizeof(rtk_bt_le_iso_remove_path_param_t));
 }
-
-#endif //end of #if defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT
 
 uint16_t rtk_bt_le_iso_data_send(rtk_bt_le_iso_data_send_info_t *info)
 {

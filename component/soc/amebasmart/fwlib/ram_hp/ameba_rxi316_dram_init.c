@@ -1042,8 +1042,8 @@ void rxi316_DynSre_init(u32 IdleCnt, u32 state)
 
 	if (state == ENABLE) {
 		ddrc->DDRC_DPERF0 &= (~DDRC_MASK_DIW);
-		ddrc->DDRC_DPERF0 |= DDRC_DIW(IdleCnt);
-
+		/* CR_DIW[0] = 0 to Enable ECO Function */
+		ddrc->DDRC_DPERF0 |= DDRC_DIW(IdleCnt & ~BIT0);
 		ddrc->DDRC_IOCR |= DDRC_BIT_DYN_SRE;
 	} else {
 		ddrc->DDRC_IOCR &= (~DDRC_BIT_DYN_SRE);

@@ -37,6 +37,7 @@ FREERTOSDIR	= $(BASEDIR)/component/os/freertos/freertos_v10.4.3/Source
 MBEDTLSDIR	 = $(BASEDIR)/component/ssl/mbedtls-2.16.9
 
 WIFIFWDIR	= $(BASEDIR)/component/wifi/wifi_fw
+WIFIMAKEDIR	= $(BASEDIR)/component/wifi/wifi_make
 
 BUILDDIR	= $(ROOTDIR)/build
 PHERIEXAMPLE	= $(ROOTDIR)/../example/demo_peripheral
@@ -154,9 +155,6 @@ IFLAGS               += -I$(BASEDIR)/component/soc/common
 
 IFLAGS               += -I$(INCDIR) -I$(INCDIR)/..
 IFLAGS               += -I$(BASEDIR)/component/stdlib
-IFLAGS               += -I$(BASEDIR)/component/wifi/api
-IFLAGS               += -I$(BASEDIR)/component/wifi/simple_config
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fast_connect
 IFLAGS               += -I$(BASEDIR)/component/example
 
 ifeq ($(CONFIG_AUDIO_FWK),y)
@@ -167,16 +165,6 @@ IFLAGS               += -I$(BASEDIR)/component/audio/frameworks/media/audio/inte
 IFLAGS               += -I$(TARGETDIR)/app/hal/interfaces
 endif
 
-#WIFI
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/core_rom
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/halcommon_rom
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/include
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_reg/rtl8720e
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_reg/common
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf/g6_intf
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/intf/g6_intf/rtl8720e
 IFLAGS               += -I$(BASEDIR)/component/network
 #IFLAGS               += -I$(BASEDIR)/component/network/libcoap/include
 IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/src/include
@@ -186,30 +174,13 @@ IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/src/include/lwip
 IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/port/realtek
 IFLAGS               += -I$(BASEDIR)/component/lwip/lwip_v2.1.2/port/realtek/freertos
 IFLAGS               += -I$(BASEDIR)/component/lwip/api
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/src
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/src/crypto
+
 IFLAGS               += -I$(BASEDIR)/component/os_dep
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/nan
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_supplicant
-IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fast_connect
+
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/amebalite/include
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_fw/common
-IFLAGS               += -I$(BASEDIR)/component/wifi/simple_config
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb/halbb_8720e
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf/halrf_8720e
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720e
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720e_rom
-IFLAGS               += -I$(BASEDIR)/component/wifi/driver/mesh
-IFLAGS               += -I$(BASEDIR)/component/wifi/common
-IFLAGS               += -I$(BASEDIR)/component/wifi/common/secure
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite
-IFLAGS               += -I$(BASEDIR)/component/wifi/wpa_supplicant/wpa_lite/rom
 
-#INIC
-IFLAGS               += -I$(BASEDIR)/component/wifi/inic
-IFLAGS               += -I$(BASEDIR)/component/wifi/inic/ipc
+include $(WIFIMAKEDIR)/Makefile.include.gen.wifi
 
 #RTSP
 IFLAGS               += -I$(BASEDIR)/component/network/rtsp

@@ -1,0 +1,24 @@
+ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
+ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
+ccflags-$(CONFIG_SDIO_BRIDGE) += -DCONFIG_SDIO_BRIDGE
+ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_SDIO
+ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src) -I$(src)/../common -I$(src)/../sdio
+
+bridge_sdio-y := ../sdio/rtw_sdio_drvio.o \
+		../sdio/rtw_sdio_ops.o \
+		../sdio/rtw_sdio_probe.o \
+		../sdio/rtw_sdio_init.o \
+		../rtw_drv_probe.o \
+		../rtw_ethtool_ops.o \
+		../rtw_netdev_ops.o \
+		../rtw_proc.o \
+		../common/rtw_llhw_ops.o \
+		../common/rtw_llhw_event_tx.o \
+		../common/rtw_llhw_event_rx.o \
+		../common/rtw_llhw_pkt_rx.o \
+		../common/rtw_llhw_pkt_tx.o \
+		../common/rtw_llhw_hci.o \
+		../common/rtw_llhw_memory.o \
+		rtw_sdio_bridge.o
+
+obj-m += bridge_sdio.o

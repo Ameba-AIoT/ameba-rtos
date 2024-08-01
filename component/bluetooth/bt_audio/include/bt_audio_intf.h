@@ -76,7 +76,8 @@ typedef struct {
 	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);      /*!< callback pcm data to APP */
 	void                       *audio_track_hdl;                                               /*!< RTAudioTrack pointer */
 	uint32_t                   channels;                                                       /*!< indicate channels */
-	uint32_t                   channel_allocation;                                             /*!< indicate mono or dual mode(1 left channel, 2 right channel, 3 dual mode) */
+	uint32_t                   channel_allocation;                                             /*!< indicate mono or dual mode
+                                                                                                    (1 left channel, 2 right channel, 3 dual mode) */
 	uint32_t                   rate;                                                           /*!< sample rate */
 	uint32_t                   bits;                                                           /*!< bit per sample */
 	uint32_t                   format;                                                         /*!< audio format */

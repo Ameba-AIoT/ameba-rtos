@@ -40,18 +40,18 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 	/* audio_config */
 	{
 		switch (format) {
-			case BT_AUDIO_FORMAT_PCM_8_BIT:
-				bits = 8;
-				break;
-			case BT_AUDIO_FORMAT_PCM_16_BIT:
-				bits = 16;
-				break;
-			case BT_AUDIO_FORMAT_PCM_32_BIT:
-				bits = 32;
-				break;
-			default:
-				bits = 16;
-				break; 
+		case BT_AUDIO_FORMAT_PCM_8_BIT:
+			bits = 8;
+			break;
+		case BT_AUDIO_FORMAT_PCM_16_BIT:
+			bits = 16;
+			break;
+		case BT_AUDIO_FORMAT_PCM_32_BIT:
+			bits = 32;
+			break;
+		default:
+			bits = 16;
+			break;
 		}
 		/* mixer period size is config within ameba_audio_mixer_usrcfg.cpp */
 		/* passthrough has no period size concept */
@@ -231,7 +231,7 @@ uint16_t rtk_bt_audio_track_delay_start(void *track_hdl, bool ctrl)
 		audio_track = (struct RTAudioTrack *)track_hdl;
 	}
 	RTAudioTrack_SetParameters(audio_track, ctrl == true ? "delay_start=1" : "delay_start=0");
-	
+
 	return 0;
 }
 

@@ -374,13 +374,13 @@ int pr_audiorecord_config(msg_attrib_t *pattrib)
 
 	switch (pattrib->device) {
 	case 1:
-		device = RTPIN_IN_MIC;
+		device = RTDEVICE_IN_MIC;
 		break;
 	case 2:
-		device = RTPIN_IN_HS_MIC;
+		device = RTDEVICE_IN_HS_MIC;
 		break;
 	case 3:
-		device = RTPIN_IN_LINEIN;
+		device = RTDEVICE_IN_LINEIN;
 		break;
 	}
 
