@@ -21,8 +21,8 @@
 *.log
 
 # menuconfig lxdialog files
-/**/lxdialog/
-/**/menuconfig/.config.old
+/**/lxdialog/lxdialog
+/**/menuconfig/*.old
 
 # wlan makefile
 /**/make/wlan/
