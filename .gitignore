@@ -16,6 +16,8 @@
 !/tools/**/*.bin
 
 # project library files
+/**/asdk/lib/
+/**/vsdk/lib/
 
 # log files
 *.log
@@ -28,7 +30,8 @@
 /**/make/wlan/
 
 # fiptool
-/**/fiptool/
+/**/fiptool/fiptool
+/**/fiptool/fiptool.exe
 
 # git files
 .repo/
@@ -38,10 +41,9 @@
 /**/build_tfm/
 
 # build info
-build_info.h
+/**/inc/build_info.h
 
 # IAR
 *.dep
 *.ewt
 /**/EWARM-RELEASE/Debug/
-EWARM-RELEASE/settings/
