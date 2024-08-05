@@ -28,7 +28,8 @@
 /**/make/wlan/
 
 # fiptool
-/**/fiptool/
+/**/fiptool/fiptool
+/**/fiptool/fiptool.exe
 
 # git files
 .repo/
@@ -38,10 +39,9 @@
 /**/build_tfm/
 
 # build info
-build_info.h
+/**/inc/build_info.h
 
 # IAR
 *.dep
 *.ewt
 /**/EWARM-RELEASE/Debug/
-EWARM-RELEASE/settings/
