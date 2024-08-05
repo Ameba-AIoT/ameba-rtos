@@ -16,8 +16,6 @@
 !/tools/**/*.bin
 
 # project library files
-/**/asdk/lib/
-/**/vsdk/lib/
 
 # log files
 *.log
