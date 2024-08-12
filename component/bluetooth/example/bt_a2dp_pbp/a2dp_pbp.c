@@ -211,7 +211,7 @@ static rtk_bt_sbc_codec_t sbc_codec_t = {
 		.blocks = 16,
 		.subbands = 8,
 		.alloc_method = SBC_ALLOCATION_METHOD_SNR,
-		.sample_rate = 41000,
+		.sample_rate = 44100,
 		.bitpool = 0x21,
 		.channel_mode = SBC_CHANNEL_MODE_DUAL_CHANNEL,
 	},

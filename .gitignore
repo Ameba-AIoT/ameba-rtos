@@ -6,9 +6,12 @@
 *.s
 
 # project build files
-/**/image/
-/**/image_mp/
-/**/build/
+/**/image/*
+/**/image_mp/*
+/**/build/*
+!/**/image/.gitignore
+!/**/image_mp/.gitignore
+!/**/build/.gitignore
 
 # all bin files
 *.bin

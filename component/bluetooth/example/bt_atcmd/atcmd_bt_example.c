@@ -863,3 +863,26 @@ int atcmd_bt_pts(int argc, char *argv[])
 	}
 	return 0;
 }
+
+int ble_transfer_module_main(uint8_t enable);
+int atcmd_bt_transfer_module(int argc, char *argv[])
+{
+	int ret = 0;
+	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
+		uint8_t op = (uint8_t)str_to_int(argv[0]);
+		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+			BTDEMO_AT_PRINTK("Error: wrong parameter (%d) for transfer module example!", op);
+			return -1;
+		}
+
+		if (ble_transfer_module_main(op)) {
+			BTDEMO_AT_PRINTK("Error: transfer module example %s failed!", (op == 1) ? "enable" : "disable");
+			return -1;
+		}
+
+		BTDEMO_AT_PRINTK("transfer module example %s OK!", (op == 1) ? "enable" : "disable");
+	} else {
+		ret = atcmd_bt_transfer_module_cmd(argc, argv);
+	}
+	return ret;
+}

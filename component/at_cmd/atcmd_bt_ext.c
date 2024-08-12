@@ -644,6 +644,9 @@ static const cmd_table_t example_table[] = {
 #endif
 	// {"bt_config",        atcmd_bt_config,           2, 2},
 	// {"demo",             atcmd_bt_demo,             1, 1},
+#if defined(CONFIG_BT_TRANSFER_MODULE) && CONFIG_BT_TRANSFER_MODULE
+	{"transfer_module",  atcmd_bt_transfer_module,  2, 4},
+#endif
 	{NULL,},
 };
 

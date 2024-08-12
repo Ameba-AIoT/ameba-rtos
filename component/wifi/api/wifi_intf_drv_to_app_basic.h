@@ -240,7 +240,7 @@ typedef struct _raw_data_desc_t {
  * @brief  The structure is crypt info.
  */
 struct rtw_crypt_info {
-	u8 pairwise;
+	u8 pairwise;            /* indicate pairwise(1) key or group key(0) */
 	u8 mac_addr[6];
 	u8 wlan_idx;
 	u16 key_len;
@@ -249,11 +249,10 @@ struct rtw_crypt_info {
 	u8 driver_cipher;
 	u8 transition_disable_exist;
 	u8 transition_disable_bitmap;
-	u8 device_id : 7;	/* wifi driver will convert to camid when force_cam_entry=1 */
-	u8 force_cam_entry : 1;	/* tx raw must set force_cam_entry=1 */
-	u8 rpt_mode;
+	u8 device_id : 5;       /* tx_raw: flag for no linked peer, and will be converted to camid when force_cam_entry=1 */
+	u8 force_cam_entry : 1; /* tx_raw must set force_cam_entry=1 */
+	u8 rpt_mode : 1;
 };
-
 
 /**
  * @brief  The structure is pmksa ops.
@@ -558,7 +557,8 @@ extern  struct wifi_user_conf wifi_user_config;
   */
 typedef struct _pwr_lmt_regu_remap {
 	unsigned char	domain_code;
-	unsigned char	PwrLmtRegu;
+	unsigned char	PwrLmtRegu_2g;	/**< Not distinguish 2.4G and 5G; just set PwrLmtRegu_2g */
+	unsigned char	PwrLmtRegu_5g;
 } pwr_lmt_regu_remap;
 
 /**
@@ -574,14 +574,14 @@ typedef struct _rtw_sw_statistics_t { /* software statistics for tx and rx*/
   */
 struct raw_frame_desc_t {
 	unsigned char wlan_idx;      /**< index of wlan interface which will transmit */
-	unsigned char device_id;     /**< index of peer device which as a rx role for receiving this pkt, and the bmc pkt(A1=0xff~0xff) ignore the field */
+	unsigned char device_id;     /**< index of peer device which as a rx role for receiving this pkt, and will be update when linked peer */
 	unsigned char *buf;          /**< poninter of buf where raw data is stored */
 	unsigned short buf_len;      /**< the length of raw data */
 	enum mgn_rate_type tx_rate;  /**< tx rate of tx_raw frame */
 	unsigned char retry_limit;   /**< the number of tx retry when tx fail for tx_raw frame */
 	unsigned char ac_queue;      /**< 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
-	unsigned char sgi;           /**< 1 for enable data short */
-	unsigned char agg_en;        /**< aggregation of tx_raw frames. 1:enable; 0-disable */
+	unsigned char sgi : 1;       /**< 1 for enable data short */
+	unsigned char agg_en : 1;    /**< aggregation of tx_raw frames. 1:enable; 0-disable */
 } ;
 
 /**
@@ -1027,6 +1027,9 @@ struct wifi_user_conf {
 
 	/*!	auto_reconnect_interval is Automatic reconnection interval, unit s*/
 	unsigned char auto_reconnect_interval;
+
+	/*!	no_beacon_disconnect_time is the disconnect time when no beacon occurs, unit 2s*/
+	unsigned char no_beacon_disconnect_time;
 
 	/*!	skb_num_np is wifi driver's trx buffer number, each buffer occupies about 1.8K bytes of heap, a little difference between different chips.\n
 		These buffer are used for all traffics except tx data in INIC mode, and all traffics in single core mode.\n

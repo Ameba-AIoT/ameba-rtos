@@ -4,7 +4,7 @@
 #                                                                                #
 ##################################################################################
 
-Date: 2019-10-24
+Date: 2024-7-31
 
 Table of Contents
 ~~~~~~~~~~~~~~~~~
@@ -22,64 +22,38 @@ Description
 Setup Guide
 ~~~~~~~~~~~
 
-For Ameba-z
-        1. Add cJSON example to SDK
-        
-        /component/common/utilities
-        .
-        |-- cJSON.c
-        |-- cJSON.h
-        
-        /component/common/example/cJSON
-        .
-        |-- example_cJSON.c
-        |-- example_cJSON.h
-        `-- readme.txt
-        
-        2. Enable CONFIG_EXAMPLE_CJSON in [platform_opts.h]
-        /* For cJSON example */
-        #define CONFIG_EXAMPLE_CJSON     1
+For AmebaDPlus, AmebaLite, AmebaSmart,
+	you only need to use command "make all EXAMPLE=cJSON" in the appropriate directory to compile cJSON example into the image.
+		For example:
+		>> cd amebadplus_gcc_project
+		or
+		>> cd amebalite_gcc_project
+		or
+		>> cd amebasmart_gcc_project
 
-        3. Add example_cJSON() to [example_entry.c]
-        #if defined(CONFIG_EXAMPLE_CJSON) && CONFIG_EXAMPLE_CJSON
-        #include <cJSON/example_cJSON.h>
-        #endif
-        void example_entry(void)
-        {
-        #if defined(CONFIG_EXAMPLE_CJSON) && CONFIG_EXAMPLE_CJSON
-            example_cJSON();
-        #endif
-        }
-        
-        4. Add cJSON lib to project
-        (a) For IAR project, add cJson source code to group <utilities> 
-            $PROJ_DIR$\..\..\..\component\common\utilities\cJSON.c
-        (b) For GCC project, add cJSON source file to utilities Makefile
-            CSRC += $(DIR)/cJSON.c
-        
-        5. Add cJSON example source files to project
-        (a) For IAR project, add cJSON example to group <example> 
-            $PROJ_DIR$\..\..\..\component\common\example\cJSON\example_cJSON.c
-        (b) For GCC project, add cJSON example to example Makefile
-            CSRC += $(DIR)/cJSON/example_cJSON.c
+		>> make all EXAMPLE=cJSON
 
-For Ameba-1, Ameba-pro, Ameba-z2, AmebaD
-	Enable CONFIG_EXAMPLE_CJSON in [platform_opts.h]
-        /* For cJSON example */
-        #define CONFIG_EXAMPLE_CJSON     1
-	
-For AmebaLite
-	Build: make all EXAMPLE=cJSON
+	Download the image(Take Dplus as an example: km4_boot_all.bin,km0_km4_app.bin) generated in the corresponding directory into the respective board.
+
+
 Parameter Setting and Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Modify generate_json_data() to specific data structure and parse it in handle_json_data().
+    You can review the EXAMPLE file "example_cJSON.c" located in component/example/cJSON/. Try to modify the function of generate_json_data() according to specific data structure, and then parse the generated data structure in handle_json_data().
 
 Result description
 ~~~~~~~~~~~~~~~~~~
     The data structure you defined display on the screen after booting.
+	For example:
+
+		{
+			"Motion_Sensor":	5,
+			"Light":	{
+				"Red":	253,
+				"Green":	123,
+				"Blue":	43
+			}
+		}
 
 [Supported List]
         Supported :
-            AMEBA-1, AMEBA-PRO, AMEBA-Z2, AMEBAD, AMEBASMART, AMEBALITE
-        Source code not in project:
-            AMEBA-Z
+			AMEBADPLUS, AMEBALITE, AMEBASMART

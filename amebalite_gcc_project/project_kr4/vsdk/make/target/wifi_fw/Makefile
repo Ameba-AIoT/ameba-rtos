@@ -24,7 +24,6 @@ ifeq ($(CONFIG_AS_INIC_NP),y)
 CSRC =$(DIR)/wififw_init.c \
        $(DIR)/wififw_txpkt.c \
        $(DIR)/wififw_pwrctrl.c \
-	   $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
@@ -76,7 +75,6 @@ ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
 CSRC =$(DIR)/wififw_init.c \
        $(DIR)/wififw_txpkt.c \
        $(DIR)/wififw_pwrctrl.c \
-	   $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \

@@ -103,6 +103,11 @@ int rtw_p2p_remain_on_ch(u8 wlan_idx, u8 enable);
 #ifdef INIC_SKIP_NP_MSG_TASK
 void rtw_single_thread_wakeup(void);
 #endif
+
+#ifdef CONFIG_WIFI_TUNNEL
+extern int wifi_tunnel_command(char *cmd);
+#define rtw_wltunnel_command(cmd) wifi_tunnel_command(cmd)
+#endif
 #ifdef	__cplusplus
 }
 #endif

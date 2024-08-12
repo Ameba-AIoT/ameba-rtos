@@ -27,6 +27,7 @@ static void wifi_csi_thread(void *param)
 	unsigned long long *buff_tmp = NULL; /* for printf csi data*/
 	unsigned int timestamp;
 	unsigned char i = 0;
+	unsigned char assoc_ap_mac[6] = {0xa4, 0x39, 0xb3, 0xa4, 0xbe, 0x2d};  /* need modify to mac address of associated AP when sta mode */
 	struct {
 		unsigned int    count;
 		rtw_mac_t mac_list[AP_STA_NUM];
@@ -40,7 +41,7 @@ static void wifi_csi_thread(void *param)
 	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
-//	act_param.mac_addr = {0x00, 0xe0, 0x4c, 0x81, 0x92, 0xbb};
+	memcpy(act_param.mac_addr, assoc_ap_mac, 6);
 
 	while (1) {
 NEXT:

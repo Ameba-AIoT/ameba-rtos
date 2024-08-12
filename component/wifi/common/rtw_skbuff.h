@@ -40,13 +40,13 @@ struct  sk_buff_head {
 };
 
 struct skb_raw_para {
-	unsigned char enable;       /* indicate whether this packet is a tx_raw packet. set to 1 when tx_raw */
 	unsigned char rate;         /* tx rate of tx_raw data */
 	unsigned char retry_limit;  /* the number of tx retry when tx fail for tx_raw frame */
 	unsigned char ac_queue;     /* 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
-	unsigned char sgi;          /* 1 for enable data short */
-	unsigned char agg_en;       /* aggregation of tx_raw frames. 1:enable; 0-disable */
-	unsigned char device_id;    /* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. ignore when bmc */
+	unsigned char device_id;    /* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer */
+	unsigned char enable : 1;   /* indicate whether this packet is a tx_raw packet. set to 1 when tx_raw */
+	unsigned char sgi : 1;      /* 1 for enable data short */
+	unsigned char agg_en : 1;   /* aggregation of tx_raw frames. 1:enable; 0-disable */
 };
 
 struct sk_buff {

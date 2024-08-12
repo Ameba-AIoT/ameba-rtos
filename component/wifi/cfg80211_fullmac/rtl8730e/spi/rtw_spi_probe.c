@@ -1,8 +1,4 @@
 #include <rtw_cfg80211_fullmac.h>
-#include <linux/spi/spi.h>
-#include <linux/of_gpio.h>
-#include <linux/interrupt.h>
-#include <linux/workqueue.h>
 
 struct inic_spi inic_spi_priv = {0};
 
@@ -12,11 +8,6 @@ static irqreturn_t rtw_spi_rx_req_handler(int irq, void *context)
 		goto exit;
 	}
 
-	if (inic_spi_priv.rx_pending) {
-		dev_warn(&inic_spi_priv.spi_dev->dev, "%s: SPI RX_REQ is ongoing!!\n", __func__);
-	}
-
-	inic_spi_priv.rx_pending = true;
 	llhw_recv_notify();
 
 exit:
@@ -74,6 +65,10 @@ int rtw_spi_setup_gpio(struct spi_device *spi)
 		goto free_rx_req_pin;
 	}
 
+#ifdef SPI_DEBUG
+	gpio_request(DEBUG_PIN, "DEBUG_PIN");
+	gpio_direction_output(DEBUG_PIN, 0);
+#endif
 	return status;
 
 free_rx_req_pin:
@@ -145,10 +140,11 @@ static void rtw_spi_remove(struct spi_device *spi)
 	free_irq(DEV_READY_IRQ, spi);
 	free_irq(RX_REQ_IRQ, spi);
 
-	gpio_free(DEV_READY_IRQ);
-	gpio_free(RX_REQ_IRQ);
-
-	spi_unregister_device(spi);
+	gpio_free(DEV_READY_PIN);
+	gpio_free(RX_REQ_PIN);
+#ifdef SPI_DEBUG
+	gpio_free(DEBUG_PIN);
+#endif
 
 	return;
 }

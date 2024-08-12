@@ -17,6 +17,7 @@ extern "C"  {
 #define SIMPLE_BLE_CLIENT_PROFILE_ID        3
 #define CTE_CLIENT_PROFILE_ID               4
 #define THROUGHPUT_CLIENT_PROFILE_ID        5
+#define TRANSFER_MODULE_CLIENT_PROFILE_ID   6
 
 typedef enum {
 	DISC_IDLE = 0,

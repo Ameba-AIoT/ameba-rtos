@@ -30,7 +30,6 @@ CSRC +=$(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
 	   $(DIR)/wififw_h2c.c \
        $(DIR)/wififw_txpkt.c \
        $(DIR)/wififw_pwrctrl.c \
-       $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
 	   $(DIR)/wififw_interrupt_ctrl.c \

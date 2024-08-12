@@ -183,9 +183,10 @@ void general_client_read_res_hdl(void *data)
 			BT_LOGA("[APP] GATT client read result, profile_id: %d, conn_handle: %d, type: %d, status: %d, handle: 0x%04x\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type, read_status, handle);
 			BT_DUMPA("[APP] GATTC read result:\r\n", read_res->by_handle.value, read_res->by_handle.len);
-			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%04x\r\n",
+			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%04x",
 						read_status, read_res->profile_id, read_res->conn_handle,
 						read_res->type, handle);
+			BT_AT_DUMP("", read_res->by_handle.value, read_res->by_handle.len);
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_BY_UUID:
@@ -193,18 +194,20 @@ void general_client_read_res_hdl(void *data)
 			BT_LOGA("[APP] GATT client read result, profile_id: %d, conn_handle: %d, type: %d, status: %d, handle: 0x%04x\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type, read_status, handle);
 			BT_DUMPA("[APP] GATTC read result:\r\n", read_res->by_uuid_per.value, read_res->by_uuid_per.len);
-			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%04x\r\n",
+			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d,0x%04x",
 						read_status, read_res->profile_id, read_res->conn_handle,
 						read_res->type, handle);
+			BT_AT_DUMP("", read_res->by_uuid_per.value, read_res->by_uuid_per.len);
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
 			BT_LOGA("[APP] GATT client read result, profile_id: %d, conn_handle: %d, type: %d, status: %d\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type, read_status);
 			BT_DUMPA("[APP] GATTC read result:\r\n", read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
-			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d\r\n",
+			BT_AT_PRINT("+BLEGATTC:read,%d,%d,%d,%d",
 						read_status, read_res->profile_id,
 						read_res->conn_handle, read_res->type);
+			BT_AT_DUMP("", read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
 			break;
 
 		default:
@@ -254,8 +257,9 @@ void general_client_notify_hdl(void *data)
 	BT_LOGA("[APP] GATTC notify received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			ntf_ind->profile_id, ntf_ind->conn_handle, ntf_ind->value_handle);
 	BT_DUMPA("[APP] GATTC notify event:\r\n", ntf_ind->value, ntf_ind->len);
-	BT_AT_PRINT("+BLEGATTC:notify,%d,%d,0x%x\r\n",
+	BT_AT_PRINT("+BLEGATTC:notify,%d,%d,0x%x",
 				ntf_ind->profile_id, ntf_ind->conn_handle, ntf_ind->value_handle);
+	BT_AT_DUMP("", ntf_ind->value, ntf_ind->len);
 }
 
 void general_client_indicate_hdl(void *data)
@@ -269,8 +273,9 @@ void general_client_indicate_hdl(void *data)
 	BT_LOGA("[APP] GATTC indicate received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			indicate_ind->profile_id, indicate_ind->conn_handle, indicate_ind->value_handle);
 	BT_DUMPA("[APP] GATTC indicate event:\r\n", indicate_ind->value, indicate_ind->len);
-	BT_AT_PRINT("+BLEGATTC:indicate,%d,%d,0x%x\r\n",
+	BT_AT_PRINT("+BLEGATTC:indicate,%d,%d,0x%x",
 				indicate_ind->profile_id, indicate_ind->conn_handle, indicate_ind->value_handle);
+	BT_AT_DUMP("", indicate_ind->value, indicate_ind->len);
 }
 
 void general_client_cccd_enable_hdl(void *data)
