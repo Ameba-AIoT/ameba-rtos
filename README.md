@@ -1,5 +1,7 @@
 # ameba-rtos
 
+* [中文版](./README_CN.md)
+
 ameba-rtos is the development framework for Realtek SoCs supported on Linux.
 
 # Supported SoCs
@@ -79,4 +81,6 @@ The image download only erase the flash fields with images programmed. If you wa
 
 # Feedback
 
-If you have any issues or suggestions during project development, please login [RealMCU](https://www.realmcu.com/en/Account/Login?ReturnUrl=%2FCommunity%2Fcima%2F3187aedd-cb0d-444b-aa0c-284fd82cc501) and give feedback.
+* If you have any issues or suggestions during project development, please login [RealMCU](https://www.realmcu.com/en/Account/Login?ReturnUrl=%2FCommunity%2Fcima%2F3187aedd-cb0d-444b-aa0c-284fd82cc501) and give feedback.
+
+* If you find a bug or have a feature request, please [Check the Issues section on github](https://github.com/Ameba-AIoT/ameba-rtos/issues). Please check existing Issues before opening a new one.
