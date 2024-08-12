@@ -76,6 +76,7 @@
 #include <net/ieee80211_radiotap.h>
 #include <linux/ieee80211.h>
 #include <net/cfg80211.h>
+#include <linux/of_gpio.h>
 
 /* fullmac headers. */
 #include "rom_rtw_defs.h"

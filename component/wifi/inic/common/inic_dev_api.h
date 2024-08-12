@@ -18,12 +18,13 @@ struct event_priv_t {
 	rtos_sema_t task_wake_sema;
 	rtos_mutex_t send_mutex;
 	rtos_sema_t api_ret_sema;
-	bool b_waiting_for_ret;
 
 	u8 *rx_api_msg;
 	u8 *rx_ret_msg;
 
 	u8 dev_req_network_info[DEV_REQ_NETWORK_INFO_MAX_LEN];
+
+	u8 b_waiting_for_ret: 1;
 };
 
 struct event_func_t {
@@ -90,6 +91,11 @@ void inic_event_add_nan_func(u32 api_id, u32 *param_buf);
 void inic_event_del_nan_func(u32 api_id, u32 *param_buf);
 void inic_event_nan_cfgvenfor(u32 api_id, u32 *param_buf);
 #endif
+
+#ifdef CONFIG_WIFI_TUNNEL
+void inic_event_wtn_cmd(u32 api_id, u32 *param_buf);
+#endif
+
 #ifdef CONFIG_MP_INCLUDED
 void inic_event_mp_cmd(u32 api_id, u32 *param_buf);
 #endif

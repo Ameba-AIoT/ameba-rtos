@@ -25,17 +25,18 @@ struct event_priv_t {
 	struct sk_buff				*rx_api_msg;
 	struct sk_buff				*rx_api_ret_msg;
 
-	bool					b_waiting_for_ret;
 	struct completion			api_ret_sema; /* sema to wait for API calling done */
 #ifdef CONFIG_SDIO_BRIDGE
 	struct completion			bridge_scan_done_sema; /* sema to wait for scan done */
 #endif
+
+	u8					b_waiting_for_ret: 1;
 };
 
 struct recv_priv_t {
 	struct task_struct			*rx_thread;
 	struct semaphore			rx_sema;
-	bool 					initialized;
+	u8					initialized: 1;
 };
 
 struct xmit_priv_t {
@@ -52,7 +53,6 @@ struct xmit_priv_t {
 struct mlme_priv_t {
 	/* scan parameters. */
 	struct cfg80211_scan_request	*pscan_req_global;
-	bool b_in_scan;
 
 	/* join parameters. */
 	struct internal_join_block_param	*join_block_param;
@@ -64,8 +64,10 @@ struct mlme_priv_t {
 	struct cfg80211_external_auth_params auth_ext_para;
 
 	/* disconnect parameters */
-	bool b_in_disconnect;
 	struct completion	disconnect_done_sema;
+
+	u8					b_in_scan: 1;
+	u8					b_in_disconnect: 1;
 };
 
 #ifdef CONFIG_P2P

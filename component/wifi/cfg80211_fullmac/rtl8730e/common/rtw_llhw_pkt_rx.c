@@ -74,7 +74,10 @@ int llhw_recv_process(struct sk_buff *pskb)
 		}
 		break;
 	default:
+#ifndef CONFIG_FULLMAC_HCI_SPI
 		dev_err(global_idev.fullmac_dev, "%s: unknown event:%d\n", __func__, event);
+#endif
+		kfree_skb(pskb);
 	}
 
 	return ret;

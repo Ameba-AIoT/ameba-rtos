@@ -22,6 +22,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5;
+	wifi_user_config.no_beacon_disconnect_time = 9;  /* unit 2s, default 18s */
 
 #if (defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_SPI))
 	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */

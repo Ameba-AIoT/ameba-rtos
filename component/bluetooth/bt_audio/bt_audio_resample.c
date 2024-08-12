@@ -314,6 +314,10 @@ static uint32_t resample_process_s16(rtk_bt_audio_resample_t *presample, int16_t
 		BT_LOGE("%s input or output or presample is NULL \r\n", __func__);
 		return 0;
 	}
+	if (presample->in_rate == presample->out_rate) {
+		memcpy((void *)output, (void *)input, input_frames * channels * 16 / 8);
+		return input_frames;
+	}
 	output_frames = (int)((float)out_rate / (float)in_rate + 1) * input_frames;
 	in_count = input_frames * channels;
 	out_count = output_frames * channels;

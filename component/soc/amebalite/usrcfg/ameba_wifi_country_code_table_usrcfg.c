@@ -284,14 +284,22 @@ const struct country_code_table_common_t country_code_table_common[] = {
 	{country_code_ETSI2, 0x3a, TXPWR_LMT_ETSI, sizeof(country_code_ETSI2) / sizeof(country_code_ETSI2[0])},
 };
 
-BOOLEAN wifi_get_country_code_info(char  *country_code, u8 *channel_plan, u8 *power_limit)
+BOOLEAN wifi_get_country_code_info(char *country_code, u8 *channel_plan, u8 *power_limit)
 {
 	u8 i, j;
+	if (!country_code) {
+		return _FALSE;
+	}
 
 	for (i = 0; i < sizeof(country_code_table) / sizeof(country_code_table[0]); i++) {
 		if (country_code_table[i].char2[0] == country_code[0] && country_code_table[i].char2[1] == country_code[1]) {
-			*channel_plan = country_code_table[i].channel_plan;
-			*power_limit = country_code_table[i].pwr_lmt;
+			if (channel_plan) {
+				*channel_plan = country_code_table[i].channel_plan;
+			}
+
+			if (power_limit) {
+				*power_limit = country_code_table[i].pwr_lmt;
+			}
 			return _TRUE;
 		}
 	}
@@ -299,8 +307,13 @@ BOOLEAN wifi_get_country_code_info(char  *country_code, u8 *channel_plan, u8 *po
 	for (i = 0; i < sizeof(country_code_table_common) / sizeof(country_code_table_common[0]); i++) {
 		for (j = 0; j < country_code_table_common[i].num; j++) {
 			if (country_code_table_common[i].country_table[j].char2[0] == country_code[0] && country_code_table_common[i].country_table[j].char2[1] == country_code[1]) {
-				*channel_plan = country_code_table_common[i].channel_plan;
-				*power_limit = country_code_table_common[i].pwr_lmt;
+				if (channel_plan) {
+					*channel_plan = country_code_table_common[i].channel_plan;
+				}
+
+				if (power_limit) {
+					*power_limit = country_code_table_common[i].pwr_lmt;
+				}
 				return _TRUE;
 			}
 		}

@@ -38,6 +38,10 @@ static int security = -1;
 extern int wifi_set_ips_internal(u8 enable);
 #ifdef CONFIG_AS_INIC_AP
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
+
+#ifdef CONFIG_WIFI_TUNNEL
+extern int inic_wltunnel_command(char *cmd, unsigned int cmd_len);
+#endif
 #endif
 
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
@@ -1288,6 +1292,53 @@ end:
 		at_wlps_help();
 	}
 }
+
+#ifdef CONFIG_WIFI_TUNNEL
+/****************************************************************
+AT command process:
+	AT+WLTUNNEL
+	Wifi AT Command:
+	[+WLTUNNEL]:OK
+****************************************************************/
+void at_wltunnel(void *arg)
+{
+	char buf[64] = {0};
+	char *copy = buf;
+	int i = 0;
+	int len = 0;
+	int ret = 0;
+
+	if (arg == NULL) {
+		RTK_LOGW(NOTAG, "[WLTUNNEL] Usage: AT+WLTUNNEL=start,[mode],[bssid],[ssid]/scan/handshake/switch/dump/stop\r\n");
+		ret = -1;
+		goto end;
+	}
+
+	strncpy(copy, arg, sizeof(buf) - 1);
+	len = strlen(copy);
+
+	i = 0;
+	do {
+		if ((*(copy + i) == ',')) {
+			*(copy + i) = ' ';
+		}
+	} while ((i++) < len);
+
+#ifdef CONFIG_AS_INIC_AP
+	ret = inic_wltunnel_command(copy, strlen(copy) + 1);
+#else
+	ret = rtw_wltunnel_command(copy);
+#endif
+
+end:
+	if (ret == 0) {
+		at_printf("\r\n%sOK\r\n", "+WLTUNNEL:");
+	} else {
+		at_printf("\r\n%sERROR:%d\r\n", "+WLTUNNEL:", ret);
+	}
+}
+#endif
+
 #endif /* CONFIG_WLAN */
 
 #ifdef CONFIG_LWIP_LAYER
@@ -1599,6 +1650,9 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLWPS", at_wlwps, {NULL, NULL}},
 #endif
 	{"+WLPS", at_wlps, {NULL, NULL}},
+#ifdef CONFIG_WIFI_TUNNEL
+	{"+WLTUNNEL", at_wltunnel, {NULL, NULL}},
+#endif
 #endif /* CONFIG_WLAN */
 };
 

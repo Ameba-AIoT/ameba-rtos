@@ -91,7 +91,7 @@ struct inic_txbuf_info_t {
 	struct inic_buf_info txbuf_info;
 #endif
 	void *ptr;	/* pointer to the original buffer*/
-	u8 is_skb;	/* the original buffer is skb or not */
+	u8 is_skb: 1;	/* the original buffer is skb or not */
 };
 
 #define SPI_DMA_ALIGN(x)	((((x-1)>>2)+1)<<2) //alignement to 4

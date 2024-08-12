@@ -279,6 +279,13 @@ int atcmd_bt_gmap_cmd(int argc, char *argv[]);
 
 /* pts cmd impl */
 int atcmd_bt_pts_cmd(int argc, char *argv[]);
+
+/* transfer module demo impl */
+int atcmd_bt_transfer_module(int argc, char *argv[]);
+
+/* transfer module cmd impl */
+int atcmd_bt_transfer_module_cmd(int argc, char *argv[]);
+
 #ifdef __cplusplus
 }
 #endif

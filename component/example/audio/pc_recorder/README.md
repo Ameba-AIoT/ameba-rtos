@@ -22,7 +22,7 @@ GCC:use CMD "make all EXAMPLE=pc_recorder" to compile pc recorder example.
 
 	4). Default payload size is 2048 bytes, make sure settings on RtkAudioRecordTool.exe stay the same as demo.
 
-	5). Run RtkAudioRecordTool.exe on PC, and start to record.
+	5). Run RtkAudioTestToolv1.0.1/RtkAudioTestTool.exe on PC, and start to record.
 
 2. for record and playback
 	1). For GCC environmnet, type command "make menuconfig" in auto_build
@@ -41,7 +41,7 @@ GCC:use CMD "make all EXAMPLE=pc_recorder" to compile pc recorder example.
 
 	4). Default payload size is 2048 bytes, make sure settings on RtkAudioRecordTool.exe stay the same as demo.
 
-	5). Run RtkAudioRecordTool.exe on PC, browse mp3 music from PC, seleck playback and start to record.
+	5). Run RtkAudioTestToolv1.0.1/RtkAudioTestTool.exe on PC, browse mp3 music from PC, seleck playback and start to record.
 
 
 ## For Example, run pc recorder on KR4.
@@ -58,9 +58,9 @@ GCC:use CMD "make all EXAMPLE=pc_recorder" to compile pc recorder example.
 	  (1)TX: PA_25, RX: PA_24
 	  (2)baudrate: 1500000
 
-	4). Default payload size is 2048 bytes, make sure settings on RtkAudioTestToolv1.0.1.2/RtkAudioTestTool.exe stay the same as demo.
+	4). Default payload size is 2048 bytes, make sure settings on RtkAudioTestToolv1.0.1/RtkAudioTestTool.exe stay the same as demo.
 
-	5). Run RtkAudioTestToolv1.0.1.2/RtkAudioTestTool.exe on PC, and start to record.
+	5). Run RtkAudioTestToolv1.0.1/RtkAudioTestTool.exe on PC, and start to record.
 
 2. for record and playback
 	1). For GCC environmnet, type command "make menuconfig" in auto_build
@@ -77,9 +77,9 @@ GCC:use CMD "make all EXAMPLE=pc_recorder" to compile pc recorder example.
 	  (1)TX: PA_25, RX: PA_24
 	  (2)baudrate: 1500000
 
-	4). Default payload size is 2048 bytes, make sure settings on RtkAudioTestToolv1.0.1.2/RtkAudioTestTool.exe stay the same as demo.
+	4). Default payload size is 2048 bytes, make sure settings on RtkAudioTestToolv1.0.1/RtkAudioTestTool.exe stay the same as demo.
 
-	5). Run RtkAudioTestToolv1.0.1.2/RtkAudioTestTool.exe on PC, browse mp3 music from PC, seleck playback and start to record.
+	5). Run RtkAudioTestToolv1.0.1/RtkAudioTestTool.exe on PC, browse mp3 music from PC, seleck playback and start to record.
 
 ## [Supported List]
 	Supported:

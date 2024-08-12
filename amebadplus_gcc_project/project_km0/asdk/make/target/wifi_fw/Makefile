@@ -24,7 +24,6 @@ CSRC +=$(DIR)/wififw_init.c \
        $(DIR)/wififw_txpkt.c \
 	   $(DIR)/wififw_bcnmode.c \
        $(DIR)/wififw_pwrctrl.c \
-	   $(DIR)/wififw_csi.c    \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
 	   $(DIR)/wififw_interrupt_handle.c \

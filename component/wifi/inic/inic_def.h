@@ -26,6 +26,7 @@
 #define P2P_API_BASE						0x5000
 #define PROXY_API_BASE						0x6000
 #define SDIO_BRIDGE_BASE					0x7000
+#define WTN_API_BASE						0x8000
 
 #define INIC_API_PROCESS_DONE				0
 
@@ -162,6 +163,8 @@ enum INIC_WIFI_H2C_API_ID {
 	INIC_API_BRIDGE_DHCP						= SDIO_BRIDGE_BASE + 1,
 	INIC_API_BRIDGE_GET_IP						= SDIO_BRIDGE_BASE + 2,
 
+	/* 0x8001~0x9000 reserved for wifi tunnel API */
+	INIC_API_WTN_CMD							= WTN_API_BASE + 1,
 };
 
 enum IPC_LWIP_INFO_TYPE {

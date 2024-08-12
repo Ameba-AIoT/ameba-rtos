@@ -21,7 +21,7 @@
 #endif
 
 #ifdef CONFIG_LONGER_CMD
-#define UART_LOG_CMD_BUFLEN     512
+#define UART_LOG_CMD_BUFLEN     4096
 #define MAX_ARGV                32
 #else
 //UART_LOG_CMD_BUFLEN: only 126 bytes could be used for keeping input

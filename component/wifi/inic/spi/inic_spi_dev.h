@@ -18,16 +18,14 @@ enum inic_spi_dma_type {
 	INIC_SPI_RXDMA
 };
 
-#define DEV_STS_IDLE			0
-#define DEV_STS_BUSY			BIT(0)
-#define DEV_STS_RXDMA_DONE		BIT(1)
-#define DEV_STS_TXDMA_DONE		BIT(2)
-
-#define DEV_STS_TRX_MASK		(DEV_STS_RXDMA_DONE | DEV_STS_TXDMA_DONE)
-
+#define DEV_STS_IDLE				0
+#define DEV_STS_SPI_CS_LOW			BIT(0)
+#define DEV_STS_WAIT_RXDMA_DONE			BIT(1)
+#define DEV_STS_WAIT_TXDMA_DONE			BIT(2)
 
 struct inic_spi_priv_t {
 	u32 dev_status;
+	rtos_mutex_t dev_sts_lock;
 
 	rtos_mutex_t tx_lock;
 	rtos_sema_t rxirq_sema;
@@ -43,6 +41,7 @@ struct inic_spi_priv_t {
 	u8 txdma_initialized: 1;
 	u8 rx_req: 1;
 	u8 wait_for_txbuf: 1;
+	u8 ssris_pending: 1;
 };
 
 static inline void set_dev_rdy_pin(u8 status)
