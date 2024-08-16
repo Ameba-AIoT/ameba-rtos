@@ -37,7 +37,7 @@ int get_method_handler(struct httpd_conn *conn)
 	vfs_file *finfo;
 	struct stat sbuf;
 	char *prefix;
-	char path[MAX_PATH_LEN] = {0};
+	char path[MAX_PATH_LEN * 2] = {0};
 
 	//printf("[%s] request.path = %s, request.path_len = %d\n", __func__, conn->request.path, conn->request.path_len);
 
@@ -69,9 +69,9 @@ int get_method_handler(struct httpd_conn *conn)
 	}
 	//printf("[%s] page_path = %s\n", __func__, page_path);
 
-	prefix = find_vfs1_tag();
+	prefix = find_vfs_tag(VFS_REGION_1);
 
-	snprintf(path, MAX_PATH_LEN, "%s:%s", prefix, page_path);
+	snprintf(path, MAX_PATH_LEN * 2, "%s:%s", prefix, page_path);
 
 	finfo = (vfs_file *)fopen(path, "r");
 	if (finfo == NULL) {

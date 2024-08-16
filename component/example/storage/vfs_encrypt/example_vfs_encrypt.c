@@ -92,7 +92,7 @@ void example_vfs_encrypt_thread(void *param)
 	vfs_file *finfo;
 	int res = 0;
 
-	prefix = find_vfs1_tag();
+	prefix = find_vfs_tag(VFS_REGION_1);
 
 	vfs_set_user_encrypt_callback(prefix, vfs_mbedtls_aes_cbc_encrypt, vfs_mbedtls_aes_cbc_decrypt, 16);
 

@@ -96,13 +96,11 @@ void eap_disconnected_hdl(char *buf, int buf_len, int flags, void *handler_user_
 	(void) flags;
 	(void) handler_user_data;
 
-#if (RTL8192E_SUPPORT == 0)//devin_li rtl8192es_temp_mask	
 	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
 	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, eap_disconnected_hdl);
 	//eap_peer_unregister_methods();
 	eap_sm_deinit();
 	//reset_config();
-#endif
 }
 
 /*

@@ -286,6 +286,7 @@ int _vsscanf_minimal(const char *buf, const char *fmt, va_list args)
 
 		case 'i':
 			base = 0;
+			is_sign = 1;
 			break;
 
 		case 'd':
@@ -391,38 +392,38 @@ int _vsscanf_minimal(const char *buf, const char *fmt, va_list args)
 
 		case 'h':
 			if (is_sign) {
-				*va_arg(args, short *) = val.s;
+				memcpy(va_arg(args, short *), &(val.s), sizeof(short));
 			} else {
-				*va_arg(args, unsigned short *) = val.u;
+				memcpy(va_arg(args, unsigned short *), &(val.u), sizeof(unsigned short));
 			}
 			break;
 
 		case 'l':
 			if (is_sign) {
-				*va_arg(args, long *) = val.s;
+				memcpy(va_arg(args, long *), &(val.s), sizeof(long));
 			} else {
-				*va_arg(args, unsigned long *) = val.u;
+				memcpy(va_arg(args, unsigned long *), &(val.u), sizeof(unsigned long));
 			}
 			break;
 
 		case 'L':
 			if (is_sign) {
-				*va_arg(args, long long *) = val.s;
+				memcpy(va_arg(args, long long *), &(val.s), sizeof(long long));
 			} else {
-				*va_arg(args, unsigned long long *) = val.u;
+				memcpy(va_arg(args, unsigned long long *), &(val.u), sizeof(unsigned long long));
 			}
 			break;
 
 		case 'Z':
 		case 'z':
-			*va_arg(args, size_t *) = val.u;
+			memcpy(va_arg(args, size_t *), &(val.u), sizeof(size_t));
 			break;
 
 		default:
 			if (is_sign) {
-				*va_arg(args, int *) = val.s;
+				memcpy(va_arg(args, int *), &(val.s), sizeof(int));
 			} else {
-				*va_arg(args, unsigned int *) = val.u;
+				memcpy(va_arg(args, unsigned int *), &(val.u), sizeof(unsigned int));
 			}
 			break;
 		}
@@ -445,6 +446,8 @@ int _vsscanf_minimal(const char *buf, const char *fmt, va_list args)
 * @fmt:        formatting of buffer
 * @...:        resulting arguments
 */
+/* support %* %x %c %s %o %x %i %d %u %h %z and %l(within len 24) */
+/* for internal use, not support [] and ^ */
 int _sscanf_ss(const char *buf, const char *fmt, ...)
 {
 	va_list args;

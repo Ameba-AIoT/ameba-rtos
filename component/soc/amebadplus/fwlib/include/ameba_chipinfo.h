@@ -62,6 +62,11 @@ _LONG_CALL_ u8 ChipInfo_PSRAMType(void);
 _LONG_CALL_ u32 ChipInfo_MCM_Info(void);
 _LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);
 _LONG_CALL_ void ChipInfo_GetLibVersion_ToBuf(char *buf, size_t buflen);
+_LONG_CALL_ u8 EFUSE_GetPackageInfo(void);
+_LONG_CALL_ u8 EFUSE_GetBDNum(void);
+_LONG_CALL_ u8 EFUSE_GetChipVersion(void);
+_LONG_CALL_ u8 EFUSE_GetESFlag(void);
+_LONG_CALL_ void EFUSE_GetUUID(u32 *UUID);
 /**
   * @}
   */

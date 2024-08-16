@@ -16,7 +16,7 @@ int FATFS_RegisterDiskDriver(ll_diskio_drv *drv)
 		disk.nbr++;
 		drv_num = drv->drv_num;
 	}
-	printf("FATFS Register: disk driver %d\n\r", drv_num);
+	VFS_DBG(VFS_INFO, "FATFS Register: disk driver %d ", drv_num);
 	return drv_num;
 }
 
@@ -341,7 +341,7 @@ int fatfs_closedir(vfs_file *finfo)
 int fatfs_mkdir(const char *pathname)
 {
 	FRESULT res = f_mkdir(pathname);
-	if (res > 0) {
+	if (res > 0 && res != FR_EXIST) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs mkdir error %d \r\n", res);
 	}
 	return -res;

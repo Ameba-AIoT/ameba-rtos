@@ -54,7 +54,7 @@ For example:
 # Expect result
 
 1. At first, slave1 would receive data in decreasing order in a loop, while slave2 which is not selected by master receives nothing and generates rx timeout at the same time.
-2. In the next loop, slave2 selected by the master receives data in increasing order, while slave2 receives nothing and generates rx timeout.
+2. In the next loop, slave2 selected by the master receives data in increasing order, while slave1 receives nothing and generates rx timeout.
 
 # Note
 

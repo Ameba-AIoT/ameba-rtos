@@ -237,8 +237,6 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
   *          This parameter can be one or combinations of the following values:
   *            @arg TransferType
   *            @arg BlockType
-  *            @arg SrcTransferType
-  *            @arg DstTransferType
   *            @arg ErrType
   *            @arg or the combination of the interrupt types above
   * @note  this function completes clearing the specified type interrupt status. Which type
@@ -269,12 +267,6 @@ GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT)
 	if ((GDMA->RAW_BLOCK & BIT(GDMA_ChNum)) && (GDMA->STATUS_BLOCK & BIT(GDMA_ChNum))) {
 		temp_isr |= (BlockType & GDMA_IT);
 	}
-	if ((GDMA->RAW_SRC_TRAN & BIT(GDMA_ChNum)) && (GDMA->STATUS_SRC_TRAN & BIT(GDMA_ChNum))) {
-		temp_isr |= (SrcTransferType & GDMA_IT);
-	}
-	if ((GDMA->RAW_DST_TRAN & BIT(GDMA_ChNum)) && (GDMA->STATUS_DST_TRAN & BIT(GDMA_ChNum))) {
-		temp_isr |= (DstTransferType & GDMA_IT);
-	}
 	if ((GDMA->RAW_ERR & BIT(GDMA_ChNum)) && (GDMA->STATUS_ERR & BIT(GDMA_ChNum))) {
 		temp_isr |= (ErrType & GDMA_IT);
 	}
@@ -288,14 +280,6 @@ GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT)
 
 	if (GDMA_IT & BlockType) {
 		GDMA->CLEAR_BLOCK = temp_bit;
-	}
-
-	if (GDMA_IT & SrcTransferType) {
-		GDMA->CLEAR_SRC_TRAN = temp_bit;
-	}
-
-	if (GDMA_IT & DstTransferType) {
-		GDMA->CLEAR_DST_TRAN = temp_bit;
 	}
 
 	if (GDMA_IT & ErrType) {
@@ -335,12 +319,6 @@ GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum)
 	if ((GDMA->RAW_BLOCK & BIT(GDMA_ChNum)) && (GDMA->STATUS_BLOCK & BIT(GDMA_ChNum))) {
 		temp_isr |= BlockType;
 	}
-	if ((GDMA->RAW_SRC_TRAN & BIT(GDMA_ChNum)) && (GDMA->STATUS_SRC_TRAN & BIT(GDMA_ChNum))) {
-		temp_isr |= SrcTransferType;
-	}
-	if ((GDMA->RAW_DST_TRAN & BIT(GDMA_ChNum)) && (GDMA->STATUS_DST_TRAN & BIT(GDMA_ChNum))) {
-		temp_isr |= DstTransferType;
-	}
 	if ((GDMA->RAW_ERR & BIT(GDMA_ChNum)) && (GDMA->STATUS_ERR & BIT(GDMA_ChNum))) {
 		temp_isr |= ErrType;
 	}
@@ -351,8 +329,6 @@ GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum)
 	/* clear all types of interrupt */
 	GDMA->CLEAR_TFR = temp_bit;
 	GDMA->CLEAR_BLOCK = temp_bit;
-	GDMA->CLEAR_SRC_TRAN = temp_bit;
-	GDMA->CLEAR_DST_TRAN = temp_bit;
 	GDMA->CLEAR_ERR = temp_bit;
 
 	return temp_isr;
@@ -366,8 +342,6 @@ GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum)
   *          This parameter can be one or combinations of the following values:
   *            @arg TransferType
   *            @arg BlockType
-  *            @arg SrcTransferType
-  *            @arg DstTransferType
   *            @arg ErrType
   *            @arg or the combination of the interrupt types above
   * @param  NewState: DISABLE/ENABLE.
@@ -393,46 +367,30 @@ GDMA_INTConfig(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT, u32 NewState)
 		temp_bit = BIT(GDMA_ChNum) | BIT(GDMA_ChNum + 8);
 
 		if (GDMA_IT & TransferType) {
-			GDMA->MASK_TFR |= temp_bit;
+			GDMA->MASK_TFR = temp_bit;
 		}
 
 		if (GDMA_IT & BlockType) {
-			GDMA->MASK_BLOCK |= temp_bit;
-		}
-
-		if (GDMA_IT & SrcTransferType) {
-			GDMA->MASK_SRC_TRAN |= temp_bit;
-		}
-
-		if (GDMA_IT & DstTransferType) {
-			GDMA->MASK_DST_TRAN |= temp_bit;
+			GDMA->MASK_BLOCK = temp_bit;
 		}
 
 		if (GDMA_IT & ErrType) {
-			GDMA->MASK_ERR |= temp_bit;
+			GDMA->MASK_ERR = temp_bit;
 		}
 	} else {
 		/* Disable the selected DMA Chan interrupts */
-		temp_bit = ~(BIT(GDMA_ChNum) | BIT(GDMA_ChNum + 8));
+		temp_bit = BIT(GDMA_ChNum + 8);
 
 		if (GDMA_IT & TransferType) {
-			GDMA->MASK_TFR &= temp_bit;
+			GDMA->MASK_TFR = temp_bit;
 		}
 
 		if (GDMA_IT & BlockType) {
-			GDMA->MASK_BLOCK &= temp_bit;
-		}
-
-		if (GDMA_IT & SrcTransferType) {
-			GDMA->MASK_SRC_TRAN &= temp_bit;
-		}
-
-		if (GDMA_IT & DstTransferType) {
-			GDMA->MASK_DST_TRAN &= temp_bit;
+			GDMA->MASK_BLOCK = temp_bit;
 		}
 
 		if (GDMA_IT & ErrType) {
-			GDMA->MASK_ERR &= temp_bit;
+			GDMA->MASK_ERR = temp_bit;
 		}
 	}
 }

@@ -24,11 +24,11 @@ int fatfs_sd_close(void)
 {
 	if (fatfs_sd_init_done) {
 		if (f_mount(NULL, fatfs_sd_param.drv, 1) != FR_OK) {
-			printf("FATFS unmount logical drive fail.\n");
+			VFS_DBG(VFS_ERROR, "FATFS unmount logical drive fail.");
 		}
 
 		if (FATFS_UnRegisterDiskDriver(fatfs_sd_param.drv_num)) {
-			printf("Unregister disk driver from FATFS fail.\n");
+			VFS_DBG(VFS_ERROR, "Unregister disk driver from FATFS fail.");
 		}
 
 		//sdio_deinit_host(psdioh_adapter);
@@ -47,11 +47,11 @@ int fatfs_sd_init(void)
 		int Fatfs_ok = 0;
 		FRESULT res;
 		// Register disk driver to Fatfs
-		printf("Register disk driver to Fatfs.\n\r");
+		VFS_DBG(VFS_INFO, "Register disk driver to Fatfs.");
 		fatfs_sd_param.drv_num = FATFS_RegisterDiskDriver(&SD_disk_Driver);
 
 		if (fatfs_sd_param.drv_num < 0) {
-			printf("Rigester disk driver to FATFS fail.\n\r");
+			VFS_DBG(VFS_ERROR, "Rigester disk driver to FATFS fail.");
 		} else {
 			Fatfs_ok = 1;
 			fatfs_sd_param.drv[0] = fatfs_sd_param.drv_num + '0';
@@ -66,10 +66,10 @@ int fatfs_sd_init(void)
 
 		res = f_mount(&fatfs_sd_param.fs, fatfs_sd_param.drv, 1);
 		if (res) {
-			printf("f_mount error here, please insert SD card or use f_mkfs to format SD card to FAT32");
+			VFS_DBG(VFS_ERROR, "f_mount error here, please insert SD card or use f_mkfs to format SD card to FAT32");
 			//res = f_mkfs(fatfs_sd_param.drv,0,0);
 			if (f_mount(&fatfs_sd_param.fs, fatfs_sd_param.drv, 0) != FR_OK) {
-				printf("FATFS mount logical drive on sd card fail.\n\r");
+				VFS_DBG(VFS_ERROR, "FATFS mount logical drive on sd card fail.");
 				ret = -2;
 				goto fatfs_init_err;
 			} else {
@@ -110,7 +110,7 @@ int fatfs_sd_open_file(char *filename)
 
 		res = f_open(&fatfs_sd_file, path, FA_OPEN_ALWAYS | FA_WRITE);
 		if (res) {
-			printf("open file (%s) fail. res = %d\n\r", filename, res);
+			VFS_DBG(VFS_ERROR, "open file (%s) fail. res = %d", filename, res);
 			return -1;
 		}
 		return 0;
@@ -124,7 +124,7 @@ int fatfs_sd_close_file(void)
 	int res;
 	res = f_close(&fatfs_sd_file);
 	if (res) {
-		printf("close file fail.\n\r");
+		VFS_DBG(VFS_ERROR, "close file fail.");
 		return -1;
 	}
 
@@ -137,18 +137,16 @@ void fatfs_sd_write(char *buf, uint32_t len)
 	uint32_t bw;
 	int offset = 0;
 
-	//printf("fatfs_sd_write length= %d\n\r",len);
-
 	while (len > 0) {
 		if (fatfs_sd_buf_pos + len >= fatfs_sd_buf_size) {
 			memcpy(fatfs_sd_buf + fatfs_sd_buf_pos, buf + offset, fatfs_sd_buf_size - fatfs_sd_buf_pos);
 
 			res = f_write(&fatfs_sd_file, fatfs_sd_buf, fatfs_sd_buf_size, &bw);
 			if (res) {
-				printf("Write error (%d)\n\r", res);
+				VFS_DBG(VFS_ERROR, "Write error (%d)", res);
 				f_lseek(&fatfs_sd_file, 0);
 			}
-			//printf("Write %d bytes.\n\r", bw);
+
 			//rtos_time_delay_ms(1);
 			offset += fatfs_sd_buf_size - fatfs_sd_buf_pos;
 			len -= fatfs_sd_buf_size - fatfs_sd_buf_pos;
@@ -166,10 +164,9 @@ void fatfs_sd_flush_buf(void)
 	int res = 0;
 	if (fatfs_sd_buf_pos != 0) {
 		uint32_t bw;
-		//printf("flush %d bytes before close file\n\r",fatfs_sd_buf_pos);
 		res = f_write(&fatfs_sd_file, fatfs_sd_buf, fatfs_sd_buf_pos, &bw);
 		if (res) {
-			printf("Write error (%d)\n\r", res);
+			VFS_DBG(VFS_ERROR, "Write error (%d)", res);
 			f_lseek(&fatfs_sd_file, 0);
 		}
 		fatfs_sd_buf_pos = 0;
@@ -186,13 +183,13 @@ void fatfs_sd_free_write_buf(void)
 int fatfs_sd_create_write_buf(uint32_t buf_size)
 {
 	if (buf_size == 0) {
-		printf("ERROR: buf_size can't be 0\n\r");
+		VFS_DBG(VFS_ERROR, "ERROR: buf_size can't be 0");
 		return -1;
 	}
 	fatfs_sd_free_write_buf();
 	fatfs_sd_buf = (unsigned char *)malloc(buf_size);
 	if (fatfs_sd_buf == NULL) {
-		printf("allocate fatfs_sd_buf fail\r\n");
+		VFS_DBG(VFS_ERROR, "allocate fatfs_sd_buf fail");
 		return -2;
 	}
 	memset(fatfs_sd_buf, 0, buf_size);
@@ -227,7 +224,7 @@ FRESULT scan_files(
 				sprintf(&cur_path[strlen(path)], "/%s", fn);
 				scan_files(cur_path);
 			} else {                                       /* It is a file. */
-				printf("%s/%s\r\n", path, fn);
+				VFS_DBG(VFS_ERROR, "%s/%s\r\n", path, fn);
 			}
 		}
 	}

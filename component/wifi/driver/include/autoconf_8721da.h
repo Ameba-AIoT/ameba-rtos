@@ -18,12 +18,6 @@
 #ifndef AUTOCONF_8721DA_H
 #define AUTOCONF_8721DA_H
 
-#ifndef CONFIG_RTL8721DA
-#define CONFIG_RTL8721DA
-#endif
-#undef RTL8721DA_SUPPORT
-#define RTL8721DA_SUPPORT 1
-
 #define PHYSTATUS_WITH_PKT 1
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/

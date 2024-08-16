@@ -6,6 +6,7 @@
 
 #ifndef _HCI_IF_INIC_H_
 #define _HCI_IF_INIC_H_
+#include "hci/hci_common.h"
 
 #define BT_INIC_FPGA_VERIFICATION 0
 
@@ -60,11 +61,9 @@
 #define HCI_Vendor_Set_Profile_Report_Command   0xfc1b
 #endif
 
-bool hci_if_open(void);
-bool hci_if_close(void);
+bool bt_inic_open(void);
+void bt_inic_close(void);
 void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len);
+void bt_inic_send_to_host(uint8_t type, uint8_t *pdata, uint32_t len);
 
 #endif
-// #endif
-
-// #endif

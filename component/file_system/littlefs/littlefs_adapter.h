@@ -1,11 +1,13 @@
+#ifndef _LITTLEFS_ADAPTER_H_
+#define _LITTLEFS_ADAPTER_H_
+
 #include "os_wrapper.h"
 #include "flash_api.h"
 #include "lfs.h"
+#include "vfs.h"
 
 extern struct lfs_config g_nor_lfs_cfg;
 extern lfs_t g_lfs;
-extern u32 VFS1_FLASH_BASE_ADDR;
-extern u32 VFS1_FLASH_SIZE;
 
 /**
  * lfs与底层flash读数据接口
@@ -62,25 +64,4 @@ enum {
 	FS_NONE,
 };
 
-#define FS_DBG_ON	0
-#if FS_DBG_ON
-#define FS_DBG(level, fmt, arg...)     \
-do {\
-	if (level <= FS_DEBUG) {\
-		if (level <= FS_ERROR) {\
-			printf("\n\r[error] %s, " fmt "\n\r", __func__, ##arg);\
-		} \
-		else if(level == FS_WARNING){\
-			printf("[warning] %s, " fmt "\n", __func__, ##arg);\
-		} \
-		else if(level == FS_INFO){\
-			printf("[info] %s, " fmt "\n", __func__, ##arg);\
-		} \
-		else if(level == FS_DEBUG){\
-			printf("[debug] %s, " fmt "\n", __func__, ##arg);\
-		} \
-	}\
-}while(0)
-#else
-#define FS_DBG(level, fmt, arg...)
 #endif

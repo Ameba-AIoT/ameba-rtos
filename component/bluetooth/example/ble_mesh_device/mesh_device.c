@@ -1693,7 +1693,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_server_app_callback(uint8_t evt_code, 
 	}
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_GET_SCENES: {
 		rtk_bt_mesh_scene_server_get_scenes_t *scenes_get = (rtk_bt_mesh_scene_server_get_scenes_t *)param;
-		memcpy(scenes_get->scenes, scenes_index, sizeof(uint16_t) * (scenes_get->num_scenes));
+		uint16_t num = scenes_get->num_scenes;
+		if (num > SCENE_DATA_MAX_LEN) {
+			num = SCENE_DATA_MAX_LEN;
+		}
+		memcpy(scenes_get->scenes, scenes_index, sizeof(uint16_t) * num);
 		break;
 	}
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_GET_STATUS_RECALL: {
@@ -1724,7 +1728,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_setup_server_app_callback(uint8_t evt_
 	switch (evt_code) {
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_STORE: {
 		rtk_bt_mesh_scene_server_store_t *store_set = (rtk_bt_mesh_scene_server_store_t *)param;
-		memcpy(store_set->pmemory, &store_scene_value, LE_TO_U16(store_scene_value) + 2);
+		uint16_t length = sizeof(store_scene_value) / sizeof(store_scene_value[0]);
+		if (length > SCENE_DATA_MAX_LEN) {
+			length = SCENE_DATA_MAX_LEN;
+		}
+		memcpy(store_set->pmemory, &store_scene_value, length);
 		BT_LOGA("[APP] scene setup server receive: status:%d, scene number:%d \r\n",
 				store_set->status, store_set->scene_number);
 		BT_AT_PRINT("+BLEMESHSCENE:ss,%d,%d,%d\r\n",
@@ -2281,7 +2289,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_client_property_server_app_callback(
 #if defined(BT_MESH_ENABLE_SENSOR_SERVER_MODEL) && BT_MESH_ENABLE_SENSOR_SERVER_MODEL
 /***BT and BLE Mesh related api shall not be called in sensor server app callback***/
 static uint8_t sensor_raw_data[] = {0x04, 0x00, 0x01, 0x02, 0x03};
-static uint16_t sensor_raw_length = 5;
+static uint16_t sensor_raw_length = 5; //should equal sensor raw data len in sensor db, default is 5
 static uint16_t column_length = 5;
 static uint16_t series_length = 5;
 static bool need_divisior = 1;
@@ -2296,6 +2304,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 	switch (evt_code) {
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_GET: {
 		rtk_bt_mesh_sensor_server_get_t *sensor_get = (rtk_bt_mesh_sensor_server_get_t *)param;
+		if (sensor_raw_length > SENSOR_GET_DATA_MAX_LEN) {
+			sensor_raw_length = SENSOR_GET_DATA_MAX_LEN;
+		}
 		memcpy(sensor_get->raw_data, &sensor_raw_length, 2);
 		memcpy((uint8_t *)sensor_get->raw_data + 2, sensor_raw_data, sensor_raw_length);
 		break;
@@ -2308,6 +2319,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 		BT_AT_PRINT("+BLEMESHSENSOR:scog,%d,%d,%d,",
 					BT_AT_MESH_ROLE_SERVER, column_get->property_id, column_get->raw_value_x_len);
 		BT_AT_DUMP_HEXN(column_get->raw_value_x, column_get->raw_value_x_len);
+		if (column_length > SENSOR_GET_COLUMN_MAX_LEN) {
+			column_length = SENSOR_GET_COLUMN_MAX_LEN;
+		}
 		memcpy(column_get->value, &column_length, 2);
 		memcpy((uint8_t *)column_get->value + 2, sensor_raw_data, column_length);
 		break;
@@ -2328,6 +2342,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 		BT_AT_PRINT(",");
 		mesh_data_uart_dump(series_get->raw_value_x2, series_get->raw_value_x_len);
 		BT_AT_DUMP_HEXN(series_get->raw_value_x2, series_get->raw_value_x_len);
+		if (series_length > SENSOR_GET_COLUMN_MAX_LEN) {
+			series_length = SENSOR_GET_COLUMN_MAX_LEN;
+		}
 		memcpy(series_get->value, &series_length, 2);
 		memcpy((uint8_t *)series_get->value + 2, sensor_raw_data, series_length);
 		break;
@@ -2360,7 +2377,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 
 #if defined(BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL) && BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL
 /***BT and BLE Mesh related api shall not be called in sensor setup server app callback***/
-static uint8_t app_setting_store[SENSOR_SETTING_DATA_MAX_LEN] = {0};
+static uint8_t app_setting_store[SENSOR_SETTING_DATA_MAX_LEN + 2] = {0};
 static uint8_t delta_down[SENSOR_CADENCE_DATA_MAX_LEN] = {0};
 static uint8_t delta_up[SENSOR_CADENCE_DATA_MAX_LEN] = {0};
 static uint8_t cadence_low[SENSOR_CADENCE_DATA_MAX_LEN] = {0};
@@ -2381,6 +2398,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		pdata += 2;
 		uint8_t raw_value_len = *pdata;
 		app_store_raw_value_len = raw_value_len;
+		uint8_t check_raw_len = raw_value_len;
+		if (app_store_raw_value_len > SENSOR_CADENCE_DATA_MAX_LEN) {
+			check_raw_len = SENSOR_CADENCE_DATA_MAX_LEN;
+		}
 		pdata++;
 		divisionr_trigger = *pdata;
 		uint8_t fast_cadence_period_divisor = (*(pdata)) & 0x7F;
@@ -2396,26 +2417,30 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		} else {
 			trigger_len = 2;
 		}
+		uint8_t check_trigger_len = trigger_len;
+		if (trigger_len > SENSOR_CADENCE_DATA_MAX_LEN) {
+			check_trigger_len = SENSOR_CADENCE_DATA_MAX_LEN;
+		}
 		if (status_trigger_type) {
 			BT_LOGA("status_trigger_delta_down: %d\r\n", LE_TO_U16(pdata));
 			BT_AT_PRINT("%d", LE_TO_U16(pdata));
-			memcpy(delta_down, pdata, trigger_len);
+			memcpy(delta_down, pdata, check_trigger_len);
 			pdata += trigger_len;
 			BT_LOGA("status_trigger_delta_up: %d\r\n", LE_TO_U16(pdata));
 			BT_AT_PRINT("%d", LE_TO_U16(pdata));
-			memcpy(delta_up, pdata, trigger_len);
+			memcpy(delta_up, pdata, check_trigger_len);
 			pdata += trigger_len;
 		} else {
 			BT_LOGA("status_trigger_delta_down: \r\n");
 			mesh_data_uart_dump(pdata, trigger_len);
 			BT_AT_DUMP_HEX(pdata, trigger_len);
-			memcpy(delta_down, pdata, trigger_len);
+			memcpy(delta_down, pdata, check_trigger_len);
 			pdata += trigger_len;
 			BT_LOGA("status_trigger_delta_up: \r\n");
 			BT_AT_PRINT(",");
 			mesh_data_uart_dump(pdata, trigger_len);
 			BT_AT_DUMP_HEX(pdata, trigger_len);
-			memcpy(delta_up, pdata, trigger_len);
+			memcpy(delta_up, pdata, check_trigger_len);
 			pdata += trigger_len;
 		}
 		uint8_t status_min_interval = *pdata;
@@ -2426,14 +2451,14 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		BT_LOGA("fast_cadence_low: \r\n");
 		mesh_data_uart_dump(pdata, raw_value_len);
 		BT_AT_DUMP_HEX(pdata, raw_value_len);
-		memcpy(cadence_low, pdata, raw_value_len);
+		memcpy(cadence_low, pdata, check_raw_len);
 		pdata += raw_value_len;
 		BT_LOGA("fast_cadence_high: \r\n");
 		BT_AT_PRINT(",");
 		mesh_data_uart_dump(pdata, raw_value_len);
 		BT_AT_DUMP_HEXN(pdata, raw_value_len);
-		memcpy(cadence_high, pdata, raw_value_len);
-		app_store_cadence_len = 2 * trigger_len + 2 * raw_value_len + 3;
+		memcpy(cadence_high, pdata, check_raw_len);
+		app_store_cadence_len = 2 * check_trigger_len + 2 * check_raw_len + 3;
 		break;
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_SET: {
@@ -2454,8 +2479,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 					BT_AT_MESH_ROLE_SERVER, property_id, setting_property_id, access);
 		BT_AT_DUMP_HEXN(pdata, raw_len);
 		memcpy(app_setting_store, &access, 1);
-		memcpy(&app_setting_store[1], &raw_len, 1);
-		memcpy(&app_setting_store[2], pdata, raw_len);
+		uint8_t store_raw_len = raw_len;
+		if (raw_len > SENSOR_SETTING_DATA_MAX_LEN) {
+			store_raw_len = SENSOR_SETTING_DATA_MAX_LEN;
+		}
+		memcpy(&app_setting_store[1], &store_raw_len, 1);
+		memcpy(&app_setting_store[2], pdata, store_raw_len);
 		break;
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_GET: {
@@ -2463,10 +2492,18 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		uint16_t property_id = pdata->property_id;
 		BT_LOGA("[APP] Sensor setup server receive: property id %d \r\n", property_id);
 		uint8_t *cadence_data = pdata->cadence;
-		memcpy(cadence_data, &app_store_cadence_len, 2);
+		uint16_t data_len = app_store_cadence_len;
+		if (app_store_cadence_len > 4 * SENSOR_CADENCE_DATA_MAX_LEN) {
+			data_len = 0;
+		}
+		memcpy(cadence_data, &data_len, 2);
 		BT_LOGA("app_store_cadence_len %d \r\n", app_store_cadence_len);
-		if (app_store_cadence_len != 0) {
-			memcpy(cadence_data + 2, &app_store_raw_value_len, 1);
+		if (data_len != 0) {
+			uint8_t check_raw_len = app_store_raw_value_len;
+			if (app_store_raw_value_len > SENSOR_CADENCE_DATA_MAX_LEN) {
+				check_raw_len = SENSOR_CADENCE_DATA_MAX_LEN;
+			}
+			memcpy(cadence_data + 2, &check_raw_len, 1);
 			memcpy(cadence_data + 3, &divisionr_trigger, 1);// fast_cadence_period_divisor + status_trigger_type
 			uint8_t trigger_len;
 			if (((divisionr_trigger & 0x80) >> 7) == 0) {
@@ -2474,11 +2511,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 			} else {
 				trigger_len = 2;
 			}
-			memcpy(cadence_data + 4, delta_down, trigger_len);
-			memcpy(cadence_data + 4 + trigger_len, delta_up, trigger_len);
-			memcpy(cadence_data + 4 + 2 * trigger_len, &app_store_status_min_interval, 1);
-			memcpy(cadence_data + 5 + 2 * trigger_len, cadence_low, app_store_raw_value_len);
-			memcpy(cadence_data + 5 + 2 * trigger_len + app_store_raw_value_len, cadence_high, app_store_raw_value_len);
+			uint8_t check_trigger_len = trigger_len;
+			if (trigger_len > SENSOR_CADENCE_DATA_MAX_LEN) {
+				check_trigger_len = SENSOR_CADENCE_DATA_MAX_LEN;
+			}
+			memcpy(cadence_data + 4, delta_down, check_trigger_len);
+			memcpy(cadence_data + 4 + check_trigger_len, delta_up, check_trigger_len);
+			memcpy(cadence_data + 4 + 2 * check_trigger_len, &app_store_status_min_interval, 1);
+			memcpy(cadence_data + 5 + 2 * check_trigger_len, cadence_low, check_raw_len);
+			memcpy(cadence_data + 5 + 2 * check_trigger_len + check_raw_len, cadence_high, check_raw_len);
 		}
 
 		break;
@@ -2487,8 +2528,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		rtk_bt_mesh_sensor_server_get_settings_t *pdata = (rtk_bt_mesh_sensor_server_get_settings_t *)param;
 		uint16_t property_id = pdata->property_id;
 		BT_LOGA("[APP] Sensor setup server receive: property id %d \r\n", property_id);
-		memcpy(pdata->settings_data, app_settings_store, 2);
-		memcpy(pdata->settings_data + 1, &app_settings_store[1], app_settings_store[0] * 2);
+		uint16_t num = app_settings_store[0];
+		if (num > SENSOR_SETTINGS_DATA_MAX_LEN) {
+			num = SENSOR_SETTINGS_DATA_MAX_LEN;
+		}
+		memcpy(pdata->settings_data, &num, 2);
+		memcpy(pdata->settings_data + 1, &app_settings_store[1], num * 2);
 		break;
 	}
 	case RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_GET: {
@@ -2496,7 +2541,11 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 		uint16_t property_id = pdata->property_id;
 		uint16_t setting_id = pdata->setting_property_id;
 		BT_LOGA("[APP] Sensor setup server receive: property id %d, setting property id %d \r\n", property_id, setting_id);
-		memcpy(pdata->setting_data, app_setting_store, app_setting_store[1] + 2);
+		uint8_t setting_len = app_setting_store[1];
+		if (setting_len > SENSOR_SETTING_DATA_MAX_LEN) {
+			setting_len = SENSOR_SETTING_DATA_MAX_LEN;
+		}
+		memcpy(pdata->setting_data, app_setting_store, setting_len + 2);
 		break;
 	}
 	default:
@@ -2508,8 +2557,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_setup_server_app_callback(uint8_t evt
 #endif // end of BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL
 
 static uint8_t app_health_period = 0;
-static uint8_t app_fault_array[] = {0x2, 0x1, 0x2};
-static uint8_t app_clear_array[] = {0};
+static uint8_t app_fault_array[] = {0x3, 0x1, 0x1, 0x2}; //1 byte data_length(test id + faults length) + 1 byte test id + n bytes faults
+static uint8_t app_clear_array[] = {1, 0x1};
 static uint8_t app_attn = 0;
 static uint8_t app_current_array[] = {0x5, 0x1, 0x5d, 0x00, 0x3, 0x4};
 
@@ -2522,14 +2571,24 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 		rtk_bt_mesh_health_server_fault_get_t *fault_get = (rtk_bt_mesh_health_server_fault_get_t *)param;
 		BT_LOGA("[APP] Health server receive: company id %04x \r\n", fault_get->company_id);
 		BT_AT_PRINT("+BLEMESHHEALTH:hfg,%d,%04x\r\n", BT_AT_MESH_ROLE_SERVER, fault_get->company_id);
-		memcpy(fault_get->fault_array, app_fault_array, app_fault_array[0] + 1);
+		uint8_t array_len = app_fault_array[0];
+		if (array_len - 1 > HEALTH_FAULT_ARRAY_LEN) {
+			array_len = HEALTH_FAULT_ARRAY_LEN + 1;
+		}
+		memcpy(fault_get->fault_array, &array_len, 1);
+		memcpy(fault_get->fault_array + 1, &app_fault_array[1], array_len);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_CLEAR: {
 		rtk_bt_mesh_health_server_fault_clear_t *fault_clear = (rtk_bt_mesh_health_server_fault_clear_t *)param;
 		BT_LOGA("[APP] Health server receive: company id %04x \r\n", fault_clear->company_id);
 		BT_AT_PRINT("+BLEMESHHEALTH:hfc,%d,%04x\r\n", BT_AT_MESH_ROLE_SERVER, fault_clear->company_id);
-		memcpy(fault_clear->fault_array, app_clear_array, app_clear_array[0] + 1);
+		uint8_t array_len = app_clear_array[0];
+		if (array_len - 1 > HEALTH_FAULT_ARRAY_LEN) {
+			array_len = HEALTH_FAULT_ARRAY_LEN + 1;
+		}
+		memcpy(fault_clear->fault_array, &array_len, 1);
+		memcpy(fault_clear->fault_array + 1, &app_clear_array[1], array_len);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_TEST: {
@@ -2538,7 +2597,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 		BT_AT_PRINT("+BLEMESHHEALTH:hft,%d,%d,%04x\r\n",
 					BT_AT_MESH_ROLE_SERVER, fault_test->test_id, fault_test->company_id);
 		/*call related customer test cb*/
-		memcpy(fault_test->fault_array, app_fault_array, app_fault_array[0] + 1);
+		uint8_t array_len = app_fault_array[0];
+		if (array_len - 1 > HEALTH_FAULT_ARRAY_LEN) {
+			array_len = HEALTH_FAULT_ARRAY_LEN + 1;
+		}
+		memcpy(fault_test->fault_array, &array_len, 1);
+		memcpy(fault_test->fault_array + 1, &app_fault_array[1], array_len);
 		break;
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_PERIOD_GET: {
@@ -2569,7 +2633,12 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	}
 	case RTK_BT_MESH_HEALTH_SERVER_MODEL_CURRENT_GET: {
 		//data style: 1 byte(total length) + 1 byte(test id) + 2 byte(company id) + n bytes(faults)
-		memcpy(param, app_current_array, app_current_array[0] + 1);
+		uint8_t array_len = app_clear_array[0];
+		if (array_len + 1 > 4 + HEALTH_FAULT_ARRAY_LEN) {
+			array_len = HEALTH_FAULT_ARRAY_LEN + 3;
+		}
+		memcpy(param, &array_len, 1);
+		memcpy((uint8_t *)param + 1, &app_current_array[1], array_len);
 		break;
 	}
 	default:

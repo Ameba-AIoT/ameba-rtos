@@ -37,10 +37,14 @@ vpath %.c $(DIR)
 
 CSRC += $(DIR)/atcmd_service.c \
 		$(DIR)/atcmd_sys.c \
-		$(DIR)/atcmd_wifi.c \
-		$(DIR)/atcmd_mqtt.c \
-		$(DIR)/atcmd_lwip.c \
 		$(DIR)/atcmd_bt_mp.c
+
+ifeq ($(CONFIG_WLAN),y)
+CSRC +=	$(DIR)/atcmd_wifi.c \
+		$(DIR)/atcmd_mqtt.c \
+		$(DIR)/atcmd_lwip.c 
+endif
+
 ifeq ($(CONFIG_BT), y)
 CSRC += $(DIR)/atcmd_bt_ext.c
 endif

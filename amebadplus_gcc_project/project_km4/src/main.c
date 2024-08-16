@@ -141,7 +141,7 @@ void app_filesystem_init(void)
 {
 	int ret = 0;
 	vfs_init();
-	ret = vfs_user_register("lfs", VFS_LITTLEFS, VFS_INF_FLASH, VFS_FLASH_R1, VFS_RW);
+	ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 	if (ret == 0) {
 		ret = rt_kv_init();
 		if (ret == 0) {

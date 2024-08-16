@@ -8,14 +8,15 @@
 
 void example_kv_thread(void *param)
 {
+	(void) param;
 	rtos_time_delay_ms(2000);
 	char key[] = "T_FILE";
-	unsigned char val[] = "KV module works normally !!!";
+	const char val[] = "KV module works normally !!!";
 	char *buffer;
 	int res = 0;
 
 	res = rt_kv_set(key, val, strlen(val));
-	if (res != strlen(val)) {
+	if (res != (int)strlen(val)) {
 		printf("rt_kv_set failed\r\n");
 	} else {
 		printf("rt_kv_set success, write %d letters.\r\n", strlen(val));
@@ -25,13 +26,13 @@ void example_kv_thread(void *param)
 	memset(buffer, 0, strlen(val));
 	res = rt_kv_get(key, buffer, strlen(val));
 
-	if (res != strlen(val)) {
+	if (res != (int)strlen(val)) {
 		printf("rt_kv_get failed\r\n");
 	} else {
 		if (memcmp(buffer, val, strlen(val)) == 0) {
 			printf("rt_kv_get success, read %d letters.\r\n", strlen(val));
 		} else {
-			printf("rt_kv_get fail, content has been changed.\r\n", strlen(val));
+			printf("rt_kv_get fail, content has been changed.\r\n");
 		}
 	}
 

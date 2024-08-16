@@ -15,7 +15,6 @@ void rtw_spi_send_data(u8 *buf, u32 len)
 		/* wait for sema*/
 		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
 			dev_err(global_idev.fullmac_dev, "%s: wait dev busy timeout, can't send data\n\r", __func__);
-
 			goto exit;
 		}
 	}
@@ -74,6 +73,14 @@ void rtw_spi_recv_data_process(void *intf_priv)
 	int rc;
 
 	mutex_lock(&priv->lock);
+
+	while (priv->dev_state == DEV_BUSY) {
+		/* wait for sema*/
+		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
+			dev_err(global_idev.fullmac_dev, "%s: wait dev busy timeout, can't send data\n\r", __func__);
+			goto exit;
+		}
+	}
 
 	/* check RX_REQ level */
 	if (gpio_get_value(RX_REQ_PIN)) {

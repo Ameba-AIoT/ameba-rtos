@@ -135,7 +135,7 @@ end:
 
 static mesh_model_info_t health_server_model;
 
-uint8_t fault_store[HEALTH_FAULT_ARRAY_LEN];
+uint8_t fault_store[HEALTH_FAULT_ARRAY_LEN + 2];
 
 uint8_t current_store[4 + HEALTH_FAULT_ARRAY_LEN];
 
@@ -158,7 +158,7 @@ static int32_t health_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 			fault_get->company_id = p_get_data->company_id;
 			fault_get->fault_array = fault_store;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
-			p_get_data->fault_array = fault_store;//reserve one byte to store length
+			p_get_data->fault_array = fault_store;//reserve one byte to store length + one byte to store test id
 		}
 	}
 	break;
@@ -175,7 +175,7 @@ static int32_t health_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 			fault_clear->company_id = p_get_data->company_id;
 			fault_clear->fault_array = fault_store;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
-			p_get_data->fault_array = fault_store;//reserve one byte to store length
+			p_get_data->fault_array = fault_store;//reserve one byte to store length + one byte to store test id
 		}
 	}
 	break;
@@ -193,7 +193,7 @@ static int32_t health_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 			fault_test->test_id = p_get_data->test_id;
 			fault_test->fault_array = fault_store;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
-			p_get_data->fault_array = fault_store;//reserve one byte to store length
+			p_get_data->fault_array = fault_store;//reserve one byte to store length + one byte to store test id
 		}
 	}
 	break;

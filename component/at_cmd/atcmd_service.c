@@ -27,7 +27,7 @@ struct list_head log_hash[ATC_INDEX_NUM];
 log_init_t log_init_table[] = {
 
 #ifndef CONFIG_MP_SHRINK
-#if CONFIG_WLAN
+#ifdef CONFIG_WLAN
 	at_wifi_init,
 #endif
 #endif
@@ -41,11 +41,13 @@ log_init_t log_init_table[] = {
 
 	at_sys_init,
 
+#ifdef CONFIG_WLAN
 #ifndef CONFIG_MP_INCLUDED
 	at_mqtt_init,
 #endif
 #ifdef CONFIG_LWIP_LAYER
 	at_tcpip_init,
+#endif
 #endif
 
 #ifdef CONFIG_ATCMD_IO_UART
@@ -307,7 +309,7 @@ exit:
 	return argc;
 }
 
-#if CONFIG_WLAN
+#ifdef CONFIG_WLAN
 int mp_command_handler(char *cmd)
 {
 	char *start = "iwpriv ";

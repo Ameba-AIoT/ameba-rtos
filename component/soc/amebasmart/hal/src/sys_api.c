@@ -71,10 +71,9 @@ void sys_clear_ota_signature(void)
 	flash_get_layout_info(IMG_APP_OTA1, &app_ota1_start_addr, NULL);
 	flash_get_layout_info(IMG_APP_OTA2, &app_ota2_start_addr, NULL);
 
-	otaCurIdx = ota_get_cur_index(0);
-	otaDstIdx = otaCurIdx ^ 1;
-
 	for (ImgID = 1; ImgID < MAX_IMG_NUM; ImgID++) {
+		otaCurIdx = ota_get_cur_index(ImgID);
+		otaDstIdx = otaCurIdx ^ 1;
 
 		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;

@@ -50,7 +50,7 @@ static const usb_cal_data_t usb_cut_a_cal_data[] = {
 };
 
 USB_DATA_SECTION
-static const usb_cal_data_t usb_cut_b_cal_data[] = {
+static const usb_cal_data_t usb_common_cal_data[] = {
 	{0x00, 0xE0, 0x9D},
 	{0x00, 0xE1, 0x19},
 	{0x00, 0xE2, 0xDB},
@@ -92,8 +92,8 @@ usb_cal_data_t *usb_chip_get_cal_data(u8 mode)
 
 	UNUSED(mode);
 
-	if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
-		data = (usb_cal_data_t *)&usb_cut_b_cal_data[0];
+	if (EFUSE_GetChipVersion() != SYSCFG_CUT_VERSION_A) {
+		data = (usb_cal_data_t *)&usb_common_cal_data[0];
 	} else {
 		data = (usb_cal_data_t *)&usb_cut_a_cal_data[0];
 	}
@@ -116,7 +116,7 @@ int usb_chip_init(void)
 	reg = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1);
 	reg |= (LSYS_BIT_BG_PWR | LSYS_BIT_BG_ON_USB2);
 	reg &= ~LSYS_MASK_BG_ALL;
-	if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
+	if (EFUSE_GetChipVersion() != SYSCFG_CUT_VERSION_A) {
 		reg |= LSYS_BG_ALL(0x2);
 	}
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, reg);

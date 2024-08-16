@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-
+#include "os_wrapper.h"
 
 void example_vfs_thread(void *param)
 {
@@ -17,7 +17,9 @@ void example_vfs_thread(void *param)
 	vfs_file *finfo;
 	int res = 0;
 
-	prefix = find_vfs1_tag();
+	(void)param;
+
+	prefix = find_vfs_tag(VFS_REGION_1);
 	snprintf(path, sizeof(path), "%s:%s", prefix, key);
 	finfo = (vfs_file *)fopen(path, "w");
 	if (finfo == NULL) {
@@ -26,7 +28,7 @@ void example_vfs_thread(void *param)
 	}
 
 	res = fwrite(val, strlen(val), 1, (FILE *)finfo);
-	if (res != strlen(val)) {
+	if (res != (int)strlen(val)) {
 		printf("[%s] fwrite failed,err is %d!!\r\n", __FUNCTION__, res);
 
 	} else {

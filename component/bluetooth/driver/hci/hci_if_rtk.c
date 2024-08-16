@@ -57,9 +57,9 @@ static uint8_t _rx_offset(uint8_t type)
 {
 	uint8_t offset = H4_HDR_LEN;
 
-	if (type == H4_ACL || type == H4_ISO) {
+	if (type == HCI_ACL || type == HCI_ISO) {
 		offset += HCI_H4_RX_ACL_PKT_BUF_OFFSET;
-	} else if (type == H4_SCO) {
+	} else if (type == HCI_SCO) {
 		offset += HCI_H4_RX_SCO_PKT_BUF_OFFSET;
 	}
 
@@ -150,7 +150,7 @@ static bool _hci_if_close(void)
 static void _hci_if_send(uint8_t *buf, uint32_t len, bool from_stack)
 {
 	uint16_t offset = H4_HDR_LEN;
-	if (H4_ACL == buf[0] || H4_ISO == buf[0]) {
+	if (HCI_ACL == buf[0] || HCI_ISO == buf[0]) {
 		offset += HCI_H4_TX_ACL_PKT_BUF_OFFSET;
 	}
 

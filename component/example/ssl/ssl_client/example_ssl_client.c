@@ -1,6 +1,7 @@
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 #include "rtw_wifi_constants.h"
+#include "wifi_conf.h"
 
 #include "mbedtls/config.h"
 #include "mbedtls/platform.h"
@@ -14,6 +15,7 @@
 
 static int my_random(void *p_rng, unsigned char *output, size_t output_len)
 {
+	(void)p_rng;
 	TRNG_get_random_bytes(output, output_len);
 	return 0;
 }
@@ -24,6 +26,8 @@ static void example_ssl_client_thread(void *param)
 	mbedtls_net_context server_fd;
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
+
+	(void)param;
 
 	printf("\nExample: SSL client\n");
 
