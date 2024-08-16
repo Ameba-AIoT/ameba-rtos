@@ -94,7 +94,7 @@ struct inic_txbuf_info_t {
 	u8 is_skb: 1;	/* the original buffer is skb or not */
 };
 
-#define SPI_DMA_ALIGN(x)	((((x-1)>>2)+1)<<2) //alignement to 4
+#define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
 #define SPI_BUFSZ		(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct inic_msg_info)))
 #define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct inic_msg_info), 4)
 

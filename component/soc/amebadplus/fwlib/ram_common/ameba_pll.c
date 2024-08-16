@@ -22,7 +22,7 @@ u32 un_err_normalization;
 bool PLL_Calibration(u32 dst_clk)
 {
 	u32 sys_pll;
-	float des_clk = 0;
+	double des_clk = 0;
 	double target_per;
 	double base_per;
 	double intp_per;
@@ -258,10 +258,10 @@ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
 
 	if (action == PLL_FASTER) {                    /* VCO:688P128M VCO/7=98.304M */
-		F0F_new = F0F_base + (u32)(ppm / step + 0.5);     /* maximum of register is 8191,so ppm<=2719 */
+		F0F_new = F0F_base + (u32)((double)ppm / step + 0.5);     /* maximum of register is 8191,so ppm<=2719 */
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		F0F_new = F0F_base - (u32)((double)ppm / step + 0.5);
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
 		F0F_new = F0F_base;
@@ -296,10 +296,10 @@ float PLL_I2S_45P1584M_ClkTune(float ppm, u32 action)
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
 
 	if (action == PLL_FASTER) {                  /* VCO:677P376M VCO/15=45.1584M */
-		F0F_new = F0F_base + (u32)(ppm / step + 0.5);   /* maximum of register is 8191,so ppm<=3872 */
+		F0F_new = F0F_base + (u32)((double)ppm / step + 0.5);   /* maximum of register is 8191,so ppm<=3872 */
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		F0F_new = F0F_base - (u32)((double)ppm / step + 0.5);
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
 		F0F_new = F0F_base;

@@ -2,8 +2,8 @@
 #include "basic_types.h"
 #include "lwipconf.h"
 #include "rtw_wifi_defs.h"
-
-#define IP_ADDR_INVALID 0
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
 #define SERVER_IP              "192.168.1.100"
 #define SERVER_PORT            80

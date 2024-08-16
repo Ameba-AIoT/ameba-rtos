@@ -18,13 +18,6 @@
 #ifndef AUTOCONF_8720E_H
 #define AUTOCONF_8720E_H
 
-#ifndef CONFIG_RTL8720E
-#define CONFIG_RTL8720E
-#endif
-
-#undef RTL8720E_SUPPORT
-#define RTL8720E_SUPPORT 1
-
 #define STATIC_RXRING_POOL 1
 
 /* For STA+AP Concurrent MODE */

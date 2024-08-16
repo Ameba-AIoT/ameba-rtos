@@ -18,12 +18,6 @@
 #ifndef AUTOCONF_8730E_H
 #define AUTOCONF_8730E_H
 
-#ifndef CONFIG_RTL8730E
-#define CONFIG_RTL8730E
-#endif
-#undef RTL8730E_SUPPORT
-#define RTL8730E_SUPPORT 1
-
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_NAN

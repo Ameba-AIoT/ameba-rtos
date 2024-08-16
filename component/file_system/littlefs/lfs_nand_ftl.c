@@ -148,13 +148,13 @@ static u8 NF_MarkBad(NAND_FTL_DeviceTypeDef *nand, u32 addr)
 	block_addr = NF_GetBlockAddr(nand, addr);
 	ret = NAND_Page_Write(block_addr, info->PageSize, 2, data);
 	if (ret == 0U) {
-		FS_DBG(FS_WARNING, "Mark block 0x%08X to bad", addr);
+		VFS_DBG(VFS_WARNING, "Mark block 0x%08X to bad", addr);
 		ret = HAL_OK;
 	} else if (ret == 0xFFU) {
-		FS_DBG(FS_ERROR, "Mark block 0x%08X to bad: TIMEOUT", addr);
+		VFS_DBG(VFS_ERROR, "Mark block 0x%08X to bad: TIMEOUT", addr);
 		ret = HAL_TIMEOUT;
 	} else {
-		FS_DBG(FS_ERROR, "Fail to mark bad block 0x%08X: 0x%02X", addr, ret);
+		VFS_DBG(VFS_ERROR, "Fail to mark bad block 0x%08X: 0x%02X", addr, ret);
 		ret = HAL_ERR_HW;
 	}
 
@@ -178,7 +178,7 @@ static u8 NF_EraseBlock(NAND_FTL_DeviceTypeDef *nand, u32 addr)
 	} else if (ret == 0xFFU) {
 		ret = HAL_TIMEOUT;
 	} else {
-		FS_DBG(FS_ERROR, "Fail to erase block 0x%08X: 0x%02X", addr, ret);
+		VFS_DBG(VFS_ERROR, "Fail to erase block 0x%08X: 0x%02X", addr, ret);
 #if NAND_MARK_BAD_AT_ERASE_FAIL
 		ret = NF_MarkBad(nand, addr);
 		if (ret == HAL_OK) {
@@ -235,7 +235,7 @@ u8 NAND_FTL_Init(void)
 	NAND_FTL_DeviceTypeDef *nand = &NF_Device;
 	Flash_InfoTypeDef *info = &nand->MemInfo;
 
-	FS_DBG(FS_INFO, "NAND init started");
+	VFS_DBG(VFS_INFO, "NAND init started");
 
 	nand->LastErasedBlockAddr = 0xFFFFFFFF;
 
@@ -278,7 +278,7 @@ u8 NAND_FTL_Init(void)
 	ret = NAND_FTL_MfgInit(nand);
 	if (ret == HAL_OK) {
 		nand->Initialized = 1;
-		FS_DBG(FS_INFO, "NAND init done");
+		VFS_DBG(VFS_INFO, "NAND init done");
 	}
 
 	return ret;
@@ -520,7 +520,7 @@ u8 NAND_FTL_EraseBlock(u32 addr, u8 force)
 		ret = UERR_NAND_BAD_BLOCK;
 	} else {
 		if (is_bad_block) {
-			FS_DBG(FS_WARNING, "Force erase bad block 0x%08X", addr);
+			VFS_DBG(VFS_WARNING, "Force erase bad block 0x%08X", addr);
 		}
 		ret = NF_EraseBlock(nand, addr);
 	}

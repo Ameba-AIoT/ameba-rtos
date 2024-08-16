@@ -1,6 +1,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "xml.h"
+#include "os_wrapper.h"
 
 static void example_xml_thread(void *param)
 {

@@ -43,8 +43,7 @@ CSRC += $(USRCFG_DIR)/ameba_wifi_country_code_table_usrcfg.c
 
 ifeq ($(CONFIG_AMEBADPLUS), y)
 CSRC += $(USRCFG_DIR)/ameba_wifi_power_table_usrcfg_1v8.c \
-	   $(USRCFG_DIR)/ameba_wifi_power_table_usrcfg_3v3_1v25.c \
-	   $(USRCFG_DIR)/ameba_wifi_power_table_usrcfg_1v8_1v25.c
+	   $(USRCFG_DIR)/ameba_wifi_power_table_usrcfg_3v3_1v25.c
 endif
 endif
 

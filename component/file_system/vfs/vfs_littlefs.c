@@ -313,7 +313,7 @@ int littlefs_mkdir(const char *pathname)
 {
 	int ret = 0;
 	ret = lfs_mkdir(&g_lfs, pathname);
-	if (ret < 0) {
+	if (ret < 0 && ret != LFS_ERR_EXIST) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs mkdir fail: %d", ret);
 	}
 	return ret;

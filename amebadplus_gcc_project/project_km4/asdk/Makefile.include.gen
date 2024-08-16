@@ -242,7 +242,7 @@ endif
 #"CCFlags": [
 #"-march=armv8-m.main+dsp",
 #"-mthumb",
-#"-mcmse",      
+#"-mcmse",
 #"-mfloat-abi=softfp",
 #"-mfpu=fpv5-sp-d16",
 #"-D__thumb2__",
@@ -253,7 +253,6 @@ endif
 #"-nostdlib",
 #"-O2",
 #"-DCONFIG_PLATFORM_8195BHP",
-#"-D__FPU_PRESENT",
 #"-D__ARM_ARCH_7M__=0",
 #"-D__ARM_ARCH_7EM__=0",
 #"-D__ARM_ARCH_8M_MAIN__=1",
@@ -278,8 +277,8 @@ endif
 #],
 
 GLOBAL_CFLAGS += -march=armv8.1-m.main+dsp
-GLOBAL_CFLAGS += -mthumb 
-GLOBAL_CFLAGS += -mcmse 
+GLOBAL_CFLAGS += -mthumb
+GLOBAL_CFLAGS += -mcmse
 GLOBAL_CFLAGS += -mfloat-abi=hard
 GLOBAL_CFLAGS += -mfpu=fpv5-sp-d16
 
@@ -290,7 +289,6 @@ GLOBAL_CFLAGS += -nostdlib
 GLOBAL_CFLAGS += -O2
 #avoid compile optimize based on undefined behavior
 GLOBAL_CFLAGS += -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
-GLOBAL_CFLAGS += -D__FPU_PRESENT
 GLOBAL_CFLAGS += -fno-tree-loop-distribute-patterns
 GLOBAL_CFLAGS += -flax-vector-conversions
 
@@ -316,7 +314,7 @@ GLOBAL_CFLAGS += -MMD -MP
 GLOBAL_CFLAGS += -fno-builtin-memset
 GLOBAL_CFLAGS += -fno-builtin-memcpy
 
-#GLOBAL_CFLAGS += -specs nosys.specs 
+#GLOBAL_CFLAGS += -specs nosys.specs
 #GLOBAL_CFLAGS += -fno-short-enums
 GLOBAL_CFLAGS += -Wextra
 
@@ -349,7 +347,7 @@ endif
 #"-O2",
 #"-march=armv8-m.main+dsp",
 #"-mthumb",
-#"-mcmse",      
+#"-mcmse",
 #"-mfloat-abi=softfp",
 #"-mfpu=fpv5-sp-d16"
 #],
@@ -366,7 +364,7 @@ endif
 LD_ARG = -L$(ASDK_TOOLCHAIN)/arm-none-eabi/lib/thumb/v8-m.main+fp/fpu
 LD_ARG += -L$(ASDK_TOOLCHAIN)/lib/gcc/arm-none-eabi/$(ASDK_VER)/thumb/v8-m.main+fp/fpu
 LD_ARG += -L$(ROOTDIR)/lib/
-LD_ARG += -T$(BUILD_TARGET_FOLDER)/rlx8721d.ld 
+LD_ARG += -T$(BUILD_TARGET_FOLDER)/rlx8721d.ld
 
 LD_ARG += -O2
 LD_ARG += -march=armv8.1-m.main+dsp
@@ -381,10 +379,10 @@ ifneq (${ROM_CFLAG},YES)
 LD_ARG += -Wl,--gc-sections
 endif
 #LD_ARG += -Wl,--warn-section-align
-LD_ARG += -Wl,-Map=text.map 
+LD_ARG += -Wl,-Map=text.map
 LD_ARG += -Wl,--cref
 LD_ARG += -Wl,--build-id=none
-LD_ARG += -save-temps 
+LD_ARG += -save-temps
 
 ifneq (${IMG3_TYPE},DEFAULT)
 ifneq (${STDLIB_TYPE},DEFAULT)
@@ -424,11 +422,11 @@ LD_SEC_IN_ARG += -Wl,--cmse-implib
 #                           ROM LD FLAGS
 #*****************************************************************************#
 ROM_LD_ARG += -march=armv8.1-m.main+dsp
-ROM_LD_ARG += -mthumb 
-ROM_LD_ARG += -mcmse 
-ROM_LD_ARG += -Wl,-Map=rom.map 
-ROM_LD_ARG += -Wl,--warn-common 
-ROM_LD_ARG += -Wl,--no-enum-size-warning 
+ROM_LD_ARG += -mthumb
+ROM_LD_ARG += -mcmse
+ROM_LD_ARG += -Wl,-Map=rom.map
+ROM_LD_ARG += -Wl,--warn-common
+ROM_LD_ARG += -Wl,--no-enum-size-warning
 
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #

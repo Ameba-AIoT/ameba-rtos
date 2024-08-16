@@ -34,6 +34,8 @@ extern "C" {
 #define ameba_audio_gdma_free free
 #endif
 
+#define HAL_AUDIO_WEAK __attribute__((weak))
+
 void ameba_audio_set_native_time(void);
 int64_t ameba_audio_get_now_ns(void);
 uint32_t ameba_audio_get_channel(uint32_t channel_count);

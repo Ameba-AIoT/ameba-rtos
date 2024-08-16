@@ -24,6 +24,7 @@ extern struct netif xnetif[NET_IF_NUM];
 
 extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
+unsigned char ap_ip[4] = {192,168,43,1}, ap_netmask[4] = {255,255,255,0}, ap_gw[4] = {192,168,43,1};
 #endif
 
 #ifdef CONFIG_WLAN
@@ -644,7 +645,21 @@ void at_wlstartap_help(void)
 	at_printf("\t<ch>:\t[1,11]\r\n");
 	at_printf("\t<sec>:\topen/wep/tkip/wpa2/wpa3\r\n");
 	at_printf("\t<pw>:\tWith length in [8,64]\r\n");
+#ifdef CONFIG_LWIP_LAYER
+	at_printf("\t<ip>:\tThe ip of AP, default 192.168.43.1\r\n");
+	at_printf("\t<gw>:\tThe gateway of AP, default 192.168.43.1\r\n");
+	at_printf("\t<msk>:\tThe netmask of AP, default 255.255.255.0\r\n");
+	at_printf("\t<pl>:\tThe ip pool of AP\r\n");
+#endif
 	at_printf("\te.g.\r\nAT+WLSTARTAP=ssid,test_ssid,pw,12345678,sec,wpa2\r\n");
+}
+
+void get_ip_addr(unsigned char *ip, const char *str)
+{
+	ip[0] = (unsigned char) inet_addr(str) & 0xff;
+	ip[1] = (unsigned char) (inet_addr(str) >> 8) & 0xff;
+	ip[2] = (unsigned char) (inet_addr(str) >> 16) & 0xff;
+	ip[3] = (unsigned char) (inet_addr(str) >> 24) & 0xff;
 }
 
 /****************************************************************
@@ -660,6 +675,7 @@ void at_wlstartap(void *arg)
 	char *argv[MAX_ARGC] = {0};
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
+	struct ip_addr start_ip, end_ip;
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 #endif
 	int timeout = 20;
@@ -672,7 +688,7 @@ void at_wlstartap(void *arg)
 	}
 
 	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 9)) {
+	if ((argc < 2) || (argc > 18)) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] command format error\r\n");
 		error_no = 2;
 		goto end;
@@ -728,6 +744,57 @@ void at_wlstartap(void *arg)
 				ap.channel = atoi(argv[j]);
 			}
 		}
+#ifdef CONFIG_LWIP_LAYER
+		/* ip */
+		else if (0 == strcmp("ip", argv[i])) {
+			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
+				get_ip_addr(ap_ip, argv[j]);
+				get_ip_addr(ap_gw, argv[j]);
+			} else {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid ip value\r\n");
+				error_no = 2;
+				goto end;
+			}
+		}
+		else if (0 == strcmp("pl", argv[i])) {
+			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE){
+				start_ip.addr = inet_addr(argv[j]);
+			} else {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid start ip value\r\n");
+				error_no = 2;
+				goto end;
+			}
+
+			if(argv[j + 1] != NULL && inet_addr(argv[j + 1]) != IPADDR_NONE){
+				end_ip.addr = inet_addr(argv[j + 1]);
+			} else {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid end ip value\r\n");
+				error_no = 2;
+				goto end;
+			}
+
+			dhcps_set_addr_pool(1,&start_ip,&end_ip);
+			i += 1;
+		}
+		else if (0 == strcmp("gw", argv[i])) {
+			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
+				get_ip_addr(ap_gw, argv[j]);
+			} else {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid gateway value\r\n");
+				error_no = 2;
+				goto end;
+			}
+		}
+		else if (0 == strcmp("msk", argv[i])) {
+			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
+				get_ip_addr(ap_netmask, argv[j]);
+			} else {
+				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid netmask value\r\n");
+				error_no = 2;
+				goto end;
+			}
+		}
+#endif
 		/* Invalid input. */
 		else {
 			RTK_LOGW(NOTAG, "[+WLSTARTAP] command format error\r\n");

@@ -43,7 +43,6 @@ static int atcmd_bt_le_iso_create_cis_by_handle(int argc, char **argv)
 	(void)argc;
 	uint8_t cis_id;
 	uint8_t cig_id;
-	uint8_t cis_count;
 	uint16_t conn_handle;
 	uint16_t cis_conn_handle;
 	cis_id = (uint8_t)str_to_int(argv[0]);

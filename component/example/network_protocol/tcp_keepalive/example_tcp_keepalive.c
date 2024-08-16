@@ -3,8 +3,8 @@
 #include "lwip_netconf.h"
 #include "lwip/netif.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
 
-#define IP_ADDR_INVALID 0
 
 #define TEST_MODE       0	// 0 to test client keepalive, 1 to test server keepalive
 #define SERVER_IP       "192.168.0.110"

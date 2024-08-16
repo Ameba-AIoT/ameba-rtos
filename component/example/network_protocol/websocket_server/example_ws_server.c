@@ -15,18 +15,19 @@ extern uint8_t *LwIP_GetIP(uint8_t idx);
 #include <mbedtls/certs.h>
 #endif
 
-void echo_data(ws_conn *conn, size_t data_len, enum opcode_type opcode)
+void echo_data(ws_conn *conn, int data_len, enum opcode_type opcode)
 {
 	printf("\r\n>>>>>> Receiving: %s with length: %d from %d\n", conn->receivedData, (int)data_len, conn->sock);
 	if (opcode == TEXT_FRAME) {
-		ws_server_sendText((char *)conn->receivedData, data_len, 1, conn);
+		ws_server_sendText((char *)conn->receivedData, (size_t)data_len, 1, conn);
 	} else if (opcode == BINARY_FRAME) {
-		ws_server_sendBinary(conn->receivedData, data_len, 1, conn);
+		ws_server_sendBinary(conn->receivedData, (size_t)data_len, 1, conn);
 	}
 }
 
 static void example_wsserver_thread(void *param)
 {
+	(void)param;
 	printf("\r\n\r\n\r\n>>>>>>>>>>>>>>>websocket server example<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
 
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {

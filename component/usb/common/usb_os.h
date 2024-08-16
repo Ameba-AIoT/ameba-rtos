@@ -30,6 +30,7 @@
 
 #include "basic_types.h"
 #include "ameba.h"
+#include <string.h>
 #ifndef CONFIG_FLOADER_USBD_EN
 #include "os_wrapper.h"
 #endif

@@ -20,6 +20,8 @@ extern "C" {
 #include "rtw_wifi_constants.h"
 #include "lwipconf.h"
 #include "lwip/netifapi.h"
+
+extern unsigned char ap_ip[4], ap_netmask[4], ap_gw[4];
 // macros
 /* Give default value if not defined */
 #define IP_ADDR_INVALID 0x00000000
@@ -51,22 +53,22 @@ extern "C" {
 /*******************************************/
 
 /*Static IP ADDRESS*/
-#define AP_IP_ADDR0   192
-#define AP_IP_ADDR1   168
-#define AP_IP_ADDR2   43
-#define AP_IP_ADDR3   1
+#define AP_IP_ADDR0   ap_ip[0]
+#define AP_IP_ADDR1   ap_ip[1]
+#define AP_IP_ADDR2   ap_ip[2]
+#define AP_IP_ADDR3   ap_ip[3]
 
 /*NETMASK*/
-#define AP_NETMASK_ADDR0   255
-#define AP_NETMASK_ADDR1   255
-#define AP_NETMASK_ADDR2   255
-#define AP_NETMASK_ADDR3   0
+#define AP_NETMASK_ADDR0   ap_netmask[0]
+#define AP_NETMASK_ADDR1   ap_netmask[1]
+#define AP_NETMASK_ADDR2   ap_netmask[2]
+#define AP_NETMASK_ADDR3   ap_netmask[3]
 
 /*Gateway Address*/
-#define AP_GW_ADDR0   192
-#define AP_GW_ADDR1   168
-#define AP_GW_ADDR2   43
-#define AP_GW_ADDR3   1
+#define AP_GW_ADDR0   ap_gw[0]
+#define AP_GW_ADDR1   ap_gw[1]
+#define AP_GW_ADDR2   ap_gw[2]
+#define AP_GW_ADDR3   ap_gw[3]
 
 /* Private typedef -----------------------------------------------------------*/
 typedef enum {

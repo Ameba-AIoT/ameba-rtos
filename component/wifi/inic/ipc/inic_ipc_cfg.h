@@ -120,7 +120,7 @@
 #endif
 #endif
 
-#elif defined(CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3)
 #if defined(ARM_CORE_CM4)
 #if defined(CONFIG_AS_INIC_AP)
 /* configuration for AP */

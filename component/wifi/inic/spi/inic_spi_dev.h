@@ -11,6 +11,10 @@
 
 #define INIC_SPI_DEV				SPI0_DEV
 
+#define INIC_SPI_CLK_MHZ			20
+#define INIC_RECOVER_TIM_IDX			0
+#define INIC_RECOVER_TO_US			1000
+
 #define DEV_DMA_ALIGN				4
 
 enum inic_spi_dma_type {
@@ -38,10 +42,14 @@ struct inic_spi_priv_t {
 	struct sk_buff *rx_skb;
 	struct inic_buf_info *txbuf_info;
 
+	u8 rx_req;
+	u8 wait_tx;
+
 	u8 txdma_initialized: 1;
-	u8 rx_req: 1;
 	u8 wait_for_txbuf: 1;
 	u8 ssris_pending: 1;
+	u8 set_devsts_pending: 1;
+
 };
 
 static inline void set_dev_rdy_pin(u8 status)

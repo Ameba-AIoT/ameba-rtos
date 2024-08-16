@@ -183,7 +183,7 @@ int  ameba_audio_stream_tx_get_position(Stream *stream, uint64_t *rendered_frame
 	return 0;
 }
 
-int  ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
+HAL_AUDIO_WEAK int ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	//now nsec;
 	uint64_t nsec;
@@ -360,6 +360,7 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 		PLL_I2S_98P304M(ENABLE);
 		RCC_PeriphClockSource_SPORT(rstream->stream.sport_dev_num, CKSL_I2S_PLL98M);
 		PLL_I2S_Div(rstream->stream.sport_dev_num, Clock_Params.PLL_DIV);
+		PLL_I2S_98P304M_ClkTune(0, PLL_AUTO);
 		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
 		break;
 
@@ -643,7 +644,7 @@ uint32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
 	return remain;
 }
 
-void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
+HAL_AUDIO_WEAK void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 
@@ -690,7 +691,7 @@ void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 
 }
 
-void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
+HAL_AUDIO_WEAK void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 
@@ -779,7 +780,7 @@ uint32_t ameba_audio_stream_tx_complete(void *data)
 
 		if (ameba_audio_stream_buffer_get_available_size(rstream->stream.rbuffer) == rstream->stream.rbuffer->capacity ||
 			ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) < tx_length) {
-			HAL_AUDIO_IRQ_INFO("buffer empty,underrun");
+			DiagPrintf("underrun \n");
 			ameba_audio_stream_tx_stop(gdata->stream, STATE_XRUN);
 		} else {
 			tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));

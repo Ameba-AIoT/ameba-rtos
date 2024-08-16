@@ -4,8 +4,9 @@
 //#include <osdep_api.h>
 #include "os_wrapper.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
-#define IP_ADDR_INVALID 0
 
 #define SERVER_PORT     5001
 #define LISTEN_QLEN     2
@@ -84,6 +85,8 @@ static void example_socket_tcp_trx_thread(void *param)
 	struct sockaddr_in server_addr, client_addr;
 	size_t client_addr_size;
 
+	(void) param;
+
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 		printf("Wait for WIFI connection ...\n");
@@ -116,7 +119,7 @@ static void example_socket_tcp_trx_thread(void *param)
 			//RtlInitSema(&tcp_tx_rx_sema, 1);
 			rtos_sema_create(&tcp_tx_rx_sema, 1, RTOS_SEMA_MAX_COUNT);
 
-			if (rtos_task_create(NULL, ((const char *)"tx_thread"), tx_thread, &client_fd, 512 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(NULL, ((const char *)"tx_thread"), tx_thread, &client_fd, 2048 * 4, 1) != SUCCESS) {
 				printf("\n\r%s rtos_task_create(tx_thread) failed", __FUNCTION__);
 			} else {
 				tx_exit = 0;
@@ -124,7 +127,7 @@ static void example_socket_tcp_trx_thread(void *param)
 
 			rtos_time_delay_ms(10);
 
-			if (rtos_task_create(NULL, ((const char *)"rx_thread"), rx_thread, &client_fd, 512 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(NULL, ((const char *)"rx_thread"), rx_thread, &client_fd, 2048 * 4, 1) != SUCCESS) {
 				printf("\n\r%s rtos_task_create(rx_thread) failed", __FUNCTION__);
 			} else {
 				rx_exit = 0;

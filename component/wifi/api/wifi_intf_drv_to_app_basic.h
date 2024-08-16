@@ -1063,7 +1063,7 @@ struct wifi_user_conf {
 
 	/*!	It is valid only when concurrent_enabled =1. The range is 1~5. The lowest bit of mac[0] is 1, which represents the multicast address, so skip mac[0].\n
 		e.g. softap_addr_offset_idx = 1, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e1:4c:01:02:03;\n
-		e.g. softap_addr_offset_idx = 5, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e1:4c:01:02:04*/
+		e.g. softap_addr_offset_idx = 5, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e0:4c:01:02:04*/
 	unsigned char softap_addr_offset_idx;
 
 	/*!	The number of ampdu that Recipient claims to Originator for RX, it can be any value less than 64.\n

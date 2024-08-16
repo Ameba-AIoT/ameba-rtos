@@ -1,10 +1,10 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 
-#include "lwipconf.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
-#define IP_ADDR_INVALID 0
 
 static void example_bcast_thread(void *param)
 {
