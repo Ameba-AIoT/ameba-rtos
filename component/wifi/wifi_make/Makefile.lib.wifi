@@ -28,6 +28,10 @@ ifeq ($(CONFIG_AMEBAGREEN2), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
 endif
 
+ifeq ($(CONFIG_AMEBAPRO3), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_common.a
+endif
+
 # AP Link Library
 ifeq ($(CONFIG_AS_INIC_AP), y)
 ifeq ($(CONFIG_MP_INCLUDED), y)
@@ -102,12 +106,12 @@ endif
 endif
 endif
 
-endif
-
 ifeq ($(CONFIG_AS_INIC_AP), y)
 ifneq ($(CONFIG_MP_SHRINK), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_cast.a
 endif
+endif
+
 endif
 
 make_wifi_lib:

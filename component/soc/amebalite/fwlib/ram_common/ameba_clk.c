@@ -81,11 +81,11 @@ void OSC131_R_Set(u32 setbit, u32 clearbit)
 	}
 
 	/* It takes 1ms to stable */
-	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
-		DelayMs(2);
-	} else {
+	// if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
+	// 	DelayMs(2);
+	// } else {
 		DelayMs(1);
-	}
+	// }
 }
 
 /**
@@ -162,12 +162,11 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 		regu->REGU_32KOSC |= min_delta_r;
 
 		/* It takes 1ms to stable */
-		if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
-			DelayMs(2);
-
-		} else {
+		// if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
+		// 	DelayMs(2);
+		// } else {
 			DelayMs(1);
-		}
+		// }
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(AON128K_CAL_CLK);
@@ -185,9 +184,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 
 	if (cur_ppm >= ppm_limit) {
 		RTK_LOGE(TAG, "[CAL131K]: !!! cal fail !!! PPM: %lu PPM_Limit:%lu \n", cur_ppm, ppm_limit);
-		if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
 			assert_param(0);
-		}
 	}
 
 	return TRUE;

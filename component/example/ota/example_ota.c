@@ -7,7 +7,7 @@
 
 #define PORT	8082
 static const char *host = "192.168.31.193";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
-static const char *resource = "OTA_All.bin";     //"051103061600.bin"
+static const char *resource = "ota_all.bin";     //"051103061600.bin"
 
 extern void sys_reset(void);
 

@@ -9,8 +9,9 @@
 #include "wifi_conf.h"
 #include "lwip_netconf.h"
 #define MQTT_SELECT_TIMEOUT 1
-static void messageArrived(MessageData *data)
+static void messageArrived(MessageData *data, void *discard)
 {
+	(void)discard;
 	mqtt_printf(MQTT_INFO, "Message arrived on topic %s: %s\n", data->topicName->lenstring.data, (char *)data->message->payload);
 }
 
@@ -113,7 +114,7 @@ void MQTTPublishMessage(MQTTClient *c, char *topic)
 	}
 
 }
-
+#if 0
 static void prvMQTTTask(void *pvParameters)
 {
 	/* To avoid gcc warnings */
@@ -167,10 +168,12 @@ static void prvMQTTTask(void *pvParameters)
 	}
 }
 #endif
+#endif
 
 void vStartMQTTTasks(uint16_t usTaskStackSize, UBaseType_t uxTaskPriority)
 {
-	BaseType_t x = 0L;
+	(void)usTaskStackSize;
+	(void)uxTaskPriority;
 	printf("\nExample: Mqtt \n");
 #if defined(MQTT_TASK)
 #else

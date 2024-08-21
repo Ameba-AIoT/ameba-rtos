@@ -45,7 +45,7 @@ For example:
 
 1. After boot up, Master SPI and slave SPI communicate with each other, and exchanged data will be displayed and compared.
 2. Master SPI Transmits data to slave SPI, and data transmitted by master and data received by slave will be displayed and compared.
-3. When transmission finishes, the compared result will be notified as "success" or "fail".
+3. When transmission finishes, the compared result will be notified as "Test result is ok" or "Test result is error".
 
 # Note
 

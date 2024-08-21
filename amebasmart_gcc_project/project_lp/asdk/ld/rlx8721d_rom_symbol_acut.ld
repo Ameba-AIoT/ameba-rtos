@@ -331,7 +331,7 @@ SECTIONS
     PROVIDE(InitKeepAlive_8730E_ROM = 0x69f5);
     PROVIDE(H2CHDL_KeepAlive_8730E_ROM = 0x6a11);
     PROVIDE(wififw_wowlan_rxpkt_release = 0x6a4d);
-    PROVIDE(wififw_wowlan_wait_rxdma_idle = 0x6a61);
+    PROVIDE(WaitRXDMAIdle_8730E_ROM = 0x6a61);
     PROVIDE(wififw_wowlan_page_offset_align = 0x6aa1);
     PROVIDE(DropCHK_8730E_ROM = 0x6ab1);
     PROVIDE(EnableWoWLAN_8730E_ROM = 0x6ad1);

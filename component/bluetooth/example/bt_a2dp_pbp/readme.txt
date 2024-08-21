@@ -48,14 +48,14 @@ GCC menuconfig
 Test ATCMD
 ~~~~~~~~~~~
 1. a2dp sink + pbp source demo 
-    1.1 enable: ATBE=a2dp_pbp,1
-    1.2 disable: ATBE=a2dp_pbp,0
+    1.1 enable: AT+BTDEMO=a2dp_pbp,1
+    1.2 disable: AT+BTDEMO=a2dp_pbp,0
     1.3 connect to the a2dp device: use Phone to connect to the device "a2dp sink pbp source"
-    1.4 start PBP broadcast: ATBC=bap_cmd,broadcast,source,start
-    1.5 stop PBP broadcast: ATBC=bap_cmd,broadcast,source,stop
+    1.4 start PBP broadcast: AT+BLEBAP=broadcast,source,start
+    1.5 stop PBP broadcast: AT+BLEBAP=broadcast,source,stop
 
 2.pbp sink demo 
-2.1 enable: ATBE=cap,acceptor,1
-2.2 scan for the PBP broadcast: ATBC=bap_cmd,broadcast,sink,escan,1
-2.3 PA sync to the PBP broadcast: ATBC=bap_cmd,broadcast,sink,sync_start,0,00e04c8002eb
+2.1 enable: AT+BTDEMO=cap,acceptor,1
+2.2 scan for the PBP broadcast: AT+BLEBAP=broadcast,sink,escan,1
+2.3 PA sync to the PBP broadcast: AT+BLEBAP=broadcast,sink,sync_start,<bd_addr type>,<bd_addr> e.g. AT+BLEBAP=broadcast,sink,sync_start,0,00e04c8002eb
 3. Play music on the Phone

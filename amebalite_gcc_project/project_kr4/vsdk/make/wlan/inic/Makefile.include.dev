@@ -2,12 +2,21 @@
 IPCDRV = $(BASEDIR)/component/wifi/inic/ipc
 SDIODRV = $(BASEDIR)/component/wifi/inic/sdio
 SPIDRV = $(BASEDIR)/component/wifi/inic/spi
+USBDRV = $(BASEDIR)/component/wifi/inic/usb
 COMDRV = $(BASEDIR)/component/wifi/inic/common
 
 vpath %.c $(IPCDRV) \
         $(SDIODRV) \
 	$(COMDRV) \
-	$(SPIDRV)
+	$(SPIDRV) \
+	$(USBDRV)
+
+
+ifeq ($(CONFIG_INIC_INTF_USB), y)
+IFLAGS += -I$(BASEDIR)/component/usb/common
+IFLAGS += -I$(BASEDIR)/component/usb/device/core
+IFLAGS += -I$(BASEDIR)/component/usb/device/inic
+endif
 
 ifeq ($(CONFIG_AS_INIC_NP),y)
 # IPC DEV
@@ -23,6 +32,12 @@ CSRC_DRV += $(COMDRV)/inic_dev_trx.c
 CSRC_DRV += $(COMDRV)/inic_dev_api.c
 CSRC_DRV += $(COMDRV)/inic_dev_protocal_offload.c
 CSRC_DRV += $(SPIDRV)/inic_spi_dev.c
+else ifeq ($(CONFIG_INIC_INTF_USB), y)
+CSRC_DRV += $(COMDRV)/inic_dev_msg_queue.c
+CSRC_DRV += $(COMDRV)/inic_dev_trx.c
+CSRC_DRV += $(COMDRV)/inic_dev_api.c
+CSRC_DRV += $(COMDRV)/inic_dev_protocal_offload.c
+CSRC_DRV += $(USBDRV)/inic_usb_dev.c
 else
 CSRC_DRV += $(IPCDRV)/inic_ipc_msg_queue.c
 CSRC_DRV += $(IPCDRV)/inic_ipc_dev_trx.c

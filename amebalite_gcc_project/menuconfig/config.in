@@ -110,326 +110,154 @@ bool "Enable BT"															CONFIG_BT_MENU
 # !!Notice that "[ ]" both side and "$CONFIG_XXX" should has a whitespace
 if [ "$CONFIG_BT_MENU" = "y" ]; then
 	if [ "$CONFIG_AP_CORE_KM4" = "y" ]; then
-		define_bool CONFIG_BT_KM4_SINGLE_CORE y
-		define_bool CONFIG_BT_KR4_SINGLE_CORE n
-	fi
-	if [ "$CONFIG_AP_CORE_KR4" = "y" ]; then
-		define_bool CONFIG_BT_KM4_SINGLE_CORE n
-		define_bool CONFIG_BT_KR4_SINGLE_CORE y
-	fi
-	if [ "$CONFIG_BT_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_BT_FOR_KM4 y
 		define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
-		choice 'BT Mode Selection'	"BLE_ONLY								CONFIG_BT_BLE_ONLY_MENU \
-									DUAL_MODE								CONFIG_BT_DUAL_MODE_MENU \
-									" BLE_ONLY
-		if [ "$CONFIG_BT_BLE_ONLY_MENU" = "y" ]; then
-			define_bool CONFIG_BT_BLE_ONLY_FOR_KM4 y
-		fi
-		if [ "$CONFIG_BT_DUAL_MODE_MENU" = "y" ]; then
-			define_bool CONFIG_BT_DUAL_MODE_FOR_KM4 y
-		fi
-		bool "BT Advanced Feature"											CONFIG_BT_ADVANCED_FEATURE_MENU
-		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT AT Command"									CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KM4
-#			bool "  Use Zephyr BT Stack"									CONFIG_BT_ZEPHYR_MENU
-			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
-				define_bool CONFIG_BT_ZEPHYR_FOR_KM4 y
-			fi
-		fi
-		bool "BT Example Demo"												CONFIG_BT_EXAMPLE_DEMO_MENU
-		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
-			bool "  BLE Peripheral"											CONFIG_BT_PERIPHERAL_FOR_KM4
-			bool "  BLE Central"											CONFIG_BT_CENTRAL_FOR_KM4
-			bool "  BLE Scatternet"											CONFIG_BT_SCATTERNET_FOR_KM4
-#			bool "  BLE Throughput"											CONFIG_BT_THROUGHPUT_FOR_KM4
-			bool "  BLE Mesh Provisioner"									CONFIG_BT_MESH_PROVISIONER_MENU
-			bool "  BLE Mesh Device"										CONFIG_BT_MESH_DEVICE_MENU
-			bool "  BLE Mesh Provisioner and BLE Scatternet"				CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
-			bool "  BLE Mesh Device and BLE Scatternet"						CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
-#			bool "  BLE Mesh Provisioner Test"								CONFIG_BT_MESH_PROVISIONER_TEST_MENU
-#			bool "  BLE Mesh Device Test"									CONFIG_BT_MESH_DEVICE_TEST_MENU
-#			bool "  BLE ISO Test"											CONFIG_BT_ISO_TEST_FOR_KM4
-			bool "  BLE Audio"												CONFIG_BT_LE_AUDIO_MENU
-			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				bool "    BLE Audio Basic Audio Profile"					CONFIG_BT_BAP_MENU
-				bool "    BLE Audio Common Audio Profile"					CONFIG_BT_CAP_MENU
-				bool "    BLE Audio Public Broadcast Profile"				CONFIG_BT_PBP_MENU
-				bool "    BLE Audio Telephony and Media Audio Profile"		CONFIG_BT_TMAP_MENU
-				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_BAP_FOR_KM4 y
-					define_bool CONFIG_BT_BAP_SUPPORT_FOR_KM4 y
-				fi
-				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_CAP_FOR_KM4 y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KM4 y
-				fi
-				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_PBP_FOR_KM4 y
-					define_bool CONFIG_BT_PBP_SUPPORT_FOR_KM4 y
-				fi
-				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_TMAP_FOR_KM4 y
-					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KM4 y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KM4 y
-				fi
-			fi
-			bool "  BT A2DP"												CONFIG_BT_A2DP_MENU
-			bool "  BT HFP"													CONFIG_BT_HFP_MENU
-			bool "  BT A2DP and BT HFP"										CONFIG_BT_A2DP_HFP_MENU
-			bool "  BT SPP"													CONFIG_BT_SPP_FOR_KM4
-			bool "  BT Audio MP Test"										CONFIG_BT_AUDIO_MP_TEST_MENU
-#			bool "  BT HID"													CONFIG_BT_HID_FOR_KM4
-#			bool "  BT PTS"													CONFIG_BT_PTS_FOR_KM4
-			bool "  BT A2DP and BLE Scatternet"								CONFIG_BT_A2DP_SCATTERNET_MENU
-#			bool "  BT A2DP and BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU
-			bool "  BT A2DP and BLE Audio PBP"								CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
-			bool "  BT A2DP and BLE Audio TMAP"								CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_MESH_PROVISIONER_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_TEST_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_TEST_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_KM4 y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_PBP_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_KM4 y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_HFP_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_SCATTERNET_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_HFP_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_KM4 y
-			fi
-			if [ "$CONFIG_BT_AUDIO_MP_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_AUDIO_MP_TEST_FOR_KM4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KM4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_KM4 y
-			fi
-		fi
-	fi
-
-	if [ "$CONFIG_BT_KR4_SINGLE_CORE" = "y" ]; then
+	else
 		define_bool CONFIG_BT_FOR_KR4 y
 		define_bool CONFIG_FTL_ENABLED_FOR_KR4 y
-		choice 'BT Mode Selection'	"BLE_ONLY								CONFIG_BT_BLE_ONLY_MENU \
-									DUAL_MODE								CONFIG_BT_DUAL_MODE_MENU \
-									" BLE_ONLY
-		if [ "$CONFIG_BT_BLE_ONLY_MENU" = "y" ]; then
-			define_bool CONFIG_BT_BLE_ONLY_FOR_KR4 y
+	fi
+	choice 'BT Mode Selection'	"BLE_ONLY								CONFIG_BT_BLE_ONLY \
+								DUAL_MODE								CONFIG_BT_DUAL_MODE \
+								" BLE_ONLY
+	bool "BT Advanced Feature"											CONFIG_BT_ADVANCED_FEATURE_MENU
+	if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
+		bool "  Exclude BT AT Command"									CONFIG_BT_EXCLUDE_AT_COMMAND
+#		bool "  Use Zephyr BT Stack"									CONFIG_BT_ZEPHYR
+	fi
+	bool "BT Example Demo"												CONFIG_BT_EXAMPLE_DEMO_MENU
+	if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
+		bool "  BLE Peripheral"											CONFIG_BT_PERIPHERAL
+		bool "  BLE Central"											CONFIG_BT_CENTRAL
+		bool "  BLE Scatternet"											CONFIG_BT_SCATTERNET
+#		bool "  BLE Throughput"											CONFIG_BT_THROUGHPUT
+		bool "  BLE Mesh Provisioner"									CONFIG_BT_MESH_PROVISIONER_MENU
+		bool "  BLE Mesh Device"										CONFIG_BT_MESH_DEVICE_MENU
+		bool "  BLE Mesh Provisioner and BLE Scatternet"				CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
+		bool "  BLE Mesh Device and BLE Scatternet"						CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
+#		bool "  BLE Mesh Provisioner Test"								CONFIG_BT_MESH_PROVISIONER_TEST_MENU
+#		bool "  BLE Mesh Device Test"									CONFIG_BT_MESH_DEVICE_TEST_MENU
+#		bool "  BLE ISO Test"											CONFIG_BT_ISO_TEST
+		bool "  BLE Audio"												CONFIG_BT_LE_AUDIO_MENU
+		if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
+			bool "    BLE Audio Basic Audio Profile"					CONFIG_BT_BAP_MENU
+			bool "    BLE Audio Common Audio Profile"					CONFIG_BT_CAP_MENU
+			bool "    BLE Audio Public Broadcast Profile"				CONFIG_BT_PBP_MENU
+			bool "    BLE Audio Telephony and Media Audio Profile"		CONFIG_BT_TMAP_MENU
 		fi
-		if [ "$CONFIG_BT_DUAL_MODE_MENU" = "y" ]; then
-			define_bool CONFIG_BT_DUAL_MODE_FOR_KR4 y
+		bool "  BT A2DP"												CONFIG_BT_A2DP_MENU
+		bool "  BT HFP"													CONFIG_BT_HFP_MENU
+		bool "  BT A2DP and BT HFP"										CONFIG_BT_A2DP_HFP_MENU
+		bool "  BT SPP"													CONFIG_BT_SPP
+		bool "  BT Audio MP Test"										CONFIG_BT_AUDIO_MP_TEST_MENU
+#		bool "  BT HID"													CONFIG_BT_HID
+#		bool "  BT PTS"													CONFIG_BT_PTS
+		bool "  BT A2DP and BLE Scatternet"								CONFIG_BT_A2DP_SCATTERNET_MENU
+#		bool "  BT A2DP and BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU
+		bool "  BT A2DP and BLE Audio PBP"								CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
+		bool "  BT A2DP and BLE Audio TMAP"								CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
+		if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
+			define_bool CONFIG_BT_MESH_PROVISIONER y
+			define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
 		fi
-		bool "BT Advanced Feature"											CONFIG_BT_ADVANCED_FEATURE_MENU
-		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT AT Command"									CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KR4
-#			bool "  Use Zephyr BT Stack"									CONFIG_BT_ZEPHYR_MENU
-			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
-				define_bool CONFIG_BT_ZEPHYR_FOR_KR4 y
+		if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
+			define_bool CONFIG_BT_MESH_DEVICE y
+			define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
+		fi
+		if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
+			define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET y
+			define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
+		fi
+		if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
+			define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET y
+			define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
+		fi
+		if [ "$CONFIG_BT_MESH_PROVISIONER_TEST_MENU" = "y" ]; then
+			define_bool CONFIG_BT_MESH_PROVISIONER_TEST y
+			define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
+		fi
+		if [ "$CONFIG_BT_MESH_DEVICE_TEST_MENU" = "y" ]; then
+			define_bool CONFIG_BT_MESH_DEVICE_TEST y
+			define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
+		fi
+		if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
+			define_bool CONFIG_BT_LE_AUDIO y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
+			if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
+				define_bool CONFIG_BT_BAP y
+				define_bool CONFIG_BT_BAP_SUPPORT y
+			fi
+			if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
+				define_bool CONFIG_BT_CAP y
+				define_bool CONFIG_BT_CAP_SUPPORT y
+			fi
+			if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
+				define_bool CONFIG_BT_PBP y
+				define_bool CONFIG_BT_PBP_SUPPORT y
+			fi
+			if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
+				define_bool CONFIG_BT_TMAP y
+				define_bool CONFIG_BT_TMAP_SUPPORT y
+				define_bool CONFIG_BT_CAP_SUPPORT y
 			fi
 		fi
-		bool "BT Example Demo"												CONFIG_BT_EXAMPLE_DEMO_MENU
-		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
-			bool "  BLE Peripheral"											CONFIG_BT_PERIPHERAL_FOR_KR4
-			bool "  BLE Central"											CONFIG_BT_CENTRAL_FOR_KR4
-			bool "  BLE Scatternet"											CONFIG_BT_SCATTERNET_FOR_KR4
-#			bool "  BLE Throughput"											CONFIG_BT_THROUGHPUT_FOR_KR4
-			bool "  BLE Mesh Provisioner"									CONFIG_BT_MESH_PROVISIONER_MENU
-			bool "  BLE Mesh Device"										CONFIG_BT_MESH_DEVICE_MENU
-			bool "  BLE Mesh Provisioner and BLE Scatternet"				CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
-			bool "  BLE Mesh Device and BLE Scatternet"						CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
-#			bool "  BLE Mesh Provisioner Test"								CONFIG_BT_MESH_PROVISIONER_TEST_MENU
-#			bool "  BLE Mesh Device Test"									CONFIG_BT_MESH_DEVICE_TEST_MENU
-#			bool "  BLE ISO Test"											CONFIG_BT_ISO_TEST_FOR_KR4
-			bool "  BLE Audio"												CONFIG_BT_LE_AUDIO_MENU
-			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				bool "    BLE Audio Basic Audio Profile"					CONFIG_BT_BAP_MENU
-				bool "    BLE Audio Common Audio Profile"					CONFIG_BT_CAP_MENU
-				bool "    BLE Audio Public Broadcast Profile"				CONFIG_BT_PBP_MENU
-				bool "    BLE Audio Telephony and Media Audio Profile"		CONFIG_BT_TMAP_MENU
-				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_BAP_FOR_KR4 y
-					define_bool CONFIG_BT_BAP_SUPPORT_FOR_KR4 y
-				fi
-				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_CAP_FOR_KR4 y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KR4 y
-				fi
-				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_PBP_FOR_KR4 y
-					define_bool CONFIG_BT_PBP_SUPPORT_FOR_KR4 y
-				fi
-				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_TMAP_FOR_KR4 y
-					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KR4 y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_KR4 y
-				fi
-			fi
-			bool "  BT A2DP"												CONFIG_BT_A2DP_MENU
-			bool "  BT HFP"													CONFIG_BT_HFP_MENU
-			bool "  BT A2DP and BT HFP"										CONFIG_BT_A2DP_HFP_MENU
-			bool "  BT SPP"													CONFIG_BT_SPP_FOR_KR4
-			bool "  BT Audio MP Test"										CONFIG_BT_AUDIO_MP_TEST_MENU
-#			bool "  BT HID"													CONFIG_BT_HID_FOR_KR4
-#			bool "  BT PTS"													CONFIG_BT_PTS_FOR_KR4
-			bool "  BT A2DP and BLE Scatternet"								CONFIG_BT_A2DP_SCATTERNET_MENU
-#			bool "  BT A2DP and BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU
-			bool "  BT A2DP and BLE Audio PBP"								CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
-			bool "  BT A2DP and BLE Audio TMAP"								CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_MESH_PROVISIONER_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_TEST_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_TEST_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_KR4 y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_PBP_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_KR4 y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_HFP_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_SCATTERNET_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_A2DP_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_HFP_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_KR4 y
-			fi
-			if [ "$CONFIG_BT_AUDIO_MP_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_AUDIO_MP_TEST_FOR_KR4 y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_KR4 y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_KR4 y
-			fi
+		if [ "$CONFIG_BT_A2DP_MENU" = "y" ]; then
+			define_bool CONFIG_BT_A2DP y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+		fi
+		if [ "$CONFIG_BT_HFP_MENU" = "y" ]; then
+			define_bool CONFIG_BT_HFP y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_CVSD y
+		fi
+		if [ "$CONFIG_BT_A2DP_HFP_MENU" = "y" ]; then
+			define_bool CONFIG_BT_A2DP_HFP y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+			define_bool CONFIG_BT_AUDIO_CODEC_CVSD y
+		fi
+		if [ "$CONFIG_BT_AUDIO_MP_TEST_MENU" = "y" ]; then
+			define_bool CONFIG_BT_AUDIO_MP_TEST y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+			define_bool CONFIG_BT_AUDIO_CODEC_CVSD y
+		fi
+		if [ "$CONFIG_BT_A2DP_SCATTERNET_MENU" = "y" ]; then
+			define_bool CONFIG_BT_A2DP_SCATTERNET y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+		fi
+		if [ "$CONFIG_BT_A2DP_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
+			define_bool CONFIG_BT_A2DP_PROVISIONER_SCATTERNET y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+			define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
+		fi
+		if [ "$CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU" = "y" ]; then
+			define_bool CONFIG_BT_LE_AUDIO y
+			define_bool CONFIG_BT_A2DP_LE_AUDIO_PBP y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_PBP_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+			define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
+		fi
+		if [ "$CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU" = "y" ]; then
+			define_bool CONFIG_BT_LE_AUDIO y
+			define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP y
+			define_bool CONFIG_BT_APP_AUDIO_DATA y
+			define_bool CONFIG_BT_TMAP_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+			define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
 		fi
 	fi
 fi

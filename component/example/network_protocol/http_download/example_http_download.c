@@ -4,8 +4,9 @@
 #include "basic_types.h"
 #include "lwipconf.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
-#define IP_ADDR_INVALID 0
 
 #define SERVER_HOST    "176.34.62.248"
 #define SERVER_PORT    80
@@ -18,6 +19,8 @@ static void example_http_download_thread(void *param)
 	int server_fd = -1;
 	struct sockaddr_in server_addr;
 	struct hostent *server_host;
+
+	(void) param;
 
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {

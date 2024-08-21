@@ -122,15 +122,6 @@
 #define GPIO_GET_INT_EN(x)             ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
-/** @defgroup GPIO_INT_MASK
- * @brief PortA/B interrupt mask register
- * @{
- **/
-#define GPIO_MASK_INT_MASK             ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls whether an interrupt on Portx can create an interrupt for the interrupt controller by not masking it. By default, all interrupts bits are unmasked. Whenever a 1 is written to a bit in this register, it masks the interrupt generation capability for this signal; otherwise interrupts are allowed through. The unmasked status can be read as well as the resultant status after masking. 0: Interrupt bits are unmasked (default) 1: Mask interrupt */
-#define GPIO_INT_MASK(x)               (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GPIO_GET_INT_MASK(x)           ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
 /** @defgroup GPIO_INT_TYPE
  * @brief PortA/B interrupt trigger type register
  * @{

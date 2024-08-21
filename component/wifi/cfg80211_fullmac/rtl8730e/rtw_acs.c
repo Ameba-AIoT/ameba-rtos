@@ -26,16 +26,16 @@ struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM] = {0};
 int cfg80211_rtw_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info)
 {
 	if (global_idev.mp_fw) {
-		return -EPERM;
+		return -ENOENT;
 	}
 
 	if (rtw_netdev_idx(netdev) == 0) {
-		return -EPERM;
+		return -ENOENT;
 	}
 
 	if (!info) {
 		dev_err(global_idev.fullmac_dev, "%s: invial parameters!\n", __func__);
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	if (idx > chanel_idx_max) {
@@ -60,7 +60,7 @@ int cfg80211_rtw_dump_survey_params(struct wiphy *wiphy, struct net_device *netd
 		info->filled = SURVEY_INFO_TIME | SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME_TX | SURVEY_INFO_NOISE_DBM;
 	} else {
 		info->channel = NULL;
-		dev_err(global_idev.fullmac_dev, "%s: acs_info == NULL,please Enable ACS\n", __func__);
+		dev_err(global_idev.fullmac_dev, "%s: idx：%d, acs_info == NULL\n", __func__,idx);
 	}
 
 	return 0;

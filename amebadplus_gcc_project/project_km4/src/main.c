@@ -141,7 +141,7 @@ void app_filesystem_init(void)
 {
 	int ret = 0;
 	vfs_init();
-	ret = vfs_user_register("lfs", VFS_LITTLEFS, VFS_INF_FLASH, VFS_FLASH_R1, VFS_RW);
+	ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 	if (ret == 0) {
 		ret = rt_kv_init();
 		if (ret == 0) {
@@ -189,7 +189,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 
-#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC))
+#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined (CONFIG_USB_FULLMAC))
 	app_filesystem_init();
 #endif
 
@@ -204,7 +204,7 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
-#if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC)) && defined(CONFIG_KM4_AS_NP)
+#if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined(CONFIG_USB_FULLMAC)) && defined(CONFIG_KM4_AS_NP)
 	wififw_task_create();
 #endif
 

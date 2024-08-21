@@ -5,8 +5,11 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
-#define IP_ADDR_INVALID 0
+
+char *http_get_header(char *host, char *resource);
 
 #define THREAD_STACK_SIZE 1024
 static const char *host = "www.google.com.tw";

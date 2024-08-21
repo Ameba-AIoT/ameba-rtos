@@ -141,14 +141,6 @@ int wifi_config_autoreconnect(__u8 mode);
 int wifi_get_autoreconnect(__u8 *mode);
 
 /**
- * @brief  Get reason code of latest disassociation or deauthentication.
- * @param[out]  reason_code: A pointer to the variable where the
- * 	reason code (rtw_connect_error_flag_t) will be written.
- * @return  RTW_SUCCESS or RTW ERROR.
- */
-int wifi_get_disconn_reason_code(unsigned short *reason_code);
-
-/**
  * @brief  Get the associated clients with SoftAP.
  * @param[out]  client_list_buffer: The location where the client
  * 	list will be stored.

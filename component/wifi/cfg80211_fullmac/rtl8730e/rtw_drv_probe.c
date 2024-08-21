@@ -18,8 +18,6 @@ static const struct of_device_id rtw_axi_of_match[] = {
 
 MODULE_DEVICE_TABLE(of, rtw_axi_of_match);
 
-struct axi_data *paxi_data_global;
-
 /* IPv4, IPv6 IP addr notifier */
 static int rtw_inetaddr_notifier_call(struct notifier_block *nb, unsigned long action, void *data)
 {
@@ -208,11 +206,9 @@ int rtw_netdev_remove(struct device *pdev)
 }
 
 #ifdef CONFIG_FULLMAC_HCI_IPC
-
 static void platform_device_init(struct platform_device *pdev)
 {
 	u32 status = false;
-	struct resource *res_mem = NULL;
 	unsigned long pmem_len = 0;
 	struct axi_data *axi_data;
 
@@ -224,23 +220,41 @@ static void platform_device_init(struct platform_device *pdev)
 	paxi_data_global = axi_data;
 	axi_data->pdev = pdev;
 
-	res_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res_mem) {
+	axi_data->wifi_reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!axi_data->wifi_reg_res) {
 		pr_err("Can't get axi IORESOURCE_MEM\n");
 		goto free_dvobj;
 	}
 
-	pmem_len = res_mem->end - res_mem->start + 1;
+	pmem_len = axi_data->wifi_reg_res->end - axi_data->wifi_reg_res->start + 1;
 
-	axi_data->axi_mem_start = (unsigned long)devm_ioremap_resource(&pdev->dev, res_mem);
-	if (!axi_data->axi_mem_start) {
+	axi_data->wifi_reg_start = (unsigned long)devm_ioremap_resource(&pdev->dev, axi_data->wifi_reg_res);
+	if (!axi_data->wifi_reg_start) {
 		pr_err("Can't map CTRL mem\n");
 		goto exit;
 	}
-	axi_data->axi_mem_end = axi_data->axi_mem_start + pmem_len;
+	axi_data->wifi_reg_end = axi_data->wifi_reg_start + pmem_len;
 
-	pr_info("Memory mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
-			(unsigned long)res_mem->start, pmem_len, axi_data->axi_mem_start);
+	pr_info("wifi reg mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
+			(unsigned long)axi_data->wifi_reg_res->start, pmem_len, axi_data->wifi_reg_start);
+
+	axi_data->fw_mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	if (!axi_data->fw_mem_res) {
+		pr_err("Can't get np IORESOURCE_MEM\n");
+		goto free_dvobj;
+	}
+
+	pmem_len = axi_data->fw_mem_res->end - axi_data->fw_mem_res->start + 1;
+
+	axi_data->fw_mem_start = (unsigned long)devm_ioremap_resource(&pdev->dev, axi_data->fw_mem_res);
+	if (!axi_data->fw_mem_start) {
+		pr_err("Can't map np mem\n");
+		goto exit;
+	}
+	axi_data->fw_mem_end = axi_data->fw_mem_start + pmem_len;
+
+	pr_info("fw memory mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
+			(unsigned long)axi_data->fw_mem_res->start, pmem_len, axi_data->fw_mem_start);
 
 	status = true;
 
@@ -258,9 +272,15 @@ static void platform_device_deinit(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 	if (axi_data) {
-		if (axi_data->axi_mem_start != 0) {
-			devm_iounmap(&pdev->dev, (void *)axi_data->axi_mem_start);
-			axi_data->axi_mem_start = 0;
+		if (axi_data->fw_mem_start != 0) {
+			devm_iounmap(&pdev->dev, (void *)axi_data->fw_mem_start);
+			axi_data->fw_mem_start = 0;
+		}
+
+
+		if (axi_data->wifi_reg_start != 0) {
+			devm_iounmap(&pdev->dev, (void *)axi_data->wifi_reg_start);
+			axi_data->wifi_reg_start = 0;
 		}
 
 		kfree((u8 *)axi_data);

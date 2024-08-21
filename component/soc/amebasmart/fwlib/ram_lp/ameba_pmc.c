@@ -78,7 +78,7 @@ int SOCPS_AONWakeReason(void)
   */
 static void OTP_Raise_AonVol(u32 status)
 {
-	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
+	if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
 		return;
 	} else {
 		u32 Aon_Vol;

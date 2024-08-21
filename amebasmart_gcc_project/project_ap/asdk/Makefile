@@ -165,6 +165,7 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
 endif
 
 ifeq ($(CONFIG_BT), y)
+ifneq ($(CONFIG_BT_INIC), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btcodec.a
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btaudiosync.a
@@ -181,6 +182,7 @@ LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebasma
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebasmart/lib/ca32/sysm.a
 ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/amebasmart/ca32/btmesh.a
+endif
 endif
 endif
 endif

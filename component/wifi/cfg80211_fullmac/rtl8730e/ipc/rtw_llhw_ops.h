@@ -11,6 +11,11 @@
 #ifndef __RTW_LLHW_OPS_H__
 #define __RTW_LLHW_OPS_H__
 
+struct axi_drv_priv {
+	struct platform_driver rtw_axi_drv;
+	int drv_registered;
+};
+
 #define RTW_JOIN_TIMEOUT		20000
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 

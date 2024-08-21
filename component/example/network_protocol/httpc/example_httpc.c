@@ -2,8 +2,9 @@
 #include "basic_types.h"
 #include "httpc/httpc.h"
 #include "rtw_wifi_defs.h"
-
-#define IP_ADDR_INVALID 0
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
+#include "os_wrapper.h"
 
 #define STACKSIZE    2048
 #define USE_HTTPS    0

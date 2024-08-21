@@ -46,6 +46,8 @@ TARGET_LIB = lib_wifi_common
 
 ifeq ($(CONFIG_AMEBAGREEN2),y)
 TARGET_LIB = lib_wifi_common
+else ifeq ($(CONFIG_AMEBAPRO3),y)
+TARGET_LIB = lib_wifi_common
 else
 CSRC += $(CSRC_ROM)
 ifeq ($(CONFIG_AS_INIC_AP), y)

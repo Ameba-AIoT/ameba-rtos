@@ -18,20 +18,15 @@
 #ifndef AUTOCONF_8730E_H
 #define AUTOCONF_8730E_H
 
-#ifndef CONFIG_RTL8730E
-#define CONFIG_RTL8730E
-#endif
-#undef RTL8730E_SUPPORT
-#define RTL8730E_SUPPORT 1
-
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_NAN
+#define CONFIG_MCC_MODE
+//#define CONFIG_MCC_NAN_TEST
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
 #else
-//#define CONFIG_MCC_MODE
 #define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 #endif
@@ -45,6 +40,10 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define CONFIG_TWT
+#endif
+
+#ifdef CONFIG_MCC_MODE
 #define CONFIG_TWT
 #endif
 

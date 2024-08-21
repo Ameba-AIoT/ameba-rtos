@@ -1059,6 +1059,11 @@ static int32_t generic_user_property_server_data(const mesh_model_info_p pmodel_
 		p_get_data = (rtk_bt_mesh_generic_property_server_value_get_t *)p_evt->data;
 		p_get_data->property_id = pdata->property_id;
 		p_get_data->value_len = pdata->value_len;
+		if (pdata->value_len > GENERIC_PROPERTY_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The len of generic property data is %d, extend max GENERIC_PROPERTY_DATA_MAX_LEN:%d\r\n", __func__, pdata->value_len,
+					GENERIC_PROPERTY_DATA_MAX_LEN);
+			pdata->value_len = GENERIC_PROPERTY_DATA_MAX_LEN;
+		}
 		p_get_data->pproperty_value = user_pvalue_store;
 		rtk_bt_evt_indicate(p_evt, NULL);
 		pdata->pproperty_value = user_pvalue_store;
@@ -1081,6 +1086,10 @@ static int32_t generic_user_property_server_data(const mesh_model_info_p pmodel_
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_IDS_VALUE_GET,
 									pdata->num_ids * 2 + sizeof(rtk_bt_mesh_generic_property_server_num_ids_value_get_t));
 		p_get_data = (rtk_bt_mesh_generic_property_server_num_ids_value_get_t *)p_evt->data;
+		if (pdata->num_ids > GENERIC_PROPERTY_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The num of generic property ids is %d, extend max GENERIC_PROPERTY_DATA_MAX_LEN:%d\r\n", __func__, pdata->num_ids, GENERIC_PROPERTY_DATA_MAX_LEN);
+			pdata->num_ids = GENERIC_PROPERTY_DATA_MAX_LEN;
+		}
 		p_get_data->num_ids = pdata->num_ids;
 		p_get_data->property_ids = user_ids_store;
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -1184,6 +1193,11 @@ static int32_t generic_admin_property_server_data(const mesh_model_info_p pmodel
 									sizeof(rtk_bt_mesh_generic_property_server_value_get_t) + pdata->value_len);
 		p_get_data = (rtk_bt_mesh_generic_property_server_value_get_t *)p_evt->data;
 		p_get_data->property_id = pdata->property_id;
+		if (pdata->value_len > GENERIC_PROPERTY_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The len of generic property data is %d, extend max GENERIC_PROPERTY_DATA_MAX_LEN:%d\r\n", __func__, pdata->value_len,
+					GENERIC_PROPERTY_DATA_MAX_LEN);
+			pdata->value_len = GENERIC_PROPERTY_DATA_MAX_LEN;
+		}
 		p_get_data->value_len = pdata->value_len;
 		p_get_data->pproperty_value = admin_pvalue_store;
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -1207,6 +1221,10 @@ static int32_t generic_admin_property_server_data(const mesh_model_info_p pmodel
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_IDS_VALUE_GET,
 									pdata->num_ids * 2 + sizeof(rtk_bt_mesh_generic_property_server_num_ids_value_get_t));
 		p_get_data = (rtk_bt_mesh_generic_property_server_num_ids_value_get_t *)p_evt->data;
+		if (pdata->num_ids > GENERIC_PROPERTY_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The num of generic property ids is %d, extend max GENERIC_PROPERTY_DATA_MAX_LEN:%d\r\n", __func__, pdata->num_ids, GENERIC_PROPERTY_DATA_MAX_LEN);
+			pdata->num_ids = GENERIC_PROPERTY_DATA_MAX_LEN;
+		}
 		p_get_data->num_ids = pdata->num_ids;
 		p_get_data->property_ids = admin_ids_store;
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -1306,6 +1324,11 @@ static int32_t generic_manu_property_server_data(const mesh_model_info_p pmodel_
 									sizeof(rtk_bt_mesh_generic_property_server_value_get_t) + pdata->value_len);
 		p_get_data = (rtk_bt_mesh_generic_property_server_value_get_t *)p_evt->data;
 		p_get_data->property_id = pdata->property_id;
+		if (pdata->value_len > GENERIC_PROPERTY_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The len of generic property data is %d, extend max GENERIC_PROPERTY_DATA_MAX_LEN:%d\r\n", __func__, pdata->value_len,
+					GENERIC_PROPERTY_DATA_MAX_LEN);
+			pdata->value_len = GENERIC_PROPERTY_DATA_MAX_LEN;
+		}
 		p_get_data->value_len = pdata->value_len;
 		p_get_data->pproperty_value = manu_pvalue_store;
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -1329,6 +1352,10 @@ static int32_t generic_manu_property_server_data(const mesh_model_info_p pmodel_
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_IDS_VALUE_GET,
 									pdata->num_ids * 2 + sizeof(rtk_bt_mesh_generic_property_server_num_ids_value_get_t));
 		p_get_data = (rtk_bt_mesh_generic_property_server_num_ids_value_get_t *)p_evt->data;
+		if (pdata->num_ids > GENERIC_PROPERTY_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The num of generic property ids is %d, extend max GENERIC_PROPERTY_DATA_MAX_LEN:%d\r\n", __func__, pdata->num_ids, GENERIC_PROPERTY_DATA_MAX_LEN);
+			pdata->num_ids = GENERIC_PROPERTY_DATA_MAX_LEN;
+		}
 		p_get_data->num_ids = pdata->num_ids;
 		p_get_data->property_ids = manu_ids_store;
 		rtk_bt_evt_indicate(p_evt, NULL);

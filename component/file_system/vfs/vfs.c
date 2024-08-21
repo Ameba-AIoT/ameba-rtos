@@ -8,11 +8,13 @@ vfs_drv  vfs = {0};
 rtos_mutex_t vfs_mutex = NULL;
 extern u32 FLASH_APP_BASE;
 extern u32 FLASH_SECTOR_COUNT;
+extern u32 LFS_FLASH_BASE_ADDR;
+extern u32 LFS_FLASH_SIZE;
 
-u32 VFS1_FLASH_BASE_ADDR;
-u32 VFS1_FLASH_SIZE;
-u32 VFS2_FLASH_BASE_ADDR;
-u32 VFS2_FLASH_SIZE;
+u32 VFS1_FLASH_BASE_ADDR = 0;
+u32 VFS1_FLASH_SIZE = 0;
+u32 VFS2_FLASH_BASE_ADDR = 0;
+u32 VFS2_FLASH_SIZE = 0;
 
 void vfs_init()
 {
@@ -28,7 +30,7 @@ void vfs_init()
 void vfs_deinit()
 {
 	if (vfs_mutex != NULL) {
-		printf("vfs_mutex deinit\r\n");
+		VFS_DBG(VFS_INFO, "vfs_mutex deinit\r\n");
 		memset(&vfs, 0, sizeof(vfs_drv));
 		rtos_mutex_delete(vfs_mutex);
 		vfs_mutex = NULL;
@@ -101,10 +103,10 @@ int find_inf_number(const char *name)
 	return -1;
 }
 
-char *find_vfs1_tag(void)
+char *find_vfs_tag(char region)
 {
 	for (int i = 0; i < MAX_USER_SIZE; i++) {
-		if (vfs.user[i].vfs_region == 1 && vfs.user[i].tag != NULL) {
+		if (vfs.user[i].vfs_region == region && vfs.user[i].tag != NULL) {
 			return (char *)vfs.user[i].tag;
 		}
 	}
@@ -118,29 +120,27 @@ void vfs_assign_region(int vfs_type, char region)
 	u32 vfs2_start_addr;
 	u32 vfs2_end_addr;
 
-	flash_get_layout_info(VFS1, &vfs1_start_addr, &vfs1_end_addr);
-	flash_get_layout_info(USER, &vfs2_start_addr, &vfs2_end_addr);
-	VFS1_FLASH_BASE_ADDR = vfs1_start_addr - SPI_FLASH_BASE;
-	VFS1_FLASH_SIZE = (vfs1_end_addr - vfs1_start_addr) + 1;
-	VFS2_FLASH_BASE_ADDR = vfs2_start_addr - SPI_FLASH_BASE;
-	VFS2_FLASH_SIZE = (vfs2_end_addr - vfs2_start_addr) + 1;
+	if (VFS1_FLASH_BASE_ADDR == 0) {
+		flash_get_layout_info(VFS1, &vfs1_start_addr, &vfs1_end_addr);
+		flash_get_layout_info(USER, &vfs2_start_addr, &vfs2_end_addr);
+		VFS1_FLASH_BASE_ADDR = vfs1_start_addr - SPI_FLASH_BASE;
+		VFS1_FLASH_SIZE = (vfs1_end_addr - vfs1_start_addr) + 1;
+		VFS2_FLASH_BASE_ADDR = vfs2_start_addr - SPI_FLASH_BASE;
+		VFS2_FLASH_SIZE = (vfs2_end_addr - vfs2_start_addr) + 1;
+	}
+
+	if (vfs_type == VFS_LITTLEFS) {
+		LFS_FLASH_BASE_ADDR = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
+		LFS_FLASH_SIZE = region == 1 ? VFS1_FLASH_SIZE : VFS2_FLASH_SIZE;
+	}
 
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	if (vfs_type == VFS_FATFS) {
-		if (region == 1) {
-			FLASH_APP_BASE = VFS1_FLASH_BASE_ADDR;
-			FLASH_SECTOR_COUNT = VFS1_FLASH_SIZE / 512;
-		} else if (region == 2) {
-			FLASH_APP_BASE = VFS2_FLASH_BASE_ADDR;
-			FLASH_SECTOR_COUNT = VFS2_FLASH_SIZE / 512;
-		}
+		FLASH_APP_BASE = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
+		FLASH_SECTOR_COUNT = region == 1 ? (VFS1_FLASH_SIZE / 512) : (VFS2_FLASH_SIZE / 512);
 	}
-#else
-	(void)vfs_type;
-	(void)region;
 #endif
 	return;
-
 }
 
 int vfs_register(vfs_opt *drv, int vfs_type)
@@ -188,8 +188,12 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 	int vfs_num = 0;
 	int ret = -1;
 	rtos_mutex_take(vfs_mutex, MUTEX_WAIT_TIMEOUT);
+
 	if (vfs_type != VFS_FATFS && vfs_type != VFS_LITTLEFS) {
 		VFS_DBG(VFS_ERROR, "It don't support the file system");
+		goto EXIT;
+	} else if (vfs_type == VFS_LITTLEFS && interface != VFS_INF_FLASH) {
+		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
 		goto EXIT;
 	} else {
 		if (!find_inf_number(prefix)) {
@@ -209,6 +213,12 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 				}
 #endif
 			}
+
+			if (vfs_num < 0) {
+				VFS_DBG(VFS_ERROR, "vfs_register failed \r\n");
+				goto EXIT;
+			}
+
 			vfs.user[vfs.ibr].tag = prefix;
 			vfs.user[vfs.ibr].vfs_type = vfs_type;
 			vfs.user[vfs.ibr].vfs_interface_type = interface;
@@ -220,7 +230,9 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 			ret = vfs.drv[vfs_num]->mount(interface);
 			if (ret) {
 				VFS_DBG(VFS_ERROR, "vfs mount fail");
-				lfs_mount_fail = 1;
+				if (region == VFS_REGION_1) {
+					lfs_mount_fail = 1;
+				}
 			}
 			goto EXIT;
 		}

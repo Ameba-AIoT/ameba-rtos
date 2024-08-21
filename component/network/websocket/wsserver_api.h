@@ -24,9 +24,9 @@ extern uint8_t ws_server_debug;
 	do { \
 		if(ws_server_debug) { \
 			rtos_critical_enter(); \
-			printf("\n\r[WS_SERVER] "); \
-			printf(__VA_ARGS__); \
-			printf("\n\r"); \
+			RTK_LOGS(NOTAG, "\n\r[WS_SERVER] "); \
+			RTK_LOGS(NOTAG, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, "\n\r"); \
 			rtos_critical_exit(); \
 		} \
 	} while(0)
@@ -35,9 +35,9 @@ extern uint8_t ws_server_debug;
 	do { \
 		if(ws_server_debug == WS_SERVER_DEBUG_VERBOSE) { \
 			rtos_critical_enter(); \
-			printf("\n\r[WS_SERVER] "); \
-			printf(__VA_ARGS__); \
-			printf("\n\r"); \
+			RTK_LOGS(NOTAG, "\n\r[WS_SERVER] "); \
+			RTK_LOGS(NOTAG, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, "\n\r"); \
 			rtos_critical_exit(); \
 		} \
 	} while(0)

@@ -44,8 +44,10 @@ ifeq ($(CONFIG_AS_INIC_NP), y)
 ifneq ($(CONFIG_AMEBALITE), y)
 ifneq ($(CONFIG_INIC_INTF_SDIO), y)
 ifneq ($(CONFIG_INIC_INTF_SPI), y)
+ifneq ($(CONFIG_INIC_INTF_USB), y)
 	python ./gen_noused_c.py -a $(IMAGE_TARGET_FOLDER)/target_img2_otrcore.asm -c $(DIR)/wifi_intf_drv_to_app_ext_strong.c -r ./wifi_intf_drv_to_app_ext_noused.c
 CSRC += ./wifi_intf_drv_to_app_ext_noused.c
+endif
 endif
 endif
 endif

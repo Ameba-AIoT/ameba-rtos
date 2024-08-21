@@ -6,9 +6,12 @@
 *.s
 
 # project build files
-/**/image/
-/**/image_mp/
-/**/build/
+/**/image/*
+/**/image_mp/*
+/**/build/*
+!/**/image/.gitignore
+!/**/image_mp/.gitignore
+!/**/build/.gitignore
 
 # all bin files
 *.bin
@@ -21,14 +24,15 @@
 *.log
 
 # menuconfig lxdialog files
-/**/lxdialog/
-/**/menuconfig/.config.old
+/**/lxdialog/lxdialog
+/**/menuconfig/*.old
 
 # wlan makefile
 /**/make/wlan/
 
 # fiptool
-/**/fiptool/
+/**/fiptool/fiptool
+/**/fiptool/fiptool.exe
 
 # git files
 .repo/
@@ -38,10 +42,9 @@
 /**/build_tfm/
 
 # build info
-build_info.h
+/**/inc/build_info.h
 
 # IAR
 *.dep
 *.ewt
 /**/EWARM-RELEASE/Debug/
-EWARM-RELEASE/settings/

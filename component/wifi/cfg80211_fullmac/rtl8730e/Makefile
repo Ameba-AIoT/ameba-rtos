@@ -4,6 +4,7 @@ export CONFIG_P2P = n
 export CONFIG_FULLMAC_HCI_IPC = y
 export CONFIG_FULLMAC_HCI_SDIO = n
 export CONFIG_FULLMAC_HCI_SPI = n
+export CONFIG_FULLMAC_HCI_USB = n
 export CONFIG_SDIO_BRIDGE = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
@@ -43,6 +44,8 @@ B := $(abspath $O/$M)
 
 ifeq ($(CONFIG_FULLMAC_HCI_SPI),y)
 SUB := spi
+else ifeq ($(CONFIG_FULLMAC_HCI_USB),y)
+SUB := usb
 else ifneq ($(CONFIG_SDIO_BRIDGE),y)
 SUB := sdio
 else

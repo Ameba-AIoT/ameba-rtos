@@ -6,6 +6,8 @@
 #endif
 
 lfs_t g_lfs;
+u32 LFS_FLASH_BASE_ADDR;
+u32 LFS_FLASH_SIZE;
 
 #ifdef CONFIG_AMEBASMART
 struct lfs_config g_nand_lfs_cfg = {
@@ -35,7 +37,7 @@ int lfs_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 
 	u32 NandAddr, PageAddr;
 
-	NandAddr = VFS1_FLASH_BASE_ADDR + c->block_size * block + off;
+	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off;
 	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
 	if (NAND_FTL_ReadPage(PageAddr, (uint8_t *)buffer)) {
 		return LFS_ERR_CORRUPT;
@@ -52,14 +54,14 @@ int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 	}
 
 	if ((off + size) > c->block_size) {
-		FS_DBG(FS_ERROR, "prog range exceed block size");
+		VFS_DBG(VFS_ERROR, "prog range exceed block size");
 		return LFS_ERR_IO;
 	}
 
 	u32 NandAddr, PageAddr;
 
 
-	NandAddr = VFS1_FLASH_BASE_ADDR + c->block_size * block + off;
+	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off;
 	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
 
 	if (NAND_FTL_WritePage(PageAddr, (uint8_t *)buffer, 0)) {
@@ -73,13 +75,13 @@ int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block)
 {
 	if (c->block_size != 0x20000) {
-		FS_DBG(FS_ERROR, "block size config wrong");
+		VFS_DBG(VFS_ERROR, "block size config wrong");
 		return LFS_ERR_IO;
 	}
 
 	u32 NandAddr, PageAddr;
 
-	NandAddr = VFS1_FLASH_BASE_ADDR + c->block_size * block;
+	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block;
 	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
 
 	if (NAND_FTL_EraseBlock(PageAddr, 0)) {
@@ -118,7 +120,7 @@ int lfs_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, v
 
 	flash_t flash;
 
-	flash_stream_read(&flash, VFS1_FLASH_BASE_ADDR + c->block_size * block + off, size, (uint8_t *)buffer);
+	flash_stream_read(&flash, LFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (uint8_t *)buffer);
 
 	return LFS_ERR_OK;
 }
@@ -130,13 +132,13 @@ int lfs_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, c
 	}
 
 	if ((off + size) > c->block_size) {
-		FS_DBG(FS_ERROR, "prog range exceed block size");
+		VFS_DBG(VFS_ERROR, "prog range exceed block size");
 		return LFS_ERR_IO;
 	}
 
 	flash_t flash;
 
-	flash_stream_write(&flash, VFS1_FLASH_BASE_ADDR + c->block_size * block + off, size, (uint8_t *)buffer);
+	flash_stream_write(&flash, LFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (uint8_t *)buffer);
 
 	return LFS_ERR_OK;
 }
@@ -144,13 +146,13 @@ int lfs_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, c
 int lfs_nor_erase(const struct lfs_config *c, lfs_block_t block)
 {
 	if (c->block_size != 0x1000) {
-		FS_DBG(FS_ERROR, "block size config wrong");
+		VFS_DBG(VFS_ERROR, "block size config wrong");
 		return LFS_ERR_IO;
 	}
 
 	flash_t flash;
 
-	flash_erase_sector(&flash, VFS1_FLASH_BASE_ADDR + c->block_size * block);
+	flash_erase_sector(&flash, LFS_FLASH_BASE_ADDR + c->block_size * block);
 
 	return LFS_ERR_OK;
 }
@@ -196,15 +198,15 @@ int rt_lfs_init(lfs_t *lfs)
 
 #ifdef CONFIG_AMEBASMART
 	if (!SYSCFG_BootFromNor()) {
-		FS_DBG(FS_INFO, "init nand lfs cfg");
+		VFS_DBG(VFS_INFO, "init nand lfs cfg");
 		NAND_FTL_Init();
-		g_nand_lfs_cfg.block_count = VFS1_FLASH_SIZE / 128 / 1024;
+		g_nand_lfs_cfg.block_count = LFS_FLASH_SIZE / 128 / 1024;
 		lfs_cfg = &g_nand_lfs_cfg;
 	} else
 #endif
 	{
-		g_nor_lfs_cfg.block_count = VFS1_FLASH_SIZE / 4096;
-		FS_DBG(FS_INFO, "init nor lfs cfg");
+		g_nor_lfs_cfg.block_count = LFS_FLASH_SIZE / 4096;
+		VFS_DBG(VFS_INFO, "init nor lfs cfg");
 		lfs_cfg = &g_nor_lfs_cfg;
 	}
 
@@ -212,12 +214,12 @@ int rt_lfs_init(lfs_t *lfs)
 	if (ret == LFS_ERR_NOTFMT) {
 		ret = lfs_format(lfs, lfs_cfg);
 		if (ret) {
-			FS_DBG(FS_ERROR, "lfs_format fail %d", ret);
+			VFS_DBG(VFS_ERROR, "lfs_format fail %d", ret);
 			return ret;
 		}
 		ret = lfs_mount(lfs, lfs_cfg);
 		if (ret) {
-			FS_DBG(FS_ERROR, "lfs_mount fail %d", ret);
+			VFS_DBG(VFS_ERROR, "lfs_mount fail %d", ret);
 			return ret;
 		}
 	}

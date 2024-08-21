@@ -18,6 +18,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5;
+	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
 	wifi_user_config.skb_num_np = 10;
 	wifi_user_config.skb_num_ap = 8;

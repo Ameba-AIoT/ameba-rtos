@@ -164,6 +164,7 @@ enum _REGULATION_TXPWR_LMT {
 
 
 #define TXPWR_LMT_MAX_REGULATION_NUM  TXPWR_LMT_MAX
+#define COUNTRY_CODE_LEN 2
 
 //
 // Channel Plan Type.

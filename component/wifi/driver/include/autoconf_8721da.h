@@ -18,21 +18,18 @@
 #ifndef AUTOCONF_8721DA_H
 #define AUTOCONF_8721DA_H
 
-#ifndef CONFIG_RTL8721DA
-#define CONFIG_RTL8721DA
-#endif
-#undef RTL8721DA_SUPPORT
-#define RTL8721DA_SUPPORT 1
-
 #define PHYSTATUS_WITH_PKT 1
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
+//#define CONFIG_WIFI_TUNNEL
+//#define WIFI_TUNNEL_DEMO
 //#define CONFIG_NAN
+#define CONFIG_MCC_MODE
+//#define CONFIG_MCC_NAN_TEST
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
 #else
-//#define CONFIG_MCC_MODE
 #define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 #endif
@@ -75,7 +72,6 @@
 #define RTL8721DA_SPECIFIC
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR
 #define CONFIG_ADDRESS_CAM
-//#define CONFIG_WIFI_TUNNEL
 /* enable csi function */
 #define CONFIG_CSI
 #define RTL8721DA_WORK_AROUND

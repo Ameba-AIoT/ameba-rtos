@@ -45,7 +45,7 @@ static void example_control_bind_cb(u8 *src_mac, u32 status)
 		return;
 	}
 	memset(node, 0x0, sizeof(wifi_cast_node_t));
-	memcpy(node->mac, src_mac, ETH_LEN);
+	memcpy(node->mac, src_mac, ETH_ALEN);
 
 	if (status) {
 		WIFI_CAST_ERROR_CHECK(wifi_cast_add_node(node));

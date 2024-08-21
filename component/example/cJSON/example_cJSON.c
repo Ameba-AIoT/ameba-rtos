@@ -2,17 +2,17 @@
 #include "cJSON.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
+#include "os_wrapper.h"
 
 /*  The data structure for this example
 
 {
-	"Motion_Sensor" : "i",
-	"Light" : {
-			"Red" : "0",
-			"Green" : "0",
-			"Blue" : "0",
-			}
-
+	"Motion_Sensor":	5,
+	"Light":	{
+		"Red":	253,
+		"Green":	123,
+		"Blue":	43
+	}
 }
 
 */
@@ -56,7 +56,7 @@ static void handle_json_data(char *iot_json)
 
 
 	cJSON *IOTJSObject, *sensorJSObject, *lightJSObject, *redJSObject, *greenJSObject, *blueJSObject;
-	int sensor_data, red = 0, green = 0, blue = 0;
+	int sensor_data = 0, red = 0, green = 0, blue = 0;
 
 	if ((IOTJSObject = cJSON_Parse(iot_json)) != NULL) {
 		sensorJSObject = cJSON_GetObjectItem(IOTJSObject, "Motion_Sensor");
@@ -90,6 +90,8 @@ static void handle_json_data(char *iot_json)
 
 static void example_cJSON_thread(void *param)
 {
+	(void)param;
+	rtos_time_delay_ms(3000);
 	char *iot_json;
 	iot_json = generate_json_data(5, 253, 123, 43);
 	if (iot_json) {
@@ -104,7 +106,7 @@ static void example_cJSON_thread(void *param)
 
 void example_cJSON(void)
 {
-	if (rtos_task_create(NULL, "example_cJSON_thread", example_cJSON_thread, NULL, 512 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, "example_cJSON_thread", example_cJSON_thread, NULL, 2048 * 4, 1) != SUCCESS) {
 		printf("\n\r%s rtos_task_create example_cJSON_thread failed", __FUNCTION__);
 	}
 }

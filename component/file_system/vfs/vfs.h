@@ -5,6 +5,8 @@ extern "C" {
 #endif
 
 #include "time.h"
+#include "log.h"
+#include "basic_types.h"
 
 #define PATH_MAX 4096
 #define MAX_FS_SIZE 2		//number of supported file system types 
@@ -35,8 +37,10 @@ typedef int(*qsort_compar)(const void *, const void *);
 #define VFS_RW 0x00
 #define VFS_RO 0x01
 
-#define VFS_FLASH_R1	0x01
-#define VFS_FLASH_R2	0x02
+#define VFS_REGION_1	0x01
+#define VFS_REGION_2	0x02
+
+#define VFS_PREFIX "vfs"
 
 #if defined ( __ICCARM__ )
 #ifndef FILE
@@ -166,8 +170,8 @@ typedef int (*vfs_decrypt_callback_t)(unsigned char *input, unsigned char *outpu
 
 typedef struct {
 	int vfs_type;
-	int vfs_type_id;		//vfs_type_id for distinguish same fs with different prefix
-	int vfs_interface_type;
+	int vfs_type_id;		//used to match vfs.drv index
+	int vfs_interface_type;	//only valid for fatfs now
 	char vfs_ro_flag;		//0:rw; 1: read only
 	char vfs_region;
 	const char *tag;
@@ -183,7 +187,7 @@ typedef struct {
 	user_config user[MAX_USER_SIZE];
 } vfs_drv;
 
-extern vfs_drv  vfs;//extern vfs_drv  vfs;
+extern vfs_drv  vfs;
 extern vfs_opt fatfs_drv;
 extern vfs_opt littlefs_drv;
 extern char lfs_mount_fail;
@@ -196,7 +200,7 @@ int vfs_scan_vfs(int vfs_type);
 int vfs_register(vfs_opt *drv, int vfs_type);
 int find_vfs_number(const char *name, int *prefix_len, int *user_id);
 int vfs_user_mount(const char *prefix);
-char *find_vfs1_tag(void);
+char *find_vfs_tag(char region);
 
 /* access function */
 #define	F_OK		0	/* test for existence of file */
@@ -224,22 +228,24 @@ enum {
 	VFS_NONE,
 };
 
-#define VFS_DBG_ON	0
+#define VFS_DBG_LEVEL VFS_ERROR
+
+#define VFS_DBG_ON	1
 #if VFS_DBG_ON
 #define VFS_DBG(level, fmt, arg...)     \
 do {\
-	if (level <= VFS_DEBUG) {\
+	if (level <= VFS_DBG_LEVEL) {\
 		if (level <= VFS_ERROR) {\
-			printf("\n\r[error] %s, " fmt "\n\r", __func__, ##arg);\
+			RTK_LOGS(NOTAG, "\n\r[error] %s, " fmt "\n\r", __func__, ##arg);\
 		} \
 		else if(level == VFS_WARNING){\
-			printf("[warning] %s, " fmt "\n", __func__, ##arg);\
+			RTK_LOGS(NOTAG, "[warning] %s, " fmt "\n", __func__, ##arg);\
 		} \
 		else if(level == VFS_INFO){\
-			printf("[info] %s, " fmt "\n", __func__, ##arg);\
+			RTK_LOGS(NOTAG, "[info] %s, " fmt "\n", __func__, ##arg);\
 		} \
 		else if(level == VFS_DEBUG){\
-			printf("[debug] %s, " fmt "\n", __func__, ##arg);\
+			RTK_LOGS(NOTAG, "[debug] %s, " fmt "\n", __func__, ##arg);\
 		} \
 	}\
 }while(0)

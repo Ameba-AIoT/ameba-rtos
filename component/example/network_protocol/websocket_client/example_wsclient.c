@@ -14,7 +14,7 @@ extern uint8_t *LwIP_GetIP(uint8_t idx);
 void handle_message(wsclient_context **wsclient, int data_len)
 {
 	wsclient_context *wsc = *wsclient;
-	printf("\r\n>>>>>> Receiving: %s with length: %d\n", wsc->receivedData, data_len);
+	RTK_LOGS(NOTAG, "\r\n>>>>>> Receiving: %s with length: %d\n", wsc->receivedData, data_len);
 
 	if (strcmp((char const *)wsc->receivedData, "hello") == 0) {
 		ws_send("world", strlen("world"), 1, wsc);
@@ -31,10 +31,10 @@ static void example_wsclient_thread(void *param)
 	rtos_create_secure_context(configMINIMAL_SECURE_STACK_SIZE);
 #endif
 
-	printf("\r\n\r\n\r\n>>>>>>>>>>>>>>>wsclient example<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
+	RTK_LOGS(NOTAG, "\r\n\r\n\r\n>>>>>>>>>>>>>>>wsclient example<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
 
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("\r\n\r\n\r\n>>>>>>>>>>>>>>Wifi is disconnected!!Please connect!!<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
+		RTK_LOGS(NOTAG, "\r\n\r\n\r\n>>>>>>>>>>>>>>Wifi is disconnected!!Please connect!!<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
 		rtos_time_delay_ms(2000);
 	}
 	int ret;
@@ -47,7 +47,7 @@ static void example_wsclient_thread(void *param)
 
 		if (wsclient->use_ssl == 1) {
 #ifndef USING_SSL
-			printf("\r\nNot Support the wss server!\r\n");
+			RTK_LOGS(NOTAG, "\r\nNot Support the wss server!\r\n");
 			rtos_task_delete(NULL);
 #endif
 		}
@@ -60,7 +60,7 @@ static void example_wsclient_thread(void *param)
 				ws_poll(0, &wsclient);
 			}
 		} else {
-			printf("\r\nConnect to websocket server failed!\r\n");
+			RTK_LOGS(NOTAG, "\r\nConnect to websocket server failed!\r\n");
 		}
 
 		if (wsclient) {
@@ -68,7 +68,7 @@ static void example_wsclient_thread(void *param)
 			wsclient = NULL;
 		}
 	} else {
-		printf("\r\nCreat websocket context failed!\r\n");
+		RTK_LOGS(NOTAG, "\r\nCreat websocket context failed!\r\n");
 	}
 
 	rtos_task_delete(NULL);
@@ -77,6 +77,6 @@ static void example_wsclient_thread(void *param)
 void example_wsclient(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_wsclient_thread"), example_wsclient_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

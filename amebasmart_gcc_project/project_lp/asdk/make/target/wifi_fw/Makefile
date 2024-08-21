@@ -40,6 +40,7 @@ CSRC +=$(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
        $(DIR)/wififw_ps_state.c \
 	   $(DIR)/wififw_ps_bcnhdl.c \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
+	   $(DIR_COMMON)/wififw_wowlan_common.c     \
        $(DIR)/wififw_wowlan.c     \
 	   $(DIR)/wififw_disconchk.c     \
 	   $(DIR_COMMON)/wififw_keepalive_common.c     \

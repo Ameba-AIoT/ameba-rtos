@@ -22,10 +22,13 @@ OBJS =
 all: CORE_TARGETS
 	make -C amebadplus_bsp all
 	make -C bt_coex all
+ifeq ($(CONFIG_BT_INIC), y)
+	make -C bt_inic all
+else
 	make -C bt_api all
 	make -C bt_atcmd all
+endif
 
-	#make -C bt_demo all
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 	make -C bt_zephyr all
 endif
@@ -61,6 +64,9 @@ endif
 ifeq ($(CONFIG_BT_ENABLE_FAST_MP), y)
 	make -C bt_fast_mp all
 endif
+ifeq ($(CONFIG_BT_TRANSFER_MODULE), y)
+	make -C ble_transfer_module all
+endif
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
@@ -73,10 +79,13 @@ CORE_TARGETS: $(OBJS)
 clean:
 	make -C amebadplus_bsp clean
 	make -C bt_coex clean
+ifeq ($(CONFIG_BT_INIC), y)
+	make -C bt_inic clean
+else
 	make -C bt_api clean
 	make -C bt_atcmd clean
+endif
 
-	#make -C bt_demo clean
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 	make -C bt_zephyr clean
 endif
@@ -109,6 +118,9 @@ ifeq ($(CONFIG_BT_MESH_DEVICE_SCATTERNET), y)
 endif
 ifeq ($(CONFIG_BT_ENABLE_FAST_MP), y)
 	make -C bt_fast_mp clean
+endif
+ifeq ($(CONFIG_BT_TRANSFER_MODULE), y)
+	make -C ble_transfer_module clean
 endif
 
 -include $(DEPS)

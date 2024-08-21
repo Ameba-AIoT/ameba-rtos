@@ -138,6 +138,7 @@ void IR_TX_thread(void)
 
 	} while (1);
 
+	rtos_task_delete(NULL);
 }
 
 int main(void)

@@ -74,7 +74,10 @@ int llhw_recv_process(struct sk_buff *pskb)
 		}
 		break;
 	default:
+#ifndef CONFIG_FULLMAC_HCI_SPI
 		dev_err(global_idev.fullmac_dev, "%s: unknown event:%d\n", __func__, event);
+#endif
+		kfree_skb(pskb);
 	}
 
 	return ret;
@@ -114,6 +117,8 @@ void llhw_recv_init(void)
 		dev_err(global_idev.fullmac_dev, "FAIL to create llhw_recv_thread!\n");
 		recv_priv->rx_thread = NULL;
 	}
+
+	recv_priv->initialized = true;
 }
 
 void llhw_recv_deinit(void)

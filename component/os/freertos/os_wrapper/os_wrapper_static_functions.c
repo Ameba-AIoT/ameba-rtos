@@ -159,8 +159,6 @@ static void __reserved_release_to_poll(int component_type, void *p_buf, struct l
 
 	assert_param(IS_VALID_COMPONENT_TYPE(component_type));
 
-	rtos_critical_enter();
-
 	if (component_type == COMPONENT_MUTEX) {
 		if (mutex_pool_addr <= buf_addr && buf_addr < (mutex_pool_addr + sizeof(mutex_pool))) {
 			is_static = pdTRUE;
@@ -175,6 +173,8 @@ static void __reserved_release_to_poll(int component_type, void *p_buf, struct l
 			is_static = pdTRUE;
 		}
 	}
+
+	rtos_critical_enter();
 
 	if (is_static) {
 		plist = (struct list_head *)(((unsigned int)p_buf) - sizeof(struct list_head));

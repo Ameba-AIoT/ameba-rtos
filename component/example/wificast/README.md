@@ -58,7 +58,9 @@ Call `wifi_cast_send()` to send WIFI-CAST data. It will return WIFI_CAST_OK if s
 
 In order to ensure the application layer can receive the data, the `struct wifi_cast_frame_info` parameter in `wifi_cast_send()` is provided. 
 * Sender can set the `ack` field to 1 and set `wait_ms` field to a timeout before send data, and receiver send back ack data when receiving WIFI-CAST data. If receiving ack data timeouts, retransmit the WIFI-CAST data. A sequence number can also be assigned to WIFI-CAST data to drop the duplicate data.
-* Sender can set the `retry_limit` field to config the MAC layer retransmition times .
+* Sender can set the `retry_limit` field to config the MAC layer retransmition times.
+* Sender can set the `retransmit_count` field to config the application layer retransmission times.
+* Sender can set the `channel` to WIFI_CAST_CHANNEL_ALL when not all the receiver are in the same channel.
 * Sender can set the `tx_rate` field to config the MAC layer transmition rate.
 
 ## Receiving WIFI-CAST Data
@@ -114,10 +116,12 @@ typedef struct wifi_cast_node {
 WIFI-CAST data information parameters.
 ```
 typedef struct wifi_cast_frame_info {
-	unsigned char ack; /* set to 1 if need rx node response with ack */
-	unsigned int wait_ms; /* set wait timeout when ack set to 1 */
-	unsigned char retry_limit;	/* tx packet retry times (hardware retry limit times) */
-	enum mgn_rate_type tx_rate;	/* tx packet rate */
+	unsigned int wait_ms;           /* set wait timeout when ack set to true */
+	unsigned char ack;              /* enable or disable ACK, set to true if need rx node response with ack */
+	unsigned char retry_limit;      /* tx packet retry times (hardware retry limit times) */
+	unsigned char retransmit_count; /* tx packet restansmit count by software */
+	unsigned char channel;          /* tx packet channel, set to WIFI_CAST_CHANNEL_CURRENT or WIFI_CAST_CHANNEL_ALL */
+	enum mgn_rate_type tx_rate;     /* tx packet rate */
 } wifi_cast_frame_info_t;
 ```
 WIFI-CAST config parameters.
@@ -128,14 +132,18 @@ typedef struct wifi_cast_config {
 ```
 ### Definitions
 ```
-WIFI_CAST_OK /* execute functions success */
-WIFI_CAST_ERR /* execute functions fail */
-WIFI_CAST_ERR_NO_MEMORY /* system memory not enough */
+WIFI_CAST_OK               /* execute functions success */
+WIFI_CAST_ERR              /* execute functions fail */
+WIFI_CAST_ERR_NO_MEMORY    /* system memory not enough */
 WIFI_CAST_ERR_INVALID_DATA /* data invalid */
-WIFI_CAST_ERR_NODE_EXIST /* the device is already added */
+WIFI_CAST_ERR_NODE_EXIST   /* the device is already added */
 WIFI_CAST_ERR_WAIT_TIMEOUT /* send data timeout when ack and time_ms is set */
 ```
 ```
-MAX_NODE_NUM /* maximum number of devices */
+MAX_NODE_NUM      /* maximum number of devices */
 WIFI_CAST_KEY_LEN /* maximum length of the key */
+```
+```
+WIFI_CAST_CHANNEL_CURRENT      /* Only in the current channel */
+WIFI_CAST_CHANNEL_ALL          /* All supported channels */
 ```

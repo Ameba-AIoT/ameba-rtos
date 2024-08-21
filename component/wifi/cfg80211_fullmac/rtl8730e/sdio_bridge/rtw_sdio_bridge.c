@@ -12,6 +12,7 @@ void rtw_sdio_bridge_getip_rsp(struct genl_info *info);
 void rtw_sdio_bridge_scanres_rsp(struct genl_info *info);
 void rtw_sdio_bridge_connect_rsp(struct genl_info *info, int connect_ret);
 void rtw_sdio_bridge_wifi_event_indicate(struct genl_info *info, int event);
+extern void llhw_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len);
 
 int llhw_sdio_bridge_connect(char *ssid, char *pwd)
 {
@@ -53,7 +54,7 @@ int llhw_sdio_bridge_dhcp(void)
 	int ret;
 
 	ret = 0;
-	llhw_send_msg(INIC_API_BRIDGE_DHCP, NULL, 0, (u8 *)&ret, sizeof(int));
+	llhw_send_event(INIC_API_BRIDGE_DHCP, NULL, 0, (u8 *)&ret, sizeof(int));
 	return ret;
 }
 
@@ -69,7 +70,7 @@ void llhw_sdio_bridge_get_scan_result(u32 ap_num)
 	}
 	scan_buf = (u8 *)kzalloc(ap_num * sizeof(rtw_scan_result_t), GFP_KERNEL);
 
-	llhw_send_msg(INIC_API_WIFI_GET_SCANNED_AP_INFO, (u8 *)param_buf, sizeof(param_buf), (u8 *)scan_buf, ap_num * sizeof(rtw_scan_result_t));
+	llhw_send_event(INIC_API_WIFI_GET_SCANNED_AP_INFO, (u8 *)param_buf, sizeof(param_buf), (u8 *)scan_buf, ap_num * sizeof(rtw_scan_result_t));
 
 	g_scan_buf = scan_buf;
 	g_scan_ap_num = ap_num;
@@ -133,7 +134,7 @@ static int rtw_sdio_bridge_cmd_process(struct sk_buff *skb, struct genl_info *in
 		}
 		ret = llhw_sdio_bridge_connect(ssid, pwd);
 		if (ret == 0) {
-			llhw_send_msg(INIC_API_WIFI_GET_MAC_ADDR, NULL, 0, (u8 *)dev_mac, ETH_ALEN);
+			llhw_send_event(INIC_API_WIFI_GET_MAC_ADDR, NULL, 0, (u8 *)dev_mac, ETH_ALEN);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 			memcpy((void *)global_idev.pndev[0]->dev_addr, dev_mac, ETH_ALEN);
 #else
@@ -236,7 +237,7 @@ void rtw_sdio_bridge_getip_rsp(struct genl_info *info)
 	struct genlmsghdr *genlhdr;
 
 	ip = 0;
-	llhw_send_msg(INIC_API_BRIDGE_GET_IP, NULL, 0, (u8 *)&ip, sizeof(int));
+	llhw_send_event(INIC_API_BRIDGE_GET_IP, NULL, 0, (u8 *)&ip, sizeof(int));
 
 	skb = genlmsg_new(nla_total_size(sizeof(u32)), GFP_KERNEL);
 	if (!skb) {

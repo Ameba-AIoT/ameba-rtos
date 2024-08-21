@@ -23,16 +23,16 @@ int rt_kv_init(void)
 	char *path = NULL;
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 1)) == NULL) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
 	if (lfs_mount_fail) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
-	prefix = find_vfs1_tag();
+	prefix = find_vfs_tag(VFS_REGION_1);
 	if (prefix == NULL) {
 		goto exit;
 	}
@@ -40,7 +40,7 @@ int rt_kv_init(void)
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 1, "%s:KV", prefix);
 	ret = mkdir(path, 0);
 	if (ret == LFS_ERR_EXIST || ret == -FR_EXIST) {
-		FS_DBG(FS_INFO, "KV dir already exist");
+		VFS_DBG(VFS_INFO, "KV dir already exist");
 		ret = 0;
 	}
 
@@ -59,17 +59,17 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	char *path = NULL;
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
 	if (lfs_mount_fail) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
-		FS_DBG(FS_ERROR, "key len limit exceed, max len is %d", MAX_KEY_LENGTH - 3);
+		VFS_DBG(VFS_ERROR, "key len limit exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
@@ -80,13 +80,13 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
 	finfo = (vfs_file *)fopen(path, "w");
 	if (finfo == NULL) {
-		FS_DBG(FS_ERROR, "fopen failed, res is %d", res);
+		VFS_DBG(VFS_ERROR, "fopen failed, res is %d", res);
 		goto exit;
 	}
 
 	res = fwrite(val, len, 1, (FILE *)finfo);
 	if (res != len) {
-		FS_DBG(FS_ERROR, "fwrite failed,err is %d!!", res);
+		VFS_DBG(VFS_ERROR, "fwrite failed,err is %d!!", res);
 	}
 	fclose((FILE *)finfo);
 
@@ -105,17 +105,17 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 	char *path = NULL;
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
 	if (lfs_mount_fail) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
-		FS_DBG(FS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
+		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
@@ -126,13 +126,13 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
 	finfo = (vfs_file *)fopen(path, "r");
 	if (finfo == NULL) {
-		FS_DBG(FS_ERROR, "fopen failed, res = %d", res);
+		VFS_DBG(VFS_ERROR, "fopen failed, res = %d", res);
 		goto exit;
 	}
 
 	res = fread(buffer, len, 1, (FILE *)finfo);
 	if (res < 0) {
-		FS_DBG(FS_ERROR, "fread failed,err is %d!!!", res);
+		VFS_DBG(VFS_ERROR, "fread failed,err is %d!!!", res);
 	}
 	fclose((FILE *)finfo);
 
@@ -150,17 +150,17 @@ int32_t rt_kv_delete(const char *key)
 	char *path = NULL;
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
-		FS_DBG(FS_ERROR, "KV init fail");
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
 	if (lfs_mount_fail) {
-		FS_DBG(FS_INFO, "KV init fail");
+		VFS_DBG(VFS_INFO, "KV init fail");
 		goto exit;
 	}
 
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
-		FS_DBG(FS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
+		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 

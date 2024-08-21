@@ -33,6 +33,8 @@ else ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic/sdio
 else ifeq ($(CONFIG_INIC_INTF_SPI), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic/spi
+else ifeq ($(CONFIG_INIC_INTF_USB), y)
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/usb
 endif
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic/common
 IFLAGS               += -I$(FREERTOSDIR)/include/
@@ -53,7 +55,7 @@ IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/non_secure
 IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/secure
 endif
 
-ifeq ($(CONFIG_AMEBAGREEN2), y)
+ifneq (, $(filter y, $(CONFIG_AMEBAGREEN2) $(CONFIG_AMEBAPRO3)))
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/bb
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/phy_g6/rf
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/rtl8720f

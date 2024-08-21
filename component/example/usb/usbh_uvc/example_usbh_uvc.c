@@ -14,7 +14,6 @@
 #include "os_wrapper.h"
 #include "usbh_uvc_intf.h"
 #include "usbh.h"
-#include "ringbuffer.h"
 
 /* Private defines -----------------------------------------------------------*/
 static const char *TAG = "UVC";
@@ -209,7 +208,7 @@ static void uvc_vfs_thread(void *param)
 	rtos_sema_create(&uvc_vfs_save_img_sema, 0U, 1U);
 	uvc_vfs_is_init = 1;
 
-	prefix = find_vfs1_tag();
+	prefix = find_vfs_tag(VFS_REGION_1);
 
 	while (uvc_vfs_is_init) {
 		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
@@ -265,7 +264,7 @@ static void uvc_vfs_thread(void *param)
 	rtos_sema_create(&uvc_vfs_save_img_sema, 0U, 1U);
 	uvc_vfs_is_init = 1;
 
-	prefix = find_vfs1_tag();
+	prefix = find_vfs_tag(VFS_REGION_1);
 
 	memset(filename, 0, 64);
 	sprintf(filename, "stream");

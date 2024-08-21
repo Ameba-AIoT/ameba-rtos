@@ -31,21 +31,26 @@
 #endif
 
 
-#ifndef ETH_LEN
-#define ETH_LEN		6
+#ifndef ETH_ALEN
+#define ETH_ALEN                    6
 #endif
 
+#define IS_BROADCAST(addr)      (((addr)[0] & (addr)[1] & (addr)[2] & (addr)[3] & (addr)[4] & (addr)[5]) == 0xFF)
 /* Definitions for error constants. */
-#define WIFI_CAST_OK					0
-#define WIFI_CAST_ERR					-1
+#define WIFI_CAST_OK                0
+#define WIFI_CAST_ERR               -1
 
-#define WIFI_CAST_ERR_NO_MEMORY			0x101
-#define WIFI_CAST_ERR_INVALID_DATA		0x102
-#define WIFI_CAST_ERR_NODE_EXIST		0x103
+#define WIFI_CAST_ERR_NO_MEMORY     0x101
+#define WIFI_CAST_ERR_INVALID_DATA  0x102
+#define WIFI_CAST_ERR_NODE_EXIST    0x103
 #define WIFI_CAST_ERR_WAIT_TIMEOUT  0x104
 
-#define MAX_NODE_NUM					16
-#define WIFI_CAST_KEY_LEN     16
+/* The channel on which the device sends packets */
+#define WIFI_CAST_CHANNEL_CURRENT   0x0   /* Only in the current channel */
+#define WIFI_CAST_CHANNEL_ALL       0xf  /* All supported channels */
+
+#define MAX_NODE_NUM                16
+#define WIFI_CAST_KEY_LEN           16
 
 extern const unsigned char WIFI_CAST_BROADCAST_MAC[ETH_ALEN];
 typedef int wcast_err_t;
@@ -63,27 +68,29 @@ typedef enum {
  * @brief Wifi cast node parameters.
  */
 typedef struct wifi_cast_node {
-	wifi_cast_addr_t 	mac; 	   /* node mac address */
-	wifi_cast_key_t   key; /* key for encrypt data */
-	unsigned char   encrypt;
-	void 			*priv;				/* user define */
+	wifi_cast_addr_t  mac; /* set node mac address */
+	wifi_cast_key_t   key; /* set key for encrypt data */
+	unsigned char encrypt; /* set enable or disable encryption */
+	void *priv;            /* user define */
 } wifi_cast_node_t;
 
 /**
  * @brief Wifi cast node information parameters.
  */
 typedef struct wifi_cast_frame_info {
-	unsigned char ack;		/* set to 1 if need rx node response with ack */
-	unsigned int wait_ms; /* set wait timeout when ack set to 1 */
-	unsigned char retry_limit;	/* tx packet retry times (hardware retry limit times) */
-	enum mgn_rate_type tx_rate;	/* tx packet rate */
+	unsigned int wait_ms;           /* set wait timeout when ack set to true */
+	unsigned char ack;              /* set enable or disable ACK, set to true if need rx node response with ack */
+	unsigned char retry_limit;      /* tx packet retry times (hardware retry limit times) */
+	unsigned char retransmit_count; /* tx packet restansmit count by software */
+	unsigned char channel;          /* tx packet channel, set to WIFI_CAST_CHANNEL_CURRENT or WIFI_CAST_CHANNEL_ALL */
+	enum mgn_rate_type tx_rate;     /* tx packet rate */
 } wifi_cast_frame_info_t;
 
 #define WIFI_CAST_FRAME_INFO_DEFAULT() \
     { \
-        .ack = 1, \
-        .wait_ms = 500, \
+        .wait_ms = 3000, \
         .retry_limit = 4, \
+        .retransmit_count = 6, \
         .tx_rate = MGN_54M, \
     }
 
@@ -91,7 +98,7 @@ typedef struct wifi_cast_frame_info {
  * @brief Wifi cast config.
  */
 typedef struct wifi_cast_config {
-	unsigned char 	channel;			/**< all wifi cast nodes need set in the same channel */
+	unsigned char 	channel;			/* initial channel */
 } wifi_cast_config_t;
 
 #define WIFI_CAST_INIT_CONFIG_DEFAULT() { \
@@ -103,7 +110,7 @@ typedef struct wifi_cast_config {
   * @param     pnode node parameters
   * @param     data receive data
   * @param     data_len length of receive data
-  * @param	   userdata user defined data
+  * @param     userdata user defined data
   */
 typedef void (*wifi_cast_recv_cb_t)(wifi_cast_node_t *pnode, unsigned char *buf, unsigned int len, signed char rssi);
 

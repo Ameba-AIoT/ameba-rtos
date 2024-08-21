@@ -9,15 +9,6 @@
 
 #define HCI_ISO_DATA_PACKET  1
 
-#define H4_HEADER_LEN 1
-#define H5_HEADER_LEN 4
-
-#define H4_NONE       0x00
-#define H4_CMD        0x01
-#define H4_ACL        0x02
-#define H4_SCO        0x03
-#define H4_EVT        0x04
-#define H4_ISO        0x05
 
 struct hci_transport_cb {
 	/** @brief A new packet is comming.

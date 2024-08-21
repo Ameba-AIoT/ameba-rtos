@@ -2,8 +2,9 @@
 #include "basic_types.h"
 #include "sntp/sntp.h"
 #include "rtw_wifi_defs.h"
-
-#define IP_ADDR_INVALID 0
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
+#include "os_wrapper.h"
 
 #define TIME_MODE    1	//0: for UTC with microseconds, 1: for timezone with seconds
 
@@ -26,14 +27,14 @@ static void show_time(void)
 		update_usec += (tick_diff_ms * 1000);
 		current_sec = update_sec + update_usec / 1000000;
 		current_usec = update_usec % 1000000;
-		printf("%s + %d usec\n", ctime(&current_sec), current_usec);
+		RTK_LOGS(NOTAG, "%s + %d usec\n", ctime(&current_sec), current_usec);
 	}
 #elif (TIME_MODE == 1)
 	int timezone = 8;	// use UTC+8 timezone for example
 	struct tm tm_now = sntp_gen_system_time(timezone);
-	printf("%d-%d-%d %d:%d:%d UTC%s%d\n",
-		   tm_now.tm_year, tm_now.tm_mon, tm_now.tm_mday, tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
-		   (timezone > 0) ? "+" : "", timezone);
+	RTK_LOGS(NOTAG, "%d-%d-%d %d:%d:%d UTC%s%d\n",
+			 tm_now.tm_year, tm_now.tm_mon, tm_now.tm_mday, tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
+			 (timezone > 0) ? "+" : "", timezone);
 #endif
 }
 #else
@@ -55,14 +56,14 @@ static void show_time(void)
 		update_usec += (tick_diff_ms * 1000);
 		current_sec = update_sec + update_usec / 1000000;
 		current_usec = update_usec % 1000000;
-		printf("%s + %d usec\n", ctime(&current_sec), current_usec);
+		RTK_LOGS(NOTAG, "%s + %d usec\n", ctime(&current_sec), current_usec);
 	}
 #elif (TIME_MODE == 1)
 	int timezone = 8 * 3600;	// use UTC+8(offset in hrs) timezone for example, 8 * 60 * 60(offset in seconds)
 	struct tm tm_now = sntp_gen_system_time(timezone);
-	printf("%d-%d-%d %d:%d:%d UTC%s%d\n",
-		   tm_now.tm_year, tm_now.tm_mon, tm_now.tm_mday, tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
-		   (timezone / 3600 > 0) ? "+" : "", timezone / 3600);
+	RTK_LOGS(NOTAG, "%d-%d-%d %d:%d:%d UTC%s%d\n",
+			 tm_now.tm_year, tm_now.tm_mon, tm_now.tm_mday, tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
+			 (timezone / 3600 > 0) ? "+" : "", timezone / 3600);
 #endif
 }
 #endif
@@ -75,10 +76,10 @@ static void example_sntp_showtime_thread(void *param)
 	int should_stop = 0;
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(2000);
 	}
-	printf("\nExample: SNTP show time\n");
+	RTK_LOGS(NOTAG, "\nExample: SNTP show time\n");
 
 	sntp_init();
 
@@ -96,6 +97,6 @@ static void example_sntp_showtime_thread(void *param)
 void example_sntp_showtime(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_sntp_showtime_thread"), example_sntp_showtime_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create failed\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}
 }

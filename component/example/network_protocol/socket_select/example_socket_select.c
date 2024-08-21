@@ -2,8 +2,8 @@
 #include "basic_types.h"
 #include "lwipconf.h"
 #include "rtw_wifi_defs.h"
-
-#define IP_ADDR_INVALID 0
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
 #define CONNECT_REMOTE  0
 
@@ -32,10 +32,10 @@ static void example_socket_select_thread(void *param)
 
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(2000);
 	}
-	printf("\nExample: socket select\n");
+	RTK_LOGS(NOTAG, "\nExample: socket select\n");
 
 	memset(socket_used, 0, sizeof(socket_used));
 
@@ -47,19 +47,19 @@ reconnect:
 		remote_addr.sin_port = htons(REMOTE_PORT);
 
 		if (connect(remote_fd, (struct sockaddr *) &remote_addr, sizeof(remote_addr)) == 0) {
-			printf("connect socket fd(%d)\n", remote_fd);
+			RTK_LOGS(NOTAG, "connect socket fd(%d)\n", remote_fd);
 			socket_used[remote_fd] = 1;
 
 			if (remote_fd > max_socket_fd) {
 				max_socket_fd = remote_fd;
 			}
 		} else {
-			printf("connect error\n");
+			RTK_LOGS(NOTAG, "connect error\n");
 			close(remote_fd);
 			goto reconnect;
 		}
 	} else {
-		printf("socket error\n");
+		RTK_LOGS(NOTAG, "socket error\n");
 		goto exit;
 	}
 #endif
@@ -69,12 +69,12 @@ reconnect:
 		server_addr.sin_addr.s_addr = INADDR_ANY;
 
 		if (bind(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) != 0) {
-			printf("bind error\n");
+			RTK_LOGS(NOTAG, "bind error\n");
 			goto exit;
 		}
 
 		if (listen(server_fd, LISTEN_QLEN) != 0) {
-			printf("listen error\n");
+			RTK_LOGS(NOTAG, "listen error\n");
 			goto exit;
 		}
 
@@ -84,7 +84,7 @@ reconnect:
 			max_socket_fd = server_fd;
 		}
 	} else {
-		printf("socket error\n");
+		RTK_LOGS(NOTAG, "socket error\n");
 		goto exit;
 	}
 
@@ -112,14 +112,14 @@ reconnect:
 						int fd = accept(server_fd, (struct sockaddr *) &client_addr, &client_addr_size);
 
 						if (fd >= 0) {
-							printf("accept socket fd(%d)\n", fd);
+							RTK_LOGS(NOTAG, "accept socket fd(%d)\n", fd);
 							socket_used[fd] = 1;
 
 							if (fd > max_socket_fd) {
 								max_socket_fd = fd;
 							}
 						} else {
-							printf("accept error\n");
+							RTK_LOGS(NOTAG, "accept error\n");
 						}
 					} else {
 						int read_size = recv(socket_fd, buf, sizeof(buf), MSG_DONTWAIT);
@@ -127,7 +127,7 @@ reconnect:
 						if (read_size > 0) {
 							send(socket_fd, buf, (read_size > 512) ? 512 : read_size, MSG_DONTWAIT);
 						} else {
-							printf("socket fd(%d) disconnected\n", socket_fd);
+							RTK_LOGS(NOTAG, "socket fd(%d) disconnected\n", socket_fd);
 							socket_used[socket_fd] = 0;
 							close(socket_fd);
 						}
@@ -135,7 +135,7 @@ reconnect:
 				}
 			}
 		} else {
-			printf("TCP server: no data in %d seconds\n", SELECT_TIMEOUT);
+			RTK_LOGS(NOTAG, "TCP server: no data in %d seconds\n", SELECT_TIMEOUT);
 		}
 
 		rtos_time_delay_ms(10);
@@ -152,6 +152,6 @@ exit:
 void example_socket_select(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_socket_select_thread"), example_socket_select_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

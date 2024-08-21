@@ -30,7 +30,7 @@ CONFIG_PHY_G6 = y
 
 endif
 
-ifeq ($(CONFIG_AMEBAGREEN2), y)
+ifneq (, $(filter y, $(CONFIG_AMEBAGREEN2) $(CONFIG_AMEBAPRO3)))
 vpath %.c $(DIR)/phy_g6 \
 		$(DIR)/phy_g6/bb \
 		$(DIR)/phy_g6/bb/halbb_8720f \
@@ -87,6 +87,11 @@ CSRC_PHY += $(path_halbb_d1)/halbb.o \
 	$(path_halbb_d1)/halbb_dbg.o \
 	$(path_halbb_d1)/halbb_dbg_cmd.o \
 	$(path_halbb_d1)/halbb_dfs.o \
+	$(path_halbb_d1)/halbb_env_clm.o \
+	$(path_halbb_d1)/halbb_env_fahm.o \
+	$(path_halbb_d1)/halbb_env_edcca_clm.o \
+	$(path_halbb_d1)/halbb_env_ifs_clm.o \
+	$(path_halbb_d1)/halbb_env_nhm.o \
 	$(path_halbb_d1)/halbb_env_mntr.o \
 	$(path_halbb_d1)/halbb_hw_cfg.o \
 	$(path_halbb_d1)/halbb_init.o \
@@ -183,7 +188,7 @@ CSRC_PHY += $(path_halrf_8730e)/halrf_8730e.o \
 
 endif
 
-ifeq ($(CONFIG_AMEBAGREEN2), y)
+ifneq (, $(filter y, $(CONFIG_AMEBAGREEN2) $(CONFIG_AMEBAPRO3)))
 
 path_halbb_8720f := $(path_halbb_d1)/halbb_8720f
 CSRC_PHY += $(path_halbb_8720f)/halbb_8720f.o \

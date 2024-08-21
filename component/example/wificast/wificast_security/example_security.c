@@ -244,6 +244,7 @@ static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, u
 		if (g_pubkey_exchange_q) {
 			if (SUCCESS != rtos_queue_send(g_pubkey_exchange_q, &info, 0)) {
 				RTK_LOGE(TAG, "%s, send queue failed\n", __func__);
+				rtos_mem_free(info);
 				return;
 			}
 		} else {
@@ -546,6 +547,7 @@ static void example_security_scan_task(void *param)
 	}
 exit:
 	rtos_mem_free(g_info_list);
+	g_info_list = NULL;
 	rtos_task_delete(NULL);
 }
 
