@@ -19,7 +19,6 @@ typedef enum {
 	RTK_BT_MESH_SCENE_STATUS_SUCCESS,
 	RTK_BT_MESH_SCENE_STATUS_REGISTER_FULL,
 	RTK_BT_MESH_SCENE_STATUS_NOT_FOUND
-	// }uint8_t rtk_bt_mesh_scene_status_code_t;
 } rtk_bt_mesh_scene_status_code_t;
 
 /**

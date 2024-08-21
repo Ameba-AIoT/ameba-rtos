@@ -37,28 +37,12 @@ extern "C" {
 #define		_48M_RATE_		10
 #define		_54M_RATE_		11
 
-/**
-  * @brief  The enumeration lists the disconnect reasons.
-  */
-enum rtw_connect_error_flag_t {
-	RTW_NO_ERROR,        /**< no error */
-	RTW_NONE_NETWORK,   /**< none network */
-	RTW_AUTH_FAIL,            /**< auth fail */
-	RTW_ASSOC_FAIL,          /**< assocation fail */
-	RTW_WRONG_PASSWORD, /**< wrong password */
-	RTW_4WAY_HANDSHAKE_TIMEOUT, /**< 4 way handshake timeout*/
-	RTW_CONNECT_FAIL,  /**< connect fail*/
-	RTW_DHCP_FAIL,        /**< dhcp fail*/
-	RTW_UNKNOWN,         /**< unknown*/
-};
-
 enum WIFI_INDICATE_MODE {
 	WIFI_INDICATE_DISABLE = 0,
 	WIFI_INDICATE_NORMAL = 1,
 	WIFI_INDICATE_WILD = 2,
 	WIFI_INDICATE_MAX,
 };
-
 //----- ------------------------------------------------------------------
 // Wlan Interface opened for upper layer
 //----- ------------------------------------------------------------------
@@ -102,6 +86,11 @@ int rtw_p2p_remain_on_ch(u8 wlan_idx, u8 enable);
 #endif
 #ifdef INIC_SKIP_NP_MSG_TASK
 void rtw_single_thread_wakeup(void);
+#endif
+
+#ifdef CONFIG_WIFI_TUNNEL
+extern int wifi_tunnel_command(char *cmd);
+#define rtw_wltunnel_command(cmd) wifi_tunnel_command(cmd)
 #endif
 #ifdef	__cplusplus
 }

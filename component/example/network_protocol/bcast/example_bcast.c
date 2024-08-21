@@ -1,10 +1,10 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 
-#include "lwipconf.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
-#define IP_ADDR_INVALID 0
 
 static void example_bcast_thread(void *param)
 {
@@ -12,9 +12,9 @@ static void example_bcast_thread(void *param)
 	(void) param;
 
 	// Delay to wait for IP by DHCP
-	printf("\nExample: bcast \n");
+	RTK_LOGS(NOTAG, "\nExample: bcast \n");
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(2000);
 	}
 
@@ -26,13 +26,13 @@ static void example_bcast_thread(void *param)
 
 	// Create socket
 	if ((socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		printf("ERROR: socket failed\n");
+		RTK_LOGS(NOTAG, "ERROR: socket failed\n");
 		goto err;
 	}
 
 	// Set broadcast socket option
 	if (setsockopt(socket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
-		printf("ERROR: setsockopt failed\n");
+		RTK_LOGS(NOTAG, "ERROR: setsockopt failed\n");
 		goto err;
 	}
 
@@ -42,7 +42,7 @@ static void example_bcast_thread(void *param)
 	bindAddr.sin_port = htons(port);
 	bindAddr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(socket, (struct sockaddr *) &bindAddr, sizeof(bindAddr)) < 0) {
-		printf("ERROR: bind failed\n");
+		RTK_LOGS(NOTAG, "ERROR: bind failed\n");
 		goto err;
 	}
 
@@ -57,7 +57,7 @@ static void example_bcast_thread(void *param)
 		if ((packetLen = recvfrom(socket, &packet, sizeof(packet), 0, &from, &fromLen)) >= 0) {
 			uint8_t *ip = (uint8_t *) &from_sin->sin_addr.s_addr;
 			uint16_t from_port = ntohs(from_sin->sin_port);
-			printf("recvfrom - %d bytes from %d.%d.%d.%d:%d\n", packetLen, ip[0], ip[1], ip[2], ip[3], from_port);
+			RTK_LOGS(NOTAG, "recvfrom - %d bytes from %d.%d.%d.%d:%d\n", packetLen, ip[0], ip[1], ip[2], ip[3], from_port);
 		}
 
 		// Send broadcast
@@ -70,16 +70,16 @@ static void example_bcast_thread(void *param)
 			to_sin->sin_addr.s_addr = INADDR_BROADCAST;
 
 			if ((sendLen = sendto(socket, packet, (packetLen <= 1024) ? packetLen : 1024, 0, &to, sizeof(struct sockaddr))) < 0) {
-				printf("ERROR: sendto broadcast\n");
+				RTK_LOGS(NOTAG, "ERROR: sendto broadcast\n");
 			} else {
-				printf("sendto - %d bytes to broadcast:%d\n", sendLen, port);
+				RTK_LOGS(NOTAG, "sendto - %d bytes to broadcast:%d\n", sendLen, port);
 			}
 		}
 	}
 
 
 err:
-	printf("ERROR: broadcast example failed\n");
+	RTK_LOGS(NOTAG, "ERROR: broadcast example failed\n");
 	close(socket);
 	rtos_task_delete(NULL);
 	return;
@@ -88,6 +88,6 @@ err:
 void example_bcast(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_bcast_thread"), example_bcast_thread, NULL, 2048 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

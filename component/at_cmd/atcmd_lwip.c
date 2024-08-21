@@ -36,6 +36,7 @@ volatile int atcmd_lwip_tt_datasize = 0;
 volatile int atcmd_lwip_tt_lasttickcnt = 0;
 
 u8 *rx_buffer = NULL;
+u8 *tx_buffer = NULL;
 
 #if ENABLE_TCPIP_SSL
 /* certificate and key for ssl server. */
@@ -552,13 +553,13 @@ void atcmd_lwip_receive_task(void *param)
 			{
 				continue;
 			}
+
 			error_no = atcmd_lwip_receive_data(curnode, rx_buffer, packet_size, &recv_size, udp_clientaddr, &udp_clientport);
 
 			if (atcmd_lwip_tt_mode == TRUE) {
 				if (error_no == 0 && recv_size > 0) {
 					rx_buffer[recv_size] = '\0';
-					at_printf("%s", rx_buffer);
-					//at_printf("\r\n");
+					at_printf("%s\r\n", rx_buffer);
 					rtos_time_delay_ms(ATCMD_LWIP_TT_MAX_DELAY_TIME_MS);
 				}
 				continue;
@@ -689,10 +690,12 @@ void atcmd_lwip_tt_handler(void *param)
 
 	UNUSED(param);
 
-	u8 *tx_buffer = (u8 *)rtos_mem_zmalloc(UART_LOG_CMD_BUFLEN);
-	if (tx_buffer == NULL) {
-		RTK_LOGI(NOTAG, "[atcmd_lwip_tt_handler] tx_buffer malloc fail\r\n");
-		goto end;
+	if (NULL == tx_buffer) {
+		tx_buffer = (u8 *)rtos_mem_zmalloc(UART_LOG_CMD_BUFLEN);
+		if (tx_buffer == NULL) {
+			RTK_LOGI(NOTAG, "[atcmd_lwip_tt_handler] tx_buffer malloc fail\r\n");
+			goto end;
+		}
 	}
 
 	while (rtos_sema_take(atcmd_lwip_tt_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
@@ -708,6 +711,7 @@ void atcmd_lwip_tt_handler(void *param)
 			atcmd_lwip_tt_mode = FALSE;
 			atcmd_lwip_tt_datasize = 0;
 			rtos_critical_exit();
+			at_printf("\r\n#\r\n");
 			goto end;
 		}
 		memcpy(tx_buffer, atcmd_buf, atcmd_lwip_tt_datasize);
@@ -721,6 +725,7 @@ void atcmd_lwip_tt_handler(void *param)
 end:
 	if (tx_buffer) {
 		rtos_mem_free(tx_buffer);
+		tx_buffer = NULL;
 	}
 	rtos_sema_delete(atcmd_lwip_tt_sema);
 	atcmd_lwip_tt_sema = NULL;
@@ -737,26 +742,28 @@ static int atcmd_lwip_start_tt_task(void)
 	int send_timeout = ATCMD_LWIP_TT_MAX_DELAY_TIME_MS;
 #endif
 
-	subret = setsockopt(n->sockfd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
-	if (subret < 0) {
-		RTK_LOGI(NOTAG, "Failed in setsockopt [1st]\r\n");
-		ret = subret;
-		goto end;
-	}
+	if (NODE_MODE_TCP == n->protocol) {
+		subret = setsockopt(n->sockfd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
+		if (subret < 0) {
+			RTK_LOGI(NOTAG, "Failed in setsockopt: TCP_NODELAY\r\n");
+			ret = subret;
+			goto end;
+		}
 
 #if LWIP_TCP_KEEPALIVE
-	subret = setsockopt(n->sockfd, SOL_SOCKET, SO_KEEPALIVE, &enable, sizeof(enable));
-	if (subret < 0) {
-		RTK_LOGI(NOTAG, "Failed in setsockopt [2nd]\r\n");
-		ret = subret;
-		goto end;
-	}
+		subret = setsockopt(n->sockfd, SOL_SOCKET, SO_KEEPALIVE, &enable, sizeof(enable));
+		if (subret < 0) {
+			RTK_LOGI(NOTAG, "Failed in setsockopt: SO_KEEPALIVE\r\n");
+			ret = subret;
+			goto end;
+		}
 #endif
+	}
 
 #if LWIP_SO_SNDTIMEO
 	subret = setsockopt(n->sockfd, SOL_SOCKET, SO_SNDTIMEO, &send_timeout, sizeof(int));
 	if (subret < 0) {
-		RTK_LOGI(NOTAG, "Failed in setsockopt [3rd]\r\n");
+		RTK_LOGI(NOTAG, "Failed in setsockopt: SO_SNDTIMEO\r\n");
 		ret = subret;
 		goto end;
 	}
@@ -769,7 +776,7 @@ static int atcmd_lwip_start_tt_task(void)
 
 	if (atcmd_lwip_tt_task == NULL) {
 		if (SUCCESS != rtos_task_create(&atcmd_lwip_tt_task,
-										"tt_hdl",
+										"atcmd_lwip_tt_handler",
 										atcmd_lwip_tt_handler,
 										NULL,
 										ATCP_STACK_SIZE,
@@ -781,15 +788,19 @@ static int atcmd_lwip_start_tt_task(void)
 	}
 
 	rtos_time_delay_ms(ATCMD_LWIP_TT_MAX_DELAY_TIME_MS);
-	if (atcmd_lwip_is_autorecv_mode() != 1) {
-		subret = atcmd_lwip_start_autorecv_task();
-		if (subret != 0) {
-			ret = -1;
-			rtos_task_delete(atcmd_lwip_tt_task);
-			atcmd_lwip_tt_task = NULL;
-			goto end;
+
+	if (atcmd_lwip_tt_task != NULL) {
+		if (atcmd_lwip_is_autorecv_mode() != 1) {
+			subret = atcmd_lwip_start_autorecv_task();
+			if (subret != 0) {
+				ret = -1;
+				rtos_task_delete(atcmd_lwip_tt_task);
+				atcmd_lwip_tt_task = NULL;
+				goto end;
+			}
 		}
 	}
+
 
 end:
 	return ret;
@@ -1390,7 +1401,7 @@ static void client_start(void *param)
 			RTK_LOGI(NOTAG, "Unknown connection type[%d]\r\n", c_mode);
 		}
 		if (c_sockfd == INVALID_SOCKET_ID) {
-			RTK_LOGW(NOTAG, "[client_start] Invalid socket id\r\n");
+			RTK_LOGW(NOTAG, "[client_start] Failed to create socket!\r\n");
 			error_no = 7;
 			goto end;
 		}
@@ -1500,6 +1511,7 @@ static void client_start(void *param)
 					if (ret < 0) {
 						RTK_LOGW(NOTAG, "Failed in hang_list_node\r\n");
 						error_no = 8;
+						close(c_sockfd);
 						goto end;
 					}
 					at_printf("%scon_id=%d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
@@ -1510,6 +1522,7 @@ static void client_start(void *param)
 				************************************************************/
 				RTK_LOGW(NOTAG, "Connect to Server failed!\r\n");
 				error_no = 9;
+				close(c_sockfd);
 				goto end;
 			}
 		}
@@ -1597,11 +1610,12 @@ static void client_start_task(void *param)
 
 	if (param != NULL) {
 		client_start(param);
-		rtos_task_delete(NULL);
-		return;
+	} else {
+		RTK_LOGW(NOTAG, "client_start_task(): param is NULL!\r\n");
 	}
 
 	rtos_task_delete(NULL);
+	return;
 }
 
 /* Create a socket client. */
@@ -1794,29 +1808,26 @@ void at_skttt(void *arg)
 		goto end;
 	}
 
-	if (enable == 1) {
-		if (mainlist->next == NULL) {
-			RTK_LOGI(NOTAG, "[SKTTT] No connection found.\r\n");
-			error_no = 2;
+	if (mainlist->next == NULL) {
+		RTK_LOGI(NOTAG, "[SKTTT] No connection found.\r\n");
+		error_no = 2;
+		goto end;
+	} else if (mainlist->next->role == NODE_ROLE_SERVER) {
+		RTK_LOGI(NOTAG, "[SKTTT] Cannot enter TT mode for server.\r\n");
+		error_no = 3;
+		goto end;
+	} else if (mainlist->next->next || mainlist->next->nextseed) {
+		RTK_LOGI(NOTAG, "[SKTTT] More than one connection found.\r\n");
+		error_no = 4;
+		goto end;
+	} else {
+		if (atcmd_lwip_start_tt_task() != 0) {
+			RTK_LOGI(NOTAG, "[SKTTT] Start TT task failed.\r\n");
+			error_no = 5;
 			goto end;
-		} else if (mainlist->next->role == NODE_ROLE_SERVER) {
-			RTK_LOGI(NOTAG, "[SKTTT] Cannot enter TT mode for server.\r\n");
-			error_no = 3;
-			goto end;
-		} else if (mainlist->next->next || mainlist->next->nextseed) {
-			RTK_LOGI(NOTAG, "[SKTTT] More than one connection found.\r\n");
-			error_no = 4;
-			goto end;
-		} else {
-			if (atcmd_lwip_start_tt_task() != 0) {
-				RTK_LOGI(NOTAG, "[SKTTT] Start TT task failed.\r\n");
-				error_no = 5;
-				goto end;
-			}
 		}
-	} /*else {
-		RTK_LOGI(NOTAG, "[SKTTT] Do nothing for %d.\r\n", enable);
-	}*/
+	}
+
 
 end:
 	if (error_no == 0) {

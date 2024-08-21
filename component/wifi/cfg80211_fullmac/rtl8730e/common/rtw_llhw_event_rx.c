@@ -21,6 +21,7 @@ static void llhw_event_scan_report_indicate(struct event_priv_t *event_priv, u32
 
 static void cfg80211_rtw_set_acs_info(u32 *param_buf)
 {
+#ifndef CONFIG_SDIO_BRIDGE
 	extern u8 chanel_idx_max;
 	extern u8 rtw_chnl_tbl[MAX_CHANNEL_NUM];
 	extern struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM];
@@ -40,6 +41,7 @@ static void cfg80211_rtw_set_acs_info(u32 *param_buf)
 			break;
 		}
 	}
+#endif
 }
 
 
@@ -62,7 +64,7 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32
 	}
 
 	if (event == WIFI_EVENT_DISCONNECT) {
-		memcpy(&disassoc_reason, buf + ETH_ALEN, 2);
+		disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
 		dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
 			cfg80211_rtw_disconnect_indicate(disassoc_reason, 1);

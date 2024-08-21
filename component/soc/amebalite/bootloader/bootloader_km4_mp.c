@@ -239,19 +239,11 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 	}
 
 	/* Clk info limit check */
-	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
-		if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
-			assert_param(CpuClk <= CPU_0P9V_CLK_LMT_ACUT);
-		} else {
-			assert_param(CpuClk <= CPU_1P0V_CLK_LMT_ACUT);
-		}
-	} else {
 		if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
 			assert_param(CpuClk <= CPU_0P9V_CLK_LMT_BCUT);
 		} else {
 			assert_param(CpuClk <= CPU_1P0V_CLK_LMT_BCUT);
 		}
-	}
 
 	assert_param(PsramClk <= PSRAMC_CLK_LIMIT);
 	RTK_LOGI(TAG, "KM4 CPU CLK: %lu Hz \n", CpuClk);

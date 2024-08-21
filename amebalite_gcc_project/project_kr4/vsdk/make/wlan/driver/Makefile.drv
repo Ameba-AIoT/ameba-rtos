@@ -42,7 +42,7 @@ HALDIR=rtl8730e
 HALROMDIR=rtl8730e_rom
 endif
 
-ifeq ($(CONFIG_AMEBAGREEN2), y)
+ifneq (, $(filter y, $(CONFIG_AMEBAGREEN2) $(CONFIG_AMEBAPRO3)))
 vpath %.c $(DIR)/rtl8720f \
 		$(DIR)/rtl8720f \
 		$(DIR)/rtl8720f_rom \
@@ -101,13 +101,16 @@ MCC_COMMON += \
 	$(DIR)/mcc/rtw_mcc_frame.c \
 
 CSRC_WIFI_TUNNEL_COMMON += \
-	$(DIR)/wifi_tunnel/wifi_tunnel_intfs.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_configure.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_scan.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_handshake.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_connect.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_switch.c \
-	$(DIR)/wifi_tunnel/wifi_tunnel_demo.c
+	$(DIR)/wifi_tunnel/rtw_wtn.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_refugee.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_scan.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_hs.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_joinbss.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_sw.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_dm.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_frame.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_rssi.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_cmd.c \
 
 CSRC_HAL_PHYDM+= \
 	$(DIR)/halcommon/hal_dig_phydm.c \
@@ -222,10 +225,13 @@ CSRC_DRV += \
 CSRC_DRV += $(CSRC_HAL_PHYG6)
 CSRC_DRV += $(CSRC_HALCOMMON_V2)
 CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
+CSRC_DRV += $(MCC_COMMON)
+
 endif
 
 #######################CONFIG_AMEBAGREEN2##############################
-ifeq ($(CONFIG_AMEBAGREEN2), y)
+#######################CONFIG_AMEBAPRO3##############################
+ifneq (, $(filter y, $(CONFIG_AMEBAGREEN2) $(CONFIG_AMEBAPRO3)))
 CSRC_DRV += \
 	$(DIR)/intf/g6_intf/wifi_intf_hal_to_g6_bb.c \
 	$(DIR)/intf/g6_intf/rtl8720f/wifi_intf_hal_to_g6_mac.c \
@@ -234,6 +240,8 @@ CSRC_DRV += \
 
 CSRC_DRV += $(CSRC_HAL_PHYG6)
 CSRC_DRV += $(CSRC_HALCOMMON_V1)
+CSRC_DRV += $(MCC_COMMON)
+
 endif
 
 #######################CONFIG_AMEBADPLUS##############################
@@ -249,7 +257,7 @@ CSRC_DRV += \
 	$(DIR)/rtl8721da/wifi_hal_nan_ctrl.c \
 	$(DIR)/rtl8721da/wifi_hal_p2pps.c \
 	$(DIR)/intf/wifi_intf_drv_to_mp_sdio.c \
-	$(DIR)/wifi_tunnel/rtl8721da/hal_wifi_tunnel.c
+	$(DIR)/wifi_tunnel/rtl8721da/hal_wtn.c
 
 CSRC_DRV += $(CSRC_HAL_PHYDM)
 CSRC_DRV += $(CSRC_HALCOMMON_V1)
@@ -275,6 +283,8 @@ CSRC_DRV += $(HAL_ROM_DP_START_ADD_DONT_CHANGE)
 CSRC_DRV += $(HAL_ROM_G2_START_ADD_DONT_CHANGE)
 CSRC_DRV += $(CSRC_HAL_PHYG6)
 CSRC_DRV += $(CSRC_HALCOMMON_V1)
+CSRC_DRV += $(MCC_COMMON)
+
 endif
 
 #######################CONFIG_AMEBASMART##############################

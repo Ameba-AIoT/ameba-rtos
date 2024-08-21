@@ -9,7 +9,11 @@ include $(MAKE_INCLUDE_GEN)
 DIR = $(WIFIFWDIR)/amebadplus/ram
 DIR_COMMON= $(WIFIFWDIR)/common
 DIR_TEST = $(WIFIFWDIR)/amebadplus/test/src
+ifeq ($(CONFIG_FW_DRIVER_COEXIST),y) 
 TARGET_LIB = lib_wifi_fw
+else
+TARGET_LIB = lib_wifi_fw_singlecore
+endif
 
 vpath %.c $(DIR)
 vpath %.c $(DIR_COMMON)

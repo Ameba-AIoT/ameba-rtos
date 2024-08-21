@@ -61,7 +61,11 @@ void wlan_initialize(void)
 	wifi_set_rom2flash();
 	inic_host_init();
 
+#ifdef CONFIG_WIFI_TUNNEL
+	wifi_fast_connect_enable(0);
+#else
 	wifi_fast_connect_enable(1);
+#endif
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 2) != SUCCESS) {
 		RTK_LOGE(TAG, "wlan_initialize failed\n");
@@ -114,7 +118,11 @@ void _init_thread(void *param)
 void wlan_initialize(void)
 {
 	wifi_set_rom2flash();
+#ifdef CONFIG_WIFI_TUNNEL
+	wifi_fast_connect_enable(0);
+#else
 	wifi_fast_connect_enable(1);
+#endif
 
 	if (rtos_task_create(NULL, ((const char *)"init"), _init_thread, NULL, (512 + 768) * 4, 5) != SUCCESS) {
 		RTK_LOGE(TAG, "wlan_initialize failed\n");

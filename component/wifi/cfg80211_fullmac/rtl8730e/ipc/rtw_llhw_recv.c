@@ -18,7 +18,6 @@ void llhw_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_sk_buff *skb_phy
 	struct inic_device *idev = &global_idev;
 	struct dev_sk_buff *skb = NULL;
 	u8 *data_addr = NULL;
-	dma_addr_t dma_skb = 0, dma_data_addr = 0;
 	struct net_device_stats *pstats = &global_idev.stats[idx_wlan];
 
 #ifdef CONFIG_P2P
@@ -39,36 +38,19 @@ void llhw_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_sk_buff *skb_phy
 		goto func_exit;
 	}
 
-	skb = phys_to_virt((unsigned long)skb_phy);
-	dma_skb = dma_map_single(pdev, skb, sizeof(struct dev_sk_buff), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_skb)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		goto func_exit;
-	}
-
-	data_addr = phys_to_virt((unsigned long)skb->data);
-	dma_data_addr = dma_map_single(pdev, data_addr, skb->len, DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_data_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		dma_unmap_single(pdev, dma_skb, sizeof(struct dev_sk_buff), DMA_FROM_DEVICE);
-		goto func_exit;
-	}
-
+	skb = llhw_ipc_fw_phy_to_virt((unsigned long)skb_phy);
+	data_addr = llhw_ipc_fw_phy_to_virt((unsigned long)skb->data);
 	/* allocate pbuf to store ethernet data from IPC. */
 	pskb = netdev_alloc_skb(idev->pndev[idx_wlan], skb->len);
 	if (pskb == NULL) {
 		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
 				__func__, skb->len);
-		dma_unmap_single(pdev, dma_skb, sizeof(struct dev_sk_buff), DMA_FROM_DEVICE);
-		dma_unmap_single(pdev, dma_data_addr, skb->len, DMA_FROM_DEVICE);
 		goto recv_done;
 	}
 
 	/* cpoy data from skb(ipc data) to local skb */
 	memcpy(pskb->data, data_addr, skb->len);
 	skb_put(pskb, skb->len);
-	dma_unmap_single(pdev, dma_skb, sizeof(struct dev_sk_buff), DMA_FROM_DEVICE);
-	dma_unmap_single(pdev, dma_data_addr, skb->len, DMA_FROM_DEVICE);
 
 	pskb->dev = global_idev.pndev[idx_wlan];
 	pskb->protocol = eth_type_trans(pskb, global_idev.pndev[idx_wlan]);
@@ -103,9 +85,8 @@ void llhw_recv_task_from_msg(u8 event_num, u32 msg_addr, u8 wlan_idx)
 
 static unsigned int llhw_recv_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pmsg)
 {
-	struct inic_ipc_ex_msg *p_ipc_msg = (struct inic_ipc_ex_msg *)phys_to_virt(pmsg->msg);
+	struct inic_ipc_ex_msg *p_ipc_msg = (struct inic_ipc_ex_msg *)llhw_ipc_fw_phy_to_virt(pmsg->msg);
 	struct device *pdev = NULL;
-	dma_addr_t dma_addr = 0;
 	int  ret = 0;
 
 	pdev = global_idev.ipc_dev;
@@ -115,14 +96,6 @@ static unsigned int llhw_recv_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pmsg)
 		goto func_exit;
 	}
 
-	dma_addr = dma_map_single(pdev, p_ipc_msg, sizeof(struct inic_ipc_ex_msg), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr)) {
-		ret = -ENOMEM;
-		dev_err(global_idev.fullmac_dev, "%s %s: mapping dma error!.\n", "ipc recv", __func__);
-		goto func_exit;
-	}
-	dma_sync_single_for_cpu(pdev, dma_addr, sizeof(struct inic_ipc_ex_msg), DMA_FROM_DEVICE);
-
 	if (p_ipc_msg->event_num == IPC_WIFI_EVT_TX_DONE) {
 		llhw_xmit_done(p_ipc_msg->wlan_idx);
 		ret = 0;
@@ -130,8 +103,6 @@ static unsigned int llhw_recv_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pmsg)
 		/* put the ipc message to the queue */
 		ret = inic_msg_enqueue(p_ipc_msg);
 	}
-
-	dma_sync_single_for_cpu(pdev, dma_addr, sizeof(struct inic_ipc_ex_msg), DMA_TO_DEVICE);
 
 	/* enqueuing message is seccussful, send acknowledgement to another
 	 * port. */
@@ -141,8 +112,6 @@ static unsigned int llhw_recv_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pmsg)
 	} else {
 		p_ipc_msg->msg_queue_status = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
 	}
-	dma_sync_single_for_device(pdev, dma_addr, sizeof(struct inic_ipc_ex_msg), DMA_TO_DEVICE);
-	dma_unmap_single(pdev, dma_addr, sizeof(struct inic_ipc_ex_msg), DMA_TO_DEVICE);
 
 func_exit:
 	return ret;

@@ -22,6 +22,7 @@ Setup Guide
 ~~~~~~~~~~~
 	GCC:use CMD "make all EXAMPLE=wifi_csi" to compile wifi_csi example(under ap project or single core project).
 	Before compile imgae, use CMD "make menuconfig" and select CONFIG WIFI->Enable WIFI CSI.
+	If sta mode, please modify line30 in example_wifi_csi.c: unsigned char assoc_ap_mac=mac address of associated AP
 
 Parameter Setting and Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

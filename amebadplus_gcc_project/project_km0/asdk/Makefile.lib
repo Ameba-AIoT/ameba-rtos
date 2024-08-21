@@ -3,7 +3,11 @@ APP_LIB_DIR = $(ROOTDIR)/lib/application
 WIFI_MAKE_DIR = make/wlan
 
 ifeq ($(CONFIG_WIFI_FW_EN),y) 
+ifeq ($(CONFIG_FW_DRIVER_COEXIST),y) 
 image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw.a
+else
+image2:LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_fw_singlecore.a
+endif
 endif
 
 ifeq ($(CONFIG_WLAN),y)

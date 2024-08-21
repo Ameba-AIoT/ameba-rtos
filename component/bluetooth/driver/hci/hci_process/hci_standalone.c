@@ -17,7 +17,7 @@ uint8_t *hci_sa_recv_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t tim
 	(void)hdr;
 	(void)len;
 
-	if (H4_EVT != type) {
+	if (HCI_EVT != type) {
 		return NULL;
 	}
 

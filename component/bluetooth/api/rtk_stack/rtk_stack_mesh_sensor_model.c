@@ -283,9 +283,9 @@ static sensor_db_t sensor_db[] = {
 /********database setup finished********/
 
 #if defined(BT_MESH_ENABLE_SENSOR_SERVER_MODEL) && BT_MESH_ENABLE_SENSOR_SERVER_MODEL
-uint8_t sensor_get_value[SENSOR_GET_DATA_MAX_LEN * 2];
-uint8_t sensor_column_get_value[SENSOR_GET_COLUMN_MAX_LEN * 2];
-uint8_t sensor_series_get_value[SENSOR_GET_SERIES_MAX_LEN * 2];
+uint8_t sensor_get_value[SENSOR_GET_DATA_MAX_LEN + 2];
+uint8_t sensor_column_get_value[SENSOR_GET_COLUMN_MAX_LEN + 2];
+uint8_t sensor_series_get_value[SENSOR_GET_SERIES_MAX_LEN + 2];
 sensor_descriptor_t sensor_descriptors[SENSOR_GET_DATA_MAX_LEN];
 static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs)
 {
@@ -319,13 +319,18 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		uint8_t cb_ret = 0;
 		if (p_get_data) {
 			rtk_bt_mesh_sensor_server_direct_get_column_t *column_get;
+			uint8_t raw_value_x_len = p_get_data->raw_value_x_len;
+			if (p_get_data->raw_value_x_len > SENSOR_COLUMN_DATA_MAX_LEN) {
+				BT_LOGA("[%s] The len of raw value x is %d, extend max SENSOR_COLUMN_DATA_MAX_LEN:%d\r\n", __func__, p_get_data->raw_value_x_len, SENSOR_COLUMN_DATA_MAX_LEN);
+				raw_value_x_len = SENSOR_COLUMN_DATA_MAX_LEN;
+			}
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_COLUMN_GET,
-										sizeof(rtk_bt_mesh_sensor_server_direct_get_column_t) + p_get_data->raw_value_x_len + 4 + SENSOR_GET_COLUMN_MAX_LEN);
+										sizeof(rtk_bt_mesh_sensor_server_direct_get_column_t) + raw_value_x_len + 4 + SENSOR_GET_COLUMN_MAX_LEN);
 			column_get = (rtk_bt_mesh_sensor_server_direct_get_column_t *)p_evt->data;
 			column_get->property_id = p_get_data->property_id;
-			column_get->raw_value_x_len = p_get_data->raw_value_x_len;
-			memcpy(column_get->raw_value_x, p_get_data->raw_value_x, p_get_data->raw_value_x_len);
+			column_get->raw_value_x_len = raw_value_x_len;
+			memcpy(column_get->raw_value_x, p_get_data->raw_value_x, raw_value_x_len);
 			column_get->value = sensor_column_get_value;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
 			p_get_data->column_len = LE_EXTRN2WORD(sensor_column_get_value);
@@ -338,14 +343,19 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		uint8_t cb_ret = 0;
 		if (p_get_data) {
 			rtk_bt_mesh_sensor_server_direct_get_series_t *series_get;
+			uint8_t raw_value_x_len = p_get_data->raw_value_x_len;
+			if (p_get_data->raw_value_x_len > SENSOR_GET_SERIES_MAX_LEN) {
+				BT_LOGA("[%s] The len of raw value x is %d, extend max SENSOR_GET_SERIES_MAX_LEN:%d\r\n", __func__, p_get_data->raw_value_x_len, SENSOR_GET_SERIES_MAX_LEN);
+				raw_value_x_len = SENSOR_GET_SERIES_MAX_LEN;
+			}
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SERIES_GET,
 										sizeof(rtk_bt_mesh_sensor_server_direct_get_series_t) + 2 * SENSOR_GET_SERIES_MAX_LEN + 2);
 			series_get = (rtk_bt_mesh_sensor_server_direct_get_series_t *)p_evt->data;
 			series_get->property_id = p_get_data->property_id;
-			series_get->raw_value_x_len = p_get_data->raw_value_x_len;
-			memcpy(series_get->raw_value_x1, p_get_data->raw_value_x1, p_get_data->raw_value_x_len);
-			memcpy(series_get->raw_value_x2, p_get_data->raw_value_x2, p_get_data->raw_value_x_len);
+			series_get->raw_value_x_len = raw_value_x_len;
+			memcpy(series_get->raw_value_x1, p_get_data->raw_value_x1, raw_value_x_len);
+			memcpy(series_get->raw_value_x2, p_get_data->raw_value_x2, raw_value_x_len);
 			series_get->value = sensor_series_get_value;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
 			p_get_data->series_len = LE_EXTRN2WORD(sensor_series_get_value);
@@ -387,6 +397,11 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 									sizeof(rtk_bt_mesh_sensor_server_get_descriptor_t) + descriptor_get->descriptor_num * sizeof(rtk_bt_mesh_sensor_descriptor_t));
 		p_get_data = (rtk_bt_mesh_sensor_server_get_descriptor_t *)p_evt->data;
 		p_get_data->property_id = descriptor_get->property_id;
+		if (descriptor_get->descriptor_num > SENSOR_GET_DATA_MAX_LEN) {
+			BT_LOGA("[%s] The num of sensor descirptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, descriptor_get->descriptor_num,
+					SENSOR_GET_DATA_MAX_LEN);
+			descriptor_get->descriptor_num = SENSOR_GET_DATA_MAX_LEN;
+		}
 		p_get_data->descriptor_num = descriptor_get->descriptor_num;
 		p_get_data->descriptor = (rtk_bt_mesh_sensor_descriptor_t *) &sensor_descriptors[0];
 		rtk_bt_evt_indicate(p_evt, &cb_ret);
@@ -443,9 +458,9 @@ mesh_model_info_t sensor_setup_server_model;
 
 sensor_server_set_cadence_t             sensor_cadence_buffer = {0};
 sensor_server_set_setting_t             sensor_setting_buffer = {0};
-uint8_t cadence_value[SENSOR_CADENCE_DATA_MAX_LEN * 4] = {0};
-uint16_t settings_store[SENSOR_SETTINGS_DATA_MAX_LEN];
-uint8_t setting_store[SENSOR_SETTING_DATA_MAX_LEN];
+uint8_t cadence_value[SENSOR_CADENCE_DATA_MAX_LEN * 4 + 5] = {0};
+uint16_t settings_store[SENSOR_SETTINGS_DATA_MAX_LEN + 1];
+uint8_t setting_store[SENSOR_SETTING_DATA_MAX_LEN + 2];
 sensor_cadence_t cadence_transfer;
 /*Customer can use link list to store data in database and search data using property_id*/
 static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs)

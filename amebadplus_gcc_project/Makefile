@@ -26,7 +26,7 @@ else
 app_all	:= $(CURRENT_PATH)/project_km4/asdk/image/km0_km4_app.bin
 km4_boot_all	:= $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin
 endif
-ota_all		 := $(CURRENT_PATH)/project_km4/asdk/image/OTA_All.bin
+ota_all		 := $(CURRENT_PATH)/project_km4/asdk/image/ota_all.bin
 
 # Define the Rules to build the core targets
 all: REMOVE_TARGETS  KM4_TARGET_ALL KM0_TARGET_ALL

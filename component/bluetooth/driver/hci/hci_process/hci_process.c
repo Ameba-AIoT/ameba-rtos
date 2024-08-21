@@ -50,7 +50,7 @@ static uint8_t hci_process_start_iqk(uint16_t opcode)
 		buf[5] = (uint8_t)(hci_iqk_data[i].value >> 8);
 		buf[6] = (uint8_t)(0);
 
-		if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 7, true)) {
+		if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 7, true)) {
 			return HCI_FAIL;
 		}
 
@@ -78,7 +78,7 @@ static uint8_t hci_process_read_local_ver(uint16_t opcode)
 	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 3, true)) {
 		return HCI_FAIL;
 	}
 
@@ -106,7 +106,7 @@ static uint8_t hci_process_read_rom_ver(uint16_t opcode)
 	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 3, true)) {
 		return HCI_FAIL;
 	}
 
@@ -132,7 +132,7 @@ static uint8_t _hci_process_set_baudrate(uint16_t opcode, bool use_default)
 	buf[2] = sizeof(uint32_t);
 	hci_get_baudrate(&buf[3], use_default);
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 7, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 7, true)) {
 		return HCI_FAIL;
 	}
 
@@ -191,7 +191,7 @@ static uint8_t hci_process_download_patch(uint16_t opcode)
 			goto dl_patch_done;
 		}
 
-		ret = hci_sa_send(H4_CMD, buf, buf[2] + 3, true);
+		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, true);
 		if (HCI_SUCCESS != ret) {
 			goto dl_patch_done;
 		}
@@ -239,7 +239,7 @@ static uint8_t hci_process_write_phy_efuse(uint16_t opcode)
 		return HCI_FAIL;
 	}
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, HCI_WRITE_PHY_EFUSE_LEN + 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, HCI_WRITE_PHY_EFUSE_LEN + 3, true)) {
 		return HCI_FAIL;
 	}
 
@@ -270,7 +270,7 @@ static uint8_t hci_process_write_rx_adck(uint16_t opcode)
 	BT_DUMPA("hci_process_write_rx_adck HCI CMD:", buf, RESERVE_LEN + 4);
 #endif
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 4, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 4, true)) {
 		return HCI_FAIL;
 	}
 
@@ -296,7 +296,7 @@ static uint8_t hci_process_set_cut_ver(uint16_t opcode)
 	buf[2] = (uint8_t)(1);
 	buf[3] = hci_platform_get_rom_ver();
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 4, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 4, true)) {
 		return HCI_FAIL;
 	}
 
@@ -320,7 +320,7 @@ static uint8_t hci_process_hci_reset(uint16_t opcode)
 	buf[1] = (uint8_t)(opcode >> 8);
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 3, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 3, true)) {
 		return HCI_FAIL;
 	}
 

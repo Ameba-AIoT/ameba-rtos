@@ -76,6 +76,7 @@
 #include <net/ieee80211_radiotap.h>
 #include <linux/ieee80211.h>
 #include <net/cfg80211.h>
+#include <linux/of_gpio.h>
 
 /* fullmac headers. */
 #include "rom_rtw_defs.h"
@@ -90,6 +91,7 @@
 #include "inic_ipc.h"
 #include "rtw_llhw_msg.h"
 #include "rtw_llhw_ops.h"
+#include "rtw_llhw_mem.h"
 #elif defined(CONFIG_FULLMAC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
 #include "inic_dev.h"
@@ -99,6 +101,11 @@
 #include <linux/spi/spi.h>
 #include "inic_dev.h"
 #include "rtw_spi.h"
+#include "rtw_ioctl.h"
+#elif defined(CONFIG_FULLMAC_HCI_USB)
+#include <linux/usb.h>
+#include "inic_dev.h"
+#include "rtw_usb.h"
 #include "rtw_ioctl.h"
 #endif
 

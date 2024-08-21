@@ -39,7 +39,7 @@ static const enum AudioHwDevice gPrimaryAudioHwDevices =
 	| AUDIO_HW_DEVICE_IN_I2S;
 
 static struct AudioHwCardDescriptor gAudioHwCardDescs[] = {
-	{ AUDIO_HW_CARD_TYPE_PRIMARY, gPrimaryAudioHwPort, 3, gPrimaryAudioHwDevices, 5}
+	{ AUDIO_HW_CARD_TYPE_PRIMARY, gPrimaryAudioHwPort, 2, gPrimaryAudioHwDevices, 5}
 };
 
 static const int32_t CARD_DESCRIPTER_COUNT =

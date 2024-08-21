@@ -582,6 +582,7 @@ SECTIONS
     PROVIDE(SPIC_CALIB_PATTERN = 0x42064);
     PROVIDE(GPIO_PORTx_S = 0x4206c);
     PROVIDE(GPIO_PORTx = 0x42074);
+    PROVIDE(LOG_UART_IDX_FLAG = 0x4207c);
     PROVIDE(mbedtls_sha512_info = 0x42df4);
     PROVIDE(mbedtls_sha384_info = 0x42e24);
     PROVIDE(mbedtls_sha256_info = 0x42e54);

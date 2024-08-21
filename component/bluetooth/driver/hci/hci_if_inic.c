@@ -19,7 +19,7 @@ void bt_inic_send_cmd_complete_evt(uint16_t opcode, uint8_t status)
 	evt[3] = opcode & 0xFF;
 	evt[4] = (opcode >> 8) & 0xFF;
 	evt[5] = status;
-	bt_inic_send_to_host(H4_EVT, evt, sizeof(evt));
+	bt_inic_send_to_host(HCI_EVT, evt, sizeof(evt));
 }
 
 #if defined(BT_INIC_FPGA_VERIFICATION) && BT_INIC_FPGA_VERIFICATION
@@ -118,7 +118,7 @@ static void _handle_cmd_for_fpga(uint16_t opcode)
 
 	for (i = 0; i < num; i++) {
 		if (opcode == fake_events[i].opcode) {
-			bt_inic_send_to_host(H4_EVT, fake_events[i].evt, fake_events[i].len);
+			bt_inic_send_to_host(HCI_EVT, fake_events[i].evt, fake_events[i].len);
 			return;
 		}
 	}
@@ -136,9 +136,9 @@ static uint8_t *bt_inic_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t 
 {
 	(void)hdr;
 	(void)timeout;
-	u8 *buf = NULL;
+	uint8_t *buf = NULL;
 
-	buf = (u8 *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, len, 4);
+	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, len, 4);
 	memset(buf, 0, len);
 	new_packet_buf = buf;
 	new_packet_len = len;
@@ -152,6 +152,7 @@ static void bt_inic_cancel(void)
 	osif_mem_aligned_free(new_packet_buf);
 }
 
+/* packet is received from controller, send it to host. */
 static void bt_inic_recv(void)
 {
 	bt_inic_send_to_host(new_packet_type, new_packet_buf, new_packet_len);
@@ -222,18 +223,23 @@ void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len)
 #if defined(BT_INIC_FPGA_VERIFICATION) && BT_INIC_FPGA_VERIFICATION
 	(void)len;
 
-	if (type == H4_CMD) {
+	if (type == HCI_CMD) {
 		_handle_cmd_for_fpga(((*(pdata + 1) << 8) | *(pdata)));
 		return;
 	}
 	BT_LOGA("Host TX type(%d) packet TO Device\r\n", type);
 
 #else
-	if (type == H4_CMD) {
+	if (type == HCI_CMD) {
 		if (is_inic_vendor_cmd(((*(pdata + 1) << 8) | *(pdata)))) {
 			return;
 		}
 	}
-	hci_transport_send(type, pdata, len, true);
+
+	if (hci_controller_is_enabled()) {
+		hci_transport_send(type, pdata, len, false);
+	} else {
+		BT_LOGE("Error!! Please enable controller first.\r\n");
+	}
 #endif
 }

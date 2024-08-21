@@ -329,11 +329,6 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
-PYTHON ?= python
-define check_python_lib
-    @$(PYTHON) -c "import $(1)" > /dev/null 2>&1 || \
-    (echo "Error: $(1) Python library is not installed.Please install by command: pip install -r {sdk}/tools/image_scripts/requirements.txt"; exit 1)
-endef
 check_toolchain:
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
@@ -365,12 +360,7 @@ check_toolchain:
 		echo "Command python not found"; \
 		echo "Please refer to AN900 Chapter 1.2(Preparing GCC Environment) install python3. If still error appears, please run: sudo ln -s /usr/bin/python3 /usr/bin/python"; \
 		exit 1; \
-	fi 
-	$(call check_python_lib,mbedtls)
-	$(call check_python_lib,cryptography)
-	$(call check_python_lib,Crypto)
-	$(call check_python_lib,ecdsa)
-	$(call check_python_lib,sslcrypto)	
+	fi
 
 #*****************************************************************************#
 #              COPYING OBJECT FILES TO THE BUILD DIRECTORY                    #

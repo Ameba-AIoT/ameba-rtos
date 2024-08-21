@@ -108,6 +108,8 @@ u32 UnderFlowCnt = 0;
 u32 vo_freq;
 u32 LCDC_Show_Idx;
 
+int First_Flag_g = 1;
+
 /*initialize the MIPI IRQ info*/
 MIPI_IRQInfo MipiIrqInfo = {
 	.IrqNum = MIPI_DSI_IRQ,
@@ -299,14 +301,18 @@ void MipiDsi_ST7701S_isr(void)
 	if (reg_val & MIPI_BIT_ERROR) {
 		reg_dphy_err = MIPIx->MIPI_DPHY_ERR;
 		MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-		RTK_LOGE(TAG, "LPTX Error: 0x%lx, DPHY Error: 0x%lx\n", reg_val, reg_dphy_err);
+		if (First_Flag_g != 1) {
+			RTK_LOGE(TAG, "LPTX Error: 0x%lx, DPHY Error: 0x%lx\n", reg_val, reg_dphy_err);
+		}
 
 		if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
 			MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
 
 			MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
 			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
-			RTK_LOGE(TAG, "LPTX Error CLR: 0x%lx, DPHY: 0x%lx\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+			if (First_Flag_g != 1) {
+				RTK_LOGE(TAG, "LPTX Error CLR: 0x%lx, DPHY: 0x%lx\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+			}
 		}
 
 		if (MIPIx->MIPI_DPHY_ERR == reg_dphy_err) {
@@ -375,6 +381,7 @@ void MipiDsi_ST7701S_Send_Cmd(MIPI_TypeDef *MIPIx, const LCM_setting_table_t *ta
 			send_cmd_idx_s = 0;
 			RTK_LOGI(TAG, "LPTX CMD Send Done\n");
 			ST7701S_Init_Done_g = 1;
+			First_Flag_g = 0;
 			return;
 		default:
 			if (send_flag) {

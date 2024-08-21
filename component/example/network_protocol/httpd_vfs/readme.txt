@@ -21,7 +21,7 @@ Description
 Setup Guide
 ~~~~~~~~~~~
 		1. In project/realtek_ameba<test board>_va0_example/src/src_<ap core>/main.c "app_filesystem_init" interface, CONFIG vfs_type from VFS_FATFS to VFS_LITTLEFS:
-			ret = vfs_user_register("lfs", VFS_LITTLEFS, VFS_INF_FLASH, VFS_FLASH_R1, VFS_RW);
+			ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		2. If you want to enable captive portal, please modify dhcps.h.
 			#define CONFIG_ENABLE_CAPTIVE_PORTAL  1
 		3. GCC:use CMD "make all EXAMPLE=httpd_vfs" to compile httpd_vfs example.

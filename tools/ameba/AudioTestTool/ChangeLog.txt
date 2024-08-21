@@ -8,3 +8,4 @@ ChangeLog:
                   (2) Add support for AmebaDplus
 				  (3) Fix chip type save failure
 				  (4) Fix load crash caused by invalid chip ID
+20240812  v1.0.4  Fix playback media directory non-exist crash issue

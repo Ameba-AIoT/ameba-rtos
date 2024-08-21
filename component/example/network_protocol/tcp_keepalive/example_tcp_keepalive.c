@@ -3,8 +3,8 @@
 #include "lwip_netconf.h"
 #include "lwip/netif.h"
 #include "rtw_wifi_defs.h"
+#include "wifi_conf.h"
 
-#define IP_ADDR_INVALID 0
 
 #define TEST_MODE       0	// 0 to test client keepalive, 1 to test server keepalive
 #define SERVER_IP       "192.168.0.110"
@@ -20,12 +20,12 @@ static void example_tcp_keepalive_thread(void *param)
 
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(2000);
 	}
-	printf("\nExample: TCP Keepalive\n");
+	RTK_LOGS(NOTAG, "\nExample: TCP Keepalive\n");
 #if !LWIP_TCP_KEEPALIVE
-	printf("\nPlease enable LWIP_TCP_KEEPALIVE\n");
+	RTK_LOGS(NOTAG, "\nPlease enable LWIP_TCP_KEEPALIVE\n");
 #else
 
 #if (TEST_MODE == 0)
@@ -35,16 +35,16 @@ static void example_tcp_keepalive_thread(void *param)
 
 	// enable socket keepalive with keepalive timeout = idle(3) + interval(5) * count(3) = 18 seconds
 	if (setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) != 0) {
-		printf("ERROR: SO_KEEPALIVE\n");
+		RTK_LOGS(NOTAG, "ERROR: SO_KEEPALIVE\n");
 	}
 	if (setsockopt(server_socket, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_idle, sizeof(keepalive_idle)) != 0) {
-		printf("ERROR: TCP_KEEPIDLE\n");
+		RTK_LOGS(NOTAG, "ERROR: TCP_KEEPIDLE\n");
 	}
 	if (setsockopt(server_socket, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_interval, sizeof(keepalive_interval)) != 0) {
-		printf("ERROR: TCP_KEEPINTVL\n");
+		RTK_LOGS(NOTAG, "ERROR: TCP_KEEPINTVL\n");
 	}
 	if (setsockopt(server_socket, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_count, sizeof(keepalive_count)) != 0) {
-		printf("ERROR: TCP_KEEPCNT\n");
+		RTK_LOGS(NOTAG, "ERROR: TCP_KEEPCNT\n");
 	}
 
 	server_addr.sin_family = AF_INET;
@@ -54,16 +54,16 @@ static void example_tcp_keepalive_thread(void *param)
 	if (connect(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
 		unsigned char response_buf[100];
 		int read_size;
-		printf("connect OK\n");
+		RTK_LOGS(NOTAG, "connect OK\n");
 
 		while ((read_size = read(server_socket, response_buf, sizeof(response_buf))) > 0) {
-			printf("read %d bytes\n", read_size);
+			RTK_LOGS(NOTAG, "read %d bytes\n", read_size);
 		}
 
-		printf("ERROR: read %d\n", read_size);
+		RTK_LOGS(NOTAG, "ERROR: read %d\n", read_size);
 		close(server_socket);
 	} else {
-		printf("ERROR: connect\n");
+		RTK_LOGS(NOTAG, "ERROR: connect\n");
 		close(server_socket);
 	}
 
@@ -81,12 +81,12 @@ static void example_tcp_keepalive_thread(void *param)
 		server_addr.sin_addr.s_addr = INADDR_ANY;
 
 		if (bind(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) != 0) {
-			printf("bind error\n");
+			RTK_LOGS(NOTAG, "bind error\n");
 			goto exit;
 		}
 
 		if (listen(server_fd, LISTEN_QLEN) != 0) {
-			printf("listen error\n");
+			RTK_LOGS(NOTAG, "listen error\n");
 			goto exit;
 		}
 
@@ -96,7 +96,7 @@ static void example_tcp_keepalive_thread(void *param)
 			max_socket_fd = server_fd;
 		}
 	} else {
-		printf("socket error\n");
+		RTK_LOGS(NOTAG, "socket error\n");
 		goto exit;
 	}
 
@@ -125,28 +125,28 @@ static void example_tcp_keepalive_thread(void *param)
 
 						if (fd >= 0) {
 							int keepalive = 1, keepalive_idle = 3, keepalive_interval = 5, keepalive_count = 3;
-							printf("accept socket fd(%d)\n", fd);
+							RTK_LOGS(NOTAG, "accept socket fd(%d)\n", fd);
 							socket_used[fd] = 1;
 
 							// enable socket keepalive with keepalive timeout = idle(3) + interval(5) * count(3) = 18 seconds
 							if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) != 0) {
-								printf("ERROR: SO_KEEPALIVE\n");
+								RTK_LOGS(NOTAG, "ERROR: SO_KEEPALIVE\n");
 							}
 							if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_idle, sizeof(keepalive_idle)) != 0) {
-								printf("ERROR: TCP_KEEPIDLE\n");
+								RTK_LOGS(NOTAG, "ERROR: TCP_KEEPIDLE\n");
 							}
 							if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_interval, sizeof(keepalive_interval)) != 0) {
-								printf("ERROR: TCP_KEEPINTVL\n");
+								RTK_LOGS(NOTAG, "ERROR: TCP_KEEPINTVL\n");
 							}
 							if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_count, sizeof(keepalive_count)) != 0) {
-								printf("ERROR: TCP_KEEPCNT\n");
+								RTK_LOGS(NOTAG, "ERROR: TCP_KEEPCNT\n");
 							}
 
 							if (fd > max_socket_fd) {
 								max_socket_fd = fd;
 							}
 						} else {
-							printf("accept error\n");
+							RTK_LOGS(NOTAG, "accept error\n");
 						}
 					} else {
 						int read_size = read(socket_fd, buf, sizeof(buf));
@@ -154,7 +154,7 @@ static void example_tcp_keepalive_thread(void *param)
 						if (read_size > 0) {
 							write(socket_fd, buf, read_size);
 						} else {
-							printf("socket fd(%d) disconnected\n", socket_fd);
+							RTK_LOGS(NOTAG, "socket fd(%d) disconnected\n", socket_fd);
 							socket_used[socket_fd] = 0;
 							close(socket_fd);
 						}
@@ -179,6 +179,6 @@ exit:
 void example_tcp_keepalive(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_tcp_keepalive_thread"), example_tcp_keepalive_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

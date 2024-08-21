@@ -840,30 +840,30 @@ static void CreateScanSsidTableItem(char *pbuf)
 
 #if USE_DIV_CSS
 
-	ret = snprintf(pbuf, LOCAL_BUF_SIZE, "<div class=\"oneline\"><div class=\"left\">APList: </div>"\
-				   "<div class=\"right\"><select  class=\"box\" name=\"APList\">"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "<option value=\"%s\" %s>%s</option>"\
-				   "</select> </div> </div>",
-				   scan_result.ap_list[0].ssid, flag[0] ? "selected" : "", scan_result.ap_list[0].ssid,
-				   scan_result.ap_list[1].ssid, flag[1] ? "selected" : "", scan_result.ap_list[1].ssid,
-				   scan_result.ap_list[2].ssid, flag[1] ? "selected" : "", scan_result.ap_list[2].ssid,
-				   scan_result.ap_list[3].ssid, flag[1] ? "selected" : "", scan_result.ap_list[3].ssid,
-				   scan_result.ap_list[4].ssid, flag[1] ? "selected" : "", scan_result.ap_list[4].ssid,
-				   scan_result.ap_list[5].ssid, flag[1] ? "selected" : "", scan_result.ap_list[5].ssid,
-				   scan_result.ap_list[6].ssid, flag[1] ? "selected" : "", scan_result.ap_list[6].ssid,
-				   scan_result.ap_list[7].ssid, flag[1] ? "selected" : "", scan_result.ap_list[7].ssid,
-				   scan_result.ap_list[8].ssid, flag[1] ? "selected" : "", scan_result.ap_list[8].ssid,
-				   scan_result.ap_list[9].ssid, flag[1] ? "selected" : "", scan_result.ap_list[9].ssid
-				  );
+	ret = DiagSnPrintf(pbuf, LOCAL_BUF_SIZE, "<div class=\"oneline\"><div class=\"left\">APList: </div>"\
+					   "<div class=\"right\"><select  class=\"box\" name=\"APList\">"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "<option value=\"%s\" %s>%s</option>"\
+					   "</select> </div> </div>",
+					   scan_result.ap_list[0].ssid, flag[0] ? "selected" : "", scan_result.ap_list[0].ssid,
+					   scan_result.ap_list[1].ssid, flag[1] ? "selected" : "", scan_result.ap_list[1].ssid,
+					   scan_result.ap_list[2].ssid, flag[1] ? "selected" : "", scan_result.ap_list[2].ssid,
+					   scan_result.ap_list[3].ssid, flag[1] ? "selected" : "", scan_result.ap_list[3].ssid,
+					   scan_result.ap_list[4].ssid, flag[1] ? "selected" : "", scan_result.ap_list[4].ssid,
+					   scan_result.ap_list[5].ssid, flag[1] ? "selected" : "", scan_result.ap_list[5].ssid,
+					   scan_result.ap_list[6].ssid, flag[1] ? "selected" : "", scan_result.ap_list[6].ssid,
+					   scan_result.ap_list[7].ssid, flag[1] ? "selected" : "", scan_result.ap_list[7].ssid,
+					   scan_result.ap_list[8].ssid, flag[1] ? "selected" : "", scan_result.ap_list[8].ssid,
+					   scan_result.ap_list[9].ssid, flag[1] ? "selected" : "", scan_result.ap_list[9].ssid
+					  );
 #else
 	ret = sprintf(pbuf, LOCAL_BUF_SIZE, "<tr>"
 				  "<td style=\"background-color:#FFD700;width:100px;\">"
@@ -1255,7 +1255,7 @@ static void http_translate_url_encode(char *ptr)
 			if ((*(data + 1) != 0) && (*(data + 2) != 0)) {
 				tmp_data[0] = *(data + 1);
 				tmp_data[1] = *(data + 2);
-				sscanf(tmp_data, "%x", &buffer);
+				_sscanf_ss(tmp_data, "%x", &buffer);
 				*outdata_ptr = (char)buffer;
 
 				/* destroy data */

@@ -44,7 +44,6 @@ CPPSRC += $(RADIO_DIR)/radio_platform.cpp
 
 #OpenThread ncp
 CPPSRC += $(NCP)/changed_props_set.cpp
-CPPSRC += $(NCP)/multipan_plaform.cpp
 CPPSRC += $(NCP)/ncp_base.cpp
 CPPSRC += $(NCP)/ncp_base_dispatcher.cpp
 CPPSRC += $(NCP)/ncp_base_radio.cpp

@@ -4,6 +4,7 @@
 *
 ******************************************************************************/
 //#include "example_captive_portal.h"
+void example_captive_portal(void);
 
 void app_example(void)
 {

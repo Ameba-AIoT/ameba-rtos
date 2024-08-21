@@ -18,6 +18,7 @@ MODULE_IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaLite_KR4
 
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/player
+MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/speexdsp
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/mydata_source_player
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/player_cache_test
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/interfaces

@@ -179,9 +179,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 
 	if (cur_ppm >= ppm_limit) {
 		RTK_LOGE(TAG, "[CAL131K]: !!! cal fail !!! PPM: %lu PPM_Limit:%lu \n", cur_ppm, ppm_limit);
-		if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
 			assert_param(0);
-		}
 	}
 
 	return TRUE;

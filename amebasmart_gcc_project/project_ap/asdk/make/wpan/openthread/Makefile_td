@@ -19,21 +19,17 @@ CPPSRC += $(CLI_DIR)/cli_dataset.cpp
 CPPSRC += $(CLI_DIR)/cli_dns.cpp
 #CPPSRC += $(CLI_DIR)/cli_history.cpp
 CPPSRC += $(CLI_DIR)/cli_joiner.cpp
-CPPSRC += $(CLI_DIR)/cli_link_metrics.cpp
 CPPSRC += $(CLI_DIR)/cli_mac_filter.cpp
 CPPSRC += $(CLI_DIR)/cli_network_data.cpp
 CPPSRC += $(CLI_DIR)/cli_output.cpp
-CPPSRC += $(CLI_DIR)/cli_ping.cpp
 CPPSRC += $(CLI_DIR)/cli_srp_client.cpp
 CPPSRC += $(CLI_DIR)/cli_srp_server.cpp
-CPPSRC += $(CLI_DIR)/cli_tcat.cpp
 CPPSRC += $(CLI_DIR)/cli_tcp.cpp
 CPPSRC += $(CLI_DIR)/cli_udp.cpp
 
 #OpenThread src API
 CPPSRC += $(API_DIR)/backbone_router_api.cpp
 CPPSRC += $(API_DIR)/backbone_router_ftd_api.cpp
-CPPSRC += $(API_DIR)/ble_secure_api.cpp
 CPPSRC += $(API_DIR)/border_agent_api.cpp
 CPPSRC += $(API_DIR)/border_router_api.cpp
 CPPSRC += $(API_DIR)/border_routing_api.cpp
@@ -115,6 +111,7 @@ CPPSRC += $(COMMON_DIR)/frame_data.cpp
 CPPSRC += $(COMMON_DIR)/heap.cpp
 CPPSRC += $(COMMON_DIR)/heap_data.cpp
 CPPSRC += $(COMMON_DIR)/heap_string.cpp
+CPPSRC += $(COMMON_DIR)/instance.cpp
 CPPSRC += $(COMMON_DIR)/log.cpp
 CPPSRC += $(COMMON_DIR)/message.cpp
 CPPSRC += $(COMMON_DIR)/notifier.cpp
@@ -142,10 +139,6 @@ CPPSRC += $(CRYPTO_DIR)/storage.cpp
 #OpenThread src DIAGS
 CPPSRC += $(DIAGS_DIR)/factory_diags.cpp
 
-#OpenThread src INSTANCE
-CPPSRC += $(INSTANCE_DIR)/instance.cpp
-#CPPSRC += $(INSTANCE_DIR)/extension_example.cpp
-
 #OpenThread src MAC
 CPPSRC += $(MAC_DIR)/channel_mask.cpp
 CPPSRC += $(MAC_DIR)/data_poll_handler.cpp
@@ -168,6 +161,7 @@ CPPSRC += $(MESHCOP_DIR)/dataset_local.cpp
 CPPSRC += $(MESHCOP_DIR)/dataset_manager.cpp
 CPPSRC += $(MESHCOP_DIR)/dataset_manager_ftd.cpp
 CPPSRC += $(MESHCOP_DIR)/dataset_updater.cpp
+CPPSRC += $(MESHCOP_DIR)/dtls.cpp
 CPPSRC += $(MESHCOP_DIR)/energy_scan_client.cpp
 CPPSRC += $(MESHCOP_DIR)/extended_panid.cpp
 CPPSRC += $(MESHCOP_DIR)/joiner.cpp
@@ -177,8 +171,6 @@ CPPSRC += $(MESHCOP_DIR)/meshcop_leader.cpp
 CPPSRC += $(MESHCOP_DIR)/meshcop_tlvs.cpp
 CPPSRC += $(MESHCOP_DIR)/network_name.cpp
 CPPSRC += $(MESHCOP_DIR)/panid_query_client.cpp
-CPPSRC += $(MESHCOP_DIR)/secure_transport.cpp
-CPPSRC += $(MESHCOP_DIR)/tcat_agent.cpp
 CPPSRC += $(MESHCOP_DIR)/timestamp.cpp
 
 #OpenThread src NET
@@ -211,7 +203,6 @@ CPPSRC += $(NET_DIR)/udp6.cpp
 
 
 #OpenThread src RADIO
-CPPSRC += $(RADIO_DIR)/ble_secure.cpp
 CPPSRC += $(RADIO_DIR)/radio.cpp
 CPPSRC += $(RADIO_DIR)/radio_callbacks.cpp
 CPPSRC += $(RADIO_DIR)/radio_platform.cpp

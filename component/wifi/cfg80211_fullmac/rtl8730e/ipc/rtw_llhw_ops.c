@@ -427,7 +427,7 @@ int llhw_wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 		}
 		param_buf[2] = (u32)dma_addr_mac_addr;
 	} else {
-		param_buf[2] = NULL;
+		param_buf[2] = 0;
 	}
 
 	ret = llhw_ipc_send_msg(INIC_API_WIFI_SAE_STATUS, param_buf, 3);
@@ -610,20 +610,15 @@ void llhw_send_packet(struct inic_ipc_ex_msg *p_ipc_msg)
 
 u64 llhw_wifi_get_tsft(u8 iface_type)
 {
-	u8 *wifi_base_vir = NULL;
-	u32 *tsf_base_vir = NULL;
 	u32 reg_tsf_low = 0, reg_tsf_high = 0;
 	u64 tsft_val = 0;
 
-	wifi_base_vir = (u8 *)paxi_data_global->axi_mem_start;
-	tsf_base_vir = (u32 *)(wifi_base_vir + 0x560);
-
 	if (iface_type == 0) {
-		reg_tsf_low = tsf_base_vir[0];
-		reg_tsf_high = tsf_base_vir[1];
+		reg_tsf_low = llhw_ipc_wifi_reg_read32(0x560);
+		reg_tsf_high = llhw_ipc_wifi_reg_read32(0x564);
 	} else if (iface_type == 1) {
-		reg_tsf_low = tsf_base_vir[2];
-		reg_tsf_high = tsf_base_vir[3];
+		reg_tsf_low = llhw_ipc_wifi_reg_read32(0x568);
+		reg_tsf_high = llhw_ipc_wifi_reg_read32(0x56C);
 	} else {
 		dev_warn(global_idev.fullmac_dev, "[AP] unknown port(%d)!\n", iface_type);
 	}

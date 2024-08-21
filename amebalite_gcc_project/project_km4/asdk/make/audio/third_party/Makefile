@@ -20,7 +20,7 @@ lib:
 	make -C flac all
 	make -C tremolo all
 	make -C opus all
-	make -C speex all
+	make -C speexdsp all
 
 #*****************************************************************************#
 #                        RULES TO CLEAN TARGETS                               #
@@ -31,6 +31,6 @@ clean:
 	make -C flac clean
 	make -C tremolo clean
 	make -C opus clean
-	make -C speex clean
+	make -C speexdsp clean
 
 -include $(DEPS)

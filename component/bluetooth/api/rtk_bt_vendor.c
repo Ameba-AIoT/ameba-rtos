@@ -22,6 +22,9 @@
 #define BT_SCB_IRQ_PRIO   3
 typedef void(*p_func_cb)(uint8_t ind);
 static p_func_cb g_rtk_bt_scoreboard_isr_cb = NULL;
+
+extern int wifi_set_ips_internal(u8 enable);
+static bool need_restore = false;
 #endif
 
 _WEAK void hci_platform_set_tx_power_gain_index(uint32_t index)
@@ -169,12 +172,64 @@ void rtk_bt_scoreboard_isr_handler(void)
 	}
 }
 
-//extern int wifi_set_ips_internal(u8 enable);
-static bool need_reset_wmac_clk = false, need_reset_wlon = false;
+static bool PeriphClockReq(u32 APBPeriph_in, u32 APBPeriph_Clock_in)
+{
+	u32 ClkRegIndx = (APBPeriph_Clock_in >> 30) & 0x03;
+	u32 APBPeriph_Clock = APBPeriph_Clock_in & (~(BIT(31) | BIT(30)));
+
+	u32 FuncRegIndx = (APBPeriph_in >> 30) & 0x03;
+	u32 APBPeriph = APBPeriph_in & (~(BIT(31) | BIT(30)));
+
+	u32 Reg = 0;
+
+	//clock
+	switch (ClkRegIndx) {
+	case 0x0:
+		Reg = REG_LSYS_CKE_GRP0;
+		break;
+	case 0x1:
+		Reg = REG_LSYS_CKE_GRP1;
+		break;
+	case 0x2:
+		Reg = REG_LSYS_CKE_GRP2;
+		break;
+	case 0x3:
+		Reg = REG_AON_CLK;
+		break;
+	}
+
+	if (APBPeriph_Clock_in != APBPeriph_CLOCK_NULL) {
+		//BT_LOGA("reg = 0x%x bit= 0x%x read reg = 0x%x &_reg = 0x%x !!_reg = 0x%x\r\n",Reg, APBPeriph_Clock, HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg),(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph_Clock),!!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph_Clock));
+		return !!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph_Clock);
+	}
+
+	//function
+	switch (FuncRegIndx) {
+	case 0x0:
+		Reg = REG_LSYS_FEN_GRP0;
+		break;
+	case 0x1:
+		Reg = REG_LSYS_FEN_GRP1;
+		break;
+	case 0x2:
+		Reg = REG_LSYS_FEN_GRP2;
+		break;
+	case 0x3:
+		Reg = REG_AON_FEN;
+		break;
+	}
+
+	if (APBPeriph_in != APBPeriph_NULL) {
+		//BT_LOGA("reg = 0x%x bit= 0x%x read reg = 0x%x &_reg = 0x%x !!_reg = 0x%x\r\n",Reg, APBPeriph, HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg),(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph),!!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph));
+		return !!(HAL_READ32(SYSTEM_CTRL_BASE_LP, Reg) & APBPeriph);
+	}
+
+	return false;
+}
+
 static bool rtk_bt_scoreboard_isr_enable(void)
 {
-	uint32_t value = 0;
-
+	bool wmac_clk_on = false, wl_on = false;
 	/****BT_SCB_IRQ (67# NP/AP INT VECTOR)*****/
 	if (false == InterruptRegister((IRQ_FUN)rtk_bt_scoreboard_isr_handler, BT_SCB_IRQ, (uint32_t)NULL, BT_SCB_IRQ_PRIO)) {
 		BT_LOGE("InterruptRegister for BT_SCB_IRQ fail\r\n");
@@ -182,79 +237,46 @@ static bool rtk_bt_scoreboard_isr_enable(void)
 	}
 	InterruptEn(BT_SCB_IRQ, BT_SCB_IRQ_PRIO);
 
-	//value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_HSYS_HP_CKE);
-	//BT_LOGA("%s REG_HSYS_HP_CKE 0x%x = 0x%x\r\n",__func__,(unsigned int)(SYSTEM_CTRL_BASE_LP + REG_HSYS_HP_CKE), (unsigned int)value);
-#if 1 //FIXME: use leave ips instead now
-	//set 0x42008218[5] = 1, APBPeriph_WMAC_CLOCK
-	value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
-	if ((value & BIT5) == 0) {
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1, value | APBPeriph_WMAC_CLOCK);
-		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
-		BT_LOGA("%s set APBPeriph_WMAC_CLOCK, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_CKE_GRP1), (unsigned int)value);
-		need_reset_wmac_clk = true;
+	wmac_clk_on = PeriphClockReq(APBPeriph_NULL, APBPeriph_WMAC_CLOCK);
+	wl_on = PeriphClockReq(APBPeriph_WLON, APBPeriph_CLOCK_NULL);
+
+	//maybe use b_mac_pwr_ctrl_on related api later
+	//scoreboard_isr need wl on and wmac clk on
+	if (wmac_clk_on == false || wl_on == false) {
+		wifi_set_ips_internal(FALSE);
+		need_restore = true;
 	}
 
-	//set 0x42008208[7] = 1, APBPeriph_WLON,enable WLON function for write REG_FSIMR_V1
-	value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
-	if ((value & BIT7) == 0) {
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0, value | APBPeriph_WLON);
-		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
-		BT_LOGA("%s set APBPeriph_WLON , 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_FEN_GRP0), (unsigned int)value);
-		need_reset_wlon = true;
-	}
-#else
-	wifi_set_ips_internal(FALSE);
-#endif
 	//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
 	HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
-	value = HAL_READ32(WIFI_REG_BASE, REG_FSISR_V1);
-	BT_LOGA("%s Clear BT dedicated SCB int ISR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSISR_V1), (unsigned int)value);
+	BT_LOGA("Clear BT dedicated SCB int ISR\r\n");
 
 	//Enable BT dedicated SCB int IMR, MAC Reg 0x40[0]
-	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
-	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, value | BIT_FS_BTON_STS_UPDATE_INT_EN);
-	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
-	BT_LOGA("%s Enable BT dedicated SCB int IMR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSIMR_V1), (unsigned int)value);
+	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1) | BIT_FS_BTON_STS_UPDATE_INT_EN);
+	BT_LOGA("Enable BT dedicated SCB int IMR\r\n");
 
 	return true;
 }
 
-
 static bool rtk_bt_scoreboard_isr_disable(void)
 {
-	uint32_t value = 0;
+	bool wl_pmc_on = false;
 
 	InterruptDis(BT_SCB_IRQ);
 	InterruptUnRegister(BT_SCB_IRQ);
 
 	//Clear BT dedicated SCB int ISR, MAC Reg 0x44[0]
 	HAL_WRITE32(WIFI_REG_BASE, REG_FSISR_V1, BIT_FS_BTON_STS_UPDATE_INT);
-	value = HAL_READ32(WIFI_REG_BASE, REG_FSISR_V1);
-	BT_LOGA("%s Clear BT dedicated SCB int ISR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSISR_V1), (unsigned int)value);
+	BT_LOGA("Clear BT dedicated SCB int ISR\r\n");
 
 	//Disable BT dedicated SCB int IMR, MAC Reg 0x40[0] = 0
-	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
-	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, value & ~BIT_FS_BTON_STS_UPDATE_INT_EN);
-	value = HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1);
-	BT_LOGA("%s Disable BT dedicated SCB int IMR , 0x%x = 0x%x\r\n", __func__, (unsigned int)(WIFI_REG_BASE + REG_FSIMR_V1), (unsigned int)value);
+	HAL_WRITE32(WIFI_REG_BASE, REG_FSIMR_V1, HAL_READ32(WIFI_REG_BASE, REG_FSIMR_V1) & ~BIT_FS_BTON_STS_UPDATE_INT_EN);
+	BT_LOGA("Disable BT dedicated SCB int IMR\r\n");
 
-#if 1 //FIXME: use leave ips instead now
-	if (need_reset_wlon) {
-		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0, value & (~BIT7));
-		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FEN_GRP0);
-		BT_LOGA("%s reset APBPeriph_WLON, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_FEN_GRP0), (unsigned int)value);
+	if (need_restore) {
+		wifi_set_ips_internal(TRUE);
 	}
 
-	if (need_reset_wmac_clk) {
-		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1, value & (~BIT5));
-		value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP1);
-		BT_LOGA("%s reset APBPeriph_WMAC_CLOCK, 0x%x = 0x%x\r\n", __func__, (unsigned int)(SYSTEM_CTRL_BASE_LP + REG_LSYS_CKE_GRP1), (unsigned int)value);
-	}
-#else
-	wifi_set_ips_internal(TRUE);
-#endif
 	return true;
 }
 

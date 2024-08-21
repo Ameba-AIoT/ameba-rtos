@@ -9,15 +9,25 @@ void rtw_spi_send_data(u8 *buf, u32 len)
 	struct sk_buff *pskb = NULL;
 	int rc;
 
+	mutex_lock(&priv->lock);
+
 	while (priv->dev_state == DEV_BUSY) {
 		/* wait for sema*/
-		down_interruptible(&priv->dev_rdy_sema);
+		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
+			dev_err(global_idev.fullmac_dev, "%s: wait dev busy timeout, can't send data\n\r", __func__);
+			goto exit;
+		}
 	}
-
-	mutex_lock(&priv->lock);
 
 	if (len > SPI_BUFSZ) {
 		dev_err(global_idev.fullmac_dev, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, len);
+	}
+
+	/* allocate rx skb */
+	pskb = netdev_alloc_skb(NULL, SPI_BUFSZ);
+	if (pskb == NULL) {
+		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err!!\n\r", __func__);
+		goto exit;
 	}
 
 	/* initiate spi transaction */
@@ -27,18 +37,9 @@ void rtw_spi_send_data(u8 *buf, u32 len)
 	}
 
 	tr = list_first_entry(&spimsg->transfers, struct spi_transfer, transfer_list);
-	tr->tx_buf = buf;
 	tr->len = SPI_BUFSZ;
-
-	if (priv->rx_pending) {
-		/* allocate skb */
-		pskb = netdev_alloc_skb(NULL, SPI_BUFSZ);
-		if (pskb == NULL) {
-			dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err!!\n\r", __func__);
-			goto exit;
-		}
-		tr->rx_buf = pskb->data;
-	}
+	tr->tx_buf = buf;
+	tr->rx_buf = pskb->data;
 
 	rc = spi_sync(spidev, spimsg);
 	if (rc) {
@@ -49,11 +50,10 @@ void rtw_spi_send_data(u8 *buf, u32 len)
 		goto exit;
 	}
 
+	//print_hex_dump_bytes("rtw_spi_send_data: ", DUMP_PREFIX_NONE, tr->tx_buf, tr->len);
+
 	/* process rx msg */
-	if (pskb) {
-		priv->rx_pending = false;
-		priv->rx_process_func(pskb);
-	}
+	priv->rx_process_func(pskb);
 
 exit:
 	mutex_unlock(&priv->lock);
@@ -74,8 +74,16 @@ void rtw_spi_recv_data_process(void *intf_priv)
 
 	mutex_lock(&priv->lock);
 
-	if (priv->rx_pending) {
-		priv->rx_pending = false;
+	while (priv->dev_state == DEV_BUSY) {
+		/* wait for sema*/
+		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
+			dev_err(global_idev.fullmac_dev, "%s: wait dev busy timeout, can't send data\n\r", __func__);
+			goto exit;
+		}
+	}
+
+	/* check RX_REQ level */
+	if (gpio_get_value(RX_REQ_PIN)) {
 
 		/* allocate skb */
 		pskb = netdev_alloc_skb(NULL, SPI_BUFSZ);
@@ -101,6 +109,8 @@ void rtw_spi_recv_data_process(void *intf_priv)
 
 			goto exit;
 		}
+
+		//print_hex_dump_bytes("rtw_spi_recv_data_process: ", DUMP_PREFIX_NONE, tr->rx_buf, tr->len);
 
 		/* process rx msg */
 		priv->rx_process_func(pskb);

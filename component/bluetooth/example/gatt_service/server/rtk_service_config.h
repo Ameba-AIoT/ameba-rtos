@@ -23,6 +23,7 @@ extern "C"  {
 #define CTE_SRV_ID                          9
 #define PTS_VENDOR_SRV_ID                   10
 #define THROUGHPUT_SRV_ID                   11
+#define TRANSFER_MODULE_SRV_ID              12
 
 
 #ifdef __cplusplus

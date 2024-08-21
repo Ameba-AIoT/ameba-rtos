@@ -49,13 +49,13 @@ struct  dev_sk_buff_head {
 };
 
 struct skb_raw_para {
-	unsigned char enable;
-	unsigned char rate;
-	unsigned char retry_limit;
-	unsigned char ac_queue;		/*0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO*/
-	unsigned char sgi;		/* 1 for enable data short */
-	unsigned char agg_en;
-	unsigned char device_id;	/* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer. ignore when bmc */
+	unsigned char rate;             /* tx rate of tx_raw packets */
+	unsigned char retry_limit;      /* the number of tx retry when tx fail for tx_raw packet */
+	unsigned char device_id;        /* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer */
+	unsigned char ac_queue;         /* 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
+	unsigned char enable : 1;       /* indicate whether this packet is a tx_raw packet. set to 1 when tx_raw */
+	unsigned char sgi : 1;          /* 1 for enable data short */
+	unsigned char agg_en : 1;       /* aggregation of tx_raw frames. 1:enable; 0-disable */
 };
 
 struct dev_sk_buff {

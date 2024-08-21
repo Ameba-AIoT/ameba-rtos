@@ -51,22 +51,6 @@
 /* For WPS and P2P */
 #define CONFIG_WPS
 
-/************************** config to support chip ****************************/
-#define RTL8723B_SUPPORT 0
-#define RTL8192E_SUPPORT 0
-#define RTL8188E_SUPPORT 0
-#define RTL8188F_SUPPORT 0
-#define RTL8720E_SUPPORT 0
-#define RTL8720F_SUPPORT 0
-#define RTL8721D_SUPPORT 0
-#define RTL8723D_SUPPORT 0
-#define RTL8195B_SUPPORT 0
-#define RTL8710C_SUPPORT 0
-#define RTL8730A_SUPPORT 0
-#define RTL8730E_SUPPORT 0
-#define RTL8721DA_SUPPORT 0
-/************************ config to support chip end **************************/
-
 /******************* Ameba Series Common Configurations ***********************/
 /*PHYDM version*/
 #define OUTSRC	1
@@ -84,6 +68,9 @@
 #include "autoconf_8720e.h"
 #elif defined(CONFIG_AMEBAGREEN2)
 /******************************* Amebalite2 (8720f) ******************************/
+#include "autoconf_8720f.h"
+#elif defined(CONFIG_AMEBAPRO3)
+/******************************* AmebaPro3 (8735c) ******************************/
 #include "autoconf_8720f.h"
 
 #endif
@@ -109,7 +96,7 @@
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
 /* for defrag in rom, remove after rom code freeze */
-#if defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2
+#if (defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2) || (defined(CONFIG_AMEBAPRO3) && CONFIG_AMEBAPRO3)
 #define CONFIG_FRAME_DEFRAG // support frame defragmentaion
 #else
 //#define CONFIG_FRAME_DEFRAG // support frame defragmentaion

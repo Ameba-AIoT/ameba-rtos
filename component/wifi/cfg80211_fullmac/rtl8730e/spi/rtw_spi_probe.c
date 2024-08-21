@@ -1,20 +1,16 @@
 #include <rtw_cfg80211_fullmac.h>
-#include <linux/spi/spi.h>
-#include <linux/of_gpio.h>
-#include <linux/interrupt.h>
-#include <linux/workqueue.h>
 
 struct inic_spi inic_spi_priv = {0};
 
 static irqreturn_t rtw_spi_rx_req_handler(int irq, void *context)
 {
-	if (inic_spi_priv.rx_pending) {
-		dev_err(&inic_spi_priv.spi_dev->dev, "%s: SPI RX_REQ is ongoing!!\n", __func__);
-	} else {
-		inic_spi_priv.rx_pending = true;
-
-		llhw_recv_notify();
+	if (global_idev.recv_priv.initialized == false) {
+		goto exit;
 	}
+
+	llhw_recv_notify();
+
+exit:
 	return IRQ_HANDLED;
 }
 
@@ -69,6 +65,10 @@ int rtw_spi_setup_gpio(struct spi_device *spi)
 		goto free_rx_req_pin;
 	}
 
+#ifdef SPI_DEBUG
+	gpio_request(DEBUG_PIN, "DEBUG_PIN");
+	gpio_direction_output(DEBUG_PIN, 0);
+#endif
 	return status;
 
 free_rx_req_pin:
@@ -81,7 +81,6 @@ free_dev_rdy_pin:
 	gpio_free(DEV_READY_PIN);
 
 	return status;
-
 }
 
 static int rtw_spi_probe(struct spi_device *spi)
@@ -103,16 +102,6 @@ static int rtw_spi_probe(struct spi_device *spi)
 			 spi->max_speed_hz);
 	dev_info(&spi->dev, "can_dma: %d\n", spi->master->can_dma != NULL);
 
-	spi->bits_per_word = 8;
-#if (KERNEL_VERSION(5, 3, 0) <= LINUX_VERSION_CODE)
-	spi->rt = 1;
-#endif
-
-	/* Setup SPI and put CS line in HIGH state! */
-	if (spi->controller->cleanup) {
-		spi->controller->cleanup(spi);
-	}
-
 	rc = spi_setup(spi);
 	if (rc != 0) {
 		goto exit;
@@ -121,7 +110,15 @@ static int rtw_spi_probe(struct spi_device *spi)
 	/* setupGPIO pin */
 	rc = rtw_spi_setup_gpio(spi);
 	if (rc) {
-		dev_info(&spi->dev, "fail to setup gpio\n");
+		dev_err(&spi->dev, "fail to setup gpio\n");
+	}
+
+	if (gpio_get_value(DEV_READY_PIN)) {
+		inic_spi_priv.dev_state = DEV_READY;
+		dev_info(&spi->dev, "dev ready\n");
+	} else {
+		inic_spi_priv.dev_state = DEV_BUSY;
+		dev_info(&spi->dev, "dev busy\n");
 	}
 
 	rtw_netdev_probe(&spi->dev);
@@ -130,12 +127,26 @@ exit:
 	return rc;
 }
 
-static int rtw_spi_remove(struct spi_device *spi)
+static void rtw_spi_remove(struct spi_device *spi)
 {
-	dev_dbg(&spi->dev, "unloading...");
-	//TODO:
+	struct inic_spi *priv = &inic_spi_priv;
 
-	return 0;
+	dev_dbg(&spi->dev, "%s\n", __func__);
+
+	rtw_netdev_remove(&spi->dev);
+
+	mutex_destroy(&(priv->lock));
+
+	free_irq(DEV_READY_IRQ, spi);
+	free_irq(RX_REQ_IRQ, spi);
+
+	gpio_free(DEV_READY_PIN);
+	gpio_free(RX_REQ_PIN);
+#ifdef SPI_DEBUG
+	gpio_free(DEBUG_PIN);
+#endif
+
+	return;
 }
 
 static const struct of_device_id inic_of_ids[] = {

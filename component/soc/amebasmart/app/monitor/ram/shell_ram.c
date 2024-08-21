@@ -9,8 +9,6 @@
 
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "rtw_wifi_constants.h"
-#include <stdarg.h>
 #include "FreeRTOS.h"
 //#include "strproc.h"
 

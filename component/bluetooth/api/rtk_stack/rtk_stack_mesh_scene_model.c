@@ -114,8 +114,8 @@ end:
 static mesh_model_info_t scene_server_model;
 static uint16_t sample_datas[SCENE_DATA_MAX_LEN];
 
-uint8_t store_value[16] = {0x1, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
-uint8_t store_value2[16] = {0x3, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+uint8_t store_value[SCENE_DATA_MAX_LEN] = {0x1, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+uint8_t store_value2[SCENE_DATA_MAX_LEN] = {0x3, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
 static scene_storage_memory_t scenes[] = {
 	{1, store_value},
 	{2, store_value2},
@@ -263,17 +263,18 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 	case SCENE_SERVER_STORE: {
 		scene_server_store_t *p_get_data = NULL;
 		p_get_data = (scene_server_store_t *)pargs;
-		if (p_get_data) {
+		if (p_get_data && p_get_data->pmemory != NULL) {
 			rtk_bt_mesh_scene_server_store_t *scene_store;
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_STORE,
-										SCENE_DATA_MAX_LEN + 3);
+										SCENE_DATA_MAX_LEN + sizeof(rtk_bt_mesh_scene_server_store_t));
 			scene_store = (rtk_bt_mesh_scene_server_store_t *)p_evt->data;
 			scene_store->status = p_get_data->status;
 			scene_store->scene_number = p_get_data->scene_number;
+			memset(scene_store_data, 0, sizeof(scene_store_data));
 			scene_store->pmemory = scene_store_data;
 			rtk_bt_evt_indicate(p_evt, NULL);
-			p_get_data->pmemory = scene_store_data; //reserve 2 bytes to store length
+			memcpy(p_get_data->pmemory, scene_store_data, SCENE_DATA_MAX_LEN);//reserve 2 bytes to store length
 		}
 	}
 	break;

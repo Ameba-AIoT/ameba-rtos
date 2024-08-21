@@ -43,16 +43,14 @@ static int atcmd_bt_le_iso_create_cis_by_handle(int argc, char **argv)
 	(void)argc;
 	uint8_t cis_id;
 	uint8_t cig_id;
-	uint8_t cis_count;
 	uint16_t conn_handle;
 	uint16_t cis_conn_handle;
 	cis_id = (uint8_t)str_to_int(argv[0]);
 	cig_id = (uint8_t)str_to_int(argv[1]);
-	cis_count = (uint8_t)str_to_int(argv[2]);
-	conn_handle = (uint16_t)str_to_int(argv[3]);
-	cis_conn_handle = (uint16_t)str_to_int(argv[4]);
+	conn_handle = (uint16_t)str_to_int(argv[2]);
+	cis_conn_handle = (uint16_t)str_to_int(argv[3]);
 
-	if (rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(cis_id, cig_id, cis_count, conn_handle, &cis_conn_handle)) {
+	if (rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(cis_id, cig_id, 1, conn_handle, &cis_conn_handle)) {
 		BTISO_AT_PRINTK("LEISO cis create fail \r\n");
 		return -1;
 	}
@@ -183,7 +181,7 @@ static int atcmd_bt_le_bis_terminate_sync(int argc, char **argv)
 
 static const cmd_table_t iso_cis_initiator_cmd_table[] = {
 	{"create_cis_by_cig", atcmd_bt_le_iso_create_cis_by_cig,             4, 4},
-	{"create_cis_by_hdl", atcmd_bt_le_iso_create_cis_by_handle,          6, 6},
+	{"create_cis_by_hdl", atcmd_bt_le_iso_create_cis_by_handle,          5, 5},
 	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},

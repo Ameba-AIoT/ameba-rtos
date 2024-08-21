@@ -361,6 +361,7 @@ void at_list(void *arg)
 	at_printf("Common AT Command:\r\n");
 	print_system_at();
 
+#ifdef CONFIG_WLAN
 #ifndef CONFIG_MP_SHRINK
 	/* Wifi commands. */
 	at_printf("Wi-Fi AT Command:\r\n");
@@ -373,6 +374,13 @@ void at_list(void *arg)
 	print_lwip_at();
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
+	/* MQTT commands. */
+	at_printf("MQTT AT command:\r\n");
+	print_mqtt_at();
+#endif
+#endif
+
 #if defined(CONFIG_BT) && CONFIG_BT
 	/* Bluetooth commands. */
 	at_printf("BT AT command:\r\n");
@@ -382,11 +390,7 @@ void at_list(void *arg)
 #endif
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
-	/* MQTT commands. */
-	at_printf("MQTT AT command:\r\n");
-	print_mqtt_at();
-#endif
+
 
 	at_printf("\r\n%sOK\r\n", "+LIST:");
 }

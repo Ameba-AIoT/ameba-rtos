@@ -6,7 +6,7 @@ sed -i 's/CONFIG_SDIO_BRIDGE = n/CONFIG_SDIO_BRIDGE = y/g' Makefile
 
 mkdir -p include
 cp ../../inic/inic_def.h include
-cp ../../inic/sdio/inic_sdio.h include
+cp ../../inic/common/inic_dev.h include
 cp ../../driver/include/rom_rtw_defs.h include
 cp ../../driver/include/rtw_wifi_defs.h include
 cp ../../api/wifi_intf_drv_to_app_basic.h include

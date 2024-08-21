@@ -418,7 +418,6 @@ pthread_t *bridge_wifi_event_callback_init(void)
 
 void bridge_wifi_event_callback_deinit(pthread_t *thread_handle)
 {
-	printf("thread deinit\n");
 	if (pthread_cancel(*thread_handle) != 0) {
 		printf("fail to cancel thread\n");
 		return;

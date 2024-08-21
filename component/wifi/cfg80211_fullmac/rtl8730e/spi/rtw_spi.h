@@ -6,10 +6,13 @@
 #define DEV_READY				1
 #define DEV_BUSY				0
 
-#define RX_REQ_PIN				27
+#define RX_REQ_PIN				23
 #define RX_REQ_IRQ				gpio_to_irq(RX_REQ_PIN)
 #define DEV_RX_REQ				1
 #define DEV_RX_IDLE				0
+
+#undef SPI_DEBUG
+#define DEBUG_PIN				13//26
 
 #define SIZE_RX_DESC			0
 #define SIZE_TX_DESC			0
@@ -24,8 +27,6 @@ struct inic_spi {
 	struct semaphore dev_rdy_sema;
 
 	u8 dev_state;
-
-	bool rx_pending;
 
 	int (*rx_process_func)(struct sk_buff *pskb);
 

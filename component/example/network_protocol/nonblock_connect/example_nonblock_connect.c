@@ -2,8 +2,8 @@
 #include "basic_types.h"
 #include "lwipconf.h"
 #include "rtw_wifi_defs.h"
-
-#define IP_ADDR_INVALID 0
+#include "wifi_conf.h"
+#include "lwip_netconf.h"
 
 #define SERVER_IP              "192.168.1.100"
 #define SERVER_PORT            80
@@ -18,10 +18,10 @@ static void example_nonblock_connect_thread(void *param)
 
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(2000);
 	}
-	printf("\nExample: Non-blocking socket connect\n");
+	RTK_LOGS(NOTAG, "\nExample: Non-blocking socket connect\n");
 
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	fcntl(server_fd, F_SETFL, fcntl(server_fd, F_GETFL, 0) | O_NONBLOCK);
@@ -42,12 +42,12 @@ static void example_nonblock_connect_thread(void *param)
 
 		// Use select to wait for non-blocking connect
 		if (select(server_fd + 1, NULL, &wfds, NULL, &time_out) == 1) {
-			printf("Server connection successful\n");
+			RTK_LOGS(NOTAG, "Server connection successful\n");
 		} else {
-			printf("Server connection failed\n");
+			RTK_LOGS(NOTAG, "Server connection failed\n");
 		}
 	} else {
-		printf("ERROR: connect\n");
+		RTK_LOGS(NOTAG, "ERROR: connect\n");
 	}
 
 	close(server_fd);
@@ -58,6 +58,6 @@ void example_nonblock_connect(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_nonblock_connect_thread"), example_nonblock_connect_thread, NULL, 1024 * 4,
 						 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

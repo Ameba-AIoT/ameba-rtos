@@ -383,18 +383,10 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 	}
 
 	/* Clk info limit check */
-	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
-		if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
-			assert_param(CpuClk <= CPU_0P9V_CLK_LMT_ACUT);
-		} else {
-			assert_param(CpuClk <= CPU_1P0V_CLK_LMT_ACUT);
-		}
+	if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
+		assert_param(CpuClk <= CPU_0P9V_CLK_LMT_BCUT);
 	} else {
-		if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
-			assert_param(CpuClk <= CPU_0P9V_CLK_LMT_BCUT);
-		} else {
-			assert_param(CpuClk <= CPU_1P0V_CLK_LMT_BCUT);
-		}
+		assert_param(CpuClk <= CPU_1P0V_CLK_LMT_BCUT);
 	}
 
 	assert_param(PsramClk <= PSRAMC_CLK_LIMIT);
@@ -590,10 +582,10 @@ void BOOT_Image1(void)
 		memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
 	}
 
-	BOOT_VerCheck();
-
 	/* enable IPC first for otp read */
 	RCC_PeriphClockCmd(APBPeriph_IPC, APBPeriph_IPC_CLOCK, ENABLE);
+
+	BOOT_VerCheck();
 
 	/* Set SOC Clock according to core voltage */
 	BOOT_SocClk_Update();

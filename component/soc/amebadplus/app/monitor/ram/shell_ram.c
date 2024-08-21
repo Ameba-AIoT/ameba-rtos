@@ -9,7 +9,6 @@
 
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include <stdarg.h>
 #include "FreeRTOS.h"
 
 #define LIB_INFO_CMD	"ATS?"

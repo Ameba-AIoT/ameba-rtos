@@ -108,7 +108,7 @@ static const char *TAG = "ETHERNET";
 #define ETHERNET_REASSEMBLE_PACKET	(0)
 
 static rtos_mutex_t mii_tx_mutex;
-static u8 TX_BUFFER[MAX_BUFFER_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));;
+static u8 TX_BUFFER[MAX_BUFFER_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 RX_BUFFER[MAX_BUFFER_SIZE];
 
 #if defined(ETHERNET_REASSEMBLE_PACKET) && ETHERNET_REASSEMBLE_PACKET
@@ -254,6 +254,26 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 	RTK_LOG_ETHERNET("%s %d \n", __func__, __LINE__);
 
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+
+#if defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII
+	(void) TX_BUFFER;
+	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
+	int sg_len = 0;
+	struct pbuf *q;
+
+	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
+		sg_list[sg_len].buf = (unsigned int) q->payload;
+		sg_list[sg_len++].len = q->len;
+	}
+
+	if (sg_len) {
+		if (rltk_mii_send(sg_list, sg_len, p->tot_len) == 0) {
+			return ERR_OK;
+		} else {
+			return ERR_BUF;    // return a non-fatal error
+		}
+	}
+#else
 	struct pbuf *q;
 	u8 *pdata = TX_BUFFER;
 	u32 size = 0;
@@ -274,6 +294,7 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 		RTK_LOG_ETHERNET("%s error = %d\n", __func__, ret);
 		return ERR_BUF;    // return a non-fatal error
 	}
+#endif
 #endif
 	return ERR_OK;
 }

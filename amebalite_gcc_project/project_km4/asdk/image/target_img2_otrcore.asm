@@ -6,7 +6,7 @@ Disassembly of section .xip_image2.text:
 
 20058060 <BOOT_InitGP>:
 20058060:	0000f197          	auipc	gp,0xf
-20058064:	90818193          	addi	gp,gp,-1784 # 20066968 <__global_pointer$>
+20058064:	92818193          	addi	gp,gp,-1752 # 20066988 <__global_pointer$>
 20058068:	8082                	c.jr	ra
 
 2005806a <set_psram_wakeup_mode>:
@@ -871,25 +871,25 @@ Disassembly of section .xip_image2.text:
 20058a02:	bdcd                	c.j	200588f4 <BOOT_WakeFromPG>
 20058a04:	40b2                	c.lwsp	ra,12(sp)
 20058a06:	0141                	c.addi	sp,16
-20058a08:	0260206f          	jal	zero,2005aa2e <BOOT_Image1>
+20058a08:	02c0206f          	jal	zero,2005aa34 <BOOT_Image1>
 
 20058a0c <app_start>:
 20058a0c:	1141                	c.addi	sp,-16
 20058a0e:	c606                	c.swsp	ra,12(sp)
 20058a10:	e50ff0ef          	jal	ra,20058060 <BOOT_InitGP>
-20058a14:	00018793          	addi	a5,gp,0 # 20066968 <__global_pointer$>
-20058a18:	e9818613          	addi	a2,gp,-360 # 20066800 <PrevIrqStatus>
+20058a14:	00018793          	addi	a5,gp,0 # 20066988 <__global_pointer$>
+20058a18:	e9818613          	addi	a2,gp,-360 # 20066820 <PrevIrqStatus>
 20058a1c:	40c78633          	sub	a2,a5,a2
 20058a20:	4581                	c.li	a1,0
-20058a22:	e9818513          	addi	a0,gp,-360 # 20066800 <PrevIrqStatus>
+20058a22:	e9818513          	addi	a0,gp,-360 # 20066820 <PrevIrqStatus>
 20058a26:	dffb1097          	auipc	ra,0xdffb1
 20058a2a:	d64080e7          	jalr	ra,-668(ra) # 978a <_memset>
 20058a2e:	200697b7          	lui	a5,0x20069
-20058a32:	01818613          	addi	a2,gp,24 # 20066980 <ipc_Semaphore>
-20058a36:	abc78793          	addi	a5,a5,-1348 # 20068abc <__bss_end__>
+20058a32:	03818613          	addi	a2,gp,56 # 200669c0 <ipc_Semaphore>
+20058a36:	afc78793          	addi	a5,a5,-1284 # 20068afc <__bss_end__>
 20058a3a:	40c78633          	sub	a2,a5,a2
 20058a3e:	4581                	c.li	a1,0
-20058a40:	01818513          	addi	a0,gp,24 # 20066980 <ipc_Semaphore>
+20058a40:	03818513          	addi	a0,gp,56 # 200669c0 <ipc_Semaphore>
 20058a44:	dffb1097          	auipc	ra,0xdffb1
 20058a48:	d46080e7          	jalr	ra,-698(ra) # 978a <_memset>
 20058a4c:	1f6060ef          	jal	ra,2005ec42 <ChipInfo_GetChipSram>
@@ -898,8 +898,8 @@ Disassembly of section .xip_image2.text:
 20058a56:	20080537          	lui	a0,0x20080
 20058a5a:	00058593          	addi	a1,a1,0 # 40000 <__ap_sram_heap_size>
 20058a5e:	00050513          	addi	a0,a0,0 # 20080000 <__ap_sram_heap_start>
-20058a62:	104020ef          	jal	ra,2005ab66 <os_heap_add>
-20058a66:	485020ef          	jal	ra,2005b6ea <rtos_mem_init>
+20058a62:	10a020ef          	jal	ra,2005ab6c <os_heap_add>
+20058a66:	48b020ef          	jal	ra,2005b6f0 <rtos_mem_init>
 20058a6a:	2005c7b7          	lui	a5,0x2005c
 20058a6e:	e8078793          	addi	a5,a5,-384 # 2005be80 <freertos_risc_v_trap_handler>
 20058a72:	9bf1                	c.andi	a5,-4
@@ -908,10 +908,10 @@ Disassembly of section .xip_image2.text:
 20058a7a:	dffae097          	auipc	ra,0xdffae
 20058a7e:	24c080e7          	jalr	ra,588(ra) # 6cc6 <SYSTIMER_Init>
 20058a82:	2db000ef          	jal	ra,2005955c <pinmap_init>
-20058a86:	11a090ef          	jal	ra,20061ba0 <__libc_init_array>
+20058a86:	122090ef          	jal	ra,20061ba8 <__libc_init_array>
 20058a8a:	40b2                	c.lwsp	ra,12(sp)
 20058a8c:	0141                	c.addi	sp,16
-20058a8e:	0a30206f          	jal	zero,2005b330 <main>
+20058a8e:	0a90206f          	jal	zero,2005b336 <main>
 
 20058a92 <_init>:
 20058a92:	8082                	c.jr	ra
@@ -922,7 +922,7 @@ Disassembly of section .xip_image2.text:
 20058a98:	dffa8097          	auipc	ra,0xdffa8
 20058a9c:	07e080e7          	jalr	ra,126(ra) # b16 <CPU_ClkGet>
 20058aa0:	40b2                	c.lwsp	ra,12(sp)
-20058aa2:	e6a1a423          	sw	a0,-408(gp) # 200667d0 <SystemCoreClock>
+20058aa2:	e6a1a423          	sw	a0,-408(gp) # 200667f0 <SystemCoreClock>
 20058aa6:	0141                	c.addi	sp,16
 20058aa8:	8082                	c.jr	ra
 
@@ -953,7 +953,7 @@ Disassembly of section .xip_image2.text:
 20058ae4 <CPU_InInterrupt>:
 20058ae4:	1141                	c.addi	sp,-16
 20058ae6:	c606                	c.swsp	ra,12(sp)
-20058ae8:	24b0d0ef          	jal	ra,20066532 <plic_get_active_irq_id>
+20058ae8:	26b0d0ef          	jal	ra,20066552 <plic_get_active_irq_id>
 20058aec:	40b2                	c.lwsp	ra,12(sp)
 20058aee:	00a03533          	sltu	a0,zero,a0
 20058af2:	0141                	c.addi	sp,16
@@ -969,9 +969,9 @@ Disassembly of section .xip_image2.text:
 20058b02:	8082                	c.jr	ra
 
 20058b04 <flash_get_layout_info>:
-20058b04:	c1818693          	addi	a3,gp,-1000 # 20066580 <Flash_Layout>
+20058b04:	c1818693          	addi	a3,gp,-1000 # 200665a0 <Flash_Layout>
 20058b08:	4701                	c.li	a4,0
-20058b0a:	c1818793          	addi	a5,gp,-1000 # 20066580 <Flash_Layout>
+20058b0a:	c1818793          	addi	a5,gp,-1000 # 200665a0 <Flash_Layout>
 20058b0e:	0ff00893          	addi	a7,zero,255
 20058b12:	0006a803          	lw	a6,0(a3)
 20058b16:	01181363          	bne	a6,a7,20058b1c <flash_get_layout_info+0x18>
@@ -998,7 +998,7 @@ Disassembly of section .xip_image2.text:
 20058b44:	1141                	c.addi	sp,-16
 20058b46:	c606                	c.swsp	ra,12(sp)
 20058b48:	377d                	c.jal	20058af6 <irq_disable_save>
-20058b4a:	e8a1ac23          	sw	a0,-360(gp) # 20066800 <PrevIrqStatus>
+20058b4a:	e8a1ac23          	sw	a0,-360(gp) # 20066820 <PrevIrqStatus>
 20058b4e:	55fd                	c.li	a1,-1
 20058b50:	4505                	c.li	a0,1
 20058b52:	25c1                	c.jal	20059212 <IPC_SEMTake>
@@ -1014,7 +1014,7 @@ Disassembly of section .xip_image2.text:
 20058b62:	79e000ef          	jal	ra,20059300 <IPC_SEMFree>
 20058b66:	dd6d                	c.beqz	a0,20058b60 <FLASH_Write_Unlock+0x4>
 20058b68:	40b2                	c.lwsp	ra,12(sp)
-20058b6a:	e981a503          	lw	a0,-360(gp) # 20066800 <PrevIrqStatus>
+20058b6a:	e981a503          	lw	a0,-360(gp) # 20066820 <PrevIrqStatus>
 20058b6e:	0141                	c.addi	sp,16
 20058b70:	b779                	c.j	20058afe <irq_enable_restore>
 
@@ -1030,7 +1030,7 @@ Disassembly of section .xip_image2.text:
 20058b82:	ea09                	c.bnez	a2,20058b94 <FLASH_ReadStream+0x22>
 20058b84:	20062537          	lui	a0,0x20062
 20058b88:	0c200593          	addi	a1,zero,194
-20058b8c:	00850513          	addi	a0,a0,8 # 20062008 <strtol+0xe>
+20058b8c:	01050513          	addi	a0,a0,16 # 20062010 <strtol+0xe>
 20058b90:	51d060ef          	jal	ra,2005f8ac <io_assert_failed>
 20058b94:	3f45                	c.jal	20058b44 <FLASH_Write_Lock>
 20058b96:	080005b7          	lui	a1,0x8000
@@ -1078,7 +1078,7 @@ Disassembly of section .xip_image2.text:
 20058bfa:	4b85                	c.li	s7,1
 20058bfc:	864e                	c.mv	a2,s3
 20058bfe:	85d6                	c.mv	a1,s5
-20058c00:	5720d0ef          	jal	ra,20066172 <FLASH_TxData>
+20058c00:	5920d0ef          	jal	ra,20066192 <FLASH_TxData>
 20058c04:	1a7d                	c.addi	s4,-1
 20058c06:	99d6                	c.add	s3,s5
 20058c08:	87da                	c.mv	a5,s6
@@ -1148,7 +1148,7 @@ Disassembly of section .xip_image2.text:
 20058caa:	3d69                	c.jal	20058b44 <FLASH_Write_Lock>
 20058cac:	85a2                	c.mv	a1,s0
 20058cae:	8526                	c.mv	a0,s1
-20058cb0:	6bc0d0ef          	jal	ra,2006636c <FLASH_Erase>
+20058cb0:	6dc0d0ef          	jal	ra,2006638c <FLASH_Erase>
 20058cb4:	4789                	c.li	a5,2
 20058cb6:	04f49f63          	bne	s1,a5,20058d14 <FLASH_EraseXIP+0x76>
 20058cba:	7c1027f3          	csrrs	a5,0x7c1,zero
@@ -1224,8 +1224,8 @@ Disassembly of section .xip_image2.text:
 20058d7a:	ce6e                	c.swsp	s11,28(sp)
 20058d7c:	200654b7          	lui	s1,0x20065
 20058d80:	20065db7          	lui	s11,0x20065
-20058d84:	c8cd8793          	addi	a5,s11,-884 # 20064c8c <ipc_tickless_table>
-20058d88:	d3448493          	addi	s1,s1,-716 # 20064d34 <lib_pmc_git_rev>
+20058d84:	c94d8793          	addi	a5,s11,-876 # 20064c94 <ipc_tickless_table>
+20058d88:	d3c48493          	addi	s1,s1,-708 # 20064d3c <lib_pmc_git_rev>
 20058d8c:	8c9d                	c.sub	s1,a5
 20058d8e:	47f1                	c.li	a5,28
 20058d90:	02f4d4b3          	divu	s1,s1,a5
@@ -1242,7 +1242,7 @@ Disassembly of section .xip_image2.text:
 20058daa:	d06a                	c.swsp	s10,32(sp)
 20058dac:	c686                	c.swsp	ra,76(sp)
 20058dae:	842a                	c.mv	s0,a0
-20058db0:	c8cd8d93          	addi	s11,s11,-884
+20058db0:	c94d8d93          	addi	s11,s11,-876
 20058db4:	4901                	c.li	s2,0
 20058db6:	4985                	c.li	s3,1
 20058db8:	4a89                	c.li	s5,2
@@ -1303,13 +1303,13 @@ Disassembly of section .xip_image2.text:
 20058e4e:	8ee9                	c.and	a3,a0
 20058e50:	ca8d                	c.beqz	a3,20058e82 <ipc_table_init+0x10c>
 20058e52:	228b2703          	lw	a4,552(s6) # 4100c228 <__km4_bd_boot_download_addr__+0x10ffa228>
-20058e56:	0b0b8693          	addi	a3,s7,176 # 200620b0 <strtol+0xb6>
+20058e56:	0b8b8693          	addi	a3,s7,184 # 200620b8 <strtol+0xb6>
 20058e5a:	04900613          	addi	a2,zero,73
 20058e5e:	8319                	c.srli	a4,0x6
 20058e60:	8b0d                	c.andi	a4,3
-20058e62:	0f8c0593          	addi	a1,s8,248 # 200620f8 <strtol+0xfe>
+20058e62:	100c0593          	addi	a1,s8,256 # 20062100 <strtol+0xfe>
 20058e66:	4511                	c.li	a0,4
-20058e68:	320020ef          	jal	ra,2005b188 <rtk_log_write>
+20058e68:	326020ef          	jal	ra,2005b18e <rtk_log_write>
 20058e6c:	0905                	c.addi	s2,1
 20058e6e:	0df1                	c.addi	s11,28
 20058e70:	bfb9                	c.j	20058dce <ipc_table_init+0x58>
@@ -1348,14 +1348,14 @@ Disassembly of section .xip_image2.text:
 20058ec4:	0ff47593          	andi	a1,s0,255
 20058ec8:	2c59                	c.jal	2005915e <IPC_INTConfig>
 20058eca:	040a                	c.slli	s0,0x2
-20058ecc:	01818613          	addi	a2,gp,24 # 20066980 <ipc_Semaphore>
+20058ecc:	03818613          	addi	a2,gp,56 # 200669c0 <ipc_Semaphore>
 20058ed0:	9432                	c.add	s0,a2
 20058ed2:	4008                	c.lw	a0,0(s0)
 20058ed4:	c511                	c.beqz	a0,20058ee0 <IPC_TXHandler+0x34>
 20058ed6:	4422                	c.lwsp	s0,8(sp)
 20058ed8:	40b2                	c.lwsp	ra,12(sp)
 20058eda:	0141                	c.addi	sp,16
-20058edc:	28d0206f          	jal	zero,2005b968 <rtos_sema_give>
+20058edc:	2930206f          	jal	zero,2005b96e <rtos_sema_give>
 20058ee0:	40b2                	c.lwsp	ra,12(sp)
 20058ee2:	4422                	c.lwsp	s0,8(sp)
 20058ee4:	0141                	c.addi	sp,16
@@ -1375,7 +1375,7 @@ Disassembly of section .xip_image2.text:
 20058f04:	fb75                	c.bnez	a4,20058ef8 <IPC_wait_idle_NonOS+0x10>
 20058f06:	20062537          	lui	a0,0x20062
 20058f0a:	1141                	c.addi	sp,-16
-20058f0c:	0fc50513          	addi	a0,a0,252 # 200620fc <strtol+0x102>
+20058f0c:	10450513          	addi	a0,a0,260 # 20062104 <strtol+0x102>
 20058f10:	c606                	c.swsp	ra,12(sp)
 20058f12:	494060ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 20058f16:	40b2                	c.lwsp	ra,12(sp)
@@ -1396,16 +1396,16 @@ Disassembly of section .xip_image2.text:
 20058f30:	3e55                	c.jal	20058ae4 <CPU_InInterrupt>
 20058f32:	ed15                	c.bnez	a0,20058f6e <IPC_wait_idle+0x50>
 20058f34:	00291993          	slli	s3,s2,0x2
-20058f38:	0d818713          	addi	a4,gp,216 # 20066a40 <IPC_IrqHandler>
+20058f38:	0f818713          	addi	a4,gp,248 # 20066a80 <IPC_IrqHandler>
 20058f3c:	974e                	c.add	a4,s3
 20058f3e:	431c                	c.lw	a5,0(a4)
 20058f40:	c79d                	c.beqz	a5,20058f6e <IPC_wait_idle+0x50>
-20058f42:	01818513          	addi	a0,gp,24 # 20066980 <ipc_Semaphore>
+20058f42:	03818513          	addi	a0,gp,56 # 200669c0 <ipc_Semaphore>
 20058f46:	954e                	c.add	a0,s3
 20058f48:	4118                	c.lw	a4,0(a0)
-20058f4a:	01818413          	addi	s0,gp,24 # 20066980 <ipc_Semaphore>
+20058f4a:	03818413          	addi	s0,gp,56 # 200669c0 <ipc_Semaphore>
 20058f4e:	e319                	c.bnez	a4,20058f54 <IPC_wait_idle+0x36>
-20058f50:	18d020ef          	jal	ra,2005b8dc <rtos_sema_create_binary>
+20058f50:	193020ef          	jal	ra,2005b8e2 <rtos_sema_create_binary>
 20058f54:	0ff97a13          	andi	s4,s2,255
 20058f58:	85d2                	c.mv	a1,s4
 20058f5a:	8526                	c.mv	a0,s1
@@ -1414,7 +1414,7 @@ Disassembly of section .xip_image2.text:
 20058f60:	013407b3          	add	a5,s0,s3
 20058f64:	4388                	c.lw	a0,0(a5)
 20058f66:	55fd                	c.li	a1,-1
-20058f68:	1b5020ef          	jal	ra,2005b91c <rtos_sema_take>
+20058f68:	1bb020ef          	jal	ra,2005b922 <rtos_sema_take>
 20058f6c:	e919                	c.bnez	a0,20058f82 <IPC_wait_idle+0x64>
 20058f6e:	4462                	c.lwsp	s0,24(sp)
 20058f70:	40f2                	c.lwsp	ra,28(sp)
@@ -1427,7 +1427,7 @@ Disassembly of section .xip_image2.text:
 20058f7e:	6105                	c.addi16sp	sp,32
 20058f80:	b7a5                	c.j	20058ee8 <IPC_wait_idle_NonOS>
 20058f82:	20062537          	lui	a0,0x20062
-20058f86:	11450513          	addi	a0,a0,276 # 20062114 <strtol+0x11a>
+20058f86:	11c50513          	addi	a0,a0,284 # 2006211c <strtol+0x11a>
 20058f8a:	41c060ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 20058f8e:	8526                	c.mv	a0,s1
 20058f90:	85d2                	c.mv	a1,s4
@@ -1462,22 +1462,22 @@ Disassembly of section .xip_image2.text:
 20058fca:	00f77a63          	bgeu	a4,a5,20058fde <ipc_send_message+0x36>
 20058fce:	20062537          	lui	a0,0x20062
 20058fd2:	0ac00593          	addi	a1,zero,172
-20058fd6:	13450513          	addi	a0,a0,308 # 20062134 <strtol+0x13a>
+20058fd6:	13c50513          	addi	a0,a0,316 # 2006213c <strtol+0x13a>
 20058fda:	0d3060ef          	jal	ra,2005f8ac <io_assert_failed>
 20058fde:	479d                	c.li	a5,7
 20058fe0:	0157fa63          	bgeu	a5,s5,20058ff4 <ipc_send_message+0x4c>
 20058fe4:	20062537          	lui	a0,0x20062
 20058fe8:	0ad00593          	addi	a1,zero,173
-20058fec:	13450513          	addi	a0,a0,308 # 20062134 <strtol+0x13a>
+20058fec:	13c50513          	addi	a0,a0,316 # 2006213c <strtol+0x13a>
 20058ff0:	0bd060ef          	jal	ra,2005f8ac <io_assert_failed>
 20058ff4:	02100793          	addi	a5,zero,33
 20058ff8:	0d37eb63          	bltu	a5,s3,200590ce <ipc_send_message+0x126>
 20058ffc:	200627b7          	lui	a5,0x20062
-20059000:	20878793          	addi	a5,a5,520 # 20062208 <CSWTCH.29>
+20059000:	21078793          	addi	a5,a5,528 # 20062210 <CSWTCH.29>
 20059004:	97ce                	c.add	a5,s3
 20059006:	20062737          	lui	a4,0x20062
 2005900a:	0007c583          	lbu	a1,0(a5)
-2005900e:	22c70713          	addi	a4,a4,556 # 2006222c <CSWTCH.30>
+2005900e:	23470713          	addi	a4,a4,564 # 20062234 <CSWTCH.30>
 20059012:	00299793          	slli	a5,s3,0x2
 20059016:	97ba                	c.add	a5,a4
 20059018:	4384                	c.lw	s1,0(a5)
@@ -1495,7 +1495,7 @@ Disassembly of section .xip_image2.text:
 20059032:	20062537          	lui	a0,0x20062
 20059036:	8622                	c.mv	a2,s0
 20059038:	85ce                	c.mv	a1,s3
-2005903a:	1dc50513          	addi	a0,a0,476 # 200621dc <strtol+0x1e2>
+2005903a:	1e450513          	addi	a0,a0,484 # 200621e4 <strtol+0x1e2>
 2005903e:	368060ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 20059042:	080a0163          	beq	s4,zero,200590c4 <ipc_send_message+0x11c>
 20059046:	0039d793          	srli	a5,s3,0x3
@@ -1637,8 +1637,8 @@ Disassembly of section .xip_image2.text:
 20059190:	ca56                	c.swsp	s5,20(sp)
 20059192:	00852a83          	lw	s5,8(a0)
 20059196:	89aa                	c.mv	s3,a0
-20059198:	05818913          	addi	s2,gp,88 # 200669c0 <IPC_IrqData>
-2005919c:	0d818493          	addi	s1,gp,216 # 20066a40 <IPC_IrqHandler>
+20059198:	07818913          	addi	s2,gp,120 # 20066a00 <IPC_IrqData>
+2005919c:	0f818493          	addi	s1,gp,248 # 20066a80 <IPC_IrqHandler>
 200591a0:	4401                	c.li	s0,0
 200591a2:	4b85                	c.li	s7,1
 200591a4:	02000b13          	addi	s6,zero,32
@@ -1672,10 +1672,10 @@ Disassembly of section .xip_image2.text:
 200591e6 <IPC_INTUserHandler>:
 200591e6:	c60d                	c.beqz	a2,20059210 <IPC_INTUserHandler+0x2a>
 200591e8:	00259793          	slli	a5,a1,0x2
-200591ec:	0d818713          	addi	a4,gp,216 # 20066a40 <IPC_IrqHandler>
+200591ec:	0f818713          	addi	a4,gp,248 # 20066a80 <IPC_IrqHandler>
 200591f0:	883e                	c.mv	a6,a5
 200591f2:	973e                	c.add	a4,a5
-200591f4:	05818793          	addi	a5,gp,88 # 200669c0 <IPC_IrqData>
+200591f4:	07818793          	addi	a5,gp,120 # 20066a00 <IPC_IrqData>
 200591f8:	97c2                	c.add	a5,a6
 200591fa:	c394                	c.sw	a3,0(a5)
 200591fc:	c310                	c.sw	a2,0(a4)
@@ -1699,16 +1699,16 @@ Disassembly of section .xip_image2.text:
 20059220:	ca56                	c.swsp	s5,20(sp)
 20059222:	4100c7b7          	lui	a5,0x4100c
 20059226:	2287aa03          	lw	s4,552(a5) # 4100c228 <__km4_bd_boot_download_addr__+0x10ffa228>
-2005922a:	e6c18793          	addi	a5,gp,-404 # 200667d4 <PXID_Idx>
+2005922a:	e6c18793          	addi	a5,gp,-404 # 200667f4 <PXID_Idx>
 2005922e:	97aa                	c.add	a5,a0
 20059230:	0007c783          	lbu	a5,0(a5)
 20059234:	892a                	c.mv	s2,a0
 20059236:	842e                	c.mv	s0,a1
-20059238:	e6c18493          	addi	s1,gp,-404 # 200667d4 <PXID_Idx>
+20059238:	e6c18493          	addi	s1,gp,-404 # 200667f4 <PXID_Idx>
 2005923c:	eb89                	c.bnez	a5,2005924e <IPC_SEMTake+0x3c>
 2005923e:	20062537          	lui	a0,0x20062
 20059242:	0bf00593          	addi	a1,zero,191
-20059246:	2b450513          	addi	a0,a0,692 # 200622b4 <CSWTCH.30+0x88>
+20059246:	2bc50513          	addi	a0,a0,700 # 200622bc <CSWTCH.30+0x88>
 2005924a:	662060ef          	jal	ra,2005f8ac <io_assert_failed>
 2005924e:	00291793          	slli	a5,s2,0x2
 20059252:	410209b7          	lui	s3,0x41020
@@ -1718,7 +1718,7 @@ Disassembly of section .xip_image2.text:
 2005925e:	8b8d                	c.andi	a5,3
 20059260:	cb89                	c.beqz	a5,20059272 <IPC_SEMTake+0x60>
 20059262:	c42d                	c.beqz	s0,200592cc <IPC_SEMTake+0xba>
-20059264:	e9c1a783          	lw	a5,-356(gp) # 20066804 <ipc_delay>
+20059264:	e9c1a783          	lw	a5,-356(gp) # 20066824 <ipc_delay>
 20059268:	c399                	c.beqz	a5,2005926e <IPC_SEMTake+0x5c>
 2005926a:	4505                	c.li	a0,1
 2005926c:	9782                	c.jalr	a5
@@ -1747,7 +1747,7 @@ Disassembly of section .xip_image2.text:
 200592b4:	20062537          	lui	a0,0x20062
 200592b8:	177d                	c.addi	a4,-1
 200592ba:	864a                	c.mv	a2,s2
-200592bc:	35c50513          	addi	a0,a0,860 # 2006235c <CSWTCH.30+0x130>
+200592bc:	36450513          	addi	a0,a0,868 # 20062364 <CSWTCH.30+0x130>
 200592c0:	0e6060ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 200592c4:	8522                	c.mv	a0,s0
 200592c6:	839ff0ef          	jal	ra,20058afe <irq_enable_restore>
@@ -1790,14 +1790,14 @@ Disassembly of section .xip_image2.text:
 20059320:	00158513          	addi	a0,a1,1
 20059324:	02e50663          	beq	a0,a4,20059350 <IPC_SEMFree+0x50>
 20059328:	1141                	c.addi	sp,-16
-2005932a:	e6c18693          	addi	a3,gp,-404 # 200667d4 <PXID_Idx>
+2005932a:	e6c18693          	addi	a3,gp,-404 # 200667f4 <PXID_Idx>
 2005932e:	c606                	c.swsp	ra,12(sp)
 20059330:	96b2                	c.add	a3,a2
 20059332:	0006c683          	lbu	a3,0(a3) # 41020000 <__km4_bd_boot_download_addr__+0x1100e000>
 20059336:	20062537          	lui	a0,0x20062
 2005933a:	0ff7f793          	andi	a5,a5,255
 2005933e:	177d                	c.addi	a4,-1
-20059340:	3a850513          	addi	a0,a0,936 # 200623a8 <CSWTCH.30+0x17c>
+20059340:	3b050513          	addi	a0,a0,944 # 200623b0 <CSWTCH.30+0x17c>
 20059344:	062060ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 20059348:	40b2                	c.lwsp	ra,12(sp)
 2005934a:	4501                	c.li	a0,0
@@ -1812,7 +1812,7 @@ Disassembly of section .xip_image2.text:
 2005935e:	8082                	c.jr	ra
 
 20059360 <IPC_SEMDelayStub>:
-20059360:	e8a1ae23          	sw	a0,-356(gp) # 20066804 <ipc_delay>
+20059360:	e8a1ae23          	sw	a0,-356(gp) # 20066824 <ipc_delay>
 20059364:	8082                	c.jr	ra
 
 20059366 <IPC_GetDevById>:
@@ -1820,7 +1820,7 @@ Disassembly of section .xip_image2.text:
 20059368:	02a7f163          	bgeu	a5,a0,2005938a <IPC_GetDevById+0x24>
 2005936c:	20062537          	lui	a0,0x20062
 20059370:	1141                	c.addi	sp,-16
-20059372:	2b450513          	addi	a0,a0,692 # 200622b4 <CSWTCH.30+0x88>
+20059372:	2bc50513          	addi	a0,a0,700 # 200622bc <CSWTCH.30+0x88>
 20059376:	11b00593          	addi	a1,zero,283
 2005937a:	c606                	c.swsp	ra,12(sp)
 2005937c:	530060ef          	jal	ra,2005f8ac <io_assert_failed>
@@ -1862,14 +1862,14 @@ Disassembly of section .xip_image2.text:
 200593dc:	97ba                	c.add	a5,a4
 200593de:	1087a403          	lw	s0,264(a5)
 200593e2:	00351993          	slli	s3,a0,0x3
-200593e6:	15818793          	addi	a5,gp,344 # 20066ac0 <IMG_ADDR>
+200593e6:	17818793          	addi	a5,gp,376 # 20066b00 <IMG_ADDR>
 200593ea:	97ce                	c.add	a5,s3
 200593ec:	439c                	c.lw	a5,0(a5)
 200593ee:	892a                	c.mv	s2,a0
-200593f0:	15818493          	addi	s1,gp,344 # 20066ac0 <IMG_ADDR>
+200593f0:	17818493          	addi	s1,gp,376 # 20066b00 <IMG_ADDR>
 200593f4:	e7a9                	c.bnez	a5,2005943e <ota_get_cur_index+0x7c>
 200593f6:	4601                	c.li	a2,0
-200593f8:	15818593          	addi	a1,gp,344 # 20066ac0 <IMG_ADDR>
+200593f8:	17818593          	addi	a1,gp,376 # 20066b00 <IMG_ADDR>
 200593fc:	4501                	c.li	a0,0
 200593fe:	f06ff0ef          	jal	ra,20058b04 <flash_get_layout_info>
 20059402:	4601                	c.li	a2,0
@@ -1971,7 +1971,7 @@ Disassembly of section .xip_image2.text:
 200594f4:	20062537          	lui	a0,0x20062
 200594f8:	00f90023          	sb	a5,0(s2)
 200594fc:	85a6                	c.mv	a1,s1
-200594fe:	41050513          	addi	a0,a0,1040 # 20062410 <CSWTCH.30+0x1e4>
+200594fe:	41850513          	addi	a0,a0,1048 # 20062418 <CSWTCH.30+0x1e4>
 20059502:	6a5050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 20059506:	4401                	c.li	s0,0
 20059508:	a089                	c.j	2005954a <OTP_Read8+0xae>
@@ -1988,7 +1988,7 @@ Disassembly of section .xip_image2.text:
 20059520:	4a92                	c.lwsp	s5,4(sp)
 20059522:	6105                	c.addi16sp	sp,32
 20059524:	8082                	c.jr	ra
-20059526:	3f4a0513          	addi	a0,s4,1012 # 200623f4 <CSWTCH.30+0x1c8>
+20059526:	3fca0513          	addi	a0,s4,1020 # 200623fc <CSWTCH.30+0x1c8>
 2005952a:	67d050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005952e:	bf41                	c.j	200594be <OTP_Read8+0x22>
 20059530:	4515                	c.li	a0,5
@@ -2026,7 +2026,7 @@ Disassembly of section .xip_image2.text:
 2005957e:	6941                	c.lui	s2,0x10
 20059580:	c03a                	c.swsp	a4,0(sp)
 20059582:	4798                	c.lw	a4,8(a5)
-20059584:	42448493          	addi	s1,s1,1060 # 20062424 <pmap_func>
+20059584:	42c48493          	addi	s1,s1,1068 # 2006242c <pmap_func>
 20059588:	197d                	c.addi	s2,-1
 2005958a:	c43a                	c.swsp	a4,8(sp)
 2005958c:	43d8                	c.lw	a4,4(a5)
@@ -2184,10 +2184,10 @@ Disassembly of section .xip_image2.text:
 2005971a <pmu_set_sysactive_time>:
 2005971a:	1141                	c.addi	sp,-16
 2005971c:	c226                	c.swsp	s1,4(sp)
-2005971e:	ea81a483          	lw	s1,-344(gp) # 20066810 <sysactive_timeout_flag>
+2005971e:	ea81a483          	lw	s1,-344(gp) # 20066830 <sysactive_timeout_flag>
 20059722:	c422                	c.swsp	s0,8(sp)
 20059724:	c606                	c.swsp	ra,12(sp)
-20059726:	eac18693          	addi	a3,gp,-340 # 20066814 <sysactive_timeout_temp>
+20059726:	eac18693          	addi	a3,gp,-340 # 20066834 <sysactive_timeout_temp>
 2005972a:	4298                	c.lw	a4,0(a3)
 2005972c:	842a                	c.mv	s0,a0
 2005972e:	c899                	c.beqz	s1,20059744 <pmu_set_sysactive_time+0x2a>
@@ -2200,15 +2200,15 @@ Disassembly of section .xip_image2.text:
 2005973e:	4492                	c.lwsp	s1,4(sp)
 20059740:	0141                	c.addi	sp,16
 20059742:	8082                	c.jr	ra
-20059744:	eac18793          	addi	a5,gp,-340 # 20066814 <sysactive_timeout_temp>
+20059744:	eac18793          	addi	a5,gp,-340 # 20066834 <sysactive_timeout_temp>
 20059748:	00e57363          	bgeu	a0,a4,2005974e <pmu_set_sysactive_time+0x34>
 2005974c:	843a                	c.mv	s0,a4
 2005974e:	0007a023          	sw	zero,0(a5)
-20059752:	4da020ef          	jal	ra,2005bc2c <rtos_time_get_current_system_time_ms>
-20059756:	ea41a783          	lw	a5,-348(gp) # 2006680c <sleepwakelock_timeout>
+20059752:	4e0020ef          	jal	ra,2005bc32 <rtos_time_get_current_system_time_ms>
+20059756:	ea41a783          	lw	a5,-348(gp) # 2006682c <sleepwakelock_timeout>
 2005975a:	800006b7          	lui	a3,0x80000
 2005975e:	942a                	c.add	s0,a0
-20059760:	ea418713          	addi	a4,gp,-348 # 2006680c <sleepwakelock_timeout>
+20059760:	ea418713          	addi	a4,gp,-348 # 2006682c <sleepwakelock_timeout>
 20059764:	ffe6c693          	xori	a3,a3,-2
 20059768:	0087f863          	bgeu	a5,s0,20059778 <pmu_set_sysactive_time+0x5e>
 2005976c:	40f407b3          	sub	a5,s0,a5
@@ -2237,17 +2237,17 @@ Disassembly of section .xip_image2.text:
 200597a0:	00a7fa63          	bgeu	a5,a0,200597b4 <pmu_register_sleep_callback+0x2e>
 200597a4:	20062537          	lui	a0,0x20062
 200597a8:	07300593          	addi	a1,zero,115
-200597ac:	52450513          	addi	a0,a0,1316 # 20062524 <pmap_func+0x100>
+200597ac:	52c50513          	addi	a0,a0,1324 # 2006252c <pmap_func+0x100>
 200597b0:	0fc060ef          	jal	ra,2005f8ac <io_assert_failed>
 200597b4:	00091b63          	bne	s2,zero,200597ca <pmu_register_sleep_callback+0x44>
 200597b8:	e889                	c.bnez	s1,200597ca <pmu_register_sleep_callback+0x44>
 200597ba:	20062537          	lui	a0,0x20062
 200597be:	07400593          	addi	a1,zero,116
-200597c2:	52450513          	addi	a0,a0,1316 # 20062524 <pmap_func+0x100>
+200597c2:	52c50513          	addi	a0,a0,1324 # 2006252c <pmap_func+0x100>
 200597c6:	0e6060ef          	jal	ra,2005f8ac <io_assert_failed>
 200597ca:	47d1                	c.li	a5,20
 200597cc:	02f40733          	mul	a4,s0,a5
-200597d0:	17018793          	addi	a5,gp,368 # 20066ad8 <gPsmDdHookInfo>
+200597d0:	19018793          	addi	a5,gp,400 # 20066b18 <gPsmDdHookInfo>
 200597d4:	97ba                	c.add	a5,a4
 200597d6:	c380                	c.sw	s0,0(a5)
 200597d8:	0127a223          	sw	s2,4(a5)
@@ -2264,14 +2264,14 @@ Disassembly of section .xip_image2.text:
 200597f4:	8082                	c.jr	ra
 
 200597f6 <pmu_yield_os_check>:
-200597f6:	e701a503          	lw	a0,-400(gp) # 200667d8 <system_can_yield>
+200597f6:	e701a503          	lw	a0,-400(gp) # 200667f8 <system_can_yield>
 200597fa:	8082                	c.jr	ra
 
 200597fc <pmu_ready_to_sleep>:
 200597fc:	1141                	c.addi	sp,-16
 200597fe:	c606                	c.swsp	ra,12(sp)
-20059800:	42c020ef          	jal	ra,2005bc2c <rtos_time_get_current_system_time_ms>
-20059804:	ea41a703          	lw	a4,-348(gp) # 2006680c <sleepwakelock_timeout>
+20059800:	432020ef          	jal	ra,2005bc32 <rtos_time_get_current_system_time_ms>
+20059804:	ea41a703          	lw	a4,-348(gp) # 2006682c <sleepwakelock_timeout>
 20059808:	800006b7          	lui	a3,0x80000
 2005980c:	87aa                	c.mv	a5,a0
 2005980e:	ffe6c693          	xori	a3,a3,-2
@@ -2280,7 +2280,7 @@ Disassembly of section .xip_image2.text:
 2005981a:	4501                	c.li	a0,0
 2005981c:	02f6e063          	bltu	a3,a5,2005983c <pmu_ready_to_sleep+0x40>
 20059820:	3679                	c.jal	200593ae <dsp_status_on>
-20059822:	e741a783          	lw	a5,-396(gp) # 200667dc <wakelock>
+20059822:	e741a783          	lw	a5,-396(gp) # 200667fc <wakelock>
 20059826:	8d5d                	c.or	a0,a5
 20059828:	00153513          	sltiu	a0,a0,1
 2005982c:	a801                	c.j	2005983c <pmu_ready_to_sleep+0x40>
@@ -2298,7 +2298,7 @@ Disassembly of section .xip_image2.text:
 20059846:	c606                	c.swsp	ra,12(sp)
 20059848:	842a                	c.mv	s0,a0
 2005984a:	aacff0ef          	jal	ra,20058af6 <irq_disable_save>
-2005984e:	e7418713          	addi	a4,gp,-396 # 200667dc <wakelock>
+2005984e:	e7418713          	addi	a4,gp,-396 # 200667fc <wakelock>
 20059852:	4314                	c.lw	a3,0(a4)
 20059854:	4785                	c.li	a5,1
 20059856:	008797b3          	sll	a5,a5,s0
@@ -2315,7 +2315,7 @@ Disassembly of section .xip_image2.text:
 2005986c:	c606                	c.swsp	ra,12(sp)
 2005986e:	842a                	c.mv	s0,a0
 20059870:	a86ff0ef          	jal	ra,20058af6 <irq_disable_save>
-20059874:	e7418713          	addi	a4,gp,-396 # 200667dc <wakelock>
+20059874:	e7418713          	addi	a4,gp,-396 # 200667fc <wakelock>
 20059878:	4314                	c.lw	a3,0(a4)
 2005987a:	4785                	c.li	a5,1
 2005987c:	008797b3          	sll	a5,a5,s0
@@ -2406,7 +2406,7 @@ Disassembly of section .xip_image2.text:
 20059944:	4791                	c.li	a5,4
 20059946:	ca3e                	c.swsp	a5,20(sp)
 20059948:	000d0b13          	addi	s6,s10,0 # 60000000 <__km4_bd_psram_start__>
-2005994c:	5bcc0793          	addi	a5,s8,1468 # 200625bc <pmap_func+0x198>
+2005994c:	5c4c0793          	addi	a5,s8,1476 # 200625c4 <pmap_func+0x198>
 20059950:	00050cb7          	lui	s9,0x50
 20059954:	d03e                	c.swsp	a5,32(sp)
 20059956:	019b07b3          	add	a5,s6,s9
@@ -2415,7 +2415,7 @@ Disassembly of section .xip_image2.text:
 2005995e:	5afd                	c.li	s5,-1
 20059960:	54fd                	c.li	s1,-1
 20059962:	4a05                	c.li	s4,1
-20059964:	c8418b93          	addi	s7,gp,-892 # 200665ec <PSRAM_CALIB_PATTERN>
+20059964:	c8418b93          	addi	s7,gp,-892 # 2006660c <PSRAM_CALIB_PATTERN>
 20059968:	ce3e                	c.swsp	a5,28(sp)
 2005996a:	47e2                	c.lwsp	a5,24(sp)
 2005996c:	cf91                	c.beqz	a5,20059988 <PSRAM_calibration+0xf6>
@@ -2424,9 +2424,9 @@ Disassembly of section .xip_image2.text:
 20059974:	8752                	c.mv	a4,s4
 20059976:	20078693          	addi	a3,a5,512 # 10000200 <__km4_boot_text_start__+0x8001e0>
 2005997a:	04900613          	addi	a2,zero,73
-2005997e:	5d058593          	addi	a1,a1,1488 # 200625d0 <pmap_func+0x1ac>
+2005997e:	5d858593          	addi	a1,a1,1496 # 200625d8 <pmap_func+0x1ac>
 20059982:	4511                	c.li	a0,4
-20059984:	005010ef          	jal	ra,2005b188 <rtk_log_write>
+20059984:	00b010ef          	jal	ra,2005b18e <rtk_log_write>
 20059988:	57a2                	c.lwsp	a5,40(sp)
 2005998a:	01ca1d93          	slli	s11,s4,0x1c
 2005998e:	5ffd                	c.li	t6,-1
@@ -2521,9 +2521,9 @@ Disassembly of section .xip_image2.text:
 20059a90:	c03e                	c.swsp	a5,0(sp)
 20059a92:	57e2                	c.lwsp	a5,56(sp)
 20059a94:	04900613          	addi	a2,zero,73
-20059a98:	5d058593          	addi	a1,a1,1488 # 200625d0 <pmap_func+0x1ac>
+20059a98:	5d858593          	addi	a1,a1,1496 # 200625d8 <pmap_func+0x1ac>
 20059a9c:	4511                	c.li	a0,4
-20059a9e:	6ea010ef          	jal	ra,2005b188 <rtk_log_write>
+20059a9e:	6f0010ef          	jal	ra,2005b18e <rtk_log_write>
 20059aa2:	57fd                	c.li	a5,-1
 20059aa4:	00fc9363          	bne	s9,a5,20059aaa <PSRAM_calibration+0x218>
 20059aa8:	8cee                	c.mv	s9,s11
@@ -2550,11 +2550,11 @@ Disassembly of section .xip_image2.text:
 20059ae2:	884e                	c.mv	a6,s3
 20059ae4:	87d6                	c.mv	a5,s5
 20059ae6:	8726                	c.mv	a4,s1
-20059ae8:	81468693          	addi	a3,a3,-2028 # 20062814 <pmap_func+0x3f0>
+20059ae8:	81c68693          	addi	a3,a3,-2020 # 2006281c <pmap_func+0x3f0>
 20059aec:	04900613          	addi	a2,zero,73
-20059af0:	5d058593          	addi	a1,a1,1488 # 200625d0 <pmap_func+0x1ac>
+20059af0:	5d858593          	addi	a1,a1,1496 # 200625d8 <pmap_func+0x1ac>
 20059af4:	4511                	c.li	a0,4
-20059af6:	692010ef          	jal	ra,2005b188 <rtk_log_write>
+20059af6:	698010ef          	jal	ra,2005b18e <rtk_log_write>
 20059afa:	7c1027f3          	csrrs	a5,0x7c1,zero
 20059afe:	1007f793          	andi	a5,a5,256
 20059b02:	e7b1                	c.bnez	a5,20059b4e <PSRAM_calibration+0x2bc>
@@ -2642,14 +2642,14 @@ Disassembly of section .xip_image2.text:
 20059bce:	c23e                	c.swsp	a5,4(sp)
 20059bd0:	4796                	c.lwsp	a5,68(sp)
 20059bd2:	876e                	c.mv	a4,s11
-20059bd4:	7f068693          	addi	a3,a3,2032 # 200627f0 <pmap_func+0x3cc>
+20059bd4:	7f868693          	addi	a3,a3,2040 # 200627f8 <pmap_func+0x3cc>
 20059bd8:	c03e                	c.swsp	a5,0(sp)
 20059bda:	57e2                	c.lwsp	a5,56(sp)
 20059bdc:	04900613          	addi	a2,zero,73
-20059be0:	5d058593          	addi	a1,a1,1488 # 200625d0 <pmap_func+0x1ac>
+20059be0:	5d858593          	addi	a1,a1,1496 # 200625d8 <pmap_func+0x1ac>
 20059be4:	4511                	c.li	a0,4
 20059be6:	d67e                	c.swsp	t6,44(sp)
-20059be8:	5a0010ef          	jal	ra,2005b188 <rtk_log_write>
+20059be8:	5a6010ef          	jal	ra,2005b18e <rtk_log_write>
 20059bec:	5fb2                	c.lwsp	t6,44(sp)
 20059bee:	57fd                	c.li	a5,-1
 20059bf0:	ecfc89e3          	beq	s9,a5,20059ac2 <PSRAM_calibration+0x230>
@@ -2697,2316 +2697,2315 @@ Disassembly of section .xip_image2.text:
 20059c62 <wifi_set_user_config>:
 20059c62:	1141                	c.addi	sp,-16
 20059c64:	c422                	c.swsp	s0,8(sp)
-20059c66:	04000613          	addi	a2,zero,64
-20059c6a:	41818413          	addi	s0,gp,1048 # 20066d80 <wifi_user_config>
+20059c66:	04400613          	addi	a2,zero,68
+20059c6a:	43818413          	addi	s0,gp,1080 # 20066dc0 <wifi_user_config>
 20059c6e:	4581                	c.li	a1,0
-20059c70:	41818513          	addi	a0,gp,1048 # 20066d80 <wifi_user_config>
+20059c70:	43818513          	addi	a0,gp,1080 # 20066dc0 <wifi_user_config>
 20059c74:	c606                	c.swsp	ra,12(sp)
 20059c76:	dffb0097          	auipc	ra,0xdffb0
 20059c7a:	e58080e7          	jalr	ra,-424(ra) # 9ace <__wrap_memset>
-20059c7e:	50800793          	addi	a5,zero,1288
-20059c82:	00f41f23          	sh	a5,30(s0)
-20059c86:	4799                	c.li	a5,6
-20059c88:	d01c                	c.sw	a5,32(s0)
-20059c8a:	47a1                	c.li	a5,8
-20059c8c:	d05c                	c.sw	a5,36(s0)
-20059c8e:	4785                	c.li	a5,1
-20059c90:	00f405a3          	sb	a5,11(s0)
-20059c94:	00f41623          	sh	a5,12(s0)
-20059c98:	00f41423          	sh	a5,8(s0)
-20059c9c:	0b0107b7          	lui	a5,0xb010
-20059ca0:	10178793          	addi	a5,a5,257 # b010101 <__ap_sram_heap_size+0xafd0101>
-20059ca4:	c81c                	c.sw	a5,16(s0)
-20059ca6:	4789                	c.li	a5,2
-20059ca8:	cc1c                	c.sw	a5,24(s0)
-20059caa:	00020737          	lui	a4,0x20
-20059cae:	10100793          	addi	a5,zero,257
-20059cb2:	02f41723          	sh	a5,46(s0)
-20059cb6:	02f41823          	sh	a5,48(s0)
-20059cba:	20070713          	addi	a4,a4,512 # 20200 <__bdram_heap_buffer_size__+0x8cc0>
-20059cbe:	4791                	c.li	a5,4
-20059cc0:	c018                	c.sw	a4,0(s0)
-20059cc2:	02f40923          	sb	a5,50(s0)
-20059cc6:	02f40a23          	sb	a5,52(s0)
-20059cca:	050f0737          	lui	a4,0x50f0
-20059cce:	6785                	c.lui	a5,0x1
-20059cd0:	c058                	c.sw	a4,4(s0)
-20059cd2:	38878793          	addi	a5,a5,904 # 1388 <CPU_ClkGet+0x872>
-20059cd6:	4751                	c.li	a4,20
-20059cd8:	40b2                	c.lwsp	ra,12(sp)
-20059cda:	00040ea3          	sb	zero,29(s0)
-20059cde:	02042423          	sw	zero,40(s0)
-20059ce2:	00040a23          	sb	zero,20(s0)
-20059ce6:	00041b23          	sh	zero,22(s0)
-20059cea:	020406a3          	sb	zero,45(s0)
-20059cee:	02e40ea3          	sb	a4,61(s0)
-20059cf2:	dc1c                	c.sw	a5,56(s0)
-20059cf4:	4422                	c.lwsp	s0,8(sp)
-20059cf6:	0141                	c.addi	sp,16
-20059cf8:	8082                	c.jr	ra
+20059c7e:	4799                	c.li	a5,6
+20059c80:	d05c                	c.sw	a5,36(s0)
+20059c82:	47a1                	c.li	a5,8
+20059c84:	d41c                	c.sw	a5,40(s0)
+20059c86:	50800793          	addi	a5,zero,1288
+20059c8a:	00f41f23          	sh	a5,30(s0)
+20059c8e:	47a5                	c.li	a5,9
+20059c90:	02f40023          	sb	a5,32(s0)
+20059c94:	4785                	c.li	a5,1
+20059c96:	00f405a3          	sb	a5,11(s0)
+20059c9a:	00f41623          	sh	a5,12(s0)
+20059c9e:	00f41423          	sh	a5,8(s0)
+20059ca2:	0b0107b7          	lui	a5,0xb010
+20059ca6:	10178793          	addi	a5,a5,257 # b010101 <__ap_sram_heap_size+0xafd0101>
+20059caa:	c81c                	c.sw	a5,16(s0)
+20059cac:	4789                	c.li	a5,2
+20059cae:	cc1c                	c.sw	a5,24(s0)
+20059cb0:	00020737          	lui	a4,0x20
+20059cb4:	10100793          	addi	a5,zero,257
+20059cb8:	02f41923          	sh	a5,50(s0)
+20059cbc:	02f41a23          	sh	a5,52(s0)
+20059cc0:	20070713          	addi	a4,a4,512 # 20200 <__bdram_heap_buffer_size__+0x8d00>
+20059cc4:	4791                	c.li	a5,4
+20059cc6:	c018                	c.sw	a4,0(s0)
+20059cc8:	02f40b23          	sb	a5,54(s0)
+20059ccc:	02f40c23          	sb	a5,56(s0)
+20059cd0:	050f0737          	lui	a4,0x50f0
+20059cd4:	6785                	c.lui	a5,0x1
+20059cd6:	c058                	c.sw	a4,4(s0)
+20059cd8:	38878793          	addi	a5,a5,904 # 1388 <CPU_ClkGet+0x872>
+20059cdc:	4751                	c.li	a4,20
+20059cde:	40b2                	c.lwsp	ra,12(sp)
+20059ce0:	02042623          	sw	zero,44(s0)
+20059ce4:	00040ea3          	sb	zero,29(s0)
+20059ce8:	00040a23          	sb	zero,20(s0)
+20059cec:	00041b23          	sh	zero,22(s0)
+20059cf0:	020408a3          	sb	zero,49(s0)
+20059cf4:	04e400a3          	sb	a4,65(s0)
+20059cf8:	dc5c                	c.sw	a5,60(s0)
+20059cfa:	4422                	c.lwsp	s0,8(sp)
+20059cfc:	0141                	c.addi	sp,16
+20059cfe:	8082                	c.jr	ra
 
-20059cfa <hash_index>:
-20059cfa:	4781                	c.li	a5,0
-20059cfc:	08300693          	addi	a3,zero,131
-20059d00:	00054703          	lbu	a4,0(a0) # 150000 <__ap_sram_heap_size+0x110000>
-20059d04:	e709                	c.bnez	a4,20059d0e <hash_index+0x14>
-20059d06:	00179513          	slli	a0,a5,0x1
-20059d0a:	8105                	c.srli	a0,0x1
-20059d0c:	8082                	c.jr	ra
-20059d0e:	02d787b3          	mul	a5,a5,a3
-20059d12:	0505                	c.addi	a0,1
-20059d14:	97ba                	c.add	a5,a4
-20059d16:	b7ed                	c.j	20059d00 <hash_index+0x6>
+20059d00 <hash_index>:
+20059d00:	4781                	c.li	a5,0
+20059d02:	08300693          	addi	a3,zero,131
+20059d06:	00054703          	lbu	a4,0(a0) # 150000 <__ap_sram_heap_size+0x110000>
+20059d0a:	e709                	c.bnez	a4,20059d14 <hash_index+0x14>
+20059d0c:	00179513          	slli	a0,a5,0x1
+20059d10:	8105                	c.srli	a0,0x1
+20059d12:	8082                	c.jr	ra
+20059d14:	02d787b3          	mul	a5,a5,a3
+20059d18:	0505                	c.addi	a0,1
+20059d1a:	97ba                	c.add	a5,a4
+20059d1c:	b7ed                	c.j	20059d06 <hash_index+0x6>
 
-20059d18 <log_add_new_command>:
-20059d18:	1141                	c.addi	sp,-16
-20059d1a:	c422                	c.swsp	s0,8(sp)
-20059d1c:	c606                	c.swsp	ra,12(sp)
-20059d1e:	842a                	c.mv	s0,a0
-20059d20:	4108                	c.lw	a0,0(a0)
-20059d22:	3fe1                	c.jal	20059cfa <hash_index>
-20059d24:	02000793          	addi	a5,zero,32
-20059d28:	02f56533          	rem	a0,a0,a5
-20059d2c:	45818793          	addi	a5,gp,1112 # 20066dc0 <log_hash>
-20059d30:	00840713          	addi	a4,s0,8
-20059d34:	050e                	c.slli	a0,0x3
-20059d36:	97aa                	c.add	a5,a0
-20059d38:	4394                	c.lw	a3,0(a5)
-20059d3a:	c2d8                	c.sw	a4,4(a3)
-20059d3c:	c414                	c.sw	a3,8(s0)
-20059d3e:	c45c                	c.sw	a5,12(s0)
-20059d40:	c398                	c.sw	a4,0(a5)
-20059d42:	40b2                	c.lwsp	ra,12(sp)
-20059d44:	4422                	c.lwsp	s0,8(sp)
-20059d46:	0141                	c.addi	sp,16
-20059d48:	8082                	c.jr	ra
+20059d1e <log_add_new_command>:
+20059d1e:	1141                	c.addi	sp,-16
+20059d20:	c422                	c.swsp	s0,8(sp)
+20059d22:	c606                	c.swsp	ra,12(sp)
+20059d24:	842a                	c.mv	s0,a0
+20059d26:	4108                	c.lw	a0,0(a0)
+20059d28:	3fe1                	c.jal	20059d00 <hash_index>
+20059d2a:	02000793          	addi	a5,zero,32
+20059d2e:	02f56533          	rem	a0,a0,a5
+20059d32:	47c18793          	addi	a5,gp,1148 # 20066e04 <log_hash>
+20059d36:	00840713          	addi	a4,s0,8
+20059d3a:	050e                	c.slli	a0,0x3
+20059d3c:	97aa                	c.add	a5,a0
+20059d3e:	4394                	c.lw	a3,0(a5)
+20059d40:	c2d8                	c.sw	a4,4(a3)
+20059d42:	c414                	c.sw	a3,8(s0)
+20059d44:	c45c                	c.sw	a5,12(s0)
+20059d46:	c398                	c.sw	a4,0(a5)
+20059d48:	40b2                	c.lwsp	ra,12(sp)
+20059d4a:	4422                	c.lwsp	s0,8(sp)
+20059d4c:	0141                	c.addi	sp,16
+20059d4e:	8082                	c.jr	ra
 
-20059d4a <atcmd_service_init>:
-20059d4a:	45818793          	addi	a5,gp,1112 # 20066dc0 <log_hash>
-20059d4e:	10078713          	addi	a4,a5,256
-20059d52:	c39c                	c.sw	a5,0(a5)
-20059d54:	c3dc                	c.sw	a5,4(a5)
-20059d56:	07a1                	c.addi	a5,8
-20059d58:	fee79de3          	bne	a5,a4,20059d52 <atcmd_service_init+0x8>
-20059d5c:	e781a783          	lw	a5,-392(gp) # 200667e0 <log_init_table>
-20059d60:	8782                	c.jr	a5
+20059d50 <atcmd_service_init>:
+20059d50:	47c18793          	addi	a5,gp,1148 # 20066e04 <log_hash>
+20059d54:	10078713          	addi	a4,a5,256
+20059d58:	c39c                	c.sw	a5,0(a5)
+20059d5a:	c3dc                	c.sw	a5,4(a5)
+20059d5c:	07a1                	c.addi	a5,8
+20059d5e:	fee79de3          	bne	a5,a4,20059d58 <atcmd_service_init+0x8>
+20059d62:	e781a783          	lw	a5,-392(gp) # 20066800 <log_init_table>
+20059d66:	8782                	c.jr	a5
 
-20059d62 <atcmd_service_add_table>:
-20059d62:	1141                	c.addi	sp,-16
-20059d64:	c422                	c.swsp	s0,8(sp)
-20059d66:	c226                	c.swsp	s1,4(sp)
-20059d68:	c04a                	c.swsp	s2,0(sp)
-20059d6a:	c606                	c.swsp	ra,12(sp)
-20059d6c:	892a                	c.mv	s2,a0
-20059d6e:	84ae                	c.mv	s1,a1
-20059d70:	4401                	c.li	s0,0
-20059d72:	00944863          	blt	s0,s1,20059d82 <atcmd_service_add_table+0x20>
-20059d76:	40b2                	c.lwsp	ra,12(sp)
-20059d78:	4422                	c.lwsp	s0,8(sp)
-20059d7a:	4492                	c.lwsp	s1,4(sp)
-20059d7c:	4902                	c.lwsp	s2,0(sp)
-20059d7e:	0141                	c.addi	sp,16
-20059d80:	8082                	c.jr	ra
-20059d82:	00441513          	slli	a0,s0,0x4
-20059d86:	954a                	c.add	a0,s2
-20059d88:	3f41                	c.jal	20059d18 <log_add_new_command>
-20059d8a:	0405                	c.addi	s0,1
-20059d8c:	b7dd                	c.j	20059d72 <atcmd_service_add_table+0x10>
+20059d68 <atcmd_service_add_table>:
+20059d68:	1141                	c.addi	sp,-16
+20059d6a:	c422                	c.swsp	s0,8(sp)
+20059d6c:	c226                	c.swsp	s1,4(sp)
+20059d6e:	c04a                	c.swsp	s2,0(sp)
+20059d70:	c606                	c.swsp	ra,12(sp)
+20059d72:	892a                	c.mv	s2,a0
+20059d74:	84ae                	c.mv	s1,a1
+20059d76:	4401                	c.li	s0,0
+20059d78:	00944863          	blt	s0,s1,20059d88 <atcmd_service_add_table+0x20>
+20059d7c:	40b2                	c.lwsp	ra,12(sp)
+20059d7e:	4422                	c.lwsp	s0,8(sp)
+20059d80:	4492                	c.lwsp	s1,4(sp)
+20059d82:	4902                	c.lwsp	s2,0(sp)
+20059d84:	0141                	c.addi	sp,16
+20059d86:	8082                	c.jr	ra
+20059d88:	00441513          	slli	a0,s0,0x4
+20059d8c:	954a                	c.add	a0,s2
+20059d8e:	3f41                	c.jal	20059d1e <log_add_new_command>
+20059d90:	0405                	c.addi	s0,1
+20059d92:	b7dd                	c.j	20059d78 <atcmd_service_add_table+0x10>
 
-20059d8e <atcmd_action>:
-20059d8e:	1141                	c.addi	sp,-16
-20059d90:	c422                	c.swsp	s0,8(sp)
-20059d92:	c226                	c.swsp	s1,4(sp)
-20059d94:	c04a                	c.swsp	s2,0(sp)
-20059d96:	c606                	c.swsp	ra,12(sp)
-20059d98:	892a                	c.mv	s2,a0
-20059d9a:	02000413          	addi	s0,zero,32
-20059d9e:	3fb1                	c.jal	20059cfa <hash_index>
-20059da0:	02856433          	rem	s0,a0,s0
-20059da4:	00341793          	slli	a5,s0,0x3
-20059da8:	45818413          	addi	s0,gp,1112 # 20066dc0 <log_hash>
-20059dac:	943e                	c.add	s0,a5
-20059dae:	4004                	c.lw	s1,0(s0)
-20059db0:	00849463          	bne	s1,s0,20059db8 <atcmd_action+0x2a>
-20059db4:	4501                	c.li	a0,0
-20059db6:	a819                	c.j	20059dcc <atcmd_action+0x3e>
-20059db8:	ff84a503          	lw	a0,-8(s1)
-20059dbc:	85ca                	c.mv	a1,s2
-20059dbe:	dffb0097          	auipc	ra,0xdffb0
-20059dc2:	d1c080e7          	jalr	ra,-740(ra) # 9ada <__wrap_strcmp>
-20059dc6:	e909                	c.bnez	a0,20059dd8 <atcmd_action+0x4a>
-20059dc8:	ffc4a503          	lw	a0,-4(s1)
-20059dcc:	40b2                	c.lwsp	ra,12(sp)
-20059dce:	4422                	c.lwsp	s0,8(sp)
-20059dd0:	4492                	c.lwsp	s1,4(sp)
-20059dd2:	4902                	c.lwsp	s2,0(sp)
-20059dd4:	0141                	c.addi	sp,16
-20059dd6:	8082                	c.jr	ra
-20059dd8:	4084                	c.lw	s1,0(s1)
-20059dda:	bfd9                	c.j	20059db0 <atcmd_action+0x22>
+20059d94 <atcmd_action>:
+20059d94:	1141                	c.addi	sp,-16
+20059d96:	c422                	c.swsp	s0,8(sp)
+20059d98:	c226                	c.swsp	s1,4(sp)
+20059d9a:	c04a                	c.swsp	s2,0(sp)
+20059d9c:	c606                	c.swsp	ra,12(sp)
+20059d9e:	892a                	c.mv	s2,a0
+20059da0:	02000413          	addi	s0,zero,32
+20059da4:	3fb1                	c.jal	20059d00 <hash_index>
+20059da6:	02856433          	rem	s0,a0,s0
+20059daa:	00341793          	slli	a5,s0,0x3
+20059dae:	47c18413          	addi	s0,gp,1148 # 20066e04 <log_hash>
+20059db2:	943e                	c.add	s0,a5
+20059db4:	4004                	c.lw	s1,0(s0)
+20059db6:	00849463          	bne	s1,s0,20059dbe <atcmd_action+0x2a>
+20059dba:	4501                	c.li	a0,0
+20059dbc:	a819                	c.j	20059dd2 <atcmd_action+0x3e>
+20059dbe:	ff84a503          	lw	a0,-8(s1)
+20059dc2:	85ca                	c.mv	a1,s2
+20059dc4:	dffb0097          	auipc	ra,0xdffb0
+20059dc8:	d16080e7          	jalr	ra,-746(ra) # 9ada <__wrap_strcmp>
+20059dcc:	e909                	c.bnez	a0,20059dde <atcmd_action+0x4a>
+20059dce:	ffc4a503          	lw	a0,-4(s1)
+20059dd2:	40b2                	c.lwsp	ra,12(sp)
+20059dd4:	4422                	c.lwsp	s0,8(sp)
+20059dd6:	4492                	c.lwsp	s1,4(sp)
+20059dd8:	4902                	c.lwsp	s2,0(sp)
+20059dda:	0141                	c.addi	sp,16
+20059ddc:	8082                	c.jr	ra
+20059dde:	4084                	c.lw	s1,0(s1)
+20059de0:	bfd9                	c.j	20059db6 <atcmd_action+0x22>
 
-20059ddc <atcmd_handler>:
-20059ddc:	7139                	c.addi16sp	sp,-64
-20059dde:	dc22                	c.swsp	s0,56(sp)
-20059de0:	c42a                	c.swsp	a0,8(sp)
-20059de2:	842a                	c.mv	s0,a0
-20059de4:	4675                	c.li	a2,29
-20059de6:	4581                	c.li	a1,0
-20059de8:	0808                	c.addi4spn	a0,sp,16
-20059dea:	de06                	c.swsp	ra,60(sp)
-20059dec:	da26                	c.swsp	s1,52(sp)
-20059dee:	c602                	c.swsp	zero,12(sp)
-20059df0:	dffb0097          	auipc	ra,0xdffb0
-20059df4:	cde080e7          	jalr	ra,-802(ra) # 9ace <__wrap_memset>
-20059df8:	200635b7          	lui	a1,0x20063
-20059dfc:	4609                	c.li	a2,2
-20059dfe:	84c58593          	addi	a1,a1,-1972 # 2006284c <pmap_func+0x428>
-20059e02:	8522                	c.mv	a0,s0
-20059e04:	771070ef          	jal	ra,20061d74 <strncmp>
-20059e08:	c519                	c.beqz	a0,20059e16 <atcmd_handler+0x3a>
-20059e0a:	4501                	c.li	a0,0
-20059e0c:	50f2                	c.lwsp	ra,60(sp)
-20059e0e:	5462                	c.lwsp	s0,56(sp)
-20059e10:	54d2                	c.lwsp	s1,52(sp)
-20059e12:	6121                	c.addi16sp	sp,64
-20059e14:	8082                	c.jr	ra
-20059e16:	200635b7          	lui	a1,0x20063
-20059e1a:	85058593          	addi	a1,a1,-1968 # 20062850 <pmap_func+0x42c>
-20059e1e:	0028                	c.addi4spn	a0,sp,8
-20059e20:	02a080ef          	jal	ra,20061e4a <strsep>
-20059e24:	200635b7          	lui	a1,0x20063
-20059e28:	842a                	c.mv	s0,a0
-20059e2a:	89458593          	addi	a1,a1,-1900 # 20062894 <pmap_func+0x470>
-20059e2e:	0028                	c.addi4spn	a0,sp,8
-20059e30:	01a080ef          	jal	ra,20061e4a <strsep>
-20059e34:	84aa                	c.mv	s1,a0
-20059e36:	d871                	c.beqz	s0,20059e0a <atcmd_handler+0x2e>
-20059e38:	8522                	c.mv	a0,s0
-20059e3a:	dffb0097          	auipc	ra,0xdffb0
-20059e3e:	c9e080e7          	jalr	ra,-866(ra) # 9ad8 <__wrap_strlen>
-20059e42:	478d                	c.li	a5,3
-20059e44:	fca7f3e3          	bgeu	a5,a0,20059e0a <atcmd_handler+0x2e>
-20059e48:	85a2                	c.mv	a1,s0
-20059e4a:	02000613          	addi	a2,zero,32
-20059e4e:	0068                	c.addi4spn	a0,sp,12
-20059e50:	791070ef          	jal	ra,20061de0 <strncpy>
-20059e54:	00e10513          	addi	a0,sp,14
-20059e58:	3f1d                	c.jal	20059d8e <atcmd_action>
-20059e5a:	842a                	c.mv	s0,a0
-20059e5c:	4501                	c.li	a0,0
-20059e5e:	d45d                	c.beqz	s0,20059e0c <atcmd_handler+0x30>
-20059e60:	8526                	c.mv	a0,s1
-20059e62:	9402                	c.jalr	s0
-20059e64:	8522                	c.mv	a0,s0
-20059e66:	b75d                	c.j	20059e0c <atcmd_handler+0x30>
+20059de2 <atcmd_handler>:
+20059de2:	7139                	c.addi16sp	sp,-64
+20059de4:	dc22                	c.swsp	s0,56(sp)
+20059de6:	c42a                	c.swsp	a0,8(sp)
+20059de8:	842a                	c.mv	s0,a0
+20059dea:	4675                	c.li	a2,29
+20059dec:	4581                	c.li	a1,0
+20059dee:	0808                	c.addi4spn	a0,sp,16
+20059df0:	de06                	c.swsp	ra,60(sp)
+20059df2:	da26                	c.swsp	s1,52(sp)
+20059df4:	c602                	c.swsp	zero,12(sp)
+20059df6:	dffb0097          	auipc	ra,0xdffb0
+20059dfa:	cd8080e7          	jalr	ra,-808(ra) # 9ace <__wrap_memset>
+20059dfe:	200635b7          	lui	a1,0x20063
+20059e02:	4609                	c.li	a2,2
+20059e04:	85458593          	addi	a1,a1,-1964 # 20062854 <pmap_func+0x428>
+20059e08:	8522                	c.mv	a0,s0
+20059e0a:	773070ef          	jal	ra,20061d7c <strncmp>
+20059e0e:	c519                	c.beqz	a0,20059e1c <atcmd_handler+0x3a>
+20059e10:	4501                	c.li	a0,0
+20059e12:	50f2                	c.lwsp	ra,60(sp)
+20059e14:	5462                	c.lwsp	s0,56(sp)
+20059e16:	54d2                	c.lwsp	s1,52(sp)
+20059e18:	6121                	c.addi16sp	sp,64
+20059e1a:	8082                	c.jr	ra
+20059e1c:	200635b7          	lui	a1,0x20063
+20059e20:	85858593          	addi	a1,a1,-1960 # 20062858 <pmap_func+0x42c>
+20059e24:	0028                	c.addi4spn	a0,sp,8
+20059e26:	02c080ef          	jal	ra,20061e52 <strsep>
+20059e2a:	200635b7          	lui	a1,0x20063
+20059e2e:	842a                	c.mv	s0,a0
+20059e30:	89c58593          	addi	a1,a1,-1892 # 2006289c <pmap_func+0x470>
+20059e34:	0028                	c.addi4spn	a0,sp,8
+20059e36:	01c080ef          	jal	ra,20061e52 <strsep>
+20059e3a:	84aa                	c.mv	s1,a0
+20059e3c:	d871                	c.beqz	s0,20059e10 <atcmd_handler+0x2e>
+20059e3e:	8522                	c.mv	a0,s0
+20059e40:	dffb0097          	auipc	ra,0xdffb0
+20059e44:	c98080e7          	jalr	ra,-872(ra) # 9ad8 <__wrap_strlen>
+20059e48:	478d                	c.li	a5,3
+20059e4a:	fca7f3e3          	bgeu	a5,a0,20059e10 <atcmd_handler+0x2e>
+20059e4e:	85a2                	c.mv	a1,s0
+20059e50:	02000613          	addi	a2,zero,32
+20059e54:	0068                	c.addi4spn	a0,sp,12
+20059e56:	793070ef          	jal	ra,20061de8 <strncpy>
+20059e5a:	00e10513          	addi	a0,sp,14
+20059e5e:	3f1d                	c.jal	20059d94 <atcmd_action>
+20059e60:	842a                	c.mv	s0,a0
+20059e62:	4501                	c.li	a0,0
+20059e64:	d45d                	c.beqz	s0,20059e12 <atcmd_handler+0x30>
+20059e66:	8526                	c.mv	a0,s1
+20059e68:	9402                	c.jalr	s0
+20059e6a:	8522                	c.mv	a0,s0
+20059e6c:	b75d                	c.j	20059e12 <atcmd_handler+0x30>
 
-20059e68 <parse_param>:
-20059e68:	7179                	c.addi16sp	sp,-48
-20059e6a:	d422                	c.swsp	s0,40(sp)
-20059e6c:	d606                	c.swsp	ra,44(sp)
-20059e6e:	d226                	c.swsp	s1,36(sp)
-20059e70:	d04a                	c.swsp	s2,32(sp)
-20059e72:	ce4e                	c.swsp	s3,28(sp)
-20059e74:	4405                	c.li	s0,1
-20059e76:	c505                	c.beqz	a0,20059e9e <parse_param+0x36>
-20059e78:	84ae                	c.mv	s1,a1
-20059e7a:	c62a                	c.swsp	a0,12(sp)
-20059e7c:	4405                	c.li	s0,1
-20059e7e:	200639b7          	lui	s3,0x20063
-20059e82:	495d                	c.li	s2,23
-20059e84:	85498593          	addi	a1,s3,-1964 # 20062854 <pmap_func+0x430>
-20059e88:	0068                	c.addi4spn	a0,sp,12
-20059e8a:	7c1070ef          	jal	ra,20061e4a <strsep>
-20059e8e:	00241793          	slli	a5,s0,0x2
-20059e92:	97a6                	c.add	a5,s1
-20059e94:	c388                	c.sw	a0,0(a5)
-20059e96:	c501                	c.beqz	a0,20059e9e <parse_param+0x36>
-20059e98:	0405                	c.addi	s0,1
-20059e9a:	ff2415e3          	bne	s0,s2,20059e84 <parse_param+0x1c>
-20059e9e:	50b2                	c.lwsp	ra,44(sp)
-20059ea0:	8522                	c.mv	a0,s0
-20059ea2:	5422                	c.lwsp	s0,40(sp)
-20059ea4:	5492                	c.lwsp	s1,36(sp)
-20059ea6:	5902                	c.lwsp	s2,32(sp)
-20059ea8:	49f2                	c.lwsp	s3,28(sp)
-20059eaa:	6145                	c.addi16sp	sp,48
-20059eac:	8082                	c.jr	ra
+20059e6e <parse_param>:
+20059e6e:	7179                	c.addi16sp	sp,-48
+20059e70:	d422                	c.swsp	s0,40(sp)
+20059e72:	d606                	c.swsp	ra,44(sp)
+20059e74:	d226                	c.swsp	s1,36(sp)
+20059e76:	d04a                	c.swsp	s2,32(sp)
+20059e78:	ce4e                	c.swsp	s3,28(sp)
+20059e7a:	4405                	c.li	s0,1
+20059e7c:	c505                	c.beqz	a0,20059ea4 <parse_param+0x36>
+20059e7e:	84ae                	c.mv	s1,a1
+20059e80:	c62a                	c.swsp	a0,12(sp)
+20059e82:	4405                	c.li	s0,1
+20059e84:	200639b7          	lui	s3,0x20063
+20059e88:	495d                	c.li	s2,23
+20059e8a:	85c98593          	addi	a1,s3,-1956 # 2006285c <pmap_func+0x430>
+20059e8e:	0068                	c.addi4spn	a0,sp,12
+20059e90:	7c3070ef          	jal	ra,20061e52 <strsep>
+20059e94:	00241793          	slli	a5,s0,0x2
+20059e98:	97a6                	c.add	a5,s1
+20059e9a:	c388                	c.sw	a0,0(a5)
+20059e9c:	c501                	c.beqz	a0,20059ea4 <parse_param+0x36>
+20059e9e:	0405                	c.addi	s0,1
+20059ea0:	ff2415e3          	bne	s0,s2,20059e8a <parse_param+0x1c>
+20059ea4:	50b2                	c.lwsp	ra,44(sp)
+20059ea6:	8522                	c.mv	a0,s0
+20059ea8:	5422                	c.lwsp	s0,40(sp)
+20059eaa:	5492                	c.lwsp	s1,36(sp)
+20059eac:	5902                	c.lwsp	s2,32(sp)
+20059eae:	49f2                	c.lwsp	s3,28(sp)
+20059eb0:	6145                	c.addi16sp	sp,48
+20059eb2:	8082                	c.jr	ra
 
-20059eae <mp_command_handler>:
-20059eae:	200635b7          	lui	a1,0x20063
-20059eb2:	1141                	c.addi	sp,-16
-20059eb4:	461d                	c.li	a2,7
-20059eb6:	85858593          	addi	a1,a1,-1960 # 20062858 <pmap_func+0x434>
-20059eba:	c422                	c.swsp	s0,8(sp)
-20059ebc:	c606                	c.swsp	ra,12(sp)
-20059ebe:	842a                	c.mv	s0,a0
-20059ec0:	6b5070ef          	jal	ra,20061d74 <strncmp>
-20059ec4:	e129                	c.bnez	a0,20059f06 <mp_command_handler+0x58>
-20059ec6:	041d                	c.addi	s0,7
-20059ec8:	8522                	c.mv	a0,s0
-20059eca:	dffb0097          	auipc	ra,0xdffb0
-20059ece:	c0e080e7          	jalr	ra,-1010(ra) # 9ad8 <__wrap_strlen>
-20059ed2:	4605                	c.li	a2,1
-20059ed4:	00150593          	addi	a1,a0,1
-20059ed8:	8522                	c.mv	a0,s0
-20059eda:	391060ef          	jal	ra,20060a6a <inic_mp_command>
-20059ede:	043010ef          	jal	ra,2005b720 <rtos_mem_get_free_heap_size>
-20059ee2:	85aa                	c.mv	a1,a0
-20059ee4:	20063537          	lui	a0,0x20063
-20059ee8:	86050513          	addi	a0,a0,-1952 # 20062860 <pmap_func+0x43c>
-20059eec:	4ba050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059ef0:	20063537          	lui	a0,0x20063
-20059ef4:	88c50513          	addi	a0,a0,-1908 # 2006288c <pmap_func+0x468>
-20059ef8:	4ae050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059efc:	4505                	c.li	a0,1
-20059efe:	40b2                	c.lwsp	ra,12(sp)
-20059f00:	4422                	c.lwsp	s0,8(sp)
-20059f02:	0141                	c.addi	sp,16
-20059f04:	8082                	c.jr	ra
-20059f06:	4501                	c.li	a0,0
-20059f08:	bfdd                	c.j	20059efe <mp_command_handler+0x50>
+20059eb4 <mp_command_handler>:
+20059eb4:	200635b7          	lui	a1,0x20063
+20059eb8:	1141                	c.addi	sp,-16
+20059eba:	461d                	c.li	a2,7
+20059ebc:	86058593          	addi	a1,a1,-1952 # 20062860 <pmap_func+0x434>
+20059ec0:	c422                	c.swsp	s0,8(sp)
+20059ec2:	c606                	c.swsp	ra,12(sp)
+20059ec4:	842a                	c.mv	s0,a0
+20059ec6:	6b7070ef          	jal	ra,20061d7c <strncmp>
+20059eca:	e129                	c.bnez	a0,20059f0c <mp_command_handler+0x58>
+20059ecc:	041d                	c.addi	s0,7
+20059ece:	8522                	c.mv	a0,s0
+20059ed0:	dffb0097          	auipc	ra,0xdffb0
+20059ed4:	c08080e7          	jalr	ra,-1016(ra) # 9ad8 <__wrap_strlen>
+20059ed8:	4605                	c.li	a2,1
+20059eda:	00150593          	addi	a1,a0,1
+20059ede:	8522                	c.mv	a0,s0
+20059ee0:	393060ef          	jal	ra,20060a72 <inic_mp_command>
+20059ee4:	043010ef          	jal	ra,2005b726 <rtos_mem_get_free_heap_size>
+20059ee8:	85aa                	c.mv	a1,a0
+20059eea:	20063537          	lui	a0,0x20063
+20059eee:	86850513          	addi	a0,a0,-1944 # 20062868 <pmap_func+0x43c>
+20059ef2:	4b4050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059ef6:	20063537          	lui	a0,0x20063
+20059efa:	89450513          	addi	a0,a0,-1900 # 20062894 <pmap_func+0x468>
+20059efe:	4a8050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059f02:	4505                	c.li	a0,1
+20059f04:	40b2                	c.lwsp	ra,12(sp)
+20059f06:	4422                	c.lwsp	s0,8(sp)
+20059f08:	0141                	c.addi	sp,16
+20059f0a:	8082                	c.jr	ra
+20059f0c:	4501                	c.li	a0,0
+20059f0e:	bfdd                	c.j	20059f04 <mp_command_handler+0x50>
 
-20059f0a <atcmd_service>:
-20059f0a:	1141                	c.addi	sp,-16
-20059f0c:	c606                	c.swsp	ra,12(sp)
-20059f0e:	35f9                	c.jal	20059ddc <atcmd_handler>
-20059f10:	c505                	c.beqz	a0,20059f38 <atcmd_service+0x2e>
-20059f12:	00f010ef          	jal	ra,2005b720 <rtos_mem_get_free_heap_size>
-20059f16:	85aa                	c.mv	a1,a0
-20059f18:	20063537          	lui	a0,0x20063
-20059f1c:	86050513          	addi	a0,a0,-1952 # 20062860 <pmap_func+0x43c>
-20059f20:	486050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059f24:	20063537          	lui	a0,0x20063
-20059f28:	88c50513          	addi	a0,a0,-1908 # 2006288c <pmap_func+0x468>
-20059f2c:	47a050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059f30:	4505                	c.li	a0,1
-20059f32:	40b2                	c.lwsp	ra,12(sp)
-20059f34:	0141                	c.addi	sp,16
-20059f36:	8082                	c.jr	ra
-20059f38:	4501                	c.li	a0,0
-20059f3a:	bfe5                	c.j	20059f32 <atcmd_service+0x28>
+20059f10 <atcmd_service>:
+20059f10:	1141                	c.addi	sp,-16
+20059f12:	c606                	c.swsp	ra,12(sp)
+20059f14:	35f9                	c.jal	20059de2 <atcmd_handler>
+20059f16:	c505                	c.beqz	a0,20059f3e <atcmd_service+0x2e>
+20059f18:	00f010ef          	jal	ra,2005b726 <rtos_mem_get_free_heap_size>
+20059f1c:	85aa                	c.mv	a1,a0
+20059f1e:	20063537          	lui	a0,0x20063
+20059f22:	86850513          	addi	a0,a0,-1944 # 20062868 <pmap_func+0x43c>
+20059f26:	480050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059f2a:	20063537          	lui	a0,0x20063
+20059f2e:	89450513          	addi	a0,a0,-1900 # 20062894 <pmap_func+0x468>
+20059f32:	474050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059f36:	4505                	c.li	a0,1
+20059f38:	40b2                	c.lwsp	ra,12(sp)
+20059f3a:	0141                	c.addi	sp,16
+20059f3c:	8082                	c.jr	ra
+20059f3e:	4501                	c.li	a0,0
+20059f40:	bfe5                	c.j	20059f38 <atcmd_service+0x28>
 
-20059f3c <at_otaclear>:
-20059f3c:	1141                	c.addi	sp,-16
-20059f3e:	c606                	c.swsp	ra,12(sp)
-20059f40:	2ba030ef          	jal	ra,2005d1fa <sys_clear_ota_signature>
-20059f44:	40b2                	c.lwsp	ra,12(sp)
-20059f46:	200635b7          	lui	a1,0x20063
-20059f4a:	20063537          	lui	a0,0x20063
-20059f4e:	89858593          	addi	a1,a1,-1896 # 20062898 <pmap_func+0x474>
-20059f52:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-20059f56:	0141                	c.addi	sp,16
-20059f58:	44e0506f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+20059f42 <at_otaclear>:
+20059f42:	1141                	c.addi	sp,-16
+20059f44:	c606                	c.swsp	ra,12(sp)
+20059f46:	2b4030ef          	jal	ra,2005d1fa <sys_clear_ota_signature>
+20059f4a:	40b2                	c.lwsp	ra,12(sp)
+20059f4c:	200635b7          	lui	a1,0x20063
+20059f50:	20063537          	lui	a0,0x20063
+20059f54:	8a058593          	addi	a1,a1,-1888 # 200628a0 <pmap_func+0x474>
+20059f58:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+20059f5c:	0141                	c.addi	sp,16
+20059f5e:	4480506f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
 
-20059f5c <at_otarecover>:
-20059f5c:	1141                	c.addi	sp,-16
-20059f5e:	c606                	c.swsp	ra,12(sp)
-20059f60:	3bc030ef          	jal	ra,2005d31c <sys_recover_ota_signature>
-20059f64:	40b2                	c.lwsp	ra,12(sp)
-20059f66:	200635b7          	lui	a1,0x20063
-20059f6a:	20063537          	lui	a0,0x20063
-20059f6e:	8b058593          	addi	a1,a1,-1872 # 200628b0 <pmap_func+0x48c>
-20059f72:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-20059f76:	0141                	c.addi	sp,16
-20059f78:	42e0506f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+20059f62 <at_otarecover>:
+20059f62:	1141                	c.addi	sp,-16
+20059f64:	c606                	c.swsp	ra,12(sp)
+20059f66:	3b6030ef          	jal	ra,2005d31c <sys_recover_ota_signature>
+20059f6a:	40b2                	c.lwsp	ra,12(sp)
+20059f6c:	200635b7          	lui	a1,0x20063
+20059f70:	20063537          	lui	a0,0x20063
+20059f74:	8b858593          	addi	a1,a1,-1864 # 200628b8 <pmap_func+0x48c>
+20059f78:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+20059f7c:	0141                	c.addi	sp,16
+20059f7e:	4280506f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
 
-20059f7c <at_test>:
-20059f7c:	c521                	c.beqz	a0,20059fc4 <at_test+0x48>
-20059f7e:	1141                	c.addi	sp,-16
-20059f80:	c606                	c.swsp	ra,12(sp)
-20059f82:	c422                	c.swsp	s0,8(sp)
-20059f84:	842a                	c.mv	s0,a0
-20059f86:	dffb0097          	auipc	ra,0xdffb0
-20059f8a:	b52080e7          	jalr	ra,-1198(ra) # 9ad8 <__wrap_strlen>
-20059f8e:	85aa                	c.mv	a1,a0
-20059f90:	20063537          	lui	a0,0x20063
-20059f94:	8c050513          	addi	a0,a0,-1856 # 200628c0 <pmap_func+0x49c>
-20059f98:	40e050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059f9c:	20063537          	lui	a0,0x20063
-20059fa0:	85a2                	c.mv	a1,s0
-20059fa2:	8d450513          	addi	a0,a0,-1836 # 200628d4 <pmap_func+0x4b0>
-20059fa6:	400050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059faa:	4422                	c.lwsp	s0,8(sp)
-20059fac:	200635b7          	lui	a1,0x20063
-20059fb0:	20063537          	lui	a0,0x20063
-20059fb4:	40b2                	c.lwsp	ra,12(sp)
-20059fb6:	8e458593          	addi	a1,a1,-1820 # 200628e4 <pmap_func+0x4c0>
-20059fba:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-20059fbe:	0141                	c.addi	sp,16
-20059fc0:	3e60506f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
-20059fc4:	200635b7          	lui	a1,0x20063
-20059fc8:	20063537          	lui	a0,0x20063
-20059fcc:	8e458593          	addi	a1,a1,-1820 # 200628e4 <pmap_func+0x4c0>
-20059fd0:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-20059fd4:	b7f5                	c.j	20059fc0 <at_test+0x44>
+20059f82 <at_test>:
+20059f82:	c521                	c.beqz	a0,20059fca <at_test+0x48>
+20059f84:	1141                	c.addi	sp,-16
+20059f86:	c606                	c.swsp	ra,12(sp)
+20059f88:	c422                	c.swsp	s0,8(sp)
+20059f8a:	842a                	c.mv	s0,a0
+20059f8c:	dffb0097          	auipc	ra,0xdffb0
+20059f90:	b4c080e7          	jalr	ra,-1204(ra) # 9ad8 <__wrap_strlen>
+20059f94:	85aa                	c.mv	a1,a0
+20059f96:	20063537          	lui	a0,0x20063
+20059f9a:	8c850513          	addi	a0,a0,-1848 # 200628c8 <pmap_func+0x49c>
+20059f9e:	408050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059fa2:	20063537          	lui	a0,0x20063
+20059fa6:	85a2                	c.mv	a1,s0
+20059fa8:	8dc50513          	addi	a0,a0,-1828 # 200628dc <pmap_func+0x4b0>
+20059fac:	3fa050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059fb0:	4422                	c.lwsp	s0,8(sp)
+20059fb2:	200635b7          	lui	a1,0x20063
+20059fb6:	20063537          	lui	a0,0x20063
+20059fba:	40b2                	c.lwsp	ra,12(sp)
+20059fbc:	8ec58593          	addi	a1,a1,-1812 # 200628ec <pmap_func+0x4c0>
+20059fc0:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+20059fc4:	0141                	c.addi	sp,16
+20059fc6:	3e00506f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+20059fca:	200635b7          	lui	a1,0x20063
+20059fce:	20063537          	lui	a0,0x20063
+20059fd2:	8ec58593          	addi	a1,a1,-1812 # 200628ec <pmap_func+0x4c0>
+20059fd6:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+20059fda:	b7f5                	c.j	20059fc6 <at_test+0x44>
 
-20059fd6 <at_rst>:
-20059fd6:	200635b7          	lui	a1,0x20063
-20059fda:	20063537          	lui	a0,0x20063
-20059fde:	1141                	c.addi	sp,-16
-20059fe0:	8ec58593          	addi	a1,a1,-1812 # 200628ec <pmap_func+0x4c8>
-20059fe4:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-20059fe8:	c606                	c.swsp	ra,12(sp)
-20059fea:	3bc050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20059fee:	40b2                	c.lwsp	ra,12(sp)
-20059ff0:	0141                	c.addi	sp,16
-20059ff2:	4660306f          	jal	zero,2005d458 <sys_reset>
+20059fdc <at_rst>:
+20059fdc:	200635b7          	lui	a1,0x20063
+20059fe0:	20063537          	lui	a0,0x20063
+20059fe4:	1141                	c.addi	sp,-16
+20059fe6:	8f458593          	addi	a1,a1,-1804 # 200628f4 <pmap_func+0x4c8>
+20059fea:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+20059fee:	c606                	c.swsp	ra,12(sp)
+20059ff0:	3b6050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20059ff4:	40b2                	c.lwsp	ra,12(sp)
+20059ff6:	0141                	c.addi	sp,16
+20059ff8:	4600306f          	jal	zero,2005d458 <sys_reset>
 
-20059ff6 <at_state>:
-20059ff6:	bf010113          	addi	sp,sp,-1040
-20059ffa:	850a                	c.mv	a0,sp
-20059ffc:	40112623          	sw	ra,1036(sp)
-2005a000:	40812423          	sw	s0,1032(sp)
-2005a004:	3a0040ef          	jal	ra,2005e3a4 <vTaskList>
-2005a008:	20063537          	lui	a0,0x20063
-2005a00c:	858a                	c.mv	a1,sp
-2005a00e:	8f450513          	addi	a0,a0,-1804 # 200628f4 <pmap_func+0x4d0>
-2005a012:	394050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a016:	850a                	c.mv	a0,sp
-2005a018:	5c3000ef          	jal	ra,2005adda <vPortGetHeapStats>
-2005a01c:	20063537          	lui	a0,0x20063
-2005a020:	90850513          	addi	a0,a0,-1784 # 20062908 <pmap_func+0x4e4>
-2005a024:	382050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a028:	ec81a583          	lw	a1,-312(gp) # 20066830 <total_heap_size>
-2005a02c:	20063537          	lui	a0,0x20063
-2005a030:	91850513          	addi	a0,a0,-1768 # 20062918 <pmap_func+0x4f4>
-2005a034:	372050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a038:	4582                	c.lwsp	a1,0(sp)
-2005a03a:	20063537          	lui	a0,0x20063
-2005a03e:	92c50513          	addi	a0,a0,-1748 # 2006292c <pmap_func+0x508>
-2005a042:	364050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a046:	4782                	c.lwsp	a5,0(sp)
-2005a048:	ec81a583          	lw	a1,-312(gp) # 20066830 <total_heap_size>
-2005a04c:	20063537          	lui	a0,0x20063
-2005a050:	94050513          	addi	a0,a0,-1728 # 20062940 <pmap_func+0x51c>
-2005a054:	8d9d                	c.sub	a1,a5
-2005a056:	350050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a05a:	47c2                	c.lwsp	a5,16(sp)
-2005a05c:	ec81a583          	lw	a1,-312(gp) # 20066830 <total_heap_size>
-2005a060:	20063537          	lui	a0,0x20063
-2005a064:	95450513          	addi	a0,a0,-1708 # 20062954 <pmap_func+0x530>
-2005a068:	8d9d                	c.sub	a1,a5
-2005a06a:	33c050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a06e:	200635b7          	lui	a1,0x20063
-2005a072:	20063537          	lui	a0,0x20063
-2005a076:	96858593          	addi	a1,a1,-1688 # 20062968 <pmap_func+0x544>
-2005a07a:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-2005a07e:	328050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a082:	40c12083          	lw	ra,1036(sp)
-2005a086:	40812403          	lw	s0,1032(sp)
-2005a08a:	41010113          	addi	sp,sp,1040
-2005a08e:	8082                	c.jr	ra
+20059ffc <at_state>:
+20059ffc:	bf010113          	addi	sp,sp,-1040
+2005a000:	850a                	c.mv	a0,sp
+2005a002:	40112623          	sw	ra,1036(sp)
+2005a006:	40812423          	sw	s0,1032(sp)
+2005a00a:	39a040ef          	jal	ra,2005e3a4 <vTaskList>
+2005a00e:	20063537          	lui	a0,0x20063
+2005a012:	858a                	c.mv	a1,sp
+2005a014:	8fc50513          	addi	a0,a0,-1796 # 200628fc <pmap_func+0x4d0>
+2005a018:	38e050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a01c:	850a                	c.mv	a0,sp
+2005a01e:	5c3000ef          	jal	ra,2005ade0 <vPortGetHeapStats>
+2005a022:	20063537          	lui	a0,0x20063
+2005a026:	91050513          	addi	a0,a0,-1776 # 20062910 <pmap_func+0x4e4>
+2005a02a:	37c050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a02e:	ec81a583          	lw	a1,-312(gp) # 20066850 <total_heap_size>
+2005a032:	20063537          	lui	a0,0x20063
+2005a036:	92050513          	addi	a0,a0,-1760 # 20062920 <pmap_func+0x4f4>
+2005a03a:	36c050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a03e:	4582                	c.lwsp	a1,0(sp)
+2005a040:	20063537          	lui	a0,0x20063
+2005a044:	93450513          	addi	a0,a0,-1740 # 20062934 <pmap_func+0x508>
+2005a048:	35e050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a04c:	4782                	c.lwsp	a5,0(sp)
+2005a04e:	ec81a583          	lw	a1,-312(gp) # 20066850 <total_heap_size>
+2005a052:	20063537          	lui	a0,0x20063
+2005a056:	94850513          	addi	a0,a0,-1720 # 20062948 <pmap_func+0x51c>
+2005a05a:	8d9d                	c.sub	a1,a5
+2005a05c:	34a050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a060:	47c2                	c.lwsp	a5,16(sp)
+2005a062:	ec81a583          	lw	a1,-312(gp) # 20066850 <total_heap_size>
+2005a066:	20063537          	lui	a0,0x20063
+2005a06a:	95c50513          	addi	a0,a0,-1700 # 2006295c <pmap_func+0x530>
+2005a06e:	8d9d                	c.sub	a1,a5
+2005a070:	336050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a074:	200635b7          	lui	a1,0x20063
+2005a078:	20063537          	lui	a0,0x20063
+2005a07c:	97058593          	addi	a1,a1,-1680 # 20062970 <pmap_func+0x544>
+2005a080:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+2005a084:	322050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a088:	40c12083          	lw	ra,1036(sp)
+2005a08c:	40812403          	lw	s0,1032(sp)
+2005a090:	41010113          	addi	sp,sp,1040
+2005a094:	8082                	c.jr	ra
 
-2005a090 <at_gmr>:
-2005a090:	715d                	c.addi16sp	sp,-80
-2005a092:	40000513          	addi	a0,zero,1024
-2005a096:	c686                	c.swsp	ra,76(sp)
-2005a098:	c4a2                	c.swsp	s0,72(sp)
-2005a09a:	c2a6                	c.swsp	s1,68(sp)
-2005a09c:	652010ef          	jal	ra,2005b6ee <rtos_mem_malloc>
-2005a0a0:	842a                	c.mv	s0,a0
-2005a0a2:	20063537          	lui	a0,0x20063
-2005a0a6:	4685                	c.li	a3,1
-2005a0a8:	4601                	c.li	a2,0
-2005a0aa:	4585                	c.li	a1,1
-2005a0ac:	97050513          	addi	a0,a0,-1680 # 20062970 <pmap_func+0x54c>
-2005a0b0:	2f6050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a0b4:	8522                	c.mv	a0,s0
-2005a0b6:	3ff00593          	addi	a1,zero,1023
-2005a0ba:	1d1040ef          	jal	ra,2005ea8a <ChipInfo_GetSocName_ToBuf>
-2005a0be:	200634b7          	lui	s1,0x20063
-2005a0c2:	85a2                	c.mv	a1,s0
-2005a0c4:	99448513          	addi	a0,s1,-1644 # 20062994 <pmap_func+0x570>
-2005a0c8:	2de050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a0cc:	8522                	c.mv	a0,s0
-2005a0ce:	3ff00593          	addi	a1,zero,1023
-2005a0d2:	275040ef          	jal	ra,2005eb46 <ChipInfo_GetLibVersion_ToBuf>
-2005a0d6:	85a2                	c.mv	a1,s0
-2005a0d8:	99448513          	addi	a0,s1,-1644
-2005a0dc:	2ca050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a0e0:	8522                	c.mv	a0,s0
-2005a0e2:	636010ef          	jal	ra,2005b718 <rtos_mem_free>
-2005a0e6:	200635b7          	lui	a1,0x20063
-2005a0ea:	02000613          	addi	a2,zero,32
-2005a0ee:	99858593          	addi	a1,a1,-1640 # 20062998 <pmap_func+0x574>
-2005a0f2:	850a                	c.mv	a0,sp
-2005a0f4:	4ed070ef          	jal	ra,20061de0 <strncpy>
-2005a0f8:	200635b7          	lui	a1,0x20063
-2005a0fc:	02000613          	addi	a2,zero,32
-2005a100:	9a058593          	addi	a1,a1,-1632 # 200629a0 <pmap_func+0x57c>
-2005a104:	1008                	c.addi4spn	a0,sp,32
-2005a106:	4db070ef          	jal	ra,20061de0 <strncpy>
-2005a10a:	20063737          	lui	a4,0x20063
-2005a10e:	200635b7          	lui	a1,0x20063
-2005a112:	20063537          	lui	a0,0x20063
-2005a116:	1014                	c.addi4spn	a3,sp,32
-2005a118:	860a                	c.mv	a2,sp
-2005a11a:	9a870713          	addi	a4,a4,-1624 # 200629a8 <pmap_func+0x584>
-2005a11e:	9bc58593          	addi	a1,a1,-1604 # 200629bc <pmap_func+0x598>
-2005a122:	9c450513          	addi	a0,a0,-1596 # 200629c4 <pmap_func+0x5a0>
-2005a126:	280050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a12a:	40b6                	c.lwsp	ra,76(sp)
-2005a12c:	4426                	c.lwsp	s0,72(sp)
-2005a12e:	4496                	c.lwsp	s1,68(sp)
-2005a130:	6161                	c.addi16sp	sp,80
-2005a132:	8082                	c.jr	ra
+2005a096 <at_gmr>:
+2005a096:	715d                	c.addi16sp	sp,-80
+2005a098:	40000513          	addi	a0,zero,1024
+2005a09c:	c686                	c.swsp	ra,76(sp)
+2005a09e:	c4a2                	c.swsp	s0,72(sp)
+2005a0a0:	c2a6                	c.swsp	s1,68(sp)
+2005a0a2:	652010ef          	jal	ra,2005b6f4 <rtos_mem_malloc>
+2005a0a6:	842a                	c.mv	s0,a0
+2005a0a8:	20063537          	lui	a0,0x20063
+2005a0ac:	4685                	c.li	a3,1
+2005a0ae:	4601                	c.li	a2,0
+2005a0b0:	4585                	c.li	a1,1
+2005a0b2:	97850513          	addi	a0,a0,-1672 # 20062978 <pmap_func+0x54c>
+2005a0b6:	2f0050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a0ba:	8522                	c.mv	a0,s0
+2005a0bc:	3ff00593          	addi	a1,zero,1023
+2005a0c0:	1cb040ef          	jal	ra,2005ea8a <ChipInfo_GetSocName_ToBuf>
+2005a0c4:	200634b7          	lui	s1,0x20063
+2005a0c8:	85a2                	c.mv	a1,s0
+2005a0ca:	99c48513          	addi	a0,s1,-1636 # 2006299c <pmap_func+0x570>
+2005a0ce:	2d8050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a0d2:	8522                	c.mv	a0,s0
+2005a0d4:	3ff00593          	addi	a1,zero,1023
+2005a0d8:	26f040ef          	jal	ra,2005eb46 <ChipInfo_GetLibVersion_ToBuf>
+2005a0dc:	85a2                	c.mv	a1,s0
+2005a0de:	99c48513          	addi	a0,s1,-1636
+2005a0e2:	2c4050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a0e6:	8522                	c.mv	a0,s0
+2005a0e8:	636010ef          	jal	ra,2005b71e <rtos_mem_free>
+2005a0ec:	200635b7          	lui	a1,0x20063
+2005a0f0:	02000613          	addi	a2,zero,32
+2005a0f4:	9a058593          	addi	a1,a1,-1632 # 200629a0 <pmap_func+0x574>
+2005a0f8:	850a                	c.mv	a0,sp
+2005a0fa:	4ef070ef          	jal	ra,20061de8 <strncpy>
+2005a0fe:	200635b7          	lui	a1,0x20063
+2005a102:	02000613          	addi	a2,zero,32
+2005a106:	9a858593          	addi	a1,a1,-1624 # 200629a8 <pmap_func+0x57c>
+2005a10a:	1008                	c.addi4spn	a0,sp,32
+2005a10c:	4dd070ef          	jal	ra,20061de8 <strncpy>
+2005a110:	20063737          	lui	a4,0x20063
+2005a114:	200635b7          	lui	a1,0x20063
+2005a118:	20063537          	lui	a0,0x20063
+2005a11c:	1014                	c.addi4spn	a3,sp,32
+2005a11e:	860a                	c.mv	a2,sp
+2005a120:	9b070713          	addi	a4,a4,-1616 # 200629b0 <pmap_func+0x584>
+2005a124:	9c458593          	addi	a1,a1,-1596 # 200629c4 <pmap_func+0x598>
+2005a128:	9cc50513          	addi	a0,a0,-1588 # 200629cc <pmap_func+0x5a0>
+2005a12c:	27a050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a130:	40b6                	c.lwsp	ra,76(sp)
+2005a132:	4426                	c.lwsp	s0,72(sp)
+2005a134:	4496                	c.lwsp	s1,68(sp)
+2005a136:	6161                	c.addi16sp	sp,80
+2005a138:	8082                	c.jr	ra
 
-2005a134 <at_log>:
-2005a134:	7159                	c.addi16sp	sp,-112
-2005a136:	d2a6                	c.swsp	s1,100(sp)
-2005a138:	05c00613          	addi	a2,zero,92
-2005a13c:	84aa                	c.mv	s1,a0
-2005a13e:	4581                	c.li	a1,0
-2005a140:	0048                	c.addi4spn	a0,sp,4
-2005a142:	d4a2                	c.swsp	s0,104(sp)
-2005a144:	d0ca                	c.swsp	s2,96(sp)
-2005a146:	d686                	c.swsp	ra,108(sp)
-2005a148:	20063437          	lui	s0,0x20063
-2005a14c:	dffb0097          	auipc	ra,0xdffb0
-2005a150:	982080e7          	jalr	ra,-1662(ra) # 9ace <__wrap_memset>
-2005a154:	20063937          	lui	s2,0x20063
-2005a158:	ec91                	c.bnez	s1,2005a174 <at_log+0x40>
-2005a15a:	200636b7          	lui	a3,0x20063
-2005a15e:	9d468693          	addi	a3,a3,-1580 # 200629d4 <pmap_func+0x5b0>
-2005a162:	04100613          	addi	a2,zero,65
-2005a166:	9e840593          	addi	a1,s0,-1560 # 200629e8 <pmap_func+0x5c4>
-2005a16a:	4505                	c.li	a0,1
-2005a16c:	01c010ef          	jal	ra,2005b188 <rtk_log_write>
-2005a170:	4605                	c.li	a2,1
-2005a172:	aa35                	c.j	2005a2ae <at_log+0x17a>
-2005a174:	8526                	c.mv	a0,s1
-2005a176:	004c                	c.addi4spn	a1,sp,4
-2005a178:	39c5                	c.jal	20059e68 <parse_param>
-2005a17a:	4785                	c.li	a5,1
-2005a17c:	84aa                	c.mv	s1,a0
-2005a17e:	1aa7d063          	bge	a5,a0,2005a31e <at_log+0x1ea>
-2005a182:	4522                	c.lwsp	a0,8(sp)
-2005a184:	18050d63          	beq	a0,zero,2005a31e <at_log+0x1ea>
-2005a188:	207070ef          	jal	ra,20061b8e <atoi>
-2005a18c:	0ff57713          	andi	a4,a0,255
-2005a190:	4789                	c.li	a5,2
-2005a192:	16f70563          	beq	a4,a5,2005a2fc <at_log+0x1c8>
-2005a196:	00e7ef63          	bltu	a5,a4,2005a1b4 <at_log+0x80>
-2005a19a:	e771                	c.bnez	a4,2005a266 <at_log+0x132>
-2005a19c:	478d                	c.li	a5,3
-2005a19e:	00f49663          	bne	s1,a5,2005a1aa <at_log+0x76>
-2005a1a2:	4532                	c.lwsp	a0,12(sp)
-2005a1a4:	00054783          	lbu	a5,0(a0)
-2005a1a8:	e78d                	c.bnez	a5,2005a1d2 <at_log+0x9e>
-2005a1aa:	200636b7          	lui	a3,0x20063
-2005a1ae:	9ec68693          	addi	a3,a3,-1556 # 200629ec <pmap_func+0x5c8>
-2005a1b2:	bf45                	c.j	2005a162 <at_log+0x2e>
-2005a1b4:	468d                	c.li	a3,3
-2005a1b6:	14d70f63          	beq	a4,a3,2005a314 <at_log+0x1e0>
-2005a1ba:	200636b7          	lui	a3,0x20063
-2005a1be:	a8068693          	addi	a3,a3,-1408 # 20062a80 <pmap_func+0x65c>
-2005a1c2:	04100613          	addi	a2,zero,65
-2005a1c6:	9e840593          	addi	a1,s0,-1560
-2005a1ca:	4505                	c.li	a0,1
-2005a1cc:	7bd000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a1d0:	b745                	c.j	2005a170 <at_log+0x3c>
-2005a1d2:	57b000ef          	jal	ra,2005af4c <rtk_log_level_get>
-2005a1d6:	45b2                	c.lwsp	a1,12(sp)
-2005a1d8:	862a                	c.mv	a2,a0
-2005a1da:	20063537          	lui	a0,0x20063
-2005a1de:	a0c50513          	addi	a0,a0,-1524 # 20062a0c <pmap_func+0x5e8>
-2005a1e2:	1c4050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a1e6:	200636b7          	lui	a3,0x20063
-2005a1ea:	a9c68693          	addi	a3,a3,-1380 # 20062a9c <pmap_func+0x678>
-2005a1ee:	04100613          	addi	a2,zero,65
-2005a1f2:	9e840593          	addi	a1,s0,-1560
-2005a1f6:	4505                	c.li	a0,1
-2005a1f8:	791000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a1fc:	200636b7          	lui	a3,0x20063
-2005a200:	ab868693          	addi	a3,a3,-1352 # 20062ab8 <pmap_func+0x694>
-2005a204:	04500613          	addi	a2,zero,69
-2005a208:	9e840593          	addi	a1,s0,-1560
-2005a20c:	4509                	c.li	a0,2
-2005a20e:	77b000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a212:	200636b7          	lui	a3,0x20063
-2005a216:	ad468693          	addi	a3,a3,-1324 # 20062ad4 <pmap_func+0x6b0>
-2005a21a:	05700613          	addi	a2,zero,87
-2005a21e:	9e840593          	addi	a1,s0,-1560
-2005a222:	450d                	c.li	a0,3
-2005a224:	765000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a228:	200636b7          	lui	a3,0x20063
-2005a22c:	9e840593          	addi	a1,s0,-1560
-2005a230:	af068693          	addi	a3,a3,-1296 # 20062af0 <pmap_func+0x6cc>
-2005a234:	04900613          	addi	a2,zero,73
-2005a238:	4511                	c.li	a0,4
-2005a23a:	74f000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a23e:	20063537          	lui	a0,0x20063
-2005a242:	b0850513          	addi	a0,a0,-1272 # 20062b08 <pmap_func+0x6e4>
-2005a246:	160050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a24a:	20063537          	lui	a0,0x20063
-2005a24e:	b2090593          	addi	a1,s2,-1248 # 20062b20 <pmap_func+0x6fc>
-2005a252:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-2005a256:	150050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a25a:	50b6                	c.lwsp	ra,108(sp)
-2005a25c:	5426                	c.lwsp	s0,104(sp)
-2005a25e:	5496                	c.lwsp	s1,100(sp)
-2005a260:	5906                	c.lwsp	s2,96(sp)
-2005a262:	6165                	c.addi16sp	sp,112
-2005a264:	8082                	c.jr	ra
-2005a266:	4791                	c.li	a5,4
-2005a268:	00f49a63          	bne	s1,a5,2005a27c <at_log+0x148>
-2005a26c:	47b2                	c.lwsp	a5,12(sp)
-2005a26e:	0007c783          	lbu	a5,0(a5)
-2005a272:	c789                	c.beqz	a5,2005a27c <at_log+0x148>
-2005a274:	4542                	c.lwsp	a0,16(sp)
-2005a276:	00054783          	lbu	a5,0(a0)
-2005a27a:	e791                	c.bnez	a5,2005a286 <at_log+0x152>
-2005a27c:	200636b7          	lui	a3,0x20063
-2005a280:	a2068693          	addi	a3,a3,-1504 # 20062a20 <pmap_func+0x5fc>
-2005a284:	bdf9                	c.j	2005a162 <at_log+0x2e>
-2005a286:	109070ef          	jal	ra,20061b8e <atoi>
-2005a28a:	0ff57593          	andi	a1,a0,255
-2005a28e:	4532                	c.lwsp	a0,12(sp)
-2005a290:	539000ef          	jal	ra,2005afc8 <rtk_log_level_set>
-2005a294:	d929                	c.beqz	a0,2005a1e6 <at_log+0xb2>
-2005a296:	200636b7          	lui	a3,0x20063
-2005a29a:	04100613          	addi	a2,zero,65
-2005a29e:	a4068693          	addi	a3,a3,-1472 # 20062a40 <pmap_func+0x61c>
-2005a2a2:	9e840593          	addi	a1,s0,-1560
-2005a2a6:	4505                	c.li	a0,1
-2005a2a8:	6e1000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a2ac:	4609                	c.li	a2,2
-2005a2ae:	20063537          	lui	a0,0x20063
-2005a2b2:	b2090593          	addi	a1,s2,-1248
-2005a2b6:	b2850513          	addi	a0,a0,-1240 # 20062b28 <pmap_func+0x704>
-2005a2ba:	0ec050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a2be:	20063537          	lui	a0,0x20063
-2005a2c2:	8d050513          	addi	a0,a0,-1840 # 200628d0 <pmap_func+0x4ac>
-2005a2c6:	0e0050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a2ca:	20063537          	lui	a0,0x20063
-2005a2ce:	b3850513          	addi	a0,a0,-1224 # 20062b38 <pmap_func+0x714>
-2005a2d2:	0d4050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a2d6:	20063537          	lui	a0,0x20063
-2005a2da:	b6450513          	addi	a0,a0,-1180 # 20062b64 <pmap_func+0x740>
-2005a2de:	0c8050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a2e2:	20063537          	lui	a0,0x20063
-2005a2e6:	b9c50513          	addi	a0,a0,-1124 # 20062b9c <pmap_func+0x778>
-2005a2ea:	0bc050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a2ee:	20063537          	lui	a0,0x20063
-2005a2f2:	bd050513          	addi	a0,a0,-1072 # 20062bd0 <pmap_func+0x7ac>
-2005a2f6:	0b0050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a2fa:	b785                	c.j	2005a25a <at_log+0x126>
-2005a2fc:	00e48763          	beq	s1,a4,2005a30a <at_log+0x1d6>
-2005a300:	200636b7          	lui	a3,0x20063
-2005a304:	a5c68693          	addi	a3,a3,-1444 # 20062a5c <pmap_func+0x638>
-2005a308:	bda9                	c.j	2005a162 <at_log+0x2e>
-2005a30a:	58818513          	addi	a0,gp,1416 # 20066ef0 <rtk_log_tag_array>
-2005a30e:	3cb000ef          	jal	ra,2005aed8 <rtk_log_array_print>
-2005a312:	bdd1                	c.j	2005a1e6 <at_log+0xb2>
-2005a314:	fef496e3          	bne	s1,a5,2005a300 <at_log+0x1cc>
-2005a318:	415000ef          	jal	ra,2005af2c <rtk_log_array_clear>
-2005a31c:	b5e9                	c.j	2005a1e6 <at_log+0xb2>
-2005a31e:	4711                	c.li	a4,4
-2005a320:	bd69                	c.j	2005a1ba <at_log+0x86>
+2005a13a <at_log>:
+2005a13a:	7159                	c.addi16sp	sp,-112
+2005a13c:	d2a6                	c.swsp	s1,100(sp)
+2005a13e:	05c00613          	addi	a2,zero,92
+2005a142:	84aa                	c.mv	s1,a0
+2005a144:	4581                	c.li	a1,0
+2005a146:	0048                	c.addi4spn	a0,sp,4
+2005a148:	d4a2                	c.swsp	s0,104(sp)
+2005a14a:	d0ca                	c.swsp	s2,96(sp)
+2005a14c:	d686                	c.swsp	ra,108(sp)
+2005a14e:	20063437          	lui	s0,0x20063
+2005a152:	dffb0097          	auipc	ra,0xdffb0
+2005a156:	97c080e7          	jalr	ra,-1668(ra) # 9ace <__wrap_memset>
+2005a15a:	20063937          	lui	s2,0x20063
+2005a15e:	ec91                	c.bnez	s1,2005a17a <at_log+0x40>
+2005a160:	200636b7          	lui	a3,0x20063
+2005a164:	9dc68693          	addi	a3,a3,-1572 # 200629dc <pmap_func+0x5b0>
+2005a168:	04100613          	addi	a2,zero,65
+2005a16c:	9f040593          	addi	a1,s0,-1552 # 200629f0 <pmap_func+0x5c4>
+2005a170:	4505                	c.li	a0,1
+2005a172:	01c010ef          	jal	ra,2005b18e <rtk_log_write>
+2005a176:	4605                	c.li	a2,1
+2005a178:	aa35                	c.j	2005a2b4 <at_log+0x17a>
+2005a17a:	8526                	c.mv	a0,s1
+2005a17c:	004c                	c.addi4spn	a1,sp,4
+2005a17e:	39c5                	c.jal	20059e6e <parse_param>
+2005a180:	4785                	c.li	a5,1
+2005a182:	84aa                	c.mv	s1,a0
+2005a184:	1aa7d063          	bge	a5,a0,2005a324 <at_log+0x1ea>
+2005a188:	4522                	c.lwsp	a0,8(sp)
+2005a18a:	18050d63          	beq	a0,zero,2005a324 <at_log+0x1ea>
+2005a18e:	209070ef          	jal	ra,20061b96 <atoi>
+2005a192:	0ff57713          	andi	a4,a0,255
+2005a196:	4789                	c.li	a5,2
+2005a198:	16f70563          	beq	a4,a5,2005a302 <at_log+0x1c8>
+2005a19c:	00e7ef63          	bltu	a5,a4,2005a1ba <at_log+0x80>
+2005a1a0:	e771                	c.bnez	a4,2005a26c <at_log+0x132>
+2005a1a2:	478d                	c.li	a5,3
+2005a1a4:	00f49663          	bne	s1,a5,2005a1b0 <at_log+0x76>
+2005a1a8:	4532                	c.lwsp	a0,12(sp)
+2005a1aa:	00054783          	lbu	a5,0(a0)
+2005a1ae:	e78d                	c.bnez	a5,2005a1d8 <at_log+0x9e>
+2005a1b0:	200636b7          	lui	a3,0x20063
+2005a1b4:	9f468693          	addi	a3,a3,-1548 # 200629f4 <pmap_func+0x5c8>
+2005a1b8:	bf45                	c.j	2005a168 <at_log+0x2e>
+2005a1ba:	468d                	c.li	a3,3
+2005a1bc:	14d70f63          	beq	a4,a3,2005a31a <at_log+0x1e0>
+2005a1c0:	200636b7          	lui	a3,0x20063
+2005a1c4:	a8868693          	addi	a3,a3,-1400 # 20062a88 <pmap_func+0x65c>
+2005a1c8:	04100613          	addi	a2,zero,65
+2005a1cc:	9f040593          	addi	a1,s0,-1552
+2005a1d0:	4505                	c.li	a0,1
+2005a1d2:	7bd000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a1d6:	b745                	c.j	2005a176 <at_log+0x3c>
+2005a1d8:	57b000ef          	jal	ra,2005af52 <rtk_log_level_get>
+2005a1dc:	45b2                	c.lwsp	a1,12(sp)
+2005a1de:	862a                	c.mv	a2,a0
+2005a1e0:	20063537          	lui	a0,0x20063
+2005a1e4:	a1450513          	addi	a0,a0,-1516 # 20062a14 <pmap_func+0x5e8>
+2005a1e8:	1be050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a1ec:	200636b7          	lui	a3,0x20063
+2005a1f0:	aa468693          	addi	a3,a3,-1372 # 20062aa4 <pmap_func+0x678>
+2005a1f4:	04100613          	addi	a2,zero,65
+2005a1f8:	9f040593          	addi	a1,s0,-1552
+2005a1fc:	4505                	c.li	a0,1
+2005a1fe:	791000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a202:	200636b7          	lui	a3,0x20063
+2005a206:	ac068693          	addi	a3,a3,-1344 # 20062ac0 <pmap_func+0x694>
+2005a20a:	04500613          	addi	a2,zero,69
+2005a20e:	9f040593          	addi	a1,s0,-1552
+2005a212:	4509                	c.li	a0,2
+2005a214:	77b000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a218:	200636b7          	lui	a3,0x20063
+2005a21c:	adc68693          	addi	a3,a3,-1316 # 20062adc <pmap_func+0x6b0>
+2005a220:	05700613          	addi	a2,zero,87
+2005a224:	9f040593          	addi	a1,s0,-1552
+2005a228:	450d                	c.li	a0,3
+2005a22a:	765000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a22e:	200636b7          	lui	a3,0x20063
+2005a232:	9f040593          	addi	a1,s0,-1552
+2005a236:	af868693          	addi	a3,a3,-1288 # 20062af8 <pmap_func+0x6cc>
+2005a23a:	04900613          	addi	a2,zero,73
+2005a23e:	4511                	c.li	a0,4
+2005a240:	74f000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a244:	20063537          	lui	a0,0x20063
+2005a248:	b1050513          	addi	a0,a0,-1264 # 20062b10 <pmap_func+0x6e4>
+2005a24c:	15a050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a250:	20063537          	lui	a0,0x20063
+2005a254:	b2890593          	addi	a1,s2,-1240 # 20062b28 <pmap_func+0x6fc>
+2005a258:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+2005a25c:	14a050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a260:	50b6                	c.lwsp	ra,108(sp)
+2005a262:	5426                	c.lwsp	s0,104(sp)
+2005a264:	5496                	c.lwsp	s1,100(sp)
+2005a266:	5906                	c.lwsp	s2,96(sp)
+2005a268:	6165                	c.addi16sp	sp,112
+2005a26a:	8082                	c.jr	ra
+2005a26c:	4791                	c.li	a5,4
+2005a26e:	00f49a63          	bne	s1,a5,2005a282 <at_log+0x148>
+2005a272:	47b2                	c.lwsp	a5,12(sp)
+2005a274:	0007c783          	lbu	a5,0(a5)
+2005a278:	c789                	c.beqz	a5,2005a282 <at_log+0x148>
+2005a27a:	4542                	c.lwsp	a0,16(sp)
+2005a27c:	00054783          	lbu	a5,0(a0)
+2005a280:	e791                	c.bnez	a5,2005a28c <at_log+0x152>
+2005a282:	200636b7          	lui	a3,0x20063
+2005a286:	a2868693          	addi	a3,a3,-1496 # 20062a28 <pmap_func+0x5fc>
+2005a28a:	bdf9                	c.j	2005a168 <at_log+0x2e>
+2005a28c:	10b070ef          	jal	ra,20061b96 <atoi>
+2005a290:	0ff57593          	andi	a1,a0,255
+2005a294:	4532                	c.lwsp	a0,12(sp)
+2005a296:	539000ef          	jal	ra,2005afce <rtk_log_level_set>
+2005a29a:	d929                	c.beqz	a0,2005a1ec <at_log+0xb2>
+2005a29c:	200636b7          	lui	a3,0x20063
+2005a2a0:	04100613          	addi	a2,zero,65
+2005a2a4:	a4868693          	addi	a3,a3,-1464 # 20062a48 <pmap_func+0x61c>
+2005a2a8:	9f040593          	addi	a1,s0,-1552
+2005a2ac:	4505                	c.li	a0,1
+2005a2ae:	6e1000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a2b2:	4609                	c.li	a2,2
+2005a2b4:	20063537          	lui	a0,0x20063
+2005a2b8:	b2890593          	addi	a1,s2,-1240
+2005a2bc:	b3050513          	addi	a0,a0,-1232 # 20062b30 <pmap_func+0x704>
+2005a2c0:	0e6050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a2c4:	20063537          	lui	a0,0x20063
+2005a2c8:	8d850513          	addi	a0,a0,-1832 # 200628d8 <pmap_func+0x4ac>
+2005a2cc:	0da050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a2d0:	20063537          	lui	a0,0x20063
+2005a2d4:	b4050513          	addi	a0,a0,-1216 # 20062b40 <pmap_func+0x714>
+2005a2d8:	0ce050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a2dc:	20063537          	lui	a0,0x20063
+2005a2e0:	b6c50513          	addi	a0,a0,-1172 # 20062b6c <pmap_func+0x740>
+2005a2e4:	0c2050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a2e8:	20063537          	lui	a0,0x20063
+2005a2ec:	ba450513          	addi	a0,a0,-1116 # 20062ba4 <pmap_func+0x778>
+2005a2f0:	0b6050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a2f4:	20063537          	lui	a0,0x20063
+2005a2f8:	bd850513          	addi	a0,a0,-1064 # 20062bd8 <pmap_func+0x7ac>
+2005a2fc:	0aa050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a300:	b785                	c.j	2005a260 <at_log+0x126>
+2005a302:	00e48763          	beq	s1,a4,2005a310 <at_log+0x1d6>
+2005a306:	200636b7          	lui	a3,0x20063
+2005a30a:	a6468693          	addi	a3,a3,-1436 # 20062a64 <pmap_func+0x638>
+2005a30e:	bda9                	c.j	2005a168 <at_log+0x2e>
+2005a310:	5ac18513          	addi	a0,gp,1452 # 20066f34 <rtk_log_tag_array>
+2005a314:	3cb000ef          	jal	ra,2005aede <rtk_log_array_print>
+2005a318:	bdd1                	c.j	2005a1ec <at_log+0xb2>
+2005a31a:	fef496e3          	bne	s1,a5,2005a306 <at_log+0x1cc>
+2005a31e:	415000ef          	jal	ra,2005af32 <rtk_log_array_clear>
+2005a322:	b5e9                	c.j	2005a1ec <at_log+0xb2>
+2005a324:	4711                	c.li	a4,4
+2005a326:	bd69                	c.j	2005a1c0 <at_log+0x86>
 
-2005a322 <at_rreg>:
-2005a322:	7159                	c.addi16sp	sp,-112
-2005a324:	d4a2                	c.swsp	s0,104(sp)
-2005a326:	05c00613          	addi	a2,zero,92
-2005a32a:	842a                	c.mv	s0,a0
-2005a32c:	4581                	c.li	a1,0
-2005a32e:	0048                	c.addi4spn	a0,sp,4
-2005a330:	d2a6                	c.swsp	s1,100(sp)
-2005a332:	d686                	c.swsp	ra,108(sp)
-2005a334:	200634b7          	lui	s1,0x20063
-2005a338:	dffaf097          	auipc	ra,0xdffaf
-2005a33c:	796080e7          	jalr	ra,1942(ra) # 9ace <__wrap_memset>
-2005a340:	ec05                	c.bnez	s0,2005a378 <at_rreg+0x56>
-2005a342:	200636b7          	lui	a3,0x20063
-2005a346:	200635b7          	lui	a1,0x20063
-2005a34a:	05700613          	addi	a2,zero,87
-2005a34e:	9e858593          	addi	a1,a1,-1560 # 200629e8 <pmap_func+0x5c4>
-2005a352:	450d                	c.li	a0,3
-2005a354:	c0468693          	addi	a3,a3,-1020 # 20062c04 <pmap_func+0x7e0>
-2005a358:	631000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a35c:	20063537          	lui	a0,0x20063
-2005a360:	4605                	c.li	a2,1
-2005a362:	c2048593          	addi	a1,s1,-992 # 20062c20 <pmap_func+0x7fc>
-2005a366:	b2850513          	addi	a0,a0,-1240 # 20062b28 <pmap_func+0x704>
-2005a36a:	03c050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a36e:	50b6                	c.lwsp	ra,108(sp)
-2005a370:	5426                	c.lwsp	s0,104(sp)
-2005a372:	5496                	c.lwsp	s1,100(sp)
-2005a374:	6165                	c.addi16sp	sp,112
-2005a376:	8082                	c.jr	ra
-2005a378:	004c                	c.addi4spn	a1,sp,4
-2005a37a:	8522                	c.mv	a0,s0
-2005a37c:	aedff0ef          	jal	ra,20059e68 <parse_param>
-2005a380:	ffe50713          	addi	a4,a0,-2
-2005a384:	4789                	c.li	a5,2
-2005a386:	fae7eee3          	bltu	a5,a4,2005a342 <at_rreg+0x20>
-2005a38a:	157d                	c.addi	a0,-1
-2005a38c:	0542                	c.slli	a0,0x10
-2005a38e:	002c                	c.addi4spn	a1,sp,8
-2005a390:	8141                	c.srli	a0,0x10
-2005a392:	17a010ef          	jal	ra,2005b50c <cmd_dump_word>
-2005a396:	20063537          	lui	a0,0x20063
-2005a39a:	c2048593          	addi	a1,s1,-992
-2005a39e:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-2005a3a2:	004050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a3a6:	b7e1                	c.j	2005a36e <at_rreg+0x4c>
+2005a328 <at_rreg>:
+2005a328:	7159                	c.addi16sp	sp,-112
+2005a32a:	d4a2                	c.swsp	s0,104(sp)
+2005a32c:	05c00613          	addi	a2,zero,92
+2005a330:	842a                	c.mv	s0,a0
+2005a332:	4581                	c.li	a1,0
+2005a334:	0048                	c.addi4spn	a0,sp,4
+2005a336:	d2a6                	c.swsp	s1,100(sp)
+2005a338:	d686                	c.swsp	ra,108(sp)
+2005a33a:	200634b7          	lui	s1,0x20063
+2005a33e:	dffaf097          	auipc	ra,0xdffaf
+2005a342:	790080e7          	jalr	ra,1936(ra) # 9ace <__wrap_memset>
+2005a346:	ec05                	c.bnez	s0,2005a37e <at_rreg+0x56>
+2005a348:	200636b7          	lui	a3,0x20063
+2005a34c:	200635b7          	lui	a1,0x20063
+2005a350:	05700613          	addi	a2,zero,87
+2005a354:	9f058593          	addi	a1,a1,-1552 # 200629f0 <pmap_func+0x5c4>
+2005a358:	450d                	c.li	a0,3
+2005a35a:	c0c68693          	addi	a3,a3,-1012 # 20062c0c <pmap_func+0x7e0>
+2005a35e:	631000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a362:	20063537          	lui	a0,0x20063
+2005a366:	4605                	c.li	a2,1
+2005a368:	c2848593          	addi	a1,s1,-984 # 20062c28 <pmap_func+0x7fc>
+2005a36c:	b3050513          	addi	a0,a0,-1232 # 20062b30 <pmap_func+0x704>
+2005a370:	036050ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a374:	50b6                	c.lwsp	ra,108(sp)
+2005a376:	5426                	c.lwsp	s0,104(sp)
+2005a378:	5496                	c.lwsp	s1,100(sp)
+2005a37a:	6165                	c.addi16sp	sp,112
+2005a37c:	8082                	c.jr	ra
+2005a37e:	004c                	c.addi4spn	a1,sp,4
+2005a380:	8522                	c.mv	a0,s0
+2005a382:	aedff0ef          	jal	ra,20059e6e <parse_param>
+2005a386:	ffe50713          	addi	a4,a0,-2
+2005a38a:	4789                	c.li	a5,2
+2005a38c:	fae7eee3          	bltu	a5,a4,2005a348 <at_rreg+0x20>
+2005a390:	157d                	c.addi	a0,-1
+2005a392:	0542                	c.slli	a0,0x10
+2005a394:	002c                	c.addi4spn	a1,sp,8
+2005a396:	8141                	c.srli	a0,0x10
+2005a398:	17a010ef          	jal	ra,2005b512 <cmd_dump_word>
+2005a39c:	20063537          	lui	a0,0x20063
+2005a3a0:	c2848593          	addi	a1,s1,-984
+2005a3a4:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+2005a3a8:	7ff040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a3ac:	b7e1                	c.j	2005a374 <at_rreg+0x4c>
 
-2005a3a8 <at_wreg>:
-2005a3a8:	7159                	c.addi16sp	sp,-112
-2005a3aa:	d4a2                	c.swsp	s0,104(sp)
-2005a3ac:	05c00613          	addi	a2,zero,92
-2005a3b0:	842a                	c.mv	s0,a0
-2005a3b2:	4581                	c.li	a1,0
-2005a3b4:	0048                	c.addi4spn	a0,sp,4
-2005a3b6:	d2a6                	c.swsp	s1,100(sp)
-2005a3b8:	d686                	c.swsp	ra,108(sp)
-2005a3ba:	200634b7          	lui	s1,0x20063
-2005a3be:	dffaf097          	auipc	ra,0xdffaf
-2005a3c2:	710080e7          	jalr	ra,1808(ra) # 9ace <__wrap_memset>
-2005a3c6:	ec05                	c.bnez	s0,2005a3fe <at_wreg+0x56>
-2005a3c8:	200636b7          	lui	a3,0x20063
-2005a3cc:	200635b7          	lui	a1,0x20063
-2005a3d0:	05700613          	addi	a2,zero,87
-2005a3d4:	9e858593          	addi	a1,a1,-1560 # 200629e8 <pmap_func+0x5c4>
-2005a3d8:	450d                	c.li	a0,3
-2005a3da:	c2868693          	addi	a3,a3,-984 # 20062c28 <pmap_func+0x804>
-2005a3de:	5ab000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a3e2:	20063537          	lui	a0,0x20063
-2005a3e6:	4605                	c.li	a2,1
-2005a3e8:	c4448593          	addi	a1,s1,-956 # 20062c44 <pmap_func+0x820>
-2005a3ec:	b2850513          	addi	a0,a0,-1240 # 20062b28 <pmap_func+0x704>
-2005a3f0:	7b7040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a3f4:	50b6                	c.lwsp	ra,108(sp)
-2005a3f6:	5426                	c.lwsp	s0,104(sp)
-2005a3f8:	5496                	c.lwsp	s1,100(sp)
-2005a3fa:	6165                	c.addi16sp	sp,112
-2005a3fc:	8082                	c.jr	ra
-2005a3fe:	004c                	c.addi4spn	a1,sp,4
-2005a400:	8522                	c.mv	a0,s0
-2005a402:	a67ff0ef          	jal	ra,20059e68 <parse_param>
-2005a406:	478d                	c.li	a5,3
-2005a408:	fcf510e3          	bne	a0,a5,2005a3c8 <at_wreg+0x20>
-2005a40c:	45a2                	c.lwsp	a1,8(sp)
-2005a40e:	4509                	c.li	a0,2
-2005a410:	056010ef          	jal	ra,2005b466 <cmd_write_word>
-2005a414:	20063537          	lui	a0,0x20063
-2005a418:	c4448593          	addi	a1,s1,-956
-2005a41c:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-2005a420:	787040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a424:	bfc1                	c.j	2005a3f4 <at_wreg+0x4c>
+2005a3ae <at_wreg>:
+2005a3ae:	7159                	c.addi16sp	sp,-112
+2005a3b0:	d4a2                	c.swsp	s0,104(sp)
+2005a3b2:	05c00613          	addi	a2,zero,92
+2005a3b6:	842a                	c.mv	s0,a0
+2005a3b8:	4581                	c.li	a1,0
+2005a3ba:	0048                	c.addi4spn	a0,sp,4
+2005a3bc:	d2a6                	c.swsp	s1,100(sp)
+2005a3be:	d686                	c.swsp	ra,108(sp)
+2005a3c0:	200634b7          	lui	s1,0x20063
+2005a3c4:	dffaf097          	auipc	ra,0xdffaf
+2005a3c8:	70a080e7          	jalr	ra,1802(ra) # 9ace <__wrap_memset>
+2005a3cc:	ec05                	c.bnez	s0,2005a404 <at_wreg+0x56>
+2005a3ce:	200636b7          	lui	a3,0x20063
+2005a3d2:	200635b7          	lui	a1,0x20063
+2005a3d6:	05700613          	addi	a2,zero,87
+2005a3da:	9f058593          	addi	a1,a1,-1552 # 200629f0 <pmap_func+0x5c4>
+2005a3de:	450d                	c.li	a0,3
+2005a3e0:	c3068693          	addi	a3,a3,-976 # 20062c30 <pmap_func+0x804>
+2005a3e4:	5ab000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a3e8:	20063537          	lui	a0,0x20063
+2005a3ec:	4605                	c.li	a2,1
+2005a3ee:	c4c48593          	addi	a1,s1,-948 # 20062c4c <pmap_func+0x820>
+2005a3f2:	b3050513          	addi	a0,a0,-1232 # 20062b30 <pmap_func+0x704>
+2005a3f6:	7b1040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a3fa:	50b6                	c.lwsp	ra,108(sp)
+2005a3fc:	5426                	c.lwsp	s0,104(sp)
+2005a3fe:	5496                	c.lwsp	s1,100(sp)
+2005a400:	6165                	c.addi16sp	sp,112
+2005a402:	8082                	c.jr	ra
+2005a404:	004c                	c.addi4spn	a1,sp,4
+2005a406:	8522                	c.mv	a0,s0
+2005a408:	a67ff0ef          	jal	ra,20059e6e <parse_param>
+2005a40c:	478d                	c.li	a5,3
+2005a40e:	fcf510e3          	bne	a0,a5,2005a3ce <at_wreg+0x20>
+2005a412:	45a2                	c.lwsp	a1,8(sp)
+2005a414:	4509                	c.li	a0,2
+2005a416:	056010ef          	jal	ra,2005b46c <cmd_write_word>
+2005a41a:	20063537          	lui	a0,0x20063
+2005a41e:	c4c48593          	addi	a1,s1,-948
+2005a422:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+2005a426:	781040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a42a:	bfc1                	c.j	2005a3fa <at_wreg+0x4c>
 
-2005a426 <find_status>:
-2005a426:	872a                	c.mv	a4,a0
-2005a428:	4781                	c.li	a5,0
-2005a42a:	00c7c463          	blt	a5,a2,2005a432 <find_status+0xc>
-2005a42e:	4501                	c.li	a0,0
-2005a430:	8082                	c.jr	ra
-2005a432:	852e                	c.mv	a0,a1
-2005a434:	4594                	c.lw	a3,8(a1)
-2005a436:	02458593          	addi	a1,a1,36
-2005a43a:	fee68be3          	beq	a3,a4,2005a430 <find_status+0xa>
-2005a43e:	0785                	c.addi	a5,1
-2005a440:	b7ed                	c.j	2005a42a <find_status+0x4>
+2005a42c <find_status>:
+2005a42c:	872a                	c.mv	a4,a0
+2005a42e:	4781                	c.li	a5,0
+2005a430:	00c7c463          	blt	a5,a2,2005a438 <find_status+0xc>
+2005a434:	4501                	c.li	a0,0
+2005a436:	8082                	c.jr	ra
+2005a438:	852e                	c.mv	a0,a1
+2005a43a:	4594                	c.lw	a3,8(a1)
+2005a43c:	02458593          	addi	a1,a1,36
+2005a440:	fee68be3          	beq	a3,a4,2005a436 <find_status+0xa>
+2005a444:	0785                	c.addi	a5,1
+2005a446:	b7ed                	c.j	2005a430 <find_status+0x4>
 
-2005a442 <find_free_delta>:
-2005a442:	87aa                	c.mv	a5,a0
-2005a444:	4701                	c.li	a4,0
-2005a446:	00b74463          	blt	a4,a1,2005a44e <find_free_delta+0xc>
-2005a44a:	4501                	c.li	a0,0
-2005a44c:	8082                	c.jr	ra
-2005a44e:	853e                	c.mv	a0,a5
-2005a450:	5794                	c.lw	a3,40(a5)
-2005a452:	03878793          	addi	a5,a5,56
-2005a456:	dafd                	c.beqz	a3,2005a44c <find_free_delta+0xa>
-2005a458:	0705                	c.addi	a4,1
-2005a45a:	b7f5                	c.j	2005a446 <find_free_delta+0x4>
+2005a448 <find_free_delta>:
+2005a448:	87aa                	c.mv	a5,a0
+2005a44a:	4701                	c.li	a4,0
+2005a44c:	00b74463          	blt	a4,a1,2005a454 <find_free_delta+0xc>
+2005a450:	4501                	c.li	a0,0
+2005a452:	8082                	c.jr	ra
+2005a454:	853e                	c.mv	a0,a5
+2005a456:	5794                	c.lw	a3,40(a5)
+2005a458:	03878793          	addi	a5,a5,56
+2005a45c:	dafd                	c.beqz	a3,2005a452 <find_free_delta+0xa>
+2005a45e:	0705                	c.addi	a4,1
+2005a460:	b7f5                	c.j	2005a44c <find_free_delta+0x4>
 
-2005a45c <update_status>:
-2005a45c:	7179                	c.addi16sp	sp,-48
-2005a45e:	d226                	c.swsp	s1,36(sp)
-2005a460:	ebc1a783          	lw	a5,-324(gp) # 20066824 <task_status>
-2005a464:	6705                	c.lui	a4,0x1
-2005a466:	d606                	c.swsp	ra,44(sp)
-2005a468:	d422                	c.swsp	s0,40(sp)
-2005a46a:	d04a                	c.swsp	s2,32(sp)
-2005a46c:	ce4e                	c.swsp	s3,28(sp)
-2005a46e:	cc52                	c.swsp	s4,24(sp)
-2005a470:	ca56                	c.swsp	s5,20(sp)
-2005a472:	c85a                	c.swsp	s6,16(sp)
-2005a474:	c65e                	c.swsp	s7,12(sp)
-2005a476:	c462                	c.swsp	s8,8(sp)
-2005a478:	00e786b3          	add	a3,a5,a4
-2005a47c:	2006a603          	lw	a2,512(a3)
-2005a480:	ebc18493          	addi	s1,gp,-324 # 20066824 <task_status>
-2005a484:	ea19                	c.bnez	a2,2005a49a <update_status+0x3e>
-2005a486:	2046a603          	lw	a2,516(a3)
-2005a48a:	ea01                	c.bnez	a2,2005a49a <update_status+0x3e>
-2005a48c:	90070713          	addi	a4,a4,-1792 # 900 <BKUP_Set+0x5a>
-2005a490:	973e                	c.add	a4,a5
-2005a492:	20f6a023          	sw	a5,512(a3)
-2005a496:	20e6a223          	sw	a4,516(a3)
-2005a49a:	6405                	c.lui	s0,0x1
-2005a49c:	97a2                	c.add	a5,s0
-2005a49e:	20078793          	addi	a5,a5,512
-2005a4a2:	47d8                	c.lw	a4,12(a5)
-2005a4a4:	43d4                	c.lw	a3,4(a5)
-2005a4a6:	21040913          	addi	s2,s0,528 # 1210 <CPU_ClkGet+0x6fa>
-2005a4aa:	c798                	c.sw	a4,8(a5)
-2005a4ac:	4398                	c.lw	a4,0(a5)
-2005a4ae:	c394                	c.sw	a3,0(a5)
-2005a4b0:	4a01                	c.li	s4,0
-2005a4b2:	c3d8                	c.sw	a4,4(a5)
-2005a4b4:	252030ef          	jal	ra,2005d706 <uxTaskGetNumberOfTasks>
-2005a4b8:	409c                	c.lw	a5,0(s1)
-2005a4ba:	85aa                	c.mv	a1,a0
-2005a4bc:	4601                	c.li	a2,0
-2005a4be:	97a2                	c.add	a5,s0
-2005a4c0:	20a7a623          	sw	a0,524(a5)
-2005a4c4:	2047a503          	lw	a0,516(a5)
-2005a4c8:	59d030ef          	jal	ra,2005e264 <uxTaskGetSystemState>
-2005a4cc:	409c                	c.lw	a5,0(s1)
-2005a4ce:	e0040613          	addi	a2,s0,-512
-2005a4d2:	4581                	c.li	a1,0
-2005a4d4:	00878733          	add	a4,a5,s0
-2005a4d8:	20a72623          	sw	a0,524(a4)
-2005a4dc:	01278533          	add	a0,a5,s2
-2005a4e0:	dffaf097          	auipc	ra,0xdffaf
-2005a4e4:	5ee080e7          	jalr	ra,1518(ra) # 9ace <__wrap_memset>
-2005a4e8:	0004aa83          	lw	s5,0(s1)
-2005a4ec:	9456                	c.add	s0,s5
-2005a4ee:	20842783          	lw	a5,520(s0)
-2005a4f2:	00f05963          	bge	zero,a5,2005a504 <update_status+0xa8>
-2005a4f6:	02400c13          	addi	s8,zero,36
-2005a4fa:	9aca                	c.add	s5,s2
-2005a4fc:	20c42783          	lw	a5,524(s0)
-2005a500:	00fa4e63          	blt	s4,a5,2005a51c <update_status+0xc0>
-2005a504:	50b2                	c.lwsp	ra,44(sp)
-2005a506:	5422                	c.lwsp	s0,40(sp)
-2005a508:	5492                	c.lwsp	s1,36(sp)
-2005a50a:	5902                	c.lwsp	s2,32(sp)
-2005a50c:	49f2                	c.lwsp	s3,28(sp)
-2005a50e:	4a62                	c.lwsp	s4,24(sp)
-2005a510:	4ad2                	c.lwsp	s5,20(sp)
-2005a512:	4b42                	c.lwsp	s6,16(sp)
-2005a514:	4bb2                	c.lwsp	s7,12(sp)
-2005a516:	4c22                	c.lwsp	s8,8(sp)
-2005a518:	6145                	c.addi16sp	sp,48
-2005a51a:	8082                	c.jr	ra
-2005a51c:	038a0933          	mul	s2,s4,s8
-2005a520:	20442b83          	lw	s7,516(s0)
-2005a524:	20842603          	lw	a2,520(s0)
-2005a528:	20042583          	lw	a1,512(s0)
-2005a52c:	9bca                	c.add	s7,s2
-2005a52e:	008ba503          	lw	a0,8(s7)
-2005a532:	3dd5                	c.jal	2005a426 <find_status>
-2005a534:	04000593          	addi	a1,zero,64
-2005a538:	8b2a                	c.mv	s6,a0
-2005a53a:	8556                	c.mv	a0,s5
-2005a53c:	3719                	c.jal	2005a442 <find_free_delta>
-2005a53e:	000ba783          	lw	a5,0(s7)
-2005a542:	84aa                	c.mv	s1,a0
-2005a544:	467d                	c.li	a2,31
-2005a546:	d51c                	c.sw	a5,40(a0)
-2005a548:	20442783          	lw	a5,516(s0)
-2005a54c:	97ca                	c.add	a5,s2
-2005a54e:	43cc                	c.lw	a1,4(a5)
-2005a550:	c14c                	c.sw	a1,4(a0)
-2005a552:	20442783          	lw	a5,516(s0)
-2005a556:	97ca                	c.add	a5,s2
-2005a558:	479c                	c.lw	a5,8(a5)
-2005a55a:	00052023          	sw	zero,0(a0)
-2005a55e:	0521                	c.addi	a0,8
-2005a560:	d15c                	c.sw	a5,36(a0)
-2005a562:	20442783          	lw	a5,516(s0)
-2005a566:	97ca                	c.add	a5,s2
-2005a568:	00c7c783          	lbu	a5,12(a5)
-2005a56c:	02f50623          	sb	a5,44(a0)
-2005a570:	20442783          	lw	a5,516(s0)
-2005a574:	97ca                	c.add	a5,s2
-2005a576:	4b9c                	c.lw	a5,16(a5)
-2005a578:	d51c                	c.sw	a5,40(a0)
-2005a57a:	067070ef          	jal	ra,20061de0 <strncpy>
-2005a57e:	c095                	c.beqz	s1,2005a5a2 <update_status+0x146>
-2005a580:	20442783          	lw	a5,516(s0)
-2005a584:	97ca                	c.add	a5,s2
-2005a586:	4f9c                	c.lw	a5,24(a5)
-2005a588:	000b0563          	beq	s6,zero,2005a592 <update_status+0x136>
-2005a58c:	018b2703          	lw	a4,24(s6)
-2005a590:	8f99                	c.sub	a5,a4
-2005a592:	c09c                	c.sw	a5,0(s1)
-2005a594:	20442783          	lw	a5,516(s0)
-2005a598:	993e                	c.add	s2,a5
-2005a59a:	00c94783          	lbu	a5,12(s2)
-2005a59e:	02f48a23          	sb	a5,52(s1)
-2005a5a2:	0a05                	c.addi	s4,1
-2005a5a4:	bfa1                	c.j	2005a4fc <update_status+0xa0>
+2005a462 <update_status>:
+2005a462:	7179                	c.addi16sp	sp,-48
+2005a464:	d226                	c.swsp	s1,36(sp)
+2005a466:	ebc1a783          	lw	a5,-324(gp) # 20066844 <task_status>
+2005a46a:	6705                	c.lui	a4,0x1
+2005a46c:	d606                	c.swsp	ra,44(sp)
+2005a46e:	d422                	c.swsp	s0,40(sp)
+2005a470:	d04a                	c.swsp	s2,32(sp)
+2005a472:	ce4e                	c.swsp	s3,28(sp)
+2005a474:	cc52                	c.swsp	s4,24(sp)
+2005a476:	ca56                	c.swsp	s5,20(sp)
+2005a478:	c85a                	c.swsp	s6,16(sp)
+2005a47a:	c65e                	c.swsp	s7,12(sp)
+2005a47c:	c462                	c.swsp	s8,8(sp)
+2005a47e:	00e786b3          	add	a3,a5,a4
+2005a482:	2006a603          	lw	a2,512(a3)
+2005a486:	ebc18493          	addi	s1,gp,-324 # 20066844 <task_status>
+2005a48a:	ea19                	c.bnez	a2,2005a4a0 <update_status+0x3e>
+2005a48c:	2046a603          	lw	a2,516(a3)
+2005a490:	ea01                	c.bnez	a2,2005a4a0 <update_status+0x3e>
+2005a492:	90070713          	addi	a4,a4,-1792 # 900 <BKUP_Set+0x5a>
+2005a496:	973e                	c.add	a4,a5
+2005a498:	20f6a023          	sw	a5,512(a3)
+2005a49c:	20e6a223          	sw	a4,516(a3)
+2005a4a0:	6405                	c.lui	s0,0x1
+2005a4a2:	97a2                	c.add	a5,s0
+2005a4a4:	20078793          	addi	a5,a5,512
+2005a4a8:	47d8                	c.lw	a4,12(a5)
+2005a4aa:	43d4                	c.lw	a3,4(a5)
+2005a4ac:	21040913          	addi	s2,s0,528 # 1210 <CPU_ClkGet+0x6fa>
+2005a4b0:	c798                	c.sw	a4,8(a5)
+2005a4b2:	4398                	c.lw	a4,0(a5)
+2005a4b4:	c394                	c.sw	a3,0(a5)
+2005a4b6:	4a01                	c.li	s4,0
+2005a4b8:	c3d8                	c.sw	a4,4(a5)
+2005a4ba:	24c030ef          	jal	ra,2005d706 <uxTaskGetNumberOfTasks>
+2005a4be:	409c                	c.lw	a5,0(s1)
+2005a4c0:	85aa                	c.mv	a1,a0
+2005a4c2:	4601                	c.li	a2,0
+2005a4c4:	97a2                	c.add	a5,s0
+2005a4c6:	20a7a623          	sw	a0,524(a5)
+2005a4ca:	2047a503          	lw	a0,516(a5)
+2005a4ce:	597030ef          	jal	ra,2005e264 <uxTaskGetSystemState>
+2005a4d2:	409c                	c.lw	a5,0(s1)
+2005a4d4:	e0040613          	addi	a2,s0,-512
+2005a4d8:	4581                	c.li	a1,0
+2005a4da:	00878733          	add	a4,a5,s0
+2005a4de:	20a72623          	sw	a0,524(a4)
+2005a4e2:	01278533          	add	a0,a5,s2
+2005a4e6:	dffaf097          	auipc	ra,0xdffaf
+2005a4ea:	5e8080e7          	jalr	ra,1512(ra) # 9ace <__wrap_memset>
+2005a4ee:	0004aa83          	lw	s5,0(s1)
+2005a4f2:	9456                	c.add	s0,s5
+2005a4f4:	20842783          	lw	a5,520(s0)
+2005a4f8:	00f05963          	bge	zero,a5,2005a50a <update_status+0xa8>
+2005a4fc:	02400c13          	addi	s8,zero,36
+2005a500:	9aca                	c.add	s5,s2
+2005a502:	20c42783          	lw	a5,524(s0)
+2005a506:	00fa4e63          	blt	s4,a5,2005a522 <update_status+0xc0>
+2005a50a:	50b2                	c.lwsp	ra,44(sp)
+2005a50c:	5422                	c.lwsp	s0,40(sp)
+2005a50e:	5492                	c.lwsp	s1,36(sp)
+2005a510:	5902                	c.lwsp	s2,32(sp)
+2005a512:	49f2                	c.lwsp	s3,28(sp)
+2005a514:	4a62                	c.lwsp	s4,24(sp)
+2005a516:	4ad2                	c.lwsp	s5,20(sp)
+2005a518:	4b42                	c.lwsp	s6,16(sp)
+2005a51a:	4bb2                	c.lwsp	s7,12(sp)
+2005a51c:	4c22                	c.lwsp	s8,8(sp)
+2005a51e:	6145                	c.addi16sp	sp,48
+2005a520:	8082                	c.jr	ra
+2005a522:	038a0933          	mul	s2,s4,s8
+2005a526:	20442b83          	lw	s7,516(s0)
+2005a52a:	20842603          	lw	a2,520(s0)
+2005a52e:	20042583          	lw	a1,512(s0)
+2005a532:	9bca                	c.add	s7,s2
+2005a534:	008ba503          	lw	a0,8(s7)
+2005a538:	3dd5                	c.jal	2005a42c <find_status>
+2005a53a:	04000593          	addi	a1,zero,64
+2005a53e:	8b2a                	c.mv	s6,a0
+2005a540:	8556                	c.mv	a0,s5
+2005a542:	3719                	c.jal	2005a448 <find_free_delta>
+2005a544:	000ba783          	lw	a5,0(s7)
+2005a548:	84aa                	c.mv	s1,a0
+2005a54a:	467d                	c.li	a2,31
+2005a54c:	d51c                	c.sw	a5,40(a0)
+2005a54e:	20442783          	lw	a5,516(s0)
+2005a552:	97ca                	c.add	a5,s2
+2005a554:	43cc                	c.lw	a1,4(a5)
+2005a556:	c14c                	c.sw	a1,4(a0)
+2005a558:	20442783          	lw	a5,516(s0)
+2005a55c:	97ca                	c.add	a5,s2
+2005a55e:	479c                	c.lw	a5,8(a5)
+2005a560:	00052023          	sw	zero,0(a0)
+2005a564:	0521                	c.addi	a0,8
+2005a566:	d15c                	c.sw	a5,36(a0)
+2005a568:	20442783          	lw	a5,516(s0)
+2005a56c:	97ca                	c.add	a5,s2
+2005a56e:	00c7c783          	lbu	a5,12(a5)
+2005a572:	02f50623          	sb	a5,44(a0)
+2005a576:	20442783          	lw	a5,516(s0)
+2005a57a:	97ca                	c.add	a5,s2
+2005a57c:	4b9c                	c.lw	a5,16(a5)
+2005a57e:	d51c                	c.sw	a5,40(a0)
+2005a580:	069070ef          	jal	ra,20061de8 <strncpy>
+2005a584:	c095                	c.beqz	s1,2005a5a8 <update_status+0x146>
+2005a586:	20442783          	lw	a5,516(s0)
+2005a58a:	97ca                	c.add	a5,s2
+2005a58c:	4f9c                	c.lw	a5,24(a5)
+2005a58e:	000b0563          	beq	s6,zero,2005a598 <update_status+0x136>
+2005a592:	018b2703          	lw	a4,24(s6)
+2005a596:	8f99                	c.sub	a5,a4
+2005a598:	c09c                	c.sw	a5,0(s1)
+2005a59a:	20442783          	lw	a5,516(s0)
+2005a59e:	993e                	c.add	s2,a5
+2005a5a0:	00c94783          	lbu	a5,12(s2)
+2005a5a4:	02f48a23          	sb	a5,52(s1)
+2005a5a8:	0a05                	c.addi	s4,1
+2005a5aa:	bfa1                	c.j	2005a502 <update_status+0xa0>
 
-2005a5a6 <print_delta>:
-2005a5a6:	715d                	c.addi16sp	sp,-80
-2005a5a8:	736277b7          	lui	a5,0x73627
-2005a5ac:	c4a2                	c.swsp	s0,72(sp)
-2005a5ae:	25278793          	addi	a5,a5,594 # 73627252 <__kr4_psram_text_start__+0x134a7232>
-2005a5b2:	842a                	c.mv	s0,a0
-2005a5b4:	20063737          	lui	a4,0x20063
-2005a5b8:	200636b7          	lui	a3,0x20063
-2005a5bc:	20063637          	lui	a2,0x20063
-2005a5c0:	200635b7          	lui	a1,0x20063
-2005a5c4:	20063537          	lui	a0,0x20063
-2005a5c8:	c43e                	c.swsp	a5,8(sp)
-2005a5ca:	c4c70713          	addi	a4,a4,-948 # 20062c4c <pmap_func+0x828>
-2005a5ce:	04400793          	addi	a5,zero,68
-2005a5d2:	c5468693          	addi	a3,a3,-940 # 20062c54 <pmap_func+0x830>
-2005a5d6:	c5c60613          	addi	a2,a2,-932 # 20062c5c <pmap_func+0x838>
-2005a5da:	c6458593          	addi	a1,a1,-924 # 20062c64 <pmap_func+0x840>
-2005a5de:	c7050513          	addi	a0,a0,-912 # 20062c70 <pmap_func+0x84c>
-2005a5e2:	c2a6                	c.swsp	s1,68(sp)
-2005a5e4:	c0ca                	c.swsp	s2,64(sp)
-2005a5e6:	de4e                	c.swsp	s3,60(sp)
-2005a5e8:	dc52                	c.swsp	s4,56(sp)
-2005a5ea:	da56                	c.swsp	s5,52(sp)
-2005a5ec:	d85a                	c.swsp	s6,48(sp)
-2005a5ee:	d65e                	c.swsp	s7,44(sp)
-2005a5f0:	ee22                	c.fswsp	fs0,28(sp)
-2005a5f2:	00f10623          	sb	a5,12(sp)
-2005a5f6:	c686                	c.swsp	ra,76(sp)
-2005a5f8:	00011223          	sh	zero,4(sp)
-2005a5fc:	00010323          	sb	zero,6(sp)
-2005a600:	5a7040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a604:	e581a407          	flw	fs0,-424(gp) # 200667c0 <__sdata_start__>
-2005a608:	6485                	c.lui	s1,0x1
-2005a60a:	4b81                	c.li	s7,0
-2005a60c:	03800993          	addi	s3,zero,56
-2005a610:	06400b13          	addi	s6,zero,100
-2005a614:	21848a13          	addi	s4,s1,536 # 1218 <CPU_ClkGet+0x702>
-2005a618:	20063ab7          	lui	s5,0x20063
-2005a61c:	460d                	c.li	a2,3
-2005a61e:	4581                	c.li	a1,0
-2005a620:	0048                	c.addi4spn	a0,sp,4
-2005a622:	dffaf097          	auipc	ra,0xdffaf
-2005a626:	4ac080e7          	jalr	ra,1196(ra) # 9ace <__wrap_memset>
-2005a62a:	033b8633          	mul	a2,s7,s3
-2005a62e:	ebc1a803          	lw	a6,-324(gp) # 20066824 <task_status>
-2005a632:	d0047753          	fcvt.s.w	fa4,s0
-2005a636:	4529                	c.li	a0,10
-2005a638:	00c806b3          	add	a3,a6,a2
-2005a63c:	96a6                	c.add	a3,s1
-2005a63e:	2106a783          	lw	a5,528(a3)
-2005a642:	d007f7d3          	fcvt.s.w	fa5,a5
-2005a646:	1087f7d3          	fmul.s	fa5,fa5,fs0
-2005a64a:	18e7f7d3          	fdiv.s	fa5,fa5,fa4
-2005a64e:	1087f7d3          	fmul.s	fa5,fa5,fs0
-2005a652:	c0079753          	fcvt.w.s	a4,fa5,rtz
-2005a656:	036767b3          	rem	a5,a4,s6
-2005a65a:	02a787b3          	mul	a5,a5,a0
-2005a65e:	0367c5b3          	div	a1,a5,s6
-2005a662:	0367e7b3          	rem	a5,a5,s6
-2005a666:	03058593          	addi	a1,a1,48
-2005a66a:	00b10223          	sb	a1,4(sp)
-2005a66e:	02a787b3          	mul	a5,a5,a0
-2005a672:	0367c7b3          	div	a5,a5,s6
-2005a676:	03078793          	addi	a5,a5,48
-2005a67a:	00f102a3          	sb	a5,5(sp)
-2005a67e:	2386a783          	lw	a5,568(a3)
-2005a682:	c78d                	c.beqz	a5,2005a6ac <print_delta+0x106>
-2005a684:	03674733          	div	a4,a4,s6
-2005a688:	2446c503          	lbu	a0,580(a3)
-2005a68c:	014605b3          	add	a1,a2,s4
-2005a690:	2406a683          	lw	a3,576(a3)
-2005a694:	01050793          	addi	a5,a0,16
-2005a698:	00278533          	add	a0,a5,sp
-2005a69c:	ff854603          	lbu	a2,-8(a0)
-2005a6a0:	005c                	c.addi4spn	a5,sp,4
-2005a6a2:	95c2                	c.add	a1,a6
-2005a6a4:	c80a8513          	addi	a0,s5,-896 # 20062c80 <pmap_func+0x85c>
-2005a6a8:	4ff040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a6ac:	0b85                	c.addi	s7,1
-2005a6ae:	04000793          	addi	a5,zero,64
-2005a6b2:	f6fb95e3          	bne	s7,a5,2005a61c <print_delta+0x76>
-2005a6b6:	40b6                	c.lwsp	ra,76(sp)
-2005a6b8:	4426                	c.lwsp	s0,72(sp)
-2005a6ba:	4496                	c.lwsp	s1,68(sp)
-2005a6bc:	4906                	c.lwsp	s2,64(sp)
-2005a6be:	59f2                	c.lwsp	s3,60(sp)
-2005a6c0:	5a62                	c.lwsp	s4,56(sp)
-2005a6c2:	5ad2                	c.lwsp	s5,52(sp)
-2005a6c4:	5b42                	c.lwsp	s6,48(sp)
-2005a6c6:	5bb2                	c.lwsp	s7,44(sp)
-2005a6c8:	6472                	c.flwsp	fs0,28(sp)
-2005a6ca:	6161                	c.addi16sp	sp,80
-2005a6cc:	8082                	c.jr	ra
+2005a5ac <print_delta>:
+2005a5ac:	715d                	c.addi16sp	sp,-80
+2005a5ae:	736277b7          	lui	a5,0x73627
+2005a5b2:	c4a2                	c.swsp	s0,72(sp)
+2005a5b4:	25278793          	addi	a5,a5,594 # 73627252 <__kr4_psram_text_start__+0x134a7232>
+2005a5b8:	842a                	c.mv	s0,a0
+2005a5ba:	20063737          	lui	a4,0x20063
+2005a5be:	200636b7          	lui	a3,0x20063
+2005a5c2:	20063637          	lui	a2,0x20063
+2005a5c6:	200635b7          	lui	a1,0x20063
+2005a5ca:	20063537          	lui	a0,0x20063
+2005a5ce:	c43e                	c.swsp	a5,8(sp)
+2005a5d0:	c5470713          	addi	a4,a4,-940 # 20062c54 <pmap_func+0x828>
+2005a5d4:	04400793          	addi	a5,zero,68
+2005a5d8:	c5c68693          	addi	a3,a3,-932 # 20062c5c <pmap_func+0x830>
+2005a5dc:	c6460613          	addi	a2,a2,-924 # 20062c64 <pmap_func+0x838>
+2005a5e0:	c6c58593          	addi	a1,a1,-916 # 20062c6c <pmap_func+0x840>
+2005a5e4:	c7850513          	addi	a0,a0,-904 # 20062c78 <pmap_func+0x84c>
+2005a5e8:	c2a6                	c.swsp	s1,68(sp)
+2005a5ea:	c0ca                	c.swsp	s2,64(sp)
+2005a5ec:	de4e                	c.swsp	s3,60(sp)
+2005a5ee:	dc52                	c.swsp	s4,56(sp)
+2005a5f0:	da56                	c.swsp	s5,52(sp)
+2005a5f2:	d85a                	c.swsp	s6,48(sp)
+2005a5f4:	d65e                	c.swsp	s7,44(sp)
+2005a5f6:	ee22                	c.fswsp	fs0,28(sp)
+2005a5f8:	00f10623          	sb	a5,12(sp)
+2005a5fc:	c686                	c.swsp	ra,76(sp)
+2005a5fe:	00011223          	sh	zero,4(sp)
+2005a602:	00010323          	sb	zero,6(sp)
+2005a606:	5a1040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a60a:	e581a407          	flw	fs0,-424(gp) # 200667e0 <__sdata_start__>
+2005a60e:	6485                	c.lui	s1,0x1
+2005a610:	4b81                	c.li	s7,0
+2005a612:	03800993          	addi	s3,zero,56
+2005a616:	06400b13          	addi	s6,zero,100
+2005a61a:	21848a13          	addi	s4,s1,536 # 1218 <CPU_ClkGet+0x702>
+2005a61e:	20063ab7          	lui	s5,0x20063
+2005a622:	460d                	c.li	a2,3
+2005a624:	4581                	c.li	a1,0
+2005a626:	0048                	c.addi4spn	a0,sp,4
+2005a628:	dffaf097          	auipc	ra,0xdffaf
+2005a62c:	4a6080e7          	jalr	ra,1190(ra) # 9ace <__wrap_memset>
+2005a630:	033b8633          	mul	a2,s7,s3
+2005a634:	ebc1a803          	lw	a6,-324(gp) # 20066844 <task_status>
+2005a638:	d0047753          	fcvt.s.w	fa4,s0
+2005a63c:	4529                	c.li	a0,10
+2005a63e:	00c806b3          	add	a3,a6,a2
+2005a642:	96a6                	c.add	a3,s1
+2005a644:	2106a783          	lw	a5,528(a3)
+2005a648:	d007f7d3          	fcvt.s.w	fa5,a5
+2005a64c:	1087f7d3          	fmul.s	fa5,fa5,fs0
+2005a650:	18e7f7d3          	fdiv.s	fa5,fa5,fa4
+2005a654:	1087f7d3          	fmul.s	fa5,fa5,fs0
+2005a658:	c0079753          	fcvt.w.s	a4,fa5,rtz
+2005a65c:	036767b3          	rem	a5,a4,s6
+2005a660:	02a787b3          	mul	a5,a5,a0
+2005a664:	0367c5b3          	div	a1,a5,s6
+2005a668:	0367e7b3          	rem	a5,a5,s6
+2005a66c:	03058593          	addi	a1,a1,48
+2005a670:	00b10223          	sb	a1,4(sp)
+2005a674:	02a787b3          	mul	a5,a5,a0
+2005a678:	0367c7b3          	div	a5,a5,s6
+2005a67c:	03078793          	addi	a5,a5,48
+2005a680:	00f102a3          	sb	a5,5(sp)
+2005a684:	2386a783          	lw	a5,568(a3)
+2005a688:	c78d                	c.beqz	a5,2005a6b2 <print_delta+0x106>
+2005a68a:	03674733          	div	a4,a4,s6
+2005a68e:	2446c503          	lbu	a0,580(a3)
+2005a692:	014605b3          	add	a1,a2,s4
+2005a696:	2406a683          	lw	a3,576(a3)
+2005a69a:	01050793          	addi	a5,a0,16
+2005a69e:	00278533          	add	a0,a5,sp
+2005a6a2:	ff854603          	lbu	a2,-8(a0)
+2005a6a6:	005c                	c.addi4spn	a5,sp,4
+2005a6a8:	95c2                	c.add	a1,a6
+2005a6aa:	c88a8513          	addi	a0,s5,-888 # 20062c88 <pmap_func+0x85c>
+2005a6ae:	4f9040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a6b2:	0b85                	c.addi	s7,1
+2005a6b4:	04000793          	addi	a5,zero,64
+2005a6b8:	f6fb95e3          	bne	s7,a5,2005a622 <print_delta+0x76>
+2005a6bc:	40b6                	c.lwsp	ra,76(sp)
+2005a6be:	4426                	c.lwsp	s0,72(sp)
+2005a6c0:	4496                	c.lwsp	s1,68(sp)
+2005a6c2:	4906                	c.lwsp	s2,64(sp)
+2005a6c4:	59f2                	c.lwsp	s3,60(sp)
+2005a6c6:	5a62                	c.lwsp	s4,56(sp)
+2005a6c8:	5ad2                	c.lwsp	s5,52(sp)
+2005a6ca:	5b42                	c.lwsp	s6,48(sp)
+2005a6cc:	5bb2                	c.lwsp	s7,44(sp)
+2005a6ce:	6472                	c.flwsp	fs0,28(sp)
+2005a6d0:	6161                	c.addi16sp	sp,80
+2005a6d2:	8082                	c.jr	ra
 
-2005a6ce <cpu_stat_thread>:
-2005a6ce:	7179                	c.addi16sp	sp,-48
-2005a6d0:	c62a                	c.swsp	a0,12(sp)
-2005a6d2:	4521                	c.li	a0,8
-2005a6d4:	d226                	c.swsp	s1,36(sp)
-2005a6d6:	d606                	c.swsp	ra,44(sp)
-2005a6d8:	d422                	c.swsp	s0,40(sp)
-2005a6da:	d04a                	c.swsp	s2,32(sp)
-2005a6dc:	ce4e                	c.swsp	s3,28(sp)
-2005a6de:	cc52                	c.swsp	s4,24(sp)
-2005a6e0:	ca56                	c.swsp	s5,20(sp)
-2005a6e2:	00c010ef          	jal	ra,2005b6ee <rtos_mem_malloc>
-2005a6e6:	45b2                	c.lwsp	a1,12(sp)
-2005a6e8:	ec018493          	addi	s1,gp,-320 # 20066828 <top_exit_sema>
-2005a6ec:	e131                	c.bnez	a0,2005a730 <cpu_stat_thread+0x62>
-2005a6ee:	200635b7          	lui	a1,0x20063
-2005a6f2:	20063537          	lui	a0,0x20063
-2005a6f6:	f4c58593          	addi	a1,a1,-180 # 20062f4c <__FUNCTION__.0>
-2005a6fa:	c9450513          	addi	a0,a0,-876 # 20062c94 <pmap_func+0x870>
-2005a6fe:	4a9040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a702:	4088                	c.lw	a0,0(s1)
-2005a704:	ebc18413          	addi	s0,gp,-324 # 20066824 <task_status>
-2005a708:	1fe010ef          	jal	ra,2005b906 <rtos_sema_delete>
-2005a70c:	4008                	c.lw	a0,0(s0)
-2005a70e:	0004a023          	sw	zero,0(s1)
-2005a712:	006010ef          	jal	ra,2005b718 <rtos_mem_free>
-2005a716:	00042023          	sw	zero,0(s0)
-2005a71a:	5422                	c.lwsp	s0,40(sp)
-2005a71c:	50b2                	c.lwsp	ra,44(sp)
-2005a71e:	5492                	c.lwsp	s1,36(sp)
-2005a720:	5902                	c.lwsp	s2,32(sp)
-2005a722:	49f2                	c.lwsp	s3,28(sp)
-2005a724:	4a62                	c.lwsp	s4,24(sp)
-2005a726:	4ad2                	c.lwsp	s5,20(sp)
-2005a728:	4501                	c.li	a0,0
-2005a72a:	6145                	c.addi16sp	sp,48
-2005a72c:	4b40106f          	jal	zero,2005bbe0 <rtos_task_delete>
-2005a730:	4621                	c.li	a2,8
-2005a732:	842a                	c.mv	s0,a0
-2005a734:	dffaf097          	auipc	ra,0xdffaf
-2005a738:	39c080e7          	jalr	ra,924(ra) # 9ad0 <__wrap_memcpy>
-2005a73c:	410187b7          	lui	a5,0x41018
-2005a740:	4bdc                	c.lw	a5,20(a5)
-2005a742:	3e800a93          	addi	s5,zero,1000
-2005a746:	eaf1a823          	sw	a5,-336(gp) # 20066818 <last_tick>
-2005a74a:	5a7d                	c.li	s4,-1
-2005a74c:	eb018913          	addi	s2,gp,-336 # 20066818 <last_tick>
-2005a750:	410189b7          	lui	s3,0x41018
-2005a754:	400c                	c.lw	a1,0(s0)
-2005a756:	4088                	c.lw	a0,0(s1)
-2005a758:	02ba85b3          	mul	a1,s5,a1
-2005a75c:	1c0010ef          	jal	ra,2005b91c <rtos_sema_take>
-2005a760:	03451463          	bne	a0,s4,2005a788 <cpu_stat_thread+0xba>
-2005a764:	39e5                	c.jal	2005a45c <update_status>
-2005a766:	0149a503          	lw	a0,20(s3) # 41018014 <__km4_bd_boot_download_addr__+0x11006014>
-2005a76a:	00092783          	lw	a5,0(s2)
-2005a76e:	0149a703          	lw	a4,20(s3)
-2005a772:	8d1d                	c.sub	a0,a5
-2005a774:	00e92023          	sw	a4,0(s2)
-2005a778:	353d                	c.jal	2005a5a6 <print_delta>
-2005a77a:	405c                	c.lw	a5,4(s0)
-2005a77c:	00f05563          	bge	zero,a5,2005a786 <cpu_stat_thread+0xb8>
-2005a780:	17fd                	c.addi	a5,-1
-2005a782:	c05c                	c.sw	a5,4(s0)
-2005a784:	bfc1                	c.j	2005a754 <cpu_stat_thread+0x86>
-2005a786:	f7f9                	c.bnez	a5,2005a754 <cpu_stat_thread+0x86>
-2005a788:	8522                	c.mv	a0,s0
-2005a78a:	78f000ef          	jal	ra,2005b718 <rtos_mem_free>
-2005a78e:	bf95                	c.j	2005a702 <cpu_stat_thread+0x34>
+2005a6d4 <cpu_stat_thread>:
+2005a6d4:	7179                	c.addi16sp	sp,-48
+2005a6d6:	c62a                	c.swsp	a0,12(sp)
+2005a6d8:	4521                	c.li	a0,8
+2005a6da:	d226                	c.swsp	s1,36(sp)
+2005a6dc:	d606                	c.swsp	ra,44(sp)
+2005a6de:	d422                	c.swsp	s0,40(sp)
+2005a6e0:	d04a                	c.swsp	s2,32(sp)
+2005a6e2:	ce4e                	c.swsp	s3,28(sp)
+2005a6e4:	cc52                	c.swsp	s4,24(sp)
+2005a6e6:	ca56                	c.swsp	s5,20(sp)
+2005a6e8:	00c010ef          	jal	ra,2005b6f4 <rtos_mem_malloc>
+2005a6ec:	45b2                	c.lwsp	a1,12(sp)
+2005a6ee:	ec018493          	addi	s1,gp,-320 # 20066848 <top_exit_sema>
+2005a6f2:	e131                	c.bnez	a0,2005a736 <cpu_stat_thread+0x62>
+2005a6f4:	200635b7          	lui	a1,0x20063
+2005a6f8:	20063537          	lui	a0,0x20063
+2005a6fc:	f5458593          	addi	a1,a1,-172 # 20062f54 <__FUNCTION__.0>
+2005a700:	c9c50513          	addi	a0,a0,-868 # 20062c9c <pmap_func+0x870>
+2005a704:	4a3040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a708:	4088                	c.lw	a0,0(s1)
+2005a70a:	ebc18413          	addi	s0,gp,-324 # 20066844 <task_status>
+2005a70e:	1fe010ef          	jal	ra,2005b90c <rtos_sema_delete>
+2005a712:	4008                	c.lw	a0,0(s0)
+2005a714:	0004a023          	sw	zero,0(s1)
+2005a718:	006010ef          	jal	ra,2005b71e <rtos_mem_free>
+2005a71c:	00042023          	sw	zero,0(s0)
+2005a720:	5422                	c.lwsp	s0,40(sp)
+2005a722:	50b2                	c.lwsp	ra,44(sp)
+2005a724:	5492                	c.lwsp	s1,36(sp)
+2005a726:	5902                	c.lwsp	s2,32(sp)
+2005a728:	49f2                	c.lwsp	s3,28(sp)
+2005a72a:	4a62                	c.lwsp	s4,24(sp)
+2005a72c:	4ad2                	c.lwsp	s5,20(sp)
+2005a72e:	4501                	c.li	a0,0
+2005a730:	6145                	c.addi16sp	sp,48
+2005a732:	4b40106f          	jal	zero,2005bbe6 <rtos_task_delete>
+2005a736:	4621                	c.li	a2,8
+2005a738:	842a                	c.mv	s0,a0
+2005a73a:	dffaf097          	auipc	ra,0xdffaf
+2005a73e:	396080e7          	jalr	ra,918(ra) # 9ad0 <__wrap_memcpy>
+2005a742:	410187b7          	lui	a5,0x41018
+2005a746:	4bdc                	c.lw	a5,20(a5)
+2005a748:	3e800a93          	addi	s5,zero,1000
+2005a74c:	eaf1a823          	sw	a5,-336(gp) # 20066838 <last_tick>
+2005a750:	5a7d                	c.li	s4,-1
+2005a752:	eb018913          	addi	s2,gp,-336 # 20066838 <last_tick>
+2005a756:	410189b7          	lui	s3,0x41018
+2005a75a:	400c                	c.lw	a1,0(s0)
+2005a75c:	4088                	c.lw	a0,0(s1)
+2005a75e:	02ba85b3          	mul	a1,s5,a1
+2005a762:	1c0010ef          	jal	ra,2005b922 <rtos_sema_take>
+2005a766:	03451463          	bne	a0,s4,2005a78e <cpu_stat_thread+0xba>
+2005a76a:	39e5                	c.jal	2005a462 <update_status>
+2005a76c:	0149a503          	lw	a0,20(s3) # 41018014 <__km4_bd_boot_download_addr__+0x11006014>
+2005a770:	00092783          	lw	a5,0(s2)
+2005a774:	0149a703          	lw	a4,20(s3)
+2005a778:	8d1d                	c.sub	a0,a5
+2005a77a:	00e92023          	sw	a4,0(s2)
+2005a77e:	353d                	c.jal	2005a5ac <print_delta>
+2005a780:	405c                	c.lw	a5,4(s0)
+2005a782:	00f05563          	bge	zero,a5,2005a78c <cpu_stat_thread+0xb8>
+2005a786:	17fd                	c.addi	a5,-1
+2005a788:	c05c                	c.sw	a5,4(s0)
+2005a78a:	bfc1                	c.j	2005a75a <cpu_stat_thread+0x86>
+2005a78c:	f7f9                	c.bnez	a5,2005a75a <cpu_stat_thread+0x86>
+2005a78e:	8522                	c.mv	a0,s0
+2005a790:	78f000ef          	jal	ra,2005b71e <rtos_mem_free>
+2005a794:	bf95                	c.j	2005a708 <cpu_stat_thread+0x34>
 
-2005a790 <at_cpuload>:
-2005a790:	7119                	c.addi16sp	sp,-128
-2005a792:	dca2                	c.swsp	s0,120(sp)
-2005a794:	05c00613          	addi	a2,zero,92
-2005a798:	842a                	c.mv	s0,a0
-2005a79a:	4581                	c.li	a1,0
-2005a79c:	0048                	c.addi4spn	a0,sp,4
-2005a79e:	de86                	c.swsp	ra,124(sp)
-2005a7a0:	d8ca                	c.swsp	s2,112(sp)
-2005a7a2:	d4d2                	c.swsp	s4,104(sp)
-2005a7a4:	daa6                	c.swsp	s1,116(sp)
-2005a7a6:	d6ce                	c.swsp	s3,108(sp)
-2005a7a8:	d2d6                	c.swsp	s5,100(sp)
-2005a7aa:	dffaf097          	auipc	ra,0xdffaf
-2005a7ae:	324080e7          	jalr	ra,804(ra) # 9ace <__wrap_memset>
-2005a7b2:	eb418793          	addi	a5,gp,-332 # 2006681c <para_in>
-2005a7b6:	4705                	c.li	a4,1
-2005a7b8:	c398                	c.sw	a4,0(a5)
-2005a7ba:	004c                	c.addi4spn	a1,sp,4
-2005a7bc:	577d                	c.li	a4,-1
-2005a7be:	8522                	c.mv	a0,s0
-2005a7c0:	c3d8                	c.sw	a4,4(a5)
-2005a7c2:	ea6ff0ef          	jal	ra,20059e68 <parse_param>
-2005a7c6:	ffe50713          	addi	a4,a0,-2
-2005a7ca:	4789                	c.li	a5,2
-2005a7cc:	20063a37          	lui	s4,0x20063
-2005a7d0:	06e7f463          	bgeu	a5,a4,2005a838 <at_cpuload+0xa8>
-2005a7d4:	20063537          	lui	a0,0x20063
-2005a7d8:	ca850513          	addi	a0,a0,-856 # 20062ca8 <pmap_func+0x884>
-2005a7dc:	3cb040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a7e0:	4405                	c.li	s0,1
-2005a7e2:	20063537          	lui	a0,0x20063
-2005a7e6:	8622                	c.mv	a2,s0
-2005a7e8:	e34a0593          	addi	a1,s4,-460 # 20062e34 <pmap_func+0xa10>
-2005a7ec:	b2850513          	addi	a0,a0,-1240 # 20062b28 <pmap_func+0x704>
-2005a7f0:	9875                	c.andi	s0,-3
-2005a7f2:	3b5040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a7f6:	14040b63          	beq	s0,zero,2005a94c <at_cpuload+0x1bc>
-2005a7fa:	20063537          	lui	a0,0x20063
-2005a7fe:	8d050513          	addi	a0,a0,-1840 # 200628d0 <pmap_func+0x4ac>
-2005a802:	3a5040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a806:	20063537          	lui	a0,0x20063
-2005a80a:	e4050513          	addi	a0,a0,-448 # 20062e40 <pmap_func+0xa1c>
-2005a80e:	399040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a812:	20063537          	lui	a0,0x20063
-2005a816:	e7050513          	addi	a0,a0,-400 # 20062e70 <pmap_func+0xa4c>
-2005a81a:	38d040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a81e:	20063537          	lui	a0,0x20063
-2005a822:	e8450513          	addi	a0,a0,-380 # 20062e84 <pmap_func+0xa60>
-2005a826:	381040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a82a:	20063537          	lui	a0,0x20063
-2005a82e:	ea050513          	addi	a0,a0,-352 # 20062ea0 <pmap_func+0xa7c>
-2005a832:	375040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a836:	aa19                	c.j	2005a94c <at_cpuload+0x1bc>
-2005a838:	84aa                	c.mv	s1,a0
-2005a83a:	4522                	c.lwsp	a0,8(sp)
-2005a83c:	eb418993          	addi	s3,gp,-332 # 2006681c <para_in>
-2005a840:	4411                	c.li	s0,4
-2005a842:	00054783          	lbu	a5,0(a0)
-2005a846:	c789                	c.beqz	a5,2005a850 <at_cpuload+0xc0>
-2005a848:	346070ef          	jal	ra,20061b8e <atoi>
-2005a84c:	0ff57413          	andi	s0,a0,255
-2005a850:	4789                	c.li	a5,2
-2005a852:	04f48463          	beq	s1,a5,2005a89a <at_cpuload+0x10a>
-2005a856:	4532                	c.lwsp	a0,12(sp)
-2005a858:	00054783          	lbu	a5,0(a0)
-2005a85c:	cf81                	c.beqz	a5,2005a874 <at_cpuload+0xe4>
-2005a85e:	330070ef          	jal	ra,20061b8e <atoi>
-2005a862:	4785                	c.li	a5,1
-2005a864:	00a05663          	bge	zero,a0,2005a870 <at_cpuload+0xe0>
-2005a868:	4532                	c.lwsp	a0,12(sp)
-2005a86a:	324070ef          	jal	ra,20061b8e <atoi>
-2005a86e:	87aa                	c.mv	a5,a0
-2005a870:	00f9a023          	sw	a5,0(s3)
-2005a874:	4791                	c.li	a5,4
-2005a876:	02f49263          	bne	s1,a5,2005a89a <at_cpuload+0x10a>
-2005a87a:	4542                	c.lwsp	a0,16(sp)
-2005a87c:	00054783          	lbu	a5,0(a0)
-2005a880:	cf89                	c.beqz	a5,2005a89a <at_cpuload+0x10a>
-2005a882:	30c070ef          	jal	ra,20061b8e <atoi>
-2005a886:	57fd                	c.li	a5,-1
-2005a888:	00a05763          	bge	zero,a0,2005a896 <at_cpuload+0x106>
-2005a88c:	4542                	c.lwsp	a0,16(sp)
-2005a88e:	300070ef          	jal	ra,20061b8e <atoi>
-2005a892:	fff50793          	addi	a5,a0,-1
-2005a896:	00f9a223          	sw	a5,4(s3)
-2005a89a:	ebc18a93          	addi	s5,gp,-324 # 20066824 <task_status>
-2005a89e:	000aa783          	lw	a5,0(s5)
-2005a8a2:	ebc18493          	addi	s1,gp,-324 # 20066824 <task_status>
-2005a8a6:	e79d                	c.bnez	a5,2005a8d4 <at_cpuload+0x144>
-2005a8a8:	6509                	c.lui	a0,0x2
-2005a8aa:	0541                	c.addi	a0,16
-2005a8ac:	643000ef          	jal	ra,2005b6ee <rtos_mem_malloc>
-2005a8b0:	00aaa023          	sw	a0,0(s5)
-2005a8b4:	e105                	c.bnez	a0,2005a8d4 <at_cpuload+0x144>
-2005a8b6:	200636b7          	lui	a3,0x20063
-2005a8ba:	200635b7          	lui	a1,0x20063
-2005a8be:	dc468693          	addi	a3,a3,-572 # 20062dc4 <pmap_func+0x9a0>
-2005a8c2:	04900613          	addi	a2,zero,73
-2005a8c6:	9e858593          	addi	a1,a1,-1560 # 200629e8 <pmap_func+0x5c4>
-2005a8ca:	4511                	c.li	a0,4
-2005a8cc:	0bd000ef          	jal	ra,2005b188 <rtk_log_write>
-2005a8d0:	4409                	c.li	s0,2
-2005a8d2:	bf01                	c.j	2005a7e2 <at_cpuload+0x52>
-2005a8d4:	0049a683          	lw	a3,4(s3)
-2005a8d8:	0009a603          	lw	a2,0(s3)
-2005a8dc:	20063537          	lui	a0,0x20063
-2005a8e0:	85a2                	c.mv	a1,s0
-2005a8e2:	de850513          	addi	a0,a0,-536 # 20062de8 <pmap_func+0x9c4>
-2005a8e6:	2c1040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a8ea:	4789                	c.li	a5,2
-2005a8ec:	08f40363          	beq	s0,a5,2005a972 <at_cpuload+0x1e2>
-2005a8f0:	0687e763          	bltu	a5,s0,2005a95e <at_cpuload+0x1ce>
-2005a8f4:	ec018793          	addi	a5,gp,-320 # 20066828 <top_exit_sema>
-2005a8f8:	e825                	c.bnez	s0,2005a968 <at_cpuload+0x1d8>
-2005a8fa:	439c                	c.lw	a5,0(a5)
-2005a8fc:	e3a1                	c.bnez	a5,2005a93c <at_cpuload+0x1ac>
-2005a8fe:	4088                	c.lw	a0,0(s1)
-2005a900:	6609                	c.lui	a2,0x2
-2005a902:	0641                	c.addi	a2,16
-2005a904:	4581                	c.li	a1,0
-2005a906:	dffaf097          	auipc	ra,0xdffaf
-2005a90a:	1c8080e7          	jalr	ra,456(ra) # 9ace <__wrap_memset>
-2005a90e:	b4fff0ef          	jal	ra,2005a45c <update_status>
-2005a912:	4605                	c.li	a2,1
-2005a914:	4581                	c.li	a1,0
-2005a916:	ec018513          	addi	a0,gp,-320 # 20066828 <top_exit_sema>
-2005a91a:	761000ef          	jal	ra,2005b87a <rtos_sema_create>
-2005a91e:	2005a637          	lui	a2,0x2005a
-2005a922:	200635b7          	lui	a1,0x20063
-2005a926:	47a9                	c.li	a5,10
-2005a928:	6711                	c.lui	a4,0x4
-2005a92a:	eb418693          	addi	a3,gp,-332 # 2006681c <para_in>
-2005a92e:	6ce60613          	addi	a2,a2,1742 # 2005a6ce <cpu_stat_thread>
-2005a932:	e2458593          	addi	a1,a1,-476 # 20062e24 <pmap_func+0xa00>
-2005a936:	4501                	c.li	a0,0
-2005a938:	284010ef          	jal	ra,2005bbbc <rtos_task_create>
-2005a93c:	20063537          	lui	a0,0x20063
-2005a940:	e34a0593          	addi	a1,s4,-460
-2005a944:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-2005a948:	25f040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a94c:	50f6                	c.lwsp	ra,124(sp)
-2005a94e:	5466                	c.lwsp	s0,120(sp)
-2005a950:	54d6                	c.lwsp	s1,116(sp)
-2005a952:	5946                	c.lwsp	s2,112(sp)
-2005a954:	59b6                	c.lwsp	s3,108(sp)
-2005a956:	5a26                	c.lwsp	s4,104(sp)
-2005a958:	5a96                	c.lwsp	s5,100(sp)
-2005a95a:	6109                	c.addi16sp	sp,128
-2005a95c:	8082                	c.jr	ra
-2005a95e:	478d                	c.li	a5,3
-2005a960:	02f40c63          	beq	s0,a5,2005a998 <at_cpuload+0x208>
-2005a964:	440d                	c.li	s0,3
-2005a966:	bdb5                	c.j	2005a7e2 <at_cpuload+0x52>
-2005a968:	4388                	c.lw	a0,0(a5)
-2005a96a:	d969                	c.beqz	a0,2005a93c <at_cpuload+0x1ac>
-2005a96c:	7fd000ef          	jal	ra,2005b968 <rtos_sema_give>
-2005a970:	b7f1                	c.j	2005a93c <at_cpuload+0x1ac>
-2005a972:	ec01a783          	lw	a5,-320(gp) # 20066828 <top_exit_sema>
-2005a976:	f3f9                	c.bnez	a5,2005a93c <at_cpuload+0x1ac>
-2005a978:	4088                	c.lw	a0,0(s1)
-2005a97a:	6609                	c.lui	a2,0x2
-2005a97c:	0641                	c.addi	a2,16
-2005a97e:	4581                	c.li	a1,0
-2005a980:	dffaf097          	auipc	ra,0xdffaf
-2005a984:	14e080e7          	jalr	ra,334(ra) # 9ace <__wrap_memset>
-2005a988:	410187b7          	lui	a5,0x41018
-2005a98c:	4bd8                	c.lw	a4,20(a5)
-2005a98e:	eae1a823          	sw	a4,-336(gp) # 20066818 <last_tick>
-2005a992:	acbff0ef          	jal	ra,2005a45c <update_status>
-2005a996:	b75d                	c.j	2005a93c <at_cpuload+0x1ac>
-2005a998:	ec01a783          	lw	a5,-320(gp) # 20066828 <top_exit_sema>
-2005a99c:	f3c5                	c.bnez	a5,2005a93c <at_cpuload+0x1ac>
-2005a99e:	abfff0ef          	jal	ra,2005a45c <update_status>
-2005a9a2:	41018937          	lui	s2,0x41018
-2005a9a6:	eb018413          	addi	s0,gp,-336 # 20066818 <last_tick>
-2005a9aa:	401c                	c.lw	a5,0(s0)
-2005a9ac:	01492503          	lw	a0,20(s2) # 41018014 <__km4_bd_boot_download_addr__+0x11006014>
-2005a9b0:	8d1d                	c.sub	a0,a5
-2005a9b2:	bf5ff0ef          	jal	ra,2005a5a6 <print_delta>
-2005a9b6:	01492783          	lw	a5,20(s2)
-2005a9ba:	4088                	c.lw	a0,0(s1)
-2005a9bc:	c01c                	c.sw	a5,0(s0)
-2005a9be:	55b000ef          	jal	ra,2005b718 <rtos_mem_free>
-2005a9c2:	0004a023          	sw	zero,0(s1)
-2005a9c6:	bf9d                	c.j	2005a93c <at_cpuload+0x1ac>
+2005a796 <at_cpuload>:
+2005a796:	7119                	c.addi16sp	sp,-128
+2005a798:	dca2                	c.swsp	s0,120(sp)
+2005a79a:	05c00613          	addi	a2,zero,92
+2005a79e:	842a                	c.mv	s0,a0
+2005a7a0:	4581                	c.li	a1,0
+2005a7a2:	0048                	c.addi4spn	a0,sp,4
+2005a7a4:	de86                	c.swsp	ra,124(sp)
+2005a7a6:	d8ca                	c.swsp	s2,112(sp)
+2005a7a8:	d4d2                	c.swsp	s4,104(sp)
+2005a7aa:	daa6                	c.swsp	s1,116(sp)
+2005a7ac:	d6ce                	c.swsp	s3,108(sp)
+2005a7ae:	d2d6                	c.swsp	s5,100(sp)
+2005a7b0:	dffaf097          	auipc	ra,0xdffaf
+2005a7b4:	31e080e7          	jalr	ra,798(ra) # 9ace <__wrap_memset>
+2005a7b8:	eb418793          	addi	a5,gp,-332 # 2006683c <para_in>
+2005a7bc:	4705                	c.li	a4,1
+2005a7be:	c398                	c.sw	a4,0(a5)
+2005a7c0:	004c                	c.addi4spn	a1,sp,4
+2005a7c2:	577d                	c.li	a4,-1
+2005a7c4:	8522                	c.mv	a0,s0
+2005a7c6:	c3d8                	c.sw	a4,4(a5)
+2005a7c8:	ea6ff0ef          	jal	ra,20059e6e <parse_param>
+2005a7cc:	ffe50713          	addi	a4,a0,-2
+2005a7d0:	4789                	c.li	a5,2
+2005a7d2:	20063a37          	lui	s4,0x20063
+2005a7d6:	06e7f463          	bgeu	a5,a4,2005a83e <at_cpuload+0xa8>
+2005a7da:	20063537          	lui	a0,0x20063
+2005a7de:	cb050513          	addi	a0,a0,-848 # 20062cb0 <pmap_func+0x884>
+2005a7e2:	3c5040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a7e6:	4405                	c.li	s0,1
+2005a7e8:	20063537          	lui	a0,0x20063
+2005a7ec:	8622                	c.mv	a2,s0
+2005a7ee:	e3ca0593          	addi	a1,s4,-452 # 20062e3c <pmap_func+0xa10>
+2005a7f2:	b3050513          	addi	a0,a0,-1232 # 20062b30 <pmap_func+0x704>
+2005a7f6:	9875                	c.andi	s0,-3
+2005a7f8:	3af040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a7fc:	14040b63          	beq	s0,zero,2005a952 <at_cpuload+0x1bc>
+2005a800:	20063537          	lui	a0,0x20063
+2005a804:	8d850513          	addi	a0,a0,-1832 # 200628d8 <pmap_func+0x4ac>
+2005a808:	39f040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a80c:	20063537          	lui	a0,0x20063
+2005a810:	e4850513          	addi	a0,a0,-440 # 20062e48 <pmap_func+0xa1c>
+2005a814:	393040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a818:	20063537          	lui	a0,0x20063
+2005a81c:	e7850513          	addi	a0,a0,-392 # 20062e78 <pmap_func+0xa4c>
+2005a820:	387040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a824:	20063537          	lui	a0,0x20063
+2005a828:	e8c50513          	addi	a0,a0,-372 # 20062e8c <pmap_func+0xa60>
+2005a82c:	37b040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a830:	20063537          	lui	a0,0x20063
+2005a834:	ea850513          	addi	a0,a0,-344 # 20062ea8 <pmap_func+0xa7c>
+2005a838:	36f040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a83c:	aa19                	c.j	2005a952 <at_cpuload+0x1bc>
+2005a83e:	84aa                	c.mv	s1,a0
+2005a840:	4522                	c.lwsp	a0,8(sp)
+2005a842:	eb418993          	addi	s3,gp,-332 # 2006683c <para_in>
+2005a846:	4411                	c.li	s0,4
+2005a848:	00054783          	lbu	a5,0(a0)
+2005a84c:	c789                	c.beqz	a5,2005a856 <at_cpuload+0xc0>
+2005a84e:	348070ef          	jal	ra,20061b96 <atoi>
+2005a852:	0ff57413          	andi	s0,a0,255
+2005a856:	4789                	c.li	a5,2
+2005a858:	04f48463          	beq	s1,a5,2005a8a0 <at_cpuload+0x10a>
+2005a85c:	4532                	c.lwsp	a0,12(sp)
+2005a85e:	00054783          	lbu	a5,0(a0)
+2005a862:	cf81                	c.beqz	a5,2005a87a <at_cpuload+0xe4>
+2005a864:	332070ef          	jal	ra,20061b96 <atoi>
+2005a868:	4785                	c.li	a5,1
+2005a86a:	00a05663          	bge	zero,a0,2005a876 <at_cpuload+0xe0>
+2005a86e:	4532                	c.lwsp	a0,12(sp)
+2005a870:	326070ef          	jal	ra,20061b96 <atoi>
+2005a874:	87aa                	c.mv	a5,a0
+2005a876:	00f9a023          	sw	a5,0(s3)
+2005a87a:	4791                	c.li	a5,4
+2005a87c:	02f49263          	bne	s1,a5,2005a8a0 <at_cpuload+0x10a>
+2005a880:	4542                	c.lwsp	a0,16(sp)
+2005a882:	00054783          	lbu	a5,0(a0)
+2005a886:	cf89                	c.beqz	a5,2005a8a0 <at_cpuload+0x10a>
+2005a888:	30e070ef          	jal	ra,20061b96 <atoi>
+2005a88c:	57fd                	c.li	a5,-1
+2005a88e:	00a05763          	bge	zero,a0,2005a89c <at_cpuload+0x106>
+2005a892:	4542                	c.lwsp	a0,16(sp)
+2005a894:	302070ef          	jal	ra,20061b96 <atoi>
+2005a898:	fff50793          	addi	a5,a0,-1
+2005a89c:	00f9a223          	sw	a5,4(s3)
+2005a8a0:	ebc18a93          	addi	s5,gp,-324 # 20066844 <task_status>
+2005a8a4:	000aa783          	lw	a5,0(s5)
+2005a8a8:	ebc18493          	addi	s1,gp,-324 # 20066844 <task_status>
+2005a8ac:	e79d                	c.bnez	a5,2005a8da <at_cpuload+0x144>
+2005a8ae:	6509                	c.lui	a0,0x2
+2005a8b0:	0541                	c.addi	a0,16
+2005a8b2:	643000ef          	jal	ra,2005b6f4 <rtos_mem_malloc>
+2005a8b6:	00aaa023          	sw	a0,0(s5)
+2005a8ba:	e105                	c.bnez	a0,2005a8da <at_cpuload+0x144>
+2005a8bc:	200636b7          	lui	a3,0x20063
+2005a8c0:	200635b7          	lui	a1,0x20063
+2005a8c4:	dcc68693          	addi	a3,a3,-564 # 20062dcc <pmap_func+0x9a0>
+2005a8c8:	04900613          	addi	a2,zero,73
+2005a8cc:	9f058593          	addi	a1,a1,-1552 # 200629f0 <pmap_func+0x5c4>
+2005a8d0:	4511                	c.li	a0,4
+2005a8d2:	0bd000ef          	jal	ra,2005b18e <rtk_log_write>
+2005a8d6:	4409                	c.li	s0,2
+2005a8d8:	bf01                	c.j	2005a7e8 <at_cpuload+0x52>
+2005a8da:	0049a683          	lw	a3,4(s3)
+2005a8de:	0009a603          	lw	a2,0(s3)
+2005a8e2:	20063537          	lui	a0,0x20063
+2005a8e6:	85a2                	c.mv	a1,s0
+2005a8e8:	df050513          	addi	a0,a0,-528 # 20062df0 <pmap_func+0x9c4>
+2005a8ec:	2bb040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a8f0:	4789                	c.li	a5,2
+2005a8f2:	08f40363          	beq	s0,a5,2005a978 <at_cpuload+0x1e2>
+2005a8f6:	0687e763          	bltu	a5,s0,2005a964 <at_cpuload+0x1ce>
+2005a8fa:	ec018793          	addi	a5,gp,-320 # 20066848 <top_exit_sema>
+2005a8fe:	e825                	c.bnez	s0,2005a96e <at_cpuload+0x1d8>
+2005a900:	439c                	c.lw	a5,0(a5)
+2005a902:	e3a1                	c.bnez	a5,2005a942 <at_cpuload+0x1ac>
+2005a904:	4088                	c.lw	a0,0(s1)
+2005a906:	6609                	c.lui	a2,0x2
+2005a908:	0641                	c.addi	a2,16
+2005a90a:	4581                	c.li	a1,0
+2005a90c:	dffaf097          	auipc	ra,0xdffaf
+2005a910:	1c2080e7          	jalr	ra,450(ra) # 9ace <__wrap_memset>
+2005a914:	b4fff0ef          	jal	ra,2005a462 <update_status>
+2005a918:	4605                	c.li	a2,1
+2005a91a:	4581                	c.li	a1,0
+2005a91c:	ec018513          	addi	a0,gp,-320 # 20066848 <top_exit_sema>
+2005a920:	761000ef          	jal	ra,2005b880 <rtos_sema_create>
+2005a924:	2005a637          	lui	a2,0x2005a
+2005a928:	200635b7          	lui	a1,0x20063
+2005a92c:	47a9                	c.li	a5,10
+2005a92e:	6711                	c.lui	a4,0x4
+2005a930:	eb418693          	addi	a3,gp,-332 # 2006683c <para_in>
+2005a934:	6d460613          	addi	a2,a2,1748 # 2005a6d4 <cpu_stat_thread>
+2005a938:	e2c58593          	addi	a1,a1,-468 # 20062e2c <pmap_func+0xa00>
+2005a93c:	4501                	c.li	a0,0
+2005a93e:	284010ef          	jal	ra,2005bbc2 <rtos_task_create>
+2005a942:	20063537          	lui	a0,0x20063
+2005a946:	e3ca0593          	addi	a1,s4,-452
+2005a94a:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+2005a94e:	259040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a952:	50f6                	c.lwsp	ra,124(sp)
+2005a954:	5466                	c.lwsp	s0,120(sp)
+2005a956:	54d6                	c.lwsp	s1,116(sp)
+2005a958:	5946                	c.lwsp	s2,112(sp)
+2005a95a:	59b6                	c.lwsp	s3,108(sp)
+2005a95c:	5a26                	c.lwsp	s4,104(sp)
+2005a95e:	5a96                	c.lwsp	s5,100(sp)
+2005a960:	6109                	c.addi16sp	sp,128
+2005a962:	8082                	c.jr	ra
+2005a964:	478d                	c.li	a5,3
+2005a966:	02f40c63          	beq	s0,a5,2005a99e <at_cpuload+0x208>
+2005a96a:	440d                	c.li	s0,3
+2005a96c:	bdb5                	c.j	2005a7e8 <at_cpuload+0x52>
+2005a96e:	4388                	c.lw	a0,0(a5)
+2005a970:	d969                	c.beqz	a0,2005a942 <at_cpuload+0x1ac>
+2005a972:	7fd000ef          	jal	ra,2005b96e <rtos_sema_give>
+2005a976:	b7f1                	c.j	2005a942 <at_cpuload+0x1ac>
+2005a978:	ec01a783          	lw	a5,-320(gp) # 20066848 <top_exit_sema>
+2005a97c:	f3f9                	c.bnez	a5,2005a942 <at_cpuload+0x1ac>
+2005a97e:	4088                	c.lw	a0,0(s1)
+2005a980:	6609                	c.lui	a2,0x2
+2005a982:	0641                	c.addi	a2,16
+2005a984:	4581                	c.li	a1,0
+2005a986:	dffaf097          	auipc	ra,0xdffaf
+2005a98a:	148080e7          	jalr	ra,328(ra) # 9ace <__wrap_memset>
+2005a98e:	410187b7          	lui	a5,0x41018
+2005a992:	4bd8                	c.lw	a4,20(a5)
+2005a994:	eae1a823          	sw	a4,-336(gp) # 20066838 <last_tick>
+2005a998:	acbff0ef          	jal	ra,2005a462 <update_status>
+2005a99c:	b75d                	c.j	2005a942 <at_cpuload+0x1ac>
+2005a99e:	ec01a783          	lw	a5,-320(gp) # 20066848 <top_exit_sema>
+2005a9a2:	f3c5                	c.bnez	a5,2005a942 <at_cpuload+0x1ac>
+2005a9a4:	abfff0ef          	jal	ra,2005a462 <update_status>
+2005a9a8:	41018937          	lui	s2,0x41018
+2005a9ac:	eb018413          	addi	s0,gp,-336 # 20066838 <last_tick>
+2005a9b0:	401c                	c.lw	a5,0(s0)
+2005a9b2:	01492503          	lw	a0,20(s2) # 41018014 <__km4_bd_boot_download_addr__+0x11006014>
+2005a9b6:	8d1d                	c.sub	a0,a5
+2005a9b8:	bf5ff0ef          	jal	ra,2005a5ac <print_delta>
+2005a9bc:	01492783          	lw	a5,20(s2)
+2005a9c0:	4088                	c.lw	a0,0(s1)
+2005a9c2:	c01c                	c.sw	a5,0(s0)
+2005a9c4:	55b000ef          	jal	ra,2005b71e <rtos_mem_free>
+2005a9c8:	0004a023          	sw	zero,0(s1)
+2005a9cc:	bf9d                	c.j	2005a942 <at_cpuload+0x1ac>
 
-2005a9c8 <print_system_at>:
-2005a9c8:	1141                	c.addi	sp,-16
-2005a9ca:	c422                	c.swsp	s0,8(sp)
-2005a9cc:	c9c18413          	addi	s0,gp,-868 # 20066604 <at_sys_items>
-2005a9d0:	c226                	c.swsp	s1,4(sp)
-2005a9d2:	c04a                	c.swsp	s2,0(sp)
-2005a9d4:	c606                	c.swsp	ra,12(sp)
-2005a9d6:	0b040493          	addi	s1,s0,176
-2005a9da:	20063937          	lui	s2,0x20063
-2005a9de:	400c                	c.lw	a1,0(s0)
-2005a9e0:	ec090513          	addi	a0,s2,-320 # 20062ec0 <pmap_func+0xa9c>
-2005a9e4:	0441                	c.addi	s0,16
-2005a9e6:	1c1040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005a9ea:	fe941ae3          	bne	s0,s1,2005a9de <print_system_at+0x16>
-2005a9ee:	40b2                	c.lwsp	ra,12(sp)
-2005a9f0:	4422                	c.lwsp	s0,8(sp)
-2005a9f2:	4492                	c.lwsp	s1,4(sp)
-2005a9f4:	4902                	c.lwsp	s2,0(sp)
-2005a9f6:	0141                	c.addi	sp,16
-2005a9f8:	8082                	c.jr	ra
+2005a9ce <print_system_at>:
+2005a9ce:	1141                	c.addi	sp,-16
+2005a9d0:	c422                	c.swsp	s0,8(sp)
+2005a9d2:	c9c18413          	addi	s0,gp,-868 # 20066624 <at_sys_items>
+2005a9d6:	c226                	c.swsp	s1,4(sp)
+2005a9d8:	c04a                	c.swsp	s2,0(sp)
+2005a9da:	c606                	c.swsp	ra,12(sp)
+2005a9dc:	0b040493          	addi	s1,s0,176
+2005a9e0:	20063937          	lui	s2,0x20063
+2005a9e4:	400c                	c.lw	a1,0(s0)
+2005a9e6:	ec890513          	addi	a0,s2,-312 # 20062ec8 <pmap_func+0xa9c>
+2005a9ea:	0441                	c.addi	s0,16
+2005a9ec:	1bb040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005a9f0:	fe941ae3          	bne	s0,s1,2005a9e4 <print_system_at+0x16>
+2005a9f4:	40b2                	c.lwsp	ra,12(sp)
+2005a9f6:	4422                	c.lwsp	s0,8(sp)
+2005a9f8:	4492                	c.lwsp	s1,4(sp)
+2005a9fa:	4902                	c.lwsp	s2,0(sp)
+2005a9fc:	0141                	c.addi	sp,16
+2005a9fe:	8082                	c.jr	ra
 
-2005a9fa <at_list>:
-2005a9fa:	20063537          	lui	a0,0x20063
-2005a9fe:	1141                	c.addi	sp,-16
-2005aa00:	ec850513          	addi	a0,a0,-312 # 20062ec8 <pmap_func+0xaa4>
-2005aa04:	c606                	c.swsp	ra,12(sp)
-2005aa06:	1a1040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005aa0a:	3f7d                	c.jal	2005a9c8 <print_system_at>
-2005aa0c:	40b2                	c.lwsp	ra,12(sp)
-2005aa0e:	200635b7          	lui	a1,0x20063
-2005aa12:	20063537          	lui	a0,0x20063
-2005aa16:	ee058593          	addi	a1,a1,-288 # 20062ee0 <pmap_func+0xabc>
-2005aa1a:	8a450513          	addi	a0,a0,-1884 # 200628a4 <pmap_func+0x480>
-2005aa1e:	0141                	c.addi	sp,16
-2005aa20:	1870406f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+2005aa00 <at_list>:
+2005aa00:	20063537          	lui	a0,0x20063
+2005aa04:	1141                	c.addi	sp,-16
+2005aa06:	ed050513          	addi	a0,a0,-304 # 20062ed0 <pmap_func+0xaa4>
+2005aa0a:	c606                	c.swsp	ra,12(sp)
+2005aa0c:	19b040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005aa10:	3f7d                	c.jal	2005a9ce <print_system_at>
+2005aa12:	40b2                	c.lwsp	ra,12(sp)
+2005aa14:	200635b7          	lui	a1,0x20063
+2005aa18:	20063537          	lui	a0,0x20063
+2005aa1c:	ee858593          	addi	a1,a1,-280 # 20062ee8 <pmap_func+0xabc>
+2005aa20:	8ac50513          	addi	a0,a0,-1876 # 200628ac <pmap_func+0x480>
+2005aa24:	0141                	c.addi	sp,16
+2005aa26:	1810406f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
 
-2005aa24 <at_sys_init>:
-2005aa24:	45ad                	c.li	a1,11
-2005aa26:	c9c18513          	addi	a0,gp,-868 # 20066604 <at_sys_items>
-2005aa2a:	b38ff06f          	jal	zero,20059d62 <atcmd_service_add_table>
+2005aa2a <at_sys_init>:
+2005aa2a:	45ad                	c.li	a1,11
+2005aa2c:	c9c18513          	addi	a0,gp,-868 # 20066624 <at_sys_items>
+2005aa30:	b38ff06f          	jal	zero,20059d68 <atcmd_service_add_table>
 
-2005aa2e <BOOT_Image1>:
-2005aa2e:	20000537          	lui	a0,0x20000
-2005aa32:	200017b7          	lui	a5,0x20001
-2005aa36:	cac78793          	addi	a5,a5,-852 # 20000cac <__rom_bss_end__>
-2005aa3a:	00050613          	addi	a2,a0,0 # 20000000 <UserIrqFunTable>
-2005aa3e:	1141                	c.addi	sp,-16
-2005aa40:	40c78633          	sub	a2,a5,a2
-2005aa44:	4581                	c.li	a1,0
-2005aa46:	00050513          	addi	a0,a0,0
-2005aa4a:	c606                	c.swsp	ra,12(sp)
-2005aa4c:	dffaf097          	auipc	ra,0xdffaf
-2005aa50:	d3e080e7          	jalr	ra,-706(ra) # 978a <_memset>
-2005aa54:	dffa6097          	auipc	ra,0xdffa6
-2005aa58:	0c2080e7          	jalr	ra,194(ra) # b16 <CPU_ClkGet>
-2005aa5c:	000f47b7          	lui	a5,0xf4
-2005aa60:	24078793          	addi	a5,a5,576 # f4240 <__ap_sram_heap_size+0xb4240>
-2005aa64:	02f55533          	divu	a0,a0,a5
-2005aa68:	200017b7          	lui	a5,0x20001
-2005aa6c:	86a7a023          	sw	a0,-1952(a5) # 20000860 <RBSS_UDELAY_CLK>
-2005aa70:	dffa6097          	auipc	ra,0xdffa6
-2005aa74:	eb4080e7          	jalr	ra,-332(ra) # 924 <BOOT_ROM_InitDebugFlg>
-2005aa78:	200587b7          	lui	a5,0x20058
-2005aa7c:	04078793          	addi	a5,a5,64 # 20058040 <Img2EntryFun0>
-2005aa80:	0017c703          	lbu	a4,1(a5)
-2005aa84:	0007c683          	lbu	a3,0(a5)
-2005aa88:	40b2                	c.lwsp	ra,12(sp)
-2005aa8a:	0722                	c.slli	a4,0x8
-2005aa8c:	8ed9                	c.or	a3,a4
-2005aa8e:	0027c703          	lbu	a4,2(a5)
-2005aa92:	0037c783          	lbu	a5,3(a5)
-2005aa96:	0742                	c.slli	a4,0x10
-2005aa98:	8f55                	c.or	a4,a3
-2005aa9a:	07e2                	c.slli	a5,0x18
-2005aa9c:	8fd9                	c.or	a5,a4
-2005aa9e:	0141                	c.addi	sp,16
-2005aaa0:	8782                	c.jr	a5
+2005aa34 <BOOT_Image1>:
+2005aa34:	20000537          	lui	a0,0x20000
+2005aa38:	200017b7          	lui	a5,0x20001
+2005aa3c:	cac78793          	addi	a5,a5,-852 # 20000cac <__rom_bss_end__>
+2005aa40:	00050613          	addi	a2,a0,0 # 20000000 <UserIrqFunTable>
+2005aa44:	1141                	c.addi	sp,-16
+2005aa46:	40c78633          	sub	a2,a5,a2
+2005aa4a:	4581                	c.li	a1,0
+2005aa4c:	00050513          	addi	a0,a0,0
+2005aa50:	c606                	c.swsp	ra,12(sp)
+2005aa52:	dffaf097          	auipc	ra,0xdffaf
+2005aa56:	d38080e7          	jalr	ra,-712(ra) # 978a <_memset>
+2005aa5a:	dffa6097          	auipc	ra,0xdffa6
+2005aa5e:	0bc080e7          	jalr	ra,188(ra) # b16 <CPU_ClkGet>
+2005aa62:	000f47b7          	lui	a5,0xf4
+2005aa66:	24078793          	addi	a5,a5,576 # f4240 <__ap_sram_heap_size+0xb4240>
+2005aa6a:	02f55533          	divu	a0,a0,a5
+2005aa6e:	200017b7          	lui	a5,0x20001
+2005aa72:	86a7a023          	sw	a0,-1952(a5) # 20000860 <RBSS_UDELAY_CLK>
+2005aa76:	dffa6097          	auipc	ra,0xdffa6
+2005aa7a:	eae080e7          	jalr	ra,-338(ra) # 924 <BOOT_ROM_InitDebugFlg>
+2005aa7e:	200587b7          	lui	a5,0x20058
+2005aa82:	04078793          	addi	a5,a5,64 # 20058040 <Img2EntryFun0>
+2005aa86:	0017c703          	lbu	a4,1(a5)
+2005aa8a:	0007c683          	lbu	a3,0(a5)
+2005aa8e:	40b2                	c.lwsp	ra,12(sp)
+2005aa90:	0722                	c.slli	a4,0x8
+2005aa92:	8ed9                	c.or	a3,a4
+2005aa94:	0027c703          	lbu	a4,2(a5)
+2005aa98:	0037c783          	lbu	a5,3(a5)
+2005aa9c:	0742                	c.slli	a4,0x10
+2005aa9e:	8f55                	c.or	a4,a3
+2005aaa0:	07e2                	c.slli	a5,0x18
+2005aaa2:	8fd9                	c.or	a5,a4
+2005aaa4:	0141                	c.addi	sp,16
+2005aaa6:	8782                	c.jr	a5
 
-2005aaa2 <flash_read_word>:
-2005aaa2:	1141                	c.addi	sp,-16
-2005aaa4:	852e                	c.mv	a0,a1
-2005aaa6:	4591                	c.li	a1,4
-2005aaa8:	c606                	c.swsp	ra,12(sp)
-2005aaaa:	8c8fe0ef          	jal	ra,20058b72 <FLASH_ReadStream>
-2005aaae:	40b2                	c.lwsp	ra,12(sp)
-2005aab0:	4505                	c.li	a0,1
-2005aab2:	0141                	c.addi	sp,16
-2005aab4:	8082                	c.jr	ra
+2005aaa8 <flash_read_word>:
+2005aaa8:	1141                	c.addi	sp,-16
+2005aaaa:	852e                	c.mv	a0,a1
+2005aaac:	4591                	c.li	a1,4
+2005aaae:	c606                	c.swsp	ra,12(sp)
+2005aab0:	8c2fe0ef          	jal	ra,20058b72 <FLASH_ReadStream>
+2005aab4:	40b2                	c.lwsp	ra,12(sp)
+2005aab6:	4505                	c.li	a0,1
+2005aab8:	0141                	c.addi	sp,16
+2005aaba:	8082                	c.jr	ra
 
-2005aab6 <os_heap_init>:
-2005aab6:	1141                	c.addi	sp,-16
-2005aab8:	c606                	c.swsp	ra,12(sp)
-2005aaba:	c422                	c.swsp	s0,8(sp)
-2005aabc:	0800                	c.addi4spn	s0,sp,16
-2005aabe:	00000793          	addi	a5,zero,0
-2005aac2:	85be                	c.mv	a1,a5
-2005aac4:	ca0007b7          	lui	a5,0xca000
-2005aac8:	00078513          	addi	a0,a5,0 # ca000000 <__ctrace_end__+0x0>
-2005aacc:	2869                	c.jal	2005ab66 <os_heap_add>
-2005aace:	67dd                	c.lui	a5,0x17
-2005aad0:	54078793          	addi	a5,a5,1344 # 17540 <__bdram_heap_buffer_size__>
-2005aad4:	85be                	c.mv	a1,a5
-2005aad6:	200697b7          	lui	a5,0x20069
-2005aada:	ac078513          	addi	a0,a5,-1344 # 20068ac0 <__bdram_heap_buffer_start__>
-2005aade:	2061                	c.jal	2005ab66 <os_heap_add>
-2005aae0:	00000793          	addi	a5,zero,0
-2005aae4:	85be                	c.mv	a1,a5
-2005aae6:	ca0007b7          	lui	a5,0xca000
-2005aaea:	00078513          	addi	a0,a5,0 # ca000000 <__ctrace_end__+0x0>
-2005aaee:	28a5                	c.jal	2005ab66 <os_heap_add>
-2005aaf0:	00000793          	addi	a5,zero,0
-2005aaf4:	85be                	c.mv	a1,a5
-2005aaf6:	ca0007b7          	lui	a5,0xca000
-2005aafa:	00078513          	addi	a0,a5,0 # ca000000 <__ctrace_end__+0x0>
-2005aafe:	20a5                	c.jal	2005ab66 <os_heap_add>
-2005ab00:	67a1                	c.lui	a5,0x8
-2005ab02:	00078793          	addi	a5,a5,0 # 8000 <__sram_bootloader_mp_size__>
-2005ab06:	85be                	c.mv	a1,a5
-2005ab08:	200127b7          	lui	a5,0x20012
-2005ab0c:	00078513          	addi	a0,a5,0 # 20012000 <__sram_bootloader_mp_start__>
-2005ab10:	2899                	c.jal	2005ab66 <os_heap_add>
-2005ab12:	ec41c783          	lbu	a5,-316(gp) # 2006682c <heap_index>
-2005ab16:	c391                	c.beqz	a5,2005ab1a <os_heap_init+0x64>
-2005ab18:	2809                	c.jal	2005ab2a <os_heap_sort>
-2005ab1a:	55818513          	addi	a0,gp,1368 # 20066ec0 <xHeapRegions>
-2005ab1e:	2481                	c.jal	2005ad5e <vPortDefineHeapRegions>
-2005ab20:	0001                	c.addi	zero,0
-2005ab22:	40b2                	c.lwsp	ra,12(sp)
-2005ab24:	4422                	c.lwsp	s0,8(sp)
-2005ab26:	0141                	c.addi	sp,16
-2005ab28:	8082                	c.jr	ra
+2005aabc <os_heap_init>:
+2005aabc:	1141                	c.addi	sp,-16
+2005aabe:	c606                	c.swsp	ra,12(sp)
+2005aac0:	c422                	c.swsp	s0,8(sp)
+2005aac2:	0800                	c.addi4spn	s0,sp,16
+2005aac4:	00000793          	addi	a5,zero,0
+2005aac8:	85be                	c.mv	a1,a5
+2005aaca:	ca0007b7          	lui	a5,0xca000
+2005aace:	00078513          	addi	a0,a5,0 # ca000000 <__ctrace_end__+0x0>
+2005aad2:	2869                	c.jal	2005ab6c <os_heap_add>
+2005aad4:	67dd                	c.lui	a5,0x17
+2005aad6:	50078793          	addi	a5,a5,1280 # 17500 <__bdram_heap_buffer_size__>
+2005aada:	85be                	c.mv	a1,a5
+2005aadc:	200697b7          	lui	a5,0x20069
+2005aae0:	b0078513          	addi	a0,a5,-1280 # 20068b00 <__bdram_heap_buffer_start__>
+2005aae4:	2061                	c.jal	2005ab6c <os_heap_add>
+2005aae6:	00000793          	addi	a5,zero,0
+2005aaea:	85be                	c.mv	a1,a5
+2005aaec:	ca0007b7          	lui	a5,0xca000
+2005aaf0:	00078513          	addi	a0,a5,0 # ca000000 <__ctrace_end__+0x0>
+2005aaf4:	28a5                	c.jal	2005ab6c <os_heap_add>
+2005aaf6:	00000793          	addi	a5,zero,0
+2005aafa:	85be                	c.mv	a1,a5
+2005aafc:	ca0007b7          	lui	a5,0xca000
+2005ab00:	00078513          	addi	a0,a5,0 # ca000000 <__ctrace_end__+0x0>
+2005ab04:	20a5                	c.jal	2005ab6c <os_heap_add>
+2005ab06:	67a1                	c.lui	a5,0x8
+2005ab08:	00078793          	addi	a5,a5,0 # 8000 <__sram_bootloader_mp_size__>
+2005ab0c:	85be                	c.mv	a1,a5
+2005ab0e:	200127b7          	lui	a5,0x20012
+2005ab12:	00078513          	addi	a0,a5,0 # 20012000 <__sram_bootloader_mp_start__>
+2005ab16:	2899                	c.jal	2005ab6c <os_heap_add>
+2005ab18:	ec41c783          	lbu	a5,-316(gp) # 2006684c <heap_index>
+2005ab1c:	c391                	c.beqz	a5,2005ab20 <os_heap_init+0x64>
+2005ab1e:	2809                	c.jal	2005ab30 <os_heap_sort>
+2005ab20:	57c18513          	addi	a0,gp,1404 # 20066f04 <xHeapRegions>
+2005ab24:	2481                	c.jal	2005ad64 <vPortDefineHeapRegions>
+2005ab26:	0001                	c.addi	zero,0
+2005ab28:	40b2                	c.lwsp	ra,12(sp)
+2005ab2a:	4422                	c.lwsp	s0,8(sp)
+2005ab2c:	0141                	c.addi	sp,16
+2005ab2e:	8082                	c.jr	ra
 
-2005ab2a <os_heap_sort>:
-2005ab2a:	4681                	c.li	a3,0
-2005ab2c:	ec41c703          	lbu	a4,-316(gp) # 2006682c <heap_index>
-2005ab30:	177d                	c.addi	a4,-1
-2005ab32:	02e6d963          	bge	a3,a4,2005ab64 <os_heap_sort+0x3a>
-2005ab36:	55818793          	addi	a5,gp,1368 # 20066ec0 <xHeapRegions>
-2005ab3a:	4601                	c.li	a2,0
-2005ab3c:	8f15                	c.sub	a4,a3
-2005ab3e:	a839                	c.j	2005ab5c <os_heap_sort+0x32>
-2005ab40:	438c                	c.lw	a1,0(a5)
-2005ab42:	4788                	c.lw	a0,8(a5)
-2005ab44:	0605                	c.addi	a2,1
-2005ab46:	00b57a63          	bgeu	a0,a1,2005ab5a <os_heap_sort+0x30>
-2005ab4a:	0047a303          	lw	t1,4(a5)
-2005ab4e:	c388                	c.sw	a0,0(a5)
-2005ab50:	47c8                	c.lw	a0,12(a5)
-2005ab52:	c78c                	c.sw	a1,8(a5)
-2005ab54:	0067a623          	sw	t1,12(a5)
-2005ab58:	c3c8                	c.sw	a0,4(a5)
-2005ab5a:	07a1                	c.addi	a5,8
-2005ab5c:	fee642e3          	blt	a2,a4,2005ab40 <os_heap_sort+0x16>
-2005ab60:	0685                	c.addi	a3,1
-2005ab62:	b7e9                	c.j	2005ab2c <os_heap_sort+0x2>
-2005ab64:	8082                	c.jr	ra
+2005ab30 <os_heap_sort>:
+2005ab30:	4681                	c.li	a3,0
+2005ab32:	ec41c703          	lbu	a4,-316(gp) # 2006684c <heap_index>
+2005ab36:	177d                	c.addi	a4,-1
+2005ab38:	02e6d963          	bge	a3,a4,2005ab6a <os_heap_sort+0x3a>
+2005ab3c:	57c18793          	addi	a5,gp,1404 # 20066f04 <xHeapRegions>
+2005ab40:	4601                	c.li	a2,0
+2005ab42:	8f15                	c.sub	a4,a3
+2005ab44:	a839                	c.j	2005ab62 <os_heap_sort+0x32>
+2005ab46:	438c                	c.lw	a1,0(a5)
+2005ab48:	4788                	c.lw	a0,8(a5)
+2005ab4a:	0605                	c.addi	a2,1
+2005ab4c:	00b57a63          	bgeu	a0,a1,2005ab60 <os_heap_sort+0x30>
+2005ab50:	0047a303          	lw	t1,4(a5)
+2005ab54:	c388                	c.sw	a0,0(a5)
+2005ab56:	47c8                	c.lw	a0,12(a5)
+2005ab58:	c78c                	c.sw	a1,8(a5)
+2005ab5a:	0067a623          	sw	t1,12(a5)
+2005ab5e:	c3c8                	c.sw	a0,4(a5)
+2005ab60:	07a1                	c.addi	a5,8
+2005ab62:	fee642e3          	blt	a2,a4,2005ab46 <os_heap_sort+0x16>
+2005ab66:	0685                	c.addi	a3,1
+2005ab68:	b7e9                	c.j	2005ab32 <os_heap_sort+0x2>
+2005ab6a:	8082                	c.jr	ra
 
-2005ab66 <os_heap_add>:
-2005ab66:	1141                	c.addi	sp,-16
-2005ab68:	c426                	c.swsp	s1,8(sp)
-2005ab6a:	ec41c703          	lbu	a4,-316(gp) # 2006682c <heap_index>
-2005ab6e:	c24a                	c.swsp	s2,4(sp)
-2005ab70:	c04e                	c.swsp	s3,0(sp)
-2005ab72:	c606                	c.swsp	ra,12(sp)
-2005ab74:	4795                	c.li	a5,5
-2005ab76:	89aa                	c.mv	s3,a0
-2005ab78:	892e                	c.mv	s2,a1
-2005ab7a:	00e7fa63          	bgeu	a5,a4,2005ab8e <os_heap_add+0x28>
-2005ab7e:	20063537          	lui	a0,0x20063
-2005ab82:	02600593          	addi	a1,zero,38
-2005ab86:	f5c50513          	addi	a0,a0,-164 # 20062f5c <__FUNCTION__.0+0x10>
-2005ab8a:	523040ef          	jal	ra,2005f8ac <io_assert_failed>
-2005ab8e:	ec41c703          	lbu	a4,-316(gp) # 2006682c <heap_index>
-2005ab92:	55818793          	addi	a5,gp,1368 # 20066ec0 <xHeapRegions>
-2005ab96:	00371693          	slli	a3,a4,0x3
-2005ab9a:	97b6                	c.add	a5,a3
-2005ab9c:	0137a023          	sw	s3,0(a5)
-2005aba0:	0127a223          	sw	s2,4(a5)
-2005aba4:	4501                	c.li	a0,0
-2005aba6:	00090c63          	beq	s2,zero,2005abbe <os_heap_add+0x58>
-2005abaa:	ec818793          	addi	a5,gp,-312 # 20066830 <total_heap_size>
-2005abae:	438c                	c.lw	a1,0(a5)
-2005abb0:	0705                	c.addi	a4,1
-2005abb2:	ece18223          	sb	a4,-316(gp) # 2006682c <heap_index>
-2005abb6:	992e                	c.add	s2,a1
-2005abb8:	0127a023          	sw	s2,0(a5)
-2005abbc:	4505                	c.li	a0,1
-2005abbe:	40b2                	c.lwsp	ra,12(sp)
-2005abc0:	44a2                	c.lwsp	s1,8(sp)
-2005abc2:	4912                	c.lwsp	s2,4(sp)
-2005abc4:	4982                	c.lwsp	s3,0(sp)
-2005abc6:	0141                	c.addi	sp,16
-2005abc8:	8082                	c.jr	ra
+2005ab6c <os_heap_add>:
+2005ab6c:	1141                	c.addi	sp,-16
+2005ab6e:	c426                	c.swsp	s1,8(sp)
+2005ab70:	ec41c703          	lbu	a4,-316(gp) # 2006684c <heap_index>
+2005ab74:	c24a                	c.swsp	s2,4(sp)
+2005ab76:	c04e                	c.swsp	s3,0(sp)
+2005ab78:	c606                	c.swsp	ra,12(sp)
+2005ab7a:	4795                	c.li	a5,5
+2005ab7c:	89aa                	c.mv	s3,a0
+2005ab7e:	892e                	c.mv	s2,a1
+2005ab80:	00e7fa63          	bgeu	a5,a4,2005ab94 <os_heap_add+0x28>
+2005ab84:	20063537          	lui	a0,0x20063
+2005ab88:	02600593          	addi	a1,zero,38
+2005ab8c:	f6450513          	addi	a0,a0,-156 # 20062f64 <__FUNCTION__.0+0x10>
+2005ab90:	51d040ef          	jal	ra,2005f8ac <io_assert_failed>
+2005ab94:	ec41c703          	lbu	a4,-316(gp) # 2006684c <heap_index>
+2005ab98:	57c18793          	addi	a5,gp,1404 # 20066f04 <xHeapRegions>
+2005ab9c:	00371693          	slli	a3,a4,0x3
+2005aba0:	97b6                	c.add	a5,a3
+2005aba2:	0137a023          	sw	s3,0(a5)
+2005aba6:	0127a223          	sw	s2,4(a5)
+2005abaa:	4501                	c.li	a0,0
+2005abac:	00090c63          	beq	s2,zero,2005abc4 <os_heap_add+0x58>
+2005abb0:	ec818793          	addi	a5,gp,-312 # 20066850 <total_heap_size>
+2005abb4:	438c                	c.lw	a1,0(a5)
+2005abb6:	0705                	c.addi	a4,1
+2005abb8:	ece18223          	sb	a4,-316(gp) # 2006684c <heap_index>
+2005abbc:	992e                	c.add	s2,a1
+2005abbe:	0127a023          	sw	s2,0(a5)
+2005abc2:	4505                	c.li	a0,1
+2005abc4:	40b2                	c.lwsp	ra,12(sp)
+2005abc6:	44a2                	c.lwsp	s1,8(sp)
+2005abc8:	4912                	c.lwsp	s2,4(sp)
+2005abca:	4982                	c.lwsp	s3,0(sp)
+2005abcc:	0141                	c.addi	sp,16
+2005abce:	8082                	c.jr	ra
 
-2005abca <__wrap_malloc>:
-2005abca:	3250006f          	jal	zero,2005b6ee <rtos_mem_malloc>
+2005abd0 <__wrap_malloc>:
+2005abd0:	3250006f          	jal	zero,2005b6f4 <rtos_mem_malloc>
 
-2005abce <__wrap_free>:
-2005abce:	34b0006f          	jal	zero,2005b718 <rtos_mem_free>
+2005abd4 <__wrap_free>:
+2005abd4:	34b0006f          	jal	zero,2005b71e <rtos_mem_free>
 
-2005abd2 <__wrap__free_r>:
-2005abd2:	852e                	c.mv	a0,a1
-2005abd4:	3450006f          	jal	zero,2005b718 <rtos_mem_free>
+2005abd8 <__wrap__free_r>:
+2005abd8:	852e                	c.mv	a0,a1
+2005abda:	3450006f          	jal	zero,2005b71e <rtos_mem_free>
 
-2005abd8 <prvInsertBlockIntoFreeList>:
-2005abd8:	ee418793          	addi	a5,gp,-284 # 2006684c <xStart>
-2005abdc:	873e                	c.mv	a4,a5
-2005abde:	439c                	c.lw	a5,0(a5)
-2005abe0:	fea7eee3          	bltu	a5,a0,2005abdc <prvInsertBlockIntoFreeList+0x4>
-2005abe4:	4350                	c.lw	a2,4(a4)
-2005abe6:	00c706b3          	add	a3,a4,a2
-2005abea:	00d51663          	bne	a0,a3,2005abf6 <prvInsertBlockIntoFreeList+0x1e>
-2005abee:	4154                	c.lw	a3,4(a0)
-2005abf0:	853a                	c.mv	a0,a4
-2005abf2:	96b2                	c.add	a3,a2
-2005abf4:	c354                	c.sw	a3,4(a4)
-2005abf6:	4154                	c.lw	a3,4(a0)
-2005abf8:	00d50633          	add	a2,a0,a3
-2005abfc:	00c79b63          	bne	a5,a2,2005ac12 <prvInsertBlockIntoFreeList+0x3a>
-2005ac00:	ecc1a603          	lw	a2,-308(gp) # 20066834 <pxEnd>
-2005ac04:	00c78763          	beq	a5,a2,2005ac12 <prvInsertBlockIntoFreeList+0x3a>
-2005ac08:	43dc                	c.lw	a5,4(a5)
-2005ac0a:	97b6                	c.add	a5,a3
-2005ac0c:	c15c                	c.sw	a5,4(a0)
-2005ac0e:	431c                	c.lw	a5,0(a4)
-2005ac10:	439c                	c.lw	a5,0(a5)
-2005ac12:	c11c                	c.sw	a5,0(a0)
-2005ac14:	00e50363          	beq	a0,a4,2005ac1a <prvInsertBlockIntoFreeList+0x42>
-2005ac18:	c308                	c.sw	a0,0(a4)
-2005ac1a:	8082                	c.jr	ra
+2005abde <prvInsertBlockIntoFreeList>:
+2005abde:	ee418793          	addi	a5,gp,-284 # 2006686c <xStart>
+2005abe2:	873e                	c.mv	a4,a5
+2005abe4:	439c                	c.lw	a5,0(a5)
+2005abe6:	fea7eee3          	bltu	a5,a0,2005abe2 <prvInsertBlockIntoFreeList+0x4>
+2005abea:	4350                	c.lw	a2,4(a4)
+2005abec:	00c706b3          	add	a3,a4,a2
+2005abf0:	00d51663          	bne	a0,a3,2005abfc <prvInsertBlockIntoFreeList+0x1e>
+2005abf4:	4154                	c.lw	a3,4(a0)
+2005abf6:	853a                	c.mv	a0,a4
+2005abf8:	96b2                	c.add	a3,a2
+2005abfa:	c354                	c.sw	a3,4(a4)
+2005abfc:	4154                	c.lw	a3,4(a0)
+2005abfe:	00d50633          	add	a2,a0,a3
+2005ac02:	00c79b63          	bne	a5,a2,2005ac18 <prvInsertBlockIntoFreeList+0x3a>
+2005ac06:	ecc1a603          	lw	a2,-308(gp) # 20066854 <pxEnd>
+2005ac0a:	00c78763          	beq	a5,a2,2005ac18 <prvInsertBlockIntoFreeList+0x3a>
+2005ac0e:	43dc                	c.lw	a5,4(a5)
+2005ac10:	97b6                	c.add	a5,a3
+2005ac12:	c15c                	c.sw	a5,4(a0)
+2005ac14:	431c                	c.lw	a5,0(a4)
+2005ac16:	439c                	c.lw	a5,0(a5)
+2005ac18:	c11c                	c.sw	a5,0(a0)
+2005ac1a:	00e50363          	beq	a0,a4,2005ac20 <prvInsertBlockIntoFreeList+0x42>
+2005ac1e:	c308                	c.sw	a0,0(a4)
+2005ac20:	8082                	c.jr	ra
 
-2005ac1c <pvPortMalloc>:
-2005ac1c:	1101                	c.addi	sp,-32
-2005ac1e:	cc22                	c.swsp	s0,24(sp)
-2005ac20:	c452                	c.swsp	s4,8(sp)
-2005ac22:	842a                	c.mv	s0,a0
-2005ac24:	ce06                	c.swsp	ra,28(sp)
-2005ac26:	ca26                	c.swsp	s1,20(sp)
-2005ac28:	c84a                	c.swsp	s2,16(sp)
-2005ac2a:	c64e                	c.swsp	s3,12(sp)
-2005ac2c:	2c9020ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
-2005ac30:	ed01aa03          	lw	s4,-304(gp) # 20066838 <xBlockAllocatedBit>
-2005ac34:	008a77b3          	and	a5,s4,s0
-2005ac38:	c799                	c.beqz	a5,2005ac46 <pvPortMalloc+0x2a>
-2005ac3a:	368030ef          	jal	ra,2005dfa2 <xTaskResumeAll>
-2005ac3e:	1bb010ef          	jal	ra,2005c5f8 <vApplicationMallocFailedHook>
-2005ac42:	4901                	c.li	s2,0
-2005ac44:	a879                	c.j	2005ace2 <pvPortMalloc+0xc6>
-2005ac46:	fff40793          	addi	a5,s0,-1
-2005ac4a:	fde00713          	addi	a4,zero,-34
-2005ac4e:	fef766e3          	bltu	a4,a5,2005ac3a <pvPortMalloc+0x1e>
-2005ac52:	02040793          	addi	a5,s0,32
-2005ac56:	887d                	c.andi	s0,31
-2005ac58:	c801                	c.beqz	s0,2005ac68 <pvPortMalloc+0x4c>
-2005ac5a:	fe07f713          	andi	a4,a5,-32
-2005ac5e:	02070713          	addi	a4,a4,32 # 4020 <GPIO_Direction+0x56>
-2005ac62:	fce7fce3          	bgeu	a5,a4,2005ac3a <pvPortMalloc+0x1e>
-2005ac66:	87ba                	c.mv	a5,a4
-2005ac68:	ed41a483          	lw	s1,-300(gp) # 2006683c <xFreeBytesRemaining>
-2005ac6c:	ed418993          	addi	s3,gp,-300 # 2006683c <xFreeBytesRemaining>
-2005ac70:	fcf4e5e3          	bltu	s1,a5,2005ac3a <pvPortMalloc+0x1e>
-2005ac74:	ee41a403          	lw	s0,-284(gp) # 2006684c <xStart>
-2005ac78:	ee418713          	addi	a4,gp,-284 # 2006684c <xStart>
-2005ac7c:	4054                	c.lw	a3,4(s0)
-2005ac7e:	00f6f463          	bgeu	a3,a5,2005ac86 <pvPortMalloc+0x6a>
-2005ac82:	4014                	c.lw	a3,0(s0)
-2005ac84:	eaa5                	c.bnez	a3,2005acf4 <pvPortMalloc+0xd8>
-2005ac86:	ecc1a683          	lw	a3,-308(gp) # 20066834 <pxEnd>
-2005ac8a:	fa8688e3          	beq	a3,s0,2005ac3a <pvPortMalloc+0x1e>
-2005ac8e:	4014                	c.lw	a3,0(s0)
-2005ac90:	00072903          	lw	s2,0(a4)
-2005ac94:	c314                	c.sw	a3,0(a4)
-2005ac96:	4054                	c.lw	a3,4(s0)
-2005ac98:	04000713          	addi	a4,zero,64
-2005ac9c:	02090913          	addi	s2,s2,32
-2005aca0:	8e9d                	c.sub	a3,a5
-2005aca2:	00d77763          	bgeu	a4,a3,2005acb0 <pvPortMalloc+0x94>
-2005aca6:	00f40533          	add	a0,s0,a5
-2005acaa:	c154                	c.sw	a3,4(a0)
-2005acac:	c05c                	c.sw	a5,4(s0)
-2005acae:	372d                	c.jal	2005abd8 <prvInsertBlockIntoFreeList>
-2005acb0:	4058                	c.lw	a4,4(s0)
-2005acb2:	ed818693          	addi	a3,gp,-296 # 20066840 <xMinimumEverFreeBytesRemaining>
-2005acb6:	4290                	c.lw	a2,0(a3)
-2005acb8:	40e487b3          	sub	a5,s1,a4
-2005acbc:	00f9a023          	sw	a5,0(s3)
-2005acc0:	00c7f363          	bgeu	a5,a2,2005acc6 <pvPortMalloc+0xaa>
-2005acc4:	c29c                	c.sw	a5,0(a3)
-2005acc6:	00ea6733          	or	a4,s4,a4
-2005acca:	edc18793          	addi	a5,gp,-292 # 20066844 <xNumberOfSuccessfulAllocations>
-2005acce:	c058                	c.sw	a4,4(s0)
-2005acd0:	4398                	c.lw	a4,0(a5)
-2005acd2:	00042023          	sw	zero,0(s0)
-2005acd6:	0705                	c.addi	a4,1
-2005acd8:	c398                	c.sw	a4,0(a5)
-2005acda:	2c8030ef          	jal	ra,2005dfa2 <xTaskResumeAll>
-2005acde:	f60900e3          	beq	s2,zero,2005ac3e <pvPortMalloc+0x22>
-2005ace2:	40f2                	c.lwsp	ra,28(sp)
-2005ace4:	4462                	c.lwsp	s0,24(sp)
-2005ace6:	44d2                	c.lwsp	s1,20(sp)
-2005ace8:	49b2                	c.lwsp	s3,12(sp)
-2005acea:	4a22                	c.lwsp	s4,8(sp)
-2005acec:	854a                	c.mv	a0,s2
-2005acee:	4942                	c.lwsp	s2,16(sp)
-2005acf0:	6105                	c.addi16sp	sp,32
-2005acf2:	8082                	c.jr	ra
-2005acf4:	8722                	c.mv	a4,s0
-2005acf6:	8436                	c.mv	s0,a3
-2005acf8:	b751                	c.j	2005ac7c <pvPortMalloc+0x60>
+2005ac22 <pvPortMalloc>:
+2005ac22:	1101                	c.addi	sp,-32
+2005ac24:	cc22                	c.swsp	s0,24(sp)
+2005ac26:	c452                	c.swsp	s4,8(sp)
+2005ac28:	842a                	c.mv	s0,a0
+2005ac2a:	ce06                	c.swsp	ra,28(sp)
+2005ac2c:	ca26                	c.swsp	s1,20(sp)
+2005ac2e:	c84a                	c.swsp	s2,16(sp)
+2005ac30:	c64e                	c.swsp	s3,12(sp)
+2005ac32:	2c3020ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
+2005ac36:	ed01aa03          	lw	s4,-304(gp) # 20066858 <xBlockAllocatedBit>
+2005ac3a:	008a77b3          	and	a5,s4,s0
+2005ac3e:	c799                	c.beqz	a5,2005ac4c <pvPortMalloc+0x2a>
+2005ac40:	362030ef          	jal	ra,2005dfa2 <xTaskResumeAll>
+2005ac44:	1b5010ef          	jal	ra,2005c5f8 <vApplicationMallocFailedHook>
+2005ac48:	4901                	c.li	s2,0
+2005ac4a:	a879                	c.j	2005ace8 <pvPortMalloc+0xc6>
+2005ac4c:	fff40793          	addi	a5,s0,-1
+2005ac50:	fde00713          	addi	a4,zero,-34
+2005ac54:	fef766e3          	bltu	a4,a5,2005ac40 <pvPortMalloc+0x1e>
+2005ac58:	02040793          	addi	a5,s0,32
+2005ac5c:	887d                	c.andi	s0,31
+2005ac5e:	c801                	c.beqz	s0,2005ac6e <pvPortMalloc+0x4c>
+2005ac60:	fe07f713          	andi	a4,a5,-32
+2005ac64:	02070713          	addi	a4,a4,32 # 4020 <GPIO_Direction+0x56>
+2005ac68:	fce7fce3          	bgeu	a5,a4,2005ac40 <pvPortMalloc+0x1e>
+2005ac6c:	87ba                	c.mv	a5,a4
+2005ac6e:	ed41a483          	lw	s1,-300(gp) # 2006685c <xFreeBytesRemaining>
+2005ac72:	ed418993          	addi	s3,gp,-300 # 2006685c <xFreeBytesRemaining>
+2005ac76:	fcf4e5e3          	bltu	s1,a5,2005ac40 <pvPortMalloc+0x1e>
+2005ac7a:	ee41a403          	lw	s0,-284(gp) # 2006686c <xStart>
+2005ac7e:	ee418713          	addi	a4,gp,-284 # 2006686c <xStart>
+2005ac82:	4054                	c.lw	a3,4(s0)
+2005ac84:	00f6f463          	bgeu	a3,a5,2005ac8c <pvPortMalloc+0x6a>
+2005ac88:	4014                	c.lw	a3,0(s0)
+2005ac8a:	eaa5                	c.bnez	a3,2005acfa <pvPortMalloc+0xd8>
+2005ac8c:	ecc1a683          	lw	a3,-308(gp) # 20066854 <pxEnd>
+2005ac90:	fa8688e3          	beq	a3,s0,2005ac40 <pvPortMalloc+0x1e>
+2005ac94:	4014                	c.lw	a3,0(s0)
+2005ac96:	00072903          	lw	s2,0(a4)
+2005ac9a:	c314                	c.sw	a3,0(a4)
+2005ac9c:	4054                	c.lw	a3,4(s0)
+2005ac9e:	04000713          	addi	a4,zero,64
+2005aca2:	02090913          	addi	s2,s2,32
+2005aca6:	8e9d                	c.sub	a3,a5
+2005aca8:	00d77763          	bgeu	a4,a3,2005acb6 <pvPortMalloc+0x94>
+2005acac:	00f40533          	add	a0,s0,a5
+2005acb0:	c154                	c.sw	a3,4(a0)
+2005acb2:	c05c                	c.sw	a5,4(s0)
+2005acb4:	372d                	c.jal	2005abde <prvInsertBlockIntoFreeList>
+2005acb6:	4058                	c.lw	a4,4(s0)
+2005acb8:	ed818693          	addi	a3,gp,-296 # 20066860 <xMinimumEverFreeBytesRemaining>
+2005acbc:	4290                	c.lw	a2,0(a3)
+2005acbe:	40e487b3          	sub	a5,s1,a4
+2005acc2:	00f9a023          	sw	a5,0(s3)
+2005acc6:	00c7f363          	bgeu	a5,a2,2005accc <pvPortMalloc+0xaa>
+2005acca:	c29c                	c.sw	a5,0(a3)
+2005accc:	00ea6733          	or	a4,s4,a4
+2005acd0:	edc18793          	addi	a5,gp,-292 # 20066864 <xNumberOfSuccessfulAllocations>
+2005acd4:	c058                	c.sw	a4,4(s0)
+2005acd6:	4398                	c.lw	a4,0(a5)
+2005acd8:	00042023          	sw	zero,0(s0)
+2005acdc:	0705                	c.addi	a4,1
+2005acde:	c398                	c.sw	a4,0(a5)
+2005ace0:	2c2030ef          	jal	ra,2005dfa2 <xTaskResumeAll>
+2005ace4:	f60900e3          	beq	s2,zero,2005ac44 <pvPortMalloc+0x22>
+2005ace8:	40f2                	c.lwsp	ra,28(sp)
+2005acea:	4462                	c.lwsp	s0,24(sp)
+2005acec:	44d2                	c.lwsp	s1,20(sp)
+2005acee:	49b2                	c.lwsp	s3,12(sp)
+2005acf0:	4a22                	c.lwsp	s4,8(sp)
+2005acf2:	854a                	c.mv	a0,s2
+2005acf4:	4942                	c.lwsp	s2,16(sp)
+2005acf6:	6105                	c.addi16sp	sp,32
+2005acf8:	8082                	c.jr	ra
+2005acfa:	8722                	c.mv	a4,s0
+2005acfc:	8436                	c.mv	s0,a3
+2005acfe:	b751                	c.j	2005ac82 <pvPortMalloc+0x60>
 
-2005acfa <vPortFree>:
-2005acfa:	cd31                	c.beqz	a0,2005ad56 <vPortFree+0x5c>
-2005acfc:	1141                	c.addi	sp,-16
-2005acfe:	c422                	c.swsp	s0,8(sp)
-2005ad00:	c606                	c.swsp	ra,12(sp)
-2005ad02:	fe452703          	lw	a4,-28(a0)
-2005ad06:	ed01a783          	lw	a5,-304(gp) # 20066838 <xBlockAllocatedBit>
-2005ad0a:	842a                	c.mv	s0,a0
-2005ad0c:	00f776b3          	and	a3,a4,a5
-2005ad10:	ce9d                	c.beqz	a3,2005ad4e <vPortFree+0x54>
-2005ad12:	fe052683          	lw	a3,-32(a0)
-2005ad16:	ee85                	c.bnez	a3,2005ad4e <vPortFree+0x54>
-2005ad18:	fff7c793          	xori	a5,a5,-1
-2005ad1c:	8ff9                	c.and	a5,a4
-2005ad1e:	fef52223          	sw	a5,-28(a0)
-2005ad22:	1d3020ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
-2005ad26:	ed418793          	addi	a5,gp,-300 # 2006683c <xFreeBytesRemaining>
-2005ad2a:	4394                	c.lw	a3,0(a5)
-2005ad2c:	fe442703          	lw	a4,-28(s0)
-2005ad30:	fe040513          	addi	a0,s0,-32
-2005ad34:	9736                	c.add	a4,a3
-2005ad36:	c398                	c.sw	a4,0(a5)
-2005ad38:	3545                	c.jal	2005abd8 <prvInsertBlockIntoFreeList>
-2005ad3a:	ee018793          	addi	a5,gp,-288 # 20066848 <xNumberOfSuccessfulFrees>
-2005ad3e:	4398                	c.lw	a4,0(a5)
-2005ad40:	0705                	c.addi	a4,1
-2005ad42:	c398                	c.sw	a4,0(a5)
-2005ad44:	4422                	c.lwsp	s0,8(sp)
-2005ad46:	40b2                	c.lwsp	ra,12(sp)
-2005ad48:	0141                	c.addi	sp,16
-2005ad4a:	2580306f          	jal	zero,2005dfa2 <xTaskResumeAll>
-2005ad4e:	40b2                	c.lwsp	ra,12(sp)
-2005ad50:	4422                	c.lwsp	s0,8(sp)
-2005ad52:	0141                	c.addi	sp,16
-2005ad54:	8082                	c.jr	ra
-2005ad56:	8082                	c.jr	ra
-
-2005ad58 <xPortGetFreeHeapSize>:
-2005ad58:	ed41a503          	lw	a0,-300(gp) # 2006683c <xFreeBytesRemaining>
+2005ad00 <vPortFree>:
+2005ad00:	cd31                	c.beqz	a0,2005ad5c <vPortFree+0x5c>
+2005ad02:	1141                	c.addi	sp,-16
+2005ad04:	c422                	c.swsp	s0,8(sp)
+2005ad06:	c606                	c.swsp	ra,12(sp)
+2005ad08:	fe452703          	lw	a4,-28(a0)
+2005ad0c:	ed01a783          	lw	a5,-304(gp) # 20066858 <xBlockAllocatedBit>
+2005ad10:	842a                	c.mv	s0,a0
+2005ad12:	00f776b3          	and	a3,a4,a5
+2005ad16:	ce9d                	c.beqz	a3,2005ad54 <vPortFree+0x54>
+2005ad18:	fe052683          	lw	a3,-32(a0)
+2005ad1c:	ee85                	c.bnez	a3,2005ad54 <vPortFree+0x54>
+2005ad1e:	fff7c793          	xori	a5,a5,-1
+2005ad22:	8ff9                	c.and	a5,a4
+2005ad24:	fef52223          	sw	a5,-28(a0)
+2005ad28:	1cd020ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
+2005ad2c:	ed418793          	addi	a5,gp,-300 # 2006685c <xFreeBytesRemaining>
+2005ad30:	4394                	c.lw	a3,0(a5)
+2005ad32:	fe442703          	lw	a4,-28(s0)
+2005ad36:	fe040513          	addi	a0,s0,-32
+2005ad3a:	9736                	c.add	a4,a3
+2005ad3c:	c398                	c.sw	a4,0(a5)
+2005ad3e:	3545                	c.jal	2005abde <prvInsertBlockIntoFreeList>
+2005ad40:	ee018793          	addi	a5,gp,-288 # 20066868 <xNumberOfSuccessfulFrees>
+2005ad44:	4398                	c.lw	a4,0(a5)
+2005ad46:	0705                	c.addi	a4,1
+2005ad48:	c398                	c.sw	a4,0(a5)
+2005ad4a:	4422                	c.lwsp	s0,8(sp)
+2005ad4c:	40b2                	c.lwsp	ra,12(sp)
+2005ad4e:	0141                	c.addi	sp,16
+2005ad50:	2520306f          	jal	zero,2005dfa2 <xTaskResumeAll>
+2005ad54:	40b2                	c.lwsp	ra,12(sp)
+2005ad56:	4422                	c.lwsp	s0,8(sp)
+2005ad58:	0141                	c.addi	sp,16
+2005ad5a:	8082                	c.jr	ra
 2005ad5c:	8082                	c.jr	ra
 
-2005ad5e <vPortDefineHeapRegions>:
-2005ad5e:	ecc1a583          	lw	a1,-308(gp) # 20066834 <pxEnd>
-2005ad62:	4701                	c.li	a4,0
-2005ad64:	4301                	c.li	t1,0
-2005ad66:	4681                	c.li	a3,0
-2005ad68:	ecc18613          	addi	a2,gp,-308 # 20066834 <pxEnd>
-2005ad6c:	ee418813          	addi	a6,gp,-284 # 2006684c <xStart>
-2005ad70:	415c                	c.lw	a5,4(a0)
-2005ad72:	ef81                	c.bnez	a5,2005ad8a <vPortDefineHeapRegions+0x2c>
-2005ad74:	c311                	c.beqz	a4,2005ad78 <vPortDefineHeapRegions+0x1a>
-2005ad76:	c20c                	c.sw	a1,0(a2)
-2005ad78:	ecd1ac23          	sw	a3,-296(gp) # 20066840 <xMinimumEverFreeBytesRemaining>
-2005ad7c:	ecd1aa23          	sw	a3,-300(gp) # 2006683c <xFreeBytesRemaining>
-2005ad80:	80000737          	lui	a4,0x80000
-2005ad84:	ece1a823          	sw	a4,-304(gp) # 20066838 <xBlockAllocatedBit>
-2005ad88:	8082                	c.jr	ra
-2005ad8a:	4118                	c.lw	a4,0(a0)
-2005ad8c:	01f77893          	andi	a7,a4,31
-2005ad90:	00088a63          	beq	a7,zero,2005ada4 <vPortDefineHeapRegions+0x46>
-2005ad94:	01f70893          	addi	a7,a4,31 # 8000001f <__ctrace_end__+0xb600001f>
-2005ad98:	fe08f893          	andi	a7,a7,-32
-2005ad9c:	97ba                	c.add	a5,a4
-2005ad9e:	411787b3          	sub	a5,a5,a7
-2005ada2:	8746                	c.mv	a4,a7
-2005ada4:	00031663          	bne	t1,zero,2005adb0 <vPortDefineHeapRegions+0x52>
-2005ada8:	00e82023          	sw	a4,0(a6)
-2005adac:	00082223          	sw	zero,4(a6)
-2005adb0:	97ba                	c.add	a5,a4
-2005adb2:	1781                	c.addi	a5,-32
-2005adb4:	9b81                	c.andi	a5,-32
-2005adb6:	0007a223          	sw	zero,4(a5)
-2005adba:	0007a023          	sw	zero,0(a5)
-2005adbe:	40e788b3          	sub	a7,a5,a4
-2005adc2:	01172223          	sw	a7,4(a4)
-2005adc6:	c31c                	c.sw	a5,0(a4)
-2005adc8:	c191                	c.beqz	a1,2005adcc <vPortDefineHeapRegions+0x6e>
-2005adca:	c198                	c.sw	a4,0(a1)
-2005adcc:	4358                	c.lw	a4,4(a4)
-2005adce:	0305                	c.addi	t1,1
-2005add0:	0521                	c.addi	a0,8
-2005add2:	96ba                	c.add	a3,a4
-2005add4:	85be                	c.mv	a1,a5
-2005add6:	4705                	c.li	a4,1
-2005add8:	bf61                	c.j	2005ad70 <vPortDefineHeapRegions+0x12>
+2005ad5e <xPortGetFreeHeapSize>:
+2005ad5e:	ed41a503          	lw	a0,-300(gp) # 2006685c <xFreeBytesRemaining>
+2005ad62:	8082                	c.jr	ra
 
-2005adda <vPortGetHeapStats>:
-2005adda:	1101                	c.addi	sp,-32
-2005addc:	cc22                	c.swsp	s0,24(sp)
-2005adde:	ce06                	c.swsp	ra,28(sp)
-2005ade0:	ca26                	c.swsp	s1,20(sp)
-2005ade2:	c84a                	c.swsp	s2,16(sp)
-2005ade4:	c64e                	c.swsp	s3,12(sp)
-2005ade6:	842a                	c.mv	s0,a0
-2005ade8:	10d020ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
-2005adec:	ee41a783          	lw	a5,-284(gp) # 2006684c <xStart>
-2005adf0:	cfb9                	c.beqz	a5,2005ae4e <vPortGetHeapStats+0x74>
-2005adf2:	ecc1a683          	lw	a3,-308(gp) # 20066834 <pxEnd>
-2005adf6:	597d                	c.li	s2,-1
-2005adf8:	4981                	c.li	s3,0
-2005adfa:	4481                	c.li	s1,0
-2005adfc:	43d8                	c.lw	a4,4(a5)
-2005adfe:	0485                	c.addi	s1,1
-2005ae00:	00e9f363          	bgeu	s3,a4,2005ae06 <vPortGetHeapStats+0x2c>
-2005ae04:	89ba                	c.mv	s3,a4
-2005ae06:	c701                	c.beqz	a4,2005ae0e <vPortGetHeapStats+0x34>
-2005ae08:	01277363          	bgeu	a4,s2,2005ae0e <vPortGetHeapStats+0x34>
-2005ae0c:	893a                	c.mv	s2,a4
-2005ae0e:	439c                	c.lw	a5,0(a5)
-2005ae10:	fef696e3          	bne	a3,a5,2005adfc <vPortGetHeapStats+0x22>
-2005ae14:	18e030ef          	jal	ra,2005dfa2 <xTaskResumeAll>
-2005ae18:	01342223          	sw	s3,4(s0)
-2005ae1c:	01242423          	sw	s2,8(s0)
-2005ae20:	c444                	c.sw	s1,12(s0)
-2005ae22:	5f9020ef          	jal	ra,2005dc1a <vTaskEnterCritical>
-2005ae26:	ed41a783          	lw	a5,-300(gp) # 2006683c <xFreeBytesRemaining>
-2005ae2a:	40f2                	c.lwsp	ra,28(sp)
-2005ae2c:	44d2                	c.lwsp	s1,20(sp)
-2005ae2e:	c01c                	c.sw	a5,0(s0)
-2005ae30:	edc1a783          	lw	a5,-292(gp) # 20066844 <xNumberOfSuccessfulAllocations>
-2005ae34:	4942                	c.lwsp	s2,16(sp)
-2005ae36:	49b2                	c.lwsp	s3,12(sp)
-2005ae38:	c85c                	c.sw	a5,20(s0)
-2005ae3a:	ee01a783          	lw	a5,-288(gp) # 20066848 <xNumberOfSuccessfulFrees>
-2005ae3e:	cc1c                	c.sw	a5,24(s0)
-2005ae40:	ed81a783          	lw	a5,-296(gp) # 20066840 <xMinimumEverFreeBytesRemaining>
-2005ae44:	c81c                	c.sw	a5,16(s0)
-2005ae46:	4462                	c.lwsp	s0,24(sp)
-2005ae48:	6105                	c.addi16sp	sp,32
-2005ae4a:	5eb0206f          	jal	zero,2005dc34 <vTaskExitCritical>
-2005ae4e:	597d                	c.li	s2,-1
-2005ae50:	4981                	c.li	s3,0
-2005ae52:	4481                	c.li	s1,0
-2005ae54:	b7c1                	c.j	2005ae14 <vPortGetHeapStats+0x3a>
+2005ad64 <vPortDefineHeapRegions>:
+2005ad64:	ecc1a583          	lw	a1,-308(gp) # 20066854 <pxEnd>
+2005ad68:	4701                	c.li	a4,0
+2005ad6a:	4301                	c.li	t1,0
+2005ad6c:	4681                	c.li	a3,0
+2005ad6e:	ecc18613          	addi	a2,gp,-308 # 20066854 <pxEnd>
+2005ad72:	ee418813          	addi	a6,gp,-284 # 2006686c <xStart>
+2005ad76:	415c                	c.lw	a5,4(a0)
+2005ad78:	ef81                	c.bnez	a5,2005ad90 <vPortDefineHeapRegions+0x2c>
+2005ad7a:	c311                	c.beqz	a4,2005ad7e <vPortDefineHeapRegions+0x1a>
+2005ad7c:	c20c                	c.sw	a1,0(a2)
+2005ad7e:	ecd1ac23          	sw	a3,-296(gp) # 20066860 <xMinimumEverFreeBytesRemaining>
+2005ad82:	ecd1aa23          	sw	a3,-300(gp) # 2006685c <xFreeBytesRemaining>
+2005ad86:	80000737          	lui	a4,0x80000
+2005ad8a:	ece1a823          	sw	a4,-304(gp) # 20066858 <xBlockAllocatedBit>
+2005ad8e:	8082                	c.jr	ra
+2005ad90:	4118                	c.lw	a4,0(a0)
+2005ad92:	01f77893          	andi	a7,a4,31
+2005ad96:	00088a63          	beq	a7,zero,2005adaa <vPortDefineHeapRegions+0x46>
+2005ad9a:	01f70893          	addi	a7,a4,31 # 8000001f <__ctrace_end__+0xb600001f>
+2005ad9e:	fe08f893          	andi	a7,a7,-32
+2005ada2:	97ba                	c.add	a5,a4
+2005ada4:	411787b3          	sub	a5,a5,a7
+2005ada8:	8746                	c.mv	a4,a7
+2005adaa:	00031663          	bne	t1,zero,2005adb6 <vPortDefineHeapRegions+0x52>
+2005adae:	00e82023          	sw	a4,0(a6)
+2005adb2:	00082223          	sw	zero,4(a6)
+2005adb6:	97ba                	c.add	a5,a4
+2005adb8:	1781                	c.addi	a5,-32
+2005adba:	9b81                	c.andi	a5,-32
+2005adbc:	0007a223          	sw	zero,4(a5)
+2005adc0:	0007a023          	sw	zero,0(a5)
+2005adc4:	40e788b3          	sub	a7,a5,a4
+2005adc8:	01172223          	sw	a7,4(a4)
+2005adcc:	c31c                	c.sw	a5,0(a4)
+2005adce:	c191                	c.beqz	a1,2005add2 <vPortDefineHeapRegions+0x6e>
+2005add0:	c198                	c.sw	a4,0(a1)
+2005add2:	4358                	c.lw	a4,4(a4)
+2005add4:	0305                	c.addi	t1,1
+2005add6:	0521                	c.addi	a0,8
+2005add8:	96ba                	c.add	a3,a4
+2005adda:	85be                	c.mv	a1,a5
+2005addc:	4705                	c.li	a4,1
+2005adde:	bf61                	c.j	2005ad76 <vPortDefineHeapRegions+0x12>
 
-2005ae56 <vListInitialise>:
-2005ae56:	00850793          	addi	a5,a0,8
-2005ae5a:	577d                	c.li	a4,-1
-2005ae5c:	c15c                	c.sw	a5,4(a0)
-2005ae5e:	c518                	c.sw	a4,8(a0)
-2005ae60:	c55c                	c.sw	a5,12(a0)
-2005ae62:	c91c                	c.sw	a5,16(a0)
-2005ae64:	00052023          	sw	zero,0(a0)
-2005ae68:	8082                	c.jr	ra
+2005ade0 <vPortGetHeapStats>:
+2005ade0:	1101                	c.addi	sp,-32
+2005ade2:	cc22                	c.swsp	s0,24(sp)
+2005ade4:	ce06                	c.swsp	ra,28(sp)
+2005ade6:	ca26                	c.swsp	s1,20(sp)
+2005ade8:	c84a                	c.swsp	s2,16(sp)
+2005adea:	c64e                	c.swsp	s3,12(sp)
+2005adec:	842a                	c.mv	s0,a0
+2005adee:	107020ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
+2005adf2:	ee41a783          	lw	a5,-284(gp) # 2006686c <xStart>
+2005adf6:	cfb9                	c.beqz	a5,2005ae54 <vPortGetHeapStats+0x74>
+2005adf8:	ecc1a683          	lw	a3,-308(gp) # 20066854 <pxEnd>
+2005adfc:	597d                	c.li	s2,-1
+2005adfe:	4981                	c.li	s3,0
+2005ae00:	4481                	c.li	s1,0
+2005ae02:	43d8                	c.lw	a4,4(a5)
+2005ae04:	0485                	c.addi	s1,1
+2005ae06:	00e9f363          	bgeu	s3,a4,2005ae0c <vPortGetHeapStats+0x2c>
+2005ae0a:	89ba                	c.mv	s3,a4
+2005ae0c:	c701                	c.beqz	a4,2005ae14 <vPortGetHeapStats+0x34>
+2005ae0e:	01277363          	bgeu	a4,s2,2005ae14 <vPortGetHeapStats+0x34>
+2005ae12:	893a                	c.mv	s2,a4
+2005ae14:	439c                	c.lw	a5,0(a5)
+2005ae16:	fef696e3          	bne	a3,a5,2005ae02 <vPortGetHeapStats+0x22>
+2005ae1a:	188030ef          	jal	ra,2005dfa2 <xTaskResumeAll>
+2005ae1e:	01342223          	sw	s3,4(s0)
+2005ae22:	01242423          	sw	s2,8(s0)
+2005ae26:	c444                	c.sw	s1,12(s0)
+2005ae28:	5f3020ef          	jal	ra,2005dc1a <vTaskEnterCritical>
+2005ae2c:	ed41a783          	lw	a5,-300(gp) # 2006685c <xFreeBytesRemaining>
+2005ae30:	40f2                	c.lwsp	ra,28(sp)
+2005ae32:	44d2                	c.lwsp	s1,20(sp)
+2005ae34:	c01c                	c.sw	a5,0(s0)
+2005ae36:	edc1a783          	lw	a5,-292(gp) # 20066864 <xNumberOfSuccessfulAllocations>
+2005ae3a:	4942                	c.lwsp	s2,16(sp)
+2005ae3c:	49b2                	c.lwsp	s3,12(sp)
+2005ae3e:	c85c                	c.sw	a5,20(s0)
+2005ae40:	ee01a783          	lw	a5,-288(gp) # 20066868 <xNumberOfSuccessfulFrees>
+2005ae44:	cc1c                	c.sw	a5,24(s0)
+2005ae46:	ed81a783          	lw	a5,-296(gp) # 20066860 <xMinimumEverFreeBytesRemaining>
+2005ae4a:	c81c                	c.sw	a5,16(s0)
+2005ae4c:	4462                	c.lwsp	s0,24(sp)
+2005ae4e:	6105                	c.addi16sp	sp,32
+2005ae50:	5e50206f          	jal	zero,2005dc34 <vTaskExitCritical>
+2005ae54:	597d                	c.li	s2,-1
+2005ae56:	4981                	c.li	s3,0
+2005ae58:	4481                	c.li	s1,0
+2005ae5a:	b7c1                	c.j	2005ae1a <vPortGetHeapStats+0x3a>
 
-2005ae6a <vListInitialiseItem>:
-2005ae6a:	00052823          	sw	zero,16(a0)
+2005ae5c <vListInitialise>:
+2005ae5c:	00850793          	addi	a5,a0,8
+2005ae60:	577d                	c.li	a4,-1
+2005ae62:	c15c                	c.sw	a5,4(a0)
+2005ae64:	c518                	c.sw	a4,8(a0)
+2005ae66:	c55c                	c.sw	a5,12(a0)
+2005ae68:	c91c                	c.sw	a5,16(a0)
+2005ae6a:	00052023          	sw	zero,0(a0)
 2005ae6e:	8082                	c.jr	ra
 
-2005ae70 <vListInsertEnd>:
-2005ae70:	415c                	c.lw	a5,4(a0)
-2005ae72:	c1dc                	c.sw	a5,4(a1)
-2005ae74:	4798                	c.lw	a4,8(a5)
-2005ae76:	c598                	c.sw	a4,8(a1)
-2005ae78:	c34c                	c.sw	a1,4(a4)
-2005ae7a:	c78c                	c.sw	a1,8(a5)
-2005ae7c:	c988                	c.sw	a0,16(a1)
-2005ae7e:	411c                	c.lw	a5,0(a0)
-2005ae80:	0785                	c.addi	a5,1
-2005ae82:	c11c                	c.sw	a5,0(a0)
-2005ae84:	8082                	c.jr	ra
+2005ae70 <vListInitialiseItem>:
+2005ae70:	00052823          	sw	zero,16(a0)
+2005ae74:	8082                	c.jr	ra
 
-2005ae86 <vListInsert>:
-2005ae86:	4194                	c.lw	a3,0(a1)
-2005ae88:	57fd                	c.li	a5,-1
-2005ae8a:	00850713          	addi	a4,a0,8
-2005ae8e:	00f69d63          	bne	a3,a5,2005aea8 <vListInsert+0x22>
-2005ae92:	491c                	c.lw	a5,16(a0)
-2005ae94:	43d8                	c.lw	a4,4(a5)
-2005ae96:	c1d8                	c.sw	a4,4(a1)
-2005ae98:	c70c                	c.sw	a1,8(a4)
-2005ae9a:	c59c                	c.sw	a5,8(a1)
-2005ae9c:	c3cc                	c.sw	a1,4(a5)
-2005ae9e:	c988                	c.sw	a0,16(a1)
-2005aea0:	411c                	c.lw	a5,0(a0)
-2005aea2:	0785                	c.addi	a5,1
-2005aea4:	c11c                	c.sw	a5,0(a0)
-2005aea6:	8082                	c.jr	ra
-2005aea8:	87ba                	c.mv	a5,a4
-2005aeaa:	4358                	c.lw	a4,4(a4)
-2005aeac:	4310                	c.lw	a2,0(a4)
-2005aeae:	fec6fde3          	bgeu	a3,a2,2005aea8 <vListInsert+0x22>
-2005aeb2:	b7cd                	c.j	2005ae94 <vListInsert+0xe>
+2005ae76 <vListInsertEnd>:
+2005ae76:	415c                	c.lw	a5,4(a0)
+2005ae78:	c1dc                	c.sw	a5,4(a1)
+2005ae7a:	4798                	c.lw	a4,8(a5)
+2005ae7c:	c598                	c.sw	a4,8(a1)
+2005ae7e:	c34c                	c.sw	a1,4(a4)
+2005ae80:	c78c                	c.sw	a1,8(a5)
+2005ae82:	c988                	c.sw	a0,16(a1)
+2005ae84:	411c                	c.lw	a5,0(a0)
+2005ae86:	0785                	c.addi	a5,1
+2005ae88:	c11c                	c.sw	a5,0(a0)
+2005ae8a:	8082                	c.jr	ra
 
-2005aeb4 <uxListRemove>:
-2005aeb4:	4154                	c.lw	a3,4(a0)
-2005aeb6:	4518                	c.lw	a4,8(a0)
-2005aeb8:	491c                	c.lw	a5,16(a0)
-2005aeba:	c698                	c.sw	a4,8(a3)
-2005aebc:	4154                	c.lw	a3,4(a0)
-2005aebe:	c354                	c.sw	a3,4(a4)
-2005aec0:	43d8                	c.lw	a4,4(a5)
-2005aec2:	00a71463          	bne	a4,a0,2005aeca <uxListRemove+0x16>
-2005aec6:	4518                	c.lw	a4,8(a0)
-2005aec8:	c3d8                	c.sw	a4,4(a5)
-2005aeca:	00052823          	sw	zero,16(a0)
-2005aece:	4398                	c.lw	a4,0(a5)
-2005aed0:	177d                	c.addi	a4,-1
-2005aed2:	c398                	c.sw	a4,0(a5)
-2005aed4:	4388                	c.lw	a0,0(a5)
-2005aed6:	8082                	c.jr	ra
+2005ae8c <vListInsert>:
+2005ae8c:	4194                	c.lw	a3,0(a1)
+2005ae8e:	57fd                	c.li	a5,-1
+2005ae90:	00850713          	addi	a4,a0,8
+2005ae94:	00f69d63          	bne	a3,a5,2005aeae <vListInsert+0x22>
+2005ae98:	491c                	c.lw	a5,16(a0)
+2005ae9a:	43d8                	c.lw	a4,4(a5)
+2005ae9c:	c1d8                	c.sw	a4,4(a1)
+2005ae9e:	c70c                	c.sw	a1,8(a4)
+2005aea0:	c59c                	c.sw	a5,8(a1)
+2005aea2:	c3cc                	c.sw	a1,4(a5)
+2005aea4:	c988                	c.sw	a0,16(a1)
+2005aea6:	411c                	c.lw	a5,0(a0)
+2005aea8:	0785                	c.addi	a5,1
+2005aeaa:	c11c                	c.sw	a5,0(a0)
+2005aeac:	8082                	c.jr	ra
+2005aeae:	87ba                	c.mv	a5,a4
+2005aeb0:	4358                	c.lw	a4,4(a4)
+2005aeb2:	4310                	c.lw	a2,0(a4)
+2005aeb4:	fec6fde3          	bgeu	a3,a2,2005aeae <vListInsert+0x22>
+2005aeb8:	b7cd                	c.j	2005ae9a <vListInsert+0xe>
 
-2005aed8 <rtk_log_array_print>:
-2005aed8:	1101                	c.addi	sp,-32
-2005aeda:	cc22                	c.swsp	s0,24(sp)
-2005aedc:	c84a                	c.swsp	s2,16(sp)
-2005aede:	ce06                	c.swsp	ra,28(sp)
-2005aee0:	ca26                	c.swsp	s1,20(sp)
-2005aee2:	c64e                	c.swsp	s3,12(sp)
-2005aee4:	eec18793          	addi	a5,gp,-276 # 20066854 <rtk_log_entry_count>
-2005aee8:	4394                	c.lw	a3,0(a5)
-2005aeea:	470d                	c.li	a4,3
-2005aeec:	842a                	c.mv	s0,a0
-2005aeee:	4911                	c.li	s2,4
-2005aef0:	00d76463          	bltu	a4,a3,2005aef8 <rtk_log_array_print+0x20>
-2005aef4:	0007a903          	lw	s2,0(a5)
-2005aef8:	557d                	c.li	a0,-1
-2005aefa:	c801                	c.beqz	s0,2005af0a <rtk_log_array_print+0x32>
-2005aefc:	0405                	c.addi	s0,1
-2005aefe:	4481                	c.li	s1,0
-2005af00:	200639b7          	lui	s3,0x20063
-2005af04:	01249a63          	bne	s1,s2,2005af18 <rtk_log_array_print+0x40>
-2005af08:	4501                	c.li	a0,0
-2005af0a:	40f2                	c.lwsp	ra,28(sp)
-2005af0c:	4462                	c.lwsp	s0,24(sp)
-2005af0e:	44d2                	c.lwsp	s1,20(sp)
-2005af10:	4942                	c.lwsp	s2,16(sp)
-2005af12:	49b2                	c.lwsp	s3,12(sp)
-2005af14:	6105                	c.addi16sp	sp,32
-2005af16:	8082                	c.jr	ra
-2005af18:	fff44603          	lbu	a2,-1(s0)
-2005af1c:	85a2                	c.mv	a1,s0
-2005af1e:	ff898513          	addi	a0,s3,-8 # 20062ff8 <__FUNCTION__.0+0xac>
-2005af22:	484040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005af26:	0485                	c.addi	s1,1
-2005af28:	042d                	c.addi	s0,11
-2005af2a:	bfe9                	c.j	2005af04 <rtk_log_array_print+0x2c>
+2005aeba <uxListRemove>:
+2005aeba:	4154                	c.lw	a3,4(a0)
+2005aebc:	4518                	c.lw	a4,8(a0)
+2005aebe:	491c                	c.lw	a5,16(a0)
+2005aec0:	c698                	c.sw	a4,8(a3)
+2005aec2:	4154                	c.lw	a3,4(a0)
+2005aec4:	c354                	c.sw	a3,4(a4)
+2005aec6:	43d8                	c.lw	a4,4(a5)
+2005aec8:	00a71463          	bne	a4,a0,2005aed0 <uxListRemove+0x16>
+2005aecc:	4518                	c.lw	a4,8(a0)
+2005aece:	c3d8                	c.sw	a4,4(a5)
+2005aed0:	00052823          	sw	zero,16(a0)
+2005aed4:	4398                	c.lw	a4,0(a5)
+2005aed6:	177d                	c.addi	a4,-1
+2005aed8:	c398                	c.sw	a4,0(a5)
+2005aeda:	4388                	c.lw	a0,0(a5)
+2005aedc:	8082                	c.jr	ra
 
-2005af2c <rtk_log_array_clear>:
-2005af2c:	1141                	c.addi	sp,-16
-2005af2e:	02c00613          	addi	a2,zero,44
-2005af32:	4581                	c.li	a1,0
-2005af34:	58818513          	addi	a0,gp,1416 # 20066ef0 <rtk_log_tag_array>
-2005af38:	c606                	c.swsp	ra,12(sp)
-2005af3a:	dffaf097          	auipc	ra,0xdffaf
-2005af3e:	850080e7          	jalr	ra,-1968(ra) # 978a <_memset>
-2005af42:	40b2                	c.lwsp	ra,12(sp)
-2005af44:	ee01a623          	sw	zero,-276(gp) # 20066854 <rtk_log_entry_count>
-2005af48:	0141                	c.addi	sp,16
-2005af4a:	8082                	c.jr	ra
+2005aede <rtk_log_array_print>:
+2005aede:	1101                	c.addi	sp,-32
+2005aee0:	cc22                	c.swsp	s0,24(sp)
+2005aee2:	c84a                	c.swsp	s2,16(sp)
+2005aee4:	ce06                	c.swsp	ra,28(sp)
+2005aee6:	ca26                	c.swsp	s1,20(sp)
+2005aee8:	c64e                	c.swsp	s3,12(sp)
+2005aeea:	eec18793          	addi	a5,gp,-276 # 20066874 <rtk_log_entry_count>
+2005aeee:	4394                	c.lw	a3,0(a5)
+2005aef0:	470d                	c.li	a4,3
+2005aef2:	842a                	c.mv	s0,a0
+2005aef4:	4911                	c.li	s2,4
+2005aef6:	00d76463          	bltu	a4,a3,2005aefe <rtk_log_array_print+0x20>
+2005aefa:	0007a903          	lw	s2,0(a5)
+2005aefe:	557d                	c.li	a0,-1
+2005af00:	c801                	c.beqz	s0,2005af10 <rtk_log_array_print+0x32>
+2005af02:	0405                	c.addi	s0,1
+2005af04:	4481                	c.li	s1,0
+2005af06:	200639b7          	lui	s3,0x20063
+2005af0a:	01249a63          	bne	s1,s2,2005af1e <rtk_log_array_print+0x40>
+2005af0e:	4501                	c.li	a0,0
+2005af10:	40f2                	c.lwsp	ra,28(sp)
+2005af12:	4462                	c.lwsp	s0,24(sp)
+2005af14:	44d2                	c.lwsp	s1,20(sp)
+2005af16:	4942                	c.lwsp	s2,16(sp)
+2005af18:	49b2                	c.lwsp	s3,12(sp)
+2005af1a:	6105                	c.addi16sp	sp,32
+2005af1c:	8082                	c.jr	ra
+2005af1e:	fff44603          	lbu	a2,-1(s0)
+2005af22:	85a2                	c.mv	a1,s0
+2005af24:	00098513          	addi	a0,s3,0 # 20063000 <__FUNCTION__.0+0xac>
+2005af28:	47e040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005af2c:	0485                	c.addi	s1,1
+2005af2e:	042d                	c.addi	s0,11
+2005af30:	bfe9                	c.j	2005af0a <rtk_log_array_print+0x2c>
 
-2005af4c <rtk_log_level_get>:
-2005af4c:	1101                	c.addi	sp,-32
-2005af4e:	c64e                	c.swsp	s3,12(sp)
-2005af50:	c452                	c.swsp	s4,8(sp)
-2005af52:	ce06                	c.swsp	ra,28(sp)
-2005af54:	cc22                	c.swsp	s0,24(sp)
-2005af56:	ca26                	c.swsp	s1,20(sp)
-2005af58:	c84a                	c.swsp	s2,16(sp)
-2005af5a:	eec18793          	addi	a5,gp,-276 # 20066854 <rtk_log_entry_count>
-2005af5e:	4394                	c.lw	a3,0(a5)
-2005af60:	470d                	c.li	a4,3
-2005af62:	89aa                	c.mv	s3,a0
-2005af64:	4a11                	c.li	s4,4
-2005af66:	00d76463          	bltu	a4,a3,2005af6e <rtk_log_level_get+0x22>
-2005af6a:	0007aa03          	lw	s4,0(a5)
-2005af6e:	00099a63          	bne	s3,zero,2005af82 <rtk_log_level_get+0x36>
-2005af72:	20063537          	lui	a0,0x20063
-2005af76:	05000593          	addi	a1,zero,80
-2005af7a:	00c50513          	addi	a0,a0,12 # 2006300c <__FUNCTION__.0+0xc0>
-2005af7e:	12f040ef          	jal	ra,2005f8ac <io_assert_failed>
-2005af82:	58818913          	addi	s2,gp,1416 # 20066ef0 <rtk_log_tag_array>
-2005af86:	0905                	c.addi	s2,1
-2005af88:	4401                	c.li	s0,0
-2005af8a:	58818493          	addi	s1,gp,1416 # 20066ef0 <rtk_log_tag_array>
-2005af8e:	01441563          	bne	s0,s4,2005af98 <rtk_log_level_get+0x4c>
-2005af92:	e7c1c503          	lbu	a0,-388(gp) # 200667e4 <rtk_log_default_level>
-2005af96:	a839                	c.j	2005afb4 <rtk_log_level_get+0x68>
-2005af98:	854a                	c.mv	a0,s2
-2005af9a:	85ce                	c.mv	a1,s3
-2005af9c:	dffaf097          	auipc	ra,0xdffaf
-2005afa0:	890080e7          	jalr	ra,-1904(ra) # 982c <_strcmp>
-2005afa4:	092d                	c.addi	s2,11
-2005afa6:	ed19                	c.bnez	a0,2005afc4 <rtk_log_level_get+0x78>
-2005afa8:	47ad                	c.li	a5,11
-2005afaa:	02f40433          	mul	s0,s0,a5
-2005afae:	9426                	c.add	s0,s1
-2005afb0:	00044503          	lbu	a0,0(s0)
-2005afb4:	40f2                	c.lwsp	ra,28(sp)
-2005afb6:	4462                	c.lwsp	s0,24(sp)
-2005afb8:	44d2                	c.lwsp	s1,20(sp)
-2005afba:	4942                	c.lwsp	s2,16(sp)
-2005afbc:	49b2                	c.lwsp	s3,12(sp)
-2005afbe:	4a22                	c.lwsp	s4,8(sp)
-2005afc0:	6105                	c.addi16sp	sp,32
-2005afc2:	8082                	c.jr	ra
-2005afc4:	0405                	c.addi	s0,1
-2005afc6:	b7e1                	c.j	2005af8e <rtk_log_level_get+0x42>
+2005af32 <rtk_log_array_clear>:
+2005af32:	1141                	c.addi	sp,-16
+2005af34:	02c00613          	addi	a2,zero,44
+2005af38:	4581                	c.li	a1,0
+2005af3a:	5ac18513          	addi	a0,gp,1452 # 20066f34 <rtk_log_tag_array>
+2005af3e:	c606                	c.swsp	ra,12(sp)
+2005af40:	dffaf097          	auipc	ra,0xdffaf
+2005af44:	84a080e7          	jalr	ra,-1974(ra) # 978a <_memset>
+2005af48:	40b2                	c.lwsp	ra,12(sp)
+2005af4a:	ee01a623          	sw	zero,-276(gp) # 20066874 <rtk_log_entry_count>
+2005af4e:	0141                	c.addi	sp,16
+2005af50:	8082                	c.jr	ra
 
-2005afc8 <rtk_log_level_set>:
-2005afc8:	1101                	c.addi	sp,-32
-2005afca:	cc22                	c.swsp	s0,24(sp)
-2005afcc:	eec18793          	addi	a5,gp,-276 # 20066854 <rtk_log_entry_count>
-2005afd0:	c84a                	c.swsp	s2,16(sp)
-2005afd2:	c64e                	c.swsp	s3,12(sp)
-2005afd4:	c05a                	c.swsp	s6,0(sp)
-2005afd6:	ce06                	c.swsp	ra,28(sp)
-2005afd8:	ca26                	c.swsp	s1,20(sp)
-2005afda:	c452                	c.swsp	s4,8(sp)
-2005afdc:	c256                	c.swsp	s5,4(sp)
-2005afde:	4398                	c.lw	a4,0(a5)
-2005afe0:	478d                	c.li	a5,3
-2005afe2:	892a                	c.mv	s2,a0
-2005afe4:	89ae                	c.mv	s3,a1
-2005afe6:	eec18413          	addi	s0,gp,-276 # 20066854 <rtk_log_entry_count>
-2005afea:	4b11                	c.li	s6,4
-2005afec:	00e7e463          	bltu	a5,a4,2005aff4 <rtk_log_level_set+0x2c>
-2005aff0:	00042b03          	lw	s6,0(s0)
-2005aff4:	557d                	c.li	a0,-1
-2005aff6:	06090b63          	beq	s2,zero,2005b06c <rtk_log_level_set+0xa4>
-2005affa:	4795                	c.li	a5,5
-2005affc:	0737e863          	bltu	a5,s3,2005b06c <rtk_log_level_set+0xa4>
-2005b000:	200635b7          	lui	a1,0x20063
-2005b004:	0a058593          	addi	a1,a1,160 # 200630a0 <__FUNCTION__.0+0x154>
-2005b008:	854a                	c.mv	a0,s2
-2005b00a:	dffaf097          	auipc	ra,0xdffaf
-2005b00e:	822080e7          	jalr	ra,-2014(ra) # 982c <_strcmp>
-2005b012:	c939                	c.beqz	a0,2005b068 <rtk_log_level_set+0xa0>
-2005b014:	58818a93          	addi	s5,gp,1416 # 20066ef0 <rtk_log_tag_array>
-2005b018:	0a85                	c.addi	s5,1
-2005b01a:	4a01                	c.li	s4,0
-2005b01c:	58818493          	addi	s1,gp,1416 # 20066ef0 <rtk_log_tag_array>
-2005b020:	076a1063          	bne	s4,s6,2005b080 <rtk_log_level_set+0xb8>
-2005b024:	4018                	c.lw	a4,0(s0)
-2005b026:	478d                	c.li	a5,3
-2005b028:	00e7f863          	bgeu	a5,a4,2005b038 <rtk_log_level_set+0x70>
-2005b02c:	20063537          	lui	a0,0x20063
-2005b030:	0a450513          	addi	a0,a0,164 # 200630a4 <__FUNCTION__.0+0x158>
-2005b034:	372040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b038:	4018                	c.lw	a4,0(s0)
-2005b03a:	401c                	c.lw	a5,0(s0)
-2005b03c:	452d                	c.li	a0,11
-2005b03e:	8b0d                	c.andi	a4,3
-2005b040:	8b8d                	c.andi	a5,3
-2005b042:	02a70733          	mul	a4,a4,a0
-2005b046:	4625                	c.li	a2,9
-2005b048:	85ca                	c.mv	a1,s2
-2005b04a:	02a787b3          	mul	a5,a5,a0
-2005b04e:	9726                	c.add	a4,s1
-2005b050:	01370023          	sb	s3,0(a4)
-2005b054:	0785                	c.addi	a5,1
-2005b056:	00f48533          	add	a0,s1,a5
-2005b05a:	587060ef          	jal	ra,20061de0 <strncpy>
-2005b05e:	401c                	c.lw	a5,0(s0)
-2005b060:	4501                	c.li	a0,0
-2005b062:	0785                	c.addi	a5,1
-2005b064:	c01c                	c.sw	a5,0(s0)
-2005b066:	a019                	c.j	2005b06c <rtk_log_level_set+0xa4>
-2005b068:	e7318e23          	sb	s3,-388(gp) # 200667e4 <rtk_log_default_level>
-2005b06c:	40f2                	c.lwsp	ra,28(sp)
-2005b06e:	4462                	c.lwsp	s0,24(sp)
-2005b070:	44d2                	c.lwsp	s1,20(sp)
-2005b072:	4942                	c.lwsp	s2,16(sp)
-2005b074:	49b2                	c.lwsp	s3,12(sp)
-2005b076:	4a22                	c.lwsp	s4,8(sp)
-2005b078:	4a92                	c.lwsp	s5,4(sp)
-2005b07a:	4b02                	c.lwsp	s6,0(sp)
-2005b07c:	6105                	c.addi16sp	sp,32
-2005b07e:	8082                	c.jr	ra
-2005b080:	8556                	c.mv	a0,s5
-2005b082:	85ca                	c.mv	a1,s2
-2005b084:	dffae097          	auipc	ra,0xdffae
-2005b088:	7a8080e7          	jalr	ra,1960(ra) # 982c <_strcmp>
-2005b08c:	0aad                	c.addi	s5,11
-2005b08e:	e901                	c.bnez	a0,2005b09e <rtk_log_level_set+0xd6>
-2005b090:	47ad                	c.li	a5,11
-2005b092:	02fa0a33          	mul	s4,s4,a5
-2005b096:	94d2                	c.add	s1,s4
-2005b098:	01348023          	sb	s3,0(s1)
-2005b09c:	bfc1                	c.j	2005b06c <rtk_log_level_set+0xa4>
-2005b09e:	0a05                	c.addi	s4,1
-2005b0a0:	b741                	c.j	2005b020 <rtk_log_level_set+0x58>
+2005af52 <rtk_log_level_get>:
+2005af52:	1101                	c.addi	sp,-32
+2005af54:	c64e                	c.swsp	s3,12(sp)
+2005af56:	c452                	c.swsp	s4,8(sp)
+2005af58:	ce06                	c.swsp	ra,28(sp)
+2005af5a:	cc22                	c.swsp	s0,24(sp)
+2005af5c:	ca26                	c.swsp	s1,20(sp)
+2005af5e:	c84a                	c.swsp	s2,16(sp)
+2005af60:	eec18793          	addi	a5,gp,-276 # 20066874 <rtk_log_entry_count>
+2005af64:	4394                	c.lw	a3,0(a5)
+2005af66:	470d                	c.li	a4,3
+2005af68:	89aa                	c.mv	s3,a0
+2005af6a:	4a11                	c.li	s4,4
+2005af6c:	00d76463          	bltu	a4,a3,2005af74 <rtk_log_level_get+0x22>
+2005af70:	0007aa03          	lw	s4,0(a5)
+2005af74:	00099a63          	bne	s3,zero,2005af88 <rtk_log_level_get+0x36>
+2005af78:	20063537          	lui	a0,0x20063
+2005af7c:	05000593          	addi	a1,zero,80
+2005af80:	01450513          	addi	a0,a0,20 # 20063014 <__FUNCTION__.0+0xc0>
+2005af84:	129040ef          	jal	ra,2005f8ac <io_assert_failed>
+2005af88:	5ac18913          	addi	s2,gp,1452 # 20066f34 <rtk_log_tag_array>
+2005af8c:	0905                	c.addi	s2,1
+2005af8e:	4401                	c.li	s0,0
+2005af90:	5ac18493          	addi	s1,gp,1452 # 20066f34 <rtk_log_tag_array>
+2005af94:	01441563          	bne	s0,s4,2005af9e <rtk_log_level_get+0x4c>
+2005af98:	e7c1c503          	lbu	a0,-388(gp) # 20066804 <rtk_log_default_level>
+2005af9c:	a839                	c.j	2005afba <rtk_log_level_get+0x68>
+2005af9e:	854a                	c.mv	a0,s2
+2005afa0:	85ce                	c.mv	a1,s3
+2005afa2:	dffaf097          	auipc	ra,0xdffaf
+2005afa6:	88a080e7          	jalr	ra,-1910(ra) # 982c <_strcmp>
+2005afaa:	092d                	c.addi	s2,11
+2005afac:	ed19                	c.bnez	a0,2005afca <rtk_log_level_get+0x78>
+2005afae:	47ad                	c.li	a5,11
+2005afb0:	02f40433          	mul	s0,s0,a5
+2005afb4:	9426                	c.add	s0,s1
+2005afb6:	00044503          	lbu	a0,0(s0)
+2005afba:	40f2                	c.lwsp	ra,28(sp)
+2005afbc:	4462                	c.lwsp	s0,24(sp)
+2005afbe:	44d2                	c.lwsp	s1,20(sp)
+2005afc0:	4942                	c.lwsp	s2,16(sp)
+2005afc2:	49b2                	c.lwsp	s3,12(sp)
+2005afc4:	4a22                	c.lwsp	s4,8(sp)
+2005afc6:	6105                	c.addi16sp	sp,32
+2005afc8:	8082                	c.jr	ra
+2005afca:	0405                	c.addi	s0,1
+2005afcc:	b7e1                	c.j	2005af94 <rtk_log_level_get+0x42>
 
-2005b0a2 <rtk_log_memory_dump_word>:
-2005b0a2:	1101                	c.addi	sp,-32
-2005b0a4:	cc22                	c.swsp	s0,24(sp)
-2005b0a6:	ca26                	c.swsp	s1,20(sp)
-2005b0a8:	c84a                	c.swsp	s2,16(sp)
-2005b0aa:	c64e                	c.swsp	s3,12(sp)
-2005b0ac:	c452                	c.swsp	s4,8(sp)
-2005b0ae:	c256                	c.swsp	s5,4(sp)
-2005b0b0:	c05a                	c.swsp	s6,0(sp)
-2005b0b2:	ce06                	c.swsp	ra,28(sp)
-2005b0b4:	892a                	c.mv	s2,a0
-2005b0b6:	89ae                	c.mv	s3,a1
-2005b0b8:	84aa                	c.mv	s1,a0
-2005b0ba:	4401                	c.li	s0,0
-2005b0bc:	20063a37          	lui	s4,0x20063
-2005b0c0:	20063ab7          	lui	s5,0x20063
-2005b0c4:	20063b37          	lui	s6,0x20063
-2005b0c8:	03341163          	bne	s0,s3,2005b0ea <rtk_log_memory_dump_word+0x48>
-2005b0cc:	4462                	c.lwsp	s0,24(sp)
-2005b0ce:	40f2                	c.lwsp	ra,28(sp)
-2005b0d0:	44d2                	c.lwsp	s1,20(sp)
-2005b0d2:	4942                	c.lwsp	s2,16(sp)
-2005b0d4:	49b2                	c.lwsp	s3,12(sp)
-2005b0d6:	4a22                	c.lwsp	s4,8(sp)
-2005b0d8:	4a92                	c.lwsp	s5,4(sp)
-2005b0da:	4b02                	c.lwsp	s6,0(sp)
-2005b0dc:	20063537          	lui	a0,0x20063
-2005b0e0:	91450513          	addi	a0,a0,-1772 # 20062914 <pmap_func+0x4f0>
-2005b0e4:	6105                	c.addi16sp	sp,32
-2005b0e6:	2c00406f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
-2005b0ea:	ec11                	c.bnez	s0,2005b106 <rtk_log_memory_dump_word+0x64>
-2005b0ec:	85ca                	c.mv	a1,s2
-2005b0ee:	0d0a8513          	addi	a0,s5,208 # 200630d0 <__FUNCTION__.0+0x184>
-2005b0f2:	2b4040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b0f6:	408c                	c.lw	a1,0(s1)
-2005b0f8:	0e4b0513          	addi	a0,s6,228 # 200630e4 <__FUNCTION__.0+0x198>
-2005b0fc:	0405                	c.addi	s0,1
-2005b0fe:	2a8040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b102:	0491                	c.addi	s1,4
-2005b104:	b7d1                	c.j	2005b0c8 <rtk_log_memory_dump_word+0x26>
-2005b106:	00747793          	andi	a5,s0,7
-2005b10a:	f7f5                	c.bnez	a5,2005b0f6 <rtk_log_memory_dump_word+0x54>
-2005b10c:	85a6                	c.mv	a1,s1
-2005b10e:	0d8a0513          	addi	a0,s4,216 # 200630d8 <__FUNCTION__.0+0x18c>
-2005b112:	b7c5                	c.j	2005b0f2 <rtk_log_memory_dump_word+0x50>
+2005afce <rtk_log_level_set>:
+2005afce:	1101                	c.addi	sp,-32
+2005afd0:	cc22                	c.swsp	s0,24(sp)
+2005afd2:	eec18793          	addi	a5,gp,-276 # 20066874 <rtk_log_entry_count>
+2005afd6:	c84a                	c.swsp	s2,16(sp)
+2005afd8:	c64e                	c.swsp	s3,12(sp)
+2005afda:	c05a                	c.swsp	s6,0(sp)
+2005afdc:	ce06                	c.swsp	ra,28(sp)
+2005afde:	ca26                	c.swsp	s1,20(sp)
+2005afe0:	c452                	c.swsp	s4,8(sp)
+2005afe2:	c256                	c.swsp	s5,4(sp)
+2005afe4:	4398                	c.lw	a4,0(a5)
+2005afe6:	478d                	c.li	a5,3
+2005afe8:	892a                	c.mv	s2,a0
+2005afea:	89ae                	c.mv	s3,a1
+2005afec:	eec18413          	addi	s0,gp,-276 # 20066874 <rtk_log_entry_count>
+2005aff0:	4b11                	c.li	s6,4
+2005aff2:	00e7e463          	bltu	a5,a4,2005affa <rtk_log_level_set+0x2c>
+2005aff6:	00042b03          	lw	s6,0(s0)
+2005affa:	557d                	c.li	a0,-1
+2005affc:	06090b63          	beq	s2,zero,2005b072 <rtk_log_level_set+0xa4>
+2005b000:	4795                	c.li	a5,5
+2005b002:	0737e863          	bltu	a5,s3,2005b072 <rtk_log_level_set+0xa4>
+2005b006:	200635b7          	lui	a1,0x20063
+2005b00a:	0a858593          	addi	a1,a1,168 # 200630a8 <__FUNCTION__.0+0x154>
+2005b00e:	854a                	c.mv	a0,s2
+2005b010:	dffaf097          	auipc	ra,0xdffaf
+2005b014:	81c080e7          	jalr	ra,-2020(ra) # 982c <_strcmp>
+2005b018:	c939                	c.beqz	a0,2005b06e <rtk_log_level_set+0xa0>
+2005b01a:	5ac18a93          	addi	s5,gp,1452 # 20066f34 <rtk_log_tag_array>
+2005b01e:	0a85                	c.addi	s5,1
+2005b020:	4a01                	c.li	s4,0
+2005b022:	5ac18493          	addi	s1,gp,1452 # 20066f34 <rtk_log_tag_array>
+2005b026:	076a1063          	bne	s4,s6,2005b086 <rtk_log_level_set+0xb8>
+2005b02a:	4018                	c.lw	a4,0(s0)
+2005b02c:	478d                	c.li	a5,3
+2005b02e:	00e7f863          	bgeu	a5,a4,2005b03e <rtk_log_level_set+0x70>
+2005b032:	20063537          	lui	a0,0x20063
+2005b036:	0ac50513          	addi	a0,a0,172 # 200630ac <__FUNCTION__.0+0x158>
+2005b03a:	36c040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b03e:	4018                	c.lw	a4,0(s0)
+2005b040:	401c                	c.lw	a5,0(s0)
+2005b042:	452d                	c.li	a0,11
+2005b044:	8b0d                	c.andi	a4,3
+2005b046:	8b8d                	c.andi	a5,3
+2005b048:	02a70733          	mul	a4,a4,a0
+2005b04c:	4625                	c.li	a2,9
+2005b04e:	85ca                	c.mv	a1,s2
+2005b050:	02a787b3          	mul	a5,a5,a0
+2005b054:	9726                	c.add	a4,s1
+2005b056:	01370023          	sb	s3,0(a4)
+2005b05a:	0785                	c.addi	a5,1
+2005b05c:	00f48533          	add	a0,s1,a5
+2005b060:	589060ef          	jal	ra,20061de8 <strncpy>
+2005b064:	401c                	c.lw	a5,0(s0)
+2005b066:	4501                	c.li	a0,0
+2005b068:	0785                	c.addi	a5,1
+2005b06a:	c01c                	c.sw	a5,0(s0)
+2005b06c:	a019                	c.j	2005b072 <rtk_log_level_set+0xa4>
+2005b06e:	e7318e23          	sb	s3,-388(gp) # 20066804 <rtk_log_default_level>
+2005b072:	40f2                	c.lwsp	ra,28(sp)
+2005b074:	4462                	c.lwsp	s0,24(sp)
+2005b076:	44d2                	c.lwsp	s1,20(sp)
+2005b078:	4942                	c.lwsp	s2,16(sp)
+2005b07a:	49b2                	c.lwsp	s3,12(sp)
+2005b07c:	4a22                	c.lwsp	s4,8(sp)
+2005b07e:	4a92                	c.lwsp	s5,4(sp)
+2005b080:	4b02                	c.lwsp	s6,0(sp)
+2005b082:	6105                	c.addi16sp	sp,32
+2005b084:	8082                	c.jr	ra
+2005b086:	8556                	c.mv	a0,s5
+2005b088:	85ca                	c.mv	a1,s2
+2005b08a:	dffae097          	auipc	ra,0xdffae
+2005b08e:	7a2080e7          	jalr	ra,1954(ra) # 982c <_strcmp>
+2005b092:	0aad                	c.addi	s5,11
+2005b094:	e901                	c.bnez	a0,2005b0a4 <rtk_log_level_set+0xd6>
+2005b096:	47ad                	c.li	a5,11
+2005b098:	02fa0a33          	mul	s4,s4,a5
+2005b09c:	94d2                	c.add	s1,s4
+2005b09e:	01348023          	sb	s3,0(s1)
+2005b0a2:	bfc1                	c.j	2005b072 <rtk_log_level_set+0xa4>
+2005b0a4:	0a05                	c.addi	s4,1
+2005b0a6:	b741                	c.j	2005b026 <rtk_log_level_set+0x58>
 
-2005b114 <rtk_log_memory_dump_byte>:
-2005b114:	1101                	c.addi	sp,-32
-2005b116:	cc22                	c.swsp	s0,24(sp)
-2005b118:	ca26                	c.swsp	s1,20(sp)
-2005b11a:	c84a                	c.swsp	s2,16(sp)
-2005b11c:	c452                	c.swsp	s4,8(sp)
-2005b11e:	c256                	c.swsp	s5,4(sp)
-2005b120:	c05a                	c.swsp	s6,0(sp)
-2005b122:	ce06                	c.swsp	ra,28(sp)
-2005b124:	c64e                	c.swsp	s3,12(sp)
-2005b126:	84aa                	c.mv	s1,a0
-2005b128:	892e                	c.mv	s2,a1
-2005b12a:	4401                	c.li	s0,0
-2005b12c:	20063a37          	lui	s4,0x20063
-2005b130:	20063ab7          	lui	s5,0x20063
-2005b134:	20063b37          	lui	s6,0x20063
-2005b138:	03241163          	bne	s0,s2,2005b15a <rtk_log_memory_dump_byte+0x46>
-2005b13c:	4462                	c.lwsp	s0,24(sp)
-2005b13e:	40f2                	c.lwsp	ra,28(sp)
-2005b140:	44d2                	c.lwsp	s1,20(sp)
-2005b142:	4942                	c.lwsp	s2,16(sp)
-2005b144:	49b2                	c.lwsp	s3,12(sp)
-2005b146:	4a22                	c.lwsp	s4,8(sp)
-2005b148:	4a92                	c.lwsp	s5,4(sp)
-2005b14a:	4b02                	c.lwsp	s6,0(sp)
-2005b14c:	20063537          	lui	a0,0x20063
-2005b150:	91450513          	addi	a0,a0,-1772 # 20062914 <pmap_func+0x4f0>
-2005b154:	6105                	c.addi16sp	sp,32
-2005b156:	2500406f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
-2005b15a:	008489b3          	add	s3,s1,s0
-2005b15e:	ec11                	c.bnez	s0,2005b17a <rtk_log_memory_dump_byte+0x66>
-2005b160:	85a6                	c.mv	a1,s1
-2005b162:	0d0a8513          	addi	a0,s5,208 # 200630d0 <__FUNCTION__.0+0x184>
-2005b166:	240040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b16a:	0009c583          	lbu	a1,0(s3)
-2005b16e:	0ecb0513          	addi	a0,s6,236 # 200630ec <__FUNCTION__.0+0x1a0>
-2005b172:	0405                	c.addi	s0,1
-2005b174:	232040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b178:	b7c1                	c.j	2005b138 <rtk_log_memory_dump_byte+0x24>
-2005b17a:	00747793          	andi	a5,s0,7
-2005b17e:	f7f5                	c.bnez	a5,2005b16a <rtk_log_memory_dump_byte+0x56>
-2005b180:	85ce                	c.mv	a1,s3
-2005b182:	0d8a0513          	addi	a0,s4,216 # 200630d8 <__FUNCTION__.0+0x18c>
-2005b186:	b7c5                	c.j	2005b166 <rtk_log_memory_dump_byte+0x52>
+2005b0a8 <rtk_log_memory_dump_word>:
+2005b0a8:	1101                	c.addi	sp,-32
+2005b0aa:	cc22                	c.swsp	s0,24(sp)
+2005b0ac:	ca26                	c.swsp	s1,20(sp)
+2005b0ae:	c84a                	c.swsp	s2,16(sp)
+2005b0b0:	c64e                	c.swsp	s3,12(sp)
+2005b0b2:	c452                	c.swsp	s4,8(sp)
+2005b0b4:	c256                	c.swsp	s5,4(sp)
+2005b0b6:	c05a                	c.swsp	s6,0(sp)
+2005b0b8:	ce06                	c.swsp	ra,28(sp)
+2005b0ba:	892a                	c.mv	s2,a0
+2005b0bc:	89ae                	c.mv	s3,a1
+2005b0be:	84aa                	c.mv	s1,a0
+2005b0c0:	4401                	c.li	s0,0
+2005b0c2:	20063a37          	lui	s4,0x20063
+2005b0c6:	20063ab7          	lui	s5,0x20063
+2005b0ca:	20063b37          	lui	s6,0x20063
+2005b0ce:	03341163          	bne	s0,s3,2005b0f0 <rtk_log_memory_dump_word+0x48>
+2005b0d2:	4462                	c.lwsp	s0,24(sp)
+2005b0d4:	40f2                	c.lwsp	ra,28(sp)
+2005b0d6:	44d2                	c.lwsp	s1,20(sp)
+2005b0d8:	4942                	c.lwsp	s2,16(sp)
+2005b0da:	49b2                	c.lwsp	s3,12(sp)
+2005b0dc:	4a22                	c.lwsp	s4,8(sp)
+2005b0de:	4a92                	c.lwsp	s5,4(sp)
+2005b0e0:	4b02                	c.lwsp	s6,0(sp)
+2005b0e2:	20063537          	lui	a0,0x20063
+2005b0e6:	91c50513          	addi	a0,a0,-1764 # 2006291c <pmap_func+0x4f0>
+2005b0ea:	6105                	c.addi16sp	sp,32
+2005b0ec:	2ba0406f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+2005b0f0:	ec11                	c.bnez	s0,2005b10c <rtk_log_memory_dump_word+0x64>
+2005b0f2:	85ca                	c.mv	a1,s2
+2005b0f4:	0d8a8513          	addi	a0,s5,216 # 200630d8 <__FUNCTION__.0+0x184>
+2005b0f8:	2ae040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b0fc:	408c                	c.lw	a1,0(s1)
+2005b0fe:	0ecb0513          	addi	a0,s6,236 # 200630ec <__FUNCTION__.0+0x198>
+2005b102:	0405                	c.addi	s0,1
+2005b104:	2a2040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b108:	0491                	c.addi	s1,4
+2005b10a:	b7d1                	c.j	2005b0ce <rtk_log_memory_dump_word+0x26>
+2005b10c:	00747793          	andi	a5,s0,7
+2005b110:	f7f5                	c.bnez	a5,2005b0fc <rtk_log_memory_dump_word+0x54>
+2005b112:	85a6                	c.mv	a1,s1
+2005b114:	0e0a0513          	addi	a0,s4,224 # 200630e0 <__FUNCTION__.0+0x18c>
+2005b118:	b7c5                	c.j	2005b0f8 <rtk_log_memory_dump_word+0x50>
 
-2005b188 <rtk_log_write>:
-2005b188:	7139                	c.addi16sp	sp,-64
-2005b18a:	d226                	c.swsp	s1,36(sp)
-2005b18c:	84aa                	c.mv	s1,a0
-2005b18e:	852e                	c.mv	a0,a1
-2005b190:	d422                	c.swsp	s0,40(sp)
-2005b192:	d606                	c.swsp	ra,44(sp)
-2005b194:	c632                	c.swsp	a2,12(sp)
-2005b196:	8436                	c.mv	s0,a3
-2005b198:	d83a                	c.swsp	a4,48(sp)
-2005b19a:	da3e                	c.swsp	a5,52(sp)
-2005b19c:	dc42                	c.swsp	a6,56(sp)
-2005b19e:	de46                	c.swsp	a7,60(sp)
-2005b1a0:	c42e                	c.swsp	a1,8(sp)
-2005b1a2:	dabff0ef          	jal	ra,2005af4c <rtk_log_level_get>
-2005b1a6:	02956563          	bltu	a0,s1,2005b1d0 <rtk_log_write+0x48>
-2005b1aa:	45a2                	c.lwsp	a1,8(sp)
-2005b1ac:	02300793          	addi	a5,zero,35
-2005b1b0:	0005c703          	lbu	a4,0(a1)
-2005b1b4:	00f70963          	beq	a4,a5,2005b1c6 <rtk_log_write+0x3e>
-2005b1b8:	4632                	c.lwsp	a2,12(sp)
-2005b1ba:	20063537          	lui	a0,0x20063
-2005b1be:	0f450513          	addi	a0,a0,244 # 200630f4 <__FUNCTION__.0+0x1a8>
-2005b1c2:	1c4040ef          	jal	ra,2005f386 <DiagPrintf>
-2005b1c6:	180c                	c.addi4spn	a1,sp,48
-2005b1c8:	8522                	c.mv	a0,s0
-2005b1ca:	ce2e                	c.swsp	a1,28(sp)
-2005b1cc:	6bd030ef          	jal	ra,2005f088 <DiagVprintf>
-2005b1d0:	50b2                	c.lwsp	ra,44(sp)
-2005b1d2:	5422                	c.lwsp	s0,40(sp)
-2005b1d4:	5492                	c.lwsp	s1,36(sp)
-2005b1d6:	6121                	c.addi16sp	sp,64
-2005b1d8:	8082                	c.jr	ra
+2005b11a <rtk_log_memory_dump_byte>:
+2005b11a:	1101                	c.addi	sp,-32
+2005b11c:	cc22                	c.swsp	s0,24(sp)
+2005b11e:	ca26                	c.swsp	s1,20(sp)
+2005b120:	c84a                	c.swsp	s2,16(sp)
+2005b122:	c452                	c.swsp	s4,8(sp)
+2005b124:	c256                	c.swsp	s5,4(sp)
+2005b126:	c05a                	c.swsp	s6,0(sp)
+2005b128:	ce06                	c.swsp	ra,28(sp)
+2005b12a:	c64e                	c.swsp	s3,12(sp)
+2005b12c:	84aa                	c.mv	s1,a0
+2005b12e:	892e                	c.mv	s2,a1
+2005b130:	4401                	c.li	s0,0
+2005b132:	20063a37          	lui	s4,0x20063
+2005b136:	20063ab7          	lui	s5,0x20063
+2005b13a:	20063b37          	lui	s6,0x20063
+2005b13e:	03241163          	bne	s0,s2,2005b160 <rtk_log_memory_dump_byte+0x46>
+2005b142:	4462                	c.lwsp	s0,24(sp)
+2005b144:	40f2                	c.lwsp	ra,28(sp)
+2005b146:	44d2                	c.lwsp	s1,20(sp)
+2005b148:	4942                	c.lwsp	s2,16(sp)
+2005b14a:	49b2                	c.lwsp	s3,12(sp)
+2005b14c:	4a22                	c.lwsp	s4,8(sp)
+2005b14e:	4a92                	c.lwsp	s5,4(sp)
+2005b150:	4b02                	c.lwsp	s6,0(sp)
+2005b152:	20063537          	lui	a0,0x20063
+2005b156:	91c50513          	addi	a0,a0,-1764 # 2006291c <pmap_func+0x4f0>
+2005b15a:	6105                	c.addi16sp	sp,32
+2005b15c:	24a0406f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+2005b160:	008489b3          	add	s3,s1,s0
+2005b164:	ec11                	c.bnez	s0,2005b180 <rtk_log_memory_dump_byte+0x66>
+2005b166:	85a6                	c.mv	a1,s1
+2005b168:	0d8a8513          	addi	a0,s5,216 # 200630d8 <__FUNCTION__.0+0x184>
+2005b16c:	23a040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b170:	0009c583          	lbu	a1,0(s3)
+2005b174:	0f4b0513          	addi	a0,s6,244 # 200630f4 <__FUNCTION__.0+0x1a0>
+2005b178:	0405                	c.addi	s0,1
+2005b17a:	22c040ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b17e:	b7c1                	c.j	2005b13e <rtk_log_memory_dump_byte+0x24>
+2005b180:	00747793          	andi	a5,s0,7
+2005b184:	f7f5                	c.bnez	a5,2005b170 <rtk_log_memory_dump_byte+0x56>
+2005b186:	85ce                	c.mv	a1,s3
+2005b188:	0e0a0513          	addi	a0,s4,224 # 200630e0 <__FUNCTION__.0+0x18c>
+2005b18c:	b7c5                	c.j	2005b16c <rtk_log_memory_dump_byte+0x52>
 
-2005b1da <app_mbedtls_free_func>:
-2005b1da:	ab3d                	c.j	2005b718 <rtos_mem_free>
+2005b18e <rtk_log_write>:
+2005b18e:	7139                	c.addi16sp	sp,-64
+2005b190:	d226                	c.swsp	s1,36(sp)
+2005b192:	84aa                	c.mv	s1,a0
+2005b194:	852e                	c.mv	a0,a1
+2005b196:	d422                	c.swsp	s0,40(sp)
+2005b198:	d606                	c.swsp	ra,44(sp)
+2005b19a:	c632                	c.swsp	a2,12(sp)
+2005b19c:	8436                	c.mv	s0,a3
+2005b19e:	d83a                	c.swsp	a4,48(sp)
+2005b1a0:	da3e                	c.swsp	a5,52(sp)
+2005b1a2:	dc42                	c.swsp	a6,56(sp)
+2005b1a4:	de46                	c.swsp	a7,60(sp)
+2005b1a6:	c42e                	c.swsp	a1,8(sp)
+2005b1a8:	dabff0ef          	jal	ra,2005af52 <rtk_log_level_get>
+2005b1ac:	02956563          	bltu	a0,s1,2005b1d6 <rtk_log_write+0x48>
+2005b1b0:	45a2                	c.lwsp	a1,8(sp)
+2005b1b2:	02300793          	addi	a5,zero,35
+2005b1b6:	0005c703          	lbu	a4,0(a1)
+2005b1ba:	00f70963          	beq	a4,a5,2005b1cc <rtk_log_write+0x3e>
+2005b1be:	4632                	c.lwsp	a2,12(sp)
+2005b1c0:	20063537          	lui	a0,0x20063
+2005b1c4:	0fc50513          	addi	a0,a0,252 # 200630fc <__FUNCTION__.0+0x1a8>
+2005b1c8:	1be040ef          	jal	ra,2005f386 <DiagPrintf>
+2005b1cc:	180c                	c.addi4spn	a1,sp,48
+2005b1ce:	8522                	c.mv	a0,s0
+2005b1d0:	ce2e                	c.swsp	a1,28(sp)
+2005b1d2:	6b7030ef          	jal	ra,2005f088 <DiagVprintf>
+2005b1d6:	50b2                	c.lwsp	ra,44(sp)
+2005b1d8:	5422                	c.lwsp	s0,40(sp)
+2005b1da:	5492                	c.lwsp	s1,36(sp)
+2005b1dc:	6121                	c.addi16sp	sp,64
+2005b1de:	8082                	c.jr	ra
 
-2005b1dc <app_mbedtls_calloc_func>:
-2005b1dc:	02b50633          	mul	a2,a0,a1
-2005b1e0:	1101                	c.addi	sp,-32
-2005b1e2:	cc22                	c.swsp	s0,24(sp)
-2005b1e4:	ce06                	c.swsp	ra,28(sp)
-2005b1e6:	8532                	c.mv	a0,a2
-2005b1e8:	c632                	c.swsp	a2,12(sp)
-2005b1ea:	2311                	c.jal	2005b6ee <rtos_mem_malloc>
-2005b1ec:	842a                	c.mv	s0,a0
-2005b1ee:	c519                	c.beqz	a0,2005b1fc <app_mbedtls_calloc_func+0x20>
-2005b1f0:	4632                	c.lwsp	a2,12(sp)
-2005b1f2:	4581                	c.li	a1,0
-2005b1f4:	dffaf097          	auipc	ra,0xdffaf
-2005b1f8:	8da080e7          	jalr	ra,-1830(ra) # 9ace <__wrap_memset>
-2005b1fc:	40f2                	c.lwsp	ra,28(sp)
-2005b1fe:	8522                	c.mv	a0,s0
-2005b200:	4462                	c.lwsp	s0,24(sp)
-2005b202:	6105                	c.addi16sp	sp,32
-2005b204:	8082                	c.jr	ra
+2005b1e0 <app_mbedtls_free_func>:
+2005b1e0:	ab3d                	c.j	2005b71e <rtos_mem_free>
 
-2005b206 <app_IWDG_refresh>:
-2005b206:	4100d537          	lui	a0,0x4100d
-2005b20a:	c0050513          	addi	a0,a0,-1024 # 4100cc00 <__km4_bd_boot_download_addr__+0x10ffac00>
-2005b20e:	dffad317          	auipc	t1,0xdffad
-2005b212:	ff430067          	jalr	zero,-12(t1) # 8202 <WDG_Refresh>
+2005b1e2 <app_mbedtls_calloc_func>:
+2005b1e2:	02b50633          	mul	a2,a0,a1
+2005b1e6:	1101                	c.addi	sp,-32
+2005b1e8:	cc22                	c.swsp	s0,24(sp)
+2005b1ea:	ce06                	c.swsp	ra,28(sp)
+2005b1ec:	8532                	c.mv	a0,a2
+2005b1ee:	c632                	c.swsp	a2,12(sp)
+2005b1f0:	2311                	c.jal	2005b6f4 <rtos_mem_malloc>
+2005b1f2:	842a                	c.mv	s0,a0
+2005b1f4:	c519                	c.beqz	a0,2005b202 <app_mbedtls_calloc_func+0x20>
+2005b1f6:	4632                	c.lwsp	a2,12(sp)
+2005b1f8:	4581                	c.li	a1,0
+2005b1fa:	dffaf097          	auipc	ra,0xdffaf
+2005b1fe:	8d4080e7          	jalr	ra,-1836(ra) # 9ace <__wrap_memset>
+2005b202:	40f2                	c.lwsp	ra,28(sp)
+2005b204:	8522                	c.mv	a0,s0
+2005b206:	4462                	c.lwsp	s0,24(sp)
+2005b208:	6105                	c.addi16sp	sp,32
+2005b20a:	8082                	c.jr	ra
 
-2005b216 <app_init_debug>:
-2005b216:	1141                	c.addi	sp,-16
-2005b218:	c606                	c.swsp	ra,12(sp)
-2005b21a:	dffac097          	auipc	ra,0xdffac
-2005b21e:	986080e7          	jalr	ra,-1658(ra) # 6ba0 <SYSCFG_OTP_DisBootLog>
-2005b222:	00153513          	sltiu	a0,a0,1
-2005b226:	200017b7          	lui	a5,0x20001
-2005b22a:	ad878793          	addi	a5,a5,-1320 # 20000ad8 <ConfigDebug>
-2005b22e:	0506                	c.slli	a0,0x1
-2005b230:	577d                	c.li	a4,-1
-2005b232:	c398                	c.sw	a4,0(a5)
-2005b234:	0007a223          	sw	zero,4(a5)
-2005b238:	c788                	c.sw	a0,8(a5)
-2005b23a:	0007a623          	sw	zero,12(a5)
-2005b23e:	40b2                	c.lwsp	ra,12(sp)
-2005b240:	0141                	c.addi	sp,16
-2005b242:	8082                	c.jr	ra
+2005b20c <app_IWDG_refresh>:
+2005b20c:	4100d537          	lui	a0,0x4100d
+2005b210:	c0050513          	addi	a0,a0,-1024 # 4100cc00 <__km4_bd_boot_download_addr__+0x10ffac00>
+2005b214:	dffad317          	auipc	t1,0xdffad
+2005b218:	fee30067          	jalr	zero,-18(t1) # 8202 <WDG_Refresh>
 
-2005b244 <app_mbedtls_rom_init>:
-2005b244:	2005b5b7          	lui	a1,0x2005b
-2005b248:	2005b537          	lui	a0,0x2005b
-2005b24c:	1141                	c.addi	sp,-16
-2005b24e:	1da58593          	addi	a1,a1,474 # 2005b1da <app_mbedtls_free_func>
-2005b252:	1dc50513          	addi	a0,a0,476 # 2005b1dc <app_mbedtls_calloc_func>
-2005b256:	c606                	c.swsp	ra,12(sp)
-2005b258:	403000ef          	jal	ra,2005be5a <mbedtls_platform_set_calloc_free>
-2005b25c:	40b2                	c.lwsp	ra,12(sp)
-2005b25e:	ee01a823          	sw	zero,-272(gp) # 20066858 <use_hw_crypto_func>
-2005b262:	0141                	c.addi	sp,16
-2005b264:	8082                	c.jr	ra
+2005b21c <app_init_debug>:
+2005b21c:	1141                	c.addi	sp,-16
+2005b21e:	c606                	c.swsp	ra,12(sp)
+2005b220:	dffac097          	auipc	ra,0xdffac
+2005b224:	980080e7          	jalr	ra,-1664(ra) # 6ba0 <SYSCFG_OTP_DisBootLog>
+2005b228:	00153513          	sltiu	a0,a0,1
+2005b22c:	200017b7          	lui	a5,0x20001
+2005b230:	ad878793          	addi	a5,a5,-1320 # 20000ad8 <ConfigDebug>
+2005b234:	0506                	c.slli	a0,0x1
+2005b236:	577d                	c.li	a4,-1
+2005b238:	c398                	c.sw	a4,0(a5)
+2005b23a:	0007a223          	sw	zero,4(a5)
+2005b23e:	c788                	c.sw	a0,8(a5)
+2005b240:	0007a623          	sw	zero,12(a5)
+2005b244:	40b2                	c.lwsp	ra,12(sp)
+2005b246:	0141                	c.addi	sp,16
+2005b248:	8082                	c.jr	ra
 
-2005b266 <app_pmu_init>:
-2005b266:	1141                	c.addi	sp,-16
-2005b268:	200017b7          	lui	a5,0x20001
-2005b26c:	ad878793          	addi	a5,a5,-1320 # 20000ad8 <ConfigDebug>
-2005b270:	c606                	c.swsp	ra,12(sp)
-2005b272:	4798                	c.lw	a4,8(a5)
-2005b274:	100006b7          	lui	a3,0x10000
-2005b278:	4501                	c.li	a0,0
-2005b27a:	8f55                	c.or	a4,a3
-2005b27c:	c798                	c.sw	a4,8(a5)
-2005b27e:	dc4fe0ef          	jal	ra,20059842 <pmu_acquire_wakelock>
-2005b282:	4100c7b7          	lui	a5,0x4100c
-2005b286:	22c7a783          	lw	a5,556(a5) # 4100c22c <__km4_bd_boot_download_addr__+0x10ffa22c>
-2005b28a:	8b89                	c.andi	a5,2
-2005b28c:	c38d                	c.beqz	a5,2005b2ae <app_pmu_init+0x48>
-2005b28e:	4509                	c.li	a0,2
-2005b290:	db2fe0ef          	jal	ra,20059842 <pmu_acquire_wakelock>
-2005b294:	9c1fe0ef          	jal	ra,20059c54 <SWR_CORE_Vol_Get>
-2005b298:	4785                	c.li	a5,1
-2005b29a:	00f51a63          	bne	a0,a5,2005b2ae <app_pmu_init+0x48>
-2005b29e:	910fe0ef          	jal	ra,200593ae <dsp_status_on>
-2005b2a2:	c511                	c.beqz	a0,2005b2ae <app_pmu_init+0x48>
-2005b2a4:	40b2                	c.lwsp	ra,12(sp)
-2005b2a6:	4511                	c.li	a0,4
-2005b2a8:	0141                	c.addi	sp,16
-2005b2aa:	d98fe06f          	jal	zero,20059842 <pmu_acquire_wakelock>
-2005b2ae:	40b2                	c.lwsp	ra,12(sp)
-2005b2b0:	0141                	c.addi	sp,16
-2005b2b2:	8082                	c.jr	ra
+2005b24a <app_mbedtls_rom_init>:
+2005b24a:	2005b5b7          	lui	a1,0x2005b
+2005b24e:	2005b537          	lui	a0,0x2005b
+2005b252:	1141                	c.addi	sp,-16
+2005b254:	1e058593          	addi	a1,a1,480 # 2005b1e0 <app_mbedtls_free_func>
+2005b258:	1e250513          	addi	a0,a0,482 # 2005b1e2 <app_mbedtls_calloc_func>
+2005b25c:	c606                	c.swsp	ra,12(sp)
+2005b25e:	403000ef          	jal	ra,2005be60 <mbedtls_platform_set_calloc_free>
+2005b262:	40b2                	c.lwsp	ra,12(sp)
+2005b264:	ee01a823          	sw	zero,-272(gp) # 20066878 <use_hw_crypto_func>
+2005b268:	0141                	c.addi	sp,16
+2005b26a:	8082                	c.jr	ra
 
-2005b2b4 <app_IWDG_int>:
-2005b2b4:	4100c7b7          	lui	a5,0x4100c
-2005b2b8:	479c                	c.lw	a5,8(a5)
-2005b2ba:	c0000737          	lui	a4,0xc0000
-2005b2be:	0709                	c.addi	a4,2
-2005b2c0:	8ff9                	c.and	a5,a4
-2005b2c2:	c7a5                	c.beqz	a5,2005b32a <app_IWDG_int+0x76>
-2005b2c4:	1101                	c.addi	sp,-32
-2005b2c6:	cc22                	c.swsp	s0,24(sp)
-2005b2c8:	200636b7          	lui	a3,0x20063
-2005b2cc:	20063437          	lui	s0,0x20063
-2005b2d0:	10068693          	addi	a3,a3,256 # 20063100 <__FUNCTION__.0+0x1b4>
-2005b2d4:	04900613          	addi	a2,zero,73
-2005b2d8:	11440593          	addi	a1,s0,276 # 20063114 <__FUNCTION__.0+0x1c8>
-2005b2dc:	4511                	c.li	a0,4
-2005b2de:	ce06                	c.swsp	ra,28(sp)
-2005b2e0:	3565                	c.jal	2005b188 <rtk_log_write>
-2005b2e2:	2005b7b7          	lui	a5,0x2005b
-2005b2e6:	200635b7          	lui	a1,0x20063
-2005b2ea:	20678793          	addi	a5,a5,518 # 2005b206 <app_IWDG_refresh>
-2005b2ee:	4705                	c.li	a4,1
-2005b2f0:	1f400693          	addi	a3,zero,500
-2005b2f4:	4601                	c.li	a2,0
-2005b2f6:	11c58593          	addi	a1,a1,284 # 2006311c <__FUNCTION__.0+0x1d0>
-2005b2fa:	0068                	c.addi4spn	a0,sp,12
-2005b2fc:	c602                	c.swsp	zero,12(sp)
-2005b2fe:	14f000ef          	jal	ra,2005bc4c <rtos_timer_create>
-2005b302:	4532                	c.lwsp	a0,12(sp)
-2005b304:	ed19                	c.bnez	a0,2005b322 <app_IWDG_int+0x6e>
-2005b306:	200636b7          	lui	a3,0x20063
-2005b30a:	12868693          	addi	a3,a3,296 # 20063128 <__FUNCTION__.0+0x1dc>
-2005b30e:	04500613          	addi	a2,zero,69
-2005b312:	11440593          	addi	a1,s0,276
-2005b316:	4509                	c.li	a0,2
-2005b318:	3d85                	c.jal	2005b188 <rtk_log_write>
-2005b31a:	40f2                	c.lwsp	ra,28(sp)
-2005b31c:	4462                	c.lwsp	s0,24(sp)
-2005b31e:	6105                	c.addi16sp	sp,32
-2005b320:	8082                	c.jr	ra
-2005b322:	4581                	c.li	a1,0
-2005b324:	207000ef          	jal	ra,2005bd2a <rtos_timer_start>
-2005b328:	bfcd                	c.j	2005b31a <app_IWDG_int+0x66>
-2005b32a:	8082                	c.jr	ra
+2005b26c <app_pmu_init>:
+2005b26c:	1141                	c.addi	sp,-16
+2005b26e:	200017b7          	lui	a5,0x20001
+2005b272:	ad878793          	addi	a5,a5,-1320 # 20000ad8 <ConfigDebug>
+2005b276:	c606                	c.swsp	ra,12(sp)
+2005b278:	4798                	c.lw	a4,8(a5)
+2005b27a:	100006b7          	lui	a3,0x10000
+2005b27e:	4501                	c.li	a0,0
+2005b280:	8f55                	c.or	a4,a3
+2005b282:	c798                	c.sw	a4,8(a5)
+2005b284:	dbefe0ef          	jal	ra,20059842 <pmu_acquire_wakelock>
+2005b288:	4100c7b7          	lui	a5,0x4100c
+2005b28c:	22c7a783          	lw	a5,556(a5) # 4100c22c <__km4_bd_boot_download_addr__+0x10ffa22c>
+2005b290:	8b89                	c.andi	a5,2
+2005b292:	c38d                	c.beqz	a5,2005b2b4 <app_pmu_init+0x48>
+2005b294:	4509                	c.li	a0,2
+2005b296:	dacfe0ef          	jal	ra,20059842 <pmu_acquire_wakelock>
+2005b29a:	9bbfe0ef          	jal	ra,20059c54 <SWR_CORE_Vol_Get>
+2005b29e:	4785                	c.li	a5,1
+2005b2a0:	00f51a63          	bne	a0,a5,2005b2b4 <app_pmu_init+0x48>
+2005b2a4:	90afe0ef          	jal	ra,200593ae <dsp_status_on>
+2005b2a8:	c511                	c.beqz	a0,2005b2b4 <app_pmu_init+0x48>
+2005b2aa:	40b2                	c.lwsp	ra,12(sp)
+2005b2ac:	4511                	c.li	a0,4
+2005b2ae:	0141                	c.addi	sp,16
+2005b2b0:	d92fe06f          	jal	zero,20059842 <pmu_acquire_wakelock>
+2005b2b4:	40b2                	c.lwsp	ra,12(sp)
+2005b2b6:	0141                	c.addi	sp,16
+2005b2b8:	8082                	c.jr	ra
 
-2005b32c <app_pre_example>:
-2005b32c:	8082                	c.jr	ra
+2005b2ba <app_IWDG_int>:
+2005b2ba:	4100c7b7          	lui	a5,0x4100c
+2005b2be:	479c                	c.lw	a5,8(a5)
+2005b2c0:	c0000737          	lui	a4,0xc0000
+2005b2c4:	0709                	c.addi	a4,2
+2005b2c6:	8ff9                	c.and	a5,a4
+2005b2c8:	c7a5                	c.beqz	a5,2005b330 <app_IWDG_int+0x76>
+2005b2ca:	1101                	c.addi	sp,-32
+2005b2cc:	cc22                	c.swsp	s0,24(sp)
+2005b2ce:	200636b7          	lui	a3,0x20063
+2005b2d2:	20063437          	lui	s0,0x20063
+2005b2d6:	10868693          	addi	a3,a3,264 # 20063108 <__FUNCTION__.0+0x1b4>
+2005b2da:	04900613          	addi	a2,zero,73
+2005b2de:	11c40593          	addi	a1,s0,284 # 2006311c <__FUNCTION__.0+0x1c8>
+2005b2e2:	4511                	c.li	a0,4
+2005b2e4:	ce06                	c.swsp	ra,28(sp)
+2005b2e6:	3565                	c.jal	2005b18e <rtk_log_write>
+2005b2e8:	2005b7b7          	lui	a5,0x2005b
+2005b2ec:	200635b7          	lui	a1,0x20063
+2005b2f0:	20c78793          	addi	a5,a5,524 # 2005b20c <app_IWDG_refresh>
+2005b2f4:	4705                	c.li	a4,1
+2005b2f6:	1f400693          	addi	a3,zero,500
+2005b2fa:	4601                	c.li	a2,0
+2005b2fc:	12458593          	addi	a1,a1,292 # 20063124 <__FUNCTION__.0+0x1d0>
+2005b300:	0068                	c.addi4spn	a0,sp,12
+2005b302:	c602                	c.swsp	zero,12(sp)
+2005b304:	14f000ef          	jal	ra,2005bc52 <rtos_timer_create>
+2005b308:	4532                	c.lwsp	a0,12(sp)
+2005b30a:	ed19                	c.bnez	a0,2005b328 <app_IWDG_int+0x6e>
+2005b30c:	200636b7          	lui	a3,0x20063
+2005b310:	13068693          	addi	a3,a3,304 # 20063130 <__FUNCTION__.0+0x1dc>
+2005b314:	04500613          	addi	a2,zero,69
+2005b318:	11c40593          	addi	a1,s0,284
+2005b31c:	4509                	c.li	a0,2
+2005b31e:	3d85                	c.jal	2005b18e <rtk_log_write>
+2005b320:	40f2                	c.lwsp	ra,28(sp)
+2005b322:	4462                	c.lwsp	s0,24(sp)
+2005b324:	6105                	c.addi16sp	sp,32
+2005b326:	8082                	c.jr	ra
+2005b328:	4581                	c.li	a1,0
+2005b32a:	207000ef          	jal	ra,2005bd30 <rtos_timer_start>
+2005b32e:	bfcd                	c.j	2005b320 <app_IWDG_int+0x66>
+2005b330:	8082                	c.jr	ra
 
-2005b32e <app_example>:
-2005b32e:	8082                	c.jr	ra
+2005b332 <app_pre_example>:
+2005b332:	8082                	c.jr	ra
 
-2005b330 <main>:
-2005b330:	20059537          	lui	a0,0x20059
-2005b334:	1141                	c.addi	sp,-16
-2005b336:	4691                	c.li	a3,4
-2005b338:	41020637          	lui	a2,0x41020
-2005b33c:	02b00593          	addi	a1,zero,43
-2005b340:	17e50513          	addi	a0,a0,382 # 2005917e <IPC_INTHandler>
-2005b344:	c606                	c.swsp	ra,12(sp)
-2005b346:	5ac040ef          	jal	ra,2005f8f2 <irq_register>
-2005b34a:	02b00513          	addi	a0,zero,43
-2005b34e:	dffad097          	auipc	ra,0xdffad
-2005b352:	c8a080e7          	jalr	ra,-886(ra) # 7fd8 <irq_enable>
-2005b356:	35fd                	c.jal	2005b244 <app_mbedtls_rom_init>
-2005b358:	4581                	c.li	a1,0
-2005b35a:	4501                	c.li	a0,0
-2005b35c:	dffae097          	auipc	ra,0xdffae
-2005b360:	ef8080e7          	jalr	ra,-264(ra) # 9254 <shell_init_rom>
-2005b364:	611010ef          	jal	ra,2005d174 <shell_init_ram>
-2005b368:	41020537          	lui	a0,0x41020
-2005b36c:	a0bfd0ef          	jal	ra,20058d76 <ipc_table_init>
-2005b370:	2005c537          	lui	a0,0x2005c
-2005b374:	bf250513          	addi	a0,a0,-1038 # 2005bbf2 <rtos_time_delay_ms>
-2005b378:	fe9fd0ef          	jal	ra,20059360 <IPC_SEMDelayStub>
-2005b37c:	3f45                	c.jal	2005b32c <app_pre_example>
-2005b37e:	6b4030ef          	jal	ra,2005ea32 <wlan_initialize>
-2005b382:	3d51                	c.jal	2005b216 <app_init_debug>
-2005b384:	35cd                	c.jal	2005b266 <app_pmu_init>
-2005b386:	373d                	c.jal	2005b2b4 <app_IWDG_int>
-2005b388:	375d                	c.jal	2005b32e <app_example>
-2005b38a:	200636b7          	lui	a3,0x20063
-2005b38e:	200635b7          	lui	a1,0x20063
-2005b392:	13c68693          	addi	a3,a3,316 # 2006313c <__FUNCTION__.0+0x1f0>
-2005b396:	04900613          	addi	a2,zero,73
-2005b39a:	11458593          	addi	a1,a1,276 # 20063114 <__FUNCTION__.0+0x1c8>
-2005b39e:	4511                	c.li	a0,4
-2005b3a0:	de9ff0ef          	jal	ra,2005b188 <rtk_log_write>
-2005b3a4:	7e2000ef          	jal	ra,2005bb86 <rtos_sched_start>
-2005b3a8:	40b2                	c.lwsp	ra,12(sp)
-2005b3aa:	4501                	c.li	a0,0
-2005b3ac:	0141                	c.addi	sp,16
-2005b3ae:	8082                	c.jr	ra
+2005b334 <app_example>:
+2005b334:	8082                	c.jr	ra
 
-2005b3b0 <CmdRamHelp>:
-2005b3b0:	1101                	c.addi	sp,-32
-2005b3b2:	cc22                	c.swsp	s0,24(sp)
-2005b3b4:	ca26                	c.swsp	s1,20(sp)
-2005b3b6:	20065437          	lui	s0,0x20065
-2005b3ba:	200654b7          	lui	s1,0x20065
-2005b3be:	c4c48793          	addi	a5,s1,-948 # 20064c4c <shell_cmd_table>
-2005b3c2:	c8c40413          	addi	s0,s0,-884 # 20064c8c <ipc_tickless_table>
-2005b3c6:	8c1d                	c.sub	s0,a5
-2005b3c8:	8011                	c.srli	s0,0x4
-2005b3ca:	20063537          	lui	a0,0x20063
-2005b3ce:	85a2                	c.mv	a1,s0
-2005b3d0:	14c50513          	addi	a0,a0,332 # 2006314c <__FUNCTION__.0+0x200>
-2005b3d4:	c84a                	c.swsp	s2,16(sp)
-2005b3d6:	c64e                	c.swsp	s3,12(sp)
-2005b3d8:	ce06                	c.swsp	ra,28(sp)
-2005b3da:	c4c48493          	addi	s1,s1,-948
-2005b3de:	7c9030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b3e2:	4901                	c.li	s2,0
-2005b3e4:	200639b7          	lui	s3,0x20063
-2005b3e8:	02891163          	bne	s2,s0,2005b40a <CmdRamHelp+0x5a>
-2005b3ec:	20063537          	lui	a0,0x20063
-2005b3f0:	85ca                	c.mv	a1,s2
-2005b3f2:	19050513          	addi	a0,a0,400 # 20063190 <__FUNCTION__.0+0x244>
-2005b3f6:	7b1030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b3fa:	40f2                	c.lwsp	ra,28(sp)
-2005b3fc:	4462                	c.lwsp	s0,24(sp)
-2005b3fe:	44d2                	c.lwsp	s1,20(sp)
-2005b400:	4942                	c.lwsp	s2,16(sp)
-2005b402:	49b2                	c.lwsp	s3,12(sp)
-2005b404:	4505                	c.li	a0,1
-2005b406:	6105                	c.addi16sp	sp,32
-2005b408:	8082                	c.jr	ra
-2005b40a:	44cc                	c.lw	a1,12(s1)
-2005b40c:	c589                	c.beqz	a1,2005b416 <CmdRamHelp+0x66>
-2005b40e:	18c98513          	addi	a0,s3,396 # 2006318c <__FUNCTION__.0+0x240>
-2005b412:	795030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b416:	0905                	c.addi	s2,1
-2005b418:	04c1                	c.addi	s1,16
-2005b41a:	b7f9                	c.j	2005b3e8 <CmdRamHelp+0x38>
+2005b336 <main>:
+2005b336:	20059537          	lui	a0,0x20059
+2005b33a:	1141                	c.addi	sp,-16
+2005b33c:	4691                	c.li	a3,4
+2005b33e:	41020637          	lui	a2,0x41020
+2005b342:	02b00593          	addi	a1,zero,43
+2005b346:	17e50513          	addi	a0,a0,382 # 2005917e <IPC_INTHandler>
+2005b34a:	c606                	c.swsp	ra,12(sp)
+2005b34c:	5a6040ef          	jal	ra,2005f8f2 <irq_register>
+2005b350:	02b00513          	addi	a0,zero,43
+2005b354:	dffad097          	auipc	ra,0xdffad
+2005b358:	c84080e7          	jalr	ra,-892(ra) # 7fd8 <irq_enable>
+2005b35c:	35fd                	c.jal	2005b24a <app_mbedtls_rom_init>
+2005b35e:	4581                	c.li	a1,0
+2005b360:	4501                	c.li	a0,0
+2005b362:	dffae097          	auipc	ra,0xdffae
+2005b366:	ef2080e7          	jalr	ra,-270(ra) # 9254 <shell_init_rom>
+2005b36a:	60b010ef          	jal	ra,2005d174 <shell_init_ram>
+2005b36e:	41020537          	lui	a0,0x41020
+2005b372:	a05fd0ef          	jal	ra,20058d76 <ipc_table_init>
+2005b376:	2005c537          	lui	a0,0x2005c
+2005b37a:	bf850513          	addi	a0,a0,-1032 # 2005bbf8 <rtos_time_delay_ms>
+2005b37e:	fe3fd0ef          	jal	ra,20059360 <IPC_SEMDelayStub>
+2005b382:	3f45                	c.jal	2005b332 <app_pre_example>
+2005b384:	6ae030ef          	jal	ra,2005ea32 <wlan_initialize>
+2005b388:	3d51                	c.jal	2005b21c <app_init_debug>
+2005b38a:	35cd                	c.jal	2005b26c <app_pmu_init>
+2005b38c:	373d                	c.jal	2005b2ba <app_IWDG_int>
+2005b38e:	375d                	c.jal	2005b334 <app_example>
+2005b390:	200636b7          	lui	a3,0x20063
+2005b394:	200635b7          	lui	a1,0x20063
+2005b398:	14468693          	addi	a3,a3,324 # 20063144 <__FUNCTION__.0+0x1f0>
+2005b39c:	04900613          	addi	a2,zero,73
+2005b3a0:	11c58593          	addi	a1,a1,284 # 2006311c <__FUNCTION__.0+0x1c8>
+2005b3a4:	4511                	c.li	a0,4
+2005b3a6:	de9ff0ef          	jal	ra,2005b18e <rtk_log_write>
+2005b3aa:	7e2000ef          	jal	ra,2005bb8c <rtos_sched_start>
+2005b3ae:	40b2                	c.lwsp	ra,12(sp)
+2005b3b0:	4501                	c.li	a0,0
+2005b3b2:	0141                	c.addi	sp,16
+2005b3b4:	8082                	c.jr	ra
 
-2005b41c <cmd_reboot>:
-2005b41c:	1141                	c.addi	sp,-16
-2005b41e:	c226                	c.swsp	s1,4(sp)
-2005b420:	84aa                	c.mv	s1,a0
-2005b422:	20063537          	lui	a0,0x20063
-2005b426:	1d050513          	addi	a0,a0,464 # 200631d0 <__FUNCTION__.0+0x284>
-2005b42a:	c422                	c.swsp	s0,8(sp)
-2005b42c:	c606                	c.swsp	ra,12(sp)
-2005b42e:	842e                	c.mv	s0,a1
-2005b430:	777030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b434:	c08d                	c.beqz	s1,2005b456 <cmd_reboot+0x3a>
-2005b436:	4008                	c.lw	a0,0(s0)
-2005b438:	200635b7          	lui	a1,0x20063
-2005b43c:	1e058593          	addi	a1,a1,480 # 200631e0 <__FUNCTION__.0+0x294>
-2005b440:	dffae097          	auipc	ra,0xdffae
-2005b444:	3ec080e7          	jalr	ra,1004(ra) # 982c <_strcmp>
-2005b448:	e519                	c.bnez	a0,2005b456 <cmd_reboot+0x3a>
-2005b44a:	20000593          	addi	a1,zero,512
-2005b44e:	dffa5097          	auipc	ra,0xdffa5
-2005b452:	458080e7          	jalr	ra,1112(ra) # 8a6 <BKUP_Set>
-2005b456:	fb2fe0ef          	jal	ra,20059c08 <System_Reset>
-2005b45a:	40b2                	c.lwsp	ra,12(sp)
-2005b45c:	4422                	c.lwsp	s0,8(sp)
-2005b45e:	4492                	c.lwsp	s1,4(sp)
-2005b460:	4505                	c.li	a0,1
-2005b462:	0141                	c.addi	sp,16
-2005b464:	8082                	c.jr	ra
+2005b3b6 <CmdRamHelp>:
+2005b3b6:	1101                	c.addi	sp,-32
+2005b3b8:	cc22                	c.swsp	s0,24(sp)
+2005b3ba:	ca26                	c.swsp	s1,20(sp)
+2005b3bc:	20065437          	lui	s0,0x20065
+2005b3c0:	200654b7          	lui	s1,0x20065
+2005b3c4:	c5448793          	addi	a5,s1,-940 # 20064c54 <shell_cmd_table>
+2005b3c8:	c9440413          	addi	s0,s0,-876 # 20064c94 <ipc_tickless_table>
+2005b3cc:	8c1d                	c.sub	s0,a5
+2005b3ce:	8011                	c.srli	s0,0x4
+2005b3d0:	20063537          	lui	a0,0x20063
+2005b3d4:	85a2                	c.mv	a1,s0
+2005b3d6:	15450513          	addi	a0,a0,340 # 20063154 <__FUNCTION__.0+0x200>
+2005b3da:	c84a                	c.swsp	s2,16(sp)
+2005b3dc:	c64e                	c.swsp	s3,12(sp)
+2005b3de:	ce06                	c.swsp	ra,28(sp)
+2005b3e0:	c5448493          	addi	s1,s1,-940
+2005b3e4:	7c3030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b3e8:	4901                	c.li	s2,0
+2005b3ea:	200639b7          	lui	s3,0x20063
+2005b3ee:	02891163          	bne	s2,s0,2005b410 <CmdRamHelp+0x5a>
+2005b3f2:	20063537          	lui	a0,0x20063
+2005b3f6:	85ca                	c.mv	a1,s2
+2005b3f8:	19850513          	addi	a0,a0,408 # 20063198 <__FUNCTION__.0+0x244>
+2005b3fc:	7ab030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b400:	40f2                	c.lwsp	ra,28(sp)
+2005b402:	4462                	c.lwsp	s0,24(sp)
+2005b404:	44d2                	c.lwsp	s1,20(sp)
+2005b406:	4942                	c.lwsp	s2,16(sp)
+2005b408:	49b2                	c.lwsp	s3,12(sp)
+2005b40a:	4505                	c.li	a0,1
+2005b40c:	6105                	c.addi16sp	sp,32
+2005b40e:	8082                	c.jr	ra
+2005b410:	44cc                	c.lw	a1,12(s1)
+2005b412:	c589                	c.beqz	a1,2005b41c <CmdRamHelp+0x66>
+2005b414:	19498513          	addi	a0,s3,404 # 20063194 <__FUNCTION__.0+0x240>
+2005b418:	78f030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b41c:	0905                	c.addi	s2,1
+2005b41e:	04c1                	c.addi	s1,16
+2005b420:	b7f9                	c.j	2005b3ee <CmdRamHelp+0x38>
 
-2005b466 <cmd_write_word>:
-2005b466:	1141                	c.addi	sp,-16
-2005b468:	c606                	c.swsp	ra,12(sp)
-2005b46a:	c422                	c.swsp	s0,8(sp)
-2005b46c:	c226                	c.swsp	s1,4(sp)
-2005b46e:	c04a                	c.swsp	s2,0(sp)
-2005b470:	892e                	c.mv	s2,a1
-2005b472:	00092503          	lw	a0,0(s2)
-2005b476:	4641                	c.li	a2,16
-2005b478:	4581                	c.li	a1,0
-2005b47a:	dffae097          	auipc	ra,0xdffae
-2005b47e:	4bc080e7          	jalr	ra,1212(ra) # 9936 <_strtoul>
-2005b482:	ffc57413          	andi	s0,a0,-4
-2005b486:	84aa                	c.mv	s1,a0
-2005b488:	00492503          	lw	a0,4(s2)
-2005b48c:	4641                	c.li	a2,16
-2005b48e:	4581                	c.li	a1,0
-2005b490:	dffae097          	auipc	ra,0xdffae
-2005b494:	4a6080e7          	jalr	ra,1190(ra) # 9936 <_strtoul>
-2005b498:	892a                	c.mv	s2,a0
-2005b49a:	862a                	c.mv	a2,a0
-2005b49c:	20063537          	lui	a0,0x20063
-2005b4a0:	85a2                	c.mv	a1,s0
-2005b4a2:	1ec50513          	addi	a0,a0,492 # 200631ec <__FUNCTION__.0+0x2a0>
-2005b4a6:	701030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b4aa:	01242023          	sw	s2,0(s0)
-2005b4ae:	7c1027f3          	csrrs	a5,0x7c1,zero
-2005b4b2:	1007f793          	andi	a5,a5,256
-2005b4b6:	c7a1                	c.beqz	a5,2005b4fe <cmd_write_word+0x98>
-2005b4b8:	01c4f793          	andi	a5,s1,28
-2005b4bc:	4711                	c.li	a4,4
-2005b4be:	c789                	c.beqz	a5,2005b4c8 <cmd_write_word+0x62>
-2005b4c0:	00478713          	addi	a4,a5,4
-2005b4c4:	fe04f413          	andi	s0,s1,-32
-2005b4c8:	01f47793          	andi	a5,s0,31
-2005b4cc:	97ba                	c.add	a5,a4
-2005b4ce:	0ff0000f          	fence	iorw,iorw
-2005b4d2:	97a2                	c.add	a5,s0
-2005b4d4:	0484700b          	cache	dwb,(s0)
-2005b4d8:	02040413          	addi	s0,s0,32
-2005b4dc:	40878733          	sub	a4,a5,s0
-2005b4e0:	fee04ae3          	blt	zero,a4,2005b4d4 <cmd_write_word+0x6e>
-2005b4e4:	0ff0000f          	fence	iorw,iorw
-2005b4e8:	0001                	c.addi	zero,0
-2005b4ea:	0001                	c.addi	zero,0
-2005b4ec:	0001                	c.addi	zero,0
+2005b422 <cmd_reboot>:
+2005b422:	1141                	c.addi	sp,-16
+2005b424:	c226                	c.swsp	s1,4(sp)
+2005b426:	84aa                	c.mv	s1,a0
+2005b428:	20063537          	lui	a0,0x20063
+2005b42c:	1d850513          	addi	a0,a0,472 # 200631d8 <__FUNCTION__.0+0x284>
+2005b430:	c422                	c.swsp	s0,8(sp)
+2005b432:	c606                	c.swsp	ra,12(sp)
+2005b434:	842e                	c.mv	s0,a1
+2005b436:	771030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b43a:	c08d                	c.beqz	s1,2005b45c <cmd_reboot+0x3a>
+2005b43c:	4008                	c.lw	a0,0(s0)
+2005b43e:	200635b7          	lui	a1,0x20063
+2005b442:	1e858593          	addi	a1,a1,488 # 200631e8 <__FUNCTION__.0+0x294>
+2005b446:	dffae097          	auipc	ra,0xdffae
+2005b44a:	3e6080e7          	jalr	ra,998(ra) # 982c <_strcmp>
+2005b44e:	e519                	c.bnez	a0,2005b45c <cmd_reboot+0x3a>
+2005b450:	20000593          	addi	a1,zero,512
+2005b454:	dffa5097          	auipc	ra,0xdffa5
+2005b458:	452080e7          	jalr	ra,1106(ra) # 8a6 <BKUP_Set>
+2005b45c:	facfe0ef          	jal	ra,20059c08 <System_Reset>
+2005b460:	40b2                	c.lwsp	ra,12(sp)
+2005b462:	4422                	c.lwsp	s0,8(sp)
+2005b464:	4492                	c.lwsp	s1,4(sp)
+2005b466:	4505                	c.li	a0,1
+2005b468:	0141                	c.addi	sp,16
+2005b46a:	8082                	c.jr	ra
+
+2005b46c <cmd_write_word>:
+2005b46c:	1141                	c.addi	sp,-16
+2005b46e:	c606                	c.swsp	ra,12(sp)
+2005b470:	c422                	c.swsp	s0,8(sp)
+2005b472:	c226                	c.swsp	s1,4(sp)
+2005b474:	c04a                	c.swsp	s2,0(sp)
+2005b476:	892e                	c.mv	s2,a1
+2005b478:	00092503          	lw	a0,0(s2)
+2005b47c:	4641                	c.li	a2,16
+2005b47e:	4581                	c.li	a1,0
+2005b480:	dffae097          	auipc	ra,0xdffae
+2005b484:	4b6080e7          	jalr	ra,1206(ra) # 9936 <_strtoul>
+2005b488:	ffc57413          	andi	s0,a0,-4
+2005b48c:	84aa                	c.mv	s1,a0
+2005b48e:	00492503          	lw	a0,4(s2)
+2005b492:	4641                	c.li	a2,16
+2005b494:	4581                	c.li	a1,0
+2005b496:	dffae097          	auipc	ra,0xdffae
+2005b49a:	4a0080e7          	jalr	ra,1184(ra) # 9936 <_strtoul>
+2005b49e:	892a                	c.mv	s2,a0
+2005b4a0:	862a                	c.mv	a2,a0
+2005b4a2:	20063537          	lui	a0,0x20063
+2005b4a6:	85a2                	c.mv	a1,s0
+2005b4a8:	1f450513          	addi	a0,a0,500 # 200631f4 <__FUNCTION__.0+0x2a0>
+2005b4ac:	6fb030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b4b0:	01242023          	sw	s2,0(s0)
+2005b4b4:	7c1027f3          	csrrs	a5,0x7c1,zero
+2005b4b8:	1007f793          	andi	a5,a5,256
+2005b4bc:	c7a1                	c.beqz	a5,2005b504 <cmd_write_word+0x98>
+2005b4be:	01c4f793          	andi	a5,s1,28
+2005b4c2:	4711                	c.li	a4,4
+2005b4c4:	c789                	c.beqz	a5,2005b4ce <cmd_write_word+0x62>
+2005b4c6:	00478713          	addi	a4,a5,4
+2005b4ca:	fe04f413          	andi	s0,s1,-32
+2005b4ce:	01f47793          	andi	a5,s0,31
+2005b4d2:	97ba                	c.add	a5,a4
+2005b4d4:	0ff0000f          	fence	iorw,iorw
+2005b4d8:	97a2                	c.add	a5,s0
+2005b4da:	0484700b          	cache	dwb,(s0)
+2005b4de:	02040413          	addi	s0,s0,32
+2005b4e2:	40878733          	sub	a4,a5,s0
+2005b4e6:	fee04ae3          	blt	zero,a4,2005b4da <cmd_write_word+0x6e>
+2005b4ea:	0ff0000f          	fence	iorw,iorw
 2005b4ee:	0001                	c.addi	zero,0
 2005b4f0:	0001                	c.addi	zero,0
 2005b4f2:	0001                	c.addi	zero,0
@@ -5015,95 +5014,95 @@ Disassembly of section .xip_image2.text:
 2005b4f8:	0001                	c.addi	zero,0
 2005b4fa:	0001                	c.addi	zero,0
 2005b4fc:	0001                	c.addi	zero,0
-2005b4fe:	40b2                	c.lwsp	ra,12(sp)
-2005b500:	4422                	c.lwsp	s0,8(sp)
-2005b502:	4492                	c.lwsp	s1,4(sp)
-2005b504:	4902                	c.lwsp	s2,0(sp)
-2005b506:	4501                	c.li	a0,0
-2005b508:	0141                	c.addi	sp,16
-2005b50a:	8082                	c.jr	ra
+2005b4fe:	0001                	c.addi	zero,0
+2005b500:	0001                	c.addi	zero,0
+2005b502:	0001                	c.addi	zero,0
+2005b504:	40b2                	c.lwsp	ra,12(sp)
+2005b506:	4422                	c.lwsp	s0,8(sp)
+2005b508:	4492                	c.lwsp	s1,4(sp)
+2005b50a:	4902                	c.lwsp	s2,0(sp)
+2005b50c:	4501                	c.li	a0,0
+2005b50e:	0141                	c.addi	sp,16
+2005b510:	8082                	c.jr	ra
 
-2005b50c <cmd_dump_word>:
-2005b50c:	1101                	c.addi	sp,-32
-2005b50e:	cc22                	c.swsp	s0,24(sp)
-2005b510:	c84a                	c.swsp	s2,16(sp)
-2005b512:	842a                	c.mv	s0,a0
-2005b514:	ce06                	c.swsp	ra,28(sp)
-2005b516:	ca26                	c.swsp	s1,20(sp)
-2005b518:	c64e                	c.swsp	s3,12(sp)
-2005b51a:	892e                	c.mv	s2,a1
-2005b51c:	dffab097          	auipc	ra,0xdffab
-2005b520:	632080e7          	jalr	ra,1586(ra) # 6b4e <SYSCFG_OTP_RSIPEn>
-2005b524:	fff40793          	addi	a5,s0,-1
-2005b528:	07c2                	c.slli	a5,0x10
-2005b52a:	83c1                	c.srli	a5,0x10
-2005b52c:	4709                	c.li	a4,2
-2005b52e:	00f77a63          	bgeu	a4,a5,2005b542 <cmd_dump_word+0x36>
-2005b532:	20063537          	lui	a0,0x20063
-2005b536:	1fc50513          	addi	a0,a0,508 # 200631fc <__FUNCTION__.0+0x2b0>
-2005b53a:	66d030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b53e:	4401                	c.li	s0,0
-2005b540:	a0f9                	c.j	2005b60e <cmd_dump_word+0x102>
-2005b542:	478d                	c.li	a5,3
-2005b544:	89aa                	c.mv	s3,a0
-2005b546:	06f41063          	bne	s0,a5,2005b5a6 <cmd_dump_word+0x9a>
-2005b54a:	00892783          	lw	a5,8(s2)
-2005b54e:	0007c403          	lbu	s0,0(a5)
-2005b552:	0df47413          	andi	s0,s0,223
-2005b556:	fbe40413          	addi	s0,s0,-66
-2005b55a:	00143413          	sltiu	s0,s0,1
-2005b55e:	00492503          	lw	a0,4(s2)
-2005b562:	4629                	c.li	a2,10
-2005b564:	4581                	c.li	a1,0
-2005b566:	dffae097          	auipc	ra,0xdffae
-2005b56a:	3d0080e7          	jalr	ra,976(ra) # 9936 <_strtoul>
-2005b56e:	84aa                	c.mv	s1,a0
-2005b570:	00092503          	lw	a0,0(s2)
-2005b574:	4641                	c.li	a2,16
-2005b576:	4581                	c.li	a1,0
-2005b578:	dffae097          	auipc	ra,0xdffae
-2005b57c:	3be080e7          	jalr	ra,958(ra) # 9936 <_strtoul>
-2005b580:	87aa                	c.mv	a5,a0
-2005b582:	f8000737          	lui	a4,0xf8000
-2005b586:	9971                	c.andi	a0,-4
-2005b588:	972a                	c.add	a4,a0
-2005b58a:	080006b7          	lui	a3,0x8000
-2005b58e:	02d77463          	bgeu	a4,a3,2005b5b6 <cmd_dump_word+0xaa>
-2005b592:	02098263          	beq	s3,zero,2005b5b6 <cmd_dump_word+0xaa>
-2005b596:	20063537          	lui	a0,0x20063
-2005b59a:	21850513          	addi	a0,a0,536 # 20063218 <__FUNCTION__.0+0x2cc>
-2005b59e:	609030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b5a2:	4405                	c.li	s0,1
-2005b5a4:	a0ad                	c.j	2005b60e <cmd_dump_word+0x102>
-2005b5a6:	4785                	c.li	a5,1
-2005b5a8:	00f40463          	beq	s0,a5,2005b5b0 <cmd_dump_word+0xa4>
-2005b5ac:	4401                	c.li	s0,0
-2005b5ae:	bf45                	c.j	2005b55e <cmd_dump_word+0x52>
-2005b5b0:	4401                	c.li	s0,0
-2005b5b2:	4485                	c.li	s1,1
-2005b5b4:	bf75                	c.j	2005b570 <cmd_dump_word+0x64>
-2005b5b6:	c43d                	c.beqz	s0,2005b624 <cmd_dump_word+0x118>
-2005b5b8:	c4f9                	c.beqz	s1,2005b686 <cmd_dump_word+0x17a>
-2005b5ba:	7c102773          	csrrs	a4,0x7c1,zero
-2005b5be:	10077713          	andi	a4,a4,256
-2005b5c2:	c339                	c.beqz	a4,2005b608 <cmd_dump_word+0xfc>
-2005b5c4:	01c7f713          	andi	a4,a5,28
-2005b5c8:	cb39                	c.beqz	a4,2005b61e <cmd_dump_word+0x112>
-2005b5ca:	9b81                	c.andi	a5,-32
-2005b5cc:	9726                	c.add	a4,s1
-2005b5ce:	02e05d63          	bge	zero,a4,2005b608 <cmd_dump_word+0xfc>
-2005b5d2:	01f7f693          	andi	a3,a5,31
-2005b5d6:	9736                	c.add	a4,a3
-2005b5d8:	0ff0000f          	fence	iorw,iorw
-2005b5dc:	973e                	c.add	a4,a5
-2005b5de:	02f7f00b          	cache	dwbinv,(a5)
-2005b5e2:	02078793          	addi	a5,a5,32
-2005b5e6:	40f706b3          	sub	a3,a4,a5
-2005b5ea:	fed04ae3          	blt	zero,a3,2005b5de <cmd_dump_word+0xd2>
-2005b5ee:	0ff0000f          	fence	iorw,iorw
-2005b5f2:	0001                	c.addi	zero,0
-2005b5f4:	0001                	c.addi	zero,0
-2005b5f6:	0001                	c.addi	zero,0
+2005b512 <cmd_dump_word>:
+2005b512:	1101                	c.addi	sp,-32
+2005b514:	cc22                	c.swsp	s0,24(sp)
+2005b516:	c84a                	c.swsp	s2,16(sp)
+2005b518:	842a                	c.mv	s0,a0
+2005b51a:	ce06                	c.swsp	ra,28(sp)
+2005b51c:	ca26                	c.swsp	s1,20(sp)
+2005b51e:	c64e                	c.swsp	s3,12(sp)
+2005b520:	892e                	c.mv	s2,a1
+2005b522:	dffab097          	auipc	ra,0xdffab
+2005b526:	62c080e7          	jalr	ra,1580(ra) # 6b4e <SYSCFG_OTP_RSIPEn>
+2005b52a:	fff40793          	addi	a5,s0,-1
+2005b52e:	07c2                	c.slli	a5,0x10
+2005b530:	83c1                	c.srli	a5,0x10
+2005b532:	4709                	c.li	a4,2
+2005b534:	00f77a63          	bgeu	a4,a5,2005b548 <cmd_dump_word+0x36>
+2005b538:	20063537          	lui	a0,0x20063
+2005b53c:	20450513          	addi	a0,a0,516 # 20063204 <__FUNCTION__.0+0x2b0>
+2005b540:	667030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b544:	4401                	c.li	s0,0
+2005b546:	a0f9                	c.j	2005b614 <cmd_dump_word+0x102>
+2005b548:	478d                	c.li	a5,3
+2005b54a:	89aa                	c.mv	s3,a0
+2005b54c:	06f41063          	bne	s0,a5,2005b5ac <cmd_dump_word+0x9a>
+2005b550:	00892783          	lw	a5,8(s2)
+2005b554:	0007c403          	lbu	s0,0(a5)
+2005b558:	0df47413          	andi	s0,s0,223
+2005b55c:	fbe40413          	addi	s0,s0,-66
+2005b560:	00143413          	sltiu	s0,s0,1
+2005b564:	00492503          	lw	a0,4(s2)
+2005b568:	4629                	c.li	a2,10
+2005b56a:	4581                	c.li	a1,0
+2005b56c:	dffae097          	auipc	ra,0xdffae
+2005b570:	3ca080e7          	jalr	ra,970(ra) # 9936 <_strtoul>
+2005b574:	84aa                	c.mv	s1,a0
+2005b576:	00092503          	lw	a0,0(s2)
+2005b57a:	4641                	c.li	a2,16
+2005b57c:	4581                	c.li	a1,0
+2005b57e:	dffae097          	auipc	ra,0xdffae
+2005b582:	3b8080e7          	jalr	ra,952(ra) # 9936 <_strtoul>
+2005b586:	87aa                	c.mv	a5,a0
+2005b588:	f8000737          	lui	a4,0xf8000
+2005b58c:	9971                	c.andi	a0,-4
+2005b58e:	972a                	c.add	a4,a0
+2005b590:	080006b7          	lui	a3,0x8000
+2005b594:	02d77463          	bgeu	a4,a3,2005b5bc <cmd_dump_word+0xaa>
+2005b598:	02098263          	beq	s3,zero,2005b5bc <cmd_dump_word+0xaa>
+2005b59c:	20063537          	lui	a0,0x20063
+2005b5a0:	22050513          	addi	a0,a0,544 # 20063220 <__FUNCTION__.0+0x2cc>
+2005b5a4:	603030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b5a8:	4405                	c.li	s0,1
+2005b5aa:	a0ad                	c.j	2005b614 <cmd_dump_word+0x102>
+2005b5ac:	4785                	c.li	a5,1
+2005b5ae:	00f40463          	beq	s0,a5,2005b5b6 <cmd_dump_word+0xa4>
+2005b5b2:	4401                	c.li	s0,0
+2005b5b4:	bf45                	c.j	2005b564 <cmd_dump_word+0x52>
+2005b5b6:	4401                	c.li	s0,0
+2005b5b8:	4485                	c.li	s1,1
+2005b5ba:	bf75                	c.j	2005b576 <cmd_dump_word+0x64>
+2005b5bc:	c43d                	c.beqz	s0,2005b62a <cmd_dump_word+0x118>
+2005b5be:	c4f9                	c.beqz	s1,2005b68c <cmd_dump_word+0x17a>
+2005b5c0:	7c102773          	csrrs	a4,0x7c1,zero
+2005b5c4:	10077713          	andi	a4,a4,256
+2005b5c8:	c339                	c.beqz	a4,2005b60e <cmd_dump_word+0xfc>
+2005b5ca:	01c7f713          	andi	a4,a5,28
+2005b5ce:	cb39                	c.beqz	a4,2005b624 <cmd_dump_word+0x112>
+2005b5d0:	9b81                	c.andi	a5,-32
+2005b5d2:	9726                	c.add	a4,s1
+2005b5d4:	02e05d63          	bge	zero,a4,2005b60e <cmd_dump_word+0xfc>
+2005b5d8:	01f7f693          	andi	a3,a5,31
+2005b5dc:	9736                	c.add	a4,a3
+2005b5de:	0ff0000f          	fence	iorw,iorw
+2005b5e2:	973e                	c.add	a4,a5
+2005b5e4:	02f7f00b          	cache	dwbinv,(a5)
+2005b5e8:	02078793          	addi	a5,a5,32
+2005b5ec:	40f706b3          	sub	a3,a4,a5
+2005b5f0:	fed04ae3          	blt	zero,a3,2005b5e4 <cmd_dump_word+0xd2>
+2005b5f4:	0ff0000f          	fence	iorw,iorw
 2005b5f8:	0001                	c.addi	zero,0
 2005b5fa:	0001                	c.addi	zero,0
 2005b5fc:	0001                	c.addi	zero,0
@@ -5112,43 +5111,43 @@ Disassembly of section .xip_image2.text:
 2005b602:	0001                	c.addi	zero,0
 2005b604:	0001                	c.addi	zero,0
 2005b606:	0001                	c.addi	zero,0
-2005b608:	85a6                	c.mv	a1,s1
-2005b60a:	b0bff0ef          	jal	ra,2005b114 <rtk_log_memory_dump_byte>
-2005b60e:	40f2                	c.lwsp	ra,28(sp)
-2005b610:	8522                	c.mv	a0,s0
-2005b612:	4462                	c.lwsp	s0,24(sp)
-2005b614:	44d2                	c.lwsp	s1,20(sp)
-2005b616:	4942                	c.lwsp	s2,16(sp)
-2005b618:	49b2                	c.lwsp	s3,12(sp)
-2005b61a:	6105                	c.addi16sp	sp,32
-2005b61c:	8082                	c.jr	ra
-2005b61e:	8726                	c.mv	a4,s1
-2005b620:	87aa                	c.mv	a5,a0
-2005b622:	b775                	c.j	2005b5ce <cmd_dump_word+0xc2>
-2005b624:	c0ad                	c.beqz	s1,2005b686 <cmd_dump_word+0x17a>
-2005b626:	7c102773          	csrrs	a4,0x7c1,zero
-2005b62a:	10077713          	andi	a4,a4,256
-2005b62e:	cb21                	c.beqz	a4,2005b67e <cmd_dump_word+0x172>
-2005b630:	01c7f693          	andi	a3,a5,28
-2005b634:	00249613          	slli	a2,s1,0x2
-2005b638:	872a                	c.mv	a4,a0
-2005b63a:	c681                	c.beqz	a3,2005b642 <cmd_dump_word+0x136>
-2005b63c:	fe07f713          	andi	a4,a5,-32
-2005b640:	9636                	c.add	a2,a3
-2005b642:	02c05e63          	bge	zero,a2,2005b67e <cmd_dump_word+0x172>
-2005b646:	01f77693          	andi	a3,a4,31
-2005b64a:	96b2                	c.add	a3,a2
-2005b64c:	0ff0000f          	fence	iorw,iorw
-2005b650:	87ba                	c.mv	a5,a4
-2005b652:	9736                	c.add	a4,a3
-2005b654:	02f7f00b          	cache	dwbinv,(a5)
-2005b658:	02078793          	addi	a5,a5,32
-2005b65c:	40f706b3          	sub	a3,a4,a5
-2005b660:	fed04ae3          	blt	zero,a3,2005b654 <cmd_dump_word+0x148>
-2005b664:	0ff0000f          	fence	iorw,iorw
-2005b668:	0001                	c.addi	zero,0
-2005b66a:	0001                	c.addi	zero,0
-2005b66c:	0001                	c.addi	zero,0
+2005b608:	0001                	c.addi	zero,0
+2005b60a:	0001                	c.addi	zero,0
+2005b60c:	0001                	c.addi	zero,0
+2005b60e:	85a6                	c.mv	a1,s1
+2005b610:	b0bff0ef          	jal	ra,2005b11a <rtk_log_memory_dump_byte>
+2005b614:	40f2                	c.lwsp	ra,28(sp)
+2005b616:	8522                	c.mv	a0,s0
+2005b618:	4462                	c.lwsp	s0,24(sp)
+2005b61a:	44d2                	c.lwsp	s1,20(sp)
+2005b61c:	4942                	c.lwsp	s2,16(sp)
+2005b61e:	49b2                	c.lwsp	s3,12(sp)
+2005b620:	6105                	c.addi16sp	sp,32
+2005b622:	8082                	c.jr	ra
+2005b624:	8726                	c.mv	a4,s1
+2005b626:	87aa                	c.mv	a5,a0
+2005b628:	b775                	c.j	2005b5d4 <cmd_dump_word+0xc2>
+2005b62a:	c0ad                	c.beqz	s1,2005b68c <cmd_dump_word+0x17a>
+2005b62c:	7c102773          	csrrs	a4,0x7c1,zero
+2005b630:	10077713          	andi	a4,a4,256
+2005b634:	cb21                	c.beqz	a4,2005b684 <cmd_dump_word+0x172>
+2005b636:	01c7f693          	andi	a3,a5,28
+2005b63a:	00249613          	slli	a2,s1,0x2
+2005b63e:	872a                	c.mv	a4,a0
+2005b640:	c681                	c.beqz	a3,2005b648 <cmd_dump_word+0x136>
+2005b642:	fe07f713          	andi	a4,a5,-32
+2005b646:	9636                	c.add	a2,a3
+2005b648:	02c05e63          	bge	zero,a2,2005b684 <cmd_dump_word+0x172>
+2005b64c:	01f77693          	andi	a3,a4,31
+2005b650:	96b2                	c.add	a3,a2
+2005b652:	0ff0000f          	fence	iorw,iorw
+2005b656:	87ba                	c.mv	a5,a4
+2005b658:	9736                	c.add	a4,a3
+2005b65a:	02f7f00b          	cache	dwbinv,(a5)
+2005b65e:	02078793          	addi	a5,a5,32
+2005b662:	40f706b3          	sub	a3,a4,a5
+2005b666:	fed04ae3          	blt	zero,a3,2005b65a <cmd_dump_word+0x148>
+2005b66a:	0ff0000f          	fence	iorw,iorw
 2005b66e:	0001                	c.addi	zero,0
 2005b670:	0001                	c.addi	zero,0
 2005b672:	0001                	c.addi	zero,0
@@ -5157,905 +5156,905 @@ Disassembly of section .xip_image2.text:
 2005b678:	0001                	c.addi	zero,0
 2005b67a:	0001                	c.addi	zero,0
 2005b67c:	0001                	c.addi	zero,0
-2005b67e:	85a6                	c.mv	a1,s1
-2005b680:	a23ff0ef          	jal	ra,2005b0a2 <rtk_log_memory_dump_word>
-2005b684:	bf39                	c.j	2005b5a2 <cmd_dump_word+0x96>
-2005b686:	20063537          	lui	a0,0x20063
-2005b68a:	23c50513          	addi	a0,a0,572 # 2006323c <__FUNCTION__.0+0x2f0>
-2005b68e:	b575                	c.j	2005b53a <cmd_dump_word+0x2e>
+2005b67e:	0001                	c.addi	zero,0
+2005b680:	0001                	c.addi	zero,0
+2005b682:	0001                	c.addi	zero,0
+2005b684:	85a6                	c.mv	a1,s1
+2005b686:	a23ff0ef          	jal	ra,2005b0a8 <rtk_log_memory_dump_word>
+2005b68a:	bf39                	c.j	2005b5a8 <cmd_dump_word+0x96>
+2005b68c:	20063537          	lui	a0,0x20063
+2005b690:	24450513          	addi	a0,a0,580 # 20063244 <__FUNCTION__.0+0x2f0>
+2005b694:	b575                	c.j	2005b540 <cmd_dump_word+0x2e>
 
-2005b690 <rtos_critical_is_in_interrupt>:
-2005b690:	1141                	c.addi	sp,-16
-2005b692:	c606                	c.swsp	ra,12(sp)
-2005b694:	69f0a0ef          	jal	ra,20066532 <plic_get_active_irq_id>
-2005b698:	40b2                	c.lwsp	ra,12(sp)
-2005b69a:	00a03533          	sltu	a0,zero,a0
-2005b69e:	0141                	c.addi	sp,16
-2005b6a0:	8082                	c.jr	ra
+2005b696 <rtos_critical_is_in_interrupt>:
+2005b696:	1141                	c.addi	sp,-16
+2005b698:	c606                	c.swsp	ra,12(sp)
+2005b69a:	6b90a0ef          	jal	ra,20066552 <plic_get_active_irq_id>
+2005b69e:	40b2                	c.lwsp	ra,12(sp)
+2005b6a0:	00a03533          	sltu	a0,zero,a0
+2005b6a4:	0141                	c.addi	sp,16
+2005b6a6:	8082                	c.jr	ra
 
-2005b6a2 <rtos_critical_enter>:
-2005b6a2:	1141                	c.addi	sp,-16
-2005b6a4:	c606                	c.swsp	ra,12(sp)
-2005b6a6:	37ed                	c.jal	2005b690 <rtos_critical_is_in_interrupt>
-2005b6a8:	c919                	c.beqz	a0,2005b6be <rtos_critical_enter+0x1c>
-2005b6aa:	ef418793          	addi	a5,gp,-268 # 2006685c <uxCriticalNestingCnt>
-2005b6ae:	0007d703          	lhu	a4,0(a5)
-2005b6b2:	0705                	c.addi	a4,1
-2005b6b4:	00e79023          	sh	a4,0(a5)
-2005b6b8:	40b2                	c.lwsp	ra,12(sp)
-2005b6ba:	0141                	c.addi	sp,16
-2005b6bc:	8082                	c.jr	ra
+2005b6a8 <rtos_critical_enter>:
+2005b6a8:	1141                	c.addi	sp,-16
+2005b6aa:	c606                	c.swsp	ra,12(sp)
+2005b6ac:	37ed                	c.jal	2005b696 <rtos_critical_is_in_interrupt>
+2005b6ae:	c919                	c.beqz	a0,2005b6c4 <rtos_critical_enter+0x1c>
+2005b6b0:	ef418793          	addi	a5,gp,-268 # 2006687c <uxCriticalNestingCnt>
+2005b6b4:	0007d703          	lhu	a4,0(a5)
+2005b6b8:	0705                	c.addi	a4,1
+2005b6ba:	00e79023          	sh	a4,0(a5)
 2005b6be:	40b2                	c.lwsp	ra,12(sp)
 2005b6c0:	0141                	c.addi	sp,16
-2005b6c2:	5580206f          	jal	zero,2005dc1a <vTaskEnterCritical>
+2005b6c2:	8082                	c.jr	ra
+2005b6c4:	40b2                	c.lwsp	ra,12(sp)
+2005b6c6:	0141                	c.addi	sp,16
+2005b6c8:	5520206f          	jal	zero,2005dc1a <vTaskEnterCritical>
 
-2005b6c6 <rtos_critical_exit>:
-2005b6c6:	1141                	c.addi	sp,-16
-2005b6c8:	c606                	c.swsp	ra,12(sp)
-2005b6ca:	37d9                	c.jal	2005b690 <rtos_critical_is_in_interrupt>
-2005b6cc:	c919                	c.beqz	a0,2005b6e2 <rtos_critical_exit+0x1c>
-2005b6ce:	ef418793          	addi	a5,gp,-268 # 2006685c <uxCriticalNestingCnt>
-2005b6d2:	0007d703          	lhu	a4,0(a5)
-2005b6d6:	177d                	c.addi	a4,-1
-2005b6d8:	00e79023          	sh	a4,0(a5)
-2005b6dc:	40b2                	c.lwsp	ra,12(sp)
-2005b6de:	0141                	c.addi	sp,16
-2005b6e0:	8082                	c.jr	ra
+2005b6cc <rtos_critical_exit>:
+2005b6cc:	1141                	c.addi	sp,-16
+2005b6ce:	c606                	c.swsp	ra,12(sp)
+2005b6d0:	37d9                	c.jal	2005b696 <rtos_critical_is_in_interrupt>
+2005b6d2:	c919                	c.beqz	a0,2005b6e8 <rtos_critical_exit+0x1c>
+2005b6d4:	ef418793          	addi	a5,gp,-268 # 2006687c <uxCriticalNestingCnt>
+2005b6d8:	0007d703          	lhu	a4,0(a5)
+2005b6dc:	177d                	c.addi	a4,-1
+2005b6de:	00e79023          	sh	a4,0(a5)
 2005b6e2:	40b2                	c.lwsp	ra,12(sp)
 2005b6e4:	0141                	c.addi	sp,16
-2005b6e6:	54e0206f          	jal	zero,2005dc34 <vTaskExitCritical>
+2005b6e6:	8082                	c.jr	ra
+2005b6e8:	40b2                	c.lwsp	ra,12(sp)
+2005b6ea:	0141                	c.addi	sp,16
+2005b6ec:	5480206f          	jal	zero,2005dc34 <vTaskExitCritical>
 
-2005b6ea <rtos_mem_init>:
-2005b6ea:	bccff06f          	jal	zero,2005aab6 <os_heap_init>
+2005b6f0 <rtos_mem_init>:
+2005b6f0:	bccff06f          	jal	zero,2005aabc <os_heap_init>
 
-2005b6ee <rtos_mem_malloc>:
-2005b6ee:	d2eff06f          	jal	zero,2005ac1c <pvPortMalloc>
+2005b6f4 <rtos_mem_malloc>:
+2005b6f4:	d2eff06f          	jal	zero,2005ac22 <pvPortMalloc>
 
-2005b6f2 <rtos_mem_zmalloc>:
-2005b6f2:	1101                	c.addi	sp,-32
-2005b6f4:	cc22                	c.swsp	s0,24(sp)
-2005b6f6:	ce06                	c.swsp	ra,28(sp)
-2005b6f8:	c62a                	c.swsp	a0,12(sp)
-2005b6fa:	d22ff0ef          	jal	ra,2005ac1c <pvPortMalloc>
-2005b6fe:	842a                	c.mv	s0,a0
-2005b700:	c519                	c.beqz	a0,2005b70e <rtos_mem_zmalloc+0x1c>
-2005b702:	4632                	c.lwsp	a2,12(sp)
-2005b704:	4581                	c.li	a1,0
-2005b706:	dffae097          	auipc	ra,0xdffae
-2005b70a:	3c8080e7          	jalr	ra,968(ra) # 9ace <__wrap_memset>
-2005b70e:	40f2                	c.lwsp	ra,28(sp)
-2005b710:	8522                	c.mv	a0,s0
-2005b712:	4462                	c.lwsp	s0,24(sp)
-2005b714:	6105                	c.addi16sp	sp,32
-2005b716:	8082                	c.jr	ra
+2005b6f8 <rtos_mem_zmalloc>:
+2005b6f8:	1101                	c.addi	sp,-32
+2005b6fa:	cc22                	c.swsp	s0,24(sp)
+2005b6fc:	ce06                	c.swsp	ra,28(sp)
+2005b6fe:	c62a                	c.swsp	a0,12(sp)
+2005b700:	d22ff0ef          	jal	ra,2005ac22 <pvPortMalloc>
+2005b704:	842a                	c.mv	s0,a0
+2005b706:	c519                	c.beqz	a0,2005b714 <rtos_mem_zmalloc+0x1c>
+2005b708:	4632                	c.lwsp	a2,12(sp)
+2005b70a:	4581                	c.li	a1,0
+2005b70c:	dffae097          	auipc	ra,0xdffae
+2005b710:	3c2080e7          	jalr	ra,962(ra) # 9ace <__wrap_memset>
+2005b714:	40f2                	c.lwsp	ra,28(sp)
+2005b716:	8522                	c.mv	a0,s0
+2005b718:	4462                	c.lwsp	s0,24(sp)
+2005b71a:	6105                	c.addi16sp	sp,32
+2005b71c:	8082                	c.jr	ra
 
-2005b718 <rtos_mem_free>:
-2005b718:	c119                	c.beqz	a0,2005b71e <rtos_mem_free+0x6>
-2005b71a:	de0ff06f          	jal	zero,2005acfa <vPortFree>
-2005b71e:	8082                	c.jr	ra
+2005b71e <rtos_mem_free>:
+2005b71e:	c119                	c.beqz	a0,2005b724 <rtos_mem_free+0x6>
+2005b720:	de0ff06f          	jal	zero,2005ad00 <vPortFree>
+2005b724:	8082                	c.jr	ra
 
-2005b720 <rtos_mem_get_free_heap_size>:
-2005b720:	e38ff06f          	jal	zero,2005ad58 <xPortGetFreeHeapSize>
+2005b726 <rtos_mem_get_free_heap_size>:
+2005b726:	e38ff06f          	jal	zero,2005ad5e <xPortGetFreeHeapSize>
 
-2005b724 <rtos_mutex_create>:
-2005b724:	c10d                	c.beqz	a0,2005b746 <rtos_mutex_create+0x22>
-2005b726:	1141                	c.addi	sp,-16
-2005b728:	c422                	c.swsp	s0,8(sp)
-2005b72a:	842a                	c.mv	s0,a0
-2005b72c:	4505                	c.li	a0,1
-2005b72e:	c606                	c.swsp	ra,12(sp)
-2005b730:	6da010ef          	jal	ra,2005ce0a <xQueueCreateMutex>
-2005b734:	c008                	c.sw	a0,0(s0)
-2005b736:	40b2                	c.lwsp	ra,12(sp)
-2005b738:	4422                	c.lwsp	s0,8(sp)
-2005b73a:	00153513          	sltiu	a0,a0,1
-2005b73e:	40a00533          	sub	a0,zero,a0
-2005b742:	0141                	c.addi	sp,16
-2005b744:	8082                	c.jr	ra
-2005b746:	557d                	c.li	a0,-1
-2005b748:	8082                	c.jr	ra
+2005b72a <rtos_mutex_create>:
+2005b72a:	c10d                	c.beqz	a0,2005b74c <rtos_mutex_create+0x22>
+2005b72c:	1141                	c.addi	sp,-16
+2005b72e:	c422                	c.swsp	s0,8(sp)
+2005b730:	842a                	c.mv	s0,a0
+2005b732:	4505                	c.li	a0,1
+2005b734:	c606                	c.swsp	ra,12(sp)
+2005b736:	6d4010ef          	jal	ra,2005ce0a <xQueueCreateMutex>
+2005b73a:	c008                	c.sw	a0,0(s0)
+2005b73c:	40b2                	c.lwsp	ra,12(sp)
+2005b73e:	4422                	c.lwsp	s0,8(sp)
+2005b740:	00153513          	sltiu	a0,a0,1
+2005b744:	40a00533          	sub	a0,zero,a0
+2005b748:	0141                	c.addi	sp,16
+2005b74a:	8082                	c.jr	ra
+2005b74c:	557d                	c.li	a0,-1
+2005b74e:	8082                	c.jr	ra
 
-2005b74a <rtos_mutex_create_static>:
-2005b74a:	1141                	c.addi	sp,-16
-2005b74c:	c422                	c.swsp	s0,8(sp)
-2005b74e:	c606                	c.swsp	ra,12(sp)
-2005b750:	842a                	c.mv	s0,a0
-2005b752:	2e4d                	c.jal	2005bb04 <__reserved_get_mutex_from_poll>
-2005b754:	e511                	c.bnez	a0,2005b760 <rtos_mutex_create_static+0x16>
-2005b756:	8522                	c.mv	a0,s0
-2005b758:	4422                	c.lwsp	s0,8(sp)
-2005b75a:	40b2                	c.lwsp	ra,12(sp)
-2005b75c:	0141                	c.addi	sp,16
-2005b75e:	b7d9                	c.j	2005b724 <rtos_mutex_create>
-2005b760:	85aa                	c.mv	a1,a0
-2005b762:	4505                	c.li	a0,1
-2005b764:	732010ef          	jal	ra,2005ce96 <xQueueCreateMutexStatic>
-2005b768:	c008                	c.sw	a0,0(s0)
-2005b76a:	40b2                	c.lwsp	ra,12(sp)
-2005b76c:	4422                	c.lwsp	s0,8(sp)
-2005b76e:	00153513          	sltiu	a0,a0,1
-2005b772:	40a00533          	sub	a0,zero,a0
-2005b776:	0141                	c.addi	sp,16
-2005b778:	8082                	c.jr	ra
+2005b750 <rtos_mutex_create_static>:
+2005b750:	1141                	c.addi	sp,-16
+2005b752:	c422                	c.swsp	s0,8(sp)
+2005b754:	c606                	c.swsp	ra,12(sp)
+2005b756:	842a                	c.mv	s0,a0
+2005b758:	2e4d                	c.jal	2005bb0a <__reserved_get_mutex_from_poll>
+2005b75a:	e511                	c.bnez	a0,2005b766 <rtos_mutex_create_static+0x16>
+2005b75c:	8522                	c.mv	a0,s0
+2005b75e:	4422                	c.lwsp	s0,8(sp)
+2005b760:	40b2                	c.lwsp	ra,12(sp)
+2005b762:	0141                	c.addi	sp,16
+2005b764:	b7d9                	c.j	2005b72a <rtos_mutex_create>
+2005b766:	85aa                	c.mv	a1,a0
+2005b768:	4505                	c.li	a0,1
+2005b76a:	72c010ef          	jal	ra,2005ce96 <xQueueCreateMutexStatic>
+2005b76e:	c008                	c.sw	a0,0(s0)
+2005b770:	40b2                	c.lwsp	ra,12(sp)
+2005b772:	4422                	c.lwsp	s0,8(sp)
+2005b774:	00153513          	sltiu	a0,a0,1
+2005b778:	40a00533          	sub	a0,zero,a0
+2005b77c:	0141                	c.addi	sp,16
+2005b77e:	8082                	c.jr	ra
 
-2005b77a <rtos_mutex_delete>:
-2005b77a:	c139                	c.beqz	a0,2005b7c0 <rtos_mutex_delete+0x46>
-2005b77c:	1141                	c.addi	sp,-16
-2005b77e:	c422                	c.swsp	s0,8(sp)
-2005b780:	c606                	c.swsp	ra,12(sp)
-2005b782:	842a                	c.mv	s0,a0
-2005b784:	130010ef          	jal	ra,2005c8b4 <xQueueGetMutexHolder>
-2005b788:	e909                	c.bnez	a0,2005b79a <rtos_mutex_delete+0x20>
-2005b78a:	8522                	c.mv	a0,s0
-2005b78c:	78c010ef          	jal	ra,2005cf18 <vQueueDelete>
-2005b790:	4501                	c.li	a0,0
-2005b792:	40b2                	c.lwsp	ra,12(sp)
-2005b794:	4422                	c.lwsp	s0,8(sp)
-2005b796:	0141                	c.addi	sp,16
-2005b798:	8082                	c.jr	ra
-2005b79a:	8522                	c.mv	a0,s0
-2005b79c:	77c010ef          	jal	ra,2005cf18 <vQueueDelete>
-2005b7a0:	4501                	c.li	a0,0
-2005b7a2:	76b010ef          	jal	ra,2005d70c <pcTaskGetName>
-2005b7a6:	85aa                	c.mv	a1,a0
-2005b7a8:	20063637          	lui	a2,0x20063
-2005b7ac:	20063537          	lui	a0,0x20063
-2005b7b0:	4b060613          	addi	a2,a2,1200 # 200634b0 <__FUNCTION__.0>
-2005b7b4:	45c50513          	addi	a0,a0,1116 # 2006345c <__FUNCTION__.0+0x510>
-2005b7b8:	3ef030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005b7bc:	557d                	c.li	a0,-1
-2005b7be:	bfd1                	c.j	2005b792 <rtos_mutex_delete+0x18>
-2005b7c0:	557d                	c.li	a0,-1
-2005b7c2:	8082                	c.jr	ra
+2005b780 <rtos_mutex_delete>:
+2005b780:	c139                	c.beqz	a0,2005b7c6 <rtos_mutex_delete+0x46>
+2005b782:	1141                	c.addi	sp,-16
+2005b784:	c422                	c.swsp	s0,8(sp)
+2005b786:	c606                	c.swsp	ra,12(sp)
+2005b788:	842a                	c.mv	s0,a0
+2005b78a:	12a010ef          	jal	ra,2005c8b4 <xQueueGetMutexHolder>
+2005b78e:	e909                	c.bnez	a0,2005b7a0 <rtos_mutex_delete+0x20>
+2005b790:	8522                	c.mv	a0,s0
+2005b792:	786010ef          	jal	ra,2005cf18 <vQueueDelete>
+2005b796:	4501                	c.li	a0,0
+2005b798:	40b2                	c.lwsp	ra,12(sp)
+2005b79a:	4422                	c.lwsp	s0,8(sp)
+2005b79c:	0141                	c.addi	sp,16
+2005b79e:	8082                	c.jr	ra
+2005b7a0:	8522                	c.mv	a0,s0
+2005b7a2:	776010ef          	jal	ra,2005cf18 <vQueueDelete>
+2005b7a6:	4501                	c.li	a0,0
+2005b7a8:	765010ef          	jal	ra,2005d70c <pcTaskGetName>
+2005b7ac:	85aa                	c.mv	a1,a0
+2005b7ae:	20063637          	lui	a2,0x20063
+2005b7b2:	20063537          	lui	a0,0x20063
+2005b7b6:	4b860613          	addi	a2,a2,1208 # 200634b8 <__FUNCTION__.0>
+2005b7ba:	46450513          	addi	a0,a0,1124 # 20063464 <__FUNCTION__.0+0x510>
+2005b7be:	3e9030ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2005b7c2:	557d                	c.li	a0,-1
+2005b7c4:	bfd1                	c.j	2005b798 <rtos_mutex_delete+0x18>
+2005b7c6:	557d                	c.li	a0,-1
+2005b7c8:	8082                	c.jr	ra
 
-2005b7c4 <rtos_mutex_delete_static>:
-2005b7c4:	1141                	c.addi	sp,-16
-2005b7c6:	c606                	c.swsp	ra,12(sp)
-2005b7c8:	c422                	c.swsp	s0,8(sp)
-2005b7ca:	c226                	c.swsp	s1,4(sp)
-2005b7cc:	84aa                	c.mv	s1,a0
-2005b7ce:	3775                	c.jal	2005b77a <rtos_mutex_delete>
-2005b7d0:	842a                	c.mv	s0,a0
-2005b7d2:	8526                	c.mv	a0,s1
-2005b7d4:	26a9                	c.jal	2005bb1e <__reserved_release_mutex_to_poll>
-2005b7d6:	40b2                	c.lwsp	ra,12(sp)
-2005b7d8:	8522                	c.mv	a0,s0
-2005b7da:	4422                	c.lwsp	s0,8(sp)
-2005b7dc:	4492                	c.lwsp	s1,4(sp)
-2005b7de:	0141                	c.addi	sp,16
-2005b7e0:	8082                	c.jr	ra
+2005b7ca <rtos_mutex_delete_static>:
+2005b7ca:	1141                	c.addi	sp,-16
+2005b7cc:	c606                	c.swsp	ra,12(sp)
+2005b7ce:	c422                	c.swsp	s0,8(sp)
+2005b7d0:	c226                	c.swsp	s1,4(sp)
+2005b7d2:	84aa                	c.mv	s1,a0
+2005b7d4:	3775                	c.jal	2005b780 <rtos_mutex_delete>
+2005b7d6:	842a                	c.mv	s0,a0
+2005b7d8:	8526                	c.mv	a0,s1
+2005b7da:	26a9                	c.jal	2005bb24 <__reserved_release_mutex_to_poll>
+2005b7dc:	40b2                	c.lwsp	ra,12(sp)
+2005b7de:	8522                	c.mv	a0,s0
+2005b7e0:	4422                	c.lwsp	s0,8(sp)
+2005b7e2:	4492                	c.lwsp	s1,4(sp)
+2005b7e4:	0141                	c.addi	sp,16
+2005b7e6:	8082                	c.jr	ra
 
-2005b7e2 <rtos_mutex_take>:
-2005b7e2:	7179                	c.addi16sp	sp,-48
-2005b7e4:	d422                	c.swsp	s0,40(sp)
-2005b7e6:	c62e                	c.swsp	a1,12(sp)
-2005b7e8:	d606                	c.swsp	ra,44(sp)
-2005b7ea:	842a                	c.mv	s0,a0
-2005b7ec:	ce02                	c.swsp	zero,28(sp)
-2005b7ee:	ea3ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005b7f2:	45b2                	c.lwsp	a1,12(sp)
-2005b7f4:	c505                	c.beqz	a0,2005b81c <rtos_mutex_take+0x3a>
-2005b7f6:	0870                	c.addi4spn	a2,sp,28
-2005b7f8:	4581                	c.li	a1,0
-2005b7fa:	8522                	c.mv	a0,s0
-2005b7fc:	4ac010ef          	jal	ra,2005cca8 <xQueueReceiveFromISR>
-2005b800:	872a                	c.mv	a4,a0
-2005b802:	4785                	c.li	a5,1
-2005b804:	557d                	c.li	a0,-1
-2005b806:	00f71763          	bne	a4,a5,2005b814 <rtos_mutex_take+0x32>
-2005b80a:	4572                	c.lwsp	a0,28(sp)
-2005b80c:	c501                	c.beqz	a0,2005b814 <rtos_mutex_take+0x32>
-2005b80e:	040020ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005b812:	4501                	c.li	a0,0
-2005b814:	50b2                	c.lwsp	ra,44(sp)
-2005b816:	5422                	c.lwsp	s0,40(sp)
-2005b818:	6145                	c.addi16sp	sp,48
-2005b81a:	8082                	c.jr	ra
-2005b81c:	8522                	c.mv	a0,s0
-2005b81e:	36c010ef          	jal	ra,2005cb8a <xQueueSemaphoreTake>
-2005b822:	157d                	c.addi	a0,-1
-2005b824:	00a03533          	sltu	a0,zero,a0
-2005b828:	40a00533          	sub	a0,zero,a0
-2005b82c:	b7e5                	c.j	2005b814 <rtos_mutex_take+0x32>
+2005b7e8 <rtos_mutex_take>:
+2005b7e8:	7179                	c.addi16sp	sp,-48
+2005b7ea:	d422                	c.swsp	s0,40(sp)
+2005b7ec:	c62e                	c.swsp	a1,12(sp)
+2005b7ee:	d606                	c.swsp	ra,44(sp)
+2005b7f0:	842a                	c.mv	s0,a0
+2005b7f2:	ce02                	c.swsp	zero,28(sp)
+2005b7f4:	ea3ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005b7f8:	45b2                	c.lwsp	a1,12(sp)
+2005b7fa:	c505                	c.beqz	a0,2005b822 <rtos_mutex_take+0x3a>
+2005b7fc:	0870                	c.addi4spn	a2,sp,28
+2005b7fe:	4581                	c.li	a1,0
+2005b800:	8522                	c.mv	a0,s0
+2005b802:	4a6010ef          	jal	ra,2005cca8 <xQueueReceiveFromISR>
+2005b806:	872a                	c.mv	a4,a0
+2005b808:	4785                	c.li	a5,1
+2005b80a:	557d                	c.li	a0,-1
+2005b80c:	00f71763          	bne	a4,a5,2005b81a <rtos_mutex_take+0x32>
+2005b810:	4572                	c.lwsp	a0,28(sp)
+2005b812:	c501                	c.beqz	a0,2005b81a <rtos_mutex_take+0x32>
+2005b814:	03a020ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005b818:	4501                	c.li	a0,0
+2005b81a:	50b2                	c.lwsp	ra,44(sp)
+2005b81c:	5422                	c.lwsp	s0,40(sp)
+2005b81e:	6145                	c.addi16sp	sp,48
+2005b820:	8082                	c.jr	ra
+2005b822:	8522                	c.mv	a0,s0
+2005b824:	366010ef          	jal	ra,2005cb8a <xQueueSemaphoreTake>
+2005b828:	157d                	c.addi	a0,-1
+2005b82a:	00a03533          	sltu	a0,zero,a0
+2005b82e:	40a00533          	sub	a0,zero,a0
+2005b832:	b7e5                	c.j	2005b81a <rtos_mutex_take+0x32>
 
-2005b82e <rtos_mutex_give>:
-2005b82e:	1101                	c.addi	sp,-32
-2005b830:	cc22                	c.swsp	s0,24(sp)
-2005b832:	ce06                	c.swsp	ra,28(sp)
-2005b834:	842a                	c.mv	s0,a0
-2005b836:	c602                	c.swsp	zero,12(sp)
-2005b838:	e59ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005b83c:	c11d                	c.beqz	a0,2005b862 <rtos_mutex_give+0x34>
-2005b83e:	006c                	c.addi4spn	a1,sp,12
-2005b840:	8522                	c.mv	a0,s0
-2005b842:	204010ef          	jal	ra,2005ca46 <xQueueGiveFromISR>
-2005b846:	872a                	c.mv	a4,a0
-2005b848:	4785                	c.li	a5,1
-2005b84a:	557d                	c.li	a0,-1
-2005b84c:	00f71763          	bne	a4,a5,2005b85a <rtos_mutex_give+0x2c>
-2005b850:	4532                	c.lwsp	a0,12(sp)
-2005b852:	c501                	c.beqz	a0,2005b85a <rtos_mutex_give+0x2c>
-2005b854:	7fb010ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005b858:	4501                	c.li	a0,0
-2005b85a:	40f2                	c.lwsp	ra,28(sp)
-2005b85c:	4462                	c.lwsp	s0,24(sp)
-2005b85e:	6105                	c.addi16sp	sp,32
-2005b860:	8082                	c.jr	ra
-2005b862:	4681                	c.li	a3,0
-2005b864:	4601                	c.li	a2,0
-2005b866:	4581                	c.li	a1,0
-2005b868:	8522                	c.mv	a0,s0
-2005b86a:	06e010ef          	jal	ra,2005c8d8 <xQueueGenericSend>
-2005b86e:	157d                	c.addi	a0,-1
-2005b870:	00a03533          	sltu	a0,zero,a0
-2005b874:	40a00533          	sub	a0,zero,a0
-2005b878:	b7cd                	c.j	2005b85a <rtos_mutex_give+0x2c>
+2005b834 <rtos_mutex_give>:
+2005b834:	1101                	c.addi	sp,-32
+2005b836:	cc22                	c.swsp	s0,24(sp)
+2005b838:	ce06                	c.swsp	ra,28(sp)
+2005b83a:	842a                	c.mv	s0,a0
+2005b83c:	c602                	c.swsp	zero,12(sp)
+2005b83e:	e59ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005b842:	c11d                	c.beqz	a0,2005b868 <rtos_mutex_give+0x34>
+2005b844:	006c                	c.addi4spn	a1,sp,12
+2005b846:	8522                	c.mv	a0,s0
+2005b848:	1fe010ef          	jal	ra,2005ca46 <xQueueGiveFromISR>
+2005b84c:	872a                	c.mv	a4,a0
+2005b84e:	4785                	c.li	a5,1
+2005b850:	557d                	c.li	a0,-1
+2005b852:	00f71763          	bne	a4,a5,2005b860 <rtos_mutex_give+0x2c>
+2005b856:	4532                	c.lwsp	a0,12(sp)
+2005b858:	c501                	c.beqz	a0,2005b860 <rtos_mutex_give+0x2c>
+2005b85a:	7f5010ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005b85e:	4501                	c.li	a0,0
+2005b860:	40f2                	c.lwsp	ra,28(sp)
+2005b862:	4462                	c.lwsp	s0,24(sp)
+2005b864:	6105                	c.addi16sp	sp,32
+2005b866:	8082                	c.jr	ra
+2005b868:	4681                	c.li	a3,0
+2005b86a:	4601                	c.li	a2,0
+2005b86c:	4581                	c.li	a1,0
+2005b86e:	8522                	c.mv	a0,s0
+2005b870:	068010ef          	jal	ra,2005c8d8 <xQueueGenericSend>
+2005b874:	157d                	c.addi	a0,-1
+2005b876:	00a03533          	sltu	a0,zero,a0
+2005b87a:	40a00533          	sub	a0,zero,a0
+2005b87e:	b7cd                	c.j	2005b860 <rtos_mutex_give+0x2c>
 
-2005b87a <rtos_sema_create>:
-2005b87a:	1141                	c.addi	sp,-16
-2005b87c:	c422                	c.swsp	s0,8(sp)
-2005b87e:	c606                	c.swsp	ra,12(sp)
-2005b880:	842a                	c.mv	s0,a0
-2005b882:	557d                	c.li	a0,-1
-2005b884:	c809                	c.beqz	s0,2005b896 <rtos_sema_create+0x1c>
-2005b886:	8532                	c.mv	a0,a2
-2005b888:	5b6010ef          	jal	ra,2005ce3e <xQueueCreateCountingSemaphore>
-2005b88c:	c008                	c.sw	a0,0(s0)
-2005b88e:	00153513          	sltiu	a0,a0,1
-2005b892:	40a00533          	sub	a0,zero,a0
-2005b896:	40b2                	c.lwsp	ra,12(sp)
-2005b898:	4422                	c.lwsp	s0,8(sp)
-2005b89a:	0141                	c.addi	sp,16
-2005b89c:	8082                	c.jr	ra
+2005b880 <rtos_sema_create>:
+2005b880:	1141                	c.addi	sp,-16
+2005b882:	c422                	c.swsp	s0,8(sp)
+2005b884:	c606                	c.swsp	ra,12(sp)
+2005b886:	842a                	c.mv	s0,a0
+2005b888:	557d                	c.li	a0,-1
+2005b88a:	c809                	c.beqz	s0,2005b89c <rtos_sema_create+0x1c>
+2005b88c:	8532                	c.mv	a0,a2
+2005b88e:	5b0010ef          	jal	ra,2005ce3e <xQueueCreateCountingSemaphore>
+2005b892:	c008                	c.sw	a0,0(s0)
+2005b894:	00153513          	sltiu	a0,a0,1
+2005b898:	40a00533          	sub	a0,zero,a0
+2005b89c:	40b2                	c.lwsp	ra,12(sp)
+2005b89e:	4422                	c.lwsp	s0,8(sp)
+2005b8a0:	0141                	c.addi	sp,16
+2005b8a2:	8082                	c.jr	ra
 
-2005b89e <rtos_sema_create_static>:
-2005b89e:	1101                	c.addi	sp,-32
-2005b8a0:	cc22                	c.swsp	s0,24(sp)
-2005b8a2:	ca26                	c.swsp	s1,20(sp)
-2005b8a4:	c62e                	c.swsp	a1,12(sp)
-2005b8a6:	ce06                	c.swsp	ra,28(sp)
-2005b8a8:	842a                	c.mv	s0,a0
-2005b8aa:	84b2                	c.mv	s1,a2
-2005b8ac:	2471                	c.jal	2005bb38 <__reserved_get_sema_from_poll>
-2005b8ae:	45b2                	c.lwsp	a1,12(sp)
-2005b8b0:	e901                	c.bnez	a0,2005b8c0 <rtos_sema_create_static+0x22>
-2005b8b2:	8522                	c.mv	a0,s0
-2005b8b4:	4462                	c.lwsp	s0,24(sp)
-2005b8b6:	40f2                	c.lwsp	ra,28(sp)
-2005b8b8:	8626                	c.mv	a2,s1
-2005b8ba:	44d2                	c.lwsp	s1,20(sp)
-2005b8bc:	6105                	c.addi16sp	sp,32
-2005b8be:	bf75                	c.j	2005b87a <rtos_sema_create>
-2005b8c0:	862a                	c.mv	a2,a0
-2005b8c2:	8526                	c.mv	a0,s1
-2005b8c4:	60a010ef          	jal	ra,2005cece <xQueueCreateCountingSemaphoreStatic>
-2005b8c8:	c008                	c.sw	a0,0(s0)
-2005b8ca:	40f2                	c.lwsp	ra,28(sp)
-2005b8cc:	4462                	c.lwsp	s0,24(sp)
-2005b8ce:	00153513          	sltiu	a0,a0,1
-2005b8d2:	44d2                	c.lwsp	s1,20(sp)
-2005b8d4:	40a00533          	sub	a0,zero,a0
-2005b8d8:	6105                	c.addi16sp	sp,32
-2005b8da:	8082                	c.jr	ra
+2005b8a4 <rtos_sema_create_static>:
+2005b8a4:	1101                	c.addi	sp,-32
+2005b8a6:	cc22                	c.swsp	s0,24(sp)
+2005b8a8:	ca26                	c.swsp	s1,20(sp)
+2005b8aa:	c62e                	c.swsp	a1,12(sp)
+2005b8ac:	ce06                	c.swsp	ra,28(sp)
+2005b8ae:	842a                	c.mv	s0,a0
+2005b8b0:	84b2                	c.mv	s1,a2
+2005b8b2:	2471                	c.jal	2005bb3e <__reserved_get_sema_from_poll>
+2005b8b4:	45b2                	c.lwsp	a1,12(sp)
+2005b8b6:	e901                	c.bnez	a0,2005b8c6 <rtos_sema_create_static+0x22>
+2005b8b8:	8522                	c.mv	a0,s0
+2005b8ba:	4462                	c.lwsp	s0,24(sp)
+2005b8bc:	40f2                	c.lwsp	ra,28(sp)
+2005b8be:	8626                	c.mv	a2,s1
+2005b8c0:	44d2                	c.lwsp	s1,20(sp)
+2005b8c2:	6105                	c.addi16sp	sp,32
+2005b8c4:	bf75                	c.j	2005b880 <rtos_sema_create>
+2005b8c6:	862a                	c.mv	a2,a0
+2005b8c8:	8526                	c.mv	a0,s1
+2005b8ca:	604010ef          	jal	ra,2005cece <xQueueCreateCountingSemaphoreStatic>
+2005b8ce:	c008                	c.sw	a0,0(s0)
+2005b8d0:	40f2                	c.lwsp	ra,28(sp)
+2005b8d2:	4462                	c.lwsp	s0,24(sp)
+2005b8d4:	00153513          	sltiu	a0,a0,1
+2005b8d8:	44d2                	c.lwsp	s1,20(sp)
+2005b8da:	40a00533          	sub	a0,zero,a0
+2005b8de:	6105                	c.addi16sp	sp,32
+2005b8e0:	8082                	c.jr	ra
 
-2005b8dc <rtos_sema_create_binary>:
-2005b8dc:	c11d                	c.beqz	a0,2005b902 <rtos_sema_create_binary+0x26>
-2005b8de:	1141                	c.addi	sp,-16
-2005b8e0:	c422                	c.swsp	s0,8(sp)
-2005b8e2:	460d                	c.li	a2,3
-2005b8e4:	842a                	c.mv	s0,a0
-2005b8e6:	4581                	c.li	a1,0
-2005b8e8:	4505                	c.li	a0,1
-2005b8ea:	c606                	c.swsp	ra,12(sp)
-2005b8ec:	4c6010ef          	jal	ra,2005cdb2 <xQueueGenericCreate>
-2005b8f0:	c008                	c.sw	a0,0(s0)
-2005b8f2:	40b2                	c.lwsp	ra,12(sp)
-2005b8f4:	4422                	c.lwsp	s0,8(sp)
-2005b8f6:	00153513          	sltiu	a0,a0,1
-2005b8fa:	40a00533          	sub	a0,zero,a0
-2005b8fe:	0141                	c.addi	sp,16
-2005b900:	8082                	c.jr	ra
-2005b902:	557d                	c.li	a0,-1
-2005b904:	8082                	c.jr	ra
+2005b8e2 <rtos_sema_create_binary>:
+2005b8e2:	c11d                	c.beqz	a0,2005b908 <rtos_sema_create_binary+0x26>
+2005b8e4:	1141                	c.addi	sp,-16
+2005b8e6:	c422                	c.swsp	s0,8(sp)
+2005b8e8:	460d                	c.li	a2,3
+2005b8ea:	842a                	c.mv	s0,a0
+2005b8ec:	4581                	c.li	a1,0
+2005b8ee:	4505                	c.li	a0,1
+2005b8f0:	c606                	c.swsp	ra,12(sp)
+2005b8f2:	4c0010ef          	jal	ra,2005cdb2 <xQueueGenericCreate>
+2005b8f6:	c008                	c.sw	a0,0(s0)
+2005b8f8:	40b2                	c.lwsp	ra,12(sp)
+2005b8fa:	4422                	c.lwsp	s0,8(sp)
+2005b8fc:	00153513          	sltiu	a0,a0,1
+2005b900:	40a00533          	sub	a0,zero,a0
+2005b904:	0141                	c.addi	sp,16
+2005b906:	8082                	c.jr	ra
+2005b908:	557d                	c.li	a0,-1
+2005b90a:	8082                	c.jr	ra
 
-2005b906 <rtos_sema_delete>:
-2005b906:	c909                	c.beqz	a0,2005b918 <rtos_sema_delete+0x12>
-2005b908:	1141                	c.addi	sp,-16
-2005b90a:	c606                	c.swsp	ra,12(sp)
-2005b90c:	60c010ef          	jal	ra,2005cf18 <vQueueDelete>
-2005b910:	40b2                	c.lwsp	ra,12(sp)
-2005b912:	4501                	c.li	a0,0
-2005b914:	0141                	c.addi	sp,16
-2005b916:	8082                	c.jr	ra
-2005b918:	557d                	c.li	a0,-1
-2005b91a:	8082                	c.jr	ra
+2005b90c <rtos_sema_delete>:
+2005b90c:	c909                	c.beqz	a0,2005b91e <rtos_sema_delete+0x12>
+2005b90e:	1141                	c.addi	sp,-16
+2005b910:	c606                	c.swsp	ra,12(sp)
+2005b912:	606010ef          	jal	ra,2005cf18 <vQueueDelete>
+2005b916:	40b2                	c.lwsp	ra,12(sp)
+2005b918:	4501                	c.li	a0,0
+2005b91a:	0141                	c.addi	sp,16
+2005b91c:	8082                	c.jr	ra
+2005b91e:	557d                	c.li	a0,-1
+2005b920:	8082                	c.jr	ra
 
-2005b91c <rtos_sema_take>:
-2005b91c:	7179                	c.addi16sp	sp,-48
-2005b91e:	d422                	c.swsp	s0,40(sp)
-2005b920:	c62e                	c.swsp	a1,12(sp)
-2005b922:	d606                	c.swsp	ra,44(sp)
-2005b924:	842a                	c.mv	s0,a0
-2005b926:	ce02                	c.swsp	zero,28(sp)
-2005b928:	d69ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005b92c:	45b2                	c.lwsp	a1,12(sp)
-2005b92e:	c505                	c.beqz	a0,2005b956 <rtos_sema_take+0x3a>
-2005b930:	0870                	c.addi4spn	a2,sp,28
-2005b932:	4581                	c.li	a1,0
-2005b934:	8522                	c.mv	a0,s0
-2005b936:	372010ef          	jal	ra,2005cca8 <xQueueReceiveFromISR>
-2005b93a:	872a                	c.mv	a4,a0
-2005b93c:	4785                	c.li	a5,1
-2005b93e:	557d                	c.li	a0,-1
-2005b940:	00f71763          	bne	a4,a5,2005b94e <rtos_sema_take+0x32>
-2005b944:	4572                	c.lwsp	a0,28(sp)
-2005b946:	c501                	c.beqz	a0,2005b94e <rtos_sema_take+0x32>
-2005b948:	707010ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005b94c:	4501                	c.li	a0,0
-2005b94e:	50b2                	c.lwsp	ra,44(sp)
-2005b950:	5422                	c.lwsp	s0,40(sp)
-2005b952:	6145                	c.addi16sp	sp,48
-2005b954:	8082                	c.jr	ra
-2005b956:	8522                	c.mv	a0,s0
-2005b958:	232010ef          	jal	ra,2005cb8a <xQueueSemaphoreTake>
-2005b95c:	157d                	c.addi	a0,-1
-2005b95e:	00a03533          	sltu	a0,zero,a0
-2005b962:	40a00533          	sub	a0,zero,a0
-2005b966:	b7e5                	c.j	2005b94e <rtos_sema_take+0x32>
+2005b922 <rtos_sema_take>:
+2005b922:	7179                	c.addi16sp	sp,-48
+2005b924:	d422                	c.swsp	s0,40(sp)
+2005b926:	c62e                	c.swsp	a1,12(sp)
+2005b928:	d606                	c.swsp	ra,44(sp)
+2005b92a:	842a                	c.mv	s0,a0
+2005b92c:	ce02                	c.swsp	zero,28(sp)
+2005b92e:	d69ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005b932:	45b2                	c.lwsp	a1,12(sp)
+2005b934:	c505                	c.beqz	a0,2005b95c <rtos_sema_take+0x3a>
+2005b936:	0870                	c.addi4spn	a2,sp,28
+2005b938:	4581                	c.li	a1,0
+2005b93a:	8522                	c.mv	a0,s0
+2005b93c:	36c010ef          	jal	ra,2005cca8 <xQueueReceiveFromISR>
+2005b940:	872a                	c.mv	a4,a0
+2005b942:	4785                	c.li	a5,1
+2005b944:	557d                	c.li	a0,-1
+2005b946:	00f71763          	bne	a4,a5,2005b954 <rtos_sema_take+0x32>
+2005b94a:	4572                	c.lwsp	a0,28(sp)
+2005b94c:	c501                	c.beqz	a0,2005b954 <rtos_sema_take+0x32>
+2005b94e:	701010ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005b952:	4501                	c.li	a0,0
+2005b954:	50b2                	c.lwsp	ra,44(sp)
+2005b956:	5422                	c.lwsp	s0,40(sp)
+2005b958:	6145                	c.addi16sp	sp,48
+2005b95a:	8082                	c.jr	ra
+2005b95c:	8522                	c.mv	a0,s0
+2005b95e:	22c010ef          	jal	ra,2005cb8a <xQueueSemaphoreTake>
+2005b962:	157d                	c.addi	a0,-1
+2005b964:	00a03533          	sltu	a0,zero,a0
+2005b968:	40a00533          	sub	a0,zero,a0
+2005b96c:	b7e5                	c.j	2005b954 <rtos_sema_take+0x32>
 
-2005b968 <rtos_sema_give>:
-2005b968:	7179                	c.addi16sp	sp,-48
-2005b96a:	d422                	c.swsp	s0,40(sp)
-2005b96c:	d606                	c.swsp	ra,44(sp)
-2005b96e:	842a                	c.mv	s0,a0
-2005b970:	ce02                	c.swsp	zero,28(sp)
-2005b972:	d1fff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005b976:	c505                	c.beqz	a0,2005b99e <rtos_sema_give+0x36>
-2005b978:	086c                	c.addi4spn	a1,sp,28
-2005b97a:	8522                	c.mv	a0,s0
-2005b97c:	0ca010ef          	jal	ra,2005ca46 <xQueueGiveFromISR>
-2005b980:	47f2                	c.lwsp	a5,28(sp)
-2005b982:	c789                	c.beqz	a5,2005b98c <rtos_sema_give+0x24>
-2005b984:	c62a                	c.swsp	a0,12(sp)
-2005b986:	6c9010ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005b98a:	4532                	c.lwsp	a0,12(sp)
-2005b98c:	50b2                	c.lwsp	ra,44(sp)
-2005b98e:	5422                	c.lwsp	s0,40(sp)
-2005b990:	157d                	c.addi	a0,-1
-2005b992:	00a03533          	sltu	a0,zero,a0
-2005b996:	40a00533          	sub	a0,zero,a0
-2005b99a:	6145                	c.addi16sp	sp,48
-2005b99c:	8082                	c.jr	ra
-2005b99e:	4681                	c.li	a3,0
-2005b9a0:	4601                	c.li	a2,0
-2005b9a2:	4581                	c.li	a1,0
-2005b9a4:	8522                	c.mv	a0,s0
-2005b9a6:	733000ef          	jal	ra,2005c8d8 <xQueueGenericSend>
-2005b9aa:	b7cd                	c.j	2005b98c <rtos_sema_give+0x24>
+2005b96e <rtos_sema_give>:
+2005b96e:	7179                	c.addi16sp	sp,-48
+2005b970:	d422                	c.swsp	s0,40(sp)
+2005b972:	d606                	c.swsp	ra,44(sp)
+2005b974:	842a                	c.mv	s0,a0
+2005b976:	ce02                	c.swsp	zero,28(sp)
+2005b978:	d1fff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005b97c:	c505                	c.beqz	a0,2005b9a4 <rtos_sema_give+0x36>
+2005b97e:	086c                	c.addi4spn	a1,sp,28
+2005b980:	8522                	c.mv	a0,s0
+2005b982:	0c4010ef          	jal	ra,2005ca46 <xQueueGiveFromISR>
+2005b986:	47f2                	c.lwsp	a5,28(sp)
+2005b988:	c789                	c.beqz	a5,2005b992 <rtos_sema_give+0x24>
+2005b98a:	c62a                	c.swsp	a0,12(sp)
+2005b98c:	6c3010ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005b990:	4532                	c.lwsp	a0,12(sp)
+2005b992:	50b2                	c.lwsp	ra,44(sp)
+2005b994:	5422                	c.lwsp	s0,40(sp)
+2005b996:	157d                	c.addi	a0,-1
+2005b998:	00a03533          	sltu	a0,zero,a0
+2005b99c:	40a00533          	sub	a0,zero,a0
+2005b9a0:	6145                	c.addi16sp	sp,48
+2005b9a2:	8082                	c.jr	ra
+2005b9a4:	4681                	c.li	a3,0
+2005b9a6:	4601                	c.li	a2,0
+2005b9a8:	4581                	c.li	a1,0
+2005b9aa:	8522                	c.mv	a0,s0
+2005b9ac:	72d000ef          	jal	ra,2005c8d8 <xQueueGenericSend>
+2005b9b0:	b7cd                	c.j	2005b992 <rtos_sema_give+0x24>
 
-2005b9ac <__reserved_get_from_poll>:
-2005b9ac:	7179                	c.addi16sp	sp,-48
-2005b9ae:	d226                	c.swsp	s1,36(sp)
-2005b9b0:	d04a                	c.swsp	s2,32(sp)
-2005b9b2:	ce4e                	c.swsp	s3,28(sp)
-2005b9b4:	cc52                	c.swsp	s4,24(sp)
-2005b9b6:	ca56                	c.swsp	s5,20(sp)
-2005b9b8:	c85a                	c.swsp	s6,16(sp)
-2005b9ba:	d606                	c.swsp	ra,44(sp)
-2005b9bc:	d422                	c.swsp	s0,40(sp)
-2005b9be:	c65e                	c.swsp	s7,12(sp)
-2005b9c0:	8a3e                	c.mv	s4,a5
-2005b9c2:	421c                	c.lw	a5,0(a2)
-2005b9c4:	84aa                	c.mv	s1,a0
-2005b9c6:	8b2e                	c.mv	s6,a1
-2005b9c8:	8ab2                	c.mv	s5,a2
-2005b9ca:	8936                	c.mv	s2,a3
-2005b9cc:	89ba                	c.mv	s3,a4
-2005b9ce:	ef85                	c.bnez	a5,2005ba06 <__reserved_get_from_poll+0x5a>
-2005b9d0:	4405                	c.li	s0,1
-2005b9d2:	08851263          	bne	a0,s0,2005ba56 <__reserved_get_from_poll+0xaa>
-2005b9d6:	f0418413          	addi	s0,gp,-252 # 2006686c <mutex_pool_init_flag>
-2005b9da:	401c                	c.lw	a5,0(s0)
-2005b9dc:	02a78563          	beq	a5,a0,2005ba06 <__reserved_get_from_poll+0x5a>
-2005b9e0:	4601                	c.li	a2,0
-2005b9e2:	4581                	c.li	a1,0
-2005b9e4:	5b418513          	addi	a0,gp,1460 # 20066f1c <mutex_pool>
-2005b9e8:	dffae097          	auipc	ra,0xdffae
-2005b9ec:	0e6080e7          	jalr	ra,230(ra) # 9ace <__wrap_memset>
-2005b9f0:	ee01ac23          	sw	zero,-264(gp) # 20066860 <mutex_buf_used_num>
-2005b9f4:	f2818513          	addi	a0,gp,-216 # 20066890 <wrapper_mutex_buf_list>
-2005b9f8:	f001a023          	sw	zero,-256(gp) # 20066868 <mutex_max_buf_used_num>
-2005b9fc:	c108                	c.sw	a0,0(a0)
-2005b9fe:	c148                	c.sw	a0,4(a0)
-2005ba00:	ee01ae23          	sw	zero,-260(gp) # 20066864 <mutex_dynamic_num>
-2005ba04:	c004                	c.sw	s1,0(s0)
-2005ba06:	c9dff0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-2005ba0a:	000b2403          	lw	s0,0(s6)
-2005ba0e:	0a8b1b63          	bne	s6,s0,2005bac4 <__reserved_get_from_poll+0x118>
-2005ba12:	cb5ff0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-2005ba16:	4b01                	c.li	s6,0
-2005ba18:	000aa783          	lw	a5,0(s5)
-2005ba1c:	c791                	c.beqz	a5,2005ba28 <__reserved_get_from_poll+0x7c>
-2005ba1e:	00092783          	lw	a5,0(s2)
-2005ba22:	0785                	c.addi	a5,1
-2005ba24:	00f92023          	sw	a5,0(s2)
-2005ba28:	00092703          	lw	a4,0(s2)
-2005ba2c:	0009a783          	lw	a5,0(s3)
-2005ba30:	97ba                	c.add	a5,a4
-2005ba32:	000a2703          	lw	a4,0(s4)
-2005ba36:	00f77463          	bgeu	a4,a5,2005ba3e <__reserved_get_from_poll+0x92>
-2005ba3a:	00fa2023          	sw	a5,0(s4)
-2005ba3e:	50b2                	c.lwsp	ra,44(sp)
-2005ba40:	5422                	c.lwsp	s0,40(sp)
-2005ba42:	5492                	c.lwsp	s1,36(sp)
-2005ba44:	5902                	c.lwsp	s2,32(sp)
-2005ba46:	49f2                	c.lwsp	s3,28(sp)
-2005ba48:	4a62                	c.lwsp	s4,24(sp)
-2005ba4a:	4ad2                	c.lwsp	s5,20(sp)
-2005ba4c:	4bb2                	c.lwsp	s7,12(sp)
-2005ba4e:	855a                	c.mv	a0,s6
-2005ba50:	4b42                	c.lwsp	s6,16(sp)
-2005ba52:	6145                	c.addi16sp	sp,48
-2005ba54:	8082                	c.jr	ra
-2005ba56:	4789                	c.li	a5,2
-2005ba58:	02f51d63          	bne	a0,a5,2005ba92 <__reserved_get_from_poll+0xe6>
-2005ba5c:	f1418b93          	addi	s7,gp,-236 # 2006687c <sema_pool_init_flag>
-2005ba60:	000ba783          	lw	a5,0(s7)
-2005ba64:	fa8781e3          	beq	a5,s0,2005ba06 <__reserved_get_from_poll+0x5a>
-2005ba68:	4601                	c.li	a2,0
-2005ba6a:	4581                	c.li	a1,0
-2005ba6c:	5b418513          	addi	a0,gp,1460 # 20066f1c <mutex_pool>
-2005ba70:	dffae097          	auipc	ra,0xdffae
-2005ba74:	05e080e7          	jalr	ra,94(ra) # 9ace <__wrap_memset>
-2005ba78:	f001a423          	sw	zero,-248(gp) # 20066870 <sema_buf_used_num>
-2005ba7c:	f3018513          	addi	a0,gp,-208 # 20066898 <wrapper_sema_buf_list>
-2005ba80:	f001a823          	sw	zero,-240(gp) # 20066878 <sema_max_buf_used_num>
-2005ba84:	c108                	c.sw	a0,0(a0)
-2005ba86:	c148                	c.sw	a0,4(a0)
-2005ba88:	f001a623          	sw	zero,-244(gp) # 20066874 <sema_dynamic_num>
-2005ba8c:	008ba023          	sw	s0,0(s7)
-2005ba90:	bf9d                	c.j	2005ba06 <__reserved_get_from_poll+0x5a>
-2005ba92:	f2418b93          	addi	s7,gp,-220 # 2006688c <timer_pool_init_flag>
-2005ba96:	000ba783          	lw	a5,0(s7)
-2005ba9a:	f68786e3          	beq	a5,s0,2005ba06 <__reserved_get_from_poll+0x5a>
-2005ba9e:	4601                	c.li	a2,0
-2005baa0:	4581                	c.li	a1,0
-2005baa2:	5b418513          	addi	a0,gp,1460 # 20066f1c <mutex_pool>
-2005baa6:	dffae097          	auipc	ra,0xdffae
-2005baaa:	028080e7          	jalr	ra,40(ra) # 9ace <__wrap_memset>
-2005baae:	f001ac23          	sw	zero,-232(gp) # 20066880 <timer_buf_used_num>
-2005bab2:	f3818513          	addi	a0,gp,-200 # 200668a0 <wrapper_timer_buf_list>
-2005bab6:	f201a023          	sw	zero,-224(gp) # 20066888 <timer_max_buf_used_num>
-2005baba:	c108                	c.sw	a0,0(a0)
-2005babc:	c148                	c.sw	a0,4(a0)
-2005babe:	f001ae23          	sw	zero,-228(gp) # 20066884 <timer_dynamic_num>
-2005bac2:	b7e9                	c.j	2005ba8c <__reserved_get_from_poll+0xe0>
-2005bac4:	405c                	c.lw	a5,4(s0)
-2005bac6:	4018                	c.lw	a4,0(s0)
-2005bac8:	00840b13          	addi	s6,s0,8
-2005bacc:	c35c                	c.sw	a5,4(a4)
-2005bace:	c398                	c.sw	a4,0(a5)
-2005bad0:	c000                	c.sw	s0,0(s0)
-2005bad2:	c040                	c.sw	s0,4(s0)
-2005bad4:	0009a783          	lw	a5,0(s3)
-2005bad8:	0785                	c.addi	a5,1
-2005bada:	00f9a023          	sw	a5,0(s3)
-2005bade:	be9ff0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-2005bae2:	57e1                	c.li	a5,-8
-2005bae4:	f2f40ae3          	beq	s0,a5,2005ba18 <__reserved_get_from_poll+0x6c>
-2005bae8:	478d                	c.li	a5,3
-2005baea:	05000613          	addi	a2,zero,80
-2005baee:	00f49463          	bne	s1,a5,2005baf6 <__reserved_get_from_poll+0x14a>
-2005baf2:	02c00613          	addi	a2,zero,44
-2005baf6:	4581                	c.li	a1,0
-2005baf8:	855a                	c.mv	a0,s6
-2005bafa:	dffae097          	auipc	ra,0xdffae
-2005bafe:	fd4080e7          	jalr	ra,-44(ra) # 9ace <__wrap_memset>
-2005bb02:	b71d                	c.j	2005ba28 <__reserved_get_from_poll+0x7c>
+2005b9b2 <__reserved_get_from_poll>:
+2005b9b2:	7179                	c.addi16sp	sp,-48
+2005b9b4:	d226                	c.swsp	s1,36(sp)
+2005b9b6:	d04a                	c.swsp	s2,32(sp)
+2005b9b8:	ce4e                	c.swsp	s3,28(sp)
+2005b9ba:	cc52                	c.swsp	s4,24(sp)
+2005b9bc:	ca56                	c.swsp	s5,20(sp)
+2005b9be:	c85a                	c.swsp	s6,16(sp)
+2005b9c0:	d606                	c.swsp	ra,44(sp)
+2005b9c2:	d422                	c.swsp	s0,40(sp)
+2005b9c4:	c65e                	c.swsp	s7,12(sp)
+2005b9c6:	8a3e                	c.mv	s4,a5
+2005b9c8:	421c                	c.lw	a5,0(a2)
+2005b9ca:	84aa                	c.mv	s1,a0
+2005b9cc:	8b2e                	c.mv	s6,a1
+2005b9ce:	8ab2                	c.mv	s5,a2
+2005b9d0:	8936                	c.mv	s2,a3
+2005b9d2:	89ba                	c.mv	s3,a4
+2005b9d4:	ef85                	c.bnez	a5,2005ba0c <__reserved_get_from_poll+0x5a>
+2005b9d6:	4405                	c.li	s0,1
+2005b9d8:	08851263          	bne	a0,s0,2005ba5c <__reserved_get_from_poll+0xaa>
+2005b9dc:	f0418413          	addi	s0,gp,-252 # 2006688c <mutex_pool_init_flag>
+2005b9e0:	401c                	c.lw	a5,0(s0)
+2005b9e2:	02a78563          	beq	a5,a0,2005ba0c <__reserved_get_from_poll+0x5a>
+2005b9e6:	4601                	c.li	a2,0
+2005b9e8:	4581                	c.li	a1,0
+2005b9ea:	5d818513          	addi	a0,gp,1496 # 20066f60 <xISRStack>
+2005b9ee:	dffae097          	auipc	ra,0xdffae
+2005b9f2:	0e0080e7          	jalr	ra,224(ra) # 9ace <__wrap_memset>
+2005b9f6:	ee01ac23          	sw	zero,-264(gp) # 20066880 <mutex_buf_used_num>
+2005b9fa:	f2818513          	addi	a0,gp,-216 # 200668b0 <wrapper_mutex_buf_list>
+2005b9fe:	f001a023          	sw	zero,-256(gp) # 20066888 <mutex_max_buf_used_num>
+2005ba02:	c108                	c.sw	a0,0(a0)
+2005ba04:	c148                	c.sw	a0,4(a0)
+2005ba06:	ee01ae23          	sw	zero,-260(gp) # 20066884 <mutex_dynamic_num>
+2005ba0a:	c004                	c.sw	s1,0(s0)
+2005ba0c:	c9dff0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+2005ba10:	000b2403          	lw	s0,0(s6)
+2005ba14:	0a8b1b63          	bne	s6,s0,2005baca <__reserved_get_from_poll+0x118>
+2005ba18:	cb5ff0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+2005ba1c:	4b01                	c.li	s6,0
+2005ba1e:	000aa783          	lw	a5,0(s5)
+2005ba22:	c791                	c.beqz	a5,2005ba2e <__reserved_get_from_poll+0x7c>
+2005ba24:	00092783          	lw	a5,0(s2)
+2005ba28:	0785                	c.addi	a5,1
+2005ba2a:	00f92023          	sw	a5,0(s2)
+2005ba2e:	00092703          	lw	a4,0(s2)
+2005ba32:	0009a783          	lw	a5,0(s3)
+2005ba36:	97ba                	c.add	a5,a4
+2005ba38:	000a2703          	lw	a4,0(s4)
+2005ba3c:	00f77463          	bgeu	a4,a5,2005ba44 <__reserved_get_from_poll+0x92>
+2005ba40:	00fa2023          	sw	a5,0(s4)
+2005ba44:	50b2                	c.lwsp	ra,44(sp)
+2005ba46:	5422                	c.lwsp	s0,40(sp)
+2005ba48:	5492                	c.lwsp	s1,36(sp)
+2005ba4a:	5902                	c.lwsp	s2,32(sp)
+2005ba4c:	49f2                	c.lwsp	s3,28(sp)
+2005ba4e:	4a62                	c.lwsp	s4,24(sp)
+2005ba50:	4ad2                	c.lwsp	s5,20(sp)
+2005ba52:	4bb2                	c.lwsp	s7,12(sp)
+2005ba54:	855a                	c.mv	a0,s6
+2005ba56:	4b42                	c.lwsp	s6,16(sp)
+2005ba58:	6145                	c.addi16sp	sp,48
+2005ba5a:	8082                	c.jr	ra
+2005ba5c:	4789                	c.li	a5,2
+2005ba5e:	02f51d63          	bne	a0,a5,2005ba98 <__reserved_get_from_poll+0xe6>
+2005ba62:	f1418b93          	addi	s7,gp,-236 # 2006689c <sema_pool_init_flag>
+2005ba66:	000ba783          	lw	a5,0(s7)
+2005ba6a:	fa8781e3          	beq	a5,s0,2005ba0c <__reserved_get_from_poll+0x5a>
+2005ba6e:	4601                	c.li	a2,0
+2005ba70:	4581                	c.li	a1,0
+2005ba72:	5d818513          	addi	a0,gp,1496 # 20066f60 <xISRStack>
+2005ba76:	dffae097          	auipc	ra,0xdffae
+2005ba7a:	058080e7          	jalr	ra,88(ra) # 9ace <__wrap_memset>
+2005ba7e:	f001a423          	sw	zero,-248(gp) # 20066890 <sema_buf_used_num>
+2005ba82:	f3018513          	addi	a0,gp,-208 # 200668b8 <wrapper_sema_buf_list>
+2005ba86:	f001a823          	sw	zero,-240(gp) # 20066898 <sema_max_buf_used_num>
+2005ba8a:	c108                	c.sw	a0,0(a0)
+2005ba8c:	c148                	c.sw	a0,4(a0)
+2005ba8e:	f001a623          	sw	zero,-244(gp) # 20066894 <sema_dynamic_num>
+2005ba92:	008ba023          	sw	s0,0(s7)
+2005ba96:	bf9d                	c.j	2005ba0c <__reserved_get_from_poll+0x5a>
+2005ba98:	f2418b93          	addi	s7,gp,-220 # 200668ac <timer_pool_init_flag>
+2005ba9c:	000ba783          	lw	a5,0(s7)
+2005baa0:	f68786e3          	beq	a5,s0,2005ba0c <__reserved_get_from_poll+0x5a>
+2005baa4:	4601                	c.li	a2,0
+2005baa6:	4581                	c.li	a1,0
+2005baa8:	5d818513          	addi	a0,gp,1496 # 20066f60 <xISRStack>
+2005baac:	dffae097          	auipc	ra,0xdffae
+2005bab0:	022080e7          	jalr	ra,34(ra) # 9ace <__wrap_memset>
+2005bab4:	f001ac23          	sw	zero,-232(gp) # 200668a0 <timer_buf_used_num>
+2005bab8:	f3818513          	addi	a0,gp,-200 # 200668c0 <wrapper_timer_buf_list>
+2005babc:	f201a023          	sw	zero,-224(gp) # 200668a8 <timer_max_buf_used_num>
+2005bac0:	c108                	c.sw	a0,0(a0)
+2005bac2:	c148                	c.sw	a0,4(a0)
+2005bac4:	f001ae23          	sw	zero,-228(gp) # 200668a4 <timer_dynamic_num>
+2005bac8:	b7e9                	c.j	2005ba92 <__reserved_get_from_poll+0xe0>
+2005baca:	405c                	c.lw	a5,4(s0)
+2005bacc:	4018                	c.lw	a4,0(s0)
+2005bace:	00840b13          	addi	s6,s0,8
+2005bad2:	c35c                	c.sw	a5,4(a4)
+2005bad4:	c398                	c.sw	a4,0(a5)
+2005bad6:	c000                	c.sw	s0,0(s0)
+2005bad8:	c040                	c.sw	s0,4(s0)
+2005bada:	0009a783          	lw	a5,0(s3)
+2005bade:	0785                	c.addi	a5,1
+2005bae0:	00f9a023          	sw	a5,0(s3)
+2005bae4:	be9ff0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+2005bae8:	57e1                	c.li	a5,-8
+2005baea:	f2f40ae3          	beq	s0,a5,2005ba1e <__reserved_get_from_poll+0x6c>
+2005baee:	478d                	c.li	a5,3
+2005baf0:	05000613          	addi	a2,zero,80
+2005baf4:	00f49463          	bne	s1,a5,2005bafc <__reserved_get_from_poll+0x14a>
+2005baf8:	02c00613          	addi	a2,zero,44
+2005bafc:	4581                	c.li	a1,0
+2005bafe:	855a                	c.mv	a0,s6
+2005bb00:	dffae097          	auipc	ra,0xdffae
+2005bb04:	fce080e7          	jalr	ra,-50(ra) # 9ace <__wrap_memset>
+2005bb08:	b71d                	c.j	2005ba2e <__reserved_get_from_poll+0x7c>
 
-2005bb04 <__reserved_get_mutex_from_poll>:
-2005bb04:	f0018793          	addi	a5,gp,-256 # 20066868 <mutex_max_buf_used_num>
-2005bb08:	ef818713          	addi	a4,gp,-264 # 20066860 <mutex_buf_used_num>
-2005bb0c:	efc18693          	addi	a3,gp,-260 # 20066864 <mutex_dynamic_num>
-2005bb10:	f0418613          	addi	a2,gp,-252 # 2006686c <mutex_pool_init_flag>
-2005bb14:	f2818593          	addi	a1,gp,-216 # 20066890 <wrapper_mutex_buf_list>
-2005bb18:	4505                	c.li	a0,1
-2005bb1a:	e93ff06f          	jal	zero,2005b9ac <__reserved_get_from_poll>
+2005bb0a <__reserved_get_mutex_from_poll>:
+2005bb0a:	f0018793          	addi	a5,gp,-256 # 20066888 <mutex_max_buf_used_num>
+2005bb0e:	ef818713          	addi	a4,gp,-264 # 20066880 <mutex_buf_used_num>
+2005bb12:	efc18693          	addi	a3,gp,-260 # 20066884 <mutex_dynamic_num>
+2005bb16:	f0418613          	addi	a2,gp,-252 # 2006688c <mutex_pool_init_flag>
+2005bb1a:	f2818593          	addi	a1,gp,-216 # 200668b0 <wrapper_mutex_buf_list>
+2005bb1e:	4505                	c.li	a0,1
+2005bb20:	e93ff06f          	jal	zero,2005b9b2 <__reserved_get_from_poll>
 
-2005bb1e <__reserved_release_mutex_to_poll>:
-2005bb1e:	1141                	c.addi	sp,-16
-2005bb20:	c606                	c.swsp	ra,12(sp)
-2005bb22:	b81ff0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-2005bb26:	efc18793          	addi	a5,gp,-260 # 20066864 <mutex_dynamic_num>
-2005bb2a:	4398                	c.lw	a4,0(a5)
-2005bb2c:	177d                	c.addi	a4,-1
-2005bb2e:	c398                	c.sw	a4,0(a5)
-2005bb30:	40b2                	c.lwsp	ra,12(sp)
-2005bb32:	0141                	c.addi	sp,16
-2005bb34:	b93ff06f          	jal	zero,2005b6c6 <rtos_critical_exit>
+2005bb24 <__reserved_release_mutex_to_poll>:
+2005bb24:	1141                	c.addi	sp,-16
+2005bb26:	c606                	c.swsp	ra,12(sp)
+2005bb28:	b81ff0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+2005bb2c:	efc18793          	addi	a5,gp,-260 # 20066884 <mutex_dynamic_num>
+2005bb30:	4398                	c.lw	a4,0(a5)
+2005bb32:	177d                	c.addi	a4,-1
+2005bb34:	c398                	c.sw	a4,0(a5)
+2005bb36:	40b2                	c.lwsp	ra,12(sp)
+2005bb38:	0141                	c.addi	sp,16
+2005bb3a:	b93ff06f          	jal	zero,2005b6cc <rtos_critical_exit>
 
-2005bb38 <__reserved_get_sema_from_poll>:
-2005bb38:	f1018793          	addi	a5,gp,-240 # 20066878 <sema_max_buf_used_num>
-2005bb3c:	f0818713          	addi	a4,gp,-248 # 20066870 <sema_buf_used_num>
-2005bb40:	f0c18693          	addi	a3,gp,-244 # 20066874 <sema_dynamic_num>
-2005bb44:	f1418613          	addi	a2,gp,-236 # 2006687c <sema_pool_init_flag>
-2005bb48:	f3018593          	addi	a1,gp,-208 # 20066898 <wrapper_sema_buf_list>
-2005bb4c:	4509                	c.li	a0,2
-2005bb4e:	e5fff06f          	jal	zero,2005b9ac <__reserved_get_from_poll>
+2005bb3e <__reserved_get_sema_from_poll>:
+2005bb3e:	f1018793          	addi	a5,gp,-240 # 20066898 <sema_max_buf_used_num>
+2005bb42:	f0818713          	addi	a4,gp,-248 # 20066890 <sema_buf_used_num>
+2005bb46:	f0c18693          	addi	a3,gp,-244 # 20066894 <sema_dynamic_num>
+2005bb4a:	f1418613          	addi	a2,gp,-236 # 2006689c <sema_pool_init_flag>
+2005bb4e:	f3018593          	addi	a1,gp,-208 # 200668b8 <wrapper_sema_buf_list>
+2005bb52:	4509                	c.li	a0,2
+2005bb54:	e5fff06f          	jal	zero,2005b9b2 <__reserved_get_from_poll>
 
-2005bb52 <__reserved_get_timer_from_poll>:
-2005bb52:	f2018793          	addi	a5,gp,-224 # 20066888 <timer_max_buf_used_num>
-2005bb56:	f1818713          	addi	a4,gp,-232 # 20066880 <timer_buf_used_num>
-2005bb5a:	f1c18693          	addi	a3,gp,-228 # 20066884 <timer_dynamic_num>
-2005bb5e:	f2418613          	addi	a2,gp,-220 # 2006688c <timer_pool_init_flag>
-2005bb62:	f3818593          	addi	a1,gp,-200 # 200668a0 <wrapper_timer_buf_list>
-2005bb66:	450d                	c.li	a0,3
-2005bb68:	e45ff06f          	jal	zero,2005b9ac <__reserved_get_from_poll>
+2005bb58 <__reserved_get_timer_from_poll>:
+2005bb58:	f2018793          	addi	a5,gp,-224 # 200668a8 <timer_max_buf_used_num>
+2005bb5c:	f1818713          	addi	a4,gp,-232 # 200668a0 <timer_buf_used_num>
+2005bb60:	f1c18693          	addi	a3,gp,-228 # 200668a4 <timer_dynamic_num>
+2005bb64:	f2418613          	addi	a2,gp,-220 # 200668ac <timer_pool_init_flag>
+2005bb68:	f3818593          	addi	a1,gp,-200 # 200668c0 <wrapper_timer_buf_list>
+2005bb6c:	450d                	c.li	a0,3
+2005bb6e:	e45ff06f          	jal	zero,2005b9b2 <__reserved_get_from_poll>
 
-2005bb6c <__reserved_release_timer_to_poll>:
-2005bb6c:	1141                	c.addi	sp,-16
-2005bb6e:	c606                	c.swsp	ra,12(sp)
-2005bb70:	b33ff0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-2005bb74:	f1c18793          	addi	a5,gp,-228 # 20066884 <timer_dynamic_num>
-2005bb78:	4398                	c.lw	a4,0(a5)
-2005bb7a:	177d                	c.addi	a4,-1
-2005bb7c:	c398                	c.sw	a4,0(a5)
-2005bb7e:	40b2                	c.lwsp	ra,12(sp)
-2005bb80:	0141                	c.addi	sp,16
-2005bb82:	b45ff06f          	jal	zero,2005b6c6 <rtos_critical_exit>
+2005bb72 <__reserved_release_timer_to_poll>:
+2005bb72:	1141                	c.addi	sp,-16
+2005bb74:	c606                	c.swsp	ra,12(sp)
+2005bb76:	b33ff0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+2005bb7a:	f1c18793          	addi	a5,gp,-228 # 200668a4 <timer_dynamic_num>
+2005bb7e:	4398                	c.lw	a4,0(a5)
+2005bb80:	177d                	c.addi	a4,-1
+2005bb82:	c398                	c.sw	a4,0(a5)
+2005bb84:	40b2                	c.lwsp	ra,12(sp)
+2005bb86:	0141                	c.addi	sp,16
+2005bb88:	b45ff06f          	jal	zero,2005b6cc <rtos_critical_exit>
 
-2005bb86 <rtos_sched_start>:
-2005bb86:	1141                	c.addi	sp,-16
-2005bb88:	c606                	c.swsp	ra,12(sp)
-2005bb8a:	208020ef          	jal	ra,2005dd92 <vTaskStartScheduler>
-2005bb8e:	40b2                	c.lwsp	ra,12(sp)
-2005bb90:	4501                	c.li	a0,0
-2005bb92:	0141                	c.addi	sp,16
-2005bb94:	8082                	c.jr	ra
+2005bb8c <rtos_sched_start>:
+2005bb8c:	1141                	c.addi	sp,-16
+2005bb8e:	c606                	c.swsp	ra,12(sp)
+2005bb90:	202020ef          	jal	ra,2005dd92 <vTaskStartScheduler>
+2005bb94:	40b2                	c.lwsp	ra,12(sp)
+2005bb96:	4501                	c.li	a0,0
+2005bb98:	0141                	c.addi	sp,16
+2005bb9a:	8082                	c.jr	ra
 
-2005bb96 <rtos_sched_get_state>:
-2005bb96:	1141                	c.addi	sp,-16
-2005bb98:	c606                	c.swsp	ra,12(sp)
-2005bb9a:	69f010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
-2005bb9e:	4785                	c.li	a5,1
-2005bba0:	00f50b63          	beq	a0,a5,2005bbb6 <rtos_sched_get_state+0x20>
-2005bba4:	695010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
-2005bba8:	c519                	c.beqz	a0,2005bbb6 <rtos_sched_get_state+0x20>
+2005bb9c <rtos_sched_get_state>:
+2005bb9c:	1141                	c.addi	sp,-16
+2005bb9e:	c606                	c.swsp	ra,12(sp)
+2005bba0:	699010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
+2005bba4:	4785                	c.li	a5,1
+2005bba6:	00f50b63          	beq	a0,a5,2005bbbc <rtos_sched_get_state+0x20>
 2005bbaa:	68f010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
-2005bbae:	4789                	c.li	a5,2
-2005bbb0:	00f50363          	beq	a0,a5,2005bbb6 <rtos_sched_get_state+0x20>
-2005bbb4:	557d                	c.li	a0,-1
-2005bbb6:	40b2                	c.lwsp	ra,12(sp)
-2005bbb8:	0141                	c.addi	sp,16
-2005bbba:	8082                	c.jr	ra
+2005bbae:	c519                	c.beqz	a0,2005bbbc <rtos_sched_get_state+0x20>
+2005bbb0:	689010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
+2005bbb4:	4789                	c.li	a5,2
+2005bbb6:	00f50363          	beq	a0,a5,2005bbbc <rtos_sched_get_state+0x20>
+2005bbba:	557d                	c.li	a0,-1
+2005bbbc:	40b2                	c.lwsp	ra,12(sp)
+2005bbbe:	0141                	c.addi	sp,16
+2005bbc0:	8082                	c.jr	ra
 
-2005bbbc <rtos_task_create>:
-2005bbbc:	882a                	c.mv	a6,a0
-2005bbbe:	8532                	c.mv	a0,a2
-2005bbc0:	863a                	c.mv	a2,a4
-2005bbc2:	1141                	c.addi	sp,-16
-2005bbc4:	873e                	c.mv	a4,a5
-2005bbc6:	8209                	c.srli	a2,0x2
-2005bbc8:	87c2                	c.mv	a5,a6
-2005bbca:	c606                	c.swsp	ra,12(sp)
-2005bbcc:	22e020ef          	jal	ra,2005ddfa <xTaskCreate>
-2005bbd0:	40b2                	c.lwsp	ra,12(sp)
-2005bbd2:	157d                	c.addi	a0,-1
-2005bbd4:	00a03533          	sltu	a0,zero,a0
-2005bbd8:	40a00533          	sub	a0,zero,a0
-2005bbdc:	0141                	c.addi	sp,16
-2005bbde:	8082                	c.jr	ra
+2005bbc2 <rtos_task_create>:
+2005bbc2:	882a                	c.mv	a6,a0
+2005bbc4:	8532                	c.mv	a0,a2
+2005bbc6:	863a                	c.mv	a2,a4
+2005bbc8:	1141                	c.addi	sp,-16
+2005bbca:	873e                	c.mv	a4,a5
+2005bbcc:	8209                	c.srli	a2,0x2
+2005bbce:	87c2                	c.mv	a5,a6
+2005bbd0:	c606                	c.swsp	ra,12(sp)
+2005bbd2:	228020ef          	jal	ra,2005ddfa <xTaskCreate>
+2005bbd6:	40b2                	c.lwsp	ra,12(sp)
+2005bbd8:	157d                	c.addi	a0,-1
+2005bbda:	00a03533          	sltu	a0,zero,a0
+2005bbde:	40a00533          	sub	a0,zero,a0
+2005bbe2:	0141                	c.addi	sp,16
+2005bbe4:	8082                	c.jr	ra
 
-2005bbe0 <rtos_task_delete>:
-2005bbe0:	1141                	c.addi	sp,-16
-2005bbe2:	c606                	c.swsp	ra,12(sp)
-2005bbe4:	28e020ef          	jal	ra,2005de72 <vTaskDelete>
-2005bbe8:	40b2                	c.lwsp	ra,12(sp)
-2005bbea:	4501                	c.li	a0,0
-2005bbec:	0141                	c.addi	sp,16
-2005bbee:	8082                	c.jr	ra
+2005bbe6 <rtos_task_delete>:
+2005bbe6:	1141                	c.addi	sp,-16
+2005bbe8:	c606                	c.swsp	ra,12(sp)
+2005bbea:	288020ef          	jal	ra,2005de72 <vTaskDelete>
+2005bbee:	40b2                	c.lwsp	ra,12(sp)
+2005bbf0:	4501                	c.li	a0,0
+2005bbf2:	0141                	c.addi	sp,16
+2005bbf4:	8082                	c.jr	ra
 
-2005bbf0 <rtos_create_secure_context>:
-2005bbf0:	8082                	c.jr	ra
+2005bbf6 <rtos_create_secure_context>:
+2005bbf6:	8082                	c.jr	ra
 
-2005bbf2 <rtos_time_delay_ms>:
-2005bbf2:	1141                	c.addi	sp,-16
-2005bbf4:	c422                	c.swsp	s0,8(sp)
-2005bbf6:	c606                	c.swsp	ra,12(sp)
-2005bbf8:	842a                	c.mv	s0,a0
-2005bbfa:	bfdfd0ef          	jal	ra,200597f6 <pmu_yield_os_check>
-2005bbfe:	cd19                	c.beqz	a0,2005bc1c <rtos_time_delay_ms+0x2a>
-2005bc00:	639010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
-2005bc04:	4789                	c.li	a5,2
-2005bc06:	00f51b63          	bne	a0,a5,2005bc1c <rtos_time_delay_ms+0x2a>
-2005bc0a:	a87ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005bc0e:	e519                	c.bnez	a0,2005bc1c <rtos_time_delay_ms+0x2a>
-2005bc10:	8522                	c.mv	a0,s0
-2005bc12:	4422                	c.lwsp	s0,8(sp)
-2005bc14:	40b2                	c.lwsp	ra,12(sp)
-2005bc16:	0141                	c.addi	sp,16
-2005bc18:	4740206f          	jal	zero,2005e08c <vTaskDelay>
-2005bc1c:	8522                	c.mv	a0,s0
-2005bc1e:	4422                	c.lwsp	s0,8(sp)
-2005bc20:	40b2                	c.lwsp	ra,12(sp)
-2005bc22:	0141                	c.addi	sp,16
-2005bc24:	dffa6317          	auipc	t1,0xdffa6
-2005bc28:	6f630067          	jalr	zero,1782(t1) # 231a <DelayMs>
+2005bbf8 <rtos_time_delay_ms>:
+2005bbf8:	1141                	c.addi	sp,-16
+2005bbfa:	c422                	c.swsp	s0,8(sp)
+2005bbfc:	c606                	c.swsp	ra,12(sp)
+2005bbfe:	842a                	c.mv	s0,a0
+2005bc00:	bf7fd0ef          	jal	ra,200597f6 <pmu_yield_os_check>
+2005bc04:	cd19                	c.beqz	a0,2005bc22 <rtos_time_delay_ms+0x2a>
+2005bc06:	633010ef          	jal	ra,2005da38 <xTaskGetSchedulerState>
+2005bc0a:	4789                	c.li	a5,2
+2005bc0c:	00f51b63          	bne	a0,a5,2005bc22 <rtos_time_delay_ms+0x2a>
+2005bc10:	a87ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005bc14:	e519                	c.bnez	a0,2005bc22 <rtos_time_delay_ms+0x2a>
+2005bc16:	8522                	c.mv	a0,s0
+2005bc18:	4422                	c.lwsp	s0,8(sp)
+2005bc1a:	40b2                	c.lwsp	ra,12(sp)
+2005bc1c:	0141                	c.addi	sp,16
+2005bc1e:	46e0206f          	jal	zero,2005e08c <vTaskDelay>
+2005bc22:	8522                	c.mv	a0,s0
+2005bc24:	4422                	c.lwsp	s0,8(sp)
+2005bc26:	40b2                	c.lwsp	ra,12(sp)
+2005bc28:	0141                	c.addi	sp,16
+2005bc2a:	dffa6317          	auipc	t1,0xdffa6
+2005bc2e:	6f030067          	jalr	zero,1776(t1) # 231a <DelayMs>
 
-2005bc2c <rtos_time_get_current_system_time_ms>:
-2005bc2c:	1141                	c.addi	sp,-16
-2005bc2e:	c606                	c.swsp	ra,12(sp)
-2005bc30:	a61ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005bc34:	c509                	c.beqz	a0,2005bc3e <rtos_time_get_current_system_time_ms+0x12>
-2005bc36:	40b2                	c.lwsp	ra,12(sp)
-2005bc38:	0141                	c.addi	sp,16
-2005bc3a:	2c70106f          	jal	zero,2005d700 <xTaskGetTickCountFromISR>
-2005bc3e:	bb9fd0ef          	jal	ra,200597f6 <pmu_yield_os_check>
-2005bc42:	d975                	c.beqz	a0,2005bc36 <rtos_time_get_current_system_time_ms+0xa>
-2005bc44:	40b2                	c.lwsp	ra,12(sp)
-2005bc46:	0141                	c.addi	sp,16
-2005bc48:	6ea0206f          	jal	zero,2005e332 <xTaskGetTickCount>
+2005bc32 <rtos_time_get_current_system_time_ms>:
+2005bc32:	1141                	c.addi	sp,-16
+2005bc34:	c606                	c.swsp	ra,12(sp)
+2005bc36:	a61ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005bc3a:	c509                	c.beqz	a0,2005bc44 <rtos_time_get_current_system_time_ms+0x12>
+2005bc3c:	40b2                	c.lwsp	ra,12(sp)
+2005bc3e:	0141                	c.addi	sp,16
+2005bc40:	2c10106f          	jal	zero,2005d700 <xTaskGetTickCountFromISR>
+2005bc44:	bb3fd0ef          	jal	ra,200597f6 <pmu_yield_os_check>
+2005bc48:	d975                	c.beqz	a0,2005bc3c <rtos_time_get_current_system_time_ms+0xa>
+2005bc4a:	40b2                	c.lwsp	ra,12(sp)
+2005bc4c:	0141                	c.addi	sp,16
+2005bc4e:	6e40206f          	jal	zero,2005e332 <xTaskGetTickCount>
 
-2005bc4c <rtos_timer_create>:
-2005bc4c:	1141                	c.addi	sp,-16
-2005bc4e:	c422                	c.swsp	s0,8(sp)
-2005bc50:	c606                	c.swsp	ra,12(sp)
-2005bc52:	842a                	c.mv	s0,a0
-2005bc54:	587d                	c.li	a6,-1
-2005bc56:	c105                	c.beqz	a0,2005bc76 <rtos_timer_create+0x2a>
-2005bc58:	88b2                	c.mv	a7,a2
+2005bc52 <rtos_timer_create>:
+2005bc52:	1141                	c.addi	sp,-16
+2005bc54:	c422                	c.swsp	s0,8(sp)
+2005bc56:	c606                	c.swsp	ra,12(sp)
+2005bc58:	842a                	c.mv	s0,a0
 2005bc5a:	587d                	c.li	a6,-1
-2005bc5c:	863a                	c.mv	a2,a4
-2005bc5e:	873e                	c.mv	a4,a5
-2005bc60:	cb99                	c.beqz	a5,2005bc76 <rtos_timer_create+0x2a>
-2005bc62:	852e                	c.mv	a0,a1
-2005bc64:	85b6                	c.mv	a1,a3
-2005bc66:	86c6                	c.mv	a3,a7
-2005bc68:	111020ef          	jal	ra,2005e578 <xTimerCreate>
-2005bc6c:	c008                	c.sw	a0,0(s0)
-2005bc6e:	00153513          	sltiu	a0,a0,1
-2005bc72:	40a00833          	sub	a6,zero,a0
-2005bc76:	40b2                	c.lwsp	ra,12(sp)
-2005bc78:	4422                	c.lwsp	s0,8(sp)
-2005bc7a:	8542                	c.mv	a0,a6
-2005bc7c:	0141                	c.addi	sp,16
-2005bc7e:	8082                	c.jr	ra
+2005bc5c:	c105                	c.beqz	a0,2005bc7c <rtos_timer_create+0x2a>
+2005bc5e:	88b2                	c.mv	a7,a2
+2005bc60:	587d                	c.li	a6,-1
+2005bc62:	863a                	c.mv	a2,a4
+2005bc64:	873e                	c.mv	a4,a5
+2005bc66:	cb99                	c.beqz	a5,2005bc7c <rtos_timer_create+0x2a>
+2005bc68:	852e                	c.mv	a0,a1
+2005bc6a:	85b6                	c.mv	a1,a3
+2005bc6c:	86c6                	c.mv	a3,a7
+2005bc6e:	10b020ef          	jal	ra,2005e578 <xTimerCreate>
+2005bc72:	c008                	c.sw	a0,0(s0)
+2005bc74:	00153513          	sltiu	a0,a0,1
+2005bc78:	40a00833          	sub	a6,zero,a0
+2005bc7c:	40b2                	c.lwsp	ra,12(sp)
+2005bc7e:	4422                	c.lwsp	s0,8(sp)
+2005bc80:	8542                	c.mv	a0,a6
+2005bc82:	0141                	c.addi	sp,16
+2005bc84:	8082                	c.jr	ra
 
-2005bc80 <rtos_timer_create_static>:
-2005bc80:	1101                	c.addi	sp,-32
-2005bc82:	cc22                	c.swsp	s0,24(sp)
-2005bc84:	ca26                	c.swsp	s1,20(sp)
-2005bc86:	c84a                	c.swsp	s2,16(sp)
-2005bc88:	84ae                	c.mv	s1,a1
-2005bc8a:	c632                	c.swsp	a2,12(sp)
-2005bc8c:	893a                	c.mv	s2,a4
-2005bc8e:	ce06                	c.swsp	ra,28(sp)
-2005bc90:	842a                	c.mv	s0,a0
-2005bc92:	c436                	c.swsp	a3,8(sp)
-2005bc94:	c23e                	c.swsp	a5,4(sp)
-2005bc96:	ebdff0ef          	jal	ra,2005bb52 <__reserved_get_timer_from_poll>
-2005bc9a:	4712                	c.lwsp	a4,4(sp)
-2005bc9c:	45a2                	c.lwsp	a1,8(sp)
-2005bc9e:	4632                	c.lwsp	a2,12(sp)
-2005bca0:	ed09                	c.bnez	a0,2005bcba <rtos_timer_create_static+0x3a>
-2005bca2:	8522                	c.mv	a0,s0
-2005bca4:	4462                	c.lwsp	s0,24(sp)
-2005bca6:	40f2                	c.lwsp	ra,28(sp)
-2005bca8:	87ba                	c.mv	a5,a4
-2005bcaa:	86ae                	c.mv	a3,a1
-2005bcac:	874a                	c.mv	a4,s2
-2005bcae:	85a6                	c.mv	a1,s1
-2005bcb0:	4942                	c.lwsp	s2,16(sp)
-2005bcb2:	44d2                	c.lwsp	s1,20(sp)
-2005bcb4:	6105                	c.addi16sp	sp,32
-2005bcb6:	f97ff06f          	jal	zero,2005bc4c <rtos_timer_create>
-2005bcba:	87aa                	c.mv	a5,a0
-2005bcbc:	86b2                	c.mv	a3,a2
-2005bcbe:	8526                	c.mv	a0,s1
-2005bcc0:	864a                	c.mv	a2,s2
-2005bcc2:	11f020ef          	jal	ra,2005e5e0 <xTimerCreateStatic>
-2005bcc6:	c008                	c.sw	a0,0(s0)
-2005bcc8:	40f2                	c.lwsp	ra,28(sp)
-2005bcca:	4462                	c.lwsp	s0,24(sp)
-2005bccc:	00153513          	sltiu	a0,a0,1
-2005bcd0:	44d2                	c.lwsp	s1,20(sp)
-2005bcd2:	4942                	c.lwsp	s2,16(sp)
-2005bcd4:	40a00533          	sub	a0,zero,a0
-2005bcd8:	6105                	c.addi16sp	sp,32
-2005bcda:	8082                	c.jr	ra
+2005bc86 <rtos_timer_create_static>:
+2005bc86:	1101                	c.addi	sp,-32
+2005bc88:	cc22                	c.swsp	s0,24(sp)
+2005bc8a:	ca26                	c.swsp	s1,20(sp)
+2005bc8c:	c84a                	c.swsp	s2,16(sp)
+2005bc8e:	84ae                	c.mv	s1,a1
+2005bc90:	c632                	c.swsp	a2,12(sp)
+2005bc92:	893a                	c.mv	s2,a4
+2005bc94:	ce06                	c.swsp	ra,28(sp)
+2005bc96:	842a                	c.mv	s0,a0
+2005bc98:	c436                	c.swsp	a3,8(sp)
+2005bc9a:	c23e                	c.swsp	a5,4(sp)
+2005bc9c:	ebdff0ef          	jal	ra,2005bb58 <__reserved_get_timer_from_poll>
+2005bca0:	4712                	c.lwsp	a4,4(sp)
+2005bca2:	45a2                	c.lwsp	a1,8(sp)
+2005bca4:	4632                	c.lwsp	a2,12(sp)
+2005bca6:	ed09                	c.bnez	a0,2005bcc0 <rtos_timer_create_static+0x3a>
+2005bca8:	8522                	c.mv	a0,s0
+2005bcaa:	4462                	c.lwsp	s0,24(sp)
+2005bcac:	40f2                	c.lwsp	ra,28(sp)
+2005bcae:	87ba                	c.mv	a5,a4
+2005bcb0:	86ae                	c.mv	a3,a1
+2005bcb2:	874a                	c.mv	a4,s2
+2005bcb4:	85a6                	c.mv	a1,s1
+2005bcb6:	4942                	c.lwsp	s2,16(sp)
+2005bcb8:	44d2                	c.lwsp	s1,20(sp)
+2005bcba:	6105                	c.addi16sp	sp,32
+2005bcbc:	f97ff06f          	jal	zero,2005bc52 <rtos_timer_create>
+2005bcc0:	87aa                	c.mv	a5,a0
+2005bcc2:	86b2                	c.mv	a3,a2
+2005bcc4:	8526                	c.mv	a0,s1
+2005bcc6:	864a                	c.mv	a2,s2
+2005bcc8:	119020ef          	jal	ra,2005e5e0 <xTimerCreateStatic>
+2005bccc:	c008                	c.sw	a0,0(s0)
+2005bcce:	40f2                	c.lwsp	ra,28(sp)
+2005bcd0:	4462                	c.lwsp	s0,24(sp)
+2005bcd2:	00153513          	sltiu	a0,a0,1
+2005bcd6:	44d2                	c.lwsp	s1,20(sp)
+2005bcd8:	4942                	c.lwsp	s2,16(sp)
+2005bcda:	40a00533          	sub	a0,zero,a0
+2005bcde:	6105                	c.addi16sp	sp,32
+2005bce0:	8082                	c.jr	ra
 
-2005bcdc <rtos_timer_delete>:
-2005bcdc:	c10d                	c.beqz	a0,2005bcfe <rtos_timer_delete+0x22>
-2005bcde:	1141                	c.addi	sp,-16
-2005bce0:	872e                	c.mv	a4,a1
-2005bce2:	4681                	c.li	a3,0
-2005bce4:	4601                	c.li	a2,0
-2005bce6:	4595                	c.li	a1,5
-2005bce8:	c606                	c.swsp	ra,12(sp)
-2005bcea:	159020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005bcee:	40b2                	c.lwsp	ra,12(sp)
-2005bcf0:	157d                	c.addi	a0,-1
-2005bcf2:	00a03533          	sltu	a0,zero,a0
-2005bcf6:	40a00533          	sub	a0,zero,a0
-2005bcfa:	0141                	c.addi	sp,16
-2005bcfc:	8082                	c.jr	ra
-2005bcfe:	557d                	c.li	a0,-1
-2005bd00:	8082                	c.jr	ra
+2005bce2 <rtos_timer_delete>:
+2005bce2:	c10d                	c.beqz	a0,2005bd04 <rtos_timer_delete+0x22>
+2005bce4:	1141                	c.addi	sp,-16
+2005bce6:	872e                	c.mv	a4,a1
+2005bce8:	4681                	c.li	a3,0
+2005bcea:	4601                	c.li	a2,0
+2005bcec:	4595                	c.li	a1,5
+2005bcee:	c606                	c.swsp	ra,12(sp)
+2005bcf0:	153020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005bcf4:	40b2                	c.lwsp	ra,12(sp)
+2005bcf6:	157d                	c.addi	a0,-1
+2005bcf8:	00a03533          	sltu	a0,zero,a0
+2005bcfc:	40a00533          	sub	a0,zero,a0
+2005bd00:	0141                	c.addi	sp,16
+2005bd02:	8082                	c.jr	ra
+2005bd04:	557d                	c.li	a0,-1
+2005bd06:	8082                	c.jr	ra
 
-2005bd02 <rtos_timer_delete_static>:
-2005bd02:	1141                	c.addi	sp,-16
-2005bd04:	c422                	c.swsp	s0,8(sp)
-2005bd06:	c226                	c.swsp	s1,4(sp)
-2005bd08:	c606                	c.swsp	ra,12(sp)
-2005bd0a:	842a                	c.mv	s0,a0
-2005bd0c:	84ae                	c.mv	s1,a1
-2005bd0e:	85a6                	c.mv	a1,s1
-2005bd10:	8522                	c.mv	a0,s0
-2005bd12:	fcbff0ef          	jal	ra,2005bcdc <rtos_timer_delete>
-2005bd16:	fd65                	c.bnez	a0,2005bd0e <rtos_timer_delete_static+0xc>
-2005bd18:	8522                	c.mv	a0,s0
-2005bd1a:	e53ff0ef          	jal	ra,2005bb6c <__reserved_release_timer_to_poll>
-2005bd1e:	40b2                	c.lwsp	ra,12(sp)
-2005bd20:	4422                	c.lwsp	s0,8(sp)
-2005bd22:	4492                	c.lwsp	s1,4(sp)
-2005bd24:	4501                	c.li	a0,0
-2005bd26:	0141                	c.addi	sp,16
-2005bd28:	8082                	c.jr	ra
-
-2005bd2a <rtos_timer_start>:
-2005bd2a:	e909                	c.bnez	a0,2005bd3c <rtos_timer_start+0x12>
-2005bd2c:	557d                	c.li	a0,-1
+2005bd08 <rtos_timer_delete_static>:
+2005bd08:	1141                	c.addi	sp,-16
+2005bd0a:	c422                	c.swsp	s0,8(sp)
+2005bd0c:	c226                	c.swsp	s1,4(sp)
+2005bd0e:	c606                	c.swsp	ra,12(sp)
+2005bd10:	842a                	c.mv	s0,a0
+2005bd12:	84ae                	c.mv	s1,a1
+2005bd14:	85a6                	c.mv	a1,s1
+2005bd16:	8522                	c.mv	a0,s0
+2005bd18:	fcbff0ef          	jal	ra,2005bce2 <rtos_timer_delete>
+2005bd1c:	fd65                	c.bnez	a0,2005bd14 <rtos_timer_delete_static+0xc>
+2005bd1e:	8522                	c.mv	a0,s0
+2005bd20:	e53ff0ef          	jal	ra,2005bb72 <__reserved_release_timer_to_poll>
+2005bd24:	40b2                	c.lwsp	ra,12(sp)
+2005bd26:	4422                	c.lwsp	s0,8(sp)
+2005bd28:	4492                	c.lwsp	s1,4(sp)
+2005bd2a:	4501                	c.li	a0,0
+2005bd2c:	0141                	c.addi	sp,16
 2005bd2e:	8082                	c.jr	ra
-2005bd30:	557d                	c.li	a0,-1
-2005bd32:	40f2                	c.lwsp	ra,28(sp)
-2005bd34:	4462                	c.lwsp	s0,24(sp)
-2005bd36:	44d2                	c.lwsp	s1,20(sp)
-2005bd38:	6105                	c.addi16sp	sp,32
-2005bd3a:	8082                	c.jr	ra
-2005bd3c:	1101                	c.addi	sp,-32
-2005bd3e:	cc22                	c.swsp	s0,24(sp)
-2005bd40:	ca26                	c.swsp	s1,20(sp)
-2005bd42:	ce06                	c.swsp	ra,28(sp)
-2005bd44:	842a                	c.mv	s0,a0
-2005bd46:	84ae                	c.mv	s1,a1
-2005bd48:	949ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005bd4c:	c505                	c.beqz	a0,2005bd74 <rtos_timer_start+0x4a>
-2005bd4e:	c602                	c.swsp	zero,12(sp)
-2005bd50:	1b1010ef          	jal	ra,2005d700 <xTaskGetTickCountFromISR>
-2005bd54:	862a                	c.mv	a2,a0
-2005bd56:	4701                	c.li	a4,0
-2005bd58:	0074                	c.addi4spn	a3,sp,12
-2005bd5a:	4599                	c.li	a1,6
-2005bd5c:	8522                	c.mv	a0,s0
-2005bd5e:	0e5020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005bd62:	4785                	c.li	a5,1
-2005bd64:	fcf516e3          	bne	a0,a5,2005bd30 <rtos_timer_start+0x6>
-2005bd68:	4532                	c.lwsp	a0,12(sp)
-2005bd6a:	d561                	c.beqz	a0,2005bd32 <rtos_timer_start+0x8>
-2005bd6c:	2e3010ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005bd70:	4501                	c.li	a0,0
-2005bd72:	b7c1                	c.j	2005bd32 <rtos_timer_start+0x8>
-2005bd74:	5be020ef          	jal	ra,2005e332 <xTaskGetTickCount>
-2005bd78:	862a                	c.mv	a2,a0
-2005bd7a:	8726                	c.mv	a4,s1
-2005bd7c:	4681                	c.li	a3,0
-2005bd7e:	4585                	c.li	a1,1
-2005bd80:	8522                	c.mv	a0,s0
-2005bd82:	0c1020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005bd86:	157d                	c.addi	a0,-1
-2005bd88:	00a03533          	sltu	a0,zero,a0
-2005bd8c:	40a00533          	sub	a0,zero,a0
-2005bd90:	b74d                	c.j	2005bd32 <rtos_timer_start+0x8>
 
-2005bd92 <rtos_timer_stop>:
-2005bd92:	e901                	c.bnez	a0,2005bda2 <rtos_timer_stop+0x10>
-2005bd94:	557d                	c.li	a0,-1
-2005bd96:	8082                	c.jr	ra
-2005bd98:	557d                	c.li	a0,-1
-2005bd9a:	50b2                	c.lwsp	ra,44(sp)
-2005bd9c:	5422                	c.lwsp	s0,40(sp)
-2005bd9e:	6145                	c.addi16sp	sp,48
-2005bda0:	8082                	c.jr	ra
-2005bda2:	7179                	c.addi16sp	sp,-48
-2005bda4:	d422                	c.swsp	s0,40(sp)
-2005bda6:	d606                	c.swsp	ra,44(sp)
-2005bda8:	842a                	c.mv	s0,a0
-2005bdaa:	c62e                	c.swsp	a1,12(sp)
-2005bdac:	8e5ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005bdb0:	4732                	c.lwsp	a4,12(sp)
-2005bdb2:	c115                	c.beqz	a0,2005bdd6 <rtos_timer_stop+0x44>
-2005bdb4:	4701                	c.li	a4,0
-2005bdb6:	0874                	c.addi4spn	a3,sp,28
-2005bdb8:	4601                	c.li	a2,0
-2005bdba:	45a1                	c.li	a1,8
-2005bdbc:	8522                	c.mv	a0,s0
-2005bdbe:	ce02                	c.swsp	zero,28(sp)
-2005bdc0:	083020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005bdc4:	4785                	c.li	a5,1
-2005bdc6:	fcf519e3          	bne	a0,a5,2005bd98 <rtos_timer_stop+0x6>
-2005bdca:	4572                	c.lwsp	a0,28(sp)
-2005bdcc:	d579                	c.beqz	a0,2005bd9a <rtos_timer_stop+0x8>
-2005bdce:	281010ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005bdd2:	4501                	c.li	a0,0
-2005bdd4:	b7d9                	c.j	2005bd9a <rtos_timer_stop+0x8>
-2005bdd6:	4681                	c.li	a3,0
-2005bdd8:	4601                	c.li	a2,0
-2005bdda:	458d                	c.li	a1,3
-2005bddc:	8522                	c.mv	a0,s0
-2005bdde:	065020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005bde2:	157d                	c.addi	a0,-1
-2005bde4:	00a03533          	sltu	a0,zero,a0
-2005bde8:	40a00533          	sub	a0,zero,a0
-2005bdec:	b77d                	c.j	2005bd9a <rtos_timer_stop+0x8>
+2005bd30 <rtos_timer_start>:
+2005bd30:	e909                	c.bnez	a0,2005bd42 <rtos_timer_start+0x12>
+2005bd32:	557d                	c.li	a0,-1
+2005bd34:	8082                	c.jr	ra
+2005bd36:	557d                	c.li	a0,-1
+2005bd38:	40f2                	c.lwsp	ra,28(sp)
+2005bd3a:	4462                	c.lwsp	s0,24(sp)
+2005bd3c:	44d2                	c.lwsp	s1,20(sp)
+2005bd3e:	6105                	c.addi16sp	sp,32
+2005bd40:	8082                	c.jr	ra
+2005bd42:	1101                	c.addi	sp,-32
+2005bd44:	cc22                	c.swsp	s0,24(sp)
+2005bd46:	ca26                	c.swsp	s1,20(sp)
+2005bd48:	ce06                	c.swsp	ra,28(sp)
+2005bd4a:	842a                	c.mv	s0,a0
+2005bd4c:	84ae                	c.mv	s1,a1
+2005bd4e:	949ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005bd52:	c505                	c.beqz	a0,2005bd7a <rtos_timer_start+0x4a>
+2005bd54:	c602                	c.swsp	zero,12(sp)
+2005bd56:	1ab010ef          	jal	ra,2005d700 <xTaskGetTickCountFromISR>
+2005bd5a:	862a                	c.mv	a2,a0
+2005bd5c:	4701                	c.li	a4,0
+2005bd5e:	0074                	c.addi4spn	a3,sp,12
+2005bd60:	4599                	c.li	a1,6
+2005bd62:	8522                	c.mv	a0,s0
+2005bd64:	0df020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005bd68:	4785                	c.li	a5,1
+2005bd6a:	fcf516e3          	bne	a0,a5,2005bd36 <rtos_timer_start+0x6>
+2005bd6e:	4532                	c.lwsp	a0,12(sp)
+2005bd70:	d561                	c.beqz	a0,2005bd38 <rtos_timer_start+0x8>
+2005bd72:	2dd010ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005bd76:	4501                	c.li	a0,0
+2005bd78:	b7c1                	c.j	2005bd38 <rtos_timer_start+0x8>
+2005bd7a:	5b8020ef          	jal	ra,2005e332 <xTaskGetTickCount>
+2005bd7e:	862a                	c.mv	a2,a0
+2005bd80:	8726                	c.mv	a4,s1
+2005bd82:	4681                	c.li	a3,0
+2005bd84:	4585                	c.li	a1,1
+2005bd86:	8522                	c.mv	a0,s0
+2005bd88:	0bb020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005bd8c:	157d                	c.addi	a0,-1
+2005bd8e:	00a03533          	sltu	a0,zero,a0
+2005bd92:	40a00533          	sub	a0,zero,a0
+2005bd96:	b74d                	c.j	2005bd38 <rtos_timer_start+0x8>
 
-2005bdee <rtos_timer_change_period>:
-2005bdee:	e909                	c.bnez	a0,2005be00 <rtos_timer_change_period+0x12>
-2005bdf0:	557d                	c.li	a0,-1
-2005bdf2:	8082                	c.jr	ra
-2005bdf4:	557d                	c.li	a0,-1
-2005bdf6:	50b2                	c.lwsp	ra,44(sp)
-2005bdf8:	5422                	c.lwsp	s0,40(sp)
-2005bdfa:	5492                	c.lwsp	s1,36(sp)
-2005bdfc:	6145                	c.addi16sp	sp,48
-2005bdfe:	8082                	c.jr	ra
-2005be00:	7179                	c.addi16sp	sp,-48
-2005be02:	d422                	c.swsp	s0,40(sp)
-2005be04:	d226                	c.swsp	s1,36(sp)
-2005be06:	d606                	c.swsp	ra,44(sp)
-2005be08:	842a                	c.mv	s0,a0
-2005be0a:	84ae                	c.mv	s1,a1
-2005be0c:	c632                	c.swsp	a2,12(sp)
-2005be0e:	883ff0ef          	jal	ra,2005b690 <rtos_critical_is_in_interrupt>
-2005be12:	4732                	c.lwsp	a4,12(sp)
-2005be14:	c115                	c.beqz	a0,2005be38 <rtos_timer_change_period+0x4a>
-2005be16:	4701                	c.li	a4,0
-2005be18:	0874                	c.addi4spn	a3,sp,28
-2005be1a:	8626                	c.mv	a2,s1
-2005be1c:	45a5                	c.li	a1,9
-2005be1e:	8522                	c.mv	a0,s0
-2005be20:	ce02                	c.swsp	zero,28(sp)
-2005be22:	021020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005be26:	4785                	c.li	a5,1
-2005be28:	fcf516e3          	bne	a0,a5,2005bdf4 <rtos_timer_change_period+0x6>
-2005be2c:	4572                	c.lwsp	a0,28(sp)
-2005be2e:	d561                	c.beqz	a0,2005bdf6 <rtos_timer_change_period+0x8>
-2005be30:	21f010ef          	jal	ra,2005d84e <vTaskSwitchContext>
-2005be34:	4501                	c.li	a0,0
-2005be36:	b7c1                	c.j	2005bdf6 <rtos_timer_change_period+0x8>
-2005be38:	4681                	c.li	a3,0
-2005be3a:	8626                	c.mv	a2,s1
-2005be3c:	4591                	c.li	a1,4
-2005be3e:	8522                	c.mv	a0,s0
-2005be40:	003020ef          	jal	ra,2005e642 <xTimerGenericCommand>
-2005be44:	157d                	c.addi	a0,-1
-2005be46:	00a03533          	sltu	a0,zero,a0
-2005be4a:	40a00533          	sub	a0,zero,a0
-2005be4e:	b765                	c.j	2005bdf6 <rtos_timer_change_period+0x8>
+2005bd98 <rtos_timer_stop>:
+2005bd98:	e901                	c.bnez	a0,2005bda8 <rtos_timer_stop+0x10>
+2005bd9a:	557d                	c.li	a0,-1
+2005bd9c:	8082                	c.jr	ra
+2005bd9e:	557d                	c.li	a0,-1
+2005bda0:	50b2                	c.lwsp	ra,44(sp)
+2005bda2:	5422                	c.lwsp	s0,40(sp)
+2005bda4:	6145                	c.addi16sp	sp,48
+2005bda6:	8082                	c.jr	ra
+2005bda8:	7179                	c.addi16sp	sp,-48
+2005bdaa:	d422                	c.swsp	s0,40(sp)
+2005bdac:	d606                	c.swsp	ra,44(sp)
+2005bdae:	842a                	c.mv	s0,a0
+2005bdb0:	c62e                	c.swsp	a1,12(sp)
+2005bdb2:	8e5ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005bdb6:	4732                	c.lwsp	a4,12(sp)
+2005bdb8:	c115                	c.beqz	a0,2005bddc <rtos_timer_stop+0x44>
+2005bdba:	4701                	c.li	a4,0
+2005bdbc:	0874                	c.addi4spn	a3,sp,28
+2005bdbe:	4601                	c.li	a2,0
+2005bdc0:	45a1                	c.li	a1,8
+2005bdc2:	8522                	c.mv	a0,s0
+2005bdc4:	ce02                	c.swsp	zero,28(sp)
+2005bdc6:	07d020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005bdca:	4785                	c.li	a5,1
+2005bdcc:	fcf519e3          	bne	a0,a5,2005bd9e <rtos_timer_stop+0x6>
+2005bdd0:	4572                	c.lwsp	a0,28(sp)
+2005bdd2:	d579                	c.beqz	a0,2005bda0 <rtos_timer_stop+0x8>
+2005bdd4:	27b010ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005bdd8:	4501                	c.li	a0,0
+2005bdda:	b7d9                	c.j	2005bda0 <rtos_timer_stop+0x8>
+2005bddc:	4681                	c.li	a3,0
+2005bdde:	4601                	c.li	a2,0
+2005bde0:	458d                	c.li	a1,3
+2005bde2:	8522                	c.mv	a0,s0
+2005bde4:	05f020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005bde8:	157d                	c.addi	a0,-1
+2005bdea:	00a03533          	sltu	a0,zero,a0
+2005bdee:	40a00533          	sub	a0,zero,a0
+2005bdf2:	b77d                	c.j	2005bda0 <rtos_timer_stop+0x8>
 
-2005be50 <rtos_timer_is_timer_active>:
-2005be50:	2d50206f          	jal	zero,2005e924 <xTimerIsTimerActive>
+2005bdf4 <rtos_timer_change_period>:
+2005bdf4:	e909                	c.bnez	a0,2005be06 <rtos_timer_change_period+0x12>
+2005bdf6:	557d                	c.li	a0,-1
+2005bdf8:	8082                	c.jr	ra
+2005bdfa:	557d                	c.li	a0,-1
+2005bdfc:	50b2                	c.lwsp	ra,44(sp)
+2005bdfe:	5422                	c.lwsp	s0,40(sp)
+2005be00:	5492                	c.lwsp	s1,36(sp)
+2005be02:	6145                	c.addi16sp	sp,48
+2005be04:	8082                	c.jr	ra
+2005be06:	7179                	c.addi16sp	sp,-48
+2005be08:	d422                	c.swsp	s0,40(sp)
+2005be0a:	d226                	c.swsp	s1,36(sp)
+2005be0c:	d606                	c.swsp	ra,44(sp)
+2005be0e:	842a                	c.mv	s0,a0
+2005be10:	84ae                	c.mv	s1,a1
+2005be12:	c632                	c.swsp	a2,12(sp)
+2005be14:	883ff0ef          	jal	ra,2005b696 <rtos_critical_is_in_interrupt>
+2005be18:	4732                	c.lwsp	a4,12(sp)
+2005be1a:	c115                	c.beqz	a0,2005be3e <rtos_timer_change_period+0x4a>
+2005be1c:	4701                	c.li	a4,0
+2005be1e:	0874                	c.addi4spn	a3,sp,28
+2005be20:	8626                	c.mv	a2,s1
+2005be22:	45a5                	c.li	a1,9
+2005be24:	8522                	c.mv	a0,s0
+2005be26:	ce02                	c.swsp	zero,28(sp)
+2005be28:	01b020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005be2c:	4785                	c.li	a5,1
+2005be2e:	fcf516e3          	bne	a0,a5,2005bdfa <rtos_timer_change_period+0x6>
+2005be32:	4572                	c.lwsp	a0,28(sp)
+2005be34:	d561                	c.beqz	a0,2005bdfc <rtos_timer_change_period+0x8>
+2005be36:	219010ef          	jal	ra,2005d84e <vTaskSwitchContext>
+2005be3a:	4501                	c.li	a0,0
+2005be3c:	b7c1                	c.j	2005bdfc <rtos_timer_change_period+0x8>
+2005be3e:	4681                	c.li	a3,0
+2005be40:	8626                	c.mv	a2,s1
+2005be42:	4591                	c.li	a1,4
+2005be44:	8522                	c.mv	a0,s0
+2005be46:	7fc020ef          	jal	ra,2005e642 <xTimerGenericCommand>
+2005be4a:	157d                	c.addi	a0,-1
+2005be4c:	00a03533          	sltu	a0,zero,a0
+2005be50:	40a00533          	sub	a0,zero,a0
+2005be54:	b765                	c.j	2005bdfc <rtos_timer_change_period+0x8>
 
-2005be54 <platform_calloc_uninit>:
-2005be54:	4501                	c.li	a0,0
-2005be56:	8082                	c.jr	ra
+2005be56 <rtos_timer_is_timer_active>:
+2005be56:	2cf0206f          	jal	zero,2005e924 <xTimerIsTimerActive>
 
-2005be58 <platform_free_uninit>:
-2005be58:	8082                	c.jr	ra
+2005be5a <platform_calloc_uninit>:
+2005be5a:	4501                	c.li	a0,0
+2005be5c:	8082                	c.jr	ra
 
-2005be5a <mbedtls_platform_set_calloc_free>:
-2005be5a:	e8a1a023          	sw	a0,-384(gp) # 200667e8 <mbedtls_calloc_func>
-2005be5e:	e8b1a223          	sw	a1,-380(gp) # 200667ec <mbedtls_free_func>
-2005be62:	200017b7          	lui	a5,0x20001
-2005be66:	c6c78793          	addi	a5,a5,-916 # 20000c6c <rom_ssl_ram_map>
-2005be6a:	20001737          	lui	a4,0x20001
-2005be6e:	c388                	c.sw	a0,0(a5)
-2005be70:	c6f72423          	sw	a5,-920(a4) # 20000c68 <p_rom_ssl_ram_map>
-2005be74:	c3cc                	c.sw	a1,4(a5)
-2005be76:	4501                	c.li	a0,0
-2005be78:	8082                	c.jr	ra
-2005be7a:	0000                	c.unimp
-2005be7c:	0000                	c.unimp
-	...
+2005be5e <platform_free_uninit>:
+2005be5e:	8082                	c.jr	ra
+
+2005be60 <mbedtls_platform_set_calloc_free>:
+2005be60:	e8a1a023          	sw	a0,-384(gp) # 20066808 <mbedtls_calloc_func>
+2005be64:	e8b1a223          	sw	a1,-380(gp) # 2006680c <mbedtls_free_func>
+2005be68:	200017b7          	lui	a5,0x20001
+2005be6c:	c6c78793          	addi	a5,a5,-916 # 20000c6c <rom_ssl_ram_map>
+2005be70:	20001737          	lui	a4,0x20001
+2005be74:	c388                	c.sw	a0,0(a5)
+2005be76:	c6f72423          	sw	a5,-920(a4) # 20000c68 <p_rom_ssl_ram_map>
+2005be7a:	c3cc                	c.sw	a1,4(a5)
+2005be7c:	4501                	c.li	a0,0
+2005be7e:	8082                	c.jr	ra
 
 2005be80 <freertos_risc_v_trap_handler>:
 2005be80:	ef810113          	addi	sp,sp,-264
@@ -6147,9 +6146,9 @@ Disassembly of section .xip_image2.text:
 2005bf3a:	a009                	c.j	2005bf3c <ecall_yield>
 
 2005bf3c <ecall_yield>:
-2005bf3c:	f5c1a283          	lw	t0,-164(gp) # 200668c4 <pxCurrentTCB>
+2005bf3c:	f5c1a283          	lw	t0,-164(gp) # 200668e4 <pxCurrentTCB>
 2005bf40:	0022a023          	sw	sp,0(t0)
-2005bf44:	e5c1a103          	lw	sp,-420(gp) # 200667c4 <xISRStackTop>
+2005bf44:	e5c1a103          	lw	sp,-420(gp) # 200667e4 <xISRStackTop>
 2005bf48:	a0a5                	c.j	2005bfb0 <task_context_switch>
 
 2005bf4a <_crash_dump>:
@@ -6160,16 +6159,16 @@ Disassembly of section .xip_image2.text:
 2005bf54:	c42e                	c.swsp	a1,8(sp)
 2005bf56:	c60e                	c.swsp	gp,12(sp)
 2005bf58:	c812                	c.swsp	tp,16(sp)
-2005bf5a:	e5c1a303          	lw	t1,-420(gp) # 200667c4 <xISRStackTop>
+2005bf5a:	e5c1a303          	lw	t1,-420(gp) # 200667e4 <xISRStackTop>
 2005bf5e:	0000b397          	auipc	t2,0xb
-2005bf62:	fc238393          	addi	t2,t2,-62 # 20066f20 <xISRStack>
+2005bf62:	00238393          	addi	t2,t2,2 # 20066f60 <xISRStack>
 2005bf66:	08038393          	addi	t2,t2,128
 2005bf6a:	00615563          	bge	sp,t1,2005bf74 <not_isrstack>
 2005bf6e:	00714363          	blt	sp,t2,2005bf74 <not_isrstack>
 2005bf72:	a019                	c.j	2005bf78 <is_isrstack>
 
 2005bf74 <not_isrstack>:
-2005bf74:	e5c1a103          	lw	sp,-420(gp) # 200667c4 <xISRStackTop>
+2005bf74:	e5c1a103          	lw	sp,-420(gp) # 200667e4 <xISRStackTop>
 
 2005bf78 <is_isrstack>:
 2005bf78:	00004297          	auipc	t0,0x4
@@ -6185,9 +6184,9 @@ Disassembly of section .xip_image2.text:
 
 2005bf88 <handle_asynchronous>:
 2005bf88:	c02e                	c.swsp	a1,0(sp)
-2005bf8a:	f5c1a283          	lw	t0,-164(gp) # 200668c4 <pxCurrentTCB>
+2005bf8a:	f5c1a283          	lw	t0,-164(gp) # 200668e4 <pxCurrentTCB>
 2005bf8e:	0022a023          	sw	sp,0(t0)
-2005bf92:	e5c1a103          	lw	sp,-420(gp) # 200667c4 <xISRStackTop>
+2005bf92:	e5c1a103          	lw	sp,-420(gp) # 200667e4 <xISRStackTop>
 
 2005bf96 <nonvec_handle>:
 2005bf96:	4285                	c.li	t0,1
@@ -6212,7 +6211,7 @@ Disassembly of section .xip_image2.text:
 2005bfb8:	bffd                	c.j	2005bfb6 <as_yet_unhandled>
 
 2005bfba <processed_source>:
-2005bfba:	f5c1a303          	lw	t1,-164(gp) # 200668c4 <pxCurrentTCB>
+2005bfba:	f5c1a303          	lw	t1,-164(gp) # 200668e4 <pxCurrentTCB>
 2005bfbe:	00032103          	lw	sp,0(t1) # 2000 <CRYPTO_Init+0x86a>
 
 2005bfc2 <restore_regs>:
@@ -6298,15 +6297,15 @@ Disassembly of section .xip_image2.text:
 2005c074:	00000013          	addi	zero,zero,0
 
 2005c078 <machine_timer_update>:
-2005c078:	f401a283          	lw	t0,-192(gp) # 200668a8 <pullMachineTimerCompareRegister>
-2005c07c:	e881a303          	lw	t1,-376(gp) # 200667f0 <pullNextTime>
+2005c078:	f401a283          	lw	t0,-192(gp) # 200668c8 <pullMachineTimerCompareRegister>
+2005c07c:	e881a303          	lw	t1,-376(gp) # 20066810 <pullNextTime>
 2005c080:	5efd                	c.li	t4,-1
 2005c082:	00032383          	lw	t2,0(t1) # 4000 <GPIO_Direction+0x36>
 2005c086:	00432e03          	lw	t3,4(t1)
 2005c08a:	01d2a023          	sw	t4,0(t0)
 2005c08e:	01c2a223          	sw	t3,4(t0)
 2005c092:	0072a023          	sw	t2,0(t0)
-2005c096:	f501a283          	lw	t0,-176(gp) # 200668b8 <uxTimerIncrementsForOneTick>
+2005c096:	f501a283          	lw	t0,-176(gp) # 200668d8 <uxTimerIncrementsForOneTick>
 2005c09a:	00728eb3          	add	t4,t0,t2
 2005c09e:	007ebf33          	sltu	t5,t4,t2
 2005c0a2:	01ee0fb3          	add	t6,t3,t5
@@ -6326,7 +6325,7 @@ Disassembly of section .xip_image2.text:
 2005c0ca:	007373b3          	and	t2,t1,t2
 2005c0ce:	00038533          	add	a0,t2,zero
 2005c0d2:	0000a797          	auipc	a5,0xa
-2005c0d6:	37278793          	addi	a5,a5,882 # 20066444 <plic_interrupt_handler>
+2005c0d6:	39278793          	addi	a5,a5,914 # 20066464 <plic_interrupt_handler>
 2005c0da:	9782                	c.jalr	a5
 
 2005c0dc <vPortHandleInterrupt_Exit>:
@@ -6340,7 +6339,7 @@ Disassembly of section .xip_image2.text:
 2005c0e8:	00000297          	auipc	t0,0x0
 2005c0ec:	d9828293          	addi	t0,t0,-616 # 2005be80 <freertos_risc_v_trap_handler>
 2005c0f0:	30529073          	csrrw	zero,mtvec,t0
-2005c0f4:	f5c1a383          	lw	t2,-164(gp) # 200668c4 <pxCurrentTCB>
+2005c0f4:	f5c1a383          	lw	t2,-164(gp) # 200668e4 <pxCurrentTCB>
 2005c0f8:	0003a103          	lw	sp,0(t2) # 80000000 <__ctrace_end__+0xb6000000>
 2005c0fc:	300022f3          	csrrs	t0,mstatus,zero
 2005c100:	6319                	c.lui	t1,0x6
@@ -6700,11 +6699,11 @@ Disassembly of section .xip_image2.text:
 	...
 
 2005c55a <vPortSetupTimerInterrupt>:
-2005c55a:	e681a783          	lw	a5,-408(gp) # 200667d0 <SystemCoreClock>
+2005c55a:	e681a783          	lw	a5,-408(gp) # 200667f0 <SystemCoreClock>
 2005c55e:	3e800713          	addi	a4,zero,1000
 2005c562:	02e7d7b3          	divu	a5,a5,a4
 2005c566:	1141                	c.addi	sp,-16
-2005c568:	f4f1a823          	sw	a5,-176(gp) # 200668b8 <uxTimerIncrementsForOneTick>
+2005c568:	f4f1a823          	sw	a5,-176(gp) # 200668d8 <uxTimerIncrementsForOneTick>
 2005c56c:	f14027f3          	csrrs	a5,mhartid,zero
 2005c570:	c63e                	c.swsp	a5,12(sp)
 2005c572:	4632                	c.lwsp	a2,12(sp)
@@ -6712,12 +6711,12 @@ Disassembly of section .xip_image2.text:
 2005c578:	00170793          	addi	a5,a4,1 # 10000001 <__km4_boot_text_start__+0x7fffe1>
 2005c57c:	963e                	c.add	a2,a5
 2005c57e:	060e                	c.slli	a2,0x3
-2005c580:	f4c1a023          	sw	a2,-192(gp) # 200668a8 <pullMachineTimerCompareRegister>
+2005c580:	f4c1a023          	sw	a2,-192(gp) # 200668c8 <pullMachineTimerCompareRegister>
 2005c584:	47b2                	c.lwsp	a5,12(sp)
-2005c586:	f5018593          	addi	a1,gp,-176 # 200668b8 <uxTimerIncrementsForOneTick>
+2005c586:	f5018593          	addi	a1,gp,-176 # 200668d8 <uxTimerIncrementsForOneTick>
 2005c58a:	97ba                	c.add	a5,a4
 2005c58c:	078e                	c.slli	a5,0x3
-2005c58e:	f4f1a223          	sw	a5,-188(gp) # 200668ac <pullMachineTimerCounterRegister>
+2005c58e:	f4f1a223          	sw	a5,-188(gp) # 200668cc <pullMachineTimerCounterRegister>
 2005c592:	800007b7          	lui	a5,0x80000
 2005c596:	43c8                	c.lw	a0,4(a5)
 2005c598:	4394                	c.lw	a3,0(a5)
@@ -6732,7 +6731,7 @@ Disassembly of section .xip_image2.text:
 2005c5ae:	00a78733          	add	a4,a5,a0
 2005c5b2:	c254                	c.sw	a3,4(a2)
 2005c5b4:	00f737b3          	sltu	a5,a4,a5
-2005c5b8:	f4818613          	addi	a2,gp,-184 # 200668b0 <ullNextTime>
+2005c5b8:	f4818613          	addi	a2,gp,-184 # 200668d0 <ullNextTime>
 2005c5bc:	96be                	c.add	a3,a5
 2005c5be:	c218                	c.sw	a4,0(a2)
 2005c5c0:	c254                	c.sw	a3,4(a2)
@@ -6758,7 +6757,7 @@ Disassembly of section .xip_image2.text:
 2005c5e6 <vApplicationIdleHook>:
 2005c5e6:	1101                	c.addi	sp,-32
 2005c5e8:	ce06                	c.swsp	ra,28(sp)
-2005c5ea:	f6efe0ef          	jal	ra,2005ad58 <xPortGetFreeHeapSize>
+2005c5ea:	f74fe0ef          	jal	ra,2005ad5e <xPortGetFreeHeapSize>
 2005c5ee:	40f2                	c.lwsp	ra,28(sp)
 2005c5f0:	c62a                	c.swsp	a0,12(sp)
 2005c5f2:	47b2                	c.lwsp	a5,12(sp)
@@ -6775,18 +6774,18 @@ Disassembly of section .xip_image2.text:
 2005c608:	104010ef          	jal	ra,2005d70c <pcTaskGetName>
 2005c60c:	862a                	c.mv	a2,a0
 2005c60e:	c632                	c.swsp	a2,12(sp)
-2005c610:	f48fe0ef          	jal	ra,2005ad58 <xPortGetFreeHeapSize>
+2005c610:	f4efe0ef          	jal	ra,2005ad5e <xPortGetFreeHeapSize>
 2005c614:	4632                	c.lwsp	a2,12(sp)
 2005c616:	86aa                	c.mv	a3,a0
 2005c618:	200635b7          	lui	a1,0x20063
 2005c61c:	20063537          	lui	a0,0x20063
-2005c620:	4cc58593          	addi	a1,a1,1228 # 200634cc <__FUNCTION__.0+0x1c>
-2005c624:	4d050513          	addi	a0,a0,1232 # 200634d0 <__FUNCTION__.0+0x20>
+2005c620:	4d458593          	addi	a1,a1,1236 # 200634d4 <__FUNCTION__.0+0x1c>
+2005c624:	4d850513          	addi	a0,a0,1240 # 200634d8 <__FUNCTION__.0+0x20>
 2005c628:	57f020ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005c62c:	30047073          	csrrci	zero,mstatus,8
 2005c630:	a001                	c.j	2005c630 <vApplicationMallocFailedHook+0x38>
 2005c632:	20063637          	lui	a2,0x20063
-2005c636:	4c460613          	addi	a2,a2,1220 # 200634c4 <__FUNCTION__.0+0x14>
+2005c636:	4cc60613          	addi	a2,a2,1228 # 200634cc <__FUNCTION__.0+0x14>
 2005c63a:	bfd1                	c.j	2005c60e <vApplicationMallocFailedHook+0x16>
 
 2005c63c <vApplicationStackOverflowHook>:
@@ -6794,18 +6793,18 @@ Disassembly of section .xip_image2.text:
 2005c63e:	20063537          	lui	a0,0x20063
 2005c642:	200635b7          	lui	a1,0x20063
 2005c646:	1141                	c.addi	sp,-16
-2005c648:	53458593          	addi	a1,a1,1332 # 20063534 <__FUNCTION__.5>
-2005c64c:	50c50513          	addi	a0,a0,1292 # 2006350c <__FUNCTION__.0+0x5c>
+2005c648:	53c58593          	addi	a1,a1,1340 # 2006353c <__FUNCTION__.5>
+2005c64c:	51450513          	addi	a0,a0,1300 # 20063514 <__FUNCTION__.0+0x5c>
 2005c650:	c606                	c.swsp	ra,12(sp)
 2005c652:	555020ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005c656:	a001                	c.j	2005c656 <vApplicationStackOverflowHook+0x1a>
 
 2005c658 <vApplicationGetIdleTaskMemory>:
 2005c658:	200687b7          	lui	a5,0x20068
-2005c65c:	f2078793          	addi	a5,a5,-224 # 20067f20 <xIdleTaskTCB.4>
+2005c65c:	f6078793          	addi	a5,a5,-160 # 20067f60 <xIdleTaskTCB.4>
 2005c660:	c11c                	c.sw	a5,0(a0)
 2005c662:	200657b7          	lui	a5,0x20065
-2005c666:	da078793          	addi	a5,a5,-608 # 20064da0 <__fini_array_end>
+2005c666:	dc078793          	addi	a5,a5,-576 # 20064dc0 <uxIdleTaskStack.3>
 2005c66a:	c19c                	c.sw	a5,0(a1)
 2005c66c:	20000793          	addi	a5,zero,512
 2005c670:	c21c                	c.sw	a5,0(a2)
@@ -6813,10 +6812,10 @@ Disassembly of section .xip_image2.text:
 
 2005c674 <vApplicationGetTimerTaskMemory>:
 2005c674:	200687b7          	lui	a5,0x20068
-2005c678:	08478793          	addi	a5,a5,132 # 20068084 <xTimerTaskTCB.2>
+2005c678:	0c478793          	addi	a5,a5,196 # 200680c4 <xTimerTaskTCB.2>
 2005c67c:	c11c                	c.sw	a5,0(a0)
 2005c67e:	200657b7          	lui	a5,0x20065
-2005c682:	5a078793          	addi	a5,a5,1440 # 200655a0 <uxTimerTaskStack.1>
+2005c682:	5c078793          	addi	a5,a5,1472 # 200655c0 <uxTimerTaskStack.1>
 2005c686:	c19c                	c.sw	a5,0(a1)
 2005c688:	20000793          	addi	a5,zero,512
 2005c68c:	c21c                	c.sw	a5,0(a2)
@@ -6827,7 +6826,7 @@ Disassembly of section .xip_image2.text:
 2005c692:	c422                	c.swsp	s0,8(sp)
 2005c694:	4501                	c.li	a0,0
 2005c696:	c606                	c.swsp	ra,12(sp)
-2005c698:	e601a823          	sw	zero,-400(gp) # 200667d8 <system_can_yield>
+2005c698:	e601a823          	sw	zero,-400(gp) # 200667f8 <system_can_yield>
 2005c69c:	c0efc0ef          	jal	ra,20058aaa <Systick_Cmd>
 2005c6a0:	300477f3          	csrrci	a5,mstatus,8
 2005c6a4:	35e010ef          	jal	ra,2005da02 <eTaskConfirmSleepModeStatus>
@@ -6856,7 +6855,7 @@ Disassembly of section .xip_image2.text:
 2005c6e0:	bcafc0ef          	jal	ra,20058aaa <Systick_Cmd>
 2005c6e4:	4785                	c.li	a5,1
 2005c6e6:	40b2                	c.lwsp	ra,12(sp)
-2005c6e8:	e6f1a823          	sw	a5,-400(gp) # 200667d8 <system_can_yield>
+2005c6e8:	e6f1a823          	sw	a5,-400(gp) # 200667f8 <system_can_yield>
 2005c6ec:	4422                	c.lwsp	s0,8(sp)
 2005c6ee:	0141                	c.addi	sp,16
 2005c6f0:	8082                	c.jr	ra
@@ -7042,9 +7041,9 @@ Disassembly of section .xip_image2.text:
 2005c89e:	0141                	c.addi	sp,16
 2005c8a0:	8082                	c.jr	ra
 2005c8a2:	01040513          	addi	a0,s0,16
-2005c8a6:	db0fe0ef          	jal	ra,2005ae56 <vListInitialise>
+2005c8a6:	db6fe0ef          	jal	ra,2005ae5c <vListInitialise>
 2005c8aa:	02440513          	addi	a0,s0,36
-2005c8ae:	da8fe0ef          	jal	ra,2005ae56 <vListInitialise>
+2005c8ae:	daefe0ef          	jal	ra,2005ae5c <vListInitialise>
 2005c8b2:	b7c5                	c.j	2005c892 <xQueueGenericReset+0x4a>
 
 2005c8b4 <xQueueGetMutexHolder>:
@@ -7526,12 +7525,12 @@ Disassembly of section .xip_image2.text:
 2005cd6a:	a5dff06f          	jal	zero,2005c7c6 <prvUnlockQueue>
 
 2005cd6e <QueueCreateTrace>:
-2005cd6e:	f541a603          	lw	a2,-172(gp) # 200668bc <Inited.1>
-2005cd72:	f5418693          	addi	a3,gp,-172 # 200668bc <Inited.1>
+2005cd6e:	f541a603          	lw	a2,-172(gp) # 200668dc <Inited.1>
+2005cd72:	f5418693          	addi	a3,gp,-172 # 200668dc <Inited.1>
 2005cd76:	200687b7          	lui	a5,0x20068
-2005cd7a:	1e878713          	addi	a4,a5,488 # 200681e8 <QueueTraceList>
+2005cd7a:	22878713          	addi	a4,a5,552 # 20068228 <QueueTraceList>
 2005cd7e:	ee01                	c.bnez	a2,2005cd96 <QueueCreateTrace+0x28>
-2005cd80:	1e878793          	addi	a5,a5,488
+2005cd80:	22878793          	addi	a5,a5,552
 2005cd84:	04070613          	addi	a2,a4,64
 2005cd88:	0007a023          	sw	zero,0(a5)
 2005cd8c:	0791                	c.addi	a5,4
@@ -7564,7 +7563,7 @@ Disassembly of section .xip_image2.text:
 2005cdc4:	84ae                	c.mv	s1,a1
 2005cdc6:	89b2                	c.mv	s3,a2
 2005cdc8:	05050513          	addi	a0,a0,80
-2005cdcc:	e51fd0ef          	jal	ra,2005ac1c <pvPortMalloc>
+2005cdcc:	e57fd0ef          	jal	ra,2005ac22 <pvPortMalloc>
 2005cdd0:	842a                	c.mv	s0,a0
 2005cdd2:	c505                	c.beqz	a0,2005cdfa <xQueueGenericCreate+0x48>
 2005cdd4:	04050323          	sb	zero,70(a0)
@@ -7699,9 +7698,9 @@ Disassembly of section .xip_image2.text:
 
 2005ceee <QueueDeleteTrace>:
 2005ceee:	20068737          	lui	a4,0x20068
-2005cef2:	1e870693          	addi	a3,a4,488 # 200681e8 <QueueTraceList>
+2005cef2:	22870693          	addi	a3,a4,552 # 20068228 <QueueTraceList>
 2005cef6:	4781                	c.li	a5,0
-2005cef8:	1e870713          	addi	a4,a4,488
+2005cef8:	22870713          	addi	a4,a4,552
 2005cefc:	4641                	c.li	a2,16
 2005cefe:	428c                	c.lw	a1,0(a3)
 2005cf00:	00a59763          	bne	a1,a0,2005cf0e <QueueDeleteTrace+0x20>
@@ -7726,7 +7725,7 @@ Disassembly of section .xip_image2.text:
 2005cf2c:	4422                	c.lwsp	s0,8(sp)
 2005cf2e:	40b2                	c.lwsp	ra,12(sp)
 2005cf30:	0141                	c.addi	sp,16
-2005cf32:	dc9fd06f          	jal	zero,2005acfa <vPortFree>
+2005cf32:	dcffd06f          	jal	zero,2005ad00 <vPortFree>
 2005cf36:	40b2                	c.lwsp	ra,12(sp)
 2005cf38:	4422                	c.lwsp	s0,8(sp)
 2005cf3a:	0141                	c.addi	sp,16
@@ -7797,8 +7796,8 @@ Disassembly of section .xip_image2.text:
 2005cfe0:	b4478793          	addi	a5,a5,-1212 # 20000b44 <shell_ctl>
 2005cfe4:	539c                	c.lw	a5,32(a5)
 2005cfe6:	c789                	c.beqz	a5,2005cff0 <shell_give_sema+0x14>
-2005cfe8:	f581a503          	lw	a0,-168(gp) # 200668c0 <shell_sema>
-2005cfec:	97dfe06f          	jal	zero,2005b968 <rtos_sema_give>
+2005cfe8:	f581a503          	lw	a0,-168(gp) # 200668e0 <shell_sema>
+2005cfec:	983fe06f          	jal	zero,2005b96e <rtos_sema_give>
 2005cff0:	8082                	c.jr	ra
 
 2005cff2 <shell_loguartRx_dispatch>:
@@ -7809,7 +7808,7 @@ Disassembly of section .xip_image2.text:
 2005cffe:	c04a                	c.swsp	s2,0(sp)
 2005d000:	00842903          	lw	s2,8(s0)
 2005d004:	200635b7          	lui	a1,0x20063
-2005d008:	55458593          	addi	a1,a1,1364 # 20063554 <__FUNCTION__.5+0x20>
+2005d008:	55c58593          	addi	a1,a1,1372 # 2006355c <__FUNCTION__.5+0x20>
 2005d00c:	00190513          	addi	a0,s2,1
 2005d010:	c606                	c.swsp	ra,12(sp)
 2005d012:	c226                	c.swsp	s1,4(sp)
@@ -7817,16 +7816,16 @@ Disassembly of section .xip_image2.text:
 2005d018:	884080e7          	jalr	ra,-1916(ra) # 9898 <_stricmp>
 2005d01c:	ed15                	c.bnez	a0,2005d058 <shell_loguartRx_dispatch+0x66>
 2005d01e:	40000513          	addi	a0,zero,1024
-2005d022:	eccfe0ef          	jal	ra,2005b6ee <rtos_mem_malloc>
+2005d022:	ed2fe0ef          	jal	ra,2005b6f4 <rtos_mem_malloc>
 2005d026:	3ff00593          	addi	a1,zero,1023
 2005d02a:	84aa                	c.mv	s1,a0
 2005d02c:	31b010ef          	jal	ra,2005eb46 <ChipInfo_GetLibVersion_ToBuf>
 2005d030:	20063537          	lui	a0,0x20063
 2005d034:	85a6                	c.mv	a1,s1
-2005d036:	99450513          	addi	a0,a0,-1644 # 20062994 <pmap_func+0x570>
+2005d036:	99c50513          	addi	a0,a0,-1636 # 2006299c <pmap_func+0x570>
 2005d03a:	36c020ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005d03e:	8526                	c.mv	a0,s1
-2005d040:	ed8fe0ef          	jal	ra,2005b718 <rtos_mem_free>
+2005d040:	edefe0ef          	jal	ra,2005b71e <rtos_mem_free>
 2005d044:	4601                	c.li	a2,0
 2005d046:	08000593          	addi	a1,zero,128
 2005d04a:	854a                	c.mv	a0,s2
@@ -7863,31 +7862,31 @@ Disassembly of section .xip_image2.text:
 2005d090:	40000513          	addi	a0,zero,1024
 2005d094:	00e78323          	sb	a4,6(a5)
 2005d098:	b4440413          	addi	s0,s0,-1212
-2005d09c:	b55fe0ef          	jal	ra,2005bbf0 <rtos_create_secure_context>
+2005d09c:	b5bfe0ef          	jal	ra,2005bbf6 <rtos_create_secure_context>
 2005d0a0:	20068ab7          	lui	s5,0x20068
 2005d0a4:	001b0913          	addi	s2,s6,1
 2005d0a8:	20063c37          	lui	s8,0x20063
 2005d0ac:	20063cb7          	lui	s9,0x20063
-2005d0b0:	f581a503          	lw	a0,-168(gp) # 200668c0 <shell_sema>
+2005d0b0:	f581a503          	lw	a0,-168(gp) # 200668e0 <shell_sema>
 2005d0b4:	55fd                	c.li	a1,-1
-2005d0b6:	867fe0ef          	jal	ra,2005b91c <rtos_sema_take>
+2005d0b6:	86dfe0ef          	jal	ra,2005b922 <rtos_sema_take>
 2005d0ba:	f39ff0ef          	jal	ra,2005cff2 <shell_loguartRx_dispatch>
 2005d0be:	00444783          	lbu	a5,4(s0)
 2005d0c2:	0ff7f793          	andi	a5,a5,255
 2005d0c6:	d7ed                	c.beqz	a5,2005d0b0 <shell_task_ram+0x4c>
 2005d0c8:	4601                	c.li	a2,0
 2005d0ca:	07f00593          	addi	a1,zero,127
-2005d0ce:	228a8513          	addi	a0,s5,552 # 20068228 <atcmd_buf>
+2005d0ce:	268a8513          	addi	a0,s5,616 # 20068268 <atcmd_buf>
 2005d0d2:	dffac097          	auipc	ra,0xdffac
 2005d0d6:	db0080e7          	jalr	ra,-592(ra) # 8e82 <shell_array_init>
 2005d0da:	85ca                	c.mv	a1,s2
-2005d0dc:	228a8513          	addi	a0,s5,552
-2005d0e0:	433040ef          	jal	ra,20061d12 <strcpy>
-2005d0e4:	228a8513          	addi	a0,s5,552
-2005d0e8:	e23fc0ef          	jal	ra,20059f0a <atcmd_service>
+2005d0dc:	268a8513          	addi	a0,s5,616
+2005d0e0:	43b040ef          	jal	ra,20061d1a <strcpy>
+2005d0e4:	268a8513          	addi	a0,s5,616
+2005d0e8:	e29fc0ef          	jal	ra,20059f10 <atcmd_service>
 2005d0ec:	ed39                	c.bnez	a0,2005d14a <shell_task_ram+0xe6>
 2005d0ee:	854a                	c.mv	a0,s2
-2005d0f0:	dbffc0ef          	jal	ra,20059eae <mp_command_handler>
+2005d0f0:	dc5fc0ef          	jal	ra,20059eb4 <mp_command_handler>
 2005d0f4:	e939                	c.bnez	a0,2005d14a <shell_task_ram+0xe6>
 2005d0f6:	854a                	c.mv	a0,s2
 2005d0f8:	dffac097          	auipc	ra,0xdffac
@@ -7915,9 +7914,9 @@ Disassembly of section .xip_image2.text:
 2005d134:	471c                	c.lw	a5,8(a4)
 2005d136:	e79d                	c.bnez	a5,2005d164 <shell_task_ram+0x100>
 2005d138:	85ca                	c.mv	a1,s2
-2005d13a:	55cc0513          	addi	a0,s8,1372 # 2006355c <__FUNCTION__.5+0x28>
+2005d13a:	564c0513          	addi	a0,s8,1380 # 20063564 <__FUNCTION__.5+0x28>
 2005d13e:	268020ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2005d142:	88cc8513          	addi	a0,s9,-1908 # 2006288c <pmap_func+0x468>
+2005d142:	894c8513          	addi	a0,s9,-1900 # 20062894 <pmap_func+0x468>
 2005d146:	260020ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005d14a:	4601                	c.li	a2,0
 2005d14c:	08000593          	addi	a1,zero,128
@@ -7938,12 +7937,12 @@ Disassembly of section .xip_image2.text:
 2005d174 <shell_init_ram>:
 2005d174:	1141                	c.addi	sp,-16
 2005d176:	c606                	c.swsp	ra,12(sp)
-2005d178:	bd3fc0ef          	jal	ra,20059d4a <atcmd_service_init>
+2005d178:	bd9fc0ef          	jal	ra,20059d50 <atcmd_service_init>
 2005d17c:	20065737          	lui	a4,0x20065
-2005d180:	c4c70693          	addi	a3,a4,-948 # 20064c4c <shell_cmd_table>
+2005d180:	c5470693          	addi	a3,a4,-940 # 20064c54 <shell_cmd_table>
 2005d184:	20065737          	lui	a4,0x20065
 2005d188:	200017b7          	lui	a5,0x20001
-2005d18c:	c8c70713          	addi	a4,a4,-884 # 20064c8c <ipc_tickless_table>
+2005d18c:	c9470713          	addi	a4,a4,-876 # 20064c94 <ipc_tickless_table>
 2005d190:	b4478793          	addi	a5,a5,-1212 # 20000b44 <shell_ctl>
 2005d194:	8f15                	c.sub	a4,a3
 2005d196:	cb94                	c.sw	a3,16(a5)
@@ -7954,28 +7953,28 @@ Disassembly of section .xip_image2.text:
 2005d1a2:	00e782a3          	sb	a4,5(a5)
 2005d1a6:	2005d737          	lui	a4,0x2005d
 2005d1aa:	fdc70713          	addi	a4,a4,-36 # 2005cfdc <shell_give_sema>
-2005d1ae:	f5818513          	addi	a0,gp,-168 # 200668c0 <shell_sema>
+2005d1ae:	f5818513          	addi	a0,gp,-168 # 200668e0 <shell_sema>
 2005d1b2:	cfd8                	c.sw	a4,28(a5)
-2005d1b4:	f28fe0ef          	jal	ra,2005b8dc <rtos_sema_create_binary>
+2005d1b4:	f2efe0ef          	jal	ra,2005b8e2 <rtos_sema_create_binary>
 2005d1b8:	2005d637          	lui	a2,0x2005d
 2005d1bc:	200635b7          	lui	a1,0x20063
 2005d1c0:	4795                	c.li	a5,5
 2005d1c2:	6705                	c.lui	a4,0x1
 2005d1c4:	4681                	c.li	a3,0
 2005d1c6:	06460613          	addi	a2,a2,100 # 2005d064 <shell_task_ram>
-2005d1ca:	57458593          	addi	a1,a1,1396 # 20063574 <__FUNCTION__.5+0x40>
+2005d1ca:	57c58593          	addi	a1,a1,1404 # 2006357c <__FUNCTION__.5+0x40>
 2005d1ce:	4501                	c.li	a0,0
-2005d1d0:	9edfe0ef          	jal	ra,2005bbbc <rtos_task_create>
+2005d1d0:	9f3fe0ef          	jal	ra,2005bbc2 <rtos_task_create>
 2005d1d4:	c105                	c.beqz	a0,2005d1f4 <shell_init_ram+0x80>
 2005d1d6:	40b2                	c.lwsp	ra,12(sp)
 2005d1d8:	200636b7          	lui	a3,0x20063
 2005d1dc:	200635b7          	lui	a1,0x20063
-2005d1e0:	58468693          	addi	a3,a3,1412 # 20063584 <__FUNCTION__.5+0x50>
+2005d1e0:	58c68693          	addi	a3,a3,1420 # 2006358c <__FUNCTION__.5+0x50>
 2005d1e4:	04500613          	addi	a2,zero,69
-2005d1e8:	5a058593          	addi	a1,a1,1440 # 200635a0 <__FUNCTION__.5+0x6c>
+2005d1e8:	5a858593          	addi	a1,a1,1448 # 200635a8 <__FUNCTION__.5+0x6c>
 2005d1ec:	4509                	c.li	a0,2
 2005d1ee:	0141                	c.addi	sp,16
-2005d1f0:	f99fd06f          	jal	zero,2005b188 <rtk_log_write>
+2005d1f0:	f9ffd06f          	jal	zero,2005b18e <rtk_log_write>
 2005d1f4:	40b2                	c.lwsp	ra,12(sp)
 2005d1f6:	0141                	c.addi	sp,16
 2005d1f8:	8082                	c.jr	ra
@@ -8031,24 +8030,24 @@ Disassembly of section .xip_image2.text:
 2005d280:	20063937          	lui	s2,0x20063
 2005d284:	0805                	c.addi	a6,1
 2005d286:	4785                	c.li	a5,1
-2005d288:	68498713          	addi	a4,s3,1668 # 20063684 <__func__.1>
+2005d288:	68c98713          	addi	a4,s3,1676 # 2006368c <__func__.1>
 2005d28c:	88d2                	c.mv	a7,s4
-2005d28e:	5a868693          	addi	a3,a3,1448 # 200635a8 <__FUNCTION__.5+0x74>
+2005d28e:	5b068693          	addi	a3,a3,1456 # 200635b0 <__FUNCTION__.5+0x74>
 2005d292:	04100613          	addi	a2,zero,65
-2005d296:	5f890593          	addi	a1,s2,1528 # 200635f8 <__FUNCTION__.5+0xc4>
+2005d296:	60090593          	addi	a1,s2,1536 # 20063600 <__FUNCTION__.5+0xc4>
 2005d29a:	4505                	c.li	a0,1
 2005d29c:	c222                	c.swsp	s0,4(sp)
 2005d29e:	c026                	c.swsp	s1,0(sp)
 2005d2a0:	ce42                	c.swsp	a6,28(sp)
-2005d2a2:	ee7fd0ef          	jal	ra,2005b188 <rtk_log_write>
+2005d2a2:	eedfd0ef          	jal	ra,2005b18e <rtk_log_write>
 2005d2a6:	1810                	c.addi4spn	a2,sp,48
 2005d2a8:	85a2                	c.mv	a1,s0
 2005d2aa:	00a8                	c.addi4spn	a0,sp,72
-2005d2ac:	ff6fd0ef          	jal	ra,2005aaa2 <flash_read_word>
+2005d2ac:	ffcfd0ef          	jal	ra,2005aaa8 <flash_read_word>
 2005d2b0:	1850                	c.addi4spn	a2,sp,52
 2005d2b2:	00440593          	addi	a1,s0,4 # f8000004 <__ctrace_end__+0x2e000004>
 2005d2b6:	00a8                	c.addi4spn	a0,sp,72
-2005d2b8:	feafd0ef          	jal	ra,2005aaa2 <flash_read_word>
+2005d2b8:	ff0fd0ef          	jal	ra,2005aaa8 <flash_read_word>
 2005d2bc:	5742                	c.lwsp	a4,48(sp)
 2005d2be:	353937b7          	lui	a5,0x35393
 2005d2c2:	13878793          	addi	a5,a5,312 # 35393138 <__km4_bd_boot_download_addr__+0x5381138>
@@ -8077,12 +8076,12 @@ Disassembly of section .xip_image2.text:
 2005d2fc:	200636b7          	lui	a3,0x20063
 2005d300:	88a6                	c.mv	a7,s1
 2005d302:	4785                	c.li	a5,1
-2005d304:	68498713          	addi	a4,s3,1668
-2005d308:	5fc68693          	addi	a3,a3,1532 # 200635fc <__FUNCTION__.5+0xc8>
+2005d304:	68c98713          	addi	a4,s3,1676
+2005d308:	60468693          	addi	a3,a3,1540 # 20063604 <__FUNCTION__.5+0xc8>
 2005d30c:	04500613          	addi	a2,zero,69
-2005d310:	5f890593          	addi	a1,s2,1528
+2005d310:	60090593          	addi	a1,s2,1536
 2005d314:	4509                	c.li	a0,2
-2005d316:	e73fd0ef          	jal	ra,2005b188 <rtk_log_write>
+2005d316:	e79fd0ef          	jal	ra,2005b18e <rtk_log_write>
 2005d31a:	b7e9                	c.j	2005d2e4 <sys_clear_ota_signature+0xea>
 
 2005d31c <sys_recover_ota_signature>:
@@ -8099,17 +8098,17 @@ Disassembly of section .xip_image2.text:
 2005d338:	c4a2                	c.swsp	s0,72(sp)
 2005d33a:	c0ca                	c.swsp	s2,64(sp)
 2005d33c:	d63e                	c.swsp	a5,44(sp)
-2005d33e:	88dfd0ef          	jal	ra,2005abca <__wrap_malloc>
+2005d33e:	893fd0ef          	jal	ra,2005abd0 <__wrap_malloc>
 2005d342:	200639b7          	lui	s3,0x20063
 2005d346:	200634b7          	lui	s1,0x20063
 2005d34a:	e50d                	c.bnez	a0,2005d374 <sys_recover_ota_signature+0x58>
 2005d34c:	200636b7          	lui	a3,0x20063
-2005d350:	66898713          	addi	a4,s3,1640 # 20063668 <__func__.0>
-2005d354:	5f848593          	addi	a1,s1,1528 # 200635f8 <__FUNCTION__.5+0xc4>
-2005d358:	64c68693          	addi	a3,a3,1612 # 2006364c <__FUNCTION__.5+0x118>
+2005d350:	67098713          	addi	a4,s3,1648 # 20063670 <__func__.0>
+2005d354:	60048593          	addi	a1,s1,1536 # 20063600 <__FUNCTION__.5+0xc4>
+2005d358:	65468693          	addi	a3,a3,1620 # 20063654 <__FUNCTION__.5+0x118>
 2005d35c:	04500613          	addi	a2,zero,69
 2005d360:	4509                	c.li	a0,2
-2005d362:	e27fd0ef          	jal	ra,2005b188 <rtk_log_write>
+2005d362:	e2dfd0ef          	jal	ra,2005b18e <rtk_log_write>
 2005d366:	40b6                	c.lwsp	ra,76(sp)
 2005d368:	4426                	c.lwsp	s0,72(sp)
 2005d36a:	4496                	c.lwsp	s1,68(sp)
@@ -8154,15 +8153,15 @@ Disassembly of section .xip_image2.text:
 2005d3dc:	0685                	c.addi	a3,1
 2005d3de:	c036                	c.swsp	a3,0(sp)
 2005d3e0:	200636b7          	lui	a3,0x20063
-2005d3e4:	66898713          	addi	a4,s3,1640
+2005d3e4:	67098713          	addi	a4,s3,1648
 2005d3e8:	0805                	c.addi	a6,1
 2005d3ea:	4785                	c.li	a5,1
-2005d3ec:	5a868693          	addi	a3,a3,1448 # 200635a8 <__FUNCTION__.5+0x74>
-2005d3f0:	5f848593          	addi	a1,s1,1528
+2005d3ec:	5b068693          	addi	a3,a3,1456 # 200635b0 <__FUNCTION__.5+0x74>
+2005d3f0:	60048593          	addi	a1,s1,1536
 2005d3f4:	04100613          	addi	a2,zero,65
 2005d3f8:	4505                	c.li	a0,1
 2005d3fa:	c24a                	c.swsp	s2,4(sp)
-2005d3fc:	d8dfd0ef          	jal	ra,2005b188 <rtk_log_write>
+2005d3fc:	d93fd0ef          	jal	ra,2005b18e <rtk_log_write>
 2005d400:	8622                	c.mv	a2,s0
 2005d402:	6585                	c.lui	a1,0x1
 2005d404:	854a                	c.mv	a0,s2
@@ -8190,7 +8189,7 @@ Disassembly of section .xip_image2.text:
 2005d442:	4906                	c.lwsp	s2,64(sp)
 2005d444:	59f2                	c.lwsp	s3,60(sp)
 2005d446:	6161                	c.addi16sp	sp,80
-2005d448:	f86fd06f          	jal	zero,2005abce <__wrap_free>
+2005d448:	f8cfd06f          	jal	zero,2005abd4 <__wrap_free>
 2005d44c:	4772                	c.lwsp	a4,28(sp)
 2005d44e:	f80007b7          	lui	a5,0xf8000
 2005d452:	bf89                	c.j	2005d3a4 <sys_recover_ota_signature+0x88>
@@ -8207,17 +8206,17 @@ Disassembly of section .xip_image2.text:
 2005d462:	c84a                	c.swsp	s2,16(sp)
 2005d464:	c64e                	c.swsp	s3,12(sp)
 2005d466:	ce06                	c.swsp	ra,28(sp)
-2005d468:	f941a983          	lw	s3,-108(gp) # 200668fc <xTickCount>
-2005d46c:	f5c18793          	addi	a5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005d468:	f941a983          	lw	s3,-108(gp) # 2006691c <xTickCount>
+2005d46c:	f5c18793          	addi	a5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005d470:	842a                	c.mv	s0,a0
 2005d472:	4388                	c.lw	a0,0(a5)
 2005d474:	892e                	c.mv	s2,a1
 2005d476:	0511                	c.addi	a0,4
-2005d478:	a3dfd0ef          	jal	ra,2005aeb4 <uxListRemove>
-2005d47c:	f5c18793          	addi	a5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005d478:	a43fd0ef          	jal	ra,2005aeba <uxListRemove>
+2005d47c:	f5c18793          	addi	a5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005d480:	ed09                	c.bnez	a0,2005d49a <prvAddCurrentTaskToDelayedList+0x3e>
 2005d482:	4398                	c.lw	a4,0(a5)
-2005d484:	f8018693          	addi	a3,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005d484:	f8018693          	addi	a3,gp,-128 # 20066908 <uxTopReadyPriority>
 2005d488:	574c                	c.lw	a1,44(a4)
 2005d48a:	4290                	c.lw	a2,0(a3)
 2005d48c:	4705                	c.li	a4,1
@@ -8236,14 +8235,14 @@ Disassembly of section .xip_image2.text:
 2005d4ae:	49b2                	c.lwsp	s3,12(sp)
 2005d4b0:	20068537          	lui	a0,0x20068
 2005d4b4:	0591                	c.addi	a1,4
-2005d4b6:	3c050513          	addi	a0,a0,960 # 200683c0 <xSuspendedTaskList>
+2005d4b6:	40050513          	addi	a0,a0,1024 # 20068400 <xSuspendedTaskList>
 2005d4ba:	6105                	c.addi16sp	sp,32
-2005d4bc:	9b5fd06f          	jal	zero,2005ae70 <vListInsertEnd>
+2005d4bc:	9bbfd06f          	jal	zero,2005ae76 <vListInsertEnd>
 2005d4c0:	4398                	c.lw	a4,0(a5)
 2005d4c2:	944e                	c.add	s0,s3
 2005d4c4:	c340                	c.sw	s0,4(a4)
 2005d4c6:	01347e63          	bgeu	s0,s3,2005d4e2 <prvAddCurrentTaskToDelayedList+0x86>
-2005d4ca:	f641a503          	lw	a0,-156(gp) # 200668cc <pxOverflowDelayedTaskList>
+2005d4ca:	f641a503          	lw	a0,-156(gp) # 200668ec <pxOverflowDelayedTaskList>
 2005d4ce:	4462                	c.lwsp	s0,24(sp)
 2005d4d0:	438c                	c.lw	a1,0(a5)
 2005d4d2:	40f2                	c.lwsp	ra,28(sp)
@@ -8252,12 +8251,12 @@ Disassembly of section .xip_image2.text:
 2005d4d8:	49b2                	c.lwsp	s3,12(sp)
 2005d4da:	0591                	c.addi	a1,4
 2005d4dc:	6105                	c.addi16sp	sp,32
-2005d4de:	9a9fd06f          	jal	zero,2005ae86 <vListInsert>
-2005d4e2:	f601a503          	lw	a0,-160(gp) # 200668c8 <pxDelayedTaskList>
+2005d4de:	9affd06f          	jal	zero,2005ae8c <vListInsert>
+2005d4e2:	f601a503          	lw	a0,-160(gp) # 200668e8 <pxDelayedTaskList>
 2005d4e6:	438c                	c.lw	a1,0(a5)
 2005d4e8:	0591                	c.addi	a1,4
-2005d4ea:	99dfd0ef          	jal	ra,2005ae86 <vListInsert>
-2005d4ee:	f8418793          	addi	a5,gp,-124 # 200668ec <xNextTaskUnblockTime>
+2005d4ea:	9a3fd0ef          	jal	ra,2005ae8c <vListInsert>
+2005d4ee:	f8418793          	addi	a5,gp,-124 # 2006690c <xNextTaskUnblockTime>
 2005d4f2:	4398                	c.lw	a4,0(a5)
 2005d4f4:	00e47363          	bgeu	s0,a4,2005d4fa <prvAddCurrentTaskToDelayedList+0x9e>
 2005d4f8:	c380                	c.sw	s0,0(a5)
@@ -8274,7 +8273,7 @@ Disassembly of section .xip_image2.text:
 2005d50a:	c606                	c.swsp	ra,12(sp)
 2005d50c:	c422                	c.swsp	s0,8(sp)
 2005d50e:	842a                	c.mv	s0,a0
-2005d510:	003040ef          	jal	ra,20061d12 <strcpy>
+2005d510:	00b040ef          	jal	ra,20061d1a <strcpy>
 2005d514:	8522                	c.mv	a0,s0
 2005d516:	dffac097          	auipc	ra,0xdffac
 2005d51a:	5c2080e7          	jalr	ra,1474(ra) # 9ad8 <__wrap_strlen>
@@ -8299,27 +8298,27 @@ Disassembly of section .xip_image2.text:
 2005d550:	bfd9                	c.j	2005d526 <prvWriteNameToBuffer+0x1e>
 
 2005d552 <prvGetExpectedIdleTime>:
-2005d552:	f801a703          	lw	a4,-128(gp) # 200668e8 <uxTopReadyPriority>
-2005d556:	f5c1a783          	lw	a5,-164(gp) # 200668c4 <pxCurrentTCB>
+2005d552:	f801a703          	lw	a4,-128(gp) # 20066908 <uxTopReadyPriority>
+2005d556:	f5c1a783          	lw	a5,-164(gp) # 200668e4 <pxCurrentTCB>
 2005d55a:	57c8                	c.lw	a0,44(a5)
 2005d55c:	e105                	c.bnez	a0,2005d57c <prvGetExpectedIdleTime+0x2a>
 2005d55e:	200687b7          	lui	a5,0x20068
-2005d562:	2a87a683          	lw	a3,680(a5) # 200682a8 <pxReadyTasksLists>
+2005d562:	2e87a683          	lw	a3,744(a5) # 200682e8 <pxReadyTasksLists>
 2005d566:	4785                	c.li	a5,1
 2005d568:	00d7eb63          	bltu	a5,a3,2005d57e <prvGetExpectedIdleTime+0x2c>
 2005d56c:	00e7e963          	bltu	a5,a4,2005d57e <prvGetExpectedIdleTime+0x2c>
-2005d570:	f841a503          	lw	a0,-124(gp) # 200668ec <xNextTaskUnblockTime>
-2005d574:	f941a783          	lw	a5,-108(gp) # 200668fc <xTickCount>
+2005d570:	f841a503          	lw	a0,-124(gp) # 2006690c <xNextTaskUnblockTime>
+2005d574:	f941a783          	lw	a5,-108(gp) # 2006691c <xTickCount>
 2005d578:	8d1d                	c.sub	a0,a5
 2005d57a:	8082                	c.jr	ra
 2005d57c:	4501                	c.li	a0,0
 2005d57e:	8082                	c.jr	ra
 
 2005d580 <prvResetNextTaskUnblockTime>:
-2005d580:	f6018713          	addi	a4,gp,-160 # 200668c8 <pxDelayedTaskList>
+2005d580:	f6018713          	addi	a4,gp,-160 # 200668e8 <pxDelayedTaskList>
 2005d584:	431c                	c.lw	a5,0(a4)
 2005d586:	4394                	c.lw	a3,0(a5)
-2005d588:	f8418793          	addi	a5,gp,-124 # 200668ec <xNextTaskUnblockTime>
+2005d588:	f8418793          	addi	a5,gp,-124 # 2006690c <xNextTaskUnblockTime>
 2005d58c:	e681                	c.bnez	a3,2005d594 <prvResetNextTaskUnblockTime+0x14>
 2005d58e:	577d                	c.li	a4,-1
 2005d590:	c398                	c.sw	a4,0(a5)
@@ -8335,16 +8334,16 @@ Disassembly of section .xip_image2.text:
 2005d5a0:	842a                	c.mv	s0,a0
 2005d5a2:	06c50513          	addi	a0,a0,108
 2005d5a6:	c606                	c.swsp	ra,12(sp)
-2005d5a8:	680040ef          	jal	ra,20061c28 <_reclaim_reent>
+2005d5a8:	688040ef          	jal	ra,20061c30 <_reclaim_reent>
 2005d5ac:	16144783          	lbu	a5,353(s0)
 2005d5b0:	eb91                	c.bnez	a5,2005d5c4 <prvDeleteTCB+0x28>
 2005d5b2:	5808                	c.lw	a0,48(s0)
-2005d5b4:	f46fd0ef          	jal	ra,2005acfa <vPortFree>
+2005d5b4:	f4cfd0ef          	jal	ra,2005ad00 <vPortFree>
 2005d5b8:	8522                	c.mv	a0,s0
 2005d5ba:	4422                	c.lwsp	s0,8(sp)
 2005d5bc:	40b2                	c.lwsp	ra,12(sp)
 2005d5be:	0141                	c.addi	sp,16
-2005d5c0:	f3afd06f          	jal	zero,2005acfa <vPortFree>
+2005d5c0:	f40fd06f          	jal	zero,2005ad00 <vPortFree>
 2005d5c4:	4705                	c.li	a4,1
 2005d5c6:	fee789e3          	beq	a5,a4,2005d5b8 <prvDeleteTCB+0x1c>
 2005d5ca:	40b2                	c.lwsp	ra,12(sp)
@@ -8397,9 +8396,9 @@ Disassembly of section .xip_image2.text:
 2005d646:	03242623          	sw	s2,44(s0)
 2005d64a:	05242e23          	sw	s2,92(s0)
 2005d64e:	06042023          	sw	zero,96(s0)
-2005d652:	819fd0ef          	jal	ra,2005ae6a <vListInitialiseItem>
+2005d652:	81ffd0ef          	jal	ra,2005ae70 <vListInitialiseItem>
 2005d656:	01840513          	addi	a0,s0,24
-2005d65a:	811fd0ef          	jal	ra,2005ae6a <vListInitialiseItem>
+2005d65a:	817fd0ef          	jal	ra,2005ae70 <vListInitialiseItem>
 2005d65e:	472d                	c.li	a4,11
 2005d660:	412704b3          	sub	s1,a4,s2
 2005d664:	4611                	c.li	a2,4
@@ -8424,13 +8423,13 @@ Disassembly of section .xip_image2.text:
 2005d6a0:	dffac097          	auipc	ra,0xdffac
 2005d6a4:	42e080e7          	jalr	ra,1070(ra) # 9ace <__wrap_memset>
 2005d6a8:	200697b7          	lui	a5,0x20069
-2005d6ac:	98478793          	addi	a5,a5,-1660 # 20068984 <__sf>
+2005d6ac:	9c478793          	addi	a5,a5,-1596 # 200689c4 <__sf>
 2005d6b0:	d83c                	c.sw	a5,112(s0)
 2005d6b2:	200697b7          	lui	a5,0x20069
-2005d6b6:	9ec78793          	addi	a5,a5,-1556 # 200689ec <__sf+0x68>
+2005d6b6:	a2c78793          	addi	a5,a5,-1492 # 20068a2c <__sf+0x68>
 2005d6ba:	d87c                	c.sw	a5,116(s0)
 2005d6bc:	200697b7          	lui	a5,0x20069
-2005d6c0:	a5478793          	addi	a5,a5,-1452 # 20068a54 <__sf+0xd0>
+2005d6c0:	a9478793          	addi	a5,a5,-1388 # 20068a94 <__sf+0xd0>
 2005d6c4:	dc3c                	c.sw	a5,120(s0)
 2005d6c6:	8656                	c.mv	a2,s5
 2005d6c8:	85d2                	c.mv	a1,s4
@@ -8453,28 +8452,28 @@ Disassembly of section .xip_image2.text:
 2005d6f2:	b7a1                	c.j	2005d63a <prvInitialiseNewTask.constprop.0+0x68>
 
 2005d6f4 <vTaskSuspendAll>:
-2005d6f4:	f7818793          	addi	a5,gp,-136 # 200668e0 <uxSchedulerSuspended>
+2005d6f4:	f7818793          	addi	a5,gp,-136 # 20066900 <uxSchedulerSuspended>
 2005d6f8:	4398                	c.lw	a4,0(a5)
 2005d6fa:	0705                	c.addi	a4,1
 2005d6fc:	c398                	c.sw	a4,0(a5)
 2005d6fe:	8082                	c.jr	ra
 
 2005d700 <xTaskGetTickCountFromISR>:
-2005d700:	f941a503          	lw	a0,-108(gp) # 200668fc <xTickCount>
+2005d700:	f941a503          	lw	a0,-108(gp) # 2006691c <xTickCount>
 2005d704:	8082                	c.jr	ra
 
 2005d706 <uxTaskGetNumberOfTasks>:
-2005d706:	f701a503          	lw	a0,-144(gp) # 200668d8 <uxCurrentNumberOfTasks>
+2005d706:	f701a503          	lw	a0,-144(gp) # 200668f8 <uxCurrentNumberOfTasks>
 2005d70a:	8082                	c.jr	ra
 
 2005d70c <pcTaskGetName>:
 2005d70c:	e119                	c.bnez	a0,2005d712 <pcTaskGetName+0x6>
-2005d70e:	f5c1a503          	lw	a0,-164(gp) # 200668c4 <pxCurrentTCB>
+2005d70e:	f5c1a503          	lw	a0,-164(gp) # 200668e4 <pxCurrentTCB>
 2005d712:	03450513          	addi	a0,a0,52
 2005d716:	8082                	c.jr	ra
 
 2005d718 <xTaskIncrementTick>:
-2005d718:	f781a783          	lw	a5,-136(gp) # 200668e0 <uxSchedulerSuspended>
+2005d718:	f781a783          	lw	a5,-136(gp) # 20066900 <uxSchedulerSuspended>
 2005d71c:	7179                	c.addi16sp	sp,-48
 2005d71e:	d606                	c.swsp	ra,44(sp)
 2005d720:	d422                	c.swsp	s0,40(sp)
@@ -8489,28 +8488,28 @@ Disassembly of section .xip_image2.text:
 2005d732:	c266                	c.swsp	s9,4(sp)
 2005d734:	c06a                	c.swsp	s10,0(sp)
 2005d736:	10079363          	bne	a5,zero,2005d83c <xTaskIncrementTick+0x124>
-2005d73a:	f9418793          	addi	a5,gp,-108 # 200668fc <xTickCount>
+2005d73a:	f9418793          	addi	a5,gp,-108 # 2006691c <xTickCount>
 2005d73e:	0007aa03          	lw	s4,0(a5)
 2005d742:	0a05                	c.addi	s4,1
 2005d744:	0147a023          	sw	s4,0(a5)
 2005d748:	020a1163          	bne	s4,zero,2005d76a <xTaskIncrementTick+0x52>
-2005d74c:	f6018713          	addi	a4,gp,-160 # 200668c8 <pxDelayedTaskList>
-2005d750:	f6418793          	addi	a5,gp,-156 # 200668cc <pxOverflowDelayedTaskList>
+2005d74c:	f6018713          	addi	a4,gp,-160 # 200668e8 <pxDelayedTaskList>
+2005d750:	f6418793          	addi	a5,gp,-156 # 200668ec <pxOverflowDelayedTaskList>
 2005d754:	4314                	c.lw	a3,0(a4)
 2005d756:	4390                	c.lw	a2,0(a5)
 2005d758:	c310                	c.sw	a2,0(a4)
 2005d75a:	c394                	c.sw	a3,0(a5)
-2005d75c:	f8818793          	addi	a5,gp,-120 # 200668f0 <xNumOfOverflows>
+2005d75c:	f8818793          	addi	a5,gp,-120 # 20066910 <xNumOfOverflows>
 2005d760:	4398                	c.lw	a4,0(a5)
 2005d762:	0705                	c.addi	a4,1
 2005d764:	c398                	c.sw	a4,0(a5)
 2005d766:	e1bff0ef          	jal	ra,2005d580 <prvResetNextTaskUnblockTime>
-2005d76a:	f8418793          	addi	a5,gp,-124 # 200668ec <xNextTaskUnblockTime>
+2005d76a:	f8418793          	addi	a5,gp,-124 # 2006690c <xNextTaskUnblockTime>
 2005d76e:	439c                	c.lw	a5,0(a5)
 2005d770:	200684b7          	lui	s1,0x20068
-2005d774:	f8418993          	addi	s3,gp,-124 # 200668ec <xNextTaskUnblockTime>
-2005d778:	2a848493          	addi	s1,s1,680 # 200682a8 <pxReadyTasksLists>
-2005d77c:	f5c18a93          	addi	s5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005d774:	f8418993          	addi	s3,gp,-124 # 2006690c <xNextTaskUnblockTime>
+2005d778:	2e848493          	addi	s1,s1,744 # 200682e8 <pxReadyTasksLists>
+2005d77c:	f5c18a93          	addi	s5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005d780:	4401                	c.li	s0,0
 2005d782:	04fa7663          	bgeu	s4,a5,2005d7ce <xTaskIncrementTick+0xb6>
 2005d786:	000aa783          	lw	a5,0(s5)
@@ -8522,10 +8521,10 @@ Disassembly of section .xip_image2.text:
 2005d796:	4785                	c.li	a5,1
 2005d798:	00e7f363          	bgeu	a5,a4,2005d79e <xTaskIncrementTick+0x86>
 2005d79c:	4405                	c.li	s0,1
-2005d79e:	f8c1a783          	lw	a5,-116(gp) # 200668f4 <xPendedTicks>
+2005d79e:	f8c1a783          	lw	a5,-116(gp) # 20066914 <xPendedTicks>
 2005d7a2:	e399                	c.bnez	a5,2005d7a8 <xTaskIncrementTick+0x90>
 2005d7a4:	e41fe0ef          	jal	ra,2005c5e4 <vApplicationTickHook>
-2005d7a8:	f981a783          	lw	a5,-104(gp) # 20066900 <xYieldPending>
+2005d7a8:	f981a783          	lw	a5,-104(gp) # 20066920 <xYieldPending>
 2005d7ac:	c391                	c.beqz	a5,2005d7b0 <xTaskIncrementTick+0x98>
 2005d7ae:	4405                	c.li	s0,1
 2005d7b0:	50b2                	c.lwsp	ra,44(sp)
@@ -8545,7 +8544,7 @@ Disassembly of section .xip_image2.text:
 2005d7cc:	8082                	c.jr	ra
 2005d7ce:	4c05                	c.li	s8,1
 2005d7d0:	4cd1                	c.li	s9,20
-2005d7d2:	f6018793          	addi	a5,gp,-160 # 200668c8 <pxDelayedTaskList>
+2005d7d2:	f6018793          	addi	a5,gp,-160 # 200668e8 <pxDelayedTaskList>
 2005d7d6:	4398                	c.lw	a4,0(a5)
 2005d7d8:	4318                	c.lw	a4,0(a4)
 2005d7da:	e709                	c.bnez	a4,2005d7e4 <xTaskIncrementTick+0xcc>
@@ -8559,13 +8558,13 @@ Disassembly of section .xip_image2.text:
 2005d7f0:	fefa67e3          	bltu	s4,a5,2005d7de <xTaskIncrementTick+0xc6>
 2005d7f4:	00490d13          	addi	s10,s2,4
 2005d7f8:	856a                	c.mv	a0,s10
-2005d7fa:	ebafd0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005d7fa:	ec0fd0ef          	jal	ra,2005aeba <uxListRemove>
 2005d7fe:	02892783          	lw	a5,40(s2)
 2005d802:	c789                	c.beqz	a5,2005d80c <xTaskIncrementTick+0xf4>
 2005d804:	01890513          	addi	a0,s2,24
-2005d808:	eacfd0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005d808:	eb2fd0ef          	jal	ra,2005aeba <uxListRemove>
 2005d80c:	02c92503          	lw	a0,44(s2)
-2005d810:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005d810:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005d814:	4314                	c.lw	a3,0(a4)
 2005d816:	00ac17b3          	sll	a5,s8,a0
 2005d81a:	03950533          	mul	a0,a0,s9
@@ -8573,14 +8572,14 @@ Disassembly of section .xip_image2.text:
 2005d820:	85ea                	c.mv	a1,s10
 2005d822:	c31c                	c.sw	a5,0(a4)
 2005d824:	9526                	c.add	a0,s1
-2005d826:	e4afd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005d826:	e50fd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005d82a:	000aa783          	lw	a5,0(s5)
 2005d82e:	02c92703          	lw	a4,44(s2)
 2005d832:	57dc                	c.lw	a5,44(a5)
 2005d834:	f8f76fe3          	bltu	a4,a5,2005d7d2 <xTaskIncrementTick+0xba>
 2005d838:	4405                	c.li	s0,1
 2005d83a:	bf61                	c.j	2005d7d2 <xTaskIncrementTick+0xba>
-2005d83c:	f8c18793          	addi	a5,gp,-116 # 200668f4 <xPendedTicks>
+2005d83c:	f8c18793          	addi	a5,gp,-116 # 20066914 <xPendedTicks>
 2005d840:	4398                	c.lw	a4,0(a5)
 2005d842:	4401                	c.li	s0,0
 2005d844:	0705                	c.addi	a4,1
@@ -8589,8 +8588,8 @@ Disassembly of section .xip_image2.text:
 2005d84c:	b795                	c.j	2005d7b0 <xTaskIncrementTick+0x98>
 
 2005d84e <vTaskSwitchContext>:
-2005d84e:	f781a703          	lw	a4,-136(gp) # 200668e0 <uxSchedulerSuspended>
-2005d852:	f9818793          	addi	a5,gp,-104 # 20066900 <xYieldPending>
+2005d84e:	f781a703          	lw	a4,-136(gp) # 20066900 <uxSchedulerSuspended>
+2005d852:	f9818793          	addi	a5,gp,-104 # 20066920 <xYieldPending>
 2005d856:	c701                	c.beqz	a4,2005d85e <vTaskSwitchContext+0x10>
 2005d858:	4705                	c.li	a4,1
 2005d85a:	c398                	c.sw	a4,0(a5)
@@ -8601,13 +8600,13 @@ Disassembly of section .xip_image2.text:
 2005d864:	0007a023          	sw	zero,0(a5)
 2005d868:	410187b7          	lui	a5,0x41018
 2005d86c:	4bd4                	c.lw	a3,20(a5)
-2005d86e:	f6c18713          	addi	a4,gp,-148 # 200668d4 <ulTotalRunTime>
+2005d86e:	f6c18713          	addi	a4,gp,-148 # 200668f4 <ulTotalRunTime>
 2005d872:	c314                	c.sw	a3,0(a4)
-2005d874:	f681a583          	lw	a1,-152(gp) # 200668d0 <ulTaskSwitchedInTime>
+2005d874:	f681a583          	lw	a1,-152(gp) # 200668f0 <ulTaskSwitchedInTime>
 2005d878:	4318                	c.lw	a4,0(a4)
-2005d87a:	f6c18793          	addi	a5,gp,-148 # 200668d4 <ulTotalRunTime>
-2005d87e:	f6818693          	addi	a3,gp,-152 # 200668d0 <ulTaskSwitchedInTime>
-2005d882:	f5c18413          	addi	s0,gp,-164 # 200668c4 <pxCurrentTCB>
+2005d87a:	f6c18793          	addi	a5,gp,-148 # 200668f4 <ulTotalRunTime>
+2005d87e:	f6818693          	addi	a3,gp,-152 # 200668f0 <ulTaskSwitchedInTime>
+2005d882:	f5c18413          	addi	s0,gp,-164 # 200668e4 <pxCurrentTCB>
 2005d886:	00e5f863          	bgeu	a1,a4,2005d896 <vTaskSwitchContext+0x48>
 2005d88a:	4388                	c.lw	a0,0(a5)
 2005d88c:	4010                	c.lw	a2,0(s0)
@@ -8633,15 +8632,15 @@ Disassembly of section .xip_image2.text:
 2005d8c0:	400c                	c.lw	a1,0(s0)
 2005d8c2:	03458593          	addi	a1,a1,52
 2005d8c6:	d77fe0ef          	jal	ra,2005c63c <vApplicationStackOverflowHook>
-2005d8ca:	f801a503          	lw	a0,-128(gp) # 200668e8 <uxTopReadyPriority>
-2005d8ce:	3e7030ef          	jal	ra,200614b4 <__clzsi2>
+2005d8ca:	f801a503          	lw	a0,-128(gp) # 20066908 <uxTopReadyPriority>
+2005d8ce:	3ef030ef          	jal	ra,200614bc <__clzsi2>
 2005d8d2:	47fd                	c.li	a5,31
 2005d8d4:	40a78533          	sub	a0,a5,a0
 2005d8d8:	4751                	c.li	a4,20
 2005d8da:	02e50733          	mul	a4,a0,a4
 2005d8de:	200687b7          	lui	a5,0x20068
-2005d8e2:	2a878693          	addi	a3,a5,680 # 200682a8 <pxReadyTasksLists>
-2005d8e6:	2a878793          	addi	a5,a5,680
+2005d8e2:	2e878693          	addi	a3,a5,744 # 200682e8 <pxReadyTasksLists>
+2005d8e6:	2e878793          	addi	a5,a5,744
 2005d8ea:	00e68633          	add	a2,a3,a4
 2005d8ee:	424c                	c.lw	a1,4(a2)
 2005d8f0:	0721                	c.addi	a4,8
@@ -8661,7 +8660,7 @@ Disassembly of section .xip_image2.text:
 2005d910:	401c                	c.lw	a5,0(s0)
 2005d912:	4422                	c.lwsp	s0,8(sp)
 2005d914:	06c78793          	addi	a5,a5,108
-2005d918:	e8f1aa23          	sw	a5,-364(gp) # 200667fc <_impure_ptr>
+2005d918:	e8f1aa23          	sw	a5,-364(gp) # 2006681c <_impure_ptr>
 2005d91c:	0141                	c.addi	sp,16
 2005d91e:	8082                	c.jr	ra
 
@@ -8669,10 +8668,10 @@ Disassembly of section .xip_image2.text:
 2005d920:	1141                	c.addi	sp,-16
 2005d922:	c422                	c.swsp	s0,8(sp)
 2005d924:	842e                	c.mv	s0,a1
-2005d926:	f5c1a583          	lw	a1,-164(gp) # 200668c4 <pxCurrentTCB>
+2005d926:	f5c1a583          	lw	a1,-164(gp) # 200668e4 <pxCurrentTCB>
 2005d92a:	c606                	c.swsp	ra,12(sp)
 2005d92c:	05e1                	c.addi	a1,24
-2005d92e:	d58fd0ef          	jal	ra,2005ae86 <vListInsert>
+2005d92e:	d5efd0ef          	jal	ra,2005ae8c <vListInsert>
 2005d932:	8522                	c.mv	a0,s0
 2005d934:	4422                	c.lwsp	s0,8(sp)
 2005d936:	40b2                	c.lwsp	ra,12(sp)
@@ -8684,12 +8683,12 @@ Disassembly of section .xip_image2.text:
 2005d940:	1141                	c.addi	sp,-16
 2005d942:	c422                	c.swsp	s0,8(sp)
 2005d944:	842e                	c.mv	s0,a1
-2005d946:	f5c1a583          	lw	a1,-164(gp) # 200668c4 <pxCurrentTCB>
+2005d946:	f5c1a583          	lw	a1,-164(gp) # 200668e4 <pxCurrentTCB>
 2005d94a:	c226                	c.swsp	s1,4(sp)
 2005d94c:	84b2                	c.mv	s1,a2
 2005d94e:	05e1                	c.addi	a1,24
 2005d950:	c606                	c.swsp	ra,12(sp)
-2005d952:	d1efd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005d952:	d24fd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005d956:	c091                	c.beqz	s1,2005d95a <vTaskPlaceOnEventListRestricted+0x1a>
 2005d958:	547d                	c.li	s0,-1
 2005d95a:	8522                	c.mv	a0,s0
@@ -8709,15 +8708,15 @@ Disassembly of section .xip_image2.text:
 2005d974:	01840593          	addi	a1,s0,24
 2005d978:	852e                	c.mv	a0,a1
 2005d97a:	c62e                	c.swsp	a1,12(sp)
-2005d97c:	d38fd0ef          	jal	ra,2005aeb4 <uxListRemove>
-2005d980:	f781a783          	lw	a5,-136(gp) # 200668e0 <uxSchedulerSuspended>
+2005d97c:	d3efd0ef          	jal	ra,2005aeba <uxListRemove>
+2005d980:	f781a783          	lw	a5,-136(gp) # 20066900 <uxSchedulerSuspended>
 2005d984:	45b2                	c.lwsp	a1,12(sp)
 2005d986:	efa1                	c.bnez	a5,2005d9de <xTaskRemoveFromEventList+0x74>
 2005d988:	00440593          	addi	a1,s0,4
 2005d98c:	852e                	c.mv	a0,a1
 2005d98e:	c62e                	c.swsp	a1,12(sp)
-2005d990:	d24fd0ef          	jal	ra,2005aeb4 <uxListRemove>
-2005d994:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005d990:	d2afd0ef          	jal	ra,2005aeba <uxListRemove>
+2005d994:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005d998:	5448                	c.lw	a0,44(s0)
 2005d99a:	4314                	c.lw	a3,0(a4)
 2005d99c:	4785                	c.li	a5,1
@@ -8728,51 +8727,51 @@ Disassembly of section .xip_image2.text:
 2005d9a8:	02f50533          	mul	a0,a0,a5
 2005d9ac:	45b2                	c.lwsp	a1,12(sp)
 2005d9ae:	200687b7          	lui	a5,0x20068
-2005d9b2:	2a878793          	addi	a5,a5,680 # 200682a8 <pxReadyTasksLists>
+2005d9b2:	2e878793          	addi	a5,a5,744 # 200682e8 <pxReadyTasksLists>
 2005d9b6:	953e                	c.add	a0,a5
-2005d9b8:	cb8fd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005d9b8:	cbefd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005d9bc:	bc5ff0ef          	jal	ra,2005d580 <prvResetNextTaskUnblockTime>
-2005d9c0:	f5c1a783          	lw	a5,-164(gp) # 200668c4 <pxCurrentTCB>
+2005d9c0:	f5c1a783          	lw	a5,-164(gp) # 200668e4 <pxCurrentTCB>
 2005d9c4:	5458                	c.lw	a4,44(s0)
 2005d9c6:	4501                	c.li	a0,0
 2005d9c8:	57dc                	c.lw	a5,44(a5)
 2005d9ca:	00e7f663          	bgeu	a5,a4,2005d9d6 <xTaskRemoveFromEventList+0x6c>
 2005d9ce:	4705                	c.li	a4,1
-2005d9d0:	f8e1ac23          	sw	a4,-104(gp) # 20066900 <xYieldPending>
+2005d9d0:	f8e1ac23          	sw	a4,-104(gp) # 20066920 <xYieldPending>
 2005d9d4:	4505                	c.li	a0,1
 2005d9d6:	40f2                	c.lwsp	ra,28(sp)
 2005d9d8:	4462                	c.lwsp	s0,24(sp)
 2005d9da:	6105                	c.addi16sp	sp,32
 2005d9dc:	8082                	c.jr	ra
 2005d9de:	20068537          	lui	a0,0x20068
-2005d9e2:	3ac50513          	addi	a0,a0,940 # 200683ac <xPendingReadyList>
-2005d9e6:	c8afd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005d9e2:	3ec50513          	addi	a0,a0,1004 # 200683ec <xPendingReadyList>
+2005d9e6:	c90fd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005d9ea:	bfd9                	c.j	2005d9c0 <xTaskRemoveFromEventList+0x56>
 
 2005d9ec <vTaskInternalSetTimeOutState>:
-2005d9ec:	f881a783          	lw	a5,-120(gp) # 200668f0 <xNumOfOverflows>
+2005d9ec:	f881a783          	lw	a5,-120(gp) # 20066910 <xNumOfOverflows>
 2005d9f0:	c11c                	c.sw	a5,0(a0)
-2005d9f2:	f941a783          	lw	a5,-108(gp) # 200668fc <xTickCount>
+2005d9f2:	f941a783          	lw	a5,-108(gp) # 2006691c <xTickCount>
 2005d9f6:	c15c                	c.sw	a5,4(a0)
 2005d9f8:	8082                	c.jr	ra
 
 2005d9fa <vTaskMissedYield>:
 2005d9fa:	4705                	c.li	a4,1
-2005d9fc:	f8e1ac23          	sw	a4,-104(gp) # 20066900 <xYieldPending>
+2005d9fc:	f8e1ac23          	sw	a4,-104(gp) # 20066920 <xYieldPending>
 2005da00:	8082                	c.jr	ra
 
 2005da02 <eTaskConfirmSleepModeStatus>:
 2005da02:	200687b7          	lui	a5,0x20068
-2005da06:	3ac7a783          	lw	a5,940(a5) # 200683ac <xPendingReadyList>
+2005da06:	3ec7a783          	lw	a5,1004(a5) # 200683ec <xPendingReadyList>
 2005da0a:	4501                	c.li	a0,0
 2005da0c:	e395                	c.bnez	a5,2005da30 <eTaskConfirmSleepModeStatus+0x2e>
-2005da0e:	f981a783          	lw	a5,-104(gp) # 20066900 <xYieldPending>
+2005da0e:	f981a783          	lw	a5,-104(gp) # 20066920 <xYieldPending>
 2005da12:	ef99                	c.bnez	a5,2005da30 <eTaskConfirmSleepModeStatus+0x2e>
-2005da14:	f8c1a783          	lw	a5,-116(gp) # 200668f4 <xPendedTicks>
+2005da14:	f8c1a783          	lw	a5,-116(gp) # 20066914 <xPendedTicks>
 2005da18:	ef81                	c.bnez	a5,2005da30 <eTaskConfirmSleepModeStatus+0x2e>
 2005da1a:	200687b7          	lui	a5,0x20068
-2005da1e:	3c07a703          	lw	a4,960(a5) # 200683c0 <xSuspendedTaskList>
-2005da22:	f701a783          	lw	a5,-144(gp) # 200668d8 <uxCurrentNumberOfTasks>
+2005da1e:	4007a703          	lw	a4,1024(a5) # 20068400 <xSuspendedTaskList>
+2005da22:	f701a783          	lw	a5,-144(gp) # 200668f8 <uxCurrentNumberOfTasks>
 2005da26:	4505                	c.li	a0,1
 2005da28:	17fd                	c.addi	a5,-1
 2005da2a:	00f71363          	bne	a4,a5,2005da30 <eTaskConfirmSleepModeStatus+0x2e>
@@ -8780,14 +8779,14 @@ Disassembly of section .xip_image2.text:
 2005da30:	8082                	c.jr	ra
 
 2005da32 <xTaskGetCurrentTaskHandle>:
-2005da32:	f5c1a503          	lw	a0,-164(gp) # 200668c4 <pxCurrentTCB>
+2005da32:	f5c1a503          	lw	a0,-164(gp) # 200668e4 <pxCurrentTCB>
 2005da36:	8082                	c.jr	ra
 
 2005da38 <xTaskGetSchedulerState>:
-2005da38:	f901a783          	lw	a5,-112(gp) # 200668f8 <xSchedulerRunning>
+2005da38:	f901a783          	lw	a5,-112(gp) # 20066918 <xSchedulerRunning>
 2005da3c:	4505                	c.li	a0,1
 2005da3e:	c791                	c.beqz	a5,2005da4a <xTaskGetSchedulerState+0x12>
-2005da40:	f781a503          	lw	a0,-136(gp) # 200668e0 <uxSchedulerSuspended>
+2005da40:	f781a503          	lw	a0,-136(gp) # 20066900 <uxSchedulerSuspended>
 2005da44:	00153513          	sltiu	a0,a0,1
 2005da48:	0506                	c.slli	a0,0x1
 2005da4a:	8082                	c.jr	ra
@@ -8799,12 +8798,12 @@ Disassembly of section .xip_image2.text:
 2005da52:	cc22                	c.swsp	s0,24(sp)
 2005da54:	ce06                	c.swsp	ra,28(sp)
 2005da56:	c84a                	c.swsp	s2,16(sp)
-2005da58:	f5c18713          	addi	a4,gp,-164 # 200668c4 <pxCurrentTCB>
+2005da58:	f5c18713          	addi	a4,gp,-164 # 200668e4 <pxCurrentTCB>
 2005da5c:	4314                	c.lw	a3,0(a4)
 2005da5e:	555c                	c.lw	a5,44(a0)
 2005da60:	842a                	c.mv	s0,a0
 2005da62:	56d4                	c.lw	a3,44(a3)
-2005da64:	f5c18493          	addi	s1,gp,-164 # 200668c4 <pxCurrentTCB>
+2005da64:	f5c18493          	addi	s1,gp,-164 # 200668e4 <pxCurrentTCB>
 2005da68:	08d7f463          	bgeu	a5,a3,2005daf0 <xTaskPriorityInherit+0xa4>
 2005da6c:	4d18                	c.lw	a4,24(a0)
 2005da6e:	00074763          	blt	a4,zero,2005da7c <xTaskPriorityInherit+0x30>
@@ -8816,17 +8815,17 @@ Disassembly of section .xip_image2.text:
 2005da7c:	46d1                	c.li	a3,20
 2005da7e:	02d787b3          	mul	a5,a5,a3
 2005da82:	20068537          	lui	a0,0x20068
-2005da86:	2a850713          	addi	a4,a0,680 # 200682a8 <pxReadyTasksLists>
-2005da8a:	2a850913          	addi	s2,a0,680
+2005da86:	2e850713          	addi	a4,a0,744 # 200682e8 <pxReadyTasksLists>
+2005da8a:	2e850913          	addi	s2,a0,744
 2005da8e:	97ba                	c.add	a5,a4
 2005da90:	4858                	c.lw	a4,20(s0)
 2005da92:	04f71b63          	bne	a4,a5,2005dae8 <xTaskPriorityInherit+0x9c>
 2005da96:	00440593          	addi	a1,s0,4
 2005da9a:	852e                	c.mv	a0,a1
 2005da9c:	c62e                	c.swsp	a1,12(sp)
-2005da9e:	c16fd0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005da9e:	c1cfd0ef          	jal	ra,2005aeba <uxListRemove>
 2005daa2:	45b2                	c.lwsp	a1,12(sp)
-2005daa4:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005daa4:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005daa8:	e911                	c.bnez	a0,2005dabc <xTaskPriorityInherit+0x70>
 2005daaa:	5450                	c.lw	a2,44(s0)
 2005daac:	4314                	c.lw	a3,0(a4)
@@ -8846,7 +8845,7 @@ Disassembly of section .xip_image2.text:
 2005dace:	d448                	c.sw	a0,44(s0)
 2005dad0:	02f50533          	mul	a0,a0,a5
 2005dad4:	954a                	c.add	a0,s2
-2005dad6:	b9afd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005dad6:	ba0fd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005dada:	4505                	c.li	a0,1
 2005dadc:	40f2                	c.lwsp	ra,28(sp)
 2005dade:	4462                	c.lwsp	s0,24(sp)
@@ -8889,9 +8888,9 @@ Disassembly of section .xip_image2.text:
 2005db28:	00450593          	addi	a1,a0,4
 2005db2c:	852e                	c.mv	a0,a1
 2005db2e:	c62e                	c.swsp	a1,12(sp)
-2005db30:	b84fd0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005db30:	b8afd0ef          	jal	ra,2005aeba <uxListRemove>
 2005db34:	45b2                	c.lwsp	a1,12(sp)
-2005db36:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005db36:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005db3a:	e911                	c.bnez	a0,2005db4e <xTaskPriorityDisinherit+0x4e>
 2005db3c:	5450                	c.lw	a2,44(s0)
 2005db3e:	4314                	c.lw	a3,0(a4)
@@ -8913,9 +8912,9 @@ Disassembly of section .xip_image2.text:
 2005db64:	d448                	c.sw	a0,44(s0)
 2005db66:	02f50533          	mul	a0,a0,a5
 2005db6a:	200687b7          	lui	a5,0x20068
-2005db6e:	2a878793          	addi	a5,a5,680 # 200682a8 <pxReadyTasksLists>
+2005db6e:	2e878793          	addi	a5,a5,744 # 200682e8 <pxReadyTasksLists>
 2005db72:	953e                	c.add	a0,a5
-2005db74:	afcfd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005db74:	b02fd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005db78:	4505                	c.li	a0,1
 2005db7a:	b779                	c.j	2005db08 <xTaskPriorityDisinherit+0x8>
 
@@ -8943,18 +8942,18 @@ Disassembly of section .xip_image2.text:
 2005dbae:	46d1                	c.li	a3,20
 2005dbb0:	02d70733          	mul	a4,a4,a3
 2005dbb4:	20068537          	lui	a0,0x20068
-2005dbb8:	2a850793          	addi	a5,a0,680 # 200682a8 <pxReadyTasksLists>
-2005dbbc:	2a850493          	addi	s1,a0,680
+2005dbb8:	2e850793          	addi	a5,a0,744 # 200682e8 <pxReadyTasksLists>
+2005dbbc:	2e850493          	addi	s1,a0,744
 2005dbc0:	973e                	c.add	a4,a5
 2005dbc2:	485c                	c.lw	a5,20(s0)
 2005dbc4:	04e79563          	bne	a5,a4,2005dc0e <vTaskPriorityDisinheritAfterTimeout+0x92>
 2005dbc8:	00440593          	addi	a1,s0,4
 2005dbcc:	852e                	c.mv	a0,a1
 2005dbce:	c62e                	c.swsp	a1,12(sp)
-2005dbd0:	ae4fd0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005dbd0:	aeafd0ef          	jal	ra,2005aeba <uxListRemove>
 2005dbd4:	5454                	c.lw	a3,44(s0)
 2005dbd6:	45b2                	c.lwsp	a1,12(sp)
-2005dbd8:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005dbd8:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005dbdc:	e909                	c.bnez	a0,2005dbee <vTaskPriorityDisinheritAfterTimeout+0x72>
 2005dbde:	4310                	c.lw	a2,0(a4)
 2005dbe0:	4785                	c.li	a5,1
@@ -8974,7 +8973,7 @@ Disassembly of section .xip_image2.text:
 2005dc04:	9526                	c.add	a0,s1
 2005dc06:	44d2                	c.lwsp	s1,20(sp)
 2005dc08:	6105                	c.addi16sp	sp,32
-2005dc0a:	a66fd06f          	jal	zero,2005ae70 <vListInsertEnd>
+2005dc0a:	a6cfd06f          	jal	zero,2005ae76 <vListInsertEnd>
 2005dc0e:	40f2                	c.lwsp	ra,28(sp)
 2005dc10:	4462                	c.lwsp	s0,24(sp)
 2005dc12:	44d2                	c.lwsp	s1,20(sp)
@@ -8984,9 +8983,9 @@ Disassembly of section .xip_image2.text:
 
 2005dc1a <vTaskEnterCritical>:
 2005dc1a:	30047073          	csrrci	zero,mstatus,8
-2005dc1e:	f901a783          	lw	a5,-112(gp) # 200668f8 <xSchedulerRunning>
+2005dc1e:	f901a783          	lw	a5,-112(gp) # 20066918 <xSchedulerRunning>
 2005dc22:	cb81                	c.beqz	a5,2005dc32 <vTaskEnterCritical+0x18>
-2005dc24:	f5c18793          	addi	a5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005dc24:	f5c18793          	addi	a5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005dc28:	4394                	c.lw	a3,0(a5)
 2005dc2a:	439c                	c.lw	a5,0(a5)
 2005dc2c:	4ab8                	c.lw	a4,80(a3)
@@ -8995,9 +8994,9 @@ Disassembly of section .xip_image2.text:
 2005dc32:	8082                	c.jr	ra
 
 2005dc34 <vTaskExitCritical>:
-2005dc34:	f901a783          	lw	a5,-112(gp) # 200668f8 <xSchedulerRunning>
+2005dc34:	f901a783          	lw	a5,-112(gp) # 20066918 <xSchedulerRunning>
 2005dc38:	cf99                	c.beqz	a5,2005dc56 <vTaskExitCritical+0x22>
-2005dc3a:	f5c18793          	addi	a5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005dc3a:	f5c18793          	addi	a5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005dc3e:	4398                	c.lw	a4,0(a5)
 2005dc40:	4b38                	c.lw	a4,80(a4)
 2005dc42:	cb11                	c.beqz	a4,2005dc56 <vTaskExitCritical+0x22>
@@ -9021,52 +9020,52 @@ Disassembly of section .xip_image2.text:
 2005dc64:	c452                	c.swsp	s4,8(sp)
 2005dc66:	842a                	c.mv	s0,a0
 2005dc68:	fb3ff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
-2005dc6c:	f7018793          	addi	a5,gp,-144 # 200668d8 <uxCurrentNumberOfTasks>
+2005dc6c:	f7018793          	addi	a5,gp,-144 # 200668f8 <uxCurrentNumberOfTasks>
 2005dc70:	4398                	c.lw	a4,0(a5)
 2005dc72:	20068937          	lui	s2,0x20068
 2005dc76:	0705                	c.addi	a4,1
 2005dc78:	c398                	c.sw	a4,0(a5)
-2005dc7a:	f5c18713          	addi	a4,gp,-164 # 200668c4 <pxCurrentTCB>
+2005dc7a:	f5c18713          	addi	a4,gp,-164 # 200668e4 <pxCurrentTCB>
 2005dc7e:	4318                	c.lw	a4,0(a4)
-2005dc80:	f5c18493          	addi	s1,gp,-164 # 200668c4 <pxCurrentTCB>
-2005dc84:	2a890993          	addi	s3,s2,680 # 200682a8 <pxReadyTasksLists>
+2005dc80:	f5c18493          	addi	s1,gp,-164 # 200668e4 <pxCurrentTCB>
+2005dc84:	2e890993          	addi	s3,s2,744 # 200682e8 <pxReadyTasksLists>
 2005dc88:	e369                	c.bnez	a4,2005dd4a <prvAddNewTaskToReadyList+0xf2>
 2005dc8a:	c080                	c.sw	s0,0(s1)
 2005dc8c:	4398                	c.lw	a4,0(a5)
 2005dc8e:	4785                	c.li	a5,1
 2005dc90:	06f71263          	bne	a4,a5,2005dcf4 <prvAddNewTaskToReadyList+0x9c>
-2005dc94:	2a890913          	addi	s2,s2,680
+2005dc94:	2e890913          	addi	s2,s2,744
 2005dc98:	0dc98a13          	addi	s4,s3,220
 2005dc9c:	854a                	c.mv	a0,s2
 2005dc9e:	0951                	c.addi	s2,20
-2005dca0:	9b6fd0ef          	jal	ra,2005ae56 <vListInitialise>
+2005dca0:	9bcfd0ef          	jal	ra,2005ae5c <vListInitialise>
 2005dca4:	ff2a1ce3          	bne	s4,s2,2005dc9c <prvAddNewTaskToReadyList+0x44>
 2005dca8:	20068537          	lui	a0,0x20068
-2005dcac:	38450a13          	addi	s4,a0,900 # 20068384 <xDelayedTaskList1>
-2005dcb0:	38450513          	addi	a0,a0,900
-2005dcb4:	9a2fd0ef          	jal	ra,2005ae56 <vListInitialise>
+2005dcac:	3c450a13          	addi	s4,a0,964 # 200683c4 <xDelayedTaskList1>
+2005dcb0:	3c450513          	addi	a0,a0,964
+2005dcb4:	9a8fd0ef          	jal	ra,2005ae5c <vListInitialise>
 2005dcb8:	20068537          	lui	a0,0x20068
-2005dcbc:	39850913          	addi	s2,a0,920 # 20068398 <xDelayedTaskList2>
-2005dcc0:	39850513          	addi	a0,a0,920
-2005dcc4:	992fd0ef          	jal	ra,2005ae56 <vListInitialise>
+2005dcbc:	3d850913          	addi	s2,a0,984 # 200683d8 <xDelayedTaskList2>
+2005dcc0:	3d850513          	addi	a0,a0,984
+2005dcc4:	998fd0ef          	jal	ra,2005ae5c <vListInitialise>
 2005dcc8:	20068537          	lui	a0,0x20068
-2005dccc:	3ac50513          	addi	a0,a0,940 # 200683ac <xPendingReadyList>
-2005dcd0:	986fd0ef          	jal	ra,2005ae56 <vListInitialise>
+2005dccc:	3ec50513          	addi	a0,a0,1004 # 200683ec <xPendingReadyList>
+2005dcd0:	98cfd0ef          	jal	ra,2005ae5c <vListInitialise>
 2005dcd4:	20068537          	lui	a0,0x20068
-2005dcd8:	3d450513          	addi	a0,a0,980 # 200683d4 <xTasksWaitingTermination>
-2005dcdc:	97afd0ef          	jal	ra,2005ae56 <vListInitialise>
+2005dcd8:	41450513          	addi	a0,a0,1044 # 20068414 <xTasksWaitingTermination>
+2005dcdc:	980fd0ef          	jal	ra,2005ae5c <vListInitialise>
 2005dce0:	20068537          	lui	a0,0x20068
-2005dce4:	3c050513          	addi	a0,a0,960 # 200683c0 <xSuspendedTaskList>
-2005dce8:	96efd0ef          	jal	ra,2005ae56 <vListInitialise>
-2005dcec:	f741a023          	sw	s4,-160(gp) # 200668c8 <pxDelayedTaskList>
-2005dcf0:	f721a223          	sw	s2,-156(gp) # 200668cc <pxOverflowDelayedTaskList>
-2005dcf4:	f7c18713          	addi	a4,gp,-132 # 200668e4 <uxTaskNumber>
+2005dce4:	40050513          	addi	a0,a0,1024 # 20068400 <xSuspendedTaskList>
+2005dce8:	974fd0ef          	jal	ra,2005ae5c <vListInitialise>
+2005dcec:	f741a023          	sw	s4,-160(gp) # 200668e8 <pxDelayedTaskList>
+2005dcf0:	f721a223          	sw	s2,-156(gp) # 200668ec <pxOverflowDelayedTaskList>
+2005dcf4:	f7c18713          	addi	a4,gp,-132 # 20066904 <uxTaskNumber>
 2005dcf8:	431c                	c.lw	a5,0(a4)
 2005dcfa:	5448                	c.lw	a0,44(s0)
 2005dcfc:	00440593          	addi	a1,s0,4
 2005dd00:	0785                	c.addi	a5,1
 2005dd02:	c31c                	c.sw	a5,0(a4)
-2005dd04:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005dd04:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005dd08:	4314                	c.lw	a3,0(a4)
 2005dd0a:	c87c                	c.sw	a5,84(s0)
 2005dd0c:	4785                	c.li	a5,1
@@ -9076,9 +9075,9 @@ Disassembly of section .xip_image2.text:
 2005dd16:	47d1                	c.li	a5,20
 2005dd18:	02f50533          	mul	a0,a0,a5
 2005dd1c:	954e                	c.add	a0,s3
-2005dd1e:	952fd0ef          	jal	ra,2005ae70 <vListInsertEnd>
+2005dd1e:	958fd0ef          	jal	ra,2005ae76 <vListInsertEnd>
 2005dd22:	f13ff0ef          	jal	ra,2005dc34 <vTaskExitCritical>
-2005dd26:	f901a783          	lw	a5,-112(gp) # 200668f8 <xSchedulerRunning>
+2005dd26:	f901a783          	lw	a5,-112(gp) # 20066918 <xSchedulerRunning>
 2005dd2a:	cb81                	c.beqz	a5,2005dd3a <prvAddNewTaskToReadyList+0xe2>
 2005dd2c:	409c                	c.lw	a5,0(s1)
 2005dd2e:	57d8                	c.lw	a4,44(a5)
@@ -9093,7 +9092,7 @@ Disassembly of section .xip_image2.text:
 2005dd44:	4a22                	c.lwsp	s4,8(sp)
 2005dd46:	6105                	c.addi16sp	sp,32
 2005dd48:	8082                	c.jr	ra
-2005dd4a:	f901a783          	lw	a5,-112(gp) # 200668f8 <xSchedulerRunning>
+2005dd4a:	f901a783          	lw	a5,-112(gp) # 20066918 <xSchedulerRunning>
 2005dd4e:	f3dd                	c.bnez	a5,2005dcf4 <prvAddNewTaskToReadyList+0x9c>
 2005dd50:	409c                	c.lw	a5,0(s1)
 2005dd52:	57d8                	c.lw	a4,44(a5)
@@ -9141,7 +9140,7 @@ Disassembly of section .xip_image2.text:
 2005ddae:	2005e537          	lui	a0,0x2005e
 2005ddb2:	4701                	c.li	a4,0
 2005ddb4:	4681                	c.li	a3,0
-2005ddb6:	69c58593          	addi	a1,a1,1692 # 2006369c <__func__.1+0x18>
+2005ddb6:	6a458593          	addi	a1,a1,1700 # 200636a4 <__func__.1+0x18>
 2005ddba:	0b650513          	addi	a0,a0,182 # 2005e0b6 <prvIdleTask>
 2005ddbe:	fa1ff0ef          	jal	ra,2005dd5e <xTaskCreateStatic>
 2005ddc2:	c51d                	c.beqz	a0,2005ddf0 <vTaskStartScheduler+0x5e>
@@ -9149,16 +9148,16 @@ Disassembly of section .xip_image2.text:
 2005ddc8:	4785                	c.li	a5,1
 2005ddca:	02f51363          	bne	a0,a5,2005ddf0 <vTaskStartScheduler+0x5e>
 2005ddce:	30047073          	csrrci	zero,mstatus,8
-2005ddd2:	f5c1a783          	lw	a5,-164(gp) # 200668c4 <pxCurrentTCB>
+2005ddd2:	f5c1a783          	lw	a5,-164(gp) # 200668e4 <pxCurrentTCB>
 2005ddd6:	06c78793          	addi	a5,a5,108
-2005ddda:	e8f1aa23          	sw	a5,-364(gp) # 200667fc <_impure_ptr>
+2005ddda:	e8f1aa23          	sw	a5,-364(gp) # 2006681c <_impure_ptr>
 2005ddde:	577d                	c.li	a4,-1
-2005dde0:	f8e1a223          	sw	a4,-124(gp) # 200668ec <xNextTaskUnblockTime>
-2005dde4:	f8a1a823          	sw	a0,-112(gp) # 200668f8 <xSchedulerRunning>
-2005dde8:	f801aa23          	sw	zero,-108(gp) # 200668fc <xTickCount>
+2005dde0:	f8e1a223          	sw	a4,-124(gp) # 2006690c <xNextTaskUnblockTime>
+2005dde4:	f8a1a823          	sw	a0,-112(gp) # 20066918 <xSchedulerRunning>
+2005dde8:	f801aa23          	sw	zero,-108(gp) # 2006691c <xTickCount>
 2005ddec:	fdafe0ef          	jal	ra,2005c5c6 <xPortStartScheduler>
 2005ddf0:	40f2                	c.lwsp	ra,28(sp)
-2005ddf2:	e8c1a783          	lw	a5,-372(gp) # 200667f4 <uxTopUsedPriority>
+2005ddf2:	e8c1a783          	lw	a5,-372(gp) # 20066814 <uxTopUsedPriority>
 2005ddf6:	6105                	c.addi16sp	sp,32
 2005ddf8:	8082                	c.jr	ra
 
@@ -9180,11 +9179,11 @@ Disassembly of section .xip_image2.text:
 2005de18:	8ab6                	c.mv	s5,a3
 2005de1a:	8b3a                	c.mv	s6,a4
 2005de1c:	8bbe                	c.mv	s7,a5
-2005de1e:	dfffc0ef          	jal	ra,2005ac1c <pvPortMalloc>
+2005de1e:	e05fc0ef          	jal	ra,2005ac22 <pvPortMalloc>
 2005de22:	c531                	c.beqz	a0,2005de6e <xTaskCreate+0x74>
 2005de24:	84aa                	c.mv	s1,a0
 2005de26:	16400513          	addi	a0,zero,356
-2005de2a:	df3fc0ef          	jal	ra,2005ac1c <pvPortMalloc>
+2005de2a:	df9fc0ef          	jal	ra,2005ac22 <pvPortMalloc>
 2005de2e:	842a                	c.mv	s0,a0
 2005de30:	cd05                	c.beqz	a0,2005de68 <xTaskCreate+0x6e>
 2005de32:	882a                	c.mv	a6,a0
@@ -9212,7 +9211,7 @@ Disassembly of section .xip_image2.text:
 2005de64:	6145                	c.addi16sp	sp,48
 2005de66:	8082                	c.jr	ra
 2005de68:	8526                	c.mv	a0,s1
-2005de6a:	e91fc0ef          	jal	ra,2005acfa <vPortFree>
+2005de6a:	e97fc0ef          	jal	ra,2005ad00 <vPortFree>
 2005de6e:	557d                	c.li	a0,-1
 2005de70:	b7cd                	c.j	2005de52 <xTaskCreate+0x58>
 
@@ -9223,23 +9222,23 @@ Disassembly of section .xip_image2.text:
 2005de78:	842a                	c.mv	s0,a0
 2005de7a:	c606                	c.swsp	ra,12(sp)
 2005de7c:	c04a                	c.swsp	s2,0(sp)
-2005de7e:	f5c18493          	addi	s1,gp,-164 # 200668c4 <pxCurrentTCB>
+2005de7e:	f5c18493          	addi	s1,gp,-164 # 200668e4 <pxCurrentTCB>
 2005de82:	d99ff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
 2005de86:	e011                	c.bnez	s0,2005de8a <vTaskDelete+0x18>
 2005de88:	4080                	c.lw	s0,0(s1)
 2005de8a:	00440913          	addi	s2,s0,4
 2005de8e:	854a                	c.mv	a0,s2
-2005de90:	824fd0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005de90:	82afd0ef          	jal	ra,2005aeba <uxListRemove>
 2005de94:	e515                	c.bnez	a0,2005dec0 <vTaskDelete+0x4e>
 2005de96:	5450                	c.lw	a2,44(s0)
 2005de98:	4751                	c.li	a4,20
 2005de9a:	02e606b3          	mul	a3,a2,a4
 2005de9e:	20068737          	lui	a4,0x20068
-2005dea2:	2a870713          	addi	a4,a4,680 # 200682a8 <pxReadyTasksLists>
+2005dea2:	2e870713          	addi	a4,a4,744 # 200682e8 <pxReadyTasksLists>
 2005dea6:	9736                	c.add	a4,a3
 2005dea8:	431c                	c.lw	a5,0(a4)
 2005deaa:	eb99                	c.bnez	a5,2005dec0 <vTaskDelete+0x4e>
-2005deac:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005deac:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005deb0:	4314                	c.lw	a3,0(a4)
 2005deb2:	4785                	c.li	a5,1
 2005deb4:	00c797b3          	sll	a5,a5,a2
@@ -9249,8 +9248,8 @@ Disassembly of section .xip_image2.text:
 2005dec0:	541c                	c.lw	a5,40(s0)
 2005dec2:	c789                	c.beqz	a5,2005decc <vTaskDelete+0x5a>
 2005dec4:	01840513          	addi	a0,s0,24
-2005dec8:	fedfc0ef          	jal	ra,2005aeb4 <uxListRemove>
-2005decc:	f7c18793          	addi	a5,gp,-132 # 200668e4 <uxTaskNumber>
+2005dec8:	ff3fc0ef          	jal	ra,2005aeba <uxListRemove>
+2005decc:	f7c18793          	addi	a5,gp,-132 # 20066904 <uxTaskNumber>
 2005ded0:	4398                	c.lw	a4,0(a5)
 2005ded2:	0705                	c.addi	a4,1
 2005ded4:	c398                	c.sw	a4,0(a5)
@@ -9258,14 +9257,14 @@ Disassembly of section .xip_image2.text:
 2005ded8:	02879e63          	bne	a5,s0,2005df14 <vTaskDelete+0xa2>
 2005dedc:	20068537          	lui	a0,0x20068
 2005dee0:	85ca                	c.mv	a1,s2
-2005dee2:	3d450513          	addi	a0,a0,980 # 200683d4 <xTasksWaitingTermination>
-2005dee6:	f8bfc0ef          	jal	ra,2005ae70 <vListInsertEnd>
-2005deea:	f7418793          	addi	a5,gp,-140 # 200668dc <uxDeletedTasksWaitingCleanUp>
+2005dee2:	41450513          	addi	a0,a0,1044 # 20068414 <xTasksWaitingTermination>
+2005dee6:	f91fc0ef          	jal	ra,2005ae76 <vListInsertEnd>
+2005deea:	f7418793          	addi	a5,gp,-140 # 200668fc <uxDeletedTasksWaitingCleanUp>
 2005deee:	4398                	c.lw	a4,0(a5)
 2005def0:	0705                	c.addi	a4,1
 2005def2:	c398                	c.sw	a4,0(a5)
 2005def4:	d41ff0ef          	jal	ra,2005dc34 <vTaskExitCritical>
-2005def8:	f901a783          	lw	a5,-112(gp) # 200668f8 <xSchedulerRunning>
+2005def8:	f901a783          	lw	a5,-112(gp) # 20066918 <xSchedulerRunning>
 2005defc:	c791                	c.beqz	a5,2005df08 <vTaskDelete+0x96>
 2005defe:	409c                	c.lw	a5,0(s1)
 2005df00:	00879463          	bne	a5,s0,2005df08 <vTaskDelete+0x96>
@@ -9276,7 +9275,7 @@ Disassembly of section .xip_image2.text:
 2005df0e:	4902                	c.lwsp	s2,0(sp)
 2005df10:	0141                	c.addi	sp,16
 2005df12:	8082                	c.jr	ra
-2005df14:	f7018793          	addi	a5,gp,-144 # 200668d8 <uxCurrentNumberOfTasks>
+2005df14:	f7018793          	addi	a5,gp,-144 # 200668f8 <uxCurrentNumberOfTasks>
 2005df18:	4398                	c.lw	a4,0(a5)
 2005df1a:	8522                	c.mv	a0,s0
 2005df1c:	177d                	c.addi	a4,-1
@@ -9286,7 +9285,7 @@ Disassembly of section .xip_image2.text:
 2005df28:	b7f1                	c.j	2005def4 <vTaskDelete+0x82>
 
 2005df2a <eTaskGetState>:
-2005df2a:	f5c1a783          	lw	a5,-164(gp) # 200668c4 <pxCurrentTCB>
+2005df2a:	f5c1a783          	lw	a5,-164(gp) # 200668e4 <pxCurrentTCB>
 2005df2e:	06a78863          	beq	a5,a0,2005df9e <eTaskGetState+0x74>
 2005df32:	1101                	c.addi	sp,-32
 2005df34:	ce06                	c.swsp	ra,28(sp)
@@ -9296,15 +9295,15 @@ Disassembly of section .xip_image2.text:
 2005df3c:	c84a                	c.swsp	s2,16(sp)
 2005df3e:	c64e                	c.swsp	s3,12(sp)
 2005df40:	cdbff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
-2005df44:	f601a983          	lw	s3,-160(gp) # 200668c8 <pxDelayedTaskList>
+2005df44:	f601a983          	lw	s3,-160(gp) # 200668e8 <pxDelayedTaskList>
 2005df48:	4844                	c.lw	s1,20(s0)
-2005df4a:	f641a903          	lw	s2,-156(gp) # 200668cc <pxOverflowDelayedTaskList>
+2005df4a:	f641a903          	lw	s2,-156(gp) # 200668ec <pxOverflowDelayedTaskList>
 2005df4e:	ce7ff0ef          	jal	ra,2005dc34 <vTaskExitCritical>
 2005df52:	4509                	c.li	a0,2
 2005df54:	03348463          	beq	s1,s3,2005df7c <eTaskGetState+0x52>
 2005df58:	03248263          	beq	s1,s2,2005df7c <eTaskGetState+0x52>
 2005df5c:	200687b7          	lui	a5,0x20068
-2005df60:	3c078793          	addi	a5,a5,960 # 200683c0 <xSuspendedTaskList>
+2005df60:	40078793          	addi	a5,a5,1024 # 20068400 <xSuspendedTaskList>
 2005df64:	02f49363          	bne	s1,a5,2005df8a <eTaskGetState+0x60>
 2005df68:	541c                	c.lw	a5,40(s0)
 2005df6a:	eb89                	c.bnez	a5,2005df7c <eTaskGetState+0x52>
@@ -9321,7 +9320,7 @@ Disassembly of section .xip_image2.text:
 2005df86:	6105                	c.addi16sp	sp,32
 2005df88:	8082                	c.jr	ra
 2005df8a:	200687b7          	lui	a5,0x20068
-2005df8e:	3d478793          	addi	a5,a5,980 # 200683d4 <xTasksWaitingTermination>
+2005df8e:	41478793          	addi	a5,a5,1044 # 20068414 <xTasksWaitingTermination>
 2005df92:	4511                	c.li	a0,4
 2005df94:	fef484e3          	beq	s1,a5,2005df7c <eTaskGetState+0x52>
 2005df98:	d0f5                	c.beqz	s1,2005df7c <eTaskGetState+0x52>
@@ -9342,7 +9341,7 @@ Disassembly of section .xip_image2.text:
 2005dfb2:	d05a                	c.swsp	s6,32(sp)
 2005dfb4:	ce5e                	c.swsp	s7,28(sp)
 2005dfb6:	c65ff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
-2005dfba:	f7818793          	addi	a5,gp,-136 # 200668e0 <uxSchedulerSuspended>
+2005dfba:	f7818793          	addi	a5,gp,-136 # 20066900 <uxSchedulerSuspended>
 2005dfbe:	4398                	c.lw	a4,0(a5)
 2005dfc0:	177d                	c.addi	a4,-1
 2005dfc2:	c398                	c.sw	a4,0(a5)
@@ -9363,26 +9362,26 @@ Disassembly of section .xip_image2.text:
 2005dfe2:	4bf2                	c.lwsp	s7,28(sp)
 2005dfe4:	6121                	c.addi16sp	sp,64
 2005dfe6:	8082                	c.jr	ra
-2005dfe8:	f701a783          	lw	a5,-144(gp) # 200668d8 <uxCurrentNumberOfTasks>
+2005dfe8:	f701a783          	lw	a5,-144(gp) # 200668f8 <uxCurrentNumberOfTasks>
 2005dfec:	dff1                	c.beqz	a5,2005dfc8 <xTaskResumeAll+0x26>
 2005dfee:	200684b7          	lui	s1,0x20068
 2005dff2:	20068937          	lui	s2,0x20068
 2005dff6:	4401                	c.li	s0,0
-2005dff8:	3ac48493          	addi	s1,s1,940 # 200683ac <xPendingReadyList>
+2005dff8:	3ec48493          	addi	s1,s1,1004 # 200683ec <xPendingReadyList>
 2005dffc:	4985                	c.li	s3,1
-2005dffe:	2a890913          	addi	s2,s2,680 # 200682a8 <pxReadyTasksLists>
+2005dffe:	2e890913          	addi	s2,s2,744 # 200682e8 <pxReadyTasksLists>
 2005e002:	4ad1                	c.li	s5,20
 2005e004:	a0b1                	c.j	2005e050 <xTaskResumeAll+0xae>
 2005e006:	44dc                	c.lw	a5,12(s1)
 2005e008:	47c0                	c.lw	s0,12(a5)
 2005e00a:	01840513          	addi	a0,s0,24
-2005e00e:	ea7fc0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005e00e:	eadfc0ef          	jal	ra,2005aeba <uxListRemove>
 2005e012:	00440593          	addi	a1,s0,4
 2005e016:	852e                	c.mv	a0,a1
 2005e018:	c62e                	c.swsp	a1,12(sp)
-2005e01a:	e9bfc0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005e01a:	ea1fc0ef          	jal	ra,2005aeba <uxListRemove>
 2005e01e:	5448                	c.lw	a0,44(s0)
-2005e020:	f8018713          	addi	a4,gp,-128 # 200668e8 <uxTopReadyPriority>
+2005e020:	f8018713          	addi	a4,gp,-128 # 20066908 <uxTopReadyPriority>
 2005e024:	4314                	c.lw	a3,0(a4)
 2005e026:	00a997b3          	sll	a5,s3,a0
 2005e02a:	03550533          	mul	a0,a0,s5
@@ -9390,31 +9389,31 @@ Disassembly of section .xip_image2.text:
 2005e030:	8fd5                	c.or	a5,a3
 2005e032:	c31c                	c.sw	a5,0(a4)
 2005e034:	954a                	c.add	a0,s2
-2005e036:	e3bfc0ef          	jal	ra,2005ae70 <vListInsertEnd>
-2005e03a:	f5c18793          	addi	a5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005e036:	e41fc0ef          	jal	ra,2005ae76 <vListInsertEnd>
+2005e03a:	f5c18793          	addi	a5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005e03e:	439c                	c.lw	a5,0(a5)
 2005e040:	5458                	c.lw	a4,44(s0)
 2005e042:	57dc                	c.lw	a5,44(a5)
 2005e044:	00f76663          	bltu	a4,a5,2005e050 <xTaskResumeAll+0xae>
-2005e048:	f9818793          	addi	a5,gp,-104 # 20066900 <xYieldPending>
+2005e048:	f9818793          	addi	a5,gp,-104 # 20066920 <xYieldPending>
 2005e04c:	0137a023          	sw	s3,0(a5)
 2005e050:	409c                	c.lw	a5,0(s1)
 2005e052:	fbd5                	c.bnez	a5,2005e006 <xTaskResumeAll+0x64>
 2005e054:	c019                	c.beqz	s0,2005e05a <xTaskResumeAll+0xb8>
 2005e056:	d2aff0ef          	jal	ra,2005d580 <prvResetNextTaskUnblockTime>
-2005e05a:	f8c18713          	addi	a4,gp,-116 # 200668f4 <xPendedTicks>
+2005e05a:	f8c18713          	addi	a4,gp,-116 # 20066914 <xPendedTicks>
 2005e05e:	4304                	c.lw	s1,0(a4)
-2005e060:	f8c18413          	addi	s0,gp,-116 # 200668f4 <xPendedTicks>
+2005e060:	f8c18413          	addi	s0,gp,-116 # 20066914 <xPendedTicks>
 2005e064:	cc89                	c.beqz	s1,2005e07e <xTaskResumeAll+0xdc>
 2005e066:	4985                	c.li	s3,1
 2005e068:	eb0ff0ef          	jal	ra,2005d718 <xTaskIncrementTick>
 2005e06c:	c509                	c.beqz	a0,2005e076 <xTaskResumeAll+0xd4>
-2005e06e:	f9818793          	addi	a5,gp,-104 # 20066900 <xYieldPending>
+2005e06e:	f9818793          	addi	a5,gp,-104 # 20066920 <xYieldPending>
 2005e072:	0137a023          	sw	s3,0(a5)
 2005e076:	14fd                	c.addi	s1,-1
 2005e078:	f8e5                	c.bnez	s1,2005e068 <xTaskResumeAll+0xc6>
 2005e07a:	00042023          	sw	zero,0(s0)
-2005e07e:	f981a783          	lw	a5,-104(gp) # 20066900 <xYieldPending>
+2005e07e:	f981a783          	lw	a5,-104(gp) # 20066920 <xYieldPending>
 2005e082:	d3b9                	c.beqz	a5,2005dfc8 <xTaskResumeAll+0x26>
 2005e084:	00000073          	ecall
 2005e088:	4505                	c.li	a0,1
@@ -9449,13 +9448,13 @@ Disassembly of section .xip_image2.text:
 2005e0c6:	ce06                	c.swsp	ra,28(sp)
 2005e0c8:	c84a                	c.swsp	s2,16(sp)
 2005e0ca:	c64e                	c.swsp	s3,12(sp)
-2005e0cc:	3d448493          	addi	s1,s1,980 # 200683d4 <xTasksWaitingTermination>
+2005e0cc:	41448493          	addi	s1,s1,1044 # 20068414 <xTasksWaitingTermination>
 2005e0d0:	20068ab7          	lui	s5,0x20068
 2005e0d4:	4405                	c.li	s0,1
-2005e0d6:	f7418913          	addi	s2,gp,-140 # 200668dc <uxDeletedTasksWaitingCleanUp>
+2005e0d6:	f7418913          	addi	s2,gp,-140 # 200668fc <uxDeletedTasksWaitingCleanUp>
 2005e0da:	00092783          	lw	a5,0(s2)
 2005e0de:	eb8d                	c.bnez	a5,2005e110 <prvIdleTask+0x5a>
-2005e0e0:	2a8a8793          	addi	a5,s5,680 # 200682a8 <pxReadyTasksLists>
+2005e0e0:	2e8a8793          	addi	a5,s5,744 # 200682e8 <pxReadyTasksLists>
 2005e0e4:	439c                	c.lw	a5,0(a5)
 2005e0e6:	00f47463          	bgeu	s0,a5,2005e0ee <prvIdleTask+0x38>
 2005e0ea:	00000073          	ecall
@@ -9472,8 +9471,8 @@ Disassembly of section .xip_image2.text:
 2005e114:	44dc                	c.lw	a5,12(s1)
 2005e116:	00c7a983          	lw	s3,12(a5)
 2005e11a:	00498513          	addi	a0,s3,4
-2005e11e:	d97fc0ef          	jal	ra,2005aeb4 <uxListRemove>
-2005e122:	f7018713          	addi	a4,gp,-144 # 200668d8 <uxCurrentNumberOfTasks>
+2005e11e:	d9dfc0ef          	jal	ra,2005aeba <uxListRemove>
+2005e122:	f7018713          	addi	a4,gp,-144 # 200668f8 <uxCurrentNumberOfTasks>
 2005e126:	431c                	c.lw	a5,0(a4)
 2005e128:	17fd                	c.addi	a5,-1
 2005e12a:	c31c                	c.sw	a5,0(a4)
@@ -9495,7 +9494,7 @@ Disassembly of section .xip_image2.text:
 2005e14e:	8932                	c.mv	s2,a2
 2005e150:	84aa                	c.mv	s1,a0
 2005e152:	e119                	c.bnez	a0,2005e158 <vTaskGetInfo+0x16>
-2005e154:	f5c1a483          	lw	s1,-164(gp) # 200668c4 <pxCurrentTCB>
+2005e154:	f5c1a483          	lw	s1,-164(gp) # 200668e4 <pxCurrentTCB>
 2005e158:	03448793          	addi	a5,s1,52
 2005e15c:	c004                	c.sw	s1,0(s0)
 2005e15e:	c05c                	c.sw	a5,4(s0)
@@ -9511,7 +9510,7 @@ Disassembly of section .xip_image2.text:
 2005e172:	cc1c                	c.sw	a5,24(s0)
 2005e174:	4795                	c.li	a5,5
 2005e176:	04f68c63          	beq	a3,a5,2005e1ce <vTaskGetInfo+0x8c>
-2005e17a:	f5c1a783          	lw	a5,-164(gp) # 200668c4 <pxCurrentTCB>
+2005e17a:	f5c1a783          	lw	a5,-164(gp) # 200668e4 <pxCurrentTCB>
 2005e17e:	02979963          	bne	a5,s1,2005e1b0 <vTaskGetInfo+0x6e>
 2005e182:	00040623          	sb	zero,12(s0)
 2005e186:	04090c63          	beq	s2,zero,2005e1de <vTaskGetInfo+0x9c>
@@ -9618,13 +9617,13 @@ Disassembly of section .xip_image2.text:
 2005e278:	842e                	c.mv	s0,a1
 2005e27a:	89b2                	c.mv	s3,a2
 2005e27c:	c78ff0ef          	jal	ra,2005d6f4 <vTaskSuspendAll>
-2005e280:	f701a783          	lw	a5,-144(gp) # 200668d8 <uxCurrentNumberOfTasks>
+2005e280:	f701a783          	lw	a5,-144(gp) # 200668f8 <uxCurrentNumberOfTasks>
 2005e284:	0af46563          	bltu	s0,a5,2005e32e <uxTaskGetSystemState+0xca>
 2005e288:	20068ab7          	lui	s5,0x20068
 2005e28c:	4a2d                	c.li	s4,11
 2005e28e:	4401                	c.li	s0,0
 2005e290:	4b51                	c.li	s6,20
-2005e292:	2a8a8a93          	addi	s5,s5,680 # 200682a8 <pxReadyTasksLists>
+2005e292:	2e8a8a93          	addi	s5,s5,744 # 200682e8 <pxReadyTasksLists>
 2005e296:	02400493          	addi	s1,zero,36
 2005e29a:	1a7d                	c.addi	s4,-1
 2005e29c:	02940533          	mul	a0,s0,s1
@@ -9636,13 +9635,13 @@ Disassembly of section .xip_image2.text:
 2005e2ae:	942a                	c.add	s0,a0
 2005e2b0:	fe0a15e3          	bne	s4,zero,2005e29a <uxTaskGetSystemState+0x36>
 2005e2b4:	02940533          	mul	a0,s0,s1
-2005e2b8:	f601a583          	lw	a1,-160(gp) # 200668c8 <pxDelayedTaskList>
+2005e2b8:	f601a583          	lw	a1,-160(gp) # 200668e8 <pxDelayedTaskList>
 2005e2bc:	4609                	c.li	a2,2
 2005e2be:	954a                	c.add	a0,s2
 2005e2c0:	f25ff0ef          	jal	ra,2005e1e4 <prvListTasksWithinSingleList>
 2005e2c4:	942a                	c.add	s0,a0
 2005e2c6:	02940533          	mul	a0,s0,s1
-2005e2ca:	f641a583          	lw	a1,-156(gp) # 200668cc <pxOverflowDelayedTaskList>
+2005e2ca:	f641a583          	lw	a1,-156(gp) # 200668ec <pxOverflowDelayedTaskList>
 2005e2ce:	4609                	c.li	a2,2
 2005e2d0:	954a                	c.add	a0,s2
 2005e2d2:	f13ff0ef          	jal	ra,2005e1e4 <prvListTasksWithinSingleList>
@@ -9650,14 +9649,14 @@ Disassembly of section .xip_image2.text:
 2005e2d8:	02940533          	mul	a0,s0,s1
 2005e2dc:	200685b7          	lui	a1,0x20068
 2005e2e0:	4611                	c.li	a2,4
-2005e2e2:	3d458593          	addi	a1,a1,980 # 200683d4 <xTasksWaitingTermination>
+2005e2e2:	41458593          	addi	a1,a1,1044 # 20068414 <xTasksWaitingTermination>
 2005e2e6:	954a                	c.add	a0,s2
 2005e2e8:	efdff0ef          	jal	ra,2005e1e4 <prvListTasksWithinSingleList>
 2005e2ec:	942a                	c.add	s0,a0
 2005e2ee:	029404b3          	mul	s1,s0,s1
 2005e2f2:	200685b7          	lui	a1,0x20068
 2005e2f6:	460d                	c.li	a2,3
-2005e2f8:	3c058593          	addi	a1,a1,960 # 200683c0 <xSuspendedTaskList>
+2005e2f8:	40058593          	addi	a1,a1,1024 # 20068400 <xSuspendedTaskList>
 2005e2fc:	00990533          	add	a0,s2,s1
 2005e300:	ee5ff0ef          	jal	ra,2005e1e4 <prvListTasksWithinSingleList>
 2005e304:	942a                	c.add	s0,a0
@@ -9684,7 +9683,7 @@ Disassembly of section .xip_image2.text:
 2005e332:	1101                	c.addi	sp,-32
 2005e334:	ce06                	c.swsp	ra,28(sp)
 2005e336:	8e5ff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
-2005e33a:	f941a503          	lw	a0,-108(gp) # 200668fc <xTickCount>
+2005e33a:	f941a503          	lw	a0,-108(gp) # 2006691c <xTickCount>
 2005e33e:	c62a                	c.swsp	a0,12(sp)
 2005e340:	8f5ff0ef          	jal	ra,2005dc34 <vTaskExitCritical>
 2005e344:	40f2                	c.lwsp	ra,28(sp)
@@ -9699,12 +9698,12 @@ Disassembly of section .xip_image2.text:
 2005e352:	842e                	c.mv	s0,a1
 2005e354:	c62a                	c.swsp	a0,12(sp)
 2005e356:	8c5ff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
-2005e35a:	f941a683          	lw	a3,-108(gp) # 200668fc <xTickCount>
+2005e35a:	f941a683          	lw	a3,-108(gp) # 2006691c <xTickCount>
 2005e35e:	401c                	c.lw	a5,0(s0)
 2005e360:	577d                	c.li	a4,-1
 2005e362:	02e78f63          	beq	a5,a4,2005e3a0 <xTaskCheckForTimeOut+0x54>
 2005e366:	4532                	c.lwsp	a0,12(sp)
-2005e368:	f881a603          	lw	a2,-120(gp) # 200668f0 <xNumOfOverflows>
+2005e368:	f881a603          	lw	a2,-120(gp) # 20066910 <xNumOfOverflows>
 2005e36c:	410c                	c.lw	a1,0(a0)
 2005e36e:	4158                	c.lw	a4,4(a0)
 2005e370:	00c58f63          	beq	a1,a2,2005e38e <xTaskCheckForTimeOut+0x42>
@@ -9738,7 +9737,7 @@ Disassembly of section .xip_image2.text:
 2005e3b2:	d256                	c.swsp	s5,36(sp)
 2005e3b4:	d05a                	c.swsp	s6,32(sp)
 2005e3b6:	ce5e                	c.swsp	s7,28(sp)
-2005e3b8:	f7018793          	addi	a5,gp,-144 # 200668d8 <uxCurrentNumberOfTasks>
+2005e3b8:	f7018793          	addi	a5,gp,-144 # 200668f8 <uxCurrentNumberOfTasks>
 2005e3bc:	438c                	c.lw	a1,0(a5)
 2005e3be:	842a                	c.mv	s0,a0
 2005e3c0:	00050023          	sb	zero,0(a0)
@@ -9746,7 +9745,7 @@ Disassembly of section .xip_image2.text:
 2005e3c6:	02400793          	addi	a5,zero,36
 2005e3ca:	c62e                	c.swsp	a1,12(sp)
 2005e3cc:	02f50533          	mul	a0,a0,a5
-2005e3d0:	84dfc0ef          	jal	ra,2005ac1c <pvPortMalloc>
+2005e3d0:	853fc0ef          	jal	ra,2005ac22 <pvPortMalloc>
 2005e3d4:	c151                	c.beqz	a0,2005e458 <vTaskList+0xb4>
 2005e3d6:	45b2                	c.lwsp	a1,12(sp)
 2005e3d8:	4601                	c.li	a2,0
@@ -9756,7 +9755,7 @@ Disassembly of section .xip_image2.text:
 2005e3e2:	00490493          	addi	s1,s2,4
 2005e3e6:	4a01                	c.li	s4,0
 2005e3e8:	4b91                	c.li	s7,4
-2005e3ea:	e6018a93          	addi	s5,gp,-416 # 200667c8 <CSWTCH.248>
+2005e3ea:	e6018a93          	addi	s5,gp,-416 # 200667e8 <CSWTCH.248>
 2005e3ee:	20063b37          	lui	s6,0x20063
 2005e3f2:	013a1f63          	bne	s4,s3,2005e410 <vTaskList+0x6c>
 2005e3f6:	5462                	c.lwsp	s0,56(sp)
@@ -9770,7 +9769,7 @@ Disassembly of section .xip_image2.text:
 2005e406:	854a                	c.mv	a0,s2
 2005e408:	5942                	c.lwsp	s2,48(sp)
 2005e40a:	6121                	c.addi16sp	sp,64
-2005e40c:	8effc06f          	jal	zero,2005acfa <vPortFree>
+2005e40c:	8f5fc06f          	jal	zero,2005ad00 <vPortFree>
 2005e410:	0084c783          	lbu	a5,8(s1)
 2005e414:	4681                	c.li	a3,0
 2005e416:	00fbe563          	bltu	s7,a5,2005e420 <vTaskList+0x7c>
@@ -9784,7 +9783,7 @@ Disassembly of section .xip_image2.text:
 2005e42e:	01c4d783          	lhu	a5,28(s1)
 2005e432:	44d8                	c.lw	a4,12(s1)
 2005e434:	46b2                	c.lwsp	a3,12(sp)
-2005e436:	6a4b0613          	addi	a2,s6,1700 # 200636a4 <__func__.1+0x20>
+2005e436:	6acb0613          	addi	a2,s6,1708 # 200636ac <__func__.1+0x20>
 2005e43a:	40000593          	addi	a1,zero,1024
 2005e43e:	842a                	c.mv	s0,a0
 2005e440:	124010ef          	jal	ra,2005f564 <DiagSnPrintf>
@@ -9808,9 +9807,9 @@ Disassembly of section .xip_image2.text:
 2005e46c:	8082                	c.jr	ra
 
 2005e46e <pvTaskIncrementMutexHeldCount>:
-2005e46e:	f5c18713          	addi	a4,gp,-164 # 200668c4 <pxCurrentTCB>
+2005e46e:	f5c18713          	addi	a4,gp,-164 # 200668e4 <pxCurrentTCB>
 2005e472:	4318                	c.lw	a4,0(a4)
-2005e474:	f5c18793          	addi	a5,gp,-164 # 200668c4 <pxCurrentTCB>
+2005e474:	f5c18793          	addi	a5,gp,-164 # 200668e4 <pxCurrentTCB>
 2005e478:	c709                	c.beqz	a4,2005e482 <pvTaskIncrementMutexHeldCount+0x14>
 2005e47a:	4394                	c.lw	a3,0(a5)
 2005e47c:	52b8                	c.lw	a4,96(a3)
@@ -9825,27 +9824,27 @@ Disassembly of section .xip_image2.text:
 2005e48a:	c606                	c.swsp	ra,12(sp)
 2005e48c:	c226                	c.swsp	s1,4(sp)
 2005e48e:	c04a                	c.swsp	s2,0(sp)
-2005e490:	fa818413          	addi	s0,gp,-88 # 20066910 <xTimerQueue>
+2005e490:	fa818413          	addi	s0,gp,-88 # 20066930 <xTimerQueue>
 2005e494:	f86ff0ef          	jal	ra,2005dc1a <vTaskEnterCritical>
 2005e498:	401c                	c.lw	a5,0(s0)
 2005e49a:	e3b9                	c.bnez	a5,2005e4e0 <prvCheckForValidListAndQueue+0x5a>
 2005e49c:	20068537          	lui	a0,0x20068
-2005e4a0:	46050913          	addi	s2,a0,1120 # 20068460 <xActiveTimerList1>
-2005e4a4:	46050513          	addi	a0,a0,1120
-2005e4a8:	9affc0ef          	jal	ra,2005ae56 <vListInitialise>
+2005e4a0:	4a050913          	addi	s2,a0,1184 # 200684a0 <xActiveTimerList1>
+2005e4a4:	4a050513          	addi	a0,a0,1184
+2005e4a8:	9b5fc0ef          	jal	ra,2005ae5c <vListInitialise>
 2005e4ac:	20068537          	lui	a0,0x20068
-2005e4b0:	47450493          	addi	s1,a0,1140 # 20068474 <xActiveTimerList2>
-2005e4b4:	47450513          	addi	a0,a0,1140
-2005e4b8:	99ffc0ef          	jal	ra,2005ae56 <vListInitialise>
+2005e4b0:	4b450493          	addi	s1,a0,1204 # 200684b4 <xActiveTimerList2>
+2005e4b4:	4b450513          	addi	a0,a0,1204
+2005e4b8:	9a5fc0ef          	jal	ra,2005ae5c <vListInitialise>
 2005e4bc:	200686b7          	lui	a3,0x20068
 2005e4c0:	20068637          	lui	a2,0x20068
-2005e4c4:	f921ae23          	sw	s2,-100(gp) # 20066904 <pxCurrentTimerList>
+2005e4c4:	f921ae23          	sw	s2,-100(gp) # 20066924 <pxCurrentTimerList>
 2005e4c8:	4701                	c.li	a4,0
-2005e4ca:	48868693          	addi	a3,a3,1160 # 20068488 <xStaticTimerQueue.0>
-2005e4ce:	3e860613          	addi	a2,a2,1000 # 200683e8 <ucStaticTimerQueueStorage.1>
+2005e4ca:	4c868693          	addi	a3,a3,1224 # 200684c8 <xStaticTimerQueue.0>
+2005e4ce:	42860613          	addi	a2,a2,1064 # 20068428 <ucStaticTimerQueueStorage.1>
 2005e4d2:	45b1                	c.li	a1,12
 2005e4d4:	4529                	c.li	a0,10
-2005e4d6:	fa91a023          	sw	s1,-96(gp) # 20066908 <pxOverflowTimerList>
+2005e4d6:	fa91a023          	sw	s1,-96(gp) # 20066928 <pxOverflowTimerList>
 2005e4da:	981fe0ef          	jal	ra,2005ce5a <xQueueGenericCreateStatic>
 2005e4de:	c008                	c.sw	a0,0(s0)
 2005e4e0:	4422                	c.lwsp	s0,8(sp)
@@ -9867,8 +9866,8 @@ Disassembly of section .xip_image2.text:
 2005e500:	4505                	c.li	a0,1
 2005e502:	00e67963          	bgeu	a2,a4,2005e514 <prvInsertTimerInActiveList+0x26>
 2005e506:	00478593          	addi	a1,a5,4
-2005e50a:	fa01a503          	lw	a0,-96(gp) # 20066908 <pxOverflowTimerList>
-2005e50e:	979fc0ef          	jal	ra,2005ae86 <vListInsert>
+2005e50a:	fa01a503          	lw	a0,-96(gp) # 20066928 <pxOverflowTimerList>
+2005e50e:	97ffc0ef          	jal	ra,2005ae8c <vListInsert>
 2005e512:	4501                	c.li	a0,0
 2005e514:	40b2                	c.lwsp	ra,12(sp)
 2005e516:	0141                	c.addi	sp,16
@@ -9877,14 +9876,14 @@ Disassembly of section .xip_image2.text:
 2005e51e:	4505                	c.li	a0,1
 2005e520:	fed5fae3          	bgeu	a1,a3,2005e514 <prvInsertTimerInActiveList+0x26>
 2005e524:	00478593          	addi	a1,a5,4
-2005e528:	f9c1a503          	lw	a0,-100(gp) # 20066904 <pxCurrentTimerList>
+2005e528:	f9c1a503          	lw	a0,-100(gp) # 20066924 <pxCurrentTimerList>
 2005e52c:	b7cd                	c.j	2005e50e <prvInsertTimerInActiveList+0x20>
 
 2005e52e <xTimerCreateTimerTask>:
 2005e52e:	1101                	c.addi	sp,-32
 2005e530:	ce06                	c.swsp	ra,28(sp)
 2005e532:	f55ff0ef          	jal	ra,2005e486 <prvCheckForValidListAndQueue>
-2005e536:	fa81a783          	lw	a5,-88(gp) # 20066910 <xTimerQueue>
+2005e536:	fa81a783          	lw	a5,-88(gp) # 20066930 <xTimerQueue>
 2005e53a:	4501                	c.li	a0,0
 2005e53c:	cb9d                	c.beqz	a5,2005e572 <xTimerCreateTimerTask+0x44>
 2005e53e:	0070                	c.addi4spn	a2,sp,12
@@ -9900,10 +9899,10 @@ Disassembly of section .xip_image2.text:
 2005e556:	2005e537          	lui	a0,0x2005e
 2005e55a:	4729                	c.li	a4,10
 2005e55c:	4681                	c.li	a3,0
-2005e55e:	6b458593          	addi	a1,a1,1716 # 200636b4 <__func__.1+0x30>
+2005e55e:	6bc58593          	addi	a1,a1,1724 # 200636bc <__func__.1+0x30>
 2005e562:	7b450513          	addi	a0,a0,1972 # 2005e7b4 <prvTimerTask>
 2005e566:	ff8ff0ef          	jal	ra,2005dd5e <xTaskCreateStatic>
-2005e56a:	faa1a623          	sw	a0,-84(gp) # 20066914 <xTimerTaskHandle>
+2005e56a:	faa1a623          	sw	a0,-84(gp) # 20066934 <xTimerTaskHandle>
 2005e56e:	00a03533          	sltu	a0,zero,a0
 2005e572:	40f2                	c.lwsp	ra,28(sp)
 2005e574:	6105                	c.addi16sp	sp,32
@@ -9924,7 +9923,7 @@ Disassembly of section .xip_image2.text:
 2005e590:	84b2                	c.mv	s1,a2
 2005e592:	89b6                	c.mv	s3,a3
 2005e594:	893a                	c.mv	s2,a4
-2005e596:	e86fc0ef          	jal	ra,2005ac1c <pvPortMalloc>
+2005e596:	e8cfc0ef          	jal	ra,2005ac22 <pvPortMalloc>
 2005e59a:	842a                	c.mv	s0,a0
 2005e59c:	c905                	c.beqz	a0,2005e5cc <xTimerCreate+0x54>
 2005e59e:	02050423          	sb	zero,40(a0)
@@ -9934,7 +9933,7 @@ Disassembly of section .xip_image2.text:
 2005e5ae:	01442c23          	sw	s4,24(s0)
 2005e5b2:	01342e23          	sw	s3,28(s0)
 2005e5b6:	03242023          	sw	s2,32(s0)
-2005e5ba:	8b1fc0ef          	jal	ra,2005ae6a <vListInitialiseItem>
+2005e5ba:	8b7fc0ef          	jal	ra,2005ae70 <vListInitialiseItem>
 2005e5be:	c499                	c.beqz	s1,2005e5cc <xTimerCreate+0x54>
 2005e5c0:	02844783          	lbu	a5,40(s0)
 2005e5c4:	0047e793          	ori	a5,a5,4
@@ -9974,7 +9973,7 @@ Disassembly of section .xip_image2.text:
 2005e610:	01442c23          	sw	s4,24(s0)
 2005e614:	01342e23          	sw	s3,28(s0)
 2005e618:	03242023          	sw	s2,32(s0)
-2005e61c:	84ffc0ef          	jal	ra,2005ae6a <vListInitialiseItem>
+2005e61c:	855fc0ef          	jal	ra,2005ae70 <vListInitialiseItem>
 2005e620:	c499                	c.beqz	s1,2005e62e <xTimerCreateStatic+0x4e>
 2005e622:	02844783          	lbu	a5,40(s0)
 2005e626:	0047e793          	ori	a5,a5,4
@@ -10005,7 +10004,7 @@ Disassembly of section .xip_image2.text:
 2005e658:	8a36                	c.mv	s4,a3
 2005e65a:	8aba                	c.mv	s5,a4
 2005e65c:	bd6ff0ef          	jal	ra,2005da32 <xTaskGetCurrentTaskHandle>
-2005e660:	fac1a783          	lw	a5,-84(gp) # 20066914 <xTimerTaskHandle>
+2005e660:	fac1a783          	lw	a5,-84(gp) # 20066934 <xTimerTaskHandle>
 2005e664:	06a79163          	bne	a5,a0,2005e6c6 <xTimerGenericCommand+0x84>
 2005e668:	ffd48793          	addi	a5,s1,-3
 2005e66c:	4705                	c.li	a4,1
@@ -10016,7 +10015,7 @@ Disassembly of section .xip_image2.text:
 2005e67a:	c799                	c.beqz	a5,2005e688 <xTimerGenericCommand+0x46>
 2005e67c:	c62a                	c.swsp	a0,12(sp)
 2005e67e:	00440513          	addi	a0,s0,4
-2005e682:	833fc0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005e682:	839fc0ef          	jal	ra,2005aeba <uxListRemove>
 2005e686:	46b2                	c.lwsp	a3,12(sp)
 2005e688:	4711                	c.li	a4,4
 2005e68a:	02844783          	lbu	a5,40(s0)
@@ -10041,7 +10040,7 @@ Disassembly of section .xip_image2.text:
 2005e6be:	8522                	c.mv	a0,s0
 2005e6c0:	e2fff0ef          	jal	ra,2005e4ee <prvInsertTimerInActiveList>
 2005e6c4:	bfd1                	c.j	2005e698 <xTimerGenericCommand+0x56>
-2005e6c6:	fa818993          	addi	s3,gp,-88 # 20066910 <xTimerQueue>
+2005e6c6:	fa818993          	addi	s3,gp,-88 # 20066930 <xTimerQueue>
 2005e6ca:	0009a783          	lw	a5,0(s3)
 2005e6ce:	4501                	c.li	a0,0
 2005e6d0:	d7e9                	c.beqz	a5,2005e69a <xTimerGenericCommand+0x58>
@@ -10079,15 +10078,15 @@ Disassembly of section .xip_image2.text:
 2005e718:	ca56                	c.swsp	s5,20(sp)
 2005e71a:	89aa                	c.mv	s3,a0
 2005e71c:	c17ff0ef          	jal	ra,2005e332 <xTaskGetTickCount>
-2005e720:	fa41a783          	lw	a5,-92(gp) # 2006690c <xLastTime.2>
+2005e720:	fa41a783          	lw	a5,-92(gp) # 2006692c <xLastTime.2>
 2005e724:	84aa                	c.mv	s1,a0
-2005e726:	fa418913          	addi	s2,gp,-92 # 2006690c <xLastTime.2>
+2005e726:	fa418913          	addi	s2,gp,-92 # 2006692c <xLastTime.2>
 2005e72a:	08f57263          	bgeu	a0,a5,2005e7ae <prvSampleTimeNow+0xa4>
-2005e72e:	f9c18a13          	addi	s4,gp,-100 # 20066904 <pxCurrentTimerList>
+2005e72e:	f9c18a13          	addi	s4,gp,-100 # 20066924 <pxCurrentTimerList>
 2005e732:	000a2703          	lw	a4,0(s4)
 2005e736:	431c                	c.lw	a5,0(a4)
 2005e738:	e795                	c.bnez	a5,2005e764 <prvSampleTimeNow+0x5a>
-2005e73a:	fa018793          	addi	a5,gp,-96 # 20066908 <pxOverflowTimerList>
+2005e73a:	fa018793          	addi	a5,gp,-96 # 20066928 <pxOverflowTimerList>
 2005e73e:	4394                	c.lw	a3,0(a5)
 2005e740:	c398                	c.sw	a4,0(a5)
 2005e742:	4785                	c.li	a5,1
@@ -10111,7 +10110,7 @@ Disassembly of section .xip_image2.text:
 2005e76e:	852e                	c.mv	a0,a1
 2005e770:	c632                	c.swsp	a2,12(sp)
 2005e772:	c42e                	c.swsp	a1,8(sp)
-2005e774:	f40fc0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005e774:	f46fc0ef          	jal	ra,2005aeba <uxListRemove>
 2005e778:	501c                	c.lw	a5,32(s0)
 2005e77a:	8522                	c.mv	a0,s0
 2005e77c:	9782                	c.jalr	a5
@@ -10126,7 +10125,7 @@ Disassembly of section .xip_image2.text:
 2005e792:	000a2503          	lw	a0,0(s4)
 2005e796:	c05c                	c.sw	a5,4(s0)
 2005e798:	c800                	c.sw	s0,16(s0)
-2005e79a:	eecfc0ef          	jal	ra,2005ae86 <vListInsert>
+2005e79a:	ef2fc0ef          	jal	ra,2005ae8c <vListInsert>
 2005e79e:	bf41                	c.j	2005e72e <prvSampleTimeNow+0x24>
 2005e7a0:	4701                	c.li	a4,0
 2005e7a2:	4681                	c.li	a3,0
@@ -10150,9 +10149,9 @@ Disassembly of section .xip_image2.text:
 2005e7c8:	d452                	c.swsp	s4,40(sp)
 2005e7ca:	ce5e                	c.swsp	s7,28(sp)
 2005e7cc:	cc62                	c.swsp	s8,24(sp)
-2005e7ce:	6bc90913          	addi	s2,s2,1724 # 200636bc <__func__.1+0x38>
-2005e7d2:	f9c1a783          	lw	a5,-100(gp) # 20066904 <pxCurrentTimerList>
-2005e7d6:	f9c18c13          	addi	s8,gp,-100 # 20066904 <pxCurrentTimerList>
+2005e7ce:	6c490913          	addi	s2,s2,1732 # 200636c4 <__func__.1+0x38>
+2005e7d2:	f9c1a783          	lw	a5,-100(gp) # 20066924 <pxCurrentTimerList>
+2005e7d6:	f9c18c13          	addi	s8,gp,-100 # 20066924 <pxCurrentTimerList>
 2005e7da:	4405                	c.li	s0,1
 2005e7dc:	4384                	c.lw	s1,0(a5)
 2005e7de:	c481                	c.beqz	s1,2005e7e6 <prvTimerTask+0x32>
@@ -10164,7 +10163,7 @@ Disassembly of section .xip_image2.text:
 2005e7ec:	f1fff0ef          	jal	ra,2005e70a <prvSampleTimeNow>
 2005e7f0:	4792                	c.lwsp	a5,4(sp)
 2005e7f2:	8baa                	c.mv	s7,a0
-2005e7f4:	fa818a13          	addi	s4,gp,-88 # 20066910 <xTimerQueue>
+2005e7f4:	fa818a13          	addi	s4,gp,-88 # 20066930 <xTimerQueue>
 2005e7f8:	ebc5                	c.bnez	a5,2005e8a8 <prvTimerTask+0xf4>
 2005e7fa:	e449                	c.bnez	s0,2005e884 <prvTimerTask+0xd0>
 2005e7fc:	08956963          	bltu	a0,s1,2005e88e <prvTimerTask+0xda>
@@ -10173,7 +10172,7 @@ Disassembly of section .xip_image2.text:
 2005e808:	47dc                	c.lw	a5,12(a5)
 2005e80a:	47c0                	c.lw	s0,12(a5)
 2005e80c:	00440513          	addi	a0,s0,4
-2005e810:	ea4fc0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005e810:	eaafc0ef          	jal	ra,2005aeba <uxListRemove>
 2005e814:	02844783          	lbu	a5,40(s0)
 2005e818:	0047f713          	andi	a4,a5,4
 2005e81c:	c325                	c.beqz	a4,2005e87c <prvTimerTask+0xc8>
@@ -10205,7 +10204,7 @@ Disassembly of section .xip_image2.text:
 2005e85a:	485c                	c.lw	a5,20(s0)
 2005e85c:	c789                	c.beqz	a5,2005e866 <prvTimerTask+0xb2>
 2005e85e:	00440513          	addi	a0,s0,4
-2005e862:	e52fc0ef          	jal	ra,2005aeb4 <uxListRemove>
+2005e862:	e58fc0ef          	jal	ra,2005aeba <uxListRemove>
 2005e866:	850a                	c.mv	a0,sp
 2005e868:	ea3ff0ef          	jal	ra,2005e70a <prvSampleTimeNow>
 2005e86c:	4792                	c.lwsp	a5,4(sp)
@@ -10218,7 +10217,7 @@ Disassembly of section .xip_image2.text:
 2005e87c:	9bf9                	c.andi	a5,-2
 2005e87e:	02f40423          	sb	a5,40(s0)
 2005e882:	bf6d                	c.j	2005e83c <prvTimerTask+0x88>
-2005e884:	fa01a783          	lw	a5,-96(gp) # 20066908 <pxOverflowTimerList>
+2005e884:	fa01a783          	lw	a5,-96(gp) # 20066928 <pxOverflowTimerList>
 2005e888:	4380                	c.lw	s0,0(a5)
 2005e88a:	00143413          	sltiu	s0,s0,1
 2005e88e:	000a2503          	lw	a0,0(s4)
@@ -10273,7 +10272,7 @@ Disassembly of section .xip_image2.text:
 2005e916:	0027f713          	andi	a4,a5,2
 2005e91a:	fb71                	c.bnez	a4,2005e8ee <prvTimerTask+0x13a>
 2005e91c:	8522                	c.mv	a0,s0
-2005e91e:	bdcfc0ef          	jal	ra,2005acfa <vPortFree>
+2005e91e:	be2fc0ef          	jal	ra,2005ad00 <vPortFree>
 2005e922:	b70d                	c.j	2005e844 <prvTimerTask+0x90>
 
 2005e924 <xTimerIsTimerActive>:
@@ -10293,8 +10292,8 @@ Disassembly of section .xip_image2.text:
 2005e944:	8082                	c.jr	ra
 
 2005e946 <wifi_fast_connect_enable>:
-2005e946:	fa01ac23          	sw	zero,-72(gp) # 20066920 <p_wifi_do_fast_connect>
-2005e94a:	fa01aa23          	sw	zero,-76(gp) # 2006691c <p_store_fast_connect_info>
+2005e946:	fa01ac23          	sw	zero,-72(gp) # 20066940 <p_wifi_do_fast_connect>
+2005e94a:	fa01aa23          	sw	zero,-76(gp) # 2006693c <p_store_fast_connect_info>
 2005e94e:	8082                	c.jr	ra
 
 2005e950 <rtw_indicate_event_handle>:
@@ -10308,12 +10307,12 @@ Disassembly of section .xip_image2.text:
 2005e964:	892e                	c.mv	s2,a1
 2005e966:	85b2                	c.mv	a1,a2
 2005e968:	8636                	c.mv	a2,a3
-2005e96a:	4d870693          	addi	a3,a4,1240 # 200684d8 <event_callback_list>
+2005e96a:	51870693          	addi	a3,a4,1304 # 20068518 <event_callback_list>
 2005e96e:	cc22                	c.swsp	s0,24(sp)
 2005e970:	ce06                	c.swsp	ra,28(sp)
 2005e972:	009687b3          	add	a5,a3,s1
 2005e976:	0007a803          	lw	a6,0(a5)
-2005e97a:	4d870413          	addi	s0,a4,1240
+2005e97a:	51870413          	addi	s0,a4,1304
 2005e97e:	00080963          	beq	a6,zero,2005e990 <rtw_indicate_event_handle+0x40>
 2005e982:	43d4                	c.lw	a3,4(a5)
 2005e984:	c632                	c.swsp	a2,12(sp)
@@ -10342,7 +10341,7 @@ Disassembly of section .xip_image2.text:
 2005e9b2 <wifi_indication>:
 2005e9b2:	472d                	c.li	a4,11
 2005e9b4:	00e51863          	bne	a0,a4,2005e9c4 <wifi_indication+0x12>
-2005e9b8:	fbc1a703          	lw	a4,-68(gp) # 20066924 <p_wifi_joinstatus_internal_callback>
+2005e9b8:	fbc1a703          	lw	a4,-68(gp) # 20066944 <p_wifi_joinstatus_internal_callback>
 2005e9bc:	c711                	c.beqz	a4,2005e9c8 <wifi_indication+0x16>
 2005e9be:	0ff6f513          	andi	a0,a3,255
 2005e9c2:	8702                	c.jr	a4
@@ -10364,33 +10363,33 @@ Disassembly of section .xip_image2.text:
 2005e9e6:	c31c                	c.sw	a5,0(a4)
 2005e9e8:	17d010ef          	jal	ra,20060364 <wifi_on>
 2005e9ec:	4505                	c.li	a0,1
-2005e9ee:	209010ef          	jal	ra,200603f6 <wifi_config_autoreconnect>
-2005e9f2:	d2ffc0ef          	jal	ra,2005b720 <rtos_mem_get_free_heap_size>
+2005e9ee:	211010ef          	jal	ra,200603fe <wifi_config_autoreconnect>
+2005e9f2:	d35fc0ef          	jal	ra,2005b726 <rtos_mem_get_free_heap_size>
 2005e9f6:	20063737          	lui	a4,0x20063
 2005e9fa:	200636b7          	lui	a3,0x20063
 2005e9fe:	200635b7          	lui	a1,0x20063
 2005ea02:	882a                	c.mv	a6,a0
 2005ea04:	03500793          	addi	a5,zero,53
 2005ea08:	4511                	c.li	a0,4
-2005ea0a:	72870713          	addi	a4,a4,1832 # 20063728 <__FUNCTION__.0>
-2005ea0e:	6e468693          	addi	a3,a3,1764 # 200636e4 <__func__.1+0x60>
+2005ea0a:	73070713          	addi	a4,a4,1840 # 20063730 <__FUNCTION__.0>
+2005ea0e:	6ec68693          	addi	a3,a3,1772 # 200636ec <__func__.1+0x60>
 2005ea12:	04900613          	addi	a2,zero,73
-2005ea16:	70058593          	addi	a1,a1,1792 # 20063700 <__func__.1+0x7c>
-2005ea1a:	f6efc0ef          	jal	ra,2005b188 <rtk_log_write>
+2005ea16:	70858593          	addi	a1,a1,1800 # 20063708 <__func__.1+0x7c>
+2005ea1a:	f74fc0ef          	jal	ra,2005b18e <rtk_log_write>
 2005ea1e:	4422                	c.lwsp	s0,8(sp)
 2005ea20:	40b2                	c.lwsp	ra,12(sp)
 2005ea22:	4501                	c.li	a0,0
 2005ea24:	0141                	c.addi	sp,16
-2005ea26:	9bafd06f          	jal	zero,2005bbe0 <rtos_task_delete>
+2005ea26:	9c0fd06f          	jal	zero,2005bbe6 <rtos_task_delete>
 2005ea2a:	4505                	c.li	a0,1
-2005ea2c:	9c6fd0ef          	jal	ra,2005bbf2 <rtos_time_delay_ms>
+2005ea2c:	9ccfd0ef          	jal	ra,2005bbf8 <rtos_time_delay_ms>
 2005ea30:	b755                	c.j	2005e9d4 <_init_thread+0xa>
 
 2005ea32 <wlan_initialize>:
 2005ea32:	1141                	c.addi	sp,-16
 2005ea34:	c606                	c.swsp	ra,12(sp)
 2005ea36:	041010ef          	jal	ra,20060276 <wifi_set_rom2flash>
-2005ea3a:	1ca020ef          	jal	ra,20060c04 <inic_host_init>
+2005ea3a:	1d2020ef          	jal	ra,20060c0c <inic_host_init>
 2005ea3e:	4505                	c.li	a0,1
 2005ea40:	f07ff0ef          	jal	ra,2005e946 <wifi_fast_connect_enable>
 2005ea44:	6705                	c.lui	a4,0x1
@@ -10400,19 +10399,19 @@ Disassembly of section .xip_image2.text:
 2005ea50:	40070713          	addi	a4,a4,1024 # 1400 <CPU_ClkGet+0x8ea>
 2005ea54:	4681                	c.li	a3,0
 2005ea56:	9ca60613          	addi	a2,a2,-1590 # 2005e9ca <_init_thread>
-2005ea5a:	70858593          	addi	a1,a1,1800 # 20063708 <__func__.1+0x84>
+2005ea5a:	71058593          	addi	a1,a1,1808 # 20063710 <__func__.1+0x84>
 2005ea5e:	4501                	c.li	a0,0
-2005ea60:	95cfd0ef          	jal	ra,2005bbbc <rtos_task_create>
+2005ea60:	962fd0ef          	jal	ra,2005bbc2 <rtos_task_create>
 2005ea64:	c105                	c.beqz	a0,2005ea84 <wlan_initialize+0x52>
 2005ea66:	40b2                	c.lwsp	ra,12(sp)
 2005ea68:	200636b7          	lui	a3,0x20063
 2005ea6c:	200635b7          	lui	a1,0x20063
-2005ea70:	71068693          	addi	a3,a3,1808 # 20063710 <__func__.1+0x8c>
+2005ea70:	71868693          	addi	a3,a3,1816 # 20063718 <__func__.1+0x8c>
 2005ea74:	04500613          	addi	a2,zero,69
-2005ea78:	70058593          	addi	a1,a1,1792 # 20063700 <__func__.1+0x7c>
+2005ea78:	70858593          	addi	a1,a1,1800 # 20063708 <__func__.1+0x7c>
 2005ea7c:	4509                	c.li	a0,2
 2005ea7e:	0141                	c.addi	sp,16
-2005ea80:	f08fc06f          	jal	zero,2005b188 <rtk_log_write>
+2005ea80:	f0efc06f          	jal	zero,2005b18e <rtk_log_write>
 2005ea84:	40b2                	c.lwsp	ra,12(sp)
 2005ea86:	0141                	c.addi	sp,16
 2005ea88:	8082                	c.jr	ra
@@ -10425,7 +10424,7 @@ Disassembly of section .xip_image2.text:
 2005ea94:	d84a                	c.swsp	s2,48(sp)
 2005ea96:	4625                	c.li	a2,9
 2005ea98:	892a                	c.mv	s2,a0
-2005ea9a:	83758593          	addi	a1,a1,-1993 # 20063837 <__FUNCTION__.0+0x10f>
+2005ea9a:	83f58593          	addi	a1,a1,-1985 # 2006383f <__FUNCTION__.0+0x10f>
 2005ea9e:	0068                	c.addi4spn	a0,sp,12
 2005eaa0:	dc22                	c.swsp	s0,56(sp)
 2005eaa2:	de06                	c.swsp	ra,60(sp)
@@ -10438,7 +10437,7 @@ Disassembly of section .xip_image2.text:
 2005eab6:	c899                	c.beqz	s1,2005eacc <ChipInfo_GetSocName_ToBuf+0x42>
 2005eab8:	20064637          	lui	a2,0x20064
 2005eabc:	0074                	c.addi4spn	a3,sp,12
-2005eabe:	86860613          	addi	a2,a2,-1944 # 20063868 <__FUNCTION__.0+0x140>
+2005eabe:	87060613          	addi	a2,a2,-1936 # 20063870 <__FUNCTION__.0+0x140>
 2005eac2:	85a6                	c.mv	a1,s1
 2005eac4:	854a                	c.mv	a0,s2
 2005eac6:	29f000ef          	jal	ra,2005f564 <DiagSnPrintf>
@@ -10451,14 +10450,14 @@ Disassembly of section .xip_image2.text:
 2005eade:	e131                	c.bnez	a0,2005eb22 <ChipInfo_GetSocName_ToBuf+0x98>
 2005eae0:	200646b7          	lui	a3,0x20064
 2005eae4:	200635b7          	lui	a1,0x20063
-2005eae8:	87068693          	addi	a3,a3,-1936 # 20063870 <__FUNCTION__.0+0x148>
+2005eae8:	87868693          	addi	a3,a3,-1928 # 20063878 <__FUNCTION__.0+0x148>
 2005eaec:	04500613          	addi	a2,zero,69
-2005eaf0:	77c58593          	addi	a1,a1,1916 # 2006377c <__FUNCTION__.0+0x54>
+2005eaf0:	78458593          	addi	a1,a1,1924 # 20063784 <__FUNCTION__.0+0x54>
 2005eaf4:	4509                	c.li	a0,2
-2005eaf6:	e92fc0ef          	jal	ra,2005b188 <rtk_log_write>
+2005eaf6:	e98fc0ef          	jal	ra,2005b18e <rtk_log_write>
 2005eafa:	00947c63          	bgeu	s0,s1,2005eb12 <ChipInfo_GetSocName_ToBuf+0x88>
 2005eafe:	20063637          	lui	a2,0x20063
-2005eb02:	8d060613          	addi	a2,a2,-1840 # 200628d0 <pmap_func+0x4ac>
+2005eb02:	8d860613          	addi	a2,a2,-1832 # 200628d8 <pmap_func+0x4ac>
 2005eb06:	408485b3          	sub	a1,s1,s0
 2005eb0a:	00890533          	add	a0,s2,s0
 2005eb0e:	257000ef          	jal	ra,2005f564 <DiagSnPrintf>
@@ -10474,7 +10473,7 @@ Disassembly of section .xip_image2.text:
 2005eb26:	00b14683          	lbu	a3,11(sp)
 2005eb2a:	408485b3          	sub	a1,s1,s0
 2005eb2e:	00890533          	add	a0,s2,s0
-2005eb32:	888a0613          	addi	a2,s4,-1912 # 20063888 <__FUNCTION__.0+0x160>
+2005eb32:	890a0613          	addi	a2,s4,-1904 # 20063890 <__FUNCTION__.0+0x160>
 2005eb36:	22f000ef          	jal	ra,2005f564 <DiagSnPrintf>
 2005eb3a:	942a                	c.add	s0,a0
 2005eb3c:	0985                	c.addi	s3,1
@@ -10502,9 +10501,9 @@ Disassembly of section .xip_image2.text:
 2005eb6a:	8b8d                	c.andi	a5,3
 2005eb6c:	e7d9                	c.bnez	a5,2005ebfa <ChipInfo_GetLibVersion_ToBuf+0xb4>
 2005eb6e:	200636b7          	lui	a3,0x20063
-2005eb72:	4cc68693          	addi	a3,a3,1228 # 200634cc <__FUNCTION__.0+0x1c>
+2005eb72:	4d468693          	addi	a3,a3,1236 # 200634d4 <__FUNCTION__.0+0x1c>
 2005eb76:	20064637          	lui	a2,0x20064
-2005eb7a:	89460613          	addi	a2,a2,-1900 # 20063894 <__FUNCTION__.0+0x16c>
+2005eb7a:	89c60613          	addi	a2,a2,-1892 # 2006389c <__FUNCTION__.0+0x16c>
 2005eb7e:	85a6                	c.mv	a1,s1
 2005eb80:	854e                	c.mv	a0,s3
 2005eb82:	1e3000ef          	jal	ra,2005f564 <DiagSnPrintf>
@@ -10513,8 +10512,8 @@ Disassembly of section .xip_image2.text:
 2005eb8c:	200646b7          	lui	a3,0x20064
 2005eb90:	20064637          	lui	a2,0x20064
 2005eb94:	40a485b3          	sub	a1,s1,a0
-2005eb98:	8a868693          	addi	a3,a3,-1880 # 200638a8 <__FUNCTION__.0+0x180>
-2005eb9c:	8bc60613          	addi	a2,a2,-1860 # 200638bc <__FUNCTION__.0+0x194>
+2005eb98:	8b068693          	addi	a3,a3,-1872 # 200638b0 <__FUNCTION__.0+0x180>
+2005eb9c:	8c460613          	addi	a2,a2,-1852 # 200638c4 <__FUNCTION__.0+0x194>
 2005eba0:	954e                	c.add	a0,s3
 2005eba2:	1c3000ef          	jal	ra,2005f564 <DiagSnPrintf>
 2005eba6:	942a                	c.add	s0,a0
@@ -10523,14 +10522,14 @@ Disassembly of section .xip_image2.text:
 2005ebb0:	20064637          	lui	a2,0x20064
 2005ebb4:	408485b3          	sub	a1,s1,s0
 2005ebb8:	00898533          	add	a0,s3,s0
-2005ebbc:	8d068693          	addi	a3,a3,-1840 # 200638d0 <__FUNCTION__.0+0x1a8>
-2005ebc0:	91060613          	addi	a2,a2,-1776 # 20063910 <__FUNCTION__.0+0x1e8>
+2005ebbc:	8d868693          	addi	a3,a3,-1832 # 200638d8 <__FUNCTION__.0+0x1a8>
+2005ebc0:	91860613          	addi	a2,a2,-1768 # 20063918 <__FUNCTION__.0+0x1e8>
 2005ebc4:	1a1000ef          	jal	ra,2005f564 <DiagSnPrintf>
 2005ebc8:	942a                	c.add	s0,a0
 2005ebca:	20065937          	lui	s2,0x20065
 2005ebce:	20065a37          	lui	s4,0x20065
-2005ebd2:	d3490913          	addi	s2,s2,-716 # 20064d34 <lib_pmc_git_rev>
-2005ebd6:	d95a0a13          	addi	s4,s4,-619 # 20064d95 <__git_ver_table_end__>
+2005ebd2:	d3c90913          	addi	s2,s2,-708 # 20064d3c <lib_pmc_git_rev>
+2005ebd6:	d9da0a13          	addi	s4,s4,-611 # 20064d9d <__git_ver_table_end__>
 2005ebda:	20064ab7          	lui	s5,0x20064
 2005ebde:	20063b37          	lui	s6,0x20063
 2005ebe2:	03496163          	bltu	s2,s4,2005ec04 <ChipInfo_GetLibVersion_ToBuf+0xbe>
@@ -10545,7 +10544,7 @@ Disassembly of section .xip_image2.text:
 2005ebf6:	6105                	c.addi16sp	sp,32
 2005ebf8:	8082                	c.jr	ra
 2005ebfa:	200646b7          	lui	a3,0x20064
-2005ebfe:	89068693          	addi	a3,a3,-1904 # 20063890 <__FUNCTION__.0+0x168>
+2005ebfe:	89868693          	addi	a3,a3,-1896 # 20063898 <__FUNCTION__.0+0x168>
 2005ec02:	bf95                	c.j	2005eb76 <ChipInfo_GetLibVersion_ToBuf+0x30>
 2005ec04:	00094683          	lbu	a3,0(s2)
 2005ec08:	e28d                	c.bnez	a3,2005ec2a <ChipInfo_GetLibVersion_ToBuf+0xe4>
@@ -10553,14 +10552,14 @@ Disassembly of section .xip_image2.text:
 2005ec0e:	0905                	c.addi	s2,1
 2005ec10:	dfed                	c.beqz	a5,2005ec0a <ChipInfo_GetLibVersion_ToBuf+0xc4>
 2005ec12:	fc9478e3          	bgeu	s0,s1,2005ebe2 <ChipInfo_GetLibVersion_ToBuf+0x9c>
-2005ec16:	8d0b0613          	addi	a2,s6,-1840 # 200628d0 <pmap_func+0x4ac>
+2005ec16:	8d8b0613          	addi	a2,s6,-1832 # 200628d8 <pmap_func+0x4ac>
 2005ec1a:	408485b3          	sub	a1,s1,s0
 2005ec1e:	00898533          	add	a0,s3,s0
 2005ec22:	143000ef          	jal	ra,2005f564 <DiagSnPrintf>
 2005ec26:	942a                	c.add	s0,a0
 2005ec28:	bf6d                	c.j	2005ebe2 <ChipInfo_GetLibVersion_ToBuf+0x9c>
 2005ec2a:	fa947ce3          	bgeu	s0,s1,2005ebe2 <ChipInfo_GetLibVersion_ToBuf+0x9c>
-2005ec2e:	920a8613          	addi	a2,s5,-1760 # 20063920 <__FUNCTION__.0+0x1f8>
+2005ec2e:	928a8613          	addi	a2,s5,-1752 # 20063928 <__FUNCTION__.0+0x1f8>
 2005ec32:	408485b3          	sub	a1,s1,s0
 2005ec36:	00898533          	add	a0,s3,s0
 2005ec3a:	0905                	c.addi	s2,1
@@ -10612,40 +10611,40 @@ Disassembly of section .xip_image2.text:
 2005ecae:	842a                	c.mv	s0,a0
 2005ecb0:	200644b7          	lui	s1,0x20064
 2005ecb4:	c8eff0ef          	jal	ra,2005e142 <vTaskGetInfo>
-2005ecb8:	92448513          	addi	a0,s1,-1756 # 20063924 <__FUNCTION__.0+0x1fc>
+2005ecb8:	92c48513          	addi	a0,s1,-1748 # 2006392c <__FUNCTION__.0+0x1fc>
 2005ecbc:	25e9                	c.jal	2005f386 <DiagPrintf>
 2005ecbe:	45c2                	c.lwsp	a1,16(sp)
 2005ecc0:	20064537          	lui	a0,0x20064
-2005ecc4:	94850513          	addi	a0,a0,-1720 # 20063948 <__FUNCTION__.0+0x220>
+2005ecc4:	95050513          	addi	a0,a0,-1712 # 20063950 <__FUNCTION__.0+0x220>
 2005ecc8:	2d7d                	c.jal	2005f386 <DiagPrintf>
 2005ecca:	45d2                	c.lwsp	a1,20(sp)
 2005eccc:	20064537          	lui	a0,0x20064
-2005ecd0:	95c50513          	addi	a0,a0,-1700 # 2006395c <__FUNCTION__.0+0x234>
+2005ecd0:	96450513          	addi	a0,a0,-1692 # 20063964 <__FUNCTION__.0+0x234>
 2005ecd4:	2d4d                	c.jal	2005f386 <DiagPrintf>
 2005ecd6:	20064537          	lui	a0,0x20064
 2005ecda:	85a2                	c.mv	a1,s0
-2005ecdc:	96c50513          	addi	a0,a0,-1684 # 2006396c <__FUNCTION__.0+0x244>
+2005ecdc:	97450513          	addi	a0,a0,-1676 # 20063974 <__FUNCTION__.0+0x244>
 2005ece0:	255d                	c.jal	2005f386 <DiagPrintf>
 2005ece2:	01814583          	lbu	a1,24(sp)
 2005ece6:	200647b7          	lui	a5,0x20064
-2005ecea:	a9078793          	addi	a5,a5,-1392 # 20063a90 <TaskStateString.0>
+2005ecea:	a9878793          	addi	a5,a5,-1384 # 20063a98 <TaskStateString.0>
 2005ecee:	00259713          	slli	a4,a1,0x2
 2005ecf2:	97ba                	c.add	a5,a4
 2005ecf4:	4390                	c.lw	a2,0(a5)
 2005ecf6:	20064537          	lui	a0,0x20064
-2005ecfa:	98050513          	addi	a0,a0,-1664 # 20063980 <__FUNCTION__.0+0x258>
+2005ecfa:	98850513          	addi	a0,a0,-1656 # 20063988 <__FUNCTION__.0+0x258>
 2005ecfe:	2561                	c.jal	2005f386 <DiagPrintf>
 2005ed00:	5582                	c.lwsp	a1,32(sp)
 2005ed02:	20064537          	lui	a0,0x20064
-2005ed06:	99c50513          	addi	a0,a0,-1636 # 2006399c <__FUNCTION__.0+0x274>
+2005ed06:	9a450513          	addi	a0,a0,-1628 # 200639a4 <__FUNCTION__.0+0x274>
 2005ed0a:	2db5                	c.jal	2005f386 <DiagPrintf>
 2005ed0c:	45f2                	c.lwsp	a1,28(sp)
 2005ed0e:	20064537          	lui	a0,0x20064
-2005ed12:	9b050513          	addi	a0,a0,-1616 # 200639b0 <__FUNCTION__.0+0x288>
+2005ed12:	9b850513          	addi	a0,a0,-1608 # 200639b8 <__FUNCTION__.0+0x288>
 2005ed16:	2d85                	c.jal	2005f386 <DiagPrintf>
 2005ed18:	5592                	c.lwsp	a1,36(sp)
 2005ed1a:	20064537          	lui	a0,0x20064
-2005ed1e:	9c850513          	addi	a0,a0,-1592 # 200639c8 <__FUNCTION__.0+0x2a0>
+2005ed1e:	9d050513          	addi	a0,a0,-1584 # 200639d0 <__FUNCTION__.0+0x2a0>
 2005ed22:	2595                	c.jal	2005f386 <DiagPrintf>
 2005ed24:	4474                	c.lw	a3,76(s0)
 2005ed26:	5818                	c.lw	a4,48(s0)
@@ -10655,13 +10654,13 @@ Disassembly of section .xip_image2.text:
 2005ed30:	8709                	c.srai	a4,0x2
 2005ed32:	20064537          	lui	a0,0x20064
 2005ed36:	0705                	c.addi	a4,1
-2005ed38:	9e050513          	addi	a0,a0,-1568 # 200639e0 <__FUNCTION__.0+0x2b8>
+2005ed38:	9e850513          	addi	a0,a0,-1560 # 200639e8 <__FUNCTION__.0+0x2b8>
 2005ed3c:	25a9                	c.jal	2005f386 <DiagPrintf>
 2005ed3e:	02c15583          	lhu	a1,44(sp)
 2005ed42:	20064537          	lui	a0,0x20064
-2005ed46:	a3050513          	addi	a0,a0,-1488 # 20063a30 <__FUNCTION__.0+0x308>
+2005ed46:	a3850513          	addi	a0,a0,-1480 # 20063a38 <__FUNCTION__.0+0x308>
 2005ed4a:	2d35                	c.jal	2005f386 <DiagPrintf>
-2005ed4c:	92448513          	addi	a0,s1,-1756
+2005ed4c:	92c48513          	addi	a0,s1,-1748
 2005ed50:	2d1d                	c.jal	2005f386 <DiagPrintf>
 2005ed52:	50f2                	c.lwsp	ra,60(sp)
 2005ed54:	5462                	c.lwsp	s0,56(sp)
@@ -10672,7 +10671,7 @@ Disassembly of section .xip_image2.text:
 2005ed5c <vTaskCrashCallback>:
 2005ed5c:	1141                	c.addi	sp,-16
 2005ed5e:	c606                	c.swsp	ra,12(sp)
-2005ed60:	e37fc0ef          	jal	ra,2005bb96 <rtos_sched_get_state>
+2005ed60:	e3dfc0ef          	jal	ra,2005bb9c <rtos_sched_get_state>
 2005ed64:	4785                	c.li	a5,1
 2005ed66:	00f50663          	beq	a0,a5,2005ed72 <vTaskCrashCallback+0x16>
 2005ed6a:	40b2                	c.lwsp	ra,12(sp)
@@ -10711,7 +10710,7 @@ Disassembly of section .xip_image2.text:
 2005edaa:	4681                	c.li	a3,0
 2005edac:	8562                	c.mv	a0,s8
 2005edae:	85e6                	c.mv	a1,s9
-2005edb0:	2a1020ef          	jal	ra,20061850 <__umoddi3>
+2005edb0:	2a9020ef          	jal	ra,20061858 <__umoddi3>
 2005edb4:	0ff57893          	andi	a7,a0,255
 2005edb8:	04aa6863          	bltu	s4,a0,2005ee08 <print_unsigned_num+0x90>
 2005edbc:	03088893          	addi	a7,a7,48 # f8000030 <__ctrace_end__+0x2e000030>
@@ -10724,7 +10723,7 @@ Disassembly of section .xip_image2.text:
 2005edd0:	8562                	c.mv	a0,s8
 2005edd2:	85e6                	c.mv	a1,s9
 2005edd4:	0405                	c.addi	s0,1
-2005edd6:	71a020ef          	jal	ra,200614f0 <__udivdi3>
+2005edd6:	722020ef          	jal	ra,200614f8 <__udivdi3>
 2005edda:	039a9463          	bne	s5,s9,2005ee02 <print_unsigned_num+0x8a>
 2005edde:	03ac7263          	bgeu	s8,s10,2005ee02 <print_unsigned_num+0x8a>
 2005ede2:	c8d5                	c.beqz	s1,2005ee96 <print_unsigned_num+0x11e>
@@ -10837,7 +10836,7 @@ Disassembly of section .xip_image2.text:
 2005eeec:	8a3a                	c.mv	s4,a4
 2005eeee:	4401                	c.li	s0,0
 2005eef0:	46a5                	c.li	a3,9
-2005eef2:	66898993          	addi	s3,s3,1640 # 20068668 <num_buf_temp>
+2005eef2:	6a898993          	addi	s3,s3,1704 # 200686a8 <num_buf_temp>
 2005eef6:	02b87733          	remu	a4,a6,a1
 2005eefa:	0ff77793          	andi	a5,a4,255
 2005eefe:	04e6ee63          	bltu	a3,a4,2005ef5a <print_decimal_num+0x8a>
@@ -10941,10 +10940,10 @@ Disassembly of section .xip_image2.text:
 2005f004:	40b2                	c.lwsp	ra,12(sp)
 2005f006:	0141                	c.addi	sp,16
 2005f008:	8082                	c.jr	ra
-2005f00a:	fb018693          	addi	a3,gp,-80 # 20066918 <rand_first.1>
+2005f00a:	fb018693          	addi	a3,gp,-80 # 20066938 <rand_first.1>
 2005f00e:	429c                	c.lw	a5,0(a3)
 2005f010:	20068737          	lui	a4,0x20068
-2005f014:	67470713          	addi	a4,a4,1652 # 20068674 <rand_seed.0>
+2005f014:	6b470713          	addi	a4,a4,1716 # 200686b4 <rand_seed.0>
 2005f018:	eb91                	c.bnez	a5,2005f02c <_rand+0x56>
 2005f01a:	678d                	c.lui	a5,0x3
 2005f01c:	03978793          	addi	a5,a5,57 # 3039 <FLASH_SetSpiMode+0x375>
@@ -11010,7 +11009,7 @@ Disassembly of section .xip_image2.text:
 2005f0a6:	842e                	c.mv	s0,a1
 2005f0a8:	4981                	c.li	s3,0
 2005f0aa:	4481                	c.li	s1,0
-2005f0ac:	aa8a0a13          	addi	s4,s4,-1368 # 20063aa8 <TaskStateString.0+0x18>
+2005f0ac:	ab0a0a13          	addi	s4,s4,-1360 # 20063ab0 <TaskStateString.0+0x18>
 2005f0b0:	4aa5                	c.li	s5,9
 2005f0b2:	4b29                	c.li	s6,10
 2005f0b4:	00094503          	lbu	a0,0(s2)
@@ -11482,7 +11481,7 @@ Disassembly of section .xip_image2.text:
 2005f5ac:	4fa9                	c.li	t6,10
 2005f5ae:	03000293          	addi	t0,zero,48
 2005f5b2:	02d00a13          	addi	s4,zero,45
-2005f5b6:	b3438393          	addi	t2,t2,-1228 # 20063b34 <TaskStateString.0+0xa4>
+2005f5b6:	b3c38393          	addi	t2,t2,-1220 # 20063b3c <TaskStateString.0+0xa4>
 2005f5ba:	4aa5                	c.li	s5,9
 2005f5bc:	0ef00b13          	addi	s6,zero,239
 2005f5c0:	eff40b93          	addi	s7,s0,-257 # eff <CPU_ClkGet+0x3e9>
@@ -11700,7 +11699,7 @@ Disassembly of section .xip_image2.text:
 2005f832:	00357793          	andi	a5,a0,3
 2005f836:	cf85                	c.beqz	a5,2005f86e <TRNG_get_random_bytes+0x5a>
 2005f838:	852e                	c.mv	a0,a1
-2005f83a:	eb5fb0ef          	jal	ra,2005b6ee <rtos_mem_malloc>
+2005f83a:	ebbfb0ef          	jal	ra,2005b6f4 <rtos_mem_malloc>
 2005f83e:	85a2                	c.mv	a1,s0
 2005f840:	892a                	c.mv	s2,a0
 2005f842:	dffa9097          	auipc	ra,0xdffa9
@@ -11711,7 +11710,7 @@ Disassembly of section .xip_image2.text:
 2005f850:	dffaa097          	auipc	ra,0xdffaa
 2005f854:	280080e7          	jalr	ra,640(ra) # 9ad0 <__wrap_memcpy>
 2005f858:	854a                	c.mv	a0,s2
-2005f85a:	ebffb0ef          	jal	ra,2005b718 <rtos_mem_free>
+2005f85a:	ec5fb0ef          	jal	ra,2005b71e <rtos_mem_free>
 2005f85e:	50b2                	c.lwsp	ra,44(sp)
 2005f860:	5422                	c.lwsp	s0,40(sp)
 2005f862:	5492                	c.lwsp	s1,36(sp)
@@ -11748,7 +11747,7 @@ Disassembly of section .xip_image2.text:
 2005f8ae:	85aa                	c.mv	a1,a0
 2005f8b0:	20064537          	lui	a0,0x20064
 2005f8b4:	1141                	c.addi	sp,-16
-2005f8b6:	b4850513          	addi	a0,a0,-1208 # 20063b48 <TaskStateString.0+0xb8>
+2005f8b6:	b5050513          	addi	a0,a0,-1200 # 20063b50 <TaskStateString.0+0xb8>
 2005f8ba:	c606                	c.swsp	ra,12(sp)
 2005f8bc:	aebff0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005f8c0:	a001                	c.j	2005f8c0 <io_assert_failed+0x14>
@@ -11761,12 +11760,12 @@ Disassembly of section .xip_image2.text:
 2005f8cc:	20064537          	lui	a0,0x20064
 2005f8d0:	1141                	c.addi	sp,-16
 2005f8d2:	469d                	c.li	a3,7
-2005f8d4:	c2450513          	addi	a0,a0,-988 # 20063c24 <TaskStateString.0+0x194>
+2005f8d4:	c2c50513          	addi	a0,a0,-980 # 20063c2c <TaskStateString.0+0x194>
 2005f8d8:	c606                	c.swsp	ra,12(sp)
 2005f8da:	acdff0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
 2005f8de:	20064537          	lui	a0,0x20064
 2005f8e2:	44800593          	addi	a1,zero,1096
-2005f8e6:	b7c50513          	addi	a0,a0,-1156 # 20063b7c <TaskStateString.0+0xec>
+2005f8e6:	b8450513          	addi	a0,a0,-1148 # 20063b84 <TaskStateString.0+0xec>
 2005f8ea:	fc3ff0ef          	jal	ra,2005f8ac <io_assert_failed>
 2005f8ee:	73e00067          	jalr	zero,1854(zero) # 0 <Reset_Handler>
 
@@ -11894,9 +11893,9 @@ Disassembly of section .xip_image2.text:
 2005fa44:	86be                	c.mv	a3,a5
 2005fa46:	10d00613          	addi	a2,zero,269
 2005fa4a:	200647b7          	lui	a5,0x20064
-2005fa4e:	e4878593          	addi	a1,a5,-440 # 20063e48 <__FUNCTION__.3>
+2005fa4e:	e5078593          	addi	a1,a5,-432 # 20063e50 <__FUNCTION__.3>
 2005fa52:	200647b7          	lui	a5,0x20064
-2005fa56:	c4878513          	addi	a0,a5,-952 # 20063c48 <TaskStateString.0+0x1b8>
+2005fa56:	c5078513          	addi	a0,a5,-944 # 20063c50 <TaskStateString.0+0x1b8>
 2005fa5a:	92dff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005fa5e:	57fd                	c.li	a5,-1
 2005fa60:	aa59                	c.j	2005fbf6 <unwind_frame_rv32i+0x2cc>
@@ -11974,9 +11973,9 @@ Disassembly of section .xip_image2.text:
 2005fb30:	86be                	c.mv	a3,a5
 2005fb32:	11d00613          	addi	a2,zero,285
 2005fb36:	200647b7          	lui	a5,0x20064
-2005fb3a:	e4878593          	addi	a1,a5,-440 # 20063e48 <__FUNCTION__.3>
+2005fb3a:	e5078593          	addi	a1,a5,-432 # 20063e50 <__FUNCTION__.3>
 2005fb3e:	200647b7          	lui	a5,0x20064
-2005fb42:	c8478513          	addi	a0,a5,-892 # 20063c84 <TaskStateString.0+0x1f4>
+2005fb42:	c8c78513          	addi	a0,a5,-884 # 20063c8c <TaskStateString.0+0x1f4>
 2005fb46:	841ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005fb4a:	57fd                	c.li	a5,-1
 2005fb4c:	a06d                	c.j	2005fbf6 <unwind_frame_rv32i+0x2cc>
@@ -12134,9 +12133,9 @@ Disassembly of section .xip_image2.text:
 2005fcf4:	86be                	c.mv	a3,a5
 2005fcf6:	16900613          	addi	a2,zero,361
 2005fcfa:	200647b7          	lui	a5,0x20064
-2005fcfe:	e5c78593          	addi	a1,a5,-420 # 20063e5c <__FUNCTION__.2>
+2005fcfe:	e6478593          	addi	a1,a5,-412 # 20063e64 <__FUNCTION__.2>
 2005fd02:	200647b7          	lui	a5,0x20064
-2005fd06:	c4878513          	addi	a0,a5,-952 # 20063c48 <TaskStateString.0+0x1b8>
+2005fd06:	c5078513          	addi	a0,a5,-944 # 20063c50 <TaskStateString.0+0x1b8>
 2005fd0a:	e7cff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005fd0e:	57fd                	c.li	a5,-1
 2005fd10:	a48d                	c.j	2005ff72 <unwind_frame_rv32c+0x372>
@@ -12240,9 +12239,9 @@ Disassembly of section .xip_image2.text:
 2005fe20:	86be                	c.mv	a3,a5
 2005fe22:	18100613          	addi	a2,zero,385
 2005fe26:	200647b7          	lui	a5,0x20064
-2005fe2a:	e5c78593          	addi	a1,a5,-420 # 20063e5c <__FUNCTION__.2>
+2005fe2a:	e6478593          	addi	a1,a5,-412 # 20063e64 <__FUNCTION__.2>
 2005fe2e:	200647b7          	lui	a5,0x20064
-2005fe32:	c4878513          	addi	a0,a5,-952 # 20063c48 <TaskStateString.0+0x1b8>
+2005fe32:	c5078513          	addi	a0,a5,-944 # 20063c50 <TaskStateString.0+0x1b8>
 2005fe36:	d50ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005fe3a:	57fd                	c.li	a5,-1
 2005fe3c:	aa1d                	c.j	2005ff72 <unwind_frame_rv32c+0x372>
@@ -12296,9 +12295,9 @@ Disassembly of section .xip_image2.text:
 2005fece:	86be                	c.mv	a3,a5
 2005fed0:	19100613          	addi	a2,zero,401
 2005fed4:	200647b7          	lui	a5,0x20064
-2005fed8:	e5c78593          	addi	a1,a5,-420 # 20063e5c <__FUNCTION__.2>
+2005fed8:	e6478593          	addi	a1,a5,-412 # 20063e64 <__FUNCTION__.2>
 2005fedc:	200647b7          	lui	a5,0x20064
-2005fee0:	c8478513          	addi	a0,a5,-892 # 20063c84 <TaskStateString.0+0x1f4>
+2005fee0:	c8c78513          	addi	a0,a5,-884 # 20063c8c <TaskStateString.0+0x1f4>
 2005fee4:	ca2ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005fee8:	57fd                	c.li	a5,-1
 2005feea:	a061                	c.j	2005ff72 <unwind_frame_rv32c+0x372>
@@ -12373,10 +12372,10 @@ Disassembly of section .xip_image2.text:
 2005ff9a:	4682                	c.lwsp	a3,0(sp)
 2005ff9c:	200644b7          	lui	s1,0x20064
 2005ffa0:	200649b7          	lui	s3,0x20064
-2005ffa4:	cbc48513          	addi	a0,s1,-836 # 20063cbc <TaskStateString.0+0x22c>
+2005ffa4:	cc448513          	addi	a0,s1,-828 # 20063cc4 <TaskStateString.0+0x22c>
 2005ffa8:	1cc00613          	addi	a2,zero,460
-2005ffac:	e7098593          	addi	a1,s3,-400 # 20063e70 <__FUNCTION__.1>
-2005ffb0:	cbc48493          	addi	s1,s1,-836
+2005ffac:	e7898593          	addi	a1,s3,-392 # 20063e78 <__FUNCTION__.1>
+2005ffb0:	cc448493          	addi	s1,s1,-828
 2005ffb4:	bd2ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005ffb8:	4901                	c.li	s2,0
 2005ffba:	04848493          	addi	s1,s1,72
@@ -12391,7 +12390,7 @@ Disassembly of section .xip_image2.text:
 2005ffd4:	4832                	c.lwsp	a6,12(sp)
 2005ffd6:	86ca                	c.mv	a3,s2
 2005ffd8:	1d700613          	addi	a2,zero,471
-2005ffdc:	e7098593          	addi	a1,s3,-400
+2005ffdc:	e7898593          	addi	a1,s3,-392
 2005ffe0:	8526                	c.mv	a0,s1
 2005ffe2:	ba4ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2005ffe6:	47a2                	c.lwsp	a5,8(sp)
@@ -12445,14 +12444,14 @@ Disassembly of section .xip_image2.text:
 20060050:	34202a73          	csrrs	s4,mcause,zero
 20060054:	34302bf3          	csrrs	s7,mtval,zero
 20060058:	20064437          	lui	s0,0x20064
-2006005c:	e8440513          	addi	a0,s0,-380 # 20063e84 <__FUNCTION__.1+0x14>
+2006005c:	e8c40513          	addi	a0,s0,-372 # 20063e8c <__FUNCTION__.1+0x14>
 20060060:	200644b7          	lui	s1,0x20064
 20060064:	11200613          	addi	a2,zero,274
-20060068:	62048593          	addi	a1,s1,1568 # 20064620 <__FUNCTION__.0>
+20060068:	62848593          	addi	a1,s1,1576 # 20064628 <__FUNCTION__.0>
 2006006c:	0551                	c.addi	a0,20
 2006006e:	b18ff0ef          	jal	ra,2005f386 <DiagPrintf>
-20060072:	e901a783          	lw	a5,-368(gp) # 200667f8 <crash_task_info>
-20060076:	e8440413          	addi	s0,s0,-380
+20060072:	e901a783          	lw	a5,-368(gp) # 20066818 <crash_task_info>
+20060076:	e8c40413          	addi	s0,s0,-372
 2006007a:	c399                	c.beqz	a5,20060080 <crash_dump+0x5a>
 2006007c:	8556                	c.mv	a0,s5
 2006007e:	9782                	c.jalr	a5
@@ -12461,43 +12460,43 @@ Disassembly of section .xip_image2.text:
 20060084:	01476a63          	bltu	a4,s4,20060098 <crash_dump+0x72>
 20060088:	20064737          	lui	a4,0x20064
 2006008c:	002a1793          	slli	a5,s4,0x2
-20060090:	74470713          	addi	a4,a4,1860 # 20064744 <exception_code_string>
+20060090:	74c70713          	addi	a4,a4,1868 # 2006474c <exception_code_string>
 20060094:	97ba                	c.add	a5,a4
 20060096:	439c                	c.lw	a5,0(a5)
 20060098:	8752                	c.mv	a4,s4
 2006009a:	86ce                	c.mv	a3,s3
 2006009c:	11700613          	addi	a2,zero,279
-200600a0:	62048593          	addi	a1,s1,1568
+200600a0:	62848593          	addi	a1,s1,1576
 200600a4:	05440513          	addi	a0,s0,84
 200600a8:	adeff0ef          	jal	ra,2005f386 <DiagPrintf>
 200600ac:	47bd                	c.li	a5,15
 200600ae:	1547f463          	bgeu	a5,s4,200601f6 <crash_dump+0x1d0>
 200600b2:	12b00613          	addi	a2,zero,299
-200600b6:	62048593          	addi	a1,s1,1568
+200600b6:	62848593          	addi	a1,s1,1576
 200600ba:	0a440513          	addi	a0,s0,164
 200600be:	ac8ff0ef          	jal	ra,2005f386 <DiagPrintf>
 200600c2:	86e2                	c.mv	a3,s8
 200600c4:	12c00613          	addi	a2,zero,300
-200600c8:	62048593          	addi	a1,s1,1568
+200600c8:	62848593          	addi	a1,s1,1576
 200600cc:	0e840513          	addi	a0,s0,232
 200600d0:	ab6ff0ef          	jal	ra,2005f386 <DiagPrintf>
 200600d4:	86e6                	c.mv	a3,s9
 200600d6:	12d00613          	addi	a2,zero,301
-200600da:	62048593          	addi	a1,s1,1568
+200600da:	62848593          	addi	a1,s1,1576
 200600de:	11840513          	addi	a0,s0,280
 200600e2:	aa4ff0ef          	jal	ra,2005f386 <DiagPrintf>
 200600e6:	86d2                	c.mv	a3,s4
 200600e8:	12e00613          	addi	a2,zero,302
-200600ec:	62048593          	addi	a1,s1,1568
+200600ec:	62848593          	addi	a1,s1,1576
 200600f0:	14840513          	addi	a0,s0,328
 200600f4:	a92ff0ef          	jal	ra,2005f386 <DiagPrintf>
 200600f8:	86de                	c.mv	a3,s7
 200600fa:	12f00613          	addi	a2,zero,303
-200600fe:	62048593          	addi	a1,s1,1568
+200600fe:	62848593          	addi	a1,s1,1576
 20060102:	17840513          	addi	a0,s0,376
 20060106:	20064b37          	lui	s6,0x20064
 2006010a:	a7cff0ef          	jal	ra,2005f386 <DiagPrintf>
-2006010e:	784b0b13          	addi	s6,s6,1924 # 20064784 <register_string>
+2006010e:	78cb0b13          	addi	s6,s6,1932 # 2006478c <register_string>
 20060112:	4a01                	c.li	s4,0
 20060114:	23440c13          	addi	s8,s0,564
 20060118:	02000b93          	addi	s7,zero,32
@@ -12507,14 +12506,14 @@ Disassembly of section .xip_image2.text:
 20060126:	439c                	c.lw	a5,0(a5)
 20060128:	86d2                	c.mv	a3,s4
 2006012a:	13400613          	addi	a2,zero,308
-2006012e:	62048593          	addi	a1,s1,1568
+2006012e:	62848593          	addi	a1,s1,1576
 20060132:	8562                	c.mv	a0,s8
 20060134:	0a05                	c.addi	s4,1
 20060136:	a50ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2006013a:	0b11                	c.addi	s6,4
 2006013c:	ff7a10e3          	bne	s4,s7,2006011c <crash_dump+0xf6>
 20060140:	15a00613          	addi	a2,zero,346
-20060144:	62048593          	addi	a1,s1,1568
+20060144:	62848593          	addi	a1,s1,1576
 20060148:	26440513          	addi	a0,s0,612
 2006014c:	a3aff0ef          	jal	ra,2005f386 <DiagPrintf>
 20060150:	4629                	c.li	a2,10
@@ -12542,7 +12541,7 @@ Disassembly of section .xip_image2.text:
 20060186:	e291                	c.bnez	a3,2006018a <crash_dump+0x164>
 20060188:	89ba                	c.mv	s3,a4
 2006018a:	16c00613          	addi	a2,zero,364
-2006018e:	62048593          	addi	a1,s1,1568
+2006018e:	62848593          	addi	a1,s1,1576
 20060192:	2a440513          	addi	a0,s0,676
 20060196:	9f0ff0ef          	jal	ra,2005f386 <DiagPrintf>
 2006019a:	004aa503          	lw	a0,4(s5)
@@ -12550,11 +12549,11 @@ Disassembly of section .xip_image2.text:
 200601a2:	4629                	c.li	a2,10
 200601a4:	95ca                	c.add	a1,s2
 200601a6:	dd7ff0ef          	jal	ra,2005ff7c <do_stack_backtrace>
-200601aa:	62048593          	addi	a1,s1,1568
+200601aa:	62848593          	addi	a1,s1,1576
 200601ae:	17000613          	addi	a2,zero,368
 200601b2:	30c40513          	addi	a0,s0,780
 200601b6:	9d0ff0ef          	jal	ra,2005f386 <DiagPrintf>
-200601ba:	62048593          	addi	a1,s1,1568
+200601ba:	62848593          	addi	a1,s1,1576
 200601be:	18300613          	addi	a2,zero,387
 200601c2:	35440513          	addi	a0,s0,852
 200601c6:	9c0ff0ef          	jal	ra,2005f386 <DiagPrintf>
@@ -12571,19 +12570,19 @@ Disassembly of section .xip_image2.text:
 200601e0:	5cd2                	c.lwsp	s9,52(sp)
 200601e2:	5d42                	c.lwsp	s10,48(sp)
 200601e4:	5db2                	c.lwsp	s11,44(sp)
-200601e6:	62048593          	addi	a1,s1,1568
+200601e6:	62848593          	addi	a1,s1,1576
 200601ea:	44d6                	c.lwsp	s1,84(sp)
 200601ec:	18400613          	addi	a2,zero,388
 200601f0:	6125                	c.addi16sp	sp,96
 200601f2:	994ff06f          	jal	zero,2005f386 <DiagPrintf>
 200601f6:	20064737          	lui	a4,0x20064
 200601fa:	002a1793          	slli	a5,s4,0x2
-200601fe:	70470713          	addi	a4,a4,1796 # 20064704 <exception_cause_string_tbl>
+200601fe:	70c70713          	addi	a4,a4,1804 # 2006470c <exception_cause_string_tbl>
 20060202:	97ba                	c.add	a5,a4
 20060204:	0007ab03          	lw	s6,0(a5)
 20060208:	ea0b05e3          	beq	s6,zero,200600b2 <crash_dump+0x8c>
 2006020c:	11d00613          	addi	a2,zero,285
-20060210:	62048593          	addi	a1,s1,1568
+20060210:	62848593          	addi	a1,s1,1576
 20060214:	1a840513          	addi	a0,s0,424
 20060218:	96eff0ef          	jal	ra,2005f386 <DiagPrintf>
 2006021c:	21040d13          	addi	s10,s0,528
@@ -12594,13 +12593,13 @@ Disassembly of section .xip_image2.text:
 20060230:	cb19                	c.beqz	a4,20060246 <crash_dump+0x220>
 20060232:	87de                	c.mv	a5,s7
 20060234:	12000613          	addi	a2,zero,288
-20060238:	62048593          	addi	a1,s1,1568
+20060238:	62848593          	addi	a1,s1,1576
 2006023c:	856e                	c.mv	a0,s11
 2006023e:	948ff0ef          	jal	ra,2005f386 <DiagPrintf>
 20060242:	0b21                	c.addi	s6,8
 20060244:	b7c5                	c.j	20060224 <crash_dump+0x1fe>
 20060246:	12300613          	addi	a2,zero,291
-2006024a:	62048593          	addi	a1,s1,1568
+2006024a:	62848593          	addi	a1,s1,1576
 2006024e:	856a                	c.mv	a0,s10
 20060250:	936ff0ef          	jal	ra,2005f386 <DiagPrintf>
 20060254:	b7fd                	c.j	20060242 <crash_dump+0x21c>
@@ -12617,16 +12616,16 @@ Disassembly of section .xip_image2.text:
 20060268:	8082                	c.jr	ra
 
 2006026a <_my_free>:
-2006026a:	caefb06f          	jal	zero,2005b718 <rtos_mem_free>
+2006026a:	cb4fb06f          	jal	zero,2005b71e <rtos_mem_free>
 
 2006026e <_my_calloc>:
 2006026e:	02b50533          	mul	a0,a0,a1
-20060272:	c80fb06f          	jal	zero,2005b6f2 <rtos_mem_zmalloc>
+20060272:	c86fb06f          	jal	zero,2005b6f8 <rtos_mem_zmalloc>
 
 20060276 <wifi_set_rom2flash>:
 20060276:	200697b7          	lui	a5,0x20069
-2006027a:	95c78793          	addi	a5,a5,-1700 # 2006895c <wifi_rom_func_map>
-2006027e:	fef1a623          	sw	a5,-20(gp) # 20066954 <p_wifi_rom_func_map>
+2006027a:	99c78793          	addi	a5,a5,-1636 # 2006899c <wifi_rom_func_map>
+2006027e:	fef1a623          	sw	a5,-20(gp) # 20066974 <p_wifi_rom_func_map>
 20060282:	20060737          	lui	a4,0x20060
 20060286:	26e70713          	addi	a4,a4,622 # 2006026e <_my_calloc>
 2006028a:	c398                	c.sw	a4,0(a5)
@@ -12636,62 +12635,62 @@ Disassembly of section .xip_image2.text:
 20060296:	20060737          	lui	a4,0x20060
 2006029a:	25670713          	addi	a4,a4,598 # 20060256 <_my_random>
 2006029e:	c798                	c.sw	a4,8(a5)
-200602a0:	200687b7          	lui	a5,0x20068
-200602a4:	7e078793          	addi	a5,a5,2016 # 200687e0 <wifi_rom2flash>
-200602a8:	fef1a423          	sw	a5,-24(gp) # 20066950 <p_wifi_rom2flash>
+200602a0:	200697b7          	lui	a5,0x20069
+200602a4:	82078793          	addi	a5,a5,-2016 # 20068820 <wifi_rom2flash>
+200602a8:	fef1a423          	sw	a5,-24(gp) # 20066970 <p_wifi_rom2flash>
 200602ac:	2005c737          	lui	a4,0x2005c
-200602b0:	82e70713          	addi	a4,a4,-2002 # 2005b82e <rtos_mutex_give>
+200602b0:	83470713          	addi	a4,a4,-1996 # 2005b834 <rtos_mutex_give>
 200602b4:	c3d8                	c.sw	a4,4(a5)
 200602b6:	2005b737          	lui	a4,0x2005b
-200602ba:	7e270713          	addi	a4,a4,2018 # 2005b7e2 <rtos_mutex_take>
+200602ba:	7e870713          	addi	a4,a4,2024 # 2005b7e8 <rtos_mutex_take>
 200602be:	c398                	c.sw	a4,0(a5)
 200602c0:	2005b737          	lui	a4,0x2005b
-200602c4:	7c470713          	addi	a4,a4,1988 # 2005b7c4 <rtos_mutex_delete_static>
+200602c4:	7ca70713          	addi	a4,a4,1994 # 2005b7ca <rtos_mutex_delete_static>
 200602c8:	d798                	c.sw	a4,40(a5)
 200602ca:	2005b737          	lui	a4,0x2005b
-200602ce:	74a70713          	addi	a4,a4,1866 # 2005b74a <rtos_mutex_create_static>
+200602ce:	75070713          	addi	a4,a4,1872 # 2005b750 <rtos_mutex_create_static>
 200602d2:	d7d8                	c.sw	a4,44(a5)
 200602d4:	2005c737          	lui	a4,0x2005c
-200602d8:	96870713          	addi	a4,a4,-1688 # 2005b968 <rtos_sema_give>
+200602d8:	96e70713          	addi	a4,a4,-1682 # 2005b96e <rtos_sema_give>
 200602dc:	c7d8                	c.sw	a4,12(a5)
 200602de:	2005c737          	lui	a4,0x2005c
-200602e2:	91c70713          	addi	a4,a4,-1764 # 2005b91c <rtos_sema_take>
+200602e2:	92270713          	addi	a4,a4,-1758 # 2005b922 <rtos_sema_take>
 200602e6:	cb98                	c.sw	a4,16(a5)
 200602e8:	2005b737          	lui	a4,0x2005b
-200602ec:	6a270713          	addi	a4,a4,1698 # 2005b6a2 <rtos_critical_enter>
+200602ec:	6a870713          	addi	a4,a4,1704 # 2005b6a8 <rtos_critical_enter>
 200602f0:	cbd8                	c.sw	a4,20(a5)
 200602f2:	2005b737          	lui	a4,0x2005b
-200602f6:	6c670713          	addi	a4,a4,1734 # 2005b6c6 <rtos_critical_exit>
+200602f6:	6cc70713          	addi	a4,a4,1740 # 2005b6cc <rtos_critical_exit>
 200602fa:	cf98                	c.sw	a4,24(a5)
 200602fc:	2005c737          	lui	a4,0x2005c
-20060300:	bf270713          	addi	a4,a4,-1038 # 2005bbf2 <rtos_time_delay_ms>
+20060300:	bf870713          	addi	a4,a4,-1032 # 2005bbf8 <rtos_time_delay_ms>
 20060304:	d3d8                	c.sw	a4,36(a5)
 20060306:	2005c737          	lui	a4,0x2005c
-2006030a:	c2c70713          	addi	a4,a4,-980 # 2005bc2c <rtos_time_get_current_system_time_ms>
+2006030a:	c3270713          	addi	a4,a4,-974 # 2005bc32 <rtos_time_get_current_system_time_ms>
 2006030e:	c798                	c.sw	a4,8(a5)
 20060310:	20061737          	lui	a4,0x20061
-20060314:	38e70713          	addi	a4,a4,910 # 2006138e <rtw_init_timer>
+20060314:	39670713          	addi	a4,a4,918 # 20061396 <rtw_init_timer>
 20060318:	d7b8                	c.sw	a4,104(a5)
 2006031a:	20061737          	lui	a4,0x20061
-2006031e:	39870713          	addi	a4,a4,920 # 20061398 <rtw_set_timer>
+2006031e:	3a070713          	addi	a4,a4,928 # 200613a0 <rtw_set_timer>
 20060322:	d7f8                	c.sw	a4,108(a5)
 20060324:	20061737          	lui	a4,0x20061
-20060328:	39c70713          	addi	a4,a4,924 # 2006139c <rtw_cancel_timer>
+20060328:	3a470713          	addi	a4,a4,932 # 200613a4 <rtw_cancel_timer>
 2006032c:	dbb8                	c.sw	a4,112(a5)
 2006032e:	20061737          	lui	a4,0x20061
-20060332:	3ac70713          	addi	a4,a4,940 # 200613ac <rtw_del_timer>
+20060332:	3b470713          	addi	a4,a4,948 # 200613b4 <rtw_del_timer>
 20060336:	dbf8                	c.sw	a4,116(a5)
 20060338:	20059737          	lui	a4,0x20059
 2006033c:	71a70713          	addi	a4,a4,1818 # 2005971a <pmu_set_sysactive_time>
 20060340:	dff8                	c.sw	a4,124(a5)
 20060342:	20061737          	lui	a4,0x20061
-20060346:	3e470713          	addi	a4,a4,996 # 200613e4 <rtw_wakelock_timeout>
+20060346:	3ec70713          	addi	a4,a4,1004 # 200613ec <rtw_wakelock_timeout>
 2006034a:	08e7a023          	sw	a4,128(a5)
 2006034e:	20061737          	lui	a4,0x20061
-20060352:	3b070713          	addi	a4,a4,944 # 200613b0 <rtw_acquire_wakelock>
+20060352:	3b870713          	addi	a4,a4,952 # 200613b8 <rtw_acquire_wakelock>
 20060356:	db98                	c.sw	a4,48(a5)
 20060358:	20061737          	lui	a4,0x20061
-2006035c:	3ca70713          	addi	a4,a4,970 # 200613ca <rtw_release_wakelock>
+2006035c:	3d270713          	addi	a4,a4,978 # 200613d2 <rtw_release_wakelock>
 20060360:	dbd8                	c.sw	a4,52(a5)
 20060362:	8082                	c.jr	ra
 
@@ -12703,20 +12702,18 @@ Disassembly of section .xip_image2.text:
 2006036c:	842a                	c.mv	s0,a0
 2006036e:	c84a                	c.swsp	s2,16(sp)
 20060370:	8f3f90ef          	jal	ra,20059c62 <wifi_set_user_config>
-20060374:	395000ef          	jal	ra,20060f08 <inic_msg_q_init>
-20060378:	41818793          	addi	a5,gp,1048 # 20066d80 <wifi_user_config>
+20060374:	39d000ef          	jal	ra,20060f10 <inic_msg_q_init>
+20060378:	43818793          	addi	a5,gp,1080 # 20066dc0 <wifi_user_config>
 2006037c:	7c102773          	csrrs	a4,0x7c1,zero
 20060380:	10077713          	andi	a4,a4,256
-20060384:	c715                	c.beqz	a4,200603b0 <wifi_on+0x4c>
+20060384:	cb15                	c.beqz	a4,200603b8 <wifi_on+0x54>
 20060386:	0ff0000f          	fence	iorw,iorw
 2006038a:	04f7f00b          	cache	dwb,(a5)
 2006038e:	02078713          	addi	a4,a5,32
 20060392:	04e7700b          	cache	dwb,(a4)
-20060396:	0ff0000f          	fence	iorw,iorw
-2006039a:	0001                	c.addi	zero,0
-2006039c:	0001                	c.addi	zero,0
-2006039e:	0001                	c.addi	zero,0
-200603a0:	0001                	c.addi	zero,0
+20060396:	04078713          	addi	a4,a5,64
+2006039a:	04e7700b          	cache	dwb,(a4)
+2006039e:	0ff0000f          	fence	iorw,iorw
 200603a2:	0001                	c.addi	zero,0
 200603a4:	0001                	c.addi	zero,0
 200603a6:	0001                	c.addi	zero,0
@@ -12724,85 +12721,85 @@ Disassembly of section .xip_image2.text:
 200603aa:	0001                	c.addi	zero,0
 200603ac:	0001                	c.addi	zero,0
 200603ae:	0001                	c.addi	zero,0
-200603b0:	4605                	c.li	a2,1
-200603b2:	006c                	c.addi4spn	a1,sp,12
-200603b4:	451d                	c.li	a0,7
-200603b6:	c63e                	c.swsp	a5,12(sp)
-200603b8:	292d                	c.jal	200607f2 <inic_api_host_message_send>
-200603ba:	059000ef          	jal	ra,20060c12 <inic_host_init_skb>
-200603be:	4605                	c.li	a2,1
-200603c0:	006c                	c.addi4spn	a1,sp,12
-200603c2:	4525                	c.li	a0,9
-200603c4:	c622                	c.swsp	s0,12(sp)
-200603c6:	2135                	c.jal	200607f2 <inic_api_host_message_send>
-200603c8:	fcc18793          	addi	a5,gp,-52 # 20066934 <wifi_boot.0>
-200603cc:	4398                	c.lw	a4,0(a5)
-200603ce:	84aa                	c.mv	s1,a0
-200603d0:	ef01                	c.bnez	a4,200603e8 <wifi_on+0x84>
-200603d2:	4905                	c.li	s2,1
-200603d4:	0127a023          	sw	s2,0(a5)
-200603d8:	5b9000ef          	jal	ra,20061190 <init_timer_wrapper>
-200603dc:	fb81a783          	lw	a5,-72(gp) # 20066920 <p_wifi_do_fast_connect>
-200603e0:	c781                	c.beqz	a5,200603e8 <wifi_on+0x84>
-200603e2:	01241363          	bne	s0,s2,200603e8 <wifi_on+0x84>
-200603e6:	9782                	c.jalr	a5
-200603e8:	40f2                	c.lwsp	ra,28(sp)
-200603ea:	4462                	c.lwsp	s0,24(sp)
-200603ec:	4942                	c.lwsp	s2,16(sp)
-200603ee:	8526                	c.mv	a0,s1
-200603f0:	44d2                	c.lwsp	s1,20(sp)
-200603f2:	6105                	c.addi16sp	sp,32
-200603f4:	8082                	c.jr	ra
-
-200603f6 <wifi_config_autoreconnect>:
-200603f6:	557d                	c.li	a0,-1
-200603f8:	8082                	c.jr	ra
-
-200603fa <_inic_ipc_ip_addr_update_in_wowlan>:
-200603fa:	4505                	c.li	a0,1
+200603b0:	0001                	c.addi	zero,0
+200603b2:	0001                	c.addi	zero,0
+200603b4:	0001                	c.addi	zero,0
+200603b6:	0001                	c.addi	zero,0
+200603b8:	4605                	c.li	a2,1
+200603ba:	006c                	c.addi4spn	a1,sp,12
+200603bc:	451d                	c.li	a0,7
+200603be:	c63e                	c.swsp	a5,12(sp)
+200603c0:	292d                	c.jal	200607fa <inic_api_host_message_send>
+200603c2:	059000ef          	jal	ra,20060c1a <inic_host_init_skb>
+200603c6:	4605                	c.li	a2,1
+200603c8:	006c                	c.addi4spn	a1,sp,12
+200603ca:	4525                	c.li	a0,9
+200603cc:	c622                	c.swsp	s0,12(sp)
+200603ce:	2135                	c.jal	200607fa <inic_api_host_message_send>
+200603d0:	fcc18793          	addi	a5,gp,-52 # 20066954 <wifi_boot.0>
+200603d4:	4398                	c.lw	a4,0(a5)
+200603d6:	84aa                	c.mv	s1,a0
+200603d8:	ef01                	c.bnez	a4,200603f0 <wifi_on+0x8c>
+200603da:	4905                	c.li	s2,1
+200603dc:	0127a023          	sw	s2,0(a5)
+200603e0:	5b9000ef          	jal	ra,20061198 <init_timer_wrapper>
+200603e4:	fb81a783          	lw	a5,-72(gp) # 20066940 <p_wifi_do_fast_connect>
+200603e8:	c781                	c.beqz	a5,200603f0 <wifi_on+0x8c>
+200603ea:	01241363          	bne	s0,s2,200603f0 <wifi_on+0x8c>
+200603ee:	9782                	c.jalr	a5
+200603f0:	40f2                	c.lwsp	ra,28(sp)
+200603f2:	4462                	c.lwsp	s0,24(sp)
+200603f4:	4942                	c.lwsp	s2,16(sp)
+200603f6:	8526                	c.mv	a0,s1
+200603f8:	44d2                	c.lwsp	s1,20(sp)
+200603fa:	6105                	c.addi16sp	sp,32
 200603fc:	8082                	c.jr	ra
 
-200603fe <inic_api_host_task_h>:
-200603fe:	7179                	c.addi16sp	sp,-48
-20060400:	d226                	c.swsp	s1,36(sp)
-20060402:	200654b7          	lui	s1,0x20065
-20060406:	d04a                	c.swsp	s2,32(sp)
-20060408:	ce4e                	c.swsp	s3,28(sp)
-2006040a:	cc52                	c.swsp	s4,24(sp)
-2006040c:	ca56                	c.swsp	s5,20(sp)
-2006040e:	c85a                	c.swsp	s6,16(sp)
-20060410:	c65e                	c.swsp	s7,12(sp)
-20060412:	d606                	c.swsp	ra,44(sp)
-20060414:	d422                	c.swsp	s0,40(sp)
-20060416:	20065a37          	lui	s4,0x20065
-2006041a:	83848493          	addi	s1,s1,-1992 # 20064838 <register_string+0xb4>
-2006041e:	fd81a503          	lw	a0,-40(gp) # 20066940 <g_host_inic_api_task_wake_sema>
-20060422:	55fd                	c.li	a1,-1
-20060424:	cf8fb0ef          	jal	ra,2005b91c <rtos_sema_take>
-20060428:	459d                	c.li	a1,7
-2006042a:	4541                	c.li	a0,16
-2006042c:	cc5f80ef          	jal	ra,200590f0 <ipc_get_message>
-20060430:	4140                	c.lw	s0,4(a0)
-20060432:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060436:	1007f793          	andi	a5,a5,256
-2006043a:	c3b9                	c.beqz	a5,20060480 <inic_api_host_task_h+0x82>
-2006043c:	01f47713          	andi	a4,s0,31
-20060440:	cb21                	c.beqz	a4,20060490 <inic_api_host_task_h+0x92>
-20060442:	04070693          	addi	a3,a4,64
-20060446:	fe047793          	andi	a5,s0,-32
-2006044a:	01f7f713          	andi	a4,a5,31
-2006044e:	9736                	c.add	a4,a3
-20060450:	0ff0000f          	fence	iorw,iorw
-20060454:	973e                	c.add	a4,a5
-20060456:	00f7f00b          	cache	dinv,(a5)
-2006045a:	02078793          	addi	a5,a5,32
-2006045e:	40f706b3          	sub	a3,a4,a5
-20060462:	fed04ae3          	blt	zero,a3,20060456 <inic_api_host_task_h+0x58>
-20060466:	0ff0000f          	fence	iorw,iorw
-2006046a:	0001                	c.addi	zero,0
-2006046c:	0001                	c.addi	zero,0
-2006046e:	0001                	c.addi	zero,0
-20060470:	0001                	c.addi	zero,0
+200603fe <wifi_config_autoreconnect>:
+200603fe:	557d                	c.li	a0,-1
+20060400:	8082                	c.jr	ra
+
+20060402 <_inic_ipc_ip_addr_update_in_wowlan>:
+20060402:	4505                	c.li	a0,1
+20060404:	8082                	c.jr	ra
+
+20060406 <inic_api_host_task_h>:
+20060406:	7179                	c.addi16sp	sp,-48
+20060408:	d226                	c.swsp	s1,36(sp)
+2006040a:	200654b7          	lui	s1,0x20065
+2006040e:	d04a                	c.swsp	s2,32(sp)
+20060410:	ce4e                	c.swsp	s3,28(sp)
+20060412:	cc52                	c.swsp	s4,24(sp)
+20060414:	ca56                	c.swsp	s5,20(sp)
+20060416:	c85a                	c.swsp	s6,16(sp)
+20060418:	c65e                	c.swsp	s7,12(sp)
+2006041a:	d606                	c.swsp	ra,44(sp)
+2006041c:	d422                	c.swsp	s0,40(sp)
+2006041e:	20065a37          	lui	s4,0x20065
+20060422:	84048493          	addi	s1,s1,-1984 # 20064840 <register_string+0xb4>
+20060426:	fd81a503          	lw	a0,-40(gp) # 20066960 <g_host_inic_api_task_wake_sema>
+2006042a:	55fd                	c.li	a1,-1
+2006042c:	cf6fb0ef          	jal	ra,2005b922 <rtos_sema_take>
+20060430:	459d                	c.li	a1,7
+20060432:	4541                	c.li	a0,16
+20060434:	cbdf80ef          	jal	ra,200590f0 <ipc_get_message>
+20060438:	4140                	c.lw	s0,4(a0)
+2006043a:	7c1027f3          	csrrs	a5,0x7c1,zero
+2006043e:	1007f793          	andi	a5,a5,256
+20060442:	c3b9                	c.beqz	a5,20060488 <inic_api_host_task_h+0x82>
+20060444:	01f47713          	andi	a4,s0,31
+20060448:	cb21                	c.beqz	a4,20060498 <inic_api_host_task_h+0x92>
+2006044a:	04070693          	addi	a3,a4,64
+2006044e:	fe047793          	andi	a5,s0,-32
+20060452:	01f7f713          	andi	a4,a5,31
+20060456:	9736                	c.add	a4,a3
+20060458:	0ff0000f          	fence	iorw,iorw
+2006045c:	973e                	c.add	a4,a5
+2006045e:	00f7f00b          	cache	dinv,(a5)
+20060462:	02078793          	addi	a5,a5,32
+20060466:	40f706b3          	sub	a3,a4,a5
+2006046a:	fed04ae3          	blt	zero,a3,2006045e <inic_api_host_task_h+0x58>
+2006046e:	0ff0000f          	fence	iorw,iorw
 20060472:	0001                	c.addi	zero,0
 20060474:	0001                	c.addi	zero,0
 20060476:	0001                	c.addi	zero,0
@@ -12810,50 +12807,50 @@ Disassembly of section .xip_image2.text:
 2006047a:	0001                	c.addi	zero,0
 2006047c:	0001                	c.addi	zero,0
 2006047e:	0001                	c.addi	zero,0
-20060480:	ec01                	c.bnez	s0,20060498 <inic_api_host_task_h+0x9a>
-20060482:	20065537          	lui	a0,0x20065
-20060486:	80450513          	addi	a0,a0,-2044 # 20064804 <register_string+0x80>
-2006048a:	f1dfe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2006048e:	bf41                	c.j	2006041e <inic_api_host_task_h+0x20>
-20060490:	87a2                	c.mv	a5,s0
-20060492:	04000693          	addi	a3,zero,64
-20060496:	bf55                	c.j	2006044a <inic_api_host_task_h+0x4c>
-20060498:	400c                	c.lw	a1,0(s0)
-2006049a:	4721                	c.li	a4,8
-2006049c:	fff58793          	addi	a5,a1,-1
-200604a0:	34f76063          	bltu	a4,a5,200607e0 <inic_api_host_task_h+0x3e2>
-200604a4:	078a                	c.slli	a5,0x2
-200604a6:	97a6                	c.add	a5,s1
-200604a8:	439c                	c.lw	a5,0(a5)
-200604aa:	8782                	c.jr	a5
-200604ac:	fc81a783          	lw	a5,-56(gp) # 20066930 <scan_user_callback_ptr>
-200604b0:	c3ad                	c.beqz	a5,20060512 <inic_api_host_task_h+0x114>
-200604b2:	440c                	c.lw	a1,8(s0)
-200604b4:	4048                	c.lw	a0,4(s0)
-200604b6:	9782                	c.jalr	a5
-200604b8:	a8a9                	c.j	20060512 <inic_api_host_task_h+0x114>
-200604ba:	4048                	c.lw	a0,4(s0)
-200604bc:	440c                	c.lw	a1,8(s0)
-200604be:	7c1027f3          	csrrs	a5,0x7c1,zero
-200604c2:	1007f793          	andi	a5,a5,256
-200604c6:	c3b9                	c.beqz	a5,2006050c <inic_api_host_task_h+0x10e>
-200604c8:	01f57713          	andi	a4,a0,31
-200604cc:	cf59                	c.beqz	a4,2006056a <inic_api_host_task_h+0x16c>
-200604ce:	03e70693          	addi	a3,a4,62
-200604d2:	fe057793          	andi	a5,a0,-32
-200604d6:	01f7f713          	andi	a4,a5,31
-200604da:	9736                	c.add	a4,a3
-200604dc:	0ff0000f          	fence	iorw,iorw
-200604e0:	973e                	c.add	a4,a5
-200604e2:	00f7f00b          	cache	dinv,(a5)
-200604e6:	02078793          	addi	a5,a5,32
-200604ea:	40f706b3          	sub	a3,a4,a5
-200604ee:	fed04ae3          	blt	zero,a3,200604e2 <inic_api_host_task_h+0xe4>
-200604f2:	0ff0000f          	fence	iorw,iorw
-200604f6:	0001                	c.addi	zero,0
-200604f8:	0001                	c.addi	zero,0
-200604fa:	0001                	c.addi	zero,0
-200604fc:	0001                	c.addi	zero,0
+20060480:	0001                	c.addi	zero,0
+20060482:	0001                	c.addi	zero,0
+20060484:	0001                	c.addi	zero,0
+20060486:	0001                	c.addi	zero,0
+20060488:	ec01                	c.bnez	s0,200604a0 <inic_api_host_task_h+0x9a>
+2006048a:	20065537          	lui	a0,0x20065
+2006048e:	80c50513          	addi	a0,a0,-2036 # 2006480c <register_string+0x80>
+20060492:	f15fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20060496:	bf41                	c.j	20060426 <inic_api_host_task_h+0x20>
+20060498:	87a2                	c.mv	a5,s0
+2006049a:	04000693          	addi	a3,zero,64
+2006049e:	bf55                	c.j	20060452 <inic_api_host_task_h+0x4c>
+200604a0:	400c                	c.lw	a1,0(s0)
+200604a2:	4721                	c.li	a4,8
+200604a4:	fff58793          	addi	a5,a1,-1
+200604a8:	34f76063          	bltu	a4,a5,200607e8 <inic_api_host_task_h+0x3e2>
+200604ac:	078a                	c.slli	a5,0x2
+200604ae:	97a6                	c.add	a5,s1
+200604b0:	439c                	c.lw	a5,0(a5)
+200604b2:	8782                	c.jr	a5
+200604b4:	fc81a783          	lw	a5,-56(gp) # 20066950 <scan_user_callback_ptr>
+200604b8:	c3ad                	c.beqz	a5,2006051a <inic_api_host_task_h+0x114>
+200604ba:	440c                	c.lw	a1,8(s0)
+200604bc:	4048                	c.lw	a0,4(s0)
+200604be:	9782                	c.jalr	a5
+200604c0:	a8a9                	c.j	2006051a <inic_api_host_task_h+0x114>
+200604c2:	4048                	c.lw	a0,4(s0)
+200604c4:	440c                	c.lw	a1,8(s0)
+200604c6:	7c1027f3          	csrrs	a5,0x7c1,zero
+200604ca:	1007f793          	andi	a5,a5,256
+200604ce:	c3b9                	c.beqz	a5,20060514 <inic_api_host_task_h+0x10e>
+200604d0:	01f57713          	andi	a4,a0,31
+200604d4:	cf59                	c.beqz	a4,20060572 <inic_api_host_task_h+0x16c>
+200604d6:	03e70693          	addi	a3,a4,62
+200604da:	fe057793          	andi	a5,a0,-32
+200604de:	01f7f713          	andi	a4,a5,31
+200604e2:	9736                	c.add	a4,a3
+200604e4:	0ff0000f          	fence	iorw,iorw
+200604e8:	973e                	c.add	a4,a5
+200604ea:	00f7f00b          	cache	dinv,(a5)
+200604ee:	02078793          	addi	a5,a5,32
+200604f2:	40f706b3          	sub	a3,a4,a5
+200604f6:	fed04ae3          	blt	zero,a3,200604ea <inic_api_host_task_h+0xe4>
+200604fa:	0ff0000f          	fence	iorw,iorw
 200604fe:	0001                	c.addi	zero,0
 20060500:	0001                	c.addi	zero,0
 20060502:	0001                	c.addi	zero,0
@@ -12861,30 +12858,30 @@ Disassembly of section .xip_image2.text:
 20060506:	0001                	c.addi	zero,0
 20060508:	0001                	c.addi	zero,0
 2006050a:	0001                	c.addi	zero,0
-2006050c:	fc41a783          	lw	a5,-60(gp) # 2006692c <scan_each_report_user_callback_ptr>
-20060510:	f3dd                	c.bnez	a5,200604b6 <inic_api_host_task_h+0xb8>
-20060512:	00042023          	sw	zero,0(s0)
-20060516:	7c1027f3          	csrrs	a5,0x7c1,zero
-2006051a:	1007f793          	andi	a5,a5,256
-2006051e:	f00780e3          	beq	a5,zero,2006041e <inic_api_host_task_h+0x20>
-20060522:	01f47793          	andi	a5,s0,31
-20060526:	04000713          	addi	a4,zero,64
-2006052a:	c781                	c.beqz	a5,20060532 <inic_api_host_task_h+0x134>
-2006052c:	04078713          	addi	a4,a5,64
-20060530:	9801                	c.andi	s0,-32
-20060532:	01f47793          	andi	a5,s0,31
-20060536:	97ba                	c.add	a5,a4
-20060538:	0ff0000f          	fence	iorw,iorw
-2006053c:	97a2                	c.add	a5,s0
-2006053e:	0484700b          	cache	dwb,(s0)
-20060542:	02040413          	addi	s0,s0,32
-20060546:	40878733          	sub	a4,a5,s0
-2006054a:	fee04ae3          	blt	zero,a4,2006053e <inic_api_host_task_h+0x140>
-2006054e:	0ff0000f          	fence	iorw,iorw
-20060552:	0001                	c.addi	zero,0
-20060554:	0001                	c.addi	zero,0
-20060556:	0001                	c.addi	zero,0
-20060558:	0001                	c.addi	zero,0
+2006050c:	0001                	c.addi	zero,0
+2006050e:	0001                	c.addi	zero,0
+20060510:	0001                	c.addi	zero,0
+20060512:	0001                	c.addi	zero,0
+20060514:	fc41a783          	lw	a5,-60(gp) # 2006694c <scan_each_report_user_callback_ptr>
+20060518:	f3dd                	c.bnez	a5,200604be <inic_api_host_task_h+0xb8>
+2006051a:	00042023          	sw	zero,0(s0)
+2006051e:	7c1027f3          	csrrs	a5,0x7c1,zero
+20060522:	1007f793          	andi	a5,a5,256
+20060526:	f00780e3          	beq	a5,zero,20060426 <inic_api_host_task_h+0x20>
+2006052a:	01f47793          	andi	a5,s0,31
+2006052e:	04000713          	addi	a4,zero,64
+20060532:	c781                	c.beqz	a5,2006053a <inic_api_host_task_h+0x134>
+20060534:	04078713          	addi	a4,a5,64
+20060538:	9801                	c.andi	s0,-32
+2006053a:	01f47793          	andi	a5,s0,31
+2006053e:	97ba                	c.add	a5,a4
+20060540:	0ff0000f          	fence	iorw,iorw
+20060544:	97a2                	c.add	a5,s0
+20060546:	0484700b          	cache	dwb,(s0)
+2006054a:	02040413          	addi	s0,s0,32
+2006054e:	40878733          	sub	a4,a5,s0
+20060552:	fee04ae3          	blt	zero,a4,20060546 <inic_api_host_task_h+0x140>
+20060556:	0ff0000f          	fence	iorw,iorw
 2006055a:	0001                	c.addi	zero,0
 2006055c:	0001                	c.addi	zero,0
 2006055e:	0001                	c.addi	zero,0
@@ -12892,27 +12889,27 @@ Disassembly of section .xip_image2.text:
 20060562:	0001                	c.addi	zero,0
 20060564:	0001                	c.addi	zero,0
 20060566:	0001                	c.addi	zero,0
-20060568:	bd5d                	c.j	2006041e <inic_api_host_task_h+0x20>
-2006056a:	87aa                	c.mv	a5,a0
-2006056c:	03e00693          	addi	a3,zero,62
-20060570:	b79d                	c.j	200604d6 <inic_api_host_task_h+0xd8>
-20060572:	4418                	c.lw	a4,8(s0)
-20060574:	4448                	c.lw	a0,12(s0)
-20060576:	481c                	c.lw	a5,16(s0)
-20060578:	4850                	c.lw	a2,20(s0)
-2006057a:	5014                	c.lw	a3,32(s0)
-2006057c:	7c1025f3          	csrrs	a1,0x7c1,zero
-20060580:	1005f593          	andi	a1,a1,256
-20060584:	c58d                	c.beqz	a1,200605ae <inic_api_host_task_h+0x1b0>
-20060586:	00a775b3          	and	a1,a4,a0
-2006058a:	587d                	c.li	a6,-1
-2006058c:	0b059363          	bne	a1,a6,20060632 <inic_api_host_task_h+0x234>
-20060590:	7c016773          	csrrsi	a4,0x7c0,2
-20060594:	0ff0000f          	fence	iorw,iorw
-20060598:	0001                	c.addi	zero,0
-2006059a:	0001                	c.addi	zero,0
-2006059c:	0001                	c.addi	zero,0
-2006059e:	0001                	c.addi	zero,0
+20060568:	0001                	c.addi	zero,0
+2006056a:	0001                	c.addi	zero,0
+2006056c:	0001                	c.addi	zero,0
+2006056e:	0001                	c.addi	zero,0
+20060570:	bd5d                	c.j	20060426 <inic_api_host_task_h+0x20>
+20060572:	87aa                	c.mv	a5,a0
+20060574:	03e00693          	addi	a3,zero,62
+20060578:	b79d                	c.j	200604de <inic_api_host_task_h+0xd8>
+2006057a:	4418                	c.lw	a4,8(s0)
+2006057c:	4448                	c.lw	a0,12(s0)
+2006057e:	481c                	c.lw	a5,16(s0)
+20060580:	4850                	c.lw	a2,20(s0)
+20060582:	5014                	c.lw	a3,32(s0)
+20060584:	7c1025f3          	csrrs	a1,0x7c1,zero
+20060588:	1005f593          	andi	a1,a1,256
+2006058c:	c58d                	c.beqz	a1,200605b6 <inic_api_host_task_h+0x1b0>
+2006058e:	00a775b3          	and	a1,a4,a0
+20060592:	587d                	c.li	a6,-1
+20060594:	0b059363          	bne	a1,a6,2006063a <inic_api_host_task_h+0x234>
+20060598:	7c016773          	csrrsi	a4,0x7c0,2
+2006059c:	0ff0000f          	fence	iorw,iorw
 200605a0:	0001                	c.addi	zero,0
 200605a2:	0001                	c.addi	zero,0
 200605a4:	0001                	c.addi	zero,0
@@ -12920,18 +12917,18 @@ Disassembly of section .xip_image2.text:
 200605a8:	0001                	c.addi	zero,0
 200605aa:	0001                	c.addi	zero,0
 200605ac:	0001                	c.addi	zero,0
-200605ae:	7c102773          	csrrs	a4,0x7c1,zero
-200605b2:	10077713          	andi	a4,a4,256
-200605b6:	c70d                	c.beqz	a4,200605e0 <inic_api_host_task_h+0x1e2>
-200605b8:	00c7f733          	and	a4,a5,a2
-200605bc:	55fd                	c.li	a1,-1
-200605be:	0ab71063          	bne	a4,a1,2006065e <inic_api_host_task_h+0x260>
-200605c2:	7c0167f3          	csrrsi	a5,0x7c0,2
-200605c6:	0ff0000f          	fence	iorw,iorw
-200605ca:	0001                	c.addi	zero,0
-200605cc:	0001                	c.addi	zero,0
-200605ce:	0001                	c.addi	zero,0
-200605d0:	0001                	c.addi	zero,0
+200605ae:	0001                	c.addi	zero,0
+200605b0:	0001                	c.addi	zero,0
+200605b2:	0001                	c.addi	zero,0
+200605b4:	0001                	c.addi	zero,0
+200605b6:	7c102773          	csrrs	a4,0x7c1,zero
+200605ba:	10077713          	andi	a4,a4,256
+200605be:	c70d                	c.beqz	a4,200605e8 <inic_api_host_task_h+0x1e2>
+200605c0:	00c7f733          	and	a4,a5,a2
+200605c4:	55fd                	c.li	a1,-1
+200605c6:	0ab71063          	bne	a4,a1,20060666 <inic_api_host_task_h+0x260>
+200605ca:	7c0167f3          	csrrsi	a5,0x7c0,2
+200605ce:	0ff0000f          	fence	iorw,iorw
 200605d2:	0001                	c.addi	zero,0
 200605d4:	0001                	c.addi	zero,0
 200605d6:	0001                	c.addi	zero,0
@@ -12939,28 +12936,28 @@ Disassembly of section .xip_image2.text:
 200605da:	0001                	c.addi	zero,0
 200605dc:	0001                	c.addi	zero,0
 200605de:	0001                	c.addi	zero,0
-200605e0:	7c1027f3          	csrrs	a5,0x7c1,zero
-200605e4:	1007f793          	andi	a5,a5,256
-200605e8:	d78d                	c.beqz	a5,20060512 <inic_api_host_task_h+0x114>
-200605ea:	01f6f713          	andi	a4,a3,31
-200605ee:	4799                	c.li	a5,6
-200605f0:	c701                	c.beqz	a4,200605f8 <inic_api_host_task_h+0x1fa>
-200605f2:	00670793          	addi	a5,a4,6
-200605f6:	9a81                	c.andi	a3,-32
-200605f8:	01f6f713          	andi	a4,a3,31
-200605fc:	973e                	c.add	a4,a5
-200605fe:	0ff0000f          	fence	iorw,iorw
-20060602:	87b6                	c.mv	a5,a3
-20060604:	9736                	c.add	a4,a3
-20060606:	00f7f00b          	cache	dinv,(a5)
-2006060a:	02078793          	addi	a5,a5,32
-2006060e:	40f706b3          	sub	a3,a4,a5
-20060612:	fed04ae3          	blt	zero,a3,20060606 <inic_api_host_task_h+0x208>
-20060616:	0ff0000f          	fence	iorw,iorw
-2006061a:	0001                	c.addi	zero,0
-2006061c:	0001                	c.addi	zero,0
-2006061e:	0001                	c.addi	zero,0
-20060620:	0001                	c.addi	zero,0
+200605e0:	0001                	c.addi	zero,0
+200605e2:	0001                	c.addi	zero,0
+200605e4:	0001                	c.addi	zero,0
+200605e6:	0001                	c.addi	zero,0
+200605e8:	7c1027f3          	csrrs	a5,0x7c1,zero
+200605ec:	1007f793          	andi	a5,a5,256
+200605f0:	d78d                	c.beqz	a5,2006051a <inic_api_host_task_h+0x114>
+200605f2:	01f6f713          	andi	a4,a3,31
+200605f6:	4799                	c.li	a5,6
+200605f8:	c701                	c.beqz	a4,20060600 <inic_api_host_task_h+0x1fa>
+200605fa:	00670793          	addi	a5,a4,6
+200605fe:	9a81                	c.andi	a3,-32
+20060600:	01f6f713          	andi	a4,a3,31
+20060604:	973e                	c.add	a4,a5
+20060606:	0ff0000f          	fence	iorw,iorw
+2006060a:	87b6                	c.mv	a5,a3
+2006060c:	9736                	c.add	a4,a3
+2006060e:	00f7f00b          	cache	dinv,(a5)
+20060612:	02078793          	addi	a5,a5,32
+20060616:	40f706b3          	sub	a3,a4,a5
+2006061a:	fed04ae3          	blt	zero,a3,2006060e <inic_api_host_task_h+0x208>
+2006061e:	0ff0000f          	fence	iorw,iorw
 20060622:	0001                	c.addi	zero,0
 20060624:	0001                	c.addi	zero,0
 20060626:	0001                	c.addi	zero,0
@@ -12968,59 +12965,59 @@ Disassembly of section .xip_image2.text:
 2006062a:	0001                	c.addi	zero,0
 2006062c:	0001                	c.addi	zero,0
 2006062e:	0001                	c.addi	zero,0
-20060630:	b5cd                	c.j	20060512 <inic_api_host_task_h+0x114>
-20060632:	01f77593          	andi	a1,a4,31
-20060636:	c199                	c.beqz	a1,2006063c <inic_api_host_task_h+0x23e>
-20060638:	9b01                	c.andi	a4,-32
-2006063a:	952e                	c.add	a0,a1
-2006063c:	f6a059e3          	bge	zero,a0,200605ae <inic_api_host_task_h+0x1b0>
-20060640:	01f77593          	andi	a1,a4,31
-20060644:	95aa                	c.add	a1,a0
-20060646:	0ff0000f          	fence	iorw,iorw
-2006064a:	95ba                	c.add	a1,a4
-2006064c:	00e7700b          	cache	dinv,(a4)
-20060650:	02070713          	addi	a4,a4,32
-20060654:	40e58533          	sub	a0,a1,a4
-20060658:	fea04ae3          	blt	zero,a0,2006064c <inic_api_host_task_h+0x24e>
-2006065c:	bf25                	c.j	20060594 <inic_api_host_task_h+0x196>
-2006065e:	01f7f713          	andi	a4,a5,31
-20060662:	c319                	c.beqz	a4,20060668 <inic_api_host_task_h+0x26a>
-20060664:	9b81                	c.andi	a5,-32
-20060666:	963a                	c.add	a2,a4
-20060668:	f6c05ce3          	bge	zero,a2,200605e0 <inic_api_host_task_h+0x1e2>
-2006066c:	01f7f713          	andi	a4,a5,31
-20060670:	9732                	c.add	a4,a2
-20060672:	0ff0000f          	fence	iorw,iorw
-20060676:	973e                	c.add	a4,a5
-20060678:	00f7f00b          	cache	dinv,(a5)
-2006067c:	02078793          	addi	a5,a5,32
-20060680:	40f70633          	sub	a2,a4,a5
-20060684:	fec04ae3          	blt	zero,a2,20060678 <inic_api_host_task_h+0x27a>
-20060688:	bf3d                	c.j	200605c6 <inic_api_host_task_h+0x1c8>
-2006068a:	fd01a783          	lw	a5,-48(gp) # 20066938 <p_ap_channel_switch_callback>
-2006068e:	e80782e3          	beq	a5,zero,20060512 <inic_api_host_task_h+0x114>
-20060692:	00840583          	lb	a1,8(s0)
-20060696:	00444503          	lbu	a0,4(s0)
-2006069a:	9782                	c.jalr	a5
-2006069c:	bd9d                	c.j	20060512 <inic_api_host_task_h+0x114>
-2006069e:	440c                	c.lw	a1,8(s0)
-200606a0:	4450                	c.lw	a2,12(s0)
-200606a2:	00444503          	lbu	a0,4(s0)
-200606a6:	4814                	c.lw	a3,16(s0)
-200606a8:	87ae                	c.mv	a5,a1
-200606aa:	8832                	c.mv	a6,a2
-200606ac:	7c102773          	csrrs	a4,0x7c1,zero
-200606b0:	10077713          	andi	a4,a4,256
-200606b4:	c70d                	c.beqz	a4,200606de <inic_api_host_task_h+0x2e0>
-200606b6:	00c5f733          	and	a4,a1,a2
-200606ba:	58fd                	c.li	a7,-1
-200606bc:	03171463          	bne	a4,a7,200606e4 <inic_api_host_task_h+0x2e6>
-200606c0:	7c0167f3          	csrrsi	a5,0x7c0,2
-200606c4:	0ff0000f          	fence	iorw,iorw
-200606c8:	0001                	c.addi	zero,0
-200606ca:	0001                	c.addi	zero,0
-200606cc:	0001                	c.addi	zero,0
-200606ce:	0001                	c.addi	zero,0
+20060630:	0001                	c.addi	zero,0
+20060632:	0001                	c.addi	zero,0
+20060634:	0001                	c.addi	zero,0
+20060636:	0001                	c.addi	zero,0
+20060638:	b5cd                	c.j	2006051a <inic_api_host_task_h+0x114>
+2006063a:	01f77593          	andi	a1,a4,31
+2006063e:	c199                	c.beqz	a1,20060644 <inic_api_host_task_h+0x23e>
+20060640:	9b01                	c.andi	a4,-32
+20060642:	952e                	c.add	a0,a1
+20060644:	f6a059e3          	bge	zero,a0,200605b6 <inic_api_host_task_h+0x1b0>
+20060648:	01f77593          	andi	a1,a4,31
+2006064c:	95aa                	c.add	a1,a0
+2006064e:	0ff0000f          	fence	iorw,iorw
+20060652:	95ba                	c.add	a1,a4
+20060654:	00e7700b          	cache	dinv,(a4)
+20060658:	02070713          	addi	a4,a4,32
+2006065c:	40e58533          	sub	a0,a1,a4
+20060660:	fea04ae3          	blt	zero,a0,20060654 <inic_api_host_task_h+0x24e>
+20060664:	bf25                	c.j	2006059c <inic_api_host_task_h+0x196>
+20060666:	01f7f713          	andi	a4,a5,31
+2006066a:	c319                	c.beqz	a4,20060670 <inic_api_host_task_h+0x26a>
+2006066c:	9b81                	c.andi	a5,-32
+2006066e:	963a                	c.add	a2,a4
+20060670:	f6c05ce3          	bge	zero,a2,200605e8 <inic_api_host_task_h+0x1e2>
+20060674:	01f7f713          	andi	a4,a5,31
+20060678:	9732                	c.add	a4,a2
+2006067a:	0ff0000f          	fence	iorw,iorw
+2006067e:	973e                	c.add	a4,a5
+20060680:	00f7f00b          	cache	dinv,(a5)
+20060684:	02078793          	addi	a5,a5,32
+20060688:	40f70633          	sub	a2,a4,a5
+2006068c:	fec04ae3          	blt	zero,a2,20060680 <inic_api_host_task_h+0x27a>
+20060690:	bf3d                	c.j	200605ce <inic_api_host_task_h+0x1c8>
+20060692:	fd01a783          	lw	a5,-48(gp) # 20066958 <p_ap_channel_switch_callback>
+20060696:	e80782e3          	beq	a5,zero,2006051a <inic_api_host_task_h+0x114>
+2006069a:	00840583          	lb	a1,8(s0)
+2006069e:	00444503          	lbu	a0,4(s0)
+200606a2:	9782                	c.jalr	a5
+200606a4:	bd9d                	c.j	2006051a <inic_api_host_task_h+0x114>
+200606a6:	440c                	c.lw	a1,8(s0)
+200606a8:	4450                	c.lw	a2,12(s0)
+200606aa:	00444503          	lbu	a0,4(s0)
+200606ae:	4814                	c.lw	a3,16(s0)
+200606b0:	87ae                	c.mv	a5,a1
+200606b2:	8832                	c.mv	a6,a2
+200606b4:	7c102773          	csrrs	a4,0x7c1,zero
+200606b8:	10077713          	andi	a4,a4,256
+200606bc:	c70d                	c.beqz	a4,200606e6 <inic_api_host_task_h+0x2e0>
+200606be:	00c5f733          	and	a4,a1,a2
+200606c2:	58fd                	c.li	a7,-1
+200606c4:	03171463          	bne	a4,a7,200606ec <inic_api_host_task_h+0x2e6>
+200606c8:	7c0167f3          	csrrsi	a5,0x7c0,2
+200606cc:	0ff0000f          	fence	iorw,iorw
 200606d0:	0001                	c.addi	zero,0
 200606d2:	0001                	c.addi	zero,0
 200606d4:	0001                	c.addi	zero,0
@@ -13028,46 +13025,46 @@ Disassembly of section .xip_image2.text:
 200606d8:	0001                	c.addi	zero,0
 200606da:	0001                	c.addi	zero,0
 200606dc:	0001                	c.addi	zero,0
-200606de:	ad4fe0ef          	jal	ra,2005e9b2 <wifi_indication>
-200606e2:	bd05                	c.j	20060512 <inic_api_host_task_h+0x114>
-200606e4:	01f5f713          	andi	a4,a1,31
-200606e8:	c709                	c.beqz	a4,200606f2 <inic_api_host_task_h+0x2f4>
-200606ea:	fe05f793          	andi	a5,a1,-32
-200606ee:	00e60833          	add	a6,a2,a4
-200606f2:	ff0056e3          	bge	zero,a6,200606de <inic_api_host_task_h+0x2e0>
-200606f6:	01f7f713          	andi	a4,a5,31
-200606fa:	9742                	c.add	a4,a6
-200606fc:	0ff0000f          	fence	iorw,iorw
-20060700:	973e                	c.add	a4,a5
-20060702:	00f7f00b          	cache	dinv,(a5)
-20060706:	02078793          	addi	a5,a5,32
-2006070a:	40f70833          	sub	a6,a4,a5
-2006070e:	ff004ae3          	blt	zero,a6,20060702 <inic_api_host_task_h+0x304>
-20060712:	bf4d                	c.j	200606c4 <inic_api_host_task_h+0x2c6>
-20060714:	fc01a783          	lw	a5,-64(gp) # 20066928 <promisc_user_callback_ptr>
-20060718:	4501                	c.li	a0,0
-2006071a:	cbc1                	c.beqz	a5,200607aa <inic_api_host_task_h+0x3ac>
-2006071c:	4058                	c.lw	a4,4(s0)
-2006071e:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060722:	1007f793          	andi	a5,a5,256
-20060726:	c3b9                	c.beqz	a5,2006076c <inic_api_host_task_h+0x36e>
-20060728:	01f77693          	andi	a3,a4,31
-2006072c:	c2c9                	c.beqz	a3,200607ae <inic_api_host_task_h+0x3b0>
-2006072e:	01068613          	addi	a2,a3,16
-20060732:	fe077793          	andi	a5,a4,-32
-20060736:	01f7f693          	andi	a3,a5,31
-2006073a:	96b2                	c.add	a3,a2
-2006073c:	0ff0000f          	fence	iorw,iorw
-20060740:	96be                	c.add	a3,a5
-20060742:	00f7f00b          	cache	dinv,(a5)
-20060746:	02078793          	addi	a5,a5,32
-2006074a:	40f68633          	sub	a2,a3,a5
-2006074e:	fec04ae3          	blt	zero,a2,20060742 <inic_api_host_task_h+0x344>
-20060752:	0ff0000f          	fence	iorw,iorw
-20060756:	0001                	c.addi	zero,0
-20060758:	0001                	c.addi	zero,0
-2006075a:	0001                	c.addi	zero,0
-2006075c:	0001                	c.addi	zero,0
+200606de:	0001                	c.addi	zero,0
+200606e0:	0001                	c.addi	zero,0
+200606e2:	0001                	c.addi	zero,0
+200606e4:	0001                	c.addi	zero,0
+200606e6:	accfe0ef          	jal	ra,2005e9b2 <wifi_indication>
+200606ea:	bd05                	c.j	2006051a <inic_api_host_task_h+0x114>
+200606ec:	01f5f713          	andi	a4,a1,31
+200606f0:	c709                	c.beqz	a4,200606fa <inic_api_host_task_h+0x2f4>
+200606f2:	fe05f793          	andi	a5,a1,-32
+200606f6:	00e60833          	add	a6,a2,a4
+200606fa:	ff0056e3          	bge	zero,a6,200606e6 <inic_api_host_task_h+0x2e0>
+200606fe:	01f7f713          	andi	a4,a5,31
+20060702:	9742                	c.add	a4,a6
+20060704:	0ff0000f          	fence	iorw,iorw
+20060708:	973e                	c.add	a4,a5
+2006070a:	00f7f00b          	cache	dinv,(a5)
+2006070e:	02078793          	addi	a5,a5,32
+20060712:	40f70833          	sub	a6,a4,a5
+20060716:	ff004ae3          	blt	zero,a6,2006070a <inic_api_host_task_h+0x304>
+2006071a:	bf4d                	c.j	200606cc <inic_api_host_task_h+0x2c6>
+2006071c:	fc01a783          	lw	a5,-64(gp) # 20066948 <promisc_user_callback_ptr>
+20060720:	4501                	c.li	a0,0
+20060722:	cbc1                	c.beqz	a5,200607b2 <inic_api_host_task_h+0x3ac>
+20060724:	4058                	c.lw	a4,4(s0)
+20060726:	7c1027f3          	csrrs	a5,0x7c1,zero
+2006072a:	1007f793          	andi	a5,a5,256
+2006072e:	c3b9                	c.beqz	a5,20060774 <inic_api_host_task_h+0x36e>
+20060730:	01f77693          	andi	a3,a4,31
+20060734:	c2c9                	c.beqz	a3,200607b6 <inic_api_host_task_h+0x3b0>
+20060736:	01068613          	addi	a2,a3,16
+2006073a:	fe077793          	andi	a5,a4,-32
+2006073e:	01f7f693          	andi	a3,a5,31
+20060742:	96b2                	c.add	a3,a2
+20060744:	0ff0000f          	fence	iorw,iorw
+20060748:	96be                	c.add	a3,a5
+2006074a:	00f7f00b          	cache	dinv,(a5)
+2006074e:	02078793          	addi	a5,a5,32
+20060752:	40f68633          	sub	a2,a3,a5
+20060756:	fec04ae3          	blt	zero,a2,2006074a <inic_api_host_task_h+0x344>
+2006075a:	0ff0000f          	fence	iorw,iorw
 2006075e:	0001                	c.addi	zero,0
 20060760:	0001                	c.addi	zero,0
 20060762:	0001                	c.addi	zero,0
@@ -13075,20 +13072,20 @@ Disassembly of section .xip_image2.text:
 20060766:	0001                	c.addi	zero,0
 20060768:	0001                	c.addi	zero,0
 2006076a:	0001                	c.addi	zero,0
-2006076c:	471c                	c.lw	a5,8(a4)
-2006076e:	4754                	c.lw	a3,12(a4)
-20060770:	7c102773          	csrrs	a4,0x7c1,zero
-20060774:	10077713          	andi	a4,a4,256
-20060778:	c70d                	c.beqz	a4,200607a2 <inic_api_host_task_h+0x3a4>
-2006077a:	577d                	c.li	a4,-1
-2006077c:	02e79c63          	bne	a5,a4,200607b4 <inic_api_host_task_h+0x3b6>
-20060780:	02f69a63          	bne	a3,a5,200607b4 <inic_api_host_task_h+0x3b6>
-20060784:	7c0167f3          	csrrsi	a5,0x7c0,2
-20060788:	0ff0000f          	fence	iorw,iorw
-2006078c:	0001                	c.addi	zero,0
-2006078e:	0001                	c.addi	zero,0
-20060790:	0001                	c.addi	zero,0
-20060792:	0001                	c.addi	zero,0
+2006076c:	0001                	c.addi	zero,0
+2006076e:	0001                	c.addi	zero,0
+20060770:	0001                	c.addi	zero,0
+20060772:	0001                	c.addi	zero,0
+20060774:	471c                	c.lw	a5,8(a4)
+20060776:	4754                	c.lw	a3,12(a4)
+20060778:	7c102773          	csrrs	a4,0x7c1,zero
+2006077c:	10077713          	andi	a4,a4,256
+20060780:	c70d                	c.beqz	a4,200607aa <inic_api_host_task_h+0x3a4>
+20060782:	577d                	c.li	a4,-1
+20060784:	02e79c63          	bne	a5,a4,200607bc <inic_api_host_task_h+0x3b6>
+20060788:	02f69a63          	bne	a3,a5,200607bc <inic_api_host_task_h+0x3b6>
+2006078c:	7c0167f3          	csrrsi	a5,0x7c0,2
+20060790:	0ff0000f          	fence	iorw,iorw
 20060794:	0001                	c.addi	zero,0
 20060796:	0001                	c.addi	zero,0
 20060798:	0001                	c.addi	zero,0
@@ -13096,79 +13093,79 @@ Disassembly of section .xip_image2.text:
 2006079c:	0001                	c.addi	zero,0
 2006079e:	0001                	c.addi	zero,0
 200607a0:	0001                	c.addi	zero,0
-200607a2:	fc01a783          	lw	a5,-64(gp) # 20066928 <promisc_user_callback_ptr>
-200607a6:	4048                	c.lw	a0,4(s0)
-200607a8:	9782                	c.jalr	a5
-200607aa:	d048                	c.sw	a0,36(s0)
-200607ac:	b39d                	c.j	20060512 <inic_api_host_task_h+0x114>
-200607ae:	87ba                	c.mv	a5,a4
-200607b0:	4641                	c.li	a2,16
-200607b2:	b751                	c.j	20060736 <inic_api_host_task_h+0x338>
-200607b4:	01f7f713          	andi	a4,a5,31
-200607b8:	c319                	c.beqz	a4,200607be <inic_api_host_task_h+0x3c0>
-200607ba:	9b81                	c.andi	a5,-32
-200607bc:	96ba                	c.add	a3,a4
-200607be:	fed052e3          	bge	zero,a3,200607a2 <inic_api_host_task_h+0x3a4>
-200607c2:	01f7f713          	andi	a4,a5,31
-200607c6:	9736                	c.add	a4,a3
-200607c8:	0ff0000f          	fence	iorw,iorw
-200607cc:	973e                	c.add	a4,a5
-200607ce:	00f7f00b          	cache	dinv,(a5)
-200607d2:	02078793          	addi	a5,a5,32
-200607d6:	40f706b3          	sub	a3,a4,a5
-200607da:	fed04ae3          	blt	zero,a3,200607ce <inic_api_host_task_h+0x3d0>
-200607de:	b76d                	c.j	20060788 <inic_api_host_task_h+0x38a>
-200607e0:	81ca0513          	addi	a0,s4,-2020 # 2006481c <register_string+0x98>
-200607e4:	bc3fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-200607e8:	b32d                	c.j	20060512 <inic_api_host_task_h+0x114>
+200607a2:	0001                	c.addi	zero,0
+200607a4:	0001                	c.addi	zero,0
+200607a6:	0001                	c.addi	zero,0
+200607a8:	0001                	c.addi	zero,0
+200607aa:	fc01a783          	lw	a5,-64(gp) # 20066948 <promisc_user_callback_ptr>
+200607ae:	4048                	c.lw	a0,4(s0)
+200607b0:	9782                	c.jalr	a5
+200607b2:	d048                	c.sw	a0,36(s0)
+200607b4:	b39d                	c.j	2006051a <inic_api_host_task_h+0x114>
+200607b6:	87ba                	c.mv	a5,a4
+200607b8:	4641                	c.li	a2,16
+200607ba:	b751                	c.j	2006073e <inic_api_host_task_h+0x338>
+200607bc:	01f7f713          	andi	a4,a5,31
+200607c0:	c319                	c.beqz	a4,200607c6 <inic_api_host_task_h+0x3c0>
+200607c2:	9b81                	c.andi	a5,-32
+200607c4:	96ba                	c.add	a3,a4
+200607c6:	fed052e3          	bge	zero,a3,200607aa <inic_api_host_task_h+0x3a4>
+200607ca:	01f7f713          	andi	a4,a5,31
+200607ce:	9736                	c.add	a4,a3
+200607d0:	0ff0000f          	fence	iorw,iorw
+200607d4:	973e                	c.add	a4,a5
+200607d6:	00f7f00b          	cache	dinv,(a5)
+200607da:	02078793          	addi	a5,a5,32
+200607de:	40f706b3          	sub	a3,a4,a5
+200607e2:	fed04ae3          	blt	zero,a3,200607d6 <inic_api_host_task_h+0x3d0>
+200607e6:	b76d                	c.j	20060790 <inic_api_host_task_h+0x38a>
+200607e8:	824a0513          	addi	a0,s4,-2012 # 20064824 <register_string+0x98>
+200607ec:	bbbfe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+200607f0:	b32d                	c.j	2006051a <inic_api_host_task_h+0x114>
 
-200607ea <inic_api_host_int_hdl>:
-200607ea:	fd81a503          	lw	a0,-40(gp) # 20066940 <g_host_inic_api_task_wake_sema>
-200607ee:	97afb06f          	jal	zero,2005b968 <rtos_sema_give>
+200607f2 <inic_api_host_int_hdl>:
+200607f2:	fd81a503          	lw	a0,-40(gp) # 20066960 <g_host_inic_api_task_wake_sema>
+200607f6:	978fb06f          	jal	zero,2005b96e <rtos_sema_give>
 
-200607f2 <inic_api_host_message_send>:
-200607f2:	7139                	c.addi16sp	sp,-64
-200607f4:	d452                	c.swsp	s4,40(sp)
-200607f6:	d256                	c.swsp	s5,36(sp)
-200607f8:	fca1ae23          	sw	a0,-36(gp) # 20066944 <latest_api_id>
-200607fc:	d05a                	c.swsp	s6,32(sp)
-200607fe:	8b2a                	c.mv	s6,a0
-20060800:	fd41a503          	lw	a0,-44(gp) # 2006693c <g_host_inic_api_message_send_sema>
-20060804:	cc62                	c.swsp	s8,24(sp)
-20060806:	20068c37          	lui	s8,0x20068
-2006080a:	da26                	c.swsp	s1,52(sp)
-2006080c:	d64e                	c.swsp	s3,44(sp)
-2006080e:	ca66                	c.swsp	s9,20(sp)
-20060810:	89ae                	c.mv	s3,a1
-20060812:	700c0493          	addi	s1,s8,1792 # 20068700 <g_host_ipc_api_request_info>
-20060816:	55fd                	c.li	a1,-1
-20060818:	6c8d                	c.lui	s9,0x3
-2006081a:	ce5e                	c.swsp	s7,28(sp)
-2006081c:	c86a                	c.swsp	s10,16(sp)
-2006081e:	c66e                	c.swsp	s11,12(sp)
-20060820:	de06                	c.swsp	ra,60(sp)
-20060822:	dc22                	c.swsp	s0,56(sp)
-20060824:	d84a                	c.swsp	s2,48(sp)
-20060826:	8bb2                	c.mv	s7,a2
-20060828:	fdc18a93          	addi	s5,gp,-36 # 20066944 <latest_api_id>
-2006082c:	8f0fb0ef          	jal	ra,2005b91c <rtos_sema_take>
-20060830:	fd418a13          	addi	s4,gp,-44 # 2006693c <g_host_inic_api_message_send_sema>
-20060834:	02048d93          	addi	s11,s1,32
-20060838:	ee0c8c93          	addi	s9,s9,-288 # 2ee0 <FLASH_SetSpiMode+0x21c>
-2006083c:	20065d37          	lui	s10,0x20065
-20060840:	4401                	c.li	s0,0
-20060842:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060846:	1007f793          	andi	a5,a5,256
-2006084a:	700c0913          	addi	s2,s8,1792
-2006084e:	c785                	c.beqz	a5,20060876 <inic_api_host_message_send+0x84>
-20060850:	0ff0000f          	fence	iorw,iorw
-20060854:	0094f00b          	cache	dinv,(s1)
-20060858:	01bdf00b          	cache	dinv,(s11)
-2006085c:	0ff0000f          	fence	iorw,iorw
-20060860:	0001                	c.addi	zero,0
-20060862:	0001                	c.addi	zero,0
-20060864:	0001                	c.addi	zero,0
-20060866:	0001                	c.addi	zero,0
+200607fa <inic_api_host_message_send>:
+200607fa:	7139                	c.addi16sp	sp,-64
+200607fc:	d452                	c.swsp	s4,40(sp)
+200607fe:	d256                	c.swsp	s5,36(sp)
+20060800:	fca1ae23          	sw	a0,-36(gp) # 20066964 <latest_api_id>
+20060804:	d05a                	c.swsp	s6,32(sp)
+20060806:	8b2a                	c.mv	s6,a0
+20060808:	fd41a503          	lw	a0,-44(gp) # 2006695c <g_host_inic_api_message_send_sema>
+2006080c:	cc62                	c.swsp	s8,24(sp)
+2006080e:	20068c37          	lui	s8,0x20068
+20060812:	da26                	c.swsp	s1,52(sp)
+20060814:	d64e                	c.swsp	s3,44(sp)
+20060816:	ca66                	c.swsp	s9,20(sp)
+20060818:	89ae                	c.mv	s3,a1
+2006081a:	740c0493          	addi	s1,s8,1856 # 20068740 <g_host_ipc_api_request_info>
+2006081e:	55fd                	c.li	a1,-1
+20060820:	6c8d                	c.lui	s9,0x3
+20060822:	ce5e                	c.swsp	s7,28(sp)
+20060824:	c86a                	c.swsp	s10,16(sp)
+20060826:	c66e                	c.swsp	s11,12(sp)
+20060828:	de06                	c.swsp	ra,60(sp)
+2006082a:	dc22                	c.swsp	s0,56(sp)
+2006082c:	d84a                	c.swsp	s2,48(sp)
+2006082e:	8bb2                	c.mv	s7,a2
+20060830:	fdc18a93          	addi	s5,gp,-36 # 20066964 <latest_api_id>
+20060834:	8eefb0ef          	jal	ra,2005b922 <rtos_sema_take>
+20060838:	fd418a13          	addi	s4,gp,-44 # 2006695c <g_host_inic_api_message_send_sema>
+2006083c:	02048d93          	addi	s11,s1,32
+20060840:	ee0c8c93          	addi	s9,s9,-288 # 2ee0 <FLASH_SetSpiMode+0x21c>
+20060844:	20065d37          	lui	s10,0x20065
+20060848:	4401                	c.li	s0,0
+2006084a:	7c1027f3          	csrrs	a5,0x7c1,zero
+2006084e:	1007f793          	andi	a5,a5,256
+20060852:	740c0913          	addi	s2,s8,1856
+20060856:	c785                	c.beqz	a5,2006087e <inic_api_host_message_send+0x84>
+20060858:	0ff0000f          	fence	iorw,iorw
+2006085c:	0094f00b          	cache	dinv,(s1)
+20060860:	01bdf00b          	cache	dinv,(s11)
+20060864:	0ff0000f          	fence	iorw,iorw
 20060868:	0001                	c.addi	zero,0
 2006086a:	0001                	c.addi	zero,0
 2006086c:	0001                	c.addi	zero,0
@@ -13176,40 +13173,40 @@ Disassembly of section .xip_image2.text:
 20060870:	0001                	c.addi	zero,0
 20060872:	0001                	c.addi	zero,0
 20060874:	0001                	c.addi	zero,0
-20060876:	00092783          	lw	a5,0(s2)
-2006087a:	cf89                	c.beqz	a5,20060894 <inic_api_host_message_send+0xa2>
-2006087c:	4505                	c.li	a0,1
-2006087e:	0405                	c.addi	s0,1
-20060880:	b72fb0ef          	jal	ra,2005bbf2 <rtos_time_delay_ms>
-20060884:	03946433          	rem	s0,s0,s9
-20060888:	fc4d                	c.bnez	s0,20060842 <inic_api_host_message_send+0x50>
-2006088a:	85cd0513          	addi	a0,s10,-1956 # 2006485c <register_string+0xd8>
-2006088e:	b19fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-20060892:	b77d                	c.j	20060840 <inic_api_host_message_send+0x4e>
-20060894:	04000613          	addi	a2,zero,64
-20060898:	4581                	c.li	a1,0
-2006089a:	700c0513          	addi	a0,s8,1792
-2006089e:	dffa9097          	auipc	ra,0xdffa9
-200608a2:	230080e7          	jalr	ra,560(ra) # 9ace <__wrap_memset>
-200608a6:	01692023          	sw	s6,0(s2)
-200608aa:	00098b63          	beq	s3,zero,200608c0 <inic_api_host_message_send+0xce>
-200608ae:	002b9613          	slli	a2,s7,0x2
-200608b2:	85ce                	c.mv	a1,s3
-200608b4:	00490513          	addi	a0,s2,4
-200608b8:	dffa9097          	auipc	ra,0xdffa9
-200608bc:	218080e7          	jalr	ra,536(ra) # 9ad0 <__wrap_memcpy>
-200608c0:	7c1027f3          	csrrs	a5,0x7c1,zero
-200608c4:	1007f793          	andi	a5,a5,256
-200608c8:	c795                	c.beqz	a5,200608f4 <inic_api_host_message_send+0x102>
-200608ca:	0ff0000f          	fence	iorw,iorw
-200608ce:	0494f00b          	cache	dwb,(s1)
-200608d2:	02048793          	addi	a5,s1,32
-200608d6:	04f7f00b          	cache	dwb,(a5)
-200608da:	0ff0000f          	fence	iorw,iorw
-200608de:	0001                	c.addi	zero,0
-200608e0:	0001                	c.addi	zero,0
-200608e2:	0001                	c.addi	zero,0
-200608e4:	0001                	c.addi	zero,0
+20060876:	0001                	c.addi	zero,0
+20060878:	0001                	c.addi	zero,0
+2006087a:	0001                	c.addi	zero,0
+2006087c:	0001                	c.addi	zero,0
+2006087e:	00092783          	lw	a5,0(s2)
+20060882:	cf89                	c.beqz	a5,2006089c <inic_api_host_message_send+0xa2>
+20060884:	4505                	c.li	a0,1
+20060886:	0405                	c.addi	s0,1
+20060888:	b70fb0ef          	jal	ra,2005bbf8 <rtos_time_delay_ms>
+2006088c:	03946433          	rem	s0,s0,s9
+20060890:	fc4d                	c.bnez	s0,2006084a <inic_api_host_message_send+0x50>
+20060892:	864d0513          	addi	a0,s10,-1948 # 20064864 <register_string+0xd8>
+20060896:	b11fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+2006089a:	b77d                	c.j	20060848 <inic_api_host_message_send+0x4e>
+2006089c:	04000613          	addi	a2,zero,64
+200608a0:	4581                	c.li	a1,0
+200608a2:	740c0513          	addi	a0,s8,1856
+200608a6:	dffa9097          	auipc	ra,0xdffa9
+200608aa:	228080e7          	jalr	ra,552(ra) # 9ace <__wrap_memset>
+200608ae:	01692023          	sw	s6,0(s2)
+200608b2:	00098b63          	beq	s3,zero,200608c8 <inic_api_host_message_send+0xce>
+200608b6:	002b9613          	slli	a2,s7,0x2
+200608ba:	85ce                	c.mv	a1,s3
+200608bc:	00490513          	addi	a0,s2,4
+200608c0:	dffa9097          	auipc	ra,0xdffa9
+200608c4:	210080e7          	jalr	ra,528(ra) # 9ad0 <__wrap_memcpy>
+200608c8:	7c1027f3          	csrrs	a5,0x7c1,zero
+200608cc:	1007f793          	andi	a5,a5,256
+200608d0:	c795                	c.beqz	a5,200608fc <inic_api_host_message_send+0x102>
+200608d2:	0ff0000f          	fence	iorw,iorw
+200608d6:	0494f00b          	cache	dwb,(s1)
+200608da:	02048793          	addi	a5,s1,32
+200608de:	04f7f00b          	cache	dwb,(a5)
+200608e2:	0ff0000f          	fence	iorw,iorw
 200608e6:	0001                	c.addi	zero,0
 200608e8:	0001                	c.addi	zero,0
 200608ea:	0001                	c.addi	zero,0
@@ -13217,27 +13214,27 @@ Disassembly of section .xip_image2.text:
 200608ee:	0001                	c.addi	zero,0
 200608f0:	0001                	c.addi	zero,0
 200608f2:	0001                	c.addi	zero,0
-200608f4:	200689b7          	lui	s3,0x20068
-200608f8:	4641                	c.li	a2,16
-200608fa:	4581                	c.li	a1,0
-200608fc:	6c098513          	addi	a0,s3,1728 # 200686c0 <g_host_ipc_api_msg>
-20060900:	dffa9097          	auipc	ra,0xdffa9
-20060904:	1ce080e7          	jalr	ra,462(ra) # 9ace <__wrap_memset>
-20060908:	6c098b13          	addi	s6,s3,1728
-2006090c:	04000793          	addi	a5,zero,64
-20060910:	009b2223          	sw	s1,4(s6)
-20060914:	000b2023          	sw	zero,0(s6)
-20060918:	00fb2423          	sw	a5,8(s6)
-2006091c:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060920:	1007f793          	andi	a5,a5,256
-20060924:	c395                	c.beqz	a5,20060948 <inic_api_host_message_send+0x156>
-20060926:	0ff0000f          	fence	iorw,iorw
-2006092a:	056b700b          	cache	dwb,(s6)
+200608f4:	0001                	c.addi	zero,0
+200608f6:	0001                	c.addi	zero,0
+200608f8:	0001                	c.addi	zero,0
+200608fa:	0001                	c.addi	zero,0
+200608fc:	200689b7          	lui	s3,0x20068
+20060900:	4641                	c.li	a2,16
+20060902:	4581                	c.li	a1,0
+20060904:	70098513          	addi	a0,s3,1792 # 20068700 <g_host_ipc_api_msg>
+20060908:	dffa9097          	auipc	ra,0xdffa9
+2006090c:	1c6080e7          	jalr	ra,454(ra) # 9ace <__wrap_memset>
+20060910:	70098b13          	addi	s6,s3,1792
+20060914:	04000793          	addi	a5,zero,64
+20060918:	009b2223          	sw	s1,4(s6)
+2006091c:	000b2023          	sw	zero,0(s6)
+20060920:	00fb2423          	sw	a5,8(s6)
+20060924:	7c1027f3          	csrrs	a5,0x7c1,zero
+20060928:	1007f793          	andi	a5,a5,256
+2006092c:	c395                	c.beqz	a5,20060950 <inic_api_host_message_send+0x156>
 2006092e:	0ff0000f          	fence	iorw,iorw
-20060932:	0001                	c.addi	zero,0
-20060934:	0001                	c.addi	zero,0
-20060936:	0001                	c.addi	zero,0
-20060938:	0001                	c.addi	zero,0
+20060932:	056b700b          	cache	dwb,(s6)
+20060936:	0ff0000f          	fence	iorw,iorw
 2006093a:	0001                	c.addi	zero,0
 2006093c:	0001                	c.addi	zero,0
 2006093e:	0001                	c.addi	zero,0
@@ -13245,29 +13242,29 @@ Disassembly of section .xip_image2.text:
 20060942:	0001                	c.addi	zero,0
 20060944:	0001                	c.addi	zero,0
 20060946:	0001                	c.addi	zero,0
-20060948:	6c098613          	addi	a2,s3,1728
-2006094c:	459d                	c.li	a1,7
-2006094e:	4501                	c.li	a0,0
-20060950:	698d                	c.lui	s3,0x3
-20060952:	e56f80ef          	jal	ra,20058fa8 <ipc_send_message>
-20060956:	02048b93          	addi	s7,s1,32
-2006095a:	ee098993          	addi	s3,s3,-288 # 2ee0 <FLASH_SetSpiMode+0x21c>
-2006095e:	20065b37          	lui	s6,0x20065
-20060962:	00092783          	lw	a5,0(s2)
-20060966:	cba9                	c.beqz	a5,200609b8 <inic_api_host_message_send+0x1c6>
-20060968:	4505                	c.li	a0,1
-2006096a:	a88fb0ef          	jal	ra,2005bbf2 <rtos_time_delay_ms>
-2006096e:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060972:	1007f793          	andi	a5,a5,256
-20060976:	c785                	c.beqz	a5,2006099e <inic_api_host_message_send+0x1ac>
-20060978:	0ff0000f          	fence	iorw,iorw
-2006097c:	0094f00b          	cache	dinv,(s1)
-20060980:	017bf00b          	cache	dinv,(s7)
-20060984:	0ff0000f          	fence	iorw,iorw
-20060988:	0001                	c.addi	zero,0
-2006098a:	0001                	c.addi	zero,0
-2006098c:	0001                	c.addi	zero,0
-2006098e:	0001                	c.addi	zero,0
+20060948:	0001                	c.addi	zero,0
+2006094a:	0001                	c.addi	zero,0
+2006094c:	0001                	c.addi	zero,0
+2006094e:	0001                	c.addi	zero,0
+20060950:	70098613          	addi	a2,s3,1792
+20060954:	459d                	c.li	a1,7
+20060956:	4501                	c.li	a0,0
+20060958:	698d                	c.lui	s3,0x3
+2006095a:	e4ef80ef          	jal	ra,20058fa8 <ipc_send_message>
+2006095e:	02048b93          	addi	s7,s1,32
+20060962:	ee098993          	addi	s3,s3,-288 # 2ee0 <FLASH_SetSpiMode+0x21c>
+20060966:	20065b37          	lui	s6,0x20065
+2006096a:	00092783          	lw	a5,0(s2)
+2006096e:	cba9                	c.beqz	a5,200609c0 <inic_api_host_message_send+0x1c6>
+20060970:	4505                	c.li	a0,1
+20060972:	a86fb0ef          	jal	ra,2005bbf8 <rtos_time_delay_ms>
+20060976:	7c1027f3          	csrrs	a5,0x7c1,zero
+2006097a:	1007f793          	andi	a5,a5,256
+2006097e:	c785                	c.beqz	a5,200609a6 <inic_api_host_message_send+0x1ac>
+20060980:	0ff0000f          	fence	iorw,iorw
+20060984:	0094f00b          	cache	dinv,(s1)
+20060988:	017bf00b          	cache	dinv,(s7)
+2006098c:	0ff0000f          	fence	iorw,iorw
 20060990:	0001                	c.addi	zero,0
 20060992:	0001                	c.addi	zero,0
 20060994:	0001                	c.addi	zero,0
@@ -13275,138 +13272,138 @@ Disassembly of section .xip_image2.text:
 20060998:	0001                	c.addi	zero,0
 2006099a:	0001                	c.addi	zero,0
 2006099c:	0001                	c.addi	zero,0
-2006099e:	0405                	c.addi	s0,1
-200609a0:	03346433          	rem	s0,s0,s3
-200609a4:	fc5d                	c.bnez	s0,20060962 <inic_api_host_message_send+0x170>
-200609a6:	000aa603          	lw	a2,0(s5)
-200609aa:	00092583          	lw	a1,0(s2)
-200609ae:	874b0513          	addi	a0,s6,-1932 # 20064874 <register_string+0xf0>
-200609b2:	9f5fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-200609b6:	b775                	c.j	20060962 <inic_api_host_message_send+0x170>
-200609b8:	000a2503          	lw	a0,0(s4)
-200609bc:	02892403          	lw	s0,40(s2)
-200609c0:	fa9fa0ef          	jal	ra,2005b968 <rtos_sema_give>
-200609c4:	50f2                	c.lwsp	ra,60(sp)
-200609c6:	8522                	c.mv	a0,s0
-200609c8:	5462                	c.lwsp	s0,56(sp)
-200609ca:	54d2                	c.lwsp	s1,52(sp)
-200609cc:	5942                	c.lwsp	s2,48(sp)
-200609ce:	59b2                	c.lwsp	s3,44(sp)
-200609d0:	5a22                	c.lwsp	s4,40(sp)
-200609d2:	5a92                	c.lwsp	s5,36(sp)
-200609d4:	5b02                	c.lwsp	s6,32(sp)
-200609d6:	4bf2                	c.lwsp	s7,28(sp)
-200609d8:	4c62                	c.lwsp	s8,24(sp)
-200609da:	4cd2                	c.lwsp	s9,20(sp)
-200609dc:	4d42                	c.lwsp	s10,16(sp)
-200609de:	4db2                	c.lwsp	s11,12(sp)
-200609e0:	6121                	c.addi16sp	sp,64
-200609e2:	8082                	c.jr	ra
+2006099e:	0001                	c.addi	zero,0
+200609a0:	0001                	c.addi	zero,0
+200609a2:	0001                	c.addi	zero,0
+200609a4:	0001                	c.addi	zero,0
+200609a6:	0405                	c.addi	s0,1
+200609a8:	03346433          	rem	s0,s0,s3
+200609ac:	fc5d                	c.bnez	s0,2006096a <inic_api_host_message_send+0x170>
+200609ae:	000aa603          	lw	a2,0(s5)
+200609b2:	00092583          	lw	a1,0(s2)
+200609b6:	87cb0513          	addi	a0,s6,-1924 # 2006487c <register_string+0xf0>
+200609ba:	9edfe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+200609be:	b775                	c.j	2006096a <inic_api_host_message_send+0x170>
+200609c0:	000a2503          	lw	a0,0(s4)
+200609c4:	02892403          	lw	s0,40(s2)
+200609c8:	fa7fa0ef          	jal	ra,2005b96e <rtos_sema_give>
+200609cc:	50f2                	c.lwsp	ra,60(sp)
+200609ce:	8522                	c.mv	a0,s0
+200609d0:	5462                	c.lwsp	s0,56(sp)
+200609d2:	54d2                	c.lwsp	s1,52(sp)
+200609d4:	5942                	c.lwsp	s2,48(sp)
+200609d6:	59b2                	c.lwsp	s3,44(sp)
+200609d8:	5a22                	c.lwsp	s4,40(sp)
+200609da:	5a92                	c.lwsp	s5,36(sp)
+200609dc:	5b02                	c.lwsp	s6,32(sp)
+200609de:	4bf2                	c.lwsp	s7,28(sp)
+200609e0:	4c62                	c.lwsp	s8,24(sp)
+200609e2:	4cd2                	c.lwsp	s9,20(sp)
+200609e4:	4d42                	c.lwsp	s10,16(sp)
+200609e6:	4db2                	c.lwsp	s11,12(sp)
+200609e8:	6121                	c.addi16sp	sp,64
+200609ea:	8082                	c.jr	ra
 
-200609e4 <inic_api_init_host>:
-200609e4:	1141                	c.addi	sp,-16
-200609e6:	567d                	c.li	a2,-1
-200609e8:	4581                	c.li	a1,0
-200609ea:	fd818513          	addi	a0,gp,-40 # 20066940 <g_host_inic_api_task_wake_sema>
-200609ee:	c606                	c.swsp	ra,12(sp)
-200609f0:	c422                	c.swsp	s0,8(sp)
-200609f2:	eadfa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-200609f6:	567d                	c.li	a2,-1
-200609f8:	4581                	c.li	a1,0
-200609fa:	fd418413          	addi	s0,gp,-44 # 2006693c <g_host_inic_api_message_send_sema>
-200609fe:	fd418513          	addi	a0,gp,-44 # 2006693c <g_host_inic_api_message_send_sema>
-20060a02:	e9dfa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-20060a06:	4008                	c.lw	a0,0(s0)
-20060a08:	f61fa0ef          	jal	ra,2005b968 <rtos_sema_give>
-20060a0c:	200605b7          	lui	a1,0x20060
-20060a10:	4701                	c.li	a4,0
-20060a12:	4681                	c.li	a3,0
-20060a14:	4601                	c.li	a2,0
-20060a16:	3fa58593          	addi	a1,a1,1018 # 200603fa <_inic_ipc_ip_addr_update_in_wowlan>
-20060a1a:	4505                	c.li	a0,1
-20060a1c:	d6bf80ef          	jal	ra,20059786 <pmu_register_sleep_callback>
-20060a20:	6705                	c.lui	a4,0x1
-20060a22:	20060637          	lui	a2,0x20060
-20060a26:	200655b7          	lui	a1,0x20065
-20060a2a:	478d                	c.li	a5,3
-20060a2c:	ce070713          	addi	a4,a4,-800 # ce0 <CPU_ClkGet+0x1ca>
-20060a30:	4681                	c.li	a3,0
-20060a32:	3fe60613          	addi	a2,a2,1022 # 200603fe <inic_api_host_task_h>
-20060a36:	8a058593          	addi	a1,a1,-1888 # 200648a0 <register_string+0x11c>
-20060a3a:	4501                	c.li	a0,0
-20060a3c:	980fb0ef          	jal	ra,2005bbbc <rtos_task_create>
-20060a40:	c10d                	c.beqz	a0,20060a62 <inic_api_init_host+0x7e>
-20060a42:	4422                	c.lwsp	s0,8(sp)
-20060a44:	40b2                	c.lwsp	ra,12(sp)
-20060a46:	200656b7          	lui	a3,0x20065
-20060a4a:	200655b7          	lui	a1,0x20065
-20060a4e:	8b468693          	addi	a3,a3,-1868 # 200648b4 <register_string+0x130>
-20060a52:	04500613          	addi	a2,zero,69
-20060a56:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060a5a:	4509                	c.li	a0,2
-20060a5c:	0141                	c.addi	sp,16
-20060a5e:	f2afa06f          	jal	zero,2005b188 <rtk_log_write>
-20060a62:	40b2                	c.lwsp	ra,12(sp)
-20060a64:	4422                	c.lwsp	s0,8(sp)
-20060a66:	0141                	c.addi	sp,16
-20060a68:	8082                	c.jr	ra
+200609ec <inic_api_init_host>:
+200609ec:	1141                	c.addi	sp,-16
+200609ee:	567d                	c.li	a2,-1
+200609f0:	4581                	c.li	a1,0
+200609f2:	fd818513          	addi	a0,gp,-40 # 20066960 <g_host_inic_api_task_wake_sema>
+200609f6:	c606                	c.swsp	ra,12(sp)
+200609f8:	c422                	c.swsp	s0,8(sp)
+200609fa:	eabfa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+200609fe:	567d                	c.li	a2,-1
+20060a00:	4581                	c.li	a1,0
+20060a02:	fd418413          	addi	s0,gp,-44 # 2006695c <g_host_inic_api_message_send_sema>
+20060a06:	fd418513          	addi	a0,gp,-44 # 2006695c <g_host_inic_api_message_send_sema>
+20060a0a:	e9bfa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+20060a0e:	4008                	c.lw	a0,0(s0)
+20060a10:	f5ffa0ef          	jal	ra,2005b96e <rtos_sema_give>
+20060a14:	200605b7          	lui	a1,0x20060
+20060a18:	4701                	c.li	a4,0
+20060a1a:	4681                	c.li	a3,0
+20060a1c:	4601                	c.li	a2,0
+20060a1e:	40258593          	addi	a1,a1,1026 # 20060402 <_inic_ipc_ip_addr_update_in_wowlan>
+20060a22:	4505                	c.li	a0,1
+20060a24:	d63f80ef          	jal	ra,20059786 <pmu_register_sleep_callback>
+20060a28:	6705                	c.lui	a4,0x1
+20060a2a:	20060637          	lui	a2,0x20060
+20060a2e:	200655b7          	lui	a1,0x20065
+20060a32:	478d                	c.li	a5,3
+20060a34:	ce070713          	addi	a4,a4,-800 # ce0 <CPU_ClkGet+0x1ca>
+20060a38:	4681                	c.li	a3,0
+20060a3a:	40660613          	addi	a2,a2,1030 # 20060406 <inic_api_host_task_h>
+20060a3e:	8a858593          	addi	a1,a1,-1880 # 200648a8 <register_string+0x11c>
+20060a42:	4501                	c.li	a0,0
+20060a44:	97efb0ef          	jal	ra,2005bbc2 <rtos_task_create>
+20060a48:	c10d                	c.beqz	a0,20060a6a <inic_api_init_host+0x7e>
+20060a4a:	4422                	c.lwsp	s0,8(sp)
+20060a4c:	40b2                	c.lwsp	ra,12(sp)
+20060a4e:	200656b7          	lui	a3,0x20065
+20060a52:	200655b7          	lui	a1,0x20065
+20060a56:	8bc68693          	addi	a3,a3,-1860 # 200648bc <register_string+0x130>
+20060a5a:	04500613          	addi	a2,zero,69
+20060a5e:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060a62:	4509                	c.li	a0,2
+20060a64:	0141                	c.addi	sp,16
+20060a66:	f28fa06f          	jal	zero,2005b18e <rtk_log_write>
+20060a6a:	40b2                	c.lwsp	ra,12(sp)
+20060a6c:	4422                	c.lwsp	s0,8(sp)
+20060a6e:	0141                	c.addi	sp,16
+20060a70:	8082                	c.jr	ra
 
-20060a6a <inic_mp_command>:
-20060a6a:	7179                	c.addi16sp	sp,-48
-20060a6c:	ce4e                	c.swsp	s3,28(sp)
-20060a6e:	89aa                	c.mv	s3,a0
-20060a70:	6505                	c.lui	a0,0x1
-20060a72:	d04a                	c.swsp	s2,32(sp)
-20060a74:	cc52                	c.swsp	s4,24(sp)
-20060a76:	d606                	c.swsp	ra,44(sp)
-20060a78:	d422                	c.swsp	s0,40(sp)
-20060a7a:	d226                	c.swsp	s1,36(sp)
-20060a7c:	892e                	c.mv	s2,a1
-20060a7e:	8a32                	c.mv	s4,a2
-20060a80:	c73fa0ef          	jal	ra,2005b6f2 <rtos_mem_zmalloc>
-20060a84:	e50d                	c.bnez	a0,20060aae <inic_mp_command+0x44>
-20060a86:	5422                	c.lwsp	s0,40(sp)
-20060a88:	50b2                	c.lwsp	ra,44(sp)
-20060a8a:	5492                	c.lwsp	s1,36(sp)
-20060a8c:	5902                	c.lwsp	s2,32(sp)
-20060a8e:	49f2                	c.lwsp	s3,28(sp)
-20060a90:	4a62                	c.lwsp	s4,24(sp)
-20060a92:	200656b7          	lui	a3,0x20065
-20060a96:	200655b7          	lui	a1,0x20065
-20060a9a:	8d868693          	addi	a3,a3,-1832 # 200648d8 <register_string+0x154>
-20060a9e:	04500613          	addi	a2,zero,69
-20060aa2:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060aa6:	4509                	c.li	a0,2
-20060aa8:	6145                	c.addi16sp	sp,48
-20060aaa:	edefa06f          	jal	zero,2005b188 <rtk_log_write>
-20060aae:	842a                	c.mv	s0,a0
-20060ab0:	87ce                	c.mv	a5,s3
-20060ab2:	c04e                	c.swsp	s3,0(sp)
-20060ab4:	c24a                	c.swsp	s2,4(sp)
-20060ab6:	c452                	c.swsp	s4,8(sp)
-20060ab8:	84aa                	c.mv	s1,a0
-20060aba:	c62a                	c.swsp	a0,12(sp)
-20060abc:	7c102773          	csrrs	a4,0x7c1,zero
-20060ac0:	10077713          	andi	a4,a4,256
-20060ac4:	c721                	c.beqz	a4,20060b0c <inic_mp_command+0xa2>
-20060ac6:	01f57693          	andi	a3,a0,31
-20060aca:	10068363          	beq	a3,zero,20060bd0 <inic_mp_command+0x166>
-20060ace:	6605                	c.lui	a2,0x1
-20060ad0:	9636                	c.add	a2,a3
-20060ad2:	fe057713          	andi	a4,a0,-32
-20060ad6:	01f77693          	andi	a3,a4,31
-20060ada:	96b2                	c.add	a3,a2
-20060adc:	0ff0000f          	fence	iorw,iorw
-20060ae0:	96ba                	c.add	a3,a4
-20060ae2:	04e7700b          	cache	dwb,(a4)
-20060ae6:	02070713          	addi	a4,a4,32
-20060aea:	40e68633          	sub	a2,a3,a4
-20060aee:	fec04ae3          	blt	zero,a2,20060ae2 <inic_mp_command+0x78>
-20060af2:	0ff0000f          	fence	iorw,iorw
-20060af6:	0001                	c.addi	zero,0
-20060af8:	0001                	c.addi	zero,0
-20060afa:	0001                	c.addi	zero,0
-20060afc:	0001                	c.addi	zero,0
+20060a72 <inic_mp_command>:
+20060a72:	7179                	c.addi16sp	sp,-48
+20060a74:	ce4e                	c.swsp	s3,28(sp)
+20060a76:	89aa                	c.mv	s3,a0
+20060a78:	6505                	c.lui	a0,0x1
+20060a7a:	d04a                	c.swsp	s2,32(sp)
+20060a7c:	cc52                	c.swsp	s4,24(sp)
+20060a7e:	d606                	c.swsp	ra,44(sp)
+20060a80:	d422                	c.swsp	s0,40(sp)
+20060a82:	d226                	c.swsp	s1,36(sp)
+20060a84:	892e                	c.mv	s2,a1
+20060a86:	8a32                	c.mv	s4,a2
+20060a88:	c71fa0ef          	jal	ra,2005b6f8 <rtos_mem_zmalloc>
+20060a8c:	e50d                	c.bnez	a0,20060ab6 <inic_mp_command+0x44>
+20060a8e:	5422                	c.lwsp	s0,40(sp)
+20060a90:	50b2                	c.lwsp	ra,44(sp)
+20060a92:	5492                	c.lwsp	s1,36(sp)
+20060a94:	5902                	c.lwsp	s2,32(sp)
+20060a96:	49f2                	c.lwsp	s3,28(sp)
+20060a98:	4a62                	c.lwsp	s4,24(sp)
+20060a9a:	200656b7          	lui	a3,0x20065
+20060a9e:	200655b7          	lui	a1,0x20065
+20060aa2:	8e068693          	addi	a3,a3,-1824 # 200648e0 <register_string+0x154>
+20060aa6:	04500613          	addi	a2,zero,69
+20060aaa:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060aae:	4509                	c.li	a0,2
+20060ab0:	6145                	c.addi16sp	sp,48
+20060ab2:	edcfa06f          	jal	zero,2005b18e <rtk_log_write>
+20060ab6:	842a                	c.mv	s0,a0
+20060ab8:	87ce                	c.mv	a5,s3
+20060aba:	c04e                	c.swsp	s3,0(sp)
+20060abc:	c24a                	c.swsp	s2,4(sp)
+20060abe:	c452                	c.swsp	s4,8(sp)
+20060ac0:	84aa                	c.mv	s1,a0
+20060ac2:	c62a                	c.swsp	a0,12(sp)
+20060ac4:	7c102773          	csrrs	a4,0x7c1,zero
+20060ac8:	10077713          	andi	a4,a4,256
+20060acc:	c721                	c.beqz	a4,20060b14 <inic_mp_command+0xa2>
+20060ace:	01f57693          	andi	a3,a0,31
+20060ad2:	10068363          	beq	a3,zero,20060bd8 <inic_mp_command+0x166>
+20060ad6:	6605                	c.lui	a2,0x1
+20060ad8:	9636                	c.add	a2,a3
+20060ada:	fe057713          	andi	a4,a0,-32
+20060ade:	01f77693          	andi	a3,a4,31
+20060ae2:	96b2                	c.add	a3,a2
+20060ae4:	0ff0000f          	fence	iorw,iorw
+20060ae8:	96ba                	c.add	a3,a4
+20060aea:	04e7700b          	cache	dwb,(a4)
+20060aee:	02070713          	addi	a4,a4,32
+20060af2:	40e68633          	sub	a2,a3,a4
+20060af6:	fec04ae3          	blt	zero,a2,20060aea <inic_mp_command+0x78>
+20060afa:	0ff0000f          	fence	iorw,iorw
 20060afe:	0001                	c.addi	zero,0
 20060b00:	0001                	c.addi	zero,0
 20060b02:	0001                	c.addi	zero,0
@@ -13414,18 +13411,18 @@ Disassembly of section .xip_image2.text:
 20060b06:	0001                	c.addi	zero,0
 20060b08:	0001                	c.addi	zero,0
 20060b0a:	0001                	c.addi	zero,0
-20060b0c:	7c102773          	csrrs	a4,0x7c1,zero
-20060b10:	10077713          	andi	a4,a4,256
-20060b14:	c70d                	c.beqz	a4,20060b3e <inic_mp_command+0xd4>
-20060b16:	577d                	c.li	a4,-1
-20060b18:	0ae99f63          	bne	s3,a4,20060bd6 <inic_mp_command+0x16c>
-20060b1c:	0b391d63          	bne	s2,s3,20060bd6 <inic_mp_command+0x16c>
-20060b20:	7c0267f3          	csrrsi	a5,0x7c0,4
-20060b24:	0ff0000f          	fence	iorw,iorw
-20060b28:	0001                	c.addi	zero,0
-20060b2a:	0001                	c.addi	zero,0
-20060b2c:	0001                	c.addi	zero,0
-20060b2e:	0001                	c.addi	zero,0
+20060b0c:	0001                	c.addi	zero,0
+20060b0e:	0001                	c.addi	zero,0
+20060b10:	0001                	c.addi	zero,0
+20060b12:	0001                	c.addi	zero,0
+20060b14:	7c102773          	csrrs	a4,0x7c1,zero
+20060b18:	10077713          	andi	a4,a4,256
+20060b1c:	c70d                	c.beqz	a4,20060b46 <inic_mp_command+0xd4>
+20060b1e:	577d                	c.li	a4,-1
+20060b20:	0ae99f63          	bne	s3,a4,20060bde <inic_mp_command+0x16c>
+20060b24:	0b391d63          	bne	s2,s3,20060bde <inic_mp_command+0x16c>
+20060b28:	7c0267f3          	csrrsi	a5,0x7c0,4
+20060b2c:	0ff0000f          	fence	iorw,iorw
 20060b30:	0001                	c.addi	zero,0
 20060b32:	0001                	c.addi	zero,0
 20060b34:	0001                	c.addi	zero,0
@@ -13433,34 +13430,34 @@ Disassembly of section .xip_image2.text:
 20060b38:	0001                	c.addi	zero,0
 20060b3a:	0001                	c.addi	zero,0
 20060b3c:	0001                	c.addi	zero,0
-20060b3e:	650d                	c.lui	a0,0x3
-20060b40:	4611                	c.li	a2,4
-20060b42:	858a                	c.mv	a1,sp
-20060b44:	050d                	c.addi	a0,3
-20060b46:	cadff0ef          	jal	ra,200607f2 <inic_api_host_message_send>
-20060b4a:	060a0863          	beq	s4,zero,20060bba <inic_mp_command+0x150>
-20060b4e:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060b52:	1007f793          	andi	a5,a5,256
-20060b56:	c7a1                	c.beqz	a5,20060b9e <inic_mp_command+0x134>
-20060b58:	01f47713          	andi	a4,s0,31
-20060b5c:	6785                	c.lui	a5,0x1
-20060b5e:	c701                	c.beqz	a4,20060b66 <inic_mp_command+0xfc>
-20060b60:	97ba                	c.add	a5,a4
-20060b62:	fe047493          	andi	s1,s0,-32
-20060b66:	01f4f713          	andi	a4,s1,31
-20060b6a:	973e                	c.add	a4,a5
-20060b6c:	0ff0000f          	fence	iorw,iorw
-20060b70:	87a6                	c.mv	a5,s1
-20060b72:	9726                	c.add	a4,s1
-20060b74:	00f7f00b          	cache	dinv,(a5)
-20060b78:	02078793          	addi	a5,a5,32 # 1020 <CPU_ClkGet+0x50a>
-20060b7c:	40f706b3          	sub	a3,a4,a5
-20060b80:	fed04ae3          	blt	zero,a3,20060b74 <inic_mp_command+0x10a>
-20060b84:	0ff0000f          	fence	iorw,iorw
-20060b88:	0001                	c.addi	zero,0
-20060b8a:	0001                	c.addi	zero,0
-20060b8c:	0001                	c.addi	zero,0
-20060b8e:	0001                	c.addi	zero,0
+20060b3e:	0001                	c.addi	zero,0
+20060b40:	0001                	c.addi	zero,0
+20060b42:	0001                	c.addi	zero,0
+20060b44:	0001                	c.addi	zero,0
+20060b46:	650d                	c.lui	a0,0x3
+20060b48:	4611                	c.li	a2,4
+20060b4a:	858a                	c.mv	a1,sp
+20060b4c:	050d                	c.addi	a0,3
+20060b4e:	cadff0ef          	jal	ra,200607fa <inic_api_host_message_send>
+20060b52:	060a0863          	beq	s4,zero,20060bc2 <inic_mp_command+0x150>
+20060b56:	7c1027f3          	csrrs	a5,0x7c1,zero
+20060b5a:	1007f793          	andi	a5,a5,256
+20060b5e:	c7a1                	c.beqz	a5,20060ba6 <inic_mp_command+0x134>
+20060b60:	01f47713          	andi	a4,s0,31
+20060b64:	6785                	c.lui	a5,0x1
+20060b66:	c701                	c.beqz	a4,20060b6e <inic_mp_command+0xfc>
+20060b68:	97ba                	c.add	a5,a4
+20060b6a:	fe047493          	andi	s1,s0,-32
+20060b6e:	01f4f713          	andi	a4,s1,31
+20060b72:	973e                	c.add	a4,a5
+20060b74:	0ff0000f          	fence	iorw,iorw
+20060b78:	87a6                	c.mv	a5,s1
+20060b7a:	9726                	c.add	a4,s1
+20060b7c:	00f7f00b          	cache	dinv,(a5)
+20060b80:	02078793          	addi	a5,a5,32 # 1020 <CPU_ClkGet+0x50a>
+20060b84:	40f706b3          	sub	a3,a4,a5
+20060b88:	fed04ae3          	blt	zero,a3,20060b7c <inic_mp_command+0x10a>
+20060b8c:	0ff0000f          	fence	iorw,iorw
 20060b90:	0001                	c.addi	zero,0
 20060b92:	0001                	c.addi	zero,0
 20060b94:	0001                	c.addi	zero,0
@@ -13468,122 +13465,122 @@ Disassembly of section .xip_image2.text:
 20060b98:	0001                	c.addi	zero,0
 20060b9a:	0001                	c.addi	zero,0
 20060b9c:	0001                	c.addi	zero,0
-20060b9e:	200656b7          	lui	a3,0x20065
-20060ba2:	200655b7          	lui	a1,0x20065
-20060ba6:	8722                	c.mv	a4,s0
-20060ba8:	8f068693          	addi	a3,a3,-1808 # 200648f0 <register_string+0x16c>
-20060bac:	04100613          	addi	a2,zero,65
-20060bb0:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060bb4:	4505                	c.li	a0,1
-20060bb6:	dd2fa0ef          	jal	ra,2005b188 <rtk_log_write>
-20060bba:	8522                	c.mv	a0,s0
-20060bbc:	b5dfa0ef          	jal	ra,2005b718 <rtos_mem_free>
-20060bc0:	50b2                	c.lwsp	ra,44(sp)
-20060bc2:	5422                	c.lwsp	s0,40(sp)
-20060bc4:	5492                	c.lwsp	s1,36(sp)
-20060bc6:	5902                	c.lwsp	s2,32(sp)
-20060bc8:	49f2                	c.lwsp	s3,28(sp)
-20060bca:	4a62                	c.lwsp	s4,24(sp)
-20060bcc:	6145                	c.addi16sp	sp,48
-20060bce:	8082                	c.jr	ra
-20060bd0:	872a                	c.mv	a4,a0
-20060bd2:	6605                	c.lui	a2,0x1
-20060bd4:	b709                	c.j	20060ad6 <inic_mp_command+0x6c>
-20060bd6:	01f9f713          	andi	a4,s3,31
-20060bda:	c701                	c.beqz	a4,20060be2 <inic_mp_command+0x178>
-20060bdc:	fe09f793          	andi	a5,s3,-32
-20060be0:	993a                	c.add	s2,a4
-20060be2:	f5205ee3          	bge	zero,s2,20060b3e <inic_mp_command+0xd4>
-20060be6:	01f7f593          	andi	a1,a5,31
-20060bea:	992e                	c.add	s2,a1
-20060bec:	0ff0000f          	fence	iorw,iorw
-20060bf0:	993e                	c.add	s2,a5
-20060bf2:	04f7f00b          	cache	dwb,(a5)
-20060bf6:	02078793          	addi	a5,a5,32
-20060bfa:	40f90733          	sub	a4,s2,a5
-20060bfe:	fee04ae3          	blt	zero,a4,20060bf2 <inic_mp_command+0x188>
-20060c02:	b70d                	c.j	20060b24 <inic_mp_command+0xba>
+20060b9e:	0001                	c.addi	zero,0
+20060ba0:	0001                	c.addi	zero,0
+20060ba2:	0001                	c.addi	zero,0
+20060ba4:	0001                	c.addi	zero,0
+20060ba6:	200656b7          	lui	a3,0x20065
+20060baa:	200655b7          	lui	a1,0x20065
+20060bae:	8722                	c.mv	a4,s0
+20060bb0:	8f868693          	addi	a3,a3,-1800 # 200648f8 <register_string+0x16c>
+20060bb4:	04100613          	addi	a2,zero,65
+20060bb8:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060bbc:	4505                	c.li	a0,1
+20060bbe:	dd0fa0ef          	jal	ra,2005b18e <rtk_log_write>
+20060bc2:	8522                	c.mv	a0,s0
+20060bc4:	b5bfa0ef          	jal	ra,2005b71e <rtos_mem_free>
+20060bc8:	50b2                	c.lwsp	ra,44(sp)
+20060bca:	5422                	c.lwsp	s0,40(sp)
+20060bcc:	5492                	c.lwsp	s1,36(sp)
+20060bce:	5902                	c.lwsp	s2,32(sp)
+20060bd0:	49f2                	c.lwsp	s3,28(sp)
+20060bd2:	4a62                	c.lwsp	s4,24(sp)
+20060bd4:	6145                	c.addi16sp	sp,48
+20060bd6:	8082                	c.jr	ra
+20060bd8:	872a                	c.mv	a4,a0
+20060bda:	6605                	c.lui	a2,0x1
+20060bdc:	b709                	c.j	20060ade <inic_mp_command+0x6c>
+20060bde:	01f9f713          	andi	a4,s3,31
+20060be2:	c701                	c.beqz	a4,20060bea <inic_mp_command+0x178>
+20060be4:	fe09f793          	andi	a5,s3,-32
+20060be8:	993a                	c.add	s2,a4
+20060bea:	f5205ee3          	bge	zero,s2,20060b46 <inic_mp_command+0xd4>
+20060bee:	01f7f593          	andi	a1,a5,31
+20060bf2:	992e                	c.add	s2,a1
+20060bf4:	0ff0000f          	fence	iorw,iorw
+20060bf8:	993e                	c.add	s2,a5
+20060bfa:	04f7f00b          	cache	dwb,(a5)
+20060bfe:	02078793          	addi	a5,a5,32
+20060c02:	40f90733          	sub	a4,s2,a5
+20060c06:	fee04ae3          	blt	zero,a4,20060bfa <inic_mp_command+0x188>
+20060c0a:	b70d                	c.j	20060b2c <inic_mp_command+0xba>
 
-20060c04 <inic_host_init>:
-20060c04:	1141                	c.addi	sp,-16
-20060c06:	c606                	c.swsp	ra,12(sp)
-20060c08:	2239                	c.jal	20060d16 <inic_host_init_priv>
-20060c0a:	40b2                	c.lwsp	ra,12(sp)
-20060c0c:	0141                	c.addi	sp,16
-20060c0e:	dd7ff06f          	jal	zero,200609e4 <inic_api_init_host>
+20060c0c <inic_host_init>:
+20060c0c:	1141                	c.addi	sp,-16
+20060c0e:	c606                	c.swsp	ra,12(sp)
+20060c10:	2239                	c.jal	20060d1e <inic_host_init_priv>
+20060c12:	40b2                	c.lwsp	ra,12(sp)
+20060c14:	0141                	c.addi	sp,16
+20060c16:	dd7ff06f          	jal	zero,200609ec <inic_api_init_host>
 
-20060c12 <inic_host_init_skb>:
-20060c12:	1141                	c.addi	sp,-16
-20060c14:	c422                	c.swsp	s0,8(sp)
-20060c16:	fe01a783          	lw	a5,-32(gp) # 20066948 <host_skb_buff>
-20060c1a:	c606                	c.swsp	ra,12(sp)
-20060c1c:	c226                	c.swsp	s1,4(sp)
-20060c1e:	c395                	c.beqz	a5,20060c42 <inic_host_init_skb+0x30>
-20060c20:	4422                	c.lwsp	s0,8(sp)
-20060c22:	40b2                	c.lwsp	ra,12(sp)
-20060c24:	4492                	c.lwsp	s1,4(sp)
-20060c26:	200656b7          	lui	a3,0x20065
-20060c2a:	200655b7          	lui	a1,0x20065
-20060c2e:	90868693          	addi	a3,a3,-1784 # 20064908 <register_string+0x184>
-20060c32:	04500613          	addi	a2,zero,69
-20060c36:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060c3a:	4509                	c.li	a0,2
-20060c3c:	0141                	c.addi	sp,16
-20060c3e:	d4afa06f          	jal	zero,2005b188 <rtk_log_write>
-20060c42:	66000793          	addi	a5,zero,1632
-20060c46:	fe418713          	addi	a4,gp,-28 # 2006694c <skb_buf_max_size>
-20060c4a:	c31c                	c.sw	a5,0(a4)
-20060c4c:	41818793          	addi	a5,gp,1048 # 20066d80 <wifi_user_config>
-20060c50:	579c                	c.lw	a5,40(a5)
-20060c52:	fe018413          	addi	s0,gp,-32 # 20066948 <host_skb_buff>
-20060c56:	41818493          	addi	s1,gp,1048 # 20066d80 <wifi_user_config>
-20060c5a:	c781                	c.beqz	a5,20060c62 <inic_host_init_skb+0x50>
-20060c5c:	07fd                	c.addi	a5,31
-20060c5e:	9b81                	c.andi	a5,-32
-20060c60:	c31c                	c.sw	a5,0(a4)
-20060c62:	50dc                	c.lw	a5,36(s1)
-20060c64:	6c000513          	addi	a0,zero,1728
-20060c68:	02f50533          	mul	a0,a0,a5
-20060c6c:	a87fa0ef          	jal	ra,2005b6f2 <rtos_mem_zmalloc>
-20060c70:	c008                	c.sw	a0,0(s0)
-20060c72:	e115                	c.bnez	a0,20060c96 <inic_host_init_skb+0x84>
-20060c74:	20065737          	lui	a4,0x20065
-20060c78:	200656b7          	lui	a3,0x20065
-20060c7c:	200655b7          	lui	a1,0x20065
-20060c80:	95470713          	addi	a4,a4,-1708 # 20064954 <__func__.1>
-20060c84:	92068693          	addi	a3,a3,-1760 # 20064920 <register_string+0x19c>
-20060c88:	04500613          	addi	a2,zero,69
-20060c8c:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060c90:	4509                	c.li	a0,2
-20060c92:	cf6fa0ef          	jal	ra,2005b188 <rtk_log_write>
-20060c96:	4681                	c.li	a3,0
-20060c98:	6c000613          	addi	a2,zero,1728
-20060c9c:	50d8                	c.lw	a4,36(s1)
-20060c9e:	401c                	c.lw	a5,0(s0)
-20060ca0:	06e6c263          	blt	a3,a4,20060d04 <inic_host_init_skb+0xf2>
-20060ca4:	7c1026f3          	csrrs	a3,0x7c1,zero
-20060ca8:	1006f693          	andi	a3,a3,256
-20060cac:	c6b9                	c.beqz	a3,20060cfa <inic_host_init_skb+0xe8>
-20060cae:	6c000693          	addi	a3,zero,1728
-20060cb2:	02d70733          	mul	a4,a4,a3
-20060cb6:	01f7f693          	andi	a3,a5,31
-20060cba:	c299                	c.beqz	a3,20060cc0 <inic_host_init_skb+0xae>
-20060cbc:	9b81                	c.andi	a5,-32
-20060cbe:	9736                	c.add	a4,a3
-20060cc0:	02e05d63          	bge	zero,a4,20060cfa <inic_host_init_skb+0xe8>
-20060cc4:	01f7f693          	andi	a3,a5,31
-20060cc8:	9736                	c.add	a4,a3
-20060cca:	0ff0000f          	fence	iorw,iorw
-20060cce:	973e                	c.add	a4,a5
-20060cd0:	04f7f00b          	cache	dwb,(a5)
-20060cd4:	02078793          	addi	a5,a5,32
-20060cd8:	40f706b3          	sub	a3,a4,a5
-20060cdc:	fed04ae3          	blt	zero,a3,20060cd0 <inic_host_init_skb+0xbe>
-20060ce0:	0ff0000f          	fence	iorw,iorw
-20060ce4:	0001                	c.addi	zero,0
-20060ce6:	0001                	c.addi	zero,0
-20060ce8:	0001                	c.addi	zero,0
-20060cea:	0001                	c.addi	zero,0
+20060c1a <inic_host_init_skb>:
+20060c1a:	1141                	c.addi	sp,-16
+20060c1c:	c422                	c.swsp	s0,8(sp)
+20060c1e:	fe01a783          	lw	a5,-32(gp) # 20066968 <host_skb_buff>
+20060c22:	c606                	c.swsp	ra,12(sp)
+20060c24:	c226                	c.swsp	s1,4(sp)
+20060c26:	c395                	c.beqz	a5,20060c4a <inic_host_init_skb+0x30>
+20060c28:	4422                	c.lwsp	s0,8(sp)
+20060c2a:	40b2                	c.lwsp	ra,12(sp)
+20060c2c:	4492                	c.lwsp	s1,4(sp)
+20060c2e:	200656b7          	lui	a3,0x20065
+20060c32:	200655b7          	lui	a1,0x20065
+20060c36:	91068693          	addi	a3,a3,-1776 # 20064910 <register_string+0x184>
+20060c3a:	04500613          	addi	a2,zero,69
+20060c3e:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060c42:	4509                	c.li	a0,2
+20060c44:	0141                	c.addi	sp,16
+20060c46:	d48fa06f          	jal	zero,2005b18e <rtk_log_write>
+20060c4a:	66000793          	addi	a5,zero,1632
+20060c4e:	fe418713          	addi	a4,gp,-28 # 2006696c <skb_buf_max_size>
+20060c52:	c31c                	c.sw	a5,0(a4)
+20060c54:	43818793          	addi	a5,gp,1080 # 20066dc0 <wifi_user_config>
+20060c58:	57dc                	c.lw	a5,44(a5)
+20060c5a:	fe018413          	addi	s0,gp,-32 # 20066968 <host_skb_buff>
+20060c5e:	43818493          	addi	s1,gp,1080 # 20066dc0 <wifi_user_config>
+20060c62:	c781                	c.beqz	a5,20060c6a <inic_host_init_skb+0x50>
+20060c64:	07fd                	c.addi	a5,31
+20060c66:	9b81                	c.andi	a5,-32
+20060c68:	c31c                	c.sw	a5,0(a4)
+20060c6a:	549c                	c.lw	a5,40(s1)
+20060c6c:	6c000513          	addi	a0,zero,1728
+20060c70:	02f50533          	mul	a0,a0,a5
+20060c74:	a85fa0ef          	jal	ra,2005b6f8 <rtos_mem_zmalloc>
+20060c78:	c008                	c.sw	a0,0(s0)
+20060c7a:	e115                	c.bnez	a0,20060c9e <inic_host_init_skb+0x84>
+20060c7c:	20065737          	lui	a4,0x20065
+20060c80:	200656b7          	lui	a3,0x20065
+20060c84:	200655b7          	lui	a1,0x20065
+20060c88:	95c70713          	addi	a4,a4,-1700 # 2006495c <__func__.1>
+20060c8c:	92868693          	addi	a3,a3,-1752 # 20064928 <register_string+0x19c>
+20060c90:	04500613          	addi	a2,zero,69
+20060c94:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060c98:	4509                	c.li	a0,2
+20060c9a:	cf4fa0ef          	jal	ra,2005b18e <rtk_log_write>
+20060c9e:	4681                	c.li	a3,0
+20060ca0:	6c000613          	addi	a2,zero,1728
+20060ca4:	5498                	c.lw	a4,40(s1)
+20060ca6:	401c                	c.lw	a5,0(s0)
+20060ca8:	06e6c263          	blt	a3,a4,20060d0c <inic_host_init_skb+0xf2>
+20060cac:	7c1026f3          	csrrs	a3,0x7c1,zero
+20060cb0:	1006f693          	andi	a3,a3,256
+20060cb4:	c6b9                	c.beqz	a3,20060d02 <inic_host_init_skb+0xe8>
+20060cb6:	6c000693          	addi	a3,zero,1728
+20060cba:	02d70733          	mul	a4,a4,a3
+20060cbe:	01f7f693          	andi	a3,a5,31
+20060cc2:	c299                	c.beqz	a3,20060cc8 <inic_host_init_skb+0xae>
+20060cc4:	9b81                	c.andi	a5,-32
+20060cc6:	9736                	c.add	a4,a3
+20060cc8:	02e05d63          	bge	zero,a4,20060d02 <inic_host_init_skb+0xe8>
+20060ccc:	01f7f693          	andi	a3,a5,31
+20060cd0:	9736                	c.add	a4,a3
+20060cd2:	0ff0000f          	fence	iorw,iorw
+20060cd6:	973e                	c.add	a4,a5
+20060cd8:	04f7f00b          	cache	dwb,(a5)
+20060cdc:	02078793          	addi	a5,a5,32
+20060ce0:	40f706b3          	sub	a3,a4,a5
+20060ce4:	fed04ae3          	blt	zero,a3,20060cd8 <inic_host_init_skb+0xbe>
+20060ce8:	0ff0000f          	fence	iorw,iorw
 20060cec:	0001                	c.addi	zero,0
 20060cee:	0001                	c.addi	zero,0
 20060cf0:	0001                	c.addi	zero,0
@@ -13591,99 +13588,99 @@ Disassembly of section .xip_image2.text:
 20060cf4:	0001                	c.addi	zero,0
 20060cf6:	0001                	c.addi	zero,0
 20060cf8:	0001                	c.addi	zero,0
-20060cfa:	40b2                	c.lwsp	ra,12(sp)
-20060cfc:	4422                	c.lwsp	s0,8(sp)
-20060cfe:	4492                	c.lwsp	s1,4(sp)
-20060d00:	0141                	c.addi	sp,16
-20060d02:	8082                	c.jr	ra
-20060d04:	02c68733          	mul	a4,a3,a2
-20060d08:	0685                	c.addi	a3,1
-20060d0a:	97ba                	c.add	a5,a4
-20060d0c:	c39c                	c.sw	a5,0(a5)
-20060d0e:	401c                	c.lw	a5,0(s0)
-20060d10:	97ba                	c.add	a5,a4
-20060d12:	c3dc                	c.sw	a5,4(a5)
-20060d14:	b761                	c.j	20060c9c <inic_host_init_skb+0x8a>
+20060cfa:	0001                	c.addi	zero,0
+20060cfc:	0001                	c.addi	zero,0
+20060cfe:	0001                	c.addi	zero,0
+20060d00:	0001                	c.addi	zero,0
+20060d02:	40b2                	c.lwsp	ra,12(sp)
+20060d04:	4422                	c.lwsp	s0,8(sp)
+20060d06:	4492                	c.lwsp	s1,4(sp)
+20060d08:	0141                	c.addi	sp,16
+20060d0a:	8082                	c.jr	ra
+20060d0c:	02c68733          	mul	a4,a3,a2
+20060d10:	0685                	c.addi	a3,1
+20060d12:	97ba                	c.add	a5,a4
+20060d14:	c39c                	c.sw	a5,0(a5)
+20060d16:	401c                	c.lw	a5,0(s0)
+20060d18:	97ba                	c.add	a5,a4
+20060d1a:	c3dc                	c.sw	a5,4(a5)
+20060d1c:	b761                	c.j	20060ca4 <inic_host_init_skb+0x8a>
 
-20060d16 <inic_host_init_priv>:
-20060d16:	1141                	c.addi	sp,-16
-20060d18:	c226                	c.swsp	s1,4(sp)
-20060d1a:	200684b7          	lui	s1,0x20068
-20060d1e:	02800613          	addi	a2,zero,40
-20060d22:	4581                	c.li	a1,0
-20060d24:	74048513          	addi	a0,s1,1856 # 20068740 <g_inic_host_priv>
-20060d28:	c606                	c.swsp	ra,12(sp)
-20060d2a:	c422                	c.swsp	s0,8(sp)
-20060d2c:	dffa9097          	auipc	ra,0xdffa9
-20060d30:	da2080e7          	jalr	ra,-606(ra) # 9ace <__wrap_memset>
-20060d34:	567d                	c.li	a2,-1
-20060d36:	4581                	c.li	a1,0
-20060d38:	74048513          	addi	a0,s1,1856
-20060d3c:	74048413          	addi	s0,s1,1856
-20060d40:	b5ffa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-20060d44:	567d                	c.li	a2,-1
-20060d46:	4581                	c.li	a1,0
-20060d48:	00440513          	addi	a0,s0,4
-20060d4c:	b53fa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-20060d50:	567d                	c.li	a2,-1
-20060d52:	4581                	c.li	a1,0
-20060d54:	00840513          	addi	a0,s0,8
-20060d58:	b47fa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-20060d5c:	4408                	c.lw	a0,8(s0)
-20060d5e:	c0bfa0ef          	jal	ra,2005b968 <rtos_sema_give>
-20060d62:	00c40513          	addi	a0,s0,12
-20060d66:	2ea5                	c.jal	200610de <rtw_init_queue>
-20060d68:	40b2                	c.lwsp	ra,12(sp)
-20060d6a:	00042c23          	sw	zero,24(s0)
-20060d6e:	00042e23          	sw	zero,28(s0)
-20060d72:	02042023          	sw	zero,32(s0)
-20060d76:	02042223          	sw	zero,36(s0)
-20060d7a:	4422                	c.lwsp	s0,8(sp)
-20060d7c:	4492                	c.lwsp	s1,4(sp)
-20060d7e:	0141                	c.addi	sp,16
-20060d80:	8082                	c.jr	ra
+20060d1e <inic_host_init_priv>:
+20060d1e:	1141                	c.addi	sp,-16
+20060d20:	c226                	c.swsp	s1,4(sp)
+20060d22:	200684b7          	lui	s1,0x20068
+20060d26:	02800613          	addi	a2,zero,40
+20060d2a:	4581                	c.li	a1,0
+20060d2c:	78048513          	addi	a0,s1,1920 # 20068780 <g_inic_host_priv>
+20060d30:	c606                	c.swsp	ra,12(sp)
+20060d32:	c422                	c.swsp	s0,8(sp)
+20060d34:	dffa9097          	auipc	ra,0xdffa9
+20060d38:	d9a080e7          	jalr	ra,-614(ra) # 9ace <__wrap_memset>
+20060d3c:	567d                	c.li	a2,-1
+20060d3e:	4581                	c.li	a1,0
+20060d40:	78048513          	addi	a0,s1,1920
+20060d44:	78048413          	addi	s0,s1,1920
+20060d48:	b5dfa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+20060d4c:	567d                	c.li	a2,-1
+20060d4e:	4581                	c.li	a1,0
+20060d50:	00440513          	addi	a0,s0,4
+20060d54:	b51fa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+20060d58:	567d                	c.li	a2,-1
+20060d5a:	4581                	c.li	a1,0
+20060d5c:	00840513          	addi	a0,s0,8
+20060d60:	b45fa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+20060d64:	4408                	c.lw	a0,8(s0)
+20060d66:	c09fa0ef          	jal	ra,2005b96e <rtos_sema_give>
+20060d6a:	00c40513          	addi	a0,s0,12
+20060d6e:	2ea5                	c.jal	200610e6 <rtw_init_queue>
+20060d70:	40b2                	c.lwsp	ra,12(sp)
+20060d72:	00042c23          	sw	zero,24(s0)
+20060d76:	00042e23          	sw	zero,28(s0)
+20060d7a:	02042023          	sw	zero,32(s0)
+20060d7e:	02042223          	sw	zero,36(s0)
+20060d82:	4422                	c.lwsp	s0,8(sp)
+20060d84:	4492                	c.lwsp	s1,4(sp)
+20060d86:	0141                	c.addi	sp,16
+20060d88:	8082                	c.jr	ra
 
-20060d82 <inic_host_trx_event_hdl>:
-20060d82:	4791                	c.li	a5,4
-20060d84:	872a                	c.mv	a4,a0
-20060d86:	00f50f63          	beq	a0,a5,20060da4 <inic_host_trx_event_hdl+0x22>
-20060d8a:	200656b7          	lui	a3,0x20065
-20060d8e:	200655b7          	lui	a1,0x20065
-20060d92:	93868693          	addi	a3,a3,-1736 # 20064938 <register_string+0x1b4>
-20060d96:	04500613          	addi	a2,zero,69
-20060d9a:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060d9e:	4509                	c.li	a0,2
-20060da0:	be8fa06f          	jal	zero,2005b188 <rtk_log_write>
-20060da4:	8082                	c.jr	ra
+20060d8a <inic_host_trx_event_hdl>:
+20060d8a:	4791                	c.li	a5,4
+20060d8c:	872a                	c.mv	a4,a0
+20060d8e:	00f50f63          	beq	a0,a5,20060dac <inic_host_trx_event_hdl+0x22>
+20060d92:	200656b7          	lui	a3,0x20065
+20060d96:	200655b7          	lui	a1,0x20065
+20060d9a:	94068693          	addi	a3,a3,-1728 # 20064940 <register_string+0x1b4>
+20060d9e:	04500613          	addi	a2,zero,69
+20060da2:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060da6:	4509                	c.li	a0,2
+20060da8:	be6fa06f          	jal	zero,2005b18e <rtk_log_write>
+20060dac:	8082                	c.jr	ra
 
-20060da6 <inic_host_trx_int_hdl>:
-20060da6:	1141                	c.addi	sp,-16
-20060da8:	4599                	c.li	a1,6
-20060daa:	4541                	c.li	a0,16
-20060dac:	c422                	c.swsp	s0,8(sp)
-20060dae:	c606                	c.swsp	ra,12(sp)
-20060db0:	b40f80ef          	jal	ra,200590f0 <ipc_get_message>
-20060db4:	4140                	c.lw	s0,4(a0)
-20060db6:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060dba:	1007f793          	andi	a5,a5,256
-20060dbe:	c3b9                	c.beqz	a5,20060e04 <inic_host_trx_int_hdl+0x5e>
-20060dc0:	01f47713          	andi	a4,s0,31
-20060dc4:	c755                	c.beqz	a4,20060e70 <inic_host_trx_int_hdl+0xca>
-20060dc6:	04070693          	addi	a3,a4,64
-20060dca:	fe047793          	andi	a5,s0,-32
-20060dce:	01f7f713          	andi	a4,a5,31
-20060dd2:	9736                	c.add	a4,a3
-20060dd4:	0ff0000f          	fence	iorw,iorw
-20060dd8:	973e                	c.add	a4,a5
-20060dda:	00f7f00b          	cache	dinv,(a5)
-20060dde:	02078793          	addi	a5,a5,32
-20060de2:	40f706b3          	sub	a3,a4,a5
-20060de6:	fed04ae3          	blt	zero,a3,20060dda <inic_host_trx_int_hdl+0x34>
-20060dea:	0ff0000f          	fence	iorw,iorw
-20060dee:	0001                	c.addi	zero,0
-20060df0:	0001                	c.addi	zero,0
-20060df2:	0001                	c.addi	zero,0
-20060df4:	0001                	c.addi	zero,0
+20060dae <inic_host_trx_int_hdl>:
+20060dae:	1141                	c.addi	sp,-16
+20060db0:	4599                	c.li	a1,6
+20060db2:	4541                	c.li	a0,16
+20060db4:	c422                	c.swsp	s0,8(sp)
+20060db6:	c606                	c.swsp	ra,12(sp)
+20060db8:	b38f80ef          	jal	ra,200590f0 <ipc_get_message>
+20060dbc:	4140                	c.lw	s0,4(a0)
+20060dbe:	7c1027f3          	csrrs	a5,0x7c1,zero
+20060dc2:	1007f793          	andi	a5,a5,256
+20060dc6:	c3b9                	c.beqz	a5,20060e0c <inic_host_trx_int_hdl+0x5e>
+20060dc8:	01f47713          	andi	a4,s0,31
+20060dcc:	c755                	c.beqz	a4,20060e78 <inic_host_trx_int_hdl+0xca>
+20060dce:	04070693          	addi	a3,a4,64
+20060dd2:	fe047793          	andi	a5,s0,-32
+20060dd6:	01f7f713          	andi	a4,a5,31
+20060dda:	9736                	c.add	a4,a3
+20060ddc:	0ff0000f          	fence	iorw,iorw
+20060de0:	973e                	c.add	a4,a5
+20060de2:	00f7f00b          	cache	dinv,(a5)
+20060de6:	02078793          	addi	a5,a5,32
+20060dea:	40f706b3          	sub	a3,a4,a5
+20060dee:	fed04ae3          	blt	zero,a3,20060de2 <inic_host_trx_int_hdl+0x34>
+20060df2:	0ff0000f          	fence	iorw,iorw
 20060df6:	0001                	c.addi	zero,0
 20060df8:	0001                	c.addi	zero,0
 20060dfa:	0001                	c.addi	zero,0
@@ -13691,35 +13688,35 @@ Disassembly of section .xip_image2.text:
 20060dfe:	0001                	c.addi	zero,0
 20060e00:	0001                	c.addi	zero,0
 20060e02:	0001                	c.addi	zero,0
-20060e04:	2455                	c.jal	200610a8 <inic_msg_get_queue_status>
-20060e06:	c92d                	c.beqz	a0,20060e78 <inic_host_trx_int_hdl+0xd2>
-20060e08:	8522                	c.mv	a0,s0
-20060e0a:	2af1                	c.jal	20060fe6 <inic_msg_enqueue>
-20060e0c:	157d                	c.addi	a0,-1
-20060e0e:	00a03533          	sltu	a0,zero,a0
-20060e12:	c408                	c.sw	a0,8(s0)
-20060e14:	00042023          	sw	zero,0(s0)
-20060e18:	7c1027f3          	csrrs	a5,0x7c1,zero
-20060e1c:	1007f793          	andi	a5,a5,256
-20060e20:	c7a1                	c.beqz	a5,20060e68 <inic_host_trx_int_hdl+0xc2>
-20060e22:	01f47793          	andi	a5,s0,31
-20060e26:	04000713          	addi	a4,zero,64
-20060e2a:	c781                	c.beqz	a5,20060e32 <inic_host_trx_int_hdl+0x8c>
-20060e2c:	04078713          	addi	a4,a5,64
-20060e30:	9801                	c.andi	s0,-32
-20060e32:	01f47793          	andi	a5,s0,31
-20060e36:	97ba                	c.add	a5,a4
-20060e38:	0ff0000f          	fence	iorw,iorw
-20060e3c:	97a2                	c.add	a5,s0
-20060e3e:	0484700b          	cache	dwb,(s0)
-20060e42:	02040413          	addi	s0,s0,32
-20060e46:	40878733          	sub	a4,a5,s0
-20060e4a:	fee04ae3          	blt	zero,a4,20060e3e <inic_host_trx_int_hdl+0x98>
-20060e4e:	0ff0000f          	fence	iorw,iorw
-20060e52:	0001                	c.addi	zero,0
-20060e54:	0001                	c.addi	zero,0
-20060e56:	0001                	c.addi	zero,0
-20060e58:	0001                	c.addi	zero,0
+20060e04:	0001                	c.addi	zero,0
+20060e06:	0001                	c.addi	zero,0
+20060e08:	0001                	c.addi	zero,0
+20060e0a:	0001                	c.addi	zero,0
+20060e0c:	2455                	c.jal	200610b0 <inic_msg_get_queue_status>
+20060e0e:	c92d                	c.beqz	a0,20060e80 <inic_host_trx_int_hdl+0xd2>
+20060e10:	8522                	c.mv	a0,s0
+20060e12:	2af1                	c.jal	20060fee <inic_msg_enqueue>
+20060e14:	157d                	c.addi	a0,-1
+20060e16:	00a03533          	sltu	a0,zero,a0
+20060e1a:	c408                	c.sw	a0,8(s0)
+20060e1c:	00042023          	sw	zero,0(s0)
+20060e20:	7c1027f3          	csrrs	a5,0x7c1,zero
+20060e24:	1007f793          	andi	a5,a5,256
+20060e28:	c7a1                	c.beqz	a5,20060e70 <inic_host_trx_int_hdl+0xc2>
+20060e2a:	01f47793          	andi	a5,s0,31
+20060e2e:	04000713          	addi	a4,zero,64
+20060e32:	c781                	c.beqz	a5,20060e3a <inic_host_trx_int_hdl+0x8c>
+20060e34:	04078713          	addi	a4,a5,64
+20060e38:	9801                	c.andi	s0,-32
+20060e3a:	01f47793          	andi	a5,s0,31
+20060e3e:	97ba                	c.add	a5,a4
+20060e40:	0ff0000f          	fence	iorw,iorw
+20060e44:	97a2                	c.add	a5,s0
+20060e46:	0484700b          	cache	dwb,(s0)
+20060e4a:	02040413          	addi	s0,s0,32
+20060e4e:	40878733          	sub	a4,a5,s0
+20060e52:	fee04ae3          	blt	zero,a4,20060e46 <inic_host_trx_int_hdl+0x98>
+20060e56:	0ff0000f          	fence	iorw,iorw
 20060e5a:	0001                	c.addi	zero,0
 20060e5c:	0001                	c.addi	zero,0
 20060e5e:	0001                	c.addi	zero,0
@@ -13727,3467 +13724,3474 @@ Disassembly of section .xip_image2.text:
 20060e62:	0001                	c.addi	zero,0
 20060e64:	0001                	c.addi	zero,0
 20060e66:	0001                	c.addi	zero,0
-20060e68:	40b2                	c.lwsp	ra,12(sp)
-20060e6a:	4422                	c.lwsp	s0,8(sp)
-20060e6c:	0141                	c.addi	sp,16
-20060e6e:	8082                	c.jr	ra
-20060e70:	87a2                	c.mv	a5,s0
-20060e72:	04000693          	addi	a3,zero,64
-20060e76:	bfa1                	c.j	20060dce <inic_host_trx_int_hdl+0x28>
-20060e78:	00044503          	lbu	a0,0(s0)
-20060e7c:	00c44603          	lbu	a2,12(s0)
-20060e80:	404c                	c.lw	a1,4(s0)
-20060e82:	f01ff0ef          	jal	ra,20060d82 <inic_host_trx_event_hdl>
-20060e86:	4501                	c.li	a0,0
-20060e88:	b769                	c.j	20060e12 <inic_host_trx_int_hdl+0x6c>
+20060e68:	0001                	c.addi	zero,0
+20060e6a:	0001                	c.addi	zero,0
+20060e6c:	0001                	c.addi	zero,0
+20060e6e:	0001                	c.addi	zero,0
+20060e70:	40b2                	c.lwsp	ra,12(sp)
+20060e72:	4422                	c.lwsp	s0,8(sp)
+20060e74:	0141                	c.addi	sp,16
+20060e76:	8082                	c.jr	ra
+20060e78:	87a2                	c.mv	a5,s0
+20060e7a:	04000693          	addi	a3,zero,64
+20060e7e:	bfa1                	c.j	20060dd6 <inic_host_trx_int_hdl+0x28>
+20060e80:	00044503          	lbu	a0,0(s0)
+20060e84:	00c44603          	lbu	a2,12(s0)
+20060e88:	404c                	c.lw	a1,4(s0)
+20060e8a:	f01ff0ef          	jal	ra,20060d8a <inic_host_trx_event_hdl>
+20060e8e:	4501                	c.li	a0,0
+20060e90:	b769                	c.j	20060e1a <inic_host_trx_int_hdl+0x6c>
 
-20060e8a <inic_msg_q_task>:
-20060e8a:	1101                	c.addi	sp,-32
-20060e8c:	cc22                	c.swsp	s0,24(sp)
-20060e8e:	20068437          	lui	s0,0x20068
-20060e92:	c84a                	c.swsp	s2,16(sp)
-20060e94:	c64e                	c.swsp	s3,12(sp)
-20060e96:	7c040913          	addi	s2,s0,1984 # 200687c0 <g_ipc_msg_q_priv>
-20060e9a:	ce06                	c.swsp	ra,28(sp)
-20060e9c:	ca26                	c.swsp	s1,20(sp)
-20060e9e:	7c040413          	addi	s0,s0,1984
-20060ea2:	4985                	c.li	s3,1
-20060ea4:	00c92503          	lw	a0,12(s2)
-20060ea8:	55fd                	c.li	a1,-1
-20060eaa:	a73fa0ef          	jal	ra,2005b91c <rtos_sema_take>
-20060eae:	ff4fa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-20060eb2:	8522                	c.mv	a0,s0
-20060eb4:	2c25                	c.jal	200610ec <rtw_queue_empty>
-20060eb6:	03351063          	bne	a0,s3,20060ed6 <inic_msg_q_task+0x4c>
-20060eba:	80dfa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-20060ebe:	01444783          	lbu	a5,20(s0)
-20060ec2:	f3ed                	c.bnez	a5,20060ea4 <inic_msg_q_task+0x1a>
-20060ec4:	4462                	c.lwsp	s0,24(sp)
-20060ec6:	40f2                	c.lwsp	ra,28(sp)
-20060ec8:	44d2                	c.lwsp	s1,20(sp)
-20060eca:	4942                	c.lwsp	s2,16(sp)
-20060ecc:	49b2                	c.lwsp	s3,12(sp)
-20060ece:	4501                	c.li	a0,0
-20060ed0:	6105                	c.addi16sp	sp,32
-20060ed2:	d0ffa06f          	jal	zero,2005bbe0 <rtos_task_delete>
-20060ed6:	4004                	c.lw	s1,0(s0)
-20060ed8:	8526                	c.mv	a0,s1
-20060eda:	2add                	c.jal	200610d0 <rtw_list_delete>
-20060edc:	feafa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-20060ee0:	dcf9                	c.beqz	s1,20060ebe <inic_msg_q_task+0x34>
-20060ee2:	44c8                	c.lw	a0,12(s1)
-20060ee4:	448c                	c.lw	a1,8(s1)
-20060ee6:	00155613          	srli	a2,a0,0x1
-20060eea:	810d                	c.srli	a0,0x3
-20060eec:	8a0d                	c.andi	a2,3
-20060eee:	897d                	c.andi	a0,31
-20060ef0:	e93ff0ef          	jal	ra,20060d82 <inic_host_trx_event_hdl>
-20060ef4:	faefa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-20060ef8:	00c4c783          	lbu	a5,12(s1)
-20060efc:	9bf9                	c.andi	a5,-2
-20060efe:	00f48623          	sb	a5,12(s1)
-20060f02:	fc4fa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-20060f06:	b765                	c.j	20060eae <inic_msg_q_task+0x24>
+20060e92 <inic_msg_q_task>:
+20060e92:	1101                	c.addi	sp,-32
+20060e94:	cc22                	c.swsp	s0,24(sp)
+20060e96:	20069437          	lui	s0,0x20069
+20060e9a:	c84a                	c.swsp	s2,16(sp)
+20060e9c:	c64e                	c.swsp	s3,12(sp)
+20060e9e:	80040913          	addi	s2,s0,-2048 # 20068800 <g_ipc_msg_q_priv>
+20060ea2:	ce06                	c.swsp	ra,28(sp)
+20060ea4:	ca26                	c.swsp	s1,20(sp)
+20060ea6:	80040413          	addi	s0,s0,-2048
+20060eaa:	4985                	c.li	s3,1
+20060eac:	00c92503          	lw	a0,12(s2)
+20060eb0:	55fd                	c.li	a1,-1
+20060eb2:	a71fa0ef          	jal	ra,2005b922 <rtos_sema_take>
+20060eb6:	ff2fa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+20060eba:	8522                	c.mv	a0,s0
+20060ebc:	2c25                	c.jal	200610f4 <rtw_queue_empty>
+20060ebe:	03351063          	bne	a0,s3,20060ede <inic_msg_q_task+0x4c>
+20060ec2:	80bfa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+20060ec6:	01444783          	lbu	a5,20(s0)
+20060eca:	f3ed                	c.bnez	a5,20060eac <inic_msg_q_task+0x1a>
+20060ecc:	4462                	c.lwsp	s0,24(sp)
+20060ece:	40f2                	c.lwsp	ra,28(sp)
+20060ed0:	44d2                	c.lwsp	s1,20(sp)
+20060ed2:	4942                	c.lwsp	s2,16(sp)
+20060ed4:	49b2                	c.lwsp	s3,12(sp)
+20060ed6:	4501                	c.li	a0,0
+20060ed8:	6105                	c.addi16sp	sp,32
+20060eda:	d0dfa06f          	jal	zero,2005bbe6 <rtos_task_delete>
+20060ede:	4004                	c.lw	s1,0(s0)
+20060ee0:	8526                	c.mv	a0,s1
+20060ee2:	2add                	c.jal	200610d8 <rtw_list_delete>
+20060ee4:	fe8fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+20060ee8:	dcf9                	c.beqz	s1,20060ec6 <inic_msg_q_task+0x34>
+20060eea:	44c8                	c.lw	a0,12(s1)
+20060eec:	448c                	c.lw	a1,8(s1)
+20060eee:	00155613          	srli	a2,a0,0x1
+20060ef2:	810d                	c.srli	a0,0x3
+20060ef4:	8a0d                	c.andi	a2,3
+20060ef6:	897d                	c.andi	a0,31
+20060ef8:	e93ff0ef          	jal	ra,20060d8a <inic_host_trx_event_hdl>
+20060efc:	facfa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+20060f00:	00c4c783          	lbu	a5,12(s1)
+20060f04:	9bf9                	c.andi	a5,-2
+20060f06:	00f48623          	sb	a5,12(s1)
+20060f0a:	fc2fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+20060f0e:	b765                	c.j	20060eb6 <inic_msg_q_task+0x24>
 
-20060f08 <inic_msg_q_init>:
-20060f08:	1141                	c.addi	sp,-16
-20060f0a:	c422                	c.swsp	s0,8(sp)
-20060f0c:	20068437          	lui	s0,0x20068
-20060f10:	02000613          	addi	a2,zero,32
-20060f14:	4581                	c.li	a1,0
-20060f16:	7c040513          	addi	a0,s0,1984 # 200687c0 <g_ipc_msg_q_priv>
-20060f1a:	c606                	c.swsp	ra,12(sp)
-20060f1c:	c226                	c.swsp	s1,4(sp)
-20060f1e:	dffa9097          	auipc	ra,0xdffa9
-20060f22:	bb0080e7          	jalr	ra,-1104(ra) # 9ace <__wrap_memset>
-20060f26:	20068537          	lui	a0,0x20068
-20060f2a:	04000613          	addi	a2,zero,64
-20060f2e:	4581                	c.li	a1,0
-20060f30:	78050513          	addi	a0,a0,1920 # 20068780 <g_inic_ipc_ex_msg>
-20060f34:	dffa9097          	auipc	ra,0xdffa9
-20060f38:	b9a080e7          	jalr	ra,-1126(ra) # 9ace <__wrap_memset>
-20060f3c:	7c040513          	addi	a0,s0,1984
-20060f40:	7c040493          	addi	s1,s0,1984
-20060f44:	2a69                	c.jal	200610de <rtw_init_queue>
-20060f46:	567d                	c.li	a2,-1
-20060f48:	4581                	c.li	a1,0
-20060f4a:	00c48513          	addi	a0,s1,12
-20060f4e:	951fa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-20060f52:	567d                	c.li	a2,-1
-20060f54:	4581                	c.li	a1,0
-20060f56:	01048513          	addi	a0,s1,16
-20060f5a:	945fa0ef          	jal	ra,2005b89e <rtos_sema_create_static>
-20060f5e:	4888                	c.lw	a0,16(s1)
-20060f60:	7c040413          	addi	s0,s0,1984
-20060f64:	a05fa0ef          	jal	ra,2005b968 <rtos_sema_give>
-20060f68:	4381a503          	lw	a0,1080(gp) # 20066da0 <wifi_user_config+0x20>
-20060f6c:	00a48e23          	sb	a0,28(s1)
-20060f70:	0ff57513          	andi	a0,a0,255
-20060f74:	0512                	c.slli	a0,0x4
-20060f76:	f7cfa0ef          	jal	ra,2005b6f2 <rtos_mem_zmalloc>
-20060f7a:	cc88                	c.sw	a0,24(s1)
-20060f7c:	4781                	c.li	a5,0
-20060f7e:	01c44703          	lbu	a4,28(s0)
-20060f82:	04e7c763          	blt	a5,a4,20060fd0 <inic_msg_q_init+0xc8>
-20060f86:	20061637          	lui	a2,0x20061
-20060f8a:	200655b7          	lui	a1,0x20065
-20060f8e:	4799                	c.li	a5,6
-20060f90:	41800713          	addi	a4,zero,1048
-20060f94:	4681                	c.li	a3,0
-20060f96:	e8a60613          	addi	a2,a2,-374 # 20060e8a <inic_msg_q_task>
-20060f9a:	96858593          	addi	a1,a1,-1688 # 20064968 <__func__.1+0x14>
-20060f9e:	4501                	c.li	a0,0
-20060fa0:	c1dfa0ef          	jal	ra,2005bbbc <rtos_task_create>
-20060fa4:	cd11                	c.beqz	a0,20060fc0 <inic_msg_q_init+0xb8>
-20060fa6:	200656b7          	lui	a3,0x20065
-20060faa:	200655b7          	lui	a1,0x20065
-20060fae:	97868693          	addi	a3,a3,-1672 # 20064978 <__func__.1+0x24>
-20060fb2:	04500613          	addi	a2,zero,69
-20060fb6:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20060fba:	4509                	c.li	a0,2
-20060fbc:	9ccfa0ef          	jal	ra,2005b188 <rtk_log_write>
-20060fc0:	4785                	c.li	a5,1
-20060fc2:	40b2                	c.lwsp	ra,12(sp)
-20060fc4:	00f40a23          	sb	a5,20(s0)
-20060fc8:	4422                	c.lwsp	s0,8(sp)
-20060fca:	4492                	c.lwsp	s1,4(sp)
-20060fcc:	0141                	c.addi	sp,16
-20060fce:	8082                	c.jr	ra
-20060fd0:	4c18                	c.lw	a4,24(s0)
-20060fd2:	00479693          	slli	a3,a5,0x4
-20060fd6:	0785                	c.addi	a5,1
-20060fd8:	9736                	c.add	a4,a3
-20060fda:	00c74683          	lbu	a3,12(a4)
-20060fde:	9af9                	c.andi	a3,-2
-20060fe0:	00d70623          	sb	a3,12(a4)
-20060fe4:	bf69                	c.j	20060f7e <inic_msg_q_init+0x76>
+20060f10 <inic_msg_q_init>:
+20060f10:	1141                	c.addi	sp,-16
+20060f12:	c422                	c.swsp	s0,8(sp)
+20060f14:	20069437          	lui	s0,0x20069
+20060f18:	02000613          	addi	a2,zero,32
+20060f1c:	4581                	c.li	a1,0
+20060f1e:	80040513          	addi	a0,s0,-2048 # 20068800 <g_ipc_msg_q_priv>
+20060f22:	c606                	c.swsp	ra,12(sp)
+20060f24:	c226                	c.swsp	s1,4(sp)
+20060f26:	dffa9097          	auipc	ra,0xdffa9
+20060f2a:	ba8080e7          	jalr	ra,-1112(ra) # 9ace <__wrap_memset>
+20060f2e:	20068537          	lui	a0,0x20068
+20060f32:	04000613          	addi	a2,zero,64
+20060f36:	4581                	c.li	a1,0
+20060f38:	7c050513          	addi	a0,a0,1984 # 200687c0 <g_inic_ipc_ex_msg>
+20060f3c:	dffa9097          	auipc	ra,0xdffa9
+20060f40:	b92080e7          	jalr	ra,-1134(ra) # 9ace <__wrap_memset>
+20060f44:	80040513          	addi	a0,s0,-2048
+20060f48:	80040493          	addi	s1,s0,-2048
+20060f4c:	2a69                	c.jal	200610e6 <rtw_init_queue>
+20060f4e:	567d                	c.li	a2,-1
+20060f50:	4581                	c.li	a1,0
+20060f52:	00c48513          	addi	a0,s1,12
+20060f56:	94ffa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+20060f5a:	567d                	c.li	a2,-1
+20060f5c:	4581                	c.li	a1,0
+20060f5e:	01048513          	addi	a0,s1,16
+20060f62:	943fa0ef          	jal	ra,2005b8a4 <rtos_sema_create_static>
+20060f66:	4888                	c.lw	a0,16(s1)
+20060f68:	80040413          	addi	s0,s0,-2048
+20060f6c:	a03fa0ef          	jal	ra,2005b96e <rtos_sema_give>
+20060f70:	45c1a503          	lw	a0,1116(gp) # 20066de4 <wifi_user_config+0x24>
+20060f74:	00a48e23          	sb	a0,28(s1)
+20060f78:	0ff57513          	andi	a0,a0,255
+20060f7c:	0512                	c.slli	a0,0x4
+20060f7e:	f7afa0ef          	jal	ra,2005b6f8 <rtos_mem_zmalloc>
+20060f82:	cc88                	c.sw	a0,24(s1)
+20060f84:	4781                	c.li	a5,0
+20060f86:	01c44703          	lbu	a4,28(s0)
+20060f8a:	04e7c763          	blt	a5,a4,20060fd8 <inic_msg_q_init+0xc8>
+20060f8e:	20061637          	lui	a2,0x20061
+20060f92:	200655b7          	lui	a1,0x20065
+20060f96:	4799                	c.li	a5,6
+20060f98:	41800713          	addi	a4,zero,1048
+20060f9c:	4681                	c.li	a3,0
+20060f9e:	e9260613          	addi	a2,a2,-366 # 20060e92 <inic_msg_q_task>
+20060fa2:	97058593          	addi	a1,a1,-1680 # 20064970 <__func__.1+0x14>
+20060fa6:	4501                	c.li	a0,0
+20060fa8:	c1bfa0ef          	jal	ra,2005bbc2 <rtos_task_create>
+20060fac:	cd11                	c.beqz	a0,20060fc8 <inic_msg_q_init+0xb8>
+20060fae:	200656b7          	lui	a3,0x20065
+20060fb2:	200655b7          	lui	a1,0x20065
+20060fb6:	98068693          	addi	a3,a3,-1664 # 20064980 <__func__.1+0x24>
+20060fba:	04500613          	addi	a2,zero,69
+20060fbe:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+20060fc2:	4509                	c.li	a0,2
+20060fc4:	9cafa0ef          	jal	ra,2005b18e <rtk_log_write>
+20060fc8:	4785                	c.li	a5,1
+20060fca:	40b2                	c.lwsp	ra,12(sp)
+20060fcc:	00f40a23          	sb	a5,20(s0)
+20060fd0:	4422                	c.lwsp	s0,8(sp)
+20060fd2:	4492                	c.lwsp	s1,4(sp)
+20060fd4:	0141                	c.addi	sp,16
+20060fd6:	8082                	c.jr	ra
+20060fd8:	4c18                	c.lw	a4,24(s0)
+20060fda:	00479693          	slli	a3,a5,0x4
+20060fde:	0785                	c.addi	a5,1
+20060fe0:	9736                	c.add	a4,a3
+20060fe2:	00c74683          	lbu	a3,12(a4)
+20060fe6:	9af9                	c.andi	a3,-2
+20060fe8:	00d70623          	sb	a3,12(a4)
+20060fec:	bf69                	c.j	20060f86 <inic_msg_q_init+0x76>
 
-20060fe6 <inic_msg_enqueue>:
-20060fe6:	1101                	c.addi	sp,-32
-20060fe8:	ca26                	c.swsp	s1,20(sp)
-20060fea:	c84a                	c.swsp	s2,16(sp)
-20060fec:	c64e                	c.swsp	s3,12(sp)
-20060fee:	200684b7          	lui	s1,0x20068
-20060ff2:	ce06                	c.swsp	ra,28(sp)
-20060ff4:	cc22                	c.swsp	s0,24(sp)
-20060ff6:	89aa                	c.mv	s3,a0
-20060ff8:	eaafa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-20060ffc:	7c048793          	addi	a5,s1,1984 # 200687c0 <g_ipc_msg_q_priv>
-20061000:	01c7c683          	lbu	a3,28(a5)
-20061004:	4f90                	c.lw	a2,24(a5)
-20061006:	7c048913          	addi	s2,s1,1984
-2006100a:	4781                	c.li	a5,0
-2006100c:	00d7c463          	blt	a5,a3,20061014 <inic_msg_enqueue+0x2e>
-20061010:	4401                	c.li	s0,0
-20061012:	a829                	c.j	2006102c <inic_msg_enqueue+0x46>
-20061014:	00479413          	slli	s0,a5,0x4
-20061018:	9432                	c.add	s0,a2
-2006101a:	00c44703          	lbu	a4,12(s0)
-2006101e:	00177593          	andi	a1,a4,1
-20061022:	e1b1                	c.bnez	a1,20061066 <inic_msg_enqueue+0x80>
-20061024:	00176713          	ori	a4,a4,1
-20061028:	00e40623          	sb	a4,12(s0)
-2006102c:	e9afa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-20061030:	ec0d                	c.bnez	s0,2006106a <inic_msg_enqueue+0x84>
-20061032:	200656b7          	lui	a3,0x20065
-20061036:	200655b7          	lui	a1,0x20065
-2006103a:	99068693          	addi	a3,a3,-1648 # 20064990 <__func__.1+0x3c>
-2006103e:	04500613          	addi	a2,zero,69
-20061042:	8d058593          	addi	a1,a1,-1840 # 200648d0 <register_string+0x14c>
-20061046:	4509                	c.li	a0,2
-20061048:	940fa0ef          	jal	ra,2005b188 <rtk_log_write>
-2006104c:	547d                	c.li	s0,-1
-2006104e:	00c92503          	lw	a0,12(s2)
-20061052:	917fa0ef          	jal	ra,2005b968 <rtos_sema_give>
-20061056:	40f2                	c.lwsp	ra,28(sp)
-20061058:	8522                	c.mv	a0,s0
-2006105a:	4462                	c.lwsp	s0,24(sp)
-2006105c:	44d2                	c.lwsp	s1,20(sp)
-2006105e:	4942                	c.lwsp	s2,16(sp)
-20061060:	49b2                	c.lwsp	s3,12(sp)
-20061062:	6105                	c.addi16sp	sp,32
-20061064:	8082                	c.jr	ra
-20061066:	0785                	c.addi	a5,1
-20061068:	b755                	c.j	2006100c <inic_msg_enqueue+0x26>
-2006106a:	0009a783          	lw	a5,0(s3)
-2006106e:	00379713          	slli	a4,a5,0x3
-20061072:	00c44783          	lbu	a5,12(s0)
-20061076:	8b9d                	c.andi	a5,7
-20061078:	8fd9                	c.or	a5,a4
-2006107a:	00f40623          	sb	a5,12(s0)
-2006107e:	0049a703          	lw	a4,4(s3)
-20061082:	9be5                	c.andi	a5,-7
-20061084:	c418                	c.sw	a4,8(s0)
-20061086:	00c9a703          	lw	a4,12(s3)
-2006108a:	8b0d                	c.andi	a4,3
-2006108c:	0706                	c.slli	a4,0x1
-2006108e:	8fd9                	c.or	a5,a4
-20061090:	00f40623          	sb	a5,12(s0)
-20061094:	e0efa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-20061098:	8522                	c.mv	a0,s0
-2006109a:	7c048593          	addi	a1,s1,1984
-2006109e:	201d                	c.jal	200610c4 <rtw_list_insert_tail>
-200610a0:	4405                	c.li	s0,1
-200610a2:	e24fa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-200610a6:	b765                	c.j	2006104e <inic_msg_enqueue+0x68>
+20060fee <inic_msg_enqueue>:
+20060fee:	1101                	c.addi	sp,-32
+20060ff0:	ca26                	c.swsp	s1,20(sp)
+20060ff2:	c84a                	c.swsp	s2,16(sp)
+20060ff4:	c64e                	c.swsp	s3,12(sp)
+20060ff6:	200694b7          	lui	s1,0x20069
+20060ffa:	ce06                	c.swsp	ra,28(sp)
+20060ffc:	cc22                	c.swsp	s0,24(sp)
+20060ffe:	89aa                	c.mv	s3,a0
+20061000:	ea8fa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+20061004:	80048793          	addi	a5,s1,-2048 # 20068800 <g_ipc_msg_q_priv>
+20061008:	01c7c683          	lbu	a3,28(a5)
+2006100c:	4f90                	c.lw	a2,24(a5)
+2006100e:	80048913          	addi	s2,s1,-2048
+20061012:	4781                	c.li	a5,0
+20061014:	00d7c463          	blt	a5,a3,2006101c <inic_msg_enqueue+0x2e>
+20061018:	4401                	c.li	s0,0
+2006101a:	a829                	c.j	20061034 <inic_msg_enqueue+0x46>
+2006101c:	00479413          	slli	s0,a5,0x4
+20061020:	9432                	c.add	s0,a2
+20061022:	00c44703          	lbu	a4,12(s0)
+20061026:	00177593          	andi	a1,a4,1
+2006102a:	e1b1                	c.bnez	a1,2006106e <inic_msg_enqueue+0x80>
+2006102c:	00176713          	ori	a4,a4,1
+20061030:	00e40623          	sb	a4,12(s0)
+20061034:	e98fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+20061038:	ec0d                	c.bnez	s0,20061072 <inic_msg_enqueue+0x84>
+2006103a:	200656b7          	lui	a3,0x20065
+2006103e:	200655b7          	lui	a1,0x20065
+20061042:	99868693          	addi	a3,a3,-1640 # 20064998 <__func__.1+0x3c>
+20061046:	04500613          	addi	a2,zero,69
+2006104a:	8d858593          	addi	a1,a1,-1832 # 200648d8 <register_string+0x14c>
+2006104e:	4509                	c.li	a0,2
+20061050:	93efa0ef          	jal	ra,2005b18e <rtk_log_write>
+20061054:	547d                	c.li	s0,-1
+20061056:	00c92503          	lw	a0,12(s2)
+2006105a:	915fa0ef          	jal	ra,2005b96e <rtos_sema_give>
+2006105e:	40f2                	c.lwsp	ra,28(sp)
+20061060:	8522                	c.mv	a0,s0
+20061062:	4462                	c.lwsp	s0,24(sp)
+20061064:	44d2                	c.lwsp	s1,20(sp)
+20061066:	4942                	c.lwsp	s2,16(sp)
+20061068:	49b2                	c.lwsp	s3,12(sp)
+2006106a:	6105                	c.addi16sp	sp,32
+2006106c:	8082                	c.jr	ra
+2006106e:	0785                	c.addi	a5,1
+20061070:	b755                	c.j	20061014 <inic_msg_enqueue+0x26>
+20061072:	0009a783          	lw	a5,0(s3)
+20061076:	00379713          	slli	a4,a5,0x3
+2006107a:	00c44783          	lbu	a5,12(s0)
+2006107e:	8b9d                	c.andi	a5,7
+20061080:	8fd9                	c.or	a5,a4
+20061082:	00f40623          	sb	a5,12(s0)
+20061086:	0049a703          	lw	a4,4(s3)
+2006108a:	9be5                	c.andi	a5,-7
+2006108c:	c418                	c.sw	a4,8(s0)
+2006108e:	00c9a703          	lw	a4,12(s3)
+20061092:	8b0d                	c.andi	a4,3
+20061094:	0706                	c.slli	a4,0x1
+20061096:	8fd9                	c.or	a5,a4
+20061098:	00f40623          	sb	a5,12(s0)
+2006109c:	e0cfa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+200610a0:	8522                	c.mv	a0,s0
+200610a2:	80048593          	addi	a1,s1,-2048
+200610a6:	201d                	c.jal	200610cc <rtw_list_insert_tail>
+200610a8:	4405                	c.li	s0,1
+200610aa:	e22fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+200610ae:	b765                	c.j	20061056 <inic_msg_enqueue+0x68>
 
-200610a8 <inic_msg_get_queue_status>:
-200610a8:	200687b7          	lui	a5,0x20068
-200610ac:	7d47c503          	lbu	a0,2004(a5) # 200687d4 <g_ipc_msg_q_priv+0x14>
-200610b0:	8082                	c.jr	ra
+200610b0 <inic_msg_get_queue_status>:
+200610b0:	200697b7          	lui	a5,0x20069
+200610b4:	8147c503          	lbu	a0,-2028(a5) # 20068814 <g_ipc_msg_q_priv+0x14>
+200610b8:	8082                	c.jr	ra
 
-200610b2 <rtw_init_listhead>:
-200610b2:	c108                	c.sw	a0,0(a0)
-200610b4:	c148                	c.sw	a0,4(a0)
-200610b6:	8082                	c.jr	ra
+200610ba <rtw_init_listhead>:
+200610ba:	c108                	c.sw	a0,0(a0)
+200610bc:	c148                	c.sw	a0,4(a0)
+200610be:	8082                	c.jr	ra
 
-200610b8 <rtw_list_insert_head>:
-200610b8:	419c                	c.lw	a5,0(a1)
-200610ba:	c3c8                	c.sw	a0,4(a5)
-200610bc:	c11c                	c.sw	a5,0(a0)
-200610be:	c14c                	c.sw	a1,4(a0)
-200610c0:	c188                	c.sw	a0,0(a1)
-200610c2:	8082                	c.jr	ra
+200610c0 <rtw_list_insert_head>:
+200610c0:	419c                	c.lw	a5,0(a1)
+200610c2:	c3c8                	c.sw	a0,4(a5)
+200610c4:	c11c                	c.sw	a5,0(a0)
+200610c6:	c14c                	c.sw	a1,4(a0)
+200610c8:	c188                	c.sw	a0,0(a1)
+200610ca:	8082                	c.jr	ra
 
-200610c4 <rtw_list_insert_tail>:
-200610c4:	41dc                	c.lw	a5,4(a1)
-200610c6:	c1c8                	c.sw	a0,4(a1)
-200610c8:	c10c                	c.sw	a1,0(a0)
-200610ca:	c15c                	c.sw	a5,4(a0)
-200610cc:	c388                	c.sw	a0,0(a5)
-200610ce:	8082                	c.jr	ra
+200610cc <rtw_list_insert_tail>:
+200610cc:	41dc                	c.lw	a5,4(a1)
+200610ce:	c1c8                	c.sw	a0,4(a1)
+200610d0:	c10c                	c.sw	a1,0(a0)
+200610d2:	c15c                	c.sw	a5,4(a0)
+200610d4:	c388                	c.sw	a0,0(a5)
+200610d6:	8082                	c.jr	ra
 
-200610d0 <rtw_list_delete>:
-200610d0:	415c                	c.lw	a5,4(a0)
-200610d2:	4118                	c.lw	a4,0(a0)
-200610d4:	c35c                	c.sw	a5,4(a4)
-200610d6:	c398                	c.sw	a4,0(a5)
-200610d8:	c108                	c.sw	a0,0(a0)
-200610da:	c148                	c.sw	a0,4(a0)
-200610dc:	8082                	c.jr	ra
+200610d8 <rtw_list_delete>:
+200610d8:	415c                	c.lw	a5,4(a0)
+200610da:	4118                	c.lw	a4,0(a0)
+200610dc:	c35c                	c.sw	a5,4(a4)
+200610de:	c398                	c.sw	a4,0(a5)
+200610e0:	c108                	c.sw	a0,0(a0)
+200610e2:	c148                	c.sw	a0,4(a0)
+200610e4:	8082                	c.jr	ra
 
-200610de <rtw_init_queue>:
-200610de:	c108                	c.sw	a0,0(a0)
-200610e0:	fe81a783          	lw	a5,-24(gp) # 20066950 <p_wifi_rom2flash>
-200610e4:	c148                	c.sw	a0,4(a0)
-200610e6:	0521                	c.addi	a0,8
-200610e8:	57dc                	c.lw	a5,44(a5)
-200610ea:	8782                	c.jr	a5
+200610e6 <rtw_init_queue>:
+200610e6:	c108                	c.sw	a0,0(a0)
+200610e8:	fe81a783          	lw	a5,-24(gp) # 20066970 <p_wifi_rom2flash>
+200610ec:	c148                	c.sw	a0,4(a0)
+200610ee:	0521                	c.addi	a0,8
+200610f0:	57dc                	c.lw	a5,44(a5)
+200610f2:	8782                	c.jr	a5
 
-200610ec <rtw_queue_empty>:
-200610ec:	411c                	c.lw	a5,0(a0)
-200610ee:	40a78533          	sub	a0,a5,a0
-200610f2:	00153513          	sltiu	a0,a0,1
-200610f6:	8082                	c.jr	ra
-
-200610f8 <rtw_end_of_queue_search>:
-200610f8:	8d0d                	c.sub	a0,a1
+200610f4 <rtw_queue_empty>:
+200610f4:	411c                	c.lw	a5,0(a0)
+200610f6:	40a78533          	sub	a0,a5,a0
 200610fa:	00153513          	sltiu	a0,a0,1
 200610fe:	8082                	c.jr	ra
 
-20061100 <timer_wrapper>:
-20061100:	1101                	c.addi	sp,-32
-20061102:	ca26                	c.swsp	s1,20(sp)
-20061104:	cc22                	c.swsp	s0,24(sp)
-20061106:	c84a                	c.swsp	s2,16(sp)
-20061108:	c64e                	c.swsp	s3,12(sp)
-2006110a:	c452                	c.swsp	s4,8(sp)
-2006110c:	ce06                	c.swsp	ra,28(sp)
-2006110e:	89aa                	c.mv	s3,a0
-20061110:	d92fa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-20061114:	ff41a403          	lw	s0,-12(gp) # 2006695c <timer_table>
-20061118:	4901                	c.li	s2,0
-2006111a:	ff418a13          	addi	s4,gp,-12 # 2006695c <timer_table>
-2006111e:	85a2                	c.mv	a1,s0
-20061120:	ff418513          	addi	a0,gp,-12 # 2006695c <timer_table>
-20061124:	fd5ff0ef          	jal	ra,200610f8 <rtw_end_of_queue_search>
-20061128:	c90d                	c.beqz	a0,2006115a <timer_wrapper+0x5a>
-2006112a:	d9cfa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-2006112e:	03441c63          	bne	s0,s4,20061166 <timer_wrapper+0x66>
-20061132:	4462                	c.lwsp	s0,24(sp)
-20061134:	40f2                	c.lwsp	ra,28(sp)
-20061136:	44d2                	c.lwsp	s1,20(sp)
-20061138:	4942                	c.lwsp	s2,16(sp)
-2006113a:	49b2                	c.lwsp	s3,12(sp)
-2006113c:	4a22                	c.lwsp	s4,8(sp)
-2006113e:	200656b7          	lui	a3,0x20065
-20061142:	200655b7          	lui	a1,0x20065
-20061146:	9a868693          	addi	a3,a3,-1624 # 200649a8 <__func__.1+0x54>
-2006114a:	04500613          	addi	a2,zero,69
-2006114e:	9d858593          	addi	a1,a1,-1576 # 200649d8 <__func__.1+0x84>
-20061152:	4509                	c.li	a0,2
-20061154:	6105                	c.addi16sp	sp,32
-20061156:	832fa06f          	jal	zero,2005b188 <rtk_log_write>
-2006115a:	441c                	c.lw	a5,8(s0)
-2006115c:	8922                	c.mv	s2,s0
-2006115e:	fd3786e3          	beq	a5,s3,2006112a <timer_wrapper+0x2a>
-20061162:	4000                	c.lw	s0,0(s0)
-20061164:	bf6d                	c.j	2006111e <timer_wrapper+0x1e>
-20061166:	01092783          	lw	a5,16(s2)
-2006116a:	cb99                	c.beqz	a5,20061180 <timer_wrapper+0x80>
-2006116c:	4462                	c.lwsp	s0,24(sp)
-2006116e:	00c92503          	lw	a0,12(s2)
-20061172:	40f2                	c.lwsp	ra,28(sp)
-20061174:	44d2                	c.lwsp	s1,20(sp)
-20061176:	4942                	c.lwsp	s2,16(sp)
-20061178:	49b2                	c.lwsp	s3,12(sp)
-2006117a:	4a22                	c.lwsp	s4,8(sp)
-2006117c:	6105                	c.addi16sp	sp,32
-2006117e:	8782                	c.jr	a5
-20061180:	40f2                	c.lwsp	ra,28(sp)
-20061182:	4462                	c.lwsp	s0,24(sp)
-20061184:	44d2                	c.lwsp	s1,20(sp)
-20061186:	4942                	c.lwsp	s2,16(sp)
-20061188:	49b2                	c.lwsp	s3,12(sp)
-2006118a:	4a22                	c.lwsp	s4,8(sp)
-2006118c:	6105                	c.addi16sp	sp,32
-2006118e:	8082                	c.jr	ra
+20061100 <rtw_end_of_queue_search>:
+20061100:	8d0d                	c.sub	a0,a1
+20061102:	00153513          	sltiu	a0,a0,1
+20061106:	8082                	c.jr	ra
 
-20061190 <init_timer_wrapper>:
-20061190:	1141                	c.addi	sp,-16
-20061192:	ff418513          	addi	a0,gp,-12 # 2006695c <timer_table>
-20061196:	c606                	c.swsp	ra,12(sp)
-20061198:	f1bff0ef          	jal	ra,200610b2 <rtw_init_listhead>
-2006119c:	40b2                	c.lwsp	ra,12(sp)
-2006119e:	fe01ae23          	sw	zero,-4(gp) # 20066964 <timer_used_num>
-200611a2:	fe01a823          	sw	zero,-16(gp) # 20066958 <max_timer_used_num>
-200611a6:	0141                	c.addi	sp,16
-200611a8:	8082                	c.jr	ra
+20061108 <timer_wrapper>:
+20061108:	1101                	c.addi	sp,-32
+2006110a:	ca26                	c.swsp	s1,20(sp)
+2006110c:	cc22                	c.swsp	s0,24(sp)
+2006110e:	c84a                	c.swsp	s2,16(sp)
+20061110:	c64e                	c.swsp	s3,12(sp)
+20061112:	c452                	c.swsp	s4,8(sp)
+20061114:	ce06                	c.swsp	ra,28(sp)
+20061116:	89aa                	c.mv	s3,a0
+20061118:	d90fa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+2006111c:	ff41a403          	lw	s0,-12(gp) # 2006697c <timer_table>
+20061120:	4901                	c.li	s2,0
+20061122:	ff418a13          	addi	s4,gp,-12 # 2006697c <timer_table>
+20061126:	85a2                	c.mv	a1,s0
+20061128:	ff418513          	addi	a0,gp,-12 # 2006697c <timer_table>
+2006112c:	fd5ff0ef          	jal	ra,20061100 <rtw_end_of_queue_search>
+20061130:	c90d                	c.beqz	a0,20061162 <timer_wrapper+0x5a>
+20061132:	d9afa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+20061136:	03441c63          	bne	s0,s4,2006116e <timer_wrapper+0x66>
+2006113a:	4462                	c.lwsp	s0,24(sp)
+2006113c:	40f2                	c.lwsp	ra,28(sp)
+2006113e:	44d2                	c.lwsp	s1,20(sp)
+20061140:	4942                	c.lwsp	s2,16(sp)
+20061142:	49b2                	c.lwsp	s3,12(sp)
+20061144:	4a22                	c.lwsp	s4,8(sp)
+20061146:	200656b7          	lui	a3,0x20065
+2006114a:	200655b7          	lui	a1,0x20065
+2006114e:	9b068693          	addi	a3,a3,-1616 # 200649b0 <__func__.1+0x54>
+20061152:	04500613          	addi	a2,zero,69
+20061156:	9e058593          	addi	a1,a1,-1568 # 200649e0 <__func__.1+0x84>
+2006115a:	4509                	c.li	a0,2
+2006115c:	6105                	c.addi16sp	sp,32
+2006115e:	830fa06f          	jal	zero,2005b18e <rtk_log_write>
+20061162:	441c                	c.lw	a5,8(s0)
+20061164:	8922                	c.mv	s2,s0
+20061166:	fd3786e3          	beq	a5,s3,20061132 <timer_wrapper+0x2a>
+2006116a:	4000                	c.lw	s0,0(s0)
+2006116c:	bf6d                	c.j	20061126 <timer_wrapper+0x1e>
+2006116e:	01092783          	lw	a5,16(s2)
+20061172:	cb99                	c.beqz	a5,20061188 <timer_wrapper+0x80>
+20061174:	4462                	c.lwsp	s0,24(sp)
+20061176:	00c92503          	lw	a0,12(s2)
+2006117a:	40f2                	c.lwsp	ra,28(sp)
+2006117c:	44d2                	c.lwsp	s1,20(sp)
+2006117e:	4942                	c.lwsp	s2,16(sp)
+20061180:	49b2                	c.lwsp	s3,12(sp)
+20061182:	4a22                	c.lwsp	s4,8(sp)
+20061184:	6105                	c.addi16sp	sp,32
+20061186:	8782                	c.jr	a5
+20061188:	40f2                	c.lwsp	ra,28(sp)
+2006118a:	4462                	c.lwsp	s0,24(sp)
+2006118c:	44d2                	c.lwsp	s1,20(sp)
+2006118e:	4942                	c.lwsp	s2,16(sp)
+20061190:	49b2                	c.lwsp	s3,12(sp)
+20061192:	4a22                	c.lwsp	s4,8(sp)
+20061194:	6105                	c.addi16sp	sp,32
+20061196:	8082                	c.jr	ra
 
-200611aa <init_timer>:
-200611aa:	491c                	c.lw	a5,16(a0)
-200611ac:	cbc1                	c.beqz	a5,2006123c <init_timer+0x92>
-200611ae:	1141                	c.addi	sp,-16
-200611b0:	c422                	c.swsp	s0,8(sp)
-200611b2:	c606                	c.swsp	ra,12(sp)
-200611b4:	842a                	c.mv	s0,a0
-200611b6:	4508                	c.lw	a0,8(a0)
-200611b8:	e535                	c.bnez	a0,20061224 <init_timer+0x7a>
-200611ba:	200617b7          	lui	a5,0x20061
-200611be:	10078793          	addi	a5,a5,256 # 20061100 <timer_wrapper>
-200611c2:	4701                	c.li	a4,0
-200611c4:	56fd                	c.li	a3,-1
-200611c6:	4601                	c.li	a2,0
-200611c8:	00840513          	addi	a0,s0,8
-200611cc:	ab5fa0ef          	jal	ra,2005bc80 <rtos_timer_create_static>
-200611d0:	441c                	c.lw	a5,8(s0)
-200611d2:	e38d                	c.bnez	a5,200611f4 <init_timer+0x4a>
-200611d4:	4422                	c.lwsp	s0,8(sp)
-200611d6:	40b2                	c.lwsp	ra,12(sp)
-200611d8:	200656b7          	lui	a3,0x20065
-200611dc:	200655b7          	lui	a1,0x20065
-200611e0:	9e068693          	addi	a3,a3,-1568 # 200649e0 <__func__.1+0x8c>
-200611e4:	04500613          	addi	a2,zero,69
-200611e8:	9d858593          	addi	a1,a1,-1576 # 200649d8 <__func__.1+0x84>
-200611ec:	4509                	c.li	a0,2
-200611ee:	0141                	c.addi	sp,16
-200611f0:	f99f906f          	jal	zero,2005b188 <rtk_log_write>
-200611f4:	caefa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-200611f8:	ff418593          	addi	a1,gp,-12 # 2006695c <timer_table>
-200611fc:	8522                	c.mv	a0,s0
-200611fe:	ebbff0ef          	jal	ra,200610b8 <rtw_list_insert_head>
-20061202:	cc4fa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-20061206:	ffc18713          	addi	a4,gp,-4 # 20066964 <timer_used_num>
-2006120a:	431c                	c.lw	a5,0(a4)
-2006120c:	0785                	c.addi	a5,1
-2006120e:	c31c                	c.sw	a5,0(a4)
-20061210:	ff018713          	addi	a4,gp,-16 # 20066958 <max_timer_used_num>
-20061214:	4314                	c.lw	a3,0(a4)
-20061216:	00f6d363          	bge	a3,a5,2006121c <init_timer+0x72>
-2006121a:	c31c                	c.sw	a5,0(a4)
-2006121c:	40b2                	c.lwsp	ra,12(sp)
-2006121e:	4422                	c.lwsp	s0,8(sp)
-20061220:	0141                	c.addi	sp,16
-20061222:	8082                	c.jr	ra
-20061224:	c2dfa0ef          	jal	ra,2005be50 <rtos_timer_is_timer_active>
-20061228:	4785                	c.li	a5,1
-2006122a:	fef519e3          	bne	a0,a5,2006121c <init_timer+0x72>
-2006122e:	4408                	c.lw	a0,8(s0)
-20061230:	4422                	c.lwsp	s0,8(sp)
-20061232:	40b2                	c.lwsp	ra,12(sp)
-20061234:	55fd                	c.li	a1,-1
-20061236:	0141                	c.addi	sp,16
-20061238:	b5bfa06f          	jal	zero,2005bd92 <rtos_timer_stop>
-2006123c:	8082                	c.jr	ra
+20061198 <init_timer_wrapper>:
+20061198:	1141                	c.addi	sp,-16
+2006119a:	ff418513          	addi	a0,gp,-12 # 2006697c <timer_table>
+2006119e:	c606                	c.swsp	ra,12(sp)
+200611a0:	f1bff0ef          	jal	ra,200610ba <rtw_init_listhead>
+200611a4:	40b2                	c.lwsp	ra,12(sp)
+200611a6:	fe01ae23          	sw	zero,-4(gp) # 20066984 <timer_used_num>
+200611aa:	fe01a823          	sw	zero,-16(gp) # 20066978 <max_timer_used_num>
+200611ae:	0141                	c.addi	sp,16
+200611b0:	8082                	c.jr	ra
 
-2006123e <mod_timer>:
-2006123e:	1141                	c.addi	sp,-16
-20061240:	c422                	c.swsp	s0,8(sp)
-20061242:	c226                	c.swsp	s1,4(sp)
-20061244:	c606                	c.swsp	ra,12(sp)
-20061246:	842a                	c.mv	s0,a0
-20061248:	4508                	c.lw	a0,8(a0)
-2006124a:	84ae                	c.mv	s1,a1
-2006124c:	e915                	c.bnez	a0,20061280 <mod_timer+0x42>
-2006124e:	20065537          	lui	a0,0x20065
-20061252:	9f850513          	addi	a0,a0,-1544 # 200649f8 <__func__.1+0xa4>
-20061256:	950fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
-2006125a:	4408                	c.lw	a0,8(s0)
-2006125c:	cd05                	c.beqz	a0,20061294 <mod_timer+0x56>
-2006125e:	567d                	c.li	a2,-1
-20061260:	85a6                	c.mv	a1,s1
-20061262:	b8dfa0ef          	jal	ra,2005bdee <rtos_timer_change_period>
-20061266:	57fd                	c.li	a5,-1
-20061268:	02f51663          	bne	a0,a5,20061294 <mod_timer+0x56>
-2006126c:	4422                	c.lwsp	s0,8(sp)
-2006126e:	40b2                	c.lwsp	ra,12(sp)
-20061270:	4492                	c.lwsp	s1,4(sp)
-20061272:	20065537          	lui	a0,0x20065
-20061276:	a1050513          	addi	a0,a0,-1520 # 20064a10 <__func__.1+0xbc>
-2006127a:	0141                	c.addi	sp,16
-2006127c:	92afe06f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
-20061280:	bd1fa0ef          	jal	ra,2005be50 <rtos_timer_is_timer_active>
-20061284:	4785                	c.li	a5,1
-20061286:	fcf51ae3          	bne	a0,a5,2006125a <mod_timer+0x1c>
-2006128a:	4408                	c.lw	a0,8(s0)
-2006128c:	55fd                	c.li	a1,-1
-2006128e:	b05fa0ef          	jal	ra,2005bd92 <rtos_timer_stop>
-20061292:	b7e1                	c.j	2006125a <mod_timer+0x1c>
-20061294:	40b2                	c.lwsp	ra,12(sp)
-20061296:	4422                	c.lwsp	s0,8(sp)
-20061298:	4492                	c.lwsp	s1,4(sp)
-2006129a:	0141                	c.addi	sp,16
-2006129c:	8082                	c.jr	ra
+200611b2 <init_timer>:
+200611b2:	491c                	c.lw	a5,16(a0)
+200611b4:	cbc1                	c.beqz	a5,20061244 <init_timer+0x92>
+200611b6:	1141                	c.addi	sp,-16
+200611b8:	c422                	c.swsp	s0,8(sp)
+200611ba:	c606                	c.swsp	ra,12(sp)
+200611bc:	842a                	c.mv	s0,a0
+200611be:	4508                	c.lw	a0,8(a0)
+200611c0:	e535                	c.bnez	a0,2006122c <init_timer+0x7a>
+200611c2:	200617b7          	lui	a5,0x20061
+200611c6:	10878793          	addi	a5,a5,264 # 20061108 <timer_wrapper>
+200611ca:	4701                	c.li	a4,0
+200611cc:	56fd                	c.li	a3,-1
+200611ce:	4601                	c.li	a2,0
+200611d0:	00840513          	addi	a0,s0,8
+200611d4:	ab3fa0ef          	jal	ra,2005bc86 <rtos_timer_create_static>
+200611d8:	441c                	c.lw	a5,8(s0)
+200611da:	e38d                	c.bnez	a5,200611fc <init_timer+0x4a>
+200611dc:	4422                	c.lwsp	s0,8(sp)
+200611de:	40b2                	c.lwsp	ra,12(sp)
+200611e0:	200656b7          	lui	a3,0x20065
+200611e4:	200655b7          	lui	a1,0x20065
+200611e8:	9e868693          	addi	a3,a3,-1560 # 200649e8 <__func__.1+0x8c>
+200611ec:	04500613          	addi	a2,zero,69
+200611f0:	9e058593          	addi	a1,a1,-1568 # 200649e0 <__func__.1+0x84>
+200611f4:	4509                	c.li	a0,2
+200611f6:	0141                	c.addi	sp,16
+200611f8:	f97f906f          	jal	zero,2005b18e <rtk_log_write>
+200611fc:	cacfa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+20061200:	ff418593          	addi	a1,gp,-12 # 2006697c <timer_table>
+20061204:	8522                	c.mv	a0,s0
+20061206:	ebbff0ef          	jal	ra,200610c0 <rtw_list_insert_head>
+2006120a:	cc2fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+2006120e:	ffc18713          	addi	a4,gp,-4 # 20066984 <timer_used_num>
+20061212:	431c                	c.lw	a5,0(a4)
+20061214:	0785                	c.addi	a5,1
+20061216:	c31c                	c.sw	a5,0(a4)
+20061218:	ff018713          	addi	a4,gp,-16 # 20066978 <max_timer_used_num>
+2006121c:	4314                	c.lw	a3,0(a4)
+2006121e:	00f6d363          	bge	a3,a5,20061224 <init_timer+0x72>
+20061222:	c31c                	c.sw	a5,0(a4)
+20061224:	40b2                	c.lwsp	ra,12(sp)
+20061226:	4422                	c.lwsp	s0,8(sp)
+20061228:	0141                	c.addi	sp,16
+2006122a:	8082                	c.jr	ra
+2006122c:	c2bfa0ef          	jal	ra,2005be56 <rtos_timer_is_timer_active>
+20061230:	4785                	c.li	a5,1
+20061232:	fef519e3          	bne	a0,a5,20061224 <init_timer+0x72>
+20061236:	4408                	c.lw	a0,8(s0)
+20061238:	4422                	c.lwsp	s0,8(sp)
+2006123a:	40b2                	c.lwsp	ra,12(sp)
+2006123c:	55fd                	c.li	a1,-1
+2006123e:	0141                	c.addi	sp,16
+20061240:	b59fa06f          	jal	zero,2005bd98 <rtos_timer_stop>
+20061244:	8082                	c.jr	ra
 
-2006129e <cancel_timer_ex>:
-2006129e:	451c                	c.lw	a5,8(a0)
-200612a0:	c7ad                	c.beqz	a5,2006130a <cancel_timer_ex+0x6c>
-200612a2:	1101                	c.addi	sp,-32
-200612a4:	c84a                	c.swsp	s2,16(sp)
-200612a6:	cc22                	c.swsp	s0,24(sp)
-200612a8:	ca26                	c.swsp	s1,20(sp)
-200612aa:	c64e                	c.swsp	s3,12(sp)
-200612ac:	ce06                	c.swsp	ra,28(sp)
-200612ae:	84aa                	c.mv	s1,a0
-200612b0:	bf2fa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-200612b4:	ff41a403          	lw	s0,-12(gp) # 2006695c <timer_table>
-200612b8:	ff418993          	addi	s3,gp,-12 # 2006695c <timer_table>
-200612bc:	85a2                	c.mv	a1,s0
-200612be:	ff418513          	addi	a0,gp,-12 # 2006695c <timer_table>
-200612c2:	e37ff0ef          	jal	ra,200610f8 <rtw_end_of_queue_search>
-200612c6:	e509                	c.bnez	a0,200612d0 <cancel_timer_ex+0x32>
-200612c8:	4418                	c.lw	a4,8(s0)
-200612ca:	449c                	c.lw	a5,8(s1)
-200612cc:	02f71463          	bne	a4,a5,200612f4 <cancel_timer_ex+0x56>
-200612d0:	bf6fa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-200612d4:	4488                	c.lw	a0,8(s1)
-200612d6:	03341163          	bne	s0,s3,200612f8 <cancel_timer_ex+0x5a>
-200612da:	4462                	c.lwsp	s0,24(sp)
-200612dc:	40f2                	c.lwsp	ra,28(sp)
-200612de:	44d2                	c.lwsp	s1,20(sp)
-200612e0:	4942                	c.lwsp	s2,16(sp)
-200612e2:	49b2                	c.lwsp	s3,12(sp)
-200612e4:	85aa                	c.mv	a1,a0
-200612e6:	20065537          	lui	a0,0x20065
-200612ea:	a2050513          	addi	a0,a0,-1504 # 20064a20 <__func__.1+0xcc>
-200612ee:	6105                	c.addi16sp	sp,32
-200612f0:	8b6fe06f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
-200612f4:	4000                	c.lw	s0,0(s0)
-200612f6:	b7d9                	c.j	200612bc <cancel_timer_ex+0x1e>
-200612f8:	4462                	c.lwsp	s0,24(sp)
-200612fa:	40f2                	c.lwsp	ra,28(sp)
-200612fc:	44d2                	c.lwsp	s1,20(sp)
-200612fe:	4942                	c.lwsp	s2,16(sp)
-20061300:	49b2                	c.lwsp	s3,12(sp)
-20061302:	55fd                	c.li	a1,-1
-20061304:	6105                	c.addi16sp	sp,32
-20061306:	a8dfa06f          	jal	zero,2005bd92 <rtos_timer_stop>
-2006130a:	8082                	c.jr	ra
+20061246 <mod_timer>:
+20061246:	1141                	c.addi	sp,-16
+20061248:	c422                	c.swsp	s0,8(sp)
+2006124a:	c226                	c.swsp	s1,4(sp)
+2006124c:	c606                	c.swsp	ra,12(sp)
+2006124e:	842a                	c.mv	s0,a0
+20061250:	4508                	c.lw	a0,8(a0)
+20061252:	84ae                	c.mv	s1,a1
+20061254:	e915                	c.bnez	a0,20061288 <mod_timer+0x42>
+20061256:	20065537          	lui	a0,0x20065
+2006125a:	a0050513          	addi	a0,a0,-1536 # 20064a00 <__func__.1+0xa4>
+2006125e:	948fe0ef          	jal	ra,2005f3a6 <DiagPrintf_minimal>
+20061262:	4408                	c.lw	a0,8(s0)
+20061264:	cd05                	c.beqz	a0,2006129c <mod_timer+0x56>
+20061266:	567d                	c.li	a2,-1
+20061268:	85a6                	c.mv	a1,s1
+2006126a:	b8bfa0ef          	jal	ra,2005bdf4 <rtos_timer_change_period>
+2006126e:	57fd                	c.li	a5,-1
+20061270:	02f51663          	bne	a0,a5,2006129c <mod_timer+0x56>
+20061274:	4422                	c.lwsp	s0,8(sp)
+20061276:	40b2                	c.lwsp	ra,12(sp)
+20061278:	4492                	c.lwsp	s1,4(sp)
+2006127a:	20065537          	lui	a0,0x20065
+2006127e:	a1850513          	addi	a0,a0,-1512 # 20064a18 <__func__.1+0xbc>
+20061282:	0141                	c.addi	sp,16
+20061284:	922fe06f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+20061288:	bcffa0ef          	jal	ra,2005be56 <rtos_timer_is_timer_active>
+2006128c:	4785                	c.li	a5,1
+2006128e:	fcf51ae3          	bne	a0,a5,20061262 <mod_timer+0x1c>
+20061292:	4408                	c.lw	a0,8(s0)
+20061294:	55fd                	c.li	a1,-1
+20061296:	b03fa0ef          	jal	ra,2005bd98 <rtos_timer_stop>
+2006129a:	b7e1                	c.j	20061262 <mod_timer+0x1c>
+2006129c:	40b2                	c.lwsp	ra,12(sp)
+2006129e:	4422                	c.lwsp	s0,8(sp)
+200612a0:	4492                	c.lwsp	s1,4(sp)
+200612a2:	0141                	c.addi	sp,16
+200612a4:	8082                	c.jr	ra
 
-2006130c <del_timer_sync>:
-2006130c:	451c                	c.lw	a5,8(a0)
-2006130e:	cfbd                	c.beqz	a5,2006138c <del_timer_sync+0x80>
-20061310:	1101                	c.addi	sp,-32
-20061312:	c84a                	c.swsp	s2,16(sp)
-20061314:	cc22                	c.swsp	s0,24(sp)
-20061316:	ca26                	c.swsp	s1,20(sp)
-20061318:	c64e                	c.swsp	s3,12(sp)
-2006131a:	ce06                	c.swsp	ra,28(sp)
-2006131c:	842a                	c.mv	s0,a0
-2006131e:	b84fa0ef          	jal	ra,2005b6a2 <rtos_critical_enter>
-20061322:	ff41a483          	lw	s1,-12(gp) # 2006695c <timer_table>
-20061326:	ff418993          	addi	s3,gp,-12 # 2006695c <timer_table>
-2006132a:	85a6                	c.mv	a1,s1
-2006132c:	ff418513          	addi	a0,gp,-12 # 2006695c <timer_table>
-20061330:	dc9ff0ef          	jal	ra,200610f8 <rtw_end_of_queue_search>
-20061334:	e901                	c.bnez	a0,20061344 <del_timer_sync+0x38>
-20061336:	4498                	c.lw	a4,8(s1)
-20061338:	441c                	c.lw	a5,8(s0)
-2006133a:	02f71563          	bne	a4,a5,20061364 <del_timer_sync+0x58>
-2006133e:	8526                	c.mv	a0,s1
-20061340:	d91ff0ef          	jal	ra,200610d0 <rtw_list_delete>
-20061344:	b82fa0ef          	jal	ra,2005b6c6 <rtos_critical_exit>
-20061348:	03349063          	bne	s1,s3,20061368 <del_timer_sync+0x5c>
-2006134c:	4462                	c.lwsp	s0,24(sp)
-2006134e:	40f2                	c.lwsp	ra,28(sp)
-20061350:	44d2                	c.lwsp	s1,20(sp)
-20061352:	4942                	c.lwsp	s2,16(sp)
-20061354:	49b2                	c.lwsp	s3,12(sp)
-20061356:	20065537          	lui	a0,0x20065
-2006135a:	a3850513          	addi	a0,a0,-1480 # 20064a38 <__func__.1+0xe4>
-2006135e:	6105                	c.addi16sp	sp,32
-20061360:	846fe06f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
-20061364:	4084                	c.lw	s1,0(s1)
-20061366:	b7d1                	c.j	2006132a <del_timer_sync+0x1e>
-20061368:	4408                	c.lw	a0,8(s0)
-2006136a:	55fd                	c.li	a1,-1
-2006136c:	997fa0ef          	jal	ra,2005bd02 <rtos_timer_delete_static>
-20061370:	ffc18793          	addi	a5,gp,-4 # 20066964 <timer_used_num>
-20061374:	4398                	c.lw	a4,0(a5)
-20061376:	00042423          	sw	zero,8(s0)
-2006137a:	177d                	c.addi	a4,-1
-2006137c:	c398                	c.sw	a4,0(a5)
-2006137e:	40f2                	c.lwsp	ra,28(sp)
-20061380:	4462                	c.lwsp	s0,24(sp)
-20061382:	44d2                	c.lwsp	s1,20(sp)
-20061384:	4942                	c.lwsp	s2,16(sp)
-20061386:	49b2                	c.lwsp	s3,12(sp)
-20061388:	6105                	c.addi16sp	sp,32
-2006138a:	8082                	c.jr	ra
-2006138c:	8082                	c.jr	ra
+200612a6 <cancel_timer_ex>:
+200612a6:	451c                	c.lw	a5,8(a0)
+200612a8:	c7ad                	c.beqz	a5,20061312 <cancel_timer_ex+0x6c>
+200612aa:	1101                	c.addi	sp,-32
+200612ac:	c84a                	c.swsp	s2,16(sp)
+200612ae:	cc22                	c.swsp	s0,24(sp)
+200612b0:	ca26                	c.swsp	s1,20(sp)
+200612b2:	c64e                	c.swsp	s3,12(sp)
+200612b4:	ce06                	c.swsp	ra,28(sp)
+200612b6:	84aa                	c.mv	s1,a0
+200612b8:	bf0fa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+200612bc:	ff41a403          	lw	s0,-12(gp) # 2006697c <timer_table>
+200612c0:	ff418993          	addi	s3,gp,-12 # 2006697c <timer_table>
+200612c4:	85a2                	c.mv	a1,s0
+200612c6:	ff418513          	addi	a0,gp,-12 # 2006697c <timer_table>
+200612ca:	e37ff0ef          	jal	ra,20061100 <rtw_end_of_queue_search>
+200612ce:	e509                	c.bnez	a0,200612d8 <cancel_timer_ex+0x32>
+200612d0:	4418                	c.lw	a4,8(s0)
+200612d2:	449c                	c.lw	a5,8(s1)
+200612d4:	02f71463          	bne	a4,a5,200612fc <cancel_timer_ex+0x56>
+200612d8:	bf4fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+200612dc:	4488                	c.lw	a0,8(s1)
+200612de:	03341163          	bne	s0,s3,20061300 <cancel_timer_ex+0x5a>
+200612e2:	4462                	c.lwsp	s0,24(sp)
+200612e4:	40f2                	c.lwsp	ra,28(sp)
+200612e6:	44d2                	c.lwsp	s1,20(sp)
+200612e8:	4942                	c.lwsp	s2,16(sp)
+200612ea:	49b2                	c.lwsp	s3,12(sp)
+200612ec:	85aa                	c.mv	a1,a0
+200612ee:	20065537          	lui	a0,0x20065
+200612f2:	a2850513          	addi	a0,a0,-1496 # 20064a28 <__func__.1+0xcc>
+200612f6:	6105                	c.addi16sp	sp,32
+200612f8:	8aefe06f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+200612fc:	4000                	c.lw	s0,0(s0)
+200612fe:	b7d9                	c.j	200612c4 <cancel_timer_ex+0x1e>
+20061300:	4462                	c.lwsp	s0,24(sp)
+20061302:	40f2                	c.lwsp	ra,28(sp)
+20061304:	44d2                	c.lwsp	s1,20(sp)
+20061306:	4942                	c.lwsp	s2,16(sp)
+20061308:	49b2                	c.lwsp	s3,12(sp)
+2006130a:	55fd                	c.li	a1,-1
+2006130c:	6105                	c.addi16sp	sp,32
+2006130e:	a8bfa06f          	jal	zero,2005bd98 <rtos_timer_stop>
+20061312:	8082                	c.jr	ra
 
-2006138e <rtw_init_timer>:
-2006138e:	c910                	c.sw	a2,16(a0)
-20061390:	c554                	c.sw	a3,12(a0)
-20061392:	85ba                	c.mv	a1,a4
-20061394:	e17ff06f          	jal	zero,200611aa <init_timer>
+20061314 <del_timer_sync>:
+20061314:	451c                	c.lw	a5,8(a0)
+20061316:	cfbd                	c.beqz	a5,20061394 <del_timer_sync+0x80>
+20061318:	1101                	c.addi	sp,-32
+2006131a:	c84a                	c.swsp	s2,16(sp)
+2006131c:	cc22                	c.swsp	s0,24(sp)
+2006131e:	ca26                	c.swsp	s1,20(sp)
+20061320:	c64e                	c.swsp	s3,12(sp)
+20061322:	ce06                	c.swsp	ra,28(sp)
+20061324:	842a                	c.mv	s0,a0
+20061326:	b82fa0ef          	jal	ra,2005b6a8 <rtos_critical_enter>
+2006132a:	ff41a483          	lw	s1,-12(gp) # 2006697c <timer_table>
+2006132e:	ff418993          	addi	s3,gp,-12 # 2006697c <timer_table>
+20061332:	85a6                	c.mv	a1,s1
+20061334:	ff418513          	addi	a0,gp,-12 # 2006697c <timer_table>
+20061338:	dc9ff0ef          	jal	ra,20061100 <rtw_end_of_queue_search>
+2006133c:	e901                	c.bnez	a0,2006134c <del_timer_sync+0x38>
+2006133e:	4498                	c.lw	a4,8(s1)
+20061340:	441c                	c.lw	a5,8(s0)
+20061342:	02f71563          	bne	a4,a5,2006136c <del_timer_sync+0x58>
+20061346:	8526                	c.mv	a0,s1
+20061348:	d91ff0ef          	jal	ra,200610d8 <rtw_list_delete>
+2006134c:	b80fa0ef          	jal	ra,2005b6cc <rtos_critical_exit>
+20061350:	03349063          	bne	s1,s3,20061370 <del_timer_sync+0x5c>
+20061354:	4462                	c.lwsp	s0,24(sp)
+20061356:	40f2                	c.lwsp	ra,28(sp)
+20061358:	44d2                	c.lwsp	s1,20(sp)
+2006135a:	4942                	c.lwsp	s2,16(sp)
+2006135c:	49b2                	c.lwsp	s3,12(sp)
+2006135e:	20065537          	lui	a0,0x20065
+20061362:	a4050513          	addi	a0,a0,-1472 # 20064a40 <__func__.1+0xe4>
+20061366:	6105                	c.addi16sp	sp,32
+20061368:	83efe06f          	jal	zero,2005f3a6 <DiagPrintf_minimal>
+2006136c:	4084                	c.lw	s1,0(s1)
+2006136e:	b7d1                	c.j	20061332 <del_timer_sync+0x1e>
+20061370:	4408                	c.lw	a0,8(s0)
+20061372:	55fd                	c.li	a1,-1
+20061374:	995fa0ef          	jal	ra,2005bd08 <rtos_timer_delete_static>
+20061378:	ffc18793          	addi	a5,gp,-4 # 20066984 <timer_used_num>
+2006137c:	4398                	c.lw	a4,0(a5)
+2006137e:	00042423          	sw	zero,8(s0)
+20061382:	177d                	c.addi	a4,-1
+20061384:	c398                	c.sw	a4,0(a5)
+20061386:	40f2                	c.lwsp	ra,28(sp)
+20061388:	4462                	c.lwsp	s0,24(sp)
+2006138a:	44d2                	c.lwsp	s1,20(sp)
+2006138c:	4942                	c.lwsp	s2,16(sp)
+2006138e:	49b2                	c.lwsp	s3,12(sp)
+20061390:	6105                	c.addi16sp	sp,32
+20061392:	8082                	c.jr	ra
+20061394:	8082                	c.jr	ra
 
-20061398 <rtw_set_timer>:
-20061398:	ea7ff06f          	jal	zero,2006123e <mod_timer>
+20061396 <rtw_init_timer>:
+20061396:	c910                	c.sw	a2,16(a0)
+20061398:	c554                	c.sw	a3,12(a0)
+2006139a:	85ba                	c.mv	a1,a4
+2006139c:	e17ff06f          	jal	zero,200611b2 <init_timer>
 
-2006139c <rtw_cancel_timer>:
-2006139c:	1141                	c.addi	sp,-16
-2006139e:	c606                	c.swsp	ra,12(sp)
-200613a0:	effff0ef          	jal	ra,2006129e <cancel_timer_ex>
-200613a4:	40b2                	c.lwsp	ra,12(sp)
-200613a6:	4501                	c.li	a0,0
-200613a8:	0141                	c.addi	sp,16
-200613aa:	8082                	c.jr	ra
+200613a0 <rtw_set_timer>:
+200613a0:	ea7ff06f          	jal	zero,20061246 <mod_timer>
 
-200613ac <rtw_del_timer>:
-200613ac:	f61ff06f          	jal	zero,2006130c <del_timer_sync>
+200613a4 <rtw_cancel_timer>:
+200613a4:	1141                	c.addi	sp,-16
+200613a6:	c606                	c.swsp	ra,12(sp)
+200613a8:	effff0ef          	jal	ra,200612a6 <cancel_timer_ex>
+200613ac:	40b2                	c.lwsp	ra,12(sp)
+200613ae:	4501                	c.li	a0,0
+200613b0:	0141                	c.addi	sp,16
+200613b2:	8082                	c.jr	ra
 
-200613b0 <rtw_acquire_wakelock>:
-200613b0:	1141                	c.addi	sp,-16
-200613b2:	c606                	c.swsp	ra,12(sp)
-200613b4:	c42f80ef          	jal	ra,200597f6 <pmu_yield_os_check>
-200613b8:	c511                	c.beqz	a0,200613c4 <rtw_acquire_wakelock+0x14>
-200613ba:	40b2                	c.lwsp	ra,12(sp)
-200613bc:	4505                	c.li	a0,1
-200613be:	0141                	c.addi	sp,16
-200613c0:	c82f806f          	jal	zero,20059842 <pmu_acquire_wakelock>
-200613c4:	40b2                	c.lwsp	ra,12(sp)
+200613b4 <rtw_del_timer>:
+200613b4:	f61ff06f          	jal	zero,20061314 <del_timer_sync>
+
+200613b8 <rtw_acquire_wakelock>:
+200613b8:	1141                	c.addi	sp,-16
+200613ba:	c606                	c.swsp	ra,12(sp)
+200613bc:	c3af80ef          	jal	ra,200597f6 <pmu_yield_os_check>
+200613c0:	c511                	c.beqz	a0,200613cc <rtw_acquire_wakelock+0x14>
+200613c2:	40b2                	c.lwsp	ra,12(sp)
+200613c4:	4505                	c.li	a0,1
 200613c6:	0141                	c.addi	sp,16
-200613c8:	8082                	c.jr	ra
+200613c8:	c7af806f          	jal	zero,20059842 <pmu_acquire_wakelock>
+200613cc:	40b2                	c.lwsp	ra,12(sp)
+200613ce:	0141                	c.addi	sp,16
+200613d0:	8082                	c.jr	ra
 
-200613ca <rtw_release_wakelock>:
-200613ca:	1141                	c.addi	sp,-16
-200613cc:	c606                	c.swsp	ra,12(sp)
-200613ce:	c28f80ef          	jal	ra,200597f6 <pmu_yield_os_check>
-200613d2:	c511                	c.beqz	a0,200613de <rtw_release_wakelock+0x14>
-200613d4:	40b2                	c.lwsp	ra,12(sp)
-200613d6:	4505                	c.li	a0,1
-200613d8:	0141                	c.addi	sp,16
-200613da:	c8ef806f          	jal	zero,20059868 <pmu_release_wakelock>
-200613de:	40b2                	c.lwsp	ra,12(sp)
+200613d2 <rtw_release_wakelock>:
+200613d2:	1141                	c.addi	sp,-16
+200613d4:	c606                	c.swsp	ra,12(sp)
+200613d6:	c20f80ef          	jal	ra,200597f6 <pmu_yield_os_check>
+200613da:	c511                	c.beqz	a0,200613e6 <rtw_release_wakelock+0x14>
+200613dc:	40b2                	c.lwsp	ra,12(sp)
+200613de:	4505                	c.li	a0,1
 200613e0:	0141                	c.addi	sp,16
-200613e2:	8082                	c.jr	ra
+200613e2:	c86f806f          	jal	zero,20059868 <pmu_release_wakelock>
+200613e6:	40b2                	c.lwsp	ra,12(sp)
+200613e8:	0141                	c.addi	sp,16
+200613ea:	8082                	c.jr	ra
 
-200613e4 <rtw_wakelock_timeout>:
-200613e4:	1141                	c.addi	sp,-16
-200613e6:	c422                	c.swsp	s0,8(sp)
-200613e8:	c606                	c.swsp	ra,12(sp)
-200613ea:	842a                	c.mv	s0,a0
-200613ec:	c0af80ef          	jal	ra,200597f6 <pmu_yield_os_check>
-200613f0:	c519                	c.beqz	a0,200613fe <rtw_wakelock_timeout+0x1a>
-200613f2:	8522                	c.mv	a0,s0
-200613f4:	4422                	c.lwsp	s0,8(sp)
-200613f6:	40b2                	c.lwsp	ra,12(sp)
-200613f8:	0141                	c.addi	sp,16
-200613fa:	b20f806f          	jal	zero,2005971a <pmu_set_sysactive_time>
+200613ec <rtw_wakelock_timeout>:
+200613ec:	1141                	c.addi	sp,-16
+200613ee:	c422                	c.swsp	s0,8(sp)
+200613f0:	c606                	c.swsp	ra,12(sp)
+200613f2:	842a                	c.mv	s0,a0
+200613f4:	c02f80ef          	jal	ra,200597f6 <pmu_yield_os_check>
+200613f8:	c519                	c.beqz	a0,20061406 <rtw_wakelock_timeout+0x1a>
+200613fa:	8522                	c.mv	a0,s0
+200613fc:	4422                	c.lwsp	s0,8(sp)
 200613fe:	40b2                	c.lwsp	ra,12(sp)
-20061400:	4422                	c.lwsp	s0,8(sp)
-20061402:	0141                	c.addi	sp,16
-20061404:	8082                	c.jr	ra
+20061400:	0141                	c.addi	sp,16
+20061402:	b18f806f          	jal	zero,2005971a <pmu_set_sysactive_time>
+20061406:	40b2                	c.lwsp	ra,12(sp)
+20061408:	4422                	c.lwsp	s0,8(sp)
+2006140a:	0141                	c.addi	sp,16
+2006140c:	8082                	c.jr	ra
 
-20061406 <deregister_tm_clones>:
-20061406:	20058537          	lui	a0,0x20058
-2006140a:	200587b7          	lui	a5,0x20058
-2006140e:	06050713          	addi	a4,a0,96 # 20058060 <BOOT_InitGP>
-20061412:	06078793          	addi	a5,a5,96 # 20058060 <BOOT_InitGP>
-20061416:	00e78863          	beq	a5,a4,20061426 <deregister_tm_clones+0x20>
-2006141a:	00000793          	addi	a5,zero,0
-2006141e:	c781                	c.beqz	a5,20061426 <deregister_tm_clones+0x20>
-20061420:	06050513          	addi	a0,a0,96
-20061424:	8782                	c.jr	a5
-20061426:	8082                	c.jr	ra
+2006140e <deregister_tm_clones>:
+2006140e:	20058537          	lui	a0,0x20058
+20061412:	200587b7          	lui	a5,0x20058
+20061416:	06050713          	addi	a4,a0,96 # 20058060 <BOOT_InitGP>
+2006141a:	06078793          	addi	a5,a5,96 # 20058060 <BOOT_InitGP>
+2006141e:	00e78863          	beq	a5,a4,2006142e <deregister_tm_clones+0x20>
+20061422:	00000793          	addi	a5,zero,0
+20061426:	c781                	c.beqz	a5,2006142e <deregister_tm_clones+0x20>
+20061428:	06050513          	addi	a0,a0,96
+2006142c:	8782                	c.jr	a5
+2006142e:	8082                	c.jr	ra
 
-20061428 <register_tm_clones>:
-20061428:	200587b7          	lui	a5,0x20058
-2006142c:	20058537          	lui	a0,0x20058
-20061430:	06078593          	addi	a1,a5,96 # 20058060 <BOOT_InitGP>
-20061434:	06050793          	addi	a5,a0,96 # 20058060 <BOOT_InitGP>
-20061438:	8d9d                	c.sub	a1,a5
-2006143a:	8589                	c.srai	a1,0x2
-2006143c:	4789                	c.li	a5,2
-2006143e:	02f5c5b3          	div	a1,a1,a5
-20061442:	c599                	c.beqz	a1,20061450 <register_tm_clones+0x28>
-20061444:	00000793          	addi	a5,zero,0
-20061448:	c781                	c.beqz	a5,20061450 <register_tm_clones+0x28>
-2006144a:	06050513          	addi	a0,a0,96
-2006144e:	8782                	c.jr	a5
-20061450:	8082                	c.jr	ra
+20061430 <register_tm_clones>:
+20061430:	200587b7          	lui	a5,0x20058
+20061434:	20058537          	lui	a0,0x20058
+20061438:	06078593          	addi	a1,a5,96 # 20058060 <BOOT_InitGP>
+2006143c:	06050793          	addi	a5,a0,96 # 20058060 <BOOT_InitGP>
+20061440:	8d9d                	c.sub	a1,a5
+20061442:	8589                	c.srai	a1,0x2
+20061444:	4789                	c.li	a5,2
+20061446:	02f5c5b3          	div	a1,a1,a5
+2006144a:	c599                	c.beqz	a1,20061458 <register_tm_clones+0x28>
+2006144c:	00000793          	addi	a5,zero,0
+20061450:	c781                	c.beqz	a5,20061458 <register_tm_clones+0x28>
+20061452:	06050513          	addi	a0,a0,96
+20061456:	8782                	c.jr	a5
+20061458:	8082                	c.jr	ra
 
-20061452 <__do_global_dtors_aux>:
-20061452:	200697b7          	lui	a5,0x20069
-20061456:	9687c703          	lbu	a4,-1688(a5) # 20068968 <completed.1>
-2006145a:	eb05                	c.bnez	a4,2006148a <__do_global_dtors_aux+0x38>
-2006145c:	1141                	c.addi	sp,-16
-2006145e:	c422                	c.swsp	s0,8(sp)
-20061460:	c606                	c.swsp	ra,12(sp)
-20061462:	843e                	c.mv	s0,a5
-20061464:	374d                	c.jal	20061406 <deregister_tm_clones>
-20061466:	00000793          	addi	a5,zero,0
-2006146a:	cb89                	c.beqz	a5,2006147c <__do_global_dtors_aux+0x2a>
-2006146c:	20058537          	lui	a0,0x20058
-20061470:	06050513          	addi	a0,a0,96 # 20058060 <BOOT_InitGP>
-20061474:	00000097          	auipc	ra,0x0
-20061478:	000000e7          	jalr	ra,0(zero) # 0 <Reset_Handler>
-2006147c:	4785                	c.li	a5,1
-2006147e:	40b2                	c.lwsp	ra,12(sp)
-20061480:	96f40423          	sb	a5,-1688(s0)
-20061484:	4422                	c.lwsp	s0,8(sp)
-20061486:	0141                	c.addi	sp,16
-20061488:	8082                	c.jr	ra
-2006148a:	8082                	c.jr	ra
+2006145a <__do_global_dtors_aux>:
+2006145a:	200697b7          	lui	a5,0x20069
+2006145e:	9a87c703          	lbu	a4,-1624(a5) # 200689a8 <completed.1>
+20061462:	eb05                	c.bnez	a4,20061492 <__do_global_dtors_aux+0x38>
+20061464:	1141                	c.addi	sp,-16
+20061466:	c422                	c.swsp	s0,8(sp)
+20061468:	c606                	c.swsp	ra,12(sp)
+2006146a:	843e                	c.mv	s0,a5
+2006146c:	374d                	c.jal	2006140e <deregister_tm_clones>
+2006146e:	00000793          	addi	a5,zero,0
+20061472:	cb89                	c.beqz	a5,20061484 <__do_global_dtors_aux+0x2a>
+20061474:	20058537          	lui	a0,0x20058
+20061478:	06050513          	addi	a0,a0,96 # 20058060 <BOOT_InitGP>
+2006147c:	00000097          	auipc	ra,0x0
+20061480:	000000e7          	jalr	ra,0(zero) # 0 <Reset_Handler>
+20061484:	4785                	c.li	a5,1
+20061486:	40b2                	c.lwsp	ra,12(sp)
+20061488:	9af40423          	sb	a5,-1624(s0)
+2006148c:	4422                	c.lwsp	s0,8(sp)
+2006148e:	0141                	c.addi	sp,16
+20061490:	8082                	c.jr	ra
+20061492:	8082                	c.jr	ra
 
-2006148c <frame_dummy>:
-2006148c:	00000793          	addi	a5,zero,0
-20061490:	c38d                	c.beqz	a5,200614b2 <frame_dummy+0x26>
-20061492:	200695b7          	lui	a1,0x20069
-20061496:	20058537          	lui	a0,0x20058
-2006149a:	1141                	c.addi	sp,-16
-2006149c:	96c58593          	addi	a1,a1,-1684 # 2006896c <object.0>
-200614a0:	06050513          	addi	a0,a0,96 # 20058060 <BOOT_InitGP>
-200614a4:	c606                	c.swsp	ra,12(sp)
-200614a6:	00000097          	auipc	ra,0x0
-200614aa:	000000e7          	jalr	ra,0(zero) # 0 <Reset_Handler>
-200614ae:	40b2                	c.lwsp	ra,12(sp)
-200614b0:	0141                	c.addi	sp,16
-200614b2:	bf9d                	c.j	20061428 <register_tm_clones>
+20061494 <frame_dummy>:
+20061494:	00000793          	addi	a5,zero,0
+20061498:	c38d                	c.beqz	a5,200614ba <frame_dummy+0x26>
+2006149a:	200695b7          	lui	a1,0x20069
+2006149e:	20058537          	lui	a0,0x20058
+200614a2:	1141                	c.addi	sp,-16
+200614a4:	9ac58593          	addi	a1,a1,-1620 # 200689ac <object.0>
+200614a8:	06050513          	addi	a0,a0,96 # 20058060 <BOOT_InitGP>
+200614ac:	c606                	c.swsp	ra,12(sp)
+200614ae:	00000097          	auipc	ra,0x0
+200614b2:	000000e7          	jalr	ra,0(zero) # 0 <Reset_Handler>
+200614b6:	40b2                	c.lwsp	ra,12(sp)
+200614b8:	0141                	c.addi	sp,16
+200614ba:	bf9d                	c.j	20061430 <register_tm_clones>
 
-200614b4 <__clzsi2>:
-200614b4:	67c1                	c.lui	a5,0x10
-200614b6:	02f57663          	bgeu	a0,a5,200614e2 <__clzsi2+0x2e>
-200614ba:	0ff00793          	addi	a5,zero,255
-200614be:	00a7b7b3          	sltu	a5,a5,a0
-200614c2:	078e                	c.slli	a5,0x3
-200614c4:	20065737          	lui	a4,0x20065
-200614c8:	02000693          	addi	a3,zero,32
-200614cc:	8e9d                	c.sub	a3,a5
-200614ce:	00f55533          	srl	a0,a0,a5
-200614d2:	a4870793          	addi	a5,a4,-1464 # 20064a48 <__clz_tab>
-200614d6:	953e                	c.add	a0,a5
-200614d8:	00054503          	lbu	a0,0(a0)
-200614dc:	40a68533          	sub	a0,a3,a0
-200614e0:	8082                	c.jr	ra
-200614e2:	01000737          	lui	a4,0x1000
-200614e6:	47c1                	c.li	a5,16
-200614e8:	fce56ee3          	bltu	a0,a4,200614c4 <__clzsi2+0x10>
-200614ec:	47e1                	c.li	a5,24
-200614ee:	bfd9                	c.j	200614c4 <__clzsi2+0x10>
+200614bc <__clzsi2>:
+200614bc:	67c1                	c.lui	a5,0x10
+200614be:	02f57663          	bgeu	a0,a5,200614ea <__clzsi2+0x2e>
+200614c2:	0ff00793          	addi	a5,zero,255
+200614c6:	00a7b7b3          	sltu	a5,a5,a0
+200614ca:	078e                	c.slli	a5,0x3
+200614cc:	20065737          	lui	a4,0x20065
+200614d0:	02000693          	addi	a3,zero,32
+200614d4:	8e9d                	c.sub	a3,a5
+200614d6:	00f55533          	srl	a0,a0,a5
+200614da:	a5070793          	addi	a5,a4,-1456 # 20064a50 <__clz_tab>
+200614de:	953e                	c.add	a0,a5
+200614e0:	00054503          	lbu	a0,0(a0)
+200614e4:	40a68533          	sub	a0,a3,a0
+200614e8:	8082                	c.jr	ra
+200614ea:	01000737          	lui	a4,0x1000
+200614ee:	47c1                	c.li	a5,16
+200614f0:	fce56ee3          	bltu	a0,a4,200614cc <__clzsi2+0x10>
+200614f4:	47e1                	c.li	a5,24
+200614f6:	bfd9                	c.j	200614cc <__clzsi2+0x10>
 
-200614f0 <__udivdi3>:
-200614f0:	88aa                	c.mv	a7,a0
-200614f2:	87ae                	c.mv	a5,a1
-200614f4:	8832                	c.mv	a6,a2
-200614f6:	8536                	c.mv	a0,a3
-200614f8:	8346                	c.mv	t1,a7
-200614fa:	20069663          	bne	a3,zero,20061706 <__udivdi3+0x216>
-200614fe:	200656b7          	lui	a3,0x20065
-20061502:	a4868693          	addi	a3,a3,-1464 # 20064a48 <__clz_tab>
-20061506:	0ac5ff63          	bgeu	a1,a2,200615c4 <__udivdi3+0xd4>
-2006150a:	6741                	c.lui	a4,0x10
-2006150c:	0ae67563          	bgeu	a2,a4,200615b6 <__udivdi3+0xc6>
-20061510:	0ff00713          	addi	a4,zero,255
-20061514:	00c73733          	sltu	a4,a4,a2
-20061518:	070e                	c.slli	a4,0x3
-2006151a:	00e65533          	srl	a0,a2,a4
-2006151e:	96aa                	c.add	a3,a0
-20061520:	0006c683          	lbu	a3,0(a3)
-20061524:	02000513          	addi	a0,zero,32
-20061528:	9736                	c.add	a4,a3
-2006152a:	40e506b3          	sub	a3,a0,a4
-2006152e:	00e50b63          	beq	a0,a4,20061544 <__udivdi3+0x54>
-20061532:	00d795b3          	sll	a1,a5,a3
-20061536:	00e8d733          	srl	a4,a7,a4
-2006153a:	00d61833          	sll	a6,a2,a3
-2006153e:	8dd9                	c.or	a1,a4
-20061540:	00d89333          	sll	t1,a7,a3
-20061544:	01085893          	srli	a7,a6,0x10
-20061548:	0315d6b3          	divu	a3,a1,a7
-2006154c:	01081613          	slli	a2,a6,0x10
-20061550:	8241                	c.srli	a2,0x10
-20061552:	01035793          	srli	a5,t1,0x10
-20061556:	0315f733          	remu	a4,a1,a7
-2006155a:	8536                	c.mv	a0,a3
-2006155c:	02d605b3          	mul	a1,a2,a3
-20061560:	0742                	c.slli	a4,0x10
-20061562:	8fd9                	c.or	a5,a4
-20061564:	00b7fc63          	bgeu	a5,a1,2006157c <__udivdi3+0x8c>
-20061568:	97c2                	c.add	a5,a6
-2006156a:	fff68513          	addi	a0,a3,-1
-2006156e:	0107e763          	bltu	a5,a6,2006157c <__udivdi3+0x8c>
-20061572:	00b7f563          	bgeu	a5,a1,2006157c <__udivdi3+0x8c>
-20061576:	ffe68513          	addi	a0,a3,-2
-2006157a:	97c2                	c.add	a5,a6
-2006157c:	8f8d                	c.sub	a5,a1
-2006157e:	0317f733          	remu	a4,a5,a7
-20061582:	0342                	c.slli	t1,0x10
-20061584:	01035313          	srli	t1,t1,0x10
-20061588:	0317d7b3          	divu	a5,a5,a7
-2006158c:	0742                	c.slli	a4,0x10
-2006158e:	00676333          	or	t1,a4,t1
-20061592:	02f606b3          	mul	a3,a2,a5
-20061596:	863e                	c.mv	a2,a5
-20061598:	00d37b63          	bgeu	t1,a3,200615ae <__udivdi3+0xbe>
-2006159c:	9342                	c.add	t1,a6
-2006159e:	fff78613          	addi	a2,a5,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
-200615a2:	01036663          	bltu	t1,a6,200615ae <__udivdi3+0xbe>
-200615a6:	00d37463          	bgeu	t1,a3,200615ae <__udivdi3+0xbe>
-200615aa:	ffe78613          	addi	a2,a5,-2
-200615ae:	0542                	c.slli	a0,0x10
-200615b0:	8d51                	c.or	a0,a2
-200615b2:	4581                	c.li	a1,0
-200615b4:	a85d                	c.j	2006166a <__udivdi3+0x17a>
-200615b6:	01000537          	lui	a0,0x1000
-200615ba:	4741                	c.li	a4,16
-200615bc:	f4a66fe3          	bltu	a2,a0,2006151a <__udivdi3+0x2a>
-200615c0:	4761                	c.li	a4,24
-200615c2:	bfa1                	c.j	2006151a <__udivdi3+0x2a>
-200615c4:	e601                	c.bnez	a2,200615cc <__udivdi3+0xdc>
-200615c6:	4705                	c.li	a4,1
-200615c8:	02c75833          	divu	a6,a4,a2
-200615cc:	6741                	c.lui	a4,0x10
-200615ce:	08e87f63          	bgeu	a6,a4,2006166c <__udivdi3+0x17c>
-200615d2:	0ff00713          	addi	a4,zero,255
-200615d6:	01077363          	bgeu	a4,a6,200615dc <__udivdi3+0xec>
-200615da:	4521                	c.li	a0,8
-200615dc:	00a85733          	srl	a4,a6,a0
-200615e0:	96ba                	c.add	a3,a4
-200615e2:	0006c703          	lbu	a4,0(a3)
-200615e6:	02000613          	addi	a2,zero,32
-200615ea:	972a                	c.add	a4,a0
-200615ec:	40e606b3          	sub	a3,a2,a4
-200615f0:	08e61563          	bne	a2,a4,2006167a <__udivdi3+0x18a>
-200615f4:	410787b3          	sub	a5,a5,a6
-200615f8:	4585                	c.li	a1,1
-200615fa:	01085893          	srli	a7,a6,0x10
-200615fe:	01081613          	slli	a2,a6,0x10
-20061602:	8241                	c.srli	a2,0x10
-20061604:	01035713          	srli	a4,t1,0x10
-20061608:	0317f6b3          	remu	a3,a5,a7
-2006160c:	0317d7b3          	divu	a5,a5,a7
-20061610:	06c2                	c.slli	a3,0x10
-20061612:	8f55                	c.or	a4,a3
-20061614:	02f60e33          	mul	t3,a2,a5
-20061618:	853e                	c.mv	a0,a5
-2006161a:	01c77c63          	bgeu	a4,t3,20061632 <__udivdi3+0x142>
-2006161e:	9742                	c.add	a4,a6
-20061620:	fff78513          	addi	a0,a5,-1
-20061624:	01076763          	bltu	a4,a6,20061632 <__udivdi3+0x142>
-20061628:	01c77563          	bgeu	a4,t3,20061632 <__udivdi3+0x142>
-2006162c:	ffe78513          	addi	a0,a5,-2
-20061630:	9742                	c.add	a4,a6
-20061632:	41c70733          	sub	a4,a4,t3
-20061636:	031777b3          	remu	a5,a4,a7
-2006163a:	0342                	c.slli	t1,0x10
-2006163c:	01035313          	srli	t1,t1,0x10
-20061640:	03175733          	divu	a4,a4,a7
-20061644:	07c2                	c.slli	a5,0x10
-20061646:	0067e333          	or	t1,a5,t1
-2006164a:	02e606b3          	mul	a3,a2,a4
-2006164e:	863a                	c.mv	a2,a4
-20061650:	00d37b63          	bgeu	t1,a3,20061666 <__udivdi3+0x176>
-20061654:	9342                	c.add	t1,a6
-20061656:	fff70613          	addi	a2,a4,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
-2006165a:	01036663          	bltu	t1,a6,20061666 <__udivdi3+0x176>
-2006165e:	00d37463          	bgeu	t1,a3,20061666 <__udivdi3+0x176>
-20061662:	ffe70613          	addi	a2,a4,-2
-20061666:	0542                	c.slli	a0,0x10
-20061668:	8d51                	c.or	a0,a2
-2006166a:	8082                	c.jr	ra
-2006166c:	01000737          	lui	a4,0x1000
-20061670:	4541                	c.li	a0,16
-20061672:	f6e865e3          	bltu	a6,a4,200615dc <__udivdi3+0xec>
-20061676:	4561                	c.li	a0,24
-20061678:	b795                	c.j	200615dc <__udivdi3+0xec>
-2006167a:	00d81833          	sll	a6,a6,a3
-2006167e:	00e7d533          	srl	a0,a5,a4
-20061682:	00d89333          	sll	t1,a7,a3
-20061686:	00d797b3          	sll	a5,a5,a3
-2006168a:	00e8d733          	srl	a4,a7,a4
-2006168e:	01085893          	srli	a7,a6,0x10
-20061692:	00f76633          	or	a2,a4,a5
-20061696:	03157733          	remu	a4,a0,a7
-2006169a:	01081793          	slli	a5,a6,0x10
-2006169e:	83c1                	c.srli	a5,0x10
-200616a0:	01065593          	srli	a1,a2,0x10
-200616a4:	03155533          	divu	a0,a0,a7
-200616a8:	0742                	c.slli	a4,0x10
-200616aa:	8f4d                	c.or	a4,a1
-200616ac:	02a786b3          	mul	a3,a5,a0
-200616b0:	85aa                	c.mv	a1,a0
-200616b2:	00d77c63          	bgeu	a4,a3,200616ca <__udivdi3+0x1da>
-200616b6:	9742                	c.add	a4,a6
-200616b8:	fff50593          	addi	a1,a0,-1 # ffffff <__ap_sram_heap_size+0xfbffff>
-200616bc:	01076763          	bltu	a4,a6,200616ca <__udivdi3+0x1da>
-200616c0:	00d77563          	bgeu	a4,a3,200616ca <__udivdi3+0x1da>
-200616c4:	ffe50593          	addi	a1,a0,-2
-200616c8:	9742                	c.add	a4,a6
-200616ca:	40d706b3          	sub	a3,a4,a3
-200616ce:	0316f733          	remu	a4,a3,a7
-200616d2:	0642                	c.slli	a2,0x10
-200616d4:	8241                	c.srli	a2,0x10
-200616d6:	0316d6b3          	divu	a3,a3,a7
-200616da:	0742                	c.slli	a4,0x10
-200616dc:	02d78533          	mul	a0,a5,a3
-200616e0:	00c767b3          	or	a5,a4,a2
-200616e4:	8736                	c.mv	a4,a3
-200616e6:	00a7fc63          	bgeu	a5,a0,200616fe <__udivdi3+0x20e>
-200616ea:	97c2                	c.add	a5,a6
-200616ec:	fff68713          	addi	a4,a3,-1
-200616f0:	0107e763          	bltu	a5,a6,200616fe <__udivdi3+0x20e>
-200616f4:	00a7f563          	bgeu	a5,a0,200616fe <__udivdi3+0x20e>
-200616f8:	ffe68713          	addi	a4,a3,-2
-200616fc:	97c2                	c.add	a5,a6
-200616fe:	05c2                	c.slli	a1,0x10
-20061700:	8f89                	c.sub	a5,a0
-20061702:	8dd9                	c.or	a1,a4
-20061704:	bddd                	c.j	200615fa <__udivdi3+0x10a>
-20061706:	14d5e263          	bltu	a1,a3,2006184a <__udivdi3+0x35a>
-2006170a:	6741                	c.lui	a4,0x10
-2006170c:	02e6ff63          	bgeu	a3,a4,2006174a <__udivdi3+0x25a>
-20061710:	0ff00713          	addi	a4,zero,255
-20061714:	00d735b3          	sltu	a1,a4,a3
-20061718:	058e                	c.slli	a1,0x3
-2006171a:	20065737          	lui	a4,0x20065
-2006171e:	00b6d533          	srl	a0,a3,a1
-20061722:	a4870713          	addi	a4,a4,-1464 # 20064a48 <__clz_tab>
-20061726:	972a                	c.add	a4,a0
-20061728:	00074703          	lbu	a4,0(a4)
-2006172c:	02000513          	addi	a0,zero,32
-20061730:	972e                	c.add	a4,a1
-20061732:	40e505b3          	sub	a1,a0,a4
-20061736:	02e51163          	bne	a0,a4,20061758 <__udivdi3+0x268>
-2006173a:	4505                	c.li	a0,1
-2006173c:	f2f6e7e3          	bltu	a3,a5,2006166a <__udivdi3+0x17a>
-20061740:	00c8b533          	sltu	a0,a7,a2
-20061744:	00154513          	xori	a0,a0,1
-20061748:	b70d                	c.j	2006166a <__udivdi3+0x17a>
-2006174a:	01000737          	lui	a4,0x1000
-2006174e:	45c1                	c.li	a1,16
-20061750:	fce6e5e3          	bltu	a3,a4,2006171a <__udivdi3+0x22a>
-20061754:	45e1                	c.li	a1,24
-20061756:	b7d1                	c.j	2006171a <__udivdi3+0x22a>
-20061758:	00e65833          	srl	a6,a2,a4
-2006175c:	00b696b3          	sll	a3,a3,a1
-20061760:	00d86833          	or	a6,a6,a3
-20061764:	00e7de33          	srl	t3,a5,a4
-20061768:	01085e93          	srli	t4,a6,0x10
-2006176c:	03de76b3          	remu	a3,t3,t4
-20061770:	00b797b3          	sll	a5,a5,a1
-20061774:	00e8d733          	srl	a4,a7,a4
-20061778:	00b61333          	sll	t1,a2,a1
-2006177c:	00f76633          	or	a2,a4,a5
-20061780:	01081793          	slli	a5,a6,0x10
-20061784:	83c1                	c.srli	a5,0x10
-20061786:	01065713          	srli	a4,a2,0x10
-2006178a:	03de5e33          	divu	t3,t3,t4
-2006178e:	06c2                	c.slli	a3,0x10
-20061790:	8f55                	c.or	a4,a3
-20061792:	03c78f33          	mul	t5,a5,t3
-20061796:	8572                	c.mv	a0,t3
-20061798:	01e77c63          	bgeu	a4,t5,200617b0 <__udivdi3+0x2c0>
-2006179c:	9742                	c.add	a4,a6
-2006179e:	fffe0513          	addi	a0,t3,-1
-200617a2:	01076763          	bltu	a4,a6,200617b0 <__udivdi3+0x2c0>
-200617a6:	01e77563          	bgeu	a4,t5,200617b0 <__udivdi3+0x2c0>
-200617aa:	ffee0513          	addi	a0,t3,-2
-200617ae:	9742                	c.add	a4,a6
-200617b0:	41e70733          	sub	a4,a4,t5
-200617b4:	03d776b3          	remu	a3,a4,t4
-200617b8:	03d75733          	divu	a4,a4,t4
-200617bc:	06c2                	c.slli	a3,0x10
-200617be:	02e78e33          	mul	t3,a5,a4
-200617c2:	01061793          	slli	a5,a2,0x10
-200617c6:	83c1                	c.srli	a5,0x10
-200617c8:	8fd5                	c.or	a5,a3
-200617ca:	863a                	c.mv	a2,a4
-200617cc:	01c7fc63          	bgeu	a5,t3,200617e4 <__udivdi3+0x2f4>
-200617d0:	97c2                	c.add	a5,a6
-200617d2:	fff70613          	addi	a2,a4,-1 # ffffff <__ap_sram_heap_size+0xfbffff>
-200617d6:	0107e763          	bltu	a5,a6,200617e4 <__udivdi3+0x2f4>
-200617da:	01c7f563          	bgeu	a5,t3,200617e4 <__udivdi3+0x2f4>
-200617de:	ffe70613          	addi	a2,a4,-2
-200617e2:	97c2                	c.add	a5,a6
-200617e4:	0542                	c.slli	a0,0x10
-200617e6:	6ec1                	c.lui	t4,0x10
-200617e8:	8d51                	c.or	a0,a2
-200617ea:	fffe8693          	addi	a3,t4,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
-200617ee:	00d57833          	and	a6,a0,a3
-200617f2:	01055613          	srli	a2,a0,0x10
-200617f6:	00d376b3          	and	a3,t1,a3
-200617fa:	01035313          	srli	t1,t1,0x10
-200617fe:	41c787b3          	sub	a5,a5,t3
-20061802:	02d80e33          	mul	t3,a6,a3
-20061806:	02d606b3          	mul	a3,a2,a3
-2006180a:	010e5713          	srli	a4,t3,0x10
-2006180e:	02680833          	mul	a6,a6,t1
-20061812:	9836                	c.add	a6,a3
-20061814:	9742                	c.add	a4,a6
-20061816:	02660633          	mul	a2,a2,t1
-2006181a:	00d77363          	bgeu	a4,a3,20061820 <__udivdi3+0x330>
-2006181e:	9676                	c.add	a2,t4
-20061820:	01075693          	srli	a3,a4,0x10
-20061824:	9636                	c.add	a2,a3
-20061826:	02c7e063          	bltu	a5,a2,20061846 <__udivdi3+0x356>
-2006182a:	d8c794e3          	bne	a5,a2,200615b2 <__udivdi3+0xc2>
-2006182e:	67c1                	c.lui	a5,0x10
-20061830:	17fd                	c.addi	a5,-1
-20061832:	8f7d                	c.and	a4,a5
-20061834:	0742                	c.slli	a4,0x10
-20061836:	00fe7e33          	and	t3,t3,a5
-2006183a:	00b898b3          	sll	a7,a7,a1
-2006183e:	9772                	c.add	a4,t3
-20061840:	4581                	c.li	a1,0
-20061842:	e2e8f4e3          	bgeu	a7,a4,2006166a <__udivdi3+0x17a>
-20061846:	157d                	c.addi	a0,-1
-20061848:	b3ad                	c.j	200615b2 <__udivdi3+0xc2>
-2006184a:	4581                	c.li	a1,0
-2006184c:	4501                	c.li	a0,0
-2006184e:	bd31                	c.j	2006166a <__udivdi3+0x17a>
+200614f8 <__udivdi3>:
+200614f8:	88aa                	c.mv	a7,a0
+200614fa:	87ae                	c.mv	a5,a1
+200614fc:	8832                	c.mv	a6,a2
+200614fe:	8536                	c.mv	a0,a3
+20061500:	8346                	c.mv	t1,a7
+20061502:	20069663          	bne	a3,zero,2006170e <__udivdi3+0x216>
+20061506:	200656b7          	lui	a3,0x20065
+2006150a:	a5068693          	addi	a3,a3,-1456 # 20064a50 <__clz_tab>
+2006150e:	0ac5ff63          	bgeu	a1,a2,200615cc <__udivdi3+0xd4>
+20061512:	6741                	c.lui	a4,0x10
+20061514:	0ae67563          	bgeu	a2,a4,200615be <__udivdi3+0xc6>
+20061518:	0ff00713          	addi	a4,zero,255
+2006151c:	00c73733          	sltu	a4,a4,a2
+20061520:	070e                	c.slli	a4,0x3
+20061522:	00e65533          	srl	a0,a2,a4
+20061526:	96aa                	c.add	a3,a0
+20061528:	0006c683          	lbu	a3,0(a3)
+2006152c:	02000513          	addi	a0,zero,32
+20061530:	9736                	c.add	a4,a3
+20061532:	40e506b3          	sub	a3,a0,a4
+20061536:	00e50b63          	beq	a0,a4,2006154c <__udivdi3+0x54>
+2006153a:	00d795b3          	sll	a1,a5,a3
+2006153e:	00e8d733          	srl	a4,a7,a4
+20061542:	00d61833          	sll	a6,a2,a3
+20061546:	8dd9                	c.or	a1,a4
+20061548:	00d89333          	sll	t1,a7,a3
+2006154c:	01085893          	srli	a7,a6,0x10
+20061550:	0315d6b3          	divu	a3,a1,a7
+20061554:	01081613          	slli	a2,a6,0x10
+20061558:	8241                	c.srli	a2,0x10
+2006155a:	01035793          	srli	a5,t1,0x10
+2006155e:	0315f733          	remu	a4,a1,a7
+20061562:	8536                	c.mv	a0,a3
+20061564:	02d605b3          	mul	a1,a2,a3
+20061568:	0742                	c.slli	a4,0x10
+2006156a:	8fd9                	c.or	a5,a4
+2006156c:	00b7fc63          	bgeu	a5,a1,20061584 <__udivdi3+0x8c>
+20061570:	97c2                	c.add	a5,a6
+20061572:	fff68513          	addi	a0,a3,-1
+20061576:	0107e763          	bltu	a5,a6,20061584 <__udivdi3+0x8c>
+2006157a:	00b7f563          	bgeu	a5,a1,20061584 <__udivdi3+0x8c>
+2006157e:	ffe68513          	addi	a0,a3,-2
+20061582:	97c2                	c.add	a5,a6
+20061584:	8f8d                	c.sub	a5,a1
+20061586:	0317f733          	remu	a4,a5,a7
+2006158a:	0342                	c.slli	t1,0x10
+2006158c:	01035313          	srli	t1,t1,0x10
+20061590:	0317d7b3          	divu	a5,a5,a7
+20061594:	0742                	c.slli	a4,0x10
+20061596:	00676333          	or	t1,a4,t1
+2006159a:	02f606b3          	mul	a3,a2,a5
+2006159e:	863e                	c.mv	a2,a5
+200615a0:	00d37b63          	bgeu	t1,a3,200615b6 <__udivdi3+0xbe>
+200615a4:	9342                	c.add	t1,a6
+200615a6:	fff78613          	addi	a2,a5,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
+200615aa:	01036663          	bltu	t1,a6,200615b6 <__udivdi3+0xbe>
+200615ae:	00d37463          	bgeu	t1,a3,200615b6 <__udivdi3+0xbe>
+200615b2:	ffe78613          	addi	a2,a5,-2
+200615b6:	0542                	c.slli	a0,0x10
+200615b8:	8d51                	c.or	a0,a2
+200615ba:	4581                	c.li	a1,0
+200615bc:	a85d                	c.j	20061672 <__udivdi3+0x17a>
+200615be:	01000537          	lui	a0,0x1000
+200615c2:	4741                	c.li	a4,16
+200615c4:	f4a66fe3          	bltu	a2,a0,20061522 <__udivdi3+0x2a>
+200615c8:	4761                	c.li	a4,24
+200615ca:	bfa1                	c.j	20061522 <__udivdi3+0x2a>
+200615cc:	e601                	c.bnez	a2,200615d4 <__udivdi3+0xdc>
+200615ce:	4705                	c.li	a4,1
+200615d0:	02c75833          	divu	a6,a4,a2
+200615d4:	6741                	c.lui	a4,0x10
+200615d6:	08e87f63          	bgeu	a6,a4,20061674 <__udivdi3+0x17c>
+200615da:	0ff00713          	addi	a4,zero,255
+200615de:	01077363          	bgeu	a4,a6,200615e4 <__udivdi3+0xec>
+200615e2:	4521                	c.li	a0,8
+200615e4:	00a85733          	srl	a4,a6,a0
+200615e8:	96ba                	c.add	a3,a4
+200615ea:	0006c703          	lbu	a4,0(a3)
+200615ee:	02000613          	addi	a2,zero,32
+200615f2:	972a                	c.add	a4,a0
+200615f4:	40e606b3          	sub	a3,a2,a4
+200615f8:	08e61563          	bne	a2,a4,20061682 <__udivdi3+0x18a>
+200615fc:	410787b3          	sub	a5,a5,a6
+20061600:	4585                	c.li	a1,1
+20061602:	01085893          	srli	a7,a6,0x10
+20061606:	01081613          	slli	a2,a6,0x10
+2006160a:	8241                	c.srli	a2,0x10
+2006160c:	01035713          	srli	a4,t1,0x10
+20061610:	0317f6b3          	remu	a3,a5,a7
+20061614:	0317d7b3          	divu	a5,a5,a7
+20061618:	06c2                	c.slli	a3,0x10
+2006161a:	8f55                	c.or	a4,a3
+2006161c:	02f60e33          	mul	t3,a2,a5
+20061620:	853e                	c.mv	a0,a5
+20061622:	01c77c63          	bgeu	a4,t3,2006163a <__udivdi3+0x142>
+20061626:	9742                	c.add	a4,a6
+20061628:	fff78513          	addi	a0,a5,-1
+2006162c:	01076763          	bltu	a4,a6,2006163a <__udivdi3+0x142>
+20061630:	01c77563          	bgeu	a4,t3,2006163a <__udivdi3+0x142>
+20061634:	ffe78513          	addi	a0,a5,-2
+20061638:	9742                	c.add	a4,a6
+2006163a:	41c70733          	sub	a4,a4,t3
+2006163e:	031777b3          	remu	a5,a4,a7
+20061642:	0342                	c.slli	t1,0x10
+20061644:	01035313          	srli	t1,t1,0x10
+20061648:	03175733          	divu	a4,a4,a7
+2006164c:	07c2                	c.slli	a5,0x10
+2006164e:	0067e333          	or	t1,a5,t1
+20061652:	02e606b3          	mul	a3,a2,a4
+20061656:	863a                	c.mv	a2,a4
+20061658:	00d37b63          	bgeu	t1,a3,2006166e <__udivdi3+0x176>
+2006165c:	9342                	c.add	t1,a6
+2006165e:	fff70613          	addi	a2,a4,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
+20061662:	01036663          	bltu	t1,a6,2006166e <__udivdi3+0x176>
+20061666:	00d37463          	bgeu	t1,a3,2006166e <__udivdi3+0x176>
+2006166a:	ffe70613          	addi	a2,a4,-2
+2006166e:	0542                	c.slli	a0,0x10
+20061670:	8d51                	c.or	a0,a2
+20061672:	8082                	c.jr	ra
+20061674:	01000737          	lui	a4,0x1000
+20061678:	4541                	c.li	a0,16
+2006167a:	f6e865e3          	bltu	a6,a4,200615e4 <__udivdi3+0xec>
+2006167e:	4561                	c.li	a0,24
+20061680:	b795                	c.j	200615e4 <__udivdi3+0xec>
+20061682:	00d81833          	sll	a6,a6,a3
+20061686:	00e7d533          	srl	a0,a5,a4
+2006168a:	00d89333          	sll	t1,a7,a3
+2006168e:	00d797b3          	sll	a5,a5,a3
+20061692:	00e8d733          	srl	a4,a7,a4
+20061696:	01085893          	srli	a7,a6,0x10
+2006169a:	00f76633          	or	a2,a4,a5
+2006169e:	03157733          	remu	a4,a0,a7
+200616a2:	01081793          	slli	a5,a6,0x10
+200616a6:	83c1                	c.srli	a5,0x10
+200616a8:	01065593          	srli	a1,a2,0x10
+200616ac:	03155533          	divu	a0,a0,a7
+200616b0:	0742                	c.slli	a4,0x10
+200616b2:	8f4d                	c.or	a4,a1
+200616b4:	02a786b3          	mul	a3,a5,a0
+200616b8:	85aa                	c.mv	a1,a0
+200616ba:	00d77c63          	bgeu	a4,a3,200616d2 <__udivdi3+0x1da>
+200616be:	9742                	c.add	a4,a6
+200616c0:	fff50593          	addi	a1,a0,-1 # ffffff <__ap_sram_heap_size+0xfbffff>
+200616c4:	01076763          	bltu	a4,a6,200616d2 <__udivdi3+0x1da>
+200616c8:	00d77563          	bgeu	a4,a3,200616d2 <__udivdi3+0x1da>
+200616cc:	ffe50593          	addi	a1,a0,-2
+200616d0:	9742                	c.add	a4,a6
+200616d2:	40d706b3          	sub	a3,a4,a3
+200616d6:	0316f733          	remu	a4,a3,a7
+200616da:	0642                	c.slli	a2,0x10
+200616dc:	8241                	c.srli	a2,0x10
+200616de:	0316d6b3          	divu	a3,a3,a7
+200616e2:	0742                	c.slli	a4,0x10
+200616e4:	02d78533          	mul	a0,a5,a3
+200616e8:	00c767b3          	or	a5,a4,a2
+200616ec:	8736                	c.mv	a4,a3
+200616ee:	00a7fc63          	bgeu	a5,a0,20061706 <__udivdi3+0x20e>
+200616f2:	97c2                	c.add	a5,a6
+200616f4:	fff68713          	addi	a4,a3,-1
+200616f8:	0107e763          	bltu	a5,a6,20061706 <__udivdi3+0x20e>
+200616fc:	00a7f563          	bgeu	a5,a0,20061706 <__udivdi3+0x20e>
+20061700:	ffe68713          	addi	a4,a3,-2
+20061704:	97c2                	c.add	a5,a6
+20061706:	05c2                	c.slli	a1,0x10
+20061708:	8f89                	c.sub	a5,a0
+2006170a:	8dd9                	c.or	a1,a4
+2006170c:	bddd                	c.j	20061602 <__udivdi3+0x10a>
+2006170e:	14d5e263          	bltu	a1,a3,20061852 <__udivdi3+0x35a>
+20061712:	6741                	c.lui	a4,0x10
+20061714:	02e6ff63          	bgeu	a3,a4,20061752 <__udivdi3+0x25a>
+20061718:	0ff00713          	addi	a4,zero,255
+2006171c:	00d735b3          	sltu	a1,a4,a3
+20061720:	058e                	c.slli	a1,0x3
+20061722:	20065737          	lui	a4,0x20065
+20061726:	00b6d533          	srl	a0,a3,a1
+2006172a:	a5070713          	addi	a4,a4,-1456 # 20064a50 <__clz_tab>
+2006172e:	972a                	c.add	a4,a0
+20061730:	00074703          	lbu	a4,0(a4)
+20061734:	02000513          	addi	a0,zero,32
+20061738:	972e                	c.add	a4,a1
+2006173a:	40e505b3          	sub	a1,a0,a4
+2006173e:	02e51163          	bne	a0,a4,20061760 <__udivdi3+0x268>
+20061742:	4505                	c.li	a0,1
+20061744:	f2f6e7e3          	bltu	a3,a5,20061672 <__udivdi3+0x17a>
+20061748:	00c8b533          	sltu	a0,a7,a2
+2006174c:	00154513          	xori	a0,a0,1
+20061750:	b70d                	c.j	20061672 <__udivdi3+0x17a>
+20061752:	01000737          	lui	a4,0x1000
+20061756:	45c1                	c.li	a1,16
+20061758:	fce6e5e3          	bltu	a3,a4,20061722 <__udivdi3+0x22a>
+2006175c:	45e1                	c.li	a1,24
+2006175e:	b7d1                	c.j	20061722 <__udivdi3+0x22a>
+20061760:	00e65833          	srl	a6,a2,a4
+20061764:	00b696b3          	sll	a3,a3,a1
+20061768:	00d86833          	or	a6,a6,a3
+2006176c:	00e7de33          	srl	t3,a5,a4
+20061770:	01085e93          	srli	t4,a6,0x10
+20061774:	03de76b3          	remu	a3,t3,t4
+20061778:	00b797b3          	sll	a5,a5,a1
+2006177c:	00e8d733          	srl	a4,a7,a4
+20061780:	00b61333          	sll	t1,a2,a1
+20061784:	00f76633          	or	a2,a4,a5
+20061788:	01081793          	slli	a5,a6,0x10
+2006178c:	83c1                	c.srli	a5,0x10
+2006178e:	01065713          	srli	a4,a2,0x10
+20061792:	03de5e33          	divu	t3,t3,t4
+20061796:	06c2                	c.slli	a3,0x10
+20061798:	8f55                	c.or	a4,a3
+2006179a:	03c78f33          	mul	t5,a5,t3
+2006179e:	8572                	c.mv	a0,t3
+200617a0:	01e77c63          	bgeu	a4,t5,200617b8 <__udivdi3+0x2c0>
+200617a4:	9742                	c.add	a4,a6
+200617a6:	fffe0513          	addi	a0,t3,-1
+200617aa:	01076763          	bltu	a4,a6,200617b8 <__udivdi3+0x2c0>
+200617ae:	01e77563          	bgeu	a4,t5,200617b8 <__udivdi3+0x2c0>
+200617b2:	ffee0513          	addi	a0,t3,-2
+200617b6:	9742                	c.add	a4,a6
+200617b8:	41e70733          	sub	a4,a4,t5
+200617bc:	03d776b3          	remu	a3,a4,t4
+200617c0:	03d75733          	divu	a4,a4,t4
+200617c4:	06c2                	c.slli	a3,0x10
+200617c6:	02e78e33          	mul	t3,a5,a4
+200617ca:	01061793          	slli	a5,a2,0x10
+200617ce:	83c1                	c.srli	a5,0x10
+200617d0:	8fd5                	c.or	a5,a3
+200617d2:	863a                	c.mv	a2,a4
+200617d4:	01c7fc63          	bgeu	a5,t3,200617ec <__udivdi3+0x2f4>
+200617d8:	97c2                	c.add	a5,a6
+200617da:	fff70613          	addi	a2,a4,-1 # ffffff <__ap_sram_heap_size+0xfbffff>
+200617de:	0107e763          	bltu	a5,a6,200617ec <__udivdi3+0x2f4>
+200617e2:	01c7f563          	bgeu	a5,t3,200617ec <__udivdi3+0x2f4>
+200617e6:	ffe70613          	addi	a2,a4,-2
+200617ea:	97c2                	c.add	a5,a6
+200617ec:	0542                	c.slli	a0,0x10
+200617ee:	6ec1                	c.lui	t4,0x10
+200617f0:	8d51                	c.or	a0,a2
+200617f2:	fffe8693          	addi	a3,t4,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
+200617f6:	00d57833          	and	a6,a0,a3
+200617fa:	01055613          	srli	a2,a0,0x10
+200617fe:	00d376b3          	and	a3,t1,a3
+20061802:	01035313          	srli	t1,t1,0x10
+20061806:	41c787b3          	sub	a5,a5,t3
+2006180a:	02d80e33          	mul	t3,a6,a3
+2006180e:	02d606b3          	mul	a3,a2,a3
+20061812:	010e5713          	srli	a4,t3,0x10
+20061816:	02680833          	mul	a6,a6,t1
+2006181a:	9836                	c.add	a6,a3
+2006181c:	9742                	c.add	a4,a6
+2006181e:	02660633          	mul	a2,a2,t1
+20061822:	00d77363          	bgeu	a4,a3,20061828 <__udivdi3+0x330>
+20061826:	9676                	c.add	a2,t4
+20061828:	01075693          	srli	a3,a4,0x10
+2006182c:	9636                	c.add	a2,a3
+2006182e:	02c7e063          	bltu	a5,a2,2006184e <__udivdi3+0x356>
+20061832:	d8c794e3          	bne	a5,a2,200615ba <__udivdi3+0xc2>
+20061836:	67c1                	c.lui	a5,0x10
+20061838:	17fd                	c.addi	a5,-1
+2006183a:	8f7d                	c.and	a4,a5
+2006183c:	0742                	c.slli	a4,0x10
+2006183e:	00fe7e33          	and	t3,t3,a5
+20061842:	00b898b3          	sll	a7,a7,a1
+20061846:	9772                	c.add	a4,t3
+20061848:	4581                	c.li	a1,0
+2006184a:	e2e8f4e3          	bgeu	a7,a4,20061672 <__udivdi3+0x17a>
+2006184e:	157d                	c.addi	a0,-1
+20061850:	b3ad                	c.j	200615ba <__udivdi3+0xc2>
+20061852:	4581                	c.li	a1,0
+20061854:	4501                	c.li	a0,0
+20061856:	bd31                	c.j	20061672 <__udivdi3+0x17a>
 
-20061850 <__umoddi3>:
-20061850:	8eaa                	c.mv	t4,a0
-20061852:	832e                	c.mv	t1,a1
-20061854:	8832                	c.mv	a6,a2
-20061856:	87b6                	c.mv	a5,a3
-20061858:	1c069263          	bne	a3,zero,20061a1c <__umoddi3+0x1cc>
-2006185c:	20065737          	lui	a4,0x20065
-20061860:	a4870713          	addi	a4,a4,-1464 # 20064a48 <__clz_tab>
-20061864:	0ac5f563          	bgeu	a1,a2,2006190e <__umoddi3+0xbe>
-20061868:	66c1                	c.lui	a3,0x10
-2006186a:	08d67b63          	bgeu	a2,a3,20061900 <__umoddi3+0xb0>
-2006186e:	0ff00693          	addi	a3,zero,255
-20061872:	00c6f363          	bgeu	a3,a2,20061878 <__umoddi3+0x28>
-20061876:	47a1                	c.li	a5,8
-20061878:	00f656b3          	srl	a3,a2,a5
-2006187c:	9736                	c.add	a4,a3
-2006187e:	00074703          	lbu	a4,0(a4)
-20061882:	97ba                	c.add	a5,a4
-20061884:	02000713          	addi	a4,zero,32
-20061888:	40f708b3          	sub	a7,a4,a5
-2006188c:	00f70b63          	beq	a4,a5,200618a2 <__umoddi3+0x52>
-20061890:	011315b3          	sll	a1,t1,a7
-20061894:	00fed7b3          	srl	a5,t4,a5
-20061898:	01161833          	sll	a6,a2,a7
-2006189c:	8ddd                	c.or	a1,a5
-2006189e:	011e9533          	sll	a0,t4,a7
-200618a2:	01085693          	srli	a3,a6,0x10
-200618a6:	02d5f7b3          	remu	a5,a1,a3
-200618aa:	01081613          	slli	a2,a6,0x10
-200618ae:	8241                	c.srli	a2,0x10
-200618b0:	01055713          	srli	a4,a0,0x10
-200618b4:	02d5d5b3          	divu	a1,a1,a3
-200618b8:	07c2                	c.slli	a5,0x10
-200618ba:	8f5d                	c.or	a4,a5
-200618bc:	02b605b3          	mul	a1,a2,a1
-200618c0:	00b77863          	bgeu	a4,a1,200618d0 <__umoddi3+0x80>
-200618c4:	9742                	c.add	a4,a6
-200618c6:	01076563          	bltu	a4,a6,200618d0 <__umoddi3+0x80>
-200618ca:	00b77363          	bgeu	a4,a1,200618d0 <__umoddi3+0x80>
-200618ce:	9742                	c.add	a4,a6
-200618d0:	8f0d                	c.sub	a4,a1
-200618d2:	02d777b3          	remu	a5,a4,a3
-200618d6:	0542                	c.slli	a0,0x10
-200618d8:	8141                	c.srli	a0,0x10
-200618da:	02d75733          	divu	a4,a4,a3
-200618de:	07c2                	c.slli	a5,0x10
-200618e0:	8d5d                	c.or	a0,a5
-200618e2:	02e60733          	mul	a4,a2,a4
-200618e6:	00e57863          	bgeu	a0,a4,200618f6 <__umoddi3+0xa6>
-200618ea:	9542                	c.add	a0,a6
-200618ec:	01056563          	bltu	a0,a6,200618f6 <__umoddi3+0xa6>
-200618f0:	00e57363          	bgeu	a0,a4,200618f6 <__umoddi3+0xa6>
-200618f4:	9542                	c.add	a0,a6
-200618f6:	8d19                	c.sub	a0,a4
-200618f8:	01155533          	srl	a0,a0,a7
-200618fc:	4581                	c.li	a1,0
-200618fe:	8082                	c.jr	ra
-20061900:	010006b7          	lui	a3,0x1000
-20061904:	47c1                	c.li	a5,16
-20061906:	f6d669e3          	bltu	a2,a3,20061878 <__umoddi3+0x28>
-2006190a:	47e1                	c.li	a5,24
-2006190c:	b7b5                	c.j	20061878 <__umoddi3+0x28>
-2006190e:	e601                	c.bnez	a2,20061916 <__umoddi3+0xc6>
-20061910:	4685                	c.li	a3,1
-20061912:	02c6d833          	divu	a6,a3,a2
-20061916:	66c1                	c.lui	a3,0x10
-20061918:	0ed87b63          	bgeu	a6,a3,20061a0e <__umoddi3+0x1be>
-2006191c:	0ff00693          	addi	a3,zero,255
-20061920:	0106f363          	bgeu	a3,a6,20061926 <__umoddi3+0xd6>
-20061924:	47a1                	c.li	a5,8
-20061926:	00f856b3          	srl	a3,a6,a5
-2006192a:	9736                	c.add	a4,a3
-2006192c:	00074603          	lbu	a2,0(a4)
-20061930:	410305b3          	sub	a1,t1,a6
-20061934:	963e                	c.add	a2,a5
-20061936:	02000793          	addi	a5,zero,32
-2006193a:	40c788b3          	sub	a7,a5,a2
-2006193e:	06c78a63          	beq	a5,a2,200619b2 <__umoddi3+0x162>
-20061942:	01181833          	sll	a6,a6,a7
-20061946:	00c357b3          	srl	a5,t1,a2
-2006194a:	011315b3          	sll	a1,t1,a7
-2006194e:	01085313          	srli	t1,a6,0x10
-20061952:	00ced633          	srl	a2,t4,a2
-20061956:	8e4d                	c.or	a2,a1
-20061958:	01081593          	slli	a1,a6,0x10
-2006195c:	81c1                	c.srli	a1,0x10
-2006195e:	011e9533          	sll	a0,t4,a7
-20061962:	0267d6b3          	divu	a3,a5,t1
-20061966:	0267f733          	remu	a4,a5,t1
-2006196a:	01065793          	srli	a5,a2,0x10
-2006196e:	02d586b3          	mul	a3,a1,a3
-20061972:	0742                	c.slli	a4,0x10
-20061974:	8f5d                	c.or	a4,a5
-20061976:	00d77863          	bgeu	a4,a3,20061986 <__umoddi3+0x136>
-2006197a:	9742                	c.add	a4,a6
-2006197c:	01076563          	bltu	a4,a6,20061986 <__umoddi3+0x136>
-20061980:	00d77363          	bgeu	a4,a3,20061986 <__umoddi3+0x136>
-20061984:	9742                	c.add	a4,a6
-20061986:	40d706b3          	sub	a3,a4,a3
-2006198a:	0266f733          	remu	a4,a3,t1
-2006198e:	0642                	c.slli	a2,0x10
-20061990:	8241                	c.srli	a2,0x10
-20061992:	0266d6b3          	divu	a3,a3,t1
-20061996:	0742                	c.slli	a4,0x10
-20061998:	02d586b3          	mul	a3,a1,a3
-2006199c:	00c765b3          	or	a1,a4,a2
-200619a0:	00d5f863          	bgeu	a1,a3,200619b0 <__umoddi3+0x160>
-200619a4:	95c2                	c.add	a1,a6
-200619a6:	0105e563          	bltu	a1,a6,200619b0 <__umoddi3+0x160>
-200619aa:	00d5f363          	bgeu	a1,a3,200619b0 <__umoddi3+0x160>
-200619ae:	95c2                	c.add	a1,a6
-200619b0:	8d95                	c.sub	a1,a3
-200619b2:	01085693          	srli	a3,a6,0x10
-200619b6:	02d5f733          	remu	a4,a1,a3
-200619ba:	01081793          	slli	a5,a6,0x10
-200619be:	83c1                	c.srli	a5,0x10
-200619c0:	01055613          	srli	a2,a0,0x10
-200619c4:	02d5d5b3          	divu	a1,a1,a3
-200619c8:	0742                	c.slli	a4,0x10
-200619ca:	8f51                	c.or	a4,a2
-200619cc:	02b785b3          	mul	a1,a5,a1
-200619d0:	00b77863          	bgeu	a4,a1,200619e0 <__umoddi3+0x190>
-200619d4:	9742                	c.add	a4,a6
-200619d6:	01076563          	bltu	a4,a6,200619e0 <__umoddi3+0x190>
-200619da:	00b77363          	bgeu	a4,a1,200619e0 <__umoddi3+0x190>
-200619de:	9742                	c.add	a4,a6
-200619e0:	40b705b3          	sub	a1,a4,a1
-200619e4:	02d5f733          	remu	a4,a1,a3
-200619e8:	0542                	c.slli	a0,0x10
-200619ea:	8141                	c.srli	a0,0x10
-200619ec:	02d5d5b3          	divu	a1,a1,a3
-200619f0:	02b785b3          	mul	a1,a5,a1
-200619f4:	01071793          	slli	a5,a4,0x10
-200619f8:	8d5d                	c.or	a0,a5
-200619fa:	00b57863          	bgeu	a0,a1,20061a0a <__umoddi3+0x1ba>
-200619fe:	9542                	c.add	a0,a6
-20061a00:	01056563          	bltu	a0,a6,20061a0a <__umoddi3+0x1ba>
-20061a04:	00b57363          	bgeu	a0,a1,20061a0a <__umoddi3+0x1ba>
-20061a08:	9542                	c.add	a0,a6
-20061a0a:	8d0d                	c.sub	a0,a1
-20061a0c:	b5f5                	c.j	200618f8 <__umoddi3+0xa8>
-20061a0e:	010006b7          	lui	a3,0x1000
-20061a12:	47c1                	c.li	a5,16
-20061a14:	f0d869e3          	bltu	a6,a3,20061926 <__umoddi3+0xd6>
-20061a18:	47e1                	c.li	a5,24
-20061a1a:	b731                	c.j	20061926 <__umoddi3+0xd6>
-20061a1c:	eed5e1e3          	bltu	a1,a3,200618fe <__umoddi3+0xae>
-20061a20:	67c1                	c.lui	a5,0x10
-20061a22:	04f6f463          	bgeu	a3,a5,20061a6a <__umoddi3+0x21a>
-20061a26:	0ff00893          	addi	a7,zero,255
-20061a2a:	00d8b7b3          	sltu	a5,a7,a3
-20061a2e:	078e                	c.slli	a5,0x3
-20061a30:	20065737          	lui	a4,0x20065
-20061a34:	00f6d833          	srl	a6,a3,a5
-20061a38:	a4870713          	addi	a4,a4,-1464 # 20064a48 <__clz_tab>
-20061a3c:	9742                	c.add	a4,a6
-20061a3e:	00074883          	lbu	a7,0(a4)
-20061a42:	98be                	c.add	a7,a5
-20061a44:	02000793          	addi	a5,zero,32
-20061a48:	41178833          	sub	a6,a5,a7
-20061a4c:	03179663          	bne	a5,a7,20061a78 <__umoddi3+0x228>
-20061a50:	0066e463          	bltu	a3,t1,20061a58 <__umoddi3+0x208>
-20061a54:	eacee5e3          	bltu	t4,a2,200618fe <__umoddi3+0xae>
-20061a58:	40ce8533          	sub	a0,t4,a2
-20061a5c:	40d305b3          	sub	a1,t1,a3
-20061a60:	00aebeb3          	sltu	t4,t4,a0
-20061a64:	41d585b3          	sub	a1,a1,t4
-20061a68:	bd59                	c.j	200618fe <__umoddi3+0xae>
-20061a6a:	01000737          	lui	a4,0x1000
-20061a6e:	47c1                	c.li	a5,16
-20061a70:	fce6e0e3          	bltu	a3,a4,20061a30 <__umoddi3+0x1e0>
-20061a74:	47e1                	c.li	a5,24
-20061a76:	bf6d                	c.j	20061a30 <__umoddi3+0x1e0>
-20061a78:	011657b3          	srl	a5,a2,a7
-20061a7c:	010696b3          	sll	a3,a3,a6
-20061a80:	00d7ee33          	or	t3,a5,a3
-20061a84:	01135f33          	srl	t5,t1,a7
-20061a88:	011ed7b3          	srl	a5,t4,a7
-20061a8c:	010e9533          	sll	a0,t4,a6
-20061a90:	010e5e93          	srli	t4,t3,0x10
-20061a94:	010315b3          	sll	a1,t1,a6
-20061a98:	03df5333          	divu	t1,t5,t4
-20061a9c:	8fcd                	c.or	a5,a1
-20061a9e:	010e1593          	slli	a1,t3,0x10
-20061aa2:	81c1                	c.srli	a1,0x10
-20061aa4:	0107d713          	srli	a4,a5,0x10
-20061aa8:	01061633          	sll	a2,a2,a6
-20061aac:	03df76b3          	remu	a3,t5,t4
-20061ab0:	02658f33          	mul	t5,a1,t1
-20061ab4:	06c2                	c.slli	a3,0x10
-20061ab6:	8f55                	c.or	a4,a3
-20061ab8:	869a                	c.mv	a3,t1
-20061aba:	01e77c63          	bgeu	a4,t5,20061ad2 <__umoddi3+0x282>
-20061abe:	9772                	c.add	a4,t3
-20061ac0:	fff30693          	addi	a3,t1,-1
-20061ac4:	01c76763          	bltu	a4,t3,20061ad2 <__umoddi3+0x282>
-20061ac8:	01e77563          	bgeu	a4,t5,20061ad2 <__umoddi3+0x282>
-20061acc:	ffe30693          	addi	a3,t1,-2
-20061ad0:	9772                	c.add	a4,t3
-20061ad2:	41e70733          	sub	a4,a4,t5
-20061ad6:	03d77333          	remu	t1,a4,t4
-20061ada:	07c2                	c.slli	a5,0x10
-20061adc:	83c1                	c.srli	a5,0x10
-20061ade:	03d75733          	divu	a4,a4,t4
-20061ae2:	0342                	c.slli	t1,0x10
-20061ae4:	00f36333          	or	t1,t1,a5
-20061ae8:	02e585b3          	mul	a1,a1,a4
-20061aec:	87ba                	c.mv	a5,a4
-20061aee:	00b37c63          	bgeu	t1,a1,20061b06 <__umoddi3+0x2b6>
-20061af2:	9372                	c.add	t1,t3
-20061af4:	fff70793          	addi	a5,a4,-1 # ffffff <__ap_sram_heap_size+0xfbffff>
-20061af8:	01c36763          	bltu	t1,t3,20061b06 <__umoddi3+0x2b6>
-20061afc:	00b37563          	bgeu	t1,a1,20061b06 <__umoddi3+0x2b6>
-20061b00:	ffe70793          	addi	a5,a4,-2
-20061b04:	9372                	c.add	t1,t3
-20061b06:	06c2                	c.slli	a3,0x10
-20061b08:	6f41                	c.lui	t5,0x10
-20061b0a:	8edd                	c.or	a3,a5
-20061b0c:	40b305b3          	sub	a1,t1,a1
-20061b10:	ffff0313          	addi	t1,t5,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
-20061b14:	0066feb3          	and	t4,a3,t1
-20061b18:	01065713          	srli	a4,a2,0x10
-20061b1c:	82c1                	c.srli	a3,0x10
-20061b1e:	00667333          	and	t1,a2,t1
-20061b22:	026e87b3          	mul	a5,t4,t1
-20061b26:	02668333          	mul	t1,a3,t1
-20061b2a:	02ee8eb3          	mul	t4,t4,a4
-20061b2e:	02e686b3          	mul	a3,a3,a4
-20061b32:	9e9a                	c.add	t4,t1
-20061b34:	0107d713          	srli	a4,a5,0x10
-20061b38:	9776                	c.add	a4,t4
-20061b3a:	00677363          	bgeu	a4,t1,20061b40 <__umoddi3+0x2f0>
-20061b3e:	96fa                	c.add	a3,t5
-20061b40:	01075313          	srli	t1,a4,0x10
-20061b44:	969a                	c.add	a3,t1
-20061b46:	6341                	c.lui	t1,0x10
-20061b48:	137d                	c.addi	t1,-1
-20061b4a:	00677733          	and	a4,a4,t1
-20061b4e:	0742                	c.slli	a4,0x10
-20061b50:	0067f7b3          	and	a5,a5,t1
-20061b54:	97ba                	c.add	a5,a4
-20061b56:	00d5e663          	bltu	a1,a3,20061b62 <__umoddi3+0x312>
-20061b5a:	00d59b63          	bne	a1,a3,20061b70 <__umoddi3+0x320>
-20061b5e:	00f57963          	bgeu	a0,a5,20061b70 <__umoddi3+0x320>
-20061b62:	40c78633          	sub	a2,a5,a2
-20061b66:	00c7b7b3          	sltu	a5,a5,a2
-20061b6a:	97f2                	c.add	a5,t3
-20061b6c:	8e9d                	c.sub	a3,a5
-20061b6e:	87b2                	c.mv	a5,a2
-20061b70:	40f507b3          	sub	a5,a0,a5
-20061b74:	00f53533          	sltu	a0,a0,a5
-20061b78:	8d95                	c.sub	a1,a3
-20061b7a:	8d89                	c.sub	a1,a0
-20061b7c:	011598b3          	sll	a7,a1,a7
-20061b80:	0107d533          	srl	a0,a5,a6
-20061b84:	00a8e533          	or	a0,a7,a0
-20061b88:	0105d5b3          	srl	a1,a1,a6
-20061b8c:	bb8d                	c.j	200618fe <__umoddi3+0xae>
+20061858 <__umoddi3>:
+20061858:	8eaa                	c.mv	t4,a0
+2006185a:	832e                	c.mv	t1,a1
+2006185c:	8832                	c.mv	a6,a2
+2006185e:	87b6                	c.mv	a5,a3
+20061860:	1c069263          	bne	a3,zero,20061a24 <__umoddi3+0x1cc>
+20061864:	20065737          	lui	a4,0x20065
+20061868:	a5070713          	addi	a4,a4,-1456 # 20064a50 <__clz_tab>
+2006186c:	0ac5f563          	bgeu	a1,a2,20061916 <__umoddi3+0xbe>
+20061870:	66c1                	c.lui	a3,0x10
+20061872:	08d67b63          	bgeu	a2,a3,20061908 <__umoddi3+0xb0>
+20061876:	0ff00693          	addi	a3,zero,255
+2006187a:	00c6f363          	bgeu	a3,a2,20061880 <__umoddi3+0x28>
+2006187e:	47a1                	c.li	a5,8
+20061880:	00f656b3          	srl	a3,a2,a5
+20061884:	9736                	c.add	a4,a3
+20061886:	00074703          	lbu	a4,0(a4)
+2006188a:	97ba                	c.add	a5,a4
+2006188c:	02000713          	addi	a4,zero,32
+20061890:	40f708b3          	sub	a7,a4,a5
+20061894:	00f70b63          	beq	a4,a5,200618aa <__umoddi3+0x52>
+20061898:	011315b3          	sll	a1,t1,a7
+2006189c:	00fed7b3          	srl	a5,t4,a5
+200618a0:	01161833          	sll	a6,a2,a7
+200618a4:	8ddd                	c.or	a1,a5
+200618a6:	011e9533          	sll	a0,t4,a7
+200618aa:	01085693          	srli	a3,a6,0x10
+200618ae:	02d5f7b3          	remu	a5,a1,a3
+200618b2:	01081613          	slli	a2,a6,0x10
+200618b6:	8241                	c.srli	a2,0x10
+200618b8:	01055713          	srli	a4,a0,0x10
+200618bc:	02d5d5b3          	divu	a1,a1,a3
+200618c0:	07c2                	c.slli	a5,0x10
+200618c2:	8f5d                	c.or	a4,a5
+200618c4:	02b605b3          	mul	a1,a2,a1
+200618c8:	00b77863          	bgeu	a4,a1,200618d8 <__umoddi3+0x80>
+200618cc:	9742                	c.add	a4,a6
+200618ce:	01076563          	bltu	a4,a6,200618d8 <__umoddi3+0x80>
+200618d2:	00b77363          	bgeu	a4,a1,200618d8 <__umoddi3+0x80>
+200618d6:	9742                	c.add	a4,a6
+200618d8:	8f0d                	c.sub	a4,a1
+200618da:	02d777b3          	remu	a5,a4,a3
+200618de:	0542                	c.slli	a0,0x10
+200618e0:	8141                	c.srli	a0,0x10
+200618e2:	02d75733          	divu	a4,a4,a3
+200618e6:	07c2                	c.slli	a5,0x10
+200618e8:	8d5d                	c.or	a0,a5
+200618ea:	02e60733          	mul	a4,a2,a4
+200618ee:	00e57863          	bgeu	a0,a4,200618fe <__umoddi3+0xa6>
+200618f2:	9542                	c.add	a0,a6
+200618f4:	01056563          	bltu	a0,a6,200618fe <__umoddi3+0xa6>
+200618f8:	00e57363          	bgeu	a0,a4,200618fe <__umoddi3+0xa6>
+200618fc:	9542                	c.add	a0,a6
+200618fe:	8d19                	c.sub	a0,a4
+20061900:	01155533          	srl	a0,a0,a7
+20061904:	4581                	c.li	a1,0
+20061906:	8082                	c.jr	ra
+20061908:	010006b7          	lui	a3,0x1000
+2006190c:	47c1                	c.li	a5,16
+2006190e:	f6d669e3          	bltu	a2,a3,20061880 <__umoddi3+0x28>
+20061912:	47e1                	c.li	a5,24
+20061914:	b7b5                	c.j	20061880 <__umoddi3+0x28>
+20061916:	e601                	c.bnez	a2,2006191e <__umoddi3+0xc6>
+20061918:	4685                	c.li	a3,1
+2006191a:	02c6d833          	divu	a6,a3,a2
+2006191e:	66c1                	c.lui	a3,0x10
+20061920:	0ed87b63          	bgeu	a6,a3,20061a16 <__umoddi3+0x1be>
+20061924:	0ff00693          	addi	a3,zero,255
+20061928:	0106f363          	bgeu	a3,a6,2006192e <__umoddi3+0xd6>
+2006192c:	47a1                	c.li	a5,8
+2006192e:	00f856b3          	srl	a3,a6,a5
+20061932:	9736                	c.add	a4,a3
+20061934:	00074603          	lbu	a2,0(a4)
+20061938:	410305b3          	sub	a1,t1,a6
+2006193c:	963e                	c.add	a2,a5
+2006193e:	02000793          	addi	a5,zero,32
+20061942:	40c788b3          	sub	a7,a5,a2
+20061946:	06c78a63          	beq	a5,a2,200619ba <__umoddi3+0x162>
+2006194a:	01181833          	sll	a6,a6,a7
+2006194e:	00c357b3          	srl	a5,t1,a2
+20061952:	011315b3          	sll	a1,t1,a7
+20061956:	01085313          	srli	t1,a6,0x10
+2006195a:	00ced633          	srl	a2,t4,a2
+2006195e:	8e4d                	c.or	a2,a1
+20061960:	01081593          	slli	a1,a6,0x10
+20061964:	81c1                	c.srli	a1,0x10
+20061966:	011e9533          	sll	a0,t4,a7
+2006196a:	0267d6b3          	divu	a3,a5,t1
+2006196e:	0267f733          	remu	a4,a5,t1
+20061972:	01065793          	srli	a5,a2,0x10
+20061976:	02d586b3          	mul	a3,a1,a3
+2006197a:	0742                	c.slli	a4,0x10
+2006197c:	8f5d                	c.or	a4,a5
+2006197e:	00d77863          	bgeu	a4,a3,2006198e <__umoddi3+0x136>
+20061982:	9742                	c.add	a4,a6
+20061984:	01076563          	bltu	a4,a6,2006198e <__umoddi3+0x136>
+20061988:	00d77363          	bgeu	a4,a3,2006198e <__umoddi3+0x136>
+2006198c:	9742                	c.add	a4,a6
+2006198e:	40d706b3          	sub	a3,a4,a3
+20061992:	0266f733          	remu	a4,a3,t1
+20061996:	0642                	c.slli	a2,0x10
+20061998:	8241                	c.srli	a2,0x10
+2006199a:	0266d6b3          	divu	a3,a3,t1
+2006199e:	0742                	c.slli	a4,0x10
+200619a0:	02d586b3          	mul	a3,a1,a3
+200619a4:	00c765b3          	or	a1,a4,a2
+200619a8:	00d5f863          	bgeu	a1,a3,200619b8 <__umoddi3+0x160>
+200619ac:	95c2                	c.add	a1,a6
+200619ae:	0105e563          	bltu	a1,a6,200619b8 <__umoddi3+0x160>
+200619b2:	00d5f363          	bgeu	a1,a3,200619b8 <__umoddi3+0x160>
+200619b6:	95c2                	c.add	a1,a6
+200619b8:	8d95                	c.sub	a1,a3
+200619ba:	01085693          	srli	a3,a6,0x10
+200619be:	02d5f733          	remu	a4,a1,a3
+200619c2:	01081793          	slli	a5,a6,0x10
+200619c6:	83c1                	c.srli	a5,0x10
+200619c8:	01055613          	srli	a2,a0,0x10
+200619cc:	02d5d5b3          	divu	a1,a1,a3
+200619d0:	0742                	c.slli	a4,0x10
+200619d2:	8f51                	c.or	a4,a2
+200619d4:	02b785b3          	mul	a1,a5,a1
+200619d8:	00b77863          	bgeu	a4,a1,200619e8 <__umoddi3+0x190>
+200619dc:	9742                	c.add	a4,a6
+200619de:	01076563          	bltu	a4,a6,200619e8 <__umoddi3+0x190>
+200619e2:	00b77363          	bgeu	a4,a1,200619e8 <__umoddi3+0x190>
+200619e6:	9742                	c.add	a4,a6
+200619e8:	40b705b3          	sub	a1,a4,a1
+200619ec:	02d5f733          	remu	a4,a1,a3
+200619f0:	0542                	c.slli	a0,0x10
+200619f2:	8141                	c.srli	a0,0x10
+200619f4:	02d5d5b3          	divu	a1,a1,a3
+200619f8:	02b785b3          	mul	a1,a5,a1
+200619fc:	01071793          	slli	a5,a4,0x10
+20061a00:	8d5d                	c.or	a0,a5
+20061a02:	00b57863          	bgeu	a0,a1,20061a12 <__umoddi3+0x1ba>
+20061a06:	9542                	c.add	a0,a6
+20061a08:	01056563          	bltu	a0,a6,20061a12 <__umoddi3+0x1ba>
+20061a0c:	00b57363          	bgeu	a0,a1,20061a12 <__umoddi3+0x1ba>
+20061a10:	9542                	c.add	a0,a6
+20061a12:	8d0d                	c.sub	a0,a1
+20061a14:	b5f5                	c.j	20061900 <__umoddi3+0xa8>
+20061a16:	010006b7          	lui	a3,0x1000
+20061a1a:	47c1                	c.li	a5,16
+20061a1c:	f0d869e3          	bltu	a6,a3,2006192e <__umoddi3+0xd6>
+20061a20:	47e1                	c.li	a5,24
+20061a22:	b731                	c.j	2006192e <__umoddi3+0xd6>
+20061a24:	eed5e1e3          	bltu	a1,a3,20061906 <__umoddi3+0xae>
+20061a28:	67c1                	c.lui	a5,0x10
+20061a2a:	04f6f463          	bgeu	a3,a5,20061a72 <__umoddi3+0x21a>
+20061a2e:	0ff00893          	addi	a7,zero,255
+20061a32:	00d8b7b3          	sltu	a5,a7,a3
+20061a36:	078e                	c.slli	a5,0x3
+20061a38:	20065737          	lui	a4,0x20065
+20061a3c:	00f6d833          	srl	a6,a3,a5
+20061a40:	a5070713          	addi	a4,a4,-1456 # 20064a50 <__clz_tab>
+20061a44:	9742                	c.add	a4,a6
+20061a46:	00074883          	lbu	a7,0(a4)
+20061a4a:	98be                	c.add	a7,a5
+20061a4c:	02000793          	addi	a5,zero,32
+20061a50:	41178833          	sub	a6,a5,a7
+20061a54:	03179663          	bne	a5,a7,20061a80 <__umoddi3+0x228>
+20061a58:	0066e463          	bltu	a3,t1,20061a60 <__umoddi3+0x208>
+20061a5c:	eacee5e3          	bltu	t4,a2,20061906 <__umoddi3+0xae>
+20061a60:	40ce8533          	sub	a0,t4,a2
+20061a64:	40d305b3          	sub	a1,t1,a3
+20061a68:	00aebeb3          	sltu	t4,t4,a0
+20061a6c:	41d585b3          	sub	a1,a1,t4
+20061a70:	bd59                	c.j	20061906 <__umoddi3+0xae>
+20061a72:	01000737          	lui	a4,0x1000
+20061a76:	47c1                	c.li	a5,16
+20061a78:	fce6e0e3          	bltu	a3,a4,20061a38 <__umoddi3+0x1e0>
+20061a7c:	47e1                	c.li	a5,24
+20061a7e:	bf6d                	c.j	20061a38 <__umoddi3+0x1e0>
+20061a80:	011657b3          	srl	a5,a2,a7
+20061a84:	010696b3          	sll	a3,a3,a6
+20061a88:	00d7ee33          	or	t3,a5,a3
+20061a8c:	01135f33          	srl	t5,t1,a7
+20061a90:	011ed7b3          	srl	a5,t4,a7
+20061a94:	010e9533          	sll	a0,t4,a6
+20061a98:	010e5e93          	srli	t4,t3,0x10
+20061a9c:	010315b3          	sll	a1,t1,a6
+20061aa0:	03df5333          	divu	t1,t5,t4
+20061aa4:	8fcd                	c.or	a5,a1
+20061aa6:	010e1593          	slli	a1,t3,0x10
+20061aaa:	81c1                	c.srli	a1,0x10
+20061aac:	0107d713          	srli	a4,a5,0x10
+20061ab0:	01061633          	sll	a2,a2,a6
+20061ab4:	03df76b3          	remu	a3,t5,t4
+20061ab8:	02658f33          	mul	t5,a1,t1
+20061abc:	06c2                	c.slli	a3,0x10
+20061abe:	8f55                	c.or	a4,a3
+20061ac0:	869a                	c.mv	a3,t1
+20061ac2:	01e77c63          	bgeu	a4,t5,20061ada <__umoddi3+0x282>
+20061ac6:	9772                	c.add	a4,t3
+20061ac8:	fff30693          	addi	a3,t1,-1
+20061acc:	01c76763          	bltu	a4,t3,20061ada <__umoddi3+0x282>
+20061ad0:	01e77563          	bgeu	a4,t5,20061ada <__umoddi3+0x282>
+20061ad4:	ffe30693          	addi	a3,t1,-2
+20061ad8:	9772                	c.add	a4,t3
+20061ada:	41e70733          	sub	a4,a4,t5
+20061ade:	03d77333          	remu	t1,a4,t4
+20061ae2:	07c2                	c.slli	a5,0x10
+20061ae4:	83c1                	c.srli	a5,0x10
+20061ae6:	03d75733          	divu	a4,a4,t4
+20061aea:	0342                	c.slli	t1,0x10
+20061aec:	00f36333          	or	t1,t1,a5
+20061af0:	02e585b3          	mul	a1,a1,a4
+20061af4:	87ba                	c.mv	a5,a4
+20061af6:	00b37c63          	bgeu	t1,a1,20061b0e <__umoddi3+0x2b6>
+20061afa:	9372                	c.add	t1,t3
+20061afc:	fff70793          	addi	a5,a4,-1 # ffffff <__ap_sram_heap_size+0xfbffff>
+20061b00:	01c36763          	bltu	t1,t3,20061b0e <__umoddi3+0x2b6>
+20061b04:	00b37563          	bgeu	t1,a1,20061b0e <__umoddi3+0x2b6>
+20061b08:	ffe70793          	addi	a5,a4,-2
+20061b0c:	9372                	c.add	t1,t3
+20061b0e:	06c2                	c.slli	a3,0x10
+20061b10:	6f41                	c.lui	t5,0x10
+20061b12:	8edd                	c.or	a3,a5
+20061b14:	40b305b3          	sub	a1,t1,a1
+20061b18:	ffff0313          	addi	t1,t5,-1 # ffff <mbedtls_ecp_check_pub_priv+0x121>
+20061b1c:	0066feb3          	and	t4,a3,t1
+20061b20:	01065713          	srli	a4,a2,0x10
+20061b24:	82c1                	c.srli	a3,0x10
+20061b26:	00667333          	and	t1,a2,t1
+20061b2a:	026e87b3          	mul	a5,t4,t1
+20061b2e:	02668333          	mul	t1,a3,t1
+20061b32:	02ee8eb3          	mul	t4,t4,a4
+20061b36:	02e686b3          	mul	a3,a3,a4
+20061b3a:	9e9a                	c.add	t4,t1
+20061b3c:	0107d713          	srli	a4,a5,0x10
+20061b40:	9776                	c.add	a4,t4
+20061b42:	00677363          	bgeu	a4,t1,20061b48 <__umoddi3+0x2f0>
+20061b46:	96fa                	c.add	a3,t5
+20061b48:	01075313          	srli	t1,a4,0x10
+20061b4c:	969a                	c.add	a3,t1
+20061b4e:	6341                	c.lui	t1,0x10
+20061b50:	137d                	c.addi	t1,-1
+20061b52:	00677733          	and	a4,a4,t1
+20061b56:	0742                	c.slli	a4,0x10
+20061b58:	0067f7b3          	and	a5,a5,t1
+20061b5c:	97ba                	c.add	a5,a4
+20061b5e:	00d5e663          	bltu	a1,a3,20061b6a <__umoddi3+0x312>
+20061b62:	00d59b63          	bne	a1,a3,20061b78 <__umoddi3+0x320>
+20061b66:	00f57963          	bgeu	a0,a5,20061b78 <__umoddi3+0x320>
+20061b6a:	40c78633          	sub	a2,a5,a2
+20061b6e:	00c7b7b3          	sltu	a5,a5,a2
+20061b72:	97f2                	c.add	a5,t3
+20061b74:	8e9d                	c.sub	a3,a5
+20061b76:	87b2                	c.mv	a5,a2
+20061b78:	40f507b3          	sub	a5,a0,a5
+20061b7c:	00f53533          	sltu	a0,a0,a5
+20061b80:	8d95                	c.sub	a1,a3
+20061b82:	8d89                	c.sub	a1,a0
+20061b84:	011598b3          	sll	a7,a1,a7
+20061b88:	0107d533          	srl	a0,a5,a6
+20061b8c:	00a8e533          	or	a0,a7,a0
+20061b90:	0105d5b3          	srl	a1,a1,a6
+20061b94:	bb8d                	c.j	20061906 <__umoddi3+0xae>
 
-20061b8e <atoi>:
-20061b8e:	4629                	c.li	a2,10
-20061b90:	4581                	c.li	a1,0
-20061b92:	a1a5                	c.j	20061ffa <strtol>
+20061b96 <atoi>:
+20061b96:	4629                	c.li	a2,10
+20061b98:	4581                	c.li	a1,0
+20061b9a:	a1a5                	c.j	20062002 <strtol>
 
-20061b94 <_atoi_r>:
-20061b94:	46a9                	c.li	a3,10
-20061b96:	4601                	c.li	a2,0
-20061b98:	a991                	c.j	20061fec <_strtol_r>
+20061b9c <_atoi_r>:
+20061b9c:	46a9                	c.li	a3,10
+20061b9e:	4601                	c.li	a2,0
+20061ba0:	a991                	c.j	20061ff4 <_strtol_r>
 
-20061b9a <__errno>:
-20061b9a:	e941a503          	lw	a0,-364(gp) # 200667fc <_impure_ptr>
-20061b9e:	8082                	c.jr	ra
+20061ba2 <__errno>:
+20061ba2:	e941a503          	lw	a0,-364(gp) # 2006681c <_impure_ptr>
+20061ba6:	8082                	c.jr	ra
 
-20061ba0 <__libc_init_array>:
-20061ba0:	1141                	c.addi	sp,-16
-20061ba2:	c422                	c.swsp	s0,8(sp)
-20061ba4:	c226                	c.swsp	s1,4(sp)
-20061ba6:	20065437          	lui	s0,0x20065
-20061baa:	200654b7          	lui	s1,0x20065
-20061bae:	d9848793          	addi	a5,s1,-616 # 20064d98 <__frame_dummy_init_array_entry>
-20061bb2:	d9840413          	addi	s0,s0,-616 # 20064d98 <__frame_dummy_init_array_entry>
-20061bb6:	8c1d                	c.sub	s0,a5
-20061bb8:	c04a                	c.swsp	s2,0(sp)
-20061bba:	c606                	c.swsp	ra,12(sp)
-20061bbc:	8409                	c.srai	s0,0x2
-20061bbe:	d9848493          	addi	s1,s1,-616
-20061bc2:	4901                	c.li	s2,0
-20061bc4:	02891763          	bne	s2,s0,20061bf2 <__libc_init_array+0x52>
-20061bc8:	200654b7          	lui	s1,0x20065
-20061bcc:	20065437          	lui	s0,0x20065
-20061bd0:	d9848793          	addi	a5,s1,-616 # 20064d98 <__frame_dummy_init_array_entry>
-20061bd4:	d9c40413          	addi	s0,s0,-612 # 20064d9c <__do_global_dtors_aux_fini_array_entry>
-20061bd8:	8c1d                	c.sub	s0,a5
-20061bda:	8409                	c.srai	s0,0x2
-20061bdc:	d9848493          	addi	s1,s1,-616
-20061be0:	4901                	c.li	s2,0
-20061be2:	00891d63          	bne	s2,s0,20061bfc <__libc_init_array+0x5c>
-20061be6:	40b2                	c.lwsp	ra,12(sp)
-20061be8:	4422                	c.lwsp	s0,8(sp)
-20061bea:	4492                	c.lwsp	s1,4(sp)
-20061bec:	4902                	c.lwsp	s2,0(sp)
-20061bee:	0141                	c.addi	sp,16
-20061bf0:	8082                	c.jr	ra
-20061bf2:	409c                	c.lw	a5,0(s1)
-20061bf4:	0905                	c.addi	s2,1
-20061bf6:	0491                	c.addi	s1,4
-20061bf8:	9782                	c.jalr	a5
-20061bfa:	b7e9                	c.j	20061bc4 <__libc_init_array+0x24>
-20061bfc:	409c                	c.lw	a5,0(s1)
-20061bfe:	0905                	c.addi	s2,1
-20061c00:	0491                	c.addi	s1,4
-20061c02:	9782                	c.jalr	a5
-20061c04:	bff9                	c.j	20061be2 <__libc_init_array+0x42>
+20061ba8 <__libc_init_array>:
+20061ba8:	1141                	c.addi	sp,-16
+20061baa:	c422                	c.swsp	s0,8(sp)
+20061bac:	c226                	c.swsp	s1,4(sp)
+20061bae:	20065437          	lui	s0,0x20065
+20061bb2:	200654b7          	lui	s1,0x20065
+20061bb6:	da048793          	addi	a5,s1,-608 # 20064da0 <__frame_dummy_init_array_entry>
+20061bba:	da040413          	addi	s0,s0,-608 # 20064da0 <__frame_dummy_init_array_entry>
+20061bbe:	8c1d                	c.sub	s0,a5
+20061bc0:	c04a                	c.swsp	s2,0(sp)
+20061bc2:	c606                	c.swsp	ra,12(sp)
+20061bc4:	8409                	c.srai	s0,0x2
+20061bc6:	da048493          	addi	s1,s1,-608
+20061bca:	4901                	c.li	s2,0
+20061bcc:	02891763          	bne	s2,s0,20061bfa <__libc_init_array+0x52>
+20061bd0:	200654b7          	lui	s1,0x20065
+20061bd4:	20065437          	lui	s0,0x20065
+20061bd8:	da048793          	addi	a5,s1,-608 # 20064da0 <__frame_dummy_init_array_entry>
+20061bdc:	da440413          	addi	s0,s0,-604 # 20064da4 <__do_global_dtors_aux_fini_array_entry>
+20061be0:	8c1d                	c.sub	s0,a5
+20061be2:	8409                	c.srai	s0,0x2
+20061be4:	da048493          	addi	s1,s1,-608
+20061be8:	4901                	c.li	s2,0
+20061bea:	00891d63          	bne	s2,s0,20061c04 <__libc_init_array+0x5c>
+20061bee:	40b2                	c.lwsp	ra,12(sp)
+20061bf0:	4422                	c.lwsp	s0,8(sp)
+20061bf2:	4492                	c.lwsp	s1,4(sp)
+20061bf4:	4902                	c.lwsp	s2,0(sp)
+20061bf6:	0141                	c.addi	sp,16
+20061bf8:	8082                	c.jr	ra
+20061bfa:	409c                	c.lw	a5,0(s1)
+20061bfc:	0905                	c.addi	s2,1
+20061bfe:	0491                	c.addi	s1,4
+20061c00:	9782                	c.jalr	a5
+20061c02:	b7e9                	c.j	20061bcc <__libc_init_array+0x24>
+20061c04:	409c                	c.lw	a5,0(s1)
+20061c06:	0905                	c.addi	s2,1
+20061c08:	0491                	c.addi	s1,4
+20061c0a:	9782                	c.jalr	a5
+20061c0c:	bff9                	c.j	20061bea <__libc_init_array+0x42>
 
-20061c06 <cleanup_glue>:
-20061c06:	1141                	c.addi	sp,-16
-20061c08:	c422                	c.swsp	s0,8(sp)
-20061c0a:	842e                	c.mv	s0,a1
-20061c0c:	418c                	c.lw	a1,0(a1)
-20061c0e:	c226                	c.swsp	s1,4(sp)
-20061c10:	c606                	c.swsp	ra,12(sp)
-20061c12:	84aa                	c.mv	s1,a0
-20061c14:	c191                	c.beqz	a1,20061c18 <cleanup_glue+0x12>
-20061c16:	3fc5                	c.jal	20061c06 <cleanup_glue>
-20061c18:	85a2                	c.mv	a1,s0
-20061c1a:	4422                	c.lwsp	s0,8(sp)
-20061c1c:	40b2                	c.lwsp	ra,12(sp)
-20061c1e:	8526                	c.mv	a0,s1
-20061c20:	4492                	c.lwsp	s1,4(sp)
-20061c22:	0141                	c.addi	sp,16
-20061c24:	faff806f          	jal	zero,2005abd2 <__wrap__free_r>
+20061c0e <cleanup_glue>:
+20061c0e:	1141                	c.addi	sp,-16
+20061c10:	c422                	c.swsp	s0,8(sp)
+20061c12:	842e                	c.mv	s0,a1
+20061c14:	418c                	c.lw	a1,0(a1)
+20061c16:	c226                	c.swsp	s1,4(sp)
+20061c18:	c606                	c.swsp	ra,12(sp)
+20061c1a:	84aa                	c.mv	s1,a0
+20061c1c:	c191                	c.beqz	a1,20061c20 <cleanup_glue+0x12>
+20061c1e:	3fc5                	c.jal	20061c0e <cleanup_glue>
+20061c20:	85a2                	c.mv	a1,s0
+20061c22:	4422                	c.lwsp	s0,8(sp)
+20061c24:	40b2                	c.lwsp	ra,12(sp)
+20061c26:	8526                	c.mv	a0,s1
+20061c28:	4492                	c.lwsp	s1,4(sp)
+20061c2a:	0141                	c.addi	sp,16
+20061c2c:	fadf806f          	jal	zero,2005abd8 <__wrap__free_r>
 
-20061c28 <_reclaim_reent>:
-20061c28:	e941a783          	lw	a5,-364(gp) # 200667fc <_impure_ptr>
-20061c2c:	0ea78263          	beq	a5,a0,20061d10 <_reclaim_reent+0xe8>
-20061c30:	515c                	c.lw	a5,36(a0)
-20061c32:	1101                	c.addi	sp,-32
-20061c34:	cc22                	c.swsp	s0,24(sp)
-20061c36:	ce06                	c.swsp	ra,28(sp)
-20061c38:	ca26                	c.swsp	s1,20(sp)
-20061c3a:	c84a                	c.swsp	s2,16(sp)
-20061c3c:	c64e                	c.swsp	s3,12(sp)
-20061c3e:	842a                	c.mv	s0,a0
-20061c40:	cf81                	c.beqz	a5,20061c58 <_reclaim_reent+0x30>
-20061c42:	47dc                	c.lw	a5,12(a5)
-20061c44:	4481                	c.li	s1,0
-20061c46:	08000913          	addi	s2,zero,128
-20061c4a:	efc9                	c.bnez	a5,20061ce4 <_reclaim_reent+0xbc>
-20061c4c:	505c                	c.lw	a5,36(s0)
-20061c4e:	438c                	c.lw	a1,0(a5)
-20061c50:	c581                	c.beqz	a1,20061c58 <_reclaim_reent+0x30>
-20061c52:	8522                	c.mv	a0,s0
-20061c54:	f7ff80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c58:	484c                	c.lw	a1,20(s0)
-20061c5a:	c581                	c.beqz	a1,20061c62 <_reclaim_reent+0x3a>
-20061c5c:	8522                	c.mv	a0,s0
-20061c5e:	f75f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c62:	504c                	c.lw	a1,36(s0)
-20061c64:	c581                	c.beqz	a1,20061c6c <_reclaim_reent+0x44>
-20061c66:	8522                	c.mv	a0,s0
-20061c68:	f6bf80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c6c:	5c0c                	c.lw	a1,56(s0)
-20061c6e:	c581                	c.beqz	a1,20061c76 <_reclaim_reent+0x4e>
-20061c70:	8522                	c.mv	a0,s0
-20061c72:	f61f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c76:	5c4c                	c.lw	a1,60(s0)
-20061c78:	c581                	c.beqz	a1,20061c80 <_reclaim_reent+0x58>
-20061c7a:	8522                	c.mv	a0,s0
-20061c7c:	f57f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c80:	402c                	c.lw	a1,64(s0)
-20061c82:	c581                	c.beqz	a1,20061c8a <_reclaim_reent+0x62>
-20061c84:	8522                	c.mv	a0,s0
-20061c86:	f4df80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c8a:	0ec42583          	lw	a1,236(s0)
-20061c8e:	c581                	c.beqz	a1,20061c96 <_reclaim_reent+0x6e>
-20061c90:	8522                	c.mv	a0,s0
-20061c92:	f41f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061c96:	0e842583          	lw	a1,232(s0)
-20061c9a:	c581                	c.beqz	a1,20061ca2 <_reclaim_reent+0x7a>
-20061c9c:	8522                	c.mv	a0,s0
-20061c9e:	f35f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061ca2:	443c                	c.lw	a5,72(s0)
-20061ca4:	c799                	c.beqz	a5,20061cb2 <_reclaim_reent+0x8a>
-20061ca6:	0887a583          	lw	a1,136(a5) # 10088 <mbedtls_ecp_check_pub_priv+0x1aa>
-20061caa:	c581                	c.beqz	a1,20061cb2 <_reclaim_reent+0x8a>
-20061cac:	8522                	c.mv	a0,s0
-20061cae:	f25f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061cb2:	584c                	c.lw	a1,52(s0)
-20061cb4:	c581                	c.beqz	a1,20061cbc <_reclaim_reent+0x94>
-20061cb6:	8522                	c.mv	a0,s0
-20061cb8:	f1bf80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061cbc:	4c1c                	c.lw	a5,24(s0)
-20061cbe:	c3b1                	c.beqz	a5,20061d02 <_reclaim_reent+0xda>
-20061cc0:	541c                	c.lw	a5,40(s0)
-20061cc2:	8522                	c.mv	a0,s0
-20061cc4:	9782                	c.jalr	a5
-20061cc6:	0d842583          	lw	a1,216(s0)
-20061cca:	cd85                	c.beqz	a1,20061d02 <_reclaim_reent+0xda>
-20061ccc:	8522                	c.mv	a0,s0
-20061cce:	4462                	c.lwsp	s0,24(sp)
-20061cd0:	40f2                	c.lwsp	ra,28(sp)
-20061cd2:	44d2                	c.lwsp	s1,20(sp)
-20061cd4:	4942                	c.lwsp	s2,16(sp)
-20061cd6:	49b2                	c.lwsp	s3,12(sp)
-20061cd8:	6105                	c.addi16sp	sp,32
-20061cda:	b735                	c.j	20061c06 <cleanup_glue>
-20061cdc:	95a6                	c.add	a1,s1
-20061cde:	418c                	c.lw	a1,0(a1)
-20061ce0:	e991                	c.bnez	a1,20061cf4 <_reclaim_reent+0xcc>
-20061ce2:	0491                	c.addi	s1,4
-20061ce4:	505c                	c.lw	a5,36(s0)
-20061ce6:	47cc                	c.lw	a1,12(a5)
-20061ce8:	ff249ae3          	bne	s1,s2,20061cdc <_reclaim_reent+0xb4>
-20061cec:	8522                	c.mv	a0,s0
-20061cee:	ee5f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061cf2:	bfa9                	c.j	20061c4c <_reclaim_reent+0x24>
-20061cf4:	0005a983          	lw	s3,0(a1)
-20061cf8:	8522                	c.mv	a0,s0
-20061cfa:	ed9f80ef          	jal	ra,2005abd2 <__wrap__free_r>
-20061cfe:	85ce                	c.mv	a1,s3
-20061d00:	b7c5                	c.j	20061ce0 <_reclaim_reent+0xb8>
-20061d02:	40f2                	c.lwsp	ra,28(sp)
-20061d04:	4462                	c.lwsp	s0,24(sp)
-20061d06:	44d2                	c.lwsp	s1,20(sp)
-20061d08:	4942                	c.lwsp	s2,16(sp)
-20061d0a:	49b2                	c.lwsp	s3,12(sp)
-20061d0c:	6105                	c.addi16sp	sp,32
-20061d0e:	8082                	c.jr	ra
-20061d10:	8082                	c.jr	ra
+20061c30 <_reclaim_reent>:
+20061c30:	e941a783          	lw	a5,-364(gp) # 2006681c <_impure_ptr>
+20061c34:	0ea78263          	beq	a5,a0,20061d18 <_reclaim_reent+0xe8>
+20061c38:	515c                	c.lw	a5,36(a0)
+20061c3a:	1101                	c.addi	sp,-32
+20061c3c:	cc22                	c.swsp	s0,24(sp)
+20061c3e:	ce06                	c.swsp	ra,28(sp)
+20061c40:	ca26                	c.swsp	s1,20(sp)
+20061c42:	c84a                	c.swsp	s2,16(sp)
+20061c44:	c64e                	c.swsp	s3,12(sp)
+20061c46:	842a                	c.mv	s0,a0
+20061c48:	cf81                	c.beqz	a5,20061c60 <_reclaim_reent+0x30>
+20061c4a:	47dc                	c.lw	a5,12(a5)
+20061c4c:	4481                	c.li	s1,0
+20061c4e:	08000913          	addi	s2,zero,128
+20061c52:	efc9                	c.bnez	a5,20061cec <_reclaim_reent+0xbc>
+20061c54:	505c                	c.lw	a5,36(s0)
+20061c56:	438c                	c.lw	a1,0(a5)
+20061c58:	c581                	c.beqz	a1,20061c60 <_reclaim_reent+0x30>
+20061c5a:	8522                	c.mv	a0,s0
+20061c5c:	f7df80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c60:	484c                	c.lw	a1,20(s0)
+20061c62:	c581                	c.beqz	a1,20061c6a <_reclaim_reent+0x3a>
+20061c64:	8522                	c.mv	a0,s0
+20061c66:	f73f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c6a:	504c                	c.lw	a1,36(s0)
+20061c6c:	c581                	c.beqz	a1,20061c74 <_reclaim_reent+0x44>
+20061c6e:	8522                	c.mv	a0,s0
+20061c70:	f69f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c74:	5c0c                	c.lw	a1,56(s0)
+20061c76:	c581                	c.beqz	a1,20061c7e <_reclaim_reent+0x4e>
+20061c78:	8522                	c.mv	a0,s0
+20061c7a:	f5ff80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c7e:	5c4c                	c.lw	a1,60(s0)
+20061c80:	c581                	c.beqz	a1,20061c88 <_reclaim_reent+0x58>
+20061c82:	8522                	c.mv	a0,s0
+20061c84:	f55f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c88:	402c                	c.lw	a1,64(s0)
+20061c8a:	c581                	c.beqz	a1,20061c92 <_reclaim_reent+0x62>
+20061c8c:	8522                	c.mv	a0,s0
+20061c8e:	f4bf80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c92:	0ec42583          	lw	a1,236(s0)
+20061c96:	c581                	c.beqz	a1,20061c9e <_reclaim_reent+0x6e>
+20061c98:	8522                	c.mv	a0,s0
+20061c9a:	f3ff80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061c9e:	0e842583          	lw	a1,232(s0)
+20061ca2:	c581                	c.beqz	a1,20061caa <_reclaim_reent+0x7a>
+20061ca4:	8522                	c.mv	a0,s0
+20061ca6:	f33f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061caa:	443c                	c.lw	a5,72(s0)
+20061cac:	c799                	c.beqz	a5,20061cba <_reclaim_reent+0x8a>
+20061cae:	0887a583          	lw	a1,136(a5) # 10088 <mbedtls_ecp_check_pub_priv+0x1aa>
+20061cb2:	c581                	c.beqz	a1,20061cba <_reclaim_reent+0x8a>
+20061cb4:	8522                	c.mv	a0,s0
+20061cb6:	f23f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061cba:	584c                	c.lw	a1,52(s0)
+20061cbc:	c581                	c.beqz	a1,20061cc4 <_reclaim_reent+0x94>
+20061cbe:	8522                	c.mv	a0,s0
+20061cc0:	f19f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061cc4:	4c1c                	c.lw	a5,24(s0)
+20061cc6:	c3b1                	c.beqz	a5,20061d0a <_reclaim_reent+0xda>
+20061cc8:	541c                	c.lw	a5,40(s0)
+20061cca:	8522                	c.mv	a0,s0
+20061ccc:	9782                	c.jalr	a5
+20061cce:	0d842583          	lw	a1,216(s0)
+20061cd2:	cd85                	c.beqz	a1,20061d0a <_reclaim_reent+0xda>
+20061cd4:	8522                	c.mv	a0,s0
+20061cd6:	4462                	c.lwsp	s0,24(sp)
+20061cd8:	40f2                	c.lwsp	ra,28(sp)
+20061cda:	44d2                	c.lwsp	s1,20(sp)
+20061cdc:	4942                	c.lwsp	s2,16(sp)
+20061cde:	49b2                	c.lwsp	s3,12(sp)
+20061ce0:	6105                	c.addi16sp	sp,32
+20061ce2:	b735                	c.j	20061c0e <cleanup_glue>
+20061ce4:	95a6                	c.add	a1,s1
+20061ce6:	418c                	c.lw	a1,0(a1)
+20061ce8:	e991                	c.bnez	a1,20061cfc <_reclaim_reent+0xcc>
+20061cea:	0491                	c.addi	s1,4
+20061cec:	505c                	c.lw	a5,36(s0)
+20061cee:	47cc                	c.lw	a1,12(a5)
+20061cf0:	ff249ae3          	bne	s1,s2,20061ce4 <_reclaim_reent+0xb4>
+20061cf4:	8522                	c.mv	a0,s0
+20061cf6:	ee3f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061cfa:	bfa9                	c.j	20061c54 <_reclaim_reent+0x24>
+20061cfc:	0005a983          	lw	s3,0(a1)
+20061d00:	8522                	c.mv	a0,s0
+20061d02:	ed7f80ef          	jal	ra,2005abd8 <__wrap__free_r>
+20061d06:	85ce                	c.mv	a1,s3
+20061d08:	b7c5                	c.j	20061ce8 <_reclaim_reent+0xb8>
+20061d0a:	40f2                	c.lwsp	ra,28(sp)
+20061d0c:	4462                	c.lwsp	s0,24(sp)
+20061d0e:	44d2                	c.lwsp	s1,20(sp)
+20061d10:	4942                	c.lwsp	s2,16(sp)
+20061d12:	49b2                	c.lwsp	s3,12(sp)
+20061d14:	6105                	c.addi16sp	sp,32
+20061d16:	8082                	c.jr	ra
+20061d18:	8082                	c.jr	ra
 
-20061d12 <strcpy>:
-20061d12:	00b56733          	or	a4,a0,a1
-20061d16:	8b0d                	c.andi	a4,3
-20061d18:	87aa                	c.mv	a5,a0
-20061d1a:	e729                	c.bnez	a4,20061d64 <strcpy+0x52>
-20061d1c:	7f7f86b7          	lui	a3,0x7f7f8
-20061d20:	f7f68693          	addi	a3,a3,-129 # 7f7f7f7f <__kr4_psram_text_start__+0x1f677f5f>
-20061d24:	587d                	c.li	a6,-1
-20061d26:	4190                	c.lw	a2,0(a1)
-20061d28:	00d67733          	and	a4,a2,a3
-20061d2c:	9736                	c.add	a4,a3
-20061d2e:	8f51                	c.or	a4,a2
-20061d30:	8f55                	c.or	a4,a3
-20061d32:	03070463          	beq	a4,a6,20061d5a <strcpy+0x48>
-20061d36:	0005c603          	lbu	a2,0(a1)
-20061d3a:	0015c683          	lbu	a3,1(a1)
-20061d3e:	0025c703          	lbu	a4,2(a1)
-20061d42:	00c78023          	sb	a2,0(a5)
-20061d46:	c615                	c.beqz	a2,20061d72 <strcpy+0x60>
-20061d48:	00d780a3          	sb	a3,1(a5)
-20061d4c:	c29d                	c.beqz	a3,20061d72 <strcpy+0x60>
-20061d4e:	00e78123          	sb	a4,2(a5)
-20061d52:	c305                	c.beqz	a4,20061d72 <strcpy+0x60>
-20061d54:	000781a3          	sb	zero,3(a5)
-20061d58:	8082                	c.jr	ra
-20061d5a:	0791                	c.addi	a5,4
-20061d5c:	0591                	c.addi	a1,4
-20061d5e:	fec7ae23          	sw	a2,-4(a5)
-20061d62:	b7d1                	c.j	20061d26 <strcpy+0x14>
-20061d64:	0005c703          	lbu	a4,0(a1)
-20061d68:	0785                	c.addi	a5,1
-20061d6a:	0585                	c.addi	a1,1
-20061d6c:	fee78fa3          	sb	a4,-1(a5)
-20061d70:	fb75                	c.bnez	a4,20061d64 <strcpy+0x52>
-20061d72:	8082                	c.jr	ra
+20061d1a <strcpy>:
+20061d1a:	00b56733          	or	a4,a0,a1
+20061d1e:	8b0d                	c.andi	a4,3
+20061d20:	87aa                	c.mv	a5,a0
+20061d22:	e729                	c.bnez	a4,20061d6c <strcpy+0x52>
+20061d24:	7f7f86b7          	lui	a3,0x7f7f8
+20061d28:	f7f68693          	addi	a3,a3,-129 # 7f7f7f7f <__kr4_psram_text_start__+0x1f677f5f>
+20061d2c:	587d                	c.li	a6,-1
+20061d2e:	4190                	c.lw	a2,0(a1)
+20061d30:	00d67733          	and	a4,a2,a3
+20061d34:	9736                	c.add	a4,a3
+20061d36:	8f51                	c.or	a4,a2
+20061d38:	8f55                	c.or	a4,a3
+20061d3a:	03070463          	beq	a4,a6,20061d62 <strcpy+0x48>
+20061d3e:	0005c603          	lbu	a2,0(a1)
+20061d42:	0015c683          	lbu	a3,1(a1)
+20061d46:	0025c703          	lbu	a4,2(a1)
+20061d4a:	00c78023          	sb	a2,0(a5)
+20061d4e:	c615                	c.beqz	a2,20061d7a <strcpy+0x60>
+20061d50:	00d780a3          	sb	a3,1(a5)
+20061d54:	c29d                	c.beqz	a3,20061d7a <strcpy+0x60>
+20061d56:	00e78123          	sb	a4,2(a5)
+20061d5a:	c305                	c.beqz	a4,20061d7a <strcpy+0x60>
+20061d5c:	000781a3          	sb	zero,3(a5)
+20061d60:	8082                	c.jr	ra
+20061d62:	0791                	c.addi	a5,4
+20061d64:	0591                	c.addi	a1,4
+20061d66:	fec7ae23          	sw	a2,-4(a5)
+20061d6a:	b7d1                	c.j	20061d2e <strcpy+0x14>
+20061d6c:	0005c703          	lbu	a4,0(a1)
+20061d70:	0785                	c.addi	a5,1
+20061d72:	0585                	c.addi	a1,1
+20061d74:	fee78fa3          	sb	a4,-1(a5)
+20061d78:	fb75                	c.bnez	a4,20061d6c <strcpy+0x52>
+20061d7a:	8082                	c.jr	ra
 
-20061d74 <strncmp>:
-20061d74:	c625                	c.beqz	a2,20061ddc <strncmp+0x68>
-20061d76:	00b567b3          	or	a5,a0,a1
-20061d7a:	8b8d                	c.andi	a5,3
-20061d7c:	e385                	c.bnez	a5,20061d9c <strncmp+0x28>
-20061d7e:	feff06b7          	lui	a3,0xfeff0
-20061d82:	80808837          	lui	a6,0x80808
-20061d86:	488d                	c.li	a7,3
-20061d88:	eff68693          	addi	a3,a3,-257 # fefefeff <__ctrace_end__+0x34fefeff>
-20061d8c:	08080813          	addi	a6,a6,128 # 80808080 <__ctrace_end__+0xb6808080>
-20061d90:	00c8f663          	bgeu	a7,a2,20061d9c <strncmp+0x28>
-20061d94:	411c                	c.lw	a5,0(a0)
-20061d96:	4198                	c.lw	a4,0(a1)
-20061d98:	02e78163          	beq	a5,a4,20061dba <strncmp+0x46>
-20061d9c:	167d                	c.addi	a2,-1
-20061d9e:	4701                	c.li	a4,0
-20061da0:	00e507b3          	add	a5,a0,a4
-20061da4:	00e586b3          	add	a3,a1,a4
-20061da8:	0007c783          	lbu	a5,0(a5)
-20061dac:	0006c683          	lbu	a3,0(a3)
-20061db0:	02d78263          	beq	a5,a3,20061dd4 <strncmp+0x60>
-20061db4:	40d78533          	sub	a0,a5,a3
-20061db8:	8082                	c.jr	ra
-20061dba:	1671                	c.addi	a2,-4
-20061dbc:	c205                	c.beqz	a2,20061ddc <strncmp+0x68>
-20061dbe:	00d78733          	add	a4,a5,a3
-20061dc2:	fff7c793          	xori	a5,a5,-1
-20061dc6:	8ff9                	c.and	a5,a4
-20061dc8:	0107f7b3          	and	a5,a5,a6
-20061dcc:	eb81                	c.bnez	a5,20061ddc <strncmp+0x68>
-20061dce:	0511                	c.addi	a0,4
-20061dd0:	0591                	c.addi	a1,4
-20061dd2:	bf7d                	c.j	20061d90 <strncmp+0x1c>
-20061dd4:	00c70463          	beq	a4,a2,20061ddc <strncmp+0x68>
-20061dd8:	0705                	c.addi	a4,1
-20061dda:	f3f9                	c.bnez	a5,20061da0 <strncmp+0x2c>
-20061ddc:	4501                	c.li	a0,0
-20061dde:	8082                	c.jr	ra
+20061d7c <strncmp>:
+20061d7c:	c625                	c.beqz	a2,20061de4 <strncmp+0x68>
+20061d7e:	00b567b3          	or	a5,a0,a1
+20061d82:	8b8d                	c.andi	a5,3
+20061d84:	e385                	c.bnez	a5,20061da4 <strncmp+0x28>
+20061d86:	feff06b7          	lui	a3,0xfeff0
+20061d8a:	80808837          	lui	a6,0x80808
+20061d8e:	488d                	c.li	a7,3
+20061d90:	eff68693          	addi	a3,a3,-257 # fefefeff <__ctrace_end__+0x34fefeff>
+20061d94:	08080813          	addi	a6,a6,128 # 80808080 <__ctrace_end__+0xb6808080>
+20061d98:	00c8f663          	bgeu	a7,a2,20061da4 <strncmp+0x28>
+20061d9c:	411c                	c.lw	a5,0(a0)
+20061d9e:	4198                	c.lw	a4,0(a1)
+20061da0:	02e78163          	beq	a5,a4,20061dc2 <strncmp+0x46>
+20061da4:	167d                	c.addi	a2,-1
+20061da6:	4701                	c.li	a4,0
+20061da8:	00e507b3          	add	a5,a0,a4
+20061dac:	00e586b3          	add	a3,a1,a4
+20061db0:	0007c783          	lbu	a5,0(a5)
+20061db4:	0006c683          	lbu	a3,0(a3)
+20061db8:	02d78263          	beq	a5,a3,20061ddc <strncmp+0x60>
+20061dbc:	40d78533          	sub	a0,a5,a3
+20061dc0:	8082                	c.jr	ra
+20061dc2:	1671                	c.addi	a2,-4
+20061dc4:	c205                	c.beqz	a2,20061de4 <strncmp+0x68>
+20061dc6:	00d78733          	add	a4,a5,a3
+20061dca:	fff7c793          	xori	a5,a5,-1
+20061dce:	8ff9                	c.and	a5,a4
+20061dd0:	0107f7b3          	and	a5,a5,a6
+20061dd4:	eb81                	c.bnez	a5,20061de4 <strncmp+0x68>
+20061dd6:	0511                	c.addi	a0,4
+20061dd8:	0591                	c.addi	a1,4
+20061dda:	bf7d                	c.j	20061d98 <strncmp+0x1c>
+20061ddc:	00c70463          	beq	a4,a2,20061de4 <strncmp+0x68>
+20061de0:	0705                	c.addi	a4,1
+20061de2:	f3f9                	c.bnez	a5,20061da8 <strncmp+0x2c>
+20061de4:	4501                	c.li	a0,0
+20061de6:	8082                	c.jr	ra
 
-20061de0 <strncpy>:
-20061de0:	00a5e733          	or	a4,a1,a0
-20061de4:	8b0d                	c.andi	a4,3
-20061de6:	87aa                	c.mv	a5,a0
-20061de8:	e701                	c.bnez	a4,20061df0 <strncpy+0x10>
-20061dea:	470d                	c.li	a4,3
-20061dec:	04c76163          	bltu	a4,a2,20061e2e <strncpy+0x4e>
-20061df0:	ca09                	c.beqz	a2,20061e02 <strncpy+0x22>
-20061df2:	0005c703          	lbu	a4,0(a1)
-20061df6:	0585                	c.addi	a1,1
-20061df8:	0785                	c.addi	a5,1
-20061dfa:	fee78fa3          	sb	a4,-1(a5)
-20061dfe:	167d                	c.addi	a2,-1
-20061e00:	fb65                	c.bnez	a4,20061df0 <strncpy+0x10>
-20061e02:	963e                	c.add	a2,a5
-20061e04:	02f61f63          	bne	a2,a5,20061e42 <strncpy+0x62>
-20061e08:	8082                	c.jr	ra
-20061e0a:	1671                	c.addi	a2,-4
-20061e0c:	0107a023          	sw	a6,0(a5)
-20061e10:	0791                	c.addi	a5,4
-20061e12:	0591                	c.addi	a1,4
-20061e14:	fcce7ee3          	bgeu	t3,a2,20061df0 <strncpy+0x10>
-20061e18:	0005a803          	lw	a6,0(a1)
-20061e1c:	01180733          	add	a4,a6,a7
-20061e20:	fff84313          	xori	t1,a6,-1
-20061e24:	00677733          	and	a4,a4,t1
-20061e28:	8f75                	c.and	a4,a3
-20061e2a:	d365                	c.beqz	a4,20061e0a <strncpy+0x2a>
-20061e2c:	b7d1                	c.j	20061df0 <strncpy+0x10>
-20061e2e:	feff08b7          	lui	a7,0xfeff0
-20061e32:	808086b7          	lui	a3,0x80808
-20061e36:	eff88893          	addi	a7,a7,-257 # fefefeff <__ctrace_end__+0x34fefeff>
-20061e3a:	08068693          	addi	a3,a3,128 # 80808080 <__ctrace_end__+0xb6808080>
-20061e3e:	4e0d                	c.li	t3,3
-20061e40:	bfe1                	c.j	20061e18 <strncpy+0x38>
-20061e42:	0785                	c.addi	a5,1
-20061e44:	fe078fa3          	sb	zero,-1(a5)
-20061e48:	bf75                	c.j	20061e04 <strncpy+0x24>
+20061de8 <strncpy>:
+20061de8:	00a5e733          	or	a4,a1,a0
+20061dec:	8b0d                	c.andi	a4,3
+20061dee:	87aa                	c.mv	a5,a0
+20061df0:	e701                	c.bnez	a4,20061df8 <strncpy+0x10>
+20061df2:	470d                	c.li	a4,3
+20061df4:	04c76163          	bltu	a4,a2,20061e36 <strncpy+0x4e>
+20061df8:	ca09                	c.beqz	a2,20061e0a <strncpy+0x22>
+20061dfa:	0005c703          	lbu	a4,0(a1)
+20061dfe:	0585                	c.addi	a1,1
+20061e00:	0785                	c.addi	a5,1
+20061e02:	fee78fa3          	sb	a4,-1(a5)
+20061e06:	167d                	c.addi	a2,-1
+20061e08:	fb65                	c.bnez	a4,20061df8 <strncpy+0x10>
+20061e0a:	963e                	c.add	a2,a5
+20061e0c:	02f61f63          	bne	a2,a5,20061e4a <strncpy+0x62>
+20061e10:	8082                	c.jr	ra
+20061e12:	1671                	c.addi	a2,-4
+20061e14:	0107a023          	sw	a6,0(a5)
+20061e18:	0791                	c.addi	a5,4
+20061e1a:	0591                	c.addi	a1,4
+20061e1c:	fcce7ee3          	bgeu	t3,a2,20061df8 <strncpy+0x10>
+20061e20:	0005a803          	lw	a6,0(a1)
+20061e24:	01180733          	add	a4,a6,a7
+20061e28:	fff84313          	xori	t1,a6,-1
+20061e2c:	00677733          	and	a4,a4,t1
+20061e30:	8f75                	c.and	a4,a3
+20061e32:	d365                	c.beqz	a4,20061e12 <strncpy+0x2a>
+20061e34:	b7d1                	c.j	20061df8 <strncpy+0x10>
+20061e36:	feff08b7          	lui	a7,0xfeff0
+20061e3a:	808086b7          	lui	a3,0x80808
+20061e3e:	eff88893          	addi	a7,a7,-257 # fefefeff <__ctrace_end__+0x34fefeff>
+20061e42:	08068693          	addi	a3,a3,128 # 80808080 <__ctrace_end__+0xb6808080>
+20061e46:	4e0d                	c.li	t3,3
+20061e48:	bfe1                	c.j	20061e20 <strncpy+0x38>
+20061e4a:	0785                	c.addi	a5,1
+20061e4c:	fe078fa3          	sb	zero,-1(a5)
+20061e50:	bf75                	c.j	20061e0c <strncpy+0x24>
 
-20061e4a <strsep>:
-20061e4a:	862a                	c.mv	a2,a0
-20061e4c:	4108                	c.lw	a0,0(a0)
-20061e4e:	4681                	c.li	a3,0
-20061e50:	a009                	c.j	20061e52 <__strtok_r>
+20061e52 <strsep>:
+20061e52:	862a                	c.mv	a2,a0
+20061e54:	4108                	c.lw	a0,0(a0)
+20061e56:	4681                	c.li	a3,0
+20061e58:	a009                	c.j	20061e5a <__strtok_r>
 
-20061e52 <__strtok_r>:
-20061e52:	e119                	c.bnez	a0,20061e58 <__strtok_r+0x6>
-20061e54:	4208                	c.lw	a0,0(a2)
-20061e56:	c939                	c.beqz	a0,20061eac <__strtok_r+0x5a>
-20061e58:	87aa                	c.mv	a5,a0
-20061e5a:	853e                	c.mv	a0,a5
-20061e5c:	0007c803          	lbu	a6,0(a5)
-20061e60:	0785                	c.addi	a5,1
-20061e62:	872e                	c.mv	a4,a1
-20061e64:	00074883          	lbu	a7,0(a4)
-20061e68:	0705                	c.addi	a4,1
-20061e6a:	00089863          	bne	a7,zero,20061e7a <__strtok_r+0x28>
-20061e6e:	02081063          	bne	a6,zero,20061e8e <__strtok_r+0x3c>
-20061e72:	00062023          	sw	zero,0(a2)
-20061e76:	4501                	c.li	a0,0
-20061e78:	8082                	c.jr	ra
-20061e7a:	ff1815e3          	bne	a6,a7,20061e64 <__strtok_r+0x12>
-20061e7e:	fef1                	c.bnez	a3,20061e5a <__strtok_r+0x8>
-20061e80:	c21c                	c.sw	a5,0(a2)
-20061e82:	00050023          	sb	zero,0(a0)
-20061e86:	8082                	c.jr	ra
-20061e88:	4781                	c.li	a5,0
-20061e8a:	a839                	c.j	20061ea8 <__strtok_r+0x56>
-20061e8c:	e689                	c.bnez	a3,20061e96 <__strtok_r+0x44>
-20061e8e:	0007c803          	lbu	a6,0(a5)
-20061e92:	0785                	c.addi	a5,1
-20061e94:	872e                	c.mv	a4,a1
-20061e96:	00074683          	lbu	a3,0(a4)
-20061e9a:	0705                	c.addi	a4,1
-20061e9c:	fed818e3          	bne	a6,a3,20061e8c <__strtok_r+0x3a>
-20061ea0:	fe0804e3          	beq	a6,zero,20061e88 <__strtok_r+0x36>
-20061ea4:	fe078fa3          	sb	zero,-1(a5)
-20061ea8:	c21c                	c.sw	a5,0(a2)
-20061eaa:	8082                	c.jr	ra
-20061eac:	8082                	c.jr	ra
+20061e5a <__strtok_r>:
+20061e5a:	e119                	c.bnez	a0,20061e60 <__strtok_r+0x6>
+20061e5c:	4208                	c.lw	a0,0(a2)
+20061e5e:	c939                	c.beqz	a0,20061eb4 <__strtok_r+0x5a>
+20061e60:	87aa                	c.mv	a5,a0
+20061e62:	853e                	c.mv	a0,a5
+20061e64:	0007c803          	lbu	a6,0(a5)
+20061e68:	0785                	c.addi	a5,1
+20061e6a:	872e                	c.mv	a4,a1
+20061e6c:	00074883          	lbu	a7,0(a4)
+20061e70:	0705                	c.addi	a4,1
+20061e72:	00089863          	bne	a7,zero,20061e82 <__strtok_r+0x28>
+20061e76:	02081063          	bne	a6,zero,20061e96 <__strtok_r+0x3c>
+20061e7a:	00062023          	sw	zero,0(a2)
+20061e7e:	4501                	c.li	a0,0
+20061e80:	8082                	c.jr	ra
+20061e82:	ff1815e3          	bne	a6,a7,20061e6c <__strtok_r+0x12>
+20061e86:	fef1                	c.bnez	a3,20061e62 <__strtok_r+0x8>
+20061e88:	c21c                	c.sw	a5,0(a2)
+20061e8a:	00050023          	sb	zero,0(a0)
+20061e8e:	8082                	c.jr	ra
+20061e90:	4781                	c.li	a5,0
+20061e92:	a839                	c.j	20061eb0 <__strtok_r+0x56>
+20061e94:	e689                	c.bnez	a3,20061e9e <__strtok_r+0x44>
+20061e96:	0007c803          	lbu	a6,0(a5)
+20061e9a:	0785                	c.addi	a5,1
+20061e9c:	872e                	c.mv	a4,a1
+20061e9e:	00074683          	lbu	a3,0(a4)
+20061ea2:	0705                	c.addi	a4,1
+20061ea4:	fed818e3          	bne	a6,a3,20061e94 <__strtok_r+0x3a>
+20061ea8:	fe0804e3          	beq	a6,zero,20061e90 <__strtok_r+0x36>
+20061eac:	fe078fa3          	sb	zero,-1(a5)
+20061eb0:	c21c                	c.sw	a5,0(a2)
+20061eb2:	8082                	c.jr	ra
+20061eb4:	8082                	c.jr	ra
 
-20061eae <strtok_r>:
-20061eae:	4685                	c.li	a3,1
-20061eb0:	b74d                	c.j	20061e52 <__strtok_r>
+20061eb6 <strtok_r>:
+20061eb6:	4685                	c.li	a3,1
+20061eb8:	b74d                	c.j	20061e5a <__strtok_r>
 
-20061eb2 <_strtol_l.constprop.0>:
-20061eb2:	4785                	c.li	a5,1
-20061eb4:	0af68863          	beq	a3,a5,20061f64 <_strtol_l.constprop.0+0xb2>
-20061eb8:	02400793          	addi	a5,zero,36
-20061ebc:	872e                	c.mv	a4,a1
-20061ebe:	0ad7e363          	bltu	a5,a3,20061f64 <_strtol_l.constprop.0+0xb2>
-20061ec2:	20065837          	lui	a6,0x20065
-20061ec6:	8eaa                	c.mv	t4,a0
-20061ec8:	b4980813          	addi	a6,a6,-1207 # 20064b49 <_ctype_+0x1>
-20061ecc:	88ba                	c.mv	a7,a4
-20061ece:	00074783          	lbu	a5,0(a4)
-20061ed2:	0705                	c.addi	a4,1
-20061ed4:	01078533          	add	a0,a5,a6
-20061ed8:	00054503          	lbu	a0,0(a0)
-20061edc:	8921                	c.andi	a0,8
-20061ede:	f57d                	c.bnez	a0,20061ecc <_strtol_l.constprop.0+0x1a>
-20061ee0:	02d00513          	addi	a0,zero,45
-20061ee4:	08a79a63          	bne	a5,a0,20061f78 <_strtol_l.constprop.0+0xc6>
-20061ee8:	00074783          	lbu	a5,0(a4)
-20061eec:	4e05                	c.li	t3,1
-20061eee:	00288713          	addi	a4,a7,2
-20061ef2:	c6f5                	c.beqz	a3,20061fde <_strtol_l.constprop.0+0x12c>
-20061ef4:	4541                	c.li	a0,16
-20061ef6:	02a69263          	bne	a3,a0,20061f1a <_strtol_l.constprop.0+0x68>
-20061efa:	03000513          	addi	a0,zero,48
-20061efe:	00a79e63          	bne	a5,a0,20061f1a <_strtol_l.constprop.0+0x68>
-20061f02:	00074783          	lbu	a5,0(a4)
-20061f06:	05800513          	addi	a0,zero,88
-20061f0a:	0df7f793          	andi	a5,a5,223
-20061f0e:	0ca79363          	bne	a5,a0,20061fd4 <_strtol_l.constprop.0+0x122>
-20061f12:	00174783          	lbu	a5,1(a4)
-20061f16:	46c1                	c.li	a3,16
-20061f18:	0709                	c.addi	a4,2
-20061f1a:	800008b7          	lui	a7,0x80000
-20061f1e:	fff8c893          	xori	a7,a7,-1
-20061f22:	98f2                	c.add	a7,t3
-20061f24:	02d8f2b3          	remu	t0,a7,a3
-20061f28:	4301                	c.li	t1,0
-20061f2a:	4501                	c.li	a0,0
-20061f2c:	43a5                	c.li	t2,9
-20061f2e:	4fe5                	c.li	t6,25
-20061f30:	02d8df33          	divu	t5,a7,a3
-20061f34:	fd078813          	addi	a6,a5,-48
-20061f38:	0503ea63          	bltu	t2,a6,20061f8c <_strtol_l.constprop.0+0xda>
-20061f3c:	87c2                	c.mv	a5,a6
-20061f3e:	06d7d763          	bge	a5,a3,20061fac <_strtol_l.constprop.0+0xfa>
-20061f42:	06034363          	blt	t1,zero,20061fa8 <_strtol_l.constprop.0+0xf6>
-20061f46:	537d                	c.li	t1,-1
-20061f48:	00af6a63          	bltu	t5,a0,20061f5c <_strtol_l.constprop.0+0xaa>
-20061f4c:	00af1463          	bne	t5,a0,20061f54 <_strtol_l.constprop.0+0xa2>
-20061f50:	00f2c663          	blt	t0,a5,20061f5c <_strtol_l.constprop.0+0xaa>
-20061f54:	4305                	c.li	t1,1
-20061f56:	02a68533          	mul	a0,a3,a0
-20061f5a:	953e                	c.add	a0,a5
-20061f5c:	0705                	c.addi	a4,1
-20061f5e:	fff74783          	lbu	a5,-1(a4)
-20061f62:	bfc9                	c.j	20061f34 <_strtol_l.constprop.0+0x82>
-20061f64:	1141                	c.addi	sp,-16
-20061f66:	c606                	c.swsp	ra,12(sp)
-20061f68:	c33ff0ef          	jal	ra,20061b9a <__errno>
-20061f6c:	40b2                	c.lwsp	ra,12(sp)
-20061f6e:	47d9                	c.li	a5,22
-20061f70:	c11c                	c.sw	a5,0(a0)
-20061f72:	4501                	c.li	a0,0
-20061f74:	0141                	c.addi	sp,16
-20061f76:	8082                	c.jr	ra
-20061f78:	02b00513          	addi	a0,zero,43
-20061f7c:	4e01                	c.li	t3,0
-20061f7e:	f6a79ae3          	bne	a5,a0,20061ef2 <_strtol_l.constprop.0+0x40>
-20061f82:	00074783          	lbu	a5,0(a4)
-20061f86:	00288713          	addi	a4,a7,2 # 80000002 <__ctrace_end__+0xb6000002>
-20061f8a:	b7a5                	c.j	20061ef2 <_strtol_l.constprop.0+0x40>
-20061f8c:	fbf78813          	addi	a6,a5,-65
-20061f90:	010fe563          	bltu	t6,a6,20061f9a <_strtol_l.constprop.0+0xe8>
-20061f94:	fc978793          	addi	a5,a5,-55
-20061f98:	b75d                	c.j	20061f3e <_strtol_l.constprop.0+0x8c>
-20061f9a:	f9f78813          	addi	a6,a5,-97
-20061f9e:	010fe763          	bltu	t6,a6,20061fac <_strtol_l.constprop.0+0xfa>
-20061fa2:	fa978793          	addi	a5,a5,-87
-20061fa6:	bf61                	c.j	20061f3e <_strtol_l.constprop.0+0x8c>
-20061fa8:	537d                	c.li	t1,-1
-20061faa:	bf4d                	c.j	20061f5c <_strtol_l.constprop.0+0xaa>
-20061fac:	00035963          	bge	t1,zero,20061fbe <_strtol_l.constprop.0+0x10c>
-20061fb0:	02200793          	addi	a5,zero,34
-20061fb4:	00fea023          	sw	a5,0(t4)
-20061fb8:	8546                	c.mv	a0,a7
-20061fba:	ea09                	c.bnez	a2,20061fcc <_strtol_l.constprop.0+0x11a>
-20061fbc:	8082                	c.jr	ra
-20061fbe:	000e0463          	beq	t3,zero,20061fc6 <_strtol_l.constprop.0+0x114>
-20061fc2:	40a00533          	sub	a0,zero,a0
-20061fc6:	c215                	c.beqz	a2,20061fea <_strtol_l.constprop.0+0x138>
-20061fc8:	00030463          	beq	t1,zero,20061fd0 <_strtol_l.constprop.0+0x11e>
-20061fcc:	fff70593          	addi	a1,a4,-1
-20061fd0:	c20c                	c.sw	a1,0(a2)
-20061fd2:	8082                	c.jr	ra
-20061fd4:	03000793          	addi	a5,zero,48
-20061fd8:	f2a9                	c.bnez	a3,20061f1a <_strtol_l.constprop.0+0x68>
-20061fda:	46a1                	c.li	a3,8
-20061fdc:	bf3d                	c.j	20061f1a <_strtol_l.constprop.0+0x68>
-20061fde:	03000513          	addi	a0,zero,48
-20061fe2:	f2a780e3          	beq	a5,a0,20061f02 <_strtol_l.constprop.0+0x50>
-20061fe6:	46a9                	c.li	a3,10
-20061fe8:	bf0d                	c.j	20061f1a <_strtol_l.constprop.0+0x68>
-20061fea:	8082                	c.jr	ra
+20061eba <_strtol_l.constprop.0>:
+20061eba:	4785                	c.li	a5,1
+20061ebc:	0af68863          	beq	a3,a5,20061f6c <_strtol_l.constprop.0+0xb2>
+20061ec0:	02400793          	addi	a5,zero,36
+20061ec4:	872e                	c.mv	a4,a1
+20061ec6:	0ad7e363          	bltu	a5,a3,20061f6c <_strtol_l.constprop.0+0xb2>
+20061eca:	20065837          	lui	a6,0x20065
+20061ece:	8eaa                	c.mv	t4,a0
+20061ed0:	b5180813          	addi	a6,a6,-1199 # 20064b51 <_ctype_+0x1>
+20061ed4:	88ba                	c.mv	a7,a4
+20061ed6:	00074783          	lbu	a5,0(a4)
+20061eda:	0705                	c.addi	a4,1
+20061edc:	01078533          	add	a0,a5,a6
+20061ee0:	00054503          	lbu	a0,0(a0)
+20061ee4:	8921                	c.andi	a0,8
+20061ee6:	f57d                	c.bnez	a0,20061ed4 <_strtol_l.constprop.0+0x1a>
+20061ee8:	02d00513          	addi	a0,zero,45
+20061eec:	08a79a63          	bne	a5,a0,20061f80 <_strtol_l.constprop.0+0xc6>
+20061ef0:	00074783          	lbu	a5,0(a4)
+20061ef4:	4e05                	c.li	t3,1
+20061ef6:	00288713          	addi	a4,a7,2
+20061efa:	c6f5                	c.beqz	a3,20061fe6 <_strtol_l.constprop.0+0x12c>
+20061efc:	4541                	c.li	a0,16
+20061efe:	02a69263          	bne	a3,a0,20061f22 <_strtol_l.constprop.0+0x68>
+20061f02:	03000513          	addi	a0,zero,48
+20061f06:	00a79e63          	bne	a5,a0,20061f22 <_strtol_l.constprop.0+0x68>
+20061f0a:	00074783          	lbu	a5,0(a4)
+20061f0e:	05800513          	addi	a0,zero,88
+20061f12:	0df7f793          	andi	a5,a5,223
+20061f16:	0ca79363          	bne	a5,a0,20061fdc <_strtol_l.constprop.0+0x122>
+20061f1a:	00174783          	lbu	a5,1(a4)
+20061f1e:	46c1                	c.li	a3,16
+20061f20:	0709                	c.addi	a4,2
+20061f22:	800008b7          	lui	a7,0x80000
+20061f26:	fff8c893          	xori	a7,a7,-1
+20061f2a:	98f2                	c.add	a7,t3
+20061f2c:	02d8f2b3          	remu	t0,a7,a3
+20061f30:	4301                	c.li	t1,0
+20061f32:	4501                	c.li	a0,0
+20061f34:	43a5                	c.li	t2,9
+20061f36:	4fe5                	c.li	t6,25
+20061f38:	02d8df33          	divu	t5,a7,a3
+20061f3c:	fd078813          	addi	a6,a5,-48
+20061f40:	0503ea63          	bltu	t2,a6,20061f94 <_strtol_l.constprop.0+0xda>
+20061f44:	87c2                	c.mv	a5,a6
+20061f46:	06d7d763          	bge	a5,a3,20061fb4 <_strtol_l.constprop.0+0xfa>
+20061f4a:	06034363          	blt	t1,zero,20061fb0 <_strtol_l.constprop.0+0xf6>
+20061f4e:	537d                	c.li	t1,-1
+20061f50:	00af6a63          	bltu	t5,a0,20061f64 <_strtol_l.constprop.0+0xaa>
+20061f54:	00af1463          	bne	t5,a0,20061f5c <_strtol_l.constprop.0+0xa2>
+20061f58:	00f2c663          	blt	t0,a5,20061f64 <_strtol_l.constprop.0+0xaa>
+20061f5c:	4305                	c.li	t1,1
+20061f5e:	02a68533          	mul	a0,a3,a0
+20061f62:	953e                	c.add	a0,a5
+20061f64:	0705                	c.addi	a4,1
+20061f66:	fff74783          	lbu	a5,-1(a4)
+20061f6a:	bfc9                	c.j	20061f3c <_strtol_l.constprop.0+0x82>
+20061f6c:	1141                	c.addi	sp,-16
+20061f6e:	c606                	c.swsp	ra,12(sp)
+20061f70:	c33ff0ef          	jal	ra,20061ba2 <__errno>
+20061f74:	40b2                	c.lwsp	ra,12(sp)
+20061f76:	47d9                	c.li	a5,22
+20061f78:	c11c                	c.sw	a5,0(a0)
+20061f7a:	4501                	c.li	a0,0
+20061f7c:	0141                	c.addi	sp,16
+20061f7e:	8082                	c.jr	ra
+20061f80:	02b00513          	addi	a0,zero,43
+20061f84:	4e01                	c.li	t3,0
+20061f86:	f6a79ae3          	bne	a5,a0,20061efa <_strtol_l.constprop.0+0x40>
+20061f8a:	00074783          	lbu	a5,0(a4)
+20061f8e:	00288713          	addi	a4,a7,2 # 80000002 <__ctrace_end__+0xb6000002>
+20061f92:	b7a5                	c.j	20061efa <_strtol_l.constprop.0+0x40>
+20061f94:	fbf78813          	addi	a6,a5,-65
+20061f98:	010fe563          	bltu	t6,a6,20061fa2 <_strtol_l.constprop.0+0xe8>
+20061f9c:	fc978793          	addi	a5,a5,-55
+20061fa0:	b75d                	c.j	20061f46 <_strtol_l.constprop.0+0x8c>
+20061fa2:	f9f78813          	addi	a6,a5,-97
+20061fa6:	010fe763          	bltu	t6,a6,20061fb4 <_strtol_l.constprop.0+0xfa>
+20061faa:	fa978793          	addi	a5,a5,-87
+20061fae:	bf61                	c.j	20061f46 <_strtol_l.constprop.0+0x8c>
+20061fb0:	537d                	c.li	t1,-1
+20061fb2:	bf4d                	c.j	20061f64 <_strtol_l.constprop.0+0xaa>
+20061fb4:	00035963          	bge	t1,zero,20061fc6 <_strtol_l.constprop.0+0x10c>
+20061fb8:	02200793          	addi	a5,zero,34
+20061fbc:	00fea023          	sw	a5,0(t4)
+20061fc0:	8546                	c.mv	a0,a7
+20061fc2:	ea09                	c.bnez	a2,20061fd4 <_strtol_l.constprop.0+0x11a>
+20061fc4:	8082                	c.jr	ra
+20061fc6:	000e0463          	beq	t3,zero,20061fce <_strtol_l.constprop.0+0x114>
+20061fca:	40a00533          	sub	a0,zero,a0
+20061fce:	c215                	c.beqz	a2,20061ff2 <_strtol_l.constprop.0+0x138>
+20061fd0:	00030463          	beq	t1,zero,20061fd8 <_strtol_l.constprop.0+0x11e>
+20061fd4:	fff70593          	addi	a1,a4,-1
+20061fd8:	c20c                	c.sw	a1,0(a2)
+20061fda:	8082                	c.jr	ra
+20061fdc:	03000793          	addi	a5,zero,48
+20061fe0:	f2a9                	c.bnez	a3,20061f22 <_strtol_l.constprop.0+0x68>
+20061fe2:	46a1                	c.li	a3,8
+20061fe4:	bf3d                	c.j	20061f22 <_strtol_l.constprop.0+0x68>
+20061fe6:	03000513          	addi	a0,zero,48
+20061fea:	f2a780e3          	beq	a5,a0,20061f0a <_strtol_l.constprop.0+0x50>
+20061fee:	46a9                	c.li	a3,10
+20061ff0:	bf0d                	c.j	20061f22 <_strtol_l.constprop.0+0x68>
+20061ff2:	8082                	c.jr	ra
 
-20061fec <_strtol_r>:
-20061fec:	b5d9                	c.j	20061eb2 <_strtol_l.constprop.0>
+20061ff4 <_strtol_r>:
+20061ff4:	b5d9                	c.j	20061eba <_strtol_l.constprop.0>
 
-20061fee <strtol_l>:
-20061fee:	86b2                	c.mv	a3,a2
-20061ff0:	862e                	c.mv	a2,a1
-20061ff2:	85aa                	c.mv	a1,a0
-20061ff4:	e941a503          	lw	a0,-364(gp) # 200667fc <_impure_ptr>
-20061ff8:	bd6d                	c.j	20061eb2 <_strtol_l.constprop.0>
+20061ff6 <strtol_l>:
+20061ff6:	86b2                	c.mv	a3,a2
+20061ff8:	862e                	c.mv	a2,a1
+20061ffa:	85aa                	c.mv	a1,a0
+20061ffc:	e941a503          	lw	a0,-364(gp) # 2006681c <_impure_ptr>
+20062000:	bd6d                	c.j	20061eba <_strtol_l.constprop.0>
 
-20061ffa <strtol>:
-20061ffa:	86b2                	c.mv	a3,a2
-20061ffc:	862e                	c.mv	a2,a1
-20061ffe:	85aa                	c.mv	a1,a0
-20062000:	e941a503          	lw	a0,-364(gp) # 200667fc <_impure_ptr>
-20062004:	b57d                	c.j	20061eb2 <_strtol_l.constprop.0>
-20062006:	0000                	c.unimp
-20062008:	6d6f682f          	0x6d6f682f
-2006200c:	2f65                	c.jal	200627c4 <pmap_func+0x3a0>
-2006200e:	7561                	c.lui	a0,0xffff8
-20062010:	6f74                	c.flw	fa3,92(a4)
-20062012:	6a5f 6e65 696b      	0x696b6e656a5f
-20062018:	736e                	c.flwsp	ft6,248(sp)
-2006201a:	775f 616c 356e      	0x356e616c775f
-20062020:	544f492f          	0x544f492f
-20062024:	415f 5354 722f      	0x722f5354415f
-2006202a:	7065                	c.lui	zero,0xffff9
-2006202c:	722f736f          	jal	t1,2015974e <__ap_sram_heap_start+0xd974e>
-20062030:	6c65                	c.lui	s8,0x19
-20062032:	6165                	c.addi16sp	sp,112
-20062034:	6d2d6573          	csrrsi	a0,0x6d2,26
-20062038:	7361                	c.lui	t1,0xffff8
-2006203a:	6574                	c.flw	fa3,76(a0)
-2006203c:	2f72                	c.fldsp	ft10,280(sp)
-2006203e:	72756f73          	csrrsi	t5,0x727,10
-20062042:	612f6563          	bltu	t5,s2,2006264c <pmap_func+0x228>
-20062046:	656d                	c.lui	a0,0x1b
-20062048:	6162                	c.flwsp	ft2,24(sp)
-2006204a:	696c                	c.flw	fa1,84(a0)
-2006204c:	6574                	c.flw	fa3,76(a0)
-2006204e:	675f 6363 705f      	0x705f6363675f
-20062054:	6f72                	c.flwsp	ft10,28(sp)
-20062056:	656a                	c.flwsp	fa0,152(sp)
-20062058:	702f7463          	bgeu	t5,sp,20062760 <pmap_func+0x33c>
+20062002 <strtol>:
+20062002:	86b2                	c.mv	a3,a2
+20062004:	862e                	c.mv	a2,a1
+20062006:	85aa                	c.mv	a1,a0
+20062008:	e941a503          	lw	a0,-364(gp) # 2006681c <_impure_ptr>
+2006200c:	b57d                	c.j	20061eba <_strtol_l.constprop.0>
+2006200e:	0000                	c.unimp
+20062010:	6d6f682f          	0x6d6f682f
+20062014:	2f65                	c.jal	200627cc <pmap_func+0x3a0>
+20062016:	7561                	c.lui	a0,0xffff8
+20062018:	6f74                	c.flw	fa3,92(a4)
+2006201a:	6a5f 6e65 696b      	0x696b6e656a5f
+20062020:	736e                	c.flwsp	ft6,248(sp)
+20062022:	775f 616c 356e      	0x356e616c775f
+20062028:	544f492f          	0x544f492f
+2006202c:	415f 5354 722f      	0x722f5354415f
+20062032:	7065                	c.lui	zero,0xffff9
+20062034:	722f736f          	jal	t1,20159756 <__ap_sram_heap_start+0xd9756>
+20062038:	6c65                	c.lui	s8,0x19
+2006203a:	6165                	c.addi16sp	sp,112
+2006203c:	6d2d6573          	csrrsi	a0,0x6d2,26
+20062040:	7361                	c.lui	t1,0xffff8
+20062042:	6574                	c.flw	fa3,76(a0)
+20062044:	2f72                	c.fldsp	ft10,280(sp)
+20062046:	72756f73          	csrrsi	t5,0x727,10
+2006204a:	612f6563          	bltu	t5,s2,20062654 <pmap_func+0x228>
+2006204e:	656d                	c.lui	a0,0x1b
+20062050:	6162                	c.flwsp	ft2,24(sp)
+20062052:	696c                	c.flw	fa1,84(a0)
+20062054:	6574                	c.flw	fa3,76(a0)
+20062056:	675f 6363 705f      	0x705f6363675f
 2006205c:	6f72                	c.flwsp	ft10,28(sp)
 2006205e:	656a                	c.flwsp	fa0,152(sp)
-20062060:	6b5f7463          	bgeu	t5,s5,20062708 <pmap_func+0x2e4>
-20062064:	3472                	c.fldsp	fs0,312(sp)
-20062066:	6473762f          	vamoandei64.v	v12,(t1),v7,v12,v0.t
-2006206a:	2e2e2f6b          	0x2e2e2f6b
-2006206e:	2f2e2e2f          	0x2f2e2e2f
-20062072:	2e2e                	c.fldsp	ft8,200(sp)
-20062074:	6d6f632f          	0x6d6f632f
-20062078:	6f70                	c.flw	fa2,92(a4)
-2006207a:	656e                	c.flwsp	fa0,216(sp)
-2006207c:	746e                	c.flwsp	fs0,248(sp)
-2006207e:	636f732f          	vamoandei64.v	zero,(t5),v22,v6
-20062082:	656d612f          	vamoandei32.v	v2,(s10),v22,v2,v0.t
-20062086:	6162                	c.flwsp	ft2,24(sp)
-20062088:	696c                	c.flw	fa1,84(a0)
-2006208a:	6574                	c.flw	fa3,76(a0)
-2006208c:	6c77662f          	0x6c77662f
-20062090:	6269                	c.lui	tp,0x1a
-20062092:	6d61722f          	0x6d61722f
-20062096:	635f 6d6f 6f6d      	0x6f6d6d6f635f
-2006209c:	2f6e                	c.fldsp	ft10,216(sp)
-2006209e:	6d61                	c.lui	s10,0x18
-200620a0:	6265                	c.lui	tp,0x19
-200620a2:	5f61                	c.li	t5,-8
-200620a4:	6c66                	c.flwsp	fs8,88(sp)
-200620a6:	7361                	c.lui	t1,0xffff8
-200620a8:	5f68                	c.lw	a0,124(a4)
-200620aa:	6172                	c.flwsp	ft2,28(sp)
-200620ac:	2e6d                	c.jal	20062466 <pmap_func+0x42>
-200620ae:	68430063          	beq	t1,tp,2006272e <pmap_func+0x30a>
-200620b2:	6e61                	c.lui	t3,0x18
-200620b4:	656e                	c.flwsp	fa0,216(sp)
-200620b6:	206c                	c.fld	fa1,192(s0)
-200620b8:	666e6f43          	fmadd.q	ft10,ft8,ft6,fa2,unknown
-200620bc:	696c                	c.flw	fa1,84(a0)
-200620be:	66207463          	bgeu	zero,sp,20062726 <pmap_func+0x302>
-200620c2:	4320726f          	jal	tp,200694f4 <__bdram_heap_buffer_start__+0xa34>
-200620c6:	5550                	c.lw	a2,44(a0)
-200620c8:	2520                	c.fld	fs0,72(a0)
-200620ca:	756c                	c.flw	fa1,108(a0)
-200620cc:	4320                	c.lw	s0,64(a4)
-200620ce:	6168                	c.flw	fa0,68(a0)
-200620d0:	6e6e                	c.flwsp	ft8,216(sp)
-200620d2:	6c65                	c.lui	s8,0x19
-200620d4:	2520                	c.fld	fs0,72(a0)
-200620d6:	756c                	c.flw	fa1,108(a0)
-200620d8:	2120                	c.fld	fs0,64(a0)
-200620da:	4920                	c.lw	s0,80(a0)
-200620dc:	726f6e67          	0x726f6e67
-200620e0:	2065                	c.jal	20062188 <strtol+0x18e>
-200620e2:	6649                	c.lui	a2,0x12
-200620e4:	4320                	c.lw	s0,64(a4)
-200620e6:	5550                	c.lw	a2,44(a0)
-200620e8:	4820                	c.lw	s0,80(s0)
-200620ea:	7361                	c.lui	t1,0xffff8
-200620ec:	5220                	c.lw	s0,96(a2)
-200620ee:	7365                	c.lui	t1,0xffff9
-200620f0:	7465                	c.lui	s0,0xffff9
-200620f2:	0a0d                	c.addi	s4,3
-200620f4:	0000                	c.unimp
-200620f6:	0000                	c.unimp
-200620f8:	5049                	c.li	zero,-14
-200620fa:	49200043          	fmadd.s	ft0,ft0,fs2,fs1,rne
-200620fe:	4350                	c.lw	a2,4(a4)
-20062100:	5220                	c.lw	s0,96(a2)
-20062102:	7165                	c.addi16sp	sp,-400
-20062104:	6575                	c.lui	a0,0x1d
-20062106:	54207473          	csrrci	s0,0x542,0
-2006210a:	6d69                	c.lui	s10,0x1a
-2006210c:	6f65                	c.lui	t5,0x19
-2006210e:	7475                	c.lui	s0,0xffffd
-20062110:	0a0d                	c.addi	s4,3
-20062112:	0000                	c.unimp
-20062114:	4920                	c.lw	s0,80(a0)
-20062116:	4350                	c.lw	a2,4(a4)
-20062118:	4720                	c.lw	s0,72(a4)
-2006211a:	7465                	c.lui	s0,0xffff9
-2006211c:	5320                	c.lw	s0,96(a4)
-2006211e:	6d65                	c.lui	s10,0x19
-20062120:	7061                	c.lui	zero,0xffff8
-20062122:	6f68                	c.flw	fa0,92(a4)
-20062124:	6572                	c.flwsp	fa0,28(sp)
-20062126:	5420                	c.lw	s0,104(s0)
-20062128:	6d69                	c.lui	s10,0x1a
-2006212a:	6f65                	c.lui	t5,0x19
-2006212c:	7475                	c.lui	s0,0xffffd
-2006212e:	0a0d                	c.addi	s4,3
-20062130:	0000                	c.unimp
-20062132:	0000                	c.unimp
-20062134:	6d6f682f          	0x6d6f682f
-20062138:	2f65                	c.jal	200628f0 <pmap_func+0x4cc>
-2006213a:	7561                	c.lui	a0,0xffff8
-2006213c:	6f74                	c.flw	fa3,92(a4)
-2006213e:	6a5f 6e65 696b      	0x696b6e656a5f
-20062144:	736e                	c.flwsp	ft6,248(sp)
-20062146:	775f 616c 356e      	0x356e616c775f
-2006214c:	544f492f          	0x544f492f
-20062150:	415f 5354 722f      	0x722f5354415f
-20062156:	7065                	c.lui	zero,0xffff9
-20062158:	722f736f          	jal	t1,2015987a <__ap_sram_heap_start+0xd987a>
-2006215c:	6c65                	c.lui	s8,0x19
-2006215e:	6165                	c.addi16sp	sp,112
-20062160:	6d2d6573          	csrrsi	a0,0x6d2,26
-20062164:	7361                	c.lui	t1,0xffff8
-20062166:	6574                	c.flw	fa3,76(a0)
-20062168:	2f72                	c.fldsp	ft10,280(sp)
-2006216a:	72756f73          	csrrsi	t5,0x727,10
-2006216e:	612f6563          	bltu	t5,s2,20062778 <pmap_func+0x354>
-20062172:	656d                	c.lui	a0,0x1b
-20062174:	6162                	c.flwsp	ft2,24(sp)
-20062176:	696c                	c.flw	fa1,84(a0)
-20062178:	6574                	c.flw	fa3,76(a0)
-2006217a:	675f 6363 705f      	0x705f6363675f
-20062180:	6f72                	c.flwsp	ft10,28(sp)
-20062182:	656a                	c.flwsp	fa0,152(sp)
-20062184:	702f7463          	bgeu	t5,sp,2006288c <pmap_func+0x468>
+20062060:	702f7463          	bgeu	t5,sp,20062768 <pmap_func+0x33c>
+20062064:	6f72                	c.flwsp	ft10,28(sp)
+20062066:	656a                	c.flwsp	fa0,152(sp)
+20062068:	6b5f7463          	bgeu	t5,s5,20062710 <pmap_func+0x2e4>
+2006206c:	3472                	c.fldsp	fs0,312(sp)
+2006206e:	6473762f          	vamoandei64.v	v12,(t1),v7,v12,v0.t
+20062072:	2e2e2f6b          	0x2e2e2f6b
+20062076:	2f2e2e2f          	0x2f2e2e2f
+2006207a:	2e2e                	c.fldsp	ft8,200(sp)
+2006207c:	6d6f632f          	0x6d6f632f
+20062080:	6f70                	c.flw	fa2,92(a4)
+20062082:	656e                	c.flwsp	fa0,216(sp)
+20062084:	746e                	c.flwsp	fs0,248(sp)
+20062086:	636f732f          	vamoandei64.v	zero,(t5),v22,v6
+2006208a:	656d612f          	vamoandei32.v	v2,(s10),v22,v2,v0.t
+2006208e:	6162                	c.flwsp	ft2,24(sp)
+20062090:	696c                	c.flw	fa1,84(a0)
+20062092:	6574                	c.flw	fa3,76(a0)
+20062094:	6c77662f          	0x6c77662f
+20062098:	6269                	c.lui	tp,0x1a
+2006209a:	6d61722f          	0x6d61722f
+2006209e:	635f 6d6f 6f6d      	0x6f6d6d6f635f
+200620a4:	2f6e                	c.fldsp	ft10,216(sp)
+200620a6:	6d61                	c.lui	s10,0x18
+200620a8:	6265                	c.lui	tp,0x19
+200620aa:	5f61                	c.li	t5,-8
+200620ac:	6c66                	c.flwsp	fs8,88(sp)
+200620ae:	7361                	c.lui	t1,0xffff8
+200620b0:	5f68                	c.lw	a0,124(a4)
+200620b2:	6172                	c.flwsp	ft2,28(sp)
+200620b4:	2e6d                	c.jal	2006246e <pmap_func+0x42>
+200620b6:	68430063          	beq	t1,tp,20062736 <pmap_func+0x30a>
+200620ba:	6e61                	c.lui	t3,0x18
+200620bc:	656e                	c.flwsp	fa0,216(sp)
+200620be:	206c                	c.fld	fa1,192(s0)
+200620c0:	666e6f43          	fmadd.q	ft10,ft8,ft6,fa2,unknown
+200620c4:	696c                	c.flw	fa1,84(a0)
+200620c6:	66207463          	bgeu	zero,sp,2006272e <pmap_func+0x302>
+200620ca:	4320726f          	jal	tp,200694fc <__bdram_heap_buffer_start__+0x9fc>
+200620ce:	5550                	c.lw	a2,44(a0)
+200620d0:	2520                	c.fld	fs0,72(a0)
+200620d2:	756c                	c.flw	fa1,108(a0)
+200620d4:	4320                	c.lw	s0,64(a4)
+200620d6:	6168                	c.flw	fa0,68(a0)
+200620d8:	6e6e                	c.flwsp	ft8,216(sp)
+200620da:	6c65                	c.lui	s8,0x19
+200620dc:	2520                	c.fld	fs0,72(a0)
+200620de:	756c                	c.flw	fa1,108(a0)
+200620e0:	2120                	c.fld	fs0,64(a0)
+200620e2:	4920                	c.lw	s0,80(a0)
+200620e4:	726f6e67          	0x726f6e67
+200620e8:	2065                	c.jal	20062190 <strtol+0x18e>
+200620ea:	6649                	c.lui	a2,0x12
+200620ec:	4320                	c.lw	s0,64(a4)
+200620ee:	5550                	c.lw	a2,44(a0)
+200620f0:	4820                	c.lw	s0,80(s0)
+200620f2:	7361                	c.lui	t1,0xffff8
+200620f4:	5220                	c.lw	s0,96(a2)
+200620f6:	7365                	c.lui	t1,0xffff9
+200620f8:	7465                	c.lui	s0,0xffff9
+200620fa:	0a0d                	c.addi	s4,3
+200620fc:	0000                	c.unimp
+200620fe:	0000                	c.unimp
+20062100:	5049                	c.li	zero,-14
+20062102:	49200043          	fmadd.s	ft0,ft0,fs2,fs1,rne
+20062106:	4350                	c.lw	a2,4(a4)
+20062108:	5220                	c.lw	s0,96(a2)
+2006210a:	7165                	c.addi16sp	sp,-400
+2006210c:	6575                	c.lui	a0,0x1d
+2006210e:	54207473          	csrrci	s0,0x542,0
+20062112:	6d69                	c.lui	s10,0x1a
+20062114:	6f65                	c.lui	t5,0x19
+20062116:	7475                	c.lui	s0,0xffffd
+20062118:	0a0d                	c.addi	s4,3
+2006211a:	0000                	c.unimp
+2006211c:	4920                	c.lw	s0,80(a0)
+2006211e:	4350                	c.lw	a2,4(a4)
+20062120:	4720                	c.lw	s0,72(a4)
+20062122:	7465                	c.lui	s0,0xffff9
+20062124:	5320                	c.lw	s0,96(a4)
+20062126:	6d65                	c.lui	s10,0x19
+20062128:	7061                	c.lui	zero,0xffff8
+2006212a:	6f68                	c.flw	fa0,92(a4)
+2006212c:	6572                	c.flwsp	fa0,28(sp)
+2006212e:	5420                	c.lw	s0,104(s0)
+20062130:	6d69                	c.lui	s10,0x1a
+20062132:	6f65                	c.lui	t5,0x19
+20062134:	7475                	c.lui	s0,0xffffd
+20062136:	0a0d                	c.addi	s4,3
+20062138:	0000                	c.unimp
+2006213a:	0000                	c.unimp
+2006213c:	6d6f682f          	0x6d6f682f
+20062140:	2f65                	c.jal	200628f8 <pmap_func+0x4cc>
+20062142:	7561                	c.lui	a0,0xffff8
+20062144:	6f74                	c.flw	fa3,92(a4)
+20062146:	6a5f 6e65 696b      	0x696b6e656a5f
+2006214c:	736e                	c.flwsp	ft6,248(sp)
+2006214e:	775f 616c 356e      	0x356e616c775f
+20062154:	544f492f          	0x544f492f
+20062158:	415f 5354 722f      	0x722f5354415f
+2006215e:	7065                	c.lui	zero,0xffff9
+20062160:	722f736f          	jal	t1,20159882 <__ap_sram_heap_start+0xd9882>
+20062164:	6c65                	c.lui	s8,0x19
+20062166:	6165                	c.addi16sp	sp,112
+20062168:	6d2d6573          	csrrsi	a0,0x6d2,26
+2006216c:	7361                	c.lui	t1,0xffff8
+2006216e:	6574                	c.flw	fa3,76(a0)
+20062170:	2f72                	c.fldsp	ft10,280(sp)
+20062172:	72756f73          	csrrsi	t5,0x727,10
+20062176:	612f6563          	bltu	t5,s2,20062780 <pmap_func+0x354>
+2006217a:	656d                	c.lui	a0,0x1b
+2006217c:	6162                	c.flwsp	ft2,24(sp)
+2006217e:	696c                	c.flw	fa1,84(a0)
+20062180:	6574                	c.flw	fa3,76(a0)
+20062182:	675f 6363 705f      	0x705f6363675f
 20062188:	6f72                	c.flwsp	ft10,28(sp)
 2006218a:	656a                	c.flwsp	fa0,152(sp)
-2006218c:	6b5f7463          	bgeu	t5,s5,20062834 <pmap_func+0x410>
-20062190:	3472                	c.fldsp	fs0,312(sp)
-20062192:	6473762f          	vamoandei64.v	v12,(t1),v7,v12,v0.t
-20062196:	2e2e2f6b          	0x2e2e2f6b
-2006219a:	2f2e2e2f          	0x2f2e2e2f
-2006219e:	2e2e                	c.fldsp	ft8,200(sp)
-200621a0:	6d6f632f          	0x6d6f632f
-200621a4:	6f70                	c.flw	fa2,92(a4)
-200621a6:	656e                	c.flwsp	fa0,216(sp)
-200621a8:	746e                	c.flwsp	fs0,248(sp)
-200621aa:	636f732f          	vamoandei64.v	zero,(t5),v22,v6
-200621ae:	656d612f          	vamoandei32.v	v2,(s10),v22,v2,v0.t
-200621b2:	6162                	c.flwsp	ft2,24(sp)
-200621b4:	696c                	c.flw	fa1,84(a0)
-200621b6:	6574                	c.flw	fa3,76(a0)
-200621b8:	6c77662f          	0x6c77662f
-200621bc:	6269                	c.lui	tp,0x1a
-200621be:	6d61722f          	0x6d61722f
-200621c2:	635f 6d6f 6f6d      	0x6f6d6d6f635f
-200621c8:	2f6e                	c.fldsp	ft10,216(sp)
-200621ca:	6d61                	c.lui	s10,0x18
-200621cc:	6265                	c.lui	tp,0x19
-200621ce:	5f61                	c.li	t5,-8
-200621d0:	7069                	c.lui	zero,0xffffa
-200621d2:	70615f63          	bge	sp,t1,200628f0 <pmap_func+0x4cc>
-200621d6:	2e69                	c.jal	20062570 <pmap_func+0x14c>
-200621d8:	00000063          	beq	zero,zero,200621d8 <strtol+0x1de>
-200621dc:	5049                	c.li	zero,-14
-200621de:	69445f43          	fmadd.s	ft10,fs0,fs4,fa3,unknown
-200621e2:	3a72                	c.fldsp	fs4,312(sp)
-200621e4:	6425                	c.lui	s0,0x9
-200621e6:	202c                	c.fld	fa1,64(s0)
-200621e8:	5049                	c.li	zero,-14
-200621ea:	58545f43          	fmadd.s	ft10,fs0,ft5,fa1,unknown
-200621ee:	445f 5441 2041      	0x20415441445f
-200621f4:	7830                	c.flw	fa2,112(s0)
-200621f6:	7825                	c.lui	a6,0xfffe9
-200621f8:	4e20                	c.lw	s0,88(a2)
-200621fa:	4320746f          	jal	s0,2006962c <__bdram_heap_buffer_start__+0xb6c>
-200621fe:	656c                	c.flw	fa1,76(a0)
-20062200:	6e61                	c.lui	t3,0x18
-20062202:	0d21                	c.addi	s10,8
-20062204:	000a                	c.slli	zero,0x2
+2006218c:	702f7463          	bgeu	t5,sp,20062894 <pmap_func+0x468>
+20062190:	6f72                	c.flwsp	ft10,28(sp)
+20062192:	656a                	c.flwsp	fa0,152(sp)
+20062194:	6b5f7463          	bgeu	t5,s5,2006283c <pmap_func+0x410>
+20062198:	3472                	c.fldsp	fs0,312(sp)
+2006219a:	6473762f          	vamoandei64.v	v12,(t1),v7,v12,v0.t
+2006219e:	2e2e2f6b          	0x2e2e2f6b
+200621a2:	2f2e2e2f          	0x2f2e2e2f
+200621a6:	2e2e                	c.fldsp	ft8,200(sp)
+200621a8:	6d6f632f          	0x6d6f632f
+200621ac:	6f70                	c.flw	fa2,92(a4)
+200621ae:	656e                	c.flwsp	fa0,216(sp)
+200621b0:	746e                	c.flwsp	fs0,248(sp)
+200621b2:	636f732f          	vamoandei64.v	zero,(t5),v22,v6
+200621b6:	656d612f          	vamoandei32.v	v2,(s10),v22,v2,v0.t
+200621ba:	6162                	c.flwsp	ft2,24(sp)
+200621bc:	696c                	c.flw	fa1,84(a0)
+200621be:	6574                	c.flw	fa3,76(a0)
+200621c0:	6c77662f          	0x6c77662f
+200621c4:	6269                	c.lui	tp,0x1a
+200621c6:	6d61722f          	0x6d61722f
+200621ca:	635f 6d6f 6f6d      	0x6f6d6d6f635f
+200621d0:	2f6e                	c.fldsp	ft10,216(sp)
+200621d2:	6d61                	c.lui	s10,0x18
+200621d4:	6265                	c.lui	tp,0x19
+200621d6:	5f61                	c.li	t5,-8
+200621d8:	7069                	c.lui	zero,0xffffa
+200621da:	70615f63          	bge	sp,t1,200628f8 <pmap_func+0x4cc>
+200621de:	2e69                	c.jal	20062578 <pmap_func+0x14c>
+200621e0:	00000063          	beq	zero,zero,200621e0 <strtol+0x1de>
+200621e4:	5049                	c.li	zero,-14
+200621e6:	69445f43          	fmadd.s	ft10,fs0,fs4,fa3,unknown
+200621ea:	3a72                	c.fldsp	fs4,312(sp)
+200621ec:	6425                	c.lui	s0,0x9
+200621ee:	202c                	c.fld	fa1,64(s0)
+200621f0:	5049                	c.li	zero,-14
+200621f2:	58545f43          	fmadd.s	ft10,fs0,ft5,fa1,unknown
+200621f6:	445f 5441 2041      	0x20415441445f
+200621fc:	7830                	c.flw	fa2,112(s0)
+200621fe:	7825                	c.lui	a6,0xfffe9
+20062200:	4e20                	c.lw	s0,88(a2)
+20062202:	4320746f          	jal	s0,20069634 <__bdram_heap_buffer_start__+0xb34>
+20062206:	656c                	c.flw	fa1,76(a0)
+20062208:	6e61                	c.lui	t3,0x18
+2006220a:	0d21                	c.addi	s10,8
+2006220c:	000a                	c.slli	zero,0x2
 	...
 
-20062208 <CSWTCH.29>:
-20062208:	0008 0000 0000 0000 0000 0000 0000 0000     ................
-20062218:	0008 0000 0000 0000 0000 0000 0000 0000     ................
-20062228:	0008 0000                                   ....
+20062210 <CSWTCH.29>:
+20062210:	0008 0000 0000 0000 0000 0000 0000 0000     ................
+20062220:	0008 0000 0000 0000 0000 0000 0000 0000     ................
+20062230:	0008 0000                                   ....
 
-2006222c <CSWTCH.30>:
-2006222c:	0000 4102 0000 4102 0000 0000 0000 0000     ...A...A........
+20062234 <CSWTCH.30>:
+20062234:	0000 4102 0000 4102 0000 0000 0000 0000     ...A...A........
 	...
-2006226c:	0080 4102 0080 4102 0000 0000 0000 0000     ...A...A........
+20062274:	0080 4102 0080 4102 0000 0000 0000 0000     ...A...A........
 	...
-200622ac:	0100 4102 0100 4102 682f 6d6f 2f65 7561     ...A...A/home/au
-200622bc:	6f74 6a5f 6e65 696b 736e 775f 616c 356e     to_jenkins_wlan5
-200622cc:	492f 544f 415f 5354 722f 7065 736f 722f     /IOT_ATS/repos/r
-200622dc:	6c65 6165 6573 6d2d 7361 6574 2f72 6f73     elease-master/so
-200622ec:	7275 6563 612f 656d 6162 696c 6574 675f     urce/amebalite_g
-200622fc:	6363 705f 6f72 656a 7463 702f 6f72 656a     cc_project/proje
-2006230c:	7463 6b5f 3472 762f 6473 2f6b 2e2e 2e2f     ct_kr4/vsdk/../.
-2006231c:	2f2e 2e2e 632f 6d6f 6f70 656e 746e 732f     ./../component/s
-2006232c:	636f 612f 656d 6162 696c 6574 662f 6c77     oc/amebalite/fwl
-2006233c:	6269 722f 6d61 635f 6d6f 6f6d 2f6e 6d61     ib/ram_common/am
-2006234c:	6265 5f61 7069 5f63 6172 2e6d 0063 0000     eba_ipc_ram.c...
-2006235c:	5043 2055 6425 7420 6b61 2065 6573 616d     CPU %d take sema
-2006236c:	2520 2064 6f66 2072 7870 6469 2520 2064      %d for pxid %d 
-2006237c:	6166 6c69 203a 7063 6975 2064 6425 7020     fail: cpuid %d p
-2006238c:	6978 2064 6425 6820 7361 7420 6b61 6e65     xid %d has taken
-2006239c:	7420 6568 7320 6d65 0a61 0000 5043 2055      the sema...CPU 
-200623ac:	6425 6620 6572 2065 6573 616d 2520 2064     %d free sema %d 
-200623bc:	6f66 2072 7870 6469 2520 2064 6166 6c69     for pxid %d fail
-200623cc:	203a 7063 6975 2064 6425 202c 7870 6469     : cpuid %d, pxid
-200623dc:	2520 2064 7369 7420 6b61 6e69 2067 6874      %d is taking th
-200623ec:	2065 6573 616d 000a 544f 2050 6572 6461     e sema..OTP read
-200623fc:	6720 7465 6820 2077 6573 616d 6620 6961      get hw sema fai
-2006240c:	0a6c 0000 544f 5f50 6552 6461 2038 6146     l...OTP_Read8 Fa
-2006241c:	6c69 2520 2078 000a                         il %x ..
+200622b4:	0100 4102 0100 4102 682f 6d6f 2f65 7561     ...A...A/home/au
+200622c4:	6f74 6a5f 6e65 696b 736e 775f 616c 356e     to_jenkins_wlan5
+200622d4:	492f 544f 415f 5354 722f 7065 736f 722f     /IOT_ATS/repos/r
+200622e4:	6c65 6165 6573 6d2d 7361 6574 2f72 6f73     elease-master/so
+200622f4:	7275 6563 612f 656d 6162 696c 6574 675f     urce/amebalite_g
+20062304:	6363 705f 6f72 656a 7463 702f 6f72 656a     cc_project/proje
+20062314:	7463 6b5f 3472 762f 6473 2f6b 2e2e 2e2f     ct_kr4/vsdk/../.
+20062324:	2f2e 2e2e 632f 6d6f 6f70 656e 746e 732f     ./../component/s
+20062334:	636f 612f 656d 6162 696c 6574 662f 6c77     oc/amebalite/fwl
+20062344:	6269 722f 6d61 635f 6d6f 6f6d 2f6e 6d61     ib/ram_common/am
+20062354:	6265 5f61 7069 5f63 6172 2e6d 0063 0000     eba_ipc_ram.c...
+20062364:	5043 2055 6425 7420 6b61 2065 6573 616d     CPU %d take sema
+20062374:	2520 2064 6f66 2072 7870 6469 2520 2064      %d for pxid %d 
+20062384:	6166 6c69 203a 7063 6975 2064 6425 7020     fail: cpuid %d p
+20062394:	6978 2064 6425 6820 7361 7420 6b61 6e65     xid %d has taken
+200623a4:	7420 6568 7320 6d65 0a61 0000 5043 2055      the sema...CPU 
+200623b4:	6425 6620 6572 2065 6573 616d 2520 2064     %d free sema %d 
+200623c4:	6f66 2072 7870 6469 2520 2064 6166 6c69     for pxid %d fail
+200623d4:	203a 7063 6975 2064 6425 202c 7870 6469     : cpuid %d, pxid
+200623e4:	2520 2064 7369 7420 6b61 6e69 2067 6874      %d is taking th
+200623f4:	2065 6573 616d 000a 544f 2050 6572 6461     e sema..OTP read
+20062404:	6720 7465 6820 2077 6573 616d 6620 6961      get hw sema fai
+20062414:	0a6c 0000 544f 5f50 6552 6461 2038 6146     l...OTP_Read8 Fa
+20062424:	6c69 2520 2078 000a                         il %x ..
 
-20062424 <pmap_func>:
-20062424:	0000 0101 0001 0101 0002 0102 0003 0102     ................
-20062434:	0004 0202 0005 0102 0006 0202 0007 0102     ................
-20062444:	0008 0101 0009 0101 000a 0101 000b 0101     ................
-20062454:	000c 0101 000d 0101 000e 0101 000f 0101     ................
-20062464:	0010 0101 0011 0101 0012 0000 0013 0202     ................
-20062474:	0014 0202 0015 0101 0016 0000 0017 0101     ................
-20062484:	0018 0101 0019 0101 001a 0101 001b 0101     ................
-20062494:	001c 0101 001d 0101 001e 0101 001f 0101     ................
-200624a4:	0020 0101 0021 0101 0022 0101 0023 0101      ...!..."...#...
-200624b4:	0024 0101 0025 0101 0026 0101 0027 0101     $...%...&...'...
-200624c4:	0028 0101 0029 0101 002a 0101 002b 0100     (...)...*...+...
-200624d4:	002c 0100 002d 0100 002e 0100 002f 0100     ,...-......./...
-200624e4:	0030 0100 0031 0100 0032 0100 0033 0100     0...1...2...3...
-200624f4:	ffff ffff 766e 6369 695f 7172 2520 756c     ....nvic_irq %lu
-20062504:	4620 6e75 4e20 746f 4120 7373 6769 216e      Fun Not Assign!
-20062514:	2121 2121 000a 0000 4c50 4349 0000 0000     !!!!....PLIC....
-20062524:	682f 6d6f 2f65 7561 6f74 6a5f 6e65 696b     /home/auto_jenki
-20062534:	736e 775f 616c 356e 492f 544f 415f 5354     ns_wlan5/IOT_ATS
-20062544:	722f 7065 736f 722f 6c65 6165 6573 6d2d     /repos/release-m
-20062554:	7361 6574 2f72 6f73 7275 6563 612f 656d     aster/source/ame
-20062564:	6162 696c 6574 675f 6363 705f 6f72 656a     balite_gcc_proje
-20062574:	7463 702f 6f72 656a 7463 6b5f 3472 762f     ct/project_kr4/v
-20062584:	6473 2f6b 2e2e 2e2f 2f2e 2e2e 632f 6d6f     sdk/../../../com
-20062594:	6f70 656e 746e 732f 636f 612f 656d 6162     ponent/soc/ameba
-200625a4:	696c 6574 6d2f 7369 2f63 6d61 6265 5f61     lite/misc/ameba_
-200625b4:	6d70 2e75 0063 0000 6e49 6176 696c 2064     pmu.c...Invalid 
-200625c4:	7350 6172 436d 6b6c 000a 0000 5350 4152     PsramClk....PSRA
-200625d4:	004d 0000 7370 6172 206d 7974 6570 6920     M...psram type i
-200625e4:	2073 7830 7825 000a 5353 4549 524e 3009     s 0x%x..SSIENR.0
-200625f4:	2578 3d78 7830 7825 000a 0000 5443 4c52     x%x=0x%x....CTRL
-20062604:	3052 3009 2578 3d78 7830 7825 000a 0000     R0.0x%x=0x%x....
-20062614:	4142 4455 0952 7830 7825 303d 2578 0a78     BAUDR.0x%x=0x%x.
-20062624:	0000 0000 4156 494c 5f44 4d43 0944 7830     ....VALID_CMD.0x
-20062634:	7825 303d 2578 0a78 0000 0000 5443 4c52     %x=0x%x.....CTRL
-20062644:	3252 3009 2578 3d78 7830 7825 000a 0000     R2.0x%x=0x%x....
-20062654:	4544 4956 4543 495f 464e 094f 7830 7825     DEVICE_INFO.0x%x
-20062664:	303d 2578 0a78 0000 5054 3052 3009 2578     =0x%x...TPR0.0x%
-20062674:	3d78 7830 7825 000a 4552 4441 465f 5341     x=0x%x..READ_FAS
-20062684:	5f54 4953 474e 454c 3009 2578 3d78 7830     T_SINGLE.0x%x=0x
-20062694:	7825 000a 5257 5449 5f45 4953 4e47 454c     %x..WRITE_SIGNLE
-200626a4:	3009 2578 3d78 7830 7825 000a 5541 4f54     .0x%x=0x%x..AUTO
-200626b4:	4c5f 4e45 5447 0948 7830 7825 303d 2578     _LENGTH.0x%x=0x%
-200626c4:	0a78 0000 5355 5245 4c5f 4e45 5447 0948     x...USER_LENGTH.
-200626d4:	7830 7825 303d 2578 0a78 0000 5541 4f54     0x%x=0x%x...AUTO
-200626e4:	4c5f 4e45 5447 3248 3009 2578 3d78 7830     _LENGTH2.0x%x=0x
-200626f4:	7825 000a 5253 3009 2578 3d78 7830 7825     %x..SR.0x%x=0x%x
-20062704:	000a 0000 5350 4850 5f59 4143 5f4c 4150     ....PSPHY_CAL_PA
-20062714:	0952 7830 7825 303d 2578 0a78 0000 0000     R.0x%x=0x%x.....
-20062724:	5350 4850 5f59 4850 5f59 5443 4c52 3009     PSPHY_PHY_CTRL.0
-20062734:	2578 3d78 7830 7825 000a 0000 5350 4850     x%x=0x%x....PSPH
-20062744:	5f59 4244 5f47 4553 094c 7830 7825 303d     Y_DBG_SEL.0x%x=0
-20062754:	2578 0a78 0000 0000 5249 5b30 5d31 303d     x%x.....IR0[1]=0
-20062764:	2578 0a78 0000 0000 5249 5b30 5d30 303d     x%x.....IR0[0]=0
-20062774:	2578 0a78 0000 0000 5243 5b30 5d31 303d     x%x.....CR0[1]=0
-20062784:	2578 0a78 0000 0000 5243 5b30 5d30 303d     x%x.....CR0[0]=0
-20062794:	2578 0a78 0000 0000 5243 5b31 5d31 303d     x%x.....CR1[1]=0
-200627a4:	2578 0a78 0000 0000 5243 5b31 5d30 303d     x%x.....CR1[0]=0
-200627b4:	2578 0a78 0000 0000 3d3d 703d 6168 6573     x%x.....===phase
-200627c4:	2520 786c 3d20 3d3d 3d3d 000a 6b6f 2520      %lx =====..ok %
-200627d4:	786c 2520 786c 2520 786c 2520 786c 2520     lx %lx %lx %lx %
-200627e4:	786c 2520 786c 2520 786c 000a 6166 6c69     lx %lx %lx..fail
-200627f4:	2520 786c 2520 786c 2520 786c 2520 786c      %lx %lx %lx %lx
-20062804:	2520 786c 2520 786c 2520 786c 000a 0000      %lx %lx %lx....
-20062814:	6143 4e6c 696d 206e 203d 7825 4320 6c61     CalNmin = %x Cal
-20062824:	6d4e 7861 3d20 2520 2078 6957 646e 776f     Nmax = %x Window
-20062834:	6953 657a 3d20 2520 2078 6870 7361 3a65     Size = %x phase:
-20062844:	2520 2078 000a 0000 5441 0000 003d 0000      %x ....AT..=...
-20062854:	002c 0000 7769 7270 7669 0020 0d0a 4d5b     ,...iwpriv ...[M
-20062864:	4d45 205d 6641 6574 2072 6f64 6320 646d     EM] After do cmd
-20062874:	202c 7661 6961 616c 6c62 2065 6568 7061     , available heap
-20062884:	2520 0a64 000d 0000 0a0d 230a 0a0d 0000      %d........#....
-20062894:	0000 0000 4f2b 4154 4c43 4145 3a52 0000     ....+OTACLEAR:..
-200628a4:	0a0d 7325 4b4f 0a0d 0000 0000 4f2b 4154     ..%sOK......+OTA
-200628b4:	4552 4f43 4556 3a52 0000 0000 0a0d 6120     RECOVER:...... a
-200628c4:	6772 6c20 6e65 3d20 2520 2064 0a0d 0000     rg len = %d ....
-200628d4:	0a0d 6120 6772 3d20 2520 2073 0a0d 0000     .. arg = %s ....
-200628e4:	542b 5345 3a54 0000 522b 5453 003a 0000     +TEST:..+RST:...
-200628f4:	6154 6b73 4c20 7369 3a74 0d20 250a 0d73     Task List: ..%s.
-20062904:	000a 0000 6548 7061 7453 7461 3a73 0d20     ....HeapStats: .
-20062914:	000a 0000 6f54 6174 206c 6548 7061 093a     ....Total Heap:.
-20062924:	7525 0a0d 0000 0000 6548 7061 4620 6572     %u......Heap Fre
-20062934:	2065 6f4e 3a77 2509 0d75 000a 6548 7061     e Now:.%u...Heap
-20062944:	5520 6573 2064 6f4e 3a77 2509 0d75 000a      Used Now:.%u...
-20062954:	6548 7061 5520 6573 2064 614d 3a78 2509     Heap Used Max:.%
-20062964:	0d75 000a 532b 4154 4554 003a 4d41 4245     u...+STATE:.AMEB
-20062974:	2d41 5452 534f 5320 4b44 5620 5245 4953     A-RTOS SDK VERSI
-20062984:	4e4f 203a 6425 252e 2e64 6425 000a 0000     ON: %d.%d.%d....
-20062994:	7325 0000 3056 2e32 2e31 0031 3376 352e     %s..V02.1.1.v3.5
-200629a4:	0000 0000 3032 3432 302f 2f37 3133 312d     ....2024/07/31-1
-200629b4:	3a35 3830 313a 0037 472b 524d 003a 0000     5:08:17.+GMR:...
-200629c4:	0a0d 7325 7325 252c 2c73 7325 0a0d 0000     ..%s%s,%s,%s....
-200629d4:	4c5b 474f 205d 5245 4f52 2052 7261 3a67     [LOG] ERROR arg:
-200629e4:	0d20 000a 0023 0000 4c5b 474f 205d 6e49      ...#...[LOG] In
-200629f4:	6176 696c 2064 6567 2074 6170 6172 656d     valid get parame
-20062a04:	6574 7372 0d2e 000a 253c 3e73 6c20 7665     ters....<%s> lev
-20062a14:	6c65 6920 2073 6425 0a0d 0000 4c5b 474f     el is %d....[LOG
-20062a24:	205d 6e49 6176 696c 2064 6573 2074 6170     ] Invalid set pa
-20062a34:	6172 656d 6574 7372 0d2e 000a 4c5b 474f     rameters....[LOG
-20062a44:	205d 6146 6c69 6465 7720 6568 206e 6573     ] Failed when se
-20062a54:	2e74 0a0d 0000 0000 4c5b 474f 205d 6e49     t.......[LOG] In
-20062a64:	6176 696c 2064 6170 6172 656d 6574 2072     valid parameter 
-20062a74:	756e 626d 7265 0d2e 000a 0000 4c5b 474f     number......[LOG
-20062a84:	205d 6e49 6176 696c 2064 6f6d 6564 2520     ] Invalid mode %
-20062a94:	2e64 0a0d 0000 0000 4c5b 474f 205d 6554     d.......[LOG] Te
-20062aa4:	7473 6120 776c 7961 2073 656c 6576 0d6c     st always level.
-20062ab4:	000a 0000 4c5b 474f 205d 6554 7473 6520     ....[LOG] Test e
-20062ac4:	7272 726f 6c20 7665 6c65 0a0d 0000 0000     rror level......
-20062ad4:	4c5b 474f 205d 6554 7473 7720 7261 696e     [LOG] Test warni
-20062ae4:	676e 6c20 7665 6c65 0a0d 0000 4c5b 474f     ng level....[LOG
-20062af4:	205d 6554 7473 6920 666e 206f 656c 6576     ] Test info leve
-20062b04:	0d6c 000a 4c5b 474f 205d 6554 7473 4c20     l...[LOG] Test L
-20062b14:	474f 495f 4554 534d 0a0d 0000 4c2b 474f     OG_ITEMS....+LOG
-20062b24:	003a 0000 0a0d 7325 5245 4f52 3a52 6425     :.....%sERROR:%d
-20062b34:	0a0d 0000 5441 4c2b 474f 3c3d 6567 5f74     ....AT+LOG=<get_
-20062b44:	6573 3e74 3c2c 6f6d 7564 656c 5b3e 3c2c     set>,<module>[,<
-20062b54:	6f6c 5f67 656c 6576 3e6c 0d5d 000a 0000     log_level>].....
-20062b64:	3c09 6567 5f74 6573 3e74 093a 2d30 6567     .<get_set>:.0-ge
-20062b74:	2c74 3120 732d 7465 202c 2d32 7270 6e69     t, 1-set, 2-prin
-20062b84:	2074 6c61 2c6c 3320 632d 656c 7261 6120     t all, 3-clear a
-20062b94:	6c6c 0a0d 0000 0000 3c09 6f6d 7564 656c     ll.......<module
-20062ba4:	3a3e 2a09 652d 6361 2068 6f6d 7564 656c     >:.*-each module
-20062bb4:	202c 746f 6568 7372 732d 6570 6963 6966     , others-specifi
-20062bc4:	2063 6f6d 7564 656c 0a0d 0000 3c09 6f6c     c module.....<lo
-20062bd4:	5f67 656c 6576 3e6c 093a 305b 352c 2c5d     g_level>:.[0,5],
-20062be4:	6f20 6c6e 2079 7061 6c70 6369 6261 656c      only applicable
-20062bf4:	6620 726f 7320 7465 6d20 646f 0d65 000a      for set mode...
-20062c04:	525b 4552 5d47 4520 7272 726f 7020 7261     [RREG] Error par
-20062c14:	6d61 7465 7265 0d73 000a 0000 522b 4552     ameters.....+RRE
-20062c24:	3a47 0000 575b 4552 5d47 4520 7272 726f     G:..[WREG] Error
-20062c34:	7020 7261 6d61 7465 7265 0d73 000a 0000      parameters.....
-20062c44:	572b 4552 3a47 0000 5043 2555 0000 0000     +WREG:..CPU%....
-20062c54:	7270 6f69 0000 0000 7473 7461 0065 0000     prio....state...
-20062c64:	6174 6b73 6e20 6d61 0065 0000 7325 2509     task name...%s.%
-20062c74:	0973 7325 2509 0a73 000d 0000 7325 2509     s.%s.%s.....%s.%
-20062c84:	0963 6425 2509 2e64 7325 0a0d 0000 0000     c.%d.%d.%s......
-20062c94:	7325 6d20 6c61 6f6c 2063 6166 6c69 6465     %s malloc failed
-20062ca4:	0a0d 0000 745b 706f 555d 6173 6567 203a     ....[top]Usage: 
-20062cb4:	6f74 3d70 6f6d 6564 742c 6d69 2c65 6f63     top=mode,time,co
-20062cc4:	6e75 0a74 200d 6f6d 6564 203a 2c30 7320     unt.. mode: 0, s
-20062cd4:	6174 7472 6320 756f 746e 6320 7570 7520     tart count cpu u
-20062ce4:	6173 6567 6520 6576 7972 5b20 6974 656d     sage every [time
-20062cf4:	205d 6573 6f63 646e 0d2e 200a 6f6d 6564     ] second... mode
-20062d04:	203a 2c31 7320 6f74 2070 6f6d 6564 3020     : 1, stop mode 0
-20062d14:	0d2e 200a 6f6d 6564 203a 3a32 7320 6174     ... mode: 2: sta
-20062d24:	7472 6320 756f 746e 6320 7570 7520 6173     rt count cpu usa
-20062d34:	6567 0d2e 200a 6f6d 6564 203a 3a33 7320     ge... mode: 3: s
-20062d44:	6f74 2070 6f6d 6564 3220 0d2e 200a 6974     top mode 2... ti
-20062d54:	656d 203a 5043 2055 7473 7461 7369 6974     me: CPU statisti
-20062d64:	7363 6920 746e 7265 6176 2e6c 6544 6166     cs interval.Defa
-20062d74:	6c75 2074 2e31 7520 696e 2874 2973 0d20     ult 1. unit(s) .
-20062d84:	200a 6f63 6e75 3a74 4320 5550 7320 6174     . count: CPU sta
-20062d94:	6974 7473 6369 2073 6f63 6e75 2c74 6420     tistics count, d
-20062da4:	6665 7561 746c 7520 746e 6c69 7320 6f74     efault until sto
-20062db4:	2070 726f 3120 322c 332c 2e2e 002e 0000     p or 1,2,3......
-20062dc4:	654d 6f6d 7972 6620 6961 756c 6572 6620     Memory failure f
-20062dd4:	726f 7420 7361 5f6b 7473 7461 7375 0a0d     or task_status..
-20062de4:	0000 0000 7563 7272 6e65 2074 6f6d 6564     ....current mode
-20062df4:	203a 6425 7420 6d69 3a65 2520 2864 2973     : %d time: %d(s)
-20062e04:	6320 756f 746e 203a 6425 2820 312d 6620      count: %d (-1 f
-20062e14:	726f 6920 666e 6e69 7469 2965 0a0d 0000     or infinite)....
-20062e24:	7063 5f75 7473 7461 745f 7268 6165 0064     cpu_stat_thread.
-20062e34:	432b 5550 4f4c 4441 003a 0000 5441 432b     +CPULOAD:...AT+C
-20062e44:	5550 4f4c 4441 3c3d 6f6d 6564 5b3e 3c2c     PULOAD=<mode>[,<
-20062e54:	6974 656d 695f 746e 6176 3e6c 3c2c 6f63     time_intval>,<co
-20062e64:	6e75 6574 3e72 0d5d 000a 0000 3c09 6f6d     unter>]......<mo
-20062e74:	6564 3a3e 5b09 2c30 5d32 0a0d 0000 0000     de>:.[0,2]......
-20062e84:	3c09 6974 656d 695f 746e 6176 3e6c 093a     .<time_intval>:.
-20062e94:	6e49 7320 6365 0a0d 0000 0000 3c09 6f63     In sec.......<co
-20062ea4:	6e75 6574 3e72 3009 6d20 6165 736e 6920     unter>.0 means i
-20062eb4:	666e 6e69 7469 0a0d 0000 0000 5441 7325     nfinit......AT%s
-20062ec4:	0a0d 0000 6f43 6d6d 6e6f 4120 2054 6f43     ....Common AT Co
-20062ed4:	6d6d 6e61 3a64 0a0d 0000 0000 4c2b 5349     mmand:......+LIS
-20062ee4:	3a54 0000 4f2b 4154 4c43 4145 0052 0000     T:..+OTACLEAR...
-20062ef4:	4f2b 4154 4552 4f43 4556 0052 432b 5550     +OTARECOVER.+CPU
-20062f04:	4f4c 4441 0000 0000 542b 5345 0054 0000     LOAD....+TEST...
-20062f14:	4c2b 5349 0054 0000 522b 5453 0000 0000     +LIST...+RST....
-20062f24:	532b 4154 4554 0000 472b 524d 0000 0000     +STATE..+GMR....
-20062f34:	4c2b 474f 0000 0000 522b 4552 0047 0000     +LOG....+RREG...
-20062f44:	572b 4552 0047 0000                         +WREG...
+2006242c <pmap_func>:
+2006242c:	0000 0101 0001 0101 0002 0102 0003 0102     ................
+2006243c:	0004 0202 0005 0102 0006 0202 0007 0102     ................
+2006244c:	0008 0101 0009 0101 000a 0101 000b 0101     ................
+2006245c:	000c 0101 000d 0101 000e 0101 000f 0101     ................
+2006246c:	0010 0101 0011 0101 0012 0000 0013 0202     ................
+2006247c:	0014 0202 0015 0101 0016 0000 0017 0101     ................
+2006248c:	0018 0101 0019 0101 001a 0101 001b 0101     ................
+2006249c:	001c 0101 001d 0101 001e 0101 001f 0101     ................
+200624ac:	0020 0101 0021 0101 0022 0101 0023 0101      ...!..."...#...
+200624bc:	0024 0101 0025 0101 0026 0101 0027 0101     $...%...&...'...
+200624cc:	0028 0101 0029 0101 002a 0101 002b 0100     (...)...*...+...
+200624dc:	002c 0100 002d 0100 002e 0100 002f 0100     ,...-......./...
+200624ec:	0030 0100 0031 0100 0032 0100 0033 0100     0...1...2...3...
+200624fc:	ffff ffff 766e 6369 695f 7172 2520 756c     ....nvic_irq %lu
+2006250c:	4620 6e75 4e20 746f 4120 7373 6769 216e      Fun Not Assign!
+2006251c:	2121 2121 000a 0000 4c50 4349 0000 0000     !!!!....PLIC....
+2006252c:	682f 6d6f 2f65 7561 6f74 6a5f 6e65 696b     /home/auto_jenki
+2006253c:	736e 775f 616c 356e 492f 544f 415f 5354     ns_wlan5/IOT_ATS
+2006254c:	722f 7065 736f 722f 6c65 6165 6573 6d2d     /repos/release-m
+2006255c:	7361 6574 2f72 6f73 7275 6563 612f 656d     aster/source/ame
+2006256c:	6162 696c 6574 675f 6363 705f 6f72 656a     balite_gcc_proje
+2006257c:	7463 702f 6f72 656a 7463 6b5f 3472 762f     ct/project_kr4/v
+2006258c:	6473 2f6b 2e2e 2e2f 2f2e 2e2e 632f 6d6f     sdk/../../../com
+2006259c:	6f70 656e 746e 732f 636f 612f 656d 6162     ponent/soc/ameba
+200625ac:	696c 6574 6d2f 7369 2f63 6d61 6265 5f61     lite/misc/ameba_
+200625bc:	6d70 2e75 0063 0000 6e49 6176 696c 2064     pmu.c...Invalid 
+200625cc:	7350 6172 436d 6b6c 000a 0000 5350 4152     PsramClk....PSRA
+200625dc:	004d 0000 7370 6172 206d 7974 6570 6920     M...psram type i
+200625ec:	2073 7830 7825 000a 5353 4549 524e 3009     s 0x%x..SSIENR.0
+200625fc:	2578 3d78 7830 7825 000a 0000 5443 4c52     x%x=0x%x....CTRL
+2006260c:	3052 3009 2578 3d78 7830 7825 000a 0000     R0.0x%x=0x%x....
+2006261c:	4142 4455 0952 7830 7825 303d 2578 0a78     BAUDR.0x%x=0x%x.
+2006262c:	0000 0000 4156 494c 5f44 4d43 0944 7830     ....VALID_CMD.0x
+2006263c:	7825 303d 2578 0a78 0000 0000 5443 4c52     %x=0x%x.....CTRL
+2006264c:	3252 3009 2578 3d78 7830 7825 000a 0000     R2.0x%x=0x%x....
+2006265c:	4544 4956 4543 495f 464e 094f 7830 7825     DEVICE_INFO.0x%x
+2006266c:	303d 2578 0a78 0000 5054 3052 3009 2578     =0x%x...TPR0.0x%
+2006267c:	3d78 7830 7825 000a 4552 4441 465f 5341     x=0x%x..READ_FAS
+2006268c:	5f54 4953 474e 454c 3009 2578 3d78 7830     T_SINGLE.0x%x=0x
+2006269c:	7825 000a 5257 5449 5f45 4953 4e47 454c     %x..WRITE_SIGNLE
+200626ac:	3009 2578 3d78 7830 7825 000a 5541 4f54     .0x%x=0x%x..AUTO
+200626bc:	4c5f 4e45 5447 0948 7830 7825 303d 2578     _LENGTH.0x%x=0x%
+200626cc:	0a78 0000 5355 5245 4c5f 4e45 5447 0948     x...USER_LENGTH.
+200626dc:	7830 7825 303d 2578 0a78 0000 5541 4f54     0x%x=0x%x...AUTO
+200626ec:	4c5f 4e45 5447 3248 3009 2578 3d78 7830     _LENGTH2.0x%x=0x
+200626fc:	7825 000a 5253 3009 2578 3d78 7830 7825     %x..SR.0x%x=0x%x
+2006270c:	000a 0000 5350 4850 5f59 4143 5f4c 4150     ....PSPHY_CAL_PA
+2006271c:	0952 7830 7825 303d 2578 0a78 0000 0000     R.0x%x=0x%x.....
+2006272c:	5350 4850 5f59 4850 5f59 5443 4c52 3009     PSPHY_PHY_CTRL.0
+2006273c:	2578 3d78 7830 7825 000a 0000 5350 4850     x%x=0x%x....PSPH
+2006274c:	5f59 4244 5f47 4553 094c 7830 7825 303d     Y_DBG_SEL.0x%x=0
+2006275c:	2578 0a78 0000 0000 5249 5b30 5d31 303d     x%x.....IR0[1]=0
+2006276c:	2578 0a78 0000 0000 5249 5b30 5d30 303d     x%x.....IR0[0]=0
+2006277c:	2578 0a78 0000 0000 5243 5b30 5d31 303d     x%x.....CR0[1]=0
+2006278c:	2578 0a78 0000 0000 5243 5b30 5d30 303d     x%x.....CR0[0]=0
+2006279c:	2578 0a78 0000 0000 5243 5b31 5d31 303d     x%x.....CR1[1]=0
+200627ac:	2578 0a78 0000 0000 5243 5b31 5d30 303d     x%x.....CR1[0]=0
+200627bc:	2578 0a78 0000 0000 3d3d 703d 6168 6573     x%x.....===phase
+200627cc:	2520 786c 3d20 3d3d 3d3d 000a 6b6f 2520      %lx =====..ok %
+200627dc:	786c 2520 786c 2520 786c 2520 786c 2520     lx %lx %lx %lx %
+200627ec:	786c 2520 786c 2520 786c 000a 6166 6c69     lx %lx %lx..fail
+200627fc:	2520 786c 2520 786c 2520 786c 2520 786c      %lx %lx %lx %lx
+2006280c:	2520 786c 2520 786c 2520 786c 000a 0000      %lx %lx %lx....
+2006281c:	6143 4e6c 696d 206e 203d 7825 4320 6c61     CalNmin = %x Cal
+2006282c:	6d4e 7861 3d20 2520 2078 6957 646e 776f     Nmax = %x Window
+2006283c:	6953 657a 3d20 2520 2078 6870 7361 3a65     Size = %x phase:
+2006284c:	2520 2078 000a 0000 5441 0000 003d 0000      %x ....AT..=...
+2006285c:	002c 0000 7769 7270 7669 0020 0d0a 4d5b     ,...iwpriv ...[M
+2006286c:	4d45 205d 6641 6574 2072 6f64 6320 646d     EM] After do cmd
+2006287c:	202c 7661 6961 616c 6c62 2065 6568 7061     , available heap
+2006288c:	2520 0a64 000d 0000 0a0d 230a 0a0d 0000      %d........#....
+2006289c:	0000 0000 4f2b 4154 4c43 4145 3a52 0000     ....+OTACLEAR:..
+200628ac:	0a0d 7325 4b4f 0a0d 0000 0000 4f2b 4154     ..%sOK......+OTA
+200628bc:	4552 4f43 4556 3a52 0000 0000 0a0d 6120     RECOVER:...... a
+200628cc:	6772 6c20 6e65 3d20 2520 2064 0a0d 0000     rg len = %d ....
+200628dc:	0a0d 6120 6772 3d20 2520 2073 0a0d 0000     .. arg = %s ....
+200628ec:	542b 5345 3a54 0000 522b 5453 003a 0000     +TEST:..+RST:...
+200628fc:	6154 6b73 4c20 7369 3a74 0d20 250a 0d73     Task List: ..%s.
+2006290c:	000a 0000 6548 7061 7453 7461 3a73 0d20     ....HeapStats: .
+2006291c:	000a 0000 6f54 6174 206c 6548 7061 093a     ....Total Heap:.
+2006292c:	7525 0a0d 0000 0000 6548 7061 4620 6572     %u......Heap Fre
+2006293c:	2065 6f4e 3a77 2509 0d75 000a 6548 7061     e Now:.%u...Heap
+2006294c:	5520 6573 2064 6f4e 3a77 2509 0d75 000a      Used Now:.%u...
+2006295c:	6548 7061 5520 6573 2064 614d 3a78 2509     Heap Used Max:.%
+2006296c:	0d75 000a 532b 4154 4554 003a 4d41 4245     u...+STATE:.AMEB
+2006297c:	2d41 5452 534f 5320 4b44 5620 5245 4953     A-RTOS SDK VERSI
+2006298c:	4e4f 203a 6425 252e 2e64 6425 000a 0000     ON: %d.%d.%d....
+2006299c:	7325 0000 3056 2e32 2e31 0031 3376 352e     %s..V02.1.1.v3.5
+200629ac:	0000 0000 3032 3432 302f 2f38 3132 312d     ....2024/08/21-1
+200629bc:	3a30 3935 313a 0030 472b 524d 003a 0000     0:59:10.+GMR:...
+200629cc:	0a0d 7325 7325 252c 2c73 7325 0a0d 0000     ..%s%s,%s,%s....
+200629dc:	4c5b 474f 205d 5245 4f52 2052 7261 3a67     [LOG] ERROR arg:
+200629ec:	0d20 000a 0023 0000 4c5b 474f 205d 6e49      ...#...[LOG] In
+200629fc:	6176 696c 2064 6567 2074 6170 6172 656d     valid get parame
+20062a0c:	6574 7372 0d2e 000a 253c 3e73 6c20 7665     ters....<%s> lev
+20062a1c:	6c65 6920 2073 6425 0a0d 0000 4c5b 474f     el is %d....[LOG
+20062a2c:	205d 6e49 6176 696c 2064 6573 2074 6170     ] Invalid set pa
+20062a3c:	6172 656d 6574 7372 0d2e 000a 4c5b 474f     rameters....[LOG
+20062a4c:	205d 6146 6c69 6465 7720 6568 206e 6573     ] Failed when se
+20062a5c:	2e74 0a0d 0000 0000 4c5b 474f 205d 6e49     t.......[LOG] In
+20062a6c:	6176 696c 2064 6170 6172 656d 6574 2072     valid parameter 
+20062a7c:	756e 626d 7265 0d2e 000a 0000 4c5b 474f     number......[LOG
+20062a8c:	205d 6e49 6176 696c 2064 6f6d 6564 2520     ] Invalid mode %
+20062a9c:	2e64 0a0d 0000 0000 4c5b 474f 205d 6554     d.......[LOG] Te
+20062aac:	7473 6120 776c 7961 2073 656c 6576 0d6c     st always level.
+20062abc:	000a 0000 4c5b 474f 205d 6554 7473 6520     ....[LOG] Test e
+20062acc:	7272 726f 6c20 7665 6c65 0a0d 0000 0000     rror level......
+20062adc:	4c5b 474f 205d 6554 7473 7720 7261 696e     [LOG] Test warni
+20062aec:	676e 6c20 7665 6c65 0a0d 0000 4c5b 474f     ng level....[LOG
+20062afc:	205d 6554 7473 6920 666e 206f 656c 6576     ] Test info leve
+20062b0c:	0d6c 000a 4c5b 474f 205d 6554 7473 4c20     l...[LOG] Test L
+20062b1c:	474f 495f 4554 534d 0a0d 0000 4c2b 474f     OG_ITEMS....+LOG
+20062b2c:	003a 0000 0a0d 7325 5245 4f52 3a52 6425     :.....%sERROR:%d
+20062b3c:	0a0d 0000 5441 4c2b 474f 3c3d 6567 5f74     ....AT+LOG=<get_
+20062b4c:	6573 3e74 3c2c 6f6d 7564 656c 5b3e 3c2c     set>,<module>[,<
+20062b5c:	6f6c 5f67 656c 6576 3e6c 0d5d 000a 0000     log_level>].....
+20062b6c:	3c09 6567 5f74 6573 3e74 093a 2d30 6567     .<get_set>:.0-ge
+20062b7c:	2c74 3120 732d 7465 202c 2d32 7270 6e69     t, 1-set, 2-prin
+20062b8c:	2074 6c61 2c6c 3320 632d 656c 7261 6120     t all, 3-clear a
+20062b9c:	6c6c 0a0d 0000 0000 3c09 6f6d 7564 656c     ll.......<module
+20062bac:	3a3e 2a09 652d 6361 2068 6f6d 7564 656c     >:.*-each module
+20062bbc:	202c 746f 6568 7372 732d 6570 6963 6966     , others-specifi
+20062bcc:	2063 6f6d 7564 656c 0a0d 0000 3c09 6f6c     c module.....<lo
+20062bdc:	5f67 656c 6576 3e6c 093a 305b 352c 2c5d     g_level>:.[0,5],
+20062bec:	6f20 6c6e 2079 7061 6c70 6369 6261 656c      only applicable
+20062bfc:	6620 726f 7320 7465 6d20 646f 0d65 000a      for set mode...
+20062c0c:	525b 4552 5d47 4520 7272 726f 7020 7261     [RREG] Error par
+20062c1c:	6d61 7465 7265 0d73 000a 0000 522b 4552     ameters.....+RRE
+20062c2c:	3a47 0000 575b 4552 5d47 4520 7272 726f     G:..[WREG] Error
+20062c3c:	7020 7261 6d61 7465 7265 0d73 000a 0000      parameters.....
+20062c4c:	572b 4552 3a47 0000 5043 2555 0000 0000     +WREG:..CPU%....
+20062c5c:	7270 6f69 0000 0000 7473 7461 0065 0000     prio....state...
+20062c6c:	6174 6b73 6e20 6d61 0065 0000 7325 2509     task name...%s.%
+20062c7c:	0973 7325 2509 0a73 000d 0000 7325 2509     s.%s.%s.....%s.%
+20062c8c:	0963 6425 2509 2e64 7325 0a0d 0000 0000     c.%d.%d.%s......
+20062c9c:	7325 6d20 6c61 6f6c 2063 6166 6c69 6465     %s malloc failed
+20062cac:	0a0d 0000 745b 706f 555d 6173 6567 203a     ....[top]Usage: 
+20062cbc:	6f74 3d70 6f6d 6564 742c 6d69 2c65 6f63     top=mode,time,co
+20062ccc:	6e75 0a74 200d 6f6d 6564 203a 2c30 7320     unt.. mode: 0, s
+20062cdc:	6174 7472 6320 756f 746e 6320 7570 7520     tart count cpu u
+20062cec:	6173 6567 6520 6576 7972 5b20 6974 656d     sage every [time
+20062cfc:	205d 6573 6f63 646e 0d2e 200a 6f6d 6564     ] second... mode
+20062d0c:	203a 2c31 7320 6f74 2070 6f6d 6564 3020     : 1, stop mode 0
+20062d1c:	0d2e 200a 6f6d 6564 203a 3a32 7320 6174     ... mode: 2: sta
+20062d2c:	7472 6320 756f 746e 6320 7570 7520 6173     rt count cpu usa
+20062d3c:	6567 0d2e 200a 6f6d 6564 203a 3a33 7320     ge... mode: 3: s
+20062d4c:	6f74 2070 6f6d 6564 3220 0d2e 200a 6974     top mode 2... ti
+20062d5c:	656d 203a 5043 2055 7473 7461 7369 6974     me: CPU statisti
+20062d6c:	7363 6920 746e 7265 6176 2e6c 6544 6166     cs interval.Defa
+20062d7c:	6c75 2074 2e31 7520 696e 2874 2973 0d20     ult 1. unit(s) .
+20062d8c:	200a 6f63 6e75 3a74 4320 5550 7320 6174     . count: CPU sta
+20062d9c:	6974 7473 6369 2073 6f63 6e75 2c74 6420     tistics count, d
+20062dac:	6665 7561 746c 7520 746e 6c69 7320 6f74     efault until sto
+20062dbc:	2070 726f 3120 322c 332c 2e2e 002e 0000     p or 1,2,3......
+20062dcc:	654d 6f6d 7972 6620 6961 756c 6572 6620     Memory failure f
+20062ddc:	726f 7420 7361 5f6b 7473 7461 7375 0a0d     or task_status..
+20062dec:	0000 0000 7563 7272 6e65 2074 6f6d 6564     ....current mode
+20062dfc:	203a 6425 7420 6d69 3a65 2520 2864 2973     : %d time: %d(s)
+20062e0c:	6320 756f 746e 203a 6425 2820 312d 6620      count: %d (-1 f
+20062e1c:	726f 6920 666e 6e69 7469 2965 0a0d 0000     or infinite)....
+20062e2c:	7063 5f75 7473 7461 745f 7268 6165 0064     cpu_stat_thread.
+20062e3c:	432b 5550 4f4c 4441 003a 0000 5441 432b     +CPULOAD:...AT+C
+20062e4c:	5550 4f4c 4441 3c3d 6f6d 6564 5b3e 3c2c     PULOAD=<mode>[,<
+20062e5c:	6974 656d 695f 746e 6176 3e6c 3c2c 6f63     time_intval>,<co
+20062e6c:	6e75 6574 3e72 0d5d 000a 0000 3c09 6f6d     unter>]......<mo
+20062e7c:	6564 3a3e 5b09 2c30 5d32 0a0d 0000 0000     de>:.[0,2]......
+20062e8c:	3c09 6974 656d 695f 746e 6176 3e6c 093a     .<time_intval>:.
+20062e9c:	6e49 7320 6365 0a0d 0000 0000 3c09 6f63     In sec.......<co
+20062eac:	6e75 6574 3e72 3009 6d20 6165 736e 6920     unter>.0 means i
+20062ebc:	666e 6e69 7469 0a0d 0000 0000 5441 7325     nfinit......AT%s
+20062ecc:	0a0d 0000 6f43 6d6d 6e6f 4120 2054 6f43     ....Common AT Co
+20062edc:	6d6d 6e61 3a64 0a0d 0000 0000 4c2b 5349     mmand:......+LIS
+20062eec:	3a54 0000 4f2b 4154 4c43 4145 0052 0000     T:..+OTACLEAR...
+20062efc:	4f2b 4154 4552 4f43 4556 0052 432b 5550     +OTARECOVER.+CPU
+20062f0c:	4f4c 4441 0000 0000 542b 5345 0054 0000     LOAD....+TEST...
+20062f1c:	4c2b 5349 0054 0000 522b 5453 0000 0000     +LIST...+RST....
+20062f2c:	532b 4154 4554 0000 472b 524d 0000 0000     +STATE..+GMR....
+20062f3c:	4c2b 474f 0000 0000 522b 4552 0047 0000     +LOG....+RREG...
+20062f4c:	572b 4552 0047 0000                         +WREG...
 
-20062f4c <__FUNCTION__.0>:
-20062f4c:	7063 5f75 7473 7461 745f 7268 6165 0064     cpu_stat_thread.
-20062f5c:	682f 6d6f 2f65 7561 6f74 6a5f 6e65 696b     /home/auto_jenki
-20062f6c:	736e 775f 616c 356e 492f 544f 415f 5354     ns_wlan5/IOT_ATS
-20062f7c:	722f 7065 736f 722f 6c65 6165 6573 6d2d     /repos/release-m
-20062f8c:	7361 6574 2f72 6f73 7275 6563 612f 656d     aster/source/ame
-20062f9c:	6162 696c 6574 675f 6363 705f 6f72 656a     balite_gcc_proje
-20062fac:	7463 702f 6f72 656a 7463 6b5f 3472 762f     ct/project_kr4/v
-20062fbc:	6473 2f6b 2e2e 2e2f 2f2e 2e2e 632f 6d6f     sdk/../../../com
-20062fcc:	6f70 656e 746e 6f2f 2f73 7266 6565 7472     ponent/os/freert
-20062fdc:	736f 662f 6572 7265 6f74 5f73 6568 7061     os/freertos_heap
-20062fec:	5f35 6f63 666e 6769 632e 0000 255b 5d73     5_config.c..[%s]
-20062ffc:	6c20 7665 6c65 3d20 2520 0a64 0000 0000      level = %d.....
-2006300c:	682f 6d6f 2f65 7561 6f74 6a5f 6e65 696b     /home/auto_jenki
-2006301c:	736e 775f 616c 356e 492f 544f 415f 5354     ns_wlan5/IOT_ATS
-2006302c:	722f 7065 736f 722f 6c65 6165 6573 6d2d     /repos/release-m
-2006303c:	7361 6574 2f72 6f73 7275 6563 612f 656d     aster/source/ame
-2006304c:	6162 696c 6574 675f 6363 705f 6f72 656a     balite_gcc_proje
-2006305c:	7463 702f 6f72 656a 7463 6b5f 3472 762f     ct/project_kr4/v
-2006306c:	6473 2f6b 2e2e 2e2f 2f2e 2e2e 632f 6d6f     sdk/../../../com
-2006307c:	6f70 656e 746e 732f 636f 612f 656d 6162     ponent/soc/ameba
-2006308c:	696c 6574 732f 6c77 6269 6c2f 676f 632e     lite/swlib/log.c
-2006309c:	0000 0000 002a 0000 6143 6863 2065 7261     ....*...Cache ar
-200630ac:	6172 2079 7369 6620 6c75 2c6c 6120 646e     ray is full, and
-200630bc:	7220 7065 616c 6563 6f20 646c 6520 746e      replace old ent
-200630cc:	7972 000a 255b 3830 5d78 0020 0a0d 255b     ry..[%08x] ...[%
-200630dc:	3830 5d78 0020 0000 3025 7838 0020 0000     08x] ...%08x ...
-200630ec:	3025 7832 0020 0000 255b 2d73 6325 205d     %02x ...[%s-%c] 
-200630fc:	0000 0000 5749 4744 7220 6665 6572 6873     ....IWDG refresh
-2006310c:	6f20 216e 000a 0000 414d 4e49 0000 0000      on!....MAIN....
-2006311c:	4457 5f47 6954 656d 0072 0000 5749 4744     WDG_Timer...IWDG
-2006312c:	7220 6665 6572 6873 6520 7272 726f 000a      refresh error..
-2006313c:	524b 2034 534f 5320 4154 5452 0a20 0000     KR4 OS START ...
-2006314c:	2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d     ----------------
-2006315c:	202d 4554 5453 4320 4d4f 414d 444e 4d20     - TEST COMMAND M
-2006316c:	444f 2045 4548 504c 2520 2d64 2d2d 2d2d     ODE HELP %d-----
-2006317c:	2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 0a2d 0000     -------------...
-2006318c:	7325 000a 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d     %s..------------
-2006319c:	2d2d 2d2d 202d 4554 5453 4320 4d4f 414d     ----- TEST COMMA
-200631ac:	444e 4d20 444f 2045 4e45 2044 2520 2d78     ND MODE END  %x-
-200631bc:	2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d     ----------------
-200631cc:	0a2d 0000 6552 6f62 746f 6e69 2067 2e2e     -...Rebooting ..
-200631dc:	0a2e 000d 6175 7472 7562 6e72 0000 0000     ....uartburn....
-200631ec:	255b 3830 5d78 2520 3830 2078 000a 0000     [%08x] %08x ....
-200631fc:	7257 6e6f 2067 7261 7567 656d 746e 6e20     Wrong argument n
-2006320c:	6d75 6562 2172 0a0d 0000 0000 5352 5049     umber!......RSIP
-2006321c:	6520 616e 6c62 6465 202c 6143 276e 2074      enabled, Can't 
-2006322c:	6552 6461 4620 616c 6873 0a2e 0000 0000     Read Flash......
-2006323c:	7257 6e6f 2067 6d63 2164 0a0d 0000 0000     Wrong cmd!......
-2006324c:	003f 0000 4809 4c45 2050 4028 293f 3a20     ?....HELP (@?) :
-2006325c:	0a20 0909 5020 6972 746e 6820 6c65 2070      ... Print help 
-2006326c:	656d 7373 6761 000a 5744 0000 4009 5744     messag..DW...@DW
-2006327c:	3c20 6441 7264 7365 2c73 4c20 6e65 7467      <Address, Lengt
-2006328c:	3e68 090a 2009 7544 706d 6d20 6d65 726f     h>... Dump memor
-2006329c:	2079 6f77 6472 6f20 2072 6552 6461 4820     y word or Read H
-200632ac:	2077 6f77 6472 7220 6765 7369 6574 3b72     w word register;
-200632bc:	0a20 0909 4420 2057 613c 6464 3e72 0920      ... DW <addr> .
-200632cc:	2009 7544 706d 6f20 6c6e 2079 6e6f 2065     . Dump only one 
-200632dc:	6f77 6472 6120 2074 6874 2065 6173 656d     word at the same
-200632ec:	7420 6d69 2c65 7520 696e 3a74 3420 7942      time, unit: 4By
-200632fc:	6574 0a73 0909 4420 2057 613c 6464 3e72     tes... DW <addr>
-2006330c:	3c20 656c 3e6e 0920 4420 6d75 2070 6874      <len> . Dump th
-2006331c:	2065 7073 6365 6669 6569 2064 656c 676e     e specified leng
-2006332c:	6874 6f20 2066 6874 2065 6f77 6472 202c     th of the word, 
-2006333c:	6e75 7469 203a 4234 7479 7365 090a 2009     unit: 4Bytes... 
-2006334c:	5744 3c20 6461 7264 203e 6c3c 6e65 203e     DW <addr> <len> 
-2006335c:	2062 4420 6d75 2070 6874 2065 7073 6365     b  Dump the spec
-2006336c:	6669 6569 2064 656c 676e 6874 6f20 2066     ified length of 
-2006337c:	6874 2065 7962 6574 202c 6e75 7469 203a     the byte, unit: 
-2006338c:	4231 7479 0a65 0000 5745 0000 4009 5745     1Byte...EW...@EW
-2006339c:	3c20 6441 7264 7365 2c73 4820 7865 0a3e      <Address, Hex>.
-200633ac:	0909 5720 6972 6574 6d20 6d65 726f 2079     .. Write memory 
-200633bc:	7764 726f 2064 726f 5720 6972 6574 4820     dword or Write H
-200633cc:	2077 7764 726f 2064 6572 6967 7473 7265     w dword register
-200633dc:	0a20 0909 4320 6e61 7720 6972 6574 6f20      ... Can write o
-200633ec:	6c6e 2079 6e6f 2065 7764 726f 2064 7461     nly one dword at
-200633fc:	7420 6568 7320 6d61 2065 6974 656d 0a20      the same time .
-2006340c:	0909 4520 3a78 4520 2057 6441 7264 7365     .. Ex: EW Addres
-2006341c:	2073 6156 756c 2065 000a 0000 4552 4f42     s Value ....REBO
-2006342c:	544f 0000 4009 4552 4f42 544f 0a20 0909     OT...@REBOOT ...
-2006343c:	7220 6265 6f6f 2074 090a 2009 6572 6f62      reboot ... rebo
-2006344c:	746f 7520 7261 6274 7275 206e 000a 0000     ot uartburn ....
-2006345c:	255b 5d73 2520 2073 3c3c 203c 6854 2065     [%s] %s <<< The 
-2006346c:	756d 6574 2078 6168 2073 6f6e 2074 6562     mutex has not be
-2006347c:	6e65 7220 6c65 6165 6573 2c64 6220 7475     en released, but
-2006348c:	7420 6568 6d20 7475 7865 6820 7361 6220      the mutex has b
-2006349c:	6565 206e 6564 656c 6574 2e64 3e20 3e3e     een deleted. >>>
-200634ac:	000a 0000                                   ....
+20062f54 <__FUNCTION__.0>:
+20062f54:	7063 5f75 7473 7461 745f 7268 6165 0064     cpu_stat_thread.
+20062f64:	682f 6d6f 2f65 7561 6f74 6a5f 6e65 696b     /home/auto_jenki
+20062f74:	736e 775f 616c 356e 492f 544f 415f 5354     ns_wlan5/IOT_ATS
+20062f84:	722f 7065 736f 722f 6c65 6165 6573 6d2d     /repos/release-m
+20062f94:	7361 6574 2f72 6f73 7275 6563 612f 656d     aster/source/ame
+20062fa4:	6162 696c 6574 675f 6363 705f 6f72 656a     balite_gcc_proje
+20062fb4:	7463 702f 6f72 656a 7463 6b5f 3472 762f     ct/project_kr4/v
+20062fc4:	6473 2f6b 2e2e 2e2f 2f2e 2e2e 632f 6d6f     sdk/../../../com
+20062fd4:	6f70 656e 746e 6f2f 2f73 7266 6565 7472     ponent/os/freert
+20062fe4:	736f 662f 6572 7265 6f74 5f73 6568 7061     os/freertos_heap
+20062ff4:	5f35 6f63 666e 6769 632e 0000 255b 5d73     5_config.c..[%s]
+20063004:	6c20 7665 6c65 3d20 2520 0a64 0000 0000      level = %d.....
+20063014:	682f 6d6f 2f65 7561 6f74 6a5f 6e65 696b     /home/auto_jenki
+20063024:	736e 775f 616c 356e 492f 544f 415f 5354     ns_wlan5/IOT_ATS
+20063034:	722f 7065 736f 722f 6c65 6165 6573 6d2d     /repos/release-m
+20063044:	7361 6574 2f72 6f73 7275 6563 612f 656d     aster/source/ame
+20063054:	6162 696c 6574 675f 6363 705f 6f72 656a     balite_gcc_proje
+20063064:	7463 702f 6f72 656a 7463 6b5f 3472 762f     ct/project_kr4/v
+20063074:	6473 2f6b 2e2e 2e2f 2f2e 2e2e 632f 6d6f     sdk/../../../com
+20063084:	6f70 656e 746e 732f 636f 612f 656d 6162     ponent/soc/ameba
+20063094:	696c 6574 732f 6c77 6269 6c2f 676f 632e     lite/swlib/log.c
+200630a4:	0000 0000 002a 0000 6143 6863 2065 7261     ....*...Cache ar
+200630b4:	6172 2079 7369 6620 6c75 2c6c 6120 646e     ray is full, and
+200630c4:	7220 7065 616c 6563 6f20 646c 6520 746e      replace old ent
+200630d4:	7972 000a 255b 3830 5d78 0020 0a0d 255b     ry..[%08x] ...[%
+200630e4:	3830 5d78 0020 0000 3025 7838 0020 0000     08x] ...%08x ...
+200630f4:	3025 7832 0020 0000 255b 2d73 6325 205d     %02x ...[%s-%c] 
+20063104:	0000 0000 5749 4744 7220 6665 6572 6873     ....IWDG refresh
+20063114:	6f20 216e 000a 0000 414d 4e49 0000 0000      on!....MAIN....
+20063124:	4457 5f47 6954 656d 0072 0000 5749 4744     WDG_Timer...IWDG
+20063134:	7220 6665 6572 6873 6520 7272 726f 000a      refresh error..
+20063144:	524b 2034 534f 5320 4154 5452 0a20 0000     KR4 OS START ...
+20063154:	2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d     ----------------
+20063164:	202d 4554 5453 4320 4d4f 414d 444e 4d20     - TEST COMMAND M
+20063174:	444f 2045 4548 504c 2520 2d64 2d2d 2d2d     ODE HELP %d-----
+20063184:	2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 0a2d 0000     -------------...
+20063194:	7325 000a 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d     %s..------------
+200631a4:	2d2d 2d2d 202d 4554 5453 4320 4d4f 414d     ----- TEST COMMA
+200631b4:	444e 4d20 444f 2045 4e45 2044 2520 2d78     ND MODE END  %x-
+200631c4:	2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d 2d2d     ----------------
+200631d4:	0a2d 0000 6552 6f62 746f 6e69 2067 2e2e     -...Rebooting ..
+200631e4:	0a2e 000d 6175 7472 7562 6e72 0000 0000     ....uartburn....
+200631f4:	255b 3830 5d78 2520 3830 2078 000a 0000     [%08x] %08x ....
+20063204:	7257 6e6f 2067 7261 7567 656d 746e 6e20     Wrong argument n
+20063214:	6d75 6562 2172 0a0d 0000 0000 5352 5049     umber!......RSIP
+20063224:	6520 616e 6c62 6465 202c 6143 276e 2074      enabled, Can't 
+20063234:	6552 6461 4620 616c 6873 0a2e 0000 0000     Read Flash......
+20063244:	7257 6e6f 2067 6d63 2164 0a0d 0000 0000     Wrong cmd!......
+20063254:	003f 0000 4809 4c45 2050 4028 293f 3a20     ?....HELP (@?) :
+20063264:	0a20 0909 5020 6972 746e 6820 6c65 2070      ... Print help 
+20063274:	656d 7373 6761 000a 5744 0000 4009 5744     messag..DW...@DW
+20063284:	3c20 6441 7264 7365 2c73 4c20 6e65 7467      <Address, Lengt
+20063294:	3e68 090a 2009 7544 706d 6d20 6d65 726f     h>... Dump memor
+200632a4:	2079 6f77 6472 6f20 2072 6552 6461 4820     y word or Read H
+200632b4:	2077 6f77 6472 7220 6765 7369 6574 3b72     w word register;
+200632c4:	0a20 0909 4420 2057 613c 6464 3e72 0920      ... DW <addr> .
+200632d4:	2009 7544 706d 6f20 6c6e 2079 6e6f 2065     . Dump only one 
+200632e4:	6f77 6472 6120 2074 6874 2065 6173 656d     word at the same
+200632f4:	7420 6d69 2c65 7520 696e 3a74 3420 7942      time, unit: 4By
+20063304:	6574 0a73 0909 4420 2057 613c 6464 3e72     tes... DW <addr>
+20063314:	3c20 656c 3e6e 0920 4420 6d75 2070 6874      <len> . Dump th
+20063324:	2065 7073 6365 6669 6569 2064 656c 676e     e specified leng
+20063334:	6874 6f20 2066 6874 2065 6f77 6472 202c     th of the word, 
+20063344:	6e75 7469 203a 4234 7479 7365 090a 2009     unit: 4Bytes... 
+20063354:	5744 3c20 6461 7264 203e 6c3c 6e65 203e     DW <addr> <len> 
+20063364:	2062 4420 6d75 2070 6874 2065 7073 6365     b  Dump the spec
+20063374:	6669 6569 2064 656c 676e 6874 6f20 2066     ified length of 
+20063384:	6874 2065 7962 6574 202c 6e75 7469 203a     the byte, unit: 
+20063394:	4231 7479 0a65 0000 5745 0000 4009 5745     1Byte...EW...@EW
+200633a4:	3c20 6441 7264 7365 2c73 4820 7865 0a3e      <Address, Hex>.
+200633b4:	0909 5720 6972 6574 6d20 6d65 726f 2079     .. Write memory 
+200633c4:	7764 726f 2064 726f 5720 6972 6574 4820     dword or Write H
+200633d4:	2077 7764 726f 2064 6572 6967 7473 7265     w dword register
+200633e4:	0a20 0909 4320 6e61 7720 6972 6574 6f20      ... Can write o
+200633f4:	6c6e 2079 6e6f 2065 7764 726f 2064 7461     nly one dword at
+20063404:	7420 6568 7320 6d61 2065 6974 656d 0a20      the same time .
+20063414:	0909 4520 3a78 4520 2057 6441 7264 7365     .. Ex: EW Addres
+20063424:	2073 6156 756c 2065 000a 0000 4552 4f42     s Value ....REBO
+20063434:	544f 0000 4009 4552 4f42 544f 0a20 0909     OT...@REBOOT ...
+20063444:	7220 6265 6f6f 2074 090a 2009 6572 6f62      reboot ... rebo
+20063454:	746f 7520 7261 6274 7275 206e 000a 0000     ot uartburn ....
+20063464:	255b 5d73 2520 2073 3c3c 203c 6854 2065     [%s] %s <<< The 
+20063474:	756d 6574 2078 6168 2073 6f6e 2074 6562     mutex has not be
+20063484:	6e65 7220 6c65 6165 6573 2c64 6220 7475     en released, but
+20063494:	7420 6568 6d20 7475 7865 6820 7361 6220      the mutex has b
+200634a4:	6565 206e 6564 656c 6574 2e64 3e20 3e3e     een deleted. >>>
+200634b4:	000a 0000                                   ....
 
-200634b0 <__FUNCTION__.0>:
-200634b0:	7472 736f 6d5f 7475 7865 645f 6c65 7465     rtos_mutex_delet
-200634c0:	0065 0000 6f4e 7354 006b 0000 524b 0034     e...NoTsk...KR4.
-200634d0:	614d 6c6c 636f 6620 6961 656c 2e64 4320     Malloc failed. C
-200634e0:	726f 3a65 255b 5d73 202c 6154 6b73 5b3a     ore:[%s], Task:[
-200634f0:	7325 2c5d 5b20 7266 6565 6820 6165 2070     %s], [free heap 
-20063500:	6973 657a 203a 6425 0d5d 000a 0d0a 255b     size: %d].....[%
-20063510:	5d73 5320 4154 4b43 4f20 4556 4652 4f4c     s] STACK OVERFLO
-20063520:	2057 202d 6154 6b73 614e 656d 2528 2973     W - TaskName(%s)
-20063530:	0d0a 0000                                   ....
+200634b8 <__FUNCTION__.0>:
+200634b8:	7472 736f 6d5f 7475 7865 645f 6c65 7465     rtos_mutex_delet
+200634c8:	0065 0000 6f4e 7354 006b 0000 524b 0034     e...NoTsk...KR4.
+200634d8:	614d 6c6c 636f 6620 6961 656c 2e64 4320     Malloc failed. C
+200634e8:	726f 3a65 255b 5d73 202c 6154 6b73 5b3a     ore:[%s], Task:[
+200634f8:	7325 2c5d 5b20 7266 6565 6820 6165 2070     %s], [free heap 
+20063508:	6973 657a 203a 6425 0d5d 000a 0d0a 255b     size: %d].....[%
+20063518:	5d73 5320 4154 4b43 4f20 4556 4652 4f4c     s] STACK OVERFLO
+20063528:	2057 202d 6154 6b73 614e 656d 2528 2973     W - TaskName(%s)
+20063538:	0d0a 0000                                   ....
 
-20063534 <__FUNCTION__.5>:
-20063534:	4176 7070 696c 6163 6974 6e6f 7453 6361     vApplicationStac
-20063544:	4f6b 6576 6672 6f6c 4877 6f6f 006b 0000     kOverflowHook...
-20063554:	5441 3f53 0000 0000 0a0d 6e75 6e6b 776f     ATS?......unknow
-20063564:	206e 6f63 6d6d 6e61 2064 2527 2773 0000     n command '%s'..
-20063574:	4f4c 5547 5241 5f54 4154 4b53 0000 0000     LOGUART_TASK....
-20063584:	7243 6165 6574 4c20 676f 5520 5241 2054     Create Log UART 
-20063594:	6154 6b73 4520 7272 2121 000a 4853 4c45     Task Err!!..SHEL
-200635a4:	004c 0000 255b 5d73 4920 474d 4449 203a     L...[%s] IMGID: 
-200635b4:	6425 202c 7563 7272 6e65 2074 544f 2541     %d, current OTA%
-200635c4:	2064 6441 7264 7365 3a73 3020 2578 3830     d Address: 0x%08
-200635d4:	2c78 7420 7261 6567 2074 544f 2541 2064     x, target OTA%d 
-200635e4:	6441 7264 7365 3a73 3020 2578 3830 0a78     Address: 0x%08x.
-200635f4:	0000 0000 5953 0053 255b 5d73 4920 474d     ....SYS.[%s] IMG
-20063604:	4449 203a 6425 202c 7563 7272 6e65 2074     ID: %d, current 
-20063614:	6966 6d72 6177 6572 6920 2073 544f 2541     firmware is OTA%
-20063624:	2c64 7420 7261 6567 2074 6966 6d72 6177     d, target firmwa
-20063634:	6572 4f20 4154 6425 6920 2073 6e69 6176     re OTA%d is inva
-20063644:	696c 0a64 0000 0000 255b 5d73 6220 6361     lid.....[%s] bac
-20063654:	756b 2070 616d 6c6c 636f 6620 6961 646c     kup malloc faild
-20063664:	6465 000a                                   ed..
+2006353c <__FUNCTION__.5>:
+2006353c:	4176 7070 696c 6163 6974 6e6f 7453 6361     vApplicationStac
+2006354c:	4f6b 6576 6672 6f6c 4877 6f6f 006b 0000     kOverflowHook...
+2006355c:	5441 3f53 0000 0000 0a0d 6e75 6e6b 776f     ATS?......unknow
+2006356c:	206e 6f63 6d6d 6e61 2064 2527 2773 0000     n command '%s'..
+2006357c:	4f4c 5547 5241 5f54 4154 4b53 0000 0000     LOGUART_TASK....
+2006358c:	7243 6165 6574 4c20 676f 5520 5241 2054     Create Log UART 
+2006359c:	6154 6b73 4520 7272 2121 000a 4853 4c45     Task Err!!..SHEL
+200635ac:	004c 0000 255b 5d73 4920 474d 4449 203a     L...[%s] IMGID: 
+200635bc:	6425 202c 7563 7272 6e65 2074 544f 2541     %d, current OTA%
+200635cc:	2064 6441 7264 7365 3a73 3020 2578 3830     d Address: 0x%08
+200635dc:	2c78 7420 7261 6567 2074 544f 2541 2064     x, target OTA%d 
+200635ec:	6441 7264 7365 3a73 3020 2578 3830 0a78     Address: 0x%08x.
+200635fc:	0000 0000 5953 0053 255b 5d73 4920 474d     ....SYS.[%s] IMG
+2006360c:	4449 203a 6425 202c 7563 7272 6e65 2074     ID: %d, current 
+2006361c:	6966 6d72 6177 6572 6920 2073 544f 2541     firmware is OTA%
+2006362c:	2c64 7420 7261 6567 2074 6966 6d72 6177     d, target firmwa
+2006363c:	6572 4f20 4154 6425 6920 2073 6e69 6176     re OTA%d is inva
+2006364c:	696c 0a64 0000 0000 255b 5d73 6220 6361     lid.....[%s] bac
+2006365c:	756b 2070 616d 6c6c 636f 6620 6961 646c     kup malloc faild
+2006366c:	6465 000a                                   ed..
 
-20063668 <__func__.0>:
-20063668:	7973 5f73 6572 6f63 6576 5f72 746f 5f61     sys_recover_ota_
-20063678:	6973 6e67 7461 7275 0065 0000               signature...
+20063670 <__func__.0>:
+20063670:	7973 5f73 6572 6f63 6576 5f72 746f 5f61     sys_recover_ota_
+20063680:	6973 6e67 7461 7275 0065 0000               signature...
 
-20063684 <__func__.1>:
-20063684:	7973 5f73 6c63 6165 5f72 746f 5f61 6973     sys_clear_ota_si
-20063694:	6e67 7461 7275 0065 4449 454c 0000 0000     gnature.IDLE....
-200636a4:	2509 0963 6425 2509 0964 6425 0a0d 0000     .%c.%d.%d.%d....
-200636b4:	6d54 2072 7653 0063 e8ae 2005 e8ae 2005     Tmr Svc.... ... 
-200636c4:	e8ae 2005 e8ea 2005 e8f6 2005 e912 2005     ... ... ... ... 
-200636d4:	e8ae 2005 e8ae 2005 e8ea 2005 e8f6 2005     ... ... ... ... 
-200636e4:	7325 2528 2964 202c 7641 6961 616c 6c62     %s(%d), Availabl
-200636f4:	2065 6568 7061 2520 0a64 0000 4c57 4e41     e heap %d...WLAN
-20063704:	0000 0000 6e69 7469 0000 0000 6c77 6e61     ....init....wlan
-20063714:	695f 696e 6974 6c61 7a69 2065 6166 6c69     _initialize fail
-20063724:	6465 000a                                   ed..
+2006368c <__func__.1>:
+2006368c:	7973 5f73 6c63 6165 5f72 746f 5f61 6973     sys_clear_ota_si
+2006369c:	6e67 7461 7275 0065 4449 454c 0000 0000     gnature.IDLE....
+200636ac:	2509 0963 6425 2509 0964 6425 0a0d 0000     .%c.%d.%d.%d....
+200636bc:	6d54 2072 7653 0063 e8ae 2005 e8ae 2005     Tmr Svc.... ... 
+200636cc:	e8ae 2005 e8ea 2005 e8f6 2005 e912 2005     ... ... ... ... 
+200636dc:	e8ae 2005 e8ae 2005 e8ea 2005 e8f6 2005     ... ... ... ... 
+200636ec:	7325 2528 2964 202c 7641 6961 616c 6c62     %s(%d), Availabl
+200636fc:	2065 6568 7061 2520 0a64 0000 4c57 4e41     e heap %d...WLAN
+2006370c:	0000 0000 6e69 7469 0000 0000 6c77 6e61     ....init....wlan
+2006371c:	695f 696e 6974 6c61 7a69 2065 6166 6c69     _initialize fail
+2006372c:	6465 000a                                   ed..
 
-20063728 <__FUNCTION__.0>:
-20063728:	695f 696e 5f74 6874 6572 6461 0000 0000     _init_thread....
-20063738:	6f46 2072 6564 7562 2067 6170 6b63 6761     For debug packag
-20063748:	2e65 5020 656c 7361 2065 6573 656c 7463     e. Please select
-20063758:	7020 7273 6d61 7420 7079 2065 6361 6f63      psram type acco
-20063768:	6472 6e69 2067 6f74 7920 756f 2072 6863     rding to your ch
-20063778:	7069 000a 4843 5049 4e49 4f46 0000 0000     ip..CHIPINFO....
-20063788:	3230 6620 726f 5720 2042 3233 624d 300a     02 for WB 32Mb.0
-20063798:	2034 6f66 2072 4257 3120 3832 624d 300a     4 for WB 128Mb.0
-200637a8:	2033 6f66 2072 4257 3220 3635 624d 0a0a     3 for WB 256Mb..
-200637b8:	0000 0000 682f 6d6f 2f65 7561 6f74 6a5f     ..../home/auto_j
-200637c8:	6e65 696b 736e 775f 616c 356e 492f 544f     enkins_wlan5/IOT
-200637d8:	415f 5354 722f 7065 736f 722f 6c65 6165     _ATS/repos/relea
-200637e8:	6573 6d2d 7361 6574 2f72 6f73 7275 6563     se-master/source
-200637f8:	612f 656d 6162 696c 6574 675f 6363 705f     /amebalite_gcc_p
-20063808:	6f72 656a 7463 702f 6f72 656a 7463 6b5f     roject/project_k
-20063818:	3472 762f 6473 2f6b 2e2e 2e2f 2f2e 2e2e     r4/vsdk/../../..
-20063828:	632f 6d6f 6f70 656e 746e 732f 636f 612f     /component/soc/a
-20063838:	656d 6162 696c 6574 6c2f 6269 722f 6d61     mebalite/lib/ram
-20063848:	635f 6d6f 6f6d 2f6e 6d61 6265 5f61 6863     _common/ameba_ch
-20063858:	7069 6e69 6f66 6c5f 6269 632e 0000 0000     ipinfo_lib.c....
-20063868:	7325 203a 0000 0000 5245 3a52 4720 7465     %s: ....ERR: Get
-20063878:	5320 636f 4e20 6d61 2065 6146 6c69 000a      Soc Name Fail..
-20063888:	3025 7832 0000 0000 4d4b 0034 7325 4c20     %02x....KM4.%s L
-20063898:	6269 5620 7265 6973 6e6f 0a3a 0000 0000     ib Version:.....
-200638a8:	3032 3432 302f 2f37 3133 312d 3a35 3830     2024/07/31-15:08
-200638b8:	303a 0030 4f43 504d 4c49 2045 4954 454d     :00.COMPILE TIME
-200638c8:	203a 7325 000a 0000 6367 2063 6576 7372     : %s....gcc vers
-200638d8:	6f69 206e 3031 332e 312e 3220 3230 3032     ion 10.3.1 20220
-200638e8:	3335 2030 5228 6165 746c 6b65 5620 4453     530 (Realtek VSD
-200638f8:	2d4b 3031 332e 312e 4220 6975 646c 3420     K-10.3.1 Build 4
-20063908:	3730 2b33 2029 0000 4f43 504d 4c49 5245     073+) ..COMPILER
-20063918:	203a 7325 000a 0000 6325 0000 2d2d 2d2d     : %s....%c..----
-20063928:	2d2d 2d2d 2d2d 2d2d 6154 6b73 4920 666e     --------Task Inf
-20063938:	2d6f 2d2d 2d2d 2d2d 2d2d 2d2d 0d2d 000a     o------------...
-20063948:	6146 6c75 2074 6e6f 7420 7361 206b 253c     Fault on task <%
-20063958:	3e73 000a 6154 6b73 4920 3a44 2520 0d64     s>..Task ID: %d.
-20063968:	000a 0000 6154 6b73 5420 4243 303a 2578     ....Task TCB:0x%
-20063978:	3830 786c 0a0d 0000 7543 7272 6e65 2074     08lx....Current 
-20063988:	7453 7461 3a65 2520 2064 2528 2973 0a0d     State: %d (%s)..
-20063998:	0000 0000 6142 6573 5020 6972 726f 7469     ....Base Priorit
-200639a8:	3a79 2520 0d64 000a 7543 7272 6e65 2074     y: %d...Current 
-200639b8:	7250 6f69 6972 7974 203a 6425 0a0d 0000     Priority: %d....
-200639c8:	7552 206e 6954 656d 4320 756f 746e 7265     Run Time Counter
-200639d8:	203a 6c25 0d75 000a 7453 6361 546b 706f     : %lu...StackTop
-200639e8:	203a 7830 3025 6c38 2c78 5320 6174 6b63     : 0x%08lx, Stack
-200639f8:	6142 6573 203a 7830 3025 6c38 2c78 5320     Base: 0x%08lx, S
-20063a08:	6174 6b63 6e45 3a64 3020 2578 3830 786c     tackEnd: 0x%08lx
-20063a18:	202c 7453 6361 536b 7a69 3d65 6c25 2875     , StackSize=%lu(
-20063a28:	6f77 6472 0d29 000a 7453 6361 206b 6948     word)...Stack Hi
-20063a38:	6867 5720 7461 7265 614d 6b72 203a 6425     gh WaterMark: %d
-20063a48:	7728 726f 2964 0a0d 0000 0000 7552 6e6e     (word)......Runn
-20063a58:	6e69 0067 6552 6461 2079 202f 6550 646e     ing.Ready / Pend
-20063a68:	6e69 0067 6c42 636f 656b 0064 7553 7073     ing.Blocked.Susp
-20063a78:	6e65 6564 0064 0000 6544 656c 6574 0064     ended...Deleted.
-20063a88:	6e49 6176 696c 0064                         Invalid.
+20063730 <__FUNCTION__.0>:
+20063730:	695f 696e 5f74 6874 6572 6461 0000 0000     _init_thread....
+20063740:	6f46 2072 6564 7562 2067 6170 6b63 6761     For debug packag
+20063750:	2e65 5020 656c 7361 2065 6573 656c 7463     e. Please select
+20063760:	7020 7273 6d61 7420 7079 2065 6361 6f63      psram type acco
+20063770:	6472 6e69 2067 6f74 7920 756f 2072 6863     rding to your ch
+20063780:	7069 000a 4843 5049 4e49 4f46 0000 0000     ip..CHIPINFO....
+20063790:	3230 6620 726f 5720 2042 3233 624d 300a     02 for WB 32Mb.0
+200637a0:	2034 6f66 2072 4257 3120 3832 624d 300a     4 for WB 128Mb.0
+200637b0:	2033 6f66 2072 4257 3220 3635 624d 0a0a     3 for WB 256Mb..
+200637c0:	0000 0000 682f 6d6f 2f65 7561 6f74 6a5f     ..../home/auto_j
+200637d0:	6e65 696b 736e 775f 616c 356e 492f 544f     enkins_wlan5/IOT
+200637e0:	415f 5354 722f 7065 736f 722f 6c65 6165     _ATS/repos/relea
+200637f0:	6573 6d2d 7361 6574 2f72 6f73 7275 6563     se-master/source
+20063800:	612f 656d 6162 696c 6574 675f 6363 705f     /amebalite_gcc_p
+20063810:	6f72 656a 7463 702f 6f72 656a 7463 6b5f     roject/project_k
+20063820:	3472 762f 6473 2f6b 2e2e 2e2f 2f2e 2e2e     r4/vsdk/../../..
+20063830:	632f 6d6f 6f70 656e 746e 732f 636f 612f     /component/soc/a
+20063840:	656d 6162 696c 6574 6c2f 6269 722f 6d61     mebalite/lib/ram
+20063850:	635f 6d6f 6f6d 2f6e 6d61 6265 5f61 6863     _common/ameba_ch
+20063860:	7069 6e69 6f66 6c5f 6269 632e 0000 0000     ipinfo_lib.c....
+20063870:	7325 203a 0000 0000 5245 3a52 4720 7465     %s: ....ERR: Get
+20063880:	5320 636f 4e20 6d61 2065 6146 6c69 000a      Soc Name Fail..
+20063890:	3025 7832 0000 0000 4d4b 0034 7325 4c20     %02x....KM4.%s L
+200638a0:	6269 5620 7265 6973 6e6f 0a3a 0000 0000     ib Version:.....
+200638b0:	3032 3432 302f 2f38 3132 312d 3a30 3835     2024/08/21-10:58
+200638c0:	353a 0035 4f43 504d 4c49 2045 4954 454d     :55.COMPILE TIME
+200638d0:	203a 7325 000a 0000 6367 2063 6576 7372     : %s....gcc vers
+200638e0:	6f69 206e 3031 332e 312e 3220 3230 3032     ion 10.3.1 20220
+200638f0:	3335 2030 5228 6165 746c 6b65 5620 4453     530 (Realtek VSD
+20063900:	2d4b 3031 332e 312e 4220 6975 646c 3420     K-10.3.1 Build 4
+20063910:	3730 2b33 2029 0000 4f43 504d 4c49 5245     073+) ..COMPILER
+20063920:	203a 7325 000a 0000 6325 0000 2d2d 2d2d     : %s....%c..----
+20063930:	2d2d 2d2d 2d2d 2d2d 6154 6b73 4920 666e     --------Task Inf
+20063940:	2d6f 2d2d 2d2d 2d2d 2d2d 2d2d 0d2d 000a     o------------...
+20063950:	6146 6c75 2074 6e6f 7420 7361 206b 253c     Fault on task <%
+20063960:	3e73 000a 6154 6b73 4920 3a44 2520 0d64     s>..Task ID: %d.
+20063970:	000a 0000 6154 6b73 5420 4243 303a 2578     ....Task TCB:0x%
+20063980:	3830 786c 0a0d 0000 7543 7272 6e65 2074     08lx....Current 
+20063990:	7453 7461 3a65 2520 2064 2528 2973 0a0d     State: %d (%s)..
+200639a0:	0000 0000 6142 6573 5020 6972 726f 7469     ....Base Priorit
+200639b0:	3a79 2520 0d64 000a 7543 7272 6e65 2074     y: %d...Current 
+200639c0:	7250 6f69 6972 7974 203a 6425 0a0d 0000     Priority: %d....
+200639d0:	7552 206e 6954 656d 4320 756f 746e 7265     Run Time Counter
+200639e0:	203a 6c25 0d75 000a 7453 6361 546b 706f     : %lu...StackTop
+200639f0:	203a 7830 3025 6c38 2c78 5320 6174 6b63     : 0x%08lx, Stack
+20063a00:	6142 6573 203a 7830 3025 6c38 2c78 5320     Base: 0x%08lx, S
+20063a10:	6174 6b63 6e45 3a64 3020 2578 3830 786c     tackEnd: 0x%08lx
+20063a20:	202c 7453 6361 536b 7a69 3d65 6c25 2875     , StackSize=%lu(
+20063a30:	6f77 6472 0d29 000a 7453 6361 206b 6948     word)...Stack Hi
+20063a40:	6867 5720 7461 7265 614d 6b72 203a 6425     gh WaterMark: %d
+20063a50:	7728 726f 2964 0a0d 0000 0000 7552 6e6e     (word)......Runn
+20063a60:	6e69 0067 6552 6461 2079 202f 6550 646e     ing.Ready / Pend
+20063a70:	6e69 0067 6c42 636f 656b 0064 7553 7073     ing.Blocked.Susp
+20063a80:	6e65 6564 0064 0000 6544 656c 6574 0064     ended...Deleted.
+20063a90:	6e49 6176 696c 0064                         Invalid.
 
-20063a90 <TaskStateString.0>:
-20063a90:	3a54 2006 3a5c 2006 3a6c 2006 3a74 2006     T:. \:. l:. t:. 
-20063aa0:	3a80 2006 3a88 2006 f220 2005 f134 2005     .:. .:.  .. 4.. 
-20063ab0:	f134 2005 f134 2005 f134 2005 f134 2005     4.. 4.. 4.. 4.. 
-20063ac0:	f134 2005 f134 2005 f134 2005 f134 2005     4.. 4.. 4.. 4.. 
-20063ad0:	f16a 2005 f2dc 2005 f1aa 2005 f134 2005     j.. ... ... 4.. 
-20063ae0:	f134 2005 f134 2005 f134 2005 f1aa 2005     4.. 4.. 4.. ... 
-20063af0:	f134 2005 f134 2005 f330 2005 f134 2005     4.. 4.. 0.. 4.. 
-20063b00:	f134 2005 f190 2005 f246 2005 f134 2005     4.. ... F.. 4.. 
-20063b10:	f134 2005 f264 2005 f134 2005 f1ec 2005     4.. d.. 4.. ... 
-20063b20:	f134 2005 f134 2005 f222 2005 f134 2005     4.. 4.. ".. 4.. 
-20063b30:	f332 2005 3130 3332 3534 3736 3938 4241     2.. 0123456789AB
-20063b40:	4443 4645 0000 0000 6f69 6420 6972 6576     CDEF....io drive
-20063b50:	2072 6170 6172 656d 6574 7372 6520 7272     r parameters err
-20063b60:	726f 2021 6966 656c 6e5f 6d61 3a65 2520     or! file_name: %
-20063b70:	2c73 6c20 6e69 3a65 2520 0064 682f 6d6f     s, line: %d./hom
-20063b80:	2f65 7561 6f74 6a5f 6e65 696b 736e 775f     e/auto_jenkins_w
-20063b90:	616c 356e 492f 544f 415f 5354 722f 7065     lan5/IOT_ATS/rep
-20063ba0:	736f 722f 6c65 6165 6573 6d2d 7361 6574     os/release-maste
-20063bb0:	2f72 6f73 7275 6563 612f 656d 6162 696c     r/source/amebali
-20063bc0:	6574 675f 6363 705f 6f72 656a 7463 702f     te_gcc_project/p
-20063bd0:	6f72 656a 7463 6b5f 3472 762f 6473 2f6b     roject_kr4/vsdk/
-20063be0:	2e2e 2e2f 2f2e 2e2e 632f 6d6f 6f70 656e     ../../../compone
-20063bf0:	746e 732f 636f 612f 656d 6162 696c 6574     nt/soc/amebalite
-20063c00:	6c2f 6269 722f 6d61 635f 6d6f 6f6d 2f6e     /lib/ram_common/
-20063c10:	6d61 6265 5f61 6f72 5f6d 6170 6374 2e68     ameba_rom_patch.
-20063c20:	0063 0000 7269 5b71 6425 205d 7270 6f69     c...irq[%d] prio
-20063c30:	6972 7974 2520 2078 6873 6c61 206c 3d3c     rity %x shall <=
-20063c40:	2520 0a64 0000 0000 5b1b 3b31 3333 5b6d      %d......[1;33m[
-20063c50:	5245 4f52 5d52 5b20 7325 3a3a 6425 205d     ERROR] [%s::%d] 
-20063c60:	7473 6361 5f6b 6973 657a 2528 2964 6920     stack_size(%d) i
-20063c70:	2073 6f70 6973 6974 6576 3f20 0a3f 5b1b     s positive ??..[
-20063c80:	6d30 0000 5b1b 3b31 3333 5b6d 5245 4f52     0m...[1;33m[ERRO
-20063c90:	5d52 5b20 7325 3a3a 6425 205d 6172 6f5f     R] [%s::%d] ra_o
-20063ca0:	6666 6573 2874 6425 2029 7369 6e20 6765     ffset(%d) is neg
-20063cb0:	7461 7669 3f65 1b3f 305b 006d 5b1b 3b31     ative??.[0m..[1;
-20063cc0:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
-20063cd0:	6425 205d 7453 7261 2074 7473 6361 206b     %d] Start stack 
-20063ce0:	6162 6b63 7274 6361 6e69 2067 6f66 2072     backtracing for 
-20063cf0:	7073 2520 2c70 7020 2063 7025 1b0a 305b     sp %p, pc %p..[0
-20063d00:	006d 0000 5b1b 3b31 3333 5b6d 5254 4341     m....[1;33m[TRAC
-20063d10:	5d45 5b20 7325 3a3a 6425 205d 665b 6172     E] [%s::%d] [fra
-20063d20:	656d 2320 6425 205d 7073 3e2d 2520 2c70     me #%d] sp-> %p,
-20063d30:	7020 2d63 203e 7025 202c 7473 6361 5f6b      pc-> %p, stack_
-20063d40:	6973 657a 3e2d 2520 2c64 7220 2d61 203e     size-> %d, ra-> 
-20063d50:	7025 1b0a 305b 006d 5b1b 3b31 3333 5b6d     %p..[0m..[1;33m[
-20063d60:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20063d70:	3d3d 3d3d 3d3d 3d3d 3d3d 5320 6174 6b63     ========== Stack
-20063d80:	5420 6172 6563 3d20 3d3d 3d3d 3d3d 3d3d      Trace =========
-20063d90:	0a3d 5b1b 6d30 0000 5b1b 3b31 3333 5b6d     =..[0m...[1;33m[
-20063da0:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20063db0:	7349 7420 6968 2073 656c 6661 6620 6e75     Is this leaf fun
-20063dc0:	7463 6f69 3f6e 5520 6973 676e 5220 2041     ction? Using RA 
-20063dd0:	7361 5020 2043 6f74 6420 206f 6162 6b63     as PC to do back
-20063de0:	7274 6361 2c65 7320 6174 6b63 735f 7a69     trace, stack_siz
-20063df0:	2865 6425 252f 2964 1b0a 305b 006d 0000     e(%d/%d)..[0m...
-20063e00:	5b1b 3b31 3333 5b6d 5254 4341 5d45 5b20     .[1;33m[TRACE] [
-20063e10:	7325 3a3a 6425 205d 3d3d 3d3d 3d3d 3d3d     %s::%d] ========
-20063e20:	3d3d 4520 646e 6f20 2066 7453 6361 206b     == End of Stack 
-20063e30:	7254 6361 2065 3d3d 3d3d 3d3d 3d3d 3d3d     Trace ==========
-20063e40:	1b0a 305b 006d 0000                         ..[0m...
+20063a98 <TaskStateString.0>:
+20063a98:	3a5c 2006 3a64 2006 3a74 2006 3a7c 2006     \:. d:. t:. |:. 
+20063aa8:	3a88 2006 3a90 2006 f220 2005 f134 2005     .:. .:.  .. 4.. 
+20063ab8:	f134 2005 f134 2005 f134 2005 f134 2005     4.. 4.. 4.. 4.. 
+20063ac8:	f134 2005 f134 2005 f134 2005 f134 2005     4.. 4.. 4.. 4.. 
+20063ad8:	f16a 2005 f2dc 2005 f1aa 2005 f134 2005     j.. ... ... 4.. 
+20063ae8:	f134 2005 f134 2005 f134 2005 f1aa 2005     4.. 4.. 4.. ... 
+20063af8:	f134 2005 f134 2005 f330 2005 f134 2005     4.. 4.. 0.. 4.. 
+20063b08:	f134 2005 f190 2005 f246 2005 f134 2005     4.. ... F.. 4.. 
+20063b18:	f134 2005 f264 2005 f134 2005 f1ec 2005     4.. d.. 4.. ... 
+20063b28:	f134 2005 f134 2005 f222 2005 f134 2005     4.. 4.. ".. 4.. 
+20063b38:	f332 2005 3130 3332 3534 3736 3938 4241     2.. 0123456789AB
+20063b48:	4443 4645 0000 0000 6f69 6420 6972 6576     CDEF....io drive
+20063b58:	2072 6170 6172 656d 6574 7372 6520 7272     r parameters err
+20063b68:	726f 2021 6966 656c 6e5f 6d61 3a65 2520     or! file_name: %
+20063b78:	2c73 6c20 6e69 3a65 2520 0064 682f 6d6f     s, line: %d./hom
+20063b88:	2f65 7561 6f74 6a5f 6e65 696b 736e 775f     e/auto_jenkins_w
+20063b98:	616c 356e 492f 544f 415f 5354 722f 7065     lan5/IOT_ATS/rep
+20063ba8:	736f 722f 6c65 6165 6573 6d2d 7361 6574     os/release-maste
+20063bb8:	2f72 6f73 7275 6563 612f 656d 6162 696c     r/source/amebali
+20063bc8:	6574 675f 6363 705f 6f72 656a 7463 702f     te_gcc_project/p
+20063bd8:	6f72 656a 7463 6b5f 3472 762f 6473 2f6b     roject_kr4/vsdk/
+20063be8:	2e2e 2e2f 2f2e 2e2e 632f 6d6f 6f70 656e     ../../../compone
+20063bf8:	746e 732f 636f 612f 656d 6162 696c 6574     nt/soc/amebalite
+20063c08:	6c2f 6269 722f 6d61 635f 6d6f 6f6d 2f6e     /lib/ram_common/
+20063c18:	6d61 6265 5f61 6f72 5f6d 6170 6374 2e68     ameba_rom_patch.
+20063c28:	0063 0000 7269 5b71 6425 205d 7270 6f69     c...irq[%d] prio
+20063c38:	6972 7974 2520 2078 6873 6c61 206c 3d3c     rity %x shall <=
+20063c48:	2520 0a64 0000 0000 5b1b 3b31 3333 5b6d      %d......[1;33m[
+20063c58:	5245 4f52 5d52 5b20 7325 3a3a 6425 205d     ERROR] [%s::%d] 
+20063c68:	7473 6361 5f6b 6973 657a 2528 2964 6920     stack_size(%d) i
+20063c78:	2073 6f70 6973 6974 6576 3f20 0a3f 5b1b     s positive ??..[
+20063c88:	6d30 0000 5b1b 3b31 3333 5b6d 5245 4f52     0m...[1;33m[ERRO
+20063c98:	5d52 5b20 7325 3a3a 6425 205d 6172 6f5f     R] [%s::%d] ra_o
+20063ca8:	6666 6573 2874 6425 2029 7369 6e20 6765     ffset(%d) is neg
+20063cb8:	7461 7669 3f65 1b3f 305b 006d 5b1b 3b31     ative??.[0m..[1;
+20063cc8:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
+20063cd8:	6425 205d 7453 7261 2074 7473 6361 206b     %d] Start stack 
+20063ce8:	6162 6b63 7274 6361 6e69 2067 6f66 2072     backtracing for 
+20063cf8:	7073 2520 2c70 7020 2063 7025 1b0a 305b     sp %p, pc %p..[0
+20063d08:	006d 0000 5b1b 3b31 3333 5b6d 5254 4341     m....[1;33m[TRAC
+20063d18:	5d45 5b20 7325 3a3a 6425 205d 665b 6172     E] [%s::%d] [fra
+20063d28:	656d 2320 6425 205d 7073 3e2d 2520 2c70     me #%d] sp-> %p,
+20063d38:	7020 2d63 203e 7025 202c 7473 6361 5f6b      pc-> %p, stack_
+20063d48:	6973 657a 3e2d 2520 2c64 7220 2d61 203e     size-> %d, ra-> 
+20063d58:	7025 1b0a 305b 006d 5b1b 3b31 3333 5b6d     %p..[0m..[1;33m[
+20063d68:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20063d78:	3d3d 3d3d 3d3d 3d3d 3d3d 5320 6174 6b63     ========== Stack
+20063d88:	5420 6172 6563 3d20 3d3d 3d3d 3d3d 3d3d      Trace =========
+20063d98:	0a3d 5b1b 6d30 0000 5b1b 3b31 3333 5b6d     =..[0m...[1;33m[
+20063da8:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20063db8:	7349 7420 6968 2073 656c 6661 6620 6e75     Is this leaf fun
+20063dc8:	7463 6f69 3f6e 5520 6973 676e 5220 2041     ction? Using RA 
+20063dd8:	7361 5020 2043 6f74 6420 206f 6162 6b63     as PC to do back
+20063de8:	7274 6361 2c65 7320 6174 6b63 735f 7a69     trace, stack_siz
+20063df8:	2865 6425 252f 2964 1b0a 305b 006d 0000     e(%d/%d)..[0m...
+20063e08:	5b1b 3b31 3333 5b6d 5254 4341 5d45 5b20     .[1;33m[TRACE] [
+20063e18:	7325 3a3a 6425 205d 3d3d 3d3d 3d3d 3d3d     %s::%d] ========
+20063e28:	3d3d 4520 646e 6f20 2066 7453 6361 206b     == End of Stack 
+20063e38:	7254 6361 2065 3d3d 3d3d 3d3d 3d3d 3d3d     Trace ==========
+20063e48:	1b0a 305b 006d 0000                         ..[0m...
 
-20063e48 <__FUNCTION__.3>:
-20063e48:	6e75 6977 646e 665f 6172 656d 725f 3376     unwind_frame_rv3
-20063e58:	6932 0000                                   2i..
+20063e50 <__FUNCTION__.3>:
+20063e50:	6e75 6977 646e 665f 6172 656d 725f 3376     unwind_frame_rv3
+20063e60:	6932 0000                                   2i..
 
-20063e5c <__FUNCTION__.2>:
-20063e5c:	6e75 6977 646e 665f 6172 656d 725f 3376     unwind_frame_rv3
-20063e6c:	6332 0000                                   2c..
+20063e64 <__FUNCTION__.2>:
+20063e64:	6e75 6977 646e 665f 6172 656d 725f 3376     unwind_frame_rv3
+20063e74:	6332 0000                                   2c..
 
-20063e70 <__FUNCTION__.1>:
-20063e70:	6f64 735f 6174 6b63 625f 6361 746b 6172     do_stack_backtra
-20063e80:	6563 0000 6e55 6e6b 776f 206e 7865 6563     ce..Unknown exce
-20063e90:	7470 6f69 006e 0000 5b1b 3b31 3333 5b6d     ption....[1;33m[
-20063ea0:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20063eb0:	3d3d 3d3d 3d3d 3d3d 3d3d 4320 6172 6873     ========== Crash
-20063ec0:	4420 6d75 2070 3d3d 3d3d 3d3d 3d3d 3d3d      Dump ==========
-20063ed0:	1b0a 305b 006d 0000 5b1b 3b31 3333 5b6d     ..[0m....[1;33m[
-20063ee0:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20063ef0:	7845 6563 7470 6f69 206e 6163 6775 7468     Exception caught
-20063f00:	6f20 206e 7025 7720 7469 2068 6572 7361      on %p with reas
-20063f10:	6e6f 5b20 7830 7825 205d 3e2d 5b20 7325     on [0x%x] -> [%s
-20063f20:	0a5d 5b1b 6d30 0000 5b1b 3b31 3333 5b6d     ]..[0m...[1;33m[
-20063f30:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20063f40:	3d3d 3d3d 3d3d 3d3d 3d3d 5220 6765 7369     ========== Regis
-20063f50:	6574 2072 7544 706d 3d20 3d3d 3d3d 3d3d     ter Dump =======
-20063f60:	3d3d 0a3d 5b1b 6d30 0000 0000 5b1b 3b31     ===..[0m.....[1;
-20063f70:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
-20063f80:	6425 205d 6d5b 6373 6172 6374 5d68 3020     %d] [mscratch] 0
-20063f90:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
-20063fa0:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
-20063fb0:	6425 205d 6d5b 7065 5d63 2020 2020 3020     %d] [mepc]     0
-20063fc0:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
-20063fd0:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
-20063fe0:	6425 205d 6d5b 6163 7375 5d65 2020 3020     %d] [mcause]   0
-20063ff0:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
-20064000:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
-20064010:	6425 205d 6d5b 7674 6c61 205d 2020 3020     %d] [mtval]    0
-20064020:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
-20064030:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
-20064040:	6425 205d 7845 6563 7470 6f69 206e 6163     %d] Exception ca
-20064050:	7375 2065 6f63 6c75 2064 6562 0d3a 1b0a     use could be:...
-20064060:	305b 006d 5b1b 3b31 3333 5b6d 5254 4341     [0m..[1;33m[TRAC
-20064070:	5d45 5b20 7325 3a3a 6425 205d 2509 2c73     E] [%s::%d] .%s,
-20064080:	2520 2073 203d 7830 7825 0a0d 5b1b 6d30      %s = 0x%x...[0m
-20064090:	0000 0000 5b1b 3b31 3333 5b6d 5254 4341     .....[1;33m[TRAC
-200640a0:	5d45 5b20 7325 3a3a 6425 205d 2509 0d73     E] [%s::%d] .%s.
-200640b0:	1b0a 305b 006d 0000 5b1b 3b31 3333 5b6d     ..[0m....[1;33m[
-200640c0:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-200640d0:	785b 6425 2d20 203e 7325 205d 7830 3025     [x%d -> %s] 0x%0
-200640e0:	7838 1b0a 305b 006d 5b1b 3b31 3333 5b6d     8x..[0m..[1;33m[
-200640f0:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20064100:	3d3d 3d3d 3d3d 3d3d 3d3d 5320 6174 6b63     ========== Stack
-20064110:	5420 6172 6563 3d20 3d3d 3d3d 3d3d 3d3d      Trace =========
-20064120:	0a3d 5b1b 6d30 0000 5b1b 3b31 3333 5b6d     =..[0m...[1;33m[
-20064130:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-20064140:	7349 7420 6968 2073 656c 6661 6620 6e75     Is this leaf fun
-20064150:	7463 6f69 3f6e 5520 6973 676e 5220 2041     ction? Using RA 
-20064160:	7361 5020 2043 6f74 6420 206f 6162 6b63     as PC to do back
-20064170:	7274 6361 2c65 7320 6174 6b63 735f 7a69     trace, stack_siz
-20064180:	2865 6425 252f 2964 1b0a 305b 006d 0000     e(%d/%d)..[0m...
-20064190:	5b1b 3b31 3333 5b6d 5254 4341 5d45 5b20     .[1;33m[TRACE] [
-200641a0:	7325 3a3a 6425 205d 3d3d 3d3d 3d3d 3d3d     %s::%d] ========
-200641b0:	3d3d 4520 646e 6f20 2066 7453 6361 206b     == End of Stack 
-200641c0:	7254 6361 2065 3d3d 3d3d 3d3d 3d3d 3d3d     Trace ==========
-200641d0:	1b0a 305b 006d 0000 5b1b 3b31 3333 5b6d     ..[0m....[1;33m[
-200641e0:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
-200641f0:	3d3d 3d3d 3d3d 3d3d 3d3d 4520 646e 6f20     ========== End o
-20064200:	2066 7243 7361 2068 7544 706d 3d20 3d3d     f Crash Dump ===
-20064210:	3d3d 3d3d 3d3d 0a3d 5b1b 6d30 0000 0000     =======..[0m....
-20064220:	5b1b 3b31 3333 5b6d 5254 4341 5d45 5b20     .[1;33m[TRACE] [
-20064230:	7325 3a3a 6425 205d 0a0d 0a0d 5b1b 6d30     %s::%d] .....[0m
-20064240:	0000 0000 6f53 6572 412f 4f4d 7020 6761     ....Sore/AMO pag
-20064250:	2065 6177 6b6c 6320 6568 6b63 6620 6961     e walk check fai
-20064260:	006c 0000 7453 726f 2065 6461 7264 7365     l...Store addres
-20064270:	0073 0000 6f4c 6461 7020 6761 2065 6177     s...Load page wa
-20064280:	6b6c 6320 6568 6b63 6620 6961 006c 0000     lk check fail...
-20064290:	6f4c 6461 6120 6464 6572 7373 0000 0000     Load address....
-200642a0:	6e49 7473 7572 7463 6f69 206e 6170 6567     Instruction page
-200642b0:	7720 6c61 206b 6863 6365 206b 6166 6c69      walk check fail
-200642c0:	0000 0000 6e49 7473 7572 7463 6f69 206e     ....Instruction 
-200642d0:	6461 7264 7365 0073 7253 726f 2f65 4d41     address.Srore/AM
-200642e0:	204f 4d50 2050 6863 6365 206b 6166 6c69     O PMP check fail
-200642f0:	0000 0000 7453 726f 2f65 4d41 204f 6170     ....Store/AMO pa
-20064300:	6567 7720 6c61 206b 7562 2073 7265 6f72     ge walk bus erro
-20064310:	0072 0000 7453 726f 2065 7562 2073 7265     r...Store bus er
-20064320:	6f72 0072 7453 726f 2f65 4d41 204f 6461     ror.Store/AMO ad
-20064330:	7264 7365 2073 696d 6173 696c 6e67 6465     dress misaligned
-20064340:	0000 0000 6f4c 6461 5020 504d 6320 6568     ....Load PMP che
-20064350:	6b63 6620 6961 006c 6f4c 6461 5020 6761     ck fail.Load Pag
-20064360:	2065 6177 6b6c 6220 7375 6520 7272 726f     e walk bus error
-20064370:	0000 0000 6f4c 6461 6220 7375 6520 7272     ....Load bus err
-20064380:	726f 0000 6f4c 6461 6120 6464 6572 7373     or..Load address
-20064390:	6d20 7369 6c61 6769 656e 0064 6c49 656c      misaligned.Ille
-200643a0:	6167 206c 6e69 7473 7572 7463 6f69 006e     gal instruction.
-200643b0:	6e49 7473 7572 7463 6f69 206e 706f 6f63     Instruction opco
-200643c0:	6564 0000 6e49 7473 7572 7463 6f69 206e     de..Instruction 
-200643d0:	4d50 2050 6863 6365 206b 6166 6c69 0000     PMP check fail..
-200643e0:	6e49 7473 7572 7463 6f69 206e 6150 6567     Instruction Page
-200643f0:	7720 6c61 206b 7562 2073 7265 6f72 0072      walk bus error.
-20064400:	6e49 7473 7572 7463 6f69 206e 7562 2073     Instruction bus 
-20064410:	7265 6f72 0072 0000 7242 6e61 6863 7420     error...Branch t
-20064420:	7261 6567 2074 696d 6173 696c 6e67 6465     arget misaligned
-20064430:	0000 0000 6154 6772 7465 6120 6464 6572     ....Target addre
-20064440:	7373 0000 6e49 7473 7572 7463 6f69 206e     ss..Instruction 
-20064450:	6461 7264 7365 2073 696d 6173 696c 6e67     address misalign
-20064460:	6465 0000 657a 6f72 0000 0000 6172 0000     ed..zero....ra..
-20064470:	7073 0000 7067 0000 7074 0000 3074 0000     sp..gp..tp..t0..
-20064480:	3174 0000 3274 0000 3073 662f 0070 0000     t1..t2..s0/fp...
-20064490:	3173 0000 3061 0000 3161 0000 3261 0000     s1..a0..a1..a2..
-200644a0:	3361 0000 3461 0000 3561 0000 3661 0000     a3..a4..a5..a6..
-200644b0:	3761 0000 3273 0000 3373 0000 3473 0000     a7..s2..s3..s4..
-200644c0:	3573 0000 3673 0000 3773 0000 3873 0000     s5..s6..s7..s8..
-200644d0:	3973 0000 3173 0030 3173 0031 3374 0000     s9..s10.s11.t3..
-200644e0:	3474 0000 3574 0000 3674 0000 6e49 7473     t4..t5..t6..Inst
-200644f0:	7572 7463 6f69 206e 6361 6563 7373 6620     ruction access f
-20064500:	7561 746c 0000 0000 7242 6165 706b 696f     ault....Breakpoi
-20064510:	746e 0000 6f4c 6461 6120 6464 7365 2073     nt..Load addess 
-20064520:	696d 6173 696c 6e67 6465 0000 6f4c 6461     misaligned..Load
-20064530:	6120 6363 7365 2073 6166 6c75 0074 0000      access fault...
-20064540:	7453 726f 2065 6461 7264 7365 2073 696d     Store address mi
-20064550:	6173 696c 6e67 6465 0000 0000 7453 726f     saligned....Stor
-20064560:	2065 6461 7264 7365 2073 6166 6c75 0074     e address fault.
-20064570:	6e45 6976 6f72 6d6e 6e65 2074 6163 6c6c     Environment call
-20064580:	6620 6f72 206d 2055 6f6d 6564 0000 0000      from U mode....
-20064590:	6e45 6976 6f72 6d6e 6e65 2074 6163 6c6c     Environment call
-200645a0:	6620 6f72 206d 2053 6f6d 6564 0000 0000      from S mode....
-200645b0:	6552 6573 7672 6465 6520 6378 7065 6974     Reserved excepti
-200645c0:	6e6f 0000 6e45 6976 6f72 6d6e 6e65 2074     on..Environment 
-200645d0:	6163 6c6c 6620 6f72 206d 204d 6f6d 6564     call from M mode
-200645e0:	0000 0000 6e49 7473 7572 7463 6f69 206e     ....Instruction 
-200645f0:	6170 6567 6620 7561 746c 0000 6f4c 6461     page fault..Load
-20064600:	7020 6761 2065 6166 6c75 0074 7453 726f      page fault.Stor
-20064610:	2065 6170 6567 6620 7561 746c 0000 0000     e page fault....
+20063e78 <__FUNCTION__.1>:
+20063e78:	6f64 735f 6174 6b63 625f 6361 746b 6172     do_stack_backtra
+20063e88:	6563 0000 6e55 6e6b 776f 206e 7865 6563     ce..Unknown exce
+20063e98:	7470 6f69 006e 0000 5b1b 3b31 3333 5b6d     ption....[1;33m[
+20063ea8:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20063eb8:	3d3d 3d3d 3d3d 3d3d 3d3d 4320 6172 6873     ========== Crash
+20063ec8:	4420 6d75 2070 3d3d 3d3d 3d3d 3d3d 3d3d      Dump ==========
+20063ed8:	1b0a 305b 006d 0000 5b1b 3b31 3333 5b6d     ..[0m....[1;33m[
+20063ee8:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20063ef8:	7845 6563 7470 6f69 206e 6163 6775 7468     Exception caught
+20063f08:	6f20 206e 7025 7720 7469 2068 6572 7361      on %p with reas
+20063f18:	6e6f 5b20 7830 7825 205d 3e2d 5b20 7325     on [0x%x] -> [%s
+20063f28:	0a5d 5b1b 6d30 0000 5b1b 3b31 3333 5b6d     ]..[0m...[1;33m[
+20063f38:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20063f48:	3d3d 3d3d 3d3d 3d3d 3d3d 5220 6765 7369     ========== Regis
+20063f58:	6574 2072 7544 706d 3d20 3d3d 3d3d 3d3d     ter Dump =======
+20063f68:	3d3d 0a3d 5b1b 6d30 0000 0000 5b1b 3b31     ===..[0m.....[1;
+20063f78:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
+20063f88:	6425 205d 6d5b 6373 6172 6374 5d68 3020     %d] [mscratch] 0
+20063f98:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
+20063fa8:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
+20063fb8:	6425 205d 6d5b 7065 5d63 2020 2020 3020     %d] [mepc]     0
+20063fc8:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
+20063fd8:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
+20063fe8:	6425 205d 6d5b 6163 7375 5d65 2020 3020     %d] [mcause]   0
+20063ff8:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
+20064008:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
+20064018:	6425 205d 6d5b 7674 6c61 205d 2020 3020     %d] [mtval]    0
+20064028:	2578 3830 0a78 5b1b 6d30 0000 5b1b 3b31     x%08x..[0m...[1;
+20064038:	3333 5b6d 5254 4341 5d45 5b20 7325 3a3a     33m[TRACE] [%s::
+20064048:	6425 205d 7845 6563 7470 6f69 206e 6163     %d] Exception ca
+20064058:	7375 2065 6f63 6c75 2064 6562 0d3a 1b0a     use could be:...
+20064068:	305b 006d 5b1b 3b31 3333 5b6d 5254 4341     [0m..[1;33m[TRAC
+20064078:	5d45 5b20 7325 3a3a 6425 205d 2509 2c73     E] [%s::%d] .%s,
+20064088:	2520 2073 203d 7830 7825 0a0d 5b1b 6d30      %s = 0x%x...[0m
+20064098:	0000 0000 5b1b 3b31 3333 5b6d 5254 4341     .....[1;33m[TRAC
+200640a8:	5d45 5b20 7325 3a3a 6425 205d 2509 0d73     E] [%s::%d] .%s.
+200640b8:	1b0a 305b 006d 0000 5b1b 3b31 3333 5b6d     ..[0m....[1;33m[
+200640c8:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+200640d8:	785b 6425 2d20 203e 7325 205d 7830 3025     [x%d -> %s] 0x%0
+200640e8:	7838 1b0a 305b 006d 5b1b 3b31 3333 5b6d     8x..[0m..[1;33m[
+200640f8:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20064108:	3d3d 3d3d 3d3d 3d3d 3d3d 5320 6174 6b63     ========== Stack
+20064118:	5420 6172 6563 3d20 3d3d 3d3d 3d3d 3d3d      Trace =========
+20064128:	0a3d 5b1b 6d30 0000 5b1b 3b31 3333 5b6d     =..[0m...[1;33m[
+20064138:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+20064148:	7349 7420 6968 2073 656c 6661 6620 6e75     Is this leaf fun
+20064158:	7463 6f69 3f6e 5520 6973 676e 5220 2041     ction? Using RA 
+20064168:	7361 5020 2043 6f74 6420 206f 6162 6b63     as PC to do back
+20064178:	7274 6361 2c65 7320 6174 6b63 735f 7a69     trace, stack_siz
+20064188:	2865 6425 252f 2964 1b0a 305b 006d 0000     e(%d/%d)..[0m...
+20064198:	5b1b 3b31 3333 5b6d 5254 4341 5d45 5b20     .[1;33m[TRACE] [
+200641a8:	7325 3a3a 6425 205d 3d3d 3d3d 3d3d 3d3d     %s::%d] ========
+200641b8:	3d3d 4520 646e 6f20 2066 7453 6361 206b     == End of Stack 
+200641c8:	7254 6361 2065 3d3d 3d3d 3d3d 3d3d 3d3d     Trace ==========
+200641d8:	1b0a 305b 006d 0000 5b1b 3b31 3333 5b6d     ..[0m....[1;33m[
+200641e8:	5254 4341 5d45 5b20 7325 3a3a 6425 205d     TRACE] [%s::%d] 
+200641f8:	3d3d 3d3d 3d3d 3d3d 3d3d 4520 646e 6f20     ========== End o
+20064208:	2066 7243 7361 2068 7544 706d 3d20 3d3d     f Crash Dump ===
+20064218:	3d3d 3d3d 3d3d 0a3d 5b1b 6d30 0000 0000     =======..[0m....
+20064228:	5b1b 3b31 3333 5b6d 5254 4341 5d45 5b20     .[1;33m[TRACE] [
+20064238:	7325 3a3a 6425 205d 0a0d 0a0d 5b1b 6d30     %s::%d] .....[0m
+20064248:	0000 0000 6f53 6572 412f 4f4d 7020 6761     ....Sore/AMO pag
+20064258:	2065 6177 6b6c 6320 6568 6b63 6620 6961     e walk check fai
+20064268:	006c 0000 7453 726f 2065 6461 7264 7365     l...Store addres
+20064278:	0073 0000 6f4c 6461 7020 6761 2065 6177     s...Load page wa
+20064288:	6b6c 6320 6568 6b63 6620 6961 006c 0000     lk check fail...
+20064298:	6f4c 6461 6120 6464 6572 7373 0000 0000     Load address....
+200642a8:	6e49 7473 7572 7463 6f69 206e 6170 6567     Instruction page
+200642b8:	7720 6c61 206b 6863 6365 206b 6166 6c69      walk check fail
+200642c8:	0000 0000 6e49 7473 7572 7463 6f69 206e     ....Instruction 
+200642d8:	6461 7264 7365 0073 7253 726f 2f65 4d41     address.Srore/AM
+200642e8:	204f 4d50 2050 6863 6365 206b 6166 6c69     O PMP check fail
+200642f8:	0000 0000 7453 726f 2f65 4d41 204f 6170     ....Store/AMO pa
+20064308:	6567 7720 6c61 206b 7562 2073 7265 6f72     ge walk bus erro
+20064318:	0072 0000 7453 726f 2065 7562 2073 7265     r...Store bus er
+20064328:	6f72 0072 7453 726f 2f65 4d41 204f 6461     ror.Store/AMO ad
+20064338:	7264 7365 2073 696d 6173 696c 6e67 6465     dress misaligned
+20064348:	0000 0000 6f4c 6461 5020 504d 6320 6568     ....Load PMP che
+20064358:	6b63 6620 6961 006c 6f4c 6461 5020 6761     ck fail.Load Pag
+20064368:	2065 6177 6b6c 6220 7375 6520 7272 726f     e walk bus error
+20064378:	0000 0000 6f4c 6461 6220 7375 6520 7272     ....Load bus err
+20064388:	726f 0000 6f4c 6461 6120 6464 6572 7373     or..Load address
+20064398:	6d20 7369 6c61 6769 656e 0064 6c49 656c      misaligned.Ille
+200643a8:	6167 206c 6e69 7473 7572 7463 6f69 006e     gal instruction.
+200643b8:	6e49 7473 7572 7463 6f69 206e 706f 6f63     Instruction opco
+200643c8:	6564 0000 6e49 7473 7572 7463 6f69 206e     de..Instruction 
+200643d8:	4d50 2050 6863 6365 206b 6166 6c69 0000     PMP check fail..
+200643e8:	6e49 7473 7572 7463 6f69 206e 6150 6567     Instruction Page
+200643f8:	7720 6c61 206b 7562 2073 7265 6f72 0072      walk bus error.
+20064408:	6e49 7473 7572 7463 6f69 206e 7562 2073     Instruction bus 
+20064418:	7265 6f72 0072 0000 7242 6e61 6863 7420     error...Branch t
+20064428:	7261 6567 2074 696d 6173 696c 6e67 6465     arget misaligned
+20064438:	0000 0000 6154 6772 7465 6120 6464 6572     ....Target addre
+20064448:	7373 0000 6e49 7473 7572 7463 6f69 206e     ss..Instruction 
+20064458:	6461 7264 7365 2073 696d 6173 696c 6e67     address misalign
+20064468:	6465 0000 657a 6f72 0000 0000 6172 0000     ed..zero....ra..
+20064478:	7073 0000 7067 0000 7074 0000 3074 0000     sp..gp..tp..t0..
+20064488:	3174 0000 3274 0000 3073 662f 0070 0000     t1..t2..s0/fp...
+20064498:	3173 0000 3061 0000 3161 0000 3261 0000     s1..a0..a1..a2..
+200644a8:	3361 0000 3461 0000 3561 0000 3661 0000     a3..a4..a5..a6..
+200644b8:	3761 0000 3273 0000 3373 0000 3473 0000     a7..s2..s3..s4..
+200644c8:	3573 0000 3673 0000 3773 0000 3873 0000     s5..s6..s7..s8..
+200644d8:	3973 0000 3173 0030 3173 0031 3374 0000     s9..s10.s11.t3..
+200644e8:	3474 0000 3574 0000 3674 0000 6e49 7473     t4..t5..t6..Inst
+200644f8:	7572 7463 6f69 206e 6361 6563 7373 6620     ruction access f
+20064508:	7561 746c 0000 0000 7242 6165 706b 696f     ault....Breakpoi
+20064518:	746e 0000 6f4c 6461 6120 6464 7365 2073     nt..Load addess 
+20064528:	696d 6173 696c 6e67 6465 0000 6f4c 6461     misaligned..Load
+20064538:	6120 6363 7365 2073 6166 6c75 0074 0000      access fault...
+20064548:	7453 726f 2065 6461 7264 7365 2073 696d     Store address mi
+20064558:	6173 696c 6e67 6465 0000 0000 7453 726f     saligned....Stor
+20064568:	2065 6461 7264 7365 2073 6166 6c75 0074     e address fault.
+20064578:	6e45 6976 6f72 6d6e 6e65 2074 6163 6c6c     Environment call
+20064588:	6620 6f72 206d 2055 6f6d 6564 0000 0000      from U mode....
+20064598:	6e45 6976 6f72 6d6e 6e65 2074 6163 6c6c     Environment call
+200645a8:	6620 6f72 206d 2053 6f6d 6564 0000 0000      from S mode....
+200645b8:	6552 6573 7672 6465 6520 6378 7065 6974     Reserved excepti
+200645c8:	6e6f 0000 6e45 6976 6f72 6d6e 6e65 2074     on..Environment 
+200645d8:	6163 6c6c 6620 6f72 206d 204d 6f6d 6564     call from M mode
+200645e8:	0000 0000 6e49 7473 7572 7463 6f69 206e     ....Instruction 
+200645f8:	6170 6567 6620 7561 746c 0000 6f4c 6461     page fault..Load
+20064608:	7020 6761 2065 6166 6c75 0074 7453 726f      page fault.Stor
+20064618:	2065 6170 6567 6620 7561 746c 0000 0000     e page fault....
 
-20064620 <__FUNCTION__.0>:
-20064620:	7263 7361 5f68 7564 706d 0000               crash_dump..
+20064628 <__FUNCTION__.0>:
+20064628:	7263 7361 5f68 7564 706d 0000               crash_dump..
 
-2006462c <exception_cause_0_string>:
-2006462c:	4418 2006 4434 2006 4444 2006 42c4 2006     .D. 4D. DD. .B. 
-	...
-
-20064644 <exception_cause_12_string>:
-20064644:	42a0 2006 42c4 2006 0000 0000 0000 0000     .B. .B. ........
-
-20064654 <exception_cause_13_string>:
-20064654:	4274 2006 4290 2006 0000 0000 0000 0000     tB. .B. ........
-
-20064664 <exception_cause_15_string>:
-20064664:	4244 2006 4264 2006 0000 0000 0000 0000     DB. dB. ........
-
-20064674 <exception_cause_1_string>:
-20064674:	43c4 2006 42c4 2006 43e0 2006 42c4 2006     .C. .B. .C. .B. 
-20064684:	4400 2006 42c4 2006 0000 0000 0000 0000     .D. .B. ........
-
-20064694 <exception_cause_2_string>:
-20064694:	439c 2006 43b0 2006 0000 0000 0000 0000     .C. .C. ........
-
-200646a4 <exception_cause_4_string>:
-200646a4:	4384 2006 4290 2006 0000 0000 0000 0000     .C. .B. ........
-
-200646b4 <exception_cause_5_string>:
-200646b4:	4344 2006 4290 2006 4358 2006 4290 2006     DC. .B. XC. .B. 
-200646c4:	4374 2006 0000 0000 0000 0000 0000 0000     tC. ............
-
-200646d4 <exception_cause_6_string>:
-200646d4:	4324 2006 4264 2006 0000 0000 0000 0000     $C. dB. ........
-
-200646e4 <exception_cause_7_string>:
-200646e4:	42d8 2006 4264 2006 42f4 2006 4264 2006     .B. dB. .B. dB. 
-200646f4:	4314 2006 0000 0000 0000 0000 0000 0000     .C. ............
-
-20064704 <exception_cause_string_tbl>:
-20064704:	462c 2006 4674 2006 4694 2006 0000 0000     ,F. tF. .F. ....
-20064714:	46a4 2006 46b4 2006 46d4 2006 46e4 2006     .F. .F. .F. .F. 
-	...
-20064734:	4644 2006 4654 2006 0000 0000 4664 2006     DF. TF. ....dF. 
-
-20064744 <exception_code_string>:
-20064744:	4444 2006 44ec 2006 439c 2006 4508 2006     DD. .D. .C. .E. 
-20064754:	4514 2006 452c 2006 4540 2006 455c 2006     .E. ,E. @E. \E. 
-20064764:	4570 2006 4590 2006 45b0 2006 45c4 2006     pE. .E. .E. .E. 
-20064774:	45e4 2006 45fc 2006 0000 0000 460c 2006     .E. .E. .....F. 
-
-20064784 <register_string>:
-20064784:	4464 2006 446c 2006 4470 2006 4474 2006     dD. lD. pD. tD. 
-20064794:	4478 2006 447c 2006 4480 2006 4484 2006     xD. |D. .D. .D. 
-200647a4:	4488 2006 4490 2006 4494 2006 4498 2006     .D. .D. .D. .D. 
-200647b4:	449c 2006 44a0 2006 44a4 2006 44a8 2006     .D. .D. .D. .D. 
-200647c4:	44ac 2006 44b0 2006 44b4 2006 44b8 2006     .D. .D. .D. .D. 
-200647d4:	44bc 2006 44c0 2006 44c4 2006 44c8 2006     .D. .D. .D. .D. 
-200647e4:	44cc 2006 44d0 2006 44d4 2006 44d8 2006     .D. .D. .D. .D. 
-200647f4:	44dc 2006 44e0 2006 44e4 2006 44e8 2006     .D. .D. .D. .D. 
-20064804:	4544 2056 5049 2043 5041 2049 736d 2067     DEV IPC API msg 
-20064814:	554e 4c4c 000a 0000 6f48 7473 4120 4950     NULL....Host API
-20064824:	5520 6b6e 6f6e 6e77 6520 7476 2528 2978      Unknown evt(%x)
-20064834:	000a 0000 04ac 2006 04ba 2006 0572 2006     ....... ... r.. 
-20064844:	0512 2006 068a 2006 069e 2006 0714 2006     ... ... ... ... 
-20064854:	0512 2006 0512 2006 616c 7473 6920 696e     ... ... last ini
-20064864:	2063 7069 2063 6f6e 2074 6468 206c 000a     c ipc not hdl ..
-20064874:	7348 4d74 6773 6553 646e 7720 6961 2074     HstMsgSend wait 
-20064884:	6e69 6369 6920 6370 6420 6e6f 2065 7830     inic ipc done 0x
-20064894:	7825 202c 7830 7825 000a 0000 6e69 6369     %x, 0x%x....inic
-200648a4:	615f 6970 685f 736f 5f74 6174 6b73 0000     _api_host_task..
-200648b4:	7243 6165 6574 6120 6970 685f 736f 5f74     Create api_host_
-200648c4:	6174 6b73 4520 7272 000a 0000 4e49 4349     task Err....INIC
-200648d4:	0000 0000 6e69 6369 6d5f 5f70 6f63 6d6d     ....inic_mp_comm
-200648e4:	6e61 2064 6166 6c69 000a 0000 7250 7669     and fail....Priv
-200648f4:	7461 2065 654d 7373 6761 3a65 2520 0a73     ate Message: %s.
-20064904:	0000 0000 6f68 7473 735f 626b 785f 2078     ....host_skb_xx 
-20064914:	6f6e 2074 7266 6565 000a 0000 7325 3e3d     not free....%s=>
-20064924:	6b73 2062 616d 6c6c 636f 6620 6961 216c     skb malloc fail!
-20064934:	0d0a 0000 6f48 7473 5520 6b6e 6f6e 6e77     ....Host Unknown
-20064944:	6520 6576 746e 2528 786c 2129 0d0a 0000      event(%lx)!....
-
-20064954 <__func__.1>:
-20064954:	6e69 6369 685f 736f 5f74 6e69 7469 735f     inic_host_init_s
-20064964:	626b 0000 6e69 6369 6d5f 6773 715f 745f     kb..inic_msg_q_t
-20064974:	7361 006b 7243 6165 6574 6d20 6773 715f     ask.Create msg_q
-20064984:	745f 7361 206b 7245 2172 000a 4f4e 6220     _task Err!..NO b
-20064994:	6675 6620 726f 6e20 7765 6e20 646f 7365     uf for new nodes
-200649a4:	0a21 0000 6146 6c69 7420 206f 6966 646e     !...Fail to find
-200649b4:	7420 6568 7420 6d69 7265 655f 746e 7972      the timer_entry
-200649c4:	6920 206e 6974 656d 2072 6174 6c62 2e65      in timer table.
-200649d4:	000a 0000 4954 454d 0052 0000 6146 6c69     ....TIMER...Fail
-200649e4:	7420 206f 6e69 7469 7420 6d69 7265 0a2e      to init timer..
-200649f4:	0000 0000 6f4d 5464 6d69 7265 203a 6f6e     ....ModTimer: no
-20064a04:	2074 6e69 7469 0a2e 0000 0000 6f4d 5464     t init......ModT
-20064a14:	6d69 7265 6620 6961 0a6c 0000 6143 636e     imer fail...Canc
-20064a24:	6c65 6954 656d 2072 6146 6c69 2528 2978     elTimer Fail(%x)
-20064a34:	000a 0000 6544 546c 6d69 7265 4620 6961     ....DelTimer Fai
-20064a44:	0a6c 0000                                   l...
-
-20064a48 <__clz_tab>:
-20064a48:	0100 0202 0303 0303 0404 0404 0404 0404     ................
-20064a58:	0505 0505 0505 0505 0505 0505 0505 0505     ................
-20064a68:	0606 0606 0606 0606 0606 0606 0606 0606     ................
-20064a78:	0606 0606 0606 0606 0606 0606 0606 0606     ................
-20064a88:	0707 0707 0707 0707 0707 0707 0707 0707     ................
-20064a98:	0707 0707 0707 0707 0707 0707 0707 0707     ................
-20064aa8:	0707 0707 0707 0707 0707 0707 0707 0707     ................
-20064ab8:	0707 0707 0707 0707 0707 0707 0707 0707     ................
-20064ac8:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064ad8:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064ae8:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064af8:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064b08:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064b18:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064b28:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-20064b38:	0808 0808 0808 0808 0808 0808 0808 0808     ................
-
-20064b48 <_ctype_>:
-20064b48:	2000 2020 2020 2020 2020 2828 2828 2028     .         ((((( 
-20064b58:	2020 2020 2020 2020 2020 2020 2020 2020                     
-20064b68:	8820 1010 1010 1010 1010 1010 1010 1010      ...............
-20064b78:	0410 0404 0404 0404 0404 1004 1010 1010     ................
-20064b88:	1010 4141 4141 4141 0101 0101 0101 0101     ..AAAAAA........
-20064b98:	0101 0101 0101 0101 0101 0101 1010 1010     ................
-20064ba8:	1010 4242 4242 4242 0202 0202 0202 0202     ..BBBBBB........
-20064bb8:	0202 0202 0202 0202 0202 0202 1010 1010     ................
-20064bc8:	0020 0000 0000 0000 0000 0000 0000 0000      ...............
+20064634 <exception_cause_0_string>:
+20064634:	4420 2006 443c 2006 444c 2006 42cc 2006      D. <D. LD. .B. 
 	...
 
-20064c4c <shell_cmd_table>:
-20064c4c:	324c 2006 0000 0000 b3b0 2005 3250 2006     L2. ....... P2. 
-20064c5c:	3274 2006 0002 0000 b50c 2005 3278 2006     t2. ....... x2. 
-20064c6c:	3394 2006 0002 0000 b466 2005 3398 2006     .3. ....f.. .3. 
-20064c7c:	3428 2006 0004 0000 b41c 2005 3430 2006     (4. ....... 04. 
+2006464c <exception_cause_12_string>:
+2006464c:	42a8 2006 42cc 2006 0000 0000 0000 0000     .B. .B. ........
 
-20064c8c <ipc_tickless_table>:
-20064c8c:	0001 0000 0000 0000 0000 0000 8eac 2005     ............... 
-20064c9c:	0000 0000 0010 0000 0000 0000               ............
+2006465c <exception_cause_13_string>:
+2006465c:	427c 2006 4298 2006 0000 0000 0000 0000     |B. .B. ........
 
-20064ca8 <ipc_kr4cdsp_table>:
-20064ca8:	0001 0000 0000 0000 0000 0000 8eac 2005     ............... 
-20064cb8:	0000 0000 0020 0000 0000 0000               .... .......
+2006466c <exception_cause_15_string>:
+2006466c:	424c 2006 426c 2006 0000 0000 0000 0000     LB. lB. ........
 
-20064cc4 <ipc_KM4WKR4_table>:
-20064cc4:	0001 0000 0000 0000 0000 0000 8eac 2005     ............... 
-20064cd4:	0000 0000 0010 0000 0002 0000               ............
+2006467c <exception_cause_1_string>:
+2006467c:	43cc 2006 42cc 2006 43e8 2006 42cc 2006     .C. .B. .C. .B. 
+2006468c:	4408 2006 42cc 2006 0000 0000 0000 0000     .D. .B. ........
 
-20064ce0 <ipc_shell_table>:
-20064ce0:	0001 0000 cf3e 2005 0000 0000 8eac 2005     ....>.. ....... 
-20064cf0:	0000 0000 0010 0000 0003 0000               ............
+2006469c <exception_cause_2_string>:
+2006469c:	43a4 2006 43b8 2006 0000 0000 0000 0000     .C. .C. ........
 
-20064cfc <ipc_api_host_table>:
-20064cfc:	0000 0000 07ea 2006 0000 0000 8eac 2005     ....... ....... 
-20064d0c:	0000 0000 0010 0000 0007 0000               ............
+200646ac <exception_cause_4_string>:
+200646ac:	438c 2006 4298 2006 0000 0000 0000 0000     .C. .B. ........
 
-20064d18 <ipc_host_event_table>:
-20064d18:	0000 0000 0da6 2006 0000 0000 8eac 2005     ....... ....... 
-20064d28:	0000 0000 0010 0000 0006 0000               ............
+200646bc <exception_cause_5_string>:
+200646bc:	434c 2006 4298 2006 4360 2006 4298 2006     LC. .B. `C. .B. 
+200646cc:	437c 2006 0000 0000 0000 0000 0000 0000     |C. ............
 
-20064d34 <lib_pmc_git_rev>:
-20064d34:	6c20 6269 705f 636d 765f 7265 385f 6139      lib_pmc_ver_89a
-20064d44:	3237 3039 6562 5f30 3032 3432 302f 2f37     7290be0_2024/07/
-20064d54:	3133 312d 3a35 3830 303a 0037               31-15:08:07.
+200646dc <exception_cause_6_string>:
+200646dc:	432c 2006 426c 2006 0000 0000 0000 0000     ,C. lB. ........
 
-20064d60 <lib_wifi_com_sec_git_rev>:
-20064d60:	6c20 6269 775f 6669 5f69 6f63 5f6d 6573      lib_wifi_com_se
-20064d70:	5f63 6576 5f72 3938 3761 3932 6230 3065     c_ver_89a7290be0
-20064d80:	325f 3230 2f34 3730 332f 2d31 3531 303a     _2024/07/31-15:0
-20064d90:	3a38 3530                                    8:05.
+200646ec <exception_cause_7_string>:
+200646ec:	42e0 2006 426c 2006 42fc 2006 426c 2006     .B. lB. .B. lB. 
+200646fc:	431c 2006 0000 0000 0000 0000 0000 0000     .C. ............
 
-20064d95 <__git_ver_table_end__>:
-20064d95:	0000                	c.unimp
+2006470c <exception_cause_string_tbl>:
+2006470c:	4634 2006 467c 2006 469c 2006 0000 0000     4F. |F. .F. ....
+2006471c:	46ac 2006 46bc 2006 46dc 2006 46ec 2006     .F. .F. .F. .F. 
+	...
+2006473c:	464c 2006 465c 2006 0000 0000 466c 2006     LF. \F. ....lF. 
+
+2006474c <exception_code_string>:
+2006474c:	444c 2006 44f4 2006 43a4 2006 4510 2006     LD. .D. .C. .E. 
+2006475c:	451c 2006 4534 2006 4548 2006 4564 2006     .E. 4E. HE. dE. 
+2006476c:	4578 2006 4598 2006 45b8 2006 45cc 2006     xE. .E. .E. .E. 
+2006477c:	45ec 2006 4604 2006 0000 0000 4614 2006     .E. .F. .....F. 
+
+2006478c <register_string>:
+2006478c:	446c 2006 4474 2006 4478 2006 447c 2006     lD. tD. xD. |D. 
+2006479c:	4480 2006 4484 2006 4488 2006 448c 2006     .D. .D. .D. .D. 
+200647ac:	4490 2006 4498 2006 449c 2006 44a0 2006     .D. .D. .D. .D. 
+200647bc:	44a4 2006 44a8 2006 44ac 2006 44b0 2006     .D. .D. .D. .D. 
+200647cc:	44b4 2006 44b8 2006 44bc 2006 44c0 2006     .D. .D. .D. .D. 
+200647dc:	44c4 2006 44c8 2006 44cc 2006 44d0 2006     .D. .D. .D. .D. 
+200647ec:	44d4 2006 44d8 2006 44dc 2006 44e0 2006     .D. .D. .D. .D. 
+200647fc:	44e4 2006 44e8 2006 44ec 2006 44f0 2006     .D. .D. .D. .D. 
+2006480c:	4544 2056 5049 2043 5041 2049 736d 2067     DEV IPC API msg 
+2006481c:	554e 4c4c 000a 0000 6f48 7473 4120 4950     NULL....Host API
+2006482c:	5520 6b6e 6f6e 6e77 6520 7476 2528 2978      Unknown evt(%x)
+2006483c:	000a 0000 04b4 2006 04c2 2006 057a 2006     ....... ... z.. 
+2006484c:	051a 2006 0692 2006 06a6 2006 071c 2006     ... ... ... ... 
+2006485c:	051a 2006 051a 2006 616c 7473 6920 696e     ... ... last ini
+2006486c:	2063 7069 2063 6f6e 2074 6468 206c 000a     c ipc not hdl ..
+2006487c:	7348 4d74 6773 6553 646e 7720 6961 2074     HstMsgSend wait 
+2006488c:	6e69 6369 6920 6370 6420 6e6f 2065 7830     inic ipc done 0x
+2006489c:	7825 202c 7830 7825 000a 0000 6e69 6369     %x, 0x%x....inic
+200648ac:	615f 6970 685f 736f 5f74 6174 6b73 0000     _api_host_task..
+200648bc:	7243 6165 6574 6120 6970 685f 736f 5f74     Create api_host_
+200648cc:	6174 6b73 4520 7272 000a 0000 4e49 4349     task Err....INIC
+200648dc:	0000 0000 6e69 6369 6d5f 5f70 6f63 6d6d     ....inic_mp_comm
+200648ec:	6e61 2064 6166 6c69 000a 0000 7250 7669     and fail....Priv
+200648fc:	7461 2065 654d 7373 6761 3a65 2520 0a73     ate Message: %s.
+2006490c:	0000 0000 6f68 7473 735f 626b 785f 2078     ....host_skb_xx 
+2006491c:	6f6e 2074 7266 6565 000a 0000 7325 3e3d     not free....%s=>
+2006492c:	6b73 2062 616d 6c6c 636f 6620 6961 216c     skb malloc fail!
+2006493c:	0d0a 0000 6f48 7473 5520 6b6e 6f6e 6e77     ....Host Unknown
+2006494c:	6520 6576 746e 2528 786c 2129 0d0a 0000      event(%lx)!....
+
+2006495c <__func__.1>:
+2006495c:	6e69 6369 685f 736f 5f74 6e69 7469 735f     inic_host_init_s
+2006496c:	626b 0000 6e69 6369 6d5f 6773 715f 745f     kb..inic_msg_q_t
+2006497c:	7361 006b 7243 6165 6574 6d20 6773 715f     ask.Create msg_q
+2006498c:	745f 7361 206b 7245 2172 000a 4f4e 6220     _task Err!..NO b
+2006499c:	6675 6620 726f 6e20 7765 6e20 646f 7365     uf for new nodes
+200649ac:	0a21 0000 6146 6c69 7420 206f 6966 646e     !...Fail to find
+200649bc:	7420 6568 7420 6d69 7265 655f 746e 7972      the timer_entry
+200649cc:	6920 206e 6974 656d 2072 6174 6c62 2e65      in timer table.
+200649dc:	000a 0000 4954 454d 0052 0000 6146 6c69     ....TIMER...Fail
+200649ec:	7420 206f 6e69 7469 7420 6d69 7265 0a2e      to init timer..
+200649fc:	0000 0000 6f4d 5464 6d69 7265 203a 6f6e     ....ModTimer: no
+20064a0c:	2074 6e69 7469 0a2e 0000 0000 6f4d 5464     t init......ModT
+20064a1c:	6d69 7265 6620 6961 0a6c 0000 6143 636e     imer fail...Canc
+20064a2c:	6c65 6954 656d 2072 6146 6c69 2528 2978     elTimer Fail(%x)
+20064a3c:	000a 0000 6544 546c 6d69 7265 4620 6961     ....DelTimer Fai
+20064a4c:	0a6c 0000                                   l...
+
+20064a50 <__clz_tab>:
+20064a50:	0100 0202 0303 0303 0404 0404 0404 0404     ................
+20064a60:	0505 0505 0505 0505 0505 0505 0505 0505     ................
+20064a70:	0606 0606 0606 0606 0606 0606 0606 0606     ................
+20064a80:	0606 0606 0606 0606 0606 0606 0606 0606     ................
+20064a90:	0707 0707 0707 0707 0707 0707 0707 0707     ................
+20064aa0:	0707 0707 0707 0707 0707 0707 0707 0707     ................
+20064ab0:	0707 0707 0707 0707 0707 0707 0707 0707     ................
+20064ac0:	0707 0707 0707 0707 0707 0707 0707 0707     ................
+20064ad0:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064ae0:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064af0:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064b00:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064b10:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064b20:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064b30:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+20064b40:	0808 0808 0808 0808 0808 0808 0808 0808     ................
+
+20064b50 <_ctype_>:
+20064b50:	2000 2020 2020 2020 2020 2828 2828 2028     .         ((((( 
+20064b60:	2020 2020 2020 2020 2020 2020 2020 2020                     
+20064b70:	8820 1010 1010 1010 1010 1010 1010 1010      ...............
+20064b80:	0410 0404 0404 0404 0404 1004 1010 1010     ................
+20064b90:	1010 4141 4141 4141 0101 0101 0101 0101     ..AAAAAA........
+20064ba0:	0101 0101 0101 0101 0101 0101 1010 1010     ................
+20064bb0:	1010 4242 4242 4242 0202 0202 0202 0202     ..BBBBBB........
+20064bc0:	0202 0202 0202 0202 0202 0202 1010 1010     ................
+20064bd0:	0020 0000 0000 0000 0000 0000 0000 0000      ...............
 	...
 
-20064d98 <__frame_dummy_init_array_entry>:
-20064d98:	148c 2006                                   ... 
+20064c54 <shell_cmd_table>:
+20064c54:	3254 2006 0000 0000 b3b6 2005 3258 2006     T2. ....... X2. 
+20064c64:	327c 2006 0002 0000 b512 2005 3280 2006     |2. ....... .2. 
+20064c74:	339c 2006 0002 0000 b46c 2005 33a0 2006     .3. ....l.. .3. 
+20064c84:	3430 2006 0004 0000 b422 2005 3438 2006     04. ....".. 84. 
 
-20064d9c <__do_global_dtors_aux_fini_array_entry>:
-20064d9c:	1452 2006                                   R.. 
+20064c94 <ipc_tickless_table>:
+20064c94:	0001 0000 0000 0000 0000 0000 8eac 2005     ............... 
+20064ca4:	0000 0000 0010 0000 0000 0000               ............
+
+20064cb0 <ipc_kr4cdsp_table>:
+20064cb0:	0001 0000 0000 0000 0000 0000 8eac 2005     ............... 
+20064cc0:	0000 0000 0020 0000 0000 0000               .... .......
+
+20064ccc <ipc_KM4WKR4_table>:
+20064ccc:	0001 0000 0000 0000 0000 0000 8eac 2005     ............... 
+20064cdc:	0000 0000 0010 0000 0002 0000               ............
+
+20064ce8 <ipc_shell_table>:
+20064ce8:	0001 0000 cf3e 2005 0000 0000 8eac 2005     ....>.. ....... 
+20064cf8:	0000 0000 0010 0000 0003 0000               ............
+
+20064d04 <ipc_api_host_table>:
+20064d04:	0000 0000 07f2 2006 0000 0000 8eac 2005     ....... ....... 
+20064d14:	0000 0000 0010 0000 0007 0000               ............
+
+20064d20 <ipc_host_event_table>:
+20064d20:	0000 0000 0dae 2006 0000 0000 8eac 2005     ....... ....... 
+20064d30:	0000 0000 0010 0000 0006 0000               ............
+
+20064d3c <lib_pmc_git_rev>:
+20064d3c:	6c20 6269 705f 636d 765f 7265 315f 3937      lib_pmc_ver_179
+20064d4c:	6238 3166 6465 5f36 3032 3432 302f 2f38     8bf1ed6_2024/08/
+20064d5c:	3132 312d 3a30 3935 303a 0032               21-10:59:02.
+
+20064d68 <lib_wifi_com_sec_git_rev>:
+20064d68:	6c20 6269 775f 6669 5f69 6f63 5f6d 6573      lib_wifi_com_se
+20064d78:	5f63 6576 5f72 3731 3839 6662 6531 3664     c_ver_1798bf1ed6
+20064d88:	325f 3230 2f34 3830 322f 2d31 3031 353a     _2024/08/21-10:5
+20064d98:	3a39 3030                                    9:00.
+
+20064d9d <__git_ver_table_end__>:
+20064d9d:	0000                	c.unimp
+	...
+
+20064da0 <__frame_dummy_init_array_entry>:
+20064da0:	1494 2006                                   ... 
+
+20064da4 <__do_global_dtors_aux_fini_array_entry>:
+20064da4:	145a 2006                                   Z.. 
+
+20064da8 <__fini_array_end>:
+	...
 
 Disassembly of section .sram_image2.text.data:
 
-20065da0 <FLASH_ClockSwitch>:
-20065da0:	1101                	c.addi	sp,-32
-20065da2:	ca26                	c.swsp	s1,20(sp)
-20065da4:	c452                	c.swsp	s4,8(sp)
-20065da6:	ce06                	c.swsp	ra,28(sp)
-20065da8:	cc22                	c.swsp	s0,24(sp)
-20065daa:	c84a                	c.swsp	s2,16(sp)
-20065dac:	c64e                	c.swsp	s3,12(sp)
-20065dae:	c256                	c.swsp	s5,4(sp)
-20065db0:	84aa                	c.mv	s1,a0
-20065db2:	8a2e                	c.mv	s4,a1
-20065db4:	c1dd                	c.beqz	a1,20065e5a <FLASH_ClockSwitch+0xba>
-20065db6:	d21f20ef          	jal	ra,20058ad6 <Systick_State>
-20065dba:	89aa                	c.mv	s3,a0
-20065dbc:	d3bf20ef          	jal	ra,20058af6 <irq_disable_save>
-20065dc0:	892a                	c.mv	s2,a0
-20065dc2:	4501                	c.li	a0,0
-20065dc4:	ce7f20ef          	jal	ra,20058aaa <Systick_Cmd>
-20065dc8:	20001ab7          	lui	s5,0x20001
-20065dcc:	4789                	c.li	a5,2
-20065dce:	864a8413          	addi	s0,s5,-1948 # 20000864 <flash_init_para>
-20065dd2:	08f49e63          	bne	s1,a5,20065e6e <FLASH_ClockSwitch+0xce>
-20065dd6:	4509                	c.li	a0,2
-20065dd8:	dffa0097          	auipc	ra,0xdffa0
-20065ddc:	c66080e7          	jalr	ra,-922(ra) # 5a3e <RCC_PeriphClockSource_SPIC>
-20065de0:	4100c6b7          	lui	a3,0x4100c
-20065de4:	25c6a783          	lw	a5,604(a3) # 4100c25c <__km4_bd_boot_download_addr__+0x10ffa25c>
-20065de8:	7775                	c.lui	a4,0xffffd
-20065dea:	177d                	c.addi	a4,-1
-20065dec:	8ff9                	c.and	a5,a4
-20065dee:	24f6ae23          	sw	a5,604(a3)
-20065df2:	06344783          	lbu	a5,99(s0) # 9063 <shell_get_argv+0x18f>
-20065df6:	c7ad                	c.beqz	a5,20065e60 <FLASH_ClockSwitch+0xc0>
-20065df8:	4501                	c.li	a0,0
-20065dfa:	dff9e097          	auipc	ra,0xdff9e
-20065dfe:	b80080e7          	jalr	ra,-1152(ra) # 397a <FLASH_CalibrationNewCmd>
-20065e02:	4505                	c.li	a0,1
-20065e04:	dff9e097          	auipc	ra,0xdff9e
-20065e08:	934080e7          	jalr	ra,-1740(ra) # 3738 <FLASH_CalibrationPLLSel>
-20065e0c:	dff9e097          	auipc	ra,0xdff9e
-20065e10:	99e080e7          	jalr	ra,-1634(ra) # 37aa <FLASH_Calibration_PSPLL_Close>
-20065e14:	4501                	c.li	a0,0
-20065e16:	dff9e097          	auipc	ra,0xdff9e
-20065e1a:	922080e7          	jalr	ra,-1758(ra) # 3738 <FLASH_CalibrationPLLSel>
-20065e1e:	dff9e097          	auipc	ra,0xdff9e
-20065e22:	98c080e7          	jalr	ra,-1652(ra) # 37aa <FLASH_Calibration_PSPLL_Close>
-20065e26:	04040ea3          	sb	zero,93(s0)
-20065e2a:	00444583          	lbu	a1,4(s0)
-20065e2e:	864a8513          	addi	a0,s5,-1948
-20065e32:	dff9d097          	auipc	ra,0xdff9d
-20065e36:	e92080e7          	jalr	ra,-366(ra) # 2cc4 <FLASH_SetSpiMode>
-20065e3a:	0c0a0c63          	beq	s4,zero,20065f12 <FLASH_ClockSwitch+0x172>
-20065e3e:	854e                	c.mv	a0,s3
-20065e40:	c6bf20ef          	jal	ra,20058aaa <Systick_Cmd>
-20065e44:	4462                	c.lwsp	s0,24(sp)
-20065e46:	40f2                	c.lwsp	ra,28(sp)
-20065e48:	44d2                	c.lwsp	s1,20(sp)
-20065e4a:	49b2                	c.lwsp	s3,12(sp)
-20065e4c:	4a22                	c.lwsp	s4,8(sp)
-20065e4e:	4a92                	c.lwsp	s5,4(sp)
-20065e50:	854a                	c.mv	a0,s2
-20065e52:	4942                	c.lwsp	s2,16(sp)
-20065e54:	6105                	c.addi16sp	sp,32
-20065e56:	ca9f206f          	jal	zero,20058afe <irq_enable_restore>
-20065e5a:	4901                	c.li	s2,0
-20065e5c:	4981                	c.li	s3,0
-20065e5e:	b7ad                	c.j	20065dc8 <FLASH_ClockSwitch+0x28>
-20065e60:	4581                	c.li	a1,0
-20065e62:	4501                	c.li	a0,0
-20065e64:	dff9e097          	auipc	ra,0xdff9e
-20065e68:	d1a080e7          	jalr	ra,-742(ra) # 3b7e <FLASH_Read_HandShake_Cmd>
-20065e6c:	bf59                	c.j	20065e02 <FLASH_ClockSwitch+0x62>
-20065e6e:	ccb5                	c.beqz	s1,20065eea <FLASH_ClockSwitch+0x14a>
-20065e70:	4501                	c.li	a0,0
-20065e72:	dff9e097          	auipc	ra,0xdff9e
-20065e76:	8c6080e7          	jalr	ra,-1850(ra) # 3738 <FLASH_CalibrationPLLSel>
-20065e7a:	dff9e097          	auipc	ra,0xdff9e
-20065e7e:	8d2080e7          	jalr	ra,-1838(ra) # 374c <FLASH_Calibration_PSPLL_Open>
-20065e82:	4505                	c.li	a0,1
+20065dc0 <FLASH_ClockSwitch>:
+20065dc0:	1101                	c.addi	sp,-32
+20065dc2:	ca26                	c.swsp	s1,20(sp)
+20065dc4:	c452                	c.swsp	s4,8(sp)
+20065dc6:	ce06                	c.swsp	ra,28(sp)
+20065dc8:	cc22                	c.swsp	s0,24(sp)
+20065dca:	c84a                	c.swsp	s2,16(sp)
+20065dcc:	c64e                	c.swsp	s3,12(sp)
+20065dce:	c256                	c.swsp	s5,4(sp)
+20065dd0:	84aa                	c.mv	s1,a0
+20065dd2:	8a2e                	c.mv	s4,a1
+20065dd4:	c1dd                	c.beqz	a1,20065e7a <FLASH_ClockSwitch+0xba>
+20065dd6:	d01f20ef          	jal	ra,20058ad6 <Systick_State>
+20065dda:	89aa                	c.mv	s3,a0
+20065ddc:	d1bf20ef          	jal	ra,20058af6 <irq_disable_save>
+20065de0:	892a                	c.mv	s2,a0
+20065de2:	4501                	c.li	a0,0
+20065de4:	cc7f20ef          	jal	ra,20058aaa <Systick_Cmd>
+20065de8:	20001ab7          	lui	s5,0x20001
+20065dec:	4789                	c.li	a5,2
+20065dee:	864a8413          	addi	s0,s5,-1948 # 20000864 <flash_init_para>
+20065df2:	08f49e63          	bne	s1,a5,20065e8e <FLASH_ClockSwitch+0xce>
+20065df6:	4509                	c.li	a0,2
+20065df8:	dffa0097          	auipc	ra,0xdffa0
+20065dfc:	c46080e7          	jalr	ra,-954(ra) # 5a3e <RCC_PeriphClockSource_SPIC>
+20065e00:	4100c6b7          	lui	a3,0x4100c
+20065e04:	25c6a783          	lw	a5,604(a3) # 4100c25c <__km4_bd_boot_download_addr__+0x10ffa25c>
+20065e08:	7775                	c.lui	a4,0xffffd
+20065e0a:	177d                	c.addi	a4,-1
+20065e0c:	8ff9                	c.and	a5,a4
+20065e0e:	24f6ae23          	sw	a5,604(a3)
+20065e12:	06344783          	lbu	a5,99(s0) # 9063 <shell_get_argv+0x18f>
+20065e16:	c7ad                	c.beqz	a5,20065e80 <FLASH_ClockSwitch+0xc0>
+20065e18:	4501                	c.li	a0,0
+20065e1a:	dff9e097          	auipc	ra,0xdff9e
+20065e1e:	b60080e7          	jalr	ra,-1184(ra) # 397a <FLASH_CalibrationNewCmd>
+20065e22:	4505                	c.li	a0,1
+20065e24:	dff9e097          	auipc	ra,0xdff9e
+20065e28:	914080e7          	jalr	ra,-1772(ra) # 3738 <FLASH_CalibrationPLLSel>
+20065e2c:	dff9e097          	auipc	ra,0xdff9e
+20065e30:	97e080e7          	jalr	ra,-1666(ra) # 37aa <FLASH_Calibration_PSPLL_Close>
+20065e34:	4501                	c.li	a0,0
+20065e36:	dff9e097          	auipc	ra,0xdff9e
+20065e3a:	902080e7          	jalr	ra,-1790(ra) # 3738 <FLASH_CalibrationPLLSel>
+20065e3e:	dff9e097          	auipc	ra,0xdff9e
+20065e42:	96c080e7          	jalr	ra,-1684(ra) # 37aa <FLASH_Calibration_PSPLL_Close>
+20065e46:	04040ea3          	sb	zero,93(s0)
+20065e4a:	00444583          	lbu	a1,4(s0)
+20065e4e:	864a8513          	addi	a0,s5,-1948
+20065e52:	dff9d097          	auipc	ra,0xdff9d
+20065e56:	e72080e7          	jalr	ra,-398(ra) # 2cc4 <FLASH_SetSpiMode>
+20065e5a:	0c0a0c63          	beq	s4,zero,20065f32 <FLASH_ClockSwitch+0x172>
+20065e5e:	854e                	c.mv	a0,s3
+20065e60:	c4bf20ef          	jal	ra,20058aaa <Systick_Cmd>
+20065e64:	4462                	c.lwsp	s0,24(sp)
+20065e66:	40f2                	c.lwsp	ra,28(sp)
+20065e68:	44d2                	c.lwsp	s1,20(sp)
+20065e6a:	49b2                	c.lwsp	s3,12(sp)
+20065e6c:	4a22                	c.lwsp	s4,8(sp)
+20065e6e:	4a92                	c.lwsp	s5,4(sp)
+20065e70:	854a                	c.mv	a0,s2
+20065e72:	4942                	c.lwsp	s2,16(sp)
+20065e74:	6105                	c.addi16sp	sp,32
+20065e76:	c89f206f          	jal	zero,20058afe <irq_enable_restore>
+20065e7a:	4901                	c.li	s2,0
+20065e7c:	4981                	c.li	s3,0
+20065e7e:	b7ad                	c.j	20065de8 <FLASH_ClockSwitch+0x28>
+20065e80:	4581                	c.li	a1,0
+20065e82:	4501                	c.li	a0,0
 20065e84:	dff9e097          	auipc	ra,0xdff9e
-20065e88:	8b4080e7          	jalr	ra,-1868(ra) # 3738 <FLASH_CalibrationPLLSel>
-20065e8c:	dff9e097          	auipc	ra,0xdff9e
-20065e90:	8c0080e7          	jalr	ra,-1856(ra) # 374c <FLASH_Calibration_PSPLL_Open>
-20065e94:	06344503          	lbu	a0,99(s0)
-20065e98:	891d                	c.andi	a0,7
+20065e88:	cfa080e7          	jalr	ra,-774(ra) # 3b7e <FLASH_Read_HandShake_Cmd>
+20065e8c:	bf59                	c.j	20065e22 <FLASH_ClockSwitch+0x62>
+20065e8e:	ccb5                	c.beqz	s1,20065f0a <FLASH_ClockSwitch+0x14a>
+20065e90:	4501                	c.li	a0,0
+20065e92:	dff9e097          	auipc	ra,0xdff9e
+20065e96:	8a6080e7          	jalr	ra,-1882(ra) # 3738 <FLASH_CalibrationPLLSel>
 20065e9a:	dff9e097          	auipc	ra,0xdff9e
-20065e9e:	990080e7          	jalr	ra,-1648(ra) # 382a <FLASH_CalibrationPLLPS_Shift>
-20065ea2:	4100c737          	lui	a4,0x4100c
-20065ea6:	25c72783          	lw	a5,604(a4) # 4100c25c <__km4_bd_boot_download_addr__+0x10ffa25c>
-20065eaa:	668d                	c.lui	a3,0x3
-20065eac:	8fd5                	c.or	a5,a3
-20065eae:	24f72e23          	sw	a5,604(a4)
-20065eb2:	4100c6b7          	lui	a3,0x4100c
-20065eb6:	470d                	c.li	a4,3
-20065eb8:	25c6a783          	lw	a5,604(a3) # 4100c25c <__km4_bd_boot_download_addr__+0x10ffa25c>
-20065ebc:	8b8d                	c.andi	a5,3
-20065ebe:	fee79de3          	bne	a5,a4,20065eb8 <FLASH_ClockSwitch+0x118>
-20065ec2:	06344783          	lbu	a5,99(s0)
-20065ec6:	cf8d                	c.beqz	a5,20065f00 <FLASH_ClockSwitch+0x160>
-20065ec8:	4505                	c.li	a0,1
-20065eca:	dff9e097          	auipc	ra,0xdff9e
-20065ece:	ab0080e7          	jalr	ra,-1360(ra) # 397a <FLASH_CalibrationNewCmd>
-20065ed2:	4505                	c.li	a0,1
-20065ed4:	e091                	c.bnez	s1,20065ed8 <FLASH_ClockSwitch+0x138>
-20065ed6:	4501                	c.li	a0,0
-20065ed8:	dffa0097          	auipc	ra,0xdffa0
-20065edc:	b66080e7          	jalr	ra,-1178(ra) # 5a3e <RCC_PeriphClockSource_SPIC>
-20065ee0:	05c44783          	lbu	a5,92(s0)
-20065ee4:	04f40ea3          	sb	a5,93(s0)
-20065ee8:	b789                	c.j	20065e2a <FLASH_ClockSwitch+0x8a>
-20065eea:	4505                	c.li	a0,1
-20065eec:	dff9e097          	auipc	ra,0xdff9e
-20065ef0:	84c080e7          	jalr	ra,-1972(ra) # 3738 <FLASH_CalibrationPLLSel>
-20065ef4:	dff9e097          	auipc	ra,0xdff9e
-20065ef8:	858080e7          	jalr	ra,-1960(ra) # 374c <FLASH_Calibration_PSPLL_Open>
-20065efc:	4501                	c.li	a0,0
-20065efe:	b759                	c.j	20065e84 <FLASH_ClockSwitch+0xe4>
-20065f00:	05c44503          	lbu	a0,92(s0)
-20065f04:	4585                	c.li	a1,1
-20065f06:	1579                	c.addi	a0,-2
-20065f08:	dff9e097          	auipc	ra,0xdff9e
-20065f0c:	c76080e7          	jalr	ra,-906(ra) # 3b7e <FLASH_Read_HandShake_Cmd>
-20065f10:	b7c9                	c.j	20065ed2 <FLASH_ClockSwitch+0x132>
-20065f12:	40f2                	c.lwsp	ra,28(sp)
-20065f14:	4462                	c.lwsp	s0,24(sp)
-20065f16:	44d2                	c.lwsp	s1,20(sp)
-20065f18:	4942                	c.lwsp	s2,16(sp)
-20065f1a:	49b2                	c.lwsp	s3,12(sp)
-20065f1c:	4a22                	c.lwsp	s4,8(sp)
-20065f1e:	4a92                	c.lwsp	s5,4(sp)
-20065f20:	6105                	c.addi16sp	sp,32
-20065f22:	8082                	c.jr	ra
+20065e9e:	8b2080e7          	jalr	ra,-1870(ra) # 374c <FLASH_Calibration_PSPLL_Open>
+20065ea2:	4505                	c.li	a0,1
+20065ea4:	dff9e097          	auipc	ra,0xdff9e
+20065ea8:	894080e7          	jalr	ra,-1900(ra) # 3738 <FLASH_CalibrationPLLSel>
+20065eac:	dff9e097          	auipc	ra,0xdff9e
+20065eb0:	8a0080e7          	jalr	ra,-1888(ra) # 374c <FLASH_Calibration_PSPLL_Open>
+20065eb4:	06344503          	lbu	a0,99(s0)
+20065eb8:	891d                	c.andi	a0,7
+20065eba:	dff9e097          	auipc	ra,0xdff9e
+20065ebe:	970080e7          	jalr	ra,-1680(ra) # 382a <FLASH_CalibrationPLLPS_Shift>
+20065ec2:	4100c737          	lui	a4,0x4100c
+20065ec6:	25c72783          	lw	a5,604(a4) # 4100c25c <__km4_bd_boot_download_addr__+0x10ffa25c>
+20065eca:	668d                	c.lui	a3,0x3
+20065ecc:	8fd5                	c.or	a5,a3
+20065ece:	24f72e23          	sw	a5,604(a4)
+20065ed2:	4100c6b7          	lui	a3,0x4100c
+20065ed6:	470d                	c.li	a4,3
+20065ed8:	25c6a783          	lw	a5,604(a3) # 4100c25c <__km4_bd_boot_download_addr__+0x10ffa25c>
+20065edc:	8b8d                	c.andi	a5,3
+20065ede:	fee79de3          	bne	a5,a4,20065ed8 <FLASH_ClockSwitch+0x118>
+20065ee2:	06344783          	lbu	a5,99(s0)
+20065ee6:	cf8d                	c.beqz	a5,20065f20 <FLASH_ClockSwitch+0x160>
+20065ee8:	4505                	c.li	a0,1
+20065eea:	dff9e097          	auipc	ra,0xdff9e
+20065eee:	a90080e7          	jalr	ra,-1392(ra) # 397a <FLASH_CalibrationNewCmd>
+20065ef2:	4505                	c.li	a0,1
+20065ef4:	e091                	c.bnez	s1,20065ef8 <FLASH_ClockSwitch+0x138>
+20065ef6:	4501                	c.li	a0,0
+20065ef8:	dffa0097          	auipc	ra,0xdffa0
+20065efc:	b46080e7          	jalr	ra,-1210(ra) # 5a3e <RCC_PeriphClockSource_SPIC>
+20065f00:	05c44783          	lbu	a5,92(s0)
+20065f04:	04f40ea3          	sb	a5,93(s0)
+20065f08:	b789                	c.j	20065e4a <FLASH_ClockSwitch+0x8a>
+20065f0a:	4505                	c.li	a0,1
+20065f0c:	dff9e097          	auipc	ra,0xdff9e
+20065f10:	82c080e7          	jalr	ra,-2004(ra) # 3738 <FLASH_CalibrationPLLSel>
+20065f14:	dff9e097          	auipc	ra,0xdff9e
+20065f18:	838080e7          	jalr	ra,-1992(ra) # 374c <FLASH_Calibration_PSPLL_Open>
+20065f1c:	4501                	c.li	a0,0
+20065f1e:	b759                	c.j	20065ea4 <FLASH_ClockSwitch+0xe4>
+20065f20:	05c44503          	lbu	a0,92(s0)
+20065f24:	4585                	c.li	a1,1
+20065f26:	1579                	c.addi	a0,-2
+20065f28:	dff9e097          	auipc	ra,0xdff9e
+20065f2c:	c56080e7          	jalr	ra,-938(ra) # 3b7e <FLASH_Read_HandShake_Cmd>
+20065f30:	b7c9                	c.j	20065ef2 <FLASH_ClockSwitch+0x132>
+20065f32:	40f2                	c.lwsp	ra,28(sp)
+20065f34:	4462                	c.lwsp	s0,24(sp)
+20065f36:	44d2                	c.lwsp	s1,20(sp)
+20065f38:	4942                	c.lwsp	s2,16(sp)
+20065f3a:	49b2                	c.lwsp	s3,12(sp)
+20065f3c:	4a22                	c.lwsp	s4,8(sp)
+20065f3e:	4a92                	c.lwsp	s5,4(sp)
+20065f40:	6105                	c.addi16sp	sp,32
+20065f42:	8082                	c.jr	ra
 
-20065f24 <FLASH_UserMode_Exit>:
-20065f24:	4100a737          	lui	a4,0x4100a
-20065f28:	431c                	c.lw	a5,0(a4)
-20065f2a:	0786                	c.slli	a5,0x1
-20065f2c:	8385                	c.srli	a5,0x1
-20065f2e:	c31c                	c.sw	a5,0(a4)
-20065f30:	431c                	c.lw	a5,0(a4)
-20065f32:	fe07cfe3          	blt	a5,zero,20065f30 <FLASH_UserMode_Exit+0xc>
-20065f36:	0ff0000f          	fence	iorw,iorw
-20065f3a:	0001                	c.addi	zero,0
-20065f3c:	0001                	c.addi	zero,0
-20065f3e:	0001                	c.addi	zero,0
-20065f40:	0001                	c.addi	zero,0
-20065f42:	0001                	c.addi	zero,0
-20065f44:	0001                	c.addi	zero,0
-20065f46:	0001                	c.addi	zero,0
-20065f48:	0001                	c.addi	zero,0
-20065f4a:	0001                	c.addi	zero,0
-20065f4c:	0001                	c.addi	zero,0
-20065f4e:	0001                	c.addi	zero,0
-20065f50:	8082                	c.jr	ra
+20065f44 <FLASH_UserMode_Exit>:
+20065f44:	4100a737          	lui	a4,0x4100a
+20065f48:	431c                	c.lw	a5,0(a4)
+20065f4a:	0786                	c.slli	a5,0x1
+20065f4c:	8385                	c.srli	a5,0x1
+20065f4e:	c31c                	c.sw	a5,0(a4)
+20065f50:	431c                	c.lw	a5,0(a4)
+20065f52:	fe07cfe3          	blt	a5,zero,20065f50 <FLASH_UserMode_Exit+0xc>
+20065f56:	0ff0000f          	fence	iorw,iorw
+20065f5a:	0001                	c.addi	zero,0
+20065f5c:	0001                	c.addi	zero,0
+20065f5e:	0001                	c.addi	zero,0
+20065f60:	0001                	c.addi	zero,0
+20065f62:	0001                	c.addi	zero,0
+20065f64:	0001                	c.addi	zero,0
+20065f66:	0001                	c.addi	zero,0
+20065f68:	0001                	c.addi	zero,0
+20065f6a:	0001                	c.addi	zero,0
+20065f6c:	0001                	c.addi	zero,0
+20065f6e:	0001                	c.addi	zero,0
+20065f70:	8082                	c.jr	ra
 
-20065f52 <FLASH_WaitBusy_InUserMode>:
-20065f52:	7179                	c.addi16sp	sp,-48
-20065f54:	d422                	c.swsp	s0,40(sp)
-20065f56:	20001437          	lui	s0,0x20001
-20065f5a:	d226                	c.swsp	s1,36(sp)
-20065f5c:	d04a                	c.swsp	s2,32(sp)
-20065f5e:	ce4e                	c.swsp	s3,28(sp)
-20065f60:	cc52                	c.swsp	s4,24(sp)
-20065f62:	ca56                	c.swsp	s5,20(sp)
-20065f64:	d606                	c.swsp	ra,44(sp)
-20065f66:	84aa                	c.mv	s1,a0
-20065f68:	000107a3          	sb	zero,15(sp)
-20065f6c:	4781                	c.li	a5,0
-20065f6e:	4911                	c.li	s2,4
-20065f70:	4985                	c.li	s3,1
-20065f72:	4a0d                	c.li	s4,3
-20065f74:	86440413          	addi	s0,s0,-1948 # 20000864 <flash_init_para>
-20065f78:	4100aab7          	lui	s5,0x4100a
-20065f7c:	ec91                	c.bnez	s1,20065f98 <FLASH_WaitBusy_InUserMode+0x46>
-20065f7e:	028aa783          	lw	a5,40(s5) # 4100a028 <__km4_bd_boot_download_addr__+0x10ff8028>
-20065f82:	8b85                	c.andi	a5,1
-20065f84:	ffe5                	c.bnez	a5,20065f7c <FLASH_WaitBusy_InUserMode+0x2a>
-20065f86:	50b2                	c.lwsp	ra,44(sp)
-20065f88:	5422                	c.lwsp	s0,40(sp)
-20065f8a:	5492                	c.lwsp	s1,36(sp)
-20065f8c:	5902                	c.lwsp	s2,32(sp)
-20065f8e:	49f2                	c.lwsp	s3,28(sp)
-20065f90:	4a62                	c.lwsp	s4,24(sp)
-20065f92:	4ad2                	c.lwsp	s5,20(sp)
-20065f94:	6145                	c.addi16sp	sp,48
-20065f96:	8082                	c.jr	ra
-20065f98:	01249563          	bne	s1,s2,20065fa2 <FLASH_WaitBusy_InUserMode+0x50>
-20065f9c:	008aa783          	lw	a5,8(s5)
-20065fa0:	b7cd                	c.j	20065f82 <FLASH_WaitBusy_InUserMode+0x30>
-20065fa2:	01349d63          	bne	s1,s3,20065fbc <FLASH_WaitBusy_InUserMode+0x6a>
-20065fa6:	05244503          	lbu	a0,82(s0)
-20065faa:	00f10613          	addi	a2,sp,15
-20065fae:	4585                	c.li	a1,1
-20065fb0:	288d                	c.jal	20066022 <FLASH_RxCmd_InUserMode>
-20065fb2:	00f14783          	lbu	a5,15(sp)
-20065fb6:	4818                	c.lw	a4,16(s0)
-20065fb8:	8ff9                	c.and	a5,a4
-20065fba:	b7e9                	c.j	20065f84 <FLASH_WaitBusy_InUserMode+0x32>
-20065fbc:	fd4494e3          	bne	s1,s4,20065f84 <FLASH_WaitBusy_InUserMode+0x32>
-20065fc0:	05244503          	lbu	a0,82(s0)
-20065fc4:	00f10613          	addi	a2,sp,15
-20065fc8:	4585                	c.li	a1,1
-20065fca:	28a1                	c.jal	20066022 <FLASH_RxCmd_InUserMode>
-20065fcc:	00f14703          	lbu	a4,15(sp)
-20065fd0:	4854                	c.lw	a3,20(s0)
-20065fd2:	4785                	c.li	a5,1
-20065fd4:	8ef9                	c.and	a3,a4
-20065fd6:	d6dd                	c.beqz	a3,20065f84 <FLASH_WaitBusy_InUserMode+0x32>
-20065fd8:	481c                	c.lw	a5,16(s0)
-20065fda:	8ff9                	c.and	a5,a4
-20065fdc:	00f037b3          	sltu	a5,zero,a5
-20065fe0:	b755                	c.j	20065f84 <FLASH_WaitBusy_InUserMode+0x32>
+20065f72 <FLASH_WaitBusy_InUserMode>:
+20065f72:	7179                	c.addi16sp	sp,-48
+20065f74:	d422                	c.swsp	s0,40(sp)
+20065f76:	20001437          	lui	s0,0x20001
+20065f7a:	d226                	c.swsp	s1,36(sp)
+20065f7c:	d04a                	c.swsp	s2,32(sp)
+20065f7e:	ce4e                	c.swsp	s3,28(sp)
+20065f80:	cc52                	c.swsp	s4,24(sp)
+20065f82:	ca56                	c.swsp	s5,20(sp)
+20065f84:	d606                	c.swsp	ra,44(sp)
+20065f86:	84aa                	c.mv	s1,a0
+20065f88:	000107a3          	sb	zero,15(sp)
+20065f8c:	4781                	c.li	a5,0
+20065f8e:	4911                	c.li	s2,4
+20065f90:	4985                	c.li	s3,1
+20065f92:	4a0d                	c.li	s4,3
+20065f94:	86440413          	addi	s0,s0,-1948 # 20000864 <flash_init_para>
+20065f98:	4100aab7          	lui	s5,0x4100a
+20065f9c:	ec91                	c.bnez	s1,20065fb8 <FLASH_WaitBusy_InUserMode+0x46>
+20065f9e:	028aa783          	lw	a5,40(s5) # 4100a028 <__km4_bd_boot_download_addr__+0x10ff8028>
+20065fa2:	8b85                	c.andi	a5,1
+20065fa4:	ffe5                	c.bnez	a5,20065f9c <FLASH_WaitBusy_InUserMode+0x2a>
+20065fa6:	50b2                	c.lwsp	ra,44(sp)
+20065fa8:	5422                	c.lwsp	s0,40(sp)
+20065faa:	5492                	c.lwsp	s1,36(sp)
+20065fac:	5902                	c.lwsp	s2,32(sp)
+20065fae:	49f2                	c.lwsp	s3,28(sp)
+20065fb0:	4a62                	c.lwsp	s4,24(sp)
+20065fb2:	4ad2                	c.lwsp	s5,20(sp)
+20065fb4:	6145                	c.addi16sp	sp,48
+20065fb6:	8082                	c.jr	ra
+20065fb8:	01249563          	bne	s1,s2,20065fc2 <FLASH_WaitBusy_InUserMode+0x50>
+20065fbc:	008aa783          	lw	a5,8(s5)
+20065fc0:	b7cd                	c.j	20065fa2 <FLASH_WaitBusy_InUserMode+0x30>
+20065fc2:	01349d63          	bne	s1,s3,20065fdc <FLASH_WaitBusy_InUserMode+0x6a>
+20065fc6:	05244503          	lbu	a0,82(s0)
+20065fca:	00f10613          	addi	a2,sp,15
+20065fce:	4585                	c.li	a1,1
+20065fd0:	288d                	c.jal	20066042 <FLASH_RxCmd_InUserMode>
+20065fd2:	00f14783          	lbu	a5,15(sp)
+20065fd6:	4818                	c.lw	a4,16(s0)
+20065fd8:	8ff9                	c.and	a5,a4
+20065fda:	b7e9                	c.j	20065fa4 <FLASH_WaitBusy_InUserMode+0x32>
+20065fdc:	fd4494e3          	bne	s1,s4,20065fa4 <FLASH_WaitBusy_InUserMode+0x32>
+20065fe0:	05244503          	lbu	a0,82(s0)
+20065fe4:	00f10613          	addi	a2,sp,15
+20065fe8:	4585                	c.li	a1,1
+20065fea:	28a1                	c.jal	20066042 <FLASH_RxCmd_InUserMode>
+20065fec:	00f14703          	lbu	a4,15(sp)
+20065ff0:	4854                	c.lw	a3,20(s0)
+20065ff2:	4785                	c.li	a5,1
+20065ff4:	8ef9                	c.and	a3,a4
+20065ff6:	d6dd                	c.beqz	a3,20065fa4 <FLASH_WaitBusy_InUserMode+0x32>
+20065ff8:	481c                	c.lw	a5,16(s0)
+20065ffa:	8ff9                	c.and	a5,a4
+20065ffc:	00f037b3          	sltu	a5,zero,a5
+20066000:	b755                	c.j	20065fa4 <FLASH_WaitBusy_InUserMode+0x32>
 
-20065fe2 <FLASH_UserMode_Enter>:
-20065fe2:	1141                	c.addi	sp,-16
-20065fe4:	c606                	c.swsp	ra,12(sp)
-20065fe6:	0ff0000f          	fence	iorw,iorw
-20065fea:	0ff0000f          	fence	iorw,iorw
-20065fee:	0001                	c.addi	zero,0
-20065ff0:	0001                	c.addi	zero,0
-20065ff2:	0001                	c.addi	zero,0
-20065ff4:	0001                	c.addi	zero,0
-20065ff6:	0001                	c.addi	zero,0
-20065ff8:	0001                	c.addi	zero,0
-20065ffa:	0001                	c.addi	zero,0
-20065ffc:	0001                	c.addi	zero,0
-20065ffe:	0001                	c.addi	zero,0
-20066000:	0001                	c.addi	zero,0
-20066002:	0001                	c.addi	zero,0
-20066004:	4501                	c.li	a0,0
-20066006:	37b1                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-20066008:	4100a737          	lui	a4,0x4100a
-2006600c:	431c                	c.lw	a5,0(a4)
-2006600e:	800006b7          	lui	a3,0x80000
-20066012:	8fd5                	c.or	a5,a3
-20066014:	c31c                	c.sw	a5,0(a4)
-20066016:	431c                	c.lw	a5,0(a4)
-20066018:	fe07dfe3          	bge	a5,zero,20066016 <FLASH_UserMode_Enter+0x34>
-2006601c:	40b2                	c.lwsp	ra,12(sp)
-2006601e:	0141                	c.addi	sp,16
-20066020:	8082                	c.jr	ra
+20066002 <FLASH_UserMode_Enter>:
+20066002:	1141                	c.addi	sp,-16
+20066004:	c606                	c.swsp	ra,12(sp)
+20066006:	0ff0000f          	fence	iorw,iorw
+2006600a:	0ff0000f          	fence	iorw,iorw
+2006600e:	0001                	c.addi	zero,0
+20066010:	0001                	c.addi	zero,0
+20066012:	0001                	c.addi	zero,0
+20066014:	0001                	c.addi	zero,0
+20066016:	0001                	c.addi	zero,0
+20066018:	0001                	c.addi	zero,0
+2006601a:	0001                	c.addi	zero,0
+2006601c:	0001                	c.addi	zero,0
+2006601e:	0001                	c.addi	zero,0
+20066020:	0001                	c.addi	zero,0
+20066022:	0001                	c.addi	zero,0
+20066024:	4501                	c.li	a0,0
+20066026:	37b1                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+20066028:	4100a737          	lui	a4,0x4100a
+2006602c:	431c                	c.lw	a5,0(a4)
+2006602e:	800006b7          	lui	a3,0x80000
+20066032:	8fd5                	c.or	a5,a3
+20066034:	c31c                	c.sw	a5,0(a4)
+20066036:	431c                	c.lw	a5,0(a4)
+20066038:	fe07dfe3          	bge	a5,zero,20066036 <FLASH_UserMode_Enter+0x34>
+2006603c:	40b2                	c.lwsp	ra,12(sp)
+2006603e:	0141                	c.addi	sp,16
+20066040:	8082                	c.jr	ra
 
-20066022 <FLASH_RxCmd_InUserMode>:
-20066022:	1101                	c.addi	sp,-32
-20066024:	cc22                	c.swsp	s0,24(sp)
-20066026:	20001437          	lui	s0,0x20001
-2006602a:	ca26                	c.swsp	s1,20(sp)
-2006602c:	c64e                	c.swsp	s3,12(sp)
-2006602e:	84ae                	c.mv	s1,a1
-20066030:	89aa                	c.mv	s3,a0
-20066032:	4581                	c.li	a1,0
-20066034:	86440513          	addi	a0,s0,-1948 # 20000864 <flash_init_para>
-20066038:	c84a                	c.swsp	s2,16(sp)
-2006603a:	ce06                	c.swsp	ra,28(sp)
-2006603c:	8932                	c.mv	s2,a2
-2006603e:	dff9d097          	auipc	ra,0xdff9d
-20066042:	c86080e7          	jalr	ra,-890(ra) # 2cc4 <FLASH_SetSpiMode>
-20066046:	4100a7b7          	lui	a5,0x4100a
-2006604a:	10078613          	addi	a2,a5,256 # 4100a100 <__km4_bd_boot_download_addr__+0x10ff8100>
-2006604e:	4e18                	c.lw	a4,24(a2)
-20066050:	fff106b7          	lui	a3,0xfff10
-20066054:	fff68593          	addi	a1,a3,-1 # fff0ffff <__ctrace_end__+0x35f0ffff>
-20066058:	8f6d                	c.and	a4,a1
-2006605a:	ce18                	c.sw	a4,24(a2)
-2006605c:	00849713          	slli	a4,s1,0x8
-20066060:	8321                	c.srli	a4,0x8
-20066062:	c3d8                	c.sw	a4,4(a5)
-20066064:	1207a823          	sw	zero,304(a5)
-20066068:	4398                	c.lw	a4,0(a5)
-2006606a:	cff68693          	addi	a3,a3,-769
-2006606e:	8f75                	c.and	a4,a3
-20066070:	30076713          	ori	a4,a4,768
-20066074:	c398                	c.sw	a4,0(a5)
-20066076:	07378023          	sb	s3,96(a5)
-2006607a:	4705                	c.li	a4,1
-2006607c:	c798                	c.sw	a4,8(a5)
-2006607e:	4100a6b7          	lui	a3,0x4100a
-20066082:	4781                	c.li	a5,0
-20066084:	02979463          	bne	a5,s1,200660ac <FLASH_RxCmd_InUserMode+0x8a>
-20066088:	4511                	c.li	a0,4
-2006608a:	35e1                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-2006608c:	86440793          	addi	a5,s0,-1948
-20066090:	86440513          	addi	a0,s0,-1948
-20066094:	4462                	c.lwsp	s0,24(sp)
-20066096:	40f2                	c.lwsp	ra,28(sp)
-20066098:	44d2                	c.lwsp	s1,20(sp)
-2006609a:	4942                	c.lwsp	s2,16(sp)
-2006609c:	49b2                	c.lwsp	s3,12(sp)
-2006609e:	0047c583          	lbu	a1,4(a5)
-200660a2:	6105                	c.addi16sp	sp,32
-200660a4:	dff9d317          	auipc	t1,0xdff9d
-200660a8:	c2030067          	jalr	zero,-992(t1) # 2cc4 <FLASH_SetSpiMode>
-200660ac:	5698                	c.lw	a4,40(a3)
-200660ae:	8b21                	c.andi	a4,8
-200660b0:	db71                	c.beqz	a4,20066084 <FLASH_RxCmd_InUserMode+0x62>
-200660b2:	0606c603          	lbu	a2,96(a3) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
-200660b6:	00f90733          	add	a4,s2,a5
-200660ba:	0785                	c.addi	a5,1
-200660bc:	00c70023          	sb	a2,0(a4) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
-200660c0:	b7d1                	c.j	20066084 <FLASH_RxCmd_InUserMode+0x62>
+20066042 <FLASH_RxCmd_InUserMode>:
+20066042:	1101                	c.addi	sp,-32
+20066044:	cc22                	c.swsp	s0,24(sp)
+20066046:	20001437          	lui	s0,0x20001
+2006604a:	ca26                	c.swsp	s1,20(sp)
+2006604c:	c64e                	c.swsp	s3,12(sp)
+2006604e:	84ae                	c.mv	s1,a1
+20066050:	89aa                	c.mv	s3,a0
+20066052:	4581                	c.li	a1,0
+20066054:	86440513          	addi	a0,s0,-1948 # 20000864 <flash_init_para>
+20066058:	c84a                	c.swsp	s2,16(sp)
+2006605a:	ce06                	c.swsp	ra,28(sp)
+2006605c:	8932                	c.mv	s2,a2
+2006605e:	dff9d097          	auipc	ra,0xdff9d
+20066062:	c66080e7          	jalr	ra,-922(ra) # 2cc4 <FLASH_SetSpiMode>
+20066066:	4100a7b7          	lui	a5,0x4100a
+2006606a:	10078613          	addi	a2,a5,256 # 4100a100 <__km4_bd_boot_download_addr__+0x10ff8100>
+2006606e:	4e18                	c.lw	a4,24(a2)
+20066070:	fff106b7          	lui	a3,0xfff10
+20066074:	fff68593          	addi	a1,a3,-1 # fff0ffff <__ctrace_end__+0x35f0ffff>
+20066078:	8f6d                	c.and	a4,a1
+2006607a:	ce18                	c.sw	a4,24(a2)
+2006607c:	00849713          	slli	a4,s1,0x8
+20066080:	8321                	c.srli	a4,0x8
+20066082:	c3d8                	c.sw	a4,4(a5)
+20066084:	1207a823          	sw	zero,304(a5)
+20066088:	4398                	c.lw	a4,0(a5)
+2006608a:	cff68693          	addi	a3,a3,-769
+2006608e:	8f75                	c.and	a4,a3
+20066090:	30076713          	ori	a4,a4,768
+20066094:	c398                	c.sw	a4,0(a5)
+20066096:	07378023          	sb	s3,96(a5)
+2006609a:	4705                	c.li	a4,1
+2006609c:	c798                	c.sw	a4,8(a5)
+2006609e:	4100a6b7          	lui	a3,0x4100a
+200660a2:	4781                	c.li	a5,0
+200660a4:	02979463          	bne	a5,s1,200660cc <FLASH_RxCmd_InUserMode+0x8a>
+200660a8:	4511                	c.li	a0,4
+200660aa:	35e1                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+200660ac:	86440793          	addi	a5,s0,-1948
+200660b0:	86440513          	addi	a0,s0,-1948
+200660b4:	4462                	c.lwsp	s0,24(sp)
+200660b6:	40f2                	c.lwsp	ra,28(sp)
+200660b8:	44d2                	c.lwsp	s1,20(sp)
+200660ba:	4942                	c.lwsp	s2,16(sp)
+200660bc:	49b2                	c.lwsp	s3,12(sp)
+200660be:	0047c583          	lbu	a1,4(a5)
+200660c2:	6105                	c.addi16sp	sp,32
+200660c4:	dff9d317          	auipc	t1,0xdff9d
+200660c8:	c0030067          	jalr	zero,-1024(t1) # 2cc4 <FLASH_SetSpiMode>
+200660cc:	5698                	c.lw	a4,40(a3)
+200660ce:	8b21                	c.andi	a4,8
+200660d0:	db71                	c.beqz	a4,200660a4 <FLASH_RxCmd_InUserMode+0x62>
+200660d2:	0606c603          	lbu	a2,96(a3) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
+200660d6:	00f90733          	add	a4,s2,a5
+200660da:	0785                	c.addi	a5,1
+200660dc:	00c70023          	sb	a2,0(a4) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
+200660e0:	b7d1                	c.j	200660a4 <FLASH_RxCmd_InUserMode+0x62>
 
-200660c2 <FLASH_RxCmd>:
-200660c2:	1101                	c.addi	sp,-32
-200660c4:	ce06                	c.swsp	ra,28(sp)
-200660c6:	c62a                	c.swsp	a0,12(sp)
-200660c8:	c42e                	c.swsp	a1,8(sp)
-200660ca:	c232                	c.swsp	a2,4(sp)
-200660cc:	3f19                	c.jal	20065fe2 <FLASH_UserMode_Enter>
-200660ce:	4612                	c.lwsp	a2,4(sp)
-200660d0:	45a2                	c.lwsp	a1,8(sp)
-200660d2:	4532                	c.lwsp	a0,12(sp)
-200660d4:	37b9                	c.jal	20066022 <FLASH_RxCmd_InUserMode>
-200660d6:	40f2                	c.lwsp	ra,28(sp)
-200660d8:	6105                	c.addi16sp	sp,32
-200660da:	b5a9                	c.j	20065f24 <FLASH_UserMode_Exit>
+200660e2 <FLASH_RxCmd>:
+200660e2:	1101                	c.addi	sp,-32
+200660e4:	ce06                	c.swsp	ra,28(sp)
+200660e6:	c62a                	c.swsp	a0,12(sp)
+200660e8:	c42e                	c.swsp	a1,8(sp)
+200660ea:	c232                	c.swsp	a2,4(sp)
+200660ec:	3f19                	c.jal	20066002 <FLASH_UserMode_Enter>
+200660ee:	4612                	c.lwsp	a2,4(sp)
+200660f0:	45a2                	c.lwsp	a1,8(sp)
+200660f2:	4532                	c.lwsp	a0,12(sp)
+200660f4:	37b9                	c.jal	20066042 <FLASH_RxCmd_InUserMode>
+200660f6:	40f2                	c.lwsp	ra,28(sp)
+200660f8:	6105                	c.addi16sp	sp,32
+200660fa:	b5a9                	c.j	20065f44 <FLASH_UserMode_Exit>
 
-200660dc <FLASH_TxCmd_InUserMode>:
-200660dc:	4100a7b7          	lui	a5,0x4100a
-200660e0:	1141                	c.addi	sp,-16
-200660e2:	c606                	c.swsp	ra,12(sp)
-200660e4:	c422                	c.swsp	s0,8(sp)
-200660e6:	c226                	c.swsp	s1,4(sp)
-200660e8:	c04a                	c.swsp	s2,0(sp)
-200660ea:	10078713          	addi	a4,a5,256 # 4100a100 <__km4_bd_boot_download_addr__+0x10ff8100>
-200660ee:	01872903          	lw	s2,24(a4)
-200660f2:	4384                	c.lw	s1,0(a5)
-200660f4:	4394                	c.lw	a3,0(a5)
-200660f6:	ffc10837          	lui	a6,0xffc10
-200660fa:	cff80813          	addi	a6,a6,-769 # ffc0fcff <__ctrace_end__+0x35c0fcff>
-200660fe:	0106f6b3          	and	a3,a3,a6
-20066102:	c394                	c.sw	a3,0(a5)
-20066104:	4f14                	c.lw	a3,24(a4)
-20066106:	fff10837          	lui	a6,0xfff10
-2006610a:	187d                	c.addi	a6,-1
-2006610c:	0106f6b3          	and	a3,a3,a6
-20066110:	cf14                	c.sw	a3,24(a4)
-20066112:	0007a223          	sw	zero,4(a5)
-20066116:	db0c                	c.sw	a1,48(a4)
-20066118:	06a78023          	sb	a0,96(a5)
-2006611c:	4100a737          	lui	a4,0x4100a
-20066120:	4781                	c.li	a5,0
-20066122:	02b7e163          	bltu	a5,a1,20066144 <FLASH_TxCmd_InUserMode+0x68>
-20066126:	4100a437          	lui	s0,0x4100a
-2006612a:	4785                	c.li	a5,1
-2006612c:	c41c                	c.sw	a5,8(s0)
-2006612e:	4511                	c.li	a0,4
-20066130:	350d                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-20066132:	11242c23          	sw	s2,280(s0) # 4100a118 <__km4_bd_boot_download_addr__+0x10ff8118>
-20066136:	c004                	c.sw	s1,0(s0)
-20066138:	40b2                	c.lwsp	ra,12(sp)
-2006613a:	4422                	c.lwsp	s0,8(sp)
-2006613c:	4492                	c.lwsp	s1,4(sp)
-2006613e:	4902                	c.lwsp	s2,0(sp)
-20066140:	0141                	c.addi	sp,16
-20066142:	8082                	c.jr	ra
-20066144:	00f606b3          	add	a3,a2,a5
-20066148:	0006c683          	lbu	a3,0(a3)
-2006614c:	0785                	c.addi	a5,1
-2006614e:	06d70023          	sb	a3,96(a4) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
-20066152:	bfc1                	c.j	20066122 <FLASH_TxCmd_InUserMode+0x46>
+200660fc <FLASH_TxCmd_InUserMode>:
+200660fc:	4100a7b7          	lui	a5,0x4100a
+20066100:	1141                	c.addi	sp,-16
+20066102:	c606                	c.swsp	ra,12(sp)
+20066104:	c422                	c.swsp	s0,8(sp)
+20066106:	c226                	c.swsp	s1,4(sp)
+20066108:	c04a                	c.swsp	s2,0(sp)
+2006610a:	10078713          	addi	a4,a5,256 # 4100a100 <__km4_bd_boot_download_addr__+0x10ff8100>
+2006610e:	01872903          	lw	s2,24(a4)
+20066112:	4384                	c.lw	s1,0(a5)
+20066114:	4394                	c.lw	a3,0(a5)
+20066116:	ffc10837          	lui	a6,0xffc10
+2006611a:	cff80813          	addi	a6,a6,-769 # ffc0fcff <__ctrace_end__+0x35c0fcff>
+2006611e:	0106f6b3          	and	a3,a3,a6
+20066122:	c394                	c.sw	a3,0(a5)
+20066124:	4f14                	c.lw	a3,24(a4)
+20066126:	fff10837          	lui	a6,0xfff10
+2006612a:	187d                	c.addi	a6,-1
+2006612c:	0106f6b3          	and	a3,a3,a6
+20066130:	cf14                	c.sw	a3,24(a4)
+20066132:	0007a223          	sw	zero,4(a5)
+20066136:	db0c                	c.sw	a1,48(a4)
+20066138:	06a78023          	sb	a0,96(a5)
+2006613c:	4100a737          	lui	a4,0x4100a
+20066140:	4781                	c.li	a5,0
+20066142:	02b7e163          	bltu	a5,a1,20066164 <FLASH_TxCmd_InUserMode+0x68>
+20066146:	4100a437          	lui	s0,0x4100a
+2006614a:	4785                	c.li	a5,1
+2006614c:	c41c                	c.sw	a5,8(s0)
+2006614e:	4511                	c.li	a0,4
+20066150:	350d                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+20066152:	11242c23          	sw	s2,280(s0) # 4100a118 <__km4_bd_boot_download_addr__+0x10ff8118>
+20066156:	c004                	c.sw	s1,0(s0)
+20066158:	40b2                	c.lwsp	ra,12(sp)
+2006615a:	4422                	c.lwsp	s0,8(sp)
+2006615c:	4492                	c.lwsp	s1,4(sp)
+2006615e:	4902                	c.lwsp	s2,0(sp)
+20066160:	0141                	c.addi	sp,16
+20066162:	8082                	c.jr	ra
+20066164:	00f606b3          	add	a3,a2,a5
+20066168:	0006c683          	lbu	a3,0(a3)
+2006616c:	0785                	c.addi	a5,1
+2006616e:	06d70023          	sb	a3,96(a4) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
+20066172:	bfc1                	c.j	20066142 <FLASH_TxCmd_InUserMode+0x46>
 
-20066154 <FLASH_WriteEn_InUserMode>:
-20066154:	1141                	c.addi	sp,-16
-20066156:	4505                	c.li	a0,1
-20066158:	c606                	c.swsp	ra,12(sp)
-2006615a:	3be5                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-2006615c:	200017b7          	lui	a5,0x20001
-20066160:	8b47c503          	lbu	a0,-1868(a5) # 200008b4 <flash_init_para+0x50>
-20066164:	4601                	c.li	a2,0
-20066166:	4581                	c.li	a1,0
-20066168:	3f95                	c.jal	200660dc <FLASH_TxCmd_InUserMode>
-2006616a:	40b2                	c.lwsp	ra,12(sp)
-2006616c:	450d                	c.li	a0,3
-2006616e:	0141                	c.addi	sp,16
-20066170:	b3cd                	c.j	20065f52 <FLASH_WaitBusy_InUserMode>
+20066174 <FLASH_WriteEn_InUserMode>:
+20066174:	1141                	c.addi	sp,-16
+20066176:	4505                	c.li	a0,1
+20066178:	c606                	c.swsp	ra,12(sp)
+2006617a:	3be5                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+2006617c:	200017b7          	lui	a5,0x20001
+20066180:	8b47c503          	lbu	a0,-1868(a5) # 200008b4 <flash_init_para+0x50>
+20066184:	4601                	c.li	a2,0
+20066186:	4581                	c.li	a1,0
+20066188:	3f95                	c.jal	200660fc <FLASH_TxCmd_InUserMode>
+2006618a:	40b2                	c.lwsp	ra,12(sp)
+2006618c:	450d                	c.li	a0,3
+2006618e:	0141                	c.addi	sp,16
+20066190:	b3cd                	c.j	20065f72 <FLASH_WaitBusy_InUserMode>
 
-20066172 <FLASH_TxData>:
-20066172:	1101                	c.addi	sp,-32
-20066174:	0ff57793          	andi	a5,a0,255
-20066178:	cc22                	c.swsp	s0,24(sp)
-2006617a:	ca26                	c.swsp	s1,20(sp)
-2006617c:	c84a                	c.swsp	s2,16(sp)
-2006617e:	ce06                	c.swsp	ra,28(sp)
-20066180:	c64e                	c.swsp	s3,12(sp)
-20066182:	97ae                	c.add	a5,a1
-20066184:	10000713          	addi	a4,zero,256
-20066188:	842a                	c.mv	s0,a0
-2006618a:	84ae                	c.mv	s1,a1
-2006618c:	8932                	c.mv	s2,a2
-2006618e:	00f77a63          	bgeu	a4,a5,200661a2 <FLASH_TxData+0x30>
-20066192:	20062537          	lui	a0,0x20062
-20066196:	23a00593          	addi	a1,zero,570
-2006619a:	00850513          	addi	a0,a0,8 # 20062008 <strtol+0xe>
-2006619e:	f0ef90ef          	jal	ra,2005f8ac <io_assert_failed>
-200661a2:	3581                	c.jal	20065fe2 <FLASH_UserMode_Enter>
-200661a4:	3f45                	c.jal	20066154 <FLASH_WriteEn_InUserMode>
-200661a6:	4100a7b7          	lui	a5,0x4100a
-200661aa:	0007a983          	lw	s3,0(a5) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
-200661ae:	4398                	c.lw	a4,0(a5)
-200661b0:	ffc106b7          	lui	a3,0xffc10
-200661b4:	cff68693          	addi	a3,a3,-769 # ffc0fcff <__ctrace_end__+0x35c0fcff>
-200661b8:	8f75                	c.and	a4,a3
-200661ba:	200016b7          	lui	a3,0x20001
-200661be:	c398                	c.sw	a4,0(a5)
-200661c0:	86468693          	addi	a3,a3,-1948 # 20000864 <flash_init_para>
-200661c4:	0646c703          	lbu	a4,100(a3)
-200661c8:	1187a603          	lw	a2,280(a5)
-200661cc:	000f05b7          	lui	a1,0xf0
-200661d0:	0742                	c.slli	a4,0x10
-200661d2:	8f6d                	c.and	a4,a1
-200661d4:	fff105b7          	lui	a1,0xfff10
-200661d8:	15fd                	c.addi	a1,-1
-200661da:	8e6d                	c.and	a2,a1
-200661dc:	8f51                	c.or	a4,a2
-200661de:	10e7ac23          	sw	a4,280(a5)
-200661e2:	00849713          	slli	a4,s1,0x8
-200661e6:	0007a223          	sw	zero,4(a5)
-200661ea:	8321                	c.srli	a4,0x8
-200661ec:	12e7a823          	sw	a4,304(a5)
-200661f0:	4709                	c.li	a4,2
-200661f2:	06e78023          	sb	a4,96(a5)
-200661f6:	0646c683          	lbu	a3,100(a3)
-200661fa:	4711                	c.li	a4,4
-200661fc:	00e69663          	bne	a3,a4,20066208 <FLASH_TxData+0x96>
-20066200:	01845713          	srli	a4,s0,0x18
-20066204:	06e78023          	sb	a4,96(a5)
-20066208:	01045713          	srli	a4,s0,0x10
-2006620c:	4100a7b7          	lui	a5,0x4100a
-20066210:	0ff77713          	andi	a4,a4,255
-20066214:	06e78023          	sb	a4,96(a5) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
-20066218:	00845713          	srli	a4,s0,0x8
-2006621c:	0ff77713          	andi	a4,a4,255
-20066220:	06e78023          	sb	a4,96(a5)
-20066224:	0ff47413          	andi	s0,s0,255
-20066228:	06878023          	sb	s0,96(a5)
-2006622c:	4100a6b7          	lui	a3,0x4100a
-20066230:	4781                	c.li	a5,0
-20066232:	00978563          	beq	a5,s1,2006623c <FLASH_TxData+0xca>
-20066236:	5698                	c.lw	a4,40(a3)
-20066238:	8b09                	c.andi	a4,2
-2006623a:	eb05                	c.bnez	a4,2006626a <FLASH_TxData+0xf8>
-2006623c:	4685                	c.li	a3,1
-2006623e:	4100a737          	lui	a4,0x4100a
-20066242:	c714                	c.sw	a3,8(a4)
-20066244:	4100a6b7          	lui	a3,0x4100a
-20066248:	0297e963          	bltu	a5,s1,2006627a <FLASH_TxData+0x108>
-2006624c:	4511                	c.li	a0,4
-2006624e:	3311                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-20066250:	4100a7b7          	lui	a5,0x4100a
-20066254:	0137a023          	sw	s3,0(a5) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
-20066258:	4505                	c.li	a0,1
-2006625a:	39e5                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-2006625c:	4462                	c.lwsp	s0,24(sp)
-2006625e:	40f2                	c.lwsp	ra,28(sp)
-20066260:	44d2                	c.lwsp	s1,20(sp)
-20066262:	4942                	c.lwsp	s2,16(sp)
-20066264:	49b2                	c.lwsp	s3,12(sp)
-20066266:	6105                	c.addi16sp	sp,32
-20066268:	b975                	c.j	20065f24 <FLASH_UserMode_Exit>
-2006626a:	00f90733          	add	a4,s2,a5
-2006626e:	00074703          	lbu	a4,0(a4) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
-20066272:	0785                	c.addi	a5,1
-20066274:	06e68023          	sb	a4,96(a3) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
-20066278:	bf6d                	c.j	20066232 <FLASH_TxData+0xc0>
-2006627a:	5698                	c.lw	a4,40(a3)
-2006627c:	8b09                	c.andi	a4,2
-2006627e:	d769                	c.beqz	a4,20066248 <FLASH_TxData+0xd6>
-20066280:	00f90733          	add	a4,s2,a5
-20066284:	00074703          	lbu	a4,0(a4)
-20066288:	0785                	c.addi	a5,1
-2006628a:	06e68023          	sb	a4,96(a3)
-2006628e:	bf6d                	c.j	20066248 <FLASH_TxData+0xd6>
+20066192 <FLASH_TxData>:
+20066192:	1101                	c.addi	sp,-32
+20066194:	0ff57793          	andi	a5,a0,255
+20066198:	cc22                	c.swsp	s0,24(sp)
+2006619a:	ca26                	c.swsp	s1,20(sp)
+2006619c:	c84a                	c.swsp	s2,16(sp)
+2006619e:	ce06                	c.swsp	ra,28(sp)
+200661a0:	c64e                	c.swsp	s3,12(sp)
+200661a2:	97ae                	c.add	a5,a1
+200661a4:	10000713          	addi	a4,zero,256
+200661a8:	842a                	c.mv	s0,a0
+200661aa:	84ae                	c.mv	s1,a1
+200661ac:	8932                	c.mv	s2,a2
+200661ae:	00f77a63          	bgeu	a4,a5,200661c2 <FLASH_TxData+0x30>
+200661b2:	20062537          	lui	a0,0x20062
+200661b6:	23a00593          	addi	a1,zero,570
+200661ba:	01050513          	addi	a0,a0,16 # 20062010 <strtol+0xe>
+200661be:	eeef90ef          	jal	ra,2005f8ac <io_assert_failed>
+200661c2:	3581                	c.jal	20066002 <FLASH_UserMode_Enter>
+200661c4:	3f45                	c.jal	20066174 <FLASH_WriteEn_InUserMode>
+200661c6:	4100a7b7          	lui	a5,0x4100a
+200661ca:	0007a983          	lw	s3,0(a5) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
+200661ce:	4398                	c.lw	a4,0(a5)
+200661d0:	ffc106b7          	lui	a3,0xffc10
+200661d4:	cff68693          	addi	a3,a3,-769 # ffc0fcff <__ctrace_end__+0x35c0fcff>
+200661d8:	8f75                	c.and	a4,a3
+200661da:	200016b7          	lui	a3,0x20001
+200661de:	c398                	c.sw	a4,0(a5)
+200661e0:	86468693          	addi	a3,a3,-1948 # 20000864 <flash_init_para>
+200661e4:	0646c703          	lbu	a4,100(a3)
+200661e8:	1187a603          	lw	a2,280(a5)
+200661ec:	000f05b7          	lui	a1,0xf0
+200661f0:	0742                	c.slli	a4,0x10
+200661f2:	8f6d                	c.and	a4,a1
+200661f4:	fff105b7          	lui	a1,0xfff10
+200661f8:	15fd                	c.addi	a1,-1
+200661fa:	8e6d                	c.and	a2,a1
+200661fc:	8f51                	c.or	a4,a2
+200661fe:	10e7ac23          	sw	a4,280(a5)
+20066202:	00849713          	slli	a4,s1,0x8
+20066206:	0007a223          	sw	zero,4(a5)
+2006620a:	8321                	c.srli	a4,0x8
+2006620c:	12e7a823          	sw	a4,304(a5)
+20066210:	4709                	c.li	a4,2
+20066212:	06e78023          	sb	a4,96(a5)
+20066216:	0646c683          	lbu	a3,100(a3)
+2006621a:	4711                	c.li	a4,4
+2006621c:	00e69663          	bne	a3,a4,20066228 <FLASH_TxData+0x96>
+20066220:	01845713          	srli	a4,s0,0x18
+20066224:	06e78023          	sb	a4,96(a5)
+20066228:	01045713          	srli	a4,s0,0x10
+2006622c:	4100a7b7          	lui	a5,0x4100a
+20066230:	0ff77713          	andi	a4,a4,255
+20066234:	06e78023          	sb	a4,96(a5) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
+20066238:	00845713          	srli	a4,s0,0x8
+2006623c:	0ff77713          	andi	a4,a4,255
+20066240:	06e78023          	sb	a4,96(a5)
+20066244:	0ff47413          	andi	s0,s0,255
+20066248:	06878023          	sb	s0,96(a5)
+2006624c:	4100a6b7          	lui	a3,0x4100a
+20066250:	4781                	c.li	a5,0
+20066252:	00978563          	beq	a5,s1,2006625c <FLASH_TxData+0xca>
+20066256:	5698                	c.lw	a4,40(a3)
+20066258:	8b09                	c.andi	a4,2
+2006625a:	eb05                	c.bnez	a4,2006628a <FLASH_TxData+0xf8>
+2006625c:	4685                	c.li	a3,1
+2006625e:	4100a737          	lui	a4,0x4100a
+20066262:	c714                	c.sw	a3,8(a4)
+20066264:	4100a6b7          	lui	a3,0x4100a
+20066268:	0297e963          	bltu	a5,s1,2006629a <FLASH_TxData+0x108>
+2006626c:	4511                	c.li	a0,4
+2006626e:	3311                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+20066270:	4100a7b7          	lui	a5,0x4100a
+20066274:	0137a023          	sw	s3,0(a5) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
+20066278:	4505                	c.li	a0,1
+2006627a:	39e5                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+2006627c:	4462                	c.lwsp	s0,24(sp)
+2006627e:	40f2                	c.lwsp	ra,28(sp)
+20066280:	44d2                	c.lwsp	s1,20(sp)
+20066282:	4942                	c.lwsp	s2,16(sp)
+20066284:	49b2                	c.lwsp	s3,12(sp)
+20066286:	6105                	c.addi16sp	sp,32
+20066288:	b975                	c.j	20065f44 <FLASH_UserMode_Exit>
+2006628a:	00f90733          	add	a4,s2,a5
+2006628e:	00074703          	lbu	a4,0(a4) # 4100a000 <__km4_bd_boot_download_addr__+0x10ff8000>
+20066292:	0785                	c.addi	a5,1
+20066294:	06e68023          	sb	a4,96(a3) # 4100a060 <__km4_bd_boot_download_addr__+0x10ff8060>
+20066298:	bf6d                	c.j	20066252 <FLASH_TxData+0xc0>
+2006629a:	5698                	c.lw	a4,40(a3)
+2006629c:	8b09                	c.andi	a4,2
+2006629e:	d769                	c.beqz	a4,20066268 <FLASH_TxData+0xd6>
+200662a0:	00f90733          	add	a4,s2,a5
+200662a4:	00074703          	lbu	a4,0(a4)
+200662a8:	0785                	c.addi	a5,1
+200662aa:	06e68023          	sb	a4,96(a3)
+200662ae:	bf6d                	c.j	20066268 <FLASH_TxData+0xd6>
 
-20066290 <FLASH_SetStatus>:
-20066290:	1101                	c.addi	sp,-32
-20066292:	ce06                	c.swsp	ra,28(sp)
-20066294:	cc22                	c.swsp	s0,24(sp)
-20066296:	c62a                	c.swsp	a0,12(sp)
-20066298:	842e                	c.mv	s0,a1
-2006629a:	c432                	c.swsp	a2,8(sp)
-2006629c:	3399                	c.jal	20065fe2 <FLASH_UserMode_Enter>
-2006629e:	3d5d                	c.jal	20066154 <FLASH_WriteEn_InUserMode>
-200662a0:	4622                	c.lwsp	a2,8(sp)
-200662a2:	4532                	c.lwsp	a0,12(sp)
-200662a4:	0ff47593          	andi	a1,s0,255
-200662a8:	3d15                	c.jal	200660dc <FLASH_TxCmd_InUserMode>
-200662aa:	4505                	c.li	a0,1
-200662ac:	315d                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-200662ae:	4462                	c.lwsp	s0,24(sp)
-200662b0:	40f2                	c.lwsp	ra,28(sp)
-200662b2:	6105                	c.addi16sp	sp,32
-200662b4:	b985                	c.j	20065f24 <FLASH_UserMode_Exit>
+200662b0 <FLASH_SetStatus>:
+200662b0:	1101                	c.addi	sp,-32
+200662b2:	ce06                	c.swsp	ra,28(sp)
+200662b4:	cc22                	c.swsp	s0,24(sp)
+200662b6:	c62a                	c.swsp	a0,12(sp)
+200662b8:	842e                	c.mv	s0,a1
+200662ba:	c432                	c.swsp	a2,8(sp)
+200662bc:	3399                	c.jal	20066002 <FLASH_UserMode_Enter>
+200662be:	3d5d                	c.jal	20066174 <FLASH_WriteEn_InUserMode>
+200662c0:	4622                	c.lwsp	a2,8(sp)
+200662c2:	4532                	c.lwsp	a0,12(sp)
+200662c4:	0ff47593          	andi	a1,s0,255
+200662c8:	3d15                	c.jal	200660fc <FLASH_TxCmd_InUserMode>
+200662ca:	4505                	c.li	a0,1
+200662cc:	315d                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+200662ce:	4462                	c.lwsp	s0,24(sp)
+200662d0:	40f2                	c.lwsp	ra,28(sp)
+200662d2:	6105                	c.addi16sp	sp,32
+200662d4:	b985                	c.j	20065f44 <FLASH_UserMode_Exit>
 
-200662b6 <FLASH_SetStatusBits>:
-200662b6:	7179                	c.addi16sp	sp,-48
-200662b8:	d606                	c.swsp	ra,44(sp)
-200662ba:	d422                	c.swsp	s0,40(sp)
-200662bc:	d226                	c.swsp	s1,36(sp)
-200662be:	ce4e                	c.swsp	s3,28(sp)
-200662c0:	842a                	c.mv	s0,a0
-200662c2:	89ae                	c.mv	s3,a1
-200662c4:	200014b7          	lui	s1,0x20001
-200662c8:	d04a                	c.swsp	s2,32(sp)
-200662ca:	3b21                	c.jal	20065fe2 <FLASH_UserMode_Enter>
-200662cc:	86448793          	addi	a5,s1,-1948 # 20000864 <flash_init_para>
-200662d0:	0527c503          	lbu	a0,82(a5)
-200662d4:	0070                	c.addi4spn	a2,sp,12
-200662d6:	4585                	c.li	a1,1
-200662d8:	33a9                	c.jal	20066022 <FLASH_RxCmd_InUserMode>
-200662da:	4785                	c.li	a5,1
-200662dc:	00c14703          	lbu	a4,12(sp)
-200662e0:	86448493          	addi	s1,s1,-1948
-200662e4:	04f99d63          	bne	s3,a5,2006633e <FLASH_SetStatusBits+0x88>
-200662e8:	00e467b3          	or	a5,s0,a4
-200662ec:	0ff7f793          	andi	a5,a5,255
-200662f0:	00f10623          	sb	a5,12(sp)
-200662f4:	4c9c                	c.lw	a5,24(s1)
-200662f6:	4905                	c.li	s2,1
-200662f8:	c385                	c.beqz	a5,20066318 <FLASH_SetStatusBits+0x62>
-200662fa:	0534c503          	lbu	a0,83(s1)
-200662fe:	00d10613          	addi	a2,sp,13
-20066302:	4585                	c.li	a1,1
-20066304:	3b39                	c.jal	20066022 <FLASH_RxCmd_InUserMode>
-20066306:	00d14503          	lbu	a0,13(sp)
-2006630a:	8021                	c.srli	s0,0x8
-2006630c:	03299d63          	bne	s3,s2,20066346 <FLASH_SetStatusBits+0x90>
-20066310:	8c49                	c.or	s0,a0
-20066312:	008106a3          	sb	s0,13(sp)
-20066316:	4909                	c.li	s2,2
-20066318:	0554c783          	lbu	a5,85(s1)
-2006631c:	eb8d                	c.bnez	a5,2006634e <FLASH_SetStatusBits+0x98>
-2006631e:	3d1d                	c.jal	20066154 <FLASH_WriteEn_InUserMode>
-20066320:	0544c503          	lbu	a0,84(s1)
-20066324:	0070                	c.addi4spn	a2,sp,12
-20066326:	85ca                	c.mv	a1,s2
-20066328:	3b55                	c.jal	200660dc <FLASH_TxCmd_InUserMode>
-2006632a:	4505                	c.li	a0,1
-2006632c:	311d                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-2006632e:	3edd                	c.jal	20065f24 <FLASH_UserMode_Exit>
-20066330:	50b2                	c.lwsp	ra,44(sp)
-20066332:	5422                	c.lwsp	s0,40(sp)
-20066334:	5492                	c.lwsp	s1,36(sp)
-20066336:	5902                	c.lwsp	s2,32(sp)
-20066338:	49f2                	c.lwsp	s3,28(sp)
-2006633a:	6145                	c.addi16sp	sp,48
-2006633c:	8082                	c.jr	ra
-2006633e:	fff44793          	xori	a5,s0,-1
-20066342:	8ff9                	c.and	a5,a4
-20066344:	b765                	c.j	200662ec <FLASH_SetStatusBits+0x36>
-20066346:	fff44413          	xori	s0,s0,-1
-2006634a:	8c69                	c.and	s0,a0
-2006634c:	b7d9                	c.j	20066312 <FLASH_SetStatusBits+0x5c>
-2006634e:	3519                	c.jal	20066154 <FLASH_WriteEn_InUserMode>
-20066350:	0544c503          	lbu	a0,84(s1)
-20066354:	0070                	c.addi4spn	a2,sp,12
-20066356:	4585                	c.li	a1,1
-20066358:	3351                	c.jal	200660dc <FLASH_TxCmd_InUserMode>
-2006635a:	4505                	c.li	a0,1
-2006635c:	3edd                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-2006635e:	3bdd                	c.jal	20066154 <FLASH_WriteEn_InUserMode>
-20066360:	0554c503          	lbu	a0,85(s1)
-20066364:	00d10613          	addi	a2,sp,13
-20066368:	4585                	c.li	a1,1
-2006636a:	bf7d                	c.j	20066328 <FLASH_SetStatusBits+0x72>
+200662d6 <FLASH_SetStatusBits>:
+200662d6:	7179                	c.addi16sp	sp,-48
+200662d8:	d606                	c.swsp	ra,44(sp)
+200662da:	d422                	c.swsp	s0,40(sp)
+200662dc:	d226                	c.swsp	s1,36(sp)
+200662de:	ce4e                	c.swsp	s3,28(sp)
+200662e0:	842a                	c.mv	s0,a0
+200662e2:	89ae                	c.mv	s3,a1
+200662e4:	200014b7          	lui	s1,0x20001
+200662e8:	d04a                	c.swsp	s2,32(sp)
+200662ea:	3b21                	c.jal	20066002 <FLASH_UserMode_Enter>
+200662ec:	86448793          	addi	a5,s1,-1948 # 20000864 <flash_init_para>
+200662f0:	0527c503          	lbu	a0,82(a5)
+200662f4:	0070                	c.addi4spn	a2,sp,12
+200662f6:	4585                	c.li	a1,1
+200662f8:	33a9                	c.jal	20066042 <FLASH_RxCmd_InUserMode>
+200662fa:	4785                	c.li	a5,1
+200662fc:	00c14703          	lbu	a4,12(sp)
+20066300:	86448493          	addi	s1,s1,-1948
+20066304:	04f99d63          	bne	s3,a5,2006635e <FLASH_SetStatusBits+0x88>
+20066308:	00e467b3          	or	a5,s0,a4
+2006630c:	0ff7f793          	andi	a5,a5,255
+20066310:	00f10623          	sb	a5,12(sp)
+20066314:	4c9c                	c.lw	a5,24(s1)
+20066316:	4905                	c.li	s2,1
+20066318:	c385                	c.beqz	a5,20066338 <FLASH_SetStatusBits+0x62>
+2006631a:	0534c503          	lbu	a0,83(s1)
+2006631e:	00d10613          	addi	a2,sp,13
+20066322:	4585                	c.li	a1,1
+20066324:	3b39                	c.jal	20066042 <FLASH_RxCmd_InUserMode>
+20066326:	00d14503          	lbu	a0,13(sp)
+2006632a:	8021                	c.srli	s0,0x8
+2006632c:	03299d63          	bne	s3,s2,20066366 <FLASH_SetStatusBits+0x90>
+20066330:	8c49                	c.or	s0,a0
+20066332:	008106a3          	sb	s0,13(sp)
+20066336:	4909                	c.li	s2,2
+20066338:	0554c783          	lbu	a5,85(s1)
+2006633c:	eb8d                	c.bnez	a5,2006636e <FLASH_SetStatusBits+0x98>
+2006633e:	3d1d                	c.jal	20066174 <FLASH_WriteEn_InUserMode>
+20066340:	0544c503          	lbu	a0,84(s1)
+20066344:	0070                	c.addi4spn	a2,sp,12
+20066346:	85ca                	c.mv	a1,s2
+20066348:	3b55                	c.jal	200660fc <FLASH_TxCmd_InUserMode>
+2006634a:	4505                	c.li	a0,1
+2006634c:	311d                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+2006634e:	3edd                	c.jal	20065f44 <FLASH_UserMode_Exit>
+20066350:	50b2                	c.lwsp	ra,44(sp)
+20066352:	5422                	c.lwsp	s0,40(sp)
+20066354:	5492                	c.lwsp	s1,36(sp)
+20066356:	5902                	c.lwsp	s2,32(sp)
+20066358:	49f2                	c.lwsp	s3,28(sp)
+2006635a:	6145                	c.addi16sp	sp,48
+2006635c:	8082                	c.jr	ra
+2006635e:	fff44793          	xori	a5,s0,-1
+20066362:	8ff9                	c.and	a5,a4
+20066364:	b765                	c.j	2006630c <FLASH_SetStatusBits+0x36>
+20066366:	fff44413          	xori	s0,s0,-1
+2006636a:	8c69                	c.and	s0,a0
+2006636c:	b7d9                	c.j	20066332 <FLASH_SetStatusBits+0x5c>
+2006636e:	3519                	c.jal	20066174 <FLASH_WriteEn_InUserMode>
+20066370:	0544c503          	lbu	a0,84(s1)
+20066374:	0070                	c.addi4spn	a2,sp,12
+20066376:	4585                	c.li	a1,1
+20066378:	3351                	c.jal	200660fc <FLASH_TxCmd_InUserMode>
+2006637a:	4505                	c.li	a0,1
+2006637c:	3edd                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+2006637e:	3bdd                	c.jal	20066174 <FLASH_WriteEn_InUserMode>
+20066380:	0554c503          	lbu	a0,85(s1)
+20066384:	00d10613          	addi	a2,sp,13
+20066388:	4585                	c.li	a1,1
+2006638a:	bf7d                	c.j	20066348 <FLASH_SetStatusBits+0x72>
 
-2006636c <FLASH_Erase>:
-2006636c:	7179                	c.addi16sp	sp,-48
-2006636e:	d422                	c.swsp	s0,40(sp)
-20066370:	d04a                	c.swsp	s2,32(sp)
-20066372:	d606                	c.swsp	ra,44(sp)
-20066374:	d226                	c.swsp	s1,36(sp)
-20066376:	4789                	c.li	a5,2
-20066378:	892a                	c.mv	s2,a0
-2006637a:	842e                	c.mv	s0,a1
-2006637c:	00a7fa63          	bgeu	a5,a0,20066390 <FLASH_Erase+0x24>
-20066380:	20062537          	lui	a0,0x20062
-20066384:	2d700593          	addi	a1,zero,727
-20066388:	00850513          	addi	a0,a0,8 # 20062008 <strtol+0xe>
-2006638c:	d20f90ef          	jal	ra,2005f8ac <io_assert_failed>
-20066390:	200014b7          	lui	s1,0x20001
-20066394:	86448793          	addi	a5,s1,-1948 # 20000864 <flash_init_para>
-20066398:	0647c583          	lbu	a1,100(a5)
-2006639c:	00845713          	srli	a4,s0,0x8
-200663a0:	01045793          	srli	a5,s0,0x10
-200663a4:	4611                	c.li	a2,4
-200663a6:	0ff7f793          	andi	a5,a5,255
-200663aa:	0ff77713          	andi	a4,a4,255
-200663ae:	0ff47693          	andi	a3,s0,255
-200663b2:	86448493          	addi	s1,s1,-1948
-200663b6:	04c59463          	bne	a1,a2,200663fe <FLASH_Erase+0x92>
-200663ba:	01845713          	srli	a4,s0,0x18
-200663be:	00f10ea3          	sb	a5,29(sp)
-200663c2:	00841793          	slli	a5,s0,0x8
-200663c6:	0442                	c.slli	s0,0x10
-200663c8:	8041                	c.srli	s0,0x10
-200663ca:	8021                	c.srli	s0,0x8
-200663cc:	8c5d                	c.or	s0,a5
-200663ce:	00e10e23          	sb	a4,28(sp)
-200663d2:	00811f23          	sh	s0,30(sp)
-200663d6:	c62e                	c.swsp	a1,12(sp)
-200663d8:	3129                	c.jal	20065fe2 <FLASH_UserMode_Enter>
-200663da:	3bad                	c.jal	20066154 <FLASH_WriteEn_InUserMode>
-200663dc:	45b2                	c.lwsp	a1,12(sp)
-200663de:	02091863          	bne	s2,zero,2006640e <FLASH_Erase+0xa2>
-200663e2:	0564c503          	lbu	a0,86(s1)
-200663e6:	4601                	c.li	a2,0
-200663e8:	4581                	c.li	a1,0
-200663ea:	39cd                	c.jal	200660dc <FLASH_TxCmd_InUserMode>
-200663ec:	4505                	c.li	a0,1
-200663ee:	3695                	c.jal	20065f52 <FLASH_WaitBusy_InUserMode>
-200663f0:	3e15                	c.jal	20065f24 <FLASH_UserMode_Exit>
-200663f2:	50b2                	c.lwsp	ra,44(sp)
-200663f4:	5422                	c.lwsp	s0,40(sp)
-200663f6:	5492                	c.lwsp	s1,36(sp)
-200663f8:	5902                	c.lwsp	s2,32(sp)
-200663fa:	6145                	c.addi16sp	sp,48
-200663fc:	8082                	c.jr	ra
-200663fe:	00f10e23          	sb	a5,28(sp)
-20066402:	00e10ea3          	sb	a4,29(sp)
-20066406:	00d10f23          	sb	a3,30(sp)
-2006640a:	458d                	c.li	a1,3
-2006640c:	b7e9                	c.j	200663d6 <FLASH_Erase+0x6a>
-2006640e:	4785                	c.li	a5,1
-20066410:	00f91663          	bne	s2,a5,2006641c <FLASH_Erase+0xb0>
-20066414:	0574c503          	lbu	a0,87(s1)
-20066418:	0870                	c.addi4spn	a2,sp,28
-2006641a:	bfc1                	c.j	200663ea <FLASH_Erase+0x7e>
-2006641c:	4789                	c.li	a5,2
-2006641e:	fcf917e3          	bne	s2,a5,200663ec <FLASH_Erase+0x80>
-20066422:	0584c503          	lbu	a0,88(s1)
-20066426:	0870                	c.addi4spn	a2,sp,28
-20066428:	b7c9                	c.j	200663ea <FLASH_Erase+0x7e>
+2006638c <FLASH_Erase>:
+2006638c:	7179                	c.addi16sp	sp,-48
+2006638e:	d422                	c.swsp	s0,40(sp)
+20066390:	d04a                	c.swsp	s2,32(sp)
+20066392:	d606                	c.swsp	ra,44(sp)
+20066394:	d226                	c.swsp	s1,36(sp)
+20066396:	4789                	c.li	a5,2
+20066398:	892a                	c.mv	s2,a0
+2006639a:	842e                	c.mv	s0,a1
+2006639c:	00a7fa63          	bgeu	a5,a0,200663b0 <FLASH_Erase+0x24>
+200663a0:	20062537          	lui	a0,0x20062
+200663a4:	2d700593          	addi	a1,zero,727
+200663a8:	01050513          	addi	a0,a0,16 # 20062010 <strtol+0xe>
+200663ac:	d00f90ef          	jal	ra,2005f8ac <io_assert_failed>
+200663b0:	200014b7          	lui	s1,0x20001
+200663b4:	86448793          	addi	a5,s1,-1948 # 20000864 <flash_init_para>
+200663b8:	0647c583          	lbu	a1,100(a5)
+200663bc:	00845713          	srli	a4,s0,0x8
+200663c0:	01045793          	srli	a5,s0,0x10
+200663c4:	4611                	c.li	a2,4
+200663c6:	0ff7f793          	andi	a5,a5,255
+200663ca:	0ff77713          	andi	a4,a4,255
+200663ce:	0ff47693          	andi	a3,s0,255
+200663d2:	86448493          	addi	s1,s1,-1948
+200663d6:	04c59463          	bne	a1,a2,2006641e <FLASH_Erase+0x92>
+200663da:	01845713          	srli	a4,s0,0x18
+200663de:	00f10ea3          	sb	a5,29(sp)
+200663e2:	00841793          	slli	a5,s0,0x8
+200663e6:	0442                	c.slli	s0,0x10
+200663e8:	8041                	c.srli	s0,0x10
+200663ea:	8021                	c.srli	s0,0x8
+200663ec:	8c5d                	c.or	s0,a5
+200663ee:	00e10e23          	sb	a4,28(sp)
+200663f2:	00811f23          	sh	s0,30(sp)
+200663f6:	c62e                	c.swsp	a1,12(sp)
+200663f8:	3129                	c.jal	20066002 <FLASH_UserMode_Enter>
+200663fa:	3bad                	c.jal	20066174 <FLASH_WriteEn_InUserMode>
+200663fc:	45b2                	c.lwsp	a1,12(sp)
+200663fe:	02091863          	bne	s2,zero,2006642e <FLASH_Erase+0xa2>
+20066402:	0564c503          	lbu	a0,86(s1)
+20066406:	4601                	c.li	a2,0
+20066408:	4581                	c.li	a1,0
+2006640a:	39cd                	c.jal	200660fc <FLASH_TxCmd_InUserMode>
+2006640c:	4505                	c.li	a0,1
+2006640e:	3695                	c.jal	20065f72 <FLASH_WaitBusy_InUserMode>
+20066410:	3e15                	c.jal	20065f44 <FLASH_UserMode_Exit>
+20066412:	50b2                	c.lwsp	ra,44(sp)
+20066414:	5422                	c.lwsp	s0,40(sp)
+20066416:	5492                	c.lwsp	s1,36(sp)
+20066418:	5902                	c.lwsp	s2,32(sp)
+2006641a:	6145                	c.addi16sp	sp,48
+2006641c:	8082                	c.jr	ra
+2006641e:	00f10e23          	sb	a5,28(sp)
+20066422:	00e10ea3          	sb	a4,29(sp)
+20066426:	00d10f23          	sb	a3,30(sp)
+2006642a:	458d                	c.li	a1,3
+2006642c:	b7e9                	c.j	200663f6 <FLASH_Erase+0x6a>
+2006642e:	4785                	c.li	a5,1
+20066430:	00f91663          	bne	s2,a5,2006643c <FLASH_Erase+0xb0>
+20066434:	0574c503          	lbu	a0,87(s1)
+20066438:	0870                	c.addi4spn	a2,sp,28
+2006643a:	bfc1                	c.j	2006640a <FLASH_Erase+0x7e>
+2006643c:	4789                	c.li	a5,2
+2006643e:	fcf917e3          	bne	s2,a5,2006640c <FLASH_Erase+0x80>
+20066442:	0584c503          	lbu	a0,88(s1)
+20066446:	0870                	c.addi4spn	a2,sp,28
+20066448:	b7c9                	c.j	2006640a <FLASH_Erase+0x7e>
 
-2006642a <plic_get_pending>:
-2006642a:	f1402773          	csrrs	a4,mhartid,zero
-2006642e:	00251793          	slli	a5,a0,0x2
-20066432:	80001537          	lui	a0,0x80001
-20066436:	c0050513          	addi	a0,a0,-1024 # 80000c00 <__ctrace_end__+0xb6000c00>
-2006643a:	97aa                	c.add	a5,a0
-2006643c:	0722                	c.slli	a4,0x8
-2006643e:	97ba                	c.add	a5,a4
-20066440:	4388                	c.lw	a0,0(a5)
-20066442:	8082                	c.jr	ra
+2006644a <plic_get_pending>:
+2006644a:	f1402773          	csrrs	a4,mhartid,zero
+2006644e:	00251793          	slli	a5,a0,0x2
+20066452:	80001537          	lui	a0,0x80001
+20066456:	c0050513          	addi	a0,a0,-1024 # 80000c00 <__ctrace_end__+0xb6000c00>
+2006645a:	97aa                	c.add	a5,a0
+2006645c:	0722                	c.slli	a4,0x8
+2006645e:	97ba                	c.add	a5,a4
+20066460:	4388                	c.lw	a0,0(a5)
+20066462:	8082                	c.jr	ra
 
-20066444 <plic_interrupt_handler>:
-20066444:	7179                	c.addi16sp	sp,-48
-20066446:	d422                	c.swsp	s0,40(sp)
-20066448:	d226                	c.swsp	s1,36(sp)
-2006644a:	ce4e                	c.swsp	s3,28(sp)
-2006644c:	d606                	c.swsp	ra,44(sp)
-2006644e:	d04a                	c.swsp	s2,32(sp)
-20066450:	0044                	c.addi4spn	s1,sp,4
-20066452:	4401                	c.li	s0,0
-20066454:	498d                	c.li	s3,3
-20066456:	8522                	c.mv	a0,s0
-20066458:	3fc9                	c.jal	2006642a <plic_get_pending>
-2006645a:	892a                	c.mv	s2,a0
-2006645c:	8522                	c.mv	a0,s0
-2006645e:	dff9f097          	auipc	ra,0xdff9f
-20066462:	2c4080e7          	jalr	ra,708(ra) # 5722 <plic_get_enable>
-20066466:	c088                	c.sw	a0,0(s1)
-20066468:	00a975b3          	and	a1,s2,a0
-2006646c:	8522                	c.mv	a0,s0
-2006646e:	0405                	c.addi	s0,1
-20066470:	dff9f097          	auipc	ra,0xdff9f
-20066474:	29a080e7          	jalr	ra,666(ra) # 570a <plic_set_enable>
-20066478:	0491                	c.addi	s1,4
-2006647a:	fd341ee3          	bne	s0,s3,20066456 <plic_interrupt_handler+0x12>
-2006647e:	0ff0000f          	fence	iorw,iorw
-20066482:	dff9f097          	auipc	ra,0xdff9f
-20066486:	354080e7          	jalr	ra,852(ra) # 57d6 <plic_claim_irq>
-2006648a:	4592                	c.lwsp	a1,4(sp)
-2006648c:	ea018493          	addi	s1,gp,-352 # 20066808 <plic_irq_id>
-20066490:	c088                	c.sw	a0,0(s1)
-20066492:	4501                	c.li	a0,0
-20066494:	dff9f097          	auipc	ra,0xdff9f
-20066498:	276080e7          	jalr	ra,630(ra) # 570a <plic_set_enable>
-2006649c:	45a2                	c.lwsp	a1,8(sp)
-2006649e:	4505                	c.li	a0,1
-200664a0:	ea018413          	addi	s0,gp,-352 # 20066808 <plic_irq_id>
-200664a4:	dff9f097          	auipc	ra,0xdff9f
-200664a8:	266080e7          	jalr	ra,614(ra) # 570a <plic_set_enable>
-200664ac:	45b2                	c.lwsp	a1,12(sp)
-200664ae:	4509                	c.li	a0,2
-200664b0:	dff9f097          	auipc	ra,0xdff9f
-200664b4:	25a080e7          	jalr	ra,602(ra) # 570a <plic_set_enable>
-200664b8:	4084                	c.lw	s1,0(s1)
-200664ba:	c4b1                	c.beqz	s1,20066506 <plic_interrupt_handler+0xc2>
-200664bc:	02048493          	addi	s1,s1,32
-200664c0:	8526                	c.mv	a0,s1
-200664c2:	77e000e7          	jalr	ra,1918(zero) # 0 <Reset_Handler>
-200664c6:	892a                	c.mv	s2,a0
-200664c8:	c531                	c.beqz	a0,20066514 <plic_interrupt_handler+0xd0>
-200664ca:	dff9f097          	auipc	ra,0xdff9f
-200664ce:	348080e7          	jalr	ra,840(ra) # 5812 <plic_get_threshold>
-200664d2:	89aa                	c.mv	s3,a0
-200664d4:	4008                	c.lw	a0,0(s0)
-200664d6:	dff9f097          	auipc	ra,0xdff9f
-200664da:	2d0080e7          	jalr	ra,720(ra) # 57a6 <plic_get_irq_priority>
-200664de:	dff9f097          	auipc	ra,0xdff9f
-200664e2:	31c080e7          	jalr	ra,796(ra) # 57fa <plic_set_threshold>
-200664e6:	8526                	c.mv	a0,s1
-200664e8:	7b2000e7          	jalr	ra,1970(zero) # 0 <Reset_Handler>
-200664ec:	9902                	c.jalr	s2
-200664ee:	854e                	c.mv	a0,s3
-200664f0:	dff9f097          	auipc	ra,0xdff9f
-200664f4:	30a080e7          	jalr	ra,778(ra) # 57fa <plic_set_threshold>
-200664f8:	4008                	c.lw	a0,0(s0)
-200664fa:	dff9f097          	auipc	ra,0xdff9f
-200664fe:	2ee080e7          	jalr	ra,750(ra) # 57e8 <plic_complete_irq>
-20066502:	00042023          	sw	zero,0(s0)
-20066506:	50b2                	c.lwsp	ra,44(sp)
-20066508:	5422                	c.lwsp	s0,40(sp)
-2006650a:	5492                	c.lwsp	s1,36(sp)
-2006650c:	5902                	c.lwsp	s2,32(sp)
-2006650e:	49f2                	c.lwsp	s3,28(sp)
-20066510:	6145                	c.addi16sp	sp,48
-20066512:	8082                	c.jr	ra
-20066514:	200626b7          	lui	a3,0x20062
-20066518:	200625b7          	lui	a1,0x20062
-2006651c:	8726                	c.mv	a4,s1
-2006651e:	4f868693          	addi	a3,a3,1272 # 200624f8 <pmap_func+0xd4>
-20066522:	05700613          	addi	a2,zero,87
-20066526:	51c58593          	addi	a1,a1,1308 # 2006251c <pmap_func+0xf8>
-2006652a:	450d                	c.li	a0,3
-2006652c:	c5df40ef          	jal	ra,2005b188 <rtk_log_write>
-20066530:	b7e1                	c.j	200664f8 <plic_interrupt_handler+0xb4>
+20066464 <plic_interrupt_handler>:
+20066464:	7179                	c.addi16sp	sp,-48
+20066466:	d422                	c.swsp	s0,40(sp)
+20066468:	d226                	c.swsp	s1,36(sp)
+2006646a:	ce4e                	c.swsp	s3,28(sp)
+2006646c:	d606                	c.swsp	ra,44(sp)
+2006646e:	d04a                	c.swsp	s2,32(sp)
+20066470:	0044                	c.addi4spn	s1,sp,4
+20066472:	4401                	c.li	s0,0
+20066474:	498d                	c.li	s3,3
+20066476:	8522                	c.mv	a0,s0
+20066478:	3fc9                	c.jal	2006644a <plic_get_pending>
+2006647a:	892a                	c.mv	s2,a0
+2006647c:	8522                	c.mv	a0,s0
+2006647e:	dff9f097          	auipc	ra,0xdff9f
+20066482:	2a4080e7          	jalr	ra,676(ra) # 5722 <plic_get_enable>
+20066486:	c088                	c.sw	a0,0(s1)
+20066488:	00a975b3          	and	a1,s2,a0
+2006648c:	8522                	c.mv	a0,s0
+2006648e:	0405                	c.addi	s0,1
+20066490:	dff9f097          	auipc	ra,0xdff9f
+20066494:	27a080e7          	jalr	ra,634(ra) # 570a <plic_set_enable>
+20066498:	0491                	c.addi	s1,4
+2006649a:	fd341ee3          	bne	s0,s3,20066476 <plic_interrupt_handler+0x12>
+2006649e:	0ff0000f          	fence	iorw,iorw
+200664a2:	dff9f097          	auipc	ra,0xdff9f
+200664a6:	334080e7          	jalr	ra,820(ra) # 57d6 <plic_claim_irq>
+200664aa:	4592                	c.lwsp	a1,4(sp)
+200664ac:	ea018493          	addi	s1,gp,-352 # 20066828 <plic_irq_id>
+200664b0:	c088                	c.sw	a0,0(s1)
+200664b2:	4501                	c.li	a0,0
+200664b4:	dff9f097          	auipc	ra,0xdff9f
+200664b8:	256080e7          	jalr	ra,598(ra) # 570a <plic_set_enable>
+200664bc:	45a2                	c.lwsp	a1,8(sp)
+200664be:	4505                	c.li	a0,1
+200664c0:	ea018413          	addi	s0,gp,-352 # 20066828 <plic_irq_id>
+200664c4:	dff9f097          	auipc	ra,0xdff9f
+200664c8:	246080e7          	jalr	ra,582(ra) # 570a <plic_set_enable>
+200664cc:	45b2                	c.lwsp	a1,12(sp)
+200664ce:	4509                	c.li	a0,2
+200664d0:	dff9f097          	auipc	ra,0xdff9f
+200664d4:	23a080e7          	jalr	ra,570(ra) # 570a <plic_set_enable>
+200664d8:	4084                	c.lw	s1,0(s1)
+200664da:	c4b1                	c.beqz	s1,20066526 <plic_interrupt_handler+0xc2>
+200664dc:	02048493          	addi	s1,s1,32
+200664e0:	8526                	c.mv	a0,s1
+200664e2:	77e000e7          	jalr	ra,1918(zero) # 0 <Reset_Handler>
+200664e6:	892a                	c.mv	s2,a0
+200664e8:	c531                	c.beqz	a0,20066534 <plic_interrupt_handler+0xd0>
+200664ea:	dff9f097          	auipc	ra,0xdff9f
+200664ee:	328080e7          	jalr	ra,808(ra) # 5812 <plic_get_threshold>
+200664f2:	89aa                	c.mv	s3,a0
+200664f4:	4008                	c.lw	a0,0(s0)
+200664f6:	dff9f097          	auipc	ra,0xdff9f
+200664fa:	2b0080e7          	jalr	ra,688(ra) # 57a6 <plic_get_irq_priority>
+200664fe:	dff9f097          	auipc	ra,0xdff9f
+20066502:	2fc080e7          	jalr	ra,764(ra) # 57fa <plic_set_threshold>
+20066506:	8526                	c.mv	a0,s1
+20066508:	7b2000e7          	jalr	ra,1970(zero) # 0 <Reset_Handler>
+2006650c:	9902                	c.jalr	s2
+2006650e:	854e                	c.mv	a0,s3
+20066510:	dff9f097          	auipc	ra,0xdff9f
+20066514:	2ea080e7          	jalr	ra,746(ra) # 57fa <plic_set_threshold>
+20066518:	4008                	c.lw	a0,0(s0)
+2006651a:	dff9f097          	auipc	ra,0xdff9f
+2006651e:	2ce080e7          	jalr	ra,718(ra) # 57e8 <plic_complete_irq>
+20066522:	00042023          	sw	zero,0(s0)
+20066526:	50b2                	c.lwsp	ra,44(sp)
+20066528:	5422                	c.lwsp	s0,40(sp)
+2006652a:	5492                	c.lwsp	s1,36(sp)
+2006652c:	5902                	c.lwsp	s2,32(sp)
+2006652e:	49f2                	c.lwsp	s3,28(sp)
+20066530:	6145                	c.addi16sp	sp,48
+20066532:	8082                	c.jr	ra
+20066534:	200626b7          	lui	a3,0x20062
+20066538:	200625b7          	lui	a1,0x20062
+2006653c:	8726                	c.mv	a4,s1
+2006653e:	50068693          	addi	a3,a3,1280 # 20062500 <pmap_func+0xd4>
+20066542:	05700613          	addi	a2,zero,87
+20066546:	52458593          	addi	a1,a1,1316 # 20062524 <pmap_func+0xf8>
+2006654a:	450d                	c.li	a0,3
+2006654c:	c43f40ef          	jal	ra,2005b18e <rtk_log_write>
+20066550:	b7e1                	c.j	20066518 <plic_interrupt_handler+0xb4>
 
-20066532 <plic_get_active_irq_id>:
-20066532:	ea01a503          	lw	a0,-352(gp) # 20066808 <plic_irq_id>
-20066536:	8082                	c.jr	ra
+20066552 <plic_get_active_irq_id>:
+20066552:	ea01a503          	lw	a0,-352(gp) # 20066828 <plic_irq_id>
+20066556:	8082                	c.jr	ra
 
-20066538 <__NVIC_GetActive_IRQ>:
-20066538:	06f00793          	addi	a5,zero,111
-2006653c:	00a7d463          	bge	a5,a0,20066544 <__NVIC_GetActive_IRQ+0xc>
-20066540:	4501                	c.li	a0,0
-20066542:	8082                	c.jr	ra
-20066544:	34202773          	csrrs	a4,mcause,zero
-20066548:	00171793          	slli	a5,a4,0x1
-2006654c:	8385                	c.srli	a5,0x1
-2006654e:	00055763          	bge	a0,zero,2006655c <__NVIC_GetActive_IRQ+0x24>
-20066552:	0541                	c.addi	a0,16
-20066554:	fe0746e3          	blt	a4,zero,20066540 <__NVIC_GetActive_IRQ+0x8>
-20066558:	8d1d                	c.sub	a0,a5
-2006655a:	a821                	c.j	20066572 <__NVIC_GetActive_IRQ+0x3a>
-2006655c:	fe0752e3          	bge	a4,zero,20066540 <__NVIC_GetActive_IRQ+0x8>
-20066560:	477d                	c.li	a4,31
-20066562:	fea75be3          	bge	a4,a0,20066558 <__NVIC_GetActive_IRQ+0x20>
-20066566:	ea01a783          	lw	a5,-352(gp) # 20066808 <plic_irq_id>
-2006656a:	02078793          	addi	a5,a5,32
-2006656e:	40a78533          	sub	a0,a5,a0
-20066572:	00153513          	sltiu	a0,a0,1
-20066576:	8082                	c.jr	ra
+20066558 <__NVIC_GetActive_IRQ>:
+20066558:	06f00793          	addi	a5,zero,111
+2006655c:	00a7d463          	bge	a5,a0,20066564 <__NVIC_GetActive_IRQ+0xc>
+20066560:	4501                	c.li	a0,0
+20066562:	8082                	c.jr	ra
+20066564:	34202773          	csrrs	a4,mcause,zero
+20066568:	00171793          	slli	a5,a4,0x1
+2006656c:	8385                	c.srli	a5,0x1
+2006656e:	00055763          	bge	a0,zero,2006657c <__NVIC_GetActive_IRQ+0x24>
+20066572:	0541                	c.addi	a0,16
+20066574:	fe0746e3          	blt	a4,zero,20066560 <__NVIC_GetActive_IRQ+0x8>
+20066578:	8d1d                	c.sub	a0,a5
+2006657a:	a821                	c.j	20066592 <__NVIC_GetActive_IRQ+0x3a>
+2006657c:	fe0752e3          	bge	a4,zero,20066560 <__NVIC_GetActive_IRQ+0x8>
+20066580:	477d                	c.li	a4,31
+20066582:	fea75be3          	bge	a4,a0,20066578 <__NVIC_GetActive_IRQ+0x20>
+20066586:	ea01a783          	lw	a5,-352(gp) # 20066828 <plic_irq_id>
+2006658a:	02078793          	addi	a5,a5,32
+2006658e:	40a78533          	sub	a0,a5,a0
+20066592:	00153513          	sltiu	a0,a0,1
+20066596:	8082                	c.jr	ra
 
-20066578 <__sram_image2_end__>:
+20066598 <__sram_image2_end__>:
 	...
 
-20066580 <Flash_Layout>:
-20066580:	0000 0000 0000 0800 3fff 0801 0002 0000     .........?......
-20066590:	4000 0801 3fff 081f 0001 0000 0000 0820     .@...?........ .
-200665a0:	3fff 0821 0003 0000 4000 0821 3fff 083f     .?!......@!..??.
-200665b0:	0004 0000 0000 0840 ffff 086f 0005 0000     ......@...o.....
-200665c0:	0000 0870 2fff 0870 0006 0000 3000 0870     ..p../p......0p.
-200665d0:	2fff 0872 0008 0000 ffff ffff ffff ffff     ./r.............
-200665e0:	00ff 0000 ffff ffff ffff ffff               ............
+200665a0 <Flash_Layout>:
+200665a0:	0000 0000 0000 0800 3fff 0801 0002 0000     .........?......
+200665b0:	4000 0801 3fff 081f 0001 0000 0000 0820     .@...?........ .
+200665c0:	3fff 0821 0003 0000 4000 0821 3fff 083f     .?!......@!..??.
+200665d0:	0004 0000 0000 0840 ffff 086f 0005 0000     ......@...o.....
+200665e0:	0000 0870 2fff 0870 0006 0000 3000 0870     ..p../p......0p.
+200665f0:	2fff 0872 0008 0000 ffff ffff ffff ffff     ./r.............
+20066600:	00ff 0000 ffff ffff ffff ffff               ............
 
-200665ec <PSRAM_CALIB_PATTERN>:
-200665ec:	3344 1122 a55a a55a 5aa5 5aa5 2211 4433     D3".Z.Z..Z.Z."3D
-200665fc:	6996 9669 9669 6996                         .ii.i..i
+2006660c <PSRAM_CALIB_PATTERN>:
+2006660c:	3344 1122 a55a a55a 5aa5 5aa5 2211 4433     D3".Z.Z..Z.Z."3D
+2006661c:	6996 9669 9669 6996                         .ii.i..i
 
-20066604 <at_sys_items>:
-20066604:	2ee8 2006 9f3c 2005 0000 0000 0000 0000     ... <.. ........
-20066614:	2ef4 2006 9f5c 2005 0000 0000 0000 0000     ... \.. ........
-20066624:	2f00 2006 a790 2005 0000 0000 0000 0000     ./. ... ........
-20066634:	2f0c 2006 9f7c 2005 0000 0000 0000 0000     ./. |.. ........
-20066644:	2f14 2006 a9fa 2005 0000 0000 0000 0000     ./. ... ........
-20066654:	2f1c 2006 9fd6 2005 0000 0000 0000 0000     ./. ... ........
-20066664:	2f24 2006 9ff6 2005 0000 0000 0000 0000     $/. ... ........
-20066674:	2f2c 2006 a090 2005 0000 0000 0000 0000     ,/. ... ........
-20066684:	2f34 2006 a134 2005 0000 0000 0000 0000     4/. 4.. ........
-20066694:	2f3c 2006 a322 2005 0000 0000 0000 0000     </. ".. ........
-200666a4:	2f44 2006 a3a8 2005 0000 0000 0000 0000     D/. ... ........
+20066624 <at_sys_items>:
+20066624:	2ef0 2006 9f42 2005 0000 0000 0000 0000     ... B.. ........
+20066634:	2efc 2006 9f62 2005 0000 0000 0000 0000     ... b.. ........
+20066644:	2f08 2006 a796 2005 0000 0000 0000 0000     ./. ... ........
+20066654:	2f14 2006 9f82 2005 0000 0000 0000 0000     ./. ... ........
+20066664:	2f1c 2006 aa00 2005 0000 0000 0000 0000     ./. ... ........
+20066674:	2f24 2006 9fdc 2005 0000 0000 0000 0000     $/. ... ........
+20066684:	2f2c 2006 9ffc 2005 0000 0000 0000 0000     ,/. ... ........
+20066694:	2f34 2006 a096 2005 0000 0000 0000 0000     4/. ... ........
+200666a4:	2f3c 2006 a13a 2005 0000 0000 0000 0000     </. :.. ........
+200666b4:	2f44 2006 a328 2005 0000 0000 0000 0000     D/. (.. ........
+200666c4:	2f4c 2006 a3ae 2005 0000 0000 0000 0000     L/. ... ........
 
-200666b4 <impure_data>:
-200666b4:	0000 0000 8984 2006 89ec 2006 8a54 2006     ....... ... T.. 
+200666d4 <impure_data>:
+200666d4:	0000 0000 89c4 2006 8a2c 2006 8a94 2006     ....... ,.. ... 
 	...
 
-200667c0 <__sdata_start__>:
-200667c0:	0000                	c.unimp
-200667c2:	42c8                	c.lw	a0,4(a3)
+200667e0 <__sdata_start__>:
+200667e0:	0000                	c.unimp
+200667e2:	42c8                	c.lw	a0,4(a3)
 
-200667c4 <xISRStackTop>:
-200667c4:	7f20 2006                                    .. 
+200667e4 <xISRStackTop>:
+200667e4:	7f60 2006                                   `.. 
 
-200667c8 <CSWTCH.248>:
-200667c8:	5258 5342 0044 0000                         XRBSD...
+200667e8 <CSWTCH.248>:
+200667e8:	5258 5342 0044 0000                         XRBSD...
 
-200667d0 <SystemCoreClock>:
-200667d0:	d180 08f0                                   ....
+200667f0 <SystemCoreClock>:
+200667f0:	d180 08f0                                   ....
 
-200667d4 <PXID_Idx>:
-200667d4:	0101 0101                                   ....
+200667f4 <PXID_Idx>:
+200667f4:	0101 0101                                   ....
 
-200667d8 <system_can_yield>:
-200667d8:	0001 0000                                   ....
+200667f8 <system_can_yield>:
+200667f8:	0001 0000                                   ....
 
-200667dc <wakelock>:
-200667dc:	0001 0000                                   ....
+200667fc <wakelock>:
+200667fc:	0001 0000                                   ....
 
-200667e0 <log_init_table>:
-200667e0:	aa24 2005                                   $.. 
+20066800 <log_init_table>:
+20066800:	aa2a 2005                                   *.. 
 
-200667e4 <rtk_log_default_level>:
-200667e4:	0004 0000                                   ....
+20066804 <rtk_log_default_level>:
+20066804:	0004 0000                                   ....
 
-200667e8 <mbedtls_calloc_func>:
-200667e8:	be54 2005                                   T.. 
+20066808 <mbedtls_calloc_func>:
+20066808:	be5a 2005                                   Z.. 
 
-200667ec <mbedtls_free_func>:
-200667ec:	be58 2005                                   X.. 
+2006680c <mbedtls_free_func>:
+2006680c:	be5e 2005                                   ^.. 
 
-200667f0 <pullNextTime>:
-200667f0:	68b0 2006                                   .h. 
+20066810 <pullNextTime>:
+20066810:	68d0 2006                                   .h. 
 
-200667f4 <uxTopUsedPriority>:
-200667f4:	000a 0000                                   ....
+20066814 <uxTopUsedPriority>:
+20066814:	000a 0000                                   ....
 
-200667f8 <crash_task_info>:
-200667f8:	ed5c 2005                                   \.. 
+20066818 <crash_task_info>:
+20066818:	ed5c 2005                                   \.. 
 
-200667fc <_impure_ptr>:
-200667fc:	66b4 2006                                   .f. 
+2006681c <_impure_ptr>:
+2006681c:	66d4 2006                                   .f. 

@@ -3,7 +3,7 @@
 #include "os_wrapper.h"
 #include "ameba.h"
 #include "httpd.h"
-
+#include "httpd_util.h"
 #
 #include "mbedtls/ssl.h"
 #include "mbedtls/platform.h"
@@ -28,9 +28,9 @@ static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *
 	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
 
 	if (*flags) {
-		printf("\n[HTTPD] ERROR: certificate verify\n%s\n", buf);
+		httpd_log("\n[HTTPD] ERROR: certificate verify\n%s\n", buf);
 	} else {
-		printf("\n[HTTPD] Certificate verified\n%s\n", buf);
+		httpd_log("\n[HTTPD] Certificate verified\n%s\n", buf);
 	}
 
 	return 0;
@@ -56,14 +56,14 @@ int httpd_tls_setup_init(const char *server_cert, const char *server_key, const 
 
 	// set server certificate for the first certificate
 	if ((ret = mbedtls_x509_crt_parse(&httpd_certs, (const unsigned char *) server_cert, strlen(server_cert) + 1)) != 0) {
-		printf("\n[HTTPD] ERROR: mbedtls_x509_crt_parse %d\n", ret);
+		httpd_log("\n[HTTPD] ERROR: mbedtls_x509_crt_parse %d\n", ret);
 		ret = -1;
 		goto exit;
 	}
 
 	// set trusted ca certificates next to server certificate
 	if ((ret = mbedtls_x509_crt_parse(&httpd_certs, (const unsigned char *) ca_certs, strlen(ca_certs) + 1)) != 0) {
-		printf("\n[HTTPD] ERROR: mbedtls_x509_crt_parse %d\n", ret);
+		httpd_log("\n[HTTPD] ERROR: mbedtls_x509_crt_parse %d\n", ret);
 		ret = -1;
 		goto exit;
 	}
@@ -72,7 +72,7 @@ int httpd_tls_setup_init(const char *server_cert, const char *server_key, const 
 #else
 	if ((ret = mbedtls_pk_parse_key(&httpd_key, (const unsigned char *) server_key, strlen(server_key) + 1, NULL, 0)) != 0) {
 #endif
-		printf("\n[HTTPD] ERROR: mbedtls_pk_parse_key %d\n", ret);
+		httpd_log("\n[HTTPD] ERROR: mbedtls_pk_parse_key %d\n", ret);
 		ret = -1;
 		goto exit;
 	}
@@ -112,7 +112,7 @@ void *httpd_tls_new_handshake(int *sock, uint8_t secure)
 											   MBEDTLS_SSL_TRANSPORT_STREAM,
 											   MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 
-			printf("\n[HTTPD] ERROR: mbedtls_ssl_config_defaults %d\n", ret);
+			httpd_log("\n[HTTPD] ERROR: mbedtls_ssl_config_defaults %d\n", ret);
 			ret = -1;
 			goto exit;
 		}
@@ -127,13 +127,13 @@ void *httpd_tls_new_handshake(int *sock, uint8_t secure)
 		}
 
 		if ((ret = mbedtls_ssl_conf_own_cert(conf, &httpd_certs, &httpd_key)) != 0) {
-			printf("\n[HTTPD] ERROR: mbedtls_ssl_conf_own_cert %d\n", ret);
+			httpd_log("\n[HTTPD] ERROR: mbedtls_ssl_conf_own_cert %d\n", ret);
 			ret = -1;
 			goto exit;
 		}
 
 		if ((ret = mbedtls_ssl_setup(ssl, conf)) != 0) {
-			printf("\n[HTTPD] ERROR: mbedtls_ssl_setup %d\n", ret);
+			httpd_log("\n[HTTPD] ERROR: mbedtls_ssl_setup %d\n", ret);
 			ret = -1;
 			goto exit;
 		}
@@ -141,15 +141,15 @@ void *httpd_tls_new_handshake(int *sock, uint8_t secure)
 		mbedtls_ssl_set_bio(ssl, sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 		if ((ret = mbedtls_ssl_handshake(ssl)) != 0) {
-			printf("\n[HTTPD] ERROR: mbedtls_ssl_handshake %d\n", ret);
+			httpd_log("\n[HTTPD] ERROR: mbedtls_ssl_handshake %d\n", ret);
 			ret = -1;
 			goto exit;
 		} else {
-			printf("\n[HTTPD] Use ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(ssl));
+			httpd_log("\n[HTTPD] Use ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(ssl));
 		}
 
 	} else {
-		printf("\n[HTTPD] ERROR: httpd_malloc\n");
+		httpd_log("\n[HTTPD] ERROR: httpd_malloc\n");
 		ret = -1;
 		goto exit;
 	}
@@ -202,7 +202,7 @@ int httpd_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t
 	size_t output_len = 0;
 
 	if ((ret = mbedtls_base64_encode((unsigned char *)base64_buf, buf_len, &output_len, data, data_len)) != 0) {
-		printf("\n[HTTPD] ERROR: mbedtls_base64_encode %d\n", ret);
+		httpd_log("\n[HTTPD] ERROR: mbedtls_base64_encode %d\n", ret);
 		ret = -1;
 	}
 
