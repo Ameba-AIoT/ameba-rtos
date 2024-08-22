@@ -27,10 +27,6 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 endif
 
 config: CORE_TARGETS
-ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
-	make -C media_config config
-endif
-
 ifeq ($(CONFIG_AUDIO_FWK),y)
 	make -C audio_config config
 endif
@@ -39,9 +35,6 @@ test: CORE_TARGETS
 ifeq ($(CONFIG_AUDIO_FWK),y)
 	#make -C audio_test all
 	#make -C audio_hal/test test
-endif
-ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
-	#make -C media_test test
 endif
 
 lib: CORE_TARGETS
@@ -53,33 +46,10 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 	make -C audio_xip lib
 	make -C base lib
 endif
-ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
-	make -C base lib
-	make -C third_party lib
-	make -C media_utils lib
-	make -C media_common lib
-	make -C media_source lib
-endif
-ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
-	make -C media_demux lib
-endif
-ifeq ($(CONFIG_MEDIA_PLAYER),y)
-	make -C media_codec codec-omx
-	make -C media_core standard
-	make -C media_libmedia standard
-endif
-ifeq ($(CONFIG_MEDIA_LITE_PLAYER),y)
-	make -C media_codec codec-simple
-	make -C media_core lite
-	make -C media_libmedia lite
-endif
-ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
-	make -C media_libmedia component
-	make -C media_xip lib
-endif
 ifeq ($(CONFIG_WIFI_AUDIO),y)
 	make -C third_party wfa
 endif
+	make -C third_party lib
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
@@ -100,14 +70,4 @@ clean:
 	make -C audio_config clean
 	make -C base clean
 	make -C third_party clean
-	make -C media_config clean
-	make -C media_utils clean
-	make -C media_common clean
-	make -C media_source clean
-	make -C media_demux clean
-	make -C media_codec clean
-	make -C media_core clean
-	make -C media_libmedia clean
-	make -C media_xip clean
-	make -C media_test clean
 -include $(DEPS)

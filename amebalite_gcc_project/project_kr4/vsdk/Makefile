@@ -198,6 +198,23 @@ else
 
 	$(Q)sh $(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/kr4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR)
 endif
+
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin ] && [ -f $(BASEDIR)/amebalite_gcc_project/fatfs.bin ]; then \
+		mv $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin $(KM4_BUILDDIR)/asdk/image/kr4_km4_app_tmp.bin; \
+		sh $(UTILITYDIR)/pad.sh $(KM4_BUILDDIR)/asdk/image/kr4_km4_app_tmp.bin; \
+		$(PREPENDTOOL) $(BASEDIR)/amebalite_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+		cat $(KM4_BUILDDIR)/asdk/image/kr4_km4_app_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin; \
+	else \
+		if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin ] && [ -f $(BASEDIR)/amebalite_gcc_project/fatfs.bin ]; then \
+			mv $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_tmp.bin; \
+			sh $(UTILITYDIR)/pad.sh $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_tmp.bin; \
+			$(PREPENDTOOL) $(BASEDIR)/amebalite_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+			cat$(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin; \
+		fi \
+	fi
+endif
+
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin $(KM4_BUILDDIR)/asdk/image/km4_boot_all.bin; \

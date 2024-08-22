@@ -14,7 +14,6 @@
 #include "os_wrapper.h"
 #include "usbh_uvc_intf.h"
 #include "usbh.h"
-#include "ringbuffer.h"
 
 /* Private defines -----------------------------------------------------------*/
 static const char *TAG = "UVC";

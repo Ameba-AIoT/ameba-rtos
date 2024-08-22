@@ -7,6 +7,7 @@
 #ifndef _AMEBA_OTA_H_
 #define _AMEBA_OTA_H_
 
+#include "amebahp_secure_boot.h"
 #if defined(CONFIG_MBED_TLS_ENABLED) && (CONFIG_MBED_TLS_ENABLED == 1)
 #include <mbedtls/config.h>
 #include <mbedtls/platform.h>
@@ -132,27 +133,12 @@ typedef struct {
 } update_dw_info;
 
 /**
-  * @brief  OTA target image manifest structure definition
-  */
-typedef struct {
-	u32 Pattern[2];
-	u8 Rsvd1[8];
-	u8 Ver;
-	u8 ImgID;
-	u8 AuthAlg;
-	u8 HashAlg;
-	u16 MajorImgVer;
-	u16 MinorImgVer;
-} update_manifest_info;
-
-
-/**
   * @brief  OTA target image header structure definition
   */
 typedef struct {
 	update_file_hdr	FileHdr;			/*!< Specifies the firmware file header. */
 	update_file_img_hdr	FileImgHdr[MAX_IMG_NUM];	/*!< Specifies the target OTA image firmware file header. */
-	update_manifest_info Manifest[MAX_IMG_NUM];			/*!< Specifies the manifest of target image. */
+	Manifest_TypeDef Manifest[MAX_IMG_NUM];			/*!< Specifies the manifest of target image. */
 	u8 ValidImgCnt;						/*!< Specifies valid image number in file. */
 } update_ota_target_hdr;
 

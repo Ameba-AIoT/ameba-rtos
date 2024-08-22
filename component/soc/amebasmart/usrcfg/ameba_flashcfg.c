@@ -102,6 +102,7 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nor[] = {
 	// + AP IMG OTA2
 	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x08623000, 0x08642FFF}, //VFS region 1 (128K)
+	{VFS2, 				0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 	/* End */
 	{0xFF, 				0xFFFFFFFF, 0xFFFFFFFF},
@@ -121,6 +122,7 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nand[] = {
 	// + AP IMG OTA2
 	{FTL,				0x0C400000, 0x0C45FFFF}, //FTL for BT(>=384K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x0C460000, 0x0C55FFFF}, //VFS region 1(1024K)
+	{VFS2, 				0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 	/* End */
 	{0xFF, 				0xFFFFFFFF, 0xFFFFFFFF},
@@ -142,6 +144,7 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nor_Linux[] = {
 
 	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x08623000, 0x08642FFF}, //VFS region 1 (128K)
+	{VFS2, 				0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 	/* End */
 	{0xFF, 				0xFFFFFFFF, 0xFFFFFFFF},
@@ -163,6 +166,7 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[] = {
 
 	{FTL,				0x0C400000, 0x0C45FFFF}, //FTL for BT(>=384K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x0C460000, 0x0C55FFFF}, //VFS region 1(1024K)
+	{VFS2, 				0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 	/* End */
 	{0xFF, 				0xFFFFFFFF, 0xFFFFFFFF},

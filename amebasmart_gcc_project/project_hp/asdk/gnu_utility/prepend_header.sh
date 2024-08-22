@@ -59,6 +59,8 @@ SYMBOL_LIST=$3
 # Constant Variables
 PATTERN_1=0x99999696
 PATTERN_2=0x3FCC66FC
+PATTERN_FS_1=0x7666735F
+PATTERN_FS_2=0x6661745F
 RSVD=0xFFFFFFFFFFFFFFFF
 IMG2SIGN=0x3831393538373131
 IMAGE_LEN=$(du -b $IMAGE_FILENAME | cut -f 1)
@@ -74,6 +76,9 @@ if [ "$IMAGE_FILENAME_NEW" == "ram_1.bin" ]; then
 elif [ "$IMAGE_FILENAME_NEW" == "xip_boot.bin" ]; then
     MakeFixedWidthHeaderString $PATTERN_1   8  HEADER_FINAL 0
     MakeFixedWidthHeaderString $PATTERN_2   8  HEADER_FINAL 0
+elif [ "$IMAGE_FILENAME_NEW" == "fatfs.bin" ]; then
+    MakeFixedWidthHeaderString $PATTERN_FS_1   8  HEADER_FINAL 0
+    MakeFixedWidthHeaderString $PATTERN_FS_2   8  HEADER_FINAL 0
 else
     MakeFixedWidthHeaderString $IMG2SIGN    16  HEADER_FINAL 0
 fi

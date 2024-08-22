@@ -114,7 +114,7 @@ void MQTTPublishMessage(MQTTClient *c, char *topic)
 	}
 
 }
-#if 0
+
 static void prvMQTTTask(void *pvParameters)
 {
 	/* To avoid gcc warnings */
@@ -168,15 +168,15 @@ static void prvMQTTTask(void *pvParameters)
 	}
 }
 #endif
-#endif
 
 void vStartMQTTTasks(uint16_t usTaskStackSize, UBaseType_t uxTaskPriority)
 {
-	(void)usTaskStackSize;
-	(void)uxTaskPriority;
+	BaseType_t x = 0L;
 	printf("\nExample: Mqtt \n");
 #if defined(MQTT_TASK)
+	rtos_task_create(NULL, "MQTTTask", prvMQTTTask, (void *)x, usTaskStackSize * 4, uxTaskPriority);
 #else
+	rtos_task_create(NULL, "MQTTEcho0", prvMQTTEchoTask, (void *)x, (usTaskStackSize + 128) * 4, uxTaskPriority);
 #endif
 
 }

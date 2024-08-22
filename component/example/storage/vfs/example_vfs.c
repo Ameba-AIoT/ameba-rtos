@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "os_wrapper.h"
+#include "ameba.h"
 
 void example_vfs_thread(void *param)
 {
@@ -20,19 +21,19 @@ void example_vfs_thread(void *param)
 	(void)param;
 
 	prefix = find_vfs_tag(VFS_REGION_1);
-	snprintf(path, sizeof(path), "%s:%s", prefix, key);
+	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, key);
 	finfo = (vfs_file *)fopen(path, "w");
 	if (finfo == NULL) {
-		printf("[%s] fopen failed \r\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, "[%s] fopen failed \r\n", __FUNCTION__);
 		goto exit;
 	}
 
 	res = fwrite(val, strlen(val), 1, (FILE *)finfo);
 	if (res != (int)strlen(val)) {
-		printf("[%s] fwrite failed,err is %d!!\r\n", __FUNCTION__, res);
+		RTK_LOGS(NOTAG, "[%s] fwrite failed,err is %d!!\r\n", __FUNCTION__, res);
 
 	} else {
-		printf("[%s] fwrite succeeded !!!\r\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, "[%s] fwrite succeeded !!!\r\n", __FUNCTION__);
 	}
 
 	fclose((FILE *)finfo);
@@ -40,13 +41,13 @@ void example_vfs_thread(void *param)
 	finfo = (vfs_file *)fopen(path, "r");
 	res = fread(buffer, strlen(val), 1, (FILE *)finfo);
 	if (res < 0) {
-		printf("[%s] fread failed,err is %d!!!\r\n", __FUNCTION__, res);
+		RTK_LOGS(NOTAG, "[%s] fread failed,err is %d!!!\r\n", __FUNCTION__, res);
 	} else {
 		if (memcmp(buffer, val, strlen(val)) != 0) {
-			printf("read buffer is %s \r\n", buffer);
-			printf("[%s] fread content error !!!\r\n", __FUNCTION__);
+			RTK_LOGS(NOTAG, "read buffer is %s \r\n", buffer);
+			RTK_LOGS(NOTAG, "[%s] fread content error !!!\r\n", __FUNCTION__);
 		} else {
-			printf("[%s] fread succeeded !!!\r\n", __FUNCTION__);
+			RTK_LOGS(NOTAG, "[%s] fread succeeded !!!\r\n", __FUNCTION__);
 		}
 	}
 
@@ -54,9 +55,9 @@ void example_vfs_thread(void *param)
 
 	res = remove(path);
 	if (res < 0) {
-		printf("[%s] remove file failed,err is %d!!!\r\n", __FUNCTION__, res);
+		RTK_LOGS(NOTAG, "[%s] remove file failed,err is %d!!!\r\n", __FUNCTION__, res);
 	} else {
-		printf("[%s] remove file succeeded !!!\r\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, "[%s] remove file succeeded !!!\r\n", __FUNCTION__);
 	}
 
 exit:
@@ -66,6 +67,6 @@ exit:
 void example_vfs(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_vfs_thread"), example_vfs_thread, NULL, 4096 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_kv_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(example_kv_thread) failed", __FUNCTION__);
 	}
 }

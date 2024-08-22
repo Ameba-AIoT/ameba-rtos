@@ -1,13 +1,6 @@
 #include <wifi_conf.h>
 u16 call_noused = 0;
 
-int wifi_get_disconn_reason_code(unsigned short *reason_code)
-{
-	UNUSED(reason_code);
-	call_noused = __LINE__;
-	return -1;
-}
-
 int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf)
 {
 	UNUSED(AP_num);

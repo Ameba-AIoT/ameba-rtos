@@ -6,6 +6,7 @@ extern "C" {
 
 #include "time.h"
 #include "log.h"
+#include "basic_types.h"
 
 #define PATH_MAX 4096
 #define MAX_FS_SIZE 2		//number of supported file system types 

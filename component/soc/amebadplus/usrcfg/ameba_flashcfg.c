@@ -85,6 +85,7 @@ const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 
 	{FTL,			0x08700000, 0x08702FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 			0x08703000, 0x08722FFF}, //VFS region 1 (128K)
+	{VFS2, 			0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 			0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 
 	/* End */

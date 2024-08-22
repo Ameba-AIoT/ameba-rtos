@@ -301,6 +301,23 @@ else
 	$(Q) sh $(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE) $(DSP_IMAGE_TARGET_DIR); \
 
 endif
+
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/kr4_km4_app.bin ] && [ -f $(BASEDIR)/amebalite_gcc_project/fatfs.bin ]; then \
+		mv $(IMAGE_TARGET_FOLDER)/kr4_km4_app.bin $(IMAGE_TARGET_FOLDER)/kr4_km4_app_tmp.bin; \
+		sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/kr4_km4_app_tmp.bin; \
+		$(PREPENDTOOL) $(BASEDIR)/amebalite_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+		cat $(IMAGE_TARGET_FOLDER)/kr4_km4_app_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/kr4_km4_app.bin; \
+	else \
+		if [ -f $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin ] && [ -f $(BASEDIR)/amebalite_gcc_project/fatfs.bin ]; then \
+			mv $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app_tmp.bin; \
+			sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app_tmp.bin; \
+			$(PREPENDTOOL) $(BASEDIR)/amebalite_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+			cat $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin; \
+		fi \
+	fi
+endif
+
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/kr4_km4_dsp_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \

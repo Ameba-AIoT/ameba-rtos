@@ -277,6 +277,22 @@ endif
 	@#$(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin 4096
 	$(Q)$(UTILITYDIR)/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/km4_image2_all.bin $(BUILD_TYPE);
 
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ] && [ -f $(BASEDIR)/amebasmart_gcc_project/fatfs.bin ]; then \
+		mv $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_tmp.bin; \
+		sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_tmp.bin 4096; \
+		$(PREPENDTOOL) $(BASEDIR)/amebasmart_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+		cat $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_tmp.bin $(BASEDIR)/amebasmart_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin; \
+	else \
+		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ] && [ -f $(BASEDIR)/amebasmart_gcc_project/fatfs.bin ]; then \
+			mv $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin; \
+			sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin 4096; \
+			$(PREPENDTOOL) $(BASEDIR)/amebasmart_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+			cat $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin $(BASEDIR)/amebasmart_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
+		fi \
+	fi
+endif
+
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \

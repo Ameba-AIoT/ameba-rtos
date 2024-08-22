@@ -31,7 +31,6 @@ ifneq ($(CONFIG_BT_ZEPHYR), y)
 endif
 endif
 
-	#make -C bt_demo all
 ifeq ($(CONFIG_BT_PERIPHERAL), y)
 	make -C ble_peripheral all
 endif
@@ -141,7 +140,6 @@ ifneq ($(CONFIG_BT_ZEPHYR), y)
 endif
 endif
 
-	#make -C bt_demo clean
 ifeq ($(CONFIG_BT_PERIPHERAL), y)
 	make -C ble_peripheral clean
 endif

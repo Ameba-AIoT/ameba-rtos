@@ -18,7 +18,7 @@ Table of Contents
 Description
 ~~~~~~~~~~~
     This example is designed for firmware update by Over-the-air programming (OTA) via
-        Wireless Network Connection. Download OTA_ALL.bin from the download server
+        Wireless Network Connection. Download ota_all.bin from the download server
         (in tools\DownloadServer(HTTP) or tools\DownloadServer) automatically.
 
 
@@ -49,7 +49,7 @@ Parameter Setting and Configuration
 		
 		6. For sdcard update, only AmebaSmart support.
 			(1) users only need to set resource.
-			#define RESOURCE    "OTA_ALL.bin" // binary file path in the sdcard.
+			#define RESOURCE    "ota_all.bin" // binary file path in the sdcard.
 			(2) in component\file_system\vfs\vfs_fatfs.h
 			#define FATFS_DISK_SD 	 1
 			(3) in component\file_system\fatfs\r0.14b\include\ffconf.h
@@ -66,10 +66,10 @@ Parameter Setting and Configuration
         set:    #define PORT    80
                 #define HOST    "m-apps.oss-cn-shenzhen.aliyuncs.com"
                 #define RESOURCE    "051103061600.bin"
-        For local network download, Set it with IP and OTA_ALL.bin
+        For local network download, Set it with IP and ota_all.bin
         e.g.    #define PORT    80
                 #define HOST    "192.168.1.100"
-                #define RESOURCE    "OTA_ALL.bin"
+                #define RESOURCE    "ota_all.bin"
         Note: Remember to Set the server start.bat with the same PORT and RESOURCE.
 
 

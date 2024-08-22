@@ -143,6 +143,13 @@ LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_vorbisdec.a
 endif
 endif
 
+ifeq ($(CONFIG_SPEEX_LIB),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_speexdsp.a
+endif
+ifeq ($(CONFIG_OPUS_LIB),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_opus.a
+endif
+
 ifeq ($(CONFIG_AUDIO_MIXER),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_mixer.a
 else ifeq ($(CONFIG_AUDIO_PASSTHROUGH),y)
@@ -165,6 +172,7 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_rpc.a
 endif
 
 ifeq ($(CONFIG_BT), y)
+ifneq ($(CONFIG_BT_INIC), y)
 ifeq ($(CONFIG_BT_AUDIO_CODEC_SUPPORT), y)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btcodec.a
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_btaudiosync.a
@@ -181,6 +189,7 @@ LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebasma
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebasmart/lib/ca32/sysm.a
 ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/amebasmart/ca32/btmesh.a
+endif
 endif
 endif
 endif
@@ -339,6 +348,15 @@ fip_image:
 	@cat $(IMAGE_TARGET_FOLDER)/xip_image2_prepend.bin $(IMAGE_TARGET_FOLDER)/bl1_sram_prepend.bin $(IMAGE_TARGET_FOLDER)/bl1_prepend.bin $(IMAGE_TARGET_FOLDER)/fip_prepend.bin > $(IMAGE_TARGET_FOLDER)/ap_image_all.bin
 
 	$(Q)$(KM4_BUILDDIR)/asdk/gnu_utility/image_tool/imagetool.sh $(IMAGE_TARGET_FOLDER)/ap_image_all.bin $(BUILD_TYPE)
+
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app.bin ] && [ -f $(BASEDIR)/amebasmart_gcc_project/fatfs.bin ]; then \
+		mv $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app.bin $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app_tmp.bin; \
+		sh $(UTILITYDIR)/pad.sh $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app_tmp.bin 4096; \
+		$(PREPENDTOOL) $(BASEDIR)/amebasmart_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
+		cat $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app_tmp.bin $(BASEDIR)/amebasmart_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app.bin; \
+	fi
+endif
 
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_ca32_app.bin ]; then \

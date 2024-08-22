@@ -162,6 +162,17 @@ typedef struct _rtw_mac_t {
 } rtw_mac_t;
 
 /**
+  * @brief  The structure is used to describe the busyness of a channe.
+  */
+struct acs_mntr_rpt {
+	u16 meas_time; /*Measurements time on this channel, unit:ms*/
+	u16 busy_time; /*time that the primary channel was sensed busy, unit:ms*/
+	u16 tx_time; /*time spent transmitting frame on this channel, unit:ms */
+	s8 noise; /*unit: dbm*/
+	u8 channel;
+};
+
+/**
   * @brief  The structure is used to describe the scan result of the AP.
   */
 typedef struct rtw_scan_result {
@@ -183,6 +194,7 @@ typedef struct _rtw_channel_scan_time_t {
 /* DO NOT define or use any enum _rtw_result_t in linux. Use asm-generic/errno.h instead. */
 typedef enum _rtw_result_t (*scan_user_callback_t)(unsigned int ap_num, void *user_data);
 typedef enum _rtw_result_t (*scan_report_each_mode_user_callback_t)(struct rtw_scan_result *scanned_ap_info, void *user_data);
+typedef enum _rtw_result_t (*scan_report_acs_user_callback_t)(struct acs_mntr_rpt *acs_mntr_rpt);
 
 /**
   * @brief  The structure is used to describe the scan parameters used for scan,
@@ -200,6 +212,7 @@ typedef struct _rtw_scan_param_t {
 	void									*scan_user_data;
 	scan_user_callback_t					scan_user_callback;   /**< used for normal asynchronized mode */
 	scan_report_each_mode_user_callback_t	scan_report_each_mode_user_callback; /*used for RTW_SCAN_REPORT_EACH mode */
+	scan_report_acs_user_callback_t 		scan_report_acs_user_callback; /*used for report acs info*/
 } rtw_scan_param_t;
 
 #if defined(__IAR_SYSTEMS_ICC__) || defined (__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
@@ -662,14 +675,6 @@ typedef struct _rtw_csa_parm_t {
 	ap_channel_switch_callback_t callback;
 } rtw_csa_parm_t;
 
-struct acs_mntr_rpt {
-	u16 meas_time; /*Measurements time on this channel, unit:ms*/
-	u16 busy_time; /*time that the primary channel was sensed busy, unit:ms*/
-	u16 tx_time; /*time spent transmitting frame on this channel, unit:ms */
-	s8 noise; /*unit: dbm*/
-	u8 channel;
-};
-
 //----------------------------
 /* ie format
  * +-----------+--------+-----------------------+
@@ -698,6 +703,83 @@ struct country_code_table_t {
 	char char2[2]; /* country code */
 	u8 channel_plan; /* channel plan code */
 	u8 pwr_lmt; /* tx power limit index */
+};
+
+/**
+  * @brief  The enumeration lists the conenct results.
+  */
+enum rtw_connect_result {
+	RTW_CONNECT_SUCCESS,
+	RTW_CONNECT_PASSWORD_WRONG,
+	RTW_CONNECT_SCAN_FAIL,
+	RTW_CONNECT_AUTH_FAIL,
+	RTW_CONNECT_ASSOC_FAIL,
+	RTW_CONNECT_4WAY_HANDSHAKE_FAIL,
+	RTW_CONNECT_UNKNOWN_FAIL,
+};
+
+/**
+  * @brief  The enumeration lists the disconnet types.
+  */
+enum rtw_disconn_type {
+	DISCONN_BY_AP	= 0x00000000,
+	DISCONN_BY_CONN_FAIL = 0x00010000,
+	DISCONN_BY_DRV = 0x00020000,
+	DISCONN_BY_APP = 0x00030000,
+};
+
+/**
+  * @brief  The enumeration lists the disconnet reasons.
+  */
+enum rtw_disconn_reason {
+#ifndef CONFIG_FULLMAC
+	/*Reason code in 802.11 spec, Receive AP's deauth or disassoc after wifi connected*/
+	WLAN_REASON_UNSPECIFIED 						= DISCONN_BY_AP + 1,
+	WLAN_REASON_PREV_AUTH_NOT_VALID 				= DISCONN_BY_AP + 2,
+	WLAN_REASON_DEAUTH_LEAVING 						= DISCONN_BY_AP + 3,
+	WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY          = DISCONN_BY_AP + 4,
+	WLAN_REASON_DISASSOC_AP_BUSY                    = DISCONN_BY_AP + 5,
+	WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA       = DISCONN_BY_AP + 6,
+	WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA      = DISCONN_BY_AP + 7,
+	WLAN_REASON_DISASSOC_STA_HAS_LEFT               = DISCONN_BY_AP + 8,
+	WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH          = DISCONN_BY_AP + 9,
+	WLAN_REASON_PWR_CAPABILITY_NOT_VALID            = DISCONN_BY_AP + 10,
+	WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID         = DISCONN_BY_AP + 11,
+	WLAN_REASON_INVALID_IE                          = DISCONN_BY_AP + 13,
+	WLAN_REASON_MICHAEL_MIC_FAILURE                 = DISCONN_BY_AP + 14,
+	WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT              = DISCONN_BY_AP + 15,
+	WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT            = DISCONN_BY_AP + 16,
+	WLAN_REASON_IE_IN_4WAY_DIFFERS                  = DISCONN_BY_AP + 17,
+	WLAN_REASON_GROUP_CIPHER_NOT_VALID              = DISCONN_BY_AP + 18,
+	WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID           = DISCONN_BY_AP + 19,
+	WLAN_REASON_AKMP_NOT_VALID                      = DISCONN_BY_AP + 20,
+	WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION          = DISCONN_BY_AP + 21,
+	WLAN_REASON_INVALID_RSN_IE_CAPAB                = DISCONN_BY_AP + 22,
+	WLAN_REASON_IEEE_802_1X_AUTH_FAILED             = DISCONN_BY_AP + 23,
+	WLAN_REASON_CIPHER_SUITE_REJECTED               = DISCONN_BY_AP + 24,
+#endif
+	/*RTK defined, Wifi connect fail reason*/
+	WLAN_REASON_PASSWORD_WRONG						= DISCONN_BY_CONN_FAIL + 1,
+	WLAN_REASON_SCAN_FAIL							= DISCONN_BY_CONN_FAIL + 2,
+	WLAN_REASON_AUTH_FAIL							= DISCONN_BY_CONN_FAIL + 3,
+	WLAN_REASON_ASSOC_FAIL							= DISCONN_BY_CONN_FAIL + 4,
+	WLAN_REASON_4WAY_HANDSHAKE_FAIL					= DISCONN_BY_CONN_FAIL + 5,
+
+	/*RTK defined, Driver disconenct from AP after wifi connected and detect something wrong*/
+	WLAN_REASON_DRV_AP_LOSS							= DISCONN_BY_DRV + 1,
+	WLAN_REASON_DRV_AP_CHANGE						= DISCONN_BY_DRV + 2,
+
+	/*RTK defined, Application layer call some API to cause wifi disconnect*/
+	WLAN_REASON_APP_DISCONN							= DISCONN_BY_APP + 1,
+	WLAN_REASON_APP_CONN_WITHOUT_DISCONN			= DISCONN_BY_APP + 2,
+};
+
+/**
+  * @brief  The enumeration lists the disconnect report.
+  */
+struct rtw_event_disconn_info_t {
+	u32 disconn_reason;/*Detail in enum rtw_disconn_reason*/
+	u8	bssid[6]; /*AP's MAC address*/
 };
 
 #ifndef CONFIG_FULLMAC

@@ -1648,7 +1648,7 @@
  *
  * This module is used for testing (ssl_client/server).
  */
-//#define MBEDTLS_CERTS_C
+#define MBEDTLS_CERTS_C
 
 /**
  * \def MBEDTLS_CIPHER_C
@@ -2287,7 +2287,7 @@
  *
  * This module is required for SSL/TLS server support.
  */
-//#define MBEDTLS_SSL_SRV_C
+#define MBEDTLS_SSL_SRV_C
 
 /**
  * \def MBEDTLS_SSL_TLS_C

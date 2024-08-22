@@ -20,6 +20,7 @@
 static struct hci_h4_t {
 	void    *rx_ind_sema;
 	void    *rx_run_sema;
+	void    *tx_mutex;
 	void    *rx_thread_hdl;
 	uint8_t  rx_run;
 	struct hci_transport_cb *cb;
@@ -180,6 +181,12 @@ void hci_transport_register(struct hci_transport_cb *cb)
 
 uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_rsvd_byte)
 {
+	uint16_t sent = 0;
+
+	if (hci_h4->rx_run != 1) {
+		return 0;
+	}
+
 	if (type < HCI_CMD || type > HCI_ISO) {
 		return 0;
 	}
@@ -188,16 +195,19 @@ uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_r
 		bt_coex_process_tx_frame(type, buf, len);
 	}
 
+	osif_mutex_take(hci_h4->tx_mutex, BT_TIMEOUT_FOREVER);
 	if (has_rsvd_byte) {
 		*(buf - 1) = type;
 		/* Caller only send size of 'len' bytes, so return 'len' */
-		return (hci_uart_send(buf - 1, len + 1) - 1);
+		sent = hci_uart_send(buf - 1, len + 1) - 1;
 	} else {
-		if (sizeof(type) != hci_uart_send(&type, sizeof(type))) {
-			return 0;
+		if (sizeof(type) == hci_uart_send(&type, sizeof(type))) {
+			sent = hci_uart_send(buf, len);
 		}
-		return hci_uart_send(buf, len);
 	}
+	osif_mutex_give(hci_h4->tx_mutex);
+
+	return sent;
 }
 
 uint8_t hci_transport_open(void)
@@ -216,6 +226,7 @@ uint8_t hci_transport_open(void)
 
 	osif_sem_create(&hci_h4->rx_ind_sema, 0, 1);
 	osif_sem_create(&hci_h4->rx_run_sema, 0, 1);
+	osif_mutex_create(&hci_h4->tx_mutex);
 	hci_h4->rx_run = 1;
 	osif_task_create(&hci_h4->rx_thread_hdl, "h4_rx_thread", h4_rx_thread, 0, CONFIG_HCI_RX_STACK_SIZE, CONFIG_HCI_RX_PRIO);
 	osif_sem_take(hci_h4->rx_run_sema, BT_TIMEOUT_FOREVER);
@@ -246,6 +257,7 @@ void hci_transport_free(void)
 
 	osif_sem_delete(hci_h4->rx_run_sema);
 	osif_sem_delete(hci_h4->rx_ind_sema);
+	osif_mutex_delete(hci_h4->tx_mutex);
 
 	if (hci_h4) {
 		osif_mem_free(hci_h4);

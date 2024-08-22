@@ -26,6 +26,7 @@ CSRC += \
 	$(DIR)/osif/bt_debug.c \
 	$(DIR)/osif/osif.c
 
+ifneq ($(CONFIG_BT_INIC), y)
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 CSRC += \
 	$(DIR)/driver/hci/hci_if_zephyr.c
@@ -34,6 +35,7 @@ CSRC += \
 	$(DIR)/driver/hci/hci_if_rtk.c \
 	$(DIR)/rtk_stack/platform/common/platform_utils.c \
 	$(DIR)/rtk_stack/platform/common/trace_uart.c
+endif
 endif
 
 OBJS = $(notdir $(CSRC:.c=.o))

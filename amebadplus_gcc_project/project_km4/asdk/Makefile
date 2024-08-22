@@ -433,7 +433,15 @@ else
 
 endif
 
-
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ] && [ -f $(BASEDIR)/amebadplus_gcc_project/fatfs.bin ]; then \
+		mv $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin; \
+		sh $(UTILITYDIR)/pad.sh $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin 4096; \
+		$(PREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(IMAGE_TARGET_FOLDER)/target_img2.map; \
+		cat $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin $(BASEDIR)/amebadplus_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
+	fi
+endif
+	
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
@@ -445,6 +453,8 @@ else
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
 	fi
 endif
+
+
 	@echo "========== Image manipulating end =========="
 
 linker_loader:

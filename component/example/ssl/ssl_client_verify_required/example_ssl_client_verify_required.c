@@ -47,9 +47,9 @@ static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *
 	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
 
 	if (*flags) {
-		printf("\nERROR: certificate verify\n%s\n", buf);
+		RTK_LOGS(NOTAG, "\nERROR: certificate verify\n%s\n", buf);
 	} else {
-		printf("\nCertificate verified\n%s\n", buf);
+		RTK_LOGS(NOTAG, "\nCertificate verified\n%s\n", buf);
 	}
 
 	return 0;
@@ -72,11 +72,11 @@ static void example_ssl_client_verify_required_thread(void *param)
 	mbedtls_ssl_config conf;
 	mbedtls_x509_crt ca_cert;
 
-	printf("\nExample: SSL client (VERIFY_REQUIRED)\n");
+	RTK_LOGS(NOTAG, "\nExample: SSL client (VERIFY_REQUIRED)\n");
 
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		printf("Please use ATW0=ssid, ATW1=password, ATWC to connect AP first time\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Please use AT+WLCONN=ssid,***,pw,*** to connect AP first time\n");
 		rtos_time_delay_ms(2000);
 	}
 
@@ -86,7 +86,7 @@ static void example_ssl_client_verify_required_thread(void *param)
 	mbedtls_x509_crt_init(&ca_cert);
 
 	if ((ret = mbedtls_net_connect(&server_fd, SERVER_HOST, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
-		printf("ERROR: mbedtls_net_connect ret(%d)\n", ret);
+		RTK_LOGS(NOTAG, "ERROR: mbedtls_net_connect ret(%d)\n", ret);
 		goto exit;
 	}
 
@@ -97,12 +97,12 @@ static void example_ssl_client_verify_required_thread(void *param)
 										   MBEDTLS_SSL_TRANSPORT_STREAM,
 										   MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 
-		printf("ERROR: mbedtls_ssl_config_defaults ret(%d)\n", ret);
+		RTK_LOGS(NOTAG, "ERROR: mbedtls_ssl_config_defaults ret(%d)\n", ret);
 		goto exit;
 	}
 
 	if ((ret = mbedtls_x509_crt_parse(&ca_cert, (const unsigned char *) test_ca_crt, strlen((char const *)test_ca_crt) + 1)) != 0) {
-		printf(" failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret);
+		RTK_LOGS(NOTAG, " failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret);
 		goto exit;
 	}
 
@@ -112,18 +112,18 @@ static void example_ssl_client_verify_required_thread(void *param)
 	mbedtls_ssl_conf_ca_chain(&conf, &ca_cert, NULL);
 
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
-		printf("ERRPR: mbedtls_ssl_setup ret(%d)\n", ret);
+		RTK_LOGS(NOTAG, "ERRPR: mbedtls_ssl_setup ret(%d)\n", ret);
 		goto exit;
 	}
 
 	if ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
-		printf("ERROR: mbedtls_ssl_handshake ret(-0x%x)", -ret);
+		RTK_LOGS(NOTAG, "ERROR: mbedtls_ssl_handshake ret(-0x%x)", -ret);
 		goto exit;
 	} else {
 		unsigned char buf[BUFFER_SIZE + 1];
 		int pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 
-		printf("SSL ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ssl));
+		RTK_LOGS(NOTAG, "SSL ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ssl));
 		sprintf((char *) buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);
 		mbedtls_ssl_write(&ssl, buf, strlen((char *) buf));
 
@@ -141,7 +141,7 @@ static void example_ssl_client_verify_required_thread(void *param)
 					body = header + strlen("\r\n\r\n");
 					*(body - 2) = 0;
 					header_removed = 1;
-					printf("\nHTTP Header: %s\n", buf);
+					RTK_LOGS(NOTAG, "\nHTTP Header: %s\n", buf);
 
 					// Remove header size to get first read size of data from body head
 					read_size = pos - ((unsigned char *) body - buf);
@@ -155,7 +155,7 @@ static void example_ssl_client_verify_required_thread(void *param)
 					}
 				} else {
 					if (pos >= BUFFER_SIZE) {
-						printf("ERROR: HTTP header\n");
+						RTK_LOGS(NOTAG, "ERROR: HTTP header\n");
 						goto exit;
 					}
 
@@ -163,12 +163,12 @@ static void example_ssl_client_verify_required_thread(void *param)
 				}
 			}
 
-			printf("read resource %d bytes\n", read_size);
+			RTK_LOGS(NOTAG, "read resource %d bytes\n", read_size);
 			resource_size += read_size;
 		}
 
-		printf("exit read. ret = %d\n", read_size);
-		printf("http content-length = %d bytes, download resource size = %d bytes\n", content_len, resource_size);
+		RTK_LOGS(NOTAG, "exit read. ret = %d\n", read_size);
+		RTK_LOGS(NOTAG, "http content-length = %d bytes, download resource size = %d bytes\n", content_len, resource_size);
 	}
 
 exit:
@@ -185,6 +185,6 @@ void example_ssl_client_verify_required(void)
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"example_ssl_client_verify_required_thread"), example_ssl_client_verify_required_thread,
 						 NULL, 2048 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_ssl_client_verify_required_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(example_ssl_client_verify_required_thread) failed", __FUNCTION__);
 	}
 }
