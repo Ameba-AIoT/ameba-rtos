@@ -18,8 +18,13 @@ OBJS =
 all: CORE_TARGETS
 	make -C amebasmart_bsp all
 	make -C bt_coex all
+
+ifeq ($(CONFIG_BT_INIC), y)
+	make -C bt_inic all
+else
 	make -C bt_api all
 	make -C bt_atcmd all
+endif
 
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 	make -C bt_zephyr all
@@ -31,7 +36,6 @@ ifneq ($(CONFIG_BT_ZEPHYR), y)
 endif
 endif
 
-	#make -C bt_demo all
 ifeq ($(CONFIG_BT_PERIPHERAL), y)
 	make -C ble_peripheral all
 endif
@@ -121,8 +125,13 @@ CORE_TARGETS: $(OBJS)
 clean:
 	make -C amebasmart_bsp clean
 	make -C bt_coex clean
+
+ifeq ($(CONFIG_BT_INIC), y)
+	make -C bt_inic clean
+else
 	make -C bt_api clean
 	make -C bt_atcmd clean
+endif
 
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 	make -C bt_zephyr clean
@@ -134,7 +143,6 @@ ifneq ($(CONFIG_BT_ZEPHYR), y)
 endif
 endif
 
-	#make -C bt_demo clean
 ifeq ($(CONFIG_BT_PERIPHERAL), y)
 	make -C ble_peripheral clean
 endif

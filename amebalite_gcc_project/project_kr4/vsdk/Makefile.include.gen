@@ -21,6 +21,11 @@ INCDIR		=$(ROOTDIR)/../inc
 BASEDIR		= $(ROOTDIR)/../../..
 KR4_BUILDDIR	= $(ROOTDIR)/../../project_kr4
 KM4_BUILDDIR	= $(ROOTDIR)/../../project_km4
+ifeq ($(findstring y, $(CONFIG_AS_INIC_AP) $(CONFIG_SINGLE_CORE_WIFI)), y)
+AP_IMAGEDIR		= $(KR4_BUILDDIR)/vsdk/image
+else
+AP_IMAGEDIR		= $(KM4_BUILDDIR)/asdk/image
+endif
 
 TARGETDIR	=$(BASEDIR)/component/soc/amebalite
 BOOTLOADER	=$(BASEDIR)/component/soc/amebalite/bootloader

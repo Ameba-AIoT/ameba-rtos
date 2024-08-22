@@ -167,21 +167,21 @@ u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int ind
 	u32 flash_checksum = 0;
 	u32 addr;
 	u32 len;
-	update_manifest_info *manifest = NULL;
+	Manifest_TypeDef *manifest = NULL;
 	u8 res = _TRUE;
 
 	addr = IMG_ADDR[pOtaTgtHdr->FileImgHdr[index].ImgID][targetIdx];
-	len = pOtaTgtHdr->FileImgHdr[index].ImgLen - sizeof(update_manifest_info);
+	len = pOtaTgtHdr->FileImgHdr[index].ImgLen - sizeof(Manifest_TypeDef);
 	manifest = &pOtaTgtHdr->Manifest[index];
 
 	/*add signature's checksum*/
-	for (i = 0; i < sizeof(update_manifest_info); i++) {
+	for (i = 0; i < sizeof(Manifest_TypeDef); i++) {
 		flash_checksum += *((u8 *)manifest + i);
 	}
 
 	/* add flash data's checksum */
 	for (i = 0; i < len; i++) {
-		flash_checksum += *((u8 *)(addr + i + sizeof(update_manifest_info)));
+		flash_checksum += *((u8 *)(addr + i + sizeof(Manifest_TypeDef)));
 
 	}
 
@@ -203,7 +203,7 @@ u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int ind
 u32 ota_update_manifest(update_ota_target_hdr *pOtaTgtHdr, u32 ota_target_index, int index)
 {
 	u32 addr;
-	update_manifest_info *manifest = NULL;
+	Manifest_TypeDef *manifest = NULL;
 	flash_t flash;
 
 #if OTA_CLEAR_PATTERN
@@ -219,7 +219,7 @@ u32 ota_update_manifest(update_ota_target_hdr *pOtaTgtHdr, u32 ota_target_index,
 	ota_printf(_OTA_INFO_, "update version major: %d, minor: %d\n", manifest->MajorImgVer, manifest->MinorImgVer);
 
 	/*write the manifest finally*/
-	flash_stream_write(&flash, addr - SPI_FLASH_BASE, sizeof(update_manifest_info), (u8 *)manifest);
+	flash_stream_write(&flash, addr - SPI_FLASH_BASE, sizeof(Manifest_TypeDef), (u8 *)manifest);
 
 #if OTA_CLEAR_PATTERN
 	if (strncmp("OTA", (const char *)pOtaTgtHdr->FileImgHdr[index].Signature, 3) == 0) {
@@ -711,8 +711,8 @@ void download_parameter_init(ota_context *ctx)
 	if (otaCtrl->ImgId == OTA_IMGID_APP) {
 		otaCtrl->RemainBytes = otaCtrl->ImageLen - otaCtrl->ReadBytes;
 	} else {
-		otaCtrl->RemainBytes = otaCtrl->ImageLen - sizeof(update_manifest_info) - otaCtrl->ReadBytes;/*skip the manifest structure*/
-		otaCtrl->FlashAddr = otaCtrl->FlashAddr + sizeof(update_manifest_info);/*skip the manifest structure*/
+		otaCtrl->RemainBytes = otaCtrl->ImageLen - sizeof(Manifest_TypeDef) - otaCtrl->ReadBytes;/*skip the manifest structure*/
+		otaCtrl->FlashAddr = otaCtrl->FlashAddr + sizeof(Manifest_TypeDef);/*skip the manifest structure*/
 		/*check bootloader OTA2*/
 		if (otaCtrl->ImgId == OTA_IMGID_BOOT && otaCtrl->targetIdx == OTA_INDEX_2) {
 			otaCtrl->SkipBootOTAFg = ota_checkbootloader_ota2();
@@ -725,8 +725,8 @@ int download_packet_process(ota_context *ctx, u8 *buf, int len)
 {
 	update_ota_ctrl_info *otaCtrl = ctx->otactrl;
 	update_ota_target_hdr *pOtaTgtHdr = ctx->otaTargetHdr;
-	static update_manifest_info *manifest = NULL;
-	static int manifest_size = sizeof(update_manifest_info);
+	static Manifest_TypeDef *manifest = NULL;
+	static int manifest_size = sizeof(Manifest_TypeDef);
 	static u8 *empty_sig = NULL;
 	static u32 write_sector = 0;
 	static u32 next_erase_sector = 0;
@@ -846,7 +846,7 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 	if (otaCtrl->RemainBytes <= 0) {
 
 		if (otaCtrl->ImgId != OTA_IMGID_APP) {
-			size += sizeof(update_manifest_info);    //add the manifest length
+			size += sizeof(Manifest_TypeDef);    //add the manifest length
 		}
 		download_percentage(size, otaCtrl->ImageLen);
 

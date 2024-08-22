@@ -97,6 +97,7 @@ if [ "$CONFIG_VFS_FATFS_INCLUDED" = "y" ]; then
 choice 'FATFS Memory Type'     "
                                 FlASH           FATFS_DISK_FLASH \
                                 "
+bool "FATFS within APP Image"				CONFIG_FATFS_WITHIN_APP_IMG
 fi
 endmenu
 
@@ -114,10 +115,11 @@ bool "Enable Wifi"                CONFIG_WLAN_MENU
 if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	choice 'INIC Mode'		"INIC_IPC	CONFIG_KM0_NP_KM4_AP \
 								SPI_FULLMAC		CONFIG_SPI_FULLMAC	\
+								USB_FULLMAC		CONFIG_USB_FULLMAC	\
 								SDIO_FULLMAC		CONFIG_SDIO_FULLMAC	\
 								SDIO_BRIDGE		CONFIG_SDIO_BRIDGE_FOR_KM4 \
 								"
-	if [ "$CONFIG_SDIO_FULLMAC" = "y" -o "$CONFIG_SPI_FULLMAC" = "y" ]; then
+	if [ "$CONFIG_SDIO_FULLMAC" = "y" -o "$CONFIG_SPI_FULLMAC" = "y" -o "$CONFIG_USB_FULLMAC" = "y" ]; then
 		choice 'WIFI Driver Location'	"KM0	CONFIG_KM0_AS_NP \
 						KM4	CONFIG_KM4_AS_NP \
 						"
@@ -136,11 +138,13 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 y
 	fi
-	if [ "$CONFIG_SDIO_FULLMAC" = "y" -o "$CONFIG_SPI_FULLMAC" = "y" ]; then
+	if [ "$CONFIG_SDIO_FULLMAC" = "y" -o "$CONFIG_SPI_FULLMAC" = "y" -o "$CONFIG_USB_FULLMAC" = "y" ]; then
 		if [ "$CONFIG_SDIO_FULLMAC" = "y" ]; then
 			define_bool CONFIG_INIC_INTF_SDIO y
-		else
+		elif [ "$CONFIG_SPI_FULLMAC" = "y" ]; then
 			define_bool CONFIG_INIC_INTF_SPI y
+		else 
+			define_bool CONFIG_INIC_INTF_USB y
 		fi
 		if [ "$CONFIG_KM0_AS_NP" = "y" ]; then
 			define_bool CONFIG_WLAN_FOR_KM0 y
@@ -214,48 +218,52 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG BT'
-bool "Enable BT"								CONFIG_BT_MENU
+bool "Enable BT"												CONFIG_BT_MENU
 # !!Notice that "[ ]" both side and "$CONFIG_XXX" should has a whitespace
 if [ "$CONFIG_BT_MENU" = "y" ]; then
 	define_bool CONFIG_BT_FOR_KM4 y
 	define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
 	if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-		define_bool CONFIG_BT_ENABLE_FAST_MP_FOR_KM4 y
+		define_bool CONFIG_BT_ENABLE_FAST_MP y
 	fi
-	bool "BT Advanced Feature"					CONFIG_BT_ADVANCED_FEATURE_MENU
-	if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-		bool "  Exclude BT AT Command"			CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KM4
-#		bool "  Use Zephyr BT Stack"			CONFIG_BT_ZEPHYR_MENU
-		if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
-			define_bool CONFIG_BT_ZEPHYR_FOR_KM4 y
+#	bool "  Enable iNIC"										CONFIG_BT_INIC
+	if [ "$CONFIG_BT_INIC" = "y" ]; then
+		choice 'Interface'	"Uart_H4							CONFIG_BT_INIC_H4 \
+							Uart_H5								CONFIG_BT_INIC_H5 \
+							" Uart_H4
+	else
+		bool "BT Advanced Feature"								CONFIG_BT_ADVANCED_FEATURE_MENU
+		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
+			bool "  Exclude BT AT Command"						CONFIG_BT_EXCLUDE_AT_COMMAND
+#			bool "  Use Zephyr BT Stack"						CONFIG_BT_ZEPHYR
 		fi
-	fi
-	bool "BT Example Demo"						CONFIG_BT_EXAMPLE_DEMO_MENU
-	if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
-		bool "  BLE Peripheral"					CONFIG_BT_PERIPHERAL_FOR_KM4
-		bool "  BLE Central"					CONFIG_BT_CENTRAL_FOR_KM4
-		bool "  BLE Scatternet"					CONFIG_BT_SCATTERNET_FOR_KM4
-#		bool "  BLE Throughput"					CONFIG_BT_THROUGHPUT_FOR_KM4
-#		bool "  BLE Transfer Module"			CONFIG_BT_TRANSFER_MODULE_FOR_KM4
-		bool "  BLE Mesh Provisioner"									CONFIG_BT_MESH_PROVISIONER_MENU
-		bool "  BLE Mesh Device"										CONFIG_BT_MESH_DEVICE_MENU
-		bool "  BLE Mesh Provisioner and BLE Scatternet"				CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
-		bool "  BLE Mesh Device and BLE Scatternet"						CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
-		if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
-			define_bool CONFIG_BT_MESH_PROVISIONER_FOR_KM4 y
-			define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
-		fi
-		if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
-			define_bool CONFIG_BT_MESH_DEVICE_FOR_KM4 y
-			define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
-		fi
-		if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-			define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET_FOR_KM4 y
-			define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
-		fi
-		if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
-			define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET_FOR_KM4 y
-			define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
+		bool "BT Example Demo"									CONFIG_BT_EXAMPLE_DEMO_MENU
+		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
+			bool "  BLE Peripheral"								CONFIG_BT_PERIPHERAL
+			bool "  BLE Central"								CONFIG_BT_CENTRAL
+			bool "  BLE Scatternet"								CONFIG_BT_SCATTERNET
+#			bool "  BLE Throughput"								CONFIG_BT_THROUGHPUT
+#			bool "  BLE Transfer Module"						CONFIG_BT_TRANSFER_MODULE
+			bool "  BLE Mesh Provisioner"						CONFIG_BT_MESH_PROVISIONER_MENU
+			bool "  BLE Mesh Device"							CONFIG_BT_MESH_DEVICE_MENU
+			bool "  BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
+			bool "  BLE Mesh Device and BLE Scatternet"			CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
+			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
+				define_bool CONFIG_BT_MESH_PROVISIONER y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
+			fi
+			if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
+				define_bool CONFIG_BT_MESH_DEVICE y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
+			fi
+			if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
+				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
+			fi
+			if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
+				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
+			fi
 		fi
 	fi
 fi
@@ -503,6 +511,7 @@ bool "CDC ACM"                          CONFIG_USBD_CDC_ACM_FOR_KM4
 bool "Composite"                        CONFIG_USBD_COMPOSITE_FOR_KM4
 bool "HID"                              CONFIG_USBD_HID_FOR_KM4
 bool "Vendor"                           CONFIG_USBD_VENDOR_FOR_KM4
+bool "INIC"								CONFIG_USBD_INIC_FOR_KM4
 fi
 endmenu
 
@@ -688,26 +697,11 @@ if [ "$CONFIG_AUDIO_FWK_FOR_KM4" = "y" ]; then
 								PassThrough	CONFIG_AUDIO_PASSTHROUGH_FOR_KM4"
 fi
 
-bool "Enable Media Framework"	CONFIG_MEDIA_PLAYER_FOR_KM4
-if [ "$CONFIG_MEDIA_PLAYER_FOR_KM4" = "y" ]; then
-	if [ "$CONFIG_AUDIO_FWK_FOR_KM4" = "n" ]; then
-		define_bool CONFIG_AUDIO_FWK_FOR_KM4 y
-		define_bool CONFIG_AUDIO_MIXER_FOR_KM4 y
-	fi
-	mainmenu_option next_comment
-	comment '< Demux'
-		bool "Demux WAV"	CONFIG_MEDIA_DEMUX_WAV_FOR_KM4
-		bool "Demux MP3"	CONFIG_MEDIA_DEMUX_MP3_FOR_KM4
-		bool "Demux AAC"	CONFIG_MEDIA_DEMUX_AAC_FOR_KM4
-		bool "Demux M4A"	CONFIG_MEDIA_DEMUX_MP4_FOR_KM4
-	endmenu
-	mainmenu_option next_comment
-	comment '< Codec'
-		bool "Codec PCM"	CONFIG_MEDIA_CODEC_PCM_FOR_KM4
-		bool "Codec MP3"	CONFIG_MEDIA_CODEC_MP3_FOR_KM4
-		bool "Codec AAC"	CONFIG_MEDIA_CODEC_HAAC_FOR_KM4
-	endmenu
-fi
+mainmenu_option next_comment
+comment 'Third Party Lib'
+        bool "Speex"        CONFIG_SPEEX_LIB_FOR_KM4
+        bool "OPUS"         CONFIG_OPUS_LIB_FOR_KM4
+endmenu
 endmenu
 
 mainmenu_option next_comment

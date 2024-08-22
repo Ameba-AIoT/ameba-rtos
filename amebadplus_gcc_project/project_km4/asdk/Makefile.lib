@@ -30,10 +30,12 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_cmsis_dsp.a
 endif
 
 ifeq ($(CONFIG_BT), y)
+ifneq ($(CONFIG_BT_INIC), y)
 ifneq ($(CONFIG_BT_ZEPHYR), y)
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/platform/amebadplus/lib/btgap.a
 ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/bluetooth/rtk_stack/src/mesh/lib/amebadplus/btmesh.a
+endif
 endif
 endif
 endif
@@ -111,6 +113,13 @@ endif
 ifeq ($(CONFIG_MEDIA_CODEC_HAAC),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_haac.a
 endif
+endif
+
+ifeq ($(CONFIG_SPEEX_LIB),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_speexdsp.a
+endif
+ifeq ($(CONFIG_OPUS_LIB),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_opus.a
 endif
 
 ifeq ($(CONFIG_AUDIO_MIXER),y)

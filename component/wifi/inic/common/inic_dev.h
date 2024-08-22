@@ -40,6 +40,8 @@ struct inic_buf_info;
 #include "inic_sdio_dev.h"
 #elif defined (CONFIG_INIC_INTF_SPI)
 #include "inic_spi_dev.h"
+#elif defined (CONFIG_INIC_INTF_USB)
+#include "inic_usb_dev.h"
 #endif
 #ifdef CONFIG_SDIO_BRIDGE
 #include "inic_sdio_dev_bridge.h"

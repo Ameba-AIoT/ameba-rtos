@@ -202,15 +202,21 @@ else
 
 endif
 
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ] && [ -f $(BASEDIR)/amebadplus_gcc_project/fatfs.bin ]; then \
+		mv $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_tmp.bin; \
+		sh $(UTILITYDIR)/pad.sh $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_tmp.bin 4096; \
+		$(PREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/target_img2.map; \
+		cat $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_tmp.bin $(BASEDIR)/amebadplus_gcc_project/fatfs_prepend.bin > $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin; \
+	fi
+endif
 
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
-	@echo "========== cl generate OTA_All.bin with bootloader km0=========="
 	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all.bin; \
 		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_ns.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all_ns.bin; \
 	fi
 else
-	@echo "========== cl generate OTA_All.bin km0 ========== "
 	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin; \
 		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_ns.bin; \

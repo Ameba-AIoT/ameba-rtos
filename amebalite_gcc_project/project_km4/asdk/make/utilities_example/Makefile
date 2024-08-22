@@ -28,6 +28,11 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/cutils/interfaces
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/utils/interfaces
 endif
 
+ifeq ($(CONFIG_SPEEX_LIB),y)
+MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/speexdsp
+MODULE_IFLAGS += -I$(BASEDIR)/component/audio/third_party/speexdsp/include
+endif
+
 ifeq ($(CONFIG_AUDIO_FWK),y)
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/audio_track
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/audio_record

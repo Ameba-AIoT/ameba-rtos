@@ -100,7 +100,7 @@ static size_t PrimaryGetStreamOutBufferSize(const struct AudioHwStream *stream)
 {
 	size_t ret = 0;
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
-	size_t size = (out->period_size * out->sample_rate) / out->sample_rate;
+	size_t size = (out->config.period_size * out->config.period_count * out->sample_rate) / out->sample_rate;
 	size = ((size + 15) / 16) * 16;
 	ret = size * PrimaryAudioHwStreamOutFrameSize((const struct AudioHwStreamOut *)stream);
 	return ret;
@@ -273,6 +273,15 @@ static int PrimaryGetPresentTime(const struct AudioHwStreamOut *stream, int64_t 
 	return ret;
 }
 
+static int64_t PrimaryGetTriggerTime(const struct AudioHwStreamOut *stream)
+{
+	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
+	int64_t ret = -1;
+	if (out->out_pcm) {
+		ret = ameba_audio_stream_tx_get_trigger_time(out->out_pcm);
+	}
+	return ret;
+}
 static int PrimarySetStreamOutVolume(struct AudioHwStreamOut *stream, float left,
 									 float right)
 {
@@ -395,6 +404,7 @@ struct AudioHwStreamOut *CreateAudioHwStreamOut(struct AudioHwCard *card, const 
 	out->stream.common.GetBufferStatus = PrimaryGetStreamOutBufferStatus;
 	out->stream.GetPresentationPosition = PrimaryGetPresentationPosition;
 	out->stream.GetPresentTime = PrimaryGetPresentTime;
+	out->stream.GetTriggerTime = PrimaryGetTriggerTime;
 	out->stream.GetLatency = PrimaryGetStreamOutLatency;
 	out->stream.SetVolume = PrimarySetStreamOutVolume;
 	out->stream.Write = PrimaryStreamOutWrite;

@@ -420,11 +420,21 @@ int32_t RTAudioTrack_SetParameters(struct RTAudioTrack *track, const char *strs)
  * @brief Get DMA buffer status of audio track.
  *
  * @param track is the pointer of struct RTAudioTrack.
- * @return DMA buffer available size to write
+ * @return DMA buffer available size to play.
  * @since 1.0
  * @version 1.0
  */
 uint32_t RTAudioTrack_GetBufferStatus(struct RTAudioTrack *track);
+
+/**
+ * @brief Get buffer size of audio track.
+ *
+ * @param track is the pointer of struct RTAudioTrack.
+ * @return total buffer size of track.
+ * @since 1.0
+ * @version 1.0
+ */
+uint32_t RTAudioTrack_GetBufferSize(struct RTAudioTrack *track);
 
 /**
  * @brief Get msec latency of audio track.

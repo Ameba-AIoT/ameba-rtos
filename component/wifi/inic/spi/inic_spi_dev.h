@@ -35,6 +35,7 @@ struct inic_spi_priv_t {
 	rtos_sema_t rxirq_sema;
 	rtos_sema_t txirq_sema;
 	rtos_sema_t spi_transfer_done_sema;
+	rtos_sema_t free_skb_sema;
 
 	GDMA_InitTypeDef SSITxGdmaInitStruct;
 	GDMA_InitTypeDef SSIRxGdmaInitStruct;
@@ -44,9 +45,9 @@ struct inic_spi_priv_t {
 
 	u8 rx_req;
 	u8 wait_tx;
+	u8 wait_for_txbuf;
 
 	u8 txdma_initialized: 1;
-	u8 wait_for_txbuf: 1;
 	u8 ssris_pending: 1;
 	u8 set_devsts_pending: 1;
 

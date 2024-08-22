@@ -153,6 +153,15 @@ void app_filesystem_init(void)
 #if defined(CONFIG_SINGLE_CORE_WIFI)
 	int ret = 0;
 	vfs_init();
+#ifdef CONFIG_VFS_FATFS_INCLUDED
+	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_2, VFS_RO);
+	if (ret == 0) {
+		RTK_LOGI(TAG, "VFS-FAT Init Success \n");
+	} else {
+		RTK_LOGI(TAG, "VFS-FAT Init Fail \n");
+	}
+#endif
+
 	ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 	if (ret == 0) {
 		ret = rt_kv_init();

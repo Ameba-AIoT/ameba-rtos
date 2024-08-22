@@ -1045,6 +1045,7 @@ enum UAPSD_MAX_SP {
 	FOUR_MSDU,
 	SIX_MSDU
 };
+
 /**
   * @}
   */

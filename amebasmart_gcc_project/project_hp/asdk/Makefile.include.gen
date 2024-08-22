@@ -26,6 +26,12 @@ KM0_BUILDDIR	= $(ROOTDIR)/../../project_lp
 KM4_BUILDDIR	= $(ROOTDIR)/../../project_hp
 AP_BUILDDIR	= $(ROOTDIR)/../../project_ap
 
+ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
+AP_IMAGEDIR		= $(KM4_BUILDDIR)/asdk/image
+else
+AP_IMAGEDIR		= $(AP_BUILDDIR)/asdk/image
+endif
+
 TARGETDIR	=$(BASEDIR)/component/soc/amebasmart
 BOOTLOADER	=$(BASEDIR)/component/soc/amebasmart/bootloader
 UTILITYDIR	= $(ROOTDIR)/gnu_utility

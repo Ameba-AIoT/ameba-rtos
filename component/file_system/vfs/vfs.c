@@ -3,6 +3,7 @@
 #include "ameba.h"
 #include "time.h"
 #include "vfs.h"
+#include "ameba_ota.h"
 
 vfs_drv  vfs = {0};
 rtos_mutex_t vfs_mutex = NULL;
@@ -136,8 +137,28 @@ void vfs_assign_region(int vfs_type, char region)
 
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	if (vfs_type == VFS_FATFS) {
+#ifdef CONFIG_FATFS_WITHIN_APP_IMG
+		u8 ota_index = ota_get_cur_index(OTA_IMGID_APP);
+		u32 img2_start_addr, img2_end_addr;
+		flash_get_layout_info(ota_index == OTA_INDEX_1 ? IMG_APP_OTA1 : IMG_APP_OTA2, &img2_start_addr, &img2_end_addr);
+		IMAGE_HEADER *img_hdr = (IMAGE_HEADER *)(img2_start_addr + 0x2000);  //add cert+manifest offset
+		while ((u32)img_hdr < img2_end_addr) {
+			if (img_hdr->signature[0] == 0x5f736676 && img_hdr->signature[1] == 0x5f746166 && img_hdr->image_addr == (u32)(&VFS1_FLASH_BASE_ADDR)) {
+				VFS_DBG(VFS_INFO, "find vfs region2 : 0x%x !!!\r\n", img_hdr);
+				break;
+			}
+			img_hdr = (IMAGE_HEADER *)((u32)img_hdr + 0x1000);
+		}
+		if ((u32)img_hdr >= img2_end_addr) {
+			VFS_DBG(VFS_INFO, "no fatfs binary \r\n");
+		} else {
+			FLASH_APP_BASE = (u32)img_hdr + 32 - SPI_FLASH_BASE;
+			FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
+		}
+#else
 		FLASH_APP_BASE = region == 1 ? VFS1_FLASH_BASE_ADDR : VFS2_FLASH_BASE_ADDR;
 		FLASH_SECTOR_COUNT = region == 1 ? (VFS1_FLASH_SIZE / 512) : (VFS2_FLASH_SIZE / 512);
+#endif
 	}
 #endif
 	return;

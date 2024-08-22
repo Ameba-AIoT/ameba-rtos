@@ -144,7 +144,7 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, str
 	}
 
 	if (event == WIFI_EVENT_DISCONNECT) {
-		memcpy(&disassoc_reason, buf + ETH_ALEN, 2);
+		disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
 		dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
 			cfg80211_rtw_disconnect_indicate(disassoc_reason, 1);
@@ -361,41 +361,16 @@ func_exit:
 #ifdef CONFIG_NAN
 static void llhw_event_nan_match_indicate(struct event_priv_t *event_priv, struct inic_ipc_dev_req_msg *p_ipc_msg)
 {
-	struct device *pdev = NULL;
-	dma_addr_t dma_addr = 0;
-	dma_addr_t dma_ie = 0;
-	u8 type = p_ipc_msg->param_buf[0];
-	u8 inst_id = p_ipc_msg->param_buf[1];
-	u8 peer_inst_id = p_ipc_msg->param_buf[2];
-	unsigned char *mac_addr = phys_to_virt(p_ipc_msg->param_buf[3]);
-	unsigned char *IEs = phys_to_virt(p_ipc_msg->param_buf[4]);
-	u32 info_len = p_ipc_msg->param_buf[5];
-	u64 cookie = p_ipc_msg->param_buf[7] << 32 | p_ipc_msg->param_buf[6];
+	u8 type = param_buf[0];
+	u8 inst_id = param_buf[1];
+	u8 peer_inst_id = param_buf[2];
+	u32 info_len = param_buf[3];
+	u64 cookie = ((u64)param_buf[5] << 32) | param_buf[4];
+	unsigned char *mac_addr = (u8 *)&param_buf[6];
+	unsigned char *IEs = mac_addr + ETH_ALEN;
 
-	pdev = global_idev.ipc_dev;
-	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
-		goto func_exit;
-	}
+	cfg80211_rtw_nan_handle_sdf(type, inst_id, peer_inst_id, mac_addr, info_len, IEs, cookie);
 
-	dma_addr = dma_map_single(pdev, mac_addr, ETH_ALEN, DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		goto func_exit;
-	}
-
-	dma_ie = dma_map_single(pdev, IEs, info_len, DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_ie)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		goto func_exit;
-	}
-
-	cfg80211_rtw_nan_handle_sdf(type, inst_id, peer_inst_id, mac_addr, info_len, dma_ie, cookie);
-
-	dma_unmap_single(pdev, dma_addr, ETH_ALEN, DMA_FROM_DEVICE);
-	dma_unmap_single(pdev, dma_ie, info_len, DMA_FROM_DEVICE);
-
-func_exit:
 	return;
 }
 
@@ -429,28 +404,11 @@ func_exit:
 
 static void llhw_event_nan_cfgvendor_cmd_reply(struct event_priv_t *event_priv, struct inic_ipc_dev_req_msg *p_ipc_msg)
 {
-	struct device *pdev = NULL;
-	dma_addr_t dma_data = 0;
-	unsigned char *data_addr = phys_to_virt(p_ipc_msg->param_buf[0]);
-	u32 size = p_ipc_msg->param_buf[1];
+	u32 size = param_buf[0];
+	unsigned char *data_addr = (u8 *)&param_buf[1];
 
-	pdev = global_idev.ipc_dev;
-	if (!pdev) {
-		dev_err(global_idev.fullmac_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
-		goto func_exit;
-	}
+	rtw_cfgvendor_send_cmd_reply(data_addr, size);
 
-	dma_data = dma_map_single(pdev, data_addr, size, DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_data)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		goto func_exit;
-	}
-
-	rtw_cfgvendor_send_cmd_reply(dma_data, size);
-
-	dma_unmap_single(pdev, dma_data, size, DMA_FROM_DEVICE);
-
-func_exit:
 	return;
 }
 

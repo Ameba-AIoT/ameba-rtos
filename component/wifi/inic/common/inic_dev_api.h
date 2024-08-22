@@ -114,6 +114,7 @@ void inic_autoreconnect_indicate(rtw_security_t security_type, u8 *ssid, int ssi
 								 char is_wps_trigger);
 void inic_eap_autoreconnect_indicate(u8 saved_eap_method);
 void inic_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
+void inic_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt);
 void inic_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
 enum _promisc_result_t inic_promisc_callback_indicate(void *pkt_info);
 void inic_ap_ch_switch_callback_indicate(unsigned char channel, rtw_channel_switch_res_t ret);

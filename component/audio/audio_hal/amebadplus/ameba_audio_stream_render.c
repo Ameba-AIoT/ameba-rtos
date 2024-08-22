@@ -158,6 +158,12 @@ HAL_AUDIO_WEAK int ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_n
 	return 0;
 }
 
+int64_t ameba_audio_stream_tx_get_trigger_time(Stream *stream)
+{
+	RenderStream *rstream = (RenderStream *)stream;
+	return rstream->stream.trigger_tstamp;
+}
+
 static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig config, uint32_t device)
 {
 	(void)device;
@@ -485,16 +491,21 @@ uint32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
 	RenderStream *rstream = (RenderStream *)stream;
 	PGDMA_InitTypeDef txgdma_initstruct = &(stream->gdma_struct->u.SpTxGdmaInitStruct);
 
-	if (!rstream || !rstream->stream.rbuffer || !rstream->stream.gdma_struct
-		|| rstream->stream.stream_mode == AMEBA_AUDIO_DMA_IRQ_MODE) {
+	if (!rstream || !rstream->stream.rbuffer || !rstream->stream.gdma_struct) {
 		HAL_AUDIO_ERROR("stream is not initialized\n");
 		return 0;
 	}
 
-	uint32_t wr = (uint32_t)(rstream->stream.rbuffer->raw_data + rstream->stream.rbuffer->write_ptr);
-	uint32_t capacity = rstream->stream.rbuffer->capacity;
-	uint32_t dma_addr = GDMA_GetSrcAddr(txgdma_initstruct->GDMA_Index, txgdma_initstruct->GDMA_ChNum);
-	uint32_t remain = (wr < dma_addr) ? (capacity - (dma_addr - wr)) : (wr - dma_addr);
+	uint32_t remain = 0;
+
+	if (rstream->stream.stream_mode == AMEBA_AUDIO_DMA_NOIRQ_MODE) {
+		uint32_t wr = (uint32_t)(rstream->stream.rbuffer->raw_data + rstream->stream.rbuffer->write_ptr);
+		uint32_t capacity = rstream->stream.rbuffer->capacity;
+		uint32_t dma_addr = GDMA_GetSrcAddr(txgdma_initstruct->GDMA_Index, txgdma_initstruct->GDMA_ChNum);
+		remain = (wr < dma_addr) ? (capacity - (dma_addr - wr)) : (wr - dma_addr);
+	} else if (rstream->stream.stream_mode == AMEBA_AUDIO_DMA_IRQ_MODE) {
+		remain = ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer);
+	}
 
 	return remain;
 }

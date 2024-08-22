@@ -498,10 +498,12 @@ int rtw_ndev_alloc(void)
 		ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
 #ifndef CONFIG_FULLMAC_HCI_IPC
 		ndev->needed_headroom = max(SIZE_RX_DESC, SIZE_TX_DESC) + sizeof(struct inic_msg_info) + 4;
+#ifndef CONFIG_SDIO_BRIDGE
 #ifdef CONFIG_WIRELESS_EXT
 		if (i == 0) {
 			ndev->wireless_handlers = (struct iw_handler_def *)&rtw_handlers_def;
 		}
+#endif
 #endif
 #endif
 		SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);

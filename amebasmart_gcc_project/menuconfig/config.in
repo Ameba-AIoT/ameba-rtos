@@ -73,6 +73,7 @@ if [ "$CONFIG_VFS_FATFS_INCLUDED" = "y" ]; then
 choice 'FATFS Memory Type'	"SD			FATFS_DISK_SD \
 							FlASH		FATFS_DISK_FLASH \
 							"
+bool "FATFS within APP Image"				CONFIG_FATFS_WITHIN_APP_IMG
 fi
 endmenu
 
@@ -96,201 +97,40 @@ comment '< CONFIG BT'
 bool "Enable BT"														CONFIG_BT_MENU
 if [ "$CONFIG_BT_MENU" = "y" ]; then
 	if [ "$CONFIG_AP_CORE_CA32" = "y" ]; then
-		define_bool CONFIG_BT_CA32_SINGLE_CORE y
-		define_bool CONFIG_BT_KM4_SINGLE_CORE n
-	fi
-	if [ "$CONFIG_AP_CORE_KM4" = "y" ]; then
-		define_bool CONFIG_BT_CA32_SINGLE_CORE n
-		define_bool CONFIG_BT_KM4_SINGLE_CORE y
-	fi
-	if [ "$CONFIG_BT_CA32_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_BT_FOR_AP y
 		define_bool CONFIG_FTL_ENABLED_FOR_AP y
-		choice 'BT Mode Selection'	"BLE_ONLY							CONFIG_BT_BLE_ONLY_MENU \
-									DUAL_MODE							CONFIG_BT_DUAL_MODE_MENU \
-									" DUAL_MODE
-		if [ "$CONFIG_BT_BLE_ONLY_MENU" = "y" ]; then
-			define_bool CONFIG_BT_BLE_ONLY_FOR_AP y
-		fi
-		if [ "$CONFIG_BT_DUAL_MODE_MENU" = "y" ]; then
-			define_bool CONFIG_BT_DUAL_MODE_FOR_AP y
-		fi
-		bool "BT Advanced Feature"										CONFIG_BT_ADVANCED_FEATURE_MENU
-		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT AT Command"								CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_AP
-#			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR_MENU
-			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
-				define_bool CONFIG_BT_ZEPHYR_FOR_AP y
-			fi
-		fi
-		bool "BT Example Demo"											CONFIG_BT_EXAMPLE_DEMO_MENU
-		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
-			bool "  BLE Peripheral"										CONFIG_BT_PERIPHERAL_FOR_AP
-			bool "  BLE Central"										CONFIG_BT_CENTRAL_FOR_AP
-			bool "  BLE Scatternet"										CONFIG_BT_SCATTERNET_FOR_AP
-#			bool "  BLE Throughput"										CONFIG_BT_THROUGHPUT_FOR_AP
-			bool "  BLE Mesh Provisioner"								CONFIG_BT_MESH_PROVISIONER_MENU
-			bool "  BLE Mesh Device"									CONFIG_BT_MESH_DEVICE_MENU
-			bool "  BLE Mesh Provisioner and BLE Scatternet"			CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
-			bool "  BLE Mesh Device and BLE Scatternet"					CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
-#			bool "  BLE Mesh Provisioner Test"							CONFIG_BT_MESH_PROVISIONER_TEST_MENU
-#			bool "  BLE Mesh Device Test"								CONFIG_BT_MESH_DEVICE_TEST_MENU
-#			bool "  BLE ISO Test"										CONFIG_BT_ISO_TEST_FOR_AP
-			bool "  BLE Audio"											CONFIG_BT_LE_AUDIO_MENU
-			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				bool "    BLE Audio Basic Audio Profile"				CONFIG_BT_BAP_MENU
-				bool "    BLE Audio Common Audio Profile"				CONFIG_BT_CAP_MENU
-				bool "    BLE Audio Public Broadcast Profile"			CONFIG_BT_PBP_MENU
-				bool "    BLE Audio Telephony and Media Audio Profile"	CONFIG_BT_TMAP_MENU
-				bool "    BLE Audio Gaming Audio Profile"				CONFIG_BT_GMAP_MENU
-				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_BAP_FOR_AP y
-					define_bool CONFIG_BT_BAP_SUPPORT_FOR_AP y
-				fi
-				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_CAP_FOR_AP y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
-				fi
-				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_PBP_FOR_AP y
-					define_bool CONFIG_BT_PBP_SUPPORT_FOR_AP y
-				fi
-				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_TMAP_FOR_AP y
-					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_AP y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
-				fi
-				if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_GMAP_FOR_AP y
-					define_bool CONFIG_BT_GMAP_SUPPORT_FOR_AP y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_AP y
-				fi
-			fi
-			bool "  BT A2DP"											CONFIG_BT_A2DP_MENU
-			bool "  BT HFP"												CONFIG_BT_HFP_MENU
-			bool "  BT A2DP and BT HFP"									CONFIG_BT_A2DP_HFP_MENU
-			bool "  BT SPP"												CONFIG_BT_SPP_FOR_AP
-#			bool "  BT Audio MP Test"									CONFIG_BT_AUDIO_MP_TEST_MENU
-#			bool "  BT HID"												CONFIG_BT_HID_FOR_AP
-			bool "  BT A2DP and BLE Scatternet"							CONFIG_BT_A2DP_SCATTERNET_MENU
-			bool "  BT A2DP and BLE Audio PBP"							CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
-			bool "  BT A2DP and BLE Audio TMAP"							CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
-			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_AP y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_FOR_AP y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET_FOR_AP y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET_FOR_AP y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_MESH_PROVISIONER_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_TEST_FOR_AP y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_MESH_DEVICE_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_TEST_FOR_AP y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_A2DP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_HFP_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_A2DP_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_SCATTERNET_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_A2DP_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_HFP_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_AUDIO_MP_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_AUDIO_MP_TEST_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_AP y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_PBP_FOR_AP y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_AP y
-			fi
-			if [ "$CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_AP y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP_FOR_AP y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_AP y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_AP y
-			fi
-		fi
-	fi
-
-	if [ "$CONFIG_BT_KM4_SINGLE_CORE" = "y" ]; then
+	else
 		define_bool CONFIG_BT_FOR_HP y
 		define_bool CONFIG_FTL_ENABLED_FOR_HP y
-		choice 'BT Mode Selection'	"BLE_ONLY							CONFIG_BT_BLE_ONLY_MENU \
-									DUAL_MODE							CONFIG_BT_DUAL_MODE_MENU \
+	fi
+#	bool "Enable iNIC"													CONFIG_BT_INIC
+	if [ "$CONFIG_BT_INIC" = "y" ]; then
+		define_bool CONFIG_BT_EXCLUDE_AT_COMMAND y
+		choice 'Interface'	"Uart_H4									CONFIG_BT_INIC_H4 \
+							Uart_H5										CONFIG_BT_INIC_H5 \
+							" Uart_H4
+	else
+		choice 'BT Mode Selection'	"BLE_ONLY							CONFIG_BT_BLE_ONLY \
+									DUAL_MODE							CONFIG_BT_DUAL_MODE \
 									" DUAL_MODE
-		if [ "$CONFIG_BT_BLE_ONLY_MENU" = "y" ]; then
-			define_bool CONFIG_BT_BLE_ONLY_FOR_HP y
-		fi
-		if [ "$CONFIG_BT_DUAL_MODE_MENU" = "y" ]; then
-			define_bool CONFIG_BT_DUAL_MODE_FOR_HP y
-		fi
 		bool "BT Advanced Feature"										CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT AT Command"								CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_HP
-#			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR_MENU
-			if [ "$CONFIG_BT_ZEPHYR_MENU" = "y" ]; then
-				define_bool CONFIG_BT_ZEPHYR_FOR_HP y
-			fi
+			bool "  Exclude BT AT Command"								CONFIG_BT_EXCLUDE_AT_COMMAND
+#			bool "  Use Zephyr BT Stack"								CONFIG_BT_ZEPHYR
 		fi
 		bool "BT Example Demo"											CONFIG_BT_EXAMPLE_DEMO_MENU
 		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
-			bool "  BLE Peripheral"										CONFIG_BT_PERIPHERAL_FOR_HP
-			bool "  BLE Central"										CONFIG_BT_CENTRAL_FOR_HP
-			bool "  BLE Scatternet"										CONFIG_BT_SCATTERNET_FOR_HP
-#			bool "  BLE Throughput"										CONFIG_BT_THROUGHPUT_FOR_HP
+			bool "  BLE Peripheral"										CONFIG_BT_PERIPHERAL
+			bool "  BLE Central"										CONFIG_BT_CENTRAL
+			bool "  BLE Scatternet"										CONFIG_BT_SCATTERNET
+#			bool "  BLE Throughput"										CONFIG_BT_THROUGHPUT
 			bool "  BLE Mesh Provisioner"								CONFIG_BT_MESH_PROVISIONER_MENU
 			bool "  BLE Mesh Device"									CONFIG_BT_MESH_DEVICE_MENU
 			bool "  BLE Mesh Provisioner and BLE Scatternet"			CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
 			bool "  BLE Mesh Device and BLE Scatternet"					CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
 #			bool "  BLE Mesh Provisioner Test"							CONFIG_BT_MESH_PROVISIONER_TEST_MENU
 #			bool "  BLE Mesh Device Test"								CONFIG_BT_MESH_DEVICE_TEST_MENU
-#			bool "  BLE ISO Test"										CONFIG_BT_ISO_TEST_FOR_HP
+#			bool "  BLE ISO Test"										CONFIG_BT_ISO_TEST
 			bool "  BLE Audio"											CONFIG_BT_LE_AUDIO_MENU
 			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
 				bool "    BLE Audio Basic Audio Profile"				CONFIG_BT_BAP_MENU
@@ -298,117 +138,117 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 				bool "    BLE Audio Public Broadcast Profile"			CONFIG_BT_PBP_MENU
 				bool "    BLE Audio Telephony and Media Audio Profile"	CONFIG_BT_TMAP_MENU
 				bool "    BLE Audio Gaming Audio Profile"				CONFIG_BT_GMAP_MENU
-				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_BAP_FOR_HP y
-					define_bool CONFIG_BT_BAP_SUPPORT_FOR_HP y
-				fi
-				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_CAP_FOR_HP y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
-				fi
-				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_PBP_FOR_HP y
-					define_bool CONFIG_BT_PBP_SUPPORT_FOR_HP y
-				fi
-				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_TMAP_FOR_HP y
-					define_bool CONFIG_BT_TMAP_SUPPORT_FOR_HP y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
-				fi
-				if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
-					define_bool CONFIG_BT_GMAP_FOR_HP y
-					define_bool CONFIG_BT_GMAP_SUPPORT_FOR_HP y
-					define_bool CONFIG_BT_CAP_SUPPORT_FOR_HP y
-				fi
 			fi
 			bool "  BT A2DP"											CONFIG_BT_A2DP_MENU
 			bool "  BT HFP"												CONFIG_BT_HFP_MENU
 			bool "  BT A2DP and BT HFP"									CONFIG_BT_A2DP_HFP_MENU
-			bool "  BT SPP"												CONFIG_BT_SPP_FOR_HP
+			bool "  BT SPP"												CONFIG_BT_SPP
 #			bool "  BT Audio MP Test"									CONFIG_BT_AUDIO_MP_TEST_MENU
-#			bool "  BT HID"												CONFIG_BT_HID_FOR_HP
+#			bool "  BT HID"												CONFIG_BT_HID
 			bool "  BT A2DP and BLE Scatternet"							CONFIG_BT_A2DP_SCATTERNET_MENU
 			bool "  BT A2DP and BLE Audio PBP"							CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU
 			bool "  BT A2DP and BLE Audio TMAP"							CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU
 			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_HP y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_HP y
+				define_bool CONFIG_BT_MESH_PROVISIONER y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_FOR_HP y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_HP y
+				define_bool CONFIG_BT_MESH_DEVICE y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET_FOR_HP y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_HP y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET_FOR_HP y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_HP y
+				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_TEST_FOR_HP y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_HP y
+				define_bool CONFIG_BT_MESH_PROVISIONER_TEST y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_DEVICE_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_TEST_FOR_HP y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_HP y
+				define_bool CONFIG_BT_MESH_DEVICE_TEST y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_HP y
+				define_bool CONFIG_BT_LE_AUDIO y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
+				if [ "$CONFIG_BT_BAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_BAP y
+					define_bool CONFIG_BT_BAP_SUPPORT y
+				fi
+				if [ "$CONFIG_BT_CAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_CAP y
+					define_bool CONFIG_BT_CAP_SUPPORT y
+				fi
+				if [ "$CONFIG_BT_PBP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_PBP y
+					define_bool CONFIG_BT_PBP_SUPPORT y
+				fi
+				if [ "$CONFIG_BT_TMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_TMAP y
+					define_bool CONFIG_BT_TMAP_SUPPORT y
+					define_bool CONFIG_BT_CAP_SUPPORT y
+				fi
+				if [ "$CONFIG_BT_GMAP_MENU" = "y" ]; then
+					define_bool CONFIG_BT_GMAP y
+					define_bool CONFIG_BT_GMAP_SUPPORT y
+					define_bool CONFIG_BT_CAP_SUPPORT y
+				fi
 			fi
 			if [ "$CONFIG_BT_A2DP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_HP y
+				define_bool CONFIG_BT_A2DP y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
 			fi
 			if [ "$CONFIG_BT_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_HFP_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_HP y
-			fi
-			if [ "$CONFIG_BT_A2DP_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_SCATTERNET_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_HP y
+				define_bool CONFIG_BT_HFP y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_CVSD y
 			fi
 			if [ "$CONFIG_BT_A2DP_HFP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_A2DP_HFP_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_HP y
+				define_bool CONFIG_BT_A2DP_HFP y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+				define_bool CONFIG_BT_AUDIO_CODEC_CVSD y
 			fi
 			if [ "$CONFIG_BT_AUDIO_MP_TEST_MENU" = "y" ]; then
-				define_bool CONFIG_BT_AUDIO_MP_TEST_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_CVSD_FOR_HP y
+				define_bool CONFIG_BT_AUDIO_MP_TEST y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+				define_bool CONFIG_BT_AUDIO_CODEC_CVSD y
+			fi
+			if [ "$CONFIG_BT_A2DP_SCATTERNET_MENU" = "y" ]; then
+				define_bool CONFIG_BT_A2DP_SCATTERNET y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
 			fi
 			if [ "$CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_HP y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_PBP_FOR_HP y
-				define_bool CONFIG_BT_PBP_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_HP y
+				define_bool CONFIG_BT_LE_AUDIO y
+				define_bool CONFIG_BT_A2DP_LE_AUDIO_PBP y
+				define_bool CONFIG_BT_PBP_SUPPORT y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+				define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
 			fi
 			if [ "$CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU" = "y" ]; then
-				define_bool CONFIG_BT_LE_AUDIO_FOR_HP y
-				define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP_FOR_HP y
-				define_bool CONFIG_BT_TMAP_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_APP_AUDIO_DATA_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_SBC_FOR_HP y
-				define_bool CONFIG_BT_AUDIO_CODEC_LC3_FOR_HP y
+				define_bool CONFIG_BT_LE_AUDIO y
+				define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP y
+				define_bool CONFIG_BT_TMAP_SUPPORT y
+				define_bool CONFIG_BT_APP_AUDIO_DATA y
+				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
+				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
+				define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
 			fi
 		fi
 	fi
@@ -1220,6 +1060,12 @@ if [ "$CONFIG_MEDIA_PLAYER_FOR_AP" = "y" ]; then
 		bool "Codec OPUS"	CONFIG_MEDIA_CODEC_OPUS_FOR_AP
 	endmenu
 fi
+mainmenu_option next_comment
+comment 'Third Party Lib'
+        bool "Speex"        CONFIG_SPEEX_LIB_FOR_AP
+        bool "OPUS"         CONFIG_OPUS_LIB_FOR_AP
+endmenu
+
 #bool "Enable Media Lite Framework"      CONFIG_MEDIA_LITE_PLAYER_FOR_AP
 #if [ "$CONFIG_MEDIA_LITE_PLAYER_FOR_AP" = "y" ]; then
 #	mainmenu_option next_comment

@@ -20,7 +20,7 @@ static void tx_thread(void *param)
 	int client_fd = * (int *) param;
 	unsigned char buffer[1024];
 	memset(buffer, 1, sizeof(buffer));
-	printf("\n%s start\n", __FUNCTION__);
+	RTK_LOGS(NOTAG, "\n%s start\n", __FUNCTION__);
 
 	while (1) {
 		int ret = 0;
@@ -39,7 +39,7 @@ static void tx_thread(void *param)
 	}
 
 exit:
-	printf("\n%s exit\n", __FUNCTION__);
+	RTK_LOGS(NOTAG, "\n%s exit\n", __FUNCTION__);
 	tx_exit = 1;
 	rtos_task_delete(NULL);
 }
@@ -48,7 +48,7 @@ static void rx_thread(void *param)
 {
 	int client_fd = * (int *) param;
 	unsigned char buffer[1024];
-	printf("\n%s start\n", __FUNCTION__);
+	RTK_LOGS(NOTAG, "\n%s start\n", __FUNCTION__);
 
 	while (1) {
 		int ret = 0, sock_err = 0;
@@ -74,7 +74,7 @@ static void rx_thread(void *param)
 	}
 
 exit:
-	printf("\n%s exit\n", __FUNCTION__);
+	RTK_LOGS(NOTAG, "\n%s exit\n", __FUNCTION__);
 	rx_exit = 1;
 	rtos_task_delete(NULL);
 }
@@ -89,10 +89,10 @@ static void example_socket_tcp_trx_thread(void *param)
 
 	// Delay to wait for IP by DHCP
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
+		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(2000);
 	}
-	printf("\nExample: socket tx/rx 1\n");
+	RTK_LOGS(NOTAG, "\nExample: socket tx/rx 1\n");
 
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	server_addr.sin_family = AF_INET;
@@ -100,12 +100,12 @@ static void example_socket_tcp_trx_thread(void *param)
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) != 0) {
-		printf("ERROR: bind\n");
+		RTK_LOGS(NOTAG, "ERROR: bind\n");
 		goto exit;
 	}
 
 	if (listen(server_fd, LISTEN_QLEN) != 0) {
-		printf("ERROR: listen\n");
+		RTK_LOGS(NOTAG, "ERROR: listen\n");
 		goto exit;
 	}
 
@@ -120,7 +120,7 @@ static void example_socket_tcp_trx_thread(void *param)
 			rtos_sema_create(&tcp_tx_rx_sema, 1, RTOS_SEMA_MAX_COUNT);
 
 			if (rtos_task_create(NULL, ((const char *)"tx_thread"), tx_thread, &client_fd, 2048 * 4, 1) != SUCCESS) {
-				printf("\n\r%s rtos_task_create(tx_thread) failed", __FUNCTION__);
+				RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(tx_thread) failed", __FUNCTION__);
 			} else {
 				tx_exit = 0;
 			}
@@ -128,7 +128,7 @@ static void example_socket_tcp_trx_thread(void *param)
 			rtos_time_delay_ms(10);
 
 			if (rtos_task_create(NULL, ((const char *)"rx_thread"), rx_thread, &client_fd, 2048 * 4, 1) != SUCCESS) {
-				printf("\n\r%s rtos_task_create(rx_thread) failed", __FUNCTION__);
+				RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(rx_thread) failed", __FUNCTION__);
 			} else {
 				rx_exit = 0;
 			}
@@ -155,6 +155,6 @@ exit:
 void example_socket_tcp_multithread(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_socket_tcp_trx_thread"), example_socket_tcp_trx_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-		printf("\n\r%s rtos_task_create(example_socket_tcp_trx_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(example_socket_tcp_trx_thread) failed", __FUNCTION__);
 	}
 }
