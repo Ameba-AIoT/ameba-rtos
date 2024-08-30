@@ -25,7 +25,7 @@ export MENUCONFIG_RELA_PATH MENUCONFIG_NAME IC_NAME
 ifeq ($(CONFIG_MP_INCLUDED),y)
 app_all  := $(CURRENT_PATH)/project_km4/asdk/image_mp/kr4_km4_app_mp.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image_mp/km4_boot_all.bin
-else ifeq ($(CONFIG_DSP_WITHIN_IMG2_EN),y)
+else ifeq ($(CONFIG_DSP_WITHIN_APP_IMG),y)
 app_all  := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_dsp_app.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin
 else
@@ -72,6 +72,9 @@ menuconfig:
 		echo; \
 		exit 1; \
 	fi
+
+toolchain:
+	make -C ./project_km4 toolchain
 
 KR4_TARGET_ALL:
 	@if [ "${CONFIG_WLAN_KR4_AP_KM4_NP}" == "y" ]; then \

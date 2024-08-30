@@ -24,13 +24,7 @@
 #if defined(CONFIG_BT_APP_DEBUG) && CONFIG_BT_APP_DEBUG
 void *g_app_printf_mtx;
 #endif
-//for iso data
-typedef struct {
-	uint8_t tx_iso_path_num;
-	uint8_t rx_iso_path_num;
-	void *mtx;
-	struct list_head head;
-} app_lea_iso_data_path_list_t;
+
 /* common broadcast source information parameter */
 app_bt_le_audio_bap_broadcast_source_info_t app_bap_bro_sour_info = {
 	.group_idx = 0xFF,
@@ -400,7 +394,7 @@ rtk_bt_le_audio_broadcast_source_create_big_t def_le_audio_broadcast_source_crea
 	/* Default value of TSPX_broadcast_code in PTS 8.0.0 is 8ED03323D1205E2D58191BF6285C3182 */
 };
 
-static app_lea_iso_data_path_list_t g_app_lea_iso_path_list = {0};
+app_lea_iso_data_path_list_t g_app_lea_iso_path_list = {0};
 static struct list_head g_app_lea_group_list_head = {0};
 static void *g_app_lea_group_list_mtx = NULL;
 static struct list_head g_app_lea_device_list_head = {0};

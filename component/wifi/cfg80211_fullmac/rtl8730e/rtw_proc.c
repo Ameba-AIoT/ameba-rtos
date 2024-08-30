@@ -291,6 +291,7 @@ static void rtw_ndev_ap_proc_deinit(void)
 	}
 
 	remove_proc_entry(RTW_PROC_AP_NAME, rtw_proc);
+	rtw_ap_proc = NULL;
 }
 
 /*
@@ -458,6 +459,7 @@ static void rtw_ndev_sta_proc_deinit(void)
 	}
 
 	remove_proc_entry(RTW_PROC_STA_NAME, rtw_proc);
+	rtw_sta_proc = NULL;
 }
 
 /*

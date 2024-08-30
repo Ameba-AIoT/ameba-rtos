@@ -11,6 +11,7 @@
 #include "amebahp_secure_boot.h"
 #include "bootloader_hp.h"
 #include "boot_ota_hp.h"
+#include "ameba_boot_lzma.h"
 
 static const char *TAG = "BOOT";
 static Certificate_TypeDef Cert[2]; //Certificate of SlotA & SlotB
@@ -20,9 +21,12 @@ s64 Ver[2] = {0};  //32-bit full version
 
 static SubImgInfo_TypeDef SubImgInfo[14]; //store sub image addr and length
 
-static uint32_t ImagePattern[2] = {
-	0x35393138,
-	0x31313738,
+static const u32 ImagePattern[2] = {
+	0x35393138, 0x31313738,
+};
+
+static const u32 CompressFlag[2] = {
+	0x504D4F43, 0x53534552,
 };
 
 static u8 ValidIMGNum = 0;
@@ -328,6 +332,105 @@ void BOOT_OTA_Region_Init(void)
 	OTA_Region[IMG_IMG2][1] = OTA_Region[IMG_CERT][1] + 0x1000;
 }
 
+/**
+  * @brief check manifest pattern and version
+  * @param none
+  * @retval first Extract OTA Idx
+  */
+u8 BOOT_Extract_SlotSelect(void)
+{
+	u32 Vertemp;
+	s64 VN_CERT; //32-bit full version in OTP
+	u8 i, ExtractIdx;
+
+	/* 1. load manifest(Slot A & Slot B) from flash to SRAM, treat OTA1's certificate as Manifest because header 24B is same */
+	for (i = 0; i < 2; i++) {
+		_memcpy((void *)&Manifest[i], (void *)OTA_Region[IMG_CERT][i], sizeof(Manifest_TypeDef));
+		if (_memcmp(Manifest[i].Pattern, CompressFlag, sizeof(CompressFlag)) == 0) {
+			Vertemp = (Manifest[i].MajorImgVer << 16) | Manifest[i].MinorImgVer; // get 32-bit full version number
+			Ver[i] = (s64)Vertemp;
+			/* Ignore two OTA IMG are compressed image and Bootloader extract. */
+			break;
+		} else {
+			Ver[i] = -1;
+		}
+	}
+
+	if (i < 2) {
+		ExtractIdx = i;
+		/* slot M need to extract, Get slot N Img version(Certificate use ImagePattern) */
+		i = (i + 1) % 2;
+		_memcpy((void *)&Manifest[i], (void *)OTA_Region[IMG_CERT][i], sizeof(Manifest_TypeDef));
+		if (_memcmp(Manifest[i].Pattern, ImagePattern, sizeof(ImagePattern)) == 0) {
+			Vertemp = (Manifest[i].MajorImgVer << 16) | Manifest[i].MinorImgVer; // get 32-bit full version number
+			Ver[i] = (s64)Vertemp;
+		}
+	} else {
+		/* No CompressFlag found, No need extract */
+		ValidIMGNum = NONEVALIDIMG;
+		return 0;
+	}
+
+	/* ---------------------------------2 Get anti-rollback version in OTP --------------------------------- */
+	VN_CERT = (s64)SYSCFG_OTP_GetRollbackVer();
+
+	/* ---------------------------------3 Check full KeyVerion in certificate--------------------------------- */
+	if ((VN_CERT > Ver[0]) && (VN_CERT > Ver[1])) {
+		/* No IMG Valid, let BOOT_OTA_IMG2 handle this */
+		ValidIMGNum = NONEVALIDIMG;
+	} else if ((VN_CERT <= Ver[0]) && (VN_CERT <= Ver[1])) {
+		ValidIMGNum = TWOVALIDIMG;
+	} else {
+		ValidIMGNum = ONEVALIDIMG;
+	}
+
+	return ExtractIdx;
+}
+
+void BOOT_OTA_Extract(void)
+{
+	u8 ExtractIdx = BOOT_Extract_SlotSelect();
+	u8 OverrideIdx = (ExtractIdx + 1) % 2;
+
+	u32 ExtractAddr = OTA_Region[IMG_CERT][ExtractIdx];
+	u32 OverrideAddr = OTA_Region[IMG_CERT][OverrideIdx];
+	u32 OverrideStart, OverrideEnd;
+
+	u8 EmpSig[8] = {0};
+
+	Manifest_TypeDef *pManifest = &Manifest[ExtractIdx];
+	SubImgInfo_TypeDef SubImgInfo[1];
+	u8 ret;
+
+	/* No need to Extract IMG */
+	if (ValidIMGNum == NONEVALIDIMG) {
+		return;
+	}
+
+	if (Ver[ExtractIdx] >= Ver[OverrideIdx]) {
+		/* 1. secure Boot Check */
+		SubImgInfo[0].Addr = ExtractAddr + MANIFEST_SIZE_4K_ALIGN;
+		SubImgInfo[0].Len = pManifest->ImgSize;
+
+		ret = BOOT_Extract_SignatureCheck(pManifest, SubImgInfo, 1);
+
+		/* 2. Extract to override other slot After Check Pass */
+		if (ret == TRUE) {
+			RTK_LOGI(TAG, "Extract from 0x%x to Override 0x%x, Compress Len is 0x%x\n", SubImgInfo[0].Addr, OverrideAddr, SubImgInfo[0].Len);
+
+			/* OverrideIdx is 0 or 1 */
+			flash_get_layout_info(IMG_APP_OTA1 + OverrideIdx, &OverrideStart, &OverrideEnd);
+			assert_param(OverrideStart == OverrideAddr);
+
+			bootLzma_buffer_set((u8 *)DDR_BASE);
+			bootLzma_main_function(SubImgInfo[0].Addr, OverrideStart, OverrideEnd);
+		}
+
+		/* 3. Invalid CompressFlag even sboot check fail. */
+		FLASH_TxData(ExtractAddr - SPI_FLASH_BASE, sizeof(EmpSig), EmpSig);
+		DCache_Invalidate(ExtractAddr, sizeof(EmpSig));
+	}
+}
 
 BOOT_RAM_TEXT_SECTION
 u8 BOOT_OTA_IMG2(void)
@@ -337,6 +440,16 @@ u8 BOOT_OTA_IMG2(void)
 	u32 version;
 	/* step 1: init OTA region */
 	BOOT_OTA_Region_Init();
+
+#ifdef CONFIG_COMPRESS_OTA_IMG
+	/* 1. OTA2 is made up of manifest & an newer compressed OTA1 IMG.
+	 * 2. Extract OTA2 to override OTA1 After OTA2 secure boot check pass.
+	 * 3. Special pattern in manifest indicate extract is needed, clear pattern to 0 after extract.
+	 */
+	if (SYSCFG_BootFromNor()) {
+		BOOT_OTA_Extract();
+	}
+#endif
 
 	/* step2: Select Slot according to Cert Version */
 	ImgIndex = BOOT_OTA_SlotSelect();

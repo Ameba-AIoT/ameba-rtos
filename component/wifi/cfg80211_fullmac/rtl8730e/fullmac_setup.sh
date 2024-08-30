@@ -4,10 +4,16 @@ sed -i 's/CONFIG_FULLMAC_HCI_IPC = y/CONFIG_FULLMAC_HCI_IPC = n/g' Makefile
 
 if [ "$1" == "spi" ]; then
 	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = y/CONFIG_FULLMAC_HCI_SDIO = n/g' Makefile
+	sed -i 's/CONFIG_FULLMAC_HCI_USB = y/CONFIG_FULLMAC_HCI_USB = n/g' Makefile
 	sed -i 's/CONFIG_FULLMAC_HCI_SPI = n/CONFIG_FULLMAC_HCI_SPI = y/g' Makefile
+elif [ "$1" == "usb" ]; then
+	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = y/CONFIG_FULLMAC_HCI_SDIO = n/g' Makefile
+	sed -i 's/CONFIG_FULLMAC_HCI_SPI = y/CONFIG_FULLMAC_HCI_SPI = n/g' Makefile
+	sed -i 's/CONFIG_FULLMAC_HCI_USB = n/CONFIG_FULLMAC_HCI_USB = y/g' Makefile
 else
 	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = n/CONFIG_FULLMAC_HCI_SDIO = y/g' Makefile
 	sed -i 's/CONFIG_FULLMAC_HCI_SPI = y/CONFIG_FULLMAC_HCI_SPI = n/g' Makefile
+	sed -i 's/CONFIG_FULLMAC_HCI_USB = y/CONFIG_FULLMAC_HCI_USB = n/g' Makefile
 fi
 
 if [ "$#" -ge 2 ]; then

@@ -38,6 +38,7 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/cdc_acm
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/composite
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/hid
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/msc
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/uac
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/vendor
 endif
 ifeq ($(CONFIG_USB_HOST_EN),y)

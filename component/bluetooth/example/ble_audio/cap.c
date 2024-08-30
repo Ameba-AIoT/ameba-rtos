@@ -254,6 +254,7 @@ app_bt_le_audio_acceptor_info_t g_acceptor_info = {
 	.p_bap_bro_sink_info = &app_bap_bro_sink_info,
 	.status = 0
 };
+static rtk_bt_le_audio_bis_info_t sync_bis_info = {0};
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 static uint8_t app_lea_default_csis_sirk[] = {0x63, 0x68, 0x65, 0x6e, 0x67, 0x2d, 0x63, 0x61, 0x69, 0x73, 0x37, 0x38, 0x32, 0x53, 0xe8, 0x10};
 #endif
@@ -487,6 +488,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 			g_acceptor_info.status = RTK_BLE_AUDIO_ACCEPTOR_DISC;
 		} else if (cap_role == RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
+			app_bt_le_audio_group_list_remove(g_initiator_info.group_handle);
 			g_initiator_info.status = RTK_BLE_AUDIO_INITIATOR_DISCONNECT;
 		} else if (cap_role == RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
@@ -1462,6 +1464,7 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 	if (ret != RTK_BT_OK) {
 		BT_LOGE("[APP] rtk_bt_le_audio_sync_get_bis_info fail,ret = 0x%x\r\n", ret);
 	}
+	sync_bis_info = bis_info;
 	//set up iso data path
 	for (i = 0; i < bis_info.num_bis; i++) {
 		bis_idx = bis_info.bis_conn_info[i].bis_idx;
@@ -1491,6 +1494,28 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 		}
 	}
 
+	return ret;
+}
+
+static uint16_t app_bt_le_audio_broadcast_sink_remove_data_path(rtk_bt_le_audio_sync_handle_t sync_handle)
+{
+	uint8_t i = 0;
+	uint16_t ret = 0;
+	uint16_t bis_conn_handle = 0;
+	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
+	if (!sync_handle) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(sync_handle);
+	if (!p_sync_dev_info) {
+		BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, sync_handle);
+		return RTK_BT_FAIL;
+	}
+	//remove iso data path
+	for (i = 0; i < sync_bis_info.num_bis; i++) {
+		bis_conn_handle = sync_bis_info.bis_conn_info[i].bis_conn_handle;
+		app_bt_le_audio_iso_data_path_remove(bis_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX);
+	}
 	return ret;
 }
 
@@ -2299,6 +2324,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			app_bt_le_audio_cap_decode_data_control(true);
 		} else if (param->sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED) {
 			BT_LOGA("[APP] broadcast sink big sync termiated\r\n");
+			ret = app_bt_le_audio_broadcast_sink_remove_data_path(param->sync_handle);
+			BT_LOGA("[APP] app_bt_le_audio_broadcast_sink_remove_data_path %s after big sync terminated! ret: 0x%x\r\n",
+					((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			ret = rtk_bt_le_audio_sync_release(param->sync_handle);
 			BT_LOGA("[APP] rtk_bt_le_audio_sync_release %s, ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			//deinit rx thread

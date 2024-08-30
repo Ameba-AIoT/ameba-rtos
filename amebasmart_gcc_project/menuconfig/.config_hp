@@ -38,6 +38,7 @@ CONFIG_VFS_LITTLEFS_INCLUDED=y
 # < CONFIG OTA OPTION
 #
 # CONFIG_UPGRADE_BOOTLOADER is not set
+# CONFIG_COMPRESS_OTA_IMG is not set
 
 #
 # < CONFIG Application Processor
@@ -61,10 +62,15 @@ CONFIG_AS_INIC_NP=y
 # CONFIG_HIGH_TP_TEST is not set
 # CONFIG_WIFI_CSI_ENABLE is not set
 # CONFIG_WIFI_ANTDIV_ENABLE is not set
+# CONFIG_WIFI_11K_ENABLE is not set
+# CONFIG_WIFI_11V_ENABLE is not set
+# CONFIG_WIFI_11R_ENABLE is not set
+# CONFIG_WIFI_SPEAKER_ENABLE is not set
 
 #
 # < CONFIG LWIP
 #
+# CONFIG_LWIP_DEBUG is not set
 
 #
 #
@@ -116,14 +122,15 @@ CONFIG_MBED_TLS_ENABLED=y
 # CONFIG_SSL_ROM_TEST is not set
 
 #
-# < GUI Config
-#
-# CONFIG_GUI_EN is not set
-
-#
 # < Audio Config
 #
 # CONFIG_AUDIO_FWK is not set
+
+#
+# Third Party Lib
+#
+# CONFIG_SPEEX_LIB is not set
+# CONFIG_OPUS_LIB is not set
 
 #
 # < IPC Message Queue Config

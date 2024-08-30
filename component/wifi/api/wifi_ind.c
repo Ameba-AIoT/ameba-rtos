@@ -23,11 +23,16 @@
 #include "inic_ipc.h"
 #if !defined(CONFIG_AS_INIC_NP)
 #include "wpa_lite_intf.h"
+#include <wifi_auto_reconnect.h>
 #endif
 
 #if defined (CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
+#endif
+
+#ifdef CONFIG_ENABLE_EAP
+extern void eap_disconnected_hdl(void);
 #endif
 
 /******************************************************
@@ -76,13 +81,12 @@ void wifi_indication(enum rtw_event_indicate event, char *buf, int buf_len, int 
 	inic_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 
+#ifndef CONFIG_AS_INIC_NP
 	if (event == WIFI_EVENT_JOIN_STATUS) {
-		if (p_wifi_joinstatus_internal_callback) {
-			p_wifi_joinstatus_internal_callback((enum rtw_join_status_type)flags);
-		}
-	} else {
-		rtw_indicate_event_handle(event, buf, buf_len, flags);
+		wifi_event_join_status_internal_hdl(buf, flags);
 	}
+	rtw_indicate_event_handle(event, buf, buf_len, flags);
+#endif
 }
 
 void wifi_reg_event_handler(unsigned int event_cmds, rtw_event_handler_t handler_func, void *handler_user_data)
@@ -125,13 +129,13 @@ void init_event_callback_list(void)
 	memset(event_callback_list, 0, sizeof(event_callback_list));
 }
 
-void wifi_join_status_indicate(enum rtw_join_status_type join_status)
+void wifi_event_join_status_internal_hdl(char *buf, int flags)
 {
-#ifndef CONFIG_MP_SHRINK
-#ifndef CONFIG_AS_INIC_NP
+#if !defined(CONFIG_MP_SHRINK) && !defined(CONFIG_AS_INIC_NP)
 	struct deauth_info  *deauth_data, *deauth_data_pre;
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-#endif
+
+	enum rtw_join_status_type join_status = (enum rtw_join_status_type)flags;
 
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
@@ -184,16 +188,30 @@ void wifi_join_status_indicate(enum rtw_join_status_type join_status)
 		}
 		rtos_mem_free((u8 *)deauth_data_pre);
 #endif
+
+#ifdef CONFIG_ENABLE_EAP
+		eap_disconnected_hdl();
+#endif
 	}
 
 	rtw_join_status = join_status;
 
+	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
+		/*wpa lite disconnect hdl*/
+		u8 port = IFACE_PORT0;
+		rtw_psk_disconnect_hdl(buf, 0, flags, &port);
+	}
+
+#if CONFIG_AUTO_RECONNECT
+	rtw_reconn_join_status_hdl(buf, flags);
+#endif
 	/* step 2: execute user callback to process join_status*/
 	if (p_wifi_joinstatus_user_callback) {
 		p_wifi_joinstatus_user_callback(join_status);
 	}
 #else
-	UNUSED(join_status);
+	UNUSED(flags);
+	UNUSED(buf);
 #endif
 }
 

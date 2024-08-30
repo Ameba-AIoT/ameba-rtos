@@ -47,6 +47,8 @@ struct xmit_priv_t {
 
 	struct task_struct 		*tx_thread;
 	struct semaphore 		tx_sema;
+
+	u8 				initialized: 1;
 };
 
 /* Scan and Join related parameters. */
@@ -86,7 +88,7 @@ struct p2p_priv_t {
 #endif
 
 struct hci_ops_t {
-	void (*send_data)(u8 *buf, u32 len);
+	void (*send_data)(u8 *buf, u32 len, struct sk_buff *pskb);
 	void (*recv_data_process)(void *intf_priv);
 };
 

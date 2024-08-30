@@ -57,13 +57,13 @@ typedef enum {
 	VERIFY_STATE_ERROR,
 } usbh_verify_ep_state_t;
 
-/* USB Host Ctrl Transfor Status */
+/* USB Host Transfor Status */
 typedef enum {
-	USBH_VERIFY_CTRL_IDLE = 0U,
-	USBH_VERIFY_CTRL_RX = 1,
-	USBH_VERIFY_CTRL_TX = 2,
-	USBH_VERIFY_CTRL_MAX,
-} usbh_verify_ctrl_state_t;
+	USBH_VERIFY_TRX_IDLE = 0U,
+	USBH_VERIFY_TX,
+	USBH_VERIFY_RX,
+	USBH_VERIFY_TRX_MAX,
+} usbh_verify_ep_trx_state_t;
 
 /* Verify user callback interface */
 typedef struct {
@@ -114,9 +114,13 @@ typedef struct {
 	__IO u32            finish_tick;
 
 	/* ctrl loop info*/
-	u8                  ctrl_transfer_idle;
 	usbh_verify_xfer_t  ctrl_in_xfer;
 	usbh_verify_xfer_t  ctrl_out_xfer;
+
+	usbh_verify_ep_trx_state_t ctrl_trx_state;
+	usbh_verify_ep_trx_state_t bulk_trx_state;
+	usbh_verify_ep_trx_state_t intr_trx_state;
+	usbh_verify_ep_trx_state_t isoc_trx_state;
 
 	u8                  ep_count;
 	usbh_verify_xfer_t  ep_array[USBH_EP_COUNT_MAX];

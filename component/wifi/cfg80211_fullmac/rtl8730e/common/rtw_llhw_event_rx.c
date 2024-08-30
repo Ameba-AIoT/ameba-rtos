@@ -63,10 +63,10 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32
 		cfg80211_rtw_connect_indicate(flags, buf, buf_len);
 	}
 
-	if (event == WIFI_EVENT_DISCONNECT) {
-		disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
-		dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
-		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
+	if ((event == WIFI_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
+		if (flags == RTW_JOINSTATUS_DISCONNECT) {
+			disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
+			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			cfg80211_rtw_disconnect_indicate(disassoc_reason, 1);
 		}
 		if (global_idev.mlme_priv.b_in_disconnect) {
@@ -74,6 +74,7 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32
 			global_idev.mlme_priv.b_in_disconnect = false;
 		}
 	}
+
 	if (event == WIFI_EVENT_STA_ASSOC) {
 		dev_dbg(global_idev.fullmac_dev, "%s: sta assoc \n", __func__);
 		cfg80211_rtw_sta_assoc_indicate(buf, buf_len);
@@ -257,9 +258,10 @@ static u8 llhw_event_get_network_info(struct event_priv_t *event_priv, u32 *para
 		memcpy((u8 *)(ret_msg + 1), (u8 *)rsp_ptr, rsp_len);
 
 		/* send */
-		llhw_send_data(buf, buf_len);
-
+		llhw_send_data(buf, buf_len, NULL);
+#ifndef CONFIG_INIC_USB_ASYNC_SEND
 		kfree(buf);
+#endif
 	}
 
 	return 1;
@@ -350,9 +352,6 @@ void llhw_event_task(struct work_struct *data)
 	case INIC_API_SCAN_EACH_REPORT_USER_CALLBACK:
 		//iiha_scan_each_report_cb_hdl(event_priv, p_recv_msg);
 		break;
-	case INIC_API_AUTO_RECONNECT:
-		//iiha_autoreconnect_hdl(event_priv, p_recv_msg);
-		break;
 	case INIC_API_WIFI_AP_CH_SWITCH:
 		//iiha_ap_ch_switch_hdl(event_priv, p_recv_msg);
 		break;
@@ -411,9 +410,10 @@ void llhw_event_task(struct work_struct *data)
 			ret_msg->event = INIC_WIFI_EVT_API_RETURN;
 			ret_msg->api_id = p_recv_msg->api_id;
 
-			llhw_send_data(buf, buf_len);
-
+			llhw_send_data(buf, buf_len, NULL);
+#ifndef CONFIG_INIC_USB_ASYNC_SEND
 			kfree(buf);
+#endif
 		}
 	}
 

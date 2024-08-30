@@ -245,7 +245,7 @@ void example_usbh_msc_thread(void *param)
 		ret = 0;
 	}
 exit_unmount:
-	if (f_mount(NULL, logical_drv, 1) != FR_OK) {
+	if (f_unmount(logical_drv) != FR_OK) {
 		RTK_LOGS(TAG, "[MSC] Fail to unmount logical drive\n");
 	}
 exit_unregister:

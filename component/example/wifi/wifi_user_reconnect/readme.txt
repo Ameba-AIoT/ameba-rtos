@@ -3,7 +3,7 @@
 #                                                                                #
 ##################################################################################
 
-Date: 2024-06-13
+Date: 2024-08-22
 
 Table of Contents
 ~~~~~~~~~~~~~~~~~
@@ -30,4 +30,4 @@ Result description
 
 Supported List
 ~~~~~~~~~~~~~~
-		AmebaD+
+		AmebaDplus, AmebaSmart, AmebaLite

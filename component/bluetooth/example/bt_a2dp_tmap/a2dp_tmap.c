@@ -28,6 +28,7 @@
 #include <bt_audio_codec_wrapper.h>
 #include <bt_audio_track_api.h>
 #include <sbc_codec_entity.h>
+#include <app_audio_data.h>
 #include "kv.h"
 #include <dlist.h>
 #include "bt_audio_resample.h"
@@ -264,7 +265,11 @@ static rtk_bt_sbc_codec_t sbc_codec_t = {
 		.blocks = 16,
 		.subbands = 8,
 		.alloc_method = SBC_ALLOCATION_METHOD_SNR,
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+		.sample_rate = 48000,
+#else
 		.sample_rate = 44100,
+#endif
 		.bitpool = 0x21,
 		.channel_mode = SBC_CHANNEL_MODE_DUAL_CHANNEL,
 	},
@@ -274,7 +279,11 @@ static rtk_bt_sbc_codec_t sbc_codec_t = {
 static uint8_t remote_bd_addr[6] = {0};
 
 static rtk_bt_a2dp_media_codec_sbc_t codec_sbc = {
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+	.sampling_frequency_mask = RTK_BT_A2DP_SBC_SAMPLING_FREQUENCY_48KHZ,
+#else
 	.sampling_frequency_mask = 0xf0,
+#endif
 	.channel_mode_mask = 0x0f,
 	.block_length_mask = 0xf0,
 	.subbands_mask = 0x0C,
@@ -929,6 +938,7 @@ static uint16_t a2dp_tmap_demo_queue_deinit(a2dp_tmap_demo_queue_t *p_queue)
 		p_queue->queue_max_len = 0;
 		if (p_queue->mtx) {
 			osif_mutex_delete(p_queue->mtx);
+			p_queue->mtx = NULL;
 		}
 		BT_LOGA("[APP] %s queue deinit success\r\n", __func__);
 		return RTK_BT_OK;
@@ -2560,6 +2570,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
+			app_bt_le_audio_group_list_remove(g_ums_info.group_handle);
 			g_ums_info.status = RTK_BLE_AUDIO_INITIATOR_DISCONNECT;
 		} else if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_BROADCAST_MEDIA_SNEDER) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);

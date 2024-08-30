@@ -69,7 +69,8 @@ endif
 ifeq ($(CONFIG_USBH_MSC),y)
 CSRC += $(MSC_DIR)/usbh_msc.c \
 	$(MSC_DIR)/usbh_msc_scsi.c \
-	$(MSC_DIR)/usbh_msc_disk.c
+	$(MSC_DIR)/usbh_msc_disk.c \
+	$(MSC_DIR)/usbh_msc_cmd.c
 endif
 
 ifeq ($(CONFIG_USBH_UVC),y)

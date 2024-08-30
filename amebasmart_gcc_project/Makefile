@@ -95,6 +95,9 @@ menuconfig:
 		exit 1; \
 	fi
 
+toolchain:
+	make -C ./project_hp toolchain
+
 AP_TARGET_ALL:
 ifneq ($(CONFIG_LINUX_FW_EN),y)
 	make -C ./project_ap all

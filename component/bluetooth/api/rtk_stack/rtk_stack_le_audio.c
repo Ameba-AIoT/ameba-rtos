@@ -4929,7 +4929,7 @@ static uint16_t bt_stack_le_audio_sync_remove_data_path(void *data)
 	p_param = (rtk_bt_le_audio_sync_remove_data_path_param_t *)data;
 
 	if (false == ble_audio_bis_remove_data_path(p_param->sync_handle, p_param->bis_idx)) {
-		BT_LOGE("%s ble_audio_bis_setup_data_path fail\r\n", __func__);
+		BT_LOGE("%s ble_audio_bis_remove_data_path fail\r\n", __func__);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 

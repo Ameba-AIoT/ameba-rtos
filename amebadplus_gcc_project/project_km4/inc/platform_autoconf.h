@@ -36,6 +36,7 @@
  * < CONFIG OTA OPTION
  */
 #undef  CONFIG_UPGRADE_BOOTLOADER
+#undef  CONFIG_COMPRESS_OTA_IMG
 
 /*
  * < CONFIG WIFI
@@ -128,6 +129,12 @@
  * < Audio Config
  */
 #undef  CONFIG_AUDIO_FWK
+
+/*
+ * Third Party Lib
+ */
+#undef  CONFIG_SPEEX_LIB
+#undef  CONFIG_OPUS_LIB
 
 /*
  * < IMQ Config

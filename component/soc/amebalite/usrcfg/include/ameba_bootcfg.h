@@ -15,7 +15,7 @@ extern FuncPtr FwCheckCallback;
 extern FuncPtr OTASelectHook;
 extern u32 Cert_PKHash_OTP_ADDR;
 extern u8 Boot_DSP_Enable;
-extern u8 DSP_WITHIN_IMG2_Enable;
+extern u8 DSP_WITHIN_APP_IMG_Enable;
 extern SocClk_Info_TypeDef SocClk_Info[];
 extern u8 Boot_SocClk_Info_Idx;
 extern u8 Boot_Agg_En;

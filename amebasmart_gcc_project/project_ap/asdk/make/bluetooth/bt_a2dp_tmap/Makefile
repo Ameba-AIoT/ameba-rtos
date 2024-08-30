@@ -11,21 +11,22 @@ BT_AUDIO_DIR = $(BT_DIR)/bt_audio
 BT_CODEC_SBC = $(BT_AUDIO_DIR)/bt_codec/sbc
 A2DP_TMAP_DIR= $(BT_DIR)/example/bt_a2dp_tmap
 BLE_AUDIO_COMMON_DIR = $(BT_DIR)/example/ble_audio_common
+BT_APP_AUDIO_DATA = $(BT_DIR)/example/bt_app_audio_data
 
 vpath %.c $(A2DP_TMAP_DIR) \
 		$(BLE_AUDIO_COMMON_DIR)
 
 MODULE_IFLAGS += \
+	-I$(BT_APP_AUDIO_DATA) \
 	-I$(BT_AUDIO_DIR)/include \
 	-I$(BT_AUDIO_DIR)/bt_codec \
 	-I$(BT_CODEC_SBC)/decoder/include \
 	-I$(BT_CODEC_SBC)/encoder/include \
-	-I$(BLE_AUDIO_COMMON_DIR) \
-	-I$(AUDIO_HAL_DIR)/interfaces \
-	-I$(AUDIO_HAL_DIR)/base/osal/osal_c/interfaces
+	-I$(BLE_AUDIO_COMMON_DIR)
 
 CSRC += \
-	$(A2DP_TMAP_DIR)/a2dp_tmap.c
+	$(A2DP_TMAP_DIR)/a2dp_tmap.c \
+	$(A2DP_TMAP_DIR)/tmap_a2dp_source.c
 
 OBJS = $(notdir $(CSRC:.c=.o))
 

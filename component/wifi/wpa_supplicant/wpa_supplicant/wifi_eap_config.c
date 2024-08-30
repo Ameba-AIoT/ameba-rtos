@@ -19,6 +19,7 @@
 
 u8 eap_phase = 0;
 u8 eap_method = 0;
+u8 eap_event_reg_disconn = 0;
 
 // eap config arguments
 char *eap_target_ssid = NULL;
@@ -88,19 +89,15 @@ void judge_station_disconnect(void)
 
 extern void eap_peer_unregister_methods(void);
 extern void eap_sm_deinit(void);
-void eap_disconnected_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
+void eap_disconnected_hdl(void)
 {
-	/* To avoid gcc warnings */
-	(void) buf;
-	(void) buf_len;
-	(void) flags;
-	(void) handler_user_data;
-
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, eap_disconnected_hdl);
-	//eap_peer_unregister_methods();
-	eap_sm_deinit();
-	//reset_config();
+	if (eap_event_reg_disconn) {
+		wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
+		eap_event_reg_disconn = 0;
+		//eap_peer_unregister_methods();
+		eap_sm_deinit();
+		//reset_config();
+	}
 }
 
 /*
@@ -242,17 +239,13 @@ int eap_start(char *method)
 #endif
 
 	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_START, eap_eapol_start_hdl);
-
-	// for re-authentication when session timeout
-	wifi_reg_event_handler(WIFI_EVENT_DISCONNECT, eap_disconnected_hdl, NULL);
-	//wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
-
+	eap_event_reg_disconn = 1;
 	set_eap_phase(DISABLE);
 
 	// eap failed, disconnect
 	if (ret != 0) {
 		judge_station_disconnect();
-		eap_disconnected_hdl(NULL, 0, 0, NULL);
+		eap_disconnected_hdl();
 		rtos_time_delay_ms(200);	//wait handler done
 		DiagPrintf("\r\nERROR: connect to AP by %s failed\n", method);
 	}

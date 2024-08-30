@@ -20,9 +20,7 @@ SECTIONS
 	.ram_image1.text . :
 	{
 		/* image1 text */
-		*(.boot.ram.text*)
 		*(.text*)
-		*(.boot.rodata*)
 		*(.rodata*)
 		. = ALIGN (4);
 	} > KM4_FLOADER_RAM_S
@@ -30,7 +28,6 @@ SECTIONS
 	.ram_image1.data . :
 	{
 		__ram_image1_data_start__ = .;
-		*(.boot.ram.data*)
 		*(.data*)
 		. = ALIGN(16);
 		__ram_image1_data_end__ = .;
@@ -41,7 +38,6 @@ SECTIONS
 	.ram_image1.bss . :
 	{
 		__image1_bss_start__ = .;
-		*(.boot.ram.bss*)
 		*(.bss*)
 		__image1_bss_end__ = .;
 	} > KM4_FLOADER_RAM_S

@@ -99,16 +99,14 @@ void llhw_sdio_bridge_event_join_status_indicate(void *event_priv, u32 *param_bu
 			if (mlme_priv->join_block_param && mlme_priv->join_block_param->block) {
 				complete(&mlme_priv->join_block_param->join_sema);
 			}
-		}
-	} else if (event == WIFI_EVENT_DISCONNECT) {
-		if (global_idev.mlme_priv.b_in_disconnect) {
-			complete(&global_idev.mlme_priv.disconnect_done_sema);
-			global_idev.mlme_priv.b_in_disconnect = false;
-		}
-		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
+		} else if (flags == RTW_JOINSTATUS_DISCONNECT) {
+			if (global_idev.mlme_priv.b_in_disconnect) {
+				complete(&global_idev.mlme_priv.disconnect_done_sema);
+				global_idev.mlme_priv.b_in_disconnect = false;
+			}
 			netif_carrier_off(global_idev.pndev[0]);
+			rtw_sdio_bridge_wifi_event_indicate(&wifi_event_user_genl_info, BRIDGE_WIFI_EVENT_DISCONNECT);
 		}
-		rtw_sdio_bridge_wifi_event_indicate(&wifi_event_user_genl_info, BRIDGE_WIFI_EVENT_DISCONNECT);
 	}
 
 	return;

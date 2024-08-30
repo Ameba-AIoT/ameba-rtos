@@ -213,6 +213,13 @@ typedef struct {
 } app_lea_iso_data_path_t;
 
 typedef struct {
+	uint8_t tx_iso_path_num;
+	uint8_t rx_iso_path_num;
+	void *mtx;
+	struct list_head head;
+} app_lea_iso_data_path_list_t;
+
+typedef struct {
 	bool brs_is_used;
 	uint8_t instance_id;
 	uint8_t source_id;
@@ -566,6 +573,7 @@ typedef struct {
 	uint8_t status;
 } app_bt_le_audio_commander_info_t;
 /*****************************************end cap commander struct***********************************/
+extern app_lea_iso_data_path_list_t g_app_lea_iso_path_list;
 extern rtk_bt_le_ext_scan_param_t app_lea_def_ext_scan_param;
 /* common broadcast source information parameter */
 extern app_bt_le_audio_bap_broadcast_source_info_t app_bap_bro_sour_info;

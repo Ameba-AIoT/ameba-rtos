@@ -23,7 +23,7 @@ _WEAK void hci_platform_force_uart_rts(bool op)
 	(void) op;
 }
 
-static bool rtk_bt_get_power_save_status(void)
+static bool rtk_bt_get_wakelock_status(void)
 {
 	uint32_t lock_status = pmu_get_wakelock_status();
 	BT_LOGA("[BT_PS] lock_status = 0x%x\r\n", lock_status);
@@ -35,9 +35,9 @@ static bool rtk_bt_get_power_save_status(void)
 	}
 }
 
-void rtk_bt_enable_power_save(void)
+void rtk_bt_release_wakelock(void)
 {
-	if (rtk_bt_get_power_save_status() == true) {
+	if (rtk_bt_get_wakelock_status() == true) {
 		BT_LOGA("[BT_PS] pmu_release_wakelock PMU_BT_DEVICE\r\n");
 		pmu_release_wakelock(PMU_BT_DEVICE);
 	} else {
@@ -45,9 +45,9 @@ void rtk_bt_enable_power_save(void)
 	}
 }
 
-void rtk_bt_disable_power_save(void)
+void rtk_bt_acquire_wakelock(void)
 {
-	if (rtk_bt_get_power_save_status() == false) {
+	if (rtk_bt_get_wakelock_status() == false) {
 		BT_LOGA("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
 		pmu_acquire_wakelock(PMU_BT_DEVICE);
 	} else {
@@ -100,7 +100,7 @@ static uint32_t rtk_bt_resume(uint32_t expected_idle_time, void *param)
 
 	BT_LOGA("[BT_PS] Enter rtk_bt_resume\r\n");
 
-	rtk_bt_disable_power_save();
+	rtk_bt_acquire_wakelock();
 
 	rtk_bt_disable_bt_wake_host();
 

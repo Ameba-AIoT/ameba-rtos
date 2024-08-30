@@ -1,14 +1,16 @@
 /**
- * @file      rtk_bt_mp_api.h
+ * @file      bt_mp_api.h
  * @author
  * @brief     Bluetooth Common function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
-#ifndef __RTK_BT_MP_API_H__
-#define __RTK_BT_MP_API_H__
+#ifndef __BT_MP_API_H__
+#define __BT_MP_API_H__
 
-#include <rtk_bt_def.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -319,4 +321,4 @@ uint8_t rtk_bt_mp_dtm_set_disable_tx_power_tracking(void);
 }
 #endif
 
-#endif /* __RTK_BT_MP_API_H__ */
+#endif /* __BT_MP_API_H__ */

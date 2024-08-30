@@ -16,7 +16,6 @@
 
 #define SECURE_CONTEXT_SIZE (128)
 
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
 #define HCI_IF_TASK_SIZE    (2*1024)
 #define HCI_IF_TASK_PRIO    (5)
 
@@ -29,29 +28,18 @@ struct tx_packet_t {
 	uint32_t len;
 	uint8_t flag;
 };
-#endif
 
 static struct {
 	HCI_IF_CALLBACK cb;
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
 	bool task_running;
 	uint32_t task_msg_num;
 	struct list_head tx_list;
 	void *tx_ind_sem;
 	void *tx_list_mtx;
 	void *task_hdl;
-#endif
-} hci_if_rtk = {
-	.cb = 0,
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
-	.task_running = false,
-	.task_msg_num = 0,
-	.tx_list = {NULL, NULL},
-	.tx_ind_sem = 0,
-	.tx_list_mtx = 0,
-	.task_hdl = 0,
-#endif
-};
+	void *internal_cmd;
+	uint32_t internal_cmd_cnt;
+} hci_if_rtk;
 
 static uint8_t _rx_offset(uint8_t type)
 {
@@ -95,13 +83,32 @@ static void rtk_stack_cancel(void)
 
 static void rtk_stack_recv(void)
 {
-	if (!new_packet_buf || !hci_if_rtk.cb) {
+	uint16_t opcode, opcode_i;
+	uint8_t *buf = new_packet_buf;
+
+	if (!buf || !hci_if_rtk.cb) {
 		return;
 	}
 
+	/* Hci event format: type, evt, len, ncmd, opcode_l, opcode_h */
+	if (hci_if_rtk.internal_cmd_cnt) {
+		if (*buf == HCI_EVT && *(buf + 1) == BT_HCI_EVT_CMD_COMPLETE) {
+			LE_TO_UINT16(opcode, buf + 4);
+			osif_msg_peek(hci_if_rtk.internal_cmd, &opcode_i, BT_TIMEOUT_NONE);
+			if (opcode == opcode_i) { /* event for internal hci command, no need send to stack */
+				osif_msg_recv(hci_if_rtk.internal_cmd, &opcode_i, BT_TIMEOUT_NONE);
+				osif_msg_queue_peek(hci_if_rtk.internal_cmd, &hci_if_rtk.internal_cmd_cnt);
+				osif_mem_aligned_free(buf);
+				new_packet_buf = NULL;
+				return;
+			}
+		}
+	}
+
 	/* If indicate OK, stack will call hci_if_confirm when process of the packet is completed. */
-	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, new_packet_buf, new_packet_buflen)) {
-		osif_mem_aligned_free(new_packet_buf);    /* when indicate fail, free memory here. */
+	if (!hci_if_rtk.cb(HCI_IF_EVT_DATA_IND, true, buf, new_packet_buflen)) {
+		osif_mem_aligned_free(buf);
+		new_packet_buf = NULL;
 	}
 }
 
@@ -162,7 +169,6 @@ static void _hci_if_send(uint8_t *buf, uint32_t len, bool from_stack)
 	}
 }
 
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
 static bool _tx_list_add(uint8_t *buf, uint32_t len, uint8_t flag)
 {
 	bool ret = false;
@@ -197,9 +203,15 @@ static bool _tx_list_add(uint8_t *buf, uint32_t len, uint8_t flag)
 	pkt->len = len;
 	pkt->flag = flag;
 
-	if (!flag) { /* internal hci tx */
+	if (!(flag & FLAG_BUF_FROM_STACK) && buf) { /* internal hci tx */
+		uint16_t opcode;
 		pkt->buf = (uint8_t *)pkt + sizeof(struct tx_packet_t);
 		memcpy(pkt->buf, buf, len);
+		if (*buf == HCI_CMD) {
+			LE_TO_UINT16(opcode, buf + 1);
+			osif_msg_send(hci_if_rtk.internal_cmd, &opcode, BT_TIMEOUT_NONE);
+			osif_msg_queue_peek(hci_if_rtk.internal_cmd, &hci_if_rtk.internal_cmd_cnt);
+		}
 	}
 
 	osif_mutex_take(hci_if_rtk.tx_list_mtx, BT_TIMEOUT_FOREVER);
@@ -258,29 +270,25 @@ static void hci_if_task(void *context)
 out:
 	osif_task_delete(NULL);
 }
-#endif
 
 bool hci_if_open(HCI_IF_CALLBACK callback)
 {
-	hci_if_rtk.cb = callback;
-
 	if (hci_controller_is_enabled()) {
 		BT_LOGD("Hci Driver Already Open!\r\n");
 		_hci_if_open_indicate();
 		return true;
 	}
 
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
+	memset(&hci_if_rtk, 0, sizeof(hci_if_rtk));
+	hci_if_rtk.cb = callback;
 	INIT_LIST_HEAD(&hci_if_rtk.tx_list);
 	osif_sem_create(&hci_if_rtk.tx_ind_sem, 0, 1);
 	osif_mutex_create(&hci_if_rtk.tx_list_mtx);
+	osif_msg_queue_create(&hci_if_rtk.internal_cmd, sizeof(uint16_t), 10);
 	osif_task_create(&hci_if_rtk.task_hdl, "hci_if_task", hci_if_task,
 					 0, HCI_IF_TASK_SIZE, HCI_IF_TASK_PRIO);
 	hci_if_rtk.task_running = true;
 	return true;
-#else
-	return _hci_if_open();
-#endif
 }
 
 bool hci_if_close(void)
@@ -289,10 +297,9 @@ bool hci_if_close(void)
 		return true;
 	}
 
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
 	hci_if_rtk.task_running = false;
 
-	/* Waiting hci_if_write_raw() on other tasks interrupted by deinit task to complete */
+	/* Waiting _tx_list_add() on other tasks interrupted by deinit task to complete */
 	while (hci_if_rtk.task_msg_num) {
 		osif_delay(5);
 	}
@@ -305,9 +312,7 @@ bool hci_if_close(void)
 
 	osif_sem_delete(hci_if_rtk.tx_ind_sem);
 	osif_mutex_delete(hci_if_rtk.tx_list_mtx);
-#else
-	_hci_if_close();
-#endif
+	osif_msg_queue_delete(hci_if_rtk.internal_cmd);
 	return true;
 }
 
@@ -322,26 +327,16 @@ void hci_if_deinit(void)
 	hci_controller_free();
 }
 
-bool hci_if_write_raw(uint8_t *buf, uint32_t len, bool from_stack)
-{
-#if defined(CONFIG_AYNSC_HCI_INTF) && CONFIG_AYNSC_HCI_INTF
-	return _tx_list_add(buf, len, from_stack ? FLAG_BUF_FROM_STACK : 0);
-#else
-	_hci_if_send(buf, len, from_stack);
-	return true;
-#endif
-}
-
+/* Internal tx use, do not indicate to stack when tx done */
 bool hci_if_write_internal(uint8_t *buf, uint32_t len)
 {
-	// Internal tx use, do not indicate to stack when tx done
-	return hci_if_write_raw(buf, len, 0);
+	return _tx_list_add(buf, len, 0);
 }
 
+/* Stack tx use, indicate to stack when tx done */
 bool hci_if_write(uint8_t *buf, uint32_t len)
 {
-	// Stack tx use, indicate to stack when tx done
-	return hci_if_write_raw(buf, len, 1);
+	return _tx_list_add(buf, len, FLAG_BUF_FROM_STACK);
 }
 
 bool hci_if_confirm(uint8_t *buf)

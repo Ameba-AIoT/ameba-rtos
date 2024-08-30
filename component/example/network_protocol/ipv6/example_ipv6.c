@@ -7,7 +7,6 @@
 #if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
 
 extern struct netif xnetif[];
-rtos_sema_t ipv6_semaphore;
 
 #define RECV_TO        1000	// ms
 
@@ -461,12 +460,6 @@ static void example_ipv6_mcast_client(void)
 static void example_ipv6_thread(void *param)
 {
 	printf("\nExample: IPV6 \n");
-	wifi_reg_event_handler(WIFI_EVENT_CONNECT, example_ipv6_callback, NULL);
-	rtos_sema_create(&ipv6_semaphore, 0, RTOS_SEMA_MAX_COUNT);
-	if (!ipv6_semaphore) {
-		rtos_task_delete(NULL);
-		return;
-	}
 
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 		printf("Wait for WIFI connection ...\n");
@@ -474,9 +467,6 @@ static void example_ipv6_thread(void *param)
 		rtos_time_delay_ms(2000);
 	}
 
-	if (rtos_sema_take(ipv6_semaphore, IPV6_SEMA_TIMEOUT) == FAIL) {
-		rtos_sema_delete(ipv6_semaphore);
-	}
 	LwIP_AUTOIP_IPv6(&xnetif[0]);
 	//Wait for ipv6 addr process conflict done
 	while (!ip6_addr_isvalid(netif_ip6_addr_state(&xnetif[0], 0))) {
@@ -493,12 +483,6 @@ static void example_ipv6_thread(void *param)
 	example_ipv6_mcast_client();
 
 	rtos_task_delete(NULL);
-}
-
-//Wait for wifi association done callback
-void example_ipv6_callback(char *buf, int buf_len, int flags, void *userdata)
-{
-	rtos_sema_give(ipv6_semaphore);
 }
 
 void example_ipv6(void)

@@ -81,10 +81,10 @@ const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	{IMG_APP_OTA1, 0x08014000, 0x081F3FFF}, //Certificate(4K) + Manifest(4K) + KM4 Application OTA1 + Manifest(4K) + RDP IMG OTA1
 
 	{IMG_BOOT_OTA2, 0x08200000, 0x08213FFF}, //Boot Manifest(4K) + KM4 Bootloader(76K) OTA
-	{IMG_APP_OTA2, 0x08214000, 0x083F3FFF}, //Certificate(4K) + Manifest(4K) + KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
+	{IMG_APP_OTA2, 0x08214000, 0x083DCFFF}, //Certificate(4K) + Manifest(4K) + KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
 
-	{FTL,			0x08700000, 0x08702FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
-	{VFS1, 			0x08703000, 0x08722FFF}, //VFS region 1 (128K)
+	{FTL,			0x083DD000, 0x083DFFFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
+	{VFS1, 			0x083E0000, 0x083FFFFF}, //VFS region 1 (128K)
 	{VFS2, 			0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 			0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 

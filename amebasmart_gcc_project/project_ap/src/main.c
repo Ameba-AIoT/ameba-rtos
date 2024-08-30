@@ -87,7 +87,7 @@ void app_filesystem_init(void)
 #if defined(CONFIG_AS_INIC_AP)
 	int ret = 0;
 	vfs_init();
-#ifdef CONFIG_VFS_FATFS_INCLUDED
+#ifdef CONFIG_FATFS_WITHIN_APP_IMG
 	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_2, VFS_RO);
 	if (ret == 0) {
 		RTK_LOGI(TAG, "VFS-FAT Init Success \n");

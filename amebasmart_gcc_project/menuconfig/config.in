@@ -5,7 +5,7 @@
 # 1. "make menuconfig" will see this file.
 # 2. make menuconfig save file will produce "/.config" and "/autoconf.h" two files.
 # 3. makefile will see the "/.config" file
-# 4. C code will see the "/autoconf.h"  
+# 4. C code will see the "/autoconf.h"
 #
 # in this file, declare variable xxx, please add the prefix "CONFIG_" word.  Example: "CONFIG_XXX"
 
@@ -79,7 +79,8 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG OTA OPTION'
-bool "Upgrade Bootloader"		CONFIG_UPGRADE_BOOTLOADER
+bool "Upgrade Bootloader"				CONFIG_UPGRADE_BOOTLOADER
+bool "Support Compressed APP Image"		CONFIG_COMPRESS_OTA_IMG
 endmenu
 
 comment '--------------Network Config Start------------'
@@ -245,6 +246,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 				define_bool CONFIG_BT_LE_AUDIO y
 				define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP y
 				define_bool CONFIG_BT_TMAP_SUPPORT y
+				define_bool CONFIG_BT_CAP_SUPPORT y
 				define_bool CONFIG_BT_APP_AUDIO_DATA y
 				define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
 				define_bool CONFIG_BT_AUDIO_CODEC_SBC y
@@ -300,7 +302,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_ENABLE_WPS_DISCOVERY_FOR_AP y
 		fi
 	fi
-	
+
 	if [ "$CONFIG_SINGLE_CORE_WIFI_KM4" = "y" ]; then
 		bool "Enable WPS"		CONFIG_ENABLE_WPS_FOR_HP
 		if [ "$CONFIG_ENABLE_WPS_FOR_HP" = "y" ]; then
@@ -413,7 +415,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_LP
 
 if [ "$CONFIG_KERNEL_FOR_LP" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_LP \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_LP 0
 fi
 endmenu #CONFIG OS
@@ -553,7 +555,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_HP
 
 if [ "$CONFIG_KERNEL_FOR_HP" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_HP \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_HP 0
 fi
 endmenu #CONFIG OS
@@ -576,12 +578,14 @@ choice 'USB Mode'			"Device		CONFIG_USB_DEVICE_EN_FOR_HP \
 					 Host		CONFIG_USB_HOST_EN_FOR_HP \
 					 DRD		CONFIG_USB_DRD_EN_FOR_HP \
 					"
+if [ "$CONFIG_AP_CORE_CA32" = "y" ]; then
 
 if [ "$CONFIG_USB_DEVICE_EN_FOR_HP" = "y" ]; then
 bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_HP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_HP
 bool "HID"				CONFIG_USBD_HID_FOR_HP
 bool "MSC"				CONFIG_USBD_MSC_FOR_HP
+bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_HP
 bool "Vendor"				CONFIG_USBD_VENDOR_FOR_HP
 fi
 
@@ -604,6 +608,7 @@ bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_HP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_HP
 bool "HID"				CONFIG_USBD_HID_FOR_HP
 bool "MSC"				CONFIG_USBD_MSC_FOR_HP
+bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_HP
 bool "Vendor"				CONFIG_USBD_VENDOR_FOR_HP
 
 comment 'USB Host Class'
@@ -616,6 +621,8 @@ fi
 bool "MSC"				CONFIG_USBH_MSC_FOR_HP
 bool "UVC"				CONFIG_USBH_UVC_FOR_HP
 bool "Vendor"				CONFIG_USBH_VENDOR_FOR_HP
+
+fi
 
 fi
 
@@ -755,6 +762,11 @@ if [ "$CONFIG_AUDIO_FWK_FOR_HP" = "y" ]; then
 	choice 'Select Audio Interfaces' "Mixer	CONFIG_AUDIO_MIXER_FOR_HP \
 								PassThrough	CONFIG_AUDIO_PASSTHROUGH_FOR_HP"
 fi
+mainmenu_option next_comment
+comment 'Third Party Lib'
+        bool "Speex"        CONFIG_SPEEX_LIB_FOR_HP
+        bool "OPUS"         CONFIG_OPUS_LIB_FOR_HP
+endmenu
 endmenu
 
 mainmenu_option next_comment
@@ -849,7 +861,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_AP
 
 if [ "$CONFIG_KERNEL_FOR_AP" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_AP \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_AP 0
 fi
 endmenu #CONFIG OS
@@ -879,6 +891,7 @@ bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_AP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_AP
 bool "HID"				CONFIG_USBD_HID_FOR_AP
 bool "MSC"				CONFIG_USBD_MSC_FOR_AP
+bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_AP
 bool "Vendor"				CONFIG_USBD_VENDOR_FOR_AP
 fi
 
@@ -901,6 +914,7 @@ bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_AP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_AP
 bool "HID"				CONFIG_USBD_HID_FOR_AP
 bool "MSC"				CONFIG_USBD_MSC_FOR_AP
+bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_AP
 bool "Vendor"				CONFIG_USBD_VENDOR_FOR_AP
 
 comment 'USB Host Class'
@@ -999,7 +1013,7 @@ define_int	MBEDTLS_VERSION     0x03040100
 fi
 if [ "$MBEDTLS_V_2_16_9_ENABLE" = "y" ]; then
 define_int	MBEDTLS_VERSION     0x02100300
-fi			 
+fi
 fi
 endmenu
 

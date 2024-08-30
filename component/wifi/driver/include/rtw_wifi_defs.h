@@ -952,8 +952,6 @@ enum rtw_event_indicate {
 	WIFI_EVENT_STA_DISASSOC,		///<used in p2p, customer
 	WIFI_EVENT_RX_MGNT,				///<used in p2p, customer
 	WIFI_EVENT_RX_MGNT_AP,
-	WIFI_EVENT_CONNECT,				///<used in ipv6 example, p2p, wifi_manager example
-	WIFI_EVENT_DISCONNECT,			///<used in wifi_manager example, p2p, eap
 	WIFI_EVENT_EXTERNAL_AUTH_REQ,
 
 	WIFI_EVENT_GROUP_KEY_CHANGED,
@@ -961,7 +959,7 @@ enum rtw_event_indicate {
 	WIFI_EVENT_ICV_ERROR,
 	WIFI_EVENT_CHALLENGE_FAIL,
 
-	WIFI_EVENT_JOIN_STATUS,			///<internally use for joinstatus indicate
+	WIFI_EVENT_JOIN_STATUS,
 
 	/* wpa event */
 	WIFI_EVENT_WPA_STA_WPS_START,
