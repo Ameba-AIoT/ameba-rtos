@@ -21,7 +21,7 @@ mainmenu_option next_comment
 comment '< CONFIG DSP Enable'
 bool "Enable DSP"				CONFIG_DSP_EN
 if [ "$CONFIG_DSP_EN" = "y" ]; then
-	bool "DSP within Image2"				CONFIG_DSP_WITHIN_IMG2_EN
+	bool "DSP within APP image"				CONFIG_DSP_WITHIN_APP_IMG
 fi
 endmenu
 
@@ -85,7 +85,8 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG OTA OPTION'
-bool "Upgrade Bootloader"		CONFIG_UPGRADE_BOOTLOADER
+bool "Upgrade Bootloader"				CONFIG_UPGRADE_BOOTLOADER
+bool "Support Compressed APP Image"		CONFIG_COMPRESS_OTA_IMG
 endmenu
 
 comment '--------------Network Config------------'
@@ -256,6 +257,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			define_bool CONFIG_BT_A2DP_LE_AUDIO_TMAP y
 			define_bool CONFIG_BT_APP_AUDIO_DATA y
 			define_bool CONFIG_BT_TMAP_SUPPORT y
+			define_bool CONFIG_BT_CAP_SUPPORT y
 			define_bool CONFIG_BT_AUDIO_CODEC_SUPPORT y
 			define_bool CONFIG_BT_AUDIO_CODEC_SBC y
 			define_bool CONFIG_BT_AUDIO_CODEC_LC3 y
@@ -342,14 +344,14 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		fi
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KR4 y
 	fi
-	
+
 	if [ "$CONFIG_WLAN_KR4_AP_KM4_NP" = "y" ]; then
 		bool "Enable WPS"		CONFIG_ENABLE_WPS_FOR_KR4
 		if [ "$CONFIG_ENABLE_WPS_FOR_KR4" = "y" ]; then
 			define_bool CONFIG_ENABLE_WPS_DISCOVERY_FOR_KR4 y
 		fi
 	fi
-	
+
 	if [ "$CONFIG_WLAN_KM4_AP_KR4_NP" = "y" ]; then
 		bool "Enable WPS"		CONFIG_ENABLE_WPS_FOR_KM4
 		if [ "$CONFIG_ENABLE_WPS_FOR_KM4" = "y" ]; then

@@ -901,7 +901,24 @@ uint16_t a2dp_pbp_demo_queue_init(a2dp_pbp_demo_queue_t *p_queue, short *queue, 
 	BT_LOGE("[APP] %s queue init failed\r\n", __func__);
 	return RTK_BT_FAIL;
 }
-
+static uint16_t a2dp_pbp_demo_queue_deinit(a2dp_pbp_demo_queue_t *p_queue)
+{
+	if (p_queue != NULL) {
+		p_queue->q_write = -1;
+		p_queue->q_read = -1;
+		p_queue->queue = NULL;
+		p_queue->queue_size = 0;
+		p_queue->queue_max_len = 0;
+		if (p_queue->mtx) {
+			osif_mutex_delete(p_queue->mtx);
+			p_queue->mtx = NULL;
+		}
+		BT_LOGA("[APP] %s queue deinit success\r\n", __func__);
+		return RTK_BT_OK;
+	}
+	BT_LOGE("[APP] %s: p_queue is NULL\r\n", __func__);
+	return RTK_BT_FAIL;
+}
 // static rtk_bt_a2dp_media_codec_aac_t codec_aac = {
 //  .object_type_mask = 0x80,
 //  .sampling_frequency_mask = 0x0180,
@@ -3005,6 +3022,7 @@ failed:
 				return -1;
 			}
 			app_bt_le_audio_pbp_broadcast_source_deinit();
+			a2dp_pbp_demo_queue_deinit(&pbp_convert_pcm_queue);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
 			g_pbp_bsrc_info.status = RTK_BLE_AUDIO_BROADCAST_SOURCE_DISABLE;

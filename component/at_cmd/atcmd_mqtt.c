@@ -535,6 +535,7 @@ void at_mqttconn(void *arg)
 		/* AT output when receiving CONNACK. */
 		RTK_LOGI(NOTAG, "\r\n[at_mqttconn] Sent connection request, waiting for ACK");
 		mqttCb->client.mqttstatus = MQTT_CONNECT;
+		mqttCb->initialConnect = 1;
 	}
 
 end:
@@ -615,7 +616,7 @@ void at_mqttdisconn(void *arg)
 	}
 
 end:
-	/* Delete the stored clientid, username, password. */
+	/* Delete the stored clientid, username, password. Set the flag back. */
 	if (NULL != mqttCb) {
 		rtos_mem_free(mqttCb->clientId);
 		mqttCb->clientId = NULL;
@@ -623,6 +624,8 @@ end:
 		mqttCb->userName = NULL;
 		rtos_mem_free(mqttCb->password);
 		mqttCb->password = NULL;
+		mqttCb->offline = 0;
+		mqttCb->initialConnect = 0;
 	}
 
 	if (MQTT_OK != resultNo) {
@@ -1630,7 +1633,11 @@ static void mqtt_clent_alive_fail(MQTT_CONTROL_BLOCK *mqttCb)
 			rtos_mem_free(mqttCb->topic[i]);
 			mqttCb->topic[i] = NULL;
 		}
-		at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
+		if (0 == mqttCb->initialConnect) {
+			at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
+		} else {
+			at_printf("\r\n%sERROR:%d\r\n", "+MQTTCONN:", MQTT_CONNECTION_ERROR);
+		}
 	}
 	mqttCb->client.ping_outstanding = 0;
 	mqttCb->client.next_packetid = 1;
@@ -1675,10 +1682,14 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 				rtos_mem_free(mqttCb->topic[i]);
 				mqttCb->topic[i] = NULL;
 			}
-			at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
+			if (0 == mqttCb->initialConnect) {
+				at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
+			} else {
+				at_printf("\r\n%sERROR:%d\r\n", "+MQTTCONN:", MQTT_CONNECTION_ERROR);
+			}
 		}
-		/* Try re-connect per second. */
-		if (mqttCb->offline && NULL != mqttCb->host && NULL != mqttCb->clientId) {
+		/* Try re-connect per second, except when initial-connect. */
+		if (0 == mqttCb->initialConnect && 1 == mqttCb->offline && NULL != mqttCb->host && NULL != mqttCb->clientId) {
 			rtos_time_delay_ms(1000);
 			if (wifi_is_connected_to_ap() == RTW_SUCCESS) {
 				if (0 >= mqttCb->network.my_socket && 1 == mqttCb->networkConnect && NULL != mqttCb->network.disconnect) {
@@ -1734,6 +1745,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] MQTT can not connect");
 				res = FAILURE;
 			}
+			mqttCb->initialConnect = 0;
 			*needAtOutpput = 1;
 		} else if (PINGRESP == packet_type) {
 			mqttCb->client.ping_outstanding = 0;

@@ -13,10 +13,6 @@
 #include "rtk_coex.h"
 #include <string.h>
 
-#define BT_HCI_EVT_LE_META_EVENT         0x3e
-#define BT_HCI_EVT_LE_ADVERTISING_REPORT 0x02
-#define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT 0x0d
-
 static struct hci_h4_t {
 	void    *rx_ind_sema;
 	void    *rx_run_sema;

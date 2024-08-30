@@ -61,6 +61,5 @@ Other Reference
 
 Supported List
 ~~~~~~~~~~~~~~
-[Supported List]
         Supported: AmebaD, AmebaSmart, AmebaDplus
         Source code not in project: Ameba-1, Ameba-z, Ameba-pro, RTL8720F

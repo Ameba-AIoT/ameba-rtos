@@ -101,6 +101,11 @@
 #include "inic_dev.h"
 #include "rtw_spi.h"
 #include "rtw_ioctl.h"
+#elif defined(CONFIG_FULLMAC_HCI_USB)
+#include <linux/usb.h>
+#include "inic_dev.h"
+#include "rtw_usb.h"
+#include "rtw_ioctl.h"
 #endif
 
 #include "rtw_llhw_event.h"

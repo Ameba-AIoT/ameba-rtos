@@ -13,18 +13,6 @@ static bool hci_is_mp = false;
 static uint8_t default_baud[HCI_BAUDRATE_SIZE] = {0x1d, 0x70, 0x00, 0x00}; //115200
 static uint8_t work_baud[HCI_BAUDRATE_SIZE] = {0};
 
-#define LE_TO_UINT16(_data, _array)  {              \
-        _data = ((uint16_t)(*((uint8_t *)(_array) + 0)) << 0) |        \
-                ((uint16_t)(*((uint8_t *)(_array) + 1)) << 8);         \
-    }
-
-#define LE_TO_UINT32(_data, _array)    {            \
-        _data = ((uint32_t)(*((uint8_t *)(_array) + 0)) <<  0) |       \
-                ((uint32_t)(*((uint8_t *)(_array) + 1)) <<  8) |       \
-                ((uint32_t)(*((uint8_t *)(_array) + 2)) << 16) |       \
-                ((uint32_t)(*((uint8_t *)(_array) + 3)) << 24);        \
-    }
-
 extern const unsigned char rtlbt_fw[];
 extern unsigned int rtlbt_fw_len;
 extern const unsigned char rtlbt_mp_fw[];

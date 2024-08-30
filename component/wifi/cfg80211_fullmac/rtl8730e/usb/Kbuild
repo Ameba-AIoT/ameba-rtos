@@ -1,0 +1,35 @@
+ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
+ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
+ccflags-$(CONFIG_FULLMAC_HCI_USB) += -DCONFIG_FULLMAC_HCI_USB
+
+ccflags-y += -DCONFIG_FULLMAC
+ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src) -I$(src)/../common
+
+fullmac_usb-$(CONFIG_FULLMAC_HCI_USB) := \
+		rtw_usb_ops.o \
+		rtw_usb_probe.o \
+		../rtw_drv_probe.o \
+		../rtw_cfg80211_ops.o \
+		../rtw_wiphy.o \
+		../rtw_regd.o \
+		../rtw_ethtool_ops.o \
+		../rtw_cfg80211_ops_ap.o \
+		../rtw_cfg80211_ops_key.o \
+		../rtw_cfg80211_ops_nan.o \
+		../rtw_cfg80211_ops_p2p.o \
+		../rtw_netdev_ops.o \
+		../rtw_netdev_ops_p2p.o \
+		../rtw_cfgvendor.o \
+		../rtw_proc.o \
+		../common/rtw_llhw_ops.o \
+		../common/rtw_llhw_event_tx.o \
+		../common/rtw_llhw_event_rx.o \
+		../common/rtw_llhw_pkt_rx.o \
+		../common/rtw_llhw_pkt_tx.o \
+		../common/rtw_llhw_hci.o \
+		../common/rtw_llhw_memory.o \
+		../common/rtw_protocal_offload.o \
+		../common/rtw_ioctl.o \
+		../rtw_acs.o
+
+obj-m += fullmac_usb.o

@@ -6,7 +6,8 @@
  *  This module is a confidential and proprietary property of RealTek and
  *  possession or use of this module requires written permission of RealTek.
  */
-
+#ifndef _AMEBA_OTA_KM4_H_
+#define _AMEBA_OTA_KM4_H_
 #include "ameba_soc.h"
 
 #define NONEVALIDIMG		0
@@ -14,6 +15,8 @@
 #define TWOVALIDIMG		2
 
 #define SAMEVERSION		2
+
+extern u8 Signature[2][SIGN_MAX_LEN];
 
 // IMG Type
 typedef enum _IMG_TYPE_ {
@@ -29,4 +32,4 @@ _LONG_CALL_ u8 BOOT_OTA_RDP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgInde
 _LONG_CALL_ u8 BOOT_Load_KR4_IMG1(void);
 _LONG_CALL_ u8 BOOT_Load_KR4_APP(void);
 _LONG_CALL_ u8 BOOT_Load_KM4_APP(void);
-
+#endif

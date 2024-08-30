@@ -14,7 +14,7 @@ LIB_RAM_COM_DIR = $(TARGETDIR)/lib/ram_common
 RAM_HP_DIR = $(TARGETDIR)/fwlib/ram_hp
 HAL_DIR = $(TARGETDIR)/hal
 HAL_SRC_DIR = $(TARGETDIR)/hal/src
-TAR_DIR = $(TARGETDIR)/imgtool_floader/src
+TAR_DIR = $(BASEDIR)/component/soc/common/imgtool_floader/src
 SWLIB_DIR = $(TARGETDIR)/swlib
 
 MODULE_IFLAGS += -I$(TARGETDIR)/app/xmodem \
@@ -26,7 +26,7 @@ MODULE_IFLAGS += -I$(TARGETDIR)/app/xmodem \
 		 -I$(SWLIB_DIR) \
 		 -I$(USB_COM_DIR) \
 		 -I$(USBD_DIR) \
-		 -I$(TAR_DIR)/../include
+		 -I$(TAR_DIR)/../inc
 
 GLOBAL_CFLAGS += -DCONFIG_USB_DOWNLOAD_EN -DCONFIG_USB_DOWNLOAD_IND_EN -DCONFIG_NAND_DOWNLOAD_EN -DCONFIG_FLOADER_USBD_EN -DCONFIG_USB_NONOS
 
@@ -45,7 +45,6 @@ CSRC = $(XM_DIR)/floader_fw_update.c \
 	$(RAM_COM_DIR)/ameba_usb.c \
 	$(RAM_HP_DIR)/ram_hp/ameba_codec.c \
 	$(SWLIB_DIR)/log.c \
-	$(TAR_DIR)/ameba_floader.c \
 	$(TAR_DIR)/ameba_floader_rom_parse.c \
 	$(HAL_SRC_DIR)/pinmap_common.c \
 	$(HAL_SRC_DIR)/pinmap.c \

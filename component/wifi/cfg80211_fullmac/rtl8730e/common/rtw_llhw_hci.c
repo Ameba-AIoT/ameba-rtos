@@ -17,6 +17,9 @@ int llhw_init(void)
 #elif defined(CONFIG_FULLMAC_HCI_SPI)
 	idev->intf_priv = &inic_spi_priv;
 	idev->intf_ops = &spi_intf_ops;
+#elif defined(CONFIG_FULLMAC_HCI_USB)
+	idev->intf_priv = &inic_usb_priv;
+	idev->intf_ops = &usb_intf_ops;
 #else
 #error Not support other interfaces!
 #endif

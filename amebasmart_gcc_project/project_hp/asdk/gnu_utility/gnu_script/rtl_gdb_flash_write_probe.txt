@@ -24,9 +24,6 @@ set $IMAGE_SYSD = 0x004
 #Load flash download file
 printf "Load flash loader.\n"
 file gnu_utility/gnu_script/target_FPGA.axf
-#Load the file
-#lo
-#restore ./image/rom.bin binary 0x0
 restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x00082000
 #===============================================================================
 
@@ -36,13 +33,11 @@ restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x00082000
 define flash_write
 	printf "flash_write FileName:%x \n", $arg0
 	printf "flash_write FileSize:%d \n", $arg1
-	printf "flash_write FlashAddrForWrite:%x \n", FlashAddrForWrite
 
 	set $FileName = $arg0
 	set $FileSize = $arg1
 	set $Loopnumber = ($FileSize / $FLASHDATBUFSIZE)
 	set $TailSize = ($FileSize % $FLASHDATBUFSIZE)
-	printf "FileSize: %x\n",$FileSize
 	printf "Loopnumber = %d\n", $Loopnumber
 	printf "TailSize = %d\n", $TailSize
 	printf "global variables\n"
@@ -53,22 +48,18 @@ define flash_write
 
 	printf "FlashDatSrc:%x\n", $FLASHDATSRC
 	printf "FlashBlockWriteSize:%x\n", FlashBlockWriteSize
-	printf  "FlashAddrForWrite:%x", FlashAddrForWrite
 
 	printf  "Flash write start...\n"
 	set $Loop = 0
 	while  ($Loop < $Loopnumber)
-    		set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
-    		printf "FILESTARTADDR"
-    		p /x $FILESTARTADDR
-    		p /x FlashAddrForWrite
-    		p /x $Loop
+		set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
+		printf "[%d]: write file 0x%x to flash 0x%x\n", $Loop, $FILESTARTADDR, FlashAddrForWrite
 
 		if ($FileName == $IMAGE_XIP1)
-    			restore ./image/km0_km4_app.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
+			restore ./image/km0_km4_app.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
 		end
 		if ($FileName == $IMAGE_IMG3)
-    			restore ./image/km4_image3_all.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
+			restore ./image/km4_image3_all.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
 		end
 		if ($FileName == $IMAGE_BOOT)
 			restore ./image/km4_boot_all.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
@@ -76,19 +67,16 @@ define flash_write
 		if ($FileName == $IMAGE_SYSD)
 			restore ./image/system.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
 		end
-    		c
-    
-    		set $Loop = $Loop + 0x01
+		c
+
+		set $Loop = $Loop + 0x01
 	end
 
 	if ( $TailSize > 0)
 		set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
 		set FlashBlockWriteSize = $TailSize
 
-		printf "FILESTARTADDR"
-		p /x $FILESTARTADDR
-		p /x FlashAddrForWrite
-		p /x $Loop
+		printf "[%d]: write file 0x%x to flash 0x%x\n", $Loop, $FILESTARTADDR, FlashAddrForWrite
 
 		if ($FileName == $IMAGE_XIP1)
 			restore ./image/km0_km4_app.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $TailSize)
@@ -133,9 +121,8 @@ set {int}($PERI_ON_BASE+0x21C) = $Temp
 printf "....\n"
 
 #===============================================================================
-#b RtlFlashProgram:StartOfFlashBlockWrite
-hb rtl_flash_download.c:88
-hb rtl_flash_download.c:118
+hb rtl_flash_download.c:Gdb_Floader_Program_Start
+hb rtl_flash_download.c:Gdb_Floader_Program_End
 
 set $pc = 0x04
 #continue

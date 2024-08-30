@@ -11,14 +11,16 @@ CFGDIR = $(TARGETDIR)/usrcfg
 DRVDIR = $(TARGETDIR)/fwlib/ram_hp
 DRVCOM = $(TARGETDIR)/fwlib/ram_common
 LOGDIR = $(TARGETDIR)/swlib
+LZMA_DIR = $(TARGETDIR)/../common/lzma/
 
 MODULE_IFLAGS += -I$(LOGDIR)
 MODULE_IFLAGS += -I$(FREERTOSDIR)/include/
 MODULE_IFLAGS += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/non_secure
 MODULE_IFLAGS += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_HP/secure
 MODULE_IFLAGS += -I$(BASEDIR)/component/soc/common/crashdump/include
+MODULE_IFLAGS += -I$(LZMA_DIR)
 
-vpath %.c $(DIR) $(CFGDIR) $(DRVDIR) $(DRVCOM) $(LOGDIR)
+vpath %.c $(DIR) $(CFGDIR) $(DRVDIR) $(DRVCOM) $(LOGDIR) $(LZMA_DIR)
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
@@ -44,9 +46,13 @@ CSRC = \
 	$(DRVCOM)/ameba_ipc_api.c \
 	$(DRVCOM)/ameba_fault_handle.c \
 
-CSRC += \
-	$(LOGDIR)/log.c
+CSRC += $(LOGDIR)/log.c
 #CSRC += $(DRVDIR)/ameba_ddrphy_scanpara.c
+
+ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+CSRC += $(LZMA_DIR)/ameba_boot_lzma.c \
+ 		$(LZMA_DIR)/LzmaDec.c
+endif
 #*****************************************************************************#
 #                               Object FILE LIST                              #
 #*****************************************************************************#

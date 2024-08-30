@@ -5,7 +5,7 @@
 # 1. "make menuconfig" will see this file.
 # 2. make menuconfig save file will produce "/.config" and "/autoconf.h" two files.
 # 3. makefile will see the "/.config" file
-# 4. C code will see the "/autoconf.h"  
+# 4. C code will see the "/autoconf.h"
 #
 # in this file, declare variable xxx, please add the prefix "CONFIG_" word.  Example: "CONFIG_XXX"
 
@@ -33,7 +33,7 @@ if [ "$CONFIG_TRUSTZONE_FOR_KM4" = "y" ]; then
 	if [ "$CONFIG_TFM_TEST_ENABLE_FOR_KM4" = "y" ]; then
 		choice 'TFM Test Suite Select'	" Regression_Tests	CONFIG_TFM_TEST_REGRESSION_FOR_KM4 \
 										  PSA_API_Tests		CONFIG_TFM_TEST_PSA_API_FOR_KM4 \
-										" 
+										"
 		if [ "$CONFIG_TFM_TEST_REGRESSION_FOR_KM4" = "y" ]; then
 			bool " TFM secure regression tests"				CONFIG_TFM_TEST_S_FOR_KM4
 			bool " TFM non-secure regression tests"			CONFIG_TFM_TEST_NS_FOR_KM4
@@ -42,7 +42,7 @@ if [ "$CONFIG_TRUSTZONE_FOR_KM4" = "y" ]; then
 			choice 'TEST_PSA_API Select'	" STORAGE				CONFIG_TEST_PSA_API_STORAGE_FOR_KM4 \
 											  CRYPTO				CONFIG_TEST_PSA_API_CRYPTO_FOR_KM4 \
 											  INITIAL_ATTESTATION	CONFIG_TEST_PSA_API_INITIAL_ATTESTATION_FOR_KM4 \
-											" 
+											"
 		fi
 	fi
 fi
@@ -103,7 +103,8 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG OTA OPTION'
-bool "Upgrade Bootloader"		CONFIG_UPGRADE_BOOTLOADER
+bool "Upgrade Bootloader"				CONFIG_UPGRADE_BOOTLOADER
+bool "Support Compressed APP Image"		CONFIG_COMPRESS_OTA_IMG
 endmenu
 
 comment '--------------Network config------------'
@@ -143,7 +144,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_INIC_INTF_SDIO y
 		elif [ "$CONFIG_SPI_FULLMAC" = "y" ]; then
 			define_bool CONFIG_INIC_INTF_SPI y
-		else 
+		else
 			define_bool CONFIG_INIC_INTF_USB y
 		fi
 		if [ "$CONFIG_KM0_AS_NP" = "y" ]; then
@@ -158,7 +159,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_WIFI_FW_EN_FOR_KM4 y
 		fi
 	else
-		#	KM0 firmware follow WLAN menu	
+		#	KM0 firmware follow WLAN menu
 		if [ "$CONFIG_MP_SHRINK" = "y" ]; then
 			define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
 		else
@@ -173,6 +174,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
 	fi
+
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
@@ -210,7 +212,7 @@ else
 	define_bool CONFIG_AS_INIC_NP_FOR_KM0 y
 	define_bool CONFIG_LWIP_LAYER n
 
-#	KM0 firmware follow WLAN menu	
+#	KM0 firmware follow WLAN menu
 	define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
 	define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
 fi
@@ -358,7 +360,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_KM0
 
 if [ "$CONFIG_KERNEL_FOR_KM0" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_KM0 \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_KM0 0
 fi
 endmenu #CONFIG OS
@@ -489,7 +491,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_KM4
 
 if [ "$CONFIG_KERNEL_FOR_KM4" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_KM4 \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_KM4 0
 fi
 endmenu #CONFIG OS
@@ -510,8 +512,9 @@ if [ "$CONFIG_USB_DEVICE_EN_FOR_KM4" = "y" ]; then
 bool "CDC ACM"                          CONFIG_USBD_CDC_ACM_FOR_KM4
 bool "Composite"                        CONFIG_USBD_COMPOSITE_FOR_KM4
 bool "HID"                              CONFIG_USBD_HID_FOR_KM4
+bool "INIC"                             CONFIG_USBD_INIC_FOR_KM4
+bool "UAC(Experimental)"                CONFIG_USBD_UAC_FOR_KM4
 bool "Vendor"                           CONFIG_USBD_VENDOR_FOR_KM4
-bool "INIC"								CONFIG_USBD_INIC_FOR_KM4
 fi
 endmenu
 

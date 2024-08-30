@@ -23,7 +23,6 @@ CSRC += \
 	$(BT_API_DIR)/rtk_bt_gap.c \
 	$(BT_API_DIR)/rtk_bt_gatt.c \
 	$(BT_API_DIR)/rtk_bt_vendor.c \
-	$(BT_API_DIR)/rtk_bt_mp_api.c \
 	$(BT_API_DIR)/rtk_bt_power_control.c \
 	$(BT_API_DIR)/rtk_bt_mesh_common.c \
 	$(BT_API_DIR)/rtk_bt_mesh_config_client_model.c \

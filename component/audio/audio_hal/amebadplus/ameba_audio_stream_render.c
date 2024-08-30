@@ -314,32 +314,70 @@ void ameba_audio_stream_tx_set_i2s_pin(uint32_t index)
 {
 	switch (index) {
 	case 0:
-		HAL_AUDIO_INFO("i2s 0 ..");
+		#if AUDIO_I2S_OUT_MCLK_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_MCLK_PIN, PINMUX_FUNCTION_I2S0_MCLK);
+		#endif
+
+		#if AUDIO_I2S_OUT_BCLK_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_BCLK_PIN, PINMUX_FUNCTION_I2S0_BCLK);
+		#endif
+
+		#if AUDIO_I2S_OUT_LRCLK_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_LRCLK_PIN, PINMUX_FUNCTION_I2S0_WS);
+		#endif
+
 		ameba_audio_set_sp_data_out(0);
+
+		#if AUDIO_I2S_OUT_DATA0_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_DATA0_PIN, PINMUX_FUNCTION_I2S0_DIO3);
-		if (AUDIO_I2S_OUT_MULTIIO_EN == 1) {
-			// HAL_AUDIO_INFO("PB_17:%" PRId32 "\n", Pinmux_ConfigGet(AUDIO_I2S_OUT_DATA1_PIN));
-			// HAL_AUDIO_INFO("PB_18:%" PRId32 "\n", Pinmux_ConfigGet(AUDIO_I2S_OUT_DATA2_PIN));
-			// HAL_AUDIO_INFO("PB_19:%" PRId32 "\n", Pinmux_ConfigGet(AUDIO_I2S_OUT_DATA3_PIN));
+		#endif
+
+		#if AUDIO_I2S_OUT_MULTIIO_EN == 1
+			#if AUDIO_I2S_OUT_DATA1_PIN != -1
 			Pinmux_Config(AUDIO_I2S_OUT_DATA1_PIN, PINMUX_FUNCTION_I2S0_DIO2);
+			#endif
+
+			#if AUDIO_I2S_OUT_DATA2_PIN != -1
 			Pinmux_Config(AUDIO_I2S_OUT_DATA2_PIN, PINMUX_FUNCTION_I2S0_DIO1);
+			#endif
+
+			#if AUDIO_I2S_OUT_DATA3_PIN != -1
 			Pinmux_Config(AUDIO_I2S_OUT_DATA3_PIN, PINMUX_FUNCTION_I2S0_DIO0);
-		}
+			#endif
+		#endif
 		break;
 	case 1:
+		#if AUDIO_I2S_OUT_MCLK_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_MCLK_PIN, PINMUX_FUNCTION_I2S1_MCLK);
+		#endif
+
+		#if AUDIO_I2S_OUT_BCLK_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_BCLK_PIN, PINMUX_FUNCTION_I2S1_BCLK);
+		#endif
+
+		#if AUDIO_I2S_OUT_LRCLK_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_LRCLK_PIN, PINMUX_FUNCTION_I2S1_WS);
+		#endif
+
 		ameba_audio_set_sp_data_out(1);
+
+		#if AUDIO_I2S_OUT_DATA0_PIN != -1
 		Pinmux_Config(AUDIO_I2S_OUT_DATA0_PIN, PINMUX_FUNCTION_I2S1_DIO3);
-		if (AUDIO_I2S_OUT_MULTIIO_EN == 1) {
+		#endif
+
+		#if AUDIO_I2S_OUT_MULTIIO_EN == 1
+			#if AUDIO_I2S_OUT_DATA1_PIN != -1
 			Pinmux_Config(AUDIO_I2S_OUT_DATA1_PIN, PINMUX_FUNCTION_I2S1_DIO2);
+			#endif
+
+			#if AUDIO_I2S_OUT_DATA2_PIN != -1
 			Pinmux_Config(AUDIO_I2S_OUT_DATA2_PIN, PINMUX_FUNCTION_I2S1_DIO1);
+			#endif
+
+			#if AUDIO_I2S_OUT_DATA3_PIN != -1
 			Pinmux_Config(AUDIO_I2S_OUT_DATA3_PIN, PINMUX_FUNCTION_I2S1_DIO0);
-		}
+			#endif
+		#endif
 		break;
 	default:
 		break;
@@ -562,7 +600,7 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
 	rstream->stream.sport_irq_count = 0;
 
 	if (state == STATE_XRUN) {
-		rstream->total_written_from_tx_start = ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) / rstream->stream.config.frame_size;
+		rstream->total_written_from_tx_start = ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) / rstream->stream.frame_size;
 	} else {
 		rstream->total_written_from_tx_start = 0;
 		ameba_audio_stream_tx_buffer_flush(stream);
@@ -777,7 +815,7 @@ static int ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const void *d
 
 	while (bytes_left_to_write != 0 || (extra_bytes_left_to_write != 0)) {
 		bytes_written = ameba_audio_stream_buffer_write(rstream->stream.rbuffer, (u8 *)p_buf + total_bytes - bytes_left_to_write, bytes_left_to_write);
-		rstream->total_written_from_tx_start += bytes_written / rstream->stream.config.frame_size;
+		rstream->total_written_from_tx_start += bytes_written / rstream->stream.frame_size;
 
 		uint32_t dma_len = rstream->stream.period_bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
 		uint32_t extra_dma_len = 0;

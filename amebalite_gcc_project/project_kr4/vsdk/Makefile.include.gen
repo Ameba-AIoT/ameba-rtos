@@ -51,6 +51,7 @@ PHERIEXAMPLE	= $(ROOTDIR)/../example/demo_peripheral
 # -----------------------------------------------------------------------------
 PREPENDTOOL		= sh $(UTILITYDIR)/prepend_header.sh
 OTAPREPENDTOOL  = $(UTILITYDIR)/prepend_ota_header.sh
+COMPRESSTOOL = python $(KM4_BUILDDIR)/asdk/gnu_utility/compresstool.py
 LXDIALOG_CYGWIN_STATIC 	= $(UTILITYDIR)/lxdialog_prebuilt/lxdialog_cygwin_x86_static.exe
 COMPILEOS		= $(shell uname -o)
 COMPILEOS_CYGWIN	= $(shell uname -o | cut -c 1-6)

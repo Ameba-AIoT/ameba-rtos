@@ -24,10 +24,10 @@ u8 Boot_DSP_Enable = ENABLE;
 u8 Boot_DSP_Enable = DISABLE;
 #endif
 
-#ifdef CONFIG_DSP_WITHIN_IMG2_EN
-u8 DSP_WITHIN_IMG2_Enable = ENABLE;
+#ifdef CONFIG_DSP_WITHIN_APP_IMG
+u8 DSP_WITHIN_APP_IMG_Enable = ENABLE;
 #else
-u8 DSP_WITHIN_IMG2_Enable = DISABLE;
+u8 DSP_WITHIN_APP_IMG_Enable = DISABLE;
 #endif
 
 /*

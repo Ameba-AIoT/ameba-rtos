@@ -13,7 +13,8 @@ vpath %.c $(DIR)/driver/hci \
 		$(DIR)/driver/platform/amebadplus/hci \
 		$(DIR)/driver/dtm \
 		$(DIR)/rtk_stack/platform/common \
-		$(DIR)/osif
+		$(DIR)/osif \
+		$(DIR)/bt_mp
 
 CSRC += \
 	$(DIR)/driver/hci/hci_process/hci_process.c \
@@ -26,7 +27,10 @@ CSRC += \
 	$(DIR)/driver/platform/amebadplus/hci/hci_uart.c \
 	$(DIR)/driver/dtm/hci_dtm.c \
 	$(DIR)/osif/bt_debug.c \
-	$(DIR)/osif/osif.c
+	$(DIR)/osif/osif.c \
+	$(DIR)/bt_mp/bt_mp_api.c \
+	$(DIR)/bt_mp/bt_fast_mp_common.c \
+	$(DIR)/bt_mp/bt_fast_mp_dplus.c
 
 ifneq ($(CONFIG_BT_INIC), y)
 ifeq ($(CONFIG_BT_ZEPHYR), y)

@@ -391,6 +391,7 @@ int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 }
 
 int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable);
+int bt_tmap_a2dp_source_main(uint8_t role, uint8_t enable);
 int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 {
 	(void)argc;
@@ -404,6 +405,12 @@ int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 	} else if (strcmp(argv[0], "bms") == 0) {
 		role = 0x10;
 		BTDEMO_AT_PRINTK("Set a2dp sink bms role");
+	} else if (strcmp(argv[0], "umr") == 0) {
+		role = 0x08;
+		BTDEMO_AT_PRINTK("Set tmap umr a2dp source role");
+	} else if (strcmp(argv[0], "bmr") == 0) {
+		role = 0x20;
+		BTDEMO_AT_PRINTK("Set tmap bmr a2dp source role");
 	} else {
 		BTDEMO_AT_PRINTK("invalid role set");
 		return -1;
@@ -414,12 +421,20 @@ int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 		return -1;
 	}
 
-	if (bt_a2dp_sink_tmap_main(role, op)) {
-		BTDEMO_AT_PRINTK("Error: example %s failed!", action[op]);
-		return -1;
+	if (role == 0x04 || role == 0x10) {
+		if (bt_a2dp_sink_tmap_main(role, op)) {
+			BTDEMO_AT_PRINTK("Error: example %s failed!", action[op]);
+			return -1;
+		}
+		BTDEMO_AT_PRINTK("a2dp sink tmap example %s OK!", action[op]);
+	} else if (role == 0x08 || role == 0x20) {
+		if (bt_tmap_a2dp_source_main(role, op)) {
+			BTDEMO_AT_PRINTK("Error: example %s failed!", action[op]);
+			return -1;
+		}
+		BTDEMO_AT_PRINTK("tmap a2dp source example %s OK!", action[op]);
 	}
 
-	BTDEMO_AT_PRINTK("a2dp sink tmap example %s OK!", action[op]);
 	return 0;
 }
 

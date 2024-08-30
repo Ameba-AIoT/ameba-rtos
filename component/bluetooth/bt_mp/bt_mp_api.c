@@ -12,7 +12,7 @@
 #include "bt_debug.h"
 #include "hci_common.h"
 #include "hci_uart.h"
-#include <rtk_bt_mp_api.h>
+#include <bt_mp_api.h>
 #if defined(CONFIG_BT_ENABLE_FAST_MP) && CONFIG_BT_ENABLE_FAST_MP
 #include "hci_dtm.h"
 #endif

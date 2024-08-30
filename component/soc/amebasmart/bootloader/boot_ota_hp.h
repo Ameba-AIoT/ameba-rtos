@@ -6,6 +6,8 @@
  *  This module is a confidential and proprietary property of RealTek and
  *  possession or use of this module requires written permission of RealTek.
  */
+#ifndef _AMEBA_OTA_HP_H_
+#define _AMEBA_OTA_HP_H_
 
 #include "ameba_soc.h"
 
@@ -27,3 +29,4 @@ _LONG_CALL_ u8 BOOT_OTA_IMG2(void);
 _LONG_CALL_ u8 BOOT_OTA_RDP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex);
 _LONG_CALL_ u8 BOOT_OTA_AP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex);
 _LONG_CALL_ u8 BOOT_OTA_AP_Linux(u8 CertImgIndex);
+#endif

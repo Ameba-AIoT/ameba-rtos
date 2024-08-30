@@ -58,8 +58,7 @@ typedef struct {
  */
 void init_event_callback_list(void);
 
-void wifi_join_status_indicate(enum rtw_join_status_type join_status);
-
+void wifi_event_join_status_internal_hdl(char *buf, int flags);
 
 /**
   * @brief  Wlan driver indicate event to upper layer through wifi_indication.
@@ -75,8 +74,6 @@ void wifi_join_status_indicate(enum rtw_join_status_type join_status);
   *			ex: using semaphore to notice another thread instead of handing event directly in wifi_indication().
   * -	Wifi event list
   *
-  * WIFI_EVENT_CONNECT							: Indicate station connect to AP
-  * WIFI_EVENT_DISCONNECT						: Indicate station disconnect with AP
   * WIFI_EVENT_RX_MGNT							: Indicate managerment frame receive
   * WIFI_EVENT_STA_ASSOC						: Indicate client associate in AP mode
   * WIFI_EVENT_STA_DISASSOC						: Indicate client disassociate in AP mode

@@ -86,6 +86,7 @@ void BOOT_OTFMaskConfig(void);
 u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u32 SrcAddr);
 u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum, Certificate_TypeDef *Cert, u32 KeyID);
 u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 addr);
+u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 
 void BOOT_RSIPIvSet(Manifest_TypeDef *Manifest, u32 IV_index);
 void BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index);

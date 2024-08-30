@@ -161,7 +161,8 @@ int wifi_do_fast_connect(void)
 		ret = rt_kv_get("wlan_data", (uint8_t *)data, sizeof(struct wlan_fast_reconnect));
 
 		if (ret < 0) {
-			DiagPrintf("[FAST_CONNECT] Read fast connect profile failed \n");
+			DiagPrintf("[FAST_CONNECT] Fast connect profile is not exist\n");
+			return 0;
 		}
 
 		/* Check whether stored flash profile is empty */

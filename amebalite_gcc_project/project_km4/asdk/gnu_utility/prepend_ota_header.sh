@@ -118,7 +118,7 @@ CURR_PATH=$(dirname $IMAGE2_FILENAME)
 IMAGE_FILENAME_PREPEND=$CURR_PATH/ota_all.bin
 IMAGE_FILENAME_NEW=$(basename $IMAGE2_FILENAME)
 
-if [ "$IMAGE_FILENAME_NEW" == "kr4_km4_app_ns.bin" ] || [ "$IMAGE_FILENAME_NEW" == "kr4_km4_dsp_app_ns.bin" ]; then
+if [ "$IMAGE_FILENAME_NEW" == "tmp_app_ns.bin" ]; then
 	IMAGE_FILENAME_PREPEND=$CURR_PATH/ota_all_ns.bin
 fi
 
@@ -150,8 +150,7 @@ fi
 IMAGE_ID=1
 let OFFSET=$OFFSET+$IMAGE_LEN_1
 
-if [ "$IMAGE_FILENAME_NEW" == "kr4_km4_app.bin" ] || [ "$IMAGE_FILENAME_NEW" == "kr4_km4_dsp_app.bin" ] \
-	|| [ "$IMAGE_FILENAME_NEW" == "kr4_km4_app_ns.bin" ] || [ "$IMAGE_FILENAME_NEW" == "kr4_km4_dsp_app_ns.bin" ]; then
+if [ "$IMAGE_FILENAME_NEW" == "tmp_app.bin" ] || [ "$IMAGE_FILENAME_NEW" == "tmp_app_ns.bin" ]; then
     MakeFixedWidthHeaderString $OTA_SIGN   8  HEADER_FINAL 0
     MakeFixedWidthHeaderString $HEADER_LEN   8  HEADER_FINAL 1
     MakeFixedWidthHeaderString $CHECKSUM    8  HEADER_FINAL 1

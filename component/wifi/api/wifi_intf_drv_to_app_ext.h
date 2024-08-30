@@ -497,6 +497,20 @@ void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *set
  * @return  RTW_SUCCESS or RTW_ERROR
  */
 int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
+
+/**
+ * @brief  for user to get tx power
+ * @param[in]  rate: phy rate
+ *    For the definition of phy rate, please refer to enum mgn_rate_type
+ *    CCK rate 1M,2M,5.5M,11M
+ *    OFDM rate 6M,9M,12M,18M,24M,36M,48M,54M
+ *    HT rate MCS0~MCS7
+ *    VHT rate MCS0~MCS8
+ *    HE rate MCS0~MCS9
+ * @param[out]  txpwr: the current tx power, unit 0.25dBm.
+ * @return  RTW_SUCCESS or RTW_ERROR
+ */
+int wifi_get_tx_power(u8 rate, s8 *txpwr);
 /**
   * @}
   */

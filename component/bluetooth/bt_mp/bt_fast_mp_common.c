@@ -5,7 +5,8 @@
 #include <bt_debug.h>
 #include <bt_utils.h>
 #include <atcmd_service.h>
-#include <rtk_bt_mp_api.h>
+#include <bt_mp_api.h>
+#include "wifi_intf_drv_to_bt.h"
 #include "bt_fast_mp_common.h"
 
 bt_fast_mp_parse_efuse_t bt_efuse = {0};
@@ -13,6 +14,7 @@ bt_fast_mp_parse_efuse_t bt_efuse = {0};
 static void *bt_timer_hdl = NULL;
 static void *bt_stop_sema = NULL;
 
+extern void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process);
 extern bool bt_fast_mp_golden_map_in_range(uint16_t efuse_offset);
 extern void bt_fast_mp_efuse_init(void);
 extern void bt_fast_mp_golden_map_func(uint16_t efuse_offset, uint8_t *p_efuse);
