@@ -37,6 +37,7 @@
  * < CONFIG OTA OPTION
  */
 #undef  CONFIG_UPGRADE_BOOTLOADER
+#undef  CONFIG_COMPRESS_OTA_IMG
 
 /*
  * < CONFIG Application Processor
@@ -60,10 +61,15 @@
 #undef  CONFIG_HIGH_TP_TEST
 #undef  CONFIG_WIFI_CSI_ENABLE
 #undef  CONFIG_WIFI_ANTDIV_ENABLE
+#undef  CONFIG_WIFI_11K_ENABLE
+#undef  CONFIG_WIFI_11V_ENABLE
+#undef  CONFIG_WIFI_11R_ENABLE
+#undef  CONFIG_WIFI_SPEAKER_ENABLE
 
 /*
  * < CONFIG LWIP
  */
+#undef  CONFIG_LWIP_DEBUG
 
 
 /*
@@ -113,14 +119,15 @@
 #undef  CONFIG_SSL_ROM_TEST
 
 /*
- * < GUI Config
- */
-#undef  CONFIG_GUI_EN
-
-/*
  * < Audio Config
  */
 #undef  CONFIG_AUDIO_FWK
+
+/*
+ * Third Party Lib
+ */
+#undef  CONFIG_SPEEX_LIB
+#undef  CONFIG_OPUS_LIB
 
 /*
  * < IPC Message Queue Config

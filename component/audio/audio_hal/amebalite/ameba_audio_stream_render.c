@@ -602,7 +602,7 @@ void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
 	rstream->stream.sport_irq_count = 0;
 
 	if (state == STATE_XRUN) {
-		rstream->total_written_from_tx_start = ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) / rstream->stream.config.frame_size;
+		rstream->total_written_from_tx_start = ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) / rstream->stream.frame_size;
 	} else {
 		rstream->total_written_from_tx_start = 0;
 		ameba_audio_stream_tx_buffer_flush(stream);
@@ -824,7 +824,7 @@ static int ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const void *d
 
 	while (bytes_left_to_write != 0 || (extra_bytes_left_to_write != 0)) {
 		bytes_written = ameba_audio_stream_buffer_write(rstream->stream.rbuffer, (u8 *)p_buf + total_bytes - bytes_left_to_write, bytes_left_to_write);
-		rstream->total_written_from_tx_start += bytes_written / rstream->stream.config.frame_size;
+		rstream->total_written_from_tx_start += bytes_written / rstream->stream.frame_size;
 
 		uint32_t dma_len = rstream->stream.period_bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
 		uint32_t extra_dma_len = 0;
@@ -961,6 +961,12 @@ void ameba_audio_stream_tx_close(Stream *stream)
 		GDMA_Cmd(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum, DISABLE);
 		GDMA_ChnlFree(sp_txgdma_initstruct.GDMA_Index, sp_txgdma_initstruct.GDMA_ChNum);
 
+		if (rstream->stream.extra_channel) {
+			GDMA_InitTypeDef extra_sp_txgdma_initstruct = rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct;
+			GDMA_ClearINT(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
+			GDMA_Cmd(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum, DISABLE);
+			GDMA_ChnlFree(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
+		}
 		rstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
 
 		AUDIO_SP_DmaCmd(rstream->stream.sport_dev_num, DISABLE);
@@ -972,14 +978,24 @@ void ameba_audio_stream_tx_close(Stream *stream)
 		ameba_audio_reset_audio_ip_status((Stream *)rstream);
 
 		rtos_sema_delete(rstream->stream.sem);
+		rtos_sema_delete(rstream->stream.extra_sem);
 		rtos_sema_delete(rstream->stream.sem_gdma_end);
 		rtos_sema_delete(rstream->stream.extra_sem_gdma_end);
 
+		if (rstream->stream.rbuffer) {
 		ameba_audio_stream_buffer_release(rstream->stream.rbuffer);
+		}
 
+		if (rstream->stream.extra_rbuffer) {
+			ameba_audio_stream_buffer_release(rstream->stream.extra_rbuffer);
+		}
 		if (rstream->stream.gdma_struct) {
 			free(rstream->stream.gdma_struct);
 			rstream->stream.gdma_struct = NULL;
+		}
+		if (rstream->stream.extra_gdma_struct) {
+			free(rstream->stream.extra_gdma_struct);
+			rstream->stream.extra_gdma_struct = NULL;
 		}
 
 		if (rstream->stream.gdma_ch_lli) {

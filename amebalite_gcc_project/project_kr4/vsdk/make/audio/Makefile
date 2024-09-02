@@ -55,7 +55,6 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 endif
 ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
 	make -C base lib
-	make -C third_party lib
 	make -C media_utils lib
 	make -C media_common lib
 	make -C media_source lib
@@ -74,6 +73,7 @@ endif
 ifneq ($(CONFIG_MEDIA_PLAYER)$(CONFIG_MEDIA_LITE_PLAYER),)
 	make -C media_xip lib
 endif
+	make -C third_party lib
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #

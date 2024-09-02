@@ -47,21 +47,24 @@ SECTIONS
 	/* space for rtos static components, 4k for mutex */
 	.sram_rtos_static_0.bss (NOLOAD):
 	{
-		*os_wrapper_static_functions.o(*.mutex_pool)
+		/* object files of cmake build system could be xxx.c.obj */
+		*os_wrapper_static_functions*.o*(*.mutex_pool)
 	} > KM0_RTOS_STATIC_0_NS
 
 	/* space for rtos static components, 2.5k for sema and timer */
 	.sram_rtos_static_1.bss (NOLOAD):
 	{
-		*os_wrapper_static_functions.o(*.sema_pool)
-		*os_wrapper_static_functions.o(*.timer_pool)
+		/* object files of cmake build system could be xxx.c.obj */
+		*os_wrapper_static_functions*.o*(*.sema_pool)
+		*os_wrapper_static_functions*.o*(*.timer_pool)
 	} > KM0_RTOS_STATIC_1_NS
 
 	/* space for TIMER and IDLE task stack: 4k */
 	.sram_timer_idle_task_stack.bss (NOLOAD):
 	{
-		*port.o(*.uxIdleTaskStack*)
-		*port.o(*.uxTimerTaskStack*)
+		/* object files of cmake build system could be xxx.c.obj */
+		*port*.o*(*.uxIdleTaskStack*)
+		*port*.o*(*.uxTimerTaskStack*)
 	} > KM0_TIMER_IDLE_TASK_STACK
 
 	/* sram part */

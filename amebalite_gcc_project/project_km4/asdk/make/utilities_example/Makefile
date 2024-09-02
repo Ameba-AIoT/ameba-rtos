@@ -17,7 +17,6 @@ MODULE_IFLAGS               += -I$(FREERTOSDIR)/portable/GCC/AmebaLite_KM4/secur
 
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/player
-MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/speexdsp
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/mydata_source_player
 MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/player_cache_test
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/interfaces
@@ -27,6 +26,10 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/osal/osal_c/interfaces
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/osal/osal_cxx/interfaces
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/cutils/interfaces
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/utils/interfaces
+endif
+
+ifeq ($(CONFIG_SPEEX_LIB),y)
+MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/speexdsp
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/third_party/speexdsp/include
 endif
 

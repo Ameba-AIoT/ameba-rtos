@@ -185,7 +185,7 @@ static uint8_t app_lea_default_pac_sink_codec[] = {
 };
 
 /* Define GMAP extended adv data default length */
-#define LE_AUDIO_GMAP_EXT_ADV_DATA_DEFAULT_LEN         3
+#define LE_AUDIO_GMAP_EXT_ADV_DATA_DEFAULT_LEN         7
 static uint8_t app_lea_adv_data[RTK_LE_AUDIO_ADV_LEN_MAX] = {
 	0x02, //AD len
 	RTK_BT_LE_GAP_ADTYPE_FLAGS, //AD types
@@ -355,6 +355,7 @@ app_bt_le_audio_acceptor_info_t g_gmap_bgr_info = {
 	.p_bap_bro_sink_info = &app_bap_bro_sink_info,
 	.status = RTK_BLE_AUDIO_INITIATOR_DISABLE
 };
+static rtk_bt_le_audio_bis_info_t sync_bis_info = {0};
 /*****************************end gmap broadcast game receiver resources***********************/
 /********************************gmap unicast game gateway resources***************************/
 app_bt_le_audio_initiator_info_t g_gmap_ugg_info = {
@@ -2239,6 +2240,7 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 	if (ret != RTK_BT_OK) {
 		BT_LOGE("[APP] rtk_bt_le_audio_sync_get_bis_info fail,ret = 0x%x\r\n", ret);
 	}
+	sync_bis_info = bis_info;
 	//set up iso data path
 	for (i = 0; i < bis_info.num_bis; i++) {
 		bis_idx = bis_info.bis_conn_info[i].bis_idx;
@@ -2268,6 +2270,28 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 		}
 	}
 
+	return ret;
+}
+
+static uint16_t app_bt_le_audio_broadcast_sink_remove_data_path(rtk_bt_le_audio_sync_handle_t sync_handle)
+{
+	uint8_t i = 0;
+	uint16_t ret = 0;
+	uint16_t bis_conn_handle = 0;
+	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
+	if (!sync_handle) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(sync_handle);
+	if (!p_sync_dev_info) {
+		BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, sync_handle);
+		return RTK_BT_FAIL;
+	}
+	//remove iso data path
+	for (i = 0; i < sync_bis_info.num_bis; i++) {
+		bis_conn_handle = sync_bis_info.bis_conn_info[i].bis_conn_handle;
+		app_bt_le_audio_iso_data_path_remove(bis_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX);
+	}
 	return ret;
 }
 
@@ -2624,6 +2648,21 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN:
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN\r\n");
 			app_bt_le_audio_group_list_remove_dev(param->group_handle, param->device_handle);
+			if (p_group_info->dev_num == 0) {
+				// release stream session when all device disconnect
+				if (p_group_info->stream_session_handle) {
+					rtk_bt_le_audio_stream_session_release(p_group_info->stream_session_handle);
+					BT_LOGA("%s: stream_session_handle:0x%x released\r\n", __func__, p_group_info->stream_session_handle);
+					p_group_info->stream_session_handle = NULL;
+				} else {
+					BT_LOGE("%s: stream_session_handle is NULL \r\n", __func__);
+				}
+				// stop stream
+				app_bt_le_audio_gmap_encode_data_control(false);
+				if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
+					app_bt_le_audio_gmap_decode_data_control(false);
+				}
+			}
 			if (gmap_role == RTK_BT_LE_AUDIO_GMAP_ROLE_BGS || gmap_role == RTK_BT_LE_AUDIO_GMAP_ROLE_UGG) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 				ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
@@ -2644,13 +2683,21 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 					}
 					BT_LOGA("[APP] %s: ext scan timer start\r\n", __func__);
 				}
-#endif
-			} else {
-				app_bt_le_audio_gmap_encode_data_control(false);
-				if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
-					//deinit rx thread
-					app_bt_le_audio_gmap_decode_data_control(false);
+#else
+				rtk_bt_le_audio_group_handle_t *p_group_handle;
+				if (gmap_role == RTK_BT_LE_AUDIO_GMAP_ROLE_BGS) {
+					p_group_handle = &g_gmap_bgs_info.group_handle;
+				} else if (gmap_role == RTK_BT_LE_AUDIO_GMAP_ROLE_UGG) {
+					p_group_handle = &g_gmap_ugg_info.group_handle;
 				}
+				if (p_group_info->dev_num == 0) {
+					// release group when group released
+					rtk_bt_le_audio_group_release(*p_group_handle);
+					BT_LOGA("%s: group handle 0x%x deleted \r\n", __func__, *p_group_handle);
+					app_bt_le_audio_group_list_remove(*p_group_handle);
+					*p_group_handle = NULL;
+				}
+#endif
 			}
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE:
@@ -3051,6 +3098,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			app_bt_le_audio_gmap_decode_data_control(true);
 		} else if (param->sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED) {
 			BT_LOGA("[APP] broadcast sink big sync termiated\r\n");
+			ret = app_bt_le_audio_broadcast_sink_remove_data_path(param->sync_handle);
+			BT_LOGA("[APP] app_bt_le_audio_broadcast_sink_remove_data_path %s after big sync terminated! ret: 0x%x\r\n",
+					((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			ret = rtk_bt_le_audio_sync_release(param->sync_handle);
 			BT_LOGA("[APP] rtk_bt_le_audio_sync_release %s, ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			//deinit rx thread

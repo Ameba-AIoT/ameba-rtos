@@ -11,14 +11,16 @@ CFGDIR = $(TARGETDIR)/usrcfg
 DRVDIR = $(TARGETDIR)/fwlib/ram_km4
 DRVCOM = $(TARGETDIR)/fwlib/ram_common
 LOGDIR= $(TARGETDIR)/swlib
+LZMA_DIR = $(TARGETDIR)/../common/lzma/
 
 MODULE_IFLAGS += -I$(FREERTOSDIR)/include/
 MODULE_IFLAGS += -I$(FREERTOSDIR)/portable/GCC/AmebaLite_KM4/non_secure
 MODULE_IFLAGS += -I$(FREERTOSDIR)/portable/GCC/AmebaLite_KM4/secure
 MODULE_IFLAGS += -I$(BASEDIR)/component/soc/common/crashdump/include
 MODULE_IFLAGS += -I$(LOGDIR)
+MODULE_IFLAGS += -I$(LZMA_DIR)
 
-vpath %.c $(DIR) $(CFGDIR) $(DRVDIR) $(DRVCOM) $(LOGDIR)
+vpath %.c $(DIR) $(CFGDIR) $(DRVDIR) $(DRVCOM) $(LOGDIR) $(LZMA_DIR)
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
@@ -48,7 +50,10 @@ CSRC += $(DIR)/boot_ota_km4.c \
 
 CSRC += $(LOGDIR)/log.c
 
-
+ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+CSRC += $(LZMA_DIR)/ameba_boot_lzma.c \
+ 		$(LZMA_DIR)/LzmaDec.c
+endif
 #*****************************************************************************#
 #                               Object FILE LIST                              #
 #*****************************************************************************#
@@ -63,7 +68,7 @@ COPY_RAM_OBJS: CORE_TARGETS
 all: COPY_RAM_OBJS
 
 #*****************************************************************************#
-#              GENERATE OBJECT FILE 
+#              GENERATE OBJECT FILE
 #*****************************************************************************#
 CORE_TARGETS: $(OBJS)
 
@@ -71,7 +76,7 @@ CORE_TARGETS: $(OBJS)
 #*****************************************************************************#
 #                        RULES TO CLEAN TARGETS                               #
 #*****************************************************************************#
-clean: CLEAN_OBJS 
+clean: CLEAN_OBJS
 	$(call CLEAN_FUNC)
 
 -include $(DEPS)

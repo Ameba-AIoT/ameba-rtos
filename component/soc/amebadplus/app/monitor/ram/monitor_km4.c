@@ -289,6 +289,27 @@ u32 cmd_write_word(u16 argc, u8  *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_WLAN
+extern int inic_wltunnel_command(char *cmd, unsigned int cmd_len);
+u32
+CmdWTN(
+	IN  u16 argc,
+	IN  u8  *argv[]
+)
+{
+#ifdef CONFIG_INIC_INTF_SDIO
+	UNUSED(argc);
+	UNUSED(argv);
+#else
+	if (argc != 1) {
+		RTK_LOGS(TAG, "Wrong argument number!\r\n");
+		return _FALSE;
+	}
+	inic_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
+#endif
+	return 0;
+}
+#endif
 
 u32 cmd_log_set(u16 argc, u8  *argv[])
 {
@@ -351,7 +372,14 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x98\n"
 		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
 	},
-
+#ifdef CONFIG_WLAN
+	{
+		(const u8 *)"WTN",	5, CmdWTN,	(const u8 *)"\t@WTN \n"
+		"\t\t get_father \n"
+		"\t\t get_child \n"
+		"\t\t ... \n"
+	},
+#endif
 #endif
 };
 

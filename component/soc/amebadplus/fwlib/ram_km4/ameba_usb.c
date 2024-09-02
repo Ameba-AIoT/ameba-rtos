@@ -27,7 +27,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-USB_DATA_SECTION
 static const char *const TAG = "USB";
 
 /* Private functions ---------------------------------------------------------*/
@@ -39,7 +38,6 @@ static const char *const TAG = "USB";
   * @param  void
   * @retval HAL status
   */
-USB_TEXT_SECTION
 int usb_chip_init(void)
 {
 	int div = 0;
@@ -90,7 +88,6 @@ int usb_chip_init(void)
   * @param  void
   * @retval HAL status
   */
-USB_TEXT_SECTION
 int usb_chip_deinit(void)
 {
 	u32 reg = 0;

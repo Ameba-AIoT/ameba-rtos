@@ -20,6 +20,7 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/core
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/cdc_acm
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/composite
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/hid
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/uac
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/vendor
 GLOBAL_CFLAGS += -DCONFIG_USB_FS
 endif

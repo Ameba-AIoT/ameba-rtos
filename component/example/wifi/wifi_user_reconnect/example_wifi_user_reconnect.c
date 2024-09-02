@@ -50,7 +50,7 @@ static void user_wifi_reconnect_task(void *param)
 static void user_main_task(void *param)
 {
 	int ret = 0;
-	printf("\nExample: user defined wifi recnnect\n");
+	printf("\nExample: user defined wifi reconnect\n");
 
 	/* Wait wifi init finish */
 	while (!(wifi_is_running(STA_WLAN_INDEX))) {
@@ -98,6 +98,7 @@ exit:
 
 void example_wifi_user_reconnect(void)
 {
+	wifi_fast_connect_enable(0);
 	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 1024 * 4, 1) != SUCCESS) {
 		printf("\n%s rtos_task_create failed\n", __FUNCTION__);
 	}

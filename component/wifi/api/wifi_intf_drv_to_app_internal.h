@@ -215,6 +215,9 @@ int wifi_set_eap_method(unsigned char eap_method);
  */
 int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
+
+void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
+
 #ifdef __cplusplus
 }
 #endif

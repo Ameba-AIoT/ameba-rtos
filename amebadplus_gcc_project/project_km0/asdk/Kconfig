@@ -1,0 +1,181 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+    comment "Target Platform Selection"
+    comment "Choose a Vendor/Product combination"
+    choice 
+        prompt "Product"
+        default AMEBADPLUS_FOR_KM0
+        config AMEBADPLUS_FOR_KM0
+            bool "AMEBADPLUS"
+    endchoice
+
+    choice
+        prompt "ArmCore" 
+        default ARM_CORE_CM0_FOR_KM0 
+        config ARM_CORE_CM0_FOR_KM0
+            bool "ARM_KM0"
+    endchoice
+    
+    config FPGA_FOR_KM0
+        bool "Select FPGA"
+
+    choice 
+        prompt "Chip Version"
+        default AMEBADPLUS_A_CUT_FOR_KM0
+        config AMEBADPLUS_A_CUT_FOR_KM0
+            bool "AMEBADPLUS_A_Cut"
+    endchoice
+endmenu
+
+comment "----------OS config----------"
+
+menu "CONFIG OS"
+    config KERNEL_FOR_KM0 
+        bool "Enable Kernel"
+        default y 
+    
+    if KERNEL_FOR_KM0
+        choice
+            prompt "Kernel Selecte"
+            default PLATFORM_FREERTOS_FOR_KM0
+            config PLATFORM_FREERTOS_FOR_KM0
+                bool "FREERTOS"
+        endchoice
+
+        config TASK_SCHEDULER_DISABLED_FOR_KM0 
+            int
+            default 0
+    endif
+
+endmenu 
+
+comment "----------Peripheral Test----------"
+
+menu "CONFIG FUNCTION TEST"
+    config PER_TEST_FOR_KM0
+        bool "Enable Peripheral Test"
+    if PER_TEST_FOR_KM0
+        config SYS_VERIFY_FOR_KM0
+            bool "System_Verify_Mode"	
+        if SYS_VERIFY_FOR_KM0
+            choice
+                prompt "System Verify Type"
+                config SIMULATION_FOR_KM0
+                bool "IMG_SIM"
+            endchoice
+        endif
+        config DBGPORT_ENABLE_FOR_KM0
+        bool "DBGPORT Enable"		
+        config TIMER_VERIFY_FOR_KM0
+        bool "Timer_Verify_Mode"	
+        config WDG_VERIFY_FOR_KM0
+        bool "WDG_Verify_Mode"		
+        config GDMA_VERIFY_FOR_KM0
+        bool "Gdma_Verify_Mode"		
+        config GPIO_VERIFY_FOR_KM0
+        bool "GPIO_Verify_Mode"		
+        config SPI_COM_VERIFY_FOR_KM0
+        bool "SPI_COM_Verify_Mode"	
+        config UART_VERIFY_FOR_KM0
+        bool "UART_Verify_Mode"		
+        config I2C_VERIFY_FOR_KM0
+        bool "I2C_Verify_Mode"		
+        config PMC_VERIFY_FOR_KM0
+        bool "PMC_Verify_Mode"		
+        config EFUSE_VERIFY_FOR_KM0
+        bool "EFUSE_Verify_Mode"	
+        config SPIC_VERIFY_FOR_KM0
+        bool "SPIC_Verify_Mode"		
+        config ADC_VERIFY_FOR_KM0
+        bool "ADC_Verify_Mode"		
+        config RSIP_VERIFY_FOR_KM0
+        bool "RSIP_Verify_Mode"		
+        config CAPTOUCH_VERIFY_FOR_KM0
+        bool "CapTouch_Verify_Mode"	
+        config SGPIO_VERIFY_FOR_KM0
+        bool "SGPIO_Verify_Mode"	
+        config QDEC_VERIFY_FOR_KM0
+        bool "Qdecoder_Verify_Mode"	
+        config DHRYSTONE_TEST_FOR_KM0
+        bool "Dhrystone Test"		
+        config PERFORMANCE_VERIFY_FOR_KM0
+        bool "Performance_Verify_Mode"		
+        config SSL_ROM_TEST_FOR_KM0
+        bool "SSL ROM Test"		
+        config RTLIB_VERIFY_FOR_KM0
+        bool "RTLIB ROM Test"		
+        config SBOOT_VERIFY_FOR_KM0
+        bool "SecureBoot Test"		
+        config IPC_VERIFY_FOR_KM0
+        bool "IPC Test"			
+        config MPU_VERIFY_FOR_KM0
+        bool "MPU Test"			
+        config CACHE_VERIFY_FOR_KM0
+        bool "CACHE Test"		
+        config WFE_VERIFY_FOR_KM0
+        bool "WFE Test"			
+        config THERMAL_VERIFY_FOR_KM0
+        bool "Thermal_Verify_Mode"	
+        config CHIP_RST_VERIFY_FOR_KM0
+        bool "chip_reset_verify"		
+        config DBG_TIMER_VERIFY_FOR_KM0
+        bool "debugtimer_verify"		
+        config SPINAND_VERIFY_FOR_KM0
+        bool "SPI Nand Test"		
+        config LOGUART_VERIFY_FOR_KM0
+        bool "LOGUART Test"		
+        config KEYSCAN_VERIFY_FOR_KM0
+        bool "KeyScan Test"		
+        config FLASH_AVL_FOR_KM0
+        bool "Flash_AVL"        
+        config WIFI_VERIFY_FOR_KM0
+        bool "WIFI Test"       
+        if WIFI_VERIFY_FOR_KM0
+            choice 
+                prompt "WIFI Verify Type"         
+                config WIFI_VERIFY_ASIC_FOR_KM0  
+                bool "WIFI_ASIC"
+                config MAC_LBK_FOR_KM0  
+                bool "WIFI_MAC_LBK"
+                config WIFI_VERIFY_PSPHY_FOR_KM0 
+                bool "WIFI_2MAC_WITH_PSPHY"
+                config WIFI_VERIFY_TRUEPHY_FOR_KM0  
+                bool "WIFI_2MAC_WITH_TUREPHY"
+            endchoice
+        endif
+    endif
+endmenu
+
+#===========================================================================
+# Normal: Build all code, includes ROM code. Normally for FPGA verification.
+# Release: Build user application code and link with ROM + RAM libraries.
+# Build_ROM_Lib: Build the ROM code library only.
+# Build_RAM_Lib: Build the RAM code library only.
+# Build_RAM_All: Build all RAM code, includes user application, and link with ROM library.
+
+comment "----------Build Config----------"
+menu "Build Option"
+comment "Select toolchain"
+    choice
+        prompt"Toolchain"
+        default TOOLCHAIN_ASDK_FOR_KM0
+        config TOOLCHAIN_ASDK_FOR_KM0
+            bool "ASDK"
+
+        config TOOLCHAIN_ARM_GCC_FOR_KM0
+            bool "ARM_GCC"
+    endchoice
+
+comment "Choose the build configuration"
+    choice 
+        prompt "Link ROM Mode"
+        default LINK_ROM_LIB_FOR_KM0
+        config LINK_ROM_LIB_FOR_KM0
+            bool "Link_ROM_Library"
+
+        config LINK_ROM_SYMB_FOR_KM0
+            bool "Link_ROM_Symbol"
+    endchoice
+endmenu
+

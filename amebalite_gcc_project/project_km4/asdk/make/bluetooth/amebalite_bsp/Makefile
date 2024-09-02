@@ -12,7 +12,8 @@ vpath %.c $(DIR)/driver/hci \
 		$(DIR)/driver/hci/hci_transport \
 		$(DIR)/driver/platform/amebalite/hci \
 		$(DIR)/rtk_stack/platform/common \
-		$(DIR)/osif
+		$(DIR)/osif \
+		$(DIR)/bt_mp
 
 MODULE_IFLAGS += \
 	-I$(BASEDIR)/component/wifi/driver \
@@ -35,7 +36,8 @@ CSRC += \
 	$(DIR)/driver/platform/amebalite/hci/hci_platform.c \
 	$(DIR)/driver/platform/amebalite/hci/hci_uart.c \
 	$(DIR)/osif/bt_debug.c \
-	$(DIR)/osif/osif.c
+	$(DIR)/osif/osif.c \
+	$(DIR)/bt_mp/bt_mp_api.c
 
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 CSRC += \

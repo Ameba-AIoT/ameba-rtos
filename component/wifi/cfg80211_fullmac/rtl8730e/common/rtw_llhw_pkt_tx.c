@@ -11,10 +11,14 @@ static int enqueue_tx_packet(struct xmit_priv_t *xmit_priv, struct inic_msg_node
 	return 0;
 }
 
-static struct inic_msg_node *dequeue_tx_packet(struct xmit_priv_t *xmit_priv)
+struct inic_msg_node *dequeue_tx_packet(struct xmit_priv_t *xmit_priv)
 {
 	struct inic_msg_node *p_node;
 	struct list_head *plist, *phead;
+
+	if (xmit_priv->initialized == 0) {
+		return NULL;
+	}
 
 	/* stop interrupt interrupting this process to cause dead lock. */
 	spin_lock_irq(&(xmit_priv->lock));
@@ -66,7 +70,7 @@ int llhw_xmit_thread(void *data)
 			pskb = p_node->msg;
 
 			/* send to NP*/
-			llhw_send_data(pskb->data, pskb->len);
+			llhw_send_data(pskb->data, pskb->len, pskb);
 
 			/* wake tx queue if need */
 			if (llhw_xmit_pending_q_num() < QUEUE_WAKE_THRES) {
@@ -75,9 +79,10 @@ int llhw_xmit_thread(void *data)
 					netif_tx_wake_all_queues(global_idev.pndev[1]);
 				}
 			}
-
+#ifndef CONFIG_INIC_USB_ASYNC_SEND
 			/* release the memory for this message. */
 			dev_kfree_skb(pskb);
+#endif
 			kfree(p_node);
 		}
 	}
@@ -161,6 +166,8 @@ int llhw_xmit_init(void)
 		xmit_priv->tx_thread = NULL;
 		return -EINVAL;
 	}
+
+	xmit_priv->initialized = 1;
 
 	return 0;
 }

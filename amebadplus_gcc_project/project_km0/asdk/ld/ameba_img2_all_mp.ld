@@ -19,8 +19,9 @@ SECTIONS
 	/* space for TIMER and IDLE task stack: 4k */
 	.sram_timer_idle_task_stack.bss (NOLOAD):
 	{
-		*port.o(*.uxIdleTaskStack*)
-		*port.o(*.uxTimerTaskStack*)
+		/* object files of cmake build system could be xxx.c.obj */
+		*port*.o*(*.uxIdleTaskStack*)
+		*port*.o*(*.uxTimerTaskStack*)
 	} > KM0_TIMER_IDLE_TASK_STACK
 
 	/* sram part */
@@ -48,9 +49,10 @@ SECTIONS
 		*(.non.dram.text*)
 		__flash_text_end__ = .;
 
-		*os_wrapper_static_functions.o(*.mutex_pool)
-		*os_wrapper_static_functions.o(*.sema_pool)
-		*os_wrapper_static_functions.o(*.timer_pool)
+		/* object files of cmake build system could be xxx.c.obj */
+		*os_wrapper_static_functions*.o*(*.mutex_pool)
+		*os_wrapper_static_functions*.o*(*.sema_pool)
+		*os_wrapper_static_functions*.o*(*.timer_pool)
 
 		__psram_image2_start__ = .;
 

@@ -10,7 +10,7 @@
 #include "rtk_coex.h"
 
 #if defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE
-
+extern void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 
 void bt_coex_init(void)
@@ -1027,6 +1027,51 @@ static void bt_coex_monitor_timer_handler(void *arg)
 	}
 }
 
+void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
+{
+	uint8_t evt = pdata[0];
+	bool need_notify = FALSE;
+	switch (evt) {
+	case HCI_EV_LE_META: {
+		uint8_t sub_evt = pdata[2];
+		switch (sub_evt) {
+		case HCI_EV_LE_CONN_COMPLETE:
+		case HCI_EV_LE_ENHANCED_CONN_COMPLETE:
+		case HCI_EV_LE_CONN_UPDATE_COMPLETE:
+			need_notify = TRUE;
+			break;
+		default:
+			break;
+		}
+	}
+	break;
+	case HCI_EV_DISCONN_COMPLETE:
+		need_notify = TRUE;
+		break;
+	default:
+		break;
+	}
+	if (need_notify == TRUE) {
+		wifi_btcoex_bt_hci_notify(pdata, len, DIR_IN);
+	}
+}
+void bt_coex_cmd_notify(uint8_t *pdata, uint16_t len)
+{
+	uint16_t opcode;
+	opcode = (uint16_t)((pdata[1] << 8) | pdata[0]);
+	switch (opcode) {
+	case BT_HCI_OP_LE_SET_SCAN_PARAM:
+	case BT_HCI_OP_LE_SET_EX_SCAN_PARAM:
+	case BT_HCI_OP_BR_WR_SCAN_ENABLE:
+	case BT_HCI_OP_BR_WR_PAGE_SCAN_ACTIVITY:
+	case BT_HCI_OP_BR_WR_INQ_SCAN_ACTIVITY:
+	case BT_HCI_OP_LE_CREATE_CONNECTION:
+		wifi_btcoex_bt_hci_notify(pdata, len, DIR_OUT);
+		break;
+	default:
+		break;
+	}
+}
 void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
 {
 	if (!pdata) {
@@ -1035,6 +1080,7 @@ void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
 
 	if (type == HCI_EVT) {
 		bt_coex_process_evt(pdata);
+		bt_coex_evt_notify(pdata, len);
 	}
 
 	if (type == HCI_ACL) {
@@ -1050,6 +1096,9 @@ void bt_coex_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
 
 	if (type == HCI_ACL) {
 		bt_coex_process_acl_data(pdata, len, DIR_OUT);
+	}
+	if (type == HCI_CMD) {
+		bt_coex_cmd_notify(pdata, len);
 	}
 }
 

@@ -41,6 +41,12 @@ DIR += $(USBD_MSC_DIR)
 MODULE_IFLAGS += -I$(USBD_MSC_DIR)
 endif
 
+ifeq ($(CONFIG_USBD_UAC),y)
+USBD_UAC_DIR = $(DEV_DIR)/uac
+DIR += $(USBD_UAC_DIR)
+MODULE_IFLAGS += -I$(USBD_UAC_DIR)
+endif
+
 ifeq ($(CONFIG_USBD_VENDOR),y)
 USBD_VEN_DIR = $(USBD_DIR)/vendor
 DIR += $(USBD_VEN_DIR)
@@ -113,6 +119,10 @@ endif
 ifeq ($(CONFIG_USBD_MSC),y)
 CSRC += $(USBD_MSC_DIR)/usbd_msc.c \
         $(USBD_MSC_DIR)/usbd_scsi.c
+endif
+
+ifeq ($(CONFIG_USBD_UAC),y)
+CSRC += $(USBD_UAC_DIR)/usbd_uac.c
 endif
 
 ifeq ($(CONFIG_USBD_VENDOR),y)

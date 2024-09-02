@@ -4,6 +4,7 @@
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
 
+
 #define RTK_USB_VID							0x0BDA
 #define RTK_USB_PID							0x8722
 
@@ -11,7 +12,7 @@
 #define RTW_INIC_WIFI_EP4_BULK_OUT						0x04U
 
 #define RTW_USB_RXQ_NUM						0x0AU
-#define RTW_USB_TXQ_NUM						0x0AU
+#define RTW_USB_TXQ_NUM						0x20U
 
 
 static struct usb_device_id inic_usb_ids[] = {
@@ -145,6 +146,7 @@ static int rtw_usb_init_phase2(struct inic_usb *priv)
 	spin_lock_init(&priv->usb_qlock);
 	spin_lock_init(&priv->usb_rxskb_lock);
 
+	atomic_set(&priv->tx_inflight, 0);
 	INIT_LIST_HEAD(&priv->tx_freeq);
 	if (rtw_usb_trx_resource_init(&priv->tx_freeq, RTW_USB_TXQ_NUM, 0, 1) != true) {
 		return false;
@@ -221,15 +223,16 @@ static void rtw_usb_disconnect(struct usb_interface *intf)
 	struct inic_usb *priv = &inic_usb_priv;
 
 	printk("%s\n", __func__);
+
+	priv->usb_disconnecting = 1;
 	if (priv->dev && (global_idev.pndev[0] != NULL)) {
 		rtw_netdev_remove(priv->dev);
 	}
 
-
 	/*free tx related resource*/
 	while ((req = rtw_usb_dequeue(&priv->tx_freeq, NULL)) != NULL) {
+		usb_kill_urb(req->urb);
 		usb_free_urb(req->urb);
-		list_del_init(&req->list);
 	}
 	kfree(priv->txreqs);
 
@@ -260,7 +263,7 @@ static int rtw_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	struct rtw_usbreq *req, *next;
 
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
-	if (priv->tx_inflight) {
+	if (atomic_read(&priv->tx_inflight)) {
 		netif_tx_start_all_queues(global_idev.pndev[0]);
 		netif_tx_wake_all_queues(global_idev.pndev[0]);
 		return -1;
@@ -335,12 +338,10 @@ static int __init rtw_usb_init_module(void)
 static void __exit rtw_usb_cleanup_module(void)
 {
 	struct inic_usb *priv = &inic_usb_priv;
-
+	priv->usb_deregistering = 1;
 	rtw_inetaddr_notifier_unregister();
 
 	usb_deregister(&inic_usb_driver);
-
-
 }
 
 module_init(rtw_usb_init_module);

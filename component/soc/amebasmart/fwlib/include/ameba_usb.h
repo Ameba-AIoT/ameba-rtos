@@ -83,14 +83,6 @@
 #define USB_IRQ_PRI									INT_PRI_MIDDLE
 /** @} */
 
-/** @defgroup USB_Code_Sections
-  * @{
-  */
-#define USB_DATA_SECTION
-#define USB_BSS_SECTION
-#define USB_TEXT_SECTION
-/** @} */
-
 /** @} */
 
 /* Exported types ------------------------------------------------------------*/

@@ -15,6 +15,7 @@
 static const char *TAG = "BOOT";
 extern u8 RMA_PK_HASH[32];
 extern u8 Signature[2][SIGN_MAX_LEN];
+u8 SecureBootEn = DISABLE;
 
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog);
 
@@ -201,7 +202,7 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 	u8 AuthAlg, HashAlg;
 
 	/* 1. check if secure boot enable. */
-	if (SYSCFG_OTP_SBootEn() == FALSE) {
+	if (SecureBootEn == DISABLE) {
 		return TRUE;
 	}
 
@@ -259,22 +260,49 @@ SBOOT_FAIL:
 }
 
 BOOT_RAM_TEXT_SECTION
+static u8 BOOT_SbootEn_Check(u8 *pk_hash)
+{
+	u8 i, j;
+
+	if (SYSCFG_OTP_RMAMode()) {
+		j = _rand() % 32;
+		for (i = 0; i < 32; i++, j = (j + 1) % 32) {
+			/* 2. read public key hash from OTP. Start with a random index to avoid side channel attack. */
+			/* If in RMA mode but RMA Pubkey is not programed, skip SBOOT */
+			pk_hash[j] = HAL_READ8(OTPC_REG_BASE, SEC_PKKEY_RMA_PK_0 + j);
+			if (pk_hash[j] != 0xFF) {
+				SecureBootEn = ENABLE;
+			}
+		}
+	} else {
+		/* 1. check if secure boot enable if not in RMA mode. */
+		if (SYSCFG_OTP_SBootEn() == FALSE) {
+			return SecureBootEn;
+		} else {
+			SecureBootEn = ENABLE;
+		}
+
+		/* 2. read public key hash from OTP. Start with a random index to avoid side channel attack. */
+		j = _rand() % 32;
+		for (i = 0; i < 32; i++, j = (j + 1) % 32) {
+			pk_hash[j] = HAL_READ8(OTPC_REG_BASE, Cert_PKHash_OTP_ADDR + j);
+		}
+	}
+
+	return SecureBootEn;
+}
+
+BOOT_RAM_TEXT_SECTION
 u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 idx)
 {
 	u8 PubKeyHash[32];
-	u8 i, j;
 	int ret;
 	u8 AuthAlg, HashAlg;
 
 	/* 1. check if secure boot enable. */
-	if (SYSCFG_OTP_SBootEn() == FALSE) {
+	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
+	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
 		return TRUE;
-	}
-
-	/* 2. read public key hash from OTP. Start with a random index to avoid side channel attack. */
-	j = _rand() % 32;
-	for (i = 0; i < 32; i++, j = (j + 1) % 32) {
-		PubKeyHash[j] = HAL_READ8(OTPC_REG_BASE, Cert_PKHash_OTP_ADDR + j);
 	}
 
 	/* 3. verify signature */
@@ -308,4 +336,52 @@ SBOOT_FAIL:
 	return FALSE;
 }
 
+BOOT_RAM_TEXT_SECTION
+u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum)
+{
+	u8 PubKeyHash[32];
+	int ret;
+	u8 AuthAlg, HashAlg;
 
+	/* 1. check if secure boot enable. */
+	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
+	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
+		return TRUE;
+	}
+
+	/* 3. verify signature */
+	/* 3.1 Initialize hash engine */
+	CRYPTO_SHA_Init(NULL);
+
+	/* 3.2 Check algorithm from flash against OTP configuration if need. */
+	ret = SBOOT_Validate_Algorithm(&AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	/* 3.3 validate pubkey hash */
+	ret = SBOOT_Validate_PubKey(AuthAlg, Manifest->SBPubKey, PubKeyHash);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	/* 3.4 validate signature */
+	ret = SBOOT_Validate_Signature(AuthAlg, HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN,
+								   Manifest->Signature);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	/* 3.5 calculate and validate image hash */
+	ret = SBOOT_Validate_ImgHash(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	RTK_LOGI(TAG, "Compressed Img VERIFY PASS\n");
+	return TRUE;
+
+SBOOT_FAIL:
+	RTK_LOGE(TAG, "Compressed Img VERIFY FAIL, ret = %d\n", ret);
+	return FALSE;
+}

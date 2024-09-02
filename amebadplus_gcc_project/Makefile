@@ -67,6 +67,9 @@ menuconfig:
 		exit 1; \
 	fi
 
+toolchain:
+	make -C ./project_km4 toolchain
+
 KM0_TARGET_ALL:
 	make -C ./project_km0 all EXAMPLE=
 KM4_TARGET_ALL:

@@ -22,28 +22,38 @@
 
 #define FLASHDATALEN 2048
 volatile u8  FlashDataBuf[FLASHDATALEN];//#define FLASH_DATA_BUF 	0x00086000
-volatile u32 *pFlashDatSrc;
-volatile u32 FlashBlockWriteSize;    //The maximum size of each block write is FLASHDATALEN,
-//The actual value MUST be given by GDB.
-volatile u32 FlashAddrForWrite;      //The flash address to be written.
-//The actual value MUST be given by GDB.
+volatile u32 FlashBlockWriteSize;    //The maximum size of each block write is FLASHDATALEN, and the actual value MUST be given by GDB.
+volatile u32 FlashAddrForWrite;      //The flash address to be written, and the actual value MUST be given by GDB.
 volatile u8  FlashWriteComplete;
 volatile u32 FlashDatSrc;
-u32 erase_sector_addr = 0;
-u32 FlashWriteResult = TRUE;
+volatile u32 FlashNextEraseAddr = 0;
 
-extern u8 __rom_bss_start__[];
-extern u8 __rom_bss_end__[];
-extern u8 __ram_start_table_start__[];
+__NO_INLINE
+void Gdb_Floader_Program_Start(void)
+{
+	__NOP();
+	__NOP();
+	__NOP();
+	__NOP();
+	WDG_Refresh(IWDG_DEV);
+}
 
+__NO_INLINE
+void Gdb_Floader_Program_End(void)
+{
+	while (1) {
+		if (FlashWriteComplete == 1) {
+			FlashWriteComplete = 0;
+		}
+	}
+}
 
 
 void RtlFlashProgram(void)__attribute__((optimize("O0")));
 
-void
-RtlFlashProgram(void)
+void RtlFlashProgram(void)
 {
-	volatile u32 FlashWriteCnt = 0;
+	u32 FlashWriteCnt, sector_addr, tx_len;
 
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 	SCB_DisableDCache();
@@ -57,11 +67,10 @@ RtlFlashProgram(void)
 
 
 	FlashDatSrc = (u32)&FlashDataBuf;
-	pFlashDatSrc = (u32 *)&FlashDataBuf;
 	FlashWriteComplete = 0;
 	FlashBlockWriteSize = 0;
 	FlashAddrForWrite = 0;
-	erase_sector_addr = 0;
+	FlashNextEraseAddr = 0;
 
 	//Cache_Enable(DISABLE);
 	//RCC_PeriphClockCmd(APBPeriph_FLASH, APBPeriph_FLASH_CLOCK, DISABLE);
@@ -74,42 +83,29 @@ RtlFlashProgram(void)
 	DBG_8195A("Flash download start\n");
 	//4 Program the flash from memory data
 	while (1) {
-StartOfFlashBlockWrite:
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-
-		WDG_Refresh(IWDG_DEV);
+		Gdb_Floader_Program_Start();
 
 		FlashWriteCnt = 0;
-		pFlashDatSrc = (u32 *)&FlashDataBuf[0];
 		if (FlashWriteComplete == 1) {
 			break;
 		}
 
 		while (FlashWriteCnt < FlashBlockWriteSize) {
-			u32 sector_addr1 = FlashAddrForWrite  & 0xFFFFF000; /* sector of first byte */
+			sector_addr = FlashAddrForWrite  & 0xFFFFF000; /* sector of first byte */
 
-			if (sector_addr1 >= erase_sector_addr) {
-				FLASH_Erase(EraseSector, sector_addr1);
-				erase_sector_addr = sector_addr1 + 0x1000; /* next sector we should erase */
+			if (sector_addr >= FlashNextEraseAddr) {
+				FLASH_Erase(EraseSector, sector_addr);
+				FlashNextEraseAddr = sector_addr + 0x1000; /* next sector we should erase */
 			}
 
-			FLASH_TxData(FlashAddrForWrite, 4, (u8 *)pFlashDatSrc);
+			tx_len = MIN(0x100, FlashBlockWriteSize - FlashWriteCnt);
+			FLASH_TxData(FlashAddrForWrite, tx_len, (u8 *)&FlashDataBuf[FlashWriteCnt]);
 
-			FlashAddrForWrite += 4;
-			FlashWriteCnt += 4;
-			pFlashDatSrc += 1;
+			FlashAddrForWrite += tx_len;
+			FlashWriteCnt += tx_len;
 		}
-		goto StartOfFlashBlockWrite;
 	}
 
 	DBG_8195A("Flash download done\n");
-
-	while (1) {
-		if (FlashWriteComplete == 1) {
-			FlashWriteComplete = 0;
-		}
-	}
+	Gdb_Floader_Program_End();
 }

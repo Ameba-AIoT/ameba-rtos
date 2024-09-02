@@ -26,6 +26,12 @@ KM0_BUILDDIR	= $(ROOTDIR)/../../project_lp
 KM4_BUILDDIR	= $(ROOTDIR)/../../project_hp
 AP_BUILDDIR	= $(ROOTDIR)/../../project_ap
 
+ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
+AP_IMAGEDIR		= $(KM4_BUILDDIR)/asdk/image
+else
+AP_IMAGEDIR		= $(AP_BUILDDIR)/asdk/image
+endif
+
 TARGETDIR	=$(BASEDIR)/component/soc/amebasmart
 BOOTLOADER	=$(BASEDIR)/component/soc/amebasmart/bootloader
 UTILITYDIR	= $(ROOTDIR)/gnu_utility
@@ -51,6 +57,7 @@ PREPENDTOOL		= python $(IMAGESCRIPTDIR)/axf2bin.py prepend_header
 OTAPREPENDTOOL  = python $(IMAGESCRIPTDIR)/axf2bin.py ota_prepend_header
 PADTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py pad
 IMAGETOOL = python $(IMAGESCRIPTDIR)/axf2bin.py imagetool
+COMPRESSTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py compress
 LXDIALOG_CYGWIN_STATIC 	= $(UTILITYDIR)/lxdialog_prebuilt/lxdialog_cygwin_x86_static.exe
 COMPILEOS		= $(shell uname -o)
 COMPILEOS_CYGWIN	= $(shell uname -o | cut -c 1-6)
@@ -90,10 +97,12 @@ ifeq ($(COMPILEOS),$(LINUX_OS))
 ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/linux/newlib
 TOOLCHAINNAME = asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
 TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
+TOOLCHAINURL_ALIYUN	= https://rs-wn.oss-cn-shanghai.aliyuncs.com/asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
 else
 ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/mingw32/newlib
 TOOLCHAINNAME = asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
+TOOLCHAINURL_ALIYUN = https://rs-wn.oss-cn-shanghai.aliyuncs.com/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 endif
 
 tool_dir = $(ASDK_TOOLCHAIN)/bin
@@ -442,7 +451,7 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
-check_toolchain:
+define download_toolchain_func
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
 	else \
@@ -454,7 +463,7 @@ check_toolchain:
 			echo "Create Toolchain Dir Failed. May Not Have Permission. Please Refer To README.MD Or AN900 Chapter 1.3(Installing Toolchain)."; \
 			exit 1; \
 		fi; \
-		if wget -P $(TOOLCHAINDIR) $(TOOLCHAINURL); then \
+		if wget -P $(TOOLCHAINDIR) $(1); then \
 			echo "Download $(TOOLCHAINNAME) Success"; \
 		else \
 			echo "Download Failed. Please Check If The Network Connection Is Accessible Or Refer To AN900 Chapter 1.3(Installing Toolchain)."; \
@@ -468,6 +477,9 @@ check_toolchain:
 		fi; \
 		echo "INSTALL SUCCESS"; \
 	fi
+endef
+check_toolchain:
+	$(call download_toolchain_func,$(TOOLCHAINURL))
 	# check permission
 	@if [ ! "$(shell which python)" ]; then \
 		echo "Command python not found"; \

@@ -30,34 +30,16 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-USB_DATA_SECTION
 static const char *const TAG = "USB";
 
-USB_DATA_SECTION
-static const usb_cal_data_t usb_cut_a_cal_data[] = {
+static const usb_cal_data_t usb_cal_data[] = {
 	{0x00, 0xE0, 0x9D},
 	{0x00, 0xE1, 0x19},
 	{0x00, 0xE2, 0xDB},
-	{0x00, 0xE4, 0x6D},
+	{0x00, 0xE4, 0x68},
 	{0x01, 0xE5, 0x0A},
 	{0x01, 0xE6, 0xD8},
-	{0x02, 0xE7, 0x32},
-	{0x01, 0xE0, 0x04},
-	{0x01, 0xE0, 0x00},
-	{0x01, 0xE0, 0x04},
-
-	{0xFF, 0x00, 0x00}
-};
-
-USB_DATA_SECTION
-static const usb_cal_data_t usb_common_cal_data[] = {
-	{0x00, 0xE0, 0x9D},
-	{0x00, 0xE1, 0x19},
-	{0x00, 0xE2, 0xDB},
-	{0x00, 0xE4, 0x6B},
-	{0x01, 0xE5, 0x0A},
-	{0x01, 0xE6, 0xD8},
-	{0x02, 0xE7, 0x32},
+	{0x02, 0xE7, 0x52},
 	{0x01, 0xE0, 0x04},
 	{0x01, 0xE0, 0x00},
 	{0x01, 0xE0, 0x04},
@@ -85,20 +67,10 @@ static const usb_cal_data_t usb_common_cal_data[] = {
   * @param  mode: 0 - device; 1 - host
   * @retval Pointer to calibration data buffer
   */
-USB_TEXT_SECTION
 usb_cal_data_t *usb_chip_get_cal_data(u8 mode)
 {
-	usb_cal_data_t *data;
-
 	UNUSED(mode);
-
-	if (EFUSE_GetChipVersion() != SYSCFG_CUT_VERSION_A) {
-		data = (usb_cal_data_t *)&usb_common_cal_data[0];
-	} else {
-		data = (usb_cal_data_t *)&usb_cut_a_cal_data[0];
-	}
-
-	return data;
+	return (usb_cal_data_t *)&usb_cal_data[0];
 }
 
 /**
@@ -106,7 +78,6 @@ usb_cal_data_t *usb_chip_get_cal_data(u8 mode)
   * @param  void
   * @retval Status
   */
-USB_TEXT_SECTION
 int usb_chip_init(void)
 {
 	u32 reg = 0;
@@ -181,7 +152,6 @@ int usb_chip_init(void)
   * @param  void
   * @retval Status
   */
-USB_TEXT_SECTION
 int usb_chip_deinit(void)
 {
 	u32 reg = 0;

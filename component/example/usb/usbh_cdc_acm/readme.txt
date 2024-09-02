@@ -73,6 +73,5 @@ Other Reference
 
 Supported List
 ~~~~~~~~~~~~~~
-[Supported List]
 	Supported : Ameba-D, Ameba-D2
 	Source code not in project: Ameba-1, Ameba-z, Ameba-pro, AmebaDplus, RTL8720F

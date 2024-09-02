@@ -7,6 +7,8 @@
 #define WIFI_OUT_EP_NUM_TOTAL	1
 #define RTW_USB_MAX_SKB_SIZE				1600
 
+#define CONFIG_INIC_USB_ASYNC_SEND
+
 struct inic_usb {
 	struct mutex	lock; /* mutex to protect send host event_priv message */
 
@@ -37,13 +39,16 @@ struct inic_usb {
 	spinlock_t usb_qlock;
 	spinlock_t usb_rxskb_lock;
 
-	u32 tx_inflight;
+	atomic_t tx_inflight;
+	u8 usb_disconnecting;
+	u8 usb_deregistering;
 };
 
 struct rtw_usbreq {
 	struct list_head list;
 	struct urb *urb;
-	struct sk_buff  *skb;
+	void  *skb;
+	u8	is_buf;
 };
 
 extern struct inic_usb inic_usb_priv;
@@ -53,4 +58,5 @@ void rtw_usb_rx_complete(struct urb *urb);
 void rtw_usb_enqueue(struct list_head *q, struct rtw_usbreq *req, int *counter);
 struct rtw_usbreq *rtw_usb_dequeue(struct list_head *q, int *counter);
 void rtw_usb_recv_data_process(void *intf_priv);
+int rtw_usb_send_event_check(u32 event_id);
 #endif /* __INIC_USB_H__ */

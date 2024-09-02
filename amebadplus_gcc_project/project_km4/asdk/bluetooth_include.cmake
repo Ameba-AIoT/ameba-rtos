@@ -1,0 +1,63 @@
+set(BLEDIR ${BASEDIR}/component/bluetooth)
+list(
+    APPEND GLOBAL_IFLAGS
+    ${BASEDIR}/component/soc/amebadplus/fwlib/include
+    ${BLEDIR}/rtk_coex
+    ${BLEDIR}/driver
+    ${BLEDIR}/driver/dtm
+    ${BLEDIR}/driver/hci
+    ${BLEDIR}/driver/inc
+    ${BLEDIR}/driver/inc/hci
+    ${BLEDIR}/driver/platform/amebadplus/inc
+    ${BLEDIR}/osif
+    ${BLEDIR}/application/bt_fast_mp
+)
+if(CONFIG_BT_ZEPHYR)
+    list(
+        APPEND GLOBAL_IFLAGS
+        ${BLEDIR}/api/zephyr_stack
+        ${BLEDIR}/zephyr
+        ${BLEDIR}/zephyr/hci_driver
+        ${BLEDIR}/zephyr/include
+        ${BLEDIR}/zephyr/stack
+        ${BLEDIR}/zephyr/stack/host
+        ${BLEDIR}/zephyr/settings
+        ${BLEDIR}/zephyr/port
+    )
+else()
+    list(
+        APPEND GLOBAL_IFLAGS
+        ${BLEDIR}/api/rtk_stack
+        ${BLEDIR}/rtk_stack/example
+        ${BLEDIR}/rtk_stack/inc/app
+        ${BLEDIR}/rtk_stack/inc/os
+        ${BLEDIR}/rtk_stack/inc/platform
+        ${BLEDIR}/rtk_stack/inc/stack
+        ${BLEDIR}/rtk_stack/inc/bluetooth/gap
+        ${BLEDIR}/rtk_stack/inc/bluetooth/profile
+        ${BLEDIR}/rtk_stack/inc/bluetooth/profile/client
+        ${BLEDIR}/rtk_stack/inc/bluetooth/profile/server
+        ${BLEDIR}/rtk_stack/platform/common
+        ${BLEDIR}/rtk_stack/platform/amebadplus/lib
+        ${BLEDIR}/rtk_stack/src/mesh/cmd
+        ${BLEDIR}/rtk_stack/src/mesh/common
+        ${BLEDIR}/rtk_stack/src/mesh/gap
+        ${BLEDIR}/rtk_stack/src/mesh/inc
+        ${BLEDIR}/rtk_stack/src/mesh/inc/amebadplus
+        ${BLEDIR}/rtk_stack/src/mesh/model
+        ${BLEDIR}/rtk_stack/src/mesh/model/ali
+        ${BLEDIR}/rtk_stack/src/mesh/model/realtek
+        ${BLEDIR}/rtk_stack/src/mesh/platform
+        ${BLEDIR}/rtk_stack/src/mesh/profile
+        ${BLEDIR}/rtk_stack/src/mesh/utility
+    )
+endif()
+list(
+    APPEND GLOBAL_IFLAGS
+    ${BLEDIR}/api
+    ${BLEDIR}/api/include
+    ${BLEDIR}/example/bt_atcmd
+    ${BLEDIR}/example/gatt_service/server
+    ${BLEDIR}/example/gatt_service/client
+    ${BASEDIR}/component/at_cmd
+)

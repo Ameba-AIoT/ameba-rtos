@@ -466,7 +466,6 @@ void eap_eapol_recvd(void *buf)
 		DiagPrintf("EAP: Recv EAPOL packet: EAP-Failure\n");
 		eap_sm_deinit();
 		g_eap_context.eapIsProcessing = 0;
-		wifi_indication(WIFI_EVENT_DISCONNECT, NULL, 0, 0);
 	}
 exit:
 	os_free(buf, 0);

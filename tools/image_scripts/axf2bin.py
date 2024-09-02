@@ -9,6 +9,7 @@ import json
 import re
 import shutil
 import importlib
+import lzma
 
 SIGN_MAX_LEN = 144
 PKEY_MAX_LEN = 144
@@ -16,6 +17,7 @@ HASH_MAX_LEN = 64
 
 FlashCalibPattern = [0x96969999, 0xFC66CC3F]
 ImagePattern = [0x35393138, 0x31313738]
+CompressFlag = [0x504D4F43, 0x53534552]
 
 def init_list(length):
     ilist = []
@@ -520,6 +522,8 @@ class PREPEND_TOOL:
         # Constant Variables
         PATTERN_1=0x99999696
         PATTERN_2=0x3FCC66FC
+        PATTERN_FS_1=0x7666735F
+        PATTERN_FS_2=0x6661745F
         RSVD=0xFFFFFFFFFFFFFFFF
         IMG2SIGN=0x3831393538373131
 
@@ -540,6 +544,9 @@ class PREPEND_TOOL:
         if IMAGE_FILENAME_NEW == "ram_1.bin" or IMAGE_FILENAME_NEW == "xip_boot.bin" or IMAGE_FILENAME_NEW == "entry_1.bin":
             HEADER_FINAL = PATTERN_1.to_bytes(4, 'big') + \
                         PATTERN_2.to_bytes(4, 'big')
+        elif IMAGE_FILENAME_NEW == "fatfs.bin":
+            HEADER_FINAL = PATTERN_FS_1.to_bytes(4, 'big') + \
+                        PATTERN_FS_2.to_bytes(4, 'big')
         else:
             HEADER_FINAL = IMG2SIGN.to_bytes(8, 'big')
 
@@ -683,6 +690,7 @@ def print_help():
     print("\tpython axf2bin.py ota_prepend_header [Image2 Name] [Boot Image Name][option] [DSP Image Name][option]")
     print("\tpython axf2bin.py imagetool [Image Name] [Build type] [DSP Image DIR][option]")
     print("\tpython axf2bin.py binary_pading [Src Image Name] [Dst Image Name] [Size]")
+    print("\tpython axf2bin.py compress [Src Image Name]")
 
 def ENCTOOL(key, *value):
     argv = (0, 0) + value
@@ -989,7 +997,7 @@ class IMAGETOOL():
 
     def execute(self):
         lproject = re.findall(r"ameba[A-Za-z0-9]+_gcc_project", os.getcwd())
-        if lproject == None or len(lproject) == 0:
+        if lproject == None or len(lproject[0]) == 0:
             sys.exit()
 
         handler = self.get_handler(lproject[0])
@@ -1034,6 +1042,79 @@ class IMAGETOOL():
         if self.IMAGE_FILENAME.find('image3') > 0:
             image3_en = os.path.join(IMG_DIR, os.path.splitext(self.IMAGE_FILENAME)[0] + '_en.bin')
             ENCTOOL('rdp', 'enc', os.path.join(IMG_DIR, self.IMAGE_FILENAME), image3_en, self.MANIFEST_JSON)
+    
+    def compress(self):
+        lproject = re.findall(r"ameba[A-Za-z0-9]+_gcc_project", os.getcwd())
+        if lproject == None or len(lproject[0]) == 0:
+            sys.exit()
+
+        index = os.getcwd().find(lproject[0])
+        self.pwd = os.path.join(os.getcwd()[0: index], lproject[0])
+
+        self.IMAGE_FULLNAME = self.argv[2]
+        self.IMAGE_FILENAME = os.path.basename(self.IMAGE_FULLNAME)
+        self.MANIFEST_JSON = os.path.join(self.pwd, 'manifest.json')
+        IMG_DIR = os.path.dirname(self.IMAGE_FULLNAME)
+
+        image_compress = os.path.join(IMG_DIR, os.path.splitext(self.IMAGE_FILENAME)[0] + '_compress.bin')
+        image_temp = os.path.join(IMG_DIR, os.path.splitext(self.IMAGE_FILENAME)[0] + '_compress_tmp.bin')
+        self.manifest = os.path.join(IMG_DIR, 'manifest.bin')
+
+        byteClassOffset = sys.getsizeof(b"") #this is the offset depending on python byte class
+        split_16k = 16384 #split by 16kb as client wanted
+        splitSize = split_16k + byteClassOffset #offset 17 or 33 bytes due to python byte class                    
+
+        compress_data = b''
+        byteRead = b''
+        with open(self.IMAGE_FULLNAME, 'rb') as fr:
+            byteRead = fr.read(1)
+            currByte = 0
+            fileNum = 0
+            toWrite = b""
+            LZMA_Size = []
+            if byteRead != b"":
+                currByte = currByte + 1
+                toWrite = toWrite + byteRead
+
+            #print("Splitting " + fileName + " into " + str(splitSize) + " bytes per file, then compress into *.lzma files")
+            ###if the current read byte is not NULL, this will run
+            while byteRead != b"":
+                byteRead = fr.read(1) #read next byte
+                toWrite = toWrite + byteRead
+                currByte = sys.getsizeof(toWrite)
+
+                if currByte == splitSize or byteRead == b"":
+                    tmp = lzma.compress(toWrite, format=lzma.FORMAT_ALONE, preset=9)
+                    compress_data = compress_data + tmp
+                    LZMA_Size.append(len(tmp))
+
+                    toWrite = b''
+                    currByte = 0
+                    fileNum = fileNum + 1
+
+        headerFile = fileNum.to_bytes(2, 'little')
+        for item in range(0, fileNum): 
+            headerFile = headerFile + LZMA_Size[item].to_bytes(2, 'little')
+        
+        print("Header creation complete")
+        print("Total number of " + str(fileNum) + " x *.bin and *.lzma files generated")
+        ############# Perform LZMA Concatenation ###############
+        '''
+        1.) Reads all lzma files according to size pointed by (headerName)
+        2.) Generates total lzma file (concatLzmaFile) by combining (headerName) in front
+        '''
+
+        with open(image_temp, 'wb') as fw:
+            fw.write(headerFile)
+            fw.write(compress_data)
+
+        global ImagePattern
+        ImagePattern[0] = CompressFlag[0]
+        ImagePattern[1] = CompressFlag[1]
+        ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, image_temp, self.manifest, 'app')
+        CATFILE('', image_compress, self.manifest, image_temp)
+        os.remove(image_temp)
+        print("Generated concatenated Lzma File %s success "%str(image_compress))
 
 if len(sys.argv) <= 1:
     print_help()
@@ -1069,6 +1150,12 @@ elif sys.argv[1] == 'binary_pading':
         sys.exit()
     imagetool = IMAGETOOL(len(sys.argv), sys.argv)
     imagetool.binary_pading(sys.argv[2], sys.argv[3], int(sys.argv[4]))
+elif sys.argv[1] == 'compress':
+    if len(sys.argv) < 3:
+        print_help()
+        sys.exit()
+    imagetool = IMAGETOOL(len(sys.argv), sys.argv)
+    imagetool.compress()
 else:
     tmp = tuple(sys.argv[2:])
     ENCTOOL(sys.argv[1], *tmp)

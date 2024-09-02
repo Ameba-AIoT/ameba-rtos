@@ -260,8 +260,6 @@ static bool rtk_bt_scoreboard_isr_enable(void)
 
 static bool rtk_bt_scoreboard_isr_disable(void)
 {
-	bool wl_pmc_on = false;
-
 	InterruptDis(BT_SCB_IRQ);
 	InterruptUnRegister(BT_SCB_IRQ);
 

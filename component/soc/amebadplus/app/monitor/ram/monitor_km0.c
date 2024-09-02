@@ -181,6 +181,23 @@ CmdAGGCmd(
 	return 0;
 }
 
+#ifdef CONFIG_WLAN
+extern int rtw_wltunnel_command(char *cmd);
+u32
+CmdWTN(
+	IN  u16 argc,
+	IN  u8  *argv[]
+)
+{
+	if (argc != 1) {
+		RTK_LOGS(TAG, "Wrong argument number!\r\n");
+		return _FALSE;
+	}
+	rtw_wltunnel_command((char *)argv[0]);
+	return 0;
+}
+#endif
+
 u32 cmd_log_set(u16 argc, u8  *argv[])
 {
 	if (argc != 2) {
@@ -240,6 +257,14 @@ const COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t 	   4, info log\n"
 		"\t\t 	   5, debug log\n"
 	},
+#ifdef CONFIG_WLAN
+	{
+		(const u8 *)"WTN",	1, CmdWTN,	(const u8 *)"\t@WTN \n"
+		"\t\t get_father \n"
+		"\t\t get_child \n"
+		"\t\t ... \n"
+	},
+#endif
 #endif
 };
 

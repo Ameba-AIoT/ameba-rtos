@@ -53,6 +53,7 @@ PREPENDTOOL		= python $(IMAGESCRIPTDIR)/axf2bin.py prepend_header
 OTAPREPENDTOOL  = python $(IMAGESCRIPTDIR)/axf2bin.py ota_prepend_header
 PADTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py pad
 IMAGETOOL = python $(IMAGESCRIPTDIR)/axf2bin.py imagetool
+COMPRESSTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py compress
 LXDIALOG_CYGWIN_STATIC 	= $(UTILITYDIR)/lxdialog_prebuilt/lxdialog_cygwin_x86_static.exe
 COMPILEOS		= $(shell uname -o)
 COMPILEOS_CYGWIN	= $(shell uname -o | cut -c 1-6)

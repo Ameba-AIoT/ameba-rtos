@@ -126,7 +126,7 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
 	finfo = (vfs_file *)fopen(path, "r");
 	if (finfo == NULL) {
-		VFS_DBG(VFS_ERROR, "fopen failed, res = %d", res);
+		VFS_DBG(VFS_WARNING, "fopen failed ");
 		goto exit;
 	}
 

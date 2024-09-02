@@ -47,6 +47,7 @@ typedef struct {
 int BOOT_DecRDPImg(u32 SrcAddr, u8 *RdpIV, SubImgInfo_TypeDef *SubImgInfo, u8 *SubImgCnt);
 u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum, Certificate_TypeDef *Cert, u32 KeyID);
 u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 idx);
+u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 void BOOT_Validate_Fail_Stuck(void);
 
 #endif

@@ -299,6 +299,21 @@ static int atcmd_bt_bap_unicast_client_release(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_bap_unicast_client_stream_session_release(int argc, char **argv)
+{
+	(void)argc;
+	uint8_t group_idx = 0;
+
+	group_idx = (uint8_t)str_to_int(argv[0]);
+	if (rtk_bt_bap_unicast_client_stream_session_release(group_idx)) {
+		BLEBAP_AT_PRINTK("BAP unicast client stream session release fail \r\n");
+		return -1;
+	}
+	BLEBAP_AT_PRINTK("BAP unicast client release stream session successfully \r\n");
+
+	return 0;
+}
+
 static int atcmd_bt_bap_unicast_client_prefer_qos_cfg(int argc, char **argv)
 {
 	(void)argc;
@@ -407,12 +422,13 @@ static const cmd_table_t bap_scan_delegate_cmd_table[] = {
 };
 
 static const cmd_table_t bap_unicast_client_cmd_table[] = {
-	{"start",       atcmd_bt_bap_unicast_client_start,                3, 3},
-	{"escan",       atcmd_bt_bap_ext_scan,                            2, 2},
-	{"stop",        atcmd_bt_bap_unicast_client_stop,                 2, 2},
-	{"release",     atcmd_bt_bap_unicast_client_release,              2, 2},
-	{"session_qos", atcmd_bt_bap_unicast_client_prefer_qos_cfg,       2, 2},
-	{"ase_qos",     atcmd_bt_bap_unicast_client_ase_target_qos_cfg,   2, 2},
+	{"start",             atcmd_bt_bap_unicast_client_start,                    3, 3},
+	{"escan",             atcmd_bt_bap_ext_scan,                                2, 2},
+	{"stop",              atcmd_bt_bap_unicast_client_stop,                     2, 2},
+	{"release",           atcmd_bt_bap_unicast_client_release,                  2, 2},
+	{"stream_release",    atcmd_bt_bap_unicast_client_stream_session_release,   2, 2},
+	{"session_qos",       atcmd_bt_bap_unicast_client_prefer_qos_cfg,           2, 2},
+	{"ase_qos",           atcmd_bt_bap_unicast_client_ase_target_qos_cfg,       2, 2},
 	{NULL,},
 };
 

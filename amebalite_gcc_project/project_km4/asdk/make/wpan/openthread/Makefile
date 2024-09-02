@@ -116,6 +116,7 @@ CSRC += $(RTK_OT_SUPPORT)/rtk_ot_alarm.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_uart.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_settings.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_test.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_cli_extension.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_cli_uart.c
 
 ifeq ($(CONFIG_802154_THREAD_RADIO_RCP_EN),y)	

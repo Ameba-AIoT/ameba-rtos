@@ -9,7 +9,8 @@
 #include "atcmd_service.h"
 #if ENABLE_TCPIP_SSL
 #include "mbedtls/config.h"
-#include "mbedtls/net.h"
+#include "mbedtls/platform.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
@@ -1386,6 +1387,7 @@ static void client_start(void *param)
 		if (ret != 0) {
 			RTK_LOGW(NOTAG, "[client_start] Failed in mbedtls_net_connect\r\n");
 			error_no = 18;
+			rtos_mem_free(c_port_str);
 			goto end;
 		}
 		c_sockfd = server_fd.fd;
@@ -1427,13 +1429,13 @@ static void client_start(void *param)
 		mbedtls_platform_set_calloc_free(atcmd_lwip_calloc, rtos_mem_free);
 		ssl = (mbedtls_ssl_context *)rtos_mem_zmalloc(sizeof(mbedtls_ssl_context));
 		if (ssl == NULL) {
-			RTK_LOGW(NOTAG, "[client_start] Failed for ssl\r\n");
+			RTK_LOGW(NOTAG, "[client_start] Memory allocation failed for ssl\r\n");
 			error_no = 19;
 			goto end;
 		}
 		conf = (mbedtls_ssl_config *)rtos_mem_zmalloc(sizeof(mbedtls_ssl_config));
 		if (conf == NULL) {
-			RTK_LOGW(NOTAG, "[client_start] Failed for conf\r\n");
+			RTK_LOGW(NOTAG, "[client_start] Memory allocation failed for conf\r\n");
 			error_no = 19;
 			goto end;
 		}
@@ -1454,7 +1456,7 @@ static void client_start(void *param)
 
 		mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_NONE);
 		mbedtls_ssl_conf_rng(conf, atcmd_ssl_random, NULL);
-		mbedtls_ssl_set_bio(ssl, &ClientNodeUsed->sockfd, mbedtls_net_send, mbedtls_net_recv, NULL);
+		mbedtls_ssl_set_bio(ssl, &server_fd/*&ClientNodeUsed->sockfd*/, mbedtls_net_send, mbedtls_net_recv, NULL);
 		mbedtls_ssl_conf_dbg(conf, atcmd_ssl_debug, NULL);
 
 		ret = mbedtls_ssl_setup(ssl, conf);
@@ -1487,8 +1489,8 @@ static void client_start(void *param)
 		************************************************************/
 		ret = hang_list_node(ClientNodeUsed);
 		if (ret < 0) {
-			RTK_LOGW(NOTAG, "[client_start] Failed for mbedtls_ssl_setup\r\n");
-			error_no = 23;
+			RTK_LOGW(NOTAG, "[client_start] Hang node failed for SSL client\r\n");
+			error_no = 22;
 			goto end;
 		}
 		at_printf("%scon_id=%d\r\n", "+SKTCLIENT:", ClientNodeUsed->con_id);
@@ -1635,6 +1637,12 @@ void at_sktclient(void *arg)
 	struct hostent *server_host = NULL;
 #endif
 
+	if (atcmd_lwip_tt_mode == TRUE && mainlist->next != NULL) {
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Only one client connection can be created in TT mode\r\n");
+		error_no = 13;
+		goto end;
+	}
+
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[+SKTCLIENT] Input parameter is NULL\r\n");
 		error_no = 1;
@@ -1645,12 +1653,6 @@ void at_sktclient(void *arg)
 	if (argc < 4 || argc > 5) {
 		RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid number of parameters\r\n");
 		error_no = 1;
-		goto end;
-	}
-
-	if (atcmd_lwip_tt_mode == TRUE && mainlist->next != NULL) {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] The mode is not correct\r\n");
-		error_no = 13;
 		goto end;
 	}
 
@@ -1667,7 +1669,7 @@ void at_sktclient(void *arg)
 	if (mode < NODE_MODE_TCP || mode > NODE_MODE_UDP)
 #endif
 	{
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Unknown mode\r\n");
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Unknown connection type\r\n");
 		error_no = 17;
 		goto end;
 	}
@@ -1702,7 +1704,7 @@ void at_sktclient(void *arg)
 	if (argc > lcl_port_idx && strlen(argv[lcl_port_idx]) != 0) {
 		local_port = atoi(argv[lcl_port_idx]);
 		if (local_port <= 0 || local_port > 65535) {
-			RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid port\r\n");
+			RTK_LOGW(NOTAG, "[+SKTCLIENT] Invalid local port\r\n");
 			error_no = 11;
 			goto end;
 		}
@@ -1710,7 +1712,7 @@ void at_sktclient(void *arg)
 
 	clientnode = create_list_node(mode, NODE_ROLE_CLIENT);
 	if (clientnode == NULL) {
-		RTK_LOGW(NOTAG, "[+SKTCLIENT] Error clientnode\r\n");
+		RTK_LOGW(NOTAG, "[+SKTCLIENT] Create clientnode failed\r\n");
 		error_no = 4;
 		goto end;
 	}

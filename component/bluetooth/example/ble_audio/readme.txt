@@ -49,6 +49,8 @@ BAP demo ATCMD:
     1.5 start unicast unidirectional stream     AT+BLEBAP=unicast,client,start,0,1
     1.6 start unicast bidirectional  stream     AT+BLEBAP=unicast,client,start,0,2
     1.7 stop unicast stream                     AT+BLEBAP=unicast,client,stop,0
+    1.8 release unicast stream                  AT+BLEBAP=unicast,client,release,0
+    1.9 release stream session                  AT+BLEBAP=unicast,client,stream_release,0
 
 2.BAP unicast server
     2.1 config audio channel                    AT+BLEBAP=unicast,server,cfg,<sound channel>     sound channel:left,right or stereo
