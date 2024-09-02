@@ -124,7 +124,7 @@ void llhw_event_deinit(void);
 int llhw_ipc_send_msg(u32 id, u32 *param_buf, u32 buf_len);
 
 #else
-void llhw_send_data(u8 *buf, u32 len);
+void llhw_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
 void llhw_recv_data_process(void *intf_priv);
 void llhw_event_task(struct work_struct *data);
 int llhw_xmit_entry(int idx, struct sk_buff *pskb);

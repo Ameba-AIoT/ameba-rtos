@@ -12,6 +12,9 @@
 
 #include "example_player.h"
 
+#define MAX_URL_SIZE 1024
+static char g_url[MAX_URL_SIZE];
+
 enum PlayingStatus {
 	IDLE,
 	PLAYING,
@@ -181,20 +184,33 @@ int player_test(const char *url)
 }
 
 #ifdef CMD_TEST
-#define MAX_URL_SIZE 1024
+void example_player_thread(void *param)
+{
+	(void) param;
+
+	printf("player test start......\n");
+
+	player_test(g_url);
+	rtos_time_delay_ms(1 * 1000);
+
+	printf("player test done......\n");
+	printf("\n\n");
+
+	rtos_task_delete(NULL);
+}
+
 void example_player_test_args_handle(u8  *argv[])
 {
-	char url[MAX_URL_SIZE];
 	/* parse command line arguments */
 	while (*argv) {
 		if (strcmp(*argv, "-F") == 0) {
 			argv++;
 			if (*argv) {
-				memset(url, 0, MAX_URL_SIZE);
+				memset(g_url, 0, MAX_URL_SIZE);
 				if (!strncasecmp("http://", *argv, 7) || !strncasecmp("https://", *argv, 8)) {
-					snprintf(url, MAX_URL_SIZE, "%s", *argv);
+					snprintf(g_url, MAX_URL_SIZE, "%s", *argv);
 				} else {
-					snprintf(url, MAX_URL_SIZE, "%s", *argv);
+					snprintf(g_url, MAX_URL_SIZE, "%s", *argv);
 				}
 			}
 		}
@@ -202,12 +218,13 @@ void example_player_test_args_handle(u8  *argv[])
 			argv++;
 		}
 	}
-	printf("Usage: url is %s", url);
+	printf("Usage: url is %s", g_url);
 
 	printf("player test start......\n");
 
-	player_test(url);
-	rtos_time_delay_ms(1 * 1000);
+	if (rtos_task_create(NULL, ((const char *)"example_player_thread"), example_player_thread, NULL, 160 * 1024, 1) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_player_thread) failed", __FUNCTION__);
+	}
 
 	printf("player test done......\n");
 	printf("\n\n");
@@ -221,7 +238,7 @@ u32 example_player_test(u16 argc, u8 *argv[])
 	example_player_test_args_handle(argv);
 	return _TRUE;
 }
-#endif
+#else
 
 void example_player_thread(void *param)
 {
@@ -244,3 +261,4 @@ void example_player(void)
 		printf("\n\r%s rtos_task_create(example_player_thread) failed", __FUNCTION__);
 	}
 }
+#endif

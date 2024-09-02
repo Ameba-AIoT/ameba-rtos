@@ -25,7 +25,8 @@ CSRC +=	$(DIR)/wpa_supplicant/wpa_supplicant/wifi_eap_config.c \
 		$(DIR)/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c \
 		$(DIR)/wpa_supplicant/wpa_supplicant/wifi_wps_config.c \
 		$(DIR)/wpa_supplicant/src/crypto/tls_polarssl.c \
-		$(DIR)/wifi_fast_connect/wifi_fast_connect.c
+		$(DIR)/wifi_fast_connect/wifi_fast_connect.c \
+		$(DIR)/wifi_auto_reconnect/wifi_auto_reconnect.c
 
 # Single core
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
@@ -33,7 +34,8 @@ CSRC +=	$(DIR)/wpa_supplicant/wpa_supplicant/wifi_eap_config.c \
 		$(DIR)/wpa_supplicant/wpa_supplicant/wifi_p2p_config.c \
 		$(DIR)/wpa_supplicant/wpa_supplicant/wifi_wps_config.c \
 		$(DIR)/wpa_supplicant/src/crypto/tls_polarssl.c \
-		$(DIR)/wifi_fast_connect/wifi_fast_connect.c
+		$(DIR)/wifi_fast_connect/wifi_fast_connect.c \
+		$(DIR)/wifi_auto_reconnect/wifi_auto_reconnect.c
 endif
 
 # NP and Single Core

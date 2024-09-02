@@ -309,7 +309,6 @@ static uint8_t hci_process_set_cut_ver(uint16_t opcode)
 }
 #endif
 
-#if defined(CONFIG_HCI_RESET) && CONFIG_HCI_RESET
 static uint8_t hci_process_hci_reset(uint16_t opcode)
 {
 	/* OpCode: 0x0C03, Data Len: Cmd(3), Event(6) */
@@ -331,7 +330,6 @@ static uint8_t hci_process_hci_reset(uint16_t opcode)
 
 	return HCI_SUCCESS;
 }
-#endif
 
 static struct {
 	uint16_t opcode;
@@ -364,9 +362,7 @@ static struct {
 #if defined(hci_platform_SET_CUT_VER) && hci_platform_SET_CUT_VER
 	{0xFDAC, hci_process_set_cut_ver},
 #endif
-#if defined(CONFIG_HCI_RESET) && CONFIG_HCI_RESET
 	{0x0C03, hci_process_hci_reset},
-#endif
 	{0,      NULL}
 };
 

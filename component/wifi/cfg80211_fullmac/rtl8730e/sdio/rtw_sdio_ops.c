@@ -34,13 +34,14 @@ static struct sk_buff *sdio_read_rxfifo(struct inic_sdio *priv, u32 size)
 	return pskb;
 }
 
-void rtw_sdio_send_data(u8 *buf, u32 len)
+void rtw_sdio_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 {
 	u32 polling_num = 0, try_cnt = 0;
 	struct inic_sdio *priv = &inic_sdio_priv;
 	INIC_TX_DESC *ptxdesc;
 
 	(void) polling_num;
+	(void) pskb;
 
 	/* wakeup device if it's in power save mode before send msg */
 	if (priv->dev_state == PWR_STATE_SLEEP) {

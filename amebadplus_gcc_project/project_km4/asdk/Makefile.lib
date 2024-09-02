@@ -115,6 +115,13 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_haac.a
 endif
 endif
 
+ifeq ($(CONFIG_SPEEX_LIB),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_speexdsp.a
+endif
+ifeq ($(CONFIG_OPUS_LIB),y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_opus.a
+endif
+
 ifeq ($(CONFIG_AUDIO_MIXER),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_mixer.a
 else ifeq ($(CONFIG_AUDIO_PASSTHROUGH),y)

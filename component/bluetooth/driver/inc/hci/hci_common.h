@@ -23,6 +23,12 @@
 #define HCI_EVT                     0x04
 #define HCI_ISO                     0x05
 
+/* hci event */
+#define BT_HCI_EVT_CMD_COMPLETE                 0x0e
+#define BT_HCI_EVT_LE_META_EVENT                0x3e
+#define BT_HCI_EVT_LE_ADVERTISING_REPORT        0x02
+#define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT    0x0d
+
 /* hci packet header struct */
 struct hci_acl_hdr {
 	uint16_t handle;
@@ -50,6 +56,18 @@ struct hci_evt_hdr {
 } __attribute__((packed));
 
 #define HCI_HDR_MAX_SIZE 4
+
+#define LE_TO_UINT16(_data, _array)  {              \
+        _data = ((uint16_t)(*((uint8_t *)(_array) + 0)) << 0) |        \
+                ((uint16_t)(*((uint8_t *)(_array) + 1)) << 8);         \
+    }
+
+#define LE_TO_UINT32(_data, _array)    {            \
+        _data = ((uint32_t)(*((uint8_t *)(_array) + 0)) <<  0) |       \
+                ((uint32_t)(*((uint8_t *)(_array) + 1)) <<  8) |       \
+                ((uint32_t)(*((uint8_t *)(_array) + 2)) << 16) |       \
+                ((uint32_t)(*((uint8_t *)(_array) + 3)) << 24);        \
+    }
 
 /****** functions called by hci_process.c ******/
 uint8_t hci_downlod_patch_init(void);

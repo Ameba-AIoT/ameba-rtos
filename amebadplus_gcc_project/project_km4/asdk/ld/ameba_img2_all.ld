@@ -39,8 +39,9 @@ SECTIONS
 	/* space for TIMER and IDLE task stack: 4k */
 	.sram_timer_idle_task_stack.bss (NOLOAD):
 	{
-		*port.o(*.uxIdleTaskStack*)
-		*port.o(*.uxTimerTaskStack*)
+		/* object files of cmake build system could be xxx.c.obj */
+		*port*.o*(*.uxIdleTaskStack*)
+		*port*.o*(*.uxTimerTaskStack*)
 	} > KM4_TIMER_IDLE_TASK_STACK
 
 	/* sram part */

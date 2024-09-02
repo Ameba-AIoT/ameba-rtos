@@ -107,6 +107,7 @@ CSRC += $(RTK_OT_SUPPORT)/rtk_ot_alarm.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_uart.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_settings.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_test.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_cli_extension.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_cli_uart.c
 
 include Makefile_spinel

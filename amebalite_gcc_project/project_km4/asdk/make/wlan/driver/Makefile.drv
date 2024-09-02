@@ -109,8 +109,10 @@ CSRC_WIFI_TUNNEL_COMMON += \
 	$(DIR)/wifi_tunnel/rtw_wtn_sw.c \
 	$(DIR)/wifi_tunnel/rtw_wtn_dm.c \
 	$(DIR)/wifi_tunnel/rtw_wtn_frame.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_helpie.c \
 	$(DIR)/wifi_tunnel/rtw_wtn_rssi.c \
 	$(DIR)/wifi_tunnel/rtw_wtn_cmd.c \
+	$(DIR)/wifi_tunnel/rtw_wtn_cornercase.c \
 
 CSRC_HAL_PHYDM+= \
 	$(DIR)/halcommon/hal_dig_phydm.c \
@@ -126,7 +128,8 @@ CSRC_HALCOMMON_V1+= \
 	$(DIR)/halcommon/hal_h2c_g1.c \
 	$(DIR)/halcommon/hal_recv_g1.c \
 	$(DIR)/halcommon/hal_suspend_g1.c \
-	$(DIR)/halcommon/hal_interrupt_g1.c
+	$(DIR)/halcommon/hal_interrupt_g1.c \
+	$(DIR)/halcommon/hal_twt_timer_g1.c
 ifneq ($(CONFIG_MP_SHRINK), y)
 CSRC_HALCOMMON_V1 += \
 	$(DIR)/halcommon/hal_h2c_g1.c \
@@ -137,7 +140,8 @@ CSRC_HALCOMMON_V2 += \
 	$(DIR)/halcommon/hal_h2c_g2.c \
 	$(DIR)/halcommon/hal_recv_g2.c \
 	$(DIR)/halcommon/hal_suspend_g2.c \
-	$(DIR)/halcommon/hal_interrupt_g2.c
+	$(DIR)/halcommon/hal_interrupt_g2.c \
+	$(DIR)/halcommon/hal_twt_timer_g2.c
 
 #############common rom files can not change #####################
 CORE_ROM_DP_START_ADD_DONT_CHANGE = \

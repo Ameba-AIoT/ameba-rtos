@@ -13,18 +13,6 @@ static bool hci_is_mp = false;
 static uint8_t default_baud[HCI_BAUDRATE_SIZE] = {0x1d, 0x70, 0x00, 0x00}; //115200
 static uint8_t work_baud[HCI_BAUDRATE_SIZE] = {0};
 
-#define LE_ARRAY_TO_UINT16(_data, _array)  {              \
-        _data = ((uint16_t)(*(_array + 0)) << 0) |        \
-                ((uint16_t)(*(_array + 1)) << 8);         \
-    }
-
-#define LE_ARRAY_TO_UINT32(_data, _array)    {            \
-        _data = ((uint32_t)(*(_array + 0)) <<  0) |       \
-                ((uint32_t)(*(_array + 1)) <<  8) |       \
-                ((uint32_t)(*(_array + 2)) << 16) |       \
-                ((uint32_t)(*(_array + 3)) << 24);        \
-    }
-
 extern const unsigned char rtlbt_fw[];
 extern unsigned int rtlbt_fw_len;
 extern const unsigned char rtlbt_mp_fw[];
@@ -156,13 +144,13 @@ static void _parse_patch_section(uint8_t *p_buf, uint32_t *p_fw_len, SECTION_OPC
 	uint8_t eco;
 	uint32_t payload_len;
 
-	LE_ARRAY_TO_UINT16(number, p_buf);
+	LE_TO_UINT16(number, p_buf);
 
 	position = p_buf + sizeof(number) + sizeof(reserve);
 	for (uint16_t i = 0; i < number; i++) {
 		eco = *(position);
-		LE_ARRAY_TO_UINT32(payload_len, position + sizeof(patch_node->eco) + sizeof(patch_node->priority) + \
-						   sizeof(patch_node->key_id) + sizeof(patch_node->reserve));
+		LE_TO_UINT32(payload_len, position + sizeof(patch_node->eco) + sizeof(patch_node->priority) + \
+					 sizeof(patch_node->key_id) + sizeof(patch_node->reserve));
 
 		if (eco == patch_chip_id) {
 			patch_node = (PATCH_NODE *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(PATCH_NODE));
@@ -210,7 +198,7 @@ static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
 	uint32_t fw_len = 0;
 	bool found_security_header = false;
 
-	LE_ARRAY_TO_UINT32(section_num, p_buf);
+	LE_TO_UINT32(section_num, p_buf);
 
 	if (section_num == 0) {
 		BT_LOGE("Section num error!\r\n");
@@ -218,8 +206,8 @@ static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
 	} else {
 		p_section = p_buf + sizeof(section_num);
 		for (i = 0; i < section_num; i++) {
-			LE_ARRAY_TO_UINT32(opcode, p_section);
-			LE_ARRAY_TO_UINT32(length, p_section + sizeof(opcode));
+			LE_TO_UINT32(opcode, p_section);
+			LE_TO_UINT32(length, p_section + sizeof(opcode));
 
 			switch (opcode) {
 			case OPCODE_PATCH_SNIPPETS:
@@ -255,8 +243,8 @@ static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
 		if (patch_key_id != 0 && found_security_header == false) {
 			p_section = p_buf + sizeof(section_num);
 			for (i = 0; i < section_num; i++) {
-				LE_ARRAY_TO_UINT32(opcode, p_section);
-				LE_ARRAY_TO_UINT32(length, p_section + sizeof(opcode));
+				LE_TO_UINT32(opcode, p_section);
+				LE_TO_UINT32(length, p_section + sizeof(opcode));
 
 				if (opcode == OPCODE_DUMMY_HEADER) {
 					_parse_patch_section(p_section + sizeof(opcode) + sizeof(length), &fw_len, OPCODE_DUMMY_HEADER, NULL, p_patch_node_head);
@@ -324,8 +312,8 @@ static uint8_t _get_patch_info(void)
 		}
 	}
 
-	LE_ARRAY_TO_UINT32(version_date, patch_info->patch_buf + sizeof(patch_sig_v2));
-	LE_ARRAY_TO_UINT32(version_time, patch_info->patch_buf + sizeof(patch_sig_v2) + sizeof(version_date));
+	LE_TO_UINT32(version_date, patch_info->patch_buf + sizeof(patch_sig_v2));
+	LE_TO_UINT32(version_time, patch_info->patch_buf + sizeof(patch_sig_v2) + sizeof(version_date));
 	BT_LOGA("FW Version: %d%d\r\n", version_date, version_time);
 
 	fw_len = _parse_patch(info->patch_buf + sizeof(patch_sig_v2) + sizeof(version_date) + sizeof(version_time), &info->head_node);
@@ -559,10 +547,10 @@ uint16_t hci_get_body_len(const void *hdr, uint8_t type)
 	} else if (type == HCI_EVT) {
 		len = ((const struct hci_evt_hdr *)hdr)->len;
 	} else if (type == HCI_ISO) {
-		len = ((const struct hci_iso_hdr *)hdr)->len;
+		LE_TO_UINT16(len, &(((const struct hci_iso_hdr *)hdr)->len));
 		len &= 0x3FFF;
 	} else if (type == HCI_ACL) {
-		len = ((const struct hci_acl_hdr *)hdr)->len;
+		LE_TO_UINT16(len, &(((const struct hci_acl_hdr *)hdr)->len));
 	} else if (type == HCI_SCO) {
 		len = ((const struct hci_sco_hdr *)hdr)->len;
 	}

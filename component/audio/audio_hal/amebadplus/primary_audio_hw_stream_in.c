@@ -328,11 +328,11 @@ static int ConfigurePureData(struct PrimaryAudioHwStreamIn *cap)
 	if (cap->requested_channels == 3) {
 		cap->config.channels = 4;
 	} else if (cap->requested_channels >= 10) {
-		if (AUDIO_I2S_IN_MULTIIO_EN) {
-			cap->config.channels = 8;
-		} else {
+		#if AUDIO_I2S_CHANNELS_BISECT
 			cap->config.channels = cap->requested_channels / 2;
-		}
+		#else
+			cap->config.channels = 8;
+		#endif
 		cap->config_extra.channels = cap->requested_channels - cap->config.channels;
 		cap->config.need_sync_start = true;
 		cap->config_extra.need_sync_start = true;
@@ -593,7 +593,21 @@ static int CheckInputParameters(uint32_t sample_rate, enum AudioHwFormat format,
 		return HAL_OSAL_ERR_INVALID_PARAM;
 	}
 
-	if (AUDIO_I2S_IN_MULTIIO_EN) {
+	#if AUDIO_I2S_CHANNELS_BISECT
+		switch (channel_count) {
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 6:
+		case 8:
+		case 12:
+		case 16:
+			break;
+		default:
+			return HAL_OSAL_ERR_INVALID_PARAM;
+		}
+	#else
 		switch (channel_count) {
 		case 1:
 		case 2:
@@ -609,21 +623,7 @@ static int CheckInputParameters(uint32_t sample_rate, enum AudioHwFormat format,
 		default:
 			return HAL_OSAL_ERR_INVALID_PARAM;
 		}
-	} else {
-		switch (channel_count) {
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 6:
-		case 8:
-		case 12:
-		case 16:
-			break;
-		default:
-			return HAL_OSAL_ERR_INVALID_PARAM;
-		}
-	}
+	#endif
 
 	switch (sample_rate) {
 	case 8000:

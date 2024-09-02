@@ -25,18 +25,18 @@ typedef void (*rtk_bt_ps_callback)(void);
  */
 
 /**
-* @brief     BT enable power save.
+* @brief     BT release wakelock.
 * @param     None
 * @return    None
 */
-void rtk_bt_enable_power_save(void);
+void rtk_bt_release_wakelock(void);
 
 /**
-* @brief     BT disable power save.
+* @brief     BT acquire wakelock.
 * @param     None
 * @return    None
 */
-void rtk_bt_disable_power_save(void);
+void rtk_bt_acquire_wakelock(void);
 
 /**
 * @brief     BT power save init.

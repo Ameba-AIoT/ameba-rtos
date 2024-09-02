@@ -6,8 +6,8 @@
  *  This module is a confidential and proprietary property of RealTek and
  *  possession or use of this module requires written permission of RealTek.
  */
-#ifndef _AMEBA_BOOT_OTA_H_
-#define _AMEBA_BOOT_OTA_H_
+#ifndef _AMEBA_OTA_KM4_H_
+#define _AMEBA_OTA_KM4_H_
 #include "boot_security_km4.h"
 
 #define KEYID_NSPE				0

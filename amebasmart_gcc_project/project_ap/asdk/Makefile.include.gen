@@ -27,6 +27,12 @@ BASEDIR		= $(ROOTDIR)/../../..
 KM0_BUILDDIR	= $(ROOTDIR)/../../project_lp
 KM4_BUILDDIR	= $(ROOTDIR)/../../project_hp
 
+ifeq ($(CONFIG_AS_INIC_AP), y)
+AP_IMAGEDIR		= $(ROOTDIR)/../../project_ap/asdk/image
+else
+AP_IMAGEDIR		= $(KM4_BUILDDIR)/asdk/image
+endif
+
 TARGETDIR	=$(BASEDIR)/component/soc/amebasmart
 BOOTLOADER	=$(BASEDIR)/component/soc/amebasmart/bootloader
 UTILITYDIR	= $(ROOTDIR)/gnu_utility
@@ -62,6 +68,7 @@ PREPENDTOOL		= python $(IMAGESCRIPTDIR)/axf2bin.py prepend_header
 OTAPREPENDTOOL  = python $(IMAGESCRIPTDIR)/axf2bin.py ota_prepend_header
 PADTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py pad
 IMAGETOOL = python $(IMAGESCRIPTDIR)/axf2bin.py imagetool
+COMPRESSTOOL = python $(IMAGESCRIPTDIR)/axf2bin.py compress
 LXDIALOG_CYGWIN_STATIC 	= $(UTILITYDIR)/lxdialog_prebuilt/lxdialog_cygwin_x86_static.exe
 COMPILEOS		= $(shell uname -o)
 COMPILEOS_CYGWIN	= $(shell uname -o | cut -c 1-6)

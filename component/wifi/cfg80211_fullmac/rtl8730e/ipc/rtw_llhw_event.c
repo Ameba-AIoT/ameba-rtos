@@ -108,10 +108,10 @@ static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, str
 		cfg80211_rtw_connect_indicate(flags, buf, buf_len);
 	}
 
-	if (event == WIFI_EVENT_DISCONNECT) {
-		disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
-		dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
-		if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
+	if ((event == WIFI_EVENT_JOIN_STATUS) && ((flags == RTW_JOINSTATUS_FAIL) || (flags == RTW_JOINSTATUS_DISCONNECT))) {
+		if (flags == RTW_JOINSTATUS_DISCONNECT) {
+			disassoc_reason = (u16)(((struct rtw_event_disconn_info_t *)buf)->disconn_reason && 0xffff);
+			dev_dbg(global_idev.fullmac_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			cfg80211_rtw_disconnect_indicate(disassoc_reason, 1);
 		}
 		if (global_idev.mlme_priv.b_in_disconnect) {
@@ -426,9 +426,6 @@ void llhw_event_task(unsigned long data)
 		break;
 	case INIC_API_SCAN_EACH_REPORT_USER_CALLBACK:
 		//iiha_scan_each_report_cb_hdl(event_priv, p_recv_msg);
-		break;
-	case INIC_API_AUTO_RECONNECT:
-		//iiha_autoreconnect_hdl(event_priv, p_recv_msg);
 		break;
 	case INIC_API_AP_CH_SWITCH:
 		//iiha_ap_ch_switch_hdl(event_priv, p_recv_msg);

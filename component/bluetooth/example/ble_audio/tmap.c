@@ -65,7 +65,7 @@ static rtk_bt_le_create_conn_param_t tmap_def_conn_param = {
 };
 #endif
 /* Define TMAP extended adv data default length */
-#define LE_AUDIO_TMAP_EXT_ADV_DATA_DEFAULT_LEN         3
+#define LE_AUDIO_TMAP_EXT_ADV_DATA_DEFAULT_LEN         7
 static uint8_t tmap_def_adv_data[RTK_LE_AUDIO_ADV_LEN_MAX] = {
 	0x02, //AD len
 	RTK_BT_LE_GAP_ADTYPE_FLAGS, //AD types
@@ -160,6 +160,8 @@ app_bt_le_audio_acceptor_info_t g_tmap_bmr_info = {
 	.p_bap_bro_sink_info = &app_bap_bro_sink_info,
 	.status = 0
 };
+
+static rtk_bt_le_audio_bis_info_t sync_bis_info = {0};
 
 static uint8_t app_tmap_pac_sink_codec[] = {
 	//Number_of_PAC_records
@@ -889,6 +891,7 @@ static uint16_t app_bt_le_audio_tmap_broadcast_media_receiver_setup_data_path(rt
 	if (ret != RTK_BT_OK) {
 		BT_LOGE("[APP] rtk_bt_le_audio_sync_get_bis_info fail,ret = 0x%x\r\n", ret);
 	}
+	sync_bis_info = bis_info;
 	//set up iso data path
 	for (i = 0; i < bis_info.num_bis; i++) {
 		bis_idx = bis_info.bis_conn_info[i].bis_idx;
@@ -917,6 +920,28 @@ static uint16_t app_bt_le_audio_tmap_broadcast_media_receiver_setup_data_path(rt
 		}
 	}
 
+	return ret;
+}
+
+static uint16_t app_bt_le_audio_tmap_broadcast_media_receiver_remove_data_path(rtk_bt_le_audio_sync_handle_t sync_handle)
+{
+	uint8_t i = 0;
+	uint16_t ret = 0;
+	uint16_t bis_conn_handle = 0;
+	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
+	if (!sync_handle) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(sync_handle);
+	if (!p_sync_dev_info) {
+		BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, sync_handle);
+		return RTK_BT_FAIL;
+	}
+	//remove iso data path
+	for (i = 0; i < sync_bis_info.num_bis; i++) {
+		bis_conn_handle = sync_bis_info.bis_conn_info[i].bis_conn_handle;
+		app_bt_le_audio_iso_data_path_remove(bis_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX);
+	}
 	return ret;
 }
 
@@ -1802,6 +1827,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			app_bt_le_audio_tmap_decode_data_control(true);
 		} else if (param->sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED) {
 			BT_LOGA("[APP] broadcast sink big sync termiated\r\n");
+			ret = app_bt_le_audio_tmap_broadcast_media_receiver_remove_data_path(param->sync_handle);
+			BT_LOGA("[APP] app_bt_le_audio_tmap_broadcast_media_receiver_remove_data_path %s after big sync terminated! ret: 0x%x\r\n",
+					((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			g_tmap_bmr_info.status = RTK_BLE_AUDIO_ACCEPTOR_BIG_SYNC_TERMINATE;
 			ret = rtk_bt_le_audio_sync_release(param->sync_handle);
 			BT_LOGA("[APP] rtk_bt_le_audio_sync_release %s, ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
@@ -2190,35 +2218,53 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			break;
 		}
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN: {
-			if (tmap_role & RTK_BT_LE_AUDIO_TMAP_ROLE_UMS) {
-				BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN\r\n");
+			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN\r\n");
+			app_bt_le_audio_group_list_remove_dev(param->group_handle, param->device_handle);
+			if (p_group_info->dev_num == 0) {
+				// release stream session
+				if (p_group_info->stream_session_handle) {
+					rtk_bt_le_audio_stream_session_release(p_group_info->stream_session_handle);
+					BT_LOGA("%s: stream_session_handle:0x%x released\r\n", __func__, p_group_info->stream_session_handle);
+					p_group_info->stream_session_handle = NULL;
+				} else {
+					BT_LOGE("%s: stream_session_handle is NULL \r\n", __func__);
+				}
+				// stop stream
 				app_bt_le_audio_tmap_encode_data_control(false);
 				if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
-					//deinit rx thread
 					app_bt_le_audio_tmap_decode_data_control(false);
 				}
 			}
-			app_bt_le_audio_group_list_remove_dev(param->group_handle, param->device_handle);
+			if (tmap_role & RTK_BT_LE_AUDIO_TMAP_ROLE_UMS) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
-			ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
-			BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
-			// transfer to ext scanning state
-			app_bt_le_audio_scan_dev_list_remove_all();
-			csip_discover_flag = true;
-			ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
-			if (RTK_BT_OK == ret) {
-				ret = rtk_bt_le_gap_start_ext_scan();
-			}
-			BT_LOGA("[APP] %s: start ext scan in csis group(%08x) %s \r\n", __func__, param->group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
-			// set ext scan time out
-			if (tmap_ext_scan_timer) {
-				tmap_ext_scan_time_remaining = 10;
-				if (false == osif_timer_start(&tmap_ext_scan_timer)) {
-					BT_LOGE("[APP] %s osif_timer_start fail \r\n", __func__);
+				ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
+				BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
+				// transfer to ext scanning state
+				app_bt_le_audio_scan_dev_list_remove_all();
+				csip_discover_flag = true;
+				ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);
+				if (RTK_BT_OK == ret) {
+					ret = rtk_bt_le_gap_start_ext_scan();
 				}
-				BT_LOGA("[APP] %s: ext scan timer start\r\n", __func__);
-			}
+				BT_LOGA("[APP] %s: start ext scan in csis group(%08x) %s \r\n", __func__, param->group_handle, (RTK_BT_OK != ret) ? "fail" : "ok");
+				// set ext scan time out
+				if (tmap_ext_scan_timer) {
+					tmap_ext_scan_time_remaining = 10;
+					if (false == osif_timer_start(&tmap_ext_scan_timer)) {
+						BT_LOGE("[APP] %s osif_timer_start fail \r\n", __func__);
+					}
+					BT_LOGA("[APP] %s: ext scan timer start\r\n", __func__);
+				}
+#else
+				if (p_group_info->dev_num == 0) {
+					// release group when all device disconnect
+					rtk_bt_le_audio_group_release(g_tmap_ums_info.group_handle);
+					BT_LOGA("%s: group handle 0x%x deleted \r\n", __func__, g_tmap_ums_info.group_handle);
+					app_bt_le_audio_group_list_remove(g_tmap_ums_info.group_handle);
+					g_tmap_ums_info.group_handle = NULL;
+				}
 #endif
+			}
 			break;
 		}
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE: {

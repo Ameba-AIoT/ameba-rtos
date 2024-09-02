@@ -833,7 +833,7 @@ static void *bt_power_test_wake_timer_hdl = NULL;
 static void bt_power_test_wake_timeout_handler(void *arg)
 {
 	(void)arg;
-	rtk_bt_enable_power_save();
+	rtk_bt_release_wakelock();
 }
 
 static void bt_power_test_suspend(void)
@@ -848,7 +848,7 @@ static void bt_power_test_resume(void)
 	if (BT_POWER_TEST_WAKE_TIME != 0) {
 		osif_timer_restart(&bt_power_test_wake_timer_hdl, BT_POWER_TEST_WAKE_TIME * 1000);
 	} else {
-		rtk_bt_enable_power_save();
+		rtk_bt_release_wakelock();
 	}
 }
 

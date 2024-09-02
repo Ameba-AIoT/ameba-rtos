@@ -413,3 +413,11 @@ int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info)
 	return -1;
 }
 
+int wifi_get_tx_power(u8 rate, s8 *txpwr)
+{
+	UNUSED(rate);
+	UNUSED(txpwr);
+	call_noused = __LINE__;
+	return -1;
+}
+

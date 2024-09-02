@@ -97,7 +97,7 @@ endif
 ifneq ($(CONFIG_MEDIA_CODEC_HAAC)$(CONFIG_MEDIA_LITE_CODEC_HAAC),)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_haac.a
 endif
-ifeq ($(CONFIG_MEDIA_CODEC_OPUS),y)
+ifneq ($(CONFIG_MEDIA_CODEC_OPUS)$(CONFIG_OPUS_LIB),)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_opus.a
 endif
 ifeq ($(CONFIG_MEDIA_DEMUX_FLAC),y)
@@ -106,8 +106,15 @@ endif
 ifeq ($(CONFIG_MEDIA_DEMUX_OGG),y)
 LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_vorbisdec.a
 endif
-
 endif
+
+ifeq ($(CONFIG_SPEEX_LIB),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_speexdsp.a
+endif
+ifeq ($(CONFIG_OPUS_LIB),y)
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_opus.a
+endif
+
 
 ifeq ($(CONFIG_AUDIO_MIXER),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_mixer.a

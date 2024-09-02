@@ -121,3 +121,104 @@ A2DP sink + TMAP Broadcast Media Sender Test ATCMD
     2.2 scan for the broadcast:                                  AT+BLEBAP=broadcast,sink,escan,1
     2.3 PA sync to the broadcast stream:                         AT+BLEBAP=broadcast,sink,sync_start,<bd_addr type>,<bd_addr>  e.g. AT+BLEBAP=broadcast,sink,sync_start,0,00E04C800427
 
+
+##################################################################################
+#                                                                                #
+#                           tmap a2dp source demo                                  #
+#                                                                                #
+##################################################################################
+
+GCC menuconfig 
+~~~~~~~~~~~
+1. for CA32 single core:
+        make menuconfig --> CONFIG Application Processor --> Select AP Core "CA32"
+        make menuconfig --> BT Mode Selection is "DUAL_MODE"--> enable BT Example Demo "BT A2DP BLE AUDIO TMAP"
+        make menuconfig --> CONGIG WIFI --> Enable Wifi
+        make menuconfig --> AP Config --> MENUCONFIG FOR AP CONFIG --> Audio Config -> Enable Audio Framework and select Audio Interfaces to Mixer
+2. for KM4 single core:
+    2.1 Config Boot_AP_Enbale in component/soc/amebasmart/usrcfg/ameba_bootcfg.c
+        change:
+                u8 Boot_AP_Enbale = ENABLE;
+        to:
+                u8 Boot_AP_Enbale = DISABLE;
+    2.2 Config Boot_AP_Enbale in amebasmart_layout.ld
+        change:
+                KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6015B000 - 0x60000020
+        to:
+                KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6025B000 - 0x60000020
+    2.3 make menuconfig --> CONFIG Application Processor --> Select AP Core "KM4" 
+                        --> BT Mode Selection is "DUAL_MODE"--> enable BT Example Demo "BT A2DP BLE AUDIO TMAP"
+        make menuconfig --> CONGIG WIFI --> Enable Wifi
+        make menuconfig --> HP Config --> MENUCONFIG FOR HP CONFIG --> Audio Config -> Enable Audio Framework and select Audio Interfaces to Mixer
+3. GCC : use CMD "make clean && make all" in auto_build to compile example
+
+TMAP unicast media receiver + A2DP source Test ATCMD
+~~~~~~~~~~~
+1.TMAP unicast media receiver + A2DP source demo
+
+    DUT:            TMAP unicast media receiver + A2DP source
+    SUT1:           A2DP sink
+    SUT2:           TMAP unicast media sender 
+
+
+Before test, TMAP unicast media sender (SUT2) need to be configured as following:
+
+CIS configuration:
+    (1) CIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 10 ms
+        Config the following Macros in app_bt_le_audio_common.h
+            change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+
+    (2) CIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 20 ms
+        Config the following Macros in app_bt_le_audio_common.h
+            change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+            change   LEA_CIG_ISO_INTERVAL_CONFIG                   to         ISO_INTERVAL_20_MS
+
+    1.1 enable DUT:                                    AT+BTDEMO=a2dp_tmap,umr,1
+
+    1.2 enable A2DP sink device (SUT1):                AT+BTDEMO=a2dp,snk,1
+
+    1.3 DUT connect to A2DP sink device (SUT1):
+        1.3.1 scan:                                    AT+BRGAP=inquiry_start,0,8 
+        1.3.2 pair:                                    AT+BTA2DP=conn,<bd_address>      e.g. AT+BTA2DP=conn,00E04C800427
+        1.3.3 play music:                              AT+BTA2DP=start,<bd_address>     e.g. AT+BTA2DP=start,00E04C800427
+
+    1.4 SUT2 establish connection with DUT and start unicast stream
+        1.4.1 SUT2 enable                              AT+BTDEMO=tmap,ums,1
+        1.4.2 SUT2 start ext scan                      AT+BLEBAP=unicast,client,escan,1
+        1.4.3 SUT2 stop ext scan                       AT+BLEBAP=unicast,client,escan,0
+        1.4.4 SUT2 connect to DUT                      AT+BLEGAP=conn,<address type>,<bd_addr>
+        1.4.5 start unicast unidirectional stream      AT+BLEBAP=unicast,client,start,<group id>,<stream mode>
+
+TMAP broadcast media receiver + A2DP source Test ATCMD
+~~~~~~~~~~~
+2.TMAP broadcast media receiver + A2DP source demo
+
+    DUT:            TMAP broadcast media receiver + A2DP source
+    SUT1:           A2DP sink
+    SUT2:           TMAP broadcast media sender 
+
+Before test, TMAP broadcast media sender (SUT2) need to be configured as following:
+
+    BIS configuration : BIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 30 ms 
+        Config the following Macros in app_bt_le_audio_common.h
+        change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
+        change   LEA_BIG_ISO_INTERVAL_CONFIG                   to         ISO_INTERVAL_30_MS
+
+    2.1 enable DUT:                                    AT+BTDEMO=a2dp_tmap,bmr,1
+
+    2.2 enable A2DP sink device (SUT1):                AT+BTDEMO=a2dp,snk,1
+
+    2.3 DUT connect to A2DP sink device (SUT1):
+        2.3.1 scan:                                    AT+BRGAP=inquiry_start,0,8 
+        2.3.2 pair:                                    AT+BTA2DP=conn,<bd_address>      e.g. AT+BTA2DP=conn,00E04C800427
+        2.3.3 play music:                              AT+BTA2DP=start,<bd_address>     e.g. AT+BTA2DP=start,00E04C800427
+
+    2.4 TMAP broadcast media sender(SUT2) start broadcast
+        2.4.1 enable                                              AT+BTDEMO=tmap,bms,1
+        2.4.2 start broadcast stream                              AT+BLEBAP=broadcast,source,start
+
+    2.5 DUT start sync to SUT2
+        2.5.1  scan broadcast source start                        AT+BLEBAP=broadcast,sink,escan,1
+        2.5.2  PA sync && big sync with bap broadcast source      AT+BLEBAP=broadcast,sink,sync_start,<bd_addr type>,<bd_addr>
+        2.5.3  terminate sync with bap broadcast source           AT+BLEBAP=broadcast,sink,sync_term,<bd_addr type>,<bd_addr>
+

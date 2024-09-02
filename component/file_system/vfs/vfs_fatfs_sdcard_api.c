@@ -1,12 +1,13 @@
 #include "platform_autoconf.h"
 #include "vfs.h"
 #include "vfs_fatfs.h"
-#if FATFS_DISK_SD
+#if defined(FATFS_DISK_SD) && FATFS_DISK_SD
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "ff.h"
 #include "ameba_sd.h"
 #include "os_wrapper.h"
+#include "diag.h"
 
 static fatfs_sd_params_t fatfs_sd_param;
 static uint8_t fatfs_sd_init_done = 0;
@@ -23,7 +24,7 @@ int fatfs_sd_is_inited(void)
 int fatfs_sd_close(void)
 {
 	if (fatfs_sd_init_done) {
-		if (f_mount(NULL, fatfs_sd_param.drv, 1) != FR_OK) {
+		if (f_unmount(fatfs_sd_param.drv) != FR_OK) {
 			VFS_DBG(VFS_ERROR, "FATFS unmount logical drive fail.");
 		}
 

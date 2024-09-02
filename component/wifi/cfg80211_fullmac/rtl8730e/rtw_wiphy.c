@@ -157,7 +157,11 @@ struct ieee80211_iface_combination rtw_combinations[] = {
 		.limits = rtw_limits,
 		.n_limits = ARRAY_SIZE(rtw_limits),
 		.max_interfaces = 2,
+#ifdef CONFIG_MCC
+		.num_different_channels = 2,
+#else
 		.num_different_channels = 1,
+#endif
 	},
 };
 #endif

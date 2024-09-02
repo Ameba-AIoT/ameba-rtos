@@ -23,7 +23,7 @@
 #include "lwip_netconf.h"
 
 #define ENABLE_TCPIP_SSL                  0
-#define ATCMD_SSL_DEBUG_LEVEL             0
+#define ATCMD_SSL_DEBUG_LEVEL             RTK_LOG_DEBUG //0
 #define ENABLE_TCPIP_AUTOLINK             0
 
 #ifdef CONFIG_LWIP_LAYER

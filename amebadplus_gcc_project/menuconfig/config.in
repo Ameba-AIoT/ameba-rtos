@@ -5,7 +5,7 @@
 # 1. "make menuconfig" will see this file.
 # 2. make menuconfig save file will produce "/.config" and "/autoconf.h" two files.
 # 3. makefile will see the "/.config" file
-# 4. C code will see the "/autoconf.h"  
+# 4. C code will see the "/autoconf.h"
 #
 # in this file, declare variable xxx, please add the prefix "CONFIG_" word.  Example: "CONFIG_XXX"
 
@@ -33,7 +33,7 @@ if [ "$CONFIG_TRUSTZONE_FOR_KM4" = "y" ]; then
 	if [ "$CONFIG_TFM_TEST_ENABLE_FOR_KM4" = "y" ]; then
 		choice 'TFM Test Suite Select'	" Regression_Tests	CONFIG_TFM_TEST_REGRESSION_FOR_KM4 \
 										  PSA_API_Tests		CONFIG_TFM_TEST_PSA_API_FOR_KM4 \
-										" 
+										"
 		if [ "$CONFIG_TFM_TEST_REGRESSION_FOR_KM4" = "y" ]; then
 			bool " TFM secure regression tests"				CONFIG_TFM_TEST_S_FOR_KM4
 			bool " TFM non-secure regression tests"			CONFIG_TFM_TEST_NS_FOR_KM4
@@ -42,7 +42,7 @@ if [ "$CONFIG_TRUSTZONE_FOR_KM4" = "y" ]; then
 			choice 'TEST_PSA_API Select'	" STORAGE				CONFIG_TEST_PSA_API_STORAGE_FOR_KM4 \
 											  CRYPTO				CONFIG_TEST_PSA_API_CRYPTO_FOR_KM4 \
 											  INITIAL_ATTESTATION	CONFIG_TEST_PSA_API_INITIAL_ATTESTATION_FOR_KM4 \
-											" 
+											"
 		fi
 	fi
 fi
@@ -97,12 +97,14 @@ if [ "$CONFIG_VFS_FATFS_INCLUDED" = "y" ]; then
 choice 'FATFS Memory Type'     "
                                 FlASH           FATFS_DISK_FLASH \
                                 "
+bool "FATFS within APP Image"				CONFIG_FATFS_WITHIN_APP_IMG
 fi
 endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG OTA OPTION'
-bool "Upgrade Bootloader"		CONFIG_UPGRADE_BOOTLOADER
+bool "Upgrade Bootloader"				CONFIG_UPGRADE_BOOTLOADER
+bool "Support Compressed APP Image"		CONFIG_COMPRESS_OTA_IMG
 endmenu
 
 comment '--------------Network config------------'
@@ -147,7 +149,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_INIC_INTF_SDIO y
 		elif [ "$CONFIG_SPI_FULLMAC" = "y" ]; then
 			define_bool CONFIG_INIC_INTF_SPI y
-		else 
+		else
 			define_bool CONFIG_INIC_INTF_USB y
 		fi
 		if [ "$CONFIG_KM0_AS_NP" = "y" ]; then
@@ -162,7 +164,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 			define_bool CONFIG_WIFI_FW_EN_FOR_KM4 y
 		fi
 	else
-		#	KM0 firmware follow WLAN menu	
+		#	KM0 firmware follow WLAN menu
 		if [ "$CONFIG_MP_SHRINK" = "y" ]; then
 			define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
 		else
@@ -177,7 +179,7 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 		define_bool CONFIG_LWIP_LAYER_FOR_KM4 y
 		define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
 	fi
-	
+
 	if [ "$CONFIG_WIFI_KM4_SINGLE_CORE" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_KM4 y
 		define_bool CONFIG_SINGLE_CORE_WIFI_FOR_KM4 y
@@ -215,7 +217,7 @@ else
 	define_bool CONFIG_AS_INIC_NP_FOR_KM0 y
 	define_bool CONFIG_LWIP_LAYER n
 
-#	KM0 firmware follow WLAN menu	
+#	KM0 firmware follow WLAN menu
 	define_bool CONFIG_FW_DRIVER_COEXIST_FOR_KM0 n
 	define_bool CONFIG_WIFI_FW_EN_FOR_KM0 n
 fi
@@ -223,51 +225,51 @@ endmenu
 
 mainmenu_option next_comment
 comment '< CONFIG BT'
-bool "Enable BT"								CONFIG_BT_MENU
+bool "Enable BT"												CONFIG_BT_MENU
 # !!Notice that "[ ]" both side and "$CONFIG_XXX" should has a whitespace
 if [ "$CONFIG_BT_MENU" = "y" ]; then
 	define_bool CONFIG_BT_FOR_KM4 y
 	define_bool CONFIG_FTL_ENABLED_FOR_KM4 y
 	if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
-		define_bool CONFIG_BT_ENABLE_FAST_MP_FOR_KM4 y
+		define_bool CONFIG_BT_ENABLE_FAST_MP y
 	fi
-#	bool "  Enable iNIC"					CONFIG_BT_INIC
+#	bool "  Enable iNIC"										CONFIG_BT_INIC
 	if [ "$CONFIG_BT_INIC" = "y" ]; then
-		choice 'Interface'	"Uart_H4							CONFIG_BT_INIC_H4_FOR_KM4 \
-							Uart_H5								CONFIG_BT_INIC_H5_FOR_KM4 \
+		choice 'Interface'	"Uart_H4							CONFIG_BT_INIC_H4 \
+							Uart_H5								CONFIG_BT_INIC_H5 \
 							" Uart_H4
 	else
-		bool "BT Advanced Feature"					CONFIG_BT_ADVANCED_FEATURE_MENU
+		bool "BT Advanced Feature"								CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
-			bool "  Exclude BT AT Command"			CONFIG_BT_EXCLUDE_AT_COMMAND_FOR_KM4
-	#		bool "  Use Zephyr BT Stack"			CONFIG_BT_ZEPHYR_FOR_KM4
+			bool "  Exclude BT AT Command"						CONFIG_BT_EXCLUDE_AT_COMMAND
+#			bool "  Use Zephyr BT Stack"						CONFIG_BT_ZEPHYR
 		fi
-		bool "BT Example Demo"						CONFIG_BT_EXAMPLE_DEMO_MENU
+		bool "BT Example Demo"									CONFIG_BT_EXAMPLE_DEMO_MENU
 		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
-			bool "  BLE Peripheral"					CONFIG_BT_PERIPHERAL_FOR_KM4
-			bool "  BLE Central"					CONFIG_BT_CENTRAL_FOR_KM4
-			bool "  BLE Scatternet"					CONFIG_BT_SCATTERNET_FOR_KM4
-	#		bool "  BLE Throughput"					CONFIG_BT_THROUGHPUT_FOR_KM4
-	#		bool "  BLE Transfer Module"			CONFIG_BT_TRANSFER_MODULE_FOR_KM4
-			bool "  BLE Mesh Provisioner"									CONFIG_BT_MESH_PROVISIONER_MENU
-			bool "  BLE Mesh Device"										CONFIG_BT_MESH_DEVICE_MENU
-			bool "  BLE Mesh Provisioner and BLE Scatternet"				CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
-			bool "  BLE Mesh Device and BLE Scatternet"						CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
+			bool "  BLE Peripheral"								CONFIG_BT_PERIPHERAL
+			bool "  BLE Central"								CONFIG_BT_CENTRAL
+			bool "  BLE Scatternet"								CONFIG_BT_SCATTERNET
+#			bool "  BLE Throughput"								CONFIG_BT_THROUGHPUT
+#			bool "  BLE Transfer Module"						CONFIG_BT_TRANSFER_MODULE
+			bool "  BLE Mesh Provisioner"						CONFIG_BT_MESH_PROVISIONER_MENU
+			bool "  BLE Mesh Device"							CONFIG_BT_MESH_DEVICE_MENU
+			bool "  BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU
+			bool "  BLE Mesh Device and BLE Scatternet"			CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
 			if [ "$CONFIG_BT_MESH_PROVISIONER_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
+				define_bool CONFIG_BT_MESH_PROVISIONER y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_DEVICE_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
+				define_bool CONFIG_BT_MESH_DEVICE y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT_FOR_KM4 y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SCATTERNET y
+				define_bool CONFIG_BT_MESH_PROVISIONER_SUPPORT y
 			fi
 			if [ "$CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU" = "y" ]; then
-				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET_FOR_KM4 y
-				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT_FOR_KM4 y
+				define_bool CONFIG_BT_MESH_DEVICE_SCATTERNET y
+				define_bool CONFIG_BT_MESH_DEVICE_SUPPORT y
 			fi
 		fi
 	fi
@@ -363,7 +365,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_KM0
 
 if [ "$CONFIG_KERNEL_FOR_KM0" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_KM0 \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_KM0 0
 fi
 endmenu #CONFIG OS
@@ -494,7 +496,7 @@ bool "Enable Kernel"                     CONFIG_KERNEL_FOR_KM4
 
 if [ "$CONFIG_KERNEL_FOR_KM4" = "y" ]; then
 choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_KM4 \
-						"FREERTOS        
+						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_KM4 0
 fi
 endmenu #CONFIG OS
@@ -515,8 +517,9 @@ if [ "$CONFIG_USB_DEVICE_EN_FOR_KM4" = "y" ]; then
 bool "CDC ACM"                          CONFIG_USBD_CDC_ACM_FOR_KM4
 bool "Composite"                        CONFIG_USBD_COMPOSITE_FOR_KM4
 bool "HID"                              CONFIG_USBD_HID_FOR_KM4
+bool "INIC"                             CONFIG_USBD_INIC_FOR_KM4
+bool "UAC(Experimental)"                CONFIG_USBD_UAC_FOR_KM4
 bool "Vendor"                           CONFIG_USBD_VENDOR_FOR_KM4
-bool "INIC"								CONFIG_USBD_INIC_FOR_KM4
 fi
 endmenu
 
@@ -700,6 +703,12 @@ if [ "$CONFIG_AUDIO_FWK_FOR_KM4" = "y" ]; then
 	choice 'Select Audio Interfaces' "Mixer	CONFIG_AUDIO_MIXER_FOR_KM4 \
 								PassThrough	CONFIG_AUDIO_PASSTHROUGH_FOR_KM4"
 fi
+mainmenu_option next_comment
+comment 'Third Party Lib'
+        bool "Speex"        CONFIG_SPEEX_LIB_FOR_KM4
+        bool "OPUS"         CONFIG_OPUS_LIB_FOR_KM4
+endmenu
+
 endmenu
 
 mainmenu_option next_comment

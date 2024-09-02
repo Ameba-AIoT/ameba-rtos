@@ -24,7 +24,7 @@ extern struct netif xnetif[NET_IF_NUM];
 
 extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
-unsigned char ap_ip[4] = {192,168,43,1}, ap_netmask[4] = {255,255,255,0}, ap_gw[4] = {192,168,43,1};
+unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};
 #endif
 
 #ifdef CONFIG_WLAN
@@ -40,9 +40,6 @@ extern int wifi_set_ips_internal(u8 enable);
 #ifdef CONFIG_AS_INIC_AP
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 
-#ifdef CONFIG_WIFI_TUNNEL
-extern int inic_wltunnel_command(char *cmd, unsigned int cmd_len);
-#endif
 #endif
 
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
@@ -160,11 +157,9 @@ static void print_scan_result(rtw_scan_result_t *record)
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
 	at_printf("%s,\r\n", record->SSID.val);
 #else
-	at_printf("%s\t ", (record->bss_type == RTW_BSS_TYPE_ADHOC) ? "Adhoc" : "Infra");
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
 	at_printf(" %d\t ", record->signal_strength);
 	at_printf(" %d\t  ", record->channel);
-	at_printf(" %d\t  ", (unsigned int)record->wps_type);
 	at_printf("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open               " :
 			  (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
 			  (record->security == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" :
@@ -657,9 +652,9 @@ void at_wlstartap_help(void)
 void get_ip_addr(unsigned char *ip, const char *str)
 {
 	ip[0] = (unsigned char) inet_addr(str) & 0xff;
-	ip[1] = (unsigned char) (inet_addr(str) >> 8) & 0xff;
-	ip[2] = (unsigned char) (inet_addr(str) >> 16) & 0xff;
-	ip[3] = (unsigned char) (inet_addr(str) >> 24) & 0xff;
+	ip[1] = (unsigned char)(inet_addr(str) >> 8) & 0xff;
+	ip[2] = (unsigned char)(inet_addr(str) >> 16) & 0xff;
+	ip[3] = (unsigned char)(inet_addr(str) >> 24) & 0xff;
 }
 
 /****************************************************************
@@ -747,7 +742,7 @@ void at_wlstartap(void *arg)
 #ifdef CONFIG_LWIP_LAYER
 		/* ip */
 		else if (0 == strcmp("ip", argv[i])) {
-			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
+			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
 				get_ip_addr(ap_ip, argv[j]);
 				get_ip_addr(ap_gw, argv[j]);
 			} else {
@@ -755,9 +750,8 @@ void at_wlstartap(void *arg)
 				error_no = 2;
 				goto end;
 			}
-		}
-		else if (0 == strcmp("pl", argv[i])) {
-			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE){
+		} else if (0 == strcmp("pl", argv[i])) {
+			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
 				start_ip.addr = inet_addr(argv[j]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid start ip value\r\n");
@@ -765,7 +759,7 @@ void at_wlstartap(void *arg)
 				goto end;
 			}
 
-			if(argv[j + 1] != NULL && inet_addr(argv[j + 1]) != IPADDR_NONE){
+			if (argv[j + 1] != NULL && inet_addr(argv[j + 1]) != IPADDR_NONE) {
 				end_ip.addr = inet_addr(argv[j + 1]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid end ip value\r\n");
@@ -773,20 +767,18 @@ void at_wlstartap(void *arg)
 				goto end;
 			}
 
-			dhcps_set_addr_pool(1,&start_ip,&end_ip);
+			dhcps_set_addr_pool(1, &start_ip, &end_ip);
 			i += 1;
-		}
-		else if (0 == strcmp("gw", argv[i])) {
-			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
+		} else if (0 == strcmp("gw", argv[i])) {
+			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
 				get_ip_addr(ap_gw, argv[j]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid gateway value\r\n");
 				error_no = 2;
 				goto end;
 			}
-		}
-		else if (0 == strcmp("msk", argv[i])) {
-			if(argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
+		} else if (0 == strcmp("msk", argv[i])) {
+			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
 				get_ip_addr(ap_netmask, argv[j]);
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid netmask value\r\n");
@@ -1359,53 +1351,6 @@ end:
 		at_wlps_help();
 	}
 }
-
-#ifdef CONFIG_WIFI_TUNNEL
-/****************************************************************
-AT command process:
-	AT+WLTUNNEL
-	Wifi AT Command:
-	[+WLTUNNEL]:OK
-****************************************************************/
-void at_wltunnel(void *arg)
-{
-	char buf[64] = {0};
-	char *copy = buf;
-	int i = 0;
-	int len = 0;
-	int ret = 0;
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WLTUNNEL] Usage: AT+WLTUNNEL=start,[mode],[bssid],[ssid]/scan/handshake/switch/dump/stop\r\n");
-		ret = -1;
-		goto end;
-	}
-
-	strncpy(copy, arg, sizeof(buf) - 1);
-	len = strlen(copy);
-
-	i = 0;
-	do {
-		if ((*(copy + i) == ',')) {
-			*(copy + i) = ' ';
-		}
-	} while ((i++) < len);
-
-#ifdef CONFIG_AS_INIC_AP
-	ret = inic_wltunnel_command(copy, strlen(copy) + 1);
-#else
-	ret = rtw_wltunnel_command(copy);
-#endif
-
-end:
-	if (ret == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLTUNNEL:");
-	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLTUNNEL:", ret);
-	}
-}
-#endif
-
 #endif /* CONFIG_WLAN */
 
 #ifdef CONFIG_LWIP_LAYER
@@ -1717,9 +1662,6 @@ log_item_t at_wifi_items[ ] = {
 	{"+WLWPS", at_wlwps, {NULL, NULL}},
 #endif
 	{"+WLPS", at_wlps, {NULL, NULL}},
-#ifdef CONFIG_WIFI_TUNNEL
-	{"+WLTUNNEL", at_wltunnel, {NULL, NULL}},
-#endif
 #endif /* CONFIG_WLAN */
 };
 

@@ -117,3 +117,6 @@ CORE_TARGETS: $(OBJS)
 
 analysis:
 	$(MAKE) -C asdk analysis_extract
+
+toolchain:
+	$(MAKE) -C asdk toolchain

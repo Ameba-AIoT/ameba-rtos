@@ -31,9 +31,6 @@ set $CA32_FILE_JF	= 0x00a
 #Load flash download file
 printf "Load flash loader.\n"
 file gnu_utility/gnu_script/target_FPGA.axf
-#Load the file
-#lo
-#restore ./image/rom.bin binary 0x0
 restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x30003020
 #===============================================================================
 
@@ -43,7 +40,6 @@ restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x30003020
 define flash_write
 	printf "flash_write FileName:%x \n", $arg0
 	printf "flash_write FileSize:%d \n", $arg1
-	printf "flash_write FlashAddrForWrite:%x \n", FlashAddrForWrite
 
 	set $FileName = $arg0
 	set $FileSize = $arg1
@@ -52,7 +48,6 @@ define flash_write
 	if ( $TailSize > 0)
 		set $Loopnumber = $Loopnumber + 0x01
 	end
-	printf "FileSize: %x\n",$FileSize
 	printf "Loopnumber = %d\n", $Loopnumber
 	printf "TailSize = %d\n", $TailSize
 	printf "global variables\n"
@@ -64,49 +59,25 @@ define flash_write
 
 	printf "FlashDatSrc:%x\n", $FLASHDATSRC
 	printf "FlashBlockWriteSize:%x\n", FlashBlockWriteSize
-	printf "FlashAddrForWrite:%x\n", FlashAddrForWrite
 
 	printf  "Flash write start...\n"
 	set $Loop = 0
 	while  ($Loop < $Loopnumber)
-    	set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
-    	printf "FILESTARTADDR"
-    	p /x $FILESTARTADDR
-    	p /x FlashAddrForWrite
-    	p /x $Loop
-
+		set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
+		printf "[%d]: write file 0x%x to flash 0x%x\n", $Loop, $FILESTARTADDR, FlashAddrForWrite
 		if ($FileSize == $FILESTARTADDR + $TailSize)
 			set FlashBlockWriteSize = $TailSize
 			set $FILEWRITESIZE = $TailSize
 		end
 
 		if ($FileName == $IMAGE_IMG2_ALL)
-    		restore ./image/km0_km4_app.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FILEWRITESIZE)
+			restore ./image/km0_km4_ca32_app.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FILEWRITESIZE)
 		end
 		if ($FileName == $IMAGE_KM4_BOOT)
 			restore ./image/km4_boot_all.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FILEWRITESIZE)
 		end
 		if ($FileName == $IMAGE_KM4_IMG3)
 			restore ./image/km4_image3_all.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FILEWRITESIZE)
-		end
-		if ($FileName == $IMAGE_CA32_IMG_ALL)
-			restore ../../project_ap/asdk/image/ap_image_all.bin binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
-		end
-		
-		if ($FileName == $IMAGE_CA32_DTB)
-			restore ../../project_ap/asdk/image/cortex-a53.dtb binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
-		end
-		
-		if ($FileName == $IMAGE_CA32_UIMAGE)
-			restore ../../project_ap/asdk/image/uImage binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
-		end
-		
-		if ($FileName == $CA32_FILE_SQ)
-			restore ../../project_ap/asdk/image/initsquashfs.bin  binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
-		end
-    	
-		if ($FileName == $CA32_FILE_JF)
-			restore ../../project_ap/asdk/image/jffs2.img  binary ($FLASHDATSRC-$FILESTARTADDR) $FILESTARTADDR ($FILESTARTADDR + $FLASHDATBUFSIZE)
 		end
 		c
 
@@ -148,8 +119,8 @@ p /x $Temp
 
 set {int}(0xE000EE08) = $Temp
 
-b rtl_flash_download.c:89
-b rtl_flash_download.c:131
+b rtl_flash_download.c:Gdb_Floader_Program_Start
+b rtl_flash_download.c:Gdb_Floader_Program_End
 
 set $pc = 0x9900
 set $sp = 0x30002FFC
@@ -170,26 +141,6 @@ flash_write $IMAGE_IMG2_ALL $FlashFileSize
 set $Img3FileSize =0
 set FlashAddrForWrite =0x1E0000
 flash_write $IMAGE_KM4_IMG3 $Img3FileSize
-
-set $APIMGFileSize =19481
-set FlashAddrForWrite =0x200000
-flash_write $IMAGE_CA32_IMG_ALL $APIMGFileSize
-
-set $DTBFileSize =0
-set FlashAddrForWrite =0x3E0000
-flash_write $IMAGE_CA32_DTB $DTBFileSize
-
-set $UIMAGEFileSize =0
-set FlashAddrForWrite =0x400000
-flash_write $IMAGE_CA32_UIMAGE $UIMAGEFileSize
-
-set $CA32_FILE_SQ_SIZE =0
-set FlashAddrForWrite =0x800000
-flash_write $CA32_FILE_SQ $CA32_FILE_SQ_SIZE
-
-set $CA32_FILE_JF_SIZE =0
-set FlashAddrForWrite =0xC00000
-flash_write $CA32_FILE_JF $CA32_FILE_JF_SIZE
 
 #Tell flashloader complete flag
 set FlashWriteComplete = 0x1

@@ -105,7 +105,7 @@ static void *bt_power_test_wake_timer_hdl = NULL;
 static void bt_power_test_wake_timeout_handler(void *arg)
 {
 	(void)arg;
-	rtk_bt_enable_power_save();
+	rtk_bt_release_wakelock();
 }
 
 static void bt_power_test_suspend(void)
@@ -120,7 +120,7 @@ static void bt_power_test_resume(void)
 	if (BT_POWER_TEST_WAKE_TIME != 0) {
 		osif_timer_restart(&bt_power_test_wake_timer_hdl, BT_POWER_TEST_WAKE_TIME * 1000);
 	} else {
-		rtk_bt_enable_power_save();
+		rtk_bt_release_wakelock();
 	}
 }
 
@@ -154,7 +154,7 @@ static void bt_power_test_deinit(void)
 /***************************************Power Control Test End********************************/
 /********************************************bro sink param*************************************/
 static bool g_app_lea_decode_enable = false;
-
+static rtk_bt_le_audio_bis_info_t sync_bis_info = {0};
 app_bt_le_audio_broadcast_sink_info_t g_bro_sink_info = {
 	.sound_channel = RTK_BT_LE_AUDIO_STEREO,
 	.device_name = "Ameba LE Broadcast Sink S",
@@ -1561,6 +1561,7 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 	if (ret != RTK_BT_OK) {
 		BT_LOGE("[APP] rtk_bt_le_audio_sync_get_bis_info fail,ret = 0x%x\r\n", ret);
 	}
+	sync_bis_info = bis_info;
 	//set up iso data path
 	for (i = 0; i < bis_info.num_bis; i++) {
 		bis_idx = bis_info.bis_conn_info[i].bis_idx;
@@ -1590,6 +1591,28 @@ static uint16_t app_bt_le_audio_broadcast_sink_setup_data_path(rtk_bt_le_audio_s
 		}
 	}
 
+	return ret;
+}
+
+static uint16_t app_bt_le_audio_broadcast_sink_remove_data_path(rtk_bt_le_audio_sync_handle_t sync_handle)
+{
+	uint8_t i = 0;
+	uint16_t ret = 0;
+	uint16_t bis_conn_handle = 0;
+	app_bt_le_audio_sync_dev_info_t *p_sync_dev_info = NULL;
+	if (!sync_handle) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	p_sync_dev_info = app_bt_le_audio_sync_dev_list_find(sync_handle);
+	if (!p_sync_dev_info) {
+		BT_LOGE("[APP] %s not find sync dev info for sync_handle %08x\r\n", __func__, sync_handle);
+		return RTK_BT_FAIL;
+	}
+	//remove iso data path
+	for (i = 0; i < sync_bis_info.num_bis; i++) {
+		bis_conn_handle = sync_bis_info.bis_conn_info[i].bis_conn_handle;
+		app_bt_le_audio_iso_data_path_remove(bis_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX);
+	}
 	return ret;
 }
 
@@ -1757,6 +1780,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			app_bt_le_audio_bap_decode_data_control(true);
 		} else if (param->sync_state == RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED) {
 			BT_LOGA("[APP] broadcast sink big sync termiated\r\n");
+			ret = app_bt_le_audio_broadcast_sink_remove_data_path(param->sync_handle);
+			BT_LOGA("[APP] app_bt_le_audio_broadcast_sink_remove_data_path %s after big sync terminated! ret: 0x%x\r\n",
+					((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			ret = rtk_bt_le_audio_sync_release(param->sync_handle);
 			BT_LOGA("[APP] rtk_bt_le_audio_sync_release %s, ret: 0x%x\r\n", ((RTK_BT_OK != ret) ? "fail" : "ok"), ret);
 			//deinit rx thread
@@ -2230,12 +2256,27 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN:
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN\r\n");
-			app_bt_le_audio_bap_encode_data_control(false);
-			if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
-				//deinit rx thread
-				app_bt_le_audio_bap_decode_data_control(false);
-			}
+			//remove device in group list
 			app_bt_le_audio_group_list_remove_dev(param->group_handle, param->device_handle);
+			if (p_group_info->dev_num == 0) {
+				// release stream session when group released
+				if (p_group_info->stream_session_handle) {
+					rtk_bt_le_audio_stream_session_release(p_group_info->stream_session_handle);
+					BT_LOGA("%s: stream_session_handle:0x%x released\r\n", __func__, p_group_info->stream_session_handle);
+					p_group_info->stream_session_handle = NULL;
+				} else {
+					BT_LOGE("%s: stream_session_handle is NULL \r\n", __func__);
+				}
+				rtk_bt_le_audio_group_release(g_uni_cli_info.group_handle);
+				BT_LOGA("%s: group handle 0x%x deleted \r\n", __func__, g_uni_cli_info.group_handle);
+				app_bt_le_audio_group_list_remove(g_uni_cli_info.group_handle);
+				g_uni_cli_info.group_handle = NULL;
+				// stop stream when group released
+				app_bt_le_audio_bap_encode_data_control(false);
+				if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
+					app_bt_le_audio_bap_decode_data_control(false);
+				}
+			}
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE:
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE\r\n");

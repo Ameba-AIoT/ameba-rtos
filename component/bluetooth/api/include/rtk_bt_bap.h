@@ -184,13 +184,23 @@ uint16_t rtk_bt_bap_unicast_client_stop(uint8_t group_idx);
 
 /**
  * @fn        uint16_t rtk_bt_bap_unicast_client_release(uint8_t group_idx)
- * @brief     release bap unicast client session stream procedure
+ * @brief     release bap unicast client unicast stream procedure
  * @param[in] group_idx: group index
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
 uint16_t rtk_bt_bap_unicast_client_release(uint8_t group_idx);
+
+/**
+ * @fn        uint16_t rtk_bt_bap_unicast_client_stream_session_release(uint8_t group_idx)
+ * @brief     bap unicast client release stream session procedure
+ * @param[in] group_idx: group index
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_bap_unicast_client_stream_session_release(uint8_t group_idx);
 
 #if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
 /**

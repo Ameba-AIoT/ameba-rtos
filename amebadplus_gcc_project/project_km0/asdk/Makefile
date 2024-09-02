@@ -203,21 +203,44 @@ else
 
 endif
 
-
-ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
-	@echo "========== cl generate ota_all.bin with bootloader km0=========="
-	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ]; then \
-		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all.bin; \
-		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_ns.bin $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km4_boot_all_ns.bin; \
-	fi
-else
-	@echo "========== cl generate ota_all.bin km0 ========== "
-	@if [ -f $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin ]; then \
-		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app.bin; \
-		$(OTAPREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/project_km4/asdk/image/km0_km4_app_ns.bin; \
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin ] && [ -f $(BASEDIR)/amebadplus_gcc_project/fatfs.bin ]; then \
+		mv $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin $(KM4_BUILDDIR)/asdk/image/km0_km4_app_tmp.bin; \
+		mv $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns.bin $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns_tmp.bin; \
+		$(PADTOOL) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_tmp.bin 4096; \
+		$(PADTOOL) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns_tmp.bin 4096; \
+		$(PREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(KM4_BUILDDIR)/asdk/image/target_img2.map; \
+		cat $(KM4_BUILDDIR)/asdk/image/km0_km4_app_tmp.bin $(BASEDIR)/amebadplus_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin; \
+		cat $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns_tmp.bin $(BASEDIR)/amebadplus_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns.bin; \
 	fi
 endif
 
+ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin ]; then \
+		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin; \
+		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns.bin; \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_compress.bin $(KM4_BUILDDIR)/asdk/image/tmp_app.bin; \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns_compress.bin $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
+	fi
+else
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin ]; then \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin $(KM4_BUILDDIR)/asdk/image/tmp_app.bin; \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns.bin $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
+	fi
+endif
+ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin ]; then \
+		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app.bin $(KM4_BUILDDIR)/asdk/image/km4_boot_all.bin; \
+		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin $(KM4_BUILDDIR)/asdk/image/km4_boot_all_ns.bin; \
+	fi
+else
+	@if [ -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin ]; then \
+		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app.bin; \
+		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
+	fi
+endif
+	@rm -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin
+	@rm -f $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin
 	@echo "========== Image manipulating end =========="
 
 code_analyze:

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 export CONFIG_NAN = n
 export CONFIG_P2P = n
+export CONFIG_MCC = n
 export CONFIG_FULLMAC_HCI_IPC = y
 export CONFIG_FULLMAC_HCI_SDIO = n
 export CONFIG_FULLMAC_HCI_SPI = n

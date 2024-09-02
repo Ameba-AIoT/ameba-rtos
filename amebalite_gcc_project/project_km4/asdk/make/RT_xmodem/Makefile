@@ -9,14 +9,14 @@ include $(MAKE_INCLUDE_GEN)
 XM_DIR = $(BASEDIR)/component/soc/common/flash_download/rt_xmodem
 RAM_COM_DIR = $(TARGETDIR)/fwlib/ram_common
 DRVDIR =  $(TARGETDIR)/fwlib/ram_km4
-TAR_DIR = $(TARGETDIR)/imgtool_floader/src
+TAR_DIR = $(BASEDIR)/component/soc/common/imgtool_floader/src
 SWLIB_DIR = $(TARGETDIR)/swlib
 
 MODULE_IFLAGS += -I$(TARGETDIR)/app/xmodem \
 		 -I$(TARGETDIR)/fwlib/include \
 		 -I$(SWLIB_DIR) \
 		 -I$(XM_DIR) \
-		 -I$(TAR_DIR)/../include \
+		 -I$(TAR_DIR)/../inc \
 		 -I$(FREERTOSDIR)/include \
 		 -I$(FREERTOSDIR)/portable/GCC/AmebaLite_KM4/non_secure \
 		 -I$(FREERTOSDIR)/portable/GCC/AmebaLite_KM4/secure
@@ -35,7 +35,6 @@ CSRC = $(XM_DIR)/floader_fw_update.c \
 	$(RAM_COM_DIR)/ameba_codec.c \
 	$(SWLIB_DIR)/log.c \
 	$(TAR_DIR)/floader_nor_ftl.c \
-	$(TAR_DIR)/ameba_floader.c \
 	$(TAR_DIR)/ameba_floader_rom_parse.c
 
 #*****************************************************************************#

@@ -13,6 +13,11 @@ void llhw_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 
 	dev_dbg(global_idev.fullmac_dev, "-----HOST CALLING API %x START\n", id);
 
+#ifdef CONFIG_FULLMAC_HCI_USB
+	if (rtw_usb_send_event_check(id) < 0) {
+		return;
+	}
+#endif
 	mutex_lock(&(event_priv->send_mutex));
 
 	/* send TX_DESC + info + data(param, param_len) */
@@ -30,9 +35,10 @@ void llhw_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		}
 
 		/* send */
-		llhw_send_data(buf, buf_len);
-
+		llhw_send_data(buf, buf_len, NULL);
+#ifndef CONFIG_INIC_USB_ASYNC_SEND
 		kfree(buf);
+#endif
 	} else {
 		dev_err(global_idev.fullmac_dev, "%s can't alloc buffer!\n", __func__);
 		goto exit;

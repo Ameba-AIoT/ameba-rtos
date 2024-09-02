@@ -40,6 +40,7 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 	make -C audio_xip lib
 	make -C base lib
 endif
+	make -C third_party lib
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #
@@ -59,5 +60,5 @@ clean:
 	make -C audio_config clean
 	make -C audio_xip clean
 	make -C base clean
-
+	make -C third_party clean
 -include $(DEPS)

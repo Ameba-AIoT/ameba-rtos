@@ -47,8 +47,11 @@ void _init_thread(void *param)
 	HAL_WRITE32(REG_AON_WIFI_IPC, 0, val32);
 
 	wifi_on(RTW_MODE_STA);
+
+#if CONFIG_AUTO_RECONNECT
 	//setup reconnection flag
 	wifi_config_autoreconnect(1);
+#endif
 
 	RTK_LOGI(TAG, "%s(%d), Available heap %d\n", __FUNCTION__, __LINE__, rtos_mem_get_free_heap_size());
 
@@ -106,8 +109,10 @@ void _init_thread(void *param)
 	wifi_set_user_config();
 
 	wifi_on(RTW_MODE_STA);
+#if CONFIG_AUTO_RECONNECT
 	//setup reconnection flag
 	wifi_config_autoreconnect(1);
+#endif
 
 	RTK_LOGI(TAG, "%s(%d), Available heap %d\n", __FUNCTION__, __LINE__, rtos_mem_get_free_heap_size());
 

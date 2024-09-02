@@ -49,6 +49,7 @@ endif
 ifneq ($(CONFIG_WIFI_AUDIO)$(CONFIG_WFA_SRC),)
 	make -C third_party wfa
 endif
+	make -C third_party lib
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE                                           #

@@ -178,10 +178,28 @@
  */
 #define AUDIO_I2S_IN_EXTRA_NEED_MCLK_OUT       0
 
-
+/*
+ *If AUDIO_I2S_IN_MULTIIO_EN equals 1, using MULTI-IO.
+ *If AUDIO_I2S_IN_MULTIIO_EN equals 0, using TDM.
+ */
 #define AUDIO_I2S_IN_MULTIIO_EN                1
 
+/*
+ *If AUDIO_I2S_IN_EXTRA_MULTIIO_EN equals 1, using MULTI-IO.
+ *If AUDIO_I2S_IN_EXTRA_MULTIIO_EN equals 0, using TDM.
+ */
 #define AUDIO_I2S_IN_EXTRA_MULTIIO_EN          1
+
+/*
+ *If audio has more than 8 channels, then need two sports.
+ *Take 12 channels for example:
+ *If AUDIO_I2S_CHANNELS_BISECT equals 1,
+ *I2S0 has 6 channels, I2S1 has 6 channels.
+ *If AUDIO_I2S_CHANNELS_BISECT equals 0,
+ *I2S0 has 8 channels, I2S1 has 12-8 channels.
+ *
+ */
+#define AUDIO_I2S_CHANNELS_BISECT              0
 
 /*
  *Define I2S in's data format

@@ -1,6 +1,8 @@
 #include <rtw_cfg80211_fullmac.h>
 
-void rtw_spi_send_data(u8 *buf, u32 len)
+struct inic_msg_node *dequeue_tx_packet(struct xmit_priv_t *xmit_priv);
+
+void rtw_spi_send_data(u8 *buf, u32 len, struct sk_buff *skb)
 {
 	struct inic_spi *priv = &inic_spi_priv;
 	struct spi_device *spidev = priv->spi_dev;
@@ -8,6 +10,8 @@ void rtw_spi_send_data(u8 *buf, u32 len)
 	struct spi_transfer *tr;
 	struct sk_buff *pskb = NULL;
 	int rc;
+
+	(void) skb;
 
 	mutex_lock(&priv->lock);
 
@@ -69,7 +73,8 @@ void rtw_spi_recv_data_process(void *intf_priv)
 	struct spi_device *spidev = priv->spi_dev;
 	struct spi_message *spimsg = NULL;
 	struct spi_transfer *tr;
-	struct sk_buff *pskb = NULL;
+	struct sk_buff *pskb = NULL, *tx_skb = NULL;
+	struct inic_msg_node *p_node;
 	int rc;
 
 	mutex_lock(&priv->lock);
@@ -102,6 +107,12 @@ void rtw_spi_recv_data_process(void *intf_priv)
 		tr->rx_buf = pskb->data;
 		tr->len = SPI_BUFSZ;
 
+		p_node = dequeue_tx_packet(&global_idev.xmit_priv);
+		if (p_node != NULL) {
+			tx_skb = p_node->msg;
+			tr->tx_buf = tx_skb->data;
+		}
+
 		rc = spi_sync(spidev, spimsg);
 		if (rc) {
 			dev_err(&spidev->dev, "could not transfer : %d\n", rc);
@@ -111,6 +122,20 @@ void rtw_spi_recv_data_process(void *intf_priv)
 		}
 
 		//print_hex_dump_bytes("rtw_spi_recv_data_process: ", DUMP_PREFIX_NONE, tr->rx_buf, tr->len);
+
+		/* wake tx queue if need */
+		if (p_node != NULL) {
+			if (llhw_xmit_pending_q_num() < QUEUE_WAKE_THRES) {
+				netif_tx_wake_all_queues(global_idev.pndev[0]);
+				if (global_idev.pndev[1]) {
+					netif_tx_wake_all_queues(global_idev.pndev[1]);
+				}
+			}
+
+			/* release the memory for this message. */
+			dev_kfree_skb(tx_skb);
+			kfree(p_node);
+		}
 
 		/* process rx msg */
 		priv->rx_process_func(pskb);

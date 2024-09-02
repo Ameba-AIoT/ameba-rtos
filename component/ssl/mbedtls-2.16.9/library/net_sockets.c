@@ -429,7 +429,7 @@ static int net_would_block( const mbedtls_net_context *ctx )
 {
 		/* To avoid gcc warnings */
 		( void ) ctx;
-#if 0
+#if 1
 
     int err = errno;
 

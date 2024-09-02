@@ -10,7 +10,8 @@ IFLAGS += \
 	-I$(BLEDIR)/driver/platform/amebalite/inc \
 	-I$(BLEDIR)/osif \
 	-I$(BLEDIR)/bt_audio/include \
-	-I$(BLEDIR)/bt_audio/bt_codec
+	-I$(BLEDIR)/bt_audio/bt_codec \
+	-I$(BLEDIR)/bt_mp
 
 ifeq ($(CONFIG_BT_ZEPHYR), y)
 IFLAGS += \

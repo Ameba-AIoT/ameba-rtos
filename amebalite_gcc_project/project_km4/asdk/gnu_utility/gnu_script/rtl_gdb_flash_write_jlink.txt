@@ -27,9 +27,6 @@ set $IMAGE_DSP_ALL = 0x004
 #Load flash download file
 printf "Load flash loader.\n"
 file gnu_utility/gnu_script/target_FPGA.axf
-#Load the file
-#lo
-#restore ./image/rom.bin binary 0x0
 restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x3000A020
 #===============================================================================
 
@@ -38,7 +35,6 @@ restore gnu_utility/gnu_script/flash_loader_ram_1.bin binary 0x3000A020
 define flash_write
 	printf "flash_write FileName:%x \n", $arg0
 	printf "flash_write FileSize:%d \n", $arg1
-	printf "flash_write FlashAddrForWrite:%x \n", FlashAddrForWrite
 
 	set $FileName = $arg0
 	set $FileSize = $arg1
@@ -47,7 +43,6 @@ define flash_write
 	if ( $TailSize > 0)
 		set $Loopnumber = $Loopnumber + 0x01
 	end
-	printf "FileSize: %x\n",$FileSize
 	printf "Loopnumber = %d\n", $Loopnumber
 	printf "TailSize = %d\n", $TailSize
 	printf "global variables\n"
@@ -59,16 +54,12 @@ define flash_write
 
 	printf "FlashDatSrc:%x\n", $FLASHDATSRC
 	printf "FlashBlockWriteSize:%x\n", FlashBlockWriteSize
-	printf "FlashAddrForWrite:%x\n", FlashAddrForWrite
 
 	printf  "Flash write start...\n"
 	set $Loop = 0
 	while  ($Loop < $Loopnumber)
 		set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
-		printf "FILESTARTADDR"
-		p /x $FILESTARTADDR
-		p /x FlashAddrForWrite
-		p /x $Loop
+		printf "[%d]: write file 0x%x to flash 0x%x\n", $Loop, $FILESTARTADDR, FlashAddrForWrite
 
 		if ($FileSize == $FILESTARTADDR + $TailSize)
 			set FlashBlockWriteSize = $TailSize
@@ -118,9 +109,9 @@ p /x $Temp
 
 set {int}(0xE000EE08) = $Temp
 
-b rtl_flash_download.c:81
+b rtl_flash_download.c:Gdb_Floader_Program_Start
 
-b rtl_flash_download.c:114
+b rtl_flash_download.c:Gdb_Floader_Program_End
 
 set $pc = 0xB000
 set $sp = 0x30009FFC
@@ -130,15 +121,15 @@ c
 
 #===============================================================================
 #flash write
-set $XIPBootSize =16432
+set $XIPBootSize =25824
 set FlashAddrForWrite =0x00000
 flash_write $IMAGE_KM4_BOOT $XIPBootSize
 
-set $FlashFileSize =119712
+set $FlashFileSize =825344
 set FlashAddrForWrite =0x14000
 flash_write $IMAGE_IMG2_ALL $FlashFileSize
 
-set $DSPFlashSize =22640
+set $DSPFlashSize =0
 set FlashAddrForWrite =0x100000
 flash_write $IMAGE_DSP_ALL $DSPFlashSize
 

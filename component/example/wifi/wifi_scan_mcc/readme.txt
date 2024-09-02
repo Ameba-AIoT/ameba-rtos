@@ -41,6 +41,10 @@ Result description
 			Infra	 a4:1a:3a:0d:0f:35 -64	  2	   6	  WPA/WPA2 AES		  TPLINK_0F35
 			Total num of AP scanned = 3
 		"
+		
+	notes: if surveying channel 2 can recv APs from  channel 1 or channel 3, it is ok, adjacent channels are allowed.
+	       if sta is connected with a AP on channel 6. it is allowed to recv APs from channel 6 when surveying channel is not channel 6.
+		   if sta is not connected with any AP, it is allowed to recv APs from channel 1 when surveying channel is not channel 1.	
 
 Support List
 ~~~~~~~~~~~~~~

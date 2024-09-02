@@ -12,7 +12,6 @@
 #include "boot_ota_km4.h"
 
 static const char *TAG = "BOOT";
-extern u8 RMA_PK_HASH[32];
 extern u32 Cert_PKHash_OTP_ADDR;
 extern u8 Signature[2][SIGN_MAX_LEN];
 u8 SecureBootEn = DISABLE;
@@ -192,7 +191,6 @@ static u8 BOOT_SbootEn_Check(u8 *pk_hash)
 	}
 
 	return SecureBootEn;
-
 }
 
 u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 idx)
@@ -236,4 +234,51 @@ SBOOT_FAIL:
 	return ret;
 }
 
+u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum)
+{
+	u8 PubKeyHash[32];
+	int ret;
+	u8 AuthAlg, HashAlg;
 
+	/* 1. check if secure boot enable. */
+	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
+	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
+		return 0;
+	}
+
+	/* 3. verify signature */
+	/* 3.1 Initialize hash engine */
+	CRYPTO_SHA_Init(NULL);
+
+	/* 3.2 Check algorithm from flash against OTP configuration if need. */
+	ret = SBOOT_Validate_Algorithm(&AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	/* 3.3 validate pubkey hash */
+	ret = SBOOT_Validate_PubKey(AuthAlg, Manifest->SBPubKey, PubKeyHash);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	/* 3.4 validate signature */
+	ret = SBOOT_Validate_Signature(AuthAlg, HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN,
+								   Manifest->Signature);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	/* 3.5 calculate and validate image hash */
+	ret = SBOOT_Validate_ImgHash(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
+	}
+
+	RTK_LOGI(TAG, "Compressed Img VERIFY PASS\n");
+	return TRUE;
+
+SBOOT_FAIL:
+	RTK_LOGE(TAG, "Compressed Img VERIFY FAIL, ret = %d\n", ret);
+	return FALSE;
+}

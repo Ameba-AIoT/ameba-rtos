@@ -30,6 +30,10 @@ ifeq ($(CONFIG_AUDIO_FWK),y)
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/interfaces
 MODULE_IFLAGS += -I$(BASEDIR)/component/audio/base/osal/osal_c/interfaces
 endif
+ifeq ($(CONFIG_SPEEX_LIB),y)
+MODULE_IFLAGS += -I$(BASEDIR)/component/example/audio/speexdsp
+MODULE_IFLAGS += -I$(BASEDIR)/component/audio/third_party/speexdsp/include
+endif
 
 ifeq ($(CONFIG_USB_DEVICE_EN),y)
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/common
@@ -38,6 +42,7 @@ MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/cdc_acm
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/composite
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/hid
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/msc
+MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/uac
 MODULE_IFLAGS += -I$(BASEDIR)/component/usb/device/vendor
 endif
 ifeq ($(CONFIG_USB_HOST_EN),y)

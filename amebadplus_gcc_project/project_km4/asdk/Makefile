@@ -166,9 +166,10 @@ linker_image3: prebuild copy_ld_img3 make_subdirs_secure
 image2_ns: prebuild copy_ld_img2 make_subdirs linker_image2_ns code_analyze
 image3_s: linker_image3
 bootloader: prebuild copy_ld_img1 make_subdirs_bootloader linker_loader
-flashloader: prebuild copy_ld_img1 make_subdirs_flashloader linker_loader copy_flashloader
+flashloader: prebuild copy_ld_floader make_subdirs_flashloader linker_loader copy_flashloader
 imgtool_flashloader:  prebuild copy_ld_floader make_subdirs_imgtool_flashloader linker_loader copy_imgtool_flashloader
 analysis_extract: code_extract
+toolchain: download_toolchain
 
 linker_tfm: prebuild copy_ld_tfm make_subdirs_tfm
 tfm_s: linker_tfm
@@ -434,18 +435,44 @@ else
 
 endif
 
-
-ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
+ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ] && [ -f $(BASEDIR)/amebadplus_gcc_project/fatfs.bin ]; then \
+		mv $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin; \
+		mv $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_tmp.bin; \
+		$(PADTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin 4096; \
+		$(PADTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_tmp.bin 4096; \
+		$(PREPENDTOOL) $(BASEDIR)/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(IMAGE_TARGET_FOLDER)/target_img2.map; \
+		cat $(IMAGE_TARGET_FOLDER)/km0_km4_app_tmp.bin $(BASEDIR)/amebadplus_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
+		cat $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_tmp.bin $(BASEDIR)/amebadplus_gcc_project/fatfs_prepend.bin > $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
+	fi
+endif
+	
+ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
-		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
-		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all_ns.bin; \
+		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
+		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	fi
 else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
-		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
-		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	fi
 endif
+ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
+		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
+		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all_ns.bin; \
+	fi
+else
+	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
+		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
+	fi
+endif
+	@rm -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin
+	@rm -f $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin
 	@echo "========== Image manipulating end =========="
 
 linker_loader:
@@ -530,6 +557,14 @@ code_extract:
 	fi
 	@echo "========== Image extract end =========="
 
+download_toolchain:
+ifeq ($(URL), aliyun)
+	@echo "Download toolchain from $(TOOLCHAINURL_ALIYUN)"
+	$(call download_toolchain_func,$(TOOLCHAINURL_ALIYUN))
+else
+	@echo "Download toolchain from $(TOOLCHAINURL)"
+	$(call download_toolchain_func,$(TOOLCHAINURL))
+endif
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #
 #*****************************************************************************#
