@@ -20,6 +20,12 @@ Documentation for latest version: https://www.realmcu.com/. Get application note
 
 **Note:** Each SoC series has its own documentation, please find documentation with the specified chip.
 
+# Accelerate with Gitee
+
+For users who can access [Gitee](https://gitee.com), we recommend that import the repository into Gitee to improve download speed if you find the download speed from GitHub is too slow.
+
+The detailed steps please refer to [How to import third-party Git repositories such as GitHub](https://gitee.com/help/articles/4261). 
+
 # Quick Reference
 
 See the ApplicationNote chapter **Build Environment** from above links for a detailed setup guide. This is a quick reference for common commands working with ameba-rtos projects:
@@ -30,6 +36,8 @@ See the ApplicationNote chapter **Build Environment** from above links for a det
 * Linux platform is supported for now, Ubuntu version 16.04 64-bit or higher is required.
 * Windows built with VScode will be supported in the future.
 * Python version 3.7 or higher is required. Run `python --version` to check the version. If an error "Command `python` not found" encounters, please refer to ApplicationNote section **Preparing GCC Environment** install python3. If still error appears, please run `sudo ln -s /usr/bin/python3 /usr/bin/python` to create symbolic link from `/usr/bin/python3` to `/usr/bin/python`.
+
+**Note:** The toolchain will be downloaded from GitHub when build project for the first time. If find the download speed from GitHub is too slow or download failed, please execute command `make toolchain URL=aliyun` or `make toolchain URL=github` first to get toolchain before building project. We recommend use `make toolchain URL=aliyun` to download toolchain from aliyun to improve the download speed.
 
 ## Finding the Project
 
