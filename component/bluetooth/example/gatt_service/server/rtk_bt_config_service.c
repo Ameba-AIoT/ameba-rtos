@@ -79,7 +79,7 @@ void bt_config_service_callback(uint8_t event, void *data)
 		write_resp.type = p_write_ind->type;
 
 		if (!p_write_ind->len || !p_write_ind->value) {
-			BT_LOGE("[ATBC] BT Config write value is empty!\r\n");
+			BT_LOGE("[APP] BT Config write value is empty!\r\n");
 			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE_SIZE;
 			goto send_write_rsp;
 		}

@@ -261,7 +261,7 @@ void bt_fast_mp_cmd_handle_api(void *arg)
 
 	argc = bt_fast_mp_parse_param(p_buf, argv);
 
-	if (argc < 2 || argc > 8) {
+	if (argc < 2) {
 		BT_LOGE("Error: Wrong input args number!\r\n");
 		goto exit;
 	}

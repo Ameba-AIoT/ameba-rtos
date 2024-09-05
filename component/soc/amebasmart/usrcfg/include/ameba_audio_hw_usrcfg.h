@@ -85,6 +85,15 @@
 #define AUDIO_I2S_OUT_SPORT_INDEX       0
 
 /*
+ *Define I2S out's data format
+ *0 for I2S
+ *1 for Left Justified
+ *2 for SP_DF_PCM_A
+ *3 for SP_DF_PCM_B
+ */
+#define AUDIO_I2S_OUT_DATA_FORMAT        0
+
+/*
  *Define I2S out pins.
  */
 #define AUDIO_I2S_OUT_MCLK_PIN           _PB_7
@@ -147,6 +156,15 @@
 #define AUDIO_I2S_IN_DATA3_PIN          _PB_20
 
 #define AUDIO_I2S_IN_MULTIIO_EN         0
+
+/*
+ *Define I2S in's data format
+ *0 for I2S
+ *1 for Left Justified
+ *2 for SP_DF_PCM_A
+ *3 for SP_DF_PCM_B
+ */
+#define AUDIO_I2S_IN_DATA_FORMAT        0
 
 /*
  *Set 1 to enable debug for buffer level.

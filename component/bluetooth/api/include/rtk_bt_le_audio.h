@@ -3757,7 +3757,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_iso_data_send(rtk_bt_le_audio_iso_data_send_info_t *info)
  * @brief     Send ISO data .
  * @param[in] info: The info of iso send data
  * @return
@@ -3767,7 +3766,6 @@ typedef struct {
 uint16_t rtk_bt_le_audio_iso_data_send(rtk_bt_le_audio_iso_data_send_info_t *info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_get_prefer_codec_cfg(uint8_t item, rtk_bt_le_audio_cfg_codec_t *p_cfg_codec)
  * @brief     BLE AUDIO GET PREFER CODEC CONFIG.
  * @param[in] item: codec item
  * @param[out] p_cfg_codec: returned cfg codec
@@ -3778,7 +3776,6 @@ uint16_t rtk_bt_le_audio_iso_data_send(rtk_bt_le_audio_iso_data_send_info_t *inf
 uint16_t rtk_bt_le_audio_get_prefer_codec_cfg(uint8_t item, rtk_bt_le_audio_cfg_codec_t *p_cfg_codec);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_qos_preferred_cfg_get(uint8_t codec_cfg_item, uint8_t qos_cfg_type, rtk_bt_le_audio_qos_cfg_preferred_t *p_qos_cfg)
  * @brief     BLE AUDIO GET PREFER CODEC CONFIG.
  * @param[in] codec_cfg_item: codec item
  * @param[in] qos_cfg_type: qos cfg type
@@ -3791,7 +3788,6 @@ uint16_t rtk_bt_le_audio_qos_preferred_cfg_get(rtk_bt_le_audio_codec_cfg_item_t 
 											   rtk_bt_le_audio_qos_cfg_preferred_t *p_qos_cfg);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_pacs_get_info(uint16_t conn_handle, rtk_bt_le_audio_bap_pacs_info_t *p_pacs_info)
  * @brief     BLE AUDIO GET PACS INFO.
  * @param[in] conn_handle: conn handle
  * @param[out] p_pacs_info: returned pacs info
@@ -3802,7 +3798,6 @@ uint16_t rtk_bt_le_audio_qos_preferred_cfg_get(rtk_bt_le_audio_codec_cfg_item_t 
 uint16_t rtk_bt_le_audio_pacs_get_info(uint16_t conn_handle, rtk_bt_le_audio_bap_pacs_info_t *p_pacs_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_pacs_get_pac_record(uint16_t conn_handle, rtk_bt_le_audio_role_t audio_role, uint8_t *p_pac_num,rtk_bt_le_audio_bap_pacs_pac_record_t * p_pac_tbl)
  * @brief     BLE AUDIO QUERY PAC RECORD[ASYNC].
  *            If sending query operation is success, the result will be returned by RTK_BT_LE_AUDIO_EVT_PAC_RECORD_IND.
  * @param[in] conn_handle: conn handle
@@ -3817,7 +3812,6 @@ uint16_t rtk_bt_le_audio_pacs_get_pac_record(uint16_t conn_handle, rtk_bt_le_aud
 											 rtk_bt_le_audio_bap_pacs_pac_record_t  *p_pac_tbl);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_pacs_get_lc3_table_mask(uint16_t conn_handle, rtk_bt_le_audio_role_t audio_role, uint16_t pref_audio_contexts, uint8_t channel_count, uint32_t *p_lc3_table_mask)
  * @brief     BLE AUDIO QUERY PACS AUDIO SUPPORT TABLE MASK.
  * @param[in] conn_handle: conn handle
  * @param[in] audio_role: audio role
@@ -3832,7 +3826,6 @@ uint16_t rtk_bt_le_audio_pacs_get_lc3_table_mask(uint16_t conn_handle, rtk_bt_le
 												 uint32_t *p_lc3_table_mask);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_pacs_get_bis_array_by_sync_info(uint16_t conn_handle, rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t filter, uint32_t *p_bis_array)
  * @brief     BLE AUDIO PACS GET BIS ARRAY BY SYNC INFO.
  * @param[in] conn_handle: Connection handle.
  * @param[in] sync_handle: BLE audio sync handle: @ref rtk_bt_le_audio_sync_handle_t.
@@ -3846,7 +3839,6 @@ uint16_t rtk_bt_le_audio_pacs_get_bis_array_by_sync_info(uint16_t conn_handle, r
 														 uint32_t *p_bis_array);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_allocate(uint8_t adv_sid,rtk_bt_le_addr_t adv_addr,uint8_t *broadcast_id,rtk_bt_le_audio_sync_handle_t * p_broadcast_sync_handle)
  * @brief     BLE AUDIO SYNC CREATE.
  * @param[in]  adv_sid: paramsters for le audio sync create
  * @param[in]  adv_addr: address of broadcast source
@@ -3860,7 +3852,6 @@ uint16_t rtk_bt_le_audio_sync_allocate(uint8_t adv_sid, rtk_bt_le_addr_t adv_add
 									   rtk_bt_le_audio_sync_handle_t *p_broadcast_sync_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_release(rtk_bt_le_audio_sync_handle_t sync_handle)
  * @brief     BLE AUDIO SYNC RELEASE.
  * @param[in]  sync_handle: Synchronization Handle
  * @return
@@ -3870,7 +3861,6 @@ uint16_t rtk_bt_le_audio_sync_allocate(uint8_t adv_sid, rtk_bt_le_addr_t adv_add
 uint16_t rtk_bt_le_audio_sync_release(rtk_bt_le_audio_sync_handle_t sync_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_find(uint8_t adv_sid, uint8_t *broadcast_id,rtk_bt_le_audio_sync_handle_t * p_broadcast_sync_handle)
  * @brief     BLE AUDIO SYNC FIND.
  * @param[in]  adv_sid: paramsters for le audio sync create
  * @param[in]  broadcast_id: broadcast id of broadcast source
@@ -3882,7 +3872,6 @@ uint16_t rtk_bt_le_audio_sync_release(rtk_bt_le_audio_sync_handle_t sync_handle)
 uint16_t rtk_bt_le_audio_sync_find(uint8_t adv_sid, uint8_t *broadcast_id, rtk_bt_le_audio_sync_handle_t *p_broadcast_sync_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_pa_sync_establish(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_pa_sync_establish_t * p_establish)
  * @brief     BLE AUDIO PA SYNC ESTABLISH.
  * @param[in]  sync_handle: Synchronization Handle
  * @param[in]  p_establish: paramsters for le audio pa sync establish
@@ -3893,7 +3882,6 @@ uint16_t rtk_bt_le_audio_sync_find(uint8_t adv_sid, uint8_t *broadcast_id, rtk_b
 uint16_t rtk_bt_le_audio_pa_sync_establish(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_pa_sync_establish_t *p_establish);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_pa_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_handle)
  * @brief     BLE AUDIO PA SYNC TERMINATE.
  * @param[in]  sync_handle: Synchronization Handle
  * @return
@@ -3903,7 +3891,6 @@ uint16_t rtk_bt_le_audio_pa_sync_establish(rtk_bt_le_audio_sync_handle_t sync_ha
 uint16_t rtk_bt_le_audio_pa_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_get_sync_info(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_sync_info_t *p_sync_info)
  * @brief     BLE AUDIO BIG SYNC INFO GET.
  * @param[in]  sync_handle: Synchronization Handle
  * @param[out] p_sync_info: the return sync information
@@ -3914,7 +3901,6 @@ uint16_t rtk_bt_le_audio_pa_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_ha
 uint16_t rtk_bt_le_audio_sync_get_sync_info(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_sync_info_t *p_sync_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_get_bis_sync_codec_cfg(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx, rtk_bt_le_audio_cfg_codec_t *p_codec_cfg)
  * @brief     BLE AUDIO SYNC BIS CODEC CFG GET.
  * @param[in]  sync_handle: Synchronization Handle
  * @param[in]  bis_idx: bis index
@@ -3926,7 +3912,6 @@ uint16_t rtk_bt_le_audio_sync_get_sync_info(rtk_bt_le_audio_sync_handle_t sync_h
 uint16_t rtk_bt_le_audio_sync_get_bis_sync_codec_cfg(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx, rtk_bt_le_audio_cfg_codec_t *p_codec_cfg);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_big_sync_establish(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_big_sync_establish_t * p_establish)
  * @brief     BLE AUDIO BIG SYNC ESTABLISH.
  * @param[in]  sync_handle: Synchronization Handle
  * @param[in]  p_establish: paramsters for le audio pa sync establish
@@ -3937,7 +3922,6 @@ uint16_t rtk_bt_le_audio_sync_get_bis_sync_codec_cfg(rtk_bt_le_audio_sync_handle
 uint16_t rtk_bt_le_audio_big_sync_establish(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_big_sync_establish_t *p_establish);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_big_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_handle)
  * @brief     BLE AUDIO BIG SYNC TERMINATE.
  * @param[in] sync_handle: Synchronization Handle
  * @return
@@ -3947,7 +3931,6 @@ uint16_t rtk_bt_le_audio_big_sync_establish(rtk_bt_le_audio_sync_handle_t sync_h
 uint16_t rtk_bt_le_audio_big_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_get_bis_info(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_bis_info_t *p_bis_info)
  * @brief     BLE AUDIO BIS SYNC INFO GET.
  * @param[in] sync_handle: Synchronization Handle
  * @param[out] p_bis_info: the return bis sync information
@@ -3958,7 +3941,6 @@ uint16_t rtk_bt_le_audio_big_sync_terminate(rtk_bt_le_audio_sync_handle_t sync_h
 uint16_t rtk_bt_le_audio_sync_get_bis_info(rtk_bt_le_audio_sync_handle_t sync_handle, rtk_bt_le_audio_bis_info_t *p_bis_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_get_bis_conn_handle(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx, uint16_t *p_bis_conn_handle)
  * @brief     BLE AUDIO BIS SYNC CONN HANDLE GET.
  * @param[in] sync_handle: Synchronization Handle
  * @param[in] bis_idx: bis idx
@@ -3970,7 +3952,6 @@ uint16_t rtk_bt_le_audio_sync_get_bis_info(rtk_bt_le_audio_sync_handle_t sync_ha
 uint16_t rtk_bt_le_audio_sync_get_bis_conn_handle(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx, uint16_t *p_bis_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_get_support_bis_array(rtk_bt_le_audio_sync_handle_t sync_handle, uint32_t sink_audio_location, uint32_t *p_support_bis_array)
  * @brief     BLE AUDIO BIS SYNC SUPPORT BIS ARRAY GET.
  * @param[in] sync_handle: Synchronization Handle
  * @param[in] sink_audio_location: sink audio channel allocation
@@ -3982,7 +3963,6 @@ uint16_t rtk_bt_le_audio_sync_get_bis_conn_handle(rtk_bt_le_audio_sync_handle_t 
 uint16_t rtk_bt_le_audio_sync_get_support_bis_array(rtk_bt_le_audio_sync_handle_t sync_handle, uint32_t sink_audio_location, uint32_t *p_support_bis_array);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_setup_data_path(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx, rtk_bt_le_audio_bis_data_path_param_t *p_setup_param)
  * @brief     BLE AUDIO SETUP BIS DATA PATH.
  * @param[in] sync_handle: Synchronization Handle
  * @param[in] bis_idx: bis index
@@ -3994,7 +3974,6 @@ uint16_t rtk_bt_le_audio_sync_get_support_bis_array(rtk_bt_le_audio_sync_handle_
 uint16_t rtk_bt_le_audio_sync_setup_data_path(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx, rtk_bt_le_audio_bis_data_path_param_t *p_setup_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_sync_remove_data_path(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx)
  * @brief     BLE AUDIO REMOVE BIS DATA PATH.
  * @param[in]  sync_handle: Synchronization Handle
  * @param[in]  bis_idx: bis index
@@ -4005,7 +3984,6 @@ uint16_t rtk_bt_le_audio_sync_setup_data_path(rtk_bt_le_audio_sync_handle_t sync
 uint16_t rtk_bt_le_audio_sync_remove_data_path(rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t bis_idx);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_create(uint8_t num_groups, rtk_bt_le_audio_broadcast_source_group_param_t *group, rtk_bt_le_audio_broadcast_source_handle_t *p_broadcast_source_handle)
  * @brief     BLE AUDIO BROADCAST SOURCE CREATE
  * @param[in]  num_groups: num of broadcast source groups
  * @param[inout]  group: broadcast source groups parameter
@@ -4018,7 +3996,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_create(uint8_t num_groups, rtk_bt_le_a
 												 rtk_bt_le_audio_broadcast_source_handle_t *p_broadcast_source_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_get_info(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, rtk_bt_le_audio_broadcast_source_info_t *p_info)
  * @brief     BLE AUDIO BROADCAST SOURCE GET INFO
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @param[out] p_info: the returned broadcast source information
@@ -4030,7 +4007,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_get_info(rtk_bt_le_audio_broadcast_sou
 												   rtk_bt_le_audio_broadcast_source_info_t *p_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_config(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, uint8_t adv_sid, uint8_t group_idx, uint8_t *p_broadcast_audio_announcements, uint16_t p_announcements_len, rtk_bt_le_audio_broadcast_source_config_t *p_config);
  * @brief     BLE AUDIO BROADCAST SOURCE CONFIG
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @param[in]  adv_sid: Value of the Advertising SID subfield in the ADI field of the PDU, Range: 0x00 to 0x0F
@@ -4045,7 +4021,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_get_info(rtk_bt_le_audio_broadcast_sou
 uint16_t rtk_bt_le_audio_broadcast_source_config(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, uint8_t adv_sid, uint8_t group_idx,
 												 uint8_t *p_broadcast_audio_announcements, uint16_t p_announcements_len, rtk_bt_le_audio_broadcast_source_config_t *p_config);
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_enable(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, rtk_bt_le_audio_broadcast_source_create_big_t *p_create_big)
  * @brief     BLE AUDIO BROADCAST SOURCE ENABLE
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @param[in]  p_create_big: broadcast source enable information
@@ -4057,7 +4032,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_enable(rtk_bt_le_audio_broadcast_sourc
 												 rtk_bt_le_audio_broadcast_source_create_big_t *p_create_big);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_disable(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle)
  * @brief     BLE AUDIO BROADCAST SOURCE DISABLE
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @return
@@ -4067,7 +4041,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_enable(rtk_bt_le_audio_broadcast_sourc
 uint16_t rtk_bt_le_audio_broadcast_source_disable(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_release(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle)
  * @brief     BLE AUDIO BROADCAST SOURCE RELEASE
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @return
@@ -4077,7 +4050,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_disable(rtk_bt_le_audio_broadcast_sour
 uint16_t rtk_bt_le_audio_broadcast_source_release(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_setup_data_path(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle,uint8_t bis_idx, rtk_bt_le_audio_bis_data_path_param_t *p_setup, uint16_t * p_bis_conn_handle)
  * @brief     BLE AUDIO BROADCAST SORUCE SETUP BIS DATA PATH.
  * @param[in] broadcast_source_handle: broadcast source handle
  * @param[in] bis_idx: bis index
@@ -4091,7 +4063,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_setup_data_path(rtk_bt_le_audio_broadc
 														  rtk_bt_le_audio_bis_data_path_param_t *p_setup, uint16_t *p_bis_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_remove_data_path(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, uint8_t bis_idx)
  * @brief     BLE AUDIO BROADCAST SORUCE REMOVE BIS DATA PATH.
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @param[in]  bis_idx: bis index
@@ -4102,7 +4073,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_setup_data_path(rtk_bt_le_audio_broadc
 uint16_t rtk_bt_le_audio_broadcast_source_remove_data_path(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, uint8_t bis_idx);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_broadcast_source_reconfig(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle, uint8_t group_idx, uint8_t subgroup_idx, uint8_t metadata_len, uint8_t *p_metadata)
  * @brief     BLE AUDIO BROADCAST SOURCE RECONFIG.
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @param[in]  group_idx: broadcast source group idx
@@ -4117,7 +4087,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_reconfig(rtk_bt_le_audio_broadcast_sou
 												   uint8_t metadata_len, uint8_t *p_metadata);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_bass_get_brs_data(uint16_t conn_handle,uint8_t char_instance_id, bool is_get_bis_info, rtk_bt_le_audio_bass_brs_data_t *p_brs_data)
  * @brief     BLE AUDIO BASS GET BROADCAST RECEIVE STATE CHAR DATA.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  char_instance_id: char instance id;
@@ -4130,7 +4099,6 @@ uint16_t rtk_bt_le_audio_broadcast_source_reconfig(rtk_bt_le_audio_broadcast_sou
 uint16_t rtk_bt_le_audio_bass_get_brs_data(uint16_t conn_handle, uint8_t char_instance_id, bool is_get_bis_info, rtk_bt_le_audio_bass_brs_data_t *p_brs_data);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_bass_client_cp_add_source_by_sync_info(uint16_t conn_handle, rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t pa_sync,uint32_t bis_array,bool is_req)
  * @brief     BLE AUDIO BASS WRITE CONCTOL POINT ADD SOURCE BY SYNC INFO.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  sync_handle: BLE audio sync handle
@@ -4145,7 +4113,6 @@ uint16_t rtk_bt_le_audio_bass_client_cp_add_source_by_sync_info(uint16_t conn_ha
 																uint32_t bis_array, bool is_req);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info(uint16_t conn_handle, rtk_bt_le_audio_sync_handle_t sync_handle, uint8_t source_id,uint8_t pa_sync,uint32_t bis_array,bool is_req)
  * @brief     BLE AUDIO BASS CLIENT WRITE CONCTOL POINT MODIFY SOURCE BY SYNC INFO.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  sync_handle: BLE audio sync handle
@@ -4161,7 +4128,6 @@ uint16_t rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info(uint16_t conn
 																   uint8_t pa_sync, uint32_t bis_array, bool is_req);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_bass_client_write_cp_op(uint16_t conn_handle, uint8_t opcode, void * op_param, bool is_req)
  * @brief     BLE AUDIO BASS CLIENT WRITE CONCTOL POINT OPCODE.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  opcode: op code @ref rtk_bt_le_audio_bass_cp_op_t
@@ -4174,7 +4140,6 @@ uint16_t rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info(uint16_t conn
 uint16_t rtk_bt_le_audio_bass_client_write_cp_op(uint16_t conn_handle, uint8_t opcode, void *op_param, bool is_req);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_bass_client_past(uint8_t past_type, void * handle, uint16_t conn_handle, rtk_bt_le_audio_bass_past_srv_data_t srv_data)
  * @brief     BLE AUDIO BASS PAST Initiating.
  * @param[in]  past_type: past type  @ref rtk_bt_le_audio_bass_past_type_t
  * @param[in]  handle: handle: broadcast_source_handle or sync_handle
@@ -4187,7 +4152,6 @@ uint16_t rtk_bt_le_audio_bass_client_write_cp_op(uint16_t conn_handle, uint8_t o
 uint16_t rtk_bt_le_audio_bass_client_past(uint8_t past_type, void *handle, uint16_t conn_handle, rtk_bt_le_audio_bass_past_srv_data_t srv_data);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_allocate(rtk_bt_le_audio_group_handle_t *p_group_handle)
  * @brief     BLE AUDIO UNICAST CLIENT ALLOCATE GROUP.
  * @param[out]  p_group_handle: unicast client group handle
  * @return
@@ -4197,7 +4161,6 @@ uint16_t rtk_bt_le_audio_bass_client_past(uint8_t past_type, void *handle, uint1
 uint16_t rtk_bt_le_audio_group_allocate(rtk_bt_le_audio_group_handle_t *p_group_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_release(rtk_bt_le_audio_group_handle_t group_handle)
  * @brief     BLE AUDIO UNICAST CLIENT RELEASE GROUP.
  * @param[in]  group_handle: unicast client group handle
  * @return
@@ -4207,7 +4170,6 @@ uint16_t rtk_bt_le_audio_group_allocate(rtk_bt_le_audio_group_handle_t *p_group_
 uint16_t rtk_bt_le_audio_group_release(rtk_bt_le_audio_group_handle_t group_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_add_device(rtk_bt_le_audio_group_handle_t group_handle, uint16_t conn_handle, rtk_bt_le_audio_device_handle_t *p_device_handle)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP ADD DEVICE.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  conn_handle: add device conn_handle
@@ -4219,7 +4181,6 @@ uint16_t rtk_bt_le_audio_group_release(rtk_bt_le_audio_group_handle_t group_hand
 uint16_t rtk_bt_le_audio_group_add_device(rtk_bt_le_audio_group_handle_t group_handle, uint16_t conn_handle, rtk_bt_le_audio_device_handle_t *p_device_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_delete_device(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_audio_device_handle_t device_handle)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP REMOVE DEVICE.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  device_handle: unicast client device handle
@@ -4230,7 +4191,6 @@ uint16_t rtk_bt_le_audio_group_add_device(rtk_bt_le_audio_group_handle_t group_h
 uint16_t rtk_bt_le_audio_group_delete_device(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_audio_device_handle_t device_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_find_device(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_addr_t dev_addr, rtk_bt_le_audio_device_handle_t *p_device_handle)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP FIND DEVICE.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  dev_addr: find device address
@@ -4243,7 +4203,6 @@ uint16_t rtk_bt_le_audio_group_find_device(rtk_bt_le_audio_group_handle_t group_
 										   rtk_bt_le_audio_device_handle_t *p_device_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_find_device_by_conn_handle(rtk_bt_le_audio_group_handle_t group_handle, uint16_t conn_handle, rtk_bt_le_audio_device_handle_t *p_device_handle)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP FIND DEVICE BY CONN HANDLE.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  conn_handle: find device conn_handle
@@ -4256,7 +4215,6 @@ uint16_t rtk_bt_le_audio_group_find_device_by_conn_handle(rtk_bt_le_audio_group_
 														  rtk_bt_le_audio_device_handle_t *p_device_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_get_device_num(rtk_bt_le_audio_group_handle_t group_handle, uint8_t *p_device_num)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP FIND DEVICE NUM.
  * @param[in]  group_handle: unicast client group handle
  * @param[out]  p_device_num: total device num
@@ -4267,7 +4225,6 @@ uint16_t rtk_bt_le_audio_group_find_device_by_conn_handle(rtk_bt_le_audio_group_
 uint16_t rtk_bt_le_audio_group_get_device_num(rtk_bt_le_audio_group_handle_t group_handle, uint8_t *p_device_num);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_get_used_device_num(rtk_bt_le_audio_group_handle_t group_handle, bool check_conn, uint8_t *p_used_device_num)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP FIND USED DEVICE NUM.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  check_conn: whether check conn
@@ -4279,7 +4236,6 @@ uint16_t rtk_bt_le_audio_group_get_device_num(rtk_bt_le_audio_group_handle_t gro
 uint16_t rtk_bt_le_audio_group_get_used_device_num(rtk_bt_le_audio_group_handle_t group_handle, bool check_conn, uint8_t *p_used_device_num);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_get_device_info(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_audio_device_handle_t device_handle, rtk_bt_le_audio_group_device_info_t *p_device_info)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP GET DEVICE INFO.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  device_handle: unicast client device handle
@@ -4292,7 +4248,6 @@ uint16_t rtk_bt_le_audio_group_get_device_info(rtk_bt_le_audio_group_handle_t gr
 											   rtk_bt_le_audio_group_device_info_t *p_device_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_group_get_all_device_info(rtk_bt_le_audio_group_handle_t group_handle, uint8_t *device_num, rtk_bt_le_audio_group_device_info_t *p_device_info_tbl)
  * @brief     BLE AUDIO UNICAST CLIENT GROUP GET ALL DEVICE INFO.
  * @param[in]  group_handle: unicast client group handle
  * @param[in]  device_num: device num
@@ -4305,7 +4260,6 @@ uint16_t rtk_bt_le_audio_group_get_all_device_info(rtk_bt_le_audio_group_handle_
 												   rtk_bt_le_audio_group_device_info_t *p_device_info_tbl);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_stream_session_allocate(rtk_bt_le_audio_group_handle_t group_handle,rtk_bt_le_audio_stream_session_handle_t *p_stream_session_handle)
  * @brief     BLE AUDIO UNICAST CLIENT ALLOCATE STEAM SESSION.
  * @param[in]  group_handle: unicast client group handle
  * @param[out] p_stream_session_handle: returned stream session handle
@@ -4316,7 +4270,6 @@ uint16_t rtk_bt_le_audio_group_get_all_device_info(rtk_bt_le_audio_group_handle_
 uint16_t rtk_bt_le_audio_stream_session_allocate(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_audio_stream_session_handle_t *p_stream_session_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_stream_session_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
  * @brief     BLE AUDIO UNICAST CLIENT RELEASE STREAM SESSION.
  * @param[in] stream_session_handle: stream session handle
  * @return
@@ -4326,7 +4279,6 @@ uint16_t rtk_bt_le_audio_stream_session_allocate(rtk_bt_le_audio_group_handle_t 
 uint16_t rtk_bt_le_audio_stream_session_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_stream_session_get_group_handle(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_group_handle_t *p_group_handle)
  * @brief     BLE AUDIO UNICAST CLIENT RELEASE STEAM SESSION.
  * @param[in] stream_session_handle: stream session handle
  * @param[out] p_group_handle: returned group handle
@@ -4338,7 +4290,6 @@ uint16_t rtk_bt_le_audio_stream_session_get_group_handle(rtk_bt_le_audio_stream_
 														 rtk_bt_le_audio_group_handle_t *p_group_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_get_session_info(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_unicast_session_info_t *p_session_info)
  * @brief     BLE AUDIO UNICAST CLIENT GET SESSION INFO.
  * @param[in] stream_session_handle: stream session handle
  * @param[out] p_session_info: returned session info
@@ -4350,7 +4301,6 @@ uint16_t rtk_bt_le_audio_unicast_get_session_info(rtk_bt_le_audio_stream_session
 												  rtk_bt_le_audio_unicast_session_info_t *p_session_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_get_cfg_mask(rtk_bt_le_audio_stream_session_handle_t stream_session_handle,uint32_t prefer_cfg,uint8_t device_num,rtk_bt_le_audio_device_handle_t *p_device_handle_tbl,uint32_t *p_cfg_mask)
  * @brief     BLE AUDIO UNICAST CLIENT GET AUDIO CFG MASK.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] prefer_cfg: prefer cfg
@@ -4365,7 +4315,6 @@ uint16_t rtk_bt_le_audio_unicast_get_cfg_mask(rtk_bt_le_audio_stream_session_han
 											  rtk_bt_le_audio_device_handle_t *p_device_handle_tbl, uint32_t *p_cfg_mask);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_get_cis_info(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_device_handle_t device_handle,rtk_bt_le_audio_unicast_cis_infos_t *p_cis_infos)
  * @brief     BLE AUDIO UNICAST CLIENT RELEASE STEAM SESSION.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] device_handle: device handle
@@ -4378,7 +4327,6 @@ uint16_t rtk_bt_le_audio_unicast_get_cis_info(rtk_bt_le_audio_stream_session_han
 											  rtk_bt_le_audio_unicast_cis_infos_t *p_cis_infos);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_config(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_unicast_cfg_type_t cfg_type,uint8_t device_num,rtk_bt_le_audio_device_handle_t *p_device_handle_tbl)
  * @brief     BLE AUDIO UNICAST CLIENT CONFIG.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] cfg_type: config type
@@ -4392,7 +4340,6 @@ uint16_t rtk_bt_le_audio_unicast_config(rtk_bt_le_audio_stream_session_handle_t 
 										uint8_t device_num, rtk_bt_le_audio_device_handle_t *p_device_handle_tbl);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_cfg_ase_codec(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_device_handle_t device_handle,uint8_t cfg_idx,rtk_bt_le_audio_unicast_ase_codec_t ase_codec)
  * @brief     BLE AUDIO UNICAST CLIENT CONFIG ASE CODEC.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] device_handle: device handle
@@ -4406,7 +4353,6 @@ uint16_t rtk_bt_le_audio_unicast_cfg_ase_codec(rtk_bt_le_audio_stream_session_ha
 											   uint8_t cfg_idx, rtk_bt_le_audio_unicast_ase_codec_t ase_codec);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_remove_config(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
  * @brief     BLE AUDIO UNICAST CLIENT REMOVE CONFIG.
  * @param[in] stream_session_handle: stream session handle
  * @return
@@ -4416,7 +4362,6 @@ uint16_t rtk_bt_le_audio_unicast_cfg_ase_codec(rtk_bt_le_audio_stream_session_ha
 uint16_t rtk_bt_le_audio_unicast_remove_config(rtk_bt_le_audio_stream_session_handle_t stream_session_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_get_session_qos(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_unicast_session_qos_t *p_session_qos)
  * @brief     BLE AUDIO UNICAST CLIENT GET SESSION QOS.
  * @param[in] stream_session_handle: stream session handle
  * @param[out] p_session_qos: session qos
@@ -4428,7 +4373,6 @@ uint16_t rtk_bt_le_audio_unicast_get_session_qos(rtk_bt_le_audio_stream_session_
 												 rtk_bt_le_audio_unicast_session_qos_t *p_session_qos);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_cfg_ase_qos(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_device_handle_t device_handle,uint8_t ase_id,rtk_bt_le_audio_unicast_ase_qos_t ase_qos)
  * @brief     BLE AUDIO UNICAST CLIENT CONFIG ASE QOS.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] device_handle: device handle
@@ -4442,7 +4386,6 @@ uint16_t rtk_bt_le_audio_unicast_cfg_ase_qos(rtk_bt_le_audio_stream_session_hand
 											 uint8_t ase_id, rtk_bt_le_audio_unicast_ase_qos_t ase_qos);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_get_ase_qos(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, rtk_bt_le_audio_device_handle_t device_handle,uint8_t ase_id,rtk_bt_le_audio_unicast_ase_qos_t *p_ase_qos)
  * @brief     BLE AUDIO UNICAST CLIENT GET ASE QOS.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] device_handle: device handle
@@ -4456,7 +4399,6 @@ uint16_t rtk_bt_le_audio_unicast_get_ase_qos(rtk_bt_le_audio_stream_session_hand
 											 uint8_t ase_id, rtk_bt_le_audio_unicast_ase_qos_t *p_ase_qos);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_start(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
  * @brief     BLE AUDIO UNICAST CLIENT START.
  * @param[in] stream_session_handle: stream session handle
  * @return
@@ -4466,7 +4408,6 @@ uint16_t rtk_bt_le_audio_unicast_get_ase_qos(rtk_bt_le_audio_stream_session_hand
 uint16_t rtk_bt_le_audio_unicast_start(rtk_bt_le_audio_stream_session_handle_t stream_session_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_stop(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, uint32_t cis_timeout_ms)
  * @brief     BLE AUDIO UNICAST CLIENT STOP.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] cis_timeout_ms: cis timeout for stop
@@ -4477,7 +4418,6 @@ uint16_t rtk_bt_le_audio_unicast_start(rtk_bt_le_audio_stream_session_handle_t s
 uint16_t rtk_bt_le_audio_unicast_stop(rtk_bt_le_audio_stream_session_handle_t stream_session_handle, uint32_t cis_timeout_ms);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
  * @brief     BLE AUDIO UNICAST CLIENT RELEASE.
  * @param[in] stream_session_handle: stream session handle
  * @return
@@ -4487,7 +4427,6 @@ uint16_t rtk_bt_le_audio_unicast_stop(rtk_bt_le_audio_stream_session_handle_t st
 uint16_t rtk_bt_le_audio_unicast_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_unicast_update(rtk_bt_le_audio_stream_session_handle_t stream_session_handle)
  * @brief     BLE AUDIO UNICAST CLIENT UPDATE.
  * @param[in] stream_session_handle: stream session handle
  * @return
@@ -4498,7 +4437,6 @@ uint16_t rtk_bt_le_audio_unicast_update(rtk_bt_le_audio_stream_session_handle_t 
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_gen_rsi(uint8_t *p_sirk, uint8_t *p_rsi)
  * @brief     BLE AUDIO generate RSI for CSIS.
  * @param[in] p_sirk: sirk, set identity resolving key
  * @param[out] p_rsi: rsi, resolvable set identifier
@@ -4509,7 +4447,6 @@ uint16_t rtk_bt_le_audio_unicast_update(rtk_bt_le_audio_stream_session_handle_t 
 uint16_t rtk_bt_le_audio_csis_gen_rsi(uint8_t *p_sirk, uint8_t *p_rsi);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_update_sirk(rtk_bt_le_audio_csis_sirk_type_t sirk_type,uint8_t *p_sirk)
  * @brief     BLE AUDIO change SIRK for CSIS.
  * @param[in] sirk_type: sirk type
  * @param[out] p_sirk: new sirk, set identity resolving key
@@ -4519,7 +4456,6 @@ uint16_t rtk_bt_le_audio_csis_gen_rsi(uint8_t *p_sirk, uint8_t *p_rsi);
  */
 uint16_t rtk_bt_le_audio_csis_update_sirk(rtk_bt_le_audio_csis_sirk_type_t sirk_type, uint8_t *p_sirk);
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size)
  * @brief     BLE AUDIO change SIZE for CSIS.
  * @param[in] csis_size: csis size
  * @return
@@ -4531,7 +4467,6 @@ uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size);
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv_addr,uint8_t report_data_len,uint8_t *p_report_data)
  * @brief     BLE AUDIO CHEK ADV RSI for CSIS SET COORDINATOR.
  * @param[in] adv_addr: adv addr
  * @param[in] report_data_len: report data len
@@ -4542,7 +4477,6 @@ uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size);
  */
 uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv_addr, uint8_t report_data_len, uint8_t *p_report_data);
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group_handle_t group_handle,bool discover,uint32_t timeout_ms)
  * @brief     BLE AUDIO CONFIG DISCOVER for CSIS SET COORDINATOR.
  * @param[in] group_handle: group handle
  * @param[in] discover: discover
@@ -4553,7 +4487,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv
  */
 uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group_handle_t group_handle, bool discover, uint32_t timeout_ms);
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_set_coordinator_add_group(rtk_bt_le_audio_csis_set_mem_info_t *p_mem_info,rtk_bt_le_audio_group_handle_t *p_group_handle,rtk_bt_le_audio_device_handle_t *p_device_handle)
  * @brief     BLE AUDIO CHEK ADD GROUP for CSIS SET COORDINATOR.
  * @param[in] p_mem_info: mem info
  * @param[out] p_group_handle: returned group handle
@@ -4565,7 +4498,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group
 uint16_t rtk_bt_le_audio_csis_set_coordinator_add_group(rtk_bt_le_audio_csis_set_mem_info_t *p_mem_info, rtk_bt_le_audio_group_handle_t *p_group_handle,
 														rtk_bt_le_audio_device_handle_t *p_device_handle);
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_set_coordinator_add_device(rtk_bt_le_audio_group_handle_t group_handle,rtk_bt_le_audio_csis_set_mem_info_t *p_mem_info,rtk_bt_le_audio_device_handle_t *p_device_handle)
  * @brief     BLE AUDIO ADD GROUP for CSIS SET COORDINATOR.
  * @param[in] group_handle: group handle
  * @param[in] p_mem_info: mem info
@@ -4577,7 +4509,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_add_group(rtk_bt_le_audio_csis_set
 uint16_t rtk_bt_le_audio_csis_set_coordinator_add_device(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_audio_csis_set_mem_info_t *p_mem_info,
 														 rtk_bt_le_audio_device_handle_t *p_device_handle);
 /**
- * @fn        uint16_t rtk_bt_le_audio_csis_set_coordinator_write_lock(rtk_bt_le_audio_group_handle_t group_handle,bool lock)
  * @brief     BLE AUDIO WRITE LOCK for CSIS SET COORDINATOR.
  * @param[in] group_handle: group handle
  * @param[in] lock: lock or unlock
@@ -4590,7 +4521,6 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_write_lock(rtk_bt_le_audio_group_h
 
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_mcs_client_write_media_cp(uint16_t conn_handle,uint8_t srv_instance_id,bool general_mcs,bool is_req,uint8_t opcode,void * p_op_param)
  * @brief     BLE AUDIO MCS CLIENT WRITE MEDIA CP. If write operation is successful and Media Control Server sends Media Control Point Notification,
  *              Media Control Point Notification will be returned by callback registered by @ref rtk_bt_evt_register_callback with msg @ref RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND.
  * @param[in] conn_handle: connection handle
@@ -4607,7 +4537,6 @@ uint16_t rtk_bt_le_audio_mcs_client_write_media_cp(uint16_t conn_handle, uint8_t
 												   void *p_op_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mcs_client_read_char_value(uint16_t conn_handle,uint8_t srv_instance_id,bool general_mcs,uint16_t char_uuid)
  * @brief     BLE AUDIO MCS CLIENT READ CHAR VALUE. If read operation is successful, the result of read characteristic value will be returned by
  *              callback registered by @ref rtk_bt_evt_register_callback with msg @ref RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_READ_RESULT_IND.
  * @param[in] conn_handle: connection handle
@@ -4622,7 +4551,6 @@ uint16_t rtk_bt_le_audio_mcs_client_write_media_cp(uint16_t conn_handle, uint8_t
 uint16_t rtk_bt_le_audio_mcs_client_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, bool general_mcs, uint16_t char_uuid);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mcs_client_cfg_cccd(uint16_t conn_handle,uint8_t srv_instance_id,bool general_mcs,uint32_t cfg_flags,bool enable)
  * @brief     BLE AUDIO MCS CLIENT CONFIG CCCD.
  * @param[in] conn_handle: connection handle
  * @param[in] srv_instance_id: Service Instance Id
@@ -4638,7 +4566,6 @@ uint16_t rtk_bt_le_audio_mcs_client_cfg_cccd(uint16_t conn_handle, uint8_t srv_i
 
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_mcs_server_set_param(uint8_t service_id, uint16_t char_uuid, void * p_param)
  * @brief     BLE AUDIO MCS SERVER SET PARAM.
  * @param[in] service_id: service id
  * @param[in] char_uuid: char uuid
@@ -4650,7 +4577,6 @@ uint16_t rtk_bt_le_audio_mcs_client_cfg_cccd(uint16_t conn_handle, uint8_t srv_i
 uint16_t rtk_bt_le_audio_mcs_server_set_param(uint8_t service_id, uint16_t char_uuid, void *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mcs_server_send_data(uint8_t service_id,uint16_t char_uuid, void * p_param)
  * @brief     BLE AUDIO MCS SERVER SEND DATA.
  * @param[in] service_id: service id
  * @param[in] char_uuid: char uuid, only support RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME,RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_TITLE,RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_DURATION,
@@ -4663,7 +4589,6 @@ uint16_t rtk_bt_le_audio_mcs_server_set_param(uint8_t service_id, uint16_t char_
 uint16_t rtk_bt_le_audio_mcs_server_send_data(uint8_t service_id, uint16_t char_uuid, void *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mcs_server_read_confirm(uint16_t conn_handle, uint16_t cid, uint8_t service_id,uint16_t char_uuid, uint16_t offset, void * p_param)
  * @brief     BLE AUDIO MCS SERVER SET PARAM.
  * @param[in] conn_handle: conn handle
  * @param[in] cid: cid
@@ -4680,7 +4605,6 @@ uint16_t rtk_bt_le_audio_mcs_server_read_confirm(uint16_t conn_handle, uint16_t 
 
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_vcs_set_param(rtk_bt_le_audio_vcs_param_t *param)
  * @brief     BLE AUDIO VCS PARAM SET.
  * @param[in]  param: vcs param
  * @return
@@ -4690,7 +4614,6 @@ uint16_t rtk_bt_le_audio_mcs_server_read_confirm(uint16_t conn_handle, uint16_t 
 uint16_t rtk_bt_le_audio_vcs_set_param(rtk_bt_le_audio_vcs_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vcs_get_param(rtk_bt_le_audio_vcs_param_t *param)
  * @brief     BLE AUDIO VCS PARAM GET.
  * @param[out]  param: vcs param
  * @return
@@ -4702,7 +4625,6 @@ uint16_t rtk_bt_le_audio_vcs_get_param(rtk_bt_le_audio_vcs_param_t *param);
 
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_vcs_write_cp(uint16_t conn_handle,rtk_bt_le_audio_vcs_cp_op_t cp_op, rtk_bt_le_audio_vcs_cp_param_t *cp_param)
  * @brief     BLE AUDIO VCS SEND VOLUME CP.
  * @param[in]  conn_handle: connection handle
  * @param[in]  cp_op:  cp op code
@@ -4714,7 +4636,6 @@ uint16_t rtk_bt_le_audio_vcs_get_param(rtk_bt_le_audio_vcs_param_t *param);
 uint16_t rtk_bt_le_audio_vcs_write_cp(uint16_t conn_handle, rtk_bt_le_audio_vcs_cp_op_t cp_op, rtk_bt_le_audio_vcs_cp_param_t *cp_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vcs_get_volume_state(uint16_t conn_handle,rtk_bt_le_audio_vcs_volume_state_t *p_vcs_volume_state)
  * @brief     BLE AUDIO VCS GET VOLUME STATE.
  * @param[in]  conn_handle: connection handle
  * @param[out] p_vcs_volume_state:  the returned vcs volume state
@@ -4725,7 +4646,6 @@ uint16_t rtk_bt_le_audio_vcs_write_cp(uint16_t conn_handle, rtk_bt_le_audio_vcs_
 uint16_t rtk_bt_le_audio_vcs_get_volume_state(uint16_t conn_handle, rtk_bt_le_audio_vcs_volume_state_t *p_vcs_volume_state);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vcs_change_mute(rtk_bt_le_audio_group_handle_t group_handle,uint8_t mute)
  * @brief     BLE AUDIO VCS CHANGE MUTE STATE.
  * @param[in]  group_handle: group handle
  * @param[in] mute:  vcs mute
@@ -4736,7 +4656,6 @@ uint16_t rtk_bt_le_audio_vcs_get_volume_state(uint16_t conn_handle, rtk_bt_le_au
 uint16_t rtk_bt_le_audio_vcs_change_mute(rtk_bt_le_audio_group_handle_t group_handle, uint8_t mute);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vcs_change_volume(rtk_bt_le_audio_group_handle_t group_handle,uint8_t volume_setting)
  * @brief     BLE AUDIO VCS CHANGE VOLUME SETTING.
  * @param[in]  group_handle: group handle
  * @param[in] volume_setting:  volume setting
@@ -4748,7 +4667,6 @@ uint16_t rtk_bt_le_audio_vcs_change_volume(rtk_bt_le_audio_group_handle_t group_
 #endif
 #if defined(RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_mics_change_mute(rtk_bt_le_audio_group_handle_t group_handle,rtk_bt_le_audio_mics_mute_state_t mic_mute)
  * @brief     BLE AUDIO MICS CHANGE MUTE STATE.
  * @param[in]  group_handle: group handle
  * @param[in] mic_mute:  mic mute
@@ -4759,7 +4677,6 @@ uint16_t rtk_bt_le_audio_vcs_change_volume(rtk_bt_le_audio_group_handle_t group_
 uint16_t rtk_bt_le_audio_mics_change_mute(rtk_bt_le_audio_group_handle_t group_handle, rtk_bt_le_audio_mics_mute_state_t mic_mute);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mics_set_mute_value(uint16_t conn_handle,rtk_bt_le_audio_mics_mute_state_t mic_mute)
  * @brief     BLE AUDIO MICS SET MUTE VALUE.
  * @param[in]  conn_handle: connect handle
  * @param[in] mic_mute:  mic mute
@@ -4770,7 +4687,6 @@ uint16_t rtk_bt_le_audio_mics_change_mute(rtk_bt_le_audio_group_handle_t group_h
 uint16_t rtk_bt_le_audio_mics_set_mute_value(uint16_t conn_handle, rtk_bt_le_audio_mics_mute_state_t mic_mute);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mics_get_mute_value(uint16_t conn_handle,rtk_bt_le_audio_mics_mute_state_t *p_mic_mute)
  * @brief     BLE AUDIO MICS GET MUTE VALUE.
  * @param[in]  conn_handle: connect handle
  * @param[in] p_mic_mute:  returned mic mute
@@ -4783,7 +4699,6 @@ uint16_t rtk_bt_le_audio_mics_get_mute_value(uint16_t conn_handle, rtk_bt_le_aud
 
 #if defined(RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_mics_set_param(rtk_bt_le_audio_mics_param_t *param)
  * @brief     BLE AUDIO MICS SET MUTE STATE.
  * @param[in] param:  mics param
  * @return
@@ -4793,7 +4708,6 @@ uint16_t rtk_bt_le_audio_mics_get_mute_value(uint16_t conn_handle, rtk_bt_le_aud
 uint16_t rtk_bt_le_audio_mics_set_param(rtk_bt_le_audio_mics_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_mics_get_param(rtk_bt_le_audio_mics_param_t *param)
  * @brief     BLE AUDIO MICS SET MUTE STATE.
  * @param[out] param:  returned mics param
  * @return
@@ -4805,7 +4719,6 @@ uint16_t rtk_bt_le_audio_mics_get_param(rtk_bt_le_audio_mics_param_t *param);
 
 #if defined(RTK_BLE_AUDIO_VOCS_SUPPORT) && RTK_BLE_AUDIO_VOCS_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_set_param(uint8_t srv_instance_id,uint8_t set_mask,rtk_bt_le_audio_vocs_param_t *p_vocs_param)
  * @brief     BLE AUDIO VOCS SET PARAMETER.
  * @param[in] srv_instance_id:  service instance id. Used when the number of services is greater than 1.
  * @param[in] set_mask:  set_mask
@@ -4817,7 +4730,6 @@ uint16_t rtk_bt_le_audio_mics_get_param(rtk_bt_le_audio_mics_param_t *param);
 uint16_t rtk_bt_le_audio_vocs_set_param(uint8_t srv_instance_id, uint8_t set_mask, rtk_bt_le_audio_vocs_param_t *p_vocs_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_get_param(uint8_t srv_instance_id,rtk_bt_le_audio_vocs_param_t *p_vocs_param)
  * @brief     BLE AUDIO VOCS GET PARAMETER.
  * @param[in] srv_instance_id:  service instance id. Used when the number of services is greater than 1.
  * @param[out] p_vocs_param:  returned the location of volume offset control service parameter
@@ -4828,7 +4740,6 @@ uint16_t rtk_bt_le_audio_vocs_set_param(uint8_t srv_instance_id, uint8_t set_mas
 uint16_t rtk_bt_le_audio_vocs_get_param(uint8_t srv_instance_id, rtk_bt_le_audio_vocs_param_t *p_vocs_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_cfg_cccd(uint16_t conn_handle, uint8_t srv_instance_id, uint8_t cfg_flags, bool enable)
  * @brief     BLE AUDIO VOCS CONFIG CCCD.
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4841,7 +4752,6 @@ uint16_t rtk_bt_le_audio_vocs_get_param(uint8_t srv_instance_id, rtk_bt_le_audio
 uint16_t rtk_bt_le_audio_vocs_cfg_cccd(uint16_t conn_handle, uint8_t srv_instance_id, uint8_t cfg_flags, bool enable);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_vocs_char_type_t type)
  * @brief     BLE AUDIO VOCS READ CHAR VALUE. If this API is called successfully, the Application will receive RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4853,7 +4763,6 @@ uint16_t rtk_bt_le_audio_vocs_cfg_cccd(uint16_t conn_handle, uint8_t srv_instanc
 uint16_t rtk_bt_le_audio_vocs_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_vocs_char_type_t type);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_write_cp(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_vocs_cp_op_t cp_op, rtk_bt_le_audio_vocs_cp_param_t cp_param)
  * @brief     BLE AUDIO VOCS WRITE CONTROL POINT. If this API is called successfully, the Application will receive RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_CP_RESULT_IND.
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4867,7 +4776,6 @@ uint16_t rtk_bt_le_audio_vocs_write_cp(uint16_t conn_handle, uint8_t srv_instanc
 									   rtk_bt_le_audio_vocs_cp_param_t cp_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_write_cp_by_group(rtk_bt_le_audio_group_handle_t group_handle, uint8_t srv_instance_id, rtk_bt_le_audio_vocs_cp_op_t cp_op, rtk_bt_le_audio_vocs_cp_param_t cp_param)
  * @brief     BLE AUDIO VOCS WRITE CONTROL POINT BY GROUP. If this API is called successfully, the Application will receive RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_CP_RESULT_IND.
  * @param[in] group_handle:  group handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4881,7 +4789,6 @@ uint16_t rtk_bt_le_audio_vocs_write_cp_by_group(rtk_bt_le_audio_group_handle_t g
 												rtk_bt_le_audio_vocs_cp_param_t cp_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_write_audio_location(uint16_t conn_handle, uint8_t srv_instance_id, uint32_t audio_location)
  * @brief     BLE AUDIO VOCS WRITE AUDIO LOCATION.
  * @param[in] group_handle:  group handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4893,7 +4800,6 @@ uint16_t rtk_bt_le_audio_vocs_write_cp_by_group(rtk_bt_le_audio_group_handle_t g
 uint16_t rtk_bt_le_audio_vocs_write_audio_location(uint16_t conn_handle, uint8_t srv_instance_id, uint32_t audio_location);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_write_output_des(uint16_t conn_handle, uint8_t srv_instance_id, uint16_t output_des_len, uint8_t *p_output_des)
  * @brief     BLE AUDIO VOCS WRITE OUTPUT DESCRIPTOR.
  * @param[in] conn_handle:  conn handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4905,7 +4811,6 @@ uint16_t rtk_bt_le_audio_vocs_write_audio_location(uint16_t conn_handle, uint8_t
  */
 uint16_t rtk_bt_le_audio_vocs_write_output_des(uint16_t conn_handle, uint8_t srv_instance_id, uint16_t output_des_len, uint8_t *p_output_des);
 /**
- * @fn        uint16_t rtk_bt_le_audio_vocs_get_srv_data(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_vocs_srv_data_t *p_srv_data)
  * @brief     BLE AUDIO VOCS WRITE GET SERVICE DATA.
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: VOCS service index.
@@ -4920,7 +4825,6 @@ uint16_t rtk_bt_le_audio_vocs_get_srv_data(uint16_t conn_handle, uint8_t srv_ins
 
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_set_param(uint8_t srv_instance_id,rtk_bt_le_audio_aics_param_type_t aics_param_type,uint8_t value_len,uint8_t *p_value,bool set_change_counter)
  * @brief     BLE AUDIO AICS SET PARAMETER.
  * @param[in] srv_instance_id:  service instance id. Used when the number of services is greater than 1.
  * @param[in] aics_param_type:  AICS service parameter type
@@ -4935,7 +4839,6 @@ uint16_t rtk_bt_le_audio_aics_set_param(uint8_t srv_instance_id, rtk_bt_le_audio
 										bool set_change_counter);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_get_param(uint8_t srv_instance_id,rtk_bt_le_audio_aics_param_type_t aics_param_type,uint8_t value_len,uint8_t *p_value)
  * @brief     BLE AUDIO AICS GET PARAMETER.
  * @param[in] srv_instance_id:  service instance id. Used when the number of services is greater than 1.
  * @param[in] aics_param_type:  AICS service parameter type, except RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_DES
@@ -4948,7 +4851,6 @@ uint16_t rtk_bt_le_audio_aics_set_param(uint8_t srv_instance_id, rtk_bt_le_audio
 uint16_t rtk_bt_le_audio_aics_get_param(uint8_t srv_instance_id, rtk_bt_le_audio_aics_param_type_t aics_param_type, uint8_t value_len, uint8_t *p_value);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_cfg_cccd(uint16_t conn_handle, uint8_t srv_instance_id, uint8_t cfg_flags, bool enable)
  * @brief     BLE AUDIO AICS CONFIG CCCD.
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: AICS service index.
@@ -4961,7 +4863,6 @@ uint16_t rtk_bt_le_audio_aics_get_param(uint8_t srv_instance_id, rtk_bt_le_audio
 uint16_t rtk_bt_le_audio_aics_cfg_cccd(uint16_t conn_handle, uint8_t srv_instance_id, uint8_t cfg_flags, bool enable);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_aics_char_type_t type)
  * @brief     BLE AUDIO AICS READ CHAR VALUE. If this API is called successfully, the Application will receive RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: AICS service index.
@@ -4973,7 +4874,6 @@ uint16_t rtk_bt_le_audio_aics_cfg_cccd(uint16_t conn_handle, uint8_t srv_instanc
 uint16_t rtk_bt_le_audio_aics_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_aics_char_type_t type);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_write_cp(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_aics_cp_op_t cp_op, rtk_bt_le_audio_aics_cp_param_t cp_param)
  * @brief     BLE AUDIO AICS WRITE CONTROL POINT. If this API is called successfully, the Application will receive RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND.
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: AICS service index.
@@ -4987,7 +4887,6 @@ uint16_t rtk_bt_le_audio_aics_write_cp(uint16_t conn_handle, uint8_t srv_instanc
 									   rtk_bt_le_audio_aics_cp_param_t cp_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_write_cp_by_group(rtk_bt_le_audio_group_handle_t group_handle, uint8_t srv_instance_id, rtk_bt_le_audio_aics_cp_op_t cp_op, rtk_bt_le_audio_aics_cp_param_t cp_param)
  * @brief     BLE AUDIO AICS WRITE CONTROL POINT BY GROUP. If this API is called successfully, the Application will receive RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND.
  * @param[in] group_handle:  group handle.
  * @param[in] srv_instance_id: AICS service index.
@@ -5001,7 +4900,6 @@ uint16_t rtk_bt_le_audio_aics_write_cp_by_group(rtk_bt_le_audio_group_handle_t g
 												rtk_bt_le_audio_aics_cp_param_t cp_param);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_write_input_des(uint16_t conn_handle, uint8_t srv_instance_id, uint16_t input_des_len, uint8_t *p_input_des)
  * @brief     BLE AUDIO AICS WRITE INPUT DESCRIPTOR.
  * @param[in] conn_handle:  conn handle.
  * @param[in] srv_instance_id: AICS service index.
@@ -5014,7 +4912,6 @@ uint16_t rtk_bt_le_audio_aics_write_cp_by_group(rtk_bt_le_audio_group_handle_t g
 uint16_t rtk_bt_le_audio_aics_write_input_des(uint16_t conn_handle, uint8_t srv_instance_id, uint16_t input_des_len, uint8_t *p_input_des);
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_aics_get_srv_data(uint16_t conn_handle, uint8_t srv_instance_id, rtk_bt_le_audio_aics_srv_data_t *p_srv_data)
  * @brief     BLE AUDIO AICS WRITE GET SERVICE DATA.
  * @param[in] conn_handle:  connect handle.
  * @param[in] srv_instance_id: AICS service index.

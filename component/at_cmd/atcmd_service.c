@@ -250,60 +250,56 @@ exit:
   If return value argc == -1, it means there are invalid datas inside.
   e.g.
     AT+XXX=param1,head\,tail,param3		<- The 2nd parameter is string "head,tail".
-	AT+XXX=param1,head\\tail,param3		<- The 2nd parameter is string "head\tail".
+    AT+XXX=param1,head\\tail,param3		<- The 2nd parameter is string "head\tail".
   The single backslash is not allowed, in other words, you should use double backslashes
   such as "\\" to express single backslash.
 ****************************************************************/
 int parse_param_advance(char *buf, char **argv)
 {
-	int argc = 1;
-	int buf_pos = 0, temp_pos = 0, length = 0;
-	static char temp_buf[UART_LOG_CMD_BUFLEN];
-	char *segment = temp_buf;
+	/* The last charactor should be '\0'. */
+	const int most_size = UART_LOG_CMD_BUFLEN - 1;
+	int argc = 1, pos = 0, i = 0, j = 0, offset = 1;
 
 	if (buf == NULL) {
 		goto exit;
 	}
-	length = strlen(buf);
-	if (length == 0) {
-		goto exit;
-	}
-	/* If the length is longer than UART_LOG_CMD_BUFLEN - 1, the tail will be cut. */
-	length = MIN(length, UART_LOG_CMD_BUFLEN - 1);
 
-	while (buf_pos < length) {
+	for (i = 0; most_size > i && '\0' != buf[i] && MAX_ARGC > argc; i += offset) {
 		/* Escape charactor. */
-		if (buf[buf_pos] == '\\') {
-			buf_pos++;
-			/* There are 2 escape charactors supported right now. */
-			if ((buf[buf_pos] == ',') || (buf[buf_pos] == '\\')) {
-				temp_buf[temp_pos] = buf[buf_pos];
-				temp_pos++;
-			} else {
+		if ('\\' == buf[i]) {
+			/* The next charactor should be comma or backslash. */
+			if (',' != buf[i + 1] && '\\' != buf[i + 1]) {
 				argc = -1;
 				goto exit;
 			}
+			buf[j] = buf[i + 1];
+			offset = 2;
 		}
-		/* Comma is considered as segmentasion. */
-		else if (buf[buf_pos] == ',') {
-			temp_buf[temp_pos] = '\0';
-			temp_pos++;
-			argv[argc] = segment;
+		/* Delimiter. */
+		else if (',' == buf[i]) {
+			buf[j] = '\0';
+			argv[argc] = &buf[pos];
 			argc++;
-			segment = &temp_buf[temp_pos];
+			pos = j + 1;
+			offset = 1;
 		}
-		/* Other characters. */
+		/* Other charactor. */
 		else {
-			temp_buf[temp_pos] = buf[buf_pos];
-			temp_pos++;
+			buf[j] = buf[i];
+			offset = 1;
 		}
-		buf_pos++;
+		j++;
 	}
 
-	/* The last one. */
-	temp_buf[temp_pos] = '\0';
-	argv[argc] = segment;
-	argc++;
+	/* The final arg. */
+	if (MAX_ARGC > argc) {
+		buf[j] = '\0';
+		argv[argc] = &buf[pos];
+		argc++;
+	} else {
+		argc = -1;
+		goto exit;
+	}
 
 exit:
 	return argc;

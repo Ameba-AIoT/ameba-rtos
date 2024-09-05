@@ -20,14 +20,13 @@
 #if CONFIG_AUTO_RECONNECT
 struct rtw_auto_reconn_t {
 	rtw_network_info_t  conn_param;
-	u8                  pwd[RTW_PASSPHRASE_MAX_SIZE + 1];
-	u8                  enable;
-	u8                  waiting;
-	u8                  connecting;
-	u8                  cnt;
-	u8                  infinite;
-	u8                  eap_method;
 	rtos_timer_t        timer;
+	u8                  pwd[RTW_PASSPHRASE_MAX_SIZE + 1];
+	u8                  cnt;
+	u8                  eap_method;
+	u8                  b_infinite: 1;
+	u8                  b_enable: 1;
+	u8                  b_waiting: 1;
 };
 
 extern struct rtw_auto_reconn_t  rtw_reconn;

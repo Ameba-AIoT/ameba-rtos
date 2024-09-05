@@ -26,8 +26,8 @@ typedef struct _at_command_mp_ext_item_ {
 #define MP_EXT2_PREFIX		"[ATM2]: "
 #define MP_EXT2_PRINTF(...) \
 		do{ \
-			_AT_PRINTK(MP_EXT2_PREFIX); \
-			_AT_PRINTK(__VA_ARGS__); \
+			RTK_LOGS(NOTAG, MP_EXT2_PREFIX); \
+			RTK_LOGS(NOTAG, __VA_ARGS__); \
 		}while(0)
 
 #define UART_BRIDGE_USAGE		"ATM2=bridge\n"

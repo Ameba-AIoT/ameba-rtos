@@ -73,7 +73,7 @@ int atcmd_bt_tx_power_gain(int argc, char *argv[])
 	uint8_t index_le, index_br, index_edr2m, index_edr3m;
 
 	if (argc != 1 && argc != 4) {
-		BTVENDOR_AT_PRINTK("rtk bt set tx power gain fail, wrong parameter number!");
+		BT_LOGE("Set tx power gain fail, wrong parameter number!\r\n");
 		return 0;
 	}
 
@@ -92,7 +92,8 @@ int atcmd_bt_tx_power_gain(int argc, char *argv[])
 
 	rtk_bt_set_bt_tx_power_gain_index(index);
 
-	BTVENDOR_AT_PRINTK("rtk bt set tx power gain OK! 0x%lx", index);
+	BT_LOGA("Set tx power gain 0x%lx OK!\r\n", index);
+
 	return 0;
 }
 
@@ -103,7 +104,8 @@ int atcmd_bt_hci_debug_enable(int argc, char *argv[])
 
 	rtk_bt_hci_debug_enable();
 
-	BTVENDOR_AT_PRINTK("hci debug enable OK!");
+	BT_LOGA("HCI debug enable OK!\r\n");
+
 	return 0;
 }
 
@@ -113,7 +115,7 @@ int atcmd_bt_sleep_mode(int argc, char *argv[])
 
 	unsigned int mode = (unsigned int)str_to_int(argv[0]);
 
-	BTVENDOR_AT_PRINTK("set fw sleep mode to 0x%x.", mode);
+	BT_LOGA("Set BT sleep mode to 0x%x.\r\n", mode);
 
 	rtk_bt_sleep_mode(mode);
 
@@ -127,11 +129,12 @@ int atcmd_bt_sleep_mode(int argc, char *argv[])
     uint8_t ant = atoi(argv[0]);
 
     if (ant > 1) {
-        BTVENDOR_AT_PRINTK("invalid param!");
+        BT_LOGE("Invalid BT ant!\r\n");
         return 0;
     }
 
-    BTVENDOR_AT_PRINTK("set default bt ant to %s.", ant ? "ANT_S1" : "ANT_S0");
+    BT_LOGA("Set BT ant to %s.\r\n", ant ? "ANT_S1" : "ANT_S0");
+
     rtk_bt_set_bt_antenna(ant);
 
     return 0;
@@ -142,7 +145,7 @@ int atcmd_bt_set_tx_power(int argc, char *argv[])
 	rtk_bt_vendor_tx_power_param_t tx_power = {0};
 
 	if (argc != 3 && argc != 4) {
-		BTVENDOR_AT_PRINTK("rtk bt set tx power fail, wrong parameter number!");
+		BT_LOGE("Set tx power fail, wrong parameter number!\r\n");
 		return 0;
 	}
 
@@ -152,7 +155,7 @@ int atcmd_bt_set_tx_power(int argc, char *argv[])
 		tx_power.tx_gain = str_to_int(argv[2]);
 
 		if (tx_power.adv_tx_power.type > ADV_TX_POW_SET_2M_DEFAULT) {
-			BTVENDOR_AT_PRINTK("rtk bt set tx power fail, wrong adv tx power!");
+			BT_LOGE("Set tx power fail, wrong adv tx power!\r\n");
 			return 0;
 		}
 
@@ -162,17 +165,17 @@ int atcmd_bt_set_tx_power(int argc, char *argv[])
 		tx_power.tx_gain = str_to_int(argv[3]);
 
 		if (tx_power.conn_tx_power.is_reset != CONN_TX_POW_USER_MODE && tx_power.conn_tx_power.is_reset != CONN_TX_POW_RESET_TO_ORIGINAL) {
-			BTVENDOR_AT_PRINTK("rtk bt set tx power fail, wrong conn tx power reset parameter!");
+			BT_LOGE("Set tx power fail, wrong conn tx power reset parameter!\r\n");
 			return 0;
 		}
 
 	} else {
-		BTVENDOR_AT_PRINTK("rtk bt set tx power fail, wrong sub command or parameter number!");
+		BT_LOGE("Set tx power fail, wrong sub command or parameter number!\r\n");
 		return 0;
 	}
 
 	if (!rtk_bt_set_tx_power(&tx_power)) {
-		BTVENDOR_AT_PRINTK("rtk bt set tx power OK! 0x%x", tx_power.tx_gain);
+		BT_LOGA("Set tx power 0x%x OK!\r\n", tx_power.tx_gain);
 	}
 	return 0;
 }
@@ -181,11 +184,11 @@ int atcmd_bt_set_tx_power(int argc, char *argv[])
 void rtk_bt_le_tx_sof_eof_callback(uint8_t flag)
 {
 	if (flag == RTK_BT_LE_TX_SOF) {
-		BTVENDOR_AT_PRINTK("%s SOF,time=%d\r\n", __func__, (int)osif_sys_time_get());
+		BT_LOGA("%s SOF,time=%d\r\n", __func__, (int)osif_sys_time_get());
 	} else if (flag == RTK_BT_LE_TX_EOF) {
-		BTVENDOR_AT_PRINTK("%s EOF,time=%d\r\n", __func__, (int)osif_sys_time_get());
+		BT_LOGA("%s EOF,time=%d\r\n", __func__, (int)osif_sys_time_get());
 	} else {
-		BTVENDOR_AT_PRINTK("%s ERROR\r\n", __func__);
+		BT_LOGE("%s ERROR\r\n", __func__);
 	}
 }
 
@@ -195,14 +198,14 @@ int atcmd_bt_sof_eof_ind(int argc, char *argv[])
 	uint8_t enable = 0;
 
 	if (argc != 2) {
-		BTVENDOR_AT_PRINTK("atcmd_bt_sof_eof_ind fail, wrong parameter number!");
+		BT_LOGE("atcmd_bt_sof_eof_ind fail, wrong parameter number!\r\n");
 		return 0;
 	}
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	enable = (uint8_t)str_to_int(argv[1]);
 
-	BTVENDOR_AT_PRINTK("set conn_handle(0x%x) sof and eof to %x.", conn_handle, enable);
+	BT_LOGA("Set conn_handle(0x%x) sof and eof to %x.\r\n", conn_handle, enable);
 
 	rtk_bt_le_sof_eof_ind(conn_handle, enable, (void *)rtk_bt_le_tx_sof_eof_callback);
 
@@ -213,7 +216,7 @@ int atcmd_bt_sof_eof_ind(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
-	BTVENDOR_AT_PRINTK("BT SOF and EOF indication is not supported on this platform!\r\n");
+	BT_LOGE("BT SOF and EOF indication is not supported on this platform!\r\n");
 	return 0;
 }
 #endif

@@ -30,19 +30,19 @@ static int atcmd_ble_mesh_remote_prov_client_scan_start(int argc, char **argv)
 	rmt_scan.scan_timeout = str_to_int(argv[3]);
 	if (5 == argc) {
 		if (!hexdata_str_to_array(argv[4], rmt_scan.uuid, 16)) {
-			AT_PRINTK("[%s] UUID String to hex fail\r\n", __func__);
+			BT_LOGE("[%s] UUID String to hex fail\r\n", __func__);
 			return -2;
 		}
 	}
 	ret = rtk_bt_mesh_remote_prov_scan_start(&rmt_scan);
 	if (RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS != ret) {
-		AT_PRINTK("[%s] Remote prov start scan fail,reason:%d\r\n", __func__, ret);
+		BT_LOGE("[%s] Remote prov start scan fail,reason:%d\r\n", __func__, ret);
 		return ret;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHRMT_AT_PRINTK("Platform not support remote provisioning client model.");
+	BT_LOGE("Platform not support remote provisioning client model.\r\n");
 	return -1;
 #endif
 }
@@ -57,13 +57,13 @@ static int atcmd_ble_mesh_remote_prov_client_scan_capa_get(int argc, char **argv
 	scan_capa_get.net_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_remote_prov_scan_capa_get(&scan_capa_get);
 	if (ret) {
-		AT_PRINTK("[%s] Remote prov scan capa get fail, reason:%d\r\n", __func__, ret);
+		BT_LOGE("[%s] Remote prov scan capa get fail, reason:%d\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHRMT_AT_PRINTK("Platform not support remote provisioning client model.");
+	BT_LOGE("Platform not support remote provisioning client model.\r\n");
 	return -1;
 #endif
 }
@@ -80,17 +80,17 @@ static int atcmd_ble_mesh_remote_prov_client_link_open(int argc, char **argv)
 		link_open.link_open_timeout = str_to_int(argv[3]);
 		ret = rtk_bt_mesh_remote_prov_link_open(&link_open);
 		if (ret) {
-			AT_PRINTK("[%s] Remote prov link open fail! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s] Remote prov link open fail! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] String to hex fail\r\n", __func__);
+		BT_LOGE("[%s] String to hex fail\r\n", __func__);
 		return -2;
 	}
 #else
 	(void)argv;
-	MESHRMT_AT_PRINTK("Platform not support remote provisioning client model.");
+	BT_LOGE("Platform not support remote provisioning client model.\r\n");
 	return -1;
 #endif
 }

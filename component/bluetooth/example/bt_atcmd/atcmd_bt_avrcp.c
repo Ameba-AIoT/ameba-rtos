@@ -25,11 +25,11 @@ static int atcmd_bt_avrcp_play(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_play(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP play fail \r\n");
+		BT_LOGE("AVRCP play fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP play %s ...", addr_str);
+	BT_LOGA("AVRCP play %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -42,11 +42,11 @@ static int atcmd_bt_avrcp_pause(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_pause(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP pause fail \r\n");
+		BT_LOGE("AVRCP pause fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP pause %s ...", addr_str);
+	BT_LOGA("AVRCP pause %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -59,11 +59,11 @@ static int atcmd_bt_avrcp_stop(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_stop(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP stop fail \r\n");
+		BT_LOGE("AVRCP stop fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP stop %s ...", addr_str);
+	BT_LOGA("AVRCP stop %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -76,11 +76,11 @@ static int atcmd_bt_avrcp_forward(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_forward(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP forward fail \r\n");
+		BT_LOGE("AVRCP forward fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP forward %s ...", addr_str);
+	BT_LOGA("AVRCP forward %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -93,11 +93,11 @@ static int atcmd_bt_avrcp_backward(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_backward(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP backward fail \r\n");
+		BT_LOGE("AVRCP backward fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP backward %s ...", addr_str);
+	BT_LOGA("AVRCP backward %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -110,11 +110,11 @@ static int atcmd_bt_avrcp_rewind_start(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_rewind_start(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP rewind start fail \r\n");
+		BT_LOGE("AVRCP rewind start fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP rewind start %s ...", addr_str);
+	BT_LOGA("AVRCP rewind start %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -127,11 +127,11 @@ static int atcmd_bt_avrcp_rewind_stop(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_rewind_stop(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP rewind stop fail \r\n");
+		BT_LOGE("AVRCP rewind stop fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP rewind stop %s ...", addr_str);
+	BT_LOGA("AVRCP rewind stop %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -144,11 +144,11 @@ static int atcmd_bt_avrcp_fast_forward_start(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_fast_forward_start(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP fast forward start fail \r\n");
+		BT_LOGE("AVRCP fast forward start fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP fast forward start %s ...", addr_str);
+	BT_LOGA("AVRCP fast forward start %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -161,11 +161,11 @@ static int atcmd_bt_avrcp_fast_forward_stop(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_fast_forward_stop(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP fast forward stop fail \r\n");
+		BT_LOGE("AVRCP fast forward stop fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP fast forward stop %s ...", addr_str);
+	BT_LOGA("AVRCP fast forward stop %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -180,11 +180,11 @@ static int atcmd_bt_avrcp_volume_set(int argc, char **argv)
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	volume = (uint8_t)str_to_int(argv[1]);
 	if (rtk_bt_avrcp_absolute_volume_set(bd_addr, volume)) {
-		BTAVRCP_AT_PRINTK("AVRCP volume set fail \r\n");
+		BT_LOGE("AVRCP volume set fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP volume set %s ...", addr_str);
+	BT_LOGA("AVRCP volume set %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -199,11 +199,11 @@ static int atcmd_bt_avrcp_volume_change_req(int argc, char **argv)
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	volume = (uint8_t)str_to_int(argv[1]);
 	if (rtk_bt_avrcp_volume_change_req(bd_addr, volume)) {
-		BTAVRCP_AT_PRINTK("AVRCP volume set fail \r\n");
+		BT_LOGE("AVRCP volume set fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP volume set %s ...", addr_str);
+	BT_LOGA("AVRCP volume set %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -216,11 +216,11 @@ static int atcmd_bt_avrcp_connect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_connect(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP connect fail \r\n");
+		BT_LOGE("AVRCP connect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP connecting to device %s ...", addr_str);
+	BT_LOGA("AVRCP connecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -233,11 +233,11 @@ static int atcmd_bt_avrcp_disconnect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_avrcp_disconnect(bd_addr)) {
-		BTAVRCP_AT_PRINTK("AVRCP disconnect fail \r\n");
+		BT_LOGE("AVRCP disconnect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTAVRCP_AT_PRINTK("AVRCP disconnecting to device %s ...", addr_str);
+	BT_LOGA("AVRCP disconnecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }

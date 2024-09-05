@@ -191,7 +191,7 @@ static bool is_inic_vendor_cmd(uint16_t opcode)
 
 	switch (opcode) {
 	case BT_HCI_CMD_VS_BT_ON:
-		status = bt_inic_open() ? 1 : 0;
+		status = bt_inic_open() ? 0 : 1;
 		BT_LOGA("BT INIC Open\r\n");
 		break;
 	case BT_HCI_CMD_VS_BT_OFF:
@@ -220,18 +220,21 @@ static bool is_inic_vendor_cmd(uint16_t opcode)
 
 void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len)
 {
+	uint16_t opcode;
 #if defined(BT_INIC_FPGA_VERIFICATION) && BT_INIC_FPGA_VERIFICATION
 	(void)len;
 
 	if (type == HCI_CMD) {
-		_handle_cmd_for_fpga(((*(pdata + 1) << 8) | *(pdata)));
+		LE_TO_UINT16(opcode, pdata);
+		_handle_cmd_for_fpga(opcode);
 		return;
 	}
 	BT_LOGA("Host TX type(%d) packet TO Device\r\n", type);
 
 #else
 	if (type == HCI_CMD) {
-		if (is_inic_vendor_cmd(((*(pdata + 1) << 8) | *(pdata)))) {
+		LE_TO_UINT16(opcode, pdata);
+		if (is_inic_vendor_cmd(opcode)) {
 			return;
 		}
 	}
@@ -242,4 +245,10 @@ void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len)
 		BT_LOGE("Error!! Please enable controller first.\r\n");
 	}
 #endif
+}
+
+bool hci_if_write_internal(uint8_t *buf, uint32_t len)
+{
+	hci_transport_send(*buf, buf + 1, len - 1, true);
+	return true;
 }

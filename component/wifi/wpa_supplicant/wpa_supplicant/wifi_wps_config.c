@@ -1044,7 +1044,7 @@ void wps_stop(void)
 
 int wps_judge_staion_disconnect(void)
 {
-	struct _rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+	struct _rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0, 0};
 
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) != 0) {
 		return -1;

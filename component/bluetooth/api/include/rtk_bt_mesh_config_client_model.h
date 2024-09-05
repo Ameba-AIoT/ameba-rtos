@@ -812,7 +812,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_add_app_key(rtk_bt_mesh_config_client_add_app_key_t *add_app_key)
  * @brief     Send Config AppKey Add message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_ADD_APP_KEY
  * @param[in] add_app_key: config message param
  * @return
@@ -822,7 +821,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_config_client_add_app_key(rtk_bt_mesh_config_client_add_app_key_t *add_app_key);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_app_bind(rtk_bt_mesh_config_client_model_app_bind_t *model_app_bind)
  * @brief     Send Config Model App Bind message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_APP_BIND
  * @param[in] model_app_bind: config message param
  * @return
@@ -832,7 +830,6 @@ uint16_t rtk_bt_mesh_config_client_add_app_key(rtk_bt_mesh_config_client_add_app
 uint16_t rtk_bt_mesh_config_client_model_app_bind(rtk_bt_mesh_config_client_model_app_bind_t *model_app_bind);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_sub_add(rtk_bt_mesh_config_client_model_sub_add_t *model_sub_add)
  * @brief     Send Config Model Subscription Add message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_SUB_ADD
  * @param[in] model_sub_add: config message param
  * @return
@@ -842,7 +839,6 @@ uint16_t rtk_bt_mesh_config_client_model_app_bind(rtk_bt_mesh_config_client_mode
 uint16_t rtk_bt_mesh_config_client_model_sub_add(rtk_bt_mesh_config_client_model_sub_add_t *model_sub_add);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_default_ttl_get(rtk_bt_mesh_config_client_model_default_ttl_get_t *ttl_get)
  * @brief     Send Config Default TTL Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_DEFAULT_TTL_GET
  * @param[in] ttl_get: config message param
  * @return
@@ -852,7 +848,6 @@ uint16_t rtk_bt_mesh_config_client_model_sub_add(rtk_bt_mesh_config_client_model
 uint16_t rtk_bt_mesh_config_client_model_default_ttl_get(rtk_bt_mesh_config_client_model_default_ttl_get_t *ttl_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_default_ttl_set(rtk_bt_mesh_config_client_model_default_ttl_set_t *ttl_set)
  * @brief     Send Config Default TTL Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_DEFAULT_TTL_SET
  * @param[in] ttl_set: config message param
  * @return
@@ -862,7 +857,6 @@ uint16_t rtk_bt_mesh_config_client_model_default_ttl_get(rtk_bt_mesh_config_clie
 uint16_t rtk_bt_mesh_config_client_model_default_ttl_set(rtk_bt_mesh_config_client_model_default_ttl_set_t *ttl_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_relay_get(rtk_bt_mesh_config_client_model_relay_get_t *relay_get)
  * @brief     Send Config Relay Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_RELAY_GET
  * @param[in] relay_get: config message param
  * @return
@@ -872,7 +866,6 @@ uint16_t rtk_bt_mesh_config_client_model_default_ttl_set(rtk_bt_mesh_config_clie
 uint16_t rtk_bt_mesh_config_client_model_relay_get(rtk_bt_mesh_config_client_model_relay_get_t *relay_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_relay_set(rtk_bt_mesh_config_client_model_relay_set_t *relay_set)
  * @brief     Send Config Relay Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_RELAY_SET
  * @param[in] relay_set: config message param
  * @return
@@ -882,7 +875,6 @@ uint16_t rtk_bt_mesh_config_client_model_relay_get(rtk_bt_mesh_config_client_mod
 uint16_t rtk_bt_mesh_config_client_model_relay_set(rtk_bt_mesh_config_client_model_relay_set_t *relay_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_net_transmit_get(rtk_bt_mesh_config_client_model_net_transmit_get_t *net_transmit_get)
  * @brief     Send Config Network Transmit Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NET_TRANSMIT_GET
  * @param[in] net_transmit_get: config message param
  * @return
@@ -892,7 +884,6 @@ uint16_t rtk_bt_mesh_config_client_model_relay_set(rtk_bt_mesh_config_client_mod
 uint16_t rtk_bt_mesh_config_client_model_net_transmit_get(rtk_bt_mesh_config_client_model_net_transmit_get_t *net_transmit_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_net_transmit_set(rtk_bt_mesh_config_client_model_net_transmit_set_t *net_transmit_set)
  * @brief     Send Config Network Transmit Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NET_TRANSMIT_SET
  * @param[in] net_transmit_set: config message param
  * @return
@@ -902,7 +893,6 @@ uint16_t rtk_bt_mesh_config_client_model_net_transmit_get(rtk_bt_mesh_config_cli
 uint16_t rtk_bt_mesh_config_client_model_net_transmit_set(rtk_bt_mesh_config_client_model_net_transmit_set_t *net_transmit_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_node_reset(rtk_bt_mesh_config_client_model_node_reset_t *node_reset)
  * @brief     Send Config Node Reset message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NODE_RESET
  * @param[in] node_reset: config message param
  * @return
@@ -912,7 +902,6 @@ uint16_t rtk_bt_mesh_config_client_model_net_transmit_set(rtk_bt_mesh_config_cli
 uint16_t rtk_bt_mesh_config_client_model_node_reset(rtk_bt_mesh_config_client_model_node_reset_t *node_reset);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_compo_data_get(rtk_bt_mesh_config_client_model_compo_data_get_t *compo_data_get)
  * @brief     Send Config Composition Data Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_GET
  * @param[in] compo_data_get: config message param
  * @return
@@ -922,7 +911,6 @@ uint16_t rtk_bt_mesh_config_client_model_node_reset(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_compo_data_get(rtk_bt_mesh_config_client_model_compo_data_get_t *compo_data_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_beacon_get(rtk_bt_mesh_config_client_model_beacon_get_t *beacon_get)
  * @brief     Send Config Beacon Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_BEACON_GET
  * @param[in] beacon_get: config message param
  * @return
@@ -932,7 +920,6 @@ uint16_t rtk_bt_mesh_config_client_model_compo_data_get(rtk_bt_mesh_config_clien
 uint16_t rtk_bt_mesh_config_client_model_beacon_get(rtk_bt_mesh_config_client_model_beacon_get_t *beacon_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_beacon_set(rtk_bt_mesh_config_client_model_beacon_set_t *beacon_set)
  * @brief     Send Config Beacon Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_BEACON_SET
  * @param[in] beacon_set: config message param
  * @return
@@ -942,7 +929,6 @@ uint16_t rtk_bt_mesh_config_client_model_beacon_get(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_beacon_set(rtk_bt_mesh_config_client_model_beacon_set_t *beacon_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_proxy_get(rtk_bt_mesh_config_client_model_proxy_get_t *proxy_get)
  * @brief     Send Config GATT Proxy Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_PROXY_GET
  * @param[in] proxy_get: config message param
  * @return
@@ -952,7 +938,6 @@ uint16_t rtk_bt_mesh_config_client_model_beacon_set(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_proxy_get(rtk_bt_mesh_config_client_model_proxy_get_t *proxy_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_proxy_set(rtk_bt_mesh_config_client_model_proxy_set_t *proxy_set)
  * @brief     Send Config GATT Proxy Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_PROXY_SET
  * @param[in] proxy_set: config message param
  * @return
@@ -962,7 +947,6 @@ uint16_t rtk_bt_mesh_config_client_model_proxy_get(rtk_bt_mesh_config_client_mod
 uint16_t rtk_bt_mesh_config_client_model_proxy_set(rtk_bt_mesh_config_client_model_proxy_set_t *proxy_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_pub_get(rtk_bt_mesh_config_client_model_model_pub_get_t *pub_get)
  * @brief     Send Config Model Publication Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_PUB_GET
  * @param[in] pub_get: config message param
  * @return
@@ -972,7 +956,6 @@ uint16_t rtk_bt_mesh_config_client_model_proxy_set(rtk_bt_mesh_config_client_mod
 uint16_t rtk_bt_mesh_config_client_model_pub_get(rtk_bt_mesh_config_client_model_model_pub_get_t *pub_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_pub_set(rtk_bt_mesh_config_client_model_model_pub_set_t *pub_set)
  * @brief     Send Config Model Publication Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_PUB_SET
  * @param[in] pub_set: config message param
  * @return
@@ -982,7 +965,6 @@ uint16_t rtk_bt_mesh_config_client_model_pub_get(rtk_bt_mesh_config_client_model
 uint16_t rtk_bt_mesh_config_client_model_pub_set(rtk_bt_mesh_config_client_model_model_pub_set_t *pub_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_sub_delete(rtk_bt_mesh_config_client_model_model_sub_delete_t *sub_delete)
  * @brief     Send Config Model Subscription Delete message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_SUB_DELETE
  * @param[in] sub_delete: config message param
  * @return
@@ -992,7 +974,6 @@ uint16_t rtk_bt_mesh_config_client_model_pub_set(rtk_bt_mesh_config_client_model
 uint16_t rtk_bt_mesh_config_client_model_sub_delete(rtk_bt_mesh_config_client_model_model_sub_delete_t *sub_delete);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_sub_delete_all(rtk_bt_mesh_config_client_model_model_sub_delete_all_t *sub_delete_all)
  * @brief     Send Config Model Subscription Delete All message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_SUB_DELETE_ALL
  * @param[in] sub_delete_all: config message param
  * @return
@@ -1002,7 +983,6 @@ uint16_t rtk_bt_mesh_config_client_model_sub_delete(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_sub_delete_all(rtk_bt_mesh_config_client_model_model_sub_delete_all_t *sub_delete_all);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_sub_overwrite(rtk_bt_mesh_config_client_model_model_sub_overwrite_t *sub_overwrite)
  * @brief     Send Config Model Subscription Overwrite message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_SUB_OVERWRITE
  * @param[in] sub_overwrite: config message param
  * @return
@@ -1012,7 +992,6 @@ uint16_t rtk_bt_mesh_config_client_model_sub_delete_all(rtk_bt_mesh_config_clien
 uint16_t rtk_bt_mesh_config_client_model_sub_overwrite(rtk_bt_mesh_config_client_model_model_sub_overwrite_t *sub_overwrite);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_sub_get(rtk_bt_mesh_config_client_model_model_sub_get_t *sub_get)
  * @brief     Send Config Model Subscription Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_SUB_GET
  * @param[in] sub_get: config message param
  * @return
@@ -1022,7 +1001,6 @@ uint16_t rtk_bt_mesh_config_client_model_sub_overwrite(rtk_bt_mesh_config_client
 uint16_t rtk_bt_mesh_config_client_model_sub_get(rtk_bt_mesh_config_client_model_model_sub_get_t *sub_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_net_key_add(rtk_bt_mesh_config_client_model_net_key_add_t *net_key_add)
  * @brief     Send Config NetKey Add message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NET_KEY_ADD
  * @param[in] net_key_add: config message param
  * @return
@@ -1032,7 +1010,6 @@ uint16_t rtk_bt_mesh_config_client_model_sub_get(rtk_bt_mesh_config_client_model
 uint16_t rtk_bt_mesh_config_client_model_net_key_add(rtk_bt_mesh_config_client_model_net_key_add_t *net_key_add);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_net_key_update(rtk_bt_mesh_config_client_model_net_key_update_t *net_key_update)
  * @brief     Send Config NetKey Update message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NET_KEY_UPDATE
  * @param[in] net_key_update: config message param
  * @return
@@ -1042,7 +1019,6 @@ uint16_t rtk_bt_mesh_config_client_model_net_key_add(rtk_bt_mesh_config_client_m
 uint16_t rtk_bt_mesh_config_client_model_net_key_update(rtk_bt_mesh_config_client_model_net_key_update_t *net_key_update);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_net_key_delete(rtk_bt_mesh_config_client_model_net_key_delete_t *net_key_delete)
  * @brief     Send Config NetKey Delete message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NET_KEY_DELETE
  * @param[in] net_key_delete: config message param
  * @return
@@ -1052,7 +1028,6 @@ uint16_t rtk_bt_mesh_config_client_model_net_key_update(rtk_bt_mesh_config_clien
 uint16_t rtk_bt_mesh_config_client_model_net_key_delete(rtk_bt_mesh_config_client_model_net_key_delete_t *net_key_delete);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_net_key_get(rtk_bt_mesh_config_client_model_net_key_get_t *net_key_get)
  * @brief     Send Config NetKey Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NET_KEY_GET
  * @param[in] net_key_get: config message param
  * @return
@@ -1062,7 +1037,6 @@ uint16_t rtk_bt_mesh_config_client_model_net_key_delete(rtk_bt_mesh_config_clien
 uint16_t rtk_bt_mesh_config_client_model_net_key_get(rtk_bt_mesh_config_client_model_net_key_get_t *net_key_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_app_key_update(rtk_bt_mesh_config_client_model_app_key_update_t *app_key_update)
  * @brief     Send Config AppKey Update message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_APP_KEY_UPDATE
  * @param[in] app_key_update: config message param
  * @return
@@ -1072,7 +1046,6 @@ uint16_t rtk_bt_mesh_config_client_model_net_key_get(rtk_bt_mesh_config_client_m
 uint16_t rtk_bt_mesh_config_client_model_app_key_update(rtk_bt_mesh_config_client_model_app_key_update_t *app_key_update);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_app_key_delete(rtk_bt_mesh_config_client_model_app_key_delete_t *app_key_delete)
  * @brief     Send Config AppKey Delete message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_APP_KEY_DELETE
  * @param[in] app_key_delete: config message param
  * @return
@@ -1082,7 +1055,6 @@ uint16_t rtk_bt_mesh_config_client_model_app_key_update(rtk_bt_mesh_config_clien
 uint16_t rtk_bt_mesh_config_client_model_app_key_delete(rtk_bt_mesh_config_client_model_app_key_delete_t *app_key_delete);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_app_key_get(rtk_bt_mesh_config_client_model_app_key_get_t *app_key_get)
  * @brief     Send Config AppKey Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_APP_KEY_GET
  * @param[in] app_key_get: config message param
  * @return
@@ -1092,7 +1064,6 @@ uint16_t rtk_bt_mesh_config_client_model_app_key_delete(rtk_bt_mesh_config_clien
 uint16_t rtk_bt_mesh_config_client_model_app_key_get(rtk_bt_mesh_config_client_model_app_key_get_t *app_key_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_node_identity_get(rtk_bt_mesh_config_client_model_node_identity_get_t *node_identity_get)
  * @brief     Send Config Node Identity Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NODE_IDENTITY_GET
  * @param[in] node_identity_get: config message param
  * @return
@@ -1102,7 +1073,6 @@ uint16_t rtk_bt_mesh_config_client_model_app_key_get(rtk_bt_mesh_config_client_m
 uint16_t rtk_bt_mesh_config_client_model_node_identity_get(rtk_bt_mesh_config_client_model_node_identity_get_t *node_identity_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_node_identity_set(rtk_bt_mesh_config_client_model_node_identity_set_t *node_identity_set)
  * @brief     Send Config Node Identity Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_NODE_IDENTITY_SET
  * @param[in] node_identity_set: config message param
  * @return
@@ -1112,7 +1082,6 @@ uint16_t rtk_bt_mesh_config_client_model_node_identity_get(rtk_bt_mesh_config_cl
 uint16_t rtk_bt_mesh_config_client_model_node_identity_set(rtk_bt_mesh_config_client_model_node_identity_set_t *node_identity_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_app_unbind(rtk_bt_mesh_config_client_model_model_app_unbind_t *model_app_unbind)
  * @brief     Send Config Model App Unbind message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_APP_UNBIND
  * @param[in] model_app_unbind: config message param
  * @return
@@ -1122,7 +1091,6 @@ uint16_t rtk_bt_mesh_config_client_model_node_identity_set(rtk_bt_mesh_config_cl
 uint16_t rtk_bt_mesh_config_client_model_app_unbind(rtk_bt_mesh_config_client_model_model_app_unbind_t *model_app_unbind);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_app_get(rtk_bt_mesh_config_client_model_model_app_get_t *model_app_get)
  * @brief     Send Config Model App Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_MODEL_APP_GET
  * @param[in] model_app_get: config message param
  * @return
@@ -1132,7 +1100,6 @@ uint16_t rtk_bt_mesh_config_client_model_app_unbind(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_app_get(rtk_bt_mesh_config_client_model_model_app_get_t *model_app_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_frnd_get(rtk_bt_mesh_config_client_model_frnd_get_t *frnd_get)
  * @brief     Send Config Friend Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_FRND_GET
  * @param[in] frnd_get: config message param
  * @return
@@ -1142,7 +1109,6 @@ uint16_t rtk_bt_mesh_config_client_model_app_get(rtk_bt_mesh_config_client_model
 uint16_t rtk_bt_mesh_config_client_model_frnd_get(rtk_bt_mesh_config_client_model_frnd_get_t *frnd_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_frnd_set(rtk_bt_mesh_config_client_model_frnd_set_t *frnd_set)
  * @brief     Send Config Friend Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_FRND_SET
  * @param[in] frnd_set: config message param
  * @return
@@ -1152,7 +1118,6 @@ uint16_t rtk_bt_mesh_config_client_model_frnd_get(rtk_bt_mesh_config_client_mode
 uint16_t rtk_bt_mesh_config_client_model_frnd_set(rtk_bt_mesh_config_client_model_frnd_set_t *frnd_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_lpn_poll_timeout_get(rtk_bt_mesh_config_client_model_lpn_poll_timeout_get_t *lpn_poll_timeout_get)
  * @brief     Send Config Low Power Node PollTimeout Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_LPN_POLL_TIMEOUT_GET
  * @param[in] lpn_poll_timeout_get: config message param
  * @return
@@ -1162,7 +1127,6 @@ uint16_t rtk_bt_mesh_config_client_model_frnd_set(rtk_bt_mesh_config_client_mode
 uint16_t rtk_bt_mesh_config_client_model_lpn_poll_timeout_get(rtk_bt_mesh_config_client_model_lpn_poll_timeout_get_t *lpn_poll_timeout_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_get(rtk_bt_mesh_config_client_model_key_refresh_phase_get_t *key_refresh_phase_get)
  * @brief     Send Config Key Refresh Phase Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_KEY_REFRESH_PHASE_GET
  * @param[in] key_refresh_phase_get: config message param
  * @return
@@ -1172,7 +1136,6 @@ uint16_t rtk_bt_mesh_config_client_model_lpn_poll_timeout_get(rtk_bt_mesh_config
 uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_get(rtk_bt_mesh_config_client_model_key_refresh_phase_get_t *key_refresh_phase_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_set(rtk_bt_mesh_config_client_model_key_refresh_phase_set_t *key_refresh_phase_set)
  * @brief     Send Config Key Refresh Phase Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_KEY_REFRESH_PHASE_SET
  * @param[in] key_refresh_phase_set: config message param
  * @return
@@ -1182,7 +1145,6 @@ uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_get(rtk_bt_mesh_confi
 uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_set(rtk_bt_mesh_config_client_model_key_refresh_phase_set_t *key_refresh_phase_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_hb_pub_get(rtk_bt_mesh_config_client_model_hb_pub_get_t *hb_pub_get)
  * @brief     Send Config Heartbeat Publication Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_HB_PUB_GET
  * @param[in] hb_pub_get: config message param
  * @return
@@ -1192,7 +1154,6 @@ uint16_t rtk_bt_mesh_config_client_model_key_refresh_phase_set(rtk_bt_mesh_confi
 uint16_t rtk_bt_mesh_config_client_model_hb_pub_get(rtk_bt_mesh_config_client_model_hb_pub_get_t *hb_pub_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_hb_pub_set(rtk_bt_mesh_config_client_model_hb_pub_set_t *hb_pub_set)
  * @brief     Send Config Heartbeat Publication Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_HB_PUB_SET
  * @param[in] hb_pub_set: config message param
  * @return
@@ -1202,7 +1163,6 @@ uint16_t rtk_bt_mesh_config_client_model_hb_pub_get(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_hb_pub_set(rtk_bt_mesh_config_client_model_hb_pub_set_t *hb_pub_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_hb_sub_get(rtk_bt_mesh_config_client_model_hb_sub_get_t *hb_sub_get)
  * @brief     Send Config Heartbeat Subscription Get message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_HB_SUB_GET
  * @param[in] hb_sub_get: config message param
  * @return
@@ -1212,7 +1172,6 @@ uint16_t rtk_bt_mesh_config_client_model_hb_pub_set(rtk_bt_mesh_config_client_mo
 uint16_t rtk_bt_mesh_config_client_model_hb_sub_get(rtk_bt_mesh_config_client_model_hb_sub_get_t *hb_sub_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_config_client_model_hb_sub_set(rtk_bt_mesh_config_client_model_hb_sub_set_t *hb_sub_set)
  * @brief     Send Config Heartbeat Subscription Set message to device, will cause event @ref RTK_BT_MESH_CONFIG_MODEL_HB_SUB_SET
  * @param[in] hb_sub_set: config message param
  * @return

@@ -15,53 +15,6 @@ extern "C"
 #include <basic_types.h>
 #include <bt_debug.h>
 
-
-#define BTDEMO_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTDEMO] "fmt, ##args)
-#define BLEGAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEGAP] "fmt, ##args)
-#define GATTS_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEGATTS] "fmt, ##args)
-#define GATTC_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEGATTC] "fmt, ##args)
-#define BRGAP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BRGAP] "fmt, ##args)
-#define BTSDP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTSDP] "fmt, ##args)
-#define BTA2DP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTA2DP] "fmt, ##args)
-#define BTAVRCP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BTAVRCP] "fmt, ##args)
-#define BTSPP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTSPP] "fmt, ##args)
-#define BTHID_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHID] "fmt, ##args)
-#define BTHFP_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTHFP] "fmt, ##args)
-#define BTISO_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BTISO] "fmt, ##args)
-#define BTPBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTHFP] "fmt, ##args)
-#define BLEBAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEBAP] "fmt, ##args)
-#define BLECAP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLECAP] "fmt, ##args)
-#define BLEPBP_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEPBP] "fmt, ##args)
-#define BLETMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLETMAP] "fmt, ##args)
-#define BLEGMAP_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLEGMAP] "fmt, ##args)
-#define MESHSTACK_AT_PRINTK(fmt, args...) AT_PRINTK("[AT+BLEMESHSTACK] "fmt, ##args)
-#define MESHDATA_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEMESHDATA] "fmt, ##args)
-#define MESHCONFIG_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEMESHCONFIG] "fmt, ##args)
-#define MESHGOO_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEMESHGOO] "fmt, ##args)
-#define MESHRMT_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEMESHRMT] "fmt, ##args)
-#define MESHLL_AT_PRINTK(fmt, args...)      AT_PRINTK("[AT+BLEMESHLL] "fmt, ##args)
-#define MESHLCTL_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHLCTL] "fmt, ##args)
-#define MESHLHSL_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHLHSL] "fmt, ##args)
-#define MESHLXYL_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHLXYL] "fmt, ##args)
-#define MESHLLC_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEMESHLLC] "fmt, ##args)
-#define MESHTIME_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHTIME] "fmt, ##args)
-#define MESHSCHE_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHSCHEDULER] "fmt, ##args)
-#define MESHSCENE_AT_PRINTK(fmt, args...)   AT_PRINTK("[AT+BLEMESHSCENE] "fmt, ##args)
-#define MESHGDTT_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHGDTT] "fmt, ##args)
-#define MESHGLE_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEMESHGLE] "fmt, ##args)
-#define MESHGPOO_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BLEMESHGPOO] "fmt, ##args)
-#define MESHGPL_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEMESHGPL] "fmt, ##args)
-#define MESHGB_AT_PRINTK(fmt, args...)      AT_PRINTK("[AT+BLEMESHGB] "fmt, ##args)
-#define MESHGLO_AT_PRINTK(fmt, args...)     AT_PRINTK("[AT+BLEMESHGLO] "fmt, ##args)
-#define MESHGP_AT_PRINTK(fmt, args...)      AT_PRINTK("[AT+BLEMESHGP] "fmt, ##args)
-#define MESHSENSOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEMESHSENSOR] "fmt, ##args)
-#define MESHHEALTH_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BLEMESHHEALTH] "fmt, ##args)
-#define BTDEVICE_AT_PRINTK(fmt, args...)    AT_PRINTK("[AT+BTENABLE] "fmt, ##args)
-#define BTGAP_AT_PRINTK(fmt, args...)       AT_PRINTK("[AT+BTGAP] "fmt, ##args)
-
-#define BTVENDOR_AT_PRINTK(fmt, args...)  AT_PRINTK("[AT+BTVENDOR] "fmt, ##args)
-
-
 typedef int (*cmd_func_t)(int argc, char *argv[]);
 
 typedef struct {

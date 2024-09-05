@@ -274,7 +274,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_fault_get(rtk_bt_mesh_health_fault_get_t *health_fault_get)
  * @brief     Send health fault get message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_GET
  * @param[in] health_fault_get: health fault get message structure
  * @return
@@ -284,7 +283,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_health_fault_get(rtk_bt_mesh_health_fault_get_t *health_fault_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_fault_clear(rtk_bt_mesh_health_fault_clear_t *health_fault_clear)
  * @brief     Send health fault clear message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_CLEAR
  * @param[in] health_fault_clear: health fault clear message structure
  * @return
@@ -294,7 +292,6 @@ uint16_t rtk_bt_mesh_health_fault_get(rtk_bt_mesh_health_fault_get_t *health_fau
 uint16_t rtk_bt_mesh_health_fault_clear(rtk_bt_mesh_health_fault_clear_t *health_fault_clear);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_fault_test(rtk_bt_mesh_health_fault_test_t *health_fault_test)
  * @brief     Send health fault test message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_TEST
  * @param[in] health_fault_test: health fault test message structure
  * @return
@@ -304,7 +301,6 @@ uint16_t rtk_bt_mesh_health_fault_clear(rtk_bt_mesh_health_fault_clear_t *health
 uint16_t rtk_bt_mesh_health_fault_test(rtk_bt_mesh_health_fault_test_t *health_fault_test);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_period_get(rtk_bt_mesh_health_period_get_t *health_period_get)
  * @brief     Send health period get message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_PERIOD_GET
  * @param[in] health_period_get: health period get message structure
  * @return
@@ -314,7 +310,6 @@ uint16_t rtk_bt_mesh_health_fault_test(rtk_bt_mesh_health_fault_test_t *health_f
 uint16_t rtk_bt_mesh_health_period_get(rtk_bt_mesh_health_period_get_t *health_period_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_period_set(rtk_bt_mesh_health_period_set_t *health_period_set)
  * @brief     Send health period set message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_PERIOD_SET
  * @param[in] health_period_set: health period set message structure
  * @return
@@ -324,7 +319,6 @@ uint16_t rtk_bt_mesh_health_period_get(rtk_bt_mesh_health_period_get_t *health_p
 uint16_t rtk_bt_mesh_health_period_set(rtk_bt_mesh_health_period_set_t *health_period_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_attn_get(rtk_bt_mesh_health_attn_get_t *health_attn_get)
  * @brief     Send health attn get message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_ATTN_GET
  * @param[in] health_attn_get: health attn get message structure
  * @return
@@ -334,7 +328,6 @@ uint16_t rtk_bt_mesh_health_period_set(rtk_bt_mesh_health_period_set_t *health_p
 uint16_t rtk_bt_mesh_health_attn_get(rtk_bt_mesh_health_attn_get_t *health_attn_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_attn_set(rtk_bt_mesh_health_attn_set_t *health_attn_set)
  * @brief     Send health attn set message to health server, will cause event @ref RTK_BT_MESH_HEALTH_CLIENT_MODEL_ATTN_SET
  * @param[in] health_attn_set: health attn set message structure
  * @return
@@ -344,7 +337,6 @@ uint16_t rtk_bt_mesh_health_attn_get(rtk_bt_mesh_health_attn_get_t *health_attn_
 uint16_t rtk_bt_mesh_health_attn_set(rtk_bt_mesh_health_attn_set_t *health_attn_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_server_fault_register(rtk_bt_mesh_health_server_fault_register_act_t *health_fault_register)
  * @brief     Send health server fault register message to health server, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_FAULT_REGISTER
  * @param[in] health_fault_register: health fault register message structure
  * @return
@@ -354,7 +346,6 @@ uint16_t rtk_bt_mesh_health_attn_set(rtk_bt_mesh_health_attn_set_t *health_attn_
 uint16_t rtk_bt_mesh_health_server_fault_register(rtk_bt_mesh_health_server_fault_register_act_t *health_fault_register);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_server_fault_clear(rtk_bt_mesh_health_server_fault_clear_act_t *health_fault_clear)
  * @brief     Send health server fault clear message to health server, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CURRENT_FAULT_CLEAR
  * @param[in] health_fault_clear: health fault clear message structure
  * @return
@@ -364,7 +355,6 @@ uint16_t rtk_bt_mesh_health_server_fault_register(rtk_bt_mesh_health_server_faul
 uint16_t rtk_bt_mesh_health_server_fault_clear(rtk_bt_mesh_health_server_fault_clear_act_t *health_fault_clear);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_server_fault_clear_all(void)
  * @brief     Send health server fault clear all message to health server, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CURRENT_FAULT_CLEAR_ALL
  * @return
  *            - 0  : Succeed
@@ -373,7 +363,6 @@ uint16_t rtk_bt_mesh_health_server_fault_clear(rtk_bt_mesh_health_server_fault_c
 uint16_t rtk_bt_mesh_health_server_fault_clear_all(void);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_server_fault_count(void)
  * @brief     Send health server fault count message to health server, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_FAULT_COUNT
  * @param[in] fault_count: health fault count message structure
  * @return
@@ -383,7 +372,6 @@ uint16_t rtk_bt_mesh_health_server_fault_clear_all(void);
 uint16_t rtk_bt_mesh_health_server_fault_count(rtk_bt_mesh_health_server_count_fault_act_t *fault_count);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_health_server_fault_check(rtk_bt_mesh_health_server_check_fault_act_t *health_fault_check)
  * @brief     Send health server fault check message to check if the fault is set, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CHECK_FAULT_IS_SET
  * @param[in] health_fault_check: health fault check message structure
  * @return

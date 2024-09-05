@@ -360,7 +360,7 @@ static void atcmd_bt_help_common(int argc, char *argv[],
 	int i = 0, j = 0;
 
 	if (0 == argc) {
-		AT_PRINTK("%s", help_usage);
+		BT_LOGA("%s\r\n", help_usage);
 		return;
 	}
 
@@ -368,14 +368,14 @@ static void atcmd_bt_help_common(int argc, char *argv[],
 	while (cmd_help_table[i].name) {
 		if (0 == strcmp(cmd_str, cmd_help_table[i].name)) {
 			if (argc == 1) {
-				AT_PRINTK("%s", cmd_help_table[i].descriptor);
+				BT_LOGA("%s\r\n", cmd_help_table[i].descriptor);
 			}
 			goto SUB_CMD_HELP;
 		}
 		i++;
 	}
 
-	AT_PRINTK("[%s] Error: Cant find this cmd help\r\n", tag);
+	BT_LOGE("[%s] Error: Cant find this cmd help\r\n", tag);
 	return;
 
 SUB_CMD_HELP:
@@ -384,15 +384,15 @@ SUB_CMD_HELP:
 		cmd_help_table_t *sub_cmd_tbl = cmd_help_table[i].sub_tbl;
 		while (sub_cmd_tbl[j].name) {
 			if (0 == strcmp(sub_cmd_str, sub_cmd_tbl[j].name)) {
-				AT_PRINTK("%s", sub_cmd_tbl[j].descriptor);
+				BT_LOGA("%s\r\n", sub_cmd_tbl[j].descriptor);
 				break;
 			}
 			j++;
 		}
 
 		if (!sub_cmd_tbl[j].name)
-			AT_PRINTK("[%s] Error: Cant find this subcmd help in cmd: %s\r\n",
-					  tag, cmd_help_table[i].name);
+			BT_LOGE("[%s] Error: Cant find this subcmd help in cmd: %s\r\n",
+					tag, cmd_help_table[i].name);
 	}
 }
 
@@ -670,13 +670,13 @@ static void atcmd_bt_cmd(void *arg, char *cmd_name, char *tag)
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("%s Error: No input args number!", tag);
+		BT_LOGE("%s Error: No input args number!\r\n", tag);
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("%s Error: Wrong input args number!", tag);
+		BT_LOGE("%s Error: Wrong input args number!\r\n", tag);
 		goto exit;
 	}
 
@@ -690,7 +690,7 @@ static void atcmd_bt_cmd(void *arg, char *cmd_name, char *tag)
 	return;
 
 exit:
-	AT_PRINTK("%s Info: Use '%s' to help", tag, "AT+BTCMDHELP");
+	BT_LOGA("%s Info: Use '%s' to help\r\n", tag, "AT+BTCMDHELP");
 	BT_AT_PRINTERROR();
 }
 
@@ -711,13 +711,13 @@ static void fBTDEMO(void *arg)
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("[AT+BTDEMO] Error: No input args number!");
+		BT_LOGE("[AT+BTDEMO] Error: No input args number!\r\n");
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("[AT+BTDEMO] Error: Wrong input args number!");
+		BT_LOGE("[AT+BTDEMO] Error: Wrong input args number!\r\n");
 		goto exit;
 	}
 
@@ -730,7 +730,7 @@ static void fBTDEMO(void *arg)
 	return;
 
 exit:
-	AT_PRINTK("[AT+BTDEMO] Info: Use 'AT+BTDEMO=help' to help");
+	BT_LOGA("[AT+BTDEMO] Info: Use 'AT+BTDEMO=help' to help\r\n");
 	BT_AT_PRINTERROR();
 }
 
@@ -972,7 +972,7 @@ static inline void fBTCMDHELP(void *arg)
 	} else {
 		argc = parse_param(arg, argv);
 		if (argc < 1 || argc > 3) {
-			AT_PRINTK("[AT+BTCMDHELP] Error: Wrong input args number!");
+			BT_LOGE("[AT+BTCMDHELP] Error: Wrong input args number!\r\n");
 			BT_AT_PRINTERROR();
 			return;
 		}
@@ -996,13 +996,13 @@ static void fBTVENDOR(void *arg)
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("[AT+BTVENDOR] Error: No input args number!");
+		BT_LOGE("[AT+BTVENDOR] Error: No input args number!\r\n");
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("[AT+BTVENDOR] Error: Wrong input args number!");
+		BT_LOGE("[AT+BTVENDOR] Error: Wrong input args number!\r\n");
 		goto exit;
 	}
 
@@ -1015,7 +1015,7 @@ static void fBTVENDOR(void *arg)
 	return;
 
 exit:
-	AT_PRINTK("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help");
+	BT_LOGA("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help\r\n");
 	BT_AT_PRINTERROR();
 }
 
@@ -1024,7 +1024,7 @@ _WEAK int rtk_bt_verify(int param_num, int *param)
 	(void)param_num;
 	(void)param;
 
-	AT_PRINTK("[ATBT] Error: rtk_bt_verify is not compiled");
+	BT_LOGE("[ATBT] Error: rtk_bt_verify is not compiled\r\n");
 	return 0;
 }
 
@@ -1032,7 +1032,7 @@ _WEAK int rtk_bt_get_verify_cmd_index(char *cmd_str)
 {
 	(void)cmd_str;
 
-	AT_PRINTK("[ATBT] Error: rtk_bt_get_verify_cmd_index is not compiled");
+	BT_LOGE("[ATBT] Error: rtk_bt_get_verify_cmd_index is not compiled\r\n");
 	return 0;
 }
 
@@ -1045,7 +1045,7 @@ static void fBTTEST(void *arg)
 	int param_num = argc - 1;
 
 	if (param_num < 1) {
-		AT_PRINTK("[AT+BTTEST] Error: No input args number!");
+		BT_LOGE("[AT+BTTEST] Error: No input args number!\r\n");
 		return;
 	}
 
@@ -1055,12 +1055,12 @@ static void fBTTEST(void *arg)
 		return;
 	}
 
-	AT_PRINTK("[AT+BTTEST] %s ", cmd_str);
+	BT_LOGA("[AT+BTTEST] %s ", cmd_str);
 	for (int i = 1; i < param_num; i++) {
 		param[i] = str_to_int(argv[i + 1]);
-		AT_PRINTK("%d ", param[i]);
+		BT_LOGA("%d ", param[i]);
 	}
-	AT_PRINTK("\r\n");
+	BT_LOGA("\r\n");
 	rtk_bt_verify(param_num, param);
 }
 

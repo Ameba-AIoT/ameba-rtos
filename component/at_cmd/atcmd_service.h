@@ -31,25 +31,6 @@
 #define MAX_ARGC 23
 #endif
 
-#define AT_PRINTK(...)			\
-		do{							\
-			DiagPrintf(__VA_ARGS__); 	\
-			DiagPrintf("\r\n");			\
-		}while(0)
-#define _AT_PRINTK(...)	DiagPrintf(__VA_ARGS__)
-#define AT_DBG_MSG(flag, level, ...)					\
-		do{														\
-			if(((flag) & gDbgFlag) && (level <= gDbgLevel)){	\
-				AT_PRINTK(__VA_ARGS__);							\
-			}													\
-		}while(0)
-#define _AT_DBG_MSG(flag, level, ...)					\
-		do{														\
-			if(((flag) & gDbgFlag) && (level <= gDbgLevel)){	\
-				_AT_PRINTK(__VA_ARGS__);						\
-			}													\
-		}while(0)
-
 typedef void (*log_init_t)(void);
 typedef void (*log_act_t)(void *);
 typedef struct _at_command_item_ {

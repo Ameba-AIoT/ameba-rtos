@@ -144,7 +144,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_sdp_record_add(void *record, uint32_t length)
  * @brief     set profile record.
  * @param[in] record: record data pointer
  * @param[in] length: data length
@@ -155,7 +154,6 @@ typedef struct {
 uint16_t rtk_sdp_record_add(void *record, uint32_t length);
 
 /**
- * @fn        uint16_t rtk_bt_sdp_discov_start(uint8_t *bd_addr)
  * @brief     start bt sdp discovery.
  * @param[in] bd_addr: bt address
  * @return

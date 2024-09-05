@@ -25,11 +25,11 @@ static int atcmd_bt_sdp_discov(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_sdp_discov_start(bd_addr)) {
-		BTSDP_AT_PRINTK("SDP discov fail \r\n");
+		BT_LOGE("SDP discov fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTSDP_AT_PRINTK("SDP discovering %s ...", addr_str);
+	BT_LOGA("SDP discovering %s ...\r\n", addr_str);
 
 	return 0;
 }

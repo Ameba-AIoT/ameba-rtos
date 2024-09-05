@@ -30,10 +30,10 @@ static int atcmd_bt_le_iso_create_cis_by_cig(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[2]);
 
 	if (rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(cis_id, cig_id, conn_handle)) {
-		BTISO_AT_PRINTK("LEISO cis create fail \r\n");
+		BT_LOGE("LEISO cis create fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO cis create successfully \r\n");
+	BT_LOGA("LEISO cis create successfully\r\n");
 
 	return 0;
 }
@@ -51,10 +51,10 @@ static int atcmd_bt_le_iso_create_cis_by_handle(int argc, char **argv)
 	cis_conn_handle = (uint16_t)str_to_int(argv[3]);
 
 	if (rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(cis_id, cig_id, 1, conn_handle, &cis_conn_handle)) {
-		BTISO_AT_PRINTK("LEISO cis create fail \r\n");
+		BT_LOGE("LEISO cis create fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO cis create successfully cis connection handle is 0x%x \r\n", cis_conn_handle);
+	BT_LOGA("LEISO cis create successfully cis connection handle is 0x%x\r\n", cis_conn_handle);
 
 	return 0;
 }
@@ -68,14 +68,14 @@ static int atcmd_bt_le_iso_send_data(int argc, char **argv)
 	char *action[] = {"stop", "start"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
-		BTISO_AT_PRINTK("Error: wrong value (%d) for iso data send !", op);
+		BT_LOGE("Error: wrong value (%d) for iso data send!\r\n", op);
 		return -1;
 	}
 	if (app_le_iso_demo_data_send_start(op)) {
-		BTISO_AT_PRINTK("LEISO cis iso data %s send fail \r\n", action[op]);
+		BT_LOGE("LEISO cis iso data %s send fail\r\n", action[op]);
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO cis iso data %s send successfully \r\n", action[op]);
+	BT_LOGA("LEISO cis iso data %s send successfully\r\n", action[op]);
 
 	return 0;
 }
@@ -87,13 +87,13 @@ static int atcmd_bt_le_iso_cis_read_tx_sync(int argc, char **argv)
 	rtk_bt_le_iso_cig_read_iso_tx_sync_info_t tx_sync_info = {0};
 
 	if (rtk_bt_le_iso_cig_read_iso_tx_sync(cis_conn_handle, &tx_sync_info)) {
-		BTISO_AT_PRINTK("LEISO cis read tx sync fail \r\n");
+		BT_LOGE("LEISO cis read tx sync fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO cis read tx sync successfully \r\n");
-	BTISO_AT_PRINTK("cis_conn_handle 0x%x, conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x, packet_sequence_number 0x%x, time_stamp 0x%x, time_offset 0x%x \r\n",
-					cis_conn_handle, tx_sync_info.conn_handle, tx_sync_info.cig_id, tx_sync_info.cis_id,
-					tx_sync_info.packet_sequence_number, (unsigned int)tx_sync_info.time_stamp, (unsigned int)tx_sync_info.time_offset);
+	BT_LOGA("LEISO cis read tx sync successfully\r\n");
+	BT_LOGA("cis_conn_handle 0x%x, conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x, packet_sequence_number 0x%x, time_stamp 0x%x, time_offset 0x%x\r\n",
+			cis_conn_handle, tx_sync_info.conn_handle, tx_sync_info.cig_id, tx_sync_info.cis_id,
+			tx_sync_info.packet_sequence_number, (unsigned int)tx_sync_info.time_stamp, (unsigned int)tx_sync_info.time_offset);
 
 	return 0;
 }
@@ -105,16 +105,16 @@ static int atcmd_bt_le_iso_cis_read_link_quality(int argc, char **argv)
 	rtk_bt_le_iso_cig_read_link_quality_info_t link_quality_info = {0};
 
 	if (rtk_bt_le_iso_cig_read_link_quality(cis_conn_handle, &link_quality_info)) {
-		BTISO_AT_PRINTK("LEISO cis read link quality fail \r\n");
+		BT_LOGE("LEISO cis read link quality fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO cis read link quality successfully \r\n");
-	BTISO_AT_PRINTK("[APP] cis_conn_handle 0x%x, conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x, tx_unacked_packets 0x%x, tx_flushed_packets 0x%x, tx_last_subevent_packets 0x%x,retransmitted_packets 0x%x, crc_error_packets %d, rx_unreceived_packets 0x%x, duplicate_packets 0x%x \r\n",
-					cis_conn_handle, link_quality_info.conn_handle, link_quality_info.cig_id, link_quality_info.cis_id,
-					(unsigned int)link_quality_info.tx_unacked_packets, (unsigned int)link_quality_info.tx_flushed_packets,
-					(unsigned int)link_quality_info.tx_last_subevent_packets,
-					(unsigned int)link_quality_info.retransmitted_packets, (unsigned int)link_quality_info.crc_error_packets, (unsigned int)link_quality_info.rx_unreceived_packets,
-					(unsigned int)link_quality_info.duplicate_packets);
+	BT_LOGA("LEISO cis read link quality successfully\r\n");
+	BT_LOGA("[APP] cis_conn_handle 0x%x, conn_handle 0x%x, cig_id 0x%x, cis_id 0x%x, tx_unacked_packets 0x%x, tx_flushed_packets 0x%x, tx_last_subevent_packets 0x%x,retransmitted_packets 0x%x, crc_error_packets %d, rx_unreceived_packets 0x%x, duplicate_packets 0x%x\r\n",
+			cis_conn_handle, link_quality_info.conn_handle, link_quality_info.cig_id, link_quality_info.cis_id,
+			(unsigned int)link_quality_info.tx_unacked_packets, (unsigned int)link_quality_info.tx_flushed_packets,
+			(unsigned int)link_quality_info.tx_last_subevent_packets,
+			(unsigned int)link_quality_info.retransmitted_packets, (unsigned int)link_quality_info.crc_error_packets, (unsigned int)link_quality_info.rx_unreceived_packets,
+			(unsigned int)link_quality_info.duplicate_packets);
 
 	return 0;
 }
@@ -126,13 +126,13 @@ static int atcmd_bt_le_iso_bis_read_tx_sync(int argc, char **argv)
 	rtk_bt_le_iso_big_broadcaster_read_tx_sync_info_t tx_sync_info = {0};
 
 	if (rtk_bt_le_iso_big_broadcaster_read_tx_sync(bis_conn_handle, &tx_sync_info)) {
-		BTISO_AT_PRINTK("LEISO bis read tx sync fail \r\n");
+		BT_LOGE("LEISO bis read tx sync fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO bis read tx sync successfully \r\n");
-	BTISO_AT_PRINTK("bis_conn_handle 0x%x, big_handle 0x%x, adv_handle 0x%x, packet_sequence_number 0x%x, time_stamp 0x%x, time_offset 0x%x \r\n",
-					bis_conn_handle, tx_sync_info.big_handle, tx_sync_info.adv_handle, tx_sync_info.packet_sequence_number,
-					(unsigned int)tx_sync_info.time_stamp, (unsigned int)tx_sync_info.time_offset);
+	BT_LOGA("LEISO bis read tx sync successfully\r\n");
+	BT_LOGA("bis_conn_handle 0x%x, big_handle 0x%x, adv_handle 0x%x, packet_sequence_number 0x%x, time_stamp 0x%x, time_offset 0x%x\r\n",
+			bis_conn_handle, tx_sync_info.big_handle, tx_sync_info.adv_handle, tx_sync_info.packet_sequence_number,
+			(unsigned int)tx_sync_info.time_stamp, (unsigned int)tx_sync_info.time_offset);
 
 	return 0;
 }
@@ -146,10 +146,10 @@ static int atcmd_bt_le_bis_create_sync(int argc, char **argv)
 	uint8_t big_handle;
 
 	if (rtk_bt_le_iso_big_receiver_create_sync(sync_handle, &def_bis_receiver_create_sync_param, &big_handle)) {
-		BTISO_AT_PRINTK("LEISO bis create sync fail \r\n");
+		BT_LOGE("LEISO bis create sync fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO bis create sync successfully, big handle is 0x%x \r\n", big_handle);
+	BT_LOGA("LEISO bis create sync successfully, big handle is 0x%x\r\n", big_handle);
 
 	return 0;
 }
@@ -162,7 +162,7 @@ static int atcmd_bt_le_bis_terminate_sync(int argc, char **argv)
 	uint8_t big_handle = (uint8_t)str_to_int(argv[0]);
 
 	if (big_handle != g_le_iso_bis_receiver_status.big_handle) {
-		BTISO_AT_PRINTK("LEISO big_handle is not created \r\n");
+		BT_LOGE("LEISO big_handle is not created\r\n");
 		return -1;
 	}
 	/* 1. remove path */
@@ -171,10 +171,10 @@ static int atcmd_bt_le_bis_terminate_sync(int argc, char **argv)
 	}
 	/* 2 terminate sync */
 	if (rtk_bt_le_iso_big_receiver_terminate_sync(big_handle)) {
-		BTISO_AT_PRINTK("LEISO bis terminate sync fail \r\n");
+		BT_LOGE("LEISO bis terminate sync fail\r\n");
 		return -1;
 	}
-	BTISO_AT_PRINTK("LEISO bis terminate sync successfully \r\n");
+	BT_LOGA("LEISO bis terminate sync successfully\r\n");
 
 	return 0;
 }
@@ -214,32 +214,32 @@ int atcmd_bt_iso_cmd(int argc, char *argv[])
 	char tag[80] = "[AT+BLEISO]";
 	if (strcmp(argv[0], "bis") == 0) {
 		if (strcmp(argv[1], "broadcaster") == 0) {
-			BLEBAP_AT_PRINTK("Set iso bis broadcaster");
+			BT_LOGA("Set iso bis broadcaster\r\n");
 			strcat(tag, "[bis][broadcaster]");
 			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_bis_broadcaster_cmd_table, tag);
 		} else if (strcmp(argv[1], "receiver") == 0) {
-			BLEBAP_AT_PRINTK("Set iso bis receiver");
+			BT_LOGA("Set iso bis receiver\r\n");
 			strcat(tag, "[bis][receiver]");
 			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_bis_receiver_cmd_table, tag);
 		} else {
-			AT_PRINTK("[%s]Error: iso bis has no role %s \r\n", __func__, argv[1]);
+			BT_LOGE("[%s]Error: iso bis has no role %s\r\n", __func__, argv[1]);
 			ret = -1;
 		}
 	} else if (strcmp(argv[0], "cis") == 0) {
 		if (strcmp(argv[1], "initiator") == 0) {
-			BLEBAP_AT_PRINTK("Set iso cis initiator");
+			BT_LOGA("Set iso cis initiator\r\n");
 			strcat(tag, "[cis][initiator]");
 			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_cis_initiator_cmd_table, tag);
 		} else if (strcmp(argv[1], "acceptor") == 0) {
-			BLEBAP_AT_PRINTK("Set iso cis acceptor");
+			BT_LOGA("Set iso cis acceptor\r\n");
 			strcat(tag, "[cis][acceptor]");
 			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_cis_acceptor_cmd_table, tag);
 		} else {
-			AT_PRINTK("[%s]Error: iso cis has no role %s \r\n", __func__, argv[1]);
+			BT_LOGE("[%s]Error: iso cis has no role %s\r\n", __func__, argv[1]);
 			ret = -1;
 		}
 	} else {
-		AT_PRINTK("[%s]Error:  do not support  %s \r\n", __func__, argv[0]);
+		BT_LOGE("[%s]Error: do not support %s\r\n", __func__, argv[0]);
 		ret = -1;
 	}
 	return ret;

@@ -7,11 +7,13 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 BT_DIR = $(BASEDIR)/component/bluetooth
 BLE_AUDIO_COMMON_DIR = $(BT_DIR)/example/ble_audio_common
+BT_APP_AUDIO_DATA = $(BT_DIR)/example/bt_app_audio_data
 
 vpath %.c $(BT_DIR)/example/ble_audio
 
 MODULE_IFLAGS += \
-	-I$(BLE_AUDIO_COMMON_DIR)
+	-I$(BLE_AUDIO_COMMON_DIR) \
+	-I$(BT_APP_AUDIO_DATA)
 
 CSRC += \
 		$(BT_DIR)/example/ble_audio/bap.c \

@@ -29,13 +29,13 @@ static int atcmd_ble_mesh_scheduler_get(int argc, char **argv)
 	scheduler_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_scheduler_get(&scheduler_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get scheduler failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get scheduler failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSCHE_AT_PRINTK("Platform not support scheduler client model.");
+	BT_LOGE("Platform not support scheduler client model.\r\n");
 	return -1;
 #endif
 }
@@ -51,13 +51,13 @@ static int atcmd_ble_mesh_scheduler_action_get(int argc, char **argv)
 	scheduler_action_get.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_scheduler_action_get(&scheduler_action_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get scheduler action failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get scheduler action failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSCHE_AT_PRINTK("Platform not support scheduler client model.");
+	BT_LOGE("Platform not support scheduler client model.\r\n");
 	return -1;
 #endif
 }
@@ -85,13 +85,13 @@ static int atcmd_ble_mesh_scheduler_action_set(int argc, char **argv)
 	scheduler_action_set.app_key_index = str_to_int(argv[14]);
 	ret = rtk_bt_mesh_scheduler_action_set(&scheduler_action_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set scheduler action failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set scheduler action failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSCHE_AT_PRINTK("Platform not support scheduler client model.");
+	BT_LOGE("Platform not support scheduler client model.\r\n");
 	return -1;
 #endif
 }

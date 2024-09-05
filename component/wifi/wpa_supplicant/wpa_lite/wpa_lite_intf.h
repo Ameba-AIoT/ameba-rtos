@@ -18,6 +18,7 @@ struct wpa_param_t {
 	u8 					pmk[PMK_LEN];
 	u8					use_pmksa;
 	u8					ap_gbl_info;
+	u32					rom_rsvd;
 };
 
 /**

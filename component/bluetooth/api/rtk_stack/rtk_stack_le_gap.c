@@ -2167,7 +2167,7 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 
 			memset(&bt_stack_le_link_tbl[conn_id], 0, sizeof(bt_stack_le_link_info_t));
 			bt_stack_le_link_num--;
-			if (RTK_BT_LE_ROLE_SLAVE == p_disconn_ind->role) {
+			if (RTK_BT_LE_ROLE_SLAVE == p_disconn_ind->role && bt_stack_profile_check(RTK_BT_PROFILE_GATTS)) {
 				bt_stack_gatts_disconnect_queue_clear(conn_id);
 			}
 

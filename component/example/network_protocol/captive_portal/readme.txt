@@ -40,4 +40,4 @@ Supported List
 ~~~~~~~~~~~~~~
 [Supported List]
 		Supported IC:
-				RTL8721F
+				AMEBASMART, AMEBALITE, AMEBADPLUS

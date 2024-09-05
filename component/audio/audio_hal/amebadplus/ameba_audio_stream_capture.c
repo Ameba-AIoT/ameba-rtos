@@ -52,6 +52,7 @@ static void ameba_audio_stream_rx_sport_init(CaptureStream **stream, StreamConfi
 	cstream->stream.sp_initstruct.SP_SelTDM = ameba_audio_get_sp_tdm(config.channels);
 	cstream->stream.sp_initstruct.SP_SelFIFO = ameba_audio_get_fifo_num(config.channels);
 	cstream->stream.sp_initstruct.SP_SR = ameba_audio_get_sp_rate(config.rate);
+	cstream->stream.sp_initstruct.SP_SelDataFormat = AUDIO_I2S_IN_DATA_FORMAT;
 	HAL_AUDIO_VERBOSE("selmo:%lu, wordlen:%lu, sr:%lu, seltdm:%lu, selfifo:%lu,",
 					  ameba_audio_get_channel(config.channels),
 					  cstream->stream.sp_initstruct.SP_SelWordLen,

@@ -41,7 +41,7 @@ static int atcmd_ble_mesh_node_reset(int argc, char **argv)
 	uint16_t ret = 0;
 	ret = rtk_bt_mesh_stack_node_reset();
 	if (ret) {
-		AT_PRINTK("[%s] Node reset oneself failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Node reset oneself failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
@@ -55,7 +55,7 @@ static int atcmd_ble_mesh_dev_info(int argc, char **argv)
 	info_switch.dev_info_dis = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_set_device_info_display(&info_switch);
 	if (ret) {
-		AT_PRINTK("[%s] Set dev info switch failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set dev info switch failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
@@ -68,7 +68,7 @@ static int atcmd_ble_mesh_user_list_info(int argc, char **argv)
 	uint16_t ret = 0;
 	ret = rtk_bt_mesh_stack_user_list_info();
 	if (ret) {
-		AT_PRINTK("[%s] Print device list info failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Print device list info failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
@@ -82,7 +82,7 @@ static int atcmd_ble_mesh_set_random_value(int argc, char **argv)
 	value.random = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_set_random_value_for_authentication(&value);
 	if (ret) {
-		AT_PRINTK("[%s] Set random value failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set random value failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
@@ -96,11 +96,11 @@ static int atcmd_ble_mesh_get_hb_subscribe_result(int argc, char **argv)
 	rtk_bt_mesh_hb_sub_t hb_sub = {0};
 	ret = rtk_bt_mesh_stack_get_heartbeat_subscribe_result(&hb_sub);
 	if (ret) {
-		AT_PRINTK("[%s] Get heartbeat subscribe result failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get heartbeat subscribe result failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	} else {
-		AT_PRINTK("[%s] Src:0x%x, dst:0x%x, period:%d, count:%d, min_hops:%d, max_hops:%d\r\n", __func__,
-				  hb_sub.src, hb_sub.dst, hb_sub.period, hb_sub.count, hb_sub.min_hops, hb_sub.max_hops);
+		BT_LOGA("[%s] Src:0x%x, dst:0x%x, period:%d, count:%d, min_hops:%d, max_hops:%d\r\n", __func__,
+				hb_sub.src, hb_sub.dst, hb_sub.period, hb_sub.count, hb_sub.min_hops, hb_sub.max_hops);
 		return 0;
 	}
 }
@@ -115,7 +115,7 @@ static int atcmd_ble_mesh_set_model_subscribe(int argc, char **argv)
 	model_sub.sub_addr = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_stack_set_model_subscribe(&model_sub);
 	if (ret) {
-		AT_PRINTK("[%s] Set model subscribe failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set model subscribe failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	} else {
 		return 0;
@@ -133,7 +133,7 @@ static int atcmd_ble_mesh_set_retrans_param(int argc, char **argv)
 	param.trans_retrans_count = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_stack_retrans_param_set(&param);
 	if (ret) {
-		AT_PRINTK("[%s] Set retransmit parameter failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set retransmit parameter failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	} else {
 		return 0;
@@ -151,13 +151,13 @@ static int atcmd_ble_mesh_fn_init(int argc, char **argv)
 	fn_init.rx_window = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_stack_fn_init(&fn_init);
 	if (ret) {
-		AT_PRINTK("[%s] Friendship FN init failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Friendship FN init failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Platform not support friend feature.");
+	BT_LOGE("Platform not support friend feature.\r\n");
 	return -1;
 #endif
 }
@@ -170,13 +170,13 @@ static int atcmd_ble_mesh_fn_deinit(int argc, char **argv)
 	uint16_t ret = 0;
 	ret = rtk_bt_mesh_stack_fn_deinit();
 	if (ret) {
-		AT_PRINTK("[%s] Friendship FN init failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Friendship FN init failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Platform not support friend feature.");
+	BT_LOGE("Platform not support friend feature.\r\n");
 	return -1;
 #endif
 }
@@ -190,17 +190,17 @@ static int atcmd_ble_mesh_pbadvcon(int argc, char **argv)
 	if (hexdata_str_to_array(argv[0], pbadvcon.uuid, 16)) {
 		ret = rtk_bt_mesh_stack_prov_pb_adv_con(&pbadvcon);
 		if (ret) {
-			AT_PRINTK("[%s] Pbadvcon failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s] Pbadvcon failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] String to hex fail\r\n", __func__);
+		BT_LOGE("[%s] String to hex fail\r\n", __func__);
 		return -2;
 	}
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -213,12 +213,12 @@ static int atcmd_ble_mesh_pbadv_discon(int argc, char **argv)
 	uint16_t ret = 0;
 	ret = rtk_bt_mesh_stack_prov_pb_adv_discon();
 	if (ret) {
-		AT_PRINTK("[%s] Pbadv discon failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Pbadv discon failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -239,7 +239,7 @@ static int atcmd_ble_mesh_pb_gatt_con(int argc, char **argv)
 		// For zephyr mesh stack, use UUID to establish PB GATT link and start provisioning
 		gatt_con.param.is_prov_link = 1;
 		if (!hexdata_str_to_array(argv[0], gatt_con.param.u.uuid, 16)) {
-			AT_PRINTK("[%s] String to hex for UUID fail!\r\n", __func__);
+			BT_LOGE("[%s] String to hex for UUID fail!\r\n", __func__);
 			return -1;
 		}
 		break;
@@ -258,14 +258,14 @@ static int atcmd_ble_mesh_pb_gatt_con(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_stack_prov_pb_gatt_con(&gatt_con);
 	if (ret) {
-		AT_PRINTK("[%s] Establish pb gatt failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Establish pb gatt failed! reason: 0x%x\r\n", __func__, ret);
 		return -2;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -289,14 +289,14 @@ static int atcmd_ble_mesh_pb_gatt_discon(int argc, char **argv)
 		break;
 	}
 	if ((ret = rtk_bt_mesh_stack_prov_pb_gatt_discon(&gatt_discon)) != 0) {
-		MESHSTACK_AT_PRINTK("Pb gatt disconnect failed! err: 0x%x", ret);
+		BT_LOGE("Pb gatt disconnect failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -315,14 +315,14 @@ static int atcmd_ble_mesh_start_provisioning(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_stack_start_provisioning(&start_prov);
 	if (ret) {
-		AT_PRINTK("[%s] Start provisioning failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Start provisioning failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -347,14 +347,14 @@ static int atcmd_ble_mesh_method_choose_for_prov(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_stack_method_choose_for_provisioning(&prov_choose);
 	if (ret) {
-		AT_PRINTK("[%s] Choose method for provisioning failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Choose method for provisioning failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -368,13 +368,13 @@ static int atcmd_ble_mesh_prov_service_disvery(int argc, char **argv)
 	prov_dis.conn_handle = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_prov_service_discovery(&prov_dis);
 	if (ret) {
-		AT_PRINTK("[%s] Prov service discovery failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Prov service discovery failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -388,13 +388,13 @@ static int atcmd_ble_mesh_prov_service_set_notify(int argc, char **argv)
 	prov_notify.is_enable = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_prov_service_set_notify(&prov_notify);
 	if (ret) {
-		AT_PRINTK("[%s] Set prov service notify failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set prov service notify failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -408,13 +408,13 @@ static int atcmd_ble_mesh_proxy_service_disvery(int argc, char **argv)
 	proxy_dis.conn_handle = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_proxy_service_discovery(&proxy_dis);
 	if (ret) {
-		AT_PRINTK("[%s] Proxy service discovery failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Proxy service discovery failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -428,13 +428,13 @@ static int atcmd_ble_mesh_proxy_service_set_notify(int argc, char **argv)
 	proxy_notify.is_enable = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_proxy_service_set_notify(&proxy_notify);
 	if (ret) {
-		AT_PRINTK("[%s] Set proxy service notify failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set proxy service notify failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not provisioner role, do not support this function.");
+	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -448,13 +448,13 @@ static int atcmd_ble_mesh_lpn_init(int argc, char **argv)
 	lpn_init.fn_num = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_lpn_init(&lpn_init);
 	if (ret) {
-		AT_PRINTK("[%s] Low power node init failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Low power node init failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
+	BT_LOGE("Is not device role or not suppport low power feature, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -483,14 +483,14 @@ static int atcmd_ble_mesh_lpn_req(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_stack_lpn_req(&lpn_request);
 	if (ret) {
-		AT_PRINTK("[%s] Low power node request friendship failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Low power node request friendship failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
+	BT_LOGE("Is not device role or not suppport low power feature, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -506,13 +506,13 @@ static int atcmd_ble_mesh_lpn_sub(int argc, char **argv)
 	lpn_sub.add_rm = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_stack_lpn_sub(&lpn_sub);
 	if (ret) {
-		AT_PRINTK("[%s] Low power node subscribe add or remove failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Low power node subscribe add or remove failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
+	BT_LOGE("Is not device role or not suppport low power feature, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -526,13 +526,13 @@ static int atcmd_ble_mesh_lpn_clear(int argc, char **argv)
 	lpn_clear.fn_index = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_lpn_clear(&lpn_clear);
 	if (ret) {
-		AT_PRINTK("[%s] Low power node clear friendship failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Low power node clear friendship failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
+	BT_LOGE("Is not device role or not suppport low power feature, do not support this function.\r\n");
 	return -1;
 #endif
 }
@@ -545,13 +545,13 @@ static int atcmd_ble_mesh_lpn_deinit(int argc, char **argv)
 	uint16_t ret = 0;
 	ret = rtk_bt_mesh_stack_lpn_deinit();
 	if (ret) {
-		AT_PRINTK("[%s] Low power node deinit failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Low power node deinit failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHSTACK_AT_PRINTK("Is not device role or not suppport low power feature, do not support this function.");
+	BT_LOGE("Is not device role or not suppport low power feature, do not support this function.\r\n");
 	return -1;
 #endif
 }

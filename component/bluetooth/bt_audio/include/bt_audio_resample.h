@@ -102,7 +102,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_audio_bq_config(rtk_bt_audio_biquad_t *filter, int type, float gain, unsigned long freq_center, unsigned long sample_rate, double bandwidth)
  * @brief     config biquad filter
  * @param[in] filter: pointer of biquad filter
  * @param[in] type: biquad filter type. list in rtk_bt_audio_filter_type_t
@@ -117,7 +116,6 @@ typedef struct {
 uint16_t rtk_bt_audio_bq_config(rtk_bt_audio_biquad_t *filter, int type, float gain, unsigned long freq_center, unsigned long sample_rate, double bandwidth);
 
 /**
- * @fn        void rtk_bt_audio_biquad_apply(rtk_bt_audio_biquad_t *f, float *buffer, int num_samples, int gap)
  * @brief     filter function
  * @param[in] f: pointer of biquad filter
  * @param[in] buffer: pointer of input data buffer
@@ -128,7 +126,6 @@ uint16_t rtk_bt_audio_bq_config(rtk_bt_audio_biquad_t *filter, int type, float g
 void rtk_bt_audio_biquad_apply(rtk_bt_audio_biquad_t *f, float *buffer, int num_samples, int gap);
 
 /**
- * @fn        rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(float in_rate, float out_rate, uint8_t in_channels, uint8_t out_channels, uint32_t input_frames)
  * @brief     allocate resample struct
  * @param[in] in_rate: input audio data sample rate
  * @param[in] out_rate: output audio data sample rate
@@ -142,7 +139,6 @@ void rtk_bt_audio_biquad_apply(rtk_bt_audio_biquad_t *f, float *buffer, int num_
 rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(float in_rate, float out_rate, uint8_t in_channels, uint8_t out_channels, uint32_t input_frames);
 
 /**
- * @fn        void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample)
  * @brief     free allocated bt audio resample struct
  * @param[in] presample: pointer to the struct
  * @return    None
@@ -150,7 +146,6 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(float in_rate, float out_ra
 void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample);
 
 /**
- * @fn        uint32_t rtk_bt_audio_resample_entry(rtk_bt_audio_resample_t *presample, rtk_bt_audio_biquad_t *bq_t, uint8_t *input, uint32_t input_frames_num, uint8_t *output, uint32_t in_rate, uint32_t out_rate)
  * @brief     resample entry
  * @param[in] presample: pointer to the struct
  * @param[in] bq_t: pointer to filter

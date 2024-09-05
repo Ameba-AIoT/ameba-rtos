@@ -115,7 +115,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_datatrans_model_write(rtk_bt_mesh_datatrans_client_write_api_t *client_write)
  * @brief     Send datatrans write message to device, will cause event @ref RTK_BT_MESH_DATATRANS_MODEL_ACT_WRITE
  * @param[in] client_write: write message param structure
  * @return
@@ -125,7 +124,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_datatrans_model_write(rtk_bt_mesh_datatrans_client_write_api_t *client_write);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_datatrans_model_read(rtk_bt_mesh_datatrans_client_read_api_t *client_read)
  * @brief     Send datatrans read message to device, will cause event @ref RTK_BT_MESH_DATATRANS_MODEL_ACT_READ
  * @param[in] client_read: read message param structure
  * @return

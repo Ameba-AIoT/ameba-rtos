@@ -344,7 +344,6 @@ typedef struct {
  */
 
 /**
- * @fn         uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid)
  * @brief      Register GATT client profile.
  * @param[in]  p_reg_param: Pointer to GATT client profile parameters.
  * @return
@@ -354,7 +353,6 @@ typedef struct {
 uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid);
 
 /**
- * @fn         rtk_bt_gattc_discover_all(uint16_t conn_handle)
  * @brief      Discover all attributes.
  * @param[in]  conn_handle: The handle of connection.
  * @return
@@ -364,7 +362,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t 
 uint16_t rtk_bt_gattc_discover_all(uint16_t conn_handle);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_find(rtk_bt_gattc_find_param_t *p_find_param)
  * @brief      GATT client Discovery operations, will cause event @ref RTK_BT_GATTC_EVT_DISCOVER_RESULT_IND
  * @param p_find_param: Pointer to GATT client find parameters.
  * @return
@@ -374,7 +371,6 @@ uint16_t rtk_bt_gattc_discover_all(uint16_t conn_handle);
 uint16_t rtk_bt_gattc_find(rtk_bt_gattc_find_param_t *p_find_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param)
  * @brief      GATT client Read operations, will cause event @ref RTK_BT_GATTC_EVT_READ_RESULT_IND
  * @param p_read_param: Pointer to GATT client Read parameters.
  * @return
@@ -384,7 +380,6 @@ uint16_t rtk_bt_gattc_find(rtk_bt_gattc_find_param_t *p_find_param);
 uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_write(rtk_bt_gattc_write_param_t *p_write_param)
  * @brief      GATT client write operations, will cause event @ref RTK_BT_GATTC_EVT_WRITE_RESULT_IND
  * @param p_write_param: Pointer to GATT client write parameters.
  * @return
@@ -394,8 +389,6 @@ uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param);
 uint16_t rtk_bt_gattc_write(rtk_bt_gattc_write_param_t *p_write_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_enable_notify_or_indicate(
-                                rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param)
  * @brief      GATT client enable notify or indicate, will cause event @ref RTK_BT_GATTC_EVT_CCCD_ENABLE_IND
  * @param p_update_cccd_param: Pointer to GATT client update cccd parameters.
  * @return
@@ -406,8 +399,6 @@ uint16_t rtk_bt_gattc_enable_notify_or_indicate(
 	rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_disable_notify_or_indicate(
-                                rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param)
  * @brief      GATT client disable notify or indicate, will cause event @ref RTK_BT_GATTC_EVT_CCCD_DISABLE_IND
  * @param p_update_cccd_param: Pointer to GATT client update cccd parameters.
  * @return
@@ -734,7 +725,6 @@ typedef struct {
  */
 
 /**
- * @fn         uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id)
  * @brief      Register GATT client profile.
  * @param[in]  profile_id: The id of client profile.
  * @return
@@ -744,7 +734,6 @@ typedef struct {
 uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle)
  * @brief      Client initiate exchange MTU request, if exchange MTU success, will
  *             cause event @ref RTK_BT_GATTC_EVT_MTU_EXCHANGE
  * @param conn_handle: The handle of connection.
@@ -755,7 +744,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id);
 uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_discover(rtk_bt_gattc_discover_param_t *p_dis_param)
  * @brief      GATT client Discovery operations, will cause event @ref RTK_BT_GATTC_EVT_DISCOVER_RESULT_IND
  * @param p_dis_param: Pointer to GATT client Discovery parameters.
  * @return
@@ -765,7 +753,6 @@ uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle);
 uint16_t rtk_bt_gattc_discover(rtk_bt_gattc_discover_param_t *p_dis_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param)
  * @brief      GATT client Read operations, will cause event @ref RTK_BT_GATTC_EVT_READ_RESULT_IND
  * @param p_read_param: Pointer to GATT client Read parameters.
  * @return
@@ -775,7 +762,6 @@ uint16_t rtk_bt_gattc_discover(rtk_bt_gattc_discover_param_t *p_dis_param);
 uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_write(rtk_bt_gattc_write_param_t *p_write_param)
  * @brief      GATT client write operations, will cause event @ref RTK_BT_GATTC_EVT_WRITE_RESULT_IND
  * @param p_write_param: Pointer to GATT client write parameters.
  * @return
@@ -785,8 +771,6 @@ uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param);
 uint16_t rtk_bt_gattc_write(rtk_bt_gattc_write_param_t *p_write_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_enable_notify_or_indicate(
-                                rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param)
  * @brief      GATT client enable notify or indicate, will cause event @ref RTK_BT_GATTC_EVT_CCCD_ENABLE_IND
  * @param p_update_cccd_param: Pointer to GATT client update cccd parameters.
  * @return
@@ -797,8 +781,6 @@ uint16_t rtk_bt_gattc_enable_notify_or_indicate(
 	rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_disable_notify_or_indicate(
-                                rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param)
  * @brief      GATT client disable notify or indicate, will cause event @ref RTK_BT_GATTC_EVT_CCCD_DISABLE_IND
  * @param p_update_cccd_param: Pointer to GATT client update cccd parameters.
  * @return
