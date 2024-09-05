@@ -488,7 +488,6 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 			g_acceptor_info.status = RTK_BLE_AUDIO_ACCEPTOR_DISC;
 		} else if (cap_role == RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
-			app_bt_le_audio_group_list_remove(g_initiator_info.group_handle);
 			g_initiator_info.status = RTK_BLE_AUDIO_INITIATOR_DISCONNECT;
 		} else if (cap_role == RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
@@ -1867,8 +1866,30 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 					}
 					BT_LOGA("[APP] %s: ext scan timer start\r\n", __func__);
 				}
+#else
+				if (p_group_info->dev_num == 0) {
+					rtk_bt_le_audio_group_release(g_commander_info.group_handle);
+					BT_LOGA("%s: group handle 0x%x deleted \r\n", __func__, g_commander_info.group_handle);
+					app_bt_le_audio_group_list_remove(g_commander_info.group_handle);
+					g_commander_info.group_handle = NULL;
+				}
 #endif
 			} else if (cap_role == RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR) {
+				if (p_group_info->dev_num == 0) {
+					// release stream session when group released
+					if (p_group_info->stream_session_handle) {
+						rtk_bt_le_audio_stream_session_release(p_group_info->stream_session_handle);
+						BT_LOGA("%s: stream_session_handle:0x%x released\r\n", __func__, p_group_info->stream_session_handle);
+						p_group_info->stream_session_handle = NULL;
+					} else {
+						BT_LOGE("%s: stream_session_handle is NULL \r\n", __func__);
+					}
+					// stop stream
+					app_bt_le_audio_cap_encode_data_control(false);
+					if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
+						app_bt_le_audio_cap_decode_data_control(false);
+					}
+				}
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 				ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
 				BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
@@ -1888,13 +1909,15 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 					}
 					BT_LOGA("[APP] %s: ext scan timer start\r\n", __func__);
 				}
-#endif
-			} else {
-				app_bt_le_audio_cap_encode_data_control(false);
-				if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
-					//deinit rx thread
-					app_bt_le_audio_cap_decode_data_control(false);
+#else
+				//release group when all device disconnect
+				if (p_group_info->dev_num == 0) {
+					rtk_bt_le_audio_group_release(g_initiator_info.group_handle);
+					BT_LOGA("%s: group handle 0x%x deleted \r\n", __func__, g_initiator_info.group_handle);
+					app_bt_le_audio_group_list_remove(g_initiator_info.group_handle);
+					g_initiator_info.group_handle = NULL;
 				}
+#endif
 			}
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE:
@@ -2843,7 +2866,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			rtk_bt_le_audio_device_handle_t device_handle = NULL;
 			if (param->group_handle == NULL) {//the server isnt in any group
 				ret = rtk_bt_le_audio_csis_set_coordinator_add_group(&param->mem_info, &group_handle, &device_handle);
-				BT_LOGA("[APP] %s: add device in csis group %s (group_handle=%08x,device_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", group_handle,
+				BT_LOGA("[APP] %s: add device in csis group %s (group_handle=0x%08x,device_handle=0x%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", group_handle,
 						device_handle);
 				if (RTK_BT_OK == ret) {
 					p_group_info = app_bt_le_audio_group_list_add_dev(group_handle, device_handle, param->conn_handle);
@@ -2852,7 +2875,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 					}
 					if (param->mem_info.set_mem_size > 1) {
 						ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
-						BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", group_handle);
+						BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=0x%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", group_handle);
 						app_bt_le_audio_scan_dev_list_remove_all();
 						csip_discover_flag = true;
 						ret = rtk_bt_le_gap_set_ext_scan_param(&app_lea_def_ext_scan_param);

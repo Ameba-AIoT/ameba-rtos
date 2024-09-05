@@ -77,7 +77,7 @@ void reset_config(void)
 
 void judge_station_disconnect(void)
 {
-	struct _rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+	struct _rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0, 0};
 
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 

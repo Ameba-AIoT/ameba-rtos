@@ -184,6 +184,8 @@ typedef struct rtw_scan_result {
 	enum rtw_wps_type          wps_type;         /**< WPS type                                                                  */
 	unsigned int                      channel;          /**< Radio channel that the AP beacon was received on                          */
 	enum rtw_802_11_band       band;             /**< Radio band                                                                */
+	char	country_code[2];
+	u8		rom_rsvd[4];
 } rtw_scan_result_t;
 
 typedef struct _rtw_channel_scan_time_t {
@@ -363,6 +365,8 @@ typedef struct _rtw_network_info_t {
 	rtw_joinstatus_callback_t	joinstatus_user_callback;	/**< user callback for processing joinstatus, please set to NULL if not use it */
 	struct _rtw_wpa_supp_connect_t	wpa_supp;
 	struct _rtw_mac_t		prev_bssid;
+	u8							by_reconn; /*connection triggered by RTK auto reconnect process, user can ignore*/
+	u8							rom_rsvd[4];
 } rtw_network_info_t;
 /** @} */
 
@@ -560,6 +564,8 @@ typedef struct _rtw_wifi_setting_t {
 	unsigned char		alg;		/**< encryption algorithm */
 	unsigned int		auth_type;
 	unsigned char		is_wps_trigger;	/**< connection triggered by WPS process**/
+	unsigned int		rom_rsvd;
+
 } rtw_wifi_setting_t;
 
 extern struct _rtw_wifi_setting_t wifi_setting[2];

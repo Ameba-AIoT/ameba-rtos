@@ -22,6 +22,7 @@ void bt_stack_pending_cmd_deinit(void);
 rtk_bt_cmd_t *bt_stack_pending_cmd_search(uint32_t msg_type);
 void bt_stack_pending_cmd_insert(rtk_bt_cmd_t *p_cmd);
 void bt_stack_pending_cmd_delete(rtk_bt_cmd_t *p_cmd);
+bool bt_stack_profile_check(rtk_bt_profile_t profile);
 
 uint16_t bt_stack_le_gap_wait_ready(void);
 void bt_stack_le_gap_handle_io_msg(uint16_t gap_type, void *gap_msg);

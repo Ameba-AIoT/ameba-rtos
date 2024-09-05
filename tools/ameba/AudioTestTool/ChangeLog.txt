@@ -1,0 +1,11 @@
+ChangeLog:
+20220722  v1.0.0  Initial release.
+20220922  v1.0.1  Add support for playback via httpd.
+20220102  v1.0.2  (1) Add support for volume tune.
+                  (2) Add retry for httpd operations.
+				  (3) Set ChipID to SoC name
+20240703  v1.0.3  (1) Add device type RTPIN_IN_DMIC_REF_AMIC
+                  (2) Add support for AmebaDplus
+				  (3) Fix chip type save failure
+				  (4) Fix load crash caused by invalid chip ID
+20240812  v1.0.4  Fix playback media directory non-exist crash issue

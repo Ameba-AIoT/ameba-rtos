@@ -95,7 +95,6 @@ typedef struct {
  * @{
  */
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_default_transition_time_client_get(rtk_bt_mesh_generic_default_transition_time_get_t *time_get)
  * @brief     Send generic default transition time get message to generic default transition time server, will cause event @ref RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL_GET
  * @param[in] time_get: generic default transition time get message structure
  * @return
@@ -105,7 +104,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_generic_default_transition_time_client_get(rtk_bt_mesh_generic_default_transition_time_get_t *time_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_default_transition_time_client_set(rtk_bt_mesh_generic_default_transition_time_set_t *time_set)
  * @brief     Send generic default transition time set message to generic default transition time server, will cause event @ref RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL_SET
  * @param[in] time_set: generic default transition time set message structure
  * @return

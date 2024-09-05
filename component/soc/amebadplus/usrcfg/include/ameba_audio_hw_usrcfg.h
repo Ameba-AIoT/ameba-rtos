@@ -87,6 +87,15 @@
 #define AUDIO_I2S_OUT_SPORT_INDEX       0
 
 /*
+ *Define I2S out's data format
+ *0 for I2S
+ *1 for Left Justified
+ *2 for SP_DF_PCM_A
+ *3 for SP_DF_PCM_B
+ */
+#define AUDIO_I2S_OUT_DATA_FORMAT        0
+
+/*
  *Define I2S out pins.
  */
 #define AUDIO_I2S_OUT_MCLK_PIN           _PA_19
@@ -169,10 +178,37 @@
  */
 #define AUDIO_I2S_IN_EXTRA_NEED_MCLK_OUT       0
 
-
+/*
+ *If AUDIO_I2S_IN_MULTIIO_EN equals 1, using MULTI-IO.
+ *If AUDIO_I2S_IN_MULTIIO_EN equals 0, using TDM.
+ */
 #define AUDIO_I2S_IN_MULTIIO_EN                1
 
+/*
+ *If AUDIO_I2S_IN_EXTRA_MULTIIO_EN equals 1, using MULTI-IO.
+ *If AUDIO_I2S_IN_EXTRA_MULTIIO_EN equals 0, using TDM.
+ */
 #define AUDIO_I2S_IN_EXTRA_MULTIIO_EN          1
+
+/*
+ *If audio has more than 8 channels, then need two sports.
+ *Take 12 channels for example:
+ *If AUDIO_I2S_CHANNELS_BISECT equals 1,
+ *I2S0 has 6 channels, I2S1 has 6 channels.
+ *If AUDIO_I2S_CHANNELS_BISECT equals 0,
+ *I2S0 has 8 channels, I2S1 has 12-8 channels.
+ *
+ */
+#define AUDIO_I2S_CHANNELS_BISECT              0
+
+/*
+ *Define I2S in's data format
+ *0 for I2S
+ *1 for Left Justified
+ *2 for SP_DF_PCM_A
+ *3 for SP_DF_PCM_B
+ */
+#define AUDIO_I2S_IN_DATA_FORMAT               0
 
 /*
  *Set 1 to enable debug for buffer level.

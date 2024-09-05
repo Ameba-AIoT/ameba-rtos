@@ -20,6 +20,7 @@ ifeq ($(CONFIG_AS_INIC_NP), y)
 ifneq ($(CONFIG_AMEBALITE), y)
 	echo > wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
 endif
+	make -C inic all
 endif
 	make -C wifi_feature_disable all
 

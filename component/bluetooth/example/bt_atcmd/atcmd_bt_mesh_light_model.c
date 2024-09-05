@@ -28,13 +28,13 @@ static int atcmd_ble_mesh_light_lightness_get(int argc, char **argv)
 	light_lightness_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lightness_get(&light_lightness_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -59,13 +59,13 @@ static int atcmd_ble_mesh_light_lightness_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_lightness_set(&light_lightness_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -80,13 +80,13 @@ static int atcmd_ble_mesh_light_lightness_linear_get(int argc, char **argv)
 	light_lightness_linear_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lightness_linear_get(&light_lightness_linear_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light linear lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light linear lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -111,13 +111,13 @@ static int atcmd_ble_mesh_light_lightness_linear_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_lightness_linear_set(&light_lightness_linear_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light linear lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light linear lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -132,13 +132,13 @@ static int atcmd_ble_mesh_light_lightness_last_get(int argc, char **argv)
 	light_lightness_last_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lightness_last_get(&light_lightness_last_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light last lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light last lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -153,13 +153,13 @@ static int atcmd_ble_mesh_light_lightness_default_get(int argc, char **argv)
 	light_lightness_default_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lightness_default_get(&light_lightness_default_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -176,13 +176,13 @@ static int atcmd_ble_mesh_light_lightness_default_set(int argc, char **argv)
 	light_lightness_default_set.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_light_lightness_default_set(&light_lightness_default_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -197,13 +197,13 @@ static int atcmd_ble_mesh_light_lightness_range_get(int argc, char **argv)
 	light_lightness_range_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lightness_range_get(&light_lightness_range_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light lightness range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light lightness range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -221,13 +221,13 @@ static int atcmd_ble_mesh_light_lightness_range_set(int argc, char **argv)
 	light_lightness_range_set.app_key_index = str_to_int(argv[4]);
 	ret = rtk_bt_mesh_light_lightness_range_set(&light_lightness_range_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light lightness range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light lightness range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLL_AT_PRINTK("Platform not support light lightness client model.");
+	BT_LOGE("Platform not support light lightness client model.\r\n");
 	return -1;
 #endif
 }
@@ -243,13 +243,13 @@ static int atcmd_ble_mesh_light_ctl_get(int argc, char **argv)
 	light_ctl_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_ctl_get(&light_ctl_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light ctl lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light ctl lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -276,13 +276,13 @@ static int atcmd_ble_mesh_light_ctl_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_ctl_set(&light_ctl_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light ctl lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light ctl lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -297,13 +297,13 @@ static int atcmd_ble_mesh_light_ctl_temperature_get(int argc, char **argv)
 	light_ctl_temperature_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_ctl_temperature_get(&light_ctl_temperature_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light ctl temperature failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light ctl temperature failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -329,13 +329,13 @@ static int atcmd_ble_mesh_light_ctl_temperature_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_ctl_temperature_set(&light_ctl_temperature_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light ctl temperature failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light ctl temperature failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -350,13 +350,13 @@ static int atcmd_ble_mesh_light_ctl_temperature_range_get(int argc, char **argv)
 	light_ctl_temperature_range_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_ctl_temperature_range_get(&light_ctl_temperature_range_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light ctl temperature range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light ctl temperature range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -374,13 +374,13 @@ static int atcmd_ble_mesh_light_ctl_temperature_range_set(int argc, char **argv)
 	light_ctl_temperature_range_set.app_key_index = str_to_int(argv[4]);
 	ret = rtk_bt_mesh_light_ctl_temperature_range_set(&light_ctl_temperature_range_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light ctl temperature range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light ctl temperature range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -395,13 +395,13 @@ static int atcmd_ble_mesh_light_ctl_default_get(int argc, char **argv)
 	light_ctl_default_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_ctl_default_get(&light_ctl_default_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light ctl default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light ctl default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -420,13 +420,13 @@ static int atcmd_ble_mesh_light_ctl_default_set(int argc, char **argv)
 	light_ctl_default_set.app_key_index = str_to_int(argv[5]);
 	ret = rtk_bt_mesh_light_ctl_default_set(&light_ctl_default_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light ctl default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light ctl default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLCTL_AT_PRINTK("Platform not support light CTL client model.");
+	BT_LOGE("Platform not support light CTL client model.\r\n");
 	return -1;
 #endif
 }
@@ -442,13 +442,13 @@ static int atcmd_ble_mesh_light_hsl_get(int argc, char **argv)
 	light_hsl_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_hsl_get(&light_hsl_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -475,13 +475,13 @@ static int atcmd_ble_mesh_light_hsl_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_hsl_set(&light_hsl_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light hsl lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light hsl lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -496,13 +496,13 @@ static int atcmd_ble_mesh_light_hsl_target_get(int argc, char **argv)
 	light_hsl_target_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_hsl_target_get(&light_hsl_target_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl target lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl target lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -517,13 +517,13 @@ static int atcmd_ble_mesh_light_hsl_hue_get(int argc, char **argv)
 	light_hsl_hue_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_hsl_hue_get(&light_hsl_hue_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl hue lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl hue lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -548,13 +548,13 @@ static int atcmd_ble_mesh_light_hsl_hue_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_hsl_hue_set(&light_hsl_hue_set);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl hue lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl hue lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -569,13 +569,13 @@ static int atcmd_ble_mesh_light_hsl_saturation_get(int argc, char **argv)
 	light_hsl_saturation_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_hsl_saturation_get(&light_hsl_saturation_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl saturation lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl saturation lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -600,13 +600,13 @@ static int atcmd_ble_mesh_light_hsl_saturation_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_hsl_saturation_set(&light_hsl_saturation_set);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl saturation lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl saturation lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -621,13 +621,13 @@ static int atcmd_ble_mesh_light_hsl_default_get(int argc, char **argv)
 	light_hsl_default_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_hsl_default_get(&light_hsl_default_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -646,13 +646,13 @@ static int atcmd_ble_mesh_light_hsl_default_set(int argc, char **argv)
 	light_hsl_default_set.app_key_index = str_to_int(argv[5]);
 	ret = rtk_bt_mesh_light_hsl_default_set(&light_hsl_default_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light hsl default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light hsl default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -667,13 +667,13 @@ static int atcmd_ble_mesh_light_hsl_range_get(int argc, char **argv)
 	light_hsl_range_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_hsl_range_get(&light_hsl_range_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl lightness range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl lightness range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -693,13 +693,13 @@ static int atcmd_ble_mesh_light_hsl_range_set(int argc, char **argv)
 	light_hsl_range_set.app_key_index = str_to_int(argv[6]);
 	ret = rtk_bt_mesh_light_hsl_range_set(&light_hsl_range_set);
 	if (ret) {
-		AT_PRINTK("[%s] Get light hsl lightness range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light hsl lightness range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLHSL_AT_PRINTK("Platform not support light HSL client model.");
+	BT_LOGE("Platform not support light HSL client model.\r\n");
 	return -1;
 #endif
 }
@@ -715,13 +715,13 @@ static int atcmd_ble_mesh_light_xyl_get(int argc, char **argv)
 	light_xyl_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_xyl_get(&light_xyl_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light xyl lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light xyl lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -748,13 +748,13 @@ static int atcmd_ble_mesh_light_xyl_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_xyl_set(&light_xyl_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light xyl lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light xyl lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -769,13 +769,13 @@ static int atcmd_ble_mesh_light_xyl_target_get(int argc, char **argv)
 	light_xyl_target_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_xyl_target_get(&light_xyl_target_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light xyl target lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light xyl target lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -790,13 +790,13 @@ static int atcmd_ble_mesh_light_xyl_default_get(int argc, char **argv)
 	light_xyl_default_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_xyl_default_get(&light_xyl_default_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light xyl default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light xyl default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -815,13 +815,13 @@ static int atcmd_ble_mesh_light_xyl_default_set(int argc, char **argv)
 	light_xyl_set.app_key_index = str_to_int(argv[5]);
 	ret = rtk_bt_mesh_light_xyl_default_set(&light_xyl_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light xyl default lightness failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light xyl default lightness failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -836,13 +836,13 @@ static int atcmd_ble_mesh_light_xyl_range_get(int argc, char **argv)
 	light_xyl_range_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_xyl_range_get(&light_xyl_range_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light xyl lightness range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light xyl lightness range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -862,13 +862,13 @@ static int atcmd_ble_mesh_light_xyl_range_set(int argc, char **argv)
 	light_xyl_range_set.app_key_index = str_to_int(argv[6]);
 	ret = rtk_bt_mesh_light_xyl_range_set(&light_xyl_range_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light xyl lightness range failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light xyl lightness range failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLXYL_AT_PRINTK("Platform not support light XYL client model.");
+	BT_LOGE("Platform not support light XYL client model.\r\n");
 	return -1;
 #endif
 }
@@ -884,13 +884,13 @@ static int atcmd_ble_mesh_light_lc_mode_get(int argc, char **argv)
 	light_lc_mode_get.app_key_index = str_to_int(argv[1]);
 	rtk_bt_mesh_light_lc_mode_get(&light_lc_mode_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light lc mode failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light lc mode failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -907,13 +907,13 @@ static int atcmd_ble_mesh_light_lc_mode_set(int argc, char **argv)
 	light_lc_mode_set.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_light_lc_mode_set(&light_lc_mode_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light lc mode failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light lc mode failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -928,13 +928,13 @@ static int atcmd_ble_mesh_light_lc_om_get(int argc, char **argv)
 	light_lc_om_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lc_om_get(&light_lc_om_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light lc om failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light lc om failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -951,13 +951,13 @@ static int atcmd_ble_mesh_light_lc_om_set(int argc, char **argv)
 	light_lc_om_set.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_light_lc_om_set(&light_lc_om_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light lc om failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light lc om failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -972,13 +972,13 @@ static int atcmd_ble_mesh_light_lc_lightonoff_get(int argc, char **argv)
 	light_lc_lightonoff_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_light_lc_lightonoff_get(&light_lc_lightonoff_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light lc light on off failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light lc light on off failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -1003,13 +1003,13 @@ static int atcmd_ble_mesh_light_lc_lightonoff_set(int argc, char **argv)
 	}
 	ret = rtk_bt_mesh_light_lc_lightonoff_set(&light_lc_lightonoff_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set light lc light on off failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set light lc light on off failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -1025,13 +1025,13 @@ static int atcmd_ble_mesh_light_lc_property_get(int argc, char **argv)
 	light_lc_property_get.property_id = str_to_int(argv[2]);//cannot be 0
 	rtk_bt_mesh_light_lc_property_get(&light_lc_property_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get light lc property failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get light lc property failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 }
@@ -1050,33 +1050,33 @@ static int atcmd_ble_mesh_light_lc_property_set(int argc, char **argv)
 	if (argc > 4) {
 		len = strlen(argv[4]);
 		if (len / 2 > LIGHT_LC_PROPERTY_DATA_MAX_LEN) {
-			AT_PRINTK("[%s] The len %d of input data extend max value %d\r\n", __func__, len, LIGHT_LC_PROPERTY_DATA_MAX_LEN);
+			BT_LOGE("[%s] The len %d of input data extend max value %d\r\n", __func__, len, LIGHT_LC_PROPERTY_DATA_MAX_LEN);
 			return -2;
 		}
 		light_lc_property_set.value_len = len / 2;
 		if (hexdata_str_to_array(argv[4], light_lc_property_set.pvalue, len)) {
 			ret = rtk_bt_mesh_light_lc_property_set(&light_lc_property_set);
 			if (ret) {
-				AT_PRINTK("[%s] Set light lc property failed! reason: 0x%x", __func__, ret);
+				BT_LOGE("[%s] Set light lc property failed! reason: 0x%x\r\n", __func__, ret);
 				return -1;
 			}
 			return 0;
 		} else {
-			AT_PRINTK("[%s] Input data format is not corrent.\r\n", __func__);
+			BT_LOGE("[%s] Input data format is not corrent.\r\n", __func__);
 			return -3;
 		}
 	} else {
 		light_lc_property_set.value_len = 0;
 		ret = rtk_bt_mesh_light_lc_property_set(&light_lc_property_set);
 		if (ret) {
-			AT_PRINTK("[%s] Set light lc property failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s] Set light lc property failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	}
 #else
 	(void)argv;
-	MESHLLC_AT_PRINTK("Platform not support light LC client model.");
+	BT_LOGE("Platform not support light LC client model.\r\n");
 	return -1;
 #endif
 

@@ -1141,7 +1141,6 @@ struct evt_ret_mem_option {
  */
 
 /**
- * @fn        void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] paddr: Device address
  * @param[out] str: String buf to get the normal format address
@@ -1150,7 +1149,6 @@ struct evt_ret_mem_option {
 void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
 
 /**
- * @fn        void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address value hexnum to normal format string.
  * @param[in] paddr: Device address
  * @param[out] str: String buf to get the normal format address
@@ -1159,7 +1157,6 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
 void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] paddr: Device address
  * @param[out] str: String buf to get the normal format address
@@ -1168,7 +1165,6 @@ void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len);
 void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] type: Device address type
  * @param[in] paddr: Device address
@@ -1178,7 +1174,6 @@ void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
 void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
  * @brief     Register event callback
  * @note      User's event callback will be excuted in bt_evt_task @ref rtk_bt_evt_taskentry,
  *            if user's callback is complex and consume too much stack size, please enlarge
@@ -1192,7 +1187,6 @@ void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
 uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb);
 
 /**
- * @fn        uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
  * @brief     Unregister event callback
  * @param[in] group: API cmd/evt group
  * @return

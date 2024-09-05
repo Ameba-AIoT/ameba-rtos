@@ -12,7 +12,7 @@ This example is for key-value module which wraps littlefs.
 
 [Supported List]
 ~~~~~~~~~~
-		AMEBASMART, AMEBALITE
+		AMEBASMART, AMEBALITE, AMEBADPLUS
 
 Result description
 ~~~~~~~~~~~~~~~~~~

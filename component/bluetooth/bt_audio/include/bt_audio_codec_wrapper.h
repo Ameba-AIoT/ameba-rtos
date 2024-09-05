@@ -183,7 +183,6 @@ typedef struct {
 } bt_audio_free_encode_buff_t;
 
 /**
- * @fn uint16_t bt_audio_handle_media_data_packet(PAUDIO_CODEC_ENTITY pentity,
                                            uint8_t *packet,
                                            uint16_t size,
                                            uint32_t *pframe_size,
@@ -209,7 +208,6 @@ uint16_t bt_audio_handle_media_data_packet(PAUDIO_CODEC_ENTITY pentity,
 										   uint8_t *pcodec_header_flag, struct audio_param *paudio_param);
 
 /**
- * @fn        uint16_t bt_audio_decode_process_data(PAUDIO_CODEC_ENTITY pentity, struct dec_codec_buffer *pdecoder_buffer, uint8_t *data, uint32_t size, uint32_t *ppcm_size, struct audio_param *paudio_param)
  * @brief     decode audio data to pcm
  * @param[in] pentity:codec entity
  * @param[in] pdecoder_buffer: indicate the allocate memory
@@ -225,7 +223,6 @@ uint16_t bt_audio_decode_process_data(PAUDIO_CODEC_ENTITY pentity, struct dec_co
 									  struct audio_param *paudio_param);
 
 /**
- * @fn        struct dec_codec_buffer *bt_audio_get_decode_buffer(PAUDIO_CODEC_ENTITY pentity)
  * @brief     get decode buffer from specific application memory management
  * @param[in] pentity:codec entity
  * @return buffer: point to buffer , NULL: allocate fail
@@ -233,7 +230,6 @@ uint16_t bt_audio_decode_process_data(PAUDIO_CODEC_ENTITY pentity, struct dec_co
 struct dec_codec_buffer *bt_audio_get_decode_buffer(PAUDIO_CODEC_ENTITY pentity);
 
 /**
- * @fn        uint16_t bt_audio_free_decode_buffer(PAUDIO_CODEC_ENTITY pentity, struct dec_codec_buffer *buffer)
  * @brief     memory free decode buffer
  * @param[in] pentity:codec entity
  * @param[in] buffer: indicate the allocate memory
@@ -244,7 +240,6 @@ struct dec_codec_buffer *bt_audio_get_decode_buffer(PAUDIO_CODEC_ENTITY pentity)
 uint16_t bt_audio_free_decode_buffer(PAUDIO_CODEC_ENTITY pentity, struct dec_codec_buffer *buffer);
 
 /**
- * @fn        uint16_t bt_audio_encode_process_data(PAUDIO_CODEC_ENTITY pentity, struct enc_codec_buffer *pencoder_buffer, int16_t *data, uint32_t size, uint8_t *p_frame_num, uint32_t *p_actual_len)
  * @brief     encode audio data to pcm
  * @param[in] pentity:codec entity
  * @param[in] pencoder_buffer: indicate the allocate memory
@@ -260,7 +255,6 @@ uint16_t bt_audio_encode_process_data(PAUDIO_CODEC_ENTITY pentity, struct enc_co
 									  uint32_t *p_actual_len);
 
 /**
- * @fn        struct enc_codec_buffer *bt_audio_get_encode_buffer(PAUDIO_CODEC_ENTITY pentity)
  * @brief     get encode buffer from specific application memory management
  * @param[in] pentity:codec entity
  * @return buffer: point to buffer , NULL: allocate fail
@@ -268,7 +262,6 @@ uint16_t bt_audio_encode_process_data(PAUDIO_CODEC_ENTITY pentity, struct enc_co
 struct enc_codec_buffer *bt_audio_get_encode_buffer(PAUDIO_CODEC_ENTITY pentity);
 
 /**
- * @fn        uint16_t uint16_t bt_audio_free_encode_buffer(PAUDIO_CODEC_ENTITY pentity, struct enc_codec_buffer *buffer)
  * @brief     memory free encode buffer
  * @param[in] pentity:codec entity
  * @param[in] buffer: indicate the allocate memory
@@ -279,7 +272,6 @@ struct enc_codec_buffer *bt_audio_get_encode_buffer(PAUDIO_CODEC_ENTITY pentity)
 uint16_t bt_audio_free_encode_buffer(PAUDIO_CODEC_ENTITY pentity, struct enc_codec_buffer *buffer);
 
 /**
- * @fn        uint16_t bt_codec_decoder_num_samples_per_frame(PAUDIO_CODEC_ENTITY pentity)
  * @brief     get decoder num samples per frame media packet
  * @param[in] pentity:codec entity
  * @return 0xFF: fail others: number samplers
@@ -287,7 +279,6 @@ uint16_t bt_audio_free_encode_buffer(PAUDIO_CODEC_ENTITY pentity, struct enc_cod
 uint16_t bt_codec_decoder_num_samples_per_frame(PAUDIO_CODEC_ENTITY pentity);
 
 /**
- * @fn        uint16_t bt_codec_decoder_num_channels(PAUDIO_CODEC_ENTITY pentity)
  * @brief     get decoder channel numbers
  * @param[in] pentity:codec entity
  * @return 0xFF: fail others: number samplers
@@ -295,7 +286,6 @@ uint16_t bt_codec_decoder_num_samples_per_frame(PAUDIO_CODEC_ENTITY pentity);
 uint16_t bt_codec_decoder_num_channels(PAUDIO_CODEC_ENTITY pentity);
 
 /**
- * @fn        int bt_codec_decoder_sample_rate(PAUDIO_CODEC_ENTITY pentity)
  * @brief     get decoder sample rate
  * @param[in] pentity:codec entity
  * @return 0xFF: fail others: number samplers
@@ -303,7 +293,6 @@ uint16_t bt_codec_decoder_num_channels(PAUDIO_CODEC_ENTITY pentity);
 int bt_codec_decoder_sample_rate(PAUDIO_CODEC_ENTITY pentity);
 
 /**
- * @fn        uint16_t bt_audio_register_codec(uint32_t type, void* param)
  * @brief     register codec
  * @param[in] type: indicate codec type
  * @param[in] param: pointer of parameter
@@ -316,7 +305,6 @@ int bt_codec_decoder_sample_rate(PAUDIO_CODEC_ENTITY pentity);
 uint16_t bt_audio_register_codec(uint32_t type, void *param, uint32_t param_len, PAUDIO_CODEC_ENTITY pentity);
 
 /**
- * @fn        uint16_t bt_audio_unregister_codec(uint32_t type)
  * @brief     unregister codec
  * @param[in] type: indicate codec type
  * @param[in] pentity:codec entity

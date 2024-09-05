@@ -875,7 +875,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_init(rtk_bt_le_iso_cig_init_param_t *param)
  * @brief     Initialize the number of CIG and CIS.
  * @param[in] param: The param for CIG init
  * @return
@@ -885,7 +884,6 @@ typedef struct {
 uint16_t rtk_bt_le_iso_cig_init(rtk_bt_le_iso_cig_init_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_get_conn_handle(uint16_t cis_conn_handle, uint16_t *p_conn_handle)
  * @brief     Get connection ID by CIS connection handle.
  * @param[in]   cis_conn_handle:  Connection handle of the CIS.
  * @param[out]  p_conn_handle:    Connection handle.
@@ -896,7 +894,6 @@ uint16_t rtk_bt_le_iso_cig_init(rtk_bt_le_iso_cig_init_param_t *param);
 uint16_t rtk_bt_le_iso_cig_get_conn_handle(uint16_t cis_conn_handle, uint16_t *p_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_get_cis_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_cis_info_t * p_info)
  * @brief     Get CIG ID and CIS ID by CIS connection handle.
  * @param[in]   cis_conn_handle:  Connection handle of the CIS.
  * @param[out]  p_info:       CIG ID and CIS ID.
@@ -907,7 +904,6 @@ uint16_t rtk_bt_le_iso_cig_get_conn_handle(uint16_t cis_conn_handle, uint16_t *p
 uint16_t rtk_bt_le_iso_cig_get_cis_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_cis_info_t *p_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_get_isoch_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cis_channel_info_t *p_info)
  * @brief     Get information about specified CIS connection handle.
  * @param[in]   cis_conn_handle  Connection handle of the CIS.
  * @param[out]  p_info           Information about specified CIS connection handle.
@@ -918,7 +914,6 @@ uint16_t rtk_bt_le_iso_cig_get_cis_info(uint16_t cis_conn_handle, rtk_bt_le_iso_
 uint16_t rtk_bt_le_iso_cig_get_isoch_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cis_channel_info_t *p_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
  * @brief     Identify and create the isochronous data path for CIS.
  * @param[in]       param:  The param of setup cis data path.
  * @return
@@ -928,7 +923,6 @@ uint16_t rtk_bt_le_iso_cig_get_isoch_info(uint16_t cis_conn_handle, rtk_bt_le_is
 uint16_t rtk_bt_le_iso_cig_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_remove_path(uint16_t cis_conn_handle,rtk_bt_le_iso_data_path_direction_flag_t data_path_direction)
  * @brief     Remove the input and/or output data path(s) associated with CIS.
  * @param[in]       cis_conn_handle:   Connection handle of the CIS.
  * @param[in]       data_path_direction:  The param for CIG remove path.
@@ -939,7 +933,6 @@ uint16_t rtk_bt_le_iso_cig_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
 uint16_t rtk_bt_le_iso_cig_remove_path(uint16_t cis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_disconnect(uint16_t cis_conn_handle)
  * @brief     Terminate a CIS connection.
  * @param[in]   cis_conn_handle:   Connection handle of the CIS.
  * @return
@@ -949,7 +942,6 @@ uint16_t rtk_bt_le_iso_cig_remove_path(uint16_t cis_conn_handle, rtk_bt_le_iso_d
 uint16_t rtk_bt_le_iso_cig_disconnect(uint16_t cis_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_read_iso_tx_sync(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_iso_tx_sync_info_t * p_tx_sync_info)
  * @brief     Read the TX_Time_Stamp and Time_Offset of a transmitted SDU identified by the Packet_Sequence_Number on a CIS.
  * @param[in]   cis_conn_handle:   Connection handle of the CIS.
  * @param[out]  p_tx_sync_info:    Point to tx sync info result.
@@ -960,7 +952,6 @@ uint16_t rtk_bt_le_iso_cig_disconnect(uint16_t cis_conn_handle);
 uint16_t rtk_bt_le_iso_cig_read_iso_tx_sync(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_iso_tx_sync_info_t *p_tx_sync_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_read_link_quality(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_link_quality_info_t * p_link_quality_info)
  * @param[in]   cis_conn_handle:        Connection handle of the CIS.
  * @param[out]  p_link_quality_info:    Point to link quality info result.
  * @return
@@ -970,7 +961,6 @@ uint16_t rtk_bt_le_iso_cig_read_iso_tx_sync(uint16_t cis_conn_handle, rtk_bt_le_
 uint16_t rtk_bt_le_iso_cig_read_link_quality(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_link_quality_info_t *p_link_quality_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_add_cis(uint8_t cig_id, uint8_t cis_id)
  * @brief     Add CIS for specified CIG.
  * @param[in] cig_id: Identifier of a CIG
  * @param[in] cis_id: Identifier of a CIS
@@ -981,7 +971,6 @@ uint16_t rtk_bt_le_iso_cig_read_link_quality(uint16_t cis_conn_handle, rtk_bt_le
 uint16_t rtk_bt_le_iso_cig_initiator_add_cis(uint8_t cig_id, uint8_t cis_id);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_set_cig_param(rtk_bt_le_iso_cig_initiator_set_cig_param_t *param)
  * @brief     Set GAP CIG parameters.
  * @param[in] param: The param for set CIG param
  * @return
@@ -991,7 +980,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_add_cis(uint8_t cig_id, uint8_t cis_id);
 uint16_t rtk_bt_le_iso_cig_initiator_set_cig_param(rtk_bt_le_iso_cig_initiator_set_cig_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_set_cis_param(rtk_bt_le_iso_cig_initiator_set_cis_param_t *param)
  * @brief     Set GAP CIS parameters.
  * @param[in] param: The param for set CIS param
  * @return
@@ -1001,7 +989,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_set_cig_param(rtk_bt_le_iso_cig_initiator_s
 uint16_t rtk_bt_le_iso_cig_initiator_set_cis_param(rtk_bt_le_iso_cig_initiator_set_cis_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id)
  * @brief     Request to create a CIG and to set the parameters of one or more CISes in the Controller.
  * @param[in] cig_id: Identifier of a CIG
  * @return
@@ -1011,7 +998,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_set_cis_param(rtk_bt_le_iso_cig_initiator_s
 uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_set_cis_acl_link(uint8_t cis_id,uint16_t conn_handle)
  * @brief     Specify the connection handle of the ACL connection associated with each CIS to be created.
  * @param[in] cis_id: Identifier of a CIS
  * @param[in] conn_handle: connection handle
@@ -1022,7 +1008,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id);
 uint16_t rtk_bt_le_iso_cig_initiator_set_cis_acl_link(uint8_t cis_id, uint16_t conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_t cig_id, uint16_t conn_handle)
  * @brief     create cis id and link it to acl, and cig.
  * @param[in] cis_id: Identifier of a CIS
  * @param[in] cig_id: Identifier of a CIG
@@ -1034,7 +1019,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_set_cis_acl_link(uint8_t cis_id, uint16_t c
 uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_t cig_id, uint16_t conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_id, uint8_t cig_id, uint8_t cis_count, uint16_t conn_handle, uint16_t *p_cis_conn_handle)
  * @brief     Request to create one or more CISes by cis conn handle.
  * @param[in] cis_id: Identifier of a CIS
  * @param[in] cig_id: Identifier of a CIG
@@ -1049,7 +1033,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_i
 																   uint16_t *p_cis_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_get_cis_conn_handle(uint8_t cis_id, uint16_t *p_cis_conn_handle)
  * @brief     Get CIS connection handle by CIS id.
  * @param[in]   cis_id:         Used to identify a CIS.
  * @param[out]  p_cis_conn_handle:   CIS connection handle.
@@ -1060,7 +1043,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_i
 uint16_t rtk_bt_le_iso_cig_initiator_get_cis_conn_handle(uint8_t cis_id, uint16_t *p_cis_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_remove_cig(uint8_t cig_id)
  * @brief     Used by the Central's Host to remove the CIG.
  * @param[in]   cig_id:   Identifier of a CIG.
  * @return
@@ -1070,7 +1052,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_get_cis_conn_handle(uint8_t cis_id, uint16_
 uint16_t rtk_bt_le_iso_cig_initiator_remove_cig(uint8_t cig_id);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_initiator_register_callback(uint8_t cig_id)
  * @brief     Register CIG by cig_id.
  * @param[in]   cig_id:   Identifier of a CIG.
  * @return
@@ -1080,7 +1061,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_remove_cig(uint8_t cig_id);
 uint16_t rtk_bt_le_iso_cig_initiator_register_callback(uint8_t cig_id);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_acceptor_accept_cis(uint16_t cis_conn_handle)
  * @brief     Accept the request for the CIS.
  * @param[in]   cis_conn_handle:   Connection handle of the CIS.
  * @return
@@ -1090,7 +1070,6 @@ uint16_t rtk_bt_le_iso_cig_initiator_register_callback(uint8_t cig_id);
 uint16_t rtk_bt_le_iso_cig_acceptor_accept_cis(uint16_t cis_conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_acceptor_reject_cis(uint16_t cis_conn_handle,uint8_t reason)
  * @brief     Reject the request for the CIS..
  * @param[in]   cis_conn_handle:  Connection handle of the CIS.
  * @param[in]   reason:   Reason the CIS request was rejected. @ref BT_HCI_ERROR (except @ref HCI_SUCCESS)
@@ -1101,7 +1080,6 @@ uint16_t rtk_bt_le_iso_cig_acceptor_accept_cis(uint16_t cis_conn_handle);
 uint16_t rtk_bt_le_iso_cig_acceptor_reject_cis(uint16_t cis_conn_handle, uint8_t reason);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_acceptor_config_sdu_param(uint16_t cis_conn_handle,bool acceptor_config_sdu_flag,uint32_t sdu_interval_m_s,uint32_t sdu_interval_s_m,uint16_t max_sdu_m_s,uint16_t max_sdu_s_m)
  * @brief     Whether to check sdu length when rtk_bt_le_iso_data_send.
  * @param[in]   cis_conn_handle:   Connection handle of the CIS.
  * @param[in]   acceptor_config_sdu_flag:   Whether to check sdu length when acceptor calls @ref rtk_bt_le_iso_data_send.
@@ -1117,7 +1095,6 @@ uint16_t rtk_bt_le_iso_cig_acceptor_config_sdu_param(uint16_t cis_conn_handle, b
 													 uint32_t sdu_interval_s_m, uint16_t max_sdu_m_s, uint16_t max_sdu_s_m);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t cis_req_action)
  * @brief     Config the acceptor action when received cis request indication. Default action is RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT.
  * @param[in]   cis_req_action:   The param for config CIS param.
  * @return
@@ -1128,7 +1105,6 @@ uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acce
 
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void)
  * @brief     Register acceptor gap app callback.
  * @return
  *            - RTK_BT_OK  : Succeed
@@ -1137,7 +1113,6 @@ uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acce
 uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_broadcaster_init(uint8_t big_num,uint8_t bis_num)
  * @brief     Initialize the number of BIG and BIS for Boardcaster.
  * @param[in] big_num: BIG number
  * @param[in] bis_num: BIS number
@@ -1148,7 +1123,6 @@ uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void);
 uint16_t rtk_bt_le_iso_big_broadcaster_init(uint8_t big_num, uint8_t bis_num);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_broadcaster_create(uint8_t adv_handle, rtk_bt_le_iso_big_broadcaster_param_t *big_param, uint8_t *big_handle)
  * @brief     Create BIG broadcaster.
  * @param[in]   adv_handle: Identify the periodic advertising train
  * @param[in]   big_param: The param for create BIG broadcaster
@@ -1160,7 +1134,6 @@ uint16_t rtk_bt_le_iso_big_broadcaster_init(uint8_t big_num, uint8_t bis_num);
 uint16_t rtk_bt_le_iso_big_broadcaster_create(uint8_t adv_handle, rtk_bt_le_iso_big_broadcaster_param_t *big_param, uint8_t *big_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_broadcaster_terminate(uint8_t big_handle)
  * @brief     Terminate BIG broadcaster.
  * @param[in]  big_handle: Identify the BIG
  * @return
@@ -1170,7 +1143,6 @@ uint16_t rtk_bt_le_iso_big_broadcaster_create(uint8_t adv_handle, rtk_bt_le_iso_
 uint16_t rtk_bt_le_iso_big_broadcaster_terminate(uint8_t big_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_broadcaster_read_tx_sync(uint16_t bis_conn_handle, rtk_bt_le_iso_big_broadcaster_read_tx_sync_info_t * p_tx_sync_info)
  * @brief     Read the TX_Time_Stamp and Time_Offset of a transmitted SDU identified by the Packet_Sequence_Number on a BIS.
  * @param[in]   bis_conn_handle: Connection handle of the BIS.
  * @param[out]  p_tx_sync_info: Read tx sync info result.
@@ -1181,7 +1153,6 @@ uint16_t rtk_bt_le_iso_big_broadcaster_terminate(uint8_t big_handle);
 uint16_t rtk_bt_le_iso_big_broadcaster_read_tx_sync(uint16_t bis_conn_handle, rtk_bt_le_iso_big_broadcaster_read_tx_sync_info_t *p_tx_sync_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_receiver_init(uint8_t big_num,uint8_t bis_num)
  * @brief     Initialize the number of BIG and BIS for Receiver.
  * @param[in] big_num: BIG number
  * @param[in] bis_num: BIS number
@@ -1192,7 +1163,6 @@ uint16_t rtk_bt_le_iso_big_broadcaster_read_tx_sync(uint16_t bis_conn_handle, rt
 uint16_t rtk_bt_le_iso_big_receiver_init(uint8_t big_num, uint8_t bis_num);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_receiver_create_sync(uint16_t sync_handle,rtk_bt_le_iso_big_receiver_create_sync_param_t *sync_param,uint8_t *p_big_handle)
  * @brief     Synchronize to a BIG described in the periodic advertising train.
  * @param[in] sync_handle: Identify the periodic advertising train
  * @param[in] sync_param: GAP Synchronized Receiver BIG create sync parameter
@@ -1204,7 +1174,6 @@ uint16_t rtk_bt_le_iso_big_receiver_init(uint8_t big_num, uint8_t bis_num);
 uint16_t rtk_bt_le_iso_big_receiver_create_sync(uint16_t sync_handle, rtk_bt_le_iso_big_receiver_create_sync_param_t *sync_param, uint8_t *p_big_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_receiver_terminate_sync(uint8_t big_handle)
  * @brief     Terminate synchronization to the BIG.
  * @param[in] big_handle: Identify the BIG
  * @return
@@ -1214,7 +1183,6 @@ uint16_t rtk_bt_le_iso_big_receiver_create_sync(uint16_t sync_handle, rtk_bt_le_
 uint16_t rtk_bt_le_iso_big_receiver_terminate_sync(uint8_t big_handle);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_receiver_read_iso_link_quality(uint16_t bis_conn_handle,rtk_bt_le_iso_big_receiver_read_link_quality_info_t * p_link_quality_info)
  * @brief     Read the values of various counters related to link quality.
  * @param[in] bis_conn_handle: Connection handle of the BIS
  * @param[out] p_link_quality_info: Read link quality info result
@@ -1225,7 +1193,6 @@ uint16_t rtk_bt_le_iso_big_receiver_terminate_sync(uint8_t big_handle);
 uint16_t rtk_bt_le_iso_big_receiver_read_iso_link_quality(uint16_t bis_conn_handle, rtk_bt_le_iso_big_receiver_read_link_quality_info_t *p_link_quality_info);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_setup_path(rtk_bt_le_iso_setup_path_param_t *param)
  * @brief     Setup data path for BIS.
  * @param[in]   param: The param for setup BIS data path
  * @return
@@ -1235,7 +1202,6 @@ uint16_t rtk_bt_le_iso_big_receiver_read_iso_link_quality(uint16_t bis_conn_hand
 uint16_t rtk_bt_le_iso_big_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle,rtk_bt_le_iso_data_path_direction_flag_t data_path_direction)
  * @brief     Remove data path for BIS.
  * @param[in]   bis_conn_handle: Connection handle of the BIS.
  * @param[in]   data_path_direction: Specify which directions are to have the data path removed.
@@ -1246,7 +1212,6 @@ uint16_t rtk_bt_le_iso_big_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
 uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
 
 /**
- * @fn        uint16_t rtk_bt_le_iso_data_send(rtk_bt_le_iso_data_send_info_t *info)
  * @brief     Send ISO data [ASYNC/SYNC].
  *            If sending request operation is success, the result will be returned when the API is done.
  * @param[in] info: The info of iso send data

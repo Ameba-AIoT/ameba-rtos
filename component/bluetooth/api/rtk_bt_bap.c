@@ -1352,6 +1352,8 @@ uint16_t rtk_bt_bap_unicast_client_start(uint8_t group_idx, rtk_bt_le_audio_play
 			BT_LOGE("%s: allocate stream_session_handle fail\r\n", __func__);
 			return RTK_BT_FAIL;
 		}
+	} else {
+		BT_LOGA("%s: stream_session_handle:%x already exist \r\n", __func__, p_group_info->stream_session_handle);
 	}
 	device_handle_tbl_len = p_group_info->dev_num * sizeof(rtk_bt_le_audio_device_handle_t);
 	p_device_handle_tbl = (rtk_bt_le_audio_device_handle_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, device_handle_tbl_len);
@@ -1383,7 +1385,8 @@ uint16_t rtk_bt_bap_unicast_client_start(uint8_t group_idx, rtk_bt_le_audio_play
 		BT_LOGE("%s: rtk_bt_bap_unicast_client_qos_cfg fail \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
-	if (p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE) {
+	if (p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE || \
+		p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE_CONFIGURED) {
 		/* unicast config */
 		if (rtk_bt_le_audio_unicast_config(p_group_info->stream_session_handle, p_group_info->audio_cfg_type,
 										   p_group_info->dev_num, p_device_handle_tbl)) {
@@ -1399,8 +1402,7 @@ uint16_t rtk_bt_bap_unicast_client_start(uint8_t group_idx, rtk_bt_le_audio_play
 			BT_LOGE("%s rtk_bt_le_audio_unicast_start fail \r\n", __func__);
 			return RTK_BT_FAIL;
 		}
-	} else if (p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE_CONFIGURED ||
-			   p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_CONFIGURED) {
+	} else if (p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_CONFIGURED) {
 		if (rtk_bt_le_audio_unicast_start(p_group_info->stream_session_handle)) {
 			BT_LOGE("%s rtk_bt_le_audio_unicast_start fail \r\n", __func__);
 			return RTK_BT_FAIL;
@@ -1477,15 +1479,40 @@ uint16_t rtk_bt_bap_unicast_client_release(uint8_t group_idx)
 			return RTK_BT_FAIL;
 		}
 		BT_LOGA("%s: release successfully\r\n", __func__);
-	} else if (p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE ||
-			   p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE_CONFIGURED) {
+	} else {
+		BT_LOGA("%s: inappropriate bap state %d \r\n", __func__, p_group_info->bap_state);
+		return RTK_BT_FAIL;
+	}
+
+	return RTK_BT_OK;
+}
+
+uint16_t rtk_bt_bap_unicast_client_stream_session_release(uint8_t group_idx)
+{
+	rtk_bt_le_audio_group_handle_t group_handle = NULL;
+	app_bt_le_audio_group_info_t *p_group_info = NULL;
+
+	group_handle = app_bt_le_audio_group_list_find_by_group_idx(group_idx);
+	if (!group_handle) {
+		BT_LOGE("%s: group_handle is NULL\r\n", __func__);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	p_group_info = app_bt_le_audio_group_list_find(group_handle);
+	if (!p_group_info) {
+		BT_LOGE("%s: p_group_info is NULL\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	if (p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE || \
+		p_group_info->bap_state == RTK_BT_LE_AUDIO_STREAM_STATE_IDLE_CONFIGURED) {
 		/* release stream_session*/
 		if (rtk_bt_le_audio_stream_session_release(p_group_info->stream_session_handle)) {
 			BT_LOGE("%s: rtk_bt_le_audio_stream_session_release fail \r\n", __func__);
 			return RTK_BT_FAIL;
 		}
-		BT_LOGA("%s: remove session ok\r\n", __func__);
+		p_group_info->stream_session_handle = NULL;
+		BT_LOGA("%s: remove stream session ok\r\n", __func__);
 	} else {
+		BT_LOGA("%s: inappropriate bap state %d \r\n", __func__, p_group_info->bap_state);
 		return RTK_BT_FAIL;
 	}
 

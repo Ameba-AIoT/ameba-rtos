@@ -27,6 +27,10 @@ IFLAGS               += -I$(BASEDIR)/component/wifi/driver/nan
 IFLAGS               += -I$(BASEDIR)/component/wifi/driver/mesh
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic
 IFLAGS               += -I$(BASEDIR)/component/wifi/inic/ipc
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/common
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/spi
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/sdio
+IFLAGS               += -I$(BASEDIR)/component/wifi/inic/usb
 
 ifeq ($(CONFIG_AMEBAGREEN2), y)
 IFLAGS               += -I$(BASEDIR)/component/wifi/wifi_reg/rtl7005

@@ -324,7 +324,6 @@ typedef struct {
  * @{
  */
 /**
- * @fn        uint16_t rtk_bt_mesh_time_get(rtk_bt_mesh_time_get_t *time_client_get)
  * @brief     Send time get message to time server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_GET
  * @param[in] time_client_get: time get message structure
  * @return
@@ -334,7 +333,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_time_get(rtk_bt_mesh_time_get_t *time_client_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_zone_get(rtk_bt_mesh_time_zone_get_t *time_client_zone_get)
  * @brief     Send time zone get message to time server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_ZONE_GET
  * @param[in] time_client_zone_get: time get message structure
  * @return
@@ -344,7 +342,6 @@ uint16_t rtk_bt_mesh_time_get(rtk_bt_mesh_time_get_t *time_client_get);
 uint16_t rtk_bt_mesh_time_zone_get(rtk_bt_mesh_time_zone_get_t *time_client_zone_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_tai_utc_delta_get(rtk_bt_mesh_time_tai_utc_delta_get_t *time_client_delta_get)
  * @brief     Send time tai tuc delta get message to time server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_TAI_UTC_DELTA_GET
  * @param[in] time_client_delta_get: time tai tuc delta get message structure
  * @return
@@ -354,7 +351,6 @@ uint16_t rtk_bt_mesh_time_zone_get(rtk_bt_mesh_time_zone_get_t *time_client_zone
 uint16_t rtk_bt_mesh_time_tai_utc_delta_get(rtk_bt_mesh_time_tai_utc_delta_get_t *time_client_delta_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_role_get(rtk_bt_mesh_time_role_get_t *time_client_role_get)
  * @brief     Send time role get message to time setup server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_ROLE_GET
  * @param[in] time_client_role_get: time role get message structure
  * @return
@@ -364,7 +360,6 @@ uint16_t rtk_bt_mesh_time_tai_utc_delta_get(rtk_bt_mesh_time_tai_utc_delta_get_t
 uint16_t rtk_bt_mesh_time_role_get(rtk_bt_mesh_time_role_get_t *time_client_role_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_set(rtk_bt_mesh_time_set_t *time_client_set)
  * @brief     Send time set message to time setup server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_SET
  * @param[in] time_client_set: time set message structure
  * @return
@@ -374,7 +369,6 @@ uint16_t rtk_bt_mesh_time_role_get(rtk_bt_mesh_time_role_get_t *time_client_role
 uint16_t rtk_bt_mesh_time_set(rtk_bt_mesh_time_set_t *time_client_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_zone_set(rtk_bt_mesh_time_zone_set_t *time_client_zone_set)
  * @brief     Send time zone set message to time setup server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_ZONE_SET
  * @param[in] time_client_zone_set: time zone set message structure
  * @return
@@ -384,7 +378,6 @@ uint16_t rtk_bt_mesh_time_set(rtk_bt_mesh_time_set_t *time_client_set);
 uint16_t rtk_bt_mesh_time_zone_set(rtk_bt_mesh_time_zone_set_t *time_client_zone_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_tai_utc_delta_set(rtk_bt_mesh_time_tai_utc_delta_set_t *time_client_delta_set)
  * @brief     Send time tai utc delta set message to time setup server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_TAI_UTC_DELTA_SET
  * @param[in] time_client_delta_set: time tai utc delta set message structure
  * @return
@@ -394,7 +387,6 @@ uint16_t rtk_bt_mesh_time_zone_set(rtk_bt_mesh_time_zone_set_t *time_client_zone
 uint16_t rtk_bt_mesh_time_tai_utc_delta_set(rtk_bt_mesh_time_tai_utc_delta_set_t *time_client_delta_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_time_role_set(rtk_bt_mesh_time_role_set_t *time_client_role_set)
  * @brief     Send time role set message to time setup server, will cause event @ref RTK_BT_MESH_TIME_CLIENT_MODEL_ROLE_SET
  * @param[in] time_client_role_set: time role set message structure
  * @return

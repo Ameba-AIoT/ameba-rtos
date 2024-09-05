@@ -2570,7 +2570,6 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
-			app_bt_le_audio_group_list_remove(g_ums_info.group_handle);
 			g_ums_info.status = RTK_BLE_AUDIO_INITIATOR_DISCONNECT;
 		} else if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_BROADCAST_MEDIA_SNEDER) {
 			app_bt_le_audio_device_list_remove(disconn_ind->conn_handle);
@@ -3032,12 +3031,32 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		}
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN: {
 			BT_LOGA("[APP] RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN\r\n");
-			app_bt_le_audio_tmap_encode_data_control(false);
-			if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
-				//deinit rx thread
-				//app_bt_le_audio_tmap_decode_data_control(false);
-			}
 			app_bt_le_audio_group_list_remove_dev(param->group_handle, param->device_handle);
+			rtk_bt_le_audio_group_handle_t *p_group_handle;
+			if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
+				p_group_handle = &g_ums_info.group_handle;
+			} else if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_BROADCAST_MEDIA_SNEDER) {
+				p_group_handle = &g_bms_info.group_handle;
+			}
+			if (p_group_info->dev_num == 0) {
+				// release stream session when group released
+				if (p_group_info->stream_session_handle) {
+					rtk_bt_le_audio_stream_session_release(p_group_info->stream_session_handle);
+					BT_LOGA("%s: stream_session_handle:0x%x released\r\n", __func__, p_group_info->stream_session_handle);
+					p_group_info->stream_session_handle = NULL;
+				} else {
+					BT_LOGE("%s: stream_session_handle is NULL \r\n", __func__);
+				}
+				rtk_bt_le_audio_group_release(*p_group_handle);
+				BT_LOGA("%s: group handle 0x%x deleted \r\n", __func__, *p_group_handle);
+				app_bt_le_audio_group_list_remove(*p_group_handle);
+				*p_group_handle = NULL;
+				// stop stream when group released
+				app_bt_le_audio_tmap_encode_data_control(false);
+				if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION) {
+					//app_bt_le_audio_tmap_decode_data_control(false);
+				}
+			}
 			break;
 		}
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_BOND_REMOVE: {

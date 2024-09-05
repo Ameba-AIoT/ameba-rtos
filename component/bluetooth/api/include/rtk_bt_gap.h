@@ -312,7 +312,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_set_param(rtk_bt_gap_ecfc_param_t type, uint16_t value)
  * @brief     Set ECFC paramter.
  * @param[in] type: Parameter type.
  * @param[in] value: Paramter value.
@@ -323,7 +322,6 @@ typedef struct {
 uint16_t rtk_bt_gap_ecfc_set_param(rtk_bt_gap_ecfc_param_t type, uint16_t value);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_register(rtk_bt_gap_ecfc_register_t *p_param)
  * @brief     Register L2CAP ECFC for a specific PSM.
  * @param[in] p_param: Protocol register parameter.
  * @return
@@ -333,7 +331,6 @@ uint16_t rtk_bt_gap_ecfc_set_param(rtk_bt_gap_ecfc_param_t type, uint16_t value)
 uint16_t rtk_bt_gap_ecfc_register(rtk_bt_gap_ecfc_register_t *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_send_sec_reg_req(rtk_bt_gap_ecfc_sec_reg_req_t *p_param)
  * @brief     Send a request to register/deregister a protocol security entry over L2CAP.
  * @param[in] p_param: Security register request parameter.
  * @return
@@ -343,7 +340,6 @@ uint16_t rtk_bt_gap_ecfc_register(rtk_bt_gap_ecfc_register_t *p_param);
 uint16_t rtk_bt_gap_ecfc_send_sec_reg_req(rtk_bt_gap_ecfc_sec_reg_req_t *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_send_conn_req(rtk_bt_gap_ecfc_conn_req_t *p_param)
  * @brief     Send a request to create L2CAP ECFC connections. @ref RTK_BT_GAP_EVT_ECFC_CONN_CMPL_IND will tell the result of L2CAP channel establishment.
  * @param[in] p_param: Create connection request parameter.
  * @return
@@ -353,7 +349,6 @@ uint16_t rtk_bt_gap_ecfc_send_sec_reg_req(rtk_bt_gap_ecfc_sec_reg_req_t *p_param
 uint16_t rtk_bt_gap_ecfc_send_conn_req(rtk_bt_gap_ecfc_conn_req_t *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_send_conn_cfm(rtk_bt_gap_ecfc_conn_cfm_t *p_param)
  * @brief     Send a confirmation for a L2CAP ECFC connection request from remote device. @ref RTK_BT_GAP_EVT_ECFC_CONN_CMPL_IND will tell the result of L2CAP channel establishment.
  * @param[in] p_param: Create connection comfirm parameter.
  * @return
@@ -363,7 +358,6 @@ uint16_t rtk_bt_gap_ecfc_send_conn_req(rtk_bt_gap_ecfc_conn_req_t *p_param);
 uint16_t rtk_bt_gap_ecfc_send_conn_cfm(rtk_bt_gap_ecfc_conn_cfm_t *p_param);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_send_disconn_req(uint16_t conn_handle, uint16_t cid)
  * @brief     Send a request to disconnect a L2CAP ECFC connection.
  * @param[in] conn_handle: Connection handle.
  * @param[in] cid: Channel id.
@@ -374,7 +368,6 @@ uint16_t rtk_bt_gap_ecfc_send_conn_cfm(rtk_bt_gap_ecfc_conn_cfm_t *p_param);
 uint16_t rtk_bt_gap_ecfc_send_disconn_req(uint16_t conn_handle, uint16_t cid);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_send_data(uint16_t conn_handle, uint16_t cid, uint8_t *p_data, uint16_t length)
  * @brief     RSend a request to send L2CAP ECFC channel data to remote device. This API can only be used when param->data_path in @ref rtk_bt_gap_ecfc_register is RTK_BT_GAP_ECFC_DATA_PATH_APP.
  * @param[in] conn_handle: Connection handle.
  * @param[in] cid: Channel id.
@@ -387,7 +380,6 @@ uint16_t rtk_bt_gap_ecfc_send_disconn_req(uint16_t conn_handle, uint16_t cid);
 uint16_t rtk_bt_gap_ecfc_send_data(uint16_t conn_handle, uint16_t cid, uint8_t *p_data, uint16_t length);
 
 /**
- * @fn        uint16_t rtk_bt_gap_ecfc_send_reconf_req(rtk_bt_gap_ecfc_reconf_req_t *p_param)
  * @brief     Send a request to reconfigure L2CAP ECFC channel.
  * @param[in] p_param: Protocol register parameter.
  * @return
@@ -401,7 +393,6 @@ uint16_t rtk_bt_gap_ecfc_send_reconf_req(rtk_bt_gap_ecfc_reconf_req_t *p_param);
 #endif
 
 /**
- * @fn        uint16_t rtk_bt_gap_vendor_cmd_req(rtk_bt_gap_vendor_cmd_param_t *vendor_param)
  * @brief     Send vendor command to controller
  * @param[in] vendor_param: Vendor cmd information parameter
  * @return

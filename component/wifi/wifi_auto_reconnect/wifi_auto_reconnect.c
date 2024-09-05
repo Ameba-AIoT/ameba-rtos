@@ -42,15 +42,14 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 	u16 disconn_reason = 0;
 	u8 need_reconn = 0;
 
-	if (join_status_last == join_status) {
-		RTK_LOGS(NOTAG, "same joinstaus: %d\n", join_status);/*just for debug*/
+	if ((join_status_last == join_status) && (join_status_last > RTW_JOINSTATUS_4WAY_HANDSHAKING)) {
+		RTK_LOGS(NOTAG, "same joinstaus: %d\n", join_status);/*just for debug, delete when stable*/
 	}
+	join_status_last = join_status;
 
-	if (rtw_reconn.enable == 0) {
+	if (rtw_reconn.b_enable == 0) {
 		return;
 	}
-
-	join_status_last = join_status;
 
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		rtw_reconn.cnt = 0;
@@ -80,41 +79,51 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 	}
 #endif
 
-	if (rtw_reconn.waiting) {
+	if (rtw_reconn.b_waiting) {
 		RTK_LOGS(NOTAG, "auto reconn ongoing\n");
 		return;
 	}
 
-	rtw_reconn.cnt = rtw_reconn.infinite ? 0 : (rtw_reconn.cnt + 1);
-	if (rtw_reconn.cnt >= wifi_user_config.auto_reconnect_count) {
+	rtw_reconn.cnt = rtw_reconn.b_infinite ? 0 : (rtw_reconn.cnt + 1);
+	if (rtw_reconn.cnt > wifi_user_config.auto_reconnect_count) {
 		RTK_LOGS(NOTAG, "auto reconn max times\n");
 	} else {
-		rtw_reconn.waiting = 1;
+		rtw_reconn.b_waiting = 1;
 		rtw_wakelock_timeout(wifi_user_config.auto_reconnect_interval * 1000 + 10);
 		rtos_timer_start(rtw_reconn.timer, 1000);
 	}
 }
 
-void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
+void rtw_reconn_task_hdl(void *param)
 {
-	(void) timer_hdl;
+	(void) param;
 	int ret = RTW_ERROR;
 
-	RTK_LOGA(NOTAG, "auto reconn %d\n", rtw_reconn.cnt);
-	rtw_reconn.waiting = 0;
-	rtw_reconn.connecting = 1;/*may be preempt by another task, then wifi_connect is not triggered by reconnect */
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
-	rtw_reconn.connecting = 0;
 #ifdef CONFIG_LWIP_LAYER
 	if (ret == RTW_SUCCESS) {
 		LwIP_DHCP(0, DHCP_START);
 	}
 #endif
+	rtos_task_delete(NULL);
+}
+
+void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
+{
+	(void) timer_hdl;
+
+	rtw_reconn.b_waiting = 0;
+	/*Creat a task to do wifi reconnect because call WIFI API in WIFI event is not safe*/
+	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, 1024, 6) != SUCCESS) {
+		RTK_LOGS(NOTAG, "Create reconn task failed\n");
+	} else {
+		RTK_LOGS(NOTAG, "auto reconn %d\n", rtw_reconn.cnt);
+	}
 }
 
 void rtw_reconn_new_conn(rtw_network_info_t *connect_param)
 {
-	if (rtw_reconn.connecting == 0) { /*a new wifi connect*/
+	if (connect_param->by_reconn == 0) { /*a new wifi connect*/
 		memcpy(&rtw_reconn.conn_param, connect_param, sizeof(rtw_network_info_t));
 		/*fix auto reconnect fail: https://jira.realtek.com/browse/RSWLANDIOT-9031*/
 		rtw_reconn.conn_param.channel = 0;
@@ -127,31 +136,32 @@ void rtw_reconn_new_conn(rtw_network_info_t *connect_param)
 		} else {
 			rtw_reconn.conn_param.password = NULL;
 		}
+		rtw_reconn.conn_param.by_reconn = 1;
 		rtos_timer_stop(rtw_reconn.timer, 1000);/*cancel ongoing reconnect*/
-		rtw_reconn.waiting = 0;
+		rtw_reconn.b_waiting = 0;
 		rtw_reconn.cnt = 0;
 	}
 }
 
 int wifi_config_autoreconnect(__u8 mode)
 {
-	if ((mode == RTW_AUTORECONNECT_DISABLE) && rtw_reconn.enable) {
+	if ((mode == RTW_AUTORECONNECT_DISABLE) && rtw_reconn.b_enable) {
 		rtos_timer_stop(rtw_reconn.timer, 1000);
 		rtos_timer_delete(rtw_reconn.timer, 1000);
-		rtw_reconn.waiting = 0;
-		rtw_reconn.enable = 0;
-	} else if ((mode != RTW_AUTORECONNECT_DISABLE) && (rtw_reconn.enable == 0))  {
+		rtw_reconn.b_waiting = 0;
+		rtw_reconn.b_enable = 0;
+	} else if ((mode != RTW_AUTORECONNECT_DISABLE) && (rtw_reconn.b_enable == 0))  {
 		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, _FALSE,
 							  rtw_reconn_timer_hdl) != SUCCESS) {
 			RTK_LOGS(NOTAG, "rtw_reconn_timer create fail\n");
 			return RTW_ERROR;
 		}
-		rtw_reconn.enable = 1;
+		rtw_reconn.b_enable = 1;
 		rtw_reconn.cnt = 0;
 	}
 
 	if (mode == RTW_AUTORECONNECT_INFINITE) {
-		rtw_reconn.infinite = 1;
+		rtw_reconn.b_infinite = 1;
 	}
 
 	return RTW_SUCCESS;

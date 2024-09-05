@@ -49,6 +49,8 @@ BAP demo ATCMD:
     1.5 start unicast unidirectional stream     AT+BLEBAP=unicast,client,start,0,1
     1.6 start unicast bidirectional  stream     AT+BLEBAP=unicast,client,start,0,2
     1.7 stop unicast stream                     AT+BLEBAP=unicast,client,stop,0
+    1.8 release unicast stream                  AT+BLEBAP=unicast,client,release,0
+    1.9 release stream session                  AT+BLEBAP=unicast,client,stream_release,0
 
 2.BAP unicast server
     2.1 config audio channel                    AT+BLEBAP=unicast,server,cfg,<sound channel>     sound channel:left,right or stereo
@@ -584,3 +586,83 @@ GMAP demo ATCMD:
     4.4 scan broacast source start                              AT+BLEBAP=broadcast,sink,escan,1
     4.5 sync with broadcast source                              AT+BLEBAP=broadcast,sink,sync_start,<bd_addr type>,<bd_addr>
     4.6 terminate sync with broadcast source                    AT+BLEBAP=broadcast,sink,sync_term,<bd_addr type>,<bd_addr>
+
+##################################################################################
+#                                                                                #
+#                           LE Audio BAP demo Outband Uart Test                  #
+#                                                                                #
+##################################################################################
+
+Test Configuration
+~~~~~~~~~~~
+BT Audio outband 48kHz sine ware uart test:
+
+change the following Macros:
+    CONFIG_BT_AUDIO_SOURCE_OUTBAND        in  app_audio_data.h            to     1
+    DEMO_UART_READ_THRESHOLD              in  app_audio_data.c            to     1920
+    RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT  in  app_bt_le_audio_common.h     to     0  
+    LEA_SOURCE_FIX_SAMPLE_FREQUENCY       in  app_bt_le_audio_common.h     to     RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K  
+
+GCC menuconfig 
+~~~~~~~~~~~
+1. for CA32 single core:
+        make menuconfig --> CONFIG BT --> Enable BT and Processor Role is "CA32_SINGLE_CORE"
+                        --> BT Mode Selection is "BLE_ONLY"--> enable BT Example Demo "BLE Audio"
+                        --> Enable "BLE Audio Basic Audio Profile"
+        make menuconfig --> CONGIG WIFI --> Enable Wifi and select INIC Processor Role
+        make menuconfig --> AP Config --> MENUCONFIG FOR AP CONFIG --> Audio Config -> Enable Audio Framework and select Audio Interfaces to Mixer
+2. for KM4 single core:
+    2.1 Config Boot_AP_Enbale in component/soc/amebasmart/usrcfg/ameba_bootcfg.c
+        change:
+                u8 Boot_AP_Enbale = ENABLE;
+        to:
+                u8 Boot_AP_Enbale = DISABLE;
+    2.2 Config Boot_AP_Enbale in amebasmart_layout.ld
+        change:
+                KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6015B000 - 0x60000020
+        to:
+                KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6025B000 - 0x60000020
+    2.3 make menuconfig --> CONFIG BT --> Enable BT and Processor Role is "KM4_SINGLE_CORE", 
+                        --> BT Mode Selection is "BLE_ONLY"--> enable BT Example Demo "BLE Audio"
+                        --> Enable "BLE Audio Basic Audio Profile"
+        make menuconfig --> CONGIG WIFI --> Enable Wifi and select "Single_Core_WiFi" Processor Role
+        make menuconfig --> HP Config --> MENUCONFIG FOR HP CONFIG --> Audio Config -> Enable Audio Framework and select Audio Interfaces to Mixer
+3. GCC : use CMD "make clean && make all" in auto_build to compile example
+
+Test Step
+~~~~~~~~~~~
+1. Use a uart tool, one end connect to the pinmux of test borad as configured in app_audio_data.c, and another connect to PC USB.
+    uart tool  RTS  to   test board    PTS pinmux
+    uart tool  PTS  to   test board    RTS pinmux
+    uart tool  RX   to   test board    TX pinmux
+    uart tool  TX   to   test board    RX pinmux
+    uart tool  GND  to   test board    GNT
+
+2. Open the uart tool bt_audio_docker_gui.exe
+    2.1 choose the proper COM 
+    2.2 choose Flow control Hardware Control
+    2.3 click Open buttion
+    2.4 Open the input audio file
+    2.5 Open the Start Buttion
+
+3. Test atcmd
+broadcast test:
+3.1 BAP broadcast source(Receive the audio data from uart tool and send it to air)
+    3.1.1 enable                                  AT+BTDEMO=bap,broadcast,source,1
+    3.1.2 start broadcast stream                  AT+BLEBAP=broadcast,source,start
+
+3.2 BAP broadcast sink(Peer device)
+    3.2.1 enable                                              AT+BTDEMO=bap,broadcast,sink,1
+    3.2.2 scan broadcast source start                         AT+BLEBAP=broadcast,sink,escan,1
+    3.2.3 PA sync && big sync with bap broadcast source       AT+BLEBAP=broadcast,sink,sync_start,<bd_addr type>,<bd_addr>
+
+unicast test:
+3.3 BAP unicast test
+    3.3.1 Enable                                  AT+BTDEMO=bap,unicast,client,1
+    3.3.2 Start ext scan                          AT+BLEBAP=unicast,client,escan,1
+    3.3.3 Stop ext scan                           AT+BLEBAP=unicast,client,escan,0
+    3.3.4 connect                                 AT+BLEGAP=conn,<address type>,<bd_addr>
+    3.3.5 start unicast unidirectional stream     AT+BLEBAP=unicast,client,start,0,1
+
+3.4 BAP unicast server(Peer device)
+    3.4.1 enable                                  AT+BTDEMO=bap,unicast,server,1

@@ -46,7 +46,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle)
  * @brief     BLE AUDIO TMAS CLIENT READ ROLE.
  * @param[in] conn_handle:  connect handle.
  * @return
@@ -56,7 +55,6 @@ typedef struct {
 uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
 
 /**
- * @fn        uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t sound_channel, uint8_t *p_neighbor_addr)
  * @brief     config tmap broadcast media receiver channel or neighbor device.
  * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
  * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor
@@ -67,7 +65,6 @@ uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
 uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t sound_channel, uint8_t *p_neighbor_addr);
 
 /**
- * @fn        uint16_t rtk_bt_tmap_unicast_media_receiver_cfg(uint8_t channel, uint8_t *p_neighbor_addr)
  * @brief     config tmap unicast media receiver channel or neighbor device
  * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
  * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor

@@ -121,7 +121,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_onoff_client_set(rtk_bt_mesh_generic_onoff_client_act_set_t *onoff_set)
  * @brief     Send generic on off set message to generic on off server, will cause event @ref RTK_BT_MESH_GENERIC_ONOFF_CLIENT_MODEL_ACT_SET
  * @param[in] onoff_set: generic on off set message structure
  * @return
@@ -131,7 +130,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_generic_onoff_client_set(rtk_bt_mesh_generic_onoff_client_act_set_t *onoff_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_onoff_client_get(rtk_bt_mesh_generic_onoff_client_act_get_t *onoff_get)
  * @brief     Send generic on off get message to generic on off server, will cause event @ref RTK_BT_MESH_GENERIC_ONOFF_CLIENT_MODEL_ACT_GET
  * @param[in] onoff_get: generic on off get message structure
  * @return

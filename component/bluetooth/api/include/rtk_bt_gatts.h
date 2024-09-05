@@ -466,7 +466,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param)
  * @brief     Register GATT service, will cause event @ref RTK_BT_GATTS_EVT_REGISTER_SERVICE
  * @param[in] param: The parameters for registering service app.
  * @return
@@ -476,7 +475,6 @@ typedef struct {
 uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 
 /**
- * @fn         uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param)
  * @brief      Notify action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND.
  *             If attribute value is longer than ATT_MTU-3 octects, it will fail.
  * @param[in]  param: The parameters for notification.
@@ -487,7 +485,6 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param);
 
 /**
- * @fn         uint16_t rtk_bt_gatts_indicate(rtk_bt_gatts_ntf_and_ind_param_t *param)
  * @brief      Indicate action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND
  *             If attribute value is longer than ATT_MTU-3 octects, it will fail.
  * @param[in]  param: The parameters for indication.
@@ -498,7 +495,6 @@ uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param);
 uint16_t rtk_bt_gatts_indicate(rtk_bt_gatts_ntf_and_ind_param_t *param);
 
 /**
- * @fn         uint16_t rtk_bt_gatts_read_resp(rtk_bt_gatts_read_resp_param_t *param)
  * @brief      Server response for client read operation.
  * @param[in]  param: The parameters for read response.
  * @return
@@ -508,7 +504,6 @@ uint16_t rtk_bt_gatts_indicate(rtk_bt_gatts_ntf_and_ind_param_t *param);
 uint16_t rtk_bt_gatts_read_resp(rtk_bt_gatts_read_resp_param_t *param);
 
 /**
- * @fn        uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param)
  * @brief     Server response for client write operation.
  * @param[in] param: The parameters for write response.
  * @return

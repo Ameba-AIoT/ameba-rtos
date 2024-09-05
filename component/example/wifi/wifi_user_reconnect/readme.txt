@@ -15,14 +15,15 @@ Table of Contents
  
 Description
 ~~~~~~~~~~~
-        This example shows how to customize wifi reconnect task.
+        This example shows how to customize wifi reconnect task. Realtek auto reconnect and fast reconnect has been disabled in this example.
 	
 Setup Guide
 ~~~~~~~~~~~
-		
-		1.Set test_ssid and test_password in example_wifi_user_reconnect.c.
 
+	1.Set test_ssid and test_password in example_wifi_user_reconnect.c.
         2.GCC:use CMD "make all EXAMPLE=wifi_user_reconnect" to compile wifi_user_reconnect example.
+        3.Modify AP's channel, Ameba will detect AP change and reconnect success.
+        4.Modify AP's password, Ameba will detect AP change and reconnect fail.
 
 Result description
 ~~~~~~~~~~~~~~~~~~
@@ -30,4 +31,4 @@ Result description
 
 Supported List
 ~~~~~~~~~~~~~~
-		AmebaDplus, AmebaSmart, AmebaLite
+	AmebaDplus, AmebaSmart, AmebaLite

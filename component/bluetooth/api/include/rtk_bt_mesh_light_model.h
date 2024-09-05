@@ -1621,7 +1621,6 @@ typedef enum {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_get(rtk_bt_mesh_light_lightness_get_t *lightness_get)
  * @brief     Send light lightness get message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL_GET
  * @param[in] lightness_get: light lightness get message structure
  * @return
@@ -1631,7 +1630,6 @@ typedef enum {
 uint16_t rtk_bt_mesh_light_lightness_get(rtk_bt_mesh_light_lightness_get_t *lightness_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_set(rtk_bt_mesh_light_lightness_set_t *lightness_set)
  * @brief     Send light lightness set message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL_SET
  * @param[in] lightness_set: light lightness set message structure
  * @return
@@ -1641,7 +1639,6 @@ uint16_t rtk_bt_mesh_light_lightness_get(rtk_bt_mesh_light_lightness_get_t *ligh
 uint16_t rtk_bt_mesh_light_lightness_set(rtk_bt_mesh_light_lightness_set_t *lightness_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_linear_get(rtk_bt_mesh_light_lightness_linear_get_t *lightness_linear_get)
  * @brief     Send light lightness linear get message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_LINEAR_CLIENT_MODEL_GET
  * @param[in] lightness_linear_get: light lightness linear get message structure
  * @return
@@ -1651,7 +1648,6 @@ uint16_t rtk_bt_mesh_light_lightness_set(rtk_bt_mesh_light_lightness_set_t *ligh
 uint16_t rtk_bt_mesh_light_lightness_linear_get(rtk_bt_mesh_light_lightness_linear_get_t *lightness_linear_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_linear_set(rtk_bt_mesh_light_lightness_linear_set_t *lightness_linear_set)
  * @brief     Send light lightness linear set message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_LINEAR_CLIENT_MODEL_SET
  * @param[in] lightness_linear_set: light lightness linear set message structure
  * @return
@@ -1661,7 +1657,6 @@ uint16_t rtk_bt_mesh_light_lightness_linear_get(rtk_bt_mesh_light_lightness_line
 uint16_t rtk_bt_mesh_light_lightness_linear_set(rtk_bt_mesh_light_lightness_linear_set_t *lightness_linear_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_last_get(rtk_bt_mesh_light_lightness_last_get_t *lightness_last_get)
  * @brief     Send light lightness last get message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_LAST_CLIENT_MODEL_GET
  * @param[in] lightness_last_set: light lightness last get message structure
  * @return
@@ -1671,7 +1666,6 @@ uint16_t rtk_bt_mesh_light_lightness_linear_set(rtk_bt_mesh_light_lightness_line
 uint16_t rtk_bt_mesh_light_lightness_last_get(rtk_bt_mesh_light_lightness_last_get_t *lightness_last_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_default_get(rtk_bt_mesh_light_lightness_default_get_t *lightness_default_get)
  * @brief     Send light lightness default get message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_DEFAULT_CLIENT_MODEL_GET
  * @param[in] lightness_default_get: light lightness default get message structure
  * @return
@@ -1681,7 +1675,6 @@ uint16_t rtk_bt_mesh_light_lightness_last_get(rtk_bt_mesh_light_lightness_last_g
 uint16_t rtk_bt_mesh_light_lightness_default_get(rtk_bt_mesh_light_lightness_default_get_t *lightness_default_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_default_set(rtk_bt_mesh_light_lightness_default_set_t *lightness_default_set)
  * @brief     Send light lightness default set message to light lightness setup server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_DEFAULT_CLIENT_MODEL_SET
  * @param[in] lightness_default_set: light lightness default set message structure
  * @return
@@ -1691,7 +1684,6 @@ uint16_t rtk_bt_mesh_light_lightness_default_get(rtk_bt_mesh_light_lightness_def
 uint16_t rtk_bt_mesh_light_lightness_default_set(rtk_bt_mesh_light_lightness_default_set_t *lightness_default_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_range_get(rtk_bt_mesh_light_lightness_range_get_t *lightness_range_get)
  * @brief     Send light lightness range get message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_RANGE_CLIENT_MODEL_GET
  * @param[in] lightness_range_get: light lightness range get message structure
  * @return
@@ -1701,7 +1693,6 @@ uint16_t rtk_bt_mesh_light_lightness_default_set(rtk_bt_mesh_light_lightness_def
 uint16_t rtk_bt_mesh_light_lightness_range_get(rtk_bt_mesh_light_lightness_range_get_t *lightness_range_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lightness_range_set(rtk_bt_mesh_light_lightness_range_set_t *lightness_range_set)
  * @brief     Send light lightness range set message to light lightness setup server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_RANGE_CLIENT_MODEL_SET
  * @param[in] lightness_range_set: light lightness range set message structure
  * @return
@@ -1711,7 +1702,6 @@ uint16_t rtk_bt_mesh_light_lightness_range_get(rtk_bt_mesh_light_lightness_range
 uint16_t rtk_bt_mesh_light_lightness_range_set(rtk_bt_mesh_light_lightness_range_set_t *lightness_range_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_get(rtk_bt_mesh_light_ctl_get_t *ctl_get)
  * @brief     Send light ctl get message to light ctl server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_GET
  * @param[in] ctl_get: light ctl get message structure
  * @return
@@ -1721,7 +1711,6 @@ uint16_t rtk_bt_mesh_light_lightness_range_set(rtk_bt_mesh_light_lightness_range
 uint16_t rtk_bt_mesh_light_ctl_get(rtk_bt_mesh_light_ctl_get_t *ctl_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_set(rtk_bt_mesh_light_ctl_set_t *ctl_set)
  * @brief     Send light ctl set message to light ctl server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_SET
  * @param[in] ctl_set: light ctl set message structure
  * @return
@@ -1731,7 +1720,6 @@ uint16_t rtk_bt_mesh_light_ctl_get(rtk_bt_mesh_light_ctl_get_t *ctl_get);
 uint16_t rtk_bt_mesh_light_ctl_set(rtk_bt_mesh_light_ctl_set_t *ctl_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_temperature_get(rtk_bt_mesh_light_ctl_temperature_get_t *ctl_temperature_get)
  * @brief     Send light ctl temperature get message to light ctl temperature server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_TEMPERATURE_GET
  * @param[in] ctl_temperature_get: light ctl temperature get message structure
  * @return
@@ -1741,7 +1729,6 @@ uint16_t rtk_bt_mesh_light_ctl_set(rtk_bt_mesh_light_ctl_set_t *ctl_set);
 uint16_t rtk_bt_mesh_light_ctl_temperature_get(rtk_bt_mesh_light_ctl_temperature_get_t *ctl_temperature_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_temperature_set(rtk_bt_mesh_light_ctl_temperature_set_t *ctl_temperature_set)
  * @brief     Send light ctl temperature set message to light ctl temperature server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_TEMPERATURE_SET
  * @param[in] ctl_temperature_set: light ctl temperature set message structure
  * @return
@@ -1751,7 +1738,6 @@ uint16_t rtk_bt_mesh_light_ctl_temperature_get(rtk_bt_mesh_light_ctl_temperature
 uint16_t rtk_bt_mesh_light_ctl_temperature_set(rtk_bt_mesh_light_ctl_temperature_set_t *ctl_temperature_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_temperature_range_get(rtk_bt_mesh_light_ctl_temperature_range_get_t *ctl_temperature_range_get)
  * @brief     Send light ctl range get message to light ctl server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_TEMPERATURE_RANGE_GET
  * @param[in] ctl_temperature_range_get: light ctl temperature range get message structure
  * @return
@@ -1761,7 +1747,6 @@ uint16_t rtk_bt_mesh_light_ctl_temperature_set(rtk_bt_mesh_light_ctl_temperature
 uint16_t rtk_bt_mesh_light_ctl_temperature_range_get(rtk_bt_mesh_light_ctl_temperature_range_get_t *ctl_temperature_range_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_temperature_range_set(rtk_bt_mesh_light_ctl_temperature_range_set_t *ctl_temperature_range_set)
  * @brief     Send light ctl range set message to light ctl setup server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_TEMPERATURE_RANGE_SET
  * @param[in] ctl_temperature_range_set: light ctl temperature range set message structure
  * @return
@@ -1771,7 +1756,6 @@ uint16_t rtk_bt_mesh_light_ctl_temperature_range_get(rtk_bt_mesh_light_ctl_tempe
 uint16_t rtk_bt_mesh_light_ctl_temperature_range_set(rtk_bt_mesh_light_ctl_temperature_range_set_t *ctl_temperature_range_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_default_get(rtk_bt_mesh_light_ctl_default_get_t *ctl_default_get)
  * @brief     Send light ctl default get message to light ctl server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_DEFAULT_GET
  * @param[in] ctl_default_get: light ctl defaultget message structure
  * @return
@@ -1781,7 +1765,6 @@ uint16_t rtk_bt_mesh_light_ctl_temperature_range_set(rtk_bt_mesh_light_ctl_tempe
 uint16_t rtk_bt_mesh_light_ctl_default_get(rtk_bt_mesh_light_ctl_default_get_t *ctl_default_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_ctl_default_set(rtk_bt_mesh_light_ctl_default_set_t *ctl_default_set)
  * @brief     Send light ctl default set message to light ctl setup server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_DEFAULT_SET
  * @param[in] ctl_default_set: light ctl default set message structure
  * @return
@@ -1791,7 +1774,6 @@ uint16_t rtk_bt_mesh_light_ctl_default_get(rtk_bt_mesh_light_ctl_default_get_t *
 uint16_t rtk_bt_mesh_light_ctl_default_set(rtk_bt_mesh_light_ctl_default_set_t *ctl_default_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_get(rtk_bt_mesh_light_hsl_get_t *hsl_get)
  * @brief     Send light hsl get message to light hsl server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_CLIENT_MODEL_GET
  * @param[in] hsl_get: light hsl get message structure
  * @return
@@ -1801,7 +1783,6 @@ uint16_t rtk_bt_mesh_light_ctl_default_set(rtk_bt_mesh_light_ctl_default_set_t *
 uint16_t rtk_bt_mesh_light_hsl_get(rtk_bt_mesh_light_hsl_get_t *hsl_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_set(rtk_bt_mesh_light_hsl_set_t *hsl_set)
  * @brief     Send light hsl set message to light hsl server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_CLIENT_MODEL_SET
  * @param[in] hsl_set: light hsl set message structure
  * @return
@@ -1811,7 +1792,6 @@ uint16_t rtk_bt_mesh_light_hsl_get(rtk_bt_mesh_light_hsl_get_t *hsl_get);
 uint16_t rtk_bt_mesh_light_hsl_set(rtk_bt_mesh_light_hsl_set_t *hsl_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_target_get(rtk_bt_mesh_light_hsl_target_get_t *hsl_target_get)
  * @brief     Send light hsl target get message to light hsl server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_TARGET_CLIENT_MODEL_GET
  * @param[in] hsl_target_get: light hsl target get message structure
  * @return
@@ -1821,7 +1801,6 @@ uint16_t rtk_bt_mesh_light_hsl_set(rtk_bt_mesh_light_hsl_set_t *hsl_set);
 uint16_t rtk_bt_mesh_light_hsl_target_get(rtk_bt_mesh_light_hsl_target_get_t *hsl_target_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_hue_get(rtk_bt_mesh_light_hsl_hue_get_t *hsl_hue_get)
  * @brief     Send light hsl hue get message to light hsl hue server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_HUE_CLIENT_MODEL_GET
  * @param[in] hsl_hue_get: light hsl hue get message structure
  * @return
@@ -1831,7 +1810,6 @@ uint16_t rtk_bt_mesh_light_hsl_target_get(rtk_bt_mesh_light_hsl_target_get_t *hs
 uint16_t rtk_bt_mesh_light_hsl_hue_get(rtk_bt_mesh_light_hsl_hue_get_t *hsl_hue_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_hue_set(rtk_bt_mesh_light_hsl_hue_set_t *hsl_hue_set)
  * @brief     Send light hsl hue set message to light hsl hue server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_HUE_CLIENT_MODEL_SET
  * @param[in] hsl_hue_set: light hsl hue set message structure
  * @return
@@ -1841,7 +1819,6 @@ uint16_t rtk_bt_mesh_light_hsl_hue_get(rtk_bt_mesh_light_hsl_hue_get_t *hsl_hue_
 uint16_t rtk_bt_mesh_light_hsl_hue_set(rtk_bt_mesh_light_hsl_hue_set_t *hsl_hue_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_saturation_get(rtk_bt_mesh_light_hsl_saturation_get_t *hsl_saturation_get)
  * @brief     Send light hsl saturation get message to light hsl saturation server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_SATURATION_CLIENT_MODEL_GET
  * @param[in] hsl_saturation_get: light hsl saturation get message structure
  * @return
@@ -1851,7 +1828,6 @@ uint16_t rtk_bt_mesh_light_hsl_hue_set(rtk_bt_mesh_light_hsl_hue_set_t *hsl_hue_
 uint16_t rtk_bt_mesh_light_hsl_saturation_get(rtk_bt_mesh_light_hsl_saturation_get_t *hsl_saturation_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_saturation_set(rtk_bt_mesh_light_hsl_saturation_set_t *hsl_saturation_set)
  * @brief     Send light hsl saturation set message to light hsl saturation server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_SATURATION_CLIENT_MODEL_SET
  * @param[in] hsl_saturation_set: light hsl saturation set message structure
  * @return
@@ -1861,7 +1837,6 @@ uint16_t rtk_bt_mesh_light_hsl_saturation_get(rtk_bt_mesh_light_hsl_saturation_g
 uint16_t rtk_bt_mesh_light_hsl_saturation_set(rtk_bt_mesh_light_hsl_saturation_set_t *hsl_saturation_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_default_get(rtk_bt_mesh_light_hsl_default_get_t *hsl_default_get)
  * @brief     Send light hsl default get message to light hsl server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_DEFAULT_CLIENT_MODEL_GET
  * @param[in] hsl_default_get: light hsl default get message structure
  * @return
@@ -1871,7 +1846,6 @@ uint16_t rtk_bt_mesh_light_hsl_saturation_set(rtk_bt_mesh_light_hsl_saturation_s
 uint16_t rtk_bt_mesh_light_hsl_default_get(rtk_bt_mesh_light_hsl_default_get_t *hsl_default_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_default_set(rtk_bt_mesh_light_hsl_default_set_t *hsl_default_set)
  * @brief     Send light hsl default set message to light hsl setup server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_DEFAULT_CLIENT_MODEL_SET
  * @param[in] hsl_default_set: light hsl default set message structure
  * @return
@@ -1881,7 +1855,6 @@ uint16_t rtk_bt_mesh_light_hsl_default_get(rtk_bt_mesh_light_hsl_default_get_t *
 uint16_t rtk_bt_mesh_light_hsl_default_set(rtk_bt_mesh_light_hsl_default_set_t *hsl_default_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_range_get(rtk_bt_mesh_light_hsl_range_get_t *hsl_range_get)
  * @brief     Send light hsl range get message to light hsl server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_RANGE_CLIENT_MODEL_GET
  * @param[in] hsl_range_get: light hsl range get message structure
  * @return
@@ -1891,7 +1864,6 @@ uint16_t rtk_bt_mesh_light_hsl_default_set(rtk_bt_mesh_light_hsl_default_set_t *
 uint16_t rtk_bt_mesh_light_hsl_range_get(rtk_bt_mesh_light_hsl_range_get_t *hsl_range_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_hsl_range_set(rtk_bt_mesh_light_hsl_range_set_t *hsl_range_set)
  * @brief     Send light hsl range set message to light hsl setup server, will cause event @ref RTK_BT_MESH_LIGHT_HSL_RANGE_CLIENT_MODEL_SET
  * @param[in] hsl_range_set: light hsl range set message structure
  * @return
@@ -1901,7 +1873,6 @@ uint16_t rtk_bt_mesh_light_hsl_range_get(rtk_bt_mesh_light_hsl_range_get_t *hsl_
 uint16_t rtk_bt_mesh_light_hsl_range_set(rtk_bt_mesh_light_hsl_range_set_t *hsl_range_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_get(rtk_bt_mesh_light_xyl_get_t *xyl_get)
  * @brief     Send light xyl get message to light xyl server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_CLIENT_MODEL_GET
  * @param[in] xyl_get: light xyl get message structure
  * @return
@@ -1911,7 +1882,6 @@ uint16_t rtk_bt_mesh_light_hsl_range_set(rtk_bt_mesh_light_hsl_range_set_t *hsl_
 uint16_t rtk_bt_mesh_light_xyl_get(rtk_bt_mesh_light_xyl_get_t *xyl_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_set(rtk_bt_mesh_light_xyl_set_t *xyl_set)
  * @brief     Send light xyl set message to light xyl server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_CLIENT_MODEL_SET
  * @param[in] xyl_set: light xyl set message structure
  * @return
@@ -1921,7 +1891,6 @@ uint16_t rtk_bt_mesh_light_xyl_get(rtk_bt_mesh_light_xyl_get_t *xyl_get);
 uint16_t rtk_bt_mesh_light_xyl_set(rtk_bt_mesh_light_xyl_set_t *xyl_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_target_get(rtk_bt_mesh_light_xyl_target_get_t *xyl_target_get)
  * @brief     Send light xyl target get message to light xyl server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_TARGET_CLIENT_MODEL_GET
  * @param[in] xyl_target_get: light xyl target get message structure
  * @return
@@ -1931,7 +1900,6 @@ uint16_t rtk_bt_mesh_light_xyl_set(rtk_bt_mesh_light_xyl_set_t *xyl_set);
 uint16_t rtk_bt_mesh_light_xyl_target_get(rtk_bt_mesh_light_xyl_target_get_t *xyl_target_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_default_get(rtk_bt_mesh_light_xyl_default_get_t *xyl_default_get)
  * @brief     Send light xyl default get message to light xyl server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_DEFAULT_CLIENT_MODEL_GET
  * @param[in] xyl_default_get: light xyl default get message structure
  * @return
@@ -1941,7 +1909,6 @@ uint16_t rtk_bt_mesh_light_xyl_target_get(rtk_bt_mesh_light_xyl_target_get_t *xy
 uint16_t rtk_bt_mesh_light_xyl_default_get(rtk_bt_mesh_light_xyl_default_get_t *xyl_default_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_default_set(rtk_bt_mesh_light_xyl_default_set_t *xyl_default_set)
  * @brief     Send light xyl default set message to light xyl setup server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_DEFAULT_CLIENT_MODEL_SET
  * @param[in] xyl_default_set: light xyl default set message structure
  * @return
@@ -1951,7 +1918,6 @@ uint16_t rtk_bt_mesh_light_xyl_default_get(rtk_bt_mesh_light_xyl_default_get_t *
 uint16_t rtk_bt_mesh_light_xyl_default_set(rtk_bt_mesh_light_xyl_default_set_t *xyl_default_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_range_get(rtk_bt_mesh_light_xyl_range_get_t *xyl_range_get)
  * @brief     Send light xyl range get message to light xyl server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_RANGE_CLIENT_MODEL_GET
  * @param[in] xyl_range_get: light xyl range get message structure
  * @return
@@ -1961,7 +1927,6 @@ uint16_t rtk_bt_mesh_light_xyl_default_set(rtk_bt_mesh_light_xyl_default_set_t *
 uint16_t rtk_bt_mesh_light_xyl_range_get(rtk_bt_mesh_light_xyl_range_get_t *xyl_range_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_xyl_range_set(rtk_bt_mesh_light_xyl_range_set_t *xyl_range_set)
  * @brief     Send light xyl range set message to light xyl setup server, will cause event @ref RTK_BT_MESH_LIGHT_XYL_RANGE_CLIENT_MODEL_SET
  * @param[in] xyl_range_set: light xyl range set message structure
  * @return
@@ -1971,7 +1936,6 @@ uint16_t rtk_bt_mesh_light_xyl_range_get(rtk_bt_mesh_light_xyl_range_get_t *xyl_
 uint16_t rtk_bt_mesh_light_xyl_range_set(rtk_bt_mesh_light_xyl_range_set_t *xyl_range_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_mode_get(rtk_bt_mesh_light_lc_mode_get_t *lc_mode_get)
  * @brief     Send light lc mode get message to light lc server, will cause event @ref RTK_BT_MESH_LIGHT_LC_MODE_CLIENT_MODEL_GET
  * @param[in] lc_mode_get: light lc mode get message structure
  * @return
@@ -1981,7 +1945,6 @@ uint16_t rtk_bt_mesh_light_xyl_range_set(rtk_bt_mesh_light_xyl_range_set_t *xyl_
 uint16_t rtk_bt_mesh_light_lc_mode_get(rtk_bt_mesh_light_lc_mode_get_t *lc_mode_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_mode_set(rtk_bt_mesh_light_lc_mode_set_t *lc_mode_set)
  * @brief     Send light lc mode set message to light lc server, will cause event @ref RTK_BT_MESH_LIGHT_LC_MODE_CLIENT_MODEL_SET
  * @param[in] lc_mode_set: light lc mode get message structure
  * @return
@@ -1991,7 +1954,6 @@ uint16_t rtk_bt_mesh_light_lc_mode_get(rtk_bt_mesh_light_lc_mode_get_t *lc_mode_
 uint16_t rtk_bt_mesh_light_lc_mode_set(rtk_bt_mesh_light_lc_mode_set_t *lc_mode_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_om_get(rtk_bt_mesh_light_lc_om_get_t *lc_om_get)
  * @brief     Send light lc om get message to light lc server, will cause event @ref RTK_BT_MESH_LIGHT_LC_OM_CLIENT_MODEL_GET
  * @param[in] lc_om_get: light lc om get message structure
  * @return
@@ -2001,7 +1963,6 @@ uint16_t rtk_bt_mesh_light_lc_mode_set(rtk_bt_mesh_light_lc_mode_set_t *lc_mode_
 uint16_t rtk_bt_mesh_light_lc_om_get(rtk_bt_mesh_light_lc_om_get_t *lc_om_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_om_set(rtk_bt_mesh_light_lc_om_set_t *lc_om_set)
  * @brief     Send light lc om set message to light lc server, will cause event @ref RTK_BT_MESH_LIGHT_LC_OM_CLIENT_MODEL_SET
  * @param[in] lc_om_set: light lc om set message structure
  * @return
@@ -2011,7 +1972,6 @@ uint16_t rtk_bt_mesh_light_lc_om_get(rtk_bt_mesh_light_lc_om_get_t *lc_om_get);
 uint16_t rtk_bt_mesh_light_lc_om_set(rtk_bt_mesh_light_lc_om_set_t *lc_om_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_lightonoff_get(rtk_bt_mesh_light_lc_lightonoff_get_t *lc_lightonoff_get)
  * @brief     Send light lc light on off get message to light lc server, will cause event @ref RTK_BT_MESH_LIGHT_LC_LIGHTONOFF_CLIENT_MODEL_GET
  * @param[in] lc_lightonoff_get: light on off get message structure
  * @return
@@ -2021,7 +1981,6 @@ uint16_t rtk_bt_mesh_light_lc_om_set(rtk_bt_mesh_light_lc_om_set_t *lc_om_set);
 uint16_t rtk_bt_mesh_light_lc_lightonoff_get(rtk_bt_mesh_light_lc_lightonoff_get_t *lc_lightonoff_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_lightonoff_set(rtk_bt_mesh_light_lc_lightonoff_set_t *lc_lightonoff_set)
  * @brief     Send light lc light on off set message to light lc server, will cause event @ref RTK_BT_MESH_LIGHT_LC_LIGHTONOFF_CLIENT_MODEL_SET
  * @param[in] lc_lightonoff_set: light on off set message structure
  * @return
@@ -2031,7 +1990,6 @@ uint16_t rtk_bt_mesh_light_lc_lightonoff_get(rtk_bt_mesh_light_lc_lightonoff_get
 uint16_t rtk_bt_mesh_light_lc_lightonoff_set(rtk_bt_mesh_light_lc_lightonoff_set_t *lc_lightonoff_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_property_get(rtk_bt_mesh_light_lc_property_get_t *lc_property_get)
  * @brief     Send light lc property get message to light lc setup server, will cause event @ref RTK_BT_MESH_LIGHT_LC_PROPERTY_CLIENT_MODEL_GET
  * @param[in] lc_property_get: light property get message structure
  * @return
@@ -2041,7 +1999,6 @@ uint16_t rtk_bt_mesh_light_lc_lightonoff_set(rtk_bt_mesh_light_lc_lightonoff_set
 uint16_t rtk_bt_mesh_light_lc_property_get(rtk_bt_mesh_light_lc_property_get_t *lc_property_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_light_lc_property_set(rtk_bt_mesh_light_lc_property_set_t *lc_property_set)
  * @brief     Send light lc property set message to light lc setup server, will cause event @ref RTK_BT_MESH_LIGHT_LC_PROPERTY_CLIENT_MODEL_SET
  * @param[in] lc_property_set: light property set message structure
  * @return

@@ -1099,7 +1099,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_level_client_get(rtk_bt_mesh_generic_level_get_t *level_get)
  * @brief     Send generic level get message to generic level server, will cause event @ref RTK_BT_MESH_GENERIC_LEVEL_CLIENT_MODEL_GET
  * @param[in] level_get: generic level get message structure
  * @return
@@ -1109,7 +1108,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_generic_level_client_get(rtk_bt_mesh_generic_level_get_t *level_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_level_client_set(rtk_bt_mesh_generic_level_set_t *level_set)
  * @brief     Send generic level set message to generic level server, will cause event @ref RTK_BT_MESH_GENERIC_LEVEL_CLIENT_MODEL_SET
  * @param[in] level_set: generic level set message structure
  * @return
@@ -1119,7 +1117,6 @@ uint16_t rtk_bt_mesh_generic_level_client_get(rtk_bt_mesh_generic_level_get_t *l
 uint16_t rtk_bt_mesh_generic_level_client_set(rtk_bt_mesh_generic_level_set_t *level_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_level_client_move_set(rtk_bt_mesh_generic_level_move_set_t *move_set)
  * @brief     Send generic level move set message to generic level server, will cause event @ref RTK_BT_MESH_GENERIC_LEVEL_CLIENT_MODEL_MOVE_SET
  * @param[in] move_set: generic move set message structure
  * @return
@@ -1129,7 +1126,6 @@ uint16_t rtk_bt_mesh_generic_level_client_set(rtk_bt_mesh_generic_level_set_t *l
 uint16_t rtk_bt_mesh_generic_level_client_move_set(rtk_bt_mesh_generic_level_move_set_t *move_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_level_client_delta_set(rtk_bt_mesh_generic_level_delta_set_t *delta_set)
  * @brief     Send generic level delta set message to generic level server, will cause event @ref RTK_BT_MESH_GENERIC_LEVEL_CLIENT_MODEL_DELTA_SET
  * @param[in] delta_set: generic delta set message structure
  * @return
@@ -1141,7 +1137,6 @@ uint16_t rtk_bt_mesh_generic_level_client_delta_set(rtk_bt_mesh_generic_level_de
 /********generic power on off*********/
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_on_power_up_client_get(rtk_bt_mesh_generic_on_power_up_get_t *power_get)
  * @brief     Send generic on power up get message to generic power on off server, will cause event @ref RTK_BT_MESH_GENERIC_ON_POWER_UP_CLIENT_MODEL_GET
  * @param[in] power_get: generic on power up get message structure
  * @return
@@ -1151,7 +1146,6 @@ uint16_t rtk_bt_mesh_generic_level_client_delta_set(rtk_bt_mesh_generic_level_de
 uint16_t rtk_bt_mesh_generic_on_power_up_client_get(rtk_bt_mesh_generic_on_power_up_get_t *power_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_on_power_up_client_set(rtk_bt_mesh_generic_on_power_up_set_t *power_set)
  * @brief     Send generic on power up set message to generic power on off setup server, will cause event @ref RTK_BT_MESH_GENERIC_ON_POWER_UP_CLIENT_MODEL_SET
  * @param[in] power_set: generic on power up set message structure
  * @return
@@ -1163,7 +1157,6 @@ uint16_t rtk_bt_mesh_generic_on_power_up_client_set(rtk_bt_mesh_generic_on_power
 /***********generic power level*************/
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_get(rtk_bt_mesh_generic_power_level_get_t *power_level_get)
  * @brief     Send generic power level get message to generic power level server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_GET
  * @param[in] power_level_get: generic power level get message structure
  * @return
@@ -1173,7 +1166,6 @@ uint16_t rtk_bt_mesh_generic_on_power_up_client_set(rtk_bt_mesh_generic_on_power
 uint16_t rtk_bt_mesh_generic_power_level_client_get(rtk_bt_mesh_generic_power_level_get_t *power_level_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_set(rtk_bt_mesh_generic_power_level_set_t *power_level_set)
  * @brief     Send generic power level set message to generic power level server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_SET
  * @param[in] power_level_set: generic power level set message structure
  * @return
@@ -1183,7 +1175,6 @@ uint16_t rtk_bt_mesh_generic_power_level_client_get(rtk_bt_mesh_generic_power_le
 uint16_t rtk_bt_mesh_generic_power_level_client_set(rtk_bt_mesh_generic_power_level_set_t *power_level_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_last_get(rtk_bt_mesh_generic_power_level_last_get_t *power_level_last_get)
  * @brief     Send generic power level last get message to generic power level server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_LAST_GET
  * @param[in] power_level_last_get: generic power level last get message structure
  * @return
@@ -1193,7 +1184,6 @@ uint16_t rtk_bt_mesh_generic_power_level_client_set(rtk_bt_mesh_generic_power_le
 uint16_t rtk_bt_mesh_generic_power_level_client_last_get(rtk_bt_mesh_generic_power_level_last_get_t *power_level_last_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_default_get(rtk_bt_mesh_generic_power_level_default_get_t *power_level_default_get)
  * @brief     Send generic power level default get message to generic power level server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_DEFAULT_GET
  * @param[in] power_level_default_get: generic power level default get message structure
  * @return
@@ -1203,7 +1193,6 @@ uint16_t rtk_bt_mesh_generic_power_level_client_last_get(rtk_bt_mesh_generic_pow
 uint16_t rtk_bt_mesh_generic_power_level_client_default_get(rtk_bt_mesh_generic_power_level_default_get_t *power_level_default_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_default_set(rtk_bt_mesh_generic_power_level_default_set_t *power_level_default_set)
  * @brief     Send generic power level default set message to generic power level setup server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_DEFAULT_SET
  * @param[in] power_level_default_set: generic power level default set message structure
  * @return
@@ -1213,7 +1202,6 @@ uint16_t rtk_bt_mesh_generic_power_level_client_default_get(rtk_bt_mesh_generic_
 uint16_t rtk_bt_mesh_generic_power_level_client_default_set(rtk_bt_mesh_generic_power_level_default_set_t *power_level_default_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_range_get(rtk_bt_mesh_generic_power_level_range_get_t *power_level_range_get)
  * @brief     Send generic power level range get message to generic power level server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_RANGE_GET
  * @param[in] power_level_range_get: generic power level range get message structure
  * @return
@@ -1223,7 +1211,6 @@ uint16_t rtk_bt_mesh_generic_power_level_client_default_set(rtk_bt_mesh_generic_
 uint16_t rtk_bt_mesh_generic_power_level_client_range_get(rtk_bt_mesh_generic_power_level_range_get_t *power_level_range_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_power_level_client_range_set(rtk_bt_mesh_generic_power_level_range_set_t *power_level_range_set)
  * @brief     Send generic power level range set message to generic power level setup server, will cause event @ref RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_RANGE_SET
  * @param[in] power_level_range_set: generic power level range set message structure
  * @return
@@ -1234,7 +1221,6 @@ uint16_t rtk_bt_mesh_generic_power_level_client_range_set(rtk_bt_mesh_generic_po
 
 /*******generic battery********/
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_battery_client_get(rtk_bt_mesh_generic_battery_get_t *battery_get)
  * @brief     Send generic battery get message to generic battery server, will cause event @ref RTK_BT_MESH_GENERIC_BATTERY_CLIENT_MODEL_GET
  * @param[in] battery_get: generic battery get message structure
  * @return
@@ -1245,7 +1231,6 @@ uint16_t rtk_bt_mesh_generic_battery_client_get(rtk_bt_mesh_generic_battery_get_
 
 /********generic location**********/
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_location_client_global_get(rtk_bt_mesh_generic_location_global_get_t *global_get)
  * @brief     Send generic location global get message to generic location server, will cause event @ref RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_GLOBAL_GET
  * @param[in] global_get: generic location global get message structure
  * @return
@@ -1255,7 +1240,6 @@ uint16_t rtk_bt_mesh_generic_battery_client_get(rtk_bt_mesh_generic_battery_get_
 uint16_t rtk_bt_mesh_generic_location_client_global_get(rtk_bt_mesh_generic_location_global_get_t *global_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_location_client_global_set(rtk_bt_mesh_generic_location_global_set_t *global_set)
  * @brief     Send generic location global set message to generic location setup server, will cause event @ref RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_GLOBAL_SET
  * @param[in] global_set: generic location global set message structure
  * @return
@@ -1265,7 +1249,6 @@ uint16_t rtk_bt_mesh_generic_location_client_global_get(rtk_bt_mesh_generic_loca
 uint16_t rtk_bt_mesh_generic_location_client_global_set(rtk_bt_mesh_generic_location_global_set_t *global_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_location_client_local_get(rtk_bt_mesh_generic_location_local_get_t *local_get)
  * @brief     Send generic location local get message to generic location server, will cause event @ref RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_LOCAL_GET
  * @param[in] local_get: generic location local get message structure
  * @return
@@ -1275,7 +1258,6 @@ uint16_t rtk_bt_mesh_generic_location_client_global_set(rtk_bt_mesh_generic_loca
 uint16_t rtk_bt_mesh_generic_location_client_local_get(rtk_bt_mesh_generic_location_local_get_t *local_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_location_client_local_set(rtk_bt_mesh_generic_location_local_set_t *local_set)
  * @brief     Send generic location local set message to generic location setup server, will cause event @ref RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_LOCAL_SET
  * @param[in] local_set: generic location local set message structure
  * @return
@@ -1286,7 +1268,6 @@ uint16_t rtk_bt_mesh_generic_location_client_local_set(rtk_bt_mesh_generic_locat
 
 /*******generic property*********/
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_user_properties_get(rtk_bt_mesh_generic_user_properties_get_t *user_get)
  * @brief     Send generic user properties get message to generic user property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTIES_GET
  * @param[in] user_get: generic user properties get message structure
  * @return
@@ -1296,7 +1277,6 @@ uint16_t rtk_bt_mesh_generic_location_client_local_set(rtk_bt_mesh_generic_locat
 uint16_t rtk_bt_mesh_generic_property_client_user_properties_get(rtk_bt_mesh_generic_user_properties_get_t *user_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_user_property_get(rtk_bt_mesh_generic_user_property_get_t *user_property_get)
  * @brief     Send generic user property get message to generic user property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTY_GET
  * @param[in] user_property_get: generic user property get message structure
  * @return
@@ -1306,7 +1286,6 @@ uint16_t rtk_bt_mesh_generic_property_client_user_properties_get(rtk_bt_mesh_gen
 uint16_t rtk_bt_mesh_generic_property_client_user_property_get(rtk_bt_mesh_generic_user_property_get_t *user_property_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_user_property_set(rtk_bt_mesh_generic_user_property_set_t *user_property_set)
  * @brief     Send generic user property set message to generic user property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTY_SET
  * @param[in] user_property_set: generic user property set message structure
  * @return
@@ -1316,7 +1295,6 @@ uint16_t rtk_bt_mesh_generic_property_client_user_property_get(rtk_bt_mesh_gener
 uint16_t rtk_bt_mesh_generic_property_client_user_property_set(rtk_bt_mesh_generic_user_property_set_t *user_property_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_admin_properties_get(rtk_bt_mesh_generic_admin_properties_get_t *admin_get)
  * @brief     Send generic admin properties get message to generic admin property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTIES_GET
  * @param[in] admin_get: generic admin properties get message structure
  * @return
@@ -1326,7 +1304,6 @@ uint16_t rtk_bt_mesh_generic_property_client_user_property_set(rtk_bt_mesh_gener
 uint16_t rtk_bt_mesh_generic_property_client_admin_properties_get(rtk_bt_mesh_generic_admin_properties_get_t *admin_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_admin_property_get(rtk_bt_mesh_generic_admin_property_get_t *admin_property_get)
  * @brief     Send generic admin property get message to generic admin property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTY_GET
  * @param[in] admin_property_get: generic admin property get message structure
  * @return
@@ -1336,7 +1313,6 @@ uint16_t rtk_bt_mesh_generic_property_client_admin_properties_get(rtk_bt_mesh_ge
 uint16_t rtk_bt_mesh_generic_property_client_admin_property_get(rtk_bt_mesh_generic_admin_property_get_t *admin_property_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_admin_property_set(rtk_bt_mesh_generic_admin_property_set_t *admin_property_set)
  * @brief     Send generic admin property set message to generic admin property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTY_SET
  * @param[in] admin_property_set: generic admin property set message structure
  * @return
@@ -1346,7 +1322,6 @@ uint16_t rtk_bt_mesh_generic_property_client_admin_property_get(rtk_bt_mesh_gene
 uint16_t rtk_bt_mesh_generic_property_client_admin_property_set(rtk_bt_mesh_generic_admin_property_set_t *admin_property_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_manu_properties_get(rtk_bt_mesh_generic_manu_properties_get_t *manu_get)
  * @brief     Send generic manufacturer properties get message to generic manufacturer property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTIES_GET
  * @param[in] manu_get: generic manufacturer properties get message structure
  * @return
@@ -1356,7 +1331,6 @@ uint16_t rtk_bt_mesh_generic_property_client_admin_property_set(rtk_bt_mesh_gene
 uint16_t rtk_bt_mesh_generic_property_client_manu_properties_get(rtk_bt_mesh_generic_manu_properties_get_t *manu_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_manu_property_get(rtk_bt_mesh_generic_manu_property_get_t *manu_property_get)
  * @brief     Send generic manufacturer property get message to generic manufacturer property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTY_GET
  * @param[in] manu_property_get: generic manufacturer property get message structure
  * @return
@@ -1366,7 +1340,6 @@ uint16_t rtk_bt_mesh_generic_property_client_manu_properties_get(rtk_bt_mesh_gen
 uint16_t rtk_bt_mesh_generic_property_client_manu_property_get(rtk_bt_mesh_generic_manu_property_get_t *manu_property_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_manu_property_set(rtk_bt_mesh_generic_manu_property_set_t *manu_property_set)
  * @brief     Send generic manufacturer property set message to generic manufacturer property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTY_SET
  * @param[in] manu_property_set: generic manufacturer property set message structure
  * @return
@@ -1376,7 +1349,6 @@ uint16_t rtk_bt_mesh_generic_property_client_manu_property_get(rtk_bt_mesh_gener
 uint16_t rtk_bt_mesh_generic_property_client_manu_property_set(rtk_bt_mesh_generic_manu_property_set_t *manu_property_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_client_properties_get(rtk_bt_mesh_generic_client_properties_get_t *client_get)
  * @brief     Send generic client properties get message to generic client property server, will cause event @ref RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_CLIENT_PROPERTY_GET
  * @param[in] client_get: generic client properties get message structure
  * @return
@@ -1386,7 +1358,6 @@ uint16_t rtk_bt_mesh_generic_property_client_manu_property_set(rtk_bt_mesh_gener
 uint16_t rtk_bt_mesh_generic_property_client_client_properties_get(rtk_bt_mesh_generic_client_properties_get_t *client_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_user_db_set(rtk_bt_mesh_generic_property_server_db_set_t *db_set)
  * @brief     Send generic user property database set message to set user property database, will cause event @ref RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: generic database set message structure
  * @return
@@ -1396,7 +1367,6 @@ uint16_t rtk_bt_mesh_generic_property_client_client_properties_get(rtk_bt_mesh_g
 uint16_t rtk_bt_mesh_generic_property_client_user_db_set(rtk_bt_mesh_generic_property_server_db_set_t *db_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_admin_db_set(rtk_bt_mesh_generic_property_server_db_set_t *db_set)
  * @brief     Send generic admin property database set message to set admin property database, will cause event @ref RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: generic database set message structure
  * @return
@@ -1406,7 +1376,6 @@ uint16_t rtk_bt_mesh_generic_property_client_user_db_set(rtk_bt_mesh_generic_pro
 uint16_t rtk_bt_mesh_generic_property_client_admin_db_set(rtk_bt_mesh_generic_property_server_db_set_t *db_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_generic_property_client_manu_db_set(rtk_bt_mesh_generic_property_server_db_set_t *db_set)
  * @brief     Send generic manu property database set message to set manu property database, will cause event @ref RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: generic database set message structure
  * @return

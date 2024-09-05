@@ -53,7 +53,6 @@ typedef enum {
  */
 
 /**
- * @fn void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer_bytes)
  * @brief                       bt audio init
  * @param[in]                   channels: audio channel
  * @param[in]                   rate: audio rate
@@ -65,7 +64,6 @@ typedef enum {
 void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer_bytes);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_deinit(void *record_hdl)
  * @brief     bt audio record deinit
  * @param[in] record_hdl: audio record handle
  * @return    none
@@ -73,7 +71,6 @@ void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer
 uint16_t rtk_bt_audio_record_deinit(void *record_hdl);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_stop(void *record_hdl)
  * @brief     bt audio record stop
  * @param[in] record_hdl: audio record handle
  *                              - 0  : Succeed
@@ -82,7 +79,6 @@ uint16_t rtk_bt_audio_record_deinit(void *record_hdl);
 uint16_t rtk_bt_audio_record_stop(void *record_hdl);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_start(void *record_hdl)
  * @brief     bt audio record start
  * @param[in] record_hdl: audio record handle
  * @return
@@ -92,7 +88,6 @@ uint16_t rtk_bt_audio_record_stop(void *record_hdl);
 uint16_t rtk_bt_audio_record_start(void *record_hdl);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_set_sample_rate(void *record_hdl, uint32_t sample_rate)
  * @brief     bt audio set record sample rate
  * @param[in] record_hdl: audio record handle
  * @param[in] sample_rate: sample rate
@@ -103,7 +98,6 @@ uint16_t rtk_bt_audio_record_start(void *record_hdl);
 uint16_t rtk_bt_audio_record_set_sample_rate(void *record_hdl, uint32_t sample_rate);
 
 /**
- * @fn        uint32_t rtk_bt_audio_record_get_sample_rate(void *record_hdl)
  * @brief     bt audio get record sample rate
  * @param[in] record_hdl: audio record handle
  * @return    sample rate
@@ -114,7 +108,6 @@ uint16_t rtk_bt_audio_record_set_sample_rate(void *record_hdl, uint32_t sample_r
 uint32_t rtk_bt_audio_record_get_sample_rate(void *record_hdl);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_set_channel_count(void *record_hdl, uint32_t channel_count)
  * @brief     bt audio set record channel count
  * @param[in] record_hdl: audio record handle
  * @param[in] channel_count: channel count
@@ -125,7 +118,6 @@ uint32_t rtk_bt_audio_record_get_sample_rate(void *record_hdl);
 uint16_t rtk_bt_audio_record_set_channel_count(void *record_hdl, uint32_t channel_count);
 
 /**
- * @fn        uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl)
  * @brief     bt audio get record channel count
  * @param[in] record_hdl: audio record handle
  * @return
@@ -135,7 +127,6 @@ uint16_t rtk_bt_audio_record_set_channel_count(void *record_hdl, uint32_t channe
 uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_set_parameters(void *record_hdl, const char *strs)
  * @brief     bt audio set record parameters
  * @param[in] record_hdl: audio record handle
  * @param[in] strs: supports AMIC settings like:"ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3"
@@ -170,7 +161,6 @@ uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl);
 uint16_t rtk_bt_audio_record_set_parameters(void *record_hdl, const char *strs);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_set_capture_volume(uint32_t channels, uint32_t volume)
  * @brief     Set Capture volume for channel.this function should be called after rtk_bt_audio_record_init
  * @param[in] channels: the total channels number to set volume, also the channels to capture.
  * @param[in] volume: the value of volume, can be 0x00-0xaf.
@@ -181,7 +171,6 @@ uint16_t rtk_bt_audio_record_set_parameters(void *record_hdl, const char *strs);
 uint16_t rtk_bt_audio_record_set_capture_volume(uint32_t channels, uint32_t volume);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_set_channel_mic_category(uint32_t channel_num, uint32_t mic_category)
  * @brief     Set Capture Mic type for channel.this function should be called after rtk_bt_audio_record_init
  * @param[in] channel_num: the channel number to set mic type.
  * @param[in] mic_category: the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
@@ -194,7 +183,6 @@ uint16_t rtk_bt_audio_record_set_capture_volume(uint32_t channels, uint32_t volu
 uint16_t rtk_bt_audio_record_set_channel_mic_category(uint32_t channel_num, uint32_t mic_category);
 
 /**
- * @fn        uint16_t rtk_bt_audio_record_set_mic_bst_gain(uint32_t mic_category, uint32_t gain)
  * @brief     Set Micbst Gain.this function should be called after rtk_bt_audio_record_init
  * @param[in] mic_category: the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
  *           [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
@@ -207,7 +195,6 @@ uint16_t rtk_bt_audio_record_set_channel_mic_category(uint32_t channel_num, uint
 uint16_t rtk_bt_audio_record_set_mic_bst_gain(uint32_t mic_category, uint32_t gain);
 
 /**
- * @fn        int32_t rtk_bt_audio_record_get_mic_bst_gain(uint32_t mic_category)
  * @brief     Get Micbst Gain.this function should be called after rtk_bt_audio_record_init
  * @param[in] mic_category: the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
  *           [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
@@ -217,7 +204,6 @@ uint16_t rtk_bt_audio_record_set_mic_bst_gain(uint32_t mic_category, uint32_t ga
 int32_t rtk_bt_audio_record_get_mic_bst_gain(uint32_t mic_category);
 
 /**
- * @fn        int rtk_bt_audio_record_read(void *record_hdl, void *buffer, int size, bool blocking)
  * @brief     read record data after rtk_bt_audio_record_init
  * @param[in] record_hdl: audio record handle
  * @param[in] buffer is the dst buffer of application.
@@ -228,7 +214,6 @@ int32_t rtk_bt_audio_record_get_mic_bst_gain(uint32_t mic_category);
 int rtk_bt_audio_record_read(void *record_hdl, void *buffer, int size, bool blocking);
 
 /**
- * @fn        void rtk_bt_audio_record_set_mute(uint32_t channel, bool muted)
  * @brief     set audio record mute
  * @param[in] channel: the channel to mute or unmute record.
  * @param[in] muted true means mute record, false means unmute record.
@@ -239,7 +224,6 @@ int rtk_bt_audio_record_read(void *record_hdl, void *buffer, int size, bool bloc
 void rtk_bt_audio_record_set_mute(uint32_t channel, bool muted);
 
 /**
- * @fn        bool rtk_bt_audio_record_get_muted(uint32_t channel)
  * @brief     Get Audio Record Mute State
  * @param[in] channel: the channel to mute or unmute record.
  * @return
