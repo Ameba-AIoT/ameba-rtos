@@ -99,6 +99,11 @@ static void update_status(void)
 		task_status->curr = task_status->status[1];
 	}
 
+	if (uxTaskGetNumberOfTasks() > TASK_CNT) {
+		RTK_LOGW(NOTAG, "number of tasks : %d(exceed TASK_CNT)! Please enlarge TASK_CNT\r\n", uxTaskGetNumberOfTasks());
+		return;
+	}
+
 	/* update last */
 	task_status->last_cnt = task_status->curr_cnt;
 	TaskStatus_t *tmp = task_status->last;
@@ -420,9 +425,12 @@ void at_state(void *arg)
 	UNUSED(arg);
 #if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1)
 	{
-		signed char pcWriteBuffer[1024];
+		char *pcWriteBuffer;
+		int task_n = uxTaskGetNumberOfTasks();
+		pcWriteBuffer = (char *)rtos_mem_malloc(task_n * 45);
 		vTaskList((char *)pcWriteBuffer);
 		at_printf("Task List: \r\n%s\r\n", pcWriteBuffer);
+		rtos_mem_free(pcWriteBuffer);
 	}
 #endif
 

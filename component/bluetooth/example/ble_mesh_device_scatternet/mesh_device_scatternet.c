@@ -2743,8 +2743,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 		BT_AT_PRINT(",");
 		mesh_data_uart_dump(series_get->raw_value_x2, series_get->raw_value_x_len);
 		BT_AT_DUMP_HEXN(series_get->raw_value_x2, series_get->raw_value_x_len);
-		if (series_length > SENSOR_GET_COLUMN_MAX_LEN) {
-			series_length = SENSOR_GET_COLUMN_MAX_LEN;
+		if (series_length > SENSOR_GET_SERIES_MAX_LEN) {
+			series_length = SENSOR_GET_SERIES_MAX_LEN;
 		}
 		memcpy(series_get->value, &series_length, 2);
 		memcpy((uint8_t *)series_get->value + 2, sensor_raw_data, series_length);

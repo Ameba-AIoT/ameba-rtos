@@ -4862,19 +4862,30 @@ static uint16_t bt_stack_le_gap_read_peer_resolv_addr(void *param)
 }
 #endif
 
+static uint16_t bt_stack_le_sm_set_pairing_mode(void *param)
+{
+	T_GAP_CAUSE cause;
+	rtk_bt_le_pairing_mode_t pairing_mode = *(rtk_bt_le_pairing_mode_t *)param;
+
+	cause = gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(uint8_t), &pairing_mode);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = gap_set_pairable_mode();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
 static uint16_t bt_stack_le_sm_set_security_param(void *param)
 {
 	T_GAP_CAUSE cause;
 	rtk_bt_le_security_param_t *p_sec_param = (rtk_bt_le_security_param_t *)param;
 	uint16_t auth_flags = 0;
-	uint8_t auth_pair_mode = 1;
 	uint16_t auth_sec_req_flags = 0;
-
-	cause = gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(uint8_t),
-						  &auth_pair_mode);
-	if (cause) {
-		return RTK_BT_ERR_LOWER_STACK_API;
-	}
 
 	cause = gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(uint8_t),
 						  &p_sec_param->io_cap);
@@ -4890,10 +4901,16 @@ static uint16_t bt_stack_le_sm_set_security_param(void *param)
 	}
 #endif
 
-	auth_flags = p_sec_param->bond_flag | p_sec_param->mitm_flag << 2 |
-				 p_sec_param->sec_pair_flag << 3;
+	auth_flags = (!!p_sec_param->bond_flag) | (!!p_sec_param->mitm_flag) << 2 |
+				 (!!p_sec_param->sec_pair_flag) << 3 | (!!p_sec_param->sec_pair_only_flag) << 9;
 	cause = gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(uint16_t),
 						  &auth_flags);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, sizeof(uint8_t),
+							  &p_sec_param->auto_sec_req);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
@@ -4950,6 +4967,12 @@ static uint16_t bt_stack_le_sm_get_security_param(void *param)
 	p_sec_param->bond_flag = auth_flags & 0x1;
 	p_sec_param->mitm_flag = (auth_flags >> 2) & 0x1;
 	p_sec_param->sec_pair_flag = (auth_flags >> 3) & 0x1;
+	p_sec_param->sec_pair_only_flag = (auth_flags >> 9) & 0x1;
+
+	cause = le_bond_get_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, &p_sec_param->auto_sec_req);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
 
 	cause = le_bond_get_param(GAP_PARAM_BOND_FIXED_PASSKEY_ENABLE, &p_sec_param->use_fixed_key);
 	if (cause) {
@@ -5970,6 +5993,11 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		goto async_handle;
 		break;
 #endif
+
+	case RTK_BT_LE_GAP_ACT_SET_PAIRING_MODE:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_PAIRING_MODE \r\n");
+		ret = bt_stack_le_sm_set_pairing_mode(p_cmd->param);
+		break;
 
 	case RTK_BT_LE_GAP_ACT_SET_SEC_PARAM:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_SEC_PARAM \r\n");

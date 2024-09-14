@@ -76,6 +76,8 @@ struct rtw_scan_result {
 	enum rtw_wps_type          wps_type;         /**< WPS type                                                                  */
 	unsigned int                      channel;          /**< Radio channel that the AP beacon was received on                          */
 	enum rtw_802_11_band       band;             /**< Radio band                                                                */
+	char	country_code[2];
+	uint8_t		rom_rsvd[4];
 } ;
 #pragma pack()
 

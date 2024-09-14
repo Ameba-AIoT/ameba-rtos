@@ -1085,6 +1085,15 @@ typedef struct {
 } rtk_bt_le_set_phy_param_t;
 
 /**
+ * @typedef   rtk_bt_le_pairing_mode_t
+ * @brief     Bluetooth BLE SM pairing mode definition.
+ */
+typedef enum {
+	RTK_PAIRING_MODE_NO_PAIRING  = 0x00,
+	RTK_PAIRING_MODE_PAIRABLE    = 0x01,
+} rtk_bt_le_pairing_mode_t;
+
+/**
  * @typedef   rtk_bt_le_io_cap_t
  * @brief     Bluetooth BLE SM IO capability type definition.
  */
@@ -1108,13 +1117,15 @@ typedef enum {
  * @brief     Bluetooth BLE SM security parameter type definition.
  */
 typedef struct {
-	rtk_bt_le_io_cap_t io_cap;      /*!< IO capabilities */
-	uint8_t oob_data_flag;          /*!< OOB data flag */
-	uint8_t bond_flag;              /*!< Bonding flags */
-	uint8_t mitm_flag;              /*!< MITM flag */
-	uint8_t sec_pair_flag;          /*!< Secure connection pairing support flag */
-	uint8_t use_fixed_key;          /*!< Pairing use fixed passkey */
-	uint32_t fixed_key;             /*!< Fixed passkey value */
+	rtk_bt_le_io_cap_t io_cap;              /*!< IO capabilities */
+	uint8_t oob_data_flag;                  /*!< OOB data flag */
+	uint8_t bond_flag;                      /*!< Bonding flags */
+	uint8_t mitm_flag;                      /*!< MITM flag */
+	uint8_t sec_pair_flag;                  /*!< Secure connection pairing support flag */
+	uint8_t sec_pair_only_flag;             /*!< Only accept secure connection pairing when local sec_pair_flag is set */
+	uint8_t use_fixed_key;                  /*!< Pairing use fixed passkey */
+	uint32_t fixed_key;                     /*!< Fixed passkey value */
+	uint8_t auto_sec_req;                   /*!< Auto send security request when connected */
 } rtk_bt_le_security_param_t;
 
 /**
@@ -2940,6 +2951,15 @@ uint16_t rtk_bt_le_gap_read_local_resolv_addr(rtk_bt_le_ident_addr_type_t peer_i
 uint16_t rtk_bt_le_gap_read_peer_resolv_addr(rtk_bt_le_ident_addr_type_t peer_ident_addr_type,
 											 uint8_t *peer_addr, uint8_t *peer_rpa);
 #endif
+
+/**
+ * @brief     Set security pairing mode.
+ * @param[in] pairing_mode: Security pairing mode, default is @ref RTK_PAIRING_MODE_PAIRABLE
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_sm_set_pairing_mode(rtk_bt_le_pairing_mode_t pairing_mode);
 
 /**
  * @brief     Set security paramters.

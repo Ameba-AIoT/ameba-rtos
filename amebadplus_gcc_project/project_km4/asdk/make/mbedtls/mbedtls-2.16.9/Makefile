@@ -68,6 +68,8 @@ CSRC += $(DIR)/library/aes.c			\
        $(DIR)/library/ctr_drbg.c	\
        $(DIR)/library/rsa_internal.c	\
        $(DIR)/library/ctr_drbg.c	\
+       $(DIR)/library/md.c	\
+       $(DIR)/library/md_wrap.c	\
 
 CSRC +=   $(DIR)/library/dhm.c	\
 	$(DIR)/library/hmac_drbg.c	\

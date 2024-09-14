@@ -911,6 +911,8 @@ _LONG_CALL_ void AUDIO_CODEC_SetADCEQBand(u32 ad_chn, u32 band_sel, u32 NewState
 _LONG_CALL_ void AUDIO_CODEC_SetADCZDET(u32 adc_sel, u32 type);
 _LONG_CALL_ void AUDIO_CODEC_SetADCZDETTimeOut(u32 adc_sel, u32 time_out);
 _LONG_CALL_ void AUDIO_CODEC_SetADCZDETTimeOut(u32 adc_sel, u32 time_out);
+_LONG_CALL_ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
+_LONG_CALL_ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate);
 
 /* MANUAL_GEN_END */
 

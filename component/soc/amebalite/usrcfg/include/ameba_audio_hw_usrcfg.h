@@ -66,6 +66,14 @@
 #define AUDIO_I2S_OUT_SPORT_INDEX       0
 
 /*
+ *0: using xtal 40M.
+ *if using PLL, please make sure to change soc/amebalite/usrcfg/ameba_bootcfg.c's clock
+ *should be same with AUDIO_HW_IN_SPORT_CLK_TYPE when tx rx together on one board.
+ *1: using CPUPLL.
+ */
+#define AUDIO_HW_OUT_SPORT_CLK_TYPE     0
+
+/*
  *Define I2S out's data format
  *0 for I2S
  *1 for Left Justified
@@ -100,6 +108,14 @@
  *Define I2S in sport index, for example, if I2S in using sport2, set 2 as value here.
  */
 #define AUDIO_I2S_IN_SPORT_INDEX         1
+
+/*
+ *0: using xtal 40M.
+ *if using PLL, please make sure to change soc/amebalite/usrcfg/ameba_bootcfg.c's clock
+ *should be same with AUDIO_HW_OUT_SPORT_CLK_TYPE when tx rx together on one board.
+ *1: using CPUPLL.
+ */
+#define AUDIO_HW_IN_SPORT_CLK_TYPE       0
 
 #define AUDIO_I2S_MASTER                 0
 #define AUDIO_I2S_SLAVE                  1
