@@ -100,6 +100,18 @@ void rtw_reconn_task_hdl(void *param)
 	int ret = RTW_ERROR;
 
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
+	if (ret != RTW_SUCCESS) {
+		RTK_LOGS(NOTAG, "reconn fail:%d", ret);
+		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+			RTK_LOGS(NOTAG, "(password format wrong)");
+		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+			RTK_LOGS(NOTAG, "(not found AP)");
+		} else if (ret == RTW_BUSY) {
+			RTK_LOGS(NOTAG, "(busy)");
+		}
+		RTK_LOGS(NOTAG, "\r\n");
+	}
+
 #ifdef CONFIG_LWIP_LAYER
 	if (ret == RTW_SUCCESS) {
 		LwIP_DHCP(0, DHCP_START);
@@ -118,7 +130,7 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 	extern void matter_reconn_task_hdl(void *param);
 	if (rtos_task_create(NULL, ((const char *)"matter_reconn_task_hdl"), matter_reconn_task_hdl, NULL, 1024, 6) != SUCCESS) {
 #else
-	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, 1024, 6) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, WIFI_STACK_SIZE_AUTO_RECONN_TASKLET, 6) != SUCCESS) {
 #endif
 		RTK_LOGS(NOTAG, "Create reconn task failed\n");
 	} else {
@@ -128,7 +140,7 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 
 void rtw_reconn_new_conn(rtw_network_info_t *connect_param)
 {
-	if (connect_param->by_reconn == 0) { /*a new wifi connect*/
+	if ((connect_param->by_reconn == 0) && (rtw_reconn.b_enable)) { /*a new wifi connect*/
 		memcpy(&rtw_reconn.conn_param, connect_param, sizeof(rtw_network_info_t));
 		/*fix auto reconnect fail: https://jira.realtek.com/browse/RSWLANDIOT-9031*/
 		rtw_reconn.conn_param.channel = 0;
@@ -153,6 +165,7 @@ int wifi_config_autoreconnect(__u8 mode)
 	if ((mode == RTW_AUTORECONNECT_DISABLE) && rtw_reconn.b_enable) {
 		rtos_timer_stop(rtw_reconn.timer, 1000);
 		rtos_timer_delete(rtw_reconn.timer, 1000);
+		rtw_reconn.timer = NULL;
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.b_enable = 0;
 	} else if ((mode != RTW_AUTORECONNECT_DISABLE) && (rtw_reconn.b_enable == 0))  {
@@ -170,6 +183,16 @@ int wifi_config_autoreconnect(__u8 mode)
 	}
 
 	return RTW_SUCCESS;
+}
+
+int wifi_get_autoreconnect(__u8 *mode)
+{
+	if (mode == NULL) {
+		return RTW_ERROR;
+	} else {
+		*mode = rtw_reconn.b_enable;
+		return RTW_SUCCESS;
+	}
 }
 
 #endif

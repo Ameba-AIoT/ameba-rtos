@@ -162,7 +162,7 @@ static void ameba_audio_stream_rx_codec_adc_reset(void)
 		uint32_t adc_idx = ameba_audio_stream_get_adc_idx(idx);
 
 		AUDIO_CODEC_EnableADC(adc_chn_idx, DISABLE);
-		//AUDIO_CODEC_EnableADCFifo(adc_chn_idx, DISABLE);
+		AUDIO_CODEC_EnableADCFifo(adc_chn_idx, DISABLE);
 		AUDIO_CODEC_SetADCHPF(idx, 3, DISABLE);
 		AUDIO_CODEC_SetADCMute(adc_idx, MUTE);
 		// AUDIO_CODEC_SetADCMixMute(adc_idx, ANAAD, MUTE);
@@ -192,7 +192,7 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 			uint32_t adc_idx = ameba_audio_stream_get_adc_idx(j);
 
 			AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-			//AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
+			AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
 			AUDIO_CODEC_SetADCHPF(adc_idx, 3, ENABLE);
 			AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[j - 1] ? MUTE : UNMUTE);
 			AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[j - 1]);
@@ -209,7 +209,7 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 				uint32_t adc_idx = ameba_audio_stream_get_adc_idx(k);
 
 				AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-				//AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
+				AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
 				AUDIO_CODEC_SetADCHPF(adc_idx, 3, ENABLE);
 				AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[k - 1] ? MUTE : UNMUTE);
 				AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[k - 1]);

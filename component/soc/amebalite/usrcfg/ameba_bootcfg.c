@@ -74,7 +74,7 @@ u8 Boot_Log_En = TRUE;
 
 u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 
-// for kr4/km4, max 240MHz under 1.0v, max 200MHz under 0.9v
+// for kr4/km4, max 400MHz under 1.0v, max 200MHz under 0.9v
 // for dsp, max 500MHz under 1.0v, max 400MHz under 0.9v
 // CPUPLL(PLLM)/DSPPLL(PLLD) can be 330MHz~660MHz
 // All CLKDIV range is [1, 16]

@@ -43,7 +43,7 @@ MODULE_IFLAGS += -I$(UAC_DIR)
 endif
 
 ifeq ($(CONFIG_USBD_INIC),y)
-INIC_DIR = $(DEV_DIR)/inic
+INIC_DIR = $(DEV_DIR)/inic_dplus
 DIR += $(INIC_DIR)
 MODULE_IFLAGS += -I$(INIC_DIR)
 endif

@@ -1,6 +1,6 @@
 ##################################################################################
 #                                                                                #
-#                      OTA UPDATING EXAMPLE                                 #
+#                      OTA UPDATING EXAMPLE                                 	 #
 #                                                                                #
 ##################################################################################
 
@@ -18,7 +18,7 @@ Table of Contents
 Description
 ~~~~~~~~~~~
     This example is designed for firmware update by Over-the-air programming (OTA) via
-        Wireless Network Connection. Download ota_all.bin from the download server
+        Wireless Network Connection. Download OTA_ALL.bin from the download server
         (in tools\DownloadServer(HTTP) or tools\DownloadServer) automatically.
 
 
@@ -49,8 +49,8 @@ Parameter Setting and Configuration
 		
 		6. For sdcard update, only AmebaSmart support.
 			(1) users only need to set resource.
-			#define RESOURCE    "ota_all.bin" // binary file path in the sdcard.
-			(2) in component\file_system\vfs\vfs_fatfs.h
+			#define RESOURCE    "OTA_ALL.bin" // binary file path in the sdcard.
+			(2) Add this line in component\file_system\vfs\vfs_fatfs.h
 			#define FATFS_DISK_SD 	 1
 			(3) in component\file_system\fatfs\r0.14b\include\ffconf.h
 			#define FF_LFN_UNICODE    2
@@ -60,16 +60,21 @@ Parameter Setting and Configuration
 				//	ota_printf(_OTA_INFO_, "Wait for WIFI connection ...\n");
 				//	rtos_time_delay_ms(1000);
 				//}
+			(6) Type command "make menuconfig" and choose "CONFIG VFS"
+				For VFS_FATFS with VFS_INF_SD: (Only AmebaSmart support)
+				[ ] Enable VFS LITTLEFS
+				[*] Enable VFS FATFS
+				(SD) FATFS Memory Type
 		
         7. For http or https update, modify PORT, HOST and RESOURCE based on your download server.
         eg: SERVER: http://m-apps.oss-cn-shenzhen.aliyuncs.com/051103061600.bin
         set:    #define PORT    80
                 #define HOST    "m-apps.oss-cn-shenzhen.aliyuncs.com"
                 #define RESOURCE    "051103061600.bin"
-        For local network download, Set it with IP and ota_all.bin
+        For local network download, Set it with IP and OTA_ALL.bin
         e.g.    #define PORT    80
                 #define HOST    "192.168.1.100"
-                #define RESOURCE    "ota_all.bin"
+                #define RESOURCE    "OTA_ALL.bin"
         Note: Remember to Set the server start.bat with the same PORT and RESOURCE.
 
 

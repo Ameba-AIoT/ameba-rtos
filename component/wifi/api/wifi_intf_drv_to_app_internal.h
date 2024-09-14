@@ -99,13 +99,12 @@ int wifi_set_wpa_mode(enum rtw_wpa_mode_type wpa_mode);
 int wifi_set_pmf_mode(u8 pmf_mode);
 
 /**
- * @brief  wpa notify wifi driver that 4 way handshake is failed.
- * wifi driver will do disconnect and autoreconnect.
- * can delete this API if autoreconnect can move to up layer.
- * @param[in]  void:
+ * @brief  wpa notify wifi driver status of 4-way/2-way handshake.
+ * wifi driver will do disconnect and autoreconnect when fail & inform coex
+ * @param[in] rtw_wap_4way_status
  * @return  null.
  */
-void wifi_wpa_sta_4way_fail_notify(void);
+void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way);
 
 /**
  * @brief  for wpa to set key to driver
@@ -214,6 +213,9 @@ int wifi_set_eap_method(unsigned char eap_method);
  * @return  RTW_ERROR or RTW SUCCESS
  */
 int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
+
+
+void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
 
 #ifdef __cplusplus
 }

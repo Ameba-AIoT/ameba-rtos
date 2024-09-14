@@ -137,6 +137,26 @@ uint16_t rtk_bt_mesh_health_server_fault_check(rtk_bt_mesh_health_server_check_f
 	return ret;
 }
 
+uint16_t rtk_bt_mesh_health_server_set_tests(rtk_bt_mesh_health_server_test_set_t *test_set)
+{
+	uint16_t ret;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_TEST_SET, test_set,
+						  sizeof(rtk_bt_mesh_health_server_test_set_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_mesh_health_server_set_company_id(rtk_bt_mesh_health_server_company_id_set_t *company_id_set)
+{
+	uint16_t ret;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_COMPANY_ID_SET, company_id_set,
+						  sizeof(rtk_bt_mesh_health_server_company_id_set_t));
+
+	return ret;
+}
+
 #endif // RTK_BLE_MESH_DEVICE_SUPPORT
 
 #endif // end of RTK_BLE_MESH_SUPPORT

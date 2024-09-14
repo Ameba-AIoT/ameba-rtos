@@ -43,8 +43,8 @@ extern rtw_joinstatus_callback_t p_wifi_joinstatus_internal_callback;
 static event_list_elem_t     event_callback_list[WIFI_EVENT_MAX][WIFI_EVENT_MAX_ROW];
 
 extern write_fast_connect_info_ptr p_store_fast_connect_info;
-extern rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback;
 extern enum rtw_join_status_type rtw_join_status;
+extern enum _rtw_result_t join_fail_reason;
 extern struct internal_join_block_param *join_block_param;
 extern wifi_jioninfo_free_ptr p_wifi_join_info_free;
 //----------------------------------------------------------------------------//
@@ -136,6 +136,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	enum rtw_join_status_type join_status = (enum rtw_join_status_type)flags;
+	struct rtw_event_join_fail_info_t *fail_info = (struct rtw_event_join_fail_info_t *)buf;
 
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
@@ -148,12 +149,11 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 		if (p_store_fast_connect_info) {
 			p_store_fast_connect_info(0, 0);
 		}
-#endif
-
 		if (p_wifi_join_info_free) {
 			/* free key here after join success */
 			p_wifi_join_info_free(IFACE_PORT0);
 		}
+#endif
 
 		/* if Synchronous connection, up sema when connect success*/
 		if (join_block_param && join_block_param->block) {
@@ -164,6 +164,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 	if (join_status == RTW_JOINSTATUS_FAIL) {
 		/* if synchronous connection, up sema when connect fail*/
 		if (join_block_param && join_block_param->block) {
+			join_fail_reason = fail_info->fail_reason;
 			rtos_sema_give(join_block_param->join_sema);
 		}
 	}
@@ -205,10 +206,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 #if CONFIG_AUTO_RECONNECT
 	rtw_reconn_join_status_hdl(buf, flags);
 #endif
-	/* step 2: execute user callback to process join_status*/
-	if (p_wifi_joinstatus_user_callback) {
-		p_wifi_joinstatus_user_callback(join_status);
-	}
+
 #else
 	UNUSED(flags);
 	UNUSED(buf);

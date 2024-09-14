@@ -187,13 +187,6 @@ int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *sw_sta
 	return -1;
 }
 
-int wifi_del_station(unsigned char *hwaddr)
-{
-	UNUSED(hwaddr);
-	call_noused = __LINE__;
-	return -1;
-}
-
 u8 wifi_driver_is_mp(void)
 {
 	call_noused = __LINE__;
@@ -374,8 +367,9 @@ int wifi_zigbee_coex_zb_rfk(void)
 	return -1;
 }
 
-void wifi_wpa_sta_4way_fail_notify(void)
+void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 {
+	UNUSED(rpt_4way);
 	call_noused = __LINE__;
 }
 
