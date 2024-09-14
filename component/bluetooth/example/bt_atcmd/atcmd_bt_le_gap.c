@@ -1604,10 +1604,26 @@ static int atcmd_ble_gap_clear_whitelist(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_ble_gap_set_pairing_mode(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 0;
+	rtk_bt_le_pairing_mode_t pairing_mode = (rtk_bt_le_pairing_mode_t)(str_to_int(argv[0]));
+
+	ret = rtk_bt_le_sm_set_pairing_mode(pairing_mode);
+	if (ret) {
+		BT_LOGE("GAP set pairing mode failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP set pairing mode success\r\n");
+	return 0;
+}
+
 static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 {
 	uint16_t ret = 0;
-	if (argc != 0 && argc != 7) {
+	if (argc != 0 && argc != 7 && argc != 9) {
 		BT_LOGE("GAP set security paramters failed! wrong args num!\r\n");
 		return -1;
 	}
@@ -1618,9 +1634,11 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 			.oob_data_flag = 0,
 			.bond_flag = 1,
 			.mitm_flag = 0,
-			.sec_pair_flag = 1,
+			.sec_pair_flag = 0,
+			.sec_pair_only_flag = 0,
 			.use_fixed_key = 0,
 			.fixed_key = 000000,
+			.auto_sec_req = 0,
 		};
 		ret = rtk_bt_le_sm_set_security_param(&def_sec_param);
 		if (ret) {
@@ -1631,14 +1649,21 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 		return 0;
 	}
 
-	rtk_bt_le_security_param_t sec_param;
-	sec_param.io_cap = (rtk_bt_le_io_cap_t)str_to_int(argv[0]);
-	sec_param.oob_data_flag = (uint8_t)str_to_int(argv[1]);
-	sec_param.bond_flag = (uint8_t)str_to_int(argv[2]);
-	sec_param.mitm_flag = (uint8_t)str_to_int(argv[3]);
-	sec_param.sec_pair_flag = (uint8_t)str_to_int(argv[4]);
-	sec_param.use_fixed_key = (uint8_t)str_to_int(argv[5]);
-	sec_param.fixed_key = (uint32_t)str_to_int(argv[6]);
+	rtk_bt_le_security_param_t sec_param = {0};
+	if (argc > 6) {
+		sec_param.io_cap = (rtk_bt_le_io_cap_t)str_to_int(argv[0]);
+		sec_param.oob_data_flag = (uint8_t)str_to_int(argv[1]);
+		sec_param.bond_flag = (uint8_t)str_to_int(argv[2]);
+		sec_param.mitm_flag = (uint8_t)str_to_int(argv[3]);
+		sec_param.sec_pair_flag = (uint8_t)str_to_int(argv[4]);
+		sec_param.use_fixed_key = (uint8_t)str_to_int(argv[5]);
+		sec_param.fixed_key = (uint32_t)str_to_int(argv[6]);
+	}
+	if (argc > 8) {
+		sec_param.sec_pair_only_flag = (uint8_t)str_to_int(argv[7]);
+		sec_param.auto_sec_req = (uint8_t)str_to_int(argv[8]);
+	}
+
 
 	ret = rtk_bt_le_sm_set_security_param(&sec_param);
 	if (ret) {
@@ -1663,12 +1688,14 @@ static int atcmd_ble_gap_get_security_param(int argc, char **argv)
 		return -1;
 	}
 
-	BT_LOGA("GAP get security paramters success, param: %d,%d,%d,%d,%d,%d,%d\r\n",
+	BT_LOGA("GAP get security paramters success, param: %d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
 			sec_param.io_cap, sec_param.oob_data_flag, sec_param.bond_flag, sec_param.mitm_flag,
-			sec_param.sec_pair_flag, sec_param.use_fixed_key, sec_param.fixed_key);
-	BT_AT_PRINT("+BLEGAP:get_sec_param,%d,%d,%d,%d,%d,%d,%d\r\n",
+			sec_param.sec_pair_flag, sec_param.use_fixed_key, sec_param.fixed_key,
+			sec_param.sec_pair_only_flag, sec_param.auto_sec_req);
+	BT_AT_PRINT("+BLEGAP:get_sec_param,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
 				sec_param.io_cap, sec_param.oob_data_flag, sec_param.bond_flag, sec_param.mitm_flag,
-				sec_param.sec_pair_flag, sec_param.use_fixed_key, sec_param.fixed_key);
+				sec_param.sec_pair_flag, sec_param.use_fixed_key, sec_param.fixed_key,
+				sec_param.sec_pair_only_flag, sec_param.auto_sec_req);
 	return 0;
 }
 
@@ -2335,7 +2362,8 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"wl_add",       atcmd_ble_gap_add_whitelist,      3, 3},
 	{"wl_remove",    atcmd_ble_gap_remove_whitelist,   3, 3},
 	{"wl_clear",     atcmd_ble_gap_clear_whitelist,    1, 1},
-	{"sec_param",    atcmd_ble_gap_set_security_param, 1, 8},
+	{"pair_mode",    atcmd_ble_gap_set_pairing_mode,   2, 2},
+	{"sec_param",    atcmd_ble_gap_set_security_param, 1, 10},
 	{"get_sec_param",    atcmd_ble_gap_get_security_param, 1, 1},
 	{"sec",          atcmd_ble_gap_security,           2, 2},
 	{"pair_cfm",     atcmd_ble_gap_confirm_pair,       3, 3},

@@ -316,6 +316,18 @@ uint16_t bt_mesh_health_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = RTK_BT_OK;
 		break;
 	}
+	case RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_TEST_SET: {
+		rtk_bt_mesh_health_server_test_set_t *test_set = (rtk_bt_mesh_health_server_test_set_t *)p_cmd->param;
+		health_server_set_tests(&health_server_model, test_set->test, test_set->num_tests);
+		ret = RTK_BT_OK;
+		break;
+	}
+	case RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_COMPANY_ID_SET: {
+		rtk_bt_mesh_health_server_company_id_set_t *company_id_set = (rtk_bt_mesh_health_server_company_id_set_t *)p_cmd->param;
+		health_server_set_company_id(&health_server_model, company_id_set->company_id);
+		ret = RTK_BT_OK;
+		break;
+	}
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
 		break;

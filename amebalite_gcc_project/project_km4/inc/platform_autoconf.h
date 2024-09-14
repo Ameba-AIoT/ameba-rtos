@@ -92,7 +92,6 @@
 #define CONFIG_AMEBALITE 1
 #define ARM_CORE_CM4 1
 #undef  CONFIG_FPGA
-#define CONFIG_AMEBALITE_A_CUT 1
 
 /*
  * < CONFIG OS

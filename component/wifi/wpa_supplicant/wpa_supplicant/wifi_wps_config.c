@@ -863,10 +863,12 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 		}
 	}
 
+#if CONFIG_AUTO_RECONNECT
 	wifi_get_autoreconnect(&auto_reconnect_status);
 	if (auto_reconnect_status != 0) {
 		wifi_config_autoreconnect(0);
 	}
+#endif
 
 	/* check if STA is conencting */
 	while ((wifi_get_join_status() > RTW_JOINSTATUS_UNKNOWN) && (wifi_get_join_status() < RTW_JOINSTATUS_SUCCESS)) {
@@ -1032,7 +1034,9 @@ exit1:
 	wpas_wps_deinit();
 
 exit2:
+#if CONFIG_AUTO_RECONNECT
 	wifi_config_autoreconnect(auto_reconnect_status);
+#endif
 	return ret;
 }
 

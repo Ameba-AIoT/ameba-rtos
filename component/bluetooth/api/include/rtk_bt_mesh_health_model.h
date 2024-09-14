@@ -169,6 +169,8 @@ typedef enum {
 	RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CURRENT_FAULT_CLEAR_ALL,
 	RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_FAULT_COUNT,
 	RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CHECK_FAULT_IS_SET,
+	RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_TEST_SET,
+	RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_COMPANY_ID_SET,
 	RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_MAX,
 } rtk_bt_mesh_health_server_model_act_t;
 
@@ -264,6 +266,35 @@ typedef struct {
 typedef struct {
 	uint8_t attn;
 } rtk_bt_mesh_health_server_attn_set_t;
+
+typedef void (*rtk_bt_mesh_health_server_test_cb_t)(const void *pmodel_info, uint16_t company_id,
+													uint8_t test_id);
+
+/**
+ * @typedef   rtk_bt_mesh_health_server_test_t
+ * @brief     BLE MESH health test setting message structure.
+ */
+typedef struct {
+	uint8_t test_id;
+	rtk_bt_mesh_health_server_test_cb_t test_cb; //rtk_bt_mesh_health_server_test_cb_t
+} rtk_bt_mesh_health_server_test_t;
+
+/**
+ * @typedef   rtk_bt_mesh_health_server_test_set_t
+ * @brief     BLE MESH health test set act message structure.
+ */
+typedef struct {
+	uint8_t num_tests;
+	void *test; //rtk_bt_mesh_health_server_test_t
+} rtk_bt_mesh_health_server_test_set_t;
+
+/**
+ * @typedef   rtk_bt_mesh_health_server_company_id_set_t
+ * @brief     BLE MESH health company id set act message structure.
+ */
+typedef struct {
+	uint16_t company_id;
+} rtk_bt_mesh_health_server_company_id_set_t;
 
 /********************************* Functions Declaration *******************************/
 /**
@@ -379,6 +410,26 @@ uint16_t rtk_bt_mesh_health_server_fault_count(rtk_bt_mesh_health_server_count_f
  *            - Others: Error code
  */
 uint16_t rtk_bt_mesh_health_server_fault_check(rtk_bt_mesh_health_server_check_fault_act_t *health_fault_check);
+
+/**
+ * @fn        uint16_t rtk_bt_mesh_health_server_set_tests(rtk_bt_mesh_health_server_test_set_t *test_set)
+ * @brief     Send health server fault test set message to set related health test, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_TEST_SET
+ * @param[in] test_set: health fault test set message structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_health_server_set_tests(rtk_bt_mesh_health_server_test_set_t *test_set);
+
+/**
+ * @fn        uint16_t rtk_bt_mesh_health_server_set_company_id(rtk_bt_mesh_health_server_company_id_set_t *company_id_set)
+ * @brief     Send health server fault company id set message to set health server company id, will cause event @ref RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_COMPANY_ID_SET
+ * @param[in] company_id_set: health fault company id set message structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_health_server_set_company_id(rtk_bt_mesh_health_server_company_id_set_t *company_id_set);
 
 /**
  * @}
