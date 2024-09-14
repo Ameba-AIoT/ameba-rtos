@@ -67,14 +67,21 @@ extern "C" {
  * @brief The enumeration lists the results of the function.
  */
 typedef enum _rtw_result_t {
-	RTW_SUCCESS                      = 0,    /**< Success */
-	RTW_TIMEOUT                      = 2,    /**< Timeout */
-	RTW_INVALID_KEY                  = 4,        /**< Invalid key */
+	RTW_SUCCESS                      = 0,	/**< Success */
 
-	RTW_ERROR                        = -1,   /**< Generic Error */
-	RTW_BADARG                       = -2,   /**< Bad Argument */
-	RTW_BUSY                         = -16,  /**< Busy */
-	RTW_NOMEM                        = -27,  /**< No Memory */
+	RTW_ERROR                        = -1,	/**< Generic Error */
+	RTW_BADARG                       = -2,	/**< Bad Argument */
+	RTW_BUSY                         = -3,	/**< Busy */
+	RTW_NOMEM                        = -4,	/**< No Memory */
+	RTW_TIMEOUT                      = -5,	/**< Timeout */
+
+	RTW_CONNECT_INVALID_KEY	         = -11,	/**< Invalid key */
+	RTW_CONNECT_SCAN_FAIL            = -12,
+	RTW_CONNECT_AUTH_FAIL            = -13,
+	RTW_CONNECT_AUTH_PASSWORD_WRONG  = -14,
+	RTW_CONNECT_ASSOC_FAIL           = -15,
+	RTW_CONNECT_4WAY_HANDSHAKE_FAIL  = -16,
+	RTW_CONNECT_4WAY_PASSWORD_WRONG  = -17,
 } rtw_result_t;
 
 #if defined(__IAR_SYSTEMS_ICC__) || defined (__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
@@ -117,7 +124,6 @@ enum SPEAKER_SET_TYPE {
 /**
  * @brief The enumeration typedef export to user. */
 typedef enum rtw_promisc_level rtw_rcr_level_t;
-// typedef enum rtw_country_code rtw_country_code_t; // rtw_country_code removed from rtw_wifi_defs.h
 typedef enum rtw_wpa_mode_type rtw_wpa_mode;
 typedef enum rtw_autoreconnect_mode rtw_autoreconnect_mode_t;
 typedef enum rtw_event_indicate rtw_event_indicate_t;
@@ -251,6 +257,19 @@ typedef struct _raw_data_desc_t {
 	unsigned short		flags;        /**< send options*/
 } raw_data_desc_t;
 
+
+/**
+ * @brief  The structure is status of wpa_4way.
+ */
+struct rtw_wpa_4way_status {
+	u8 *mac_addr;             /**< mac addr of 4-way interactive peer device */
+	u8 wlan_idx;              /**< index of wlan interface */
+	u8 is_start : 1;          /**< start(1) or stop(0) of 4way/2way exchange */
+	u8 is_grpkey_update : 1;  /**< indicate first key change(0) or update grp_key change(1) */
+	u8 is_success : 1;        /**< result of 4way/2way exchange: 0-fail; 1-success */
+};
+
+
 /**
  * @brief  The structure is crypt info.
  */
@@ -362,7 +381,6 @@ typedef struct _rtw_network_info_t {
 	unsigned char				channel;		/**< set to 0 means full channel scan, set to other value means only scan on the specified channel */
 	unsigned char				pscan_option;	/**< used when the specified channel is set, set to 0 for normal partial scan, set to PSCAN_FAST_SURVEY for fast survey*/
 	unsigned char 				is_wps_trigger;	/**< connection triggered by WPS process**/
-	rtw_joinstatus_callback_t	joinstatus_user_callback;	/**< user callback for processing joinstatus, please set to NULL if not use it */
 	struct _rtw_wpa_supp_connect_t	wpa_supp;
 	struct _rtw_mac_t		prev_bssid;
 	u8							by_reconn; /*connection triggered by RTK auto reconnect process, user can ignore*/
@@ -712,20 +730,6 @@ struct country_code_table_t {
 };
 
 /**
-  * @brief  The enumeration lists the conenct results.
-  */
-enum rtw_connect_result {
-	RTW_CONNECT_SUCCESS,
-	RTW_CONNECT_SCAN_FAIL,
-	RTW_CONNECT_AUTH_FAIL,
-	RTW_CONNECT_AUTH_PASSWORD_WRONG,
-	RTW_CONNECT_ASSOC_FAIL,
-	RTW_CONNECT_4WAY_HANDSHAKE_FAIL,
-	RTW_CONNECT_4WAY_PASSWORD_WRONG,
-	RTW_CONNECT_UNKNOWN_FAIL,
-};
-
-/**
   * @brief  The enumeration lists the disconnet reasons.
   */
 enum rtw_disconn_reason {
@@ -779,9 +783,9 @@ struct rtw_event_disconn_info_t {
 };
 
 struct rtw_event_join_fail_info_t {
-	u8 fail_reason;/*Detail in enum rtw_connect_result*/
-	u16 reason_or_status_code;/*from AP*/
-	u8	bssid[6]; /*AP's MAC address*/
+	enum _rtw_result_t	fail_reason;
+	u16					reason_or_status_code;/*from AP*/
+	u8					bssid[6]; /*AP's MAC address*/
 };
 
 #ifndef CONFIG_FULLMAC
@@ -888,9 +892,19 @@ int wifi_is_running(unsigned char wlan_idx);
  * @param[in]  block: if block is set to 1, it means synchronized wifi connect, and this
 * 	API will return until connect is finished; if block is set to 0, it means asynchronized
 * 	wifi connect, and this API will return immediately.
- * @return  RTW_SUCCESS: when the system is joined for synchronized wifi connect, when connect
-* 	cmd is set successfully for asynchronized wifi connect.
- * @return  RTW_ERROR: if an error occurred.
+ * @return  RTW_SUCCESS: Join successfully for synchronized wifi connect,
+ *  or connect cmd is set successfully for asynchronized wifi connect.
+ * @return  RTW_ERROR: An error occurred.
+ * @return  RTW_BUSY: Wifi connect or scan is ongoing.
+ * @return  RTW_NOMEM: Malloc fail during wifi connect.
+ * @return  RTW_TIMEOUT: More than RTW_JOIN_TIMEOUT(43s) without successful connection.
+ * @return  RTW_CONNECT_INVALID_KEY: Password format wrong.
+ * @return  RTW_CONNECT_SCAN_FAIL: Scan fail.
+ * @return  RTW_CONNECT_AUTH_FAIL: Auth fail.
+ * @return  RTW_CONNECT_AUTH_PASSWORD_WRONG: Password error causing auth failure, not entirely accurate.
+ * @return  RTW_CONNECT_ASSOC_FAIL: Assoc fail.
+ * @return  RTW_CONNECT_4WAY_HANDSHAKE_FAIL: 4 way handshake fail.
+ * @return  RTW_CONNECT_4WAY_PASSWORD_WRONG: Password error causing 4 way handshake failure,not entirely accurate.
  * @note  Please make sure the Wi-Fi is enabled before invoking this function.
  * 	(@ref wifi_on())
  * @note  if bssid in connect_param is set, then bssid will be used for connect, otherwise ssid

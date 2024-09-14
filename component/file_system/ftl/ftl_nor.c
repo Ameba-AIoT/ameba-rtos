@@ -9,52 +9,28 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "os_wrapper.h"
-
 #include "ftl_nor.h"
-
+#include "flash_api.h"
 #if defined(CONFIG_FTL_EN) && CONFIG_FTL_EN
 #include "ftl_common_api.h"
 #endif
 
-#include "flash_api.h"
-
-//////////////////////////////////////////////////
-
-#define FTL_PRINT_LEVEL	FTL_LEVEL_ERROR
-
+#define FTL_PRINT_LEVEL					FTL_LEVEL_ERROR
 #define FTL_PRINTF(LEVEL, pFormat, ...)     do {\
    if (LEVEL <= FTL_PRINT_LEVEL)\
         RTK_LOGS(#LEVEL, pFormat"\r\n", ##__VA_ARGS__);\
 }while(0)
 
-//////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////
-// [config]
-
-//#define DBG_EN 1
-//#define USE_LOCAL_DBG_DIRECT 1
-//#define MONITOR_STATUS_INFO 1
-
-#define FTL_MAGIC_PATTERN_VER01 0x635E
-#define FTL_MAGIC_PATTERN_VER02 0x777F
-
-//#define EXTRA_DEBUG 1
-//#define FEATURE_WRITE_RECYCLE 1
-//#define SAVE_TO_STORAGE_RECONFIRM_EN 1
-
+//#define DBG_EN 						1
+//#define MONITOR_STATUS_INFO 			1
+#define FTL_MAGIC_PATTERN_VER01 		0x635E
+#define FTL_MAGIC_PATTERN_VER02 		0x777F
+//#define EXTRA_DEBUG 					1
+//#define SAVE_TO_STORAGE_RECONFIRM_EN 	1
 #define FTL_USE_MAPPING_TABLE			1
 #define FTL_ONLY_GC_IN_IDLE				0
 #define FTL_APP_LOGICAL_ADDR_BASE		0
-
-
-#if defined(WIN32) && (WIN32 == 1)
-#define RAVEN_DEBUG 1
-#endif
-
-/////////////////////////////////////////////////////////////////
-#define LOGIC_ADDR_MAP_BIT_NUM 12
+#define LOGIC_ADDR_MAP_BIT_NUM 			12
 
 struct Page_T *g_pPage = 0;
 uint16_t       g_free_cell_index;
@@ -65,48 +41,35 @@ uint8_t        g_free_page_count;
 uint8_t        g_active = 0;
 
 ALIGNMTO(64) rtos_mutex_t ftl_mutex_lock;
-
-#if defined(FEATURE_WRITE_RECYCLE) && (FEATURE_WRITE_RECYCLE == 1)
-uint8_t  g_read_pageID;
-uint16_t g_read_data_index;
-#endif
+ALIGNMTO(64) rtos_mutex_t ftl_write_lock;
 
 #if defined(MONITOR_STATUS_INFO) && (MONITOR_STATUS_INFO == 1)
-#define MONITOR_STATUS_INFO_TABLE_SIZE (10)
+#define MONITOR_STATUS_INFO_TABLE_SIZE 		(10)
 uint32_t g_EraseCnt[ MONITOR_STATUS_INFO_TABLE_SIZE ]; // test 10
 uint32_t g_GarbageCnt;
 uint32_t g_RecycleCnt;
 uint32_t g_WriteCnt;
 #endif
 
-#if 1//CONFIG_EFLASH_BOARD_EXIST
+#define FMC_PAGE_SIZE            	0x1000
+#define PAGE_element             	(FMC_PAGE_SIZE/4)
+#define PAGE_element_data        	((FMC_PAGE_SIZE/8)-1)    // 511
+#define MAX_logical_address_size 	(((PAGE_element_data*(g_PAGE_num-1))-1)<<2)
+#define MAPPING_TABLE_SIZE   		(MAX_logical_address_size / 4 * LOGIC_ADDR_MAP_BIT_NUM / 8)
+#define BIT_VALID           		BIT31
+#define WRITABLE_32BIT          	0xffffffff
 
-/////////////////////////////////////////////////////////////////
-
-#define FMC_PAGE_SIZE            0x1000
-#define PAGE_element             (FMC_PAGE_SIZE/4)
-#define PAGE_element_data        ( (FMC_PAGE_SIZE/8)-1)    // 511
-#define MAX_logical_address_size (((PAGE_element_data*(g_PAGE_num-1))-1)<<2)
-
-#define MAPPING_TABLE_SIZE   (MAX_logical_address_size / 4 * LOGIC_ADDR_MAP_BIT_NUM / 8)
-
-#define BIT_VALID           BIT31
-
-#define WRITABLE_32BIT           0xffffffff
-
-#define INFO_beg_index (0)
-#define INFO_end_index (1)
-#define INFO_size      (2)
-
-#define FTL_ASSERT(x)   //PLATFORM_ASSERT(x)
+#define INFO_beg_index 				(0)
+#define INFO_end_index 				(1)
+#define INFO_size      				(2)
+#define FTL_ASSERT(x)   			assert_param(x)
 
 // 2K bytes / per page
 struct Page_T {
 	uint32_t Data[PAGE_element];
 };
-
 u32 ftl_phy_page_start_addr;	/* The start offset of flash pages which is allocated to FTL physical map.
-															Users should modify it according to their own memory layout!! */
+									Users should modify it according to their own memory layout!! */
 u8 ftl_phy_page_num = 3;		/* The number of physical map pages, default is 3*/
 rtos_sema_t ftl_sem = NULL;
 uint8_t *ftl_mapping_table = NULL;
@@ -195,7 +158,6 @@ uint32_t ftl_page_write(struct Page_T *p, uint32_t index, uint32_t data)
 	} else {
 		return FTL_WRITE_ERROR_OUT_OF_SPACE;
 	}
-
 }
 
 uint8_t ftl_get_page_seq(struct Page_T *p)
@@ -298,7 +260,6 @@ uint8_t ftl_get_free_page_count(void)
 
 uint32_t ftl_get_page_end_position(struct Page_T *p, uint16_t *pEndPos)
 {
-
 	uint32_t tmp = ftl_page_read(p, INFO_end_index);
 
 	if (flash_get_bit(tmp, BIT_VALID)) {
@@ -310,15 +271,14 @@ uint32_t ftl_get_page_end_position(struct Page_T *p, uint16_t *pEndPos)
 	} else {
 		return FTL_ERROR_PAGE_END_FORMAT;
 	}
-
 }
 
 
 uint8_t ftl_get_prev_page(uint8_t CurPageID, uint8_t *pPrePageID) // 0 is ok
 {
 	uint8_t result = 1;
-
 	uint8_t PrePageID;
+
 	if (CurPageID == 0) {
 		PrePageID = g_PAGE_num - 1;
 	} else {
@@ -428,19 +388,17 @@ uint8_t ftl_page_get_oldest(void)
 	// make sure valid
 	FTL_ASSERT(0 == ftl_page_is_valid(g_pPage + OldestPage));
 
-#if 0 // EXTRA_DEBUG
+#ifdef EXTRA_DEBUG
 	if (OldestPage == 0) {
 		// make sure next page is invalid
-		ASSERT(ftl_page_is_valid(g_pPage + PAGE_num - 1));
+		FTL_ASSERT(ftl_page_is_valid(g_pPage + PAGE_num - 1));
 	} else {
 		// make sure next page is invalid
-		ASSERT(ftl_page_is_valid(g_pPage + OldestPage - 1));
+		FTL_ASSERT(ftl_page_is_valid(g_pPage + OldestPage - 1));
 	}
 #endif
 
 	FTL_ASSERT(OldestPage != g_cur_pageID);
-
-	//FLASH_PRINT_TRACE1("OldestPage: %d\r\n", OldestPage);
 
 	return OldestPage;
 }
@@ -450,9 +408,6 @@ uint8_t ftl_page_get_oldest(void)
 uint16_t   ftl_page_garbage_collect_Imp(void)
 {
 	uint16_t RecycleNum = 0;
-
-
-	//ftl_ioctl( FTL_IOCTL_DEBUG, 0, 0);
 
 	int8_t retry_count = g_PAGE_num - ftl_get_free_page_count() - 1;
 	FTL_ASSERT(g_PAGE_num > retry_count && retry_count >= 0);
@@ -517,7 +472,6 @@ L_retry:
 		return RecycleNum;
 	}
 
-
 	FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ftl_page_garbage_collect_Imp: Recycle_page:%d, RecycleNum:%d, retry_count:%d",
 			   Recycle_page, RecycleNum, retry_count);
 
@@ -543,10 +497,6 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 {
 	uint8_t result = 0;
 
-	if (NULL != ftl_sem) {
-		rtos_mutex_recursive_take(ftl_sem, RTOS_MAX_DELAY);
-	}
-
 	if (g_doingGarbageCollection == 0) {
 		g_doingGarbageCollection = 1;
 
@@ -560,10 +510,6 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 		}
 
 		g_doingGarbageCollection = 0;
-	}
-
-	if (NULL != ftl_sem) {
-		rtos_mutex_recursive_give(ftl_sem);
 	}
 
 	return result;
@@ -587,8 +533,6 @@ void ftl_set_page_end_position(struct Page_T *p, uint16_t Endpos)
 {
 	uint32_t data = Endpos;
 	data |= 0xffff0000;
-
-	//ftl_page_write(p, INFO_end_index,  data);
 
 	flash_set_bit(&data, BIT_VALID);
 	FTL_ASSERT(1 == flash_get_bit(data, BIT_VALID));
@@ -756,17 +700,11 @@ uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
 	return result;
 }
 
-
-
 void ftl_recover_from_power_lost(void)
 {
-	//DBG_PRINT_INFO_2("ftl_recover_from_power_lost");
-
 	if (ftl_get_free_page_count()) {
 		return;
 	}
-
-	//FLASH_PRINT_TRACE0("ftl_recover_from_power_lost");
 
 	int16_t RecycleNum = 0;
 
@@ -814,8 +752,6 @@ void ftl_recover_from_power_lost(void)
 
 					//FTL_ASSERT(length == 1);
 
-
-
 					ftl_write(addr, rdata);
 				} else {
 					++later_to_write_item_num;
@@ -846,8 +782,6 @@ void ftl_recover_from_power_lost(void)
 #ifdef DBG_EN
 	ftl_ioctl(FTL_IOCTL_DEBUG, 0, 0);
 #endif
-
-
 }
 
 uint16_t read_mapping_table(uint16_t logical_addr)
@@ -896,7 +830,6 @@ uint32_t ftl_read(uint16_t logical_addr, uint32_t *value)
 {
 	uint32_t ret = FTL_READ_SUCCESS;
 
-
 	if (ftl_check_logical_addr(logical_addr)) {
 		//PLATFORM_ASSERT(0);
 		return FTL_READ_ERROR_INVALID_LOGICAL_ADDR;
@@ -907,7 +840,6 @@ uint32_t ftl_read(uint16_t logical_addr, uint32_t *value)
 			int32_t key_index = g_free_cell_index - 1;
 
 L_retry:
-
 			// todo, length is 1
 			//PRINTF("pageID,key_index: %d, %d \r\n", pageID, key_index);
 
@@ -928,12 +860,6 @@ L_retry:
 						found = 1;
 						*value = ftl_page_read(g_pPage + pageID, key_index - 1);
 						ret = 0;
-
-#if defined(FEATURE_WRITE_RECYCLE) && (FEATURE_WRITE_RECYCLE == 1)
-						g_read_pageID = pageID;
-						g_read_data_index = key_index - 1;
-#endif
-
 						break;
 					}
 				} else {
@@ -1022,7 +948,6 @@ uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 	uint16_t bak_size = size;
 #endif
 
-
 	uint32_t ret = 0;
 
 	while (size > 0) {
@@ -1032,7 +957,7 @@ uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 									 (pdata8[3] << 24));
 
 		ret = ftl_write(offset, data32);
-		FTL_ASSERT(result == 0);
+		FTL_ASSERT(ret == 0);
 
 		if (ret) {
 			break;
@@ -1043,9 +968,7 @@ uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 		pdata8 += 4;
 	}
 
-
 #if defined(SAVE_TO_STORAGE_RECONFIRM_EN) && (SAVE_TO_STORAGE_RECONFIRM_EN == 1)
-
 
 	if (ret == 0) {
 		pdata8 = (uint8_t *)pdata_tmp;
@@ -1089,10 +1012,9 @@ __WEAK uint32_t nor_ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16
 	u32 ret;
 	if (ftl_mutex_lock == NULL) {
 		return FTL_WRITE_ERROR_NOT_INIT;
-	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != 0) {
+	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != SUCCESS) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
-
 
 	ret = ftl_save_to_storage_i(pdata_tmp, offset, size);
 
@@ -1137,10 +1059,9 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 {
 	uint32_t ret = FTL_WRITE_SUCCESS;
 
-	uint8_t sem_flag = FALSE;
-//#if defined (ARM_CORE_CA32)
+//#if defined (CONFIG_ARM_CORE_CA32)
 //	if (CPSR_M_IRQ == __get_mode()) {
-//		DBG_8195A("ARM_CORE_CA32\n");
+//		DBG_8195A("CONFIG_ARM_CORE_CA32\n");
 //		FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] FTL_write should not be called in interrupt handler!\n");
 //		return FTL_WRITE_ERROR_IN_INTR;
 //	}
@@ -1151,10 +1072,10 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 //	}
 //
 //#endif
-	if (NULL != ftl_sem) {
-		if (rtos_mutex_recursive_take(ftl_sem, RTOS_MAX_DELAY) == TRUE) {
-			sem_flag = TRUE;
-		}
+	if (ftl_write_lock == NULL) {
+		return FTL_WRITE_ERROR_NOT_INIT;
+	} else if (rtos_mutex_take(ftl_write_lock, 100) != SUCCESS) {
+		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 
 	if (ftl_check_logical_addr(logical_addr)) {
@@ -1235,9 +1156,7 @@ L_retry:
 		}
 	}
 
-	if (sem_flag) {
-		rtos_mutex_recursive_give(ftl_sem);
-	}
+	rtos_mutex_give(ftl_write_lock);
 
 	FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] w 0x%08x: 0x%08x (%d)\r\n", logical_addr, (unsigned int)w_data, (int)ret);
 
@@ -1249,7 +1168,7 @@ __WEAK uint32_t nor_ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint
 	u32 ret;
 	if (ftl_mutex_lock == NULL) {
 		return FTL_READ_ERROR_NOT_INIT;
-	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != 0) {
+	} else if (rtos_mutex_take(ftl_mutex_lock, 100) != SUCCESS) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 
@@ -1261,22 +1180,67 @@ __WEAK uint32_t nor_ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint
 }
 
 
-#if 0
-uint32_t ftl_load(void *pdata, uint16_t offset, uint16_t size)
+void ftl_mapping_table_init(void)
 {
-	return ftl_load_from_storage(pdata, offset + FTL_APP_LOGICAL_ADDR_BASE * 1024,
-								 size);
-}
+	if (NULL == ftl_mapping_table) {
+		ftl_mapping_table = rtos_mem_zmalloc(MAPPING_TABLE_SIZE);
+	}
 
-uint32_t ftl_save(void *pdata, uint16_t offset, uint16_t size)
-{
-	return ftl_save_to_storage(pdata, offset + FTL_APP_LOGICAL_ADDR_BASE * 1024, size);
+	uint8_t pageID = g_cur_pageID;
+	int32_t key_index = g_free_cell_index - 1;
+
+L_retry:
+
+	// todo, length is 1
+	//PRINTF("pageID,key_index: %d, %d \r\n", pageID, key_index);
+
+	for (; key_index >= 3; key_index -= 2) {
+		uint32_t key = ftl_page_read(g_pPage + pageID, key_index);
+
+		uint32_t length = ftl_key_get_length(key);
+
+		if (length == 0) {
+			continue;
+		}
+
+		//PLATFORM_ASSERT( length == 1);
+
+		if (length == 1) {
+			uint16_t addr = key & 0xffff;
+			if (!read_mapping_table(addr)) {
+				write_mapping_table(addr, pageID, key_index - 1);
+			}
+		} else {
+			FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] length != 1! func: %s, line: %d", __FUNCTION__, __LINE__);
+		}
+
+	}
+
+	uint8_t prePageID;
+	if (0 == ftl_get_prev_page(pageID, &prePageID)) {
+		uint16_t EndPos;
+
+		if (0 == ftl_get_page_end_position(g_pPage + prePageID, &EndPos)) {
+			key_index = EndPos;
+			pageID = prePageID;
+
+			goto L_retry;
+		} else {
+			//TODO;
+			// todo, error recovery
+
+			key_index = PAGE_element - 1;
+			pageID = prePageID;
+
+			goto L_retry;
+		}
+	}
 }
-#endif
 
 uint32_t nor_ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 {
 	rtos_mutex_create(&ftl_mutex_lock);
+	rtos_mutex_create(&ftl_write_lock);
 	if (pagenum < 3) {
 		pagenum = 3;
 	}
@@ -1348,44 +1312,8 @@ uint32_t nor_ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 			break;
 		}
 	}
-
-
-#if defined(WIN32) && (WIN32 == 1)
-#if defined(EXTRA_DEBUG) && (EXTRA_DEBUG == 1)
-	uint8_t   bak_g_cur_pageID      = g_cur_pageID;
-	uint16_t  bak_g_free_cell_index = g_free_cell_index;
-#endif
-#endif
-
 	g_cur_pageID = cur_pageID;
 	g_free_cell_index = free_cell_index;
-
-#if defined(WIN32) && (WIN32 == 1)
-#if defined(EXTRA_DEBUG) && (EXTRA_DEBUG == 1)
-
-	//if(1==rand()%100)
-	//{
-	//    // raven.test fail
-	//    bak_g_cur_pageID = 7;
-	//}
-
-	if (g_cur_pageID != bak_g_cur_pageID) {
-		DPRINTF("\n\n[debug]\n");
-
-		ftl_ioctl(FTL_IOCTL_DEBUG, 1, 0);
-
-		DPRINTF("old_g_cur_pageID: %d, ", bak_g_cur_pageID);
-		DPRINTF("old_g_free_cell_index: %d\n", bak_g_free_cell_index);
-	}
-
-	FTL_ASSERT(g_cur_pageID == bak_g_cur_pageID);
-	if (bak_g_free_cell_index == 0) {
-		bak_g_free_cell_index = 2;
-	}
-	FTL_ASSERT(g_free_cell_index == bak_g_free_cell_index);
-
-#endif
-#endif
 
 	ftl_ioctl(FTL_IOCTL_DEBUG, 0, 0);
 
@@ -1398,233 +1326,3 @@ uint32_t nor_ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 
 	return 0;
 }
-
-void ftl_mapping_table_init(void)
-{
-	if (NULL == ftl_mapping_table) {
-		//ftl_mapping_table = os_mem_zalloc((RAM_TYPE)ftl_config.ftl_mapping_table_ram_type,
-		//                                  MAPPING_TABLE_SIZE);//table is initialised as 0
-
-		ftl_mapping_table = rtos_mem_zmalloc(MAPPING_TABLE_SIZE);
-	}
-
-	uint8_t pageID = g_cur_pageID;
-	int32_t key_index = g_free_cell_index - 1;
-
-L_retry:
-
-	// todo, length is 1
-	//PRINTF("pageID,key_index: %d, %d \r\n", pageID, key_index);
-
-	for (; key_index >= 3; key_index -= 2) {
-		uint32_t key = ftl_page_read(g_pPage + pageID, key_index);
-
-		uint32_t length = ftl_key_get_length(key);
-
-		if (length == 0) {
-			continue;
-		}
-
-		//PLATFORM_ASSERT( length == 1);
-
-		if (length == 1) {
-			uint16_t addr = key & 0xffff;
-			if (!read_mapping_table(addr)) {
-				write_mapping_table(addr, pageID, key_index - 1);
-			}
-		} else {
-			FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] length != 1! func: %s, line: %d", __FUNCTION__, __LINE__);
-		}
-
-	}
-
-	uint8_t prePageID;
-	if (0 == ftl_get_prev_page(pageID, &prePageID)) {
-		uint16_t EndPos;
-
-		if (0 == ftl_get_page_end_position(g_pPage + prePageID, &EndPos)) {
-			key_index = EndPos;
-			pageID = prePageID;
-
-			goto L_retry;
-		} else {
-			//TODO;
-			// todo, error recovery
-
-			key_index = PAGE_element - 1;
-			pageID = prePageID;
-
-			goto L_retry;
-		}
-	}
-}
-
-#if 0//WIN32
-
-uint32_t FMC_Erase_Page(uint32_t u32PageAddr)
-{
-	struct Page_T *p = (struct Page_T *) u32PageAddr;
-
-	uint32_t i;
-
-	for (i = 0; i < (PAGE_element); ++i) {
-		p->Data[i] = WRITABLE_32BIT;
-	}
-	return 0;
-}
-
-uint32_t FMC_Read(uint32_t u32Addr)
-{
-	uint32_t *pData = (uint32_t *) u32Addr;
-
-	return *pData;
-}
-
-uint32_t FMC_Write(uint32_t u32Addr, uint32_t u32Data)
-{
-	uint32_t *pData = (uint32_t *) u32Addr;
-
-	// check
-	uint32_t i;
-	for (i = 0; i < 32; ++i) {
-		uint8_t bit_from = ((*pData) & (0x1 << i)) ? 1 : 0;
-		uint8_t bit_to   = (u32Data & (0x1 << i)) ? 1 : 0;
-
-		if (bit_from == 0 && bit_to == 1) {
-			BUG;
-		}
-	}
-
-	*pData = u32Data;
-
-	ASSERT(u32Data == FMC_Read(u32Addr));
-
-	return FMC_SUCCESS;
-}
-
-#endif // WIN32
-
-
-#else // CONFIG_EFLASH_BOARD_EXIST
-
-
-#if 0
-
-// from kevin's reply
-FPGA mode support Data SRAM range 0x2000_0000 - 0x2003_FFFF(64k)
-real SRAM range is 0x2001_0000 - 0x2001_0000(64KB)
-test SRAM range is 0x2001_0000 - 0x2003_FFFF(192KB)
-
-
-// raven.todo
-/* tmp for fake flash in ram section */
-FAKE_FLASH_MAIN(rwx)  : ORIGIN = 0x20010000, LENGTH = 256K
-									 FAKE_FLASH_INFO(rwx)  : ORIGIN = 0x20050000, LENGTH = 2K
-											 FAKE_FLASH_REDU(rwx)  : ORIGIN = 0x20050800, LENGTH = 2K
-													 FAKE_FLASH_TRIM(rwx)  : ORIGIN = 0x20051000, LENGTH = 2K
-#endif
-
-#define FAKE_PAGE_num (5)
-
-#define PAGE_element_data        ( (FMC_PAGE_SIZE/8)-1)    // 255
-#define MAX_logical_u32_count    ((PAGE_element_data*(FAKE_PAGE_num-1))-1)
-#define MAX_logical_address_size (MAX_logical_u32_count<<2)
-#define Fake_FTL_BASE (0x20010000)
-
-															 typedef struct {
-	uint32_t m_table[MAX_logical_u32_count];
-} Fake_FTL_T;
-
-#define Fake_FTL  ((Fake_FTL_T *) Fake_FTL_BASE)   // Pointer to FMC register structure
-
-// logical_addr is 4 bytes alignment addr
-uint32_t ftl_check_logical_addr(uint16_t logical_addr)
-{
-	if (logical_addr & 0x3) {
-		while (1);
-	}
-
-	if (logical_addr >= MAX_logical_address_size) {
-		DPRINTF("logical_addr >= MAX_logical_address_size \n");
-
-		while (1);
-	}
-
-	return 0;
-}
-
-uint32_t ftl_init(uint8_t pagenum)
-{
-	pagenum = FAKE_PAGE_num;
-
-	DPRINTF("[Fake_FTL in RAM] init(%d) \n", pagenum);
-
-	UNUSED(g_pPage);
-	UNUSED(g_last_error_code);
-	UNUSED(g_free_cell_index);
-	UNUSED(g_cur_pageID);
-	UNUSED(g_doingGarbageCollection);
-	UNUSED(g_PAGE_num);
-
-#if 0
-
-	uint32_t i;
-
-	for (i = 0; i < (MAX_logical_u32_count); ++i) {
-		Fake_FTL->m_table[i] = 0xdeadbeef;
-	}
-
-	for (i = 0; i < (MAX_logical_u32_count); ++i) {
-		if (Fake_FTL->m_table[i] != 0xdeadbeef) {
-			DPRINTF("%d\n", i);
-
-			BUG;
-			while (1);
-		}
-	}
-
-#endif
-
-	return FMC_SUCCESS;
-}
-
-// logical_addr is 4 bytes alignment addr
-uint32_t ftl_read(uint16_t logical_addr)
-{
-	ftl_check_logical_addr(logical_addr);
-
-	logical_addr >>= 2;
-	uint32_t r_data = Fake_FTL->m_table[logical_addr];
-
-	ASIC_DPRINTF("[ftl] r 0x%08x: 0x%08x \r\n", logical_addr << 2, r_data);
-
-	return r_data;
-}
-
-uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
-{
-	ftl_check_logical_addr(logical_addr);
-
-	logical_addr >>= 2;
-	Fake_FTL->m_table[logical_addr] = w_data;
-
-	ASIC_DPRINTF("[ftl] w 0x%08x: 0x%08x \r\n", logical_addr << 2, w_data);
-
-	return FMC_SUCCESS;
-}
-
-uint32_t ftl_get_error()
-{
-	return FMC_SUCCESS;
-}
-
-uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
-{
-	return FMC_SUCCESS;
-}
-
-
-
-#endif // !CONFIG_EFLASH_BOARD_EXIST
-
-

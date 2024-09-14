@@ -17,6 +17,8 @@ extern "C" {
 #define BT_TIMEOUT_NONE             0
 #define BT_TIMEOUT_FOREVER          0xffffffffUL
 
+#define BT_SECURE_STACK_SIZE        (1024)
+
 /* task & isr context check interface */
 bool osif_task_context_check(void);
 

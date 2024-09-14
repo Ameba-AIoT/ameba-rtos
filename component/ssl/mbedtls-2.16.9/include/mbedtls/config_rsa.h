@@ -2193,7 +2193,7 @@
  *
  * This module is required for SSL/TLS and SHA1-signed certificates.
  */
-//#define MBEDTLS_SHA1_C  //Since some mbedTLS files are placed in ROM for AmebaDPlus, please do not enable this macro to avoid inconsistency between ROM and RAM configurations.
+#define MBEDTLS_SHA1_C
 
 /**
  * \def MBEDTLS_SHA256_C

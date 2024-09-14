@@ -49,8 +49,8 @@ OBJS = $(notdir $(CSRC:.c=.o))
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
-COPY_RAM_OBJS: CORE_TARGETS
-all: COPY_RAM_OBJS
+#COPY_RAM_OBJS: CORE_TARGETS
+all: CORE_TARGETS
 	$(call GEN_AND_MOVE_TO_LIB_FOLDER, $(TARGET_LIB), $(TARGET_LIBAPP_FOLDER))
 #*****************************************************************************#
 #              GENERATE OBJECT FILE 

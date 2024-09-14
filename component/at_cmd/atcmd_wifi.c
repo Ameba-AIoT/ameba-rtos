@@ -60,7 +60,6 @@ static void init_wifi_struct(void)
 	wifi.key_id = -1;
 	wifi.channel = 0;
 	wifi.pscan_option = 0;
-	wifi.joinstatus_user_callback = NULL;
 	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));
 	ap.ssid.len = 0;
 	ap.password = NULL;
@@ -378,10 +377,15 @@ void at_wlconn(void *arg)
 	/* Connecting ...... */
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTW_SUCCESS) {
-		if (ret == RTW_INVALID_KEY) {
-			RTK_LOGW(NOTAG, "[+WLCONN] Invalid Key set\r\n");
+		RTK_LOGW(NOTAG, "[+WLCONN] Fail:%d", ret);
+		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+			RTK_LOGW(NOTAG, "(password format wrong)");
+		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+			RTK_LOGW(NOTAG, "(not found AP)");
+		} else if (ret == RTW_BUSY) {
+			RTK_LOGW(NOTAG, "(busy)");
 		}
-		RTK_LOGW(NOTAG, "[+WLCONN] Can not connect to AP\r\n");
+		RTK_LOGW(NOTAG, "\r\n");
 		error_no = 4;
 		goto end;
 	}

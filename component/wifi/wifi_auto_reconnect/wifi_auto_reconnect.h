@@ -29,6 +29,8 @@ struct rtw_auto_reconn_t {
 	u8                  b_waiting: 1;
 };
 
+#define WIFI_STACK_SIZE_AUTO_RECONN_TASKLET	(1056 + 128 + CONTEXT_SAVE_SIZE)	/* max 1056 in lite */
+
 extern struct rtw_auto_reconn_t  rtw_reconn;
 void rtw_reconn_new_conn(rtw_network_info_t *connect_param);
 void rtw_reconn_join_status_hdl(char *buf, int flags);

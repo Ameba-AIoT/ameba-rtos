@@ -707,8 +707,6 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	}
 #endif
 
-	connect_param.joinstatus_user_callback = NULL;
-
 	ret = llhw_wifi_connect(&connect_param, 0);
 	if (ret < 0) {
 		/* KM4 connect failed */

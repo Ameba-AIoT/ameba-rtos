@@ -99,7 +99,6 @@ typedef struct {
 	u8(* Init)(NAND_FTL_DeviceTypeDef *nand);
 	u8(* SelectTarget)(NAND_FTL_DeviceTypeDef *nand, u8 target);
 	u8(* GetEccStatus)(NAND_FTL_DeviceTypeDef *nand, u8 status);
-	u8(* ReadParameterPage)(NAND_FTL_DeviceTypeDef *nand, u8 *data);
 } NAND_FTL_MfgOpsTypeDef;
 
 

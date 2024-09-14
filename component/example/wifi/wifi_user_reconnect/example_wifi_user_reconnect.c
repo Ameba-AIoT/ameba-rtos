@@ -30,6 +30,18 @@ WIFI_CONNECT:
 	/*Connect*/
 	RTK_LOGI(TAG, "Wifi connect start, retey cnt = %d\n", reconnect_cnt);
 	ret = wifi_connect(&connect_param, 1);
+	if (ret != RTW_SUCCESS) {
+		RTK_LOGI(TAG, "Reconnect Fail:%d", ret);
+		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+			RTK_LOGI(TAG, "(password format wrong)\r\n");
+		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+			RTK_LOGI(TAG, "(not found AP)\r\n");
+		} else if (ret == RTW_BUSY) {
+			RTK_LOGI(TAG, "(busy)\r\n");
+		} else {
+			RTK_LOGI(TAG, "(other)\r\n");
+		}
+	}
 
 	/*DHCP*/
 	if (ret == RTW_SUCCESS) {
@@ -45,7 +57,7 @@ WIFI_CONNECT:
 		}
 	}
 
-	/*Reconnect*/
+	/*Reconnect when connect fail or DHCP fail*/
 	reconnect_cnt++;
 	if (reconnect_cnt >= RECONNECT_LIMIT) {
 		RTK_LOGI(TAG, "Reconnect limit reach, Wifi connect fail\n");
@@ -72,10 +84,10 @@ void user_wifi_join_status_event_hdl(char *buf, int buf_len, int flags, void *us
 	enum rtw_join_status_type join_status = (enum rtw_join_status_type)flags;
 	u16 disconn_reason = 0;
 
-	/*RTW_JOINSTATUS_DISCONNECT will only happen after connected*/
+	/*Reconnect when disconnect after connected*/
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
 		disconn_reason = ((struct rtw_event_disconn_info_t *)buf)->disconn_reason;
-		/*disconnect by APP no need do reconnect*/
+		/*Disconnect by APP no need do reconnect*/
 		if (disconn_reason > WLAN_REASON_APP_BASE && disconn_reason < WLAN_REASON_APP_BASE_END) {
 			return;
 		}

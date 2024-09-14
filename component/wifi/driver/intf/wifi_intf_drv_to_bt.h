@@ -69,7 +69,7 @@ void rltk_bt_pta_init(void);
 void rltk_coex_bt_enable(u8 enable);
 int rltk_coex_mailbox_to_wifi(u8 *data, u8 len);
 int rltk_coex_bt_rfk(struct bt_rfk_param *rfk_param);
-
+void rltk_coex_bt_hci_notify(u8 *pdata, u16 len, u8 dir);
 #ifdef	__cplusplus
 }
 #endif

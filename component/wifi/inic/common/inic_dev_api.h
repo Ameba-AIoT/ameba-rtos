@@ -104,6 +104,13 @@ void inic_event_p2p_role(u32 api_id, u32 *param_buf);
 void inic_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 #endif
 
+#ifndef CONFIG_SDIO_BRIDGE
+void inic_event_get_scan_res(u32 api_id, u32 *param_buf);
+void inic_event_wifi_get_setting(u32 api_id, u32 *param_buf);
+void inic_event_send_eapol(u32 api_id, u32 *param_buf);
+void inic_event_get_assoc_client_list(u32 api_id, u32 *param_buf);
+#endif
+
 /* ---------------------------- Public Functions ---------------------------- */
 int wext_private_command(char *cmd, int show_msg, char *user_buf);
 int wifi_set_ips_internal(u8 enable);

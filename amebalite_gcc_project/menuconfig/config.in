@@ -472,9 +472,6 @@ choice 'ArmCore' "ARM_CM4 ARM_CORE_CM4_FOR_KM4 \
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_KM4
 
-choice 'Chip Version' "AMEBALITE_A_Cut			CONFIG_AMEBALITE_A_CUT_FOR_KM4
-		" AMEBALITE_A_Cut
-
 endmenu
 
 #===========================================================================
@@ -856,9 +853,6 @@ choice 'RSICVCore' "RSICV_KR4 RSICV_CORE_KR4_FOR_KR4  \
 		"RSICV_KR4
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_KR4
-
-choice 'Chip Version' "AMEBALITE_A_Cut			CONFIG_AMEBALITE_A_CUT_FOR_KR4
-		" AMEBALITE_A_Cut
 
 endmenu
 

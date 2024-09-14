@@ -238,7 +238,6 @@ int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char b
 		   sizeof(connect_param->channel) +
 		   sizeof(connect_param->pscan_option) +
 		   sizeof(connect_param->is_wps_trigger) +
-		   sizeof(u32) +
 		   sizeof(connect_param->wpa_supp) +
 		   sizeof(connect_param->prev_bssid) +
 		   connect_param->password_len;
@@ -268,9 +267,6 @@ int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char b
 
 	memcpy(ptr, &connect_param->is_wps_trigger, sizeof(connect_param->is_wps_trigger));
 	ptr += sizeof(connect_param->is_wps_trigger);
-
-	memcpy(ptr, &connect_param->joinstatus_user_callback, sizeof(u32));
-	ptr += sizeof(u32);
 
 	memcpy(ptr, &connect_param->wpa_supp, sizeof(connect_param->wpa_supp));
 	ptr += sizeof(connect_param->wpa_supp);
