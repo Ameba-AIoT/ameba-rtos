@@ -770,7 +770,7 @@ void at_wlstartap(void *arg)
 			}
 		} else if (0 == strcmp("pl", argv[i])) {
 			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
-				start_ip.addr = inet_addr(argv[j]);
+				ip_addr_set_ip4_u32(&start_ip, inet_addr(argv[j]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid start ip value\r\n");
 				error_no = 2;
@@ -778,7 +778,7 @@ void at_wlstartap(void *arg)
 			}
 
 			if (argv[j + 1] != NULL && inet_addr(argv[j + 1]) != IPADDR_NONE) {
-				end_ip.addr = inet_addr(argv[j + 1]);
+				ip_addr_set_ip4_u32(&end_ip, inet_addr(argv[j+1]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid end ip value\r\n");
 				error_no = 2;
