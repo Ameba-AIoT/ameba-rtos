@@ -9,16 +9,16 @@
 BOOT_RAM_DATA_SECTION
 const TZ_CFG_TypeDef sau_config[] = {
 	{0x0001E000,			0x00054000 - 1,			0},	/* entry0: IROM & DROM NS */
+	{0x08000000,			0x0A000000 - 1,			0},	/* entry1: BootLoader XIP */
 #if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
-	{0x08000000,			0x6015B000 - 1,			0},	/* entry1: Others */
-	{0x6015B000,			0x6015C000 - 1,			1},	/* entry2: NSC */
-	{0x60160000,			0xFFFFFFFF,				0},	/* entry3: TODO */
+	{0x0C000000,			0x6015B000 - 1,			0},	/* entry2: Others */
+	{0x6015B000,			0x6015C000 - 1,			1},	/* entry3: NSC */
+	{0x60160000,			0xFFFFFFFF,				0},	/* entry4: TODO */
 #else
-	{0x08000000,			0xFFFFFFFF,				0},	/* entry1: Others */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry2: TODO */
+	{0x0C000000,			0xFFFFFFFF,				0},	/* entry2: Others */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry3: TODO */
-#endif
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry4: TODO */
+#endif
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry5: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry6: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: TODO */
@@ -30,6 +30,8 @@ const TZ_CFG_TypeDef mpc1_config[] =					/* Security configuration for DDR/PSRAM
 //  Start					End						NSC
 #if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
 	{0x00000000,			0x0015B000 - 1,			0},	/* entry0: TODO */
+#elif defined (CONFIG_XIP_FLASH)
+	{0x00000000,			0x00060000 - 1, 		0}, /* entry0: TODO */
 #else
 	{0x00000000,			0x00180000 - 1,			0},	/* entry0: TODO */
 #endif
@@ -40,7 +42,7 @@ const TZ_CFG_TypeDef mpc1_config[] =					/* Security configuration for DDR/PSRAM
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry4: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry5: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry6: TODO */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: locked to [0x00300000, 0x00600000 - 1] in ATF for security reason */
+	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: locked to [CA32_BL3_DRAM_NS, 0x00600000 - 1] in ATF for security reason */
 };
 
 BOOT_RAM_DATA_SECTION

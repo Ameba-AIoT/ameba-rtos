@@ -353,11 +353,6 @@ typedef struct _rtw_phy_statistics_t {
 	unsigned int	supported_max_rate;
 } rtw_phy_statistics_t;
 
-typedef struct _promisc_para_t {
-	enum _promisc_rcr_mode filter_mode;
-	enum _promisc_result_t (*callback)(void *);
-} promisc_para_t, *ppromisc_para_t;
-
 typedef void (*rtw_joinstatus_callback_t)(enum rtw_join_status_type join_status);
 
 /**
@@ -558,6 +553,10 @@ struct rx_pkt_info {
 	u32 len;
 };
 
+typedef struct _promisc_para_t {
+	enum _promisc_rcr_mode filter_mode;
+	enum _promisc_result_t (*callback)(struct rx_pkt_info *pkt_info);
+} promisc_para_t, *ppromisc_para_t;
 
 typedef int (*wifi_do_fast_connect_ptr)(void);
 typedef int (*write_fast_connect_info_ptr)(unsigned int data1, unsigned int data2);

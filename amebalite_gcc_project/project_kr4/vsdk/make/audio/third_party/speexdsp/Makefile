@@ -16,6 +16,7 @@ vpath %.c $(DIR) $(shell find $(DIR) -type d)
 MODULE_IFLAGS = -I$(DIR)/libspeexdsp/
 MODULE_IFLAGS = -I$(DIR)/include/
 
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 GLOBAL_CFLAGS += -DHAVE_CONFIG_H
 GLOBAL_CFLAGS += -DFIXED_POINT
 

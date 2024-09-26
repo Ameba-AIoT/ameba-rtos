@@ -58,8 +58,6 @@ u32 gdma_memcpy_int(void *pData)
 
 	pSrcData = TestBuf1;
 	pDstData = TestBuf2;
-	/* Clean Auto Reload Bit */
-	GDMA_ChCleanAutoReload(dma_obj->index, dma_obj->ch_num, CLEAN_RELOAD_SRC_DST);
 
 	/* Write the cached value back to memory */
 	DCache_Invalidate(((u32)TestBuf2 & CACHE_LINE_ADDR_MSK), DATA_SIZE);
