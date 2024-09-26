@@ -266,8 +266,8 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	uint32_t tmp = rand();
 	SOCPS_AONTimer(tmp % 800 + 50);
 	SOCPS_AONTimerINT_EN(ENABLE);
-	InterruptRegister(pg_aontimer_int, AON_TIM_IRQ, NULL, 7);
-	InterruptEn(AON_TIM_IRQ, 7);
+	InterruptRegister(pg_aontimer_int, AON_TIM_IRQ, NULL, INT_PRI_MIDDLE);
+	InterruptEn(AON_TIM_IRQ, INT_PRI_MIDDLE);
 	SOCPS_SetNPWakeEvent_MSK0_HP(WAKE_SRC_AON_TIM, ENABLE);
 #endif
 

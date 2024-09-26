@@ -55,8 +55,10 @@ retry:
 
 		/* process rx data */
 		msg_info = (struct inic_msg_info *) rx_pkt->data;
-		skb_reserve(rx_pkt, sizeof(struct inic_msg_info));
+		skb_reserve(rx_pkt, sizeof(struct inic_msg_info) + msg_info->pad_len);
 		skb_put(rx_pkt, msg_info->data_len);
+
+		rx_pkt->dev = (void *)msg_info->wlan_idx;
 
 		inic_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 

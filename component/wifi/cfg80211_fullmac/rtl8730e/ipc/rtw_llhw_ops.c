@@ -1085,3 +1085,24 @@ int llhw_wifi_driver_is_mp(void)
 {
 	return llhw_ipc_send_msg(INIC_API_WIFI_DRIVE_IS_MP, NULL, 0);
 }
+
+int wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir)
+{
+	int ret = 0;
+	u32 param_buf[3] = {0};
+	dma_addr_t dma_data = 0;
+	struct device *pdev = global_idev.ipc_dev;
+
+	dma_data = dma_map_single(pdev, pdata, len, DMA_TO_DEVICE);
+	if (dma_mapping_error(pdev, dma_data)) {
+		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+		return -1;
+	}
+
+	param_buf[0] = (u32)dma_data;
+	param_buf[1] = (u32)len;
+	param_buf[2] = (u32)dir;
+	ret = llhw_ipc_send_msg(INIC_API_WIFI_COEX_BT_HCI, param_buf, 3);
+	dma_unmap_single(pdev, dma_data, len, DMA_TO_DEVICE);
+	return ret;
+}

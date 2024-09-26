@@ -8,7 +8,7 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
 
-#define SERVER_HOST    "192.168.1.100"
+#define SERVER_HOST    "192.168.1.101"
 #define SERVER_PORT    "443"
 #define RESOURCE       "/"
 #define BUFFER_SIZE    2048
@@ -126,6 +126,7 @@ static void example_ssl_client_verify_required_thread(void *param)
 		RTK_LOGS(NOTAG, "SSL ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&ssl));
 		sprintf((char *) buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);
 		mbedtls_ssl_write(&ssl, buf, strlen((char *) buf));
+		RTK_LOGS(NOTAG, "\nHTTP GET Content:\n%s", buf);
 
 		while ((read_size = mbedtls_ssl_read(&ssl, buf + pos, BUFFER_SIZE - pos)) > 0) {
 			if (header_removed == 0) {
@@ -141,7 +142,7 @@ static void example_ssl_client_verify_required_thread(void *param)
 					body = header + strlen("\r\n\r\n");
 					*(body - 2) = 0;
 					header_removed = 1;
-					RTK_LOGS(NOTAG, "\nHTTP Header: %s\n", buf);
+					RTK_LOGS(NOTAG, "\nHTTP Header: \n%s\n", buf);
 
 					// Remove header size to get first read size of data from body head
 					read_size = pos - ((unsigned char *) body - buf);
@@ -167,7 +168,9 @@ static void example_ssl_client_verify_required_thread(void *param)
 			resource_size += read_size;
 		}
 
-		RTK_LOGS(NOTAG, "exit read. ret = %d\n", read_size);
+		if ((read_size != MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) && (read_size != MBEDTLS_ERR_SSL_CONN_EOF)) {
+			RTK_LOGS(NOTAG, "exit read. ret = -0x%x\n", -read_size);
+		}
 		RTK_LOGS(NOTAG, "http content-length = %d bytes, download resource size = %d bytes\n", content_len, resource_size);
 	}
 

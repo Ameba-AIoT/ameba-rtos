@@ -1,5 +1,5 @@
 
-INCLUDE "../../amebasmart_layout.ld"
+#include "../../../amebasmart_layout.ld"
 
 SECTIONS
 {
@@ -15,8 +15,6 @@ SECTIONS
 	.sram_image2.text.data ORIGIN(KM4_BD_RAM):
 	{
 		__sram_image2_start__ = .;
-		__image2_entry_func__ = .;
-		KEEP(*(SORT(.image2.entry.data*)))
 
 		*(.timesensitive.text*)
 		*(.sramdram.only.text*)
@@ -29,13 +27,16 @@ SECTIONS
 	.psram_image2.text.data ORIGIN(KM4_BD_DRAM):
 	{
 		__psram_image2_start__ = .;
+		__image2_entry_func__ = .;
+		KEEP(*(SORT(.image2.entry.data*)))
+
 		__psram_image2_end__ = .;
 	} > KM4_BD_DRAM
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab :
 	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*) 
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
 	} > KM4_IMG2_XIP
 
@@ -80,15 +81,15 @@ SECTIONS
 		__fini_array_start = .;
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
-		__fini_array_end = .;	
+		__fini_array_end = .;
 
-		/*-----------------*/		
+		/*-----------------*/
 		__image2_backtrace_end__ = .;
-	
+
 		. = ALIGN(32);
 	} > KM4_IMG2_XIP
 
-	.sram_image2.text.data :
+	.psram_image2.text.data :
 	{
 		*(.timesensitive.data*)
 
@@ -96,7 +97,7 @@ SECTIONS
 
 		/*cache line size aligned in order to avoid MMU remap err*/
 		. = ALIGN(32);
-	} > KM4_BD_RAM
+	} > KM4_BD_DRAM
 
 	/*-----------------*/
 	.ram_image2.bss (NOLOAD):
@@ -106,7 +107,7 @@ SECTIONS
 		*(COMMON)
 		__bss_end__ = .;
 		. = ALIGN(32);
-	} > KM4_BD_RAM
+	} > KM4_BD_DRAM
 
 	.ram_image2.nocache.data (NOLOAD):
 	{
@@ -123,8 +124,7 @@ SECTIONS
 		/*reserved heap to 8k for sbrk*/
 		end = .;
 		. = . + 8192;
-
-	} > KM4_BD_RAM
+	} > KM4_BD_DRAM
 
 	/* put in the end of sram part */
 	.bdram_heap.start (NOLOAD):
@@ -156,11 +156,11 @@ SECTIONS
 ASSERT(__flash_text_start__ == ORIGIN(KM4_IMG2_XIP), "__flash_text_start__ is changed.")
 ASSERT(__sram_image2_start__ == ORIGIN(KM4_BD_RAM), "__sram_image2_start__ is changed.")
 ASSERT(__psram_image2_start__ == ORIGIN(KM4_BD_DRAM), "__psram_image2_start__ is changed.")
-ASSERT(__image2_entry_func__ == ORIGIN(KM4_BD_RAM), "__image2_entry_func__ is not KM4_BD_RAM.")
+ASSERT(__image2_entry_func__ == ORIGIN(KM4_BD_DRAM), "__image2_entry_func__ is not KM4_BD_DRAM.")
 
 __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM) + LENGTH(KM4_BD_RAM) - __bdram_heap_buffer_start__;
-/* KM4 DRAM HEAP is not used */
 __psram_heap_buffer_size__ = ORIGIN(KM4_BD_DRAM) + LENGTH(KM4_BD_DRAM) - __psram_heap_buffer_start__;
 
+/* KM4 DRAM HEAP Extend is not used */
 __psram_heap_extend_start__ = ORIGIN(KM4_DRAM_HEAP_EXT);
 __psram_heap_extend_size__ = 0;

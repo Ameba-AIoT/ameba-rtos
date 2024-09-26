@@ -53,6 +53,18 @@ static void ameba_audio_stream_rx_sport_init(CaptureStream **stream, StreamConfi
 		cstream->stream.sp_initstruct.SP_Fix_Bclk = ENABLE;
 	}
 
+#if AUDIO_HW_IN_SPORT_CLK_TYPE == 1
+	RCC_PeriphClockSource_SPORT(CKSL_I2S_CPUPLL);
+	if (config.rate % 8000 == 0) {
+		PLL_I2S_98P304M(CKSL_I2S_CPUPLL, ENABLE);
+		PLL_I2S_98P304M_ClkTune(CKSL_I2S_CPUPLL, 0, PLL_AUTO);
+	} else {
+		PLL_I2S_45P158M(CKSL_I2S_CPUPLL, ENABLE);
+		PLL_I2S_45P158M_ClkTune(CKSL_I2S_CPUPLL, 0, PLL_AUTO);
+	}
+	cstream->stream.sp_initstruct.SP_SelClk = CKSL_I2S_CPUPLL;
+#endif
+
 	AUDIO_SP_Init(cstream->stream.sport_dev_num, SP_DIR_RX, &cstream->stream.sp_initstruct);
 	if (cstream->stream.device == AMEBA_AUDIO_IN_I2S) {
 		if (AUDIO_I2S_IN_ROLE == AUDIO_I2S_SLAVE) {
@@ -311,7 +323,7 @@ int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frame
 	return 0;
 }
 
-int  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
+HAL_AUDIO_WEAK int ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	//now nsec;
 	uint64_t nsec;
@@ -690,7 +702,7 @@ int64_t ameba_audio_stream_rx_get_trigger_time(Stream *stream)
 	return cstream->stream.trigger_tstamp;
 }
 
-void ameba_audio_stream_rx_start(Stream *stream)
+HAL_AUDIO_WEAK void ameba_audio_stream_rx_start(Stream *stream)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
 	cstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
@@ -862,7 +874,7 @@ int ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes)
 	return 0;
 }
 
-void ameba_audio_stream_rx_stop(Stream *stream)
+HAL_AUDIO_WEAK void ameba_audio_stream_rx_stop(Stream *stream)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
 	cstream->stream.trigger_tstamp = ameba_audio_get_now_ns();

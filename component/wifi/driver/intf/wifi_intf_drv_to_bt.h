@@ -59,15 +59,10 @@ struct bt_rfk_param {
 
 
 //----- ------------------------------------------------------------------
-// BT Interface opened for upper layer
+// Coex Interface opened for upper layer
 //----- ------------------------------------------------------------------
-void rltk_bt_set_gnt_bt(enum pta_type gnt_bt, u8 role, u8 process);
-void rltk_bt_set_gnt_bt_with_clk_source(enum pta_type gnt_bt, u8 role, u8 process);
-const unsigned char *rltk_bt_get_patch_code(void);
-unsigned int rltk_bt_get_patch_code_len(void);
-void rltk_bt_pta_init(void);
-void rltk_coex_bt_enable(u8 enable);
-int rltk_coex_mailbox_to_wifi(u8 *data, u8 len);
+void rltk_coex_set_gnt_bt(enum pta_type gnt_bt, u8 role, u8 process);
+void rltk_coex_set_gnt_bt_with_clk_source(enum pta_type gnt_bt, u8 role, u8 process);
 int rltk_coex_bt_rfk(struct bt_rfk_param *rfk_param);
 void rltk_coex_bt_hci_notify(u8 *pdata, u16 len, u8 dir);
 #ifdef	__cplusplus

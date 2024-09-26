@@ -12,6 +12,7 @@ MODULE_IFLAGS +=  \
 	-I$(BASEDIR)/component/ui/third_party/libjpeg-turbo/interfaces/include
 TARGET_LIB = lib_jpg
 
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 CFLAGS += -O3 -fstrict-aliasing -Wno-sign-compare -Wno-unused-parameter
 
 vpath %.c $(DIR) $(shell find $(DIR) -type d)
