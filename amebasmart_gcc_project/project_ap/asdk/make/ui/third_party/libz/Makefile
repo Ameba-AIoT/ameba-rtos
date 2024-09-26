@@ -12,6 +12,8 @@ MODULE_IFLAGS +=  \
 	-I$(DIR)/interfaces/include \
 	-I$(DIR)/zlib/src
 TARGET_LIB = lib_z
+
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 CFLAGS += -O3 -DUSE_MMAP
 
 vpath %.c $(DIR) $(shell find $(DIR) -type d)

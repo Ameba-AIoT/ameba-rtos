@@ -22,7 +22,7 @@ else
     ANALYZE_MP_IMG = 0
 endif
 #ROM_SYMBOL_GEN_PYTHON=$(shell $(ABS_ROOTDIR)/img_utility/export_rom_symbol.py)
-#ROM_SYMBOL_GEN_PYTHON= 
+#ROM_SYMBOL_GEN_PYTHON=
 include $(MAKE_INCLUDE_GEN)
 
 # Verbose flag
@@ -60,8 +60,8 @@ RAM_OBJS_LIST = ./build/ram/*.o
 ROM_OBJS_LIST = ./build/rom/*.o
 LIB_OBJS_LIST = ./build/lib/*.o
 
-LINK_ROM_LIB = 
-LINK_ROM_SYMBOL = 
+LINK_ROM_LIB =
+LINK_ROM_SYMBOL =
 LINK_APP_LIB =
 LINK_THIRD_APP_LIB =
 .PHONY: all build_target_folder menuconfig clean build_libraries make_wifi_lib
@@ -447,7 +447,7 @@ gdb: gdb_prepare
 
 	$(GNU_SCRIPT)/SetupGDB_FPGA.sh $(GNU_SCRIPT)
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_flash_write.txt
-	
+
 
 gdbboot: gdb_prepare
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_jtag_boot.txt
@@ -523,7 +523,7 @@ clean_all: clean
 #*****************************************************************************#
 copy_ld_img2:
 ifeq ($(CONFIG_XIP_FLASH), y)
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_img2_xip.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_img2_xip.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 else
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_img2_dram.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_img2_dram.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 endif

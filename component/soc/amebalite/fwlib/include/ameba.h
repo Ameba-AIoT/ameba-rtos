@@ -152,7 +152,7 @@ typedef enum  _HAL_Status {
   */
 #define assert_param(expr) ((expr) ? (void)0 : io_assert_failed((uint8_t *)__FILE__, __LINE__))
 /* Exported functions ------------------------------------------------------- */
-void io_assert_failed(uint8_t *file, uint32_t line);
+__NO_RETURN void io_assert_failed(uint8_t *file, uint32_t line);
 #else
 #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */

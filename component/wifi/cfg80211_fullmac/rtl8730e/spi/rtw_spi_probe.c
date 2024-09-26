@@ -87,6 +87,10 @@ static int rtw_spi_probe(struct spi_device *spi)
 {
 	struct inic_spi *priv = &inic_spi_priv;
 	int rc = 0;
+	struct spi_delay cs_setup_time = {
+		.unit = SPI_DELAY_UNIT_USECS,
+		.value = 7
+	};
 
 	dev_info(&spi->dev, "%s\n", __func__);
 
@@ -97,6 +101,8 @@ static int rtw_spi_probe(struct spi_device *spi)
 	sema_init(&priv->dev_rdy_sema, 0);
 
 	/* Setup SPI parameters */
+	spi->cs_setup = cs_setup_time;
+
 	dev_info(&spi->dev, "setup mode: %d, %u bits/w, %u Hz max\n",
 			 (int)(spi->mode & (SPI_CPOL | SPI_CPHA)), spi->bits_per_word,
 			 spi->max_speed_hz);

@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-INCLUDE "../../amebasmart_layout.ld"
+#include "../../../amebasmart_layout.ld"
 
 SECTIONS
 {

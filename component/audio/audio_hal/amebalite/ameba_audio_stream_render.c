@@ -171,7 +171,7 @@ int  ameba_audio_stream_tx_get_position(Stream *stream, uint64_t *rendered_frame
 	return 0;
 }
 
-int  ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
+HAL_AUDIO_WEAK int  ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	//now nsec;
 	uint64_t nsec;
@@ -260,6 +260,15 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 	} else {
 		rstream->stream.sp_initstruct.SP_Fix_Bclk = ENABLE;
 	}
+
+#if AUDIO_HW_OUT_SPORT_CLK_TYPE == 1
+	RCC_PeriphClockSource_SPORT(CKSL_I2S_CPUPLL);
+	if (config.rate % 8000 == 0)
+		PLL_I2S_98P304M(CKSL_I2S_CPUPLL, ENABLE);
+	else
+		PLL_I2S_45P158M(CKSL_I2S_CPUPLL, ENABLE);
+	rstream->stream.sp_initstruct.SP_SelClk = CKSL_I2S_CPUPLL;
+#endif
 
 	HAL_AUDIO_VERBOSE("selmo:%lu, wordlen:%lu, sr:%lu, seltdm:%lu, selfifo:%lu,",
 					  rstream->stream.sp_initstruct.SP_SelI2SMonoStereo,
@@ -522,7 +531,7 @@ uint32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
 	return remain;
 }
 
-void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
+HAL_AUDIO_WEAK void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 
@@ -569,7 +578,7 @@ void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 
 }
 
-void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
+HAL_AUDIO_WEAK void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 

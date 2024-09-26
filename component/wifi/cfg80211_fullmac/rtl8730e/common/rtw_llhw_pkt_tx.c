@@ -99,7 +99,7 @@ int llhw_xmit_entry(int idx, struct sk_buff *pskb)
 	struct net_device_stats *pstats = &global_idev.stats[idx];
 	struct net_device *pndev = global_idev.pndev[idx];
 	struct inic_msg_node *p_node = NULL;
-	u32 need_headroom;
+	u32 need_headroom, pad_len;
 
 	if (llhw_xmit_pending_q_num() >= QUEUE_STOP_THRES) {
 		netif_tx_stop_all_queues(pndev);
@@ -111,6 +111,15 @@ int llhw_xmit_entry(int idx, struct sk_buff *pskb)
 	}
 
 	need_headroom = SIZE_TX_DESC + sizeof(struct inic_msg_info);
+
+	/* buf addr should be 4-byte aligned, because Laptop PCIE to SDIO converter driver don't support non 4byte-aligned transfer */
+	if (BUF_ALIGN_SZ != 0) {
+		pad_len = (uintptr_t)(pskb->data - need_headroom) % BUF_ALIGN_SZ;
+	} else {
+		pad_len = 0;
+	}
+	need_headroom += pad_len;
+
 	if (skb_headroom(pskb) >= need_headroom) {
 		skb_push(pskb, need_headroom);
 	} else {
@@ -125,7 +134,7 @@ int llhw_xmit_entry(int idx, struct sk_buff *pskb)
 	msg->event = INIC_WIFI_EVT_XIMT_PKTS;
 	msg->wlan_idx = idx;
 	msg->data_len = pskb->len - need_headroom;
-	msg->pad_len = 0;
+	msg->pad_len = pad_len;
 
 	/* enqueue pkt */
 	p_node = kzalloc(sizeof(struct inic_msg_node), GFP_KERNEL);

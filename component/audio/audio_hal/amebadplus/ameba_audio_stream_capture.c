@@ -64,12 +64,13 @@ static void ameba_audio_stream_rx_sport_init(CaptureStream **stream, StreamConfi
 	cstream->stream.sp_initstruct.SP_SelClk = CKSL_I2S_XTAL40M;
 	if (cstream->stream.is_multi_io == 1) {
 		cstream->stream.sp_initstruct.SP_SetMultiIO = SP_RX_MULTIIO_EN;
+		Init_Params.chn_cnt = 2;
 	} else {
 		cstream->stream.sp_initstruct.SP_SetMultiIO = SP_RX_MULTIIO_DIS;
+		Init_Params.chn_cnt = config.channels;
 	}
 
 	Init_Params.chn_len = SP_TXCL_32;
-	Init_Params.chn_cnt = config.channels;
 	Init_Params.sr = config.rate;
 
 	if (AUDIO_HW_IN_SPORT_CLK_TYPE == 0) {

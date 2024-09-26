@@ -13,7 +13,7 @@
 #include <plat/common/common_def.h>
 #include "hal_platform.h"
 #include "sysreg_lsys.h"
-
+#include "platform_autoconf.h"
 
 /* Special value used to verify platform parameters from BL2 to BL3-1 */
 #define SHEIPA_BL31_PLAT_PARAM_VAL	0x0f1e2d3c4b5a6978ULL
@@ -69,15 +69,30 @@
 #define SEC_ROM_BASE			0x0
 #define SEC_ROM_SIZE			0x00000400
 
-#define SEC_SRAM_BASE			0x701B0000
-#define SEC_SRAM_SIZE			0x00010000
+#ifdef CONFIG_XIP_FLASH
+#ifdef AARCH32_SP_OPTEE
+#error "not support optee when XIP"
+#endif
+/* Change to SRAM, cannot > 3.5KB */
+#define SEC_SRAM_BASE			0x3001F000
+#define SEC_SRAM_SIZE			0x00001000
 
-#define SEC_DRAM_BASE			0x70180000
-#define SEC_DRAM_SIZE			0x00180000
+//ATF Actual Need 204KB
+#define SEC_DRAM_BASE			0x70060000
+#define SEC_DRAM_SIZE			0x00034000
 
-#define NS_DRAM0_BASE			0x60300000
-#define NS_DRAM0_SIZE			0x00D00000
+#define NS_DRAM0_BASE			0x60094000
+#define NS_DRAM0_SIZE			0x0076C000
+#else
+#define SEC_SRAM_BASE 			0x701B0000
+#define SEC_SRAM_SIZE 			0x00010000
 
+#define SEC_DRAM_BASE 			0x70180000
+#define SEC_DRAM_SIZE 			0x00180000
+
+#define NS_DRAM0_BASE		 	0x60300000
+#define NS_DRAM0_SIZE 			0x00D00000
+#endif
 /*
  * ARM-TF lives in SRAM, partition it here
  */
@@ -107,10 +122,16 @@
  * Put BL1 RW at the top of the Secure SRAM. BL1_RW_BASE is calculated using
  * the current BL1 RW debug size plus a little space for growth.
  */
-#define BL1_RO_BASE			SEC_DRAM_BASE
-#define BL1_RO_LIMIT		(BL1_RO_BASE + 0x20000)
-#define BL1_RW_BASE			(BL1_RO_LIMIT)
+#ifdef CONFIG_XIP_FLASH
+#define BL1_RO_SIZE			(0x4000)
+#define BL1_RW_SIZE			(0xC000)
+#else
+#define BL1_RO_SIZE			(0x20000)
 #define BL1_RW_SIZE			(0x10000)
+#endif
+#define BL1_RO_BASE			SEC_DRAM_BASE
+#define BL1_RO_LIMIT		(BL1_RO_BASE + BL1_RO_SIZE)
+#define BL1_RW_BASE			(BL1_RO_LIMIT)
 #define BL1_RW_LIMIT		(BL1_RW_BASE + BL1_RW_SIZE)
 
 /*
@@ -119,8 +140,13 @@
  * Put BL2 just below BL3-1. BL2_BASE is calculated using the current BL2 debug
  * size plus a little space for growth.
  */
-#define BL2_BASE			(BL1_RW_LIMIT + 0x10000)	//skip SHARED_RAM
+#ifdef CONFIG_XIP_FLASH
+#define BL2_BASE			(BL1_RW_LIMIT)
+#define BL2_LIMIT			(BL2_BASE + 0x10000)
+#else
+#define BL2_BASE 			(BL1_RW_LIMIT + 0x10000) // skip SHARED_RAM
 #define BL2_LIMIT			(BL2_BASE + 0x40000)
+#endif
 
 #define BL2_RW_BASE			(BL2_BASE)
 #define BL2_RW_LIMIT		(BL2_LIMIT)
@@ -167,7 +193,7 @@
 #define SHEIPA_OPTEE_PAGEABLE_LOAD_SIZE	0x00100000
 
 #define SHEIPA_OPTEE_SHMEM_START		0x602e0000
-#define SHEIPA_OPTEE_SHMEM_SIZE		0x00020000
+#define SHEIPA_OPTEE_SHMEM_SIZE			0x00020000
 
 /*******************************************************************************
  * TSP  specific defines.
@@ -201,7 +227,7 @@
 #define KM4_ROMBSS_RAM_COM_BASE		0x2001C000
 #define KM4_ROMBSS_RAM_COM_SIZE		0x1000
 
-#define SHEIPA_FIP_BASE		0x60400000
+#define SHEIPA_FIP_BASE		0x70400000
 #define SHEIPA_FIP_SIZE		0x00C00000
 
 #define PLAT_SHEIPA_FIP_BASE		SHEIPA_FIP_BASE
@@ -239,7 +265,7 @@
 #define PLAT_SHEIPA_DT_BASE		(SEC_ROM_BASE + 0x40000)
 #define PLAT_SHEIPA_DT_MAX_SIZE		0x000c0000
 #else
-#define PLAT_SHEIPA_DT_BASE		0x81f00000
+#define PLAT_SHEIPA_DT_BASE			0x81f00000
 #define PLAT_SHEIPA_DT_MAX_SIZE		0x000c0000
 #endif
 

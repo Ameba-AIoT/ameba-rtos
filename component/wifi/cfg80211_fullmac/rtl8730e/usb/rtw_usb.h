@@ -4,6 +4,8 @@
 #define SIZE_RX_DESC			0
 #define SIZE_TX_DESC			0
 
+#define BUF_ALIGN_SZ			0
+
 #define WIFI_OUT_EP_NUM_TOTAL	1
 #define RTW_USB_MAX_SKB_SIZE				1600
 
