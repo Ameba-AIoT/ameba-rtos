@@ -62,7 +62,7 @@ LINK_ROM_LIB_NS = $(ROM_LIB_DIR)/rom_ns.a
 
 LINK_ROM_SYMBOL_NS = ./ld/rlx8721d_rom_symbol_empty.ld
 LINK_ROM_SYMBOL_S = ./ld/rlx8721d_rom_symbol_empty.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y) 
+ifeq ($(CONFIG_LINK_ROM_SYMB),y)
 LINK_ROM_LIB =
 LINK_ROM_LIB_NS =
 ifeq ($(CONFIG_AMEBASMART_B_CUT),y)
@@ -263,7 +263,7 @@ endif
 	$(Q)$(CC_SIZE) -A --radix=10 $(IMAGE_TARGET_FOLDER)/target_img2.axf
 	$(Q)$(CC_SIZE) -t --radix=10 $(IMAGE_TARGET_FOLDER)/target_img2.axf
 	@echo "========== Image Info DEC =========="
-	
+
 	$(Q)$(RM) -f $(RAM_OBJS_LIST) $(LIB_OBJS_LIST)
 	@echo "========== linker img2_ns end =========="
 
@@ -386,7 +386,7 @@ linker_loader:
 	fi
 
 	@echo "========== Image manipulating end =========="
-	
+
 code_analyze:
 	@echo "========== Image analyze start =========="
 	@if [ -f $(SCRIPT_DIR)/code_analyze.py ]; then \
@@ -454,7 +454,7 @@ gdb: gdb_prepare
 	$(COPY) $(GNU_SCRIPT)/acut_loader/*  $(GNU_SCRIPT)/
 	$(GNU_SCRIPT)/SetupGDB_FPGA.sh $(GNU_SCRIPT)
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_flash_write.txt
-	
+
 gdbboot: gdb_prepare
 	$(GDB) -x $(GNU_SCRIPT)/rtl_gdb_jtag_boot.txt
 
@@ -511,7 +511,7 @@ clean:
 	@# #flashloader code start
 	@# @+$(MAKE) -C make/flashloader clean
 	@#+$(MAKE) -C $(TARGETDIR)/imgtool_floader clean
-	
+
 clean_xip:
 	@make -C make clean
 	@make -C make_ns clean
@@ -522,25 +522,21 @@ clean_all: clean
 #              PACKAGE COPY link script file-ld                               #
 #*****************************************************************************#
 copy_ld_img1:
-ifeq ($(CONFIG_XIP_FLASH), y)
-	$(Q)$(COPY) ./ld/rlx8721d_img1_s_xip.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-else
-	$(Q)$(COPY) ./ld/rlx8721d_img1_s.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-endif
-	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_img1_s.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_floader:
-	$(Q)$(COPY) ./ld/rlx8721d_floader_s.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-	cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_floader_s.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img2:
 ifeq ($(CONFIG_XIP_FLASH), y)
-	$(Q)$(COPY) ./ld/rlx8721d_img2_non_trustzone_xip.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_img2_non_trustzone_xip.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 else
-	$(Q)$(COPY) ./ld/rlx8721d_img2_non_trustzone_dram.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_img2_non_trustzone_dram.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 endif
-	$(Q)cat $(LINK_ROM_SYMBOL_NS) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) cat $(LINK_ROM_SYMBOL_NS) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img3:
-	$(Q)$(COPY) ./ld/rlx8721d_img3_s.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-	$(Q)cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c ./ld/rlx8721d_img3_s.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) cat $(LINK_ROM_SYMBOL_S) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 
 #*****************************************************************************#
 #              COPY flashloader into flashdownload folder                     #
@@ -554,7 +550,7 @@ copy_imgtool_flashloader:
 	$(Q)$(COPY) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin 	$(FLOADER_BIN_DIR)/imgtool_flashloader.bin -f
 	$(Q)$(MOVE) $(IMAGE_TARGET_FOLDER)/imgtool_flashloader.bin $(FLOADER_BIN_DIR)/floader_amebasmart.bin -f
 
-gen_imgtool_floader: 
+gen_imgtool_floader:
 	@if [ ! -f $(FLOADER_BIN_DIR)/imgtool_flashloader.bin ]; then \
 		echo Error: No imgtool_flashloader.bin in $(FLOADER_BIN_DIR); exit 1;\
 	fi

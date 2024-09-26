@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-INCLUDE "../../amebasmart_layout.ld"
+#include "../../../amebasmart_layout.ld"
 
 SECTIONS
 {
@@ -8,7 +8,7 @@ SECTIONS
 	.xip_image2.text :
 	{
 		__flash_text_start__ = .;
-		
+
 		__flash_text_end__ = .;
 	} > KM0_IMG2_XIP
 
@@ -107,7 +107,7 @@ SECTIONS
 		__end__ = .;
 		end = __end__;
 		. = . + 4096;	/* reserved for _sbrk */
-		
+
 		__HeapLimit = .;
 	} > KM0_BD_RAM
 

@@ -18,13 +18,13 @@
 #endif
 
 #if ENABLE_ASSERTIONS
-# if PLAT_LOG_LEVEL_ASSERT >= LOG_LEVEL_VERBOSE
-#  define assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, #e))
-# elif PLAT_LOG_LEVEL_ASSERT >= LOG_LEVEL_INFO
-#  define assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__))
-# else
-#  define assert(e)	((e) ? (void)0 : __assert())
-# endif
+#if PLAT_LOG_LEVEL_ASSERT >= LOG_LEVEL_VERBOSE
+#define assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, #e))
+#elif PLAT_LOG_LEVEL_ASSERT >= LOG_LEVEL_INFO
+#define assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__))
+#else
+#define assert(e)	((e) ? (void)0 : __assert())
+#endif
 #else
 #define assert(e)	((void)0)
 #endif /* ENABLE_ASSERTIONS */

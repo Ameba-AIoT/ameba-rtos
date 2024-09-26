@@ -13,6 +13,7 @@ MODULE_IFLAGS +=  \
 	-I$(BASEDIR)/component/ui/third_party/zlib/interfaces/include
 TARGET_LIB = lib_png
 
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 CFLAGS += --std=gnu89 -Wall -Wno-unused-parameter
 
 vpath %.c $(DIR) $(shell find $(DIR) -type d)

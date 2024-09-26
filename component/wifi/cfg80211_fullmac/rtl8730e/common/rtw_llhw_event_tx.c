@@ -1049,3 +1049,15 @@ int llhw_wifi_driver_is_mp(void)
 	return ret;
 }
 
+int wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir)
+{
+	int ret = 0;
+
+        (void) pdata;
+        (void) len;
+        (void) dir;
+
+	dev_err(global_idev.fullmac_dev, "%s: not support\n", __func__);
+
+	return ret;
+}

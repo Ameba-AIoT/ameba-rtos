@@ -102,6 +102,7 @@ int llhw_wifi_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
 int llhw_wifi_set_country_code(char *cc);
 int llhw_wifi_get_country_code(struct country_code_table_t *table);
 int llhw_wifi_driver_is_mp(void);
+int wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
 
 void *rtw_malloc(size_t size, dma_addr_t *paddr);
 void rtw_mfree(size_t size, void *vaddr, dma_addr_t paddr);

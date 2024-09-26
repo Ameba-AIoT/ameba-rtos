@@ -18,6 +18,7 @@ vpath %.c $(shell find $(DIR)/ -type d)
 #*****************************************************************************#
 #                               CFLAGS                                        #
 #*****************************************************************************#
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 GLOBAL_CFLAGS += \
     -D__RTOS__ \
     -DHAVE_CONFIG_H \

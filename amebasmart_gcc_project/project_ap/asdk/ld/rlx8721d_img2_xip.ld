@@ -1,4 +1,4 @@
-INCLUDE "../../amebasmart_layout.ld"
+#include "../../../amebasmart_layout.ld"
 
 /* Linker script to place sections and symbol values. Should be used together
  * with other linker script that defines memory regions FLASH and RAM.
@@ -80,7 +80,7 @@ SECTIONS
 	} > CA32_BL3_DRAM_NS
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab :
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
 	} > CA32_IMG2_XIP
