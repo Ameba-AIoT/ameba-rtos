@@ -87,6 +87,9 @@ endif
 ifeq ($(CONFIG_BT_SPP), y)
 	make -C bt_spp all
 endif
+ifeq ($(CONFIG_BT_RFC), y)
+	make -C bt_rfc all
+endif
 ifeq ($(CONFIG_BT_HID), y)
 	make -C bt_hid all
 endif
@@ -201,6 +204,9 @@ ifeq ($(CONFIG_BT_A2DP_HFP), y)
 endif
 ifeq ($(CONFIG_BT_SPP), y)
 	make -C bt_spp clean
+endif
+ifeq ($(CONFIG_BT_RFC), y)
+	make -C bt_rfc clean
 endif
 ifeq ($(CONFIG_BT_HID), y)
 	make -C bt_hid clean

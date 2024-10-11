@@ -59,6 +59,8 @@ uint16_t bt_stack_avrcp_init(uint8_t role);
 void bt_stack_avrcp_deinit(void);
 uint16_t bt_stack_spp_init(uint8_t role);
 void bt_stack_spp_deinit(void);
+uint16_t bt_stack_rfc_init(uint8_t server_chann);
+void bt_stack_rfc_deinit(void);
 uint16_t bt_stack_hid_init(uint8_t role);
 void bt_stack_hid_deinit(void);
 uint16_t bt_stack_sdp_init(void);
@@ -75,6 +77,7 @@ uint16_t bt_stack_pbap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_sdp_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_spp_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_rfc_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_hid_act_handle(rtk_bt_cmd_t *p_cmd);
 #else
 static inline uint16_t bt_stack_br_gap_wait_ready(void)
@@ -128,6 +131,17 @@ static inline uint16_t bt_stack_spp_init(uint8_t role)
 }
 
 static inline void bt_stack_spp_deinit(void)
+{
+
+}
+
+static inline uint16_t bt_stack_rfc_init(uint8_t server_chann)
+{
+	(void)server_chann;
+	return RTK_BT_OK;
+}
+
+static inline void bt_stack_rfc_deinit(void)
 {
 
 }
@@ -206,6 +220,12 @@ static inline uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 }
 
 static inline uint16_t bt_stack_spp_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	(void)p_cmd;
+	return RTK_BT_OK;
+}
+
+static inline uint16_t bt_stack_rfc_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	(void)p_cmd;
 	return RTK_BT_OK;

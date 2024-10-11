@@ -18,7 +18,7 @@
 #include "platform_misc.h"
 #include "mesh_api.h"
 
-#if MESH_BLOB
+#if MESH_MBT
 
 BEGIN_DECLS
 
@@ -27,32 +27,32 @@ BEGIN_DECLS
  * @{
  */
 
-/* blob server capabilites */
-#define BLOB_TRANSFER_CPAS_MIN_BLOCK_SIZE_LOG                 6
-#define BLOB_TRANSFER_CPAS_MAX_BLOCK_SIZE_LOG                 12
-#define BLOB_TRANSFER_CPAS_MAX_TOTAL_CHUNKS                   20
-#define BLOB_TRANSFER_CPAS_MAX_CHUNK_SIZE                     256
-#define BLOB_TRANSFER_CPAS_MAX_BLOB_SIZE                      5000
-#define BLOB_TRANSFER_CPAS_SERVER_MTU_SIZE                    350
-#define BLOB_TRANSFER_CPAS_MODE_PULL_SUPPORT                  1
-#define BLOB_TRANSFER_CPAS_MODE_PUSH_SUPPORT                  1
+/* blob server capabilities */
+#define BLOB_TRANSFER_CAPS_MIN_BLOCK_SIZE_LOG                 6
+#define BLOB_TRANSFER_CAPS_MAX_BLOCK_SIZE_LOG                 12
+#define BLOB_TRANSFER_CAPS_MAX_TOTAL_CHUNKS                   20
+#define BLOB_TRANSFER_CAPS_MAX_CHUNK_SIZE                     256
+#define BLOB_TRANSFER_CAPS_MAX_BLOB_SIZE                      307200
+#define BLOB_TRANSFER_CAPS_SERVER_MTU_SIZE                    376
+#define BLOB_TRANSFER_CAPS_MODE_PULL_SUPPORT                  1
+#define BLOB_TRANSFER_CAPS_MODE_PUSH_SUPPORT                  1
 
 /**
  * @defgroup BLOB_TRANSFER_ACCESS_OPCODE Access Opcode
- * @brief Mesh messsage access opcode
+ * @brief Mesh message access opcode
  * @{
  */
-#define MESH_MSG_BLOB_TRANSFER_GET                       0xB701
-#define MESH_MSG_BLOB_TRANSFER_START                     0xB702
-#define MESH_MSG_BLOB_TRANSFER_CANCEL                    0xB703
-#define MESH_MSG_BLOB_TRANSFER_STATUS                    0xB704
-#define MESH_MSG_BLOB_BLOCK_GET                          0xB707
-#define MESH_MSG_BLOB_BLOCK_START                        0xB705
-#define MESH_MSG_BLOB_BLOCK_STATUS                       0x7E
-#define MESH_MSG_BLOB_PARTIAL_BLOCK_REPORT               0x4F
-#define MESH_MSG_BLOB_CHUNK_TRANSFER                     0x7D
-#define MESH_MSG_BLOB_INFO_GET                           0xB70A
-#define MESH_MSG_BLOB_INFO_STATUS                        0xB70B
+#define MESH_MSG_BLOB_TRANSFER_GET                       0x8300
+#define MESH_MSG_BLOB_TRANSFER_START                     0x8301
+#define MESH_MSG_BLOB_TRANSFER_CANCEL                    0x8302
+#define MESH_MSG_BLOB_TRANSFER_STATUS                    0x8303
+#define MESH_MSG_BLOB_BLOCK_GET                          0x8305
+#define MESH_MSG_BLOB_BLOCK_START                        0x8304
+#define MESH_MSG_BLOB_BLOCK_STATUS                       0x67
+#define MESH_MSG_BLOB_PARTIAL_BLOCK_REPORT               0x68
+#define MESH_MSG_BLOB_CHUNK_TRANSFER                     0x66
+#define MESH_MSG_BLOB_INFO_GET                           0x8306
+#define MESH_MSG_BLOB_INFO_STATUS                        0x8307
 /** @} */
 
 /**
@@ -60,8 +60,8 @@ BEGIN_DECLS
  * @brief Mesh model id
  * @{
  */
-#define MESH_MODEL_BLOB_TRANSFER_SERVER                  0xBF42FFFF
-#define MESH_MODEL_BLOB_TRANSFER_CLIENT                  0xBF43FFFF
+#define MESH_MODEL_BLOB_TRANSFER_SERVER                  0x1400FFFF
+#define MESH_MODEL_BLOB_TRANSFER_CLIENT                  0x1401FFFF
 /** @} */
 
 /**
@@ -71,7 +71,7 @@ BEGIN_DECLS
  */
 enum
 {
-    BLOB_TRANSFER_PHASE_IDLE,
+    BLOB_TRANSFER_PHASE_INACTIVE,
     BLOB_TRANSFER_PHASE_WAITING_START,
     BLOB_TRANSFER_PHASE_WAITING_BLOCK,
     BLOB_TRANSFER_PHASE_WAITING_CHUNK,
@@ -92,7 +92,7 @@ enum
 {
     BLOB_TRANSFER_MODE_IDLE, //!< No active transfer
     BLOB_TRANSFER_MODE_PUSH, //!< Push BLOB transfer mode
-    BLOB_TRANSFER_MODE_PULL, //!< Pull BlOB transfer mode
+    BLOB_TRANSFER_MODE_PULL, //!< Pull BLOB transfer mode
 } _SHORT_ENUM_;
 typedef uint8_t blob_transfer_mode_t;
 
@@ -214,22 +214,37 @@ typedef struct
  * @brief Data types and structure used by data process callback
  * @{
  */
-typedef struct
-{
-    uint8_t min_block_size_log;
-    uint8_t max_block_size_log;
-    uint16_t max_total_chunks;
-    uint16_t max_chunk_size;
-    uint32_t max_blob_size; //!< supported max size
-    uint16_t server_mtu_size;
-    uint8_t mode_pull_support : 1;
-    uint8_t mode_push_support : 1;
-    uint8_t mode_support_rfu : 6;
-} blob_server_capabilites_t;
+
+#define BLOB_DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
+#define BLOB_TRANSFER_MODE_PUSH_MASK 0x01     // pull mode mask
+#define BLOB_TRANSFER_MODE_PULL_MASK 0x02     // push mode mask
+#define BLOB_TRANSFER_MODE_RFU_MASK  0xFC     // rfu mask
 
 typedef struct
 {
-    blob_server_capabilites_t caps;
+    uint8_t min_block_size_log; //!< 6 - 32
+    uint8_t max_block_size_log; //!< 6 - 32
+    uint16_t max_total_chunks; //!< > 1
+    uint16_t max_chunk_size; //!<  8 - 377
+    uint32_t max_blob_size; //!< > 1, supported max size
+    uint16_t server_mtu_size; //!< 20 - 380
+    uint8_t mode_push_support : 1;
+    uint8_t mode_pull_support : 1;
+    uint8_t mode_support_rfu : 6;
+} blob_server_capabilities_t;
+
+enum
+{
+    BLOB_PULL_TIMER_TYPE_NEW_CHUNK,
+    BLOB_PULL_TIMER_TYPE_RECEPTION,
+    BLOB_PULL_TIMER_TYPE_BLOCK_COMPLETE,
+} _SHORT_ENUM_;
+typedef uint8_t blob_pull_timer_type_t;
+
+typedef struct
+{
+    blob_server_capabilities_t caps;
 
     blob_transfer_mode_t mode;
     blob_transfer_phase_t phase;
@@ -240,6 +255,7 @@ typedef struct
     uint16_t transfer_mtu_size;
     uint16_t transfer_timeout_base;
     uint8_t transfer_ttl;
+    bool resume;
 
     uint8_t *block_data;
     uint8_t *blocks_not_recv;
@@ -258,9 +274,11 @@ typedef struct
     uint16_t updater_app_key_index;
 
     plt_timer_t transfer_timer;
-    plt_timer_t partial_report_timer;
+    plt_timer_t pull_timer;
+    blob_pull_timer_type_t pull_timer_type;
+    uint32_t pull_timeout_time;
+    uint8_t block_complete_retry_counter;
     uint8_t partial_report_retry_times;
-    uint32_t partial_report_timeout_time;
     uint8_t partial_report_max_retry_times;
 } blob_transfer_server_ctx_t;
 
@@ -277,7 +295,7 @@ typedef struct
 {
     uint16_t block_num;
     uint8_t *pdata;
-    uint16_t data_len;
+    uint32_t data_len;
 } blob_transfer_server_block_data_t;
 
 typedef struct
@@ -382,16 +400,16 @@ bool blob_transfer_server_reg(uint8_t element_index, model_data_cb_pf model_data
 void blob_transfer_server_set_data_cb(model_data_cb_pf model_data_cb);
 
 /**
- * @brief set blob transfer server capabilites
- * @param[in] pcaps: server capabilites
+ * @brief set blob transfer server capabilities
+ * @param[in] pcaps: server capabilities
  */
-void blob_transfer_server_caps_set(blob_server_capabilites_t *pcaps);
+void blob_transfer_server_caps_set(blob_server_capabilities_t *pcaps);
 
 /**
- * @brief get blob transfer server capabilites
- * @return server capabilites
+ * @brief get blob transfer server capabilities
+ * @return server capabilities
  */
-blob_server_capabilites_t blob_transfer_server_caps_get(void);
+blob_server_capabilities_t blob_transfer_server_caps_get(void);
 
 /**
  * @brief initialize blob transfer server
@@ -443,7 +461,7 @@ void blob_transfer_handle_transfer_timeout(void);
 /**
  * @brief handle blob transfer partial report timeout
  */
-void blob_transfer_handle_partial_report_timeout(void);
+void blob_transfer_handle_pull_timeout(void);
 
 /**
  * @brief send blob transfer status
@@ -498,6 +516,19 @@ mesh_msg_send_cause_t blob_info_status(uint16_t dst, uint16_t app_key_index, uin
  * @return register status
  */
 void blob_transfer_client_reg(uint8_t element_index, model_data_cb_pf model_data_cb);
+
+
+/**
+ * @brief set blob transfer client model send callback function
+ * @param[in] model_send_cb: model send callback function
+ */
+void blob_transfer_client_set_send_cb(model_send_cb_pf model_send_cb);
+
+/**
+ * @brief set blob transfer client model data callback function
+ * @param[in] model_data_cb: model data callback function
+ */
+void blob_transfer_client_set_data_cb(model_data_cb_pf model_data_cb);
 
 /**
  * @brief get blob transfer
@@ -576,6 +607,6 @@ mesh_msg_send_cause_t blob_info_get(uint16_t dst, uint16_t app_key_index);
 
 END_DECLS
 
-#endif /* MESH_BLOB */
+#endif /* MESH_MBT */
 
 #endif /* _BLOB_TRANSFER_H */

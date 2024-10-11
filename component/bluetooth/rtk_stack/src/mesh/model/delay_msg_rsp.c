@@ -10,23 +10,21 @@
 * @version  v1.0
 * *************************************************************************************
 */
-#include <stdlib.h>
 #include "delay_msg_rsp.h"
 #include "mesh_node.h"
 #include "model_config.h"
 
 #define DELAY_MSG_TRANS_DELAY_MIN       200 /* 200ms */
 
-// From spec, random delay shoud be 20~50ms for uincast addr and 20~500ms for group addr before send response message
-#define DELAY_MSG_UNICAST_ADDR_MIN      20
+#define DELAY_MSG_UNICAST_ADDR_MIN      10
 #define DELAY_MSG_UNICAST_ADDR_MAX      50
-#define DELAY_MSG_GROUP_ADDR_MIN        20
-#define DELAY_MSG_GROUP_ADDR_MAX        500
+#define DELAY_MSG_GROUP_ADDR_MIN        500
+#define DELAY_MSG_GROUP_ADDR_MAX        2000
 
 uint32_t delay_msg_get_rsp_delay(uint16_t dst_addr)
 {
-    int delay = rand();
-    uint32_t real_delay = delay;
+    uint32_t real_delay = 0;
+    plt_rand((uint8_t *)&real_delay, sizeof(real_delay));
     if (MESH_IS_UNICAST_ADDR(dst_addr))
     {
         /* random delay 10-50ms */

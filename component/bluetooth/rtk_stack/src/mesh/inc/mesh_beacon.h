@@ -104,7 +104,7 @@ typedef struct
     beacon_type_t beacon_type;
     union
     {
-        beacon_udb_t  udb;
+        beacon_udb_t udb;
         beacon_snb_t snb;
 #if MESH_PRB
         beacon_prb_t prb;
@@ -122,6 +122,7 @@ typedef enum
     BEACON_CFG_TYPE_PRB_RETRANS_COUNT = 4, //!< uint8_t
     BEACON_CFG_TYPE_PRB_RETRANS_INTERVAL = 5, //!< uint16_t, unit: ms
 #endif
+    BEACON_CFG_TYPE_SNB_AVOID_OVERLOAD = 6, //!< bool
 } beacon_cfg_type_t;
 /** @} */
 
@@ -151,9 +152,10 @@ void beacon_uri_hash_calc(uint8_t uri_data[], uint16_t len, uint8_t uri_hash[4])
 
 /**
   * @brief send snb via proxy
+  * @param[in] net_key_index: net key index
   * @return none
   */
-void beacon_snb_send_via_proxy(void);
+void beacon_snb_send_via_proxy(uint8_t net_key_index);
 
 /**
   * @brief send beacon
@@ -196,7 +198,7 @@ void private_beacon_stop(void);
   * @brief update private beacon random
   * @return none
   */
-void private_beacon_random_udpate(void);
+void private_beacon_random_update(void);
 
 /**
  * @brief update private beacon random timer
@@ -206,9 +208,16 @@ void private_beacon_random_timer_update(uint32_t new_interval);
 
 /**
  * @brief send private beacon in gatt bearer
+ * @param[in] net_key_index: net key index
  */
-void beacon_prb_send_via_proxy(void);
+void beacon_prb_send_via_proxy(uint8_t net_key_index);
 #endif
+
+/**
+ * @brief send snb or prb in gatt bearer
+ * @param[in] net_key_index: net key index
+ */
+void beacon_send_via_proxy(uint8_t net_key_index);
 
 /**
   * @brief recevie beacon

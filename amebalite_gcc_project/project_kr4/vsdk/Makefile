@@ -84,6 +84,7 @@ all: prebuild copy_ld_ram make_subdirs linker_image2 code_analyze
 image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
 ucps_image2: prebuild copy_ld_img2 make_subdirs linker_image2 code_analyze
 analysis_extract: code_extract
+toolchain: download_toolchain
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
 #*****************************************************************************#
@@ -278,6 +279,14 @@ code_extract:
 	fi
 	@echo "========== Image extract end =========="
 
+download_toolchain:
+ifeq ($(URL), aliyun)
+	@echo "Download toolchain from $(TOOLCHAINURL_ALIYUN)"
+	$(call download_toolchain_func,$(TOOLCHAINURL_ALIYUN))
+else
+	@echo "Download toolchain from $(TOOLCHAINURL)"
+	$(call download_toolchain_func,$(TOOLCHAINURL))
+endif
 #*****************************************************************************#
 #                      RULES TO BUILD COMPILER TIME                           #
 #*****************************************************************************#

@@ -25,7 +25,7 @@ mesh_msg_send_cause_t generic_on_power_up_stat(mesh_model_info_p pmodel_info, ui
     ACCESS_OPCODE_BYTE(msg.opcode, MESH_MSG_GENERIC_ON_POWER_UP_STAT);
     msg.on_power_up = on_power_up;
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)&msg;

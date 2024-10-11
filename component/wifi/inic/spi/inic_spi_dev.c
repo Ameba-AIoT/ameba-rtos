@@ -2,6 +2,8 @@
 
 struct inic_spi_priv_t spi_priv = {0};
 
+void rtw_pending_q_resume(void);
+
 void inic_spi_dma_tx_done_cb(void *param)
 {
 	struct inic_spi_priv_t *spi_priv = (struct inic_spi_priv_t *) param;
@@ -45,8 +47,12 @@ retry:
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
 			spi_priv->wait_for_txbuf = TRUE;
 
+			/* resume pending queue to release skb */
+			rtw_pending_q_resume();
+
 			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
 			rtos_sema_take(spi_priv->free_skb_sema, 5);
+
 			goto retry;
 		} else {
 			spi_priv->wait_for_txbuf = FALSE;
@@ -146,7 +152,25 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 		}
 
 		if ((ops == DISABLE) && (inic_spi_priv->dev_status & sts)) {
+#ifdef SPI_DEBUG
+			u32 pin = 0;
 
+			switch (sts) {
+			case DEV_STS_WAIT_TXDMA_DONE:
+				pin = _PB_2;
+				break;
+			case DEV_STS_WAIT_RXDMA_DONE:
+				pin = _PB_3;
+				break;
+			case DEV_STS_SPI_CS_LOW:
+				pin = _PB_10;
+				break;
+			default:
+				break;
+			}
+
+			GPIO_WriteBit(pin, 1);
+#endif
 			/* Clear status if exists */
 			inic_spi_priv->dev_status &= ~sts;
 
@@ -167,7 +191,9 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 
 				rtos_sema_give(inic_spi_priv->spi_transfer_done_sema);
 			}
-
+#ifdef SPI_DEBUG
+			GPIO_WriteBit(pin, 0);
+#endif
 		} else if (ops == ENABLE) {
 			/* Set status */
 			set_dev_rdy_pin(DEV_BUSY);
@@ -325,16 +351,13 @@ static void inic_spi_init(void)
 	GPIO_Init(&GPIO_InitStruct);
 
 #ifdef SPI_DEBUG
-	GPIO_InitStruct.GPIO_Pin = _PB_20;
+	GPIO_InitStruct.GPIO_Pin = _PB_2;
 	GPIO_Init(&GPIO_InitStruct);
 
-	GPIO_InitStruct.GPIO_Pin = _PB_6;
+	GPIO_InitStruct.GPIO_Pin = _PB_3;
 	GPIO_Init(&GPIO_InitStruct);
 
-	GPIO_InitStruct.GPIO_Pin = _PA_24;
-	GPIO_Init(&GPIO_InitStruct);
-
-	GPIO_InitStruct.GPIO_Pin = _PA_25;
+	GPIO_InitStruct.GPIO_Pin = _PB_10;
 	GPIO_Init(&GPIO_InitStruct);
 #endif
 

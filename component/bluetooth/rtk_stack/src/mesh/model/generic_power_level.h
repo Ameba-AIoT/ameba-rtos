@@ -152,7 +152,7 @@ typedef struct
  * @{
  */
 #define GENERIC_POWER_LEVEL_SERVER_GET                              0 //!< @ref generic_power_level_server_get_t
-#define GENERIC_POWER_LEVEL_SERVER_GET_DEFAULT                      1 //!< @ref generic_power_level_server_get_t 
+#define GENERIC_POWER_LEVEL_SERVER_GET_DEFAULT                      1 //!< @ref generic_power_level_server_get_t
 #define GENERIC_POWER_LEVEL_SERVER_GET_LAST                         2 //!< @ref generic_power_level_server_get_t
 #define GENERIC_POWER_LEVEL_SERVER_GET_RANGE                        3 //!< @ref generic_power_level_server_get_range_t
 #define GENERIC_POWER_LEVEL_SERVER_GET_DEFAULT_TRANSITION_TIME      4 //!< @ref generic_power_level_server_get_default_transition_time_t

@@ -366,8 +366,8 @@ alert(\"Your password is too long!(8-64)\");\
 #define MAX_PASSWORD_LEN		64
 #define MAX_CHANNEL_NUM			13
 
-rtw_wifi_setting_t Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
-rtw_wifi_setting_t target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+rtw_wifi_setting_t Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0, 0};
+rtw_wifi_setting_t target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0, 0};
 
 static void vProcessConnection(void *param);
 

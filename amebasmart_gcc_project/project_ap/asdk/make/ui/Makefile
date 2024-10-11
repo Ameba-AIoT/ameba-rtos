@@ -18,12 +18,12 @@ ifeq ($(CONFIG_GUI_EN),y)
 ifeq ($(CONFIG_LVGL_EN),y)
 	make -C LVGL all
 endif
-	make -C third_party all
 endif
 	#make -C test all
+	make -C drivers all
 
 lib: CORE_TARGETS
-	make -C drivers lib
+	make -C third_party lib
 #*****************************************************************************#
 #              GENERATE OBJECT FILE
 #*****************************************************************************#

@@ -10,6 +10,8 @@
 #include <platform_utils.h>
 #include <health.h>
 #include <mesh_cmd.h>
+#include <provision_client.h>
+#include <proxy_client.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -25,6 +27,7 @@
 #include <rtk_bt_mesh_generic_default_transition_time.h>
 #include <rtk_bt_mesh_generic_model.h>
 #include <rtk_bt_mesh_remote_prov_model.h>
+#include <rtk_bt_mesh_directed_forwarding_model.h>
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 #include <provision_service.h>
@@ -523,6 +526,17 @@ static void hb_cb(hb_data_type_t type, void *pargs)
 	}
 }
 
+uint16_t df_cb(uint8_t type, void *pdata)
+{
+	rtk_bt_mesh_stack_evt_df_t *df_cb_data;
+	rtk_bt_evt_t *p_evt = NULL;
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DF_CB, sizeof(rtk_bt_mesh_stack_evt_df_t));
+	df_cb_data = (rtk_bt_mesh_stack_evt_df_t *)p_evt->data;
+	df_cb_data->type = type;
+	df_cb_data->path_action = *(rtk_bt_mesh_df_path_action_t *)pdata;
+	return rtk_bt_evt_indicate(p_evt, NULL);
+}
+
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 T_APP_RESULT bt_stack_mesh_client_callback(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data)
 {
@@ -608,6 +622,9 @@ static void client_models_init(void)
 	health_client_model_init();
 #if defined(BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL) && BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL
 	remote_prov_client_init();
+#endif
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
+	directed_forwarding_client_init();
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL
 	generic_on_off_client_model_init();
@@ -835,7 +852,6 @@ static void rtk_bt_mesh_stack_init(void *data)
 #endif
 	/** configure provisioning parameters */
 	prov_params_set(PROV_PARAMS_CALLBACK_FUN, (void *)prov_cb, sizeof(prov_cb_pf));
-
 	/** config node parameters */
 	mesh_node_features_t features = {
 		.role = mesh_role,
@@ -846,7 +862,10 @@ static void rtk_bt_mesh_stack_init(void *data)
 		.snb = 1,
 		.bg_scan = 1,
 		.flash = 1,
-		.flash_rpl = 1
+		.flash_rpl = 1,
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+		.df = 1,
+#endif
 	};
 
 	mesh_node_cfg_t node_cfg = {
@@ -856,7 +875,10 @@ static void rtk_bt_mesh_stack_init(void *data)
 		.rpl_num = 20,
 		.sub_addr_num = 5,
 		.proxy_num = 1,
-		.proxy_interval = 5
+		.proxy_interval = 5,
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+		.df_fixed_path_size = 5,
+#endif
 	};
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	if (MESH_ROLE_PROVISIONER == mesh_role) {
@@ -946,6 +968,13 @@ static void rtk_bt_mesh_stack_init(void *data)
 	mesh_init();
 	device_info_cb_reg(device_info_cb);
 	hb_init(hb_cb);
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	df_cb_reg(df_cb);
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+	directed_control_t ctl = {1, 1, 1, 1, 1};
+	df_control_set(0, ctl);
+#endif
+#endif
 }
 
 static bool is_all_zeros_in_buf(uint8_t *p, uint8_t len)
@@ -1411,6 +1440,7 @@ static uint16_t rtk_stack_method_choose_for_prov(rtk_bt_mesh_stack_prov_start_t 
 	return RTK_BT_MESH_STACK_API_SUCCESS;
 }
 
+static int prov_client_conn_id;
 static uint16_t rtk_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_t *prov_dis)
 {
 	uint16_t ret;
@@ -1435,7 +1465,8 @@ static uint16_t rtk_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_set
 		ret = RTK_BT_MESH_STACK_API_FAIL;
 		goto end;
 	}
-	if (!proxy_ctx_set_link(prov_proxy_ctx_id, prov_client_conn_id)) {
+	uint8_t ctx_id = prov_service_alloc_proxy_ctx(prov_client_conn_id);
+	if (ctx_id == MESH_PROXY_PROTOCOL_RSVD_CTX_ID) {
 		ret = RTK_BT_MESH_STACK_API_FAIL;
 		goto end;
 	}
@@ -1559,7 +1590,7 @@ static rtk_bt_mesh_stack_lpn_req_result_type rtk_stack_lpn_req(rtk_bt_mesh_stack
 	case LPN_REQ_REASON_FRND_INDEX_INVALID:
 		rtk_req_result = RTK_BT_MESH_LPN_REQ_REASON_FRND_INDEX_INVALID;
 		break;
-	case LPN_REQ_REASON_FRND_ALREADY_EXIST_OR_ESTABLISING:
+	case LPN_REQ_REASON_FRND_ALREADY_EXIST_OR_ESTABLISHING:
 		rtk_req_result = RTK_BT_MESH_LPN_REQ_REASON_FRND_ALREADY_EXIST_OR_ESTABLISING;
 		break;
 	case LPN_REQ_REASON_RESOURCE_INSUFFICIENT:
@@ -1743,6 +1774,10 @@ void bt_stack_mesh_deinit(void)
 	mesh_deinit();
 	memset(rtk_bt_mesh_uuid_user, 0, 16);
 	rtk_bt_mesh_one_shot_adv_deinit();
+	prov_client_deinit();
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+	proxy_client_deinit();
+#endif
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

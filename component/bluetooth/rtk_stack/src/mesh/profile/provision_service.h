@@ -29,7 +29,7 @@ BEGIN_DECLS
   * @{
   */
 #define MESH_PB_GATT_PKT_OFFSET                         (3) //!< opcode + handle
-#define MESH_PB_GATT_PKT_HEADER_SIZE                    (1) //!< control(2 bits) + info(6 bits) 
+#define MESH_PB_GATT_PKT_HEADER_SIZE                    (1) //!< control(2 bits) + info(6 bits)
 #define MESH_PB_GATT_START_HEADER_SIZE                  (3) //!< length(2) + fcs(1)
 
 ///@cond
@@ -53,10 +53,32 @@ extern prov_bearer_cb_pf pf_pb_gatt_cb;
   * @brief
   * @{
   */
+
+/**
+  * @brief allocate proxy resource for provision on this link
+  *
+  * The resource will be released automatically when disconnected.
+  * @param[in] link: the link for provisioning
+  *
+  * @return the proxy resource index
+  * @retval MESH_PROXY_PROTOCOL_RSVD_CTX_ID: allocate failed
+  */
+uint8_t prov_service_alloc_proxy_ctx(gap_sched_link_t link);
+
+/**
+  * @brief allocate proxy resources for provision on this link
+  *
+  * Use this api to recycle resource if the link is still kept.
+  * @param[in] link: the link for provisioning
+  * @return operation result
+  */
+bool prov_service_free_proxy_ctx(gap_sched_link_t link);
+
 ///@cond
-bool prov_service_send(uint8_t *pvalue, uint16_t len);
+uint8_t prov_service_get_active_count(void);
+bool prov_service_send(gap_sched_link_t link, uint8_t *pvalue, uint16_t len);
 bool prov_service_receive(uint8_t ctx_id, proxy_pdu_type_t type, uint8_t *pvalue, uint16_t len);
-void prov_service_handle_tx_done(void);
+void prov_service_handle_tx_done(gap_sched_link_t link);
 void prov_service_handle_disc(gap_sched_link_t link);
 ///@endcond
 /** @} */

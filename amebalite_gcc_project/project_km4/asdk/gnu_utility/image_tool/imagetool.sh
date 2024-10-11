@@ -158,6 +158,15 @@ if [ "$IMAGE_FILENAME" == "km4_boot_all.bin" ]; then
 	rm -rf $KM4_IMG_DIR/km4_boot_all_en.bin
 fi
 
+if [ "$IMAGE_FILENAME" == "km4_boot_all_mp.bin" ]; then
+	$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/km4_boot_all_mp.bin $KM4_IMG_DIR/manifest.bin boot
+	$ELF2BIN rsip $KM4_IMG_DIR/km4_boot_all_mp.bin $KM4_IMG_DIR/km4_boot_all_mp_en.bin 0x0F800000 $MANIFEST_JSON boot
+
+	cat $KM4_IMG_DIR/manifest.bin $KM4_IMG_DIR/km4_boot_all_mp.bin > $KM4_IMG_DIR/km4_boot_all_mp_ns.bin	
+	cat $KM4_IMG_DIR/manifest.bin $KM4_IMG_DIR/km4_boot_all_mp_en.bin > $KM4_IMG_DIR/km4_boot_all_mp.bin
+	rm -rf $KM4_IMG_DIR/km4_boot_all_mp_en.bin
+fi
+
 if [ "$IMAGE_FILENAME" == "ram_1_prepend.bin" ]; then
 	$ELF2BIN manifest $MANIFEST_JSON $MANIFEST_JSON $KM4_IMG_DIR/ram_1_prepend.bin $KM4_IMG_DIR/manifest.bin boot
 	cat $KM4_IMG_DIR/ram_1_prepend.bin $KM4_IMG_DIR/manifest.bin > $KM4_IMG_DIR/imgtool_flashloader.bin

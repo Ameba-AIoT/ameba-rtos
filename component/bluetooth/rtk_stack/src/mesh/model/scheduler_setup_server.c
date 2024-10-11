@@ -18,7 +18,7 @@
 
 
 extern mesh_msg_send_cause_t scheduler_action_status(mesh_model_info_p pmodel_info, uint16_t dst,
-                                                     uint16_t app_key_index, scheduler_register_t scheduler,
+                                                     uint16_t app_key_index, bool optional, scheduler_register_t scheduler,
                                                      uint32_t delay_time);
 extern mesh_msg_send_cause_t scheduler_delay_publish(const mesh_model_info_p pmodel_info,
                                                      scheduler_register_t scheduler, uint32_t delay_time);
@@ -36,7 +36,7 @@ static bool scheduler_check_parameter(const scheduler_register_t *pscheduler)
         return FALSE;
     }
 
-    if (!IS_SCHEDULER_YEAR_VALIE(pscheduler->year))
+    if (!IS_SCHEDULER_YEAR_VALID(pscheduler->year))
     {
         return FALSE;
     }
@@ -111,7 +111,8 @@ static bool scheduler_setup_server_receive(mesh_msg_p pmesh_msg)
 #endif
                 if (MESH_MSG_SCHEDULER_ACTION_SET == pmesh_msg->access_opcode)
                 {
-                    scheduler_action_status(pmodel_info, pmesh_msg->src, pmesh_msg->app_key_index, pmsg->scheduler,
+                    scheduler_action_status(pmodel_info, pmesh_msg->src, pmesh_msg->app_key_index, true,
+                                            pmsg->scheduler,
                                             delay_rsp_time);
                 }
 

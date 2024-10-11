@@ -2,7 +2,7 @@
 *****************************************************************************************
 *     Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
-* @file     blob_transfer.c
+* @file     blob_transfer_client.c
 * @brief    Source file for blob transfer client model.
 * @details  Data types and external functions declaration.
 * @author   bill
@@ -12,18 +12,18 @@
 */
 
 /* Add Includes here */
-#include <string.h>
 #include "mesh_api.h"
 #include "blob_transfer.h"
+#include "app_mesh_flags.h"
 
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
 
 mesh_model_info_t blob_transfer_client;
 
 static mesh_msg_send_cause_t blob_transfer_client_send(uint16_t dst, uint16_t app_key_index,
                                                        uint8_t *pmsg, uint16_t len)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &blob_transfer_client;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -86,7 +86,7 @@ mesh_msg_send_cause_t blob_chunk_transfer(uint16_t dst, uint16_t app_key_index, 
                                           uint8_t *pdata, uint16_t len)
 {
     mesh_msg_send_cause_t ret;
-    blob_chunk_transfer_t *pmsg = (blob_chunk_transfer_t *)plt_malloc(sizeof(
+    blob_chunk_transfer_t *pmsg = (blob_chunk_transfer_t *)plt_zalloc(sizeof(
                                                                           blob_chunk_transfer_t) + len, RAM_TYPE_DATA_ON);
     if (pmsg == NULL)
     {
@@ -150,15 +150,15 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
 
             if (pmesh_msg->msg_len == MEMBER_OFFSET(blob_transfer_status_t, blob_id))
             {
-                data_uart_debug("receive blob transfer status: status %d, mode %d, phase %d\r\n",
-                                pmsg->status, pmsg->transfer_mode, pmsg->transfer_phase);
+                printi("receive blob transfer status: status %d, mode %d, phase %d",
+                       pmsg->status, pmsg->transfer_mode, pmsg->transfer_phase);
             }
             else if (pmesh_msg->msg_len == MEMBER_OFFSET(blob_transfer_status_t, blob_size))
             {
                 memcpy(status_data.blob_id, pmsg->blob_id, 8);
-                data_uart_debug("receive blob transfer status: status %d, mode %d, phase %d, blob_id \r\n",
-                                pmsg->status, pmsg->transfer_mode, pmsg->transfer_phase);
-                data_uart_dump(pmsg->blob_id, 8);
+                printi("receive blob transfer status: status %d, mode %d, phase %d, blob_id",
+                       pmsg->status, pmsg->transfer_mode, pmsg->transfer_phase);
+                dprinti(pmsg->blob_id, 8);
             }
             else
             {
@@ -167,15 +167,15 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                 status_data.block_size_log = pmsg->block_size_log;
                 status_data.transfer_mtu_size = pmsg->transfer_mtu_size;
 
-                data_uart_debug("receive blob transfer status: status %d, mode %d, phase %d, blob_size %d, block_size_log %d, transfer_mtu_size %d, blob_id \r\n",
-                                pmsg->status, pmsg->transfer_mode, pmsg->transfer_phase, pmsg->blob_size, pmsg->block_size_log,
-                                pmsg->transfer_mtu_size);
-                data_uart_dump(pmsg->blob_id, 8);
+                printi("receive blob transfer status: status %d, mode %d, phase %d, blob_size %d, block_size_log %d, transfer_mtu_size %d, blob_id",
+                       pmsg->status, pmsg->transfer_mode, pmsg->transfer_phase, pmsg->blob_size, pmsg->block_size_log,
+                       pmsg->transfer_mtu_size);
+                dprinti(pmsg->blob_id, 8);
                 if (pmesh_msg->msg_len > sizeof(blob_transfer_status_t))
                 {
                     uint16_t data_len = pmesh_msg->msg_len - sizeof(blob_transfer_status_t);
                     uint8_t *pdata = pmsg->blocks_not_received;
-                    pmissing_blocks = plt_malloc(data_len * 8 * 2, RAM_TYPE_DATA_ON);
+                    pmissing_blocks = plt_zalloc(data_len * 8 * 2, RAM_TYPE_DATA_ON);
                     uint16_t *pbuffer = pmissing_blocks;
                     if (NULL == pmissing_blocks)
                     {
@@ -190,12 +190,12 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                             missing_blocks_len ++;
                         }
                     }
-                    data_uart_debug("blocks_not_received = ");
-                    data_uart_dump((uint8_t *)pmissing_blocks, missing_blocks_len * 2);
+                    printi("blocks_not_received =");
+                    dprinti((uint8_t *)pmissing_blocks, missing_blocks_len * 2);
                 }
             }
 
-            if (NULL != blob_transfer_client.model_data_cb)
+            if (blob_transfer_client.model_data_cb)
             {
                 status_data.pmissing_blocks = pmissing_blocks;
                 status_data.missing_blocks_len = missing_blocks_len;
@@ -203,30 +203,28 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                                                    &status_data);
             }
 
-            if (NULL != pmissing_blocks)
+            if (pmissing_blocks)
             {
                 plt_free(pmissing_blocks, RAM_TYPE_DATA_ON);
+                pmissing_blocks = NULL;
             }
         }
         break;
     case MESH_MSG_BLOB_BLOCK_STATUS:
         {
             blob_block_status_t *pmsg = (blob_block_status_t *)pbuffer;
-            data_uart_debug("receive blob block status: status %d, format %d, block_num %d, chunk_size %d",
-                            pmsg->status, pmsg->format, pmsg->block_num, pmsg->chunk_size);
+            printi("receive blob block status: src 0x%04x, status %d, format %d, block_num %d, chunk_size %d",
+                   pmesh_msg->src, pmsg->status, pmsg->format, pmsg->block_num, pmsg->chunk_size);
             uint16_t *pmissing_chunks = NULL;
             uint16_t missing_chunks_len = 0;
             uint16_t data_len = pmesh_msg->msg_len - sizeof(blob_block_status_t);
             uint8_t *pdata = pmsg->missing_chunks;
             if (pmsg->format == BLOB_CHUNK_MISSING_FORMAT_ENCODED)
             {
-                data_uart_debug(" ,missing_chunks = ");
                 uint8_t convert_len;
-                uint16_t *pmissing_chunks = NULL;
-                uint16_t missing_chunks_len = 0;
                 if (data_len > 0)
                 {
-                    pmissing_chunks = plt_malloc(data_len * 2, RAM_TYPE_DATA_ON);
+                    pmissing_chunks = plt_zalloc(data_len * 2, RAM_TYPE_DATA_ON);
                     uint16_t *pbuffer = pmissing_chunks;
                     if (NULL == pmissing_chunks)
                     {
@@ -240,15 +238,13 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                         pdata += convert_len;
                         missing_chunks_len ++;
                     }
-                    data_uart_dump((uint8_t *)pmissing_chunks, missing_chunks_len * 2);
                 }
             }
             else if (pmsg->format == BLOB_CHUNK_MISSING_FORMAT_SOME)
             {
-                data_uart_debug(" ,missing_chunks = ");
                 if (data_len > 0)
                 {
-                    pmissing_chunks = plt_malloc(data_len * 8 * 2, RAM_TYPE_DATA_ON);
+                    pmissing_chunks = plt_zalloc(data_len * 8 * 2, RAM_TYPE_DATA_ON);
                     if (NULL == pmissing_chunks)
                     {
                         printe("receive partial block report: out of memory!");
@@ -263,12 +259,10 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                             missing_chunks_len ++;
                         }
                     }
-                    data_uart_dump((uint8_t *)pmissing_chunks, missing_chunks_len * 2);
                 }
             }
-            data_uart_debug("\r\n");
 
-            if (NULL != blob_transfer_client.model_data_cb)
+            if (blob_transfer_client.model_data_cb)
             {
                 blob_transfer_client_block_status_t block_data;
                 block_data.src = pmesh_msg->src;
@@ -286,16 +280,16 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                                                    &block_data);
             }
 
-            if (NULL != pmissing_chunks)
+            if (pmissing_chunks)
             {
                 plt_free(pmissing_chunks, RAM_TYPE_DATA_ON);
+                pmissing_chunks = NULL;
             }
         }
         break;
     case MESH_MSG_BLOB_PARTIAL_BLOCK_REPORT:
         {
             blob_partial_block_report_t *pmsg = (blob_partial_block_report_t *)pbuffer;
-            data_uart_debug("receive partial block report: encoded missing chunks = ");
             uint8_t *pdata = pmsg->encoded_missing_chunks;
             uint16_t data_len = pmesh_msg->msg_len - sizeof(blob_partial_block_report_t);
             uint8_t convert_len;
@@ -303,7 +297,7 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
             uint16_t missing_chunks_len = 0;
             if (data_len > 0)
             {
-                pmissing_chunks = plt_malloc(data_len * 2, RAM_TYPE_DATA_ON);
+                pmissing_chunks = plt_zalloc(data_len * 2, RAM_TYPE_DATA_ON);
                 uint16_t *pbuffer = pmissing_chunks;
                 if (NULL == pmissing_chunks)
                 {
@@ -317,11 +311,9 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                     pdata += convert_len;
                     missing_chunks_len ++;
                 }
-                data_uart_dump((uint8_t *)pmissing_chunks, missing_chunks_len * 2);
             }
-            data_uart_debug("\r\n");
 
-            if (NULL != blob_transfer_client.model_data_cb)
+            if (blob_transfer_client.model_data_cb)
             {
                 blob_transfer_client_partial_block_report_t report_data;
                 report_data.src = pmesh_msg->src;
@@ -332,16 +324,32 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                                                    &report_data);
             }
 
-            if (NULL != pmissing_chunks)
+            if (pmissing_chunks)
             {
                 plt_free(pmissing_chunks, RAM_TYPE_DATA_ON);
+                pmissing_chunks = NULL;
             }
         }
         break;
     case MESH_MSG_BLOB_INFO_STATUS:
         {
             blob_info_status_t *pmsg = (blob_info_status_t *)pbuffer;
-            if (NULL != blob_transfer_client.model_data_cb)
+            uint32_t max_block_size = pmsg->max_total_chunks * pmsg->max_chunk_size;
+            if (pmsg->min_block_size_log > pmsg->max_block_size_log)
+            {
+                printe("receive blob info status: wrong block size log, min %d max %d", pmsg->min_block_size_log,
+                       pmsg->max_block_size_log);
+                break;
+            }
+
+            if (plt_exp2(pmsg->min_block_size_log) > max_block_size)
+            {
+                printe("receive blob info status: wrong block size log, min block size %d, max block size %d",
+                       plt_exp2(pmsg->min_block_size_log), max_block_size);
+                break;
+            }
+
+            if (blob_transfer_client.model_data_cb)
             {
                 blob_transfer_client_info_status_t status_data;
                 status_data.src = pmesh_msg->src;
@@ -356,9 +364,9 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
                 blob_transfer_client.model_data_cb(&blob_transfer_client, BLOB_TRANSFER_CLIENT_INFO_STATUS,
                                                    &status_data);
             }
-            data_uart_debug("receive blob info status: min_block_size_log %d, max_block_size_log %d, max_total_chunks %d, max_chunk_size %d, max_blob_size %d, server_mtu_size %d, supported_transfer_mode %d\r\n",
-                            pmsg->min_block_size_log, pmsg->max_block_size_log, pmsg->max_total_chunks, pmsg->max_chunk_size,
-                            pmsg->max_blob_size, pmsg->server_mtu_size, pmsg->supported_transfer_mode);
+            printi("receive blob info status: min_block_size_log %d, max_block_size_log %d, max_total_chunks %d, max_chunk_size %d, max_blob_size %d, server_mtu_size %d, supported_transfer_mode %d",
+                   pmsg->min_block_size_log, pmsg->max_block_size_log, pmsg->max_total_chunks, pmsg->max_chunk_size,
+                   pmsg->max_blob_size, pmsg->server_mtu_size, pmsg->supported_transfer_mode);
         }
         break;
     default:
@@ -369,6 +377,16 @@ bool blob_transfer_client_receive(mesh_msg_p pmesh_msg)
     return ret;
 }
 
+void blob_transfer_client_set_send_cb(model_send_cb_pf model_send_cb)
+{
+    blob_transfer_client.model_send_cb = model_send_cb;
+}
+
+void blob_transfer_client_set_data_cb(model_data_cb_pf model_data_cb)
+{
+    blob_transfer_client.model_data_cb = model_data_cb;
+}
+
 void blob_transfer_client_reg(uint8_t element_index, model_data_cb_pf model_data_cb)
 {
     blob_transfer_client.model_id = MESH_MODEL_BLOB_TRANSFER_CLIENT;
@@ -377,4 +395,4 @@ void blob_transfer_client_reg(uint8_t element_index, model_data_cb_pf model_data
     mesh_model_reg(element_index, &blob_transfer_client);
 }
 
-#endif /* MESH_BLOB */
+#endif /* F_BT_MESH_1_1_MBT_SUPPORT */

@@ -33,15 +33,15 @@ BEGIN_DECLS
  * @brief Mesh message access opcode
  * @{
  */
-#define MESH_MSG_FW_UPDATE_INFO_GET                     0xB71B
-#define MESH_MSG_FW_UPDATE_INFO_STATUS                  0x7C
-#define MESH_MSG_FW_UPDATE_FW_METADATA_CHECK            0x7B
-#define MESH_MSG_FW_UPDATE_FW_METADATA_STATUS           0x7A
-#define MESH_MSG_FW_UPDATE_GET                          0xB71C
-#define MESH_MSG_FW_UPDATE_START                        0xB71D
-#define MESH_MSG_FW_UPDATE_CANCEL                       0xB71E
-#define MESH_MSG_FW_UPDATE_APPLY                        0xB71F
-#define MESH_MSG_FW_UPDATE_STATUS                       0x70
+#define MESH_MSG_FW_UPDATE_INFO_GET                     0x8308
+#define MESH_MSG_FW_UPDATE_INFO_STATUS                  0x8309
+#define MESH_MSG_FW_UPDATE_FW_METADATA_CHECK            0x830A
+#define MESH_MSG_FW_UPDATE_FW_METADATA_STATUS           0x830B
+#define MESH_MSG_FW_UPDATE_GET                          0x830C
+#define MESH_MSG_FW_UPDATE_START                        0x830D
+#define MESH_MSG_FW_UPDATE_CANCEL                       0x830E
+#define MESH_MSG_FW_UPDATE_APPLY                        0x830F
+#define MESH_MSG_FW_UPDATE_STATUS                       0x8310
 /** @} */
 
 /**
@@ -49,8 +49,8 @@ BEGIN_DECLS
  * @brief Mesh model id
  * @{
  */
-#define MESH_MODEL_FW_UPDATE_SERVER                     0xBF44FFFF
-#define MESH_MODEL_FW_UPDATE_CLIENT                     0xBF45FFFF
+#define MESH_MODEL_FW_UPDATE_SERVER                     0x1402FFFF
+#define MESH_MODEL_FW_UPDATE_CLIENT                     0x1403FFFF
 /** @} */
 
 /**
@@ -107,7 +107,7 @@ enum
     FW_RETRIEVED_UPDATE_PHASE_TRANSFER_CANCELED,
     FW_RETRIEVED_UPDATE_PHASE_APPLY_SUCCESS,
     FW_RETRIEVED_UPDATE_PHASE_APPLY_FAILED,
-    FW_RETRIEVED_UPDATE_PHASE_APPLY_UNKNOWN,
+    FW_RETRIEVED_UPDATE_PHASE_UNKNOWN,
 } _SHORT_ENUM_;
 typedef uint8_t fw_retrieved_update_phase_t;
 
@@ -220,7 +220,6 @@ extern fw_update_server_ctx_t fw_update_server_ctx;
 #define FW_UPDATE_SERVER_APPLY                                  4 //!< @ref fw_update_server_apply_t
 #define FW_UPDATE_SERVER_BLOCK_DATA                             5 //!< @ref fw_update_server_block_data_t
 #define FW_UPDATE_SERVER_FAIL                                   6 //!< @ref fw_update_server_fail_t
-
 
 typedef struct
 {

@@ -68,7 +68,7 @@ static mesh_msg_send_cause_t sensor_server_send(const mesh_model_info_p pmodel_i
                                                 uint16_t dst, uint16_t app_key_index, void *pmsg, uint16_t msg_len,
                                                 uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -362,7 +362,10 @@ static int32_t sensor_server_publish(mesh_model_info_p pmodel_info, bool retrans
             sensor_data.raw_data_len = psensor->sensor_raw_data_len;
             sensor_data.raw_data = get_data.raw_data;
             /* publish */
-            sensor_status(pmodel_info, 0, 0, &sensor_data, 1, 0);
+            if (sensor_data.raw_data_len == 0 || sensor_data.raw_data != 0)
+            {
+                sensor_status(pmodel_info, 0, 0, &sensor_data, 1, 0);
+            }
             /* compare data */
             sensor_server_compare_cadence_t get_data = {psensor->descriptor.property_id, FALSE};
             if (NULL != psensor->cadence)

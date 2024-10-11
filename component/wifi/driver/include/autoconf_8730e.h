@@ -21,8 +21,11 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_NAN
+
+#if defined(CONFIG_FULLMAC) && defined(CONFIG_NAN)
 #define CONFIG_MCC_MODE
-//#define CONFIG_MCC_NAN_TEST
+#endif
+
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3

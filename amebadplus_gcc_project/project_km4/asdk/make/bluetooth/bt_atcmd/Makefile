@@ -35,7 +35,8 @@ CSRC += \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_default_transition_time.c \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_model.c \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_sensor_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_health_model.c
+	$(DIR)/bt_atcmd/atcmd_bt_mesh_health_model.c \
+	${DIR}/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c
 
 OBJS = $(notdir $(CSRC:.c=.o))
 

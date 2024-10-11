@@ -26,6 +26,7 @@ extern "C"  {
 #include "blob_transfer.h"
 #include "firmware_update.h"
 #include "firmware_distribution.h"
+#include "blob_client_app.h"
 
 /****************************************************************************************************************
 * exported variables other .c files may use all defined here.
@@ -53,6 +54,210 @@ extern "C"  {
      "cms [dst] [model] [parameters]\n\r",\
      "configuration model set parameters\n\r",\
      user_cmd_cms\
+    },\
+    {\
+     "dcg",\
+     "dcg [dst] [net key index] [net key index df]\n\r",\
+     "directed control get\n\r",\
+     user_cmd_directed_control_get\
+    },\
+    {\
+     "dcs",\
+     "dcs [dst] [net key index] [net key index df] [forwarding] [relay] [proxy] [proxy use directed default] [friend]\n\r",\
+     "directed control set\n\r",\
+     user_cmd_directed_control_set\
+    },\
+    {\
+     "pmg",\
+     "pmg [dst] [net key index][net key index df]\n\r",\
+     "path metric get\n\r",\
+     user_cmd_path_metric_get\
+    },\
+    {\
+     "pms",\
+     "pms [dst] [net key index] [net key index df] [metric type] [lifetime]\n\r",\
+     "path metric set\n\r",\
+     user_cmd_path_metric_set\
+    },\
+    {\
+     "dtcg",\
+     "dtcg [dst] [net key index] [net key index df]\n\r",\
+     "discovery table capabilities get\n\r",\
+     user_cmd_discovery_table_capabilities_get\
+    },\
+    {\
+     "dtcs",\
+     "dtcs [dst] [net key index] [net key index df] [max concurrent init]\n\r",\
+     "discovery table capabilities set\n\r",\
+     user_cmd_discovery_table_capabilities_set\
+    },\
+    {\
+     "fta",\
+     "fta [dst] [net key index] [net key index df] [unicast dst] [backward path valid] [origin addr] [ori second elem num] [target addr] [tar second elem num] [bearer toward origin] [bearer toward target]\n\r",\
+     "forwarding table add\n\r",\
+     user_cmd_forwarding_table_add\
+    },\
+    {\
+     "ftd",\
+     "ftd [dst] [net key index] [net key index df] [path origin] [dst]\n\r",\
+     "forwarding table delete\n\r",\
+     user_cmd_forwarding_table_delete\
+    },\
+    {\
+     "ftda",\
+     "ftda [dst] [net key index] [net key index df] [path origin] [path target] [do_list_size] [dt_list_size] [addr] [second elem num]...\n\r",\
+     "forwarding table dependents add\n\r",\
+     user_cmd_forwarding_table_dependents_add\
+    },\
+    {\
+     "ftdd",\
+     "ftdd [dst] [net key index] [net key index df] [path origin] [path target] [do_list_size] [dt_list_size] [addr range] ...\n\r",\
+     "forwarding table dependents delete\n\r",\
+     user_cmd_forwarding_table_dependents_delete\
+    },\
+    {\
+     "ftdg",\
+     "ftdg [dst] [net key index] [net key index df] [list mask] [fixed path flag] [start index] [path origin] [path target] [update id]\n\r",\
+     "forwarding table dependents get\n\r",\
+     user_cmd_forwarding_table_dependents_get\
+    },\
+    {\
+     "ftecg",\
+     "ftecg [dst] [net key index] [net key index df]\n\r",\
+     "forwarding table entries count get\n\r",\
+     user_cmd_forwarding_table_entries_count_get\
+    },\
+    {\
+     "fteg",\
+     "fteg [dst] [net key index] [net key index df] [filter mask] [start index] ...\n\r",\
+     "forwarding table entries get\n\r",\
+     user_cmd_forwarding_table_entries_get\
+    },\
+    {\
+     "wlg",\
+     "wlg [dst] [net key index] [net key index df]\n\r",\
+     "wanted lanes get\n\r",\
+     user_cmd_wanted_lanes_get\
+    },\
+    {\
+     "wls",\
+     "wls [dst] [net key index] [net key index df] [wanted lanes]\n\r",\
+     "wanted lanes set\n\r",\
+     user_cmd_wanted_lanes_set\
+    },\
+    {\
+     "twpg",\
+     "twpg [dst] [net key index] [net key index df]\n\r",\
+     "two way path get\n\r",\
+     user_cmd_two_way_path_get\
+    },\
+    {\
+     "twps",\
+     "twps [dst] [net key index] [net key index df] [two way path]\n\r",\
+     "two way path set\n\r",\
+     user_cmd_two_way_path_set\
+    },\
+    {\
+     "peig",\
+     "peig [dst] [net key index] [net key index df]\n\r",\
+     "path echo interval get\n\r",\
+     user_cmd_path_echo_interval_get\
+    },\
+    {\
+     "peis",\
+     "peis [dst] [net key index] [net key index df] [unicast echo interval] [multicast echo interval]\n\r",\
+     "path echo interval set\n\r",\
+     user_cmd_path_echo_interval_set\
+    },\
+    {\
+     "dntg",\
+     "dntg [dst] [net key index]\n\r",\
+     "directed network transmit get\n\r",\
+     user_cmd_directed_network_transmit_get\
+    },\
+    {\
+     "dnts",\
+     "dnts [dst] [net key index] [count] [steps]\n\r",\
+     "directed network transmit set\n\r",\
+     user_cmd_directed_network_transmit_set\
+    },\
+    {\
+     "drrg",\
+     "drrg [dst] [net key index]\n\r",\
+     "directed relay retransmit get\n\r",\
+     user_cmd_directed_relay_retransmit_get\
+    },\
+    {\
+     "drrs",\
+     "drrs [dst] [net key index] [count] [steps]\n\r",\
+     "directed relay retransmit set\n\r",\
+     user_cmd_directed_relay_retransmit_set\
+    },\
+    {\
+     "rssitg",\
+     "rssitg [dst] [net key index]\n\r",\
+     "rssi threshold get\n\r",\
+     user_cmd_rssi_threshold_get\
+    },\
+    {\
+     "rssits",\
+     "rssits [dst] [net key index] [rssi margin]\n\r",\
+     "rssi threshold get\n\r",\
+     user_cmd_rssi_threshold_set\
+    },\
+    {\
+     "dpg",\
+     "dpg [dst] [net key index]\n\r",\
+     "directed paths get\n\r",\
+     user_cmd_directed_paths_get\
+    },\
+    {\
+     "dppg",\
+     "dppg [dst] [net key index] [elem addr] [model id]\n\r",\
+     "directed publish policy get\n\r",\
+     user_cmd_directed_publish_policy_get\
+    },\
+    {\
+     "dpps",\
+     "dpps [dst] [net key index] [policy] [elem addr] [model id]\n\r",\
+     "directed publish policy set\n\r",\
+     user_cmd_directed_publish_policy_set\
+    },\
+    {\
+     "pdtcg",\
+     "pdtcg [dst] [net key index]\n\r",\
+     "path discovery timing control get\n\r",\
+     user_cmd_path_discovery_timing_control_get\
+    },\
+    {\
+     "pdtcs",\
+     "pdtcs [dst] [net key index] [monitor] [dis retry] [dis interval] [lan guard]\n\r",\
+     "path discovery timing control set\n\r",\
+     user_cmd_path_discovery_timing_control_set\
+    },\
+    {\
+     "dcntg",\
+     "dcntg [dst] [net key index]\n\r",\
+     "directed control network transmit get\n\r",\
+     user_cmd_directed_control_network_transmit_get\
+    },\
+    {\
+     "dcnts",\
+     "dcnts [dst] [net key index] [count] [steps]\n\r",\
+     "directed control network transmit set\n\r",\
+     user_cmd_directed_control_network_transmit_set\
+    },\
+    {\
+     "dcrrg",\
+     "dcrrg [dst] [net key index]\n\r",\
+     "directed control relay retransmit get\n\r",\
+     user_cmd_directed_control_relay_retransmit_get\
+    },\
+    {\
+     "dcrrs",\
+     "dcrrs [dst] [net key index] [count] [steps]\n\r",\
+     "directed control relay retransmit set\n\r",\
+     user_cmd_directed_control_relay_retransmit_set\
     },\
     {\
      "gdttg",\
@@ -775,6 +980,24 @@ extern "C"  {
      user_cmd_blob_info_get\
     },\
     {\
+     "btccr",\
+     "btccr [app key index] [transfer ttl] [addr num] [addr]..\n\r",\
+     "blob transfer client caps retrieve\n\r",\
+     user_cmd_blob_transfer_client_caps_retrieve\
+    },\
+    {\
+     "btcbt",\
+     "btcbt [multicast addr] [app key index] [transfer ttl] [blob id] [blob size] [transfer mode: 1 push, 2 pull] [client timeout base] [skip caps retrieve] [addr num] [addr]..\n\r",\
+     "blob transfer client blob transfer\n\r",\
+     user_cmd_blob_transfer_client_blob_transfer\
+    },\
+    {\
+     "btctc",\
+     "btctc [blob id] [addr num] [addr]..\n\r",\
+     "blob transfer client transfer cancel\n\r",\
+     user_cmd_blob_transfer_client_transfer_cancel\
+    },\
+    {\
      "fuig",\
      "fuig [dst] [app_key_index] [first_index] [entries_limit]\n\r",\
      "firmware update information get\n\r",\
@@ -831,7 +1054,7 @@ extern "C"  {
     {\
      "fdcg",\
      "fdcg [dst] [app_key_index]\n\r",\
-     "firmware distribution capabilites get\n\r",\
+     "firmware distribution capabilities get\n\r",\
      user_cmd_fw_dist_caps_get\
     },\
     {\
@@ -845,6 +1068,24 @@ extern "C"  {
      "fds [dst] [app_key_index] [dist_app_key_index] [dist_ttl] [dist_timeout_base] [dist_transfer_mode] [update_policy] [dist_fw_image_idx] [dist_multicast_addr] [dist_dst_len]\n\r",\
      "firmware distribution start\n\r",\
      user_cmd_fw_dist_start\
+    },\
+    {\
+     "dfuus",\
+     "dfuus [dist_dst] [dist_app_key_index] [upload_timeout_base] [fw_image_size]\n\r",\
+     "start dfu upload\n\r",\
+     user_cmd_dfu_upload_start\
+    },\
+    {\
+     "dfuds",\
+     "dfuds [dst] [app_key_index] [dist_app_key_index] [dist_timeout_base] [dist_fw_image_idx] [dist_multicast_addr] [dist_dst_len]\n\r",\
+     "firmware distribution start\n\r",\
+     user_cmd_dfu_dist_start\
+    },\
+    {\
+     "fdsp",\
+     "fdsp [dst] [app_key_index]\n\r",\
+     "firmware distribution suspend\n\r",\
+     user_cmd_fw_dist_suspend\
     },\
     {\
      "fdc",\
@@ -891,7 +1132,7 @@ extern "C"  {
     {\
      "fdgbi",\
      "fdgbi [dst] [app_key_index] [dist_fw_image_index]\n\r",\
-     "firmware distribution get by index\n\r",\
+     "firmware distribution firmware get by index\n\r",\
      user_cmd_fw_dist_fw_get_by_index\
     },\
     {\
@@ -905,6 +1146,48 @@ extern "C"  {
      "fdfda [dst] [app_key_index]\n\r",\
      "firmware distribution firmware delete all\n\r",\
      user_cmd_fw_dist_fw_delete_all\
+    },\
+    {\
+     "sbg",\
+     "sbg [dst] [net_key_index]\n\r",\
+     "subnet bridge get\n\r",\
+     user_cmd_subnet_bridge_get\
+    },\
+    {\
+     "sbs",\
+     "sbs [dst] [net_key_index] [state]\n\r",\
+     "subnet bridge set\n\r",\
+     user_cmd_subnet_bridge_set\
+    },\
+    {\
+     "bta",\
+     "bta [dst] [net_key_index] [directions] [net_key_index1] [net_key_index2] [addr1] [addr2]\n\r",\
+     "bridging table add\n\r",\
+     user_cmd_bridging_table_add\
+    },\
+    {\
+     "btr",\
+     "btr [dst] [net_key_index] [net_key_index1] [net_key_index2] [addr1] [addr2]\n\r",\
+     "bridging table remove\n\r",\
+     user_cmd_bridging_table_remove\
+    },\
+    {\
+     "bsg",\
+     "bsg [dst] [net_key_index] [filter] [filter_net_key_idnex] [start_index]\n\r",\
+     "bridged subnets get\n\r",\
+     user_cmd_bridged_subnets_get\
+    },\
+    {\
+     "btbg",\
+     "btbg [dst] [net_key_index] [net_key_index1] [net_key_index2] [start_index]\n\r",\
+     "bridging table get\n\r",\
+     user_cmd_bridging_table_get\
+    },\
+    {\
+     "btsg",\
+     "btsg [dst] [net_key_index]\n\r",\
+     "bridging table size get\n\r",\
+     user_cmd_bridging_table_size_get\
     }
 /** @} */
 
@@ -1062,7 +1345,12 @@ user_cmd_parse_result_t user_cmd_blob_block_get(user_cmd_parse_value_t *pparse_v
 user_cmd_parse_result_t user_cmd_blob_block_start(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_blob_chunk_transfer(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_blob_info_get(user_cmd_parse_value_t *pparse_value);
-
+user_cmd_parse_result_t user_cmd_blob_transfer_client_caps_retrieve(user_cmd_parse_value_t
+                                                                    *pparse_value);
+user_cmd_parse_result_t user_cmd_blob_transfer_client_blob_transfer(user_cmd_parse_value_t
+                                                                    *pparse_value);
+user_cmd_parse_result_t user_cmd_blob_transfer_client_transfer_cancel(user_cmd_parse_value_t
+                                                                      *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_update_info_get(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_update_metadata_check(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_update_get(user_cmd_parse_value_t *pparse_value);
@@ -1076,6 +1364,9 @@ user_cmd_parse_result_t user_cmd_fw_dist_recvs_get(user_cmd_parse_value_t *ppars
 user_cmd_parse_result_t user_cmd_fw_dist_caps_get(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_dist_get(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_dist_start(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_dist_start(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_upload_start(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_fw_dist_suspend(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_dist_cancel(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_dist_apply(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_dist_upload_get(user_cmd_parse_value_t *pparse_value);
@@ -1088,9 +1379,67 @@ user_cmd_parse_result_t user_cmd_fw_dist_fw_get_by_index(user_cmd_parse_value_t 
 user_cmd_parse_result_t user_cmd_fw_dist_fw_delete(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_fw_dist_fw_delete_all(user_cmd_parse_value_t *pparse_value);
 
+user_cmd_parse_result_t user_cmd_subnet_bridge_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_subnet_bridge_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_bridging_table_add(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_bridging_table_remove(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_bridged_subnets_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_bridging_table_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_bridging_table_size_get(user_cmd_parse_value_t *pparse_value);
 
 /** @} */
 /** @} */
+
+user_cmd_parse_result_t user_cmd_directed_control_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_control_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_path_metric_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_path_metric_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_discovery_table_capabilities_get(user_cmd_parse_value_t
+                                                                  *pparse_value);
+user_cmd_parse_result_t user_cmd_discovery_table_capabilities_set(user_cmd_parse_value_t
+                                                                  *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_add(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_delete(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_dependents_add(user_cmd_parse_value_t
+                                                                 *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_dependents_delete(user_cmd_parse_value_t
+                                                                    *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_dependents_get(user_cmd_parse_value_t
+                                                                 *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_entries_count_get(user_cmd_parse_value_t
+                                                                    *pparse_value);
+user_cmd_parse_result_t user_cmd_forwarding_table_entries_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_wanted_lanes_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_wanted_lanes_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_two_way_path_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_two_way_path_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_path_echo_interval_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_path_echo_interval_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_network_transmit_get(user_cmd_parse_value_t
+                                                               *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_network_transmit_set(user_cmd_parse_value_t
+                                                               *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_relay_retransmit_get(user_cmd_parse_value_t
+                                                               *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_relay_retransmit_set(user_cmd_parse_value_t
+                                                               *pparse_value);
+user_cmd_parse_result_t user_cmd_rssi_threshold_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_rssi_threshold_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_paths_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_publish_policy_get(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_publish_policy_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_path_discovery_timing_control_get(user_cmd_parse_value_t
+                                                                   *pparse_value);
+user_cmd_parse_result_t user_cmd_path_discovery_timing_control_set(user_cmd_parse_value_t
+                                                                   *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_control_network_transmit_get(
+    user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_control_network_transmit_set(
+    user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_control_relay_retransmit_get(
+    user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_directed_control_relay_retransmit_set(
+    user_cmd_parse_value_t *pparse_value);
 
 #ifdef  __cplusplus
 }

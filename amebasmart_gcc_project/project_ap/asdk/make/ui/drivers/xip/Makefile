@@ -1,6 +1,6 @@
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: lib  clean
+.PHONY: all  clean
 TARGET_LIB = lib_ui_drivers
 
 #*****************************************************************************#
@@ -37,7 +37,7 @@ OBJS = $(wildcard $(DIR)/*.o)
 # Define the Rules to build the core targets
 COPY_RAM_OBJS: CORE_TARGETS
 
-lib: COPY_RAM_OBJS
+all: COPY_RAM_OBJS
 	$(call GEN_AND_MOVE_TO_LIB_FOLDER, $(TARGET_LIB), $(TARGET_LIBAPP_FOLDER))
 
 #*****************************************************************************#

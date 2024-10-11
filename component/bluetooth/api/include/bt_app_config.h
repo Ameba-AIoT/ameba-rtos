@@ -33,6 +33,7 @@ typedef struct {
 	uint8_t  hfp_role;                         /*!< Default HFP profile role (Only used in BR/EDR) */
 	uint8_t  hid_role;                         /*!< Default HID profile role (Only used in BR/EDR) */
 	uint32_t app_profile_support;              /*!< app profile support @ref rtk_bt_profile_t */
+	uint8_t  server_chann;                     /*!< rfc server channel */
 	uint16_t mtu_size;                         /*!< Deafult MTU config */
 	bool     master_init_mtu_req;              /*!< Whether local device as master will auto initiate exchange MTU request when connected.
                                                     If this value is false, user can use @ref rtk_bt_gattc_exchange_mtu
