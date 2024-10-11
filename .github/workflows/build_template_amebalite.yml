@@ -1,0 +1,92 @@
+name: Reusable amebalite workflow template
+
+on:
+  workflow_call:
+    # parameters from upstream workflow
+    inputs:
+      module_name:
+        required: true
+        type: string
+      artifacts_name:
+        required: true
+        type: string
+    # parameters from upstream inherit
+    secrets:
+      TOKEN_AMEBALITE:
+        required: false
+      TOKEN_AMEBASMART:
+        required: false
+      TOKEN_AMEBADPLUS:
+        required: false
+
+jobs:
+  build-template-amebalite:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Configure bash
+      run: |
+        sudo ln -sf /bin/bash /bin/sh
+  
+    - name: Configure prerequisites
+      run: |
+        # set config
+
+        if ${{ inputs.artifacts_name == 'amebalite-B1' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT1
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_MIXER
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebalite-B2' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config LITE_CROSS
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_MIXER_CROSS
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebalite-B3' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_PASSTHROUGH
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebalite-B4' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config LITE_CROSS
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT2
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_PASSTHROUGH_CROSS
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebalite-B5' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config MP
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT_EN
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebalite-B6' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config MP_NORMAL
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT_EN
+        fi
+
+    - name: Compile
+      run: |
+        cd amebalite_gcc_project
+        make all
+        cd -
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifacts_name }}
+        path: |
+          amebalite_gcc_project/menuconfig/*.config
+          amebalite_gcc_project/menuconfig/*.config_kr4
+          amebalite_gcc_project/menuconfig/*.config_km4
+          amebalite_gcc_project/project_km4/asdk/image
+          amebalite_gcc_project/project_kr4/vsdk/image
+          amebalite_gcc_project/project_km4/inc
+          amebalite_gcc_project/project_kr4/inc

@@ -1,0 +1,77 @@
+name: Reusable amebadplus workflow template
+
+on:
+  workflow_call:
+    # parameters from upstream workflow
+    inputs:
+      module_name:
+        required: true
+        type: string
+      artifacts_name:
+        required: true
+        type: string
+    # parameters from upstream inherit
+    secrets:
+      TOKEN_AMEBALITE:
+        required: false
+      TOKEN_AMEBASMART:
+        required: false
+      TOKEN_AMEBADPLUS:
+        required: false
+
+jobs:
+  build-template-amebadplus:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Configure bash
+      run: |
+        sudo ln -sf /bin/bash /bin/sh
+
+    - name: Configure prerequisites
+      run: |
+        # set config
+
+        if ${{ inputs.artifacts_name == 'amebadplus-B1' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT1
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config AUDIO_PASSTHROUGH
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebadplus-B2' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config HIGH_TP_FOR_INIC
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config WPS
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebadplus-B3' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT2
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config USB_KM4_DEVICE
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebadplus-B5' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT_MP_SHRINK
+        fi
+
+        if ${{ inputs.artifacts_name == 'amebadplus-B6' }}; then
+          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT_MP_EXPAND
+        fi
+
+    - name: Compile
+      run: |
+        cd amebadplus_gcc_project
+        make all
+        cd -
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifacts_name }}
+        path: |
+          amebadplus_gcc_project/menuconfig/*.config
+          amebadplus_gcc_project/menuconfig/*.config_km0
+          amebadplus_gcc_project/menuconfig/*.config_km4
+          amebadplus_gcc_project/project_km4/asdk/image
+          amebadplus_gcc_project/project_km0/asdk/image
+          amebadplus_gcc_project/project_km4/inc
+          amebadplus_gcc_project/project_km0/inc
