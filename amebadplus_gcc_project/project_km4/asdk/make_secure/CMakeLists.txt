@@ -39,6 +39,7 @@ if(CONFIG_RDP_BASIC)
     add_custom_command(
         OUTPUT ${IMAGE_TARGET_FOLDER}/cmse_implib.lib ${IMAGE_TARGET_FOLDER}/target_img3.axf
         COMMAND ${CMAKE_COMMAND} -E make_directory ${IMAGE_TARGET_FOLDER}
+        COMMAND ${CMAKE_COMMAND} -E touch ${IMAGE_TARGET_FOLDER}/.gitignore
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cmse_implib.lib ${IMAGE_TARGET_FOLDER}/cmse_implib.lib 
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${IMAGE_TARGET_FOLDER}/text_image3.map
         COMMAND ${CMAKE_COMMAND} -E copy target_img3.axf ${IMAGE_TARGET_FOLDER}

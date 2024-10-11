@@ -79,7 +79,7 @@ extern IRQ_FUN UserIrqFunTable[];
 extern u32 UserIrqDataTable[];
 extern HAL_VECTOR_FUN  NewVectorTable[];
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 #define MAX_VECTOR_TABLE_NUM			(80+16)
 #define MAX_PERIPHERAL_IRQ_NUM			80
 #define MAX_IRQ_PRIORITY_VALUE			7

@@ -74,8 +74,8 @@ extern "C"  {
      user_cmd_dev_key_set\
     },\
     {\
-     "ss",\
-     "ss [seq]\n\r",\
+     "sst",\
+     "sst [seq]\n\r",\
      "seq set\n\r",\
      user_cmd_seq_set\
     },\
@@ -116,8 +116,8 @@ extern "C"  {
      user_cmd_subscribe\
     },\
     {\
-     "ts",\
-     "ts [dst] [ttl] [len] [app key index(0xff:DevKey)]\n\r",\
+     "tsd",\
+     "tsd [dst] [ttl] [len] [app key index(0xff:DevKey)]\n\r",\
      "test send\n\r",\
      user_cmd_test_send\
     },\

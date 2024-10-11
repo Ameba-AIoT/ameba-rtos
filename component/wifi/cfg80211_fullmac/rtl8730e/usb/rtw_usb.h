@@ -4,7 +4,9 @@
 #define SIZE_RX_DESC			0
 #define SIZE_TX_DESC			0
 
-#define WIFI_OUT_EP_NUM_TOTAL	1
+#define BUF_ALIGN_SZ			0
+
+#define WIFI_OUT_EP_NUM_TOTAL	2
 #define RTW_USB_MAX_SKB_SIZE				1600
 
 #define CONFIG_INIC_USB_ASYNC_SEND
@@ -38,8 +40,10 @@ struct inic_usb {
 
 	spinlock_t usb_qlock;
 	spinlock_t usb_rxskb_lock;
+	wait_queue_head_t txreq_wq;
 
 	atomic_t tx_inflight;
+	u8 txreq_available;
 	u8 usb_disconnecting;
 	u8 usb_deregistering;
 };

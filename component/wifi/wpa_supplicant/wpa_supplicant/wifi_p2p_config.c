@@ -77,9 +77,9 @@ int wifi_start_p2p_go(char *ssid, char *passphrase, u8 channel)
 	struct netif *pnetif = &xnetif[0];
 	struct _rtw_softap_info_t softAP_config = {0};
 
-	u32 addr = WIFI_MAKEU32(P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
-	u32 netmask = WIFI_MAKEU32(P2P_NETMASK_ADDR0, P2P_NETMASK_ADDR1, P2P_NETMASK_ADDR2, P2P_NETMASK_ADDR3);
-	u32 gw = WIFI_MAKEU32(P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
+	u32 addr = CONCAT_TO_UINT32(P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
+	u32 netmask = CONCAT_TO_UINT32(P2P_NETMASK_ADDR0, P2P_NETMASK_ADDR1, P2P_NETMASK_ADDR2, P2P_NETMASK_ADDR3);
+	u32 gw = CONCAT_TO_UINT32(P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
 	LwIP_SetIP(0, addr, netmask, gw);
 
 	// start ap

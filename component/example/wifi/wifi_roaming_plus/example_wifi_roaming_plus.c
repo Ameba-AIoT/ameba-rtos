@@ -54,7 +54,7 @@ typedef struct wifi_roaming_ap {
 	u8 	ssid[33];
 	u8 	bssid[ETH_ALEN];
 	u8	channel;
-	rtw_security_t		security_type;
+	enum rtw_security		security_type;
 	u8 	password[65];
 	u8	key_idx;
 	s32	rssi;
@@ -214,9 +214,9 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	u8 key_id ;
 	int ret;
 	uint32_t wifi_retry_connect = 3; //For fast wifi connect retry
-	rtw_network_info_t wifi = {0};
+	struct _rtw_network_info_t wifi = {0};
 	struct ap_additional_info store_dhcp_info = {0};
-	rtw_wifi_setting_t ap_info = {0};
+	struct _rtw_wifi_setting_t ap_info = {0};
 	struct psk_info PSK_INFO;
 
 #ifdef CONFIG_LWIP_LAYER
@@ -234,7 +234,7 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	memcpy(PSK_INFO.psk_essid, data->ap_info.psk_essid, sizeof(data->ap_info.psk_essid));
 	memcpy(PSK_INFO.psk_passphrase, data->ap_info.psk_passphrase, sizeof(data->ap_info.psk_passphrase));
 	memcpy(PSK_INFO.wpa_global_PSK, data->ap_info.wpa_global_PSK, sizeof(data->ap_info.wpa_global_PSK));
-	rtw_psk_get_psk_info(&PSK_INFO);
+	rtw_psk_set_psk_info(&PSK_INFO);
 
 	channel = data->ap_info.channel;
 	key_id = channel >> 28;
@@ -382,7 +382,7 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 	u8 ap_change = 0;
 	u32 tick1 = rtos_time_get_current_system_time_ms();
 	struct wlan_fast_reconnect fast_connect_info;
-	rtw_wifi_setting_t setting;
+	struct _rtw_wifi_setting_t setting;
 	struct psk_info PSK_info;
 	u32 channel = 0;
 
@@ -392,7 +392,7 @@ int  wifi_write_ap_info_to_flash(u32 offer_ip, u32 server_ip)
 
 	/* STEP1: get current connect info from wifi driver*/
 	if (wifi_get_setting(WLAN0_IDX, &setting) || setting.mode == RTW_MODE_AP) {
-		RTW_API_INFO("\r\n %s():wifi_get_setting fail or ap mode", __func__);
+		printf("\r\n %s():wifi_get_setting fail or ap mode", __func__);
 		return RTW_ERROR;
 	}
 	channel = (u32)setting.channel;
@@ -509,11 +509,11 @@ void example_wifi_roaming_plus_init(void)
 static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
 {
 	u32 target_security = *(u32 *)user_data;
-	rtw_scan_result_t *scanned_ap_info;
+	struct rtw_scan_result *scanned_ap_info;
 	u32 i = 0;
 	char *scan_buf = NULL;
 
-	scan_buf = (char *)rtos_mem_zmalloc(ap_num * sizeof(rtw_scan_result_t));
+	scan_buf = (char *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
 	if (scan_buf == NULL) {
 		printf("malloc scan buf for example wifi roaming plus\n");
 		return -1;
@@ -525,7 +525,7 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 	}
 
 	for (i = 0; i < ap_num; i++) {
-		scanned_ap_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
+		scanned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
 		ROAMING_DBG("Scan ap:"MAC_FMT"(%d)\n", MAC_ARG(scanned_ap_info->BSSID.octet), scanned_ap_info->channel);
 		if (target_security == scanned_ap_info->security ||
 			((target_security & (WPA2_SECURITY | WPA_SECURITY)) && ((scanned_ap_info->security) & (WPA2_SECURITY | WPA_SECURITY)))) {
@@ -546,12 +546,12 @@ static u32 wifi_roaming_plus_find_ap_from_scan_buf(char *target_ssid, void *user
 int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 {
 	int cur_rssi, rssi_delta;
-	rtw_phy_statistics_t phy_statistics;
-	rtw_scan_param_t scan_param;
+	struct _rtw_phy_statistics_t phy_statistics;
+	struct _rtw_scan_param_t scan_param;
 	int scanned_ap_num = 0;
 
 	//set scan_param for scan
-	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 	scan_param.ssid = (char *)roaming_ap.ssid;
 	scan_param.channel_list = pscan_channel_list;
 	scan_param.channel_list_num = 1;
@@ -574,12 +574,12 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 int wifi_roaming_scan(struct wifi_roaming_data  read_data, u32 retry)
 {
 	wifi_roaming_ap_t	roaming_ap;
-	rtw_wifi_setting_t	setting;
+	struct _rtw_wifi_setting_t	setting;
 	channel_plan_t channel_plan_temp = roaming_channel_plan;
 	u8 ch = 0, ch_num;
 	u8 first_5g = 0;
 
-	memset(&setting, 0, sizeof(rtw_wifi_setting_t));
+	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 
@@ -680,7 +680,7 @@ void wifi_roaming_plus_thread(void *param)
 	(void)param;
 	ROAMING_DBG("\n %s()\n", __func__);
 	signed char ap_rssi;
-	rtw_phy_statistics_t phy_statistics;
+	struct _rtw_phy_statistics_t phy_statistics;
 	u32 scan_retry = 0;
 	u32	polling_count = 0;
 	u32 ap_valid = AP_VALID_TIME;

@@ -10,6 +10,7 @@ COMPONENT :=
 ifeq ($(CONFIG_KERNEL),y)
 COMPONENT += freertos
 COMPONENT += freertos/freertos_v10.4.3
+COMPONENT += freertos_posix
 COMPONENT += stdlib_wrap
 endif
 
@@ -17,6 +18,7 @@ COMPONENT_CLEAN :=
 ifeq ($(CONFIG_KERNEL),y)
 COMPONENT_CLEAN += freertos
 COMPONENT_CLEAN += freertos/freertos_v10.4.3
+COMPONENT_CLEAN += freertos_posix
 COMPONENT_CLEAN += stdlib_wrap
 endif
 

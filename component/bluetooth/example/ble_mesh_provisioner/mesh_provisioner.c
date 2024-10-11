@@ -22,6 +22,7 @@
 #include <rtk_bt_mesh_generic_model.h>
 #include <rtk_bt_mesh_sensor_model.h>
 #include <rtk_bt_mesh_health_model.h>
+#include <rtk_bt_mesh_directed_forwarding_model.h>
 #include <bt_utils.h>
 
 static void mesh_data_uart_dump(uint8_t *pbuffer, uint32_t len)
@@ -58,10 +59,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
-		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
+		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d \r\n",
 				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 				scan_res_ind->adv_report.len);
-		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
+		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
 					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 					scan_res_ind->adv_report.len);
 		break;
@@ -362,15 +363,35 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
 				BT_AT_DUMP_HEXN(p_data + offset + 4, 16);
 				break;
-			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY:
-				BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
-						* (p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
-				mesh_data_uart_dump(p_data + offset + 6, 16);
-				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
-							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
-							*(p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
-				BT_AT_DUMP_HEXN(p_data + offset + 6, 16);
-				break;
+			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY: {
+				uint8_t net_key_type = *(p_data + offset);
+				switch (net_key_type) {
+				case RTK_BT_MESH_NET_KEY_MASTER:
+					BT_LOGA("NetKey:\t\t");
+					break;
+				case RTK_BT_MESH_NET_KEY_FN:
+					BT_LOGA("NetKey-FN:\t");
+					break;
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+				case RTK_BT_MESH_NET_KEY_DF:
+					BT_LOGA("NetKey-DF:\t");
+					break;
+#endif
+				default:
+					break;
+				}
+				BT_LOGA("%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset + 1), LE_TO_U16(p_data + offset + 2), \
+						* (p_data + offset + 4), *(p_data + offset + 5), *(p_data + offset + 6));
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d,%d-0x%04x-%d-%d-%d-",
+							type, net_key_type, *(p_data + offset + 1), LE_TO_U16(p_data + offset + 2), \
+							* (p_data + offset + 4), *(p_data + offset + 5), *(p_data + offset + 6));
+				if (net_key_type == 1) {
+					BT_LOGA("\t\t");
+					mesh_data_uart_dump(p_data + offset + 7, 16);
+					BT_AT_DUMP_HEXN(p_data + offset + 7, 16);
+				}
+			}
+			break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
 				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
 						* (p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
@@ -405,10 +426,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_AT_PRINT(",%d,%d", type, *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO:
-				BT_LOGA("(pub to:0x%04x-%d-%d)", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+				BT_LOGA("(pub to:0x%04x-%d-%d", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
 						LE_TO_U16(p_data + offset + 3));
 				BT_AT_PRINT(",%d,0x%04x-%d-%d", type, LE_TO_U16(p_data + offset), *(p_data + offset + 2),
 							LE_TO_U16(p_data + offset + 3));
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+				BT_LOGA("-%d", *(p_data + offset + 5));
+				BT_AT_PRINT("-%d", *(p_data + offset + 5));
+#endif
+				BT_LOGA(")");
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO: {
 				uint16_t sub_addr_num = data_len / 2;
@@ -428,6 +454,39 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				}
 				break;
 			}
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+			case RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO: {
+				BT_LOGA("\r\nDF-Path:\t%d-%d-%d-%d-%d-%d-0x%04x-0x%04x\r\n\t\t0x%04x(%d)",
+						LE_TO_U16(p_data + offset), LE_TO_U16(p_data + offset + 2),
+						*(p_data + offset + 4), *(p_data + offset + 5),
+						*(p_data + offset + 6), *(p_data + offset + 7),
+						LE_TO_U16(p_data + offset + 8), LE_TO_U16(p_data + offset + 10),
+						LE_TO_U16(p_data + offset + 12), *(p_data + offset + 14));
+				BT_AT_PRINT("\r\n+BLEMESHSTACK:list,%d,%d-%d-%d-0x%04x,%d",
+							type, LE_TO_U16(p_data + offset), LE_TO_U16(p_data + offset + 2),
+							*(p_data + offset + 4), *(p_data + offset + 5),
+							*(p_data + offset + 6), *(p_data + offset + 7),
+							LE_TO_U16(p_data + offset + 8), LE_TO_U16(p_data + offset + 10),
+							LE_TO_U16(p_data + offset + 12), *(p_data + offset + 14));
+				uint8_t origin_dependent_count = *(p_data + offset + 15);
+				for (int i = 0; i < origin_dependent_count; i++) {
+					BT_LOGA("-<0x%04x(%d)>", LE_TO_U16(p_data + offset + 16 + 3 * i), *(p_data + offset + 18 + 3 * i));
+					BT_AT_PRINT(",0x%04x,%d", LE_TO_U16(p_data + offset + 16 + 3 * i), *(p_data + offset + 18 + 3 * i));
+				}
+				BT_LOGA("\r\n\t\t----->\r\n\t\t0x%04x(%d)", LE_TO_U16(p_data + offset + 16 + 3 * origin_dependent_count),
+						*(p_data + offset + 18 + 3 * origin_dependent_count));
+				BT_AT_PRINT("\r\n0x%04x,%d", LE_TO_U16(p_data + offset + 16 + 3 * origin_dependent_count),
+							*(p_data + offset + 18 + 3 * origin_dependent_count));
+				uint8_t target_dependent_count = *(p_data + offset + 19 + 3 * origin_dependent_count);
+				for (int i = 0; i < target_dependent_count; i++) {
+					BT_LOGA("-<0x%04x(%d)>", LE_TO_U16(p_data + offset + 20 + 3 * origin_dependent_count + 3 * i),
+							*(p_data + offset + 22 + 3 * origin_dependent_count + 3 * i));
+					BT_AT_PRINT(",0x%04x,%d", LE_TO_U16(p_data + offset + 20 + 3 * origin_dependent_count + 3 * i),
+								*(p_data + offset + 22 + 3 * origin_dependent_count + 3 * i));
+				}
+				break;
+			}
+#endif
 			default:
 				BT_LOGE("[%s] Unknown data type %d for RTK_BT_MESH_STACK_EVT_LIST_INFO\r\n", __func__, (int)type);
 				return RTK_BT_EVT_CB_OK;
@@ -452,6 +511,37 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					result->ttl, result->trans_retrans_count);
 		break;
 	}
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	case RTK_BT_MESH_STACK_EVT_DF_CB: {
+		rtk_bt_mesh_stack_evt_df_t *df;
+		df = (rtk_bt_mesh_stack_evt_df_t *)param;
+		switch (df->type) {
+		case RTK_BT_MESH_MSG_DF_PATH_ACTION: {
+			char *state_str[] = {"Discovering", "Discovery failed", "Established", "Path released",
+								 "New lane discovering", "New lane established", "New lane failed"
+								};
+			BT_LOGA("%s, master key index %d\r\nsrc 0x%04x(%d) [0x%04x(%d)] --> dst 0x%04x(%d) [0x%04x(%d)]\r\nforwarding num %d\r\n",
+					state_str[df->path_action.action_type], df->path_action.master_key_index,
+					df->path_action.path_src, df->path_action.path_src_sec_elem_num,
+					df->path_action.dp_src, df->path_action.dp_src_sec_elem_num,
+					df->path_action.path_dst, df->path_action.path_dst_sec_elem_num,
+					df->path_action.dp_dst, df->path_action.dp_dst_sec_elem_num,
+					df->path_action.forwarding_num);
+			BT_AT_PRINT("+BLEMESHSTACK:df_state,%d,%d,\r\n0x%04x,%d,0x%04x,%d,\r\n0x%04x,%d,0x%04x,%d,\r\n%d\r\n",
+						df->path_action.action_type, df->path_action.master_key_index,
+						df->path_action.path_src, df->path_action.path_src_sec_elem_num,
+						df->path_action.dp_src, df->path_action.dp_src_sec_elem_num,
+						df->path_action.path_dst, df->path_action.path_dst_sec_elem_num,
+						df->path_action.dp_dst, df->path_action.dp_dst_sec_elem_num,
+						df->path_action.forwarding_num);
+		}
+		break;
+		default:
+			break;
+		}
+		break;
+	}
+#endif
 	default:
 		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
@@ -2040,6 +2130,431 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_client_model_app_callback(uint8_t evt
 	return RTK_BT_EVT_CB_OK;
 }
 
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
+static rtk_bt_evt_cb_ret_t ble_mesh_directed_forwarding_client_model_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+	switch (evt_code) {
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_CONTROL_STAT: {
+		rtk_bt_mesh_directed_control_status_t *ctl_status;
+		ctl_status = (rtk_bt_mesh_directed_control_status_t *)param;
+		BT_LOGA("[APP] receive directed control status: status %d, net_key_index 0x%04x, ctl %d-%d-%d-%d-%d\r\n",
+				ctl_status->status, ctl_status->net_key_index, ctl_status->directed_ctl.directed_forwarding,
+				ctl_status->directed_ctl.directed_relay,
+				ctl_status->directed_ctl.directed_proxy, ctl_status->directed_ctl.directed_proxy_use_directed_default,
+				ctl_status->directed_ctl.directed_friend);
+		BT_AT_PRINT("+BLEMESHDF:dcs,%d,%d,0x%04x,%d-%d-%d-%d-%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ctl_status->status, ctl_status->net_key_index, ctl_status->directed_ctl.directed_forwarding,
+					ctl_status->directed_ctl.directed_relay,
+					ctl_status->directed_ctl.directed_proxy, ctl_status->directed_ctl.directed_proxy_use_directed_default,
+					ctl_status->directed_ctl.directed_friend);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_PATH_METRIC_STAT: {
+		rtk_bt_mesh_path_metric_status_t *metric_status;
+		metric_status = (rtk_bt_mesh_path_metric_status_t *)param;
+		BT_LOGA("[APP] receive path metric status: status %d, net_key_index 0x%04x, metric %d-%d\r\n",
+				metric_status->status,
+				metric_status->net_key_index, metric_status->path_metric.metric_type, metric_status->path_metric.lifetime);
+		BT_AT_PRINT("+BLEMESHDF:pms,%d,%d,0x%04x,%d-%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, metric_status->status,
+					metric_status->net_key_index, metric_status->path_metric.metric_type, metric_status->path_metric.lifetime);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DISCOVERY_TABLE_CAPABILITIES_STAT: {
+		rtk_bt_mesh_discovery_table_capabilities_status_t *cap_status;
+		cap_status = (rtk_bt_mesh_discovery_table_capabilities_status_t *)param;
+		BT_LOGA("[APP] receive discovery table capabilities status: status %d, net_key_index 0x%04x, capabilities %d-%d\r\n",
+				cap_status->status, cap_status->net_key_index, cap_status->capabilities.max_concurrent_init,
+				cap_status->capabilities.max_discovery_table_entries_count);
+		BT_AT_PRINT("+BLEMESHDF:dtcs,%d,%d,0x%04x,%d-%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, cap_status->status, cap_status->net_key_index, cap_status->capabilities.max_concurrent_init,
+					cap_status->capabilities.max_discovery_table_entries_count);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_STAT: {
+		rtk_bt_mesh_forwarding_table_status_t *fd_status;
+		fd_status = (rtk_bt_mesh_forwarding_table_status_t *)param;
+		BT_LOGA("[APP] receive forwarding table status: status %d, net_key_index 0x%04x, path_origin 0x%04x, dst 0x%04x\r\n",
+				fd_status->status, fd_status->net_key_index, fd_status->path_origin, fd_status->dst);
+		BT_AT_PRINT("+BLEMESHDF:fts,%d,%d,0x%04x,0x%04x,0x%04x\r\n",
+					BT_AT_MESH_ROLE_CLIENT, fd_status->status, fd_status->net_key_index, fd_status->path_origin, fd_status->dst);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_DEPENDENTS_STAT: {
+		rtk_bt_mesh_forwarding_table_dependents_status_t *fdd_status;
+		fdd_status = (rtk_bt_mesh_forwarding_table_dependents_status_t *)param;
+		BT_LOGA("[APP] receive forwarding table dependents status: status %d, net_key_index 0x%04x, path_origin 0x%04x, dst 0x%04x\r\n",
+				fdd_status->status, fdd_status->net_key_index, fdd_status->path_origin, fdd_status->dst);
+		BT_AT_PRINT("+BLEMESHDF:ftds,%d,%d,0x%04x,0x%04x,0x%04x\r\n",
+					BT_AT_MESH_ROLE_CLIENT, fdd_status->status, fdd_status->net_key_index, fdd_status->path_origin, fdd_status->dst);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_ENTRIES_COUNT_STAT: {
+		rtk_bt_mesh_forwarding_table_entries_count_status_t *ftec_status;
+		ftec_status = (rtk_bt_mesh_forwarding_table_entries_count_status_t *)param;
+		BT_LOGA("[APP] receive forwarding table entries count status: status %d, net_key_index 0x%04x, update id %d, fixed entries count %d, none fixed entries count %d\r\n",
+				ftec_status->status, ftec_status->net_key_index, ftec_status->count.forwarding_table_update_id,
+				ftec_status->count.fixed_path_entries_count, ftec_status->count.non_fixed_path_entries_count);
+		BT_AT_PRINT("+BLEMESHDF:ftdcs,%d,%d,0x%04x,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ftec_status->status, ftec_status->net_key_index, ftec_status->count.forwarding_table_update_id,
+					ftec_status->count.fixed_path_entries_count, ftec_status->count.non_fixed_path_entries_count);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_ENTRIES_STAT: {
+		rtk_bt_mesh_forwarding_table_entries_status_for_call_t *ftesc_status;
+		ftesc_status = (rtk_bt_mesh_forwarding_table_entries_status_for_call_t *)param;
+		uint8_t *pdata = (uint8_t *)param + sizeof(rtk_bt_mesh_forwarding_table_entries_status_for_call_t);
+		uint8_t *pdata_base = pdata;
+		uint16_t path_origin = 0x0000;
+		uint16_t dst = 0x0000;
+		uint16_t forwarding_table_update_counter = 0;
+		if (ftesc_status->filter_mask & RTK_BT_MESH_FORWARDING_TABLE_FILTER_MASK_PATH_ORIGIN_MATCH) {
+			path_origin = LE_TO_U16(pdata);
+			pdata += 2;
+		}
+
+		if (ftesc_status->filter_mask & RTK_BT_MESH_FORWARDING_TABLE_FILTER_MASK_DST_MATCH) {
+			dst = LE_TO_U16(pdata);
+			pdata += 2;
+		}
+
+		if (RTK_BT_MESH_MSG_STAT_SUCCESS == ftesc_status->status) {
+			forwarding_table_update_counter = LE_TO_U16(pdata);
+			pdata += 2;
+		}
+
+		BT_LOGA("[APP] receive forwarding table entries status: status %d, net_key_index 0x%04x, filter_mask %d, start_index %d, path_origin 0x%04x, dst 0x%04x, counter %d\r\n",
+				ftesc_status->status, ftesc_status->net_key_index, ftesc_status->filter_mask, ftesc_status->start_index, path_origin, dst,
+				forwarding_table_update_counter);
+		BT_AT_PRINT("+BLEMESHDF:ft_entires_stat,%d,%d,0x%04x,%d,%d,0x%04x,0x%04x,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ftesc_status->status, ftesc_status->net_key_index, ftesc_status->filter_mask, ftesc_status->start_index, path_origin, dst,
+					forwarding_table_update_counter);
+
+		while ((pdata - pdata_base + 1) <= ftesc_status->data_len) {
+			rtk_bt_mesh_forwarding_table_entry_header_t *pheader = (rtk_bt_mesh_forwarding_table_entry_header_t *)pdata;
+			BT_LOGA("entry header: fixed path %d, unicast_dst %d, backward_path_valid %d, bearer_toward_path_origin_indicator %d, bearer_toward_path_target_indicator %d, dependent_origin_list_size_indicator %d, dependent_target_list_size_indicator %d\r\n",
+					pheader->fixed_path_flag, pheader->unicast_dst_flag, pheader->backward_path_validated_flag,
+					pheader->bearer_toward_path_origin_indicator, pheader->bearer_toward_path_target_indicator,
+					pheader->dependent_origin_list_size_indicator, pheader->dependent_target_list_size_indicator);
+			BT_AT_PRINT("+BLEMESHDF:ft_entires_stat,entry_header,%d,%d,%d,%d,%d,%d,%d\r\n",
+						pheader->fixed_path_flag, pheader->unicast_dst_flag, pheader->backward_path_validated_flag,
+						pheader->bearer_toward_path_origin_indicator, pheader->bearer_toward_path_target_indicator,
+						pheader->dependent_origin_list_size_indicator, pheader->dependent_target_list_size_indicator);
+			pdata += sizeof(rtk_bt_mesh_forwarding_table_entry_header_t);
+
+			if (pheader->fixed_path_flag) {
+				uint16_t entry_path_origin;
+				uint8_t entry_path_origin_len = 1;
+				uint16_t entry_dependent_origin_list_size = 0;
+				uint16_t entry_bearer_toward_path_origin = 0;
+				uint16_t entry_path_target;
+				uint8_t entry_path_target_len = 1;
+				uint16_t entry_dependent_target_list_size = 0;
+				uint16_t entry_bearer_toward_path_target = 0;
+
+				rtk_bt_mesh_addr_range_t *paddr = (rtk_bt_mesh_addr_range_t *)pdata;
+				entry_path_origin = paddr->range_start_access;
+				pdata += 2;
+				if (paddr->len_present_access) {
+					entry_path_origin_len = paddr->range_len;
+					pdata += 1;
+				}
+
+				if (pheader->dependent_origin_list_size_indicator == 1) {
+					entry_dependent_origin_list_size = *(uint8_t *)pdata;
+					pdata += 1;
+				} else if (pheader->dependent_origin_list_size_indicator == 2) {
+					entry_dependent_origin_list_size = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->bearer_toward_path_origin_indicator == 1) {
+					entry_bearer_toward_path_origin = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->unicast_dst_flag) {
+					rtk_bt_mesh_addr_range_t *paddr = (rtk_bt_mesh_addr_range_t *)pdata;
+					entry_path_target = paddr->range_start_access;
+					pdata += 2;
+					if (paddr->len_present_access) {
+						entry_path_target_len = paddr->range_len;
+						pdata += 1;
+					}
+				} else {
+					entry_path_target = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->dependent_target_list_size_indicator == 1) {
+					entry_dependent_target_list_size = *(uint8_t *)pdata;
+					pdata += 1;
+				} else if (pheader->dependent_target_list_size_indicator == 2) {
+					entry_dependent_target_list_size = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->bearer_toward_path_target_indicator == 1) {
+					entry_bearer_toward_path_target = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				BT_LOGA("fixed path entry: path_origin 0x%04x, path_origin_elem_num %d, dependent_origin_list_size %d, bearer_toward_path_origin 0x%x, path_target 0x%04x, path_target_elem_num %d, dependent_target_list_size %d, bearer_toward_path_target 0x%x\r\n",
+						entry_path_origin, entry_path_origin_len, entry_dependent_origin_list_size,
+						entry_bearer_toward_path_origin, entry_path_target, entry_path_target_len,
+						entry_dependent_target_list_size, entry_bearer_toward_path_target);
+				BT_AT_PRINT("+BLEMESHDF:ft_entires_stat,fixed_path_entry,0x%04x,%d,%d,0x%x,0x%04x,%d,%d,0x%x\r\n",
+							entry_path_origin, entry_path_origin_len, entry_dependent_origin_list_size,
+							entry_bearer_toward_path_origin, entry_path_target, entry_path_target_len,
+							entry_dependent_target_list_size, entry_bearer_toward_path_target);
+			} else {
+				uint16_t entry_path_origin;
+				uint8_t entry_path_origin_len = 1;
+				uint16_t entry_dependent_origin_list_size = 0;
+				uint16_t entry_bearer_toward_path_origin = 0;
+				uint16_t entry_path_target;
+				uint8_t entry_path_target_len = 1;
+				uint16_t entry_dependent_target_list_size = 0;
+				uint16_t entry_bearer_toward_path_target = 0;
+
+				uint8_t lane_counter = *(uint8_t *)pdata;
+				pdata += 1;
+				uint16_t remain_time = LE_TO_U16(pdata);
+				pdata += 2;
+				uint8_t forwarding_num = *(uint8_t *)pdata;
+				pdata += 1;
+
+				rtk_bt_mesh_addr_range_t *paddr = (rtk_bt_mesh_addr_range_t *)pdata;
+				entry_path_origin = paddr->range_start_access;
+				pdata += 2;
+				if (paddr->len_present_access) {
+					entry_path_origin_len = paddr->range_len;
+					pdata += 1;
+				}
+
+				if (pheader->dependent_origin_list_size_indicator == 1) {
+					entry_dependent_origin_list_size = *(uint8_t *)pdata;
+					pdata += 1;
+				} else if (pheader->dependent_origin_list_size_indicator == 2) {
+					entry_dependent_origin_list_size = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->bearer_toward_path_origin_indicator == 1) {
+					entry_bearer_toward_path_origin = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->unicast_dst_flag) {
+					rtk_bt_mesh_addr_range_t *paddr = (rtk_bt_mesh_addr_range_t *)pdata;
+					entry_path_target = paddr->range_start_access;
+					pdata += 2;
+					if (paddr->len_present_access) {
+						entry_path_target_len = paddr->range_len;
+						pdata += 1;
+					}
+				} else {
+					entry_path_target = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->dependent_target_list_size_indicator == 1) {
+					entry_dependent_target_list_size = *(uint8_t *)pdata;
+					pdata += 1;
+				} else if (pheader->dependent_target_list_size_indicator == 2) {
+					entry_dependent_target_list_size = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				if (pheader->bearer_toward_path_target_indicator == 1) {
+					entry_bearer_toward_path_target = LE_TO_U16(pdata);
+					pdata += 2;
+				}
+
+				BT_LOGA("non-fixed path entry: lane_counter %d, remain_time %d, forwarding_num %d, path_origin 0x%04x, path_origin_elem_num %d, dependent_origin_list_size %d, bearer_toward_path_origin 0x%x, path_target 0x%04x, path_target_elem_num %d, dependent_target_list_size %d, bearer_toward_path_target 0x%x\r\n",
+						lane_counter, remain_time, forwarding_num, entry_path_origin, entry_path_origin_len,
+						entry_dependent_origin_list_size, entry_bearer_toward_path_origin, entry_path_target,
+						entry_path_target_len, entry_dependent_target_list_size, entry_bearer_toward_path_target);
+				BT_AT_PRINT("+BLEMESHDF:ft_entires_stat,non_fixed_path_entry,%d,%d,%d,0x%04x,%d,%d,0x%x,0x%04x,%d,%d,0x%x\r\n",
+							entry_path_origin, entry_path_origin_len, entry_dependent_origin_list_size,
+							entry_bearer_toward_path_origin, entry_path_target, entry_path_target_len,
+							entry_dependent_target_list_size, entry_bearer_toward_path_target);
+			}
+		}
+
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_DEPENDENTS_GET_STAT: {
+		rtk_bt_mesh_forwarding_table_dependents_get_status_for_call_t *ftdg_status;
+		ftdg_status = (rtk_bt_mesh_forwarding_table_dependents_get_status_for_call_t *)param;
+		uint8_t *pdata = (uint8_t *)param + sizeof(rtk_bt_mesh_forwarding_table_dependents_get_status_for_call_t);
+		uint8_t *pdata_base = pdata;
+		uint16_t forwarding_table_update_counter = 0;
+		uint16_t dependent_origin_list_size = 0;
+		uint16_t dependent_target_list_size = 0;
+		if (ftdg_status->status == RTK_BT_MESH_MSG_STAT_SUCCESS || ftdg_status->status == RTK_BT_MESH_MSG_STAT_OBSOLETE_INFORMATION) {
+			forwarding_table_update_counter = LE_TO_U16(pdata);
+			pdata += 2;
+		}
+
+		if (ftdg_status->status == RTK_BT_MESH_MSG_STAT_SUCCESS) {
+			dependent_origin_list_size = *pdata;
+			pdata += 1;
+
+			dependent_target_list_size = *pdata;
+			pdata += 1;
+		}
+		BT_LOGA("[APP] receive forwarding table dependents get status: status %d, net_key_index 0x%04x, dependents_list_mask 0x%02x, fixed_path_flag %d, start_index %d, path_origin 0x%04x, dst 0x%04x, forwarding_table_update_counter %d, dependents_origin_list_size %d, dependents_target_list_size %d\r\n",
+				ftdg_status->status, ftdg_status->net_key_index, ftdg_status->dependents_list_mask, ftdg_status->fixed_path_flag, ftdg_status->status,
+				ftdg_status->path_origin, ftdg_status->dst, forwarding_table_update_counter, dependent_origin_list_size,
+				dependent_target_list_size);
+		BT_AT_PRINT("+BLEMESHDF:ftdgs,%d,%d,0x%04x,0x%02x,%d,%d,0x%04x,0x%04x,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ftdg_status->status, ftdg_status->net_key_index, ftdg_status->dependents_list_mask, ftdg_status->fixed_path_flag, ftdg_status->status,
+					ftdg_status->path_origin, ftdg_status->dst, forwarding_table_update_counter, dependent_origin_list_size,
+					dependent_target_list_size);
+
+		uint16_t addr;
+		uint8_t addr_len;
+		while ((pdata - pdata_base) < ftdg_status->data_len) {
+			addr_len = 0;
+			rtk_bt_mesh_addr_range_t *paddr = (rtk_bt_mesh_addr_range_t *)pdata;
+			addr = paddr->range_start_access;
+			pdata += 2;
+			if (paddr->len_present_access) {
+				addr_len = paddr->range_len;
+				pdata += 1;
+			} else {
+				addr_len = 1;
+			}
+			BT_LOGA("dependent addr: addr 0x%04x, elem_num %d\r\n", addr, addr_len);
+			BT_AT_PRINT(",0x%04x,%d\r\n", addr, addr_len);
+		}
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_WANTED_LANES_STAT: {
+		rtk_bt_mesh_wanted_lanes_status_t *lanes_status;
+		lanes_status = (rtk_bt_mesh_wanted_lanes_status_t *)param;
+		BT_LOGA("[APP] receive wanted lanes status: status %d, net_key_index 0x%04x, wanted lanes %d\r\n",
+				lanes_status->status, lanes_status->net_key_index, lanes_status->wanted_lanes);
+		BT_AT_PRINT("+BLEMESHDF:wls,%d,%d,0x%04x,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, lanes_status->status, lanes_status->net_key_index, lanes_status->wanted_lanes);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_TWO_WAY_PATH_STAT: {
+		rtk_bt_mesh_two_way_path_status_t *path_status;
+		path_status = (rtk_bt_mesh_two_way_path_status_t *)param;
+		BT_LOGA("[APP] receive two way path status: status %d, net_key_index 0x%04x, two way path %d\r\n",
+				path_status->status, path_status->net_key_index, path_status->two_way_path.two_way_path);
+		BT_AT_PRINT("+BLEMESHDF:twps,%d,%d,0x%04x,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, path_status->status, path_status->net_key_index, path_status->two_way_path.two_way_path);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_PATH_ECHO_INTERVAL_STAT: {
+		rtk_bt_mesh_path_echo_interval_status_t *echo_interval_status;
+		echo_interval_status = (rtk_bt_mesh_path_echo_interval_status_t *)param;
+		BT_LOGA("[APP] receive path echo interval status: status %d, net_key_index 0x%04x, unicast echo interval %d, multicast echo interval %d\r\n",
+				echo_interval_status->status, echo_interval_status->net_key_index, echo_interval_status->unicast_echo_interval, echo_interval_status->multicast_echo_interval);
+		BT_AT_PRINT("+BLEMESHDF:peis,%d,%d,0x%04x,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, echo_interval_status->status, echo_interval_status->net_key_index, echo_interval_status->unicast_echo_interval,
+					echo_interval_status->multicast_echo_interval);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_NETWORK_TRANSMIT_STAT: {
+		rtk_bt_mesh_directed_network_transmit_status_t *net_trans_status;
+		net_trans_status = (rtk_bt_mesh_directed_network_transmit_status_t *)param;
+		BT_LOGA("[APP] receive directed network transmit status: count %d, steps %d\r\n",
+				net_trans_status->network_transmit.directed_network_transmit_count,
+				net_trans_status->network_transmit.directed_network_transmit_interval_steps);
+		BT_AT_PRINT("+BLEMESHDF:dnts,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, net_trans_status->network_transmit.directed_network_transmit_count,
+					net_trans_status->network_transmit.directed_network_transmit_interval_steps);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_RELAY_RETRANSMIT_STAT: {
+		rtk_bt_mesh_directed_relay_retransmit_status_t *relay_trans_status;
+		relay_trans_status = (rtk_bt_mesh_directed_relay_retransmit_status_t *)param;
+		BT_LOGA("[APP] receive directed relay retransmit status: count %d, steps %d\r\n",
+				relay_trans_status->relay_retransmit.directed_relay_retransmit_count,
+				relay_trans_status->relay_retransmit.directed_relay_retransmit_interval_steps);
+		BT_AT_PRINT("+BLEMESHDF:drrs,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, relay_trans_status->relay_retransmit.directed_relay_retransmit_count,
+					relay_trans_status->relay_retransmit.directed_relay_retransmit_interval_steps);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_RSSI_THRESHOLD_STAT: {
+		rtk_bt_mesh_rssi_threshold_status_t *rssi_status;
+		rssi_status = (rtk_bt_mesh_rssi_threshold_status_t *)param;
+		BT_LOGA("[APP] receive rssi threshold status: default_rssi_threshold %d, rssi_margin %d\r\n",
+				rssi_status->threshold.default_rssi_threshold, rssi_status->threshold.rssi_margin);
+		BT_AT_PRINT("+BLEMESHDF:rts,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, rssi_status->threshold.default_rssi_threshold, rssi_status->threshold.rssi_margin);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_PATHS_STAT: {
+		rtk_bt_mesh_directed_paths_status_t *path_status;
+		path_status = (rtk_bt_mesh_directed_paths_status_t *)param;
+		BT_LOGA("[APP] receive directed paths status: directed_node_paths %d, directed_relay_paths %d, directed_proxy_paths %d, directed_friend_paths %d\r\n",
+				path_status->directed_paths.directed_node_paths, path_status->directed_paths.directed_relay_paths,
+				path_status->directed_paths.directed_proxy_paths,
+				path_status->directed_paths.directed_friend_paths);
+		BT_AT_PRINT("+BLEMESHDF:dps,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, path_status->directed_paths.directed_node_paths,
+					path_status->directed_paths.directed_relay_paths,
+					path_status->directed_paths.directed_proxy_paths,
+					path_status->directed_paths.directed_friend_paths);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_PUBLISH_POLICY_STAT: {
+		rtk_bt_mesh_directed_publish_policy_status_t *policy_status;
+		policy_status = (rtk_bt_mesh_directed_publish_policy_status_t *)param;
+		BT_LOGA("[APP] receive directed publish policy status: status %d, policy %d, elem_addr 0x%04x, model id 0x%08x\r\n",
+				policy_status->status, policy_status->publish_policy, policy_status->element_addr, policy_status->model_id);
+		BT_AT_PRINT("+BLEMESHDF:dpps,%d,%d,%d,0x%04x,0x%08x\r\n",
+					BT_AT_MESH_ROLE_CLIENT, policy_status->status, policy_status->publish_policy, policy_status->element_addr, policy_status->model_id);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_PATH_DISCOVERY_TIMING_CONTROL_STAT: {
+		rtk_bt_mesh_path_discovery_timing_control_status_t *timing_status;
+		timing_status = (rtk_bt_mesh_path_discovery_timing_control_status_t *)param;
+		BT_LOGA("[APP] receive path discovery timing control status: path_monitoring_interval %d, path_discovery_retry_interval %d, path_discovery_interval %d, lane_discovery_guard_interval %d\r\n",
+				timing_status->timing_ctl.path_monitoring_interval, timing_status->timing_ctl.path_discovery_retry_interval,
+				timing_status->timing_ctl.path_discovery_interval, timing_status->timing_ctl.lane_discovery_guard_interval);
+		BT_AT_PRINT("+BLEMESHDF:pdtcs,%d,%d,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, timing_status->timing_ctl.path_monitoring_interval, timing_status->timing_ctl.path_discovery_retry_interval,
+					timing_status->timing_ctl.path_discovery_interval, timing_status->timing_ctl.lane_discovery_guard_interval);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_CONTROL_NETWORK_TRANSMIT_STAT: {
+		rtk_bt_mesh_directed_control_network_transmit_status_t *ctl_net_trans_status;
+		ctl_net_trans_status = (rtk_bt_mesh_directed_control_network_transmit_status_t *)param;
+		BT_LOGA("[APP] receive directed control network transmit status: count %d, steps %d\r\n",
+				ctl_net_trans_status->control_network_transmit.directed_control_network_transmit_count,
+				ctl_net_trans_status->control_network_transmit.directed_control_network_transmit_interval_steps);
+		BT_AT_PRINT("+BLEMESHDF:dcnts,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ctl_net_trans_status->control_network_transmit.directed_control_network_transmit_count,
+					ctl_net_trans_status->control_network_transmit.directed_control_network_transmit_interval_steps);
+	}
+	break;
+	case RTK_BT_MESH_DF_MODEL_DIRECTED_CONTROL_RELAY_RETRANSMIT_STAT: {
+		rtk_bt_mesh_directed_control_relay_retransmit_status_t *ctl_relay_trans_status;
+		ctl_relay_trans_status = (rtk_bt_mesh_directed_control_relay_retransmit_status_t *)param;
+		BT_LOGA("[APP] receive directed control relay retransmit status: count %d, steps %d\r\n",
+				ctl_relay_trans_status->control_relay_retransmit.directed_control_relay_retransmit_count,
+				ctl_relay_trans_status->control_relay_retransmit.directed_control_relay_retransmit_interval_steps);
+		BT_AT_PRINT("+BLEMESHDF:dcrrs,%d,%d,%d\r\n",
+					BT_AT_MESH_ROLE_CLIENT, ctl_relay_trans_status->control_relay_retransmit.directed_control_relay_retransmit_count,
+					ctl_relay_trans_status->control_relay_retransmit.directed_control_relay_retransmit_interval_steps);
+	}
+	break;
+	default:
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		break;
+	}
+	return RTK_BT_EVT_CB_OK;
+}
+#endif
+
 static rtk_bt_mesh_stack_act_provisioner_init_setting_t pro_init_param = {
 	// Set to 0 to use default val
 	.unicast_addr = 0,
@@ -2072,6 +2587,7 @@ int ble_mesh_provisioner_main(uint8_t enable)
 		bt_app_conf.max_tx_time = 0x200;
 		BT_LOGA("Before Enable BT\r\n");
 		/* Enable BT */
+		bt_app_conf.bt_mesh_app_conf.bt_mesh_flash_size = 2200;
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 
 		// MUST DO:set provisioner unicast address,add net key and app key
@@ -2143,6 +2659,9 @@ int ble_mesh_provisioner_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, ble_mesh_sensor_client_model_app_callback));
 #endif
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, ble_mesh_health_client_model_app_callback));
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL, ble_mesh_directed_forwarding_client_model_app_callback));
+#endif
 	} else if (0 == enable) {
 
 		/* Disable BT */

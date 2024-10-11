@@ -22,28 +22,9 @@ set(
     ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/secure
 )
 
-
-
-if(CONFIG_INTERNAL_LIB)
-
-    target_sources(
-        ${CURRENT_LIB_NAME}
-        PRIVATE 
-        ${CSRC}
-    )
-
-else()
-
-    foreach(src ${CSRC})
-        set_property(GLOBAL APPEND PROPERTY RENAME_CMD COMMAND ${CMAKE_OBJCOPY} --rename-section .text=.image2.net.ram.text ${CMAKE_CURRENT_BINARY_DIR}/../../../CMakeFiles/target_img2_${PROJECT_NAME}.dir${src}.o ${CMAKE_CURRENT_BINARY_DIR}/../../../CMakeFiles/target_img2_${PROJECT_NAME}.dir${src}.o)
-    endforeach()
-
-    set_source_files_properties(${CSRC} DIRECTORY ../../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-
-    target_sources(
-    target_img2_${PROJECT_NAME}
+target_sources(
+    ${CURRENT_LIB_NAME}
     PRIVATE 
     ${CSRC}
-    )
+)
 
-endif()

@@ -13,6 +13,9 @@ set(
 	${DIR}/driver/dtm/hci_dtm.c 
 	${DIR}/osif/bt_debug.c 
 	${DIR}/osif/osif.c
+	${DIR}/bt_mp/bt_mp_api.c 
+	${DIR}/bt_mp/bt_fast_mp_common.c 
+	${DIR}/bt_mp/bt_fast_mp_dplus.c
 )
 
 if(NOT CONFIG_BT_INIC)
@@ -31,4 +34,4 @@ if(NOT CONFIG_BT_INIC)
     endif()
 endif()
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

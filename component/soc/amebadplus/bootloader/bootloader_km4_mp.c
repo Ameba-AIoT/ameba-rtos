@@ -383,7 +383,7 @@ void BOOT_Image1(void)
 	if (BOOT_Reason() == 0) {
 		/*reset osc 131k counter, only for RTL6845*/
 		OSC131K_Reset();
-		memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
+		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
 	}
 
 	BOOT_SOC_ClkSet();

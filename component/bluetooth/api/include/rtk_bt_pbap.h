@@ -193,7 +193,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_pbap_connect(uint8_t *bd_addr)
  * @brief     send pbap connect request.
  * @param[in] bd_addr: bt address
  * @return
@@ -203,7 +202,6 @@ typedef struct {
 uint16_t rtk_bt_pbap_connect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_pbap_disconnect(uint8_t *bd_addr)
  * @brief     disconnect pbap.
  * @param[in] bd_addr: bt address
  * @return
@@ -213,7 +211,6 @@ uint16_t rtk_bt_pbap_connect(uint8_t *bd_addr);
 uint16_t rtk_bt_pbap_disconnect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_pbap_set_phone_book(rtk_bt_pbap_set_pb_t *p_set_pb_t)
  * @brief     send a request to set active phone book.
  * @param[in] p_set_pb_t: set phone book struct
  * @return
@@ -223,7 +220,6 @@ uint16_t rtk_bt_pbap_disconnect(uint8_t *bd_addr);
 uint16_t rtk_bt_pbap_set_phone_book(rtk_bt_pbap_set_pb_t *p_set_pb_t);
 
 /**
- * @fn        uint16_t rtk_bt_pbap_phone_book_pull(rtk_bt_pbap_pb_pull_t *p_pb_pull_t)
  * @brief     send a request to pull phone book.
  * @param[in] p_pb_pull_t: phone book struct
  * @return
@@ -233,7 +229,6 @@ uint16_t rtk_bt_pbap_set_phone_book(rtk_bt_pbap_set_pb_t *p_set_pb_t);
 uint16_t rtk_bt_pbap_phone_book_pull(rtk_bt_pbap_pb_pull_t *p_pb_pull_t);
 
 /**
- * @fn        uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr)
  * @brief     send a request to pull more data from the remote server.
  * @param[in] bd_addr: bt address
  * @return
@@ -243,7 +238,6 @@ uint16_t rtk_bt_pbap_phone_book_pull(rtk_bt_pbap_pb_pull_t *p_pb_pull_t);
 uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_pbap_phone_book_size_get(rtk_bt_pbap_pb_size_get_t *p_pb_size_t)
  * @brief     send a request to get phone book size.
  * @param[in] p_pb_size_t: phone book size struct
  * @return
@@ -253,7 +247,6 @@ uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr);
 uint16_t rtk_bt_pbap_phone_book_size_get(rtk_bt_pbap_pb_size_get_t *p_pb_size_t);
 
 /**
- * @fn        uint16_t rtk_bt_pbap_pull_caller_id_name(rtk_bt_pbap_pull_caller_id_name_t *p_pull_caller_id_name_t)
  * @brief     send a request to pull the vCard listing in current phonebook by phone number.
  * @param[in] p_pull_caller_id_name_t: pull caller id name struct
  * @return

@@ -28,19 +28,9 @@ set(
     ${CPPSRC}
 )
 
-if(CONFIG_INTERNAL_LIB)
 
-    ameba_internal_library(wifi_audio_src)
-    target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_DEFINES})
-    target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_OPTIONS})
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${SRC})
-
-else()
-
-    set_source_files_properties(${SRC} DIRECTORY ../../.. PROPERTIES COMPILE_OPTIONS "${MODULE_OPTIONS}")
-    set_source_files_properties(${SRC} DIRECTORY ../../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_DEFINES}")
-    set_source_files_properties(${SRC} DIRECTORY ../../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-    target_sources(target_img2_${PROJECT_NAME} PRIVATE ${SRC})
-
-endif()
+ameba_internal_library(wifi_audio_src)
+target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_DEFINES})
+target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_OPTIONS})
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${SRC})

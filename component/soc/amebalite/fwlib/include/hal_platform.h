@@ -519,13 +519,13 @@
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00020000)
 
 /* margin 512 for lite and 1024 for CA32 */
-#if defined(RSICV_CORE_KR4)
+#if defined(CONFIG_RSICV_CORE_KR4)
 #define CONTEXT_SAVE_SIZE	(320)	/* portCONTEXT_SIZE:66*4 = 288 roundup to 64B aligned */
-#elif defined(ARM_CORE_CA32)
+#elif defined(CONFIG_ARM_CORE_CA32)
 #define CONTEXT_SAVE_SIZE	(320 + 1024) /* 15*4 + 32*8: general reg and floating reg */
-#elif defined(ARM_CORE_CM4)
+#elif defined(CONFIG_ARM_CORE_CM4)
 #define CONTEXT_SAVE_SIZE	192 /* 15*4 + 16*8: s16~s31 if use float */
-#elif defined(ARM_CORE_CM0)
+#elif defined(CONFIG_ARM_CORE_CM0)
 #define CONTEXT_SAVE_SIZE	64	/* not support hw float, 15*4 */
 #endif
 

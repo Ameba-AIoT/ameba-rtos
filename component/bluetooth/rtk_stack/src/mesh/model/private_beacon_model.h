@@ -31,15 +31,15 @@ BEGIN_DECLS
  * @brief Mesh message access opcode
  * @{
  */
-#define MESH_MSG_PRIVATE_BEACON_GET                         0xB711
-#define MESH_MSG_PRIVATE_BEACON_SET                         0xB712
-#define MESH_MSG_PRIVATE_BEACON_STATUS                      0xB713
-#define MESH_MSG_PRIVATE_GATT_PROXY_GET                     0xB714
-#define MESH_MSG_PRIVATE_GATT_PROXY_SET                     0xB715
-#define MESH_MSG_PRIVATE_GATT_PROXY_STATUS                  0xB716
-#define MESH_MSG_PRIVATE_NODE_IDENTITY_GET                  0xB718
-#define MESH_MSG_PRIVATE_NODE_IDENTITY_SET                  0xB719
-#define MESH_MSG_PRIVATE_NODE_IDENTITY_STATUS               0xB71A
+#define MESH_MSG_PRIVATE_BEACON_GET                         0x8060
+#define MESH_MSG_PRIVATE_BEACON_SET                         0x8061
+#define MESH_MSG_PRIVATE_BEACON_STATUS                      0x8062
+#define MESH_MSG_PRIVATE_GATT_PROXY_GET                     0x8063
+#define MESH_MSG_PRIVATE_GATT_PROXY_SET                     0x8064
+#define MESH_MSG_PRIVATE_GATT_PROXY_STATUS                  0x8065
+#define MESH_MSG_PRIVATE_NODE_IDENTITY_GET                  0x8066
+#define MESH_MSG_PRIVATE_NODE_IDENTITY_SET                  0x8067
+#define MESH_MSG_PRIVATE_NODE_IDENTITY_STATUS               0x8068
 /** @} */
 
 /**
@@ -47,8 +47,8 @@ BEGIN_DECLS
  * @brief Mesh model id
  * @{
  */
-#define MESH_MODEL_PRIVATE_BEACON_SERVER                    0xBF40FFFF
-#define MESH_MODEL_PRIVATE_BEACON_CLIENT                    0xBF41FFFF
+#define MESH_MODEL_PRIVATE_BEACON_SERVER                    0x000AFFFF
+#define MESH_MODEL_PRIVATE_BEACON_CLIENT                    0x000BFFFF
 /** @} */
 
 /**
@@ -185,7 +185,7 @@ mesh_msg_send_cause_t private_gatt_proxy_set(uint16_t dst, uint16_t net_key_inde
                                              uint8_t private_gatt_proxy);
 
 /**
- * @brief private node identitu get
+ * @brief private node identity get
  * @param[in] dst: destination address
  * @param[in] net_key_index: network key index
  * @param[in] sub_net_key_index: node identity network key index

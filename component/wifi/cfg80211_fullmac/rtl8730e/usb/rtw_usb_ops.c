@@ -56,6 +56,8 @@ static void rtw_usb_tx_complete_cb(struct urb *urb)
 	req->is_buf = 0;
 	rtw_usb_enqueue(&priv->tx_freeq, req, NULL);
 	atomic_dec(&priv->tx_inflight);
+	priv->txreq_available = 1;
+	wake_up(&priv->txreq_wq);
 
 	//USB_TODO: check free urb count, may netif wake queue
 }
@@ -81,10 +83,16 @@ void rtw_usb_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 	}
 	mutex_lock(&priv->lock);
 
+dequeue_again:
 	req = rtw_usb_dequeue(&priv->tx_freeq, NULL);
 	if (req == NULL) {
-		//printk("send req is null=%d\n",atomic_read(&priv->tx_inflight));
-		goto exit_free_buf;
+		priv->txreq_available = 0;
+		if (!wait_event_timeout(priv->txreq_wq, priv->txreq_available == 1, msecs_to_jiffies(500))) {
+			printk("wait txreq available timeout\n");
+			goto exit_free_buf;
+		} else {
+			goto dequeue_again;
+		}
 	}
 	if (pskb) {
 		req->skb = pskb;
@@ -97,7 +105,7 @@ void rtw_usb_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 	req->urb->transfer_flags |= URB_ZERO_PACKET;
 	usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->tx_pipe[priv->out_pipe_idx],
 					  buf, len, rtw_usb_tx_complete_cb, req);
-
+	priv->out_pipe_idx = (priv->out_pipe_idx + 1) % WIFI_OUT_EP_NUM_TOTAL;
 	ret = usb_submit_urb(req->urb, GFP_ATOMIC);
 	if (ret) {
 		printk("%s: Failed to resubmit TX URB: %d\n", __func__, ret);

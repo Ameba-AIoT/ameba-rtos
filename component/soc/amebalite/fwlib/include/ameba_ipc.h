@@ -401,11 +401,11 @@ typedef enum {
 #define DSP_IPC_PXID BIT(2)
 #define CA7_IPC_PXID BIT(3)
 
-#if defined(ARM_CORE_CM4)
+#if defined(CONFIG_ARM_CORE_CM4)
 #define IPC_FLASH_LOCK  KM4_IPC_PXID
-#elif defined(ARM_CORE_CA32)
+#elif defined(CONFIG_ARM_CORE_CA32)
 #define IPC_FLASH_LOCK  KR4_IPC_PXID
-#elif defined(RSICV_CORE_KR4)
+#elif defined(CONFIG_RSICV_CORE_KR4)
 #define IPC_FLASH_LOCK  DSP_IPC_PXID
 #else
 #define IPC_FLASH_LOCK  CA7_IPC_PXID

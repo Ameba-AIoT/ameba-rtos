@@ -41,9 +41,17 @@ if(CONFIG_USBD_VENDOR)
     )
 endif()
 
+if(CONFIG_USBD_UAC)
+    set(UAC_DIR  ${DEV_DIR}/uac)
+    list(
+        APPEND MODULE_IFLAGS 
+        ${UAC_DIR}
+    )
+endif()
+
 
 if(CONFIG_USBD_INIC)
-    set(INIC_DIR ${DEV_DIR}/inic)
+    set(INIC_DIR ${DEV_DIR}/inic_dplus)
     list(
         APPEND MODULE_IFLAGS
         ${INIC_DIR}
@@ -84,6 +92,13 @@ if(CONFIG_USBD_VENDOR)
     )
 endif()
 
+if(CONFIG_USBD_UAC)
+    list(
+        APPEND CSRC
+        ${UAC_DIR}/usbd_uac.c
+    )
+endif()
+
 if(CONFIG_USBD_INIC)
     list(
         APPEND CSRC
@@ -91,13 +106,8 @@ if(CONFIG_USBD_INIC)
     )
 endif()
 
-if(CONFIG_INTERNAL_LIB)
-    ameba_internal_library(usb_otg_device_class)
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else()
-    set_source_files_properties(${CSRC} DIRECTORY ../../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-    set_source_files_properties(${CSRC} DIRECTORY ../../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_C_DEFINES}")
-    target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
-endif()
+
+ameba_internal_library(usb_otg_device_class)
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

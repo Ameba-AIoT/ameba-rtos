@@ -60,7 +60,7 @@ static mesh_msg_send_cause_t generic_level_stat(mesh_model_info_p pmodel_info, u
     }
     msg.present_level = present_level;
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)&msg;

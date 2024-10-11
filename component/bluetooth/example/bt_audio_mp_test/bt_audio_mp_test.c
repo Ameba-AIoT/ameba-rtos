@@ -863,6 +863,43 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 		break;
 	}
 
+	case RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO: {
+		uint8_t temp_buff[50];
+		const char *attr[] = {"", "Title:", "Artist:", "Album:", "Track:",
+							  "TotalTrack:", "Genre:", "PlayingTime:"
+							 };
+		rtk_bt_avrcp_element_attr_info_t *p_attr_t = (rtk_bt_avrcp_element_attr_info_t *)param;
+
+		if (p_attr_t->state == 0) {
+			BT_LOGA("[AVRCP] Get element attr information successfully from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_attr_t->bd_addr[5], p_attr_t->bd_addr[4], p_attr_t->bd_addr[3], p_attr_t->bd_addr[2], p_attr_t->bd_addr[1], p_attr_t->bd_addr[0]);
+			for (uint8_t i = 0; i < p_attr_t->num_of_attr; i ++) {
+				if (p_attr_t->attr[i].length) {
+					memset((void *)temp_buff, 0, 50);
+					snprintf((char *)temp_buff, 50, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
+					BT_LOGA("[AVRCP] %s \r\n", temp_buff);
+					osif_mem_free(p_attr_t->attr[i].p_buf);
+				}
+			}
+		} else {
+			BT_LOGA("[AVRCP] Get element attr information fail from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+					p_attr_t->bd_addr[5], p_attr_t->bd_addr[4], p_attr_t->bd_addr[3], p_attr_t->bd_addr[2], p_attr_t->bd_addr[1], p_attr_t->bd_addr[0]);
+		}
+		if (p_attr_t->num_of_attr) {
+			osif_mem_free(p_attr_t->attr);
+		}
+		break;
+	}
+
+	case RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND: {
+		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)param;
+
+		if (p_data_t->data_end) {
+			BT_LOGA("[AVRCP] Get art cover successfully \r\n");
+		}
+		break;
+	}
+
 	case RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET: {
 		rtk_bt_avrcp_absolute_volume_set_t *p_avrcp_absolute_volume_set_t = (rtk_bt_avrcp_absolute_volume_set_t *)param;
 		uint8_t volume = p_avrcp_absolute_volume_set_t->volume;

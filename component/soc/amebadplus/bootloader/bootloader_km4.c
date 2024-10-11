@@ -15,6 +15,13 @@
 
 static const char *TAG = "BOOT";
 
+#define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
+    do { \
+        if ((flagValue) & (bit)) { \
+            RTK_LOGS(NOTAG, "%s ", (name)); \
+        } \
+    } while (0)
+
 PRAM_START_FUNCTION BOOT_SectionInit(void)
 {
 	return (PRAM_START_FUNCTION)__image2_entry_func__;
@@ -231,8 +238,23 @@ void BOOT_ReasonSet(void)
 	/*Backup it to system register,So the software can read from the register*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_REASON_SW, temp);
 
-	RTK_LOGI(TAG, "KM4 BOOT REASON: %lx \n", temp);
-
+	RTK_LOGI(TAG, "KM4 BOOT REASON %x: ", temp);
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_OCP, "OCP");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WARM_KM02PERI, "WARM_KM02PERI");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WARM_KM42PERI, "WARM_KM42PERI");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WDG2, "WDG2");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WDG1, "WDG1");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WDG0, "WDG0");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_IWDG, "IWDG");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_KM0_SYS, "KM0_SYS");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_KM4_SYS, "KM4_SYS");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_DSLP, "DSLP");
+	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_BOR, "BOR");
+	if (temp == 0) {
+		RTK_LOGS(NOTAG, "Initial Power on\n");
+	} else {
+		RTK_LOGS(NOTAG, "UNKNOWN\n");
+	}
 }
 
 void BOOT_Enable_KM0(void)
@@ -411,7 +433,7 @@ void BOOT_Image1(void)
 	if (BOOT_Reason() == 0) {
 		/*reset osc 131k counter, only for RTL6845*/
 		OSC131K_Reset();
-		memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
+		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
 	}
 
 	BOOT_SOC_ClkSet();

@@ -23,7 +23,7 @@
 #define IMQ_BUF_SIZE2 			512
 #define IMQ_TEST_COUNT1			1000
 #define IMQ_TEST_COUNT2			1000
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 #ifdef CONFIG_IPC_MSG_MASTER
 #define QUEUE_NP_TO_AP			0
 #else

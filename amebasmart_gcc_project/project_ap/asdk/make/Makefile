@@ -42,7 +42,7 @@ else ifeq ($(CONFIG_AS_INIC_NP),y)
 endif
 endif
 
-ifeq ($(CONFIG_MBED_TLS_ENABLED),y)
+ifeq ($(CONFIG_MBEDTLS_ENABLED),y)
 	@make -C mbedtls all
 endif
 

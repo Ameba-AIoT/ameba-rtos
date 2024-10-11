@@ -90,3 +90,6 @@ CORE_TARGETS: update_wlan_makefiles $(OBJS)
 
 analysis:
 	make -C vsdk analysis_extract
+
+toolchain:
+	make -C vsdk toolchain

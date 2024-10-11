@@ -19,17 +19,17 @@ static const char *TAG = "I2C";
  * @{
  */
 const I2C_DevTable I2C_DEV_TABLE[3] = {
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 	{I2C0_DEV, I2C0_IRQ},
 	{I2C1_DEV, I2C1_IRQ},
 	{I2C2_DEV, I2C2_IRQ},
 
-#elif defined (ARM_CORE_CM0)
+#elif defined (CONFIG_ARM_CORE_CM0)
 	{I2C0_DEV, I2C0_IRQ},
 	{I2C1_DEV, I2C1_IRQ},
 	{I2C2_DEV, I2C2_IRQ},
 
-#elif defined (ARM_CORE_CA32)
+#elif defined (CONFIG_ARM_CORE_CA32)
 	{I2C0_DEV, I2C0_IRQ},
 	{I2C1_DEV, I2C1_IRQ},
 	{I2C2_DEV, I2C2_IRQ},

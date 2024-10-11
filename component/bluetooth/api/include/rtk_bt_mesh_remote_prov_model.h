@@ -183,7 +183,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_remote_prov_scan_start(rtk_bt_mesh_remote_prov_client_scan_start_t *rmt_scan)
  * @brief     Send remote scan start message to device, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_SCAN_START
  * @param[in] rmt_scan: remote scan start message param structure
  * @return
@@ -193,7 +192,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_remote_prov_scan_start(rtk_bt_mesh_remote_prov_client_scan_start_t *rmt_scan);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_remote_prov_scan_capa_get(rtk_bt_mesh_remote_prov_client_scan_capa_get_t *scan_capa_get)
  * @brief     Send remote scan capa get message to device, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_SCAN_CAPA_GET
  * @param[in] scan_capa_get: remote scan capability get message param structure
  * @return
@@ -203,7 +201,6 @@ uint16_t rtk_bt_mesh_remote_prov_scan_start(rtk_bt_mesh_remote_prov_client_scan_
 uint16_t rtk_bt_mesh_remote_prov_scan_capa_get(rtk_bt_mesh_remote_prov_client_scan_capa_get_t *scan_capa_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_remote_prov_link_open(rtk_bt_mesh_remote_prov_client_link_open_t *link_open)
  * @brief     Send remote link open message to device, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_LINK_OPEN
  * @param[in] link_open: remote link open message param structure
  * @return

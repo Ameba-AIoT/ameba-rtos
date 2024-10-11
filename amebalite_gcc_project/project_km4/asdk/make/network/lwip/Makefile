@@ -12,6 +12,10 @@ LWIPAPI = $(BASEDIR)/component/lwip/api
 NETWORK = $(BASEDIR)/component/network
 LWIPPORT = $(LWIPDIR)/port/realtek/freertos
 
+ifeq ($(CONFIG_802154_THREAD_BORDER_ROUTER_EN),y)	
+MODULE_IFLAGS += -I${BASEDIR}/component/wpan/openthread/rtk_otbr/
+endif
+
 vpath ethernetif.c $(LWIPPORT)
 vpath sys_arch.c $(LWIPPORT)
 vpath mdns.c $(LWIPDIR)/src/apps/mdns

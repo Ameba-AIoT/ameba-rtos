@@ -36,12 +36,12 @@ list(
 list(
     APPEND GLOBAL_IFLAGS
     ${BASEDIR}/component/network
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/src/include
-    #${BASEDIR}/component/lwip/lwip_v2.1.2/src/include/lwip
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/src/include/netif
-    #${BASEDIR}/component/lwip/lwip_v2.1.2/src/include/ipv4
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/port/realtek
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/port/realtek/freertos
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include
+    #${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include/lwip
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include/netif
+    #${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include/ipv4
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/port/realtek
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/port/realtek/freertos
     ${BASEDIR}/component/lwip/api
     
     ${BASEDIR}/component/os_dep
@@ -53,7 +53,7 @@ list(
     #${BASEDIR}/component/ssl/ssl_ram_map/rom
     
     #MBEDTLS
-    ${BASEDIR}/component/ssl/mbedtls-2.16.9/include
+    ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER}/include
     ${BASEDIR}/component/ssl/mbedtls_ram_map/rom
     
     #apple

@@ -22,10 +22,14 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_WIFI_TUNNEL
-//#define WIFI_TUNNEL_DEMO
+#ifndef CONFIG_WIFI_TUNNEL
 //#define CONFIG_NAN
+
+#if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined(CONFIG_USB_FULLMAC)) && defined(CONFIG_NAN)
 #define CONFIG_MCC_MODE
-//#define CONFIG_MCC_NAN_TEST
+#endif
+#endif
+
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
@@ -83,7 +87,7 @@
 #undef CONFIG_ADDRESS_CAM
 #endif
 
-#ifdef CONFIG_MCC_MODE
+#if (defined CONFIG_MCC_MODE || defined CONFIG_WIFI_TUNNEL)
 #define CONFIG_TWT
 #endif
 

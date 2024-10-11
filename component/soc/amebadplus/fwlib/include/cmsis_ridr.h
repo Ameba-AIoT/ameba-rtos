@@ -28,7 +28,7 @@ typedef struct {
 	__IOM uint32_t CNTDATA;					/*!< Offset: 0x01C (R/W) cp3 read/write data regsiter */
 	uint32_t RESERVED0[8U];					/*!< Offset: 0x020 ~ 0x03C */
 	__IOM uint32_t LMUARBTSLT;				/*!< Offset: 0x040 (R/W)  LMU arbiter time slot */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 	uint32_t RESERVED1[3U];					/*!< Offset: 0x044 ~ 0x04C */
 	__IOM uint32_t ITCM0_BASE;				/*!< Offset: 0x050 (R/W)  ITCM0 Range Base register */
 	__IOM uint32_t ITCM0_TOP;				/*!< Offset: 0x054 (R/W)  ITCM0 Range Top register */
@@ -38,7 +38,7 @@ typedef struct {
 	__IOM uint32_t DTCM0_TOP;				/*!< Offset: 0x064 (R/W)  DTCM0 Range Top register */
 	__IOM uint32_t DTCM1_BASE;				/*!< Offset: 0x068 (R/W)  DTCM1 Range Base register */
 	__IOM uint32_t DTCM1_TOP;				/*!< Offset: 0x06C (R/W)  DTCM1 Range Top register */
-#else /*ARM_CORE_CM0*/
+#else /*CONFIG_ARM_CORE_CM0*/
 	uint32_t RESERVED1[11U];				/*!< Offset: 0x044 ~ 0x06C */
 #endif
 	__IM  uint32_t XO_RANGE_EN; 			/*!< Offset: 0x070 (R/W)  execution only range enable register */

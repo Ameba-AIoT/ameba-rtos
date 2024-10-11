@@ -25,14 +25,6 @@
 /* internal head files */
 #include "inic_ipc.h"
 
-#define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
-
-#if defined(CONFIG_AS_INIC_AP)
-#define WIFI_STACK_SIZE_INIC_MSG_Q	(600 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
-#elif defined(CONFIG_AS_INIC_NP)
-#define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
-#endif
-
 /* message queue priv */
 struct ipc_msg_q_priv {
 	struct __queue msg_queue; /* msg queue */

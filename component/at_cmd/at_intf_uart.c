@@ -6,6 +6,27 @@
 
 #include "at_intf_uart.h"
 #include "atcmd_service.h"
+#include "cJSON.h"
+#include "kv.h"
+
+#if defined (CONFIG_AMEBASMART)
+u8 UART_TX = _PA_3; // UART0 TX
+u8 UART_RX = _PA_2; // UART0 RX
+#elif defined (CONFIG_AMEBALITE)
+/* fully programmable zone */
+u8 UART_TX = _PA_28; // UART TX
+u8 UART_RX = _PA_29; // UART RX
+#elif defined (CONFIG_AMEBADPLUS)
+/* fully programmable zone */
+u8 UART_TX = _PA_26; // UART TX
+u8 UART_RX = _PA_27; // UART RX
+#elif defined (CONFIG_AMEBAGREEN2)
+/* fully programmable zone */
+u8 UART_TX = _PA_4; // UART TX
+u8 UART_RX = _PA_5; // UART RX
+#endif
+
+u32 UART_BAUD = 38400;
 
 GDMA_InitTypeDef GDMA_InitStruct;
 volatile u8 dma_tx_busy = 0;
@@ -13,6 +34,7 @@ volatile u8 uart_tx_busy = 0;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
+extern char lfs_mount_fail;
 
 #if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
@@ -186,6 +208,67 @@ void atio_uart_init(void)
 
 	/* enable uart clock and function */
 	RCC_PeriphClockCmd(APBPeriph_UARTx[uart_idx], APBPeriph_UARTx_CLOCK[uart_idx], ENABLE);
+
+#ifdef CONFIG_ATCMD_MCU_CONTROL
+	if (lfs_mount_fail) {
+		goto DEFAULT;
+	}
+
+	int file_size = rt_kv_size("atcmd_config.json");
+	if (file_size <= 0) {
+		RTK_LOGI(NOTAG, "atcmd_config.json is not exist\n");
+		goto DEFAULT;
+	}
+
+	char *atcmd_config;
+	cJSON *atcmd_ob, *interface_ob, *uart_ob, *baudrate_ob, *tx_ob, *rx_ob;
+	atcmd_config = (char *)rtos_mem_zmalloc(file_size);
+	int ret = rt_kv_get("atcmd_config.json", atcmd_config, file_size);
+	if (ret < 0) {
+		RTK_LOGI(NOTAG, "rt_kv_get atcmd_config.json fail \r\n");
+		rtos_mem_free(atcmd_config);
+		goto DEFAULT;
+	}
+
+	if ((atcmd_ob = cJSON_Parse(atcmd_config)) != NULL) {
+		interface_ob = cJSON_GetObjectItem(atcmd_ob, "interface");
+
+		if (interface_ob && strncmp(interface_ob->valuestring, "uart", strlen(interface_ob->valuestring)) != 0) {
+			RTK_LOGI(NOTAG, "ATCMD MCU Control mode only support uart now !\r\n");
+			rtos_mem_free(atcmd_config);
+			goto DEFAULT;
+		}
+
+		if ((uart_ob = cJSON_GetObjectItem(atcmd_ob, "uart")) != NULL) {
+			baudrate_ob = cJSON_GetObjectItem(uart_ob, "baudrate");
+			if (baudrate_ob) {
+				UART_BAUD = baudrate_ob->valueint;
+			}
+
+			tx_ob = cJSON_GetObjectItem(uart_ob, "tx");
+			if (tx_ob) {
+				if (strstr(tx_ob->valuestring, "PA")) {
+					UART_TX = _PA_0 + atoi(&(tx_ob->valuestring[2]));
+				} else if (strstr(tx_ob->valuestring, "PB")) {
+					UART_TX = _PB_0 + atoi(&(tx_ob->valuestring[2]));
+				}
+			}
+
+			rx_ob = cJSON_GetObjectItem(uart_ob, "rx");
+			if (rx_ob) {
+				if (strstr(rx_ob->valuestring, "PA")) {
+					UART_RX = _PA_0 + atoi(&(rx_ob->valuestring[2]));
+				} else if (strstr(tx_ob->valuestring, "PB")) {
+					UART_RX = _PB_0 + atoi(&(rx_ob->valuestring[2]));
+				}
+			}
+		}
+	}
+
+	rtos_mem_free(atcmd_config);
+
+DEFAULT:
+#endif
 
 #if defined (CONFIG_AMEBASMART)
 	/* Configure UART TX and RX pin */

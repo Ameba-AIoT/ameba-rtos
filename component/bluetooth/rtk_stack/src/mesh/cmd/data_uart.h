@@ -57,7 +57,7 @@ typedef void (*pf_send_msg_from_isr_t)(uint8_t data);
  * @brief
  * @{
  */
-/* Print formated data use Data UART  */
+/* Print formatted data use Data UART  */
 extern void data_uart_debug(char *fmt, ...);
 extern void data_uart_dump(uint8_t *pbuffer, uint32_t len);
 extern uint32_t data_uart_send_string(const uint8_t *data, uint32_t len);

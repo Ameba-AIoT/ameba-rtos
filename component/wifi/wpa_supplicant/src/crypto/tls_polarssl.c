@@ -64,7 +64,7 @@ void my_debug(void *ctx, int level, const char *str)
 #include <ssl_misc.h>
 extern int max_buf_bio_in_size;
 extern int max_buf_bio_out_size;
-#elif (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+#elif (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 #include <mbedtls/net.h>
 #include <mbedtls/ssl_internal.h>
 extern int max_buf_bio_in_size;
@@ -83,7 +83,7 @@ int buf_init(struct tls_connection *conn)
 	if (conn->buf_in == NULL) {
 		return -1;
 	}
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+#if (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	conn->buf_in->ptr = (unsigned char *)os_zalloc(max_buf_bio_in_size);
 #else
 	conn->buf_in->ptr = (unsigned char *)os_zalloc(max_buf_bio_size);
@@ -96,7 +96,7 @@ int buf_init(struct tls_connection *conn)
 	if (conn->buf_out == NULL) {
 		return -1;
 	}
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+#if (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	conn->buf_out->ptr = (unsigned char *)os_zalloc(max_buf_bio_out_size);
 #else
 	conn->buf_out->ptr = (unsigned char *)os_zalloc(max_buf_bio_size);
@@ -107,7 +107,7 @@ int buf_init(struct tls_connection *conn)
 
 	conn->buf_in->len = 0;
 	conn->buf_out->len = 0;
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+#if (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	conn->buf_in->len_left = max_buf_bio_in_size;
 	conn->buf_out->len_left = max_buf_bio_out_size;
 #else
@@ -209,7 +209,7 @@ void buf_clear(void *ctx, int isIn)
 	} else {
 		wpa_printf(MSG_DEBUG, "TLS: clear output buffer, len: %d", bio->len);
 	}
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+#if (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	if (isIn == 1) {
 		os_memset(bio->ptr, 0, max_buf_bio_in_size);
 		bio->len = 0;

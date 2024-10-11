@@ -77,7 +77,7 @@ u32 Systick_State(void)
 /* Notice: Maximum miss 1 tick because of cpu clock changed */
 void Systick_update(void)
 {
-#ifdef PLATFORM_FREERTOS
+#ifdef CONFIG_PLATFORM_FREERTOS
 	extern void vPortSetupTimerInterrupt(void);
 	vPortSetupTimerInterrupt();
 #else

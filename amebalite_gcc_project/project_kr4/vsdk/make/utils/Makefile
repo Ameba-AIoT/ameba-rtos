@@ -8,6 +8,7 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 
 COMPONENT_CLEAN += ipc
+#COMPONENT_CLEAN += unity
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #
@@ -22,6 +23,7 @@ $(foreach n, $(COMPONENT), $(eval $(call GenerateTargets, $(n),all)))
 
 all:
 	make -C ipc all
+	#make -C unity all
 
 lib: CORE_TARGETS
 	make -C ipc lib

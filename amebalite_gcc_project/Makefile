@@ -75,6 +75,7 @@ menuconfig:
 
 toolchain:
 	make -C ./project_km4 toolchain
+	make -C ./project_kr4 toolchain
 
 KR4_TARGET_ALL:
 	@if [ "${CONFIG_WLAN_KR4_AP_KM4_NP}" == "y" ]; then \

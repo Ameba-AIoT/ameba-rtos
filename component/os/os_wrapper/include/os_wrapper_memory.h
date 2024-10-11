@@ -13,7 +13,7 @@
  * that it is consistent with the configuration of the operating system.
  */
 #ifdef CONFIG_AMEBASMART
-#if (defined ARM_CORE_CM4) || (defined ARM_CORE_CA32)
+#if (defined CONFIG_ARM_CORE_CM4) || (defined CONFIG_ARM_CORE_CA32)
 #define RTOS_MEM_BYTE_ALIGNMENT 64
 #else
 #define RTOS_MEM_BYTE_ALIGNMENT 32

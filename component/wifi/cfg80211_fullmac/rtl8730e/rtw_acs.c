@@ -25,6 +25,10 @@ struct acs_mntr_rpt acs_mntr_rpt_tbl[MAX_CHANNEL_NUM] = {0};
 
 int cfg80211_rtw_dump_survey_params(struct wiphy *wiphy, struct net_device *netdev, int idx, struct survey_info *info)
 {
+	if (!global_idev.wifi_user_config.acs_en) {
+		return -ENOENT;
+	}
+
 	if (global_idev.mp_fw) {
 		return -ENOENT;
 	}

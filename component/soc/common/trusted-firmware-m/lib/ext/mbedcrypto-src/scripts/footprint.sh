@@ -99,7 +99,7 @@ log "Footprint of standard configurations (minus net_sockets.c, timing.c, fs_io)
 log "for bare-metal ARM Cortex-M3/M4 microcontrollers."
 
 VERSION_H="include/mbedtls/version.h"
-MBEDTLS_VERSION=$( sed -n 's/.*VERSION_STRING *"\(.*\)"/\1/p' $VERSION_H )
+CONFIG_MBEDTLS_VERSION=$( sed -n 's/.*VERSION_STRING *"\(.*\)"/\1/p' $VERSION_H )
 if git rev-parse HEAD >/dev/null; then
     GIT_HEAD=$( git rev-parse HEAD | head -c 10 )
     GIT_VERSION=" (git head: $GIT_HEAD)"
@@ -108,7 +108,7 @@ else
 fi
 
 log ""
-log "mbed TLS $MBEDTLS_VERSION$GIT_VERSION"
+log "mbed TLS $CONFIG_MBEDTLS_VERSION$GIT_VERSION"
 log "$( arm-none-eabi-gcc --version | head -n1 )"
 log "CFLAGS=$ARMGCC_FLAGS"
 

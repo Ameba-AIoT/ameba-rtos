@@ -1,6 +1,4 @@
 set(DIR ${TARGETDIR}/cmsis/source)
-# target_sources(
-#     target_img2_${PROJECT_NAME}
-#     PRIVATE
-#     ${DIR}/mpu_config.c
-# )
+
+# ameba_internal_library(cmsis)
+# target_sources(${CURRENT_LIB_NAME} PRIVATE ${DIR}/mpu_config.c)

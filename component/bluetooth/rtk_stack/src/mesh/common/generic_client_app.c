@@ -87,7 +87,7 @@ static int32_t generic_level_client_data(const mesh_model_info_p pmodel_info,
             generic_level_client_status_t *pdata = pargs;
             if (pdata->optional)
             {
-                data_uart_debug("genric level client receive: src = %d, present = %d, target = %d, remain time = step(%d), \
+                data_uart_debug("generic level client receive: src = %d, present = %d, target = %d, remain time = step(%d), \
 resolution(%d)\r\n", pdata->src, pdata->present_level, pdata->target_level,
                                 pdata->remaining_time.num_steps,
                                 pdata->remaining_time.step_resolution);
@@ -115,7 +115,7 @@ static int32_t generic_battery_client_data(const mesh_model_info_p pmodel_info,
     case GENERIC_BATTERY_CLIENT_STATUS:
         {
             generic_battery_client_status_t *pdata = pargs;
-            data_uart_debug("genric battery client receive: src = %d, battery level = %d, time to discharge = %d, \
+            data_uart_debug("generic battery client receive: src = %d, battery level = %d, time to discharge = %d, \
 time to charge = %d, presence = %d, indicator = %d, charging = %d, serviceability = %d\r\n",
                             pdata->src,
                             pdata->battery_level,
@@ -162,7 +162,7 @@ static int32_t generic_power_level_client_data(const mesh_model_info_p pmodel_in
             generic_power_level_client_status_t *pdata = pargs;
             if (pdata->optional)
             {
-                data_uart_debug("genric power level client receive: src = %d, present = %d, target = %d, remain time = step(%d), \
+                data_uart_debug("generic power level client receive: src = %d, present = %d, target = %d, remain time = step(%d), \
 resolution(%d)\r\n", pdata->src, pdata->present_power, pdata->target_power,
                                 pdata->remaining_time.num_steps,
                                 pdata->remaining_time.step_resolution);
@@ -349,7 +349,7 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
             {
                 for (uint16_t i = 0; i < pdata->num_descriptors; ++i)
                 {
-                    data_uart_debug("sensor client receive: property id = %d, positive rolerance = %d, negative tolerance = %d, sampling function = %d, measurement period = %d, updata_interval = %d\r\n",
+                    data_uart_debug("sensor client receive: property id = %d, positive tolerance = %d, negative tolerance = %d, sampling function = %d, measurement period = %d, update_interval = %d\r\n",
                                     pdata->descriptors[i].property_id, pdata->descriptors[i].positive_tolerance,
                                     pdata->descriptors[i].negative_tolerance, pdata->descriptors[i].sampling_function,
                                     pdata->descriptors[i].measurement_period, pdata->descriptors[i].update_interval);
@@ -499,7 +499,7 @@ static int32_t generic_location_client_data(const mesh_model_info_p pmodel_info,
     case SCHEDULER_CLIENT_STATUS_ACTION:
         {
             generic_location_client_status_local_t *pdata = pargs;
-            data_uart_debug("generic location client receive: src = %d, north = %d, east = %d, altitude = %d, floor = %d, stationary = %d, updata time = %d, precision = %d\r\n",
+            data_uart_debug("generic location client receive: src = %d, north = %d, east = %d, altitude = %d, floor = %d, stationary = %d, update time = %d, precision = %d\r\n",
                             pdata->src, pdata->local.local_north, pdata->local.local_east, pdata->local.local_altitude,
                             pdata->local.floor_num,
                             pdata->local.uncertainty.stationary, pdata->local.uncertainty.update_time,
@@ -520,7 +520,7 @@ static int32_t generic_property_client_data(const mesh_model_info_p pmodel_info,
     UNUSED(pmodel_info);
     switch (type)
     {
-    case GENERIC_USER_PROPERIES_CLIENT_STATUS:
+    case GENERIC_USER_PROPERTIES_CLIENT_STATUS:
         {
             generic_properties_client_status_t *pdata = pargs;
             data_uart_debug("generic property client receive: src = %d", pdata->src);

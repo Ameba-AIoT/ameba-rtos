@@ -21,7 +21,6 @@ uint16_t rtk_bt_mesh_health_fault_get(rtk_bt_mesh_health_fault_get_t *health_fau
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_GET, health_fault_get,
 						  sizeof(rtk_bt_mesh_health_fault_get_t));
 
-	BT_LOGA("ret %d \r\n", ret);
 	return ret;
 }
 
@@ -133,6 +132,26 @@ uint16_t rtk_bt_mesh_health_server_fault_check(rtk_bt_mesh_health_server_check_f
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_CHECK_FAULT_IS_SET, health_fault_check,
 						  sizeof(rtk_bt_mesh_health_server_check_fault_act_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_mesh_health_server_set_tests(rtk_bt_mesh_health_server_test_set_t *test_set)
+{
+	uint16_t ret;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_TEST_SET, test_set,
+						  sizeof(rtk_bt_mesh_health_server_test_set_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_mesh_health_server_set_company_id(rtk_bt_mesh_health_server_company_id_set_t *company_id_set)
+{
+	uint16_t ret;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ACT_COMPANY_ID_SET, company_id_set,
+						  sizeof(rtk_bt_mesh_health_server_company_id_set_t));
 
 	return ret;
 }

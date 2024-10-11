@@ -421,7 +421,7 @@ static int32_t generic_property_client_data(const mesh_model_info_p pmodel_info,
 {
 	UNUSED(pmodel_info);
 	switch (type) {
-	case GENERIC_USER_PROPERIES_CLIENT_STATUS: {
+	case GENERIC_USER_PROPERTIES_CLIENT_STATUS: {
 		generic_properties_client_status_t *pvalue = pargs;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTIES_STATUS,

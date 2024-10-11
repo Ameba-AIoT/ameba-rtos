@@ -9,7 +9,7 @@
 static const char *TAG = "GDMA";
 
 static u8 GDMA_IrqNum[8] = {
-#if defined (ARM_CORE_CM4) || defined (ARM_CORE_CA32)
+#if defined (CONFIG_ARM_CORE_CM4) || defined (CONFIG_ARM_CORE_CA32)
 	/* CA32/KM4 GDMA IRQ */
 	GDMA0_CHANNEL0_IRQ,
 	GDMA0_CHANNEL1_IRQ,
@@ -19,7 +19,7 @@ static u8 GDMA_IrqNum[8] = {
 	GDMA0_CHANNEL5_IRQ,
 	GDMA0_CHANNEL6_IRQ,
 	GDMA0_CHANNEL7_IRQ,
-#elif defined (ARM_CORE_CM0)
+#elif defined (CONFIG_ARM_CORE_CM0)
 	/* KM0 GDMA IRQ */
 	NULL,
 	NULL,

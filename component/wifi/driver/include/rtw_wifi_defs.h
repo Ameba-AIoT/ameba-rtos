@@ -201,37 +201,6 @@
    *@{
    */
 
-/* struct iw_encode_ext ->alg */
-enum RTW_IW_ENC_ALG {
-	RTW_ENCODE_ALG_NONE = 0,
-	RTW_ENCODE_ALG_WEP,
-	RTW_ENCODE_ALG_TKIP,
-	RTW_ENCODE_ALG_CCMP,
-	RTW_ENCODE_ALG_PMK,
-	RTW_ENCODE_ALG_AES_CMAC //IGTK
-};
-
-
-
-/* Modes of operation */
-enum RTK_IW_MODE {
-	RTW_MODE_INFRA,			/* Multi cell network, roaming, ... */
-	RTW_MODE_MASTER			/* Synchronisation master or Access Point */
-};
-
-/**
-* @brief  The enumeration lists the promisc levels.
-*/
-enum rtw_promisc_level {
-	RTW_PROMISC_DISABLE = 0,	/**< Disable the promisc */
-	RTW_PROMISC_ENABLE = 1,	/**< Fetch all ethernet packets */
-	RTW_PROMISC_ENABLE_1 = 2, /**< Fetch only B/M packets */
-	RTW_PROMISC_ENABLE_2 = 3, /**< Fetch all 802.11 packets*/
-	RTW_PROMISC_ENABLE_3 = 4, /**< Fetch only B/M 802.11 packets*/
-	RTW_PROMISC_ENABLE_4 = 5, /**< Fetch all 802.11 packets & MIMO PLCP headers. Please note that the PLCP header would be struct rtw_rx_info_t defined in wifi_conf.h*/
-	RTW_PROMISC_ENABLE_5 = 6 /**< Fetch all unicast 802.11 packets, data frame and beacon in same BSSID*/
-};
-
 /**
  * @brief The enumeration lists band type
  */
@@ -243,9 +212,9 @@ enum band_type {
 };
 
 /**
- * @brief The enumeration lists wpa mode
+ * @brief The enumeration lists wpa mode， size u8
  */
-enum rtw_wpa_mode_type {
+enum {
 	WPA_AUTO_MODE,  /**< wpa auto mode                       */
 	WPA_ONLY_MODE,   /**< wpa only mode                       */
 	WPA2_ONLY_MODE, /**< wpa2 only mode                       */
@@ -281,42 +250,9 @@ enum rtw_security {
 };
 
 /**
- * @brief The enumeration lists encryption types
- */
-enum rtw_encryption_type {
-	RTW_ENCRYPTION_UNKNOWN = 0,    /**< unknown encryption type*/
-	RTW_ENCRYPTION_OPEN = 1,           /**< open encryption type*/
-	RTW_ENCRYPTION_WEP40 = 2,         /**< WEP40 encryption type*/
-	RTW_ENCRYPTION_WPA_TKIP = 3,   /**< WPA+TKIP encryption type*/
-	RTW_ENCRYPTION_WPA_AES = 4,    /**< WPA+AES encryption type*/
-	RTW_ENCRYPTION_WPA2_TKIP = 5,/**< WPA2+TKIP encryption type*/
-	RTW_ENCRYPTION_WPA2_AES = 6,  /**< WPA2+AES encryption type*/
-	RTW_ENCRYPTION_WPA2_MIXED = 7,  /**< WPA2+MIXED encryption type*/
-	RTW_ENCRYPTION_WEP104 = 9,          /**< WEP104 encryption type*/
-	RTW_ENCRYPTION_UNDEF = 0xFF    /**< undefined encryption type*/
-};
-
-enum WIFI_STATUS_CODE {
-	_STATS_SUCCESSFUL_			= 0,
-	_STATS_FAILURE_				= 1,
-	_STATS_CAP_FAIL_			= 10,
-	_STATS_NO_ASOC_				= 11,
-	_STATS_OTHER_				= 12,
-	_STATS_NO_SUPP_ALG_			= 13,
-	_STATS_OUT_OF_AUTH_SEQ_		= 14,
-	_STATS_CHALLENGE_FAIL_		= 15,
-	_STATS_AUTH_TIMEOUT_		= 16,
-	_STATS_UNABLE_HANDLE_STA_	= 17,
-	_STATS_RATE_FAIL_			= 18,
-	_STATS_REFUSED_TEMPORARILY_ = 30,
-	_STATS_INVALID_PMKID_		= 53,
-	_STATS_SAE_HASH_TO_ELEMENT_ = 126,
-};
-
-/**
   * @brief The enumeration lists the BIT 7 HT Rate.
   */
-enum mgn_rate_type {
+enum {
 	MGN_1M		= 0x02,     /**< 0x02 */
 	MGN_2M		= 0x04,     /**< 0x04 */
 	MGN_5_5M	= 0x0B,     /**< 0x0B */
@@ -456,7 +392,7 @@ enum mgn_rate_type {
 /**
   * @brief csi trig management frame subtype.
   */
-enum trig_frame_mgnt_type {
+enum {
 	CSI_TRIG_ASSOCREQ   = BIT(0),
 	CSI_TRIG_ASSOCRSP   = BIT(1),
 	CSI_TRIG_REASSOCREQ = BIT(2),
@@ -474,7 +410,7 @@ enum trig_frame_mgnt_type {
 /**
   * @brief csi trig control frame subtype.
   */
-enum trig_frame_ctrl_type {
+enum {
 	CSI_TRIG_TRIGGER     = BIT(2),
 	CSI_TRIG_BA          = BIT(9),
 	CSI_TRIG_PSPOLL      = BIT(10),
@@ -488,7 +424,7 @@ enum trig_frame_ctrl_type {
 /**
   * @brief csi trig data frame subtype.
   */
-enum trig_frame_data_type {
+enum {
 	CSI_TRIG_DATA           = BIT(0),
 	CSI_TRIG_DATA_CFACK     = BIT(1),
 	CSI_TRIG_DATA_CFPOLL    = BIT(2),
@@ -504,7 +440,7 @@ enum trig_frame_data_type {
 /**
   * @brief csi enable or config
   */
-enum rtw_csi_action_type {
+enum {
 	CSI_ACT_EN,    /**< enable or disable csi func */
 	CSI_ACT_CFG,  /**< config csi parameters */
 	CSI_ACT_MAX
@@ -513,7 +449,7 @@ enum rtw_csi_action_type {
 /**
   * @brief csi group num
   */
-enum rtw_csi_group_type {
+enum {
 	CSI_GROUP_NUM_1 = 0,  /**< per tone */
 	CSI_GROUP_NUM_2,         /**< per 2tone */
 	CSI_GROUP_NUM_4,        /**< per 4tone */
@@ -524,7 +460,7 @@ enum rtw_csi_group_type {
 /**
   * @brief csi mode
   */
-enum rtw_csi_mode_type {
+enum {
 	CSI_MODE_NORMAL = 0,   ///<   normal mode
 	CSI_MODE_NDP,                ///<   ndp mode
 	CSI_MODE_RX_RESP,         ///<    rx rsp mode
@@ -534,7 +470,7 @@ enum rtw_csi_mode_type {
 /**
   * @brief csi accuracy.
   */
-enum rtw_csi_accuracy_type {
+enum {
 	CSI_ACCU_1BYTE = 0, /**< CSI_ACCU_1BYTE: S(8,4) */
 	CSI_ACCU_2BYTES,  /**< CSI_ACCU_2BYTE: S(16,12) */
 	CSI_ACCU_MAX
@@ -543,7 +479,7 @@ enum rtw_csi_accuracy_type {
 /**
   * @brief csi alg_opt.
   */
-enum rtw_csi_alg_opt_type {
+enum {
 	CSI_ALG_LS = 0,  /**< ls algo */
 	CSI_ALG_SMOTHING, /**< smothing algo */
 	CSI_ALG_MAX            /**< other algo */
@@ -552,7 +488,7 @@ enum rtw_csi_alg_opt_type {
 /**
   * @brief csi ch_opt.
   */
-enum rtw_csi_ch_opt_type {
+enum {
 	CSI_CH_LEGACY = 0, /**< legacy part(L-LTF) channel estmation result */
 	CSI_CH_NON_LEGACY,  /**< non-legacy(HT-LTF) part */
 	CSI_CH_MAX
@@ -561,22 +497,11 @@ enum rtw_csi_ch_opt_type {
 /**
   * @brief csi play_role for sta mode.
   */
-enum rtw_csi_op_role {
+enum {
 	CSI_OP_ROLE_TRX = 0,  /**< both trx */
 	CSI_OP_ROLE_TX  = 1,  /**< only tx csi triggering frame */
 	CSI_OP_ROLE_RX  = 2,  /**< only rx csi triggering frame for fetching csi report */
 	CSI_OP_ROLE_MAX
-};
-
-/**
-  * @brief The enumeration lists the power status.
-  */
-enum rtw_tx_pwr_percentage {
-	RTW_TX_PWR_PERCENTAGE_100	= 0, /**< 100%, default target output power.	 */
-	RTW_TX_PWR_PERCENTAGE_75	= 1, /**< 75% */
-	RTW_TX_PWR_PERCENTAGE_50	= 2, /**< 50% */
-	RTW_TX_PWR_PERCENTAGE_25	= 3, /**< 25% */
-	RTW_TX_PWR_PERCENTAGE_12_5	= 4, /**< 12.5% */
 };
 
 /**
@@ -620,28 +545,26 @@ enum rtw_antdiv_mode {
 };
 
 /**
-* @brief The enumeration lists band types
+* @brief The enumeration lists band types, size u8
 */
-enum rtw_802_11_band {
+enum {
 	RTW_802_11_BAND_5GHZ   = 0, /**< Denotes 5GHz radio band */
 	RTW_802_11_BAND_2_4GHZ = 1,  /**< Denotes 2.4GHz radio band */
-	RTW_802_11_BAND_NOUSE = 0xFFFFFFFF
 };
 
 /**
-  * @brief  The enumeration lists the bss types.
+  * @brief  The enumeration lists the bss types. size u8
   */
-enum rtw_bss_type {
+enum {
 	RTW_BSS_TYPE_INFRASTRUCTURE 	= 0, /**< Denotes infrastructure network                  */
-	RTW_BSS_TYPE_ADHOC          		= 1, /**< Denotes an 802.11 ad-hoc IBSS network           */
-	RTW_BSS_TYPE_ANY            			= 2, /**< Denotes either infrastructure or ad-hoc network */
-	RTW_BSS_TYPE_UNKNOWN        		= 0xFFFFFFFF /**< May be returned by scan function if BSS type is unknown. Do not pass this to the Join function */
+	RTW_BSS_TYPE_WTN_HELPER          		= 1, /**< Denotes an wtn helper network           */
+	RTW_BSS_TYPE_UNKNOWN
 };
 
 /**
   * @brief  The enumeration lists the scan options.
   */
-enum rtw_scan_option {
+enum {
 	RTW_SCAN_NOUSE			= 0x00,  /**< default value */
 	RTW_SCAN_ACTIVE              	= 0x01,     /**< active scan */
 	RTW_SCAN_PASSIVE             	= 0x02,    /**< passive scan*/
@@ -653,51 +576,26 @@ enum rtw_scan_option {
 /**
   * @brief  The enumeration lists the WPS types.
   */
-enum rtw_wps_type {
-	RTW_WPS_TYPE_DEFAULT 		    		= 0x0000,	/**< default type */
-	RTW_WPS_TYPE_USER_SPECIFIED 		= 0x0001,	/**< user specified type */
-	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 0x0002,	/**< machine specified type */
-	RTW_WPS_TYPE_REKEY 			        	= 0x0003,	/**< retry key type */
-	RTW_WPS_TYPE_PUSHBUTTON 		    	= 0x0004,	/**< push button type */
-	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 0x0005,	/**< register specified type */
-	RTW_WPS_TYPE_NONE                   		= 0x0006, 	/**< none */
-	RTW_WPS_TYPE_WSC                    		= 0x0007,	/**< wsc type */
-	RTW_WPS_TYPE_NOUSE					= 0xffffffff		/**< unsed type */
-};
-
-/**
-  * @brief The enumeration lists the join status.
-  */
-enum rtw_join_status_type {
-	RTW_JOINSTATUS_UNKNOWN = 0,				/**< unknown */
-
-	/* The intermediate states of Linking should be added
-		in front of RTW_JOINSTATUS_SUCCESS */
-	RTW_JOINSTATUS_STARTING,				/**< starting phase */
-	RTW_JOINSTATUS_SCANNING,				/**< scanning phase */
-	RTW_JOINSTATUS_AUTHENTICATING,			/**< authenticating phase */
-	RTW_JOINSTATUS_AUTHENTICATED,			/**< authenticated phase */
-	RTW_JOINSTATUS_ASSOCIATING,				/**< associating phase */
-	RTW_JOINSTATUS_ASSOCIATED,			 	/**< associated phase */
-	RTW_JOINSTATUS_4WAY_HANDSHAKING,		/**< 4 way handshaking phase */
-	RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE,	/**< 4 way handshake done phase */
-	RTW_JOINSTATUS_SUCCESS,					/**< join success  */
-
-	/* The other result states of Linking should be added
-		in back of RTW_JOINSTATUS_SUCCESS */
-	RTW_JOINSTATUS_FAIL,						/**< join fail  */
-	RTW_JOINSTATUS_DISCONNECT,				/**< disconnect */
+enum {
+	RTW_WPS_TYPE_DEFAULT 		    		= 0,	/**< default type */
+	RTW_WPS_TYPE_USER_SPECIFIED 		= 1,	/**< user specified type */
+	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 2,	/**< machine specified type */
+	RTW_WPS_TYPE_REKEY 			        	= 3,	/**< retry key type */
+	RTW_WPS_TYPE_PUSHBUTTON 		    	= 4,	/**< push button type */
+	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 5,	/**< register specified type */
+	RTW_WPS_TYPE_NONE                   		= 6, 	/**< none */
+	RTW_WPS_TYPE_WSC                    		= 7,	/**< wsc type */
 };
 
 /**
   * @brief The enumeration lists the supported operation mode by WIFI driver,
   *			including station and AP mode.
   */
-enum rtw_mode_type {
+enum {
 	RTW_MODE_NONE	= 0,		///<none
-	RTW_MODE_STA		= 0x0001,	///<sta mode
-	RTW_MODE_AP		= 0x0002,	///<ap mode
-	RTW_MODE_NAN		= 0x0004,	///<nan mode
+	RTW_MODE_STA		= 1,	///<sta mode
+	RTW_MODE_AP		= 2,	///<ap mode
+	RTW_MODE_NAN		= 3,	///<nan mode
 	RTW_MODE_MAX
 };
 
@@ -710,14 +608,6 @@ enum rtw_autoreconnect_mode {
 	RTW_AUTORECONNECT_INFINITE ///< infinite auto reconnect
 };
 
-/**
-  * @brief  The enumeration lists the interfaces.
-  */
-enum rtw_interface_type {
-	RTW_STA_INTERFACE     = 0, /**<  STA or Client Interface  */
-	RTW_AP_INTERFACE      = 1 /**<  SoftAP Interface         */
-};
-
 /* For freertos, core, hal, rf, halbb. */
 enum phl_phy_idx {
 	HW_PHY_0,
@@ -726,80 +616,42 @@ enum phl_phy_idx {
 };
 
 /**
-  * @brief  The enumeration lists the packet filter rules.
+  * @brief  only internal used events.
   */
-enum rtw_packet_filter_rule {
-	RTW_POSITIVE_MATCHING  = 0, /**< Receive the data matching with this pattern and discard the other data   */
-	RTW_NEGATIVE_MATCHING  = 1  /**< Discard the data matching with this pattern and receive the other data */
-};
+enum  {
+	/* only internal used */
+	WIFI_EVENT_INTERNAL_BASE		 	= 100,
+	WIFI_EVENT_RX_MGNT					= 101,
+	WIFI_EVENT_RX_MGNT_AP				= 102,
+	WIFI_EVENT_EXTERNAL_AUTH_REQ		= 103,
 
-/**
-  * @brief channel switch
-  */
-enum rtw_channel_switch_res {
-	RTW_CH_SWITCH_FAIL = -1,           ///<channel switch fail
-	RTW_CH_SWITCH_SUCCESS = 0,      ///<channel switch success
-};
+	WIFI_EVENT_WPA_STA_4WAY_START		= 104,
+	WIFI_EVENT_WPA_AP_4WAY_START		= 105,
+	WIFI_EVENT_WPA_STA_4WAY_RECV		= 106,
+	WIFI_EVENT_WPA_AP_4WAY_RECV			= 107,
+	WIFI_EVENT_WPA_SET_PSK_INFO			= 108,
 
-/**
-  * @brief  The enumeration is event type indicated from wlan driver.
-  */
-enum rtw_event_indicate {
-	/* common event */
-	WIFI_EVENT_STA_ASSOC = 0,		///<used in p2p, simple config, 11s, customer
-	WIFI_EVENT_STA_DISASSOC,		///<used in p2p, customer
-	WIFI_EVENT_RX_MGNT,				///<used in p2p, customer
-	WIFI_EVENT_RX_MGNT_AP,
-	WIFI_EVENT_EXTERNAL_AUTH_REQ,
+	WIFI_EVENT_OWE_START_CALC			= 109,
+	WIFI_EVENT_OWE_PEER_KEY_RECV		= 110,
 
-	WIFI_EVENT_GROUP_KEY_CHANGED,
-	WIFI_EVENT_RECONNECTION_FAIL,
-	WIFI_EVENT_ICV_ERROR,
-	WIFI_EVENT_CHALLENGE_FAIL,
-
-	WIFI_EVENT_JOIN_STATUS,
-
-	/* wpa event */
-	WIFI_EVENT_WPA_STA_WPS_START,
-	WIFI_EVENT_WPA_WPS_FINISH,
-	WIFI_EVENT_WPA_EAPOL_START,
-	WIFI_EVENT_WPA_EAPOL_RECVD,
-	WIFI_EVENT_WPA_STA_4WAY_START,
-	WIFI_EVENT_WPA_AP_4WAY_START,
-	WIFI_EVENT_WPA_STA_4WAY_RECV,
-	WIFI_EVENT_WPA_AP_4WAY_RECV,
-	WIFI_EVENT_WPA_SET_PSK_INFO,
-	/* owe event */
-	WIFI_EVENT_OWE_START_CALC,
-	WIFI_EVENT_OWE_PEER_KEY_RECV,
-	/* kvr event */
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-	WIFI_EVENT_KVR_CAP_UPDATE,
+	WIFI_EVENT_KVR_CAP_UPDATE			= 111,
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-	WIFI_EVENT_NB_RESP_RECV,
+	WIFI_EVENT_NB_RESP_RECV				= 112,
 #endif
 #ifdef CONFIG_IEEE80211V
-	WIFI_EVENT_BTM_REQ_RECV,
-	WIFI_EVENT_BTM_DEBUG_CMD,
+	WIFI_EVENT_BTM_REQ_RECV				= 113,
+	WIFI_EVENT_BTM_DEBUG_CMD			= 114,
 #endif
 #ifdef CONFIG_IEEE80211R
-	WIFI_EVENT_FT_AUTH_START,
-	WIFI_EVENT_FT_RX_MGNT,
+	WIFI_EVENT_FT_AUTH_START			= 115,
+	WIFI_EVENT_FT_RX_MGNT				= 116,
 #endif
 #endif
 
-	/* csi rx done event */
-	WIFI_EVENT_CSI_DONE,
-
-	/* flash event */
-	WIFI_EVENT_DEAUTH_INFO_FLASH,
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-	WIFI_EVENT_RFK_NOTIFY,
-	WIFI_EVENT_CHANNEL_NOT_SUPPORTED,
-#endif
-	WIFI_EVENT_MAX,
+	WIFI_EVENT_DEAUTH_INFO_FLASH		= 117,
+	WIFI_EVENT_INTERNAL_MAX,
 };
-
 /**
   * The enumeration lists the flash operation status.
   */
@@ -811,7 +663,7 @@ enum flash_operation_type {
 /**
   * The enumeration lists the power save status.
   */
-enum ips_level_type {
+enum {
 	IPS_WIFI_OFF = 0,
 	IPS_WIFI_PG,
 	IPS_LEVEL_MAX,

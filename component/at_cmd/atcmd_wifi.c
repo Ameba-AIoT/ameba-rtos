@@ -31,8 +31,8 @@ unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, 
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 extern void cmd_wps(int argc, char **argv);
 #endif
-static rtw_network_info_t wifi = {0};
-static rtw_softap_info_t ap = {0};
+static struct _rtw_network_info_t wifi = {0};
+static struct _rtw_softap_info_t ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
@@ -57,7 +57,6 @@ static void init_wifi_struct(void)
 	wifi.key_id = -1;
 	wifi.channel = 0;
 	wifi.pscan_option = 0;
-	wifi.joinstatus_user_callback = NULL;
 	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));
 	ap.ssid.len = 0;
 	ap.password = NULL;
@@ -67,7 +66,7 @@ static void init_wifi_struct(void)
 	security = -1;
 }
 
-static void print_wifi_setting(unsigned char wlan_idx, rtw_wifi_setting_t *pSetting)
+static void print_wifi_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *pSetting)
 {
 #ifndef CONFIG_INIC_NO_FLASH
 
@@ -151,7 +150,7 @@ static void print_wifi_setting(unsigned char wlan_idx, rtw_wifi_setting_t *pSett
 #endif
 }
 
-static void print_scan_result(rtw_scan_result_t *record)
+static void print_scan_result(struct rtw_scan_result *record)
 {
 #if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
@@ -191,13 +190,16 @@ static void print_scan_result(rtw_scan_result_t *record)
 			  "Unknown            ");
 
 	at_printf(" %s ", record->SSID.val);
+	if (record->bss_type == RTW_BSS_TYPE_WTN_HELPER) {
+		at_printf(" Helper\t ");
+	}
 	at_printf("\r\n");
 #endif
 }
 
-static rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
+static int app_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 {
-	rtw_scan_result_t *scanned_AP_info;
+	struct rtw_scan_result *scanned_AP_info;
 	char *scan_buf = NULL;
 	unsigned int i = 0;
 
@@ -207,7 +209,7 @@ static rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *u
 		return RTW_ERROR;
 	}
 
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(rtw_scan_result_t));
+	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
 	if (scan_buf == NULL) {
 		return RTW_ERROR;
 	}
@@ -223,7 +225,7 @@ static rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *u
 #else
 		at_printf("%d\t ", (i + 1));
 #endif
-		scanned_AP_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
+		scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
 		scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 
 		print_scan_result(scanned_AP_info);
@@ -263,7 +265,6 @@ void at_wlconn(void *arg)
 #ifdef CONFIG_LWIP_LAYER
 	unsigned long tick3;
 #endif
-	struct _rtw_wifi_setting_t *p_wifi_setting = NULL;
 
 	if (arg == NULL) {
 		RTK_LOGW(NOTAG, "[+WLCONN] The parameters can not be ignored\r\n");
@@ -338,13 +339,6 @@ void at_wlconn(void *arg)
 		}
 	}
 
-	p_wifi_setting = (struct _rtw_wifi_setting_t *)rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
-	if (p_wifi_setting == NULL) {
-		RTK_LOGW(NOTAG, "[+WLCONN] alloc p_wifi_setting fail\r\n");
-		error_no = 3;
-		goto end;
-	}
-
 	/* Check bssid is empty && ssid is null */
 	if (!memcmp(wifi.bssid.octet, empty_bssid, sizeof(empty_bssid)) && (wifi.ssid.val[0] == 0)) {
 		RTK_LOGW(NOTAG, "[+WLCONN] SSID should exist here\r\n");
@@ -359,26 +353,18 @@ void at_wlconn(void *arg)
 		wifi.security_type = RTW_SECURITY_OPEN;
 	}
 
-	/* Check AP mode */
-	wifi_get_setting(STA_WLAN_INDEX, p_wifi_setting);
-	if (p_wifi_setting->mode == RTW_MODE_AP) {
-#ifdef CONFIG_LWIP_LAYER
-		dhcps_deinit();
-#endif
-		if (wifi_on(RTW_MODE_STA) < 0) {
-			RTK_LOGW(NOTAG, "[+WLCONN] Wifi on failed\r\n");
-			error_no = 5;
-			goto end;
-		}
-	}
-
 	/* Connecting ...... */
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTW_SUCCESS) {
-		if (ret == RTW_INVALID_KEY) {
-			RTK_LOGW(NOTAG, "[+WLCONN] Invalid Key set\r\n");
+		RTK_LOGW(NOTAG, "[+WLCONN] Fail:%d", ret);
+		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+			RTK_LOGW(NOTAG, "(password format wrong)");
+		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+			RTK_LOGW(NOTAG, "(not found AP)");
+		} else if (ret == RTW_BUSY) {
+			RTK_LOGW(NOTAG, "(busy)");
 		}
-		RTK_LOGW(NOTAG, "[+WLCONN] Can not connect to AP\r\n");
+		RTK_LOGW(NOTAG, "\r\n");
 		error_no = 4;
 		goto end;
 	}
@@ -394,7 +380,6 @@ void at_wlconn(void *arg)
 #endif
 
 end:
-	rtos_mem_free((void *)p_wifi_setting);
 	init_wifi_struct();
 	if (error_no == 0) {
 		at_printf("\r\n%sOK\r\n", "+WLCONN:");
@@ -417,7 +402,7 @@ void at_wldisconn(void *arg)
 {
 	int timeout = 20;
 	int error_no = 0, ret = 0;
-	struct _rtw_wifi_setting_t wifi_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+	struct _rtw_wifi_setting_t wifi_setting = {0};
 
 	UNUSED(arg);
 
@@ -530,7 +515,7 @@ void at_wlscan(void *arg)
 	int error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
 	struct _rtw_scan_param_t scan_param;
-	enum rtw_join_status_type join_status = RTW_JOINSTATUS_UNKNOWN;
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
@@ -752,7 +737,7 @@ void at_wlstartap(void *arg)
 			}
 		} else if (0 == strcmp("pl", argv[i])) {
 			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
-				start_ip.addr = inet_addr(argv[j]);
+				ip_addr_set_ip4_u32(&start_ip, inet_addr(argv[j]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid start ip value\r\n");
 				error_no = 2;
@@ -760,7 +745,7 @@ void at_wlstartap(void *arg)
 			}
 
 			if (argv[j + 1] != NULL && inet_addr(argv[j + 1]) != IPADDR_NONE) {
-				end_ip.addr = inet_addr(argv[j + 1]);
+				ip_addr_set_ip4_u32(&end_ip, inet_addr(argv[j + 1]));
 			} else {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid end ip value\r\n");
 				error_no = 2;
@@ -838,9 +823,9 @@ void at_wlstartap(void *arg)
 
 #ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit();
-	ip_addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netmask = WIFI_MAKEU32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	ip_addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 #endif
 
@@ -878,9 +863,9 @@ void at_wlstartap(void *arg)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
+	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
+	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
+	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 	dhcps_init(pnetif);
 #endif
@@ -930,7 +915,7 @@ void at_wlstate(void *arg)
 	u8 *msk = LwIP_GetMASK(0);
 #endif
 	struct _rtw_wifi_setting_t *p_wifi_setting = NULL;
-	rtw_sw_statistics_t stats;
+	struct _rtw_sw_statistics_t stats;
 
 	UNUSED(arg);
 
@@ -1105,10 +1090,10 @@ void at_wlpromisc(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
-	promisc_para_t promisc_para;
+	struct _promisc_para_t promisc_para;
 	u32 status;
 
-	memset(&promisc_para, 0, sizeof(promisc_para_t));
+	memset(&promisc_para, 0, sizeof(struct _promisc_para_t));
 
 	argc = parse_param(arg, argv);
 	if (argc > 1) {

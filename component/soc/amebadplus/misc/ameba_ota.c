@@ -185,7 +185,8 @@ u8 ota_checkimage_layout(update_ota_target_hdr *pOtaTgtHdr)
 
 		if ((end_addr - start_addr) < pOtaTgtHdr->FileImgHdr[index].ImgLen) {
 			ota_printf(_OTA_ERR_, "ImgID: %lu, OTA%d start addr: 0x%08X, end addr: 0x%08X, OTA image Length(%d) > Layout(%d)!!!\n",
-					   pOtaTgtHdr->FileImgHdr[index].ImgID, targetIdx + 1, (unsigned int)start_addr, (unsigned int)end_addr, pOtaTgtHdr->FileImgHdr[index].ImgLen, (end_addr - start_addr));
+					   pOtaTgtHdr->FileImgHdr[index].ImgID, targetIdx + 1, (unsigned int)start_addr, (unsigned int)end_addr, pOtaTgtHdr->FileImgHdr[index].ImgLen,
+					   (end_addr - start_addr));
 			return _FALSE;
 		}
 	}
@@ -287,17 +288,17 @@ int parser_url(char *url, char *host, u16 *port, char *resource, int len)
 		if (http) { // remove http
 			url += strlen("http://");
 		}
-		memset(host, 0, len);
+		_memset(host, 0, len);
 
 		pos = strstr(url, ":");	// get port
 		if (pos) {
-			memcpy(host, url, (pos - url));
+			_memcpy(host, url, (pos - url));
 			pos += 1;
 			*port = atoi(pos);
 		} else {
 			pos = strstr(url, "/");
 			if (pos) {
-				memcpy(host, url, (pos - url));
+				_memcpy(host, url, (pos - url));
 				url = pos;
 			}
 			*port = 80;
@@ -305,10 +306,10 @@ int parser_url(char *url, char *host, u16 *port, char *resource, int len)
 		ota_printf(_OTA_INFO_, "server: %s\n\r", host);
 		ota_printf(_OTA_INFO_, "port: %d\n\r", *port);
 
-		memset(resource, 0, len);
+		_memset(resource, 0, len);
 		pos = strstr(url, "/");
 		if (pos) {
-			memcpy(resource, pos + 1, strlen(pos + 1));
+			_memcpy(resource, pos + 1, strlen(pos + 1));
 		}
 		ota_printf(_OTA_INFO_, "resource: %s\n\r", resource);
 
@@ -450,8 +451,8 @@ int ota_update_http_parse_response(ota_context *ctx, u8 *response, u32 response_
 						return -1;
 					}
 				}
-				memset(redirect->url, 0, redirect->len);
-				memcpy(redirect->url, tmp + 10, strlen(tmp + 10));
+				_memset(redirect->url, 0, redirect->len);
+				_memcpy(redirect->url, tmp + 10, strlen(tmp + 10));
 			}
 
 			if (redirect->host == NULL) {
@@ -468,8 +469,8 @@ int ota_update_http_parse_response(ota_context *ctx, u8 *response, u32 response_
 				}
 			}
 
-			memset(redirect->host, 0, redirect->len);
-			memset(redirect->resource, 0, redirect->len);
+			_memset(redirect->host, 0, redirect->len);
+			_memset(redirect->resource, 0, redirect->len);
 			if (parser_url(redirect->url, redirect->host, &redirect->port, redirect->resource, redirect->len) < 0) {
 				return -1;
 			}
@@ -490,8 +491,8 @@ int ota_update_http_parse_response(ota_context *ctx, u8 *response, u32 response_
 
 		if (3 == result->parse_status) {//Still didn't receive the full header
 			result->header_bak = rtos_mem_malloc(HEADER_BAK_LEN + 1);
-			memset(result->header_bak, 0, strlen((const char *)result->header_bak));
-			memcpy(result->header_bak, response + response_len - HEADER_BAK_LEN, HEADER_BAK_LEN);
+			_memset(result->header_bak, 0, strlen((const char *)result->header_bak));
+			_memcpy(result->header_bak, response + response_len - HEADER_BAK_LEN, HEADER_BAK_LEN);
 		}
 	}
 
@@ -520,13 +521,13 @@ int ota_update_http_parse_response(ota_context *ctx, u8 *response, u32 response_
 
 		if (1 == result->parse_status) {//didn't get the content length and the full header
 			result->header_bak = rtos_mem_malloc(HEADER_BAK_LEN + 1);
-			memset(result->header_bak, 0, strlen((char *)result->header_bak));
-			memcpy(result->header_bak, response + response_len - HEADER_BAK_LEN, HEADER_BAK_LEN);
+			_memset(result->header_bak, 0, strlen((char *)result->header_bak));
+			_memcpy(result->header_bak, response + response_len - HEADER_BAK_LEN, HEADER_BAK_LEN);
 		} else if (2 == result->parse_status) { //didn't get the full header but get the content length
 			result->parse_status = 3;
 			result->header_bak = rtos_mem_malloc(HEADER_BAK_LEN + 1);
-			memset(result->header_bak, 0, strlen((char *)result->header_bak));
-			memcpy(result->header_bak, response + response_len - HEADER_BAK_LEN, HEADER_BAK_LEN);
+			_memset(result->header_bak, 0, strlen((char *)result->header_bak));
+			_memcpy(result->header_bak, response + response_len - HEADER_BAK_LEN, HEADER_BAK_LEN);
 		}
 	}
 
@@ -543,20 +544,20 @@ int ota_update_http_recv_response(ota_context *ctx, u8 *buf, int buf_size)
 
 	while (3 >= rsp_result.parse_status) { //still read header
 		if (0 == rsp_result.parse_status) { //didn't get the http response
-			memset(buf, 0, buf_size);
+			_memset(buf, 0, buf_size);
 			read_bytes = ota_update_conn_read(ctx, buf, buf_size);
 			if (read_bytes <= 0) {
 				ota_printf(_OTA_ERR_, "[%s] Read socket failed\n", __FUNCTION__);
 				goto exit;
 			}
 			idx = read_bytes;
-			memset(&rsp_result, 0, sizeof(rsp_result));
+			_memset(&rsp_result, 0, sizeof(rsp_result));
 			if (ota_update_http_parse_response(ctx, buf, idx, &rsp_result) == -1) {
 				goto exit;
 			}
 		} else if ((1 == rsp_result.parse_status) || (3 == rsp_result.parse_status)) { //just get the status code
-			memset(buf, 0, buf_size);
-			memcpy(buf, rsp_result.header_bak, HEADER_BAK_LEN);
+			_memset(buf, 0, buf_size);
+			_memcpy(buf, rsp_result.header_bak, HEADER_BAK_LEN);
 			rtos_mem_free(rsp_result.header_bak);
 			rsp_result.header_bak = NULL;
 			read_bytes = ota_update_conn_read(ctx, buf + HEADER_BAK_LEN, (buf_size - HEADER_BAK_LEN));
@@ -583,9 +584,9 @@ int ota_update_http_recv_response(ota_context *ctx, u8 *buf, int buf_size)
 	writelen = idx - rsp_result.header_len;
 	/* remove http header_len from alloc*/
 	if (writelen >= 0) {
-		memset(buf, 0, rsp_result.header_len);
+		_memset(buf, 0, rsp_result.header_len);
 		_memcpy((void *)buf, (void *)(buf + rsp_result.header_len), writelen);
-		memset(buf + writelen, 0, rsp_result.header_len); // move backup to the head of alloc
+		_memset(buf + writelen, 0, rsp_result.header_len); // move backup to the head of alloc
 	}
 
 	return writelen;
@@ -770,7 +771,7 @@ int download_packet_process(ota_context *ctx, u8 *buf, int len)
 		otaCtrl->IsGetHdr = 1;
 		manifest = &pOtaTgtHdr->Manifest[otaCtrl->index];
 		empty_sig = (u8 *)rtos_mem_malloc(manifest_size);
-		memset(empty_sig, 0xFF, manifest_size);
+		_memset(empty_sig, 0xFF, manifest_size);
 		write_sector = 0;
 		next_erase_sector = 0;
 		size = 0;
@@ -929,7 +930,7 @@ int ota_update_s2_download_fw(ota_context *ctx)
 	ota_printf(_OTA_INFO_, "[%s] download image index : %d", __func__, otaCtrl->index);
 
 	while (1) {
-		memset(buf, 0, BUF_SIZE);
+		_memset(buf, 0, BUF_SIZE);
 		read_bytes = ota_update_conn_read(ctx, buf, BUF_SIZE);
 		if (read_bytes == 0) {
 			ret = 0;
@@ -968,7 +969,7 @@ int ota_update_s1_prepare(ota_context *ctx, u8 *buf, int len)
 		/* Receive file_info[] from server. Add this for compatibility. This file_info includes the
 		file_size and checksum information of the total firmware file.	Even though the file_info
 		is received from server , it won't be used.*/
-		memset(buf, 0, sizeof(file_info));
+		_memset(buf, 0, sizeof(file_info));
 		if (!recv_file_info_from_server(ctx, buf, sizeof(file_info))) {
 			ota_printf(_OTA_ERR_, "[%s] receive file_info failed", __FUNCTION__);
 			return -1;
@@ -1011,7 +1012,7 @@ int ota_update_s1_prepare(ota_context *ctx, u8 *buf, int len)
 
 	ctx->otactrl->NextImgLen = writelen - RevHdrLen;
 	if (ctx->otactrl->NextImgLen > 0) {
-		memset(ctx->otactrl->NextImgBuf, 0, BUF_SIZE);
+		_memset(ctx->otactrl->NextImgBuf, 0, BUF_SIZE);
 		_memcpy((void *)ctx->otactrl->NextImgBuf, (void *)(buf + RevHdrLen), writelen - RevHdrLen);
 		ctx->otactrl->NextImgFg = 1;
 	}
@@ -1047,10 +1048,10 @@ int ota_update_s0_connect_server(ota_context *ctx)
 		goto exit;
 	}
 
-	memset(&server_addr, 0, sizeof(server_addr));
+	_memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(ctx->port);
-	memcpy((void *)&server_addr.sin_addr, (void *)server->h_addr, 4);
+	_memcpy((void *)&server_addr.sin_addr, (void *)server->h_addr, 4);
 
 	if (connect(ctx->fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 		ota_printf(_OTA_ERR_, "[%s] Socket connect failed", __FUNCTION__);
@@ -1097,7 +1098,7 @@ restart_http_ota:
 		ota_printf(_OTA_ERR_, "[%s] Alloc buffer failed\n", __FUNCTION__);
 		goto update_ota_exit;
 	}
-	memset(alloc, 0, alloc_buf_size);
+	_memset(alloc, 0, alloc_buf_size);
 
 	/*----------------step1: connect to http server---------------------*/
 	ret = ota_update_s0_connect_server(ctx);
@@ -1187,7 +1188,7 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 
 	otactrl = (update_ota_ctrl_info *)rtos_mem_malloc(sizeof(update_ota_ctrl_info));
 	if (otactrl) {
-		memset(otactrl, 0, sizeof(update_ota_ctrl_info));
+		_memset(otactrl, 0, sizeof(update_ota_ctrl_info));
 		ctx->otactrl = otactrl;
 	} else {
 		ota_printf(_OTA_ERR_, "%s, otactrl malloc failed", __func__);
@@ -1196,7 +1197,7 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 
 	redirect = (update_redirect_conn *)rtos_mem_malloc(sizeof(update_redirect_conn));
 	if (redirect) {
-		memset(redirect, 0, sizeof(update_redirect_conn));
+		_memset(redirect, 0, sizeof(update_redirect_conn));
 		ctx->redirect = redirect;
 	} else {
 		ota_printf(_OTA_ERR_, "%s, redirect malloc failed", __func__);
@@ -1205,7 +1206,7 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 
 	otaTargetHdr = (update_ota_target_hdr *)rtos_mem_malloc(sizeof(update_ota_target_hdr));
 	if (otaTargetHdr) {
-		memset(otaTargetHdr, 0, sizeof(update_ota_target_hdr));
+		_memset(otaTargetHdr, 0, sizeof(update_ota_target_hdr));
 		ctx->otaTargetHdr = otaTargetHdr;
 	} else {
 		ota_printf(_OTA_ERR_, "%s, otaTargetHdr malloc failed", __func__);

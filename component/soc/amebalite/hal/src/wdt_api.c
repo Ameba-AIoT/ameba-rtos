@@ -32,10 +32,10 @@
 /** @defgroup MBED_WDG_Exported_Types MBED_WDG Exported Types
   * @{
   */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 WDG_TypeDef *WDGDev = WDG2_DEV;
 IRQn_Type WdgIrqNum = KM4_NS_WDG_INT_IRQ;
-#elif defined (RSICV_CORE_KR4)
+#elif defined (CONFIG_RSICV_CORE_KR4)
 WDG_TypeDef *WDGDev = WDG3_DEV;
 IRQn_Type WdgIrqNum = KR4_WDG_INT_IRQ;
 #elif defined (RSICV_CORE_DSP)

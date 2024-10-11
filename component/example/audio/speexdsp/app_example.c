@@ -4,9 +4,9 @@
 *
 ******************************************************************************/
 #include "ameba_soc.h"
-#include "example_resample.h"
+#include "example_speexdsp.h"
 
 void app_example(void)
 {
-	rtos_task_create(NULL, ((const char *)"autorun_task"), testresample, NULL, 1024*4, 1);
+	rtos_task_create(NULL, ((const char *)"autorun_task"), testresample, NULL, 1024 * 4, 1);
 }

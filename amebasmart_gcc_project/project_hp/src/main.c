@@ -185,14 +185,10 @@ int main(void)
 	InterruptRegister(IPC_INTHandler, IPC_NP_IRQ, (u32)IPCNP_DEV, 5);
 	InterruptEn(IPC_NP_IRQ, 5);
 
-#ifdef CONFIG_MBED_TLS_ENABLED
+#ifdef CONFIG_MBEDTLS_ENABLED
 	app_mbedtls_rom_init();
 #endif
 	//app_init_debug();
-
-	/* init console */
-	shell_init_rom(0, 0);
-	shell_init_ram();
 
 	ipc_table_init(IPCNP_DEV);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
@@ -212,6 +208,10 @@ int main(void)
 #ifdef CONFIG_WLAN
 	wlan_initialize();
 #endif
+
+	/* init console */
+	shell_init_rom(0, 0);
+	shell_init_ram();
 
 	//app_shared_btmem(ENABLE);
 

@@ -271,6 +271,7 @@ int usbh_intr_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 int usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 int usbh_isoc_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u32 usbh_get_last_transfer_size(usb_host_t *host, u8 pipe);
+u32 usbh_get_dev_address(void);
 
 /* Usbh CTS test operations */
 int usbh_enter_suspend(u8 suspend);

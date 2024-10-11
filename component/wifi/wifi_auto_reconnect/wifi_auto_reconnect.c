@@ -37,20 +37,19 @@ struct rtw_auto_reconn_t  rtw_reconn;
 
 void rtw_reconn_join_status_hdl(char *buf, int flags)
 {
-	enum rtw_join_status_type join_status = (enum rtw_join_status_type)flags;
-	static enum rtw_join_status_type join_status_last = RTW_JOINSTATUS_SUCCESS;
+	u8 join_status = (u8)flags;
+	static u8 join_status_last = RTW_JOINSTATUS_SUCCESS;
 	u16 disconn_reason = 0;
 	u8 need_reconn = 0;
 
 	if ((join_status_last == join_status) && (join_status_last > RTW_JOINSTATUS_4WAY_HANDSHAKING)) {
 		RTK_LOGS(NOTAG, "same joinstaus: %d\n", join_status);/*just for debug, delete when stable*/
 	}
+	join_status_last = join_status;
 
 	if (rtw_reconn.b_enable == 0) {
 		return;
 	}
-
-	join_status_last = join_status;
 
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		rtw_reconn.cnt = 0;
@@ -86,7 +85,7 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 	}
 
 	rtw_reconn.cnt = rtw_reconn.b_infinite ? 0 : (rtw_reconn.cnt + 1);
-	if (rtw_reconn.cnt >= wifi_user_config.auto_reconnect_count) {
+	if (rtw_reconn.cnt > wifi_user_config.auto_reconnect_count) {
 		RTK_LOGS(NOTAG, "auto reconn max times\n");
 	} else {
 		rtw_reconn.b_waiting = 1;
@@ -101,6 +100,18 @@ void rtw_reconn_task_hdl(void *param)
 	int ret = RTW_ERROR;
 
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
+	if (ret != RTW_SUCCESS) {
+		RTK_LOGS(NOTAG, "reconn fail:%d", ret);
+		if ((ret == RTW_CONNECT_INVALID_KEY)) {
+			RTK_LOGS(NOTAG, "(password format wrong)");
+		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
+			RTK_LOGS(NOTAG, "(not found AP)");
+		} else if (ret == RTW_BUSY) {
+			RTK_LOGS(NOTAG, "(busy)");
+		}
+		RTK_LOGS(NOTAG, "\r\n");
+	}
+
 #ifdef CONFIG_LWIP_LAYER
 	if (ret == RTW_SUCCESS) {
 		LwIP_DHCP(0, DHCP_START);
@@ -115,17 +126,17 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 
 	rtw_reconn.b_waiting = 0;
 	/*Creat a task to do wifi reconnect because call WIFI API in WIFI event is not safe*/
-	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, 1024, 6) != SUCCESS) {
-		printf("Create reconnect task failed\n");
+	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, WIFI_STACK_SIZE_AUTO_RECONN_TASKLET, 6) != SUCCESS) {
+		RTK_LOGS(NOTAG, "Create reconn task failed\n");
 	} else {
 		RTK_LOGS(NOTAG, "auto reconn %d\n", rtw_reconn.cnt);
 	}
 }
 
-void rtw_reconn_new_conn(rtw_network_info_t *connect_param)
+void rtw_reconn_new_conn(struct _rtw_network_info_t *connect_param)
 {
-	if (connect_param->by_reconn == 0) { /*a new wifi connect*/
-		memcpy(&rtw_reconn.conn_param, connect_param, sizeof(rtw_network_info_t));
+	if ((connect_param->by_reconn == 0) && (rtw_reconn.b_enable)) { /*a new wifi connect*/
+		memcpy(&rtw_reconn.conn_param, connect_param, sizeof(struct _rtw_network_info_t));
 		/*fix auto reconnect fail: https://jira.realtek.com/browse/RSWLANDIOT-9031*/
 		rtw_reconn.conn_param.channel = 0;
 		rtw_reconn.conn_param.pscan_option = 0;
@@ -149,6 +160,7 @@ int wifi_config_autoreconnect(__u8 mode)
 	if ((mode == RTW_AUTORECONNECT_DISABLE) && rtw_reconn.b_enable) {
 		rtos_timer_stop(rtw_reconn.timer, 1000);
 		rtos_timer_delete(rtw_reconn.timer, 1000);
+		rtw_reconn.timer = NULL;
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.b_enable = 0;
 	} else if ((mode != RTW_AUTORECONNECT_DISABLE) && (rtw_reconn.b_enable == 0))  {
@@ -166,6 +178,16 @@ int wifi_config_autoreconnect(__u8 mode)
 	}
 
 	return RTW_SUCCESS;
+}
+
+int wifi_get_autoreconnect(__u8 *mode)
+{
+	if (mode == NULL) {
+		return RTW_ERROR;
+	} else {
+		*mode = rtw_reconn.b_enable;
+		return RTW_SUCCESS;
+	}
 }
 
 #endif

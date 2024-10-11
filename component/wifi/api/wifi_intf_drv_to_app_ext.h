@@ -185,25 +185,25 @@ u8 wifi_set_countrycode(char *cntcode);
  * @brief  Retrieves the current Media Access Control (MAC) address
  *	(or Ethernet hardware address) of the 802.11 device.
  * @param[in]  idx: Get STA or SoftAP mac address. Invalid parameter while setting efuse = 1.
- * @param[in]  mac: Pointer to the struct rtw_mac_t which contain obtained mac address.
+ * @param[in]  mac: Pointer to the struct struct _rtw_mac_t  which contain obtained mac address.
  * @param[in]  efuse: Get mac address from efuse or get from RAM.
  * @return  RTW_SUCCESS or RTW_ERROR
  * @note  Get mac address inside EFUSE(efuse = 1).
  * Get runtime mac address(efuse = 0). (RECOMMENDED)
  */
-int wifi_get_mac_address(int idx, rtw_mac_t *mac, u8 efuse);
+int wifi_get_mac_address(int idx, struct _rtw_mac_t  *mac, u8 efuse);
 
 /**
  * @brief  Get current Wi-Fi setting from driver.
  * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX.
- * @param[out]  psetting: Points to the rtw_wifi_setting_t structure which information is gotten.
+ * @param[out]  psetting: Points to the struct _rtw_wifi_setting_t structure which information is gotten.
  * @return  RTW_SUCCESS: The result is successfully got.
  * @return  RTW_ERROR: The result is not successfully got.
- * @note  the mode in rtw_wifi_setting_t corresponding to the wifi mode of current wlan_idx, if in
- * 	station mode, the info in rtw_wifi_setting_t except mode will correspond to the AP it connected,
- * 	if in AP mode, the info in rtw_wifi_setting_t will correspond to the softAP itself.
+ * @note  the mode in struct _rtw_wifi_setting_t corresponding to the wifi mode of current wlan_idx, if in
+ * 	station mode, the info in struct _rtw_wifi_setting_t except mode will correspond to the AP it connected,
+ * 	if in AP mode, the info in struct _rtw_wifi_setting_t will correspond to the softAP itself.
  */
-int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting);
+int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting);
 
 /**
  * @brief  This function is used to get wifi mode
@@ -219,10 +219,31 @@ int wifi_get_network_mode(void);
  * 	This function is used to change wireless network mode
  * 	for station mode before connecting to AP.
  * @param[in]  mode: Network mode to set. The value can be
- * 	WLAN_MD_11B, WLAN_MD_11BG, WLAN_MD_11BGN and WLAN_MD_24G_MIX.
+*               	- WLAN_MD_11B
+*               	- WLAN_MD_11A
+*               	- WLAN_MD_11G
+*               	- WLAN_MD_11N
+*               	- WLAN_MD_11AC
+*               	- WLAN_MD_11AX
+*               	- WLAN_MD_11BG
+*               	- WLAN_MD_11GN
+*               	- WLAN_MD_11AN
+*               	- WLAN_MD_11BN
+*               	- WLAN_MD_11BGN
+*               	- WLAN_MD_11BGAX
+*               	- WLAN_MD_11GAX
+*               	- WLAN_MD_11A_AC
+*               	- WLAN_MD_11A_AX
+*               	- WLAN_MD_11AGN
+*               	- WLAN_MD_11ABGN
+*               	- WLAN_MD_11ANAC
+*               	- WLAN_MD_24G_MIX
+*               	- WLAN_MD_5G_MIX
+*               	- WLAN_MD_MAX
  * @return  RTW_SUCCESS or RTW_ERROR.
+ * @note  We do not recommend 2G without 11b mode and 5G without 11a mode, as this may lead to compatibility issues
  */
-int wifi_set_network_mode(enum wlan_mode mode);
+int wifi_set_network_mode(u32 mode);
 
 /**
   * @}
@@ -241,7 +262,7 @@ int wifi_set_network_mode(enum wlan_mode mode);
  *    callback return value will decide whether driver need continue process this packet.
  * @return  None
  */
-void wifi_promisc_enable(u32 enable, promisc_para_t *para);
+void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para);
 
 /**
  * @brief  check whether current wifi driver is mp or not.
@@ -267,7 +288,7 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
  * @param[in]  idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_IDX.
  * @return  NULL.
  */
-int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics);
+int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *sw_statistics);
 
 /**
  * @brief  fetch statistic info about wifi.
@@ -277,7 +298,7 @@ int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics)
  * @return  RTW_ERROR: If the statistic info is not successfully get.
  * @note  the rssi and snr info will only be valid after connected to AP successfully.
  */
-int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic);
+int wifi_fetch_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic);
 
 /**
  * @brief  get current remaining number of packets in HW TX buffer.
@@ -317,7 +338,7 @@ int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant);
  * 	1) WL_BAND_5G: only support 5G
  * 	2) WL_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
  */
-WL_BAND_TYPE wifi_get_band_type(void);
+u8 wifi_get_band_type(void);
 
 /**
  * @brief	Get wifi TSF register[63:32]&[31:0].
@@ -338,7 +359,7 @@ u64 wifi_get_tsf(unsigned char port_id);
  * 	successfully set to wifi driver.
  * @note  this function should be used when operating as AP.
  */
-int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
+int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param);
 
 /**
  * @brief  set WPS IE in Probe Request/Probe Response/Beacon/
@@ -357,11 +378,11 @@ int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
 int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
 /**
- * @brief  Setup custom ie list. (Information Element)
+ * @brief  Setup custom IE list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.
- * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE list.
- * @param[in]  ie_num: The number of WIFI CUSTOM IE list.
+ * @param[in]  cus_ie: a buffer stores custom IE list, format of custom ie is struct custom_ie.
+ * @param[in]  ie_num: The number of custom IEs in cus_ie.
  * @return  0 if success, otherwise return -1.
  */
 int wifi_add_custom_ie(void *cus_ie, int ie_num);
@@ -385,7 +406,7 @@ int wifi_del_custom_ie(unsigned char wlan_idx);
 
 /**
  * @brief  send raw frame
- * @param[in]  raw_data_desc: the pointer of raw_data_desc_t,
+ * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
  * 	which describe related information, include the pointer of raw frame and so on.
  * @return  RTW_ERROR or RTW SUCCESS
  */
@@ -393,19 +414,18 @@ int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc);
 
 /**
  * @brief  send raw frame
- * @param[in]  raw_data_desc: the pointer of raw_data_desc_t,
+ * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
  * 	which describe related information, include the pointer of raw frame and so on.
  * @return  RTW_ERROR or RTW SUCCESS
  */
-int wifi_send_mgnt(raw_data_desc_t *raw_data_desc);
+int wifi_send_mgnt(struct _raw_data_desc_t *raw_data_desc);
 
 /**
  * @brief  Control initial tx rate by different ToS value in IP header.
  * @param[in]  enable: set 1 to add control for specified tx_rate for
  * 	corresponding ToS_value, set 0 to disable initial rate control for this ToS_value.
  * @param[in]  ToS_precedence: range from 0 to 7, corresponding to IP precedence in TOS field of IP header(BIT7~5).
- * @param[in]  tx_rate: initial tx rate for packet which has the same ToS value as setted.Please
- * 	refer to enum enum mgn_rate_type in wifi_constants.h for rate definition.
+ * @param[in]  tx_rate: initial tx rate for packet which has the same ToS value as setted. val: MGN_1M, MGN_2M...
  * @return  RTW_SUCCESS or RTW_ERROR.
  * @note this function only take IP Precedence(BIT 7~5 in ToS field) into consideration.
  */
@@ -441,13 +461,13 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
  * @brief  set the csi parameters and enable or disable csi func(sta or softap)
  * @param[in]  act_param: A pointer to the param
  * @note:
- *    rtw_csi_action_parm_t act_param = {0};
+ *    struct _rtw_csi_action_parm_t act_param = {0};
  *    act_param.mode = 2;
  *    ...
  *    wifi_csi_config(&act_param);
  * @return  RTW_SUCCESS or RTW_ERROR
  */
-int wifi_csi_config(rtw_csi_action_parm_t *act_param);
+int wifi_csi_config(struct _rtw_csi_action_parm_t *act_param);
 
 /**
  * @brief  get csi raw data and csi hdr info
@@ -465,7 +485,10 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 /**
  * @brief  for wifi speaker setting
- * @param[in]  set_type: wifi speaker setting type
+ * @param[in]  set_type: wifi speaker setting type:
+ *                - SPEAKER_SET_INIT
+ *                - SPEAKER_SET_LATCH_I2S_COUNT
+ *                - SPEAKER_SET_TSF_TIMER
  * @param[in]  settings: A pointer to the params
  * @note:
  *      when set_type == SPEAKER_SET_INIT
@@ -480,7 +503,7 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
  *          port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1
  * @return  null.
  */
-void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *settings);
+void wifi_speaker_setting(u8 set_type, union speaker_set *settings);
 
 /**
  * @brief  for user to set tx power
@@ -500,8 +523,7 @@ int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
 
 /**
  * @brief  for user to get tx power
- * @param[in]  rate: phy rate
- *    For the definition of phy rate, please refer to enum mgn_rate_type
+ * @param[in]  rate: phy rate, val: MGN_1M, MGN_2M...
  *    CCK rate 1M,2M,5.5M,11M
  *    OFDM rate 6M,9M,12M,18M,24M,36M,48M,54M
  *    HT rate MCS0~MCS7
@@ -511,10 +533,13 @@ int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
  * @return  RTW_SUCCESS or RTW_ERROR
  */
 int wifi_get_tx_power(u8 rate, s8 *txpwr);
-/**
-  * @}
-  */
 
+/**
+  * @brief  for user to config retry limit for different stages of join
+  * @param[in]  conn_step_retries
+  * @return  null.
+  */
+void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries);
 /**
   * @}
   */

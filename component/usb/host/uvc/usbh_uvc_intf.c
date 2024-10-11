@@ -171,6 +171,8 @@ int usbh_uvc_init(usbh_uvc_cb_t *cb)
 	usbh_uvc_host_t *uvc = &uvc_host;
 
 	usb_os_memset(uvc, 0, sizeof(usbh_uvc_host_t));
+	uvc->stream[0].stream_num = 0;
+	uvc->stream[1].stream_num = 1;
 
 	usbh_uvc_desc_init();
 
@@ -251,9 +253,10 @@ int usbh_uvc_stream_on(u32 if_num)
 	usbh_uvc_stream_init(stream);
 
 	stream->stream_state = STREAMING_ON;
+#if (UVC_USE_HW == 0)
 	stream->cur_setting.last_frame = usbh_get_current_frame(uvc->host);
 	stream->stream_data_state = STREAM_DATA_IN;
-
+#endif
 	return HAL_OK;
 }
 
@@ -345,6 +348,7 @@ uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
 	uvc_frame_t *frame;
 	uvc_stream_t *stream = &uvc->stream[if_num];
 
+#if (UVC_USE_HW == 0)
 	if (usb_os_sema_take(stream->frame_sema, UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
 		if (list_empty(&stream->frame_chain)) {
 			/*should not reach here*/
@@ -359,7 +363,16 @@ uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
 		RTK_LOGS(TAG, "[UVC] Fail to down frame sema\n");
 		return NULL;
 	}
-
+#else
+	if (usb_os_sema_take(stream->uvc_dec->dec_sema, UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
+		stream->frame_buffer[stream->uvc_dec->frame_done_num].byteused = stream->uvc_dec->frame_done_size;
+		frame = &stream->frame_buffer[stream->uvc_dec->frame_done_num];
+		return frame;
+	} else {
+		RTK_LOGS(TAG, "[UVC] Fail to down frame sema\n");
+		return NULL;
+	}
+#endif
 }
 
 /**
@@ -369,6 +382,7 @@ uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
   */
 void usbh_uvc_put_frame(uvc_frame_t *frame, u32 if_num)
 {
+#if (UVC_USE_HW == 0)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	uvc_stream_t *stream = &uvc->stream[if_num];
 
@@ -376,5 +390,9 @@ void usbh_uvc_put_frame(uvc_frame_t *frame, u32 if_num)
 		frame->byteused = 0;
 		list_add_tail(&frame->list, &stream->frame_empty);
 	}
+#else
+	UNUSED(frame);
+	UNUSED(if_num);
+#endif
 }
 

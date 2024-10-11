@@ -110,13 +110,13 @@ static inline void receive_chars(void)
 
 	while (UART_Readable(HCI_UART_DEV) && max_count-- > 0) {
 		UART_CharGet(HCI_UART_DEV, &ch);
-#if defined(ARM_CORE_CA32) && ARM_CORE_CA32
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		/* prevent multiple accesss both by core1 and core0 of CA32 */
 		osif_lock();
 #endif
 		g_uart->ring[g_uart->write_ptr++] = ch;
 		g_uart->write_ptr %= g_uart->ring_size;
-#if defined(ARM_CORE_CA32) && ARM_CORE_CA32
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		osif_unlock(0);
 #endif
 	}
@@ -208,13 +208,13 @@ uint16_t hci_uart_read(uint8_t *buf, uint16_t len)
 	}
 
 	memcpy(buf, &g_uart->ring[g_uart->read_ptr], read_len);
-#if defined(ARM_CORE_CA32) && ARM_CORE_CA32
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 	/* prevent multiple accesss both by core1 and core0 of CA32 */
 	osif_lock();
 #endif
 	g_uart->read_ptr += read_len;
 	g_uart->read_ptr %= g_uart->ring_size;
-#if defined(ARM_CORE_CA32) && ARM_CORE_CA32
+#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 	osif_unlock(0);
 #endif
 

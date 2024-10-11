@@ -9,7 +9,7 @@
 
 //HeapRegion Addresses need to be sorted from smallest to largest
 #if defined ( __ICCARM__ )
-#if (defined ARM_CORE_CM4)
+#if (defined CONFIG_ARM_CORE_CM4)
 //The flow heap size shall great than 300K defined in configTOTAL_HEAP_SIZE
 
 //#define SRAM_HEAP0_START				__bdram_heap_buffer_start__
@@ -24,7 +24,7 @@
 #define PSRAM_HEAP1_SIZE				__km4_heap_ext_size__
 #endif
 
-#elif (defined ARM_CORE_CM0)
+#elif (defined CONFIG_ARM_CORE_CM0)
 //The flow heap size shall great than 20K defined in configTOTAL_HEAP_SIZE
 
 #define SRAM_HEAP0_START				(NOCACHE_DATA$$Limit + 0x1000)
@@ -45,7 +45,7 @@
 
 #else
 
-#if (defined ARM_CORE_CM4)
+#if (defined CONFIG_ARM_CORE_CM4)
 //The flow heap size shall great than 300K defined in configTOTAL_HEAP_SIZE
 
 #define SRAM_HEAP0_START				__bdram_heap_buffer_start__
@@ -60,7 +60,7 @@
 #define PSRAM_HEAP1_SIZE				__psram_heap_extend_size__
 #endif
 
-#elif (defined ARM_CORE_CM0)
+#elif (defined CONFIG_ARM_CORE_CM0)
 //The flow heap size shall great than 20K defined in configTOTAL_HEAP_SIZE
 
 #define SRAM_HEAP0_START				__bdram_heap_buffer_start__

@@ -115,6 +115,15 @@
 #define USB_FS_MAX_PACKET_SIZE                         64U
 #define USB_MAX_EP0_SIZE                               64U
 
+#define USB_CTRL_MAX_MPS                               64U
+#define USB_XFER_MAX_MPS                               1024U
+#define USB_BULK_FS_MAX_MPS                            64U
+#define USB_BULK_HS_MAX_MPS                            512U
+#define USB_INTR_FS_MAX_MPS                            64U
+#define USB_INTR_HS_MAX_MPS                            USB_XFER_MAX_MPS
+#define USB_ISOC_FS_MAX_MPS                            1023U
+#define USB_ISOC_HS_MAX_MPS                            USB_XFER_MAX_MPS
+
 /* bmAttributes D1..0 Transfer type */
 #define USB_EP_XFER_TYPE_MASK                          0x03U
 

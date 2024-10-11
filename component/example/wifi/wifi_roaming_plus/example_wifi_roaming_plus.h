@@ -4,8 +4,8 @@
 #include "wifi_intf_drv_to_app_basic.h"
 
 //fast reconnect callback fun
-extern wifi_do_fast_connect_ptr p_wifi_do_fast_connect;
-extern write_fast_connect_info_ptr p_store_fast_connect_info;
+extern int (*p_wifi_do_fast_connect)(void);
+extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
 
 void example_wifi_roaming_plus(void);
 void example_wifi_roaming_plus_init(void);

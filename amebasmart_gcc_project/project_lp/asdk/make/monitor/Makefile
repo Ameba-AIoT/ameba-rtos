@@ -7,17 +7,18 @@ include $(MAKE_INCLUDE_GEN)
 #                               VARIABLES	                              #
 #*****************************************************************************#
 DIR = $(TARGETDIR)/app/monitor
+ATCMDDIR = $(BASEDIR)/component/at_cmd
 MODULE_IFLAGS += -I$(DIR)/include
 
 MODULE_IFLAGS += -I$(FREERTOSDIR)/include/
 MODULE_IFLAGS += -I$(FREERTOSDIR)/portable/GCC/AmebaSmart_LP/
 
-vpath %.c $(DIR) $(shell find $(DIR) -type d)
+vpath %.c $(DIR) $(ATCMDDIR) $(shell find $(DIR) -type d)
 
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
-CSRC = $(DIR)/ram/monitor_lp.c \
+CSRC = $(ATCMDDIR)/monitor.c \
        $(DIR)/ram/shell_ram.c \
 	   $(DIR)/ram/low_level_io.c
 

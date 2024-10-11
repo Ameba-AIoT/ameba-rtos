@@ -9,4 +9,4 @@ set(
 	${BT_DIR}/example/gatt_service/client/rtk_simple_ble_client.c
 )
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

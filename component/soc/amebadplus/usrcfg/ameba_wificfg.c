@@ -15,12 +15,12 @@ struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 _WEAK void wifi_set_user_config(void)
 {
-	memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
+	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
 	wifi_user_config.concurrent_enabled = 1;
 	wifi_user_config.softap_addr_offset_idx = 1;
-	wifi_user_config.auto_reconnect_count = 8;
+	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9;  /* unit 2s, default 18s */
 
@@ -40,6 +40,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rx_ampdu_num = 8;
 #else
 	wifi_user_config.skb_num_np = 10;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx*/
+#ifdef CONFIG_WIFI_TUNNEL
+	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 10 for tunnel tx */
+#endif
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
 #endif

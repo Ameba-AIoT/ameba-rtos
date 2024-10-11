@@ -32,6 +32,21 @@ typedef enum {
 } rtk_bt_avrcp_play_status_t;
 
 /**
+ * @typedef   rtk_bt_avrcp_element_attr_t
+ * @brief     element attr information
+ */
+typedef enum {
+	RTK_BT_AVRCP_ELEM_ATTR_TITLE = 0x01,
+	RTK_BT_AVRCP_ELEM_ATTR_ARTIST = 0x02,
+	RTK_BT_AVRCP_ELEM_ATTR_ALBUM = 0x03,
+	RTK_BT_AVRCP_ELEM_ATTR_TRACK = 0x04,
+	RTK_BT_AVRCP_ELEM_ATTR_TOTAL_TRACK = 0x05,
+	RTK_BT_AVRCP_ELEM_ATTR_GENRE = 0x06,
+	RTK_BT_AVRCP_ELEM_ATTR_PLAYING_TIME = 0x07,
+	RTK_BT_AVRCP_ELEM_ATTR_DEFAULT_COVER_ART = 0x08,
+} rtk_bt_avrcp_element_attr_t;
+
+/**
  * @struct    rtk_bt_avrcp_absolute_volume_set_t
  * @brief     Bluetooth AVRCP absolute volume set.
  */
@@ -48,6 +63,51 @@ typedef struct {
 	uint8_t bd_addr[6];
 	uint8_t volume;
 } rtk_bt_avrcp_volume_change_req_t;
+
+/**
+ * @struct    rtk_bt_avrcp_get_element_attr_req_t
+ * @brief     Bluetooth AVRCP get element attr request.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t attr;
+} rtk_bt_avrcp_get_element_attr_req_t;
+
+/**
+ * bt_avrcp.h
+ *
+ * \brief  BT AVRCP element attribute.
+ *
+ * \ingroup BT_AVRCP
+ */
+typedef struct {
+	uint32_t attribute_id;
+	uint16_t character_set_id;
+	uint16_t length;
+	uint8_t *p_buf;
+} rtk_bt_avrcp_element_attr;
+
+/**
+ * @struct    rtk_bt_avrcp_get_element_attr_req_t
+ * @brief     Bluetooth AVRCP get element attr request.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t state;
+	uint8_t num_of_attr;
+	rtk_bt_avrcp_element_attr *attr;
+} rtk_bt_avrcp_element_attr_info_t;
+
+/**
+ * @struct    rtk_bt_avrcp_cover_art_data_ind_t
+ * @brief     Bluetooth AVRCP cover art data indication.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t *p_data;
+	uint16_t data_len;
+	bool data_end;
+} rtk_bt_avrcp_cover_art_data_ind_t;
 
 /**
  * @struct    rtk_bt_avrcp_volume_t
@@ -106,7 +166,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_connect(uint8_t *bd_addr)
  * @brief     send avrcp connect request.
  * @param[in] bd_addr: bt address
  * @return
@@ -116,7 +175,6 @@ typedef struct {
 uint16_t rtk_bt_avrcp_connect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr)
  * @brief     send avrcp disconnect request.
  * @param[in] bd_addr: bt address
  * @return
@@ -126,7 +184,6 @@ uint16_t rtk_bt_avrcp_connect(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_play(uint8_t *bd_addr)
  * @brief     send avrcp play request.
  * @param[in] bd_addr: bt address
  * @return
@@ -136,7 +193,6 @@ uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_play(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_pause(uint8_t *bd_addr)
  * @brief     send avrcp pause request.
  * @param[in] bd_addr: bt address
  * @return
@@ -146,7 +202,6 @@ uint16_t rtk_bt_avrcp_play(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_pause(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_stop(uint8_t *bd_addr)
  * @brief     send avrcp stop request.
  * @param[in] bd_addr: bt address
  * @return
@@ -156,7 +211,6 @@ uint16_t rtk_bt_avrcp_pause(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_stop(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_forward(uint8_t *bd_addr)
  * @brief     send avrcp forward request.
  * @param[in] bd_addr: bt address
  * @return
@@ -166,7 +220,6 @@ uint16_t rtk_bt_avrcp_stop(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_forward(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_backward(uint8_t *bd_addr)
  * @brief     send avrcp backward request.
  * @param[in] bd_addr: bt address
  * @return
@@ -176,7 +229,6 @@ uint16_t rtk_bt_avrcp_forward(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_backward(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_rewind_start(uint8_t *bd_addr)
  * @brief     send avrcp rewind start request.
  * @param[in] bd_addr: bt address
  * @return
@@ -186,7 +238,6 @@ uint16_t rtk_bt_avrcp_backward(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_rewind_start(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_rewind_stop(uint8_t *bd_addr)
  * @brief     send avrcp rewind stop request.
  * @param[in] bd_addr: bt address
  * @return
@@ -196,7 +247,6 @@ uint16_t rtk_bt_avrcp_rewind_start(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_rewind_stop(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_fast_forward_start(uint8_t *bd_addr)
  * @brief     send avrcp fast forward start request.
  * @param[in] bd_addr: bt address
  * @return
@@ -206,7 +256,6 @@ uint16_t rtk_bt_avrcp_rewind_stop(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_fast_forward_start(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_fast_forward_stop(uint8_t *bd_addr)
  * @brief     send avrcp fast forward stop request.
  * @param[in] bd_addr: bt address
  * @return
@@ -216,7 +265,6 @@ uint16_t rtk_bt_avrcp_fast_forward_start(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_fast_forward_stop(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_absolute_volume_set(uint8_t *bd_addr, uint8_t volume)
  * @brief     send avrcp absolute volume set.
  * @param[in] bd_addr: bt address
  * @param[in] volume: volume
@@ -227,7 +275,6 @@ uint16_t rtk_bt_avrcp_fast_forward_stop(uint8_t *bd_addr);
 uint16_t rtk_bt_avrcp_absolute_volume_set(uint8_t *bd_addr, uint8_t volume);
 
 /**
- * @fn        uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume)
  * @brief     send avrcp volume change request.
  * @param[in] bd_addr: bt address
  * @param[in] volume: volume
@@ -236,6 +283,16 @@ uint16_t rtk_bt_avrcp_absolute_volume_set(uint8_t *bd_addr, uint8_t volume);
  *            - Others: Error code
  */
 uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume);
+
+/**
+ * @brief     send element attr get request.
+ * @param[in] bd_addr: bt address
+ * @param[in] attr: attr
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t attr);
 
 /**
  * @}

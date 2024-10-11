@@ -1,7 +1,7 @@
 
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: all clean
+.PHONY: lib clean
 
 #*****************************************************************************#
 #                               VARIABLES	                              #
@@ -13,6 +13,7 @@ MODULE_IFLAGS +=  \
 	-I$(BASEDIR)/component/ui/third_party/zlib/interfaces/include
 TARGET_LIB = lib_png
 
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 CFLAGS += --std=gnu89 -Wall -Wno-unused-parameter
 
 vpath %.c $(DIR) $(shell find $(DIR) -type d)
@@ -52,7 +53,7 @@ STATIC_LIB = lib_png.a
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
-all: CLEAN_OBJS CORE_TARGETS COPY_RAM_OBJS
+lib: CLEAN_OBJS CORE_TARGETS
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE

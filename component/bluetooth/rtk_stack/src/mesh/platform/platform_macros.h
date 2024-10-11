@@ -53,6 +53,10 @@ extern "C"  {
 #undef  CLAMP
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
+#ifndef DIVISION_ROUND
+#define DIVISION_ROUND(dividend, divisor)       ((dividend) + ((divisor)/2))/(divisor)
+#endif
+
 #ifndef MEMBER_OFFSET
 #define MEMBER_OFFSET(struct_type, member)      ((uint32_t)&((struct_type *)0)->member)
 #endif
@@ -117,11 +121,11 @@ extern "C"  {
 
 #ifndef BE_EXTRN2WORD
 /* Get local WORD from external 2 BYTE, Big-Endian format STANDARD NETWORK BYTE ORDER */
-#define BE_EXTRN2WORD(p) ((*((p)+1)) & 0xff) + ((*(p)) << 8)
+#define BE_EXTRN2WORD(p) (((*((p)+1)) & 0xff) + ((*(p)) << 8))
 
 /* Get local DWORD from external 4 BYTE, Big-Endian format STANDARD NETWORK BYTE ORDER */
-#define BE_EXTRN2DWORD(p) ((unsigned long)(*((p)+3)) & 0xff) + ((unsigned long)(*((p)+2)) << 8) \
-    + ((unsigned long)(*((p)+1)) << 16)  + ((unsigned long)(*((p)+0)) << 24)
+#define BE_EXTRN2DWORD(p) (((unsigned long)(*((p)+3)) & 0xff) + ((unsigned long)(*((p)+2)) << 8) \
+                           + ((unsigned long)(*((p)+1)) << 16)  + ((unsigned long)(*((p)+0)) << 24))
 
 /* PUT external 2 CHARS from local SHORT, Big-Endian format STANDARD NETWORK BYTE ORDER */
 #define BE_WORD2EXTRN(p,w)                 \

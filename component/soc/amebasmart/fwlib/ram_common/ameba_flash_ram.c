@@ -14,7 +14,7 @@ void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
 void FLASH_UserMode_Enter(void);
 void FLASH_UserMode_Exit(void);
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 {
@@ -71,13 +71,13 @@ void FLASH_Write_Lock(void)
 	PrevIrqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 
 	/* Add This Code For XIP when ca32 Program Flah */
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 	/*1. Close Core1 to avoid Core1 Access Flash */
 	vPortGateOtherCore();
 #ifdef CONFIG_XIP_FLASH
 	/*2. Sent IPC to KM4 */
 	IPC_MSG_STRUCT ipc_msg_temp;
-	memset(Flash_Sync_Flag, 0, sizeof(Flash_Sync_Flag));
+	_memset(Flash_Sync_Flag, 0, sizeof(Flash_Sync_Flag));
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 
 	ipc_msg_temp.msg_type = IPC_USER_POINT;
@@ -105,7 +105,7 @@ void FLASH_Write_Lock(void)
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 #ifdef CONFIG_XIP_FLASH
 	/*1. Let KM4 Go */
 	Flash_Sync_Flag[0] = 0;
@@ -312,7 +312,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	/* To avoid gcc warnings */
 	(void) Source;
 	(void) Protection;
-#if defined (ARM_CORE_CM0)
+#if defined (CONFIG_ARM_CORE_CM0)
 	u32 Temp = 0;
 	u32 timeout = 20;
 

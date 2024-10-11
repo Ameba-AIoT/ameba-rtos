@@ -276,7 +276,7 @@ void i2c_master_rx_check(void)
 			break;
 		}
 	}
-	RTK_LOGI(TAG, "\r\nMaster receive: Result is %s\r\n", (result) ? "success" : "fail");
+	RTK_LOGI(TAG, "Master receive: Result is %s\r\n", (result) ? "success" : "fail");
 }
 
 void i2c_dual_master_task(void)
@@ -343,6 +343,7 @@ void i2c_dual_master_task(void)
 #endif
 	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
+	i2c_master_rx_check();
 
 #ifdef I2C_LOOP_TEST
 
@@ -352,6 +353,7 @@ void i2c_dual_master_task(void)
 	RTK_LOGI(TAG, "Master polling read2>>>\n");
 	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 	DelayMs(50);
+	i2c_master_rx_check();
 
 	RTK_LOGI(TAG, "\r\nMaster polling write3>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);

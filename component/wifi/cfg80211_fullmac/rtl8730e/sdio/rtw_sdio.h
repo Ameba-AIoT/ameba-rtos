@@ -17,6 +17,8 @@ struct inic_sdio;
 //#define CONFIG_POWER_SAVING
 //#define CONFIG_PS_DYNAMIC_CHK
 
+#define BUF_ALIGN_SZ	4
+
 #define SDIO_BLOCK_SIZE		256
 #define ETH_ALEN	6 //ethernet address length
 

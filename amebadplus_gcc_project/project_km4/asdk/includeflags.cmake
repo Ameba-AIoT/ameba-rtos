@@ -40,12 +40,12 @@ list(
 
     ${BASEDIR}/component/network
     #${BASEDIR}/component/network/libcoap/include
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/src/include
-    #${BASEDIR}/component/lwip/lwip_v2.1.2/src/include/lwip
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/src/include/lwip/apps
-    #${BASEDIR}/component/lwip/lwip_v2.1.2/src/include/ipv4
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/port/realtek
-    ${BASEDIR}/component/lwip/lwip_v2.1.2/port/realtek/freertos
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include
+    #${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include/lwip
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include/lwip/apps
+    #${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/include/ipv4
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/port/realtek
+    ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/port/realtek/freertos
     ${BASEDIR}/component/lwip/api
 
     ${BASEDIR}/component/os_dep
@@ -61,7 +61,7 @@ list(
     #${BASEDIR}/component/ssl/ssl_ram_map/rom
 
     #MBEDTLS
-    ${BASEDIR}/component/ssl/mbedtls-2.16.9/include
+    ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER}/include
     ${BASEDIR}/component/ssl/mbedtls_ram_map/rom
 
     #apple
@@ -75,13 +75,13 @@ list(
     ${BASEDIR}/component/application/apple/homekit/crypto/sha512
 
     #filesystem
-    ${BASEDIR}/component/file_system/fatfs/r0.14b/include
+    ${BASEDIR}/component/file_system/fatfs/${FATFS_VER}/include
     ${BASEDIR}/component/file_system/fatfs
     ${BASEDIR}/component/file_system/ftl
     ${BASEDIR}/component/file_system/ftl_common
     ${BASEDIR}/component/file_system/dct
     ${BASEDIR}/component/file_system/littlefs
-    ${BASEDIR}/component/file_system/littlefs/r2.50
+    ${BASEDIR}/component/file_system/littlefs/${LITTLEFS_VER}
     ${BASEDIR}/component/file_system/kv
     ${BASEDIR}/component/file_system/vfs
     )

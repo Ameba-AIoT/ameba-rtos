@@ -9,9 +9,13 @@
   ******************************************************************************
   */
 
+#ifndef _USBH_UVC_H_
+#define _USBH_UVC_H_
+
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
+#include "usbh_uvc_dec.h"
 #include "usbh_uvc_desc.h"
 #include "usbh_uvc_intf.h"
 
@@ -33,10 +37,6 @@
 
 #define USBH_MAX_NUM_VS_DESC			3
 #define USBH_MAX_NUM_VS_ALTS			30
-
-#define UVC_DETECT_EOF					0
-
-#define UVC_USE_SOF						1  //if set to 0, sof interrupt can be disabled
 
 #define HFNUM_MAX_FRNUM					0x3fff
 
@@ -153,6 +153,7 @@ typedef struct {
 	uvc_vs_t *vs_intf;
 	u8 stream_state;
 	u8 stream_data_state;
+	u8 stream_num;
 
 	uvc_frame_t frame_buffer[UVC_VIDEO_MAX_FRAME];
 	u8 *frame_buf;
@@ -172,6 +173,8 @@ typedef struct {
 
 	usb_os_queue_t urb_wait_queue;
 	usb_os_queue_t urb_giveback_queue;
+	volatile u32 complete_flag;
+	volatile u32 complete_on;
 	u8 last_fid;
 
 	uvc_stream_control_t stream_ctrl;
@@ -181,6 +184,10 @@ typedef struct {
 	uvc_vs_frame_t *cur_frame;
 
 	usb_os_task_t decode_task;
+
+#if UVC_USE_HW
+	usbh_uvc_dec *uvc_dec;
+#endif
 } uvc_stream_t;
 
 
@@ -237,5 +244,5 @@ void usbh_uvc_desc_init(void);
 
 void usbh_uvc_desc_free(void);
 
-
+#endif
 

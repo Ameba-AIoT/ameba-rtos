@@ -11,4 +11,5 @@ set(
     ${DIR}/sboot_ed25519_sign_ram.c 
 )
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+ameba_internal_library(test_sboot)
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

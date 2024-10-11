@@ -439,6 +439,100 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	break;
 
+	case BT_EVENT_AVRCP_ELEM_ATTR: {
+		rtk_bt_avrcp_element_attr_info_t *p_attr_t = NULL;
+
+		APP_PRINT_INFO0("BT_EVENT_AVRCP_ELEM_ATTR");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_ELEM_ATTR \r\n");
+		p_link = app_find_br_link(param->avrcp_elem_attr.bd_addr);
+		if (p_link != NULL) {
+			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO, sizeof(rtk_bt_avrcp_element_attr_info_t));
+			if (!p_evt) {
+				BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+				handle = false;
+				break;
+			}
+			p_attr_t = (rtk_bt_avrcp_element_attr_info_t *)p_evt->data;
+			memcpy((void *)p_attr_t->bd_addr, (void *)param->avrcp_elem_attr.bd_addr, 6);
+			p_attr_t->state = param->avrcp_elem_attr.state;
+			p_attr_t->num_of_attr = param->avrcp_elem_attr.num_of_attr;
+			if (p_attr_t->num_of_attr) {
+				p_attr_t->attr = (rtk_bt_avrcp_element_attr *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_attr_t->num_of_attr * sizeof(rtk_bt_avrcp_element_attr));
+				if (NULL == p_attr_t->attr) {
+					BT_LOGE("app_avrcp_bt_cback: rtk_bt_avrcp_element_attr allocate fail \r\n");
+					rtk_bt_event_free(p_evt);
+					break;
+				}
+			}
+			if (param->avrcp_elem_attr.state == 0) {
+				for (uint8_t i = 0; i < param->avrcp_elem_attr.num_of_attr; i++) {
+					p_attr_t->attr[i].attribute_id = param->avrcp_elem_attr.attr[i].attribute_id;
+					p_attr_t->attr[i].character_set_id = param->avrcp_elem_attr.attr[i].character_set_id;
+					p_attr_t->attr[i].length = param->avrcp_elem_attr.attr[i].length;
+					if (p_attr_t->attr[i].length) {
+						p_attr_t->attr[i].p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_attr_t->attr[i].length);
+						if (NULL == p_attr_t->attr[i].p_buf) {
+							BT_LOGE("app_avrcp_bt_cback: p_buf allocate fail \r\n");
+							p_attr_t->attr[i].length = 0;
+						} else {
+							memcpy((void *)p_attr_t->attr[i].p_buf, param->avrcp_elem_attr.attr[i].p_buf, p_attr_t->attr[i].length);
+						}
+					}
+					if (p_attr_t->attr[i].attribute_id == BT_AVRCP_ELEM_ATTR_DEFAULT_COVER_ART) {
+						uint8_t image_handle[16] = {0};
+
+						for (uint8_t j = 0; j < param->avrcp_elem_attr.attr[i].length; j++) {
+							image_handle[2 * j + 1] = param->avrcp_elem_attr.attr[i].p_buf[j];
+						}
+						bt_avrcp_cover_art_get(p_link->bd_addr, image_handle);
+					}
+				}
+			}
+			/* Send event */
+			if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+				handle = false;
+				break;
+			}
+		}
+	}
+	break;
+
+	case BT_EVENT_AVRCP_COVER_ART_DATA_IND: {
+		rtk_bt_avrcp_cover_art_data_ind_t *p_data_t = NULL;
+
+		APP_PRINT_INFO0("BT_EVENT_AVRCP_COVER_ART_DATA_IND");
+		BT_LOGA("app_avrcp_bt_cback: BT_EVENT_AVRCP_COVER_ART_DATA_IND \r\n");
+		p_link = app_find_br_link(param->avrcp_cover_art_data_ind.bd_addr);
+		if (p_link != NULL) {
+			if (!param->avrcp_cover_art_data_ind.data_end) {
+				bt_avrcp_cover_art_get(p_link->bd_addr, NULL);
+			} else {
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND, sizeof(rtk_bt_avrcp_cover_art_data_ind_t));
+				if (!p_evt) {
+					BT_LOGE("app_avrcp_bt_cback: evt_t allocate fail \r\n");
+					handle = false;
+					break;
+				}
+				p_data_t = (rtk_bt_avrcp_cover_art_data_ind_t *)p_evt->data;
+				memcpy((void *)p_data_t->bd_addr, (void *)param->avrcp_cover_art_data_ind.bd_addr, 6);
+				p_data_t->data_end = param->avrcp_cover_art_data_ind.data_end;
+				p_data_t->data_len = param->avrcp_cover_art_data_ind.data_len;
+				p_data_t->p_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, p_data_t->data_len);
+				if (NULL == p_data_t->p_data) {
+					BT_LOGE("app_avrcp_bt_cback: p_data allocate fail \r\n");
+				} else {
+					memcpy((void *)p_data_t->p_data, (void *)param->avrcp_cover_art_data_ind.p_data, p_data_t->data_len);
+				}
+				/* Send event */
+				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
+					handle = false;
+					break;
+				}
+			}
+		}
+	}
+	break;
+
 	default: {
 		handle = false;
 	}
@@ -595,6 +689,17 @@ static uint16_t bt_stack_avrcp_volume_change_req(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_avrcp_get_element_attr_req(void *param)
+{
+	rtk_bt_avrcp_get_element_attr_req_t *req_t = (rtk_bt_avrcp_get_element_attr_req_t *)param;
+
+	if (bt_avrcp_get_element_attr_req(req_t->bd_addr, 1, &req_t->attr)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
 uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	int16_t ret = 0;
@@ -651,6 +756,10 @@ uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_AVRCP_ACT_VOLUME_CHANGE_REQ:
 		ret = bt_stack_avrcp_volume_change_req(p_cmd->param);
+		break;
+
+	case RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR:
+		ret = bt_stack_avrcp_get_element_attr_req(p_cmd->param);
 		break;
 
 	default:

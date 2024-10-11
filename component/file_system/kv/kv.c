@@ -144,6 +144,57 @@ exit:
 	return res;
 }
 
+int32_t rt_kv_size(const char *key)
+{
+	struct stat *stat_buf;
+	int res = -1;
+	char *path = NULL;
+
+	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
+	}
+
+	if ((stat_buf = rtos_mem_zmalloc(sizeof(struct stat))) == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
+	}
+
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
+		goto exit;
+	}
+
+	if (strlen(key) > MAX_KEY_LENGTH - 3) {
+		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
+		goto exit;
+	}
+
+	if (prefix == NULL) {
+		goto exit;
+	}
+
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:KV/%s", prefix, key);
+
+	res = stat(path, stat_buf);
+	if (res < 0) {
+		VFS_DBG(VFS_WARNING, "stat failed,err is %d!!!", res);
+	} else {
+		res = stat_buf->st_size;
+	}
+
+exit:
+	if (path) {
+		rtos_mem_free(path);
+	}
+
+	if (stat_buf) {
+		rtos_mem_free(stat_buf);
+	}
+
+	return res;
+}
+
 int32_t rt_kv_delete(const char *key)
 {
 	int res = -1;

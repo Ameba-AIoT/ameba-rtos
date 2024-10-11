@@ -68,7 +68,7 @@ void app_pmu_init(void)
 	}
 
 	/* KM4 need do pmc init */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 	SOCPS_sleepInit();
 #endif
 

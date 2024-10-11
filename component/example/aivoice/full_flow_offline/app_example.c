@@ -4,6 +4,7 @@ extern void aivoice_algo_offline_example(void);
 
 static void aivoice_thread(void *param)
 {
+	(void)param;
 	// rtos_time_delay_ms(1000);
 
 	printf("create example_aivoice_thread\n");

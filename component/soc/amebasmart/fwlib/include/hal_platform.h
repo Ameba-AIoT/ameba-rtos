@@ -227,7 +227,7 @@
   */
 
 /* TBD AutoGen */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 #define SYSTEM_CTRL_BASE		0x41000000
 #else
 #define SYSTEM_CTRL_BASE		0x42008000
@@ -252,7 +252,7 @@
 #define HP_SRAM_EXT_BASE         0x22000000        /* ID:HSLV-5, Inter. Type:AXI, Top Address:0x22FFFFFF, Size(KB):16M, Clk Domain:HS_APB_CLK */
 #define SPI_FLASH_CTRL_BASE      0x44000000        /* ID:HSLV-7, Inter. Type:AXI, Top Address:0x440FFFFF, Size(KB):1M, Clk Domain:SPIC_CLK */
 #define SPI_FLASH_BASE           0x08000000        /* ID:HSLV-11, Inter. Type:AXI, Top Address:0x0FFFFFFF, Size(KB):128M, Clk Domain:SPIC_CLK */
-#if defined(ARM_CORE_CM0) && ARM_CORE_CM0
+#if defined(CONFIG_ARM_CORE_CM0) && CONFIG_ARM_CORE_CM0
 #define WIFI_REG_BASE            0x43000000
 #else
 #define WIFI_REG_BASE            0x40000000        /* ID:HSLV8-0, Inter. Type:AHB, Top Address:0x4007FFFF, Size(KB):512K, Clk Domain:HS_AHB_CLK */
@@ -582,13 +582,13 @@ typedef struct {
 #endif
 
 /* margin 512 for lite and 1024 for CA32 */
-#if defined(RSICV_CORE_KR4)
+#if defined(CONFIG_RSICV_CORE_KR4)
 #define CONTEXT_SAVE_SIZE	(320)	/* portCONTEXT_SIZE:66*4 = 288 roundup to 64B aligned */
-#elif defined(ARM_CORE_CA32)
+#elif defined(CONFIG_ARM_CORE_CA32)
 #define CONTEXT_SAVE_SIZE	(320 + 1024) /* 15*4 + 32*8: general reg and floating reg */
-#elif defined(ARM_CORE_CM4)
+#elif defined(CONFIG_ARM_CORE_CM4)
 #define CONTEXT_SAVE_SIZE	192 /* 15*4 + 16*8: s16~s31 if use float */
-#elif defined(ARM_CORE_CM0)
+#elif defined(CONFIG_ARM_CORE_CM0)
 #define CONTEXT_SAVE_SIZE	64	/* not support hw float, 15*4 */
 #endif
 

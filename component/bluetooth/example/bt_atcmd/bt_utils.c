@@ -26,7 +26,7 @@ static uint8_t ctoi(char c)
 		return (c - '0' + 0x00);
 	}
 
-	AT_PRINTK("[%s]Error: Hex char is invalid !!!\r\n", __func__);
+	BT_LOGE("[%s]Error: Hex char is invalid!!!\r\n", __func__);
 	return 0xFF;
 }
 
@@ -38,7 +38,7 @@ static int hexnum_str_to_int(char *str)
 	uint32_t n = 2;
 
 	if ((str_len < 3) || (str[0] != '0') || ((str[1] != 'x') && (str[1] != 'X'))) {
-		AT_PRINTK("[%s]Error: Hexnum is not begin with 0x or 0X !!!\r\n", __func__);
+		BT_LOGE("[%s]Error: Hexnum is not begin with 0x or 0X!!!\r\n", __func__);
 		return -1;
 	}
 	while (n < str_len) {
@@ -73,7 +73,7 @@ bool hexdata_str_to_bd_addr(char *str, uint8_t *addr_buf, uint8_t buf_len)
 	uint8_t num = 0;
 
 	if (str_len != 2 * 6 || buf_len < 6) {
-		AT_PRINTK("[%s]Error: Invalid bd addr string\r\n", __func__);
+		BT_LOGE("[%s]Error: Invalid bd addr string\r\n", __func__);
 		return FALSE;
 	}
 
@@ -104,7 +104,7 @@ bool hexnum_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 	uint32_t n = 0;
 
 	if ((str_len < 3) || (str[0] != '0') || ((str[1] != 'x') && (str[1] != 'X'))) {
-		AT_PRINTK("[%s]Error: Hexnum is not begin with 0x or 0X !!!\r\n", __func__);
+		BT_LOGE("[%s]Error: Hexnum is not begin with 0x or 0X!!!\r\n", __func__);
 		return FALSE;
 	}
 
@@ -146,7 +146,7 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 	uint8_t byte_high = 0, byte_low = 0;
 
 	if (str_len % 2 || arr_len < str_len / 2) {
-		AT_PRINTK("[%s]Error: Hexdata is invalid\r\n", __func__);
+		BT_LOGE("[%s]Error: Hexdata is invalid\r\n", __func__);
 		return FALSE;
 	}
 
@@ -163,7 +163,7 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 	return TRUE;
 }
 
-#if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART)
+#if (defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL)
 
 void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str)
 {

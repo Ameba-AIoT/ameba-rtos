@@ -4,6 +4,10 @@
 #*****************************************************************************#
 OBJS =
 
+CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
+          else if [ -x /bin/bash ]; then echo /bin/bash; \
+          else echo sh; fi ; fi)
+
 CONFIG_DISPLAY ?= 1
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #

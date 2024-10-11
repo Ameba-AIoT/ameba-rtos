@@ -5,6 +5,9 @@ set(
     ${BT_DIR}/rtk_stack/src/mesh/cmd/mesh_cmd.c 
 	${BT_DIR}/rtk_stack/src/mesh/model/delay_msg_rsp.c 
 	${BT_DIR}/rtk_stack/src/mesh/model/realtek/datatrans_model.c 
+    ${BT_DIR}/rtk_stack/src/mesh/model/blob_transfer_client.c  
+    ${BT_DIR}/rtk_stack/src/mesh/model/firmware_distribution_client.c 
+    ${BT_DIR}/rtk_stack/src/mesh/model/firmware_update_client.c 
 	${BT_DIR}/rtk_stack/src/mesh/utility/mesh_data_dump.c
 )
 
@@ -30,6 +33,9 @@ if(CONFIG_BT_MESH_PROVISIONER_SUPPORT)
         ${BT_DIR}/rtk_stack/src/mesh/model/time_client.c 
         ${BT_DIR}/rtk_stack/src/mesh/model/sensor_client.c 
         ${BT_DIR}/rtk_stack/src/mesh/model/health_client.c
+        ${BT_DIR}/rtk_stack/src/mesh/model/directed_forwarding_client.c 
+        ${BT_DIR}/rtk_stack/src/mesh/model/private_beacon_client.c 
+        ${BT_DIR}/rtk_stack/src/mesh/model/subnet_bridge_client.c
     )
 endif()
 
@@ -78,4 +84,4 @@ if(CONFIG_BT_MESH_DEVICE_SUPPORT)
     )
 endif()
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

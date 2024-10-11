@@ -36,6 +36,8 @@ BEGIN_DECLS
 
 #define HB_TIMER_PUB                        0
 #define HB_TIMER_SUB                        1
+
+#define HB_IS_PUB_PERIODIC(pub)             (pub.count && pub.period && MESH_NOT_UNASSIGNED_ADDR(pub.dst))
 #define HB_IS_PUB_STORABLE(pub)             ((pub.count == HB_COUNT_INDEFINITELY) && pub.period && MESH_NOT_UNASSIGNED_ADDR(pub.dst))
 /** @} */
 
@@ -108,7 +110,7 @@ typedef struct
      */
     uint16_t dst;
     /**
-     * @brief preiod for processing periodical heartbeat transport control messages
+     * @brief period for processing periodical heartbeat transport control messages
      * 0: heartbeat messages are not being processed
      * 1-0xffff: remaining period in seconds for processing periodical heartbeat message
      */
@@ -187,6 +189,7 @@ bool hb_init(hb_data_cb pcb);
 
 ///@cond
 void hb_run(void);
+void hb_clear(void);
 ///@endcond
 
 /**
@@ -209,7 +212,7 @@ void hb_timer_start(uint8_t timer);
 void hb_timer_stop(uint8_t timer);
 
 /**
-  * @brief detect if the messggage need be processed
+  * @brief detect if the message need be processed
   * @param[in] src: message source addr
   * @param[in] dst: message destination addr
   * @return operation result
@@ -243,7 +246,7 @@ void hb_handle_timeout(uint8_t timer);
 
 /**
  * @brief set heartbeat publication parameter
- * @param[in] pub: hearbeat publication parameter
+ * @param[in] pub: heartbeat publication parameter
  */
 void hb_publication_set(hb_pub_t pub);
 
@@ -255,14 +258,14 @@ hb_pub_t hb_publication_get(void);
 
 /**
  * @brief set heartbeat subscription parameter
- * @param[in] sub: hearbeat subscription parameter
+ * @param[in] sub: heartbeat subscription parameter
  */
 void hb_subscription_set(hb_sub_t sub);
 
 #if MESH_HB_SUB_UNCHECK_SRC
 /**
  * @brief enable the customized feature to uncheck the source address when receiving heartbeat message
- * @param[in] enable: true or flase to uncheck
+ * @param[in] enable: true or false to uncheck
  */
 void hb_subscription_uncheck_src(bool enable);
 #endif

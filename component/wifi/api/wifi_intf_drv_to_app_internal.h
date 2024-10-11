@@ -73,6 +73,15 @@ void wifi_btcoex_set_bt_ant(u8 bt_ant);
 int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param);
 
 /**
+  * @brief Notify extwpan data to COEX
+  * @param[in]  type: type for exewpan send
+  * @param[in]  data; data pointer
+  * @param[in]  data_len; data length
+  * @retval  result(1:success  0:failed)
+  */
+int wifi_extchip_coex_notify(u32 type, u32 data, u32 data_len);
+
+/**
   * @brief Zigbee Call WL RFK
   * @param  void
   * @retval  ZBC RFK result(0:success  -1:failed)
@@ -86,7 +95,7 @@ int wifi_zigbee_coex_zb_rfk(void);
 	WPA3_ONLY_MODE,WPA_WPA2_MIXED_MODE, WPA2_WPA3_MIXED_MODE).
  * @return  0:success  -1:fail.
  */
-int wifi_set_wpa_mode(enum rtw_wpa_mode_type wpa_mode);
+int wifi_set_wpa_mode(u8 wpa_mode);
 
 /**
  * @brief  Dynamically modify the working mode of pmf.
@@ -99,13 +108,12 @@ int wifi_set_wpa_mode(enum rtw_wpa_mode_type wpa_mode);
 int wifi_set_pmf_mode(u8 pmf_mode);
 
 /**
- * @brief  wpa notify wifi driver that 4 way handshake is failed.
- * wifi driver will do disconnect and autoreconnect.
- * can delete this API if autoreconnect can move to up layer.
- * @param[in]  void:
+ * @brief  wpa notify wifi driver status of 4-way/2-way handshake.
+ * wifi driver will do disconnect and autoreconnect when fail & inform coex
+ * @param[in] rtw_wap_4way_status
  * @return  null.
  */
-void wifi_wpa_sta_4way_fail_notify(void);
+void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way);
 
 /**
  * @brief  for wpa to set key to driver
@@ -217,6 +225,9 @@ int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 f
 
 
 void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
+
+void wifi_event_init(void);
+void wifi_indication(unsigned int event, char *buf, int buf_len, int flags);
 
 #ifdef __cplusplus
 }

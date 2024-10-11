@@ -21,6 +21,7 @@
 #include <rtk_bt_mesh_generic_model.h>
 #include <rtk_bt_mesh_sensor_model.h>
 #include <rtk_bt_mesh_health_model.h>
+#include <rtk_bt_mesh_directed_forwarding_model.h>
 #include <bt_utils.h>
 
 static void mesh_data_uart_dump(uint8_t *pbuffer, uint32_t len)
@@ -47,10 +48,10 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
 		rtk_bt_le_scan_res_ind_t *scan_res_ind = (rtk_bt_le_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->adv_report.addr), le_addr, sizeof(le_addr));
-		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %i, len: %d \r\n",
+		BT_LOGA("[APP] Scan info, [Device]: %s, AD evt type: %d, RSSI: %d, len: %d \r\n",
 				le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 				scan_res_ind->adv_report.len);
-		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%i,%d\r\n",
+		BT_AT_PRINT("+BLEGAP:scan,info,%s,%d,%d,%d\r\n",
 					le_addr, scan_res_ind->adv_report.evt_type, scan_res_ind->adv_report.rssi,
 					scan_res_ind->adv_report.len);
 		break;
@@ -418,15 +419,35 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1), *(p_data + offset + 3));
 				BT_AT_DUMP_HEXN(p_data + offset + 4, 16);
 				break;
-			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY:
-				BT_LOGA("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
-						* (p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
-				mesh_data_uart_dump(p_data + offset + 6, 16);
-				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
-							type, *(p_data + offset), LE_TO_U16(p_data + offset + 1),
-							*(p_data + offset + 3), *(p_data + offset + 4), *(p_data + offset + 5));
-				BT_AT_DUMP_HEXN(p_data + offset + 6, 16);
-				break;
+			case RTK_BT_MESH_STACK_USER_LIST_NET_KEY: {
+				uint8_t net_key_type = *(p_data + offset);
+				switch (net_key_type) {
+				case RTK_BT_MESH_NET_KEY_MASTER:
+					BT_LOGA("NetKey:\t\t");
+					break;
+				case RTK_BT_MESH_NET_KEY_FN:
+					BT_LOGA("NetKey-FN:\t");
+					break;
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+				case RTK_BT_MESH_NET_KEY_DF:
+					BT_LOGA("NetKey-DF:\t");
+					break;
+#endif
+				default:
+					break;
+				}
+				BT_LOGA("%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset + 1), LE_TO_U16(p_data + offset + 2), \
+						* (p_data + offset + 4), *(p_data + offset + 5), *(p_data + offset + 6));
+				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d,%d-0x%04x-%d-%d-%d-",
+							type, net_key_type, *(p_data + offset + 1), LE_TO_U16(p_data + offset + 2), \
+							* (p_data + offset + 4), *(p_data + offset + 5), *(p_data + offset + 6));
+				if (net_key_type == 1) {
+					BT_LOGA("\t\t");
+					mesh_data_uart_dump(p_data + offset + 7, 16);
+					BT_AT_DUMP_HEXN(p_data + offset + 7, 16);
+				}
+			}
+			break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
 				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
 						* (p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
@@ -461,10 +482,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				BT_AT_PRINT(",%d,%d", type, *(p_data + offset));
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO:
-				BT_LOGA("(pub to:0x%04x-%d-%d)", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+				BT_LOGA("(pub to:0x%04x-%d-%d", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
 						LE_TO_U16(p_data + offset + 3));
 				BT_AT_PRINT(",%d,0x%04x-%d-%d", type, LE_TO_U16(p_data + offset), *(p_data + offset + 2),
 							LE_TO_U16(p_data + offset + 3));
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+				BT_LOGA("-%d", *(p_data + offset + 5));
+				BT_AT_PRINT("-%d", *(p_data + offset + 5));
+#endif
+				BT_LOGA(")");
 				break;
 			case RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO: {
 				uint16_t sub_addr_num = data_len / 2;
@@ -484,6 +510,39 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 				}
 				break;
 			}
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+			case RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO: {
+				BT_LOGA("\r\nDF-Path:\t%d-%d-%d-%d-%d-%d-0x%04x-0x%04x\r\n\t\t0x%04x(%d)",
+						LE_TO_U16(p_data + offset), LE_TO_U16(p_data + offset + 2),
+						*(p_data + offset + 4), *(p_data + offset + 5),
+						*(p_data + offset + 6), *(p_data + offset + 7),
+						LE_TO_U16(p_data + offset + 8), LE_TO_U16(p_data + offset + 10),
+						LE_TO_U16(p_data + offset + 12), *(p_data + offset + 14));
+				BT_AT_PRINT("\r\n+BLEMESHSTACK:list,%d,%d-%d-%d-0x%04x,%d",
+							type, LE_TO_U16(p_data + offset), LE_TO_U16(p_data + offset + 2),
+							*(p_data + offset + 4), *(p_data + offset + 5),
+							*(p_data + offset + 6), *(p_data + offset + 7),
+							LE_TO_U16(p_data + offset + 8), LE_TO_U16(p_data + offset + 10),
+							LE_TO_U16(p_data + offset + 12), *(p_data + offset + 14));
+				uint8_t origin_dependent_count = *(p_data + offset + 15);
+				for (int i = 0; i < origin_dependent_count; i++) {
+					BT_LOGA("-<0x%04x(%d)>", LE_TO_U16(p_data + offset + 16 + 3 * i), *(p_data + offset + 18 + 3 * i));
+					BT_AT_PRINT(",0x%04x,%d", LE_TO_U16(p_data + offset + 16 + 3 * i), *(p_data + offset + 18 + 3 * i));
+				}
+				BT_LOGA("\r\n\t\t----->\r\n\t\t0x%04x(%d)", LE_TO_U16(p_data + offset + 16 + 3 * origin_dependent_count),
+						*(p_data + offset + 18 + 3 * origin_dependent_count));
+				BT_AT_PRINT("\r\n0x%04x,%d", LE_TO_U16(p_data + offset + 16 + 3 * origin_dependent_count),
+							*(p_data + offset + 18 + 3 * origin_dependent_count));
+				uint8_t target_dependent_count = *(p_data + offset + 19 + 3 * origin_dependent_count);
+				for (int i = 0; i < target_dependent_count; i++) {
+					BT_LOGA("-<0x%04x(%d)>", LE_TO_U16(p_data + offset + 20 + 3 * origin_dependent_count + 3 * i),
+							*(p_data + offset + 22 + 3 * origin_dependent_count + 3 * i));
+					BT_AT_PRINT(",0x%04x,%d", LE_TO_U16(p_data + offset + 20 + 3 * origin_dependent_count + 3 * i),
+								*(p_data + offset + 22 + 3 * origin_dependent_count + 3 * i));
+				}
+				break;
+			}
+#endif
 			default:
 				BT_LOGE("[%s] Unknown data type %d for RTK_BT_MESH_STACK_EVT_LIST_INFO\r\n", __func__, (int)type);
 				return RTK_BT_EVT_CB_OK;
@@ -508,6 +567,37 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					result->ttl, result->trans_retrans_count);
 		break;
 	}
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	case RTK_BT_MESH_STACK_EVT_DF_CB: {
+		rtk_bt_mesh_stack_evt_df_t *df;
+		df = (rtk_bt_mesh_stack_evt_df_t *)param;
+		switch (df->type) {
+		case RTK_BT_MESH_MSG_DF_PATH_ACTION: {
+			char *state_str[] = {"Discovering", "Discovery failed", "Established", "Path released",
+								 "New lane discovering", "New lane established", "New lane failed"
+								};
+			BT_LOGA("%s, master key index %d\r\nsrc 0x%04x(%d) [0x%04x(%d)] --> dst 0x%04x(%d) [0x%04x(%d)]\r\nforwarding num %d\r\n",
+					state_str[df->path_action.action_type], df->path_action.master_key_index,
+					df->path_action.path_src, df->path_action.path_src_sec_elem_num,
+					df->path_action.dp_src, df->path_action.dp_src_sec_elem_num,
+					df->path_action.path_dst, df->path_action.path_dst_sec_elem_num,
+					df->path_action.dp_dst, df->path_action.dp_dst_sec_elem_num,
+					df->path_action.forwarding_num);
+			BT_AT_PRINT("+BLEMESHSTACK:df_state,%d,%d,\r\n0x%04x,%d,0x%04x,%d,\r\n0x%04x,%d,0x%04x,%d,\r\n%d\r\n",
+						df->path_action.action_type, df->path_action.master_key_index,
+						df->path_action.path_src, df->path_action.path_src_sec_elem_num,
+						df->path_action.dp_src, df->path_action.dp_src_sec_elem_num,
+						df->path_action.path_dst, df->path_action.path_dst_sec_elem_num,
+						df->path_action.dp_dst, df->path_action.dp_dst_sec_elem_num,
+						df->path_action.forwarding_num);
+		}
+		break;
+		default:
+			break;
+		}
+		break;
+	}
+#endif
 	default:
 		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
@@ -2342,8 +2432,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_sensor_server_app_callback(uint8_t evt_code,
 		BT_AT_PRINT(",");
 		mesh_data_uart_dump(series_get->raw_value_x2, series_get->raw_value_x_len);
 		BT_AT_DUMP_HEXN(series_get->raw_value_x2, series_get->raw_value_x_len);
-		if (series_length > SENSOR_GET_COLUMN_MAX_LEN) {
-			series_length = SENSOR_GET_COLUMN_MAX_LEN;
+		if (series_length > SENSOR_GET_SERIES_MAX_LEN) {
+			series_length = SENSOR_GET_SERIES_MAX_LEN;
 		}
 		memcpy(series_get->value, &series_length, 2);
 		memcpy((uint8_t *)series_get->value + 2, sensor_raw_data, series_length);
@@ -2669,6 +2759,7 @@ int ble_mesh_device_main(uint8_t enable)
 		// Mesh stack will report a event when stack is ready, so should regist callback before bt enable
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		/* Enable BT */
+		bt_app_conf.bt_mesh_app_conf.bt_mesh_flash_size = 2200;
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 
 		BT_APP_PROCESS(rtk_bt_le_gap_get_bd_addr(&bd_addr));

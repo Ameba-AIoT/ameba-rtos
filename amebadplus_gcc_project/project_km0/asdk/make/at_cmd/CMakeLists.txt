@@ -2,6 +2,8 @@ set(
     MODULE_IFLAGS
     ${BASEDIR}/component/network/mqtt/MQTTClient
     ${BASEDIR}/component/network/mqtt/MQTTPacket
+    ${BASEDIR}/component/network/cJSON
+    ${BASEDIR}/component/file_system/kv
 )
 
 set(APP_DIR ${TARGETDIR}/app/monitor)
@@ -9,7 +11,7 @@ set(DIR ${BASEDIR}/component/at_cmd)
 
 set(
     CSRC 
-    ${APP_DIR}/ram/monitor_km0.c 
+    ${DIR}/monitor.c 
     ${APP_DIR}/ram/shell_ram.c 
     ${APP_DIR}/ram/low_level_io.c
 )
@@ -23,7 +25,7 @@ endif()
 
 if(CONFIG_WLAN)
 # note: apply new atcmd, add your config here!!!
-    if(CONFIG_ATCMD_IO_UART)
+    if(CONFIG_ATCMD_MCU_CONTROL)
         list(
             APPEND CSRC 
             ${DIR}/at_intf_uart.c

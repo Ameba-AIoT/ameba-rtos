@@ -63,7 +63,7 @@ int main(void)
 		goto end_demo;
 	}
 
-#ifdef PLATFORM_FREERTOS
+#ifdef CONFIG_PLATFORM_FREERTOS
 	rtos_sched_start();
 #endif
 

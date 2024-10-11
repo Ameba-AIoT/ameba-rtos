@@ -32,6 +32,13 @@ MODULE_IFLAGS += -I$(PLATFORM_CONFIG)/
 MODULE_IFLAGS += -I$(BASEDIR)/component/soc/amebasmart/fwlib/include
 MODULE_IFLAGS += -I$(BASEDIR)/component/os/os_dep/
 
+ifeq ($(CONFIG_802154_THREAD_CONCURRENT_EN), y)
+PLATFORM_COEX = $(BASEDIR)/component/rtk_coex/rtk_coex_ext_chip/rtk_coex_ext_slave
+vpath %.c $(PLATFORM_COEX)
+MODULE_IFLAGS += -I$(PLATFORM_COEX)
+CSRC += $(PLATFORM_COEX)/rtk_coex_ext_api_slave.c
+endif
+
 #*****************************************************************************#
 #                               Object FILE LIST                              #
 #*****************************************************************************#

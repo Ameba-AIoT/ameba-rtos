@@ -50,7 +50,7 @@
 
 /* ===========================  Configuration of the ARM ARMV8MBL Processor and Core Peripherals  ============================ */
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 #define __CM3_REV                      0x0200    /**< Core revision r0p0 */
 #define __MPU_PRESENT                  1         /**< Defines if an MPU is present or not */
 #define __NVIC_PRIO_BITS               3         /**< Number of priority bits implemented in the NVIC */
@@ -71,7 +71,7 @@
 #include <arm_cmse.h>   /* Use CMSE intrinsics */
 #include "core_armv81mml.h"
 #include "core_cache.h"
-#elif defined (ARM_CORE_CM0)
+#elif defined (CONFIG_ARM_CORE_CM0)
 #define __ARMV8MBL_REV                 0x0000U  /*!< ARMV8MBL Core Revision                                                    */
 #define __NVIC_PRIO_BITS               2        /*!< Number of Bits used for Priority Levels                                   */
 #define __Vendor_SysTickConfig         0        /*!< Set to 1 if different SysTick Config is used                              */
@@ -81,7 +81,7 @@
 #define __MPU_PRESENT                  1         /**< Defines if an MPU is present or not */
 #include "core_armv8mbl.h"
 #include "core_cache.h"
-#elif defined (ARM_CORE_CA32)
+#elif defined (CONFIG_ARM_CORE_CA32)
 #include <string.h>
 #include <stdlib.h>
 
@@ -115,7 +115,7 @@
 #include "ameba_wakepin.h"
 #include "ameba_arch.h"
 
-#ifndef ARM_CORE_CA32
+#ifndef CONFIG_ARM_CORE_CA32
 #include "ameba_cache.h"
 #else
 #include "amebaap_cache.h"
@@ -178,7 +178,7 @@ typedef enum  _HAL_Status {
   */
 #define assert_param(expr) ((expr) ? (void)0 : io_assert_failed((uint8_t *)__FILE__, __LINE__))
 /* Exported functions ------------------------------------------------------- */
-void io_assert_failed(uint8_t *file, uint32_t line);
+__NO_RETURN void io_assert_failed(uint8_t *file, uint32_t line);
 #else
 #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */

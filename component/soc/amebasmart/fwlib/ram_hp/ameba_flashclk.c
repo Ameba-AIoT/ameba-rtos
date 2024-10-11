@@ -543,10 +543,13 @@ BOOT_RAM_TEXT_SECTION
 static void flash_get_vendor(void)
 {
 	u8 flash_ID[4];
+	u32 flash_capacity = 0;
 
 	/* Read flash ID */
 	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_id, 3, flash_ID);
-	RTK_LOGI(TAG, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
+	/* Byte -> Mbits: 10 + 10 - 3 = 17 (0x11) */
+	flash_capacity = (1 << (flash_ID[2] - 0x11));
+	RTK_LOGI(TAG, "Flash ID: %x-%x-%x (Capacity: %dM-bit)\n", flash_ID[0], flash_ID[1], flash_ID[2], flash_capacity);
 
 	/* Get flash chip information */
 	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
@@ -638,7 +641,7 @@ static void flash_set_status_register(void)
 {
 	u8 StatusLen = 1;
 	u32 data = 0;
-	u32 status;
+	u32 status = 0;
 	u32 mask = current_IC->sta_mask;
 
 	if (flash_init_para.FLASH_QuadEn_bit != 0) {
@@ -670,6 +673,7 @@ static void flash_set_status_register(void)
 			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status, 1, (u8 *)&data);
 			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status2, 1, ((u8 *)&data) + 1);
 		}
+		RTK_LOGI(TAG, "Flash status register changed:0x%x -> 0x%x\n", status, data);
 	}
 }
 
@@ -733,6 +737,7 @@ void flash_highspeed_setup(void)
 {
 	u8 read_mode;
 	u8 flash_speed;
+	u8 nand_reg;
 
 	read_mode = flash_get_option(Flash_ReadMode, _FALSE);
 	flash_speed = flash_get_option(Flash_Speed, _TRUE);
@@ -756,10 +761,18 @@ void flash_highspeed_setup(void)
 		nand_get_vendor();
 		/* QuadEnable */
 		if (flash_init_para.FLASH_QuadEn_bit != 0) {
-			NAND_SetStatus(NAND_REG_CFG, NAND_GetStatus(NAND_REG_CFG) | NAND_CFG_QUAD_ENABLE);
+			nand_reg = NAND_GetStatus(NAND_REG_CFG);
+			if (nand_reg != (nand_reg | NAND_CFG_QUAD_ENABLE)) {
+				NAND_SetStatus(NAND_REG_CFG, nand_reg | NAND_CFG_QUAD_ENABLE);
+			}
 		}
+
 		/*After power-up, the chip is in protection state, set feature bits BPx to 0 to unlock all block. */
-		NAND_SetStatus(NAND_REG_BLOCK_LOCK, NAND_BL_ALL_UNLOCKED);
+		nand_reg = NAND_GetStatus(NAND_REG_BLOCK_LOCK);
+		if (nand_reg != NAND_BL_ALL_UNLOCKED) {
+			NAND_SetStatus(NAND_REG_BLOCK_LOCK, NAND_BL_ALL_UNLOCKED);
+			RTK_LOGI(TAG, "Flash all block unlocked. Feature reg 0x%02x set to 0x%02x\n", NAND_REG_BLOCK_LOCK, NAND_BL_ALL_UNLOCKED);
+		}
 	}
 
 	/* Set flash I/O mode and high-speed calibration */

@@ -60,8 +60,13 @@ static void ameba_audio_stream_rx_sport_init(CaptureStream **stream, StreamConfi
 					  cstream->stream.sp_initstruct.SP_SelFIFO);
 
 	Init_Params.chn_len = SP_CL_32;
-	Init_Params.chn_cnt = config.channels;
 	Init_Params.sr = cstream->stream.sp_initstruct.SP_SR;
+
+#if AUDIO_I2S_IN_MULTIIO_EN
+	Init_Params.chn_cnt = 2;
+#else
+	Init_Params.chn_cnt = config.channels;
+#endif
 
 	if (AUDIO_HW_IN_SPORT_CLK_TYPE == 0) {
 		Init_Params.codec_multiplier_with_rate = 0;
@@ -416,7 +421,7 @@ int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frame
 	return 0;
 }
 
-int  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
+HAL_AUDIO_WEAK int ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	//now nsec;
 	uint64_t nsec;
@@ -772,7 +777,7 @@ int64_t ameba_audio_stream_rx_get_trigger_time(Stream *stream)
 	return cstream->stream.trigger_tstamp;
 }
 
-void ameba_audio_stream_rx_start(Stream *stream)
+HAL_AUDIO_WEAK void ameba_audio_stream_rx_start(Stream *stream)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
 	cstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
@@ -944,7 +949,7 @@ int ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes)
 	return 0;
 }
 
-void ameba_audio_stream_rx_stop(Stream *stream)
+HAL_AUDIO_WEAK void ameba_audio_stream_rx_stop(Stream *stream)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
 	cstream->stream.trigger_tstamp = ameba_audio_get_now_ns();

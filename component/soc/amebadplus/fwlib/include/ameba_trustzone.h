@@ -147,7 +147,7 @@ void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status);
 */
 __STATIC_INLINE u32 TrustZone_IsSecure(void)
 {
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)DiagPrintf);
 	return cmse_address_info.flags.secure;
 #else

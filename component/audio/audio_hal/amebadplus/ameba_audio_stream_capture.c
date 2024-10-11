@@ -64,12 +64,13 @@ static void ameba_audio_stream_rx_sport_init(CaptureStream **stream, StreamConfi
 	cstream->stream.sp_initstruct.SP_SelClk = CKSL_I2S_XTAL40M;
 	if (cstream->stream.is_multi_io == 1) {
 		cstream->stream.sp_initstruct.SP_SetMultiIO = SP_RX_MULTIIO_EN;
+		Init_Params.chn_cnt = 2;
 	} else {
 		cstream->stream.sp_initstruct.SP_SetMultiIO = SP_RX_MULTIIO_DIS;
+		Init_Params.chn_cnt = config.channels;
 	}
 
 	Init_Params.chn_len = SP_TXCL_32;
-	Init_Params.chn_cnt = config.channels;
 	Init_Params.sr = config.rate;
 
 	if (AUDIO_HW_IN_SPORT_CLK_TYPE == 0) {
@@ -162,7 +163,7 @@ static void ameba_audio_stream_rx_codec_adc_reset(void)
 		uint32_t adc_idx = ameba_audio_stream_get_adc_idx(idx);
 
 		AUDIO_CODEC_EnableADC(adc_chn_idx, DISABLE);
-		//AUDIO_CODEC_EnableADCFifo(adc_chn_idx, DISABLE);
+		AUDIO_CODEC_EnableADCFifo(adc_chn_idx, DISABLE);
 		AUDIO_CODEC_SetADCHPF(idx, 3, DISABLE);
 		AUDIO_CODEC_SetADCMute(adc_idx, MUTE);
 		// AUDIO_CODEC_SetADCMixMute(adc_idx, ANAAD, MUTE);
@@ -192,7 +193,7 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 			uint32_t adc_idx = ameba_audio_stream_get_adc_idx(j);
 
 			AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-			//AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
+			AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
 			AUDIO_CODEC_SetADCHPF(adc_idx, 3, ENABLE);
 			AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[j - 1] ? MUTE : UNMUTE);
 			AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[j - 1]);
@@ -209,7 +210,7 @@ static void ameba_audio_stream_rx_adc_mic_configure(StreamConfig config)
 				uint32_t adc_idx = ameba_audio_stream_get_adc_idx(k);
 
 				AUDIO_CODEC_EnableADC(adc_chn_idx, ENABLE);
-				//AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
+				AUDIO_CODEC_EnableADCFifo(adc_chn_idx, ENABLE);
 				AUDIO_CODEC_SetADCHPF(adc_idx, 3, ENABLE);
 				AUDIO_CODEC_SetADCMute(adc_idx, dc->mute_for_adc[k - 1] ? MUTE : UNMUTE);
 				AUDIO_CODEC_SetADCVolume(adc_idx, dc->volume_for_adc[k - 1]);

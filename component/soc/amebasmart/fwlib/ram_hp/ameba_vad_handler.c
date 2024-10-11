@@ -198,9 +198,9 @@ void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf)
 		DCache_CleanInvalidate((u32)buf, (u32)amount_byte);
 
 	} else {
-		memcpy((void *)buf, (void *)addr_start, block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start);
-		memcpy((void *)(buf + block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start), (void *)(block_range[block_index][0]),
-			   amount_byte - (block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start));
+		_memcpy((void *)buf, (void *)addr_start, block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start);
+		_memcpy((void *)(buf + block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start), (void *)(block_range[block_index][0]),
+				amount_byte - (block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start));
 	}
 }
 
@@ -315,7 +315,7 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 		}
 	}
 
-	memcpy(buf, temp_buf, used_bytes);
+	_memcpy(buf, temp_buf, used_bytes);
 	DCache_CleanInvalidate((u32)buf, (u32)used_bytes);
 	free(temp_buf);
 

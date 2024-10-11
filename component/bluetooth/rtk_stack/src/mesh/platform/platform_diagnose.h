@@ -52,6 +52,7 @@ typedef enum
     MM_SECURITY, //!< 16
     MM_FLASH,
     MM_MODEL,
+    MM_DF,
     MM_APP,
     MM_NUM = 32
 } mesh_module_t;

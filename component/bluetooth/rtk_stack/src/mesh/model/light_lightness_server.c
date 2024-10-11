@@ -51,7 +51,7 @@ uint16_t light_lightness_linear_to_actual(uint16_t lightness_linear)
 
 uint16_t light_lightness_actual_to_linear(uint16_t lightness_actual)
 {
-    return (uint16_t)(lightness_actual / 65535.0 * lightness_actual);
+    return (uint16_t)(ceil(lightness_actual / 65535.0 * lightness_actual));
 }
 
 int16_t light_lightness_to_generic_level(uint16_t lightness)
@@ -78,7 +78,7 @@ static mesh_msg_send_cause_t light_lightness_server_send(mesh_model_info_p pmode
                                                          uint16_t dst, uint8_t *pmsg, uint16_t msg_len, uint16_t app_key_index,
                                                          uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;

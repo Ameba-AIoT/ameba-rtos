@@ -19,7 +19,7 @@
 // CBC enables AES128 encryption in CBC-mode of operation and handles 0-padding.
 // ECB enables the basic ECB 16-byte block algorithm. Both can be enabled simultaneously.
 // The #ifndef-guard allows it to be configured before #include'ing or at compile time.
-#define CBC 0
+#define CBC 1
 #define ECB 1
 /** @} */
 

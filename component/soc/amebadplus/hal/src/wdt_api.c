@@ -36,7 +36,7 @@
 /**
  * @brief WDGDev and WdgIrqNum
  */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 WDG_TypeDef *WDGDev = KM4_NS_WDG_DEV;
 IRQn_Type WdgIrqNum = KM4_NS_WDG_IRQ;
 #else

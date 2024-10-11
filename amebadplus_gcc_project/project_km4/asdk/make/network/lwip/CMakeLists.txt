@@ -1,7 +1,14 @@
-set(LWIPDIR ${BASEDIR}/component/lwip/lwip_v2.1.2)
+set(LWIPDIR ${BASEDIR}/component/lwip/lwip_${LWIP_VER})
 set(LWIPAPI ${BASEDIR}/component/lwip/api)
 set(NETWORK ${BASEDIR}/component/network)
 set(LWIPPORT ${LWIPDIR}/port/realtek/freertos)
+
+if(CONFIG_802154_THREAD_BORDER_ROUTER_EN)
+    set(
+    MODULE_IFLAGS
+    ${BASEDIR}/component/wpan/openthread/rtk_otbr/
+)
+endif()
 
 set(
     CSRC 
@@ -68,4 +75,6 @@ set(
     ${LWIPAPI}/lwip_netconf.c
 )
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+ameba_internal_library(lwip)
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})

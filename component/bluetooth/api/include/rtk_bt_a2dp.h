@@ -225,7 +225,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_a2dp_codec_cfg(uint8_t codec_type, void *codec_t, uint32_t length)
  * @brief     Set a2dp codec configuration.
  * @param[in] codec_type: codec index
  * @param[in] codec_t: codec struct pointer
@@ -237,7 +236,6 @@ typedef struct {
 uint16_t rtk_bt_a2dp_codec_cfg(uint8_t codec_type, void *codec_t, uint32_t length);
 
 /**
- * @fn        uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr)
  * @brief     send a2dp connect request.
  * @param[in] bd_addr: bt address
  * @return
@@ -247,7 +245,6 @@ uint16_t rtk_bt_a2dp_codec_cfg(uint8_t codec_type, void *codec_t, uint32_t lengt
 uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_a2dp_disconnect(uint8_t *bd_addr)
  * @brief     disconnect a2dp.
  * @param[in] bd_addr: bt address
  * @return
@@ -257,7 +254,6 @@ uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr);
 uint16_t rtk_bt_a2dp_disconnect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_a2dp_start(uint8_t *bd_addr)
  * @brief     start a2dp stream sending.
  * @param[in] bd_addr: bt address
  * @return
@@ -267,7 +263,6 @@ uint16_t rtk_bt_a2dp_disconnect(uint8_t *bd_addr);
 uint16_t rtk_bt_a2dp_start(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr)
  * @brief     a2dp suspend.
  * @param[in] bd_addr: bt address
  * @return
@@ -277,7 +272,6 @@ uint16_t rtk_bt_a2dp_start(uint8_t *bd_addr);
 uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_a2dp_data_send(rtk_bt_a2dp_stream_data_send_t *p_data_send_t)
  * @brief     a2dp data send.
  * @param[in] p_data_send_t: data send data struct pointer
  * @return

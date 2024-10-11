@@ -8,6 +8,9 @@
 #include <string.h>
 #include <stdio.h>
 #include "atcmd_service.h"
+#include "vfs.h"
+#include "cJSON.h"
+#include "kv.h"
 
 #ifdef CONFIG_SUPPORT_ATCMD
 
@@ -49,19 +52,17 @@ log_init_t log_init_table[] = {
 	at_tcpip_init,
 #endif
 #endif
-
-#ifdef CONFIG_ATCMD_IO_UART
-	atio_uart_init,
-#endif
 };
 
 
 //======================================================
 /* TODO */
-#ifdef CONFIG_ATCMD_IO_UART
+#ifdef CONFIG_ATCMD_MCU_CONTROL
 char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
+
+extern u8 wifi_set_countrycode(char *cntcode);
 
 /**
  * @brief Output format strings, like printf.
@@ -135,6 +136,58 @@ void log_add_new_command(log_item_t *new)
 	list_add(&new->node, &log_hash[index]);
 }
 
+int atcmd_get_ssl_certificate(char *buffer, char cert_type, char index)
+{
+	if (buffer == NULL) {
+		return -1;
+	}
+
+	int ret;
+	char *prefix;
+	char path[128] = {0};
+	vfs_file *finfo;
+	struct stat *stat_buf;
+	prefix = find_vfs_tag(VFS_REGION_1);
+	switch (cert_type) {
+	case CLIENT_CA:
+		DiagSnPrintf(path, sizeof(path), "%s:client_ca_%d.crt", prefix, index);
+		break;
+	case CLIENT_CERT:
+		DiagSnPrintf(path, sizeof(path), "%s:client_cert_%d.crt", prefix, index);
+		break;
+	case CLIENT_KEY:
+		DiagSnPrintf(path, sizeof(path), "%s:client_key_%d.key", prefix, index);
+		break;
+	case SERVER_CA:
+		DiagSnPrintf(path, sizeof(path), "%s:server_ca_%d.crt", prefix, index);
+		break;
+	case SERVER_CERT:
+		DiagSnPrintf(path, sizeof(path), "%s:server_cert_%d.crt", prefix, index);
+		break;
+	case SERVER_KEY:
+		DiagSnPrintf(path, sizeof(path), "%s:server_key_%d.key", prefix, index);
+		break;
+	default:
+		return -1;
+	}
+
+	ret = stat(path, stat_buf);
+	if (ret < 0) {
+		return 0;
+	}
+
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo == NULL) {
+		return -1;
+	}
+
+	ret = fread(buffer, stat_buf->st_size, 1, (FILE *)finfo);
+
+	fclose((FILE *)finfo);
+
+	return ret == stat_buf->st_size ? ret : -1;
+}
+
 void atcmd_service_init(void)
 {
 	unsigned int i;
@@ -146,6 +199,43 @@ void atcmd_service_init(void)
 	for (i = 0; i < sizeof(log_init_table) / sizeof(log_init_t); i++) {
 		log_init_table[i]();
 	}
+
+#ifdef CONFIG_ATCMD_MCU_CONTROL
+	atio_uart_init();
+
+	if (lfs_mount_fail) {
+		return;
+	}
+
+	int file_size = rt_kv_size("wifi_config.json");
+	if (file_size <= 0) {
+		RTK_LOGI(NOTAG, "wifi_config.json is not exist\n");
+		return;
+	}
+
+	char *wifi_config;
+	cJSON *wifi_ob, *country_code_ob;
+	wifi_config = (char *)rtos_mem_zmalloc(file_size);
+	int ret = rt_kv_get("wifi_config.json", wifi_config, file_size);
+	if (ret < 0) {
+		RTK_LOGI(NOTAG, "rt_kv_get wifi_config.json fail \r\n");
+		goto EXIT;
+	}
+
+	if ((wifi_ob = cJSON_Parse(wifi_config)) != NULL) {
+		country_code_ob = cJSON_GetObjectItem(wifi_ob, "country_code");
+
+		if (!country_code_ob || strlen(country_code_ob->valuestring) != 2) {
+			goto EXIT;
+		}
+
+		RTK_LOGI(NOTAG, "wifi_set_countrycode : %s \r\n", country_code_ob->valuestring);
+		wifi_set_countrycode(country_code_ob->valuestring);
+	}
+
+EXIT:
+	rtos_mem_free(wifi_config);
+#endif
 }
 
 //sizeof(log_items)/sizeof(log_items[0])
@@ -250,60 +340,56 @@ exit:
   If return value argc == -1, it means there are invalid datas inside.
   e.g.
     AT+XXX=param1,head\,tail,param3		<- The 2nd parameter is string "head,tail".
-	AT+XXX=param1,head\\tail,param3		<- The 2nd parameter is string "head\tail".
+    AT+XXX=param1,head\\tail,param3		<- The 2nd parameter is string "head\tail".
   The single backslash is not allowed, in other words, you should use double backslashes
   such as "\\" to express single backslash.
 ****************************************************************/
 int parse_param_advance(char *buf, char **argv)
 {
-	int argc = 1;
-	int buf_pos = 0, temp_pos = 0, length = 0;
-	static char temp_buf[UART_LOG_CMD_BUFLEN];
-	char *segment = temp_buf;
+	/* The last charactor should be '\0'. */
+	const int most_size = UART_LOG_CMD_BUFLEN - 1;
+	int argc = 1, pos = 0, i = 0, j = 0, offset = 1;
 
 	if (buf == NULL) {
 		goto exit;
 	}
-	length = strlen(buf);
-	if (length == 0) {
-		goto exit;
-	}
-	/* If the length is longer than UART_LOG_CMD_BUFLEN - 1, the tail will be cut. */
-	length = MIN(length, UART_LOG_CMD_BUFLEN - 1);
 
-	while (buf_pos < length) {
+	for (i = 0; most_size > i && '\0' != buf[i] && MAX_ARGC > argc; i += offset) {
 		/* Escape charactor. */
-		if (buf[buf_pos] == '\\') {
-			buf_pos++;
-			/* There are 2 escape charactors supported right now. */
-			if ((buf[buf_pos] == ',') || (buf[buf_pos] == '\\')) {
-				temp_buf[temp_pos] = buf[buf_pos];
-				temp_pos++;
-			} else {
+		if ('\\' == buf[i]) {
+			/* The next charactor should be comma or backslash. */
+			if (',' != buf[i + 1] && '\\' != buf[i + 1]) {
 				argc = -1;
 				goto exit;
 			}
+			buf[j] = buf[i + 1];
+			offset = 2;
 		}
-		/* Comma is considered as segmentasion. */
-		else if (buf[buf_pos] == ',') {
-			temp_buf[temp_pos] = '\0';
-			temp_pos++;
-			argv[argc] = segment;
+		/* Delimiter. */
+		else if (',' == buf[i]) {
+			buf[j] = '\0';
+			argv[argc] = &buf[pos];
 			argc++;
-			segment = &temp_buf[temp_pos];
+			pos = j + 1;
+			offset = 1;
 		}
-		/* Other characters. */
+		/* Other charactor. */
 		else {
-			temp_buf[temp_pos] = buf[buf_pos];
-			temp_pos++;
+			buf[j] = buf[i];
+			offset = 1;
 		}
-		buf_pos++;
+		j++;
 	}
 
-	/* The last one. */
-	temp_buf[temp_pos] = '\0';
-	argv[argc] = segment;
-	argc++;
+	/* The final arg. */
+	if (MAX_ARGC > argc) {
+		buf[j] = '\0';
+		argv[argc] = &buf[pos];
+		argc++;
+	} else {
+		argc = -1;
+		goto exit;
+	}
 
 exit:
 	return argc;

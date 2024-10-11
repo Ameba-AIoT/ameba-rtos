@@ -365,7 +365,6 @@ enum attr_perm_t {
 	RTK_BT_GATT_PERM_WRITE_ENCRYPT = BIT3,  /*!< Attribute write permission with encryption. */
 	RTK_BT_GATT_PERM_READ_AUTHEN   = BIT4,  /*! Attribute read permission with authentication. */
 	RTK_BT_GATT_PERM_WRITE_AUTHEN  = BIT5,  /*!< Attribute write permission with authentication. */
-	RTK_BT_GATT_PERM_PREPARE_WRITE = BIT6,  /*!< Attribute prepare write permission. */
 };
 
 #ifdef __cplusplus

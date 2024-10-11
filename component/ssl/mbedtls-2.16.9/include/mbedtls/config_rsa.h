@@ -648,7 +648,7 @@
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_RC4_128_SHA
  */
-//#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
@@ -1046,7 +1046,7 @@
  *
  * Comment this macro to disable 1/n-1 record splitting.
  */
-#define MBEDTLS_SSL_CBC_RECORD_SPLITTING
+//#define MBEDTLS_SSL_CBC_RECORD_SPLITTING  //Since some mbedTLS files are placed in ROM for AmebaDPlus, please do not enable this macro to avoid inconsistency between ROM and RAM configurations.
 
 /**
  * \def MBEDTLS_SSL_RENEGOTIATION
@@ -1114,7 +1114,7 @@
  *
  * Comment this macro to disable support for TLS 1.0
  */
-#define MBEDTLS_SSL_PROTO_TLS1
+//#define MBEDTLS_SSL_PROTO_TLS1  //Since some mbedTLS files are placed in ROM for AmebaDPlus, please do not enable this macro to avoid inconsistency between ROM and RAM configurations.
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_1
@@ -1126,7 +1126,7 @@
  *
  * Comment this macro to disable support for TLS 1.1 / DTLS 1.0
  */
-#define MBEDTLS_SSL_PROTO_TLS1_1
+//#define MBEDTLS_SSL_PROTO_TLS1_1  //Since some mbedTLS files are placed in ROM for AmebaDPlus, please do not enable this macro to avoid inconsistency between ROM and RAM configurations.
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_2
@@ -1757,7 +1757,7 @@
  *
  * Requires: MBEDTLS_ECP_C
  */
-//#define MBEDTLS_ECDH_C
+#define MBEDTLS_ECDH_C
 
 /**
  * \def MBEDTLS_ECDSA_C

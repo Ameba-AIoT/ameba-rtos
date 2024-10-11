@@ -998,7 +998,7 @@ static void bt_coex_monitor_timer_handler(void *arg)
 
 			if (p_monitor->profile_idx == PROFILE_A2DP) {
 
-				DBG_BT_COEX("bt_coex_monitor_timer_handler: a2dp cnt = 0x%lx \r\n", p_conn->a2dp_cnt);
+				DBG_BT_COEX("bt_coex_monitor_timer_handler: a2dp cnt = %d \r\n", p_conn->a2dp_cnt);
 
 				if ((p_conn->a2dp_cnt == 0) && (p_conn->a2dp_pre_cnt > 0)) {
 					p_conn->profile_status_bitmap &= (~BIT(PROFILE_A2DP));

@@ -23,6 +23,7 @@ TARGET_LIB = lib_lvgl
 
 vpath %.c $(DIR) $(shell find $(DIR) -type d)
 
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 GLOBAL_CFLAGS += -DLV_CONF_INCLUDE_SIMPLE
 
 #*****************************************************************************#

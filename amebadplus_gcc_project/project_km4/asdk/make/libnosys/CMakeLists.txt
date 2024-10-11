@@ -28,19 +28,8 @@ set(
 
 set(MODULE_C_OPTIONS -Wno-unused-parameter)
 
-if(CONFIG_INTERNAL_LIB)
 
-    # add_compile_options(${MODULE_C_OPTIONS})
-    ameba_internal_library(libnosys)
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-    target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIONS})
+ameba_internal_library(libnosys)
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIONS})
 
-else()
-    set_source_files_properties(${CSRC} DIRECTORY .. PROPERTIES COMPILE_OPTIONS "${MODULE_C_OPTIONS}")
-
-    target_sources(
-        target_img2_${PROJECT_NAME}
-        PRIVATE 
-        ${CSRC}
-    )
-endif()

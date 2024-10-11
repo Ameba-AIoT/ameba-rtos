@@ -175,7 +175,6 @@ struct wpa_gtk_info {
 	int				GTKRekey;
 	int				GkeyReady;
 	int				GTKAuthenticator;
-	int				GKeyDoneStations;
 	int				GInitAKeys;
 	int				GUpdateStationKeys;
 

@@ -73,9 +73,7 @@ static void bt_stack_api_taskentry(void *ctx)
 
 	osif_sem_give(api_task_sem);
 
-#if defined(configENABLE_TRUSTZONE) && configENABLE_TRUSTZONE
-	osif_create_secure_context(configMINIMAL_SECURE_STACK_SIZE + 256);
-#endif
+	osif_create_secure_context(BT_SECURE_STACK_SIZE);
 
 	while (true) {
 		if (true == osif_msg_recv(api_task_evt_msg_q, &event, BT_TIMEOUT_FOREVER)) {
@@ -423,6 +421,12 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 			return ret;
 		}
 	}
+	if (app_profile_support & RTK_BT_PROFILE_RFC) {
+		ret = bt_stack_rfc_init(papp_conf->server_chann);
+		if (ret) {
+			return ret;
+		}
+	}
 	if (app_profile_support & RTK_BT_PROFILE_HID) {
 		ret = bt_stack_hid_init(papp_conf->hid_role);
 		if (ret) {
@@ -482,6 +486,9 @@ static uint16_t bt_stack_profile_deinit(void)
 	}
 	if (profile_conf & RTK_BT_PROFILE_SPP) {
 		bt_stack_spp_deinit();
+	}
+	if (profile_conf & RTK_BT_PROFILE_RFC) {
+		bt_stack_rfc_deinit();
 	}
 	if (profile_conf & RTK_BT_PROFILE_HID) {
 		bt_stack_hid_deinit();
@@ -725,6 +732,12 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_mesh_sensor_client_model_act_handle(p_cmd);
 		break;
 #endif
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
+	case RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL:
+		BT_LOGD("RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL group");
+		bt_mesh_directed_forwarding_client_model_act_handle(p_cmd);
+		break;
+#endif
 	case RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL:
 		BT_LOGD("RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL group");
 		bt_mesh_health_client_model_act_handle(p_cmd);
@@ -784,6 +797,12 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_mesh_datatrans_model_act_handle(p_cmd);
 		break;
 #endif
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	case RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON:
+		BT_LOGD("RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON group");
+		bt_mesh_directed_forwarding_common_act_handle(p_cmd);
+		break;
+#endif
 #endif  // RTK_BLE_MESH_SUPPORT
 	case RTK_BT_BR_GP_GAP:
 		BT_LOGD("RTK_BT_BR_GP_GAP group \r\n");
@@ -800,6 +819,10 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_BR_GP_SPP:
 		BT_LOGD("RTK_BT_BR_GP_SPP group \r\n");
 		bt_stack_spp_act_handle(p_cmd);
+		break;
+	case RTK_BT_BR_GP_RFC:
+		BT_LOGD("RTK_BT_BR_GP_RFC group \r\n");
+		bt_stack_rfc_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_HID:
 		BT_LOGD("RTK_BT_BR_GP_HID group \r\n");

@@ -1,3 +1,5 @@
+#Note: Previously defined variables cannot be used directly in this file 
+#unless passed through -D
 include(${CMAKE_FILES_DIR}/axf2bin.cmake)
 
 if(CONFIG_MP_SHRINK)
@@ -120,7 +122,13 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
             COMMAND ${CMAKE_COMMAND} -E rename ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin ${IMAGE_TARGET_FOLDER}/km0_km4_app_tmp.bin
         )
         execute_process(
+            COMMAND ${CMAKE_COMMAND} -E rename ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns.bin ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns_tmp.bin
+        )
+        execute_process(
             COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app_tmp.bin 4096
+        )
+        execute_process(
+            COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns_tmp.bin 4096
         )
         execute_process(
             COMMAND ${PREPENDTOOL} ${BASEDIR}/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${IMAGE_TARGET_FOLDER}/target_img2.map
@@ -129,29 +137,65 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
             COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/km0_km4_app_tmp.bin ${BASEDIR}/amebadplus_gcc_project/fatfs_prepend.bin
             OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin
         )
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns_tmp.bin ${BASEDIR}/amebadplus_gcc_project/fatfs_prepend.bin
+            OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns.bin
+        )
     endif()
 endif()
 
-
-if(CONFIG_UPGRADE_BOOTLOADER)
+if(CONFIG_COMPRESS_OTA_IMG)
     if(EXISTS ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin)
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin
+            COMMAND ${COMPRESSTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin
         )
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns.bin ${IMAGE_TARGET_FOLDER}/km4_boot_all_ns.bin
+            COMMAND ${COMPRESSTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns.bin
+        )
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/km0_km4_app_compress.bin ${IMAGE_TARGET_FOLDER}/tmp_app.bin
+        )
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns_compress.bin ${IMAGE_TARGET_FOLDER}/tmp_app_ns.bin
         )
     endif()
 else()
     if(EXISTS ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin)
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin
+            COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin ${IMAGE_TARGET_FOLDER}/tmp_app.bin
         )
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns.bin
+            COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/km0_km4_app_ns.bin ${IMAGE_TARGET_FOLDER}/tmp_app_ns.bin
         )
     endif()
 endif()
+
+if(CONFIG_UPGRADE_BOOTLOADER)
+    if(EXISTS ${IMAGE_TARGET_FOLDER}/tmp_app.bin)
+        execute_process(
+            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/tmp_app.bin ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin
+        )
+        execute_process(
+            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/tmp_app_ns.bin ${IMAGE_TARGET_FOLDER}/km4_boot_all_ns.bin
+        )
+    endif()
+else()
+    if(EXISTS ${IMAGE_TARGET_FOLDER}/tmp_app.bin)
+        execute_process(
+            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/tmp_app.bin
+        )
+        execute_process(
+            COMMAND ${OTAPREPENDTOOL} ${IMAGE_TARGET_FOLDER}/tmp_app_ns.bin
+        )
+    endif()
+endif()
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/tmp_app.bin
+)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/tmp_app_ns.bin
+)
 message("========== Image manipulating end ==========")
 
 if (CONFIG_MP_INCLUDED)
@@ -173,3 +217,15 @@ if(EXISTS ${OTA_ALL})
     )
 endif()
 
+if(NOT AMEBA_RLS)
+    message("========== Image analyze start ==========")
+    execute_process(
+        COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}
+        WORKING_DIRECTORY ${PROJECTDIR}/asdk
+    )
+    execute_process(
+        COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD}
+        WORKING_DIRECTORY ${PROJECTDIR}/asdk
+    )
+    message("========== Image analyze end ==========")
+endif()

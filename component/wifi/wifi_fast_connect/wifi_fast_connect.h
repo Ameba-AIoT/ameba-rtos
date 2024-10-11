@@ -46,9 +46,8 @@ struct wlan_fast_reconnect {
 };
 
 //Function
-extern wifi_do_fast_connect_ptr p_wifi_do_fast_connect;
-extern write_fast_connect_info_ptr p_store_fast_connect_info;
-
+extern int (*p_wifi_do_fast_connect)(void);
+extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
 int check_is_the_same_ap(void);
 void wifi_fast_connect_enable(unsigned char enable);
 void wifi_fast_connect_load_fast_dhcp(void);

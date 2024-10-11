@@ -190,14 +190,15 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 
 	rstream->stream.sp_initstruct.SP_SelChLen = SP_TXCL_32;
 	rstream->stream.sp_initstruct.SP_SelClk = CKSL_I2S_XTAL40M;
-	if (AUDIO_I2S_OUT_MULTIIO_EN == 1) {
-		rstream->stream.sp_initstruct.SP_SetMultiIO = SP_TX_MULTIIO_EN;
-	} else {
-		rstream->stream.sp_initstruct.SP_SetMultiIO = SP_TX_MULTIIO_DIS;
-	}
+#if AUDIO_I2S_OUT_MULTIIO_EN
+	rstream->stream.sp_initstruct.SP_SetMultiIO = SP_TX_MULTIIO_EN;
+	Init_Params.chn_cnt = 2;
+#else
+	rstream->stream.sp_initstruct.SP_SetMultiIO = SP_TX_MULTIIO_DIS;
+	Init_Params.chn_cnt = config.channels;
+#endif
 
 	Init_Params.chn_len = SP_TXCL_32;
-	Init_Params.chn_cnt = config.channels;
 	Init_Params.sr = rstream->stream.sp_initstruct.SP_SR;
 
 	if (AUDIO_HW_OUT_SPORT_CLK_TYPE == 0) {

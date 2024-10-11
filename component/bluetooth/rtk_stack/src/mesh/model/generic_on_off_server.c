@@ -55,7 +55,7 @@ static mesh_msg_send_cause_t generic_on_off_stat(mesh_model_info_p pmodel_info, 
     }
     msg.present_on_off = present_on_off;
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)&msg;
@@ -69,8 +69,8 @@ static mesh_msg_send_cause_t generic_on_off_stat(mesh_model_info_p pmodel_info, 
     return access_send(&mesh_msg);
 }
 
-static mesh_msg_send_cause_t generic_on_off_delay_publish(const mesh_model_info_p pmodel_info,
-                                                          generic_on_off_t on_off, uint32_t delay_time)
+mesh_msg_send_cause_t generic_on_off_delay_publish(const mesh_model_info_p pmodel_info,
+                                                   generic_on_off_t on_off, uint32_t delay_time)
 {
     mesh_msg_send_cause_t ret = MESH_MSG_SEND_CAUSE_INVALID_DST;
     if (mesh_model_pub_check(pmodel_info))

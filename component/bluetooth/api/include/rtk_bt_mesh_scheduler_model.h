@@ -150,7 +150,6 @@ typedef enum {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scheduler_get(rtk_bt_mesh_scheduler_get_t *scheduler_get)
  * @brief     Send scheduler get message to scheduler server, will cause event @ref RTK_BT_MESH_SCHEDULER_CLIENT_MODEL_GET
  * @param[in] scheduler_get: scheduler get message structure
  * @return
@@ -160,7 +159,6 @@ typedef enum {
 uint16_t rtk_bt_mesh_scheduler_get(rtk_bt_mesh_scheduler_get_t *scheduler_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scheduler_action_get(rtk_bt_mesh_scheduler_action_get_t *scheduler_action_get)
  * @brief     Send scheduler action get message to scheduler server, will cause event @ref RTK_BT_MESH_SCHEDULER_ACTION_CLIENT_MODEL_GET
  * @param[in] scheduler_action_get: scheduler action get message structure
  * @return
@@ -170,7 +168,6 @@ uint16_t rtk_bt_mesh_scheduler_get(rtk_bt_mesh_scheduler_get_t *scheduler_get);
 uint16_t rtk_bt_mesh_scheduler_action_get(rtk_bt_mesh_scheduler_action_get_t *scheduler_action_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scheduler_action_set(rtk_bt_mesh_scheduler_action_set_t *scheduler_action_set)
  * @brief     Send scheduler action set message to scheduler setup server, will cause event @ref RTK_BT_MESH_SCHEDULER_ACTION_CLIENT_MODEL_SET
  * @param[in] scheduler_action_set: scheduler action set message structure
  * @return

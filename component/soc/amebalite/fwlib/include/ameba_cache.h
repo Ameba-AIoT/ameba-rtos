@@ -242,7 +242,7 @@ void Cache_Enable(u32 Enable)
 	}
 }
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 /**
   * @brief  Disable/Enable Nonsecure I/D cache by secure world.
   * @param  Enable

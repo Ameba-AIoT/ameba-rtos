@@ -2,6 +2,8 @@
 include $(MAKE_INCLUDE_GEN)
 MODULE_IFLAGS += -I$(BASEDIR)/component/network/mqtt/MQTTClient
 MODULE_IFLAGS += -I$(BASEDIR)/component/network/mqtt/MQTTPacket
+MODULE_IFLAGS += -I$(BASEDIR)/component/network/cJSON
+MODULE_IFLAGS += -I$(BASEDIR)/component/file_system/kv
 
 .PHONY: all clean
 
@@ -20,9 +22,9 @@ endif
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
-vpath %.c $(APP_DIR) $(shell find $(APP_DIR) -type d)
+vpath %.c $(APP_DIR) $(DIR) $(shell find $(APP_DIR) -type d)
 
-CSRC = $(APP_DIR)/ram/monitor_hp.c \
+CSRC = $(DIR)/monitor.c \
        $(APP_DIR)/ram/shell_ram.c \
        $(APP_DIR)/ram/low_level_io.c
 
@@ -48,7 +50,7 @@ ifeq ($(CONFIG_BT), y)
 CSRC += $(DIR)/atcmd_bt_ext.c
 endif
 
-ifeq ($(CONFIG_ATCMD_IO_UART), y)
+ifeq ($(CONFIG_ATCMD_MCU_CONTROL), y)
 CSRC += $(DIR)/at_intf_uart.c
 endif
 endif

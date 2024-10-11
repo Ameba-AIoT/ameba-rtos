@@ -10,6 +10,7 @@ cp ../../inic/common/inic_dev.h include
 cp ../../driver/include/rom_rtw_defs.h include
 cp ../../driver/include/rtw_wifi_defs.h include
 cp ../../api/wifi_intf_drv_to_app_basic.h include
+cp ../../api/wifi_ind.h include
 cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h include
 cp ../../../soc/amebadplus/usrcfg/ameba_wificfg.c sdio
 

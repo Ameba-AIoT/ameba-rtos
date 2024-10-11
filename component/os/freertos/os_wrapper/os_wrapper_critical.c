@@ -25,16 +25,16 @@ static uint16_t uxCriticalNestingCnt[RTOS_NUM_CORES] = {0};
 
 int rtos_critical_is_in_interrupt(void)
 {
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 	return (__get_mode() != CPSR_M_USR) && (__get_mode() != CPSR_M_SYS);
 #else
 #if defined(__ICCARM__)
 	return (__get_PSR() & 0x1FF) != 0;
 #elif defined(__GNUC__)
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 	return (__get_xPSR() & 0x1FF) != 0;
-#elif defined(RSICV_CORE_KR4)
+#elif defined(CONFIG_RSICV_CORE_KR4)
 	return plic_get_active_irq_id() != 0;
 #else
 	return __get_IPSR() != 0;

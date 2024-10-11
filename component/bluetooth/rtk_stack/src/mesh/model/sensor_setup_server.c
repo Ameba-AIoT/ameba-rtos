@@ -74,7 +74,7 @@ static mesh_msg_send_cause_t sensor_setup_server_send(const mesh_model_info_p pm
                                                       uint16_t dst, uint16_t app_key_index, void *pmsg, uint16_t msg_len,
                                                       uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -293,6 +293,7 @@ mesh_msg_send_cause_t sensor_setting_publish(const mesh_model_info_p pmodel_info
     return sensor_setting_delay_publish(pmodel_info, property_id, setting, 0);
 }
 
+//RTK porting:avoid when candence length is variable
 static bool sensor_check_msg(const mesh_model_info_p pmodel_info, const sensor_cadence_set_t *pmsg, uint16_t msg_len)
 {
     if (!IS_SENSOR_PROPERTY_ID_VALID(pmsg->property_id))
@@ -313,6 +314,7 @@ static bool sensor_check_msg(const mesh_model_info_p pmodel_info, const sensor_c
 
     const uint8_t *pdata = pmsg->cadence;
     uint8_t trigger_len;
+    //RTK porting:avoid when candence length is variable
 	if (SENSOR_TRIGGER_TYPE_CHARACTERISTIC == pmsg->status_trigger_type) {
 		trigger_len = (msg_len - sizeof(uint8_t)) / 4;
 	} else {
@@ -356,8 +358,9 @@ static bool sensor_setup_server_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_SENSOR_CADENCE_SET_UNACK:
         {
             sensor_cadence_set_t *pmsg = (sensor_cadence_set_t *)pbuffer;
-		uint16_t msg_len = pmesh_msg->msg_len - sizeof(sensor_cadence_set_t);
-		if (sensor_check_msg(pmodel_info, pmsg, msg_len)) {
+            //RTK porting:avoid when candence length is variable
+			uint16_t msg_len = pmesh_msg->msg_len - sizeof(sensor_cadence_set_t);
+			if (sensor_check_msg(pmodel_info, pmsg, msg_len)) {
                 sensor_cadence_t *cadence = sensor_get_cadence(pmodel_info, pmsg->property_id);
                 if (NULL != cadence)
                 {
@@ -365,15 +368,15 @@ static bool sensor_setup_server_receive(mesh_msg_p pmesh_msg)
                     uint8_t trigger_len;
                     cadence->fast_cadence_period_divisor = pmsg->fast_cadence_period_divisor;
                     cadence->status_trigger_type = pmsg->status_trigger_type;
-
-				uint8_t raw_value_len;
-				if (SENSOR_TRIGGER_TYPE_CHARACTERISTIC == pmsg->status_trigger_type) {
-					raw_value_len = (msg_len - sizeof(uint8_t)) / 4;
-					cadence->raw_value_len = raw_value_len;
+                    //RTK porting:avoid when candence length is variable
+					uint8_t raw_value_len;
+					if (SENSOR_TRIGGER_TYPE_CHARACTERISTIC == pmsg->status_trigger_type) {
+						raw_value_len = (msg_len - sizeof(uint8_t)) / 4;
+						cadence->raw_value_len = raw_value_len;
                         trigger_len = cadence->raw_value_len;
-				} else {
-					raw_value_len = (msg_len - sizeof(uint8_t) - 2 * TRIGGER_DELTA_UNITLESS_LEN) / 2;
-					cadence->raw_value_len = raw_value_len;
+					} else {
+						raw_value_len = (msg_len - sizeof(uint8_t) - 2 * TRIGGER_DELTA_UNITLESS_LEN) / 2;
+						cadence->raw_value_len = raw_value_len;
                         trigger_len = TRIGGER_DELTA_UNITLESS_LEN;
                     }
 

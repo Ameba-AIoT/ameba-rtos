@@ -138,10 +138,13 @@ static const FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
 static void flash_get_vendor(void)
 {
 	u8 flash_ID[4];
+	u32 flash_capacity = 0;
 
 	/* Read flash ID */
 	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_id, 3, flash_ID);
-	RTK_LOGI(TAG, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
+	/* Byte -> Mbits: 10 + 10 - 3 = 17 (0x11) */
+	flash_capacity = (1 << (flash_ID[2] - 0x11));
+	RTK_LOGI(TAG, "Flash ID: %x-%x-%x (Capacity: %dM-bit)\n", flash_ID[0], flash_ID[1], flash_ID[2], flash_capacity);
 
 	/* Get flash chip information */
 	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
@@ -193,7 +196,7 @@ static void flash_set_status_register(void)
 {
 	u8 StatusLen = 1;
 	u32 data = 0;
-	u32 status;
+	u32 status = 0;
 	u32 mask = current_IC->sta_mask;
 
 	if (flash_init_para.FLASH_QuadEn_bit != 0) {
@@ -225,6 +228,7 @@ static void flash_set_status_register(void)
 			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status, 1, (u8 *)&data);
 			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status2, 1, ((u8 *)&data) + 1);
 		}
+		RTK_LOGI(TAG, "Flash status register changed:0x%x -> 0x%x\n", status, data);
 	}
 }
 

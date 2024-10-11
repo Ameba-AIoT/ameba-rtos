@@ -23,9 +23,21 @@
 # log files
 *.log
 
+# git version files 
+lib_*_git_version.c
+
+#wifi ext noused c files
+/**/wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
+
 # menuconfig lxdialog files
 /**/lxdialog/lxdialog
 /**/menuconfig/*.old
+/**/menuconfig/__pycache__
+
+# config files
+/**/.config.old
+/**/.setconfig
+/**/.setconfig.old
 
 # wlan makefile
 /**/make/wlan/

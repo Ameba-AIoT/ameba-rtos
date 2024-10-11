@@ -35,7 +35,6 @@ struct event_func_t {
 /* ---------------------------- Global Variables ---------------------------- */
 extern struct event_priv_t event_priv;
 
-extern p_wlan_autoreconnect_hdl_t p_wlan_autoreconnect_hdl;
 extern u8 inic_ipc_ip_addr[4];
 
 /* ---------------------------- Private Functions --------------------------- */
@@ -74,6 +73,7 @@ void inic_event_wifi_set_gen_ie(u32 api_id, u32 *param_buf);
 void inic_event_wifi_scan_abort(u32 api_id, u32 *param_buf);
 void inic_event_wifi_custom_ie_ops(u32 api_id, u32 *param_buf);
 void inic_event_wifi_set_usr_config(u32 api_id, u32 *param_buf);
+void inic_event_wifi_set_host_rtos(u32 api_id, u32 *param_buf);
 void inic_event_wifi_set_edcca_mode(u32 api_id, u32 *param_buf);
 void inic_event_wifi_get_edcca_mode(u32 api_id, u32 *param_buf);
 void inic_event_wifi_get_ant_info(u32 api_id, u32 *param_buf);
@@ -104,6 +104,15 @@ void inic_event_p2p_role(u32 api_id, u32 *param_buf);
 void inic_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 #endif
 
+#ifndef CONFIG_SDIO_BRIDGE
+void inic_event_get_scan_res(u32 api_id, u32 *param_buf);
+void inic_event_wifi_get_setting(u32 api_id, u32 *param_buf);
+void inic_event_send_eapol(u32 api_id, u32 *param_buf);
+void inic_event_get_assoc_client_list(u32 api_id, u32 *param_buf);
+void inic_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
+void inic_event_get_sw_statistic(u32 api_id, u32 *param_buf);
+#endif
+
 /* ---------------------------- Public Functions ---------------------------- */
 int wext_private_command(char *cmd, int show_msg, char *user_buf);
 int wifi_set_ips_internal(u8 enable);
@@ -113,8 +122,8 @@ void inic_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
 void inic_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void inic_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt);
 void inic_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
-enum _promisc_result_t inic_promisc_callback_indicate(void *pkt_info);
-void inic_ap_ch_switch_callback_indicate(unsigned char channel, rtw_channel_switch_res_t ret);
+u8 inic_promisc_callback_indicate(struct rx_pkt_info *pkt_info);
+void inic_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 void inic_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int inic_get_lwip_info(u32 type, unsigned char *input, int index);
 void inic_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);

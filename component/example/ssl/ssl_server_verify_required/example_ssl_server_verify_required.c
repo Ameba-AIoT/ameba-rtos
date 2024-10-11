@@ -227,6 +227,7 @@ static void example_ssl_server_verify_required_thread(void *param)
 		 */
 		RTK_LOGS(NOTAG, "\n\r  > Response to client:");
 
+		memset(buf, 0, sizeof(buf));
 		sprintf((char *)buf, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\n\r\n%s", strlen(response), response);
 		if ((ret = mbedtls_ssl_write(&ssl, buf, strlen((const char *)buf))) <= 0) {
 			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {

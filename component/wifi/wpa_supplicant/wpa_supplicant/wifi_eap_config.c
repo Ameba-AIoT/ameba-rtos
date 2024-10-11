@@ -77,7 +77,7 @@ void reset_config(void)
 
 void judge_station_disconnect(void)
 {
-	struct _rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+	struct _rtw_wifi_setting_t setting = {0};
 
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 
@@ -322,7 +322,7 @@ void eap_autoreconnect_hdl(u8 method_id)
 #define MBEDTLS_SSL_COMPRESSION_ADD 0
 int max_buf_bio_in_size = MBEDTLS_SSL_IN_BUFFER_LEN;
 int max_buf_bio_out_size = MBEDTLS_SSL_OUT_BUFFER_LEN;
-#elif (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+#elif (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 #include <mbedtls/config.h>
 #include <mbedtls/ssl_internal.h>
 int max_buf_bio_in_size = MBEDTLS_SSL_IN_BUFFER_LEN;

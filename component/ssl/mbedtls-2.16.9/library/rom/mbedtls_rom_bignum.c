@@ -826,7 +826,7 @@ static mbedtls_mpi_uint mpi_uint_bigendian_to_host( mbedtls_mpi_uint x )
 #endif
 
 #ifndef AMEBALITE_TODO
-#ifdef RSICV_CORE_KR4
+#ifdef CONFIG_RSICV_CORE_KR4
 #undef have_bswap
 #endif
 #endif

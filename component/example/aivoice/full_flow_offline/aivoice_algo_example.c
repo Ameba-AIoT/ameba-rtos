@@ -18,13 +18,15 @@
 #define DATASIZE_124K (100 * 1024)
 char DRAM0 g_dtcm_buffer_124k_0[DATASIZE_124K];
 
-extern unsigned char *get_test_wav();
-extern unsigned int get_test_wav_len();
+extern unsigned char *get_test_wav(void);
+extern unsigned int get_test_wav_len(void);
 
 static int aivoice_callback_process(void *userdata,
 									enum aivoice_out_event_type event_type,
 									const void *msg, int len)
 {
+
+	(void)userdata;
 	struct aivoice_evout_vad *vad_out;
 	struct aivoice_evout_afe *afe_out;
 
@@ -70,7 +72,7 @@ static int aivoice_callback_process(void *userdata,
 }
 
 /* entry function of this example */
-void aivoice_algo_offline_example()
+void aivoice_algo_offline_example(void)
 {
 	/* step 1:
 	 * Select the aivoice flow you want to use.

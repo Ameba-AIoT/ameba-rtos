@@ -270,7 +270,6 @@ typedef struct {
  * @{
  */
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_store(rtk_bt_mesh_scene_store_t *scene_client_store)
  * @brief     Send scene store message to scene setup server, will cause event @ref RTK_BT_MESH_SCENE_CLIENT_MODEL_STORE
  * @param[in] scene_client_store: scene store message structure
  * @return
@@ -280,7 +279,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_scene_store(rtk_bt_mesh_scene_store_t *scene_client_store);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_recall(rtk_bt_mesh_scene_recall_t *scene_client_recall)
  * @brief     Send scene recall message to scene server, will cause event @ref RTK_BT_MESH_SCENE_CLIENT_MODEL_RECALL
  * @param[in] scene_client_recall: scene recall message structure
  * @return
@@ -290,7 +288,6 @@ uint16_t rtk_bt_mesh_scene_store(rtk_bt_mesh_scene_store_t *scene_client_store);
 uint16_t rtk_bt_mesh_scene_recall(rtk_bt_mesh_scene_recall_t *scene_client_recall);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_get(rtk_bt_mesh_scene_get_t *scene_client_get)
  * @brief     Send scene get message to scene server, will cause event @ref RTK_BT_MESH_SCENE_CLIENT_MODEL_GET
  * @param[in] scene_client_get: scene get message structure
  * @return
@@ -300,7 +297,6 @@ uint16_t rtk_bt_mesh_scene_recall(rtk_bt_mesh_scene_recall_t *scene_client_recal
 uint16_t rtk_bt_mesh_scene_get(rtk_bt_mesh_scene_get_t *scene_client_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_register_get(rtk_bt_mesh_scene_register_get_t *scene_register_get)
  * @brief     Send scene register get message to scene server, will cause event @ref RTK_BT_MESH_SCENE_CLIENT_MODEL_REGISTER_GET
  * @param[in] scene_register_get: scene register get message structure
  * @return
@@ -310,7 +306,6 @@ uint16_t rtk_bt_mesh_scene_get(rtk_bt_mesh_scene_get_t *scene_client_get);
 uint16_t rtk_bt_mesh_scene_register_get(rtk_bt_mesh_scene_register_get_t *scene_register_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_delete(rtk_bt_mesh_scene_delete_t *scene_delete);
  * @brief     Send scene delete message to scene setup server, will cause event @ref RTK_BT_MESH_SCENE_CLIENT_MODEL_DELETE
  * @param[in] scene_delete: scene delete message structure
  * @return
@@ -320,7 +315,6 @@ uint16_t rtk_bt_mesh_scene_register_get(rtk_bt_mesh_scene_register_get_t *scene_
 uint16_t rtk_bt_mesh_scene_delete(rtk_bt_mesh_scene_delete_t *scene_delete);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_server_db_set(rtk_bt_mesh_scene_server_db_set_t *db_set)
  * @brief     Send scene database set message to set scene database, will cause event @ref RTK_BT_MESH_SCENE_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: scene database set message structure
  * @return
@@ -330,7 +324,6 @@ uint16_t rtk_bt_mesh_scene_delete(rtk_bt_mesh_scene_delete_t *scene_delete);
 uint16_t rtk_bt_mesh_scene_server_db_set(rtk_bt_mesh_scene_server_db_set_t *db_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_scene_setup_server_db_set(rtk_bt_mesh_scene_server_db_set_t *db_set)
  * @brief     Send scene setup database set message to set scene setup database, will cause event @ref RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: scene setup database set message structure
  * @return

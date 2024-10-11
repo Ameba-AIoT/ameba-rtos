@@ -21,7 +21,7 @@
 #include "ameba_soc.h"
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 #include "FreeRTOS.h"
 #endif
 #include "platform_stdlib.h"

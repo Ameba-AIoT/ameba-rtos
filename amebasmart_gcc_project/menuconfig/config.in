@@ -58,10 +58,14 @@ mainmenu_option next_comment
 comment '< CONFIG Shell CMD'
 bool "Enable ATCMD"			CONFIG_SUPPORT_ATCMD
 if [ "$CONFIG_SUPPORT_ATCMD" = "y" ]; then
-choice 'ATCMD IO Type'	"LOGUART	CONFIG_ATCMD_IO_LOGUART \
-						UART		CONFIG_ATCMD_IO_UART \
+choice 'ATCMD Mode'	"LOGUART	CONFIG_ATCMD_LOGUART \
+						MCU_Control		CONFIG_ATCMD_MCU_CONTROL \
 						"
-bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+if [ "$CONFIG_ATCMD_MCU_CONTROL" = "y" ]; then
+	define_bool CONFIG_LONGER_CMD y
+else
+	bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+fi
 fi
 endmenu
 
@@ -71,7 +75,7 @@ bool "Enable VFS LITTLEFS"                     CONFIG_VFS_LITTLEFS_INCLUDED
 bool "Enable VFS FATFS"			CONFIG_VFS_FATFS_INCLUDED
 if [ "$CONFIG_VFS_FATFS_INCLUDED" = "y" ]; then
 choice 'FATFS Memory Type'	"SD			FATFS_DISK_SD \
-							FlASH		FATFS_DISK_FLASH \
+							FlASH		CONFIG_FATFS_DISK_FLASH \
 							"
 bool "FATFS within APP Image"				CONFIG_FATFS_WITHIN_APP_IMG
 fi
@@ -144,6 +148,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			bool "  BT HFP"												CONFIG_BT_HFP_MENU
 			bool "  BT A2DP and BT HFP"									CONFIG_BT_A2DP_HFP_MENU
 			bool "  BT SPP"												CONFIG_BT_SPP
+			bool "  BT RFC"												CONFIG_BT_RFC
 #			bool "  BT Audio MP Test"									CONFIG_BT_AUDIO_MP_TEST_MENU
 #			bool "  BT HID"												CONFIG_BT_HID
 			bool "  BT A2DP and BLE Scatternet"							CONFIG_BT_A2DP_SCATTERNET_MENU
@@ -393,7 +398,7 @@ comment 'Choose a Vendor/Product combination.'
 choice 'Product' "AMEBASMART CONFIG_AMEBASMART_FOR_LP  \
 		" AMEBASMART
 
-choice 'ArmCore' "ARM_KM0 ARM_CORE_CM0_FOR_LP  \
+choice 'ArmCore' "ARM_KM0 CONFIG_ARM_CORE_CM0_FOR_LP  \
 		"ARM_KM0
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_LP
@@ -414,7 +419,7 @@ comment '< CONFIG OS'
 bool "Enable Kernel"                     CONFIG_KERNEL_FOR_LP
 
 if [ "$CONFIG_KERNEL_FOR_LP" = "y" ]; then
-choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_LP \
+choice 'Kernel Selecte' "FREERTOS        CONFIG_PLATFORM_FREERTOS_FOR_LP \
 						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_LP 0
 fi
@@ -525,7 +530,7 @@ comment 'Choose a Vendor/Product combination.'
 choice 'Product' "AMEBASMART CONFIG_AMEBASMART_FOR_HP  \
 		" AMEBASMART
 
-choice 'ArmCore' "ARM_CM4 ARM_CORE_CM4_FOR_HP \
+choice 'ArmCore' "ARM_CM4 CONFIG_ARM_CORE_CM4_FOR_HP \
 		"ARM_CM4
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_HP
@@ -554,7 +559,7 @@ comment '< CONFIG OS'
 bool "Enable Kernel"                     CONFIG_KERNEL_FOR_HP
 
 if [ "$CONFIG_KERNEL_FOR_HP" = "y" ]; then
-choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_HP \
+choice 'Kernel Selecte' "FREERTOS        CONFIG_PLATFORM_FREERTOS_FOR_HP \
 						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_HP 0
 fi
@@ -751,7 +756,7 @@ comment '--------------Application Config Start------------'
 mainmenu_option next_comment
 comment '< SSL Config'
 define_bool CONFIG_USE_MBEDTLS_ROM_FOR_HP y
-bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_HP
+bool "MBEDTLS Enable"		CONFIG_MBEDTLS_ENABLED_FOR_HP
 bool "SSL ROM Test"		CONFIG_SSL_ROM_TEST_FOR_HP
 endmenu
 
@@ -825,7 +830,7 @@ comment 'Choose a Vendor/Product combination.'
 choice 'Product' "AMEBASMART CONFIG_AMEBASMART_FOR_AP  \
 		" AMEBASMART
 
-choice 'ArmCore' "ARM_CA32 ARM_CORE_CA32_FOR_AP  \
+choice 'ArmCore' "ARM_CA32 CONFIG_ARM_CORE_CA32_FOR_AP  \
 		"ARM_CA32
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_AP
@@ -860,7 +865,7 @@ comment '< CONFIG OS'
 bool "Enable Kernel"                     CONFIG_KERNEL_FOR_AP
 
 if [ "$CONFIG_KERNEL_FOR_AP" = "y" ]; then
-choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_AP \
+choice 'Kernel Selecte' "FREERTOS        CONFIG_PLATFORM_FREERTOS_FOR_AP \
 						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_AP 0
 fi
@@ -1002,17 +1007,17 @@ bool "NAT REPEATER Enable"		CONFIG_IP_NAT
 endmenu
 mainmenu_option next_comment
 comment '< SSL Config'
-bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_AP
-if [ "$CONFIG_MBED_TLS_ENABLED_FOR_AP" = "y" ]; then
-choice 'MBEDTLS Version'        "MBEDTLS_V_3_4_1   MBEDTLS_V_3_4_1_ENABLE \
-								 MBEDTLS_V_2_16_9   MBEDTLS_V_2_16_9_ENABLE
+bool "MBEDTLS Enable"		CONFIG_MBEDTLS_ENABLED_FOR_AP
+if [ "$CONFIG_MBEDTLS_ENABLED_FOR_AP" = "y" ]; then
+choice 'MBEDTLS Version'        "MBEDTLS_V_3_4_1   CONFIG_MBEDTLS_V_3_4_1_ENABLE \
+								 MBEDTLS_V_2_16_9   CONFIG_MBEDTLS_V_2_16_9_ENABLE
 								 " MBEDTLS_V_2_16_9
 
-if [ "$MBEDTLS_V_3_4_1_ENABLE" = "y" ]; then
-define_int	MBEDTLS_VERSION     0x03040100
+if [ "$CONFIG_MBEDTLS_V_3_4_1_ENABLE" = "y" ]; then
+define_int	CONFIG_MBEDTLS_VERSION     0x03040100
 fi
-if [ "$MBEDTLS_V_2_16_9_ENABLE" = "y" ]; then
-define_int	MBEDTLS_VERSION     0x02100300
+if [ "$CONFIG_MBEDTLS_V_2_16_9_ENABLE" = "y" ]; then
+define_int	CONFIG_MBEDTLS_VERSION     0x02100300
 fi
 fi
 endmenu
@@ -1021,10 +1026,10 @@ mainmenu_option next_comment
 comment '< 802154 Config'
 bool "Enable 802154"                     CONFIG_802154_EN_FOR_AP
 if [ "$CONFIG_802154_EN_FOR_AP" = "y" ]; then
-	if [ "$CONFIG_MBED_TLS_ENABLED_FOR_AP" = "n" ]; then
+	if [ "$CONFIG_MBEDTLS_ENABLED_FOR_AP" = "n" ]; then
 		comment '    Must Enable MBEDTLS Before Enable THREAD'
 	fi
-	if [ "$CONFIG_MBED_TLS_ENABLED_FOR_AP" = "y" ]; then
+	if [ "$CONFIG_MBEDTLS_ENABLED_FOR_AP" = "y" ]; then
 		bool "Enable THREAD"                	CONFIG_802154_THREAD_EN_FOR_AP
 		if [ "$CONFIG_802154_THREAD_EN_FOR_AP" = "y" ]; then
 			choice 'THREAD ROLE'      "BORDER_ROUTER		CONFIG_802154_THREAD_BORDER_ROUTER_EN_FOR_AP \
@@ -1034,8 +1039,17 @@ if [ "$CONFIG_802154_EN_FOR_AP" = "y" ]; then
 							"
 			if [ "$CONFIG_802154_THREAD_RCP_EN_FOR_AP" = "n" ]; then
 				bool "RCP AS RADIO"                	CONFIG_802154_THREAD_RADIO_RCP_EN_FOR_AP
+				if [ "$CONFIG_802154_THREAD_RADIO_RCP_EN_FOR_AP" = "y" ]; then
+					bool "Enable Radio Concurrent"      CONFIG_802154_THREAD_CONCURRENT_EN_FOR_AP
+					if [ "$CONFIG_802154_THREAD_CONCURRENT_EN_FOR_AP" = "y" ]; then
+						choice 'RCP Vendor'    "RTL8771H    CONFIG_802154_THREAD_RCP_RTL8771H_FOR_AP \
+												SILICON     CONFIG_802154_THREAD_RCP_SILICON_FOR_AP \
+												"
+					fi
+				fi
 			fi
 			bool "Low Layer Function Test"                	CONFIG_802154_THREAD_LLF_TEST_EN_FOR_AP
+			bool "Rtk OT CoAP Test"                   	    CONFIG_802154_THREAD_COAP_TEST_EN_FOR_AP
 		fi
 	fi
 	bool "Enable 802154 Platform Test"               CONFIG_802154_PLATFORM_TEST_EN_FOR_AP

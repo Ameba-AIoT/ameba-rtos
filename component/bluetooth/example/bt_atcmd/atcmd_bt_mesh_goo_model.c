@@ -38,20 +38,20 @@ static int atcmd_ble_mesh_generic_onff_set(int argc, char **argv)
 		break;
 	}
 	default: {
-		AT_PRINTK("[%s] The input number %d is incorrect, only 4 or 7 is support\r\n", __func__, argc);
+		BT_LOGE("[%s] The input number %d is incorrect, only 4 or 7 is support\r\n", __func__, argc);
 	}
 	}
 
 	ret = rtk_bt_mesh_generic_onoff_client_set(&onoff_set);
 	if (ret) {
-		AT_PRINTK("[%s] Generic on off model set failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Generic on off model set failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argc;
 	(void)argv;
-	MESHGOO_AT_PRINTK("Platform not support generic on off client model.");
+	BT_LOGE("Platform not support generic on off client model.\r\n");
 	return -1;
 #endif
 }
@@ -66,13 +66,13 @@ static int atcmd_ble_mesh_generic_onff_get(int argc, char **argv)
 	onoff_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_generic_onoff_client_get(&onoff_get);
 	if (ret) {
-		AT_PRINTK("[%s] Generic on off model get failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Generic on off model get failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHGOO_AT_PRINTK("Platform not support generic on off client model.");
+	BT_LOGE("Platform not support generic on off client model.\r\n");
 	return -1;
 #endif
 }

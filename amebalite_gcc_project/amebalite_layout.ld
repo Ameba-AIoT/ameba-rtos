@@ -42,7 +42,7 @@
 #if defined(CONFIG_IMG1_FLASH)
 #define KM4_IMG1_SIZE 				KBYTES(4)
 #else
-#define KM4_IMG1_SIZE 				KBYTES(24)
+#define KM4_IMG1_SIZE 				KBYTES(28)
 #endif
 /*
                    AmebaLite SRAM Layout(512KB)

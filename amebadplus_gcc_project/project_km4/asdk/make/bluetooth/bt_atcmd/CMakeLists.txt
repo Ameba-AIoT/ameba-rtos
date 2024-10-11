@@ -24,6 +24,7 @@ set(
 	${DIR}/bt_atcmd/atcmd_bt_mesh_generic_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_sensor_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_health_model.c
+	${DIR}/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c
 )
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

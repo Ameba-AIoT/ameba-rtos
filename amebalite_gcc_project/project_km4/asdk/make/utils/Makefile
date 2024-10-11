@@ -7,8 +7,9 @@ include $(MAKE_INCLUDE_GEN)
 #                               VARIABLES	                              #
 #*****************************************************************************#
 COMPONENT := ipc
-
+#COMPONENT += unity
 COMPONENT_CLEAN += ipc
+#COMPONENT_CLEAN += unity
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #

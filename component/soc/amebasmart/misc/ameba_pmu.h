@@ -82,7 +82,7 @@ void pmu_release_wakelock(uint32_t nDeviceId);
 uint32_t pmu_get_wakelock_status(void);
 uint32_t pmu_get_deepwakelock_status(void);
 
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 void pmu_set_secondary_cpu_state(uint32_t CoreID, uint32_t NewStatus);
 uint32_t pmu_get_secondary_cpu_state(uint32_t CoreID);
 int pmu_secondary_cpu_state_is_running(uint32_t CoreID);

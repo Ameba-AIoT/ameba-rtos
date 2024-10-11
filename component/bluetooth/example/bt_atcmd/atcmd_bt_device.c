@@ -26,20 +26,20 @@ int atcmd_bt_device(int argc, char *argv[])
 	int en = str_to_int(argv[0]);
 	if (1 == en) {
 		if (RTK_BT_FAIL == rtk_bt_enable(&app_conf)) {
-			BTDEVICE_AT_PRINTK("BT enable failed!");
+			BT_LOGE("BT enable failed!\r\n");
 			return -1;
 		}
 
-		BTDEVICE_AT_PRINTK("BT enable OK!");
+		BT_LOGA("BT enable OK!\r\n");
 	} else if (0 == en) {
 		if (RTK_BT_FAIL == rtk_bt_disable()) {
-			BTDEVICE_AT_PRINTK("BT disable failed!");
+			BT_LOGE("BT disable failed!\r\n");
 			return -1;
 		}
 
-		BTDEVICE_AT_PRINTK("BT disable OK!");
+		BT_LOGA("BT disable OK!\r\n");
 	} else {
-		BTDEVICE_AT_PRINTK("BT input wrong args!");
+		BT_LOGE("BT input wrong args!\r\n");
 		return -1;
 	}
 

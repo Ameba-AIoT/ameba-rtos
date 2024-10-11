@@ -29,13 +29,13 @@ static int atcmd_ble_mesh_time_get(int argc, char **argv)
 	time_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_time_get(&time_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get time failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get time failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -50,13 +50,13 @@ static int atcmd_ble_mesh_time_zone_get(int argc, char **argv)
 	time_zone_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_time_zone_get(&time_zone_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get time zone failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get time zone failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -71,13 +71,13 @@ static int atcmd_ble_mesh_time_tai_utc_delta_get(int argc, char **argv)
 	time_tai_utc_delta_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_time_tai_utc_delta_get(&time_tai_utc_delta_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get time tai utc delta failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get time tai utc delta failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -92,13 +92,13 @@ static int atcmd_ble_mesh_time_role_get(int argc, char **argv)
 	time_role_get.app_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_time_role_get(&time_role_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get time role failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get time role failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -114,7 +114,7 @@ static int atcmd_ble_mesh_time_set(int argc, char **argv)
 	time_set.app_key_index = str_to_int(argv[1]);
 	len = strlen(argv[2]);
 	if (len / 2 > 5) {
-		AT_PRINTK("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 5);
+		BT_LOGE("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 5);
 		return -2;
 	}
 	if (hexdata_str_to_array(argv[2], time_set.time.tai_seconds, len)) {
@@ -125,17 +125,17 @@ static int atcmd_ble_mesh_time_set(int argc, char **argv)
 		time_set.time.time_zone_offset = str_to_int(argv[7]);
 		ret = rtk_bt_mesh_time_set(&time_set);
 		if (ret) {
-			AT_PRINTK("[%s]Set time failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s]Set time failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] Input data format is not corrent.\r\n", __func__);
+		BT_LOGE("[%s] Input data format is not corrent.\r\n", __func__);
 		return -3;
 	}
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -152,23 +152,23 @@ static int atcmd_ble_mesh_time_zone_set(int argc, char **argv)
 	time_zone_set.time_zone_offset_new = str_to_int(argv[2]);
 	len = strlen(argv[3]);
 	if (len / 2 > 5) {
-		AT_PRINTK("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 5);
+		BT_LOGE("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 5);
 		return -2;
 	}
 	if (hexdata_str_to_array(argv[3], time_zone_set.tai_of_zone_change, len)) {
 		ret = rtk_bt_mesh_time_zone_set(&time_zone_set);
 		if (ret) {
-			AT_PRINTK("[%s]Set time zone failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s]Set time zone failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] Input data format is not corrent.\r\n", __func__);
+		BT_LOGE("[%s] Input data format is not corrent.\r\n", __func__);
 		return -3;
 	}
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -185,23 +185,23 @@ static int atcmd_ble_mesh_time_tai_utc_delta_set(int argc, char **argv)
 	time_tai_utc_delta_set.tai_utc_delta_new = str_to_int(argv[2]);
 	len = strlen(argv[3]);
 	if (len / 2 > 5) {
-		AT_PRINTK("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 5);
+		BT_LOGE("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 5);
 		return -2;
 	}
 	if (hexdata_str_to_array(argv[3], time_tai_utc_delta_set.tai_of_delta_change, len)) {
 		ret = rtk_bt_mesh_time_tai_utc_delta_set(&time_tai_utc_delta_set);
 		if (ret) {
-			AT_PRINTK("[%s]Set time tai utc delta failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s]Set time tai utc delta failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] Input data format is not corrent.\r\n", __func__);
+		BT_LOGE("[%s] Input data format is not corrent.\r\n", __func__);
 		return -3;
 	}
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }
@@ -217,13 +217,13 @@ static int atcmd_ble_mesh_time_role_set(int argc, char **argv)
 	time_role_set.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_time_role_set(&time_role_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set time role failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set time role failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHTIME_AT_PRINTK("Platform not support time client model.");
+	BT_LOGE("Platform not support time client model.\r\n");
 	return -1;
 #endif
 }

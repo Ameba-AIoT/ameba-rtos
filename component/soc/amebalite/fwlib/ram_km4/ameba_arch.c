@@ -66,7 +66,7 @@ u32 Systick_State(void)
 	}
 }
 
-#ifdef PLATFORM_FREERTOS
+#ifdef CONFIG_PLATFORM_FREERTOS
 /* Notice: Maximum miss 1 tick because of cpu clock changed */
 void Systick_update(void)
 {

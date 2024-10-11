@@ -47,7 +47,7 @@
 
 /* ===========================  Configuration of the ARM ARMV8MBL Processor and Core Peripherals  ============================ */
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 #define __CM3_REV                      0x0200    /**< Core revision r0p0 */
 #define __MPU_PRESENT                  1         /**< Defines if an MPU is present or not */
 #define __NVIC_PRIO_BITS               3         /**< Number of priority bits implemented in the NVIC */
@@ -68,7 +68,7 @@
 #include <arm_cmse.h>   /* Use CMSE intrinsics */
 #include "core_armv81mml.h"
 #include "core_cache.h"
-#elif defined (RSICV_CORE_KR4)
+#elif defined (CONFIG_RSICV_CORE_KR4)
 #define __RISCV_REV                 0x0000U  /*!< RISCV Core Revision                                                    */
 
 /* ----------------------------------------------------------------------------
@@ -97,9 +97,9 @@
 #include "ameba_ledc.h"
 #include "ameba_audio.h"
 #include "ameba_sport.h"
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 #include "ameba_cache.h"
-#elif RSICV_CORE_KR4
+#elif CONFIG_RSICV_CORE_KR4
 #include "ameba_cache_kr4.h"
 #endif
 #include "ameba_thermal.h"
@@ -152,7 +152,7 @@ typedef enum  _HAL_Status {
   */
 #define assert_param(expr) ((expr) ? (void)0 : io_assert_failed((uint8_t *)__FILE__, __LINE__))
 /* Exported functions ------------------------------------------------------- */
-void io_assert_failed(uint8_t *file, uint32_t line);
+__NO_RETURN void io_assert_failed(uint8_t *file, uint32_t line);
 #else
 #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */

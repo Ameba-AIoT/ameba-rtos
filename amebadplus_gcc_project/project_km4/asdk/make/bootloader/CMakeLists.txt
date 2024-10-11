@@ -3,23 +3,24 @@ set(CFGDIR ${TARGETDIR}/usrcfg)
 set(DRVDIR ${TARGETDIR}/fwlib/ram_km4)
 set(DRVCOM ${TARGETDIR}/fwlib/ram_common)
 set(LOGDIR ${TARGETDIR}/swlib)
+set(LZMADIR ${TARGETDIR}/../common/lzma)
 
-add_executable(target_loader_${PROJECT_NAME})
+add_executable(target_bootloader)
 
 add_custom_target(
     boot
     COMMENT "build bootloader only"
-    DEPENDS target_loader_${PROJECT_NAME}
+    DEPENDS target_bootloader
 )
 
 if (CONFIG_MP_SHRINK)
-    target_sources(target_loader_${PROJECT_NAME} PRIVATE ${DIR}/bootloader_km4_mp.c)
+    target_sources(target_bootloader PRIVATE ${DIR}/bootloader_km4_mp.c)
 else()
-    target_sources(target_loader_${PROJECT_NAME} PRIVATE ${DIR}/bootloader_km4.c)
+    target_sources(target_bootloader PRIVATE ${DIR}/bootloader_km4.c)
 endif()
 
 target_sources(
-    target_loader_${PROJECT_NAME} 
+    target_bootloader 
     PRIVATE 
     ${DIR}/boot_ota_km4.c 
 	${DIR}/boot_security_km4.c 
@@ -36,17 +37,26 @@ target_sources(
     ${LOGDIR}/log.c
 )
 
-target_include_directories(target_loader_${PROJECT_NAME} PRIVATE ${LOGDIR} ${TARGETDIR}/lib/bootloader ${BASEDIR}/component/soc/common/crashdump/include)
+if(CONFIG_COMPRESS_OTA_IMG)
+    target_sources(
+        target_bootloader 
+        PRIVATE 
+        ${LZMADIR}/ameba_boot_lzma.c
+        ${LZMADIR}/LzmaDec.c
+    )
+endif()
 
-list(APPEND 
-    LINK_LOADER_LIB 
-    ${TARGET_LIBSOC_FOLDER}/lib_bootloader.a  
-    ${TARGET_LIBSOC_FOLDER}/lib_crashdump.a
-    ) 
-
+target_include_directories(
+    target_bootloader 
+    PRIVATE 
+    ${LOGDIR} 
+    ${TARGETDIR}/lib/bootloader 
+    ${BASEDIR}/component/soc/common/crashdump/include
+    ${LZMADIR}
+)
 
 target_link_libraries(
-    target_loader_${PROJECT_NAME} 
+    target_bootloader 
     PRIVATE ameba_interface_${PROJECT_NAME} ameba_wrap_interface_${PROJECT_NAME}
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map 
@@ -62,7 +72,7 @@ else()
 endif()
 
 add_custom_command(
-  TARGET target_loader_${PROJECT_NAME} PRE_LINK 
+  TARGET target_bootloader PRE_LINK 
   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG1_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build bootloader linkerscript rlx8721d.ld"
@@ -74,13 +84,14 @@ set(
     ${PROJECTDIR}/../amebaDplus_layout.ld
 )
 
-set_target_properties(target_loader_${PROJECT_NAME} PROPERTIES LINK_DEPENDS "${LINK_SCRIPTS}")
+set_target_properties(target_bootloader PROPERTIES LINK_DEPENDS "${LINK_SCRIPTS}")
 
 
-add_custom_command(TARGET target_loader_${PROJECT_NAME} POST_BUILD
+add_custom_command(TARGET target_bootloader POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${IMAGE_TARGET_FOLDER}
+    COMMAND ${CMAKE_COMMAND} -E touch ${IMAGE_TARGET_FOLDER}/.gitignore
     COMMAND ${CMAKE_COMMAND} -E copy text.map ${IMAGE_TARGET_FOLDER}/text_loader.map
-    COMMAND ${CMAKE_COMMAND} -E copy target_loader_${PROJECT_NAME}.axf ${IMAGE_TARGET_FOLDER}/target_loader.axf
+    COMMAND ${CMAKE_COMMAND} -E copy target_bootloader.axf ${IMAGE_TARGET_FOLDER}/target_loader.axf
     COMMAND ${CMAKE_NM} ${IMAGE_TARGET_FOLDER}/target_loader.axf | sort > ${IMAGE_TARGET_FOLDER}/target_loader.map
     COMMAND ${CMAKE_OBJDUMP} -d ${IMAGE_TARGET_FOLDER}/target_loader.axf > ${IMAGE_TARGET_FOLDER}/target_loader.asm
     COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/target_loader.axf ${IMAGE_TARGET_FOLDER}/target_pure_loader.axf
@@ -88,14 +99,16 @@ add_custom_command(TARGET target_loader_${PROJECT_NAME} POST_BUILD
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_boot_all.bin"
 
-    COMMAND ${CMAKE_COMMAND} -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR}
+    COMMAND ${CMAKE_COMMAND} 
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} 
+    -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}  
-    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
     -DBUILD_TYPE=${BUILD_TYPE}
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/boot_postbuild.cmake
+    -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../loader_postbuild.cmake
 )
 
-set_property(TARGET target_loader_${PROJECT_NAME}
+set_property(TARGET target_bootloader
     PROPERTY ADDITIONAL_CLEAN_FILES
     ${IMAGE_TARGET_FOLDER}
     ${IMAGE_TARGET_FOLDER}/../../../km4_boot_all.bin 

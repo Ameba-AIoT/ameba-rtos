@@ -242,7 +242,7 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (enum _rtw_result_t (*)(unsigned int,  void *))0xffffffff;
+	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
 	scan_param.ssid = NULL;
 #ifdef CONFIG_P2P
 	scan_param.scan_user_data = (void *)(uintptr_t)rtw_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
@@ -707,8 +707,6 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	}
 #endif
 
-	connect_param.joinstatus_user_callback = NULL;
-
 	ret = llhw_wifi_connect(&connect_param, 0);
 	if (ret < 0) {
 		/* KM4 connect failed */
@@ -861,7 +859,7 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy, struct wireless_d
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (enum _rtw_result_t (*)(unsigned int,  void *))0xffffffff;
+	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
 	scan_param.ssid = NULL;
 	scan_param.options = RTW_SCAN_PASSIVE;
 	scan_param.chan_scan_time.passive_scan_time = duration;

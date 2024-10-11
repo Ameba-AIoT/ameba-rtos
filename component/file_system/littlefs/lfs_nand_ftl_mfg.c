@@ -17,6 +17,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "lfs_nand_ftl.h"
+#include "littlefs_adapter.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -31,9 +32,6 @@
 #define NF_ECCSR_MACRONIX_ADDR		0x00U  /* Dummy */
 #define NF_ECCSR_MACRONIX_MASK		0x0FU
 
-#define NF_CFG_MICRON_CFG0			(1 << 1)
-#define NF_CFG_MICRON_CFG1			(1 << 6)
-#define NF_CFG_MICRON_CFG2			(1 << 7)
 #define NF_CFG_WINBOND_BUF_READ		(1 << 3)
 
 #define NF_WINBOND_DIE_SEL_CMD		0xC2U
@@ -74,42 +72,32 @@ static u8 NAND_FTL_GigaDevice_GetEccStatus(NAND_FTL_DeviceTypeDef *nand, u8 stat
 static u8 NAND_FTL_Macronix_GetEccStatus(NAND_FTL_DeviceTypeDef *nand, u8 status);
 static u8 NAND_FTL_Micron_GetEccStatus(NAND_FTL_DeviceTypeDef *nand, u8 status);
 static u8 NAND_FTL_Winbond_GetEccStatus(NAND_FTL_DeviceTypeDef *nand, u8 status);
-static u8 NAND_FTL_Common_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
-static u8 NAND_FTL_Dosilicon_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
-static u8 NAND_FTL_GigaDevice_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
-static u8 NAND_FTL_Micron_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
-static u8 NAND_FTL_Macronix_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
-static u8 NAND_FTL_Winbond_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
+static u8 NAND_FTL_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
 
 /* Private variables ---------------------------------------------------------*/
 
 static NAND_FTL_MfgOpsTypeDef NandDefaultOps = {
 	.GetEccStatus = NAND_FTL_Common_GetEccStatus,
-	.ReadParameterPage = NAND_FTL_Common_ReadParameterPage
 };
 
 
 static NAND_FTL_MfgOpsTypeDef DosiliconOps = {
 	.GetEccStatus = NAND_FTL_Dosilicon_GetEccStatus,
-	.ReadParameterPage = NAND_FTL_Dosilicon_ReadParameterPage
 };
 
 
 static NAND_FTL_MfgOpsTypeDef GigaDeviceOps = {
 	.GetEccStatus = NAND_FTL_GigaDevice_GetEccStatus,
-	.ReadParameterPage = NAND_FTL_GigaDevice_ReadParameterPage
 };
 
 
 static NAND_FTL_MfgOpsTypeDef MacronixOps = {
 	.GetEccStatus = NAND_FTL_Macronix_GetEccStatus,
-	.ReadParameterPage = NAND_FTL_Macronix_ReadParameterPage
 };
 
 
 static NAND_FTL_MfgOpsTypeDef MicronOps = {
 	.GetEccStatus = NAND_FTL_Micron_GetEccStatus,
-	.ReadParameterPage = NAND_FTL_Micron_ReadParameterPage
 };
 
 
@@ -117,7 +105,6 @@ static NAND_FTL_MfgOpsTypeDef WinbondOps = {
 	.Init = NAND_FTL_Winbond_Init,
 	.SelectTarget = NAND_FTL_Winbond_SelectTarget,
 	.GetEccStatus = NAND_FTL_Winbond_GetEccStatus,
-	.ReadParameterPage = NAND_FTL_Winbond_ReadParameterPage
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -444,114 +431,16 @@ static u8 NAND_FTL_Winbond_GetEccStatus(NAND_FTL_DeviceTypeDef *nand, u8 status)
   * @retval HAL_OK : OK; others : FAIL
   */
 
-static u8 NAND_FTL_Common_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
+static u8 NAND_FTL_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
 {
 	u8 ret = HAL_ERR_UNKNOWN;
 	u8 reg;
 	u8 bk_reg;
 	u8 retry;
-
-	UNUSED(nand);
-
-	reg = NAND_GetStatus(NAND_REG_CFG);
-	bk_reg = reg;
-
-	reg |= NAND_CFG_OTP_ENABLE;
-	reg &= ~NAND_CFG_ECC_ENABLE;
-
-	for (retry = 0; retry < 3; retry++) {
-		NAND_SetStatus(NAND_REG_CFG, reg);
-		reg = NAND_GetStatus(NAND_REG_CFG);
-		if (((reg & NAND_CFG_OTP_ENABLE) == NAND_CFG_OTP_ENABLE) && ((reg & NAND_CFG_ECC_ENABLE) == 0)) {
-			ret = HAL_OK;
-			break;
-		}
-	}
-
-	if (ret != HAL_OK) {
-		NAND_SetStatus(NAND_REG_CFG, bk_reg);
-		return HAL_TIMEOUT;
-	}
-
-	ret = NAND_Page_Read(NF_PARAMETER_PAGE_ADDR, 0, NF_PARAMETER_PAGE_TOTAL_SIZE, data);
-	if (ret == 0xFFU) {
-		ret = HAL_TIMEOUT;
-	} else {
-		/* ECC status will be ignored */
-		ret = HAL_OK;
-	}
-
-	NAND_SetStatus(NAND_REG_CFG, 0x10);
-
-	NAND_SetStatus(NAND_REG_CFG, bk_reg);
-
-	return ret;
-}
-
-/**
-  * @brief  Read parameter page for Dosilicon NAND devices
-  * @param  nand : NAND device info
-  * @param  data : data buffer
-  * @retval HAL_OK : OK; others : FAIL
-  */
-
-static u8 NAND_FTL_Dosilicon_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
-{
-	u8 ret = HAL_ERR_UNKNOWN;
-	u8 reg;
-	u8 retry;
-
-	UNUSED(nand);
-
-	reg = NAND_GetStatus(NAND_REG_CFG);
-
-	for (retry = 0; retry < 3; retry++) {
-		NAND_SetStatus(NAND_REG_CFG, 0x40); /* As per datasheet */
-		reg = NAND_GetStatus(NAND_REG_CFG);
-		if (reg == 0x40) {
-			ret = HAL_OK;
-			break;
-		}
-	}
-
-	if (ret != HAL_OK) {
-		NAND_SetStatus(NAND_REG_CFG, reg);
-		return HAL_TIMEOUT;
-	}
-
-	ret = NAND_Page_Read(NF_PARAMETER_PAGE_ADDR, 0, NF_PARAMETER_PAGE_TOTAL_SIZE, data);
-	if (ret == 0xFFU) {
-		ret = HAL_TIMEOUT;
-	} else {
-		/* ECC status will be ignored */
-		ret = HAL_OK;
-	}
-
-	NAND_SetStatus(NAND_REG_CFG, 0x10); /* As per datasheet, 0x10 */
-
-	NAND_SetStatus(NAND_REG_CFG, reg);
-
-	return ret;
-}
-
-/**
-  * @brief  Read parameter page for GigaDevice NAND devices
-  * @param  nand : NAND device info
-  * @param  data : data buffer
-  * @retval HAL_OK : OK; others : FAIL
-  */
-
-static u8 NAND_FTL_GigaDevice_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
-{
-	u8 ret = HAL_ERR_UNKNOWN;
-	u8 reg;
-	u8 bk_reg;
-	u8 retry;
+	u8 mid;
 	u8 did;
 	u32 addr;
 
-	UNUSED(nand);
-
 	reg = NAND_GetStatus(NAND_REG_CFG);
 	bk_reg = reg;
 
@@ -572,11 +461,13 @@ static u8 NAND_FTL_GigaDevice_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8
 		return HAL_TIMEOUT;
 	}
 
-	/* 38nm models use 0x04 while 24nm and newer models use 0x01 */
+	/* GD 38nm models use 0x04 while 24nm and newer models use 0x01 */
+	mid = nand->MemInfo.MID;
 	did = nand->MemInfo.DID;
-	if ((did == 0x21) || (did == 0x31) || (did == 0x41) || (did == 0x51) ||
-		(did == 0x22) || (did == 0x32) || (did == 0x42) || (did == 0x52) ||
-		(did == 0x25) || (did == 0x35) || (did == 0x45) || (did == 0x55)) {
+	if ((mid == NAND_MFG_GIGADEVICE) &&
+		((did == 0x21) || (did == 0x31) || (did == 0x41) || (did == 0x51) ||
+		 (did == 0x22) || (did == 0x32) || (did == 0x42) || (did == 0x52) ||
+		 (did == 0x25) || (did == 0x35) || (did == 0x45) || (did == 0x55))) {
 		addr = NF_PARAMETER_PAGE_GIGADEVICE_ADDR;
 	} else {
 		addr = NF_PARAMETER_PAGE_ADDR;
@@ -590,123 +481,9 @@ static u8 NAND_FTL_GigaDevice_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8
 		ret = HAL_OK;
 	}
 
-	NAND_SetStatus(NAND_REG_CFG, 0x10);
-
 	NAND_SetStatus(NAND_REG_CFG, bk_reg);
 
 	return ret;
-}
-
-/**
-  * @brief  Read parameter page for Micron NAND devices
-  * @param  nand : NAND device info
-  * @param  data : data buffer
-  * @retval HAL_OK : OK; others : FAIL
-  */
-
-static u8 NAND_FTL_Micron_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
-{
-	u8 ret = HAL_ERR_UNKNOWN;
-	u8 reg;
-	u8 bk_reg;
-	u8 retry;
-
-	UNUSED(nand);
-
-	reg = NAND_GetStatus(NAND_REG_CFG);
-	bk_reg = reg;
-
-	reg &= ~NF_CFG_MICRON_CFG0;
-	reg |= NF_CFG_MICRON_CFG1;
-	reg &= ~NF_CFG_MICRON_CFG2;
-
-	for (retry = 0; retry < 3; retry++) {
-		NAND_SetStatus(NAND_REG_CFG, reg);
-		reg = NAND_GetStatus(NAND_REG_CFG);
-		if (((reg & NF_CFG_MICRON_CFG0) == 0)
-			&& ((reg & NF_CFG_MICRON_CFG1) == NF_CFG_MICRON_CFG1)
-			&& ((reg & NF_CFG_MICRON_CFG2) == 0)) {
-			ret = HAL_OK;
-			break;
-		}
-	}
-
-	if (ret != HAL_OK) {
-		NAND_SetStatus(NAND_REG_CFG, bk_reg);
-		return HAL_TIMEOUT;
-	}
-
-	ret = NAND_Page_Read(NF_PARAMETER_PAGE_ADDR, 0, NF_PARAMETER_PAGE_TOTAL_SIZE, data);
-	if (ret == 0xFFU) {
-		ret = HAL_TIMEOUT;
-	} else {
-		/* ECC status will be ignored */
-		ret = HAL_OK;
-	}
-
-	NAND_SetStatus(NAND_REG_CFG, 0x00); /* As per datasheet */
-
-	NAND_SetStatus(NAND_REG_CFG, bk_reg);
-
-	return ret;
-}
-
-/**
-  * @brief  Read parameter page for Macronix NAND devices
-  * @param  nand : NAND device info
-  * @param  data : data buffer
-  * @retval HAL_OK : OK; others : FAIL
-  */
-
-static u8 NAND_FTL_Macronix_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
-{
-	u8 ret = HAL_ERR_UNKNOWN;
-	u8 reg;
-	u8 retry;
-
-	UNUSED(nand);
-
-	reg = NAND_GetStatus(NAND_REG_CFG);
-
-	for (retry = 0; retry < 3; retry++) {
-		NAND_SetStatus(NAND_REG_CFG, 0x40); /* As per datasheet */
-		reg = NAND_GetStatus(NAND_REG_CFG);
-		if (reg == 0x40) {
-			ret = HAL_OK;
-			break;
-		}
-	}
-
-	if (ret != HAL_OK) {
-		NAND_SetStatus(NAND_REG_CFG, reg);
-		return HAL_TIMEOUT;
-	}
-
-	ret = NAND_Page_Read(NF_PARAMETER_PAGE_ADDR, 0, NF_PARAMETER_PAGE_TOTAL_SIZE, data);
-	if (ret == 0xFFU) {
-		ret = HAL_TIMEOUT;
-	} else {
-		/* ECC status will be ignored */
-		ret = HAL_OK;
-	}
-
-	NAND_SetStatus(NAND_REG_CFG, 0x10); /* As per datasheet, 0x10 or 0x00 */
-
-	NAND_SetStatus(NAND_REG_CFG, reg);
-
-	return ret;
-}
-
-/**
-  * @brief  Read parameter page for Winbond NAND devices
-  * @param  nand : NAND device info
-  * @param  data : data buffer
-  * @retval HAL_OK : OK; others : FAIL
-  */
-
-static u8 NAND_FTL_Winbond_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data)
-{
-	return NAND_FTL_Common_ReadParameterPage(nand, data);
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -763,38 +540,32 @@ u8 NAND_FTL_MfgInit(NAND_FTL_DeviceTypeDef *nand)
 		}
 	}
 
-	if (ops->ReadParameterPage) {
-		for (retry = 0; retry < 3; retry++) {
-			ret = ops->ReadParameterPage(nand, buf);
-			if (ret == HAL_OK) {
-				break;
-			}
-		}
+	for (retry = 0; retry < 3; retry++) {
+		ret = NAND_FTL_ReadParameterPage(nand, buf);
 		if (ret == HAL_OK) {
-			paramBufOffset = NAND_FTL_GetValidParameterOffset(buf);
-			if (paramBufOffset >= 0) {
-				paramBuf = buf + paramBufOffset;
-
-				FTL_MEMCPY((void *)info->MFG, (const void *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_MFG), NAND_ONFI_MFG_LEN);
-				FTL_MEMCPY((void *)info->Model, (const void *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_MODEL), NAND_ONFI_MODEL_LEN);
-
-				info->PageSize = *(u32 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_BYTES_PER_PAGE);
-				info->OobSize = *(u16 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_OOB_BYTES_PER_PAGE);
-				info->PagesPerBlock = *(u32 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_PAGES_PER_BLOCK);
-				info->BlocksPerLun = *(u32 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_BLOCKS_PER_LUN);
-				info->LunsPerTarget = paramBuf[NF_PARAMETER_PAGE_OFFSET_LUNS];
-				info->MaxBadBlocksPerLun = *(u16 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_MAX_BB_PER_LUN);
-				info->ReqHostEccLevel = paramBuf[NF_PARAMETER_PAGE_OFFSET_REQ_HOST_ECC_LEVEL];
-				info->Capacity = info->PageSize * info->PagesPerBlock * info->BlocksPerLun * info->LunsPerTarget * info->Targets;
-			} else {
-				ret = UERR_CHK;
-				DBG_PRINTF(MODULE_FLASH, LEVEL_ERROR, "NAND parameter page checksum error\n");
-			}
+			break;
+		}
+	}
+	if (ret == HAL_OK) {
+		paramBufOffset = NAND_FTL_GetValidParameterOffset(buf);
+		if (paramBufOffset >= 0) {
+			paramBuf = buf + paramBufOffset;
+			FTL_MEMCPY((void *)info->MFG, (const void *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_MFG), NAND_ONFI_MFG_LEN);
+			FTL_MEMCPY((void *)info->Model, (const void *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_MODEL), NAND_ONFI_MODEL_LEN);
+			info->PageSize = *(u32 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_BYTES_PER_PAGE);
+			info->OobSize = *(u16 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_OOB_BYTES_PER_PAGE);
+			info->PagesPerBlock = *(u32 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_PAGES_PER_BLOCK);
+			info->BlocksPerLun = *(u32 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_BLOCKS_PER_LUN);
+			info->LunsPerTarget = paramBuf[NF_PARAMETER_PAGE_OFFSET_LUNS];
+			info->MaxBadBlocksPerLun = *(u16 *)(paramBuf + NF_PARAMETER_PAGE_OFFSET_MAX_BB_PER_LUN);
+			info->ReqHostEccLevel = paramBuf[NF_PARAMETER_PAGE_OFFSET_REQ_HOST_ECC_LEVEL];
+			info->Capacity = info->PageSize * info->PagesPerBlock * info->BlocksPerLun * info->LunsPerTarget * info->Targets;
 		} else {
-			DBG_PRINTF(MODULE_FLASH, LEVEL_ERROR, "Read NAND parameter page fail: 0x%02X\n", ret);
+			ret = UERR_CHK;
+			VFS_DBG(VFS_ERROR, "NAND parameter page checksum error\n");
 		}
 	} else {
-		ret = HAL_ERR_PARA;
+		VFS_DBG(VFS_ERROR, "Read NAND parameter page fail: 0x%02X\n", ret);
 	}
 
 	return ret;

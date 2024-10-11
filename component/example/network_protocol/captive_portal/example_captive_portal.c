@@ -366,13 +366,13 @@ alert(\"Your password is too long!(8-64)\");\
 #define MAX_PASSWORD_LEN		64
 #define MAX_CHANNEL_NUM			13
 
-rtw_wifi_setting_t Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
-rtw_wifi_setting_t target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+struct _rtw_wifi_setting_t Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+struct _rtw_wifi_setting_t target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
 
 static void vProcessConnection(void *param);
 
 /*------------------------------------------------------------------------------*/
-extern int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting);
+extern int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting);
 static void LoadWifiSetting(void)
 {
 	unsigned char wlan_idx = WLAN0_IDX;
@@ -469,7 +469,7 @@ int EraseApinfo(void)
 
 extern void dhcps_init(struct netif *pnetif);
 extern void dhcps_deinit(void);
-int wifi_restart_ap(rtw_softap_info_t *softAP_config)
+int wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 {
 	unsigned char idx = 0;
 #ifdef CONFIG_LWIP_LAYER
@@ -479,9 +479,9 @@ int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 #endif
 
 #ifdef  CONFIG_CONCURRENT_MODE
-	rtw_wifi_setting_t setting;
+	struct _rtw_wifi_setting_t setting;
 	int sta_linked = 0;
-	rtw_network_info_t connect_param = {0};
+	struct _rtw_network_info_t connect_param = {0};
 #endif
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
@@ -503,9 +503,9 @@ int wifi_restart_ap(rtw_softap_info_t *softAP_config)
 	{
 #ifdef CONFIG_LWIP_LAYER
 		dhcps_deinit();
-		ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-		netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-		gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
+		ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
+		netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
+		gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 		LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 #endif
 		wifi_stop_ap();
@@ -558,7 +558,7 @@ static void RestartSoftAP(void)
 	RTK_LOGI(NOTAG, "RestartAP: security_type=%d\n", Wifi_Setting.security_type);
 	RTK_LOGI(NOTAG, "RestartAP: password=%s\n", Wifi_Setting.password);
 	RTK_LOGI(NOTAG, "RestartAP: channel=%d\n", Wifi_Setting.channel);
-	rtw_softap_info_t softAP_config = {0};
+	struct _rtw_softap_info_t softAP_config = {0};
 	softAP_config.ssid.len = strlen((char *)Wifi_Setting.ssid);
 	memcpy(softAP_config.ssid.val, Wifi_Setting.ssid, softAP_config.ssid.len);
 	softAP_config.password = Wifi_Setting.password;
@@ -1040,12 +1040,12 @@ static void GenerateWaitHtmlPage(char *cDynamicPage)
 }
 
 extern int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf);
-static rtw_result_t scan_result_handler(unsigned int scanned_AP_num, void *user_data)
+static int scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 {
 	/* To avoid gcc warnings */
 	(void) user_data;
 
-	rtw_scan_result_t *scanned_AP_info;
+	struct rtw_scan_result *scanned_AP_info;
 	char *scan_buf = NULL;
 	unsigned int i = 0;
 	int ApNum = 0;
@@ -1054,7 +1054,7 @@ static rtw_result_t scan_result_handler(unsigned int scanned_AP_num, void *user_
 		return RTW_ERROR;
 	}
 
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(rtw_scan_result_t));
+	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
 	if (scan_buf == NULL) {
 		return RTW_ERROR;
 	}
@@ -1065,7 +1065,7 @@ static rtw_result_t scan_result_handler(unsigned int scanned_AP_num, void *user_
 	}
 
 	for (i = 0; i < scanned_AP_num; i++) {
-		scanned_AP_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
+		scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
 		scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 
 		if (!strcmp((char *)scanned_AP_info->SSID.val, "")) {
@@ -1116,17 +1116,17 @@ static rtw_result_t scan_result_handler(unsigned int scanned_AP_num, void *user_
 static int wifi_start_scan(void)
 {
 	RTK_LOGI(NOTAG, "%s\n", __func__);
-	rtw_scan_param_t scan_param;
+	struct _rtw_scan_param_t scan_param;
 	char *scan_buf;
 
-	scan_buf = rtos_mem_malloc(2 * SCAN_AP_LIST_MAX * sizeof(rtw_scan_result_t));
+	scan_buf = rtos_mem_malloc(2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
 	if (!scan_buf) {
 		RTK_LOGE(NOTAG, "ERROR: malloc failed!\n");
 		return -1;
 	}
-	memset(scan_buf, 0, 2 * SCAN_AP_LIST_MAX * sizeof(rtw_scan_result_t));
+	memset(scan_buf, 0, 2 * SCAN_AP_LIST_MAX * sizeof(struct rtw_scan_result));
 	memset(scan_result.ap_list, 0, 2 * SCAN_AP_LIST_MAX * sizeof(ap_list_t));
-	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
 	scan_param.scan_user_callback = scan_result_handler;
 	scan_param.max_ap_record_num = 2 * SCAN_AP_LIST_MAX;
@@ -1148,21 +1148,21 @@ static void wifi_scan_thread(void *pvParameters)
 }
 
 /*get ap security mode from scan list*/
-static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mode, OUT u8 *channel)
+static int _get_ap_security_mode(IN char *ssid, OUT enum rtw_security *security_mode, OUT u8 *channel)
 {
-	rtw_scan_param_t scan_param;
-	rtw_scan_result_t *scanned_ap_info;
+	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_result *scanned_ap_info;
 	int scan_cnt = 0;
 	char *scan_buf;
 	int i = 0;
 
-	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 	scan_param.ssid = ssid;
 
 	if ((scan_cnt = wifi_scan_networks(&scan_param, 1)) <= 0) {
 		RTK_LOGE(NOTAG, "error %s, wifi scan failed\n", __func__);
 	} else {
-		scan_buf = (char *)rtos_mem_zmalloc(scan_cnt * sizeof(rtw_scan_result_t));
+		scan_buf = (char *)rtos_mem_zmalloc(scan_cnt * sizeof(struct rtw_scan_result));
 		if (scan_buf == NULL) {
 			RTK_LOGE(NOTAG, "error %s, malloc scan_buf failed\n", __func__);
 			return -1;
@@ -1172,7 +1172,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 			return -1;
 		}
 		for (i = 0; i < scan_cnt; i++) {
-			scanned_ap_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
+			scanned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
 			scanned_ap_info->SSID.val[scanned_ap_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 			//RTK_LOGI(NOTAG, "info %s, ssid: %s\n", __func__, scanned_ap_info->SSID.val);
 			if (strcmp(ssid, (char *)scanned_ap_info->SSID.val) == 0) {
@@ -1192,7 +1192,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 static void ConnectTargetAP(void)
 {
 	int ret;
-	rtw_network_info_t connect_param = {0};
+	struct _rtw_network_info_t connect_param = {0};
 	int security_retry_count = 0;
 	u8 connect_channel;
 	u8 connect_status;
@@ -1226,7 +1226,7 @@ static void ConnectTargetAP(void)
 	ret = wifi_connect(&connect_param, 0);
 
 	if (ret != RTW_SUCCESS) {
-		if (ret == RTW_INVALID_KEY) {
+		if (ret == RTW_CONNECT_INVALID_KEY) {
 			RTK_LOGE(NOTAG, "ERROR:Invalid Key\n");
 		}
 
@@ -1286,7 +1286,7 @@ static u8_t ProcessPostMessage(struct netbuf  *pxRxBuffer, char *LocalBuf)
 	char *pcRxString, *ptr;
 	unsigned short usLength;
 	u8_t bChanged = 0;
-	rtw_security_t secType;
+	enum rtw_security secType;
 	u8_t channel;
 	u8_t len = 0;
 
@@ -1626,9 +1626,9 @@ static void example_start_captive_portal(void *param)
 
 #ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit();
-	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
+	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
+	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
+	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 #endif
 
@@ -1657,7 +1657,7 @@ static void example_start_captive_portal(void *param)
 	RTK_LOGI(NOTAG, "Check AP running\n");
 
 	while (1) {
-		rtw_wifi_setting_t setting;
+		struct _rtw_wifi_setting_t setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		if (strlen((const char *)setting.ssid) > 0) {
 			if (strcmp((const char *) setting.ssid, (const char *)SOFTAP_CONFIG.ssid.val) == 0) {

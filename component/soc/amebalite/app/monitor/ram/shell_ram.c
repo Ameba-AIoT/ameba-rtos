@@ -86,7 +86,7 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	(void) IrqStatus;
 	(void) ChanNum;
 
-#if defined (RSICV_CORE_KR4)
+#if defined (CONFIG_RSICV_CORE_KR4)
 	PIPC_MSG_STRUCT	ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_KM4_TO_KR4, IPC_M2R_LOGUART_RX_SWITCH);
 #else
 	PIPC_MSG_STRUCT ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_KM4_TO_DSP, IPC_M2D_LOGUART_RX_SWITCH);
@@ -104,14 +104,14 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	}
 }
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 UART_LOG_BUF				tmp_log_buf;
 
 void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 {
 	IPC_MSG_STRUCT ipc_msg_temp;
 
-	memcpy(&tmp_log_buf, shell_ctl.pTmpLogBuf, sizeof(UART_LOG_BUF));
+	_memcpy(&tmp_log_buf, shell_ctl.pTmpLogBuf, sizeof(UART_LOG_BUF));
 	DCache_CleanInvalidate((u32)&tmp_log_buf, sizeof(UART_LOG_BUF));
 
 	ipc_msg_temp.msg_type = IPC_USER_POINT;
@@ -162,7 +162,7 @@ void shell_loguartRx_dispatch(void)
 			}
 
 			/* avoid useless space */
-			memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
+			_memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
 			break;
 		}
 	}
@@ -225,7 +225,7 @@ void shell_loguartRx_dispatch(void)
 			}
 
 			/* avoid useless space */
-			memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
+			_memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
 			break;
 		}
 	}
@@ -333,7 +333,7 @@ const IPC_INIT_TABLE ipc_shell_table = {
 	.IPC_Channel = IPC_M2R_LOGUART_RX_SWITCH
 };
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 /* for uart bridge to close shell loguart rx */
 void shell_uartbridge_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 {

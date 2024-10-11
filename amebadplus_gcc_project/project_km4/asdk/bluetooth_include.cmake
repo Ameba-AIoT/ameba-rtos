@@ -10,7 +10,7 @@ list(
     ${BLEDIR}/driver/inc/hci
     ${BLEDIR}/driver/platform/amebadplus/inc
     ${BLEDIR}/osif
-    ${BLEDIR}/application/bt_fast_mp
+    ${BLEDIR}/bt_mp
 )
 if(CONFIG_BT_ZEPHYR)
     list(
