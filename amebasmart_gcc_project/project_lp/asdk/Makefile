@@ -71,9 +71,8 @@ endif
 
 image2:LINK_APP_LIB += $(ROOTDIR)/lib/soc/lib_pmc.a $(ROOTDIR)/lib/soc/lib_chipinfo.a $(ROOTDIR)/lib/soc/lib_crashdump.a
 
-all: prebuild copy_ld_ram make_subdirs linker_image2
 image2: prebuild copy_ld_img2 make_subdirs linker_image2
-lib_image2: prebuild copy_ld_img2 make_subdirs_lib
+lib_image2: prebuild make_subdirs_lib
 #*****************************************************************************#
 #                      RULES TO CREATE DIRECTORY                              #
 #*****************************************************************************#
@@ -314,22 +313,10 @@ clean_all: clean
 #*****************************************************************************#
 #              PACKAGE COPY link script file-ld                               #
 #*****************************************************************************#
-copy_ld_ram:
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_ram.ld $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-copy_ld_img1:
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_boot.ld $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 copy_ld_img2:
 ifeq ($(CONFIG_XIP_FLASH),y)
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_img2_xip.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c $(ROOTDIR)/ld/rlx8721d_img2_sram.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 else
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_img2_sram.ld  $(BUILD_TARGET_FOLDER)/rlx8721d.ld
+	$(Q) $(CC) -E -P -xc -c $(ROOTDIR)/ld/rlx8721d_img2_sram.ld -o $(BUILD_TARGET_FOLDER)/rlx8721d.ld
 endif
 	$(Q)cat $(LINK_ROM_SYMBOL) >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-copy_ld_floader:
-	$(Q)$(COPY) $(ROOTDIR)/ld/rlx8721d_boot.ld $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-ifeq ($(CONFIG_LINK_ROM_SYMB),y)
-	$(Q)cat ./ld/rlx8721d_rom_symbol.ld >> $(BUILD_TARGET_FOLDER)/rlx8721d.ld
-endif
-

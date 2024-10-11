@@ -1748,9 +1748,9 @@ SD_RESULT SD_Init(SDIOHCFG_TypeDef *config)
 {
 	IRQn_Type IrqNum;
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 	IrqNum = SDIO_HOST_IRQ;
-#elif defined (ARM_CORE_CA32)
+#elif defined (CONFIG_ARM_CORE_CA32)
 	IrqNum = SDIO_HOST_IRQ;
 #endif
 
@@ -1805,9 +1805,9 @@ SD_RESULT SD_DeInit(void)
 {
 	IRQn_Type IrqNum;
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 	IrqNum = SDIO_HOST_IRQ;
-#elif defined (ARM_CORE_CA32)
+#elif defined (CONFIG_ARM_CORE_CA32)
 	IrqNum = SDIO_HOST_IRQ;
 #endif
 

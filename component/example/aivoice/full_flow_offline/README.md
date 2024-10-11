@@ -26,42 +26,15 @@ LINK_THIRD_APP_LIB += $(BASEDIR)/component/aivoice/prebuilts/lib/rtl8730e_ca32_f
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libtomlc99.a
 LINK_THIRD_APP_LIB += $(BASEDIR)/component/aivoice/prebuilts/lib/rtl8730e_ca32_freertos/libNE10.a
 
-2. Modify amebasmart_layout.ld
-	/* KM4 Non-secure RAM */
-    KM4_MSP_RAM_NS (rw) :                   ORIGIN = 0x2001D000, LENGTH = 0x2001E000 - 0x2001D000   /* KM4  MSP_NS RAM: 4k */
-    KM4_ROMBSS_RAM_COM (rw) :               ORIGIN = 0x2001E000, LENGTH = 0x2001F000 - 0x2001E000   /* KM4  ROM BSS COMMON(S & NS both used) RAM: 4k */
-    KM4_ROMBSS_RAM_NS (rw) :                ORIGIN = 0x2001F000, LENGTH = 0x20020000 - 0x2001F000   /* KM4 ROM BSS NS RAM: 4k */
-    KM4_STDLIB_HEAP_RAM_NS (rw) :           ORIGIN = 0x20020000, LENGTH = 0x20021000 - 0x20020000   /* KM4 ROM STDLIB HEAP: 4k */
-    KM4_AUDIO_BUFFER (rw) :                 ORIGIN = 0x20022000, LENGTH = 0x20040000 - 0x20022000   /* KM4 AUDIO BUFFER: 128k */
+2. Modify amebasmart_gcc_project/project_ap/asdk/make/utilities_example/Makefile
+add include path as below
+    MODULE_IFLAGS += -I$(BASEDIR)/component/aivoice/include
 
-    /* KM4 Non-secure RAM for XIP only */
-    KM4_BD_RAM (rwx) :                      ORIGIN = 0x20014020, LENGTH = 0x2001D000 - 0x20014020   /* KM4 MAIN SRAM: 28k */
-
-	/* CA32 RAM */
-    CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60800000 - 0x60300000   /* CA32 BL3 DRAM NS: 4MB */
-	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x60800000, LENGTH = 0x60800000 - 0x60800000	/* KM4 PSRAM HEAP EXT: 1MB, (PSRAM Die is 8MB) */
-
-3. Modify amebasmart_gcc_project/project_ap/asdk/ld/rlx8721d_img2_xip.ld, put test audio into flash
-	.xip_image2.text ORIGIN(CA32_IMG2_XIP):
-	{
-		__flash_text_start__ = .;
-		*(.audio.data*)
-		*(.text)		/* .text sections (code) */
-		*(.text*)		/* .text* sections (code) */
-
-4. Modify amebasmart_gcc_project/project_ap/asdk/make/Makefile
-add below in target all
-    @make -C aivoice all
-add below in target clean
-    @make -C aivoice clean
-
-5. Copy Makefile from this folder with the example into amebasmart_gcc_project/project_ap/asdk/make/aivoice.
-
-6. make menuconfig
+3. make menuconfig
 < CONFIG BOOT OPTION  --->
         [*] XIP_FLASH 
 
-7. cd amebasmart_gcc_project , make all
+4. cd amebasmart_gcc_project , make EXAMPLE=full_flow_offline
 
 # Expected Result
 * full_flow_offline

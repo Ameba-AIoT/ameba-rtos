@@ -38,6 +38,41 @@ typedef struct {
   * @}
   */
 
+/**
+  * @brief SDIO Register Declaration
+  */
+typedef struct {
+	__IO uint32_t RSVD0[40]               ;  /*!< Reserved,  Address offset:0x000-0x09C */
+	__IO uint32_t SPDIO_TXBD_ADDR         ;  /*!< Register,  Address offset:0x0A0 */
+	__IO uint32_t SPDIO_TXBD_NUM          ;  /*!< Register,  Address offset:0x0A4 */
+	__I  uint32_t SPDIO_TXBD_WPTR         ;  /*!< Register,  Address offset:0x0A8 */
+	__IO uint32_t SPDIO_TXBD_RPTR         ;  /*!< Register,  Address offset:0x0AC */
+	__IO uint32_t SPDIO_RXBD_ADDR         ;  /*!< Register,  Address offset:0x0B0 */
+	__IO uint16_t SPDIO_RXBD_NUM          ;  /*!< Register,  Address offset:0x0B4 */
+	__IO uint16_t SPDIO_RXBD_C2H_WPTR     ;  /*!< Register,  Address offset:0x0B6 */
+	__I  uint16_t SPDIO_RXBD_C2H_RPTR     ;  /*!< Register,  Address offset:0x0B8 */
+	__IO uint8_t SPDIO_HCI_RX_REQ        ;  /*!< Register,  Address offset:0x0BA */
+	__IO uint8_t SPDIO_CPU_RST_SDIO_DMA  ;  /*!< Register,  Address offset:0x0BB */
+	__I  uint32_t SPDIO_RX_REQ_ADDR       ;  /*!< Register,  Address offset:0x0BC */
+	__IO uint16_t SPDIO_CPU_INT_MASK      ;  /*!< Register,  Address offset:0x0C0 */
+	__IO uint16_t SPDIO_CPU_INT_STATUS    ;  /*!< Register,  Address offset:0x0C2 */
+	__IO uint8_t SPDIO_CCPWM             ;  /*!< Register,  Address offset:0x0C4 */
+	__IO uint8_t SPDIO_SYS_CPU_INDICATION;  /*!< Register,  Address offset:0x0C5 */
+	__IO uint16_t SPDIO_CCPWM2            ;  /*!< Register,  Address offset:0x0C6 */
+	__I  uint32_t SPDIO_CPU_H2C_MSG       ;  /*!< Register,  Address offset:0x0C8 */
+	__IO uint32_t SPDIO_CPU_C2H_MSG       ;  /*!< Register,  Address offset:0x0CC */
+	__I  uint16_t SPDIO_CRPWM             ;  /*!< Register,  Address offset:0x0D0 */
+	__I  uint16_t SPDIO_CRPWM2            ;  /*!< Register,  Address offset:0x0D2 */
+	__IO uint32_t SPDIO_AHB_DMA_CTRL      ;  /*!< Register,  Address offset:0x0D4 */
+	__IO uint32_t SPDIO_FREE_RXBD_COUNT   ;  /*!< Register,  Address offset:0x0D8 */
+	__I  uint32_t SPDIO_CPU_H2C_MSG_EXT   ;  /*!< Register,  Address offset:0x0DC */
+	__IO uint32_t SPDIO_CPU_C2H_MSG_EXT   ;  /*!< Register,  Address offset:0x0E0 */
+} SDIO_TypeDef;
+
+/**
+  * @}
+  */
+
 /* Exported constants --------------------------------------------------------*/
 
 /** @defgroup SDIO_Exported_Constants SDIO Exported Constants
@@ -129,25 +164,25 @@ typedef struct {
   */
 
 _LONG_CALL_ void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct);
-_LONG_CALL_ void SDIO_Init(SDIO_InitTypeDef *SDIOInit_Struct);
-_LONG_CALL_ void SDIO_INTClear(u16 IntStatus);
-_LONG_CALL_ void SDIO_INTClearAll(void);
-_LONG_CALL_ void SDIO_INTConfig(u16 IntMask, u32 NewState);
-_LONG_CALL_ u16 SDIO_INTStatus(void);
-_LONG_CALL_ u8 SDIO_RPWM1_Get(void);
-_LONG_CALL_ u16 SDIO_RPWM2_Get(void);
-_LONG_CALL_ void SDIO_CPWM1_Set(u8 Val);
-_LONG_CALL_ void SDIO_CPWM2_Set(u16 Val, u32 Newstate);
-_LONG_CALL_ u32 SDIO_H2C_MSG_Get(void);
-_LONG_CALL_ u16 SDIO_RXBD_RPTR_Get(void);
-_LONG_CALL_ void SDIO_RXBD_WPTR_Set(u16 Val);
-_LONG_CALL_ u32 SDIO_TXBD_WPTR_Get(void);
-_LONG_CALL_ void SDIO_TXBD_RPTR_Set(u32 Val);
-_LONG_CALL_ u32 SDIO_TXBD_RPTR_Get(void);
-_LONG_CALL_ void SDIO_DMA_Reset(void);
-_LONG_CALL_ u32 SDIO_DMA_CTRL_Get(void);
-_LONG_CALL_ void SDIO_SetReady(int ready);
-_LONG_CALL_ void SDIO_RxReq(void);
+_LONG_CALL_ void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct);
+_LONG_CALL_ void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 IntStatus);
+_LONG_CALL_ void SDIO_INTClearAll(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_INTConfig(SDIO_TypeDef *SDIO, u16 IntMask, u32 NewState);
+_LONG_CALL_ u16 SDIO_INTStatus(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u8 SDIO_RPWM1_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u16 SDIO_RPWM2_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_CPWM1_Set(SDIO_TypeDef *SDIO, u8 Val);
+_LONG_CALL_ void SDIO_CPWM2_Set(SDIO_TypeDef *SDIO, u16 Val, u32 Newstate);
+_LONG_CALL_ u32 SDIO_H2C_MSG_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u16 SDIO_RXBD_RPTR_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_RXBD_WPTR_Set(SDIO_TypeDef *SDIO, u16 Val);
+_LONG_CALL_ u32 SDIO_TXBD_WPTR_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_TXBD_RPTR_Set(SDIO_TypeDef *SDIO, u32 Val);
+_LONG_CALL_ u32 SDIO_TXBD_RPTR_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready);
+_LONG_CALL_ void SDIO_RxReq(SDIO_TypeDef *SDIO);
 
 
 #define SDIO_CCCR_REG_BASE					(SDIO_REG_BASE + 0x1000)

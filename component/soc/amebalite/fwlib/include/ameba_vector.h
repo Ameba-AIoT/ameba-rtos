@@ -53,7 +53,7 @@ typedef void (*Fault_Patch)(uint32_t *MSP, uint32_t *PSP, uint32_t lr, uint32_t 
 /** @defgroup Km4IRQn_enum
   * @{
   */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 enum KM4IRQn {
 	/******  Processor Exceptions Numbers ********/
 	NonMaskableInt_IRQn			= -14,	/*!< 2 Non Maskable Interrupt */
@@ -158,7 +158,7 @@ enum KM4IRQn {
 /** @defgroup KR4IRQn_enum
   * @{
   */
-#if defined (RSICV_CORE_KR4)
+#if defined (CONFIG_RSICV_CORE_KR4)
 enum KR4IRQn {
 	/* Exception from system fault or ECALL instruction */
 	Fault_IAddr_IRQn = (0 - MAX_SYSTEM_EXECPTION_NUM),  // Instruction address misaligned
@@ -331,7 +331,7 @@ enum DSPRQn {
 /** @defgroup IRQn_Priority_def
   * @{
   */
-#ifdef RSICV_CORE_KR4
+#ifdef CONFIG_RSICV_CORE_KR4
 enum IRQnPriority {
 	INT_PRI7 = 1,	//lower numbers have higher priority in KM4, But higher numbers have higher priority in KR4.
 	INT_PRI6 = 1,	//A priority value of 0 is reserved in KR4, Set to 1 if an enabled IQR priority is 0 in the Code.
@@ -405,11 +405,11 @@ extern IRQ_FUN UserIrqFunTable[];
 extern u32 UserIrqDataTable[];
 extern HAL_VECTOR_FUN  NewVectorTable[];
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 #define MAX_VECTOR_TABLE_NUM			(80+16)
 #define MAX_PERIPHERAL_IRQ_NUM			80
 #define MAX_IRQ_PRIORITY_VALUE			7
-#elif RSICV_CORE_KR4
+#elif CONFIG_RSICV_CORE_KR4
 #define MAX_VECTOR_TABLE_NUM			(NVIC_PLIC_IRQ_OFFSET+80)
 #define MAX_PERIPHERAL_IRQ_NUM			80
 

@@ -11,7 +11,7 @@
 /** @defgroup IRQ_Exported_Constants IRQ Exported Constants
   * @{
   */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 /** @defgroup Km4IRQn_enum
   * @{
   */
@@ -105,7 +105,7 @@ typedef enum KM4IRQn {
   */
 #endif
 
-#if defined (ARM_CORE_CM0)
+#if defined (CONFIG_ARM_CORE_CM0)
 /** @defgroup KM0IRQn_enum
   * @{
   */
@@ -203,7 +203,7 @@ typedef enum KM0IRQn {
 /** @defgroup IRQn_Priority_def
   * @{
   */
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 enum IRQnPriority {
 	INT_PRI0 = 0,				//KM4 Priority value 0 is the highest active priority
 	INT_PRI_HIGHEST	= INT_PRI0,

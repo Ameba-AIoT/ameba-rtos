@@ -25,15 +25,9 @@ set(
     ${DIR}/src/lv_hal.c
 )
 
-if(CONFIG_INTERNAL_LIB)
-    ameba_internal_library(lv_drivers)
-    target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
-    target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIONS})
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else()
-    set_source_files_properties(${CSRC} DIRECTORY ../../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_C_DEFINES}")
-    set_source_files_properties(${CSRC} DIRECTORY ../../.. PROPERTIES COMPILE_OPTIONS "${MODULE_C_OPTIONS}")
-    set_source_files_properties(${CSRC} DIRECTORY ../../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-    target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
-endif()
+
+ameba_internal_library(lv_drivers)
+target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
+target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIONS})
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

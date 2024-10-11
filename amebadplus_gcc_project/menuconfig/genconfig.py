@@ -48,6 +48,14 @@ def main():
         description=__doc__)
 
     parser.add_argument(
+        "--config-in",
+        metavar="CONFIG_LOAD",
+        help="""
+File that kconfig load from. This file is in .config format, and symbol values 
+will be set by this file.
+""")
+
+    parser.add_argument(
         "--header-path",
         metavar="HEADER_FILE",
         help="""
@@ -110,7 +118,10 @@ only supported for backwards compatibility).
 
 
     kconf = kconfiglib.Kconfig(args.kconfig, suppress_traceback=True)
-    kconf.load_config()
+    if args.config_in is None:
+        kconf.load_config()
+    else:
+        kconf.load_config(args.config_in)
 
     if args.header_path is None:
         if "KCONFIG_AUTOHEADER" in os.environ:

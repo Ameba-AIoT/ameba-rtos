@@ -12,17 +12,17 @@
 */
 
 /* Add Includes here */
-#include <string.h>
 #include "mesh_api.h"
 #include "firmware_update.h"
+#include "app_mesh_flags.h"
 
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
 mesh_model_info_t fw_update_client;
 
 static mesh_msg_send_cause_t fw_update_client_send(uint16_t dst, uint16_t app_key_index,
                                                    uint8_t *pmsg, uint16_t len)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &fw_update_client;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -49,9 +49,9 @@ mesh_msg_send_cause_t fw_update_fw_metadata_check(uint16_t dst, uint16_t app_key
                                                   uint8_t update_fw_image_idx, uint8_t *pfw_metadata, uint8_t metadata_len)
 {
     uint16_t msg_len = sizeof(fw_update_fw_metadata_check_t) + metadata_len;
-    fw_update_fw_metadata_check_t *pmsg = (fw_update_fw_metadata_check_t *)plt_malloc(msg_len,
+    fw_update_fw_metadata_check_t *pmsg = (fw_update_fw_metadata_check_t *)plt_zalloc(msg_len,
                                           RAM_TYPE_DATA_ON);
-    if (NULL == pmsg)
+    if (!pmsg)
     {
         printe("fw_update_fw_metadata_check: failed, out of memory");
         return MESH_MSG_SEND_CAUSE_NO_MEMORY;
@@ -78,8 +78,8 @@ mesh_msg_send_cause_t fw_update_start(uint16_t dst, uint16_t app_key_index, uint
                                       uint8_t *pfw_metadata, uint8_t metadata_len)
 {
     uint16_t msg_len = sizeof(fw_update_start_t) + metadata_len;
-    fw_update_start_t *pmsg = plt_malloc(msg_len, RAM_TYPE_DATA_ON);
-    if (NULL == pmsg)
+    fw_update_start_t *pmsg = plt_zalloc(msg_len, RAM_TYPE_DATA_ON);
+    if (!pmsg)
     {
         printe("fw_update_start: failed, out of memory");
         return MESH_MSG_SEND_CAUSE_NO_MEMORY;
@@ -122,12 +122,12 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
     switch (pmesh_msg->access_opcode)
     {
     case MESH_MSG_FW_UPDATE_INFO_STATUS:
-        if (pmesh_msg->msg_len == sizeof(fw_update_info_status_t))
+        if (pmesh_msg->msg_len >= sizeof(fw_update_info_status_t))
         {
             fw_update_info_status_t *pmsg = (fw_update_info_status_t *)pbuffer;
             uint8_t *pdata = pmsg->fw_info_list;
-            data_uart_debug("receive fw update info status: src 0x%04x, fw_info_list_count %d, first_index %d\r\n",
-                            pmesh_msg->src, pmsg->fw_info_list_cnt, pmsg->first_index);
+            printi("receive fw update info status: src 0x%04x, fw_info_list_count %d, first_index %d",
+                   pmesh_msg->src, pmsg->fw_info_list_cnt, pmsg->first_index);
             uint8_t fw_info_cnt = 0;
             fw_info_t *pfw_info = NULL;
             uint16_t data_len = pmesh_msg->msg_len - sizeof(fw_update_info_status_t);
@@ -146,8 +146,8 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
             if (fw_info_cnt > 0)
             {
                 pdata = pmsg->fw_info_list;
-                pfw_info = plt_malloc(fw_info_cnt * sizeof(fw_info_t), RAM_TYPE_DATA_ON);
-                if (NULL == pfw_info)
+                pfw_info = plt_zalloc(fw_info_cnt * sizeof(fw_info_t), RAM_TYPE_DATA_ON);
+                if (!pfw_info)
                 {
                     printe("receive fw update info status: out of memory");
                     return true;
@@ -156,21 +156,19 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
                 for (uint8_t i = 0; i < fw_info_cnt; ++i)
                 {
                     pfw_info[i].fw_id_len = *pdata++;
-                    pdata += 2;
-                    data_uart_debug("entry\r\n");
                     memcpy(&pfw_info[i].fw_id, pdata, pfw_info[i].fw_id_len);
-                    data_uart_debug("    firmware id 0x");
-                    data_uart_dump(pdata, pfw_info[i].fw_id_len);
+                    printi("firmware id");
+                    dprinti(pdata, pfw_info[i].fw_id_len);
                     pdata += pfw_info[i].fw_id_len;
                     pfw_info[i].update_uri_len = *pdata ++;
                     memcpy(pfw_info[i].update_uri, pdata, pfw_info[i].update_uri_len);
-                    data_uart_debug("    update uri 0x");
-                    data_uart_dump(pdata, pfw_info[i].update_uri_len);
+                    printi("update uri");
+                    dprinti(pdata, pfw_info[i].update_uri_len);
                     pdata += pfw_info[i].update_uri_len;
                 }
             }
 
-            if (NULL != fw_update_client.model_data_cb)
+            if (fw_update_client.model_data_cb)
             {
                 fw_update_client_info_status_t status_data;
                 status_data.src = pmesh_msg->src;
@@ -181,7 +179,7 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
                 fw_update_client.model_data_cb(&fw_update_client, FW_UPDATE_CLIENT_INFO_STATUS, &status_data);
             }
 
-            if (NULL != pfw_info)
+            if (pfw_info)
             {
                 plt_free(pfw_info, RAM_TYPE_DATA_ON);
             }
@@ -191,7 +189,7 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
         if (pmesh_msg->msg_len == sizeof(fw_update_fw_metadata_status_t))
         {
             fw_update_fw_metadata_status_t *pmsg = (fw_update_fw_metadata_status_t *)pbuffer;
-            if (NULL != fw_update_client.model_data_cb)
+            if (fw_update_client.model_data_cb)
             {
                 fw_update_client_fw_metadata_status_t metadata_data;
                 metadata_data.src = pmesh_msg->src;
@@ -201,8 +199,8 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
                 fw_update_client.model_data_cb(&fw_update_client, FW_UPDATE_CLIENT_FW_METADATA_STATUS,
                                                &metadata_data);
             }
-            data_uart_debug("receive fw metadata status: src 0x%04x, status %d, addi_info %d, fw_image_idx %d\r\n",
-                            pmesh_msg->src, pmsg->status, pmsg->addi_info, pmsg->fw_image_idx);
+            printi("receive fw metadata status: src 0x%04x, status %d, addi_info %d, fw_image_idx %d",
+                   pmesh_msg->src, pmsg->status, pmsg->addi_info, pmsg->fw_image_idx);
         }
         break;
     case MESH_MSG_FW_UPDATE_STATUS:
@@ -222,20 +220,18 @@ bool fw_update_client_receive(mesh_msg_p pmesh_msg)
                 status_data.update_timeout_base = pmsg->update_timeout_base;
                 memcpy(status_data.blob_id, pmsg->blob_id, 8);
                 status_data.update_fw_image_index = pmsg->update_fw_image_idx;
-                data_uart_debug("receive fw update status: src 0x%04x, status %d, update_phase %d, update_ttl %d, addi_info %d, update_timeout_base %d, update_fw_image_idx %d, blob_id 0x",
-                                pmesh_msg->src, pmsg->status, pmsg->update_phase, pmsg->update_ttl, pmsg->addi_info,
-                                pmsg->update_timeout_base,
-                                pmsg->update_fw_image_idx);
-                data_uart_dump(pmsg->blob_id, 8);
+                printi("receive fw update status: src 0x%04x, status %d, update_phase %d, update_ttl %d, addi_info %d, update_timeout_base %d, update_fw_image_idx %d, blob_id",
+                       pmesh_msg->src, pmsg->status, pmsg->update_phase, pmsg->update_ttl, pmsg->addi_info,
+                       pmsg->update_timeout_base, pmsg->update_fw_image_idx);
+                dprinti(pmsg->blob_id, 8);
             }
             else
             {
-                data_uart_debug("receive fw update status: src 0x%04x, status %d, update_phase %d\r\n",
-                                pmsg->status,
-                                pmesh_msg->src, pmsg->update_phase);
+                printi("receive fw update status: src 0x%04x, status %d, update_phase %d",
+                       pmsg->status, pmesh_msg->src, pmsg->update_phase);
             }
 
-            if (NULL != fw_update_client.model_data_cb)
+            if (fw_update_client.model_data_cb)
             {
                 fw_update_client.model_data_cb(&fw_update_client, FW_UPDATE_CLIENT_STATUS, &status_data);
             }
@@ -256,4 +252,5 @@ bool fw_update_client_reg(uint8_t element_index, model_data_cb_pf model_data_cb)
     fw_update_client.model_data_cb = model_data_cb;
     return mesh_model_reg(element_index, &fw_update_client);
 }
-#endif /* MESH_DFU */
+
+#endif /* F_BT_MESH_1_1_DFU_SUPPORT */

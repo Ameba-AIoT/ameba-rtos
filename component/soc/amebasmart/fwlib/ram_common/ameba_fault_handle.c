@@ -4,7 +4,7 @@
 
 static const char *TAG = "FAULT";
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 /* Redefine secure fault handler and replace old INT_SecureFault in rom code. */
 void HANDLER_SecureFault(void)
 {
@@ -223,7 +223,7 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 
 void Fault_Hanlder_Redirect(crash_on_task crash_on_task_func)
 {
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 #ifdef IMAGE2_BUILD
 	NewVectorTable[3] = (HAL_VECTOR_FUN)HANDLER_HardFault;
 	NewVectorTable[4] = (HAL_VECTOR_FUN)HANDLER_MemFault;

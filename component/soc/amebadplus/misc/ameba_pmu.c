@@ -16,7 +16,7 @@ static uint32_t deepwakelock     = DEFAULT_DEEP_WAKELOCK;
 
 uint32_t system_can_yield = 1; /* default is can */
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 #define PMC_TIMER_DEV PMCTIMER_DEV0
 #define PMC_TIMER_IRQ PMC_TIMER0_IRQ
 #define PMC_TIMER_INT_PRIO INT_PRI6
@@ -129,7 +129,7 @@ void aontimer_int(u32 Data)
 
 void aontimer_test()
 {
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 	SOCPS_AONTimer(2000);
 	SOCPS_AONTimerINT_EN(ENABLE);

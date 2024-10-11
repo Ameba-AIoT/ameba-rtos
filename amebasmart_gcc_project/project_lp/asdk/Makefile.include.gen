@@ -93,6 +93,7 @@ ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/mingw32/newlib
 TOOLCHAINNAME = asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 endif
+TOOLCHAINVER = 4072
 
 tool_dir = $(ASDK_TOOLCHAIN)/bin
 TARGET_LIBAPP_FOLDER = $(ROOTDIR)/lib/application
@@ -219,6 +220,7 @@ GLOBAL_CFLAGS += -nostartfiles
 GLOBAL_CFLAGS += -nostdlib
 GLOBAL_CFLAGS += -fno-builtin-printf
 GLOBAL_CFLAGS += -Wall
+GLOBAL_CFLAGS += -Werror
 GLOBAL_CFLAGS += -Wpointer-arith
 GLOBAL_CFLAGS += -Wstrict-prototypes
 GLOBAL_CFLAGS += -Wundef
@@ -309,6 +311,17 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
+CURRENTVER = $(shell $(CC) --version)
+define check_toolchain_version_func
+	@if [ $(findstring $(TOOLCHAINVER), $(CURRENTVER)) ]; then \
+		echo "Toolchain Version Matched"; \
+	else \
+		echo "$(CURRENTVER)"; \
+		echo "Warning: Current Toolchain Version Mismatched!"; \
+		echo "Warning: Please delete current toolchain /asdk-$(ASDK_VER) in $(TOOLCHAINDIR) and redo make. The Latest ToolChain $(TOOLCHAINNAME) will be installed automatically during the project building"; \
+		exit 1; \
+	fi
+endef
 check_toolchain:
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
@@ -335,6 +348,7 @@ check_toolchain:
 		fi; \
 		echo "INSTALL SUCCESS"; \
 	fi
+	$(call check_toolchain_version_func)
 	# check permission
 	@if [ ! "$(shell which python)" ]; then \
 		echo "Command python not found"; \

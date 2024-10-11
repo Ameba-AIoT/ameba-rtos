@@ -33,14 +33,14 @@ static int atcmd_bt_pbp_broadcast_sink_cfg(int argc, char **argv)
 		/* RTK_BT_LE_AUDIO_STEREO */
 		channel = 3;
 	} else {
-		BLEPBP_AT_PRINTK("Unknown channel allocation");
+		BT_LOGE("Unknown channel allocation\r\n");
 		return -1;
 	}
 	if (rtk_bt_pbp_broadcast_sink_cfg(channel)) {
-		BLEPBP_AT_PRINTK("PBP broadcast sink config channel fail \r\n");
+		BT_LOGE("PBP broadcast sink config channel fail\r\n");
 		return -1;
 	}
-	BLEPBP_AT_PRINTK("PBP broadcast sink config channel 0x%x successfully \r\n", channel);
+	BT_LOGA("PBP broadcast sink config channel 0x%x successfully\r\n", channel);
 
 	return 0;
 }
@@ -55,10 +55,10 @@ int atcmd_bt_pbp_cmd(int argc, char *argv[])
 	int ret = 0;
 	char tag[80] = "[AT+BLEPBP][sink]";
 	if (strcmp(argv[0], "sink") == 0) {
-		BLEPBP_AT_PRINTK("Set pbp broadcast sink cmd");
+		BT_LOGA("Set pbp broadcast sink cmd\r\n");
 		ret = atcmd_bt_excute(argc - 1, &argv[1], pbp_broadcast_sink_cmd_table, tag);
 	} else {
-		AT_PRINTK("[%s]Error: pbp do not support  %s \r\n", __func__, argv[0]);
+		BT_LOGE("[%s]Error: pbp do not support %s\r\n", __func__, argv[0]);
 		ret = -1;
 	}
 

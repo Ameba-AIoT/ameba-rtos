@@ -1,5 +1,5 @@
 
-INCLUDE "../../amebasmart_layout.ld"
+#include "../../../amebasmart_layout.ld"
 
 SECTIONS
 {
@@ -24,7 +24,6 @@ SECTIONS
 	.psram_image2.text.data ORIGIN(KM4_BD_DRAM):
 	{
 		__psram_image2_start__ = .;
-
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
 
@@ -32,9 +31,9 @@ SECTIONS
 	} > KM4_BD_DRAM
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
-	.ARM.extab  : 
+	.ARM.extab  :
 	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*) 
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
 	} > KM4_BD_DRAM
 
@@ -83,11 +82,11 @@ SECTIONS
 		__fini_array_start = .;
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
-		__fini_array_end = .;	
+		__fini_array_end = .;
 
-		/*-----------------*/		
+		/*-----------------*/
 		__image2_backtrace_end__ = .;
-	
+
 		. = ALIGN(32);
 	} > KM4_BD_DRAM
 

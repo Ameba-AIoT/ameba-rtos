@@ -26,7 +26,6 @@ extern "C"
  */
 
 /**
- * @fn        uint16_t rtk_bt_pbp_broadcast_sink_cfg(uint8_t channel)
  * @brief     config pbp broadcast sink channel.
  * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
  * @return

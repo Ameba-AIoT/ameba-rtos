@@ -11,6 +11,7 @@
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 #include "rtw_wifi_constants.h"
+#include "wifi_ind.h"
 
 #include <dlist.h>
 
@@ -606,7 +607,7 @@ void pc_msg_process(msg_attrib_t *pattrib)
 			pattrib->url = rtos_mem_malloc(strlen(curl->valuestring) + 1);
 			memset(pattrib->url, 0x00, strlen(curl->valuestring) + 1);
 
-			strncpy((char *)pattrib->url, curl->valuestring, strlen(curl->valuestring));
+			memcpy(pattrib->url, curl->valuestring, strlen(curl->valuestring));
 			if (player_is_running) {
 				rtos_time_delay_ms(200);
 				printf("[PC RECORDER INFO] %s, Player is running\n", __func__);

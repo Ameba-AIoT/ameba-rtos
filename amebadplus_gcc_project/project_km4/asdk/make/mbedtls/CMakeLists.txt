@@ -1,1 +1,1 @@
-add_subdirectory(mbedtls-2.16.9)
+add_subdirectory(mbedtls-${MBEDTLS_VER})

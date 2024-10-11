@@ -320,8 +320,13 @@ static void ameba_audio_stream_tx_sport_init(RenderStream **stream, StreamConfig
 					  rstream->stream.sp_initstruct.SP_SelFIFO);
 
 	Init_Params.chn_len = SP_CL_32;
-	Init_Params.chn_cnt = config.channels;
 	Init_Params.sr = rstream->stream.sp_initstruct.SP_SR;
+
+#if AUDIO_I2S_OUT_MULTIIO_EN
+	Init_Params.chn_cnt = 2;
+#else
+	Init_Params.chn_cnt = config.channels;
+#endif
 
 	if (AUDIO_HW_OUT_SPORT_CLK_TYPE == 0) {
 		Init_Params.codec_multiplier_with_rate = 0;

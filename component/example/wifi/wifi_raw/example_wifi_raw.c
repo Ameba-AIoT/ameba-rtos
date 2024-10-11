@@ -17,7 +17,7 @@ u8 addr3[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};
 
 void wifi_raw_tx(void *param)
 {
-	raw_data_desc_t tx_raw_data_desc;
+	struct _raw_data_desc_t tx_raw_data_desc;
 
 	printf("%s start.\n", __func__);
 

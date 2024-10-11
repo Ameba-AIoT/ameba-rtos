@@ -10,6 +10,7 @@
 
 #define RTW_INIC_WIFI_EP3_BULK_IN 						0x03U
 #define RTW_INIC_WIFI_EP4_BULK_OUT						0x04U
+#define RTW_INIC_WIFI_EP2_BULK_OUT						0x02U
 
 #define RTW_USB_RXQ_NUM						0x0AU
 #define RTW_USB_TXQ_NUM						0x20U
@@ -46,6 +47,9 @@ int rtw_usb_init(struct inic_usb *priv, struct usb_interface *intf)
 		} else if (usb_endpoint_dir_out(endpoint)) {
 			if (endpoint_num == RTW_INIC_WIFI_EP4_BULK_OUT) {
 				priv->tx_pipe[0] = usb_sndbulkpipe(usb, endpoint_num);
+				priv->tx_mps = usb_endpoint_maxp(endpoint);
+			} else if (endpoint_num == RTW_INIC_WIFI_EP2_BULK_OUT) {
+				priv->tx_pipe[1] = usb_sndbulkpipe(usb, endpoint_num);
 				priv->tx_mps = usb_endpoint_maxp(endpoint);
 			}
 		}
@@ -147,6 +151,7 @@ static int rtw_usb_init_phase2(struct inic_usb *priv)
 	spin_lock_init(&priv->usb_rxskb_lock);
 
 	atomic_set(&priv->tx_inflight, 0);
+	init_waitqueue_head(&priv->txreq_wq);
 	INIT_LIST_HEAD(&priv->tx_freeq);
 	if (rtw_usb_trx_resource_init(&priv->tx_freeq, RTW_USB_TXQ_NUM, 0, 1) != true) {
 		return false;

@@ -18,7 +18,7 @@ typedef struct wifi_roaming_ap {
 	u8 	ssid[33];
 	u8 	bssid[ETH_ALEN];
 	u8	channel;
-	rtw_security_t		security_type;
+	enum rtw_security		security_type;
 	u8 	password[65];
 	u8	key_idx;
 	s32	rssi;
@@ -35,13 +35,13 @@ static u8 pscan_channel_list[] = {1, 3, 5}; // set by customer
 u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
 {
 	wifi_roaming_ap_t *pwifi = (wifi_roaming_ap_t *)user_data;
-	rtw_scan_result_t *scanned_ap_info;
+	struct rtw_scan_result *scanned_ap_info;
 	wifi_roaming_ap_t *candicate, *temp;
 	u32 i, j = 0;
 	pwifi->rssi = -100;//init
 	char *scan_buf = NULL;
 
-	scan_buf = (char *)rtos_mem_zmalloc(ap_num * sizeof(rtw_scan_result_t));
+	scan_buf = (char *)rtos_mem_zmalloc(ap_num * sizeof(struct rtw_scan_result));
 	if (scan_buf == NULL) {
 		printf("malloc scan buf for example wifi roaming\n");
 		return -1;
@@ -53,7 +53,7 @@ u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int a
 	}
 
 	for (i = 0; i < ap_num; i++) {
-		scanned_ap_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
+		scanned_ap_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
 		if (pwifi->security_type == scanned_ap_info->security ||
 			((pwifi->security_type & (WPA2_SECURITY | WPA_SECURITY)) && (scanned_ap_info->security & (WPA2_SECURITY | WPA_SECURITY)))) {
 			if (ap_count < MAX_AP_NUM) {
@@ -94,16 +94,16 @@ void wifi_ip_changed_hdl(u8 *buf, u32 buf_len, u32 flags, void *userdata)
 }
 void wifi_roaming_thread(void *param)
 {
-	rtw_wifi_setting_t	setting;
+	struct _rtw_wifi_setting_t	setting;
 	wifi_roaming_ap_t	roaming_ap;
 	u32	i = 0, polling_count = 0;
-	rtw_scan_param_t scan_param;
+	struct _rtw_scan_param_t scan_param;
 	int scanned_ap_num = 0;
-	rtw_network_info_t connect_param;
-	rtw_phy_statistics_t phy_statistics;
-	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
-	memset(&connect_param, 0, sizeof(rtw_network_info_t));
-	memset(&setting, 0, sizeof(rtw_wifi_setting_t));
+	struct _rtw_network_info_t connect_param;
+	struct _rtw_phy_statistics_t phy_statistics;
+	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
+	memset(&setting, 0, sizeof(struct _rtw_wifi_setting_t));
 	memset(&roaming_ap, 0, sizeof(wifi_roaming_ap_t));
 	roaming_ap.rssi = -100;
 #ifdef CONFIG_LWIP_LAYER

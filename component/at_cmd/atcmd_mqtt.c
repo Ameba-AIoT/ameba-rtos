@@ -1636,7 +1636,8 @@ static void mqtt_clent_alive_fail(MQTT_CONTROL_BLOCK *mqttCb)
 		if (0 == mqttCb->initialConnect) {
 			at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
 		} else {
-			at_printf("\r\n%sERROR:%d\r\n", "+MQTTCONN:", MQTT_CONNECTION_ERROR);
+			/* Do not use at_printf here. */
+			RTK_LOGI(NOTAG, "\r\n[mqtt_clent_alive_fail] Connect failed.");
 		}
 	}
 	mqttCb->client.ping_outstanding = 0;
@@ -1685,7 +1686,8 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			if (0 == mqttCb->initialConnect) {
 				at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
 			} else {
-				at_printf("\r\n%sERROR:%d\r\n", "+MQTTCONN:", MQTT_CONNECTION_ERROR);
+				/* Do not use at_printf here. */
+				RTK_LOGI(NOTAG, "\r\n[mqtt_clent_data_proc] Lost connection.");
 			}
 		}
 		/* Try re-connect per second, except when initial-connect. */

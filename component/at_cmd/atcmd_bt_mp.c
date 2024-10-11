@@ -26,7 +26,7 @@ static uint8_t check_byte_num = 0;
 static uint32_t temp_uart_aggc = 0;
 
 #if (defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1))
-#if defined(ARM_CORE_CM4)
+#if defined(CONFIG_ARM_CORE_CM4)
 static void *UartBkFunc = NULL;
 #endif
 #endif
@@ -110,15 +110,15 @@ static void bt_uart_bridge_close(void)
 	/* km0 open shell loguart*/
 	IPC_MSG_STRUCT ipc_msg_temp;
 	ipc_msg_temp.msg = 2; // km0 open shell loguart
-#if defined(ARM_CORE_CA32)
+#if defined(CONFIG_ARM_CORE_CA32)
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_UARTBRIDGE, &ipc_msg_temp);
-#elif defined(ARM_CORE_CM4)
+#elif defined(CONFIG_ARM_CORE_CM4)
 	ipc_send_message(IPC_NP_TO_LP, IPC_N2L_UARTBRIDGE, &ipc_msg_temp);
 #endif
 #endif
 
 #if defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)
-#if defined(RSICV_CORE_KR4)
+#if defined(CONFIG_RSICV_CORE_KR4)
 	irq_disable(UART_LOG_IRQ);
 	/* km4 open shell loguart*/
 	IPC_MSG_STRUCT ipc_msg_temp;
@@ -252,7 +252,7 @@ void bt_uart_bridge_open(void)
 	LOGUART_AGGCmd(LOGUART_DEV, DISABLE);
 
 #if defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)
-#if defined(RSICV_CORE_KR4)
+#if defined(CONFIG_RSICV_CORE_KR4)
 	/* km4 close shell loguart */
 	IPC_MSG_STRUCT ipc_msg_temp;
 	ipc_msg_temp.msg = 1;
@@ -267,9 +267,9 @@ void bt_uart_bridge_open(void)
 	/* km0 close shell loguart*/
 	IPC_MSG_STRUCT ipc_msg_temp;
 	ipc_msg_temp.msg = 1;
-#if defined(ARM_CORE_CA32)
+#if defined(CONFIG_ARM_CORE_CA32)
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_UARTBRIDGE, &ipc_msg_temp);
-#elif defined(ARM_CORE_CM4)
+#elif defined(CONFIG_ARM_CORE_CM4)
 	ipc_send_message(IPC_NP_TO_LP, IPC_N2L_UARTBRIDGE, &ipc_msg_temp);
 #endif
 #endif
@@ -386,10 +386,10 @@ void fATM2(void *arg)
 	cmd_cnt = sizeof(at_mp_ext2_items) / sizeof(at_mp_ext2_items[0]);
 	argc = parse_param(arg, argv);
 	if (argc == 1) {
-		_AT_PRINTK("\n");
+		RTK_LOGS(NOTAG, "\n");
 		MP_EXT2_PRINTF("Command usage :\n");
 		for (idx = 0; idx < cmd_cnt; idx++) {
-			_AT_PRINTK("%s", at_mp_ext2_items[idx].mp_ext_usage);
+			RTK_LOGS(NOTAG, "%s", at_mp_ext2_items[idx].mp_ext_usage);
 		}
 	} else {
 		for (idx = 0; idx < cmd_cnt; idx++) {

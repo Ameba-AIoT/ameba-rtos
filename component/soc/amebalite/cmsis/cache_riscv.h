@@ -548,7 +548,7 @@ __STATIC_FORCEINLINE void CleanInvalidateDCache_by_Addr(__UNUSED uint32_t *addr,
 #endif
 }
 
-#ifndef RSICV_CORE_KR4
+#ifndef CONFIG_RSICV_CORE_KR4
 /**
   \brief   Enable L2-Cache
   \details Turns on L2-Cache
@@ -824,7 +824,7 @@ __STATIC_FORCEINLINE void DisableDMem1(void)
 #endif
 }
 
-#ifndef RSICV_CORE_KR4
+#ifndef CONFIG_RSICV_CORE_KR4
 /**
   \brief   Disable L2-Mem
   \details Turns off L2-Mem

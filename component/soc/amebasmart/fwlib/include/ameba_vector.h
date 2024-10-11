@@ -50,7 +50,7 @@ typedef void (*Fault_Patch)(uint32_t *MSP, uint32_t *PSP, uint32_t lr, uint32_t 
 /** @defgroup IRQ_Exported_Constants IRQ Exported Constants
   * @{
   */
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 /** @defgroup IRQn_enum
   * @{
   */
@@ -152,7 +152,7 @@ enum IRQn {
   * @}
   */
 #endif
-#if defined (ARM_CORE_CM0)
+#if defined (CONFIG_ARM_CORE_CM0)
 
 /** @defgroup LPIRQn_enum
   * @{
@@ -220,7 +220,7 @@ enum LPIRQn {
   * @}
   */
 #endif
-#if defined (ARM_CORE_CA32)
+#if defined (CONFIG_ARM_CORE_CA32)
 /** @defgroup APIRQn_enum
   * @{
   */
@@ -344,7 +344,7 @@ enum APIRQn {
 /** @defgroup IRQn_Priority_def
   * @{
   */
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 enum IRQnPriority {
 	INT_PRI0 = 0,				//KM4 Priority value 0 is the highest active priority
 	INT_PRI_HIGHEST	= INT_PRI0,
@@ -359,7 +359,7 @@ enum IRQnPriority {
 	INT_PRI7,
 	INT_PRI_LOWEST	= INT_PRI7,
 };
-#elif defined (ARM_CORE_CM0)
+#elif defined (CONFIG_ARM_CORE_CM0)
 enum IRQnPriority {
 	INT_PRI0 = 0,
 	INT_PRI_HIGHEST = INT_PRI0,		//KM0 Priority
@@ -370,7 +370,7 @@ enum IRQnPriority {
 	INT_PRI3,
 	INT_PRI_LOWEST	= INT_PRI3,		//KM0 only have 4 priority level
 };
-#elif defined (ARM_CORE_CA32)
+#elif defined (CONFIG_ARM_CORE_CA32)
 enum NS_IRQnPriority {
 	INT_PRI0 = 0,
 	INT_PRI_HIGHEST = INT_PRI0,		//CA32 Priority in NS World, lower numbers have higher priority
@@ -419,7 +419,7 @@ extern _LONG_CALL_ BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,
 extern _LONG_CALL_ BOOL irq_unregister(IRQn_Type IrqNum);
 extern _LONG_CALL_ BOOL FaultPatch_register(Fault_Patch PatchFun);
 
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 #define InterruptRegister_edge		irq_register_edge
 #endif
 #define InterruptRegister			irq_register
@@ -444,7 +444,7 @@ extern IRQ_FUN UserIrqFunTable[];
 extern u32 UserIrqDataTable[];
 extern HAL_VECTOR_FUN  NewVectorTable[];
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 #define MAX_VECTOR_TABLE_NUM			(80+16)
 #define MAX_PERIPHERAL_IRQ_NUM			80
 #define MAX_IRQ_PRIORITY_VALUE			7

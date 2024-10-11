@@ -5,8 +5,8 @@ A simple websocket server example which echo all the messages.
 
 
 Configuration:
-1.Both WS server and WSS server are supported by this exmaple, and can be changed by modifying USE_WSS in example_ws_server.c.
-	[example_ws_server.c]
+1.Both WS server and WSS server are supported by this exmaple, and can be changed by modifying USE_WSS in example_websocket_server.c.
+	[example_websocket_server.c]
 		#define USE_WSS    1 //acting as the WSS server
 		#define USE_WSS    0 //acting as the WS server
 		

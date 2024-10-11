@@ -676,6 +676,7 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #define LWIP_HOOK_IP4_INPUT rtk_otbr_lwip_hook_ip4_input
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
 #define MEMP_NUM_SYS_TIMEOUT            20
+#define LWIP_HOOK_FILENAME "rtk_otbr_tcpip_hook.h"
 #endif
 
 #define MEM_LIBC_MALLOC                 1

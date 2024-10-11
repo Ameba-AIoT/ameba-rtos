@@ -71,7 +71,7 @@
 #endif
 
 #if defined(CONFIG_AS_INIC_AP)
-#include "inic_ipc_host_trx.h"
+extern int inic_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt);
 #endif
 
 #define netifMTU                                (1500)
@@ -267,10 +267,8 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 	}
 
 	if (sg_len) {
-		if (rltk_mii_send(sg_list, sg_len, p->tot_len) == 0) {
-			return ERR_OK;
-		} else {
-			return ERR_BUF;    // return a non-fatal error
+		if (rltk_mii_send(sg_list, sg_len, p->tot_len) != 0) {
+			return ERR_BUF;
 		}
 	}
 #else

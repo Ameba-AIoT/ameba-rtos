@@ -56,7 +56,7 @@ void us_ticker_init(void)
 	printf("%s: Timer_Id=%d\n", __FUNCTION__, APP_TIM_ID);
 }
 
-#if (!TICK_READ_FROM_CPU) || !defined(PLATFORM_FREERTOS)
+#if (!TICK_READ_FROM_CPU) || !defined(CONFIG_PLATFORM_FREERTOS)
 uint32_t us_ticker_read(void)
 {
 	uint32_t tick_cnt;

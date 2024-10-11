@@ -81,7 +81,7 @@ func_exit:
 
 static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, struct inic_ipc_dev_req_msg *p_ipc_msg)
 {
-	enum rtw_event_indicate event = (enum rtw_event_indicate)p_ipc_msg->param_buf[0];
+	u32 event = (u32)p_ipc_msg->param_buf[0];
 	char *buf = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[1]);
 	int buf_len = (int)p_ipc_msg->param_buf[2];
 	int flags = (int)p_ipc_msg->param_buf[3];

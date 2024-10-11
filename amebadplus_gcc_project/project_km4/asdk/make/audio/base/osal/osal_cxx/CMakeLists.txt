@@ -1,5 +1,5 @@
 set(
-    MODULE_IFLAGS 
+    MODULE_IFLAGS
     ${BASEDIR}/component/audio/base/log/interfaces
     ${BASEDIR}/component/audio/base/osal/osal_c/interfaces
     ${BASEDIR}/component/audio/base/osal/osal_cxx/interfaces
@@ -9,12 +9,14 @@ set(
 set(DIR ${BASEDIR}/component/audio/base/osal/osal_cxx)
 
 set(
-    CPPSRC 
+    CPPSRC
     ${DIR}/src/refptr.cpp
     ${DIR}/adapter/freertos/mutex.cpp
     ${DIR}/adapter/freertos/condition.cpp
     ${DIR}/adapter/freertos/threads.cpp
 )
 
+set(MODULE_C_DEFINES __RTOS__)
+set_source_files_properties(${CSRC} DIRECTORY ../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_C_DEFINES}")
 set_source_files_properties(${CPPSRC} DIRECTORY ../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CPPSRC})

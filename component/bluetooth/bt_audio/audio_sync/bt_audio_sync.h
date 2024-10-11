@@ -30,7 +30,6 @@ typedef enum {
 } bt_audio_pres_act_t;
 
 /**
- * @fn        uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t* data, uint16_t size)
  * @brief     do audio xrun handle(when audio buffer is empty).
  * @param[in] track: pointer of audio track struct
  * @param[in] data: pointer of decoded data
@@ -42,7 +41,6 @@ typedef enum {
 uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, uint16_t size);
 
 /**
- * @fn        uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size)
  * @brief     do audio presentation compenstaion check.
  * @param[in] track: pointer of audio track struct
  * @param[in] ts_us: time stamp(micro seconds)

@@ -18,6 +18,7 @@
 /* Add Includes here */
 #include "provision_generic.h"
 #include "provision_adv.h"
+#include "mesh_provision.h"
 
 BEGIN_DECLS
 
@@ -37,6 +38,7 @@ BEGIN_DECLS
   *
   * The spec requires the provisioner to disconnect the bearer after the provision procedure.
   * The mesh stack leaves the app to decide whether to disconnect at the case @ref PROV_CB_TYPE_COMPLETE.
+  * @deprecated
   * @param[in] reason: pb-adv bearer need the disconnect reason
   * @return operation result
   */
@@ -46,10 +48,11 @@ bool prov_disconnect_dev(pb_adv_link_close_reason_t reason);
   * @brief set the auth random value
   *
   * The function shall be called at the appropriate time.
+  * @deprecated
   * @param[in] random: random value
   * @return operation result
   */
-bool prov_auth_random_set_dev(uint8_t random[16]);
+bool prov_auth_random_set_dev(uint8_t random[]);
 
 /**
   * @brief change the auth value
@@ -81,10 +84,12 @@ void device_receive(uint8_t *pdata, uint16_t len);
 
 /**
  * @brief device send data
+ * @deprecated
+ * @param[in] pprov_ctx: provision information
  * @param[in] pdata: provision data
  * @param[in] len: provision data length
  */
-bool prov_send_dev(uint8_t *pdata, uint16_t len);
+bool prov_send_dev(prov_ctx_p pprov_ctx, uint8_t *pdata, uint16_t len);
 
 /**
  * @brief initialize provision resources

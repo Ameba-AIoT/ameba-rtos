@@ -6,6 +6,8 @@ set(
     MODULE_IFLAGS 
     ${BASEDIR}/component/network/mqtt/MQTTClient
     ${BASEDIR}/component/network/mqtt/MQTTPacket
+    ${BASEDIR}/component/network/cJSON
+    ${BASEDIR}/component/file_system/kv
 )
 
 set(APP_DIR ${TARGETDIR}/app/monitor)
@@ -14,7 +16,7 @@ set(DIR ${BASEDIR}/component/at_cmd)
 
 set(
     CSRC
-    ${APP_DIR}/ram/monitor_km4.c
+    ${DIR}/monitor.c
     ${APP_DIR}/ram/shell_ram.c
     ${APP_DIR}/ram/low_level_io.c
 )
@@ -49,7 +51,7 @@ if(CONFIG_BT)
     )
 endif()
 
-if(CONFIG_ATCMD_IO_UART)
+if(CONFIG_ATCMD_MCU_CONTROL)
     list(
         APPEND CSRC 
         ${DIR}/at_intf_uart.c
@@ -66,22 +68,8 @@ list(
     ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/secure
 )
 
-if(CONFIG_INTERNAL_LIB)
 
-    ameba_internal_library(at_cmd)
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
 
-else()
-
-    set_source_files_properties(${CSRC} DIRECTORY .. PROPERTIES COMPILE_DEFINITIONS "${MODULE_C_DEFINES}")
-
-    set_source_files_properties(${CSRC} DIRECTORY .. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-
-    target_sources(
-        target_img2_${PROJECT_NAME}
-        PRIVATE
-        ${CSRC}
-    )
-endif()
+ameba_internal_library(at_cmd)
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

@@ -2,6 +2,7 @@
 #include "lwip_netconf.h"
 #include "main.h"
 #if CONFIG_WLAN
+#include "wifi_conf.h"
 #include "wifi_ind.h"
 #endif
 
@@ -55,7 +56,7 @@
 struct netif eth_netif;
 extern err_t ethernetif_mii_init(struct netif *netif);
 #endif
-
+extern void (*p_wifi_join_info_free)(u8 iface_type);
 struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -280,6 +281,10 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 				if (p_store_fast_connect_info) {
 					p_store_fast_connect_info((uint32_t)dhcp->offered_ip_addr.addr, (uint32_t)ip_addr_get_ip4_u32(&dhcp->server_ip_addr));
 				}
+				if (p_wifi_join_info_free) {
+					/* free key here after join success */
+					p_wifi_join_info_free(IFACE_PORT0);
+				}
 #endif
 				return DHCP_ADDRESS_ASSIGNED;
 			} else {
@@ -305,6 +310,10 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 					if (p_store_fast_connect_info) {
 						p_store_fast_connect_info((uint32_t)dhcp->offered_ip_addr.addr, (uint32_t)ip_addr_get_ip4_u32(&dhcp->server_ip_addr));
+					}
+					if (p_wifi_join_info_free) {
+						/* free key here after join success */
+						p_wifi_join_info_free(IFACE_PORT0);
 					}
 #endif
 

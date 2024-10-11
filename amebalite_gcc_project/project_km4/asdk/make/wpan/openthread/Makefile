@@ -25,6 +25,7 @@ COAP_DIR 			= $(DIR)/coap
 COMMON_DIR 			= $(DIR)/common
 CRYPTO_DIR 			= $(DIR)/crypto
 DIAGS_DIR 			= $(DIR)/diags
+INSTANCE_DIR 		= $(DIR)/instance
 MAC_DIR 			= $(DIR)/mac
 MESHCOP_DIR 		= $(DIR)/meshcop
 NET_DIR 			= $(DIR)/net
@@ -48,6 +49,7 @@ vpath %.c $(THREADDIR) $(shell find $(THREADDIR) -type d)
 
 #GLOBAL_CFLAGS += -DOPENTHREAD_CONFIG_CORE_USER_CONFIG_HEADER_ENABLE
 CPPFLAGS += -Wno-unused-parameter
+GLOBAL_CFLAGS := $(filter-out -Werror, $(GLOBAL_CFLAGS))
 
 #*****************************************************************************#
 #                               Include FILE LIST                             #
@@ -80,6 +82,10 @@ MODULE_IFLAGS += -I$(THREADDIR)/openthread/cli/
 #MODULE_IFLAGS += -I$(THREADDIR)/openthread/third_party/mbedtls/repo/include/
 #MODULE_IFLAGS += -I$(THREADDIR)/openthread/third_party/mbedtls/repo/include/psa/
 #MODULE_IFLAGS += -I$(THREADDIR)/openthread/third_party/mbedtls/repo/library/
+
+ifeq ($(CONFIG_802154_THREAD_CONCURRENT_EN), y)
+MODULE_IFLAGS += -I$(BASEDIR)/component/rtk_coex/rtk_coex_ext_chip/rtk_coex_ext_slave/
+endif
 
 #*****************************************************************************#
 #                               Source FILE LIST                              #
@@ -115,6 +121,8 @@ CSRC += $(RTK_OT_SUPPORT)/rtk_ot_alarm.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_crypto.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_uart.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_settings.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_multipan.c \
+		$(RTK_OT_SUPPORT)/rtk_ot_ble.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_test.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_cli_extension.c \
 		$(RTK_OT_SUPPORT)/rtk_ot_cli_uart.c
@@ -163,7 +171,7 @@ $(OPENTHREAD_DIR_OBJS):
 #all: $(OPENTHREAD_DIR_OBJS) CORE_TARGETS COPY_RAM_OBJS
 
 #library method
-lib:$(shell cd $(THREADDIR)/openthread && git apply ./../tcplp_dup_name.ptach && cd -)	$(OPENTHREAD_DIR_OBJS) CORE_TARGETS
+lib:$(shell cd $(THREADDIR)/openthread && git apply ./../openthread_tcplp_dup_name_patch.ptach && cd -)	$(OPENTHREAD_DIR_OBJS) CORE_TARGETS
 	$(call GEN_AND_MOVE_TO_LIB_FOLDER, $(TARGET_LIB), $(TARGET_LIBAPP_FOLDER))
 #library method end
 #*****************************************************************************#

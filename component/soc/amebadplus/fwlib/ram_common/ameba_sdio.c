@@ -45,8 +45,10 @@ void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct)
   *         the configuration information for the SDIO peripheral.
   * @retval None
   */
-void SDIO_Init(SDIO_InitTypeDef *SDIOInit_Struct)
+void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct)
 {
+	UNUSED(SDIO);
+
 	u16 Temp = 0;
 
 	/* Set PID to 0x8722 */
@@ -98,8 +100,10 @@ void SDIO_Init(SDIO_InitTypeDef *SDIOInit_Struct)
   * @note	clear all interrupt of SDIO
   * @retval None
   */
-void SDIO_INTClear(u16 IntStatus)
+void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 IntStatus)
 {
+	UNUSED(SDIO);
+
 	HAL_WRITE16(SDIO_REG_BASE, REG_SPDIO_CPU_INT_STAS, IntStatus);	// clean the ISR
 }
 
@@ -108,8 +112,10 @@ void SDIO_INTClear(u16 IntStatus)
   * @note	clear all interrupt of SDIO
   * @retval None
   */
-void SDIO_INTClearAll(void)
+void SDIO_INTClearAll(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	u16 IntStatus;
 
 	IntStatus = HAL_READ16(SDIO_REG_BASE, REG_SPDIO_CPU_INT_STAS);
@@ -135,8 +141,10 @@ void SDIO_INTClearAll(void)
   * @param  NewState: ENABLE or DISABLE.
   * @retval None
   */
-void SDIO_INTConfig(u16 IntMask, u32 NewState)
+void SDIO_INTConfig(SDIO_TypeDef *SDIO, u16 IntMask, u32 NewState)
 {
+	UNUSED(SDIO);
+
 	u16 IntMaskTmp = HAL_READ16(SDIO_REG_BASE, REG_SPDIO_CPU_INT_MASK);
 
 	if (NewState == ENABLE) {
@@ -153,8 +161,10 @@ void SDIO_INTConfig(u16 IntMask, u32 NewState)
   * @param  None.
   * @retval Interrupt status
   */
-u16 SDIO_INTStatus(void)
+u16 SDIO_INTStatus(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ16(SDIO_REG_BASE, REG_SPDIO_CPU_INT_STAS);
 }
 
@@ -163,8 +173,10 @@ u16 SDIO_INTStatus(void)
   * @param  None.
   * @retval RPWM1 val.
   */
-u8 SDIO_RPWM1_Get(void)
+u8 SDIO_RPWM1_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ8(SDIO_REG_BASE, REG_SPDIO_CRPWM);
 }
 
@@ -173,8 +185,10 @@ u8 SDIO_RPWM1_Get(void)
   * @param  None.
   * @retval RPWM2 val.
   */
-u16 SDIO_RPWM2_Get(void)
+u16 SDIO_RPWM2_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ16(SDIO_REG_BASE, REG_SPDIO_CRPWM2);
 }
 
@@ -183,8 +197,10 @@ u16 SDIO_RPWM2_Get(void)
   * @param  Val: CPWM msg to send.
   * @retval None
   */
-void SDIO_CPWM1_Set(u8 Val)
+void SDIO_CPWM1_Set(SDIO_TypeDef *SDIO, u8 Val)
 {
+	UNUSED(SDIO);
+
 	u8  Temp = HAL_READ8(SDIO_REG_BASE, REG_SPDIO_CCPWM);
 
 	Temp ^= CPWM1_TOGGLE_BIT;
@@ -199,8 +215,10 @@ void SDIO_CPWM1_Set(u8 Val)
   * @param  Newstate: DISABLE/ENABLE.
   * @retval None
   */
-void SDIO_CPWM2_Set(u16 Val, u32 Newstate)
+void SDIO_CPWM2_Set(SDIO_TypeDef *SDIO, u16 Val, u32 Newstate)
 {
+	UNUSED(SDIO);
+
 	u16  Temp = HAL_READ16(SDIO_REG_BASE, REG_SPDIO_CCPWM2);
 
 	Temp ^= CPWM2_TOGGLE_BIT;
@@ -219,8 +237,10 @@ void SDIO_CPWM2_Set(u16 Val, u32 Newstate)
   * @param  None.
   * @retval H2C message val.
   */
-u32 SDIO_H2C_MSG_Get(void)
+u32 SDIO_H2C_MSG_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ32(SDIO_REG_BASE, REG_SPDIO_CPU_H2C_MSG);
 }
 
@@ -229,8 +249,10 @@ u32 SDIO_H2C_MSG_Get(void)
   * @param  None
   * @retval RXBD read pointer
   */
-u16 SDIO_RXBD_RPTR_Get(void)
+u16 SDIO_RXBD_RPTR_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ16(SDIO_REG_BASE, REG_SPDIO_RXBD_C2H_RPTR);
 }
 
@@ -239,8 +261,10 @@ u16 SDIO_RXBD_RPTR_Get(void)
   * @param  Val: RXBD write pointer
   * @retval None
   */
-void SDIO_RXBD_WPTR_Set(u16 Val)
+void SDIO_RXBD_WPTR_Set(SDIO_TypeDef *SDIO, u16 Val)
 {
+	UNUSED(SDIO);
+
 	HAL_WRITE16(SDIO_REG_BASE, REG_SPDIO_RXBD_C2H_WPTR, Val);
 }
 
@@ -249,8 +273,10 @@ void SDIO_RXBD_WPTR_Set(u16 Val)
   * @param  None
   * @retval TXBD write pointer
   */
-u32 SDIO_TXBD_WPTR_Get(void)
+u32 SDIO_TXBD_WPTR_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ32(SDIO_REG_BASE, REG_SPDIO_TXBD_WPTR);
 }
 
@@ -259,8 +285,10 @@ u32 SDIO_TXBD_WPTR_Get(void)
   * @param  None
   * @retval TXBD read pointer
   */
-void SDIO_TXBD_RPTR_Set(u32 Val)
+void SDIO_TXBD_RPTR_Set(SDIO_TypeDef *SDIO, u32 Val)
 {
+	UNUSED(SDIO);
+
 	HAL_WRITE32(SDIO_REG_BASE, REG_SPDIO_TXBD_RPTR, Val);
 }
 
@@ -269,8 +297,10 @@ void SDIO_TXBD_RPTR_Set(u32 Val)
   * @param  None
   * @retval TXBD read pointer
   */
-u32 SDIO_TXBD_RPTR_Get(void)
+u32 SDIO_TXBD_RPTR_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ32(SDIO_REG_BASE, REG_SPDIO_TXBD_RPTR);
 }
 
@@ -279,8 +309,10 @@ u32 SDIO_TXBD_RPTR_Get(void)
   * @param  None
   * @retval TXBD read pointer
   */
-void SDIO_DMA_Reset(void)
+void SDIO_DMA_Reset(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	HAL_WRITE8(SDIO_REG_BASE, REG_SPDIO_CPU_RST_DMA, BIT_CPU_RST_SDIO_DMA);
 }
 
@@ -289,8 +321,10 @@ void SDIO_DMA_Reset(void)
   * @param  None.
   * @retval H2C message val.
   */
-u32 SDIO_DMA_CTRL_Get(void)
+u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	return HAL_READ32(SDIO_REG_BASE, REG_SPDIO_AHB_DMA_CTRL);
 }
 
@@ -299,8 +333,10 @@ u32 SDIO_DMA_CTRL_Get(void)
   * @param  ready: Set if SDIO is ready. It can be ENABLE/DISABLE.
   * @retval None
   */
-void SDIO_SetReady(int ready)
+void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready)
 {
+	UNUSED(SDIO);
+
 	u8 reg;
 
 	reg = HAL_READ8(SDIO_REG_BASE, REG_SPDIO_CPU_IND);
@@ -319,8 +355,10 @@ void SDIO_SetReady(int ready)
   * @param  None
   * @retval None
   */
-void SDIO_RxReq(void)
+void SDIO_RxReq(SDIO_TypeDef *SDIO)
 {
+	UNUSED(SDIO);
+
 	HAL_WRITE8(SDIO_REG_BASE, REG_SPDIO_HCI_RX_REQ, BIT_HCI_RX_REQ);
 }
 /**

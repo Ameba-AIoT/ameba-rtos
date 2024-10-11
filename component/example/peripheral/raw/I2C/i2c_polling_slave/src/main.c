@@ -222,6 +222,7 @@ void i2c_dual_slave_task(void)
 #ifdef I2C_LOOP_TEST
 	RTK_LOGI(TAG, "Slave read  2>>>\n");
 	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], I2C_DATA_LENGTH);
+	i2c_slave_rx_check();
 
 	RTK_LOGI(TAG, "Slave write  2>>>\n");
 	I2C_SlaveWrite(i2cslave.I2Cx, &i2cdatardsrc[0], I2C_DATA_LENGTH);
@@ -233,6 +234,7 @@ void i2c_dual_slave_task(void)
 
 	RTK_LOGI(TAG, "Slave read 3>>>\n");
 	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], I2C_DATA_LENGTH);
+	i2c_slave_rx_check();
 
 	RTK_LOGI(TAG, "Slave write 3>>>\n");
 	I2C_SlaveWrite(i2cslave.I2Cx, &i2cdatardsrc[0], I2C_DATA_LENGTH);

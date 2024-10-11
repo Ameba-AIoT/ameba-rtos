@@ -48,7 +48,7 @@ static void cfg80211_rtw_set_acs_info(u32 *param_buf)
 static void llhw_event_join_status_indicate(struct event_priv_t *event_priv, u32 *param_buf)
 {
 #ifndef CONFIG_SDIO_BRIDGE
-	enum rtw_event_indicate event = (enum rtw_event_indicate)param_buf[0];
+	u32 event = (u32)param_buf[0];
 	int flags = (int)param_buf[1];
 	int buf_len = (int)param_buf[2];
 	char *buf = (char *) &param_buf[3];

@@ -25,8 +25,5 @@ set(CSRC
     ${DIR}/spdio_api.c
 )
 
-target_sources(
-    target_img2_${PROJECT_NAME} 
-    PRIVATE 
-    ${CSRC}
-)
+ameba_internal_library(target_hal)
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

@@ -243,6 +243,8 @@ typedef	    __kernel_ssize_t	SSIZE_T;
  			(((u16)(x) & (u16)0xff00) >>  8)))
 
 #if SYSTEM_ENDIAN == PLATFORM_LITTLE_ENDIAN
+#define CONCAT_TO_UINT32(b4, b3, b2, b1) 	(((u32)((b4) & 0xFF) << 24) | ((u32)((b3) & 0xFF) << 16) | ((u32)((b2) & 0xFF) << 8) | ((u32)((b1) & 0xFF)))
+#define CONCAT_TO_UINT16(b2, b1) 			(((u16)((b2) & 0xFF) << 8) | ((u16)((b1) & 0xFF)))
 #ifndef rtk_le16_to_cpu
 #define rtk_cpu_to_le32(x)		((u32)(x))
 #define rtk_le32_to_cpu(x)		((u32)(x))
@@ -255,6 +257,8 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 #endif
 
 #elif SYSTEM_ENDIAN == PLATFORM_BIG_ENDIAN
+#define CONCAT_TO_UINT32(b4, b3, b2, b1) 	(((u32)((b1) & 0xFF) << 24) | ((u32)((b2) & 0xFF) << 16) | ((u32)((b3) & 0xFF) << 8) | ((u32)((b4) & 0xFF)))
+#define CONCAT_TO_UINT16(b2, b1) 			(((u16)((b1) & 0xFF) << 8) | ((u16)((b2) & 0xFF)))
 #ifndef rtk_le16_to_cpu
 #define rtk_cpu_to_le32(x)		SWAP32((x))
 #define rtk_le32_to_cpu(x)		SWAP32((x))

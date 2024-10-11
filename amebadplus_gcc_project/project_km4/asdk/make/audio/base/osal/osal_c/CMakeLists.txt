@@ -11,7 +11,7 @@ set(
 set(DIR ${BASEDIR}/component/audio/base/osal/osal_c)
 
 set(
-    CSRC 
+    CSRC
     ${DIR}/adapter/freertos/osal_mem.c
     ${DIR}/adapter/freertos/osal_mutex.c
     ${DIR}/adapter/freertos/osal_sem.c
@@ -20,8 +20,10 @@ set(
     ${DIR}/adapter/freertos/osal_time.c
     ${DIR}/adapter/freertos/osal_timer.c
     ${DIR}/adapter/freertos/osal_strdup.c
-    ${DIR}/adapter/freertos/osal_vasprintf.c 
+    ${DIR}/adapter/freertos/osal_vasprintf.c
 )
 
+set(MODULE_C_DEFINES __RTOS__)
+set_source_files_properties(${CSRC} DIRECTORY ../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_C_DEFINES}")
 set_source_files_properties(${CSRC} DIRECTORY ../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

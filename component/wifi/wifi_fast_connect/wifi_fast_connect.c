@@ -51,13 +51,13 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 #endif
 	struct wlan_fast_reconnect read_data = {0};
 	struct wlan_fast_reconnect wifi_data_to_flash = {0};
-	rtw_wifi_setting_t setting;
+	struct _rtw_wifi_setting_t setting;
 	struct psk_info PSK_info;
 	u32 channel = 0;
 
 	/* STEP1: get current connect info from wifi driver*/
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
-		RTW_API_INFO("\r\n %s():wifi_get_setting fail or ap mode", __func__);
+		RTK_LOGS(NOTAG, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
 		return RTW_ERROR;
 	}
 
@@ -142,7 +142,7 @@ int wifi_do_fast_connect(void)
 #else
 	int wifi_retry_connect = 0;	// For fast wifi connect retry times in WPS function
 #endif
-	rtw_network_info_t wifi = {0};
+	struct _rtw_network_info_t wifi = {0};
 	struct psk_info PSK_INFO = {0};
 
 #ifdef CONFIG_LWIP_LAYER
@@ -285,10 +285,10 @@ int check_is_the_same_ap()
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 	if (p_store_fast_connect_info != NULL) {
 		struct wlan_fast_reconnect data;
-		rtw_wifi_setting_t setting;
+		struct _rtw_wifi_setting_t setting;
 
 		if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
-			RTW_API_INFO("\r\n %s():wifi_get_setting fail or ap mode", __func__);
+			RTK_LOGS(NOTAG, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
 			return 0;
 		}
 

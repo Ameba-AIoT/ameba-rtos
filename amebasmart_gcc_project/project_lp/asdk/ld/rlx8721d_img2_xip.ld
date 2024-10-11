@@ -1,6 +1,6 @@
 ENTRY(Reset_Handler)
 
-INCLUDE "../../amebasmart_layout.ld"
+#include "../../../amebasmart_layout.ld"
 
 SECTIONS
 {
@@ -8,7 +8,7 @@ SECTIONS
 	.xip_image2.text :
 	{
 		__flash_text_start__ = .;
-		
+
 		__flash_text_end__ = .;
 	} > KM0_IMG2_XIP
 
@@ -31,6 +31,14 @@ SECTIONS
 		__sram_image2_end__ = .;
 		. = ALIGN(32);
 	} > KM0_BD_RAM
+
+	/* psram part */
+	.psram_image2.text.data ORIGIN(KM0_BD_DRAM):
+	{
+		__psram_image2_start__ = .;
+
+		__psram_image2_end__ = .;
+	} > KM0_BD_DRAM
 
 	.xip_image2.text :
 	{
@@ -99,9 +107,8 @@ SECTIONS
 		__HeapBase = .;
 		__end__ = .;
 		end = __end__;
-		KEEP(*(.heap.stdlib*))
 		. = . + 4096;	/* reserved for _sbrk */
-		
+
 		__HeapLimit = .;
 	} > KM0_BD_RAM
 
@@ -110,13 +117,18 @@ SECTIONS
 	{
 		__bdram_heap_buffer_start__ = .;
 	} > KM0_BD_RAM
+
+	/* put in the end of psram part */
+	.psram_heap.start (NOLOAD):
+	{
+		__psram_heap_buffer_start__ = .;
+	} > KM0_BD_DRAM
+
 }
 
 ASSERT( __flash_text_start__ == ORIGIN(KM0_IMG2_XIP), "__flash_text_start__ is changed.")
 ASSERT(__sram_image2_start__ == ORIGIN(KM0_BD_RAM), "__sram_image2_start__ is changed.")
-__psram_image2_start__ = .;
+ASSERT( __psram_image2_start__ == ORIGIN(KM0_BD_DRAM), "__psram_image2_start__ is changed.")
 
 __bdram_heap_buffer_size__ = ORIGIN(KM0_BD_RAM) + LENGTH(KM0_BD_RAM) - __bdram_heap_buffer_start__;
-
-__psram_heap_buffer_start__ = .;
 __psram_heap_buffer_size__ = 0;

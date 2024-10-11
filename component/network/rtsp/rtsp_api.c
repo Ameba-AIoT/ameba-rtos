@@ -1316,7 +1316,7 @@ void rtsp_start_service(struct rtsp_context *rtsp_ctx)
 {
 	char *request, *request_concat_buf;
 	int mode = 0;
-	rtw_wifi_setting_t setting = {0};
+	struct _rtw_wifi_setting_t setting = {0};
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t client_addr_len = sizeof(struct sockaddr_in);
 

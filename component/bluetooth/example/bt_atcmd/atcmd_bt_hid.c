@@ -27,11 +27,11 @@ static int atcmd_bt_hid_disconnect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hid_disconnect(bd_addr)) {
-		BTHID_AT_PRINTK("HID disconnect fail \r\n");
+		BT_LOGE("HID disconnect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTHID_AT_PRINTK("HID disconnecting to device %s ...", addr_str);
+	BT_LOGA("HID disconnecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -44,11 +44,11 @@ static int atcmd_bt_hid_get_report_rsp(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_hid_get_report_rsp(bd_addr)) {
-		BTHID_AT_PRINTK("HID get report response fail \r\n");
+		BT_LOGE("HID get report response fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTHID_AT_PRINTK("HID get report response to device %s ...", addr_str);
+	BT_LOGA("HID get report response to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -64,11 +64,11 @@ static int atcmd_bt_hid_data_send(int argc, char **argv)
 		data_t.data[i] = (uint8_t)str_to_int(argv[i + 1]);
 	}
 	if (rtk_bt_hid_input_data_send(data_t.bd_addr, data_t.data, data_t.len)) {
-		BTHID_AT_PRINTK("HID data send fail \r\n");
+		BT_LOGE("HID data send fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(data_t.bd_addr, addr_str, sizeof(addr_str));
-	BTHID_AT_PRINTK("HID data send op to device %s ...", addr_str);
+	BT_LOGA("HID data send op to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -89,11 +89,11 @@ static int atcmd_bt_hid_mouse(int argc, char **argv)
 	report.mse_data.Wheel = (int8_t)str_to_int(argv[5]);
 
 	if (rtk_bt_hid_mouse_control(&report)) {
-		BTHID_AT_PRINTK("HID mouse fail \r\n");
+		BT_LOGE("HID mouse fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(report.bd_addr, addr_str, sizeof(addr_str));
-	BTHID_AT_PRINTK("HID mouse op to device %s ...", addr_str);
+	BT_LOGA("HID mouse op to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -117,11 +117,11 @@ static int atcmd_bt_hid_gamepad(int argc, char **argv)
 	report.gpd_data.DigitalButtons.Value16 = (uint16_t)str_to_int(argv[9]);
 	report.gpd_data.ShareButton = (uint8_t)str_to_int(argv[10]);
 	if (rtk_bt_hid_gamepad_control(&report)) {
-		BTHID_AT_PRINTK("HID gamepad fail \r\n");
+		BT_LOGE("HID gamepad fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(report.bd_addr, addr_str, sizeof(addr_str));
-	BTHID_AT_PRINTK("HID gamepad op to device %s ...", addr_str);
+	BT_LOGA("HID gamepad op to device %s ...\r\n", addr_str);
 
 	return 0;
 }

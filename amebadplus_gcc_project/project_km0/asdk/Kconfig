@@ -42,10 +42,6 @@ menu "CONFIG OS"
             config PLATFORM_FREERTOS_FOR_KM0
                 bool "FREERTOS"
         endchoice
-
-        config TASK_SCHEDULER_DISABLED_FOR_KM0 
-            int
-            default 0
     endif
 
 endmenu 

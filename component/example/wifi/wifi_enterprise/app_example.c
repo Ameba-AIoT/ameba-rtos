@@ -3,7 +3,7 @@
 * Copyright(c) 2007 - 2018 Realtek Corporation. All rights reserved.
 *
 ******************************************************************************/
-#include "example_eap.h"
+#include "example_wifi_enterprise.h"
 
 void app_example(void)
 {

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "os_wrapper.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "audio/audio_service.h"
@@ -94,7 +95,7 @@ void OnError(const struct RTPlayerCallback *listener, const struct RTPlayer *pla
 	printf("OnError (%p %p), (%d, %d)\n", player, listener, error, extra);
 }
 
-void StartPlay(struct RTPlayer *player, char *url)
+void StartPlay(struct RTPlayer *player, const char *url)
 {
 	if (player == NULL) {
 		printf("start play fail, player is NULL!\n");
@@ -199,7 +200,7 @@ void example_player_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-void example_player_test_args_handle(u8  *argv[])
+void example_player_test_args_handle(char  *argv[])
 {
 	/* parse command line arguments */
 	while (*argv) {
@@ -222,7 +223,7 @@ void example_player_test_args_handle(u8  *argv[])
 
 	printf("player test start......\n");
 
-	if (rtos_task_create(NULL, ((const char *)"example_player_thread"), example_player_thread, NULL, 160 * 1024, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_player_thread"), example_player_thread, NULL, 8 * 1024, 1) != SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_player_thread) failed", __FUNCTION__);
 	}
 
@@ -235,7 +236,7 @@ void example_player_test_args_handle(u8  *argv[])
 u32 example_player_test(u16 argc, u8 *argv[])
 {
 	(void) argc;
-	example_player_test_args_handle(argv);
+	example_player_test_args_handle((char**)argv);
 	return _TRUE;
 }
 #else
@@ -257,7 +258,7 @@ void example_player_thread(void *param)
 
 void example_player(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_player_thread"), example_player_thread, NULL, 160 * 1024, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_player_thread"), example_player_thread, NULL, 8 * 1024, 1) != SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_player_thread) failed", __FUNCTION__);
 	}
 }

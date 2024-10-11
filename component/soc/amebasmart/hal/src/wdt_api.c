@@ -29,10 +29,10 @@
  *  @{
  */
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 WDG_TypeDef *WDGDev = WDG2_DEV;
 IRQn_Type WdgIrqNum = WDG2_IRQ;
-#elif defined (ARM_CORE_CA32)
+#elif defined (CONFIG_ARM_CORE_CA32)
 WDG_TypeDef *WDGDev = WDG4_DEV;
 IRQn_Type WdgIrqNum = WDG4_IRQ;
 #endif

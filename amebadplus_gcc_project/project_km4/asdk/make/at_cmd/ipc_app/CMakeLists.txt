@@ -14,19 +14,8 @@ set(
     ${BASEDIR}/component/soc/amebalite/app/ipc_app/src
 )
 
-if(CONFIG_INTERNAL_LIB)
 
-    ameba_internal_library(ipc_app)
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE 4{MODULE_IFLAGS})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+ameba_internal_library(ipc_app)
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
 
-else()
-
-    set_source_files_properties(${CSRC} DIRECTORY ../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-
-    target_sources(
-        target_img2_${PROJECT_NAME}
-        PRIVATE
-        ${CSRC}
-    )
-endif()

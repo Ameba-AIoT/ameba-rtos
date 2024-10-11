@@ -64,10 +64,14 @@ mainmenu_option next_comment
 comment '< CONFIG Shell CMD'
 bool "Enable ATCMD"			CONFIG_SUPPORT_ATCMD
 if [ "$CONFIG_SUPPORT_ATCMD" = "y" ]; then
-choice 'ATCMD IO Type'	"LOGUART	CONFIG_ATCMD_IO_LOGUART \
-						UART		CONFIG_ATCMD_IO_UART \
+choice 'ATCMD Mode'	"LOGUART	CONFIG_ATCMD_LOGUART \
+						MCU_Control		CONFIG_ATCMD_MCU_CONTROL \
 						"
-bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+if [ "$CONFIG_ATCMD_MCU_CONTROL" = "y" ]; then
+	define_bool CONFIG_LONGER_CMD y
+else
+	bool "Enable Longer CMD"	CONFIG_LONGER_CMD
+fi
 fi
 endmenu
 
@@ -77,7 +81,7 @@ bool "Enable VFS LITTLEFS"                     CONFIG_VFS_LITTLEFS_INCLUDED
 bool "Enable VFS FATFS"                        CONFIG_VFS_FATFS_INCLUDED
 if [ "$CONFIG_VFS_FATFS_INCLUDED" = "y" ]; then
 choice 'FATFS Memory Type'     "
-                            	FlASH           FATFS_DISK_FLASH \
+                            	FlASH           CONFIG_FATFS_DISK_FLASH \
                                 "
 bool "FATFS within APP Image"				CONFIG_FATFS_WITHIN_APP_IMG
 fi
@@ -150,6 +154,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		bool "  BT HFP"													CONFIG_BT_HFP_MENU
 		bool "  BT A2DP and BT HFP"										CONFIG_BT_A2DP_HFP_MENU
 		bool "  BT SPP"													CONFIG_BT_SPP
+		bool "  BT RFC"													CONFIG_BT_RFC
 		bool "  BT Audio MP Test"										CONFIG_BT_AUDIO_MP_TEST_MENU
 #		bool "  BT HID"													CONFIG_BT_HID
 #		bool "  BT PTS"													CONFIG_BT_PTS
@@ -464,13 +469,10 @@ comment 'Choose a Vendor/Product combination.'
 choice 'Product' "AMEBALITE CONFIG_AMEBALITE_FOR_KM4  \
 		" AMEBALITE
 
-choice 'ArmCore' "ARM_CM4 ARM_CORE_CM4_FOR_KM4 \
+choice 'ArmCore' "ARM_CM4 CONFIG_ARM_CORE_CM4_FOR_KM4 \
 		"ARM_CM4
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_KM4
-
-choice 'Chip Version' "AMEBALITE_A_Cut			CONFIG_AMEBALITE_A_CUT_FOR_KM4
-		" AMEBALITE_A_Cut
 
 endmenu
 
@@ -484,7 +486,7 @@ comment '< CONFIG OS'
 bool "Enable Kernel"                     CONFIG_KERNEL_FOR_KM4
 
 if [ "$CONFIG_KERNEL_FOR_KM4" = "y" ]; then
-choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_KM4 \
+choice 'Kernel Selecte' "FREERTOS        CONFIG_PLATFORM_FREERTOS_FOR_KM4 \
 						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_KM4 0
 fi
@@ -613,7 +615,7 @@ comment '--------------Application Config------------'
 mainmenu_option next_comment
 comment '< SSL Config'
 define_bool CONFIG_USE_MBEDTLS_ROM_FOR_KM4 y
-bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_KM4
+bool "MBEDTLS Enable"		CONFIG_MBEDTLS_ENABLED_FOR_KM4
 bool "SSL ROM Test"		CONFIG_SSL_ROM_TEST_FOR_KM4
 endmenu
 
@@ -631,7 +633,14 @@ endmenu
 		# if [ "$CONFIG_802154_THREAD_RCP_EN_FOR_KM4" = "n" ]; then
 			# bool "RCP AS RADIO"                	CONFIG_802154_THREAD_RADIO_RCP_EN_FOR_KM4
 		# fi
+		# bool "Enable Radio Concurrent"      CONFIG_802154_THREAD_CONCURRENT_EN_FOR_KM4
+		# if [ "$CONFIG_802154_THREAD_CONCURRENT_EN_FOR_KM4" = "y" ]; then
+			# choice 'RCP Vendor'    "RTL8771H    CONFIG_802154_THREAD_RCP_RTL8771H_FOR_KM4 \
+									# SILICON     CONFIG_802154_THREAD_RCP_SILICON_FOR_KM4 \
+									# "
+		# fi
 		# bool "Low Layer Function Test"                	CONFIG_802154_THREAD_LLF_TEST_EN_FOR_KM4
+		# bool "Rtk OT CoAP Test"                   	    CONFIG_802154_THREAD_COAP_TEST_EN_FOR_KM4
 	# fi
 	# bool "Enable ZIGBEE"                	CONFIG_802154_ZIGBEE_EN_FOR_KM4
 	# if [ "$CONFIG_802154_ZIGBEE_EN_FOR_KM4" = "y" ]; then
@@ -671,15 +680,6 @@ endmenu
 	# fi
 # fi
 # endmenu
-
-mainmenu_option next_comment
-comment '< GUI Config'
-bool "Enable GUI"                    		CONFIG_GUI_EN_FOR_KM4
-if [ "$CONFIG_GUI_EN_FOR_KM4" = "y" ]; then
-	bool "emWin"		CONFIG_EMWIN_EN_FOR_KM4
-	bool "LittlevGL"		CONFIG_LITTLEVGL_EN_FOR_KM4
-fi
-endmenu
 
 mainmenu_option next_comment
 comment '< Audio Config'
@@ -734,6 +734,14 @@ endmenu
 #fi
 if [ "$CONFIG_MEDIA_PLAYER_FOR_KM4" = "y" -o "$CONFIG_MEDIA_LITE_PLAYER_FOR_KM4" = "y" ]; then
 	define_bool CONFIG_AUDIO_FWK_FOR_KM4 y
+fi
+endmenu
+
+mainmenu_option next_comment
+comment '< GUI Config'
+bool "Enable GUI"                               CONFIG_GUI_EN_FOR_KM4
+if [ "$CONFIG_GUI_EN_FOR_KM4" = "y" ]; then
+        bool "LVGL"             CONFIG_LVGL_EN_FOR_KM4
 fi
 endmenu
 
@@ -815,13 +823,10 @@ comment 'Choose a Vendor/Product combination.'
 choice 'Product' "AMEBALITE CONFIG_AMEBALITE_FOR_KR4  \
 		" AMEBALITE
 
-choice 'RSICVCore' "RSICV_KR4 RSICV_CORE_KR4_FOR_KR4  \
+choice 'RSICVCore' "RSICV_KR4 CONFIG_RSICV_CORE_KR4_FOR_KR4  \
 		"RSICV_KR4
 
 bool "Select FPGA"            CONFIG_FPGA_FOR_KR4
-
-choice 'Chip Version' "AMEBALITE_A_Cut			CONFIG_AMEBALITE_A_CUT_FOR_KR4
-		" AMEBALITE_A_Cut
 
 endmenu
 
@@ -835,7 +840,7 @@ comment '< CONFIG OS'
 bool "Enable Kernel"                     CONFIG_KERNEL_FOR_KR4
 
 if [ "$CONFIG_KERNEL_FOR_KR4" = "y" ]; then
-choice 'Kernel Selecte' "FREERTOS        PLATFORM_FREERTOS_FOR_KR4 \
+choice 'Kernel Selecte' "FREERTOS        CONFIG_PLATFORM_FREERTOS_FOR_KR4 \
 						"FREERTOS
 define_int TASK_SCHEDULER_DISABLED_FOR_KR4 0
 fi
@@ -909,7 +914,7 @@ comment '--------------Application Config------------'
 mainmenu_option next_comment
 comment '< SSL Config'
 define_bool CONFIG_USE_MBEDTLS_ROM_FOR_KR4 y
-bool "MBEDTLS Enable"		CONFIG_MBED_TLS_ENABLED_FOR_KR4
+bool "MBEDTLS Enable"		CONFIG_MBEDTLS_ENABLED_FOR_KR4
 bool "SSL ROM Test"		CONFIG_SSL_ROM_TEST_FOR_KR4
 endmenu
 
@@ -968,6 +973,15 @@ if [ "$CONFIG_MEDIA_PLAYER_FOR_KR4" = "y" -o "$CONFIG_MEDIA_LITE_PLAYER_FOR_KR4"
 	define_bool CONFIG_AUDIO_FWK_FOR_KR4 y
 fi
 endmenu
+
+mainmenu_option next_comment
+comment '< GUI Config'
+bool "Enable GUI"                               CONFIG_GUI_EN_FOR_KR4
+if [ "$CONFIG_GUI_EN_FOR_KR4" = "y" ]; then
+        bool "LVGL"             CONFIG_LVGL_EN_FOR_KR4
+fi
+endmenu
+
 mainmenu_option next_comment
 comment '< CONFIG IPC Message Queue'
 bool "Enable IPC Message Queue"		CONFIG_IMQ_EN_FOR_KR4

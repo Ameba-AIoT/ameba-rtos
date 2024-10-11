@@ -29,7 +29,7 @@ typedef struct {
 	signed char  ap_power;             /* Received Signal Strength Indication, min: -110, max: 0 */
 	char bssid[6];             /* The BSSID of an access point. */
 	u8   channel;              /* The RF frequency, 1-13 */
-	rtw_security_t sec_type;     /* Security type, @ref wlan_sec_type_t */
+	enum rtw_security sec_type;     /* Security type, @ref wlan_sec_type_t */
 } ap_list_t;
 
 /*
@@ -51,7 +51,7 @@ typedef unsigned long rtw_bool_t;
   * @brief  The structure is used to describe the data needed by scan result handler function.
   */
 typedef struct rtw_scan_handler_result {
-	rtw_scan_result_t ap_details;
+	struct rtw_scan_result ap_details;
 	rtw_bool_t        scan_complete;
 	void             *user_data;
 
@@ -76,7 +76,7 @@ struct rtw_wifi_config {
 #define CAPTIVE_PORTAL_DEBUG	0
 #define CONFIG_READ_FLASH		0
 
-rtw_softap_info_t SOFTAP_CONFIG;
+struct _rtw_softap_info_t SOFTAP_CONFIG;
 struct netconn *pxHTTPListener = NULL;
 web_conn *web_connections = NULL;
 
@@ -90,7 +90,7 @@ u8_t webs_terminate = 0;
 u8 connect_target_ap = 0;
 u8 scan_ap = 0;
 
-extern rtw_mode_t wifi_mode;
+extern u8 wifi_mode;
 extern struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 
 #endif /* EXAMPLE_CAPTIVE_PORTAL_H */

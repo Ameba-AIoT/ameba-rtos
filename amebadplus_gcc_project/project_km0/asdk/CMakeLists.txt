@@ -34,22 +34,8 @@ set_property(TARGET build_info_${PROJECT_NAME}
 )
 
 ############################################################################
-set(FLOADER_BIN_DIR ${UTILITYDIR}/image_tool_flashloader/amebadplus_acut)
 
-if(CONFIG_AMEBADPLUS_A_CUT)
-    set(ROM_LIB_DIR  ${PROJECTDIR}/asdk/lib/amebadplus_rom_acut)
-endif()
-
-if(CONFIG_LINK_ROM_SYMB) 
-    set(LINK_ROM_LIB)
-    set(LINK_ROM_SYMBOL ${LDDIR}/ameba_rom_symbol_acut.ld)
-else()
-    set(LINK_ROM_LIB ${ROM_LIB_DIR}/rom.a)
-    set(LINK_ROM_SYMBOL ${LDDIR}/ameba_rom_symbol_empty.ld)
-endif()
-
-
-list(APPEND LINK_ROM_SYMBOL ${LDDIR}/ameba_rom_symbol_stdlib.ld)
+include(libs.cmake)
 
 ################################# BUILD ROM   ##############################
 
@@ -63,16 +49,27 @@ add_compile_options(-fdata-sections  -ffunction-sections)
 
 add_subdirectory(make)
 
-########################### BUILD SOC LIBS #################################
+############################# BUILD LIBS ###################################
+if(NOT AMEBA_RLS)
+    add_subdirectory(make_lib/chipinfo_lib)
 
-add_subdirectory(make_lib/chipinfo_lib)
+    add_subdirectory(make_lib/crashdump_lib)
 
-add_subdirectory(make_lib/crashdump_lib)
+    add_subdirectory(make_lib/pmc_lib)
 
-add_subdirectory(make_lib/pmc_lib)
+    if(CONFIG_WIFI_FW_EN)
+        add_subdirectory(${WIFIFWDIR}/amebadplus make/target/wifi_fw)
+    endif()
+
+    if(CONFIG_WLAN)
+        if(CONFIG_AS_INIC_NP)
+            add_subdirectory(make/rtk_coex)
+        endif()
+    endif()
+endif()
 
 ############################################################################
 add_custom_target(
     ${PROJECT_NAME} 
-    DEPENDS target_img2_${PROJECT_NAME}
+    DEPENDS target_img2_${PROJECT_NAME} target_img2_${PROJECT_NAME}_post_build
 )

@@ -9,7 +9,7 @@
 
 #include "ameba_vector_table.h"
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 
 /* ========  Configuration of Core Peripherals  ================================== */
 #define __CM55_REV                0x0001U   /* Core revision r0p1 */
@@ -36,7 +36,7 @@
 #include <arm_cmse.h>
 #endif /* __ARM_FEATURE_CMSE */
 
-#elif defined (ARM_CORE_CM0)
+#elif defined (CONFIG_ARM_CORE_CM0)
 
 /* --------  Configuration of the Cortex-M23 Processor and Core Peripherals  ------ */
 #define __CM23_REV                0x0000U   /* Core revision r0p1 */

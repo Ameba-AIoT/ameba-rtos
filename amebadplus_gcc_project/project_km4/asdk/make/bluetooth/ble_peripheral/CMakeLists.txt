@@ -13,4 +13,4 @@ set(
 	${BT_DIR}/example/gatt_service/server/rtk_long_uuid_service.c
 )
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

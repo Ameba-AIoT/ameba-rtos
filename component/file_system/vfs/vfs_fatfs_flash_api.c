@@ -1,7 +1,7 @@
 #include "platform_autoconf.h"
 #include "vfs.h"
 #include "vfs_fatfs.h"
-#if defined(FATFS_DISK_FLASH) && FATFS_DISK_FLASH
+#if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include <stdint.h>
@@ -140,4 +140,4 @@ int usb_flash_writeblocks(uint32_t sector, const uint8_t *data, uint32_t count)
 }
 /*For usb operation.........................................*/
 
-#endif //FATFS_DISK_FLASH
+#endif //CONFIG_FATFS_DISK_FLASH

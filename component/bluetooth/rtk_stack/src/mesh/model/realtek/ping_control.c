@@ -24,7 +24,7 @@ static pf_pong_cb_t pf_ping_control_pong_cb;
 static mesh_msg_send_cause_t ping_control_send(uint16_t dst, uint8_t ttl, uint8_t *pmsg,
                                                uint16_t msg_len, uint16_t app_key_index)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &ping_control;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;

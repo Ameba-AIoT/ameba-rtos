@@ -447,7 +447,7 @@ int cfg80211_rtw_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *requ
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (enum _rtw_result_t (*)(unsigned int,  void *))0xffffffff;
+	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
 	scan_param.ssid = NULL;
 
 	if (global_idev.mlme_priv.b_in_scan) {

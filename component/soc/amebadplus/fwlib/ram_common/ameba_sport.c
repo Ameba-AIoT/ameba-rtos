@@ -1642,14 +1642,18 @@ void AUDIO_SP_ClearTXCounterIrq(u32 index)
 }
 
 /**
-  * @brief  Set SPORT phase latch.
-  * @param  index: select SPORT.
-  * @retval None
-  */
+ * @brief  Set SPORT phase latch.
+ * @param  index: select SPORT.
+ * @retval None
+ */
 void AUDIO_SP_SetPhaseLatch(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
+	u32 temp = SPORTx->SP_RX_LRCLK | SP_BIT_EN_FS_PHASE_LATCH;
+
+	/*To aviod clear tx_sport_interrupt signal(bit31), set bit31 to 0 before write back.*/
+	temp &= ~SP_BIT_CLR_TX_SPORT_RDY;
+	SPORTx->SP_RX_LRCLK = temp;
 }
 
 /**

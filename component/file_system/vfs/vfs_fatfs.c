@@ -468,7 +468,7 @@ int fatfs_mount(int interface)
 #endif
 	} else if (interface == VFS_INF_FLASH) {
 		VFS_DBG(VFS_INFO, "flash mount");
-#if defined(FATFS_DISK_FLASH) && FATFS_DISK_FLASH
+#if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
 		ret = fatfs_flash_init();
 #endif
 	} else {
@@ -488,7 +488,7 @@ int fatfs_ummount(int interface)
 #endif
 	} else if (interface == VFS_INF_FLASH) {
 		VFS_DBG(VFS_INFO, "flash unmount");
-#if defined(FATFS_DISK_FLASH) && FATFS_DISK_FLASH
+#if defined(CONFIG_FATFS_DISK_FLASH) && CONFIG_FATFS_DISK_FLASH
 		ret = fatfs_flash_close();
 #endif
 	} else {

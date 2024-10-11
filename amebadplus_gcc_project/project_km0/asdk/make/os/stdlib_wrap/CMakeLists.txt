@@ -2,8 +2,5 @@ set(DIR ${BASEDIR}/component/soc/amebadplus/swlib)
 
 set(CSRC ${DIR}/gcc_wrap.c)
 
-target_sources(
-    target_img2_${PROJECT_NAME} 
-    PRIVATE 
-    ${CSRC}
-)
+ameba_internal_library(os_stdlib_wrap)
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

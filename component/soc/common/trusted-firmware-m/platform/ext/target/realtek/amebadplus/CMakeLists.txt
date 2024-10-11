@@ -99,7 +99,7 @@ target_compile_definitions(platform_s
     PUBLIC
         $<$<BOOL:${TEST_NS_FPU}>:TEST_NS_FPU>
         $<$<BOOL:${TEST_S_FPU}>:TEST_S_FPU>
-		ARM_CORE_CM4
+		CONFIG_ARM_CORE_CM4
 )
 
 #========================= Platform Non-Secure ================================#
@@ -126,7 +126,7 @@ target_include_directories(platform_ns
 
 target_compile_definitions(platform_ns
     PUBLIC
-		ARM_CORE_CM4
+		CONFIG_ARM_CORE_CM4
 )
 
 #========================= tfm_spm ============================================#

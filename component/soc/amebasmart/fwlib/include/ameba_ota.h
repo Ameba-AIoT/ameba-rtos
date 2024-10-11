@@ -8,7 +8,7 @@
 #define _AMEBA_OTA_H_
 
 #include "amebahp_secure_boot.h"
-#if defined(CONFIG_MBED_TLS_ENABLED) && (CONFIG_MBED_TLS_ENABLED == 1)
+#if defined(CONFIG_MBEDTLS_ENABLED) && (CONFIG_MBEDTLS_ENABLED == 1)
 #include <mbedtls/config.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/net_sockets.h>

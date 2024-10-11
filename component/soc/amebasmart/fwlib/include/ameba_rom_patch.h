@@ -36,7 +36,7 @@ _LONG_CALL_ void VectorTableAdd(void);
 _LONG_CALL_ int TRNG_get_random_bytes(void *dst, u32 size);
 _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);
 
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 #include "amebahp_secure_boot.h"
 
 int SBOOT_GetMdType_B(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac);

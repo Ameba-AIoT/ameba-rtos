@@ -32,7 +32,7 @@ uint32_t PrevIrqStatus;
 #define WRITE_SYNC_LOCK    1
 #define WRITE_SYNC_UNLOCK  2
 
-#ifdef ARM_CORE_CM0
+#ifdef CONFIG_ARM_CORE_CM0
 static u32 Start_Timer_Cnt = 0;
 static u32 Start_Systick_Cnt = 0;
 
@@ -96,7 +96,7 @@ const IPC_INIT_TABLE ipc_flashpg_table[] = {
 	}
 };
 #else
-/* ARM_CORE_CM4 */
+/* CONFIG_ARM_CORE_CM4 */
 ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
 
 static void Flash_Write_Lock_IPC(u8 sync_type)
@@ -134,7 +134,7 @@ void FLASH_Write_Lock(void)
 	while (IPC_SEMTake(IPC_SEM_FLASH, 1000) != _TRUE) {
 		RTK_LOGS(TAG, "FLASH_Write_Lock get hw sema fail\n");
 	}
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 	/* Sent IPC to KM0 */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
 #endif
@@ -150,7 +150,7 @@ void FLASH_Write_Lock(void)
   */
 void FLASH_Write_Unlock(void)
 {
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 	/* Sent IPC to KM0 */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
 #endif

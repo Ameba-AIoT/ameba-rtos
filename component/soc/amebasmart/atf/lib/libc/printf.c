@@ -10,7 +10,6 @@
 #include <stdint.h>
 
 #include <common/debug.h>
-#include <lib/spinlock.h>
 
 #define get_num_va_args(_args, _lcount)				\
 	(((_lcount) > 1)  ? va_arg(_args, long long int) :	\
@@ -21,8 +20,6 @@
 	(((_lcount) > 1)  ? va_arg(_args, unsigned long long int) :	\
 	(((_lcount) == 1) ? va_arg(_args, unsigned long int) :		\
 			    va_arg(_args, unsigned int)))
-
-static spinlock_t print_lock;
 
 static int string_print(const char *str)
 {
@@ -192,13 +189,9 @@ int printf(const char *fmt, ...)
 	int count;
 	va_list va;
 
-	spin_lock(&print_lock);
-
 	va_start(va, fmt);
 	count = vprintf(fmt, va);
 	va_end(va);
-
-	spin_unlock(&print_lock);
 
 	return count;
 }

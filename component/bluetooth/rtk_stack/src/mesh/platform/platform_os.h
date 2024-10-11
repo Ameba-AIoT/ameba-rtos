@@ -59,10 +59,13 @@ plt_mutex_t plt_mutex_create(void);
   * @brief heap memory management
   * @{
   */
+void *plt_os_mem_zalloc(RAM_TYPE ram_type, uint32_t size, const char *pfunc, uint32_t file_line);
+void plt_os_mem_free(void *p);
+void plt_os_mem_clear(void);
 #define RAM_TYPE_DATA_OFF                                           RAM_TYPE_DATA_ON
-#define plt_malloc(size, ram_type)                                  os_mem_alloc(ram_type, size)
-#define plt_zalloc(size, ram_type)                                  os_mem_zalloc(ram_type, size)
-#define plt_free(p, ram_type)                                       os_mem_free(p)
+#define plt_malloc(size, ram_type)                                  plt_os_mem_zalloc(ram_type, size, __func__, __LINE__)
+#define plt_zalloc(size, ram_type)                                  plt_os_mem_zalloc(ram_type, size, __func__, __LINE__)
+#define plt_free(p, ram_type)                                       plt_os_mem_free(p)
 /** @} */
 
 /** @defgroup Sync_Queue Sync Queue
@@ -82,7 +85,9 @@ plt_os_queue_handle_t plt_os_queue_create(uint32_t item_num, uint32_t item_size)
 typedef void *plt_timer_t;
 plt_timer_t plt_timer_create(const char *name, uint32_t period_ms, bool reload, uint32_t timer_id,
                              void (*pf_cb)(void *));
-#define plt_timer_delete(timer, wait_ms)                            os_timer_delete(&timer)
+void plt_timer_remove(plt_timer_t timer);
+void plt_timer_clear(void);
+#define plt_timer_delete(timer, wait_ms)                            plt_timer_remove(timer)
 #define plt_timer_start(timer, wait_ms)                             os_timer_start(&timer)
 #define plt_timer_stop(timer, wait_ms)                              os_timer_stop(&timer)
 #define plt_timer_reset(timer, wait_ms)                             os_timer_start(&timer)

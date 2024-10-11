@@ -25,11 +25,11 @@ static int atcmd_bt_a2dp_connect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_connect(bd_addr)) {
-		BTA2DP_AT_PRINTK("A2DP connect fail \r\n");
+		BT_LOGE("A2DP connect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTA2DP_AT_PRINTK("A2DP connecting to device %s ...", addr_str);
+	BT_LOGA("A2DP connecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -42,11 +42,11 @@ static int atcmd_bt_a2dp_disconnect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_disconnect(bd_addr)) {
-		BTA2DP_AT_PRINTK("A2DP disconnect fail \r\n");
+		BT_LOGE("A2DP disconnect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTA2DP_AT_PRINTK("A2DP disconnecting to device %s ...", addr_str);
+	BT_LOGA("A2DP disconnecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -59,11 +59,11 @@ static int atcmd_bt_a2dp_start(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_start(bd_addr)) {
-		BTA2DP_AT_PRINTK("A2DP start fail \r\n");
+		BT_LOGE("A2DP start fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTA2DP_AT_PRINTK("A2DP starting to device %s ...", addr_str);
+	BT_LOGA("A2DP starting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -76,11 +76,11 @@ static int atcmd_bt_a2dp_suspend(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_a2dp_suspend(bd_addr)) {
-		BTA2DP_AT_PRINTK("A2DP suspend fail \r\n");
+		BT_LOGE("A2DP suspend fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTA2DP_AT_PRINTK("A2DP suspending to device %s ...", addr_str);
+	BT_LOGA("A2DP suspending to device %s ...\r\n", addr_str);
 
 	return 0;
 }

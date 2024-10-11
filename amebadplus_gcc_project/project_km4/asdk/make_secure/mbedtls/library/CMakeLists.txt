@@ -1,4 +1,4 @@
-set(DIR ${BASEDIR}/component/ssl/mbedtls-2.16.9)
+set(DIR ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER})
 set(DIR_RAMMAP  ${BASEDIR}/component/ssl/ssl_ram_map)
 
 set(MODULE_C_DEFINES CONFIG_BUILD_SECURE=1)

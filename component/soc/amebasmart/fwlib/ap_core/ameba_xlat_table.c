@@ -35,7 +35,7 @@ extern unsigned char __data_start__[];
 void mmap_add_region(unsigned long long base_pa, uintptr_t base_va, size_t size,
 					 unsigned int attr);
 
-void *memset(void *dst, int val, size_t count);
+void *_memset(void *dst, int val, size_t count);
 
 /*|                       		| Memory Range            	| Definition in Translation Table   |
 *|----------------------|-------------------------|------------------------------------------------|
@@ -68,7 +68,7 @@ void setupMMUTable(int coreID)
 	if (coreID == 1) {
 		mmap_section_init();
 		/* core0: clear bss, create MMU table */
-		memset((void *)__bss_start__, 0, (size_t)__bss_end__ - (size_t)__bss_start__);
+		_memset((void *)__bss_start__, 0, (size_t)__bss_end__ - (size_t)__bss_start__);
 
 		/* NOTE: For RW Normal Memory, default XN. For RO Normal Memory, it can be EXC/XN */
 //		mmap_add_region(0x00000000, 0x00000000, 0x00100000, MT_CODE | MT_NS); // Non-Secure CPU do not need it

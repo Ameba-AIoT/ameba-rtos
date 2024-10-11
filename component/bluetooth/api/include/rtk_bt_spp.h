@@ -232,7 +232,6 @@ typedef struct {
  */
 
 /**
- * @fn        uint16_t rtk_bt_spp_init_cfg(uint8_t max_link_num, uint8_t max_service_num, uint16_t mtu_size, uint8_t credits);
  * @brief     spp init config
  * @param[in] max_link_num: max spp server channel number
  * @param[in] max_service_num: max service number
@@ -245,7 +244,6 @@ typedef struct {
 uint16_t rtk_bt_spp_init_cfg(uint8_t max_link_num, uint8_t max_service_num, uint16_t mtu_size, uint8_t credits);
 
 /**
- * @fn        uint16_t rtk_bt_service_register_cfg(void *spp_service_class_uuid, uint32_t length, uint8_t local_server_chann);
  * @brief     Config register spp uuid together with local server channel
  * @param[in] spp_service_class_uuid: the service uuid needs to be registered
  * @param[in] length: uuid length
@@ -257,7 +255,6 @@ uint16_t rtk_bt_spp_init_cfg(uint8_t max_link_num, uint8_t max_service_num, uint
 uint16_t rtk_bt_service_register_cfg(void *spp_service_class_uuid, uint32_t length, uint8_t local_server_chann);
 
 /**
- * @fn        uint16_t rtk_bt_spp_connect(uint8_t *bd_addr)
  * @brief     Send SPP connect request.
  * @param[in] bd_addr: bt address
  * @return
@@ -267,7 +264,6 @@ uint16_t rtk_bt_service_register_cfg(void *spp_service_class_uuid, uint32_t leng
 uint16_t rtk_bt_spp_connect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_spp_disconnect(rtk_bt_spp_disconn_req_t *p_disconn_req_t)
  * @brief     Send an SPP disconnection request
  * @param[in] p_disconn_req_t: SPP disconnection request struct pointer
  * @return
@@ -277,7 +273,6 @@ uint16_t rtk_bt_spp_connect(uint8_t *bd_addr);
 uint16_t rtk_bt_spp_disconnect(rtk_bt_spp_disconn_req_t *p_disconn_req_t);
 
 /**
- * @fn        uint16_t rtk_bt_spp_disconnect_all(uint8_t *bd_addr);
  * @brief     Send a request to disconnect all SPP connection
  * @param[in] bd_addr: Remote bt address
  * @return
@@ -287,7 +282,6 @@ uint16_t rtk_bt_spp_disconnect(rtk_bt_spp_disconn_req_t *p_disconn_req_t);
 uint16_t rtk_bt_spp_disconnect_all(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_spp_send_data(rtk_bt_spp_send_data_t *p_send_data_t)
  * @brief     Send data to peer device on specific rfc channel
  * @param[in] p_send_data_t: SPP send data struct pointer
  * @return
@@ -297,7 +291,6 @@ uint16_t rtk_bt_spp_disconnect_all(uint8_t *bd_addr);
 uint16_t rtk_bt_spp_send_data(rtk_bt_spp_send_data_t *p_send_data_t);
 
 /**
- * @fn        uint16_t rtk_bt_spp_credits_give(rtk_bt_spp_credits_give_t *p_credits_give_t)
  * @brief     Give SPP credits to remote device
  * @param[in] p_credits_give_t: SPP link credits give struct pointer
  * @return

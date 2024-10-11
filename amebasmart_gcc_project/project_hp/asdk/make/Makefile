@@ -46,7 +46,7 @@ COMPONENT += network
 endif
 endif
 endif
-ifeq ($(CONFIG_MBED_TLS_ENABLED),y)
+ifeq ($(CONFIG_MBEDTLS_ENABLED),y)
 COMPONENT += mbedtls
 COMPONENT_CLEAN += mbedtls
 endif

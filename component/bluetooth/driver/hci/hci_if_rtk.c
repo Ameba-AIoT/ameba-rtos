@@ -232,10 +232,6 @@ static void hci_if_task(void *context)
 {
 	(void)context;
 
-#if defined(CONFIG_BUILD_NONSECURE) && CONFIG_BUILD_NONSECURE
-	osif_create_secure_context(SECURE_CONTEXT_SIZE);
-#endif
-
 	if (!_hci_if_open()) {
 		return;
 	}

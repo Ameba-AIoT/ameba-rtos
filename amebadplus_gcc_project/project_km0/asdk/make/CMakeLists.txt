@@ -1,4 +1,4 @@
-add_executable(target_img2_${PROJECT_NAME} "")
+add_executable(target_img2_${PROJECT_NAME} empty_file.c)
 target_compile_definitions(target_img2_${PROJECT_NAME} PRIVATE IMAGE2_BUILD)
 
 
@@ -27,12 +27,6 @@ if(CONFIG_WLAN)
     endif()
 endif()
 
-set(LINK_APP_LIB ${ASDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base/libm.a)
-
-include(../libs.cmake)
-
-include(${WIFIMAKEDIR}/wifilib.cmake)
-
 get_property(IMG2_LIBS_PROPERTY GLOBAL PROPERTY IMG2_LIBS_${PROJECT_NAME})
 
 
@@ -50,8 +44,16 @@ target_link_libraries(
     ${LINK_THIRD_APP_LIB}
 )
 
+if(TARGET target_img2_km4_postbuild)
+    #avoid making bin files in parallel
+    set(DEP_KM4 target_img2_km4_postbuild)
+endif()
+
 add_custom_command(
-    TARGET target_img2_${PROJECT_NAME} POST_BUILD
+    OUTPUT ${IMAGE_TARGET_FOLDER}/target_img2.axf
+    # TARGET target_img2_${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${IMAGE_TARGET_FOLDER}
+    COMMAND ${CMAKE_COMMAND} -E touch ${IMAGE_TARGET_FOLDER}/.gitignore
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${IMAGE_TARGET_FOLDER}/text_image2.map
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/target_img2_${PROJECT_NAME}.axf ${IMAGE_TARGET_FOLDER}/target_img2.axf
     COMMAND ${CMAKE_NM} ${IMAGE_TARGET_FOLDER}/target_img2.axf | sort > ${IMAGE_TARGET_FOLDER}/target_img2.map
@@ -63,17 +65,23 @@ add_custom_command(
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km0_image2_all.bin"
 
-    COMMAND ${CMAKE_COMMAND} -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR}
-    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}  
-    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
-    -DBUILD_TYPE=${BUILD_TYPE}
+    COMMAND ${CMAKE_COMMAND} 
+    -DAMEBA_RLS=${AMEBA_RLS}
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DKM4_BUILDDIR=${KM4_BUILDDIR} -DPROJECTDIR=${PROJECTDIR}
+    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR}
+    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY} 
+    -DBUILD_TYPE=${BUILD_TYPE} -DANALYZE_MP_IMG=${ANALYZE_MP_IMG} -DDAILY_BUILD=${DAILY_BUILD}
+    -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK} -DCONFIG_MP_INCLUDED=${CONFIG_MP_INCLUDED}
+    -DCONFIG_FATFS_WITHIN_APP_IMG=${CONFIG_FATFS_WITHIN_APP_IMG} -DCONFIG_COMPRESS_OTA_IMG=${CONFIG_COMPRESS_OTA_IMG} -DCONFIG_UPGRADE_BOOTLOADER=${CONFIG_UPGRADE_BOOTLOADER}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/img2_postbuild.cmake
 
-    COMMAND ${CMAKE_COMMAND} -E echo "========== Image analyze start =========="
-    COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}
-    COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD}
-    COMMAND ${CMAKE_COMMAND} -E echo "========== Image analyze end =========="
-    WORKING_DIRECTORY ${PROJECTDIR}/asdk
+    DEPENDS target_img2_${PROJECT_NAME} ${DEP_KM4}
+)
+
+add_custom_target(
+    target_img2_${PROJECT_NAME}_postbuild
+    ALL
+    DEPENDS ${IMAGE_TARGET_FOLDER}/target_img2.axf
 )
 
 if(CONFIG_MP_SHRINK)

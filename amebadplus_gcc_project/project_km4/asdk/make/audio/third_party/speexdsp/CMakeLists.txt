@@ -7,9 +7,14 @@ set(
 )
 
 set(
-    MODULE_C_DEFINES 
+    MODULE_C_DEFINES
     HAVE_CONFIG_H
     FIXED_POINT
+)
+
+set(
+    MODULE_C_OPTIONS
+    -Wno-error
 )
 
 set(
@@ -30,4 +35,5 @@ set(
 ameba_app_library(speexdsp)
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
 target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
+target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIONS})
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

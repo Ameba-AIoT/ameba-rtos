@@ -22,24 +22,29 @@ vpath %.c $(DIR_TEST)
 #*****************************************************************************#
 ifeq ($(CONFIG_AS_INIC_NP),y)
 CSRC =$(DIR)/wififw_init.c \
+       $(DIR_COMMON)/wififw_init_common.c \
        $(DIR)/wififw_txpkt_common.c \
 	   $(DIR)/wififw_bcnmode.c \
        $(DIR)/wififw_pwrctrl.c \
    	   $(DIR_COMMON)/wififw_pwrctrl_common.c \
+	   $(DIR)/wififw_csi.c \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
-	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
+	   $(DIR)/wififw_interrupt_ctrl.c \
 	   $(DIR_COMMON)/wififw_ps_state_common.c \
+	   $(DIR)/wififw_ps_bcnhdl.c \
 	   $(DIR_COMMON)/wififw_ps_bcnhdl_common.c \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
        $(DIR)/wififw_wowlan.c     \
 	   $(DIR)/wififw_lpsofld.c \
 	   $(DIR)/wififw_ra_new.c \
+	   $(DIR)/wififw_phy_reg_init.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR)/wififw_periodcca.c \
 	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR_COMMON)/wififw_h2c_common.c     \
 	   $(DIR_COMMON)/wififw_c2h_common.c \
+	   $(DIR)/wififw_gtimer.c \
 	   $(DIR_COMMON)/wififw_gtimer_common.c \
 	   $(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
 	   $(DIR_COMMON)/wififw_btcoex_tdma_common.c \
@@ -72,23 +77,28 @@ endif
 
 ifeq ($(CONFIG_SINGLE_CORE_WIFI),y)
 CSRC =$(DIR)/wififw_init.c \
+       $(DIR_COMMON)/wififw_init_common.c \
        $(DIR)/wififw_txpkt_common.c \
        $(DIR)/wififw_pwrctrl.c \
    	   $(DIR_COMMON)/wififw_pwrctrl_common.c \
+	   $(DIR)/wififw_csi.c \
 	   $(DIR_COMMON)/wififw_csi_common.c \
        $(DIR)/wififw_interrupt_handle.c \
-	   $(DIR_COMMON)/wififw_interrupt_ctrl_common.c \
+	   $(DIR)/wififw_interrupt_ctrl.c \
 	   $(DIR_COMMON)/wififw_ps_state_common.c \
+	   $(DIR)/wififw_ps_bcnhdl.c \
 	   $(DIR_COMMON)/wififw_ps_bcnhdl_common.c \
 	   $(DIR_COMMON)/wififw_hioe_common.c \
        $(DIR)/wififw_wowlan.c     \
 	   $(DIR)/wififw_lpsofld.c \
 	   $(DIR)/wififw_ra_new.c \
+	   $(DIR)/wififw_phy_reg_init.c \
 	   $(DIR_COMMON)/wififw_phy_common.c \
 	   $(DIR)/wififw_periodcca.c \
 	   $(DIR_COMMON)/wififw_ps_twt.c \
 	   $(DIR_COMMON)/wififw_h2c_common.c     \
 	   $(DIR_COMMON)/wififw_c2h_common.c \
+	   $(DIR)/wififw_gtimer.c \
 	   $(DIR_COMMON)/wififw_gtimer_common.c \
 	   $(DIR_COMMON)/wififw_btcoex_mailbox_common.c \
 	   $(DIR_COMMON)/wififw_btcoex_tdma_common.c \

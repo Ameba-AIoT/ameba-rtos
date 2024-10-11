@@ -15,7 +15,7 @@ vpath %.c $(IPCDRV) \
 ifeq ($(CONFIG_INIC_INTF_USB), y)
 IFLAGS += -I$(BASEDIR)/component/usb/common
 IFLAGS += -I$(BASEDIR)/component/usb/device/core
-IFLAGS += -I$(BASEDIR)/component/usb/device/inic
+IFLAGS += -I$(BASEDIR)/component/usb/device/inic_dplus
 endif
 
 ifeq ($(CONFIG_AS_INIC_NP),y)
@@ -31,7 +31,7 @@ CSRC_DRV += $(COMDRV)/inic_dev_msg_queue.c
 CSRC_DRV += $(COMDRV)/inic_dev_trx.c
 CSRC_DRV += $(COMDRV)/inic_dev_api.c
 CSRC_DRV += $(COMDRV)/inic_dev_protocal_offload.c
-CSRC_DRV += $(SPIDRV)/inic_spi_dev.c
+#CSRC_DRV += $(SPIDRV)/inic_spi_dev.c
 else ifeq ($(CONFIG_INIC_INTF_USB), y)
 CSRC_DRV += $(COMDRV)/inic_dev_msg_queue.c
 CSRC_DRV += $(COMDRV)/inic_dev_trx.c

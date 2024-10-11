@@ -42,10 +42,3 @@ target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
 target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
 target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIONS})
-
-
-add_custom_command(TARGET ${CURRENT_LIB_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy lib_${CURRENT_LIB_NAME}.a ${TARGET_LIBAPP_FOLDER}/lib_audio_hal.a
-    COMMAND ${CMAKE_OBJCOPY} -g -D ${TARGET_LIBAPP_FOLDER}/lib_audio_hal.a
-)
-

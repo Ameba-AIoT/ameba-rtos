@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+import argparse
 
 # Helper function to extract lines between markers
 def extract_lines(filename, start_marker, end_marker):
@@ -15,7 +16,7 @@ def extract_lines(filename, start_marker, end_marker):
             end_index = i
             break
     if start_index is not None and end_index is not None:
-        return lines[start_index + 1:end_index]
+        return lines[start_index:end_index]
     else:
         return []
 
@@ -30,13 +31,39 @@ def process_and_write_lines(extracted_lines, filename, remove_pattern, replace_p
         file.writelines(processed_lines)
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description=__doc__)
+
+    parser.add_argument(
+        "--config-in",
+        metavar="CONFIG_IN",
+        help="input config files")
+
+    parser.add_argument(
+        "--header-in",
+        metavar="HEADER_IN",
+        help="input header files")
+
+    args = parser.parse_args()
+    
     # Define paths
-    FATHER_DIR = sys.argv[1]
+    FATHER_DIR = sys.path[0] + '/..'
+
     KM4_PROJECT_PATH = f"{FATHER_DIR}/project_km4"
     KM0_PROJECT_PATH = f"{FATHER_DIR}/project_km0"
 
-    DEF_CONFIG = f"{FATHER_DIR}/.config"
-    DEF_CONFIG_H = f"{FATHER_DIR}/autoconf.h"
+    if args.config_in is None:
+        DEF_CONFIG = f"{FATHER_DIR}/menuconfig/.config"
+    else:
+        DEF_CONFIG = args.config_in
+
+    if args.header_in is None:
+        DEF_CONFIG_H = f"{FATHER_DIR}/menuconfig/autoconf.h"
+    else:
+        DEF_CONFIG_H = args.header_in
+
     CONFIG_TEMP = f"{FATHER_DIR}/tempconfig.txt"
     CONFIG_KM4 = f"{FATHER_DIR}/menuconfig/.config_km4"
     CONFIG_KM0 = f"{FATHER_DIR}/menuconfig/.config_km0"
@@ -44,29 +71,15 @@ if __name__ == "__main__":
     CONFIG_KM0_H = f"{KM0_PROJECT_PATH}/inc/platform_autoconf.h"
 
     # Process .config for KM0
-
-    # general_lines = extract_lines(DEF_CONFIG, "#GeneralStart", "#GeneralEnd")
-    # km0_lines = extract_lines(DEF_CONFIG, "#KM0Start", "#KM0End")
-    # with open(CONFIG_TEMP, 'w') as temp_file:
-    #     temp_file.writelines(general_lines)
-    #     temp_file.writelines(km0_lines)
-
-    with open(DEF_CONFIG, 'r') as file:
-        all_lines = file.readlines()
-
+    general_lines = extract_lines(DEF_CONFIG, "General config", "KM0 config")
+    km0_lines = extract_lines(DEF_CONFIG, "KM0 config", "KM4 config")
     with open(CONFIG_TEMP, 'w') as temp_file:
-        temp_file.writelines(all_lines)
+        temp_file.writelines(general_lines)
+        temp_file.writelines(km0_lines)
 
     process_and_write_lines(open(CONFIG_TEMP, 'r').readlines(), CONFIG_KM0, "_FOR_KM4", "_FOR_KM0")
 
     # Process autoconf.h for KM0
-
-    # general_lines_h = extract_lines(DEF_CONFIG_H, "#GeneralStart", "#GeneralEnd")
-    # km0_lines_h = extract_lines(DEF_CONFIG_H, "#KM0Start", "#KM0End")
-    # with open(CONFIG_TEMP, 'w') as temp_file:
-    #     temp_file.writelines(general_lines_h)
-    #     temp_file.writelines(km0_lines_h)
-
     with open(DEF_CONFIG_H, 'r') as file:
         all_lines_h = file.readlines()
 
@@ -76,23 +89,14 @@ if __name__ == "__main__":
     process_and_write_lines(open(CONFIG_TEMP, 'r').readlines(), CONFIG_KM0_H, "_FOR_KM4", "_FOR_KM0")
 
     # Process .config for KM4
-
-    # km4_lines = extract_lines(DEF_CONFIG, "#KM4Start", "#KM4End")
-    # with open(CONFIG_TEMP, 'w') as temp_file:
-    #     temp_file.writelines(general_lines)
-    #     temp_file.writelines(km4_lines)
-
+    km4_lines = extract_lines(DEF_CONFIG, "KM4 config", "Config End")
     with open(CONFIG_TEMP, 'w') as temp_file:
-        temp_file.writelines(all_lines)
+        temp_file.writelines(general_lines)
+        temp_file.writelines(km4_lines)
 
     process_and_write_lines(open(CONFIG_TEMP, 'r').readlines(), CONFIG_KM4, "_FOR_KM0", "_FOR_KM4")
 
     # Process autoconf.h for KM4
-
-    # km4_lines_h = extract_lines(DEF_CONFIG_H, "#KM4Start", "#KM4End")
-    # with open(CONFIG_TEMP, 'w') as temp_file:
-    #     temp_file.writelines(general_lines_h)
-    #     temp_file.writelines(km4_lines_h)
     with open(CONFIG_TEMP, 'w') as temp_file:
         temp_file.writelines(all_lines_h)
 

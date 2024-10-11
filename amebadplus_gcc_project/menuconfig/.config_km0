@@ -1,52 +1,68 @@
+# ----------General config----------
 #
 
 #
-# < CONFIG TrustZone
+# CONFIG TrustZone
 #
+# end of CONFIG TrustZone
 
 #
-# < CONFIG Link Option
+# CONFIG Link Option
 #
 CONFIG_IMG1_FLASH=y
 # CONFIG_IMG1_SRAM is not set
 CONFIG_IMG2_FLASH=y
 # CONFIG_IMG2_PSRAM is not set
 # CONFIG_PSRAM_AS_HEAP is not set
+# end of CONFIG Link Option
 
 #
-# < CONFIG Mass Production
+# CONFIG Mass Production
 #
 # CONFIG_MP_INCLUDED is not set
+# end of CONFIG Mass Production
 
 #
-# < CONFIG Shell CMD
+# CONFIG Shell CMD
 #
 CONFIG_SUPPORT_ATCMD=y
-CONFIG_ATCMD_IO_LOGUART=y
-# CONFIG_ATCMD_IO_UART is not set
+CONFIG_ATCMD_LOGUART=y
+# CONFIG_ATCMD_MCU_CONTROL is not set
 # CONFIG_LONGER_CMD is not set
+# end of CONFIG Shell CMD
 
 #
-# < CONFIG VFS
+# CONFIG VFS
 #
 CONFIG_VFS_LITTLEFS_INCLUDED=y
 # CONFIG_VFS_FATFS_INCLUDED is not set
+# end of CONFIG VFS
 
 #
-# < CONFIG OTA OPTION
+# OTA OPTION
 #
 # CONFIG_UPGRADE_BOOTLOADER is not set
 # CONFIG_COMPRESS_OTA_IMG is not set
+# end of OTA OPTION
 
 #
-# < CONFIG WIFI
+# ----------Network config----------
+#
+
+#
+# WIFI
 #
 CONFIG_WLAN_MENU=y
 CONFIG_KM0_NP_KM4_AP=y
 # CONFIG_SPI_FULLMAC is not set
 # CONFIG_USB_FULLMAC is not set
 # CONFIG_SDIO_FULLMAC is not set
+# CONFIG_SPI_FULLMAC_HOST is not set
 # CONFIG_HIGH_TP_TEST is not set
+CONFIG_INIC_INTF_IPC=y
+CONFIG_WLAN=y
+CONFIG_AS_INIC_NP=y
+CONFIG_FW_DRIVER_COEXIST=y
 CONFIG_WIFI_FW_EN=y
 # CONFIG_WIFI_CSI_ENABLE is not set
 # CONFIG_WIFI_ANTDIV_ENABLE is not set
@@ -54,54 +70,90 @@ CONFIG_WIFI_FW_EN=y
 # CONFIG_WIFI_11V_ENABLE is not set
 # CONFIG_WIFI_11R_ENABLE is not set
 # CONFIG_WIFI_SPEAKER_ENABLE is not set
+# end of WIFI
 
 #
-# < CONFIG BT
+# CONFIG BT
 #
 # CONFIG_BT_MENU is not set
+# end of CONFIG BT
 
 #
-# < CONFIG LWIP
+# CONFIG LWIP
 #
 # CONFIG_LWIP_DEBUG is not set
+# end of CONFIG LWIP
 
 #
+# ----------KM0 config----------
 #
 
 #
-# < MENUCONFIG FOR KM0 CONFIG
+# MENUCONFIG FOR KM0 CONFIG
 #
 
 #
-# < CONFIG CHIP
+# ----------CPU config----------
+#
+
+#
+# CONFIG CHIP
+#
+
+#
+# Target Platform Selection
+#
+
+#
+# Choose a Vendor/Product combination
 #
 CONFIG_AMEBADPLUS=y
-ARM_CORE_CM0=y
+CONFIG_ARM_CORE_CM0=y
 # CONFIG_FPGA is not set
 CONFIG_AMEBADPLUS_A_CUT=y
+# end of CONFIG CHIP
 
 #
-# < CONFIG OS
+# ----------OS config----------
+#
+
+#
+# CONFIG OS
 #
 CONFIG_KERNEL=y
-PLATFORM_FREERTOS=y
-TASK_SCHEDULER_DISABLED=0
+CONFIG_PLATFORM_FREERTOS=y
+# end of CONFIG OS
 
 #
-# < CONFIG FUNCTION TEST
+# ----------Peripheral Test----------
+#
+
+#
+# CONFIG FUNCTION TEST
 #
 # CONFIG_PER_TEST is not set
+# end of CONFIG FUNCTION TEST
 
 #
-# < Build Option
+# ----------Build Config----------
+#
+
+#
+# Build Option
+#
+
+#
+# Select toolchain
 #
 CONFIG_TOOLCHAIN_ASDK=y
 # CONFIG_TOOLCHAIN_ARM_GCC is not set
-# CONFIG_LINK_ROM_LIB is not set
-CONFIG_LINK_ROM_SYMB=y
 
 #
-CONFIG_INIC_INTF_IPC=y
-CONFIG_WLAN=y
-CONFIG_AS_INIC_NP=y
-CONFIG_FW_DRIVER_COEXIST=y
+# Choose the build configuration
+#
+# CONFIG_LINK_ROM_LIB is not set
+CONFIG_LINK_ROM_SYMB=y
+# end of Build Option
+# end of MENUCONFIG FOR KM0 CONFIG
+
+#

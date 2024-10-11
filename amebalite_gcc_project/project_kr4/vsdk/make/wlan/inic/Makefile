@@ -37,23 +37,34 @@ endif
 #*****************************************************************************#
 #                               VARIABLES	                              #
 #*****************************************************************************#
-INICDRV = $(BASEDIR)/component/wifi/inic/ipc
-OSSER = $(BASEDIR)/component/os/os_dep
-OSCER = $(BASEDIR)/component/wifi/driver/core
-COMDIR = $(BASEDIR)/component/wifi/common
+INICDRV = $(BASEDIR)/component/wifi/inic
 
-vpath %.c $(INICDRV) $(OSSER) $(OSCER) $(COMDIR)
+vpath %.c $(INICDRV) $(shell find $(INICDRV) -type d)
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
 
+ifeq ($(CONFIG_AS_INIC_NP), y)
+ifeq ($(CONFIG_INIC_INTF_SPI), y)
+CSRC  = $(INICDRV)/spi/inic_spi_dev.c
+endif
+else ifeq ($(CONFIG_AS_INIC_AP), y)
 # IPC HOST
-CSRC  = $(INICDRV)/inic_ipc_host.c \
-	$(INICDRV)/inic_ipc_host_trx.c \
-	$(INICDRV)/inic_ipc_host_api.c \
-	$(INICDRV)/inic_ipc_host_api_basic.c \
-	$(INICDRV)/inic_ipc_host_api_ext.c \
-	$(INICDRV)/inic_ipc_msg_queue.c
+ifeq ($(CONFIG_SPI_FULLMAC_HOST), y)
+CSRC  = $(INICDRV)/spi/inic_spi_host.c \
+       $(INICDRV)/spi/inic_spi_host_api.c \
+       $(INICDRV)/spi/inic_spi_host_api_ext.c \
+       $(INICDRV)/spi/inic_spi_host_api_basic.c \
+       $(INICDRV)/spi/inic_spi_host_trx.c
+else
+CSRC  = $(INICDRV)/ipc/inic_ipc_host.c \
+	$(INICDRV)/ipc/inic_ipc_host_trx.c \
+	$(INICDRV)/ipc/inic_ipc_host_api.c \
+	$(INICDRV)/ipc/inic_ipc_host_api_basic.c \
+	$(INICDRV)/ipc/inic_ipc_host_api_ext.c \
+	$(INICDRV)/ipc/inic_ipc_msg_queue.c
+endif
+endif
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #
@@ -82,8 +93,8 @@ endif
 #*****************************************************************************#
 #              GENERATE OBJECT FILE
 #*****************************************************************************#
-CORE_TARGETS:	$(OBJS) $(ASM_OBJS)
-
+CORE_TARGETS:	$(OBJS)
+all: CORE_TARGETS COPY_RAM_OBJS
 
 #*****************************************************************************#
 #                        RULES TO CLEAN TARGETS                               #

@@ -341,7 +341,7 @@
 #define _ARM_MATH_H
 
 #include "platform_autoconf.h"
-#if (defined (ARM_CORE_CM4) && (ARM_CORE_CM4 == 1))
+#if (defined (CONFIG_ARM_CORE_CM4) && (CONFIG_ARM_CORE_CM4 == 1))
 #if defined(__ICCARM__) &&  (__VER__ <= 9010001) //IAR  COMPILE , IAR 9.10, not support HELIUM
 #else  //NOT IAR  COMPILE or version > 9.10
 #define ARM_MATH_MVEI

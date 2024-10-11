@@ -145,10 +145,11 @@ typedef enum {
 	RTK_BT_PROFILE_SDP      =  BIT4,
 	RTK_BT_PROFILE_LEAUDIO  =  BIT5,
 	RTK_BT_PROFILE_SPP      =  BIT6,
-	RTK_BT_PROFILE_HFP      =  BIT7,
-	RTK_BT_PROFILE_PBAP     =  BIT8,
-	RTK_BT_PROFILE_MESH     =  BIT9,
-	RTK_BT_PROFILE_HID      =  BIT10,
+	RTK_BT_PROFILE_RFC      =  BIT7,
+	RTK_BT_PROFILE_HFP      =  BIT8,
+	RTK_BT_PROFILE_PBAP     =  BIT9,
+	RTK_BT_PROFILE_MESH     =  BIT10,
+	RTK_BT_PROFILE_HID      =  BIT11,
 } rtk_bt_profile_t;
 
 /***************************************BLE group************************************/
@@ -221,6 +222,8 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL,          /*!< LE mesh sensor setup server model group */
 	RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL,          /*!< LE mesh health client model group */
 	RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL,          /*!< LE mesh health server model group */
+	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL,          /*!< LE mesh directed forwarding client model group */
+	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON,          /*!< LE mesh directed forwarding common group */
 	RTK_BT_LE_GP_MAX,                           /*!< Reserved */
 } rtk_bt_le_group_t;
 
@@ -265,6 +268,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_SET_PRIVACY_MODE,
 	RTK_BT_LE_GAP_ACT_READ_LOCAL_RESOLV_ADDR,
 	RTK_BT_LE_GAP_ACT_READ_PEER_RESOLV_ADDR,
+	RTK_BT_LE_GAP_ACT_SET_PAIRING_MODE,
 	RTK_BT_LE_GAP_ACT_SET_SEC_PARAM,
 	RTK_BT_LE_GAP_ACT_GET_SEC_PARAM,
 	RTK_BT_LE_GAP_ACT_START_SECURITY,
@@ -716,6 +720,7 @@ typedef enum {
 	RTK_BT_BR_GP_AVRCP,                           /*!< BR/EDR avrcp group */
 	RTK_BT_BR_GP_A2DP,                            /*!< BR/EDR a2dp group */
 	RTK_BT_BR_GP_SPP,                             /*!< BR/EDR spp group */
+	RTK_BT_BR_GP_RFC,                             /*!< BR/EDR rfcom group */
 	RTK_BT_BR_GP_HFP,                             /*!< BR/EDR hfp group */
 	RTK_BT_BR_GP_SDP,                             /*!< BR/EDR sdp group */
 	RTK_BT_BR_GP_HID,                             /*!< BR/EDR hid group */
@@ -825,6 +830,7 @@ typedef enum {
 	RTK_BT_AVRCP_ACT_FAST_FORWARD_STOP,
 	RTK_BT_AVRCP_ACT_ABSOLUTE_VOLUME_SET,
 	RTK_BT_AVRCP_ACT_VOLUME_CHANGE_REQ,
+	RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR,
 	RTK_BT_AVRCP_ACT_MAX,
 } rtk_bt_avrcp_act_t;
 
@@ -839,6 +845,8 @@ typedef enum {
 	RTK_BT_AVRCP_EVT_VOLUME_UP,                     /*!< AVRCP volume up */
 	RTK_BT_AVRCP_EVT_VOLUME_DOWN,                   /*!< AVRCP volume down */
 	RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED,            /*!< AVRCP volume reg changed */
+	RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO,             /*!< AVRCP element attr information */
+	RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND,            /*!< AVRCP cover art data indication */
 	RTK_BT_AVRCP_EVT_CONN_CMPL,                     /*!< AVRCP conn completion */
 	RTK_BT_AVRCP_EVT_DISCONN_CMPL,                  /*!< AVRCP disconn completion */
 	RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ,   /*!< AVRCP play status changed */
@@ -886,6 +894,34 @@ typedef enum {
 	RTK_BT_SPP_EVT_SDP_DISCOV_CMPL,         /*!< SPP sdp discovery completed */
 	RTK_BT_SPP_EVT_MAX,
 } rtk_bt_spp_evt_t;
+
+/**
+ * @typedef   rtk_bt_rfc_act_t
+ * @brief     Bluetooth RFC action
+ */
+
+typedef enum {
+	RTK_BT_RFC_ACT_CONNECT = 1,
+	RTK_BT_RFC_ACT_DISCONNECT,
+	RTK_BT_RFC_ACT_SEND_DATA,
+	RTK_BT_RFC_ACT_CREDITS_GIVE,
+	RTK_BT_RFC_ACT_MAX,
+} rtk_bt_rfc_act_t;
+
+/**
+ * @typedef   rtk_bt_rfc_evt_t
+ * @brief     Bluetooth RFC event indication
+ */
+
+typedef enum {
+	RTK_BT_RFC_EVT_RFC_ATTR_INFO = 1,        /*!< RFC get sdp attribute info */
+	RTK_BT_RFC_EVT_CONN_IND,                 /*!< RFC connection establishment completed */
+	RTK_BT_RFC_EVT_CONN_CMPL,                /*!< RFC link credits received */
+	RTK_BT_RFC_EVT_DISCONN_CMPL,             /*!< RFC data indication */
+	RTK_BT_RFC_EVT_DATA_IND,                 /*!< RFC data response */
+	RTK_BT_RFC_EVT_CREDITS_INFO,             /*!< RFC credits information */
+	RTK_BT_RFC_EVT_MAX,
+} rtk_bt_rfc_evt_t;
 
 /**
  * @typedef   rtk_bt_hid_act_t
@@ -1141,7 +1177,6 @@ struct evt_ret_mem_option {
  */
 
 /**
- * @fn        void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] paddr: Device address
  * @param[out] str: String buf to get the normal format address
@@ -1150,7 +1185,6 @@ struct evt_ret_mem_option {
 void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
 
 /**
- * @fn        void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address value hexnum to normal format string.
  * @param[in] paddr: Device address
  * @param[out] str: String buf to get the normal format address
@@ -1159,7 +1193,6 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
 void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] paddr: Device address
  * @param[out] str: String buf to get the normal format address
@@ -1168,7 +1201,6 @@ void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len);
 void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] type: Device address type
  * @param[in] paddr: Device address
@@ -1178,7 +1210,6 @@ void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
 void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
  * @brief     Register event callback
  * @note      User's event callback will be excuted in bt_evt_task @ref rtk_bt_evt_taskentry,
  *            if user's callback is complex and consume too much stack size, please enlarge
@@ -1192,7 +1223,6 @@ void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
 uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb);
 
 /**
- * @fn        uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
  * @brief     Unregister event callback
  * @param[in] group: API cmd/evt group
  * @return

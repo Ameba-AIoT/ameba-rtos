@@ -68,7 +68,6 @@ typedef struct {
 /* ------------------------------ Functions Declaration ------------------------------ */
 
 /**
- * @fn        uint16_t rtk_hid_descriptor_add(void *des, uint32_t length)
  * @brief     set hid descriptor data.
  * @param[in] des: descriptor data pointer
  * @param[in] length: data length
@@ -79,7 +78,6 @@ typedef struct {
 uint16_t rtk_hid_descriptor_add(void *des, uint32_t length);
 
 /**
- * @fn        uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
  * @brief     disconnect hid.
  * @param[in] bd_addr: bt address
  * @return
@@ -89,7 +87,6 @@ uint16_t rtk_hid_descriptor_add(void *des, uint32_t length);
 uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr)
  * @brief     get report response.
  * @param[in] bd_addr: bt address
  * @return
@@ -99,7 +96,6 @@ uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr);
 uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t len)
  * @brief     hid input data send.
  * @param[in] bd_addr: bt address
  * @param[in] data: pointer to input data

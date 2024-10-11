@@ -103,7 +103,7 @@ int _BOOT_Validate_ImgHash(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgIn
 	u8 i, j, error = 0;
 	int ret = 0;
 
-	memset(&Context, 0, sizeof(hw_sha_context));
+	_memset(&Context, 0, sizeof(hw_sha_context));
 
 	ret = SBOOT_GetMdType(HashAlg, &MdType, &IsHmac);
 	if (ret != 0) {

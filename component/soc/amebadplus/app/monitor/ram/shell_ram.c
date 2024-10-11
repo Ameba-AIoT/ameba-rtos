@@ -96,14 +96,14 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	}
 }
 
-#ifdef ARM_CORE_CM0
+#ifdef CONFIG_ARM_CORE_CM0
 UART_LOG_BUF				tmp_log_buf;
 
 void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 {
 	IPC_MSG_STRUCT ipc_msg_temp;
 
-	memcpy(&tmp_log_buf, shell_ctl.pTmpLogBuf, sizeof(UART_LOG_BUF));
+	_memcpy(&tmp_log_buf, shell_ctl.pTmpLogBuf, sizeof(UART_LOG_BUF));
 	DCache_CleanInvalidate((u32)&tmp_log_buf, sizeof(UART_LOG_BUF));
 
 	ipc_msg_temp.msg_type = IPC_USER_POINT;
@@ -140,7 +140,7 @@ void shell_loguartRx_dispatch(void)
 			}
 
 			/* avoid useless space */
-			memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
+			_memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
 			break;
 		}
 	}

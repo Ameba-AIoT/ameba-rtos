@@ -9,9 +9,9 @@
 #define CH_NULL 1
 
 /* allow customer to adjust the pwrlmt regu corresponding to domain code, for example*/
-volatile pwr_lmt_regu_remap pwrlmt_regu_remapping_1v8[1] = {{0}};
+volatile struct _pwr_lmt_regu_remap pwrlmt_regu_remapping_1v8[1] = {{0}};
 
-volatile u8 array_len_of_pwrlmt_regu_remapping_1v8 = sizeof(pwrlmt_regu_remapping_1v8) / sizeof(pwr_lmt_regu_remap);
+volatile u8 array_len_of_pwrlmt_regu_remapping_1v8 = sizeof(pwrlmt_regu_remapping_1v8) / sizeof(struct _pwr_lmt_regu_remap);
 
 /******************************************************************************
  *                             TX_Power Limit

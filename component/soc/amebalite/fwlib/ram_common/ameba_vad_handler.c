@@ -195,11 +195,11 @@ void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf)
 	u8 block_index = get_block_index(addr_start);
 
 	if ((block_range[block_index][1] + ONE_SAMPLE_BYTES - addr_start) >= amount_byte) {
-		memcpy((void *)buf, (void *)addr_start, amount_byte);
+		_memcpy((void *)buf, (void *)addr_start, amount_byte);
 	} else {
-		memcpy((void *)buf, (void *)addr_start, block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start);
-		memcpy((void *)(buf + block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start), (void *)(block_range[block_index][0]),
-			   amount_byte - (block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start));
+		_memcpy((void *)buf, (void *)addr_start, block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start);
+		_memcpy((void *)(buf + block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start), (void *)(block_range[block_index][0]),
+				amount_byte - (block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start));
 	}
 }
 
@@ -317,7 +317,7 @@ void get_vad_data(u32 time_period_ms, u8 *buf, u8 *buf1)
 	}
 
 	u8 *temp_buf = malloc(used_bytes);
-	memcpy(temp_buf, buf, used_bytes);
+	_memcpy(temp_buf, buf, used_bytes);
 	vad_data_get_high_bytes(temp_buf, used_bytes, buf); //RTK_LOGD(TAG, "delete low 16 bit\n");
 
 	/* example:turn block0  block1  block2 into 0 1 2 0 1 2...(interleave) */

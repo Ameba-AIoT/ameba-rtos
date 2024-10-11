@@ -14,7 +14,7 @@ static bool check_str_whitespace(char *str)
 	uint32_t str_len = strlen(str);
 
 	if (' ' == str[0] || ' ' == str[str_len - 1]) {
-		AT_PRINTK("[%s]Error: Atcmd param has 'whitespace' in string !!!\r\n", __func__);
+		BT_LOGE("[%s]Error: Atcmd param has 'whitespace' in string!!!\r\n", __func__);
 		return TRUE;
 	}
 	return FALSE;
@@ -28,7 +28,7 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 
 	for (j = 0; j < argc; j++) {
 		if (NULL == argv[j]) {
-			AT_PRINTK("[%s]Error: Atcmd has NULL param !!!\r\n", __func__);
+			BT_LOGE("[%s]Error: Atcmd has NULL param!!!\r\n", __func__);
 			return -1;
 		}
 		if (check_str_whitespace(argv[j])) {
@@ -39,8 +39,8 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 	while (cmd_table[i].cmd_name) {
 		if (0 == strcmp(cmd_str, cmd_table[i].cmd_name)) {
 			if (argc < cmd_table[i].argc_min || argc > cmd_table[i].argc_max) {
-				AT_PRINTK("%s %s failed: wrong args number: %d, right range: [%d-%d]!",
-						  tag, cmd_str, argc, cmd_table[i].argc_min, cmd_table[i].argc_max);
+				BT_LOGE("%s %s failed: wrong args number: %d, right range: [%d-%d]!\r\n",
+						tag, cmd_str, argc, cmd_table[i].argc_min, cmd_table[i].argc_max);
 				return -1;
 			}
 
@@ -49,6 +49,6 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 		i++;
 	}
 
-	AT_PRINTK("%s Error: Cant find this cmd %s\r\n", tag, cmd_str);
+	BT_LOGE("%s Error: Cant find this cmd %s\r\n", tag, cmd_str);
 	return -1;
 }

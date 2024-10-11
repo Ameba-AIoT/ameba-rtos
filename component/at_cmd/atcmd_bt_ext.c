@@ -42,10 +42,12 @@ cmd_help_table_t mesh_gp_help_table[] = {{NULL,},};
 cmd_help_table_t mesh_sensor_help_table[] = {{NULL,},};
 cmd_help_table_t mesh_health_help_table[] = {{NULL,},};
 cmd_help_table_t mesh_rmt_help_table[] = {{NULL,},};
+cmd_help_table_t mesh_df_help_table[] = {{NULL,},};
 #endif
 cmd_help_table_t a2dp_help_table[] = {{NULL,},};
 cmd_help_table_t avrcp_help_table[] = {{NULL,},};
 cmd_help_table_t spp_help_table[] = {{NULL,},};
+cmd_help_table_t rfc_help_table[] = {{NULL,},};
 
 cmd_help_table_t cmd_help_table[] = {
 	{
@@ -226,6 +228,14 @@ cmd_help_table_t cmd_help_table[] = {
 		"[subcmd] = <scan_start, scan_cap_get, link_open>",
 		mesh_rmt_help_table
 	},
+	{
+		"mesh_df",   "[AT+BTCMDHELP] mesh_df: BLE mesh directed forwarding model operation\n\r"
+		"usage: AT+BLEMESHDF=[sub_cmd],...\n\r"
+		"[subcmd] = <dfpdis, dfpsol, dfpdupt, mdu, dcss, dcg, dcs, pmg, pms, dtcg, dtcs, fta, ftd, \n\r"
+		"			 ftda, ftdd, ftdg, ftecg, fteg, wlg, wls, twpg, twps, peig, peis, dntg, dnts, \n\r"
+		"			 drrg, drrs, rssitg, rssits, dpg, dppg, dpps, pdtcg, pdtcs, dcntg, dcnts, dcrrg, dcrrs>",
+		mesh_df_help_table
+	},
 #endif
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{
@@ -245,6 +255,12 @@ cmd_help_table_t cmd_help_table[] = {
 		"usage: AT+BTSPP=[sub_cmd],..\n\r"
 		"[sub_cmd] = <conn, disconn, disconn_all, send_data, give_credits>",
 		spp_help_table
+	},
+	{
+		"rfc_cmd",    "[AT+BTCMDHELP] rfc_cmd: BT RFC operation\n\r"
+		"usage: AT+BTRFC=[sub_cmd],..\n\r"
+		"[sub_cmd] = <conn, disconn, send_data>",
+		rfc_help_table
 	},
 #endif /* RTK_BREDR_SUPPORT */
 	{NULL,},
@@ -310,6 +326,12 @@ cmd_help_table_t example_help_table[] = {
 		NULL
 	},
 	{
+		"rfc", "[AT+BTDEMO] rfc: run as a RFC demo\n\r"
+		"usage: AT+BTDEMO=rfc,[val]\n\r"
+		"[val] = <0-(disable), 1-(enable)>",
+		NULL
+	},
+	{
 		"hfp", "[AT+BTDEMO] hfp: run as a HFP hf(hand free))/ag(audio gate)\n\r"
 		"usage: AT+BTDEMO=hfp,[role][val]\n\r"
 		"[role] = <hf-(hand free), ag-(audio gate)>"
@@ -360,7 +382,7 @@ static void atcmd_bt_help_common(int argc, char *argv[],
 	int i = 0, j = 0;
 
 	if (0 == argc) {
-		AT_PRINTK("%s", help_usage);
+		BT_LOGA("%s\r\n", help_usage);
 		return;
 	}
 
@@ -368,14 +390,14 @@ static void atcmd_bt_help_common(int argc, char *argv[],
 	while (cmd_help_table[i].name) {
 		if (0 == strcmp(cmd_str, cmd_help_table[i].name)) {
 			if (argc == 1) {
-				AT_PRINTK("%s", cmd_help_table[i].descriptor);
+				BT_LOGA("%s\r\n", cmd_help_table[i].descriptor);
 			}
 			goto SUB_CMD_HELP;
 		}
 		i++;
 	}
 
-	AT_PRINTK("[%s] Error: Cant find this cmd help\r\n", tag);
+	BT_LOGE("[%s] Error: Cant find this cmd help\r\n", tag);
 	return;
 
 SUB_CMD_HELP:
@@ -384,15 +406,15 @@ SUB_CMD_HELP:
 		cmd_help_table_t *sub_cmd_tbl = cmd_help_table[i].sub_tbl;
 		while (sub_cmd_tbl[j].name) {
 			if (0 == strcmp(sub_cmd_str, sub_cmd_tbl[j].name)) {
-				AT_PRINTK("%s", sub_cmd_tbl[j].descriptor);
+				BT_LOGA("%s\r\n", sub_cmd_tbl[j].descriptor);
 				break;
 			}
 			j++;
 		}
 
 		if (!sub_cmd_tbl[j].name)
-			AT_PRINTK("[%s] Error: Cant find this subcmd help in cmd: %s\r\n",
-					  tag, cmd_help_table[i].name);
+			BT_LOGE("[%s] Error: Cant find this subcmd help in cmd: %s\r\n",
+					tag, cmd_help_table[i].name);
 	}
 }
 
@@ -402,7 +424,7 @@ static int atcmd_bt_cmd_help(int argc, char *argv[])
 							  "usage: AT+BTCMDHELP=[cmd]\n\r"
 							  "       AT+BTCMDHELP=[cmd],[subcmd]\n\r"
 							  "[cmd] = <bt, ble_gap, br_gap, gattc, gatts, mesh_stack, mesh_data, mesh_config, mesh_goo, mesh_rmt\n\r"
-							  "			mesh_ll, mesh_lctl, mesh_lhsl, mesh_lxyl, mesh_llc, a2dp, avrcp, spp_cmd>\n\r"
+							  "			mesh_ll, mesh_lctl, mesh_lhsl, mesh_lxyl, mesh_llc, a2dp, avrcp, spp_cmd, rfc_cmd>\n\r"
 							  "[subcmd] = 'use AT+BTCMDHELP=[cmd] to show subcmds'";
 	atcmd_bt_help_common(argc, argv, "AT+BTCMDHELP", help_usage, cmd_help_table);
 	return 0;
@@ -413,7 +435,7 @@ static int atcmd_bt_example_help(int argc, char *argv[])
 	const char *help_usage =  "[AT+BTDEMO] help: show AT+BTDEMO cmds usage and description\n\r"
 							  "usage: AT+BTDEMO=help,[cmd]\n\r"
 							  "       AT+BTDEMO=help,[cmd],[subcmd]\n\r"
-							  "[cmd] = <central, peripheral, scatternet, provisioner, device, provisioner_scatternet, device_scatternet, a2dp, spp, hfp>\n\r"
+							  "[cmd] = <central, peripheral, scatternet, provisioner, device, provisioner_scatternet, device_scatternet, a2dp, spp, rfc, hfp>\n\r"
 							  "[subcmd] = 'use AT+BTDEMO=help,[cmd] to show subcmds'";
 	atcmd_bt_help_common(argc, argv, "AT+BTDEMO", help_usage, example_help_table);
 	return 0;
@@ -470,6 +492,7 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_MESH_GP         "+BLEMESHGP"
 #define CMD_NAME_MESH_SENSOR     "+BLEMESHSENSOR"
 #define CMD_NAME_MESH_HEALTH     "+BLEMESHHEALTH"
+#define CMD_NAME_MESH_DF         "+BLEMESHDF"
 #endif /* RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 #define CMD_NAME_BR_GAP          "+BRGAP"
@@ -477,6 +500,7 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_A2DP            "+BTA2DP"
 #define CMD_NAME_AVRCP           "+BTAVRCP"
 #define CMD_NAME_SPP             "+BTSPP"
+#define CMD_NAME_RFC             "+BTRFC"
 #define CMD_NAME_HID             "+BTHID"
 #define CMD_NAME_HFP             "+BTHFP"
 #define CMD_NAME_PBAP            "+BTPBAP"
@@ -525,6 +549,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_MESH_GP,          atcmd_bt_mesh_generic_property,                 4, 8},
 	{CMD_NAME_MESH_SENSOR,      atcmd_bt_mesh_sensor,                           4, 14},
 	{CMD_NAME_MESH_HEALTH,      atcmd_bt_mesh_health,                           4, 7},
+	{CMD_NAME_MESH_DF,          atcmd_bt_mesh_df,                               4, 21},
 #endif  // end of RTK_BLE_MESH_SUPPORT
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{CMD_NAME_BR_GAP,           atcmd_bt_br_gap,                                2, 13},
@@ -532,6 +557,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_A2DP,             atcmd_bt_a2dp_cmd,                              1, 8},
 	{CMD_NAME_AVRCP,            atcmd_bt_avrcp_cmd,                             1, 4},
 	{CMD_NAME_SPP,              atcmd_bt_spp_cmd,                               1, 8},
+	{CMD_NAME_RFC,              atcmd_bt_rfc_cmd,                               1, 8},
 	{CMD_NAME_HID,              atcmd_bt_hid_cmd,                               1, 23},
 	{CMD_NAME_HFP,              atcmd_bt_hfp_cmd,                               1, 8},
 	{CMD_NAME_PBAP,             atcmd_bt_pbap_cmd,                              1, 8},
@@ -615,6 +641,9 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_SPP) && CONFIG_BT_SPP
 	{"spp",              atcmd_bt_spp,              3, 6},
 #endif
+#if defined(CONFIG_BT_RFC) && CONFIG_BT_RFC
+	{"rfc",              atcmd_bt_rfc,              2, 3},
+#endif
 #if defined(CONFIG_BT_HID) && CONFIG_BT_HID
 	{"hid",              atcmd_bt_hid,              2, 3},
 #endif
@@ -670,13 +699,13 @@ static void atcmd_bt_cmd(void *arg, char *cmd_name, char *tag)
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("%s Error: No input args number!", tag);
+		BT_LOGE("%s Error: No input args number!\r\n", tag);
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("%s Error: Wrong input args number!", tag);
+		BT_LOGE("%s Error: Wrong input args number!\r\n", tag);
 		goto exit;
 	}
 
@@ -690,7 +719,7 @@ static void atcmd_bt_cmd(void *arg, char *cmd_name, char *tag)
 	return;
 
 exit:
-	AT_PRINTK("%s Info: Use '%s' to help", tag, "AT+BTCMDHELP");
+	BT_LOGA("%s Info: Use '%s' to help\r\n", tag, "AT+BTCMDHELP");
 	BT_AT_PRINTERROR();
 }
 
@@ -711,13 +740,13 @@ static void fBTDEMO(void *arg)
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("[AT+BTDEMO] Error: No input args number!");
+		BT_LOGE("[AT+BTDEMO] Error: No input args number!\r\n");
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("[AT+BTDEMO] Error: Wrong input args number!");
+		BT_LOGE("[AT+BTDEMO] Error: Wrong input args number!\r\n");
 		goto exit;
 	}
 
@@ -730,7 +759,7 @@ static void fBTDEMO(void *arg)
 	return;
 
 exit:
-	AT_PRINTK("[AT+BTDEMO] Info: Use 'AT+BTDEMO=help' to help");
+	BT_LOGA("[AT+BTDEMO] Info: Use 'AT+BTDEMO=help' to help\r\n");
 	BT_AT_PRINTERROR();
 }
 
@@ -773,6 +802,11 @@ static inline void fBTAVRCP(void *arg)
 static inline void fBTSPP(void *arg)
 {
 	atcmd_bt_cmd(arg, CMD_NAME_SPP, "[AT+BTSPP]");
+}
+
+static inline void fBTRFC(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_RFC, "[AT+BTRFC]");
 }
 
 static inline void fBTHID(void *arg)
@@ -948,6 +982,12 @@ static inline void fBLEMESHHEALTH(void *arg)
 	atcmd_bt_cmd(arg, CMD_NAME_MESH_HEALTH, "[AT+BLEMESHHEALTH]");
 }
 
+static inline void fBLEMESHDF(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_DF, "[AT+BLEMESHDF]");
+}
+
+
 #endif /* RTK_BLE_MESH_SUPPORT */
 
 static inline void fBTDEVICE(void *arg)
@@ -972,7 +1012,7 @@ static inline void fBTCMDHELP(void *arg)
 	} else {
 		argc = parse_param(arg, argv);
 		if (argc < 1 || argc > 3) {
-			AT_PRINTK("[AT+BTCMDHELP] Error: Wrong input args number!");
+			BT_LOGE("[AT+BTCMDHELP] Error: Wrong input args number!\r\n");
 			BT_AT_PRINTERROR();
 			return;
 		}
@@ -996,13 +1036,13 @@ static void fBTVENDOR(void *arg)
 	int ret = 0;
 
 	if (!arg) {
-		AT_PRINTK("[AT+BTVENDOR] Error: No input args number!");
+		BT_LOGE("[AT+BTVENDOR] Error: No input args number!\r\n");
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		AT_PRINTK("[AT+BTVENDOR] Error: Wrong input args number!");
+		BT_LOGE("[AT+BTVENDOR] Error: Wrong input args number!\r\n");
 		goto exit;
 	}
 
@@ -1015,7 +1055,7 @@ static void fBTVENDOR(void *arg)
 	return;
 
 exit:
-	AT_PRINTK("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help");
+	BT_LOGA("[AT+BTVENDOR] Info: Use 'AT+BTVENDOR=help' to help\r\n");
 	BT_AT_PRINTERROR();
 }
 
@@ -1024,7 +1064,7 @@ _WEAK int rtk_bt_verify(int param_num, int *param)
 	(void)param_num;
 	(void)param;
 
-	AT_PRINTK("[ATBT] Error: rtk_bt_verify is not compiled");
+	BT_LOGE("[ATBT] Error: rtk_bt_verify is not compiled\r\n");
 	return 0;
 }
 
@@ -1032,7 +1072,7 @@ _WEAK int rtk_bt_get_verify_cmd_index(char *cmd_str)
 {
 	(void)cmd_str;
 
-	AT_PRINTK("[ATBT] Error: rtk_bt_get_verify_cmd_index is not compiled");
+	BT_LOGE("[ATBT] Error: rtk_bt_get_verify_cmd_index is not compiled\r\n");
 	return 0;
 }
 
@@ -1045,7 +1085,7 @@ static void fBTTEST(void *arg)
 	int param_num = argc - 1;
 
 	if (param_num < 1) {
-		AT_PRINTK("[AT+BTTEST] Error: No input args number!");
+		BT_LOGE("[AT+BTTEST] Error: No input args number!\r\n");
 		return;
 	}
 
@@ -1055,12 +1095,12 @@ static void fBTTEST(void *arg)
 		return;
 	}
 
-	AT_PRINTK("[AT+BTTEST] %s ", cmd_str);
+	BT_LOGA("[AT+BTTEST] %s ", cmd_str);
 	for (int i = 1; i < param_num; i++) {
 		param[i] = str_to_int(argv[i + 1]);
-		AT_PRINTK("%d ", param[i]);
+		BT_LOGA("%d ", param[i]);
 	}
-	AT_PRINTK("\r\n");
+	BT_LOGA("\r\n");
 	rtk_bt_verify(param_num, param);
 }
 
@@ -1084,6 +1124,7 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_A2DP,             fBTA2DP,              {NULL, NULL}},
 	{CMD_NAME_AVRCP,            fBTAVRCP,             {NULL, NULL}},
 	{CMD_NAME_SPP,              fBTSPP,               {NULL, NULL}},
+	{CMD_NAME_RFC,              fBTRFC,               {NULL, NULL}},
 	{CMD_NAME_HID,              fBTHID,               {NULL, NULL}},
 	{CMD_NAME_HFP,              fBTHFP,               {NULL, NULL}},
 	{CMD_NAME_PBAP,             fBTPBAP,              {NULL, NULL}},
@@ -1129,6 +1170,7 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_MESH_GP,          fBLEMESHGP,           {NULL, NULL}},
 	{CMD_NAME_MESH_SENSOR,      fBLEMESHSENSOR,       {NULL, NULL}},
 	{CMD_NAME_MESH_HEALTH,      fBLEMESHHEALTH,       {NULL, NULL}},
+	{CMD_NAME_MESH_DF,          fBLEMESHDF,           {NULL, NULL}},
 #endif /* RTK_BLE_MESH_SUPPORT */
 	{CMD_NAME_BT_VENDOR,        fBTVENDOR,            {NULL, NULL}},
 	{CMD_NAME_BT_TEST,          fBTTEST,              {NULL, NULL}},

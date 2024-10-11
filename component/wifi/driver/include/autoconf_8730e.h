@@ -21,8 +21,10 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_NAN
+
+#if defined(CONFIG_FULLMAC) && defined(CONFIG_NAN)
 #define CONFIG_MCC_MODE
-//#define CONFIG_MCC_NAN_TEST
+#endif
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
 #define SUPPORT_ADAPTER_NUM	3
@@ -163,7 +165,6 @@
 #define DRV_BB_CMN_RPT_DISABLE
 #define DRV_BB_STATISTICS_DISABLE
 #define DRV_BB_DGB_SUPPORT_DISABLE
-#define DRV_RF_DBG_TRACE_DISABLE
 #define DRV_BB_CH_INFO_DISABLE
 #define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_PHYSTS_PARSING_DISABLE
@@ -184,15 +185,10 @@
 #define DISABLE_FW
 #endif
 /************************* Config for MP_MODE end *****************************/
+/* Config for BB/RF debug */
+//#define CONFIG_PHYDM_CMD
+//#define CONFIG_HALRF_CMD
 
-#ifndef CONFIG_PHYDM_CMD
-#define DRV_BB_DBG_TRACE_DISABLE
-#define DRV_BB_PMAC_TX_DISABLE
-#define DRV_BB_CMN_RPT_DISABLE
-#define DRV_BB_STATISTICS_DISABLE
-#define DRV_BB_DGB_SUPPORT_DISABLE
-#define DRV_RF_DBG_TRACE_DISABLE
-#endif
 /*Config for SKB Size*/
 #define SKB_CACHE_SZ	64/*max(AP_Core_Cache, NP_Core_Cache)*/
 #define SKB_ALIGNMENT	__attribute__((aligned(SKB_CACHE_SZ)))

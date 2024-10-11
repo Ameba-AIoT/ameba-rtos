@@ -81,6 +81,7 @@ typedef enum {
 	RTK_BT_MESH_STACK_EVT_HB_SUB_PERIOD_UPDATE,
 	RTK_BT_MESH_STACK_EVT_HB_SUB_RECEIVE,
 	RTK_BT_MESH_STACK_EVT_RETRANS_PARAM_SETTING_RESULT,
+	RTK_BT_MESH_STACK_EVT_DF_CB,
 	RTK_BT_MESH_STACK_EVT_MAX,
 } rtk_bt_mesh_stack_event_t;
 
@@ -110,7 +111,18 @@ typedef enum {
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY,
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO,
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO,
+	RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO,
 } rtk_bt_mesh_stack_user_list_type_t;
+
+/**
+ * @typedef   rtk_bt_mesh_stack_evt_net_key_type
+ * @brief     BLE MESH net key type.
+ */
+typedef enum {
+	RTK_BT_MESH_NET_KEY_MASTER = 1,
+	RTK_BT_MESH_NET_KEY_FN,
+	RTK_BT_MESH_NET_KEY_DF,
+} rtk_bt_mesh_stack_net_key_type;
 
 /**
  * @typedef   rtk_bt_mesh_stack_role_t
@@ -822,7 +834,6 @@ typedef struct {
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_provisioner_setting_init(rtk_bt_mesh_stack_act_provisioner_init_setting_t *init_setting)
  * @brief     Setting provisioner init param, will cause event @ref RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING
  * @param[in] init_setting: init setting param
  * @return
@@ -832,7 +843,6 @@ typedef struct {
 uint16_t rtk_bt_mesh_stack_provisioner_setting_init(rtk_bt_mesh_stack_act_provisioner_init_setting_t *init_setting);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_prov_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvcon)
  * @brief     Establish PBADV link, will cause event @ref RTK_BT_MESH_STACK_ACT_PB_ADV_CON
  * @param[in] pbadvcon: PB-ADV link param struct
  * @return
@@ -842,7 +852,6 @@ uint16_t rtk_bt_mesh_stack_provisioner_setting_init(rtk_bt_mesh_stack_act_provis
 uint16_t rtk_bt_mesh_stack_prov_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvcon);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_prov_pb_adv_discon(void)
  * @brief     Disconnect PBADV link, will cause event @ref RTK_BT_MESH_STACK_ACT_PB_ADV_DISCON
  * @return
  *            - 0  : Succeed
@@ -851,7 +860,6 @@ uint16_t rtk_bt_mesh_stack_prov_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *p
 uint16_t rtk_bt_mesh_stack_prov_pb_adv_discon(void);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_prov_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt_con)
  * @brief     Establish PB-GATT link, will cause event @ref RTK_BT_MESH_STACK_ACT_PB_GATT_CON
  * @return
  *            - 0  : Succeed
@@ -860,7 +868,6 @@ uint16_t rtk_bt_mesh_stack_prov_pb_adv_discon(void);
 uint16_t rtk_bt_mesh_stack_prov_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt_con);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_prov_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon)
  * @brief     Disconn the PB-GATT link, will cause event @ref RTK_BT_MESH_STACK_ACT_PB_GATT_DISCON
  * @return
  *            - 0  : Succeed
@@ -869,7 +876,6 @@ uint16_t rtk_bt_mesh_stack_prov_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t 
 uint16_t rtk_bt_mesh_stack_prov_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_start_provisioning(rtk_bt_mesh_stack_act_start_prov_t *start_prov)
  * @brief     Start provisioning, will cause event @ref RTK_BT_MESH_STACK_ACT_START_PROV
  * @param[in] start_prov: start provisioning param struct
  * @return
@@ -879,7 +885,6 @@ uint16_t rtk_bt_mesh_stack_prov_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_dis
 uint16_t rtk_bt_mesh_stack_start_provisioning(rtk_bt_mesh_stack_act_start_prov_t *start_prov);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_method_choose_for_provisioning(rtk_bt_mesh_stack_prov_start_t *method)
  * @brief     Select a method according unprovisioned device support for provisioning, will cause event @ref RTK_BT_MESH_STACK_ACT_METHOD_CHOOSE_FOR_PROV
  * @param[in] method: provisioning method data param struct
  * @return
@@ -889,7 +894,6 @@ uint16_t rtk_bt_mesh_stack_start_provisioning(rtk_bt_mesh_stack_act_start_prov_t
 uint16_t rtk_bt_mesh_stack_method_choose_for_provisioning(rtk_bt_mesh_stack_prov_start_t *method);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_t *prov_dis)
  * @brief     Prov service discovery, will cause event @ref RTK_BT_MESH_STACK_ACT_PROV_SERVICE_DISCOVERY
  * @param[in] prov_dis : prov service discovery param struct
  * @return
@@ -899,7 +903,6 @@ uint16_t rtk_bt_mesh_stack_method_choose_for_provisioning(rtk_bt_mesh_stack_prov
 uint16_t rtk_bt_mesh_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_t *prov_dis);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_set_notify_t *prov_notify)
  * @brief     Prov service set notify, will cause event @ref RTK_BT_MESH_STACK_ACT_PROV_SERVICE_SET_NOTIFY
  * @param[in] prov_notify : prov service notify set param struct
  * @return
@@ -909,7 +912,6 @@ uint16_t rtk_bt_mesh_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis
 uint16_t rtk_bt_mesh_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_set_notify_t *prov_notify);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_proxy_service_discovery(rtk_bt_mesh_stack_act_proxy_dis_t *proxy_dis)
  * @brief     Proxy service discovery, will cause event @ref RTK_BT_MESH_STACK_ACT_PROXY_SERVICE_DISCOVERY
  * @param[in] proxy_dis : proxy service discovery param struct
  * @return
@@ -919,7 +921,6 @@ uint16_t rtk_bt_mesh_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_se
 uint16_t rtk_bt_mesh_stack_proxy_service_discovery(rtk_bt_mesh_stack_act_proxy_dis_t *proxy_dis);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_proxy_set_notify_t *proxy_notify)
  * @brief     Proxy service set notify, will cause event @ref RTK_BT_MESH_STACK_ACT_PROXY_SERVICE_SET_NOTIFY
  * @param[in] proxy_notify : proxy service notify set param struct
  * @return
@@ -933,7 +934,6 @@ uint16_t rtk_bt_mesh_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_proxy_
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_lpn_init(rtk_bt_mesh_stack_act_lpn_init_t *lpn_init)
  * @brief     Init low power node, will cause event @ref RTK_BT_MESH_STACK_ACT_LPN_INIT
  * @param[in] lpn_init : low power node init param struct
  * @return
@@ -943,7 +943,6 @@ uint16_t rtk_bt_mesh_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_proxy_
 uint16_t rtk_bt_mesh_stack_lpn_init(rtk_bt_mesh_stack_act_lpn_init_t *lpn_init);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_lpn_req(rtk_bt_mesh_stack_act_lpn_req_t *lpn_req)
  * @brief     Low power node request a friendship to friend node, will cause event @ref RTK_BT_MESH_STACK_ACT_LPN_REQ
  * @param[in] lpn_req : low power node request friendship param struct
  * @return
@@ -953,7 +952,6 @@ uint16_t rtk_bt_mesh_stack_lpn_init(rtk_bt_mesh_stack_act_lpn_init_t *lpn_init);
 uint16_t rtk_bt_mesh_stack_lpn_req(rtk_bt_mesh_stack_act_lpn_req_t *lpn_req);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_lpn_sub(rtk_bt_mesh_stack_act_lpn_sub_t *lpn_sub)
  * @brief     Low power node add or remove subscribe address, will cause event @ref RTK_BT_MESH_STACK_ACT_LPN_SUB
  * @param[in] lpn_sub : low power node subscribe add or remove param struct
  * @return
@@ -963,7 +961,6 @@ uint16_t rtk_bt_mesh_stack_lpn_req(rtk_bt_mesh_stack_act_lpn_req_t *lpn_req);
 uint16_t rtk_bt_mesh_stack_lpn_sub(rtk_bt_mesh_stack_act_lpn_sub_t *lpn_sub);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_lpn_clear(rtk_bt_mesh_stack_act_lpn_clear_t *lpn_clear)
  * @brief     Low power node clear friendship, will cause event @ref RTK_BT_MESH_STACK_ACT_LPN_CLEAR
  * @param[in] lpn_clear : low power node clear friendship data param struct
  * @return
@@ -973,7 +970,6 @@ uint16_t rtk_bt_mesh_stack_lpn_sub(rtk_bt_mesh_stack_act_lpn_sub_t *lpn_sub);
 uint16_t rtk_bt_mesh_stack_lpn_clear(rtk_bt_mesh_stack_act_lpn_clear_t *lpn_clear);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_lpn_deinit(void)
  * @brief     Deinit low power node, will cause event @ref RTK_BT_MESH_STACK_ACT_LPN_DEINIT
  * @return
  *            - 0  : Succeed
@@ -984,7 +980,6 @@ uint16_t rtk_bt_mesh_stack_lpn_deinit(void);
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_node_reset(void)
  * @brief     Node reset, clear the mesh param, will cause event @ref RTK_BT_MESH_STACK_ACT_NODE_RESET
  * @return
  *            - 0  : Succeed
@@ -993,7 +988,6 @@ uint16_t rtk_bt_mesh_stack_lpn_deinit(void);
 uint16_t rtk_bt_mesh_stack_node_reset(void);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data)
  * @brief     Device info display switch, will cause event @ref RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH
  * @param[in] p_data: device info display data struct
  * @return
@@ -1003,7 +997,6 @@ uint16_t rtk_bt_mesh_stack_node_reset(void);
 uint16_t rtk_bt_mesh_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_user_list_info(void)
  * @brief     Print user list info, will cause event @ref RTK_BT_MESH_STACK_ACT_USER_LIST_INFO
  * @return
  *            - 0  : Succeed
@@ -1012,7 +1005,6 @@ uint16_t rtk_bt_mesh_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_
 uint16_t rtk_bt_mesh_stack_user_list_info(void);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *adv_param)
  * @brief     Only send one mesh adv, will cause event @ref RTK_BT_MESH_STACK_ACT_SEND_ONE_SHOT_ADV
  * @param[in] adv_param: adv param data structure
  * @return
@@ -1022,7 +1014,6 @@ uint16_t rtk_bt_mesh_stack_user_list_info(void);
 uint16_t rtk_bt_mesh_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *adv_param);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_set_random_value_for_authentication(rtk_bt_mesh_stack_act_set_random_value_t *value)
  * @brief     Set random value when use output or input oob method for Authentication for provisioning, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_RANDOM_VALUE
  * @param[in] value: the random value data structure
  * @return
@@ -1032,7 +1023,6 @@ uint16_t rtk_bt_mesh_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *a
 uint16_t rtk_bt_mesh_stack_set_random_value_for_authentication(rtk_bt_mesh_stack_act_set_random_value_t *value);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_get_heartbeat_subscribe_result(rtk_bt_mesh_hb_sub_t *hb_sub)
  * @brief     Get heartbeat subscribe result, will cause event @ref RTK_BT_MESH_STACK_ACT_GET_HB_SUB_RESULT
  * @param[in] value: the subscribe result data structure
  * @return
@@ -1042,7 +1032,6 @@ uint16_t rtk_bt_mesh_stack_set_random_value_for_authentication(rtk_bt_mesh_stack
 uint16_t rtk_bt_mesh_stack_get_heartbeat_subscribe_result(rtk_bt_mesh_hb_sub_t *hb_sub);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t *model_sub)
  * @brief     Set model subscribe, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_MODEL_SUB
  * @param[in] model_sub: the set model subscribe data structure
  * @return
@@ -1052,7 +1041,6 @@ uint16_t rtk_bt_mesh_stack_get_heartbeat_subscribe_result(rtk_bt_mesh_hb_sub_t *
 uint16_t rtk_bt_mesh_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t *model_sub);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_fn_init(rtk_bt_mesh_stack_act_fn_init_t *friend_init)
  * @brief     Init friendship FN node, will cause event @ref RTK_BT_MESH_STACK_ACT_FN_INIT
  * @param[in] friend_init: friend node init data struct
  * @return
@@ -1062,7 +1050,6 @@ uint16_t rtk_bt_mesh_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t
 uint16_t rtk_bt_mesh_stack_fn_init(rtk_bt_mesh_stack_act_fn_init_t *friend_init);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_fn_deinit(void)
  * @brief     Deinit friendship FN node, will cause event @ref RTK_BT_MESH_STACK_ACT_FN_DEINIT
  * @return
  *            - 0  : Succeed
@@ -1071,7 +1058,6 @@ uint16_t rtk_bt_mesh_stack_fn_init(rtk_bt_mesh_stack_act_fn_init_t *friend_init)
 uint16_t rtk_bt_mesh_stack_fn_deinit(void);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *param)
  * @brief     Set retransmit parameters, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_RETRANS_PARAM
  * @param[in] param: the set retransmit parameters structure
  * @return

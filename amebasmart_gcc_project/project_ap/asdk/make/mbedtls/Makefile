@@ -11,9 +11,9 @@ include $(MAKE_INCLUDE_GEN)
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
 all:
-ifeq ($(MBEDTLS_V_2_16_9_ENABLE), y)
+ifeq ($(CONFIG_MBEDTLS_V_2_16_9_ENABLE), y)
 	make -C mbedtls-2.16.9 all
-else ifeq ($(MBEDTLS_V_3_4_1_ENABLE), y)
+else ifeq ($(CONFIG_MBEDTLS_V_3_4_1_ENABLE), y)
 	make -C mbedtls-3.4.1 all
 endif
 

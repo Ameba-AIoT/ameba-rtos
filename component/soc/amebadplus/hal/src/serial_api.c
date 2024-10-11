@@ -540,7 +540,7 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 	// For stdio management
 	if (uart_idx == STDIO_UART) {
 		stdio_uart_inited = 1;
-		memcpy(&stdio_uart, obj, sizeof(serial_t));
+		_memcpy(&stdio_uart, obj, sizeof(serial_t));
 	}
 #endif
 }

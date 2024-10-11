@@ -93,7 +93,7 @@ static mesh_msg_send_cause_t generic_location_send(mesh_model_info_p pmodel_info
                                                    uint16_t app_key_index,
                                                    uint8_t *pmsg, uint16_t msg_len, uint16_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;

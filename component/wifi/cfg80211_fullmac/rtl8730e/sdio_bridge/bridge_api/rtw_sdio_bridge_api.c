@@ -188,7 +188,7 @@ static int _bridge_get_family_id(int fd, char *family_name)
 
 static void _bridge_print_scan_result(struct rtw_scan_result *record)
 {
-	printf("%s\t ", (record->bss_type == RTW_BSS_TYPE_ADHOC) ? "Adhoc" : "Infra");
+	printf("%s\t ", (record->bss_type == RTW_BSS_TYPE_WTN_HELPER) ? "Helper" : "Infra");
 	printf("%02x:%02x:%02x:%02x:%02x:%02x,", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4],
 		   record->BSSID.octet[5]);
 	/* cal complement for logs */

@@ -33,7 +33,7 @@
 // #define IPC_N2A_BT_DATA_TRAN			5	/*!<  KM0 -->  KM4 BT DATA Exchange */
 #define IPC_N2A_WIFI_TRX_TRAN				6	/*!<  KM0 -->  KM4 WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN				7	/*!<  KM0 -->  KM4 API WIFI Message Exchange */
-#define IPC_N2A_WAKE_AP_FULLMAC			8
+//#define IPC_N2A_Channel8				8
 //#define IPC_N2A_Channel9				9
 //#define IPC_N2A_Channel10				10
 //#define IPC_N2A_Channel11				11

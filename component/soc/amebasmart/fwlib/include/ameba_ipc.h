@@ -340,19 +340,19 @@ typedef enum {
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
 #define IPC_A2N_IMQ_TRX_TRAN					7	/*!<  AP -->  NP IMQ Message Exchange for RTOS*/
-#if (defined(ARM_CORE_CA32) && defined(CONFIG_AS_AP)) || \
-	(defined(ARM_CORE_CM4) && defined(CONFIG_AS_NP))
+#if (defined(CONFIG_ARM_CORE_CA32) && defined(CONFIG_AS_AP)) || \
+	(defined(CONFIG_ARM_CORE_CM4) && defined(CONFIG_AS_NP))
 
 #define IPC_CH_WIFI_FW_CTRL		IPC_N2L_Channel1
 #define IPC_DIR_WIFI_FW_CTRL		IPC_NP_TO_LP
 
-#elif (defined(ARM_CORE_CM4) && defined(CONFIG_AS_AP)) || \
-	(defined(ARM_CORE_CA32) && defined(CONFIG_AS_NP))
+#elif (defined(CONFIG_ARM_CORE_CM4) && defined(CONFIG_AS_AP)) || \
+	(defined(CONFIG_ARM_CORE_CA32) && defined(CONFIG_AS_NP))
 
 #define IPC_CH_WIFI_FW_CTRL		IPC_A2L_Channel1
 #define IPC_DIR_WIFI_FW_CTRL		IPC_AP_TO_LP
 
-#elif (defined(ARM_CORE_CM0))
+#elif (defined(CONFIG_ARM_CORE_CM0))
 #define IPC_CH_WIFI_FW_CTRL			1
 #define IPC_FW_CA2LP_CHNUM			17
 #define IPC_FW_KM2LP_CHNUM			25

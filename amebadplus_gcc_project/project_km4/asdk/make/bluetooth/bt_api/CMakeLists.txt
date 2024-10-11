@@ -9,7 +9,6 @@ set(
 	${BT_API_DIR}/rtk_bt_gap.c
 	${BT_API_DIR}/rtk_bt_gatt.c
 	${BT_API_DIR}/rtk_bt_vendor.c
-	${BT_API_DIR}/rtk_bt_mp_api.c
 	${BT_API_DIR}/rtk_bt_power_control.c
 	${BT_API_DIR}/rtk_bt_mesh_common.c
 	${BT_API_DIR}/rtk_bt_mesh_config_client_model.c
@@ -24,6 +23,7 @@ set(
 	${BT_API_DIR}/rtk_bt_mesh_remote_prov_model.c
 	${BT_API_DIR}/rtk_bt_mesh_health_model.c
 	${BT_API_DIR}/rtk_bt_mesh_sensor_model.c
+    ${BT_API_DIR}/rtk_bt_mesh_directed_forwarding_model.c
 )
 
 if(CONFIG_BT_ZEPHYR)
@@ -57,7 +57,8 @@ else()
         ${BT_API_DIR}/rtk_stack/rtk_stack_mesh_generic_model.c
         ${BT_API_DIR}/rtk_stack/rtk_stack_mesh_health_model.c
         ${BT_API_DIR}/rtk_stack/rtk_stack_mesh_sensor_model.c
+        ${BT_API_DIR}/rtk_stack/rtk_stack_mesh_directed_forwarding_model.c
     )
 endif()
 
-target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

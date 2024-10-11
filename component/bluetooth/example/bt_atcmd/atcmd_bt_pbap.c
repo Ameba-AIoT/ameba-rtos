@@ -25,11 +25,11 @@ static int atcmd_bt_pbap_connect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_pbap_connect(bd_addr)) {
-		BTPBAP_AT_PRINTK("PBAP connect fail \r\n");
+		BT_LOGE("PBAP connect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP connecting to device %s ...", addr_str);
+	BT_LOGA("PBAP connecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -42,11 +42,11 @@ static int atcmd_bt_pbap_disconnect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_pbap_disconnect(bd_addr)) {
-		BTPBAP_AT_PRINTK("PBAP disconnect fail \r\n");
+		BT_LOGE("PBAP disconnect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP disconnecting to device %s ...", addr_str);
+	BT_LOGA("PBAP disconnecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -62,11 +62,11 @@ static int atcmd_bt_pbap_set_phone_book(int argc, char **argv)
 	set_pb_t.path = (rtk_bt_pbap_path)str_to_int(argv[2]);
 
 	if (rtk_bt_pbap_set_phone_book(&set_pb_t)) {
-		BTPBAP_AT_PRINTK("PBAP set phone book fail \r\n");
+		BT_LOGE("PBAP set phone book fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(set_pb_t.bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP set phone book to device %s ...", addr_str);
+	BT_LOGA("PBAP set phone book to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -85,11 +85,11 @@ static int atcmd_bt_pbap_phone_book_pull(int argc, char **argv)
 	pb_pull_t.filter = (uint64_t)str_to_int(argv[5]);
 
 	if (rtk_bt_pbap_phone_book_pull(&pb_pull_t)) {
-		BTPBAP_AT_PRINTK("PBAP phone book pull fail \r\n");
+		BT_LOGE("PBAP phone book pull fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(pb_pull_t.bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP phone book pull to device %s ...", addr_str);
+	BT_LOGA("PBAP phone book pull to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -102,11 +102,11 @@ static int atcmd_bt_pbap_phone_book_pull_continue(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_pbap_phone_book_pull_continue(bd_addr)) {
-		BTPBAP_AT_PRINTK("PBAP phone book pull continue fail \r\n");
+		BT_LOGE("PBAP phone book pull continue fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP phone book pull continue to device %s ...", addr_str);
+	BT_LOGA("PBAP phone book pull continue to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -122,11 +122,11 @@ static int atcmd_bt_pbap_phone_book_size_get(int argc, char **argv)
 	pb_size_t.phone_book = (rtk_bt_pbap_phone_book)str_to_int(argv[2]);
 
 	if (rtk_bt_pbap_phone_book_size_get(&pb_size_t)) {
-		BTPBAP_AT_PRINTK("PBAP phone book size get fail \r\n");
+		BT_LOGE("PBAP phone book size get fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(pb_size_t.bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP phone book size get from device %s ...", addr_str);
+	BT_LOGA("PBAP phone book size get from device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -138,17 +138,17 @@ static int atcmd_bt_pbap_pull_caller_id_name(int argc, char **argv)
 	rtk_bt_pbap_pull_caller_id_name_t caller_id = {0};
 
 	if (strlen(argv[1]) > 20) {
-		BTPBAP_AT_PRINTK("PBAP pull caller id number is overflow \r\n");
+		BT_LOGE("PBAP pull caller id number is overflow\r\n");
 		return -1;
 	}
 	hexdata_str_to_bd_addr(argv[0], caller_id.bd_addr, RTK_BD_ADDR_LEN);
 	memcpy((void *)caller_id.number, (void *)argv[1], strlen(argv[1]));
 	if (rtk_bt_pbap_pull_caller_id_name(&caller_id)) {
-		BTPBAP_AT_PRINTK("PBAP pull caller id name fail \r\n");
+		BT_LOGE("PBAP pull caller id name fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(caller_id.bd_addr, addr_str, sizeof(addr_str));
-	BTPBAP_AT_PRINTK("PBAP pull caller id name to device %s ...", addr_str);
+	BT_LOGA("PBAP pull caller id name to device %s ...\r\n", addr_str);
 
 	return 0;
 }

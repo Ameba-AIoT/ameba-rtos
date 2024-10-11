@@ -100,6 +100,8 @@ extern uint32_t SystemCoreClock;
 #define configUSE_QUEUE_SETS							1
 #define configUSE_TASK_NOTIFICATIONS					1
 #define configUSE_TRACE_FACILITY						1
+#define configSUPPORT_STATIC_ALLOCATION					1
+#define configUSE_POSIX_ERRNO						1
 
 /* Constants that define which hook (callback) functions should be used. */
 #define configUSE_IDLE_HOOK								1

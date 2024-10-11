@@ -33,7 +33,7 @@ int wifi_get_network_mode(void)
 }
 
 
-int wifi_set_network_mode(enum wlan_mode mode)
+int wifi_set_network_mode(u32 mode)
 {
 	UNUSED(mode);
 	call_noused = __LINE__;
@@ -188,13 +188,6 @@ int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *sw_sta
 	return -1;
 }
 
-int wifi_del_station(unsigned char *hwaddr)
-{
-	UNUSED(hwaddr);
-	call_noused = __LINE__;
-	return -1;
-}
-
 u8 wifi_driver_is_mp(void)
 {
 	call_noused = __LINE__;
@@ -335,7 +328,7 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flag
 	return -1;
 }
 
-enum _WL_BAND_TYPE wifi_get_band_type(void)
+u8 wifi_get_band_type(void)
 {
 	call_noused = __LINE__;
 	return WL_BAND_2_4G;
@@ -375,8 +368,9 @@ int wifi_zigbee_coex_zb_rfk(void)
 	return -1;
 }
 
-void wifi_wpa_sta_4way_fail_notify(void)
+void wifi_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4way)
 {
+	UNUSED(rpt_4way);
 	call_noused = __LINE__;
 }
 
@@ -393,7 +387,7 @@ void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para)
 	call_noused = __LINE__;
 }
 
-void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *settings)
+void wifi_speaker_setting(u8 set_type, union speaker_set *settings)
 {
 	UNUSED(set_type);
 	UNUSED(settings);
@@ -419,5 +413,11 @@ int wifi_get_tx_power(u8 rate, s8 *txpwr)
 	UNUSED(txpwr);
 	call_noused = __LINE__;
 	return -1;
+}
+
+void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries)
+{
+	UNUSED(conn_step_retries);
+	call_noused = __LINE__;
 }
 

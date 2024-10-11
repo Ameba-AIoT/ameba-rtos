@@ -45,9 +45,9 @@ FLASHDLIMGDIR_KM4	= $(KM4_BUILDDIR)/asdk/gnu_utility/gnu_script/acut_loader
 OSDIR		= $(BASEDIR)/component/os
 FREERTOSDIR	= $(BASEDIR)/component/os/freertos/freertos_v10.2.1_smp/Source/
 
-ifeq ($(MBEDTLS_V_2_16_9_ENABLE), y)
+ifeq ($(CONFIG_MBEDTLS_V_2_16_9_ENABLE), y)
 MBEDTLSDIR	 = $(BASEDIR)/component/ssl/mbedtls-2.16.9
-else ifeq ($(MBEDTLS_V_3_4_1_ENABLE), y)
+else ifeq ($(CONFIG_MBEDTLS_V_3_4_1_ENABLE), y)
 MBEDTLSDIR	 = $(BASEDIR)/component/ssl/mbedtls-3.4.1
 endif
 
@@ -111,6 +111,7 @@ ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/mingw32/newlib
 TOOLCHAINNAME = asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
 endif
+TOOLCHAINVER = 4072
 
 tool_dir = $(ASDK_TOOLCHAIN)/bin
 TARGET_LIBAPP_FOLDER = $(ROOTDIR)/lib/application
@@ -209,9 +210,9 @@ IFLAGS               += -I$(BASEDIR)/component/os_dep
 IFLAGS               += -I$(BASEDIR)/component/ssl/ssl_ram_map/rom
 
 #MBEDTLS
-ifeq ($(MBEDTLS_V_2_16_9_ENABLE), y)
+ifeq ($(CONFIG_MBEDTLS_V_2_16_9_ENABLE), y)
 IFLAGS               += -I$(BASEDIR)/component/ssl/mbedtls-2.16.9/include
-else ifeq ($(MBEDTLS_V_3_4_1_ENABLE), y)
+else ifeq ($(CONFIG_MBEDTLS_V_3_4_1_ENABLE), y)
 IFLAGS               += -I$(BASEDIR)/component/ssl/mbedtls-3.4.1/include
 IFLAGS               += -I$(BASEDIR)/component/ssl/mbedtls-3.4.1/library
 IFLAGS               += -I$(BASEDIR)/component/ssl/mbedtls-3.4.1/function_map
@@ -277,6 +278,7 @@ GLOBAL_CFLAGS += -nostartfiles
 GLOBAL_CFLAGS += -nostdlib
 GLOBAL_CFLAGS += -fno-builtin-printf
 GLOBAL_CFLAGS += -Wall
+GLOBAL_CFLAGS += -Werror
 GLOBAL_CFLAGS += -Wpointer-arith
 
 #When the memory length is 4 bytes, memset/memcpy will be optimized for direct 32-bit reading and writing.
@@ -374,6 +376,17 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
+CURRENTVER = $(shell $(CC) --version)
+define check_toolchain_version_func
+	@if [ $(findstring $(TOOLCHAINVER), $(CURRENTVER)) ]; then \
+		echo "Toolchain Version Matched"; \
+	else \
+		echo "$(CURRENTVER)"; \
+		echo "Warning: Current Toolchain Version Mismatched!"; \
+		echo "Warning: Please delete current toolchain /asdk-$(ASDK_VER) in $(TOOLCHAINDIR) and redo make. The Latest ToolChain $(TOOLCHAINNAME) will be installed automatically during the project building"; \
+		exit 1; \
+	fi
+endef
 check_toolchain:
 	@if [ -d $(ASDK_TOOLCHAIN) ]; then \
 		echo "ToolChain Had Existed"; \
@@ -400,6 +413,7 @@ check_toolchain:
 		fi; \
 		echo "INSTALL SUCCESS"; \
 	fi
+	$(call check_toolchain_version_func)
 	# check permission
 	@if [ ! "$(shell which python)" ]; then \
 		echo "Command python not found"; \

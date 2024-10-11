@@ -24,7 +24,7 @@ int main(void)
 		printf("Cannot create demo task\n");
 	}
 
-#ifdef PLATFORM_FREERTOS
+#ifdef CONFIG_PLATFORM_FREERTOS
 	rtos_sched_start();
 #endif
 

@@ -213,7 +213,7 @@ void SOCPS_SetMemMode(u32 module, u32 mem_mode);
 void SOCPS_SleepPG_LIB(void);
 void SOCPS_SleepCG_LIB(void);
 
-#if defined (ARM_CORE_CM4)
+#if defined (CONFIG_ARM_CORE_CM4)
 void SOCPS_WakeFromPG_HP(void);
 void SOCPS_DeepSleep(void);
 

@@ -1,4 +1,4 @@
-set(DIR ${BASEDIR}/component/ssl/mbedtls-2.16.9)
+set(DIR ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER})
 set(MODULE_C_DEFINES CONFIG_BUILD_NONSECURE=1)
 
 set(CSRC)
@@ -59,7 +59,9 @@ list(
     ${DIR}/library/arc4.c 
     ${DIR}/library/ctr_drbg.c	
     ${DIR}/library/rsa_internal.c	
-    ${DIR}/library/ctr_drbg.c	
+    ${DIR}/library/ctr_drbg.c
+	${DIR}/library/md.c
+	${DIR}/library/md_wrap.c
 
     ${DIR}/library/dhm.c	
 	${DIR}/library/hmac_drbg.c	
@@ -79,11 +81,7 @@ list(
 	#${DIR}/library/ecdsa.c	\
 )
 
-if(CONFIG_INTERNAL_LIB)
-    ameba_internal_library(mbedtls)
-    target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else()
-    set_source_files_properties(${CSRC} DIRECTORY ../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_C_DEFINES}")
-    target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
-endif()
+
+ameba_internal_library(mbedtls)
+target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

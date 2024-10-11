@@ -29,12 +29,12 @@ extern void dns_relay_service_init(void);
 
 int wifi_repeater_ap_config_complete = 0;
 
-static rtw_softap_info_t rptap = {0};
+static struct _rtw_softap_info_t rptap = {0};
 char *rptssid = "AmebaRPT";
 char *rptpassword = "12345678";	// NULL for RTW_SECURITY_OPEN
 unsigned char rptchannel = 6;
 
-static int ip_nat_wifi_restart_ap(rtw_softap_info_t *softAP_config)
+static int ip_nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config)
 {
 	unsigned char idx = 0;
 	u32 addr;
@@ -48,9 +48,9 @@ static int ip_nat_wifi_restart_ap(rtw_softap_info_t *softAP_config)
 
 	// stop dhcp server
 	dhcps_deinit();
-	addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netmask = WIFI_MAKEU32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
+	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
 
 	wifi_stop_ap();
@@ -65,12 +65,12 @@ static int ip_nat_wifi_restart_ap(rtw_softap_info_t *softAP_config)
 
 	// start ap
 	if (wifi_start_ap(softAP_config) < 0) {
-		RTW_API_INFO("\n\rERROR: Operation failed!");
+		printf("\n\rERROR: Operation failed!");
 		return -1;
 	}
 
 	while (1) {
-		rtw_wifi_setting_t softapsetting;
+		struct _rtw_wifi_setting_t softapsetting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &softapsetting);
 		if (strlen((const char *)softapsetting.ssid) > 0) {
 			if (strcmp((const char *) softapsetting.ssid, (const char *)softAP_config->ssid.val) == 0) {
@@ -88,9 +88,9 @@ static int ip_nat_wifi_restart_ap(rtw_softap_info_t *softAP_config)
 		timeout --;
 	}
 
-	addr = WIFI_MAKEU32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
-	netmask = WIFI_MAKEU32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
+	addr = CONCAT_TO_UINT32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
+	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
+	gw = CONCAT_TO_UINT32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
 
 	// start dhcp server
@@ -189,10 +189,10 @@ static int ip_nat_avoid_confliction_ip(void)
 		IP4_ADDR(ip_2_ip4(&set_gw), iptab[0], iptab[1], iptab[2], iptab[3]);
 		netif_set_addr(&xnetif[1], ip_2_ip4(&set_ipaddr), ip_2_ip4(&set_netmask), ip_2_ip4(&set_gw));
 
-		rtw_wifi_setting_t setting;
+		struct _rtw_wifi_setting_t setting;
 		wifi_get_setting(WLAN1_IDX, &setting);
 
-		rtw_softap_info_t softAP_config = {0};
+		struct _rtw_softap_info_t softAP_config = {0};
 		softAP_config.ssid.len = strlen((char *)setting.ssid);
 		memcpy(softAP_config.ssid.val, setting.ssid, softAP_config.ssid.len);
 		softAP_config.password = setting.password;
@@ -299,7 +299,7 @@ static void example_wlan_repeater_thread(void *param)
 	printf("\n\r[WLAN_REPEATER_EXAMPLE] Check AP running\n");
 	int timeout = 20;
 	while (1) {
-		rtw_wifi_setting_t setting;
+		struct _rtw_wifi_setting_t setting;
 		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		if (strlen((const char *)setting.ssid) > 0) {
 			if (strcmp((const char *) setting.ssid, (const char *)rptap.ssid.val) == 0) {
@@ -315,9 +315,9 @@ static void example_wlan_repeater_thread(void *param)
 		timeout --;
 	}
 
-	ip_addr = WIFI_MAKEU32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
-	netmask = WIFI_MAKEU32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
+	ip_addr = CONCAT_TO_UINT32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
+	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
+	gw = CONCAT_TO_UINT32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 
 	printf("\n\r[WLAN_REPEATER_EXAMPLE] Start DHCP server\n");

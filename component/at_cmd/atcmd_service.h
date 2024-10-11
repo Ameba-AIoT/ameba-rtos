@@ -31,25 +31,6 @@
 #define MAX_ARGC 23
 #endif
 
-#define AT_PRINTK(...)			\
-		do{							\
-			DiagPrintf(__VA_ARGS__); 	\
-			DiagPrintf("\r\n");			\
-		}while(0)
-#define _AT_PRINTK(...)	DiagPrintf(__VA_ARGS__)
-#define AT_DBG_MSG(flag, level, ...)					\
-		do{														\
-			if(((flag) & gDbgFlag) && (level <= gDbgLevel)){	\
-				AT_PRINTK(__VA_ARGS__);							\
-			}													\
-		}while(0)
-#define _AT_DBG_MSG(flag, level, ...)					\
-		do{														\
-			if(((flag) & gDbgFlag) && (level <= gDbgLevel)){	\
-				_AT_PRINTK(__VA_ARGS__);						\
-			}													\
-		}while(0)
-
 typedef void (*log_init_t)(void);
 typedef void (*log_act_t)(void *);
 typedef struct _at_command_item_ {
@@ -69,8 +50,17 @@ int parse_param_advance(char *buf, char **argv);
 #define SMALL_BUF               128
 #define BIG_BUF                 1024
 
+enum {
+	CLIENT_CA = 0,
+	CLIENT_CERT,
+	CLIENT_KEY,
+	SERVER_CA,
+	SERVER_CERT,
+	SERVER_KEY,
+};
+
 /* TODO */
-#ifdef CONFIG_ATCMD_IO_UART
+#ifdef CONFIG_ATCMD_MCU_CONTROL
 typedef void (*at_write)(char *buf, int len);
 extern uint16_t atcmd_switch;
 extern char global_buf[SMALL_BUF];

@@ -52,7 +52,7 @@
  * GNU Compiler
  */
 #elif defined ( __GNUC__ )
-#ifdef RSICV_CORE_KR4
+#ifdef CONFIG_RSICV_CORE_KR4
 #include "cmsis_gcc_riscv.h"
 #include "ameba_plic.h"
 #else
@@ -64,7 +64,7 @@
  * IAR Compiler
  */
 #elif defined ( __ICCARM__ )
-#ifndef RSICV_CORE_KR4
+#ifndef CONFIG_RSICV_CORE_KR4
 #include <cmsis_iccarm.h>
 #endif
 

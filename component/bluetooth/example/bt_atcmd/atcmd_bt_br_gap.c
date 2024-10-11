@@ -28,11 +28,11 @@ static int atcmd_br_gap_inquiry_start(int argc, char **argv)
 
 	ret = rtk_bt_br_gap_start_inquiry(&inquiry_start_param);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP start inquiry failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP start inquiry failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP starting inquiry...");
+	BT_LOGA("BR GAP starting inquiry...\r\n");
 	return 0;
 }
 
@@ -40,7 +40,7 @@ static int atcmd_br_gap_set_security_param(int argc, char **argv)
 {
 	uint16_t ret = 0;
 	if (argc != 0 && argc != 7) {
-		BRGAP_AT_PRINTK("GAP set security paramters failed! wrong args num!");
+		BT_LOGE("GAP set security paramters failed! wrong args num!\r\n");
 		return -1;
 	}
 
@@ -56,10 +56,10 @@ static int atcmd_br_gap_set_security_param(int argc, char **argv)
 		};
 		ret = rtk_bt_br_sm_set_security_param(&def_sec_param);
 		if (ret) {
-			BRGAP_AT_PRINTK("GAP set default security paramters failed! err: 0x%x", ret);
+			BT_LOGE("GAP set default security paramters failed! err: 0x%x\r\n", ret);
 			return -1;
 		}
-		BRGAP_AT_PRINTK("GAP set def security paramters sucess");
+		BT_LOGA("GAP set def security paramters success\r\n");
 		return 0;
 	}
 
@@ -74,11 +74,11 @@ static int atcmd_br_gap_set_security_param(int argc, char **argv)
 
 	ret = rtk_bt_br_sm_set_security_param(&sec_param);
 	if (ret) {
-		BRGAP_AT_PRINTK("GAP set security paramters failed! err: 0x%x", ret);
+		BT_LOGE("GAP set security paramters failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("GAP set security paramters sucess");
+	BT_LOGA("GAP set security paramters success\r\n");
 	return 0;
 }
 
@@ -90,11 +90,11 @@ static int atcmd_br_gap_disconnect(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	if (rtk_bt_br_gap_disconnect(bd_addr)) {
-		BRGAP_AT_PRINTK("BR GAP disconnect fail \r\n");
+		BT_LOGE("BR GAP disconnect fail\r\n");
 		return -1;
 	}
 	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
-	BRGAP_AT_PRINTK("BR GAP disconnecting to device %s ...", addr_str);
+	BT_LOGA("BR GAP disconnecting to device %s ...\r\n", addr_str);
 
 	return 0;
 }
@@ -110,10 +110,10 @@ static int atcmd_br_gap_cfg_page_param(int argc, char **argv)
 	type = (uint8_t)str_to_int(argv[0]);
 	interval = (uint16_t)str_to_int(argv[1]);
 	window = (uint16_t)str_to_int(argv[2]);
-	BRGAP_AT_PRINTK("cfg page type 0x%02x, interval 0x%04x, window 0x%04x \r\n", type, interval, window);
+	BT_LOGA("cfg page type 0x%02x, interval 0x%04x, window 0x%04x\r\n", type, interval, window);
 	ret = rtk_bt_br_gap_cfg_page_param(type, interval, window);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP cfg page param failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP cfg page param failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
@@ -131,10 +131,10 @@ static int atcmd_br_gap_cfg_inquiry_param(int argc, char **argv)
 	type = (uint8_t)str_to_int(argv[0]);
 	interval = (uint16_t)str_to_int(argv[1]);
 	window = (uint16_t)str_to_int(argv[2]);
-	BRGAP_AT_PRINTK("cfg inquiry type 0x%02x, interval 0x%04x, window 0x%04x \r\n", type, interval, window);
+	BT_LOGA("cfg inquiry type 0x%02x, interval 0x%04x, window 0x%04x\r\n", type, interval, window);
 	ret = rtk_bt_br_gap_cfg_inquiry_param(type, interval, window);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP cfg inquiry param failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP cfg inquiry param failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
@@ -150,11 +150,11 @@ static int atcmd_br_gap_bond_clear(int argc, char **argv)
 	ret = rtk_bt_br_gap_bond_clear();
 
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP clear bond storage failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP clear bond storage failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP clearing bond info...");
+	BT_LOGA("BR GAP clearing bond info...\r\n");
 	return 0;
 }
 
@@ -168,11 +168,11 @@ static int atcmd_br_gap_radio_mode(int argc, char **argv)
 
 	ret = rtk_bt_br_gap_set_radio_mode(mode);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP radio mode failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP radio mode failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP seting radio mode ...");
+	BT_LOGA("BR GAP seting radio mode ...\r\n");
 	return 0;
 }
 
@@ -183,7 +183,7 @@ static int atcmd_br_gap_sniff_mode(int argc, char **argv)
 	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
 
 	if (argc != 2 && argc != 6) {
-		BRGAP_AT_PRINTK("BR GAP sniff mode failed! wrong args num!");
+		BT_LOGE("BR GAP sniff mode failed! wrong args num!\r\n");
 		return -1;
 	}
 	enable = (uint8_t)str_to_int(argv[0]);
@@ -198,11 +198,11 @@ static int atcmd_br_gap_sniff_mode(int argc, char **argv)
 		ret = rtk_bt_br_gap_set_sniff_mode(enable, bd_addr, 0, 0, 0, 0);
 	}
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP sniff mode failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP sniff mode failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP seting sniff mode ...");
+	BT_LOGA("BR GAP seting sniff mode ...\r\n");
 	return 0;
 }
 
@@ -215,11 +215,11 @@ static int atcmd_br_gap_bond_max_num(int argc, char **argv)
 
 	ret = rtk_bt_br_gap_max_bond_num_get(&bond_max_num);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP bond max num failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP bond max num failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("Max bond num %d ...", bond_max_num);
+	BT_LOGA("Max bond num %d ...\r\n", bond_max_num);
 	BT_AT_PRINT("+BRGAP:bond_max_num,%d\r\n", bond_max_num);
 	return 0;
 }
@@ -233,11 +233,11 @@ static int atcmd_br_gap_bond_num(int argc, char **argv)
 
 	ret = rtk_bt_br_gap_bond_num_get(&bond_num);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP bond num failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP bond num failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("Bond num %d ...", bond_num);
+	BT_LOGA("Bond num %d ...\r\n", bond_num);
 	BT_AT_PRINT("+BRGAP:bond_num,%d\r\n", bond_num);
 	return 0;
 }
@@ -253,12 +253,12 @@ static int atcmd_br_gap_bond_addr_get(int argc, char **argv)
 
 	ret = rtk_bt_br_gap_bond_addr_get(priority, bd_addr);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP get bond addr failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP get bond addr failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP Bond addr %02x:%02x:%02x:%02x:%02x:%02x ",
-					bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
+	BT_LOGA("BR GAP Bond addr %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+			bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	BT_AT_PRINT("+BRGAP:bond_addr_get,%02x:%02x:%02x:%02x:%02x:%02x\r\n",
 				bd_addr[5], bd_addr[4], bd_addr[3], bd_addr[2], bd_addr[1], bd_addr[0]);
 	return 0;
@@ -274,11 +274,11 @@ static int atcmd_br_gap_bond_index_get(int argc, char **argv)
 	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
 	ret = rtk_bt_br_gap_bond_index_get(&index, bd_addr);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP get bond index failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP get bond index failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP Bond index 0x%x", index);
+	BT_LOGA("BR GAP Bond index 0x%x\r\n", index);
 	BT_AT_PRINT("+BRGAP:bond_index_get,0x%x\r\n", index);
 	return 0;
 }
@@ -294,16 +294,17 @@ static int atcmd_br_gap_bond_key_get(int argc, char **argv)
 	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
 	ret = rtk_bt_br_gap_bond_key_get(bd_addr, &key_type, key);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP get bond key failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP get bond key failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP Bond key: \r\n");
+	BT_LOGA("BR GAP Bond key: ");
 	BT_AT_PRINT("+BRGAP:bond_key_get");
 	for (uint8_t i = 0; i < 16; i ++) {
-		AT_PRINTK("%02x ", key[i]);
+		BT_LOGA("%02x ", key[i]);
 		BT_AT_PRINT(",%02x", key[i]);
 	}
+	BT_LOGA("\r\n");
 	BT_AT_PRINT("\r\n");
 	return 0;
 }
@@ -317,11 +318,11 @@ static int atcmd_br_gap_bond_delete(int argc, char **argv)
 	hexdata_str_to_bd_addr(argv[0], bd_addr, 6);
 	ret = rtk_bt_br_gap_bond_delete(bd_addr);
 	if (ret) {
-		BRGAP_AT_PRINTK("BR GAP Bond delete failed! err: 0x%x", ret);
+		BT_LOGE("BR GAP Bond delete failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 
-	BRGAP_AT_PRINTK("BR GAP Bond delete success");
+	BT_LOGA("BR GAP Bond delete success\r\n");
 
 	return 0;
 }

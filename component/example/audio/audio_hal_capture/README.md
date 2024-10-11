@@ -8,6 +8,7 @@
 	- [Supported IC ](#supported-ic-)
 	- [Configurations ](#configurations-)
 		- [hardware configurations](#hardware-configurations)
+		- [software configurations](#software-configurations)
 	- [How to use ](#how-to-use-)
 
 ## About <a name = "about"></a>
@@ -26,13 +27,25 @@ Ameba audio project can achieve:
 
 Please see discriptions in component/soc/xx/usrcfg/include/ameba_audio_hw_usrcfg.h, ameba_audio_hw_usrcfg.h is for audio hardware configurations.
 
-### hardware configurations
+### Hardware configurations
 
 1. Setup the hardware devices, like dmic devices and so on.
 2. Define using pll clock or xtal clock for record.
 3. Please refer to component/audio/audio_hal/xx/README.md.
 
+### Software configurations
+Select the core used for application core(KM4 or CA32):
+Under "Audio Config"
+[*] "Enable Audio Framework"
+(X) "PassThrough"
+[*]"Enable Media Framework"
+"Demux" --->
+[*] "Demux FLAC"
+[*] "Demux OGG"
+
 ## How to use <a name = "How to use"></a>
 
 1. Use CMD `make all EXAMPLE=audio_hal_capture` to compile this example.
 2. Compile and run. For capture run command and parameters, please refer to app_example.c.
+3. To run the example, the default command in serial log UART is: AudioHalRender
+

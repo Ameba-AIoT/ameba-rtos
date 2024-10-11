@@ -9,7 +9,7 @@
 #include "diag.h"
 #include "os_wrapper.h"
 
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 /* include apcore/spinlock.h for padding a cache line fully*/
 #include "spinlock.h"
 /**
@@ -72,7 +72,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	int ret;
 	va_list ap;
 
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 	u32 isr_status = spin_lock_irqsave(&print_lock);
 #endif
 
@@ -85,7 +85,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	}
 	va_end(ap);
 
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 	spin_unlock_irqrestore(&print_lock, isr_status);
 #endif
 

@@ -1,1 +1,1 @@
-add_subdirectory(src)
+add_subdirectory(${SRCDIR} ${CMAKE_CURRENT_BINARY_DIR}/src)

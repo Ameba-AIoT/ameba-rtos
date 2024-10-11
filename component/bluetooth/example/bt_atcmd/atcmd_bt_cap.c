@@ -34,10 +34,10 @@ static int atcmd_bt_mcp_media_send(int argc, char **argv)
 	}
 
 	if (rtk_bt_mcp_media_send(char_uuid, track_value)) {
-		BLECAP_AT_PRINTK("mcp media send fail \r\n");
+		BT_LOGE("mcp media send fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("mcp media send successfully \r\n");
+	BT_LOGA("mcp media send successfully\r\n");
 
 	return 0;
 }
@@ -63,10 +63,10 @@ static int atcmd_bt_mcp_media_discover(int argc, char **argv)
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	if (rtk_bt_mcp_media_discover(conn_handle)) {
-		BLECAP_AT_PRINTK("mcp media discover fail \r\n");
+		BT_LOGE("mcp media discover fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("mcp media discover successfully \r\n");
+	BT_LOGA("mcp media discover successfully\r\n");
 
 	return 0;
 }
@@ -84,10 +84,10 @@ static int atcmd_bt_mcp_media_write(int argc, char **argv)
 	}
 
 	if (rtk_bt_mcp_media_write(conn_handle, opcode, op_param)) {
-		BLECAP_AT_PRINTK("mcp media write fail \r\n");
+		BT_LOGE("mcp media write fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("mcp media write successfully \r\n");
+	BT_LOGA("mcp media write successfully\r\n");
 
 	return 0;
 }
@@ -101,10 +101,10 @@ static int atcmd_bt_mcp_media_read(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	char_uuid = (uint16_t)str_to_int(argv[1]);
 	if (rtk_bt_mcp_media_read(conn_handle, char_uuid)) {
-		BLECAP_AT_PRINTK("mcp media read fail \r\n");
+		BT_LOGE("mcp media read fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("mcp media read successfully \r\n");
+	BT_LOGA("mcp media read successfully\r\n");
 
 	return 0;
 }
@@ -120,10 +120,10 @@ static int atcmd_bt_mcp_media_cccd(int argc, char **argv)
 	cfg_cccd = (uint32_t)str_to_int(argv[1]);
 	enable = (bool)str_to_int(argv[2]);
 	if (rtk_bt_mcp_media_cccd(conn_handle, cfg_cccd, enable)) {
-		BLECAP_AT_PRINTK("mcp media cccd fail \r\n");
+		BT_LOGE("mcp media cccd fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("mcp media cccd successfully \r\n");
+	BT_LOGA("mcp media cccd successfully\r\n");
 
 	return 0;
 }
@@ -150,10 +150,10 @@ static int atcmd_bt_vcp_server_get(int argc, char **argv)
 	rtk_bt_le_audio_vcs_param_t vcs_param = {0};
 
 	if (rtk_bt_vcp_server_get(&vcs_param)) {
-		BLECAP_AT_PRINTK("vcp server get fail \r\n");
+		BT_LOGE("vcp server get fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vcp server get successfully \r\n");
+	BT_LOGA("vcp server get successfully\r\n");
 	BT_AT_PRINT("+BLECAP:acceptor,vcp,get,%u,%u,%u,%u,%u\r\n",
 				vcs_param.volume_setting, vcs_param.mute, vcs_param.change_counter,
 				vcs_param.volume_flags, vcs_param.step_size);
@@ -180,10 +180,10 @@ static int atcmd_bt_micp_server_get(int argc, char **argv)
 	rtk_bt_le_audio_mics_param_t mics_param = {0};
 
 	if (rtk_bt_micp_server_get(&mics_param)) {
-		BLECAP_AT_PRINTK("micp server get fail \r\n");
+		BT_LOGE("micp server get fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("micp server get successfully \r\n");
+	BT_LOGA("micp server get successfully\r\n");
 	BT_AT_PRINT("+BLECAP:acceptor,micp,get,%u\r\n", mics_param.mic_mute);
 
 	return 0;
@@ -209,15 +209,15 @@ static int atcmd_bt_vocs_server_get(int argc, char **argv)
 
 	vocs_param.output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 	if (!vocs_param.output_des.p_output_des) {
-		AT_PRINTK("%s: osif_mem_alloc len %d fail\r\n", __func__, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
+		BT_LOGE("%s: osif_mem_alloc len %d fail\r\n", __func__, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 		return -1;
 	}
 	if (rtk_bt_vocs_server_get(&vocs_param)) {
-		BLECAP_AT_PRINTK("vocs server get fail \r\n");
+		BT_LOGE("vocs server get fail\r\n");
 		osif_mem_free((void *)vocs_param.output_des.p_output_des);
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vocs server get successfully \r\n");
+	BT_LOGA("vocs server get successfully\r\n");
 	BT_AT_PRINT("+BLECAP:acceptor,vocs,get,%d,%u,%u,%u,%s\r\n",
 				vocs_param.volume_offset, vocs_param.change_counter, vocs_param.audio_location,
 				vocs_param.output_des.output_des_len, vocs_param.output_des.p_output_des);
@@ -246,7 +246,7 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 	uint8_t *p_value = NULL;
 
 	if (argc != 2) {
-		AT_PRINTK("%s: wrong argc:%d \r\n", __func__, argc);
+		BT_LOGE("%s: wrong argc:%d\r\n", __func__, argc);
 		return -1;
 	}
 
@@ -267,25 +267,25 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 		value_len = 1;
 		break;
 	default:
-		AT_PRINTK("%s: not support aics_param_type %d for get \r\n", __func__, aics_param_type);
+		BT_LOGE("%s: not support aics_param_type %d for get\r\n", __func__, aics_param_type);
 		return -1;
 	}
 
 	p_value = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_len);
 	if (p_value == NULL) {
-		AT_PRINTK("%s: osif_mem_alloc len %d fail\r\n", __func__, value_len);
+		BT_LOGE("%s: osif_mem_alloc len %d fail\r\n", __func__, value_len);
 		return RTK_BT_ERR_NO_RESOURCE;
 	}
 
 	if (rtk_bt_aics_server_get(srv_instance_id, aics_param_type, value_len, p_value)) {
-		BLECAP_AT_PRINTK("aics server get fail \r\n");
+		BT_LOGE("aics server get fail\r\n");
 		return -1;
 	}
 	switch (aics_param_type) {
 	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATE: {
 		rtk_bt_le_audio_aics_input_state_t *p_input_state = (rtk_bt_le_audio_aics_input_state_t *)p_value;
-		AT_PRINTK("aics param: srv_instance_id %d, gain_setting %d, mute %d, gain_mode %d,change_counter %d\r\n",
-				  srv_instance_id, p_input_state->gain_setting, p_input_state->mute, p_input_state->gain_mode, p_input_state->change_counter);
+		BT_LOGA("aics param: srv_instance_id %d, gain_setting %d, mute %d, gain_mode %d,change_counter %d\r\n",
+				srv_instance_id, p_input_state->gain_setting, p_input_state->mute, p_input_state->gain_mode, p_input_state->change_counter);
 		BT_AT_PRINT("+BLECAP:acceptor,aics,get,%u,%d,%d,%d,%d,%d\r\n",
 					aics_param_type, srv_instance_id, p_input_state->gain_setting,
 					p_input_state->mute, p_input_state->gain_mode, p_input_state->change_counter);
@@ -293,20 +293,20 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 	}
 	case RTK_BT_LE_AUDIO_AICS_PARAM_GAIN_SETTING_PROP: {
 		rtk_bt_le_audio_aics_gain_setting_prop_t *p_setting_prop = (rtk_bt_le_audio_aics_gain_setting_prop_t *)p_value;
-		AT_PRINTK("aics param: srv_instance_id %d, gain_setting_units %d, gain_setting_min %d, gain_setting_max %d\r\n",
-				  srv_instance_id, p_setting_prop->gain_setting_units, p_setting_prop->gain_setting_min, p_setting_prop->gain_setting_max);
+		BT_LOGA("aics param: srv_instance_id %d, gain_setting_units %d, gain_setting_min %d, gain_setting_max %d\r\n",
+				srv_instance_id, p_setting_prop->gain_setting_units, p_setting_prop->gain_setting_min, p_setting_prop->gain_setting_max);
 		BT_AT_PRINT("+BLECAP:acceptor,aics,get,%u,%d,%d,%d,%d\r\n",
 					aics_param_type, srv_instance_id, p_setting_prop->gain_setting_units,
 					p_setting_prop->gain_setting_min, p_setting_prop->gain_setting_max);
 		break;
 	}
 	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_TYPE:
-		AT_PRINTK("aics param: srv_instance_id %d, input type %d\r\n", srv_instance_id, *(uint8_t *)p_value);
+		BT_LOGA("aics param: srv_instance_id %d, input type %d\r\n", srv_instance_id, *(uint8_t *)p_value);
 		BT_AT_PRINT("+BLECAP:acceptor,aics,get,%u,%d,%d\r\n",
 					aics_param_type, srv_instance_id, *(uint8_t *)p_value);
 		break;
 	case RTK_BT_LE_AUDIO_AICS_PARAM_INPUT_STATUS:
-		AT_PRINTK("aics param: srv_instance_id %d, input status %d\r\n", srv_instance_id, *(uint8_t *)p_value);
+		BT_LOGA("aics param: srv_instance_id %d, input status %d\r\n", srv_instance_id, *(uint8_t *)p_value);
 		BT_AT_PRINT("+BLECAP:acceptor,aics,get,%u,%d,%d\r\n",
 					aics_param_type, srv_instance_id, *(uint8_t *)p_value);
 		break;
@@ -317,7 +317,7 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 		osif_mem_free((void *)p_value);
 	}
 
-	BLECAP_AT_PRINTK("aics server get successfully \r\n");
+	BT_LOGA("aics server get successfully\r\n");
 
 	return 0;
 }
@@ -348,22 +348,22 @@ static int atcmd_bt_cap_acceptor_cfg(int argc, char **argv)
 		/* RTK_BT_LE_AUDIO_STEREO */
 		channel = 3;
 	} else {
-		BLECAP_AT_PRINTK("Unknown channel allocation");
+		BT_LOGE("Unknown channel allocation\r\n");
 		return -1;
 	}
 	if (argc == 2) {
 		hexdata_str_to_bd_addr(argv[1], neighbor_addr, 6);
 		if (rtk_bt_cap_acceptor_cfg(channel, neighbor_addr)) {
-			BLECAP_AT_PRINTK("CAP acceptor config channel neighbor address fail \r\n");
+			BT_LOGE("CAP acceptor config channel neighbor address fail\r\n");
 			return -1;
 		}
-		BLECAP_AT_PRINTK("CAP acceptor config channel neighbor address successfully \r\n");
+		BT_LOGA("CAP acceptor config channel neighbor address successfully\r\n");
 	} else {
 		if (rtk_bt_cap_acceptor_cfg(channel, NULL)) {
-			BLECAP_AT_PRINTK("CAP acceptor config channel fail \r\n");
+			BT_LOGE("CAP acceptor config channel fail\r\n");
 			return -1;
 		}
-		BLECAP_AT_PRINTK("CAP acceptor config channel successfully \r\n");
+		BT_LOGA("CAP acceptor config channel successfully\r\n");
 	}
 
 	return 0;
@@ -381,10 +381,10 @@ static int atcmd_bt_vcp_client_gmute(int argc, char **argv)
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	vcs_mute = (rtk_bt_le_audio_vcs_mute_state_t)str_to_int(argv[1]);
 	if (rtk_bt_vcp_client_gmute(group_idx, vcs_mute)) {
-		BLECAP_AT_PRINTK("vcp client gmute fail \r\n");
+		BT_LOGE("vcp client gmute fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vcp client gmute successfully \r\n");
+	BT_LOGA("vcp client gmute successfully\r\n");
 
 	return 0;
 }
@@ -398,10 +398,10 @@ static int atcmd_bt_vcp_client_gvolume(int argc, char **argv)
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	volume_setting = (uint8_t)str_to_int(argv[1]);
 	if (rtk_bt_vcp_client_gvolume(group_idx, volume_setting)) {
-		BLECAP_AT_PRINTK("vcp client gvolume fail \r\n");
+		BT_LOGE("vcp client gvolume fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vcp client gvolume successfully \r\n");
+	BT_LOGA("vcp client gvolume successfully\r\n");
 
 	return 0;
 }
@@ -419,10 +419,10 @@ static int atcmd_bt_vcp_client_write(int argc, char **argv)
 	}
 
 	if (rtk_bt_vcp_client_write(conn_handle, cp_op, volume_setting)) {
-		BLECAP_AT_PRINTK("vcp client write fail \r\n");
+		BT_LOGE("vcp client write fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vcp client write successfully \r\n");
+	BT_LOGA("vcp client write successfully\r\n");
 
 	return 0;
 }
@@ -435,10 +435,10 @@ static int atcmd_bt_vcp_client_get(int argc, char **argv)
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	if (rtk_bt_vcp_client_get(conn_handle, &volume_state)) {
-		BLECAP_AT_PRINTK("vcp client get fail \r\n");
+		BT_LOGE("vcp client get fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vcp client get successfully \r\n");
+	BT_LOGA("vcp client get successfully\r\n");
 	BT_AT_PRINT("+BLECAP:commander,vcp,get,%u,%u,%u,%u\r\n",
 				conn_handle, volume_state.volume_setting,
 				volume_state.mute, volume_state.change_counter);
@@ -470,10 +470,10 @@ static int atcmd_bt_micp_client_gmute(int argc, char **argv)
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	mic_mute = (rtk_bt_le_audio_mics_mute_state_t)str_to_int(argv[1]);
 	if (rtk_bt_micp_client_gmute(group_idx, mic_mute)) {
-		BLECAP_AT_PRINTK("micp client gmute fail \r\n");
+		BT_LOGE("micp client gmute fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("micp client gmute successfully \r\n");
+	BT_LOGA("micp client gmute successfully\r\n");
 
 	return 0;
 }
@@ -487,10 +487,10 @@ static int atcmd_bt_micp_client_set_mute(int argc, char **argv)
 	conn_handle = (uint8_t)str_to_int(argv[0]);
 	mic_mute = (rtk_bt_le_audio_mics_mute_state_t)str_to_int(argv[1]);
 	if (rtk_bt_micp_client_set_mute(conn_handle, mic_mute)) {
-		BLECAP_AT_PRINTK("micp client set mute fail \r\n");
+		BT_LOGE("micp client set mute fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("micp client set mute successfully \r\n");
+	BT_LOGA("micp client set mute successfully\r\n");
 
 	return 0;
 }
@@ -503,10 +503,10 @@ static int atcmd_bt_micp_client_get_mute(int argc, char **argv)
 
 	conn_handle = (uint8_t)str_to_int(argv[0]);
 	if (rtk_bt_micp_client_get_mute(conn_handle, &mic_mute)) {
-		BLECAP_AT_PRINTK("micp client get mute fail \r\n");
+		BT_LOGE("micp client get mute fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("micp client get mute successfully \r\n");
+	BT_LOGA("micp client get mute successfully\r\n");
 	BT_AT_PRINT("+BLECAP:commander,micp,get_mute,%u,%d\r\n",
 				conn_handle, mic_mute);
 
@@ -538,10 +538,10 @@ static int atcmd_bt_vocs_client_write(int argc, char **argv)
 	cp_op = (rtk_bt_le_audio_vocs_cp_op_t)str_to_int(argv[1]);
 	volume_offset = (int16_t)str_to_int(argv[2]);
 	if (rtk_bt_vocs_client_write(conn_handle, cp_op, volume_offset)) {
-		BLECAP_AT_PRINTK("vocs client write fail \r\n");
+		BT_LOGE("vocs client write fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vocs client write successfully \r\n");
+	BT_LOGA("vocs client write successfully\r\n");
 
 	return 0;
 }
@@ -557,10 +557,10 @@ static int atcmd_bt_vocs_client_gwrite(int argc, char **argv)
 	cp_op = (rtk_bt_le_audio_vocs_cp_op_t)str_to_int(argv[1]);
 	volume_offset = (int16_t)str_to_int(argv[2]);
 	if (rtk_bt_vocs_client_gwrite(group_idx, cp_op, volume_offset)) {
-		BLECAP_AT_PRINTK("vocs client gwrite fail \r\n");
+		BT_LOGE("vocs client gwrite fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vocs client gwrite successfully \r\n");
+	BT_LOGA("vocs client gwrite successfully\r\n");
 
 	return 0;
 }
@@ -576,10 +576,10 @@ static int atcmd_bt_vocs_client_wdes(int argc, char **argv)
 	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	des_str = (uint8_t *)argv[2];
 	if (rtk_bt_vocs_client_wdes(conn_handle, srv_instance_id, des_str)) {
-		BLECAP_AT_PRINTK("vocs client wdes fail \r\n");
+		BT_LOGE("vocs client wdes fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vocs client wdes successfully \r\n");
+	BT_LOGA("vocs client wdes successfully\r\n");
 
 	return 0;
 }
@@ -593,15 +593,15 @@ static int atcmd_bt_vocs_client_get_srv(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	srv_data.output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 	if (!srv_data.output_des.p_output_des) {
-		AT_PRINTK("%s: conn_handle (%d) osif_mem_alloc len %d fail\r\n", __func__, conn_handle, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
+		BT_LOGE("%s: conn_handle (%d) osif_mem_alloc len %d fail\r\n", __func__, conn_handle, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 		return -1;
 	}
 	if (rtk_bt_vocs_client_get_srv(conn_handle, &srv_data)) {
-		BLECAP_AT_PRINTK("vocs client get srv fail \r\n");
+		BT_LOGE("vocs client get srv fail\r\n");
 		osif_mem_free((void *)srv_data.output_des.p_output_des);
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vocs client get srv successfully \r\n");
+	BT_LOGA("vocs client get srv successfully\r\n");
 	BT_AT_PRINT("+BLECAP:commander,vocs,get_srv,%u,%u,%d,%u,%u,%u,%s\r\n",
 				srv_data.srv_instance_id, srv_data.type_exist, srv_data.volume_offset.volume_offset,
 				srv_data.volume_offset.change_counter, srv_data.audio_location, srv_data.output_des.output_des_len,
@@ -618,10 +618,10 @@ static int atcmd_bt_vocs_client_get_char(int argc, char **argv)
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	if (rtk_bt_vocs_client_get_char(conn_handle)) {
-		BLECAP_AT_PRINTK("vocs client get char fail \r\n");
+		BT_LOGE("vocs client get char fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("vocs client get char successfully \r\n");
+	BT_LOGA("vocs client get char successfully\r\n");
 
 	return 0;
 }
@@ -654,10 +654,10 @@ static int atcmd_bt_aics_client_write(int argc, char **argv)
 		gaining_setting = (int8_t)str_to_int(argv[2]);
 	}
 	if (rtk_bt_aics_client_write(conn_handle, cp_op, gaining_setting)) {
-		BLECAP_AT_PRINTK("aics client write fail \r\n");
+		BT_LOGE("aics client write fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("aics client write successfully \r\n");
+	BT_LOGA("aics client write successfully\r\n");
 
 	return 0;
 }
@@ -674,10 +674,10 @@ static int atcmd_bt_aics_client_gwrite(int argc, char **argv)
 		gaining_setting = (int8_t)str_to_int(argv[2]);
 	}
 	if (rtk_bt_aics_client_gwrite(group_idx, cp_op, gaining_setting)) {
-		BLECAP_AT_PRINTK("aics client gwrite fail \r\n");
+		BT_LOGE("aics client gwrite fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("aics client gwrite successfully \r\n");
+	BT_LOGA("aics client gwrite successfully\r\n");
 
 	return 0;
 }
@@ -693,10 +693,10 @@ static int atcmd_bt_aics_client_wdes(int argc, char **argv)
 	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	des_str = (uint8_t *)argv[2];
 	if (rtk_bt_aics_client_wdes(conn_handle, srv_instance_id, des_str)) {
-		BLECAP_AT_PRINTK("aics client wdes fail \r\n");
+		BT_LOGE("aics client wdes fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("aics client wdes successfully \r\n");
+	BT_LOGA("aics client wdes successfully\r\n");
 
 	return 0;
 }
@@ -710,15 +710,15 @@ static int atcmd_bt_aics_client_get_srv(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	srv_data.input_des.p_input_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 	if (srv_data.input_des.p_input_des == NULL) {
-		AT_PRINTK("%s: conn_handle (%d) osif_mem_alloc len %d fail\r\n", __func__, conn_handle, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
+		BT_LOGE("%s: conn_handle (%d) osif_mem_alloc len %d fail\r\n", __func__, conn_handle, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 		return -1;
 	}
 	if (rtk_bt_aics_client_get_srv(conn_handle, &srv_data)) {
-		BLECAP_AT_PRINTK("aics client get srv fail \r\n");
+		BT_LOGE("aics client get srv fail\r\n");
 		osif_mem_free((void *)srv_data.input_des.p_input_des);
 		return -1;
 	}
-	BLECAP_AT_PRINTK("aics client get srv successfully \r\n");
+	BT_LOGA("aics client get srv successfully\r\n");
 	BT_AT_PRINT("+BLECAP:commander,aics,get_srv,%u,%u,%d,%u,%u,%u,%u,%d,%d,%u,%u,%u,%s\r\n",
 				srv_data.srv_instance_id, srv_data.type_exist, srv_data.input_state.gain_setting,
 				srv_data.input_state.mute, srv_data.input_state.gain_mode, srv_data.input_state.change_counter,
@@ -737,10 +737,10 @@ static int atcmd_bt_aics_client_get_char(int argc, char **argv)
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	if (rtk_bt_aics_client_get_char(conn_handle)) {
-		BLECAP_AT_PRINTK("aics client get char fail \r\n");
+		BT_LOGE("aics client get char fail\r\n");
 		return -1;
 	}
-	BLECAP_AT_PRINTK("aics client get char successfully \r\n");
+	BT_LOGA("aics client get char successfully\r\n");
 
 	return 0;
 }
@@ -820,7 +820,7 @@ int atcmd_bt_cap_cmd(int argc, char *argv[])
 		strcat(tag, "[commander]");
 		ret = atcmd_bt_excute(argc - 1, &argv[1], cap_commander_cmd_table, tag);
 	} else {
-		AT_PRINTK("[%s]Error: cap do not support %s \r\n", __func__, argv[0]);
+		BT_LOGE("[%s]Error: cap do not support %s\r\n", __func__, argv[0]);
 		ret = -1;
 	}
 	return ret;

@@ -9,7 +9,7 @@
 static const char *TAG = "I2C";
 
 const I2C_DevTable I2C_DEV_TABLE[2] = {
-#ifdef ARM_CORE_CM4
+#ifdef CONFIG_ARM_CORE_CM4
 	{I2C0_DEV, I2C0_IRQ},
 	{I2C1_DEV, I2C1_IRQ},
 #else

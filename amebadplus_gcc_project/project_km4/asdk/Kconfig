@@ -10,6 +10,10 @@ menu "CONFIG CHIP"
             bool "AMEBADPLUS"
     endchoice
 
+    config CPU_HAS_FPU_FOR_KM4
+        bool
+        default y
+
     choice
         prompt "ArmCore" 
         default ARM_CORE_CM4_FOR_KM4 
@@ -45,9 +49,6 @@ menu "CONFIG OS"
                 bool "FREERTOS"
         endchoice
 
-        config TASK_SCHEDULER_DISABLED_FOR_KM4 
-            int
-            default 0
     endif
 
 endmenu 
@@ -65,10 +66,12 @@ menu "CONFIG USB"
             bool "Composite"
         config USBD_HID_FOR_KM4
             bool "HID"
-        config USBD_VENDOR_FOR_KM4
-            bool "Vendor"
         config USBD_INIC_FOR_KM4
             bool "INIC"
+        config USBD_UAC_FOR_KM4
+            bool "UAC(Experimental)"
+        config USBD_VENDOR_FOR_KM4
+            bool "Vendor"
     endif
 endmenu
 
@@ -317,7 +320,7 @@ menu "SSL Config"
     config USE_MBEDTLS_ROM_FOR_KM4
         bool 
         default y 
-    config MBED_TLS_ENABLED_FOR_KM4
+    config MBEDTLS_ENABLED_FOR_KM4
         bool "MBEDTLS Enable"
         default y 
     config SSL_ROM_TEST_FOR_KM4
@@ -330,27 +333,45 @@ menu "802154 Config"
         bool "Enable 802154"
         default n 
     if 802154_EN_FOR_KM4
-        if !MBED_TLS_ENABLED_FOR_KM4
+        if !MBEDTLS_ENABLED_FOR_KM4
             comment "Must Enable MBEDTLS Before Enable THREAD"
         endif
-        if MBED_TLS_ENABLED_FOR_KM4
+        if MBEDTLS_ENABLED_FOR_KM4
             config 802154_THREAD_EN_FOR_KM4
                 depends on !802154_PLATFORM_TEST_EN_FOR_KM4
                 bool "Enable THREAD" 
                 default n 
-            choice 
-                depends on 802154_THREAD_EN_FOR_KM4
-                prompt "THREAD ROLE"
-                config 802154_THREAD_BORDER_ROUTER_EN_FOR_KM4
-                    bool "BORDER_ROUTER"
-                config 802154_THREAD_FTD_EN_FOR_KM4
-                    bool "FTD"
-                config 802154_THREAD_MTD_EN_FOR_KM4
-                    bool "MTD"
-            endchoice
-            config 802154_THREAD_LLF_TEST_EN_FOR_KM4
-                bool "Low Layer Function Test"
-                default n 
+			if 802154_THREAD_EN_FOR_KM4
+				choice 
+					depends on 802154_THREAD_EN_FOR_KM4
+					prompt "THREAD ROLE"
+					config 802154_THREAD_BORDER_ROUTER_EN_FOR_KM4
+						bool "BORDER_ROUTER"
+					config 802154_THREAD_FTD_EN_FOR_KM4
+						bool "FTD"
+					config 802154_THREAD_MTD_EN_FOR_KM4
+						bool "MTD"
+				endchoice
+                config 802154_THREAD_CONCURRENT_EN_FOR_KM4
+                    bool "Enable Radio Concurrent"
+                    default n
+                    if 802154_THREAD_CONCURRENT_EN_FOR_KM4
+                        choice
+                            depends on 802154_THREAD_EN_FOR_KM4
+                            prompt "RCP Vendor"
+                            config 802154_THREAD_RCP_RTL8771H_FOR_KM4
+                                bool "RTL8771H"
+                            config 802154_THREAD_RCP_SILICON_FOR_KM4
+                                bool "SILICON"
+                        endchoice
+                    endif
+				config 802154_THREAD_LLF_TEST_EN_FOR_KM4
+					bool "Low Layer Function Test"
+					default n
+				config 802154_THREAD_COAP_TEST_EN_FOR_KM4
+					bool "Rtk OT CoAP Test"
+					default n
+			endif
         endif
         config 802154_PLATFORM_TEST_EN_FOR_KM4
             bool "Enable 802154 Platform Test"

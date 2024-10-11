@@ -1,11 +1,13 @@
 set(DIR ${BASEDIR}/component/file_system/fatfs)
 
-target_sources(
-    target_img2_${PROJECT_NAME}
-    PRIVATE 
+set(
+	CSRC
     ${DIR}/disk_if/src/usbdisk.c
-	${DIR}/r0.14b/src/ff.c
-	${DIR}/r0.14b/src/diskio.c
-	${DIR}/r0.14b/src/ffsystem.c
-	${DIR}/r0.14b/src/ffunicode.c 
+	${DIR}/${FATFS_VER}/src/ff.c
+	${DIR}/${FATFS_VER}/src/diskio.c
+	${DIR}/${FATFS_VER}/src/ffsystem.c
+	${DIR}/${FATFS_VER}/src/ffunicode.c 
 )
+
+ameba_internal_library(fatfs)
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

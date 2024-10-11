@@ -507,7 +507,6 @@ typedef enum {
  */
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_descriptor_get(rtk_bt_mesh_sensor_descriptor_get_t *sensor_descriptor_get)
  * @brief     Send sensor descriptor get message to sensor server, will cause event @ref RTK_BT_MESH_SENSOR_DESCRIPTOR_CLIENT_MODEL_GET
  * @param[in] sensor_descriptor_get: sensor descriptor get message structure
  * @return
@@ -517,7 +516,6 @@ typedef enum {
 uint16_t rtk_bt_mesh_sensor_descriptor_get(rtk_bt_mesh_sensor_descriptor_get_t *sensor_descriptor_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_cadence_get(rtk_bt_mesh_sensor_cadence_get_t *sensor_cadence_get)
  * @brief     Send sensor cadence get message to sensor setup server, will cause event @ref RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_GET
  * @param[in] sensor_cadence_get: sensor cadence get message structure
  * @return
@@ -527,7 +525,6 @@ uint16_t rtk_bt_mesh_sensor_descriptor_get(rtk_bt_mesh_sensor_descriptor_get_t *
 uint16_t rtk_bt_mesh_sensor_cadence_get(rtk_bt_mesh_sensor_cadence_get_t *sensor_cadence_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_cadence_set(rtk_bt_mesh_sensor_cadence_set_t *sensor_cadence_set)
  * @brief     Send sensor cadence set message to sensor setup server, will cause event @ref RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_SET
  * @param[in] sensor_cadence_set: sensor cadence set message structure
  * @return
@@ -537,7 +534,6 @@ uint16_t rtk_bt_mesh_sensor_cadence_get(rtk_bt_mesh_sensor_cadence_get_t *sensor
 uint16_t rtk_bt_mesh_sensor_cadence_set(rtk_bt_mesh_sensor_cadence_set_t *sensor_cadence_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_settings_get(rtk_bt_mesh_sensor_settings_get_t *sensor_settings_get)
  * @brief     Send sensor settings get message to sensor setup server, will cause event @ref RTK_BT_MESH_SENSOR_SETTINGS_CLIENT_MODEL_GET
  * @param[in] sensor_settings_get: sensor settings get message structure
  * @return
@@ -547,7 +543,6 @@ uint16_t rtk_bt_mesh_sensor_cadence_set(rtk_bt_mesh_sensor_cadence_set_t *sensor
 uint16_t rtk_bt_mesh_sensor_settings_get(rtk_bt_mesh_sensor_settings_get_t *sensor_settings_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_setting_get(rtk_bt_mesh_sensor_setting_get_t *sensor_setting_get)
  * @brief     Send sensor setting get message to sensor setup server, will cause event @ref RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_GET
  * @param[in] sensor_setting_get: sensor setting get message structure
  * @return
@@ -557,7 +552,6 @@ uint16_t rtk_bt_mesh_sensor_settings_get(rtk_bt_mesh_sensor_settings_get_t *sens
 uint16_t rtk_bt_mesh_sensor_setting_get(rtk_bt_mesh_sensor_setting_get_t *sensor_setting_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_setting_set(rtk_bt_mesh_sensor_setting_set_t *sensor_setting_set)
  * @brief     Send sensor setting set message to sensor setup server, will cause event @ref RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_SET
  * @param[in] sensor_setting_set: sensor setting set message structure
  * @return
@@ -567,7 +561,6 @@ uint16_t rtk_bt_mesh_sensor_setting_get(rtk_bt_mesh_sensor_setting_get_t *sensor
 uint16_t rtk_bt_mesh_sensor_setting_set(rtk_bt_mesh_sensor_setting_set_t *sensor_setting_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_get(rtk_bt_mesh_sensor_get_t *sensor_get)
  * @brief     Send sensor get message to sensor server, will cause event @ref RTK_BT_MESH_SENSOR_CLIENT_MODEL_GET
  * @param[in] sensor_get: sensor get message structure
  * @return
@@ -577,7 +570,6 @@ uint16_t rtk_bt_mesh_sensor_setting_set(rtk_bt_mesh_sensor_setting_set_t *sensor
 uint16_t rtk_bt_mesh_sensor_get(rtk_bt_mesh_sensor_get_t *sensor_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_column_get(rtk_bt_mesh_sensor_column_get_t *sensor_column_get)
  * @brief     Send sensor column get message to sensor server, will cause event @ref RTK_BT_MESH_SENSOR_COLUMN_CLIENT_MODEL_GET
  * @param[in] sensor_column_get: sensor column get message structure
  * @return
@@ -587,7 +579,6 @@ uint16_t rtk_bt_mesh_sensor_get(rtk_bt_mesh_sensor_get_t *sensor_get);
 uint16_t rtk_bt_mesh_sensor_column_get(rtk_bt_mesh_sensor_column_get_t *sensor_column_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_series_get(rtk_bt_mesh_sensor_series_get_t *sensor_series_get)
  * @brief     Send sensor series get message to sensor server, will cause event @ref RTK_BT_MESH_SENSOR_SERIES_CLIENT_MODEL_GET
  * @param[in] sensor_series_get: sensor series get message structure
  * @return
@@ -597,7 +588,6 @@ uint16_t rtk_bt_mesh_sensor_column_get(rtk_bt_mesh_sensor_column_get_t *sensor_c
 uint16_t rtk_bt_mesh_sensor_series_get(rtk_bt_mesh_sensor_series_get_t *sensor_series_get);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *db_set)
  * @brief     Send sensor database set message to set sensor database, will cause event @ref RTK_BT_MESH_SENSOR_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: sensor database set message structure
  * @return
@@ -607,7 +597,6 @@ uint16_t rtk_bt_mesh_sensor_series_get(rtk_bt_mesh_sensor_series_get_t *sensor_s
 uint16_t rtk_bt_mesh_sensor_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *db_set);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_sensor_setup_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *db_set)
  * @brief     Send sensor setup database set message to set sensor setup database, will cause event @ref RTK_BT_MESH_SENSOR_SETUP_SERVER_MODEL_ACT_DB_SET
  * @param[in] db_set: sensor setup database set message structure
  * @return

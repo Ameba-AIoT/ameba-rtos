@@ -654,7 +654,7 @@ exit1:
 }
 #endif /* CONFIG_ENABLE_WPS_DISCOVERY */
 
-static enum _rtw_result_t wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
+static int wps_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 {
 	struct _internal_wps_scan_handler_arg *wps_arg = (struct _internal_wps_scan_handler_arg *)user_data;
 	struct rtw_scan_result *scaned_ap_info;
@@ -699,7 +699,7 @@ EXIT:
 	}
 	DiagPrintf("\r\nWPS scan done!\r\n");
 	rtos_sema_give(wps_arg->scan_sema);
-	return (enum _rtw_result_t)ret;
+	return (int)ret;
 }
 
 static int wps_find_out_triger_wps_AP(char *target_ssid, unsigned char *target_bssid, u16 config_method)
@@ -863,10 +863,12 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 		}
 	}
 
+#if CONFIG_AUTO_RECONNECT
 	wifi_get_autoreconnect(&auto_reconnect_status);
 	if (auto_reconnect_status != 0) {
 		wifi_config_autoreconnect(0);
 	}
+#endif
 
 	/* check if STA is conencting */
 	while ((wifi_get_join_status() > RTW_JOINSTATUS_UNKNOWN) && (wifi_get_join_status() < RTW_JOINSTATUS_SUCCESS)) {
@@ -1032,7 +1034,9 @@ exit1:
 	wpas_wps_deinit();
 
 exit2:
+#if CONFIG_AUTO_RECONNECT
 	wifi_config_autoreconnect(auto_reconnect_status);
+#endif
 	return ret;
 }
 
@@ -1044,7 +1048,7 @@ void wps_stop(void)
 
 int wps_judge_staion_disconnect(void)
 {
-	struct _rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+	struct _rtw_wifi_setting_t setting = {0};
 
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) != 0) {
 		return -1;
@@ -1068,7 +1072,7 @@ void cmd_wps(int argc, char **argv)
 
 	// check if STA is conencting
 	if ((wifi_get_join_status() > RTW_JOINSTATUS_UNKNOWN) && (wifi_get_join_status() < RTW_JOINSTATUS_SUCCESS)) {
-		RTW_API_INFO("\nthere is ongoing wifi connect!");
+		RTK_LOGS(NOTAG, "\nthere is ongoing wifi connect!");
 		return;
 	}
 

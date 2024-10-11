@@ -167,13 +167,9 @@ int main(void)
 	InterruptRegister(IPC_INTHandler, IPC_KR4_IRQ, (u32)IPCKR4_DEV, INT_PRI3);
 	InterruptEn(IPC_KR4_IRQ, INT_PRI3);
 
-#ifdef CONFIG_MBED_TLS_ENABLED
+#ifdef CONFIG_MBEDTLS_ENABLED
 	app_mbedtls_rom_init();
 #endif
-
-	/* init console */
-	shell_init_rom(0, 0);
-	shell_init_ram();
 
 	/*IPC table initialization*/
 	ipc_table_init(IPCKR4_DEV);
@@ -199,6 +195,10 @@ int main(void)
 
 	wlan_initialize();
 #endif
+
+	/* init console */
+	shell_init_rom(0, 0);
+	shell_init_ram();
 
 	app_init_debug();
 

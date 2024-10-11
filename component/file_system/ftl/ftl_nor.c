@@ -496,11 +496,12 @@ L_retry:
 uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 {
 	uint8_t result = 0;
+	uint8_t sem_flag = FALSE;
 
-	if (ftl_write_lock == NULL) {
-		return FTL_WRITE_ERROR_NOT_INIT;
-	} else if (rtos_mutex_take(ftl_write_lock, 100) != SUCCESS) {
-		return ERROR_MUTEX_GET_TIMEOUT;
+	if (NULL != ftl_sem) {
+		if (rtos_mutex_recursive_take(ftl_sem, RTOS_MAX_DELAY) == TRUE) {
+			sem_flag = TRUE;
+		}
 	}
 
 	if (g_doingGarbageCollection == 0) {
@@ -518,7 +519,9 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 		g_doingGarbageCollection = 0;
 	}
 
-	rtos_mutex_give(ftl_write_lock);
+	if (sem_flag) {
+		rtos_mutex_recursive_give(ftl_sem);
+	}
 
 	return result;
 }
@@ -1066,10 +1069,11 @@ uint32_t ftl_load_from_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size
 uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 {
 	uint32_t ret = FTL_WRITE_SUCCESS;
+	uint8_t sem_flag = FALSE;
 
-//#if defined (ARM_CORE_CA32)
+//#if defined (CONFIG_ARM_CORE_CA32)
 //	if (CPSR_M_IRQ == __get_mode()) {
-//		DBG_8195A("ARM_CORE_CA32\n");
+//		DBG_8195A("CONFIG_ARM_CORE_CA32\n");
 //		FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] FTL_write should not be called in interrupt handler!\n");
 //		return FTL_WRITE_ERROR_IN_INTR;
 //	}
@@ -1080,10 +1084,10 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 //	}
 //
 //#endif
-	if (ftl_write_lock == NULL) {
-		return FTL_WRITE_ERROR_NOT_INIT;
-	} else if (rtos_mutex_take(ftl_write_lock, 100) != SUCCESS) {
-		return ERROR_MUTEX_GET_TIMEOUT;
+	if (NULL != ftl_sem) {
+		if (rtos_mutex_recursive_take(ftl_sem, RTOS_MAX_DELAY) == SUCCESS) {
+			sem_flag = TRUE;
+		}
 	}
 
 	if (ftl_check_logical_addr(logical_addr)) {
@@ -1164,7 +1168,9 @@ L_retry:
 		}
 	}
 
-	rtos_mutex_give(ftl_write_lock);
+	if (sem_flag) {
+		rtos_mutex_recursive_give(ftl_sem);
+	}
 
 	FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] w 0x%08x: 0x%08x (%d)\r\n", logical_addr, (unsigned int)w_data, (int)ret);
 

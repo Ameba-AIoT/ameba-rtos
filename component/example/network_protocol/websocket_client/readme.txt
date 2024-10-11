@@ -20,7 +20,7 @@ Configuration:
 	[config_rsa.h]
 		#define MBEDTLS_SSL_MAX_CONTENT_LEN 16384
 
-	[example_wsclient.c]
+	[example_websocket_client.c]
 		wsclient_context *wsclient = create_wsclient("ws://websocket-echo.com", 0, NULL, NULL, 1500, 3);
 
 3.If using the WSS server:
@@ -29,7 +29,7 @@ Configuration:
 		#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 		#define MBEDTLS_ECDH_C
 
-	[example_wsclient.c]
+	[example_websocket_client.c]
 		wsclient_context *wsclient = create_wsclient("wss://websocket-echo.com", 0, NULL, NULL, 1500, 3);
 
 4.GCC:use CMD "make all EXAMPLE=websocket_client" to compile websocket_client example

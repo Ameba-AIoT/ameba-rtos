@@ -180,7 +180,6 @@ static void scene_setup_server_deinit(mesh_model_info_t *pmodel_info)
 {
     if (pmodel_info->model_receive == scene_setup_server_receive)
     {
-        /* now we can remove */
         if (NULL != pmodel_info->pargs)
         {
             plt_free(pmodel_info->pargs, RAM_TYPE_DATA_ON);

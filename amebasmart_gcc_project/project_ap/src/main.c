@@ -134,15 +134,11 @@ int main(void)
 	InterruptRegister(IPC_INTHandler, IPC_AP_IRQ, (u32)IPCAP_DEV, INT_PRI_MIDDLE);
 	InterruptEn(IPC_AP_IRQ, INT_PRI_MIDDLE);
 
-#ifdef CONFIG_MBED_TLS_ENABLED
+#ifdef CONFIG_MBEDTLS_ENABLED
 	app_mbedtls_rom_init();
 #endif
 
 	ipc_table_init(IPCAP_DEV);
-
-	/* init console */
-	shell_init_rom(0, 0);
-	shell_init_ram();
 
 	app_pmu_init();
 
@@ -162,6 +158,10 @@ int main(void)
 #ifdef CONFIG_WLAN
 	wlan_initialize();
 #endif
+
+	/* init console */
+	shell_init_rom(0, 0);
+	shell_init_ram();
 
 	/* Execute application example */
 	app_example();

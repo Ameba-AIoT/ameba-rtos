@@ -8,10 +8,10 @@ set(
 
 set(DIR ${BASEDIR}/component/audio/base/cutils/src)
 
-set(MODULE_C_OPTIONS -Wno-multichar -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast)
+set(MODULE_C_OPTIONS -D__RTOS__ -Wno-multichar -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast)
 
 set(
-    CSRC 
+    CSRC
     ${DIR}/parcel.c
     ${DIR}/rtrbtree.c
     ${DIR}/rtintmap.c

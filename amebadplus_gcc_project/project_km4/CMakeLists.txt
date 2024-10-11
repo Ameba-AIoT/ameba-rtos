@@ -20,9 +20,14 @@ set(TARGETDIR ${BASEDIR}/component/soc/amebadplus)
 set(CMAKE_FILES_DIR ${BASEDIR}/cmake)
 
 set(FREERTOS_VER v10.4.3)
+set(MBEDTLS_VER 2.16.9)
+set(LITTLEFS_VER r2.50)
+set(FATFS_VER r0.14b)
+set(LWIP_VER v2.1.2)
+
 set(FREERTOSDIR ${BASEDIR}/component/os/freertos/freertos_${FREERTOS_VER}/Source)
 set(OSDIR ${BASEDIR}/component/os)
-set(MBEDTLSDIR ${BASEDIR}/component/ssl/mbedtls-2.16.9)
+set(MBEDTLSDIR ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER})
 set(WIFIFWDIR ${BASEDIR}/component/wifi/wifi_fw)
 set(WIFIMAKEDIR ${BASEDIR}/component/wifi/wifi_make)
 
@@ -32,22 +37,25 @@ set(UTILITYDIR ${PROJECTDIR}/asdk/gnu_utility)
 set(FLASHDLDIR ${PROJECTDIR}/asdk/flashloader)
 set(GNU_SCRIPT ${UTILITYDIR}/gnu_script)
 set(FLASHDLIMGDIR ${GNU_SCRIPT}/acut_loader)
+set(FLOADER_BIN_DIR ${UTILITYDIR}/image_tool_flashloader/amebadplus_acut)
 
 set(TARGET_LIBSOC_FOLDER ${PROJECTDIR}/asdk/lib/soc)
 set(TARGET_LIBAPP_FOLDER ${PROJECTDIR}/asdk/lib/application)
 
 ###########################################
-if(NOT CMAKE_PROJECT_NAME)
+if(NOT ASDK_VER)
     set(ASDK_VER 10.3.1)
     include (${CMAKE_FILES_DIR}/toolchain/ameba-toolchain-${ASDK_VER}.cmake)
+    set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_FILES_DIR}/set_extensions.cmake)
+    set(CMAKE_PROJECT_INCLUDE_BEFORE ${CMAKE_FILES_DIR}/disable_compiler_detection.cmake)
 endif()
 
-project(km4)
+project(km4 LANGUAGES C CXX ASM)
 message ("project : " ${PROJECT_NAME})
 
-set(CMAKE_BUILD_TYPE DEBUG)
+set(CMAKE_BUILD_TYPE "")
 # set CMAKE_VERBOSE_MAKEFILE ON to print compile info
-set(CMAKE_VERBOSE_MAKEFILE OFF) 
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 ###########################################
 
@@ -65,6 +73,8 @@ include (${CMAKE_FILES_DIR}/flags/${PROJECT_NAME}/linkflags.cmake)
 
 include(${CMAKE_FILES_DIR}/axf2bin.cmake)
 
+include(${CMAKE_FILES_DIR}/git/GetGitRevisionDescription.cmake)
+git_describe(GIT_VER)
 ###########################################
 
 if (CONFIG_MP_INCLUDED)

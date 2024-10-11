@@ -11,7 +11,7 @@
 
 //HeapRegion Addresses need to be sorted from smallest to largest
 
-#if (defined ARM_CORE_CM4)
+#if (defined CONFIG_ARM_CORE_CM4)
 
 #ifdef CONFIG_MP_SHRINK
 /* Recycle floader mem for km4 */
@@ -28,7 +28,7 @@
 #define PSRAM_HEAP1_START					__psram_heap_extend_start__
 #define PSRAM_HEAP1_SIZE					__psram_heap_extend_size__
 
-#elif (defined RSICV_CORE_KR4)
+#elif (defined CONFIG_RSICV_CORE_KR4)
 
 #ifdef CONFIG_MP_SHRINK
 /* Recycle bootloader mem for kr4 */

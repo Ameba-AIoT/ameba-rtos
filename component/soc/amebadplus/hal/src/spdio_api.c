@@ -142,7 +142,7 @@ s8 spdio_rpwm_cb(void *padapter)
 {
 	struct spdio_t *obj = (struct spdio_t *)padapter;
 
-	u16 rpwm2 = SDIO_RPWM2_Get();
+	u16 rpwm2 = SDIO_RPWM2_Get(SDIO_WIFI);
 
 	if (obj) {
 		return obj->rpwm_cb(obj, rpwm2);
@@ -271,8 +271,8 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 	} while (Offset < pkt_size);
 
 	if (RxBdWrite > 0) {
-		SDIO_RXBD_WPTR_Set(pgSDIODev->RXBDWPtr);
-		SDIO_RxReq();
+		SDIO_RXBD_WPTR_Set(SDIO_WIFI, pgSDIODev->RXBDWPtr);
+		SDIO_RxReq(SDIO_WIFI);
 	}
 
 	RTK_LOGI(TAG, "SDIO_Return_Rx_Data(%d)<==\n", RxBdWrite);
@@ -319,15 +319,15 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
 	u32 WPTR_FLAG, RPTR_FLAG;
 
-	TxBDWPtr = (u16) SDIO_TXBD_WPTR_Get();
-	WPTR_FLAG = BIT_SPDIO_TXBD_H2C_WPTR_WRAP & SDIO_TXBD_WPTR_Get();
-	TxBDRPtr = (u16) SDIO_TXBD_RPTR_Get();
-	RPTR_FLAG = BIT_SPDIO_TXBD_H2C_RPTR_WRAP & SDIO_TXBD_RPTR_Get();
+	TxBDWPtr = (u16) SDIO_TXBD_WPTR_Get(SDIO_WIFI);
+	WPTR_FLAG = BIT_SPDIO_TXBD_H2C_WPTR_WRAP & SDIO_TXBD_WPTR_Get(SDIO_WIFI);
+	TxBDRPtr = (u16) SDIO_TXBD_RPTR_Get(SDIO_WIFI);
+	RPTR_FLAG = BIT_SPDIO_TXBD_H2C_RPTR_WRAP & SDIO_TXBD_RPTR_Get(SDIO_WIFI);
 
 	if ((TxBDWPtr == TxBDRPtr) && (WPTR_FLAG == RPTR_FLAG)) {
 		if (unlikely(pSPDIODev->TxOverFlow != 0)) {
 			pSPDIODev->TxOverFlow = 0;
-			reg = SDIO_DMA_CTRL_Get();
+			reg = SDIO_DMA_CTRL_Get(SDIO_WIFI);
 			RTK_LOGS_LVL(TAG, RTK_LOG_WARN, "SDIO TX Overflow Case: Reg DMA_CTRL==0x%x %x %x %x\n", (reg >> 24) & 0xff, (reg >> 16) & 0xff, (reg >> 8) & 0xff,
 						 (reg) & 0xff);
 		} else {
@@ -369,7 +369,7 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 		} else {
 			pSPDIODev->TXBDRPtr++;
 			if (pSPDIODev->TXBDRPtr >= obj->rx_bd_num) {
-				RPTR_FLAG = BIT_SPDIO_TXBD_H2C_RPTR_WRAP & SDIO_TXBD_RPTR_Get();
+				RPTR_FLAG = BIT_SPDIO_TXBD_H2C_RPTR_WRAP & SDIO_TXBD_RPTR_Get(SDIO_WIFI);
 				if (RPTR_FLAG) {
 					RPTR_FLAG = 0;
 				} else {
@@ -378,10 +378,10 @@ void SPDIO_TX_FIFO_DataReady(IN PHAL_SPDIO_ADAPTER pSPDIODev)
 				pSPDIODev->TXBDRPtr = 0;
 			}
 			pSPDIODev->TXBDRPtrReg = pSPDIODev->TXBDRPtr;
-			SDIO_TXBD_RPTR_Set(((u32)pSPDIODev->TXBDRPtrReg) | RPTR_FLAG);
+			SDIO_TXBD_RPTR_Set(SDIO_WIFI, ((u32)pSPDIODev->TXBDRPtrReg) | RPTR_FLAG);
 		}
-		TxBDWPtr = (u16) SDIO_TXBD_WPTR_Get();
-		WPTR_FLAG = BIT_SPDIO_TXBD_H2C_WPTR_WRAP & SDIO_TXBD_WPTR_Get();
+		TxBDWPtr = (u16) SDIO_TXBD_WPTR_Get(SDIO_WIFI);
+		WPTR_FLAG = BIT_SPDIO_TXBD_H2C_WPTR_WRAP & SDIO_TXBD_WPTR_Get(SDIO_WIFI);
 		if (isForceBreak) {
 			break;	// break the TX FIFO DMA Done processing
 		}
@@ -405,8 +405,8 @@ void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 	struct spdio_t *obj = (struct spdio_t *)pgSPDIODev->spdio_priv;
 	u8 isPktEnd = _FALSE;
 
-	SDIO_INTConfig(BIT_C2H_DMA_OK, DISABLE);
-	while (SDIO_RXBD_RPTR_Get() != pgSPDIODev->RXBDRPtr) {
+	SDIO_INTConfig(SDIO_WIFI, BIT_C2H_DMA_OK, DISABLE);
+	while (SDIO_RXBD_RPTR_Get(SDIO_WIFI) != pgSPDIODev->RXBDRPtr) {
 		pRxBdHdl = pgSPDIODev->pRXBDHdl + pgSPDIODev->RXBDRPtr;
 		pRXBD = pRxBdHdl->pRXBD;
 		isPktEnd = _FALSE;
@@ -431,7 +431,7 @@ void SPDIO_Recycle_Rx_BD(IN PHAL_SPDIO_ADAPTER pgSPDIODev)
 			spdio_tx_done_cb(obj, (u8 *)(pRxBdHdl->priv));
 		}
 	}
-	SDIO_INTConfig(BIT_C2H_DMA_OK, ENABLE);
+	SDIO_INTConfig(SDIO_WIFI, BIT_C2H_DMA_OK, ENABLE);
 	RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "<==SDIO_Recycle_Rx_BD(%u)\n", FreeCnt);
 
 }
@@ -463,10 +463,10 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 		/* Task blocked and wait the semaphore(events) here */
 		rtos_sema_take(pgSPDIODev->IrqSema, RTOS_MAX_TIMEOUT);
 
-		IntStatus = SDIO_INTStatus();
+		IntStatus = SDIO_INTStatus(SDIO_WIFI);
 		RTK_LOGS_LVL(TAG, RTK_LOG_DEBUG, "%s:ISRStatus=0x%x\n", __FUNCTION__, IntStatus);
 
-		SDIO_INTClear(IntStatus);	// clean the ISR
+		SDIO_INTClear(SDIO_WIFI, IntStatus);	// clean the ISR
 		InterruptEn(SDIO_IRQ, SPDIO_IRQ_PRIORITY);
 
 		if (IntStatus & BIT_C2H_DMA_OK) {
@@ -474,7 +474,7 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 		}
 
 		if (IntStatus & BIT_H2C_MSG_INT) {
-			SDIO_H2C_MSG_Get();
+			SDIO_H2C_MSG_Get(SDIO_WIFI);
 		}
 
 		if (IntStatus & BIT_RPWM2_INT) {
@@ -482,9 +482,9 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 		}
 
 		if (IntStatus & BIT_H2C_DMA_OK || pgSPDIODev->WaitForTxbuf) {
-			SDIO_INTConfig(BIT_H2C_DMA_OK, DISABLE);
+			SDIO_INTConfig(SDIO_WIFI, BIT_H2C_DMA_OK, DISABLE);
 			SPDIO_TX_FIFO_DataReady(pgSPDIODev);
-			SDIO_INTConfig(BIT_H2C_DMA_OK, ENABLE);
+			SDIO_INTConfig(SDIO_WIFI, BIT_H2C_DMA_OK, ENABLE);
 		}
 		if (IntStatus & BIT_TXFIFO_H2C_OVF) {
 			pgSPDIODev->TxOverFlow = 1;
@@ -553,13 +553,13 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	SDIO_InitStruct.RXBD_RING_SIZE = obj->tx_bd_num;
 	SDIO_InitStruct.RXBD_FREE_TH = RX_BD_FREE_TH;
 
-	SDIO_Init((&SDIO_InitStruct));
+	SDIO_Init(SDIO_WIFI, (&SDIO_InitStruct));
 
-	pgSPDIODev->TXBDWPtr = SDIO_TXBD_WPTR_Get();
+	pgSPDIODev->TXBDWPtr = SDIO_TXBD_WPTR_Get(SDIO_WIFI);
 	pgSPDIODev->TXBDRPtr = pgSPDIODev->TXBDWPtr;
 	pgSPDIODev->TXBDRPtrReg = pgSPDIODev->TXBDWPtr;
 
-	pgSPDIODev->RXBDWPtr = pgSPDIODev->RXBDRPtr = SDIO_RXBD_RPTR_Get();
+	pgSPDIODev->RXBDWPtr = pgSPDIODev->RXBDRPtr = SDIO_RXBD_RPTR_Get(SDIO_WIFI);
 
 	RTK_LOGI(TAG, "TXBDWPtr=0x%x TXBDRPtr=0x%x\n", pgSPDIODev->TXBDWPtr, pgSPDIODev->TXBDRPtr);
 
@@ -619,23 +619,23 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	}
 
 	//pgSPDIODev->CRPWM = SDIO_RPWM1_Get();
-	//pgSPDIODev->CRPWM2 = SDIO_RPWM2_Get();
+	//pgSPDIODev->CRPWM2 = SDIO_RPWM2_Get(SDIO_WIFI);
 
 	// Indicate Host this is a iNIC FW
-	//SDIO_CPWM2_Set(CPWM2_INIC_FW_RDY_BIT, ENABLE);
+	//SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_INIC_FW_RDY_BIT, ENABLE);
 
 	/* enable the interrupt */
 	InterruptRegister((IRQ_FUN) SPDIO_IRQ_Handler, SDIO_IRQ, (u32) pgSPDIODev, SPDIO_IRQ_PRIORITY);
 	InterruptEn(SDIO_IRQ, SPDIO_IRQ_PRIORITY);
 
-	SDIO_INTClearAll();
-	SDIO_INTConfig(SDIO_INIT_INT_MASK, ENABLE);
+	SDIO_INTClearAll(SDIO_WIFI);
+	SDIO_INTConfig(SDIO_WIFI, SDIO_INIT_INT_MASK, ENABLE);
 
 	// Update the power state indication
-	SDIO_CPWM2_Set(CPWM2_ACT_BIT, ENABLE);
+	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_ACT_BIT, ENABLE);
 
 	/* Indicate the Host system that the TX/RX is ready */
-	SDIO_SetReady(ENABLE);
+	SDIO_SetReady(SDIO_WIFI, ENABLE);
 
 	RTK_LOGI(TAG, "<==SDIO_Device_Init\n");
 
@@ -701,7 +701,7 @@ void SPDIO_Device_DeInit(void)
 
 	obj = pgSPDIODev->spdio_priv;
 	// Indicate the Host that Ameba is InActived
-	SDIO_CPWM2_Set(CPWM2_ACT_BIT, DISABLE);
+	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_ACT_BIT, DISABLE);
 
 	if (pgSPDIODev->pRXBDHdl) {
 		rtos_mem_free((u8 *)pgSPDIODev->pRXBDHdl);
@@ -745,10 +745,12 @@ void SPDIO_Device_DeInit(void)
 		pgSPDIODev->pRXDESCAddrAligned = NULL;
 	}
 
-	SDIO_INTConfig(0xffff, DISABLE);
-	SDIO_INTClearAll();
+	SDIO_INTConfig(SDIO_WIFI, 0xffff, DISABLE);
+	SDIO_INTClearAll(SDIO_WIFI);
 	InterruptDis(SDIO_IRQ);
 	InterruptUnRegister(SDIO_IRQ);
+
+	rtos_task_delete(pgSPDIODev->xSDIOIrqTaskHandle);
 
 	if (pgSPDIODev->IrqSema) {
 		rtos_sema_delete(pgSPDIODev->IrqSema);
@@ -756,7 +758,7 @@ void SPDIO_Device_DeInit(void)
 	}
 
 	// Reset SDIO DMA
-	SDIO_DMA_Reset();
+	SDIO_DMA_Reset(SDIO_WIFI);
 }
 
 void spdio_init(struct spdio_t *obj)

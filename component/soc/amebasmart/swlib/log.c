@@ -2,6 +2,16 @@
 #include "ameba_soc.h"
 #include "log.h"
 
+#ifdef CONFIG_ARM_CORE_CA32
+/* include apcore/spinlock.h for padding a cache line fully*/
+#include "spinlock.h"
+/**
+ * @brief The CA32 has two cores that need to be locked
+ * when printing to avoid interrupting each other
+ */
+static spinlock_t print_lock;
+#endif
+
 static const char *TAG = "LOG";
 /* Define default log-display level*/
 rtk_log_level_t rtk_log_default_level = RTK_LOG_DEFAULT_LEVEL;
@@ -254,10 +264,16 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 	if (level_of_tag < level) {
 		return;
 	}
+#ifdef CONFIG_ARM_CORE_CA32
+	u32 isr_status = spin_lock_irqsave(&print_lock);
+#endif
 	if (tag[0] != '#') {
 		DiagPrintf("[%s-%c] ", tag, letter);
 	}
 	va_start(ap, fmt);
 	DiagVprintf(fmt, ap);
 	va_end(ap);
+#ifdef CONFIG_ARM_CORE_CA32
+	spin_unlock_irqrestore(&print_lock, isr_status);
+#endif
 }

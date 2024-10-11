@@ -43,7 +43,7 @@ static mesh_msg_send_cause_t time_server_send(mesh_model_info_p pmodel_info,
                                               uint16_t dst, void *pmsg, uint16_t msg_len, uint16_t app_key_index,
                                               uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -69,7 +69,7 @@ mesh_msg_send_cause_t time_status(mesh_model_info_p pmodel_info, uint16_t dst,
         msg_len = MEMBER_OFFSET(time_status_t, subsecond);
     }
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)&msg;

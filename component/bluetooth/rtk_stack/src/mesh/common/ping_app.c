@@ -12,7 +12,6 @@
   */
 
 /* Add Includes here */
-#include <string.h>
 #include "trace.h"
 #include "app_msg.h"
 #include "ping_app.h"

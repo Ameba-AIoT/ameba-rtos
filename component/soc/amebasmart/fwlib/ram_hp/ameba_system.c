@@ -78,7 +78,7 @@ u32 IsRDPenabled(void)
   */
 u32 CPU_InInterrupt(void)
 {
-#ifdef ARM_CORE_CA32
+#ifdef CONFIG_ARM_CORE_CA32
 	return (__get_mode() != CPSR_M_USR) && (__get_mode() != CPSR_M_SYS);
 #else
 	return __get_IPSR() != 0;

@@ -25,9 +25,8 @@ SECTIONS
 		__sram_image2_end__ = .;
 		. = ALIGN(32);
 
-		/* object files of cmake build system could be xxx.c.obj */
-		*port*.o*(*.uxIdleTaskStack*)
-		*port*.o*(*.uxTimerTaskStack*)
+		*port.o(*.uxIdleTaskStack*)
+		*port.o(*.uxTimerTaskStack*)
 		
 		__flash_text_start__ = .;
 		*(.non.dram.text*)

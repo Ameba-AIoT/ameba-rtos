@@ -150,7 +150,7 @@ set(
 )
 
 set(
-    MODULE_C_DEFINES 
+    MODULE_C_DEFINES
     NULL=0 
     SOCKLEN_T=socklen_t 
     LOCALE_NOT_USED 
@@ -164,11 +164,12 @@ set(
     SIMD_EXTRA_ALLOC_BYTES=16 
     HAVE_LRINT 
     HAVE_LRINTF 
-    ENABLE_HARDENING 
+    ENABLE_HARDENING
 )
 
 set(
-    MODULE_C_OPTIONS 
+    MODULE_C_OPTIONS
+    -Wno-error
     -O2
     -fno-math-errno
 )

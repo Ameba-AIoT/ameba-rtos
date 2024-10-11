@@ -28,13 +28,13 @@ static int atcmd_ble_mesh_app_key_add(int argc, char **argv)
 	app_key_add.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_add_app_key(&app_key_add);
 	if (ret) {
-		AT_PRINTK("[%s] Add app key failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Add app key failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -51,13 +51,13 @@ static int atcmd_ble_mesh_model_app_bind(int argc, char **argv)
 	model_app_bind.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_config_client_model_app_bind(&model_app_bind);
 	if (ret) {
-		AT_PRINTK("[%s] Model bind app key failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model bind app key failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -76,13 +76,13 @@ static int atcmd_ble_mesh_model_sub_add(int argc, char **argv)
 	model_sub_add.group_addr[1] = (str_to_int(argv[3]) & 0xff00) >> 8;
 	ret = rtk_bt_mesh_config_client_model_sub_add(&model_sub_add);
 	if (ret) {
-		AT_PRINTK("[%s] Model sub add failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model sub add failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -96,13 +96,13 @@ static int atcmd_ble_mesh_ttl_get(int argc, char **argv)
 	ttl_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_default_ttl_get(&ttl_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get default ttl failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get default ttl failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -117,13 +117,13 @@ static int atcmd_ble_mesh_ttl_set(int argc, char **argv)
 	ttl_set.ttl = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_default_ttl_set(&ttl_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set default ttl failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set default ttl failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -137,13 +137,13 @@ static int atcmd_ble_mesh_relay_get(int argc, char **argv)
 	relay_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_relay_get(&relay_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get relay state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get relay state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -160,13 +160,13 @@ static int atcmd_ble_mesh_relay_set(int argc, char **argv)
 	relay_set.steps = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_config_client_model_relay_set(&relay_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set relay state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set relay state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -180,13 +180,13 @@ static int atcmd_ble_mesh_net_trans_get(int argc, char **argv)
 	net_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_net_transmit_get(&net_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get net trans state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get net trans state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -202,13 +202,13 @@ static int atcmd_ble_mesh_net_trans_set(int argc, char **argv)
 	net_set.steps = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_net_transmit_set(&net_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set net trans state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set net trans state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -222,13 +222,13 @@ static int atcmd_ble_mesh_node_reset(int argc, char **argv)
 	node_reset.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_node_reset(&node_reset);
 	if (ret) {
-		AT_PRINTK("[%s] Node 0x%x reset failed! reason: 0x%x", __func__, node_reset.dst, ret);
+		BT_LOGE("[%s] Node 0x%x reset failed! reason: 0x%x\r\n", __func__, node_reset.dst, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -242,13 +242,13 @@ static int atcmd_ble_mesh_beacon_get(int argc, char **argv)
 	beacon_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_beacon_get(&beacon_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get beacon state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get beacon state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -263,13 +263,13 @@ static int atcmd_ble_mesh_beacon_set(int argc, char **argv)
 	beacon_set.state = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_beacon_set(&beacon_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set beacon state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set beacon state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -284,13 +284,13 @@ static int atcmd_ble_mesh_compo_data_get(int argc, char **argv)
 	compo_data_get.page = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_compo_data_get(&compo_data_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get compo data state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get compo data state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -304,13 +304,13 @@ static int atcmd_ble_mesh_proxy_get(int argc, char **argv)
 	proxy_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_proxy_get(&proxy_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get proxy state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get proxy state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -325,13 +325,13 @@ static int atcmd_ble_mesh_proxy_set(int argc, char **argv)
 	proxy_set.state = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_proxy_set(&proxy_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set proxy state failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set proxy state failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -347,13 +347,13 @@ static int atcmd_ble_mesh_pub_get(int argc, char **argv)
 	pub_get.model_id = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_pub_get(&pub_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get model publication failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get model publication failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -379,13 +379,13 @@ static int atcmd_ble_mesh_pub_set(int argc, char **argv)
 	pub_set.pub_retrans_info.steps = str_to_int(argv[10]);
 	ret = rtk_bt_mesh_config_client_model_pub_set(&pub_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set model publication failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set model publication failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -404,13 +404,13 @@ static int atcmd_ble_mesh_model_sub_delete(int argc, char **argv)
 	sub_delete.group_addr[1] = (str_to_int(argv[3]) & 0xff00) >> 8;
 	ret = rtk_bt_mesh_config_client_model_sub_delete(&sub_delete);
 	if (ret) {
-		AT_PRINTK("[%s] Model sub delete failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model sub delete failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -426,13 +426,13 @@ static int atcmd_ble_mesh_model_sub_delete_all(int argc, char **argv)
 	sub_delete_all.model_id = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_sub_delete_all(&sub_delete_all);
 	if (ret) {
-		AT_PRINTK("[%s] Model sub delete all failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model sub delete all failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -451,13 +451,13 @@ static int atcmd_ble_mesh_model_sub_overwrite(int argc, char **argv)
 	sub_overwrite.group_addr[1] = (str_to_int(argv[3]) & 0xff00) >> 8;
 	ret = rtk_bt_mesh_config_client_model_sub_overwrite(&sub_overwrite);
 	if (ret) {
-		AT_PRINTK("[%s] Model sub overwrite failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model sub overwrite failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -473,13 +473,13 @@ static int atcmd_ble_mesh_model_sub_get(int argc, char **argv)
 	sub_get.model_id = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_sub_get(&sub_get);
 	if (ret) {
-		AT_PRINTK("[%s] Model sub get failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model sub get failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -494,13 +494,13 @@ static int atcmd_ble_mesh_net_key_add(int argc, char **argv)
 	net_key_add.net_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_net_key_add(&net_key_add);
 	if (ret) {
-		AT_PRINTK("[%s] Add netkey failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Add netkey failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -516,23 +516,23 @@ static int atcmd_ble_mesh_net_key_update(int argc, char **argv)
 	uint16_t len;
 	len = strlen(argv[2]);
 	if (len / 2 > 16) {
-		AT_PRINTK("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 16);
+		BT_LOGE("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 16);
 		return -2;
 	}
 	if (hexdata_str_to_array(argv[2], net_key_update.net_key, len)) {
 		ret = rtk_bt_mesh_config_client_model_net_key_update(&net_key_update);
 		if (ret) {
-			AT_PRINTK("[%s] Update netkey failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s] Update netkey failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] Input data format is not corrent.\r\n", __func__);
+		BT_LOGE("[%s] Input data format is not corrent.\r\n", __func__);
 		return -3;
 	}
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -547,13 +547,13 @@ static int atcmd_ble_mesh_net_key_delete(int argc, char **argv)
 	net_key_delete.net_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_net_key_delete(&net_key_delete);
 	if (ret) {
-		AT_PRINTK("[%s] Delete netkey failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Delete netkey failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -567,13 +567,13 @@ static int atcmd_ble_mesh_net_key_get(int argc, char **argv)
 	net_key_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_net_key_get(&net_key_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get netkey failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get netkey failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -590,23 +590,23 @@ static int atcmd_ble_mesh_app_key_update(int argc, char **argv)
 	uint16_t len;
 	len = strlen(argv[3]);
 	if (len / 2 > 16) {
-		AT_PRINTK("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 16);
+		BT_LOGE("[%s] The len %d of input data extend max value %d\r\n", __func__, len, 16);
 		return -2;
 	}
 	if (hexdata_str_to_array(argv[3], app_key_update.app_key, len)) {
 		ret = rtk_bt_mesh_config_client_model_app_key_update(&app_key_update);
 		if (ret) {
-			AT_PRINTK("[%s] Update appkey failed! reason: 0x%x", __func__, ret);
+			BT_LOGE("[%s] Update appkey failed! reason: 0x%x\r\n", __func__, ret);
 			return -1;
 		}
 		return 0;
 	} else {
-		AT_PRINTK("[%s] Input data format is not corrent.\r\n", __func__);
+		BT_LOGE("[%s] Input data format is not corrent.\r\n", __func__);
 		return -3;
 	}
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -622,13 +622,13 @@ static int atcmd_ble_mesh_app_key_delete(int argc, char **argv)
 	app_key_delete.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_app_key_delete(&app_key_delete);
 	if (ret) {
-		AT_PRINTK("[%s] Delete appkey failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Delete appkey failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -643,13 +643,13 @@ static int atcmd_ble_mesh_app_key_get(int argc, char **argv)
 	app_key_get.net_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_app_key_get(&app_key_get);
 	if (ret) {
-		AT_PRINTK("[%s] Delete appkey failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Delete appkey failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -664,13 +664,13 @@ static int atcmd_ble_mesh_node_identity_get(int argc, char **argv)
 	node_identity_get.net_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_node_identity_get(&node_identity_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get node identity failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get node identity failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -686,13 +686,13 @@ static int atcmd_ble_mesh_node_identity_set(int argc, char **argv)
 	node_identity_set.identity = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_node_identity_set(&node_identity_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set node identity failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set node identity failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -709,13 +709,13 @@ static int atcmd_ble_mesh_model_app_unbind(int argc, char **argv)
 	model_app_unbind.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_config_client_model_app_unbind(&model_app_unbind);
 	if (ret) {
-		AT_PRINTK("[%s] Model unbind app key failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model unbind app key failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -731,13 +731,13 @@ static int atcmd_ble_mesh_model_app_get(int argc, char **argv)
 	model_app_get.model_id = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_app_get(&model_app_get);
 	if (ret) {
-		AT_PRINTK("[%s] Model app get failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Model app get failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -751,13 +751,13 @@ static int atcmd_ble_mesh_frnd_get(int argc, char **argv)
 	frnd_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_frnd_get(&frnd_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get friend failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get friend failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -772,13 +772,13 @@ static int atcmd_ble_mesh_frnd_set(int argc, char **argv)
 	frnd_set.state = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_frnd_set(&frnd_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set friend failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set friend failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -793,13 +793,13 @@ static int atcmd_ble_mesh_lpn_poll_timeout_get(int argc, char **argv)
 	lpn_poll_timeout_get.lpn_addr = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_lpn_poll_timeout_get(&lpn_poll_timeout_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get lpn poll timeout failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get lpn poll timeout failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -814,13 +814,13 @@ static int atcmd_ble_mesh_key_refresh_phase_get(int argc, char **argv)
 	key_refresh_phase_get.net_key_index = str_to_int(argv[1]);
 	ret = rtk_bt_mesh_config_client_model_key_refresh_phase_get(&key_refresh_phase_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get key refresh phase failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get key refresh phase failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -836,13 +836,13 @@ static int atcmd_ble_mesh_key_refresh_phase_set(int argc, char **argv)
 	key_refresh_phase_set.state = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_config_client_model_key_refresh_phase_set(&key_refresh_phase_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set key refresh phase failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set key refresh phase failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -856,13 +856,13 @@ static int atcmd_ble_mesh_hb_pub_get(int argc, char **argv)
 	hb_pub_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_hb_pub_get(&hb_pub_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get hearbeat publication failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get hearbeat publication failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -885,13 +885,13 @@ static int atcmd_ble_mesh_hb_pub_set(int argc, char **argv)
 	hb_pub_set.features.lpn = str_to_int(argv[9]);
 	ret = rtk_bt_mesh_config_client_model_hb_pub_set(&hb_pub_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set hearbeat publication failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set hearbeat publication failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -905,13 +905,13 @@ static int atcmd_ble_mesh_hb_sub_get(int argc, char **argv)
 	hb_sub_get.dst = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_config_client_model_hb_sub_get(&hb_sub_get);
 	if (ret) {
-		AT_PRINTK("[%s] Get hearbeat subscription failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Get hearbeat subscription failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }
@@ -928,13 +928,13 @@ static int atcmd_ble_mesh_hb_sub_set(int argc, char **argv)
 	hb_sub_set.period_log = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_config_client_model_hb_sub_set(&hb_sub_set);
 	if (ret) {
-		AT_PRINTK("[%s] Set hearbeat subscription failed! reason: 0x%x", __func__, ret);
+		BT_LOGE("[%s] Set hearbeat subscription failed! reason: 0x%x\r\n", __func__, ret);
 		return -1;
 	}
 	return 0;
 #else
 	(void)argv;
-	MESHCONFIG_AT_PRINTK("Is not provisioner role, do not support configuration client model.");
+	BT_LOGE("Is not provisioner role, do not support configuration client model.\r\n");
 	return -1;
 #endif
 }

@@ -13,29 +13,29 @@
 #define WPA3_SECURITY		0x00800000	/**< wpa3 */
 #define WPS_ENABLED		0x10000000	/**< wps  enable*/
 
-enum rtw_bss_type {
+/**
+  * @brief  The enumeration lists the bss types. size u8
+  */
+enum {
 	RTW_BSS_TYPE_INFRASTRUCTURE 	= 0, /**< Denotes infrastructure network                  */
-	RTW_BSS_TYPE_ADHOC          		= 1, /**< Denotes an 802.11 ad-hoc IBSS network           */
-	RTW_BSS_TYPE_ANY            			= 2, /**< Denotes either infrastructure or ad-hoc network */
-	RTW_BSS_TYPE_UNKNOWN        		= 0xFFFFFFFF /**< May be returned by scan function if BSS type is unknown. Do not pass this to the Join function */
+	RTW_BSS_TYPE_WTN_HELPER          		= 1, /**< Denotes an wtn helper network           */
+	RTW_BSS_TYPE_UNKNOWN
 };
 
-enum rtw_wps_type {
-	RTW_WPS_TYPE_DEFAULT 		    		= 0x0000,	/**< default type */
-	RTW_WPS_TYPE_USER_SPECIFIED 		= 0x0001,	/**< user specified type */
-	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 0x0002,	/**< machine specified type */
-	RTW_WPS_TYPE_REKEY 			        	= 0x0003,	/**< retry key type */
-	RTW_WPS_TYPE_PUSHBUTTON 		    	= 0x0004,	/**< push button type */
-	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 0x0005,	/**< register specified type */
-	RTW_WPS_TYPE_NONE                   		= 0x0006, 	/**< none */
-	RTW_WPS_TYPE_WSC                    		= 0x0007,	/**< wsc type */
-	RTW_WPS_TYPE_NOUSE					= 0xffffffff		/**< unsed type */
+enum {
+	RTW_WPS_TYPE_DEFAULT 		    		= 0,	/**< default type */
+	RTW_WPS_TYPE_USER_SPECIFIED 		= 1,	/**< user specified type */
+	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 2,	/**< machine specified type */
+	RTW_WPS_TYPE_REKEY 			        	= 3,	/**< retry key type */
+	RTW_WPS_TYPE_PUSHBUTTON 		    	= 4,	/**< push button type */
+	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 5,	/**< register specified type */
+	RTW_WPS_TYPE_NONE                   		= 6, 	/**< none */
+	RTW_WPS_TYPE_WSC                    		= 7,	/**< wsc type */
 };
 
-enum rtw_802_11_band {
+enum {
 	RTW_802_11_BAND_5GHZ   = 0, /**< Denotes 5GHz radio band */
 	RTW_802_11_BAND_2_4GHZ = 1,  /**< Denotes 2.4GHz radio band */
-	RTW_BAND_NOUSE			= 0xFFFFFFFF
 };
 
 enum rtw_security {
@@ -71,11 +71,13 @@ struct rtw_scan_result {
 	struct _rtw_ssid_t              SSID;             /**< Service Set Identification (i.e. Name of Access Point)                    */
 	struct _rtw_mac_t               BSSID;            /**< Basic Service Set Identification (i.e. MAC address of Access Point)       */
 	signed short		                  signal_strength;  /**< Receive Signal Strength Indication in dBm. <-90=Very poor, >-30=Excellent */
-	enum rtw_bss_type          bss_type;         /**< Network type                                                              */
-	enum rtw_security          security;         /**< Security type                                                             */
-	enum rtw_wps_type          wps_type;         /**< WPS type                                                                  */
+	uint8_t          			   bss_type;         /**< val: RTW_BSS_TYPE_INFRASTRUCTURE, RTW_BSS_TYPE_WTN_HELPER*/
+	uint32_t					       security;         /**< Security type, val: see enum rtw_security*/
+	uint8_t        				   wps_type;         /**< val: RTW_SECURITY_OPEN, RTW_SECURITY_WEP_PSK...*/
 	unsigned int                      channel;          /**< Radio channel that the AP beacon was received on                          */
-	enum rtw_802_11_band       band;             /**< Radio band                                                                */
+	uint8_t					       band;             /**< val: RTW_802_11_BAND_5GHZ, RTW_802_11_BAND_2_4GHZ*/
+	char	country_code[2];
+	uint8_t		rom_rsvd[4];
 } ;
 #pragma pack()
 

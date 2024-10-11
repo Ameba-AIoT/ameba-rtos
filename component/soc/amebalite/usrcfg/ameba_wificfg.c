@@ -11,12 +11,12 @@ struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 _WEAK void wifi_set_user_config(void)
 {
-	memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
+	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
 	wifi_user_config.concurrent_enabled = (u8)_TRUE;
 	wifi_user_config.softap_addr_offset_idx = 1;
-	wifi_user_config.auto_reconnect_count = 8;
+	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/

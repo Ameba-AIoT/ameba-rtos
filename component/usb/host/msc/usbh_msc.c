@@ -946,7 +946,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 	timeout = msc->host->tick;
 
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
-#if defined (ARM_CORE_CA32)
+#if defined (CONFIG_ARM_CORE_CA32)
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
@@ -990,7 +990,7 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	timeout = msc->host->tick;
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
-#if defined (ARM_CORE_CA32)
+#if defined (CONFIG_ARM_CORE_CA32)
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif

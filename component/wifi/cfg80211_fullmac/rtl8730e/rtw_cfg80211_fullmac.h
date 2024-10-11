@@ -155,6 +155,8 @@ struct wps_str {
 	u8 wps_phase;
 };
 
+#define _memset(x, y, z) memset(x, y, z)
+
 #define set_frame_sub_type(pbuf, type) \
 	do {    \
 		*(unsigned short *)(pbuf) &= cpu_to_le16(~(BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2))); \

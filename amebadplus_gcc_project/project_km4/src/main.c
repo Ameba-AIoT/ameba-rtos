@@ -189,10 +189,6 @@ int main(void)
 	/* Debug log control */
 	app_init_debug();
 
-	/* init console */
-	shell_init_rom(0, 0);
-	shell_init_ram();
-
 	InterruptRegister(IPC_INTHandler, IPC_KM4_IRQ, (u32)IPCKM4_DEV, INT_PRI5);
 	InterruptEn(IPC_KM4_IRQ, INT_PRI5);
 
@@ -203,7 +199,7 @@ int main(void)
 	app_filesystem_init();
 #endif
 
-#ifdef CONFIG_MBED_TLS_ENABLED
+#ifdef CONFIG_MBEDTLS_ENABLED
 	app_mbedtls_rom_init();
 #endif
 
@@ -221,6 +217,10 @@ int main(void)
 #if defined(CONFIG_WLAN)
 	wlan_initialize();
 #endif
+
+	/* init console */
+	shell_init_rom(0, 0);
+	shell_init_ram();
 
 	app_pmu_init();
 #if defined(CONFIG_RTCIO_ENABLED) && CONFIG_RTCIO_ENABLED

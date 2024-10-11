@@ -20,10 +20,12 @@
 #define RTL_CRYPTO_FRAGMENT               15360
 
 #define MBEDTLS_VERSION_CONVERT(a,b,c)	(((a) << 16) + ((b) << 8) + (c))
-#ifndef MBEDTLS_VERSION
-#define MBEDTLS_VERSION		MBEDTLS_VERSION_CONVERT(2,16,9)
+#ifndef CONFIG_MBEDTLS_VERSION
+#define CONFIG_MBEDTLS_VERSION		MBEDTLS_VERSION_CONVERT(2,16,9)
 #endif
 #if defined(CONFIG_802154_THREAD_EN)
+#include "platform_stdlib.h"
+#include "basic_types.h"
 #include "mbedtls/config_thread.h"
 #elif defined(CONFIG_SSL_ROM)
 #include <section_config.h>

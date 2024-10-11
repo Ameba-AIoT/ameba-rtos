@@ -1,4 +1,48 @@
+################### ROM LIB ##################
+if(CONFIG_AMEBADPLUS_A_CUT)
+    set(ROM_LIB_DIR  ${PROJECTDIR}/asdk/lib/amebadplus_rom_acut)
+elseif(CONFIG_AMEBADPLUS_B_CUT)
+    set(ROM_LIB_DIR ${PROJECTDIR}/asdk/lib/amebadplus_rom_bcut)
+else()
+
+endif()
+
+if(CONFIG_LINK_ROM_SYMB)
+    set(LINK_ROM_LIB)
+    set(LINK_ROM_LIB_NS)
+    set(LINK_ROM_SYMBOL_NS ${LDDIR}/ameba_rom_symbol_acut.ld)
+    set(LINK_ROM_SYMBOL_S  ${LDDIR}/ameba_rom_symbol_acut_s.ld)
+else()
+    set(LINK_ROM_LIB ${ROM_LIB_DIR}/rom.a)
+    set(LINK_ROM_LIB_NS ${ROM_LIB_DIR}/rom_ns.a)
+    set(LINK_ROM_SYMBOL_NS ${LDDIR}/ameba_rom_symbol_empty.ld)
+    set(LINK_ROM_SYMBOL_S ${LDDIR}/ameba_rom_symbol_empty.ld)
+endif()
+
+list(
+    APPEND LINK_ROM_LIB
+    ${TARGET_LIBSOC_FOLDER}/lib_chipinfo.a
+)
+
+list(
+    APPEND LINK_ROM_LIB_NS
+    ${TARGET_LIBSOC_FOLDER}/lib_chipinfo.a
+)
+
+set(LINK_ROM_SYMBOL_STDLIB ${LDDIR}/ameba_rom_symbol_stdlib.ld)
+
+################### LOADER LIB ##################
+set(
+    LINK_LOADER_LIB
+    ${TARGET_LIBSOC_FOLDER}/lib_bootloader.a
+    ${TARGET_LIBSOC_FOLDER}/lib_crashdump.a
+)
+
+################### APP LIB ##################
 set(APP_LIB_DIR ${TARGET_LIBAPP_FOLDER})
+set(LINK_APP_LIB)
+set(LINK_THIRD_APP_LIB)
+
 if(CONFIG_AUDIO_EN)
     list(
         APPEND LINK_APP_LIB
@@ -87,7 +131,7 @@ if(CONFIG_WLAN)
             APPEND LINK_APP_LIB
             ${APP_LIB}
         )
-    elseif(CONFIG_AS_INIC_AP)
+    elseif(CONFIG_AS_INIC_NP)
         if(CONFIG_MP_INCLUDED)
             list(
                 APPEND LINK_APP_LIB
@@ -213,55 +257,13 @@ list(
     ${APP_LIB_DIR}/lib_ui_drivers.a
 )
 
-#make libs
-if(CONFIG_WLAN)
-    if(CONFIG_AS_INIC_AP)
-        add_subdirectory(network/httpc)
-        add_subdirectory(network/httpd)
-        add_subdirectory(network/websocket)
-        add_subdirectory(network/ipnat)
-        add_subdirectory(network/ipdnrd)
-        add_subdirectory(network/tftp)
-    elseif(CONFIG_AS_INIC_NP)
-        add_subdirectory(rtk_coex)
-    elseif(CONFIG_SINGLE_CORE_WIFI)
-        add_subdirectory(network/httpc)
-        add_subdirectory(network/httpd)
-        add_subdirectory(network/websocket)
-        add_subdirectory(network/ipnat)
-        add_subdirectory(network/ipdnrd)
-        add_subdirectory(network/tftp)
-        add_subdirectory(rtk_coex)
-    endif()
+############# WIFI LIB #############
+
+include(${WIFIMAKEDIR}/wifilib.cmake)
+
+############# WPAN LIB #############
+
+if(CONFIG_802154_EN)
+	include(make/wpan/wpanlib.cmake)
 endif()
 
-if(CONFIG_AUDIO_EN)
-    add_subdirectory(cmsis-dsp)
-    add_subdirectory(audio/ac3)
-    add_subdirectory(audio/amr)
-    add_subdirectory(audio/flac)
-    add_subdirectory(audio/haac)
-    add_subdirectory(audio/hmp3)
-    add_subdirectory(audio/mp3)
-    add_subdirectory(audio/gsm610)
-    add_subdirectory(audio/ekho)
-    add_subdirectory(audio/libogg-1.3.3)
-    add_subdirectory(audio/opus-1.3.1)
-    add_subdirectory(audio/opusfile-0.11)
-    add_subdirectory(audio/libopusenc-0.2.1)
-    add_subdirectory(audio/m4a_selfparse)
-endif()
-
-add_subdirectory(usb_otg/device/lib)
-
-if(CONFIG_WFA_SRC)
-    add_subdirectory(application/wifi-audio-src)
-endif()
-
-if(CONFIG_WLAN)
-    if(CONFIG_WIFI_FW_EN)
-        add_subdirectory(target/wifi_fw)
-    endif()
-endif()
-
-add_subdirectory(ui/drivers)

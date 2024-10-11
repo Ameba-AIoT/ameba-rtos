@@ -23,7 +23,7 @@
   * @note 	KM0 does not support interrupts for timers 0/1/8/9
   */
 int TIMx_irq[TimerNum] = {
-#if defined (ARM_CORE_CM4) || defined(ARM_CORE_CA32)
+#if defined (CONFIG_ARM_CORE_CM4) || defined(CONFIG_ARM_CORE_CA32)
 	TIMER0_IRQ,
 	TIMER1_IRQ,
 
@@ -34,7 +34,7 @@ int TIMx_irq[TimerNum] = {
 	TIMER5_IRQ,
 	TIMER6_IRQ,
 	TIMER7_IRQ,
-#if defined(ARM_CORE_CM4) || defined(ARM_CORE_CA32)
+#if defined(CONFIG_ARM_CORE_CM4) || defined(CONFIG_ARM_CORE_CA32)
 	TIMER8_IRQ,
 	TIMER9_IRQ,
 #endif

@@ -1,6 +1,6 @@
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: all lib clean
+.PHONY: all clean
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #
@@ -13,10 +13,10 @@ OBJS =
 #*****************************************************************************#
 
 # Define the Rules to build the core targets
-lib: CORE_TARGETS
-	make -C cst328 lib
-	make -C st7701s lib
-	make -C xip lib
+all: CORE_TARGETS
+	make -C cst328 all
+	make -C st7701s all
+	make -C xip all
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE

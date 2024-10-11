@@ -1,5 +1,5 @@
-set(DIR ${BASEDIR}/component/lwip/lwip_v2.1.2/src/core/ipv4/ip_nat)
-set(MODULE_IFLAGS ${BASEDIR}/component/lwip/lwip_v2.1.2/src/core/ipv4/ip_nat)
+set(DIR ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/core/ipv4/ip_nat)
+set(MODULE_IFLAGS ${BASEDIR}/component/lwip/lwip_${LWIP_VER}/src/core/ipv4/ip_nat)
 
 set(
     CSRC 

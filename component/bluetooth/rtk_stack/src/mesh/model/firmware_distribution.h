@@ -30,41 +30,41 @@ BEGIN_DECLS
  * @{
  */
 
-/* firmware distribution server capabilites */
-#define FW_DIST_CPAS_MAX_DIST_RECVS_LIST_SIZE                 2
-#define FW_DIST_CPAS_MAX_FW_IMAGES_LIST_SIZE                  2
-#define FW_DIST_CPAS_MAX_FW_IMAGE_SIZE                        5000
-#define FW_DIST_CPAS_MAX_UPLOAD_SPACE                         10000
-#define FW_DIST_CPAS_OOB_RETRIEVAL_SUPPORTED                  1
-
+/* firmware distribution server capabilities */
+#define FW_DIST_CAPS_MAX_DIST_RECVS_LIST_SIZE                 20
+#define FW_DIST_CAPS_MAX_FW_IMAGES_LIST_SIZE                  2
+#define FW_DIST_CAPS_MAX_FW_IMAGE_SIZE                        307200
+#define FW_DIST_CAPS_MAX_UPLOAD_SPACE                         512000
+#define FW_DIST_CAPS_OOB_RETRIEVAL_SUPPORTED                  0
 
 /**
  * @defgroup FIRMWARE_DISTRIBUTION_ACCESS_OPCODE Access Opcode
  * @brief Mesh message access opcode
  * @{
  */
-#define MESH_MSG_FW_DIST_RECVS_ADD                      0x6F
-#define MESH_MSG_FW_DIST_RECVS_DELETE_ALL               0xB720
-#define MESH_MSG_FW_DIST_RECVS_STATUS                   0xB721
-#define MESH_MSG_FW_DIST_RECVS_GET                      0xB722
-#define MESH_MSG_FW_DIST_RECVS_LIST                     0x6E
-#define MESH_MSG_FW_DIST_CAPS_GET                       0xB723
-#define MESH_MSG_FW_DIST_CAPS_STATUS                    0x6D
-#define MESH_MSG_FW_DIST_GET                            0xB724
-#define MESH_MSG_FW_DIST_START                          0x6C
-#define MESH_MSG_FW_DIST_CANCEL                         0xB725
-#define MESH_MSG_FW_DIST_APPLY                          0xB726
-#define MESH_MSG_FW_DIST_STATUS                         0x6B
-#define MESH_MSG_FW_DIST_UPLOAD_GET                     0xB727
-#define MESH_MSG_FW_DIST_UPLOAD_START                   0x6A
-#define MESH_MSG_FW_DIST_UPLOAD_OOB_START               0x60
-#define MESH_MSG_FW_DIST_UPLOAD_CANCEL                  0xB728
-#define MESH_MSG_FW_DIST_UPLOAD_STATUS                  0x5F
-#define MESH_MSG_FW_DIST_FW_GET                         0x5E
-#define MESH_MSG_FW_DIST_FW_GET_BY_INDEX                0xB729
-#define MESH_MSG_FW_DIST_FW_DELETE                      0x5D
-#define MESH_MSG_FW_DIST_FW_DELETE_ALL                  0xB72A
-#define MESH_MSG_FW_DIST_FW_STATUS                      0x5C
+#define MESH_MSG_FW_DIST_RECVS_ADD                      0x8311
+#define MESH_MSG_FW_DIST_RECVS_DELETE_ALL               0x8312
+#define MESH_MSG_FW_DIST_RECVS_STATUS                   0x8313
+#define MESH_MSG_FW_DIST_RECVS_GET                      0x8314
+#define MESH_MSG_FW_DIST_RECVS_LIST                     0x8315
+#define MESH_MSG_FW_DIST_CAPS_GET                       0x8316
+#define MESH_MSG_FW_DIST_CAPS_STATUS                    0x8317
+#define MESH_MSG_FW_DIST_GET                            0x8318
+#define MESH_MSG_FW_DIST_START                          0x8319
+#define MESH_MSG_FW_DIST_SUSPEND                        0x831A
+#define MESH_MSG_FW_DIST_CANCEL                         0x831B
+#define MESH_MSG_FW_DIST_APPLY                          0x831C
+#define MESH_MSG_FW_DIST_STATUS                         0x831D
+#define MESH_MSG_FW_DIST_UPLOAD_GET                     0x831E
+#define MESH_MSG_FW_DIST_UPLOAD_START                   0x831F
+#define MESH_MSG_FW_DIST_UPLOAD_OOB_START               0x8320
+#define MESH_MSG_FW_DIST_UPLOAD_CANCEL                  0x8321
+#define MESH_MSG_FW_DIST_UPLOAD_STATUS                  0x8322
+#define MESH_MSG_FW_DIST_FW_GET                         0x8323
+#define MESH_MSG_FW_DIST_FW_GET_BY_INDEX                0x8324
+#define MESH_MSG_FW_DIST_FW_DELETE                      0x8325
+#define MESH_MSG_FW_DIST_FW_DELETE_ALL                  0x8326
+#define MESH_MSG_FW_DIST_FW_STATUS                      0x8327
 /** @} */
 
 /**
@@ -72,8 +72,8 @@ BEGIN_DECLS
  * @brief Mesh model id
  * @{
  */
-#define MESH_MODEL_FW_DIST_SERVER                       0xBF46FFFF
-#define MESH_MODEL_FW_DIST_CLIENT                       0xBF47FFFF
+#define MESH_MODEL_FW_DIST_SERVER                       0x1404FFFF
+#define MESH_MODEL_FW_DIST_CLIENT                       0x1405FFFF
 /** @} */
 
 /**
@@ -93,45 +93,55 @@ typedef struct
 
 enum
 {
-    FW_DIST_PHASE_IDLE,
-    FW_DIST_PHASE_TRANSFER_ACTIVE,
-    FW_DIST_PHASE_TRANSFER_SUCCESS,
-    FW_DIST_PHASE_APPLYING_UPDATE,
-    FW_DIST_PHASE_COMPLETED,
-    FW_DIST_PHASE_FAILED,
-    FW_DIST_PHASE_CANCELING_UPDATE,
+    FW_DIST_PHASE_IDLE,                 // No firmware distribution is in progress
+    FW_DIST_PHASE_TRANSFER_ACTIVE,      // Firmware distribution is in progress
+    FW_DIST_PHASE_TRANSFER_SUCCESS,     // The Transfer BLOB procedure has completed successfully
+    FW_DIST_PHASE_APPLYING_UPDATE,      // The Apply Firmware On Target Nodes procedure is being executed
+    FW_DIST_PHASE_COMPLETED,            // The Distribute Firmware procedure has completed successfully
+    FW_DIST_PHASE_FAILED,               // The Distribute Firmware procedure has failed
+    FW_DIST_PHASE_CANCELING_UPDATE,     // The Cancel Firmware Update procedure is being executed
+    FW_DIST_PHASE_TRANSFER_SUSPENDED,   // The Transfer BLOB procedure is suspended
 } _SHORT_ENUM_;
 typedef uint8_t fw_dist_phase_t;
 
 enum
 {
-    FW_UPLOAD_PHASE_IDLE,
-    FW_UPLOAD_PHASE_TRANSFER_ACTIVE,
-    FW_UPLOAD_PHASE_OOB_TRANSFER_ACTIVE,
-    FW_UPLOAD_PHASE_TRANSFER_ERR,
-    FW_UPLOAD_PHASE_TRANSFER_SUCCESS,
+    FW_UPLOAD_PHASE_IDLE,               // No firmware upload is in progress
+    FW_UPLOAD_PHASE_TRANSFER_ACTIVE,    // The Store Firmware or Store Firmware OOB procedure is being executed
+    FW_UPLOAD_PHASE_TRANSFER_ERR,       // The Store Firmware procedure or Store Firmware OOB procedure failed
+    FW_UPLOAD_PHASE_TRANSFER_SUCCESS,   // The Store Firmware procedure or the Store Firmware OOB procedure completed successfully
 } _SHORT_ENUM_;
 typedef uint8_t fw_upload_phase_t;
 
 enum
 {
-    FW_DIST_STATUS_SUCCESS,
-    FW_DIST_STATUS_INSUFFICIENT_RESOURCES,
-    FW_DIST_STATUS_WRONG_PHASE,
-    FW_DIST_STATUS_INTERNAL_ERR,
-    FW_DIST_STATUS_FW_NOT_FOUND,
-    FW_DIST_STATUS_INVALID_APP_KEY_INDEX,
-    FW_DIST_STATUS_RECEIVERS_LIST_EMPTY,
-    FW_DIST_STATUS_BUSY_WITH_DIST,
-    FW_DIST_STATUS_BUSY_WITH_UPLOAD,
-    FW_DIST_STATUS_URI_NOT_SUPPORTED,
-    FW_DIST_STATUS_URI_MALFORMED,
+    FW_DIST_STATUS_SUCCESS,                 // The message was processed successfully
+    FW_DIST_STATUS_INSUFFICIENT_RESOURCES,  // Insufficient resources on the nod
+    FW_DIST_STATUS_WRONG_PHASE,             // The operation cannot be performed while the server is in the current phase
+    FW_DIST_STATUS_INTERNAL_ERR,            // An internal error occurred on the node
+    FW_DIST_STATUS_FW_NOT_FOUND,            // The requested firmware image is not stored on the Distributor
+    FW_DIST_STATUS_INVALID_APP_KEY_INDEX,   // The AppKey identified by the AppKey Index is not known to the node
+    FW_DIST_STATUS_RECEIVERS_LIST_EMPTY,    // There are no Target nodes in the Distribution Receivers List state
+    FW_DIST_STATUS_BUSY_WITH_DIST,          // Another firmware image distribution is in progress
+    FW_DIST_STATUS_BUSY_WITH_UPLOAD,        // Another upload is in progress
+    FW_DIST_STATUS_URI_NOT_SUPPORTED,       // The URI scheme name indicated by the Update URI is not supported
+    FW_DIST_STATUS_URI_MALFORMED,           // The format of the Update URI is invalid
+    FW_DIST_STATUS_URI_UNREACHABLE,         // The URI is unreachable
+    FW_DIST_STATUS_NEW_FW_NOT_AVAILABLE,    // The Check Firmware OOB procedure did not find any new firmware
+    FW_DIST_STATUS_SUSPEND_FAILED,          // The suspension of the Distribute Firmware procedure failed
 } _SHORT_ENUM_;
 typedef uint8_t fw_dist_status_code_t;
 
 enum
 {
+    /* The Firmware Distribution Server verifies that firmware image
+       distribution completed successfully but does not apply the update. The
+       Initiator (the Firmware Distribution Client) initiates firmware image
+       application */
     FW_UPDATE_POLICY_VERIFY_ONLY,
+    /* The Firmware Distribution Server verifies that firmware image
+       distribution completed successfully and then applies the firmware
+       update */
     FW_UPDATE_POLICY_VERIFY_AND_UPDATE,
 } _SHORT_ENUM_;
 typedef uint8_t fw_update_policy_t;
@@ -195,15 +205,22 @@ typedef struct
     uint16_t max_dist_recvs_list_size;
     uint16_t max_fw_images_list_size;
     uint32_t max_fw_image_size;
-    uint32_t max_upload_spcace;
+    uint32_t max_upload_space;
     uint32_t remaining_upload_space;
     uint8_t oob_retrieval_supported;
-} _PACKED4_ fw_dist_caps_t;
+    uint8_t *psupported_uri_scheme_names;
+    uint16_t supported_uri_scheme_names_len;
+} fw_dist_caps_t;
 
 typedef struct
 {
     uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_FW_DIST_CAPS_STATUS)];
-    fw_dist_caps_t dist_caps;
+    uint16_t max_dist_recvs_list_size;
+    uint16_t max_fw_images_list_size;
+    uint32_t max_fw_image_size;
+    uint32_t max_upload_space;
+    uint32_t remaining_upload_space;
+    uint8_t oob_retrieval_supported;
     uint8_t supported_uri_scheme_names[0];
 } _PACKED4_ fw_dist_caps_status_t;
 
@@ -236,6 +253,11 @@ typedef struct
     uint16_t dist_fw_image_idx;
     uint8_t dist_multicast_addr[16];
 } _PACKED4_ fw_dist_start_t;
+
+typedef struct
+{
+    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_FW_DIST_SUSPEND)];
+} _PACKED4_ fw_dist_suspend_t;
 
 typedef struct
 {
@@ -295,7 +317,8 @@ typedef struct
     uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_FW_DIST_UPLOAD_STATUS)];
     uint8_t status;
     fw_upload_phase_t phase;
-    uint8_t upload_progress;
+    uint8_t upload_progress : 7;
+    uint8_t upload_type : 1;
     uint8_t upload_fw_id[0];
 } _PACKED4_ fw_dist_upload_status_t;
 
@@ -332,20 +355,26 @@ typedef struct
 } _PACKED4_ fw_dist_fw_status_t;
 /** @} */
 
-/**
- * @defgroup FIRMWARE_DISTRIBUTION_SERVER_DATA Server Data
- * @brief Data types and structure used by data process callback
- * @{
- */
+typedef struct _fw_dist_update_node_t
+{
+    struct _fw_dist_update_node_t *pnext;
+    fw_dist_receiver_t receiver;
+} fw_dist_update_node_t, *fw_dist_update_node_p;
+
+typedef struct _fw_image_e_t
+{
+    struct _fw_image_e_t *pnext;
+    fw_image_t image;
+    uint32_t dfu_image_size;
+} fw_image_e_t, *fw_image_e_p;
 
 typedef struct
 {
     fw_dist_caps_t caps;
-    uint8_t *psupported_uri_scheme_names;
-    uint16_t uri_scheme_names_len;
-    plt_list_t dist_update_node_list;
-    plt_list_t dist_fw_image_list;
+    plt_list_t dist_update_node_list;   //!< @ref fw_dist_update_node_t
+    plt_list_t dist_fw_image_list;      //!< @ref fw_image_e_t
     fw_dist_phase_t dist_phase;
+
     /* distribution parameters */
     uint16_t dist_multicast_addr;
     uint16_t dist_app_key_index;
@@ -354,8 +383,10 @@ typedef struct
     uint8_t dist_transfer_mode;
     fw_update_policy_t dist_update_policy;
     uint16_t dist_fw_image_index;
+
     /* upload parameters */
     fw_upload_phase_t upload_phase;
+    bool upload_oob;
     uint8_t upload_ttl;
     uint16_t upload_timeout_base;
     uint8_t upload_blob_id[8];
@@ -368,18 +399,25 @@ typedef struct
 
 extern fw_dist_server_ctx_t fw_dist_server_ctx;
 
+/**
+ * @defgroup FIRMWARE_DISTRIBUTION_SERVER_DATA Server Data
+ * @brief Data types and structure used by data process callback
+ * @{
+ */
 
-#define FW_DIST_SERVER_START                                    0 //!< @ref fw_dist_server_start_t
-#define FW_DIST_SERVER_CANCEL                                   1 //!< @ref NULL
-#define FW_DIST_SERVER_APPLY                                    2 //!< @ref NULL
-#define FW_DIST_SERVER_UPLOAD_START                             3 //!< @ref fw_dist_server_upload_start_t
-#define FW_DIST_SERVER_UPLOAD_OOB_START                         4 //!< @ref fw_dist_server_upload_oob_start_t
-#define FW_DIST_SERVER_UPLOAD_BLOCK_DATA                        5 //!< @ref fw_dist_server_upload_block_data_t
-#define FW_DIST_SERVER_UPLOAD_COMPLETE                          6 //!< @ref NULL
-#define FW_DIST_SERVER_UPLOAD_FAIL                              7 //!< @ref fw_dist_server_upload_fail_t
-#define FW_DIST_SERVER_FW_DELETE                                8 //!< @ref fw_dist_server_fw_delete_t
-#define FW_DIST_SERVER_FW_DELETE_ALL                            9 //!< @ref NULL
-#define FW_DIST_SERVER_URI_CHECK                                10 //!< @ref fw_dist_server_uri_check_t
+#define FW_DIST_SERVER_START                    0   //!< @ref fw_dist_server_start_t
+#define FW_DIST_SERVER_SUSPEND                  1   //!< @ref NULL
+#define FW_DIST_SERVER_CANCEL                   2   //!< @ref NULL
+#define FW_DIST_SERVER_APPLY                    3   //!< @ref NULL
+#define FW_DIST_SERVER_UPLOAD_START             4   //!< @ref fw_dist_server_upload_start_t
+#define FW_DIST_SERVER_UPLOAD_OOB_START         5   //!< @ref fw_dist_server_upload_oob_start_t
+#define FW_DIST_SERVER_UPLOAD_BLOCK_DATA        6   //!< @ref fw_dist_server_upload_block_data_t
+#define FW_DIST_SERVER_UPLOAD_COMPLETE          7   //!< @ref NULL
+#define FW_DIST_SERVER_UPLOAD_FAIL              8   //!< @ref fw_dist_server_upload_fail_t
+#define FW_DIST_SERVER_FW_DELETE                9   //!< @ref fw_dist_server_fw_delete_t
+#define FW_DIST_SERVER_FW_DELETE_ALL            10  //!< @ref NULL
+#define FW_DIST_SERVER_URI_CHECK                11  //!< @ref fw_dist_server_uri_check_t
+#define FW_DIST_SERVER_UPDATE_NODE_STATUS_GET   12  //!< @ref fw_dist_server_update_node_status_get_t
 
 typedef struct
 {
@@ -390,6 +428,8 @@ typedef struct
     uint8_t dist_update_policy;
     uint16_t dist_fw_image_index;
     uint16_t dist_multicast_addr;
+    uint16_t receiver_num;
+    fw_dist_receiver_t *preceiver;
 } fw_dist_server_start_t;
 
 typedef struct
@@ -416,7 +456,7 @@ typedef struct
 {
     uint16_t block_num;
     uint8_t *pdata;
-    uint16_t data_len;
+    uint32_t data_len;
 } fw_dist_server_upload_block_data_t;
 
 typedef enum
@@ -445,6 +485,11 @@ typedef struct
     /* app should modify this filed */
     fw_dist_status_code_t *pstatus;
 } fw_dist_server_uri_check_t;
+
+typedef struct
+{
+    fw_update_node_t *pnode;
+} fw_dist_server_update_node_status_get_t;
 
 /** @} */
 
@@ -480,8 +525,6 @@ typedef struct
 {
     uint16_t src;
     fw_dist_caps_t dist_caps;
-    uint8_t *psupported_uri_scheme_names;
-    uint8_t names_len;
 } fw_dist_client_caps_status_t;
 
 typedef struct
@@ -505,6 +548,7 @@ typedef struct
     uint8_t status;
     fw_upload_phase_t phase;
     uint8_t upload_progress;
+    bool upload_oob;
     uint8_t *pupload_fw_id;
     uint8_t upload_fw_id_len;
 } fw_dist_client_upload_status_t;
@@ -536,11 +580,23 @@ typedef struct
 bool fw_dist_server_reg(uint8_t element_index, model_data_cb_pf model_data_cb);
 
 /**
- * @brief add receiver to firmware distribution server
- * @param[in] preceiver: receiver to add
- * @return add status
+ * @brief set firmware distribution server capabilities
+ * @param[in] pcaps: server capabilities
  */
-bool fw_dist_server_add_receiver(fw_dist_receiver_t *preceiver);
+void fw_dist_server_caps_set(fw_dist_caps_t *pcaps);
+
+/**
+ * @brief get firmware distribution server capabilities
+ * @return fw_dist_caps_t
+ */
+fw_dist_caps_t fw_dist_server_caps_get(void);
+
+/**
+ * @brief get image information
+ * @param[in] index: image index
+ * @return image pointer
+ */
+fw_image_e_p fw_dist_server_get_image_by_index(uint16_t index);
 
 /**
  * @brief check whether receiver is empty
@@ -574,11 +630,6 @@ void fw_dist_server_delete_all_image(void);
 bool fw_dist_server_delete_image(uint8_t *pfw_id, uint8_t fw_id_len);
 
 /**
- * @brief finish cancel firmware distribution server
- */
-void fw_dist_server_cancel_done(void);
-
-/**
  * @brief handle blob transfer server data
  * @param[in] pmodel_info: pointer to blob transfer server model
  * @param[in] type: data callback message type
@@ -591,7 +642,7 @@ int32_t fw_dist_handle_blob_server_data(const mesh_model_info_p pmodel_info, uin
 /**
  * @brief start firmware distribution
  * @param[in] app_key_index: app key index
- * @param[in] updata_ttl: update ttl
+ * @param[in] update_ttl: update ttl
  * @param[in] update_timeout_base: update timeout base value
  * @param[in] blob_id: blob id value
  * @param[in] pfw_metadata: firmware metadata
@@ -617,17 +668,6 @@ void fw_dist_server_set_upload_recvd_size(uint32_t upload_recvd_size);
  */
 void fw_dist_server_upload_oob_done(bool success);
 
-/**
- * @brief set node updating status
- * @param[in] precv: node
- * @param[in] update_phase: node update phase
- * @param[in] update_status: node update status
- * @param[in] trans_status: node transfer status
- * @param[in] progress: node update progress, range is 0-100
-*/
-void fw_dist_server_set_updating_status(fw_dist_receiver_t *precv, fw_update_phase_t update_phase,
-                                        fw_update_status_code_t update_status, blob_transfer_status_code_t trans_status,
-                                        uint8_t trans_progres);
 /** @} */
 
 /**
@@ -675,7 +715,7 @@ mesh_msg_send_cause_t fw_dist_recvs_get(uint16_t dst, uint16_t app_key_index, ui
                                         uint16_t entries_limit);
 
 /**
- * @brief get firmware distribution server capabilites
+ * @brief get firmware distribution server capabilities
  * @param[in] dst: remote address
  * @param[in] app_key_index: app key index
  * @return send status
@@ -700,6 +740,14 @@ mesh_msg_send_cause_t fw_dist_get(uint16_t dst, uint16_t app_key_index);
  */
 mesh_msg_send_cause_t fw_dist_start(uint16_t dst, uint16_t app_key_index,
                                     fw_dist_start_data_t start, uint8_t dist_dst_len);
+
+/**
+ * @brief suspend firmware distribution
+ * @param[in] dst: remote address
+ * @param[in] app_key_index: app key index
+ * @return send status
+ */
+mesh_msg_send_cause_t fw_dist_suspend(uint16_t dst, uint16_t app_key_index);
 
 /**
  * @brief cancel firmware distribution

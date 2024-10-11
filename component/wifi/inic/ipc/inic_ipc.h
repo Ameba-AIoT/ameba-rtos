@@ -33,6 +33,17 @@
 #endif
 
 /* -------------------------------- Defines --------------------------------- */
+/*msg q task*/
+#define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
+#if defined(CONFIG_AS_INIC_AP)
+#define WIFI_STACK_SIZE_INIC_MSG_Q	(600 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
+#elif defined(CONFIG_AS_INIC_NP)
+#define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
+#endif
+
+/*host api task*/
+#define CONFIG_INIC_IPC_HOST_API_PRIO 3
+#define WIFI_STACK_SIZE_INIC_IPC_HST_API (2848 + 128 + CONTEXT_SAVE_SIZE)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
 
 /* -------------------------------- Macros ---------------------------------- */
 #define FLAG_WLAN_IF_NOT_RUNNING		0xFFFFFFFF
@@ -105,9 +116,9 @@ void inic_api_dev_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 void inic_wifi_event_indicate(int event_cmd, char *buf, int buf_len, int flags);
 void inic_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void inic_acs_info_indicate(struct acs_mntr_rpt *acs_mntr_rpt);
-void inic_scan_each_report_user_callback_indicate(rtw_scan_result_t *scanned_ap_info, void *user_data);
-enum _promisc_result_t inic_promisc_callback_indicate(void *pkt_info);
-void inic_ap_ch_switch_callback_indicate(unsigned char channel, enum rtw_channel_switch_res ret);
+void inic_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
+u8 inic_promisc_callback_indicate(struct rx_pkt_info *pkt_info);
+void inic_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 int inic_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int inic_get_lwip_info(u32 type, unsigned char *input, int index);
 u64 inic_host_get_wifi_tsf(unsigned char port_id);

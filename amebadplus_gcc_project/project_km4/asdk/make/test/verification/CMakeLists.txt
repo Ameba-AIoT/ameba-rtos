@@ -1,37 +1,37 @@
 set(DIR ${TARGETDIR}/verification)
 set(MODULE_IFLAGS ${DIR}./  ${BASEDIR}/component/application/ir)
-set(CFGDIR $(TARGETDIR)/usrcfg)
+set(CFGDIR ${TARGETDIR}/usrcfg)
 
 set(CSRC)
 
 if(CONFIG_ADC_VERIFY)
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/adc/ameba_adc_test.c
     )
 endif()
 
 if(CONFIG_CAPTOUCH_VERIFY)
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/captouch/ameba_captouch_test.c
     )
 endif()
 
 if(CONFIG_AF_VERIFY)
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/af/af_test.c
     )
 endif()
 
 if(CONFIG_FT)
     list(
-        APPEND MODULE_IFLAGS 
+        APPEND MODULE_IFLAGS
         ${DIR}/ft_test/adc/
     )
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/ft_test/adc/rtl8195a_ft_adc_dac.c
         ${DIR}/ft_test/adc/rtl8195a_dac_sin_23p84.c
         ${DIR}/ft_test/adc/rtl8195a_i2c_spi_dac.c
@@ -42,12 +42,12 @@ endif()
 
 if(CONFIG_EQC)
     list(
-        APPEND MODULE_IFLAGS 
+        APPEND MODULE_IFLAGS
         ${BASEDIR}/component/usb/common
         ${DIR}/eqc
     )
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/eqc/ameba_eqc.c
         ${DIR}/eqc/ameba_eqc_ext.c
     )
@@ -56,11 +56,11 @@ endif()
 
 if(CONFIG_QA)
     list(
-        APPEND MODULE_IFLAGS 
+        APPEND MODULE_IFLAGS
         ${DIR}/qa_test
     )
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/qa_test/ameba_qa.c
         ${DIR}/qa_test/ameba_gpio_qa_test.c
         ${DIR}/qa_test/ameba_ft_adc_dac_qa_test.c
@@ -73,9 +73,9 @@ endif()
 
 if(CONFIG_OLT)
     list(
-        APPEND MODULE_IFLAGS 
+        APPEND MODULE_IFLAGS
         ${BASEDIR}/component/usb/common
-        $(TARGETDIR)/fwlib/include
+        ${TARGETDIR}/fwlib/include
         ${DIR}/olt_test
     )
     list(
@@ -87,7 +87,7 @@ endif()
 
 if(CONFIG_EMC)
     list(
-        APPEND MODULE_IFLAGS 
+        APPEND MODULE_IFLAGS
         ${DIR}/emc
     )
     list(
@@ -98,9 +98,9 @@ endif()
 
 if(CONFIG_CornerTest)
     list(
-        APPEND MODULE_IFLAGS 
+        APPEND MODULE_IFLAGS
         ${DIR}/corner_test
-        $(TARGETDIR)/fwlib/include
+        ${TARGETDIR}/fwlib/include
     )
     list(
         APPEND CSRC
@@ -559,11 +559,7 @@ if(CONFIG_FLASH_AVL)
     )
 endif()
 
-if(CONFIG_INTERNAL_LIB)
-    ameba_internal_library(test_verification)
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else()
-    set_source_files_properties(${CSRC} DIRECTORY ../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
-    target_sources(target_img2_${PROJECT_NAME} PRIVATE ${CSRC})
-endif()
+
+ameba_internal_library(test_verification)
+target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
