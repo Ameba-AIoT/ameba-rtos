@@ -12,17 +12,17 @@
 */
 
 /* Add Includes here */
-#include <string.h>
 #include "mesh_api.h"
 #include "firmware_distribution.h"
+#include "app_mesh_flags.h"
 
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
 mesh_model_info_t fw_dist_client;
 
 static mesh_msg_send_cause_t fw_dist_server_send(uint16_t dst, uint16_t app_key_index,
                                                  uint8_t *pmsg, uint16_t len)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &fw_dist_client;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -47,7 +47,7 @@ mesh_msg_send_cause_t fw_dist_recvs_add(uint16_t dst, uint16_t app_key_index,
     }
 
     ACCESS_OPCODE_BYTE(pmsg->opcode, MESH_MSG_FW_DIST_RECVS_ADD);
-    memcpy(pmsg->entries, precvs, recvs_len);
+    memcpy(pmsg->entries, precvs, sizeof(fw_dist_receiver_t) * recvs_len);
     mesh_msg_send_cause_t ret = fw_dist_server_send(dst, app_key_index, (uint8_t *)pmsg, msg_len);
     plt_free(pmsg, RAM_TYPE_DATA_ON);
 
@@ -105,6 +105,14 @@ mesh_msg_send_cause_t fw_dist_start(uint16_t dst, uint16_t app_key_index,
 
     return fw_dist_server_send(dst, app_key_index, (uint8_t *)&msg, MEMBER_OFFSET(fw_dist_start_t,
                                                                                   dist_multicast_addr) + dist_dst_len);
+}
+
+mesh_msg_send_cause_t fw_dist_suspend(uint16_t dst, uint16_t app_key_index)
+{
+    fw_dist_suspend_t msg;
+    ACCESS_OPCODE_BYTE(msg.opcode, MESH_MSG_FW_DIST_SUSPEND);
+
+    return fw_dist_server_send(dst, app_key_index, (uint8_t *)&msg, sizeof(msg));
 }
 
 mesh_msg_send_cause_t fw_dist_cancel(uint16_t dst, uint16_t app_key_index)
@@ -259,7 +267,7 @@ bool fw_dist_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_FW_DIST_RECVS_STATUS:
         {
             fw_dist_recvs_status_t *pmsg = (fw_dist_recvs_status_t *)pbuffer;
-            if (NULL != fw_dist_client.model_data_cb)
+            if (fw_dist_client.model_data_cb)
             {
                 fw_dist_client_recvs_status_t status_data;
                 status_data.src = pmesh_msg->src;
@@ -267,14 +275,14 @@ bool fw_dist_client_receive(mesh_msg_p pmesh_msg)
                 status_data.recvs_list_cnt = pmsg->recvs_list_cnt;
                 fw_dist_client.model_data_cb(&fw_dist_client, FW_DIST_CLIENT_RECVS_STATUS, &status_data);
             }
-            data_uart_debug("receive fw dist receivers status: src 0x%04x, status %d, list count %d\r\n",
-                            pmesh_msg->src, pmsg->status, pmsg->recvs_list_cnt);
+            printi("receive fw dist receivers status: src 0x%04x, status %d, list count %d",
+                   pmesh_msg->src, pmsg->status, pmsg->recvs_list_cnt);
         }
         break;
     case MESH_MSG_FW_DIST_RECVS_LIST:
         {
             fw_dist_recvs_list_t *pmsg = (fw_dist_recvs_list_t *)pbuffer;
-            if (NULL != fw_dist_client.model_data_cb)
+            if (fw_dist_client.model_data_cb)
             {
                 fw_dist_client_recvs_list_t list_data;
                 list_data.src = pmesh_msg->src;
@@ -285,16 +293,16 @@ bool fw_dist_client_receive(mesh_msg_p pmesh_msg)
                                             fw_update_node_t);
                 fw_dist_client.model_data_cb(&fw_dist_client, FW_DIST_CLIENT_RECVS_LIST, &list_data);
             }
-            data_uart_debug("receive fw dist receivers list: src 0x%04x, recvs_list_cnt %d, first_index %d\r\n",
-                            pmesh_msg->src, pmsg->recvs_list_cnt, pmsg->first_index);
+            printi("fw dist receivers list: src 0x%04x, recvs_list_cnt %d, first_index %d",
+                   pmesh_msg->src, pmsg->recvs_list_cnt, pmsg->first_index);
 
             fw_update_node_t *pentries = pmsg->entries;
             for (uint8_t i = 0;
                  i < (pmesh_msg->msg_len - sizeof(fw_dist_recvs_list_t)) / sizeof(fw_update_node_t); ++i)
             {
-                data_uart_debug("addr 0x%04x, retrieved_update_phase %d, update_status %d, transfer_status %d, transfer_progress %d, update_fw_image_idx %d\r\n",
-                                pentries->addr, pentries->retrieved_update_phase, pentries->update_status,
-                                pentries->transfer_status, pentries->transfer_progress, pentries->update_fw_image_idx);
+                printi("addr 0x%04x, retrieved_update_phase %d, update_status %d, transfer_status %d, transfer_progress %d, update_fw_image_idx %d",
+                       pentries->addr, pentries->retrieved_update_phase, pentries->update_status,
+                       pentries->transfer_status, pentries->transfer_progress, pentries->update_fw_image_idx);
                 pentries ++;
             }
         }
@@ -302,29 +310,33 @@ bool fw_dist_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_FW_DIST_CAPS_STATUS:
         {
             fw_dist_caps_status_t *pmsg = (fw_dist_caps_status_t *)pbuffer;
-            if (NULL != fw_dist_client.model_data_cb)
+            if (fw_dist_client.model_data_cb)
             {
                 fw_dist_client_caps_status_t status_data;
                 status_data.src = pmesh_msg->src;
-                status_data.dist_caps = pmsg->dist_caps;
-                status_data.psupported_uri_scheme_names = pmsg->supported_uri_scheme_names;
-                status_data.names_len = pmesh_msg->msg_len - sizeof(fw_dist_caps_status_t);
+                status_data.dist_caps.max_dist_recvs_list_size = pmsg->max_dist_recvs_list_size;
+                status_data.dist_caps.max_fw_images_list_size = pmsg->max_fw_images_list_size;
+                status_data.dist_caps.max_fw_image_size = pmsg->max_fw_image_size;
+                status_data.dist_caps.max_upload_space = pmsg->max_upload_space;
+                status_data.dist_caps.remaining_upload_space = pmsg->remaining_upload_space;
+                status_data.dist_caps.oob_retrieval_supported = pmsg->oob_retrieval_supported;
+                status_data.dist_caps.psupported_uri_scheme_names = pmsg->supported_uri_scheme_names;
+                status_data.dist_caps.supported_uri_scheme_names_len = pmesh_msg->msg_len - sizeof(
+                                                                           fw_dist_caps_status_t);
                 fw_dist_client.model_data_cb(&fw_dist_client, FW_DIST_CLIENT_CAPS_STATUS, &status_data);
             }
 
-            data_uart_debug("receive fw dist capabilites: src 0x%04x max_dist_recvs_list_size %d, max_fw_images_list_size %d, max_fw_image_size %d, max_upload_spcace %d, remaining_upload_space %d, oob_retrieval_supported %d, supported_uri_scheme_names = \r\n",
-                            pmesh_msg->src, pmsg->dist_caps.max_dist_recvs_list_size, pmsg->dist_caps.max_fw_images_list_size,
-                            pmsg->dist_caps.max_fw_image_size, pmsg->dist_caps.max_upload_spcace,
-                            pmsg->dist_caps.remaining_upload_space, pmsg->dist_caps.oob_retrieval_supported);
-
-            data_uart_dump(pmsg->supported_uri_scheme_names,
-                           pmesh_msg->msg_len - sizeof(fw_dist_caps_status_t));
+            printi("receive fw dist capabilities: src 0x%04x max_dist_recvs_list_size %d, max_fw_images_list_size %d, max_fw_image_size %d, max_upload_space %d, remaining_upload_space %d, oob_retrieval_supported %d, supported_uri_scheme_names =",
+                   pmesh_msg->src, pmsg->max_dist_recvs_list_size, pmsg->max_fw_images_list_size,
+                   pmsg->max_fw_image_size, pmsg->max_upload_space,
+                   pmsg->remaining_upload_space, pmsg->oob_retrieval_supported);
+            dprinti(pmsg->supported_uri_scheme_names, pmesh_msg->msg_len - sizeof(fw_dist_caps_status_t));
         }
         break;
     case MESH_MSG_FW_DIST_STATUS:
         {
             fw_dist_status_t *pmsg = (fw_dist_status_t *)pbuffer;
-            if (NULL != fw_dist_client.model_data_cb)
+            if (fw_dist_client.model_data_cb)
             {
                 fw_dist_client_dist_status_t status_data;
                 status_data.src = pmesh_msg->src;
@@ -341,37 +353,45 @@ bool fw_dist_client_receive(mesh_msg_p pmesh_msg)
                 fw_dist_client.model_data_cb(&fw_dist_client, FW_DIST_CLIENT_STATUS, &status_data);
             }
 
-            data_uart_debug("receive fw dist status: src 0x%04x, status %d, phase %d, dist_multicast_addr 0x%04x, dist_appkey_index 0x%04x, dist_ttl %d, dist_timeout_base %d, dist_transfer_mode %d, update_policy %d, dist_fw_image_idx %d\r\n",
-                            pmesh_msg->src, pmsg->status, pmsg->phase, pmsg->dist_multicast_addr, pmsg->dist_appkey_index,
-                            pmsg->dist_ttl, pmsg->dist_timeout_base, pmsg->dist_transfer_mode, pmsg->update_policy,
-                            pmsg->dist_fw_image_idx);
+            printi("receive fw dist status: src 0x%04x, status %d, phase %d, dist_multicast_addr 0x%04x, dist_appkey_index 0x%04x, dist_ttl %d, dist_timeout_base %d, dist_transfer_mode %d, update_policy %d, dist_fw_image_idx %d",
+                   pmesh_msg->src, pmsg->status, pmsg->phase, pmsg->dist_multicast_addr, pmsg->dist_appkey_index,
+                   pmsg->dist_ttl, pmsg->dist_timeout_base, pmsg->dist_transfer_mode, pmsg->update_policy,
+                   pmsg->dist_fw_image_idx);
         }
         break;
     case MESH_MSG_FW_DIST_UPLOAD_STATUS:
         {
             fw_dist_upload_status_t *pmsg = (fw_dist_upload_status_t *)pbuffer;
-            if (NULL != fw_dist_client.model_data_cb)
+            if (fw_dist_client.model_data_cb)
             {
                 fw_dist_client_upload_status_t status_data;
                 status_data.src = pmesh_msg->src;
                 status_data.status = pmsg->status;
                 status_data.phase = pmsg->phase;
-                status_data.upload_progress = pmsg->upload_progress;
-                status_data.pupload_fw_id = pmsg->upload_fw_id;
-                status_data.upload_fw_id_len = pmesh_msg->msg_len - sizeof(fw_dist_upload_status_t);
+                if (pmesh_msg->msg_len > (MEMBER_OFFSET(fw_dist_upload_status_t, phase) + 1))
+                {
+                    status_data.upload_progress = pmsg->upload_progress;
+                    status_data.upload_oob = pmsg->upload_type;
+                    if (pmesh_msg->msg_len > sizeof(fw_dist_upload_status_t))
+                    {
+                        status_data.pupload_fw_id = pmsg->upload_fw_id;
+                        status_data.upload_fw_id_len = pmesh_msg->msg_len - sizeof(fw_dist_upload_status_t);
+                    }
 
+                }
                 fw_dist_client.model_data_cb(&fw_dist_client, FW_DIST_CLIENT_UPLOAD_STATUS, &status_data);
             }
 
-            data_uart_debug("receive fw dist upload status: src 0x%04x, status %d, phase %d, upload_progress %d, upload_fw_id = ",
-                            pmesh_msg->src, pmsg->status, pmsg->phase, pmsg->upload_progress);
-            data_uart_dump(pmsg->upload_fw_id, pmesh_msg->msg_len - sizeof(fw_dist_upload_status_t));
+            printi("receive fw dist upload status: src 0x%04x, status %d, phase %d, upload_progress %d, upload oob %d, upload_fw_id =",
+                   pmesh_msg->src, pmsg->status, pmsg->phase, pmsg->upload_progress, pmsg->upload_type);
+            dprinti(pmsg->upload_fw_id, pmesh_msg->msg_len > sizeof(fw_dist_upload_status_t) ?
+                    (pmesh_msg->msg_len > sizeof(fw_dist_upload_status_t)) : 0);
         }
         break;
     case MESH_MSG_FW_DIST_FW_STATUS:
         {
             fw_dist_fw_status_t *pmsg = (fw_dist_fw_status_t *)pbuffer;
-            if (NULL != fw_dist_client.model_data_cb)
+            if (fw_dist_client.model_data_cb)
             {
                 fw_dist_client_fw_status_t status_data;
                 status_data.src = pmesh_msg->src;
@@ -384,9 +404,9 @@ bool fw_dist_client_receive(mesh_msg_p pmesh_msg)
                 fw_dist_client.model_data_cb(&fw_dist_client, FW_DIST_CLIENT_FW_STATUS, &status_data);
             }
 
-            data_uart_debug("receive fw dist fw status: src 0x%04x, status %d, entry_cnt %d, dw_fw_image_idx %d, fw_id = ",
-                            pmesh_msg->src, pmsg->status, pmsg->entry_cnt, pmsg->dist_fw_image_idx);
-            data_uart_dump(pmsg->fw_id, pmesh_msg->msg_len - sizeof(fw_dist_fw_status_t));
+            printi("receive fw dist fw status: src 0x%04x, status %d, entry_cnt %d, dw_fw_image_idx %d, fw_id =",
+                   pmesh_msg->src, pmsg->status, pmsg->entry_cnt, pmsg->dist_fw_image_idx);
+            dprinti(pmsg->fw_id, pmesh_msg->msg_len - sizeof(fw_dist_fw_status_t));
         }
         break;
     default:

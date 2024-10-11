@@ -40,13 +40,15 @@ typedef struct
 
 int16_t light_ctl_temperature_to_generic_level(uint16_t temperature)
 {
-    return (temperature - LIGHT_CTL_TEMPERATURE_LOWER_LIMIT) * 65535.0 / LIGHT_CTL_TEMPERATURE_DELTA -
+    return DIVISION_ROUND((temperature - LIGHT_CTL_TEMPERATURE_LOWER_LIMIT) * 65535,
+                          LIGHT_CTL_TEMPERATURE_DELTA) -
            32768;
 }
 
 uint16_t generic_level_to_light_ctl_temperature(int16_t level)
 {
-    return LIGHT_CTL_TEMPERATURE_LOWER_LIMIT + (level + 32768) / 65535.0 * LIGHT_CTL_TEMPERATURE_DELTA;
+    return LIGHT_CTL_TEMPERATURE_LOWER_LIMIT + DIVISION_ROUND((level + 32768) *
+                                                              LIGHT_CTL_TEMPERATURE_DELTA, 65535);
 }
 
 float light_ctl_delta_uv_to_represented_delta_uv(int16_t delta_uv)
@@ -63,7 +65,7 @@ static mesh_msg_send_cause_t light_ctl_server_send(mesh_model_info_p pmodel_info
                                                    uint8_t *pmsg, uint16_t msg_len, uint16_t app_key_index,
                                                    uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;

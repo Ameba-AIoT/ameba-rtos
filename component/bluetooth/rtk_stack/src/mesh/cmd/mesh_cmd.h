@@ -160,6 +160,12 @@ extern "C"  {
      user_cmd_proxy_cfg_remove_addr\
     },\
     {\
+     "pcdpc",\
+     "pcdpc [use directed] [addr] [second elem]\n\r",\
+     "proxy cfg directed proxy control\n\r",\
+     user_cmd_proxy_cfg_directed_proxy_control\
+    },\
+    {\
      "log",\
      "log [bit0: lower, bit1: upper, bit2: mesh]\n\r",\
      "log level setting\n\r",\
@@ -190,6 +196,12 @@ extern "C"  {
      user_cmd_fn_deinit\
     },\
     {\
+     "dfudis",\
+     "dfudis [conn id]\n\r",\
+     "Start discovery dfu service\n\r",\
+     user_cmd_dfu_start_discover\
+    },\
+    {\
      "hbpub",\
      "hbpub [dst] [count] [period]\n\r",\
      "Publish heartbeat\n\r",\
@@ -206,7 +218,55 @@ extern "C"  {
      "md\n\r",\
      "mesh deinit\n\r",\
      user_cmd_mesh_deinit\
-    }
+    },\
+    {\
+     "dfpdis",\
+     "dfpdis [master key index] [target addr] [dependent addr] [dependent elem num]\n\r",\
+     "directed forwarding path discovery\n\r",\
+     user_cmd_df_path_discovery\
+    },\
+    {\
+     "dfpsol",\
+     "dfpsol [master key index] [addr1] [addr2] ...\n\r",\
+     "directed forwarding path solicitation\n\r",\
+     user_cmd_df_path_solicitation\
+    },\
+    {\
+     "dfpdupt",\
+     "dfpdupt [type: 0 remove, 1 add] [endpoint addr] [dependent addr] [dependent elem num]\n\r",\
+     "directed forwarding path dependents update\n\r",\
+     user_cmd_df_path_dependents_update\
+    },\
+    {\
+     "dfpmtmt",\
+     "dfpmtmt [enable]\n\r",\
+     "directed forwarding path monitor test mode trigger\n\r",\
+     user_cmd_df_path_monitor_test_mode_trigger\
+    },\
+    {\
+     "dfua",\
+     "dfua [address] [image index]\n\r",\
+     "dfu add receiver\n\r",\
+     user_cmd_dfu_add\
+    },\
+    {\
+     "dfud",\
+     "dfud [address]\n\r",\
+     "dfu delete receiver\n\r",\
+     user_cmd_dfu_delete\
+    },\
+    {\
+     "dfus",\
+     "dfus [dist_dst] [dist_app_key_index] [update_timeout_base] [fw_image_size] [metadata_len] [metadata]\n\r",\
+     "start dfu\n\r",\
+     user_cmd_dfu_start\
+    },\
+    {\
+     "btsi",\
+     "btsi [blob id] [transfer timeout base] [transfer ttl]\n\r",\
+     "blob transfer server init\n\r",\
+     user_cmd_blob_transfer_server_init\
+    }\
 
 
 #define PING_TIMEOUT_MSG           101
@@ -237,7 +297,7 @@ mesh_msg_send_cause_t ping_handle_timeout(void);
 user_cmd_parse_result_t user_cmd_trans_ping(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_ping(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_big_ping(user_cmd_parse_value_t *pparse_value);
-int32_t tp_reveive(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs);
+int32_t tp_receive(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs);
 void pong_receive(uint16_t src, uint16_t dst, uint8_t hops_forward, ping_pong_type_t type,
                   uint8_t hops_reverse, uint16_t pong_delay);
 user_cmd_parse_result_t user_cmd_tp_msg(user_cmd_parse_value_t *pparse_value);
@@ -253,6 +313,12 @@ user_cmd_parse_result_t user_cmd_proxy_cfg_set_filter_type(user_cmd_parse_value_
                                                            *pparse_value);
 user_cmd_parse_result_t user_cmd_proxy_cfg_add_addr(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_proxy_cfg_remove_addr(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_proxy_cfg_directed_proxy_control(user_cmd_parse_value_t
+                                                                  *pparse_value);
+
+user_cmd_parse_result_t user_cmd_dfu_start_discover(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_read_character(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_cccd_operate(user_cmd_parse_value_t *pparse_value);
 
 user_cmd_parse_result_t user_cmd_log_set(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_time(user_cmd_parse_value_t *pparse_value);
@@ -266,6 +332,18 @@ user_cmd_parse_result_t user_cmd_hb_pub(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_hb_sub(user_cmd_parse_value_t *pparse_value);
 
 user_cmd_parse_result_t user_cmd_mesh_deinit(user_cmd_parse_value_t *pparse_value);
+
+user_cmd_parse_result_t user_cmd_df_ctl_set(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_df_path_discovery(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_df_path_solicitation(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_df_path_dependents_update(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_df_path_monitor_test_mode_trigger(user_cmd_parse_value_t
+                                                                   *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_add(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_delete(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_dfu_start(user_cmd_parse_value_t *pparse_value);
+user_cmd_parse_result_t user_cmd_blob_transfer_server_init(user_cmd_parse_value_t
+                                                           *pparse_value);
 /** @} */
 /** @} */
 

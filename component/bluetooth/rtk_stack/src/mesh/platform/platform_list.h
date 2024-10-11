@@ -82,6 +82,13 @@ void  plt_list_insert(plt_list_t *plist, void *plist_e, void *plist_e_new);
   */
 void  plt_list_delete(plt_list_t *plist, void *plist_e_previous, void *plist_e);
 
+/**
+ * @brief remove the element at any position of the list
+ * @param[in] plist: the list pointer
+ * @param[in] plist_e: the deleted element pointer
+ */
+void  plt_list_remove(plt_list_t *plist, void *plist_e);
+
 /** @} */
 /** @} */
 

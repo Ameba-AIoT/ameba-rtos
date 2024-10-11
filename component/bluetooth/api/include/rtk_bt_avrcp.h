@@ -32,6 +32,21 @@ typedef enum {
 } rtk_bt_avrcp_play_status_t;
 
 /**
+ * @typedef   rtk_bt_avrcp_element_attr_t
+ * @brief     element attr information
+ */
+typedef enum {
+	RTK_BT_AVRCP_ELEM_ATTR_TITLE = 0x01,
+	RTK_BT_AVRCP_ELEM_ATTR_ARTIST = 0x02,
+	RTK_BT_AVRCP_ELEM_ATTR_ALBUM = 0x03,
+	RTK_BT_AVRCP_ELEM_ATTR_TRACK = 0x04,
+	RTK_BT_AVRCP_ELEM_ATTR_TOTAL_TRACK = 0x05,
+	RTK_BT_AVRCP_ELEM_ATTR_GENRE = 0x06,
+	RTK_BT_AVRCP_ELEM_ATTR_PLAYING_TIME = 0x07,
+	RTK_BT_AVRCP_ELEM_ATTR_DEFAULT_COVER_ART = 0x08,
+} rtk_bt_avrcp_element_attr_t;
+
+/**
  * @struct    rtk_bt_avrcp_absolute_volume_set_t
  * @brief     Bluetooth AVRCP absolute volume set.
  */
@@ -48,6 +63,51 @@ typedef struct {
 	uint8_t bd_addr[6];
 	uint8_t volume;
 } rtk_bt_avrcp_volume_change_req_t;
+
+/**
+ * @struct    rtk_bt_avrcp_get_element_attr_req_t
+ * @brief     Bluetooth AVRCP get element attr request.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t attr;
+} rtk_bt_avrcp_get_element_attr_req_t;
+
+/**
+ * bt_avrcp.h
+ *
+ * \brief  BT AVRCP element attribute.
+ *
+ * \ingroup BT_AVRCP
+ */
+typedef struct {
+	uint32_t attribute_id;
+	uint16_t character_set_id;
+	uint16_t length;
+	uint8_t *p_buf;
+} rtk_bt_avrcp_element_attr;
+
+/**
+ * @struct    rtk_bt_avrcp_get_element_attr_req_t
+ * @brief     Bluetooth AVRCP get element attr request.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t state;
+	uint8_t num_of_attr;
+	rtk_bt_avrcp_element_attr *attr;
+} rtk_bt_avrcp_element_attr_info_t;
+
+/**
+ * @struct    rtk_bt_avrcp_cover_art_data_ind_t
+ * @brief     Bluetooth AVRCP cover art data indication.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t *p_data;
+	uint16_t data_len;
+	bool data_end;
+} rtk_bt_avrcp_cover_art_data_ind_t;
 
 /**
  * @struct    rtk_bt_avrcp_volume_t
@@ -223,6 +283,16 @@ uint16_t rtk_bt_avrcp_absolute_volume_set(uint8_t *bd_addr, uint8_t volume);
  *            - Others: Error code
  */
 uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume);
+
+/**
+ * @brief     send element attr get request.
+ * @param[in] bd_addr: bt address
+ * @param[in] attr: attr
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t attr);
 
 /**
  * @}

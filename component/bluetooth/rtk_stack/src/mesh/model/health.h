@@ -221,6 +221,7 @@ typedef struct
  * @{
  */
 
+//RTK porting:add macro and new structure for call app layer
 #define HEALTH_SERVER_GET_FAULT                         0 //!< @ref health_server_fault_get_t
 #define HEALTH_SERVER_CLEAR_FAULT                    	1 //!< @ref health_server_fault_clear_t
 #define HEALTH_SERVER_TEST_FAULT               			2 //!< @ref health_server_fault_test_t
@@ -238,6 +239,7 @@ typedef struct
     health_server_test_cb_t test_cb;
 } health_server_test_t;
 
+//RTK porting:add macro and new structure for call app layer
 typedef struct {
     uint16_t company_id;
 	uint8_t *fault_array;
@@ -277,8 +279,8 @@ typedef struct {
  * @brief Data types and structure used by data process callback
  * @{
  */
-#define HEALTH_CLIENT_STATUS_CURRENT                 0 //!< @ref health_client_status_t 
-#define HEALTH_CLIENT_STATUS_REGISTERED              1 //!< @ref health_client_status_t 
+#define HEALTH_CLIENT_STATUS_CURRENT                 0 //!< @ref health_client_status_t
+#define HEALTH_CLIENT_STATUS_REGISTERED              1 //!< @ref health_client_status_t
 #define HEALTH_CLIENT_STATUS_PERIOD                  2 //!< @ref health_client_status_period_t
 #define HEALTH_CLIENT_STATUS_ATTENTION               3 //!< @ref health_client_status_attention_t
 

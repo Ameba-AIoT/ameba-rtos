@@ -20,7 +20,7 @@ static mesh_msg_send_cause_t scheduler_server_send(mesh_model_info_p pmodel_info
                                                    uint16_t dst, void *pmsg, uint16_t msg_len, uint16_t app_key_index,
                                                    uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -46,14 +46,21 @@ mesh_msg_send_cause_t scheduler_status(mesh_model_info_p pmodel_info, uint16_t d
 }
 
 mesh_msg_send_cause_t scheduler_action_status(mesh_model_info_p pmodel_info, uint16_t dst,
-                                              uint16_t app_key_index, scheduler_register_t scheduler,
+                                              uint16_t app_key_index, bool optional, scheduler_register_t scheduler,
                                               uint32_t delay_time)
 {
     scheduler_action_status_t msg;
     ACCESS_OPCODE_BYTE(msg.opcode, MESH_MSG_SCHEDULER_ACTION_STATUS);
     msg.scheduler = scheduler;
 
-    return scheduler_server_send(pmodel_info, dst, &msg, sizeof(msg), app_key_index, delay_time);
+    uint16_t msg_len = sizeof(msg);
+    if (!optional)
+    {
+        msg_len = MEMBER_OFFSET(scheduler_action_status_t, scheduler) + 1;
+        msg.scheduler.year = 0;
+    }
+
+    return scheduler_server_send(pmodel_info, dst, &msg, msg_len, app_key_index, delay_time);
 }
 
 mesh_msg_send_cause_t scheduler_delay_publish(const mesh_model_info_p pmodel_info,
@@ -62,7 +69,7 @@ mesh_msg_send_cause_t scheduler_delay_publish(const mesh_model_info_p pmodel_inf
     mesh_msg_send_cause_t ret = MESH_MSG_SEND_CAUSE_INVALID_DST;
     if (mesh_model_pub_check(pmodel_info))
     {
-        ret = scheduler_action_status(pmodel_info, 0, 0, scheduler, delay_time);
+        ret = scheduler_action_status(pmodel_info, 0, 0, true, scheduler, delay_time);
     }
 
     return ret;
@@ -111,14 +118,16 @@ static bool scheduler_server_receive(mesh_msg_p pmesh_msg)
                 {
                     get_data.index = pmsg->index;
                     pmodel_info->model_data_cb(pmodel_info, SCHEDULER_SERVER_GET_ACTION, &get_data);
+                    get_data.scheduler.index = pmsg->index;
                 }
 
                 uint32_t delay_rsp_time = 0;
 #if MODEL_ENABLE_DELAY_MSG_RSP
                 delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
-                scheduler_action_status(pmodel_info, pmesh_msg->src, pmesh_msg->app_key_index, get_data.scheduler,
-                                        delay_rsp_time);
+                scheduler_action_status(pmodel_info, pmesh_msg->src, pmesh_msg->app_key_index,
+                                        get_data.scheduler.action != SCHEDULER_NO_ACTION,
+                                        get_data.scheduler, delay_rsp_time);
             }
         }
         break;
@@ -145,7 +154,7 @@ static int32_t scheduler_server_publish(mesh_model_info_p pmodel_info, bool retr
             pmodel_info->model_data_cb(pmodel_info, SCHEDULER_SERVER_GET_ACTION, &get_data);
             if (0 != memcmp(&get_data, &get_data_zero, sizeof(scheduler_server_get_action_t)))
             {
-                scheduler_action_status(pmodel_info, 0, 0, get_data.scheduler, 0);
+                scheduler_action_status(pmodel_info, 0, 0, true, get_data.scheduler, 0);
             }
         }
     }

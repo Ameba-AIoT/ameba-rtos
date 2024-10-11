@@ -31,7 +31,7 @@ mesh_msg_send_cause_t ali_attr_get(mesh_model_info_t *pmodel_info, uint16_t dst,
     pmsg->tid = tid;
     memcpy(pmsg->attr_type, attr_type, type_num * sizeof(ali_attr_type_t));
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)pmsg;
@@ -50,7 +50,7 @@ mesh_msg_send_cause_t ali_attr_conf(mesh_model_info_t *pmodel_info, const mesh_m
     ACCESS_OPCODE_BYTE(msg.opcode, MESH_MSG_ALI_ATTR_CONF);
     msg.tid = tid;
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)&msg;
@@ -71,7 +71,7 @@ mesh_msg_send_cause_t ali_attr_msg_raw(mesh_model_info_t *pmodel_info, uint16_t 
     pmsg->tid = tid;
     memcpy(&pmsg->attr_type, raw_data, data_len);
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)pmsg;
@@ -94,7 +94,7 @@ static uint16_t ali_attr_len(ali_attr_t attr[1], uint16_t attr_num)
 }
 
 mesh_msg_send_cause_t ali_attr_msg(mesh_model_info_t *pmodel_info, uint16_t dst,
-                                   uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, ali_attr_t attr[1], uint16_t attr_num)
+                                   uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, ali_attr_t attr[], uint16_t attr_num)
 {
     mesh_msg_send_cause_t ret;
     ali_attr_set_t *pmsg;
@@ -111,7 +111,7 @@ mesh_msg_send_cause_t ali_attr_msg(mesh_model_info_t *pmodel_info, uint16_t dst,
         pdata += attr[loop].param_len;
     }
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)pmsg;
@@ -134,7 +134,7 @@ mesh_msg_send_cause_t ali_transparent_msg(mesh_model_info_t *pmodel_info, uint16
     memcpy(pmsg->transparent_msg, transparent_msg, msg_len);
     msg_len += MEMBER_OFFSET(ali_transparent_msg_t, transparent_msg);
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)pmsg;

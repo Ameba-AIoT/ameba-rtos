@@ -42,10 +42,12 @@ cmd_help_table_t mesh_gp_help_table[] = {{NULL,},};
 cmd_help_table_t mesh_sensor_help_table[] = {{NULL,},};
 cmd_help_table_t mesh_health_help_table[] = {{NULL,},};
 cmd_help_table_t mesh_rmt_help_table[] = {{NULL,},};
+cmd_help_table_t mesh_df_help_table[] = {{NULL,},};
 #endif
 cmd_help_table_t a2dp_help_table[] = {{NULL,},};
 cmd_help_table_t avrcp_help_table[] = {{NULL,},};
 cmd_help_table_t spp_help_table[] = {{NULL,},};
+cmd_help_table_t rfc_help_table[] = {{NULL,},};
 
 cmd_help_table_t cmd_help_table[] = {
 	{
@@ -226,6 +228,14 @@ cmd_help_table_t cmd_help_table[] = {
 		"[subcmd] = <scan_start, scan_cap_get, link_open>",
 		mesh_rmt_help_table
 	},
+	{
+		"mesh_df",   "[AT+BTCMDHELP] mesh_df: BLE mesh directed forwarding model operation\n\r"
+		"usage: AT+BLEMESHDF=[sub_cmd],...\n\r"
+		"[subcmd] = <dfpdis, dfpsol, dfpdupt, mdu, dcss, dcg, dcs, pmg, pms, dtcg, dtcs, fta, ftd, \n\r"
+		"			 ftda, ftdd, ftdg, ftecg, fteg, wlg, wls, twpg, twps, peig, peis, dntg, dnts, \n\r"
+		"			 drrg, drrs, rssitg, rssits, dpg, dppg, dpps, pdtcg, pdtcs, dcntg, dcnts, dcrrg, dcrrs>",
+		mesh_df_help_table
+	},
 #endif
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{
@@ -245,6 +255,12 @@ cmd_help_table_t cmd_help_table[] = {
 		"usage: AT+BTSPP=[sub_cmd],..\n\r"
 		"[sub_cmd] = <conn, disconn, disconn_all, send_data, give_credits>",
 		spp_help_table
+	},
+	{
+		"rfc_cmd",    "[AT+BTCMDHELP] rfc_cmd: BT RFC operation\n\r"
+		"usage: AT+BTRFC=[sub_cmd],..\n\r"
+		"[sub_cmd] = <conn, disconn, send_data>",
+		rfc_help_table
 	},
 #endif /* RTK_BREDR_SUPPORT */
 	{NULL,},
@@ -306,6 +322,12 @@ cmd_help_table_t example_help_table[] = {
 		"spp", "[AT+BTDEMO] spp: run as a SPP client(client))/server(server)\n\r"
 		"usage: AT+BTDEMO=spp,[role][val]\n\r"
 		"[role] = <client-(client), server-(server)>"
+		"[val] = <0-(disable), 1-(enable)>",
+		NULL
+	},
+	{
+		"rfc", "[AT+BTDEMO] rfc: run as a RFC demo\n\r"
+		"usage: AT+BTDEMO=rfc,[val]\n\r"
 		"[val] = <0-(disable), 1-(enable)>",
 		NULL
 	},
@@ -402,7 +424,7 @@ static int atcmd_bt_cmd_help(int argc, char *argv[])
 							  "usage: AT+BTCMDHELP=[cmd]\n\r"
 							  "       AT+BTCMDHELP=[cmd],[subcmd]\n\r"
 							  "[cmd] = <bt, ble_gap, br_gap, gattc, gatts, mesh_stack, mesh_data, mesh_config, mesh_goo, mesh_rmt\n\r"
-							  "			mesh_ll, mesh_lctl, mesh_lhsl, mesh_lxyl, mesh_llc, a2dp, avrcp, spp_cmd>\n\r"
+							  "			mesh_ll, mesh_lctl, mesh_lhsl, mesh_lxyl, mesh_llc, a2dp, avrcp, spp_cmd, rfc_cmd>\n\r"
 							  "[subcmd] = 'use AT+BTCMDHELP=[cmd] to show subcmds'";
 	atcmd_bt_help_common(argc, argv, "AT+BTCMDHELP", help_usage, cmd_help_table);
 	return 0;
@@ -413,7 +435,7 @@ static int atcmd_bt_example_help(int argc, char *argv[])
 	const char *help_usage =  "[AT+BTDEMO] help: show AT+BTDEMO cmds usage and description\n\r"
 							  "usage: AT+BTDEMO=help,[cmd]\n\r"
 							  "       AT+BTDEMO=help,[cmd],[subcmd]\n\r"
-							  "[cmd] = <central, peripheral, scatternet, provisioner, device, provisioner_scatternet, device_scatternet, a2dp, spp, hfp>\n\r"
+							  "[cmd] = <central, peripheral, scatternet, provisioner, device, provisioner_scatternet, device_scatternet, a2dp, spp, rfc, hfp>\n\r"
 							  "[subcmd] = 'use AT+BTDEMO=help,[cmd] to show subcmds'";
 	atcmd_bt_help_common(argc, argv, "AT+BTDEMO", help_usage, example_help_table);
 	return 0;
@@ -470,6 +492,7 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_MESH_GP         "+BLEMESHGP"
 #define CMD_NAME_MESH_SENSOR     "+BLEMESHSENSOR"
 #define CMD_NAME_MESH_HEALTH     "+BLEMESHHEALTH"
+#define CMD_NAME_MESH_DF         "+BLEMESHDF"
 #endif /* RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 #define CMD_NAME_BR_GAP          "+BRGAP"
@@ -477,6 +500,7 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_A2DP            "+BTA2DP"
 #define CMD_NAME_AVRCP           "+BTAVRCP"
 #define CMD_NAME_SPP             "+BTSPP"
+#define CMD_NAME_RFC             "+BTRFC"
 #define CMD_NAME_HID             "+BTHID"
 #define CMD_NAME_HFP             "+BTHFP"
 #define CMD_NAME_PBAP            "+BTPBAP"
@@ -525,6 +549,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_MESH_GP,          atcmd_bt_mesh_generic_property,                 4, 8},
 	{CMD_NAME_MESH_SENSOR,      atcmd_bt_mesh_sensor,                           4, 14},
 	{CMD_NAME_MESH_HEALTH,      atcmd_bt_mesh_health,                           4, 7},
+	{CMD_NAME_MESH_DF,          atcmd_bt_mesh_df,                               4, 21},
 #endif  // end of RTK_BLE_MESH_SUPPORT
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{CMD_NAME_BR_GAP,           atcmd_bt_br_gap,                                2, 13},
@@ -532,6 +557,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_A2DP,             atcmd_bt_a2dp_cmd,                              1, 8},
 	{CMD_NAME_AVRCP,            atcmd_bt_avrcp_cmd,                             1, 4},
 	{CMD_NAME_SPP,              atcmd_bt_spp_cmd,                               1, 8},
+	{CMD_NAME_RFC,              atcmd_bt_rfc_cmd,                               1, 8},
 	{CMD_NAME_HID,              atcmd_bt_hid_cmd,                               1, 23},
 	{CMD_NAME_HFP,              atcmd_bt_hfp_cmd,                               1, 8},
 	{CMD_NAME_PBAP,             atcmd_bt_pbap_cmd,                              1, 8},
@@ -614,6 +640,9 @@ static const cmd_table_t example_table[] = {
 #endif
 #if defined(CONFIG_BT_SPP) && CONFIG_BT_SPP
 	{"spp",              atcmd_bt_spp,              3, 6},
+#endif
+#if defined(CONFIG_BT_RFC) && CONFIG_BT_RFC
+	{"rfc",              atcmd_bt_rfc,              2, 3},
 #endif
 #if defined(CONFIG_BT_HID) && CONFIG_BT_HID
 	{"hid",              atcmd_bt_hid,              2, 3},
@@ -773,6 +802,11 @@ static inline void fBTAVRCP(void *arg)
 static inline void fBTSPP(void *arg)
 {
 	atcmd_bt_cmd(arg, CMD_NAME_SPP, "[AT+BTSPP]");
+}
+
+static inline void fBTRFC(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_RFC, "[AT+BTRFC]");
 }
 
 static inline void fBTHID(void *arg)
@@ -948,6 +982,12 @@ static inline void fBLEMESHHEALTH(void *arg)
 	atcmd_bt_cmd(arg, CMD_NAME_MESH_HEALTH, "[AT+BLEMESHHEALTH]");
 }
 
+static inline void fBLEMESHDF(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_DF, "[AT+BLEMESHDF]");
+}
+
+
 #endif /* RTK_BLE_MESH_SUPPORT */
 
 static inline void fBTDEVICE(void *arg)
@@ -1084,6 +1124,7 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_A2DP,             fBTA2DP,              {NULL, NULL}},
 	{CMD_NAME_AVRCP,            fBTAVRCP,             {NULL, NULL}},
 	{CMD_NAME_SPP,              fBTSPP,               {NULL, NULL}},
+	{CMD_NAME_RFC,              fBTRFC,               {NULL, NULL}},
 	{CMD_NAME_HID,              fBTHID,               {NULL, NULL}},
 	{CMD_NAME_HFP,              fBTHFP,               {NULL, NULL}},
 	{CMD_NAME_PBAP,             fBTPBAP,              {NULL, NULL}},
@@ -1129,6 +1170,7 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_MESH_GP,          fBLEMESHGP,           {NULL, NULL}},
 	{CMD_NAME_MESH_SENSOR,      fBLEMESHSENSOR,       {NULL, NULL}},
 	{CMD_NAME_MESH_HEALTH,      fBLEMESHHEALTH,       {NULL, NULL}},
+	{CMD_NAME_MESH_DF,          fBLEMESHDF,           {NULL, NULL}},
 #endif /* RTK_BLE_MESH_SUPPORT */
 	{CMD_NAME_BT_VENDOR,        fBTVENDOR,            {NULL, NULL}},
 	{CMD_NAME_BT_TEST,          fBTTEST,              {NULL, NULL}},

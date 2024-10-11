@@ -41,29 +41,31 @@ BEGIN_DECLS
 #define MESH_PROXY_ADV_WITH_BT_ADDR             1 //!< adv
 #define MESH_PARAM_CONFIGURABLE                 0 //!< configurable parameters
 #define MESH_HB_SUB_UNCHECK_SRC                 1 //!< transport layer uncheck the source address of the received heartbeat message
+#define MESH_SUPPORT_FLASH_ACCESS_CB            1
 
 /** !!! For test purpose. If don't know well, please do not modify in case of wrong operation !!! */
 #define MESH_MUTE_MODE                          0 //!< just scan to Receive all mesh data pkts even not sent to me playing a role as a monitor.
 #define MESH_TRANSCEIVER_MODE                   0 //!< Disable duplicate pkts and src address check in network layer.
 #define MESH_PROVISIONING_SAMPLE_DATA           0 //!< Provisioning Protocol
 #define MESH_UNPROVISIONING_SUPPORT             0 //!< Support unprovisioning cmd in pb-gatt
+#define MESH_DATA_UART_DEBUG                    1 //!< Data uart debug
 
 /* mesh features */
-#define MESH_DATA_UART_DEBUG                    1 //!< Data uart debug
 #define MESH_FN                                 1 //!< friend relay
 #define MESH_BEARER_ADV                         1
 #define MESH_BEARER_GATT                        1
-#define MESH_SUPPORT_FLASH_ACCESS_CB            1
 #define MESH_PB_ADV                             1
 #define MESH_HB                                 1
 
-/* mesh profile 1.1 */
+/* mesh protocol 1.1 */
 #define MESH_1_1_SUPPORT                        1
-#define MESH_PRB                                (MESH_1_1_SUPPORT && 0)
-#define MESH_BLOB                               (MESH_1_1_SUPPORT && 1)
-#define MESH_DFU                                (MESH_1_1_SUPPORT && MESH_BLOB && 1)
+#define MESH_EPA                                (MESH_1_1_SUPPORT && 1)
+#define MESH_PRB                                (MESH_1_1_SUPPORT && 1)
+#define MESH_MBT                                (MESH_1_1_SUPPORT && 1)
+#define MESH_DFU                                (MESH_1_1_SUPPORT && MESH_MBT && 1)
 #define MESH_RPR                                (MESH_1_1_SUPPORT && 1)
-
+#define MESH_SBR                                (MESH_1_1_SUPPORT && 1)
+#define MESH_DF                                 (MESH_1_1_SUPPORT && 1)
 
 #if MESH_DEVICE
 //#warning "current project is device lib"
@@ -71,6 +73,8 @@ BEGIN_DECLS
 #define MESH_GENERATE_ECC_KEY_PAIR_EACH_SESSION 1 //!< only mandatory in the device?
 #define MESH_DEVICE_ONLY_ONE_DEV_KEY            0 //!< Device may send configuration client msgs using other device's DevKey
 #define MESH_DEVICE_PROV_PROXY_SERVER_COEXIST   1 //!< Why not?
+#define MESH_DEVICE_PROV_CTX_CNT                1
+#define MESH_DEVICE_PROV_PROXY_CTX_CNT          1
 #else
 #define MESH_LPN                                0 //!< low power node
 #endif
@@ -78,6 +82,8 @@ BEGIN_DECLS
 #if MESH_PROVISIONER
 //#warning "current project is provisioner lib"
 #define MESH_PROV_WO_AUTH_VALUE                 0
+#define MESH_PROVER_PROV_CTX_CNT                2
+#define MESH_PROVER_PROV_PROXY_CTX_CNT          2
 #else
 #define MESH_PROV_WO_AUTH_VALUE                 0
 #endif
@@ -99,6 +105,7 @@ BEGIN_DECLS
 #define MESH_PROV_ADV_PERIOD                    3000 //!< in units of millisecond
 #define MESH_PROXY_ADV_PERIOD                   3000 //!< in units of millisecond
 #define MESH_ID_ADV_PERIOD                      300 //!< in units of millisecond
+
 #if MESH_PRB
 #define MESH_PRB_PERIOD                         10000 //!< in units of millisecond
 #define MESH_PRB_RANDOM_UPDATE_PERIOD           600 //!< in units of seconds 
@@ -225,6 +232,24 @@ BEGIN_DECLS
 #define MESH_PROVISIONING_NET_KEY_INDEX         0
 #define MESH_PROVISIONING_IV_INDEX              MESH_IV_INDEX
 #define MESH_PROVISIONING_UNICAST_ADDRESS       0x0100//MESH_SRC
+#endif
+
+#if MESH_DF
+#define MESH_DF_NET_RETRANSMIT_TIMES            1
+#define MESH_DF_RELAY_RETRANSMIT_TIMES          2
+#define MESH_DF_NET_CTL_RETRANSMIT_TIMES        1
+#define MESH_DF_RELAY_CTL_RETRANSMIT_TIMES      2
+#define MESH_DF_DEFAULT_RSSI_THRESHOLD          -80
+#define MESH_DF_RSSI_MARGIN                     0x14
+#define MESH_DF_PATH_MONITORING_INTERVAL        120 /* unit is sec */
+#define MESH_DF_PATH_DISCOVERY_RETRY_INTERVAL   300 /* unit is sec */
+#define MESH_DF_PATH_DISCOVERY_INTERVAL         1 /* 0: 5sec 1: 30sec */
+#define MESH_DF_LANE_DISCOVERY_GUARD_INTERVAL   1 /* 0: 2sec 1: 10sec */
+#define MESH_DF_NODE_PATHS                      20
+#define MESH_DF_RELAY_PATHS                     20
+#define MESH_DF_PROXY_PATHS                     20
+#define MESH_DF_DEPENDENT_ADDR_SIZE             10
+#define MESH_DF_NON_FIXED_PATH_SIZE             30
 #endif
 
 /* model configuration */

@@ -272,10 +272,11 @@ typedef struct
  */
 #define SENSOR_SERVER_GET                                      0 //!< @ref sensor_server_get_t
 #define SENSOR_SERVER_GET_COLUMN                               1 //!< @ref sensor_server_get_column_t
-#define SENSOR_SERVER_GET_SERIES                               2 //!< @ref sensor_server_get_series_t   
+#define SENSOR_SERVER_GET_SERIES                               2 //!< @ref sensor_server_get_series_t
 #define SENSOR_SERVER_SET_CADENCE                              3 //!< @ref sensor_server_set_cadence_t
 #define SENSOR_SERVER_SET_SETTING                              4 //!< @ref sensor_server_set_setting_t
 #define SENSOR_SERVER_COMPARE_CADENCE                          5 //!< @ref sensor_server_compare_cadence_t
+//RTK porting:add new macro for call app layer
 #define SENSOR_SERVER_GET_DESCRIPTOR_NUM                       6 //!< @ref sensor_server_get_descriptor_num_t
 #define SENSOR_SERVER_GET_DESCRIPTOR                       	   7 //!< @ref sensor_server_get_descriptor_t
 #define SENSOR_SERVER_GET_CADENCE                       	   8 //!< @ref sensor_server_get_cadence_t
@@ -312,6 +313,7 @@ typedef struct
     void *series;
 } sensor_server_get_series_t;
 
+//RTK porting:add new structure for call app layer
 typedef struct
 {
     uint16_t property_id;
@@ -337,6 +339,7 @@ typedef struct
 	uint16_t *settings_data;// reserve 2 bytes to store setting num
 } sensor_server_get_settings_t;
 
+//RTK porting:add new structure for call app layer
 typedef struct {
 	uint16_t property_id;
 	sensor_setting_t *setting;
@@ -357,6 +360,7 @@ typedef struct
     bool need_fast_divisor;
 } sensor_server_compare_cadence_t;
 
+//RTK porting:add new structure for call app layer
 typedef struct {
 	uint16_t property_id;
 	uint16_t descriptor_num;

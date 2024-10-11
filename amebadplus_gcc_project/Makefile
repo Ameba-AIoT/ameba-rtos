@@ -21,7 +21,11 @@ export MENUCONFIG_RELA_PATH MENUCONFIG_NAME IC_NAME
 
 ifeq ($(CONFIG_MP_INCLUDED),y)
 app_all	:= $(CURRENT_PATH)/project_km4/asdk/image_mp/km0_km4_app_mp.bin
+ifeq ($(CONFIG_MP_SHRINK),y)
+km4_boot_all	:= $(CURRENT_PATH)/project_km4/asdk/image_mp/km4_boot_all_mp.bin
+else
 km4_boot_all	:= $(CURRENT_PATH)/project_km4/asdk/image_mp/km4_boot_all.bin
+endif
 else
 app_all	:= $(CURRENT_PATH)/project_km4/asdk/image/km0_km4_app.bin
 km4_boot_all	:= $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin

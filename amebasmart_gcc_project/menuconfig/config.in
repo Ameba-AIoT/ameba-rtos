@@ -147,6 +147,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			bool "  BT HFP"												CONFIG_BT_HFP_MENU
 			bool "  BT A2DP and BT HFP"									CONFIG_BT_A2DP_HFP_MENU
 			bool "  BT SPP"												CONFIG_BT_SPP
+			bool "  BT RFC"												CONFIG_BT_RFC
 #			bool "  BT Audio MP Test"									CONFIG_BT_AUDIO_MP_TEST_MENU
 #			bool "  BT HID"												CONFIG_BT_HID
 			bool "  BT A2DP and BLE Scatternet"							CONFIG_BT_A2DP_SCATTERNET_MENU

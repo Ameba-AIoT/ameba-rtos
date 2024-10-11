@@ -595,7 +595,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			bt_stack_pending_cmd_delete(p_cmd);
 			p_cmd->ret = p_data->p_le_read_rssi_rsp->cause;
 			*read_rssi->p_rssi = p_data->p_le_read_rssi_rsp->rssi;
-			// BT_LOGA("RSSI IS: %i\r\n", p_data->p_le_read_rssi_rsp->rssi);
+			// BT_LOGA("RSSI IS: %d\r\n", p_data->p_le_read_rssi_rsp->rssi);
 			osif_sem_give(p_cmd->psem);
 		} else {
 			BT_LOGD("[%s] GAP_MSG_LE_READ_RSSI: find no pending command \r\n", __func__);

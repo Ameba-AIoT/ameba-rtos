@@ -126,12 +126,12 @@ uint8_t plt_log2(uint32_t value);
 uint32_t plt_exp2(uint8_t log);
 
 /**
-  * @brief trasnform the hex string to a binary array (big endian)
+  * @brief transform the hex string to a binary array (big endian)
   *
   * The binary array will be filled with 0 if the string length is not enough.
   * @param[out] pbin: binary output
   * @param[in] phex: hex ascii input
-  * @param[in] pbin_len: binary output max lenght
+  * @param[in] pbin_len: binary output max length
   * @return actual binary output length
   *
   * <b>Example usage</b>

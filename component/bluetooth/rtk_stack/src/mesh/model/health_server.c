@@ -85,7 +85,7 @@ static uint8_t health_server_fault_count_internal(const uint32_t *faults)
 static mesh_msg_send_cause_t health_server_send(mesh_msg_p pmesh_msg, uint8_t *pmsg, uint16_t len,
                                                 uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmesh_msg->pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -112,7 +112,7 @@ static mesh_msg_send_cause_t health_curt_stat(mesh_model_info_p pmodel_info, uin
     phealth_curt_stat->company_id = company_id;
     health_server_fill_fault(phealth_curt_stat->fault_array, fault_array);
 
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = (uint8_t *)phealth_curt_stat;
@@ -293,7 +293,8 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
     bool ret = TRUE;
     uint8_t *pbuffer = pmesh_msg->pbuffer + pmesh_msg->msg_offset;
 	mesh_model_info_p pmodel_info = pmesh_msg->pmodel_info;
-	switch (pmesh_msg->access_opcode) {
+    switch (pmesh_msg->access_opcode)
+    {
     case MESH_MSG_HEALTH_ATTN_GET:
         if (pmesh_msg->msg_len == sizeof(health_attn_get_t))
         {
@@ -302,6 +303,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
             delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
 			/**
+             * RTK porting
 			 * Add a method to get data from app layer
 			*/
 			health_server_attn_t attn_value;
@@ -325,6 +327,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
                 delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
 				/**
+                 * RTK porting
 				 * Add a method to indicate app layer
 				*/
 				health_server_attn_t attn_value;
@@ -346,6 +349,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
             delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
 			/**
+             * RTK porting
 			 * Add a method to get data from app layer
 			*/
 			health_server_period_t period_value;
@@ -372,6 +376,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
                     delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
 				/**
+                 * RTK porting
 				 * Add a method to indicate app layer
 				*/
 				health_server_period_t period_value;
@@ -396,6 +401,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
                 delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
 				/**
+                 * RTK porting
 				 * Add a method to get data from and indicate app layer
 				*/
 				health_server_fault_get_t fault_status;
@@ -426,6 +432,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
                     delay_rsp_time = delay_msg_get_rsp_delay(pmesh_msg->dst);
 #endif
 					/**
+                     * RTK porting
 					 * Add a method to get data from and indicate app layer
 					*/
 					health_server_fault_clear_t fault_status;
@@ -475,6 +482,7 @@ static bool health_server_receive(mesh_msg_p pmesh_msg)
                     }
                 }
 				/**
+                 * RTK porting
 				 * Add a method to get data from and indicate app layer
 				*/
 				health_server_fault_test_t fault_status;

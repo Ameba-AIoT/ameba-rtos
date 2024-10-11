@@ -17,7 +17,6 @@
 
 /* Add Includes here */
 #include "platform_misc.h"
-#include "ftl_app.h"
 #include "mesh_api.h"
 
 BEGIN_DECLS
@@ -42,6 +41,13 @@ BEGIN_DECLS
 #define MESH_RPL_ENTRY_NUM_MAX                  20
 #define MESH_MODEL_NUM_MAX                      1
 #define MESH_MODEL_SUB_ADDR_NUM_MAX             10
+#if MESH_SBR
+#define MESH_SUBNET_BRIDGE_NUM_MAX              1
+#endif
+#if MESH_DF
+#define MESH_DF_NET_NUM_MAX                     1
+#define MESH_DF_FIXED_PATH_MAX                  1
+#endif
 
 // Flash Storage Offset
 #define MESH_FLASH_OFFSET                       mesh_node.flash_offset
@@ -55,24 +61,41 @@ BEGIN_DECLS
 
 typedef enum
 {
-    MESH_FLASH_PARAMS_NODE_INFO,
-    MESH_FLASH_PARAMS_IV_INDEX,
-    MESH_FLASH_PARAMS_IV_UPDATE_FLAG,
-    MESH_FLASH_PARAMS_SEQ,
-    MESH_FLASH_PARAMS_TTL,
-    MESH_FLASH_PARAMS_FEATURES,
-    MESH_FLASH_PARAMS_NWK_TX_PARAMS,
-    MESH_FLASH_PARAMS_HB_PARAMS,
-    MESH_FLASH_PARAMS_DEV_KEY,
-    MESH_FLASH_PARAMS_NET_KEY,
-    MESH_FLASH_PARAMS_APP_KEY,
-    MESH_FLASH_PARAMS_VIR_ADDR,
-    MESH_FLASH_PARAMS_RPL,
-    MESH_FLASH_PARAMS_RPL_ENTRY,
-    MESH_FLASH_PARAMS_RPL_SEQ,
-    MESH_FLASH_PARAMS_MODEL_PUB_PARAMS,
-    MESH_FLASH_PARAMS_MODEL_APP_KEY_BINDING,
-    MESH_FLASH_PARAMS_MODEL_SUBSCRIBE_ADDR
+    MESH_FLASH_PARAMS_NODE_INFO = 0,
+    MESH_FLASH_PARAMS_IV_INDEX = 1,
+    MESH_FLASH_PARAMS_IV_UPDATE_FLAG = 2,
+    MESH_FLASH_PARAMS_SEQ = 3,
+    MESH_FLASH_PARAMS_TTL = 4,
+    MESH_FLASH_PARAMS_FEATURES = 5,
+    MESH_FLASH_PARAMS_NWK_TX_PARAMS = 6,
+    MESH_FLASH_PARAMS_HB_PARAMS = 7,
+    MESH_FLASH_PARAMS_DEV_KEY = 8,
+    MESH_FLASH_PARAMS_NET_KEY = 9,
+    MESH_FLASH_PARAMS_APP_KEY = 10,
+    MESH_FLASH_PARAMS_VIR_ADDR = 11,
+    MESH_FLASH_PARAMS_RPL = 12,
+    MESH_FLASH_PARAMS_RPL_ENTRY = 13,
+    MESH_FLASH_PARAMS_RPL_SEQ = 14,
+    MESH_FLASH_PARAMS_MODEL_PUB_PARAMS = 15,
+    MESH_FLASH_PARAMS_MODEL_APP_KEY_BINDING = 16,
+    MESH_FLASH_PARAMS_MODEL_SUBSCRIBE_ADDR = 17,
+#if MESH_SBR
+    MESH_FLASH_PARAMS_BRIDGING_TABLE = 18,
+#endif
+#if MESH_DF
+    MESH_FLASH_PARAMS_DF_NWK_TX_PARAMS = 19,
+    MESH_FLASH_PARAMS_DF_NWK_CTL_TX_PARAMS = 20,
+    MESH_FLASH_PARAMS_DF_RSSI_THRESHOLD = 21,
+    MESH_FLASH_PARAMS_DF_DISCOVERY_TIMING = 22,
+    MESH_FLASH_PARAMS_DF_DIRECTED_CTL = 23,
+    MESH_FLASH_PARAMS_DF_PATH_METRIC = 24,
+    MESH_FLASH_PARAMS_DF_DISCOVERY_TABLE_CAP = 25,
+    MESH_FLASH_PARAMS_DF_WANTED_LANES = 26,
+    MESH_FLASH_PARAMS_DF_TWO_WAY_PATH = 27,
+    MESH_FLASH_PARAMS_DF_PATH_ECHO_INTERVAL = 28,
+    MESH_FLASH_PARAMS_DF_FIXED_PATH = 29,
+    MESH_FLASH_PARAMS_DF_FORWARDING_NUM = 30,
+#endif
 } flash_params_type_t;
 
 typedef struct
@@ -149,12 +172,15 @@ mesh_node_state_t mesh_flash_restore_node_state(void);
 
 ///@cond
 void mesh_flash_store(flash_params_type_t param_type, void *param);
+void mesh_flash_store_all(void);
 void mesh_flash_restore(void);
 void mesh_flash_clear(void);
 bool mesh_flash_restore_msg_id(uint16_t *unicast_addr, uint32_t *iv_index, uint32_t *seq,
                                bool *iv_update_flag);
-bool mesh_flash_retore_net_key(uint16_t net_key_index, uint16_t *net_key_index_g,
-                               uint8_t key[MESH_COMMON_KEY_SIZE]);
+bool mesh_flash_restore_net_key(uint16_t net_key_index, uint16_t *net_key_index_g,
+                                uint8_t key[MESH_COMMON_KEY_SIZE]);
+bool mesh_flash_restore_signature(uint32_t *signature);
+uint32_t mesh_flash_sign(void);
 uint32_t mesh_flash_total_size(void);
 ///@endcond
 

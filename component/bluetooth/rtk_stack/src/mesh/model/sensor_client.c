@@ -20,7 +20,7 @@
 static mesh_msg_send_cause_t sensor_client_send(const mesh_model_info_p pmodel_info,
                                                 uint16_t dst, uint16_t app_key_index, uint8_t *pmsg, uint16_t msg_len)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -278,6 +278,7 @@ static bool sensor_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_SENSOR_CADENCE_STATUS:
         {
             sensor_cadence_status_t *pmsg = (sensor_cadence_status_t *)pbuffer;
+            //RTK porting:avoid when pmsg->cadence == NULL
             if (NULL != pmodel_info->model_data_cb && (pmesh_msg->msg_len - sizeof(sensor_cadence_status_t)) != 0)
             {
                 sensor_client_status_cadence_t status_data = {pmesh_msg->src, 0, NULL};
@@ -307,6 +308,7 @@ static bool sensor_client_receive(mesh_msg_p pmesh_msg)
                                                uint8_t);
                 cadence.fast_cadence_high = (uint8_t *)cadence.fast_cadence_low + cadence.raw_value_len;
                 pmodel_info->model_data_cb(pmodel_info, SENSOR_CLIENT_STATUS_CADENCE, &status_data);
+            //RTK porting:avoid when pmsg->cadence == NULL
             } else {
                 sensor_client_status_cadence_t status_data = {pmesh_msg->src, 0, NULL};
                 status_data.property_id = pmsg->property_id;
@@ -323,9 +325,10 @@ static bool sensor_client_receive(mesh_msg_p pmesh_msg)
                 status_data.property_id = pmsg->property_id;
                 uint16_t ids_len = pmesh_msg->msg_len - sizeof(sensor_settings_status_t);
                 status_data.num_ids = ids_len / SETTING_PROPERTY_ID_LEN;
-			// status_data.setting_ids = pmsg->setting_ids;
-            void *pointer = (void *)pmsg->setting_ids;
-			status_data.setting_ids = (uint16_t *)pointer;
+                // avoid compile warning
+                // status_data.setting_ids = pmsg->setting_ids;
+                void *pointer = (void *)pmsg->setting_ids;
+                status_data.setting_ids = (uint16_t *)pointer;
                 pmodel_info->model_data_cb(pmodel_info, SENSOR_CLIENT_STATUS_SETTINGS, &status_data);
             }
         }

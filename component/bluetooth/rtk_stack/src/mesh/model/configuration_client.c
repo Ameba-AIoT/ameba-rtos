@@ -25,7 +25,7 @@ uint16_t cfg_client_key_index; //!< NetKey or AppKey depends on the mesh_node.fe
 
 static mesh_msg_send_cause_t cfg_client_send(uint16_t dst, uint8_t *pmsg, uint16_t len)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &cfg_client;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;

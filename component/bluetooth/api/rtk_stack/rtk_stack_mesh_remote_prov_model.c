@@ -128,16 +128,16 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
 	}
-	case RMT_PROV_CLIENT_EXTENED_SCAN_REPORT: {
-		rmt_prov_client_extened_scan_report_t *pdata = (rmt_prov_client_extened_scan_report_t *)pargs;
+	case RMT_PROV_CLIENT_EXTENDED_SCAN_REPORT: {
+		rmt_prov_client_extended_scan_report_t *pdata = (rmt_prov_client_extended_scan_report_t *)pargs;
 		uint16_t oob = 0xffff;
 		if (pdata->poob) {
 			oob = (pdata->poob[1] << 8) + pdata->poob[0];
 		}
-		BT_LOGA("rmt_prov_extened_scan_report: oob %d, uuid ", oob);
+		BT_LOGA("rmt_prov_extended_scan_report: oob %d, uuid ", oob);
 		data_uart_dump(pdata->uuid, 16);
 		if (pdata->adv_structs_len > 0) {
-			BT_LOGA("rmt_prov_extened_scan_report: adv structs ");
+			BT_LOGA("rmt_prov_extended_scan_report: adv structs ");
 			data_uart_dump(pdata->padv_structs, pdata->adv_structs_len);
 		}
 		break;
