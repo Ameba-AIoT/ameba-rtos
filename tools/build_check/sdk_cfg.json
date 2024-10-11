@@ -1,0 +1,1593 @@
+{
+  "AMEBAD": {
+    "MESH": {
+      "autoconf": {
+        "path": "component/wifi/driver/include/autoconf_8721d.h",
+        "set_y": [],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {},
+        "define_1": [
+          "CONFIG_WIFI_MESH"
+        ],
+        "define_0": [],
+        "remove": []
+      },
+      "hp_makefile": {
+        "path": "project/realtek_amebaD_va0_example/project_hp/asdk/make/application/Makefile",
+        "set_y": [],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {},
+        "remove": []
+      }
+    }
+  },
+  "AMEBALITE": {
+    "BT_EN": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_KM4_SINGLE_CORE",
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4",
+            "CONFIG_BT_BLE_ONLY_MENU",
+            "CONFIG_BT_BLE_ONLY_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT1": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU",
+          "CONFIG_AUDIO_FWK_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_AUDIO_FWK_FOR_KM4": [
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4",
+            "CONFIG_BT_BLE_ONLY",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_BT_MESH_PROVISIONER_MENU",
+            "CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU",
+            "CONFIG_BT_LE_AUDIO_MENU",
+            "CONFIG_BT_BAP_MENU",
+            "CONFIG_BT_CAP_MENU",
+            "CONFIG_BT_PBP_MENU",
+            "CONFIG_BT_TMAP_MENU",
+            "CONFIG_BT_MESH_PROVISIONER",
+            "CONFIG_BT_MESH_PROVISIONER_SUPPORT",
+            "CONFIG_BT_MESH_PROVISIONER_SCATTERNET",
+            "CONFIG_BT_LE_AUDIO",
+            "CONFIG_BT_APP_AUDIO_DATA",
+            "CONFIG_BT_AUDIO_CODEC_SUPPORT",
+            "CONFIG_BT_AUDIO_CODEC_LC3",
+            "CONFIG_BT_BAP",
+            "CONFIG_BT_BAP_SUPPORT",
+            "CONFIG_BT_CAP",
+            "CONFIG_BT_CAP_SUPPORT",
+            "CONFIG_BT_PBP",
+            "CONFIG_BT_PBP_SUPPORT",
+            "CONFIG_BT_TMAP",
+            "CONFIG_BT_TMAP_SUPPORT",
+            "CONFIG_AUDIO_MIXER_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT2": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_CODE_XIP_DATA_PSRAM",
+          "CONFIG_AP_CORE_KR4",
+          "CONFIG_BT_MENU",
+          "CONFIG_WLAN_KR4_AP_KM4_NP",
+          "CONFIG_AUDIO_FWK_FOR_KR4"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_CODE_XIP_DATA_SRAM",
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_WLAN_KM4_AP_KR4_NP"
+        ],
+        "set_insert": {
+          "CONFIG_AUDIO_FWK_FOR_KR4": [
+            "CONFIG_BT_FOR_KR4",
+            "CONFIG_FTL_ENABLED_FOR_KR4",
+            "CONFIG_BT_DUAL_MODE",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_BT_MESH_DEVICE_MENU",
+            "CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU",
+            "CONFIG_BT_A2DP_MENU",
+            "CONFIG_BT_HFP_MENU",
+            "CONFIG_BT_A2DP_HFP_MENU",
+            "CONFIG_BT_SPP",
+            "CONFIG_BT_AUDIO_MP_TEST_MENU",
+            "CONFIG_BT_A2DP_SCATTERNET_MENU",
+            "CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU",
+            "CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU",
+            "CONFIG_BT_MESH_DEVICE",
+            "CONFIG_BT_MESH_DEVICE_SUPPORT",
+            "CONFIG_BT_MESH_DEVICE_SCATTERNET",
+            "CONFIG_BT_A2DP",
+            "CONFIG_BT_APP_AUDIO_DATA",
+            "CONFIG_BT_AUDIO_CODEC_SUPPORT",
+            "CONFIG_BT_AUDIO_CODEC_SBC",
+            "CONFIG_BT_HFP",
+            "CONFIG_BT_AUDIO_CODEC_CVSD",
+            "CONFIG_BT_A2DP_HFP",
+            "CONFIG_BT_AUDIO_MP_TEST",
+            "CONFIG_BT_A2DP_SCATTERNET",
+            "CONFIG_BT_LE_AUDIO",
+            "CONFIG_BT_A2DP_LE_AUDIO_PBP",
+            "CONFIG_BT_PBP_SUPPORT",
+            "CONFIG_BT_AUDIO_CODEC_LC3",
+            "CONFIG_BT_A2DP_LE_AUDIO_TMAP",
+            "CONFIG_BT_TMAP_SUPPORT",
+            "CONFIG_AS_INIC_AP_FOR_KR4",
+            "CONFIG_AS_INIC_NP_FOR_KM4",
+            "CONFIG_LWIP_LAYER_FOR_KR4",
+            "CONFIG_FW_DRIVER_COEXIST_FOR_KM4",
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_KR4"
+          ]
+        },
+        "remove": [
+          "CONFIG_AS_INIC_AP_FOR_KM4",
+          "CONFIG_AS_INIC_NP_FOR_KR4",
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_FW_DRIVER_COEXIST_FOR_KR4"
+        ]
+      }
+    },
+    "AUDIO_MIXER": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_KM4",
+          "CONFIG_MEDIA_PLAYER_FOR_KM4",
+          "CONFIG_SPEEX_LIB_FOR_KM4",
+          "CONFIG_OPUS_LIB_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_KM4": [
+            "CONFIG_AUDIO_MIXER_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_WAV_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_MP3_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_AAC_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_MP4_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_FLAC_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_OGG_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_PCM_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_MP3_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_HAAC_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_VORBIS_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_OPUS_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "AUDIO_PASSTHROUGH": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_KM4",
+          "CONFIG_MEDIA_PLAYER_FOR_KM4",
+          "CONFIG_SPEEX_LIB_FOR_KM4",
+          "CONFIG_OPUS_LIB_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_KM4": [
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_WAV_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_MP3_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_AAC_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_MP4_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_FLAC_FOR_KM4",
+            "CONFIG_MEDIA_DEMUX_OGG_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_PCM_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_MP3_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_HAAC_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_VORBIS_FOR_KM4",
+            "CONFIG_MEDIA_CODEC_OPUS_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "AUDIO_MIXER_CROSS": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KR4",
+          "CONFIG_WLAN_KR4_AP_KM4_NP",
+          "CONFIG_AUDIO_FWK_FOR_KR4",
+          "CONFIG_MEDIA_PLAYER_FOR_KR4",
+          "CONFIG_SPEEX_LIB_FOR_KR4",
+          "CONFIG_OPUS_LIB_FOR_KR4"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_WLAN_KM4_AP_KR4_NP"
+        ],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_KR4": [
+            "CONFIG_AS_INIC_AP_FOR_KR4",
+            "CONFIG_AS_INIC_NP_FOR_KM4",
+            "CONFIG_LWIP_LAYER_FOR_KR4",
+            "CONFIG_FW_DRIVER_COEXIST_FOR_KM4",
+            "CONFIG_AUDIO_MIXER_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_WAV_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_MP3_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_AAC_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_MP4_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_FLAC_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_OGG_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_PCM_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_MP3_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_HAAC_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_VORBIS_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_OPUS_FOR_KR4"
+          ]
+        },
+        "remove": [
+          "CONFIG_AS_INIC_AP_FOR_KM4",
+          "CONFIG_AS_INIC_NP_FOR_KR4",
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_FW_DRIVER_COEXIST_FOR_KR4"
+        ]
+      }
+    },
+    "AUDIO_PASSTHROUGH_CROSS": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KR4",
+          "CONFIG_WLAN_KR4_AP_KM4_NP",
+          "CONFIG_AUDIO_FWK_FOR_KR4",
+          "CONFIG_MEDIA_PLAYER_FOR_KR4",
+          "CONFIG_SPEEX_LIB_FOR_KR4",
+          "CONFIG_OPUS_LIB_FOR_KR4"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_WLAN_KM4_AP_KR4_NP"
+        ],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_KR4": [
+            "CONFIG_AS_INIC_AP_FOR_KR4",
+            "CONFIG_AS_INIC_NP_FOR_KM4",
+            "CONFIG_LWIP_LAYER_FOR_KR4",
+            "CONFIG_FW_DRIVER_COEXIST_FOR_KM4",
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_WAV_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_MP3_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_AAC_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_MP4_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_FLAC_FOR_KR4",
+            "CONFIG_MEDIA_DEMUX_OGG_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_PCM_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_MP3_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_HAAC_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_VORBIS_FOR_KR4",
+            "CONFIG_MEDIA_CODEC_OPUS_FOR_KR4"
+          ]
+        },
+        "remove": [
+          "CONFIG_AS_INIC_AP_FOR_KM4",
+          "CONFIG_AS_INIC_NP_FOR_KR4",
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_FW_DRIVER_COEXIST_FOR_KR4"
+        ]
+      }
+    },
+    "DSP": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_DSP_EN",
+          "CONFIG_CODE_PSRAM_DATA_PSRAM"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_CODE_XIP_DATA_SRAM"
+        ],
+        "set_insert": {
+          "CONFIG_DSP_EN": [
+            "CONFIG_DSP_WITHIN_IMG2_EN"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "IPC": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_IMQ"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_IMQ": [
+            "CONFIG_IMQ2_EN",
+            "CONFIG_RPC_EN",
+            "CONFIG_IPC_MSG_MASTER"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "TRUSTZONE": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_TRUSTZONE_FOR_KM4",
+          "CONFIG_IMG1_SRAM"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_IMG1_FLASH"
+        ],
+        "set_insert": {
+          "CONFIG_TRUSTZONE_FOR_KM4": [
+            "CONFIG_TRUSTZONE_EN",
+            "CONFIG_IMG3_SRAM"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "PLATFORM": {
+      "KR4": {
+        "8726EA": {
+          "kr4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_kr4",
+            "set_y": [
+              "CONFIG_8726EA"
+            ],
+            "not_set": [
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "kr4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_kr4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8726EA"
+            ],
+            "undef": [
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8726EC": {
+          "kr4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_kr4",
+            "set_y": [
+              "CONFIG_8726EC"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "kr4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_kr4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8726EC"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8720EAM": {
+          "kr4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_kr4",
+            "set_y": [
+              "CONFIG_8720EAM"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "kr4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_kr4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8720EAM"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8720EAF": {
+          "kr4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_kr4",
+            "set_y": [
+              "CONFIG_8720EAF"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "kr4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_kr4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8720EAF"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8720EC": {
+          "kr4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_kr4",
+            "set_y": [
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF"
+            ]
+          },
+          "kr4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_kr4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF"
+            ]
+          }
+        }
+      },
+      "KM4": {
+        "8726EA": {
+          "km4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_km4",
+            "set_y": [
+              "CONFIG_8726EA"
+            ],
+            "not_set": [
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "km4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_km4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8726EA"
+            ],
+            "undef": [
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8726EC": {
+          "km4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_km4",
+            "set_y": [
+              "CONFIG_8726EC"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "km4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_km4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8726EC"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8720EAM": {
+          "km4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_km4",
+            "set_y": [
+              "CONFIG_8720EAM"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "km4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_km4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8720EAM"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAF",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8720EAF": {
+          "km4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_km4",
+            "set_y": [
+              "CONFIG_8720EAF"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          },
+          "km4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_km4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8720EAF"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ]
+          }
+        },
+        "8720EC": {
+          "km4_config": {
+            "path": "amebalite_gcc_project/menuconfig/.config_km4",
+            "set_y": [
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ],
+            "not_set": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF"
+            ]
+          },
+          "km4_platform_cfg": {
+            "path": "amebalite_gcc_project/project_km4/inc/platform_autoconf.h",
+            "define_1": [
+              "CONFIG_8720EC",
+              "CONFIG_XIP_FLASH"
+            ],
+            "undef": [
+              "CONFIG_8726EA",
+              "CONFIG_8726EC",
+              "CONFIG_8720EAM",
+              "CONFIG_8720EAF"
+            ]
+          }
+        }
+      }
+    },
+    "LITE_CROSS": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KR4",
+          "CONFIG_WLAN_KR4_AP_KM4_NP"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_WLAN_KM4_AP_KR4_NP"
+        ],
+        "set_insert": {
+          "CONFIG_WLAN_KR4_AP_KM4_NP": [
+            "CONFIG_AS_INIC_AP_FOR_KR4",
+            "CONFIG_AS_INIC_NP_FOR_KM4",
+            "CONFIG_LWIP_LAYER_FOR_KR4",
+            "CONFIG_FW_DRIVER_COEXIST_FOR_KM4"
+          ]
+        },
+        "remove": [
+          "CONFIG_AS_INIC_AP_FOR_KM4",
+          "CONFIG_AS_INIC_NP_FOR_KR4",
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_FW_DRIVER_COEXIST_FOR_KR4"
+        ]
+      }
+    },
+    "MP": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_LWIP_LAYER_FOR_KM4"
+        ],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_SHRINK"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "MP_NORMAL": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_EXPAND"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "KR4_SINGLECORE": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KR4",
+          "CONFIG_WIFI_KR4_SINGLE_CORE"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_WIFI_INIC",
+          "CONFIG_WLAN_KM4_AP_KR4_NP"
+        ],
+        "set_insert": {
+          "CONFIG_WIFI_KR4_SINGLE_CORE": [
+            "CONFIG_SINGLE_CORE_WIFI_FOR_KR4",
+            "CONFIG_LWIP_LAYER_FOR_KR4"
+          ]
+        },
+        "remove": [
+          "CONFIG_WLAN_FOR_KM4",
+          "CONFIG_AS_INIC_AP_FOR_KM4",
+          "CONFIG_AS_INIC_NP_FOR_KR4",
+          "CONFIG_LWIP_LAYER_FOR_KM4"
+        ]
+      }
+    },
+    "DISABLE_WIFI": {
+      "auto_config": {
+        "path": "amebalite_gcc_project/menuconfig/.config",
+        "set_y": [],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_WIFI_MENU": []
+        },
+        "remove": [
+          "CONFIG_WLAN_MENU",
+          "CONFIG_WLAN_KM4_AP_KR4_NP",
+          "CONFIG_WLAN_FOR_KR4",
+          "CONFIG_WLAN_FOR_KM4",
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_FW_DRIVER_COEXIST_FOR_KR4"
+        ]
+      }
+    },
+    "build_dir": "amebalite_gcc_project"
+  },
+  "AMEBASMART": {
+    "BT_EN": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_CA32_SINGLE_CORE",
+            "CONFIG_BT_FOR_AP",
+            "CONFIG_FTL_ENABLED_FOR_AP",
+            "CONFIG_BT_DUAL_MODE_MENU",
+            "CONFIG_BT_DUAL_MODE_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT1": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU",
+          "CONFIG_AUDIO_FWK_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_AUDIO_FWK_FOR_AP": [
+            "CONFIG_BT_FOR_AP",
+            "CONFIG_FTL_ENABLED_FOR_AP",
+            "CONFIG_BT_BLE_ONLY",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_BT_MESH_PROVISIONER_MENU",
+            "CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU",
+            "CONFIG_BT_LE_AUDIO_MENU",
+            "CONFIG_BT_BAP_MENU",
+            "CONFIG_BT_CAP_MENU",
+            "CONFIG_BT_PBP_MENU",
+            "CONFIG_BT_TMAP_MENU",
+            "CONFIG_BT_GMAP_MENU",
+            "CONFIG_BT_MESH_PROVISIONER",
+            "CONFIG_BT_MESH_PROVISIONER_SUPPORT",
+            "CONFIG_BT_MESH_PROVISIONER_SCATTERNET",
+            "CONFIG_BT_LE_AUDIO",
+            "CONFIG_BT_APP_AUDIO_DATA",
+            "CONFIG_BT_AUDIO_CODEC_SUPPORT",
+            "CONFIG_BT_AUDIO_CODEC_LC3",
+            "CONFIG_BT_BAP",
+            "CONFIG_BT_BAP_SUPPORT",
+            "CONFIG_BT_CAP",
+            "CONFIG_BT_CAP_SUPPORT",
+            "CONFIG_BT_PBP",
+            "CONFIG_BT_PBP_SUPPORT",
+            "CONFIG_BT_TMAP",
+            "CONFIG_BT_TMAP_SUPPORT",
+            "CONFIG_BT_GMAP",
+            "CONFIG_BT_GMAP_SUPPORT",
+            "CONFIG_AUDIO_MIXER_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT2": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU",
+          "CONFIG_AUDIO_FWK_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_AUDIO_FWK_FOR_AP": [
+            "CONFIG_BT_FOR_AP",
+            "CONFIG_FTL_ENABLED_FOR_AP",
+            "CONFIG_BT_DUAL_MODE",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_BT_MESH_DEVICE_MENU",
+            "CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU",
+            "CONFIG_BT_A2DP_MENU",
+            "CONFIG_BT_HFP_MENU",
+            "CONFIG_BT_A2DP_HFP_MENU",
+            "CONFIG_BT_SPP",
+            "CONFIG_BT_A2DP_SCATTERNET_MENU",
+            "CONFIG_BT_A2DP_LE_AUDIO_PBP_MENU",
+            "CONFIG_BT_A2DP_LE_AUDIO_TMAP_MENU",
+            "CONFIG_BT_MESH_DEVICE",
+            "CONFIG_BT_MESH_DEVICE_SUPPORT",
+            "CONFIG_BT_MESH_DEVICE_SCATTERNET",
+            "CONFIG_BT_A2DP",
+            "CONFIG_BT_APP_AUDIO_DATA",
+            "CONFIG_BT_AUDIO_CODEC_SUPPORT",
+            "CONFIG_BT_AUDIO_CODEC_SBC",
+            "CONFIG_BT_HFP",
+            "CONFIG_BT_AUDIO_CODEC_CVSD",
+            "CONFIG_BT_A2DP_HFP",
+            "CONFIG_BT_A2DP_SCATTERNET",
+            "CONFIG_BT_LE_AUDIO",
+            "CONFIG_BT_A2DP_LE_AUDIO_PBP",
+            "CONFIG_BT_PBP_SUPPORT",
+            "CONFIG_BT_AUDIO_CODEC_LC3",
+            "CONFIG_BT_A2DP_LE_AUDIO_TMAP",
+            "CONFIG_BT_TMAP_SUPPORT",
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT3": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_BT_MENU",
+          "CONFIG_SINGLE_CORE_WIFI_KM4"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_CA32",
+          "CONFIG_AS_INIC_KM4_NP_CA32_AP"
+        ],
+        "set_insert": {
+          "CONFIG_SINGLE_CORE_WIFI_KM4": [
+            "CONFIG_BT_FOR_HP",
+            "CONFIG_FTL_ENABLED_FOR_HP",
+            "CONFIG_BT_BLE_ONLY",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_LWIP_LAYER_FOR_HP",
+            "CONFIG_SINGLE_CORE_WIFI_FOR_HP"
+          ]
+        },
+        "remove": [
+          "CONFIG_WLAN_FOR_AP",
+          "CONFIG_AS_INIC_AP_FOR_AP",
+          "CONFIG_LWIP_LAYER_FOR_AP",
+          "CONFIG_AS_INIC_NP_FOR_HP"
+        ]
+      }
+    },
+    "AUDIO_MIXER": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_AP",
+          "CONFIG_MEDIA_PLAYER_FOR_AP",
+          "CONFIG_SPEEX_LIB_FOR_AP",
+          "CONFIG_OPUS_LIB_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_AP": [
+            "CONFIG_AUDIO_MIXER_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_WAV_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_MP3_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_AAC_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_MP4_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_FLAC_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_OGG_FOR_AP",
+            "CONFIG_MEDIA_CODEC_PCM_FOR_AP",
+            "CONFIG_MEDIA_CODEC_MP3_FOR_AP",
+            "CONFIG_MEDIA_CODEC_HAAC_FOR_AP",
+            "CONFIG_MEDIA_CODEC_VORBIS_FOR_AP",
+            "CONFIG_MEDIA_CODEC_OPUS_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "AUDIO_PASSTHROUGH": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_AP",
+          "CONFIG_MEDIA_PLAYER_FOR_AP",
+          "CONFIG_SPEEX_LIB_FOR_AP",
+          "CONFIG_OPUS_LIB_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_AP": [
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_WAV_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_MP3_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_AAC_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_MP4_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_FLAC_FOR_AP",
+            "CONFIG_MEDIA_DEMUX_OGG_FOR_AP",
+            "CONFIG_MEDIA_CODEC_PCM_FOR_AP",
+            "CONFIG_MEDIA_CODEC_MP3_FOR_AP",
+            "CONFIG_MEDIA_CODEC_HAAC_FOR_AP",
+            "CONFIG_MEDIA_CODEC_VORBIS_FOR_AP",
+            "CONFIG_MEDIA_CODEC_OPUS_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "AUDIO_MIXER_SINGLECORE": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_SINGLE_CORE_WIFI_KM4",
+          "CONFIG_AUDIO_FWK_FOR_HP",
+          "CONFIG_SPEEX_LIB_FOR_HP",
+          "CONFIG_OPUS_LIB_FOR_HP"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_CA32",
+          "CONFIG_AS_INIC_KM4_NP_CA32_AP"
+        ],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_HP": [
+            "CONFIG_LWIP_LAYER_FOR_HP",
+            "CONFIG_SINGLE_CORE_WIFI_FOR_HP",
+            "CONFIG_AUDIO_MIXER_FOR_HP"
+          ]
+        },
+        "remove": [
+          "CONFIG_WLAN_FOR_AP",
+          "CONFIG_AS_INIC_AP_FOR_AP",
+          "CONFIG_LWIP_LAYER_FOR_AP",
+          "CONFIG_AS_INIC_NP_FOR_HP"
+        ]
+      }
+    },
+    "AUDIO_PASSTHROUGH_SINGLECORE": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AP_CORE_KM4",
+          "CONFIG_SINGLE_CORE_WIFI_KM4",
+          "CONFIG_AUDIO_FWK_FOR_HP",
+          "CONFIG_SPEEX_LIB_FOR_HP",
+          "CONFIG_OPUS_LIB_FOR_HP"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_AP_CORE_CA32",
+          "CONFIG_AS_INIC_KM4_NP_CA32_AP"
+        ],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_HP": [
+            "CONFIG_LWIP_LAYER_FOR_HP",
+            "CONFIG_SINGLE_CORE_WIFI_FOR_HP",
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_HP"
+          ]
+        },
+        "remove": [
+          "CONFIG_WLAN_FOR_AP",
+          "CONFIG_AS_INIC_AP_FOR_AP",
+          "CONFIG_LWIP_LAYER_FOR_AP",
+          "CONFIG_AS_INIC_NP_FOR_HP"
+        ]
+      }
+    },
+    "IPC": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_IMQ_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_IMQ_FOR_AP": [
+            "CONFIG_IMQ_EN_FOR_AP",
+            "CONFIG_AS_IMQ_AP_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "TRUSTZONE": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_TRUSTZONE_FOR_HP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_TRUSTZONE_FOR_HP": [
+            "CONFIG_TRUSTZONE_EN_FOR_HP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "MSFT": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_CLINTWOOD",
+          "CONFIG_AUDIO_FWK_FOR_HP",
+          "CONFIG_SINGLE_CORE_WIFI_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_CLINTWOOD": [
+            "CONFIG_CLINTWOOD_FOR_LP",
+            "CONFIG_CLINTWOOD_FOR_HP",
+            "CONFIG_CLINTWOOD_FOR_AP",
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_HP",
+            "CONFIG_IMQ_EN_FOR_HP",
+            "CONFIG_IMQ_EN_FOR_AP",
+            "CONFIG_LWIP_LAYER_FOR_HP",
+            "CONFIG_SINGLE_CORE_WIFI_FOR_HP",
+            "CONFIG_IPC_MSG_MASTER_FOR_HP"
+          ]
+        },
+        "remove": [
+          "CONFIG_WLAN_FOR_AP",
+          "CONFIG_AS_INIC_AP_FOR_AP",
+          "CONFIG_LWIP_LAYER_FOR_AP",
+          "CONFIG_AS_INIC_NP_FOR_HP"
+        ]
+      }
+    },
+    "USB_AP_DEVICE": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_USB_OTG_EN_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_USB_OTG_EN_FOR_AP": [
+            "CONFIG_USB_DRD_EN_FOR_AP",
+            "CONFIG_USBD_CDC_ACM_FOR_AP",
+            "CONFIG_USBD_COMPOSITE_FOR_AP",
+            "CONFIG_USBD_HID_FOR_AP",
+            "CONFIG_USBD_MSC_FOR_AP",
+            "CONFIG_USBD_VENDOR_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "USB_AP_HOST": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_USB_OTG_EN_FOR_AP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_USB_OTG_EN_FOR_AP": [
+            "CONFIG_USB_DRD_EN_FOR_AP",
+            "CONFIG_USBH_CDC_ACM_FOR_AP",
+            "CONFIG_USBH_CDC_ECM_FOR_AP",
+            "CONFIG_ETHERNET_FOR_AP",
+            "CONFIG_ETHERNET_BRIDGE_FOR_AP",
+            "CONFIG_USBH_MSC_FOR_AP",
+            "CONFIG_USBH_UVC_FOR_AP",
+            "CONFIG_USBH_VENDOR_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "USB_HP_DEVICE": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_USB_OTG_EN_FOR_HP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_USB_OTG_EN_FOR_HP": [
+            "CONFIG_USB_DEVICE_EN_FOR_HP",
+            "CONFIG_USBD_CDC_ACM_FOR_HP",
+            "CONFIG_USBD_COMPOSITE_FOR_HP",
+            "CONFIG_USBD_HID_FOR_HP",
+            "CONFIG_USBD_MSC_FOR_HP",
+            "CONFIG_USBD_VENDOR_FOR_HP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "USB_HP_HOST": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_USB_OTG_EN_FOR_HP"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_USB_OTG_EN_FOR_HP": [
+            "CONFIG_USB_HOST_EN_FOR_HP",
+            "CONFIG_USBH_CDC_ACM_FOR_HP",
+            "CONFIG_USBH_CDC_ECM_FOR_HP",
+            "CONFIG_ETHERNET_FOR_HP",
+            "CONFIG_USBH_MSC_FOR_HP",
+            "CONFIG_USBH_UVC_FOR_HP",
+            "CONFIG_USBH_VENDOR_FOR_HP"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "VFS_FATFS": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_VFS_FATFS_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {},
+        "remove": []
+      }
+    },
+    "XIP_FLASH": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_XIP_FLASH"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {},
+        "remove": []
+      }
+    },
+    "MP": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_LWIP_LAYER_FOR_AP"
+        ],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_SHRINK"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "MP_NORMAL": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_EXPAND"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "LOGO": {
+      "rtw_autoconf": {
+        "path": "component/wifi/driver/include/rtw_autoconf.h",
+        "define_1": [
+          "WIFI_LOGO_CERTIFICATION"
+        ],
+        "define_0": [],
+        "undef": [],
+        "def_insert": {},
+        "remove": []
+      }
+    },
+    "DISABLE_WIFI": {
+      "auto_config": {
+        "path": "amebasmart_gcc_project/menuconfig/.config",
+        "set_y": [],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_WIFI_MENU": []
+        },
+        "remove": [
+          "CONFIG_WLAN_MENU",
+          "CONFIG_AS_INIC_KM4_NP_CA32_AP",
+          "CONFIG_WLAN_FOR_AP",
+          "CONFIG_LWIP_LAYER_FOR_AP",
+          "CONFIG_WLAN_FOR_HP"
+        ]
+      }
+    },
+    "build_dir": "amebasmart_gcc_project"
+  },
+  "AMEBADPLUS": {
+    "BT_EN": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT1": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_BT_MESH_PROVISIONER_MENU",
+            "CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU",
+            "CONFIG_BT_MESH_PROVISIONER",
+            "CONFIG_BT_MESH_PROVISIONER_SUPPORT",
+            "CONFIG_BT_MESH_PROVISIONER_SCATTERNET"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT2": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4",
+            "CONFIG_BT_EXAMPLE_DEMO_MENU",
+            "CONFIG_BT_PERIPHERAL",
+            "CONFIG_BT_CENTRAL",
+            "CONFIG_BT_SCATTERNET",
+            "CONFIG_BT_MESH_DEVICE_MENU",
+            "CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU",
+            "CONFIG_BT_MESH_DEVICE",
+            "CONFIG_BT_MESH_DEVICE_SUPPORT",
+            "CONFIG_BT_MESH_DEVICE_SCATTERNET"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "MP": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_WIFI_FW_EN_FOR_KM0"
+        ],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_SHRINK"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "MP_NORMAL": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_EXPAND"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT_MP_SHRINK": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED",
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_WIFI_FW_EN_FOR_KM0"
+        ],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_SHRINK"
+          ],
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4",
+            "CONFIG_BT_ENABLE_FAST_MP_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "BT_MP_EXPAND": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_MP_INCLUDED",
+          "CONFIG_BT_MENU"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_MP_INCLUDED": [
+            "CONFIG_MP_EXPAND"
+          ],
+          "CONFIG_BT_MENU": [
+            "CONFIG_BT_FOR_KM4",
+            "CONFIG_FTL_ENABLED_FOR_KM4",
+            "CONFIG_BT_ENABLE_FAST_MP_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "USB_KM4_DEVICE": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_USB_DEVICE_EN_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_USB_DEVICE_EN_FOR_KM4": [
+            "CONFIG_USBD_CDC_ACM_FOR_KM4",
+            "CONFIG_USBD_COMPOSITE_FOR_KM4",
+            "CONFIG_USBD_HID_FOR_KM4",
+            "CONFIG_USBD_VENDOR_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "HIGH_TP_FOR_INIC": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_HIGH_TP_TEST"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {},
+        "remove": []
+      }
+    },
+    "WPS": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_ENABLE_WPS_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_ENABLE_WPS_FOR_KM4": [
+            "CONFIG_ENABLE_WPS_DISCOVERY_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "AUDIO_PASSTHROUGH": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_KM4",
+          "CONFIG_SPEEX_LIB_FOR_KM4",
+          "CONFIG_OPUS_LIB_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_OPUS_LIB_FOR_KM4": [
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "WIFI_AUDIO": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_AUDIO_FWK_FOR_KM4": [
+            "CONFIG_AUDIO_PASSTHROUGH_FOR_KM4",
+            "CONFIG_WIFI_AUDIO_FOR_KM4"
+          ]
+        },
+        "remove": []
+      }
+    },
+    "WFA_SRC": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_AUDIO_FWK_FOR_KM4",
+          "CONFIG_AUDIO_PASSTHROUGH_FOR_KM4",
+          "CONFIG_WFA_SRC_FOR_KM4"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {},
+        "remove": []
+      }
+    },
+    "SDIO_DEVICE": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_SDIO_FULLMAC",
+          "CONFIG_KM0_AS_NP",
+          "CONFIG_INIC_INTF_SDIO"
+        ],
+        "set_n": [],
+        "not_set": [
+          "CONFIG_KM0_NP_KM4_AP"
+        ],
+        "set_insert": {},
+        "remove": [
+          "CONFIG_INIC_INTF_IPC",
+          "CONFIG_WLAN_FOR_KM4",
+          "CONFIG_AS_INIC_AP_FOR_KM4",
+          "CONFIG_LWIP_LAYER_FOR_KM4"
+        ]
+      }
+    },
+    "DISABLE_WIFI": {
+      "auto_config": {
+        "path": "amebadplus_gcc_project/menuconfig/.config",
+        "set_y": [],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_WIFI_MENU": [
+            "CONFIG_AS_INIC_NP_FOR_KM0"
+          ]
+        },
+        "remove": [
+          "CONFIG_WLAN_MENU",
+          "CONFIG_KM0_NP_KM4_AP",
+          "CONFIG_INIC_INTF_IPC",
+          "CONFIG_WLAN_FOR_KM0",
+          "CONFIG_WLAN_FOR_KM4",
+          "CONFIG_AS_INIC_NP_FOR_KM0",
+          "CONFIG_LWIP_LAYER_FOR_KM4",
+          "CONFIG_FW_DRIVER_COEXIST_FOR_KM0",
+          "CONFIG_WIFI_FW_EN_FOR_KM0"
+        ]
+      }
+    },
+    "build_dir": "amebadplus_gcc_project"
+  },
+  "AMEBAGREEN2": {
+    "WIFI": {
+      "auto_config": {
+        "path": "amebagreen2_gcc_project/menuconfig/.config",
+        "set_y": [
+          "CONFIG_WLAN"
+        ],
+        "set_n": [],
+        "not_set": [],
+        "set_insert": {
+          "CONFIG_WLAN": [
+            "CONFIG_WLAN_AP_AP_NP_NP",
+            "CONFIG_AS_INIC_AP_FOR_AP",
+            "CONFIG_AS_INIC_NP_FOR_NP",
+            "CONFIG_LWIP_LAYER_FOR_AP"
+          ]
+        },
+        "remove": []
+      }
+    }
+  }
+}
