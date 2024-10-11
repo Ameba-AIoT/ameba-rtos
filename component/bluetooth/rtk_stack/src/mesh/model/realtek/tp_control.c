@@ -32,7 +32,7 @@ struct tp_tx_ctx_t
 static mesh_msg_send_cause_t tp_control_send(uint16_t dst, uint8_t ttl, uint8_t *pmsg,
                                              uint16_t msg_len, uint16_t app_key_index)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = &tp_control;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;

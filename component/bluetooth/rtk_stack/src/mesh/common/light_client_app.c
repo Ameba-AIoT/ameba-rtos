@@ -201,7 +201,7 @@ static int32_t light_hsl_client_data(const mesh_model_info_p pmodel_info,
             }
             else
             {
-                data_uart_debug("light hsl client receive: src %d, present lightness %d, present hue %d, presnet saturation %d\r\n",
+                data_uart_debug("light hsl client receive: src %d, present lightness %d, present hue %d, present saturation %d\r\n",
                                 pdata->src, pdata->lightness, pdata->hue, pdata->saturation);
             }
         }

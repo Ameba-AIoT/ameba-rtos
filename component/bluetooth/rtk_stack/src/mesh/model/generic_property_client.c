@@ -16,7 +16,7 @@ static mesh_msg_send_cause_t generic_property_client_send(const mesh_model_info_
                                                           uint16_t dst, uint16_t app_key_index,
                                                           uint8_t *pmsg, uint16_t msg_len)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -191,13 +191,14 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-			if (value_len > 0) {
-				// status_data.pproperty_ids = pmsg->property_ids;
-				void *pointer = (uint8_t *)pmsg + 1;
-				status_data.pproperty_ids = (uint16_t *)pointer;
+				if (value_len > 0) {
+                    // avoid compile warning
+					// status_data.pproperty_ids = pmsg->property_ids;
+					void *pointer = (uint8_t *)pmsg + 1;
+					status_data.pproperty_ids = (uint16_t *)pointer;
                     status_data.num_ids = value_len / 2;
                 }
-                pmodel_info->model_data_cb(pmodel_info, GENERIC_USER_PROPERIES_CLIENT_STATUS, &status_data);
+                pmodel_info->model_data_cb(pmodel_info, GENERIC_USER_PROPERTIES_CLIENT_STATUS, &status_data);
             }
         }
         break;
@@ -237,10 +238,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-			if (value_len > 0) {
-				// status_data.pproperty_ids = pmsg->property_ids;
-				void *pointer = (uint8_t *)pmsg + 1;
-				status_data.pproperty_ids = (uint16_t *)pointer;
+				if (value_len > 0) {
+                    // avoid compile warning
+					// status_data.pproperty_ids = pmsg->property_ids;
+					void *pointer = (uint8_t *)pmsg + 1;
+					status_data.pproperty_ids = (uint16_t *)pointer;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_ADMIN_PROPERTIES_CLIENT_STATUS, &status_data);
@@ -284,10 +286,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-			if (value_len > 0) {
-				// status_data.pproperty_ids = pmsg->property_ids;
-				void *pointer = (uint8_t *)pmsg + 1;
-				status_data.pproperty_ids = (uint16_t *)pointer;
+				if (value_len > 0) {
+                    // avoid compile warning
+					// status_data.pproperty_ids = pmsg->property_ids;
+					void *pointer = (uint8_t *)pmsg + 1;
+					status_data.pproperty_ids = (uint16_t *)pointer;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_MANUFACTURER_PROPERTIES_CLIENT_STATUS,
@@ -331,10 +334,11 @@ static bool generic_property_client_receive(mesh_msg_p pmesh_msg)
                 status_data.src = pmesh_msg->src;
                 status_data.pproperty_ids = NULL;
                 status_data.num_ids = 0;
-			if (value_len > 0) {
-				// status_data.pproperty_ids = pmsg->property_ids;
-				void *pointer = (uint8_t *)pmsg + 1;
-				status_data.pproperty_ids = (uint16_t *)pointer;
+				if (value_len > 0) {
+                    // avoid compile warning
+					// status_data.pproperty_ids = pmsg->property_ids;
+					void *pointer = (uint8_t *)pmsg + 1;
+					status_data.pproperty_ids = (uint16_t *)pointer;
                     status_data.num_ids = value_len / 2;
                 }
                 pmodel_info->model_data_cb(pmodel_info, GENERIC_CLIENT_PROPERTIES_CLIENT_STATUS, &status_data);

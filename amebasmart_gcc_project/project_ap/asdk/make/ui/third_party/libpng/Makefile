@@ -1,7 +1,7 @@
 
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: all clean
+.PHONY: lib clean
 
 #*****************************************************************************#
 #                               VARIABLES	                              #
@@ -53,7 +53,7 @@ STATIC_LIB = lib_png.a
 #*****************************************************************************#
 #                        RULES TO GENERATE TARGETS                            #
 #*****************************************************************************#
-all: CLEAN_OBJS CORE_TARGETS COPY_RAM_OBJS
+lib: CLEAN_OBJS CORE_TARGETS
 
 #*****************************************************************************#
 #              GENERATE OBJECT FILE

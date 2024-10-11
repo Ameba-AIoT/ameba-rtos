@@ -150,6 +150,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 		bool "  BT HFP"													CONFIG_BT_HFP_MENU
 		bool "  BT A2DP and BT HFP"										CONFIG_BT_A2DP_HFP_MENU
 		bool "  BT SPP"													CONFIG_BT_SPP
+		bool "  BT RFC"													CONFIG_BT_RFC
 		bool "  BT Audio MP Test"										CONFIG_BT_AUDIO_MP_TEST_MENU
 #		bool "  BT HID"													CONFIG_BT_HID
 #		bool "  BT PTS"													CONFIG_BT_PTS
@@ -671,15 +672,6 @@ endmenu
 # endmenu
 
 mainmenu_option next_comment
-comment '< GUI Config'
-bool "Enable GUI"                    		CONFIG_GUI_EN_FOR_KM4
-if [ "$CONFIG_GUI_EN_FOR_KM4" = "y" ]; then
-	bool "emWin"		CONFIG_EMWIN_EN_FOR_KM4
-	bool "LittlevGL"		CONFIG_LITTLEVGL_EN_FOR_KM4
-fi
-endmenu
-
-mainmenu_option next_comment
 comment '< Audio Config'
 
 bool "Enable Audio Framework"		CONFIG_AUDIO_FWK_FOR_KM4
@@ -732,6 +724,14 @@ endmenu
 #fi
 if [ "$CONFIG_MEDIA_PLAYER_FOR_KM4" = "y" -o "$CONFIG_MEDIA_LITE_PLAYER_FOR_KM4" = "y" ]; then
 	define_bool CONFIG_AUDIO_FWK_FOR_KM4 y
+fi
+endmenu
+
+mainmenu_option next_comment
+comment '< GUI Config'
+bool "Enable GUI"                               CONFIG_GUI_EN_FOR_KM4
+if [ "$CONFIG_GUI_EN_FOR_KM4" = "y" ]; then
+        bool "LVGL"             CONFIG_LVGL_EN_FOR_KM4
 fi
 endmenu
 
@@ -963,6 +963,15 @@ if [ "$CONFIG_MEDIA_PLAYER_FOR_KR4" = "y" -o "$CONFIG_MEDIA_LITE_PLAYER_FOR_KR4"
 	define_bool CONFIG_AUDIO_FWK_FOR_KR4 y
 fi
 endmenu
+
+mainmenu_option next_comment
+comment '< GUI Config'
+bool "Enable GUI"                               CONFIG_GUI_EN_FOR_KR4
+if [ "$CONFIG_GUI_EN_FOR_KR4" = "y" ]; then
+        bool "LVGL"             CONFIG_LVGL_EN_FOR_KR4
+fi
+endmenu
+
 mainmenu_option next_comment
 comment '< CONFIG IPC Message Queue'
 bool "Enable IPC Message Queue"		CONFIG_IMQ_EN_FOR_KR4

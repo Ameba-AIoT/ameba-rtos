@@ -531,6 +531,26 @@ int atcmd_bt_spp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_rfc_main(uint8_t enable);
+int atcmd_bt_rfc(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
+		BT_LOGE("Error: wrong value (%d) for spp!\r\n", op);
+		return -1;
+	}
+	if (bt_rfc_main(op)) {
+		BT_LOGE("Error: rfc example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("rfc example %s OK!\r\n", action[op]);
+	return 0;
+}
+
 int bt_hid_main(uint8_t role, uint8_t enable);
 int atcmd_bt_hid(int argc, char *argv[])
 {

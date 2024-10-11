@@ -109,12 +109,18 @@ typedef struct
 
 typedef enum
 {
-    PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE = BIT0
+    PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE = BIT0,  // BTM_ECDH_P256_CMAC_AES128_AES_CCM
+#if MESH_EPA
+    PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM = BIT1,
+#endif
 } prov_cap_algorithm_t;
 
 enum
 {
-    PROV_START_FIPS_P256_ELLIPTIC_CURVE
+    PROV_START_FIPS_P256_ELLIPTIC_CURVE,    // BTM_ECDH_P256_CMAC_AES128_AES_CCM
+#if MESH_EPA
+    PROV_START_BTM_ECDH_P256_HMAC_SHA256_AES_CCM,
+#endif
 } _SHORT_ENUM_;
 typedef uint8_t prov_start_algorithm_t;
 
@@ -132,7 +138,10 @@ typedef uint8_t prov_start_public_key_t;
 
 typedef enum
 {
-    PROV_CAP_STATIC_OOB = BIT0
+    PROV_CAP_STATIC_OOB = BIT0,
+#if MESH_EPA
+    PROV_CAP_ONLY_OOB = BIT1,
+#endif
 } prov_cap_static_oob_t;
 
 #define OUTPUT_OOB_SIZE_MAX     8
@@ -232,12 +241,12 @@ typedef struct
 
 typedef struct
 {
-    uint8_t confirmation[16];
+    uint8_t confirmation[32];
 } _PACKED4_ prov_confirmation_t, *prov_confirmation_p;
 
 typedef struct
 {
-    uint8_t rand[16];
+    uint8_t rand[32];
 } _PACKED4_ prov_random_t, *prov_random_p;
 
 typedef struct
@@ -294,18 +303,27 @@ typedef struct
 {
     uint8_t public_key[64];
     uint8_t private_key[32];
-    uint8_t random[16];
-    uint8_t ecdh_secrect[32];
-    uint8_t conf[16];
-    uint8_t conf_salt[16];
-    uint8_t conf_key[16];
+    uint8_t random[32];
+    uint8_t ecdh_secret[32];
+    uint8_t conf[32];
+    uint8_t conf_salt[32];
+    uint8_t conf_key[32];
     uint8_t prov_salt[16];
     uint8_t conf_inputs[CONFIRMATION_INPUTS_LENGTH];
-    uint8_t auth_value[16];
+    uint8_t auth_value[32];
     bool auth_value_flag;
     bool confirm_rx_flag;
     prov_start_t prov_start;
 } prov_ctx_tmp_t, *prov_ctx_tmp_p;
+
+typedef enum
+{
+    PROV_MATERIAL_LEN_TYPE_RANDOM,
+    PROV_MATERIAL_LEN_TYPE_CONF,
+    PROV_MATERIAL_LEN_TYPE_CONF_SALT,
+    PROV_MATERIAL_LEN_TYPE_CONF_KEY,
+    PROV_MATERIAL_LEN_TYPE_AUTH_VALUE,
+} prov_material_len_type_t;
 
 /** @defgroup Provision_Callback Provision Callback
   * @brief  Callback types used for provisioning procedure.
@@ -356,23 +374,28 @@ typedef struct
 #endif
 
 /** little endian interfaced with app */
-typedef union
+typedef struct
 {
-    prov_generic_cb_type_t pb_generic_cb_type; //!< used in PROV_CB_TYPE_PB_ADV_LINK_STATE
-    prov_capabilities_t *pprov_capabilities; //!< used in PROV_CB_TYPE_PATH_CHOOSE by provisioner
-    prov_start_t *pprov_start; //!< used in PROV_CB_TYPE_AUTH_DATA by device
-    prov_data_t *pprov_data; //!< used in PROV_CB_TYPE_COMPLETE
-    prov_random_t *pprov_random; //!< used in PROV_CB_TYPE_RANDOM by device and provisioner
-    prov_cb_fail_t prov_fail; //!< used in PROV_CB_TYPE_FAIL
+    union
+    {
+        prov_generic_cb_type_t pb_generic_cb_type; //!< used in PROV_CB_TYPE_PB_ADV_LINK_STATE
+        prov_capabilities_t *pprov_capabilities; //!< used in PROV_CB_TYPE_PATH_CHOOSE by provisioner
+        prov_start_t *pprov_start; //!< used in PROV_CB_TYPE_AUTH_DATA by device
+        prov_data_t *pprov_data; //!< used in PROV_CB_TYPE_COMPLETE
+        prov_random_t *pprov_random; //!< used in PROV_CB_TYPE_RANDOM by device and provisioner
+        prov_cb_fail_t prov_fail; //!< used in PROV_CB_TYPE_FAIL
 #if MESH_PROV_WO_AUTH_VALUE
-    prov_check_conf_t prov_check_conf;
+        prov_check_conf_t prov_check_conf;
 #endif
+    };
+    prov_bearer_t bearer;
 } prov_cb_data_t;
 
+typedef struct _prov_ctx_t *prov_ctx_p;
 typedef bool (*prov_cb_pf)(prov_cb_type_t cb_type, prov_cb_data_t cb_data);
-typedef bool (*prov_send_t)(uint8_t *pdata, uint16_t len);
+typedef bool (*prov_send_t)(prov_ctx_p pprov_ctx, uint8_t *pdata, uint16_t len);
 
-typedef struct
+typedef struct _prov_ctx_t
 {
     prov_pdu_type_t fsm;
     bool fsm_flag; //!< TRUE: tx, False: Rx. Assisting to determine the FSM when there is ambiguity tx/rx the same msgs.
@@ -381,9 +404,14 @@ typedef struct
     plt_timer_t timer;
     prov_ctx_tmp_p pctx_tmp;
     prov_send_t prov_send;
+    prov_bearer_t bearer;
+    bool random_set;
+#if MESH_PROVISIONER
+    uint16_t assign_net_key_index;
+    uint16_t assign_addr;
+    int16_t assign_idx;
+#endif
 } prov_ctx_t, *prov_ctx_p;
-
-extern prov_ctx_t prov_ctx;
 /** @} */
 
 /** @} */
@@ -395,26 +423,59 @@ extern prov_ctx_t prov_ctx;
 
 ///@cond
 void prov_init(void);
-uint32_t prov_cap_check(void);
-uint32_t prov_start_check(void);
-void prov_timer_restart(void);
-void prov_timer_stop(void);
+uint32_t prov_cap_check(prov_ctx_p pprov_ctx);
+uint32_t prov_start_check(prov_ctx_p pprov_ctx);
+void prov_timer_restart(prov_ctx_p pprov_ctx);
+void prov_timer_stop(prov_ctx_p pprov_ctx);
 void prov_allocate(void);
 void prov_free(void);
-bool prov_ecc_key_gen(void);
+bool prov_ecc_key_gen(prov_ctx_p pprov_ctx);
 bool prov_ecc_key_validate(uint8_t public_key[64]);
 bool prov_ecdh_secret_gen(uint8_t public_key[64], uint8_t private_key[32], uint8_t secret[32]);
-void prov_conf_keys_gen(void);
-bool prov_conf_key_get(uint8_t conf_key[16]);
-void prov_confirmation_gen(uint8_t confirmation[16], uint8_t rand[16], uint8_t auth_value[16]);
-void prov_data_keys_gen(uint8_t random_provisioner[16], uint8_t random_device[16]);
-bool prov_data_crypto(uint8_t dev_key[16], uint8_t data[38], bool encrypt_decrypt);
-void prov_handle_disconnect(void);
-void prov_handle_timeout(void);
+void prov_conf_keys_gen(prov_ctx_p pprov_ctx);
+uint8_t prov_material_len_get(prov_ctx_p pprov_ctx, prov_material_len_type_t type);
+bool prov_conf_key_get(uint8_t conf_key[]);
+void prov_confirmation_gen(prov_ctx_p pprov_ctx, uint8_t confirmation[], uint8_t rand[],
+                           uint8_t auth_value[]);
+void prov_data_keys_gen(prov_ctx_p pprov_ctx, uint8_t random_provisioner[],
+                        uint8_t random_device[]);
+bool prov_data_crypto(prov_ctx_p pprov_ctx, uint8_t dev_key[16], uint8_t data[38],
+                      bool encrypt_decrypt);
+void prov_handle_disconnect(gap_sched_link_t link);
+void prov_handle_timeout(prov_ctx_p pprov_ctx);
 void prov_set_send_cb(prov_send_t pcb);
 uint16_t prov_dev_key_idx(uint16_t addr);
 bool prov_replace(uint16_t old_idx, uint16_t new_idx);
+void prov_ctx_deinit(void);
+prov_ctx_p prov_ctx_get(void);
+prov_ctx_p prov_ctx_get_def(void);
+prov_ctx_p prov_ctx_get_by_idx(uint8_t idx);
+prov_ctx_p prov_ctx_get_by_link(gap_sched_link_t link);
+prov_ctx_p prov_ctx_get_by_bearer(prov_bearer_t bearer);
+prov_ctx_p prov_ctx_alloc_by_bearer(prov_bearer_t bearer);
+bool prov_ctx_free(prov_ctx_p pprov_ctx);
+bool prov_ctx_free_by_bearer(prov_bearer_t bearer);
+void provisioner_prov_cb(prov_bearer_t bearer, prov_generic_cb_type_t type, uint8_t *pbuffer,
+                         uint16_t len);
 ///@endcond
+
+/**
+  * @brief set prov maximum parallel capability
+  *
+  * If the default value is not desired, this api shall be invoked before prov_params_set and mesh_init.
+  * @param[in] cnt: parallel number
+  * @return operation result
+  */
+bool prov_ctx_set_cnt(uint8_t cnt);
+
+/**
+  * @brief set prov current environment
+  *
+  * This api is used to choose operate the designated peer device by the bearer.
+  * @param[in] bearer: the provision bearer
+  * @return none
+  */
+void prov_ctx_set_def(prov_bearer_t bearer);
 
 /**
   * @brief get the provision parameters
@@ -462,7 +523,7 @@ bool prov_auth_value_change(uint8_t *pvalue, uint8_t len);
   * @param[in] random: random value
   * @return operation result
   */
-bool prov_auth_random_set(uint8_t random[16]);
+bool prov_auth_random_set(uint8_t random[]);
 
 /**
   * @brief get the auth value type
@@ -482,6 +543,25 @@ prov_auth_value_type_t prov_auth_value_type_get(prov_start_t *pprov_start);
   * @return operation result
   */
 bool prov_disconnect(pb_adv_link_close_reason_t reason);
+
+/**
+  * @brief disconnect the prov bearer
+  *
+  * The spec requires the provisioner to disconnect the bearer after the provision procedure.
+  * The mesh stack leaves the app to decide whether to disconnect at the case @ref PROV_CB_TYPE_COMPLETE.
+  * @param[in] pprov_ctx: designated device information
+  * @param[in] reason: pb-adv bearer need the disconnect reason
+  * @return operation result
+  */
+bool prov_disconnect_by_ctx(prov_ctx_p pprov_ctx, pb_adv_link_close_reason_t reason);
+
+/**
+ * @brief send prov data
+ * @param[in] pprov_ctx: provision information
+ * @param[in] pdata: provision data
+ * @param[in] len: provision data length
+ */
+bool prov_send(prov_ctx_p pprov_ctx, uint8_t *pdata, uint16_t len);
 
 /** @} */
 /** @} */

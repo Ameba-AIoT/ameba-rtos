@@ -71,6 +71,11 @@ generic_transition_time_t time_to_generic_transition_time(uint32_t time)
         }
     }
 
+    if (index >= sizeof(trans_time_map_max) / sizeof(trans_time_map_max[0]))
+    {
+        index = sizeof(trans_time_map_max) / sizeof(trans_time_map_max[0]) - 1;
+    }
+
     uint8_t steps = time / trans_time_tick_map[index];
     if (steps > 0x3e)
     {

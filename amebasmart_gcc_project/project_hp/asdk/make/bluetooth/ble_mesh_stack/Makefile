@@ -16,6 +16,9 @@ CSRC += \
 	$(BT_DIR)/rtk_stack/src/mesh/cmd/mesh_cmd.c \
 	$(BT_DIR)/rtk_stack/src/mesh/model/delay_msg_rsp.c \
 	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/datatrans_model.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/blob_transfer_client.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/firmware_distribution_client.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/firmware_update_client.c \
 	$(BT_DIR)/rtk_stack/src/mesh/utility/mesh_data_dump.c
 
 ifeq ($(CONFIG_BT_MESH_PROVISIONER_SUPPORT), y)
@@ -38,7 +41,10 @@ CSRC += \
 	$(BT_DIR)/rtk_stack/src/mesh/model/scheduler_client.c \
 	$(BT_DIR)/rtk_stack/src/mesh/model/time_client.c \
 	$(BT_DIR)/rtk_stack/src/mesh/model/sensor_client.c \
-	$(BT_DIR)/rtk_stack/src/mesh/model/health_client.c
+	$(BT_DIR)/rtk_stack/src/mesh/model/health_client.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/directed_forwarding_client.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/private_beacon_client.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/subnet_bridge_client.c
 endif
 
 ifeq ($(CONFIG_BT_MESH_DEVICE_SUPPORT), y)

@@ -803,7 +803,7 @@ static void usbh_verify_ctrl_process_tx(usb_host_t *host)
 	usbh_verify_host_t *verify = &usbh_verify_host;
 	usbh_verify_xfer_t *ep;
 	ep = &(verify->ctrl_out_xfer);
-	if (USBH_VERIFY_RX & verify->ctrl_trx_state) {
+	if (USBH_VERIFY_RX == verify->ctrl_trx_state) {
 		return;
 	}
 	if (USBH_VERIFY_TRX_IDLE == verify->ctrl_trx_state) {

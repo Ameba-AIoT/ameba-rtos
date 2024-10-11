@@ -9,6 +9,10 @@
 #define _PACKED4_            __attribute__ ((packed))
 #endif
 
+#ifndef _SHORT_ENUM_
+#define _SHORT_ENUM_        __attribute__ ((packed))
+#endif
+
 #define ACCESS_OPCODE_SIZE(opcode)              ((opcode) >= 0xc00000 ? 3 : ((opcode) >= 0x8000 ? 2 : 1))
 
 #define RTK_BT_MESH_EVT_MEM_OP_MAX_SIZE    0xffffffff
@@ -26,8 +30,13 @@
 #define BT_MESH_CONFIG_TRANS_RETRANS_COUNTS      4
 #define BT_MESH_CONFIG_MSG_TTL                   5
 
+#define BT_MESH_ENABLE_DIRECTED_FORWARDING                             1
+
 // Mesh models enable configuration
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+#define BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL                1
+#endif
 #define BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL                1
 #define BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL                     1
 #define BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL                      1
@@ -210,6 +219,26 @@ typedef enum {
 typedef enum {
 	RTK_BT_MESH_IO_MSG_SUBTYPE_ADV,
 } rtk_bt_mesh_msg_subtype;
+
+/**
+ * @typedef rtk_bt_mesh_addr_range_t
+ * @brief mesh addr range type
+ */
+
+typedef struct {
+	union {
+		struct {
+			uint16_t range_start : 15;
+			uint16_t len_present : 1;
+		};
+		struct {
+			uint16_t len_present_access : 1;
+			uint16_t range_start_access : 15;
+		};
+		uint16_t addr;
+	};
+	uint8_t range_len;
+} _PACKED4_ rtk_bt_mesh_addr_range_t;
 
 /**
  * @defgroup  ble_mesh_api_group BT LE Mesh APIs

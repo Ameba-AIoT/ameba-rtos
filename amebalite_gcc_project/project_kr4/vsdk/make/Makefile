@@ -73,6 +73,10 @@ COMPONENT += mbedtls
 COMPONENT_CLEAN += mbedtls
 endif
 
+ifeq ($(CONFIG_GUI_EN),y)
+COMPONENT += ui
+COMPONENT_CLEAN += ui
+endif
 
 
 COMPONENT_CLEAN += at_cmd

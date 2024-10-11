@@ -81,6 +81,7 @@ typedef enum {
 	RTK_BT_MESH_STACK_EVT_HB_SUB_PERIOD_UPDATE,
 	RTK_BT_MESH_STACK_EVT_HB_SUB_RECEIVE,
 	RTK_BT_MESH_STACK_EVT_RETRANS_PARAM_SETTING_RESULT,
+	RTK_BT_MESH_STACK_EVT_DF_CB,
 	RTK_BT_MESH_STACK_EVT_MAX,
 } rtk_bt_mesh_stack_event_t;
 
@@ -110,7 +111,18 @@ typedef enum {
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_APP_KEY,
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO,
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO,
+	RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO,
 } rtk_bt_mesh_stack_user_list_type_t;
+
+/**
+ * @typedef   rtk_bt_mesh_stack_evt_net_key_type
+ * @brief     BLE MESH net key type.
+ */
+typedef enum {
+	RTK_BT_MESH_NET_KEY_MASTER = 1,
+	RTK_BT_MESH_NET_KEY_FN,
+	RTK_BT_MESH_NET_KEY_DF,
+} rtk_bt_mesh_stack_net_key_type;
 
 /**
  * @typedef   rtk_bt_mesh_stack_role_t
