@@ -32,6 +32,7 @@ CSRC += \
 	$(DIR)/bt_atcmd/atcmd_bt_a2dp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_avrcp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_spp.c \
+	$(DIR)/bt_atcmd/atcmd_bt_rfc.c \
 	$(DIR)/bt_atcmd/atcmd_bt_hid.c \
 	$(DIR)/bt_atcmd/atcmd_bt_hfp.c \
 	$(DIR)/bt_atcmd/atcmd_bt_iso.c \
@@ -53,7 +54,8 @@ CSRC += \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_default_transition_time.c \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_model.c \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_sensor_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_health_model.c
+	$(DIR)/bt_atcmd/atcmd_bt_mesh_health_model.c \
+	$(DIR)/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c
 
 OBJS = $(notdir $(CSRC:.c=.o))
 

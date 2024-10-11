@@ -90,12 +90,15 @@ typedef enum
     MESH_PRIVATE_SERVICE_TIMEOUT,
     MESH_PRIVATE_SERVICE_ID_TIMEOUT,
 #endif
-#if MESH_BLOB
+#if MESH_MBT
     MESH_BLOB_SERVER_TRANSFER_TIMEOUT = 110,
-    MESH_BLOB_SERVER_PARTIAL_REPORT_TIMEOUT,
+    MESH_BLOB_SERVER_PULL_TIMEOUT = 111,
 #endif
 #if MESH_RPR
     MESH_REMOTE_PROV_TIMEOUT = 120,
+#endif
+#if MESH_DF
+    MESH_DF_TIMEOUT = 130,
 #endif
 } mesh_inner_msg_type_t;
 
@@ -124,6 +127,7 @@ typedef struct _mesh_inner_msg_t
 typedef enum
 {
     DEVICE_INFO_UDB,
+    DEVICE_INFO_SNB,
     DEVICE_INFO_PROV_ADV,
     DEVICE_INFO_PROXY_ADV
 } device_info_type_t;
@@ -135,6 +139,7 @@ typedef struct
     union
     {
         beacon_udb_t *pbeacon_udb;
+        beacon_snb_t *pbeacon_snb;
         mesh_service_data_t *pservice_data;
     };
 } device_info_t;

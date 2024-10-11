@@ -1684,7 +1684,7 @@ static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	if (false == bt_stack_gattc_cccd_record_get_profile_id(conn_id, handle, &profile_id)) {
-		return APP_RESULT_REJECT;
+		profile_id = 0;  /* If this character's cccd hasn't been enabled by any client, just send event to default gcs_client(profile_id=0) callback */
 	}
 
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,

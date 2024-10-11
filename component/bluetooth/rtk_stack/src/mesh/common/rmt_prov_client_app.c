@@ -15,8 +15,9 @@
 #include "rmt_prov_client_app.h"
 #include "remote_provisioning.h"
 #include "generic_types.h"
+#include "app_mesh_flags.h"
 
-#if MESH_RPR
+#if F_BT_MESH_1_1_RPR_SUPPORT
 
 static int32_t rmt_prov_client_data(const mesh_model_info_p pmodel_info, uint32_t type,
                                     void *pargs)
@@ -57,19 +58,19 @@ static int32_t rmt_prov_client_data(const mesh_model_info_p pmodel_info, uint32_
             data_uart_dump(pdata->uuid, 16);
         }
         break;
-    case RMT_PROV_CLIENT_EXTENED_SCAN_REPORT:
+    case RMT_PROV_CLIENT_EXTENDED_SCAN_REPORT:
         {
-            rmt_prov_client_extened_scan_report_t *pdata = (rmt_prov_client_extened_scan_report_t *)pargs;
+            rmt_prov_client_extended_scan_report_t *pdata = (rmt_prov_client_extended_scan_report_t *)pargs;
             uint16_t oob = 0xffff;
             if (pdata->poob)
             {
                 oob = (pdata->poob[1] << 8) + pdata->poob[0];
             }
-            data_uart_debug("rmt_prov_extened_scan_report: oob %d, uuid ", oob);
+            data_uart_debug("rmt_prov_extended_scan_report: oob %d, uuid ", oob);
             data_uart_dump(pdata->uuid, 16);
             if (pdata->adv_structs_len > 0)
             {
-                data_uart_debug("rmt_prov_extened_scan_report: adv structs ");
+                data_uart_debug("rmt_prov_extended_scan_report: adv structs ");
                 data_uart_dump(pdata->padv_structs, pdata->adv_structs_len);
             }
         }

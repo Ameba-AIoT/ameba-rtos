@@ -396,8 +396,8 @@ typedef struct
 {
     uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_ALI_ATTR_SET)];
     uint8_t tid;
-    ali_attr_type_t attr_type[1]; //!< variable number
-    uint8_t attr_param[1]; //!< variable length
+    ali_attr_type_t attr_type[0]; //!< variable number
+    uint8_t attr_param[0]; //!< variable length
 } _PACKED4_ ali_attr_set_t;
 
 typedef struct
@@ -474,7 +474,7 @@ mesh_msg_send_cause_t ali_attr_conf(mesh_model_info_t *pmodel_info, const mesh_m
 mesh_msg_send_cause_t ali_attr_msg_raw(mesh_model_info_t *pmodel_info, uint16_t dst,
                                        uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, uint8_t raw_data[], uint16_t data_len);
 mesh_msg_send_cause_t ali_attr_msg(mesh_model_info_t *pmodel_info, uint16_t dst,
-                                   uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, ali_attr_t attr[1], uint16_t attr_num);
+                                   uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, ali_attr_t attr[], uint16_t attr_num);
 mesh_msg_send_cause_t ali_transparent_msg(mesh_model_info_t *pmodel_info, uint16_t dst,
                                           uint16_t app_key_index, uint8_t transparent_msg[1], uint16_t msg_len);
 bool ali_model_reg(uint8_t element_index, mesh_model_info_p pmodel_info, bool server);

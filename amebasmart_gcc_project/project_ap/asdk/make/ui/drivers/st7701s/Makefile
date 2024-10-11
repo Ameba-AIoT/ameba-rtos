@@ -1,7 +1,7 @@
 
 include $(MAKE_INCLUDE_GEN)
 
-.PHONY: lib  clean
+.PHONY: all  clean
 
 #*****************************************************************************#
 #                               VARIABLES	                              #
@@ -40,7 +40,7 @@ OBJS = $(notdir $(CSRC:.c=.o))
 # Define the Rules to build the core targets
 COPY_RAM_OBJS: CORE_TARGETS
 
-lib: COPY_RAM_OBJS
+all: COPY_RAM_OBJS
 	$(COPY) $(OBJS) ../xip
 
 #*****************************************************************************#

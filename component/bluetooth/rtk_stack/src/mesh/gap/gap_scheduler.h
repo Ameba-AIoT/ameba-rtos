@@ -107,6 +107,7 @@ typedef enum
     GAP_SCHED_PARAMS_TASK_NUM,
     GAP_SCHED_PARAMS_LINK_NUM,
     GAP_SCHED_PARAMS_SCAN_MODE,
+    GAP_SCHED_PARAMS_ADV_TIMES,
     GAP_SCHED_PARAMS_BT5_AE, /**< Shall be configured before mesh_node_cfg invoked */
     GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE,
 } gap_sched_params_type_t;
@@ -117,7 +118,7 @@ typedef enum
     GAP_SCHED_TYPE_SCAN, //!< background scan
     GAP_SCHED_TYPE_ADV, //!< idle delay(random or zero) + one shot adv
     GAP_SCHED_TYPE_LPN_ADV, //!< one shot adv + reserved idle + scan a little while(scan maybe stopped in advance)
-    GAP_SCHED_TYPE_FN_ADV //!< reserverd idle + one shot adv
+    GAP_SCHED_TYPE_FN_ADV //!< reserved idle + one shot adv
 } gap_sched_type_t;
 
 typedef enum
@@ -336,7 +337,7 @@ void gap_sched_scan(bool on_off);
 /**
   * @brief handle the bt status message
   *
-  * The gap sheduler need process the bt messages.
+  * The gap scheduler need process the bt messages.
   *
   * @param[in] pmsg: the bt status msg
   * @return none
@@ -346,7 +347,7 @@ void gap_sched_handle_bt_status_msg(mesh_inner_msg_t *pmsg);
 /**
   * @brief handle the adv report
   *
-  * The gap sheduler need process the adv report.
+  * The gap scheduler need process the adv report.
   *
   * @param[in] ple_scan_info: the adv report
   * @return none

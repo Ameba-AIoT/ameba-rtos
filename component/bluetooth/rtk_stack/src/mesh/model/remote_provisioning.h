@@ -39,8 +39,8 @@ BEGIN_DECLS
 #define MESH_MSG_RMT_PROV_SCAN_STOP                            0x8053
 #define MESH_MSG_RMT_PROV_SCAN_STATUS                          0x8054
 #define MESH_MSG_RMT_PROV_SCAN_REPORT                          0x8055
-#define MESH_MSG_RMT_PROV_EXTENED_SCAN_START                   0x8056
-#define MESH_MSG_RMT_PROV_EXTENED_SCAN_REPORT                  0x8057
+#define MESH_MSG_RMT_PROV_EXTENDED_SCAN_START                  0x8056
+#define MESH_MSG_RMT_PROV_EXTENDED_SCAN_REPORT                 0x8057
 #define MESH_MSG_RMT_PROV_LINK_GET                             0x8058
 #define MESH_MSG_RMT_PROV_LINK_OPEN                            0x8059
 #define MESH_MSG_RMT_PROV_LINK_CLOSE                           0x805A
@@ -91,9 +91,9 @@ typedef uint8_t rmt_prov_dkri_procedure_t;
 
 enum
 {
-    RMT_PROV_LINK_CLOSE_SUCCESS,
-    RMT_PROV_LINK_CLOSE_PROHIBITED,
-    RMT_PROV_LINK_CLOSE_FAIL,
+    RMT_PROV_LINK_CLOSE_SUCCESS,    // The provisioning or Node Provisioning Protocol Interface procedure completed successfully
+    RMT_PROV_LINK_CLOSE_PROHIBITED, // Prohibited
+    RMT_PROV_LINK_CLOSE_FAIL,       // The provisioning or Node Provisioning Protocol Interface procedure failed
 } _SHORT_ENUM_;
 typedef uint8_t rmt_prov_link_close_reason_t;
 
@@ -137,8 +137,8 @@ typedef uint8_t rmt_prov_procedure_t;
 #define RMT_PROV_MAX_SCANNED_ITEMS_MAX                         255
 #define RMT_PROV_SCANNED_ITEMS_NO_LIMIT                        0
 
-#define RMT_PROV_EXTENED_SCAN_TIMEOUT_MIN                      0x01
-#define RMT_PROV_EXTENED_SCAN_TIMEOUT_MAX                      0x15
+#define RMT_PROV_EXTENDED_SCAN_TIMEOUT_MIN                     0x01
+#define RMT_PROV_EXTENDED_SCAN_TIMEOUT_MAX                     0x15
 
 #define RMT_PROV_LINK_OPEN_TIMEOUT_MIN                         0x01
 #define RMT_PROV_LINK_OPEN_TIMEOUT_MAX                         0x3C
@@ -193,18 +193,18 @@ typedef struct
 
 typedef struct
 {
-    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_RMT_PROV_EXTENED_SCAN_START)];
+    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_RMT_PROV_EXTENDED_SCAN_START)];
     uint8_t ad_type_filter_count;
     uint8_t data[0];
-} _PACKED4_ rmt_prov_extened_scan_start_t;
+} _PACKED4_ rmt_prov_extended_scan_start_t;
 
 typedef struct
 {
-    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_RMT_PROV_EXTENED_SCAN_REPORT)];
+    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_RMT_PROV_EXTENDED_SCAN_REPORT)];
     rmt_prov_status_t status;
     uint8_t uuid[16];
     uint8_t oob_adv[0];
-} _PACKED4_ rmt_prov_extened_scan_report_t;
+} _PACKED4_ rmt_prov_extended_scan_report_t;
 
 typedef struct
 {
@@ -242,7 +242,7 @@ typedef struct
     uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_RMT_PROV_LINK_REPORT)];
     rmt_prov_status_t status;
     rmt_prov_link_state_t link_state;
-    rmt_prov_link_close_reason_t reason;
+    pb_adv_link_close_reason_t reason;
 } _PACKED4_ rmt_prov_link_report_t;
 
 typedef struct
@@ -279,7 +279,7 @@ typedef struct
     uint8_t ad_type_filter_count;
     uint8_t *pad_type_filter;
     /* app shall fill this field */
-    uint8_t adv_strcuts[31];
+    uint8_t adv_structs[31];
     uint8_t adv_structs_len;
 } rmt_prov_server_adv_structs_get_t;
 /** @} */
@@ -292,7 +292,7 @@ typedef struct
 #define RMT_PROV_CLIENT_SCAN_CAPS_STATUS                        0 //!< @ref rmt_prov_client_scan_caps_status_t
 #define RMT_PROV_CLIENT_SCAN_STATUS                             1 //!< @ref rmt_prov_client_scan_status_t
 #define RMT_PROV_CLIENT_SCAN_REPORT                             2 //!< @ref rmt_prov_client_scan_report_t
-#define RMT_PROV_CLIENT_EXTENED_SCAN_REPORT                     3 //!< @ref rmt_prov_client_extened_scan_report_t
+#define RMT_PROV_CLIENT_EXTENDED_SCAN_REPORT                    3 //!< @ref rmt_prov_client_extended_scan_report_t
 #define RMT_PROV_CLIENT_LINK_STATUS                             4 //!< @ref rmt_prov_client_link_status_t
 #define RMT_PROV_CLIENT_LINK_REPORT                             5 //!< @ref rmt_prov_client_link_report_t
 
@@ -328,7 +328,7 @@ typedef struct
     uint8_t *poob;
     uint8_t *padv_structs;
     uint16_t adv_structs_len;
-} rmt_prov_client_extened_scan_report_t;
+} rmt_prov_client_extended_scan_report_t;
 
 typedef struct
 {
@@ -342,7 +342,7 @@ typedef struct
     uint16_t src;
     rmt_prov_status_t status;
     rmt_prov_link_state_t link_state;
-    rmt_prov_link_close_reason_t *preason;
+    pb_adv_link_close_reason_t *preason;
 } rmt_prov_client_link_report_t;
 /** @} */
 
@@ -367,13 +367,13 @@ bool rmt_prov_server_reg(uint8_t element_index);
 void rmt_prov_server_set_cb(model_data_cb_pf pcb);
 
 /**
- * @brief set remote provisioning server capabilites
+ * @brief set remote provisioning server capabilities
  * @param[in] max_scanned_items: max scanned items value
  * @param[in] active_scan_state: active scan state value
  * @return set status
  */
-bool rmt_prov_server_set_capabilites(uint8_t max_scanned_items,
-                                     rmt_prov_active_scan_state_t active_scan_state);
+bool rmt_prov_server_set_capabilities(uint8_t max_scanned_items,
+                                      rmt_prov_active_scan_state_t active_scan_state);
 
 /**
  * @brief stop scan
@@ -390,26 +390,26 @@ void rmt_prov_server_scan_stop(void);
  * @param[in] uri_hash: received uri hash value
  * @return send status
  */
-mesh_msg_send_cause_t rm_prov_scan_report(uint16_t dst, uint16_t net_key_index, int8_t rssi,
-                                          uint8_t uuid[16], uint8_t oob[2], uint8_t uri_hash[4]);
+mesh_msg_send_cause_t rmt_prov_scan_report(uint16_t dst, uint16_t net_key_index, int8_t rssi,
+                                           uint8_t uuid[16], uint8_t oob[2], uint8_t uri_hash[4]);
 
 /**
- * @brief report extened scan information
- * @param[in] dst: extened scan report destination address
- * @param[in] net_key_index: extened scan report used network key index
- * @param[in] status: rextened scan status
+ * @brief report extended scan information
+ * @param[in] dst: extended scan report destination address
+ * @param[in] net_key_index: extended scan report used network key index
+ * @param[in] status: extended scan status
  * @param[in] uuid: received uuid value
  * @param[in] oob: received oob value
- * @param[in] adv_data: scanned extened adv data
- * @param[in] adv_data_len: scanned extened adv data length
+ * @param[in] adv_data: scanned extended adv data
+ * @param[in] adv_data_len: scanned extended adv data length
  * @return send status
  */
-mesh_msg_send_cause_t rm_prov_extened_scan_report(uint16_t dst, uint16_t net_key_index,
-                                                  rmt_prov_status_t status, uint8_t uuid[16], uint8_t oob[2], uint8_t adv_data[],
-                                                  uint8_t adv_data_len);
+mesh_msg_send_cause_t rmt_prov_extended_scan_report(uint16_t dst, uint16_t net_key_index,
+                                                    rmt_prov_status_t status, uint8_t uuid[16], uint8_t oob[2], uint8_t adv_data[],
+                                                    uint8_t adv_data_len);
 
 /**
- * @brief handle uprovision device beacon
+ * @brief handle unprovision device beacon
  * @param[in] bt_addr: device bt address
  * @param[in] bt_addr_type: device bt address type
  * @param[in] rssi: rssi received
@@ -441,6 +441,13 @@ void rmt_prov_server_handle_conn_state_change(uint8_t conn_id, uint8_t new_state
 
 
 /**
+ * @brief handle mtu information
+ * @param[in] conn_id: connection id
+ * @param[in] mtu_size: the mtu size
+ */
+void rmt_prov_server_handle_mtu_info(uint8_t conn_id, uint16_t mtu_size);
+
+/**
  * @brief get remote provision procedure
  * @return remote provision procedure
  */
@@ -453,7 +460,7 @@ rmt_prov_procedure_t rmt_prov_server_procedure_get(void);
 void rmt_prov_handle_timeout_dev(void *ptimer);
 
 /**
- * @brief handle externed scan data
+ * @brief handle extended scan data
  * @param[in] adv_report_type: adv report type
  * @param[in] bt_addr: device bt address
  * @param[in] bt_addr_type: device bt address type
@@ -461,8 +468,8 @@ void rmt_prov_handle_timeout_dev(void *ptimer);
  * @param[in] pbuffer: scan response data
  * @param[in] len: scan response data length
  */
-void rmt_prov_server_extened_scan_handle(gap_sched_adv_report_type_t adv_report_type,
-                                         uint8_t bt_addr[6], uint8_t addr_type, int8_t rssi, uint8_t *pbuffer, uint16_t buf_len);
+void rmt_prov_server_extended_scan_handle(gap_sched_adv_report_type_t adv_report_type,
+                                          uint8_t bt_addr[6], uint8_t addr_type, int8_t rssi, uint8_t *pbuffer, uint16_t buf_len);
 
 /**
  * @brief link close
@@ -515,7 +522,7 @@ void rmt_prov_set_prefer_bearer(bearer_field_t bearer);
 bool rmt_prov_client_reg(uint8_t element_index, model_data_cb_pf pcb);
 
 /**
- * @brief get scan capabilites
+ * @brief get scan capabilities
  * @param[in] dst: destination address
  * @param[in] net_key_index: network key index
  * @return send result
@@ -551,17 +558,17 @@ mesh_msg_send_cause_t rmt_prov_client_scan_start(uint16_t dst, uint16_t net_key_
 mesh_msg_send_cause_t rmt_prov_client_scan_stop(uint16_t dst, uint16_t net_key_index);
 
 /**
- * @brief start extened scan
+ * @brief start extended scan
  * @param[in] dst: destination address
  * @param[in] net_key_index: network key index
  * @param[in] ad_type_filter_cnt: ad type filter count
  * @param[in] pad_type_filter: ad type filter value
  * @param[in] uuid: remote device uuid
- * @param[in] timeout: extened scan timeout
+ * @param[in] timeout: extended scan timeout
  * @return send result
  */
-mesh_msg_send_cause_t rmt_prov_client_extened_scan_start(uint16_t dst, uint16_t net_key_index,
-                                                         uint8_t ad_type_filter_cnt, uint8_t *pad_type_filter, uint8_t uuid[16], uint8_t timeout);
+mesh_msg_send_cause_t rmt_prov_client_extended_scan_start(uint16_t dst, uint16_t net_key_index,
+                                                          uint8_t ad_type_filter_cnt, uint8_t *pad_type_filter, uint8_t uuid[16], uint8_t timeout);
 
 /**
  * @brief get remote link status
@@ -625,6 +632,13 @@ void rmt_prov_handle_timeout_prov(void *ptimer);
  * @param[in] reason: link close reason
  */
 void rmt_prov_link_close(rmt_prov_link_close_reason_t reason);
+
+/**
+ * @brief check remote provision link active
+ * @return true active
+ * @return false inactive
+ */
+bool rmt_prov_client_link_active(void);
 
 /**
  * @brief get remote provision client link state

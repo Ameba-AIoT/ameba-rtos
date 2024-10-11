@@ -147,7 +147,7 @@ static void bt_fast_mp_test_start_dut_func(uint8_t bt_channel)
 		BT_LOGE("DUT get RX RSSI failed!\r\n");
 		goto exit;
 	}
-	BT_LOGA("DUT RX end: RX PKT number = %d, RX RSSI = %i\r\n\r\n", num_pkts, rssi);
+	BT_LOGA("DUT RX end: RX PKT number = %d, RX RSSI = %d\r\n\r\n", num_pkts, rssi);
 
 exit:
 	if (bt_stop_sema) {
@@ -201,7 +201,7 @@ static void bt_fast_mp_test_start_golden_func(uint8_t bt_channel)
 		BT_LOGE("GOLDEN get RX RSSI failed!\r\n");
 		goto exit;
 	}
-	BT_LOGA("GOLDEN RX end: RX PKT number = %d, RX RSSI = %i\r\n\r\n", num_pkts, rssi);
+	BT_LOGA("GOLDEN RX end: RX PKT number = %d, RX RSSI = %d\r\n\r\n", num_pkts, rssi);
 
 	// 2. GOLDEN TX
 	if (0 == rtk_bt_mp_dtm_set_tx_count(BT_TX_PKT_COUNT)) {

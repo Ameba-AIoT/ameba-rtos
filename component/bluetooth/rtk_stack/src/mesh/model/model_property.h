@@ -44,10 +44,13 @@
 #define MODEL_PROPERTY_LIGHT_CONTORL_TIME_PROLONG                 0x003B
 #define MODEL_PROPERTY_LIGHT_CONTROL_TIME_RUN_ON                  0x003C
 #define MODEL_PROPERTY_MOTION_SENSED                              0x0042
+#define MODEL_PROPERTY_MOTION_THRESHOLD                           0x0043
 #define MODEL_PROPERTY_PEOPLE_COUNT                               0x004C
 #define MODEL_PROPERTY_PRESENCE_DETECTED                          0x004D
 #define MODEL_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL                0x004E
 #define MODEL_PROPERTY_TIME_SINCE_MOTION_SENSED                   0x0068
+#define MODEL_PROPERTY_PRECISE_TOTAL_DEVICE_ENERGY_USE            0x0072
+#define MODEL_PROPERTY_SENSOR_GAIN                                0x0074
 /** @} */
 /** @} */
 

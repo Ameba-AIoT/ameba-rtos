@@ -11,7 +11,7 @@
 extern "C"  {
 #endif
 
-#define GCS_CLIENT_PROFILE_ID               0
+#define GCS_CLIENT_PROFILE_ID               0  /* GCS client is the default general common client. Its id default is 0, do not change it */
 #define GAPS_CLIENT_PROFILE_ID              1
 #define BAS_CLIENT_PROFILE_ID               2
 #define SIMPLE_BLE_CLIENT_PROFILE_ID        3

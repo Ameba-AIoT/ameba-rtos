@@ -157,10 +157,9 @@ LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_passthrough.a
 endif
 
 ifeq ($(CONFIG_GUI_EN),y)
-ifeq ($(CONFIG_DEMO_UI_EN),y)
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_ui_utils.a
-endif
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_ui_drivers.a
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_png.a
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_z.a
+LINK_THIRD_APP_LIB += $(APP_LIB_DIR)/lib_jpg.a
 endif
 
 ifeq ($(CONFIG_AUDIO_FWK),y)

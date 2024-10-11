@@ -190,9 +190,9 @@ typedef struct
  * @{
  */
 #define TIME_SERVER_GET                                        0 //!< @ref time_server_get_t
-#define TIME_SERVER_GET_ROLE                                   1 //!< @ref time_server_get_role_t 
-#define TIME_SERVER_GET_ZONE                                   2 //!< @ref time_server_get_zone_t 
-#define TIME_SERVER_GET_TAI_UTC_DELTA                          3 //!< @ref time_server_get_tai_utc_delta_t 
+#define TIME_SERVER_GET_ROLE                                   1 //!< @ref time_server_get_role_t
+#define TIME_SERVER_GET_ZONE                                   2 //!< @ref time_server_get_zone_t
+#define TIME_SERVER_GET_TAI_UTC_DELTA                          3 //!< @ref time_server_get_tai_utc_delta_t
 #define TIME_SERVER_SET                                        4 //!< @ref time_server_set_t
 #define TIME_SERVER_SET_ROLE                                   5 //!< @ref time_server_set_role_t
 #define TIME_SERVER_STATUS_SET                                 6 //!< @ref time_server_status_set_t

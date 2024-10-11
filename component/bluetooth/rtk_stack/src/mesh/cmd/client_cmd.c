@@ -12,16 +12,18 @@
   */
 
 /* Add Includes here */
-#include <string.h>
 #include "trace.h"
 #include "app_msg.h"
 #include "gap_wrapper.h"
 #include "client_cmd.h"
 #include "mesh_api.h"
+#include "app_mesh_flags.h"
 #include "health.h"
 #include "generic_client_app.h"
 #include "light_client_app.h"
-
+#include "subnet_bridge_model.h"
+#include "blob_client_app.h"
+#include "dfu_initiator_app.h"
 
 /**
  * @brief configuration model parameter get command
@@ -132,7 +134,7 @@ user_cmd_parse_result_t user_cmd_cms(user_cmd_parse_value_t *pparse_value)
         break;
     case 6:
         {
-            pub_key_info_t pub_key_info = {.app_key_index = pparse_value->dw_parameter[5], .frnd_flag = pparse_value->dw_parameter[6], 0};
+            pub_key_info_t pub_key_info = {.app_key_index = pparse_value->dw_parameter[5], .frnd_flag = pparse_value->dw_parameter[6], .rfu = 0};
             pub_period_t pub_period = {pparse_value->dw_parameter[8] & 0x3f, pparse_value->dw_parameter[8] >> 6};
             pub_retrans_info_t pub_retrans_info = {pparse_value->dw_parameter[9], pparse_value->dw_parameter[10]};
             uint8_t addr[16];
@@ -1291,11 +1293,11 @@ user_cmd_parse_result_t user_cmd_generic_user_property_set(user_cmd_parse_value_
     {
         return USER_CMD_RESULT_WRONG_NUM_OF_PARAMETERS;
     }
-    uint8_t property_value[20];
+    uint8_t property_value[USER_CMD_MAX_PARAMETERS - 4];
     uint8_t value_len = pparse_value->para_count - 4;
-    if (value_len > 20)
+    if (value_len > USER_CMD_MAX_PARAMETERS - 4)
     {
-        value_len = 20;
+        value_len = USER_CMD_MAX_PARAMETERS - 4;
     }
     for (uint8_t i = 0; i < value_len; ++i)
     {
@@ -1328,11 +1330,11 @@ user_cmd_parse_result_t user_cmd_generic_admin_property_set(user_cmd_parse_value
     {
         return USER_CMD_RESULT_WRONG_NUM_OF_PARAMETERS;
     }
-    uint8_t property_value[20];
+    uint8_t property_value[USER_CMD_MAX_PARAMETERS - 5];
     uint8_t value_len = pparse_value->para_count - 5;
-    if (value_len > 20)
+    if (value_len > USER_CMD_MAX_PARAMETERS - 5)
     {
-        value_len = 20;
+        value_len = USER_CMD_MAX_PARAMETERS - 5;
     }
     for (uint8_t i = 0; i < value_len; ++i)
     {
@@ -1446,7 +1448,472 @@ user_cmd_parse_result_t user_cmd_light_xyl_range_set(user_cmd_parse_value_t *ppa
     light_xyl_range_set(&light_xyl_client, pparse_value->dw_parameter[0], pparse_value->dw_parameter[6],
                         pparse_value->dw_parameter[1], pparse_value->dw_parameter[2],
                         pparse_value->dw_parameter[3], pparse_value->dw_parameter[4], pparse_value->dw_parameter[5]);
+    return USER_CMD_RESULT_OK;
+}
 
+user_cmd_parse_result_t user_cmd_directed_control_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_control_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                         pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_control_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_control_t ctl;
+    ctl.directed_forwarding = pparse_value->dw_parameter[3];
+    ctl.directed_relay = pparse_value->dw_parameter[4];
+    ctl.directed_proxy = pparse_value->dw_parameter[5];
+    ctl.directed_proxy_use_directed_default = pparse_value->dw_parameter[6];
+    ctl.directed_friend = pparse_value->dw_parameter[7];
+    directed_control_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                         pparse_value->dw_parameter[2], ctl);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_path_metric_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    path_metric_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                    pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_path_metric_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    path_metric_t metric;
+    metric.metric_type = pparse_value->dw_parameter[3];
+    metric.lifetime = pparse_value->dw_parameter[4];
+    metric.prohibited = 0;
+    path_metric_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                    pparse_value->dw_parameter[2], metric);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_discovery_table_capabilities_get(user_cmd_parse_value_t
+                                                                  *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    discovery_table_capabilities_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                     pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_discovery_table_capabilities_set(user_cmd_parse_value_t
+                                                                  *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    discovery_table_capabilities_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                     pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_add(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    forwarding_table_param_t param;
+    param.unicast_dst = pparse_value->dw_parameter[3];
+    param.backward_path_valid = pparse_value->dw_parameter[4];
+    param.prohibited = 0;
+    param.path_origin = unicast_addr_range_transform(true, pparse_value->dw_parameter[5],
+                                                     pparse_value->dw_parameter[6]);
+    if (param.unicast_dst)
+    {
+        param.path_target = unicast_addr_range_transform(true, pparse_value->dw_parameter[7],
+                                                         pparse_value->dw_parameter[8]);
+    }
+    else
+    {
+        param.multicast_dst = pparse_value->dw_parameter[7];
+    }
+    param.bearer_toward_path_origin = pparse_value->dw_parameter[9];
+    param.bearer_toward_path_target = pparse_value->dw_parameter[10];
+    forwarding_table_add(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                         pparse_value->dw_parameter[2], &param);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_delete(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    forwarding_table_delete(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                            pparse_value->dw_parameter[2], pparse_value->dw_parameter[3],
+                            pparse_value->dw_parameter[4]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_dependents_add(user_cmd_parse_value_t
+                                                                 *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    forwarding_table_dependents_add_param_t param;
+    param.path_origin = pparse_value->dw_parameter[3];
+    param.dst = pparse_value->dw_parameter[4];
+    param.dependent_origin_list_size = pparse_value->dw_parameter[5];
+    param.dependent_target_list_size = pparse_value->dw_parameter[6];
+    param.addr_range_len = (pparse_value->dw_parameter[5] + pparse_value->dw_parameter[6]) * sizeof(
+                               mesh_addr_range_t);
+    param.paddr_range = plt_zalloc(param.addr_range_len, RAM_TYPE_DATA_ON);
+
+    mesh_addr_range_t dependent_addr_range, *paddr_range;
+    uint8_t *pdata = param.paddr_range;
+
+    uint8_t param_index = 7;
+    for (uint8_t i = 0; i < param.dependent_origin_list_size; ++i)
+    {
+        dependent_addr_range = unicast_addr_range_transform(true, pparse_value->dw_parameter[param_index],
+                                                            pparse_value->dw_parameter[param_index + 1]);
+        paddr_range = (mesh_addr_range_t *)pdata;
+        if (dependent_addr_range.len_present_access)
+        {
+            *paddr_range = dependent_addr_range;
+            pdata += 3;
+        }
+        else
+        {
+            paddr_range->addr = dependent_addr_range.addr;
+            pdata += 2;
+        }
+
+        param_index += 2;
+    }
+
+    for (uint8_t i = 0; i < param.dependent_target_list_size; ++i)
+    {
+        dependent_addr_range = unicast_addr_range_transform(true, pparse_value->dw_parameter[param_index],
+                                                            pparse_value->dw_parameter[param_index + 1]);
+        paddr_range = (mesh_addr_range_t *)pdata;
+        if (dependent_addr_range.len_present_access)
+        {
+            *paddr_range = dependent_addr_range;
+            pdata += 3;
+        }
+        else
+        {
+            paddr_range->addr = dependent_addr_range.addr;
+            pdata += 2;
+        }
+
+        param_index += 2;
+    }
+
+    param.addr_range_len = (pdata - param.paddr_range);
+
+    forwarding_table_dependents_add(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                    pparse_value->dw_parameter[2], &param);
+    plt_free(param.paddr_range, RAM_TYPE_DATA_ON);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_dependents_delete(user_cmd_parse_value_t
+                                                                    *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    forwarding_table_dependents_del_param_t param;
+    param.path_origin = pparse_value->dw_parameter[3];
+    param.dst = pparse_value->dw_parameter[4];
+    param.dependent_origin_list_size = pparse_value->dw_parameter[5];
+    param.dependent_target_list_size = pparse_value->dw_parameter[6];
+    param.addr_range_len = (pparse_value->dw_parameter[5] + pparse_value->dw_parameter[6]) * 16;
+    param.paddrs = plt_malloc(param.addr_range_len, RAM_TYPE_DATA_ON);
+
+    uint8_t *pdata = param.paddrs;
+    uint8_t param_index = 7;
+    for (uint8_t i = 0; i < param.dependent_origin_list_size; ++i)
+    {
+        LE_WORD2EXTRN(pdata, pparse_value->dw_parameter[param_index] & MESH_UNICAST_ADDR_MASK);
+        pdata += 2;
+
+        param_index ++;
+    }
+
+    for (uint8_t i = 0; i < param.dependent_target_list_size; ++i)
+    {
+        LE_WORD2EXTRN(pdata, pparse_value->dw_parameter[param_index] & MESH_UNICAST_ADDR_MASK);
+        pdata += 2;
+
+        param_index ++;
+    }
+
+    param.addr_range_len = (pdata - param.paddrs);
+
+    forwarding_table_dependents_delete(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                       pparse_value->dw_parameter[2], &param);
+    plt_free(param.paddrs, RAM_TYPE_DATA_ON);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_dependents_get(user_cmd_parse_value_t
+                                                                 *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    bool update_id_exist = pparse_value->para_count == 9;
+    uint16_t update_id = update_id_exist ? pparse_value->dw_parameter[8] : 0;
+    forwarding_table_dependents_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                    pparse_value->dw_parameter[2], pparse_value->dw_parameter[3],
+                                    pparse_value->dw_parameter[4], pparse_value->dw_parameter[5],
+                                    pparse_value->dw_parameter[6], pparse_value->dw_parameter[7],
+                                    update_id_exist, update_id);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_entries_count_get(user_cmd_parse_value_t
+                                                                    *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    forwarding_table_entries_count_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                       pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_forwarding_table_entries_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    uint16_t dst = pparse_value->dw_parameter[0];
+    uint16_t net_key_index = pparse_value->dw_parameter[1];
+    uint16_t net_key_index_df = pparse_value->dw_parameter[2];
+    uint8_t filter_mask = pparse_value->dw_parameter[3];
+    uint16_t start_index = pparse_value->dw_parameter[4];
+    uint8_t data[6];
+    uint16_t data_len = 0;
+    uint8_t param_index = 5;
+    if (filter_mask & FORWARDING_TABLE_FILTER_MASK_PATH_ORIGIN_MATCH)
+    {
+        LE_WORD2EXTRN(&data[data_len], pparse_value->dw_parameter[param_index]);
+        data_len += 2;
+        param_index++;
+    }
+    if (filter_mask & FORWARDING_TABLE_FILTER_MASK_DST_MATCH)
+    {
+        LE_WORD2EXTRN(&data[data_len], pparse_value->dw_parameter[param_index]);
+        data_len += 2;
+        param_index++;
+    }
+    if (pparse_value->dw_parameter[param_index])
+    {
+        LE_WORD2EXTRN(&data[data_len], pparse_value->dw_parameter[param_index]);
+        data_len += 2;
+        param_index++;
+    }
+    forwarding_table_entries_get(dst, net_key_index, net_key_index_df, filter_mask, start_index, data,
+                                 data_len);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_wanted_lanes_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    wanted_lanes_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                     pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_wanted_lanes_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    wanted_lanes_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                     pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_two_way_path_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    two_way_path_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                     pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_two_way_path_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    two_way_path_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                     pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_path_echo_interval_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    path_echo_interval_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                           pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_path_echo_interval_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    path_echo_interval_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                           pparse_value->dw_parameter[2], pparse_value->dw_parameter[3],
+                           pparse_value->dw_parameter[4]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_network_transmit_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_network_transmit_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_network_transmit_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_network_transmit_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                  pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_relay_retransmit_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_relay_retransmit_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_relay_retransmit_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_relay_retransmit_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                  pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_rssi_threshold_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    rssi_threshold_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_rssi_threshold_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    rssi_threshold_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                       pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_paths_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_paths_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_publish_policy_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_publish_policy_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_publish_policy_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_publish_policy_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                pparse_value->dw_parameter[2], pparse_value->dw_parameter[3], pparse_value->dw_parameter[4]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_path_discovery_timing_control_get(user_cmd_parse_value_t
+                                                                   *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    path_discovery_timing_control_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_path_discovery_timing_control_set(user_cmd_parse_value_t
+                                                                   *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    path_discovery_timing_control_t timing_ctl;
+    timing_ctl.path_monitoring_interval = pparse_value->dw_parameter[2];
+    timing_ctl.path_discovery_retry_interval = pparse_value->dw_parameter[3];
+    timing_ctl.path_discovery_interval = pparse_value->dw_parameter[4];
+    timing_ctl.lane_discovery_guard_interval = pparse_value->dw_parameter[5];
+    timing_ctl.prohibited = 0;
+    path_discovery_timing_control_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                      timing_ctl);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_control_network_transmit_get(
+    user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_control_network_transmit_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_control_network_transmit_set(
+    user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_control_network_transmit_t net_transmit;
+    net_transmit.directed_control_network_transmit_count = pparse_value->dw_parameter[2];
+    net_transmit.directed_control_network_transmit_interval_steps = pparse_value->dw_parameter[3];
+    directed_control_network_transmit_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                          net_transmit);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_control_relay_retransmit_get(
+    user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_control_relay_retransmit_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_directed_control_relay_retransmit_set(
+    user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DF_SUPPORT
+    directed_control_relay_retransmit_t relay_retransmit;
+    relay_retransmit.directed_control_relay_retransmit_count = pparse_value->dw_parameter[2];
+    relay_retransmit.directed_control_relay_retransmit_interval_steps = pparse_value->dw_parameter[3];
+    directed_control_relay_retransmit_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                                          relay_retransmit);
+#endif
     return USER_CMD_RESULT_OK;
 }
 
@@ -1517,11 +1984,11 @@ user_cmd_parse_result_t user_cmd_light_lc_property_set(user_cmd_parse_value_t *p
     {
         return USER_CMD_RESULT_WRONG_NUM_OF_PARAMETERS;
     }
-    uint8_t property_value[20];
+    uint8_t property_value[USER_CMD_MAX_PARAMETERS - 4];
     uint8_t value_len = pparse_value->para_count - 4;
-    if (value_len > 20)
+    if (value_len > USER_CMD_MAX_PARAMETERS - 4)
     {
-        value_len = 20;
+        value_len = USER_CMD_MAX_PARAMETERS - 4;
     }
     for (uint8_t i = 0; i < value_len; ++i)
     {
@@ -1537,7 +2004,7 @@ user_cmd_parse_result_t user_cmd_light_lc_property_set(user_cmd_parse_value_t *p
 
 user_cmd_parse_result_t user_cmd_private_beacon_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_PRB
+#if F_BT_MESH_1_1_PRB_SUPPORT
     private_beacon_get(pparse_value->dw_parameter[0], 0);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1545,7 +2012,7 @@ user_cmd_parse_result_t user_cmd_private_beacon_get(user_cmd_parse_value_t *ppar
 
 user_cmd_parse_result_t user_cmd_private_beacon_set(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_PRB
+#if F_BT_MESH_1_1_PRB_SUPPORT
     if (pparse_value->para_count > 2)
     {
         private_beacon_set(pparse_value->dw_parameter[0], 0, pparse_value->dw_parameter[1], true,
@@ -1561,7 +2028,7 @@ user_cmd_parse_result_t user_cmd_private_beacon_set(user_cmd_parse_value_t *ppar
 
 user_cmd_parse_result_t user_cmd_private_gatt_proxy_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_PRB
+#if F_BT_MESH_1_1_PRB_SUPPORT
     private_gatt_proxy_get(pparse_value->dw_parameter[0], 0);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1569,7 +2036,7 @@ user_cmd_parse_result_t user_cmd_private_gatt_proxy_get(user_cmd_parse_value_t *
 
 user_cmd_parse_result_t user_cmd_private_gatt_proxy_set(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_PRB
+#if F_BT_MESH_1_1_PRB_SUPPORT
     private_gatt_proxy_set(pparse_value->dw_parameter[0], 0, pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1577,7 +2044,7 @@ user_cmd_parse_result_t user_cmd_private_gatt_proxy_set(user_cmd_parse_value_t *
 
 user_cmd_parse_result_t user_cmd_private_node_identity_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_PRB
+#if F_BT_MESH_1_1_PRB_SUPPORT
     private_node_identity_get(pparse_value->dw_parameter[0], 0, pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1585,7 +2052,7 @@ user_cmd_parse_result_t user_cmd_private_node_identity_get(user_cmd_parse_value_
 
 user_cmd_parse_result_t user_cmd_private_node_identity_set(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_PRB
+#if F_BT_MESH_1_1_PRB_SUPPORT
     private_node_identity_set(pparse_value->dw_parameter[0], 0, pparse_value->dw_parameter[1],
                               pparse_value->dw_parameter[2]);
 #endif
@@ -1594,7 +2061,7 @@ user_cmd_parse_result_t user_cmd_private_node_identity_set(user_cmd_parse_value_
 
 user_cmd_parse_result_t user_cmd_blob_transfer_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     blob_transfer_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1602,7 +2069,7 @@ user_cmd_parse_result_t user_cmd_blob_transfer_get(user_cmd_parse_value_t *ppars
 
 user_cmd_parse_result_t user_cmd_blob_transfer_start(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     uint8_t blob_id[8];
     plt_hex_to_bin(blob_id, (uint8_t *)pparse_value->pparameter[3], sizeof(blob_id));
     blob_transfer_start(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
@@ -1614,7 +2081,7 @@ user_cmd_parse_result_t user_cmd_blob_transfer_start(user_cmd_parse_value_t *ppa
 
 user_cmd_parse_result_t user_cmd_blob_transfer_cancel(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     uint8_t blob_id[8];
     plt_hex_to_bin(blob_id, (uint8_t *)pparse_value->pparameter[2], sizeof(blob_id));
     blob_transfer_cancel(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1], blob_id);
@@ -1624,7 +2091,7 @@ user_cmd_parse_result_t user_cmd_blob_transfer_cancel(user_cmd_parse_value_t *pp
 
 user_cmd_parse_result_t user_cmd_blob_block_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     blob_block_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1632,7 +2099,7 @@ user_cmd_parse_result_t user_cmd_blob_block_get(user_cmd_parse_value_t *pparse_v
 
 user_cmd_parse_result_t user_cmd_blob_block_start(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     blob_block_start(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
                      pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
 #endif
@@ -1641,7 +2108,7 @@ user_cmd_parse_result_t user_cmd_blob_block_start(user_cmd_parse_value_t *pparse
 
 user_cmd_parse_result_t user_cmd_blob_chunk_transfer(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     uint16_t chunk_size = pparse_value->dw_parameter[3];
     uint8_t *pdata = plt_zalloc(chunk_size, RAM_TYPE_DATA_ON);
     if (NULL == pdata)
@@ -1657,15 +2124,80 @@ user_cmd_parse_result_t user_cmd_blob_chunk_transfer(user_cmd_parse_value_t *ppa
 
 user_cmd_parse_result_t user_cmd_blob_info_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_BLOB
+#if F_BT_MESH_1_1_MBT_SUPPORT
     blob_info_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_blob_transfer_client_caps_retrieve(user_cmd_parse_value_t
+                                                                    *pparse_value)
+{
+#if F_BT_MESH_1_1_MBT_SUPPORT
+    uint8_t app_key_index = pparse_value->dw_parameter[0];
+    uint8_t transfer_ttl = pparse_value->dw_parameter[1];
+    uint8_t unicast_addr_num = pparse_value->dw_parameter[2];
+    uint16_t *punicast_addr = (uint16_t *)plt_zalloc(unicast_addr_num * sizeof(uint16_t),
+                                                     RAM_TYPE_DATA_ON);
+    for (uint8_t i = 0; i < unicast_addr_num; i++)
+    {
+        punicast_addr[i] = pparse_value->dw_parameter[3 + i];
+    }
+    blob_client_caps_retrieve(app_key_index, transfer_ttl, punicast_addr, unicast_addr_num);
+    plt_free(punicast_addr, RAM_TYPE_DATA_ON);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_blob_transfer_client_blob_transfer(user_cmd_parse_value_t
+                                                                    *pparse_value)
+{
+#if F_BT_MESH_1_1_MBT_SUPPORT
+    uint16_t multicast_addr = pparse_value->dw_parameter[0];
+    uint8_t app_key_index = pparse_value->dw_parameter[1];
+    uint8_t transfer_ttl = pparse_value->dw_parameter[2];
+    uint8_t blob_id[8];
+    plt_hex_to_bin(blob_id, (uint8_t *)pparse_value->pparameter[3], 8);
+    uint32_t blob_size = pparse_value->dw_parameter[4];
+    blob_transfer_mode_t transfer_mode = pparse_value->dw_parameter[5];
+    uint8_t client_timeout_base = pparse_value->dw_parameter[6];
+    bool skip_caps_retrieve = pparse_value->dw_parameter[7];
+    uint8_t unicast_addr_num = pparse_value->dw_parameter[8];
+    uint16_t *punicast_addr = plt_zalloc(unicast_addr_num * sizeof(uint16_t), RAM_TYPE_DATA_ON);
+    for (uint8_t i = 0; i < unicast_addr_num; i++)
+    {
+        punicast_addr[i] = pparse_value->dw_parameter[9 + i];
+    }
+    blob_client_blob_transfer(multicast_addr, app_key_index, transfer_ttl, punicast_addr,
+                              unicast_addr_num, blob_id, blob_size, transfer_mode,
+                              client_timeout_base, skip_caps_retrieve);
+    plt_free(punicast_addr, RAM_TYPE_DATA_ON);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_blob_transfer_client_transfer_cancel(user_cmd_parse_value_t
+                                                                      *pparse_value)
+{
+#if F_BT_MESH_1_1_MBT_SUPPORT
+    uint8_t blob_id[8];
+    plt_hex_to_bin(blob_id, (uint8_t *)pparse_value->pparameter[0], 8);
+    uint8_t unicast_addr_num = pparse_value->dw_parameter[1];
+    uint16_t *punicast_addr = (uint16_t *)plt_zalloc(unicast_addr_num * sizeof(uint16_t),
+                                                     RAM_TYPE_DATA_ON);
+    for (uint8_t i = 0; i < unicast_addr_num; i++)
+    {
+        punicast_addr[i] = pparse_value->dw_parameter[2 + i];
+    }
+    blob_client_transfer_cancel(punicast_addr, unicast_addr_num, blob_id);
+    plt_free(punicast_addr, RAM_TYPE_DATA_ON);
 #endif
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_fw_update_info_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_update_info_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
                        pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
 #endif
@@ -1674,7 +2206,7 @@ user_cmd_parse_result_t user_cmd_fw_update_info_get(user_cmd_parse_value_t *ppar
 
 user_cmd_parse_result_t user_cmd_fw_update_metadata_check(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     uint8_t metadata[255];
     uint8_t metadata_len = pparse_value->dw_parameter[4];
     plt_hex_to_bin(metadata, (uint8_t *)pparse_value->pparameter[3], metadata_len);
@@ -1686,7 +2218,7 @@ user_cmd_parse_result_t user_cmd_fw_update_metadata_check(user_cmd_parse_value_t
 
 user_cmd_parse_result_t user_cmd_fw_update_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_update_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1694,7 +2226,7 @@ user_cmd_parse_result_t user_cmd_fw_update_get(user_cmd_parse_value_t *pparse_va
 
 user_cmd_parse_result_t user_cmd_fw_update_start(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     uint8_t blob_id[8];
     plt_hex_to_bin(blob_id, (uint8_t *)pparse_value->pparameter[4], 8);
     uint8_t metadata[255];
@@ -1709,7 +2241,7 @@ user_cmd_parse_result_t user_cmd_fw_update_start(user_cmd_parse_value_t *pparse_
 
 user_cmd_parse_result_t user_cmd_fw_update_cancel(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_update_cancel(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1717,7 +2249,7 @@ user_cmd_parse_result_t user_cmd_fw_update_cancel(user_cmd_parse_value_t *pparse
 
 user_cmd_parse_result_t user_cmd_fw_update_apply(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_update_apply(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1725,7 +2257,7 @@ user_cmd_parse_result_t user_cmd_fw_update_apply(user_cmd_parse_value_t *pparse_
 
 user_cmd_parse_result_t user_cmd_fw_dist_recvs_add(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_receiver_t receiver;
     receiver.addr = pparse_value->dw_parameter[2];
     receiver.update_fw_image_idx = pparse_value->dw_parameter[3];
@@ -1736,7 +2268,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_recvs_add(user_cmd_parse_value_t *ppars
 
 user_cmd_parse_result_t user_cmd_fw_dist_recvs_delete_all(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_recvs_delete_all(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1744,7 +2276,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_recvs_delete_all(user_cmd_parse_value_t
 
 user_cmd_parse_result_t user_cmd_fw_dist_recvs_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_recvs_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
                       pparse_value->dw_parameter[2], pparse_value->dw_parameter[3]);
 #endif
@@ -1753,7 +2285,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_recvs_get(user_cmd_parse_value_t *ppars
 
 user_cmd_parse_result_t user_cmd_fw_dist_caps_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_caps_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1761,7 +2293,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_caps_get(user_cmd_parse_value_t *pparse
 
 user_cmd_parse_result_t user_cmd_fw_dist_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1769,7 +2301,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_get(user_cmd_parse_value_t *pparse_valu
 
 user_cmd_parse_result_t user_cmd_fw_dist_start(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_start_data_t start;
     start.dist_app_key_index = pparse_value->dw_parameter[2];
     start.dist_ttl = pparse_value->dw_parameter[3];
@@ -1781,7 +2313,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_start(user_cmd_parse_value_t *pparse_va
     uint8_t dist_dst_len = pparse_value->dw_parameter[9];
     if (2 == dist_dst_len)
     {
-        *(uint16_t *)start.dist_multicast_addr = pparse_value->dw_parameter[8];
+        LE_WORD2EXTRN(start.dist_multicast_addr, pparse_value->dw_parameter[8]);
     }
     else
     {
@@ -1793,9 +2325,59 @@ user_cmd_parse_result_t user_cmd_fw_dist_start(user_cmd_parse_value_t *pparse_va
     return USER_CMD_RESULT_OK;
 }
 
+// DFU Initiator role
+user_cmd_parse_result_t user_cmd_dfu_dist_start(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DFU_SUPPORT
+    fw_dist_start_data_t start;
+    start.dist_app_key_index = pparse_value->dw_parameter[2];
+    start.dist_ttl = mesh_node.ttl;
+    start.dist_timeout_base = pparse_value->dw_parameter[3];
+    start.dist_transfer_mode = BLOB_TRANSFER_MODE_PUSH;
+    start.update_policy = FW_UPDATE_POLICY_VERIFY_AND_UPDATE;
+    start.rfu = 0;
+    start.dist_fw_image_idx = pparse_value->dw_parameter[4];
+    uint8_t dist_dst_len = pparse_value->dw_parameter[6];
+    if (2 == dist_dst_len)
+    {
+        LE_WORD2EXTRN(start.dist_multicast_addr, pparse_value->dw_parameter[5]);
+    }
+    else
+    {
+        plt_hex_to_bin(start.dist_multicast_addr, (uint8_t *)pparse_value->pparameter[5], 16);
+    }
+
+    fw_dist_start(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1], start, dist_dst_len);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+// DFU Initiator role
+user_cmd_parse_result_t user_cmd_dfu_upload_start(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DFU_SUPPORT
+    fw_id_t fw_id;
+    fw_id.company_id = 0x005d;
+    fw_id.version[0] = 0x00;
+    fw_id.version[1] = 0x01;
+    dfu_init_upload_start(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                          pparse_value->dw_parameter[2], NULL, 0, &fw_id, 4,
+                          pparse_value->dw_parameter[3]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_fw_dist_suspend(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_DFU_SUPPORT
+    fw_dist_suspend(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
 user_cmd_parse_result_t user_cmd_fw_dist_cancel(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_cancel(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1803,7 +2385,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_cancel(user_cmd_parse_value_t *pparse_v
 
 user_cmd_parse_result_t user_cmd_fw_dist_apply(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_apply(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1811,7 +2393,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_apply(user_cmd_parse_value_t *pparse_va
 
 user_cmd_parse_result_t user_cmd_fw_dist_upload_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_upload_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1819,7 +2401,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_upload_get(user_cmd_parse_value_t *ppar
 
 user_cmd_parse_result_t user_cmd_user_cmd_fw_dist_upload_start(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     uint8_t blob_id[8];
     plt_hex_to_bin(blob_id, (uint8_t *)pparse_value->pparameter[4], 8);
     uint8_t metadata[64];
@@ -1836,7 +2418,7 @@ user_cmd_parse_result_t user_cmd_user_cmd_fw_dist_upload_start(user_cmd_parse_va
 
 user_cmd_parse_result_t user_cmd_fw_dist_upload_oob_start(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     uint8_t upload_uri[64];
     plt_hex_to_bin(upload_uri, (uint8_t *)pparse_value->pparameter[2], pparse_value->dw_parameter[3]);
     uint8_t fw_id[64];
@@ -1849,7 +2431,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_upload_oob_start(user_cmd_parse_value_t
 
 user_cmd_parse_result_t user_cmd_fw_dist_upload_cancel(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_upload_cancel(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
@@ -1857,7 +2439,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_upload_cancel(user_cmd_parse_value_t *p
 
 user_cmd_parse_result_t user_cmd_fw_dist_fw_get(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     uint8_t fw_id[64];
     plt_hex_to_bin(fw_id, (uint8_t *)pparse_value->pparameter[2], pparse_value->dw_parameter[3]);
     fw_dist_fw_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1], fw_id,
@@ -1868,7 +2450,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_fw_get(user_cmd_parse_value_t *pparse_v
 
 user_cmd_parse_result_t user_cmd_fw_dist_fw_get_by_index(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_fw_get_by_index(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
                             pparse_value->dw_parameter[2]);
 #endif
@@ -1877,7 +2459,7 @@ user_cmd_parse_result_t user_cmd_fw_dist_fw_get_by_index(user_cmd_parse_value_t 
 
 user_cmd_parse_result_t user_cmd_fw_dist_fw_delete(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     uint8_t fw_id[64];
     plt_hex_to_bin(fw_id, (uint8_t *)pparse_value->pparameter[2], pparse_value->dw_parameter[3]);
     fw_dist_fw_delete(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1], fw_id,
@@ -1888,8 +2470,77 @@ user_cmd_parse_result_t user_cmd_fw_dist_fw_delete(user_cmd_parse_value_t *ppars
 
 user_cmd_parse_result_t user_cmd_fw_dist_fw_delete_all(user_cmd_parse_value_t *pparse_value)
 {
-#if MESH_DFU
+#if F_BT_MESH_1_1_DFU_SUPPORT
     fw_dist_fw_delete_all(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
 #endif
     return USER_CMD_RESULT_OK;
 }
+
+user_cmd_parse_result_t user_cmd_subnet_bridge_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    subnet_bridge_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_subnet_bridge_set(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    subnet_bridge_set(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                      pparse_value->dw_parameter[2]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_bridging_table_add(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    uint8_t directions = pparse_value->dw_parameter[2];
+    uint16_t net_key_index1 = pparse_value->dw_parameter[3];
+    uint16_t net_key_index2 = pparse_value->dw_parameter[4];
+    uint16_t addr1 = pparse_value->dw_parameter[5];
+    uint16_t addr2 = pparse_value->dw_parameter[6];
+
+    bridging_table_add(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1], directions,
+                       net_key_index1, net_key_index2, addr1, addr2);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_bridging_table_remove(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    bridging_table_remove(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                          pparse_value->dw_parameter[2],
+                          pparse_value->dw_parameter[3], pparse_value->dw_parameter[4], pparse_value->dw_parameter[5]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_bridged_subnets_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    bridged_subnets_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                        pparse_value->dw_parameter[2], pparse_value->dw_parameter[3], pparse_value->dw_parameter[4]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_bridging_table_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    bridging_table_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1],
+                       pparse_value->dw_parameter[2], pparse_value->dw_parameter[3], pparse_value->dw_parameter[4]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+
+user_cmd_parse_result_t user_cmd_bridging_table_size_get(user_cmd_parse_value_t *pparse_value)
+{
+#if F_BT_MESH_1_1_SBR_SUPPORT
+    bridging_table_size_get(pparse_value->dw_parameter[0], pparse_value->dw_parameter[1]);
+#endif
+    return USER_CMD_RESULT_OK;
+}
+

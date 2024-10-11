@@ -69,6 +69,8 @@ int atcmd_bt_a2dp_tmap(int argc, char *argv[]);
 
 int atcmd_bt_spp(int argc, char *argv[]);
 
+int atcmd_bt_rfc(int argc, char *argv[]);
+
 int atcmd_bt_hid(int argc, char *argv[]);
 
 int atcmd_bt_hfp(int argc, char *argv[]);
@@ -179,6 +181,9 @@ int atcmd_bt_mesh_health(int argc, char *argv[]);
 /* mesh performence test cmd impl */
 int atcmd_bt_mesh_performence_test(int argc, char *argv[]);
 
+/* mesh directed forwarding cmd impl */
+int atcmd_bt_mesh_df(int argc, char *argv[]);
+
 /* br gap cmd impl */
 int atcmd_bt_br_gap(int argc, char *argv[]);
 
@@ -202,6 +207,9 @@ int atcmd_bt_avrcp_cmd(int argc, char *argv[]);
 
 /* spp cmd impl */
 int atcmd_bt_spp_cmd(int argc, char *argv[]);
+
+/* rfc cmd impl */
+int atcmd_bt_rfc_cmd(int argc, char *argv[]);
 
 /* hid cmd impl */
 int atcmd_bt_hid_cmd(int argc, char *argv[]);

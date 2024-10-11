@@ -29,7 +29,7 @@ BEGIN_DECLS
   * @{
   */
 
-/** @brief Handle cache for intrested UUIDs */
+/** @brief Handle cache for interested UUIDs */
 typedef enum
 {
     HDL_PROXY_SRV_START,
@@ -114,7 +114,7 @@ typedef enum
 {
     PROXY_CLIENT_CB_TYPE_DISC_STATE,          //!< Discovery procedure state, done or pending.
     PROXY_CLIENT_CB_TYPE_DISC_HDL,            //!< Discovered handle information.
-    PROXY_CLIENT_CB_TYPE_READ_RESULT,         //!< Read request's result data, responsed from server.
+    PROXY_CLIENT_CB_TYPE_READ_RESULT,         //!< Read request's result data, responded from server.
     PROXY_CLIENT_CB_TYPE_WRITE_RESULT,        //!< Write request result, success or fail.
     PROXY_CLIENT_CB_TYPE_NOTIF_IND_RESULT,    //!< Notification or indication data received from server.
     PROXY_CLIENT_CB_TYPE_INVALID              //!< Invalid callback type, no practical usage.
@@ -152,11 +152,17 @@ extern T_CLIENT_ID proxy_client_id;
 T_CLIENT_ID proxy_client_add(P_FUN_GENERAL_APP_CB appCB);
 
 /**
+  * @brief deinit the client
+  *
+  */
+void proxy_client_deinit(void);
+
+/**
   * @brief set the handle of the client
   * @param[in] conn_id: the connection id
   * @param[in] type: the handle type
   * @param[in] value: the handle value
-  * @return the operatino result
+  * @return the operation result
   */
 bool proxy_client_handle_set(uint8_t conn_id, proxy_handle_type_t type, uint16_t value);
 
@@ -173,7 +179,7 @@ uint16_t proxy_client_handle_get(uint8_t conn_id, proxy_handle_type_t handle_typ
   *
   * contains the service/characteristic/cccd declaration
   * @param[in] conn_id: the connection id
-  * @return the operatino result
+  * @return the operation result
   */
 bool proxy_client_start_discovery(uint8_t conn_id);
 
@@ -181,7 +187,7 @@ bool proxy_client_start_discovery(uint8_t conn_id);
   * @brief read the server by handle
   * @param[in] conn_id: the connection id
   * @param[in] type: the read type
-  * @return the operatino result
+  * @return the operation result
   */
 bool proxy_client_read_by_handle(uint8_t conn_id, proxy_read_type_t readCharType);
 
@@ -189,7 +195,7 @@ bool proxy_client_read_by_handle(uint8_t conn_id, proxy_read_type_t readCharType
   * @brief read the server by uuid
   * @param[in] conn_id: the connection id
   * @param[in] type: the handle type
-  * @return the operatino result
+  * @return the operation result
   */
 bool proxy_client_read_by_uuid(uint8_t conn_id, proxy_read_type_t readCharType);
 
@@ -197,7 +203,7 @@ bool proxy_client_read_by_uuid(uint8_t conn_id, proxy_read_type_t readCharType);
   * @brief write the cccd of the characteristic
   * @param[in] conn_id: the connection id
   * @param[in] command: the cccd value
-  * @return the operatino result
+  * @return the operation result
   */
 bool proxy_client_data_out_cccd_set(uint8_t conn_id, bool command);
 
@@ -206,7 +212,7 @@ bool proxy_client_data_out_cccd_set(uint8_t conn_id, bool command);
   * @param[in] conn_id: the connection id
   * @param[in] pdata: the data pointer
   * @param[in] length: the data length
-  * @return the operatino result
+  * @return the operation result
   */
 bool proxy_client_data_in_write(uint8_t conn_id, uint8_t *pdata, uint16_t length);
 

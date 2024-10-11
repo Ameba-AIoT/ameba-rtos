@@ -22,7 +22,7 @@ static mesh_msg_send_cause_t light_lc_setup_server_send(mesh_model_info_p pmodel
                                                         uint16_t dst, uint8_t *pmsg, uint16_t msg_len, uint16_t app_key_index,
                                                         uint32_t delay_time)
 {
-    mesh_msg_t mesh_msg;
+    mesh_msg_t mesh_msg = {0};
     mesh_msg.pmodel_info = pmodel_info;
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
@@ -87,20 +87,29 @@ bool light_lc_property_value_check(uint16_t property_id, const uint8_t *value, u
     }
 
     uint16_t wanted_len = 0;
-    if ((property_id >= 0x2E) && (property_id <= 0x30))
+    if (property_id == MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_ACCURACY)
+    {
+        wanted_len = 1;
+    }
+    if (property_id >= MODEL_PROPERTY_LIGHT_CONTORL_LIGHTNESS_ON &&
+        property_id <= MODEL_PROPERTY_LIGHT_CONTORL_LIGHTNESS_STANDBY)
     {
         wanted_len = 2;
     }
-    else if ((property_id >= 0x36) && (property_id <= 0x3c))
+    else if ((property_id >= MODEL_PROPERTY_LIGHT_CONTORL_TIME_FADE &&
+              property_id <= MODEL_PROPERTY_LIGHT_CONTROL_TIME_RUN_ON) ||
+             (property_id >= MODEL_PROPERTY_LIGHT_CONTORL_AMBIENT_LUXLEVEL_ON &&
+              property_id <= MODEL_PROPERTY_LIGHT_CONTORL_AMBIENT_LUXLEVEL_STANDBY))
     {
         wanted_len = 3;
     }
-    if (value_len != wanted_len)
+    else if (property_id >= MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_KID &&
+             property_id <= MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_KPU)
     {
-        return FALSE;
+        wanted_len = 4;
     }
 
-    return TRUE;
+    return value_len == wanted_len;
 }
 
 static bool light_lc_setup_server_receive(mesh_msg_p pmesh_msg)

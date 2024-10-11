@@ -208,6 +208,25 @@ static int atcmd_bt_avrcp_volume_change_req(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_avrcp_element_attr_get(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+	uint8_t attr;
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	attr = (uint8_t)str_to_int(argv[1]);
+	if (rtk_bt_avrcp_get_element_attr(bd_addr, attr)) {
+		BT_LOGE("AVRCP element attr get fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("AVRCP element attr get %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static int atcmd_bt_avrcp_connect(int argc, char **argv)
 {
 	(void)argc;
@@ -254,6 +273,7 @@ static const cmd_table_t avrcp_cmd_table[] = {
 	{"fast_forward_stop",    atcmd_bt_avrcp_fast_forward_stop,     2, 2},
 	{"volume_set",           atcmd_bt_avrcp_volume_set,            3, 3},
 	{"volume_change_req",    atcmd_bt_avrcp_volume_change_req,     3, 3},
+	{"element_attr",         atcmd_bt_avrcp_element_attr_get,      3, 3},
 	{"conn",                 atcmd_bt_avrcp_connect,               2, 2},
 	{"disconn",              atcmd_bt_avrcp_disconnect,            2, 2},
 	{NULL,},

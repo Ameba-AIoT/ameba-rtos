@@ -144,6 +144,7 @@ typedef struct
 #define SCENE_SERVER_STORE                                     3 //!< @ref scene_server_store_t
 #define SCENE_SERVER_RECALL                                    4 //!< @ref scene_server_recall_t
 #define SCENE_SERVER_DELETE                                    5 //!< @ref scene_server_delete_t
+//RTK porting: Add new macro for call app layer
 #define SCENE_SERVER_GET_STATUS_RECALL                         6 //!< @ref scene_server_delete_t
 #define SCENE_SERVER_GET_SCENES                   		       7 //!< @ref scene_server_delete_t
 #define SCENE_SERVER_GET_SCENES_NUM                   		   8 //!< @ref scene_server_delete_t
@@ -158,6 +159,7 @@ typedef struct
     scene_status_code_t status;
 } scene_server_get_register_status_t;
 
+//RTK porting: Add new macro for call app layer
 typedef struct
 {
     uint16_t scene_number;
@@ -189,6 +191,7 @@ typedef struct
     uint16_t scene_number;
 } scene_server_delete_t;
 
+//RTK porting: Add new macro for call app layer
 typedef struct {
     uint16_t scene_number;
 	scene_status_code_t status_recall;

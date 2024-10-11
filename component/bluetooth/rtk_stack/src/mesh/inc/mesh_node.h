@@ -60,10 +60,11 @@ typedef struct
     //uint8_t model_num;
     uint16_t dev_key_num;
     uint16_t net_key_num;
+    uint16_t master_key_num; //!< the number of master key, shall <= net_key_num
     uint16_t app_key_num;
     uint16_t vir_addr_num; //!< the number of virtual address
     uint16_t rpl_num; //!< the number of replay protection list entries
-    uint8_t sub_addr_num; //!< the number of subscribe address per model
+    uint16_t sub_addr_num; //!< the number of subscribe address per model
     uint8_t proxy_num; //!< the number of proxy server, only support at most one now
 
     uint16_t udb_interval; //!< unit: 100 millisecond, 0: use stack default value
@@ -74,6 +75,13 @@ typedef struct
 #if MESH_PRB
     uint16_t prb_interval; //!< unit: 100 millisecond, 0: use stack default value
     uint32_t prb_random_update_interval; //!< unit: 100 millisecond, 0: use stack default value
+#endif
+#if MESH_SBR
+    uint16_t bridging_table_size; //!< the number bridging table
+#endif
+#if MESH_DF
+    uint8_t dependent_addr_size;
+    uint16_t df_fixed_path_size;
 #endif
 } mesh_node_cfg_t, *mesh_node_cfg_p;
 
@@ -105,7 +113,11 @@ typedef struct
     uint32_t prb : 1; //!< state can be changed by private beacon set
     uint32_t private_proxy: 2; //!< Mesh Private Proxy
 
-    uint32_t rfu: 11;
+    uint32_t sbr : 1; //!< state can be changed by subnet bridge set
+
+    uint32_t df : 1; //!< enable or disable directed forwarding feature
+
+    uint32_t rfu: 9;
 } mesh_node_features_t;
 
 /** @defgroup Mesh_Address Mesh Address
@@ -128,6 +140,7 @@ typedef enum
 #define MESH_GROUP_ADDR_DYNAMIC_START           0xC000
 #define MESH_GROUP_ADDR_DYNAMIC_END             0xFEFF
 #define MESH_GROUP_ADDR_FIX_START               0xFF00
+#define MESH_GROUP_ADDR_ALL_DF                  0xFFFB
 #define MESH_GROUP_ADDR_ALL_PROXY               0xFFFC
 #define MESH_GROUP_ADDR_ALL_FRND                0xFFFD
 #define MESH_GROUP_ADDR_ALL_RELAY               0xFFFE
@@ -141,13 +154,32 @@ typedef enum
 #define MESH_NOT_VIRTUAL_ADDR(addr)             (((addr) & 0xC000) != 0x8000)
 #define MESH_IS_GROUP_ADDR(addr)                (((addr) & 0xC000) == 0xC000)
 #define MESH_NOT_GROUP_ADDR(addr)               (((addr) & 0xC000) != 0xC000)
-#define MESH_IS_RFU_GROUP_ADDR(addr)            ((addr) >= MESH_GROUP_ADDR_FIX_START && (addr) < MESH_GROUP_ADDR_ALL_PROXY)
+#define MESH_IS_RFU_GROUP_ADDR(addr)            ((addr) >= MESH_GROUP_ADDR_FIX_START && (addr) < MESH_GROUP_ADDR_ALL_DF)
 #define MESH_IS_BROADCAST_ADDR(addr)            ((addr) == MESH_GROUP_ADDR_ALL_NODE)
 #define MESH_NOT_BROADCAST_ADDR(addr)           ((addr) != MESH_GROUP_ADDR_ALL_NODE)
 #define MESH_IS_SUBSCRIBE_ADDR(addr)            ((addr) != MESH_GROUP_ADDR_ALL_NODE && ((addr) & 0x8000) == 0x8000)
 #define MESH_NOT_SUBSCRIBE_ADDR(addr)           ((addr) == MESH_GROUP_ADDR_ALL_NODE || ((addr) & 0x8000) != 0x8000)
 #define MESH_IS_MY_ADDR(addr)                   ((addr) >= mesh_node.unicast_addr && (addr) - mesh_node.unicast_addr < mesh_node.element_queue.count)
 #define MESH_NOT_MY_ADDR(addr)                  ((addr) < mesh_node.unicast_addr || (addr) - mesh_node.unicast_addr >= mesh_node.element_queue.count)
+
+typedef struct
+{
+    union
+    {
+        struct
+        {
+            uint16_t range_start : 15;
+            uint16_t len_present : 1;
+        };
+        struct
+        {
+            uint16_t len_present_access : 1;
+            uint16_t range_start_access : 15;
+        };
+        uint16_t addr;
+    };
+    uint8_t range_len;
+} _PACKED4_ mesh_addr_range_t;
 
 typedef struct _mesh_addr_member_t
 {
@@ -200,6 +232,14 @@ typedef struct _mesh_model_info_t
 #endif
     /** point to the bound model, sharing the subscription list with the binding model */
     struct _mesh_model_info_t *pmodel_bound;
+    struct
+    {
+        uint8_t corresponding_present : 1;
+        uint8_t format : 1;
+        uint8_t extended_item_count : 6;
+        uint8_t corresponding_group_id;
+        struct _mesh_model_info_t *pmodel_extended_info;
+    };
     /** configured by stack */
     uint8_t element_index;
     uint8_t model_index;
@@ -215,6 +255,10 @@ typedef struct
     uint8_t pub_ttl;
     pub_period_t pub_period;
     pub_retrans_info_t pub_retrans_info;
+#if MESH_DF
+    /* publish policy */
+    uint8_t pub_policy; //!< @ref directed_publish_policy_t
+#endif
 } mesh_model_pub_params_t;
 
 typedef struct _mesh_model_t
@@ -316,11 +360,42 @@ typedef struct
     mesh_key_state_t key_state;
     uint8_t identity; //!< Binding with GATT Proxy state
 #if MESH_PRB
-    uint8_t private_identity; //!< Binding with GATT Pirvate Proxy state
+    uint8_t private_identity; //!< Binding with GATT Private Proxy state
 #endif
-    uint16_t net_key_index_g; //!< index of global NetKey list, bit15 represent wheather it is a frnd key
+    uint16_t net_key_index_g; //!< index of global NetKey list, bit15 represent whether it is a frnd key
     net_key_p pnet_key[2];
+    uint8_t rcvd_snb_count;
+    uint16_t start_obs_point;
+    uint16_t snb_interval;
+    uint16_t last_snb_point;
 } net_key_list_t, *net_key_list_p;
+
+/* network key index flag */
+#define NET_KEY_INDEX_FLAG_MASK            0xF000
+
+#define NET_KEY_INDEX_FLAG_MASTER          0x0000
+#define NET_KEY_INDEX_FLAG_FRND            0x8000
+#define NET_KEY_INDEX_FLAG_DF              0x4000
+
+typedef enum
+{
+    NET_KEY_TYPE_INVALID = 0x00,
+    NET_KEY_TYPE_MASTER = 0x01,   // managed flooding security material
+    NET_KEY_TYPE_FRND = 0x02,     // friendship security material
+#if MESH_DF
+    NET_KEY_TYPE_DF = 0x03,       // directed security material
+#endif
+} net_key_type_t;
+
+#if MESH_DF
+enum
+{
+    DF_TAG_TYPE_DEFAULT,               //!< default, use the df key if the path exists, otherwise use the master key
+    DF_TAG_TYPE_USE_DIRECTED,          //!< use directed, key type may be changed and df path init may start
+    DF_TAG_TYPE_IMMUTABLE_CREDENTIALS, //!< immutable credentials, key type shall be not changed
+} _SHORT_ENUM_;
+typedef uint8_t df_tag_t;
+#endif
 
 typedef struct
 {
@@ -351,6 +426,9 @@ typedef struct
     uint8_t label_uuid[MESH_COMMON_KEY_SIZE];
 } _PACKED4_ vir_addr_t;
 
+#define MESH_COMPO_DATA_PAGE128   3
+#define MESH_COMPO_DATA_PAGE_NUM  4
+
 /** @defgroup Compo_Data_Page0 Composition Data Page 0
   * @brief
   * @{
@@ -364,6 +442,30 @@ typedef struct
     //mesh_features_t features;
 } _PACKED4_ compo_data_page0_header_t, *compo_data_page0_header_p;
 /** @} End of Compo_Data_Page0 */
+
+/** @defgroup Compo_Data_Page2 Composition Data Page 2
+  * @brief
+  * @{
+  */
+enum
+{
+    MESH_PROFILE_NLC_AMBIENT_LIGHT_SENSOR_V_1_0       = 0X1600,
+    MESH_PROFILE_NLC_BASIC_LIGHTNESS_CONTROLLER_V_1_0 = 0X1601,
+    MESH_PROFILE_NLC_BASIC_SCENE_SELECTOR_V_1_0       = 0X1602,
+    MESH_PROFILE_NLC_DIMMING_CONTROL_V_1_0            = 0X1603,
+    MESH_PROFILE_NLC_ENERGY_MONITOR_V_1_0             = 0X1604,
+    MESH_PROFILE_NLC_OCCUPANCY_SENSOR_V_1_0           = 0X1605,
+};
+typedef uint16_t mesh_profile_identifier_t;
+
+typedef struct
+{
+    uint8_t version_x;  // Specification major revision number
+    uint8_t version_y;  // Specification minor revision number
+    uint8_t version_z;  // Specification .Z revision number
+} _PACKED4_ mesh_profile_version_t, *mesh_profile_version_p;
+
+/** @} End of Compo_Data_Page2 */
 
 #define MESH_MSG_RESERVED_NET_TRANS_COUNT         0xFF
 #define MESH_MSG_RESERVED_NET_TRANS_STEPS         0xFF
@@ -399,13 +501,18 @@ typedef struct _mesh_msg_t
     uint32_t delay_time; //!< message send delay time, unit is ms
     bearer_field_t bearer_field; //!< indicate which bearers sending to, or which bearer receiving from
     gap_sched_link_t link; //!< indicate which links sending to, or which link receiving from
+    net_key_type_t net_key_type; //!< indicate which network key used to send or received from
+#if MESH_DF
+    df_tag_t df_tag; //!< directed forwarding tag
+#endif
 } mesh_msg_t;
 
 typedef struct
 {
     /** network keys */
     net_key_list_p net_key_list;
-    uint16_t net_key_num; //!< 12 valid bits
+    uint16_t net_key_num; //!< 12 valid bits, sum of master key, df key, frnd key
+    uint16_t master_key_num; //!< save for flooding key
     uint16_t frnd_key_num; //!< save for frnd
     /** application keys */
     app_key_list_p app_key_list;
@@ -441,23 +548,31 @@ typedef struct
     uint16_t unicast_addr;
     plt_list_t element_queue; //!< @ref mesh_element_t
     uint8_t model_num;
-    uint8_t sub_addr_num; //!< per model
-    uint8_t *compo_data[3]; //!< 0: page 0, 1: page 1, 2: page 128
-    uint16_t compo_data_size[3];
+    uint16_t sub_addr_num; //!< per model
+    uint8_t *compo_data[MESH_COMPO_DATA_PAGE_NUM];      //!< page0 : 0, page1 : 1, page2 : 2, page128 : MESH_COMPO_DATA_PAGE128
+    uint16_t compo_data_size[MESH_COMPO_DATA_PAGE_NUM];
     /** element attention */
     plt_timer_t attn_timer;
     uint32_t attn_interval; //!< ms, range of 10ms ~ 1000ms
     mesh_attn_cb_pf attn_cb;
-    /** bearer paramemeters */
+    /** bearer parameters */
+    uint8_t pb_adv_delay_min; //!< ms, default value 0ms
+    uint8_t pb_adv_delay_max; //!< ms, default value 0ms
+    uint8_t pb_adv_msg_ack_delay_min; //!< ms, default value 20ms
+    uint8_t pb_adv_msg_ack_delay_max; //!< ms, default value 50ms
     uint8_t pb_adv_retrans_count; //!< transmit (pb_adv_retrans_count + 1) times
     uint8_t pb_adv_retrans_steps; //!< retransmission interval = (pb_adv_retrans_steps + 1) * 10ms
     /** net parameters */
     uint8_t net_trans_count_base; //!< can't be modified by the cfg client
     uint8_t net_trans_count; //!< :3 transmit (net_trans_count + net_trans_count_base + 1) times
     uint8_t net_trans_steps; //!< :5 retransmission interval = (net_trans_steps + 1) * 10ms
+    uint32_t net_delay_time_min; //!< ms, default value 0ms
+    uint32_t net_delay_time_max; //!< ms, default value 0ms, shall not less than net_delay_time_min
     uint8_t relay_retrans_count_base; //!< can't be modified by the cfg client
     uint8_t relay_retrans_count; //!< :3 transmit (relay_retrans_count + relay_retrans_count_base + 1) times
     uint8_t relay_retrans_steps; //!< :5 retransmission interval = (relay_retrans_steps + 1) * 10ms
+    uint32_t relay_delay_time_min; //!< ms, default value 0ms
+    uint32_t relay_delay_time_max; //!< ms, default value 0ms, shall not less than relay_delay_time_min
     uint16_t nmc_size; //!< net msg cache size default value @ref MESH_NET_MSG_CACHE_SIZE
     uint8_t relay_parallel_num;
     uint8_t relay_parallel_max;  //!< default 3
@@ -473,12 +588,14 @@ typedef struct
     uint16_t trans_ack_seg_factor; //!< segment transmission timer seg num factor, unit is ms, default value 30ms
     uint16_t trans_seg_ack_delay_min; //!< segment acknowledge send delay minimum time, unit is ms, default value 30ms
     uint16_t trans_seg_ack_delay_max; //!< segment acknowledge send delay maximum time, unit is ms, default value 30ms
+    uint32_t trans_seg_delay_time_min; //!< ms, default value 0ms
+    uint32_t trans_seg_delay_time_max; //!< ms, default value 0ms, shall not less than trans_seg_delay_time_min
     uint16_t tsmc_size; //!< trans seg msg cache size default value @ref MESH_TRANS_SEG_MSG_CACHE_SIZE
     /** friendship parameters */
-    uint8_t frnd_rx_window; //!< range: 0x01–0xFF ms (default 20ms), set by the fn
-    uint8_t frnd_rx_delay; //!< range: 0x0A–0xFF ms (default 10ms), set by the lpn
-    uint8_t frnd_rx_widen; //!< range: 0x00–0xFF ms (default 0ms), set by the lpn
-    uint8_t frnd_tx_ahead; //!< range: 0x00–0xFF ms (default 15ms), set by the fn
+    uint8_t frnd_rx_window; //!< range: 0x01-0xFF ms (default 20ms), set by the fn
+    uint8_t frnd_rx_delay; //!< range: 0x0A-0xFF ms (default 10ms), set by the lpn
+    uint8_t frnd_rx_widen; //!< range: 0x00-0xFF ms (default 0ms), set by the lpn
+    uint8_t frnd_tx_ahead; //!< range: 0x00-0xFF ms (default 15ms), set by the fn
     uint8_t frnd_poll_times; //!< default 1 times, set by the lpn
     uint8_t frnd_upd_times; //!< default 11 times, set by the fn
     uint16_t frnd_offer_rx_delay; //!< range: 0x01-0xFFFF ms (default 90ms), set by the lpn
@@ -508,7 +625,43 @@ typedef struct
     uint8_t node_uncheck_group_addr: 1; //!< default off
     uint8_t check_reprov: 1; //!< default off
     uint8_t cccd_not_check: 1; //!< default off
-
+#if MESH_SBR
+    uint16_t bridging_table_size; //!< the number bridging table
+#endif
+#if MESH_DF
+    /* network param */
+    uint8_t df_net_trans_count_base; //!< can't be modified by the df client
+    uint8_t df_net_trans_count; //!< :3 transmit (df_net_trans_count + df_net_trans_count_base + 1) times
+    uint8_t df_net_trans_steps; //!< :5 retransmission interval = (df_net_trans_steps + 1) * 10ms
+    uint8_t df_relay_retrans_count_base; //!< can't be modified by the df client
+    uint8_t df_relay_retrans_count; //!< :3 transmit (df_relay_retrans_count + df_relay_retrans_count_base + 1) times
+    uint8_t df_relay_retrans_steps; //!< :5 retransmission interval = (df_relay_retrans_steps + 1) * 10ms
+    uint8_t df_net_ctl_trans_count_base; //!< can't be modified by the df client
+    uint8_t df_net_ctl_trans_count; //!< :3 transmit (df_net_ctl_trans_count + df_net_ctl_trans_count_base + 1) times
+    uint8_t df_net_ctl_trans_steps; //!< :5 retransmission interval = (df_net_ctl_trans_steps + 1) * 10ms
+    uint8_t df_relay_ctl_retrans_count_base; //!< can't be modified by the df client
+    uint8_t df_relay_ctl_retrans_count; //!< :3 transmit (df_relay_ctl_retrans_count + df_relay_ctl_retrans_count_base + 1) times
+    uint8_t df_relay_ctl_retrans_steps; //!< :5 retransmission interval = (df_relay_ctl_retrans_steps + 1) * 10ms
+    /* path rssi threshold */
+    int8_t df_default_rssi_threshold; //!< dbm
+    uint8_t df_rssi_margin; //!< dbm
+    /* path discovery timing */
+    uint16_t path_monitoring_interval; //!< 1000ms
+    uint16_t path_discovery_retry_interval; //!< 1000ms
+    uint8_t path_discovery_interval; //!< 0: 5sec, 1: 30sec
+    uint8_t lane_discovery_guard_interval; //!< 0: 2sec, 1: 10sec
+    /* directed paths */
+    uint16_t directed_node_paths; //!< minimum number of paths that the node supports when acting as a Path Origin or as a Path Target.
+    uint16_t directed_relay_paths; //!< minimum number of paths that the node supports when acting as an intermediate Directed Relay node.
+    uint16_t directed_proxy_paths; //!< minimum number of paths that the node supports when acting as a Directed Proxy node.
+    uint16_t directed_friend_paths; //!< minimum number of paths that the node supports when acting as a Directed Friend node.
+    /* dependents addr num */
+    uint16_t dependent_addr_size; //!< max dependent addr num per path
+    /* fixed path num */
+    uint16_t df_fixed_path_size; //!< max fixed paths
+    /* non-fixed path num */
+    uint16_t df_non_fixed_path_size; //!< max non fixed paths
+#endif
     /* configurable parameters */
 #if MESH_PARAM_CONFIGURABLE
     uint16_t inner_msg_num;
@@ -526,6 +679,19 @@ typedef struct
 } mesh_node_t, *mesh_node_p;
 
 extern mesh_node_t mesh_node;
+
+typedef enum
+{
+    MESH_IV_INDEX_UPDATE,
+} iv_index_cb_type_t;
+
+typedef struct
+{
+    uint32_t iv_index;
+    bool iv_index_update_flag;
+} iv_index_cb_data_t;
+
+typedef bool (*iv_index_cb_pf)(iv_index_cb_type_t cb_type, iv_index_cb_data_t cb_data);
 
 /** @} */
 
@@ -545,6 +711,13 @@ void device_uuid_set(const uint8_t dev_uuid[16]);
   * @{
   */
 mesh_addr_type_t mesh_addr_type_classify(uint16_t addr);
+bool unicast_addr_range_contain(bool access, mesh_addr_range_t addr_range1,
+                                mesh_addr_range_t addr_range2);
+bool unicast_addr_range_overlap(bool access, mesh_addr_range_t addr_range1,
+                                mesh_addr_range_t addr_range2);
+bool unicast_addr_range_valid(bool access, mesh_addr_range_t addr_range);
+mesh_addr_range_t unicast_addr_range_transform(bool access, uint16_t unicast_addr,
+                                               uint8_t element_num);
 
 bool fixed_group_addr_check_by_model(uint16_t addr, mesh_model_p pmodel);
 bool fixed_group_addr_check_by_node(uint16_t addr);
@@ -582,7 +755,7 @@ void dev_key_get(uint16_t dev_key_index, uint8_t *pdev_key);
   * @brief get the available device key index
   * @return operation result
   * @retval >=0: the dev key index
-  * @retval -1: not availabe
+  * @retval -1: not available
   */
 int dev_key_get_available_idx(void);
 
@@ -641,13 +814,14 @@ void net_key_delete(uint16_t net_key_index);
 uint16_t net_key_dump(uint16_t net_key_indexes[]);
 bool net_key_primary_subnet_check(void);
 bool net_key_is_frnd_key(uint16_t net_key_index);
+net_key_type_t net_key_type_get(uint16_t net_key_index);
+uint16_t master_key_index_get(uint16_t net_key_index);
 /** @} */
 
 /** @brief
   * @{
   */
 bool frnd_key_update(uint16_t frnd_key_index, uint16_t master_key_index, uint8_t p[9]);
-bool frnd_key_check(uint16_t net_key_index);
 /** @} */
 
 /** @brief
@@ -683,6 +857,31 @@ bool compo_data_page128_gen(compo_data_page0_header_t *pcompo_data_page0_header)
 bool compo_data_page128_valid(void);
 bool compo_data_page128_to_page0(void);
 
+/**
+ * @brief generate composition data page 1 about the relationships among models
+ *
+ * @return true
+ * @return false
+ */
+bool compo_data_page1_gen(void);
+
+/**
+ * @brief add mesh profile entry to composition data page 2
+ *
+ * @param[in] identifier: Mesh profile UUID identifying the supported mesh profile specification
+ * @param[in] pversion: Version of the mesh profile specification
+ * @param[in] num_element_offsets: Total number of element offsets in the Element_Offset_List field
+ * @param[in] pelement_offset_list: List of element offsets containing models related to the supported mesh profile specification
+ * @param[in] add_data_len: Length of the additional data
+ * @param[in] padd_data: Additional data specified in a mesh profile specification that is indicated by the Mesh_Profil
+ * @return true: add success
+ * @return false: add fail
+ */
+bool compo_data_page2_entry_add(mesh_profile_identifier_t identifier,
+                                mesh_profile_version_p pversion,
+                                uint8_t num_element_offsets, uint8_t *pelement_offset_list,
+                                uint16_t add_data_len, uint8_t *padd_data);
+
 /** @brief
   * @{
   */
@@ -694,10 +893,40 @@ uint32_t mesh_seq_use(void);
 /** @brief
   * @{
   */
+void gap_sched_support_hw_timer(bool enable);
+/** @} */
+
+/** @brief
+  * @{
+  */
+/**
+  * @brief get random delay for net trans
+  * @return random delay time(ms)
+  */
+uint32_t net_random_delay_time_get(void);
+
+/**
+  * @brief get random delay for net relay
+  * @return random delay time(ms)
+  */
+uint32_t relay_random_delay_time_get(void);
+
+/**
+  * @brief get random delay for trans seg
+  * @return random delay time(ms)
+  */
+uint32_t trans_seg_random_delay_time_get(void);
+
+/** @} */
+
+/** @brief
+  * @{
+  */
 static inline uint32_t iv_index_get_tx_value(void)
 {
     return mesh_node.iv_index - (mesh_node.iv_update_flag ? 1 : 0);
 }
+void iv_index_cb_reg(iv_index_cb_pf p_function);
 uint32_t iv_index_get(void);
 void iv_index_set(uint32_t iv_index);
 void iv_index_update(uint32_t iv_index, bool iv_update_flag);
@@ -713,18 +942,39 @@ void iv_index_timer_stop(void);
 void rpl_clear(void);
 void rpl_clear_per_loop(uint8_t rpl_loop);
 /**
- * @brief rpl function type definition
+ * @brief set rpl list
+ * @param[in] src:      mesh address
+ * @param[in] seq:      seq will be set
  * @param[in] rpl_loop: loop of rpl list
- * @return result
  */
-typedef void (*rpl_cb_t)(uint8_t rpl_loop);
+void rpl_set_seq(uint16_t src, uint32_t seq, uint8_t rpl_loop);
+
+typedef enum
+{
+    MESH_RPL_LOWER_SEQ,
+    MESH_RPL_LOWER_IV_INDEX,
+    MESH_RPL_LIST_FULL,
+} mesh_rpl_fail_type_t;
 
 /**
- * @brief register rpl list full callback
+ * @brief rpl function type definition
+ * @param[in] type:       fail type
+ * @param[in] rpl_loop:   loop of rpl list
+ * @param[in] src:        mesh address in received msg
+ * @param[in] iv_index:   iv index in received msg
+ * @param[in] rpl_seq:    seq stored in rpl list
+ * @param[in] seq:        seq used in received msg
+ * @return ignore rpl check, true: ignore rpl check fail, receive message normally; false: don't receive the message
+ */
+typedef bool (*rpl_cb_t)(mesh_rpl_fail_type_t type, uint8_t rpl_loop, uint16_t src,
+                         uint32_t iv_index, uint32_t rpl_seq, uint32_t seq);
+
+/**
+ * @brief register rpl callback
  * @param[in] cb: callback
  * @return none
  */
-void rpl_list_full_cb_reg(rpl_cb_t cb);
+void rpl_cb_reg(rpl_cb_t cb);
 
 /** @brief
   * @{
@@ -749,7 +999,30 @@ bool mesh_node_check_reprov(uint16_t unicast_address, uint32_t iv_index, bool iv
 ///@endcond
 
 /**
-  * @brief clear the mesh parameters stored in the nvm
+  * @brief configure the mesh parameters
+  *
+  * This function can be invoked multiple times.
+  * It can be used in conjunction with mesh_flash_sign to get the flash signature.
+  * @param[in] features: the supported mesh features
+  * @param[in] pnode_cfg: the configurable device parameters
+  * @return none
+  */
+void mesh_node_cfg_update(mesh_node_features_t features, mesh_node_cfg_p pnode_cfg);
+
+/**
+  * @brief provide the old parameters to migrate the flash data
+  *
+  * The old parameters is used to check data overflow
+  * @param[in] features: the old supported mesh features
+  * @param[in] pnode_cfg: the old configurable device parameters
+  * @return none
+  */
+void mesh_node_cfg_check(mesh_node_features_t features, mesh_node_cfg_p pnode_cfg);
+
+/**
+  * @brief configure the mesh parameters and allocate resources
+  *
+  * This function invokes mesh_node_cfg_update to configure the mesh parameters.
   * @param[in] features: the supported mesh features
   * @param[in] pnode_cfg: the configurable device parameters
   * @return none
@@ -764,16 +1037,12 @@ void mesh_node_clear(void);
 
 /**
   * @brief clear the mesh parameters stored in the ram
-  *
-  * It may reboot the system.
   * @return none
   */
 void mesh_node_clean(void);
 
 /**
   * @brief clear all the mesh parameters in the nvm and ram
-  *
-  * It may reboot the system.
   * @return none
   */
 void mesh_node_reset(void);
@@ -792,7 +1061,7 @@ void mesh_node_restore(void);
   *
   * @return none
   */
-void mesh_node_unckeck_group_addr(bool enable);
+void mesh_node_uncheck_group_addr(bool enable);
 
 /**
   * @brief When the feature is enabled, the node will reuse the old mesh parameters if it is reprovisioned.
@@ -885,7 +1154,7 @@ uint16_t mesh_model_bind_dump(mesh_model_info_t *pmodel_info, uint16_t app_key_i
                               uint16_t max_count);
 
 /**
-  * @brief get the index of the first availabel app key of the model
+  * @brief get the index of the first available app key of the model
   * @param[in] pmodel_info: pointer of model info
   * @return the local app key index
   * @retval >=0: the available app key index
@@ -912,14 +1181,14 @@ bool mesh_model_unsub(mesh_model_p pmodel, uint16_t addr);
 /**
   * @brief all the models subscribe the group address
   *
-  * Some models may subscribe fail due to the subcribe list is full or other reasons.
+  * Some models may subscribe fail due to the subscribe list is full or other reasons.
   * @param[in] addr: the group address
-  * @return the successed model num
+  * @return the succeed model num
   */
 uint8_t mesh_model_sub_all(uint16_t addr);
 
 /**
-  * @brief check wheather the group address is subscribed by the model
+  * @brief check whether the group address is subscribed by the model
   * @param[in] pmodel: pointer of model
   * @param[in] addr: the group address
   * @return operation result
@@ -940,7 +1209,7 @@ uint16_t mesh_model_sub_dump_internal(mesh_model_p pmodel, uint16_t addr[], uint
   * @brief subscribe many group addresses of the model
   * @param[in] pmodel: pointer of model
   * @param[in] addr: the group addresses
-  * @param[in] num: the number of addreses
+  * @param[in] num: the number of addresses
   * @return none
   */
 void mesh_model_sub_load(mesh_model_p pmodel, uint16_t addr[], uint16_t num);
@@ -953,7 +1222,7 @@ void mesh_model_sub_load(mesh_model_p pmodel, uint16_t addr[], uint16_t num);
 void mesh_model_sub_clear(mesh_model_p pmodel);
 
 /**
-  * @brief start the publishment of the model
+  * @brief start the publish of the model
   * @param[in] pmodel: pointer of model
   * @return none
   */
@@ -982,7 +1251,7 @@ void mesh_model_pub_params_set(mesh_model_t *pmodel, mesh_model_pub_params_t pub
 mesh_model_pub_params_t mesh_model_pub_params_get(const mesh_model_t *pmodel);
 
 /**
-  * @brief check wheather the publish addr is set
+  * @brief check whether the publish addr is set
   * @param[in] pmodel_info: pointer of model info
   * @return operation result
   */

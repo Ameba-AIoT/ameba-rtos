@@ -750,6 +750,8 @@ void SPDIO_Device_DeInit(void)
 	InterruptDis(SDIO_IRQ);
 	InterruptUnRegister(SDIO_IRQ);
 
+	rtos_task_delete(pgSPDIODev->xSDIOIrqTaskHandle);
+
 	if (pgSPDIODev->IrqSema) {
 		rtos_sema_delete(pgSPDIODev->IrqSema);
 		pgSPDIODev->IrqSema = NULL;

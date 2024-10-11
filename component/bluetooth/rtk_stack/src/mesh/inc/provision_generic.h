@@ -17,6 +17,7 @@
 
 /* Add Includes here */
 #include "platform_types.h"
+#include "gap_scheduler.h"
 
 BEGIN_DECLS
 
@@ -48,11 +49,29 @@ typedef enum
     PB_GENERIC_CB_LINK_CLOSED,
     PB_GENERIC_CB_MSG_ACKED,
     PB_GENERIC_CB_MSG,
-    //todo: PB_GENERIC_CB_MSG_TRANSMITED maybe usefull calc ecdh secret after send public key to save time
+    //todo: PB_GENERIC_CB_MSG_TRANSMITTED maybe useful calc ecdh secret after send public key to save time
 } prov_generic_cb_type_t;
 
-typedef void (*prov_bearer_cb_pf)(prov_generic_cb_type_t type, uint8_t *pbuffer,
-                                  uint16_t len); //todo: add ctx index & ctx type when use multiple bearer
+typedef enum
+{
+    PROV_BEARER_TYPE_INVALID,
+    PROV_BEARER_TYPE_ADV,
+    PROV_BEARER_TYPE_GATT,
+    PROV_BEARER_TYPE_RPR
+} prov_bearer_type_t;
+
+typedef struct
+{
+    prov_bearer_type_t type;
+    union
+    {
+        gap_sched_link_t link;
+    };
+} prov_bearer_t;
+
+typedef void (*prov_bearer_cb_pf)(prov_bearer_t bearer, prov_generic_cb_type_t type,
+                                  uint8_t *pbuffer,
+                                  uint16_t len);
 /** @} */
 /** @} */
 

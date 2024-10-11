@@ -208,6 +208,7 @@ typedef struct
 #define GENERIC_ADMIN_PROPERTY_SERVER_SET                                       1 //!< @ref generic_admin_property_server_set_t
 #define GENERIC_MANUFACTURER_PROPERTY_SERVER_SET                                2 //!< @ref generic_manufacturer_property_server_set_t
 #define GENERIC_CLIENT_PROPERTY_SERVER_GET                                      3 //!< @ref generic_client_property_server_get_t
+////RTK porting:add new macro and structure for call app layer
 #define GENERIC_PROPERTY_SERVER_PARAMETER_GET                             		4 //!< @ref generic_property_server_para_get_t
 #define GENERIC_PROPERTY_SERVER_VALUE_GET                              			5 //!< @ref generic_property_server_para_get_t
 #define GENERIC_PROPERTY_SERVER_NUM_IDS_GET                              		6 //!< @ref generic_property_server_num_ids_get_t
@@ -292,7 +293,7 @@ typedef struct
  * @brief Data types and structure used by data process callback
  * @{
  */
-#define GENERIC_USER_PROPERIES_CLIENT_STATUS                                    0 //!< @ref generic_properties_client_status_t
+#define GENERIC_USER_PROPERTIES_CLIENT_STATUS                                   0 //!< @ref generic_properties_client_status_t
 #define GENERIC_USER_PROPERTY_CLIENT_STATUS                                     1 //!< @ref generic_property_client_status_t
 #define GENERIC_ADMIN_PROPERTIES_CLIENT_STATUS                                  2 //!< @ref generic_properties_client_status_t
 #define GENERIC_ADMIN_PROPERTY_CLIENT_STATUS                                    3 //!< @ref generic_property_client_status_t
