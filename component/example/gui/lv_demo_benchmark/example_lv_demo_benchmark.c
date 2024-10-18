@@ -1,6 +1,3 @@
-<<<<<<< HEAD   (bbd1c2 [common][media] fix the player example warning)
-=======
-
 
 #include "ameba_soc.h"
 
@@ -52,4 +49,3 @@ void app_example(void)
 	lv_demo_benchmark_show();
 }
 #endif
->>>>>>> CHANGE (6580cb [ameba][gui] fix the example warning)
