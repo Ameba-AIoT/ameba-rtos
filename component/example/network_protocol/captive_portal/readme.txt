@@ -31,8 +31,7 @@ Setup Guide
 
 Result description
 		~~~~~~~~~~~~~~~~~~
-		A softap thread will be started automatically when booting. After the phone connects to the softap, a captive portal page will automatically appear,
-		which can display information of softap and scan available wifi.
+		A softap thread will be started automatically when booting. After the phone connects to the softap(SOFTAP_SSID: captive_portal_test, SOFTAP_PASSWORD:12345678), a captive portal page will automatically appear, which can display information of softap and scan available wifi.
 		Several buttons are provided. "Submit" button is used to restart softap when you change the setting. "Scan" button is used to scan available wifi. "Connect"
 		button is used to connect target wifi according to your input. "Refresh" button is used to refresh page.
 

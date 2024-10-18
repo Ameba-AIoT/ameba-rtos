@@ -1148,7 +1148,7 @@ static void wifi_scan_thread(void *pvParameters)
 }
 
 /*get ap security mode from scan list*/
-static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mode, OUT u8 *channel)
+static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *channel)
 {
 	rtw_scan_param_t scan_param;
 	rtw_scan_result_t *scanned_ap_info;
@@ -1573,6 +1573,7 @@ static void vCaptivePortalServer(void *pvParameters)
 			/* Service connection. */
 			port_netconn_accept(pxHTTPListener, pxNewConnection->conn, ret);
 			if (pxNewConnection->conn != NULL && ret == ERR_OK) {
+				rtos_time_delay_ms(500);
 				if (rtos_task_create(&pxNewConnection->task, (const char *)"web_conn", vProcessConnection, pxNewConnection, 1024 * 4, 1) != SUCCESS) {
 					RTK_LOGE(NOTAG, "ERROR: rtos_task_create web_server_conn");
 				}
@@ -1614,6 +1615,8 @@ static void example_start_captive_portal(void *param)
 {
 	/* To avoid gcc warnings */
 	(void) param;
+
+	rtos_time_delay_ms(500);
 
 #ifdef CONFIG_LWIP_LAYER
 	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];

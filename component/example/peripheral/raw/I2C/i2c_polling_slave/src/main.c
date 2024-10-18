@@ -210,6 +210,7 @@ void i2c_dual_slave_task(void)
 
 	// Master read - Slave write
 #ifdef I2C_RESTART_DEMO
+	RTK_LOGI(TAG, "Slave read 1.1>>>\n");
 	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], 1);
 #endif
 

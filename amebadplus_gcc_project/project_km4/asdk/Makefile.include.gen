@@ -435,9 +435,10 @@ ROM_LD_ARG += -Wl,--no-enum-size-warning
 #*****************************************************************************#
 #                      RULES TO CHECK TOOLCHAIN                               #
 #*****************************************************************************#
-CURRENTVER = $(shell $(CC) --version)
+CURRENTVER = `$(CC) --version`
 define check_toolchain_version_func
-	@if [ $(findstring $(TOOLCHAINVER), $(CURRENTVER)) ]; then \
+	@echo "Checking for gcc == $(TOOLCHAINVER)..."
+	@if $(CC) --version | grep -q '$(TOOLCHAINVER)'; then \
 		echo "Toolchain Version Matched"; \
 	else \
 		echo "$(CURRENTVER)"; \
