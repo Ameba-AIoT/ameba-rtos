@@ -50,14 +50,16 @@ int parse_param_advance(char *buf, char **argv);
 #define SMALL_BUF               128
 #define BIG_BUF                 1024
 
-enum {
+typedef enum {
 	CLIENT_CA = 0,
 	CLIENT_CERT,
 	CLIENT_KEY,
 	SERVER_CA,
 	SERVER_CERT,
 	SERVER_KEY,
-};
+} CERT_TYPE;
+
+int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);
 
 /* TODO */
 #ifdef CONFIG_ATCMD_MCU_CONTROL

@@ -1,4 +1,4 @@
-add_executable(target_img2_${PROJECT_NAME} empty_file.c)
+ameba_executable(target_img2_${PROJECT_NAME} empty_file.c)
 target_compile_definitions(target_img2_${PROJECT_NAME} PRIVATE IMAGE2_BUILD)
 
 add_custom_target(

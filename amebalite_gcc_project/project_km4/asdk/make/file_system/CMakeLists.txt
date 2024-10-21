@@ -1,0 +1,7 @@
+add_subdirectory(fatfs)
+add_subdirectory(littlefs)
+add_subdirectory(kv)
+add_subdirectory(vfs)
+if(CONFIG_BT)
+    add_subdirectory(ftl)
+endif()

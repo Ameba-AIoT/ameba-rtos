@@ -111,22 +111,6 @@ void ex_spdio_thread(void *param)
 	UNUSED(param);
 	u32 i;
 
-	/* Group3 */
-	PAD_PullCtrl(_PB_6, GPIO_PuPd_UP);  //D2
-	PAD_PullCtrl(_PB_7, GPIO_PuPd_UP);  //D3
-	PAD_PullCtrl(_PB_8, GPIO_PuPd_UP);  //cmd
-	PAD_PullCtrl(_PB_9, GPIO_PuPd_UP);  //clk
-	PAD_PullCtrl(_PB_13, GPIO_PuPd_UP);  //D0
-	PAD_PullCtrl(_PB_14, GPIO_PuPd_UP);  //D1
-	Pinmux_Config(_PB_6, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_7, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_8, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_9, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_13, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_14, PINMUX_FUNCTION_SDIO);
-
-	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);
-
 	spdio_dev.priv = NULL;
 	spdio_dev.rx_bd_num = EX_SPDIO_RX_BD_NUM;
 	spdio_dev.tx_bd_num = EX_SPDIO_TX_BD_NUM;

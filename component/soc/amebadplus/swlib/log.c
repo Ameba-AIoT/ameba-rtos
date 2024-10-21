@@ -240,7 +240,7 @@ void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len)
 }
 
 /**
- * @brief print log
+ * @brief print log(stack size: 252bytes)
  *
  * @param level  current log lvel
  * @param tag    tag of the current log
@@ -260,5 +260,29 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 	}
 	va_start(ap, fmt);
 	DiagVprintf(fmt, ap);
+	va_end(ap);
+}
+
+/**
+ * @brief print log(smaller stack, 136Bytes)
+ *
+ * @param level  current log lvel
+ * @param tag    tag of the current log
+ * @param letter the letter corresponding to a specific log level
+ * @param fmt    the format string to be output
+ * @param ... 	 other parameters
+ */
+void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...)
+{
+	rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
+	va_list ap;
+	if (level_of_tag < level) {
+		return;
+	}
+	if (tag[0] != '#') {
+		DiagPrintfNano("[%s-%c] ", tag, letter);
+	}
+	va_start(ap, fmt);
+	DiagVprintfNano(fmt, ap);
 	va_end(ap);
 }

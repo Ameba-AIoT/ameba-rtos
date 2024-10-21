@@ -16,8 +16,6 @@
 #include "platform_autoconf.h"
 #endif
 
-struct inic_buf_info;
-
 #include "inic_def.h"
 
 #ifndef CONFIG_FULLMAC
@@ -29,6 +27,8 @@ struct inic_buf_info;
 #include "wifi_conf.h"
 #include "wifi_intf_drv_to_lwip.h"
 #include "wifi_intf_drv_to_upper.h"
+
+#include "inic_dev_struct.h"
 
 #include "inic_dev_api.h"
 #include "inic_dev_trx.h"
@@ -46,58 +46,12 @@ struct inic_buf_info;
 #ifdef CONFIG_SDIO_BRIDGE
 #include "inic_sdio_dev_bridge.h"
 #endif
+#else
+#include "inic_dev_struct.h"
 #endif
 
 #ifndef CONFIG_SDIO_BRIDGE
 #include "inic_dev_protocal_offload.h"
 #endif
-
-enum INIC_WIFI_CTRL_TYPE {
-	INIC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
-	INIC_WIFI_EVT_RECV_PKTS,
-	INIC_WIFI_EVT_API_CALL,
-	INIC_WIFI_EVT_API_RETURN,
-
-	INIC_WIFI_EVT_MAX
-};
-
-struct inic_api_info {
-	u32	event;
-	u32	api_id;
-};
-
-struct inic_msg_info {
-	u32	event;
-	u32	wlan_idx;
-	u32	data_len;
-	u32	pad_len;
-};
-
-struct inic_msg_node {
-	struct list_head		list;
-	void	*msg;
-};
-
-struct inic_buf_info {
-	u32 buf_allocated; //The spdio buffer allocated address
-	u16 size_allocated; //The actual allocated size
-	u32 buf_addr; //The spdio buffer physical address, it must be 4-bytes aligned
-	u16 buf_size;
-	u8 type; //The type of the data which this buffer carries
-};
-
-struct inic_txbuf_info_t {
-#ifdef CONFIG_INIC_INTF_SDIO
-	struct spdio_buf_t txbuf_info;
-#else
-	struct inic_buf_info txbuf_info;
-#endif
-	void *ptr;	/* pointer to the original buffer*/
-	u8 is_skb: 1;	/* the original buffer is skb or not */
-};
-
-#define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
-#define SPI_BUFSZ		(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct inic_msg_info)))
-#define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct inic_msg_info), 4)
 
 #endif /* __INIC_SDIO_H__ */

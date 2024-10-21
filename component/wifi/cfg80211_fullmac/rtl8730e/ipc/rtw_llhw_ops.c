@@ -106,26 +106,43 @@ int llhw_wifi_set_mac_addr(u32 wlan_idx, u8 *addr)
 	return ret;
 }
 
-int llhw_wifi_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_length, u32 block)
+int llhw_wifi_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
-	u32 param_buf[3];
-	dma_addr_t dma_addr_scan_param = 0;
+	u32 param_buf[2];
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
+	size_t size = sizeof(struct _rtw_scan_param_t);
+	size_t offset = 0;
+	struct _rtw_scan_param_t *scan_param_tmp = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_addr_scan_param = dma_map_single(pdev, scan_param, sizeof(struct _rtw_scan_param_t), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr_scan_param)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
+	size += (sizeof(block) + ssid_length + scan_param->channel_list_num);
+	buf_vir = rtw_malloc(size, &buf_phy);
+	if (!buf_vir) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+	memcpy(buf_vir, &block, sizeof(block));
+	offset += sizeof(block);
+	memcpy(buf_vir + offset, scan_param, size);
+
+	scan_param_tmp = (struct _rtw_scan_param_t *)(buf_vir + offset);
+	offset += sizeof(struct _rtw_scan_param_t);
+	if (ssid_length) {
+		scan_param_tmp->ssid = (char *)(buf_phy + offset);
+		offset += ssid_length;
+	}
+	if (scan_param->channel_list_num) {
+		scan_param_tmp->channel_list = (unsigned char *)(buf_phy + offset);
 	}
 
-	param_buf[0] = (u32)dma_addr_scan_param;
-	param_buf[1] = block;
-	param_buf[2] = ssid_length;
+	param_buf[0] = (u32)buf_phy;
+	param_buf[1] = (u32)size;
 
-	ret = llhw_ipc_send_msg(INIC_API_WIFI_SCAN_NETWROKS, param_buf, 3);
-	dma_unmap_single(pdev, dma_addr_scan_param, sizeof(struct _rtw_scan_param_t), DMA_TO_DEVICE);
+	ret = llhw_ipc_send_msg(INIC_API_WIFI_SCAN_NETWROKS, param_buf, 2);
 
+	rtw_mfree(size, buf_vir, buf_phy);
 	return ret;
 }
 
@@ -145,8 +162,12 @@ int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char b
 {
 	int ret = 0;
 	struct internal_join_block_param *block_param = NULL;
-	u32 param_buf[1] = {0};
-	dma_addr_t dma_addr_connect_param = 0;
+	u32 param_buf[2];
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
+	size_t size = 0;
+	size_t offset = 0;
+	struct _rtw_network_info_t *connect_param_tmp = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 	int is_connected = -1;
 
@@ -175,15 +196,23 @@ int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char b
 	}
 
 	/* step3: set connect cmd to driver*/
-	dma_addr_connect_param = dma_map_single(pdev, connect_param, sizeof(struct _rtw_network_info_t), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr_connect_param)) {
+	size = sizeof(struct _rtw_network_info_t) + connect_param->password_len;
+	buf_vir = rtw_malloc(size, &buf_phy);
+	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
-	param_buf[0] = (u32)dma_addr_connect_param;
+	memcpy(buf_vir, connect_param, size);
+	connect_param_tmp = (struct _rtw_network_info_t *)buf_vir;
+	offset += sizeof(struct _rtw_network_info_t);
+	if (connect_param->password_len) {
+		connect_param_tmp->password = (unsigned char *)(buf_phy + offset);
+	}
 
-	ret = llhw_ipc_send_msg(INIC_API_WIFI_CONNECT, param_buf, 1);
-	dma_unmap_single(pdev, dma_addr_connect_param, sizeof(struct _rtw_network_info_t), DMA_TO_DEVICE);
+	param_buf[0] = (u32)buf_phy;
+	param_buf[1] = (u32)size;
+
+	ret = llhw_ipc_send_msg(INIC_API_WIFI_CONNECT, param_buf, 2);
 
 	/* step4: wait connect finished for synchronous connection*/
 	if (block) {
@@ -215,7 +244,9 @@ error:
 	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL) {
 		cfg80211_rtw_connect_indicate(RTW_JOINSTATUS_FAIL, NULL, 0);
 	}
-
+	if (buf_vir) {
+		rtw_mfree(size, buf_vir, buf_phy);
+	}
 	return ret;
 }
 
@@ -301,23 +332,34 @@ int llhw_wifi_del_sta(u8 wlan_idx, u8 *mac)
 int llhw_wifi_start_ap(struct _rtw_softap_info_t *softAP_config)
 {
 	int ret = 0;
-	u32 param_buf[1];
-	dma_addr_t dma_addr_password = 0;
-	dma_addr_t dma_addr_softap_config = 0;
+	u32 param_buf[2];
+	u8 *buf_vir = NULL;
+	dma_addr_t buf_phy = 0;
+	size_t size = 0;
+	size_t offset = 0;
+	struct _rtw_softap_info_t *softAP_config_tmp = NULL;
 	struct device *pdev = global_idev.ipc_dev;
 
-	dma_addr_softap_config = dma_map_single(pdev, softAP_config, sizeof(struct _rtw_softap_info_t), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr_password)) {
+	size = sizeof(struct _rtw_softap_info_t) + softAP_config->password_len;
+	buf_vir = rtw_malloc(size, &buf_phy);
+	if (!buf_vir) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
 	}
+	memcpy(buf_vir, softAP_config, size);
+	softAP_config_tmp = (struct _rtw_softap_info_t *)buf_vir;
+	offset += sizeof(struct _rtw_softap_info_t);
+	if (softAP_config->password_len) {
+		softAP_config_tmp->password = (unsigned char *)(buf_phy + offset);
+	}
 
-	param_buf[0] = (u32)dma_addr_softap_config;
+	param_buf[0] = (u32)buf_phy;
+	param_buf[1] = (u32)size;
 
-	ret = llhw_ipc_send_msg(INIC_API_WIFI_START_AP, param_buf, 1);
-
-	dma_unmap_single(pdev, dma_addr_softap_config, sizeof(struct _rtw_softap_info_t), DMA_FROM_DEVICE);
-
+	ret = llhw_ipc_send_msg(INIC_API_WIFI_START_AP, param_buf, 2);
+	if (buf_vir) {
+		rtw_mfree(size, buf_vir, buf_phy);
+	}
 	return ret;
 }
 

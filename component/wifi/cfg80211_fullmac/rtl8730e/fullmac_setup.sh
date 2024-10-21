@@ -25,6 +25,7 @@ fi
 mkdir -p include
 cp ../../inic/inic_def.h include
 cp ../../inic/common/inic_dev.h include
+cp ../../inic/common/inic_dev_struct.h include
 cp ../../inic/common/inic_dev_protocal_offload.h include
 cp ../../driver/include/rom_rtw_defs.h include
 cp ../../driver/include/rtw_wifi_defs.h include

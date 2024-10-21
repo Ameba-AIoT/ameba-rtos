@@ -234,15 +234,6 @@ int pmu_ready_to_dsleep(void)
  *                               If we set this value to 0 then FreeRTOS will do nothing in its sleep function.
  **/
 #if defined (CONFIG_ARM_CORE_CM4)
-#if 0 //for longrun test
-void pg_aontimer_int(uint32_t Data)
-{
-	DBG_8195A("pg Hp aontimer handler 1\n", SOCPS_AONWakeReason());
-	SOCPS_AONTimerClearINT();
-	DBG_8195A("pg Hp aontimer handler 2\n", SOCPS_AONWakeReason());
-	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
-}
-#endif
 
 void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 {
@@ -259,17 +250,6 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	/*  Store gtimer timestamp before sleep */
 	*tick_before_sleep = SYSTIMER_TickGet();
 	sysactive_timeout_flag = 1;
-
-	/* for test */
-#if 0
-	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-	uint32_t tmp = rand();
-	SOCPS_AONTimer(tmp % 800 + 50);
-	SOCPS_AONTimerINT_EN(ENABLE);
-	InterruptRegister(pg_aontimer_int, AON_TIM_IRQ, NULL, INT_PRI_MIDDLE);
-	InterruptEn(AON_TIM_IRQ, INT_PRI_MIDDLE);
-	SOCPS_SetNPWakeEvent_MSK0_HP(WAKE_SRC_AON_TIM, ENABLE);
-#endif
 
 	if (sleep_type == SLEEP_PG) {
 		SOCPS_SleepPG();

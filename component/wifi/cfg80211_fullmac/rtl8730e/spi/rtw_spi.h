@@ -3,12 +3,12 @@
 
 #if (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
 
-/* For kernel version higher than 6.6, gpio pins of raspberry pi are numbered differently.
-check the correct number of the required GPIO pin in /sys/kernel/debug/gpio*/
+/* For kernel version higher than 6.6, gpio pins of raspberry pi 5 are numbered differently.
+check the correct number of the required GPIO pin to use command "gpioinfo" */
 
-#define DEV_READY_PIN			534
-#define RX_REQ_PIN				535
-#define DEBUG_PIN				525
+#define DEV_READY_PIN			593
+#define RX_REQ_PIN				594
+#define DEBUG_PIN				584
 #else
 #define DEV_READY_PIN			22
 #define RX_REQ_PIN				23

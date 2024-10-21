@@ -191,7 +191,7 @@ void rtk_log_memory_dump_byte(uint8_t *src, uint32_t len)
 *
 *  @param	src_buff The starting address of the target memory
 *
-*  @param   buff_len The length of the target memory
+*  @param	buff_len The length of the target memory
 *
 *  @return	none
 *
@@ -272,6 +272,27 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 	}
 	va_start(ap, fmt);
 	DiagVprintf(fmt, ap);
+	va_end(ap);
+#ifdef CONFIG_ARM_CORE_CA32
+	spin_unlock_irqrestore(&print_lock, isr_status);
+#endif
+}
+
+void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...)
+{
+	rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
+	va_list ap;
+	if (level_of_tag < level) {
+		return;
+	}
+#ifdef CONFIG_ARM_CORE_CA32
+	u32 isr_status = spin_lock_irqsave(&print_lock);
+#endif
+	if (tag[0] != '#') {
+		DiagPrintfNano("[%s-%c] ", tag, letter);
+	}
+	va_start(ap, fmt);
+	DiagVprintfNano(fmt, ap);
 	va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
 	spin_unlock_irqrestore(&print_lock, isr_status);

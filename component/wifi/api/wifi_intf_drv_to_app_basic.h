@@ -737,7 +737,7 @@ struct wifi_user_conf {
 	/*!	Specify the trx buffer size of each skb.\n
 		Cache size(32 for amebadplus&amebalite and 64 for amebasmart)alignment will be applied to the input size.\n
 		0: use default size*/
-	int skb_buf_size;
+	unsigned int skb_buf_size;
 
 	/*!	Every data tx is forced to start with cts2self */
 	unsigned char force_cts2self;

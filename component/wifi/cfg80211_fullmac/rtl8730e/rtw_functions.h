@@ -17,7 +17,7 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy);
 int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type);
 int llhw_wifi_set_user_config(struct wifi_user_conf *pwifi_usrcfg);
 void llhw_wifi_on(void);
-int llhw_wifi_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_len, u32 block);
+int llhw_wifi_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_len, u8 block);
 int llhw_wifi_scan_abort(u8 block);
 int llhw_wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block);
 int llhw_wifi_disconnect(void);

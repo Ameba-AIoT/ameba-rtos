@@ -31,11 +31,9 @@ void kr4_power_gate(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "R4G\n");
-
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_KR4_IRQ_MASK) {
 	} else {
-		RTK_LOGI(TAG, "KR4 exit WFI\n");
+		RTK_LOGS(NOTAG, "KR4 exit WFI\n");
 		return;
 	}
 
@@ -45,10 +43,12 @@ void kr4_power_gate(void)
 		}
 		timeout--;
 		if (timeout == 0) {
-			RTK_LOGI(TAG, "KR4 wake, no need to close KR4\n");
+			RTK_LOGS(NOTAG, "KR4 wake, no need to close KR4\n");
 			return;
 		}
 	}
+
+	RTK_LOGD(TAG, "R4CG\n");
 
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_KR4_CLOCK, DISABLE);
 
@@ -67,9 +67,9 @@ void kr4_power_wake(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "R4W\n");
-
 	RCC_PeriphClockCmd(APBPeriph_KR4, APBPeriph_KR4_CLOCK, ENABLE);
+
+	RTK_LOGD(TAG, "R4PW\n");
 }
 
 void kr4_clock_gate(void)
@@ -81,11 +81,9 @@ void kr4_clock_gate(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "R4CG\n");
-
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_KR4_IRQ_MASK) {
 	} else {
-		RTK_LOGI(TAG, "KR4 exit WFI\n");
+		RTK_LOGS(NOTAG, "KR4 exit WFI\n");
 		return;
 	}
 
@@ -95,10 +93,12 @@ void kr4_clock_gate(void)
 		}
 		timeout--;
 		if (timeout == 0) {
-			RTK_LOGI(TAG, "KR4 wake, no need to close KR4\n");
+			RTK_LOGS(NOTAG, "KR4 wake, no need to close KR4\n");
 			return;
 		}
 	}
+
+	RTK_LOGD(TAG, "R4CG\n");
 
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_KR4_CLOCK, DISABLE);
 
@@ -117,15 +117,15 @@ void kr4_clock_on(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "R4CW\n");
-
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_KR4_CLOCK, ENABLE);
+
+	RTK_LOGD(TAG, "R4CW\n");
 }
 
 u32 NPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
-	RTK_LOGI(TAG, "NP WAKE AP HANDLER %lx %lx\n", \
+	RTK_LOGD(TAG, "NP WAKE AP HANDLER %lx %lx\n", \
 			 HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
 
 	InterruptDis(NP_WAKE_IRQ);
@@ -140,7 +140,7 @@ u32 aontimer_int_wakeup_ap(UNUSED_WARN_DIS void *Data)
 	UNUSED(Data);
 
 	SOCPS_AONTimerClearINT();
-	RTK_LOGI(TAG, "wakereason: 0x%x \n", SOCPS_AONWakeReason());
+	RTK_LOGD(TAG, "wakereason: 0x%x \n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 
 	return TRUE;
@@ -160,7 +160,7 @@ u32 kr4_suspend(u32 type)
 	}
 
 	if (duration > 0) {
-		RTK_LOGI(TAG, "duration: %lu\n", duration);
+		RTK_LOGS(NOTAG, "duration: %lu\n", duration);
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		SOCPS_AONTimer(duration);
 		SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
@@ -172,7 +172,7 @@ u32 kr4_suspend(u32 type)
 	/*clean np wake pending interrupt*/
 	NVIC_ClearPendingIRQ(NP_WAKE_IRQ);
 
-	RTK_LOGI(TAG, "register np_wake_irq\n");
+	RTK_LOGD(TAG, "register np_wake_irq\n");
 	InterruptRegister(NPWAP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
 	InterruptEn(NP_WAKE_IRQ, INT_PRI5);
 
@@ -229,7 +229,7 @@ void kr4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	UNUSED(ChanNum);
 	SLEEP_ParamDef *psleep_param;
 
-	RTK_LOGI(TAG, "kr4_tickless_ipc_int\n");
+	RTK_LOGD(TAG, "kr4_tickless_ipc_int\n");
 	psleep_param = (SLEEP_ParamDef *)ipc_get_message(IPC_KR4_TO_KM4, IPC_R2M_TICKLESS_INDICATION);
 	DCache_Invalidate((u32)psleep_param, sizeof(SLEEP_ParamDef));
 

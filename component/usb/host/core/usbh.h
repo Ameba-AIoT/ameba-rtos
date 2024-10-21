@@ -25,6 +25,12 @@
 #define USBH_DEFAULT_MAX_ALT_NUM			3
 #define USBH_MAX_CLASSES_NUM				1
 
+
+/* USB Host interrupt enable flag*/
+/* GINTSTS */
+#define USBH_SOF_INTR                 (BIT0) /* Start of (micro)Frame GINTSTS.bit3 */
+#define USBH_ICOP_INTR                (BIT1) /* Incomplete period transfer GINTSTS.bit21 */
+
 /* Exported types ------------------------------------------------------------*/
 
 /* USB host state */
@@ -128,6 +134,7 @@ typedef union {
 
 /* USB user configuration */
 typedef struct {
+	u32 ext_intr_en;                                    /* allow class to enable some interrupts*/
 	u8 main_task_priority;								/* USB main thread priority */
 	u8 isr_task_priority;								/* USB ISR thread priority */
 	u8 alt_max;											/* USB support max alt setting num */

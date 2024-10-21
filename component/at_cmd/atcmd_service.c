@@ -136,7 +136,7 @@ void log_add_new_command(log_item_t *new)
 	list_add(&new->node, &log_hash[index]);
 }
 
-int atcmd_get_ssl_certificate(char *buffer, char cert_type, char index)
+int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 {
 	if (buffer == NULL) {
 		return -1;
@@ -146,7 +146,7 @@ int atcmd_get_ssl_certificate(char *buffer, char cert_type, char index)
 	char *prefix;
 	char path[128] = {0};
 	vfs_file *finfo;
-	struct stat *stat_buf;
+	struct stat stat_buf;
 	prefix = find_vfs_tag(VFS_REGION_1);
 	switch (cert_type) {
 	case CLIENT_CA:
@@ -171,8 +171,8 @@ int atcmd_get_ssl_certificate(char *buffer, char cert_type, char index)
 		return -1;
 	}
 
-	ret = stat(path, stat_buf);
-	if (ret < 0) {
+	ret = stat(path, &stat_buf);
+	if (ret < 0 || stat_buf.st_size == 0) {
 		return 0;
 	}
 
@@ -181,11 +181,11 @@ int atcmd_get_ssl_certificate(char *buffer, char cert_type, char index)
 		return -1;
 	}
 
-	ret = fread(buffer, stat_buf->st_size, 1, (FILE *)finfo);
+	ret = fread(buffer, stat_buf.st_size, 1, (FILE *)finfo);
 
 	fclose((FILE *)finfo);
 
-	return ret == stat_buf->st_size ? ret : -1;
+	return ret == stat_buf.st_size ? ret : -1;
 }
 
 void atcmd_service_init(void)

@@ -23,7 +23,7 @@
 //Max number of streaming
 #define MULTI_STREAM_NUM 10
 
-#define printf		DiagPrintf_minimal
+#define printf		DiagPrintfNano
 
 struct stream_id_t {
 	uint8_t id_used;
@@ -104,11 +104,11 @@ rtos_mutex_t g_tptest_mutex = NULL;
 #define tptest_res_log(...)       do { \
                                     if(NULL != g_tptest_log_mutex){\
                                         rtos_mutex_take(g_tptest_log_mutex, MUTEX_WAIT_TIMEOUT); \
-                                        DiagPrintf_minimal(__VA_ARGS__); \
+                                        DiagPrintfNano(__VA_ARGS__); \
                                         rtos_mutex_give(g_tptest_log_mutex); \
                                     }\
                                     else{\
-                                        DiagPrintf_minimal(__VA_ARGS__); \
+                                        DiagPrintfNano(__VA_ARGS__); \
                                     }\
                                 }while(0)
 

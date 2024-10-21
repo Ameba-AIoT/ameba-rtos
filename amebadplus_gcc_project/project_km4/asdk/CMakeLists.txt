@@ -38,6 +38,12 @@ set_property(TARGET build_info_${PROJECT_NAME}
 
 include(libs.cmake)
 
+define_property(GLOBAL PROPERTY ALL_EXE_TARGETS_${PROJECT_NAME}
+BRIEF_DOCS "all executable targets"
+FULL_DOCS "all executable targets"
+)
+
+
 ################################# BUILD ROM   ##############################
 
 #TODO

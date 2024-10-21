@@ -102,7 +102,7 @@ void ap_power_gate(void)
 	CA32_TypeDef *ca32 = CA32_BASE;
 
 	if ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_FEN) & HSYS_BIT_FEN_AP) == 0) {
-		RTK_LOGI(TAG, "AP PG Already\n");
+		RTK_LOGS(NOTAG, "AP PG Already\n");
 		return;
 	}
 
@@ -119,7 +119,7 @@ void ap_power_gate(void)
 		pmu_release_deepwakelock(PMU_AP_RUN);
 	}
 
-	RTK_LOGI(TAG, "CA7PG-\n");
+	RTK_LOGD(TAG, "APPG\n");
 }
 
 void ap_power_on(void)
@@ -133,7 +133,7 @@ void ap_power_on(void)
 
 	ap_power_on_ctrl();
 
-	RTK_LOGI(TAG, "CA7PW-\n");
+	RTK_LOGD(TAG, "APPW\n");
 }
 
 void ap_clk_gate_ctrl(void)
@@ -192,14 +192,14 @@ void ap_clock_gate(void)
 		pmu_release_deepwakelock(PMU_AP_RUN);
 	}
 
-	RTK_LOGI(TAG, "CA7CG-\n");
+	RTK_LOGD(TAG, "APCG\n");
 
 }
 
 void ap_clock_on(void)
 {
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) {
-		RTK_LOGI(TAG, "AP CW Already\n");
+		RTK_LOGS(NOTAG, "AP CW Already\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -207,7 +207,7 @@ void ap_clock_on(void)
 
 	ap_clk_wake_ctrl();
 
-	RTK_LOGI(TAG, "CA7CW-\n");
+	RTK_LOGD(TAG, "APCW\n");
 }
 
 
@@ -216,13 +216,12 @@ void ap_resume(void)
 	int cnt = 0;
 	/* check km4 state, km4 need be active when CA7 run*/
 	if (!np_status_on()) {
-		RTK_LOGI(TAG, "wake km4\n");
 		InterruptDis(NP_WAKE_IRQ);
 		np_resume();
 	}
 
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) {
-		RTK_LOGI(TAG, "already clk on\n");
+		RTK_LOGS(NOTAG, "already clk on\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -258,7 +257,7 @@ u32 ap_suspend(u32 type)
 	u32 duration = 0;
 
 	if (!np_status_on()) {
-		RTK_LOGI(TAG, "NP is not on\n");
+		RTK_LOGS(NOTAG, "NP is not on\n");
 		return 0;
 	}
 

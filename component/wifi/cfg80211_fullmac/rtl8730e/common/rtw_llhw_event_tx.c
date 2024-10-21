@@ -128,7 +128,7 @@ int llhw_wifi_set_mac_addr(u32 wlan_idx, u8 *addr)
 	return ret;
 }
 
-int llhw_wifi_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_length, u32 block)
+int llhw_wifi_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_length, u8 block)
 {
 	int ret = 0;
 	u32 size;
@@ -1035,9 +1035,9 @@ int wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir)
 {
 	int ret = 0;
 
-        (void) pdata;
-        (void) len;
-        (void) dir;
+	(void) pdata;
+	(void) len;
+	(void) dir;
 
 	dev_err(global_idev.fullmac_dev, "%s: not support\n", __func__);
 

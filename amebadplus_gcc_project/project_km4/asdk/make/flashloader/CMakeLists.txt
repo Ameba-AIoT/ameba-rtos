@@ -6,7 +6,7 @@ set(
     ${DIR}/rtl_flash_download_entry.c
 )
 
-add_executable(target_flashloader EXCLUDE_FROM_ALL)
+ameba_executable(target_flashloader EXCLUDE_FROM_ALL)
 
 add_custom_target(
     flashloader
@@ -24,14 +24,14 @@ target_link_libraries(
     target_flashloader
     PRIVATE ameba_interface_${PROJECT_NAME} ameba_wrap_interface_${PROJECT_NAME}
     -Wl,--gc-sections
-    -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map 
-    -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld 
-    ${LINK_ROM_LIB} 
+    -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
+    -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+    ${LINK_ROM_LIB}
     ${LINK_LOADER_LIB}
 )
 
 add_custom_command(
-  TARGET target_flashloader PRE_LINK 
+  TARGET target_flashloader PRE_LINK
   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c -DGENERATE_FLOADER_LD ${LDDIR}/ameba_img1_all.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build flashloader linkerscript rlx8721d.ld"
@@ -57,10 +57,10 @@ add_custom_command(TARGET target_flashloader POST_BUILD
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      flash_loader_ram_1.bin"
 
-    COMMAND ${CMAKE_COMMAND} 
-    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} 
+    COMMAND ${CMAKE_COMMAND}
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR}
     -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
-    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}  
+    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE}
     -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK}
     -DIMGTOOL_LOADER=y

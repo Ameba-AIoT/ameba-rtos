@@ -44,6 +44,7 @@ static usbh_config_t usbh_cfg = {
 	.pipes = 5U,
 	.speed = USB_SPEED_HIGH,
 	.dma_enable = FALSE,
+	.ext_intr_en = USBH_SOF_INTR,
 	.main_task_priority = 3U,
 	.isr_task_priority  = 4U,
 };

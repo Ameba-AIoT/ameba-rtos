@@ -55,6 +55,8 @@ ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_sdio_np_mp_shrink.a
 else ifeq ($(CONFIG_INIC_INTF_SPI), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_spi_np_mp_shrink.a
+else ifeq ($(CONFIG_INIC_INTF_USB), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_usb_np_mp_shrink.a
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_np_mp_shrink.a
 endif
@@ -63,6 +65,8 @@ ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_sdio_np_mp.a
 else ifeq ($(CONFIG_INIC_INTF_SPI), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_spi_np_mp.a
+else ifeq ($(CONFIG_INIC_INTF_USB), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_usb_np_mp.a
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_np_mp.a
 endif
@@ -72,6 +76,8 @@ ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_sdio_np.a
 else ifeq ($(CONFIG_INIC_INTF_SPI), y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_spi_np.a
+else ifeq ($(CONFIG_INIC_INTF_USB), y)
+LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_usb_np.a
 else
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_wifi_inic_np.a
 endif

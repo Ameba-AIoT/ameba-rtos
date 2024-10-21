@@ -912,7 +912,7 @@ void np_power_gate(void)
 	}
 
 	if (ps_config.km0_tickles_debug) {
-		RTK_LOGD(TAG, "M4G\n");
+		RTK_LOGS(NOTAG, "NPPG\n");
 	}
 	/* poll KM4 clock gate */
 	while (1) {
@@ -949,12 +949,13 @@ void np_power_wake(void)
 		i++;
 	}
 
-	if (ps_config.km0_tickles_debug) {
-		RTK_LOGD(TAG, "M4W\n");
-	}
 	pmu_acquire_wakelock(PMU_KM4_RUN);
 
 	np_power_wake_ctrl();
+
+	if (ps_config.km0_tickles_debug) {
+		RTK_LOGS(NOTAG, "NPPW\n");
+	}
 }
 
 void np_clock_gate(void)
@@ -965,9 +966,6 @@ void np_clock_gate(void)
 		return;
 	}
 
-	if (ps_config.km0_tickles_debug) {
-		RTK_LOGD(TAG, "M4CG\n");
-	}
 	/* poll KM4 clock gate */
 	while (1) {
 		temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HPLAT_STATUS);	/*get KM4 sleep status*/
@@ -980,7 +978,7 @@ void np_clock_gate(void)
 
 
 	if (ps_config.km0_tickles_debug) {
-		RTK_LOGD(TAG, "M4CG-\n");
+		RTK_LOGS(TAG, "NPCG\n");
 	}
 
 	pmu_release_wakelock(PMU_KM4_RUN);
@@ -1014,7 +1012,10 @@ void np_clock_on(void)
 
 	/* tell KM4 wake */
 	asm volatile("sev");
-	RTK_LOGI(TAG, "M4CW-\n");
+
+	if (ps_config.km0_tickles_debug) {
+		RTK_LOGS(NOTAG, "NPCW\n");
+	}
 }
 
 u32 ap_clk_status_on(void)

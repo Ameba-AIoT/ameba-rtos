@@ -7,7 +7,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 
-#define printf	DiagPrintf_minimal
+#define printf	DiagPrintfNano
 
 #define PING_IP		"192.168.159.1"
 #define PING_TO		1000
