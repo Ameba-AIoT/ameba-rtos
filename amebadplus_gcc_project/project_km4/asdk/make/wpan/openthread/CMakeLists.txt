@@ -98,7 +98,7 @@ execute_process(
 	# message(FATAL_ERROR "git apply ptach error! " ${ERROR_CODE})
 # endif()
 
-remove_definitions(-DOT_BIG_ENDIAN)
+
 add_subdirectory(${THREADDIR}/openthread ${CMAKE_CURRENT_BINARY_DIR}/openthread)
 target_compile_definitions(ot-config INTERFACE ${MODULE_C_DEFINES})
 target_include_directories(ot-config INTERFACE ${MODULE_IFLAGS} ${GLOBAL_IFLAGS})

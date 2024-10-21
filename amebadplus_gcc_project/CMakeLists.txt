@@ -20,7 +20,7 @@ by user, cross-compile toolchain will be searched in <TOOLCHAIN_DIR>. Default TO
 '/opt/rtk-toolchain' in linux and 'C:/rtk-toolchain' in windows.")
 
 set(ASDK_VER 10.3.1)
-include (${CMAKE_CURRENT_SOURCE_DIR}/../cmake/toolchain/ameba-toolchain-${ASDK_VER}.cmake)
+include (${CMAKE_CURRENT_SOURCE_DIR}/../cmake/toolchain/ameba-toolchain-asdk-${ASDK_VER}.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/set_extensions.cmake)
 set(CMAKE_PROJECT_INCLUDE_BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/disable_compiler_detection.cmake)
 

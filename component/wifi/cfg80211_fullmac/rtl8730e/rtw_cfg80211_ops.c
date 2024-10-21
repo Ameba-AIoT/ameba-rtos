@@ -205,16 +205,10 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	struct element *target_ptr = NULL;
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
-	struct _rtw_scan_param_t scan_param = {0};
+	u8 *buf = NULL, *ptr = NULL;
+	size_t size = sizeof(struct _rtw_scan_param_t);
+	struct _rtw_scan_param_t *scan_param = NULL;
 	struct cfg80211_scan_info info;
-
-	/* coherent alloc: revise vir addr will be mapped to phy addr. Send phy addr to rtos by ipc. */
-	u8 *channel_list_vir = NULL;
-	dma_addr_t channel_list_phy;
-
-	/* coherent alloc: revise vir addr will be mapped to phy addr. Send phy addr to rtos by ipc. */
-	u8 *ssid_vir = NULL;
-	dma_addr_t ssid_phy;
 
 	u32 ssid_len = 0;
 	u32 channel_num = 0;
@@ -222,6 +216,21 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	if (global_idev.mp_fw) {
 		return -EPERM;
 	}
+
+	for (i = 0; i < request->n_ssids && ssids && i < RTW_SSID_SCAN_AMOUNT; i++) {
+		if (ssids[i].ssid_len) {
+			size += ssids[i].ssid_len;
+		}
+	}
+	size += request->n_channels < RTW_CHANNEL_SCAN_AMOUNT ?  request->n_channels : RTW_CHANNEL_SCAN_AMOUNT;
+	ptr = buf = kmalloc(size, GFP_KERNEL);
+	if (!buf) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	scan_param = (struct _rtw_scan_param_t *)ptr;
+	ptr += sizeof(struct _rtw_scan_param_t);
 
 	wdev = request->wdev;
 	pnetdev = wdev_to_ndev(wdev);
@@ -239,28 +248,24 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 
 	dev_dbg(global_idev.fullmac_dev, "cfg80211_rtw_scan enter\n");
 
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	memset(scan_param, 0, sizeof(struct _rtw_scan_param_t));
 
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
-	scan_param.ssid = NULL;
+	scan_param->scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
+	scan_param->ssid = NULL;
 #ifdef CONFIG_P2P
-	scan_param.scan_user_data = (void *)(uintptr_t)rtw_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
+	scan_param->scan_user_data = (void *)(uintptr_t)rtw_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
 	if ((wdev == global_idev.p2p_global.pd_pwdev) && (wlan_idx == 1)) {
-		scan_param.options |= RTW_SCAN_WITH_P2P;
+		scan_param->options |= RTW_SCAN_WITH_P2P;
 	}
 #endif
 	for (i = 0; i < request->n_ssids && ssids && i < RTW_SSID_SCAN_AMOUNT; i++) {
 		if (ssids[i].ssid_len) {
-			ssid_vir = rtw_malloc(ssids[0].ssid_len, &ssid_phy);
-			if (!ssid_vir) {
-				dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-				return -ENOMEM;
-			}
-			memcpy(ssid_vir, ssids[0].ssid, ssids[0].ssid_len);
+			memcpy((char *)ptr, ssids[0].ssid, ssids[0].ssid_len);
 			ssid_len = ssids[0].ssid_len;
 			/* Only hidden ssid scan has ssid param. */
-			scan_param.ssid = (char *)ssid_phy;
+			scan_param->ssid = (char *)ptr;
+			ptr += ssid_len;
 #ifdef CONFIG_P2P
 			if (memcmp(ssids[i].ssid, "DIRECT-", 7) == 0) {
 				target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, request->ie, request->ie_len);
@@ -280,31 +285,20 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 
 	/* no ssid entry, set the scan type as passive */
 	if (request->n_ssids == 0) {
-		scan_param.options = RTW_SCAN_PASSIVE;
-	}
-
-	if (request->n_channels) {
-		channel_list_vir = rtw_malloc(request->n_channels, &channel_list_phy);
-		if (!channel_list_vir) {
-			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-			if (ssid_vir) {
-				rtw_mfree(ssids[0].ssid_len, ssid_vir, ssid_phy);
-			}
-			return -ENOMEM;
-		}
+		scan_param->options = RTW_SCAN_PASSIVE;
 	}
 
 	for (i = 0; i < request->n_channels && i < RTW_CHANNEL_SCAN_AMOUNT; i++) {
 		if (request->channels[i]->flags & IEEE80211_CHAN_DISABLED) {
 			continue;
 		}
-		*(channel_list_vir + channel_num) = request->channels[i]->hw_value;
+		*(ptr + channel_num) = request->channels[i]->hw_value;
 		channel_num++;
 	}
-	scan_param.channel_list_num = channel_num;
+	scan_param->channel_list_num = channel_num;
 	if (request->n_channels) {
 		/* If channel list exists. */
-		scan_param.channel_list = (unsigned char *)channel_list_phy;
+		scan_param->channel_list = (unsigned char *)ptr;
 	}
 
 	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, request->ie, request->ie_len);
@@ -322,7 +316,7 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 	} else {
 		global_idev.mlme_priv.b_in_scan = true;
 
-		ret = llhw_wifi_scan(&scan_param, ssid_len, 0);
+		ret = llhw_wifi_scan(scan_param, ssid_len, 0);
 		if (ret < 0) {
 			memset(&info, 0, sizeof(info));
 			info.aborted = 0;
@@ -344,11 +338,8 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 		}
 	}
 
-	if (ssid_vir) {
-		rtw_mfree(ssids[0].ssid_len, ssid_vir, ssid_phy);
-	}
-	if (channel_list_vir) {
-		rtw_mfree(request->n_channels, channel_list_vir, channel_list_phy);
+	if (buf) {
+		kfree(buf);
 	}
 
 exit:
@@ -505,12 +496,12 @@ void cfg80211_rtw_update_owe_info_event(char *buf, int buf_len)
 static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_connect_params *sme)
 {
 	int ret = 0;
-	struct _rtw_network_info_t connect_param = {0};
+	u8 *buf = NULL, *ptr = NULL;
+	size_t size = 0;
+	struct _rtw_network_info_t *connect_param = NULL;
 	u32 wlan_idx = 0;
 	/* coherent alloc: revise vir addr will be mapped to phy addr. Send phy addr to rtos by ipc. */
-	u8 *vir_pwd = NULL;
 	u8 pwd[] = "12345678";
-	dma_addr_t phy_pwd;
 	int rsnx_ielen = 0, rsn_ielen = 0;
 	u8 pmf_mode = 0, spp_opt = 0;
 	u8 *prsnx, *prsn;
@@ -548,62 +539,71 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	dev_dbg(global_idev.fullmac_dev, "wpa_versions=0x%x, ciphers_pairwise=0x%x, cipher_group=0x%x,, akm_suites=0x%x\n",
 			sme->crypto.wpa_versions, sme->crypto.ciphers_pairwise[0], sme->crypto.cipher_group, sme->crypto.akm_suites[0]);
 
-	memset(&connect_param, 0, sizeof(struct _rtw_network_info_t));
-	connect_param.security_type = 0;
+	size = sizeof(struct _rtw_network_info_t) + sme->key_len;
+	ptr = buf = kmalloc(size, GFP_KERNEL);
+	if (!buf) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+	connect_param = (struct _rtw_network_info_t *)ptr;
+	ptr += sizeof(struct _rtw_network_info_t);
+
+	memset(connect_param, 0, sizeof(struct _rtw_network_info_t));
+	connect_param->security_type = 0;
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3) {
-		connect_param.security_type |= WPA3_SECURITY;
+		connect_param->security_type |= WPA3_SECURITY;
 	}
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2) {
-		connect_param.security_type |= WPA2_SECURITY;
+		connect_param->security_type |= WPA2_SECURITY;
 		llhw_wifi_set_wpa_mode(WPA2_ONLY_MODE);
 	}
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1) {
-		connect_param.security_type |= WPA_SECURITY;
+		connect_param->security_type |= WPA_SECURITY;
 		llhw_wifi_set_wpa_mode(WPA_ONLY_MODE);
 	}
 
 	if (sme->auth_type == NL80211_AUTHTYPE_SHARED_KEY) {
-		connect_param.security_type |= SHARED_ENABLED;
+		connect_param->security_type |= SHARED_ENABLED;
 	}
 
 	if ((sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_WEP40)
 		|| (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_WEP104)) {
-		connect_param.security_type |= WEP_ENABLED;
+		connect_param->security_type |= WEP_ENABLED;
 	} else if ((sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_CCMP)
 			   || (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_CCMP_256)) {
-		connect_param.security_type |= AES_ENABLED;
+		connect_param->security_type |= AES_ENABLED;
 	} else if (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_TKIP) {
-		connect_param.security_type |= TKIP_ENABLED;
+		connect_param->security_type |= TKIP_ENABLED;
 	} else if (sme->crypto.ciphers_pairwise[0] == WLAN_CIPHER_SUITE_AES_CMAC) {
-		connect_param.security_type |= AES_CMAC_ENABLED;
+		connect_param->security_type |= AES_CMAC_ENABLED;
 	}
 
 	if (sme->want_1x || (sme->auth_type == NL80211_AUTHTYPE_NETWORK_EAP)) {
-		connect_param.security_type |= ENTERPRISE_ENABLED;
+		connect_param->security_type |= ENTERPRISE_ENABLED;
 	}
 
 	/* Do not change open and WEP password from upper layer. */
-	if (connect_param.security_type && !(connect_param.security_type & WEP_ENABLED)) {
+	if (connect_param->security_type && !(connect_param->security_type & WEP_ENABLED)) {
 		sme->key_len = 8;
 		sme->key = pwd;
 	}
 
-	memcpy(connect_param.ssid.val, (u8 *)sme->ssid, sme->ssid_len);
-	connect_param.ssid.len = sme->ssid_len;
+	memcpy(connect_param->ssid.val, (u8 *)sme->ssid, sme->ssid_len);
+	connect_param->ssid.len = sme->ssid_len;
 
-	memset(connect_param.prev_bssid.octet, 0, ETH_ALEN);
+	memset(connect_param->prev_bssid.octet, 0, ETH_ALEN);
 	if (sme->prev_bssid) {
 		dev_dbg(global_idev.fullmac_dev,
 				"Former AP [0x%x:0x%x:0x%x:0x%x:0x%x:0x%x], Re-Association Request to [0x%x:0x%x:0x%x:0x%x:0x%x:0x%x].\n",
 				sme->prev_bssid[0], sme->prev_bssid[1], sme->prev_bssid[2], sme->prev_bssid[3], sme->prev_bssid[4], sme->prev_bssid[5],
 				sme->bssid[0], sme->bssid[1], sme->bssid[2], sme->bssid[3], sme->bssid[4], sme->bssid[5]);
-		memcpy(connect_param.prev_bssid.octet, sme->prev_bssid, ETH_ALEN);
+		memcpy(connect_param->prev_bssid.octet, sme->prev_bssid, ETH_ALEN);
 		/* Stop upper-layer-data-queue because of re-association. */
 		netif_carrier_off(global_idev.pndev[0]);
 	}
 
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_OWE) {
-		connect_param.security_type = 0;
+		connect_param->security_type = 0;
 		target_ptr = (struct element *)cfg80211_find_ext_elem(WLAN_EID_EXT_OWE_DH_PARAM, sme->ie, sme->ie_len);
 		if (target_ptr) {
 			memcpy(&owe_info, target_ptr->data + 1, target_ptr->datalen - 1);
@@ -619,15 +619,10 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	}
 
 	if (sme->key_len) {
-		vir_pwd = rtw_malloc(sme->key_len, &phy_pwd);
-		if (!vir_pwd) {
-			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-			return -ENOMEM;
-		}
-		memcpy(vir_pwd, (u8 *)sme->key, sme->key_len);
-		connect_param.password = (unsigned char *)phy_pwd;
+		memcpy(ptr, (u8 *)sme->key, sme->key_len);
+		connect_param->password = (unsigned char *)ptr;
 	} else {
-		connect_param.password = NULL;
+		connect_param->password = NULL;
 	}
 
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_SAE) {
@@ -637,16 +632,16 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 		llhw_wifi_set_wpa_mode(WPA3_ONLY_MODE);
 	}
 
-	connect_param.password_len = sme->key_len;
-	connect_param.key_id = sme->key_idx;
+	connect_param->password_len = sme->key_len;
+	connect_param->key_id = sme->key_idx;
 	/* set channel to let low level do scan on specific channel */
-	connect_param.channel = rtw_freq2ch(sme->channel->center_freq);
-	connect_param.pscan_option = 0x2;
+	connect_param->channel = rtw_freq2ch(sme->channel->center_freq);
+	connect_param->pscan_option = 0x2;
 
 	/* do connect by bssid */
-	memset(connect_param.bssid.octet, 0, ETH_ALEN);
+	memset(connect_param->bssid.octet, 0, ETH_ALEN);
 	if (sme->bssid) {
-		memcpy(connect_param.bssid.octet, sme->bssid, ETH_ALEN);
+		memcpy(connect_param->bssid.octet, sme->bssid, ETH_ALEN);
 	}
 
 	/* read rsn*/
@@ -678,7 +673,7 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	prsnx = rtw_get_ie((u8 *)sme->ie, WLAN_EID_RSNX, &rsnx_ielen, sme->ie_len);
 	if (prsnx && (rsnx_ielen > 0)) {
 		if ((rsnx_ielen + 2) <= RSNXE_MAX_LEN) {
-			memcpy(connect_param.wpa_supp.rsnxe_ie, prsnx, rsnx_ielen + 2);
+			memcpy(connect_param->wpa_supp.rsnxe_ie, prsnx, rsnx_ielen + 2);
 		} else {
 			printk("%s:no more buf to save RSNX Cap!rsnx_ielen=%d\n", __func__, rsnx_ielen + 2);
 		}
@@ -696,7 +691,7 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 		llhw_wifi_set_gen_ie(wlan_idx, wps_ie, wps_ielen, P2PWPS_ASSOC_REQ_IE);
 	} else if (wps_info.wps_phase) {
 		memset(&wps_info, 0, sizeof(struct wps_str));
-		connect_param.is_wps_trigger = 1;
+		connect_param->is_wps_trigger = 1;
 	}
 	llhw_wifi_set_wps_phase(wps_info.wps_phase);
 
@@ -707,17 +702,16 @@ static int cfg80211_rtw_connect(struct wiphy *wiphy, struct net_device *ndev, st
 	}
 #endif
 
-	ret = llhw_wifi_connect(&connect_param, 0);
+	ret = llhw_wifi_connect(connect_param, 0);
 	if (ret < 0) {
 		/* KM4 connect failed */
 		cfg80211_connect_result(ndev, NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
 	}
 
-	if (sme->key_len) {
-		rtw_mfree(strlen(vir_pwd), vir_pwd, phy_pwd);
-	}
-
 exit:
+	if (buf) {
+		kfree(buf);
+	}
 	return ret;
 }
 
@@ -837,13 +831,18 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy, struct wireless_d
 	int ret = 0;
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
-	struct _rtw_scan_param_t scan_param = {0};
-
-	/* coherent alloc: revise vir addr will be mapped to phy addr. Send phy addr to rtos by ipc. */
-	u8 *channel_list_vir = NULL;
-	dma_addr_t channel_list_phy;
+	u8 *buf = NULL, *ptr = NULL;
+	size_t size = sizeof(struct _rtw_scan_param_t);
+	struct _rtw_scan_param_t *scan_param = NULL;
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+
+	size += channel ?  1 : 0;
+	ptr = buf = kmalloc(size, GFP_KERNEL);
+	if (!buf) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
 
 	pnetdev = wdev_to_ndev(wdev);
 	if (wdev == global_idev.p2p_global.pd_pwdev) {
@@ -857,27 +856,23 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy, struct wireless_d
 
 	llhw_wifi_scan_abort(1);
 
-	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
+	scan_param = (struct _rtw_scan_param_t *)ptr;
+	ptr += sizeof(struct _rtw_scan_param_t);
+	memset(scan_param, 0, sizeof(struct _rtw_scan_param_t));
 	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
-	scan_param.ssid = NULL;
-	scan_param.options = RTW_SCAN_PASSIVE;
-	scan_param.chan_scan_time.passive_scan_time = duration;
-	scan_param.scan_user_data = (void *)(uintptr_t)rtw_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
+	scan_param->scan_user_callback = (int (*)(unsigned int,  void *))0xffffffff;
+	scan_param->ssid = NULL;
+	scan_param->options = RTW_SCAN_PASSIVE;
+	scan_param->chan_scan_time.passive_scan_time = duration;
+	scan_param->scan_user_data = (void *)(uintptr_t)rtw_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
 	if (wlan_idx == 1) {
-		scan_param.options |= RTW_SCAN_WITH_P2P;
+		scan_param->options |= RTW_SCAN_WITH_P2P;
 	}
 
 	if (channel) {
-		channel_list_vir = rtw_malloc(1, &channel_list_phy);
-		if (!channel_list_vir) {
-			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-			return -ENOMEM;
-		}
-
-		*(channel_list_vir) = channel->hw_value;
-		scan_param.channel_list_num = 1;
-		scan_param.channel_list = (unsigned char *)channel_list_phy;
+		*ptr = channel->hw_value;
+		scan_param->channel_list_num = 1;
+		scan_param->channel_list = (unsigned char *)ptr;
 	}
 
 	global_idev.p2p_global.roch_onging = 1;
@@ -892,14 +887,13 @@ static s32 cfg80211_rtw_remain_on_channel(struct wiphy *wiphy, struct wireless_d
 	}
 
 	llhw_wifi_set_p2p_remain_on_ch(wlan_idx, 1);
-	ret = llhw_wifi_scan(&scan_param, 0, 0);
+	ret = llhw_wifi_scan(scan_param, 0, 0);
 	if (ret < 0) {
 		return -EBUSY;
 	}
 
-
-	if (channel_list_vir) {
-		rtw_mfree(1, channel_list_vir, channel_list_phy);
+	if (buf) {
+		kfree(buf);
 	}
 
 exit:

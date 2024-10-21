@@ -12,9 +12,13 @@ include $(MAKE_INCLUDE_GEN)
 
 # Define the Rules to build the core targets
 lib:
+ifeq ($(CONFIG_GUI_LIB_PNG),y)
 	make -C libz lib
 	make -C libpng lib
+endif
+ifeq ($(CONFIG_GUI_LIB_JPG),y)
 	make -C libjpeg lib
+endif
 
 #*****************************************************************************#
 #                        RULES TO CLEAN TARGETS                               #

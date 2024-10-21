@@ -43,6 +43,13 @@ unsigned int plat_sheipa_calc_core_pos(u_register_t mpidr);
 
 void sheipa_console_init(void);
 
+unsigned int plat_sheipa_pm_get_ns_dram0_base(void);
+unsigned int plat_sheipa_pm_get_ns_dram0_size(void);
+unsigned int plat_sheipa_pm_get_trusted_mailbox_base(void);
+unsigned int plat_sheipa_pm_get_hold_base(void);
+unsigned int plat_sheipa_pm_get_warm_boot_base(void);
+
+
 /*
  * Mandatory functions for GICV3/GICV2
  */

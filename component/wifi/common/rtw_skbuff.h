@@ -25,8 +25,15 @@
 #include "dlist.h"
 
 /*skb size = HW info + wlan over head + ethernet len + safety*/
-#define MAX_SKB_BUF_SIZE	(((WLAN_HW_INFO_LEN+WLAN_MAX_PROTOCOL_OVERHEAD+WLAN_MAX_ETHFRM_LEN+8)\
+#define MAX_SKB_BUF_SIZE_NORMAL  (((WLAN_HW_INFO_LEN+WLAN_MAX_PROTOCOL_OVERHEAD+WLAN_MAX_ETHFRM_LEN+8)\
 							+ SKB_CACHE_SZ) & ~(SKB_CACHE_SZ-1))
+
+#ifdef CONFIG_INIC_INTF_SDIO
+#include "inic_dev_struct.h"
+#define MAX_SKB_BUF_SIZE	MAX(MAX_SKB_BUF_SIZE_NORMAL, (SPDIO_RX_BUFSZ + SPDIO_SKB_RSVD_LEN + SKB_CACHE_SZ) & ~(SKB_CACHE_SZ-1))
+#else
+#define MAX_SKB_BUF_SIZE	MAX_SKB_BUF_SIZE_NORMAL
+#endif
 
 /*TX reserve size before 802.3 pkt*/
 #define WLAN_ETHHDR_LEN	14
@@ -65,8 +72,8 @@ struct sk_buff {
 
 	struct skb_raw_para	tx_raw;
 
-	unsigned char buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;/* buf start address and size alignmengt for pre allocate skb*/
 	atomic_t ref;
+	unsigned char buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;/* buf start address and size alignmengt for pre allocate skb*/
 }; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
 
 struct skb_priv_t {
@@ -130,7 +137,7 @@ void kfree_skb(struct sk_buff *skb);
 struct sk_buff *skb_clone(struct sk_buff *skb, int gfp_mask);
 struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int reserve_len);
 void dev_kfree_skb_any(struct sk_buff *skb);
-void init_skb_pool(uint32_t skb_num_np, uint32_t skb_buf_size, unsigned char skb_cache_zise);
+void init_skb_pool(uint32_t skb_num_np, unsigned char skb_cache_zise);
 void deinit_skb_pool(void);
 struct sk_buff *get_buf_from_poll(void);
 void release_buf_to_poll(struct sk_buff *skb);

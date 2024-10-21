@@ -6,18 +6,28 @@
 
 
 #define RTK_USB_VID							0x0BDA
-#define RTK_USB_PID							0x8722
+#define RTK_USB_PID_DPLUS						0x8722
+#define RTK_USB_PID_GREEN2						0x8006
 
-#define RTW_INIC_WIFI_EP3_BULK_IN 						0x03U
-#define RTW_INIC_WIFI_EP4_BULK_OUT						0x04U
+#ifdef CONFIG_AMEBADPLUS
+#define RTW_INIC_WIFI_EP_BULK_IN 						0x03U
+#else //GREEN2
+#define RTW_INIC_WIFI_EP_BULK_IN 						0x04U
+#endif
+
 #define RTW_INIC_WIFI_EP2_BULK_OUT						0x02U
+#define RTW_INIC_WIFI_EP4_BULK_OUT						0x04U
+#define RTW_INIC_WIFI_EP5_BULK_OUT						0x05U
+#define RTW_INIC_WIFI_EP6_BULK_OUT						0x06U
+#define RTW_INIC_WIFI_EP7_BULK_OUT						0x07U
 
 #define RTW_USB_RXQ_NUM						0x0AU
 #define RTW_USB_TXQ_NUM						0x20U
 
 
 static struct usb_device_id inic_usb_ids[] = {
-	{USB_DEVICE(RTK_USB_VID, RTK_USB_PID)},
+	{USB_DEVICE(RTK_USB_VID, RTK_USB_PID_DPLUS)},
+	{USB_DEVICE(RTK_USB_VID, RTK_USB_PID_GREEN2)},
 	{}
 };
 
@@ -31,6 +41,7 @@ int rtw_usb_init(struct inic_usb *priv, struct usb_interface *intf)
 	struct usb_device *usb;
 	u32 num_of_eps;
 	u8 endpoint_num, ep;
+	u8 cnt = 0;
 
 	desc = &intf->cur_altsetting->desc;
 	num_of_eps = desc->bNumEndpoints;
@@ -42,14 +53,15 @@ int rtw_usb_init(struct inic_usb *priv, struct usb_interface *intf)
 			continue;
 		}
 
-		if (usb_endpoint_dir_in(endpoint) && (endpoint_num == RTW_INIC_WIFI_EP3_BULK_IN)) {
+		if (usb_endpoint_dir_in(endpoint) && (endpoint_num == RTW_INIC_WIFI_EP_BULK_IN)) {
 			priv->rx_pipe = usb_rcvbulkpipe(usb, endpoint_num);
 		} else if (usb_endpoint_dir_out(endpoint)) {
-			if (endpoint_num == RTW_INIC_WIFI_EP4_BULK_OUT) {
-				priv->tx_pipe[0] = usb_sndbulkpipe(usb, endpoint_num);
-				priv->tx_mps = usb_endpoint_maxp(endpoint);
-			} else if (endpoint_num == RTW_INIC_WIFI_EP2_BULK_OUT) {
-				priv->tx_pipe[1] = usb_sndbulkpipe(usb, endpoint_num);
+#ifdef CONFIG_AMEBADPLUS
+			if (endpoint_num == RTW_INIC_WIFI_EP4_BULK_OUT || endpoint_num == RTW_INIC_WIFI_EP2_BULK_OUT) {
+#else //GREEN2
+			if (endpoint_num == RTW_INIC_WIFI_EP5_BULK_OUT || endpoint_num == RTW_INIC_WIFI_EP6_BULK_OUT || endpoint_num == RTW_INIC_WIFI_EP7_BULK_OUT) {
+#endif
+				priv->tx_pipe[cnt++] = usb_sndbulkpipe(usb, endpoint_num);
 				priv->tx_mps = usb_endpoint_maxp(endpoint);
 			}
 		}

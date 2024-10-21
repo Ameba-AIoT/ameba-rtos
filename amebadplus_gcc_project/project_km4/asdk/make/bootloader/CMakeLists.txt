@@ -5,7 +5,7 @@ set(DRVCOM ${TARGETDIR}/fwlib/ram_common)
 set(LOGDIR ${TARGETDIR}/swlib)
 set(LZMADIR ${TARGETDIR}/../common/lzma)
 
-add_executable(target_bootloader)
+ameba_executable(target_bootloader)
 
 add_custom_target(
     boot
@@ -20,48 +20,48 @@ else()
 endif()
 
 target_sources(
-    target_bootloader 
-    PRIVATE 
-    ${DIR}/boot_ota_km4.c 
-	${DIR}/boot_security_km4.c 
-	${CFGDIR}/ameba_boot_trustzonecfg.c 
-	${CFGDIR}/ameba_bootcfg.c 
-	${CFGDIR}/ameba_flashcfg.c 
-	${DRVDIR}/ameba_flashclk.c 
+    target_bootloader
+    PRIVATE
+    ${DIR}/boot_ota_km4.c
+	${DIR}/boot_security_km4.c
+	${CFGDIR}/ameba_boot_trustzonecfg.c
+	${CFGDIR}/ameba_bootcfg.c
+	${CFGDIR}/ameba_flashcfg.c
+	${DRVDIR}/ameba_flashclk.c
 	${DRVCOM}/ameba_psram.c
-	${DRVCOM}/ameba_clk.c 
-	${DRVCOM}/ameba_ldo.c 
-	${DRVCOM}/ameba_reset.c 
-	${DRVCOM}/ameba_pll.c 
-	${DRVCOM}/ameba_fault_handle.c 
+	${DRVCOM}/ameba_clk.c
+	${DRVCOM}/ameba_ldo.c
+	${DRVCOM}/ameba_reset.c
+	${DRVCOM}/ameba_pll.c
+	${DRVCOM}/ameba_fault_handle.c
     ${LOGDIR}/log.c
 )
 
 if(CONFIG_COMPRESS_OTA_IMG)
     target_sources(
-        target_bootloader 
-        PRIVATE 
+        target_bootloader
+        PRIVATE
         ${LZMADIR}/ameba_boot_lzma.c
         ${LZMADIR}/LzmaDec.c
     )
 endif()
 
 target_include_directories(
-    target_bootloader 
-    PRIVATE 
-    ${LOGDIR} 
-    ${TARGETDIR}/lib/bootloader 
+    target_bootloader
+    PRIVATE
+    ${LOGDIR}
+    ${TARGETDIR}/lib/bootloader
     ${BASEDIR}/component/soc/common/crashdump/include
     ${LZMADIR}
 )
 
 target_link_libraries(
-    target_bootloader 
+    target_bootloader
     PRIVATE ameba_interface_${PROJECT_NAME} ameba_wrap_interface_${PROJECT_NAME}
     -Wl,--gc-sections
-    -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map 
-    -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld 
-    ${LINK_ROM_LIB} 
+    -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
+    -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+    ${LINK_ROM_LIB}
     ${LINK_LOADER_LIB}
 )
 
@@ -72,7 +72,7 @@ else()
 endif()
 
 add_custom_command(
-  TARGET target_bootloader PRE_LINK 
+  TARGET target_bootloader PRE_LINK
   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG1_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build bootloader linkerscript rlx8721d.ld"
@@ -99,10 +99,10 @@ add_custom_command(TARGET target_bootloader POST_BUILD
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_boot_all.bin"
 
-    COMMAND ${CMAKE_COMMAND} 
-    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} 
+    COMMAND ${CMAKE_COMMAND}
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR}
     -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
-    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}  
+    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE}
     -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../loader_postbuild.cmake
@@ -111,5 +111,5 @@ add_custom_command(TARGET target_bootloader POST_BUILD
 set_property(TARGET target_bootloader
     PROPERTY ADDITIONAL_CLEAN_FILES
     ${IMAGE_TARGET_FOLDER}
-    ${IMAGE_TARGET_FOLDER}/../../../km4_boot_all.bin 
+    ${IMAGE_TARGET_FOLDER}/../../../km4_boot_all.bin
 )

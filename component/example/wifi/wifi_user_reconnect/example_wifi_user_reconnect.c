@@ -28,7 +28,7 @@ int user_wifi_connect(void)
 
 WIFI_CONNECT:
 	/*Connect*/
-	RTK_LOGI(TAG, "Wifi connect start, retey cnt = %d\n", reconnect_cnt);
+	RTK_LOGI(TAG, "Wifi connect start, retry cnt = %d\n", reconnect_cnt);
 	ret = wifi_connect(&connect_param, 1);
 	if (ret != RTW_SUCCESS) {
 		RTK_LOGI(TAG, "Reconnect Fail:%d", ret);

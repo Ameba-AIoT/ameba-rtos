@@ -91,6 +91,11 @@ if (CONFIG_WLAN)
                         APPEND LINK_APP_LIB 
                         ${APP_LIB_DIR}/lib_wifi_inic_spi_np_mp_shrink.a
                     )
+                elseif(CONFIG_INIC_INTF_USB)
+                    list(
+                        APPEND LINK_APP_LIB 
+                        ${APP_LIB_DIR}/lib_wifi_inic_usb_np_mp_shrink.a
+                    )
                 else()
                     list(
                         APPEND LINK_APP_LIB
@@ -107,6 +112,11 @@ if (CONFIG_WLAN)
                     list(
                         APPEND LINK_APP_LIB 
                         ${APP_LIB_DIR}/lib_wifi_inic_spi_np_mp.a
+                    )
+                elseif(CONFIG_INIC_INTF_USB)
+                    list(
+                        APPEND LINK_APP_LIB 
+                        ${APP_LIB_DIR}/lib_wifi_inic_usb_np_mp.a
                     )
                 else()
                     list(
@@ -125,6 +135,11 @@ if (CONFIG_WLAN)
                 list(
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_inic_spi_np.a
+                )
+            elseif(CONFIG_INIC_INTF_USB)
+                list(
+                    APPEND LINK_APP_LIB 
+                    ${APP_LIB_DIR}/lib_wifi_inic_usb_np.a
                 )
             else()
                 list(

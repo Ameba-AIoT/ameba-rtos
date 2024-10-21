@@ -35,7 +35,7 @@ set(TARGET_LIBAPP_FOLDER ${PROJECTDIR}/asdk/lib/application)
 ###########################################
 if(NOT ASDK_VER)
     set(ASDK_VER 10.3.1)
-    include (${CMAKE_FILES_DIR}/toolchain/ameba-toolchain-${ASDK_VER}.cmake)
+    include (${CMAKE_FILES_DIR}/toolchain/ameba-toolchain-asdk-${ASDK_VER}.cmake)
     set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_FILES_DIR}/set_extensions.cmake)
     set(CMAKE_PROJECT_INCLUDE_BEFORE ${CMAKE_FILES_DIR}/disable_compiler_detection.cmake)
 endif()

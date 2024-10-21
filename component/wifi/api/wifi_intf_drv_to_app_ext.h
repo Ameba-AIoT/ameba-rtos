@@ -308,19 +308,6 @@ int wifi_fetch_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic);
 int wifi_get_txbuf_pkt_num(void);
 
 /**
- * @brief  config mode of HW indicating packets(mgnt and data)
- * 	and SW reporting packets to wifi_indication().
- * @param[in]  enable
- * 	0) WIFI_INDICATE_DISABLE: disable mode(default), HW only
- * 	   indicate bssid-matched pkts and SW don't report.
- * 	1) WIFI_INDICATE_NORMAL: HW only indicate bssid-matched
- * 	   pkts and SW report.
- * 	2) WIFI_INDICATE_WILD: HW indicate all pkts and SW report.
- * @return  None
- */
-void wifi_set_indicate_mgnt(int enable);
-
-/**
  * @brief  Get antdiv infomation.
  * @param[in]  antdiv_mode: Point to the antdiv_mode value obtained from driver,
  * @param[in]  curr_ant: Point to the antenna value obtained from driver,
@@ -411,14 +398,6 @@ int wifi_del_custom_ie(unsigned char wlan_idx);
  * @return  RTW_ERROR or RTW SUCCESS
  */
 int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc);
-
-/**
- * @brief  send raw frame
- * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
- * 	which describe related information, include the pointer of raw frame and so on.
- * @return  RTW_ERROR or RTW SUCCESS
- */
-int wifi_send_mgnt(struct _raw_data_desc_t *raw_data_desc);
 
 /**
  * @brief  Control initial tx rate by different ToS value in IP header.

@@ -1,7 +1,7 @@
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 ############################ COMPILE FLAGS ##############################
-add_compile_options( 
+add_compile_options(
 	"$<$<COMPILE_LANGUAGE:C>:${GLOBAL_C_OPTIONS}>"
     "$<$<COMPILE_LANGUAGE:ASM>:${GLOBAL_ASM_OPTIONS}>"
 )
@@ -37,6 +37,11 @@ set_property(TARGET build_info_${PROJECT_NAME}
 
 include(libs.cmake)
 
+define_property(GLOBAL PROPERTY ALL_EXE_TARGETS_${PROJECT_NAME}
+BRIEF_DOCS "all executable targets"
+FULL_DOCS "all executable targets"
+)
+
 ################################# BUILD ROM   ##############################
 
 #TODO
@@ -70,6 +75,6 @@ endif()
 
 ############################################################################
 add_custom_target(
-    ${PROJECT_NAME} 
+    ${PROJECT_NAME}
     DEPENDS target_img2_${PROJECT_NAME} target_img2_${PROJECT_NAME}_post_build
 )

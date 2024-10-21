@@ -52,7 +52,7 @@ struct task_struct g_client_task;
 unsigned char g_server_terminate = 0;
 unsigned char g_client_terminate = 0;
 
-#define printf	DiagPrintf_minimal
+#define printf	DiagPrintfNano
 
 void server_thread(void *param)
 {

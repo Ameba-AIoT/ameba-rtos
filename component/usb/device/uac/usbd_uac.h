@@ -182,11 +182,12 @@ typedef struct {
 typedef struct {
 	usbd_audio_cfg_t in;
 	usbd_audio_cfg_t out;
+	void *audio;
 	int(* init)(void);
 	int(* deinit)(void);
 	int(* setup)(usb_setup_req_t *req, u8 *buf);
 	int(* set_config)(void);
-	int(* isoc_received)(u8 *buf, u32 len);
+	int(* isoc_received)(void *audio, u8 *buf, u32 len);
 	void(* isoc_transmitted)(u8 status);
 	void(* status_changed)(u8 status);
 	void(* mute_changed)(u8 mute);
@@ -227,5 +228,6 @@ typedef struct {
 int usbd_uac_init(usbd_uac_cb_t *cb);
 int usbd_uac_deinit(void);
 int usbd_uac_transmit_data(u8 *buf, u16 len);
+int usbd_uac_receive_data(u8 *buf, u16 len);
 
 #endif  /* USBD_UAC_H */

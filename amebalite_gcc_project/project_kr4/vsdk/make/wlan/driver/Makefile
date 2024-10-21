@@ -116,6 +116,8 @@ ifeq ($(CONFIG_INIC_INTF_SDIO), y)
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_sdio_np$(LIB_NAME_MP_SUFFIX).a
 else ifeq ($(CONFIG_INIC_INTF_SPI), y)
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_spi_np$(LIB_NAME_MP_SUFFIX).a
+else ifeq ($(CONFIG_INIC_INTF_USB), y)
+	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_usb_np$(LIB_NAME_MP_SUFFIX).a
 else
 	$(MOVE) -f lib_wlan.a $(ROOTDIR)/lib/application/lib_wifi_inic_np$(LIB_NAME_MP_SUFFIX).a
 endif

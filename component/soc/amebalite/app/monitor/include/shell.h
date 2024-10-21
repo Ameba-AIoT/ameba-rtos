@@ -80,7 +80,7 @@ typedef struct {
 
 #define KB_SPACENO_TAB  1
 
-#define _ConsolePrint  DiagPrintf_minimal
+#define _ConsolePrint  DiagPrintfNano
 
 #define AMEBA_CONSOLE_PREFIX	"#"
 #define CONSOLE_AMEBA(...)     do {\

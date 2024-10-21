@@ -24,11 +24,11 @@ void SOCPS_SleepPG(void)
 		return;
 	}
 
-	debug_printf("pg-s\n");
+	RTK_LOGS(NOTAG, "APPG\n");
 
 	SOCPS_SleepPG_LIB();
 
-	debug_printf("pg-w\n");
+	RTK_LOGS(NOTAG, "APPW\n");
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
@@ -54,11 +54,11 @@ void SOCPS_SleepCG(void)
 		return;
 	}
 
-	debug_printf("cg-s\n");
+	RTK_LOGS(NOTAG, "APCG\n");
 
 	SOCPS_SleepCG_LIB();
 
-	debug_printf("cg-w\n");
+	RTK_LOGS(NOTAG, "APCW\n");
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);

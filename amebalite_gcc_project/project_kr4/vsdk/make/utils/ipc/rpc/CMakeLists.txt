@@ -1,0 +1,5 @@
+add_subdirectory(hal)
+add_subdirectory(framework)
+if(CONFIG_RPC_TEST)
+    add_subdirectory(tests)
+endif()

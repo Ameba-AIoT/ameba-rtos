@@ -279,10 +279,10 @@ void cfg80211_rtw_sta_assoc_indicate(char *buf, int buf_len)
 static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_ap_settings *settings)
 {
 	int ret = 0;
-	struct _rtw_softap_info_t softAP_config = {0};
+	u8 *buf = NULL, *ptr = NULL;
+	size_t size = 0;
+	struct _rtw_softap_info_t *softAP_config = NULL;
 	char fake_pwd[] = "12345678";
-	u8 *pwd_vir = NULL;
-	dma_addr_t pwd_phy;
 	u8 elem_num = 0;
 	const struct element *elem, **pelem;
 #ifdef CONFIG_P2P
@@ -300,9 +300,20 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 		return -EPERM;
 	}
 
-	memcpy(softAP_config.ssid.val, (u8 *)settings->ssid, settings->ssid_len);
-	softAP_config.ssid.len = settings->ssid_len;
-	softAP_config.channel = (u8) ieee80211_frequency_to_channel(settings->chandef.chan->center_freq);
+	size = sizeof(struct _rtw_softap_info_t) + (settings->privacy ? strlen(fake_pwd) + 1 : 0);
+	ptr = buf = kmalloc(size, GFP_KERNEL);
+	if (!buf) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+	softAP_config = (struct _rtw_softap_info_t *)ptr;
+	ptr += sizeof(struct _rtw_softap_info_t);
+
+	memset(softAP_config, 0, sizeof(struct _rtw_softap_info_t));
+
+	memcpy(softAP_config->ssid.val, (u8 *)settings->ssid, settings->ssid_len);
+	softAP_config->ssid.len = settings->ssid_len;
+	softAP_config->channel = (u8) ieee80211_frequency_to_channel(settings->chandef.chan->center_freq);
 
 	dev_dbg(global_idev.fullmac_dev, "wpa_versions=%d\n", settings->crypto.wpa_versions);
 	dev_dbg(global_idev.fullmac_dev, "n_ciphers_pairwise=%d\n", settings->crypto.n_ciphers_pairwise);
@@ -310,7 +321,9 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 	dev_dbg(global_idev.fullmac_dev, "n_akm_suites=%d\n", settings->crypto.n_akm_suites);
 	dev_dbg(global_idev.fullmac_dev, "akm_suites=0x%x\n", settings->crypto.akm_suites[0]);
 	dev_dbg(global_idev.fullmac_dev, "cipher_group=0x%x\n", settings->crypto.cipher_group);
+#if (KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE)
 	dev_dbg(global_idev.fullmac_dev, "wep_tx_key=%d\n", settings->crypto.wep_tx_key);
+#endif
 	dev_dbg(global_idev.fullmac_dev, "sae_pwd_len=%d\n", settings->crypto.sae_pwd_len);
 
 	if (settings->privacy) {
@@ -319,33 +332,28 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 			return -EPERM;
 		}
 		if ((settings->crypto.wpa_versions == 2) && ((u8)settings->crypto.akm_suites[0] == 0x08)) {
-			softAP_config.security_type = RTW_SECURITY_WPA3_AES_PSK;
+			softAP_config->security_type = RTW_SECURITY_WPA3_AES_PSK;
 		} else if ((settings->crypto.wpa_versions == 2) && ((u8)settings->crypto.ciphers_pairwise[0] == 0x04)) {
-			softAP_config.security_type = RTW_SECURITY_WPA2_AES_PSK;
+			softAP_config->security_type = RTW_SECURITY_WPA2_AES_PSK;
 		} else if ((settings->crypto.wpa_versions == 2) && ((u8)settings->crypto.ciphers_pairwise[0] == 0x02)) {
-			softAP_config.security_type = RTW_SECURITY_WPA2_TKIP_PSK;
+			softAP_config->security_type = RTW_SECURITY_WPA2_TKIP_PSK;
 		} else if (settings->crypto.wpa_versions == 1) {
 			dev_dbg(global_idev.fullmac_dev, "wpa_versions=1, not support right now!\n");
 			return -EPERM;
 		} else {
-			softAP_config.security_type = RTW_SECURITY_WEP_PSK;
+			softAP_config->security_type = RTW_SECURITY_WEP_PSK;
 			dev_err(global_idev.fullmac_dev, "ERR: AP in WEP security mode is not supported!!");
 			return -EPERM;
 		}
 
-		/* fix CWE-170, null terminated string, so to add 1. */
-		pwd_vir = rtw_malloc(strlen(fake_pwd) + 1, &pwd_phy);
-		if (!pwd_vir) {
-			dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
-			return -ENOMEM;
-		}
 		/* If not fake, copy from upper layer, like WEP(unsupported). */
-		memcpy(pwd_vir, fake_pwd, strlen(fake_pwd) + 1);
-		softAP_config.password = (unsigned char *)pwd_phy;
-		softAP_config.password_len = strlen(fake_pwd);
-		//dev_dbg(global_idev.fullmac_dev, "security_type=0x%x, password=%s, len=%d \n", softAP_config.security_type, softAP_config.password, softAP_config.password_len);
+		/* fix CWE-170, null terminated string, so to add 1. */
+		memcpy(ptr, fake_pwd, strlen(fake_pwd) + 1);
+		softAP_config->password = (unsigned char *)ptr;
+		softAP_config->password_len = strlen(fake_pwd);
+		//dev_dbg(global_idev.fullmac_dev, "security_type=0x%x, password=%s, len=%d \n", softAP_config->security_type, softAP_config->password, softAP_config->password_len);
 	} else {
-		softAP_config.security_type = RTW_SECURITY_OPEN;
+		softAP_config->security_type = RTW_SECURITY_OPEN;
 	}
 
 #ifdef CONFIG_P2P
@@ -358,12 +366,12 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 	}
 #endif
 
-	ret = llhw_wifi_start_ap(&softAP_config);
+	ret = llhw_wifi_start_ap(softAP_config);
 
 	netif_carrier_on(ndev);
 
-	if (pwd_vir) {
-		rtw_mfree(strlen(pwd_vir) + 1, pwd_vir, pwd_phy);
+	if (buf) {
+		kfree(buf);
 	}
 
 	if (settings->beacon.beacon_ies_len) {

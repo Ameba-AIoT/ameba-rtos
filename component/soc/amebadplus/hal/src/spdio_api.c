@@ -494,6 +494,27 @@ void SPDIO_IRQ_Handler_BH(void *pData)
 	}
 }
 
+void SPDIO_Board_Init(void)
+{
+	/* Pinmux function and Pad control */
+	/* Group3 */
+	PAD_PullCtrl(_PB_6, GPIO_PuPd_UP);  //D2
+	PAD_PullCtrl(_PB_7, GPIO_PuPd_UP);  //D3
+	PAD_PullCtrl(_PB_8, GPIO_PuPd_UP);  //cmd
+	PAD_PullCtrl(_PB_9, GPIO_PuPd_UP);  //clk
+	PAD_PullCtrl(_PB_13, GPIO_PuPd_UP);  //D0
+	PAD_PullCtrl(_PB_14, GPIO_PuPd_UP);  //D1
+	Pinmux_Config(_PB_6, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_7, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_8, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_9, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_13, PINMUX_FUNCTION_SDIO);
+	Pinmux_Config(_PB_14, PINMUX_FUNCTION_SDIO);
+
+	/* SDIO function enable and clock enable*/
+	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);
+}
+
 /******************************************************************************
  * Function: SPDIO_Device_Init
  * Desc: SDIO mbed device driver initialization.
@@ -544,6 +565,8 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 		goto SDIO_INIT_ERR;
 	}
 	pgSPDIODev->pRXDESCAddrAligned = (INIC_RX_DESC *)(((((u32)pgSPDIODev->pRXDESCAddr - 1) >> 2) + 1) << 2); //Make it 4-bytes aligned
+
+	SPDIO_Board_Init();
 
 	SDIO_StructInit(&SDIO_InitStruct);
 	SDIO_InitStruct.TXBD_BAR = (u32)pgSPDIODev->pTXBDAddrAligned;

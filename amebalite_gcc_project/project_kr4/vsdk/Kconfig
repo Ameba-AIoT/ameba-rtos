@@ -1,0 +1,303 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+    comment "Target Platform Selection"
+    comment "Choose a Vendor/Product combination"
+    choice
+        prompt "Product"
+        default AMEBALITE_FOR_KR4
+        config AMEBALITE_FOR_KR4
+            bool "AMEBALITE"
+    endchoice
+
+    choice
+        prompt "ArmCore"
+        default RSICV_CORE_KR4_FOR_KR4
+        config RSICV_CORE_KR4_FOR_KR4
+            bool "RSICV_KR4"
+    endchoice
+
+    config FPGA_FOR_KR4
+        bool "Select FPGA"
+
+endmenu
+
+comment "----------OS config----------"
+
+menu "CONFIG OS"
+    config KERNEL_FOR_KR4
+        bool "Enable Kernel"
+        default y
+
+    if KERNEL_FOR_KR4
+        choice
+            prompt "Kernel Selecte"
+            default PLATFORM_FREERTOS_FOR_KR4
+            config PLATFORM_FREERTOS_FOR_KR4
+                bool "FREERTOS"
+        endchoice
+
+    endif
+
+endmenu
+
+comment "----------Peripheral config----------"
+
+
+comment "----------Peripheral Test----------"
+menu "CONFIG FUNCTION TEST"
+    config PER_TEST_FOR_KR4
+        bool "Enable Peripheral Test"
+    if PER_TEST_FOR_KR4
+        config SYS_VERIFY_FOR_KR4
+            bool "System_Verify_Mode"
+        if SYS_VERIFY_FOR_KR4
+            choice
+                prompt "System Verify Type"
+                config SIMULATION_FOR_KR4
+                    bool "IMG_SIM"
+            endchoice
+        endif
+        config WIFI_FW_VERIFY_FOR_KR4
+        bool "WIFI FW Test"
+        config SOCZB_PTA_VERIFY_FOR_KR4
+        bool "SOCZB_PTA_Verify_Mode"
+        config TIMER_VERIFY_FOR_KR4
+        bool "Timer_Verify_Mode"
+        config WDG_VERIFY_FOR_KR4
+        bool "WDG_Verify_Mode"
+        config GDMA_VERIFY_FOR_KR4
+        bool "Gdma_Verify_Mode"
+        config GPIO_VERIFY_FOR_KR4
+        bool "GPIO_Verify_Mode"
+        config SPI_COM_VERIFY_FOR_KR4
+        bool "SPI_COM_Verify_Mode"
+        config UART_VERIFY_FOR_KR4
+        bool "UART_Verify_Mode"
+        config I2C_VERIFY_FOR_KR4
+        bool "I2C_Verify_Mode"
+        config PMC_VERIFY_FOR_KR4
+        bool "PMC_Verify_Mode"
+        config EFUSE_VERIFY_FOR_KR4
+        bool "EFUSE_Verify_Mode"
+        config SPIC_VERIFY_FOR_KR4
+        bool "SPIC_Verify_Mode"
+        config ADC_VERIFY_FOR_KR4
+        bool "ADC_Verify_Mode"
+        config RSIP_VERIFY_FOR_KR4
+        bool "RSIP_Verify_Mode"
+        config CAPTOUCH_VERIFY_FOR_KR4
+        bool "CapTouch_Verify_Mode"
+        config SGPIO_VERIFY_FOR_KR4
+        bool "SGPIO_Verify_Mode"
+        config QDEC_VERIFY_FOR_KR4
+        bool "Qdecoder_Verify_Mode"
+        config DHRYSTONE_TEST_FOR_KR4
+        bool "Dhrystone Test"
+        config SSL_ROM_TEST_FOR_KR4
+        bool "SSL ROM Test"
+        config RTLIB_VERIFY_FOR_KR4
+        bool "RTLIB ROM Test"
+        config SBOOT_VERIFY_FOR_KR4
+        bool "SecureBoot Test"
+        config IPC_VERIFY_FOR_KR4
+        bool "IPC Test"
+        config MPU_VERIFY_FOR_KR4
+        bool "MPU Test"
+        config CACHE_VERIFY_FOR_KR4
+        bool "CACHE Test"
+        config WFE_VERIFY_FOR_KR4
+        bool "WFE Test"
+        config THERMAL_VERIFY_FOR_KR4
+        bool "Thermal_Verify_Mode"
+        config CHIP_RST_VERIFY_FOR_KR4
+        bool "chip_reset_verify"
+        config DBG_TIMER_VERIFY_FOR_KR4
+        bool "debugtimer_verify"
+        config LOGUART_VERIFY_FOR_KR4
+        bool "LOGUART Test"
+        config AUDIO_VERIFY_FOR_KR4
+        bool "AUDIO_Verify_Mode"
+        config CRYPTO_VERIFY_FOR_KR4
+        bool "CRYPTO_Verify_Mode"
+        config ECDSA_VERIFY_FOR_KR4
+        bool "ECDSA_Verify_Mode"
+        config MEMSHARE_VERIFY_FOR_KR4
+        bool "Memory Share Test"
+        config FLASH_AVL_FOR_KR4
+        bool "Flash_AVL"
+        config WIFI_VERIFY_FOR_KR4
+        bool "WIFI Test"
+        if WIFI_VERIFY_FOR_KR4
+            choice
+                prompt "WIFI Verify Type"
+                config WIFI_VERIFY_ASIC_FOR_KR4
+                bool "WIFI_ASIC"
+                config MAC_LBK_FOR_KR4
+                bool "WIFI_MAC_LBK"
+                config WIFI_VERIFY_PSPHY_FOR_KR4
+                bool "WIFI_2MAC_WITH_PSPHY"
+                config WIFI_VERIFY_TRUEPHY_FOR_KR4
+                bool "WIFI_2MAC_WITH_TUREPHY"
+            endchoice
+        endif
+    endif
+
+endmenu
+
+
+comment "----------Application Config----------"
+
+menu "SSL Config"
+    config USE_MBEDTLS_ROM_FOR_KR4
+        bool
+        default y
+    config MBEDTLS_ENABLED_FOR_KR4
+        bool "MBEDTLS Enable"
+        default y
+    config SSL_ROM_TEST_FOR_KR4
+        bool "SSL ROM Test"
+        default n
+endmenu
+
+menu "Audio Config"
+    config AUDIO_FWK_FOR_KR4
+        bool "Enable Audio Framework"
+        default n
+    if AUDIO_FWK_FOR_KR4
+        choice
+            prompt "Select Audio Interfaces"
+            config AUDIO_MIXER_FOR_KR4
+                bool "Mixer"
+            config AUDIO_PASSTHROUGH_FOR_KR4
+                bool "PassThrough"
+        endchoice
+    endif
+
+    config MEDIA_PLAYER_FOR_KR4
+        bool "Enable Media Framework"
+        default n
+        select AUDIO_FWK_FOR_KR4
+
+    if MEDIA_PLAYER_FOR_KR4
+        menu "Demux"
+            config MEDIA_DEMUX_WAV_FOR_KR4
+                bool "Demux WAV"
+            config MEDIA_DEMUX_MP3_FOR_KR4
+                bool "Demux MP3"
+            config MEDIA_DEMUX_AAC_FOR_KR4
+                bool "Demux AAC"
+            config MEDIA_DEMUX_MP4_FOR_KR4
+                bool "Demux M4A"
+            config MEDIA_DEMUX_FLAC_FOR_KR4
+                bool "Demux FLAC"
+            config MEDIA_DEMUX_OGG_FOR_KR4
+                bool "Demux OGG"
+        endmenu
+
+        menu "Codec"
+            config MEDIA_CODEC_PCM_FOR_KR4
+                bool "Codec PCM"
+            config MEDIA_CODEC_MP3_FOR_KR4
+                bool "Codec MP3"
+            config MEDIA_CODEC_HAAC_FOR_KR4
+                bool "Codec AAC"
+            config MEDIA_CODEC_VORBIS_FOR_KR4
+                bool "Codec VORBIS"
+            config MEDIA_CODEC_OPUS_FOR_KR4
+                bool "Codec OPUS"
+        endmenu
+    endif
+
+    menu "Third Party Lib"
+        config SPEEX_LIB_FOR_KR4
+            bool "Speex"
+            default n
+        config OPUS_LIB_FOR_KR4
+            bool "OPUS"
+            default n
+    endmenu
+
+endmenu
+
+menu "GUI Config"
+    config GUI_EN_FOR_KR4
+        bool "Enable GUI"
+        default n
+    config LVGL_EN_FOR_KR4
+        depends on GUI_EN_FOR_KR4
+        bool "LVGL"
+        default n
+endmenu
+
+menu "CONFIG IPC Message Queue"
+    config IMQ_EN_FOR_KR4
+        bool "Enable IPC Message Queue"
+        default n
+    if IMQ_EN_FOR_KR4
+        config RPC_EN_FOR_KR4
+            bool "Enable RPC"
+            default n
+        config IMQ2_TEST_FOR_KR4
+            bool "Enable IPC Message Queue Test"
+            default n
+        config IPC_MSG_MASTER_FOR_KR4
+            bool
+            default y
+    endif
+endmenu
+
+#=====================    Debug Message Config   =====================
+comment '--------------Debug Message Config------------'
+menu "To set debug msg flag"
+    config DEBUG_RXI_DUMP_FOR_KR4
+        bool
+        default n
+    config DEBUG_BACK_TRACE_FOR_KR4
+        bool "Enable debug backtrace"
+        default n
+    config DEBUG_CRASH_DUMP_FOR_KR4
+        bool "Enable debug crash dump"
+        default n
+    if DEBUG_CRASH_DUMP_FOR_KR4
+        config STACK_DUMP_DEPTH_FOR_KR4
+            int
+            default 100
+        config DEBUG_CRASH_DUMP_RUNS_FOR_KR4
+            int
+            default 1
+    endif
+
+endmenu
+
+#===========================================================================
+# Normal: Build all code, includes ROM code. Normally for FPGA verification.
+# Release: Build user application code and link with ROM + RAM libraries.
+# Build_ROM_Lib: Build the ROM code library only.
+# Build_RAM_Lib: Build the RAM code library only.
+# Build_RAM_All: Build all RAM code, includes user application, and link with ROM library.
+
+comment "----------Build Config----------"
+menu "Build Option"
+comment "Select toolchain"
+    choice
+        prompt"Toolchain"
+        default TOOLCHAIN_VSDK_FOR_KR4
+        config TOOLCHAIN_VSDK_FOR_KR4
+            bool "VSDK"
+
+        config TOOLCHAIN_ARM_GCC_FOR_KR4
+            bool "ARM_GCC"
+    endchoice
+
+comment "Choose the build configuration"
+    choice
+        prompt "Link ROM Mode"
+        default LINK_ROM_LIB_FOR_KR4
+        config LINK_ROM_LIB_FOR_KR4
+            bool "Link_ROM_Library"
+
+        config LINK_ROM_SYMB_FOR_KR4
+            bool "Link_ROM_Symbol"
+    endchoice
+endmenu

@@ -28,8 +28,6 @@ void dsp_power_off(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "DSPOFF\n");
-
 	/* poll DSP sleep status */
 	u32 temp = 0;
 	while (1) {
@@ -38,6 +36,8 @@ void dsp_power_off(void)
 			break;
 		}
 	}
+
+	RTK_LOGD(TAG, "DSPPG\n");
 
 	RCC_PeriphClockCmd(APBPeriph_HIFI, APBPeriph_HIFI_CLOCK, DISABLE);
 
@@ -51,9 +51,9 @@ void dsp_power_on(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "DSPON\n");
-
 	RCC_PeriphClockCmd(APBPeriph_HIFI, APBPeriph_HIFI_CLOCK, ENABLE);
+
+	RTK_LOGD(TAG, "DSPPW\n");
 }
 
 void dsp_clock_gate(void)
@@ -61,8 +61,6 @@ void dsp_clock_gate(void)
 	if (!dsp_status_on()) {
 		return;
 	}
-
-	RTK_LOGI(TAG, "DSPCG\n");
 
 	/* poll DSP sleep status */
 	u32 temp = 0;
@@ -73,6 +71,8 @@ void dsp_clock_gate(void)
 			break;
 		}
 	}
+
+	RTK_LOGD(TAG, "DSPCG\n");
 
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_HIFI_CLOCK, DISABLE);
 
@@ -87,10 +87,10 @@ void dsp_clock_on(void)
 		return;
 	}
 
-	RTK_LOGI(TAG, "DSPCW\n");
-
 	/* enable DSP clock */
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_HIFI_CLOCK, ENABLE);
+
+	RTK_LOGD(TAG, "DSPCW\n");
 }
 
 void dsp_resume(void)
@@ -110,7 +110,7 @@ void dsp_resume(void)
 	if (dsp_sleep_type == SLEEP_PG) {
 		/* check AP state, AP need be active when DSP PG Wakeup*/
 		if (!km4_status_on()) {
-			RTK_LOGI(TAG, "wake KM4\n");
+			RTK_LOGS(NOTAG, "wake KM4\n");
 			km4_resume();
 		}
 
@@ -128,7 +128,7 @@ void dsp_resume(void)
 u32 NPWDSP_INTHandler(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
-	RTK_LOGI(TAG, "NP WAKE DSP HANDLER %lx %lx\n",
+	RTK_LOGD(TAG, "NP WAKE DSP HANDLER %lx %lx\n",
 			 HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
 
 	InterruptDis(DSP_WAKE_IRQ);
@@ -159,7 +159,7 @@ u32 dsp_suspend(u32 type)
 	sleep_wevent_config_val[1] = HAL_READ32(PMC_BASE, WAK_MASK1_DSP);
 	sleep_wevent_config_val[0] = HAL_READ32(PMC_BASE, WAK_MASK0_DSP);
 
-	RTK_LOGI(TAG, "dsp_suspend %lx %lx\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
+	RTK_LOGD(TAG, "dsp_suspend %lx %lx\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
 	if ((sleep_wevent_config_val[0] | sleep_wevent_config_val[1])) {
 		InterruptRegister(NPWDSP_INTHandler, DSP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI3);
 		InterruptEn(DSP_WAKE_IRQ, INT_PRI3);
@@ -190,7 +190,7 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	UNUSED(ChanNum);
 	SLEEP_ParamDef *psleep_param;
 
-	RTK_LOGI(TAG, "dsp_tickless_ipc_int\n");
+	RTK_LOGD(TAG, "dsp_tickless_ipc_int\n");
 
 	psleep_param = (SLEEP_ParamDef *)ipc_get_message(IPC_DSP_TO_KR4, IPC_D2R_TICKLESS_INDICATION);
 	DCache_Invalidate((u32)psleep_param, sizeof(SLEEP_ParamDef));
@@ -223,7 +223,7 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	}
 
 	DSPSleepTick = SYSTIMER_TickGet();
-	RTK_LOGI(TAG, "T:%lu, tms:%lu\r\n", DSPSleepTick, (((DSPSleepTick & 0xFFFF8000) / 32768) * 1000 + ((DSPSleepTick & 0x7FFF) * 1000) / 32768));
+	RTK_LOGD(TAG, "T:%lu, tms:%lu\r\n", DSPSleepTick, (((DSPSleepTick & 0xFFFF8000) / 32768) * 1000 + ((DSPSleepTick & 0x7FFF) * 1000) / 32768));
 }
 
 IPC_TABLE_DATA_SECTION

@@ -66,6 +66,14 @@ void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process);
 void wifi_btcoex_set_bt_ant(u8 bt_ant);
 
 /**
+  * @brief Set vendor info to coex
+  * @param[in]  p_vendor_info: vendor info
+  * @param[in]  length: vendor info length
+  * @retval  Null
+  */
+void wifi_btcoex_vendor_info_set(void *p_vendor_info, u8 length);
+
+/**
   * @brief Write BT RFK  data to RFC
   * @param  calibration data
   * @retval  BT RFK result(1:success  0:failed)
@@ -165,6 +173,14 @@ int wifi_set_group_id(unsigned char value);
  * @return  RTW_ERROR otherwise.
  */
 int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
+
+/**
+ * @brief  send raw frame
+ * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
+ * 	which describe related information, include the pointer of raw frame and so on.
+ * @return  RTW_ERROR or RTW SUCCESS
+ */
+int wifi_send_mgnt(struct _raw_data_desc_t *raw_data_desc);
 
 /**
  * @brief  for wpa supplicant indicate ft status.

@@ -1,0 +1,5 @@
+if(CONFIG_KERNEL)
+    add_subdirectory(freertos)
+    add_subdirectory(freertos_posix)
+    add_subdirectory(stdlib_wrap)
+endif()

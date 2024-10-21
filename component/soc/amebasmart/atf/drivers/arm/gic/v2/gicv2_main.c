@@ -168,7 +168,7 @@ void gicv2_driver_init(const gicv2_driver_data_t *plat_driver_data)
 	flush_dcache_range((uintptr_t) &driver_data, sizeof(driver_data));
 	flush_dcache_range((uintptr_t) driver_data, sizeof(*driver_data));
 #endif
-	INFO("ARM GICv2 driver initialized\n");
+	//INFO("ARM GICv2 driver initialized\n");
 }
 
 /******************************************************************************

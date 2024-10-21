@@ -1138,6 +1138,11 @@ bool "Enable GUI"                               CONFIG_GUI_EN_FOR_AP
 if [ "$CONFIG_GUI_EN_FOR_AP" = "y" ]; then
 	bool "LVGL"             CONFIG_LVGL_EN_FOR_AP
 fi
+mainmenu_option next_comment
+comment 'Third Party Lib'
+        bool "PNG"        CONFIG_GUI_LIB_PNG_FOR_AP
+        bool "JPG"         CONFIG_GUI_LIB_JPG_FOR_AP
+endmenu
 endmenu
 
 mainmenu_option next_comment

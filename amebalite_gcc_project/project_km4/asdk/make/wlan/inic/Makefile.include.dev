@@ -15,7 +15,11 @@ vpath %.c $(IPCDRV) \
 ifeq ($(CONFIG_INIC_INTF_USB), y)
 IFLAGS += -I$(BASEDIR)/component/usb/common
 IFLAGS += -I$(BASEDIR)/component/usb/device/core
+ifeq ($(CONFIG_AMEBADPLUS), y)
 IFLAGS += -I$(BASEDIR)/component/usb/device/inic_dplus
+else ifeq ($(CONFIG_AMEBAGREEN2), y)
+IFLAGS += -I$(BASEDIR)/component/usb/device/inic
+endif
 endif
 
 ifeq ($(CONFIG_AS_INIC_NP),y)

@@ -6,9 +6,6 @@
 
 #define DEV_DMA_ALIGN	SPDIO_DMA_ALIGN_4
 
-#define SPDIO_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct inic_msg_info) + sizeof(INIC_TX_DESC))) //n*64, must be rounded to 64
-#define SPDIO_SKB_RSVD_LEN		N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct inic_msg_info) - sizeof(INIC_TX_DESC), SPDIO_DMA_ALIGN_4)
-
 struct inic_sdio_priv_t {
 	struct spdio_t dev;
 

@@ -656,7 +656,7 @@ void inic_dev_init(void)
 	rtk_log_level_set(TAG_WLAN_INIC, RTK_LOG_DEBUG);
 
 	wifi_set_user_config();
-	init_skb_pool(wifi_user_config.skb_num_np, wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE, SKB_CACHE_SZ);
+	init_skb_pool(wifi_user_config.skb_num_np, SKB_CACHE_SZ);
 
 	inic_spi_init();
 

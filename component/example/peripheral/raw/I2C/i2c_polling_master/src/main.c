@@ -326,8 +326,9 @@ void i2c_dual_master_task(void)
 	I2C_Cmd(i2cmaster.I2Cx, ENABLE);
 
 	// Master write - Slave read
-	RTK_LOGI(TAG, "\r\nMaster polling write>>>\n");
+	RTK_LOGI(TAG, "\r\nMaster polling write1>>>\n");
 #ifdef I2C_RESTART_DEMO
+	RTK_LOGI(TAG, "\r\nMaster polling write1.1>>>\n");
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[1], (I2C_DATA_LENGTH - 1), 1);
 #else
@@ -337,7 +338,7 @@ void i2c_dual_master_task(void)
 
 
 	// Master read - Slave write
-	RTK_LOGI(TAG, "Master polling read>>>\n");
+	RTK_LOGI(TAG, "Master polling read1>>>\n");
 #ifdef I2C_RESTART_DEMO
 	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], 1, 0);
 #endif
