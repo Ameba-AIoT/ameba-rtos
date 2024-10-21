@@ -30,38 +30,43 @@ jobs:
     - name: Configure bash
       run: |
         sudo ln -sf /bin/bash /bin/sh
+    
+    - name: Install cmake environment variables
+      run: |
+        sudo apt-get install cmake ninja-build
 
     - name: Configure prerequisites
       run: |
         # set config
 
+        cd amebadplus_gcc_project
+
         if ${{ inputs.artifacts_name == 'amebadplus-B1' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT1
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config AUDIO_PASSTHROUGH
+          ./menuconfig.py -f bt1.conf audio_passthrough.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebadplus-B2' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config HIGH_TP_FOR_INIC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config WPS
+          ./menuconfig.py -f high_tp.conf wps.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebadplus-B3' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT2
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config USB_KM4_DEVICE
+          ./menuconfig.py -f bt2.conf usb.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebadplus-B5' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT_MP_SHRINK
+          ./menuconfig.py -f bt_en.conf mp_shrink.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebadplus-B6' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBADPLUS --config BT_MP_EXPAND
+          ./menuconfig.py -f bt_en.conf mp_expand.conf
         fi
+
+        cd -
 
     - name: Compile
       run: |
         cd amebadplus_gcc_project
-        make all
+        ./build.py
         cd -
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
