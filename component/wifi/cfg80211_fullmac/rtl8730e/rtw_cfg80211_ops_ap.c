@@ -310,7 +310,9 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev, s
 	dev_dbg(global_idev.fullmac_dev, "n_akm_suites=%d\n", settings->crypto.n_akm_suites);
 	dev_dbg(global_idev.fullmac_dev, "akm_suites=0x%x\n", settings->crypto.akm_suites[0]);
 	dev_dbg(global_idev.fullmac_dev, "cipher_group=0x%x\n", settings->crypto.cipher_group);
+#if (KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE)
 	dev_dbg(global_idev.fullmac_dev, "wep_tx_key=%d\n", settings->crypto.wep_tx_key);
+#endif
 	dev_dbg(global_idev.fullmac_dev, "sae_pwd_len=%d\n", settings->crypto.sae_pwd_len);
 
 	if (settings->privacy) {
