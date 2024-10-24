@@ -64,6 +64,8 @@
  * and secure DRAM.
  */
 
+#define KM0_IPC_RAM				0x2301FD00
+
 #define DRAM_START_ADDR			0x60000000
 
 #define SEC_ROM_BASE			0x0
