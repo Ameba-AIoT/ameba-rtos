@@ -65,11 +65,6 @@ void app_IWDG_refresh(void *arg)
 
 void app_IWDG_int(void)
 {
-	/* usually IWDG will enable by HW, and the bark interval is 4095ms by default */
-	if (0 == (HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN) & APBPeriph_IWDG)) {
-		return;
-	}
-
 	IWDG_LP_Enable(IWDG_DEV, DISABLE);
 	RTK_LOGI(TAG, "IWDG refresh on!\n");
 

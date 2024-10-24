@@ -158,6 +158,14 @@ int wifi_set_group_id(unsigned char value);
 int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
 
 /**
+ * @brief  send raw frame
+ * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
+ * 	which describe related information, include the pointer of raw frame and so on.
+ * @return  RTW_ERROR or RTW SUCCESS
+ */
+int wifi_send_mgnt(struct _raw_data_desc_t *raw_data_desc);
+
+/**
  * @brief  for wpa supplicant indicate ft status.
  * @param[in] status:ft_status which will be indicated.
  * @return  null.

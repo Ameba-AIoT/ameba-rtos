@@ -254,14 +254,6 @@ int wifi_del_custom_ie(unsigned char wlan_idx)
 	return -1;
 }
 
-
-void wifi_set_indicate_mgnt(int enable)
-{
-	UNUSED(enable);
-	call_noused = __LINE__;
-	return;
-}
-
 int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc)
 {
 	UNUSED(raw_frame_desc);

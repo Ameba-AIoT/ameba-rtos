@@ -305,27 +305,27 @@ ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
 endif
 
 ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
-	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
-		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
-		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
-		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
-		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
+		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin; \
+		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	else \
-		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
-			$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin; \
-			$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns.bin; \
-			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
-			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
+		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
+			$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
+			$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
+			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 		fi \
 	fi
 else
-	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
-		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
-		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	else \
-		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
-			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
-			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
+		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
+			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 		fi \
 	fi
 endif

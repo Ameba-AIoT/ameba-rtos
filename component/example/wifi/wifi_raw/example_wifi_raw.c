@@ -17,7 +17,8 @@ u8 addr3[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};
 
 void wifi_raw_tx(void *param)
 {
-	raw_data_desc_t tx_raw_data_desc;
+	struct raw_frame_desc_t tx_raw_data_desc = {0};
+	UNUSED(param);
 
 	printf("%s start.\n", __func__);
 
@@ -40,55 +41,61 @@ void wifi_raw_tx(void *param)
 	tx_raw_data_desc.wlan_idx = STA_WLAN_INDEX;
 	tx_raw_data_desc.buf = tx_frame_buf;
 	tx_raw_data_desc.buf_len = 42;
-	tx_raw_data_desc.flags = 0;
 
 	while (1) {
-		if (wifi_send_mgnt(&tx_raw_data_desc) < 0) {
+		if (wifi_send_raw_frame(&tx_raw_data_desc) < 0) {
 			printf("%s failed!\n", __func__);
 		}
 		rtos_time_delay_ms(100);
 	}
 
-exit:
 	rtos_task_delete(NULL);
 }
 
-void wifi_raw_rx_callback(char *buf, int buf_len, int flags, void *userdata)
+static u8 promisc_callback(struct rx_pkt_info *pkt_info)
 {
-	u8 stype;
-	int i;
+	u8 *buf = pkt_info->buf;
+	u8 subtype;
+	u32 buf_len = pkt_info->len;
+	u32 i;
 
-	stype = GetFrameSubType(buf);
+	subtype = GetFrameSubType(buf);
 
-	if (stype == WIFI_PROBERSP) {
+	if (subtype == WIFI_PROBERSP) {
 		printf("Probe Rsp frame:\n");
 		for (i = 0; i < buf_len; i++) {
 			printf("%x ", buf[i]);
 		}
 		printf("\n\n");
+		return 1;
 	}
-}
 
+	return 0;
+}
 void wifi_raw_rx(void *param)
 {
+	UNUSED(param);
+	struct _promisc_para_t promiscpara;
 
 	printf("%s start.\n", __func__);
 
-	wifi_set_indicate_mgnt(WIFI_INDICATE_WILD);
-
-	wifi_reg_event_handler(WIFI_EVENT_RX_MGNT, wifi_raw_rx_callback, NULL);
+	memset(&promiscpara, 0, sizeof(struct _promisc_para_t));
+	promiscpara.filter_mode = RCR_ALL_PKT;
+	promiscpara.callback = promisc_callback;
+	wifi_promisc_enable(ENABLE, &promiscpara);
 
 	while (1) {
 		rtos_time_delay_ms(10);
 	}
 
-exit:
 	rtos_task_delete(NULL);
 }
 
 
 void wifi_raw_task(void *param)
 {
+	UNUSED(param);
+
 	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
 		printf("Wait for WIFI connection ...\n");
 		rtos_time_delay_ms(1000);

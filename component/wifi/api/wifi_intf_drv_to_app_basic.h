@@ -467,21 +467,10 @@ union speaker_set {
 #define SCAN_LONGEST_WAIT_TIME	(12000)
 
 /**
-* @brief enable for partial channel scan
-*/
-#define PSCAN_ENABLE		0x01
-
-/**
 * @brief set to select scan time to FAST_SURVEY_TO, otherwise SURVEY_TO
 */
 #define PSCAN_FAST_SURVEY	0x02
-
-/**
-* @brief set to select scan time to FAST_SURVEY_TO and resend probe request
-*/
-#define PSCAN_SIMPLE_CONFIG	0x04
 /** @} */
-
 
 /** @defgroup BIT_Def
    *@{
