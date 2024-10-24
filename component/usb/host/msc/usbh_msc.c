@@ -33,8 +33,6 @@ static int usbh_msc_detach(usb_host_t *host);
 static int usbh_msc_process(usb_host_t *host);
 static int usbh_msc_setup(usb_host_t *host);
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
-static int usbh_msc_sof(usb_host_t *host);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *TAG = "MSC";
@@ -46,7 +44,6 @@ static usbh_class_driver_t usbh_msc_driver = {
 	.detach = usbh_msc_detach,
 	.setup = usbh_msc_setup,
 	.process = usbh_msc_process,
-	.sof = usbh_msc_sof
 };
 
 static usbh_msc_host_t usbh_msc_host;
@@ -405,17 +402,6 @@ static int usbh_msc_process(usb_host_t *host)
 	}
 
 	return status;
-}
-
-/**
-  * @brief  The function is for SOF state
-  * @param  host: Host handle  for MSC I/O Process
-  * @retval Status
-  */
-static int usbh_msc_sof(usb_host_t *host)
-{
-	UNUSED(host);
-	return HAL_OK;
 }
 
 /**

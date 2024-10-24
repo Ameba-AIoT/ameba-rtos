@@ -489,7 +489,7 @@ u8 BOOT_OTA_IMG2(void)
 	}
 	version = (u32)(Ver[ImgIndex] & 0xFFFFFFFF);
 
-	RTK_LOGI(TAG, "IMG2 BOOT from OTA %d, Version: %x.%x \n", ImgIndex + 1, ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+	RTK_LOGI(TAG, "IMG2 BOOT from OTA %d, Version: %ld.%ld \n", ImgIndex + 1, ((version >> 16) & 0xFFFF), (version & 0xFFFF));
 
 	return ImgIndex; //verified slot index
 
