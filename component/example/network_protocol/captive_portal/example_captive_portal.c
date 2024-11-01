@@ -1198,7 +1198,7 @@ static void ConnectTargetAP(void)
 	u8 connect_status;
 
 	while (1) {
-		if (_get_ap_security_mode((char *)target_ap_setting.ssid, &target_ap_setting.security_type, &connect_channel) == 0) {
+		if (_get_ap_security_mode((char *)target_ap_setting.ssid, (u32 *)&target_ap_setting.security_type, &connect_channel) == 0) {
 			break;
 		}
 		security_retry_count++;

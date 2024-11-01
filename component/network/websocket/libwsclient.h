@@ -24,10 +24,10 @@
 
 /****************Define the structures used*************************/
 typedef enum {
-	CLOSING,
-	CLOSED,
-	CONNECTING,
-	OPEN
+	WSC_CLOSING,
+	WSC_CLOSED,
+	WSC_CONNECTING,
+	WSC_OPEN
 } readyStateValues;
 
 struct wsheader_type {

@@ -60,6 +60,7 @@ CSRC +=	$(DIR_COM)/ameba_ipc_ram.c \
 
 CSRC +=	$(LOGDIR)/log.c
 CSRC += $(LOGDIR)/sscanf_minimal.c
+CSRC += $(LOGDIR)/locks.c
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #

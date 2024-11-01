@@ -22,6 +22,7 @@ vpath %.c $(DIR_OSWRAPPER) $(DIR) $(shell find $(DIR) -type d) $(DIR_SWLIB)
 CSRC += $(DIR)/freertos_heap5_config.c \
        
 CSRC += $(DIR_SWLIB)/gcc_wrap.c
+CSRC += $(DIR_SWLIB)/locks.c
 
 CSRC += $(DIR_OSWRAPPER)/os_wrapper_critical.c \
        $(DIR_OSWRAPPER)/os_wrapper_memory.c \

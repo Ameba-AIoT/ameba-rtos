@@ -367,6 +367,16 @@ bool bt_avrcp_init(uint8_t link_num);
 /**
  * bt_avrcp.h
  *
+ * \brief  De-initialize AVRCP profile.
+ *
+ *
+ * \ingroup BT_AVRCP
+ */
+void bt_avrcp_deinit(void);
+
+/**
+ * bt_avrcp.h
+ *
  * \brief   Set AVRCP supported features.
  *
  * \param[in]  ct_features   The supported features of controller.

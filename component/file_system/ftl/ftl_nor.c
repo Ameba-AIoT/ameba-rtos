@@ -1059,9 +1059,9 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 {
 	uint32_t ret = FTL_WRITE_SUCCESS;
 
-//#if defined (CONFIG_ARM_CORE_CA32)
+//#if defined (ARM_CORE_CA32)
 //	if (CPSR_M_IRQ == __get_mode()) {
-//		DBG_8195A("CONFIG_ARM_CORE_CA32\n");
+//		DBG_8195A("ARM_CORE_CA32\n");
 //		FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] FTL_write should not be called in interrupt handler!\n");
 //		return FTL_WRITE_ERROR_IN_INTR;
 //	}
