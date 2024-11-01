@@ -43,7 +43,11 @@ uint16_t rtk_stack_df_paramerter_setting(rtk_bt_mesh_directed_control_param_sett
 
 	if (param->bit_check & DF_RSSI_SETTING) {
 		mesh_node.df_default_rssi_threshold = param->threshold.default_rssi_threshold;
-		mesh_node.df_rssi_margin = param->threshold.rssi_margin;
+		if (param->threshold.rssi_margin <= 0x32) {
+			mesh_node.df_rssi_margin = param->threshold.rssi_margin;
+		} else {
+			BT_LOGE("DF Rssi Setting is out of the range, rssi_margin is 0 - 50 \r\n");
+		}
 	}
 
 	if (param->bit_check & DF_DIRECTED_PATHS_SETTING) {

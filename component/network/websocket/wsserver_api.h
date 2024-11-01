@@ -51,11 +51,11 @@ extern uint8_t ws_server_debug;
   */
 
 typedef enum {
-	CLOSED = 0,		/*!< Client Connection closed */
-	CONNECTING,	/*!< Client is connecting */
-	CONNECTED1,	/*!< Client is connected */
-	CONNECTED2,	/*!< Connected and server sent ping to client */
-	CLOSING,	/*!< Client will be closed */
+	WSS_CLOSED = 0,		/*!< Client Connection closed */
+	WSS_CONNECTING,	/*!< Client is connecting */
+	WSS_CONNECTED1,	/*!< Client is connected */
+	WSS_CONNECTED2,	/*!< Connected and server sent ping to client */
+	WSS_CLOSING,	/*!< Client will be closed */
 } ws_conn_state;
 
 

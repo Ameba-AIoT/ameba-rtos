@@ -132,7 +132,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		rtk_bt_br_remote_name_rsp_t *p_name_rsp = NULL;
 		T_APP_BR_LINK *p_link = NULL;
 		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_REMOTE_NAME_RSP \r\n");
-		p_link = app_find_br_link(param->acl_conn_ind.bd_addr);
+		p_link = app_find_br_link(param->remote_name_rsp.bd_addr);
 		if (!p_link) {
 			BT_LOGE("bt_stack_mgr_cback: no link found \r\n");
 			break;
@@ -461,6 +461,7 @@ uint16_t rtk_stack_framework_event_handler(uint8_t event)
 uint16_t bt_stack_br_gap_deinit(void)
 {
 	bt_stack_br_gap_ready = false;
+	bt_mgr_cback_unregister(bt_stack_mgr_cback);
 
 	return 0;
 }

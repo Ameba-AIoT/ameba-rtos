@@ -13,7 +13,7 @@ static const char *TAG = "APP";
 
 extern int main(void);
 void NS_ENTRY BOOT_IMG3(void);
-
+extern void newlib_locks_init(void);
 
 u32 app_mpu_nocache_check(u32 mem_addr)
 {
@@ -163,6 +163,8 @@ void app_start(void)
 	/* Add This for C++ support */
 	__libc_init_array();
 #endif
+
+	newlib_locks_init();
 
 	mpu_init();
 	app_mpu_nocache_init();

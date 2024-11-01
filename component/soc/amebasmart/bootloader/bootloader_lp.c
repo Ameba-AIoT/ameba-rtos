@@ -36,7 +36,12 @@ PRAM_START_FUNCTION BOOT_SectionInit(void)
 BOOT_RAM_TEXT_SECTION
 void BOOT_WakeFromPG(void)
 {
+	u32 Rtemp;
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
+
+	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0);
+	Rtemp |= LSYS_CKSL_LSOC(BIT_LSYS_CKSL_LP_XTAL);
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Rtemp);
 
 	/* we should Cache_Flush when we wake */
 	Cache_Enable(ENABLE);

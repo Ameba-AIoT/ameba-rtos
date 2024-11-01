@@ -315,6 +315,7 @@ _LONG_CALL_ u32 SWR_AUDIO(u32 NewState);
 _LONG_CALL_ void SWR_AUDIO_Manual(u32 NewState);
 _LONG_CALL_ u32 SWR_AUDIO_Mode_Get(void);
 _LONG_CALL_ u32 SWR_AUDIO_Mode_Set(u32 SWR_Mode);
+_LONG_CALL_ u32 SWR_Mode_Get(void);
 _LONG_CALL_ void SWR_PFM_MODE_Set(u32 MODE);
 _LONG_CALL_ void SWR_BST_MODE_Set(u32 MODE);
 _LONG_CALL_ u8 SWR_In_BST_MODE(void);

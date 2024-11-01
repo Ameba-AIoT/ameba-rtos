@@ -2587,7 +2587,6 @@ int ble_mesh_provisioner_main(uint8_t enable)
 		bt_app_conf.max_tx_time = 0x200;
 		BT_LOGA("Before Enable BT\r\n");
 		/* Enable BT */
-		bt_app_conf.bt_mesh_app_conf.bt_mesh_flash_size = 2200;
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 
 		// MUST DO:set provisioner unicast address,add net key and app key

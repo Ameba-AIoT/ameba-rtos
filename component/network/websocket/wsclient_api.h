@@ -119,7 +119,7 @@ void ws_pong(void (*callback)(wsclient_context **)) ;
 ** Function Name  : ws_getReadyState
 ** Description    : Getting the connection status
 ** Input          : wsclient: the websocket client context
-** Return         : readyStateValues(3 types:CLOSING, CLOSED, OPEN)
+** Return         : readyStateValues(3 types:WSC_CLOSING, WSC_CLOSED, WSC_OPEN)
 **************************************************************************************************/
 readyStateValues ws_getReadyState(wsclient_context *wsclient);
 

@@ -1126,16 +1126,13 @@ uint16_t bt_stack_hfp_init(uint8_t role)
 	return RTK_BT_OK;
 }
 
-extern void hfp_deinit(void);
-extern void hfp_ag_deinit(void);
-
 void bt_stack_hfp_deinit(void)
 {
 	BT_LOGA("[HFP]app_hfp_init\n");
 	if (hfp_role == RTK_BT_AUDIO_HFP_ROLE_AG) {
-		hfp_ag_deinit();
+		bt_hfp_ag_deinit();
 	} else {
-		hfp_deinit();
+		bt_hfp_deinit();
 	}
 }
 

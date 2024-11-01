@@ -2759,7 +2759,6 @@ int ble_mesh_device_main(uint8_t enable)
 		// Mesh stack will report a event when stack is ready, so should regist callback before bt enable
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		/* Enable BT */
-		bt_app_conf.bt_mesh_app_conf.bt_mesh_flash_size = 2200;
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 
 		BT_APP_PROCESS(rtk_bt_le_gap_get_bd_addr(&bd_addr));

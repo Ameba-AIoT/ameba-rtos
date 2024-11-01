@@ -90,7 +90,7 @@ delta_status_t *find_free_delta(delta_status_t *delta, int cnt)
 	return NULL;
 }
 
-static void update_status(void)
+static int update_status(void)
 {
 	delta_status_t *deltaone = NULL;
 	/* init */
@@ -101,7 +101,7 @@ static void update_status(void)
 
 	if (uxTaskGetNumberOfTasks() > TASK_CNT) {
 		RTK_LOGW(NOTAG, "number of tasks : %d(exceed TASK_CNT)! Please enlarge TASK_CNT\r\n", uxTaskGetNumberOfTasks());
-		return;
+		return -1;
 	}
 
 	/* update last */
@@ -140,6 +140,8 @@ static void update_status(void)
 			}
 		}
 	}
+
+	return 0;
 }
 
 void print_delta(int delta_tick)
@@ -178,7 +180,9 @@ void cpu_stat_thread(void *dummy)
 	memcpy(ppara, dummy, sizeof(status_cmd_para_t));
 	last_tick = portGET_RUN_TIME_COUNTER_VALUE();
 	while ((rtos_sema_take((rtos_sema_t)top_exit_sema, ppara->time * 1000) == FAIL)) {
-		update_status();
+		if (update_status()) {
+			continue;
+		}
 		int delta_tick =  portGET_RUN_TIME_COUNTER_VALUE() - last_tick;
 		last_tick = portGET_RUN_TIME_COUNTER_VALUE();
 		print_delta(delta_tick);
@@ -287,7 +291,10 @@ void at_cpuload(void *arg)
 			break;
 		}
 		memset(task_status, 0, sizeof(task_status_t));
-		update_status();
+		if (update_status()) {
+			error_no = 4;
+			break;
+		}
 		rtos_sema_create(&top_exit_sema, 0, 1);
 		rtos_task_create(NULL, ((const char *)"cpu_stat_thread"), cpu_stat_thread, &para_in, 4096 * 4, configMAX_PRIORITIES - 1);
 		break;
@@ -302,13 +309,18 @@ void at_cpuload(void *arg)
 		}
 		memset(task_status, 0, sizeof(task_status_t));
 		last_tick = portGET_RUN_TIME_COUNTER_VALUE();
-		update_status();
+		if (update_status()) {
+			error_no = 4;
+		}
 		break;
 	case atcmd_cpuload_type_stop:
 		if (top_exit_sema)	{
 			break;
 		}
-		update_status();
+		if (update_status()) {
+			error_no = 4;
+			break;
+		}
 		print_delta(portGET_RUN_TIME_COUNTER_VALUE() - last_tick);
 		last_tick = portGET_RUN_TIME_COUNTER_VALUE();
 		rtos_mem_free(task_status);

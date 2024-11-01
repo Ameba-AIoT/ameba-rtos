@@ -1340,7 +1340,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 			for (uint8_t i = 0; i < p_attr_t->num_of_attr; i ++) {
 				if (p_attr_t->attr[i].length) {
 					memset((void *)temp_buff, 0, 50);
-					snprintf((char *)temp_buff, 50, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
+					uint16_t len = p_attr_t->attr[i].length + strlen(attr[p_attr_t->attr[i].attribute_id]) + 1;
+					snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
 					BT_LOGA("[AVRCP] %s \r\n", temp_buff);
 					osif_mem_free(p_attr_t->attr[i].p_buf);
 				}
