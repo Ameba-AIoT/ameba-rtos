@@ -55,7 +55,7 @@ static void example_wsclient_thread(void *param)
 		if (ret >= 0) {
 			ws_send("hello", strlen("hello"), 1, wsclient);
 			ws_dispatch(handle_message);
-			while (wsclient->readyState != CLOSED) {
+			while (wsclient->readyState != WSC_CLOSED) {
 
 				ws_poll(0, &wsclient);
 			}

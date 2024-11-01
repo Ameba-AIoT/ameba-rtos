@@ -38,6 +38,8 @@
 // for debug (mic,mic,..ref,out), only out buffer not filled by audio fwk
 #define ALL_DATA                      "no_afe_all_data"
 #define REF_CHANNEL                   "ref_channel"
+//0 master, 1 slave
+#define MASTER_SLAVE                  "master_slave"
 #define PURE_DATA_DUMP                0
 #define DUMP_FRAME                    48000
 
@@ -92,6 +94,7 @@ struct PrimaryAudioHwStreamIn {
 	uint64_t mic_category;
 	uint32_t device;
 	rtos_mutex_t time_lock;
+	uint32_t master_slave;
 
 #if PURE_DATA_DUMP
 	char *in_buf;  //2s data
@@ -247,6 +250,11 @@ static int PrimarySetStreamInParameters(struct AudioHwStream *stream, const char
 			HAL_AUDIO_VERBOSE("mode:PURE DATA");
 			cap->mode = CAPTURE_PURE_DATA;
 		}
+	}
+
+	if (string_cells_has_key(cells, MASTER_SLAVE)) {
+		string_cells_get_int(cells, MASTER_SLAVE, &value);
+		cap->master_slave = value;
 	}
 
 	string_cells_destroy(cells);
@@ -414,6 +422,8 @@ static int StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
 			cap->in_pcm_extra = ameba_audio_stream_rx_init(cap->device, cap->config_extra);
 		}
 	}
+
+	AUDIO_SP_SetMasterSlave(cap->config.sport_index, cap->master_slave);
 
 	ameba_audio_stream_rx_start(cap->in_pcm);
 	if (cap->requested_channels >= 10) {
@@ -750,6 +760,7 @@ struct AudioHwStreamIn *CreateAudioHwStreamIn(struct AudioHwCard *card, const st
 
 	in->requested_channels = config->channel_count;
 	in->channel_for_ref = 2;
+	in->master_slave = 1;
 
 	if (desc->flags & AUDIO_HW_INPUT_FLAG_NOIRQ) {
 		in->config.mode = AMEBA_AUDIO_DMA_NOIRQ_MODE;

@@ -512,6 +512,16 @@ bool bt_a2dp_init(uint8_t  link_num,
                   uint8_t  service_capabilities);
 
 /**
+ * bt_a2dp.h
+ *
+ * \brief  De-initialize A2DP profile.
+ *
+ *
+ * \ingroup BT_A2DP
+ */
+void bt_a2dp_deinit(void);
+
+/**
  * \brief  Send an A2DP connection request.
  *
  * \param[in] bd_addr   Remote BT address.

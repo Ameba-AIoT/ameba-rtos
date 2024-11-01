@@ -56,10 +56,6 @@ void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);
 void ameba_audio_dump_sport_regs(uint32_t SPORTx);
 void ameba_audio_dump_codec_regs(void);
 
-uint64_t ameba_audio_get_wmac_ns(void);
-int64_t ameba_audio_get_audio_ns(void);
-void ameba_audio_reset_latch_audio(void);
-
 #ifdef __cplusplus
 }
 #endif

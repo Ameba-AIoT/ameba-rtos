@@ -65,6 +65,7 @@ CSRC +=	$(DIR_COM)/ameba_i2c.c \
 #	$(DIR_COM)/ameba_pmc_com.c
 CSRC +=	$(LOGDIR)/log.c
 CSRC += $(LOGDIR)/sscanf_minimal.c
+CSRC += $(LOGDIR)/locks.c
 
 CSRC +=	$(CFGDIR)/ameba_sleepcfg.c \
 		$(CFGDIR)/ameba_flashcfg.c

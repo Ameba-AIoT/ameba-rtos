@@ -1150,6 +1150,17 @@ void bt_coex_deinit(void)
 			p_conn = (rtk_bt_coex_conn_t *)plist;
 			plist = plist->next;
 			list_del(&p_conn->list);
+			{
+				struct list_head *p_profile_list = NULL;
+				rtk_bt_coex_profile_info_t *p_profile = NULL;
+				p_profile_list = p_conn->profile_list.next;
+				while (p_profile_list != &p_conn->profile_list) {
+					p_profile = (rtk_bt_coex_profile_info_t *)p_profile_list;
+					p_profile_list = p_profile_list->next;
+					list_del(&p_profile->list);
+					osif_mem_free(p_profile);
+				}
+			}
 			osif_mem_free(p_conn);
 		}
 	}

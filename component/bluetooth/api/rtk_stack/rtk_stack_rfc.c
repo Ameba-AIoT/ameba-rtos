@@ -378,7 +378,9 @@ uint16_t bt_stack_rfc_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_rfc_init(uint8_t server_chann)
 {
-	bt_rfc_profile_register(server_chann, app_rfc_cback);
+	if (!bt_rfc_profile_register(server_chann, app_rfc_cback)) {
+		BT_LOGE("bt_rfc_profile_register failed \r\n");
+	}
 	/* Register event callback function*/
 	bt_mgr_cback_register(bt_stack_rfc_evt_ind_cback);
 	rfc_channel = server_chann;
@@ -389,6 +391,9 @@ uint16_t bt_stack_rfc_init(uint8_t server_chann)
 void bt_stack_rfc_deinit(void)
 {
 	/* RFC deinit */
+	if (!bt_rfc_profile_unregister(rfc_channel)) {
+		BT_LOGE("bt_rfc_profile_unregister failed \r\n");
+	}
 	BT_LOGA("rfc_demo_deinit\r\n");
 }
 

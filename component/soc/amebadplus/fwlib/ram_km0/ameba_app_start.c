@@ -11,6 +11,7 @@
 
 extern int main(void);
 extern void SOCPS_WakeFromPG(void);
+extern void newlib_locks_init(void);
 
 //set all KM0 rom & ram no-cachable, just flash cachable
 //KM0 have 4 mpu entrys
@@ -50,6 +51,8 @@ void app_start(void)
 {
 	/* 1. Redirect hardfault for debug, and register function pointer to print task information when a crash occurs */
 	Fault_Hanlder_Redirect(vTaskCrashCallback);
+
+	newlib_locks_init();
 
 	/* 2. Init heap region for printf*/
 	rtos_mem_init();
