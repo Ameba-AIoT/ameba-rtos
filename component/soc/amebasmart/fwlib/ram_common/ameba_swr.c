@@ -295,6 +295,24 @@ u32 SWR_AUDIO_Mode_Set(u32 SWR_Mode)
 }
 
 /**
+  * @brief  Get core swr mode.
+  * @retval swr mode.
+  *   swr mode shows as follows:
+  *            - SWR_PWM : PWM mode
+  *            - SWR_PFM : PFM mode
+  */
+u32 SWR_Mode_Get(void)
+{
+	REGU_TypeDef *regu = REGU_BASE;
+
+	if (regu->REGU_POWER_CTRL & REGU_BIT_SYS_PWM_REQ) {
+		return SWR_PWM;
+	} else {
+		return SWR_PFM;
+	}
+}
+
+/**
   * @brief  set Core mode req from sys
   * @param  MODE: ENABLE PFM, DISABLE PWM
   * @retval None.
@@ -306,14 +324,14 @@ void SWR_PFM_MODE_Set(u32 MODE)
 	REGU_TypeDef *regu = REGU_BASE;
 	temp = regu->REGU_POWER_CTRL;
 
-	if (MODE && (SWR_PWM == SWR_MEM_Mode_Get())) {
+	if (MODE && (SWR_PWM == SWR_Mode_Get())) {
 		if (SWR_In_BST_MODE()) {
 			RTK_LOGE(TAG, "In BST mode Now, goto Normal mode First !\n");
 			return;
 		}
 		temp &= (~(REGU_BIT_SYS_PWM_REQ));
 		regu->REGU_POWER_CTRL = temp;
-	} else if ((!MODE) && (SWR_PFM == SWR_MEM_Mode_Get())) {
+	} else if ((!MODE) && (SWR_PFM == SWR_Mode_Get())) {
 		temp |= (REGU_BIT_SYS_PWM_REQ);
 		regu->REGU_POWER_CTRL = temp;
 	}

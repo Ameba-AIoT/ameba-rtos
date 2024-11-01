@@ -488,7 +488,7 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 		rtos_sema_create(&rstream->stream.extra_sem_gdma_end, 0, RTOS_SEMA_MAX_COUNT);
 	}
 
-	rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+	rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 	rstream->stream.total_counter = 0;
 	rstream->stream.sport_irq_count = 0;
 	rstream->stream.sport_compare_val = config.period_size * config.period_count;
@@ -565,7 +565,7 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 	AUDIO_SP_DmaCmd(rstream->stream.sport_dev_num, ENABLE);
 
 	AUDIO_SP_TXStart(rstream->stream.sport_dev_num, ENABLE);
-	rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+	rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 	rstream->stream.state = state;
 
 	rstream->stream.total_counter = 0;
@@ -597,7 +597,7 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
 	AUDIO_SP_TXStart(rstream->stream.sport_dev_num, DISABLE);
 	AUDIO_SP_TXSetFifo(rstream->stream.sport_dev_num, rstream->stream.sp_initstruct.SP_SelFIFO, DISABLE);
 
-	rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+	rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 	rstream->stream.total_counter = 0;
 	rstream->stream.sport_irq_count = 0;
 
@@ -948,7 +948,7 @@ void ameba_audio_stream_tx_close(Stream *stream)
 			GDMA_ChnlFree(extra_sp_txgdma_initstruct.GDMA_Index, extra_sp_txgdma_initstruct.GDMA_ChNum);
 		}
 
-		rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+		rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 
 		AUDIO_SP_DmaCmd(rstream->stream.sport_dev_num, DISABLE);
 		AUDIO_SP_TXStart(rstream->stream.sport_dev_num, DISABLE);

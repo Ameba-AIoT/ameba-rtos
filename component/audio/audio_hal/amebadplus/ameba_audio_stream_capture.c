@@ -365,7 +365,7 @@ int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frame
 
 	//tv_sec is lld, tv_nsec is ld
 	//usec will exceed at (2^64 / 50M / 3600 / 24 / 365 / 20 = 584 days)
-	nsec = rtos_time_get_current_system_time_ms() * 1000000LL;
+	nsec = rtos_time_get_current_system_time_ns();
 	tstamp->tv_sec = nsec / 1000000000LL;
 	tstamp->tv_nsec = nsec - tstamp->tv_sec * 1000000000LL;
 
@@ -794,7 +794,7 @@ static void ameba_audio_stream_rx_start_in_noirq_mode(Stream *stream)
 
 		rtos_critical_enter();
 		AUDIO_SP_RXStart(cstream->stream.sport_dev_num, ENABLE);
-		cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+		cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 		HAL_AUDIO_INFO("noirq start at:%lld", cstream->stream.trigger_tstamp);
 		rtos_critical_exit();
 
@@ -831,7 +831,7 @@ static void ameba_audio_stream_rx_start_in_irq_mode(Stream *stream)
 		rtos_critical_enter();
 		if (!cstream->stream.need_sync_start) {
 			AUDIO_SP_RXStart(cstream->stream.sport_dev_num, ENABLE);
-			cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+			cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 			HAL_AUDIO_INFO("no sync start at:%lld", cstream->stream.trigger_tstamp);
 		}
 		rtos_critical_exit();
@@ -880,7 +880,7 @@ HAL_AUDIO_WEAK void ameba_audio_stream_rx_sync_start(Stream *stream, uint32_t sp
 	rtos_critical_enter();
 	AUDIO_SP_RXStart(sport_index, ENABLE);
 	AUDIO_SP_RXStart(sport_index_extra, ENABLE);
-	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 	rtos_critical_exit();
 	HAL_AUDIO_INFO("rx start at:%lld", cstream->stream.trigger_tstamp);
 }
@@ -891,7 +891,7 @@ HAL_AUDIO_WEAK void ameba_audio_stream_rx_sync_stop(Stream *stream, uint32_t spo
 	rtos_critical_enter();
 	AUDIO_SP_RXStart(sport_index, DISABLE);
 	AUDIO_SP_RXStart(sport_index_extra, DISABLE);
-	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 	rtos_critical_exit();
 	HAL_AUDIO_INFO("rx stop at:%lld", cstream->stream.trigger_tstamp);
 }
@@ -1063,7 +1063,7 @@ int ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes, uint3
 HAL_AUDIO_WEAK void ameba_audio_stream_rx_stop(Stream *stream)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
-	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ms() * 1000000LL;
+	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 	cstream->stream.total_counter = 0;
 	cstream->stream.sport_irq_count = 0;
 

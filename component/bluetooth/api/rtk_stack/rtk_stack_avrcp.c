@@ -791,13 +791,11 @@ uint16_t bt_stack_avrcp_init(uint8_t role)
 	return RTK_BT_OK;
 }
 
-extern void avrcp_deinit(void);
-
 void bt_stack_avrcp_deinit(void)
 {
 	BT_LOGA("[AVRCP]app_avrcp_deinit\n");
 
-	avrcp_deinit();
+	bt_avrcp_deinit();
 }
 
 #endif

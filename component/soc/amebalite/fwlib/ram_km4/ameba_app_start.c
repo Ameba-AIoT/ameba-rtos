@@ -15,6 +15,7 @@ extern u32 GlobalDebugEnable;
 void NS_ENTRY BOOT_IMG3(void);
 void app_init_psram(void);
 extern void SOCPS_WakeFromPG_KM4(void);
+extern void newlib_locks_init(void);
 
 u32 app_mpu_nocache_check(u32 mem_addr)
 {
@@ -132,6 +133,7 @@ void app_start(void)
 	/* Add This for C++ support */
 	__libc_init_array();
 #endif
+	newlib_locks_init();
 	/* 9. MPU Init*/
 	mpu_init();
 

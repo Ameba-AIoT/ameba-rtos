@@ -923,6 +923,16 @@ static void rtk_bt_mesh_stack_init(void *data)
 	mesh_node.relay_retrans_steps = BT_MESH_CONFIG_RELAY_RETRANS_STEPS;
 	mesh_node.trans_retrans_count = BT_MESH_CONFIG_TRANS_RETRANS_COUNTS;
 	mesh_node.ttl = BT_MESH_CONFIG_MSG_TTL;
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	mesh_node.df_net_trans_count = BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_COUNTS;
+	mesh_node.df_net_trans_steps = BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_STEPS;
+	mesh_node.df_relay_retrans_count = BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_COUNTS;
+	mesh_node.df_relay_retrans_steps = BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_STEPS;
+	mesh_node.df_net_ctl_trans_count = BT_MESH_CONFIG_DF_CTL_NET_TRANS_COUNTS;
+	mesh_node.df_net_ctl_trans_steps = BT_MESH_CONFIG_DF_CTL_NET_TRANS_STEPS;
+	mesh_node.df_relay_ctl_retrans_count = BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_COUNTS;
+	mesh_node.df_relay_ctl_retrans_steps = BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_STEPS;
+#endif
 
 	// Set user mesh retrans params
 	if (mesh_app_conf->trans_retrans_count) {

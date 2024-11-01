@@ -28,6 +28,7 @@ SECTION(".data") u8 *__psram_bss_start__ = 0;
 SECTION(".data") u8 *__psram_bss_end__ = 0;
 #endif
 
+extern void newlib_locks_init(void);
 extern int main(void);
 extern u32 GlobalDebugEnable;
 void NS_ENTRY BOOT_IMG3(void);
@@ -206,6 +207,7 @@ void app_start(void)
 	/* Add This for C++ support */
 	__libc_init_array();
 #endif
+	newlib_locks_init();
 	/*10. MPU init*/
 	mpu_init();
 	app_mpu_nocache_init();

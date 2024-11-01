@@ -20,6 +20,7 @@ SECTION(".data") u8 *__ram_nocache_start__ = 0;
 SECTION(".data") u8 *__ram_nocache_end__ = 0;
 #endif
 
+extern void newlib_locks_init(void);
 extern int main(void);
 extern void SOCPS_WakeFromPG(void);
 void app_section_init(void)
@@ -110,6 +111,7 @@ void app_start(void)
 	SYSTIMER_Init(); /* 0.2ms */
 
 	//app_start_autoicg();
+	newlib_locks_init();
 
 	/* 5. MPU init*/
 	mpu_init();
