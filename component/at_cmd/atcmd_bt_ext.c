@@ -1180,8 +1180,16 @@ static log_item_t at_bt_items[] = {
 void print_bt_ext_at(void)
 {
 #if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
-    ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
+    ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND)) || \
+	((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
 	//Print nothing
+#else
+
+#if (defined(CONFIG_ATCMD_IO_UART) && CONFIG_ATCMD_IO_UART)
+	at_printf("AT+BTDEMO\r\n");
+	at_printf("AT+BLEGAP\r\n");
+	at_printf("AT+BLEGATTS\r\n");
+	at_printf("AT+BLEGATTC\r\n");
 #else
 	int index;
 	int num = 0;
@@ -1192,13 +1200,16 @@ void print_bt_ext_at(void)
 			at_printf("AT%s\r\n", at_bt_items[index].log_cmd);
 		}
 	}
+#endif //CONFIG_ATCMD_IO_UART
+
 #endif
 }
 
 void at_bt_init(void)
 {
 #if ((defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED) && (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)) || \
-    ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND))
+    ((!defined(CONFIG_MP_INCLUDED) || !CONFIG_MP_INCLUDED) && (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND)) || \
+	((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
 	(void)at_bt_items;
 #else
 	atcmd_service_add_table(at_bt_items, sizeof(at_bt_items) / sizeof(at_bt_items[0]));

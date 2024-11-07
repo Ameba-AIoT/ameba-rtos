@@ -238,6 +238,15 @@ uint16_t rtk_bt_pbap_phone_book_pull(rtk_bt_pbap_pb_pull_t *p_pb_pull_t);
 uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr);
 
 /**
+ * @brief     send a request to abort pulling phone book.
+ * @param[in] bd_addr: bt address
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_pbap_phone_book_pull_abort(uint8_t *bd_addr);
+
+/**
  * @brief     send a request to get phone book size.
  * @param[in] p_pb_size_t: phone book size struct
  * @return

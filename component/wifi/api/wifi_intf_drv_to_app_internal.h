@@ -73,6 +73,15 @@ void wifi_btcoex_set_bt_ant(u8 bt_ant);
 int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param);
 
 /**
+  * @brief Notify extwpan data to COEX
+  * @param[in]  type: type for exewpan send
+  * @param[in]  data; data pointer
+  * @param[in]  data_len; data length
+  * @retval  result(1:success  0:failed)
+  */
+int wifi_extchip_coex_notify(u32 type, u32 data, u32 data_len);
+
+/**
   * @brief Zigbee Call WL RFK
   * @param  void
   * @retval  ZBC RFK result(0:success  -1:failed)

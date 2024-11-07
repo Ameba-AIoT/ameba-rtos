@@ -93,7 +93,7 @@ int cfg80211_rtw_scan_done_indicate(unsigned int scanned_AP_num, void *user_data
 		return -1;
 	}
 
-	if (!global_idev.mlme_priv.pscan_req_global) {
+	if (!global_idev.mlme_priv.pscan_req_global || !global_idev.mlme_priv.b_in_scan) {
 		dev_dbg(global_idev.fullmac_dev, "Last scan req has been finished. Wait for next. ");
 		return -1;
 	}
@@ -330,7 +330,6 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy, struct cfg80211_scan_request *
 			dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
 
 			global_idev.mlme_priv.b_in_scan = false;
-			global_idev.mlme_priv.pscan_req_global = NULL;
 
 #ifndef CONFIG_FULLMAC_HCI_IPC
 			/* wakeup xmit thread if there are pending packets */
@@ -784,6 +783,60 @@ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy, struct cfg80211
 	return 0;
 }
 
+static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
+				    struct wireless_dev *wdev,
+#if (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
+				    unsigned int link_id,
+#endif
+				    struct cfg80211_chan_def *chandef)
+{
+	u32 wlan_idx = 0;
+	struct net_device *pnetdev = NULL;
+	u8 ch = 0;
+	struct ieee80211_channel *chan = NULL;
+	int freq = 0;
+	int ret = 0;
+
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+
+	if (global_idev.mp_fw) {
+		return -EPERM;
+	}
+
+	pnetdev = wdev_to_ndev(wdev);
+#ifdef CONFIG_P2P
+	if (wdev == global_idev.p2p_global.pd_pwdev) {/*P2P Device intf not have ndev, wlanidx need fetch from other way*/
+		wlan_idx = global_idev.p2p_global.pd_wlan_idx;
+	} else
+#endif
+	if (pnetdev) {
+		wlan_idx = rtw_netdev_idx(pnetdev);
+	} else {
+		dev_err(global_idev.fullmac_dev, "[fullmac]: %s, cannot find wlan idx.", __func__);
+		return -EINVAL;
+	}
+
+	ret = llhw_wifi_get_channel(wlan_idx, &ch);
+	if (ret < 0) {
+		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s, get channel failed(%d).", __func__, ret);
+		return ret;
+	}
+
+	freq = rtw_ch2freq(ch);
+	chan = ieee80211_get_channel(wiphy, freq);
+	if (!chan) {
+		dev_err(global_idev.fullmac_dev, "[fullmac]: %s, ieee80211_get_channel failed.", __func__);
+		return -EINVAL;
+	}
+
+	memset(chandef, 0, sizeof(struct cfg80211_chan_def));
+	chandef->width = NL80211_CHAN_WIDTH_20;
+	chandef->center_freq1 = freq;
+	chandef->chan = chan;
+
+	return ret;
+}
+
 static int cfg80211_rtw_external_auth_status(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params)
 {
 	if (global_idev.mp_fw) {
@@ -1057,6 +1110,7 @@ void cfg80211_rtw_ops_sta_init(void)
 	ops->get_tx_power = cfg80211_rtw_get_txpower;
 	ops->set_power_mgmt = cfg80211_rtw_set_power_mgmt;
 	ops->set_monitor_channel = cfg80211_rtw_set_monitor_channel;
+	ops->get_channel = cfg80211_rtw_get_channel;
 	ops->remain_on_channel = cfg80211_rtw_remain_on_channel;
 	ops->cancel_remain_on_channel = cfg80211_rtw_cancel_remain_on_channel;
 	ops->mgmt_tx = cfg80211_rtw_mgmt_tx;

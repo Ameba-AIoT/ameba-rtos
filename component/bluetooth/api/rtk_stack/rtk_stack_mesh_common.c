@@ -821,6 +821,16 @@ static void rtk_bt_mesh_gap_init(void)
 #endif
 	gap_sched_params_set(GAP_SCHED_PARAMS_DEVICE_NAME, dev_name, GAP_DEVICE_NAME_LEN);
 	gap_sched_params_set(GAP_SCHED_PARAMS_APPEARANCE, &appearance, sizeof(appearance));
+#if RTK_BLE_MESH_BASED_ON_CODED_PHY
+	bool ae = true;
+	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE, &ae, sizeof(ae))) {
+		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE fail.\r\n", __func__);
+	}
+	gap_sched_bt5_ae_adv_type_t ae_adv_type = GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_S8;
+	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE, &ae_adv_type, sizeof(ae_adv_type))) {
+		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE fail.\r\n", __func__);
+	}
+#endif
 }
 
 extern void proxy_server_support_prov_on_proxy(bool);

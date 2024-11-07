@@ -35,5 +35,9 @@ void rtos_critical_enter(void);
  */
 void rtos_critical_exit(void);
 
-
+/**
+ * @brief  For FreeRTOS, get task enter critical state
+ * @retval >0: in critical state; 0: exit critical state
+ */
+uint32_t rtos_get_critical_state(void);
 #endif

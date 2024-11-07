@@ -138,6 +138,30 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		break;
 	}
 
+#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
+		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
+		if (!ext_adv_ind->err) {
+			if (ext_adv_ind->is_start) {
+				BT_LOGA("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
+			} else {
+				BT_LOGA("[APP] Ext ADV(%d) stopped: reason 0x%x \r\n", ext_adv_ind->adv_handle, ext_adv_ind->stop_reason);
+			}
+		} else {
+			if (ext_adv_ind->is_start) {
+				BT_LOGE("[APP] Ext ADV(%d) started failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+			} else {
+				BT_LOGE("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+			}
+		}
+		BT_AT_PRINT("+BLEGAP:eadv,%s,%d,%d\r\n",
+					ext_adv_ind->is_start ? "start" : "stop",
+					(ext_adv_ind->err == 0) ? 0 : -1,
+					ext_adv_ind->adv_handle);
+		break;
+	}
+#endif
+
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change =
 			(rtk_bt_le_data_len_change_ind_t *)param;

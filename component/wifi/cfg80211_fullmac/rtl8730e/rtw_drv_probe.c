@@ -168,6 +168,7 @@ int rtw_netdev_probe(struct device *pdev)
 #ifdef CONFIG_SDIO_BRIDGE
 	rtw_sdio_bridge_register_genl_family();
 #endif
+
 	return 0; /* probe success */
 
 os_ndevs_deinit:
@@ -187,7 +188,6 @@ int rtw_netdev_remove(struct device *pdev)
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
 #ifndef CONFIG_SDIO_BRIDGE
-	rtw_regd_deinit();
 	wiphy_unregister(global_idev.pwiphy_global);
 
 	rtw_wiphy_deinit();

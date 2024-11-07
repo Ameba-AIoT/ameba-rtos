@@ -976,6 +976,28 @@ static uint16_t bt_stack_hfp_call_terminate(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_hfp_call_dial_with_number(void *param)
+{
+	rtk_bt_hfp_dial_number_t *p_dial_number = (rtk_bt_hfp_dial_number_t *)param;
+
+	if (bt_hfp_dial_with_number_req(p_dial_number->bd_addr, p_dial_number->number)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
+static uint16_t bt_stack_hfp_call_dial_last_number(void *param)
+{
+	uint8_t *bd_addr = (uint8_t *)param;
+
+	if (bt_hfp_dial_last_number_req(bd_addr)) {
+		return RTK_BT_OK;
+	}
+
+	return RTK_BT_FAIL;
+}
+
 static uint16_t bt_stack_hfp_data_send(void *param)
 {
 	rtk_bt_hfp_sco_data_send_t *p_data_send_t = (rtk_bt_hfp_sco_data_send_t *)param;
@@ -1063,6 +1085,14 @@ uint16_t bt_stack_hfp_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_HFP_ACT_CALL_TERMINATE:
 		ret = bt_stack_hfp_call_terminate(p_cmd->param);
+		break;
+
+	case RTK_BT_HFP_ACT_DIAL_WITH_NUMBER:
+		ret = bt_stack_hfp_call_dial_with_number(p_cmd->param);
+		break;
+
+	case RTK_BT_HFP_ACT_DIAL_LAST_NUMBER:
+		ret = bt_stack_hfp_call_dial_last_number(p_cmd->param);
 		break;
 
 	case RTK_BT_HFP_ACT_SEND_SCO_DATA:

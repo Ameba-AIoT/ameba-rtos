@@ -25,7 +25,7 @@ BEGIN_DECLS
   * @{
   */
 
-/** @defgroup Provision_Service_Exported_Constants Exported Constants
+/** @defgroup Provision_Service_Exported_Macros Exported Macros
   * @{
   */
 #define MESH_PB_GATT_PKT_OFFSET                         (3) //!< opcode + handle
@@ -61,7 +61,6 @@ extern prov_bearer_cb_pf pf_pb_gatt_cb;
   * @param[in] link: the link for provisioning
   *
   * @return the proxy resource index
-  * @retval MESH_PROXY_PROTOCOL_RSVD_CTX_ID: allocate failed
   */
 uint8_t prov_service_alloc_proxy_ctx(gap_sched_link_t link);
 
