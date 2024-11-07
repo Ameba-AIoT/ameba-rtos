@@ -23,6 +23,10 @@ static_assert(1 == RTOS_NUM_CORES, "Incorrect RTOS_NUM_CORES value config");
 static uint32_t uxSavedInterruptStatus[RTOS_NUM_CORES] = {0};
 static uint16_t uxCriticalNestingCnt[RTOS_NUM_CORES] = {0};
 
+#ifndef ARM_CORE_CA32
+uint32_t xPortGetCriticalState(void);
+#endif
+
 int rtos_critical_is_in_interrupt(void)
 {
 #ifdef ARM_CORE_CA32
@@ -74,4 +78,12 @@ void rtos_critical_exit(void)
 	} else {
 		taskEXIT_CRITICAL();
 	}
+}
+
+uint32_t rtos_get_critical_state(void)
+{
+#ifndef ARM_CORE_CA32
+	return xPortGetCriticalState();
+#endif
+	return 0;
 }

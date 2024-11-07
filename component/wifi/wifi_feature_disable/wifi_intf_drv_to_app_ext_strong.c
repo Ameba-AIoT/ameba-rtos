@@ -228,7 +228,7 @@ int wifi_get_autoreconnect(__u8 *mode)
 	return -1;
 }
 
-int wifi_add_custom_ie(void *cus_ie, int ie_num)
+int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_num);
@@ -237,7 +237,7 @@ int wifi_add_custom_ie(void *cus_ie, int ie_num)
 }
 
 
-int wifi_update_custom_ie(void *cus_ie, int ie_index)
+int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_index);

@@ -12,7 +12,7 @@
 
 #define CH_PLAN_VERSION "R67"
 /* sync to WS-240223-Willis-Efuse_Channel_Plan_new_define-R67.xlsx */
-#define RTL_RR_2G_01 REG_RULE(2412-10, 2462+10, 40, 0, 20, 0), REG_RULE(2467-10, 2472+10, 40, 0, 20, NL80211_RRF_NO_IR)
+#define RTL_RR_2G_01 REG_RULE(2412-10, 2462+10, 40, 0, 20, 0), REG_RULE(2467-10, 2472+10, 20, 0, 20, NL80211_RRF_NO_IR)
 #define RTL_NRR_2G_01 2
 #define RTL_RR_2G_02 REG_RULE(2412-10, 2472+10, 40, 0, 20, 0)
 #define RTL_NRR_2G_02 1
@@ -20,9 +20,9 @@
 #define RTL_NRR_2G_03 1
 #define RTL_RR_2G_04 REG_RULE(2412-10, 2484+10, 40, 0, 20, 0)
 #define RTL_NRR_2G_04 1
-#define RTL_RR_2G_05 REG_RULE(2457-10, 2472+10, 40, 0, 20, 0)
+#define RTL_RR_2G_05 REG_RULE(2457-10, 2472+10, 20, 0, 20, 0)
 #define RTL_NRR_2G_05 1
-#define RTL_RR_2G_06 REG_RULE(2412-10, 2462+10, 40, 0, 20, 0), REG_RULE(2467-10, 2484+10, 40, 0, 20, NL80211_RRF_NO_IR)
+#define RTL_RR_2G_06 REG_RULE(2412-10, 2462+10, 40, 0, 20, 0), REG_RULE(2467-10, 2484+10, 20, 0, 20, NL80211_RRF_NO_IR)
 #define RTL_NRR_2G_06 1
 
 #define RTL_RR_5G_01 REG_RULE(5180-10, 5240+10, 40, 0, 30, 0),\
@@ -1371,15 +1371,32 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 {
 	int ret = 0;
 	struct country_code_table_t table;
-	const struct ieee80211_regdomain *regd = NULL;
+	struct ieee80211_regdomain *regd = NULL;
+	int rtnl_lock_need = 0;
 
 	ret = llhw_wifi_set_country_code(country);
 	if (ret == 0) {
 		llhw_wifi_get_country_code(&table);
 		regd = _rtl_reg_get_regd(table.channel_plan);
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
-		wiphy_apply_custom_regulatory(wiphy, regd);
-		wiphy->regd = regd;
+
+		rtnl_lock_need = !rtnl_is_locked();
+		if(rtnl_lock_need){
+			rtnl_lock();
+		}
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+		ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
+#else
+		ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
+#endif
+		if (ret != 0){
+			dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__,ret);
+		}
+
+		if(rtnl_lock_need){
+			rtnl_unlock();
+		}
 	} else {
 		dev_err(global_idev.fullmac_dev, "%s set country %s failed\n", __func__, country);
 	}
@@ -1402,20 +1419,14 @@ void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 	return;
 }
 
-void rtw_regd_deinit(void)
-{
-	struct wiphy *wiphy = global_idev.pwiphy_global;
-
-	wiphy->regd = NULL;
-}
-
 int rtw_regd_init(void)
 {
 	struct wiphy *wiphy = global_idev.pwiphy_global;
 	struct country_code_table_t table;
 	char ww_char2[2] = {'0', '0'};
-	const struct ieee80211_regdomain *regd = NULL;
+	struct ieee80211_regdomain *regd = NULL;
 	int ret = 0;
+	int rtnl_lock_need = 0;
 
 	ret = llhw_wifi_get_country_code(&table);
 	if (ret < 0) {
@@ -1436,13 +1447,29 @@ int rtw_regd_init(void)
 				 CH_PLAN_VERSION, table.char2[0], table.char2[1]);
 	}
 
-	wiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
 	wiphy->regulatory_flags |= REGULATORY_WIPHY_SELF_MANAGED;
+	wiphy->regulatory_flags &= ~REGULATORY_CUSTOM_REG;
 	wiphy->regulatory_flags &= ~REGULATORY_STRICT_REG;
-	wiphy->regulatory_flags &= ~REGULATORY_DISABLE_BEACON_HINTS;
+	wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_FOLLOW_POWER;
+	wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_IGNORE;
 
-	wiphy_apply_custom_regulatory(wiphy, regd);
-	wiphy->regd = regd;
+	rtnl_lock_need = !rtnl_is_locked();
+	if(rtnl_lock_need){
+		rtnl_lock();
+	}
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+	ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
+#else
+	ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
+#endif
+	if (ret != 0){
+		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__,ret);
+	}
+
+	if(rtnl_lock_need){
+		rtnl_unlock();
+	}
 
 	/* add reg_notifier to set channel plan by user.
 	because _rtl_reg_set_country_code must be called after wifi on, rtw_regd_init assignement should be moved to rtw_regd_init */

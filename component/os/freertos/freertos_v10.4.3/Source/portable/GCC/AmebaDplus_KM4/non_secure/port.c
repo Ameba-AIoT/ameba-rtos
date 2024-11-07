@@ -512,6 +512,11 @@ void vPortExitCritical(void)   /* PRIVILEGED_FUNCTION */
 }
 /*-----------------------------------------------------------*/
 
+uint32_t xPortGetCriticalState(void)
+{
+	return ulCriticalNesting;
+}
+
 __attribute__((naked)) uint32_t ulPortSetInterruptMask(void)
 {
 	__asm volatile														\

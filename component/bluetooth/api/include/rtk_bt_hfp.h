@@ -19,6 +19,7 @@ extern "C"
 #define RTK_BT_RFC_HSP_AG_CHANN_NUM            22
 #define RTK_BT_RFC_HFP_AG_CHANN_NUM            23
 #define RTK_BT_HFP_MAX_SCO_DATA_LENGTH         1024
+#define RTK_BT_HFP_MAX_PHONE_NUMBER            20
 /* BT HFP AG Supported Local Feature */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_3WAY                   (1 << 0)
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EC_NR                  (1 << 1)
@@ -233,10 +234,10 @@ typedef struct {
  * @brief     hfp calling data structure.
  */
 typedef struct {
-	uint8_t bd_addr[6];                             /*!< Remote BT address */
-	const char call_num[20];                        /*!< HFP AG incoming call number */
-	uint8_t call_num_len;                           /*!< HFP AG incoming call number length with the maximum of 20 including '\0' */
-	uint8_t call_num_type;                          /*!< HFP AG incoming call number type */
+	uint8_t bd_addr[6];                                /*!< Remote BT address */
+	const char call_num[RTK_BT_HFP_MAX_PHONE_NUMBER];  /*!< HFP AG incoming call number */
+	uint8_t call_num_len;                              /*!< HFP AG incoming call number length with the maximum of 20 including '\0' */
+	uint8_t call_num_type;                             /*!< HFP AG incoming call number type */
 } rtk_bt_hfp_call_incoming_t;
 
 /**
@@ -296,7 +297,7 @@ typedef struct {
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
-	char    number[20];                                 /*!< number */
+	char    number[RTK_BT_HFP_MAX_PHONE_NUMBER];        /*!< number */
 	uint8_t type;                                       /*!< number type */
 } rtk_bt_hfp_caller_id_ind_t;
 
@@ -332,6 +333,15 @@ typedef struct {
 	uint32_t length;                                    /*!< stream data length */
 	uint8_t  data[RTK_BT_HFP_MAX_SCO_DATA_LENGTH];      /*!< stream data */
 } rtk_bt_hfp_sco_data_ind_t;
+
+/**
+ * @struct    rtk_bt_hfp_dial_number_t
+ * @brief     Bluetooth HFP dial call number struct.
+ */
+typedef struct {
+	uint8_t bd_addr[6];                                 /*!< Remote BT address */
+	const char number[RTK_BT_HFP_MAX_PHONE_NUMBER];     /*1< dial number */
+} rtk_bt_hfp_dial_number_t;
 
 /**
  * @struct    rtk_bt_hfp_sco_data_send_t
@@ -482,6 +492,26 @@ uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr);
  *            - Others: Error code
  */
 uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr);
+
+/**
+ * @brief     dial call with number.
+ * @param[in] bd_addr: bt address
+ * @param[in] call_num: dial call number pointer
+ * @param[in] call_num_len: call number length
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_hfp_dial_with_number_req(uint8_t *bd_addr, const char *call_num, uint8_t call_num_len);
+
+/**
+ * @brief     dial last call.
+ * @param[in] bd_addr: bt address
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_hfp_dial_last_number_req(uint8_t *bd_addr);
 
 /**
  * @brief     hfp sco data send.

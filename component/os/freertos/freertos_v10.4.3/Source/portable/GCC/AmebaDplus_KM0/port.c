@@ -256,6 +256,11 @@ void vPortExitCritical(void)
 }
 /*-----------------------------------------------------------*/
 
+uint32_t xPortGetCriticalState(void)
+{
+	return uxCriticalNesting;
+}
+
 uint32_t ulSetInterruptMaskFromISR(void)
 {
 	__asm volatile(

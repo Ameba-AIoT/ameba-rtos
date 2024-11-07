@@ -130,11 +130,7 @@ typedef struct
      */
     uint8_t max_hops;
 } hb_sub_t;
-/** @} */
 
-/** @defgroup HB_DATA_CALLBACKS Data Callbacks
-  * @{
-  */
 typedef enum
 {
     HB_DATA_PUB_TIMER_STATE, //!< @ref hb_data_timer_state_t

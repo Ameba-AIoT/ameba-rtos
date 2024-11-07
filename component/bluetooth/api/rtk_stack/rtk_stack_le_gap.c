@@ -683,25 +683,41 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 		}
 #endif
 
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
-									RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND,
-									sizeof(rtk_bt_le_ext_scan_res_ind_t) + p_info->data_len);
-		rtk_bt_le_ext_scan_res_ind_t *scan_res = (rtk_bt_le_ext_scan_res_ind_t *)p_evt->data;
-		scan_res->data = (uint8_t *)scan_res + sizeof(rtk_bt_le_ext_scan_res_ind_t);
-		scan_res->evt_type = p_info->event_type;
-		scan_res->addr.type = (rtk_bt_le_addr_type_t)p_info->addr_type;
-		memcpy(scan_res->addr.addr_val, p_info->bd_addr, RTK_BD_ADDR_LEN);
-		scan_res->direct_addr.type = (rtk_bt_le_addr_type_t)p_info->direct_addr_type;
-		memcpy(scan_res->direct_addr.addr_val, p_info->direct_addr, RTK_BD_ADDR_LEN);
-		scan_res->len = p_info->data_len;
-		memcpy(scan_res->data, p_info->p_data, p_info->data_len);
-		scan_res->rssi = p_info->rssi;
-		scan_res->primary_phy = p_info->primary_phy;
-		scan_res->secondary_phy = p_info->secondary_phy;
-		scan_res->adv_sid = p_info->adv_sid;
-		scan_res->tx_power = p_info->tx_power;
-		scan_res->peri_adv_interval = p_info->peri_adv_interval;
-		rtk_bt_evt_indicate(p_evt, NULL);
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+		if (!rtk_bt_mesh_is_enable() || rtk_ble_mesh_scan_enable_flag)
+#endif
+		{
+			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
+										RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND,
+										sizeof(rtk_bt_le_ext_scan_res_ind_t) + p_info->data_len);
+			rtk_bt_le_ext_scan_res_ind_t *scan_res = (rtk_bt_le_ext_scan_res_ind_t *)p_evt->data;
+			scan_res->data = (uint8_t *)scan_res + sizeof(rtk_bt_le_ext_scan_res_ind_t);
+			scan_res->evt_type = p_info->event_type;
+			scan_res->addr.type = (rtk_bt_le_addr_type_t)p_info->addr_type;
+			memcpy(scan_res->addr.addr_val, p_info->bd_addr, RTK_BD_ADDR_LEN);
+			scan_res->direct_addr.type = (rtk_bt_le_addr_type_t)p_info->direct_addr_type;
+			memcpy(scan_res->direct_addr.addr_val, p_info->direct_addr, RTK_BD_ADDR_LEN);
+			scan_res->len = p_info->data_len;
+			memcpy(scan_res->data, p_info->p_data, p_info->data_len);
+			scan_res->rssi = p_info->rssi;
+			scan_res->primary_phy = p_info->primary_phy;
+			scan_res->secondary_phy = p_info->secondary_phy;
+			scan_res->adv_sid = p_info->adv_sid;
+			scan_res->tx_power = p_info->tx_power;
+			scan_res->peri_adv_interval = p_info->peri_adv_interval;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		}
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+		if (rtk_bt_mesh_is_enable()) {
+			// APP_PRINT_INFO5("GAP_MSG_LE_EXT_ADV_REPORT_INFO:event_type 0x%x, bd_addr %s, addr_type %d, rssi %d, data_len %d",
+			//              p_data->p_le_ext_adv_report_info->event_type,
+			//              TRACE_BDADDR(p_data->p_le_ext_adv_report_info->bd_addr),
+			//              p_data->p_le_ext_adv_report_info->addr_type,
+			//              p_data->p_le_ext_adv_report_info->rssi,
+			//              p_data->p_le_ext_adv_report_info->data_len);
+			gap_sched_handle_ext_adv_report(p_data->p_le_ext_adv_report_info);
+		}
+#endif
 		break;
 	}
 #endif
@@ -987,6 +1003,15 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 				p_cmd->ret = p_data->p_le_ext_adv_start_setting_rsp->cause;
 				osif_sem_give(p_cmd->psem);
 			}
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+			if (rtk_bt_mesh_is_enable()) {
+				// APP_PRINT_INFO3("GAP_MSG_LE_EXT_ADV_START_SETTING:cause 0x%x, flag 0x%x, adv_handle %d",
+				//              p_data->p_le_ext_adv_start_setting_rsp->cause, p_data->p_le_ext_adv_start_setting_rsp->flag,
+				//              p_data->p_le_ext_adv_start_setting_rsp->adv_handle);
+				/* Enable one advertising set */
+				gap_sched_ext_adv_step(p_data->p_le_ext_adv_start_setting_rsp->adv_handle);
+			}
+#endif
 			break;
 		}
 
@@ -997,6 +1022,16 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			p_cmd->ret = p_data->p_le_ext_adv_start_setting_rsp->cause;
 			osif_sem_give(p_cmd->psem);
 		}
+
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+		if (rtk_bt_mesh_is_enable()) {
+			// APP_PRINT_INFO3("GAP_MSG_LE_EXT_ADV_START_SETTING:cause 0x%x, flag 0x%x, adv_handle %d",
+			//              p_data->p_le_ext_adv_start_setting_rsp->cause, p_data->p_le_ext_adv_start_setting_rsp->flag,
+			//              p_data->p_le_ext_adv_start_setting_rsp->adv_handle);
+			/* Enable one advertising set */
+			gap_sched_ext_adv_step(p_data->p_le_ext_adv_start_setting_rsp->adv_handle);
+		}
+#endif
 
 		break;
 	}
@@ -2550,6 +2585,13 @@ void bt_stack_le_gap_handle_io_msg(uint16_t gap_type, void *gap_msg)
 		bt_stack_le_gap_handle_ext_adv_state_evt(p_gap_msg->msg_data.gap_ext_adv_state_change.adv_handle,
 												 (T_GAP_EXT_ADV_STATE)p_gap_msg->msg_data.gap_ext_adv_state_change.new_state,
 												 p_gap_msg->msg_data.gap_ext_adv_state_change.cause);
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+		if (rtk_bt_mesh_is_enable()) {
+			gap_sched_handle_ext_adv_state_evt(p_gap_msg->msg_data.gap_ext_adv_state_change.adv_handle,
+											   (T_GAP_EXT_ADV_STATE)p_gap_msg->msg_data.gap_ext_adv_state_change.new_state,
+											   p_gap_msg->msg_data.gap_ext_adv_state_change.cause);
+		}
+#endif
 		break;
 #endif
 	default:
@@ -3021,11 +3063,33 @@ static uint16_t bt_stack_le_gap_start_ext_adv(void *param)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	if (rtk_bt_mesh_is_enable()) {
+		if (true == gap_sched_ext_adv_set_param_flag(adv_handle, EXT_ADV_SET_AUTO)) {
+			cause = GAP_CAUSE_SUCCESS;
+		} else {
+			cause = GAP_CAUSE_ERROR_UNKNOWN;
+		}
+	} else {
+		cause = le_ext_adv_start_setting(adv_handle, EXT_ADV_SET_AUTO);
+	}
+#else  // RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
 	cause = le_ext_adv_start_setting(adv_handle, EXT_ADV_SET_AUTO);
+#endif
 	if (cause) {
 		BT_LOGD("bt_stack_le_gap_start_ext_adv: start_setting cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	if (rtk_bt_mesh_is_enable()) {
+		uint8_t cause;
+		cause = gap_sched_ext_adv_start(adv_handle);
+		if (cause) {
+			BT_LOGE("[%s] Call mesh stack adv start api, return cause:0x%x.\r\n", __func__, cause);
+			return RTK_BT_ERR_LOWER_STACK_API;
+		}
+	}
+#endif
 #endif /* #if RTK_BLE_MGR_LIB_EADV */
 	return 0;
 }
@@ -3057,7 +3121,15 @@ static uint16_t bt_stack_le_gap_stop_ext_adv(void *param)
 #if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	cause = ble_ext_adv_mgr_disable(handle, 0);
 #else
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+	if (rtk_bt_mesh_is_enable()) {
+		cause = gap_sched_ext_adv_stop(handle);
+	} else {
+		cause = le_ext_adv_disable(1, &handle);
+	}
+#else  // RTK_BLE_MESH_SUPPORT
 	cause = le_ext_adv_disable(1, &handle);
+#endif
 #endif
 	if (cause) {
 		BT_LOGD("bt_stack_le_gap_stop_ext_adv: cause = %x \r\n", cause);
@@ -3856,6 +3928,36 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 	rtk_bt_le_scan_param_t *p_gap_scan_param = (rtk_bt_le_scan_param_t *)param;
 	T_GAP_CAUSE cause;
 
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	T_GAP_LE_EXT_SCAN_PARAM extended_scan_param = {0};
+	uint8_t scan_phys = GAP_EXT_SCAN_PHYS_1M_BIT;
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_LOCAL_ADDR_TYPE, sizeof(p_gap_scan_param->own_addr_type), &p_gap_scan_param->own_addr_type);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_FILTER_POLICY, sizeof(p_gap_scan_param->filter_policy), &p_gap_scan_param->filter_policy);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_FILTER_DUPLICATES, sizeof(p_gap_scan_param->duplicate_opt), &p_gap_scan_param->duplicate_opt);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_PHYS, sizeof(scan_phys), &scan_phys);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	extended_scan_param.scan_type = (T_GAP_SCAN_MODE)p_gap_scan_param->type;
+	extended_scan_param.scan_interval = p_gap_scan_param->interval;
+	extended_scan_param.scan_window = p_gap_scan_param->window;
+	le_ext_scan_set_phy_param(LE_SCAN_PHY_LE_1M, &extended_scan_param);
+
+#else
 	cause = le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(p_gap_scan_param->type), &p_gap_scan_param->type);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -3885,13 +3987,17 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
+#endif
 
 	return RTK_BT_OK;
-
 }
 
 static uint16_t bt_stack_le_gap_get_scan_param(void *param)
 {
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#else
 	rtk_bt_le_scan_param_t *pscan_param = (rtk_bt_le_scan_param_t *)param;
 	T_GAP_CAUSE cause;
 
@@ -3926,12 +4032,19 @@ static uint16_t bt_stack_le_gap_get_scan_param(void *param)
 	}
 
 	return 0;
+#endif
 }
 
 static uint16_t bt_stack_le_gap_start_scan(void)
 {
 	T_GAP_CAUSE cause;
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	cause = le_ext_scan_start();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
 
+#else
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (rtk_bt_mesh_is_enable()) {
@@ -3944,6 +4057,7 @@ static uint16_t bt_stack_le_gap_start_scan(void)
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
+#endif
 
 	return 0;
 }
@@ -3951,7 +4065,13 @@ static uint16_t bt_stack_le_gap_start_scan(void)
 static uint16_t bt_stack_le_gap_stop_scan(void)
 {
 	T_GAP_CAUSE cause;
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	cause = le_ext_scan_stop();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
 
+#else
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (rtk_bt_mesh_is_enable()) {
@@ -3964,6 +4084,7 @@ static uint16_t bt_stack_le_gap_stop_scan(void)
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
+#endif
 
 	return 0;
 }
@@ -5691,10 +5812,21 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && \
     (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT) && \
     (!defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV)
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+		if (!rtk_bt_mesh_is_enable()) {
+			p_cmd->user_data = (RTK_BT_LE_GAP_ACT_START_EXT_ADV << 8);
+			bt_stack_pending_cmd_insert(p_cmd);
+			ret = bt_stack_le_gap_start_adv(p_cmd->param);
+			goto async_handle;
+		} else {
+			ret = bt_stack_le_gap_start_adv(p_cmd->param);
+		}
+#else
 		p_cmd->user_data = (RTK_BT_LE_GAP_ACT_START_EXT_ADV << 8);
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_gap_start_adv(p_cmd->param);
 		goto async_handle;
+#endif  // RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
 #else
 		ret = bt_stack_le_gap_start_adv(p_cmd->param);
 #endif
@@ -5725,10 +5857,19 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_gap_create_ext_adv(p_cmd->param);
 #if !defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV
 		if (!ret) {
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+			if (!rtk_bt_mesh_is_enable()) {
+				p_cmd->user_data = GAP_MSG_LE_EXT_ADV_START_SETTING;
+				bt_stack_pending_cmd_insert(p_cmd);
+				ret = _ext_adv_param_take_effect(p_cmd->param); /* Some of PA param, like AoA/AoD, must set after EA param takes effect. */
+				goto async_handle;
+			}
+#else
 			p_cmd->user_data = GAP_MSG_LE_EXT_ADV_START_SETTING;
 			bt_stack_pending_cmd_insert(p_cmd);
 			ret = _ext_adv_param_take_effect(p_cmd->param); /* Some of PA param, like AoA/AoD, must set after EA param takes effect. */
 			goto async_handle;
+#endif  // RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
 		}
 #endif
 		break;
@@ -5737,10 +5878,21 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 		ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
 #else
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
+		if (!rtk_bt_mesh_is_enable()) {
+			p_cmd->user_data = (RTK_BT_LE_GAP_ACT_START_EXT_ADV << 8);
+			bt_stack_pending_cmd_insert(p_cmd);
+			ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
+			goto async_handle;
+		} else {
+			ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
+		}
+#else
 		p_cmd->user_data = (RTK_BT_LE_GAP_ACT_START_EXT_ADV << 8);
 		bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
 		goto async_handle;
+#endif  // RTK_BLE_MESH_SUPPORT && RTK_BLE_MESH_BASED_ON_CODED_PHY
 #endif
 		break;
 	case RTK_BT_LE_GAP_ACT_STOP_EXT_ADV:

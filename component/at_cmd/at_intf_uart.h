@@ -6,15 +6,17 @@
 
 #include "ameba_soc.h"
 
-#define UART_DEV	UART2_DEV
+/* note: Selected UART shall not conflict with UART_BT, */
+/* e.g. UART3 in AmebaSmart/AmebaLite or UART2 in AmebaDplus */
+#define UART_DEV	UART0_DEV
 #define UART_BAUD	38400
 #define DMA_TX_BURST_SIZE	8
 
 #define POLL_LEN_MAX		16
 
 #if defined (CONFIG_AMEBASMART)
-#define UART_TX		_PB_22 // UART2 TX
-#define UART_RX		_PB_21 // UART2 RX
+#define UART_TX		_PA_3 // UART0 TX
+#define UART_RX		_PA_2 // UART0 RX
 #elif defined (CONFIG_AMEBALITE)
 /* fully programmable zone */
 #define UART_TX		_PA_28 // UART TX

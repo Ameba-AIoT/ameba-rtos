@@ -18,7 +18,7 @@ Required Components: capacitive circuit.
 In this example, press and release is detected by software based on filtered CapTouch sample data, which improves accuracy.
 
 1. Macro `ACFREQ_IS_50` can be defined as 1 when AC frequency is 50Hz or as 0 when AC frequency is 60Hz.
-2. Parameters in `ctc_ch_config[]`, including `Diff Threshold`, `Mbias Current`, `ETC N_Nosie Threshold`, `ETC P_Noise Threshold` and `Channle Enable`, can be adjusted independently according to different applicaiton environmnet.
+2. Parameters in `ctc_ch_config[]`, including `Diff Threshold`, `Mbias Current`, `ETC N_Nosie Threshold`, `ETC P_Noise Threshold` and `Channel Enable`, can be adjusted independently according to different application environment.
 3. Macro `CTC_EN_CH` should be consistent with enabled channel number in `ctc_ch_config[]`.
 4. Filtered data will be checked every `BASE_UPD_CYCLE` cycles and each cycle consists of `PBUF_NUM` scan intervals.
 5. When diff data or accumulated diff data is over `BASE_UPD_THRE`, baseline will be updated immediately and step value is `BASE_UPD_STEP`.
@@ -31,8 +31,9 @@ In this example, press and release is detected by software based on filtered Cap
 # Expected Result
 
 1. When a key press/key release/n_noise/p_noise event is detected, console will print out the log.
-2. More features can be realized in function ctc_press_entry() and funciton ctc_release_entry().
+2. More features can be realized in function ctc_press_entry() and function ctc_release_entry().
 3. If N-Noise is detected and no press, release or pnoise is detected over `NNOISE_RST_LMT` times, CapTouch `baseline` will be reset.
+4. If press is detected and keeps over `PRESS_RST_LMT` times, CapTouch `baseline` will be reset as well.
 
 # Note
 

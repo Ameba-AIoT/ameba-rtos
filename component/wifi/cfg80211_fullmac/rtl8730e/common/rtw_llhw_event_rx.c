@@ -189,7 +189,11 @@ static void llhw_event_set_netif_info(struct event_priv_t *event_priv, u32 *para
 		/*set ap port mac address*/
 		memcpy((void *)global_idev.pndev[1]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
 
-		last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
+		if(softap_addr_offset_idx == 0){
+			last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
+		}else{
+			last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
+		}
 		memcpy((void *)&global_idev.pndev[1]->dev_addr[softap_addr_offset_idx], &last, 1);
 	}
 

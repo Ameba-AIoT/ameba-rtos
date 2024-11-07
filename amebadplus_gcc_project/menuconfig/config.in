@@ -235,12 +235,14 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 	if [ "$CONFIG_BT_INIC" = "y" ]; then
 		choice 'Interface'	"Uart_H4							CONFIG_BT_INIC_H4 \
 							Uart_H5								CONFIG_BT_INIC_H5 \
+							SPI									CONFIG_BT_INIC_SPI \
 							" Uart_H4
 	else
 		bool "BT Advanced Feature"								CONFIG_BT_ADVANCED_FEATURE_MENU
 		if [ "$CONFIG_BT_ADVANCED_FEATURE_MENU" = "y" ]; then
 			bool "  Exclude BT AT Command"						CONFIG_BT_EXCLUDE_AT_COMMAND
 #			bool "  Use Zephyr BT Stack"						CONFIG_BT_ZEPHYR
+			bool "  Enable BT Mesh Based on CODED PHY"			CONFIG_BT_MESH_BASED_ON_CODED_PHY
 		fi
 		bool "BT Example Demo"									CONFIG_BT_EXAMPLE_DEMO_MENU
 		if [ "$CONFIG_BT_EXAMPLE_DEMO_MENU" = "y" ]; then
@@ -248,7 +250,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			bool "  BLE Central"								CONFIG_BT_CENTRAL
 			bool "  BLE Scatternet"								CONFIG_BT_SCATTERNET
 #			bool "  BLE Throughput"								CONFIG_BT_THROUGHPUT
-#			bool "  BLE Transfer Module"						CONFIG_BT_TRANSFER_MODULE
+			bool "  BLE Transfer Module"						CONFIG_BT_TRANSFER_MODULE
 			bool "  BLE Mesh Provisioner"						CONFIG_BT_MESH_PROVISIONER_MENU
 			bool "  BLE Mesh Device"							CONFIG_BT_MESH_DEVICE_MENU
 			bool "  BLE Mesh Provisioner and BLE Scatternet"	CONFIG_BT_MESH_PROVISIONER_SCATTERNET_MENU

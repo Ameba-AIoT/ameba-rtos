@@ -83,17 +83,66 @@ typedef struct
 /** @} */
 
 /**
- * @defgroup PING_SERVER_API Server API
+ * @defgroup PING_MODEL_API Model API
  * @brief Functions declaration
  * @{
  */
+
+/**
+ * @brief register ping control model
+ *
+ * @param[in] pf_ping_cb: ping callback
+ * @param[in] pf_pong_cb: pong callback
+ */
 void ping_control_reg(pf_ping_cb_t pf_ping_cb, pf_pong_cb_t pf_pong_cb);
+
+/**
+ * @brief ping
+ *
+ * @param[in] dst: destination
+ * @param[in] ttl: ttl
+ * @param[in] app_key_index: AppKey index
+ * @param[in] pong_max_delay: pong max delay
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t ping(uint16_t dst, uint8_t ttl, uint16_t app_key_index,
                            uint16_t pong_max_delay);
+
+/**
+ * @brief pong
+ *
+ * @param[in] dst: destination
+ * @param[in] ttl: ttl
+ * @param[in] app_key_index: AppKey index
+ * @param[in] hops_forward: hops forward
+ * @param[in] pong_delay: pong delay
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t pong(uint16_t dst, uint8_t ttl, uint16_t app_key_index, uint8_t hops_forward,
                            uint16_t pong_delay);
+
+/**
+ * @brief big ping
+ *
+ * @param[in] dst: destination
+ * @param[in] ttl: ttl
+ * @param[in] app_key_index: AppKey index
+ * @param[in] pong_max_delay: pong max delay
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t big_ping(uint16_t dst, uint8_t ttl, uint16_t app_key_index,
                                uint16_t pong_max_delay);
+
+/**
+ * @brief big pong
+ *
+ * @param[in] dst: destination
+ * @param[in] ttl: ttl
+ * @param[in] app_key_index: AppKey index
+ * @param[in] hops_forward: hops forward
+ * @param[in] pong_delay: pong delay
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t big_pong(uint16_t dst, uint8_t ttl, uint16_t app_key_index,
                                uint8_t hops_forward, uint16_t pong_delay);
 /** @} */

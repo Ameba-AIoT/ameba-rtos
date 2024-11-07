@@ -18,8 +18,6 @@
 #include "mesh_api.h"
 #include "provision_client.h"
 
-#if MESH_RPR
-
 BEGIN_DECLS
 
 /**
@@ -268,7 +266,7 @@ typedef struct
 /** @} */
 
 /**
- * @defgroup REMOTE_PROVISION_SERVER_DATA Server Data
+ * @defgroup REMOTE_PROVISIONING_SERVER_DATA Server Data
  * @brief Data types and structure used by data process callback
  * @{
  */
@@ -285,7 +283,7 @@ typedef struct
 /** @} */
 
 /**
- * @defgroup REMOTE_PROVISION_CLIENT_DATA Client Data
+ * @defgroup REMOTE_PROVISIONING_CLIENT_DATA Client Data
  * @brief Data types and structure used by data process callback
  * @{
  */
@@ -347,7 +345,7 @@ typedef struct
 /** @} */
 
 /**
- * @defgroup REMOTE_PROVISION_SERVER_API Server API
+ * @defgroup REMOTE_PROVISIONING_SERVER_API Server API
  * @brief Functions declaration
  * @{
  */
@@ -508,7 +506,7 @@ void rmt_prov_set_prefer_bearer(bearer_field_t bearer);
 /** @} */
 
 /**
- * @defgroup REMOTE_PROVISION_CLIENT_API Client API
+ * @defgroup REMOTE_PROVISIONING_CLIENT_API Client API
  * @brief Functions declaration
  * @{
  */
@@ -684,7 +682,5 @@ bool rmt_prov_client_refresh_compo_data(uint8_t attn_dur);
 /** @} */
 
 END_DECLS
-
-#endif /* MESH_RPR */
 
 #endif /* _REMOTE_PROVISIONING_H */

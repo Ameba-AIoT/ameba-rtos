@@ -25,7 +25,7 @@ BEGIN_DECLS
   * @{
   */
 
-/** @defgroup Proxy_Service_Exported_Constants Exported Constants
+/** @defgroup Proxy_Service_Exported_Macros Exported Macros
   * @{
   */
 
@@ -41,23 +41,12 @@ BEGIN_DECLS
 
 /** @} */
 
-/** @defgroup Proxy_Service_Exported_Types Exported Types
-  * @brief
-  * @{
-  */
-/** @} */
-
-/** @defgroup Proxy_Service_Exported_Functions Exported Functions
-  * @brief
-  * @{
-  */
 ///@cond
 bool proxy_service_send(uint8_t ctx_id, proxy_pdu_type_t type, uint16_t dst, uint8_t *pvalue,
                         uint16_t len);
 bool proxy_service_receive(uint8_t ctx_id, proxy_pdu_type_t type, uint8_t *pvalue, uint16_t len);
 void proxy_service_handle_disc(gap_sched_link_t link);
 ///@endcond
-/** @} */
 /** @} */
 
 END_DECLS

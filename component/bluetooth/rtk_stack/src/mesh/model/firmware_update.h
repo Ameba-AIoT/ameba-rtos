@@ -19,8 +19,6 @@
 #include "platform_misc.h"
 #include "mesh_api.h"
 
-#if MESH_DFU
-
 BEGIN_DECLS
 
 /**
@@ -455,7 +453,5 @@ mesh_msg_send_cause_t fw_update_apply(uint16_t dst, uint16_t app_key_index);
 /** @} */
 
 END_DECLS
-
-#endif /* MESH_DFU */
 
 #endif /* _FIRMWARE_UPDATE_H */

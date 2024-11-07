@@ -801,6 +801,11 @@ void vPortExitCritical(void)   /* PRIVILEGED_FUNCTION */
 }
 /*-----------------------------------------------------------*/
 
+uint32_t xPortGetCriticalState(void)
+{
+	return ulCriticalNesting;
+}
+
 void SysTick_Handler(void)   /* PRIVILEGED_FUNCTION */
 {
 	uint32_t ulPreviousMask;

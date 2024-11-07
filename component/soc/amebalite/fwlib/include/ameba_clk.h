@@ -170,6 +170,8 @@
 #define PSRAMC_CLK_LIMIT		(500 * MHZ_TICK_CNT)
 #define SPIC_CLK_LIMIT			(208 * MHZ_TICK_CNT)
 #define ECDSA_CLK_LIMIT			(100 * MHZ_TICK_CNT)
+#define SRAM_0P9V_CLK_LIMIT		(200 * MHZ_TICK_CNT)
+#define SRAM_1P0V_CLK_LIMIT		(240 * MHZ_TICK_CNT)
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SDM32K_CLK_Exported_Functions SDM32K_CLK Exported Functions
