@@ -37,7 +37,7 @@ By default, `UART0` is used to communicate with PC under `38400bps` by DMA.
 
 1. Open super terminal or Ameba trace tool and set baudrate to `38400bps`, `1 stopbit`, `no parity`, `no flow control`.
 2. When log `"Ready to receive N-byte-data..."` is printed, it reminds you to enter `N characters` to terminal.
-3. Characters from terminal input, number of which varies from `2` to `15`, will be received and transferred to predefined buffer by DMA. Received characters will be transmitted to PC by DMA subsequently.
+3. Characters from terminal input, number of which varies from `2` to `33`, will be received and transferred to predefined buffer by DMA. Received characters will be transmitted to PC by DMA subsequently. UART will wait until characters of specified number are received.
 4. Characters sent from PC will be displayed on the terminal.
 
 # Note

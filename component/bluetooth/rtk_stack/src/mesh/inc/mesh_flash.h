@@ -144,8 +144,8 @@ typedef struct
   * @param[in] param_type: parameter type
   * @param[in] param: parameter info pointer
   * @param[in] store: true: store, false: restore
-  * @param[in out] value: parametet value pointer
-  * @param[in] value_len: parametet value length
+  * @param[in out] value: parameter value pointer
+  * @param[in] value_len: parameter value length
   * @return none
   */
 typedef void (*mesh_flash_access_cb_t)(flash_params_type_t param_type, void *param, bool store,
@@ -162,15 +162,15 @@ void mesh_flash_reg_access_cb(mesh_flash_access_cb_t cb);
 /**
   * @brief load the node state from the NVM
   *
-  * It can be usde to get the node state in advance of mesh_init.
+  * It can be used to get the node state in advance of mesh_init.
   * !!!Attention: the API shall be called after all the models have bee registered!!!
   *
   * @return the node state
   */
 mesh_node_state_t mesh_flash_restore_node_state(void);
-#define mesh_node_state_restore mesh_flash_restore_node_state
 
 ///@cond
+#define mesh_node_state_restore mesh_flash_restore_node_state
 void mesh_flash_store(flash_params_type_t param_type, void *param);
 void mesh_flash_store_all(void);
 void mesh_flash_restore(void);

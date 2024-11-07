@@ -347,20 +347,27 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flag
  * @brief  Setup custom ie list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.
- * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE list.
- * @param[in]  ie_num: The number of WIFI CUSTOM IE list.
+ * @param[in]  cus_ie: a buffer stores custom IE list, format of custom ie is struct custom_ie.
+ *  u8 ie1[] = {221, 2, 2, 2};
+ *  u8 ie2[] = {221, 2, 1, 1};
+ *  struct custom_ie buf[2] = {{ie1, BEACON}, {ie2, PROBE_RSP}};
+ *  wifi_add_custom_ie(buf, 2);
+ * @param[in]  ie_num: The number of custom IEs in cus_ie.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_add_custom_ie(void *cus_ie, int ie_num);
+int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num);
 
 /**
  * @brief  Update the item in WIFI CUSTOM IE list.
  * 	(Information Element)
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
+ *  u8 ie[] = {221, 2, 1, 3} ;
+ *  struct custom_ie buf_update = {ie, PROBE_RSP};
+ *  wifi_update_custom_ie(&buf_update, 2);
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_update_custom_ie(void *cus_ie, int ie_index);
+int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE list. (Information Element)

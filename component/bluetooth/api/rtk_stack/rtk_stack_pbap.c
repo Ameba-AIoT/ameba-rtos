@@ -142,6 +142,10 @@ static void app_pbap_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 		BT_LOGA("app_pbap_bt_cback: Get phone book completely \r\n");
 		p_link = app_find_br_link(param->pbap_get_phone_book_cmpl.bd_addr);
 		if (p_link != NULL) {
+			/* deal with data */
+			if (!param->pbap_get_phone_book_cmpl.data_end) {
+				bt_pbap_pull_continue(param->pbap_get_phone_book_cmpl.bd_addr);
+			}
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_PBAP, RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL, sizeof(rtk_bt_pbap_get_pb_cmpl_t));
 			if (!p_evt) {
 				BT_LOGE("app_pbap_bt_cback: evt_t allocate fail \r\n");
@@ -329,6 +333,21 @@ static uint16_t bt_stack_pbap_phone_book_pull_continue(void *param)
 	return RTK_BT_FAIL;
 }
 
+static uint16_t bt_stack_pbap_phone_book_pull_abort(void *param)
+{
+	uint8_t *bd_addr = (uint8_t *)param;
+	T_APP_BR_LINK *p_link;
+
+	p_link = app_find_br_link(bd_addr);
+	if (p_link != NULL) {
+		if (bt_pbap_pull_abort(bd_addr)) {
+			return RTK_BT_OK;
+		}
+	}
+
+	return RTK_BT_FAIL;
+}
+
 static uint16_t bt_stack_pbap_phone_book_size_get(void *param)
 {
 	rtk_bt_pbap_pb_size_get_t *p_pb_size_t = (rtk_bt_pbap_pb_size_get_t *)param;
@@ -385,6 +404,10 @@ uint16_t bt_stack_pbap_act_handle(rtk_bt_cmd_t *p_cmd)
 
 	case RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_CONTINUE:
 		ret = bt_stack_pbap_phone_book_pull_continue(p_cmd->param);
+		break;
+
+	case RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_ABORT:
+		ret = bt_stack_pbap_phone_book_pull_abort(p_cmd->param);
 		break;
 
 	case RTK_BT_PBAP_ACT_PHONE_BOOK_SIZE_GET:

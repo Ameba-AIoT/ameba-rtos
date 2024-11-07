@@ -21,21 +21,12 @@
 #include "blob_transfer.h"
 #include "firmware_update.h"
 
-#if MESH_DFU
-
 BEGIN_DECLS
 
 /**
  * @addtogroup FIRMWARE_DISTRIBUTION
  * @{
  */
-
-/* firmware distribution server capabilities */
-#define FW_DIST_CAPS_MAX_DIST_RECVS_LIST_SIZE                 20
-#define FW_DIST_CAPS_MAX_FW_IMAGES_LIST_SIZE                  2
-#define FW_DIST_CAPS_MAX_FW_IMAGE_SIZE                        307200
-#define FW_DIST_CAPS_MAX_UPLOAD_SPACE                         512000
-#define FW_DIST_CAPS_OOB_RETRIEVAL_SUPPORTED                  0
 
 /**
  * @defgroup FIRMWARE_DISTRIBUTION_ACCESS_OPCODE Access Opcode
@@ -355,6 +346,19 @@ typedef struct
 } _PACKED4_ fw_dist_fw_status_t;
 /** @} */
 
+/**
+ * @defgroup FIRMWARE_DISTRIBUTION_SERVER_DATA Server Data
+ * @brief Data types and structure used by data process callback
+ * @{
+ */
+
+/* firmware distribution server capabilities */
+#define FW_DIST_CAPS_MAX_DIST_RECVS_LIST_SIZE                 20
+#define FW_DIST_CAPS_MAX_FW_IMAGES_LIST_SIZE                  2
+#define FW_DIST_CAPS_MAX_FW_IMAGE_SIZE                        307200
+#define FW_DIST_CAPS_MAX_UPLOAD_SPACE                         512000
+#define FW_DIST_CAPS_OOB_RETRIEVAL_SUPPORTED                  1
+
 typedef struct _fw_dist_update_node_t
 {
     struct _fw_dist_update_node_t *pnext;
@@ -398,12 +402,6 @@ typedef struct
 } fw_dist_server_ctx_t;
 
 extern fw_dist_server_ctx_t fw_dist_server_ctx;
-
-/**
- * @defgroup FIRMWARE_DISTRIBUTION_SERVER_DATA Server Data
- * @brief Data types and structure used by data process callback
- * @{
- */
 
 #define FW_DIST_SERVER_START                    0   //!< @ref fw_dist_server_start_t
 #define FW_DIST_SERVER_SUSPEND                  1   //!< @ref NULL
@@ -854,7 +852,5 @@ mesh_msg_send_cause_t fw_dist_fw_delete_all(uint16_t dst, uint16_t app_key_index
 /** @} */
 
 END_DECLS
-
-#endif /* MESH_DFU */
 
 #endif /* _FIRMWARE_DISTRIBUTION_H */

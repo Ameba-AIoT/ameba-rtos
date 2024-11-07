@@ -468,7 +468,6 @@ int cfg80211_rtw_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *requ
 			dev_dbg(global_idev.fullmac_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
 
 			global_idev.mlme_priv.b_in_scan = false;
-			global_idev.mlme_priv.pscan_req_global = NULL;
 
 #ifndef CONFIG_FULLMAC_HCI_IPC
 			/* wakeup xmit thread if there are pending packets */

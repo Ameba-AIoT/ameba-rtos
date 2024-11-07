@@ -2976,18 +2976,6 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
         case SO_ERROR:
           LWIP_SOCKOPT_CHECK_OPTLEN(sock, *optlen, int);
           *(int *)optval = err_to_errno(netconn_err(sock->conn));
-/* Added by Realtek start */	  
-#if 1
-          //SO_ERROR returns only "pending errors", and EWOULDBLOCK is not one of them
-          //Check https://savannah.nongnu.org/bugs/?func=detailitem&item_id=49848#options
-          //Once you are aware of this, you can remove this warning message
-          static u8_t warning = 0;
-          if((*(int *)optval == ERR_OK) && !warning){
-            RTK_LOGS("#", "WARNING(lwip_getsockopt): EWOULDBLOCK(EAGAIN) IS NOT SO_ERROR(sockets.c:%d)\r\n", __LINE__);
-            warning = 1;
-          }
-#endif
-/* Added by Realtek end */
           LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, SOL_SOCKET, SO_ERROR) = %d\n",
                                       s, *(int *)optval));
           break;

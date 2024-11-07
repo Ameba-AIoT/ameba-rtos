@@ -187,10 +187,10 @@ typedef struct
     plt_list_t directed_proxy_list;
 #endif
 } proxy_ctx_t, *proxy_ctx_p;
-/** @} */
 
 extern proxy_ctx_t *proxy_ctx;
 extern uint8_t proxy_ctx_count;
+/** @} */
 
 /** @defgroup Proxy_Protocol_Exported_Functions Exported Functions
   * @{

@@ -215,6 +215,10 @@ uint16_t hci_uart_read(uint8_t *buf, uint16_t len)
 
 void hci_uart_force_rts(bool op)
 {
+	if (!g_uart) {
+		return;
+	}
+
 	if (op == true) {
 		UART_RTSForceCmd(HCI_UART_DEV, ENABLE);
 	} else {

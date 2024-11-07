@@ -215,6 +215,10 @@ uint16_t hci_uart_read(uint8_t *buf, uint16_t len)
 
 void hci_uart_config_rx(bool op)
 {
+	if (!g_uart) {
+		return;
+	}
+
 	if (op == true) {
 		/* Enable Uart High Rate Rx Path */
 		UART_RxCmd(HCI_UART_DEV, ENABLE);

@@ -135,7 +135,7 @@ UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState)
   * @param  CallbackFunc: GDMA callback function.
   * @param  pTxBuf: Tx Buffer.
   * @param  TxCount: Tx Count.
-  * @retval   TRUE/FLASE
+  * @retval   TRUE/FALSE
   */
 BOOL UART_TXGDMA_Init(
 	u8 UartIndex,
@@ -207,7 +207,7 @@ BOOL UART_TXGDMA_Init(
   * @param  CallbackFunc: GDMA callback function.
   * @param  pRxBuf: Rx Buffer.
   * @param  RxCount: Rx Count, 0 will use UART as DMA controller.
-  * @retval   TRUE/FLASE
+  * @retval   TRUE/FALSE
   */
 BOOL UART_RXGDMA_Init(
 	u8 UartIndex,
@@ -244,7 +244,6 @@ BOOL UART_RXGDMA_Init(
 		UARTx->MISCR &= (~RUART_BIT_RXDMA_OWNER);
 	}
 
-	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	GDMA_InitStruct->GDMA_SrcHandshakeInterface = UART_DEV_TABLE[UartIndex].Rx_HandshakeInterface;
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)&UART_DEV_TABLE[UartIndex].UARTx->RBR_OR_UART_THR;
 	GDMA_InitStruct->GDMA_Index   = 0;
@@ -257,11 +256,11 @@ BOOL UART_RXGDMA_Init(
 
 	if (((u32)(pRxBuf) & 0x03) == 0) {
 		/*  4-bytes aligned, move 4 bytes each DMA transaction */
-		GDMA_InitStruct->GDMA_DstMsize = MsizeOne;
+		GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 	} else {
 		/*  move 1 byte each DMA transaction */
-		GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
+		GDMA_InitStruct->GDMA_DstMsize = MsizeSixteen;
 		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthOneByte;
 	}
 	GDMA_InitStruct->GDMA_BlockSize = RxCount;

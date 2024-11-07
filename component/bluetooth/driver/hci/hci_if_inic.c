@@ -155,6 +155,7 @@ static void bt_inic_cancel(void)
 /* packet is received from controller, send it to host. */
 static void bt_inic_recv(void)
 {
+	// BT_DUMPA("bt_inic_recv\r\n", new_packet_buf, new_packet_len);
 	bt_inic_send_to_host(new_packet_type, new_packet_buf, new_packet_len);
 	osif_mem_aligned_free(new_packet_buf);
 }
@@ -168,6 +169,10 @@ static struct hci_transport_cb bt_inic_cb = {
 
 bool bt_inic_open(void)
 {
+	if (hci_controller_is_enabled()) {
+		return true;
+	}
+
 	if (!hci_controller_enable()) {
 		return false;
 	}

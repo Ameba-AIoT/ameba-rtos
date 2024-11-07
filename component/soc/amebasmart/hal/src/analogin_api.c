@@ -61,7 +61,7 @@ void analogin_init(analogin_t *obj, PinName pin)
 	uint32_t adc_idx;
 
 	adc_idx = pinmap_peripheral(pin, PinMap_ADC);
-	printf("analogin_init [%x:%lx ]\n", pin, adc_idx);
+	RTK_LOGI(NOTAG, "analogin_init [%x:%lx ]\n", pin, adc_idx);
 	assert_param(adc_idx != NC);
 
 	/* Enable ADC clock and function */

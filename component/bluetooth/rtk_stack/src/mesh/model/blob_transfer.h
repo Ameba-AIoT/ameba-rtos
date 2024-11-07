@@ -18,24 +18,12 @@
 #include "platform_misc.h"
 #include "mesh_api.h"
 
-#if MESH_MBT
-
 BEGIN_DECLS
 
 /**
  * @addtogroup BLOB_TRANSFER
  * @{
  */
-
-/* blob server capabilities */
-#define BLOB_TRANSFER_CAPS_MIN_BLOCK_SIZE_LOG                 6
-#define BLOB_TRANSFER_CAPS_MAX_BLOCK_SIZE_LOG                 12
-#define BLOB_TRANSFER_CAPS_MAX_TOTAL_CHUNKS                   20
-#define BLOB_TRANSFER_CAPS_MAX_CHUNK_SIZE                     256
-#define BLOB_TRANSFER_CAPS_MAX_BLOB_SIZE                      307200
-#define BLOB_TRANSFER_CAPS_SERVER_MTU_SIZE                    376
-#define BLOB_TRANSFER_CAPS_MODE_PULL_SUPPORT                  1
-#define BLOB_TRANSFER_CAPS_MODE_PUSH_SUPPORT                  1
 
 /**
  * @defgroup BLOB_TRANSFER_ACCESS_OPCODE Access Opcode
@@ -206,14 +194,24 @@ typedef struct
 } _PACKED4_ blob_info_status_t;
 /** @} */
 
-#define BLOB_BLOCK_NUM_NOT_SET           0xFFFF
-#define BLOB_CHUNK_SIZE_NOT_SET          0xFFFF
-
 /**
  * @defgroup BLOB_TRANSFER_SERVER_DATA Server Data
  * @brief Data types and structure used by data process callback
  * @{
  */
+
+/* blob server capabilities */
+#define BLOB_TRANSFER_CAPS_MIN_BLOCK_SIZE_LOG                 6
+#define BLOB_TRANSFER_CAPS_MAX_BLOCK_SIZE_LOG                 12
+#define BLOB_TRANSFER_CAPS_MAX_TOTAL_CHUNKS                   20
+#define BLOB_TRANSFER_CAPS_MAX_CHUNK_SIZE                     256
+#define BLOB_TRANSFER_CAPS_MAX_BLOB_SIZE                      307200
+#define BLOB_TRANSFER_CAPS_SERVER_MTU_SIZE                    350
+#define BLOB_TRANSFER_CAPS_MODE_PULL_SUPPORT                  1
+#define BLOB_TRANSFER_CAPS_MODE_PUSH_SUPPORT                  1
+
+#define BLOB_BLOCK_NUM_NOT_SET           0xFFFF
+#define BLOB_CHUNK_SIZE_NOT_SET          0xFFFF
 
 #define BLOB_DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
@@ -606,7 +604,5 @@ mesh_msg_send_cause_t blob_info_get(uint16_t dst, uint16_t app_key_index);
 /** @} */
 
 END_DECLS
-
-#endif /* MESH_MBT */
 
 #endif /* _BLOB_TRANSFER_H */

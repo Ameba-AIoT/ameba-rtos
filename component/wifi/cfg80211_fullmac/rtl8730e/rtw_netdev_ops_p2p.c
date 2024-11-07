@@ -272,7 +272,13 @@ void rtw_p2p_gc_intf_revert(u8 need_if2_deinit)
 		global_idev.p2p_global.pd_wlan_idx = 0;
 
 		memcpy((void *)port0_macaddr, global_idev.pndev[1]->dev_addr, ETH_ALEN);
-		last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - 1;
+
+		if(softap_addr_offset_idx == 0){
+			last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - (1 << 1);
+		}else{
+			last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - 1;
+		}
+
 		memcpy((void *)&port0_macaddr[softap_addr_offset_idx], &last, 1);
 		llhw_wifi_set_mac_addr(0, port0_macaddr);
 		llhw_wifi_set_mac_addr(1, global_idev.pndev[1]->dev_addr);

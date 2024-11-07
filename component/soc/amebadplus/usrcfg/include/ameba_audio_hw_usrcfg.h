@@ -109,6 +109,11 @@
 #define AUDIO_I2S_OUT_MULTIIO_EN         1
 
 /*
+ *Aways output LRCLK, even if xrun happens.
+ */
+#define AUDIO_OUT_CONTINUOUS_LRCLK       1
+
+/*
  *0: using xtal 40M.
  *1: using PLL, mclk is mulitiplier of fs.
  *2: using PLL, mclk is fixed value.

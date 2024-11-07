@@ -1147,7 +1147,9 @@ struct wifi_user_conf {
 		1: STA and SoftAP may run at the same time, Softap's mac address depends on softap_addr_offset_idx */
 	unsigned char concurrent_enabled;
 
-	/*!	It is valid only when concurrent_enabled =1. The range is 1~5. The lowest bit of mac[0] is 1, which represents the multicast address, so skip mac[0].\n
+	/*!	It is valid only when concurrent_enabled =1. The range is 0~5.The lowest bit of mac[0] is 1, which represents the multicast address,
+		therefore, the mac[0] of softap is incremented by 2, others is incremented by 1.\n
+		e.g. softap_addr_offset_idx = 0, chip's mac = 00:e0:4c:01:02:03, softap's mac = 02:e0:4c:01:02:03;\n
 		e.g. softap_addr_offset_idx = 1, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e1:4c:01:02:03;\n
 		e.g. softap_addr_offset_idx = 5, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e0:4c:01:02:04*/
 	unsigned char softap_addr_offset_idx;

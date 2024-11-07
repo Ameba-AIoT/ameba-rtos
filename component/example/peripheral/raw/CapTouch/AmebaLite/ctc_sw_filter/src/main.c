@@ -42,6 +42,9 @@
 /* n_noise timing */
 #define NNOISE_RST_LMT	400
 
+/* keeping pressed for long time will cause base_init */
+#define PRESS_RST_LMT	400
+
 #define ABS(a,b) ((a) > (b) ? (a) - (b):(b) - (a))
 
 #if CTC_DATA_DBG
@@ -68,7 +71,8 @@ typedef struct {
 	s16 ctc_acc_diff; // accumulated diff value
 	u8 ctc_ch_idx;
 	u8 ctc_cycle_cnt; // baseline update cycle count
-	u8 ctc_press_cnt;
+	u8 ctc_press_cnt; // switch from other states to press_state
+	u16 ctc_press_keep_cnt; // keep press_state
 	u8 ctc_release_cnt;
 	u16 ctc_nnoise_cnt;
 	BOOL ctc_is_pressed;
@@ -275,6 +279,7 @@ void ctc_base_init(PCTC_FLT_Typedef pctc_flt)
 		pctc_flt[i].ctc_press_cnt = 0;
 		pctc_flt[i].ctc_release_cnt = 0;
 		pctc_flt[i].ctc_nnoise_cnt = 0;
+		pctc_flt[i].ctc_press_keep_cnt = 0;
 	}
 }
 
@@ -470,6 +475,7 @@ void ctc_board_init(void)
 		ctc_flt[i].ctc_acc_diff = 0;
 		ctc_flt[i].ctc_cycle_cnt = 0;
 		ctc_flt[i].ctc_press_cnt = 0;
+		ctc_flt[i].ctc_press_keep_cnt = 0;
 		ctc_flt[i].ctc_release_cnt = 0;
 		ctc_flt[i].ctc_nnoise_cnt = 0;
 #if CTC_DATA_DBG
@@ -536,6 +542,14 @@ u32 ctc_event_detect(PCTC_FLT_Typedef pctc_flt)
 			pctc_flt->ctc_nnoise_cnt = 0;
 			return CH_RELEASED;
 		}
+	}
+
+	if (!larger_data && pctc_flt->ctc_is_pressed && data_diff > pctc_flt->ctc_thre) {
+		if (++pctc_flt->ctc_press_keep_cnt >= PRESS_RST_LMT) {
+			ctc_base_init(ctc_flt);
+		}
+	} else {
+		pctc_flt->ctc_press_keep_cnt = 0;
 	}
 
 	pctc_flt->ctc_nnoise_cnt = 0;

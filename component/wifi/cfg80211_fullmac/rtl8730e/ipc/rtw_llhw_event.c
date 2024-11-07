@@ -285,7 +285,11 @@ static void llhw_event_set_netif_info(struct event_priv_t *event_priv, struct in
 	if (!global_idev.pndev[0]) {
 		/*set ap port mac address*/
 		memcpy(global_idev.pndev[1]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-		global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
+		if(softap_addr_offset_idx == 0){
+			global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
+		}else{
+			global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
+		}
 	}
 	dma_unmap_single(pdev, dma_addr, ETH_ALEN, DMA_FROM_DEVICE);
 

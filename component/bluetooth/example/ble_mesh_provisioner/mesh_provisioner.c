@@ -37,23 +37,27 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 	char *role;
 	switch (evt_code) {
 	case RTK_BT_LE_GAP_EVT_SCAN_START_IND: {
+		/*  Do not report scan start event, because mesh stack would auto start and stop scan when enable extended adv and extended scan(RTK_BLE_MESH_BASED_ON_CODED_PHY)
 		rtk_bt_le_scan_start_ind_t *scan_start_ind = (rtk_bt_le_scan_start_ind_t *)param;
 		if (!scan_start_ind->err) {
-			BT_LOGA("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
+		    BT_LOGA("[APP] Scan started, scan_type: %d\r\n", scan_start_ind->scan_type);
 		} else {
-			BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
+		    BT_LOGE("[APP] Scan start failed(err: 0x%x)\r\n", scan_start_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:scan,start,%d,%d\r\n", (scan_start_ind->err == 0) ? 0 : -1, scan_start_ind->scan_type);
+		*/
 		break;
 	}
 	case RTK_BT_LE_GAP_EVT_SCAN_STOP_IND: {
+		/*  Do not report scan start event, because mesh stack would auto start and stop scan when enable extended adv and extended scan(RTK_BLE_MESH_BASED_ON_CODED_PHY)
 		rtk_bt_le_scan_stop_ind_t *scan_stop_ind = (rtk_bt_le_scan_stop_ind_t *)param;
 		if (!scan_stop_ind->err) {
-			BT_LOGA("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
+		    BT_LOGA("[APP] Scan stopped, reason: 0x%x\r\n", scan_stop_ind->stop_reason);
 		} else {
-			BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
+		    BT_LOGE("[APP] Scan stop failed(err: 0x%x)\r\n", scan_stop_ind->err);
 		}
 		BT_AT_PRINT("+BLEGAP:scan,stop,%d,0x%x\r\n", (scan_stop_ind->err == 0) ? 0 : -1, scan_stop_ind->stop_reason);
+		*/
 		break;
 	}
 	case RTK_BT_LE_GAP_EVT_SCAN_RES_IND: {
@@ -126,6 +130,30 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 					data_len_change->max_rx_time);
 		break;
 	}
+#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
+		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
+		if (!ext_adv_ind->err) {
+			if (ext_adv_ind->is_start) {
+				BT_LOGA("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
+			} else {
+				BT_LOGA("[APP] Ext ADV(%d) stopped: reason 0x%x \r\n", ext_adv_ind->adv_handle, ext_adv_ind->stop_reason);
+			}
+		} else {
+			if (ext_adv_ind->is_start) {
+				BT_LOGE("[APP] Ext ADV(%d) started failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+			} else {
+				BT_LOGE("[APP] Ext ADV(%d) stopped failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
+			}
+		}
+		BT_AT_PRINT("+BLEGAP:eadv,%s,%d,%d\r\n",
+					ext_adv_ind->is_start ? "start" : "stop",
+					(ext_adv_ind->err == 0) ? 0 : -1,
+					ext_adv_ind->adv_handle);
+		break;
+	}
+#endif
+
 	default:
 		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
 		break;
