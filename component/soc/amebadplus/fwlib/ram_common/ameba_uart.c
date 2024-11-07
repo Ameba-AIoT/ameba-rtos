@@ -245,7 +245,6 @@ bool UART_RXGDMA_Init(
 		UARTx->MISCR &= (~RUART_BIT_RXDMA_OWNER);
 	}
 
-	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	GDMA_InitStruct->GDMA_SrcHandshakeInterface = UART_DEV_TABLE[UartIndex].Rx_HandshakeInterface;
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)&UART_DEV_TABLE[UartIndex].UARTx->RBR_OR_UART_THR;
 	GDMA_InitStruct->GDMA_Index   = 0;

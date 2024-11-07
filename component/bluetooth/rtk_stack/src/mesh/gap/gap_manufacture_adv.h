@@ -21,11 +21,11 @@
 
 BEGIN_DECLS
 
-/** @addtogroup Gap_Manufacture_Adv
+/** @addtogroup GAP_Manufacture_Adv
   * @{
   */
 
-/** @defgroup Gap_Manufacture_Adv_Exported_Macros Exported Macros
+/** @defgroup GAP_Manufacture_Adv_Exported_Macros Exported Macros
   * @brief
   * @{
   */
@@ -46,7 +46,7 @@ BEGIN_DECLS
 #define DFU_PRODUCT_ID_GROUP_RCU                0x00000007
 /** @} */
 
-/** @defgroup Gap_Manufacture_Adv_Exported_Types Exported Types
+/** @defgroup GAP_Manufacture_Adv_Exported_Types Exported Types
   * @brief
   * @{
   */

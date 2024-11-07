@@ -58,7 +58,6 @@ void cfg80211_rtw_connect_indicate(unsigned int join_status, void *user_data, si
 int cfg80211_rtw_scan_done_indicate(unsigned int scanned_AP_num, void *user_data);
 u64 llhw_wifi_get_tsft(u8 iface_type);
 void rtw_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request);
-void rtw_regd_deinit(void);
 int rtw_regd_init(void);
 void rtw_ethtool_ops_init(void);
 

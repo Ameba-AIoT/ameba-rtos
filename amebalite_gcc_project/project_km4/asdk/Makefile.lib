@@ -109,7 +109,6 @@ endif
 
 ifeq ($(CONFIG_AUDIO_MIXER),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_mixer.a
-LINK_APP_LIB += $(APP_LIB_DIR)/lib_speexdsp.a
 else ifeq ($(CONFIG_AUDIO_PASSTHROUGH),y)
 LINK_APP_LIB += $(APP_LIB_DIR)/lib_audio_passthrough.a
 endif

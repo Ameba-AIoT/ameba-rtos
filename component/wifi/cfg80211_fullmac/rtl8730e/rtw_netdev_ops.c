@@ -398,7 +398,11 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	netif_carrier_off(global_idev.pndev[2]);
 	/* set nan port mac address */
 	memcpy(global_idev.pndev[2]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-	global_idev.pndev[2]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 2;
+	if(softap_addr_offset_idx == 0){
+		global_idev.pndev[2]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (2 << 1);
+	}else{
+		global_idev.pndev[2]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 2;
+	}
 
 	ret = (register_netdevice(global_idev.pndev[2]) == 0) ? true : false;
 	if (ret != true) {
