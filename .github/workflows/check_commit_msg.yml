@@ -1,0 +1,26 @@
+name: Validate Commit Message
+
+on:
+  pull_request:
+    branches:
+      - release/v1.0
+
+jobs:
+  check-commit-msg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Validate commit message
+        run: |
+          if echo "$(git log -1 --pretty=%B)" | grep "Change-Id:"; then
+            echo "$(git log -1 --pretty=%B)"
+            echo "Valid commit message"
+          else
+            echo "$(git log -1 --pretty=%B)"
+            echo "Invalid commit message!!"
+            exit 1
+          fi
