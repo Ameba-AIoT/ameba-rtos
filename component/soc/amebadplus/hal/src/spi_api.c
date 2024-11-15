@@ -629,13 +629,29 @@ void spi_format(spi_t *obj, int bits, int mode, int slave)
 	}
 }
 
+static u32 spi_get_ipclk(void)
+{
+	u32 pll_clk, hperi_div, ip_clk;
+	u32 reg_tmp;
+
+	pll_clk = PLL_ClkGet();
+
+	reg_tmp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP0);
+	hperi_div = LSYS_GET_CKD_HPERI(reg_tmp) + 1;
+
+	ip_clk = pll_clk / hperi_div;
+	// printf("pll_clk:%lu, reg_tmp%lx div:%lu, ip_clk:%lu \r\n", pll_clk, reg_tmp, hperi_div, ip_clk);
+
+	return ip_clk;
+}
+
 /**
   * @brief  Set SPI baudrate.
   * @param  obj: SPI master object defined in application software.
   * @param  hz: Baudrate for SPI bus in units of Hz.
   * @retval none
   * @attention Baudrate to be set should be less than or equal to half of the SPI IpClk.
-  * @note IpClk for SPI0 and SPI1 is 100MHz.
+  * @note none.
   */
 void spi_frequency(spi_t *obj, int hz)
 {
@@ -644,7 +660,7 @@ void spi_frequency(spi_t *obj, int hz)
 	u32 ClockDivider;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
-	IpClk = 100000000;
+	IpClk = spi_get_ipclk();//100000000;
 
 	/* Adjust SCK Divider to an even number */
 	ClockDivider = (u32)(IpClk / hz / 2) * 2;

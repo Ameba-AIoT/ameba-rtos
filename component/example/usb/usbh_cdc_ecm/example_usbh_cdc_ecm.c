@@ -33,6 +33,8 @@ extern void rltk_mii_init(void);
 #define ENABLE_DUMP_FILE                        0
 #define ENABLE_REMOTE_FILE_DOWNLOAD             0
 
+#define ENABLE_USER_SET_DONGLE_MAC              0
+
 #if ENABLE_REMOTE_FILE_DOWNLOAD
 #define MD5_CHECK_BUFFER_LEN                    (2)
 /* socket server info */
@@ -66,9 +68,22 @@ static u8 dhcp_done = 0;
 extern struct netif xnetif[NET_IF_NUM];
 extern struct netif eth_netif;
 
+#if ENABLE_USER_SET_DONGLE_MAC
+static u16 led_color[1] = {0x1122};
+static u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+static usbh_cdc_ecm_priv_data_t ecm_priv = {
+	mac_valid,
+	led_color,
+	sizeof(led_color) / sizeof(led_color[0]),
+};
+#endif
 static int cdc_ecm_do_init(void)
 {
-	return usbh_cdc_ecm_do_init(ethernetif_mii_recv);
+#if ENABLE_USER_SET_DONGLE_MAC
+	return usbh_cdc_ecm_do_init(ethernetif_mii_recv, &ecm_priv);
+#else
+	return usbh_cdc_ecm_do_init(ethernetif_mii_recv, NULL);
+#endif
 }
 
 static void ecm_link_change_thread(void *param)
