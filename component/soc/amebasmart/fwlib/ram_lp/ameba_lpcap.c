@@ -280,6 +280,9 @@ u32 ap_suspend(u32 type)
 		ap_power_gate();
 	}
 
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RUNNING));
+
 	/*clean ap wake pending interrupt*/
 	NVIC_ClearPendingIRQ(AP_WAKE_IRQ);
 	InterruptEn(AP_WAKE_IRQ, 5);
