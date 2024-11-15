@@ -425,7 +425,7 @@ int usbh_cdc_ecm_do_deinit(void)
 	return HAL_OK;
 }
 
-int usbh_cdc_ecm_do_init(usb_report_data cb_handle)
+int usbh_cdc_ecm_do_init(usb_report_data cb_handle, usbh_cdc_ecm_priv_data_t *priv)
 {
 	int status;
 	usb_os_task_t task;
@@ -433,6 +433,14 @@ int usbh_cdc_ecm_do_init(usb_report_data cb_handle)
 	usbh_cdc_ecm_host_user.report_data = cb_handle ;
 
 	if (0 == usbh_cdc_ecm_host_user.ecm_init_success) {
+		if (priv) {
+			if (priv->mac_value) {
+				usbh_cdc_ecm_set_dongle_mac(priv->mac_value);
+			}
+			if ((priv->led_array != NULL) && (priv->led_cnt > 0)) {
+				usbh_cdc_ecm_set_dongle_led_array(priv->led_array, priv->led_cnt);
+			}
+		}
 		status = rtos_task_create(&task, "ecm_init_thread", usbh_cdc_ecm_init_thread, NULL, 1024U, USBH_ECM_INIT_THREAD_PRIORITY);
 		if (status != SUCCESS) {
 			RTK_LOGS(TAG, "[ECMH] Create init task fail %d\n", status);

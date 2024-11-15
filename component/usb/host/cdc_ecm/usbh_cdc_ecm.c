@@ -30,6 +30,8 @@
 
 #define USB_BULK_OUT_IDLE_MAX_CNT        8000
 
+#define  USBH_ECM_FREE_MEM(x)  if(x){ usb_os_mfree(x); x = NULL;}
+
 /* Private types -------------------------------------------------------------*/
 typedef struct {
 	u8  bLength;
@@ -59,6 +61,13 @@ static int usbh_cdc_ecm_process_set_rcr(usb_host_t *host);
 static int usbh_cdc_ecm_process_set_flow_ctrl1(usb_host_t *host);
 static int usbh_cdc_ecm_process_set_flow_ctrl2(usb_host_t *host);
 #endif
+static int usbh_cdc_ecm_process_mac_get_lock(usb_host_t *host);
+static int usbh_cdc_ecm_process_mac_set_dis_lock(usb_host_t *host);
+static int usbh_cdc_ecm_process_mac_set_mac1(usb_host_t *host);
+static int usbh_cdc_ecm_process_mac_set_mac2(usb_host_t *host);
+static int usbh_cdc_ecm_process_mac_en_lock(usb_host_t *host);
+static int usbh_cdc_ecm_process_led_set_ctrl(usb_host_t *host);
+
 #if ECM_ENABLE_PACKETFILTER
 static int usbh_cdc_ecm_process_get_statistic(usb_host_t *host);
 static int usbh_cdc_ecm_process_set_packet_filter(usb_host_t *host);
@@ -232,6 +241,99 @@ static int usbh_cdc_ecm_parse_data(u8 *pbuf, u32 *length, u32 leftlen)
 		}
 	}
 	return HAL_OK;
+}
+
+static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+	u8 req_status = HAL_OK;
+
+	switch (cdc->sub_state) {
+	case CDC_ECM_STATE_CTRL_MAC_GET_LOCK: //8152 mac
+		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+			cdc->sub_state++;
+		} else {
+			usb_os_memset(cdc->mac_ctrl_lock, 0, 4);
+			req_status = usbh_cdc_ecm_process_mac_get_lock(host);
+			if (req_status == HAL_OK) {
+				usb_os_memcpy(cdc->mac_ctrl_lock, cdc->dongle_ctrl_buf, CDC_ECM_MAC_CTRL_REG_LEN);
+				cdc->sub_state++;
+			} else if (req_status != HAL_BUSY) {
+				RTK_LOGS(TAG, "Get MAC lock err\n");
+				usb_os_sleep_ms(100);
+			}
+		}
+		break;
+
+	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK: //8152 mac
+		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+			cdc->sub_state++;
+		} else {
+			cdc->mac_ctrl_lock[0] = 0xD0;
+			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->mac_ctrl_lock, CDC_ECM_MAC_CTRL_REG_LEN);
+			req_status = usbh_cdc_ecm_process_mac_set_dis_lock(host);
+			if (req_status == HAL_OK) {
+				cdc->sub_state++;
+			} else if (req_status != HAL_BUSY) {
+				RTK_LOGS(TAG, "Dis MAC lock err\n");
+				usb_os_sleep_ms(100);
+			}
+		}
+		break;
+
+	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1: //8152 mac
+		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+			cdc->sub_state++;
+		} else {
+			usb_os_memcpy(cdc->dongle_ctrl_buf, &(cdc->mac[0]), CDC_ECM_MAC_CTRL_REG_LEN);
+			req_status = usbh_cdc_ecm_process_mac_set_mac1(host);
+			if (req_status == HAL_OK) {
+				cdc->sub_state++;
+			} else if (req_status != HAL_BUSY) {
+				RTK_LOGS(TAG, "Set MAC1 err\n");
+				usb_os_sleep_ms(100);
+			}
+		}
+		break;
+
+	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2: //8152 mac
+		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+			cdc->sub_state++;
+		} else {
+			usb_os_memcpy(cdc->dongle_ctrl_buf, &(cdc->mac[4]), CDC_ECM_MAC_CTRL_REG_LEN);
+			cdc->dongle_ctrl_buf[2] = cdc->dongle_ctrl_buf[3] = 0xFF;
+			req_status = usbh_cdc_ecm_process_mac_set_mac2(host);
+			if (req_status == HAL_OK) {
+				cdc->sub_state++;
+			} else if (req_status != HAL_BUSY) {
+				RTK_LOGS(TAG, "Set MAC2 err\n");
+				usb_os_sleep_ms(100);
+			}
+		}
+		break;
+
+	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK: //8152 mac
+		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+			cdc->sub_state++;
+		} else {
+			cdc->mac_ctrl_lock[0] = 0x10;
+			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->mac_ctrl_lock, CDC_ECM_MAC_CTRL_REG_LEN);
+			req_status = usbh_cdc_ecm_process_mac_en_lock(host);
+			if (req_status == HAL_OK) {
+				cdc->sub_state++;
+				cdc->mac_valid = 1;
+				RTK_LOGS(TAG, "Mac set success \n");
+			} else if (req_status != HAL_BUSY) {
+				RTK_LOGS(TAG, "En MAC lock err\n");
+				usb_os_sleep_ms(100);
+			}
+		}
+		break;
+
+	default:
+		cdc->sub_state++;
+		break;
+	}
 }
 
 /**
@@ -445,14 +547,35 @@ static int usbh_cdc_ecm_detach(usb_host_t *host)
 static int usbh_cdc_ecm_setup(usb_host_t *host)
 {
 	u8 i = 0;
-	int status = HAL_ERR_UNKNOWN ;
+	u8 mac_is_valid = 0;
+	int status = HAL_ERR_UNKNOWN;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
 	/*Issue the get line coding request*/
-	status = usbh_cdc_acm_process_get_string(host, cdc->mac_string, CDC_ECM_MAC_STRING_LEN, cdc->func_if.iMACAddress);
+	if (cdc->mac_src_type == CDC_ECM_MAC_UPPER_LAYER_SET) {
+		status = HAL_OK;
+		RTK_LOGS(TAG, "Upper set mac[%02x %02x %02x %02x %02x %02x]\n", cdc->mac[0], cdc->mac[1], cdc->mac[2], cdc->mac[3], cdc->mac[4], cdc->mac[5]);
+	} else {
+		status = usbh_cdc_acm_process_get_string(host, cdc->dongle_ctrl_buf, CDC_ECM_MAC_STRING_LEN, cdc->func_if.iMACAddress);
+		cdc->mac_src_type = CDC_ECM_MAC_DONGLE_SUPPLY;
+	}
+
 	if (status == HAL_OK) {
-		for (i = 0; i < 6; i++) {
-			cdc->mac[i] = hex_to_char(cdc->mac_string[2 + 4 * i]) * 16 + hex_to_char(cdc->mac_string[2 + 4 * i + 2]) ;
+		if (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY) {
+			for (i = 0; i < 6; i++) {
+				cdc->mac[i] = hex_to_char(cdc->dongle_ctrl_buf[2 + 4 * i]) * 16 + hex_to_char(cdc->dongle_ctrl_buf[2 + 4 * i + 2]);
+				if (cdc->mac[i]) {
+					mac_is_valid = 1;
+				}
+			}
+			if (mac_is_valid == 0) {
+				TRNG_get_random_bytes(cdc->mac, CDC_ECM_MAC_STR_LEN);
+				RTK_LOGS(TAG, "Random mac[%02x %02x %02x %02x %02x %02x]\n", cdc->mac[0], cdc->mac[1], cdc->mac[2], cdc->mac[3], cdc->mac[4], cdc->mac[5]);
+				cdc->mac_src_type = CDC_ECM_MAC_RANDOM_SET;
+			} else {
+				RTK_LOGS(TAG, "Dongle mac[%02x %02x %02x %02x %02x %02x]\n", cdc->mac[0], cdc->mac[1], cdc->mac[2], cdc->mac[3], cdc->mac[4], cdc->mac[5]);
+				cdc->mac_valid = 1;
+			}
 		}
 
 		cdc->usbh_state = USBH_CDC_ECM_SETUP;
@@ -627,6 +750,7 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 			usb_os_memset(cdc->rcr, 0, 4);
 			req_status = usbh_cdc_ecm_process_get_rcr(host);
 			if (req_status == HAL_OK) {
+				usb_os_memcpy(cdc->rcr, cdc->dongle_ctrl_buf, CDC_ECM_MAC_CTRL_REG_LEN);
 				cdc->sub_state++;
 			} else if (req_status != HAL_BUSY) {
 				RTK_LOGS(TAG, "[ECMH] Get RCR err\n");
@@ -641,6 +765,7 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		} else {
 			//set bit 0~3 set 1 will enable PING & UDP transfer
 			cdc->rcr[0] = cdc->rcr[0] | 0x0F;
+			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->rcr, CDC_ECM_MAC_CTRL_REG_LEN);
 			req_status = usbh_cdc_ecm_process_set_rcr(host);
 			if (req_status == HAL_OK) {
 				cdc->sub_state++;
@@ -657,7 +782,9 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA)) {
 			cdc->sub_state++;
 		} else {
+			usb_os_memset(cdc->flow_ctrl, 0, 4);
 			cdc->flow_ctrl[0] = 0x60;
+			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->flow_ctrl, CDC_ECM_MAC_CTRL_REG_LEN);
 			req_status = usbh_cdc_ecm_process_set_flow_ctrl1(host);
 			if (req_status == HAL_OK) {
 				cdc->sub_state++;
@@ -672,7 +799,9 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA)) {
 			cdc->sub_state++;
 		} else {
+			usb_os_memset(cdc->flow_ctrl, 0, 4);
 			cdc->flow_ctrl[0] = 0xa0;
+			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->flow_ctrl, CDC_ECM_MAC_CTRL_REG_LEN);
 			req_status = usbh_cdc_ecm_process_set_flow_ctrl2(host);
 			if (req_status == HAL_OK) {
 				cdc->sub_state++;
@@ -683,6 +812,30 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		}
 		break;
 #endif
+
+	case CDC_ECM_STATE_CTRL_MAC_GET_LOCK:
+	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK:
+	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1:
+	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2:
+	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK:
+		usbh_cdc_ecm_config_dongle_mac(host);
+		break;
+
+	case CDC_ECM_STATE_CTRL_LED_COLOR_SET: //8152 led ctrl
+		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->led_cnt == 0) || (cdc->led_array == NULL)) {
+			cdc->sub_state++;
+		} else {
+			usb_os_memset(cdc->dongle_ctrl_buf, 0xFF, 4);
+			usb_os_memcpy(cdc->dongle_ctrl_buf, (u8 *) & (cdc->led_array[0]), 2);
+			req_status = usbh_cdc_ecm_process_led_set_ctrl(host);
+			if (req_status == HAL_OK) {
+				cdc->sub_state++;
+			} else if (req_status != HAL_BUSY) {
+				RTK_LOGS(TAG, "Set led color err\n");
+				usb_os_sleep_ms(100);
+			}
+		}
+		break;
 
 	default:
 		ret = HAL_OK;
@@ -1004,7 +1157,7 @@ static int usbh_cdc_ecm_process_get_rcr(usb_host_t *host)
 	setup.b.wIndex = 0x0100;
 	setup.b.wLength = 4;
 
-	return usbh_ctrl_request(host, &setup, (u8 *)cdc->rcr);
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
 }
 
 /**
@@ -1023,7 +1176,7 @@ static int usbh_cdc_ecm_process_set_rcr(usb_host_t *host)
 	setup.b.wIndex = 0x010F;
 	setup.b.wLength = 4;
 
-	return usbh_ctrl_request(host, &setup, (u8 *)cdc->rcr);
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
 }
 #endif
 
@@ -1043,7 +1196,7 @@ static int usbh_cdc_ecm_process_set_flow_ctrl1(usb_host_t *host)
 	setup.b.wValue = 0xC0A4;
 	setup.b.wIndex = 0x0103;
 	setup.b.wLength = 4;
-	return usbh_ctrl_request(host, &setup, (u8 *)cdc->flow_ctrl);
+	return usbh_ctrl_request(host, &setup, (u8 *)cdc->dongle_ctrl_buf);
 }
 /**
   * @brief  Set 8152 flow ctrl params2
@@ -1060,10 +1213,99 @@ static int usbh_cdc_ecm_process_set_flow_ctrl2(usb_host_t *host)
 	setup.b.wValue = 0xC0A8;
 	setup.b.wIndex = 0x0103;
 	setup.b.wLength = 4;
-	return usbh_ctrl_request(host, &setup, (u8 *)cdc->flow_ctrl);
+	return usbh_ctrl_request(host, &setup, (u8 *)cdc->dongle_ctrl_buf);
 }
 #endif
 
+/******************Set MAC for 8152 *****************************/
+/**
+  * @brief  Set 8152 mac flow ctrl
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_cdc_ecm_process_mac_get_lock(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	setup.b.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
+	setup.b.bRequest = 0x05;
+	setup.b.wValue = 0xE81C;
+	setup.b.wIndex = 0x010F;
+	setup.b.wLength = 4;
+
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+}
+
+static int usbh_cdc_ecm_process_mac_set_dis_lock(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	setup.b.bmRequestType = 0x40;
+	setup.b.bRequest = 0x05;
+	setup.b.wValue = 0xE81C;
+	setup.b.wIndex = 0x010F;
+	setup.b.wLength = 4;
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+}
+
+static int usbh_cdc_ecm_process_mac_set_mac1(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	setup.b.bmRequestType = 0x40;
+	setup.b.bRequest = 0x05;
+	setup.b.wValue = 0xC000;
+	setup.b.wIndex = 0x010F;
+	setup.b.wLength = 4;
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+}
+
+static int usbh_cdc_ecm_process_mac_set_mac2(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	setup.b.bmRequestType = 0x40;
+	setup.b.bRequest = 0x05;
+	setup.b.wValue = 0xC004;
+	setup.b.wIndex = 0x0103;
+	setup.b.wLength = 4;
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+}
+
+static int usbh_cdc_ecm_process_mac_en_lock(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	setup.b.bmRequestType = 0x40;
+	setup.b.bRequest = 0x05;
+	setup.b.wValue = 0xE81C;
+	setup.b.wIndex = 0x010F;
+	setup.b.wLength = 4;
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+}
+
+/**
+  * @brief  Set led color for 8152
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_cdc_ecm_process_led_set_ctrl(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	setup.b.bmRequestType = 0x40;
+	setup.b.bRequest = 0x05;
+	setup.b.wValue = 0xDD90;
+	setup.b.wIndex = 0x0103;
+	setup.b.wLength = 4;
+	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+}
 /* Exported functions --------------------------------------------------------*/
 /*
 	below is the private apis that called by ecm_hal
@@ -1078,44 +1320,19 @@ int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	usb_os_memset(cdc, 0x00, sizeof(usbh_cdc_ecm_host_t));
 
-	cdc->mac_string = (u8 *)usb_os_malloc(CDC_ECM_MAC_STRING_LEN);
-	if (NULL == cdc->mac_string) {
-		RTK_LOGS(TAG, "[ECMH] Alloc mem %d fail\n", CDC_ECM_MAC_STRING_LEN);
+	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(CDC_ECM_MAC_STRING_LEN);
+	if (NULL == cdc->dongle_ctrl_buf) {
+		RTK_LOGS(TAG, "Alloc mem %d fail\n", CDC_ECM_MAC_STRING_LEN);
 		return HAL_ERR_MEM;
 	}
 
 	cdc->bulk_data_in_buf = (u8 *)usb_os_malloc(USBH_CDC_ECM_BULK_BUF_MAX_SIZE);
 	if (NULL == cdc->bulk_data_in_buf) {
-		RTK_LOGS(TAG, "[ECMH] Alloc mem %d fail\n", USBH_CDC_ECM_BULK_BUF_MAX_SIZE);
-		usb_os_mfree(cdc->mac_string);
-		cdc->mac_string = NULL;
+		RTK_LOGS(TAG, "Alloc mem %d fail\n", USBH_CDC_ECM_BULK_BUF_MAX_SIZE);
+		USBH_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
 		return HAL_ERR_MEM;
 	}
-
-#if ECM_ENABLE_RCR_CONFIGURATION
-	cdc->rcr = (u8 *)usb_os_malloc(CDC_ECM_MAC_STRING_LEN);
-	if (NULL == cdc->rcr) {
-		RTK_LOGS(TAG, "[ECMH] Alloc mem %d fail\n", CDC_ECM_MAC_STRING_LEN);
-		usb_os_mfree(cdc->mac_string);
-		usb_os_mfree(cdc->bulk_data_in_buf);
-		return HAL_ERR_MEM;
-	}
-#endif
-
-#if ECM_ENABLE_FIFO_FLOW_CTRL
-	cdc->flow_ctrl = (u32 *)usb_os_malloc(sizeof(u32));
-	if (NULL == cdc->flow_ctrl) {
-		RTK_LOGS(TAG, "[ECMH] Alloc mem %d fail\n", sizeof(u32));
-		usb_os_mfree(cdc->mac_string);
-		usb_os_mfree(cdc->bulk_data_in_buf);
-#if ECM_ENABLE_RCR_CONFIGURATION
-		usb_os_mfree(cdc->rcr);
-#endif
-		return HAL_ERR_MEM;
-	}
-#endif
 
 	if (cb != NULL) {
 		cdc->cb = cb;
@@ -1156,30 +1373,7 @@ int usbh_cdc_ecm_deinit(void)
 		usbh_close_pipe(host, cdc->data_if.bulk_out_pipe);
 	}
 
-#if ECM_ENABLE_FIFO_FLOW_CTRL
-	if (cdc->flow_ctrl) {
-		usb_os_mfree(cdc->flow_ctrl);
-		cdc->flow_ctrl = NULL;
-	}
-#endif
-
-#if ECM_ENABLE_RCR_CONFIGURATION
-	if (cdc->rcr) {
-		usb_os_mfree(cdc->rcr);
-		cdc->rcr = NULL;
-	}
-#endif
-
-	if (cdc->mac_string) {
-		usb_os_mfree(cdc->mac_string);
-		cdc->mac_string = NULL;
-	}
-
-	if (cdc->bulk_data_in_buf) {
-		usb_os_mfree(cdc->bulk_data_in_buf);
-		cdc->bulk_data_in_buf = NULL;
-	}
-
+	USBH_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
 
 	usbh_unregister_class(&usbh_cdc_ecm_driver);
 
@@ -1371,7 +1565,7 @@ const u8 *usbh_cdc_ecm_process_mac_str(void)
 {
 	u32 i = 0;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	while (cdc->usbh_state < USBH_CDC_ECM_SETUP && i < 10) {
+	while ((cdc->usbh_state < USBH_CDC_ECM_SETUP) && (i < 10) && (cdc->mac_valid == 0))  {
 		usb_os_sleep_ms(1000);
 		i++;
 		RTK_LOGS(TAG, "[ECMH] State(%d) want(%d) keep wait\n", cdc->usbh_state, USBH_CDC_ECM_SETUP);
@@ -1379,3 +1573,31 @@ const u8 *usbh_cdc_ecm_process_mac_str(void)
 	return cdc->mac;
 }
 
+void usbh_cdc_ecm_set_dongle_mac(u8 *mac)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+	if (NULL == mac) {
+		RTK_LOGS(TAG, "Param error,mac 0x%08x\n", mac);
+		return ;
+	}
+
+	memcpy((void *) & (cdc->mac[0]), (void *)mac, 6);
+	cdc->mac_src_type = CDC_ECM_MAC_UPPER_LAYER_SET;
+}
+
+void usbh_cdc_ecm_set_dongle_led_array(u16 *led, u8 len)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	if (led == NULL || len == 0) {
+		RTK_LOGS(TAG, "Param error,led 0x%08x, len %d\n", led, len);
+		return ;
+	}
+
+	USBH_ECM_FREE_MEM(cdc->led_array);
+
+	cdc->led_array = (u16 *)usb_os_malloc(len * sizeof(u16));
+	memcpy((void *)cdc->led_array, (void *)led, len * sizeof(u16));
+
+	cdc->led_cnt = len;
+}
