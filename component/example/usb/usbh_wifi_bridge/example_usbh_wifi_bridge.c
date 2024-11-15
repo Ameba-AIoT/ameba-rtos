@@ -53,7 +53,7 @@ extern struct netif eth_netif;
 
 u8 cdc_ecm_do_init(void)
 {
-	return usbh_cdc_ecm_do_init(ethernetif_mii_recv);
+	return usbh_cdc_ecm_do_init(ethernetif_mii_recv, NULL);
 }
 
 
