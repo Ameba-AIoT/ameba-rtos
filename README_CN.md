@@ -16,7 +16,7 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，目前仅支持Linux�
 
 # 相关文档
 
-最新版的文档: https://www.realmcu.com/ ，根据所使用的芯片类型获取相应的应用指南和数据手册。
+最新版的文档: https://github.com/Ameba-AIoT/ameba-iot-docs ，根据所使用的芯片类型点击README中的URL查看相应的应用指南。
 
 **注意:** 不同系列的芯片都有其相对应的文档，请根据特定的芯片名称查找文档。
 
