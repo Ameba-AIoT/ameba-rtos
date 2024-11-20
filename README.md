@@ -16,7 +16,7 @@ ameba-rtos is the development framework for Realtek SoCs supported on Linux.
 
 # Documentation
 
-Documentation for latest version: https://www.realmcu.com/. Get application note and datasheet depending on chip you use.
+Documentation for latest version: https://github.com/Ameba-AIoT/ameba-iot-docs. Click the URLs listed in README to view the documentations of the specific SoC.
 
 **Note:** Each SoC series has its own documentation, please find documentation with the specified chip.
 
