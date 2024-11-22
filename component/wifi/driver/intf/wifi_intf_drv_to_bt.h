@@ -57,6 +57,10 @@ struct bt_rfk_param {
 	uint8_t  rfk_data4;
 };
 
+struct rtk_coex_vendor_info {
+	uint8_t  vendor_id;
+	uint8_t  product_id;
+};
 
 //----- ------------------------------------------------------------------
 // Coex Interface opened for upper layer
@@ -64,7 +68,8 @@ struct bt_rfk_param {
 void rltk_coex_set_gnt_bt(enum pta_type gnt_bt, u8 role, u8 process);
 void rltk_coex_set_gnt_bt_with_clk_source(enum pta_type gnt_bt, u8 role, u8 process);
 int rltk_coex_bt_rfk(struct bt_rfk_param *rfk_param);
-void rltk_coex_bt_hci_notify(u8 *pdata, u16 len, u8 dir);
+void rltk_coex_bt_hci_notify(u8 type, u8 *pdata, u16 len);
+void rltk_coex_vendor_info_set(void *p_vendor_info, u8 length);
 #ifdef	__cplusplus
 }
 #endif

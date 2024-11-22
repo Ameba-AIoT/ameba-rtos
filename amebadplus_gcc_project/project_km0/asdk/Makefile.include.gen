@@ -197,6 +197,11 @@ IFLAGS               += -I$(BASEDIR)/component/application/apple/WACServer/Exter
 			-I$(BASEDIR)/component/soc/amebadplus/sboot/ed25519 \
 			-I$(BASEDIR)/component/soc/amebadplus/sboot/sha512
 
+#bluetooth
+ifeq ($(CONFIG_BT), y)
+include  $(ABS_ROOTDIR)/Makefile.include.bt.gen
+endif
+
 #*****************************************************************************#
 #                             ARM ASSEMBLER FLAGS
 #*****************************************************************************#

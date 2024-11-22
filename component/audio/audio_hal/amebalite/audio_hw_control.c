@@ -14,6 +14,7 @@
  */
 
 #include "ameba_audio_stream_control.h"
+
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
 

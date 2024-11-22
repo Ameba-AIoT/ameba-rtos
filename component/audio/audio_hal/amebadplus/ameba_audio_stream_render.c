@@ -12,22 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ameba_audio_stream_render.h"
-#include <inttypes.h>
 
-#include "audio_hw_compat.h"
+#include <inttypes.h>
+#include <stdlib.h>
+
 #include "basic_types.h"
+
+#include "ameba.h"
 #include "ameba_audio_clock.h"
 #include "ameba_audio_stream_control.h"
 #include "ameba_audio_stream_utils.h"
 #include "ameba_audio_stream_buffer.h"
 #include "ameba_audio_types.h"
 #include "ameba_audio_hw_usrcfg.h"
-#include "ameba_soc.h"
-#include "ameba_rcc.h"
+
+#include "audio_hw_compat.h"
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
-#include "platform_stdlib.h"
+
+#include "ameba_audio_stream_render.h"
 
 extern void PLL_I2S_24P576M(u32 NewState);
 extern void AUDIO_SP_SetMclk(u32 index, u32 NewState);
@@ -38,19 +41,19 @@ static uint64_t s_counter_frames = 0;
 static uint64_t s_dma_frames = 0;
 #endif
 
-int ameba_audio_stream_tx_set_amp_state(bool state)
+int32_t ameba_audio_stream_tx_set_amp_state(bool state)
 {
 	StreamControl *control = ameba_audio_get_ctl();
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("Audio driver control is null initialized\n");
-		return -1;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	if (AUDIO_HW_AMPLIFIER_CONTROL_ENABLE) {
 		ameba_audio_ctl_set_amp_state(control, state);
 	}
 
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 void ameba_audio_stream_tx_buffer_flush(Stream *stream)
@@ -81,7 +84,7 @@ uint32_t ameba_audio_stream_tx_sport_interrupt(void *data)
 	return 0;
 }
 
-uint64_t ameba_audio_stream_tx_sport_rendered_frames(Stream *stream)
+int64_t ameba_audio_stream_tx_sport_rendered_frames(Stream *stream)
 {
 	uint32_t counter = 0;
 	/* frames totally delivered through LRCLK */
@@ -89,7 +92,7 @@ uint64_t ameba_audio_stream_tx_sport_rendered_frames(Stream *stream)
 
 	RenderStream *rstream = (RenderStream *)stream;
 	if (!rstream) {
-		return -1;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	AUDIO_SP_SetPhaseLatch(rstream->stream.sport_dev_num);
@@ -99,7 +102,7 @@ uint64_t ameba_audio_stream_tx_sport_rendered_frames(Stream *stream)
 	return total_counter;
 }
 
-static uint64_t ameba_audio_stream_tx_get_counter_ntime(RenderStream *rstream)
+static int64_t ameba_audio_stream_tx_get_counter_ntime(RenderStream *rstream)
 {
 	uint64_t usec = 0;
 	//current total i2s counter of audio frames;
@@ -108,7 +111,7 @@ static uint64_t ameba_audio_stream_tx_get_counter_ntime(RenderStream *rstream)
 	uint32_t delta_counter = 0;
 
 	if (!rstream) {
-		return -1;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	AUDIO_SP_SetPhaseLatch(rstream->stream.sport_dev_num);
@@ -122,13 +125,13 @@ static uint64_t ameba_audio_stream_tx_get_counter_ntime(RenderStream *rstream)
 	return usec;
 }
 
-int ameba_audio_stream_tx_get_htimestamp(Stream *stream, uint32_t *avail, struct timespec *tstamp)
+int32_t ameba_audio_stream_tx_get_htimestamp(Stream *stream, uint32_t *avail, struct timespec *tstamp)
 {
 	uint64_t usec;
 
 	RenderStream *rstream = (RenderStream *)stream;
 	if (!rstream) {
-		return -1;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	//tstamp get is us
@@ -147,15 +150,15 @@ int ameba_audio_stream_tx_get_htimestamp(Stream *stream, uint32_t *avail, struct
 	HAL_AUDIO_PVERBOSE("avail:%" PRIu32 ", trigger:%" PRIu64 ", usec:%" PRIu64 ", tv_sec:%" PRIu64 ", tv_nsec:%" PRIu32 "",
 					   *avail, rstream->stream.trigger_tstamp, usec, tstamp->tv_sec, tstamp->tv_nsec);
 
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-HAL_AUDIO_WEAK int ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
+HAL_AUDIO_WEAK int32_t ameba_audio_stream_tx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	(void) stream;
 	(void) now_ns;
 	(void) audio_ns;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 int64_t ameba_audio_stream_tx_get_trigger_time(Stream *stream)
@@ -312,80 +315,6 @@ static void ameba_audio_stream_tx_llp_init(Stream *stream)
 	}
 }
 
-void ameba_audio_stream_tx_set_i2s_pin(uint32_t index)
-{
-	switch (index) {
-	case 0:
-		#if AUDIO_I2S_OUT_MCLK_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_MCLK_PIN, PINMUX_FUNCTION_I2S0_MCLK);
-		#endif
-
-		#if AUDIO_I2S_OUT_BCLK_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_BCLK_PIN, PINMUX_FUNCTION_I2S0_BCLK);
-		#endif
-
-		#if AUDIO_I2S_OUT_LRCLK_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_LRCLK_PIN, PINMUX_FUNCTION_I2S0_WS);
-		#endif
-
-		ameba_audio_set_sp_data_out(0);
-
-		#if AUDIO_I2S_OUT_DATA0_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_DATA0_PIN, PINMUX_FUNCTION_I2S0_DIO3);
-		#endif
-
-		#if AUDIO_I2S_OUT_MULTIIO_EN == 1
-			#if AUDIO_I2S_OUT_DATA1_PIN != -1
-			Pinmux_Config(AUDIO_I2S_OUT_DATA1_PIN, PINMUX_FUNCTION_I2S0_DIO2);
-			#endif
-
-			#if AUDIO_I2S_OUT_DATA2_PIN != -1
-			Pinmux_Config(AUDIO_I2S_OUT_DATA2_PIN, PINMUX_FUNCTION_I2S0_DIO1);
-			#endif
-
-			#if AUDIO_I2S_OUT_DATA3_PIN != -1
-			Pinmux_Config(AUDIO_I2S_OUT_DATA3_PIN, PINMUX_FUNCTION_I2S0_DIO0);
-			#endif
-		#endif
-		break;
-	case 1:
-		#if AUDIO_I2S_OUT_MCLK_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_MCLK_PIN, PINMUX_FUNCTION_I2S1_MCLK);
-		#endif
-
-		#if AUDIO_I2S_OUT_BCLK_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_BCLK_PIN, PINMUX_FUNCTION_I2S1_BCLK);
-		#endif
-
-		#if AUDIO_I2S_OUT_LRCLK_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_LRCLK_PIN, PINMUX_FUNCTION_I2S1_WS);
-		#endif
-
-		ameba_audio_set_sp_data_out(1);
-
-		#if AUDIO_I2S_OUT_DATA0_PIN != -1
-		Pinmux_Config(AUDIO_I2S_OUT_DATA0_PIN, PINMUX_FUNCTION_I2S1_DIO3);
-		#endif
-
-		#if AUDIO_I2S_OUT_MULTIIO_EN == 1
-			#if AUDIO_I2S_OUT_DATA1_PIN != -1
-			Pinmux_Config(AUDIO_I2S_OUT_DATA1_PIN, PINMUX_FUNCTION_I2S1_DIO2);
-			#endif
-
-			#if AUDIO_I2S_OUT_DATA2_PIN != -1
-			Pinmux_Config(AUDIO_I2S_OUT_DATA2_PIN, PINMUX_FUNCTION_I2S1_DIO1);
-			#endif
-
-			#if AUDIO_I2S_OUT_DATA3_PIN != -1
-			Pinmux_Config(AUDIO_I2S_OUT_DATA3_PIN, PINMUX_FUNCTION_I2S1_DIO0);
-			#endif
-		#endif
-		break;
-	default:
-		break;
-	}
-}
-
 Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 {
 	RenderStream *rstream;
@@ -526,14 +455,14 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	return &rstream->stream;
 }
 
-uint32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
+int32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 	PGDMA_InitTypeDef txgdma_initstruct = &(stream->gdma_struct->u.SpTxGdmaInitStruct);
 
 	if (!rstream || !rstream->stream.rbuffer || !rstream->stream.gdma_struct) {
 		HAL_AUDIO_ERROR("stream is not initialized\n");
-		return 0;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	uint32_t remain = 0;
@@ -706,7 +635,7 @@ uint32_t ameba_audio_stream_tx_complete(void *data)
 	return 0;
 }
 
-static int ameba_audio_stream_tx_write_in_noirq_mode(Stream *stream, const void *data, uint32_t bytes, bool block)
+static int32_t ameba_audio_stream_tx_write_in_noirq_mode(Stream *stream, const void *data, uint32_t bytes, bool block)
 {
 	uint32_t bytes_left_to_write = bytes;
 	uint32_t bytes_written = 0;
@@ -757,7 +686,7 @@ static int ameba_audio_stream_tx_write_in_noirq_mode(Stream *stream, const void 
 	return bytes;
 }
 
-static int ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const void *data, uint32_t bytes, bool block)
+static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const void *data, uint32_t bytes, bool block)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 
@@ -910,13 +839,13 @@ static int ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const void *d
 	return bytes;
 }
 
-uint64_t ameba_audio_stream_tx_get_frames_written(Stream *stream)
+int64_t ameba_audio_stream_tx_get_frames_written(Stream *stream)
 {
 	RenderStream *rstream = (RenderStream *)stream;
 	return rstream->total_written_from_tx_start;
 }
 
-int ameba_audio_stream_tx_write(Stream *stream, const void *data, uint32_t bytes, bool block)
+int32_t ameba_audio_stream_tx_write(Stream *stream, const void *data, uint32_t bytes, bool block)
 {
 	if (stream) {
 		if (stream->stream_mode) {

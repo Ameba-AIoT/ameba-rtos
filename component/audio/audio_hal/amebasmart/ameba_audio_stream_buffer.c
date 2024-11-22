@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ameba_audio_stream_buffer.h"
+
+#include <stdlib.h>
 
 #include "ameba_audio_stream_utils.h"
 #include "ameba_audio_types.h"
-#include "ameba_soc.h"
-#include "platform_stdlib.h"
-#include "basic_types.h"
+
+#include "ameba_audio_stream_buffer.h"
 
 AudioBuffer *ameba_audio_stream_buffer_create(void)
 {
