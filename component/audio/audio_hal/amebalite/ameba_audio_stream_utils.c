@@ -12,23 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ameba_audio_stream_utils.h"
 
-#include "platform_stdlib.h"
 #include "basic_types.h"
-#include "ameba_sport.h"
-#include "ameba_audio.h"
+
+#include "ameba.h"
 #include "ameba_audio_stream.h"
 #include "ameba_audio_types.h"
 
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
 
+#include "ameba_audio_stream_utils.h"
+
 AUD_TypeDef *g_audio_analog = AUD_SYS_BASE;
 
-uint32_t ameba_audio_get_channel(uint32_t channel_count)
+int32_t ameba_audio_get_channel(uint32_t channel_count)
 {
-	uint32_t tmp;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (channel_count) {
 	case 1:
 		tmp = SP_CH_MONO;
@@ -41,14 +41,14 @@ uint32_t ameba_audio_get_channel(uint32_t channel_count)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid format");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-uint32_t ameba_audio_get_sp_tdm(uint32_t channel_count)
+int32_t ameba_audio_get_sp_tdm(uint32_t channel_count)
 {
-	uint32_t tmp;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (channel_count) {
 	case 1:
 	case 2:
@@ -65,14 +65,14 @@ uint32_t ameba_audio_get_sp_tdm(uint32_t channel_count)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid format");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-uint32_t ameba_audio_get_codec_tdm(uint32_t channel_count)
+int32_t ameba_audio_get_codec_tdm(uint32_t channel_count)
 {
-	uint32_t tmp;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (channel_count) {
 	case 1:
 	case 2:
@@ -83,14 +83,14 @@ uint32_t ameba_audio_get_codec_tdm(uint32_t channel_count)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid format");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-uint32_t ameba_audio_get_fifo_num(uint32_t channel_count)
+int32_t ameba_audio_get_fifo_num(uint32_t channel_count)
 {
-	uint32_t tmp;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (channel_count) {
 	case 1:
 	case 2:
@@ -107,14 +107,14 @@ uint32_t ameba_audio_get_fifo_num(uint32_t channel_count)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid format");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-int ameba_audio_get_sp_format(enum AudioHwFormat format, uint32_t direction)
+int32_t ameba_audio_get_sp_format(enum AudioHwFormat format, uint32_t direction)
 {
-	int tmp = -1;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (format) {
 	case AUDIO_HW_FORMAT_PCM_32_BIT:
 		if (direction == STREAM_OUT) {
@@ -139,14 +139,14 @@ int ameba_audio_get_sp_format(enum AudioHwFormat format, uint32_t direction)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid format");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-int ameba_audio_get_sp_rate(uint32_t rate)
+int32_t ameba_audio_get_sp_rate(uint32_t rate)
 {
-	int tmp = -1;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (rate) {
 	case 8000:
 		tmp = SP_8K;
@@ -186,14 +186,14 @@ int ameba_audio_get_sp_rate(uint32_t rate)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid rate");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-int ameba_audio_get_codec_format(enum AudioHwFormat format, uint32_t direction)
+int32_t ameba_audio_get_codec_format(enum AudioHwFormat format, uint32_t direction)
 {
-	int tmp = -1;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	(void)direction;
 	switch (format) {
 	case AUDIO_HW_FORMAT_PCM_8_24_BIT:
@@ -207,14 +207,14 @@ int ameba_audio_get_codec_format(enum AudioHwFormat format, uint32_t direction)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid format");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-int ameba_audio_get_codec_rate(uint32_t rate)
+int32_t ameba_audio_get_codec_rate(uint32_t rate)
 {
-	int tmp = -1;
+	int32_t tmp = HAL_OSAL_ERR_INVALID_PARAM;
 	switch (rate) {
 	case 8000:
 		tmp = SR_8K;
@@ -251,14 +251,14 @@ int ameba_audio_get_codec_rate(uint32_t rate)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] invalid rate");
-		return -1;
+		break;
 	}
 	return tmp;
 }
 
-uint32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category)
+int32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category)
 {
-	uint32_t mic_num = 0;
+	int32_t mic_num = 0;
 	switch (mic_category) {
 	case AMEBA_AUDIO_AMIC1:
 		mic_num = AMIC1;
@@ -283,15 +283,15 @@ uint32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] mic category %ld not supported", mic_category);
-		return HAL_OSAL_ERR_INVALID_OPERATION;
+		return HAL_OSAL_ERR_INVALID_PARAM;
 	}
 
 	return mic_num;
 }
 
-uint32_t ameba_audio_stream_get_adc_chn_idx(uint32_t index)
+int32_t ameba_audio_stream_get_adc_chn_idx(uint32_t index)
 {
-	uint32_t adc_chn = 0;
+	int32_t adc_chn = 0;
 	switch (index) {
 	case 1:
 		adc_chn = ADCHN1;
@@ -307,15 +307,16 @@ uint32_t ameba_audio_stream_get_adc_chn_idx(uint32_t index)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] adc channel index: %ld not supported", index);
+		adc_chn = HAL_OSAL_ERR_INVALID_PARAM;
 		break;
 	}
 
 	return adc_chn;
 }
 
-uint32_t ameba_audio_stream_get_adc_idx(uint32_t index)
+int32_t ameba_audio_stream_get_adc_idx(uint32_t index)
 {
-	uint32_t adc_num = 0;
+	int32_t adc_num = 0;
 	switch (index) {
 	case 1:
 		adc_num = ADC1;
@@ -331,6 +332,7 @@ uint32_t ameba_audio_stream_get_adc_idx(uint32_t index)
 		break;
 	default:
 		HAL_AUDIO_ERROR("[AmebaAudioUtils] adc index: %ld not supported", index);
+		adc_num = HAL_OSAL_ERR_INVALID_PARAM;
 		break;
 	}
 
@@ -515,9 +517,9 @@ AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index)
 	return addr;
 }
 
-uint32_t ameba_audio_get_sport_irq(uint32_t index)
+int32_t ameba_audio_get_sport_irq(uint32_t index)
 {
-	uint32_t irq = 0;
+	int32_t irq = 0;
 	switch (index) {
 	case 0:
 		irq = SPORT0_IRQ;
@@ -527,6 +529,7 @@ uint32_t ameba_audio_get_sport_irq(uint32_t index)
 		break;
 	default:
 		HAL_AUDIO_ERROR("unsupported sport:%lu", index);
+		irq = HAL_OSAL_ERR_INVALID_PARAM;
 		break;
 	}
 	return irq;

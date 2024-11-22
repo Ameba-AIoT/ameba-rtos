@@ -1,15 +1,10 @@
-#ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_H
-#define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBALITE_AMEBA_AUDIO_STREAM_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBALITE_AMEBA_AUDIO_STREAM_H
 
-#include "platform_stdlib.h"
 #include "basic_types.h"
+
 #include "ameba.h"
-#include "ameba_rcc.h"
-#include "ameba_sport.h"
-#include "ameba_audio.h"
 #include "ameba_audio_stream_buffer.h"
-#include "hardware/audio/audio_hw_types.h"
-#include "os_wrapper.h"
 
 #ifdef __cplusplus
 extern "C" {

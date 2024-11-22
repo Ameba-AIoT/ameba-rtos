@@ -24,6 +24,7 @@ GLOBAL_CFLAGS += -DNDEBUG -UDEBUG -Werror
 CSRC = $(DIR)/audio_track.c
 CSRC += $(DIR)/audio_record.c
 CSRC += $(DIR)/audio_service.c
+CSRC += $(DIR)/audio_manager.c
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #

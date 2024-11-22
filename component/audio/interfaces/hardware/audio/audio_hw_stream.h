@@ -33,8 +33,8 @@
  */
 
 
-#ifndef AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_H
-#define AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_H
+#ifndef AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_H
+#define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_H
 
 #include "hardware/audio/audio_hw_types.h"
 
@@ -63,7 +63,7 @@ struct AudioHwStream {
 	 * @param stream is the pointer of the audio stream.
 	 * @param rate is the sampling rate set to the audio stream.
 	 */
-	int (*SetSampleRate)(struct AudioHwStream *stream, uint32_t rate);
+	int32_t (*SetSampleRate)(struct AudioHwStream *stream, uint32_t rate);
 
 	/**
 	 * @brief Get size of input/output buffer in bytes for this stream for AudioHwStream,
@@ -90,7 +90,7 @@ struct AudioHwStream {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetChannels)(const struct AudioHwStream *stream, uint32_t channel);
+	int32_t (*SetChannels)(const struct AudioHwStream *stream, uint32_t channel);
 
 	/**
 	 * @brief Return the audio format for AudioHwStream.
@@ -108,7 +108,7 @@ struct AudioHwStream {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetFormat)(struct AudioHwStream *stream, enum AudioHwFormat format);
+	int32_t (*SetFormat)(struct AudioHwStream *stream, enum AudioHwFormat format);
 
 	/**
 	 * @brief Notify audio stream to standby.
@@ -117,7 +117,7 @@ struct AudioHwStream {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*Standby)(struct AudioHwStream *stream);
+	int32_t (*Standby)(struct AudioHwStream *stream);
 
 	/**
 	 * @brief dump audio stream status.
@@ -126,7 +126,7 @@ struct AudioHwStream {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*Dump)(const struct AudioHwStream *stream, int fd);
+	int32_t (*Dump)(const struct AudioHwStream *stream, int32_t fd);
 
 	/**
 	 * @brief set audio stream parameters.
@@ -136,7 +136,7 @@ struct AudioHwStream {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetParameters)(struct AudioHwStream *stream, const char *strs);
+	int32_t (*SetParameters)(struct AudioHwStream *stream, const char *strs);
 
 	/**
 	 * @brief get audio stream parameters.
@@ -152,13 +152,14 @@ struct AudioHwStream {
 	 *
 	 * @param stream is the pointer of the audio stream.
 	 * @return Returns returns buffer status.
+	 * returns < 0 if error happens.
 	 */
-	uint32_t (*GetBufferStatus)(struct AudioHwStream *stream);
+	int32_t (*GetBufferStatus)(struct AudioHwStream *stream);
 };
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_H
+#endif  // AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_H
 /** @} */

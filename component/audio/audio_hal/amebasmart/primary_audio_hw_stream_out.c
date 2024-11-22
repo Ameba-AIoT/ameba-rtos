@@ -12,20 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_hw_compat.h"
+
 #include <inttypes.h>
+
+#include "os_wrapper.h"
 
 #include "ameba_audio_hw_usrcfg.h"
 #include "ameba_audio_types.h"
 #include "ameba_audio_stream_control.h"
 #include "ameba_audio_stream_render.h"
+
+#include "audio_hw_compat.h"
 #include "audio_hw_osal_errnos.h"
 #include "audio_hw_debug.h"
+#include "audio_hw_params_handle.h"
+
 #include "hardware/audio/audio_hw_types.h"
 #include "hardware/audio/audio_hw_utils.h"
 #include "hardware/audio/audio_hw_stream_out.h"
-#include "os_wrapper.h"
-#include "audio_hw_params_handle.h"
+
 #include "primary_audio_hw_card.h"
 
 #define DEFAULT_OUT_SAMPLING_RATE 16000
@@ -54,7 +59,7 @@ struct PrimaryAudioHwStreamOut {
 	Stream *out_pcm;
 	char *buffer;
 	size_t buffer_frames;
-	int standby;
+	int32_t standby;
 	enum AudioHwFormat format;
 	uint32_t channel_count;
 	uint32_t sample_rate;
@@ -70,7 +75,7 @@ struct PrimaryAudioHwStreamOut {
 
 static inline size_t PrimaryAudioHwStreamOutFrameSize(const struct AudioHwStreamOut *s)
 {
-	int chan_samp_sz;
+	int32_t chan_samp_sz;
 	enum AudioHwFormat format = s->common.GetFormat(&s->common);
 
 	if (AudioIsLinearPCM(format)) {
@@ -87,11 +92,11 @@ static uint32_t PrimaryGetStreamOutSampleRate(const struct AudioHwStream *stream
 	return out->sample_rate;
 }
 
-static int PrimarySetStreamOutSampleRate(struct AudioHwStream *stream, uint32_t rate)
+static int32_t PrimarySetStreamOutSampleRate(struct AudioHwStream *stream, uint32_t rate)
 {
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
 	out->sample_rate = rate;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static size_t PrimaryGetStreamOutBufferSize(const struct AudioHwStream *stream)
@@ -111,12 +116,12 @@ static uint32_t PrimaryGetStreamOutChannels(const struct AudioHwStream *stream)
 	return out->channel_count;
 }
 
-static int PrimarySetStreamOutChannels(const struct AudioHwStream *stream, uint32_t channel)
+static int32_t PrimarySetStreamOutChannels(const struct AudioHwStream *stream, uint32_t channel)
 {
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
 
 	out->channel_count = channel;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static enum AudioHwFormat PrimaryGetStreamOutFormat(const struct AudioHwStream *stream)
@@ -126,15 +131,15 @@ static enum AudioHwFormat PrimaryGetStreamOutFormat(const struct AudioHwStream *
 	return out->format;
 }
 
-static int PrimarySetStreamOutFormat(struct AudioHwStream *stream, enum AudioHwFormat format)
+static int32_t PrimarySetStreamOutFormat(struct AudioHwStream *stream, enum AudioHwFormat format)
 {
 	(void) stream;
 	(void) format;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 /* must be called with hw device and output stream mutexes locked */
-static int DoStandbyOutput(struct PrimaryAudioHwStreamOut *out)
+static int32_t DoStandbyOutput(struct PrimaryAudioHwStreamOut *out)
 {
 	if (!out->standby) {
 		out->standby = 1;
@@ -145,13 +150,13 @@ static int DoStandbyOutput(struct PrimaryAudioHwStreamOut *out)
 		ameba_audio_stream_tx_standby(out->out_pcm);
 		ameba_audio_stream_buffer_flush(out->out_pcm->rbuffer);
 	}
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-static int PrimaryStandbyStreamOut(struct AudioHwStream *stream)
+static int32_t PrimaryStandbyStreamOut(struct AudioHwStream *stream)
 {
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
-	int status;
+	int32_t status;
 
 	//rtos_mutex_take(out->pri_card->lock, MUTEX_WAIT_TIMEOUT);
 	rtos_mutex_take(out->lock, MUTEX_WAIT_TIMEOUT);
@@ -162,32 +167,32 @@ static int PrimaryStandbyStreamOut(struct AudioHwStream *stream)
 	return status;
 }
 
-static int PrimaryDumpStreamOut(const struct AudioHwStream *stream, int fd)
+static int32_t PrimaryDumpStreamOut(const struct AudioHwStream *stream, int32_t fd)
 {
 	(void) stream;
 	(void) fd;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-static uint32_t PrimaryGetStreamOutBufferStatus(struct AudioHwStream *stream)
+static int32_t PrimaryGetStreamOutBufferStatus(struct AudioHwStream *stream)
 {
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
 	if (!out) {
 		HAL_AUDIO_ERROR("PrimaryGetStreamOutBufferStatus stream_out is not initialized");
-		return 0;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 
 	return ameba_audio_stream_tx_get_buffer_status(out->out_pcm);
 }
 
-static int PrimarySetStreamOutParameters(struct AudioHwStream *stream, const char *str_pairs)
+static int32_t PrimarySetStreamOutParameters(struct AudioHwStream *stream, const char *str_pairs)
 {
 	HAL_AUDIO_INFO("%s, keys = %s", __FUNCTION__, str_pairs);
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
 	struct string_cell *cells;
 	cells = string_cells_create_from_str(str_pairs);
-	int value;
+	int32_t value;
 
 	if (string_cells_has_key(cells, AMPLIFIER_EN_PIN)) {
 		string_cells_get_int(cells, AMPLIFIER_EN_PIN, &value);
@@ -202,7 +207,7 @@ static int PrimarySetStreamOutParameters(struct AudioHwStream *stream, const cha
 	}
 
 	string_cells_destroy(cells);
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static char *PrimaryGetStreamOutParameters(const struct AudioHwStream *stream, const char *keys)
@@ -228,12 +233,12 @@ static uint32_t PrimaryGetStreamOutLatency(const struct AudioHwStreamOut *stream
 	}
 }
 
-static int PrimaryGetPresentationPosition(const struct AudioHwStreamOut *stream, uint64_t *frames, struct timespec *timestamp)
+static int32_t PrimaryGetPresentationPosition(const struct AudioHwStreamOut *stream, uint64_t *frames, struct timespec *timestamp)
 {
 	HAL_AUDIO_VERBOSE("primaryGetPresentationPosition latency:%lu", PrimaryGetStreamOutLatency(stream));
 
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
-	int ret = -1;
+	int32_t ret = -1;
 
 	rtos_mutex_take(out->lock, MUTEX_WAIT_TIMEOUT);
 
@@ -248,7 +253,7 @@ static int PrimaryGetPresentationPosition(const struct AudioHwStreamOut *stream,
 				*frames = signed_frames;
 				HAL_AUDIO_VERBOSE("frames:%llu", *frames);
 				rtos_mutex_give(out->lock);
-				return 0;
+				return HAL_OSAL_OK;
 			}
 		} else {
 			HAL_AUDIO_ERROR("get ts fail");
@@ -262,12 +267,12 @@ static int PrimaryGetPresentationPosition(const struct AudioHwStreamOut *stream,
 	return ret;
 }
 
-static int PrimaryGetPresentTime(const struct AudioHwStreamOut *stream, int64_t *now_ns, int64_t *audio_ns)
+static int32_t PrimaryGetPresentTime(const struct AudioHwStreamOut *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	HAL_AUDIO_VERBOSE("primaryGetPresentationPosition latency:%lu", PrimaryGetStreamOutLatency(stream));
 
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
-	int ret = -1;
+	int32_t ret = -1;
 	int64_t tmp_now_ns = 0;
 	int64_t tmp_audio_ns = 0;
 
@@ -305,17 +310,17 @@ static int64_t PrimaryGetTriggerTime(const struct AudioHwStreamOut *stream)
 	return ret;
 }
 
-static int PrimarySetStreamOutVolume(struct AudioHwStreamOut *stream, float left,
+static int32_t PrimarySetStreamOutVolume(struct AudioHwStreamOut *stream, float left,
 									 float right)
 {
 	HAL_AUDIO_VERBOSE("PrimarySetStreamOutVolume enter, left: %f, right: %f", left, right);
 	(void) stream;
 	ameba_audio_ctl_set_tx_volume(ameba_audio_get_ctl(), left, right);
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 /* must be called with hw device and output stream mutexes locked */
-static int StartAudioHwStreamOut(struct PrimaryAudioHwStreamOut *out)
+static int32_t StartAudioHwStreamOut(struct PrimaryAudioHwStreamOut *out)
 {
 	HAL_AUDIO_VERBOSE("start output stream enter");
 	(void) out;
@@ -331,7 +336,7 @@ static ssize_t PrimaryStreamOutWrite(struct AudioHwStreamOut *stream, const void
 {
 	HAL_AUDIO_PVERBOSE("primaryStreamOutWrite: bytes: %u", bytes);
 
-	int ret = 0;
+	int32_t ret = 0;
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
 	//struct PrimaryAudioHwCard *pri_card = out->pri_card;
 

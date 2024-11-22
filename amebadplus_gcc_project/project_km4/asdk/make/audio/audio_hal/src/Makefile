@@ -39,6 +39,7 @@ CSRC += $(DIR)/ameba_audio_stream_control.c
 CSRC += $(DIR)/ameba_audio_stream_utils.c
 CSRC += $(DIR)/ameba_audio_stream_render.c
 CSRC += $(DIR)/ameba_audio_stream_capture.c
+CSRC += $(DIR)/ameba_audio_stream_audio_patch.c
 CSRC += $(DIR)/primary_audio_hw_stream_out.c
 CSRC += $(DIR)/primary_audio_hw_card.c
 CSRC += $(DIR)/primary_audio_hw_stream_in.c

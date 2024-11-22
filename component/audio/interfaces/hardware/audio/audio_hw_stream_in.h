@@ -32,8 +32,8 @@
  * @version 1.0
  */
 
-#ifndef AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_IN_H
-#define AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_IN_H
+#ifndef AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_IN_H
+#define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_IN_H
 
 #include <sys/types.h>
 
@@ -65,7 +65,7 @@ struct AudioHwStreamIn {
 	 * @return Returns 0 if stream in frames and timestamp get successfully;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetCapturePosition)(const struct AudioHwStreamIn *stream, uint64_t *frames, struct timespec *timestamp);
+	int32_t (*GetCapturePosition)(const struct AudioHwStreamIn *stream, uint64_t *frames, struct timespec *timestamp);
 
 	/**
 	 * @brief Get current stream in frames and timestamp of the current AudioHwStreamIn.
@@ -76,7 +76,7 @@ struct AudioHwStreamIn {
 	 * @return Returns 0 if stream in frames and timestamp get successfully;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetPresentTime)(const struct AudioHwStreamIn *stream, int64_t *now_ns, int64_t *audio_ns);
+	int32_t (*GetPresentTime)(const struct AudioHwStreamIn *stream, int64_t *now_ns, int64_t *audio_ns);
 
 	/**
 	 * @brief Get current stream in frames and timestamp of the current AudioHwStreamIn.
@@ -131,5 +131,5 @@ size_t GetHwInputBufferSize(uint32_t sample_rate, enum AudioHwFormat format, uin
 }
 #endif
 
-#endif  // AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_IN_H
+#endif  // AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_IN_H
 /** @} */

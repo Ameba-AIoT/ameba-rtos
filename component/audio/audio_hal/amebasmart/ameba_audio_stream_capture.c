@@ -12,24 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ameba_audio_stream_capture.h"
 
-#include "audio_hw_compat.h"
 #include <inttypes.h>
+#include <stdlib.h>
 
-#include "platform_stdlib.h"
 #include "basic_types.h"
+
+#include "ameba.h"
 #include "ameba_audio_clock.h"
-#include "ameba_soc.h"
-#include "ameba_rcc.h"
 #include "ameba_audio_hw_usrcfg.h"
-#include "audio_hw_debug.h"
-#include "hardware/audio/audio_hw_types.h"
 
 #include "ameba_audio_stream_control.h"
 #include "ameba_audio_stream_utils.h"
 #include "ameba_audio_stream_buffer.h"
 #include "ameba_audio_types.h"
+
+#include "audio_hw_compat.h"
+#include "audio_hw_debug.h"
+#include "audio_hw_osal_errnos.h"
+
+#include "ameba_audio_stream_capture.h"
 
 #define IS_6_8_CHANNEL(NUM) (((NUM) == 6) || ((NUM) == 8))
 
@@ -344,7 +346,7 @@ static void ameba_audio_stream_rx_codec_init(CaptureStream **stream, StreamConfi
 static void stream_rx_llp_init(Stream *stream)
 {
 	uint32_t j;
-	int index = 1;
+	int32_t index = 1;
 
 	CaptureStream *cstream = (CaptureStream *)stream;
 	struct GDMA_CH_LLI *ch_lli = cstream->stream.gdma_ch_lli;
@@ -389,7 +391,7 @@ uint32_t ameba_audio_stream_rx_sport_interrupt(void *data)
 	return 0;
 }
 
-int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp)
+int32_t ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp)
 {
 	//now nsec;
 	uint64_t nsec;
@@ -400,7 +402,7 @@ int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frame
 
 	CaptureStream *cstream = (CaptureStream *)stream;
 	if (!cstream) {
-		return -1;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	AUDIO_SP_SetPhaseLatch(cstream->stream.sport_dev_num);
@@ -418,10 +420,10 @@ int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frame
 	HAL_AUDIO_PVERBOSE("captured_frames:%" PRIu64 ", trigger:%" PRIu64 ", usec:%" PRIu64 ", tv_sec:%" PRIu64 ", tv_nsec:%" PRIu32 "",
 					   *captured_frames, cstream->stream.trigger_tstamp, nsec, tstamp->tv_sec, tstamp->tv_nsec);
 
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-HAL_AUDIO_WEAK int ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
+HAL_AUDIO_WEAK int32_t ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 	//now nsec;
 	uint64_t nsec;
@@ -434,7 +436,7 @@ HAL_AUDIO_WEAK int ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_n
 
 	CaptureStream *cstream = (CaptureStream *)stream;
 	if (!cstream) {
-		return -1;
+		return HAL_OSAL_ERR_NO_INIT;
 	}
 
 	AUDIO_SP_SetPhaseLatch(cstream->stream.sport_dev_num);
@@ -448,7 +450,7 @@ HAL_AUDIO_WEAK int ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_n
 	*now_ns = nsec;
 	*audio_ns = (int64_t)((double)((double)now_counter + (double)phase / (double)32) / (double)cstream->stream.config.rate * (double)1000000000);
 
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config)
@@ -830,13 +832,13 @@ static void ameba_audio_stream_rx_check_and_start_gdma(CaptureStream *cstream)
 	}
 }
 
-static int ameba_audio_stream_rx_read_in_noirq_mode(Stream *stream, void *data, unsigned int bytes)
+static int32_t ameba_audio_stream_rx_read_in_noirq_mode(Stream *stream, void *data, uint32_t bytes)
 {
 	HAL_AUDIO_CVERBOSE("bytes:%" PRId32 "", __func__, bytes);
 
-	unsigned int total_bytes_0 = bytes;
-	unsigned int bytes_to_read_0 = total_bytes_0;
-	unsigned int bytes_read_0 = 0;
+	uint32_t total_bytes_0 = bytes;
+	uint32_t bytes_to_read_0 = total_bytes_0;
+	uint32_t bytes_read_0 = 0;
 
 	char *p_buf0 = (char *)data;
 	CaptureStream *cstream = (CaptureStream *)stream;
@@ -857,10 +859,10 @@ static int ameba_audio_stream_rx_read_in_noirq_mode(Stream *stream, void *data, 
 
 	}
 
-	return 0;
+	return bytes;
 }
 
-static int ameba_audio_stream_rx_read_in_irq_mode(Stream *stream, void *data, uint32_t bytes)
+static int32_t ameba_audio_stream_rx_read_in_irq_mode(Stream *stream, void *data, uint32_t bytes)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
 
@@ -931,10 +933,10 @@ static int ameba_audio_stream_rx_read_in_irq_mode(Stream *stream, void *data, ui
 		}
 	}
 
-	return 0;
+	return bytes;
 }
 
-int ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes)
+int32_t ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
 

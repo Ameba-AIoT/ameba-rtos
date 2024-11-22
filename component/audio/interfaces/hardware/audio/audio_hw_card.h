@@ -32,8 +32,8 @@
  * @version 1.0
  */
 
-#ifndef AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_CARD_H
-#define AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_CARD_H
+#ifndef AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_CARD_H
+#define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_CARD_H
 
 
 #include "hardware/audio/audio_hw_stream_out.h"
@@ -58,7 +58,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetParameters)(struct AudioHwCard *card, const char *strs);
+	int32_t (*SetParameters)(struct AudioHwCard *card, const char *strs);
 
 	/**
 	 * @brief Get parameters of AudioHwcard.
@@ -78,7 +78,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetCaptureVolume)(const struct AudioHwCard *card, float volume);
+	int32_t (*SetCaptureVolume)(const struct AudioHwCard *card, float volume);
 
 	/**
 	 * @brief Get capture volume of AudioHwcard.
@@ -88,7 +88,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetCaptureVolume)(const struct AudioHwCard *card, float *volume);
+	int32_t (*GetCaptureVolume)(const struct AudioHwCard *card, float *volume);
 
 	/**
 	 * @brief Set playback volume of AudioHwcard.
@@ -98,7 +98,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetRenderVolume)(const struct AudioHwCard *card, float volume);
+	int32_t (*SetRenderVolume)(const struct AudioHwCard *card, float volume);
 
 	/**
 	 * @brief Get playback volume of AudioHwcard.
@@ -108,7 +108,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetRenderVolume)(const struct AudioHwCard *card, float *volume);
+	int32_t (*GetRenderVolume)(const struct AudioHwCard *card, float *volume);
 
 	/**
 	 * @brief Set mute playback status of AudioHwcard.
@@ -118,7 +118,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetRenderMute)(const struct AudioHwCard *card, bool muted);
+	int32_t (*SetRenderMute)(const struct AudioHwCard *card, bool muted);
 
 	/**
 	 * @brief Get current playback mute status of AudioHwcard.
@@ -128,7 +128,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetRenderMute)(const struct AudioHwCard *card, bool *muted);
+	int32_t (*GetRenderMute)(const struct AudioHwCard *card, bool *muted);
 
 	/**
 	 * @brief Set capture mute status to AudioHwcard.
@@ -138,7 +138,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*SetCaptureMute)(const struct AudioHwCard *card, bool muted);
+	int32_t (*SetCaptureMute)(const struct AudioHwCard *card, bool muted);
 
 	/**
 	 * @brief Get current capture mute status of AudioHwcard.
@@ -148,7 +148,7 @@ struct AudioHwCard {
 	 * @return Returns 0 if the operation is successful;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetCaptureMute)(const struct AudioHwCard *card, bool *muted);
+	int32_t (*GetCaptureMute)(const struct AudioHwCard *card, bool *muted);
 
 	/**
 	 * @brief Get input buffer size of AudioHwcard.
@@ -159,6 +159,29 @@ struct AudioHwCard {
 	 */
 	size_t (*GetInputBufferSize)(const struct AudioHwCard *card,
 								 const struct AudioHwConfig *config);
+
+	/**
+	 * @brief Create audio patch.
+	 *
+	 * @param card is the pointer of the struct AudioHwcard.
+	 * @param source where the streaming comes from.
+	 * @param sink where the streaming goes to.
+	 * @return Returns path index if the operation is successful;
+	 * returns < 0 if error happens.
+	 */
+	int32_t (*CreateAudioPatch)(struct AudioHwCard *card,
+			int32_t num_sources, struct AudioHwPatchConfig *sources,
+			int32_t num_sinks, struct AudioHwPatchConfig *sinks);
+
+	/**
+	 * @brief Release audio patch.
+	 *
+	 * @param card is the pointer of the struct AudioHwcard.
+	 * @param patch_index is the path index to release.
+	 * @return Returns 0 if the operation is successful;
+	 * returns < 0 if error happens.
+	 */
+	int32_t (*ReleaseAudioPatch)(struct AudioHwCard *card, int32_t patch_index);
 
 	/**
 	 * @brief Creates AudioHwStreamOut.
@@ -214,5 +237,5 @@ struct AudioHwCard *CreateAudioHwCard(void);
 }
 #endif
 
-#endif  // AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_CARD_H
+#endif  // AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_CARD_H
 /** @} */

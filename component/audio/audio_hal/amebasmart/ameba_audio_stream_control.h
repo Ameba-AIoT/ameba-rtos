@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_CONTROL_H
-#define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_CONTROL_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBASMART_AMEBA_AUDIO_STREAM_CONTROL_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBASMART_AMEBA_AUDIO_STREAM_CONTROL_H
 
 #include "ameba_audio_stream.h"
 
