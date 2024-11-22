@@ -10,30 +10,7 @@
 #include "rtk_coex.h"
 
 #if defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE
-extern void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
-#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
-
-void bt_coex_init(void)
-{
-
-}
-
-void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
-{
-
-}
-
-void bt_coex_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
-{
-
-}
-
-void bt_coex_deinit(void)
-{
-
-}
-
-#else //defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+extern void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t type);
 
 rtk_bt_coex_priv_t *p_rtk_bt_coex_priv = NULL;
 
@@ -65,13 +42,13 @@ static rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
 	}
 }
 
-static void bt_coex_send_vendor_cmd(uint8_t *pbuf, uint8_t len)
+static void bt_coex_send_vendor_cmd(uint16_t cmd_id, uint8_t *pbuf, uint8_t len)
 {
-	DBG_BT_COEX("bt_coex_send_vendor_cmd -----> \r\n");
+	DBG_BT_COEX("bt_coex_send_vendor_cmd -----> cmd_id 0x%x\r\n", cmd_id);
 
 	pbuf[0] = HCI_CMD;
-	pbuf[1] = HCI_VENDOR_SET_PROFILE_REPORT_COMMAND & 0xFF;
-	pbuf[2] = (HCI_VENDOR_SET_PROFILE_REPORT_COMMAND >> 8) & 0xFF;
+	pbuf[1] = cmd_id & 0xFF;
+	pbuf[2] = (cmd_id >> 8) & 0xFF;
 	pbuf[3] = len - 4;
 
 	DBG_BT_COEX("bt_coex_send_vendor_cmd: len = %d\r\n", len);
@@ -114,6 +91,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 		return;
 	}
 
+	//the first 4 byte reserved for header
 	pbuf[offset + 4] = handle_number;
 	offset ++;
 
@@ -142,7 +120,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 
 	//BT_DUMPA("", pbuf, offset + 4);
 
-	bt_coex_send_vendor_cmd(pbuf, offset + 4);
+	bt_coex_send_vendor_cmd(HCI_VENDOR_SET_PROFILE_REPORT_COMMAND, pbuf, offset + 4);
 
 	osif_mem_free(pbuf);
 }
@@ -870,7 +848,38 @@ static void bt_coex_handle_handle_l2cap_dis_conn_req(rtk_bt_coex_conn_t *p_conn,
 	osif_mem_free(p_profile);
 }
 
-static void bt_coex_packet_counter_handle(rtk_bt_coex_conn_t *p_conn, uint16_t cid, uint8_t dir)
+
+static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
+{
+#define HCI_VENDOR_SET_BITPOOL_LENGTH  5
+	struct sbc_frame_hdr *sbc_header = NULL;
+	struct rtp_header *rtph = NULL;
+	uint8_t hci_buf[HCI_VENDOR_SET_BITPOOL_LENGTH] = {0};
+
+	/* We assume it is SBC if the packet length
+	    * is bigger than 100 bytes
+	    */
+	if (length > 100) {
+		rtph = (struct rtp_header *)user_data;
+
+		DBG_BT_COEX("bt_coex_set_bitpool_to_fw rtp: v 0x%x, cc 0x%x, pt 0x%x \r\n", rtph->v, rtph->cc, rtph->pt);
+
+		/* move forward */
+		user_data += sizeof(struct rtp_header) + rtph->cc * 4 + 1;
+
+		/* point to the sbc frame header */
+		sbc_header = (struct sbc_frame_hdr *)user_data;
+		hci_buf[HCI_VENDOR_SET_BITPOOL_LENGTH - 1] = (uint8_t)sbc_header->bitpool;
+
+		DBG_BT_COEX("bt_coex_set_bitpool_to_fw bitpool %d channel_mode %d sampling_frequency %d\r\n", sbc_header->bitpool, sbc_header->channel_mode,
+					sbc_header->sampling_frequency);
+
+		//the first 4 byte reserved for header
+		bt_coex_send_vendor_cmd(HCI_VENDOR_SET_BITPOOL, hci_buf, HCI_VENDOR_SET_BITPOOL_LENGTH);
+	}
+}
+
+static void bt_coex_packet_counter_handle(rtk_bt_coex_conn_t *p_conn, uint16_t cid, uint8_t dir, uint8_t *pdata, uint16_t length)
 {
 	rtk_bt_coex_profile_info_t *p_profile = NULL;
 
@@ -892,6 +901,7 @@ static void bt_coex_packet_counter_handle(rtk_bt_coex_conn_t *p_conn, uint16_t c
 				}
 			}
 			bt_coex_set_profile_info_to_fw();
+			bt_coex_set_bitpool_to_fw(pdata, length);
 		}
 
 		p_conn->a2dp_cnt ++;
@@ -920,6 +930,7 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 	uint16_t scid = 0;
 	uint16_t dcid = 0;
 	uint16_t res = 0;
+	uint16_t pdu_len = 0;
 	rtk_bt_coex_conn_t *p_conn = NULL;
 
 	conn_handle = (uint16_t)((pdata[1] << 8) | pdata[0]);
@@ -937,6 +948,7 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 		return;
 	}
 
+	pdu_len = (uint16_t)((pdata[5] << 8) | pdata[4]);
 	channel_id = (uint16_t)((pdata[7] << 8) | pdata[6]);
 
 	if ((channel_id == 0x0001) && len < 11) {
@@ -971,7 +983,7 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 		}
 	} else {
 		if ((((p_conn->profile_bitmap & BIT(PROFILE_A2DP)) > 0) || ((p_conn->profile_bitmap & BIT(PROFILE_PAN)) > 0))) {
-			bt_coex_packet_counter_handle(p_conn, channel_id, dir);
+			bt_coex_packet_counter_handle(p_conn, channel_id, dir, pdata + 9, pdu_len);
 		}
 	}
 }
@@ -1027,6 +1039,86 @@ static void bt_coex_monitor_timer_handler(void *arg)
 	}
 }
 
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+static void bt_coex_send_mailbox_cmd(uint8_t *user_data, uint16_t length)
+{
+	uint8_t *pbuf = NULL;
+	uint8_t offset = 0;
+
+	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, 1 + length + 4);
+	if (!pbuf) {
+		return;
+	}
+
+	//the first 4 byte reserved for header
+	pbuf[offset + 4] = length;
+	offset ++;
+	memcpy(pbuf + offset + 4, user_data, length);
+
+	//the first 4 byte reserved for header
+	bt_coex_send_vendor_cmd(HCI_VENDOR_MAILBOX_CMD, pbuf, offset + 4);
+
+	osif_mem_free(pbuf);
+}
+
+
+static void bt_coex_set_mailbox_to_wifi(uint8_t *user_data, uint16_t length)
+{
+	DBG_BT_COEX_DUMP("bt_coex_set_mailbox_to_wifi: pdata = ", user_data, length);
+	wifi_btcoex_bt_hci_notify(user_data, length, HCI_NOTIFY_SW_MAILBOX);
+}
+
+static void bt_coex_parse_mailbox_event(uint8_t status, uint8_t mailbox_id, uint8_t payload_len, uint8_t *payload)
+{
+	uint8_t *pdata = NULL;
+	uint8_t data_len = 0;
+	DBG_BT_COEX("bt_coex_parse_mailbox_event status %d mailbox_id 0x%x\r\n", status, mailbox_id);
+
+	switch (mailbox_id) {
+	case RTK_COEX_MAILBOX_BT_IGNORE_WLAN_ACT:
+		break;
+	case RTK_COEX_MAILBOX_BT_MP_REPORT:
+		break;
+	case RTK_COEX_MAILBOX_BT_INFO_REPORT:
+	case RTK_COEX_MAILBOX_BT_INFO_REPORT_BY_ITSELF:
+		if (status == 0) {
+			pdata = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, 1 + payload_len);
+			if (!pdata || payload_len == 0) {
+				return;
+			}
+			pdata[0] = mailbox_id;
+			memcpy(pdata + 1, payload, payload_len);
+			data_len = payload_len + 1;
+			DBG_BT_COEX_DUMP("bt_coex_set_mailbox_to_wifi: pdata = ", pdata, data_len);
+			bt_coex_set_mailbox_to_wifi(pdata, data_len);
+			osif_mem_free(pdata);
+		}
+		break;
+
+	default:
+		break;
+	}
+}
+#endif
+
+void rtk_coex_bt_hci_msg_send(uint8_t type, uint8_t *pdata, uint16_t len)
+{
+	if (type == HCI_MSG_HCI_INFO_WRITE) {
+
+	} else if (type == HCI_MSG_HCI_INFO_READ) {
+
+	}
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+	else if (type == HCI_MSG_MAILBOX_TRIGGER) {
+		bt_coex_send_mailbox_cmd(pdata, len);
+		DBG_BT_COEX_DUMP("rtk_coex_bt_hci_msg_send: pdata = ", pdata, len);
+	}
+#endif
+	(void) pdata;
+	(void) len;
+	(void) type;
+}
+
 void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
 {
 	uint8_t evt = pdata[0];
@@ -1048,11 +1140,50 @@ void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
 	case HCI_EV_DISCONN_COMPLETE:
 		need_notify = TRUE;
 		break;
+
+	case HCI_EV_CMD_COMPLETE: {
+		//B0: event code, B1: length, B2: Num_HCI_Command_Packets, B3&B4: Command_Opcode: B5: cmd_status
+		uint16_t cmd_opcode = (uint16_t)((pdata[4] << 8) | pdata[3]);
+		uint8_t length = pdata[1];
+		uint8_t status = pdata[5];
+		switch (cmd_opcode) {
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		case HCI_VENDOR_MAILBOX_CMD: {
+			uint8_t mailbox_id = pdata[1];
+			uint8_t payload_len = length - 5;
+			uint8_t *payload = pdata + 7;
+			bt_coex_parse_mailbox_event(status, mailbox_id, payload_len, payload);
+			break;
+		}
+#endif
+		default:
+			(void) length;
+			(void) status;
+			break;
+		}
+		break;
+	}
+
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+	case HCI_EV_VENDOR_SPECIFIC: {//fix me, test in amebad
+		//B0: event code, B1: length, B2: sub event code, B3: cmd_status, B4&B11 coex info
+		uint8_t length = pdata[1];
+		uint8_t sub_event_code = pdata[2];
+		uint8_t status = pdata[3];
+		uint8_t payload_len = length - 2;
+		uint8_t *payload = pdata + 4;
+		if (sub_event_code == RTK_COEX_MAILBOX_BT_INFO_REPORT_BY_ITSELF) {
+			bt_coex_parse_mailbox_event(status, sub_event_code, payload_len, payload);
+		}
+		break;
+	}
+#endif
+
 	default:
 		break;
 	}
 	if (need_notify == TRUE) {
-		wifi_btcoex_bt_hci_notify(pdata, len, DIR_IN);
+		wifi_btcoex_bt_hci_notify(pdata, len, HCI_NOTIFY_HCI_EVENT);
 	}
 }
 void bt_coex_cmd_notify(uint8_t *pdata, uint16_t len)
@@ -1060,13 +1191,21 @@ void bt_coex_cmd_notify(uint8_t *pdata, uint16_t len)
 	uint16_t opcode;
 	opcode = (uint16_t)((pdata[1] << 8) | pdata[0]);
 	switch (opcode) {
+	case BT_HCI_OP_LE_SET_ADV_PARAM:
+	case BT_HCI_OP_LE_SET_ADV_ENABLE:
+	case BT_HCI_OP_LE_SET_EADV_PARAM_V1:
+	case BT_HCI_OP_LE_SET_EADV_PARAM_V2:
+	case BT_HCI_OP_LE_SET_EADV_ENABLE:
+	case BT_HCI_OP_LE_SET_PADV_PARAM_V1:
+	case BT_HCI_OP_LE_SET_PADV_PARAM_V2:
+	case BT_HCI_OP_LE_SET_PADV_ENABLE:
 	case BT_HCI_OP_LE_SET_SCAN_PARAM:
 	case BT_HCI_OP_LE_SET_EX_SCAN_PARAM:
 	case BT_HCI_OP_BR_WR_SCAN_ENABLE:
 	case BT_HCI_OP_BR_WR_PAGE_SCAN_ACTIVITY:
 	case BT_HCI_OP_BR_WR_INQ_SCAN_ACTIVITY:
 	case BT_HCI_OP_LE_CREATE_CONNECTION:
-		wifi_btcoex_bt_hci_notify(pdata, len, DIR_OUT);
+		wifi_btcoex_bt_hci_notify(pdata, len, HCI_NOTIFY_HCI_CMD);
 		break;
 	default:
 		break;
@@ -1169,8 +1308,6 @@ void bt_coex_deinit(void)
 	osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
 	osif_mem_free(p_rtk_bt_coex_priv);
 }
-
-#endif //defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 
 #else //defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE
 

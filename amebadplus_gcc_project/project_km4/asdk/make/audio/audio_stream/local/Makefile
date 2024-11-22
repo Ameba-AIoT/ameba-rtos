@@ -31,6 +31,7 @@ CPPFLAGS += -D__RTOS__ -Wno-multichar -Wno-unused-parameter -Wno-literal-suffix 
 CSRC  = $(DIR)/audio_track.cpp
 CSRC  += $(DIR)/audio_record.cpp
 CSRC  += $(DIR)/audio_service.cpp
+CSRC  += $(DIR)/audio_manager.cpp
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #

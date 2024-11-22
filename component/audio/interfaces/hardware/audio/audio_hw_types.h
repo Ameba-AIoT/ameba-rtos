@@ -32,8 +32,8 @@
  * @version 1.0
  */
 
-#ifndef AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_TYPES_H
-#define AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_TYPES_H
+#ifndef AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_TYPES_H
+#define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_TYPES_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -47,25 +47,25 @@ extern "C" {
  * @brief Defines the audio hw format.
  */
 enum AudioHwFormat {
-	/** audio data bit format not supported */
-	AUDIO_HW_FORMAT_INVALID             = 0xFFFFFFFFu,
-	/** audio data bit format is pcm */
-	AUDIO_HW_FORMAT_PCM                 = 0x00000000u,
-	/** mask to check if format if pcm or other categories */
-	AUDIO_HW_FORMAT_MAIN_MASK           = 0xFF000000u,
+    /** audio data bit format not supported */
+    AUDIO_HW_FORMAT_INVALID             = 0xFFFFFFFFu,
+    /** audio data bit format is pcm */
+    AUDIO_HW_FORMAT_PCM                 = 0x00000000u,
+    /** mask to check if format if pcm or other categories */
+    AUDIO_HW_FORMAT_MAIN_MASK           = 0xFF000000u,
 
-	/** audio data bit format, 8bit per channel per frame */
-	AUDIO_HW_FORMAT_PCM_8_BIT           = 0x01u,
-	/** audio data bit format, 16bit per channel per frame */
-	AUDIO_HW_FORMAT_PCM_16_BIT          = 0x02u,
-	/** audio data bit format, 32bit per channel per frame */
-	AUDIO_HW_FORMAT_PCM_32_BIT          = 0x04u,
-	/** audio data bit format, float per channel per frame */
-	AUDIO_HW_FORMAT_PCM_FLOAT           = 0x08u,
-	/** audio data bit format, 24bit zero per channel per frame */
-	AUDIO_HW_FORMAT_PCM_24_BIT          = 0x10u,
-	/** audio data bit format, 24bit+8bit zero per channel per frame */
-	AUDIO_HW_FORMAT_PCM_8_24_BIT        = 0x20u,
+    /** audio data bit format, 8bit per channel per frame */
+    AUDIO_HW_FORMAT_PCM_8_BIT           = 0x01u,
+    /** audio data bit format, 16bit per channel per frame */
+    AUDIO_HW_FORMAT_PCM_16_BIT          = 0x02u,
+    /** audio data bit format, 32bit per channel per frame */
+    AUDIO_HW_FORMAT_PCM_32_BIT          = 0x04u,
+    /** audio data bit format, float per channel per frame */
+    AUDIO_HW_FORMAT_PCM_FLOAT           = 0x08u,
+    /** audio data bit format, 24bit zero per channel per frame */
+    AUDIO_HW_FORMAT_PCM_24_BIT          = 0x10u,
+    /** audio data bit format, 24bit+8bit zero per channel per frame */
+    AUDIO_HW_FORMAT_PCM_8_24_BIT        = 0x20u,
 
 };
 
@@ -73,122 +73,154 @@ enum AudioHwFormat {
  * @brief Defines the audio hw card type.
  */
 enum AudioHwCardType {
-	/** audio card type primary*/
-	AUDIO_HW_CARD_TYPE_PRIMARY = 0x0u,
+    /** audio card type primary*/
+    AUDIO_HW_CARD_TYPE_PRIMARY = 0x0u,
 };
 
 /**
  * @brief Defines the audio port role.
  */
 enum AudioHwPortRole {
-	/** audio port's role is output */
-	AUDIO_HW_PORT_ROLE_OUT    = 0x1u,
-	/** audio port's role is input */
-	AUDIO_HW_PORT_ROLE_IN     = 0x2u,
+    /** audio port's role is output */
+    AUDIO_HW_PORT_ROLE_OUT    = 0x1u,
+    /** audio port's role is input */
+    AUDIO_HW_PORT_ROLE_IN     = 0x2u,
 };
 
 /**
  * @brief Defines the audio devices.
  */
 enum AudioHwDevice {
-	/** audio device none */
-	AUDIO_HW_DEVICE_NONE             = 0x0u,
-	/** audio device speaker */
-	AUDIO_HW_DEVICE_OUT_SPEAKER      = 0x1u,
-	/** audio device i2s out */
-	AUDIO_HW_DEVICE_OUT_I2S          = 0x2u,
-	/** audio device microphone */
-	AUDIO_HW_DEVICE_IN_MIC           = 0x8000001u,
-	/** audio device digital microphone */
-	AUDIO_HW_DEVICE_IN_DMIC_REF_AMIC = 0x8000002u,
-	/** audio device i2s in */
-	AUDIO_HW_DEVICE_IN_I2S           = 0x8000004u,
+    /** audio device none */
+    AUDIO_HW_DEVICE_NONE             = 0x0u,
+    /** audio device speaker */
+    AUDIO_HW_DEVICE_OUT_SPEAKER      = 0x1u,
+    /** audio device i2s out */
+    AUDIO_HW_DEVICE_OUT_I2S          = 0x2u,
+    /** audio device microphone */
+    AUDIO_HW_DEVICE_IN_MIC           = 0x8000001u,
+    /** audio device digital microphone */
+    AUDIO_HW_DEVICE_IN_DMIC_REF_AMIC = 0x8000002u,
+    /** audio device i2s in */
+    AUDIO_HW_DEVICE_IN_I2S           = 0x8000004u,
 };
 
 /**
  * @brief Defines the output flags of an audio stream out.
  */
 enum AudioHwOutputFlag {
-	/** audio output flag none */
-	AUDIO_HW_OUTPUT_FLAG_NONE         = 0x0u,
-	/** audio output for no irq of dma */
-	AUDIO_HW_OUTPUT_FLAG_NOIRQ        = 0x1u,
+    /** audio output flag none */
+    AUDIO_HW_OUTPUT_FLAG_NONE         = 0x0u,
+    /** audio output for no irq of dma */
+    AUDIO_HW_OUTPUT_FLAG_NOIRQ        = 0x1u,
 };
 
 /**
  * @brief Defines the input flags of an audio stream in.
  */
 enum AudioHwInputFlag {
-	/** audio input flag none */
-	AUDIO_HW_INPUT_FLAG_NONE         = 0x0u,
-	/** audio input for no irq of dma */
-	AUDIO_HW_INPUT_FLAG_NOIRQ        = 0x1u,
+    /** audio input flag none */
+    AUDIO_HW_INPUT_FLAG_NONE         = 0x0u,
+    /** audio input for no irq of dma */
+    AUDIO_HW_INPUT_FLAG_NOIRQ        = 0x1u,
 };
 
 /**
  * @brief Defines the audio card information.
  */
 struct AudioHwCardDescriptor {
-	/** audio card type, for example, primary */
-	enum AudioHwCardType type;
-	/** supported ports by this card */
-	struct AudioHwPort *ports;
-	/** supported port count by this card */
-	uint32_t port_num;
-	/** supported devices by this card */
-	enum AudioHwDevice devices;
-	/** supported device count by this card */
-	uint32_t device_num;
+    /** audio card type, for example, primary */
+    enum AudioHwCardType type;
+    /** supported ports by this card */
+    struct AudioHwPort *ports;
+    /** supported port count by this card */
+    uint32_t port_num;
+    /** supported devices by this card */
+    enum AudioHwDevice devices;
+    /** supported device count by this card */
+    uint32_t device_num;
 };
 
 /**
  * @brief Defines the audio port information.
  */
 struct AudioHwPort {
-	/** port index */
-	uint32_t port_index;
-	/** port role */
-	enum AudioHwPortRole role;
-	/** port flags */
-	union flag {
-		enum AudioHwOutputFlag out_flags;
-		enum AudioHwInputFlag in_flags;
-	} flags;
-	/** supported devices by this port */
-	enum AudioHwDevice supported_devices;
-	/** supported device count by this port */
-	uint32_t devices_num;
+    /** port index */
+    uint32_t port_index;
+    /** port role */
+    enum AudioHwPortRole role;
+    /** port flags */
+    union flag {
+        enum AudioHwOutputFlag out_flags;
+        enum AudioHwInputFlag in_flags;
+    } flags;
+    /** supported devices by this port */
+    enum AudioHwDevice supported_devices;
+    /** supported device count by this port */
+    uint32_t devices_num;
+};
+
+/**
+ * @brief Defines the audio patch node types.
+ */
+enum AudioHwPatchNodeType {
+    /** audio patch node none */
+    AUDIO_HW_PATCH_NODE_NONE        = 0x0u,
+    /** audio patch node: AudioHwPort */
+    AUDIO_HW_PATCH_NODE_PORT        = 0x1u,
+    /** audio patch node: AudioHwDevice */
+    AUDIO_HW_PATCH_NODE_DEVICE      = 0x2u,
+};
+
+/**
+ * @brief Defines the audio patch config.
+ */
+struct AudioHwPatchConfig {
+    /** rate of the sample */
+    uint32_t sample_rate;
+    /** channel count of the sample */
+    uint32_t channel_count;
+    /** format of the sample */
+    enum AudioHwFormat format;
+    /** audio patch node type */
+    enum AudioHwPatchNodeType type;
+    union {
+        /** audio patch node is AudioHwPort*/
+        int32_t port_index;
+        /** audio patch node is AudioHwDevice*/
+        enum AudioHwDevice device;
+    } node;
 };
 
 /**
  * @brief Defines the audio patch information.
  */
 struct AudioHwPathDescriptor {
-	/** port index of the audio path*/
-	uint32_t port_index;
-	/** flags of the audio path*/
-	uint32_t flags;
-	/** devices of the audio path*/
-	enum AudioHwDevice devices;
+    /** port index of the audio path*/
+    uint32_t port_index;
+    /** flags of the audio path*/
+    uint32_t flags;
+    /** devices of the audio path*/
+    enum AudioHwDevice devices;
 };
 
 /**
  * @brief Defines audio stream configs.
  */
 struct AudioHwConfig {
-	/** rate of the sample */
-	uint32_t sample_rate;
-	/** channel count of the sample */
-	uint32_t channel_count;
-	/** format of the sample */
-	enum AudioHwFormat format;
-	/** dma buffer bytes one time */
-	uint32_t buffer_bytes;
+    /** rate of the sample */
+    uint32_t sample_rate;
+    /** channel count of the sample */
+    uint32_t channel_count;
+    /** format of the sample */
+    enum AudioHwFormat format;
+    /** dma buffer bytes one time */
+    uint32_t buffer_bytes;
 };
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_TYPES_H
+#endif  // AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_TYPES_H
 /** @} */

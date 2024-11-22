@@ -1,0 +1,21 @@
+BLEDIR = $(BASEDIR)/component/bluetooth
+
+IFLAGS += \
+	-I$(BASEDIR)/component/soc/amebadplus/fwlib/include \
+	-I$(BLEDIR)/rtk_coex \
+	-I$(BLEDIR)/driver \
+	-I$(BLEDIR)/driver/dtm \
+	-I$(BLEDIR)/driver/hci \
+	-I$(BLEDIR)/driver/inc \
+	-I$(BLEDIR)/driver/inc/hci \
+	-I$(BLEDIR)/driver/platform/amebadplus/inc \
+	-I$(BLEDIR)/osif \
+	-I$(BLEDIR)/bt_mp
+
+IFLAGS += \
+	-I$(BLEDIR)/api \
+	-I$(BLEDIR)/api/include \
+	-I$(BLEDIR)/example/bt_atcmd \
+	-I$(BLEDIR)/example/gatt_service/server \
+	-I$(BLEDIR)/example/gatt_service/client \
+	-I$(BASEDIR)/component/at_cmd
