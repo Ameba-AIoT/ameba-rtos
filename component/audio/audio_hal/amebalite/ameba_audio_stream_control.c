@@ -12,21 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <inttypes.h>
+#include <stdlib.h>
 
-#include "ameba_audio_stream_control.h"
-#include "ameba_audio_stream_utils.h"
-#include "platform_stdlib.h"
 #include "basic_types.h"
-#include "ameba_sport.h"
-#include "ameba_audio.h"
-#include "ameba_audio_types.h"
 
+#include "ameba.h"
+#include "ameba_audio_types.h"
 #include "ameba_audio_hw_usrcfg.h"
+#include "ameba_audio_stream_utils.h"
+
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
 
-#include "hardware/audio/audio_hw_types.h"
+#include "ameba_audio_stream_control.h"
 
 #define DEVICE_SPEAKER 1
 #define MAX_DAC_VOLUME 141

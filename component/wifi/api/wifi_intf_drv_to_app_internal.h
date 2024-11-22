@@ -66,6 +66,14 @@ void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process);
 void wifi_btcoex_set_bt_ant(u8 bt_ant);
 
 /**
+  * @brief Set vendor info to coex
+  * @param[in]  p_vendor_info: vendor info
+  * @param[in]  length: vendor info length
+  * @retval  Null
+  */
+void wifi_btcoex_vendor_info_set(void *p_vendor_info, u8 length);
+
+/**
   * @brief Write BT RFK  data to RFC
   * @param  calibration data
   * @retval  BT RFK result(1:success  0:failed)
@@ -232,7 +240,7 @@ int wifi_set_eap_method(unsigned char eap_method);
 int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
 
-void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
+void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t type);
 
 #ifdef __cplusplus
 }

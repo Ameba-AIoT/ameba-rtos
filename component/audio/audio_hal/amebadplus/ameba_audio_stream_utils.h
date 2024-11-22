@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8721DA_AMEBA_AUDIO_STREAM_UTILS_H
-#define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8721DA_AMEBA_AUDIO_STREAM_UTILS_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_STREAM_UTILS_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_STREAM_UTILS_H
+
+#include "ameba.h"
 
 #include "ameba_audio_hw_usrcfg.h"
-#include "ameba.h"
-#include "basic_types.h"
-#include "platform_stdlib.h"
+
 #include "hardware/audio/audio_hw_types.h"
 
 #ifdef __cplusplus
@@ -37,24 +37,31 @@ extern "C" {
 
 #define HAL_AUDIO_WEAK __attribute__((weak))
 
-uint32_t ameba_audio_get_channel(uint32_t channel_count);
-uint32_t ameba_audio_get_sp_tdm(uint32_t channel_count);
-uint32_t ameba_audio_get_codec_tdm(uint32_t channel_count);
-uint32_t ameba_audio_get_fifo_num(uint32_t channel_count);
-uint32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category);
-uint32_t ameba_audio_stream_get_adc_idx(uint32_t index);
-uint32_t ameba_audio_stream_get_adc_chn_idx(uint32_t index);
-int ameba_audio_get_sp_format(enum AudioHwFormat format, uint32_t direction);
-int ameba_audio_get_sp_rate(uint32_t rate);
-int ameba_audio_get_codec_format(enum AudioHwFormat format, uint32_t direction);
-int ameba_audio_get_codec_rate(uint32_t rate);
+int32_t ameba_audio_get_channel(uint32_t channel_count);
+int32_t ameba_audio_get_sp_tdm(uint32_t channel_count);
+int32_t ameba_audio_get_codec_tdm(uint32_t channel_count);
+int32_t ameba_audio_get_fifo_num(uint32_t channel_count);
+int32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category);
+int32_t ameba_audio_stream_get_adc_idx(uint32_t index);
+int32_t ameba_audio_stream_get_adc_chn_idx(uint32_t index);
+int32_t ameba_audio_get_sp_format(enum AudioHwFormat format, uint32_t direction);
+int32_t ameba_audio_get_sp_rate(uint32_t rate);
+int32_t ameba_audio_get_codec_format(enum AudioHwFormat format, uint32_t direction);
+int32_t ameba_audio_get_codec_rate(uint32_t rate);
 AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index);
-uint32_t ameba_audio_get_sport_irq(uint32_t index);
+int32_t ameba_audio_get_sport_irq(uint32_t index);
 void ameba_audio_set_sp_data_out(uint32_t index);
 void ameba_audio_set_sp_data_in(uint32_t index);
 void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);
 void ameba_audio_dump_sport_regs(uint32_t SPORTx);
 void ameba_audio_dump_codec_regs(void);
+void ameba_audio_stream_rx_set_i2s_pin(uint32_t index);
+void ameba_audio_stream_rx_set_i2s_extra_pin(uint32_t index);
+void ameba_audio_stream_tx_set_i2s_pin(uint32_t index);
+int32_t ameba_audio_stream_get_direct_out_channel_idx(uint32_t channel);
+int32_t ameba_audio_stream_get_direct_in_channel_idx(uint32_t channel);
+int32_t ameba_audio_stream_get_direct_reg_idx(uint32_t channel);
+int32_t ameba_audio_stream_get_sp_tx_channel_idx(uint32_t channel);
 
 #ifdef __cplusplus
 }

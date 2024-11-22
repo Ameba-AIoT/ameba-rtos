@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBALITE_AUDIO_HW_MIX_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBALITE_AUDIO_HW_MIX_H
+
 #include <stddef.h>
 #include <stdint.h>
 
 void ProcessMix(const void *buffer, int16_t *raw_out, size_t frame_count);
+
+#endif

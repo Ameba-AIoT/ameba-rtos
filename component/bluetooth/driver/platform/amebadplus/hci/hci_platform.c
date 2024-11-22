@@ -117,6 +117,7 @@ extern int wifi_set_ips_internal(u8 enable);
 
 void hci_platform_cfg_bd_addr(uint8_t *bdaddr)
 {
+	/* bdaddr is little endian, please print in reverse order from high address to low address to confirm habits */
 	for (uint8_t i = 0; i < HCI_MAC_ADDR_LEN; i++) {
 		hci_cfg_bd_addr[i] = bdaddr[i];
 	}
