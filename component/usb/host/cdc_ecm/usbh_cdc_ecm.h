@@ -265,6 +265,7 @@ typedef struct {
 	u32                                 intr_in_idle_tick;    /* intr in idle tick*/
 	u32                                 bulk_data_out_len;    /* bluk out data length */
 	u32                                 bulk_out_idle_tick;   /* bulk out idle tick */
+	u32                                 bulk_in_idle_tick;    /* bulk in idle tick */
 
 	/* u16 */
 	u16                                 vid;
