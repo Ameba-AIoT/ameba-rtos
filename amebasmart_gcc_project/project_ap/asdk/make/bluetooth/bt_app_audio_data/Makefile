@@ -12,7 +12,10 @@ vpath %.c $(BT_APP_AUDIO_DATA)
 
 MODULE_IFLAGS += \
 	-I$(BT_APP_AUDIO_DATA) \
-	-I$(BT_DIR)/example/ble_audio_common
+	-I$(BT_DIR)/example/ble_audio_common \
+	-I$(BASEDIR)/component/usb/common \
+	-I$(BASEDIR)/component/usb/device/core \
+	-I$(BASEDIR)/component/usb/device/uac
 
 CSRC += \
 	$(BT_APP_AUDIO_DATA)/app_audio_data.c

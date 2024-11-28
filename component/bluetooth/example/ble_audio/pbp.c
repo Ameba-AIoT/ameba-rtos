@@ -19,6 +19,7 @@
 #include <bt_audio_intf.h>
 #include <bt_audio_codec_wrapper.h>
 #include <bt_utils.h>
+#include <app_audio_data.h>
 
 /***************************************common resources******************************************/
 /* Define PBP broadcast name length*/
@@ -492,8 +493,6 @@ static uint16_t app_bt_le_audio_parse_two_chnl_pcm_data_to_one_chnl(short *in_bu
 	return RTK_BT_OK;
 }
 
-extern short audio_demo[];
-extern uint32_t audio_demo_size;
 static uint16_t app_bt_le_audio_encode_birds_sing(app_lea_iso_data_path_t *p_iso_path, short *p_pcm_data, uint32_t pcm_total_num)
 {
 	uint8_t bytes_per_num = (DEFAULT_PCM_BIT_WIDTH / 8), pcm_channels = 0;
@@ -600,8 +599,8 @@ static void app_bt_le_audio_pbp_encode_task_entry(void *ctx)
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
 	short *p_pcm_data = NULL;
 	uint32_t pcm_total_num = 0;
-	p_pcm_data = audio_demo;
-	pcm_total_num = audio_demo_size * 2;
+	p_pcm_data = (short *)birds_sing;
+	pcm_total_num = birds_sing_size / (DEFAULT_PCM_BIT_WIDTH / 8);
 #endif
 	g_pbp_bsrc_encode_task.run = 1;
 	//give sem each 10ms in

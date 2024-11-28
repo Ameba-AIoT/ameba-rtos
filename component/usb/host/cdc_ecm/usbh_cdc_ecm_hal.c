@@ -179,7 +179,7 @@ static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 	}
 #endif
 
-	if (usbh_cdc_ecm_host_user.report_data != NULL) {
+	if ((usbh_cdc_ecm_host_user.report_data != NULL) && (length > 0)) {
 		usbh_cdc_ecm_host_user.report_data(buf, length);
 	}
 

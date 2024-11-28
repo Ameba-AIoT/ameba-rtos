@@ -1654,7 +1654,42 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gattc_app_callback(uint8_t event, void
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
 static int16_t pcm_buffer[512] = {0};
 static uint16_t a2dp_demo_send_data_seq = 0;
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+static void app_a2dp_src_send_data(void)
+{
+	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
+	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
 
+	if (src_a2dp_credits) {
+		if (!demo_usb_read_buffer((uint8_t *)pcm_buffer, (uint16_t)1024)) {
+			// BT_LOGA("[A2DP SRC Demo]: uart buffer read success \r\n");
+			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)pcm_buffer, (uint32_t)1024);
+			if (penc_codec_buffer_t) {
+				memset((void *)&data_send_t, 0, sizeof(rtk_bt_a2dp_stream_data_send_t));
+				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
+				data_send_t.seq_num = a2dp_demo_send_data_seq++;
+				data_send_t.frame_buf = (uint8_t *)penc_codec_buffer_t->pbuffer;
+				data_send_t.frame_num = (uint8_t)penc_codec_buffer_t->frame_num;
+				data_send_t.time_stamp += data_send_t.frame_num * sbc_codec_t.encoder_t.subbands * sbc_codec_t.encoder_t.blocks;
+				data_send_t.len = (uint16_t)(penc_codec_buffer_t->frame_num * penc_codec_buffer_t->frame_size);
+				data_send_t.flush = false;
+				if (rtk_bt_a2dp_data_send(&data_send_t)) {
+					BT_LOGE("[A2DP] data send fail \r\n");
+				} else {
+					src_a2dp_credits --;
+				}
+				rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, penc_codec_buffer_t);
+			} else {
+				BT_LOGE("[A2DP SRC Demo]: Encode fail \r\n");
+			}
+		} else {
+			// BT_LOGE("[A2DP SRC Demo]: uart buffer length is not enough \r\n");
+		}
+	} else {
+		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
+	}
+}
+#else
 static void app_a2dp_src_send_data(void)
 {
 	rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
@@ -1689,6 +1724,7 @@ static void app_a2dp_src_send_data(void)
 		// BT_LOGE("[A2DP] waiting src_a2dp_credits \r\n");
 	}
 }
+#endif
 #else
 static uint32_t pcm_offset = 0;
 static uint16_t a2dp_demo_send_data_seq = 0;
@@ -3016,7 +3052,13 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		/* bredr gap related */
 		{
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+			if (!demo_usb_init()) {
+				BT_LOGE("demo_usb_init failed\r\n");
+			}
+#else
 			demo_uart_init();
+#endif
 #endif
 			/* Initilize GAP part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_GAP, br_gap_app_callback));
@@ -3147,6 +3189,13 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_SDP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_AVRCP));
 		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_BR_GP_A2DP));
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+		if (!demo_usb_deinit()) {
+			BT_LOGE("demo_usb_deinit failed\r\n");
+		}
+#endif
+#endif
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
 		/* audio related resources release */
