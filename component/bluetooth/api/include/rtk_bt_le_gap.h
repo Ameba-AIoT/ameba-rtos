@@ -1523,12 +1523,32 @@ typedef struct {
 } rtk_bt_le_scan_res_ind_t;
 
 #if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_CONNECTABLE_ADV   (1 << 0)
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_SCANNABLE_ADV     (1 << 1)
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_DIRECTED_ADV      (1 << 2)
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_SCAN_RESPONSE     (1 << 3)
+
+/**
+ * @struct    rtk_bt_le_ext_adv_report_type_t
+ * @brief     Bluetooth LE ext adv report event type.
+ */
+typedef enum {
+	/*!< Other value that less than 0x10, reference RTK_BT_LE_EXT_ADV_EVT_BIT_XXX bit value. */
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_IND =                  0x13,
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_DIRECT_IND =           0x15,
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_SCAN_IND =             0x12,
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_NONCONN_IND =          0x10,
+	RTK_BT_LE_EXT_EVT_LEGACY_SCAN_RSP_TO_ADV_IND =      0x1B,
+	RTK_BT_LE_EXT_EVT_LEGACY_SCAN_RSP_TO_ADV_SCAN_IND = 0x1A,
+} rtk_bt_le_ext_adv_report_type_t;
+
 /**
  * @struct    rtk_bt_le_ext_scan_res_ind_t
  * @brief     Bluetooth LE ext scan result indication msg.
  */
 typedef struct {
-	uint16_t evt_type;
+	uint16_t evt_type;      /*!< ref @ref rtk_bt_le_ext_adv_report_type_t, more bit field information, please ref bt spec "LE Extended Advertising Report Event". */
 	rtk_bt_le_addr_t addr;
 	rtk_bt_le_addr_t direct_addr;
 	int8_t rssi;
@@ -1538,7 +1558,7 @@ typedef struct {
 	int8_t tx_power;
 	uint16_t peri_adv_interval;
 	uint16_t len;
-	uint8_t *data; /* Must be the last member */
+	uint8_t *data; /*!< Must be the last member */
 } rtk_bt_le_ext_scan_res_ind_t;
 #endif
 
@@ -1936,6 +1956,13 @@ typedef struct {
 	uint16_t conn_handle;
 	uint16_t *p_tx_pending_num;
 } rtk_bt_le_get_tx_pending_num_param_t;
+
+#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+typedef struct {
+	uint16_t conn_handle;
+	uint8_t *adv_handle;
+} rtk_bt_le_get_eadv_by_conn_handle_param_t;
+#endif
 
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 typedef struct {
@@ -2539,6 +2566,18 @@ uint16_t rtk_bt_le_gap_stop_ext_adv(uint8_t adv_handle);
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle);
+
+
+/**
+ * @brief     When an extended advertising set is stopped due to connnection established, get the stopped
+ *            advertising handle according to the connection handle.
+ * @param[in] conn_handle: Handle of connection.
+ * @param[out] adv_handle: Handle of advertising set that stopped due to this connection.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(uint16_t conn_handle, uint8_t *adv_handle);
 #endif
 
 #if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)

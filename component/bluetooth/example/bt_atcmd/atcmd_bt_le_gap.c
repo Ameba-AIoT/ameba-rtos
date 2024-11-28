@@ -694,6 +694,26 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 	BT_LOGA("GAP set ext scan resp data(%d) success\r\n", adv_handle);
 	return 0;
 }
+
+static int atcmd_ble_gap_get_ext_adv_handle_by_conn_handle(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint16_t conn_handle = 0;
+	uint8_t adv_handle = 0;
+
+	conn_handle = str_to_int(argv[0]);
+
+	ret = rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(conn_handle, &adv_handle);
+	if (ret) {
+		BT_LOGE("GAP get adv_handle by conn_handle failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP get adv_handle by conn_handle, adv handle: %d\r\n", adv_handle);
+	BT_AT_PRINT("+BLEGAP:eadv_hdl_by_conn,%d\r\n", adv_handle);
+	return 0;
+}
 #endif
 
 #if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
@@ -2385,6 +2405,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"eadv_data",    atcmd_ble_gap_set_ext_adv_data,   1, 3},
 	{"escan_rsp",    atcmd_ble_gap_set_ext_scan_resp,  1, 3},
 	{"eadv",         atcmd_ble_gap_op_ext_adv,         2, 13},
+	{"eadv_hdl_by_conn", atcmd_ble_gap_get_ext_adv_handle_by_conn_handle, 2, 2},
 #endif
 #if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 	{"escan_param",  atcmd_ble_gap_ext_scan_set_param, 1, 13},
