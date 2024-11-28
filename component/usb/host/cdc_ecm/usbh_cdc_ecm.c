@@ -28,7 +28,8 @@
 /* conventional codes for class-specific descriptors */
 #define USB_DT_CS_INTERFACE              0x24
 
-#define USB_BULK_OUT_IDLE_MAX_CNT        8000
+#define USB_BULK_OUT_IDLE_MAX_CNT        8000U
+#define USB_BULK_IN_IDLE_MAX_CNT         40U
 
 #define  USBH_ECM_FREE_MEM(x)  if(x){ usb_os_mfree(x); x = NULL;}
 
@@ -971,6 +972,7 @@ static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host)
 							   cdc->data_if.bulk_in_pipe);
 		cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_BUSY;
 		cdc->next_transfor = 1;
+		cdc->bulk_in_idle_tick = host->tick;
 		break;
 
 	case CDC_ECM_TRANSFER_STATE_BUSY:
@@ -986,11 +988,17 @@ static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host)
 								   USBH_CDC_ECM_BULK_BUF_MAX_SIZE,
 								   cdc->data_if.bulk_in_pipe);
 
+			cdc->bulk_in_idle_tick = host->tick;
 			cdc->next_transfor = 1;
 		} else if (urb_state == USBH_URB_BUSY) {
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
-			cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_IDLE;
+			cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
 			RTK_LOGS(TAG, "[ECMH] BULK in failed %d\n", urb_state);
+		} else if (urb_state == USBH_URB_IDLE) {
+			cdc->next_transfor = 1;
+			if (usbh_get_elapsed_ticks(host, cdc->bulk_in_idle_tick) >= (USB_BULK_IN_IDLE_MAX_CNT)) { // some tick
+				cdc->bulk_data_in_state = CDC_ECM_TRANSFER_STATE_XFER;
+			}
 		}
 		break;
 
