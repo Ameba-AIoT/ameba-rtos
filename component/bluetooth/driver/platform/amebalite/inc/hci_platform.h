@@ -43,4 +43,9 @@ uint8_t hci_platform_init(void);
 void hci_platform_deinit(void);
 
 void hci_platform_debug_enable(void);
+
+void hci_platform_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_dbg_mask);
+void hci_platform_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad);
+void hci_platform_debug_port_shift(uint8_t original, uint8_t mapping);
+void hci_platform_gpio_enable(uint8_t bt_gpio, char *pad);
 #endif

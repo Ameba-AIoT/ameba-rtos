@@ -224,6 +224,8 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL,          /*!< LE mesh health server model group */
 	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL,          /*!< LE mesh directed forwarding client model group */
 	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON,          /*!< LE mesh directed forwarding common group */
+	RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL,          /*!< LE mesh subnet bridge client model group */
+	RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL,          /*!< LE mesh private beacon client model group */
 	RTK_BT_LE_GP_MAX,                           /*!< Reserved */
 } rtk_bt_le_group_t;
 

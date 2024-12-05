@@ -39,6 +39,8 @@
 #include <rtk_bt_mesh_sensor_model.h>
 #include <rtk_bt_mesh_health_model.h>
 #include <rtk_bt_mesh_directed_forwarding_model.h>
+#include <rtk_bt_mesh_subnet_bridge_model.h>
+#include <rtk_bt_mesh_private_beacon_model.h>
 #include <bt_utils.h>
 
 static uint8_t adv_data[] = {
@@ -608,6 +610,25 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		BT_AT_DUMP_HEXN(udb_info->dev_uuid, 16);
 		break;
 	}
+	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_SNB_DISPLAY: {
+		rtk_bt_mesh_stack_evt_dev_info_snb_t *snb_info;
+		snb_info = (rtk_bt_mesh_stack_evt_dev_info_snb_t *)param;
+		BT_LOGA("[APP] ");
+		if (0xff != snb_info->dev_info.bt_addr_type) {
+			// Only for RTK mesh stack, report bt address and type information(zephyr mesh stack can not report)
+			BT_LOGA("bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", snb_info->dev_info.bt_addr[5], snb_info->dev_info.bt_addr[4],
+					snb_info->dev_info.bt_addr[3], snb_info->dev_info.bt_addr[2], snb_info->dev_info.bt_addr[1], snb_info->dev_info.bt_addr[0], snb_info->dev_info.bt_addr_type,
+					snb_info->dev_info.rssi);
+		}
+		BT_LOGA("snb=");
+		mesh_data_uart_dump(snb_info->net_id, 8);
+		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,snb,",
+					snb_info->dev_info.bt_addr[5], snb_info->dev_info.bt_addr[4], snb_info->dev_info.bt_addr[3],
+					snb_info->dev_info.bt_addr[2], snb_info->dev_info.bt_addr[1], snb_info->dev_info.bt_addr[0],
+					snb_info->dev_info.bt_addr_type, snb_info->dev_info.rssi);
+		BT_AT_DUMP_HEXN(snb_info->net_id, 8);
+		break;
+	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY: {
 		rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *prov_info;
 		prov_info = (rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *)param;
@@ -630,15 +651,27 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY: {
 		rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t *proxy_info;
 		proxy_info = (rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t *)param;
-		BT_LOGA("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4],
-				proxy_info->dev_info.bt_addr[3], proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
-				proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
-		BT_LOGA("proxy=");
+		switch (proxy_info->proxy.type) {
+		case RTK_BT_MESH_PROXY_ADV_TYPE_NET_ID:
+			BT_LOGA("proxy net id=");
+			break;
+		case RTK_BT_MESH_PROXY_ADV_TYPE_NODE_IDENTITY:
+			BT_LOGA("proxy node id=");
+			break;
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON) && BT_MESH_ENABLE_PRIVATE_BEACON
+		case RTK_BT_MESH_PROXY_ADV_TYPE_PRIVATE_NET_ID:
+			BT_LOGA("proxy private net id=");
+			break;
+		case RTK_BT_MESH_PROXY_ADV_TYPE_PRIVATE_NODE_IDENTITY:
+			BT_LOGA("proxy private node id=");
+			break;
+#endif
+		}
 		mesh_data_uart_dump((uint8_t *)&proxy_info->proxy, proxy_info->len);
-		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,proxy,",
+		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,proxy,%d,",
 					proxy_info->dev_info.bt_addr[5], proxy_info->dev_info.bt_addr[4], proxy_info->dev_info.bt_addr[3],
 					proxy_info->dev_info.bt_addr[2], proxy_info->dev_info.bt_addr[1], proxy_info->dev_info.bt_addr[0],
-					proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi);
+					proxy_info->dev_info.bt_addr_type, proxy_info->dev_info.rssi, proxy_info->proxy.type);
 		BT_AT_DUMP_HEXN((uint8_t *)&proxy_info->proxy, proxy_info->len);
 		break;
 	}
@@ -664,8 +697,27 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 	case RTK_BT_MESH_STACK_EVT_PROV_COMPLETE: {
 		rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
 		prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)param;
-		BT_LOGA("[APP] Provisioning complete,unicast address:0x%x\r\n", prov_complete->unicast_addr);
-		BT_AT_PRINT("+BLEMESHSTACK:prov,0,0x%x\r\n", prov_complete->unicast_addr);
+		if (prov_complete->dkri_flag) {
+			BT_AT_PRINT("+BLEMESHSTACK:dkri,%d\r\n", prov_complete->dkri);
+			switch (prov_complete->dkri) {
+			case RTK_BT_MESH_RMT_PROV_DKRI_DEV_KEY_REFRESH:
+				BT_LOGA("[APP] Refresh device key!\r\n");
+				break;
+			case RTK_BT_MESH_RMT_PROV_DKRI_NODE_ADDR_REFRESH:
+				BT_LOGA("[APP] Refresh node address to 0x%04x!\r\n", prov_complete->unicast_addr);
+				BT_AT_PRINT("+BLEMESHSTACK:dkri,1,%d\r\n", prov_complete->unicast_address);
+				break;
+			case RTK_BT_MESH_RMT_PROV_DKRI_NODE_COMPO_REFRESH:
+				BT_LOGA("[APP] Refresh node composition data!\r\n");
+				break;
+			default:
+				BT_LOGA("[APP] Unknown dkri procedure %d done!\r\n", prov_complete->dkri);
+				break;
+			}
+		} else {
+			BT_LOGA("[APP] Provisioning complete,unicast address:0x%x\r\n", prov_complete->unicast_addr);
+			BT_AT_PRINT("+BLEMESHSTACK:prov,0,0x%x\r\n", prov_complete->unicast_addr);
+		}
 		break;
 	}
 	case RTK_BT_MESH_STACK_EVT_PROV_FAIL: {
@@ -926,6 +978,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					BT_AT_PRINT(",0x%04x,%d", LE_TO_U16(p_data + offset + 20 + 3 * origin_dependent_count + 3 * i),
 								*(p_data + offset + 22 + 3 * origin_dependent_count + 3 * i));
 				}
+				break;
+			}
+#endif
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
+			case RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO: {
+				BT_LOGA("\r\nBridge:\t\t%d-%d-0x%04x-0x%04x-0x%04x-0x%04x\r\n", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+						LE_TO_U16(p_data + offset + 3), LE_TO_U16(p_data + offset + 5), LE_TO_U16(p_data + offset + 7), LE_TO_U16(p_data + offset + 9));
+				BT_AT_PRINT("\r\n+BLEMESHSTACK:list,%d,%d-%d-0x%04x-0x%04x-0x%04x-0x%04x\r\n", type, LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+							LE_TO_U16(p_data + offset + 3), LE_TO_U16(p_data + offset + 5), LE_TO_U16(p_data + offset + 7), LE_TO_U16(p_data + offset + 9));
 				break;
 			}
 #endif
@@ -1443,6 +1504,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_remote_prov_client_model_app_callback(uint8_
 			BT_LOGA("[APP] Remote prov scan report: src 0x%x, rssi %d, oob %d, uuid ", scan_report->src, scan_report->rssi, scan_report->oob);
 		}
 		mesh_data_uart_dump(scan_report->uuid, 16);
+		break;
+	}
+	case RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_EXTENDED_SCAN_REPORT: {
+		rtk_bt_mesh_rmt_prov_client_extended_scan_report_t *escan_report = (rtk_bt_mesh_rmt_prov_client_extended_scan_report_t *)param;
+		BT_LOGA("[APP] Remote prov extended scan report: src %d, oob %d, uuid ", escan_report->src, escan_report->oob);
+		mesh_data_uart_dump(escan_report->uuid, 16);
+		if (escan_report->adv_structs_len > 0) {
+			BT_LOGA("\r\n adv structs ");
+			mesh_data_uart_dump((uint8_t *)param + sizeof(rtk_bt_mesh_rmt_prov_client_extended_scan_report_t), escan_report->adv_structs_len);
+		}
 		break;
 	}
 	case RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_STATUS: {
@@ -2995,6 +3066,115 @@ static rtk_bt_evt_cb_ret_t ble_mesh_directed_forwarding_client_model_app_callbac
 }
 #endif
 
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL) && BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL
+static rtk_bt_evt_cb_ret_t ble_mesh_subnet_bridge_client_model_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+	switch (evt_code) {
+	case RTK_BT_MESH_SUBNET_BRIDGE_CLIENT_MODEL_STATUS: {
+		rtk_bt_mesh_subnet_bridge_status_t *status;
+		status = (rtk_bt_mesh_subnet_bridge_status_t *)param;
+		BT_LOGA("[APP] Subnet bridge status: state %d\r\n", status->state);
+		BT_AT_PRINT("+BLEMESHSBR:sbrs,%d\r\n", status->state);
+	}
+	break;
+	case RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_STATUS: {
+		rtk_bt_mesh_bridging_table_status_t *status;
+		status = (rtk_bt_mesh_bridging_table_status_t *)param;
+		BT_LOGA("[APP] Bridging table status: status %d, directions %d, net_key_index1 0x%04x, net_key_index2 0x%04x, addr1 0x%04x, addr2 0x%04x\r\n",
+				status->status, status->directions, status->net_key_index1, status->net_key_index2, status->addr1, status->addr2);
+		BT_AT_PRINT("+BLEMESHSBR:sbrbts,%d,%d,%04x,%04x,%04x,%04x\r\n", status->status, status->directions, status->net_key_index1, status->net_key_index2,
+					status->addr1, status->addr2);
+	}
+	break;
+	case RTK_BT_MESH_SUBNET_BRIDGE_BRIDGED_SUBNETS_CLIENT_MODEL_LIST: {
+		rtk_bt_mesh_bridged_subnets_list_t *list;
+		list = (rtk_bt_mesh_bridged_subnets_list_t *)param;
+		BT_LOGA("[APP] Bridged subnets list: filter %d, net_key_index 0x%04x, start_index %d\r\n",
+				list->filter, list->net_key_index, list->start_index);
+		BT_AT_PRINT("+BLEMESHSBR:sbrbrls,%d,%04x,%d\r\n", list->filter, list->net_key_index, list->start_index);
+		uint16_t subnets_len = len - sizeof(rtk_bt_mesh_bridged_subnets_list_t);
+		uint16_t net_key_index1, net_key_index2;
+		uint8_t *psubnets = (uint8_t *)param + sizeof(rtk_bt_mesh_bridged_subnets_list_t);
+		for (uint16_t i = 0; i < subnets_len;) {
+			net_key_index1 = LE_TO_U16(psubnets + i) & 0x0fff;
+			net_key_index2 = (LE_TO_U16(psubnets + i + 1) >> 4);
+			BT_LOGA("net key index1 %d, net key index2 %d\r\n", net_key_index1, net_key_index2);
+			BT_AT_PRINT("+BLEMESHSBR:bridged_subnets_list,%d,%d", net_key_index1, net_key_index2);
+			i += 3;
+		}
+	}
+	break;
+	case RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_LIST: {
+		rtk_bt_mesh_bridging_table_list_t *list;
+		list = (rtk_bt_mesh_bridging_table_list_t *)param;
+		BT_LOGA("[APP] Bridging_table_list: status %d, net_key_index1 0x%04x, net_key_index2 0x%04x, start_index %d, bridged_addrs_list \r\n",
+				list->status, list->net_key_index1, list->net_key_index2, list->start_index);
+		BT_AT_PRINT("+BLEMESHSBR:sbrbtls,%d,%04x,%04x,%d\r\n", list->status, list->net_key_index1, list->net_key_index2, list->start_index);
+		uint16_t addrs_len = len - sizeof(rtk_bt_mesh_bridging_table_list_t);
+		uint8_t *table_list = (uint8_t *)param + sizeof(rtk_bt_mesh_bridging_table_list_t);
+		rtk_bt_mesh_bridged_address_entry_t *pentry = (rtk_bt_mesh_bridged_address_entry_t *)table_list;
+		for (uint16_t i = 0; i < addrs_len;) {
+			BT_LOGA("addr1 0x%04x, addr2 0x%04x, directions %d\r\n", pentry->addr1, pentry->addr2,
+					pentry->directions);
+			BT_AT_PRINT("+BLEMESHSBR:bridging_table_list,%04x,%04x,%d", pentry->addr1, pentry->addr2, pentry->directions);
+			i += sizeof(rtk_bt_mesh_bridged_address_entry_t);
+			pentry += 1;
+		}
+	}
+	break;
+	case RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_SIZE: {
+		rtk_bt_mesh_bridging_table_size_status_t *status;
+		status = (rtk_bt_mesh_bridging_table_size_status_t *)param;
+		BT_LOGA("[APP] Bridging table size status: table size %d\r\n", status->bridging_table_size);
+		BT_AT_PRINT("+BLEMESHSBR:sbrbts,%d\r\n", status->bridging_table_size);
+	}
+	break;
+	default:
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		break;
+	}
+	return RTK_BT_EVT_CB_OK;
+}
+#endif
+
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL) && BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL
+static rtk_bt_evt_cb_ret_t ble_mesh_private_beacon_client_model_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+	switch (evt_code) {
+	case RTK_BT_MESH_PRIVATE_BEACON_CLIENT_MODEL_EVT_STATUS: {
+		rtk_bt_mesh_private_beacon_status_t *status;
+		status = (rtk_bt_mesh_private_beacon_status_t *)param;
+		BT_LOGA("Private beacon client receive: private beacon %d, random update interval steps %d\r\n",
+				status->private_beacon, status->random_update_interval_steps);
+		BT_AT_PRINT("+BLEMESHPRB:prbs,%d,%d\r\n", status->private_beacon, status->random_update_interval_steps);
+	}
+	break;
+	case RTK_BT_MESH_PRIVATE_BEACON_CLIENT_MODEL_EVT_GATT_PROXY_STATUS: {
+		rtk_bt_mesh_private_gatt_proxy_status_t *status;
+		status = (rtk_bt_mesh_private_gatt_proxy_status_t *)param;
+		BT_LOGA("Private beacon client receive: private gatt proxy %d\r\n",
+				status->private_gatt_proxy);
+		BT_AT_PRINT("+BLEMESHPRB:pbgps,%d\r\n", status->private_gatt_proxy);
+	}
+	break;
+	case RTK_BT_MESH_PRIVATE_BEACON_CLIENT_MODEL_EVT_NODE_IDENTITY_STATUS: {
+		rtk_bt_mesh_private_node_identity_status_t *status;
+		status = (rtk_bt_mesh_private_node_identity_status_t *)param;
+		BT_LOGA("Private beacon client receive: status %d, net_key_index 0x%04x, private identity %d\r\n",
+				status->status, status->net_key_index, status->private_identity);
+		BT_AT_PRINT("+BLEMESHPRB:pbnis,%d\r\n", status->status, status->net_key_index, status->private_identity);
+	}
+	break;
+	default:
+		BT_LOGE("[%s] Unknown evt_code:%d\r\n", __func__, evt_code);
+		break;
+	}
+	return RTK_BT_EVT_CB_OK;
+}
+#endif
+
 static rtk_bt_mesh_stack_act_provisioner_init_setting_t pro_init_param = {
 	// Set to 0 to use default val
 	.unicast_addr = 0,
@@ -3122,6 +3302,12 @@ int ble_mesh_provisioner_scatternet_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, ble_mesh_health_client_model_app_callback));
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL, ble_mesh_directed_forwarding_client_model_app_callback));
+#endif
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL) && BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL, ble_mesh_subnet_bridge_client_model_app_callback));
+#endif
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL) && BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL, ble_mesh_private_beacon_client_model_app_callback));
 #endif
 	} else if (0 == enable) {
 

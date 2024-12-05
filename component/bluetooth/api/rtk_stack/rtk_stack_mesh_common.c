@@ -221,17 +221,18 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 		break;
 	}
 	case PROV_CB_TYPE_COMPLETE: {
-		rtk_bt_evt_t *p_evt = NULL;
-		rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROV_COMPLETE, sizeof(rtk_bt_mesh_stack_evt_prov_complete_t));
-		prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)p_evt->data;
-		prov_complete->unicast_addr = cb_data.pprov_data->unicast_address;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		bool dkri_flag = 0;
+		uint8_t dkri;
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		if (MESH_ROLE_PROVISIONER == mesh_role) {
 			/* the spec requires to disconnect, but you can remove it as you like! :) */
 #if defined(BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL) && BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL
 			if (rmt_prov_client_link_state() == RTK_BT_MESH_RMT_PROV_LINK_STATE_OUTBOUND_PKT_TRANS) {
+				if (rmt_prov_client_procedure() == RMT_PROV_PROCEDURE_DKRI) {
+					dkri_flag = 1;
+					rmt_prov_dkri_procedure_t dkri_procedure = rmt_prov_dkri_procedure();
+					dkri = dkri_procedure;
+				}
 				rmt_prov_link_close(RTK_BT_MESH_RMT_PROV_LINK_CLOSE_SUCCESS);
 			} else
 #endif
@@ -245,6 +246,16 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 			mesh_node.iv_timer_count = MESH_IV_INDEX_48W;
 		}
 #endif
+		rtk_bt_evt_t *p_evt = NULL;
+		rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROV_COMPLETE, sizeof(rtk_bt_mesh_stack_evt_prov_complete_t));
+		prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)p_evt->data;
+		prov_complete->unicast_addr = cb_data.pprov_data->unicast_address;
+		prov_complete->dkri_flag = dkri_flag;
+		if (dkri_flag) {
+			prov_complete->dkri = dkri;
+		}
+		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;
 	case PROV_CB_TYPE_FAIL: {
@@ -460,6 +471,12 @@ static void device_info_cb(uint8_t bt_addr[6], uint8_t bt_addr_type, int8_t rssi
 		device_info_udb = (rtk_bt_mesh_stack_evt_dev_info_udb_t *)p_evt->data;
 		memcpy(device_info_udb->dev_uuid, pinfo->pbeacon_udb->dev_uuid, 16);
 		break;
+	case DEVICE_INFO_SNB:
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_INFO_SNB_DISPLAY, sizeof(rtk_bt_mesh_stack_evt_dev_info_snb_t));
+		rtk_bt_mesh_stack_evt_dev_info_snb_t *device_info_snb;
+		device_info_snb = (rtk_bt_mesh_stack_evt_dev_info_snb_t *)p_evt->data;
+		memcpy(device_info_snb->net_id, pinfo->pbeacon_snb->net_id, 8);
+		break;
 	case DEVICE_INFO_PROV_ADV:
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY, sizeof(rtk_bt_mesh_stack_evt_dev_info_provision_adv_t));
 		rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *device_info_prov;
@@ -535,6 +552,18 @@ uint16_t df_cb(uint8_t type, void *pdata)
 	df_cb_data->type = type;
 	df_cb_data->path_action = *(rtk_bt_mesh_df_path_action_t *)pdata;
 	return rtk_bt_evt_indicate(p_evt, NULL);
+}
+
+bool rpl_cb(mesh_rpl_fail_type_t type, uint8_t rpl_loop, uint16_t src, uint32_t iv_index,
+			uint32_t rpl_seq, uint32_t seq)
+{
+	(void)type;
+	(void)rpl_loop;
+	(void)src;
+	(void)iv_index;
+	(void)rpl_seq;
+	(void)seq;
+	return false;
 }
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
@@ -625,6 +654,12 @@ static void client_models_init(void)
 #endif
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
 	directed_forwarding_client_init();
+#endif
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
+	subnet_bridge_client_init();
+#endif
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL) && BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL
+	private_beacon_client_init();
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL
 	generic_on_off_client_model_init();
@@ -849,7 +884,11 @@ static void rtk_bt_mesh_stack_init(void *data)
 	if (MESH_ROLE_DEVICE == mesh_role) {
 		/** configure provisioning parameters */
 		prov_capabilities_t prov_capabilities = {
-			.algorithm = PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE,
+			.algorithm = PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+			| PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM
+#endif
+			,
 			.public_key = 0,
 			.static_oob = PROV_SUPPORT_STATIC_OOB,
 			.output_oob_size = PROV_SUPPORT_OUTPUT_OOB_SIZE,
@@ -873,6 +912,10 @@ static void rtk_bt_mesh_stack_init(void *data)
 		.bg_scan = 1,
 		.flash = 1,
 		.flash_rpl = 1,
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON) && BT_MESH_ENABLE_PRIVATE_BEACON
+		.prb = 1,
+		.private_proxy = 1,
+#endif
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
 		.df = 1,
 #endif
@@ -886,6 +929,9 @@ static void rtk_bt_mesh_stack_init(void *data)
 		.sub_addr_num = 5,
 		.proxy_num = 1,
 		.proxy_interval = 5,
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
+		.bridging_table_size = 5,
+#endif
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
 		.df_fixed_path_size = 5,
 #endif
@@ -894,6 +940,9 @@ static void rtk_bt_mesh_stack_init(void *data)
 	if (MESH_ROLE_PROVISIONER == mesh_role) {
 		features.lpn = 2;
 		features.udb = 0;
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
+		features.sbr = 0;
+#endif
 		if (mesh_app_conf->bt_mesh_dev_key_num) {
 			// Use the user device key num
 			node_cfg.dev_key_num = mesh_app_conf->bt_mesh_dev_key_num;
@@ -907,6 +956,9 @@ static void rtk_bt_mesh_stack_init(void *data)
 	if (MESH_ROLE_DEVICE == mesh_role) {
 		features.lpn = 1;
 		features.udb = 1;
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
+		features.sbr = 1;
+#endif
 		node_cfg.dev_key_num = 2;
 		node_cfg.prov_interval = 2;
 		node_cfg.udb_interval = 2;
@@ -988,6 +1040,9 @@ static void rtk_bt_mesh_stack_init(void *data)
 	mesh_init();
 	device_info_cb_reg(device_info_cb);
 	hb_init(hb_cb);
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+	rpl_cb_reg(rpl_cb);
+#endif
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
 	df_cb_reg(df_cb);
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT

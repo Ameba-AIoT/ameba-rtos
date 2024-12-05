@@ -61,6 +61,28 @@ uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = rmt_prov_client_link_open_prov(link_open->dst, link_open->net_key_index, link_open->uuid, link_open->link_open_timeout);
 		break;
 	}
+	case RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_LINK_OPEN_DKRI: {
+		rtk_bt_mesh_remote_prov_client_link_open_dkri_t *link_open_dkri;
+		link_open_dkri = (rtk_bt_mesh_remote_prov_client_link_open_dkri_t *)p_cmd->param;
+		ret = rmt_prov_client_link_open_dkri(link_open_dkri->dst, link_open_dkri->net_key_index, link_open_dkri->dkri_procedure);
+		break;
+	}
+	case RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_DEVICE_KEY_REFRESH: {
+		uint8_t attn_dur = *(uint8_t *)p_cmd->param;
+		ret = rmt_prov_client_refresh_dev_key(attn_dur) ? RTK_BT_OK : RTK_BT_FAIL;
+		break;
+	}
+	case RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_NODE_ADDR_REFRESH: {
+		rtk_bt_mesh_remote_prov_client_node_addr_refresh_t *addr_refresh;
+		addr_refresh = (rtk_bt_mesh_remote_prov_client_node_addr_refresh_t *)p_cmd->param;
+		ret = rmt_prov_client_refresh_node_addr(addr_refresh->node_addr, addr_refresh->attn_dur) ? RTK_BT_OK : RTK_BT_FAIL;
+		break;
+	}
+	case RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_COMPO_DATA_REFRESH: {
+		uint8_t attn_dur = *(uint8_t *)p_cmd->param;
+		ret = rmt_prov_client_refresh_compo_data(attn_dur) ? RTK_BT_OK : RTK_BT_FAIL;
+		break;
+	}
 	default:
 		BT_LOGE("[%s] Unknown act:%d\r\n", __func__, p_cmd->act);
 		break;
@@ -134,12 +156,16 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		if (pdata->poob) {
 			oob = (pdata->poob[1] << 8) + pdata->poob[0];
 		}
-		BT_LOGA("rmt_prov_extended_scan_report: oob %d, uuid ", oob);
-		data_uart_dump(pdata->uuid, 16);
-		if (pdata->adv_structs_len > 0) {
-			BT_LOGA("rmt_prov_extended_scan_report: adv structs ");
-			data_uart_dump(pdata->padv_structs, pdata->adv_structs_len);
-		}
+		rtk_bt_evt_t *p_evt = NULL;
+		rtk_bt_mesh_rmt_prov_client_extended_scan_report_t *escan_report = NULL;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_EXTENDED_SCAN_REPORT,
+									sizeof(rtk_bt_mesh_rmt_prov_client_extended_scan_report_t) + pdata->adv_structs_len);
+		escan_report = (rtk_bt_mesh_rmt_prov_client_extended_scan_report_t *)p_evt->data;
+		escan_report->src = pdata->src;
+		memcpy(escan_report->uuid, pdata->uuid, 16);
+		escan_report->oob = oob;
+		escan_report->adv_structs_len = pdata->adv_structs_len;
+		memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_rmt_prov_client_extended_scan_report_t), pdata->padv_structs, pdata->adv_structs_len);
 		break;
 	}
 	case RMT_PROV_CLIENT_LINK_STATUS: {

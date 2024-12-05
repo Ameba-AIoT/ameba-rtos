@@ -1241,7 +1241,8 @@ _LONG_CALL_ void AUDIO_SP_RXSetDirectOutStart(u32 index, u32 out_chn, u32 NewSta
 _LONG_CALL_ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState);
 _LONG_CALL_ void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
-
+_LONG_CALL_ void AUDIO_SP_SetTxDataFormat(u32 index, u32 format);
+_LONG_CALL_ void AUDIO_SP_SetRxDataFormat(u32 index, u32 format);
 
 /**
   * @}

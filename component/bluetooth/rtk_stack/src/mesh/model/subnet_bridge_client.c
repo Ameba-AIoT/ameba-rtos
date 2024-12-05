@@ -13,6 +13,9 @@
 #include "mesh_config.h"
 #include "subnet_bridge_model.h"
 #include "app_mesh_flags.h"
+// RTK porting:call event to app
+#include <rtk_stack_mesh_internal.h>
+#include "rtk_bt_mesh_subnet_bridge_model.h"
 
 #if F_BT_MESH_1_1_SBR_SUPPORT
 
@@ -123,57 +126,72 @@ static bool subnet_bridge_client_receive(mesh_msg_p pmesh_msg)
     case MESH_MSG_SUBNET_BRIDGE_STATUS:
         if (pmesh_msg->msg_len == sizeof(subnet_bridge_status_t))
         {
-            subnet_bridge_status_t *pmsg = (subnet_bridge_status_t *)pbuffer;
-            data_uart_debug("subnet_bridge_status: state %d\r\n", pmsg->state);
+            // subnet_bridge_status_t *pmsg = (subnet_bridge_status_t *)pbuffer;
+            // data_uart_debug("subnet_bridge_status: state %d\r\n", pmsg->state);
+            rtk_bt_mesh_subnet_bridge_client_model_indicate_event(RTK_BT_MESH_SUBNET_BRIDGE_CLIENT_MODEL_STATUS,
+				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_SUBNET_BRIDGE_STATUS),
+				sizeof(subnet_bridge_status_t) - ACCESS_OPCODE_SIZE(MESH_MSG_SUBNET_BRIDGE_STATUS));
         }
         break;
     case MESH_MSG_BRIDGING_TABLE_STATUS:
         if (pmesh_msg->msg_len == sizeof(bridging_table_status_t))
         {
-            bridging_table_status_t *pmsg = (bridging_table_status_t *)pbuffer;
-            data_uart_debug("bridging_table_status: status%d, directions %d, net_key_index1 0x%04x, net_key_index2 0x%04x, addr1 0x%04x, addr2 0x%04x\r\n",
-                            pmsg->status, pmsg->directions, pmsg->net_key_index1, pmsg->net_key_index2, pmsg->addr1,
-                            pmsg->addr2);
+            // bridging_table_status_t *pmsg = (bridging_table_status_t *)pbuffer;
+            // data_uart_debug("bridging_table_status: status%d, directions %d, net_key_index1 0x%04x, net_key_index2 0x%04x, addr1 0x%04x, addr2 0x%04x\r\n",
+            //                 pmsg->status, pmsg->directions, pmsg->net_key_index1, pmsg->net_key_index2, pmsg->addr1,
+            //                 pmsg->addr2);
+            rtk_bt_mesh_subnet_bridge_client_model_indicate_event(RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_STATUS,
+				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_STATUS),
+				sizeof(bridging_table_status_t) - ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_STATUS));
         }
         break;
     case MESH_MSG_BRIDGED_SUBNETS_LIST:
         {
-            bridged_subnets_list_t *pmsg = (bridged_subnets_list_t *)pbuffer;
-            data_uart_debug("bridged_subnets_list: filter %d, net_key_index 0x%04x, start_index %d\r\n",
-                            pmsg->filter, pmsg->net_key_index, pmsg->start_index);
+            // bridged_subnets_list_t *pmsg = (bridged_subnets_list_t *)pbuffer;
+            // data_uart_debug("bridged_subnets_list: filter %d, net_key_index 0x%04x, start_index %d\r\n",
+            //                 pmsg->filter, pmsg->net_key_index, pmsg->start_index);
             uint16_t subnets_len = pmesh_msg->msg_len - sizeof(bridged_subnets_list_t);
-            uint16_t net_key_index1, net_key_index2;
-            uint8_t *psubnets = pmsg->bridged_subnets_list;
+            // uint16_t net_key_index1, net_key_index2;
+            // uint8_t *psubnets = pmsg->bridged_subnets_list;
             for (uint16_t i = 0; i < subnets_len;)
             {
-                net_key_index1 = LE_EXTRN2WORD(psubnets + i) & 0x0fff;
-                net_key_index2 = (LE_EXTRN2WORD(psubnets + i + 1) >> 4);
-                data_uart_debug("net_key_index1 %d, net_key_index2 %d\r\n", net_key_index1, net_key_index2);
+                // net_key_index1 = LE_EXTRN2WORD(psubnets + i) & 0x0fff;
+                // net_key_index2 = (LE_EXTRN2WORD(psubnets + i + 1) >> 4);
+                // data_uart_debug("net_key_index1 %d, net_key_index2 %d\r\n", net_key_index1, net_key_index2);
                 i += 3;
             }
+            rtk_bt_mesh_subnet_bridge_client_model_indicate_event(RTK_BT_MESH_SUBNET_BRIDGE_BRIDGED_SUBNETS_CLIENT_MODEL_LIST,
+				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGED_SUBNETS_LIST),
+				sizeof(bridged_subnets_list_t) - ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_STATUS) + subnets_len);
         }
         break;
     case MESH_MSG_BRIDGING_TABLE_LIST:
         {
             bridging_table_list_t *pmsg = (bridging_table_list_t *)pbuffer;
-            data_uart_debug("bridging_table_list: status %d, net_key_index1 0x%04x, net_key_index2 0x%04x, start_index %d, bridged_addrs_list \r\n",
-                            pmsg->status, pmsg->net_key_index1, pmsg->net_key_index2, pmsg->start_index);
+            // data_uart_debug("bridging_table_list: status %d, net_key_index1 0x%04x, net_key_index2 0x%04x, start_index %d, bridged_addrs_list \r\n",
+            //                 pmsg->status, pmsg->net_key_index1, pmsg->net_key_index2, pmsg->start_index);
             uint16_t addrs_len = pmesh_msg->msg_len - sizeof(bridging_table_list_t);
             bridged_address_entry_t *pentry = (bridged_address_entry_t *)pmsg->bridged_addrs_list;
             for (uint16_t i = 0; i < addrs_len;)
             {
-                data_uart_debug("addr1 0x%04x, addr2 0x%04x, directions %d\r\n", pentry->addr1, pentry->addr2,
-                                pentry->directions);
+                // data_uart_debug("addr1 0x%04x, addr2 0x%04x, directions %d\r\n", pentry->addr1, pentry->addr2,
+                //                 pentry->directions);
                 i += sizeof(bridged_address_entry_t);
                 pentry += 1;
             }
+            rtk_bt_mesh_subnet_bridge_client_model_indicate_event(RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_LIST,
+				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_LIST),
+				sizeof(bridging_table_list_t) - ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_LIST) + addrs_len);
         }
         break;
     case MESH_MSG_BRIDGING_TABLE_SIZE_STATUS:
         if (pmesh_msg->msg_len == sizeof(bridging_table_size_status_t))
         {
-            bridging_table_size_status_t *pmsg = (bridging_table_size_status_t *)pbuffer;
-            data_uart_debug("bridging_table_size_status: table size %d\r\n", pmsg->bridging_table_size);
+            // bridging_table_size_status_t *pmsg = (bridging_table_size_status_t *)pbuffer;
+            // data_uart_debug("bridging_table_size_status: table size %d\r\n", pmsg->bridging_table_size);
+            rtk_bt_mesh_subnet_bridge_client_model_indicate_event(RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_SIZE,
+				(uint8_t *) pbuffer + ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_SIZE_STATUS),
+				sizeof(bridging_table_size_status_t) - ACCESS_OPCODE_SIZE(MESH_MSG_BRIDGING_TABLE_SIZE_STATUS));
         }
         break;
     default:
