@@ -561,17 +561,27 @@ void serial_free(serial_t *obj)
 
 #ifdef CONFIG_GDMA_EN
 	if (serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) {
-		GDMA_ChnlFree(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index,
-					  puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ClearINT(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ChnlFree(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
 		serial_dma_en[obj->uart_idx] &= ~SERIAL_RX_DMA_EN;
+		UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
 	}
 
 	if (serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) {
-		GDMA_ChnlFree(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index,
-					  puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ClearINT(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ChnlFree(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
 		serial_dma_en[obj->uart_idx] &= ~SERIAL_TX_DMA_EN;
+		UART_TXDMACmd(puart_adapter->UARTx, DISABLE);
 	}
 #endif
+
+	UART_SetRxFlag(obj->uart_idx, 0);
+	UART_SetTxFlag(obj->uart_idx, 0);
+
 	// TODO: recovery Pin Mux
 
 }
@@ -1114,7 +1124,8 @@ int32_t serial_send_stream_abort(serial_t *obj)
 
 			if (serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) {
 				GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-				GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+				/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+				GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				serial_dma_en[obj->uart_idx] &= ~SERIAL_TX_DMA_EN;
 			}
@@ -1164,7 +1175,8 @@ int32_t serial_recv_stream_abort(serial_t *obj)
 
 			if (serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) {
 				GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-				GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+				/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+				GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 				serial_dma_en[obj->uart_idx] &= ~SERIAL_RX_DMA_EN;
 			}

@@ -16,11 +16,10 @@ MODULE_IFLAGS += \
 	-I$(BLE_AUDIO_COMMON_DIR) \
 	-I$(BLE_ISO_COMMON_DIR) \
 	-I$(BASEDIR)/component/at_cmd
-	
+
 CSRC += \
 	$(DIR)/bt_atcmd/bt_utils.c \
 	$(DIR)/bt_atcmd/atcmd_bt_common.c \
-	$(DIR)/bt_atcmd/atcmd_bt_device.c \
 	$(DIR)/bt_atcmd/atcmd_bt_example.c \
 	$(DIR)/bt_atcmd/atcmd_bt_gap.c \
 	$(DIR)/bt_atcmd/atcmd_bt_le_gap.c \
@@ -55,7 +54,9 @@ CSRC += \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_generic_model.c \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_sensor_model.c \
 	$(DIR)/bt_atcmd/atcmd_bt_mesh_health_model.c \
-	$(DIR)/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c
+	$(DIR)/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c \
+	$(DIR)/bt_atcmd/atcmd_bt_mesh_subnet_bridge_model.c \
+	$(DIR)/bt_atcmd/atcmd_bt_mesh_private_beacon_model.c
 
 OBJS = $(notdir $(CSRC:.c=.o))
 

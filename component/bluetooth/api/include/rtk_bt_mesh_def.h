@@ -31,6 +31,9 @@
 #define BT_MESH_CONFIG_MSG_TTL                   5
 
 #define BT_MESH_ENABLE_DIRECTED_FORWARDING                             1
+#define BT_MESH_ENABLE_SUBNET_BRIDGE                                   1
+#define BT_MESH_ENABLE_PRIVATE_BEACON                                  1
+#define BT_MESH_ENABLE_EPA_PROVISION                                   1
 
 // Mesh DF default configuration paramters
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
@@ -48,6 +51,12 @@
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
 #define BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL                1
+#endif
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
+#define BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL                      1
+#endif
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON) && BT_MESH_ENABLE_PRIVATE_BEACON
+#define BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL                     1
 #endif
 #define BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL                1
 #define BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL                     1

@@ -147,10 +147,7 @@ u32 inic_spi_txdma_irq_handler(void *pData)
 int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 sts)
 {
 	do {
-		if (rtos_mutex_take(inic_spi_priv->dev_sts_lock, MUTEX_WAIT_TIMEOUT) == FAIL) {
-			return FAIL;
-		}
-
+		rtos_critical_enter();
 		if ((ops == DISABLE) && (inic_spi_priv->dev_status & sts)) {
 #ifdef SPI_DEBUG
 			u32 pin = 0;
@@ -188,8 +185,6 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 					/* set DEV_RDY pin to idle */
 					set_dev_rdy_pin(DEV_READY);
 				}
-
-				rtos_sema_give(inic_spi_priv->spi_transfer_done_sema);
 			}
 #ifdef SPI_DEBUG
 			GPIO_WriteBit(pin, 0);
@@ -208,9 +203,11 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 			RTIM_Reset(TIMx[INIC_RECOVER_TIM_IDX]);
 			RTIM_Cmd(TIMx[INIC_RECOVER_TIM_IDX], ENABLE);
 		}
+		rtos_critical_exit();
 
-		rtos_mutex_give(inic_spi_priv->dev_sts_lock);
-
+		if (inic_spi_priv->dev_status == DEV_STS_IDLE) {
+			rtos_sema_give(inic_spi_priv->spi_transfer_done_sema);
+		}
 		if (inic_spi_priv->ssris_pending) {
 			inic_spi_priv->ssris_pending = FALSE;
 
@@ -236,7 +233,7 @@ u32 inic_spi_recover(void *Data)
 {
 	struct inic_spi_priv_t *inic_spi_priv = (struct inic_spi_priv_t *) Data;
 
-	RTIM_INTClear(TIM0);
+	RTIM_INTClear(TIMx[INIC_RECOVER_TIM_IDX]);
 
 	/* check if error occurs or SPI transfer is still ongoing */
 	if (SSI_Busy(INIC_SPI_DEV)) {
@@ -333,7 +330,6 @@ static void inic_spi_init(void)
 
 	index = (INIC_SPI_DEV == SPI0_DEV) ? 0 : 1;
 
-	rtos_mutex_create_static(&inic_spi_priv->dev_sts_lock);
 	rtos_mutex_create_static(&inic_spi_priv->tx_lock);
 	rtos_sema_create(&inic_spi_priv->txirq_sema, 0, RTOS_SEMA_MAX_COUNT);
 	rtos_sema_create(&inic_spi_priv->rxirq_sema, 0, RTOS_SEMA_MAX_COUNT);
@@ -362,10 +358,10 @@ static void inic_spi_init(void)
 #endif
 
 	/* Initialize Timer*/
-	RCC_PeriphClockCmd(APBPeriph_LTIM0, APBPeriph_LTIM0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_TIMx[INIC_RECOVER_TIM_IDX], APBPeriph_TIMx_CLOCK[INIC_RECOVER_TIM_IDX], ENABLE);
 	RTIM_TimeBaseStructInit(&TIM_InitStruct);
 	TIM_InitStruct.TIM_Idx = INIC_RECOVER_TIM_IDX;
-	TIM_InitStruct.TIM_Period = INIC_RECOVER_TO_US / (1000000 / 32768);
+	TIM_InitStruct.TIM_Period = INIC_RECOVER_TO_US;
 
 	RTIM_TimeBaseInit(TIMx[INIC_RECOVER_TIM_IDX], &TIM_InitStruct, TIMx_irq[INIC_RECOVER_TIM_IDX], (IRQ_FUN)inic_spi_recover, (u32)inic_spi_priv);
 	RTIM_INTConfig(TIMx[INIC_RECOVER_TIM_IDX], TIM_IT_Update, ENABLE);

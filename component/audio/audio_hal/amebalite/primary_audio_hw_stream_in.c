@@ -44,6 +44,8 @@
 #define REF_CHANNEL                   "ref_channel"
 //0 master, 1 slave
 #define MASTER_SLAVE                  "master_slave"
+// I2S:0, Left justified:1, pcm_a:2, pcm_b:3.
+#define CAPTURE_DATA_FORMAT           "data_format"
 #define NO_AFE_PURE_DATA_DUMP         0
 #define NO_AFE_ALL_DATA_DUMP          0
 #define DUMP_FRAME                    48000
@@ -80,6 +82,7 @@ struct PrimaryAudioHwStreamIn {
 	uint64_t mic_category;
 	uint32_t device;
 	uint32_t master_slave;
+	uint32_t data_format;
 
 #if (NO_AFE_PURE_DATA_DUMP || NO_AFE_ALL_DATA_DUMP)
 	char *in_buf;  //2s data
@@ -235,6 +238,11 @@ static int32_t PrimarySetStreamInParameters(struct AudioHwStream *stream, const 
 	if (string_cells_has_key(cells, MASTER_SLAVE)) {
 		string_cells_get_int(cells, MASTER_SLAVE, &value);
 		cap->master_slave = value;
+	}
+
+	if (string_cells_has_key(cells, CAPTURE_DATA_FORMAT)) {
+		string_cells_get_int(cells, CAPTURE_DATA_FORMAT, &value);
+		cap->data_format = value;
 	}
 
 	string_cells_destroy(cells);
@@ -417,6 +425,7 @@ static int32_t StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
 	}
 
 	AUDIO_SP_SetMasterSlave(AUDIO_I2S_IN_SPORT_INDEX, cap->master_slave);
+	AUDIO_SP_SetRxDataFormat(AUDIO_I2S_IN_SPORT_INDEX, cap->data_format);
 
 	ameba_audio_stream_rx_start(cap->in_pcm);
 	return HAL_OSAL_OK;
@@ -763,6 +772,7 @@ struct AudioHwStreamIn *CreateAudioHwStreamIn(struct AudioHwCard *card, const st
 	in->requested_channels = config->channel_count;
 	in->channel_for_ref = 2;
 	in->master_slave = AUDIO_I2S_IN_ROLE;
+	in->data_format = AUDIO_I2S_IN_DATA_FORMAT;
 
 	if (desc->flags & AUDIO_HW_INPUT_FLAG_NOIRQ) {
 		HAL_AUDIO_INFO("CreateAudioHwStreamIn in NO_IRQ mode, buffer_bytes: %" PRIu32 "", config->buffer_bytes);

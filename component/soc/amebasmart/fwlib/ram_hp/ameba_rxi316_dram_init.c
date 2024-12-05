@@ -1031,9 +1031,7 @@ void rxi316_DynSre_init(u32 IdleCnt, u32 state)
 	DDRC_TypeDef *ddrc = DDRC_DEV;
 
 	if (SYSCFG_RLVersion() < SYSCFG_CUT_VERSION_D) {
-		if (DDR_Type_DDR2 == DDR_PHY_ChipInfo_ddrtype()) {
-			IdleCnt = 0;	/* Keep DDR2 Active to fix srex issue */
-		}
+		IdleCnt = 0;	/* Keep Dram Active to fix srex issue */
 	} else {
 		/* CR_DPERF0[15:0].DIW < CR_DRR[23:8].tREF - 0x46 atfer D-Cut */
 		/* If CR_DIW is too large, RXI316_DDRC will not be able to enter DYN_SRE.*/
