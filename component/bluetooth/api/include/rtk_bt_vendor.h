@@ -71,6 +71,18 @@ typedef enum {
  */
 
 /**
+ * @brief     BT controller power on.
+ * @return    None
+ */
+void rtk_bt_controller_power_on(void);
+
+/**
+ * @brief     BT controller power off.
+ * @return    None
+ */
+void rtk_bt_controller_power_off(void);
+
+/**
  * @brief     Set BT TX power gain index.
  * @param[in] index: TX power gain index.
  * @return    None
@@ -89,6 +101,39 @@ void rtk_bt_set_bt_antenna(uint8_t ant);
  * @return    None
  */
 void rtk_bt_hci_debug_enable(void);
+
+/**
+ * @brief     Enable BT Debug Port.
+ * @param[in] bt_sel: BT Debug Port selection, 0 for BT vendor, 1 for BT on.
+ * @param[in] bt_bdg_mask: BT debug mask, each bit set 1 means enable BT Debug Port[0-31].
+ * @return    None
+ */
+void rtk_bt_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_bdg_mask);
+
+/**
+ * @brief     Enable BT Debug Port.
+ * @param[in] bt_sel: BT Debug Port selection, 0 for BT vendor, 1 for BT on.
+ * @param[in] bt_dbg_port: BT debug port bit, range 0~31.
+ * @param[in] pad: PAD name.
+ * @return    None
+ */
+void rtk_bt_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad);
+
+/**
+ * @brief     Shift BT Debug Port.
+ * @param[in] original: Original BT Debug Port which is shift from.
+ * @param[in] mapping: Target BT Debug Port mapping which is shift to.
+ * @return    None
+ */
+void rtk_bt_debug_port_shift(uint8_t original, uint8_t mapping);
+
+/**
+ * @brief     Enable BT GPIO.
+ * @param[in] bt_gpio: BT GPIO name.
+ * @param[in] pad: PAD name.
+ * @return    None
+ */
+void rtk_bt_gpio_enable(uint8_t bt_gpio, char *pad);
 
 /**
  * @brief     Config BT sleep mode.

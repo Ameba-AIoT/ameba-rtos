@@ -375,6 +375,23 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
         {
             // data_uart_debug("Bridge:\t\t%d-%d-0x%04x-0x%04x-0x%04x-0x%04x\r\n", i, ptable->directions,
             //                 ptable->net_key_index1, ptable->net_key_index2, ptable->addr1, ptable->addr2);
+            *(p_data + offset) = RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO;
+            offset++;
+
+            *(p_data + offset) = 11;  // len:11
+            offset++;
+            copy_data_to_memory_byte_by_byte(i, p_data + offset, 2);  // offset:0  type:uint16_t
+            offset += 2;
+            *(p_data + offset) = ptable->directions;    // offset:2  type:uint8_t
+            offset++;
+            copy_data_to_memory_byte_by_byte(ptable->net_key_index1, p_data + offset, 2);  // offset:3  type:uint16_t
+            offset += 2;
+            copy_data_to_memory_byte_by_byte(ptable->net_key_index2, p_data + offset, 2);  // offset:5  type:uint16_t
+            offset += 2;
+            copy_data_to_memory_byte_by_byte(ptable->addr1, p_data + offset, 2);  // offset:7  type:uint16_t
+            offset += 2;
+            copy_data_to_memory_byte_by_byte(ptable->addr2, p_data + offset, 2);  // offset:9  type:uint16_t
+            offset += 2;
         }
     }
 #endif

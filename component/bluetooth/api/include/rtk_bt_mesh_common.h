@@ -53,6 +53,7 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_UDB_DISPLAY = 1,
+	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_SNB_DISPLAY,
 	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY,
 	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY,
 	RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE,
@@ -112,6 +113,7 @@ typedef enum {
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO,
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO,
 	RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO,
+	RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO,
 } rtk_bt_mesh_stack_user_list_type_t;
 
 /**
@@ -452,11 +454,36 @@ typedef struct {
 } rtk_bt_mesh_stack_evt_dev_info_udb_t;
 
 /**
+ * @typedef   rtk_bt_mesh_stack_evt_dev_info_snb_t
+ * @brief     BLE MESH device secure network beacon info structure.
+ */
+typedef struct {
+	rtk_bt_mesh_stack_device_info_common_data dev_info;
+	/*
+	 * phase 1: old NetKey + Key Refresh flag set to 0
+	 * phase 2: new NetKey + Key Refresh flag set to 1
+	 * phase 3: new NetKey + Key Refresh flag set to 0
+	 */
+	uint8_t key_refresh_flag: 1; //!< bit0: key refresh flag
+	/*
+	 * normal: new iv index + iv_update_flag set to 0
+	 * update: old iv index + iv_update_flag set to 1
+	 */
+	uint8_t iv_update_flag: 1; //!< bit1: IV update flag
+	uint8_t rfu: 6; //!< reserved for future use
+	uint8_t net_id[8]; //!< Network ID
+	uint8_t iv_index[4]; //!< IV Index
+	uint8_t auth[8]; //!< Authenticates the packet contents, computed with the Network Key over the [KR, NID, CIVI] fields
+} rtk_bt_mesh_stack_evt_dev_info_snb_t;
+
+/**
  * @typedef   rtk_bt_mesh_stack_evt_prov_complete_t
  * @brief     BLE MESH device provisioning complete info structure.
  */
 typedef struct {
 	uint16_t unicast_addr;
+	bool dkri_flag;
+	uint8_t dkri;
 } rtk_bt_mesh_stack_evt_prov_complete_t;
 
 /**
@@ -493,6 +520,14 @@ typedef struct {
  * @typedef   proxy_adv_type_t
  * @brief     BLE MESH device proxy adv info structure.
  */
+enum {
+	RTK_BT_MESH_PROXY_ADV_TYPE_NET_ID = 0,
+	RTK_BT_MESH_PROXY_ADV_TYPE_NODE_IDENTITY = 1,
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON) && BT_MESH_ENABLE_PRIVATE_BEACON
+	RTK_BT_MESH_PROXY_ADV_TYPE_PRIVATE_NET_ID = 2,
+	RTK_BT_MESH_PROXY_ADV_TYPE_PRIVATE_NODE_IDENTITY = 3,
+#endif
+} _SHORT_ENUM_;
 typedef uint8_t proxy_adv_type_t;
 
 /**

@@ -2018,6 +2018,51 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
   * @}
   */
 
+/**
+ * @brief  Set AUDIO SPORT TX DataFormat.
+ * @param  index: SPORT index.
+ * @param  format: data format.
+ *          This parameter can be one of the following values:
+ *            @arg SP_DF_I2S
+ *            @arg SP_DF_LEFT
+ *            @arg SP_DF_PCM_A
+ *            @arg SP_DF_PCM_B
+ * @retval None
+ */
+void AUDIO_SP_SetTxDataFormat(u32 index, u32 format)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+	SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(format);
+}
+
+/**
+ * @}
+ */
+
+/**
+ * @brief  Set AUDIO SPORT RX DataFormat.
+ * @param  index: SPORT index.
+ * @param  format: data format.
+ *          This parameter can be one of the following values:
+ *            @arg SP_DF_I2S
+ *            @arg SP_DF_LEFT
+ *            @arg SP_DF_PCM_A
+ *            @arg SP_DF_PCM_B
+ * @retval None
+ */
+void AUDIO_SP_SetRxDataFormat(u32 index, u32 format)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_FORMAT &= ~SP_MASK_DATA_FORMAT_SEL_RX;
+	SPORTx->SP_FORMAT |= SP_DATA_FORMAT_SEL_RX(format);
+	SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+	SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(format);
+}
+
+/**
+ * @}
+ */
 /** @} */
 
 /** @} */

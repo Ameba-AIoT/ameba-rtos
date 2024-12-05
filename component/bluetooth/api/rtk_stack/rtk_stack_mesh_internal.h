@@ -126,6 +126,10 @@ uint8_t rtk_bt_mesh_config_client_model_indicate_event(uint32_t event_code, void
 
 uint8_t rtk_bt_mesh_directed_forwarding_client_model_indicate_event(uint32_t event_code, void *pdata, uint32_t len);
 
+uint8_t rtk_bt_mesh_subnet_bridge_client_model_indicate_event(uint32_t event_code, void *pdata, uint32_t len);
+
+uint8_t rtk_bt_mesh_private_beacon_client_model_indicate_event(uint32_t event_code, void *pdata, uint32_t len);
+
 uint16_t bt_mesh_config_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 
 uint16_t bt_mesh_generic_onoff_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
@@ -136,6 +140,10 @@ uint16_t bt_mesh_directed_forwarding_client_model_act_handle(rtk_bt_cmd_t *p_cmd
 
 uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd);
 
+uint16_t bt_mesh_subnet_bridge_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
+
+uint16_t bt_mesh_private_beacon_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
+
 bool datatrans_model_init(void);
 
 uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
@@ -143,6 +151,10 @@ uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 void remote_prov_client_init(void);
 
 void directed_forwarding_client_init(void);
+
+void subnet_bridge_client_init(void);
+
+void private_beacon_client_init(void);
 
 uint16_t bt_mesh_light_lightness_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 

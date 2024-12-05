@@ -218,6 +218,21 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		BT_AT_DUMP_HEXN(udb_info->dev_uuid, 16);
 		break;
 	}
+	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_SNB_DISPLAY: {
+		rtk_bt_mesh_stack_evt_dev_info_snb_t *snb_info;
+		snb_info = (rtk_bt_mesh_stack_evt_dev_info_snb_t *)param;
+		BT_LOGA("[APP] bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", snb_info->dev_info.bt_addr[5], snb_info->dev_info.bt_addr[4],
+				snb_info->dev_info.bt_addr[3], snb_info->dev_info.bt_addr[2], snb_info->dev_info.bt_addr[1], snb_info->dev_info.bt_addr[0], snb_info->dev_info.bt_addr_type,
+				snb_info->dev_info.rssi);
+		BT_LOGA("snb=");
+		mesh_data_uart_dump(snb_info->net_id, 8);
+		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,snb,",
+					snb_info->dev_info.bt_addr[5], snb_info->dev_info.bt_addr[4], snb_info->dev_info.bt_addr[3],
+					snb_info->dev_info.bt_addr[2], snb_info->dev_info.bt_addr[1], snb_info->dev_info.bt_addr[0],
+					snb_info->dev_info.bt_addr_type, snb_info->dev_info.rssi);
+		BT_AT_DUMP_HEXN(snb_info->net_id, 8);
+		break;
+	}
 	case RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY: {
 		rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *prov_info;
 		prov_info = (rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *)param;
@@ -564,6 +579,15 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 					BT_AT_PRINT(",0x%04x,%d", LE_TO_U16(p_data + offset + 20 + 3 * origin_dependent_count + 3 * i),
 								*(p_data + offset + 22 + 3 * origin_dependent_count + 3 * i));
 				}
+				break;
+			}
+#endif
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
+			case RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO: {
+				BT_LOGA("\r\nBridge:\t\t%d-%d-0x%04x-0x%04x-0x%04x-0x%04x", LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+						LE_TO_U16(p_data + offset + 3), LE_TO_U16(p_data + offset + 5), LE_TO_U16(p_data + offset + 7), LE_TO_U16(p_data + offset + 9));
+				BT_AT_PRINT("\r\n+BLEMESHSTACK:list,%d,%d-%d-0x%04x-0x%04x-0x%04x-0x%04x", type, LE_TO_U16(p_data + offset), *(p_data + offset + 2),
+							LE_TO_U16(p_data + offset + 3), LE_TO_U16(p_data + offset + 5), LE_TO_U16(p_data + offset + 7), LE_TO_U16(p_data + offset + 9));
 				break;
 			}
 #endif
