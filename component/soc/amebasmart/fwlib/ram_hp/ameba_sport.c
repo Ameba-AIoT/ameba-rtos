@@ -1768,9 +1768,288 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
 }
 
 /**
+  * @brief  Set SPORT direct out start state.
+  * @param  index: select SPORT.
+  * @param  out_chn: select direct out channel.
+  *		   This parameter can be one of the following values:
+  *			 @arg DIRECT_OUT_CHN0
+  *			 @arg DIRECT_OUT_CHN1
+  *			 @arg DIRECT_OUT_CHN2
+  *			 @arg DIRECT_OUT_CHN3
+  *			 @arg DIRECT_OUT_CHN4
+  *			 @arg DIRECT_OUT_CHN5
+  *			 @arg DIRECT_OUT_CHN6
+  *			 @arg DIRECT_OUT_CHN7
+  * @param  NewState: ENABLE or Disable channel.
+  * @retval None
+  */
+void AUDIO_SP_RXSetDirectOutStart(u32 index, u32 out_chn, u32 NewState)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	if (NewState == ENABLE) {
+		switch (out_chn) {
+		case DIRECT_OUT_CHN0:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_0_EN;
+			break;
+		case DIRECT_OUT_CHN1:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_1_EN;
+			break;
+		case DIRECT_OUT_CHN2:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_2_EN;
+			break;
+		case DIRECT_OUT_CHN3:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_3_EN;
+			break;
+		case DIRECT_OUT_CHN4:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_4_EN;
+			break;
+		case DIRECT_OUT_CHN5:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_5_EN;
+			break;
+		case DIRECT_OUT_CHN6:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_6_EN;
+			break;
+		case DIRECT_OUT_CHN7:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct out channel value for enable!\n");
+			break;
+		}
+	} else {
+		switch (out_chn) {
+		case DIRECT_OUT_CHN0:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_0_EN;
+			break;
+		case DIRECT_OUT_CHN1:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_1_EN;
+			break;
+		case DIRECT_OUT_CHN2:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_2_EN;
+			break;
+		case DIRECT_OUT_CHN3:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_3_EN;
+			break;
+		case DIRECT_OUT_CHN4:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_4_EN;
+			break;
+		case DIRECT_OUT_CHN5:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_5_EN;
+			break;
+		case DIRECT_OUT_CHN6:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_6_EN;
+			break;
+		case DIRECT_OUT_CHN7:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct out channel value for diable!\n");
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Set SPORT direct reg start state.
+  * @param  index: select SPORT.
+  * @param  reg_chn: select direct reg channel.
+  *		   This parameter can be one of the following values:
+  *			 @arg DIRECT_REG_0
+  *			 @arg DIRECT_REG_1
+  *			 @arg DIRECT_REG_2
+  *			 @arg DIRECT_REG_3
+  *			 @arg DIRECT_REG_4
+  *			 @arg DIRECT_REG_5
+  *			 @arg DIRECT_REG_6
+  *			 @arg DIRECT_REG_7
+  * @param  NewState: ENABLE or Disable direct reg.
+  * @retval None
+  */
+void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	if (NewState == ENABLE) {
+		switch (reg_chn) {
+		case DIRECT_REG_0:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_0_EN;
+			break;
+		case DIRECT_REG_1:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_1_EN;
+			break;
+		case DIRECT_REG_2:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_2_EN;
+			break;
+		case DIRECT_REG_3:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_3_EN;
+			break;
+		case DIRECT_REG_4:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_4_EN;
+			break;
+		case DIRECT_REG_5:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_5_EN;
+			break;
+		case DIRECT_REG_6:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_6_EN;
+			break;
+		case DIRECT_REG_7:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct reg for enable!\n");
+			break;
+		}
+	} else {
+		switch (reg_chn) {
+		case DIRECT_REG_0:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_0_EN;
+			break;
+		case DIRECT_REG_1:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_1_EN;
+			break;
+		case DIRECT_REG_2:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_2_EN;
+			break;
+		case DIRECT_REG_3:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_3_EN;
+			break;
+		case DIRECT_REG_4:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_4_EN;
+			break;
+		case DIRECT_REG_5:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_5_EN;
+			break;
+		case DIRECT_REG_6:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_6_EN;
+			break;
+		case DIRECT_REG_7:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct reg for diable!\n");
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Select SPORT direct reg's source.
+  * @param  index: select SPORT.
+  * @param  reg_chn: direct reg channel.
+  *            @This parameter can be one of the following values:
+  *			 @arg DIRECT_REG_0
+  *			 @arg DIRECT_REG_1
+  *			 @arg DIRECT_REG_2
+  *			 @arg DIRECT_REG_3
+  *			 @arg DIRECT_REG_4
+  *			 @arg DIRECT_REG_5
+  *			 @arg DIRECT_REG_6
+  *			 @arg DIRECT_REG_7
+  * @param  direct_in_chn: select direct in channel.
+  *		   This parameter can be one of the following values:
+  *			 @arg DIRECT_IN_CHN0
+  *			 @arg DIRECT_IN_CHN1
+  *			 @arg DIRECT_IN_CHN2
+  *			 @arg DIRECT_IN_CHN3
+  *			 @arg DIRECT_IN_CHN4
+  *			 @arg DIRECT_IN_CHN5
+  *			 @arg DIRECT_IN_CHN6
+  *			 @arg DIRECT_IN_CHN7
+  * @retval None
+  */
+void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	switch (reg_chn) {
+	case DIRECT_REG_0:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_0_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_0_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_1:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_1_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_1_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_2:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_2_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_2_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_3:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_3_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_3_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_4:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_4_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_4_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_5:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_5_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_5_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_6:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_6_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_6_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_7:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_7_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_7_SEL(direct_in_chn);
+		break;
+	default:
+		RTK_LOGE(TAG, "please check direct reg value!\n");
+		break;
+	}
+}
+
+/**
   * @}
   */
 
+/**
+ * @brief  Set AUDIO SPORT TX DataFormat.
+ * @param  index: SPORT index.
+ * @param  format: data format.
+ *          This parameter can be one of the following values:
+ *            @arg SP_DF_I2S
+ *            @arg SP_DF_LEFT
+ *            @arg SP_DF_PCM_A
+ *            @arg SP_DF_PCM_B
+ * @retval None
+ */
+void AUDIO_SP_SetTxDataFormat(u32 index, u32 format)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+	SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(format);
+}
+
+/**
+ * @}
+ */
+
+/**
+ * @brief  Set AUDIO SPORT RX DataFormat.
+ * @param  index: SPORT index.
+ * @param  format: data format.
+ *          This parameter can be one of the following values:
+ *            @arg SP_DF_I2S
+ *            @arg SP_DF_LEFT
+ *            @arg SP_DF_PCM_A
+ *            @arg SP_DF_PCM_B
+ * @retval None
+ */
+void AUDIO_SP_SetRxDataFormat(u32 index, u32 format)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_FORMAT &= ~SP_MASK_DATA_FORMAT_SEL_RX;
+	SPORTx->SP_FORMAT |= SP_DATA_FORMAT_SEL_RX(format);
+	SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+	SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(format);
+}
+
+/**
+ * @}
+ */
 /** @} */
 
 /** @} */

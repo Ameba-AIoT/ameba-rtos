@@ -60,6 +60,8 @@ CSRC += \
 	$(BT_API_DIR)/rtk_bt_mesh_remote_prov_model.c \
 	$(BT_API_DIR)/rtk_bt_mesh_health_model.c \
 	$(BT_API_DIR)/rtk_bt_mesh_sensor_model.c \
+	$(BT_API_DIR)/rtk_bt_mesh_subnet_bridge_model.c \
+	$(BT_API_DIR)/rtk_bt_mesh_private_beacon_model.c \
 	$(BT_API_DIR)/rtk_bt_le_iso.c \
 	$(BT_API_DIR)/rtk_bt_le_audio.c \
 	$(BT_API_DIR)/rtk_bt_bap.c \
@@ -91,7 +93,8 @@ CSRC += \
 	$(BT_API_DIR)/zephyr_stack/zephyr_stack_mesh_generic_default_transition_time.c \
 	$(BT_API_DIR)/zephyr_stack/zephyr_stack_mesh_generic_model.c \
 	$(BT_API_DIR)/zephyr_stack/zephyr_stack_mesh_health_model.c \
-	$(BT_API_DIR)/zephyr_stack/zephyr_stack_mesh_remote_provision_model.c
+	$(BT_API_DIR)/zephyr_stack/zephyr_stack_mesh_remote_provision_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_private_beacon_model.c
 endif
 
 else
@@ -125,6 +128,8 @@ CSRC += \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_directed_forwarding_model.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_health_model.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_sensor_model.c \
+	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_subnet_bridge_model.c \
+	$(BT_API_DIR)/rtk_stack/rtk_stack_mesh_private_beacon_model.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_iso.c \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_le_audio.c
 endif

@@ -1073,6 +1073,7 @@ typedef struct {
 #define TX_FIFO1_REG0_R		((u32)0x00000005)
 #define TX_FIFO1_REG1_L		((u32)0x00000006)
 #define TX_FIFO1_REG1_R		((u32)0x00000007)
+#define DIRECT_REG_CHN		((u32)0x00000008)
 /**
   * @}
   */
@@ -1112,6 +1113,50 @@ typedef struct {
   */
 #define DSP_SRC_BCLK_DIV4   ((u32)0x00000000)
 #define DSP_SRC_BCLK_DIV2   ((u32)0x00000001)
+/**
+  * @}
+  */
+/** @defgroup AUDIO_SPORT_DirectOutChannel
+* @{
+*/
+#define DIRECT_OUT_CHN0		((u32)0x00000000)
+#define DIRECT_OUT_CHN1		((u32)0x00000001)
+#define DIRECT_OUT_CHN2		((u32)0x00000002)
+#define DIRECT_OUT_CHN3		((u32)0x00000003)
+#define DIRECT_OUT_CHN4		((u32)0x00000004)
+#define DIRECT_OUT_CHN5		((u32)0x00000005)
+#define DIRECT_OUT_CHN6		((u32)0x00000006)
+#define DIRECT_OUT_CHN7		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_DirectInChannel
+* @{
+*/
+#define DIRECT_IN_CHN0		((u32)0x00000000)
+#define DIRECT_IN_CHN1		((u32)0x00000001)
+#define DIRECT_IN_CHN2		((u32)0x00000002)
+#define DIRECT_IN_CHN3		((u32)0x00000003)
+#define DIRECT_IN_CHN4		((u32)0x00000004)
+#define DIRECT_IN_CHN5		((u32)0x00000005)
+#define DIRECT_IN_CHN6		((u32)0x00000006)
+#define DIRECT_IN_CHN7		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_DirectReg
+* @{
+*/
+#define DIRECT_REG_0		((u32)0x00000000)
+#define DIRECT_REG_1		((u32)0x00000001)
+#define DIRECT_REG_2		((u32)0x00000002)
+#define DIRECT_REG_3		((u32)0x00000003)
+#define DIRECT_REG_4		((u32)0x00000004)
+#define DIRECT_REG_5		((u32)0x00000005)
+#define DIRECT_REG_6		((u32)0x00000006)
+#define DIRECT_REG_7		((u32)0x00000007)
 /**
   * @}
   */
@@ -1175,7 +1220,11 @@ _LONG_CALL_ u32 AUDIO_SP_GetRXCounterVal(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXPhaseVal(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
-
+_LONG_CALL_ void AUDIO_SP_RXSetDirectOutStart(u32 index, u32 out_chn, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn);
+_LONG_CALL_ void AUDIO_SP_SetTxDataFormat(u32 index, u32 format);
+_LONG_CALL_ void AUDIO_SP_SetRxDataFormat(u32 index, u32 format);
 
 
 /**

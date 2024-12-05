@@ -94,9 +94,17 @@ int atcmd_bt_config(int argc, char *argv[]);
 int atcmd_bt_pts(int argc, char *argv[]);
 
 /* bt vendor cmd implementation */
+int atcmd_bt_enable(int argc, char *argv[]);
+
+int atcmd_bt_power(int argc, char *argv[]);
+
 int atcmd_bt_tx_power_gain(int argc, char *argv[]);
 
 int atcmd_bt_hci_debug_enable(int argc, char *argv[]);
+
+int atcmd_bt_debug_port(int argc, char *argv[]);
+
+int atcmd_bt_gpio(int argc, char *argv[]);
 
 int atcmd_bt_sleep_mode(int argc, char *argv[]);
 
@@ -105,9 +113,6 @@ int atcmd_bt_sleep_mode(int argc, char *argv[]);
 int atcmd_bt_set_tx_power(int argc, char *argv[]);
 
 int atcmd_bt_sof_eof_ind(int argc, char *argv[]);
-
-/* device cmd impl */
-int atcmd_bt_device(int argc, char *argv[]);
 
 /* le gap cmd impl */
 int atcmd_bt_le_gap(int argc, char *argv[]);
@@ -183,6 +188,12 @@ int atcmd_bt_mesh_performence_test(int argc, char *argv[]);
 
 /* mesh directed forwarding cmd impl */
 int atcmd_bt_mesh_df(int argc, char *argv[]);
+
+/* mesh directed forwarding cmd impl */
+int atcmd_bt_mesh_sbr(int argc, char *argv[]);
+
+/* mesh private beacon cmd impl */
+int atcmd_bt_mesh_prb(int argc, char *argv[]);
 
 /* br gap cmd impl */
 int atcmd_bt_br_gap(int argc, char *argv[]);

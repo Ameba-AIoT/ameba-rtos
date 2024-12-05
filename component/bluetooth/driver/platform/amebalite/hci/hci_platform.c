@@ -31,6 +31,9 @@ extern int wifi_set_ips_internal(u8 enable);
 #define LEFUSE(x)                  ((x)-HCI_LGC_EFUSE_OFFSET)
 #define PEFUSE(x)                  ((x)-HCI_PHY_EFUSE_OFFSET)
 
+#define DBG_BT_VENDOR              0
+#define DBG_BT_ON                  1
+
 uint32_t hci_cfg_sw_val = 0xFF;    // Open BT Trace log & FW log use 0xDD
 
 static uint8_t bt_manual_tx_power_gain_enable = 0;
@@ -432,9 +435,15 @@ void rtk_bt_post_enable(void)
 #endif
 }
 
+void hci_platform_external_fw_log_pin(void)
+{
+	Pinmux_Config(_PA_22, PINMUX_FUNCTION_BT_UART);
+	PAD_PullCtrl(_PA_22, GPIO_PuPd_UP);
+}
+
 uint8_t hci_platform_init(void)
 {
-	// Move to rtk_bt_enable() to aviod rtk upperstack memory leak when fail
+	// Move to rtk_bt_enable() to avoid rtk upperstack memory leak when fail
 	// if (rtk_bt_pre_enable() == false) {
 	//  BT_LOGE("rtk_bt_pre_enable fail!\r\n");
 	//  return HCI_FAIL;
@@ -444,8 +453,7 @@ uint8_t hci_platform_init(void)
 		rtk_bt_fw_log_open();
 		BT_LOGA("FW LOG OPEN\r\n");
 #if 0
-		Pinmux_Config(_PA_22, PINMUX_FUNCTION_BT_UART);
-		PAD_PullCtrl(_PA_22, GPIO_PuPd_UP);
+		hci_platform_external_fw_log_pin();
 #endif
 	}
 
@@ -528,5 +536,219 @@ void hci_platform_debug_enable(void)
 	set_reg_value(0x4100C884, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x40);     //Uart RTS GPIOD_10 PB1
 	osif_delay(5);
 	set_reg_value(0x4100C280, BIT19, 1);                                    //pinmux
+	osif_delay(5);
+}
+
+static void hci_platform_bt_debug_bit(uint8_t bt_dbg_port, char *pad)
+{
+	(void)pad;
+
+	switch (bt_dbg_port) {
+	case 0:
+		Pinmux_Config(_PA_0, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 1:
+		Pinmux_Config(_PA_1, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 2:
+		Pinmux_Config(_PA_30, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 3:
+		Pinmux_Config(_PA_31, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 4:
+		Pinmux_Config(_PA_28, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 5:
+		Pinmux_Config(_PA_29, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 6:
+		Pinmux_Config(_PA_21, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 7:
+		Pinmux_Config(_PA_22, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 8:
+		Pinmux_Config(_PB_0, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 9:
+		Pinmux_Config(_PB_1, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 10:
+		Pinmux_Config(_PB_2, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 11:
+		Pinmux_Config(_PB_3, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 12:
+		Pinmux_Config(_PB_4, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 13:
+		Pinmux_Config(_PB_5, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 14:
+		Pinmux_Config(_PA_14, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 15:
+		Pinmux_Config(_PA_15, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 16:
+		Pinmux_Config(_PA_16, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 17:
+		Pinmux_Config(_PA_17, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 18:
+		Pinmux_Config(_PA_18, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 19:
+		Pinmux_Config(_PA_13, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 20:
+		Pinmux_Config(_PA_24, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 21:
+		Pinmux_Config(_PA_25, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 22:
+		Pinmux_Config(_PA_26, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 23:
+		Pinmux_Config(_PA_27, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 24:
+		Pinmux_Config(_PB_6, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 25:
+		Pinmux_Config(_PB_7, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 26:
+		Pinmux_Config(_PB_8, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 27:
+		Pinmux_Config(_PB_9, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 28:
+		Pinmux_Config(_PB_10, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 29:
+		Pinmux_Config(_PA_11, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 30:
+		Pinmux_Config(_PA_12, PINMUX_FUNCTION_DBGPORT);
+		break;
+	case 31:
+		Pinmux_Config(_PA_10, PINMUX_FUNCTION_DBGPORT);
+		break;
+	default:
+		BT_LOGA("Invalid setting BT debug port, wrong BT debug port[%d].\r\n", bt_dbg_port);
+		break;
+	}
+}
+
+static void hci_platform_bt_debug_shift_bit(uint8_t original, uint8_t mapping)
+{
+	switch (mapping) {
+	case 0:
+		set_reg_value(0x4100C9E8, BIT0 | BIT1 | BIT2 | BIT3 | BIT4, original);
+		break;
+	case 1:
+		set_reg_value(0x4100C9E8, BIT8 | BIT9 | BIT10 | BIT11 | BIT12, original);
+		break;
+	case 2:
+		set_reg_value(0x4100C9E8, BIT16 | BIT17 | BIT18 | BIT19 | BIT20, original);
+		break;
+	case 3:
+		set_reg_value(0x4100C9E8, BIT24 | BIT25 | BIT26 | BIT27 | BIT28, original);
+		break;
+	case 4:
+		set_reg_value(0x4100C9EC, BIT0 | BIT1 | BIT2 | BIT3 | BIT4, original);
+		break;
+	case 5:
+		set_reg_value(0x4100C9EC, BIT8 | BIT9 | BIT10 | BIT11 | BIT12, original);
+		break;
+	case 6:
+		set_reg_value(0x4100C9EC, BIT16 | BIT17 | BIT18 | BIT19 | BIT20, original);
+		break;
+	case 7:
+		set_reg_value(0x4100C9EC, BIT24 | BIT25 | BIT26 | BIT27 | BIT28, original);
+		break;
+	default:
+		BT_LOGA("Invalid setting BT debug port shift, wrong shift mapping (%d).\r\n", mapping);
+		break;
+	}
+}
+
+static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
+{
+	(void)pad;
+
+	switch (bt_gpio) {
+	case 0:
+		Pinmux_Config(_PA_28, PINMUX_FUNCTION_BT_GPIO);
+		break;
+	case 1:
+		Pinmux_Config(_PA_29, PINMUX_FUNCTION_BT_GPIO);
+		break;
+	case 2:
+		Pinmux_Config(_PA_21, PINMUX_FUNCTION_BT_GPIO);
+		break;
+	case 3:
+		Pinmux_Config(_PA_22, PINMUX_FUNCTION_BT_GPIO);
+		break;
+	default:
+		BT_LOGA("Invalid setting BT GPIO, wrong BT GPIO[%d].\r\n", bt_gpio);
+		break;
+	}
+}
+
+static void hci_platform_debug_port_pre_enable(uint8_t bt_sel)
+{
+	set_reg_value(0x4100C9F4, BIT0, 0);                // pad reg 0x4100C9F4[0]=0, SWD pinmux disable
+	osif_delay(5);
+	set_reg_value(0x4100C9E4, BIT31, 1);               // 0x4100C9E4[31]=1, debug port enable
+	osif_delay(5);
+	if (bt_sel == DBG_BT_VENDOR) {                     // 0x4100C9E4[7:0]=0x3E, debug port sel, BT TOP for debug port
+		set_reg_value(0x4100C9E4, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x3E);
+	} else if (bt_sel == DBG_BT_ON) {                  // 0x4100C9E4[7:0]=0x3F, debug port sel, BT TOP for debug port & PMC
+		set_reg_value(0x4100C9E4, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x3F);
+	}
+	osif_delay(5);
+}
+
+void hci_platform_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_dbg_mask)
+{
+	uint8_t i = 0;
+	uint32_t mask = bt_dbg_mask;
+
+	hci_platform_debug_port_pre_enable(bt_sel);
+	for (i = 0; i < 32 && mask != 0; i++) {            // pinmux, to PINMUX_FUNCTION_DBGPORT
+		if ((mask & ((uint32_t)0x1)) == 1) {
+			hci_platform_bt_debug_bit(i, NULL);
+			osif_delay(5);
+		}
+		mask >>= 1;
+	}
+}
+
+void hci_platform_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad)
+{
+	hci_platform_debug_port_pre_enable(bt_sel);
+	hci_platform_bt_debug_bit(bt_dbg_port, pad);       // pinmux, to PINMUX_FUNCTION_DBGPORT
+	osif_delay(5);
+}
+
+void hci_platform_debug_port_shift(uint8_t original, uint8_t mapping)
+{
+	// shift from original to mapping
+	hci_platform_bt_debug_shift_bit(original, mapping);
+	osif_delay(5);
+}
+
+void hci_platform_gpio_enable(uint8_t bt_gpio, char *pad)
+{
+	set_reg_value(0x4100C9F4, BIT0, 0);               // pad reg 0x4100C9F4[0]=0, SWD pinmux disable
+	osif_delay(5);
+	hci_platform_bt_gpio_pad(bt_gpio, pad);           // pinmux, to PINMUX_FUNCTION_BT_GPIO
 	osif_delay(5);
 }

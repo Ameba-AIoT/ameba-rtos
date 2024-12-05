@@ -738,6 +738,18 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_mesh_directed_forwarding_client_model_act_handle(p_cmd);
 		break;
 #endif
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL) && BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL
+	case RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL:
+		BT_LOGD("RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL group");
+		bt_mesh_subnet_bridge_client_model_act_handle(p_cmd);
+		break;
+#endif
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL) && BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL
+	case RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL:
+		BT_LOGD("RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL group");
+		bt_mesh_private_beacon_client_model_act_handle(p_cmd);
+		break;
+#endif
 	case RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL:
 		BT_LOGD("RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL group");
 		bt_mesh_health_client_model_act_handle(p_cmd);
