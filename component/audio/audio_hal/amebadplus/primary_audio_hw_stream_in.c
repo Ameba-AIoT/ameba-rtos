@@ -436,8 +436,10 @@ static int32_t StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
 		}
 	}
 
-	AUDIO_SP_SetMasterSlave(cap->config.sport_index, cap->master_slave);
-	AUDIO_SP_SetRxDataFormat(cap->config.sport_index, cap->data_format);
+	if (cap->device == AMEBA_AUDIO_IN_I2S) {
+		AUDIO_SP_SetMasterSlave(cap->config.sport_index, cap->master_slave);
+		AUDIO_SP_SetRxDataFormat(cap->config.sport_index, cap->data_format);
+	}
 
 	ameba_audio_stream_rx_start(cap->in_pcm);
 	if (cap->requested_channels >= 10) {

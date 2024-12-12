@@ -43,7 +43,7 @@ int rtos_queue_delete(rtos_queue_t p_handle);
  * @param  p_handle:
  * @retval
  */
-uint32_t rtos_queue_massage_waiting(rtos_queue_t p_handle);
+uint32_t rtos_queue_message_waiting(rtos_queue_t p_handle);
 
 /**
  * @brief  For FreeRTOS, map to xQueueSendToBack / xQueueSendToBackFromISR

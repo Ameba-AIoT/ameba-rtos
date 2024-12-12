@@ -16,7 +16,7 @@ ifeq ($(CONFIG_BT_INIC_H4), y)
 CSRC += $(DIR)/driver/bt_inic/bt_inic_h4.c
 else ifeq ($(CONFIG_BT_INIC_H5), y)
 CSRC += $(DIR)/driver/bt_inic/bt_inic_h5.c
-else ifeq ($(CONFIG_BT_INIC_SPI), y)
+else ifneq (, $(filter y, $(CONFIG_BT_INIC_SPI) $(CONFIG_SPI_FULLMAC)))
 CSRC += $(DIR)/driver/bt_inic/bt_inic_spi_dev.c
 endif 
 

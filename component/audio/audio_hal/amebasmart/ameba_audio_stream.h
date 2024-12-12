@@ -43,6 +43,8 @@ extern "C" {
 #define RX_SPORT3_IN_USE    ((uint32_t)0x00000001 << 25)
 
 #define IS_6_8_CHANNEL(NUM) (((NUM) == 6) || ((NUM) == 8))
+#define DMA_XRUN           ((uint32_t)0x00000001 << 0)
+#define EXTRA_DMA_XRUN     ((uint32_t)0x00000001 << 1)
 
 enum {
 	AUDIOIP       = 0,
@@ -92,7 +94,6 @@ typedef struct _Stream {
 	uint32_t              period_bytes;
 	uint32_t              rate;
 	bool                  start_gdma;
-	bool                  gdma_need_stop;
 	uint32_t              stream_mode;
 	struct GDMA_CH_LLI   *gdma_ch_lli;
 	bool                  restart_by_user;
@@ -131,6 +132,9 @@ typedef struct _Stream {
 	bool                  extra_sem_need_post;
 	rtos_sema_t                 extra_sem_gdma_end;
 	bool                  extra_sem_gdma_end_need_post;
+
+	int32_t               multi_dma_xrun_mask;
+	bool                  dma_irq_masked;
 
 } Stream;
 

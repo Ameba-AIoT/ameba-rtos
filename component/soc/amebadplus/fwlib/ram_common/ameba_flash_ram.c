@@ -303,6 +303,16 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 	u32 addr_end = (page_cnt == 1) ? (address + len) : (page_begin + 0x100);
 	u32 size = addr_end - addr_begin;
 
+	if (len == 0) {
+		RTK_LOGW(NOTAG, "function %s, data length is invalid (0) \r\n", __func__);
+		goto exit;
+	}
+
+	if (IS_FLASH_ADDR((u32)pbuf)) {
+		RTK_LOGE(NOTAG, "function %s, source address(%08x) can not be flash address\r\n", __func__, pbuf);
+		assert_param(0);
+	}
+
 	FLASH_Write_Lock();
 	while (page_cnt) {
 		FLASH_TxData(addr_begin, size, pbuf);
@@ -317,6 +327,7 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 	DCache_Invalidate(SPI_FLASH_BASE + address, len);
 	FLASH_Write_Unlock();
 
+exit:
 	return 1;
 }
 /**

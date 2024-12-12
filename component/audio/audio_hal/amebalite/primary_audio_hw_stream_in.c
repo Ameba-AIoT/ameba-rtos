@@ -424,8 +424,10 @@ static int32_t StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
 
 	}
 
-	AUDIO_SP_SetMasterSlave(AUDIO_I2S_IN_SPORT_INDEX, cap->master_slave);
-	AUDIO_SP_SetRxDataFormat(AUDIO_I2S_IN_SPORT_INDEX, cap->data_format);
+	if (cap->device == AMEBA_AUDIO_IN_I2S) {
+		AUDIO_SP_SetMasterSlave(AUDIO_I2S_IN_SPORT_INDEX, cap->master_slave);
+		AUDIO_SP_SetRxDataFormat(AUDIO_I2S_IN_SPORT_INDEX, cap->data_format);
+	}
 
 	ameba_audio_stream_rx_start(cap->in_pcm);
 	return HAL_OSAL_OK;

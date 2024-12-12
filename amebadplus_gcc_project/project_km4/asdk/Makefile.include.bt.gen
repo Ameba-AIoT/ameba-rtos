@@ -56,3 +56,7 @@ IFLAGS += \
 	-I$(BLEDIR)/example/gatt_service/server \
 	-I$(BLEDIR)/example/gatt_service/client \
 	-I$(BASEDIR)/component/at_cmd
+
+ifeq ($(CONFIG_BT_INIC), y)
+IFLAGS += -I$(BLEDIR)/driver/bt_inic
+endif

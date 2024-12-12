@@ -7,4 +7,4 @@ ECHO Jlink version with v7.22 or later is recommanded
 PAUSE && EXIT 
 )
 
-%JLinkGDBServer_Path% -select USB -device Cortex-A32 -if swd -scriptfile AP3_CA32_Core0.JLinkScript -port 2337
+%JLinkGDBServer_Path% -select USB -device Cortex-A32 -if swd -scriptfile AP3_CA32_Core0.JLinkScript -port 2337 -nolocalhostonly
