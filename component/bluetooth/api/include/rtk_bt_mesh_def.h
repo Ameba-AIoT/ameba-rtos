@@ -121,6 +121,9 @@
 
 // Mesh provisioning capability releate setting for device
 #define PROV_SUPPORT_STATIC_OOB           0  // Whether support static oob for provisining
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+#define PROV_SUPPORT_OOB_AUTH_ONLY        0
+#endif
 #define PROV_SUPPORT_OUTPUT_OOB_ACTION    RTK_BT_MESH_PROV_CAP_OUTPUT_OOB_ACTION_NOT_ENABLE    // @ref rtk_bt_mesh_stack_prov_cap_output_oob_action_t
 #define PROV_SUPPORT_OUTPUT_OOB_SIZE      0    // The bytes store random number for mesh stack
 #define PROV_SUPPORT_INPUT_OOB_ACTION     RTK_BT_MESH_PROV_CAP_INPUT_OOB_ACTION_NOT_ENABLE    // @ref rtk_bt_mesh_stack_prov_cap_input_oob_action_t

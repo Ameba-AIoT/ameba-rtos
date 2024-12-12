@@ -81,7 +81,7 @@ err_t sys_mbox_new(sys_mbox_t *mbox, int size)
 */
 void sys_mbox_free(sys_mbox_t *mbox)
 {
-    if( rtos_queue_massage_waiting( *mbox ) )
+    if( rtos_queue_message_waiting( *mbox ) )
     {
 #if SYS_STATS
         lwip_stats.sys.mbox.err++;

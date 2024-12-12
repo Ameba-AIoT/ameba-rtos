@@ -5,6 +5,9 @@
 static const char *TAG = "MAIN";
 u32 use_hw_crypto_func;
 
+#if (defined(CONFIG_BT) && CONFIG_BT) && (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+#include "bt_inic.h"
+#endif
 
 void app_init_debug(void)
 {
@@ -116,6 +119,11 @@ int main(void)
 
 #ifdef CONFIG_WLAN
 	wlan_initialize();
+#endif
+
+	/* initialize BT iNIC */
+#if (defined(CONFIG_BT) && CONFIG_BT) && (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+	bt_inic_init();
 #endif
 
 	app_IWDG_int();

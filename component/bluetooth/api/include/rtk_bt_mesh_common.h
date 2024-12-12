@@ -704,7 +704,10 @@ typedef struct {
  * @brief     BLE MESH Algorithm of provisioning method unprovisioned device supported when provisioning.
  */
 typedef enum {
-	RTK_BT_MESH_PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE = BIT0
+	RTK_BT_MESH_PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE = BIT0,
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	RTK_BT_MESH_PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM = BIT1,
+#endif
 } rtk_bt_mesh_stack_prov_cap_algorithm_t;
 
 /**
@@ -721,7 +724,10 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_PROV_CAP_NOT_SUPPORT_STATIC_OOB = 0,
-	RTK_BT_MESH_PROV_CAP_SUPPORT_STATIC_OOB = BIT0
+	RTK_BT_MESH_PROV_CAP_SUPPORT_STATIC_OOB = BIT0,
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	RTK_BT_MESH_PROV_CAP_ONLY_OOB = BIT1,
+#endif
 } rtk_bt_mesh_stack_prov_cap_static_oob_t;
 
 /**
@@ -769,7 +775,10 @@ typedef struct {
  * @brief     BLE MESH Algorithm values used for provisioner when provisioning.
  */
 typedef enum {
-	RTK_BT_MESH_PROV_START_FIPS_P256_ELLIPTIC_CURVE
+	RTK_BT_MESH_PROV_START_FIPS_P256_ELLIPTIC_CURVE,
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	RTK_BT_MESH_PROV_START_BTM_ECDH_P256_HMAC_SHA256_AES_CCM,
+#endif
 } rtk_bt_mesh_prov_start_algorithm_t;
 
 /**
