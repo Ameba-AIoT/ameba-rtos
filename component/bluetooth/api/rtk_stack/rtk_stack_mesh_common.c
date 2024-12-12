@@ -105,15 +105,42 @@ static uint8_t oob_size_for_provisioning = 0;
  */
 static bool prov_check_method(prov_capabilities_p p_capability)
 {
-	if (PROV_START_FIPS_P256_ELLIPTIC_CURVE != expect_prov_meshod_for_provisioner.algorithm) {
+	if (PROV_START_FIPS_P256_ELLIPTIC_CURVE != expect_prov_meshod_for_provisioner.algorithm
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+		&& PROV_START_BTM_ECDH_P256_HMAC_SHA256_AES_CCM != expect_prov_meshod_for_provisioner.algorithm
+#endif
+	   ) {
+		return false;
+	}
+	if ((PROV_START_FIPS_P256_ELLIPTIC_CURVE == expect_prov_meshod_for_provisioner.algorithm && !(p_capability->algorithm & PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE))
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+		|| (PROV_START_BTM_ECDH_P256_HMAC_SHA256_AES_CCM == expect_prov_meshod_for_provisioner.algorithm &&
+			!(p_capability->algorithm & PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM))
+#endif
+	   ) {
 		return false;
 	}
 	if (PROV_START_OOB_PUBLIC_KEY == expect_prov_meshod_for_provisioner.public_key && PROV_CAP_PUBLIC_KEY_OOB != p_capability->public_key) {
 		return false;
 	}
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	if (p_capability->static_oob & PROV_CAP_ONLY_OOB) {
+		bool oob_availability = p_capability->output_oob_size > 0 || p_capability->input_oob_size > 0 ||
+								(p_capability->static_oob & PROV_CAP_STATIC_OOB);
+		bool is_sha256 = p_capability->algorithm & PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM;
+		if (!oob_availability && !is_sha256) {
+			return false;
+		}
+
+		if (expect_prov_meshod_for_provisioner.algorithm == PROV_START_FIPS_P256_ELLIPTIC_CURVE ||
+			expect_prov_meshod_for_provisioner.auth_method == PROV_AUTH_METHOD_NO_OOB) {
+			return false;
+		}
+	}
+#endif
 	switch (expect_prov_meshod_for_provisioner.auth_method) {
 	case PROV_AUTH_METHOD_STATIC_OOB:
-		if (PROV_CAP_STATIC_OOB != p_capability->static_oob) {
+		if (!(PROV_CAP_STATIC_OOB & p_capability->static_oob)) {
 			return false;
 		}
 		break;
@@ -123,22 +150,22 @@ static bool prov_check_method(prov_capabilities_p p_capability)
 		}
 		switch (expect_prov_meshod_for_provisioner.auth_action.input_oob_action) {
 		case PROV_START_INPUT_OOB_ACTION_PUSH:
-			if (PROV_CAP_INPUT_OOB_ACTION_BIT_PUSH != p_capability->input_oob_action) {
+			if (!(PROV_CAP_INPUT_OOB_ACTION_BIT_PUSH & p_capability->input_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_INPUT_OOB_ACTION_TWIST:
-			if (PROV_CAP_INPUT_OOB_ACTION_BIT_TWIST != p_capability->input_oob_action) {
+			if (!(PROV_CAP_INPUT_OOB_ACTION_BIT_TWIST & p_capability->input_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_INPUT_OOB_ACTION_INPUT_NUMERIC:
-			if (PROV_CAP_INPUT_OOB_ACTION_BIT_INPUT_NUMERIC != p_capability->input_oob_action) {
+			if (!(PROV_CAP_INPUT_OOB_ACTION_BIT_INPUT_NUMERIC & p_capability->input_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_INPUT_OOB_ACTION_INPUT_ALPHANUMERIC:
-			if (PROV_CAP_INPUT_OOB_ACTION_BIT_INPUT_ALPHANUMERIC != p_capability->input_oob_action) {
+			if (!(PROV_CAP_INPUT_OOB_ACTION_BIT_INPUT_ALPHANUMERIC & p_capability->input_oob_action)) {
 				return false;
 			}
 			break;
@@ -153,27 +180,27 @@ static bool prov_check_method(prov_capabilities_p p_capability)
 		}
 		switch (expect_prov_meshod_for_provisioner.auth_action.output_oob_action) {
 		case PROV_START_OUTPUT_OOB_ACTION_BLINK:
-			if (PROV_CAP_OUTPUT_OOB_ACTION_BLINK != p_capability->output_oob_action) {
+			if (!(PROV_CAP_OUTPUT_OOB_ACTION_BLINK & p_capability->output_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_OUTPUT_OOB_ACTION_BEEP:
-			if (PROV_CAP_OUTPUT_OOB_ACTION_BEEP != p_capability->output_oob_action) {
+			if (!(PROV_CAP_OUTPUT_OOB_ACTION_BEEP & p_capability->output_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_OUTPUT_OOB_ACTION_VIBRATE:
-			if (PROV_CAP_OUTPUT_OOB_ACTION_VIBRATE != p_capability->output_oob_action) {
+			if (!(PROV_CAP_OUTPUT_OOB_ACTION_VIBRATE & p_capability->output_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_OUTPUT_OOB_ACTION_OUTPUT_NUMERIC:
-			if (PROV_CAP_OUTPUT_OOB_ACTION_OUTPUT_NUMERIC != p_capability->output_oob_action) {
+			if (!(PROV_CAP_OUTPUT_OOB_ACTION_OUTPUT_NUMERIC & p_capability->output_oob_action)) {
 				return false;
 			}
 			break;
 		case PROV_START_OUTPUT_OOB_ACTION_OUTPUT_ALPHANUMERIC:
-			if (PROV_CAP_OUTPUT_OOB_ACTION_OUTPUT_ALPHANUMERIC != p_capability->output_oob_action) {
+			if (!(PROV_CAP_OUTPUT_OOB_ACTION_OUTPUT_ALPHANUMERIC & p_capability->output_oob_action)) {
 				return false;
 			}
 			break;
@@ -896,6 +923,14 @@ static void rtk_bt_mesh_stack_init(void *data)
 			.input_oob_size = PROV_SUPPORT_INPUT_OOB_SIZE,
 			.input_oob_action = PROV_SUPPORT_INPUT_OOB_ACTION
 		};
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+		bool oob_availability = prov_capabilities.output_oob_size > 0 ||
+								prov_capabilities.input_oob_size > 0 || prov_capabilities.static_oob;
+		if (oob_availability && PROV_SUPPORT_OOB_AUTH_ONLY) {
+			prov_capabilities.algorithm = PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM;
+			prov_capabilities.static_oob = PROV_SUPPORT_STATIC_OOB | PROV_CAP_ONLY_OOB;
+		}
+#endif
 		prov_params_set(PROV_PARAMS_CAPABILITIES, &prov_capabilities, sizeof(prov_capabilities_t));
 	}
 #endif

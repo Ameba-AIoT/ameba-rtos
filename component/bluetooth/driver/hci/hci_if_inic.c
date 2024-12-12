@@ -132,6 +132,8 @@ static void _handle_cmd_for_fpga(uint16_t opcode)
 static uint8_t *new_packet_buf = NULL;
 static uint16_t new_packet_len = 0;
 static uint8_t new_packet_type = 0;
+static void *internal_cmd_q;
+static uint32_t internal_cmd_cnt = 0;
 static uint8_t *bt_inic_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t timeout)
 {
 	(void)hdr;
@@ -155,9 +157,26 @@ static void bt_inic_cancel(void)
 /* packet is received from controller, send it to host. */
 static void bt_inic_recv(void)
 {
-	// BT_DUMPA("bt_inic_recv\r\n", new_packet_buf, new_packet_len);
-	bt_inic_send_to_host(new_packet_type, new_packet_buf, new_packet_len);
-	osif_mem_aligned_free(new_packet_buf);
+	uint16_t opcode, opcode_i;
+	uint8_t *buf = new_packet_buf;
+
+	/* filter out event for internal sent cmd */
+	if (internal_cmd_cnt) {
+		if (new_packet_type == HCI_EVT && *buf == BT_HCI_EVT_CMD_COMPLETE) {
+			LE_TO_UINT16(opcode, buf + 3);
+			osif_msg_peek(internal_cmd_q, &opcode_i, BT_TIMEOUT_NONE);
+			if (opcode == opcode_i) { /* event for internal hci command, no need send to stack */
+				// BT_LOGA("filter out opcode 0x%04x\r\n", opcode);
+				osif_msg_recv(internal_cmd_q, &opcode_i, BT_TIMEOUT_NONE);
+				osif_msg_queue_peek(internal_cmd_q, &internal_cmd_cnt);
+				osif_mem_aligned_free(buf);
+				return;
+			}
+		}
+	}
+
+	bt_inic_send_to_host(new_packet_type, buf, new_packet_len);
+	osif_mem_aligned_free(buf);
 }
 
 static struct hci_transport_cb bt_inic_cb = {
@@ -177,6 +196,8 @@ bool bt_inic_open(void)
 		return false;
 	}
 
+	osif_msg_queue_create(&internal_cmd_q, sizeof(uint16_t), 10);
+
 	/* HCI Transport Bridge to BT inic */
 	hci_transport_register(&bt_inic_cb);
 
@@ -187,6 +208,8 @@ void bt_inic_close(void)
 {
 	hci_controller_disable();
 	hci_controller_free();
+	internal_cmd_cnt = 0;
+	osif_msg_queue_delete(internal_cmd_q);
 }
 
 static bool is_inic_vendor_cmd(uint16_t opcode)
@@ -254,6 +277,19 @@ void bt_inic_recv_from_host(uint8_t type, uint8_t *pdata, uint32_t len)
 
 bool hci_if_write_internal(uint8_t *buf, uint32_t len)
 {
+	uint16_t opcode;
+
+	if (!hci_controller_is_enabled()) {
+		return false;
+	}
+
+	if (*buf == HCI_CMD) {
+		LE_TO_UINT16(opcode, buf + 1);
+		osif_msg_send(internal_cmd_q, &opcode, BT_TIMEOUT_NONE);
+		osif_msg_queue_peek(internal_cmd_q, &internal_cmd_cnt);
+		// BT_LOGA("internal send opcode 0x%04x, cnt %d\r\n", opcode, internal_cmd_cnt);
+	}
+
 	hci_transport_send(*buf, buf + 1, len - 1, true);
 	return true;
 }

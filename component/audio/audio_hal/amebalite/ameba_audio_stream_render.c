@@ -49,6 +49,9 @@ void ameba_audio_stream_tx_buffer_flush(Stream *stream)
 	RenderStream *rstream = (RenderStream *) stream;
 	if (rstream) {
 		ameba_audio_stream_buffer_flush(rstream->stream.rbuffer);
+		if (rstream->stream.extra_channel) {
+			ameba_audio_stream_buffer_flush(rstream->stream.extra_rbuffer);
+		}
 	}
 }
 
@@ -444,7 +447,6 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	}
 
 	rstream->stream.start_gdma = false;
-	rstream->stream.gdma_need_stop = false;
 	rstream->stream.frame_size = config.frame_size * rstream->stream.channel / config.channels;
 	rstream->stream.gdma_cnt = 0;
 	rstream->stream.gdma_irq_cnt = 0;
@@ -467,6 +469,8 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	rstream->stream.extra_gdma_irq_cnt = 0;
 	rstream->stream.extra_sem_need_post = false;
 	rstream->stream.extra_sem_gdma_end_need_post = false;
+	rstream->stream.multi_dma_xrun_mask = 0;
+	rstream->stream.dma_irq_masked = false;
 
 	if (IS_6_8_CHANNEL(config.channels)) {
 		rstream->stream.extra_gdma_struct = (GdmaCallbackData *)calloc(1, sizeof(GdmaCallbackData));
@@ -513,6 +517,42 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	rstream->stream.state = STATE_INITED;
 
 	return &rstream->stream;
+}
+
+static void ameba_audio_stream_tx_mask_gdma_irq(Stream *stream)
+{
+	RenderStream *rstream = (RenderStream *)stream;
+
+	PGDMA_InitTypeDef sp_txgdma_initstruct = &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct);
+	PGDMA_InitTypeDef extra_sp_txgdma_initstruct = &(rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct);
+
+	if (!rstream->stream.start_gdma)
+		return;
+
+	GDMA_INTConfig(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, sp_txgdma_initstruct->GDMA_IsrType, DISABLE);
+	if (rstream->stream.extra_channel) {
+		GDMA_INTConfig(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, extra_sp_txgdma_initstruct->GDMA_IsrType, DISABLE);
+	}
+
+	rstream->stream.dma_irq_masked = true;
+}
+
+static void ameba_audio_stream_tx_unmask_gdma_irq(Stream *stream)
+{
+	RenderStream *rstream = (RenderStream *)stream;
+
+	PGDMA_InitTypeDef sp_txgdma_initstruct = &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct);
+	PGDMA_InitTypeDef extra_sp_txgdma_initstruct = &(rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct);
+
+	if (!rstream->stream.start_gdma)
+		return;
+
+	GDMA_INTConfig(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
+	if (rstream->stream.extra_channel) {
+		GDMA_INTConfig(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, extra_sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
+	}
+
+	rstream->stream.dma_irq_masked = false;
 }
 
 int32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
@@ -573,7 +613,6 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 
 	rstream->stream.total_counter = 0;
 	rstream->stream.sport_irq_count = 0;
-	rstream->stream.gdma_need_stop = false;
 	//should not set zero here, because when user write data after xrun, it may not up to start threhold bytes.
 	//rstream->total_written_from_tx_start = 0;
 
@@ -627,18 +666,40 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_stop(Stream *stream, int32_t state)
 void ameba_audio_stream_tx_standby(Stream *stream)
 {
 	RenderStream *rstream = (RenderStream *)stream;
-	rstream->stream.gdma_need_stop = true;
+	PGDMA_InitTypeDef sp_txgdma_initstruct = &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct);
+	PGDMA_InitTypeDef extra_sp_txgdma_initstruct = &(rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct);
+
+	// if in running state:
+	// (rstream->stream.gdma_cnt != rstream->stream.gdma_irq_cnt) is always false.
+	// only in gdma interrupt, they can be the same.
+
+	// if in xrun state:
+	// rstream->stream.gdma_cnt and rstream->stream.gdma_irq_cnt is the same.
+
+	ameba_audio_stream_tx_mask_gdma_irq(stream);
 
 	if (rstream->stream.gdma_cnt != rstream->stream.gdma_irq_cnt) {
+		// gdma interrupt may happens here, sem_gdma_end_need_post is false now,
+		// interrupt may check xrun, if in xrun state, the following sema will stuck forever.
+		// please mask interrupt in the handling.
 		rstream->stream.sem_gdma_end_need_post = true;
+		GDMA_INTConfig(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
 		rtos_sema_take(rstream->stream.sem_gdma_end, RTOS_MAX_TIMEOUT);
 		rstream->stream.sem_gdma_end_need_post = false;
 	}
 	if (rstream->stream.extra_gdma_cnt != rstream->stream.extra_gdma_irq_cnt) {
+		// gdma interrupt may happens here, extra_sem_gdma_end_need_post is false now,
+		// interrupt may check xrun, if in xrun state, the following sema will stuck forever.
+		// please mask interrupt in the handling.
 		rstream->stream.extra_sem_gdma_end_need_post = true;
+		if (rstream->stream.extra_channel) {
+			GDMA_INTConfig(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, extra_sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
+		}
 		rtos_sema_take(rstream->stream.extra_sem_gdma_end, RTOS_MAX_TIMEOUT);
 		rstream->stream.extra_sem_gdma_end_need_post = false;
 	}
+
+	ameba_audio_stream_tx_unmask_gdma_irq(stream);
 
 	ameba_audio_stream_tx_stop(stream, STATE_STANDBY);
 }
@@ -669,13 +730,13 @@ uint32_t ameba_audio_stream_tx_complete(void *data)
 			return 0;
 		}
 
-		if (rstream->stream.gdma_need_stop) {
-			return 0;
-		}
-
 		if (ameba_audio_stream_buffer_get_available_size(rstream->stream.rbuffer) == rstream->stream.rbuffer->capacity ||
 			ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) < tx_length) {
-			HAL_AUDIO_IRQ_INFO("buffer empty,underrun");
+			rstream->stream.multi_dma_xrun_mask |= DMA_XRUN;
+			if (rstream->stream.extra_channel && ((rstream->stream.multi_dma_xrun_mask & EXTRA_DMA_XRUN) == 0)) {
+				return 0;
+			}
+			DiagPrintf("underrun \n");
 			ameba_audio_stream_tx_stop(gdata->stream, STATE_XRUN);
 		} else {
 			tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
@@ -696,13 +757,13 @@ uint32_t ameba_audio_stream_tx_complete(void *data)
 			return 0;
 		}
 
-		if (rstream->stream.gdma_need_stop) {
-			return 0;
-		}
-
 		if (ameba_audio_stream_buffer_get_available_size(rstream->stream.extra_rbuffer) == rstream->stream.extra_rbuffer->capacity ||
 			ameba_audio_stream_buffer_get_remain_size(rstream->stream.extra_rbuffer) < extra_tx_length) {
-			HAL_AUDIO_IRQ_INFO("buffer empty,underrun");
+			rstream->stream.multi_dma_xrun_mask |= EXTRA_DMA_XRUN;
+			if ((rstream->stream.multi_dma_xrun_mask & DMA_XRUN) == 0) {
+				return 0;
+			}
+			DiagPrintf("extra underrun \n");
 			ameba_audio_stream_tx_stop(gdata->stream, STATE_XRUN);
 		} else {
 			extra_tx_addr = (uint32_t)(rstream->stream.extra_rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.extra_rbuffer));
@@ -753,11 +814,11 @@ static int32_t ameba_audio_stream_tx_write_in_noirq_mode(Stream *stream, const v
 			HAL_AUDIO_PVERBOSE("bytes: %" PRIu32 ", rstream->stream.period_bytes:%" PRIu32 ", remain size:%u", bytes, rstream->stream.period_bytes,
 							   ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer));
 			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) >= rstream->stream.period_bytes) {
-				rstream->stream.start_gdma = true;
 
 				AUDIO_SP_LLPTXGDMA_Init(rstream->stream.sport_dev_num, GDMA_INT, sp_txgdma_initstruct, rstream->stream.gdma_struct,
 										(IRQ_FUN)NULL,
 										rstream->stream.period_bytes, rstream->stream.period_count, rstream->stream.gdma_ch_lli);
+				rstream->stream.start_gdma = true;
 				AUDIO_SP_DmaCmd(rstream->stream.sport_dev_num, ENABLE);
 				if (!rstream->delay_start) {
 					AUDIO_SP_TXStart(rstream->stream.sport_dev_num, ENABLE);
@@ -774,7 +835,6 @@ static int32_t ameba_audio_stream_tx_write_in_noirq_mode(Stream *stream, const v
 static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const void *data, uint32_t bytes, bool block)
 {
 	RenderStream *rstream = (RenderStream *)stream;
-	bool mark_irq = false;
 
 	bool has_extra_dma = false;
 	uint32_t total_bytes = bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
@@ -795,14 +855,17 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 	rstream->write_cnt++;
 
-	rtos_critical_enter();
-	mark_irq = true;
+	if (!rstream->stream.dma_irq_masked) {
+		ameba_audio_stream_tx_mask_gdma_irq(stream);
+	}
 
 	if (rstream->stream.state == STATE_XRUN) {
 		//If xrun ,return -EPIPE. Application should handle xrun according to the return value.
 		//HAL_AUDIO_INFO("xrun happens, state change to STATE_XRUN_NOTIFIED");
 		rstream->stream.state = STATE_XRUN_NOTIFIED;
-		rtos_critical_exit();
+		if (rstream->stream.dma_irq_masked) {
+			ameba_audio_stream_tx_unmask_gdma_irq(stream);
+		}
 		return HAL_OSAL_ERR_DEAD_OBJECT;
 	}
 
@@ -835,6 +898,9 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 	}
 
 	while (bytes_left_to_write != 0 || (extra_bytes_left_to_write != 0)) {
+		if (!rstream->stream.dma_irq_masked) {
+			ameba_audio_stream_tx_mask_gdma_irq(stream);
+		}
 		bytes_written = ameba_audio_stream_buffer_write(rstream->stream.rbuffer, (u8 *)p_buf + total_bytes - bytes_left_to_write, bytes_left_to_write);
 		rstream->total_written_from_tx_start += bytes_written / rstream->stream.frame_size;
 
@@ -849,7 +915,6 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 		if (rstream->stream.state == STATE_INITED) {
 			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) >= dma_len) {
-				rstream->stream.start_gdma = true;
 				tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
 				AUDIO_SP_TXGDMA_Init(rstream->stream.sport_dev_num, GDMA_INT, sp_txgdma_initstruct, rstream->stream.gdma_struct,
 									 (IRQ_FUN)ameba_audio_stream_tx_complete, (u8 *)tx_addr, dma_len);
@@ -865,6 +930,7 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 					HAL_AUDIO_INFO("gdma extra init: index:%d, chNum:%d, tx_addr:0x%lx, extra_dma_len:%lu",
 								   extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, extra_tx_addr, extra_dma_len);
 				}
+				rstream->stream.start_gdma = true;
 
 				ameba_audio_stream_tx_start(stream, STATE_STARTED);
 
@@ -880,6 +946,7 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) >= dma_len) {
 				tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
 				HAL_AUDIO_VERBOSE("restart gdma at rp:%u", ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
+				rstream->stream.multi_dma_xrun_mask = 0;
 				AUDIO_SP_TXGDMA_Restart(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, tx_addr, dma_len);
 				rstream->stream.gdma_cnt++;
 
@@ -897,9 +964,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 		if (ameba_audio_stream_buffer_get_available_size(rstream->stream.rbuffer) < bytes_left_to_write) {
 			rstream->stream.sem_need_post = true;
-			if (mark_irq) {
-				rtos_critical_exit();
-				mark_irq = false;
+			if (rstream->stream.dma_irq_masked) {
+				ameba_audio_stream_tx_unmask_gdma_irq(stream);
 			}
 
 			rtos_sema_take(rstream->stream.sem, RTOS_MAX_TIMEOUT);
@@ -911,9 +977,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 			extra_bytes_left_to_write -= extra_bytes_written;
 			if (ameba_audio_stream_buffer_get_available_size(rstream->stream.extra_rbuffer) < extra_bytes_left_to_write) {
 				rstream->stream.extra_sem_need_post = true;
-				if (mark_irq) {
-					rtos_critical_exit();
-					mark_irq = false;
+				if (rstream->stream.dma_irq_masked) {
+					ameba_audio_stream_tx_unmask_gdma_irq(stream);
 				}
 				rtos_sema_take(rstream->stream.extra_sem, RTOS_MAX_TIMEOUT);
 			}
@@ -922,9 +987,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 	}
 
-	if (mark_irq) {
-		rtos_critical_exit();
-		mark_irq = false;
+	if (rstream->stream.dma_irq_masked) {
+		ameba_audio_stream_tx_unmask_gdma_irq(stream);
 	}
 
 	if (has_extra_dma) {
@@ -981,11 +1045,7 @@ void ameba_audio_stream_tx_close(Stream *stream)
 		}
 		rstream->stream.trigger_tstamp = ameba_audio_get_now_ns();
 
-		AUDIO_SP_DmaCmd(rstream->stream.sport_dev_num, DISABLE);
-		AUDIO_SP_TXStart(rstream->stream.sport_dev_num, DISABLE);
-
 		AUDIO_SP_Deinit(rstream->stream.sport_dev_num, SP_DIR_TX);
-		//AUDIO_CODEC_DeInit(APP_LINE_OUT);
 
 		ameba_audio_reset_audio_ip_status((Stream *)rstream);
 

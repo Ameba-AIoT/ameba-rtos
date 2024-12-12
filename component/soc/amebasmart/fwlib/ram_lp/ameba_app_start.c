@@ -119,7 +119,7 @@ void app_start(void)
 	app_mpu_nocache_init();
 	/* Force SP align to 8bytes */
 	__asm(
-		"ldr r1, =#0xFFFFFF80\n"
+		"ldr r1, =#0xFFFFFFF8\n"
 		"mov r0, sp \n"
 		"and r0, r0, r1\n"
 		"mov sp, r0\n"

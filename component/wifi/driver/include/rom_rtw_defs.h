@@ -135,6 +135,7 @@ enum _RT_CHANNEL_DOMAIN_5G {
 	RTW_RD_5G_59 = 59,      /*Bolivia*/
 	RTW_RD_5G_60 = 60,      /*ETSI (include ch169/ch173)*/
 	RTW_RD_5G_61 = 61,      /*Malaysia(include ch169/ch173)*/
+	RTW_RD_5G_62 = 62,
 	//===== Add new channel plan above this line===============//
 	RT_CHANNEL_DOMAIN_5G_MAX
 };

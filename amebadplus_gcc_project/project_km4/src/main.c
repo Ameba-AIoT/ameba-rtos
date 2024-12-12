@@ -22,6 +22,9 @@ void app_ftl_init(void)
 }
 #endif
 
+#if (defined(CONFIG_BT) && CONFIG_BT) && (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+#include "bt_inic.h"
+#endif
 
 void app_init_debug(void)
 {
@@ -220,6 +223,11 @@ int main(void)
 
 #if defined(CONFIG_WLAN)
 	wlan_initialize();
+#endif
+
+	/* initialize BT iNIC */
+#if (defined(CONFIG_BT) && CONFIG_BT) && (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+	bt_inic_init();
 #endif
 
 	app_pmu_init();
