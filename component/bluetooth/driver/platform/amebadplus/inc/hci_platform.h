@@ -44,6 +44,8 @@ int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len);
 int hci_platform_get_rx_adck_data(uint8_t *data, uint8_t len);
 bool hci_platform_check_lmp_subver(uint16_t lmp_subver);
 
+bool rtk_bt_pre_enable(void);
+void rtk_bt_post_enable(void);
 uint8_t hci_platform_init(void);
 void hci_platform_deinit(void);
 

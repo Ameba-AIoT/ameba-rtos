@@ -40,23 +40,30 @@ static int cfg80211_rtw_add_key(struct wiphy *wiphy, struct net_device *ndev
 								, bool pairwise
 								, const u8 *mac_addr, struct key_params *params)
 {
-	struct rtw_crypt_info crypt;
+	struct rtw_crypt_info *crypt;
 	int ret = 0;
+	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
 
 	dev_dbg(global_idev.fullmac_dev, "--- %s ---", __func__);
 	if (global_idev.mp_fw) {
 		return -EPERM;
 	}
 
-	memset(&crypt, 0, sizeof(struct rtw_crypt_info));
+	crypt = kmalloc(sizeof(struct rtw_crypt_info), GFP_KERNEL);
+	if (!crypt) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	memset(crypt, 0, sizeof(struct rtw_crypt_info));
 	if (ndev) {
-		crypt.wlan_idx = rtw_netdev_idx(ndev);
+		crypt->wlan_idx = rtw_netdev_idx(ndev);
 	} else {
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: netdev = %d", crypt.wlan_idx);
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: netdev = %d", crypt->wlan_idx);
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: key_index = %d", key_index);
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: pairwise= %d", pairwise);
 	if (pairwise) {
@@ -70,23 +77,36 @@ static int cfg80211_rtw_add_key(struct wiphy *wiphy, struct net_device *ndev
 	if (((params->cipher & 0xff) == 1) || ((params->cipher & 0xff) == 5)) {
 		/* Set WEP key by rtos. */
 		dev_dbg(global_idev.fullmac_dev, "--- %s --- return: set key by rtos self. ", __func__);
+		kfree(crypt);
 		return 0;
 	}
 
 	if (params->key_len && params->key) {
-		crypt.key_len = params->key_len;
-		memcpy(crypt.key, (u8 *)params->key, params->key_len);
+		crypt->key_len = params->key_len;
+		memcpy(crypt->key, (u8 *)params->key, params->key_len);
 	}
-	crypt.pairwise = pairwise;
-	crypt.key_idx = key_index;
-	crypt.driver_cipher = rtw_80211_cipher_suite_to_driver(params->cipher);
+	crypt->pairwise = pairwise;
+	crypt->key_idx = key_index;
+	crypt->driver_cipher = rtw_80211_cipher_suite_to_driver(params->cipher);
 	if (pairwise && mac_addr) {
-		memcpy(crypt.mac_addr, mac_addr, 6);
+		memcpy(crypt->mac_addr, mac_addr, 6);
 	}
 
-	ret = llhw_wifi_add_key(&crypt);
+#ifndef CONFIG_FULLMAC_HCI_IPC
+	if (pairwise) {	/*https://jira.realtek.com/browse/RSWLANDIOT-9403*/
+		while (1) {
+			if (list_empty(&(xmit_priv->queue_head)) == true) {
+				break;
+			}
+			msleep(1);
+		}
+	}
+#endif
+
+	ret = llhw_wifi_add_key(crypt);
 exit:
 
+	kfree(crypt);
 	return ret;
 }
 

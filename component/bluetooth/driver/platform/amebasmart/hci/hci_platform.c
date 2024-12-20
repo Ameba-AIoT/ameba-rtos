@@ -165,28 +165,21 @@ bool hci_platform_check_lmp_subver(uint16_t lmp_subver)
 	}
 }
 
-static uint8_t hci_platform_read_efuse(void)
+static uint8_t hci_platform_read_antenna(void)
 {
-	uint8_t i, *pbuf, val;
-
-	/* Read Logic Efuse */
-	pbuf = osif_mem_alloc(RAM_TYPE_DATA_ON, 1024);
-	if (!pbuf || _FAIL == OTP_LogicalMap_Read(pbuf, 0, OTP_LMAP_LEN)) {
-		BT_LOGE("OTP_LogicalMap_Read failed\r\n");
-		if (pbuf) {
-			osif_mem_free(pbuf);
-		}
-		return HCI_FAIL;
-	}
-
-	memcpy(hci_lgc_efuse, pbuf + HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN);
+	uint8_t val;
 
 	/* Parse BT RF PATH */
 	if (bt_ant_switch == 0xFF) { /* Priority of ATM2=ant is higher than efuse in mp image. */
+		/* Read Logic Efuse */
+		if (_FAIL == OTP_LogicalMap_Read(&val, 0x133, 1)) {
+			BT_LOGE("OTP_LogicalMap_Read 0x133 failed\r\n");
+			return HCI_FAIL;
+		}
+
 		/* Bit[5]: Radio on/off type
 		0: combine with WiFi/BT SEL Shared Port
 		1: individual /BT SEL Dedicated Port */
-		val = pbuf[0x133];
 		if (val != 0xff) {
 			if (val & BIT5) {
 				bt_ant_switch = ANT_S0;
@@ -200,6 +193,19 @@ static uint8_t hci_platform_read_efuse(void)
 
 	BT_LOGA("bt ant %d\r\n", bt_ant_switch);
 
+	return HCI_SUCCESS;
+}
+
+static uint8_t hci_platform_read_efuse(void)
+{
+	uint8_t i;
+
+	/* Read Logic Efuse */
+	if (_FAIL == OTP_LogicalMap_Read(hci_lgc_efuse, HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN)) {
+		BT_LOGE("OTP_LogicalMap_Read failed\r\n");
+		return HCI_FAIL;
+	}
+
 	/* Read Physical Efuse */
 	for (i = 0; i < HCI_PHY_EFUSE_LEN; i++) {
 		OTP_Read8((HCI_PHY_EFUSE_OFFSET + i), (hci_phy_efuse + i));
@@ -208,9 +214,6 @@ static uint8_t hci_platform_read_efuse(void)
 	BT_DUMPA("Read Logic Efuse:\r\n", hci_lgc_efuse, HCI_LGC_EFUSE_LEN);
 	BT_DUMPA("Read Phy Efuse:\r\n", hci_phy_efuse, HCI_PHY_EFUSE_LEN);
 #endif
-	if (pbuf) {
-		osif_mem_free(pbuf);
-	}
 
 	return HCI_SUCCESS;
 }
@@ -418,7 +421,9 @@ void hci_platform_controller_reset(void)
 
 bool rtk_bt_pre_enable(void)
 {
-	uint32_t lock_status;
+	if (!hci_platform_read_antenna()) {
+		return false;
+	}
 
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (bt_ant_switch == ANT_S1) {
@@ -434,25 +439,11 @@ bool rtk_bt_pre_enable(void)
 	}
 #endif
 
-	lock_status = pmu_get_wakelock_status();
-	if (!(lock_status & ((0x01) << PMU_BT_DEVICE))) {
-		BT_LOGA("Acuqire BT PMU LOCK \r\n");
-		pmu_acquire_wakelock(PMU_BT_DEVICE);
-	}
-
 	return true;
 }
 
 void rtk_bt_post_enable(void)
 {
-	uint32_t lock_status;
-
-	lock_status = pmu_get_wakelock_status();
-	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
-		BT_LOGA("Release BT PMU LOCK \r\n");
-		pmu_release_wakelock(PMU_BT_DEVICE);
-	}
-
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (bt_ant_switch == ANT_S1) {
 		if (!hci_is_mp_mode()) {
@@ -472,7 +463,6 @@ void hci_platform_external_fw_log_pin(void)
 uint8_t hci_platform_init(void)
 {
 	/* Read Efuse and Parse Configbuf */
-	/* bt_ant_switch is set in hci_platform_read_efuse(), used in hci_platform_parse_config() rtk_bt_pre_enable() */
 	if (HCI_FAIL == hci_platform_read_efuse()) {
 		return HCI_FAIL;
 	}
@@ -480,12 +470,6 @@ uint8_t hci_platform_init(void)
 	if (HCI_FAIL == hci_platform_parse_config()) {
 		return HCI_FAIL;
 	}
-
-	// Move to rtk_bt_enable() to avoid rtk upperstack memory leak when fail
-	// if (rtk_bt_pre_enable() == false) {
-	//  BT_LOGE("rtk_bt_pre_enable fail!\r\n");
-	//  return HCI_FAIL;
-	// }
 
 	if (!CHECK_CFG_SW(CFG_SW_BT_FW_LOG)) {
 		rtk_bt_fw_log_open();

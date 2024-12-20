@@ -22,6 +22,7 @@
 #include <rtk_bt_mesh_sensor_model.h>
 #include <rtk_bt_mesh_health_model.h>
 #include <rtk_bt_mesh_directed_forwarding_model.h>
+#include <rtk_bt_mesh_device_firmware_update_model.h>
 #include <bt_utils.h>
 
 static void mesh_data_uart_dump(uint8_t *pbuffer, uint32_t len)
@@ -488,7 +489,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 			}
 			break;
 			case RTK_BT_MESH_STACK_USER_LIST_APP_KEY:
-				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
+				BT_LOGA("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n\t\t", *(p_data + offset), LE_TO_U16(p_data + offset + 1), \
 						* (p_data + offset + 3), *(p_data + offset + 4), LE_TO_U16(p_data + offset + 5));
 				mesh_data_uart_dump(p_data + offset + 7, 16);
 				BT_AT_PRINT("+BLEMESHSTACK:list,%d,%d-0x%04x-%d-%d-%d-",
@@ -2786,6 +2787,114 @@ static rtk_bt_evt_cb_ret_t ble_mesh_health_server_app_callback(uint8_t evt_code,
 	return RTK_BT_EVT_CB_OK;
 }
 
+#if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+static rtk_bt_evt_cb_ret_t ble_mesh_device_firmware_update_distributor_role_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+	bool already_print = false;
+	BT_LOGD("[%s] Event code:%d.\r\n", __func__, evt_code);
+	switch (evt_code) {
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_START: {
+		BT_LOGA("[APP] Receive Firmware Update Start message.\r\n");
+		BT_AT_PRINT("+BLEMESHDFU:init_upstartd,%d\r\n", BT_AT_MESH_ROLE_SERVER);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_BLOCK_DATA: {
+		BT_LOGA("[APP] Receive a block packet, num:%d.\r\n", *(uint16_t *)param);
+		BT_AT_PRINT("+BLEMESHDFU:init_upstarte,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, *(uint16_t *)param);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_COMPLETE: {
+		BT_LOGA("[APP] Distributor server upload complete.\r\n");
+		BT_AT_PRINT("+BLEMESHDFU:init_upstartf,%d\r\n", BT_AT_MESH_ROLE_SERVER);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_PARAM: {
+		rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *pblob = (rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *)param;
+		BT_LOGA("[APP] BLOB param, blob size:%u, block size:%d, total blocks:%d, chunk size:%d\r\n", (unsigned int)pblob->blob_size, pblob->block_size,
+				pblob->total_blocks, pblob->chunk_size);
+		BT_AT_PRINT("+BLEMESHDFU:init_disstartb,%d,%d,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, (unsigned int)pblob->blob_size, pblob->block_size, pblob->total_blocks,
+					pblob->chunk_size);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_NODE_FAIL: {
+		rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *node_fail = (rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *)param;
+		BT_LOGA("[APP] Type:node fail for addr:0x%x, client phase:%d.\r\n", node_fail->addr, node_fail->dist_phase);
+		BT_AT_PRINT("+BLEMESHDFU:init_disstartc,%d,%x,%d", BT_AT_MESH_ROLE_CLIENT, node_fail->addr, node_fail->dist_phase);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_PROGRESS: {
+		rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *trans_progress = (rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *)param;
+		BT_LOGA("[APP] Type:transfer progress, --------------------- %d%% ----------------, client phase:%d.\r\n", trans_progress->progress,
+				trans_progress->dist_phase);
+		BT_AT_PRINT("+BLEMESHDFU:init_disstartd,%d,%d,%d\r\n", BT_AT_MESH_ROLE_CLIENT, trans_progress->progress, trans_progress->dist_phase);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_SUCCESS: {
+		if (!already_print) {
+			already_print = true;
+			BT_LOGA("[APP] Type:transfer success,");
+			BT_AT_PRINT("+BLEMESHDFU:init_disstarte,%d,", BT_AT_MESH_ROLE_CLIENT);
+		}
+		__attribute__((fallthrough));
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_VERIFY: {
+		if (!already_print) {
+			already_print = true;
+			BT_LOGA("[APP] Type:verify,");
+			BT_AT_PRINT("+BLEMESHDFU:init_disstartf,%d,", BT_AT_MESH_ROLE_CLIENT);
+		}
+		__attribute__((fallthrough));
+	}
+	case RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_COMPLETE: {
+		if (!already_print) {
+			already_print = true;
+			BT_LOGA("[APP] Type:complete,");
+			BT_AT_PRINT("+BLEMESHDFU:init_disstartg,%d,", BT_AT_MESH_ROLE_CLIENT);
+		}
+		rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *trans_other = (rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *)param;
+		BT_LOGA(" num of node:%d", trans_other->addr_num);
+		BT_AT_PRINT("%d", trans_other->addr_num);
+		for (uint8_t i = 0; i < trans_other->addr_num; i++) {
+			BT_LOGA(", 0x%x", trans_other->paddr[i]);
+			BT_AT_PRINT(",0x%x", trans_other->paddr[i]);
+		}
+		BT_LOGA(", client phase:%d.\r\n", trans_other->dist_phase);
+		BT_AT_PRINT(",%d\r\n", trans_other->dist_phase);
+		break;
+	}
+	default:
+		BT_LOGE("[%s] Unknown event code:%d\r\n", __func__, evt_code);
+		break;
+	}
+	return RTK_BT_EVT_CB_OK;
+}
+#endif  // BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+
+#if defined(BT_MESH_ENABLE_DFU_TARGET_ROLE) && BT_MESH_ENABLE_DFU_TARGET_ROLE
+static rtk_bt_evt_cb_ret_t ble_mesh_device_firmware_update_target_role_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)len;
+	BT_LOGD("[%s] Event code:%d.\r\n", __func__, evt_code);
+	switch (evt_code) {
+	case RTK_BT_MESH_DFU_EVT_TARGET_BLOCK_DATA: {
+		BT_LOGA("[APP] Receive a block data num:%d.\r\n", *(uint16_t *)param);
+		BT_AT_PRINT("+BLEMESHDFU:stand_startb,%d,%d\r\n", BT_AT_MESH_ROLE_SERVER, *(uint16_t *)param);
+		break;
+	}
+	case RTK_BT_MESH_DFU_EVT_TARGET_APPLY: {
+		BT_LOGA("[APP] Start apply for new firmware image.\r\n");
+		BT_AT_PRINT("+BLEMESHDFU:stand_startf,%d\r\n", BT_AT_MESH_ROLE_SERVER);
+		break;
+	}
+	default:
+		BT_LOGE("[%s] Unknown event code:%d\r\n", __func__, evt_code);
+		break;
+	}
+	return RTK_BT_EVT_CB_OK;
+}
+#endif  // BT_MESH_ENABLE_DFU_TARGET_ROLE
+
 int ble_mesh_device_main(uint8_t enable)
 {
 	rtk_bt_app_conf_t bt_app_conf = {0};
@@ -2925,6 +3034,12 @@ int ble_mesh_device_main(uint8_t enable)
 #if defined(BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL) && BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, ble_mesh_sensor_setup_server_app_callback));
 #endif // end of BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, ble_mesh_device_firmware_update_distributor_role_app_callback));
+#endif
+#if defined(BT_MESH_ENABLE_DFU_TARGET_ROLE) && BT_MESH_ENABLE_DFU_TARGET_ROLE
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, ble_mesh_device_firmware_update_target_role_app_callback));
+#endif
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, ble_mesh_health_server_app_callback));
 	} else if (0 == enable) {
 

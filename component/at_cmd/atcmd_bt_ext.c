@@ -528,6 +528,7 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #define CMD_NAME_MESH_DF         "+BLEMESHDF"
 #define CMD_NAME_MESH_SBR        "+BLEMESHSBR"
 #define CMD_NAME_MESH_PRB        "+BLEMESHPRB"
+#define CMD_NAME_MESH_DFU        "+BLEMESHDFU"
 #endif /* RTK_BLE_MESH_SUPPORT */
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 #define CMD_NAME_BR_GAP          "+BRGAP"
@@ -586,6 +587,7 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_MESH_DF,          atcmd_bt_mesh_df,                               4, 21},
 	{CMD_NAME_MESH_SBR,         atcmd_bt_mesh_sbr,                              4, 9},
 	{CMD_NAME_MESH_PRB,         atcmd_bt_mesh_prb,                              4, 6},
+	{CMD_NAME_MESH_DFU,         atcmd_bt_mesh_device_firmware_update,           3, 11},
 #endif  // end of RTK_BLE_MESH_SUPPORT
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	{CMD_NAME_BR_GAP,           atcmd_bt_br_gap,                                2, 13},
@@ -1037,6 +1039,11 @@ static inline void fBLEMESHPRB(void *arg)
 	atcmd_bt_cmd(arg, CMD_NAME_MESH_PRB, "[AT+BLEMESHPRB]");
 }
 
+static inline void fBLEMESHDFU(void *arg)
+{
+	atcmd_bt_cmd(arg, CMD_NAME_MESH_DFU, "[AT+BLEMESHDFU]");
+}
+
 #endif /* RTK_BLE_MESH_SUPPORT */
 
 static inline void fBTGAP(void *arg)
@@ -1171,6 +1178,7 @@ static log_item_t at_bt_items[] = {
 	{CMD_NAME_MESH_DF,          fBLEMESHDF,           {NULL, NULL}},
 	{CMD_NAME_MESH_SBR,         fBLEMESHSBR,          {NULL, NULL}},
 	{CMD_NAME_MESH_PRB,         fBLEMESHPRB,          {NULL, NULL}},
+	{CMD_NAME_MESH_DFU,         fBLEMESHDFU,          {NULL, NULL}},
 #endif /* RTK_BLE_MESH_SUPPORT */
 	{CMD_NAME_BT_VENDOR,        fBTVENDOR,            {NULL, NULL}},
 };

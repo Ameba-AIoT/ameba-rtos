@@ -19,7 +19,7 @@
  */
 typedef enum {
 	RTK_BT_MESH_STACK_ACT_NODE_RESET = 1,
-	RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING,
+	RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM,
 	RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH,
 	RTK_BT_MESH_STACK_ACT_PB_ADV_CON,
 	RTK_BT_MESH_STACK_ACT_PB_ADV_DISCON,
@@ -136,14 +136,14 @@ typedef enum {
 } rtk_bt_mesh_stack_role_t;
 
 /**
- * @typedef   rtk_bt_mesh_stack_act_provisioner_init_setting_t
- * @brief     BLE MESH provisioner init setting param structure.
+ * @typedef   rtk_bt_mesh_stack_act_set_prov_param_t
+ * @brief     BLE MESH prov param set structure.
  */
 typedef struct {
 	uint16_t unicast_addr;
 	uint8_t net_key[16];
 	uint8_t app_key[16];
-} rtk_bt_mesh_stack_act_provisioner_init_setting_t;
+} rtk_bt_mesh_stack_act_set_prov_param_t;
 
 /**
  * @typedef   rkt_bt_mesh_stack_act_device_info_set_t
@@ -875,16 +875,16 @@ typedef struct {
  * @{
  */
 
-#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-
 /**
- * @brief     Setting provisioner init param, will cause event @ref RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING
+ * @brief     Prov param set function, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM
  * @param[in] init_setting: init setting param
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_mesh_stack_provisioner_setting_init(rtk_bt_mesh_stack_act_provisioner_init_setting_t *init_setting);
+uint16_t rtk_bt_mesh_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *init_setting);
+
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 
 /**
  * @brief     Establish PBADV link, will cause event @ref RTK_BT_MESH_STACK_ACT_PB_ADV_CON

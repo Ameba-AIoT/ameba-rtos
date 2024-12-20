@@ -85,18 +85,18 @@ BUILD_TYPE = NONE
 endif
 export BUILD_TYPE
 
+TOOLCHAINVER = 4072
 ifeq ($(COMPILEOS),$(LINUX_OS))
 ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/linux/newlib
-TOOLCHAINNAME = asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
-TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
-TOOLCHAINURL_ALIYUN	= https://rs-wn.oss-cn-shanghai.aliyuncs.com/asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2
+TOOLCHAINNAME = asdk-10.3.1-linux-newlib-build-$(TOOLCHAINVER)-x86_64.tar.bz2
+TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-linux-newlib-build-$(TOOLCHAINVER)-x86_64.tar.bz2
+TOOLCHAINURL_ALIYUN	= https://rs-wn.oss-cn-shanghai.aliyuncs.com/asdk-10.3.1-linux-newlib-build-$(TOOLCHAINVER)-x86_64.tar.bz2
 else
 ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/mingw32/newlib
-TOOLCHAINNAME = asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
-TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
-TOOLCHAINURL_ALIYUN = https://rs-wn.oss-cn-shanghai.aliyuncs.com/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip
+TOOLCHAINNAME = asdk-10.3.1-mingw32-newlib-build-$(TOOLCHAINVER)-x86_64.zip
+TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-$(TOOLCHAINVER)-x86_64.zip
+TOOLCHAINURL_ALIYUN = https://rs-wn.oss-cn-shanghai.aliyuncs.com/asdk-10.3.1-mingw32-newlib-build-$(TOOLCHAINVER)-x86_64.zip
 endif
-TOOLCHAINVER = 4072
 
 tool_dir = $(ASDK_TOOLCHAIN)/bin
 

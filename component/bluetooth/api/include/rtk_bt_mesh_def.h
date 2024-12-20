@@ -76,6 +76,8 @@
 #define BT_MESH_ENABLE_LIGHT_HSL_CLIENT_MODEL                          1
 #define BT_MESH_ENABLE_LIGHT_XYL_CLIENT_MODEL                          1
 #define BT_MESH_ENABLE_LIGHT_LC_CLIENT_MODEL                           1
+#define BT_MESH_ENABLE_DFU_INITIATOR_ROLE                              0  // initiator and standalone updater can not enable at same time
+#define BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE                     1  // initiator and standalone updater can not enable at same time
 #endif
 
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
@@ -114,6 +116,8 @@
 #define BT_MESH_ENABLE_LIGHT_XYL_SETUP_SERVER_MODEL                    1
 #define BT_MESH_ENABLE_LIGHT_LC_SERVER_MODEL                           1
 #define BT_MESH_ENABLE_LIGHT_LC_SETUP_SERVER_MODEL                     1
+#define BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE                            0  // distributor and target can not enable at same time
+#define BT_MESH_ENABLE_DFU_TARGET_ROLE                                 1  // distributor and target can not enable at same time
 #endif
 
 #define BT_MESH_ENABLE_DATATRANS_MODEL                                 1
@@ -242,6 +246,11 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_IO_MSG_SUBTYPE_ADV,
+	RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_CHUNK_TRANSFER,
+	RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_PROCEDURE,
+	RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_RETRY,
+	RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_DIST_APP_TIMEOUT_MSG,
+	RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_INIT_APP_TIMEOUT_MSG,
 } rtk_bt_mesh_msg_subtype;
 
 /**
