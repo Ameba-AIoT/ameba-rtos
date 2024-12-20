@@ -133,6 +133,7 @@ struct wpa_sta_info {
 	struct timer_list			resendTimer;
 	struct timer_list			waitTimer;	// wait for 4-1 or 2-1
 	struct timer_list			sae_timer;
+	struct timer_list			start_sae_timer;
 
 	union _LARGE_INTEGER		CurrentReplayCounter;
 	union _LARGE_INTEGER		ReplayCounterStarted; // david+1-12-2007
@@ -158,6 +159,8 @@ struct wpa_sta_info {
 	u8					b_clientHndshkDone : 1;
 	u8 					b_clientGkeyUpdate : 1;
 
+	u8					*Saebuf;
+	u32 				Saebuflen;
 };
 
 struct key_joininfo {

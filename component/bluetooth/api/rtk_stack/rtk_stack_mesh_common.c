@@ -12,6 +12,9 @@
 #include <mesh_cmd.h>
 #include <provision_client.h>
 #include <proxy_client.h>
+#include <blob_client_app.h>
+#include <dfu_distributor_app.h>
+#include <dfu_initiator_app.h>
 
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
@@ -31,8 +34,6 @@
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 #include <provision_service.h>
-#include <provision_client.h>
-#include <proxy_client.h>
 #include <remote_provisioning.h>
 #endif
 
@@ -742,6 +743,12 @@ static void client_models_init(void)
 #if defined(BT_MESH_ENABLE_DATATRANS_MODEL) && BT_MESH_ENABLE_DATATRANS_MODEL
 	datatrans_model_init();
 #endif
+#if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
+	rtk_stack_dfu_standalone_updater_init();
+#endif
+#if defined(BT_MESH_ENABLE_DFU_INITIATOR_ROLE) && BT_MESH_ENABLE_DFU_INITIATOR_ROLE
+	rtk_stack_dfu_initiator_init();
+#endif
 }
 #endif
 
@@ -856,6 +863,12 @@ static void server_models_init(void)
 #endif
 #if defined(BT_MESH_ENABLE_DATATRANS_MODEL) && BT_MESH_ENABLE_DATATRANS_MODEL
 	datatrans_model_init();
+#endif
+#if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+	rtk_stack_dfu_distributor_init();
+#endif
+#if defined(BT_MESH_ENABLE_DFU_TARGET_ROLE) && BT_MESH_ENABLE_DFU_TARGET_ROLE
+	rtk_stack_dfu_target_init();
 #endif
 }
 #endif
@@ -1142,20 +1155,6 @@ static uint8_t is_advertising_flag = 0;
 static void *mesh_one_shot_adv_timer_handle = NULL;
 
 static uint16_t rtk_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *adv_param);
-void ble_mesh_handle_io_msg(T_IO_MSG *io_msg)
-{
-	uint16_t subtype = io_msg->subtype;
-	switch (subtype) {
-	case RTK_BT_MESH_IO_MSG_SUBTYPE_ADV:
-		if (is_advertising_flag) {
-			rtk_stack_send_one_shot_adv(&default_adv);
-		}
-		break;
-	default:
-		break;
-	}
-}
-
 extern uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg);
 static void one_shot_adv_timer_func(void *param)
 {
@@ -1182,6 +1181,46 @@ static bool rtk_bt_mesh_one_shot_adv_deinit(void)
 	}
 	mesh_one_shot_adv_timer_handle = NULL;
 	return true;
+}
+
+/* =============================================== stack api task receive bt mesh common message ======================================= */
+
+void ble_mesh_handle_io_msg(T_IO_MSG *io_msg)
+{
+	uint16_t subtype = io_msg->subtype;
+	switch (subtype) {
+	case RTK_BT_MESH_IO_MSG_SUBTYPE_ADV:
+		if (is_advertising_flag) {
+			rtk_stack_send_one_shot_adv(&default_adv);
+		}
+		break;
+#if defined(BT_MESH_ENABLE_DFU_INITIATOR_ROLE) && BT_MESH_ENABLE_DFU_INITIATOR_ROLE || \
+    defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE || \
+    defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+	case RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_PROCEDURE:
+		blob_client_handle_procedure_timeout();
+		break;
+	case RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_RETRY:
+		blob_client_handle_retry_timeout();
+		break;
+	case RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_CHUNK_TRANSFER:
+		blob_client_active_chunk_transfer();
+		break;
+#endif
+#if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE || \
+    defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
+	case RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_DIST_APP_TIMEOUT_MSG:
+		dfu_dist_handle_timeout();
+		break;
+#endif
+#if defined(BT_MESH_ENABLE_DFU_INITIATOR_ROLE) && BT_MESH_ENABLE_DFU_INITIATOR_ROLE
+	case RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_INIT_APP_TIMEOUT_MSG:
+		dfu_init_handle_timeout();
+		break;
+#endif
+	default:
+		break;
+	}
 }
 
 /* =============================================== bt mesh stack releate API functions ======================================= */
@@ -1323,6 +1362,44 @@ static uint16_t rtk_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t 
 	}
 }
 
+static void rtk_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *p_data)
+{
+	uint16_t net_key_index;
+	uint8_t *p, bt_addr[6] = {0};
+	uint8_t net_key[16] = {0x7d, 0xd7, 0x36, 0x4c, 0xd8, 0x42, 0xad, 0x18, 0xc1, 0x7c, 0x2b, 0x82, 0x0c, 0x84, 0xc3, 0xd6};
+	uint8_t app_key[16] = {0x63, 0x96, 0x47, 0x71, 0x73, 0x4f, 0xbd, 0x76, 0xe3, 0xb4, 0x05, 0x19, 0xd1, 0xd9, 0x4a, 0x48};
+
+	mesh_node.node_state = PROV_NODE;
+
+	if (gap_get_param(GAP_PARAM_BD_ADDR, bt_addr)) {
+		BT_LOGE("[%s] Get bt addr fail\r\n", __func__);
+	}
+
+	if (p_data->unicast_addr) {
+		mesh_node.unicast_addr = p_data->unicast_addr;
+	} else {
+		mesh_node.unicast_addr = 0x200 | bt_addr[0];
+	}
+
+	if (is_all_zeros_in_buf(p_data->net_key, 16)) {
+		p = net_key;
+		memcpy(&p[10], bt_addr, sizeof(bt_addr));
+	} else {
+		p = p_data->net_key;
+	}
+	net_key_index = net_key_add(0, p);
+
+	if (is_all_zeros_in_buf(p_data->app_key, 16)) {
+		p = app_key;
+		memcpy(&p[10], bt_addr, sizeof(bt_addr));
+	} else {
+		p = p_data->app_key;
+	}
+	app_key_add(net_key_index, 0, p);
+
+	mesh_model_bind_all_key();
+}
+
 #if defined(RTK_BLE_MESH_FN_SUPPORT) && RTK_BLE_MESH_FN_SUPPORT
 static void friendship_fn_callback(uint8_t frnd_index, fn_cb_type_t type, uint16_t lpn_addr)
 {
@@ -1402,44 +1479,6 @@ static bool rtk_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *p
 }
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-static void rtk_stack_provisioner_init_setting(rtk_bt_mesh_stack_act_provisioner_init_setting_t *p_data)
-{
-	uint16_t net_key_index;
-	uint8_t *p, bt_addr[6] = {0};
-	uint8_t net_key[16] = {0x7d, 0xd7, 0x36, 0x4c, 0xd8, 0x42, 0xad, 0x18, 0xc1, 0x7c, 0x2b, 0x82, 0x0c, 0x84, 0xc3, 0xd6};
-	uint8_t app_key[16] = {0x63, 0x96, 0x47, 0x71, 0x73, 0x4f, 0xbd, 0x76, 0xe3, 0xb4, 0x05, 0x19, 0xd1, 0xd9, 0x4a, 0x48};
-
-	mesh_node.node_state = PROV_NODE;
-
-	if (gap_get_param(GAP_PARAM_BD_ADDR, bt_addr)) {
-		BT_LOGE("[%s] Get bt addr fail\r\n", __func__);
-	}
-
-	if (p_data->unicast_addr) {
-		mesh_node.unicast_addr = p_data->unicast_addr;
-	} else {
-		mesh_node.unicast_addr = 0x200 | bt_addr[0];
-	}
-
-	if (is_all_zeros_in_buf(p_data->net_key, 16)) {
-		p = net_key;
-		memcpy(&p[10], bt_addr, sizeof(bt_addr));
-	} else {
-		p = p_data->net_key;
-	}
-	net_key_index = net_key_add(0, p);
-
-	if (is_all_zeros_in_buf(p_data->app_key, 16)) {
-		p = app_key;
-		memcpy(&p[10], bt_addr, sizeof(bt_addr));
-	} else {
-		p = p_data->app_key;
-	}
-	app_key_add(net_key_index, 0, p);
-
-	mesh_model_bind_all_key();
-}
-
 static uint16_t rtk_stack_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvcon)
 {
 	uint16_t ret;
@@ -1774,6 +1813,10 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_MESH_STACK_ACT_SET_RETRANS_PARAM:
 		ret = rtk_stack_retrans_param_set(p_cmd->param);
 		break;
+	case RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM:
+		rtk_stack_prov_param_set(p_cmd->param);
+		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		break;
 #if defined(RTK_BLE_MESH_FN_SUPPORT) && RTK_BLE_MESH_FN_SUPPORT
 	case RTK_BT_MESH_STACK_ACT_FN_INIT:
 		if (rtk_stack_fn_init(p_cmd->param)) {
@@ -1788,10 +1831,6 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 #endif // end of RTK_BLE_MESH_FN_SUPPORT
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-	case RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING:
-		rtk_stack_provisioner_init_setting(p_cmd->param);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
-		break;
 	case RTK_BT_MESH_STACK_ACT_PB_ADV_CON:
 		ret = rtk_stack_pb_adv_con(p_cmd->param);
 		break;

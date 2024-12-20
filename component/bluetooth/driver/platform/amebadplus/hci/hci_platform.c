@@ -233,19 +233,13 @@ static void hci_platform_read_voltage(void)
 
 static uint8_t hci_platform_read_efuse(void)
 {
-	uint8_t i, *pbuf;
+	uint8_t i;
 
 	/* Read Logic Efuse */
-	pbuf = osif_mem_alloc(RAM_TYPE_DATA_ON, 1024);
-	if (!pbuf || _FAIL == OTP_LogicalMap_Read(pbuf, 0, OTP_LMAP_LEN)) {
+	if (_FAIL == OTP_LogicalMap_Read(hci_lgc_efuse, HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN)) {
 		BT_LOGE("OTP_LogicalMap_Read failed\r\n");
-		if (pbuf) {
-			osif_mem_free(pbuf);
-		}
 		return HCI_FAIL;
 	}
-
-	memcpy(hci_lgc_efuse, pbuf + HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN);
 
 	/* Read Physical Efuse */
 	for (i = 0; i < HCI_PHY_EFUSE_LEN; i++) {
@@ -255,9 +249,6 @@ static uint8_t hci_platform_read_efuse(void)
 	BT_DUMPA("Read Logic Efuse:\r\n", hci_lgc_efuse, HCI_LGC_EFUSE_LEN);
 	BT_DUMPA("Read Phy Efuse:\r\n", hci_phy_efuse, HCI_PHY_EFUSE_LEN);
 #endif
-	if (pbuf) {
-		osif_mem_free(pbuf);
-	}
 
 	return HCI_SUCCESS;
 }
@@ -458,8 +449,7 @@ void hci_platform_controller_reset(void)
 
 bool rtk_bt_pre_enable(void)
 {
-	uint32_t lock_status;
-
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX))) {
 		BT_LOGE("WiFi is OFF! Please Restart BT after Wifi on!\r\n");
 		return false;
@@ -469,30 +459,19 @@ bool rtk_bt_pre_enable(void)
 		wifi_set_lps_enable(FALSE);
 		wifi_set_ips_internal(FALSE);
 	}
-
-	lock_status = pmu_get_wakelock_status();
-	if (!(lock_status & ((0x01) << PMU_BT_DEVICE))) {
-		BT_LOGA("Acuqire BT PMU LOCK \r\n");
-		pmu_acquire_wakelock(PMU_BT_DEVICE);
-	}
+#endif
 
 	return true;
 }
 
 void rtk_bt_post_enable(void)
 {
-	uint32_t lock_status;
-
-	lock_status = pmu_get_wakelock_status();
-	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
-		BT_LOGA("Release BT PMU LOCK \r\n");
-		pmu_release_wakelock(PMU_BT_DEVICE);
-	}
-
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (!hci_is_mp_mode()) {
 		wifi_set_lps_enable(wifi_user_config.lps_enable);
 		wifi_set_ips_internal(wifi_user_config.ips_enable);
 	}
+#endif
 }
 
 void hci_platform_external_fw_log_pin(void)
@@ -503,12 +482,6 @@ void hci_platform_external_fw_log_pin(void)
 
 uint8_t hci_platform_init(void)
 {
-	// Move to rtk_bt_enable() to avoid rtk upperstack memory leak when fail
-	// if (rtk_bt_pre_enable() == false) {
-	//  BT_LOGE("rtk_bt_pre_enable fail!\r\n");
-	//  return HCI_FAIL;
-	// }
-
 	if (!CHECK_CFG_SW(CFG_SW_BT_FW_LOG)) {
 		rtk_bt_fw_log_open();
 		BT_LOGA("FW LOG OPEN\r\n");

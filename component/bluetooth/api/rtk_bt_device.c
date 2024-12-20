@@ -27,8 +27,7 @@ bool rtk_bt_mesh_is_enable(void)
 	return mesh_stack_is_init;
 }
 #endif
-bool rtk_bt_pre_enable(void);
-void rtk_bt_post_enable(void);
+
 uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 {
 	uint16_t err = 0;
@@ -36,11 +35,6 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 	if (b_bt_enabled == true) {
 		BT_LOGE("%s: bt is enabled already.\r\n", __func__);
 		return RTK_BT_ERR_ALREADY_DONE;
-	}
-
-	if (!rtk_bt_pre_enable()) {
-		BT_LOGE("%s: rtk_bt_pre_enable fail!\r\n", __func__);
-		return RTK_BT_ERR_NOT_READY;
 	}
 
 	err = rtk_bt_evt_init();
@@ -64,7 +58,6 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 		return err;
 	}
 
-	rtk_bt_post_enable();
 	rtk_bt_log_init();
 
 	/* set the bt enable flag on */

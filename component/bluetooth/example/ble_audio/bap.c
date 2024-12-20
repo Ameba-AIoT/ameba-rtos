@@ -93,66 +93,7 @@ static uint8_t app_lea_vocs_features[RTK_BT_LE_AUDIO_DEFAULT_VOCS_NUM] = { RTK_B
 																		 };
 #endif
 /***************************************end common resourses********************************/
-/***************************************Power Control Test********************************/
-#if defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT
-#define BT_POWER_TEST_MODE         0
-#if defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE
-#include "rtk_bt_power_control.h"
 
-#define BT_POWER_TEST_WAKE_TIME    5    //Unit:s
-
-static void *bt_power_test_wake_timer_hdl = NULL;
-
-static void bt_power_test_wake_timeout_handler(void *arg)
-{
-	(void)arg;
-	rtk_bt_release_wakelock();
-}
-
-static void bt_power_test_suspend(void)
-{
-	BT_LOGA("[BT_PS] Enter bt_power_test_suspend\r\n");
-}
-
-static void bt_power_test_resume(void)
-{
-	BT_LOGA("[BT_PS] Enter bt_power_test_resume\r\n");
-
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		osif_timer_restart(&bt_power_test_wake_timer_hdl, BT_POWER_TEST_WAKE_TIME * 1000);
-	} else {
-		rtk_bt_release_wakelock();
-	}
-}
-
-static void bt_power_test_init(void)
-{
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		osif_timer_create(&bt_power_test_wake_timer_hdl, "bt_power_test_wake_timer", NULL, BT_POWER_TEST_WAKE_TIME * 1000, false,
-						  bt_power_test_wake_timeout_handler);
-		if (bt_power_test_wake_timer_hdl == NULL) {
-			BT_LOGE("[BT_PS] bt_power_test_wake_timer create failed!\r\n");
-			return;
-		}
-	}
-
-	rtk_bt_power_save_init((rtk_bt_ps_callback)bt_power_test_suspend, (rtk_bt_ps_callback)bt_power_test_resume);
-}
-
-static void bt_power_test_deinit(void)
-{
-	rtk_bt_power_save_deinit();
-
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		if (bt_power_test_wake_timer_hdl) {
-			osif_timer_delete(&bt_power_test_wake_timer_hdl);
-			bt_power_test_wake_timer_hdl = NULL;
-		}
-	}
-}
-#endif
-#endif
-/***************************************Power Control Test End********************************/
 /********************************************bro sink param*************************************/
 static bool g_app_lea_decode_enable = false;
 static rtk_bt_le_audio_bis_info_t sync_bis_info = {0};
@@ -2921,9 +2862,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_broadcast_source_init(p_bro_sour_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR;
 			p_bro_sour_info->status = RTK_BLE_AUDIO_BROADCAST_SOURCE_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -2996,9 +2934,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_broadcast_sink_init(p_bro_sink_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK;
 			p_bro_sink_info->status = RTK_BLE_AUDIO_BROADCAST_SINK_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3046,9 +2981,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_broadcast_assistant_init(p_bro_assi_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_BRO_ASSI;
 			p_bro_assi_info->status = RTK_BLE_AUDIO_BROADCAST_ASSISTANT_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3105,9 +3037,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_scan_delegator_init(p_scan_dele_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE;
 			p_scan_dele_info->status = RTK_BLE_AUDIO_SCAN_DELEGATOR_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3185,9 +3114,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_unicast_server_init(p_uni_ser_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER;
 			p_uni_ser_info->status = RTK_BLE_AUDIO_UNICAST_SERVER_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3247,9 +3173,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_unicast_client_init(p_uni_cli_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_UNI_CLI;
 			p_uni_cli_info->status = RTK_BLE_AUDIO_UNICAST_CLIENT_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3274,9 +3197,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please stop first before disable \r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			app_bt_le_audio_broadcast_source_deinit(&g_bro_sour_info);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
@@ -3302,9 +3223,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please terminate sync with broadcast stream before disable\r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			/* Stop and remove ea */
 			rtk_bt_le_gap_stop_ext_adv(app_lea_def_ext_adv_handle);
 
@@ -3322,9 +3241,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: already disabled\r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			app_bt_le_audio_broadcast_assistant_deinit(&g_bro_assi_info);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
@@ -3339,9 +3256,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: already disabled\r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			/* Stop and remove ea */
 			rtk_bt_le_gap_stop_ext_adv(app_lea_def_ext_adv_handle);
 
@@ -3363,9 +3278,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please stop unicast stream first before disable \r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			/* Stop and remove ea */
 			rtk_bt_le_gap_stop_ext_adv(app_lea_def_ext_adv_handle);
 
@@ -3387,9 +3300,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please stop unicast stream first before disable \r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			app_bt_le_audio_unicast_client_deinit(&g_uni_cli_info);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());

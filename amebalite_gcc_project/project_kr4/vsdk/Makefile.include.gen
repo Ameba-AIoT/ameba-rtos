@@ -86,18 +86,18 @@ BUILD_TYPE = NONE
 endif
 export BUILD_TYPE
 
+TOOLCHAINVER = 4073
 ifeq ($(COMPILEOS),$(LINUX_OS))
 VSDK_TOOLCHAIN = $(TOOLCHAINDIR)/vsdk-$(VSDK_VER)/linux/newlib
-TOOLCHAINNAME = vsdk-10.3.1-linux-newlib-build-4073-x86_64.tar.bz2
-TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/vsdk-10.3.1-linux-newlib-build-4073-x86_64.tar.bz2
-TOOLCHAINURL_ALIYUN	= https://rs-wn.oss-cn-shanghai.aliyuncs.com/vsdk-10.3.1-linux-newlib-build-4073-x86_64.tar.bz2
+TOOLCHAINNAME = vsdk-10.3.1-linux-newlib-build-$(TOOLCHAINVER)-x86_64.tar.bz2
+TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/vsdk-10.3.1-linux-newlib-build-$(TOOLCHAINVER)-x86_64.tar.bz2
+TOOLCHAINURL_ALIYUN	= https://rs-wn.oss-cn-shanghai.aliyuncs.com/vsdk-10.3.1-linux-newlib-build-$(TOOLCHAINVER)-x86_64.tar.bz2
 else
 VSDK_TOOLCHAIN = $(TOOLCHAINDIR)/vsdk-$(VSDK_VER)/mingw32/newlib
-TOOLCHAINNAME = vsdk-10.3.1-mingw32-newlib-build-4073-x86_64.zip
-TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/vsdk-10.3.1-mingw32-newlib-build-4073-x86_64.zip
-TOOLCHAINURL_ALIYUN = https://rs-wn.oss-cn-shanghai.aliyuncs.com/vsdk-10.3.1-mingw32-newlib-build-4073-x86_64.zip
+TOOLCHAINNAME = vsdk-10.3.1-mingw32-newlib-build-$(TOOLCHAINVER)-x86_64.zip
+TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/vsdk-10.3.1-mingw32-newlib-build-$(TOOLCHAINVER)-x86_64.zip
+TOOLCHAINURL_ALIYUN = https://rs-wn.oss-cn-shanghai.aliyuncs.com/vsdk-10.3.1-mingw32-newlib-build-$(TOOLCHAINVER)-x86_64.zip
 endif
-TOOLCHAINVER = 4073
 VSDK_TOOLCHAIN_LIBPATH = $(VSDK_TOOLCHAIN)/lib/gcc/riscv32-none-elf/$(VSDK_VER)/rv32imafc/ilp32f
 
 tool_dir = $(VSDK_TOOLCHAIN)/bin

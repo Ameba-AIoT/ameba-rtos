@@ -215,7 +215,7 @@ void vRegisterIRQHandler(uint32_t ulID, ISRCallback_t pxHandler, void *pvContext
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationIRQHandler(void)
+void vApplicationFPUSafeIRQHandler(void)
 {
 	uint32_t ulInterruptStat, ulInterruptID;
 	UBaseType_t ulCoreID = 0;

@@ -556,6 +556,34 @@ static int atcmd_ble_mesh_lpn_deinit(int argc, char **argv)
 #endif
 }
 
+static int atcmd_ble_mesh_prov_param_set(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 0;
+	rtk_bt_mesh_stack_act_set_prov_param_t prov_param = {0};
+
+	prov_param.unicast_addr = str_to_int(argv[0]);
+
+	if (!hexdata_str_to_array(argv[1], prov_param.net_key, 16)) {
+		BT_LOGE("[%s][%d] String to hex fail\r\n", __func__, __LINE__);
+		return -2;
+	}
+
+	if (!hexdata_str_to_array(argv[2], prov_param.app_key, 16)) {
+		BT_LOGE("[%s][%d] String to hex fail\r\n", __func__, __LINE__);
+		return -3;
+	}
+
+	ret = rtk_bt_mesh_stack_prov_param_set(&prov_param);
+
+	if (ret) {
+		BT_LOGE("[%s][%d] Call API fail, ret:0x%x.\r\n", __func__, __LINE__, ret);
+		return -4;
+	}
+
+	return 0;
+}
+
 static const cmd_table_t mesh_stack_cmd_table[] = {
 	{"reset",       atcmd_ble_mesh_node_reset,                1, 1},
 	{"dev_info",    atcmd_ble_mesh_dev_info,                  2, 2},
@@ -581,6 +609,7 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 	{"lpn_sub",     atcmd_ble_mesh_lpn_sub,                   4, 4},
 	{"lpn_clear",   atcmd_ble_mesh_lpn_clear,                 2, 2},
 	{"lpn_deinit",  atcmd_ble_mesh_lpn_deinit,                1, 1},
+	{"prov_set",    atcmd_ble_mesh_prov_param_set,            4, 4},
 	{NULL,},
 };
 

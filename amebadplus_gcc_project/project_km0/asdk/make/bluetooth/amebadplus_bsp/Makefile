@@ -18,6 +18,8 @@ vpath %.c $(DIR)/driver/hci \
 
 CSRC += \
 	$(DIR)/driver/hci/hci_process/hci_process.c \
+	$(DIR)/driver/hci/hci_process/hci_download_v2.c \
+	$(DIR)/driver/hci/hci_process/hci_download_v3.c \
 	$(DIR)/driver/hci/hci_process/hci_common.c \
 	$(DIR)/driver/hci/hci_process/hci_standalone.c \
 	$(DIR)/driver/hci/hci_transport/hci_h4.c \

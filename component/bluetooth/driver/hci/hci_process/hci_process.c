@@ -166,49 +166,36 @@ static uint8_t hci_process_reset_baudrate(uint16_t opcode)
 #endif
 
 #if defined(hci_platform_DOWNLOAD_PATCH) && hci_platform_DOWNLOAD_PATCH
+extern uint8_t hci_patch_download_v2(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len);
+extern uint8_t hci_patch_download_v3(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len);
 static uint8_t hci_process_download_patch(uint16_t opcode)
 {
-	/* OpCode: 0xFC20, Data Len: Cmd(256), Event(7) */
-	uint8_t ret = HCI_SUCCESS;
-	uint8_t buf_raw[RESERVE_LEN + 256];
-	uint8_t *buf = buf_raw + RESERVE_LEN;
+	uint8_t patch_version;
+	uint8_t *p_patch;
+	uint32_t patch_len;
+	uint8_t ret = HCI_FAIL;
 
-	ret = hci_downlod_patch_init();
-	if (HCI_SUCCESS != ret) {
-		goto dl_patch_done;
+	patch_version = hci_patch_get_patch_version(&p_patch, &patch_len);
+
+	switch (patch_version) {
+	case PATCH_VERSION_V1:
+		BT_LOGE("Signature check success: Merge patch v1 not support\r\n");
+		break;
+
+	case PATCH_VERSION_V2:
+		BT_LOGA("Signature check success: Merge patch v2\r\n");
+		ret = hci_patch_download_v2(opcode, p_patch, patch_len);
+		break;
+
+	case PATCH_VERSION_V3:
+		BT_LOGA("Signature check success: Merge patch v3\r\n");
+		ret = hci_patch_download_v3(opcode, p_patch, patch_len);
+		break;
+
+	default:
+		BT_LOGE("Signature check fail, No available patch!\r\n");
+		break;
 	}
-
-	while (1) {
-		buf[0] = (uint8_t)(opcode >> 0);
-		buf[1] = (uint8_t)(opcode >> 8);
-		ret = hci_get_patch_cmd_len(&buf[2]);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		ret = hci_get_patch_cmd_buf(&buf[3], buf[2]);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, true);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		/* Check Resp: OpCode and Status */
-		if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-			goto dl_patch_done;
-		}
-
-		/* Check the last patch fragment */
-		if (buf[6] & 0x80) {
-			break;
-		}
-	}
-
-dl_patch_done:
-	hci_downlod_patch_done();
 
 	return ret;
 }
