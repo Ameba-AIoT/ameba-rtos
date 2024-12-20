@@ -147,7 +147,7 @@ int atcmd_bt_tx_power_gain(int argc, char *argv[])
 
 	rtk_bt_set_bt_tx_power_gain_index(index);
 
-	BT_LOGA("Set tx power gain 0x%lx OK!\r\n", index);
+	BT_LOGA("Set tx power gain 0x%08x OK!\r\n", index);
 
 	return 0;
 }

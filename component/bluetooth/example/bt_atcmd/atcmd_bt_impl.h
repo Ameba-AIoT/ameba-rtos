@@ -129,6 +129,9 @@ int atcmd_bt_mesh_generic_onoff(int argc, char *argv[]);
 /* mesh datatrans model cmd impl */
 int atcmd_bt_mesh_datatrans_model(int argc, char *argv[]);
 
+/* mesh device firmware update relate models cmd impl */
+int atcmd_bt_mesh_device_firmware_update(int argc, char *argv[]);
+
 /* mesh remote prov client model cmd impl */
 int atcmd_bt_mesh_remote_prov_client_model(int argc, char *argv[]);
 

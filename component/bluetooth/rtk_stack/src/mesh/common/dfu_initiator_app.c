@@ -18,6 +18,8 @@
 #include "dfu_initiator_app.h"
 #include "generic_types.h"
 #include "app_msg.h"
+// RTK porting:for RTK_BT_MESH_IO_MSG_SUBTYPE_xxx define
+#include <rtk_bt_mesh_def.h>
 
 #if F_BT_MESH_1_1_DFU_SUPPORT
 
@@ -87,6 +89,8 @@ static bool dfu_init_blob_transfer(void)
 
 int32_t dfu_init_dist_client_data(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs)
 {
+    // RTK porting:avoid compile warning
+    (void)pmodel_info;
     switch (type)
     {
     case FW_DIST_CLIENT_RECVS_STATUS:
@@ -150,21 +154,11 @@ int32_t dfu_init_dist_client_data(const mesh_model_info_p pmodel_info, uint32_t 
     return MODEL_SUCCESS;
 }
 
-extern void *evt_queue_handle;  //!< Event queue handle
-extern void *io_queue_handle;   //!< IO queue handle
-
+// RTK porting:call common API for send app msg to app main task and process msg through app main task
+extern uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg);
 static void dfu_init_timeout(void *ptimer)
 {
-    uint8_t event = EVENT_IO_TO_APP;
-    T_IO_MSG msg;
-    msg.type = DFU_INIT_APP_TIMEOUT_MSG;
-    msg.u.buf = ptimer;
-    if (os_msg_send(io_queue_handle, &msg, 0) == false)
-    {
-    }
-    else if (os_msg_send(evt_queue_handle, &event, 0) == false)
-    {
-    }
+    bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_DFU_INIT_APP_TIMEOUT_MSG, ptimer);
 }
 
 void dfu_init_handle_timeout(void)

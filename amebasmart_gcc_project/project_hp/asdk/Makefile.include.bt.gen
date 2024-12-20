@@ -64,6 +64,7 @@ endif
 IFLAGS += \
 	-I$(BLEDIR)/api \
 	-I$(BLEDIR)/api/include \
+	-I$(BLEDIR)/example/ble_mesh_ota_common \
 	-I$(BLEDIR)/example/bt_atcmd \
 	-I$(BLEDIR)/example/gatt_service/server \
 	-I$(BLEDIR)/example/gatt_service/client \

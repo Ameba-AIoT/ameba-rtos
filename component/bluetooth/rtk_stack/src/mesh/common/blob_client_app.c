@@ -17,6 +17,8 @@
 #include "app_msg.h"
 #include "generic_types.h"
 #include "blob_client_app.h"
+// RTK porting:for RTK_BT_MESH_IO_MSG_SUBTYPE_xxx define
+#include <rtk_bt_mesh_def.h>
 
 #if F_BT_MESH_1_1_MBT_SUPPORT
 
@@ -96,8 +98,7 @@ struct
     uint8_t current_sending_chunks_len;
 } blob_client_ctx;
 
-extern void *evt_queue_handle;  //!< Event queue handle
-extern void *io_queue_handle;   //!< IO queue handle
+// RTK porting:do not need extern xxx_handle
 
 void blob_client_mtu_size_set(uint16_t client_mtu_size)
 {
@@ -307,17 +308,13 @@ bool active_blob_recvs_node_delete_by_addr(uint16_t addr)
 }
 #endif
 
+// RTK porting:call common API for send T_IO_MSG msg to app main task and process msg through app main task
+extern uint16_t bt_stack_msg_send(uint16_t type, uint16_t subtype, void *msg);
 void blob_client_procedure_timeout(void *pargs)
 {
-    uint8_t event = EVENT_IO_TO_APP;
-    T_IO_MSG msg;
-    msg.type = BLOB_CLIENT_PROCEDURE_TIMEOUT;
-    if (os_msg_send(io_queue_handle, &msg, 0) == false)
-    {
-    }
-    else if (os_msg_send(evt_queue_handle, &event, 0) == false)
-    {
-    }
+    /* avoid gcc compile warning */
+    (void)pargs;
+	bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_PROCEDURE, NULL);
 }
 
 static bool blob_client_procedure_timer_is_active(void)
@@ -361,17 +358,12 @@ void blob_client_procedure_timer_stop(void)
     }
 }
 
+// RTK porting:call common API for send T_IO_MSG msg to app main task and process msg through app main task
 void blob_client_retry_timeout(void *pargs)
 {
-    uint8_t event = EVENT_IO_TO_APP;
-    T_IO_MSG msg;
-    msg.type = BLOB_CLIENT_RETRY_TIMEOUT;
-    if (os_msg_send(io_queue_handle, &msg, 0) == false)
-    {
-    }
-    else if (os_msg_send(evt_queue_handle, &event, 0) == false)
-    {
-    }
+    /* avoid gcc compile warning */
+    (void)pargs;
+	bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_RETRY, NULL);
 }
 
 static bool blob_client_retry_timer_start(uint32_t period_ms)
@@ -416,6 +408,8 @@ static bool blob_client_blob_init(uint32_t blob_size, blob_transfer_mode_t trans
     uint16_t total_chunks_max = 0;
     uint16_t total_blocks_max = 0;
     bool chunk_size_suit = false;
+    // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
+    uint32_t blob_size_temp = 0;
 
     if (skip_caps_retrieve)
     {
@@ -502,9 +496,12 @@ static bool blob_client_blob_init(uint32_t blob_size, blob_transfer_mode_t trans
             {
                 pcaps = blob_recvs_caps_get_by_addr(pnode->addr);
                 total_chunks_max = MIN(pcaps->caps.max_total_chunks, 8 * (pcaps->caps.server_mtu_size - 6));
+                // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
+                blob_size_temp = total_chunks_max * chunk_size;
                 if (pcaps->caps.min_block_size_log <= i &&
                     pcaps->caps.max_block_size_log >= i &&
-                    total_chunks_max * chunk_size >= plt_exp2(i))
+                    // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
+                    blob_size_temp >= plt_exp2(i))
                 {
                     avail_count++;
                 }
@@ -531,10 +528,13 @@ static bool blob_client_blob_init(uint32_t blob_size, blob_transfer_mode_t trans
             pcaps = blob_recvs_caps_get_by_addr(pnode->addr);
             total_chunks_max = MIN(pcaps->caps.max_total_chunks, 8 * (pcaps->caps.server_mtu_size - 6));
             total_blocks_max = 8 * (pcaps->caps.server_mtu_size - 19);
+            // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
+            blob_size_temp = total_chunks_max * chunk_size;
             /* set node inactive which do not match block log size */
             if (pcaps->caps.min_block_size_log > blob_client_ctx.block_size_log ||
                 pcaps->caps.max_block_size_log < blob_client_ctx.block_size_log ||
-                total_chunks_max * chunk_size < plt_exp2(blob_client_ctx.block_size_log))
+                // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
+                blob_size_temp < plt_exp2(blob_client_ctx.block_size_log))
             {
                 pnode->active = false;
                 printw("blob_client_blob_init: inactive 0x%04x, block log size not match %d(%d,%d), total chunks %d, chunk size %d",
@@ -1052,9 +1052,7 @@ bool blob_client_blob_transfer(uint16_t multicast_addr, uint8_t app_key_index, u
 void blob_client_send_cb(mesh_model_info_p pmodel_info, mesh_msg_send_stat_t stat,
                          uint32_t access_opcode)
 {
-    uint8_t event = EVENT_IO_TO_APP;
-    T_IO_MSG msg;
-    msg.type = BLOB_CLIENT_CHUNK_TRANSFER;
+    // RTK porting:do not need define data for send msg to app main task
 
     if (pmodel_info->model_id != MESH_MODEL_BLOB_TRANSFER_CLIENT)
     {
@@ -1090,13 +1088,8 @@ void blob_client_send_cb(mesh_model_info_p pmodel_info, mesh_msg_send_stat_t sta
             /* stop blob data send procedure ? */
         }
 
-        if (os_msg_send(io_queue_handle, &msg, 0) == false)
-        {
-            printe("blob_client_send_cb: send io queue fail");
-            blob_client_handle_transfer(false);
-        }
-        else if (os_msg_send(evt_queue_handle, &event, 0) == false)
-        {
+        // RTK porting:call common API for send T_IO_MSG msg to app main task and process msg through app main task
+        if (bt_stack_msg_send(IO_MSG_TYPE_LE_MESH, RTK_BT_MESH_IO_MSG_SUBTYPE_BLOB_CLIENT_CHUNK_TRANSFER, NULL)) {
             printe("blob_client_send_cb: send evt queue fail");
             blob_client_handle_transfer(false);
         }
@@ -1216,12 +1209,21 @@ void blob_client_data_send(void)
 void blob_client_transfer_status_determine(uint16_t multicast_addr, uint8_t app_key_index,
                                            uint8_t transfer_ttl, uint16_t *punicast_addr, uint8_t unicast_addr_num)
 {
+    // RTK porting:avoid compile warning
+    (void)multicast_addr;
+    (void)app_key_index;
+    (void)transfer_ttl;
+    (void)punicast_addr;
+    (void)unicast_addr_num;
     return;
 }
 
 bool blob_client_transfer_cancel(uint16_t *punicast_addr, uint8_t unicast_addr_num,
                                  uint8_t blob_id[8])
 {
+    // RTK porting:avoid compile warning
+    (void)punicast_addr;
+    (void)unicast_addr_num;
     if (memcmp(blob_id, blob_client_ctx.blob_id, 8) != 0)
     {
         printe("blob_client_transfer_cancel: wrong blob id");
@@ -1737,6 +1739,8 @@ void blob_client_handle_retry_timeout(void)
 
 int32_t blob_client_app_handle_data(const mesh_model_info_p pmodel_info, uint32_t type, void *pargs)
 {
+    // RTK porting:avoid compile warning
+    (void)pmodel_info;
     blob_recvs_node_p pnode = NULL;
     switch (type)
     {

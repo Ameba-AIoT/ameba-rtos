@@ -20,12 +20,14 @@
 #include "mesh_cmd.h"
 #include "mesh_api.h"
 #include "proxy_client.h"
+// RTK porting:do not need include this file
 // #include "dfu_client.h"
 #include "ping.h"
 #include "tp.h"
 #include "firmware_distribution.h"
 #include "dfu_distributor_app.h"
-#include "rtk_bt_mesh_def.h"
+// RTK porting:add more include files
+#include <rtk_bt_mesh_def.h>
 #include <rtk_bt_common.h>
 #include <rtk_bt_mesh_common.h>
 #include <mesh_data_dump.h>
@@ -40,6 +42,7 @@ user_cmd_parse_result_t user_cmd_reset(user_cmd_parse_value_t *pparse_value)
     return USER_CMD_RESULT_OK;
 }
 
+// RTK porting:for report cmd list info event
 static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t data_len)
 {
 	// Copy a val to memory using little endian
@@ -53,6 +56,7 @@ static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t d
 	return true;
 }
 
+// RTK porting:for report cmd list info event
 #define USER_CMD_LIST_MAX_LEN    1024
 // max of user cmd list for provisioner : 190 + N(provisioned device num)*24 + 2(IPC align)
 // Provisioner list info len with 20 device : 190+20*24 + 2 = 672 bytes
@@ -803,8 +807,9 @@ user_cmd_parse_result_t user_cmd_disconnect(user_cmd_parse_value_t *pparse_value
 
 user_cmd_parse_result_t user_cmd_dfu_start_discover(user_cmd_parse_value_t *pparse_value)
 {
-    (void)pparse_value;
     data_uart_debug("Dfu Start Discover\r\n");
+    // RTK porting:have notify mesh stack, maybe fix next release version
+    (void)pparse_value;
     // dfu_client_start_discovery(pparse_value->dw_parameter[0]);
     return USER_CMD_RESULT_OK;
 }

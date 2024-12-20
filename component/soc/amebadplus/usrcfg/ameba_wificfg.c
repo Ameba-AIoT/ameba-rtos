@@ -43,6 +43,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
+#if WIFI_LOGO_CERTIFICATION
+	wifi_user_config.skb_num_ap = 16;
+#endif
 #ifdef CONFIG_SINGLE_CORE_WIFI
 	wifi_user_config.skb_num_ap = 0;
 #endif

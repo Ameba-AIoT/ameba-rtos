@@ -236,6 +236,7 @@ static void llhw_event_set_netif_info(struct event_priv_t *event_priv, struct in
 	int idx = (u32)p_ipc_msg->param_buf[0];
 	unsigned char *dev_addr = phys_to_virt(p_ipc_msg->param_buf[1]);
 	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
+	u8 mac_addr[ETH_ALEN] = {0};
 
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: set netif info.");
 
@@ -276,7 +277,12 @@ static void llhw_event_set_netif_info(struct event_priv_t *event_priv, struct in
 	}
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 	memcpy(global_idev.pndev[idx]->dev_addr, dev_addr, ETH_ALEN);
+#else
+	eth_hw_addr_set(global_idev.pndev[idx], dev_addr);
+#endif
+
 	dev_dbg(global_idev.fullmac_dev, "MAC ADDR [%02x:%02x:%02x:%02x:%02x:%02x]", *global_idev.pndev[idx]->dev_addr,
 			*(global_idev.pndev[idx]->dev_addr + 1), *(global_idev.pndev[idx]->dev_addr + 2),
 			*(global_idev.pndev[idx]->dev_addr + 3), *(global_idev.pndev[idx]->dev_addr + 4),
@@ -284,12 +290,17 @@ static void llhw_event_set_netif_info(struct event_priv_t *event_priv, struct in
 
 	if (!global_idev.pndev[0]) {
 		/*set ap port mac address*/
-		memcpy(global_idev.pndev[1]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-		if(softap_addr_offset_idx == 0){
-			global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
-		}else{
-			global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
+		memcpy(mac_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
+		if (softap_addr_offset_idx == 0) {
+			mac_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
+		} else {
+			mac_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
 		}
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+		memcpy(global_idev.pndev[1]->dev_addr, mac_addr, ETH_ALEN);
+#else
+		eth_hw_addr_set(global_idev.pndev[1], mac_addr);
+#endif
 	}
 	dma_unmap_single(pdev, dma_addr, ETH_ALEN, DMA_FROM_DEVICE);
 

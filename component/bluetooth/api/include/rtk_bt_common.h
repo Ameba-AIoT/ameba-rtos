@@ -226,6 +226,10 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON,          /*!< LE mesh directed forwarding common group */
 	RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL,          /*!< LE mesh subnet bridge client model group */
 	RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL,          /*!< LE mesh private beacon client model group */
+	RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL,          /*!< LE mesh dfu initiator model group */
+	RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL,          /*!< LE mesh dfu standalone updater model group */
+	RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL,          /*!< LE mesh dfu distributor model group */
+	RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL,          /*!< LE mesh dfu target model group */
 	RTK_BT_LE_GP_MAX,                           /*!< Reserved */
 } rtk_bt_le_group_t;
 

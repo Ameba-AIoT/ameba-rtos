@@ -125,7 +125,7 @@ static uint8_t privacy_irk[RTK_BT_LE_GAP_IRK_LEN] = "abcdef0123456789";
 #endif
 
 #if defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT
-#define BT_POWER_TEST_MODE         0
+#define BT_POWER_TEST_MODE         0    //If set to 1, WAKE_SRC_BT_WAKE_HOST should be set to wakeup AP core in ameba_sleepcfg.c
 #if defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE
 #include "rtk_bt_power_control.h"
 
