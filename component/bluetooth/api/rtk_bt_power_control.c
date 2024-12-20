@@ -26,7 +26,7 @@ _WEAK void hci_platform_force_uart_rts(bool op)
 static bool rtk_bt_get_wakelock_status(void)
 {
 	uint32_t lock_status = pmu_get_wakelock_status();
-	BT_LOGA("[BT_PS] lock_status = 0x%x\r\n", lock_status);
+	BT_LOGD("[BT_PS] lock_status = 0x%x\r\n", lock_status);
 
 	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
 		return true;    //Already acquire bt wake lock
@@ -38,20 +38,20 @@ static bool rtk_bt_get_wakelock_status(void)
 void rtk_bt_release_wakelock(void)
 {
 	if (rtk_bt_get_wakelock_status() == true) {
-		BT_LOGA("[BT_PS] pmu_release_wakelock PMU_BT_DEVICE\r\n");
+		BT_LOGD("[BT_PS] pmu_release_wakelock PMU_BT_DEVICE\r\n");
 		pmu_release_wakelock(PMU_BT_DEVICE);
 	} else {
-		BT_LOGA("[BT_PS] already release PMU_BT_DEVICE\r\n");
+		BT_LOGD("[BT_PS] already release PMU_BT_DEVICE\r\n");
 	}
 }
 
 void rtk_bt_acquire_wakelock(void)
 {
 	if (rtk_bt_get_wakelock_status() == false) {
-		BT_LOGA("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
+		BT_LOGD("[BT_PS] pmu_acquire_wakelock PMU_BT_DEVICE\r\n");
 		pmu_acquire_wakelock(PMU_BT_DEVICE);
 	} else {
-		BT_LOGA("[BT_PS] already acquire PMU_BT_DEVICE\r\n");
+		BT_LOGD("[BT_PS] already acquire PMU_BT_DEVICE\r\n");
 	}
 }
 
@@ -80,7 +80,7 @@ static uint32_t rtk_bt_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
-	BT_LOGA("[BT_PS] Enter rtk_bt_suspend\r\n");
+	BT_LOGD("[BT_PS] Enter rtk_bt_suspend\r\n");
 
 	hci_platform_force_uart_rts(true);
 
@@ -98,7 +98,7 @@ static uint32_t rtk_bt_resume(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
-	BT_LOGA("[BT_PS] Enter rtk_bt_resume\r\n");
+	BT_LOGD("[BT_PS] Enter rtk_bt_resume\r\n");
 
 	rtk_bt_acquire_wakelock();
 

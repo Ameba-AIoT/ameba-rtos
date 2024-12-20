@@ -28,6 +28,7 @@ endif
 ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
 ifneq ($(CONFIG_BT_ZEPHYR), y)
 	make -C ble_mesh_stack all
+	make -C ble_mesh_ota_common all
 endif
 endif
 

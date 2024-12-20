@@ -297,6 +297,9 @@ static uint16_t bt_stack_init(void *app_config)
 	//BT Stack init
 	b_bte_init_ret = bte_init();
 	if (false == b_bte_init_ret) {
+		/* fix upperstack memory leak when bte_init fail.
+		 * fix bte_init() not call hci_if_open after first bte_init() fail. */
+		bte_deinit_free();
 		goto failed;
 	}
 
@@ -815,6 +818,18 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_mesh_directed_forwarding_common_act_handle(p_cmd);
 		break;
 #endif
+#if defined(BT_MESH_ENABLE_DFU_INITIATOR_ROLE) && BT_MESH_ENABLE_DFU_INITIATOR_ROLE
+	case RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL:
+		BT_LOGD("[%s] RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL group.\r\n", __func__);
+		bt_mesh_dfu_initiator_act_handle(p_cmd);
+		break;
+#endif
+#if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
+	case RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL:
+		BT_LOGD("[%s] RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL group.\r\n", __func__);
+		bt_mesh_dfu_standalone_updater_act_handle(p_cmd);
+		break;
+#endif
 #endif  // RTK_BLE_MESH_SUPPORT
 	case RTK_BT_BR_GP_GAP:
 		BT_LOGD("RTK_BT_BR_GP_GAP group \r\n");
@@ -915,16 +930,17 @@ uint16_t bt_stack_enable(void *app_conf)
 	//step 2 initialize GAP and other common config
 	ret = bt_stack_init(app_conf);
 	if (ret) {
-		return ret;
+		goto stack_fail;
 	}
 	//step3 initialize profile
 	ret = bt_stack_profile_init(app_conf);
 	if (ret) {
-		return ret;
+		goto profile_fail;
 	}
 	//step 4 stack enable
 	if (false == bt_stack_startup(app_conf)) {
-		return RTK_BT_FAIL;
+		ret = RTK_BT_FAIL;
+		goto startup_fail;
 	}
 
 	bt_stack_le_gap_wait_ready();
@@ -933,6 +949,14 @@ uint16_t bt_stack_enable(void *app_conf)
 	bt_stack_post_config();
 
 	return 0;
+
+startup_fail:
+	bt_stack_profile_deinit();
+profile_fail:
+	bt_stack_deinit();
+stack_fail:
+	bt_stack_api_deinit();
+	return ret;
 }
 
 uint16_t bt_stack_disable(void)

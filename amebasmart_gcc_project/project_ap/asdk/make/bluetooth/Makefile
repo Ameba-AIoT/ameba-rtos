@@ -33,6 +33,7 @@ ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEV
 ifneq ($(CONFIG_BT_ZEPHYR), y)
 	make -C ble_mesh_stack all
 endif
+	make -C ble_mesh_ota_common all
 endif
 
 ifeq ($(CONFIG_BT_PERIPHERAL), y)

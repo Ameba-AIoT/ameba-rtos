@@ -8,17 +8,21 @@ include $(MAKE_INCLUDE_GEN)
 BT_DIR = $(BASEDIR)/component/bluetooth
 
 vpath %.c $(BT_DIR)/rtk_stack/src/mesh/cmd \
+		$(BT_DIR)/rtk_stack/src/mesh/common \
 		$(BT_DIR)/rtk_stack/src/mesh/model \
 		$(BT_DIR)/rtk_stack/src/mesh/model/realtek \
 		$(BT_DIR)/rtk_stack/src/mesh/utility
 
 CSRC += \
 	$(BT_DIR)/rtk_stack/src/mesh/cmd/mesh_cmd.c \
+	$(BT_DIR)/rtk_stack/src/mesh/common/blob_client_app.c \
+	$(BT_DIR)/rtk_stack/src/mesh/common/dfu_distributor_app.c \
+	$(BT_DIR)/rtk_stack/src/mesh/common/dfu_initiator_app.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/blob_transfer_client.c \
 	$(BT_DIR)/rtk_stack/src/mesh/model/delay_msg_rsp.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/firmware_distribution_client.c \
+	$(BT_DIR)/rtk_stack/src/mesh/model/firmware_update_client.c \
 	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/datatrans_model.c \
-	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/blob_transfer_client.c \
-	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/firmware_distribution_client.c \
-	$(BT_DIR)/rtk_stack/src/mesh/model/realtek/firmware_update_client.c \
 	$(BT_DIR)/rtk_stack/src/mesh/utility/mesh_data_dump.c
 
 ifeq ($(CONFIG_BT_MESH_PROVISIONER_SUPPORT), y)
