@@ -313,6 +313,10 @@ extern "C"
 #error "Can not enable RTK_BLE_MESH_PROVISIONER_SUPPORT and RTK_BLE_MESH_DEVICE_SUPPORT at same time"
 #endif
 
+#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+#define RTK_BLE_5_0_USE_EXTENDED_ADV        1
+#endif
+
 #ifdef __cplusplus
 }
 #endif

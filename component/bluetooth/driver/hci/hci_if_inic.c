@@ -166,7 +166,7 @@ static void bt_inic_recv(void)
 			LE_TO_UINT16(opcode, buf + 3);
 			osif_msg_peek(internal_cmd_q, &opcode_i, BT_TIMEOUT_NONE);
 			if (opcode == opcode_i) { /* event for internal hci command, no need send to stack */
-				// BT_LOGA("filter out opcode 0x%04x\r\n", opcode);
+				/* BT_LOGA("filter out opcode 0x%04x\r\n", opcode); */
 				osif_msg_recv(internal_cmd_q, &opcode_i, BT_TIMEOUT_NONE);
 				osif_msg_queue_peek(internal_cmd_q, &internal_cmd_cnt);
 				osif_mem_aligned_free(buf);
@@ -287,7 +287,7 @@ bool hci_if_write_internal(uint8_t *buf, uint32_t len)
 		LE_TO_UINT16(opcode, buf + 1);
 		osif_msg_send(internal_cmd_q, &opcode, BT_TIMEOUT_NONE);
 		osif_msg_queue_peek(internal_cmd_q, &internal_cmd_cnt);
-		// BT_LOGA("internal send opcode 0x%04x, cnt %d\r\n", opcode, internal_cmd_cnt);
+		/* BT_LOGA("internal send opcode 0x%04x, cnt %d\r\n", opcode, internal_cmd_cnt); */
 	}
 
 	hci_transport_send(*buf, buf + 1, len - 1, true);

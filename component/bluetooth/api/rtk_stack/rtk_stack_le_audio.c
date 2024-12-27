@@ -4273,9 +4273,11 @@ void bt_stack_le_audio_deinit(void)
 
 	if (p_default_pac_sink_codec != NULL) {
 		osif_mem_free(p_default_pac_sink_codec);
+		p_default_pac_sink_codec = NULL;
 	}
 	if (p_default_pac_source_codec != NULL) {
 		osif_mem_free(p_default_pac_source_codec);
+		p_default_pac_source_codec = NULL;
 	}
 
 	//broadcast source deinit

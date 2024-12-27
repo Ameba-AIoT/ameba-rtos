@@ -44,6 +44,7 @@ int64_t ameba_audio_stream_tx_sport_rendered_frames(Stream *stream);
 int64_t ameba_audio_stream_tx_get_frames_written(Stream *stream);
 int64_t ameba_audio_stream_tx_get_trigger_time(Stream *stream);
 void ameba_audio_stream_tx_set_delay_start(Stream *stream, bool should_delay);
+void ameba_audio_stream_tx_buffer_flush(Stream *stream);
 
 #ifdef __cplusplus
 }

@@ -23,7 +23,7 @@ typedef enum {
 	OPCODE_CONTROLLER_RSVD = 0x08
 } SECTION_OPCODE;
 
-typedef struct {
+struct PATCH_NODE {
 	struct list_head list;
 	uint8_t eco;
 	uint8_t priority;
@@ -32,9 +32,9 @@ typedef struct {
 	uint32_t payload_len;
 	uint8_t *payload;
 	uint32_t sent_payload_len;
-} PATCH_NODE;
+};
 
-typedef struct {
+struct PATCH_INFO {
 	uint32_t fw_len;
 	uint32_t sent_fw_len;
 	uint8_t *config_buf;
@@ -45,20 +45,20 @@ typedef struct {
 	uint8_t last_pkt;
 	uint8_t *patch_buf;
 	uint32_t patch_len;
-	PATCH_NODE head_node;
-} PATCH_INFO;
+	struct PATCH_NODE head_node;
+};
 
-static PATCH_INFO *patch_info = NULL;
+static struct PATCH_INFO *patch_info = NULL;
 static uint8_t patch_key_id = 0;
 
 static uint8_t hci_patch_download_init(void)
 {
-	patch_info = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(PATCH_INFO));
+	patch_info = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct PATCH_INFO));
 	if (!patch_info) {
 		return HCI_FAIL;
 	}
 
-	memset(patch_info, 0, sizeof(PATCH_INFO));
+	memset(patch_info, 0, sizeof(struct PATCH_INFO));
 	INIT_LIST_HEAD(&patch_info->head_node.list);
 
 	return HCI_SUCCESS;
@@ -67,10 +67,10 @@ static uint8_t hci_patch_download_init(void)
 static void hci_patch_download_done(void)
 {
 	struct list_head *pos, *next;
-	PATCH_NODE *node;
+	struct PATCH_NODE *node;
 
 	list_for_each_safe(pos, next, &patch_info->head_node.list) {
-		node = list_entry(pos, PATCH_NODE, list);
+		node = list_entry(pos, struct PATCH_NODE, list);
 		list_del_init(pos);
 		osif_mem_free(node);
 	}
@@ -81,17 +81,17 @@ static void hci_patch_download_done(void)
 	patch_info = NULL;
 }
 
-static void _insert_patch_queue(struct list_head *head, PATCH_NODE *p_patch_node)
+static void _insert_patch_queue(struct list_head *head, struct PATCH_NODE *p_patch_node)
 {
 	struct list_head *pos, *next;
-	PATCH_NODE *node;
+	struct PATCH_NODE *node;
 
 	if (!head || !p_patch_node) {
 		return;
 	}
 
 	list_for_each_safe(pos, next, head) {
-		node = list_entry(pos, PATCH_NODE, list);
+		node = list_entry(pos, struct PATCH_NODE, list);
 		if (node->priority >= p_patch_node->priority) {
 			break;
 		}
@@ -101,9 +101,9 @@ static void _insert_patch_queue(struct list_head *head, PATCH_NODE *p_patch_node
 }
 
 static void _parse_patch_section(uint8_t *p_buf, uint32_t *p_fw_len, SECTION_OPCODE opcode, bool *p_found_security_header,
-								 PATCH_NODE *p_patch_node_head)
+								 struct PATCH_NODE *p_patch_node_head)
 {
-	PATCH_NODE *patch_node;
+	struct PATCH_NODE *patch_node;
 	uint16_t number, reserve;
 	uint8_t *position;
 	uint8_t eco;
@@ -118,12 +118,12 @@ static void _parse_patch_section(uint8_t *p_buf, uint32_t *p_fw_len, SECTION_OPC
 					 sizeof(patch_node->key_id) + sizeof(patch_node->reserve));
 
 		if (eco == hci_patch_get_chipid()) {
-			patch_node = (PATCH_NODE *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(PATCH_NODE));
+			patch_node = (struct PATCH_NODE *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct PATCH_NODE));
 			if (patch_node == NULL) {
 				BT_LOGE("patch_node allocate fail!\r\n");
 				return;
 			}
-			memset(patch_node, 0, sizeof(PATCH_NODE));
+			memset(patch_node, 0, sizeof(struct PATCH_NODE));
 
 			patch_node->eco = eco;
 			patch_node->priority = *(position + sizeof(patch_node->eco));
@@ -154,7 +154,7 @@ static void _parse_patch_section(uint8_t *p_buf, uint32_t *p_fw_len, SECTION_OPC
 	}
 }
 
-static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
+static uint32_t _parse_patch(uint8_t *p_buf, struct PATCH_NODE *p_patch_node_head)
 {
 	uint32_t i;
 	uint32_t section_num;
@@ -204,7 +204,7 @@ static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
 			p_section += sizeof(opcode) + sizeof(length) + length;
 		}
 
-		// if has key id but not found security header, parse dummy header again
+		/* if has key id but not found security header, parse dummy header again */
 		if (patch_key_id != 0 && found_security_header == false) {
 			p_section = p_buf + sizeof(section_num);
 			for (i = 0; i < section_num; i++) {
@@ -224,7 +224,7 @@ static uint32_t _parse_patch(uint8_t *p_buf, PATCH_NODE *p_patch_node_head)
 
 static uint8_t _get_patch_info(uint8_t *p_patch, uint32_t patch_len)
 {
-	PATCH_INFO *info = patch_info;
+	struct PATCH_INFO *info = patch_info;
 	uint32_t version_date, version_time;
 	uint32_t fw_len;
 	uint8_t sig_len = 8;
@@ -260,7 +260,7 @@ static uint8_t _get_patch_info(uint8_t *p_patch, uint32_t patch_len)
 static uint8_t hci_get_patch_cmd_len(uint8_t *cmd_len, uint8_t *p_patch, uint32_t patch_len)
 {
 	uint8_t ret;
-	PATCH_INFO *info = patch_info;
+	struct PATCH_INFO *info = patch_info;
 
 	/* Download FW partial patch first time, get patch and info */
 	if (0 == info->cur_index) {
@@ -282,14 +282,14 @@ static uint8_t hci_get_patch_cmd_len(uint8_t *cmd_len, uint8_t *p_patch, uint32_
 
 static uint8_t hci_get_patch_cmd_buf(uint8_t *cmd_buf, uint8_t cmd_len)
 {
-	PATCH_INFO *info = patch_info;
+	struct PATCH_INFO *info = patch_info;
 	uint8_t *data_buf = &cmd_buf[1];
 	uint8_t data_len = cmd_len - 1;
 	uint8_t remain_len = data_len;
 	uint8_t sending_len = 0;
 	uint32_t total_node_len = 0;
 	struct list_head *pos, *next;
-	PATCH_NODE *node;
+	struct PATCH_NODE *node;
 
 	/* first byte is index */
 	if (info->cur_index >= 0x80) {
@@ -302,10 +302,10 @@ static uint8_t hci_get_patch_cmd_buf(uint8_t *cmd_buf, uint8_t cmd_len)
 	}
 
 	list_for_each_safe(pos, next, &info->head_node.list) {
-		node = list_entry(pos, PATCH_NODE, list);
+		node = list_entry(pos, struct PATCH_NODE, list);
 		total_node_len += node->payload_len;
 
-		// Find the patch node need to be send
+		/* Find the patch node need to be send */
 		if (info->sent_fw_len < total_node_len) {
 			if (info->sent_fw_len + remain_len < total_node_len) {
 				sending_len = remain_len;
@@ -313,7 +313,7 @@ static uint8_t hci_get_patch_cmd_buf(uint8_t *cmd_buf, uint8_t cmd_len)
 				info->sent_fw_len += sending_len;
 				node->sent_payload_len += sending_len;
 				remain_len -= sending_len;
-				// data_buf is already full, break the loop
+				/* data_buf is already full, break the loop */
 				break;
 			} else {
 				sending_len = node->payload_len - node->sent_payload_len;
@@ -325,7 +325,7 @@ static uint8_t hci_get_patch_cmd_buf(uint8_t *cmd_buf, uint8_t cmd_len)
 					BT_LOGE("Patch node has not been sent completely! payload_len = %d, sent_payload_len = %d\r\n", node->payload_len, node->sent_payload_len);
 					return HCI_FAIL;
 				}
-				// data_buf is not full, jump to the next patch node
+				/* data_buf is not full, jump to the next patch node */
 			}
 		}
 	}
@@ -336,7 +336,7 @@ static uint8_t hci_get_patch_cmd_buf(uint8_t *cmd_buf, uint8_t cmd_len)
 			return HCI_FAIL;
 		}
 
-		// Add config data after firmware
+		/* Add config data after firmware */
 		memcpy(data_buf + data_len - remain_len, info->config_buf + info->sent_config_len, remain_len);
 		info->sent_config_len += remain_len;
 	}

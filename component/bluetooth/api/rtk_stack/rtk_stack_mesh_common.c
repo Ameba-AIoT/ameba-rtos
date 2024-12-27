@@ -1398,6 +1398,20 @@ static void rtk_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *p_d
 	app_key_add(net_key_index, 0, p);
 
 	mesh_model_bind_all_key();
+
+	// The provisioner do not need add device key, maybe mesh stack already do it
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+	// Add the device key setting
+	uint8_t dev_key[16] = {0x12, 0x88, 0x98, 0xa4, 0x7e, 0x34, 0xaa, 0xef, 0x12, 0x9f, 0x3e, 0xd8, 0xaa, 0x4f, 0x9e, 0x34};
+	if (is_all_zeros_in_buf(p_data->dev_key, 16)) {
+		p = dev_key;
+		memcpy(&p[10], bt_addr, sizeof(bt_addr));
+	} else {
+		p = p_data->dev_key;
+	}
+	// param 2(1) means the element num, according the invoke times of mesh_element_create() API
+	dev_key_add(mesh_node.unicast_addr, 1, p);
+#endif
 }
 
 #if defined(RTK_BLE_MESH_FN_SUPPORT) && RTK_BLE_MESH_FN_SUPPORT
@@ -1536,7 +1550,7 @@ static uint16_t rtk_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt
 	}
 
 	/* In rtk stack, if extend adv enabled, legacy connection (le_connect(0,...)) will not work */
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT)
+#if (defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT)
 	init_phys = GAP_PHYS_CONN_INIT_1M_BIT;
 #else
 	init_phys = 0;
