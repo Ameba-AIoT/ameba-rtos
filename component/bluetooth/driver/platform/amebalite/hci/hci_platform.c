@@ -34,7 +34,7 @@ extern int wifi_set_ips_internal(u8 enable);
 #define DBG_BT_VENDOR              0
 #define DBG_BT_ON                  1
 
-uint32_t hci_cfg_sw_val = 0xFF;    // Open BT Trace log & FW log use 0xDD
+uint32_t hci_cfg_sw_val = 0xFF;    /* Open BT Trace log & FW log use 0xDD */
 
 static uint8_t bt_manual_tx_power_gain_enable = 0;
 static uint8_t bt_manual_gain_index_le;
@@ -97,7 +97,7 @@ void hci_platform_cfg_bd_addr(uint8_t *bdaddr)
 
 void hci_platform_bt_rf_calibration(void)
 {
-	// DAC DCK
+	/* DAC DCK */
 	/* 0x741[2] 0 for bt dac dck valid */
 	if ((hci_phy_efuse[PEFUSE(0x741)] & BIT2) == 0) {
 		struct bt_rfk_param p_temp_pram = {0};
@@ -115,7 +115,7 @@ void hci_platform_bt_rf_calibration(void)
 		wifi_btcoex_bt_rfk(&p_temp_pram);
 	}
 
-	//TX LOK
+	/* TX LOK */
 	/* 0x741[0] 0 for tx lok valid */
 	if ((hci_phy_efuse[PEFUSE(0x741)] & BIT0) == 0) {
 		struct bt_rfk_param p_temp_pram = {0};
@@ -133,7 +133,7 @@ void hci_platform_bt_rf_calibration(void)
 		wifi_btcoex_bt_rfk(&p_temp_pram);
 	}
 
-	//TX LOK Res
+	/* TX LOK Res */
 	/* 0x741[4] 0 for tx lok res valid */
 	if ((hci_phy_efuse[PEFUSE(0x741)] & BIT4) == 0) {
 		struct bt_rfk_param p_temp_pram = {0};
@@ -206,7 +206,6 @@ static uint8_t hci_platform_parse_config(void)
 	uint8_t *p, i;
 	uint16_t entry_offset, entry_len, config_length;
 	uint32_t config_header;
-	//uint16_t tx_flatk;
 
 	if (sizeof(hci_init_config) <= HCI_CONFIG_HDR_LEN) {
 		return HCI_IGNORE;
@@ -281,16 +280,16 @@ static uint8_t hci_platform_parse_config(void)
 		case 0x0282:
 			for (i = 0; i < entry_len; i++) {
 				if (bt_manual_tx_power_gain_enable) {
-					if (i == 0) { // br
+					if (i == 0) { /* br */
 						BT_LOGA("0x0282 BR gain 0x%02x\r\n", bt_manual_gain_index_br);
 						p[i] = bt_manual_gain_index_br;
-					} else if (i == 1) { // edr 2m
+					} else if (i == 1) { /* edr 2m */
 						BT_LOGA("0x0282 EDR 2M gain 0x%02x\r\n", bt_manual_gain_index_edr2m);
 						p[i] = bt_manual_gain_index_edr2m;
-					} else if (i == 2) { // edr 3m
+					} else if (i == 2) { /* edr 3m */
 						BT_LOGA("0x0282 EDR 3M gain 0x%02x\r\n", bt_manual_gain_index_edr3m);
 						p[i] = bt_manual_gain_index_edr3m;
-					} else { // le
+					} else { /* le */
 						BT_LOGA("0x0282 LE gain 0x%02x\r\n", bt_manual_gain_index_le);
 						p[i] = bt_manual_gain_index_le;
 					}
@@ -330,48 +329,48 @@ static uint8_t hci_platform_parse_config(void)
 
 static void bt_power_on(void)
 {
-	set_reg_value(0x4100C200, BIT1, 1);             //enable BT Power Cut
+	set_reg_value(0x4100C200, BIT1, 1);             /* enable BT Power Cut */
 	osif_delay(5);
-	set_reg_value(0x4100C200, BIT17, 0);            //disable ISO of BT
+	set_reg_value(0x4100C200, BIT17, 0);            /* disable ISO of BT */
 	osif_delay(5);
-	set_reg_value(0x4100C214, BIT2, 1);             //enable clk_osc4m_wlbt
+	set_reg_value(0x4100C214, BIT2, 1);             /* enable clk_osc4m_wlbt */
 	osif_delay(5);
-	set_reg_value(0x4100C208, BIT2, 1);             //enable WL RFAFE control circuit
+	set_reg_value(0x4100C208, BIT2, 1);             /* enable WL RFAFE control circuit */
 	osif_delay(5);
-	set_reg_value(0x4100C480, BIT5 | BIT6, 3);      //enable RFAFE
+	set_reg_value(0x4100C480, BIT5 | BIT6, 3);      /* enable RFAFE */
 	osif_delay(5);
-	set_reg_value(0x4100C4A8, BIT4, 1);             //enable WL_CKI_80M_RFC, default=1, can skip
+	set_reg_value(0x4100C4A8, BIT4, 1);             /* enable WL_CKI_80M_RFC, default=1, can skip */
 	osif_delay(5);
-	set_reg_value(0x4100C4A8, BIT3, 0);             //when WL RFAFE enter power off, keep WLRFC not power off
+	set_reg_value(0x4100C4A8, BIT3, 0);             /* when WL RFAFE enter power off, keep WLRFC not power off */
 	osif_delay(5);
-	set_reg_value(0x4100C208, BIT1, 1);             //release BTON reset
+	set_reg_value(0x4100C208, BIT1, 1);             /* release BTON reset */
 	osif_delay(5);
-	set_reg_value(0x4100C214, BIT2, 0);             //disable clk_osc4m_wlbt
+	set_reg_value(0x4100C214, BIT2, 0);             /* disable clk_osc4m_wlbt */
 	osif_delay(5);
 	if (HCI_BT_KEEP_WAKE) {
-		set_reg_value(0x4100c280, BIT14, 1);        //enable HOST_WAKE_BT No GPIO
+		set_reg_value(0x4100c280, BIT14, 1);        /* enable HOST_WAKE_BT No GPIO */
 		osif_delay(5);
-		set_reg_value(0x4100c280, BIT13, 1);        //HOST_WAKE_BT
+		set_reg_value(0x4100c280, BIT13, 1);        /* HOST_WAKE_BT */
 		osif_delay(5);
 	}
 }
 
 void bt_power_off(void)
 {
-	set_reg_value(0x4100C208, BIT1, 0);             //BTON reset
+	set_reg_value(0x4100C208, BIT1, 0);             /* BTON reset */
 	osif_delay(5);
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX)))
 #endif
 	{
-		set_reg_value(0x4100C480, BIT5 | BIT6, 0);  //disable RFAFE (if WIFI active, keep 2'b11)
+		set_reg_value(0x4100C480, BIT5 | BIT6, 0);  /* disable RFAFE (if WIFI active, keep 2'b11) */
 		osif_delay(5);
-		set_reg_value(0x4100C208, BIT2, 0);         //disable WL RFAFE control circuit (if WIFI active, keep 1'b1)
+		set_reg_value(0x4100C208, BIT2, 0);         /* disable WL RFAFE control circuit (if WIFI active, keep 1'b1) */
 		osif_delay(5);
 	}
-	set_reg_value(0x4100C200, BIT17, 1);            //enable ISO of BT
+	set_reg_value(0x4100C200, BIT17, 1);            /* enable ISO of BT */
 	osif_delay(5);
-	set_reg_value(0x4100C200, BIT1, 0);             //disable BT Power Cut
+	set_reg_value(0x4100C200, BIT1, 0);             /* disable BT Power Cut */
 	osif_delay(5);
 }
 
@@ -471,13 +470,13 @@ void hci_platform_debug_enable(void)
 	uint32_t data;
 
 	/* keep bt wakeup from dlps/lps */
-	set_reg_value(0x4100C280, BIT14, 1);        //enable HOST_WAKE_BT No GPIO
+	set_reg_value(0x4100C280, BIT14, 1);        /* enable HOST_WAKE_BT No GPIO */
 	osif_delay(5);
-	set_reg_value(0x4100C280, BIT13, 1);        //HOST_WAKE_BT
+	set_reg_value(0x4100C280, BIT13, 1);        /* HOST_WAKE_BT */
 	osif_delay(5);
 	while (1) {
 		osif_delay(100);
-		data = HAL_READ32(0x4100C284, 0) & 0x1F; // 0x4100C284 [0:4]
+		data = HAL_READ32(0x4100C284, 0) & 0x1F; /* 0x4100C284 [0:4] */
 		if (data == 4) {
 			/* bt active */
 			BT_LOGD("bt active\r\n");
@@ -488,23 +487,23 @@ void hci_platform_debug_enable(void)
 	}
 	BT_LOGD("BT wakeup from sleep\r\n");
 
-	set_reg_value(0x4100C9F4, BIT0, 0);                                     //swd close
+	set_reg_value(0x4100C9F4, BIT0, 0);                                     /* swd close */
 	osif_delay(5);
-	set_reg_value(0x4100C880, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x3F);     //Uart tx GPIOD_9 PA30
+	set_reg_value(0x4100C880, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x3F);     /* Uart tx GPIOD_9 PA30 */
 	osif_delay(5);
-	set_reg_value(0x4100C280, BIT19, 1);                                    //pinmux
+	set_reg_value(0x4100C280, BIT19, 1);                                    /* pinmux */
 	osif_delay(5);
-	set_reg_value(0x4100C878, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0xD);      //Uart Rx GPIOD_7 PB0
+	set_reg_value(0x4100C878, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0xD);      /* Uart Rx GPIOD_7 PB0 */
 	osif_delay(5);
-	set_reg_value(0x4100C280, BIT19, 1);                                    //pinmux
+	set_reg_value(0x4100C280, BIT19, 1);                                    /* pinmux */
 	osif_delay(5);
-	set_reg_value(0x4100C87C, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0xD);      //Uart CTS GPIOD_8 PA31 Keep Low connected to GND
+	set_reg_value(0x4100C87C, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0xD);      /* Uart CTS GPIOD_8 PA31 Keep Low connected to GND */
 	osif_delay(5);
-	set_reg_value(0x4100C280, BIT19, 1);                                    //pinmux
+	set_reg_value(0x4100C280, BIT19, 1);                                    /* pinmux */
 	osif_delay(5);
-	set_reg_value(0x4100C884, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x40);     //Uart RTS GPIOD_10 PB1
+	set_reg_value(0x4100C884, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x40);     /* Uart RTS GPIOD_10 PB1 */
 	osif_delay(5);
-	set_reg_value(0x4100C280, BIT19, 1);                                    //pinmux
+	set_reg_value(0x4100C280, BIT19, 1);                                    /* pinmux */
 	osif_delay(5);
 }
 
@@ -673,13 +672,13 @@ static void hci_platform_bt_gpio_pad(uint8_t bt_gpio, char *pad)
 
 static void hci_platform_debug_port_pre_enable(uint8_t bt_sel)
 {
-	set_reg_value(0x4100C9F4, BIT0, 0);                // pad reg 0x4100C9F4[0]=0, SWD pinmux disable
+	set_reg_value(0x4100C9F4, BIT0, 0);                /* pad reg 0x4100C9F4[0]=0, SWD pinmux disable */
 	osif_delay(5);
-	set_reg_value(0x4100C9E4, BIT31, 1);               // 0x4100C9E4[31]=1, debug port enable
+	set_reg_value(0x4100C9E4, BIT31, 1);               /* 0x4100C9E4[31]=1, debug port enable */
 	osif_delay(5);
-	if (bt_sel == DBG_BT_VENDOR) {                     // 0x4100C9E4[7:0]=0x3E, debug port sel, BT TOP for debug port
+	if (bt_sel == DBG_BT_VENDOR) {                     /* 0x4100C9E4[7:0]=0x3E, debug port sel, BT TOP for debug port */
 		set_reg_value(0x4100C9E4, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x3E);
-	} else if (bt_sel == DBG_BT_ON) {                  // 0x4100C9E4[7:0]=0x3F, debug port sel, BT TOP for debug port & PMC
+	} else if (bt_sel == DBG_BT_ON) {                  /* 0x4100C9E4[7:0]=0x3F, debug port sel, BT TOP for debug port & PMC */
 		set_reg_value(0x4100C9E4, BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7, 0x3F);
 	}
 	osif_delay(5);
@@ -691,7 +690,7 @@ void hci_platform_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_dbg_mask)
 	uint32_t mask = bt_dbg_mask;
 
 	hci_platform_debug_port_pre_enable(bt_sel);
-	for (i = 0; i < 32 && mask != 0; i++) {            // pinmux, to PINMUX_FUNCTION_DBGPORT
+	for (i = 0; i < 32 && mask != 0; i++) {            /* pinmux, to PINMUX_FUNCTION_DBGPORT */
 		if ((mask & ((uint32_t)0x1)) == 1) {
 			hci_platform_bt_debug_bit(i, NULL);
 			osif_delay(5);
@@ -703,21 +702,21 @@ void hci_platform_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_dbg_mask)
 void hci_platform_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad)
 {
 	hci_platform_debug_port_pre_enable(bt_sel);
-	hci_platform_bt_debug_bit(bt_dbg_port, pad);       // pinmux, to PINMUX_FUNCTION_DBGPORT
+	hci_platform_bt_debug_bit(bt_dbg_port, pad);       /* pinmux, to PINMUX_FUNCTION_DBGPORT */
 	osif_delay(5);
 }
 
 void hci_platform_debug_port_shift(uint8_t original, uint8_t mapping)
 {
-	// shift from original to mapping
+	/* shift from original to mapping */
 	hci_platform_bt_debug_shift_bit(original, mapping);
 	osif_delay(5);
 }
 
 void hci_platform_gpio_enable(uint8_t bt_gpio, char *pad)
 {
-	set_reg_value(0x4100C9F4, BIT0, 0);               // pad reg 0x4100C9F4[0]=0, SWD pinmux disable
+	set_reg_value(0x4100C9F4, BIT0, 0);               /* pad reg 0x4100C9F4[0]=0, SWD pinmux disable */
 	osif_delay(5);
-	hci_platform_bt_gpio_pad(bt_gpio, pad);           // pinmux, to PINMUX_FUNCTION_BT_GPIO
+	hci_platform_bt_gpio_pad(bt_gpio, pad);           /* pinmux, to PINMUX_FUNCTION_BT_GPIO */
 	osif_delay(5);
 }

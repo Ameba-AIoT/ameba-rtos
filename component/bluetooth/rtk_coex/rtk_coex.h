@@ -56,13 +56,13 @@
 #define BT_OGF_LE                               0x08
 #define BT_OGF_VS                               0x3f
 
-//BT_OGF_BASEBAND
+/* BT_OGF_BASEBAND */
 #define HCI_CMD_BR_WR_SCAN_ENABLE               0x1A
 #define HCI_CMD_BR_WR_PAGE_SCAN_ACTIVITY        0x1C
 #define HCI_CMD_BR_WR_INQ_SCAN_ACTIVITY         0x1E
 
 
-//BT_OGF_LE
+/* BT_OGF_LE */
 #define HCI_CMD_LE_SET_ADV_PARAM                0x06
 #define HCI_CMD_LE_SET_ADV_ENABLE               0x0A
 #define HCI_CMD_LE_SET_SCAN_PARAM               0x0B
@@ -182,19 +182,19 @@ enum rtk_coex_mailbox_cmd {
 	RTK_COEX_MAILBOX_BT_SLOT_CTRL                       = 0x48
 };
 
-typedef struct {
+struct rtk_bt_coex_profile_info_t {
 	struct list_head list;
 	uint16_t psm;
 	uint16_t dcid;
 	uint16_t scid;
 	uint16_t idx;
 	uint8_t  flags;
-} rtk_bt_coex_profile_info_t;
+};
 
-typedef struct {
+struct rtk_bt_coex_conn_t {
 	struct list_head list;
 	uint16_t conn_handle;
-	uint8_t type;       // __hci_conn_type：0:l2cap, 1:sco/esco, 2:le
+	uint8_t type;       /* __hci_conn_type：0:l2cap, 1:sco/esco, 2:le */
 	uint16_t profile_bitmap;
 	uint16_t profile_status_bitmap;
 	uint8_t  profile_refcount[PROFILE_MAX];
@@ -203,23 +203,23 @@ typedef struct {
 	uint32_t a2dp_pre_cnt;
 	uint32_t pan_cnt;
 	uint32_t pan_pre_cnt;
-} rtk_bt_coex_conn_t;
+};
 
-typedef struct {
+struct rtk_bt_coex_monitor_node_t {
 	struct list_head list;
-	rtk_bt_coex_conn_t *p_conn;
+	struct rtk_bt_coex_conn_t *p_conn;
 	uint16_t profile_idx;
 	uint8_t b_first_add;
-} rtk_bt_coex_monitor_node_t;
+};
 
-typedef struct {
+struct rtk_bt_coex_priv_t {
 	struct list_head conn_list;
 	struct list_head monitor_list;
 	void *monitor_mutex;
 	void *monitor_timer;
-} rtk_bt_coex_priv_t;
+};
 
-//little endian
+/* little endian */
 struct sbc_frame_hdr {
 	uint8_t syncword: 8;        /* Sync word */
 	uint8_t subbands: 1;        /* Subbands, 0:4;1:8 */

@@ -36,6 +36,7 @@ int32_t  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t
 int64_t ameba_audio_stream_rx_get_trigger_time(Stream *stream);
 void ameba_audio_stream_rx_mask_gdma_irq(Stream *stream);
 void ameba_audio_stream_rx_unmask_gdma_irq(Stream *stream);
+uint32_t ameba_audio_stream_rx_complete(void *data);
 
 #ifdef __cplusplus
 }

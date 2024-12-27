@@ -445,17 +445,16 @@ u32 llhw_wifi_update_ip_addr(void)
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	u32 param_buf[1] = {0};
 	u32 try_cnt = 5000;//wait 10ms
-	static u8 *ip_addr = NULL;
-	static dma_addr_t ip_addr_phy = 0;
+	u8 *ip_addr = NULL;
+	dma_addr_t ip_addr_phy = 0;
 
-	if (ip_addr == NULL) {
-		ip_addr = dmam_alloc_coherent(global_idev.fullmac_dev, sizeof(u32), &ip_addr_phy, GFP_KERNEL);
-		if (!ip_addr) {
-			dev_err(global_idev.fullmac_dev, "%s: allloc ip_addr error.\n", __func__);
-			return -ENOMEM;
-		}
-		memcpy(ip_addr, global_idev.ip_addr, 4);
+	ip_addr = dmam_alloc_coherent(global_idev.fullmac_dev, sizeof(u32), &ip_addr_phy, GFP_KERNEL);
+	if (!ip_addr) {
+		dev_err(global_idev.fullmac_dev, "%s: allloc ip_addr error.\n", __func__);
+		return -ENOMEM;
 	}
+	memcpy(ip_addr, global_idev.ip_addr, 4);
+
 	dev_dbg(global_idev.fullmac_dev, "%s ip=[%d.%d.%d.%d]\n", __func__, ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]);
 
 	param_buf[0] = (u32)ip_addr_phy;

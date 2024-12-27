@@ -287,6 +287,19 @@ int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic);
 int wifi_get_txbuf_pkt_num(void);
 
 /**
+ * @brief  config mode of HW indicating packets(mgnt and data)
+ * 	and SW reporting packets to wifi_indication().
+ * @param[in]  enable
+ * 	0) WIFI_INDICATE_DISABLE: disable mode(default), HW only
+ * 	   indicate bssid-matched pkts and SW don't report.
+ * 	1) WIFI_INDICATE_NORMAL: HW only indicate bssid-matched
+ * 	   pkts and SW report.
+ * 	2) WIFI_INDICATE_WILD: HW indicate all pkts and SW report.
+ * @return  None
+ */
+void wifi_set_indicate_mgnt(int enable);
+
+/**
  * @brief  Get antdiv infomation.
  * @param[in]  antdiv_mode: Point to the antdiv_mode value obtained from driver,
  * @param[in]  curr_ant: Point to the antenna value obtained from driver,

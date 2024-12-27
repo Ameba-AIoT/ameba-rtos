@@ -263,10 +263,12 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
 	}
 #ifdef CONFIG_SDIO_BRIDGE
-	llhw_wifi_disconnect();
-	/* sdio device will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done */
-	global_idev.mlme_priv.b_in_disconnect = true;
-	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
+	if (llhw_wifi_is_connected_to_ap() == 0) {
+		llhw_wifi_disconnect();
+		/* sdio device will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done */
+		global_idev.mlme_priv.b_in_disconnect = true;
+		wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
+	}
 #endif
 	netif_tx_stop_all_queues(pnetdev);
 	netif_carrier_off(pnetdev);
@@ -398,9 +400,9 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	netif_carrier_off(global_idev.pndev[2]);
 	/* set nan port mac address */
 	memcpy(global_idev.pndev[2]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-	if(softap_addr_offset_idx == 0){
+	if (softap_addr_offset_idx == 0) {
 		global_idev.pndev[2]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (2 << 1);
-	}else{
+	} else {
 		global_idev.pndev[2]->dev_addr[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 2;
 	}
 

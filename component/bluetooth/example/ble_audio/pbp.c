@@ -926,7 +926,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
 		if (!ext_adv_ind->err) {
@@ -973,7 +973,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_le_audio_gap_callback(uint8_t evt_code, void *
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
@@ -1989,9 +1989,9 @@ int bt_pbp_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_lea_app_conf((void *)p_lea_app_conf, g_pbp_bsink_info.sound_channel,
 										 RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR,
 										 RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK | RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE,
-										 app_pbp_bsink_pac_sink_codec,
-										 app_pbp_bsink_pac_sink_codec_len,
-										 NULL, 0,
+										 NULL,
+										 0,
+										 app_pbp_bsink_pac_sink_codec, app_pbp_bsink_pac_sink_codec_len,
 										 &cap_param_t);
 
 			p_pbp_bsink_info->config_sink_audio_location = p_lea_app_conf->pacs_param.sink_audio_location;

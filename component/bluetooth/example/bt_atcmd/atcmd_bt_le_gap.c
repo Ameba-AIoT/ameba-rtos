@@ -26,7 +26,7 @@ static uint8_t def_adv_data[] = {
 	'R', 'T', 'K', '_', 'B', 'T', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',
 };
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static uint8_t def_ext_adv_data[] = {
 	// Flags
 	0x02,
@@ -156,7 +156,7 @@ static rtk_bt_le_adv_param_t def_adv_param = {
 	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static rtk_bt_le_ext_adv_param_t def_ext_adv_param = {
 	.adv_event_prop = RTK_BT_LE_EXT_ADV_EXTENDED_ADV_CONN_UNDIRECTED,
 	.primary_adv_interval_min = 320,
@@ -181,7 +181,7 @@ static rtk_bt_le_scan_param_t def_scan_param = {
 	.duplicate_opt = 1,
 };
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static rtk_bt_le_ext_scan_param_t def_ext_scan_param = {
 	.own_addr_type      = RTK_BT_LE_ADDR_TYPE_PUBLIC,
 	.phys               = {true, true},
@@ -212,7 +212,7 @@ static rtk_bt_le_create_conn_param_t def_conn_param = {
 	.scan_timeout      = 1000,
 };
 
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static rtk_bt_le_ext_create_conn_param_t def_ext_conn_param = {
 	.filter_policy = RTK_BT_LE_CONN_FILTER_WITHOUT_WHITELIST,
 	.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
@@ -530,7 +530,7 @@ static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 	return 0;
 }
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 {
 	uint16_t ret = 0;
@@ -1097,7 +1097,7 @@ static int atcmd_ble_gap_op_scan(int argc, char **argv)
 	return 0;
 }
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static int atcmd_ble_gap_ext_scan_set_param(int argc, char **argv)
 {
 	uint16_t ret = 0;
@@ -1238,7 +1238,7 @@ static int atcmd_ble_gap_connect_cancel(int argc, char **argv)
 	return 0;
 }
 
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static int atcmd_ble_gap_ext_connect(int argc, char **argv)
 {
 	char addr_str[30] = {0};
@@ -2401,17 +2401,13 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"read_local_rpa", atcmd_ble_gap_read_local_rpa,   1, 3},
 	{"read_peer_rpa",  atcmd_ble_gap_read_peer_rpa,    3, 3},
 #endif
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	{"eadv_data",    atcmd_ble_gap_set_ext_adv_data,   1, 3},
 	{"escan_rsp",    atcmd_ble_gap_set_ext_scan_resp,  1, 3},
 	{"eadv",         atcmd_ble_gap_op_ext_adv,         2, 13},
 	{"eadv_hdl_by_conn", atcmd_ble_gap_get_ext_adv_handle_by_conn_handle, 2, 2},
-#endif
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
 	{"escan_param",  atcmd_ble_gap_ext_scan_set_param, 1, 13},
 	{"escan",        atcmd_ble_gap_op_ext_scan,        2, 2},
-#endif
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 	{"econn",        atcmd_ble_gap_ext_connect,        4, 12},
 #endif
 #if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT

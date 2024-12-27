@@ -25,6 +25,9 @@
 #include <firmware_update.h>
 #include <firmware_distribution.h>
 
+#define BLOB_SERVER_SUPPORT_MAX_BLOB_TRANSFER_SIZE  1500000  // The max image size of target role or distributor role
+#define DISTRIBUTION_SERVER_SUPPORT_MAX_FW_IMAGE_LIST_SIZE  5  // The max image list size for distributor role, means the distributor can save the number of images
+
 #if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE || \
     defined(BT_MESH_ENABLE_DFU_TARGET_ROLE) && BT_MESH_ENABLE_DFU_TARGET_ROLE
 // The default max_blob_size capability in mesh stack is not big for ameba ic
@@ -33,7 +36,7 @@ static void rtk_stack_blob_transfer_server_set_capability(void)
 {
 	blob_server_capabilities_t cap = {0};
 	cap = blob_transfer_server_caps_get();
-	cap.max_blob_size = 1500000;  // means the max image size
+	cap.max_blob_size = BLOB_SERVER_SUPPORT_MAX_BLOB_TRANSFER_SIZE;  // means the max image size
 	blob_transfer_server_caps_set(&cap);
 }
 #endif
@@ -594,9 +597,10 @@ bool rtk_stack_dfu_distributor_init(void)
 	rtk_stack_blob_transfer_server_set_capability();
 
 	// Set distributor server capability, the defualt value of stack is not enough
-	uint32_t image_size = 1500000;
+	uint32_t image_size = BLOB_SERVER_SUPPORT_MAX_BLOB_TRANSFER_SIZE;
 	fw_dist_caps_t dist_cap;
 	dist_cap = fw_dist_server_caps_get();
+	dist_cap.max_fw_images_list_size = DISTRIBUTION_SERVER_SUPPORT_MAX_FW_IMAGE_LIST_SIZE;
 	dist_cap.max_fw_image_size = image_size;
 	dist_cap.max_upload_space = image_size;
 	dist_cap.remaining_upload_space = image_size;

@@ -674,10 +674,6 @@ uint32_t ameba_audio_stream_rx_complete(void *data)
 			return 0;
 		}
 
-		if (cstream->stream.restart_by_user == true) {
-			return 0;
-		}
-
 		if (ameba_audio_stream_buffer_get_available_size(cstream->stream.rbuffer) == 0) {
 			HAL_AUDIO_IRQ_INFO("buffer full, overrun");
 			cstream->stream.restart_by_user = true;
@@ -709,10 +705,6 @@ uint32_t ameba_audio_stream_rx_complete(void *data)
 
 		if (cstream->stream.extra_sem_gdma_end_need_post) {
 			rtos_sema_give(cstream->stream.extra_sem_gdma_end);
-			return 0;
-		}
-
-		if (cstream->stream.extra_restart_by_user == true) {
 			return 0;
 		}
 
@@ -840,12 +832,11 @@ static void ameba_audio_stream_rx_check_and_start_gdma(CaptureStream *cstream)
 		if (ameba_audio_stream_buffer_get_available_size(cstream->stream.rbuffer) >= bytes) {
 			GDMA_InitTypeDef sp_rxgdma_initstruct = cstream->stream.gdma_struct->u.SpRxGdmaInitStruct;
 			rx_addr = (uint32_t)(cstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_rx_writeptr(cstream->stream.rbuffer));
-
+			cstream->stream.restart_by_user = false;
 			AUDIO_SP_RXGDMA_Restart(sp_rxgdma_initstruct.GDMA_Index, sp_rxgdma_initstruct.GDMA_ChNum, rx_addr, bytes);
 			AUDIO_SP_SetRXCounter(cstream->stream.sport_dev_num, ENABLE);
 			AUDIO_SP_SetPhaseLatch(cstream->stream.sport_dev_num);
 			cstream->stream.gdma_cnt++;
-			cstream->stream.restart_by_user = false;
 		}
 	}
 
@@ -856,12 +847,11 @@ static void ameba_audio_stream_rx_check_and_start_gdma(CaptureStream *cstream)
 		if (ameba_audio_stream_buffer_get_available_size(cstream->stream.extra_rbuffer) >= extra_bytes) {
 			GDMA_InitTypeDef extra_sp_rxgdma_initstruct = cstream->stream.extra_gdma_struct->u.SpRxGdmaInitStruct;
 			extra_rx_addr = (uint32_t)(cstream->stream.extra_rbuffer->raw_data + ameba_audio_stream_buffer_get_rx_writeptr(cstream->stream.extra_rbuffer));
-
+			cstream->stream.extra_restart_by_user = false;
 			AUDIO_SP_RXGDMA_Restart(extra_sp_rxgdma_initstruct.GDMA_Index, extra_sp_rxgdma_initstruct.GDMA_ChNum, extra_rx_addr, extra_bytes);
 			AUDIO_SP_SetRXCounter(cstream->stream.sport_dev_num, ENABLE);
 			AUDIO_SP_SetPhaseLatch(cstream->stream.sport_dev_num);
 			cstream->stream.extra_gdma_cnt++;
-			cstream->stream.extra_restart_by_user = false;
 		}
 	}
 }
