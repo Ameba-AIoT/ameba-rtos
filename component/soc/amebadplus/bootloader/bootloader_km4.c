@@ -81,6 +81,10 @@ void BOOT_RccConfig(void)
 	TempVal |= APBPeriph_DMAC_CLOCK;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP0, TempVal);
 
+	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL);
+	TempVal |= LSYS_OTHERCPU_RST_EN(1) | LSYS_PERIALL_RST_EN(1);
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL, TempVal);
+
 	for (idx = 0; ; idx++) {
 		/*  Check if search to end */
 		if (RCC_Config[idx].func == 0xFFFFFFFF) {

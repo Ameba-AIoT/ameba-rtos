@@ -160,7 +160,7 @@ static bool bt_stack_framework_init(void)
 #endif
 
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && \
+#if (defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && \
     (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT) && \
     (defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV)
 	param.ble_ext_adv.enable = true;
@@ -297,9 +297,6 @@ static uint16_t bt_stack_init(void *app_config)
 	//BT Stack init
 	b_bte_init_ret = bte_init();
 	if (false == b_bte_init_ret) {
-		/* fix upperstack memory leak when bte_init fail.
-		 * fix bte_init() not call hci_if_open after first bte_init() fail. */
-		bte_deinit_free();
 		goto failed;
 	}
 

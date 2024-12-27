@@ -240,6 +240,8 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 	}
 
 	DCache_Invalidate(SPI_FLASH_BASE + address, len);
+	/* Clean MMU cache */
+	RSIP_MMU_Cache_Clean();
 	FLASH_Write_Unlock();
 
 exit:

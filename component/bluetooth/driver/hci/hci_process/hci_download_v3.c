@@ -35,7 +35,7 @@ typedef enum {
 	OPCODE_PATCH_IMAGE = 0x01,
 } SECTION_OPCODE;
 
-typedef struct {
+struct SECTION_NODE {
 	struct list_head list;
 	bool new_section_check;
 	uint8_t priority;
@@ -47,9 +47,9 @@ typedef struct {
 	uint32_t image_len;
 	uint8_t *image_payload;
 	uint32_t sent_image_len;
-} SECTION_NODE;
+};
 
-typedef struct {
+struct PATCH_INFO {
 	uint32_t fw_len;
 	uint32_t sent_fw_len;
 	uint8_t section_cnt;
@@ -58,11 +58,11 @@ typedef struct {
 	uint16_t sent_config_len;
 	uint8_t *patch_buf;
 	uint32_t patch_len;
-	SECTION_NODE head_node;
-	SECTION_NODE *security_node;
-} PATCH_INFO;
+	struct SECTION_NODE head_node;
+	struct SECTION_NODE *security_node;
+};
 
-static PATCH_INFO *patch_info = NULL;
+static struct PATCH_INFO *patch_info = NULL;
 static uint8_t patch_key_id = 0;
 
 static uint8_t hci_vendor_read(uint32_t addr, uint32_t *value)
@@ -126,17 +126,17 @@ static uint8_t hci_vendor_write(uint32_t addr, uint32_t value)
 	return HCI_SUCCESS;
 }
 
-static void _insert_patch_queue(struct list_head *head, SECTION_NODE *p_node)
+static void _insert_patch_queue(struct list_head *head, struct SECTION_NODE *p_node)
 {
 	struct list_head *pos, *next;
-	SECTION_NODE *node;
+	struct SECTION_NODE *node;
 
 	if (!head || !p_node) {
 		return;
 	}
 
 	list_for_each_safe(pos, next, head) {
-		node = list_entry(pos, SECTION_NODE, list);
+		node = list_entry(pos, struct SECTION_NODE, list);
 		if (node->priority >= p_node->priority) {
 			break;
 		}
@@ -145,7 +145,7 @@ static void _insert_patch_queue(struct list_head *head, SECTION_NODE *p_node)
 	__list_add(&p_node->list, pos->prev, pos);
 }
 
-static void _select_security_section_node(SECTION_NODE **dest_node, SECTION_NODE *p_node)
+static void _select_security_section_node(struct SECTION_NODE **dest_node, struct SECTION_NODE *p_node)
 {
 	if (!p_node) {
 		return;
@@ -161,8 +161,8 @@ static void _select_security_section_node(SECTION_NODE **dest_node, SECTION_NODE
 
 static uint32_t _parse_patch_image(uint8_t *p_payload)
 {
-	PATCH_INFO *info = patch_info;
-	SECTION_NODE *node;
+	struct PATCH_INFO *info = patch_info;
+	struct SECTION_NODE *node;
 	uint8_t *position;
 	uint16_t chip_id;
 	uint8_t ic_cut, key_id, ota_en;
@@ -193,12 +193,12 @@ static uint32_t _parse_patch_image(uint8_t *p_payload)
 		return 0;
 	}
 
-	node = (SECTION_NODE *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(SECTION_NODE));
+	node = (struct SECTION_NODE *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct SECTION_NODE));
 	if (node == NULL) {
 		BT_LOGE("Section node allocate fail!\r\n");
 		return 0;
 	}
-	memset(node, 0, sizeof(SECTION_NODE));
+	memset(node, 0, sizeof(struct SECTION_NODE));
 	info->section_cnt++;
 
 	node->image_len = (uint32_t)(temp_image_len);
@@ -266,7 +266,7 @@ static uint32_t _parse_sections(uint8_t *p_buf)
 
 static uint8_t _get_patch_info(uint8_t *p_patch, uint32_t patch_len)
 {
-	PATCH_INFO *info = patch_info;
+	struct PATCH_INFO *info = patch_info;
 	uint32_t version_date, version_time, reserved;
 	uint32_t fw_len;
 	uint8_t sig_len = 8;
@@ -296,12 +296,12 @@ static uint8_t hci_patch_download_init_parse(uint8_t *p_patch, uint32_t patch_le
 {
 	uint8_t ret;
 
-	patch_info = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(PATCH_INFO));
+	patch_info = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct PATCH_INFO));
 	if (!patch_info) {
 		return HCI_FAIL;
 	}
 
-	memset(patch_info, 0, sizeof(PATCH_INFO));
+	memset(patch_info, 0, sizeof(struct PATCH_INFO));
 	INIT_LIST_HEAD(&patch_info->head_node.list);
 
 	/* Parse patch and get info */
@@ -316,10 +316,10 @@ static uint8_t hci_patch_download_init_parse(uint8_t *p_patch, uint32_t patch_le
 static void hci_patch_download_done(void)
 {
 	struct list_head *pos, *next;
-	SECTION_NODE *node;
+	struct SECTION_NODE *node;
 
 	list_for_each_safe(pos, next, &patch_info->head_node.list) {
-		node = list_entry(pos, SECTION_NODE, list);
+		node = list_entry(pos, struct SECTION_NODE, list);
 		list_del_init(pos);
 		osif_mem_free(node);
 	}
@@ -332,15 +332,15 @@ static void hci_patch_download_done(void)
 
 static uint8_t hci_patch_get_cmd_buf(uint32_t (*reg_arr)[2], bool *new_section, uint8_t *cmd_buf)
 {
-	PATCH_INFO *info = patch_info;
-	SECTION_NODE *node;
+	struct PATCH_INFO *info = patch_info;
+	struct SECTION_NODE *node;
 	struct list_head *pos, *next;
 	uint8_t *data_buf = &cmd_buf[2];  /* cmd_buf[0]: len, cmd_buf[1]: index */
 	uint8_t remain_len, sending_len;
 
 	/* Send each section image frag */
 	list_for_each_safe(pos, next, &info->head_node.list) {
-		node = list_entry(pos, SECTION_NODE, list);
+		node = list_entry(pos, struct SECTION_NODE, list);
 		if (node->new_section_check == false) {
 			for (uint8_t i = 0; i < INFO_REG_NUM; i++) {
 				reg_arr[i][REG_ADDR] = node->reg_addr[i];
@@ -409,7 +409,7 @@ static uint8_t hci_patch_get_cmd_buf(uint32_t (*reg_arr)[2], bool *new_section, 
 
 static bool hci_patch_found_security_section(uint32_t *reg_addr, uint32_t *reg_value)
 {
-	SECTION_NODE *node = patch_info->security_node;
+	struct SECTION_NODE *node = patch_info->security_node;
 
 	if (node == NULL) {
 		return false;

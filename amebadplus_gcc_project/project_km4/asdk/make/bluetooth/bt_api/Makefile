@@ -49,6 +49,24 @@ CSRC += \
 	$(BT_API_DIR)/zephyr_stack/zephyr_stack_le_gap.c \
 	$(BT_API_DIR)/zephyr_stack/zephyr_stack_gattc.c \
 	$(BT_API_DIR)/zephyr_stack/zephyr_stack_gatts.c
+ifeq ($(findstring y, $(CONFIG_BT_MESH_PROVISIONER_SUPPORT) $(CONFIG_BT_MESH_DEVICE_SUPPORT)), y)
+CSRC += \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_common.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_configuration_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_datatrans_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_generic_onoff_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_light_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_scene_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_models_handler.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_sensor_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_time_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_scheduler_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_generic_default_transition_time.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_generic_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_health_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_remote_provision_model.c \
+	${BT_API_DIR}/zephyr_stack/zephyr_stack_mesh_private_beacon_model.c
+endif
 else
 CSRC += \
 	$(BT_API_DIR)/rtk_stack/rtk_stack_api.c \

@@ -382,12 +382,12 @@ uint8_t hci_dtm_vendor_k_power_setting(uint8_t sub_index, uint32_t value, uint8_
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 	buf[3] = sub_index;
-	if (sub_index == 0x00) {         // get TX power
+	if (sub_index == 0x00) {         /* get TX power */
 		buf[2] = (uint8_t)(1);
-	} else if (sub_index == 0x01) {  // set TX Gain K
+	} else if (sub_index == 0x01) {  /* set TX Gain K */
 		buf[2] = (uint8_t)(2);
 		buf[4] = (uint8_t)(value & 0xFF);
-	} else if (sub_index == 0x02) {  // set TX Flatness K
+	} else if (sub_index == 0x02) {  /* set TX Flatness K */
 		buf[2] = (uint8_t)(5);
 		buf[4] = (uint8_t)(value >> 0);
 		buf[5] = (uint8_t)(value >> 8);
@@ -455,10 +455,10 @@ uint8_t hci_dtm_vendor_enable_tx_power_tracking(uint8_t is_get_or_set, uint8_t i
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 	buf[3] = is_get_or_set;
-	if (is_get_or_set == 0x00) {         // set TX power tracking
+	if (is_get_or_set == 0x00) {         /* set TX power tracking */
 		buf[2] = (uint8_t)(2);
 		buf[4] = is_set_enable;
-	} else if (is_get_or_set == 0x01) {  // get TX power tracking
+	} else if (is_get_or_set == 0x01) {  /* get TX power tracking */
 		buf[2] = (uint8_t)(1);
 	}
 

@@ -26,7 +26,7 @@
 
 static char s_dev_name[TRANSFER_MODULE_DEV_NAME_MAX_LEN] = RTK_BT_DEFAULT_DEV_NAME;
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static uint8_t ext_adv_data[] = {
 	// Flags
 	0x02,
@@ -200,7 +200,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
 		if (!ext_adv_ind->err) {
@@ -247,7 +247,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
@@ -307,7 +307,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 
 		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
 			/* gap action */
-#if !defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT
+#if !defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV
 			rtk_bt_le_gap_dev_state_t dev_state;
 			rtk_bt_le_adv_param_t adv_param = {0};
 			if (rtk_bt_le_gap_get_dev_state(&dev_state) == RTK_BT_OK &&
@@ -340,7 +340,7 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 						, adv_param.type,  adv_param.own_addr_type, adv_param.filter_policy);
 				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 			}
-#endif /* RTK_BLE_5_0_AE_ADV_SUPPORT */
+#endif /* RTK_BLE_5_0_USE_EXTENDED_ADV */
 			/* gatts action */
 			if (RTK_BT_OK == ble_transfer_module_server_disconnect(disconn_ind->conn_handle)) {
 				BT_LOGA("[APP] Transfer module server disconnect success, conn_handle: %d\r\n",
@@ -581,7 +581,7 @@ int ble_transfer_module_main(uint8_t enable)
 	char addr_str[30] = {0};
 	int ret = 0;
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	uint8_t adv_handle;
 #else
 	rtk_bt_le_adv_param_t adv_param = {0};
@@ -621,19 +621,19 @@ int ble_transfer_module_main(uint8_t enable)
 
 		BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 
-#if !defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT
+#if !defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV
 		memcpy(&adv_param, &def_adv_param, sizeof(rtk_bt_le_adv_param_t));
 #endif
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 		if (privacy_enable) {
 			BT_APP_PROCESS(rtk_bt_le_gap_privacy_init(privacy_whitelist));
-#if !defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT
+#if !defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV
 			/* If privacy on, default use RPA adv, even not bonded */
 			adv_param.own_addr_type = 2;
 #endif
 			BT_APP_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
 			if (bond_size != 0) {
-#if (defined(PRIVACY_USE_DIR_ADV_WHEN_BONDED) && PRIVACY_USE_DIR_ADV_WHEN_BONDED) && (!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT)
+#if (defined(PRIVACY_USE_DIR_ADV_WHEN_BONDED) && PRIVACY_USE_DIR_ADV_WHEN_BONDED) && (!defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV)
 				rtk_bt_le_bond_info_t bond_info = {0};
 				uint8_t bond_num = 1;
 				rtk_bt_le_sm_get_bond_info(&bond_info, &bond_num);
@@ -659,7 +659,7 @@ int ble_transfer_module_main(uint8_t enable)
 													ble_transfer_module_gattc_app_callback));
 		BT_APP_PROCESS(ble_transfer_module_client_add());
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 		if (adv_filter_whitelist) {
 			ext_adv_param.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
 		}

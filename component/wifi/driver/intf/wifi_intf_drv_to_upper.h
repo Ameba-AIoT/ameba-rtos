@@ -37,6 +37,13 @@ extern "C" {
 #define		_48M_RATE_		10
 #define		_54M_RATE_		11
 
+enum WIFI_INDICATE_MODE {
+	WIFI_INDICATE_DISABLE = 0,
+	WIFI_INDICATE_NORMAL = 1,
+	WIFI_INDICATE_WILD = 2,
+	WIFI_INDICATE_MAX,
+};
+
 //----- ------------------------------------------------------------------
 // Wlan Interface opened for upper layer
 //----- ------------------------------------------------------------------

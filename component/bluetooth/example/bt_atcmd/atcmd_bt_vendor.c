@@ -176,7 +176,7 @@ int atcmd_bt_debug_port(int argc, char *argv[])
 	char *pad = NULL;
 
 	if (argc < 3 && argc > 5) {
-		BT_LOGE("Set bt debug port fail, wrong parameter number!");
+		BT_LOGE("Set bt debug port fail, wrong parameter number!\r\n");
 		return 0;
 	}
 
@@ -189,13 +189,13 @@ int atcmd_bt_debug_port(int argc, char *argv[])
 
 		type = (uint8_t)str_to_int(argv[2]);
 		if (type > 1) {
-			BT_LOGE("Set bt debug port enable fail, wrong type!");
+			BT_LOGE("Set bt debug port enable fail, wrong type!\r\n");
 			return 0;
 		}
 
 		if (type == 0) {
 			if (argc != 4) {
-				BT_LOGE("Set bt debug port enable fail, wrong parameter number!");
+				BT_LOGE("Set bt debug port enable fail, wrong parameter number!\r\n");
 				return 0;
 			}
 			bt_bdg_mask = (uint32_t)str_to_int(argv[3]);
@@ -209,23 +209,23 @@ int atcmd_bt_debug_port(int argc, char *argv[])
 		}
 	} else if (strcmp("shift", argv[0]) == 0) {
 		if (argc != 3) {
-			BT_LOGE("Set bt debug port shift fail, wrong parameter number!");
+			BT_LOGE("Set bt debug port shift fail, wrong parameter number!\r\n");
 			return 0;
 		}
 
 		original = (uint8_t)str_to_int(argv[1]);
 		mapping = (uint8_t)str_to_int(argv[2]);
 		if (original > 31 || mapping > 7) {
-			BT_LOGE("Set bt debug port shift fail, wrong original or mapping!");
+			BT_LOGE("Set bt debug port shift fail, wrong original or mapping!\r\n");
 			return 0;
 		}
 		rtk_bt_debug_port_shift(original, mapping);
 	} else {
-		BT_LOGE("Set bt debug port fail, wrong parameter argv [%s]!", argv[0]);
+		BT_LOGE("Set bt debug port fail, wrong parameter argv [%s]!\r\n", argv[0]);
 		return 0;
 	}
 
-	BT_LOGE("BT debug port set OK!");
+	BT_LOGA("BT debug port set OK!\r\n");
 	return 0;
 }
 
@@ -235,7 +235,7 @@ int atcmd_bt_gpio(int argc, char *argv[])
 	char *pad = NULL;
 
 	if (argc != 1 && argc != 2) {
-		BT_LOGE("Set bt gpio fail, wrong parameter number!");
+		BT_LOGE("Set bt gpio fail, wrong parameter number!\r\n");
 		return 0;
 	}
 
@@ -245,7 +245,7 @@ int atcmd_bt_gpio(int argc, char *argv[])
 	}
 	rtk_bt_gpio_enable(bt_gpio, pad);
 
-	BT_LOGE("BT GPIO set OK!");
+	BT_LOGA("BT GPIO set OK!\r\n");
 	return 0;
 }
 

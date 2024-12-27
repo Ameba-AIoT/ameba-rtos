@@ -143,6 +143,7 @@ typedef struct {
 	uint16_t unicast_addr;
 	uint8_t net_key[16];
 	uint8_t app_key[16];
+	uint8_t dev_key[16];
 } rtk_bt_mesh_stack_act_set_prov_param_t;
 
 /**
