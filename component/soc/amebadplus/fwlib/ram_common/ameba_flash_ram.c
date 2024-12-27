@@ -213,27 +213,6 @@ void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState)
 }
 
 /**
-  * @brief  This function is used to write data to flash in OneBitMode and User Mode, and lock CPU when write.
-  * @param  StartAddr: Start address in flash from which SPIC writes.
-  * @param  DataPhaseLen: the number of bytes that SPIC sends in Data Phase.
-  * @param  pData: pointer to a byte array that is to be sent.
-  * @note
-  *		- page program(256B) time typical is 0.7ms: BaudRate=2.9Mbps, so one bit mode is enough.
-  *		- page program(12B) time typical is 20+2.5*11= 47.5us BaudRate = 2.02M bps, so program 12B once is enough.
-  *		- for compatibility with amebaz, which has 16-byte TX FIFO is 16 byte and max len is 16-cmdlen = 12 byte
-  * @retval none
-  */
-void FLASH_TxDataXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
-{
-	FLASH_Write_Lock();
-
-	FLASH_TxData(StartAddr, DataPhaseLen, pData);
-	DCache_Invalidate(SPI_FLASH_BASE + StartAddr, DataPhaseLen);
-
-	FLASH_Write_Unlock();
-}
-
-/**
   * @brief  This function is used to erase flash, and lock CPU when erase.
   * @param EraseType: can be one of the following  parameters:
   		@arg EraseChip: Erase the whole chip.
@@ -325,6 +304,8 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 	}
 
 	DCache_Invalidate(SPI_FLASH_BASE + address, len);
+	/* Clean MMU cache */
+	RSIP_MMU_Cache_Clean();
 	FLASH_Write_Unlock();
 
 exit:

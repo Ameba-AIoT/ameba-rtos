@@ -23,7 +23,7 @@
 
 #define HCI_DEFAULT_LMP_SUBVER     0x8720
 #define HCI_PATCH_PROJECT_ID       0x27
-#define HCI_PATCH_FLASH_ADDRESS    0x080F8000    //Temp value, need sync flash layout with platform owner if use this function
+#define HCI_PATCH_FLASH_ADDRESS    0x080F8000    /* Temp value, need sync flash layout with platform owner if use this function */
 
 #define HCI_BT_COEX_ENABLE         1
 #define HCI_BT_COEX_SW_MAILBOX     0

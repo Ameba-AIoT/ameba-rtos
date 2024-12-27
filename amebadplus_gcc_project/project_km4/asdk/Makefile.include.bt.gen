@@ -20,6 +20,7 @@ IFLAGS += \
 	-I$(BLEDIR)/zephyr/include \
 	-I$(BLEDIR)/zephyr/stack \
 	-I$(BLEDIR)/zephyr/stack/host \
+	-I$(BLEDIR)/zephyr/stack/mesh \
 	-I$(BLEDIR)/zephyr/settings \
 	-I$(BLEDIR)/zephyr/port
 else

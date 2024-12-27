@@ -24,10 +24,7 @@ T_GAP_CAUSE le_vendor_one_shot_adv(void)
 	uint8_t len = 1;
 	uint8_t param[1] = {1};
 
-	if (gap_vendor_cmd_req(VENDOR_CMD_ONE_SHOT_ADV_OPCODE, len, param) == GAP_CAUSE_SUCCESS) {
-		return GAP_CAUSE_SUCCESS;
-	}
-	return GAP_CAUSE_SEND_REQ_FAILED;
+	return gap_vendor_cmd_req(VENDOR_CMD_ONE_SHOT_ADV_OPCODE, len, param);
 }
 #endif
 #endif
@@ -39,11 +36,7 @@ T_GAP_CAUSE le_ae_coding_scheme(T_GAP_AE_CODING_SCHEME coding_scheme)
 	param[0] = HCI_EXT_SUB_SET_CONTROLLER_PREFERRED_TX_CI;
 	param[1] = coding_scheme;
 
-
-	if (gap_vendor_cmd_req(VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE, 2, param)) {
-		return GAP_CAUSE_SUCCESS;
-	}
-	return GAP_CAUSE_SEND_REQ_FAILED;
+	return gap_vendor_cmd_req(VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE, 2, param);
 }
 #endif
 
@@ -55,11 +48,7 @@ T_GAP_CAUSE le_vendor_ae_scheme(void)
 	param[1] = HCI_VENDOR_BT_FW_FEATURE_LEGACY_ADV_ON_CODED_PHY;
 	param[2] = 0x1;
 
-
-	if (gap_vendor_cmd_req(VENDOR_CMD_PLATFORM_EXTENSION_FEATURE_OPCODE, 3, param)) {
-		return GAP_CAUSE_SUCCESS;
-	}
-	return GAP_CAUSE_SEND_REQ_FAILED;
+	return gap_vendor_cmd_req(VENDOR_CMD_PLATFORM_EXTENSION_FEATURE_OPCODE, 3, param);
 }
 #endif
 

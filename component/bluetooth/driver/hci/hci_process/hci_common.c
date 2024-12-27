@@ -9,7 +9,7 @@
 
 static uint8_t patch_chip_id = 0;
 static bool hci_is_mp = false;
-static uint8_t default_baud[HCI_BAUDRATE_SIZE] = {0x1d, 0x70, 0x00, 0x00}; //115200
+static uint8_t default_baud[HCI_BAUDRATE_SIZE] = {0x1d, 0x70, 0x00, 0x00}; /* 115200 */
 static uint8_t work_baud[HCI_BAUDRATE_SIZE] = {0};
 
 extern const unsigned char rtlbt_fw[];
@@ -58,10 +58,10 @@ static uint8_t _get_patch_project_id(uint8_t *p_buf)
 
 uint8_t hci_patch_get_patch_version(uint8_t **pp_patch_buf, uint32_t *p_patch_len)
 {
-	const uint8_t patch_sig_v1[] = {0x52, 0x65, 0x61, 0x6C, 0x74, 0x65, 0x63, 0x68}; // V1 signature: Realtech
-	const uint8_t patch_sig_v2[] = {0x52, 0x54, 0x42, 0x54, 0x43, 0x6F, 0x72, 0x65}; // V2 signature: RTBTCore
-	const uint8_t patch_sig_v3[] = {0x42, 0x54, 0x4E, 0x49, 0x43, 0x30, 0x30, 0x33}; // V3 signature: BTNIC003
-	const uint8_t ext_section_sig[] = {0x51, 0x04, 0xFD, 0x77};                      // Extension section signature
+	const uint8_t patch_sig_v1[] = {0x52, 0x65, 0x61, 0x6C, 0x74, 0x65, 0x63, 0x68}; /* V1 signature: Realtech */
+	const uint8_t patch_sig_v2[] = {0x52, 0x54, 0x42, 0x54, 0x43, 0x6F, 0x72, 0x65}; /* V2 signature: RTBTCore */
+	const uint8_t patch_sig_v3[] = {0x42, 0x54, 0x4E, 0x49, 0x43, 0x30, 0x30, 0x33}; /* V3 signature: BTNIC003 */
+	const uint8_t ext_section_sig[] = {0x51, 0x04, 0xFD, 0x77};                      /* Extension section signature */
 	bool ext_section_check;
 	uint8_t project_id;
 	uint8_t *p_patch = NULL;
@@ -172,10 +172,10 @@ void hci_set_work_baudrate(uint8_t *baudrate)
 void hci_get_baudrate(uint8_t *baudrate, bool use_default_rate)
 {
 	if (use_default_rate) {
-		//Init baudrate
+		/* Init baudrate */
 		memcpy(baudrate, default_baud, HCI_BAUDRATE_SIZE);
 	} else {
-		//Work baudrate
+		/* Work baudrate */
 		memcpy(baudrate, work_baud, HCI_BAUDRATE_SIZE);
 	}
 }

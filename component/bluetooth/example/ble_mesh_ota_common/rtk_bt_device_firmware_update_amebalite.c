@@ -740,12 +740,28 @@ static bool dfu_fw_update_server_start(uint8_t fw_image_idx)
 	return true;
 }
 
+static void *mesh_ota_reboot_timer_handle = NULL;
+static void mesh_ota_reboot_timer_func(void *param)
+{
+	(void)param;
+	BT_LOGD("[%s] Actual start reboot.\r\n", __func__);
+	sys_reset();
+}
+
 static bool dfu_fw_update_server_apply(void)
 {
-	// Call the system reboot function
-	BT_LOGD("[%s] Start reboot for apply the new fw image\r\n", __func__);
-	osif_delay(200);
-	sys_reset();
+	uint32_t reboot_delay = 3000;
+
+	// Because mesh stack should response status message for remote device, so should returen this function firstly for release app main task
+	if (!osif_timer_create(&mesh_ota_reboot_timer_handle, "BT mesh ota reboot timer", 0, reboot_delay, false, mesh_ota_reboot_timer_func) || \
+		!osif_timer_start(&mesh_ota_reboot_timer_handle)) {
+		BT_LOGE("[%s] Create timer for reboot fail, start reboot after delay %dms.\r\n", __func__, reboot_delay);
+		osif_delay(reboot_delay);
+		sys_reset();
+	} else {
+		BT_LOGD("[%s] Create and start timer for reboot success.\r\n", __func__);
+	}
+
 	return true;
 }
 
@@ -776,8 +792,9 @@ static uint8_t *fw_update_server_save_header_info_to_ram(update_ota_target_hdr *
 	}
 
 	for (uint32_t i = 0; i < hdr_num; i++) {
-		BT_LOGD("[%s] Get ota image header info index:%d.\r\n", __func__, i);
 		memcpy(&hdr->FileImgHdr[i], p1, sizeof(update_file_img_hdr));
+		update_file_img_hdr *p_hdr = &hdr->FileImgHdr[i];
+		BT_LOGD("[%s] Index:%d, get a ota image header (checksum:0x%x, image len:0x%x, image id:%d).\r\n", __func__, i, p_hdr->Checksum, p_hdr->ImgLen, p_hdr->ImgID);
 		p1 += sizeof(update_file_img_hdr);
 		if ((uint32_t)(p1 - p) > len) {
 			BT_LOGE("[%s] Extend the max len:%d.\r\n", __func__, len);
