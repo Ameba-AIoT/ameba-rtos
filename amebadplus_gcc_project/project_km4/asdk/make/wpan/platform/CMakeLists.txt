@@ -20,18 +20,6 @@ list(
 	${FLASH}/rtk_802154_flash.c
 )
 
-if(CONFIG_802154_THREAD_CONCURRENT_EN)
-    set(COEX ${BASEDIR}/component/rtk_coex/rtk_coex_ext_chip/rtk_coex_ext_slave)
-    list(
-        APPEND MODULE_IFLAGS
-        ${COEX}/
-    )
-    list(
-        APPEND CSRC
-        ${COEX}/rtk_coex_ext_api_slave.c
-    )
-endif()
-
 ameba_internal_library(platform)
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
 target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})

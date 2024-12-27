@@ -33,7 +33,7 @@ uint8_t i2cdatadst[I2C_DATA_LENGTH];
 uint8_t i2cdatardsrc[I2C_DATA_LENGTH];
 uint8_t i2cdatarddst[I2C_DATA_LENGTH];
 I2C_InitTypeDef I2CInitData[2];
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 
 /* RESTART verification */

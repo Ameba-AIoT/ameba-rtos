@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 #include "ameba_ddrphy_scanpara.h"
 
-static const char *TAG = "DDRPHY";
+static const char *const TAG = "DDRPHY";
 #if 0
 #define SCAN_PRINT DiagPrintf
 #define BSTC_DEBUG_PRINT TRUE
@@ -788,7 +788,7 @@ static u8 DDR_PHY_Scan_param_setup_map(void)
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
 
 	while (!(LOGUART_Readable()));
-	scan_stage = LOGUART_GetChar(_FALSE) - '0';
+	scan_stage = LOGUART_GetChar(FALSE) - '0';
 
 	LOGUART_ClearRxFifo(LOGUART_DEV);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
@@ -3020,7 +3020,7 @@ static u8 DDR_PHY_Scan_param_Stage(void)
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
 
 	while (!(LOGUART_Readable()));
-	scan_stage = LOGUART_GetChar(_FALSE) - '0';
+	scan_stage = LOGUART_GetChar(FALSE) - '0';
 
 	LOGUART_ClearRxFifo(LOGUART_DEV);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);

@@ -20,7 +20,7 @@ void homepage_cb(struct httpd_conn *conn)
 
 	// test log to show extra User-Agent header field
 	if (httpd_request_get_header_field(conn, (char *)"User-Agent", &user_agent) != -1) {
-		RTK_LOGS(NOTAG, "\nUser-Agent=[%s]\n", user_agent);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nUser-Agent=[%s]\n", user_agent);
 		httpd_free(user_agent);
 	}
 
@@ -151,10 +151,10 @@ static void example_httpd_thread(void *param)
 {
 	/* To avoid gcc warnings */
 	(void) param;
-	RTK_LOGS(NOTAG, "\nExample: HTTPD\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: HTTPD\n");
 #if USE_HTTPS
 	if (httpd_setup_cert(mbedtls_test_srv_crt, mbedtls_test_srv_key, mbedtls_test_ca_crt) != 0) {
-		RTK_LOGS(NOTAG, "\nERROR: httpd_setup_cert\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nERROR: httpd_setup_cert\n");
 		goto exit;
 	}
 #endif
@@ -168,7 +168,7 @@ static void example_httpd_thread(void *param)
 #else
 	if (httpd_start(80, 5, 4096, HTTPD_THREAD_SINGLE, HTTPD_SECURE_NONE) != 0) {
 #endif
-		RTK_LOGS(NOTAG, "ERROR: httpd_start");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: httpd_start");
 		httpd_clear_page_callbacks();
 	}
 #if USE_HTTPS
@@ -180,6 +180,6 @@ exit:
 void example_httpd(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_httpd_thread"), example_httpd_thread, NULL, 2048 * 4, 1) != SUCCESS) {
-		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(example_httpd_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_httpd_thread) failed", __FUNCTION__);
 	}
 }

@@ -11,10 +11,10 @@
 #define ROMVERSION_SUB		0 /* ROM sub version */
 #define ROMINFORMATION		(ROMVERSION)
 
-#define HAL_READ32(base, addr)				rtk_le32_to_cpu(*((volatile u32*)(base + addr)))
-#define HAL_WRITE32(base, addr, value32)		((*((volatile u32*)(base + addr))) = rtk_cpu_to_le32(value32))
-#define HAL_READ16(base, addr)				rtk_le16_to_cpu(*((volatile u16*)(base + addr)))
-#define HAL_WRITE16(base, addr, value)		((*((volatile u16*)(base + addr))) = rtk_cpu_to_le16(value))
+#define HAL_READ32(base, addr)				((u32)(*((volatile u32*)(base + addr))))
+#define HAL_WRITE32(base, addr, value32)	((*((volatile u32*)(base + addr))) = ((u32)(value32)))
+#define HAL_READ16(base, addr)				((u16)(*((volatile u16*)(base + addr))))
+#define HAL_WRITE16(base, addr, value)		((*((volatile u16*)(base + addr))) = ((u16)(value)))
 #define HAL_READ8(base, addr)				(*((volatile u8*)(base + addr)))
 #define HAL_WRITE8(base, addr, value)		((*((volatile u8*)(base + addr))) = value)
 
@@ -508,6 +508,13 @@
 
 #define LS_SRAM_ADDR_START			LP_SRAM_BASE
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00020000)
+
+/*BT share mem with system*/
+#define SHARE_MEM_BT_E0_ADDRESS       			0x20080000
+#define SHARE_MEM_BT_E1_ADDRESS       			0x20090000
+/*WiFi share mem with system*/
+#define SHARE_MEM_WIFI_TXPKTBUF_ADDRESS			0x200C0000
+#define SHARE_MEM_WIFI_RXPKTBUF_ADDRESS			0x200C6000
 
 /* margin 512 for lite and 1024 for CA32 */
 #if defined(CONFIG_RSICV_CORE_KR4)

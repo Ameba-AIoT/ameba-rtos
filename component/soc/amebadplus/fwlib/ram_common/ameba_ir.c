@@ -21,7 +21,7 @@
   */
 
 /**
-  * @brief  Deinitializes the IR peripheral registers to their default values.
+  * @brief  Deinitialize the IR peripheral registers to their default values.
   * @param  None.
   * @retval None
   */
@@ -33,7 +33,7 @@ void IR_DeInit(void)
 
 
 /**
-  * @brief Initializes the IR peripheral according to the specified
+  * @brief Initialize the IR peripheral according to the specified
   *   parameters in the IR_InitStruct
   * @param  IR_InitStruct: pointer to a IR_InitTypeDef structure that
   *   contains the configuration information for the specified IR peripheral
@@ -102,7 +102,7 @@ void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct)
 }
 
 /**
-  * @brief  Fills each IR_InitStruct member with its default value.
+  * @brief  Fill each IR_InitStruct member with its default value.
   * @param  IR_InitStruct: pointer to an IR_InitTypeDef structure which will be initialized.
   * @retval None
   */
@@ -190,7 +190,7 @@ void IR_SendBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len, u32 IsLastPacket)
 	}
 
 	/* If send the last IR packet, SET the following bit */
-	if (IsLastPacket == _TRUE) {
+	if (IsLastPacket == TRUE) {
 		IRx->IR_TX_FIFO =  *pBuf | IR_BIT_TX_DATA_END_FLAG;
 	} else {
 		IRx->IR_TX_FIFO =  *pBuf;
@@ -348,7 +348,7 @@ u32 IR_FSMRunning(IR_TypeDef *IRx)
 }
 
 /**
-  * @brief  Clears the IR interrupt pending bits.
+  * @brief  Clear the IR interrupt pending bits.
   * @param  IR_IT: specifies the interrupt pending bit to clear.
   *   This parameter can be any combination of the following values:
   *     @arg IR_TX_FIFO_EMPTY_INT_CLR: Clear TX FIFO empty interrupt.
@@ -375,7 +375,7 @@ void IR_ClearINTPendingBit(IR_TypeDef *IRx, u32 IR_CLEAR_INT)
 
 
 /**
-  * @brief  set tx threshold.when TX FIFO depth <= threshold value, trigger  interrupt
+  * @brief  Set tx threshold.when TX FIFO depth <= threshold value, trigger  interrupt
   * @param  thd: tx threshold.
   * @retval None
   */
@@ -391,7 +391,7 @@ void IR_SetTxThreshold(IR_TypeDef *IRx, uint8_t thd)
 
 
 /**
-  * @brief  set rx threshold.when RX FIFO depth > threshold value, trigger  interrupt
+  * @brief  Set rx threshold.when RX FIFO depth > threshold value, trigger  interrupt
   * @param  thd: rx threshold.
   * @retval None
   */

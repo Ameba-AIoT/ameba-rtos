@@ -131,8 +131,6 @@ SECTIONS
     PROVIDE(OTPPowerSwitch = 0x21b7);
     PROVIDE(OTPGetCRC = 0x21d5);
     PROVIDE(OTP_Read8_Rom = 0x220d);
-    PROVIDE(OTP_ProgramMarginRead8 = 0x2295);
-    PROVIDE(_OTP_Write8 = 0x2321);
     PROVIDE(OTP_Write8_Rom = 0x23a5);
     PROVIDE(OTP_Read32 = 0x2439);
     PROVIDE(OTP_PG_Packet_Byte = 0x246d);
@@ -213,7 +211,6 @@ SECTIONS
     PROVIDE(RTIM_GetFlagStatus = 0x33fd);
     PROVIDE(RTIM_GetINTStatus = 0x3491);
     PROVIDE(TRNG_Random_Delay = 0x3531);
-    PROVIDE(TRNG_Security_Only = 0x356d);
     PROVIDE(TRNG_INTConfig = 0x3589);
     PROVIDE(TRNG_ClearINT = 0x35a1);
     PROVIDE(TRNG_GetINT = 0x35b1);

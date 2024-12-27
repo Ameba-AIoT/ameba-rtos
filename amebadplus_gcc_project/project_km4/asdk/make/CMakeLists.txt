@@ -1,5 +1,4 @@
 ameba_executable(target_img2_${PROJECT_NAME} empty_file.c)
-target_compile_definitions(target_img2_${PROJECT_NAME} PRIVATE IMAGE2_BUILD)
 
 add_custom_target(
     image2_${PROJECT_NAME}
@@ -25,12 +24,21 @@ add_subdirectory(target)
 add_subdirectory(test)
 add_subdirectory(utils)
 
+
+if(CONFIG_WPA_LOCATION_DEV)
+	add_subdirectory(wpa_supplicant_std)
+endif()
+
 if(CONFIG_AUDIO_FWK)
     add_subdirectory(audio/audio_config)
     add_subdirectory(audio/audio_hal)
     # add_subdirectory(audio/audio_test)
     # add_subdirectory(audio/audio_hal/test)
     # add_subdirectory(audio/base/cutils/cmd)
+endif()
+
+if(CONFIG_TFLITE_MICRO_EN)
+    add_subdirectory(tflite_micro)
 endif()
 
 if(CONFIG_BT)
@@ -113,9 +121,9 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
-    -DAMEBA_RLS=${AMEBA_RLS}
+    -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS}
     -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DPROJECTDIR=${PROJECTDIR}
-    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR}
+    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE} -DANALYZE_MP_IMG=${ANALYZE_MP_IMG} -DDAILY_BUILD=${DAILY_BUILD}
     -DCONFIG_BT=${CONFIG_BT} -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK} -DCONFIG_MP_INCLUDED=${CONFIG_MP_INCLUDED}
@@ -169,7 +177,7 @@ set_target_properties(target_img2_${PROJECT_NAME} PROPERTIES LINK_DEPENDS "${LIN
 set_property(TARGET target_img2_${PROJECT_NAME}
     PROPERTY ADDITIONAL_CLEAN_FILES
     ${IMAGE_TARGET_FOLDER}
-    ${IMAGE_TARGET_FOLDER}/../../../km0_km4_app.bin
-    ${IMAGE_TARGET_FOLDER}/../../../km0_km4_app_mp.bin
-    ${IMAGE_TARGET_FOLDER}/../../../ota_all.bin
+    ${FINAL_IMAGE_DIR}/km0_km4_app.bin
+    ${FINAL_IMAGE_DIR}/km0_km4_app_mp.bin
+    ${FINAL_IMAGE_DIR}/ota_all.bin
 )

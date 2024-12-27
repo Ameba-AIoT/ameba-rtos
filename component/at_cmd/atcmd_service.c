@@ -11,11 +11,14 @@
 #include "vfs.h"
 #include "cJSON.h"
 #include "kv.h"
+#include "ringbuffer.h"
 
 #ifdef CONFIG_SUPPORT_ATCMD
 
 #ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
+#include "atcmd_http.h"
+#include "atcmd_websocket.h"
 #endif
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
@@ -24,7 +27,12 @@
 //======================================================
 struct list_head log_hash[ATC_INDEX_NUM];
 
+RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
+rtos_sema_t atcmd_tt_mode_sema;
+char g_tt_mode = 0;
+
 #include "at_intf_uart.h"
+#include "at_intf_spi.h"
 #include "lwip_netconf.h"
 
 log_init_t log_init_table[] = {
@@ -32,8 +40,22 @@ log_init_t log_init_table[] = {
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_WLAN
 	at_wifi_init,
+#ifdef CONFIG_LWIP_LAYER
+#if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
+	at_mqtt_init,
 #endif
+#if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
+	at_tcpip_init,
 #endif
+#if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
+	at_http_init,
+#endif
+#if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
+	at_websocket_init,
+#endif
+#endif  //CONFIG_LWIP_LAYER
+#endif  //CONFIG_WLAN
+#endif  //CONFIG_MP_SHRINK
 
 #if defined(CONFIG_BT) && CONFIG_BT
 	at_bt_init,
@@ -41,17 +63,8 @@ log_init_t log_init_table[] = {
 	at_mp_init,
 #endif
 #endif
-
 	at_sys_init,
 
-#ifdef CONFIG_WLAN
-#ifndef CONFIG_MP_INCLUDED
-	at_mqtt_init,
-#endif
-#ifdef CONFIG_LWIP_LAYER
-	at_tcpip_init,
-#endif
-#endif
 };
 
 
@@ -62,7 +75,7 @@ char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
 
-extern u8 wifi_set_countrycode(char *cntcode);
+extern int wifi_set_countrycode(char *cntcode);
 
 /**
  * @brief Output format strings, like printf.
@@ -114,6 +127,141 @@ int at_printf(const char *fmt, ...)
 fail:
 	return ret;
 }
+
+/**
+ * @brief Output format strings reported by system.
+ * @param fmt: format string.
+ * @return The length of the output string or error code.
+ * @retval -1: encoding error or format string is tool long.
+ * @retval others: The length of the output string.
+ */
+int at_printf_indicate(const char *fmt, ...)
+{
+	int ret = -1;
+	int len_fmt = 0;
+	char *buf;
+	char *buf_r;
+
+	va_list ap;
+	va_start(ap, fmt);
+	len_fmt = vsnprintf(global_buf, SMALL_BUF, fmt, ap);
+	va_end(ap);
+
+	if (len_fmt < 0) {
+		goto fail;
+	}
+
+	if (len_fmt < SMALL_BUF) {
+		buf = global_buf;
+	} else {
+		buf = (char *)rtos_mem_malloc(BIG_BUF);
+		va_start(ap, fmt);
+		len_fmt = vsnprintf(buf, BIG_BUF, fmt, ap);
+		va_end(ap);
+	}
+
+	if (len_fmt < 0 || len_fmt >= BIG_BUF) {
+		goto fail;
+	}
+
+	ret = len_fmt;
+
+	buf_r = (char *)rtos_mem_malloc(len_fmt + 1);
+	buf_r[0] = '$';
+	memcpy(&buf_r[1], buf, len_fmt);
+
+	if (out_buffer) {
+		out_buffer(buf_r, len_fmt + 1);
+	}
+
+	rtos_mem_free(buf_r);
+
+	if (len_fmt >= SMALL_BUF) {
+		rtos_mem_free(buf);
+	}
+
+	return ret;
+
+fail:
+	return ret;
+}
+
+int atcmd_tt_mode_start(u32 len)
+{
+	if (rtos_mem_get_free_heap_size() < (len + 1)) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "tt mode size exceeds free heap size(%u), exit tt mode\n", rtos_mem_get_free_heap_size());
+		return -1;
+	}
+	atcmd_tt_mode_rx_ring_buf = RingBuffer_Create(NULL, len + 1, 1);
+	if (atcmd_tt_mode_rx_ring_buf == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "create tt mode ring buffer fail\n");
+		return -1;
+	}
+
+	g_tt_mode = 1;
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "enter tt mode\n");
+	// info MCU we enter tt mode now
+	at_printf(ATCMD_ENTER_TT_MODE_STR);
+
+	return 0;
+}
+
+u32 atcmd_tt_mode_get(u8 *buf, u32 len)
+{
+	u32 get_len = len;
+	u8 *buf_temp = buf;
+	u32 actual_len = 0;
+
+	if (get_len > MAX_TT_BUF_LEN) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "TT mode len exceeds MAX_TT_BUF_LEN\n");
+		get_len = MAX_TT_BUF_LEN;
+	}
+
+	while (get_len != 0) {
+		while (RingBuffer_Available(atcmd_tt_mode_rx_ring_buf) == 0) {
+			rtos_sema_take(atcmd_tt_mode_sema, 0xFFFFFFFF);
+		}
+
+		actual_len = RingBuffer_Available(atcmd_tt_mode_rx_ring_buf);
+		actual_len = actual_len > get_len ? get_len : actual_len;
+		RingBuffer_Read(atcmd_tt_mode_rx_ring_buf, buf_temp, actual_len);
+		get_len -= actual_len;
+		buf_temp += actual_len;
+	}
+
+	return (buf_temp - buf);
+}
+
+void atcmd_tt_mode_end(void)
+{
+	g_tt_mode = 0;
+	RingBuffer_Destroy(atcmd_tt_mode_rx_ring_buf);
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "exit tt mode\n");
+	// info MCU we exit tt mode now if needed
+	//at_printf(ATCMD_EXIT_TT_MODE_STR);
+}
+
+#else
+
+int atcmd_tt_mode_start(u32 len)
+{
+	(void) len;
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "NOT SUPPORT TT MODE\n");
+	return -1;
+}
+
+u32 atcmd_tt_mode_get(u8 *buf, u32 len)
+{
+	(void) buf;
+	(void) len;
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "NOT SUPPORT TT MODE\n");
+	return 0;
+}
+
+void atcmd_tt_mode_end(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "NOT SUPPORT TT MODE\n");
+}
 #endif
 
 
@@ -136,6 +284,42 @@ void log_add_new_command(log_item_t *new)
 	list_add(&new->node, &log_hash[index]);
 }
 
+int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index)
+{
+	char *prefix;
+	char *path = (char *)rtos_mem_zmalloc(128);
+	struct stat stat_buf;
+	prefix = find_vfs_tag(VFS_REGION_1);
+	switch (cert_type) {
+	case CLIENT_CA:
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_ca_%d.crt", prefix, index);
+		break;
+	case CLIENT_CERT:
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_cert_%d.crt", prefix, index);
+		break;
+	case CLIENT_KEY:
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_key_%d.key", prefix, index);
+		break;
+	case SERVER_CA:
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_ca_%d.crt", prefix, index);
+		break;
+	case SERVER_CERT:
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_cert_%d.crt", prefix, index);
+		break;
+	case SERVER_KEY:
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_key_%d.key", prefix, index);
+		break;
+	default:
+		return -1;
+	}
+
+	if (stat(path, &stat_buf) < 0) {
+		return 0;
+	}
+
+	return stat_buf.st_size;
+}
+
 int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 {
 	if (buffer == NULL) {
@@ -144,28 +328,28 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 
 	int ret;
 	char *prefix;
-	char path[128] = {0};
+	char *path = (char *)rtos_mem_zmalloc(128);
 	vfs_file *finfo;
 	struct stat stat_buf;
 	prefix = find_vfs_tag(VFS_REGION_1);
 	switch (cert_type) {
 	case CLIENT_CA:
-		DiagSnPrintf(path, sizeof(path), "%s:client_ca_%d.crt", prefix, index);
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_ca_%d.crt", prefix, index);
 		break;
 	case CLIENT_CERT:
-		DiagSnPrintf(path, sizeof(path), "%s:client_cert_%d.crt", prefix, index);
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_cert_%d.crt", prefix, index);
 		break;
 	case CLIENT_KEY:
-		DiagSnPrintf(path, sizeof(path), "%s:client_key_%d.key", prefix, index);
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_key_%d.key", prefix, index);
 		break;
 	case SERVER_CA:
-		DiagSnPrintf(path, sizeof(path), "%s:server_ca_%d.crt", prefix, index);
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_ca_%d.crt", prefix, index);
 		break;
 	case SERVER_CERT:
-		DiagSnPrintf(path, sizeof(path), "%s:server_cert_%d.crt", prefix, index);
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_cert_%d.crt", prefix, index);
 		break;
 	case SERVER_KEY:
-		DiagSnPrintf(path, sizeof(path), "%s:server_key_%d.key", prefix, index);
+		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_key_%d.key", prefix, index);
 		break;
 	default:
 		return -1;
@@ -200,7 +384,13 @@ void atcmd_service_init(void)
 		log_init_table[i]();
 	}
 
+	//initialize tt mode ring sema
+	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
+
 #ifdef CONFIG_ATCMD_MCU_CONTROL
+#ifdef CONFIG_MCU_CONTROL_SPI
+	atio_spi_init();
+#else
 	atio_uart_init();
 
 	if (lfs_mount_fail) {
@@ -235,6 +425,7 @@ void atcmd_service_init(void)
 
 EXIT:
 	rtos_mem_free(wifi_config);
+#endif
 #endif
 }
 
@@ -403,13 +594,17 @@ int mp_command_handler(char *cmd)
 	if (strncmp(cmd, start, len) == 0) {
 #ifdef CONFIG_MP_INCLUDED
 #if defined(CONFIG_AS_INIC_AP)
-		inic_mp_command(cmd + len, strlen(cmd + len) + 1, 1);
+		char *cmdbuf = NULL;
+		cmdbuf = rtos_mem_malloc(strlen(cmd + len) + 1);
+		strcpy(cmdbuf, (const char *)(cmd + len));
+		inic_mp_command(cmdbuf, strlen(cmd + len) + 1, 1);
+		rtos_mem_free(cmdbuf);
 #elif defined(CONFIG_SINGLE_CORE_WIFI)
 		wext_private_command(cmd + len, 1, NULL);
 #endif
 #endif
-		RTK_LOGS(NOTAG, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
-		RTK_LOGS(NOTAG, "\r\n\n#\r\n"); //"#" is needed for mp tool
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n"); //"#" is needed for mp tool
 		return TRUE;
 	}
 
@@ -419,18 +614,12 @@ int mp_command_handler(char *cmd)
 
 int atcmd_service(char *line_buf)
 {
-#ifdef CONFIG_LWIP_LAYER
-	if (atcmd_lwip_tt_proc() == SUCCESS) {
-		return TRUE;
-	}
-#endif
-
 	if (atcmd_handler((char *)line_buf) == NULL) {
 		return FALSE;
 	}
 
-	RTK_LOGS(NOTAG, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
-	RTK_LOGS(NOTAG, "\r\n\n#\r\n"); //"#" is needed for mp tool
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[MEM] After do cmd, available heap %d\n\r", rtos_mem_get_free_heap_size());
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n"); //"#" is needed for mp tool
 	return TRUE;
 }
 #endif /* CONFIG_SUPPORT_ATCMD */

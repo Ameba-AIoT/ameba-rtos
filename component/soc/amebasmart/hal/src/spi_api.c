@@ -19,7 +19,7 @@
 #include "spi_ex_api.h"
 #include "PinNames.h"
 
-static const char *TAG = "SPI";
+static const char *const TAG = "SPI";
 
 /** @addtogroup Ameba_Mbed_API
   * @{
@@ -238,7 +238,7 @@ static u32 ssi_int_read(void *Adapter, void *RxData, u32 Length)
 	/*  As a Slave mode, if the peer(Master) side is power off, the BUSY flag is always on */
 	if (SSI_Busy(ssi_adapter->spi_dev)) {
 		RTK_LOGW(TAG, "ssi_int_read: SSI is busy\n");
-		return _FALSE;
+		return FALSE;
 	}
 
 	if (DataFrameSize > 8) {
@@ -253,7 +253,7 @@ static u32 ssi_int_read(void *Adapter, void *RxData, u32 Length)
 
 	SSI_INTConfig(ssi_adapter->spi_dev, (SPI_BIT_RXFIM | SPI_BIT_RXOIM | SPI_BIT_RXUIM), ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 static u32 ssi_int_write(void *Adapter, u8 *pTxData, u32 Length)
@@ -274,7 +274,7 @@ static u32 ssi_int_write(void *Adapter, u8 *pTxData, u32 Length)
 	ssi_adapter->TxData = (void *)pTxData;
 	SSI_INTConfig(ssi_adapter->spi_dev, (SPI_BIT_TXOIM | SPI_BIT_TXEIM), ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /* GDMA IRQ Handler */
@@ -336,13 +336,13 @@ static u32 ssi_dma_rx_irq(void *Data)
 static u32 ssi_dma_send(void *Adapter, u8 *pTxData, u32 Length)
 {
 	PHAL_SSI_ADAPTOR ssi_adapter = (PHAL_SSI_ADAPTOR) Adapter;
-	u32 ret = _TRUE;
+	u32 ret = TRUE;
 
 	assert_param(Length != 0);
 	assert_param(pTxData != NULL);
 
 	if (ssi_adapter->dma_en & SPI_DMA_TX_EN) {
-		return _FALSE;
+		return FALSE;
 	}
 
 	ssi_adapter->dma_en |= SPI_DMA_TX_EN;
@@ -363,13 +363,13 @@ static u32 ssi_dma_send(void *Adapter, u8 *pTxData, u32 Length)
 static u32 ssi_dma_recv(void *Adapter, u8  *pRxData, u32 Length)
 {
 	PHAL_SSI_ADAPTOR ssi_adapter = (PHAL_SSI_ADAPTOR) Adapter;
-	u32 ret = _TRUE;
+	u32 ret = TRUE;
 
 	assert_param(Length != 0);
 	assert_param(pRxData != NULL);
 
 	if (ssi_adapter->dma_en & SPI_DMA_RX_EN) {
-		return _FALSE;
+		return FALSE;
 	}
 
 	ssi_adapter->dma_en |= SPI_DMA_RX_EN;
@@ -407,7 +407,8 @@ static u32 spi_stop_recv(spi_t *obj)
 		/* Clear Pending ISR */
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		DMAStopAddr = GDMA_GetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
@@ -520,7 +521,8 @@ void spi_free(spi_t *obj)
 		/* Clear Pending ISR */
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	}
 
@@ -533,7 +535,8 @@ void spi_free(spi_t *obj)
 		/* Clear Pending ISR */
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	}
 
@@ -628,13 +631,35 @@ void spi_format(spi_t *obj, int bits, int mode, int slave)
 	}
 }
 
+static u32 spi_get_ipclk(void)
+{
+	u32 reg_temp;
+	u32 hbus_div, ip_clk;
+
+	/* indirectly get np_pll clock according to CPU_ClkGet() in ameba_rom_patch.c */
+	u32 Div, np_pll;
+	PLL_TypeDef *pll = (PLL_TypeDef *)PLL_BASE;
+
+	Div = PLL_GET_NPLL_DIVN_SDM(pll->PLL_NPPLL_CTRL1) + 2;
+	np_pll = 40000000 * Div;
+
+	/* get hbus_div to calculate hbus_clk, which is equal spi ipclk */
+	reg_temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0);
+	hbus_div = LSYS_GET_CKD_HBUS(reg_temp) + 1;
+	ip_clk = np_pll / hbus_div;
+
+	// printf("np_pll:%lu hbus_div:%lu ip_clk:%lu \r\n", np_pll, hbus_div, ip_clk);
+
+	return ip_clk;
+}
+
 /**
   * @brief  Set SPI baudrate.
   * @param  obj: SPI master object defined in application software.
   * @param  hz: Baudrate for SPI bus in units of Hz.
   * @retval none
   * @attention Baudrate to be set should be less than or equal to half of the SPI IpClk.
-  * @note IpClk for SPI0 and SPI1 is 100MHz.
+  * @note none.
   */
 void spi_frequency(spi_t *obj, int hz)
 {
@@ -643,7 +668,7 @@ void spi_frequency(spi_t *obj, int hz)
 	u32 ClockDivider;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
-	IpClk = 100000000;
+	IpClk = spi_get_ipclk();
 
 	/* Adjust SCK Divider to an even number */
 	ClockDivider = (u32)(IpClk / hz / 2) * 2;
@@ -796,11 +821,11 @@ int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 
 	//RTK_LOGI(TAG, "rx_buffer addr: %X, length: %d\n", rx_buffer, length);
 	obj->state |= SPI_STATE_RX_BUSY;
-	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) != _TRUE) {
+	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 	}
 
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -825,10 +850,10 @@ int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 	}
 
 	obj->state |= SPI_STATE_TX_BUSY;
-	if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != _TRUE) {
+	if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;
 	}
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -857,18 +882,18 @@ int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 	while (SSI_Busy(ssi_adapter->spi_dev));
 
 	obj->state |= SPI_STATE_RX_BUSY;
-	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) == _TRUE) {
+	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) == TRUE) {
 		/* as Master mode, it need to push data to TX FIFO to generate clock out
 		then the slave can transmit data out */
 		// send some dummy data out
-		if ((ret = ssi_int_write(ssi_adapter, NULL, length)) != _TRUE) {
+		if ((ret = ssi_int_write(ssi_adapter, NULL, length)) != TRUE) {
 			obj->state &= ~SPI_STATE_RX_BUSY;
 		}
 	} else {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 	}
 
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -895,10 +920,10 @@ int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 	obj->state |= SPI_STATE_TX_BUSY;
 	/* as Master mode, sending data will receive data at sametime, so we need to
 	drop those received dummy data */
-	if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != _TRUE) {
+	if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;
 	}
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -929,9 +954,9 @@ int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
 
 	obj->state |= SPI_STATE_RX_BUSY;
 	/* as Master mode, sending data will receive data at sametime */
-	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) == _TRUE) {
+	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) == TRUE) {
 		obj->state |= SPI_STATE_TX_BUSY;
-		if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != _TRUE) {
+		if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != TRUE) {
 			obj->state &= ~(SPI_STATE_RX_BUSY | SPI_STATE_TX_BUSY);
 			// Disable RX IRQ
 			SSI_INTConfig(ssi_adapter->spi_dev, (SPI_BIT_RXFIM | SPI_BIT_RXOIM | SPI_BIT_RXUIM), DISABLE);
@@ -940,7 +965,7 @@ int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
 		obj->state &= ~(SPI_STATE_RX_BUSY);
 	}
 
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -979,10 +1004,10 @@ int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 
 	obj->state |= SPI_STATE_RX_BUSY;
 	ret = ssi_dma_recv(ssi_adapter, (u8 *) rx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 	}
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -1008,10 +1033,10 @@ int32_t spi_slave_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
 
 	obj->state |= SPI_STATE_TX_BUSY;
 	ret = ssi_dma_send(ssi_adapter, (u8 *) tx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;
 	}
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -1038,7 +1063,7 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 
 	obj->state |= SPI_STATE_RX_BUSY;
 	ret = ssi_dma_recv(ssi_adapter, (u8 *) rx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 	}
 
@@ -1048,16 +1073,16 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 	// Make the GDMA to use the rx_buffer too
 
 	ret = ssi_dma_send(ssi_adapter, (u8 *) rx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 	}
 #else
 	// TX DMA isn't enabled, so we just use Interrupt mode to TX dummy data
-	if ((ret = ssi_int_write(ssi_adapter, NULL, length)) != _TRUE) {
+	if ((ret = ssi_int_write(ssi_adapter, NULL, length)) != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 	}
 #endif
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -1083,11 +1108,11 @@ int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length
 
 	obj->state |= SPI_STATE_TX_BUSY;
 	ret = ssi_dma_send(ssi_adapter, (u8 *) tx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;
 	}
 
-	return (ret == _TRUE) ? HAL_OK : HAL_BUSY;
+	return (ret == TRUE) ? HAL_OK : HAL_BUSY;
 }
 
 /**
@@ -1114,14 +1139,14 @@ int32_t spi_master_write_read_stream_dma(spi_t *obj, char *tx_buffer,
 
 	obj->state |= SPI_STATE_RX_BUSY;
 	ret = ssi_dma_recv(ssi_adapter, (u8 *) rx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return HAL_BUSY;
 	}
 
 	obj->state |= SPI_STATE_TX_BUSY;
 	ret = ssi_dma_send(ssi_adapter, (u8 *) tx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;
 		return HAL_BUSY;
 	}
@@ -1153,7 +1178,7 @@ int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t 
 
 	obj->state |= SPI_STATE_RX_BUSY;
 	ret = ssi_dma_recv(ssi_adapter, (u8 *) rx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return -HAL_BUSY;
 	}
@@ -1209,7 +1234,7 @@ int32_t spi_slave_read_stream_dma_terminate(spi_t *obj, char *rx_buffer, uint32_
 
 	obj->state |= SPI_STATE_RX_BUSY;
 	ret = ssi_dma_recv(ssi_adapter, (u8 *) rx_buffer, length);
-	if (ret != _TRUE) {
+	if (ret != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return -HAL_BUSY;
 	}
@@ -1273,7 +1298,7 @@ int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t leng
 	}
 
 	obj->state |= SPI_STATE_RX_BUSY;
-	if (ssi_int_read(ssi_adapter, rx_buffer, length) != _TRUE) {
+	if (ssi_int_read(ssi_adapter, rx_buffer, length) != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return -HAL_BUSY;
 	}
@@ -1326,7 +1351,7 @@ int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t le
 	}
 
 	obj->state |= SPI_STATE_RX_BUSY;
-	if (ssi_int_read(ssi_adapter, rx_buffer, length) != _TRUE) {
+	if (ssi_int_read(ssi_adapter, rx_buffer, length) != TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return -HAL_BUSY;
 	}

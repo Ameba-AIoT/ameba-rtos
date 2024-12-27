@@ -19,7 +19,7 @@
  */
 typedef enum {
 	RTK_BT_MESH_STACK_ACT_NODE_RESET = 1,
-	RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING,
+	RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM,
 	RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH,
 	RTK_BT_MESH_STACK_ACT_PB_ADV_CON,
 	RTK_BT_MESH_STACK_ACT_PB_ADV_DISCON,
@@ -53,6 +53,7 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_UDB_DISPLAY = 1,
+	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_SNB_DISPLAY,
 	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY,
 	RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY,
 	RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE,
@@ -112,6 +113,7 @@ typedef enum {
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_PUB_INFO,
 	RTK_BT_MESH_STACK_USER_LIST_MODEL_SUB_INFO,
 	RTK_BT_MESH_STACK_USER_LIST_DF_PATH_INFO,
+	RTK_BT_MESH_STACK_USER_LIST_SUBNET_BRIDGE_INFO,
 } rtk_bt_mesh_stack_user_list_type_t;
 
 /**
@@ -134,14 +136,15 @@ typedef enum {
 } rtk_bt_mesh_stack_role_t;
 
 /**
- * @typedef   rtk_bt_mesh_stack_act_provisioner_init_setting_t
- * @brief     BLE MESH provisioner init setting param structure.
+ * @typedef   rtk_bt_mesh_stack_act_set_prov_param_t
+ * @brief     BLE MESH prov param set structure.
  */
 typedef struct {
 	uint16_t unicast_addr;
 	uint8_t net_key[16];
 	uint8_t app_key[16];
-} rtk_bt_mesh_stack_act_provisioner_init_setting_t;
+	uint8_t dev_key[16];
+} rtk_bt_mesh_stack_act_set_prov_param_t;
 
 /**
  * @typedef   rkt_bt_mesh_stack_act_device_info_set_t
@@ -452,11 +455,36 @@ typedef struct {
 } rtk_bt_mesh_stack_evt_dev_info_udb_t;
 
 /**
+ * @typedef   rtk_bt_mesh_stack_evt_dev_info_snb_t
+ * @brief     BLE MESH device secure network beacon info structure.
+ */
+typedef struct {
+	rtk_bt_mesh_stack_device_info_common_data dev_info;
+	/*
+	 * phase 1: old NetKey + Key Refresh flag set to 0
+	 * phase 2: new NetKey + Key Refresh flag set to 1
+	 * phase 3: new NetKey + Key Refresh flag set to 0
+	 */
+	uint8_t key_refresh_flag: 1; //!< bit0: key refresh flag
+	/*
+	 * normal: new iv index + iv_update_flag set to 0
+	 * update: old iv index + iv_update_flag set to 1
+	 */
+	uint8_t iv_update_flag: 1; //!< bit1: IV update flag
+	uint8_t rfu: 6; //!< reserved for future use
+	uint8_t net_id[8]; //!< Network ID
+	uint8_t iv_index[4]; //!< IV Index
+	uint8_t auth[8]; //!< Authenticates the packet contents, computed with the Network Key over the [KR, NID, CIVI] fields
+} rtk_bt_mesh_stack_evt_dev_info_snb_t;
+
+/**
  * @typedef   rtk_bt_mesh_stack_evt_prov_complete_t
  * @brief     BLE MESH device provisioning complete info structure.
  */
 typedef struct {
 	uint16_t unicast_addr;
+	bool dkri_flag;
+	uint8_t dkri;
 } rtk_bt_mesh_stack_evt_prov_complete_t;
 
 /**
@@ -493,6 +521,14 @@ typedef struct {
  * @typedef   proxy_adv_type_t
  * @brief     BLE MESH device proxy adv info structure.
  */
+enum {
+	RTK_BT_MESH_PROXY_ADV_TYPE_NET_ID = 0,
+	RTK_BT_MESH_PROXY_ADV_TYPE_NODE_IDENTITY = 1,
+#if defined(BT_MESH_ENABLE_PRIVATE_BEACON) && BT_MESH_ENABLE_PRIVATE_BEACON
+	RTK_BT_MESH_PROXY_ADV_TYPE_PRIVATE_NET_ID = 2,
+	RTK_BT_MESH_PROXY_ADV_TYPE_PRIVATE_NODE_IDENTITY = 3,
+#endif
+} _SHORT_ENUM_;
 typedef uint8_t proxy_adv_type_t;
 
 /**
@@ -669,7 +705,10 @@ typedef struct {
  * @brief     BLE MESH Algorithm of provisioning method unprovisioned device supported when provisioning.
  */
 typedef enum {
-	RTK_BT_MESH_PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE = BIT0
+	RTK_BT_MESH_PROV_CAP_ALGO_FIPS_P256_ELLIPTIC_CURVE = BIT0,
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	RTK_BT_MESH_PROV_CAP_ALGO_BTM_ECDH_P256_HMAC_SHA256_AES_CCM = BIT1,
+#endif
 } rtk_bt_mesh_stack_prov_cap_algorithm_t;
 
 /**
@@ -686,7 +725,10 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_PROV_CAP_NOT_SUPPORT_STATIC_OOB = 0,
-	RTK_BT_MESH_PROV_CAP_SUPPORT_STATIC_OOB = BIT0
+	RTK_BT_MESH_PROV_CAP_SUPPORT_STATIC_OOB = BIT0,
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	RTK_BT_MESH_PROV_CAP_ONLY_OOB = BIT1,
+#endif
 } rtk_bt_mesh_stack_prov_cap_static_oob_t;
 
 /**
@@ -734,7 +776,10 @@ typedef struct {
  * @brief     BLE MESH Algorithm values used for provisioner when provisioning.
  */
 typedef enum {
-	RTK_BT_MESH_PROV_START_FIPS_P256_ELLIPTIC_CURVE
+	RTK_BT_MESH_PROV_START_FIPS_P256_ELLIPTIC_CURVE,
+#if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
+	RTK_BT_MESH_PROV_START_BTM_ECDH_P256_HMAC_SHA256_AES_CCM,
+#endif
 } rtk_bt_mesh_prov_start_algorithm_t;
 
 /**
@@ -831,16 +876,16 @@ typedef struct {
  * @{
  */
 
-#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-
 /**
- * @brief     Setting provisioner init param, will cause event @ref RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING
+ * @brief     Prov param set function, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM
  * @param[in] init_setting: init setting param
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_mesh_stack_provisioner_setting_init(rtk_bt_mesh_stack_act_provisioner_init_setting_t *init_setting);
+uint16_t rtk_bt_mesh_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *init_setting);
+
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 
 /**
  * @brief     Establish PBADV link, will cause event @ref RTK_BT_MESH_STACK_ACT_PB_ADV_CON

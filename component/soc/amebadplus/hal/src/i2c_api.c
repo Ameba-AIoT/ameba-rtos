@@ -661,7 +661,7 @@ int i2c_slave_set_for_rd_req(i2c_t *obj, int set)
 		I2C_INTConfig(obj->I2Cx, I2C_BIT_M_RD_REQ, DISABLE);
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**

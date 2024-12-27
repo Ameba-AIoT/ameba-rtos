@@ -32,8 +32,8 @@
  * @version 1.0
  */
 
-#ifndef AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_MANAGER_H
-#define AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_MANAGER_H
+#ifndef AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_MANAGER_H
+#define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_MANAGER_H
 
 #include "hardware/audio/audio_hw_types.h"
 #include "hardware/audio/audio_hw_card.h"
@@ -104,5 +104,5 @@ void DestoryAudioHwManager(struct AudioHwManager *manager);
 }
 #endif
 
-#endif  // AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_MANAGER_H
+#endif  // AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_MANAGER_H
 /** @} */

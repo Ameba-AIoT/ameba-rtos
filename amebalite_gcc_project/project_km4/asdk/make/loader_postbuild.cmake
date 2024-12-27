@@ -41,18 +41,27 @@ if (CONFIG_MP_SHRINK)
         COMMAND ${CMAKE_COMMAND} -E  cat ${IMAGE_TARGET_FOLDER}/entry_1_prepend.bin ${IMAGE_TARGET_FOLDER}/ram_1_prepend.bin
         OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin
     )
-    execute_process(COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin ${BUILD_TYPE})
+    execute_process(
+        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin ${BUILD_TYPE}
+        WORKING_DIRECTORY ${PROJECTDIR}/..
+    )
 else()
     execute_process(COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/ram_1.bin  __ram_start_table_start__  ${IMAGE_TARGET_FOLDER}/target_loader.map)
     if(IMGTOOL_LOADER)
-        execute_process(COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/ram_1_prepend.bin ${BUILD_TYPE})
+        execute_process(
+            COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/ram_1_prepend.bin ${BUILD_TYPE}
+            WORKING_DIRECTORY ${PROJECTDIR}/..
+        )
     else()
         execute_process(COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/xip_boot.bin  __km4_boot_text_start__  ${IMAGE_TARGET_FOLDER}/target_loader.map)
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E  cat ${IMAGE_TARGET_FOLDER}/xip_boot_prepend.bin ${IMAGE_TARGET_FOLDER}/ram_1_prepend.bin
             OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin
         )
-        execute_process(COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin ${BUILD_TYPE})
+        execute_process(
+            COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin ${BUILD_TYPE}
+            WORKING_DIRECTORY ${PROJECTDIR}/..
+        )
     endif()
 endif()
 
@@ -61,6 +70,6 @@ message( "========== Image manipulating end ==========")
 if (NOT IMGTOOL_LOADER)
     set(KM4_BOOT_ALL ${IMAGE_TARGET_FOLDER}/km4_boot_all.bin)
     if(EXISTS ${KM4_BOOT_ALL})
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BOOT_ALL} ${IMAGE_TARGET_FOLDER}/../../..)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BOOT_ALL} ${FINAL_IMAGE_DIR})
     endif()
 endif()

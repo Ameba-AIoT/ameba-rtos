@@ -27,11 +27,9 @@ static void example_httpc_thread(void *param)
 
 	struct httpc_conn *conn = NULL;
 
-	// Delay to wait for IP by DHCP
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		rtos_time_delay_ms(2000);
-	}
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
+
 	printf("\nExample: HTTPC\n");
 
 	/* test GET to http://httpbin.org/get?param1=test_data1&param2=test_data2 */

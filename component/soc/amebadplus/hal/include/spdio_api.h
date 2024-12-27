@@ -31,42 +31,31 @@
 #include <os_wrapper.h>
 
 /** @addtogroup Ameba_Mbed_API
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup MBED_SPDIO
- *  @brief      MBED_SPDIO driver modules.
+ *  @brief MBED_SPDIO driver modules.
  *  @{
  */
 
 /** @defgroup MBED_SPDIO_Exported_Constants MBED_SPDIO Exported Constants
-  * @{
-  */
-
-#define SPDIO_API_DBG
-
-#ifdef SPDIO_API_DBG
-#define SPDIO_API_PRINTK(fmt, args...)		printf(fmt"\r\n",## args)
-#define _SPDIO_API_PRINTK(fmt, args...)		printf(fmt,## args)
-#else
-#define SPDIO_API_PRINTK(fmt, args...)
-#define _SPDIO_API_PRINTK(fmt, args...)
-#endif
-
+ * @{
+ */
 #define SPDIO_DMA_ALIGN_4			4
-#define SPDIO_RX_BUFSZ_ALIGN(x)	((((x-1)>>6)+1)<<6) //alignement to 64
+#define SPDIO_RX_BUFSZ_ALIGN(x)	((((x-1)>>6)+1)<<6) //alignment to 64
 
 #define SPDIO_RXDESC_SZ	24
 
 /** @}*/
 
 /** @defgroup MBED_SPDIO_Exported_Types MBED_SPDIO Exported Types
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup MBED_SPDIO_Enumeration_Type Enumeration Type
-  * @{
-  */
+ * @{
+ */
 
 /*Don't modify this enum table*/
 enum spdio_rx_data_t {
@@ -86,8 +75,8 @@ enum spdio_tx_data_t {
 /** @}*/
 
 /** @defgroup MBED_SPDIO_Structure_Type Structure Type
-  * @{
-  */
+ * @{
+ */
 
 struct spdio_buf_t {
 	void *priv; //priv data from user
@@ -107,34 +96,31 @@ struct spdio_t {
 	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, rx_bd_bufsz * rx_bd_num
 
 	/**
-	 *@brief pointer to callback function defined by user,
-	 		called by spdio when one packet receive done
-	 *@param priv: a pointer to spdio_t structure which is used to initilize spdio interface
-	 *@param pbuf: a pointer to spdio_buf_t structure which is spdio receive buffer
-	 *@param pdata: the actual received packet payload
-	 *@param size: the actual payload length
-	 *@param type: the received packet type, spdio_rx_data_t
-	 *@retval SUCCESS or FAIL
+	 * @brief Callback function defined by user, called by spdio when one packet is received.
+	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
+	 * @param pbuf Pointer to spdio_buf_t structure which is spdio receive buffer.
+	 * @param pdata Actual received packet payload.
+	 * @param size Actual payload length.
+	 * @param type Received packet type, which should be a value of @ref spdio_rx_data_t.
+	 * @retval SUCCESS or FAIL.
 	 */
 	char (*rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
 
 	/**
-	 *@brief pointer to callback function defined by user,
-	 		called by spdio when one packet sent done
-	 *@param priv: a pointer to spdio_t structure which is used to initilize spdio interface
-	 *@param pbuf: a pointer to spdio_buf_t structure which carries the transmit packet
-	 *@retval SUCCESS or FAIL
+	 * @brief Callback function defined by user, called by spdio when one packet is sent.
+	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
+	 * @param pbuf Pointer to spdio_buf_t structure which carries the transmit packet.
+	 * @retval SUCCESS or FAIL.
 	 */
 	char (*tx_done_cb)(void *priv, void *pbuf);
 
 	/**
-	 *@brief pointer to callback function defined by user
-	 *@param priv: a pointer to spdio_t structure which is used to initilize spdio interface
-	 *@param value: rpwm2 value
-	 *@retval SUCCESS or FAIL
+	 * @brief Callback function defined by user.
+	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
+	 * @param value RPWM2 value.
+	 * @retval SUCCESS or FAIL.
 	 */
 	char (*rpwm_cb)(void *priv, u16 value);
-
 };
 
 /** @}*/
@@ -142,48 +128,16 @@ struct spdio_t {
 /** @}*/
 /** @}*/
 
-/**
-  * @brief  Gets example setting for spdio obj.
-  * @param  obj: a pointer to an spdio_t structure which will be initialized with an example settings
-  * @retval None
-  */
 void spdio_structinit(struct spdio_t *obj);
-
-/**
-  * @brief  Initialize spdio interface.
-  * @param  obj, a pointer to a spdio_t structure which should be initialized by user,
-  *		and which will be used to initialize spdio interface
-  *		obj->tx_bd_num: spdio write bd number, needs 2 bd for one transaction
-  *		obj->rx_bd_num: spdio read bd number
-  *		obj->rx_bd_bufsz: spdio read buffer size
-  *		obj->rx_buf: spdio read buffer array
-  * @retval None
-  */
 void spdio_init(struct spdio_t *obj);
-
-/**
-  * @brief  Deinitialize spdio interface.
-  * @param  obj: a pointer to spdio_t structure which is already initialized
-  * @retval None
-  */
 void spdio_deinit(struct spdio_t *obj);
-
-/**
-  * @brief  spdio write function.
-  * @param  obj: a pointer to spdio_t structure which is already initialized
-  * @param  pbuf: a pointer to spdio_buf_t structure which carries the payload
-  * @retval SUCCESS or FAIL
-  */
 s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf);
-
 void spdio_trigger_rx_handle(void);
 
 /**
-  * @brief  an obj which will be used to initialize sdio interface
-  *		so it must be initialized before calling HalSdioInit();
-  */
+ * @brief An obj which will be used to initialize SDIO interface,
+ * 		so it must be initialized before by calling HalSdioInit();
+ */
 extern struct spdio_t *g_spdio_priv;
 
-
-
-#endif //#ifndef __SPDIO_API_H__
+#endif // #ifndef __SPDIO_API_H__

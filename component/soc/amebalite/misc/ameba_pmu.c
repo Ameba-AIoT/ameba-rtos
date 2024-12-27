@@ -9,7 +9,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
-static const char *TAG = "PMU";
+static const char *const TAG = "PMU";
 
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
 static uint32_t sleepwakelock_timeout     = 0;

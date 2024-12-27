@@ -27,7 +27,7 @@
 
 //#define printf					DiagPrintf
 
-static const char *TAG = "SYS";
+static const char *const TAG = "SYS";
 
 #define RSIP_REMAP_REGION_ADDR_SHIFT	12
 

@@ -1,5 +1,4 @@
 ameba_executable(target_img2_${PROJECT_NAME} empty_file.c)
-target_compile_definitions(target_img2_${PROJECT_NAME} PRIVATE IMAGE2_BUILD)
 
 add_custom_target(
     image2_${PROJECT_NAME}
@@ -30,6 +29,10 @@ endif()
 if(CONFIG_MEDIA_PLAYER OR CONFIG_MEDIA_LITE_PLAYER)
     add_subdirectory(audio/media_config)
     # add_subdirectory(audio/media_test)
+endif()
+
+if(CONFIG_TFLITE_MICRO_EN)
+    add_subdirectory(tflite_micro)
 endif()
 
 add_subdirectory(file_system)
@@ -102,6 +105,11 @@ target_link_libraries(
     -lm -lstdc++
 )
 
+if(TARGET kr4)
+    #avoid making bin files in parallel
+    set(DEP_KR4 kr4)
+endif()
+
 add_custom_command(
     OUTPUT ${IMAGE_TARGET_FOLDER}/target_img2.axf ${KR4_BUILDDIR}/vsdk/image/target_img2_otrcore.asm
     COMMAND ${CMAKE_COMMAND} -E make_directory ${IMAGE_TARGET_FOLDER}
@@ -117,17 +125,18 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
-    -DAMEBA_RLS=${AMEBA_RLS}
+    -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS}
     -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DPROJECTDIR=${PROJECTDIR} -DDSP_IMAGE_TARGET_DIR=${DSP_IMAGE_TARGET_DIR}
-    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DAP_IMAGEDIR=${AP_IMAGEDIR}
+    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DAP_IMAGEDIR=${AP_IMAGEDIR} -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE} -DANALYZE_MP_IMG=${ANALYZE_MP_IMG} -DDAILY_BUILD=${DAILY_BUILD}
     -DCONFIG_BT=${CONFIG_BT} -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK} -DCONFIG_MP_INCLUDED=${CONFIG_MP_INCLUDED}
+    -DCONFIG_AP_CORE_KM4=${CONFIG_AP_CORE_KM4}
     -DCONFIG_FATFS_WITHIN_APP_IMG=${CONFIG_FATFS_WITHIN_APP_IMG} -DCONFIG_COMPRESS_OTA_IMG=${CONFIG_COMPRESS_OTA_IMG}
     -DCONFIG_UPGRADE_BOOTLOADER=${CONFIG_UPGRADE_BOOTLOADER} -DCONFIG_DSP_WITHIN_APP_IMG=${CONFIG_DSP_WITHIN_APP_IMG}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/img2_postbuild.cmake
 
-    DEPENDS target_img2_${PROJECT_NAME}
+    DEPENDS target_img2_${PROJECT_NAME} ${DEP_KR4}
 )
 
 add_custom_target(
@@ -174,8 +183,8 @@ set_target_properties(target_img2_${PROJECT_NAME} PROPERTIES LINK_DEPENDS "${LIN
 set_property(TARGET target_img2_${PROJECT_NAME}
     PROPERTY ADDITIONAL_CLEAN_FILES
     ${IMAGE_TARGET_FOLDER}
-    ${IMAGE_TARGET_FOLDER}/../../../kr4_km4_app.bin
-    ${IMAGE_TARGET_FOLDER}/../../../kr4_km4_dsp_app.bin
-    ${IMAGE_TARGET_FOLDER}/../../../kr4_km4_app_mp.bin
-    ${IMAGE_TARGET_FOLDER}/../../../ota_all.bin
+    ${FINAL_IMAGE_DIR}/kr4_km4_app.bin
+    ${FINAL_IMAGE_DIR}/kr4_km4_dsp_app.bin
+    ${FINAL_IMAGE_DIR}/kr4_km4_app_mp.bin
+    ${FINAL_IMAGE_DIR}/ota_all.bin
 )

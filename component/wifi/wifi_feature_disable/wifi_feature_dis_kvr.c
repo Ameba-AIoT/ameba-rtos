@@ -34,32 +34,28 @@ void rtw_roam_kvr_cap_update(char *buf, int buf_len, int flags, void *userdata)
 #endif
 
 #ifndef CONFIG_WIFI_11K_ENABLE
-void rtw_init_rm(void)
+void rtw_rrm_init_priv(void)
 {
 
 }
 
-void rtw_deinit_rm(void)
+void rtw_rrm_disable(void)
 {
 
 }
 
-void rtw_rm_enable(void)
+void rtw_rrm_enable(void)
 {
 
 }
 
-void rtw_rm_disable(void)
+
+void rtw_rrmapi_nb_discover(void)
 {
 
 }
 
-void rtw_roam_nb_discover(void)
-{
-
-}
-
-int rm_post_event(u8 a, u32 rmid, u8 evid)
+int rtw_rrmapi_event_post_cmd(u8 a, u32 rmid, u8 evid)
 {
 	UNUSED(a);
 	UNUSED(rmid);
@@ -67,21 +63,21 @@ int rm_post_event(u8 a, u32 rmid, u8 evid)
 	return -1;
 }
 
-unsigned int onAction_rm(void *a, void *b)
+int rtw_on_action_rrm(void *a, void *b)
 {
 	UNUSED(a);
 	UNUSED(b);
-	return -1;
+	return FAIL;
 }
 
-void rm_dbg_cmd(char *s)
+void rtw_rrm_dbg_cmd(char *s)
 {
 	UNUSED(s);
 }
 #endif
 
 #ifndef CONFIG_WIFI_11V_ENABLE
-void rtw_wnm_process_btm_req(char *buf, int buf_len, int flags, void *userdata)
+void rtw_wnm_btm_req_process(char *buf, int buf_len, int flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -89,12 +85,12 @@ void rtw_wnm_process_btm_req(char *buf, int buf_len, int flags, void *userdata)
 	UNUSED(userdata);
 }
 
-void rtw_wnm_set_btm_flags(u8 flags)
+void rtw_wnm_btm_flags_set(u8 flags)
 {
 	UNUSED(flags);
 }
 
-void wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata)
+void rtw_wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -104,7 +100,7 @@ void wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata)
 #endif
 
 #if !defined(CONFIG_WIFI_11K_ENABLE) && !defined(CONFIG_WIFI_11V_ENABLE)
-void rtw_wnm_btm_candidates_survey(char *buf, int buf_len, int flags, void *userdata)
+void rtw_roam_nb_rpt_elem_parsing(char *buf, int buf_len, int flags, void *userdata)
 {
 	UNUSED(buf);
 	UNUSED(buf_len);
@@ -130,9 +126,9 @@ u16 rtw_roam_nb_ch_get(u8 ch)
 #endif
 
 #if !defined(CONFIG_WIFI_11V_ENABLE) && !defined(CONFIG_WIFI_11R_ENABLE)
-void rtw_set_to_roam(u8 to_roam)
+void rtw_set_to_roam(u8 roam_try_cnt)
 {
-	UNUSED(to_roam);
+	UNUSED(roam_try_cnt);
 }
 #endif
 
@@ -179,21 +175,21 @@ void rtw_ft_auth_start(char *buf, int buf_len, int flags, void *userdata)
 	UNUSED(userdata);
 }
 
-int rtw_ft_derive_ptk(u8 *sa, u8 *ssid)
+int rtw_ft_ptk_derive(u8 *sa, u8 *ssid)
 {
 	UNUSED(sa);
 	UNUSED(ssid);
 	return -1;
 }
 
-int rtw_ft_validate_ie_eapol_3(u8 *buf, u32 len)
+int rtw_ft_eapol3_ie_validate(u8 *buf, u32 len)
 {
 	UNUSED(buf);
 	UNUSED(len);
 	return -1;
 }
 
-u8 rtw_ft_build_eapol_2_ies(void *a)
+int rtw_ft_eapol2_ies_build(void *a)
 {
 	UNUSED(a);
 	return -1;

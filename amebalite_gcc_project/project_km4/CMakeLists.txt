@@ -18,7 +18,7 @@ set(TARGETDIR ${BASEDIR}/component/soc/amebalite)
 set(CMAKE_FILES_DIR ${BASEDIR}/cmake)
 
 set(FREERTOS_VER v10.4.3)
-set(MBEDTLS_VER 2.16.9)
+set(MBEDTLS_VER 3.6.2)
 set(LITTLEFS_VER r2.50)
 set(FATFS_VER r0.14b)
 set(LWIP_VER v2.1.2)
@@ -40,6 +40,14 @@ set(FLOADER_BIN_DIR ${UTILITYDIR}/image_tool_flashloader/amebalite_acut)
 set(TARGET_LIBSOC_FOLDER ${PROJECTDIR}/asdk/lib/soc)
 set(TARGET_LIBAPP_FOLDER ${PROJECTDIR}/asdk/lib/application)
 
+if(NOT FINAL_IMAGE_DIR)
+    set(FINAL_IMAGE_DIR ${PROJECTDIR}/..)
+else()
+    if(NOT EXISTS FINAL_IMAGE_DIR)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${FINAL_IMAGE_DIR})
+    endif()
+endif()
+
 ###########################################
 if(NOT ASDK_VER)
     set(ASDK_VER 10.3.1)
@@ -56,7 +64,9 @@ set(CMAKE_BUILD_TYPE "")
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 ###########################################
-
+file(READ ${PROJECTDIR}/../utils/jlink_script/gdb.py content)
+string(REGEX REPLACE "CMAKE_GDB = [^\r\n\t]*" "CMAKE_GDB = \'${CMAKE_GDB}\'" content ${content})
+file(WRITE ${PROJECTDIR}/../utils/jlink_script/gdb.py ${content})
 #############   include  ##################
 
 include (${CMAKE_FILES_DIR}/ccache.cmake)

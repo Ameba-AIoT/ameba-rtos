@@ -40,13 +40,13 @@
 #ifndef __ANDROID__
 struct in6_flowlabel_req {
 	struct in6_addr flr_dst;
-	__u32   flr_label;
-	__u8    flr_action;
-	__u8    flr_share;
-	__u16   flr_flags;
-	__u16   flr_expires;
-	__u16   flr_linger;
-	__u32   __flr_pad;
+	u32   flr_label;
+	u8    flr_action;
+	u8    flr_share;
+	u16   flr_flags;
+	u16   flr_expires;
+	u16   flr_linger;
+	u32   __flr_pad;
 	/* Options in format of IPV6_PKTOPTIONS */
 };
 #endif

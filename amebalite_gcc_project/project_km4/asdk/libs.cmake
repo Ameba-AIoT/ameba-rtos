@@ -1,7 +1,5 @@
 ################### ROM LIB ##################
-if(CONFIG_AMEBALITE_A_CUT)
-    set(ROM_LIB_DIR ${PROJECTDIR}/asdk/lib/amebalite_rom_acut)
-endif()
+set(ROM_LIB_DIR ${PROJECTDIR}/asdk/lib/amebalite_rom_acut)
 
 if(CONFIG_LINK_ROM_SYMB)
     set(LINK_ROM_LIB)
@@ -85,6 +83,7 @@ if(CONFIG_WLAN)
     # AP Link Library
     if(CONFIG_AS_INIC_AP)
         list(APPEND LINK_APP_LIB ${APP_LIB})
+        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     # NP Link Library
     elseif(CONFIG_AS_INIC_NP)
         if(NOT CONFIG_MP_SHRINK)
@@ -111,6 +110,7 @@ if(CONFIG_WLAN)
         else()
             list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex.a)
         endif()
+        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     endif()
 endif()
 
@@ -139,9 +139,12 @@ if(CONFIG_MEDIA_PLAYER OR CONFIG_MEDIA_LITE_PLAYER)
     if(CONFIG_MEDIA_DEMUX_OGG)
         list(APPEND LINK_THIRD_APP_LIB ${APP_LIB_DIR}/lib_vorbisdec.a)
     endif()
+    if(CONFIG_MEDIA_CODEC_GSM)
+        list(APPEND LINK_THIRD_APP_LIB ${APP_LIB_DIR}/lib_gsm.a)
+    endif()
 endif()
 
-if(CONFIG_SPEEX_LIB OR CONFIG_AUDIO_MIXER)
+if(CONFIG_SPEEX_LIB)
     list(APPEND LINK_THIRD_APP_LIB ${APP_LIB_DIR}/lib_speexdsp.a)
 endif()
 if(CONFIG_OPUS_LIB OR CONFIG_MEDIA_CODEC_OPUS)
@@ -165,32 +168,20 @@ if(CONFIG_RPC_EN)
     #list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_rpc_hal.a)
 endif()
 
-#zigbee
-if(CONFIG_802154_ZIGBEE_EN)
-    # application
-    if(CONFIG_802154_ZIGBEE_APPLICATION_EN)
-        if(CONFIG_802154_ZIGBEE_ROLE_ZC_ZR)
-            list(APPEND LINK_APP_LIB ${BASEDIR}/component/wpan/zigbee/lib/libzboss.a)
-        endif()
-        if(CONFIG_802154_ZIGBEE_ROLE_ZED)
-            list(APPEND LINK_APP_LIB ${BASEDIR}/component/wpan/zigbee/lib/libzboss.ed.a)
-        endif()
-    endif()
-    # mac cert test
-    if(CONFIG_802154_ZIGBEE_MAC_TEST_EN)
-        list(APPEND LINK_APP_LIB ${BASEDIR}/component/wpan/zigbee/lib/libzboss_mac_cert.a)
-    endif()
-    # zcp test
-    if(CONFIG_802154_ZIGBEE_ZCP_TEST_EN)
-        if(CONFIG_802154_ZIGBEE_ROLE_ZC_ZR)
-            list(APPEND LINK_APP_LIB ${BASEDIR}/component/wpan/zigbee/lib/libzboss_r22_cert.a)
-        endif()
-        if(CONFIG_802154_ZIGBEE_ROLE_ZED)
-            list(APPEND LINK_APP_LIB ${BASEDIR}/component/wpan/zigbee/lib/libzboss_r22_cert.ed.a)
-        endif()
-    endif()
+if(CONFIG_TFLITE_MICRO_EN)
+    list(
+        APPEND LINK_APP_LIB
+        ${APP_LIB_DIR}/lib_tflite_micro.a
+        ${APP_LIB_DIR}/lib_cmsis_nn.a
+    )
 endif()
 
 ############# WIFI LIB #############
 
 include(${WIFIMAKEDIR}/wifilib.cmake)
+
+############# WPAN LIB #############
+
+if(CONFIG_802154_EN)
+	include(make/wpan/wpanlib.cmake)
+endif()

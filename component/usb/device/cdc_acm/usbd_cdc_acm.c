@@ -37,7 +37,7 @@ static void acm_cdc_status_changed(usb_dev_t *dev, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "ACM";
+static const char *const TAG = "ACM";
 
 /* USB Standard Device Descriptor */
 static u8 usbd_cdc_acm_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
@@ -475,7 +475,7 @@ static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 		}
 #endif
 	} else {
-		RTK_LOGS(TAG, "[ACM] EP%02x TX fail: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX fail: %d\n", ep_addr, status);
 		if (ep_addr == CDC_ACM_BULK_IN_EP) {
 			cdev->bulk_in_state = 0U;
 			if (cdev->cb->transmitted) {
@@ -604,7 +604,7 @@ static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spee
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGS(TAG, "[ACM] Invalid str idx %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -654,7 +654,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usbd_cdc_acm_ntf_t *ntf = cdev->intr_in_buf;
 
 	if (!cdev->is_ready) {
-		RTK_LOGS(TAG, "[ACM] EP%02x TX %d not ready\n", CDC_ACM_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", CDC_ACM_INTR_IN_EP, len);
 		return ret;
 	}
 
@@ -841,7 +841,7 @@ int usbd_cdc_acm_transmit(u8       *buf, u16 len)
 	usb_dev_t *dev = cdev->dev;
 
 	if (!cdev->is_ready) {
-		RTK_LOGS(TAG, "[ACM] EP%02x TX %d not ready\n", CDC_ACM_BULK_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", CDC_ACM_BULK_IN_EP, len);
 		return ret;
 	}
 

@@ -26,8 +26,10 @@ set(
     CSRC
 	${RAM_COM_DIR}/ameba_reset.c
 	${RAM_COM_DIR}/ameba_codec.c
+	${RAM_COM_DIR}/ameba_ipc_ram.c
 	${RAM_COM_DIR}/ameba_otp.c
 	${RAM_COM_DIR}/ameba_tim.c
+	${RAM_HP_DIR}/ameba_arch.c
 	${SWLIB_DIR}/log.c
 	${FL_DIR}/loguart_intf.c
 	${FL_DIR}/floader_debug.c
@@ -83,7 +85,7 @@ add_custom_command(
 set(
     LINK_SCRIPTS
     ${LDDIR}/ameba_img1_all.ld
-    ${PROJECTDIR}/../amebaDplus_layout.ld
+    ${PROJECTDIR}/../amebalite_layout.ld
 )
 
 set_target_properties(target_imgtool_flashloader PROPERTIES LINK_DEPENDS "${LINK_SCRIPTS}")
@@ -101,7 +103,7 @@ add_custom_command(TARGET target_imgtool_flashloader POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      imgtool_flashloader.bin"
 
     COMMAND ${CMAKE_COMMAND}
-    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR}
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DPROJECTDIR=${PROJECTDIR}
     -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE}
@@ -109,9 +111,7 @@ add_custom_command(TARGET target_imgtool_flashloader POST_BUILD
     -DIMGTOOL_LOADER=y
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../loader_postbuild.cmake
 
-    COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/target_loader.axf 	        ${FLOADER_BIN_DIR}/target_FPGA.axf
     COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/ram_1_prepend.bin           ${FLOADER_BIN_DIR}/imgtool_flashloader_raw.bin
-    COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin     ${FLOADER_BIN_DIR}/floader_amebadplus.bin
-    COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin     ${FLOADER_BIN_DIR}/imgtool_flashloader.bin
+    COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin     ${FLOADER_BIN_DIR}/floader_amebalite.bin
     COMMAND ${CMAKE_COMMAND} -E remove -f ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin
 )

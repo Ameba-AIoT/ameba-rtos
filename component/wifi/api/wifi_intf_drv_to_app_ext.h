@@ -127,7 +127,7 @@ int wifi_set_lps_listen_interval(u8 interval);
  * @note  Defining CONFIG_AUTO_RECONNECT in "rtw_autoconf.h" needs to be
  * 	done before compiling, or this API won't be effective.
  */
-int wifi_config_autoreconnect(__u8 mode);
+int wifi_config_autoreconnect(u8 mode);
 
 /**
  * @brief  Get the result of setting reconnection mode.
@@ -138,7 +138,7 @@ int wifi_config_autoreconnect(__u8 mode);
  * @note  Defining CONFIG_AUTO_RECONNECT in "rtw_autoconf.h" needs to be
  * 	done before compiling, or this API won't be effective.
  */
-int wifi_get_autoreconnect(__u8 *mode);
+int wifi_get_autoreconnect(u8 *mode);
 
 /**
  * @brief  Get the associated clients with SoftAP.
@@ -179,7 +179,7 @@ int wifi_get_channel(unsigned char wlan_idx, u8 *channel);
  * @param[in]  cntcode: Pointer to the country code which want to be set
  * @return  RTW_SUCCESS or RTW_ERROR
  */
-u8 wifi_set_countrycode(char *cntcode);
+int wifi_set_countrycode(char *cntcode);
 
 /**
  * @brief  Retrieves the current Media Access Control (MAC) address
@@ -362,26 +362,33 @@ int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param);
  * 	P2PWPS_ASSOC_RSP_IE: set WPS ie in Association Response
  * @return  RTW_ERROR or RTW SUCCESS
  */
-int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
+int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 
 /**
  * @brief  Setup custom IE list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.
  * @param[in]  cus_ie: a buffer stores custom IE list, format of custom ie is struct custom_ie.
+ *  u8 ie1[] = {221, 2, 2, 2};
+ *  u8 ie2[] = {221, 2, 1, 1};
+ *  struct custom_ie buf[2] = {{ie1, BEACON}, {ie2, PROBE_RSP}};
+ *  wifi_add_custom_ie(buf, 2);
  * @param[in]  ie_num: The number of custom IEs in cus_ie.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_add_custom_ie(void *cus_ie, int ie_num);
+int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num);
 
 /**
  * @brief  Update the item in WIFI CUSTOM IE list.
  * 	(Information Element)
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
+ *  u8 ie[] = {221, 2, 1, 3} ;
+ *  struct custom_ie buf_update = {ie, PROBE_RSP};
+ *  wifi_update_custom_ie(&buf_update, 2);
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_update_custom_ie(void *cus_ie, int ie_index);
+int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE list. (Information Element)

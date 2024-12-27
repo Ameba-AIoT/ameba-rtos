@@ -8,6 +8,13 @@ if (CONFIG_WLAN)
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_com_sec.a
                 )
+            elseif(CONFIG_ZEPHYR_SDK)
+                list(
+                    APPEND LINK_APP_LIB
+                    ${APP_LIB_DIR}/lib_wifi_common.a
+                    ${APP_LIB_DIR}/lib_wpa_lite.a
+                    ${APP_LIB_DIR}/lib_wps.a
+                )
             else()
                 list(
                     APPEND LINK_APP_LIB
@@ -20,6 +27,13 @@ if (CONFIG_WLAN)
                 ${APP_LIB_DIR}/lib_wifi_com_sec.a
             )
         endif()
+    endif()
+
+    if(CONFIG_AMEBAD)
+        list(
+            APPEND LINK_APP_LIB
+            ${APP_LIB_DIR}/lib_wifi_com_sec.a
+        )
     endif()
 
     if(CONFIG_AMEBASMART)
@@ -47,6 +61,13 @@ if (CONFIG_WLAN)
         list(
             APPEND LINK_APP_LIB
             ${APP_LIB_DIR}/lib_wifi_common.a
+        )
+    endif()
+
+    if(CONFIG_AMEBAL2)
+        list(
+            APPEND LINK_APP_LIB
+            ${APP_LIB_DIR}/lib_wifi_com_sec.a
         )
     endif()
 
@@ -175,6 +196,25 @@ if (CONFIG_WLAN)
                 list(
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_sdio_bridge.a
+                )
+            endif()
+        elseif(CONFIG_SPI_BRIDGE)
+            if(CONFIG_MP_INCLUDED)
+                if(CONFIG_MP_SHRINK)
+                    list(
+                        APPEND LINK_APP_LIB
+                        ${APP_LIB_DIR}/lib_wifi_spi_bridge_mp_shrink.a
+                    )
+                else()
+                    list(
+                        APPEND LINK_APP_LIB
+                        ${APP_LIB_DIR}/lib_wifi_spi_bridge_mp.a
+                    )
+                endif()
+            else()
+                list(
+                    APPEND LINK_APP_LIB
+                    ${APP_LIB_DIR}/lib_wifi_spi_bridge.a
                 )
             endif()
         else()

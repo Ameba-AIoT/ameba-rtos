@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "LPCNP";
+static const char *const TAG = "LPCNP";
 u32 NPSleepTick = 0;
 u32 np_sleep_type;
 u32 np_sleep_timeout = 0xffffffff;
@@ -42,7 +42,7 @@ u32 FLASH_CalibrationNewCmd(u32 NewStatus)
 
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, temp);
 
-	return _TRUE;
+	return TRUE;
 }
 
 SRAM_ONLY_TEXT_SECTION
@@ -912,7 +912,7 @@ void np_power_gate(void)
 	}
 
 	if (ps_config.km0_tickles_debug) {
-		RTK_LOGS(NOTAG, "NPPG\n");
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "NPPG\n");
 	}
 	/* poll KM4 clock gate */
 	while (1) {
@@ -954,7 +954,7 @@ void np_power_wake(void)
 	np_power_wake_ctrl();
 
 	if (ps_config.km0_tickles_debug) {
-		RTK_LOGS(NOTAG, "NPPW\n");
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "NPPW\n");
 	}
 }
 
@@ -978,7 +978,7 @@ void np_clock_gate(void)
 
 
 	if (ps_config.km0_tickles_debug) {
-		RTK_LOGS(TAG, "NPCG\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "NPCG\n");
 	}
 
 	pmu_release_wakelock(PMU_KM4_RUN);
@@ -1014,7 +1014,7 @@ void np_clock_on(void)
 	asm volatile("sev");
 
 	if (ps_config.km0_tickles_debug) {
-		RTK_LOGS(NOTAG, "NPCW\n");
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "NPCW\n");
 	}
 }
 
@@ -1037,10 +1037,10 @@ u32 ap_status_on(void)
 	}
 }
 
-u32 np_suspend(u32 type)
+int np_suspend(u32 type)
 {
 	u32 Rtemp;
-	u32 ret = _SUCCESS;
+	int ret = SUCCESS;
 
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW,
 			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW) & (~LSYS_BIT_NP_RUNNING));
@@ -1157,12 +1157,12 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
-		if (_SUCCESS == np_suspend(SLEEP_PG)) {
+		if (SUCCESS == np_suspend(SLEEP_PG)) {
 			pmu_set_sleep_type(SLEEP_PG);
 		}
 		break;
 	case SLEEP_CG:
-		if (_SUCCESS == np_suspend(SLEEP_CG)) {
+		if (SUCCESS == np_suspend(SLEEP_CG)) {
 			pmu_set_sleep_type(SLEEP_CG);
 			//pmu_set_sysactive_time(2);
 		}

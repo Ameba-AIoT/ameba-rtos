@@ -44,6 +44,8 @@
 #include "ameba_pmu.h"
 #include "cmsis_gcc_riscv.h"
 
+#include "platform_autoconf.h"
+
 #ifdef configCLINT_BASE_ADDRESS
 #undef configCLINT_BASE_ADDRESS
 #endif
@@ -243,9 +245,9 @@ void vApplicationIdleHook(void)
 	remains unallocated. */
 	xFreeStackSpace = xPortGetFreeHeapSize();
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
-	extern u32 driver_suspend_ret;
+	extern int driver_suspend_ret;
 #if defined (CONFIG_WLAN)
-	extern u32 wlan_driver_check_and_suspend(void);
+	extern int wlan_driver_check_and_suspend(void);
 	driver_suspend_ret = wlan_driver_check_and_suspend();
 #endif
 #endif
@@ -279,7 +281,7 @@ void vApplicationMallocFailedHook(void)
 		pcCurrentTask = pcTaskGetName(NULL);
 	}
 
-	RTK_LOGS(NOTAG, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KR4", pcCurrentTask, xPortGetFreeHeapSize());
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KR4", pcCurrentTask, xPortGetFreeHeapSize());
 
 	taskDISABLE_INTERRUPTS();
 	for (;;);
@@ -296,7 +298,7 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 	parameters have been corrupted, depending on the severity of the stack
 	overflow.  When this is the case pxCurrentTCB can be inspected in the
 	debugger to find the offending task. */
-	RTK_LOGS(NOTAG, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
 	for (;;);
 }
 
@@ -428,4 +430,15 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 }
 
 
+/*-----------------------------------------------------------*/
+
+void vPortCleanUpTCB(uint32_t * pxTCB)
+{
+	UNUSED(pxTCB);
+
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+	extern void sys_thread_sem_deinit(void);
+	sys_thread_sem_deinit();
+#endif
+}
 /*-----------------------------------------------------------*/

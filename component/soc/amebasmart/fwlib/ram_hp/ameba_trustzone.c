@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "TRUSTZONE";
+static const char *const TAG = "TRUSTZONE";
 /**
   * @brief  Configure slave port as secure or non-secure attribute.
   * @param  PPC_PeripheralId: it can be one of the followings:

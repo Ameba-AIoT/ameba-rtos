@@ -130,11 +130,11 @@ void flash_init_userdef(void)
 	FLASH_InitStruct->FLASH_Status2_exist = 0;
 
 	/*1.2 dummy cycle */
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = 0;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = FLASH_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = FLASH_DM_CYCLE_2IO;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = FLASH_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = FLASH_DM_CYCLE_4IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = FLASH_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = FLASH_DM_CYCLE_2IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = FLASH_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = FLASH_DM_CYCLE_4IO;
 
 	/*1.3 set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = 0xBB;

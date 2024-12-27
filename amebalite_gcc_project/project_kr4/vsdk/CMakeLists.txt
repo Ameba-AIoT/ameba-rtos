@@ -56,7 +56,7 @@ add_compile_options(-fdata-sections  -ffunction-sections)
 add_subdirectory(make)
 
 ############################# BUILD LIBS ###################################
-if(NOT AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS)
     ## build soc libs
     add_subdirectory(make_lib/chipinfo_lib)
 
@@ -71,6 +71,7 @@ if(NOT AMEBA_RLS)
             add_subdirectory(make/network/httpd)
             add_subdirectory(make/network/websocket)
             add_subdirectory(make/network/tftp)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         elseif(CONFIG_AS_INIC_NP)
             if(NOT CONFIG_MP_SHRINK)
                 add_subdirectory(make/target/wifi_fw)
@@ -85,6 +86,7 @@ if(NOT AMEBA_RLS)
 	            add_subdirectory(make/target/wifi_fw)
             endif()
             add_subdirectory(make/rtk_coex)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         endif()
     endif()
 
@@ -109,5 +111,5 @@ endif()
 
 add_custom_target(
     ${PROJECT_NAME}
-    DEPENDS target_bootloader target_img2_${PROJECT_NAME}
+    DEPENDS target_bootloader target_img2_${PROJECT_NAME} target_img2_${PROJECT_NAME}_postbuild
 )

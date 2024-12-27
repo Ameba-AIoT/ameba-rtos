@@ -38,7 +38,7 @@ static struct dhcp_msg *dhcp_message_repository;
 static int dhcp_message_total_options_lenth;
 
 /* allocated IP range */
-static struct table  ip_table;
+struct table  ip_table;
 static struct ip_addr client_request_ip;
 static uint8_t client_addr[6];
 
@@ -522,9 +522,12 @@ static void dhcps_send_offer(struct pbuf *packet_buffer)
 #ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
 	temp_ip = check_client_request_ip(&client_request_ip, client_addr);
 #endif
-	/* create new client ip */
 	if (temp_ip == 0) {
-		temp_ip = search_next_ip();
+		temp_ip = check_client_direct_request_ip(&client_request_ip, client_addr);
+		/* create new client ip */
+		if (temp_ip == 0) {
+			temp_ip = search_next_ip();
+		}
 	}
 #if (debug_dhcps)
 	printf("\r\n temp_ip = %d", temp_ip);

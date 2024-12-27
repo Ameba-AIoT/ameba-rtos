@@ -2,12 +2,14 @@ if(CONFIG_IMQ_EN)
     add_subdirectory(ipc_app)
 endif()
 
-set( 
-    MODULE_IFLAGS 
+set(
+    MODULE_IFLAGS
     ${BASEDIR}/component/network/mqtt/MQTTClient
     ${BASEDIR}/component/network/mqtt/MQTTPacket
     ${BASEDIR}/component/network/cJSON
+    ${BASEDIR}/component/network/websocket
     ${BASEDIR}/component/file_system/kv
+    ${BASEDIR}/component/utils/ringbuffer
 )
 
 set(APP_DIR ${TARGETDIR}/app/monitor)
@@ -29,42 +31,51 @@ if(CONFIG_LONGER_CMD)
 endif()
 
 list(
-    APPEND CSRC 
-    ${DIR}/atcmd_service.c 
-	${DIR}/atcmd_sys.c 
+    APPEND CSRC
+    ${DIR}/atcmd_service.c
+	${DIR}/atcmd_sys.c
 	${DIR}/atcmd_bt_mp.c
 )
 
 if(CONFIG_WLAN)
     list(
-        APPEND CSRC 
-        ${DIR}/atcmd_wifi.c 
-		${DIR}/atcmd_mqtt.c 
-		${DIR}/atcmd_lwip.c 
+        APPEND CSRC
+        ${DIR}/atcmd_wifi.c
+		${DIR}/atcmd_mqtt.c
+		${DIR}/atcmd_sockets.c
+		${DIR}/atcmd_http.c
+		${DIR}/atcmd_websocket.c
     )
 endif()
 
 if(CONFIG_BT)
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/atcmd_bt_ext.c
     )
 endif()
 
-if(CONFIG_ATCMD_MCU_CONTROL)
+if(CONFIG_MCU_CONTROL_UART)
     list(
-        APPEND CSRC 
+        APPEND CSRC
         ${DIR}/at_intf_uart.c
     )
 endif()
 
+if(CONFIG_MCU_CONTROL_SPI)
+    list(
+        APPEND CSRC 
+        ${DIR}/at_intf_spi.c
+    )
+endif()
+
 list(
-    APPEND 
-    MODULE_IFLAGS 
+    APPEND
+    MODULE_IFLAGS
     ${DIR}
     ${APP_DIR}/include
     ${FREERTOSDIR}/include
-    ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/non_secure 
+    ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/non_secure
     ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/secure
 )
 

@@ -37,6 +37,15 @@ def main():
         help="Top-level Kconfig file (default: Kconfig)")
 
     parser.add_argument(
+        "--config-in",
+        metavar="CONFIG_LOAD",
+        help="""
+        File that kconfig load from. This file is in .config format, and symbol values
+        will be set by this file.
+        """)
+
+
+    parser.add_argument(
         "--config-out",
         metavar="CONFIG_FILE",
         help="Write the configuration to CONFIG_FILE.")
@@ -65,7 +74,11 @@ def main():
     args = parser.parse_args()
 
     kconf = kconfiglib.Kconfig(args.kconfig, suppress_traceback=True)
-    print(kconf.load_config())
+
+    if args.config_in is None:
+        print(kconf.load_config())
+    else:
+        print(kconf.load_config(args.config_in))
 
     for arg in args.assignments:
         if "=" not in arg:

@@ -54,7 +54,7 @@ I2C_InitTypeDef I2CInitData[2];
 
 #define I2C_0 0
 #define I2C_1 1
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 /*if defined 1, master send, slave read mode.
  else master read slave send mode.*/

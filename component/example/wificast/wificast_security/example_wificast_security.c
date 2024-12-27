@@ -1,62 +1,12 @@
-#include "wifi_intf_drv_to_app_cast.h"
-#include "os_wrapper.h"
-#include "PinNames.h"
-#include "serial_api.h"
-#include "serial_ex_api.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/ecdh.h"
+#include "example_wificast_security.h"
 
-static const char *TAG = "example_main";
+static const char *const TAG = "example_main";
 static const char *pers = "wifi_cast_sec";
-#define WIFI_CAST_UART_DATA		BIT(13)
-#define WIFI_CAST_SEC_SCAN_REQUEST		BIT(12)
-#define WIFI_CAST_SEC_SCAN_RESPONSE		BIT(11)
-#define WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST	BIT(10)
-#define WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE	BIT(9)
-
-#define UART_IDX  0
-#define UART_BAUD_RATE 1500000
-#define UART_TX_PIN    PA_28
-#define UART_RX_PIN    PA_29
-
-#define UART_RX_BUF_SZ	200
-
-struct example_frame_head {
-	u16 type;
-	u16 len;
-} __attribute__((packed));
-
-struct example_sec_info {
-	u8 mac[6];
-} __attribute__((packed));
-
-struct example_node_list {
-	u8 is_init;
-	int size;
-	struct example_sec_info info[MAX_NODE_NUM];
-};
-
-struct pubkey_exchange_info {
-	u16 type;
-	u8 mac[6];
-	u8 pubkey[MBEDTLS_ECP_MAX_PT_LEN];
-	int pubkey_len;
-} __attribute__((packed));
-
-struct example_keypair {
-	u8 pubkey[MBEDTLS_ECP_MAX_PT_LEN];
-	int pubkey_len;
-	u8 privkey[MBEDTLS_ECP_MAX_BYTES];
-	int privkey_len;
-	u8 shared_key[MBEDTLS_ECP_MAX_PT_LEN];
-	int shared_key_len;
-};
 
 static serial_t g_uart_obj;
 static rtos_queue_t g_scan_report_q;
 static rtos_queue_t g_pubkey_exchange_q;
-static struct example_sec_info *g_info_list = NULL;
+static struct example_scan_info *g_info_list = NULL;
 static struct example_node_list g_node_list = {0};
 static struct example_keypair g_keypair;
 
@@ -139,13 +89,13 @@ static wcast_err_t example_send(u16 type, const wifi_cast_addr_t dst_mac, u8 *da
 
 static void example_security_scan_request_cb(u8 *src_mac)
 {
-	struct example_sec_info info = {0};
-	struct _rtw_mac_t  self_mac = {0};
+	struct example_scan_info info = {0};
+	struct _rtw_mac_t self_mac = {0};
 
 	wifi_get_mac_address(0, &self_mac, 0);
 	memcpy(info.mac, self_mac.octet, 6);
 
-	if (example_send(WIFI_CAST_SEC_SCAN_RESPONSE, WIFI_CAST_BROADCAST_MAC, (u8 *)&info, sizeof(info)) != WIFI_CAST_OK) {
+	if (example_send(WIFI_CAST_SCAN_RESPONSE, WIFI_CAST_BROADCAST_MAC, (u8 *)&info, sizeof(info)) != WIFI_CAST_OK) {
 		RTK_LOGE(TAG, "%s, send fail\n", __func__);
 		return;
 	}
@@ -160,7 +110,7 @@ static void example_security_scan_request_cb(u8 *src_mac)
 
 static void example_security_scan_response_cb(u8 *mac)
 {
-	struct example_sec_info info = {0};
+	struct example_scan_info info = {0};
 	memcpy(info.mac, mac, 6);
 
 	RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(mac));
@@ -225,9 +175,9 @@ static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, u
 	if (hdr->type & WIFI_CAST_UART_DATA) {
 		RTK_LOGI(TAG, MAC_FMT", rssi: %d, recv count: %d, size: %d, data: %s\n",
 				 MAC_ARG(pnode->mac), rssi, ++count, hdr->len, buf + sizeof(struct example_frame_head));
-	} else if (hdr->type & WIFI_CAST_SEC_SCAN_REQUEST) {
+	} else if (hdr->type & WIFI_CAST_SCAN_REQUEST) {
 		example_security_scan_request_cb(pnode->mac);
-	} else if (hdr->type & WIFI_CAST_SEC_SCAN_RESPONSE) {
+	} else if (hdr->type & WIFI_CAST_SCAN_RESPONSE) {
 		example_security_scan_response_cb(buf + sizeof(struct example_frame_head));
 	} else if (hdr->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST ||
 			   hdr->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE) {
@@ -484,13 +434,13 @@ exit:
 	return ret;
 }
 
-static void example_security_initial_scan(struct example_sec_info **info_list, int *num, u32 wait_ms)
+static void example_security_initial_scan(struct example_scan_info **info_list, int *num, u32 wait_ms)
 {
-	struct example_sec_info info = {0};
+	struct example_scan_info info = {0};
 	int info_num = 0;
 
 	do {
-		example_send(WIFI_CAST_SEC_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
+		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
 		if (SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
 			u8 exist = 0;
 			if (g_info_list) {
@@ -505,7 +455,7 @@ static void example_security_initial_scan(struct example_sec_info **info_list, i
 				continue;
 			}
 			RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(info.mac));
-			g_info_list = (struct example_sec_info *)rtos_mem_realloc(g_info_list, (info_num + 1) * sizeof(struct example_sec_info));
+			g_info_list = (struct example_scan_info *)rtos_mem_realloc(g_info_list, (info_num + 1) * sizeof(struct example_scan_info));
 			memcpy(g_info_list[info_num].mac, info.mac, 6);
 			info_num++;
 		}
@@ -519,7 +469,7 @@ static void example_security_initial_scan(struct example_sec_info **info_list, i
 static void example_security_scan_task(void *param)
 {
 	(void)param;
-	struct example_sec_info *info_list = NULL;
+	struct example_scan_info *info_list = NULL;
 	int info_num = 0;
 	example_security_initial_scan(&info_list, &info_num, 3000);
 	RTK_LOGI(TAG, "%s, scan info num: %d\n", __func__, info_num);
@@ -569,7 +519,7 @@ static void example_main_task(void *param)
 	WIFI_CAST_ERROR_CHECK(wifi_cast_register_recv_cb(example_recv_callback));
 
 	example_uart_init();
-	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_sec_info));
+	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_scan_info));
 	rtos_queue_create(&g_pubkey_exchange_q, 16, sizeof(struct pubkey_exchange_info *));
 
 	if (rtos_task_create(NULL, ((const char *)"pubkey_exchange_task"), pubkey_exchange_task, NULL, 1024 * 4, 1) != SUCCESS) {
@@ -590,6 +540,9 @@ void WifiCastTestApp(u8  *argv[])
 {
 	if (_strcmp((const char *)argv[0], "scan") == 0) {
 		example_security_scan();
+	} else if (_strcmp((const char *)argv[0], "help") == 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\twificast \n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\t\t scan  : start scan devices and exchange key\n");
 	}
 }
 
@@ -603,7 +556,7 @@ CmdWifiCastTest(
 		WifiCastTestApp(argv);
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 CMD_TABLE_DATA_SECTION

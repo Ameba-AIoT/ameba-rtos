@@ -1,0 +1,133 @@
+ChangeLog:
+20170323  v2.0.0  Compatible with B_Cut.
+20170428  V2.0.1  (1) Reset flash status register before download.
+                  (2) Verify checksum after download.
+20170508  v2.0.2  Enable RSIP Function.
+20170724  v2.0.3  (1) Fix other baudrate except 1.5Mbps can not download issue.
+                  (2) Add Security Boot image process function.
+20170815  v2.0.4  Add Offset and Len options to Security Boot.
+20170822  v2.1.0  Adjust Generate Tabpage. Generate Image_All.bin without inserting system data by default. Select system.bin if needed.
+20170915  v2.2.0  (1) Build flash loader with ROM symbols, which is compatible with SMIC and UMC version.
+                  (2) Add "Advanced Setting" functions to Download Tabpage, which makes users to be able to check and modify flash status registers.
+                  (3) Modify Download Tabpage layout.
+20180202  v2.2.1  Compatible with AmebaD Security Function.
+20180306  v2.2.2  (1) Compatible with AmebaD Uart Download Function.
+                  (2) User needs to select target chip before download or encrypt images.
+                  (3) DataGridView is used to show images to be downloaded. The maximum number of images is not limited.
+                      User can add more rows in DataGridVeiw if needed.
+20180605  v2.2.3  (1) Compatible with AmebaD secure boot function(Start Offset fixed, Length: fixed to image size).
+                  (2) AmebaD init baudrate set to 115200bps for UART Download.
+                  (3) Close COM would throw exception when image download is ongoing. Fix it.
+20180719  v2.2.4  (1) Fix checksum error when download image to 8MB flash.
+                  (2) Update AmebaD flashloader to fit ASIC.
+20180725  v2.2.5  (1) Show default download address for different chips.
+                  (2) Disable AllowUserAddRows function when download image.
+20180727  v2.2.6  Add H/W power down enable function for AmebaD.
+20180731  v2.2.7  Modify flash speed options for AmebaD.
+20180820  v2.2.8  (1) Add support to Ameba-D RSIP mask function.
+                  (2) Fix closing serial port causes exception issue.
+                  (3) Fix checksum error in case of RSIP enable when download images to Ameba-D.
+20180905  v2.2.9  (1) Add timeout mechanism for handshake in AmebaZ/D flashloader.
+                  (2) Fix checksum error in case of RSIP enable when download images to Ameba-Z.
+20181024  v2.2.10 (1) AmebaD flash layout adjustment.
+                  (2) Enable datagridview column auto-size function.
+                  (3) Modify OTA trigger pin for AmebaD.
+20181102  v2.2.11 (1) Enable image append to tail without offset in Generate.
+                  (2) IMG3 download with IMG2 for AmebaD if use RDP. Do not download IMG3 independently.
+20181226  v2.2.12 (1) Modify default download images to fit new memory layout.
+                  (2) Update AmebaD flashloader to compatible with B-Cut.
+20190110  v2.2.13 Sync xmodem code with 1-10 MP Image Tool.
+20190424  v2.3.0  (1) Disable system data generae function for AmebaD.
+                  (2) Fix checksum error after more than 3MB image download.
+                  (3) Add IV input textbox for AmebaD RSIP encryption.
+20190529  v2.3.1  Add alternative baudrates for image download.
+20190718  v2.3.2  (1) Enable serial port auto detection.
+                  (2) Enable download tabpage auto sizing.
+                  (3) Enable edit/save system data for AmebaD.
+                  (4) Remove "Open" button to download images directly.
+20190813  v2.3.3  (1) Save and restore flash erase address and size.
+                  (2) Update serial port DropDownStyle to DropDownList.
+20191009  v2.4.1  Able to download into empty flash automatically, do not need to enter UART_DOWNLOAD mode manually.
+20200304  v2.5.1  Fix download/generate/encrypt fail when images are readonly.
+20200403  v2.5.2  Support the option of DEV bootup after download.
+20210407  v2.5.3  Add support for AmebaD2 USB download protocol.
+20210527  v2.5.4  Update memory layout and flashloader for RLE1080.
+20210719  v2.5.5  Update flashloader to support large density nor flash.
+20210723  v2.5.6  Revert uart download delay time from 2s to 500ms.
+20210816  v2.5.7  (1) Fix serial port combobox init exception when no serial port attached.
+                  (2) Auto generate form title from assembly info.
+20210826  v2.5.8  Add NAND Flash USB download support for AmebaD2.
+20210830  v2.5.9  Fix not erasing flash when image address cross 16MB boundary.
+20210902  v2.5.10 (1) Add NAND Flash bad block management support for AmebaD2.
+                  (2) Add expert mode for advanced operations.
+                  (3) Re-organize and rename project files for better maintainability.
+20210903  v2.5.11 (1) Fix USB serial port timeout issue for large images download.
+                  (2) Print friendly error text for USB error code alarm.
+                  (3) Unify the log message style.
+20210924  v2.5.12 (1) Fix serial port hotplug detection failure issue.
+                  (2) Fix download progress bar value error when rollback happens.
+                  (3) Disable generate/encrypt/security tabs for AmebaSmart.
+                  (4) Rename AmebaD2 to AmebaSmart.
+20211009  v2.5.13 (1) Improve NAND BBM to distinguish the bit-flip warning/error/fatal in expert mode.
+                  (2) Change default configuration to ignore bit-flip warnings.
+                  (3) Force user to confirm before mark NAND blocks in expert mode.
+                  (4) Disable the Mark Good button in expert mode.
+20211018  v2.5.14 Modify memory layout, the locations of fip and dtb change.
+20211019  v2.5.15 Modify fip and dtb address to nand-block(128K) aligned.
+20211102  v2.5.16 (1) Add support for force erase NAND bad blocks in expert mode.
+                  (2) Add image check before download.
+                  (3) Fix erase/read size error.
+                  (4) Update amebad2 flashloader to sdk git commit 7650721f.
+20211122  v2.5.17 Fix USB burn NOR flash checksum timeout issue.
+20211125  v2.5.18 (1) Fix USB burn >16MB NOR flash fail issue.
+                  (2) Tune the stop burn function.
+20211129  v2.5.19 Sync with latest Linux flash layout.
+20211220  v2.5.20 (1) Update RTOS layout considering OTA.
+                  (2) Download combined ap_image_all.bin instead of individual BL1 and FIP image.
+20211230  v2.5.21 Add support for AmebaLite.
+20211230  v2.5.22 (1) Tune NOR flash erase strategy.
+                  (2) Tune AmebaLite layout.
+20220224  v2.6.0  Add support for device profiles.
+20220225  v2.6.1  Eliminate unnecessary delay.
+20220301  v2.6.2  Fix project setting issues.
+20220310  v2.6.3  Tune device profiles.
+20220314  v2.6.4  (1) Add support for XModem cancellation.
+                  (2) Tune log and alarm message.
+20220512  v2.6.5  Fix Flash unlock issue.
+20220512  v2.6.6  Add support for RTL872xD OTA image generation
+20220701  v2.6.7  Add OTP access support for RTL8730X, RTL872XE
+20220704  v2.7.0  (1) Move common classes to RtkUtils.dll
+                  (2) Add efuse parameters into device profile
+                  (3) Update DeviceProfileEditor to v1.1.0 to fix issues and add support for efuse parameters
+20220714  v2.7.1  (1) Fix flash erase/read issues
+                  (2) Add status strip to display profile path
+                  (3) Add clean up at form closing
+                  (4) Add unhandled exception handler
+20220818  v2.7.2  (1) Update to .NET Framework 4.0
+                  (2) Rework device profile to support mandatory/optional partitions
+20220824  v2.7.3  Fix layout issues in non-100% display scales
+20220915  v2.7.4  Add GPIO indicating for download result
+20220923  v2.7.5  Add PWM indicating for download result
+20230213  v2.7.6  (1) Fix Xmodem handshake issue
+                  (2) Add support for RTL8745E
+20230223  v2.7.7  Auto PG eFuse to enable NOR flash 4-byte address mode as required
+20230303  v2.7.8  (1) Tune Xmodem handshake flow
+                  (2) Skip the NOR flash address mode check when access address is within 16MB
+				  (3) Add handshake timeout configuration
+20230419  v2.7.9  (1) Tune NOR flash address mode check strategy
+                  (2) Move floader files to sub-directory
+20230420  v2.7.10 Add support for combined image generation for all the SoC types
+20230720  v2.7.11 (1) Tune spic addr mode otp offset for amebaD
+                  (2) Update image filter for *.dtb
+20230817  v2.7.12 Change the rule to detect USB connections
+20230926  v2.7.13 (1) Fix NOR flash status register write error and simplify access strategy
+                  (2) Verify NOR flash capacity for USB download
+				  (3) Skip floader for CDC bootloader usage
+20231214  v2.7.14 (1) Eliminate unnecessary read delay to speed up flash download process
+				  (2) Update floaders to sync to latest SDK
+20240425  v2.7.15 Rename chips with SoC names
+20240611 v2.7.16  (1) Support dpuls/lite download image to sram
+                  (2) Fix checksum error in dplus uart download mode
+20240717 v2.7.17  (1) Fix download big size to flash error
+                  (2) Increase timeout value when erase flash
+20241119 v2.7.18  Change floader path for better maintainability

@@ -6,6 +6,7 @@ set(
     ${BASEDIR}/component/wifi/driver/halcommon
     ${BASEDIR}/component/wifi/driver/halbtc
     ${BASEDIR}/component/wifi/driver/phl
+    ${BASEDIR}/component/bluetooth/driver/bt_inic
 )
 
 if(CONFIG_AMEBALITE)
@@ -52,6 +53,7 @@ if(CONFIG_AS_INIC_NP)
 
         ameba_internal_library(wifi_inic_spi_dev)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+        target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
 elseif(CONFIG_AS_INIC_AP)
     if(CONFIG_SPI_FULLMAC_HOST)

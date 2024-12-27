@@ -122,7 +122,7 @@ static void rtw_sdio_irq(struct sdio_func *func)
 		return;
 	}
 
-	if ((padapter->surprise_remove == _TRUE)) {
+	if ((padapter->surprise_remove == TRUE)) {
 		RTK_PRINTF("%s: surprise remove!\n", __FUNCTION__);
 		return;
 	}
@@ -234,11 +234,11 @@ static int rtk_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 	//RL7005_FirmwareDownload(padapter);
 #endif
 
-	padapter->stop_trx = _TRUE;
+	padapter->stop_trx = TRUE;
 	for (i = 0; i < 100; i++) {
 		fw_ready = rtw_read8(padapter, SDIO_REG_CPU_IND);
 		if (fw_ready & SDIO_SYSTEM_TRX_RDY_IND) {
-			padapter->stop_trx = _FALSE;
+			padapter->stop_trx = FALSE;
 			break;
 		}
 		rtw_msleep_os(10);
@@ -265,7 +265,7 @@ static int rtk_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 	padapter->tx_max_size = rtw_read8(padapter, SDIO_REG_TXBUF_UNIT_SZ) * 64 - 32;
 	padapter->txbd_size = rtw_read16(padapter, SDIO_REG_TXBD_NUM);
 
-	padapter->surprise_remove = _FALSE;
+	padapter->surprise_remove = FALSE;
 
 	rtw_write16(padapter, 0x0, rtw_read16(padapter, 0) | BIT1);
 
@@ -290,7 +290,7 @@ static void rtk_sdio_remove(struct sdio_func *func)
 	sdio_adapter *padapter = &adapter;
 	rtw_release_irq(func);
 	rtw_disable_function(func);
-	padapter->surprise_remove = _TRUE;
+	padapter->surprise_remove = TRUE;
 	mychardev_exit();
 	rtw_mfree(padapter->rx_buffer);
 	rtw_mfree(padapter->tx_buffer);

@@ -14,7 +14,7 @@
 #include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *TAG = "VND";
+static const char *const TAG = "VND";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_VENDOR_HOTPLUG						1
@@ -90,7 +90,7 @@ static usbd_config_t vendor_cfg = {
 	.dma_enable = 1U,
 	.ptx_fifo_first = 1U,
 	.isr_priority = CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY,
-	.ext_intr_en =  USBD_EOPF_INTR | USBD_ICII_INTR,
+	.ext_intr_en =  USBD_EOPF_INTR,
 	.intr_use_ptx_fifo = 0U,
 };
 
@@ -350,7 +350,7 @@ static void vendor_bulk_xfer_thread(void *param)
 
 static void vendor_cb_status_changed(u8 status)
 {
-	RTK_LOGS(TAG, "[VND] Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	vendor_attach_status = status;
 	rtos_sema_give(vendor_attach_status_changed_sema);
@@ -367,13 +367,13 @@ static void vendor_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(vendor_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if (vendor_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-				RTK_LOGS(TAG, "[VND] DETACHED\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_vendor_deinit();
 				ret = usbd_deinit();
 				if (ret != 0) {
 					break;
 				}
-				RTK_LOGS(TAG, "[VND] Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&vendor_cfg);
 				if (ret != 0) {
 					break;
@@ -384,13 +384,13 @@ static void vendor_hotplug_thread(void *param)
 					break;
 				}
 			} else if (vendor_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
-				RTK_LOGS(TAG, "[VND] ATTACHED\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\n");
 			} else {
-				RTK_LOGS(TAG, "[VND] INIT\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 			}
 		}
 	}
-	RTK_LOGS(TAG, "[VND] Hotplug thread fail\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_VENDOR_HOTPLUG
@@ -457,7 +457,7 @@ static void example_usbd_vendor_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, "[VND] USBD vendor demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD vendor demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -488,7 +488,7 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, "[VND] USBD vendor demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD vendor demo stop\n");
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	rtos_sema_delete(vendor_attach_status_changed_sema);
 #endif
@@ -504,7 +504,7 @@ void example_usbd_vendor(void)
 
 	status = rtos_task_create(&task, "example_usbd_vendor_thread", example_usbd_vendor_thread, NULL, 1024U, CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY);
 	if (status != SUCCESS) {
-		RTK_LOGS(TAG, "[VND] Create USBD vendor thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD vendor thread fail\n");
 	}
 }
 

@@ -18,13 +18,11 @@
 #ifndef	__RTW_WIFI_CONSTANTS_H_
 #define __RTW_WIFI_CONSTANTS_H_
 
-#include "basic_types.h"
+
 #include "section_config.h"
 #include "platform_stdlib.h"
-#include "basic_types.h"
 #include "ameba.h"
-
-#include "rtw_autoconf.h"
+#include "rtw_wifi_common.h"
 #include "rtw_byteorder.h"
 
 #include "rtw_wifi_defs.h"

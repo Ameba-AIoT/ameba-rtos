@@ -1,0 +1,73 @@
+choice  # this will never be choice
+    depends on BT_INIC && !FULLMAC_MENU
+    prompt "Interface"
+    default BT_INIC_H4
+    config BT_INIC_H4
+        bool "Uart_H4"
+    config BT_INIC_H5
+        bool "Uart_H5"
+    config BT_INIC_SPI
+        bool "SPI"
+    config BT_INIC_SDIO
+        bool "SDIO"
+endchoice
+
+if !BT_INIC
+
+    config BT_ADVANCED_FEATURE_MENU
+        bool "BT Advanced Feature"
+        default n
+
+    config BT_EXCLUDE_AT_COMMAND
+        depends on BT_ADVANCED_FEATURE_MENU
+        bool "Exclude BT AT Command"
+        default n
+
+    config BT_MESH_BASED_ON_CODED_PHY
+        depends on BT_ADVANCED_FEATURE_MENU
+        bool "Enable BT Mesh Based on CODED PHY"
+        default n
+
+    config BT_EXAMPLE_DEMO_MENU
+        bool "BT Example Demo"
+        default n
+
+    if BT_EXAMPLE_DEMO_MENU
+        config BT_PERIPHERAL_MENU
+            bool "BLE Peripheral"
+            default n
+
+        config BT_CENTRAL_MENU
+            bool "BLE Central"
+            default n
+
+        config BT_SCATTERNET_MENU
+            bool "BLE Scatternet"
+            default n
+
+        # config BT_THROUGHPUT
+        #     bool "BLE Throughput"
+        #     default n
+
+        config BT_TRANSFER_MODULE_MENU
+            bool "BLE Transfer Module"
+            default n
+
+        config BT_MESH_PROVISIONER_MENU
+            bool "BLE Mesh Provisioner"
+            default n
+
+        config BT_MESH_DEVICE_MENU
+            bool "BLE Mesh Device"
+            default n
+
+        config BT_MESH_PROVISIONER_SCATTERNET_MENU
+            bool "BLE Mesh Provisioner and BLE Scatternet"
+            default n
+
+        config BT_MESH_DEVICE_SCATTERNET_MENU
+            bool "BLE Mesh Device and BLE Scatternet"
+            default n
+
+    endif
+endif

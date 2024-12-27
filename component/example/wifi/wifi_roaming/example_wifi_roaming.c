@@ -29,7 +29,7 @@ typedef struct wifi_roaming_ap {
 
 static wifi_roaming_ap_t *ap_list[MAX_AP_NUM] = {0};
 static u32 ap_count = 0;//scanned AP NUM
-static u8 pscan_enable = _FALSE; // if set _TRUE, please set pscan_channel_list
+static u8 pscan_enable = FALSE; // if set TRUE, please set pscan_channel_list
 static u8 pscan_channel_list[] = {1, 3, 5}; // set by customer
 
 u32 wifi_roaming_find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
@@ -124,7 +124,7 @@ void wifi_roaming_thread(void *param)
 #ifdef CONFIG_LWIP_LAYER
 					memcpy(roaming_ap.ip, IP, 4);
 #endif
-					if (pscan_enable == _TRUE) {
+					if (pscan_enable == TRUE) {
 						scan_param.channel_list = pscan_channel_list;
 						scan_param.channel_list_num = sizeof(pscan_channel_list);
 					}

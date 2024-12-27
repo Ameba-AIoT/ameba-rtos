@@ -36,7 +36,7 @@ static void usbd_vendor_status_changed(usb_dev_t *dev, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "VND";
+static const char *const TAG = "VND";
 
 /* USB Standard Device Descriptor */
 static u8 usbd_vendor_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
@@ -332,7 +332,7 @@ static int usbd_vendor_transmit_bulk_zlp(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
-	RTK_LOGS(TAG, "[VND] BULK TX ZLP\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX ZLP\n");
 	usbd_ep_transmit(cdev->dev, USBD_VENDOR_BULK_IN_EP, NULL, 0);
 
 	return HAL_OK;
@@ -582,9 +582,9 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 		if (ep_addr == USBD_VENDOR_INTR_IN_EP) {
 			cdev->intr_in_state = 0U;
 			if (status == HAL_OK) {
-				RTK_LOGS(TAG, "[VND] INTR TX done\n");
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX done\n");
 			} else {
-				RTK_LOGS(TAG, "[VND] INTR TX err: %d\n", status);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR TX err: %d\n", status);
 			}
 			if (cb->intr_transmitted != NULL) {
 				cb->intr_transmitted(status);
@@ -595,7 +595,7 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 #if CONFIG_USBD_VENDOR_BULK_TEST
 		if (ep_addr == USBD_VENDOR_BULK_IN_EP) {
 			if (status == HAL_OK) {
-				RTK_LOGS(TAG, "[VND] BULK TX done\n");
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX done\n");
 				if (cdev->bulk_in_zlp) {
 					cdev->bulk_in_zlp = 0;
 					usbd_vendor_transmit_bulk_zlp();
@@ -603,7 +603,7 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 					cdev->bulk_in_state = 0U;
 				}
 			} else {
-				RTK_LOGS(TAG, "[VND] BULK TX err: %d\n", status);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX err: %d\n", status);
 				cdev->bulk_in_state = 0U;
 			}
 			if (cb->bulk_transmitted != NULL) {
@@ -616,9 +616,9 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 #if CONFIG_USBD_VENDOR_ISOC_TEST
 	if (ep_addr == USBD_VENDOR_ISOC_IN_EP) {
 		if (status == HAL_OK) {
-			RTK_LOGS(TAG, "[VND] ISOC TX done\n");
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX done\n");
 		} else {
-			RTK_LOGS(TAG, "[VND] ISOC TX err: %d\n", status);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC TX err: %d\n", status);
 		}
 		if (cb->isoc_transmitted != NULL) {
 			cb->isoc_transmitted(status);
@@ -745,7 +745,7 @@ static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGS(TAG, "[VND] Invalid str idx %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -949,7 +949,7 @@ int usbd_vendor_transmit_ctrl_data(u8 *buf, u16 len)
 		len = ep_mps;
 	}
 
-	RTK_LOGS(TAG, "[VND] CTRL TX len=%d\n", len);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL TX len=%d\n", len);
 
 	usb_os_memcpy(cdev->ctrl_buf, buf, len);
 
@@ -980,12 +980,12 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
 	}
 
 	if (cdev->bulk_in_state == 0U) {
-		RTK_LOGS(TAG, "[VND] BULK TX len=%d data=%d\n", len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX len=%d data=%d\n", len, buf[0]);
 		cdev->bulk_in_state = 1U;
 		usb_os_memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
 		usbd_ep_transmit(cdev->dev, USBD_VENDOR_BULK_IN_EP, cdev->bulk_in_buf, len);
 	} else {
-		RTK_LOGS(TAG, "[VND] BULK TX len=%d data=%d: BUSY\n", len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "BULK TX len=%d data=%d: BUSY\n", len, buf[0]);
 		ret = HAL_BUSY;
 	}
 
@@ -1019,12 +1019,12 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
 	}
 
 	if (cdev->intr_in_state == 0U) {
-		RTK_LOGS(TAG, "[VND] INTR TX len=%d data=%d\n", len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX len=%d data=%d\n", len, buf[0]);
 		cdev->intr_in_state = 1U;
 		usb_os_memcpy((void *)cdev->intr_in_buf, (void *)buf, len);
 		usbd_ep_transmit(cdev->dev, USBD_VENDOR_INTR_IN_EP, cdev->intr_in_buf, len);
 	} else {
-		RTK_LOGS(TAG, "[VND] INTR TX len=%d data=%d: BUSY\n", len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "INTR TX len=%d data=%d: BUSY\n", len, buf[0]);
 		ret = HAL_BUSY;
 	}
 
@@ -1056,7 +1056,7 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
 		len = USBD_VENDOR_ISOC_IN_BUF_SIZE;
 	}
 
-	RTK_LOGS(TAG, "[VND] ISOC TX len=%d data=%d\n", len, buf[0]);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX len=%d data=%d\n", len, buf[0]);
 	usb_os_memcpy(cdev->isoc_in_buf, buf, len);
 	usbd_ep_transmit(cdev->dev, USBD_VENDOR_ISOC_IN_EP, cdev->isoc_in_buf, len);
 

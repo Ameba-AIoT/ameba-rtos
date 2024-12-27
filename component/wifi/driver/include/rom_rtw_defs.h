@@ -18,11 +18,6 @@
 #ifndef __ROM_RTW_DEFS_H_
 #define __ROM_RTW_DEFS_H_
 
-#define TAG_WLAN_DRV   "WLAN"
-#define TAG_WLAN_COEX  "COEX"
-#define TAG_WLAN_INIC  "INIC"
-#define TAG_WLAN_NAN   "NAN"
-
 /**
   * @brief  The enumeration lists all the network mode.
   */
@@ -130,6 +125,7 @@ enum _RT_CHANNEL_DOMAIN_5G {
 	RTW_RD_5G_59 = 59,      /*Bolivia*/
 	RTW_RD_5G_60 = 60,      /*ETSI (include ch169/ch173)*/
 	RTW_RD_5G_61 = 61,      /*Malaysia(include ch169/ch173)*/
+	RTW_RD_5G_62 = 62,
 	//===== Add new channel plan above this line===============//
 	RT_CHANNEL_DOMAIN_5G_MAX
 };
@@ -338,8 +334,9 @@ enum _NDIS_802_11_AUTHENTICATION_MODE {
 
 enum VCS_TYPE {
 	NONE_VCS,
-	RTS_CTS,
-	CTS_TO_SELF
+	RTS_CTS_BY_HW,
+	CTS_TO_SELF_FORCE,
+	RTS_CTS_FORCE
 };
 
 #define WAIT_FOR_BCN_TO_MIN		(6000)
@@ -480,13 +477,6 @@ enum rf_type {
 	RF_3T4R			= 6,
 	RF_4T4R			= 7,
 	RF_TYPE_MAX,
-};
-
-enum _IFACE_TYPE {
-	IFACE_PORT0, //mapping to port0 for C/D series chips
-	IFACE_PORT1, //mapping to port1 for C/D series chip
-	IFACE_PORT2,
-	MAX_IFACE_PORT,
 };
 
 enum _WIRELESS_MODE {

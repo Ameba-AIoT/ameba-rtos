@@ -292,6 +292,10 @@ dhcp_handle_nak(struct netif *netif)
   dhcp_set_state(dhcp, DHCP_STATE_BACKING_OFF);
   /* remove IP address from interface (must no longer be used, as per RFC2131) */
   netif_set_addr(netif, IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
+
+  /* Realtek add, stop dhcp lease/renew/rebind during restarted dhcp process to prevent disrupting dhcp state machine */
+  dhcp->t1_renew_time = dhcp->t2_rebind_time = dhcp->t0_timeout = 0;
+
   /* We can immediately restart discovery */
   dhcp_discover(netif);
 }
@@ -1161,6 +1165,11 @@ dhcp_bind(struct netif *netif)
   /* If we have sub 1 minute lease, t2 and t1 will kick in at the same time. */
   if ((dhcp->t1_timeout >= dhcp->t2_timeout) && (dhcp->t2_timeout > 0)) {
     dhcp->t1_timeout = 0;
+  }
+
+  /* Realtek Add, refer to RFC2131, the time value of 0xffffffff is reserved to represent "infinity" */
+  if (dhcp->offered_t0_lease == 0xffffffffUL) {
+    dhcp->t1_renew_time = dhcp->t2_rebind_time = dhcp->t0_timeout = 0;
   }
 
   if (dhcp->subnet_mask_given) {

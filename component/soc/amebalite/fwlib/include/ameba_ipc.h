@@ -208,6 +208,7 @@ typedef enum {
 	IPC_SEM_FLASH,
 	IPC_SEM_OTP,
 	IPC_SEM_CRYPTO,
+	IPC_SEM_GDMA = IPC_SEM_CRYPTO,/* gdma and crypto share the idx*/
 	IPC_SEM_MAX,			/* can't be this value, total 4 ipc semaphores*/
 } IPC_SEM_IDX;
 

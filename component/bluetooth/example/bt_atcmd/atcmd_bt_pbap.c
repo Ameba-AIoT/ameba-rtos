@@ -111,6 +111,23 @@ static int atcmd_bt_pbap_phone_book_pull_continue(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_pbap_phone_book_pull_abort(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_pbap_phone_book_pull_abort(bd_addr)) {
+		BT_LOGE("PBAP phone book pull abort fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("PBAP phone book pull abort to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static int atcmd_bt_pbap_phone_book_size_get(int argc, char **argv)
 {
 	(void)argc;
@@ -159,6 +176,7 @@ static const cmd_table_t pbap_cmd_table[] = {
 	{"set_pb",                  atcmd_bt_pbap_set_phone_book,           2, 4},
 	{"pull_pb",                 atcmd_bt_pbap_phone_book_pull,          2, 7},
 	{"pull_pb_continue",        atcmd_bt_pbap_phone_book_pull_continue, 2, 2},
+	{"pull_pb_abort",           atcmd_bt_pbap_phone_book_pull_abort,    2, 2},
 	{"get_pb_size",             atcmd_bt_pbap_phone_book_size_get,      2, 4},
 	{"pull_id",                 atcmd_bt_pbap_pull_caller_id_name,      2, 3},
 	{NULL,},

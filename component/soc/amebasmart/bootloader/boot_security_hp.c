@@ -12,7 +12,7 @@
 #include "bootloader_hp.h"
 #include "boot_ota_hp.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 extern u8 RMA_PK_HASH[32];
 extern u8 Signature[2][SIGN_MAX_LEN];
 u8 SecureBootEn = DISABLE;
@@ -34,7 +34,7 @@ u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u
 	Cnt = sizeof(Km4Img3Label) / sizeof(char *);
 
 	/* check if RDP image should decrypt. If not, copy to secure RAM directly */
-	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, 2, Km4Img3Label, _FALSE) == _TRUE) {
+	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, 2, Km4Img3Label, FALSE) == TRUE) {
 		return Cnt;
 	}
 

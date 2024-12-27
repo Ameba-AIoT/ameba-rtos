@@ -55,7 +55,7 @@ add_compile_options(-fdata-sections  -ffunction-sections)
 add_subdirectory(make)
 
 ############################# BUILD LIBS ###################################
-if(NOT AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS)
     add_subdirectory(make_lib/chipinfo_lib)
 
     add_subdirectory(make_lib/crashdump_lib)
@@ -69,6 +69,9 @@ if(NOT AMEBA_RLS)
     if(CONFIG_WLAN)
         if(CONFIG_AS_INIC_NP)
             add_subdirectory(make/rtk_coex)
+        endif()
+        if(CONFIG_AS_INIC_AP)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         endif()
     endif()
 endif()

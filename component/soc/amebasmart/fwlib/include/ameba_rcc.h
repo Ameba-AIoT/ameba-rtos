@@ -57,6 +57,11 @@
 #define APBPeriph_CLOCK_NULL			0x0
 
 
+/** @defgroup KM0_Clock_Source_define
+  * @{
+  */
+#define BIT_LSYS_CKSL_LP_OSC4M		0x00
+#define BIT_LSYS_CKSL_LP_XTAL		0x03
 
 /** @defgroup SPIC_Clock_Source_define
   * @{

@@ -20,6 +20,10 @@ typedef enum {
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_SCAN_START = 1,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_SCAN_CAPA_GET,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_LINK_OPEN,
+	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_LINK_OPEN_DKRI,
+	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_DEVICE_KEY_REFRESH,
+	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_NODE_ADDR_REFRESH,
+	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_COMPO_DATA_REFRESH,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_MAX,
 } rtk_bt_mesh_remote_prov_client_act_t;
 
@@ -31,6 +35,7 @@ typedef enum {
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_CAPA_STATUS = 1,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_STATUS,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_REPORT,
+	RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_EXTENDED_SCAN_REPORT,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_STATUS,
 	RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_REPORT,
 } rtk_bt_mesh_remote_prov_client_evt_t;
@@ -88,6 +93,17 @@ typedef enum {
 } rtk_bt_mesh_rmt_prov_link_close_reason_t;
 
 /**
+ * @typedef   rtk_bt_mesh_rmt_prov_dkri_procedure_t
+ * @brief     BLE MESH remote provisioning DKRI PROCEDURE definition.
+ */
+enum {
+	RTK_BT_MESH_RMT_PROV_DKRI_DEV_KEY_REFRESH,
+	RTK_BT_MESH_RMT_PROV_DKRI_NODE_ADDR_REFRESH,
+	RTK_BT_MESH_RMT_PROV_DKRI_NODE_COMPO_REFRESH,
+} _SHORT_ENUM_;
+typedef uint8_t rtk_bt_mesh_rmt_prov_dkri_procedure_t;
+
+/**
  * @typedef   rtk_bt_mesh_remote_prov_client_scan_capa_get_t
  * @brief     BLE MESH remote provisioning scan capability get data struct definition.
  */
@@ -143,6 +159,17 @@ typedef struct {
 } rtk_bt_mesh_rmt_prov_client_scan_report_t;
 
 /**
+ * @typedef   rtk_bt_mesh_rmt_prov_client_scan_report_t
+ * @brief     BLE MESH remote provisioning extended scan report data struct definition.
+ */
+typedef struct {
+	uint16_t src;
+	uint8_t uuid[16];
+	uint8_t oob;
+	uint16_t adv_structs_len;
+} rtk_bt_mesh_rmt_prov_client_extended_scan_report_t;
+
+/**
  * @typedef   rtk_bt_mesh_remote_prov_client_link_open_t
  * @brief     BLE MESH remote provisioning link open data struct definition.
  */
@@ -174,6 +201,24 @@ typedef struct {
 	rtk_bt_mesh_rmt_prov_link_close_reason_t close_reason;  // Only exit when the prov link is close
 } rtk_bt_mesh_rmt_prov_client_link_report_t;
 
+/**
+ * @typedef   rtk_bt_mesh_remote_prov_client_link_open_dkri_t
+ * @brief     BLE MESH remote provisioning link open dkri data struct definition.
+ */
+typedef struct {
+	uint16_t dst;
+	uint16_t net_key_index;
+	rtk_bt_mesh_rmt_prov_dkri_procedure_t dkri_procedure;
+} rtk_bt_mesh_remote_prov_client_link_open_dkri_t;
+
+/**
+ * @typedef   rtk_bt_mesh_remote_prov_client_link_open_dkri_t
+ * @brief     BLE MESH remote provisioning link open dkri data struct definition.
+ */
+typedef struct {
+	uint16_t node_addr;
+	uint8_t attn_dur;
+} rtk_bt_mesh_remote_prov_client_node_addr_refresh_t;
 /* =============================================== Remote provisioning client model relate function definition ======================================= */
 /**
  * @defgroup  ble_mesh_remote_provisioning_client_model BT LE Mesh Rempte Provisioning Client Model APIs
@@ -208,6 +253,42 @@ uint16_t rtk_bt_mesh_remote_prov_scan_capa_get(rtk_bt_mesh_remote_prov_client_sc
  *            - Others: Error code
  */
 uint16_t rtk_bt_mesh_remote_prov_link_open(rtk_bt_mesh_remote_prov_client_link_open_t *link_open);
+
+/**
+ * @brief     Send remote link open dkri message to device, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_DEVICE_KEY_REFRESH
+ * @param[in] link_open_dkri: remote link open dkri message param structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_remote_prov_link_open_dkri(rtk_bt_mesh_remote_prov_client_link_open_dkri_t *link_open_dkri);
+
+/**
+ * @brief     Execute device key refresh procedure, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_DEVICE_KEY_REFRESH
+ * @param[in] attn_dur: device key refresh message param structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_remote_prov_dev_key_refresh(uint8_t *attn_dur);
+
+/**
+ * @brief     Execute node addr refresh procedure, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_DEVICE_KEY_REFRESH
+ * @param[in] node_refresh: node addr refresh message param structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_remote_prov_node_addr_refresh(rtk_bt_mesh_remote_prov_client_node_addr_refresh_t *node_refresh);
+
+/**
+ * @brief     Execute composition refresh procedure, will cause event @ref RTK_BT_MESH_REMOTE_PROV_CLIENT_ACT_DEVICE_KEY_REFRESH
+ * @param[in] attn_dur: composition refresh message param structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_remote_prov_composition_refresh(uint8_t *attn_dur);
 
 /**
  * @}

@@ -43,7 +43,7 @@ static int usbd_inic_resume(usb_dev_t *dev);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "INIC";
+static const char *const TAG = "INIC";
 
 static u8 usbd_inic_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_DESC,             // bLength
@@ -156,7 +156,7 @@ static int usbd_inic_transmit_zlp(u8 ep_addr)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
-	RTK_LOGS(TAG, "[INIC] IN EP%02X TX ZLP\n", ep_addr);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "IN EP%02X TX ZLP\n", ep_addr);
 	usbd_ep_transmit(idev->dev, ep_addr, NULL, 0);
 
 	return HAL_OK;
@@ -411,7 +411,7 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 			ep->state = USBD_INIC_EP_STATE_IDLE;
 		}
 	} else {
-		RTK_LOGS(TAG, "[INIC] EP%02x TX err: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
 		ep->state = USBD_INIC_EP_STATE_IDLE;
 	}
 
@@ -501,7 +501,7 @@ static u8 *usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_sp
 			/*Not support*/
 			break;
 		default:
-			RTK_LOGS(TAG, "[INIC] Invalid str idx %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -691,7 +691,7 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	if (len > idev->ctrl_buf_len) {
 		len = idev->ctrl_buf_len;
 	}
-	RTK_LOGS(TAG, "[INIC] CTRL TX len=%d\n", len);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL TX len=%d\n", len);
 	usb_os_memcpy(idev->ctrl_buf, buf, len);
 
 	usbd_ep0_transmit(dev, idev->ctrl_buf, len);
@@ -707,7 +707,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	usbd_inic_ep_t *ep;
 
 	if (USB_EP_IS_OUT(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
-		RTK_LOGS(TAG, "[INIC] Invalid IN EP num: 0x%02x\n", ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid IN EP num: 0x%02x\n", ep_addr);
 		return HAL_ERR_PARA;
 	}
 
@@ -724,13 +724,13 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	}
 
 	if (ep->state == USBD_INIC_EP_STATE_IDLE) {
-		//RTK_LOGS(TAG, "[INIC] EP%02x TX len=%d data=%d\n", num, len, buf[0]);
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX len=%d data=%d\n", num, len, buf[0]);
 		ep->state = USBD_INIC_EP_STATE_BUSY;
 		ep->userdata = userdata;
 		ep->buf = buf;
 		usbd_ep_transmit(idev->dev, ep_addr, ep->buf, len);
 	} else {
-		RTK_LOGS(TAG, "[INIC] EP%02x TX len=%d data=%d: BUSY\n", num, len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX len=%d data=%d: BUSY\n", num, len, buf[0]);
 		ret = HAL_BUSY;
 	}
 
@@ -744,7 +744,7 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u16 len, void *userdata)
 	usbd_inic_ep_t *ep;
 
 	if (USB_EP_IS_IN(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
-		RTK_LOGS(TAG, "[INIC] Invalid OUT EP num: 0x%02x\n", ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid OUT EP num: 0x%02x\n", ep_addr);
 		return HAL_ERR_PARA;
 	}
 

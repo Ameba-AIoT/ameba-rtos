@@ -73,7 +73,7 @@ static int usbh_cdc_ecm_doinit(void);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "ECMH";
+static const char *const TAG = "ECMH";
 
 static u8 cdc_ecm_intr_rx_buf[USBH_CDC_ECM_INTR_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
@@ -112,31 +112,31 @@ static usbh_user_cb_t usbh_ecm_usr_cb = {
 /* Private functions ---------------------------------------------------------*/
 static int usbh_cdc_ecm_get_usb_status(void)//
 {
-	return usbh_cdc_ecm_host_user.cdc_ecm_is_ready ;
+	return usbh_cdc_ecm_host_user.cdc_ecm_is_ready;
 }
 
 static int cdc_ecm_cb_init(void)
 {
-	RTK_LOGS(TAG, "[ECMH] INIT\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 	return HAL_OK;
 }
 
 static int cdc_ecm_cb_deinit(void)
 {
-	RTK_LOGS(TAG, "[ECMH] DEINIT\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 	usbh_cdc_ecm_host_user.ecm_hw_connect = 0;
 	return HAL_OK;
 }
 
 static int cdc_ecm_cb_attach(void)
 {
-	RTK_LOGS(TAG, "[ECMH] ATTACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	return HAL_OK;
 }
 
 static int cdc_ecm_cb_detach(void)
 {
-	RTK_LOGS(TAG, "[ECMH] DETACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 	usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG_TEST
 	usb_os_sema_give(cdc_ecm_detach_sema);
@@ -147,7 +147,7 @@ static int cdc_ecm_cb_detach(void)
 
 static int cdc_ecm_cb_setup(void)
 {
-	RTK_LOGS(TAG, "[ECMH] SETUP\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 1;
 	usb_os_sema_give(cdc_ecm_intr_start_sema);
 	usb_os_sema_give(cdc_ecm_bulk_start_sema);
@@ -158,7 +158,6 @@ static int cdc_ecm_cb_setup(void)
 
 static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 {
-	//RTK_LOGS(TAG, "[ECMH] bulk receive(%d)\n",length);
 #if USBH_ECM_RX_SPEED_CHECK
 	static u64 usb_rx_start_time = 0, usb_rx_end_time, usb_rx_interval_time;
 	static u64 usb_rx_total_len = 0;
@@ -171,7 +170,7 @@ static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 	usb_rx_interval_time = (usb_rx_end_time - usb_rx_start_time) * RTOS_TICK_RATE_MS;
 
 	if (usb_rx_interval_time >= 2000) {
-		RTK_LOGS(TAG, "[ECMH] Heap %d RX %dB in %d ms, %d Kbps\n",
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d RX %dB in %d ms, %d Kbps\n",
 				 rtos_mem_get_free_heap_size(),
 				 (u32)usb_rx_total_len, (u32)usb_rx_interval_time, (u32)((usb_rx_total_len * 8 * 1000) / (usb_rx_interval_time * 1024)));
 		usb_rx_start_time = usb_rx_end_time;
@@ -179,7 +178,7 @@ static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 	}
 #endif
 
-	if (usbh_cdc_ecm_host_user.report_data != NULL) {
+	if ((usbh_cdc_ecm_host_user.report_data != NULL) && (length > 0)) {
 		usbh_cdc_ecm_host_user.report_data(buf, length);
 	}
 
@@ -190,7 +189,7 @@ static int cdc_ecm_cb_bulk_send(usbh_urb_state_t state)
 {
 	usb_os_sema_give(usbh_cdc_ecm_host_user.cdc_ecm_tx_sema);
 	if (state != USBH_URB_DONE) {
-		RTK_LOGS(TAG, "[ECMH] BULK TX fail %d\n", state);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", state);
 	}
 
 	return HAL_OK;
@@ -200,7 +199,7 @@ static int cdc_ecm_cb_bulk_send(usbh_urb_state_t state)
 static int cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 {
 	if (buf && length >= 8) {
-		//RTK_LOGS(TAG, "[ECMH] Data(%02x %02x %02x %02x )\n",buf[0],buf[1],buf[2],buf[3]);
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Data(%02x %02x %02x %02x )\n",buf[0],buf[1],buf[2],buf[3]);
 		/*A1 00 00 00 01 00 00 00 */
 		if (length == 8 && buf[0] == 0xA1 && buf[1] == CDC_ECM_NOTIFY_NETWORK_CONNECTION) {
 			usbh_cdc_ecm_host_user.ecm_hw_connect = buf[2];
@@ -239,16 +238,16 @@ static void ecm_intr_rx_thread(void *param)
 {
 	int i = 0;
 	UNUSED(param);
-	RTK_LOGS(TAG, "[ECMH] INTR test pending, wait device ready\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INTR test pending, wait device ready\n");
 
 	if (usb_os_sema_take(cdc_ecm_intr_start_sema, USB_OS_SEMA_TIMEOUT) == HAL_OK) {
-		//RTK_LOGS(TAG, "[ECMH] INTR TX task start\n");
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX task start\n");
 
 		do {
 			i++;
 			if (!usbh_cdc_ecm_get_usb_status()) { //18s
 				if ((i % 10 == 0)) {
-					RTK_LOGS(TAG, "[USBH] Device disconnected %d\n", usbh_cdc_ecm_get_usb_status());
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnected %d\n", usbh_cdc_ecm_get_usb_status());
 				}
 				//device disconnect, try again after sleep 1s
 				usb_os_sleep_ms(1000);
@@ -267,16 +266,16 @@ static void ecm_bulk_rx_thread(void *param)
 {
 	u32 i = 0;
 	UNUSED(param);
-	RTK_LOGS(TAG, "[ECMH] BULK test pending, wait device ready\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "BULK test pending, wait device ready\n");
 
 	if (usb_os_sema_take(cdc_ecm_bulk_start_sema, USB_OS_SEMA_TIMEOUT) == HAL_OK) {
-		//RTK_LOGS(TAG, "[ECMH] BULK TX task start\n");
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX task start\n");
 
 		do {
 			i++;
 			if (!usbh_cdc_ecm_get_usb_status()) {
 				if (i % 10 == 0) {
-					RTK_LOGS(TAG, "[USBH] Device disconnected %d\n", usbh_cdc_ecm_get_usb_status());
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnected %d\n", usbh_cdc_ecm_get_usb_status());
 				}
 				usb_os_sleep_ms(1000);
 				continue;
@@ -306,11 +305,11 @@ static void ecm_hotplug_thread(void *param)
 		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
 		usbh_cdc_ecm_deinit();
 		usbh_deinit();
-		RTK_LOGS(TAG, "[ECMH] Free heap size: 0x%08x\n", usb_os_get_free_heap_size());
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap size: 0x%08x\n", usb_os_get_free_heap_size());
 
 		ret = usbh_cdc_ecm_doinit();
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, "[ECMH] Init fail %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 			break;
 		}
 	}
@@ -325,13 +324,13 @@ static int usbh_cdc_ecm_doinit(void)
 
 	status = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, "[ECMH] Host init fail %d\n", status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Host init fail %d\n", status);
 		return USBH_CORE_INIT_FAIL;
 	}
 
 	status = usbh_cdc_ecm_init(&cdc_ecm_usb_cb);
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, "[ECMH] Init driver fail %d\n", status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init driver fail %d\n", status);
 		return USBH_CLASS_INIT_FAIL;
 	}
 
@@ -373,20 +372,20 @@ static void usbh_cdc_ecm_init_thread(void *param)
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG_TEST
 	status = rtos_task_create(&hotplug_task, "ecm_hotplug_thread", ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (status != SUCCESS) {
-		RTK_LOGS(TAG, "[ECMH] Create hotplug check task fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 		goto usb_ecm_deinit_exit;
 	}
 #endif
 
 	status = rtos_task_create(&intr_task, "ecm_intr_rx_thread", ecm_intr_rx_thread, NULL, 1024U, USBH_ECM_RX_THREAD_PRIORITY);
 	if (status != SUCCESS) {
-		RTK_LOGS(TAG, "[ECMH] Create INTR RX task fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create INTR RX task fail\n");
 		goto usbh_ecm_cdc_deinit_exit;
 	}
 
 	status = rtos_task_create(&bulk_task, "ecm_bulk_rx_thread", ecm_bulk_rx_thread, NULL, 1024U, USBH_ECM_RX_THREAD_PRIORITY);
 	if (status != SUCCESS) {
-		RTK_LOGS(TAG, "[ECMH] Create BULK RX thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create BULK RX thread fail\n");
 		goto delete_intr_task_exit;
 	}
 
@@ -425,17 +424,25 @@ int usbh_cdc_ecm_do_deinit(void)
 	return HAL_OK;
 }
 
-int usbh_cdc_ecm_do_init(usb_report_data cb_handle)
+int usbh_cdc_ecm_do_init(usb_report_data cb_handle, usbh_cdc_ecm_priv_data_t *priv)
 {
 	int status;
 	usb_os_task_t task;
 
-	usbh_cdc_ecm_host_user.report_data = cb_handle ;
+	usbh_cdc_ecm_host_user.report_data = cb_handle;
 
 	if (0 == usbh_cdc_ecm_host_user.ecm_init_success) {
+		if (priv) {
+			if (priv->mac_value) {
+				usbh_cdc_ecm_set_dongle_mac(priv->mac_value);
+			}
+			if ((priv->led_array != NULL) && (priv->led_cnt > 0)) {
+				usbh_cdc_ecm_set_dongle_led_array(priv->led_array, priv->led_cnt);
+			}
+		}
 		status = rtos_task_create(&task, "ecm_init_thread", usbh_cdc_ecm_init_thread, NULL, 1024U, USBH_ECM_INIT_THREAD_PRIORITY);
 		if (status != SUCCESS) {
-			RTK_LOGS(TAG, "[ECMH] Create init task fail %d\n", status);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create init task fail %d\n", status);
 			return HAL_ERR_MEM;
 		}
 		usbh_cdc_ecm_host_user.ecm_init_success = 1;
@@ -471,7 +478,7 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 			break;
 		}
 		if (++retry_cnt > 3) {
-			//RTK_LOGS(TAG, "[ECMH] TX drop(%d)\n", len);
+			//RTK_LOGS(TAG, RTK_LOG_ERROR, "TX drop(%d)\n", len);
 			ret = HAL_ERR_UNKNOWN;
 			break;
 		} else {
@@ -487,7 +494,7 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len)
 		usb_tx_interval_time = (usb_tx_end_time - usb_tx_start_time) * RTOS_TICK_RATE_MS;
 
 		if (usb_tx_interval_time >= 3000) {
-			RTK_LOGS(TAG, "[ECMH] Heap %d TX %dB in %d ms, %d Kbps\n",
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d TX %dB in %d ms, %d Kbps\n",
 					 rtos_mem_get_free_heap_size(),
 					 (u32)usb_tx_total_len, (u32)usb_tx_interval_time, (u32)((usb_tx_total_len * 8 * 1000) / (usb_tx_interval_time * 1024)));
 			usb_tx_start_time = usb_tx_end_time;
@@ -505,7 +512,7 @@ int usbh_cdc_ecm_get_connect_status(void)//1 up
 	u8 ret1 = usbh_cdc_ecm_host_user.cdc_ecm_is_ready;
 	u8 ret2 = usbh_cdc_ecm_host_user.ecm_hw_connect;
 	int ret = ret1 & ret2;
-	//RTK_LOGS(TAG, "[ECMH] Status usb(%d)-dongle(%d)\n", ret1, ret2);
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Status usb(%d)-dongle(%d)\n", ret1, ret2);
 	return ret;
 }
 

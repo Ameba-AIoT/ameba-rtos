@@ -1,10 +1,6 @@
 #include "ameba_soc.h"
 
-#ifdef __ICCARM__
-typedef __cmse_nonsecure_call u32 nsFunc(u32);
-#else
 typedef u32 __attribute__((cmse_nonsecure_call)) nsFunc(u32);
-#endif
 
 /*
  * Internal secure data that can't be accessed directly by Non-secure functions.

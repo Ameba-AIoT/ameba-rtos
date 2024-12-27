@@ -8,6 +8,8 @@
 #include "atcmd_service.h"
 #include "cJSON.h"
 #include "kv.h"
+#include "stdlib.h"
+#include "ringbuffer.h"
 
 #if defined (CONFIG_AMEBASMART)
 u8 UART_TX = _PA_3; // UART0 TX
@@ -35,6 +37,14 @@ volatile u8 uart_tx_busy = 0;
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
 extern char lfs_mount_fail;
+
+#define UART_TT_BUF_LEN 1024
+u8 uart_tt_buf[UART_TT_BUF_LEN];
+u16 uart_tt_buf_len;
+extern char g_tt_mode;
+extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
+extern rtos_sema_t atcmd_tt_mode_sema;
+
 
 #if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
@@ -90,7 +100,7 @@ u32 uart_dma_cb(void *buf)
 void atio_uart_out_dma(char *buf, int len)
 {
 	u32 uart_idx = uart_get_idx(UART_DEV);
-	BOOL ret;
+	bool ret;
 
 	do {} while (dma_tx_busy);
 	dma_tx_busy = 1;
@@ -157,6 +167,33 @@ u32 atio_uart_handler(void *data)
 	uart_ier = UART_DEV->IER;
 	UART_INTConfig(UART_DEV, uart_ier, DISABLE);
 
+tt_recv_again:
+
+	if (g_tt_mode) {
+		while (UART_Readable(UART_DEV)) {
+			if (uart_tt_buf_len == UART_TT_BUF_LEN) {
+				break;
+			}
+			UART_CharGet(UART_DEV, &(uart_tt_buf[uart_tt_buf_len++]));
+		}
+
+		if (uart_tt_buf_len > 0) {
+			u32 space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+			if (space >= uart_tt_buf_len) {
+				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, uart_tt_buf, uart_tt_buf_len);
+				rtos_sema_give(atcmd_tt_mode_sema);
+			} else {
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+			}
+			uart_tt_buf_len = 0;
+			goto tt_recv_again;
+		}
+
+		UART_DEV->IER = uart_ier;
+
+		return 0;
+	}
+
 recv_again:
 
 	/* fetch all data in Uart rx fifo before processing each character */
@@ -176,7 +213,7 @@ recv_again:
 	if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
 		//4 check UartLog buffer to prevent from incorrect access
 		if (shell_ctl.pTmpLogBuf != NULL) {
-			shell_ctl.ExecuteCmd = _TRUE;
+			shell_ctl.ExecuteCmd = TRUE;
 
 			if (shell_ctl.shell_task_rdy) {
 				shell_ctl.GiveSema();

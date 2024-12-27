@@ -14,7 +14,7 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 typedef struct {
 	u32 NVICbackup_HP[6];
 	u32 SCBVTORbackup_HP;
@@ -26,7 +26,7 @@ CPU_S_BackUp_TypeDef PMC_S_BK;
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
     do { \
         if ((flagValue) & (bit)) { \
-            RTK_LOGS(NOTAG, "%s ", (name)); \
+            RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s ", (name)); \
         } \
     } while (0)
 
@@ -249,9 +249,9 @@ void BOOT_ReasonSet(void)
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_BOR, "BOR");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_THM, "THM");
 	if (temp == 0) {
-		RTK_LOGS(NOTAG, "Initial Power on\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Initial Power on\n");
 	} else {
-		RTK_LOGS(NOTAG, "UNKNOWN\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UNKNOWN\n");
 	}
 }
 
@@ -426,8 +426,8 @@ void BOOT_SOC_ClkChk(SocClk_Info_TypeDef *pSocClk_Info)
 void BOOT_SocClk_Update(void)
 {
 	u32 Temp;
-	u32 PllMClk, PllDClk;
-	u32 HbusDiV, EcdsaDiv, CpuDiv;
+	u32 PllMClk, PllDClk, PllClk;
+	u32 HbusDiV, EcdsaDiv, CpuDiv, SramDiv;
 	SocClk_Info_TypeDef *pSocClk_Info;
 	RRAM_TypeDef *rram = RRAM_DEV;
 
@@ -438,15 +438,32 @@ void BOOT_SocClk_Update(void)
 
 	PllMClk = pSocClk_Info->PLLM_CLK;
 	PllDClk = pSocClk_Info->PLLD_CLK;
+	CpuDiv = pSocClk_Info->CPU_CKD & ~ISPLLD;
 
-	// km4:Sram shall be 1:1 or 2:1
-	if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
-		HbusDiV = CLKDIV_ROUND_UP(PllMClk, HBUS_0P9V_CLK_LIMIT);/*target clk HBUS_0P9V_CLK_LIMIT*/
+	if (pSocClk_Info->CPU_CKD & ISPLLD) {
+		PllClk = PllDClk;
 	} else {
-		HbusDiV = CLKDIV_ROUND_UP(PllMClk, HBUS_1P0V_CLK_LIMIT);/*target clk HBUS_1P0V_CLK_LIMIT*/
+		PllClk = PllMClk;
 	}
+
+	/* Note: for sram, max 240MHz under 1.0v, max 200MHz under 0.9v, and km4:Sram shall be 1:1 or 2:1 */
+	if (pSocClk_Info->Vol_Type == CORE_VOL_0P9) {
+		HbusDiV = CLKDIV_ROUND_UP(PllClk, HBUS_0P9V_CLK_LIMIT);
+		if (PllClk / CpuDiv > SRAM_0P9V_CLK_LIMIT) {
+			SramDiv = CpuDiv * 2;
+		} else {
+			SramDiv = CpuDiv;
+		}
+	} else {
+		HbusDiV = CLKDIV_ROUND_UP(PllClk, HBUS_1P0V_CLK_LIMIT);
+		if (PllClk / CpuDiv > SRAM_1P0V_CLK_LIMIT) {
+			SramDiv = CpuDiv * 2;
+		} else {
+			SramDiv = CpuDiv;
+		}
+	}
+
 	EcdsaDiv = CLKDIV_ROUND_UP(PllMClk, ECDSA_CLK_LIMIT);/*target clk ECDSA_CLK_LIMIT*/
-	CpuDiv = pSocClk_Info->CPU_CKD;
 
 	//0. configure core power according user setting
 	SWR_CORE_Vol_Set(pSocClk_Info->Vol_Type);
@@ -479,8 +496,7 @@ void BOOT_SocClk_Update(void)
 	Temp &= ~(LSYS_MASK_CKD_HBUS | LSYS_MASK_CKD_GDMA_AXI);
 	Temp &= ~LSYS_MASK_CKD_PSRAM;
 
-	/* Note: for sram, max 240MHz under 1.0v, max 200MHz under 0.9v, and km4:Sram shall be 1:1 or 2:1 */
-	Temp |= LSYS_CKD_KM4(CpuDiv - 1) | LSYS_CKD_KR4(CpuDiv - 1) | LSYS_CKD_SRAM(CpuDiv - 1);
+	Temp |= LSYS_CKD_KM4(CpuDiv - 1) | LSYS_CKD_KR4(CpuDiv - 1) | LSYS_CKD_SRAM(SramDiv - 1);
 	Temp |= LSYS_CKD_HBUS(HbusDiV - 1) | LSYS_CKD_GDMA_AXI(HbusDiV - 1);
 	Temp |= LSYS_CKD_PSRAM(pSocClk_Info->PSRAMC_CKD - 1);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP0, Temp);
@@ -502,8 +518,11 @@ void BOOT_SocClk_Update(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Temp);
 
 	//8. select divn_clk
-	CPU_ClkSet_NonOS(CLK_CPU_MPLL);
-
+	if (pSocClk_Info->CPU_CKD & ISPLLD) {
+		CPU_ClkSet_NonOS(CLK_CPU_DPLL);
+	} else {
+		CPU_ClkSet_NonOS(CLK_CPU_MPLL);
+	}
 }
 
 void BOOT_Config_PMC_Role(void)

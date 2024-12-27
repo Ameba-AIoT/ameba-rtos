@@ -11,7 +11,7 @@
 #include "boot_security_km4.h"
 #include "boot_ota_km4.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 extern u32 Cert_PKHash_OTP_ADDR;
 extern u8 Signature[2][SIGN_MAX_LEN];
 u8 SecureBootEn = DISABLE;
@@ -30,7 +30,7 @@ int BOOT_DecRDPImg(u32 SrcAddr, u8 *RdpIV, SubImgInfo_TypeDef *SubImgInfo, u8 *C
 	*Cnt = SubImgCnt;
 
 	/* check if RDP image should decrypt. If not, copy to secure RAM directly */
-	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, SubImgCnt, Km4Img3Label, _FALSE) == _TRUE) {
+	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, SubImgCnt, Km4Img3Label, FALSE) == TRUE) {
 		return TRUE;
 	}
 

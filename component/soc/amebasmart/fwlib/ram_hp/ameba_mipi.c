@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "MIPI";
+static const char *const TAG = "MIPI";
 
 void MIPI_DPHY_Reset(MIPI_TypeDef *MIPIx)
 {

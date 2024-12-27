@@ -1,0 +1,45 @@
+if FULLMAC_MENU
+    menu "CONFIG WIFI MODE"
+        config NAN
+            bool "Enable NAN"
+            default n
+        config P2P
+            bool "Enable P2P"
+            default n
+    endmenu
+endif
+
+
+if WIFI_INIC_IPC_MENU || WIFI_SINGLE_CORE_MENU
+    config WIFI_WPS_ENABLE_MENU
+        bool "Enable WPS"
+        default n
+endif
+
+config WIFI_CSI_ENABLE
+    bool "Enable CSI"
+    default n
+
+config WIFI_ANTDIV_ENABLE
+    bool "Enable ANTDIV"
+    default n
+
+config WIFI_11K_ENABLE
+    bool "Enable 11K"
+    default n
+
+config WIFI_11V_ENABLE
+    bool "Enable 11V"
+    default n
+
+config WIFI_11R_ENABLE
+    bool "Enable 11R"
+    default n
+
+config WIFI_SPEAKER_ENABLE
+    bool "Enable WIFI SPEAKER"
+    default n
+
+config HIGH_TP_TEST
+    bool "Enable HIGH TP"
+    default n

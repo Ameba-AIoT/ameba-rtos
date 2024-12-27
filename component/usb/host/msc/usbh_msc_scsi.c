@@ -270,8 +270,8 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 
 
 		/*Transfer length */
-		cbw->field.CB[7]  = (((u8 *)(void *)&length)[1]) ;
-		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]) ;
+		cbw->field.CB[7]  = (((u8 *)(void *)&length)[1]);
+		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]);
 
 
 		msc->hbot.state = BOT_SEND_CBW;
@@ -324,8 +324,8 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 
 
 		/*Transfer length */
-		cbw->field.CB[7]  = (((u8 *)(void *)&length)[1]) ;
-		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]) ;
+		cbw->field.CB[7]  = (((u8 *)(void *)&length)[1]);
+		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]);
 
 
 		msc->hbot.state = BOT_SEND_CBW;

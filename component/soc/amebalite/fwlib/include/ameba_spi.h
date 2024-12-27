@@ -665,9 +665,9 @@ _LONG_CALL_ void SSI_SetBaudDiv(SPI_TypeDef *spi_dev, u32 ClockDivider);
 _LONG_CALL_ void SSI_SetRole(SPI_TypeDef *spi_dev, u32 role);
 
 /* SPI_Exported_DMA_Functions SPI Exported DMA Functions */
-_LONG_CALL_ BOOL SSI_TXGDMA_Init(u32 Index, PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool SSI_TXGDMA_Init(u32 Index, PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData,
 								 IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length);
-_LONG_CALL_ BOOL SSI_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool SSI_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 								 IRQ_FUN CallbackFunc, u8  *pRxData, u32 Length);
 _LONG_CALL_ void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask);
 _LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLeve, u32 RxLevel);

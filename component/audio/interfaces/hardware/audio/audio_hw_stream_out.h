@@ -32,8 +32,8 @@
  * @version 1.0
  */
 
-#ifndef AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
-#define AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
+#ifndef AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
+#define AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
 
 #include <sys/types.h>
 
@@ -73,7 +73,7 @@ struct AudioHwStreamOut {
 	 * @return Returns 0 if stream out frames and timestamp get successfully;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetPresentationPosition)(const struct AudioHwStreamOut *stream, uint64_t *frames, struct timespec *timestamp);
+	int32_t (*GetPresentationPosition)(const struct AudioHwStreamOut *stream, uint64_t *frames, struct timespec *timestamp);
 
 	/**
 	 * @brief Get current stream out time of the current AudioHwStreamOut.
@@ -84,7 +84,7 @@ struct AudioHwStreamOut {
 	 * @return Returns 0 if stream out frames and timestamp get successfully;
 	 * returns < 0 if error happens.
 	 */
-	int (*GetPresentTime)(const struct AudioHwStreamOut *stream, int64_t *now_ns, int64_t *audio_ns);
+	int32_t (*GetPresentTime)(const struct AudioHwStreamOut *stream, int64_t *now_ns, int64_t *audio_ns);
 
 	/**
 	 * @brief Get trigger time of the current AudioHwStreamOut.
@@ -115,7 +115,7 @@ struct AudioHwStreamOut {
 	 * @return Returns 0 if volume is set successfully;
 	 * returns < 0 otherwise.
 	 */
-	int (*SetVolume)(struct AudioHwStreamOut *stream, float left, float right);
+	int32_t (*SetVolume)(struct AudioHwStreamOut *stream, float left, float right);
 
 	/**
 	 * @brief Pause current audio stream out.
@@ -124,7 +124,7 @@ struct AudioHwStreamOut {
 	 * @return Returns 0 if paused successfully;
 	 * returns < 0 otherwise.
 	 */
-	int (*Pause)(struct AudioHwStreamOut *stream);
+	int32_t (*Pause)(struct AudioHwStreamOut *stream);
 
 	/**
 	 * @brief Resume current audio stream out.
@@ -133,7 +133,7 @@ struct AudioHwStreamOut {
 	 * @return Returns 0 if resumed successfully;
 	 * returns < 0 otherwise.
 	 */
-	int (*Resume)(struct AudioHwStreamOut *stream);
+	int32_t (*Resume)(struct AudioHwStreamOut *stream);
 
 	/**
 	 * @brief Flush current audio stream out.
@@ -142,12 +142,12 @@ struct AudioHwStreamOut {
 	 * @return Returns 0 if flushed successfully;
 	 * returns < 0 otherwise.
 	 */
-	int (*Flush)(struct AudioHwStreamOut *stream);
+	int32_t (*Flush)(struct AudioHwStreamOut *stream);
 };
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // AMEBA_HARDWARE_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
+#endif  // AMEBA_AUDIO_INTERFACES_HARDWARE_AUDIO_AUDIO_HW_STREAM_OUT_H
 /** @} */

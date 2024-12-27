@@ -11,6 +11,7 @@ list(
     CONFIG_USE_MBEDTLS_ROM_ALG
     CONFIG_FUNCION_O0_OPTIMIZE
     DM_ODM_SUPPORT_TYPE=32
+    MBEDTLS_CONFIG_FILE="mbedtls/config.h"
 )
 
 list(

@@ -7,7 +7,7 @@
 #include "cmsis.h"
 #include "mpu_config.h"
 
-static const char *TAG = "MPU";
+static const char *const TAG = "MPU";
 u8 mpu_entry_register[MPU_MAX_REGION];
 
 void mpu_enable(void)

@@ -36,7 +36,7 @@ I2C_InitTypeDef I2CInitData[2];
 u32 restart_enable = 0;
 uint16_t i2c_target_addr[2];
 u32 master_addr_retry = 1;
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 i2c_t i2cslave;
 

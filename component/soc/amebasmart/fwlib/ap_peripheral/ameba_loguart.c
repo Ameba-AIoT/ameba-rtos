@@ -12,6 +12,8 @@ static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, UART_LOG_IRQ},	/* CA32 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 };
 
+/* note: LOGUART_WaitTxComplete and LOGUART_INTConfig have been added to ameba_rom_patch.c */
+
 /**
   * @brief  LOGUART send char
   * @param  c: send char value
@@ -46,7 +48,7 @@ void LOGUART_PutChar(u8 c)
   *            @arg FALSE: read RX register directly
   * @retval receive data
   */
-u8 LOGUART_GetChar(BOOL PullMode)
+u8 LOGUART_GetChar(bool PullMode)
 {
 	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
 
@@ -132,31 +134,6 @@ void LOGUART_SetBaud(LOGUART_TypeDef *UARTLOG, u32 BaudRate)
 	UARTLOG->LOGUART_UART_REG_RX_PATH_CTRL = RegValue;
 }
 
-/**
-  * @brief  wait log uart tx is complete.
-  * @retval: none
-  * @note   this function is to wait until tx data is completely push from tx fifo and all the tx fifo is empty.
-  */
-void LOGUART_WaitTxComplete(void)
-{
-	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	u32 lsr;
-
-	/* Wait for LogUart print out */
-	while (1) {
-		lsr = UARTLOG->LOGUART_UART_LSR;
-
-		if ((lsr & LOGUART_BIT_TP1F_EMPTY) && (lsr & LOGUART_BIT_TP2F_EMPTY) && (lsr & LOGUART_BIT_TP3F_EMPTY)  && \
-			(lsr & LOGUART_BIT_TP4F_EMPTY) && (!(lsr & LOGUART_BIT_RPF_DRDY)) && (lsr & LOGUART_BIT_TX_EMPTY)) {
-			break;
-		}
-
-		DelayUs(100);
-	}
-
-	/* delay at least 12 cycles of one bit time to make sure the last data is completely out of tx fifo, 4800bps is 2.5ms */
-	DelayMs(3);
-}
 
 /**
   * @brief  Enables or Disables the AGG function.
@@ -175,7 +152,6 @@ void LOGUART_AGGCmd(LOGUART_TypeDef *UARTLOG, u32 NewState)
 		UARTLOG->LOGUART_UART_AGGC &= ~LOGUART_BIT_AGG_EN;
 	}
 }
-
 
 /**
   * @brief  Configure the path open bits.
@@ -252,28 +228,26 @@ void LOGUART_AGGPathCmd(LOGUART_TypeDef *UARTLOG, u8 PathIndex, u32 NewState)
 }
 
 /**
-  * @brief  Set LOGUART IMR
-  * @param  SetValue: specifies the LOGUART interrupt sources to be enabled or disabled.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg LOGUART_BIT_ERBI:  Received Data Available interrupt
-  *            @arg LOGUART_BIT_ELSI:  Receiver Line Status interrupt
-  *            @arg LOGUART_BIT_ETOI: Rx Time Out interrupt
-  *            @arg LOGUART_BIT_EDSSI: Modem Status Interrupt
-  *            @arg LOGUART_TX_EMPTY_PATH_1_INTR: Tx Path 1 Transmitter FIFO Empty interrupt
-  *            @arg LOGUART_TX_EMPTY_PATH_2_INTR: Tx Path 2 Transmitter FIFO Empty interrupt
-  *            @arg LOGUART_TX_EMPTY_PATH_3_INTR: Tx Path 3 Transmitter FIFO Empty interrupt
-  *            @arg LOGUART_TX_EMPTY_PATH_4_INTR: Tx Path 4 Transmitter FIFO Empty interrupt
-  * @retval none
-  */
-void LOGUART_INTConfig(LOGUART_TypeDef *UARTLOG, u32 UART_IT, u32 newState)
+ * @brief Get LOGUART IER value.
+ * @return LOGUART IER value.
+ */
+u32 LOGUART_GetIMR(void)
 {
-	if (newState == ENABLE) {
-		/* Enable the selected UARTx interrupts */
-		UARTLOG->LOGUART_UART_IER |= UART_IT;
-	} else {
-		/* Disable the selected UARTx interrupts */
-		UARTLOG->LOGUART_UART_IER &= (u32)~UART_IT;
-	}
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+
+	return UARTLOG->LOGUART_UART_IER;
+}
+
+/**
+ * @brief Set LOGUART IER directly.
+ * @param SetValue Specified LOGUART IER value.
+ * @return None
+ */
+void LOGUART_SetIMR(u32 SetValue)
+{
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+
+	UARTLOG->LOGUART_UART_IER = SetValue;
 }
 
 /**
@@ -328,9 +302,9 @@ u32 LOGUART_ClearRxFifo(LOGUART_TypeDef *UARTLOG)
 	}
 
 	if (Temp == 0) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 
@@ -440,9 +414,9 @@ u32 LOGUART_Relay_ClearRxFifo(LOGUART_TypeDef *UARTLOG)
 	}
 
 	if (Temp == 0) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 

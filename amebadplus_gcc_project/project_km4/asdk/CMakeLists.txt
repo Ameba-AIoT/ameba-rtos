@@ -58,8 +58,8 @@ add_subdirectory(make/bootloader)
 
 add_subdirectory(make/flashloader)
 
-if(NOT AMEBA_RLS)
-    add_subdirectory(make/RT_xmodem)
+if(NOT CONFIG_AMEBA_RLS)
+    add_subdirectory(make/imgtool_floader)
 endif()
 
 ########################### BUILD APPLICATION ##############################
@@ -69,7 +69,7 @@ add_subdirectory(make)
 add_subdirectory(make_secure)
 
 ############################# BUILD LIBS ###################################
-if(NOT AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS)
     ## build soc libs
     add_subdirectory(make_lib/bootloader_lib)
 
@@ -91,6 +91,7 @@ if(NOT AMEBA_RLS)
             add_subdirectory(make/network/ipnat)
             add_subdirectory(make/network/ipdnrd)
             add_subdirectory(make/network/tftp)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         elseif(CONFIG_AS_INIC_NP)
             add_subdirectory(make/rtk_coex)
         elseif(CONFIG_SINGLE_CORE_WIFI)
@@ -101,6 +102,7 @@ if(NOT AMEBA_RLS)
             add_subdirectory(make/network/ipdnrd)
             add_subdirectory(make/network/tftp)
             add_subdirectory(make/rtk_coex)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         endif()
     endif()
 
@@ -165,9 +167,10 @@ endif()
 
 add_custom_target(
     gdb
-    COMMAND ${CMAKE_COMMAND} -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DGNU_SCRIPT=${GNU_SCRIPT} -DPROJECTDIR=${PROJECTDIR} -P ${GNU_SCRIPT}/gdbsetup.cmake
-    COMMAND ${CMAKE_GDB} -x ${GNU_SCRIPT}/rtl_gdb_flash_write.txt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo "Note: please use command :./build.py -gdb"
+    COMMAND ${CMAKE_COMMAND} -E echo " -------------   HELP   -----------------"
+    COMMAND ${CMAKE_COMMAND} -E echo " ./build.py -gdb for loading image with gdb"
+    COMMAND ${CMAKE_COMMAND} -E echo " ./build.py -debug for debugging with gdb"
 )
 
 add_custom_target(

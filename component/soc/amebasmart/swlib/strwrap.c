@@ -11,19 +11,19 @@
 
 //wrap
 LIBC_ROM_TEXT_SECTION
-void *__wrap_memset(void *s, int c, SIZE_T n)
+void *__wrap_memset(void *s, int c, size_t n)
 {
 	return _memset(s, c, n);
 }
 
 LIBC_ROM_TEXT_SECTION
-void *__wrap_memcpy(void *s1, const void *s2, SIZE_T n)
+void *__wrap_memcpy(void *s1, const void *s2, size_t n)
 {
 	return _memcpy(s1, s2, n);
 }
 
 LIBC_ROM_TEXT_SECTION
-int __wrap_memcmp(const void *av, const void *bv, SIZE_T len)
+int __wrap_memcmp(const void *av, const void *bv, size_t len)
 {
 	return _memcmp(av, bv, len);
 }
@@ -41,7 +41,7 @@ void *__wrap_memmove(void *dst_void, const void *src_void, size_t length)
 }
 
 LIBC_ROM_TEXT_SECTION
-SIZE_T __wrap_strlen(const char *s)
+size_t __wrap_strlen(const char *s)
 {
 	return _strlen(s);
 }

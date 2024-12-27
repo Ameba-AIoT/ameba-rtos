@@ -1214,13 +1214,6 @@ enum CORE_Vol_TYPE {
 /*****************************Macro definition for OTP SYSCFG1**************/
 #define LSYS_BIT_DIS_BOOT_DELAY       ((u32)0x00000001 << 0)
 
-/*****************************Macro definition for SHARE MEMORY**************/
-#define SHARE_MEM_BT_E0_ADDRESS       			0x20080000
-#define SHARE_MEM_BT_E1_ADDRESS       			0x20090000
-#define SHARE_MEM_WIFI_TXPKTBUF_ADDRESS			0x200C0000
-#define SHARE_MEM_WIFI_RXPKTBUF_ADDRESS			0x200C6000
-
-
 /**************************************************************************//**
  * @defgroup AMEBA_RRAM
  * @{

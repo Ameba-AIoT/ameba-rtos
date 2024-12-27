@@ -119,13 +119,10 @@ iperf_accept(struct iperf_test *test)
 	signed char rbuf = ACCESS_DENIED;
 	socklen_t len;
 	struct sockaddr_storage addr;
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
 
 	len = sizeof(addr);
 	if ((s = accept(test->listener, (struct sockaddr *) &addr, &len)) < 0) {
-		getsockopt(test->listener, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
-		printf("iperf_accept fail, error : %d\n", so_error);
+		printf("iperf_accept fail, error : %d\n", errno);
 		i_errno = IEACCEPT;
 		return -1;
 	}

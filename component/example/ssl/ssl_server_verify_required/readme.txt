@@ -6,7 +6,10 @@ A simple SSL server which can reply for the https request.
 Configuration:
 1.Modify SERVER_PORT and response content in example_ssl_server_verify_required.c based on your SSL server.
 
-2.GCC:use CMD "make all EXAMPLE=ssl_server_verify_required" to compile example_ssl_server_verify_required example
+2. (Optional)Test for TLS1.3.
+	Enable CONFIG SSL -> Support TLS 1.3 protocol
+
+3.GCC:use CMD "./build.py -a ssl_server_verify_required" to compile example_ssl_server_verify_required example
 
 Execution:
 Can make automatical Wi-Fi connection when booting by using wlan fast connect example.

@@ -793,7 +793,7 @@ typedef struct {
   */
 
 /* Exported functions --------------------------------------------------------*/
-_LONG_CALL_ void LOGUART_DiagInit(BOOL InitConsol);
+_LONG_CALL_ void LOGUART_DiagInit(bool InitConsol);
 _LONG_CALL_ void LOGUART_INTCoreConfig(LOGUART_TypeDef *UARTLOG, u32 IntCoreMask, u32 NewState);
 _LONG_CALL_ void LOGUART_AGGCmd(LOGUART_TypeDef *UARTLOG, u32 NewState);
 _LONG_CALL_ void LOGUART_AGGPathCmd(LOGUART_TypeDef *UARTLOG, u8 PathIndex, u32 NewState);
@@ -803,7 +803,7 @@ _LONG_CALL_ void LOGUART_AGGSetSyncPattern(LOGUART_TypeDef *UARTLOG, u32 SyncPat
 _LONG_CALL_ void LOGUART_AGGPathAllCmd(LOGUART_TypeDef *UARTLOG, u32 NewState);
 _LONG_CALL_ void LOGUART_WaitTx(void);
 _LONG_CALL_ void LOGUART_PutChar(u8 c);
-_LONG_CALL_ u8 LOGUART_GetChar(BOOL PullMode);
+_LONG_CALL_ u8 LOGUART_GetChar(bool PullMode);
 _LONG_CALL_ u8 LOGUART_Readable(void);
 _LONG_CALL_ u32 LOGUART_GetRxCount(void);
 _LONG_CALL_ u32 LOGUART_GetIMR(void);

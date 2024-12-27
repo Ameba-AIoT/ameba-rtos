@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*- 
+# -*- coding:utf-8 -*-
 import os
 import sys
 from ctypes import *
@@ -84,6 +84,165 @@ class Certificate_TypeDef(Structure):
               ('PKInfo',c_uint8 * sizeof(CertEntry_TypeDef) * 5),
               ('Signature',c_uint8 * SIGN_MAX_LEN)]
 
+class SB_HEADER(Structure):
+    _fields_=[('reserved', c_uint32*12),
+              ('sb_sig', c_uint8*64)]
+
+class secure_boot_AMEBAD():
+    def __init__(self, argc, argv):
+        self.argc = argc
+        self.argv = argv
+        self.SecureBootEn = 0
+        self.SecureImg2En = 0
+        self.PrivKey = ''
+        self.PubKey = ''
+
+    def SBOOT_GetInfo(self, filename):
+        with open(filename, 'r') as f:
+            content = f.read()
+            json_data = json.loads(content)
+        json_keys = json_data.keys()
+        if 'SECURE_BOOT_EN' in json_keys:
+            self.SecureBootEn = json_data['SECURE_BOOT_EN']
+        if 'SECURE_IMG2_EN' in json_keys:
+            self.SecureImg2En = json_data['SECURE_IMG2_EN']
+
+        if self.SecureBootEn or self.SecureImg2En:
+            if 'algorithm' in json_keys:
+                self.algorithm = json_data['algorithm']
+            if 'private key' in json_keys:
+                self.PrivKey = json_data['private key']
+            if 'public key' in json_keys:
+                self.PubKey = json_data['public key']
+
+    def SBOOT_GenSignature(self):
+        sbHdr = SB_HEADER()
+        memset(addressof(sbHdr), 0xFF, sizeof(sbHdr))
+
+        self.SBOOT_GetInfo(self.argv[4])
+
+        sbHdrAddrEN = self.argv[5]
+        if self.SecureBootEn and sbHdrAddrEN == 'boot':
+            lib_security = importlib.import_module('security')
+            sboot = lib_security.secure_boot(self.argc, self.argv)
+
+            with open(self.argv[2], 'rb') as f:
+                msg = f.read()
+            mlen = len(msg)
+            new_size = ((mlen - 1) // 4 + 1) * 4
+            padcount = new_size - mlen
+
+            for _ in range(padcount):
+                msg += (b'\xFF')
+
+            addr = (0x08004000 + new_size).to_bytes(4, 'little')
+            new_msg = msg[:0x10] + addr + msg[0x14:]
+            sboot.gen_signature(AuthAlg.AuthID_ED25519.value, self.PrivKey, self.PubKey, new_msg, new_size, sbHdr.sb_sig)
+
+            with open(self.argv[3], 'wb') as f:
+                f.write(new_msg)
+                f.write(string_at(addressof(sbHdr), sizeof(sbHdr)))
+                if sbHdrAddrEN == 'app':
+                    padcount = ((new_size + sizeof(sbHdr) - 1) // 4096 + 1) * 4096 \
+                                - (new_size + sizeof(sbHdr))
+                    for _ in range(padcount):
+                        f.write(b'\xFF')
+        elif self.SecureImg2En:
+            lib_security = importlib.import_module('security')
+            sboot = lib_security.secure_boot(self.argc, self.argv)
+
+            with open(self.argv[2], 'rb') as f:
+                msg = f.read()
+            mlen = len(msg)
+            new_size = ((mlen - 1) // 4 + 1) * 4
+            padcount = new_size - mlen
+
+            for _ in range(padcount):
+                msg += (b'\xFF')
+
+            addr = (0xFFFFFFFF).to_bytes(4, 'little')
+            if sbHdrAddrEN == "app":
+                addr = (0x0E000000 + new_size).to_bytes(4, 'little')
+            new_msg = msg[:0x10] + addr + msg[0x14:]
+            sboot.gen_signature(AuthAlg.AuthID_ED25519.value, self.PrivKey, self.PubKey, new_msg, new_size, sbHdr.sb_sig)
+
+            with open(self.argv[3], 'wb') as f:
+                f.write(new_msg)
+                f.write(string_at(addressof(sbHdr), sizeof(sbHdr)))
+                if sbHdrAddrEN == 'app':
+                    padcount = ((new_size + sizeof(sbHdr) - 1) // 4096 + 1) * 4096 \
+                                - (new_size + sizeof(sbHdr))
+                    for _ in range(padcount):
+                        f.write(b'\xFF')
+        else:
+            fw = open(self.argv[3], 'wb')
+            with open(self.argv[2], 'rb') as f:
+                buf = f.read()
+                fw.write(buf)
+            fw.close()
+
+class RSIP_AMEBAD():
+    def __init__(self, argc, argv):
+        self.argc = argc
+        self.argv = argv
+        self.RsipEn = 0
+
+    def RSIP_GetInfo(self, filename, imgtypename):
+        with open(filename, 'r') as f:
+            content = f.read()
+            json_data = json.loads(content)
+        json_keys = json_data.keys()
+        if 'RSIP_EN' in json_keys:
+            self.RsipEn = json_data['RSIP_EN']
+        return 0
+
+    def RSIP_ImageEncrypt(self):
+        self.RSIP_GetInfo(self.argv[5], 'app')
+        if self.RsipEn:
+            lib_security = importlib.import_module('security')
+            rsip = lib_security.RSIP(self.argc, self.argv)
+            rsip.RSIP_ImageEncrypt_AMEBAD()
+        else:
+            fw = open(self.argv[3], 'wb')
+            with open(self.argv[2], 'rb') as f:
+                buf = f.read()
+                fw.write(buf)
+            fw.close()
+
+class RDP_AMEBAD():
+    def __init__(self, argc, argv):
+        self.argc = argc
+        self.argv = argv
+        self.rdp_enc = 0
+
+    def rdp_get_info(self, filename, imgtypename):
+        # print(os.getcwd())
+        with open(filename, 'r') as f:
+            content = f.read()
+            json_data = json.loads(content)
+        json_keys = json_data.keys()
+
+        if 'RDP_EN' in json_keys:
+            self.rdp_enc = json_data['RDP_EN']
+        return 0
+
+    def rdp_encrypt(self):
+        ret = self.rdp_get_info(self.argv[5], 'app')
+        if ret != 0:
+            return
+        if self.rdp_enc:
+            lib_security = importlib.import_module('security')
+            rdp = lib_security.RDP(self.argc, self.argv)
+            rdp.rdp_encrypt_AMEBAD()
+        else:
+            fw = open(self.argv[4], 'wb')
+            # print(self.argv[4])
+            with open(self.argv[3], 'rb') as f:
+                buf = f.read()
+                fw.write(buf)
+            fw.close()
+        return
+
 class secure_boot():
     def __init__(self, argc, argv):
         self.argc = argc
@@ -105,7 +264,7 @@ class secure_boot():
             return
         keyinfo = {'algorithm':'', 'private key':'', 'public key':'', 'public key hash':''}
         keyinfo['algorithm'] = self.argv[2]
-        
+
         if auth_alg_id == AuthAlg.AuthID_ED25519.value:
             sboot.ed25519_genkey(keyinfo)
         else:
@@ -138,6 +297,8 @@ class secure_boot():
         if imgtypename in json_keys:
             img_json_data = json_data[imgtypename]
             img_json_keys = img_json_data.keys()
+            if 'RSIP_EN' in img_json_keys:
+                rsip_en = img_json_data['RSIP_EN']
             if 'IMG_ID' in img_json_keys:
                 manifest.ImgID = int(img_json_data['IMG_ID'])
                 if manifest.ImgID == ImgID.IMGID_BOOT.value:
@@ -183,7 +344,7 @@ class secure_boot():
                     self.HmacKey = json_data['HMAC_KEY']
                     # print('HMAC_KEY:', self.HmacKey)
                     self.HmacKeyLen = length // 2
-            
+
             if rsip_en:
                 if 'RSIP_IV' in img_json_keys:
                     if len(img_json_data['RSIP_IV']) == 16:
@@ -195,7 +356,7 @@ class secure_boot():
         if ImgID.IMGID_NSPE.value == manifest.ImgID:
             if 'RDP_EN' in json_keys:
                 rdp_en = json_data['RDP_EN']
-            
+
             if rdp_en:
                 if imgtypename in json_keys:
                     img_json_data = json_data[imgtypename]
@@ -215,7 +376,7 @@ class secure_boot():
                         print('RDP_IV format error: should be 8 bytes')
                         return -8
         return 0
-    
+
     def parse_cert_json(self, filename, imgtypename, cert):
         with open(filename, 'r') as f:
             content = f.read()
@@ -223,10 +384,10 @@ class secure_boot():
         json_keys = json_data.keys()
         if 'MANIFEST_VER' in json_keys:
             cert.Ver = json_data['MANIFEST_VER']
-        
+
         if 'SECURE_BOOT_EN' in json_keys:
             self.SecureBootEn = json_data['SECURE_BOOT_EN']
-        
+
         if imgtypename in json_keys:
             img_json_data = json_data[imgtypename]
             img_json_keys = img_json_data.keys()
@@ -248,15 +409,15 @@ class secure_boot():
             if self.SecureBootEn:
                 if 'HASH_ALG' in img_json_keys:
                     self.MdType = img_json_data['HASH_ALG']
-                if 'HMAC_KEY' in img_json_keys:
-                    length = len(img_json_data['HMAC_KEY'])
+                if 'HMAC_KEY' in json_keys:
+                    length = len(json_data['HMAC_KEY'])
                     if length != 64:
                         print('HMAC_KEY format error: should be 32 bytes')
                         return -7
-                    self.HmacKey = img_json_data['HMAC_KEY']
+                    self.HmacKey = json_data['HMAC_KEY']
                     self.HmacKeyLen = length // 2
         return 0
-    
+
     def parse_key_json(self, filename, imgtypename, manifest, privkey, pubkey, hash):
         with open(filename, 'r') as f:
             content = f.read()
@@ -300,7 +461,10 @@ class secure_boot():
             lib_security = importlib.import_module('security')
             sboot = lib_security.secure_boot(self.argc, self.argv)
             # parse key.json
-            ret = self.parse_key_json(self.argv[3], self.argv[6], manifest, 1, manifest.SBPubKey, 0)
+            imgtypename = self.argv[6]
+            if (ImagePattern[0] == CompressFlag[0]) and (ImagePattern[1] == CompressFlag[1]):
+                imgtypename = 'cert' # compress use cert keys
+            ret = self.parse_key_json(self.argv[3], imgtypename, manifest, 1, manifest.SBPubKey, 0)
             if (ret != 0) :
                 print("Fail to parse key json, ret: ", ret)
                 return
@@ -311,6 +475,8 @@ class secure_boot():
             if 0 != sboot.gen_hash_id(manifest, self.MdType):
                 return
             # gen image hash
+            sboot.HmacKey = self.HmacKey
+            sboot.HmacKeyLen = self.HmacKeyLen
             ret = sboot.gen_image_hash(self.argv[4], manifest.ImgHash)
             if (ret != 0) :
                 print("Fail to gen image hash, ret: ", ret)
@@ -329,7 +495,7 @@ class secure_boot():
             for _ in range(padcount):
                 f.write(b'\xFF')
         return
-        
+
     def create_certificate(self):
         cert = Certificate_TypeDef()
         memset(addressof(cert), 0xFF, sizeof(cert))
@@ -376,6 +542,8 @@ class secure_boot():
             for i in range(0, entry_num):
                 memmove(byref(cert, cert_size + i * sizeof(cert_entries[i])), addressof(cert_entries[i]), sizeof(cert_entries[i]))
             # gen signature
+            sboot.HmacKey = self.HmacKey
+            sboot.HmacKeyLen = self.HmacKeyLen
             ret = sboot.gen_signature(cert.AuthAlg, self.PrivKey, cert.SBPubKey, cert, cert.TableSize, cert.Signature)
             if ret != 0:
                 print('Fail to gen signature, ret: ', ret)
@@ -419,6 +587,12 @@ class RSIP():
         json_keys = json_data.keys()
         if 'RSIP_EN' in json_keys:
             self.RsipEn = json_data['RSIP_EN']
+
+        if imgtypename in json_keys:
+            img_json_data = json_data[imgtypename]
+            img_json_keys = img_json_data.keys()
+            if 'RSIP_EN' in img_json_keys:
+                self.RsipEn = img_json_data['RSIP_EN']
         return 0
 
     def RSIP_ImageEncrypt(self):
@@ -445,7 +619,7 @@ class RDP():
         self.key = ''
         self.iv = ''
         self.rdp_enc = 0
-    
+
     def rdp_get_info(self, filename, imgtypename):
         # print(os.getcwd())
         with open(filename, 'r') as f:
@@ -496,6 +670,14 @@ class PADTOOL():
                     file.write(b'\xFF')
 
 def CATFILE(header, dst, *src):
+    """
+    cat files
+
+    :param header: bytes, only prepend_header and ota_prepend_header need, others fill ''
+    :param dst: destination file
+    :param *src: source files, (src1, src2, ...), cat to dst
+
+    """
     with open(dst, "wb") as dst_fd:
         if header != '':
             dst_fd.write(header)
@@ -519,7 +701,6 @@ class PREPEND_TOOL:
 
     def prepend_header(self):
         # Constant Variables
-        # Constant Variables
         PATTERN_1=0x99999696
         PATTERN_2=0x3FCC66FC
         PATTERN_FS_1=0x7666735F
@@ -534,24 +715,25 @@ class PREPEND_TOOL:
 
         IMAGE_LEN = os.path.getsize(IMAGE_FILENAME)
         IMAGE_ADDR = self.grep(IMAGE_SECTION_START_NAME, SYMBOL_LIST)
-
         IMAGE_FILENAME_NEW=os.path.basename(IMAGE_FILENAME)
-        IMAGE_FILENAME_PREPEND = os.path.join(os.path.dirname(IMAGE_FILENAME), 
+        IMAGE_FILENAME_PREPEND = os.path.join(os.path.dirname(IMAGE_FILENAME),
                                             os.path.splitext(IMAGE_FILENAME_NEW)[0] + '_prepend' + os.path.splitext(IMAGE_FILENAME_NEW)[1])
         # print(IMAGE_FILENAME_PREPEND)
 
         HEADER_FINAL=''
         if IMAGE_FILENAME_NEW == "ram_1.bin" or IMAGE_FILENAME_NEW == "xip_boot.bin" or IMAGE_FILENAME_NEW == "entry_1.bin":
-            HEADER_FINAL = PATTERN_1.to_bytes(4, 'big') + \
-                        PATTERN_2.to_bytes(4, 'big')
+            HEADER_FINAL = PATTERN_1.to_bytes(4, 'big') +  PATTERN_2.to_bytes(4, 'big')
         elif IMAGE_FILENAME_NEW == "fatfs.bin":
-            HEADER_FINAL = PATTERN_FS_1.to_bytes(4, 'big') + \
-                        PATTERN_FS_2.to_bytes(4, 'big')
+            HEADER_FINAL = PATTERN_FS_1.to_bytes(4, 'big') +  PATTERN_FS_2.to_bytes(4, 'big')
         else:
             HEADER_FINAL = IMG2SIGN.to_bytes(8, 'big')
 
         HEADER_FINAL = HEADER_FINAL + IMAGE_LEN.to_bytes(4, 'little') + int(IMAGE_ADDR, 16).to_bytes(4, 'little')
-        HEADER_FINAL = HEADER_FINAL + RSVD.to_bytes(8, 'little')
+        if len(sys.argv) > 5: #add boot index for rom jump in amebagreen2 and later
+            BOOT_INDEX=self.argv[5]
+            HEADER_FINAL = HEADER_FINAL + int(BOOT_INDEX, 16).to_bytes(4, 'little') + 0xFFFFFFFF.to_bytes(4, 'little')
+        else:
+            HEADER_FINAL = HEADER_FINAL + RSVD.to_bytes(8, 'little')
         HEADER_FINAL = HEADER_FINAL + RSVD.to_bytes(8, 'little')
 
         CATFILE(HEADER_FINAL, IMAGE_FILENAME_PREPEND, IMAGE_FILENAME)
@@ -679,49 +861,58 @@ class OTA_PREPEND_TOOL():
         else:
             CATFILE(self.HEADER_FINAL, IMAGE_FILENAME_PREPEND, IMAGE2_FILENAME, "", "")
             self.CHECKSUMTOOL(IMAGE2_FILENAME, IMAGE_FILENAME_PREPEND, 16)
-def print_help():
-    print("\tpython axf2bin.py keypair <auth_alg> <filename>")
-    print("\tpython axf2bin.py manifest <manifest.json> <key.json> <img_file> <out_file> [app|boot]")
-    print("\tpython axf2bin.py cert <manifest.json> <key.json> <out_file> <key_id1> <key1_name> <key_id2> <key2_name>...")
-    print("\tpython axf2bin.py rsip <src.bin> <dst.bin> <virtual_addr> <manifest.json> [app|boot]")
-    print("\tpython axf2bin.py rdp [enc|dec] <img_file> <out_file> <manifest.json>, Actual IV is composed by app RSIP_IV + RDP_IV")
-    print("\tpython axf2bin.py pad [Image Name] [Aligned Bytes(decimal)]")
-    print("\tpython axf2bin.py prepend_header [Image Name] [Start Symbol Name] [Symbols List File]")
-    print("\tpython axf2bin.py ota_prepend_header [Image2 Name] [Boot Image Name][option] [DSP Image Name][option]")
-    print("\tpython axf2bin.py imagetool [Image Name] [Build type] [DSP Image DIR][option]")
-    print("\tpython axf2bin.py binary_pading [Src Image Name] [Dst Image Name] [Size]")
-    print("\tpython axf2bin.py compress [Src Image Name]")
+
+def ENCTOOL_AMEBAD(key, *value):
+    argv = (0, 0) + value
+    if key == "sboot":
+        if len(argv) < 6:
+            print("\tpython axf2bin.py sboot <src.bin> <dst.bin> <manifest.json> [app|boot]")
+            raise ValueError
+        sboot = secure_boot_AMEBAD(len(argv), argv)
+        sboot.SBOOT_GenSignature()
+    elif key == "rsip":
+        if len(argv) < 7:
+            print("\tpython axf2bin.py rsip <src.bin> <dst.bin> <virtual_addr> <manifest.json> [app|boot]")
+            raise ValueError
+        rsip = RSIP_AMEBAD(len(argv), argv)
+        rsip.RSIP_ImageEncrypt()
+    elif key == "rdp":
+        if len(argv) < 6:
+            print("\tpython axf2bin.py rdp [enc|dec] <img_file> <out_file> <manifest.json>, Actual IV is composed by app RSIP_IV + RDP_IV")
+            raise ValueError
+        rdp = RDP_AMEBAD(len(argv), argv)
+        rdp.rdp_encrypt()
 
 def ENCTOOL(key, *value):
     argv = (0, 0) + value
     if key == "keypair":
         if len(argv) < 4:
-            print_help()
-            sys.exit()
+            print("\tpython axf2bin.py keypair <auth_alg> <filename>")
+            raise ValueError
         sboot = secure_boot(len(argv), argv)
         sboot.create_keypair()
     elif key == "manifest":
         if len(argv) < 7:
-            print_help()
-            sys.exit()
+            print("\tpython axf2bin.py manifest <manifest.json> <key.json> <img_file> <out_file> [app|boot]")
+            raise ValueError
         sboot = secure_boot(len(argv), argv)
         sboot.create_manifest()
     elif key == "cert":
         if len(argv) < 5 or len(argv)%2 == 0:
-            print_help()
-            sys.exit()
+            print("\tpython axf2bin.py cert <manifest.json> <key.json> <out_file> <key_id1> <key1_name> <key_id2> <key2_name>...")
+            raise ValueError
         sboot = secure_boot(len(argv), argv)
         sboot.create_certificate()
     elif key == "rsip":
         if len(argv) < 7:
-            print_help()
-            sys.exit()
+            print("\tpython axf2bin.py rsip <src.bin> <dst.bin> <virtual_addr> <manifest.json> [app|boot]")
+            raise ValueError
         rsip = RSIP(len(argv), argv)
         rsip.RSIP_ImageEncrypt()
     elif key == "rdp":
         if len(argv) < 6:
-            print_help()
-            sys.exit()
+            print("\tpython axf2bin.py rdp [enc|dec] <img_file> <out_file> <manifest.json>, Actual IV is composed by app RSIP_IV + RDP_IV")
+            raise ValueError
         rdp = RDP(len(argv), argv)
         rdp.rdp_encrypt()
     elif key == "huk":
@@ -739,6 +930,32 @@ class IMAGETOOL():
         self.argc = argc
         self.argv = argv
 
+    def get_address(self, ld, section, target):
+        """get address from ld file, e.g. ameba_layout.ld
+
+        Args:
+            ld (string): ld file, e.g. ameba_layout.ld
+            section (string): section name, e.g. AP_IMG2_XIP
+            target (string): target name, e.g. ORIGIN
+            return address
+        """
+        if not os.path.exists(ld):
+            return None
+        with open(ld, 'r') as f:
+            content = f.read()
+            lines = content.split('\n')
+            for line in lines:
+                # print(line)
+                tmp = re.match(fr"^{section}\s", line.lstrip())
+                if tmp:
+                    x = re.findall(fr'{target}\s=\s0x[0-9A-F]+', line.lstrip())
+                    if x:
+                        y = re.findall(r'0x[0-9A-F]+', x[0])
+                        if y:
+                            return hex(int(y[0], 16) - 0x20)
+            return None
+
+
     def binary_pading(self, src, dst, size):
         print('size, ', size)
         with open(src, 'rb') as fd:
@@ -755,15 +972,15 @@ class IMAGETOOL():
                 fw.write(tmp)
                 print('%d bytes copied'%(len(tmp)))
         os.remove('temp.bin')
-    
+
     def image2_prehandle(self, image2_1, image2_2, image3, app, image_dir):
         if os.path.exists(image2_1):
             shutil.copy(image2_1, image_dir)
         image2_1 = os.path.join(image_dir, os.path.basename(image2_1))
         if os.path.exists(image2_2) == False:
-            sys.exit()
+            sys.exit(0)
         if os.path.exists(image2_1) == False:
-            sys.exit()
+            sys.exit(0)
         if os.path.exists(app):
             os.remove(app)
         if os.path.exists(image3):
@@ -771,7 +988,7 @@ class IMAGETOOL():
         else:
             CATFILE('', app, image2_1, image2_2)
         return image2_1
-    
+
     def image2_posthandle(self, image_dir, *apps):
         if self.BUILD_TYPE != 'MFG':
             return
@@ -815,7 +1032,7 @@ class IMAGETOOL():
             ENCTOOL('rsip', km4_image2, km4_image2_en, '0x0E000000', self.MANIFEST_JSON, 'app')
 
             if os.path.exists(self.manifest) == False:
-                sys.exit()
+                sys.exit(1)
 
             if os.path.exists(km4_image3_en):
                 CATFILE('', app_ns, self.cert, self.manifest, kr4_image2, km4_image2, km4_image3)
@@ -823,7 +1040,7 @@ class IMAGETOOL():
             else:
                 CATFILE('', app_ns, self.cert, self.manifest, kr4_image2, km4_image2)
                 CATFILE('', app, self.cert, self.manifest, kr4_image2_en, km4_image2_en)
-            
+
             if os.path.exists(dsp_image_en):
                 CATFILE('', app_dsp_ns, app_ns, dsp_image)
                 CATFILE('', app_dsp, app, dsp_image_en)
@@ -841,13 +1058,30 @@ class IMAGETOOL():
             if os.path.exists(os.path.join(KR4_IMG_DIR, 'kr4_image2_all_shrink.bin')):
                 shutil.copy(os.path.join(KR4_IMG_DIR, 'kr4_image2_all_shrink.bin'), KM4_IMG_DIR)
             if os.path.exists(os.path.join(KM4_IMG_DIR, 'kr4_image2_all_shrink.bin')) == False:
-                sys.exit()
+                sys.exit(0)
             if os.path.exists(os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin')) == False:
-                sys.exit()
+                sys.exit(0)
             CATFILE('', app, os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin'),os.path.join(KM4_IMG_DIR, 'kr4_image2_all_shrink.bin'))
             if self.BUILD_TYPE == 'MFG':
                 if os.path.exists(app):
                     os.rename(app, os.path.join(KM4_IMG_DIR, 'kr4_km4_app_mp.bin'))
+
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        IMAGE_NAME_NS = os.path.splitext(IMAGE_NAME)[0] + '_ns.bin'
+        if self.IMAGE_FILENAME == 'km4_boot_all.bin' or self.IMAGE_FILENAME == 'km4_boot_all_mp.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x0F800000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', IMAGE_NAME_NS, self.manifest, IMAGE_NAME)
+            CATFILE('', IMAGE_NAME, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+
+        if self.IMAGE_FILENAME == 'km4_image3_all.bin':
+            ENCTOOL('rdp', 'enc', IMAGE_NAME, IMAGE_NAME_EN, self.MANIFEST_JSON)
+
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(KM4_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
 
     def amebadplus(self, KM4_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
@@ -872,7 +1106,7 @@ class IMAGETOOL():
             ENCTOOL('rsip', km4_image2, km4_image2_en, '0x0E000000', self.MANIFEST_JSON, 'app')
 
             if os.path.exists(self.manifest) == False:
-                sys.exit()
+                sys.exit(1)
 
             if os.path.exists(km4_image3_en):
                 CATFILE('', app_ns, self.cert, self.manifest, km0_image2, km4_image2, km4_image3)
@@ -882,22 +1116,134 @@ class IMAGETOOL():
                 CATFILE('', app, self.cert, self.manifest, km0_image2_en, km4_image2_en)
 
             self.image2_posthandle(KM4_IMG_DIR, app, app_ns)
-    
+
         if self.IMAGE_FILENAME == 'km0_image2_all_shrink.bin' or self.IMAGE_FILENAME == 'km4_image2_all_shrink.bin':
             if os.path.exists(os.path.join(KM0_IMG_DIR, 'km0_image2_all_shrink.bin')):
                 shutil.copy(os.path.join(KM0_IMG_DIR, 'km0_image2_all_shrink.bin'), KM4_IMG_DIR)
             if os.path.exists(os.path.join(KM4_IMG_DIR, 'km0_image2_all_shrink.bin')) == False:
-                sys.exit()
+                sys.exit(0)
             if os.path.exists(os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin')) == False:
-                sys.exit()
+                sys.exit(0)
             if os.path.exists(app):
                 os.remove(app)
-            
+
             self.binary_pading(os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin'), os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink_pad.bin'), 150)
             CATFILE('', app, os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink_pad.bin'), os.path.join(KM4_IMG_DIR, 'km0_image2_all_shrink.bin'))
-            
+
             self.image2_posthandle(KM4_IMG_DIR, app)
-    
+
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        if self.IMAGE_FILENAME == 'km4_boot.bin' :
+            boot_all = os.path.join(KM4_IMG_DIR, 'km4_boot_all.bin')
+            boot_all_ns = os.path.join(KM4_IMG_DIR, 'km4_boot_all_ns.bin')
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x0F800000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', boot_all_ns, self.manifest, IMAGE_NAME)
+            CATFILE('', boot_all, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+            os.remove(self.manifest)
+
+        if self.IMAGE_FILENAME == 'km4_boot_mp.bin' :
+            boot_all = os.path.join(KM4_IMG_DIR, 'km4_boot_all_mp.bin')
+            boot_all_ns = os.path.join(KM4_IMG_DIR, 'km4_boot_all_mp_ns.bin')
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x0F800000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', boot_all_ns, self.manifest, IMAGE_NAME)
+            CATFILE('', boot_all, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+            os.remove(self.manifest)
+
+        if self.IMAGE_FILENAME == 'km4_image3_all.bin':
+            ENCTOOL('rdp', 'enc', IMAGE_NAME, IMAGE_NAME_EN, self.MANIFEST_JSON)
+
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(KM4_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+
+    def amebad(self, KM4_IMG_DIR):
+        if self.BUILD_TYPE == 'MFG':
+            KM0_IMG_DIR = os.path.join(self.pwd, 'project_km0', 'asdk', 'image_mp')
+        else:
+            KM0_IMG_DIR = os.path.join(self.pwd, 'project_km0', 'asdk', 'image')
+        km0_image2 = os.path.join(KM0_IMG_DIR, 'km0_image2_all.bin')
+        km4_image2 = os.path.join(KM4_IMG_DIR, 'km4_image2_all.bin')
+        km4_image3 = os.path.join(KM4_IMG_DIR, 'km4_image3_all.bin')
+        km4_image3_psram = os.path.join(KM4_IMG_DIR, 'km4_image3_psram.bin')
+        km0_image2_en = os.path.join(KM4_IMG_DIR, 'km0_image2_all_en.bin')
+        km4_image2_en = os.path.join(KM4_IMG_DIR, 'km4_image2_all_en.bin')
+        km4_image3_en = os.path.join(KM4_IMG_DIR, 'km4_image3_all_en.bin')
+        km4_image3_psram_en = os.path.join(KM4_IMG_DIR, 'km4_image3_psram_en.bin')
+        app = os.path.join(KM4_IMG_DIR, 'km0_km4_app.bin')
+        app_ns = os.path.join(KM4_IMG_DIR, 'km0_km4_app_ns.bin')
+
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        IMAGE_NAME_SB = os.path.splitext(IMAGE_NAME)[0] + '_sb.bin'
+        IMAGE_NAME_NS = os.path.splitext(IMAGE_NAME)[0] + '_ns.bin'
+        if self.IMAGE_FILENAME == "km0_boot_all.bin":
+            ENCTOOL_AMEBAD('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x08000000', self.MANIFEST_JSON, 'boot')
+            os.rename(IMAGE_NAME, IMAGE_NAME_NS)
+            os.rename(IMAGE_NAME_EN, IMAGE_NAME)
+
+        if self.IMAGE_FILENAME == "km4_boot_all.bin":
+            ENCTOOL_AMEBAD('sboot', IMAGE_NAME, IMAGE_NAME_SB, self.MANIFEST_JSON, 'boot')
+            ENCTOOL_AMEBAD('rsip', IMAGE_NAME_SB, IMAGE_NAME_EN, '0x08004000', self.MANIFEST_JSON, 'boot')
+            os.rename(IMAGE_NAME, IMAGE_NAME_NS)
+            os.rename(IMAGE_NAME_EN, IMAGE_NAME)
+            os.remove(IMAGE_NAME_SB)
+
+        if self.IMAGE_FILENAME == "km4_image3_all.bin":
+            ENCTOOL_AMEBAD('rdp', 'enc', km4_image3, km4_image3_en, self.MANIFEST_JSON)
+
+        if self.IMAGE_FILENAME == "km4_image3_psram.bin":
+            ENCTOOL_AMEBAD('rdp', 'enc', km4_image3_psram, km4_image3_psram_en, self.MANIFEST_JSON)
+
+        if self.IMAGE_FILENAME == "psram_2_prepend.bin":
+            ENCTOOL_AMEBAD('sboot', IMAGE_NAME, IMAGE_NAME_EN, self.MANIFEST_JSON, 'app_ext')
+
+        if self.IMAGE_FILENAME == 'km4_image2_all.bin':
+            ENCTOOL_AMEBAD('sboot', km4_image2, IMAGE_NAME_SB, self.MANIFEST_JSON, 'app')
+            ENCTOOL_AMEBAD('rsip', IMAGE_NAME_SB, km4_image2_en, '0x0E000000', self.MANIFEST_JSON, 'app')
+            os.remove(IMAGE_NAME_SB)
+
+            if os.path.exists(km0_image2) == False:
+                sys.exit(0)
+
+            ENCTOOL_AMEBAD('rsip', km0_image2, km0_image2_en, '0x0C000000', self.MANIFEST_JSON, 'app')
+
+            if os.path.exists(km4_image3_en) == True:
+                if self.BUILD_TYPE == 'MFG':
+                    CATFILE('', app, km0_image2_en, km4_image2_en, km4_image3, km4_image3_psram)
+                else:
+                    CATFILE('', app, km0_image2_en, km4_image2_en, km4_image3_en, km4_image3_psram_en)
+                CATFILE('', app_ns, km0_image2, km4_image2, km4_image3, km4_image3_psram)
+            else:
+                CATFILE('', app, km0_image2_en, km4_image2_en)
+                CATFILE('', app_ns, km0_image2, km4_image2)
+
+            self.image2_posthandle(KM4_IMG_DIR, app, app_ns)
+
+        if self.IMAGE_FILENAME == 'km0_image2_all.bin':
+            ENCTOOL_AMEBAD('rsip', km0_image2, km0_image2_en, '0x0C000000', self.MANIFEST_JSON, 'app')
+
+            if os.path.exists(km4_image2) == False:
+                sys.exit(0)
+
+            ENCTOOL_AMEBAD('rsip', km4_image2, km4_image2_en, '0x0E000000', self.MANIFEST_JSON, 'app')
+
+            if os.path.exists(km4_image3_en) == True:
+                if self.BUILD_TYPE == 'MFG':
+                    CATFILE('', app, km0_image2_en, km4_image2_en, km4_image3, km4_image3_psram)
+                else:
+                    CATFILE('', app, km0_image2_en, km4_image2_en, km4_image3_en, km4_image3_psram_en)
+                CATFILE('', app_ns, km0_image2, km4_image2, km4_image3, km4_image3_psram)
+            else:
+                CATFILE('', app, km0_image2_en, km4_image2_en)
+                CATFILE('', app_ns, km0_image2, km4_image2)
+
+            self.image2_posthandle(KM4_IMG_DIR, app, app_ns)
+
     def amebasmart(self, KM4_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
             CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image_mp')
@@ -917,11 +1263,12 @@ class IMAGETOOL():
         app_ca32 = os.path.join(KM4_IMG_DIR, 'km0_km4_ca32_app.bin')
         app_ca32_ns = os.path.join(KM4_IMG_DIR, 'km0_km4_ca32_app_ns.bin')
 
-        if self.IMAGE_FILENAME == 'km0_image2_all.bin' or self.IMAGE_FILENAME == 'km4_image2_all.bin':
+        if self.IMAGE_FILENAME == 'km0_image2_all.bin' or self.IMAGE_FILENAME == 'km4_image2_all.bin' or self.IMAGE_FILENAME == 'ap_image_all.bin':
             km0_image2 = self.image2_prehandle(km0_image2, km4_image2, km4_image3, app, KM4_IMG_DIR)
-            
+
             ENCTOOL('cert', self.MANIFEST_JSON, self.MANIFEST_JSON, self.cert, 0, 'app')
             if os.path.exists(ca32_image):
+                ENCTOOL('rsip', ca32_image, ca32_image_en, '0x0E000000', self.MANIFEST_JSON, 'app')
                 CATFILE('', app_ca32, app, ca32_image)
                 ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app_ca32, self.manifest, 'app')
             else:
@@ -930,7 +1277,7 @@ class IMAGETOOL():
             ENCTOOL('rsip', km4_image2, km4_image2_en, '0x0D000000', self.MANIFEST_JSON, 'app')
 
             if os.path.exists(self.manifest) == False:
-                sys.exit()
+                sys.exit(1)
 
             if os.path.exists(km4_image3_en):
                 CATFILE('', app_ns, self.cert, self.manifest, km0_image2, km4_image2, km4_image3)
@@ -938,22 +1285,35 @@ class IMAGETOOL():
             else:
                 CATFILE('', app_ns, self.cert, self.manifest, km0_image2, km4_image2)
                 CATFILE('', app, self.cert, self.manifest, km0_image2_en, km4_image2_en)
-            
+
             if os.path.exists(ca32_image_en):
                 CATFILE('', app_ca32_ns, app_ns, ca32_image)
                 CATFILE('', app_ca32, app, ca32_image_en)
 
             self.image2_posthandle(KM4_IMG_DIR, app, app_ns, app_ca32, app_ca32_ns)
 
-        if self.IMAGE_FILENAME == 'ap_image_all.bin':
-            if os.path.exists(ca32_image):
-                ENCTOOL('rsip', ca32_image, ca32_image_en, '0x0E000000', self.MANIFEST_JSON, 'app')
-    
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        IMAGE_NAME_NS = os.path.splitext(IMAGE_NAME)[0] + '_ns.bin'
+        if self.IMAGE_FILENAME == 'km4_boot_all.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x0A000000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', IMAGE_NAME_NS, self.manifest, IMAGE_NAME)
+            CATFILE('', IMAGE_NAME, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+
+        if self.IMAGE_FILENAME == 'km4_image3_all.bin':
+            ENCTOOL('rdp', 'enc', IMAGE_NAME, IMAGE_NAME_EN, self.MANIFEST_JSON)
+
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(KM4_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+
     def amebagreen2(self, AP_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
-            NP_IMG_DIR = os.path.join(self.pwd, 'project_np', 'asdk', 'image_mp')
+            NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image_mp')
         else:
-            NP_IMG_DIR = os.path.join(self.pwd, 'project_np', 'asdk', 'image')
+            NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image')
         np_image2 = os.path.join(NP_IMG_DIR, 'np_image2_all.bin')
         ap_image2 = os.path.join(AP_IMG_DIR, 'ap_image2_all.bin')
         ap_image3 = os.path.join(AP_IMG_DIR, 'ap_image3_all.bin')
@@ -968,11 +1328,22 @@ class IMAGETOOL():
 
             ENCTOOL('cert', self.MANIFEST_JSON, self.MANIFEST_JSON, self.cert, 0, 'app')
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app, self.manifest, 'app')
-            ENCTOOL('rsip', np_image2, np_image2_en, '0x06000000', self.MANIFEST_JSON, 'app')
-            ENCTOOL('rsip', ap_image2, ap_image2_en, '0x04000000', self.MANIFEST_JSON, 'app')
+            np_addr = self.get_address(self.LD_FILE, 'NP_IMG2_XIP', 'ORIGIN')
+            ap_addr = self.get_address(self.LD_FILE, 'AP_IMG2_XIP', 'ORIGIN')
+            if not np_addr:
+                print('error: NP_IMG2_XIP is NULL file: %s'%(__file__))
+                sys.exit(-1)
+
+            ENCTOOL('rsip', np_image2, np_image2_en, np_addr, self.MANIFEST_JSON, 'app')
+
+            if not ap_addr:
+                print('error: AP_IMG2_XIP is NULL file: %s'%(__file__))
+                sys.exit(-1)
+
+            ENCTOOL('rsip', ap_image2, ap_image2_en, ap_addr, self.MANIFEST_JSON, 'app')
 
             if os.path.exists(self.manifest) == False:
-                sys.exit()
+                sys.exit(1)
 
             if os.path.exists(ap_image3_en):
                 CATFILE('', app_ns, self.cert, self.manifest, np_image2, ap_image2, ap_image3)
@@ -982,28 +1353,121 @@ class IMAGETOOL():
                 CATFILE('', app, self.cert, self.manifest, np_image2_en, ap_image2_en)
 
             self.image2_posthandle(AP_IMG_DIR, app, app_ns)
-    
+
+        if self.IMAGE_FILENAME == 'fullmac_ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest, 'boot')
+            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac_img_1.bin'), os.path.join(AP_IMG_DIR, 'fullmac_ram_1_prepend.bin'), self.manifest)
+
+        if self.IMAGE_FILENAME == 'fullmac_sram_2_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'fullmac_sram_2_prepend.bin'), self.manifest, 'app')
+            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac_img_2.bin'), os.path.join(AP_IMG_DIR, 'fullmac_sram_2_prepend.bin'), self.manifest)
+
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        if self.IMAGE_FILENAME == 'ap_boot_all.bin':
+            boot_all = os.path.join(AP_IMG_DIR, 'amebagreen2_boot.bin')
+            boot_all_ns = os.path.join(AP_IMG_DIR, 'amebagreen2_boot_ns.bin')
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10400000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', boot_all_ns, self.manifest, IMAGE_NAME)
+            CATFILE('', boot_all, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+
+        if self.IMAGE_FILENAME == 'ap_image3_all.bin':
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10C00000', self.MANIFEST_JSON, 'img3')
+
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(AP_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+
+    def amebaL2(self, AP_IMG_DIR):
+        if self.BUILD_TYPE == 'MFG':
+            NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image_mp')
+        else:
+            NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image')
+        np_image2 = os.path.join(NP_IMG_DIR, 'np_image2_all.bin')
+        ap_image2 = os.path.join(AP_IMG_DIR, 'ap_image2_all.bin')
+        ap_image3 = os.path.join(AP_IMG_DIR, 'ap_image3_all.bin')
+        np_image2_en = os.path.join(AP_IMG_DIR, 'np_image2_all_en.bin')
+        ap_image2_en = os.path.join(AP_IMG_DIR, 'ap_image2_all_en.bin')
+        ap_image3_en = os.path.join(AP_IMG_DIR, 'ap_image3_all_en.bin')
+        app = os.path.join(AP_IMG_DIR, 'amebaL2_app.bin')
+        app_ns = os.path.join(AP_IMG_DIR, 'amebaL2_app_ns.bin')
+
+        if self.IMAGE_FILENAME == 'np_image2_all.bin' or self.IMAGE_FILENAME == 'ap_image2_all.bin':
+            np_image2 = self.image2_prehandle(np_image2, ap_image2, ap_image3, app, AP_IMG_DIR)
+
+            ENCTOOL('cert', self.MANIFEST_JSON, self.MANIFEST_JSON, self.cert, 0, 'app')
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app, self.manifest, 'app')
+            np_addr = self.get_address(self.LD_FILE, 'NP_IMG2_XIP', 'ORIGIN')
+            ap_addr = self.get_address(self.LD_FILE, 'AP_IMG2_XIP', 'ORIGIN')
+            if not np_addr:
+                print('error: NP_IMG2_XIP is NULL file: %s'%(__file__))
+                sys.exit(-1)
+
+            ENCTOOL('rsip', np_image2, np_image2_en, np_addr, self.MANIFEST_JSON, 'app')
+
+            if not ap_addr:
+                print('error: AP_IMG2_XIP is NULL file: %s'%(__file__))
+                sys.exit(-1)
+
+            ENCTOOL('rsip', ap_image2, ap_image2_en, ap_addr, self.MANIFEST_JSON, 'app')
+
+            if os.path.exists(self.manifest) == False:
+                sys.exit(1)
+
+            if os.path.exists(ap_image3_en):
+                CATFILE('', app_ns, self.cert, self.manifest, np_image2, ap_image2, ap_image3)
+                CATFILE('', app, self.cert, self.manifest, np_image2_en, ap_image2_en, ap_image3_en)
+            else:
+                CATFILE('', app_ns, self.cert, self.manifest, np_image2, ap_image2)
+                CATFILE('', app, self.cert, self.manifest, np_image2_en, ap_image2_en)
+
+            self.image2_posthandle(AP_IMG_DIR, app, app_ns)
+
         if self.IMAGE_FILENAME == 'ram_all_prepend.bin':
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'ram_all_prepend.bin'), self.manifest, 'boot')
             CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac.bin'), os.path.join(AP_IMG_DIR, 'ram_all_prepend.bin'), self.manifest)
-    
+
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        if self.IMAGE_FILENAME == 'ap_boot_all.bin':
+            boot_all = os.path.join(AP_IMG_DIR, 'amebaL2_boot.bin')
+            boot_all_ns = os.path.join(AP_IMG_DIR, 'amebaL2_boot_ns.bin')
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10400000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', boot_all_ns, self.manifest, IMAGE_NAME)
+            CATFILE('', boot_all, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+
+        if self.IMAGE_FILENAME == 'ap_image3_all.bin':
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10C00000', self.MANIFEST_JSON, 'img3')
+
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(AP_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+
     def get_handler(self, project):
         return {
             'amebasmart_gcc_project': {'handler': self.amebasmart, 'image_core': 'project_hp', 'boot_addr': '0x0A000000', 'boot_image': 'km4_boot_all'},
             'amebalite_gcc_project': {'handler': self.amebalite, 'image_core': 'project_km4', 'boot_addr': '0x0F800000', 'boot_image': 'km4_boot_all'},
             'amebadplus_gcc_project': {'handler': self.amebadplus, 'image_core': 'project_km4', 'boot_addr': '0x0F800000', 'boot_image': 'km4_boot_all'},
-            'amebagreen2_gcc_project': {'handler': self.amebagreen2, 'image_core': 'project_ap', 'boot_addr': '0x02000000', 'boot_image': 'amebagreen2_boot'},
+            'amebad_gcc_project': {'handler': self.amebad, 'image_core': 'project_km4', 'boot_addr': '', 'boot_image': 'km4_boot_all'},
+            'amebagreen2_gcc_project': {'handler': self.amebagreen2, 'image_core': 'project_km4tz', 'boot_addr': '0x10400000', 'boot_image': 'amebagreen2_boot'},
+            'amebaL2_gcc_project': {'handler': self.amebaL2, 'image_core': 'project_km4tz', 'boot_addr': '0x10400000', 'boot_image': 'amebaL2_boot'},
         }.get(project, None)
 
     def execute(self):
         lproject = re.findall(r"ameba[A-Za-z0-9]+_gcc_project", os.getcwd())
-        if lproject == None or len(lproject[0]) == 0:
-            sys.exit()
+        if lproject == None or len(lproject) == 0:
+            print('project is None! please execute under project')
+            raise ValueError
 
         handler = self.get_handler(lproject[0])
         if handler == None:
-            sys.exit()
-        
+            print('handler is not added! please add handler in get_handler')
+            raise ValueError
+
         index = os.getcwd().find(lproject[0])
         self.pwd = os.path.join(os.getcwd()[0: index], lproject[0])
 
@@ -1011,6 +1475,7 @@ class IMAGETOOL():
         self.IMAGE_FILENAME = os.path.basename(self.IMAGE_FULLNAME)
         self.BUILD_TYPE = self.argv[3]
         self.MANIFEST_JSON = os.path.join(self.pwd, 'manifest.json')
+        self.LD_FILE = os.path.join(self.pwd, 'ameba_layout.ld')
 
         if self.BUILD_TYPE == 'MFG':
             IMG_DIR = os.path.join(self.pwd, handler['image_core'], 'asdk', 'image_mp')
@@ -1024,29 +1489,11 @@ class IMAGETOOL():
 
         handler['handler'](IMG_DIR)
 
-        if self.IMAGE_FILENAME.find('boot') > 0:
-            boot = self.IMAGE_FULLNAME
-            boot_en = os.path.join(IMG_DIR, os.path.splitext(self.IMAGE_FILENAME)[0] + '_en.bin')
-            boot_all = os.path.join(IMG_DIR, handler['boot_image'] + '.bin')
-            boot_all_ns = os.path.join(IMG_DIR, handler['boot_image'] + '_ns.bin')
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, boot, self.manifest, 'boot')
-            ENCTOOL('rsip', boot, boot_en, handler['boot_addr'], self.MANIFEST_JSON, 'boot')
-            CATFILE('', boot_all_ns, self.manifest, boot)
-            CATFILE('', boot_all, self.manifest, boot_en)
-            os.remove(boot_en)
-        
-        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(IMG_DIR, 'ram_1_prepend.bin'), self.manifest, 'boot')
-            CATFILE('', os.path.join(IMG_DIR, 'imgtool_flashloader.bin'), os.path.join(IMG_DIR, 'ram_1_prepend.bin'), self.manifest)
-        
-        if self.IMAGE_FILENAME.find('image3') > 0:
-            image3_en = os.path.join(IMG_DIR, os.path.splitext(self.IMAGE_FILENAME)[0] + '_en.bin')
-            ENCTOOL('rdp', 'enc', os.path.join(IMG_DIR, self.IMAGE_FILENAME), image3_en, self.MANIFEST_JSON)
-    
     def compress(self):
         lproject = re.findall(r"ameba[A-Za-z0-9]+_gcc_project", os.getcwd())
-        if lproject == None or len(lproject[0]) == 0:
-            sys.exit()
+        if lproject == None or len(lproject) == 0:
+            print('project is None! please execute under project')
+            raise ValueError
 
         index = os.getcwd().find(lproject[0])
         self.pwd = os.path.join(os.getcwd()[0: index], lproject[0])
@@ -1062,7 +1509,7 @@ class IMAGETOOL():
 
         byteClassOffset = sys.getsizeof(b"") #this is the offset depending on python byte class
         split_16k = 16384 #split by 16kb as client wanted
-        splitSize = split_16k + byteClassOffset #offset 17 or 33 bytes due to python byte class                    
+        splitSize = split_16k + byteClassOffset #offset 17 or 33 bytes due to python byte class
 
         compress_data = b''
         byteRead = b''
@@ -1093,9 +1540,9 @@ class IMAGETOOL():
                     fileNum = fileNum + 1
 
         headerFile = fileNum.to_bytes(2, 'little')
-        for item in range(0, fileNum): 
+        for item in range(0, fileNum):
             headerFile = headerFile + LZMA_Size[item].to_bytes(2, 'little')
-        
+
         print("Header creation complete")
         print("Total number of " + str(fileNum) + " x *.bin and *.lzma files generated")
         ############# Perform LZMA Concatenation ###############
@@ -1116,44 +1563,57 @@ class IMAGETOOL():
         os.remove(image_temp)
         print("Generated concatenated Lzma File %s success "%str(image_compress))
 
+def print_help():
+    print("\tpython axf2bin.py keypair <auth_alg> <filename>")
+    print("\tpython axf2bin.py manifest <manifest.json> <key.json> <img_file> <out_file> [app|boot]")
+    print("\tpython axf2bin.py cert <manifest.json> <key.json> <out_file> <key_id1> <key1_name> <key_id2> <key2_name>...")
+    print("\tpython axf2bin.py rsip <src.bin> <dst.bin> <virtual_addr> <manifest.json> [app|boot]")
+    print("\tpython axf2bin.py rdp [enc|dec] <img_file> <out_file> <manifest.json>, Actual IV is composed by app RSIP_IV + RDP_IV")
+    print("\tpython axf2bin.py pad [Image Name] [Aligned Bytes(decimal)]")
+    print("\tpython axf2bin.py prepend_header [Image Name] [Start Symbol Name] [Symbols List File]")
+    print("\tpython axf2bin.py ota_prepend_header [Image2 Name] [Boot Image Name][option] [DSP Image Name][option]")
+    print("\tpython axf2bin.py imagetool [Image Name] [Build type] [DSP Image DIR][option]")
+    print("\tpython axf2bin.py binary_pading [Src Image Name] [Dst Image Name] [Size]")
+    print("\tpython axf2bin.py compress [Src Image Name]")
+
 if len(sys.argv) <= 1:
     print_help()
-    sys.exit()
+    raise ValueError
 
 if sys.argv[1] == "pad":
     if len(sys.argv) < 4:
-        print_help()
-        sys.exit()
+        print("\tpython axf2bin.py pad [Image Name] [Aligned Bytes(decimal)]")
+        raise ValueError
     padtool = PADTOOL(len(sys.argv), sys.argv)
     padtool.pad()
 elif sys.argv[1] == 'prepend_header':
-    if len(sys.argv) != 5:
-        print_help()
-        sys.exit()
+    if len(sys.argv) < 5:
+        print("\tpython axf2bin.py prepend_header [Image Name] [Start Symbol Name] [Symbols List File]")
+        raise ValueError
     prependtool = PREPEND_TOOL(len(sys.argv), sys.argv)
     prependtool.prepend_header()
 elif sys.argv[1] == 'ota_prepend_header':
     if len(sys.argv) < 3 or len(sys.argv) > 5:
-        print_help()
-        sys.exit()
+        print("\tpython axf2bin.py ota_prepend_header [Image2 Name] [Boot Image Name][option] [DSP Image Name][option]")
+        raise ValueError
     otaprependtool = OTA_PREPEND_TOOL(len(sys.argv), sys.argv)
     otaprependtool.ota_prepend_header()
 elif sys.argv[1] == 'imagetool':
     if len(sys.argv) < 4:
-        print_help()
-        sys.exit()
+        print("\tpython axf2bin.py imagetool [Image Name] [Build type] [DSP Image DIR][option]")
+        raise ValueError
     imagetool = IMAGETOOL(len(sys.argv), sys.argv)
     imagetool.execute()
 elif sys.argv[1] == 'binary_pading':
     if len(sys.argv) < 5:
-        print_help()
-        sys.exit()
+        print("\tpython axf2bin.py binary_pading [Src Image Name] [Dst Image Name] [Size]")
+        raise ValueError
     imagetool = IMAGETOOL(len(sys.argv), sys.argv)
     imagetool.binary_pading(sys.argv[2], sys.argv[3], int(sys.argv[4]))
 elif sys.argv[1] == 'compress':
     if len(sys.argv) < 3:
-        print_help()
-        sys.exit()
+        print("\tpython axf2bin.py compress [Src Image Name]")
+        raise ValueError
     imagetool = IMAGETOOL(len(sys.argv), sys.argv)
     imagetool.compress()
 else:

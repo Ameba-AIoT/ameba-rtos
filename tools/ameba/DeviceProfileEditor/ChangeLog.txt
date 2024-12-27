@@ -6,3 +6,7 @@ ChangeLog:
 20220826  v1.1.2  Splite internal and release versions.
 20230817  v1.1.3  Simpify release version.
 20240426  v1.1.4  Rename Chip ID to SoC Name to sync with device profile changes.
+20241119  v1.1.5  (1) Add device id to catch the mismatch of device and profile.
+                  (2) Add profile version for validation.
+				  (3) Add memory type for device and partitions.
+				  (4) Add RAM start address for validation of RAM download.

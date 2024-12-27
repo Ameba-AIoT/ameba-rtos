@@ -14,7 +14,7 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 typedef struct {
 	u32 NVICbackup_HP[6];
 	u32 SCBVTORbackup_HP;
@@ -26,31 +26,13 @@ CPU_S_BackUp_TypeDef PMC_S_BK;
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
     do { \
         if ((flagValue) & (bit)) { \
-            RTK_LOGS(NOTAG, "%s ", (name)); \
+            RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s ", (name)); \
         } \
     } while (0)
-
-#if defined ( __ICCARM__ )
-#pragma section=".ram.bss"
-#pragma section=".rom.bss"
-#pragma section=".ram.start.table"
-#pragma section=".ram_image1.bss"
-#pragma section=".ram_image2.entry"
-
-BOOT_RAM_RODATA_SECTION u8 *__image2_entry_func__ = 0;
-BOOT_RAM_RODATA_SECTION u8 *__image1_bss_start__ = 0;
-BOOT_RAM_RODATA_SECTION u8 *__image1_bss_end__ = 0;
-#endif
 
 BOOT_RAM_TEXT_SECTION
 PRAM_START_FUNCTION BOOT_SectionInit(void)
 {
-#if defined ( __ICCARM__ )
-	// only need __bss_start__, __bss_end__
-	__image2_entry_func__		= (u8 *)__section_begin(".ram_image2.entry");
-	__image1_bss_start__		= (u8 *)__section_begin(".ram_image1.bss");
-	__image1_bss_end__			= (u8 *)__section_end(".ram_image1.bss");
-#endif
 	return (PRAM_START_FUNCTION)__image2_entry_func__;
 }
 
@@ -395,7 +377,7 @@ u32 BOOT_LoadImages(void)
 		BOOT_OTA_AP_Linux(CertImgIndex);
 	}
 #endif
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -444,9 +426,9 @@ void BOOT_ReasonSet(void)
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_BOR, "BOR");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_THM, "THM");
 	if (temp == 0) {
-		RTK_LOGS(NOTAG, "Initial Power on\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Initial Power on\n");
 	} else {
-		RTK_LOGS(NOTAG, "UNKNOWN\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UNKNOWN\n");
 	}
 }
 
@@ -577,6 +559,11 @@ void BOOT_SOC_ClkSet(void)
 	RTK_LOGI(TAG, "NP Freq %lu MHz\n", NPCLK);
 	RTK_LOGI(TAG, "AP Freq %lu MHz\n", APCLK);
 	RTK_LOGI(TAG, "LP Freq %lu MHz\n", LPCLK / MHZ_TICK_CNT);
+
+#ifndef CONFIG_CLINTWOOD
+	/* Note that if no anti-rollback and warm reset continuously, clear BOOT_CNT to avoid boot from older bootloader */
+	BKUP_Write(BKUP_REG0, BKUP_Read(BKUP_REG0) & ~BOOT_CNT_MASK);
+#endif
 }
 
 // 0x1 for core 0, 0x3 for core 0/1
@@ -916,7 +903,7 @@ void BOOT_Image1(void)
 	BOOT_Share_Memory_Patch();
 
 	ret = BOOT_LoadImages();
-	if (ret == _FALSE) {
+	if (ret == FALSE) {
 		goto INVALID_IMG2;
 	}
 

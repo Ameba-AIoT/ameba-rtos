@@ -77,9 +77,16 @@ int __wrap_printf(const char *__restrict fmt, ...)
 #endif
 
 	va_start(ap, fmt);
+#ifdef CONFIG_ARM_CORE_CA32
 	if (CPU_InInterrupt()) {
 		ret = DiagVprintf(fmt, ap);
-	} else {
+	}
+#else
+	if (CPU_InInterrupt() || rtos_sched_get_state() != RTOS_SCHED_RUNNING || rtos_get_critical_state() > 0) {
+		ret = DiagVprintf(fmt, ap);
+	}
+#endif
+	else {
 		ret = vprintf(fmt, ap);
 		fflush(stdout);
 	}

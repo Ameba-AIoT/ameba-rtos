@@ -23,7 +23,7 @@
 
 #define HCI_DEFAULT_LMP_SUBVER     0x8720
 #define HCI_PATCH_PROJECT_ID       0x27
-#define HCI_PATCH_FLASH_ADDRESS    0x080F8000    //Temp value, need sync flash layout with platform owner if use this function
+#define HCI_PATCH_FLASH_ADDRESS    0x080F8000    /* Temp value, need sync flash layout with platform owner if use this function */
 
 #define HCI_BT_COEX_ENABLE         1
 #define HCI_BT_COEX_SW_MAILBOX     0
@@ -39,8 +39,15 @@ void hci_platform_bt_rx_dck(void);
 int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len);
 bool hci_platform_check_lmp_subver(uint16_t lmp_subver);
 
+bool rtk_bt_pre_enable(void);
+void rtk_bt_post_enable(void);
 uint8_t hci_platform_init(void);
 void hci_platform_deinit(void);
 
 void hci_platform_debug_enable(void);
+
+void hci_platform_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_dbg_mask);
+void hci_platform_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad);
+void hci_platform_debug_port_shift(uint8_t original, uint8_t mapping);
+void hci_platform_gpio_enable(uint8_t bt_gpio, char *pad);
 #endif

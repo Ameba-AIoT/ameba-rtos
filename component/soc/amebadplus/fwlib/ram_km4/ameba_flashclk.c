@@ -13,13 +13,13 @@ static FlashInfo_TypeDef *current_IC;
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
 
-static const char *TAG = "FLASH";
+static const char *const TAG = "FLASH";
 
 SRAMDRAM_ONLY_TEXT_SECTION
 u32 flash_handshake_highspeed(u32 div)
 {
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
-	u32 Ret = _TRUE;
+	u32 Ret = TRUE;
 
 	FLASH_PLLInit_ClockDiv(div);
 
@@ -32,7 +32,7 @@ u32 flash_handshake_highspeed(u32 div)
 		FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, DISABLE);
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_XTAL);
 		SPIC->TPR1 = (SPIC->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
-		Ret = _FALSE;
+		Ret = FALSE;
 	}
 
 	RTK_LOGI(TAG, "FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL");
@@ -139,9 +139,9 @@ static void flash_set_status_register(void)
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
-u32 flash_rx_mode_switch(u32 spic_mode)
+int flash_rx_mode_switch(u32 spic_mode)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	u8 status = 0;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
@@ -157,7 +157,7 @@ u32 flash_rx_mode_switch(u32 spic_mode)
 
 		if (FLASH_InitStruct->FLASH_Id == FLASH_ID_MICRON) {
 			FLASH_RxCmd(0x85, 1, &status);
-			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cyle[spic_mode] << 4);
+			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
 			FLASH_SetStatus(0x81, 1, &status);
 		}
 
@@ -165,7 +165,7 @@ u32 flash_rx_mode_switch(u32 spic_mode)
 
 		if (spic_mode == Spic1IOBitMode) {
 			RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-			Ret = _FAIL;
+			Ret = FAIL;
 			break;
 		}
 

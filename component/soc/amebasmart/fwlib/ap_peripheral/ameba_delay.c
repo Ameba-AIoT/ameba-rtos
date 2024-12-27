@@ -7,17 +7,10 @@
 #include "ameba_soc.h"
 #include "FreeRTOS.h"
 
-#if defined ( __ICCARM__ )
-#define DelayCheck()						\
-	do {							\
-		__asm volatile("nop;");	\
-	} while (0)
-#else
 #define DelayCheck()						\
 	do {							\
 		__asm__ __volatile__("nop;");	\
 	} while (0)
-#endif
 
 /**
   * @brief  Delay x us.

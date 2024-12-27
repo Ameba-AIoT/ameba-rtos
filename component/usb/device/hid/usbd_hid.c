@@ -47,7 +47,7 @@ static void hid_status_changed(usb_dev_t *dev, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "HID";
+static const char *const TAG = "HID";
 
 static u8 *usbd_hid_report_desc = NULL;
 
@@ -561,7 +561,7 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	if (status == HAL_OK) {
 		/*TX done*/
 	} else {
-		RTK_LOGS(TAG, "[HID] EP%02x TX err: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
 	}
 
 	hid->cb->transmitted(status);
@@ -640,7 +640,7 @@ static u8 *hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_ty
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGS(TAG, "[HID] Invalid str idx %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -780,7 +780,7 @@ int usbd_hid_send_data(u8 *data, u16 len)
 	usbd_hid_t *hid = &hid_device;
 
 	if (!hid->is_ready) {
-		RTK_LOGS(TAG, "[HID] EP%02x TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
 		return ret;
 	}
 

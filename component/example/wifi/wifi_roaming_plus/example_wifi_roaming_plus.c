@@ -87,7 +87,7 @@ enum {
 extern struct netif xnetif[NET_IF_NUM];
 #endif
 static wifi_roaming_ap_t *ap_list;
-static u8 pscan_enable = _TRUE; // if set _TRUE, please set pscan_channel_list
+static u8 pscan_enable = TRUE; // if set TRUE, please set pscan_channel_list
 static u8 pscan_channel_list[] = {1}; // set by customer
 static unsigned short ping_seq = 0;
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP

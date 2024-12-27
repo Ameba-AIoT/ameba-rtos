@@ -18,7 +18,7 @@
 #include "usbh_msc.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *TAG = "MSC";
+static const char *const TAG = "MSC";
 #define USBH_MSC_THREAD_STACK_SIZE  (1024*8)
 #define USBH_MSC_TEST_BUF_SIZE      4096
 #define USBH_MSC_TEST_ROUNDS        20
@@ -62,14 +62,14 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 static int msc_cb_attach(void)
 {
-	RTK_LOGS(TAG, "[MSC] ATTACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	rtos_sema_give(msc_attach_sema);
 	return HAL_OK;
 }
 
 static int msc_cb_setup(void)
 {
-	RTK_LOGS(TAG, "[MSC] SETUP\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	msc_is_ready = 1;
 	return HAL_OK;
 }
@@ -117,23 +117,23 @@ void example_usbh_msc_thread(void *param)
 
 	buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
 	if (buf == NULL) {
-		RTK_LOGS(TAG, "[MSC] Fail to alloc test buf\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc test buf\n");
 		goto exit;
 	}
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to init USBH\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init USBH\n");
 		goto exit_free;
 	}
 
 	usbh_msc_init(&msc_usr_cb);
 
 	// Register USB disk driver to fatfs
-	RTK_LOGS(TAG, "[MSC] Register USB disk\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Register USB disk\n");
 	drv_num = FATFS_RegisterDiskDriver(&USB_disk_Driver);
 	if (drv_num < 0) {
-		RTK_LOGS(TAG, "[MSC] Fail to register\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to register\n");
 		goto exit_deinit;
 	}
 
@@ -142,7 +142,7 @@ void example_usbh_msc_thread(void *param)
 	logical_drv[2] = '/';
 	logical_drv[3] = 0;
 
-	RTK_LOGS(TAG, "[MSC] FatFS USB W/R performance test start...\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test start...\n");
 
 	while (1) {
 		if (msc_is_ready) {
@@ -152,7 +152,7 @@ void example_usbh_msc_thread(void *param)
 	}
 
 	if (f_mount(&fs, logical_drv, 1) != FR_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to mount logical drive\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive\n");
 		goto exit_unregister;
 	}
 
@@ -160,7 +160,7 @@ void example_usbh_msc_thread(void *param)
 
 	while (1) {
 		if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
-			RTK_LOGS(TAG, "[MSC] Fail to take sema\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to take sema\n");
 			continue;
 		}
 
@@ -172,11 +172,11 @@ void example_usbh_msc_thread(void *param)
 		}
 
 		sprintf(&path[3], "TEST%ld.DAT", filenum);
-		RTK_LOGS(TAG, "[MSC] Open file: %s\n", path);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 		// open test file
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
-			RTK_LOGS(TAG, "[MSC] Fail to open file: TEST%d.DAT\n", filenum);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to open file: TEST%d.DAT\n", filenum);
 			goto exit_unmount;
 		}
 		// clean write and read buffer
@@ -188,14 +188,14 @@ void example_usbh_msc_thread(void *param)
 				break;
 			}
 
-			RTK_LOGS(TAG, "[MSC] W test: size %d, round %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "W test: size %d, round %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
 				res = f_write(&f, (void *)buf, test_size, (UINT *)&bw);
 				if (res || (bw < test_size)) {
 					f_lseek(&f, 0);
-					RTK_LOGS(TAG, "[MSC] W err bw=%d, rc=%d\n", bw, res);
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
 					ret = 1;
 					break;
 				}
@@ -203,19 +203,19 @@ void example_usbh_msc_thread(void *param)
 
 			elapse = SYSTIMER_GetPassTime(start);
 			perf = (round * test_size * 10000 / 1024) / elapse;
-			RTK_LOGS(TAG, "[MSC] W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
 			/* move the file pointer to the file head*/
 			res = f_lseek(&f, 0);
 
-			RTK_LOGS(TAG, "[MSC] R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
 				res = f_read(&f, (void *)buf, test_size, (UINT *)&br);
 				if (res || (br < test_size)) {
 					f_lseek(&f, 0);
-					RTK_LOGS(TAG, "[MSC] R err br=%d, rc=%d\n", br, res);
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
 					ret = 1;
 					break;
 				}
@@ -223,21 +223,21 @@ void example_usbh_msc_thread(void *param)
 
 			elapse = SYSTIMER_GetPassTime(start);
 			perf = (round * test_size * 10000 / 1024) / elapse;
-			RTK_LOGS(TAG, "[MSC] R rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "R rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
 			/* move the file pointer to the file head*/
 			res = f_lseek(&f, 0);
 		}
 
-		RTK_LOGS(TAG, "[MSC] FatFS USB W/R performance test %s\n", (ret == 0) ? "done" : "abort");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test %s\n", (ret == 0) ? "done" : "abort");
 
 		// close source file
 		res = f_close(&f);
 		if (res) {
-			RTK_LOGS(TAG, "[MSC] File close fail\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "File close fail\n");
 			ret = 1;
 		} else {
-			RTK_LOGS(TAG, "[MSC] File close OK\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "File close OK\n");
 		}
 
 		if (!ret) {
@@ -247,11 +247,11 @@ void example_usbh_msc_thread(void *param)
 	}
 exit_unmount:
 	if (f_unmount(logical_drv) != FR_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to unmount logical drive\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unmount logical drive\n");
 	}
 exit_unregister:
 	if (FATFS_UnRegisterDiskDriver(drv_num)) {
-		RTK_LOGS(TAG, "[MSC] Fail to unregister disk driver from FATFS\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unregister disk driver from FATFS\n");
 	}
 exit_deinit:
 	usbh_msc_deinit();
@@ -272,11 +272,11 @@ void example_usbh_msc(void)
 	int ret;
 	rtos_task_t task;
 
-	RTK_LOGS(TAG, "[MSC] USBH MSC demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH MSC demo start\n");
 
 	ret = rtos_task_create(&task, "example_usbh_msc_thread", example_usbh_msc_thread, NULL, USBH_MSC_THREAD_STACK_SIZE, 2);
 	if (ret != SUCCESS) {
-		RTK_LOGS(TAG, "[MSC] Create thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
 

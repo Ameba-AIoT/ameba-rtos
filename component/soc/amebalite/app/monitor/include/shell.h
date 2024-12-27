@@ -13,9 +13,9 @@
 #ifdef CONFIG_MP_INCLUDED
 #define SHELL_TASK_FUNC_STACK_SIZE (1024 * 4)
 #elif (defined (CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI))
-#define SHELL_TASK_FUNC_STACK_SIZE (1504 + 128 + CONTEXT_SAVE_SIZE + 1152)
+#define SHELL_TASK_FUNC_STACK_SIZE (1520 + 128 + CONTEXT_SAVE_SIZE + 1152)
 #else
-#define SHELL_TASK_FUNC_STACK_SIZE (744 + 128 + CONTEXT_SAVE_SIZE)	/* 744 for cmd_efuse_protect, when kr4 as ap */
+#define SHELL_TASK_FUNC_STACK_SIZE (984 + 128 + CONTEXT_SAVE_SIZE)	/* 744 for cmd_efuse_protect, when kr4 as ap */
 #endif
 
 #ifdef CONFIG_LONGER_CMD

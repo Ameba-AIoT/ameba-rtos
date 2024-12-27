@@ -8,7 +8,7 @@
 
 #define FLASH_CALIBRATION_DEBUG		0
 
-static const char *TAG = "DFLASHCLK";
+static const char *const TAG = "DFLASHCLK";
 
 static FlashInfo_TypeDef *current_IC;
 
@@ -99,7 +99,7 @@ u32 DATA_FLASH_PLLInit_ClockDiv(FlashDivInt_E Div)
 	/* Release gating of flash clock after BIT_FLASH_DIV_RDY. */
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_PSRAM_CLOCK, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -178,7 +178,7 @@ u32 DATA_FLASH_CalibrationPhase(u8 phase_int, u8 phase_sel)
 	/* 7. Release gating of flash clock */
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_PSRAM_CLOCK, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -216,7 +216,7 @@ u32 DATA_FLASH_CalibrationNewCmd(u32 NewStatus)
 
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PSRAMC_FLASH_CTRL, temp);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -371,14 +371,14 @@ u32 DATA_FLASH_Read_DataIsRight(void)
 
 	/* compare data */
 	if (_memcmp(pgolden_data, SPIC_CALIB_PATTERN, 8) == 0) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 
 }
 
-BOOL _data_flash_calibration_highspeed(u8 SpicBitMode, FlashDivInt_E Div)
+bool _data_flash_calibration_highspeed(u8 SpicBitMode, FlashDivInt_E Div)
 {
 	u32 window_size = 0;
 	u32 phase_shift_idx = 0;
@@ -429,18 +429,18 @@ BOOL _data_flash_calibration_highspeed(u8 SpicBitMode, FlashDivInt_E Div)
 		FLASH_InitStruct->FLASH_rd_sample_dly_cycle_cal = spic_cyc_dly;
 		FLASH_InitStruct->FLASH_rd_sample_dly_cycle = FLASH_InitStruct->FLASH_rd_sample_dly_cycle_cal;
 
-		return _TRUE;
+		return TRUE;
 	} else {
 		FLASH_InitStruct->phase_shift_idx = 0;
 		FLASH_InitStruct->FLASH_rd_sample_dly_cycle = SPIC_LOWSPEED_SAMPLE_PHASE;
 	}
 
-	return _FALSE;
+	return FALSE;
 }
 
-u32 data_flash_calibration_highspeed(FlashDivInt_E div)
+int data_flash_calibration_highspeed(FlashDivInt_E div)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
 	u8 spic_mode = FLASH_InitStruct->FLASH_cur_bitmode;
 
@@ -448,7 +448,7 @@ u32 data_flash_calibration_highspeed(FlashDivInt_E div)
 	DATA_FLASH_PLLInit_ClockDiv(div);
 
 	FLASH_InitStruct->debug = FLASH_CALIBRATION_DEBUG;
-	if (_data_flash_calibration_highspeed(spic_mode, div) == _TRUE) {
+	if (_data_flash_calibration_highspeed(spic_mode, div) == TRUE) {
 		/* we should open calibration new first, and then set phase index */
 		DATA_FLASH_CalibrationNewCmd(ENABLE);
 		DATA_FLASH_CalibrationPhaseIdx(FLASH_InitStruct->phase_shift_idx);
@@ -462,16 +462,16 @@ u32 data_flash_calibration_highspeed(FlashDivInt_E div)
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
 
 		RTK_LOGE(TAG, "DATA FLASH CALIB[0x%x FAIL]\n", div);
-		Ret = _FAIL;
+		Ret = FAIL;
 	}
 
 	return Ret;
 }
 
-u32 data_flash_handshake_highspeed(FlashDivInt_E div)
+int data_flash_handshake_highspeed(FlashDivInt_E div)
 {
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
-	u32 Ret = _TRUE;
+	int Ret = SUCCESS;
 
 	/* SPIC clock switch to PLL */
 	DATA_FLASH_PLLInit_ClockDiv(div);
@@ -484,7 +484,7 @@ u32 data_flash_handshake_highspeed(FlashDivInt_E div)
 		DATA_FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, DISABLE);
 		RCC_PeriphClockSource_PSRAM(BIT_LSYS_CKSL_PSRAM_LBUS);
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(1);
-		Ret = _FAIL;
+		Ret = FAIL;
 	}
 
 	RTK_LOGI(TAG, "DATA FLASH HandShake[0x%x %s]\n", div, Ret ? "OK" : "FAIL");
@@ -584,9 +584,9 @@ static void data_flash_set_status_register(void)
 	}
 }
 
-u32 data_flash_rx_mode_switch(u32 spic_mode)
+int data_flash_rx_mode_switch(u32 spic_mode)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	u8 status = 0;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
@@ -603,7 +603,7 @@ u32 data_flash_rx_mode_switch(u32 spic_mode)
 		if (FLASH_InitStruct->FLASH_Id == FLASH_ID_MICRON) {
 			DATA_FLASH_RxCmd(0x85, 1, &status);
 
-			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cyle[spic_mode] << 4);
+			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
 			DATA_FLASH_SetStatus(0x81, 1, &status);
 		}
 
@@ -611,7 +611,7 @@ u32 data_flash_rx_mode_switch(u32 spic_mode)
 
 		if (spic_mode == Spic1IOBitMode) {
 			RTK_LOGE(TAG, "DATA Flash Switch Read Mode FAIL\n");
-			Ret = _FAIL;
+			Ret = FAIL;
 			break;
 		}
 

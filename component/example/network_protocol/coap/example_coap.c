@@ -47,12 +47,10 @@ static void example_coap_thread(void *para)
 	/* To avoid gcc warnings */
 	(void)para;
 
-	printf("\nCoAP Client Example\n");
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
 
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		rtos_time_delay_ms(2000);
-	}
+	printf("\nCoAP Client Example\n");
 
 	// Initialize the CoAP protocol handle, pointing to local implementations on malloc/free/tx/rx functions
 	coapHandle = coap_protocol_init(&coap_tx_cb, &coap_rx_cb);
@@ -103,7 +101,7 @@ static void example_coap_thread(void *para)
 	int socket = coap_sock_open();
 
 	//send CoAP message
-	coap_sendto(SERVER_HOST, SERVER_PORT, socket, coap_res_ptr);
+	coap_send(SERVER_HOST, SERVER_PORT, socket, coap_res_ptr);
 
 	coap_free(coap_res_ptr);
 

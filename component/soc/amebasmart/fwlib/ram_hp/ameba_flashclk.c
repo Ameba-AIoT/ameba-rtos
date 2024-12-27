@@ -8,7 +8,7 @@
 
 #define FLASH_CALIBRATION_DEBUG		0
 
-static const char *TAG = "FLASH";
+static const char *const TAG = "FLASH";
 static const FlashInfo_TypeDef *current_IC;
 
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
@@ -90,7 +90,7 @@ u32 FLASH_ClockDiv(u8 Div)
 	/* 8. Release gating of flash clock after BIT_FLASH_DIV_RDY. */
 	RCC_PeriphClockCmd(APBPeriph_FLASH, APBPeriph_FLASH_CLOCK, ENABLE);
 	RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_PLL);
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -156,7 +156,7 @@ u32 FLASH_CalibrationPhaseIdx(u8 phase_idx)
 	/* 6. Release gating of flash clock */
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_FLASH_CLOCK, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -178,7 +178,7 @@ u32 FLASH_CalibrationNewCmd(u32 NewStatus)
 
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, temp);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -379,14 +379,14 @@ u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Li
 	spi_flash->AUTO_LENGTH = tempAutolen;
 
 	if (pass) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 
 BOOT_RAM_TEXT_SECTION
-BOOL _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
+bool _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 {
 	u32 line_delay_temp = 0;
 	u32 window_temp = 0;
@@ -442,19 +442,19 @@ BOOL _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 		flash_init_para.FLASH_rd_sample_phase_cal = final_phase_idx;
 		flash_init_para.FLASH_rd_sample_phase = flash_init_para.FLASH_rd_sample_phase_cal;
 
-		return _TRUE;
+		return TRUE;
 	} else {
 		flash_init_para.phase_shift_idx = 0;
 		flash_init_para.FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
 	}
 
-	return _FALSE;
+	return FALSE;
 }
 
 BOOT_RAM_TEXT_SECTION
-u32 flash_calibration_highspeed(u8 div)
+int flash_calibration_highspeed(u8 div)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	u8 spic_mode = flash_init_para.FLASH_cur_bitmode;
 
 
@@ -463,7 +463,7 @@ u32 flash_calibration_highspeed(u8 div)
 	/* SPIC clock switch to PLL */
 	FLASH_ClockDiv(div);
 
-	if (_flash_calibration_highspeed(spic_mode, div) == _TRUE) {
+	if (_flash_calibration_highspeed(spic_mode, div) == TRUE) {
 		/* we should open calibration new first, and then set phase index */
 		FLASH_CalibrationNewCmd(ENABLE);
 		FLASH_CalibrationPhaseIdx(flash_init_para.phase_shift_idx);
@@ -482,7 +482,7 @@ u32 flash_calibration_highspeed(u8 div)
 
 		RTK_LOGE(TAG, "FLASH CALIB[0x%x FAIL]\n", div);
 
-		Ret = _FAIL;
+		Ret = FAIL;
 	}
 
 
@@ -490,7 +490,7 @@ u32 flash_calibration_highspeed(u8 div)
 }
 
 BOOT_RAM_TEXT_SECTION
-static u8 flash_get_option(u32 sys_data, BOOL is_speed)
+static u8 flash_get_option(u32 sys_data, bool is_speed)
 {
 	u16 tmp = 0x8000;
 	u8 cnt = 0;
@@ -678,9 +678,9 @@ static void flash_set_status_register(void)
 }
 
 BOOT_RAM_TEXT_SECTION
-u32 flash_rx_mode_switch(u8 read_mode)
+int flash_rx_mode_switch(u8 read_mode)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	u8 status = 0, spic_mode = 0, i;
 	u32 pdata[2];
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
@@ -698,7 +698,7 @@ u32 flash_rx_mode_switch(u8 read_mode)
 			if (flash_init_para.FLASH_Id == FLASH_ID_MICRON) {
 				FLASH_RxCmd(0x85, 1, &status);
 
-				status = (status & 0x0f) | (flash_init_para.FLASH_rd_dummy_cyle[spic_mode] << 4);
+				status = (status & 0x0f) | (flash_init_para.FLASH_rd_dummy_cycle[spic_mode] << 4);
 				FLASH_SetStatus(0x81, 1, &status);
 			}
 
@@ -726,7 +726,7 @@ u32 flash_rx_mode_switch(u8 read_mode)
 
 	if (i == 5) {
 		RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-		Ret = _FAIL;
+		Ret = FAIL;
 	}
 
 	return Ret;
@@ -739,8 +739,8 @@ void flash_highspeed_setup(void)
 	u8 flash_speed;
 	u8 nand_reg;
 
-	read_mode = flash_get_option(Flash_ReadMode, _FALSE);
-	flash_speed = flash_get_option(Flash_Speed, _TRUE);
+	read_mode = flash_get_option(Flash_ReadMode, FALSE);
+	flash_speed = flash_get_option(Flash_Speed, TRUE);
 	//RTK_LOGD(TAG, "flash_speed: %lu\n", flash_speed);
 	__asm volatile("cpsid i");
 

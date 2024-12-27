@@ -21,8 +21,8 @@
 #include "pinmap.h"
 
 /** @addtogroup Ameba_Mbed_API
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup MBED_ADC
  *  @brief      MBED_ADC driver modules.
@@ -46,22 +46,22 @@ static const PinMap PinMap_ADC[] = {
 /* end of group */
 
 /** @defgroup MBED_ADC_Exported_Functions MBED_ADC Exported Functions
-  * @{
-  */
+ * @{
+ */
 
 /**
-  * @brief  Initialize the ADC device, including clock, function and ADC registers.
-  * @param  obj: ADC object defined in application software.
-  * @param  pin: ADC PinName according to pinmux spec.
-  * @retval none
-  */
+ * @brief Initialize the ADC device, including clock, function and ADC registers.
+ * @param obj ADC object defined in application software.
+ * @param pin ADC PinName according to pinmux spec.
+ * @return None
+ */
 void analogin_init(analogin_t *obj, PinName pin)
 {
 	ADC_InitTypeDef ADC_InitStruct;
 	uint32_t adc_idx;
 
 	adc_idx = pinmap_peripheral(pin, PinMap_ADC);
-	RTK_LOGI(NOTAG, "analogin_init [%x:%lx ]\n", pin, (u32)adc_idx);
+	RTK_LOGI(NOTAG, "analogin_init [%x:%lx ]\n", pin, adc_idx);
 	assert_param(adc_idx != NC);
 
 	/* Enable ADC clock and function */
@@ -75,7 +75,7 @@ void analogin_init(analogin_t *obj, PinName pin)
 		/* Initialize ADC pin */
 		Pinmux_Config(obj->adc_pin, PINMUX_FUNCTION_ADC);
 		PAD_PullCtrl(obj->adc_pin, PullNone);
-		PAD_SleepPullCtrl(obj->adc_pin, PullNone);// avoid immediate wakeup once gated
+		PAD_SleepPullCtrl(obj->adc_pin, PullNone); // avoid immediate wakeup once gated
 		/* Disable digital path input */
 		PAD_InputCtrl(obj->adc_pin, DISABLE);
 	}
@@ -90,15 +90,15 @@ void analogin_init(analogin_t *obj, PinName pin)
 }
 
 /**
-  * @brief  Read data from the specified ADC channel FIFO.
-  * @param  obj: ADC object defined in application software.
-  * @return ADC channel data(float).
-  */
+ * @brief Read data from the specified ADC channel FIFO.
+ * @param obj ADC object defined in application software.
+ * @return ADC channel data(float).
+ */
 float analogin_read(analogin_t *obj)
 {
 	float value;
 	uint32_t AnalogDatFull = 0xFFFF;
-	uint8_t  ChIdx = obj->adc_idx;
+	uint8_t ChIdx = obj->adc_idx;
 	uint32_t data;
 
 	/* Set channel index into channel switch list*/
@@ -119,13 +119,13 @@ float analogin_read(analogin_t *obj)
 }
 
 /**
-  * @brief  Read data from the specified ADC channel FIFO.
-  * @param  obj: ADC object defined in application software.
-  * @return 16b ADC channel data(int).
-  */
+ * @brief Read data from the specified ADC channel FIFO.
+ * @param obj ADC object defined in application software.
+ * @return 16b ADC channel data(int).
+ */
 uint16_t analogin_read_u16(analogin_t *obj)
 {
-	uint8_t  ChIdx = obj->adc_idx;
+	uint8_t ChIdx = obj->adc_idx;
 	uint32_t data;
 
 	/* Set channel index into channel switch list*/
@@ -145,11 +145,11 @@ uint16_t analogin_read_u16(analogin_t *obj)
 }
 
 /**
-  * @brief  Deinitialize the ADC device, including clock, function and ADC registers.
-  * @param  obj: ADC object defined in application software.
-  * @retval none
-  */
-void  analogin_deinit(analogin_t *obj)
+ * @brief Deinitialize the ADC device, including clock, function and ADC registers.
+ * @param obj ADC object defined in application software.
+ * @return None
+ */
+void analogin_deinit(analogin_t *obj)
 {
 	/* Enable digital path input */
 	PAD_InputCtrl(obj->adc_pin, ENABLE);
@@ -162,20 +162,20 @@ void  analogin_deinit(analogin_t *obj)
 }
 
 /**
-  * @brief Get channel voltage in mV according to conversion data from normal channel(0-6 & 8-10).
-  * @param adc_data: ADC conversion data from normal channel.
-  * @return Normal channel voltage in mV.
-  */
+ * @brief Get channel voltage in mV according to conversion data from normal channel(0-6 & 8-10).
+ * @param adc_data ADC conversion data from normal channel.
+ * @return Normal channel voltage in mV.
+ */
 uint32_t analogin_voltage_norm(uint32_t adc_data)
 {
 	return ADC_GetVoltage(adc_data);
 }
 
 /**
-  * @brief Get channel voltage in mV according to conversion data from VBAT channel(7).
-  * @param adc_data: ADC conversion data from VBAT channel.
-  * @return VBAT channel voltage in mV.
-  */
+ * @brief Get channel voltage in mV according to conversion data from VBAT channel(7).
+ * @param adc_data ADC conversion data from VBAT channel.
+ * @return VBAT channel voltage in mV.
+ */
 uint32_t analogin_voltage_vbat(uint32_t adc_data)
 {
 	return ADC_GetVBATVoltage(adc_data);

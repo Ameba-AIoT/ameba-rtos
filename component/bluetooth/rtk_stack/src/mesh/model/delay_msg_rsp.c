@@ -16,10 +16,11 @@
 
 #define DELAY_MSG_TRANS_DELAY_MIN       200 /* 200ms */
 
-#define DELAY_MSG_UNICAST_ADDR_MIN      10
+//RTK porting: From spec, random delay shoud be 20~50ms for uincast addr and 20~500ms for group addr before send response message
+#define DELAY_MSG_UNICAST_ADDR_MIN      20
 #define DELAY_MSG_UNICAST_ADDR_MAX      50
-#define DELAY_MSG_GROUP_ADDR_MIN        500
-#define DELAY_MSG_GROUP_ADDR_MAX        2000
+#define DELAY_MSG_GROUP_ADDR_MIN        20
+#define DELAY_MSG_GROUP_ADDR_MAX        500
 
 uint32_t delay_msg_get_rsp_delay(uint16_t dst_addr)
 {

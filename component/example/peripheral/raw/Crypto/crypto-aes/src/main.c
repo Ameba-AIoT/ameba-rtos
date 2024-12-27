@@ -67,7 +67,7 @@ int test_aes_ecb(u32 OTPkey)
 	msglen = sizeof(aes_test_ecb_buf);
 
 	/*take sema to obtain the right to crypto engine*/
-	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != _TRUE) {
+	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
 		printf("ipsec get hw sema fail\n");
 	}
 
@@ -106,7 +106,7 @@ int test_aes_ecb(u32 OTPkey)
 	message = pResult;
 
 	/*take sema to obtain the right to crypto engine*/
-	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != _TRUE) {
+	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
 		printf("ipsec get hw sema fail\n");
 	}
 

@@ -21,6 +21,9 @@
 #endif
 
 #ifndef CONFIG_MP_INCLUDED
+
+#if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
+
 static MQTT_RESULT_ENUM mqtt_get_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK **mqttCb, u8 needInit);
 static void mqtt_del_handle_cb(MQTT_CONTROL_BLOCK **mqttCb);
 static void mqtt_set_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK *mqttCb);
@@ -105,7 +108,7 @@ void mqtt_main(void *param)
 			if (MQTT_OK == resultNo) {
 				at_printf("\r\nACK\r\n");
 			} else {
-				at_printf("\r\nERROR:%d\r\n", resultNo);
+				at_printf(ATCMD_ERROR_END_STR, resultNo);
 			}
 		}
 	}
@@ -266,12 +269,12 @@ end:
 			mqtt_del_handle_cb(&mqttCb);
 			mqtt_set_handle_cb(tcpConnId, mqttCb);
 		}
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTOPEN:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttopen_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTOPEN:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -382,12 +385,12 @@ end:
 	mqtt_set_handle_cb(tcpConnId, mqttCb);
 
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTCLOSE:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttclose_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTCLOSE:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -540,12 +543,12 @@ void at_mqttconn(void *arg)
 
 end:
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTCONN:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttconn_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTCONN:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -629,12 +632,12 @@ end:
 	}
 
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTDISCONN:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttdisconn_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTDISCONN:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -760,12 +763,12 @@ end:
 			rtos_mem_free(mqttCb->topic[found]);
 			mqttCb->topic[found] = NULL;
 		}
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTSUB:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttsub_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTSUB:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -868,12 +871,12 @@ end:
 		mqttCb->client.messageHandlers[j].fp = NULL;
 	}
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTUNSUB:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttunsub_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTUNSUB:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -1023,12 +1026,12 @@ end:
 		mqttCb->pubData.msg = NULL;
 	}
 	if (MQTT_OK != resultNo) {
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTPUB:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttpub_help();
 		}
 	} else {
-		at_printf("\r\n%sOK\r\n", "+MQTTPUB:");
+		at_printf(ATCMD_OK_END_STR);
 	}
 }
 
@@ -1250,9 +1253,9 @@ void at_mqttcfg(void *arg)
 
 end:
 	if (MQTT_OK == resultNo) {
-		at_printf("\r\n%sOK\r\n", "+MQTTCFG:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+MQTTCFG:", resultNo);
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
 		if (MQTT_ARGS_ERROR == resultNo) {
 			at_mqttcfg_help();
 		}
@@ -1327,7 +1330,7 @@ void at_mqttreset(void *arg)
 	}
 
 	/* This command only output "OK". */
-	at_printf("\r\n%sOK\r\n", "+MQTTRESET:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 log_item_t at_mqtt_items[ ] = {
@@ -2012,4 +2015,5 @@ void at_mqtt_init(void)
 	atcmd_service_add_table(at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
 }
 
+#endif /* CONFIG_ATCMD_MQTT */
 #endif /* CONFIG_MP_INCLUDED */

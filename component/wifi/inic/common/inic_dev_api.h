@@ -104,7 +104,7 @@ void inic_event_p2p_role(u32 api_id, u32 *param_buf);
 void inic_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 #endif
 
-#ifndef CONFIG_SDIO_BRIDGE
+#ifndef CONFIG_FULLMAC_BRIDGE
 void inic_event_get_scan_res(u32 api_id, u32 *param_buf);
 void inic_event_wifi_get_setting(u32 api_id, u32 *param_buf);
 void inic_event_send_eapol(u32 api_id, u32 *param_buf);

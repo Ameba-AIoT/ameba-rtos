@@ -1,0 +1,59 @@
+config TRUSTZONE_FOR_KM4
+    bool "Enable TrustZone"
+    default n
+    help
+        Configurations for trustzone
+if TRUSTZONE_FOR_KM4
+    choice
+        prompt "TrustZone by RDP or TFM"
+        default RDP_BASIC_FOR_KM4
+        config RDP_BASIC_FOR_KM4
+            bool "RDP_BASIC"
+
+        config RDP_TFM_FOR_KM4
+            bool "RDP_TFM"
+
+    endchoice
+
+    config TRUSTZONE_EN_FOR_KM4
+        bool
+        default y
+
+    if RDP_TFM_FOR_KM4
+        config TFM_TEST_ENABLE_FOR_KM4
+            bool "TFM Test Suite Enable"
+            default n
+    endif
+
+    if TFM_TEST_ENABLE_FOR_KM4
+        choice
+            prompt "TFM Test Suite Select"
+            config TFM_TEST_REGRESSION_FOR_KM4
+                bool "Regression_Tests"
+
+            config TFM_TEST_PSA_API_FOR_KM4
+                bool "PSA_API_Tests"
+        endchoice
+
+        if TFM_TEST_REGRESSION_FOR_KM4
+            config TFM_TEST_S_FOR_KM4
+                bool "TFM secure regression tests"
+            config TFM_TEST_NS_FOR_KM4
+                bool "TFM non-secure regression tests"
+        endif
+
+        if TFM_TEST_PSA_API_FOR_KM4
+            choice
+                prompt "TEST_PSA_API Select"
+                config TEST_PSA_API_STORAGE_FOR_KM4
+                    bool "STORAGE"
+
+                config TEST_PSA_API_CRYPTO_FOR_KM4
+                    bool "CRYPTO"
+
+                config TEST_PSA_API_INITIAL_ATTESTATION_FOR_KM4
+                    bool "INITIAL_ATTESTATION"
+            endchoice
+        endif
+    endif
+endif

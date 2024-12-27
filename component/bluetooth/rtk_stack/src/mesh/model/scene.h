@@ -271,7 +271,7 @@ mesh_msg_send_cause_t scene_publish(const mesh_model_info_p pmodel_info,
 /**
  * @brief set scene server storage memory
  * @param[in] pmodel_info: pointer to scene server model context
- * @param[in] scenes: scene storage memeories
+ * @param[in] scenes: scene storage memories
  * @param[in] num_scenes: number of scenes
  */
 void scene_server_set_storage_memory(mesh_model_info_p pmodel_info, scene_storage_memory_t *scenes,
@@ -280,7 +280,7 @@ void scene_server_set_storage_memory(mesh_model_info_p pmodel_info, scene_storag
 /**
  * @brief set scene setup server storage memory
  * @param[in] pmodel_info: pointer to scene setup server model context
- * @param[in] scenes: scene storage memeories
+ * @param[in] scenes: scene storage memories
  * @param[in] num_scenes: number of scenes
  */
 void scene_setup_server_set_storage_memory(mesh_model_info_p pmodel_info,

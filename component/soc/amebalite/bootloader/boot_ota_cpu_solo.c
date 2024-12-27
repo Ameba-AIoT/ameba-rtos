@@ -13,7 +13,7 @@
 #include "boot_ota_km4.h"
 
 #define SECURE_BOOT_SUPPORT	DISABLE
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 
 typedef struct {
 	u32 Pattern[2];
@@ -121,10 +121,10 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
 		if ((ImgHdr.signature[0] != 0x35393138) || (ImgHdr.signature[1] != 0x31313738)) {
-			if (ErrLog == _TRUE) {
+			if (ErrLog == TRUE) {
 				RTK_LOGE(TAG, "%s Invalid\n", ImgName[i]);
 			}
-			return _FALSE;
+			return FALSE;
 		}
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
@@ -151,7 +151,7 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 		StartAddr += Len;
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 void BOOT_RSIPIvSet(Manifest_TypeDef *Manifest, u32 IV_index)
@@ -215,7 +215,7 @@ u8 BOOT_Load_KR4_IMG1(void)
 	PhyAddr = LoaderAddr + MANIFEST_SIZE_4K_ALIGN + Manifest[0].ImgSize;
 
 	Cnt = sizeof(Kr4Label) / sizeof(char *);
-	return BOOT_LoadSubImage(&SubImgInfo, PhyAddr, Cnt, Kr4Label, _TRUE);
+	return BOOT_LoadSubImage(&SubImgInfo, PhyAddr, Cnt, Kr4Label, TRUE);
 }
 
 u8 BOOT_Load_KR4_APP(void)
@@ -258,7 +258,7 @@ u8 BOOT_Load_KR4_APP(void)
 		BOOT_OTFCheck(LogAddr, LogAddr + 0x01000000 - 0x20, 1, 1);
 
 		Cnt = sizeof(Kr4Label) / sizeof(char *);
-		ret = BOOT_LoadSubImage(&SubImgInfo[ImgIndex], LogAddr, Cnt, Kr4Label, _TRUE);
+		ret = BOOT_LoadSubImage(&SubImgInfo[ImgIndex], LogAddr, Cnt, Kr4Label, TRUE);
 		assert_param(Cnt <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
 
 #if SECURE_BOOT_SUPPORT
@@ -339,7 +339,7 @@ u8 BOOT_Load_KM4_APP(void)
 		BOOT_OTFCheck(LogAddr, LogAddr + 0x01000000 - 0x20, 2, 2);
 		/* KM4 XIP & SRAM, read with virtual addr in case of encryption */
 		Cnt = sizeof(Km4Label) / sizeof(char *);
-		ret = BOOT_LoadSubImage(&SubImgInfo[ImgIndex], LogAddr, Cnt, Km4Label, _TRUE);
+		ret = BOOT_LoadSubImage(&SubImgInfo[ImgIndex], LogAddr, Cnt, Km4Label, TRUE);
 		assert_param(Cnt <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
 
 #if SECURE_BOOT_SUPPORT

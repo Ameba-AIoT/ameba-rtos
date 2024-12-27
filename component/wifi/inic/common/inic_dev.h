@@ -43,8 +43,8 @@
 #elif defined (CONFIG_INIC_INTF_USB)
 #include "inic_usb_dev.h"
 #endif
-#ifdef CONFIG_SDIO_BRIDGE
-#include "inic_sdio_dev_bridge.h"
+#ifdef CONFIG_FULLMAC_BRIDGE
+#include "inic_dev_bridge.h"
 #endif
 #else
 #include "inic_dev_struct.h"
@@ -52,6 +52,21 @@
 
 #ifndef CONFIG_SDIO_BRIDGE
 #include "inic_dev_protocal_offload.h"
+#endif
+
+/* remove after rom freeze */
+#ifndef CONFIG_BUILD_ROM
+#include "bt_inic_defs.h"
+
+enum INIC_WIFI_CTRL_TYPE {
+	INIC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
+	INIC_WIFI_EVT_RECV_PKTS,
+	INIC_WIFI_EVT_API_CALL,
+	INIC_WIFI_EVT_API_RETURN,
+	INIC_WIFI_EVT_MAX,
+
+	INIC_BT_EVT_BASE = INIC_BT_ID_BASE
+};
 #endif
 
 #endif /* __INIC_SDIO_H__ */

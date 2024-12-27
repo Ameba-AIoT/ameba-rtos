@@ -39,7 +39,7 @@ int get_method_handler(struct httpd_conn *conn)
 	char *prefix;
 	char path[MAX_PATH_LEN * 2] = {0};
 
-	//RTK_LOGS(NOTAG, "[%s] request.path = %s, request.path_len = %d\n", __func__, conn->request.path, conn->request.path_len);
+	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] request.path = %s, request.path_len = %d\n", __func__, conn->request.path, conn->request.path_len);
 
 	/*  Set mime type */
 	if (conn->request.path_len >= 3 && strncmp(conn->request.path + conn->request.path_len - 3, ".js", 3) == 0) {
@@ -67,7 +67,7 @@ int get_method_handler(struct httpd_conn *conn)
 		memcpy(page_path, index_page, strlen(index_page));
 		mime_type = MIME_TYPE_HTML;
 	}
-	//RTK_LOGS(NOTAG, "[%s] page_path = %s\n", __func__, page_path);
+	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] page_path = %s\n", __func__, page_path);
 
 	prefix = find_vfs_tag(VFS_REGION_1);
 
@@ -75,11 +75,11 @@ int get_method_handler(struct httpd_conn *conn)
 
 	finfo = (vfs_file *)fopen(path, "r");
 	if (finfo == NULL) {
-		RTK_LOGS(NOTAG, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
 
 #if(defined(CONFIG_ENABLE_CAPTIVE_PORTAL) && CONFIG_ENABLE_CAPTIVE_PORTAL)
 		/* If enables captive portal, return homepage. */
-		RTK_LOGS(NOTAG, "return homepage.\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "return homepage.\n");
 
 		memset(page_path, 0, MAX_PATH_LEN);
 		memcpy(page_path, index_page, strlen(index_page));
@@ -88,7 +88,7 @@ int get_method_handler(struct httpd_conn *conn)
 		sprintf(path, "%s:%s", prefix, page_path);
 		finfo = (vfs_file *)fopen(path, "r");
 		if (finfo == NULL) {
-			RTK_LOGS(NOTAG, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s][%d] fopen failed: %s\r\n", __FUNCTION__, __LINE__, page_path);
 			httpd_response_not_found(conn, NULL);
 			httpd_conn_close(conn);
 			return -1;
@@ -101,16 +101,16 @@ int get_method_handler(struct httpd_conn *conn)
 	}
 
 	if (stat(path, &sbuf) < 0) {
-		RTK_LOGS(NOTAG, "%s stat fail %d\r\n", page_path, page_size);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s stat fail %d\r\n", page_path, page_size);
 		httpd_response_not_found(conn, NULL);
 		goto EXIT;
 	}
 	page_size = sbuf.st_size;
-	RTK_LOGS(NOTAG, "[%s] file:%s		size:%d\n", __func__, page_path, page_size);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] file:%s		size:%d\n", __func__, page_path, page_size);
 
 	page_body = (char *)httpd_malloc(page_size);
 	if (page_body == NULL) {
-		RTK_LOGS(NOTAG, "[%s] malloc failed\n", __func__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] malloc failed\n", __func__);
 		goto EXIT;
 	}
 	memset(page_body, 0, page_size);
@@ -120,13 +120,13 @@ int get_method_handler(struct httpd_conn *conn)
 
 	// test log to show extra User-Agent header field
 	if (httpd_request_get_header_field(conn, "User-Agent", &user_agent) != -1) {
-		RTK_LOGS(NOTAG, "\nUser-Agent=[%s]\n", user_agent);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nUser-Agent=[%s]\n", user_agent);
 		httpd_free(user_agent);
 	}
 
 	ret = fread(page_body, page_size, 1, (FILE *)finfo);
 	if (ret < 0) {
-		RTK_LOGS(NOTAG, "[%s] fread failed\n", __func__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fread failed\n", __func__);
 		goto EXIT;
 	}
 
@@ -140,7 +140,7 @@ int get_method_handler(struct httpd_conn *conn)
 	while (remain_len > send_len) {
 		httpd_response_write_data(conn, (uint8_t *)page_body + i * send_len, send_len);
 		remain_len -= send_len;
-		//RTK_LOGS(NOTAG, "i=%d, remain_len=%d\n", i, remain_len);
+		//RTK_LOGS(NOTAG, RTK_LOG_INFO, "i=%d, remain_len=%d\n", i, remain_len);
 		i++;
 	}
 
@@ -161,7 +161,7 @@ EXIT:
 int post_method_handler(struct httpd_conn *conn)
 {
 	char *msg = "[post] method is not supported!\n";
-	RTK_LOGS(NOTAG, "%s", msg);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", msg);
 	httpd_response_method_not_allowed(conn, msg);
 
 	return 0;
@@ -170,7 +170,7 @@ int post_method_handler(struct httpd_conn *conn)
 int put_method_handler(struct httpd_conn *conn)
 {
 	char *msg = "[put] method is not supported!\n";
-	RTK_LOGS(NOTAG, "%s", msg);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", msg);
 	httpd_response_method_not_allowed(conn, msg);
 
 	return 0;
@@ -200,16 +200,16 @@ static void example_httpd_vfs_thread(void *param)
 	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
 	rtos_time_delay_ms(5000);
-	RTK_LOGS(NOTAG, "\nExample: httpd_vfs\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: httpd_vfs\n");
 
 	struct httpd_data *hd = calloc(1, sizeof(struct httpd_data));
 	if (!hd) {
-		RTK_LOGS(NOTAG, "Failed to allocate memory for HTTP data");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Failed to allocate memory for HTTP data");
 		goto exit; ;
 	}
 	hd->hd_calls = calloc(config.max_uri_handlers, sizeof(httpd_uri_t *));
 	if (!hd->hd_calls) {
-		RTK_LOGS(NOTAG, "Failed to allocate memory for HTTP URI handlers");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Failed to allocate memory for HTTP URI handlers");
 		free(hd);
 		goto exit;
 	}
@@ -222,7 +222,7 @@ static void example_httpd_vfs_thread(void *param)
 	httpd_register_uri_handler(&put_callback);
 
 	if (httpd_start_with_callback(config.port, config.max_conn, config.stack_bytes, config.thread_mode, config.secure) != 0) {
-		RTK_LOGS(NOTAG, "ERROR: example_httpd_littlefs_thread\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: example_httpd_littlefs_thread\n");
 		httpd_unregister_uri_handler(&get_callback);
 		httpd_unregister_uri_handler(&post_callback);
 		httpd_unregister_uri_handler(&put_callback);
@@ -235,6 +235,6 @@ void example_httpd_vfs(void)
 {
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"example_httpd_vfs_thread"), example_httpd_vfs_thread, NULL, 2048 * 4, 1) != SUCCESS) {
-		RTK_LOGS(NOTAG, "\n\r[%s] Create example_httpd_vfs_thread task failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] Create example_httpd_vfs_thread task failed", __FUNCTION__);
 	}
 }

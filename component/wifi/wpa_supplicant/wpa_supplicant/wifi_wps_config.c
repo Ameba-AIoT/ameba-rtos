@@ -349,7 +349,7 @@ static void wps_config_wifi_setting(struct _rtw_network_info_t *wifi, struct dev
 	DiagPrintf("\r\nwps_wifi.password = %s\n", wifi->password);
 	wifi->password_len = dev_cred->key_len;
 	DiagPrintf("\r\nwps_wifi.password_len = %d", wifi->password_len);
-	wifi->is_wps_trigger = _TRUE;
+	wifi->is_wps_trigger = TRUE;
 	//rtos_sema_give(wps_reconnect_semaphore);
 }
 
@@ -1072,7 +1072,7 @@ void cmd_wps(int argc, char **argv)
 
 	// check if STA is conencting
 	if ((wifi_get_join_status() > RTW_JOINSTATUS_UNKNOWN) && (wifi_get_join_status() < RTW_JOINSTATUS_SUCCESS)) {
-		RTK_LOGS(NOTAG, "\nthere is ongoing wifi connect!");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nthere is ongoing wifi connect!");
 		return;
 	}
 

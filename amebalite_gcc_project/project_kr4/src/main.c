@@ -4,8 +4,7 @@
 #include "os_wrapper.h"
 #include <mbedtls/platform.h>
 
-static const char *TAG = "MAIN";
-u32 use_hw_crypto_func;
+static const char *const TAG = "MAIN";
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 #include "ftl_int.h"
@@ -65,8 +64,6 @@ static void app_mbedtls_free_func(void *buf)
 void app_mbedtls_rom_init(void)
 {
 	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
-	use_hw_crypto_func = 0;
-	//rtl_cryptoEngine_init();
 }
 
 void app_pmu_init(void)

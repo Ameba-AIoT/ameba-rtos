@@ -41,7 +41,7 @@ void gpio_dir(gpio_t *obj, PinDirection direction);
 void gpio_write(gpio_t *obj, int value);
 int  gpio_read(gpio_t *obj);
 
-void gpio_direct_write(gpio_t *obj, BOOL value) ;
+void gpio_direct_write(gpio_t *obj, bool value) ;
 void gpio_pull_ctrl(gpio_t *obj, PinMode pull_type);
 void gpio_deinit(gpio_t *obj);
 void gpio_change_dir(gpio_t *obj, PinDirection direction);

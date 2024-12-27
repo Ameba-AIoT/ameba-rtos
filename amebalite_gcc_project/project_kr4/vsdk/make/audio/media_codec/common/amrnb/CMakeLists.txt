@@ -1,0 +1,113 @@
+set(DIR ${BASEDIR}/component/audio/media_codec/common/amrnb)
+set(
+    MODULE_IFLAGS
+    ${DIR}/common/include
+    ${DIR}/common/src
+    ${DIR}/dec/src
+    ${BASEDIR}/component/audio/base/log/interfaces
+)
+
+set(MODULE_CPP_DEFINES __RTOS__ OSCL_IMPORT_REF= OSCL_EXPORT_REF=)
+set(MODULE_CPP_OPTIONS -Wno-error -Wno-multichar -Wno-unused-parameter "-DOSCL_UNUSED_ARG(x)=(void)(x)")
+
+set(
+    CPPSRC
+    ${DIR}/common/src/add.cpp
+    ${DIR}/common/src/az_lsp.cpp
+    ${DIR}/common/src/bitno_tab.cpp
+    ${DIR}/common/src/bitreorder_tab.cpp
+    ${DIR}/common/src/bits2prm.cpp
+    ${DIR}/common/src/c2_9pf_tab.cpp
+    ${DIR}/common/src/copy.cpp
+    ${DIR}/common/src/div_32.cpp
+    ${DIR}/common/src/div_s.cpp
+    ${DIR}/common/src/extract_h.cpp
+    ${DIR}/common/src/extract_l.cpp
+    ${DIR}/common/src/gains_tbl.cpp
+    ${DIR}/common/src/gc_pred.cpp
+    ${DIR}/common/src/gmed_n.cpp
+    ${DIR}/common/src/grid_tbl.cpp
+    ${DIR}/common/src/gray_tbl.cpp
+    ${DIR}/common/src/int_lpc.cpp
+    ${DIR}/common/src/inv_sqrt.cpp
+    ${DIR}/common/src/inv_sqrt_tbl.cpp
+    ${DIR}/common/src/l_abs.cpp
+    ${DIR}/common/src/l_deposit_h.cpp
+    ${DIR}/common/src/l_deposit_l.cpp
+    ${DIR}/common/src/l_shr_r.cpp
+    ${DIR}/common/src/log2.cpp
+    ${DIR}/common/src/log2_norm.cpp
+    ${DIR}/common/src/log2_tbl.cpp
+    ${DIR}/common/src/lsfwt.cpp
+    ${DIR}/common/src/lsp.cpp
+    ${DIR}/common/src/lsp_az.cpp
+    ${DIR}/common/src/lsp_lsf.cpp
+    ${DIR}/common/src/lsp_lsf_tbl.cpp
+    ${DIR}/common/src/lsp_tab.cpp
+    ${DIR}/common/src/mult_r.cpp
+    ${DIR}/common/src/norm_l.cpp
+    ${DIR}/common/src/norm_s.cpp
+    ${DIR}/common/src/ph_disp_tab.cpp
+    ${DIR}/common/src/pow2.cpp
+    ${DIR}/common/src/pow2_tbl.cpp
+    ${DIR}/common/src/pred_lt.cpp
+    ${DIR}/common/src/q_plsf.cpp
+    ${DIR}/common/src/q_plsf_3.cpp
+    ${DIR}/common/src/q_plsf_3_tbl.cpp
+    ${DIR}/common/src/q_plsf_5.cpp
+    ${DIR}/common/src/q_plsf_5_tbl.cpp
+    ${DIR}/common/src/qua_gain_tbl.cpp
+    ${DIR}/common/src/reorder.cpp
+    ${DIR}/common/src/residu.cpp
+    ${DIR}/common/src/round.cpp
+    ${DIR}/common/src/set_zero.cpp
+    ${DIR}/common/src/shr.cpp
+    ${DIR}/common/src/shr_r.cpp
+    ${DIR}/common/src/sqrt_l.cpp
+    ${DIR}/common/src/sqrt_l_tbl.cpp
+    ${DIR}/common/src/sub.cpp
+    ${DIR}/common/src/syn_filt.cpp
+    ${DIR}/common/src/vad1.cpp
+    ${DIR}/common/src/weight_a.cpp
+    ${DIR}/common/src/window_tab.cpp
+    ${DIR}/dec/src/a_refl.cpp
+    ${DIR}/dec/src/agc.cpp
+    ${DIR}/dec/src/amrdecode.cpp
+    ${DIR}/dec/src/b_cn_cod.cpp
+    ${DIR}/dec/src/bgnscd.cpp
+    ${DIR}/dec/src/c_g_aver.cpp
+    ${DIR}/dec/src/d1035pf.cpp
+    ${DIR}/dec/src/d2_11pf.cpp
+    ${DIR}/dec/src/d2_9pf.cpp
+    ${DIR}/dec/src/d3_14pf.cpp
+    ${DIR}/dec/src/d4_17pf.cpp
+    ${DIR}/dec/src/d8_31pf.cpp
+    ${DIR}/dec/src/d_gain_c.cpp
+    ${DIR}/dec/src/d_gain_p.cpp
+    ${DIR}/dec/src/d_plsf.cpp
+    ${DIR}/dec/src/d_plsf_3.cpp
+    ${DIR}/dec/src/d_plsf_5.cpp
+    ${DIR}/dec/src/dec_amr.cpp
+    ${DIR}/dec/src/dec_gain.cpp
+    ${DIR}/dec/src/dec_input_format_tab.cpp
+    ${DIR}/dec/src/dec_lag3.cpp
+    ${DIR}/dec/src/dec_lag6.cpp
+    ${DIR}/dec/src/dtx_dec.cpp
+    ${DIR}/dec/src/ec_gains.cpp
+    ${DIR}/dec/src/ex_ctrl.cpp
+    ${DIR}/dec/src/if2_to_ets.cpp
+    ${DIR}/dec/src/int_lsf.cpp
+    ${DIR}/dec/src/lsp_avg.cpp
+    ${DIR}/dec/src/ph_disp.cpp
+    ${DIR}/dec/src/post_pro.cpp
+    ${DIR}/dec/src/preemph.cpp
+    ${DIR}/dec/src/pstfilt.cpp
+    ${DIR}/dec/src/qgain475_tab.cpp
+    ${DIR}/dec/src/sp_dec.cpp
+    ${DIR}/dec/src/wmf_to_ets.cpp
+)
+
+set_source_files_properties(${CPPSRC} DIRECTORY ../../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_CPP_DEFINES}")
+set_source_files_properties(${CPPSRC} DIRECTORY ../../.. PROPERTIES COMPILE_OPTIONS "${MODULE_CPP_OPTIONS}")
+set_source_files_properties(${CPPSRC} DIRECTORY ../../.. PROPERTIES INCLUDE_DIRECTORIES "${MODULE_IFLAGS}")
+target_sources(${CURRENT_LIB_NAME} PRIVATE ${CPPSRC})

@@ -20,18 +20,17 @@ unsigned int csi_data_len = 2048;
 
 static void wifi_csi_thread(void *param)
 {
+	(void)param;
 	struct _rtw_csi_action_parm_t act_param = {0};
-	unsigned int len;
+	u32 len;
 	unsigned char *csi_buf = NULL;
 
 	unsigned long long *buff_tmp = NULL; /* for printf csi data*/
 	unsigned int timestamp;
 	unsigned char i = 0;
 	unsigned char assoc_ap_mac[6] = {0xa4, 0x39, 0xb3, 0xa4, 0xbe, 0x2d};  /* need modify to mac address of associated AP when sta mode */
-	struct {
-		unsigned int    count;
-		struct _rtw_mac_t  mac_list[AP_STA_NUM];
-	} client_info;
+	struct _rtw_client_list_t client_info;
+	memset(&client_info, 0, sizeof(struct _rtw_client_list_t));
 
 	act_param.group_num = 0;
 	act_param.mode = 2;
@@ -131,6 +130,9 @@ NEXT:
 /* wifi csi report callback */
 void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdata)
 {
+	(void)buf;
+	(void)buf_len;
+	(void)userdata;
 	rtos_sema_give(wc_ready_sema);
 	csi_data_len = flags;
 	return;

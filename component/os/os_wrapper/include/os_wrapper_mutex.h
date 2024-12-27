@@ -16,35 +16,34 @@ typedef void *rtos_mutex_t;
 
 /**
  * @brief  Static memory allocation implementation of rtos_mutex_create
- * @param  pp_handle:
- * @retval
+ * @param  pp_handle: The handle itself is a pointer, and the pp_handle means a pointer to the handle.
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_create_static(rtos_mutex_t *pp_handle);
 
 /**
  * @brief  Static memory allocation implementation of rtos_mutex_delete
- * @param  p_handle:
- * @retval
+ * @param  p_handle: Address of the mutex
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_delete_static(rtos_mutex_t p_handle);
 
 /**
  * @brief  Static memory allocation implementation of rtos_mutex_recursive_create
- * @param  pp_handle:
- * @retval
+ * @param  pp_handle: The handle itself is a pointer, and the pp_handle means a pointer to the handle.
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_recursive_create_static(rtos_mutex_t *pp_handle);
 
 /**
  * @brief  Static memory allocation implementation of rtos_mutex_recursive_delete
- * @param  p_handle:
- * @retval
+ * @param  p_handle: Address of the mutex
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_recursive_delete_static(rtos_mutex_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateMutex.
- *         In the FreeRTOS system, compared to semaphores, Mutex has a priority inheritance mechanism.
+ * @brief  Compared to semaphores, Mutex has a priority inheritance mechanism.
  *         Dynamic allocate memory.
  * @note   Usage example:
  * Create:
@@ -57,39 +56,37 @@ int rtos_mutex_recursive_delete_static(rtos_mutex_t p_handle);
  * Delete:
  *          rtos_mutex_delete(mutex_handle);
  * @param  pp_handle: The handle itself is a pointer, and the pp_handle means a pointer to the handle.
- * @retval
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_create(rtos_mutex_t *pp_handle);
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
+ * @brief  Delete a mutex.
  * @note   Do not delete mutex if held by a task
- * @param  p_handle:
- * @retval
+ * @param  p_handle: Address of the mutex
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_delete(rtos_mutex_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
+ * @brief  Take a mutex.
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
- * @param  p_handle:
- * @param  wait_ms:
- * @retval
+ * @param  p_handle: Address of the mutex
+ * @param  wait_ms: The time in milliseconds to wait, 0xFFFFFFFF means Block infinitely until the semaphore taken.
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGive / xSemaphoreGiveFromISR
+ * @brief  Give a semaphore.
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
- * @param  p_handle:
- * @param  wait_ms:
- * @retval
+ * @param  p_handle: Address of the mutex
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_give(rtos_mutex_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateRecursiveMutex
- *         In the FreeRTOS system, compared to semaphores, Mutex has a priority inheritance mechanism.
+ * @brief  Creates a new recursive mutex, compared to semaphores, Mutex has a priority inheritance mechanism.
  *         Dynamic allocate memory.
  * @note   Usage example:
  * Create:
@@ -102,32 +99,31 @@ int rtos_mutex_give(rtos_mutex_t p_handle);
  * Delete:
  *          rtos_mutex_recursive_delete(mutex_handle);
  * @param  pp_handle: The handle itself is a pointer, and the pp_handle means a pointer to the handle.
- * @retval
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_recursive_create(rtos_mutex_t *pp_handle);
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
- * @param  p_handle:
- * @retval
+ * @brief  Delete a mutex.
+ * @param  p_handle: Address of the mutex
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_recursive_delete(rtos_mutex_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
- * @note   For FreeRTOS, recursive mutexes cannot be used in interrupt service routines.
- * @param  p_handle:
- * @param  wait_ms:
- * @retval
+ * @brief  Take a mutex.
+ * @note   recursive mutexes cannot be used in interrupt service routines.
+ * @param  p_handle: Address of the mutex
+ * @param  wait_ms: The time in milliseconds to wait, 0xFFFFFFFF means Block infinitely until the semaphore taken.
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_recursive_take(rtos_mutex_t p_handle, uint32_t wait_ms);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGiveRecursive / xSemaphoreGiveRecursiveFromISR
+ * @brief  Give a semaphore.
  * @note   Recursive mutexes cannot be used in interrupt service routines.
- * @param  p_handle:
- * @param  wait_ms:
- * @retval
+ * @param  p_handle: Address of the mutex
+ * @retval The status is SUCCESS or FAIL
  */
 int rtos_mutex_recursive_give(rtos_mutex_t p_handle);
 

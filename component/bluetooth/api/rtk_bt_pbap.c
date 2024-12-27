@@ -83,6 +83,20 @@ uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr)
 	return ret;
 }
 
+uint16_t rtk_bt_pbap_phone_book_pull_abort(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_PBAP, RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_ABORT,
+						  bd_addr, 6);
+
+	return ret;
+}
+
 uint16_t rtk_bt_pbap_phone_book_size_get(rtk_bt_pbap_pb_size_get_t *p_pb_size_t)
 {
 	uint16_t ret = 0;

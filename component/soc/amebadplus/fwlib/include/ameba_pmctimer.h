@@ -170,7 +170,7 @@ typedef struct {
   *   This parameter can be: 0 ~ 3.
   * @retval None
   */
-__STATIC_INLINE void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, BOOL NewState)
+__STATIC_INLINE void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bool NewState)
 {
 	if (NewState) {
 		PMC_TIMER->PMCTTIM_EN |= BIT(Timer_Idx);
@@ -189,9 +189,9 @@ __STATIC_INLINE void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, BO
 __STATIC_INLINE u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
 	if (PMC_TIMER->PMCTTIM_EN & PMCT_BIT_TIM_VALIDx(Timer_Idx)) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 

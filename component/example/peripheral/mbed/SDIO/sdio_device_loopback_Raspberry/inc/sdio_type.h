@@ -45,8 +45,8 @@
 #define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
 
 
-#define _TRUE	1
-#define _FALSE	0
+#define TRUE	1
+#define FALSE	0
 
 
 #define _FAIL		0

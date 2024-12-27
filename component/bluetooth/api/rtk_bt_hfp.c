@@ -157,6 +157,38 @@ uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr)
 	return ret;
 }
 
+uint16_t rtk_bt_hfp_dial_with_number_req(uint8_t *bd_addr, const char *call_num, uint8_t call_num_len)
+{
+	uint16_t ret = 0;
+	rtk_bt_hfp_dial_number_t hfp_dial_number = {0};
+
+	if (!bd_addr || !call_num) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	memcpy((void *)&hfp_dial_number.bd_addr, bd_addr, 6);
+	memcpy((void *)hfp_dial_number.number, call_num, call_num_len);
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_HFP, RTK_BT_HFP_ACT_DIAL_WITH_NUMBER,
+						  &hfp_dial_number, sizeof(rtk_bt_hfp_dial_number_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_hfp_dial_last_number_req(uint8_t *bd_addr)
+{
+	uint16_t ret = 0;
+
+	if (!bd_addr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_HFP, RTK_BT_HFP_ACT_DIAL_LAST_NUMBER,
+						  bd_addr, 6);
+
+	return ret;
+}
+
 uint16_t rtk_bt_hfp_data_send(rtk_bt_hfp_sco_data_send_t *p_data_send_t)
 {
 	uint16_t ret = 0;

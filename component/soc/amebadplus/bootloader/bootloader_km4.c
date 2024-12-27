@@ -13,12 +13,12 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 
 #define CHECK_AND_PRINT_FLAG(flagValue, bit, name) \
     do { \
         if ((flagValue) & (bit)) { \
-            RTK_LOGS(NOTAG, "%s ", (name)); \
+            RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s ", (name)); \
         } \
     } while (0)
 
@@ -87,6 +87,10 @@ void BOOT_RccConfig(void)
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP0);
 	TempVal |= APBPeriph_DMAC_CLOCK;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP0, TempVal);
+
+	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL);
+	TempVal |= LSYS_OTHERCPU_RST_EN(1) | LSYS_PERIALL_RST_EN(1);
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL, TempVal);
 
 	for (idx = 0; ; idx++) {
 		/*  Check if search to end */
@@ -251,9 +255,9 @@ void BOOT_ReasonSet(void)
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_DSLP, "DSLP");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_BOR, "BOR");
 	if (temp == 0) {
-		RTK_LOGS(NOTAG, "Initial Power on\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Initial Power on\n");
 	} else {
-		RTK_LOGS(NOTAG, "UNKNOWN\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UNKNOWN\n");
 	}
 }
 

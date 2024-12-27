@@ -2,6 +2,13 @@ set(LWIPDIR ${BASEDIR}/component/lwip/lwip_${LWIP_VER})
 set(LWIPAPI ${BASEDIR}/component/lwip/api)
 set(NETWORK ${BASEDIR}/component/network)
 set(LWIPPORT ${LWIPDIR}/port/realtek/freertos)
+set(MODULE_IFLAGS)
+
+list(
+    APPEND MODULE_IFLAGS
+    ${FREERTOSDIR}/include
+    ${FREERTOSDIR}/portable/GCC/AmebaLite_KR4
+)
 
 set(
     CSRC 

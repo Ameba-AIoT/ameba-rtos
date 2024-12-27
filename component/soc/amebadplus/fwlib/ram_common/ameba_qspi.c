@@ -5,8 +5,10 @@
  */
 
 #include "ameba_soc.h"
+#include "os_wrapper.h"
 
-static const char *TAG = "QSPI";
+static const char *const TAG = "QSPI";
+static struct GDMA_CH_LLI *qspi_gdma_lli;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -284,12 +286,15 @@ int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct,
 				  u32 Size)
 {
 	u8 GdmaChnl;
+	u32 blocksize = 65535 * 4;   //max block size 65535, data width 4B
+	u32 blockcnt = (Size / blocksize) + 1;
+	u32 llisize;
 
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI_HIGHEST);
 	if (GdmaChnl == 0xFF) {
 		/* No Available DMA channel */
 		RTK_LOGE(TAG, "Alloc dma channel fail\n");
-		return _FALSE;
+		return FALSE;
 	}
 
 	/* Set QSPI hw handshake to GDMA */
@@ -297,13 +302,13 @@ int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct,
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
 	GDMA_InitStruct->MuliBlockCunt = 0;
-	GDMA_InitStruct->MaxMuliBlock  = 1;
+	GDMA_InitStruct->MaxMuliBlock  = blockcnt;
 	GDMA_InitStruct->GDMA_DIR     = TTFCMemToPeri;
 	GDMA_InitStruct->GDMA_DstHandshakeInterface = GDMA_HANDSHAKE_INTERFACE_SPIC_TX;
 	GDMA_InitStruct->GDMA_DstAddr = (u32) & (QSPI->DR[0].BYTE);
 	GDMA_InitStruct->GDMA_Index   = 0;
 	GDMA_InitStruct->GDMA_ChNum   = GdmaChnl;
-	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
+	GDMA_InitStruct->GDMA_IsrType = (TransferType | ErrType);
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 	GDMA_InitStruct->GDMA_DstInc = NoChange;
@@ -314,9 +319,55 @@ int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct,
 	GDMA_InitStruct->GDMA_BlockSize = Size >> 2;
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)(Pbuf);
 
+	if (blockcnt > 1) {
+		GDMA_InitStruct->GDMA_LlpSrcEn = 1;
+		GDMA_InitStruct->GDMA_LlpDstEn = 1;
+	} else {
+		GDMA_InitStruct->GDMA_LlpSrcEn = 0;
+		GDMA_InitStruct->GDMA_LlpDstEn = 0;
+	}
+
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 
-	return _TRUE;
+	if (blockcnt > 1) {
+		llisize = blockcnt * sizeof(struct GDMA_CH_LLI);
+		qspi_gdma_lli = (struct GDMA_CH_LLI *) rtos_mem_malloc(llisize);
+		_memset(qspi_gdma_lli, 0, llisize);
+
+		for (u32 i = 0; i < blockcnt; i++) {
+			qspi_gdma_lli[i].LliEle.Sarx = ((u32)Pbuf) + blocksize * i;
+			qspi_gdma_lli[i].LliEle.Darx = (u32) & (QSPI->DR[0].BYTE);
+
+			if (i != (blockcnt - 1)) {
+				qspi_gdma_lli[i].BlockSize = (blocksize) >>  GDMA_InitStruct->GDMA_SrcDataWidth;
+				qspi_gdma_lli[i].pNextLli = &qspi_gdma_lli[i + 1];
+			} else {
+				qspi_gdma_lli[i].BlockSize = (Size - i * blocksize) >>  GDMA_InitStruct->GDMA_SrcDataWidth;
+				qspi_gdma_lli[i].pNextLli = NULL;
+			}
+		}
+		GDMA_SetLLP(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->MaxMuliBlock, qspi_gdma_lli, 0);
+	}
+
+	return TRUE;
+}
+
+/**
+  * @brief  Deinit GDMA used by QSPI.
+  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
+  *         the configuration information for the GDMA peripheral.
+  * @retval   TRUE/FLASE
+  */
+int QSPI_GDMADeinit(GDMA_InitTypeDef *GDMA_InitStruct)
+{
+	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+
+	if (qspi_gdma_lli) {
+		rtos_mem_free(qspi_gdma_lli);
+	}
+
+	return TRUE;
 }
 
 

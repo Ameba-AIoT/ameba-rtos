@@ -43,7 +43,7 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 	u8 need_reconn = 0;
 
 	if ((join_status_last == join_status) && (join_status_last > RTW_JOINSTATUS_4WAY_HANDSHAKING)) {
-		RTK_LOGS(NOTAG, "same joinstaus: %d\n", join_status);/*just for debug, delete when stable*/
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "same joinstaus: %d\n", join_status);/*just for debug, delete when stable*/
 	}
 	join_status_last = join_status;
 
@@ -73,20 +73,20 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 
 #ifdef CONFIG_ENABLE_EAP
 	if (rtw_reconn.eap_method != 0) {
-		RTK_LOGS(NOTAG, "auto reconn\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn\n");
 		eap_autoreconnect_hdl(rtw_reconn.eap_method);
 		return;
 	}
 #endif
 
 	if (rtw_reconn.b_waiting) {
-		RTK_LOGS(NOTAG, "auto reconn ongoing\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn ongoing\n");
 		return;
 	}
 
 	rtw_reconn.cnt = rtw_reconn.b_infinite ? 0 : (rtw_reconn.cnt + 1);
 	if (rtw_reconn.cnt > wifi_user_config.auto_reconnect_count) {
-		RTK_LOGS(NOTAG, "auto reconn max times\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn max times\n");
 	} else {
 		rtw_reconn.b_waiting = 1;
 		rtw_wakelock_timeout(wifi_user_config.auto_reconnect_interval * 1000 + 10);
@@ -101,15 +101,15 @@ void rtw_reconn_task_hdl(void *param)
 
 	ret = wifi_connect(&rtw_reconn.conn_param, 1);
 	if (ret != RTW_SUCCESS) {
-		RTK_LOGS(NOTAG, "reconn fail:%d", ret);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "reconn fail:%d", ret);
 		if ((ret == RTW_CONNECT_INVALID_KEY)) {
-			RTK_LOGS(NOTAG, "(password format wrong)");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(password format wrong)");
 		} else if (ret == RTW_CONNECT_SCAN_FAIL) {
-			RTK_LOGS(NOTAG, "(not found AP)");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(not found AP)");
 		} else if (ret == RTW_BUSY) {
-			RTK_LOGS(NOTAG, "(busy)");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(busy)");
 		}
-		RTK_LOGS(NOTAG, "\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n");
 	}
 
 #ifdef CONFIG_LWIP_LAYER
@@ -127,9 +127,9 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 	rtw_reconn.b_waiting = 0;
 	/*Creat a task to do wifi reconnect because call WIFI API in WIFI event is not safe*/
 	if (rtos_task_create(NULL, ((const char *)"rtw_reconn_task_hdl"), rtw_reconn_task_hdl, NULL, WIFI_STACK_SIZE_AUTO_RECONN_TASKLET, 6) != SUCCESS) {
-		RTK_LOGS(NOTAG, "Create reconn task failed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Create reconn task failed\n");
 	} else {
-		RTK_LOGS(NOTAG, "auto reconn %d\n", rtw_reconn.cnt);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn %d\n", rtw_reconn.cnt);
 	}
 }
 
@@ -155,7 +155,7 @@ void rtw_reconn_new_conn(struct _rtw_network_info_t *connect_param)
 	}
 }
 
-int wifi_config_autoreconnect(__u8 mode)
+int wifi_config_autoreconnect(u8 mode)
 {
 	if ((mode == RTW_AUTORECONNECT_DISABLE) && rtw_reconn.b_enable) {
 		rtos_timer_stop(rtw_reconn.timer, 1000);
@@ -164,9 +164,9 @@ int wifi_config_autoreconnect(__u8 mode)
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.b_enable = 0;
 	} else if ((mode != RTW_AUTORECONNECT_DISABLE) && (rtw_reconn.b_enable == 0))  {
-		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, _FALSE,
+		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
 							  rtw_reconn_timer_hdl) != SUCCESS) {
-			RTK_LOGS(NOTAG, "rtw_reconn_timer create fail\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rtw_reconn_timer create fail\n");
 			return RTW_ERROR;
 		}
 		rtw_reconn.b_enable = 1;
@@ -180,7 +180,7 @@ int wifi_config_autoreconnect(__u8 mode)
 	return RTW_SUCCESS;
 }
 
-int wifi_get_autoreconnect(__u8 *mode)
+int wifi_get_autoreconnect(u8 *mode)
 {
 	if (mode == NULL) {
 		return RTW_ERROR;

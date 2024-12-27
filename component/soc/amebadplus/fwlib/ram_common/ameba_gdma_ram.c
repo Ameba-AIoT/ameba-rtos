@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "GDMA";
+static const char *const TAG = "GDMA";
 static u8 GDMA_IrqNum[8] = {
 	GDMA0_CHANNEL0_IRQ,
 	GDMA0_CHANNEL1_IRQ,
@@ -67,7 +67,6 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 	u32 CtlxUp = 0;
 	u32 CfgxLow = 0;
 	u32 CfgxUp = 0;
-	u32 ChEn = BIT(GDMA_ChNum) | BIT((GDMA_ChNum + 8));
 	u32 BlockSize = GDMA_InitStruct->GDMA_BlockSize;
 	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
 
@@ -90,7 +89,7 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 	//GDMA->DmaCfgReg = 1;
 
 	/* Check chanel is avaliable */
-	if (GDMA->ChEnReg & ChEn) {
+	if (GDMA->ChEnReg & BIT(GDMA_ChNum)) {
 		/* Disable Channel */
 		RTK_LOGW(TAG, "Channel had used; Disable Channel!!!!\n");
 
@@ -598,7 +597,7 @@ u32 GDMA_GetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
-  * @brief  register channel if this channel is used.
+  * @brief  Register channel if this channel is used.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @retval None
@@ -623,7 +622,7 @@ static void GDMA_ChnlRegister(u8 GDMA_Index, u8 GDMA_ChNum, IRQ_FUN IrqFun, u32 
 }
 
 /**
-  * @brief  unregister channel if this channel is not used.
+  * @brief  Unregister channel if this channel is not used.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @retval   None
@@ -645,7 +644,7 @@ static void GDMA_ChnlUnRegister(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
-  * @brief  alloc a free channel.
+  * @brief  Alloc a free channel.
   * @param  GDMA_Index: 0 .
   * @param  IrqFun: GDMA IRQ callback function.
   * @param  IrqData: GDMA IRQ callback data.
@@ -661,7 +660,7 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 
 	assert_param(IS_GDMA_Index(GDMA_Index));
 
-	if (IPC_SEMTake(GDMA_SEM_IDX, 1000) == _FALSE) {
+	if (IPC_SEMTake(GDMA_SEM_IDX, 1000) == FALSE) {
 		return GDMA_ChNum;
 	}
 
@@ -687,21 +686,21 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 }
 
 /**
-  * @brief  free a channel, this channel will not be used.
+  * @brief  Free a channel, this channel will not be used.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   _TRUE/_FLASE
+  * @retval   TRUE/_FLASE
   */
 __weak  u8
 GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 {
 	GDMA_TypeDef *GDMA = NULL;
-	u8 ret  = _FALSE;
+	u8 ret  = FALSE;
 	/* Check the parameters */
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
-	if (IPC_SEMTake(GDMA_SEM_IDX, 1000) == _FALSE) {
+	if (IPC_SEMTake(GDMA_SEM_IDX, 1000) == FALSE) {
 		return ret;
 	}
 
@@ -715,12 +714,12 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 
 	IPC_SEMFree(GDMA_SEM_IDX);
 
-	ret = _TRUE;
+	ret = TRUE;
 	return ret;
 }
 
 /**
-  * @brief  get irq number for a channel.
+  * @brief  Get irq number for a channel.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @retval   IrqNum
@@ -739,7 +738,7 @@ GDMA_GetIrqNum(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
-  * @brief  set channel priority.
+  * @brief  Set channel priority.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @retval   IrqNum
@@ -767,7 +766,7 @@ GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPriority)
 }
 
 /**
-  * @brief  suspend a channel.
+  * @brief  Suspend a channel.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   */
@@ -786,7 +785,7 @@ GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
-  * @brief  resume a channel.
+  * @brief  Resume a channel.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   */
@@ -805,7 +804,7 @@ GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
-  * @brief  abort a channel.
+  * @brief  Abort a channel.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   */

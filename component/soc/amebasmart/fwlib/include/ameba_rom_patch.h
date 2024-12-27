@@ -25,9 +25,14 @@
 
 // add your function statements here
 _LONG_CALL_ void LOGUART_PutChar_RAM(u8 c);
+_LONG_CALL_ void LOGUART_INTConfig(LOGUART_TypeDef *UARTLOG, u32 UART_IT, u32 newState);
+_LONG_CALL_ void LOGUART_WaitBusy(void);
+_LONG_CALL_ void LOGUART_WaitTxComplete(void);
 _LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);
 _LONG_CALL_ void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct);
+_LONG_CALL_ void UART_WaitBusy(UART_TypeDef *UARTx, u32 PollTimes);
 _LONG_CALL_ void GPIO_Init(GPIO_InitTypeDef *GPIO_InitStruct);
+_LONG_CALL_ void GPIO_WriteBit_Critical(u32 GPIO_Pin, u32 Pin_State);
 _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 _LONG_CALL_ u32 SYSCFG_RLVersion(void);
@@ -35,6 +40,12 @@ _LONG_CALL_ u32 SYSCFG_GetRLNum(void);
 _LONG_CALL_ void VectorTableAdd(void);
 _LONG_CALL_ int TRNG_get_random_bytes(void *dst, u32 size);
 _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);
+_LONG_CALL_ void AUDIO_SP_SetI2S3ExtDoutPinmux(u32 state);
+_LONG_CALL_ void AUDIO_SP_SetI2S3ExtDinPinmux(u32 state);
+_LONG_CALL_ void AUDIO_SP_SetI2S3ExtCKPinmux(u32 state);
+_LONG_CALL_ void AUDIO_SP_SetI2S2Ext2DoutPinmux(u32 state);
+_LONG_CALL_ void AUDIO_SP_SetI2S2Ext2CKPinmux(u32 state);
+_LONG_CALL_ void AUDIO_SP_SetI2S2Ext1CKPinmux(u32 state);
 
 #ifdef CONFIG_ARM_CORE_CM4
 #include "amebahp_secure_boot.h"

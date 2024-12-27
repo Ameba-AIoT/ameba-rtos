@@ -40,7 +40,7 @@ DRESULT USB_disk_ioctl(BYTE cmd, void *buff);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "MSC";
+static const char *const TAG = "MSC";
 
 /* USB Disk Deiver */
 ll_diskio_drv USB_disk_Driver = {
@@ -102,7 +102,7 @@ DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 			break;
 		} else {
 			usbh_msc_get_lun_info(0U, &info);
-			RTK_LOGS(TAG, "[MSC] Disk read fail %d/%d, try %d\n", status, info.sense.asc, i + 1);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk read fail %d/%d, try %d\n", status, info.sense.asc, i + 1);
 
 			switch (info.sense.asc) {
 			case SCSI_ASC_LOGICAL_UNIT_NOT_READY:
@@ -122,7 +122,7 @@ DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 	if (status == HAL_OK) {
 		res = RES_OK;
 	} else {
-		RTK_LOGS(TAG, "[MSC] Disk read fail %d\n", status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk read fail %d\n", status);
 
 		usbh_msc_get_lun_info(0U, &info);
 
@@ -161,7 +161,7 @@ DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 			break;
 		} else {
 			usbh_msc_get_lun_info(0U, &info);
-			RTK_LOGS(TAG, "[MSC] Disk write fail %d/%d, try %d\n", status, info.sense.asc, i + 1);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk write fail %d/%d, try %d\n", status, info.sense.asc, i + 1);
 
 			switch (info.sense.asc) {
 			case SCSI_ASC_WRITE_PROTECTED:
@@ -185,7 +185,7 @@ DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 	if (status == HAL_OK) {
 		res = RES_OK;
 	} else {
-		RTK_LOGS(TAG, "[MSC] Disk write fail %d\n", status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk write fail %d\n", status);
 
 		usbh_msc_get_lun_info(0U, &info);
 

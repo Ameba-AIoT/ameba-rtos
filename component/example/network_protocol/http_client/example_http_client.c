@@ -81,11 +81,8 @@ static void http_client_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-	//wait for wifi connected, a rough time
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		rtos_time_delay_ms(2000);
-	}
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
 
 	printf("\nExample:  http_client\n");
 

@@ -79,7 +79,7 @@ u8 array_mp_txpwr_byrate_2g_array_len_3v3_1v25 = sizeof(array_mp_txpwr_byrate_2g
 const s8 array_mp_txpwr_byrate_5g_3v3_1v25[] = {0};
 u8 array_mp_txpwr_byrate_5g_array_len_3v3_1v25 = sizeof(array_mp_txpwr_byrate_5g_3v3_1v25) / sizeof(s8);
 
-s8 wifi_hal_phy_get_power_limit_value_3v3_1v25(u8 regulation, u8 band, u8 limit_rate, u8 chnl_idx, boolean is_shape)
+s8 wifi_hal_phy_get_power_limit_value_3v3_1v25(u8 regulation, u8 band, u8 limit_rate, u8 chnl_idx, bool is_shape)
 {
 	s8 power_limit = 127;
 	s8 tx_shape_idx = -1;

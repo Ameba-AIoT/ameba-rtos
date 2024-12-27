@@ -1,23 +1,6 @@
-#include "wifi_intf_drv_to_app_cast.h"
-#include "os_wrapper.h"
-#include "PinNames.h"
-#include "gpio_api.h"
+#include "example_wificast_control.h"
 
 static const char *TAG = "example_main";
-#define WIFI_CAST_CONTROL_LIGHT		BIT(15)
-#define WIFI_CAST_CONTROL_BIND		BIT(14)
-
-#define LED_PIN	PA_22
-
-typedef enum {
-	EXAMPLE_CONTROL_INIT = 0,
-	EXAMPLE_CONTROL_BIND,
-} control_status_t;
-
-struct example_frame_head {
-	u16 type;
-	u16 len;
-} __attribute__((packed));
 
 static control_status_t g_control_status = EXAMPLE_CONTROL_INIT;
 static gpio_t g_led_obj;
@@ -173,6 +156,11 @@ void WifiCastTestApp(u8  *argv[])
 		example_control_bind(1);
 	} else if (_strcmp((const char *)argv[0], "unbind") == 0) {
 		example_control_bind(0);
+	} else if (_strcmp((const char *)argv[0], "help") == 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\twificast \n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\t\t light  : control the device on or off\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\t\t bind   : bind the device\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\t\t unbind : unbind the device\n");
 	}
 }
 
@@ -186,7 +174,7 @@ CmdWifiCastTest(
 		WifiCastTestApp(argv);
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 CMD_TABLE_DATA_SECTION

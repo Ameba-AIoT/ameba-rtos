@@ -224,7 +224,7 @@ u32 example_mydata_source_player_test(u16 argc, u8 *argv[])
 {
 	(void) argc;
 	example_mydata_source_player_test_args_handle(argv);
-	return _TRUE;
+	return TRUE;
 }
 #endif
 

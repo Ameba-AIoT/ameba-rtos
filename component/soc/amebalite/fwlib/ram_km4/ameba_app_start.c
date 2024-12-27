@@ -8,13 +8,14 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "APP";
+static const char *const TAG = "APP";
 
 extern int main(void);
 extern u32 GlobalDebugEnable;
 void NS_ENTRY BOOT_IMG3(void);
 void app_init_psram(void);
 extern void SOCPS_WakeFromPG_KM4(void);
+extern void newlib_locks_init(void);
 
 u32 app_mpu_nocache_check(u32 mem_addr)
 {
@@ -132,6 +133,7 @@ void app_start(void)
 	/* Add This for C++ support */
 	__libc_init_array();
 #endif
+	newlib_locks_init();
 	/* 9. MPU Init*/
 	mpu_init();
 
@@ -139,7 +141,7 @@ void app_start(void)
 
 	/* Force SP align to 8bytes */
 	__asm(
-		"ldr r1, =#0xFFFFFF80\n"
+		"ldr r1, =#0xFFFFFFF8\n"
 		"mov r0, sp \n"
 		"and r0, r0, r1\n"
 		"mov sp, r0\n"

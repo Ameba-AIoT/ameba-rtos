@@ -53,6 +53,7 @@ set(
 
 	${LOGDIR}/log.c
 	${LOGDIR}/sscanf_minimal.c
+	${LOGDIR}/locks.c
 )
 
 

@@ -48,6 +48,18 @@ void *CreateFLACEnc(
         const char *name, const void *callbacks,
         void *appData, void **component);
 
+void *CreateSwAmrDec(
+        const char *name, const void *callbacks,
+        void *app_data, void **component);
+
+void *CreateSwGsmDec(
+        const char *name, const void *callbacks,
+        void *app_data, void **component);
+
+void *CreateSwG711Dec(
+        const char *name, const void *callbacks,
+        void *app_data, void **component);
+
 MediaDecoderConfig kMediaDecoderConfigs[] = {
 #if defined(MEDIA_CODEC_PCM)
     { "wav", CreatePCMDec },
@@ -75,6 +87,21 @@ MediaDecoderConfig kMediaDecoderConfigs[] = {
 #endif
 #if defined(MEDIA_ENC_FLAC)
     {"flac-encoder", CreateFLACEnc},
+#endif
+#if defined(MEDIA_CODEC_AMR)
+    { "amrnb", CreateSwAmrDec},
+#endif
+#if defined(MEDIA_CODEC_AMR)
+    { "amrwb", CreateSwAmrDec},
+#endif
+#if defined(MEDIA_CODEC_GSM)
+    { "gsm", CreateSwGsmDec},
+#endif
+#if defined(MEDIA_CODEC_G711)
+    { "g711alaw", CreateSwG711Dec},
+#endif
+#if defined(MEDIA_CODEC_G711)
+    { "g711mlaw", CreateSwG711Dec},
 #endif
 };
 

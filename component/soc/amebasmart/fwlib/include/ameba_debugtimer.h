@@ -137,7 +137,7 @@ typedef struct {
   * @{
   */
 
-__STATIC_INLINE void DTimer_Cmd(BOOL Newstatus)
+__STATIC_INLINE void DTimer_Cmd(bool Newstatus)
 {
 	DEBUGTIMER_TypeDef *DTimer = DTIMER_DEV;
 

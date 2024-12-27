@@ -58,7 +58,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 Len);
 static void cdc_acm_cb_status_changed(u8 status);
 
 /* Private variables ---------------------------------------------------------*/
-static const char *TAG = "ACM";
+static const char *const TAG = "ACM";
 
 static usbd_cdc_acm_cb_t cdc_acm_cb = {
 	.init = cdc_acm_cb_init,
@@ -79,7 +79,11 @@ static usbd_config_t cdc_acm_cfg = {
 	.intr_use_ptx_fifo  = 0U,
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_en        = USBD_EPMIS_INTR,
-	.nptx_max_err_cnt   = {0U, 0U, 0U, 2000U, }
+	.nptx_max_err_cnt   = {0U, 0U, 0U, 2000U, },
+#if defined (CONFIG_AMEBAGREEN2)
+	.rx_fifo_depth = 676U,
+	.ptx_fifo_depth = {16U, 256U, 32U, },
+#endif
 };
 
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
@@ -155,7 +159,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 			rtos_sema_give(cdc_acm_async_xfer_sema);
 		}
 	} else {
-		RTK_LOGS(TAG, "[ACM] Busy, discard %dB\n", len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Busy, discard %dB\n", len);
 		ret = HAL_BUSY;
 	}
 
@@ -225,7 +229,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		*/
 		cdc_acm_ctrl_line_state = req->wValue;
 		if (cdc_acm_ctrl_line_state & 0x01) {
-			RTK_LOGS(TAG, "[ACM] VCOM port activate\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
 #if CONFIG_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(CDC_ACM_CTRL_DSR | CDC_ACM_CTRL_DCD);
 #endif
@@ -245,7 +249,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 static void cdc_acm_cb_status_changed(u8 status)
 {
-	RTK_LOGS(TAG, "[ACM] Status change: %d\n", status);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d\n", status);
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
 	cdc_acm_attach_status = status;
 	rtos_sema_give(cdc_acm_attach_status_changed_sema);
@@ -262,13 +266,13 @@ static void cdc_acm_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
 			if (cdc_acm_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-				RTK_LOGS(TAG, "[ACM] DETACHED\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_cdc_acm_deinit();
 				ret = usbd_deinit();
 				if (ret != 0) {
 					break;
 				}
-				RTK_LOGS(TAG, "[ACM] Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&cdc_acm_cfg);
 				if (ret != 0) {
 					break;
@@ -279,13 +283,13 @@ static void cdc_acm_hotplug_thread(void *param)
 					break;
 				}
 			} else if (cdc_acm_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
-				RTK_LOGS(TAG, "[ACM] ATTACHED\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\n");
 			} else {
-				RTK_LOGS(TAG, "[ACM] INIT\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 			}
 		}
 	}
-	RTK_LOGS(TAG, "[ACM] Hotplug thread exit\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread exit\n");
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_MSC_CHECK_USB_STATUS
@@ -304,7 +308,7 @@ static void cdc_acm_xfer_thread(void *param)
 			xfer_len = CONFIG_CDC_ACM_ASYNC_BUF_SIZE;
 			xfer_buf = cdc_acm_async_xfer_buf;
 			cdc_acm_async_xfer_busy = 1;
-			RTK_LOGS(TAG, "[ACM] Start xfer(%dB) idx(%d)\n", CONFIG_CDC_ACM_ASYNC_BUF_SIZE, cdc_acm_xfer_idx);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Start xfer(%dB) idx(%d)\n", CONFIG_CDC_ACM_ASYNC_BUF_SIZE, cdc_acm_xfer_idx);
 			while (xfer_len > 0) {
 				if (xfer_len > CONFIG_CDC_ACM_BULK_IN_XFER_SIZE) {
 					ret = usbd_cdc_acm_transmit(xfer_buf, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
@@ -312,7 +316,7 @@ static void cdc_acm_xfer_thread(void *param)
 						xfer_len -= CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
 						xfer_buf += CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
 					} else { // HAL_BUSY
-						RTK_LOGS(TAG, "[ACM] Xfer busy, retry[1]\n");
+						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[1]\n");
 						rtos_time_delay_us(200);
 					}
 				} else {
@@ -321,10 +325,10 @@ static void cdc_acm_xfer_thread(void *param)
 						xfer_len = 0;
 						cdc_acm_async_xfer_busy = 0;
 						cdc_acm_xfer_idx++;
-						RTK_LOGS(TAG, "[ACM] Xfer done\n");
+						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer done\n");
 						break;
 					} else { // HAL_BUSY
-						RTK_LOGS(TAG, "[ACM] Xfer busy, retry[2]\n");
+						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\n");
 						rtos_time_delay_us(200);
 					}
 				}
@@ -383,7 +387,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, "[ACM] USBD CDC ACM demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -405,7 +409,7 @@ exit_usbd_cdc_acm_init_fail:
 	usbd_deinit();
 
 exit_usbd_init_fail:
-	RTK_LOGS(TAG, "[ACM] USBD CDC ACM demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo stop\n");
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
 	rtos_sema_delete(cdc_acm_attach_status_changed_sema);
 #endif
@@ -430,7 +434,7 @@ void example_usbd_cdc_acm(void)
 
 	ret = rtos_task_create(&task, "example_usbd_cdc_acm_thread", example_usbd_cdc_acm_thread, NULL, 1024U, CONFIG_CDC_ACM_INIT_THREAD_PRIORITY);
 	if (ret != SUCCESS) {
-		RTK_LOGS(TAG, "[ACM] Create USBD CDC ACM thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD CDC ACM thread fail\n");
 	}
 }
 

@@ -28,6 +28,7 @@ unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, 
 #endif
 
 #ifdef CONFIG_WLAN
+extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 extern void cmd_wps(int argc, char **argv);
 #endif
@@ -382,9 +383,9 @@ void at_wlconn(void *arg)
 end:
 	init_wifi_struct();
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLCONN:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLCONN:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlconn_help();
 		}
@@ -450,9 +451,9 @@ end:
 #endif
 	init_wifi_struct();
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLDISCONN:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLDISCONN:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -583,9 +584,9 @@ void at_wlscan(void *arg)
 end:
 	rtos_mem_free((void *)channel_list);
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLSCAN:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLSCAN:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1) {
 			at_wlscan_help();
 		}
@@ -612,7 +613,7 @@ void at_wlrssi(void *arg)
 	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.rssi + 1));
 	at_printf("data rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.data_rssi + 1));
 	at_printf("beacon rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.beacon_rssi + 1));
-	at_printf("\r\n%sOK\r\n", "+WLRSSI:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 void at_wlstartap_help(void)
@@ -874,9 +875,9 @@ end:
 	rtos_mem_free((void *)setting);
 	init_wifi_struct();
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLSTARTAP:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLSTARTAP:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlstartap_help();
 		}
@@ -895,7 +896,7 @@ void at_wlstopap(void *arg)
 	UNUSED(arg);
 
 	wifi_stop_ap();
-	at_printf("\r\n%sOK\r\n", "+WLSTOPAP:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 /****************************************************************
@@ -908,6 +909,7 @@ AT command process:
 void at_wlstate(void *arg)
 {
 	int i = 0;
+	uint8_t *p = NULL;
 #ifdef CONFIG_LWIP_LAYER
 	u8 *mac = LwIP_GetMAC(0);
 	u8 *ip = LwIP_GetIP(0);
@@ -922,7 +924,7 @@ void at_wlstate(void *arg)
 	p_wifi_setting = (struct _rtw_wifi_setting_t *)rtos_mem_zmalloc(sizeof(struct _rtw_wifi_setting_t));
 	if (p_wifi_setting == NULL) {
 		RTK_LOGW(NOTAG, "[+WLSTATE]: alloc p_wifi_setting fail \r\n");
-		at_printf("\r\n%sERROR:%d\r\n", "+WLSTATE:", 1);
+		at_printf(ATCMD_ERROR_END_STR, 1);
 		return;
 	}
 
@@ -967,10 +969,22 @@ void at_wlstate(void *arg)
 					at_printf("Client Num: %d\r\n", client_info.count);
 					for (client_number = 0; client_number < client_info.count; client_number++) {
 						at_printf("Client %d:\r\n", client_number + 1);
+#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
+						for (int n = 0; n < AP_STA_NUM; n++) {
+							p = ip_table.client_mac[n];
+							if (memcmp(p, client_info.mac_list[client_number].octet, 6) == 0) {
+								at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_table.ip_addr4[n]);
+								at_printf("MAC address: %02x:%02x:%02x:%02x:%02x:%02x, ", p[0], p[1], p[2], p[3], p[4], p[5]);
+								at_printf("RSSI: %d", client_info.rssi_list[client_number]);
+								at_printf("\r\n");
+								break;
+							}
+						}
+#else
 						at_printf("\tMAC => "MAC_FMT"\r\n",
 								  MAC_ARG(client_info.mac_list[client_number].octet));
+#endif
 					}
-					at_printf("\r\n");
 				}
 			}
 		}
@@ -991,7 +1005,7 @@ void at_wlstate(void *arg)
 #endif /* CONFIG_ETHERNET */
 
 	rtos_mem_free((void *)p_wifi_setting);
-	at_printf("\r\n%sOK\r\n", "+WLSTATE:");
+	at_printf(ATCMD_OK_END_STR);
 
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
 	ipnat_dump();
@@ -1065,9 +1079,9 @@ void at_wlreconn(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLRECONN:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLRECONN:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlreconn_help();
 	}
 }
@@ -1130,9 +1144,9 @@ void at_wlpromisc(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLPROMISC:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLPROMISC:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlpromisc_help();
 	}
 }
@@ -1197,9 +1211,9 @@ void at_wldbg(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLDBG:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLDBG:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1) {
 			at_wldbg_help();
 		}
@@ -1254,9 +1268,9 @@ void at_wlwps(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLWPS:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLWPS:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlwps_help();
 		}
@@ -1330,9 +1344,9 @@ void at_wlps(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLPS:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLPS:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlps_help();
 	}
 }
@@ -1381,9 +1395,9 @@ void at_wlstaticip(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WLSTATICIP:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WLSTATICIP:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlstaticip_help();
 	}
 }
@@ -1436,9 +1450,9 @@ void at_ping(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+PING:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+PING:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_ping_help();
 	}
 }
@@ -1547,9 +1561,9 @@ void at_iperf(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+IPERF:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+IPERF:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_iperf_help();
 	}
 	if (input) {
@@ -1616,9 +1630,9 @@ void at_iperf3(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+IPERF3:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+IPERF3:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_iperf3_help();
 	}
 }

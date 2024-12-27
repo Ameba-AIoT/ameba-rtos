@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "CODEC";
+static const char *const TAG = "CODEC";
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -570,7 +570,7 @@ void AUDIO_CODEC_SetDmicClk(u32 clk, u32 newstate)
 }
 
 /**
-  * @brief  select DMIC source of input ADC channel.
+  * @brief  Select DMIC source of input ADC channel.
   * @param  ad_chn: select adc input path channel
   *			 This parameter can be one of the following values:
   *			   @arg ADCHN1
@@ -644,7 +644,7 @@ void AUDIO_CODEC_SetADCEQClk(u32 ad_chn, u32 newstate)
 }
 
 /**
-  * @brief  set EQ band as filter for DMIC rx.
+  * @brief  Set EQ band as filter for DMIC rx.
   * @param  ad_chn: select adc channel
   *          This parameter can be one of the following values:
   *            @arg ADCHN1

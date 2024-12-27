@@ -9,10 +9,14 @@ Configuration:
 2. Modify SSL_MAX_CONTENT_LEN in SSL config for large size file.
 	If the transmitted fils size is larger than 16kbytes, SSL_MAX_CONTENT_LEN should be set to 16384.
 
-	[config_rsa.h]
-	#define MBEDTLS_SSL_MAX_CONTENT_LEN            16384
+	[mbedtls_config.h]
+	#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
+	#define MBEDTLS_SSL_IN_CONTENT_LEN              16384
 
-3. GCC:use CMD "make all EXAMPLE=ssl_client" to compile ssl_client example.
+3. (Optional)Test for TLS1.3.
+	Enable CONFIG SSL -> Support TLS 1.3 protocol
+
+4. GCC:use CMD "./build.py -a ssl_client" to compile ssl_client example.
 
 
 Execution:

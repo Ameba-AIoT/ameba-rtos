@@ -22,6 +22,8 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_WIFI_TUNNEL
+//#define CONFIG_WTN_SOCKET_APP
+//#define CONFIG_WTN_JUST_LINKAP
 #ifndef CONFIG_WIFI_TUNNEL
 //#define CONFIG_NAN
 

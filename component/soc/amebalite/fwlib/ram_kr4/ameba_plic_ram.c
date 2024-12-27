@@ -11,7 +11,7 @@
 
 typedef void (*IRQHandler_t)(uint32_t);
 
-static const char *TAG = "PLIC";
+static const char *const TAG = "PLIC";
 static uint32_t plic_irq_id = 0;
 
 /**

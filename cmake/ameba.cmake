@@ -1,0 +1,11 @@
+include_guard(GLOBAL)
+set(RS_AMEBA_INCLUDED TRUE)
+
+include(${CMAKE_CURRENT_LIST_DIR}/global_define.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/common.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/ccache.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/extensions.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/axf2bin.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/git/GetGitRevisionDescription.cmake)
+set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_LIST_DIR}/set_extensions.cmake)
+set(CMAKE_PROJECT_INCLUDE_BEFORE ${CMAKE_CURRENT_LIST_DIR}/disable_compiler_detection.cmake)

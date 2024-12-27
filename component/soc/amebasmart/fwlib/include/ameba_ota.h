@@ -8,14 +8,12 @@
 #define _AMEBA_OTA_H_
 
 #include "amebahp_secure_boot.h"
-#if defined(CONFIG_MBEDTLS_ENABLED) && (CONFIG_MBEDTLS_ENABLED == 1)
 #include <mbedtls/config.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 
 #define HTTPS_OTA_UPDATE
-#endif
 
 #define HTTP_OTA_UPDATE
 

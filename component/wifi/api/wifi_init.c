@@ -33,40 +33,8 @@ static u32 heap_tmp;
 #endif
 
 #define WIFI_STACK_SIZE_INIT ((512 + 768) * 4)
-__attribute__((unused)) static const char *TAG = "WLAN";
+__attribute__((unused)) static const char *const TAG = "WLAN";
 extern void wifi_set_rom2flash(void);
-
-#ifndef CONFIG_AS_INIC_AP
-void init_skb_pool(uint32_t skb_num_np, unsigned char skb_cache_zise)
-{
-	int i;
-	uint32_t skb_buf_size = wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE;
-
-	if (skbpriv.skb_buff_pool) {
-		RTK_LOGW(TAG_WLAN_DRV, "skb_buff_pool not mfree|\n");
-		return;
-	}
-
-	skbpriv.skb_buf_max_size = ((skb_buf_size + (skb_cache_zise - 1)) & ~(skb_cache_zise - 1));
-	skbpriv.skb_buff_num = skb_num_np;
-	skbpriv.skb_buff_used = 0;
-	skbpriv.skb_buff_max_used = 0;
-
-	/*Start address must align to max(AP_Core_Cache, NP_Core_Cache),
-	* freertos's portBYTE_ALIGNMENT usually guarantees this,
-	* or we have to do align opreration here */
-	skbpriv.skb_buff_pool = (struct sk_buff *)rtos_mem_zmalloc(skbpriv.skb_buff_num * sizeof(struct sk_buff));
-	if (!skbpriv.skb_buff_pool) {
-		RTK_LOGE(TAG_WLAN_DRV, "skb pool malloc fail\n");
-	}
-
-	INIT_LIST_HEAD(&skbpriv.skb_buff_list);
-	for (i = 0; i < skbpriv.skb_buff_num; i++) {
-		INIT_LIST_HEAD(&skbpriv.skb_buff_pool[i].list);
-		list_add_tail(&skbpriv.skb_buff_pool[i].list, &skbpriv.skb_buff_list);
-	}
-}
-#endif
 
 #if defined(CONFIG_AS_INIC_AP)
 void _init_thread(void *param)
@@ -150,7 +118,7 @@ void _init_thread(void *param)
 	LwIP_Init();
 	RTK_LOGI(TAG, "LWIP consume heap %d\n", heap_tmp - rtos_mem_get_free_heap_size() - TCPIP_THREAD_STACKSIZE * 4);
 #endif
-#ifdef CONFIG_SDIO_BRIDGE
+#ifdef CONFIG_FULLMAC_BRIDGE
 	wifi_fast_connect_enable(0);
 	inic_dev_init();
 #endif

@@ -9,7 +9,6 @@
 
 static void *recv_sem = NULL;
 static uint8_t *hci_buf;
-//static uint16_t hci_buf_len;
 
 uint8_t *hci_sa_recv_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_t timeout)
 {

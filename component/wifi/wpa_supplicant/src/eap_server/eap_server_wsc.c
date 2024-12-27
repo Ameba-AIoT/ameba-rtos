@@ -338,10 +338,10 @@ static Boolean eap_wsc_check(struct eap_sm *sm, void *priv,
 						   respData, &len);
 	if (pos == NULL || len < 2) {
 		wpa_printf(MSG_INFO, "EAP-WSC: Invalid frame");
-		return _TRUE;
+		return TRUE;
 	}
 
-	return _FALSE;
+	return FALSE;
 }
 #endif
 
@@ -532,7 +532,7 @@ static Boolean eap_wsc_isDone(struct eap_sm *sm, void *priv)
 static Boolean eap_wsc_isSuccess(struct eap_sm *sm, void *priv)
 {
 	/* EAP-WSC will always result in EAP-Failure */
-	return _FALSE;
+	return FALSE;
 }
 #endif
 

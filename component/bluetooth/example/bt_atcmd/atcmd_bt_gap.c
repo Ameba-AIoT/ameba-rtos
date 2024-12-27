@@ -202,9 +202,11 @@ static int atcmd_bt_gap_vendor_cmd_req(int argc, char **argv)
 	vendor_param.op = (uint16_t)str_to_int(argv[0]);
 
 	vendor_param.len = (uint8_t)str_to_int(argv[1]);
-	vendor_param.cmd_param = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON,
-													   vendor_param.len);
-	hexnum_str_to_array(argv[2], vendor_param.cmd_param, vendor_param.len);
+	if (vendor_param.len) {
+		vendor_param.cmd_param = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON,
+														   vendor_param.len);
+		hexnum_str_to_array(argv[2], vendor_param.cmd_param, vendor_param.len);
+	}
 	ret = rtk_bt_gap_vendor_cmd_req(&vendor_param);
 	if (ret) {
 		BT_LOGE("GAP vendor cmd reqeust failed, err: 0x%x\r\n", ret);
@@ -221,7 +223,7 @@ static const cmd_table_t gap_cmd_table[] = {
 #if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
 	{"ecfc",          atcmd_bt_gap_ecfc,              2, 12},
 #endif
-	{"vendor_cmd",    atcmd_bt_gap_vendor_cmd_req,    4, 4},
+	{"vendor_cmd",    atcmd_bt_gap_vendor_cmd_req,    3, 4},
 	{NULL,},
 };
 

@@ -195,7 +195,7 @@ struct _NDIS_802_11_VARIABLE_IEs {
 
 struct dot11_ssid {
 	u32  SsidLength;
-	u8  Ssid[RTW_ESSID_MAX_SIZE + 4];
+	u8  Ssid[RTW_ESSID_MAX_SIZE + 1];
 };
 
 struct _NDIS_802_11_FIXED_IEs {

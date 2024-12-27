@@ -109,6 +109,7 @@ macro(ameba_internal_library name)
   ameba_library_common(${name})
 # record lib name in GLOBAL PROPERTY IMG2_LIBS_${PROJECT_NAME}, then target_img2 can get them when linking
   set_property(GLOBAL APPEND PROPERTY IMG2_LIBS_${PROJECT_NAME} ${CURRENT_LIB_NAME})
+  set_property(GLOBAL APPEND PROPERTY g_${d_MCU_PROJECT_NAME}_IMAGE2_LIBS ${CURRENT_LIB_NAME})
 
 endmacro()
 
@@ -123,6 +124,34 @@ macro(ameba_library_common name)
     add_dependencies(${CURRENT_LIB_NAME} build_info_${PROJECT_NAME})
 endmacro()
 
+#internal library of rom ns, do not export
+#this macro is for components which have extra compile or include flags than target_rom_ns
+macro(ameba_rom_ns_library name)
+
+  set(CURRENT_LIB_NAME ${name}_${PROJECT_NAME})
+  add_library(${CURRENT_LIB_NAME} STATIC EXCLUDE_FROM_ALL "")
+  set_target_properties(${CURRENT_LIB_NAME} PROPERTIES PREFIX "lib_"  SUFFIX ".a")
+
+  target_link_libraries(${CURRENT_LIB_NAME} PUBLIC ameba_interface_${PROJECT_NAME})
+  add_dependencies(${CURRENT_LIB_NAME} build_info_${PROJECT_NAME})
+  # record lib name in GLOBAL PROPERTY ROM_NS_LIBS_${PROJECT_NAME}, then target_rom_ns can get them when linking
+  set_property(GLOBAL APPEND PROPERTY ROM_NS_LIBS_${PROJECT_NAME} ${CURRENT_LIB_NAME})
+endmacro()
+
+#internal library of rom, do not export
+#this macro is for components which have extra compile or include flags than target_rom
+macro(ameba_rom_library name)
+
+  set(CURRENT_LIB_NAME ${name}_${PROJECT_NAME})
+  add_library(${CURRENT_LIB_NAME} STATIC EXCLUDE_FROM_ALL "")
+  set_target_properties(${CURRENT_LIB_NAME} PROPERTIES PREFIX "lib_"  SUFFIX ".a")
+
+  target_link_libraries(${CURRENT_LIB_NAME} PUBLIC ameba_interface_${PROJECT_NAME})
+  add_dependencies(${CURRENT_LIB_NAME} build_info_${PROJECT_NAME})
+  # record lib name in GLOBAL PROPERTY ROM_LIBS_${PROJECT_NAME}, then target_rom can get them when linking
+  set_property(GLOBAL APPEND PROPERTY ROM_LIBS_${PROJECT_NAME} ${CURRENT_LIB_NAME})
+endmacro()
+
 #genereate git version of lib
 macro(ameba_git_version_gen name)
 
@@ -135,13 +164,15 @@ macro(ameba_git_version_gen name)
     )
 
     if(ERROR_CODE)
-        message(FATAL_ERROR "git version generate error! " ${ERROR_CODE})
+        message(SEND_ERROR "git version generate error! " ${ERROR_CODE})
     endif()
 
     set(_lib_name lib_${name})
     string(TIMESTAMP _configuration_time "%Y/%m/%d-%H:%M:%S")
 
-    configure_file(${CMAKE_FILES_DIR}/git_version.c.in ${CMAKE_CURRENT_SOURCE_DIR}/lib_${name}_git_version.c  @ONLY)
+    configure_file(${CMAKE_FILES_DIR}/git_version.c.in ${CMAKE_CURRENT_BINARY_DIR}/lib_${name}_git_version.c  @ONLY)
+
+    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/lib_${name}_git_version.c)
 
 endmacro()
 
@@ -151,6 +182,9 @@ macro(ameba_executable name)
   add_executable(${name} ${ARGN})
   # record executable target name in GLOBAL PROPERTY ALL_EXE_TARGETS_${PROJECT_NAME}
   set_property(GLOBAL APPEND PROPERTY ALL_EXE_TARGETS_${PROJECT_NAME} ${name})
+  if(TARGET rom)
+      add_dependencies(${name} rom)
+  endif()
 
 endmacro()
 
@@ -230,8 +264,55 @@ function(import_kconfig prefix kconfig_fragment)
     if(unparsed_length GREATER 1)
     # Two mandatory arguments and one optional, anything after that is an error.
       list(GET IMPORT_KCONFIG_UNPARSED_ARGUMENTS 1 first_invalid)
-      message(FATAL_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${first_invalid})")
+      message(SEND_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${first_invalid})")
     endif()
     set(${IMPORT_KCONFIG_UNPARSED_ARGUMENTS} "${keys}" PARENT_SCOPE)
   endif()
 endfunction()
+
+macro(RENAME_ROM_OBJS)
+    add_custom_command(
+        TARGET ${CURRENT_LIB_NAME} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.4=.rom.rodata.str1.4 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+        COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.1=.rom.rodata.str1.1 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+        COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata=.rom.rodata ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+        COMMENT "RENAME_ROM_OBJS"
+    )
+endmacro()
+
+# use MERGE_ROM_RODATA_COMMON to merge drom common rodata
+macro(MERGE_ROM_RODATA_COMMON)
+    add_custom_command(
+      TARGET ${CURRENT_LIB_NAME} POST_BUILD
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .hal.rom.rodata=.com.rom.rodata.hal ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.4=.com.rom.rodata.str1.4 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.1=.com.rom.rodata.str1.1 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata=.com.rom.rodata ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMENT "MERGE_ROM_RODATA_COMMON"
+    )
+endmacro()
+
+macro(ROM_COMMON_SHARE)
+    add_custom_command(
+      TARGET ${CURRENT_LIB_NAME} POST_BUILD
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .hal.rom.text=.share.rom.text ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .hal.rom.rodata=.share.rom.rodata.hal ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.4=.share.rom.rodata.str1.4 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.1=.share.rom.rodata.str1.1 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata=.share.rom.rodata ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMENT "ROM_COMMON_SHARE"
+    )
+endmacro()
+
+macro(RENAME_SSL2ROM)
+    add_custom_command(
+      TARGET ${CURRENT_LIB_NAME} POST_BUILD
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .text=.ssl.rom.text ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata=.ssl.rom.rodata ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.4=.ssl.rom.rodata.str1.4 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .rodata.str1.1=.ssl.rom.rodata.str1.1 ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMAND ${CMAKE_OBJCOPY} --rename-section .hal.rom.bss=.hal.rom.bank.bss ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a ${CMAKE_CURRENT_BINARY_DIR}/lib_${CURRENT_LIB_NAME}.a
+      COMMENT "RENAME_SSL2ROM"
+    )
+endmacro()
+

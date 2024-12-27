@@ -19,32 +19,32 @@ void irq_disable(IRQn_Type irqn)
 	arm_gic_irq_disable(32 + irqn);
 }
 
-BOOL irq_register_edge(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,  u32 Priority)
+bool irq_register_edge(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,  u32 Priority)
 {
 	vRegisterIRQHandler((32 + IrqNum), (ISRCallback_t)IrqFun, (void *)Data);
 
 	arm_gic_irq_set_priority((32 + IrqNum), Priority, IRQ_TYPE_EDGE);
 
-	return _TRUE;
+	return TRUE;
 }
 
-BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,  u32 Priority)
+bool irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,  u32 Priority)
 {
 	vRegisterIRQHandler((32 + IrqNum), (ISRCallback_t)IrqFun, (void *)Data);
 	arm_gic_irq_set_priority((32 + IrqNum), Priority, IRQ_TYPE_LEVEL);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
   * @brief  Unregister IRQ Handler.
   * @param  IrqNum: a value of @ref IRQn_enum.
   */
-BOOL irq_unregister(IRQn_Type   IrqNum)
+bool irq_unregister(IRQn_Type   IrqNum)
 {
 	vRegisterIRQHandler((32 + IrqNum), NULL, NULL);
 
-	return _TRUE;
+	return TRUE;
 }
 
 void irq_clear_pending(IRQn_Type irqn)

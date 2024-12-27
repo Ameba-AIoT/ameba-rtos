@@ -36,7 +36,7 @@ extern void *bt_log_mtx;
     do {\
         if (level <= BT_LOG_DEBUG_LEVEL) {\
             BT_LOG_MUTEX_TAKE \
-            RTK_LOGS(NOTAG, __VA_ARGS__); \
+            RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, __VA_ARGS__); \
             BT_LOG_MUTEX_GIVE \
         }\
     }while(0)
@@ -45,7 +45,7 @@ extern void *bt_log_mtx;
     do {\
         if (level <= BT_LOG_DEBUG_LEVEL) {\
             BT_LOG_MUTEX_TAKE   \
-            RTK_LOGS(NOTAG, "%s\r\n", _str);\
+            RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s\r\n", _str);\
             rtk_log_memory_dump_byte(_buf, _len);\
             BT_LOG_MUTEX_GIVE   \
         }\

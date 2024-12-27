@@ -25,7 +25,7 @@ typedef struct {
 
 
 #define I2C_ID 0
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 #define I2C_SLAVE_ADDR0    0x23
 

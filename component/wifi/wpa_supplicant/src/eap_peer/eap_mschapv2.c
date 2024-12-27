@@ -139,6 +139,7 @@ static void *eap_mschapv2_init(struct eap_sm *sm)
 
 static void eap_mschapv2_deinit(struct eap_sm *sm, void *priv)
 {
+	(void)sm;
 	struct eap_mschapv2_data *data = priv;
 	os_free(data->peer_challenge, 0);
 	os_free(data->auth_challenge, 0);
@@ -853,6 +854,7 @@ static struct wpabuf *eap_mschapv2_process(struct eap_sm *sm, void *priv,
 
 static Boolean eap_mschapv2_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
+	(void)sm;
 	struct eap_mschapv2_data *data = priv;
 	return (Boolean)(data->success && data->master_key_valid);
 }
@@ -860,6 +862,7 @@ static Boolean eap_mschapv2_isKeyAvailable(struct eap_sm *sm, void *priv)
 
 static u8 *eap_mschapv2_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
+	(void)sm;
 	struct eap_mschapv2_data *data = priv;
 	u8 *key;
 	int key_len;

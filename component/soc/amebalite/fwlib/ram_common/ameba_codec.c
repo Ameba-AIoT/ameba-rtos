@@ -11,7 +11,7 @@
 #include "sysreg_pmc.h"
 #include "hal_platform.h"
 
-static const char *TAG = "CODEC";
+static const char *const TAG = "CODEC";
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -1132,7 +1132,7 @@ void AUDIO_CODEC_SetDmicClk(u32 clk, u32 newstate)
 }
 
 /**
-  * @brief  mute or unmute  dmic input path.
+  * @brief  Mute or unmute  dmic input path.
   * @param  dmic_num: select adc input path channel
   *			 This parameter can be one of the following values:
   *			   @arg ADCHN1
@@ -1535,7 +1535,7 @@ void AUDIO_CODEC_SetADDALPBK(u32 newstate)
 }
 
 /**
-  * @brief  select ADC path decimation source
+  * @brief  Select ADC path decimation source
   * @param  adc_sel: select adc channel
   *			 This parameter can be one of the following values:
   *			   @arg ADC1

@@ -17,7 +17,7 @@
 #define IR_IRQ_PRIORITY_TEST     6
 
 uint32_t buf_index = 0;
-uint8_t tx_done = _FALSE;
+uint8_t tx_done = FALSE;
 uint8_t ir_code[2] = {0, 0};
 
 rtos_sema_t IR_sema = NULL;
@@ -35,7 +35,7 @@ void IR_tx_done_callback(void)
 	if (ir_code[0]++ >= 255) {
 		ir_code[1]++;
 		if (ir_code[1] >= 255) {
-			tx_done = _TRUE;
+			tx_done = TRUE;
 		}
 	}
 
@@ -88,7 +88,7 @@ u32 IR_irq_handler(void *data)
 				while (IR_FSMRunning(IR_DEV) && !(IR_GetINTStatus(IR_DEV) & IR_BIT_TX_FIFO_EMPTY));
 				IR_Cmd(IR_DEV, IR_InitStruct.IR_Mode, DISABLE);
 				DelayMs(80);
-				if (tx_done != _TRUE) {
+				if (tx_done != TRUE) {
 					IR_tx_done_callback();
 				}
 			}

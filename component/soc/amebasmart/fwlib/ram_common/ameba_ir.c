@@ -193,7 +193,7 @@ void IR_SendBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len, u32 IsLastPacket)
 	}
 
 	/* If send the last IR packet, SET the following bit */
-	if (IsLastPacket == _TRUE) {
+	if (IsLastPacket == TRUE) {
 		IRx->IR_TX_FIFO =  *pBuf | IR_BIT_TX_DATA_END_FLAG;
 	} else {
 		IRx->IR_TX_FIFO =  *pBuf;

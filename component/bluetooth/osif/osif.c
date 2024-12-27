@@ -365,7 +365,7 @@ bool osif_msg_queue_peek(void *p_handle, uint32_t *p_msg_num)
 		return false;
 	}
 
-	*p_msg_num = rtos_queue_massage_waiting((rtos_queue_t)p_handle);
+	*p_msg_num = rtos_queue_message_waiting((rtos_queue_t)p_handle);
 
 	return true;
 }

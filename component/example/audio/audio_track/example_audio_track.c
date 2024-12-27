@@ -547,5 +547,5 @@ u32 example_track_test(u16 argc, unsigned char **argv)
 {
 	(void) argc;
 	example_audio_track((char **)argv);
-	return _TRUE;
+	return TRUE;
 }

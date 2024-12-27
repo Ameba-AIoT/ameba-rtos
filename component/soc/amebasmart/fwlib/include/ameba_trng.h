@@ -247,14 +247,11 @@ typedef struct {
 /** @defgroup TRNG_Exported_Functions TRNG Exported Functions
   * @{
   */
-
-_LONG_CALL_ extern u32 TRNG_Security_Only(BOOL NewState);
 _LONG_CALL_ extern void TRNG_INTConfig(u32 TRNG_IT, u32 NewState);
 _LONG_CALL_ extern void TRNG_ClearINT(u32 INTrBit);
 _LONG_CALL_ extern u32 TRNG_GetINT(void);
 _LONG_CALL_ void TRNG_Init(void);
 _LONG_CALL_ void TRNG_Random_Delay(void);
-
 /**
   * @}
   */

@@ -156,8 +156,8 @@ error:
   * @brief  check if update image length exceeds the layout
   * @param  pOtaTgtHdr: point to target image OTA  header
   * The retval can be one of the followings:
-  *              _TRUE: update image length is valid
-  *              _FALSE: update image length is invalid
+  *              TRUE: update image length is valid
+  *              FALSE: update image length is invalid
   */
 u8 ota_checkimage_layout(update_ota_target_hdr *pOtaTgtHdr)
 {
@@ -191,11 +191,11 @@ u8 ota_checkimage_layout(update_ota_target_hdr *pOtaTgtHdr)
 			ota_printf(_OTA_ERR_, "ImgID: %lu, OTA%d start addr: 0x%08X, end addr: 0x%08X, OTA image Length(%d) > Layout(%d)!!!\n",
 					   pOtaTgtHdr->FileImgHdr[index].ImgID, targetIdx + 1, (unsigned int)start_addr, (unsigned int)end_addr, pOtaTgtHdr->FileImgHdr[index].ImgLen,
 					   (end_addr - start_addr));
-			return _FALSE;
+			return FALSE;
 		}
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -213,7 +213,7 @@ u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int ind
 	u32 addr;
 	u32 len;
 	Manifest_TypeDef *manifest = NULL;
-	u8 res = _TRUE;
+	u8 res = TRUE;
 
 	addr = IMG_ADDR[pOtaTgtHdr->FileImgHdr[index].ImgID][targetIdx];
 	len = pOtaTgtHdr->FileImgHdr[index].ImgLen - sizeof(Manifest_TypeDef);
@@ -233,7 +233,7 @@ u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int ind
 	if (flash_checksum != pOtaTgtHdr->FileImgHdr[index].Checksum) {
 		ota_printf(_OTA_ERR_, "OTA image(%08x) checksum error!!!\nCalculated checksum 0x%8x, host checksum 0x%8x\n", (unsigned int)addr, \
 				   (unsigned int)flash_checksum, (unsigned int)pOtaTgtHdr->FileImgHdr[index].Checksum);
-		res = _FALSE;
+		res = FALSE;
 	} else {
 		ota_printf(_OTA_INFO_, "OTA image(%08x) checksum ok!!!\n", (unsigned int)addr);
 	}
@@ -745,17 +745,13 @@ void download_parameter_init(ota_context *ctx)
 	/*initialize the reveiving counter*/
 	otaCtrl->ImgOffset = 0;
 	otaCtrl->ReadBytes = 0;
-
-	if (otaCtrl->ImgId == OTA_IMGID_APP) {
-		otaCtrl->RemainBytes = otaCtrl->ImageLen - otaCtrl->ReadBytes;
-	} else {
-		otaCtrl->RemainBytes = otaCtrl->ImageLen - sizeof(Manifest_TypeDef) - otaCtrl->ReadBytes;/*skip the manifest structure*/
-		otaCtrl->FlashAddr = otaCtrl->FlashAddr + sizeof(Manifest_TypeDef);/*skip the manifest structure*/
-		/*check bootloader OTA2*/
-		if (otaCtrl->ImgId == OTA_IMGID_BOOT && otaCtrl->targetIdx == OTA_INDEX_2) {
-			otaCtrl->SkipBootOTAFg = ota_checkbootloader_ota2();
-		}
+	otaCtrl->RemainBytes = otaCtrl->ImageLen - sizeof(Manifest_TypeDef) - otaCtrl->ReadBytes;/*skip the manifest structure*/
+	otaCtrl->FlashAddr = otaCtrl->FlashAddr + sizeof(Manifest_TypeDef);/*skip the manifest structure*/
+	/*check bootloader OTA2*/
+	if (otaCtrl->ImgId == OTA_IMGID_BOOT && otaCtrl->targetIdx == OTA_INDEX_2) {
+		otaCtrl->SkipBootOTAFg = ota_checkbootloader_ota2();
 	}
+
 	ota_printf(_OTA_INFO_, "ReadBytes: %d, ImgOffset: %lu\n", otaCtrl->ReadBytes, otaCtrl->ImgOffset);
 }
 
@@ -792,39 +788,29 @@ int download_packet_process(ota_context *ctx, u8 *buf, int len)
 			otaCtrl->SigFg = 1;
 			TempCnt = otaCtrl->ReadBytes - otaCtrl->ImgOffset;
 			otaCtrl->SigCnt = TempCnt < manifest_size ? TempCnt : manifest_size;
-			_memcpy((void *)manifest, (void *)(buf + (len - TempCnt)), otaCtrl->SigCnt);
+			_memcpy((void *)(u8 *)manifest, (void *)(buf + (len - TempCnt)), otaCtrl->SigCnt);
 
 			if (otaCtrl->SigCnt < manifest_size || TempCnt - manifest_size == 0) {
 				return size;
 			}
 
-			if (otaCtrl->ImgId == OTA_IMGID_APP) {
-				_memcpy((void *)(buf + (len - TempCnt)), (void *)empty_sig, otaCtrl->SigCnt);
-			} else {
-				buf = buf + (len - TempCnt + manifest_size);
-			}
-
-
-			if (otaCtrl->ImgId != OTA_IMGID_APP) {
-				len = TempCnt - manifest_size;
-			}
+			buf = buf + (len - TempCnt + manifest_size);
+			len = TempCnt - manifest_size;
 		} else {
 			/*normal packet process*/
 			if (otaCtrl->SigCnt < manifest_size) {
 				if (len < (int)(manifest_size - otaCtrl->SigCnt)) {
-					_memcpy((void *)(manifest + otaCtrl->SigCnt), (void *)buf, len);
+					_memcpy((void *)((u8 *)manifest + otaCtrl->SigCnt), (void *)buf, len);
 					otaCtrl->SigCnt += len;
 					return size;
 				} else {
-					_memcpy((void *)(manifest + otaCtrl->SigCnt), (void *)buf, manifest_size - otaCtrl->SigCnt);
+					ota_printf(_OTA_INFO_, "manifest_size: %d, otaCtrl->SigCnt: %d, len: %d, (manifest_size - otaCtrl->SigCnt): %d\n",
+							   manifest_size, otaCtrl->SigCnt, len, manifest_size - otaCtrl->SigCnt);
 
-					if (otaCtrl->ImgId == OTA_IMGID_APP) {
-						_memcpy((void *)(buf + (manifest_size - otaCtrl->SigCnt)), (void *)empty_sig, (manifest_size - otaCtrl->SigCnt));
-					} else {
-						buf = buf + (manifest_size - otaCtrl->SigCnt);
-						len -= (manifest_size - otaCtrl->SigCnt) ;
-					}
+					_memcpy((void *)((u8 *)manifest + otaCtrl->SigCnt), (void *)buf, manifest_size - otaCtrl->SigCnt);
 
+					buf = buf + (manifest_size - otaCtrl->SigCnt);
+					len -= (manifest_size - otaCtrl->SigCnt) ;
 					otaCtrl->SigCnt = manifest_size;
 
 					if (!len) {
@@ -876,16 +862,14 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 	if (otaCtrl->NextImgFg == 1) {
 		size = download_packet_process(ctx, otaCtrl->NextImgBuf, otaCtrl->NextImgLen);
 		otaCtrl->NextImgFg = 0;
+		ota_printf(_OTA_INFO_, "%s, size: %d\n", __func__, size);
 	}
 
 	size = download_packet_process(ctx, buf, len);
 	download_percentage(size, otaCtrl->ImageLen);
 
 	if (otaCtrl->RemainBytes <= 0) {
-
-		if (otaCtrl->ImgId != OTA_IMGID_APP) {
-			size += sizeof(Manifest_TypeDef);    //add the manifest length
-		}
+		size += sizeof(Manifest_TypeDef);    //add the manifest length
 		download_percentage(size, otaCtrl->ImageLen);
 
 		ota_printf(_OTA_INFO_, "Update file size: %d bytes, start addr:0x%08x\n", size, (unsigned int)(otaCtrl->FlashAddr + SPI_FLASH_BASE));
@@ -896,7 +880,7 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 
 		if (otaCtrl->SkipBootOTAFg) {
 			ota_printf(_OTA_WARN_, "Bootloader OTA2 address is invalid, skip Bootloader OTA2\n");
-			return 0;
+			goto download_app;
 		}
 
 		/*----------step4: verify checksum and update signature-----------------*/
@@ -906,6 +890,7 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 				return -1;
 			}
 		}
+download_app:
 		/*check if another image is needed to download*/
 		if (otaCtrl->index < ctx->otaTargetHdr->ValidImgCnt - 1) {
 			otaCtrl->index++;

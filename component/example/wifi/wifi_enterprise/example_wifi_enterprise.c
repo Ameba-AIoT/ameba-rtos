@@ -15,6 +15,7 @@ extern int eap_ca_cert_len;
 extern int eap_client_cert_len;
 extern int eap_client_key_len;
 extern char *eap_client_key_pwd;
+extern int eap_start(char *method);
 
 void example_eap_config(void)
 {
@@ -67,7 +68,7 @@ void example_eap_config(void)
 	"-----END RSA PRIVATE KEY-----\r\n";
 		eap_client_key_pwd = "testca";
 	*/
-	eap_client_cert = \
+	eap_client_cert = (const unsigned char *)\
 					  "-----BEGIN CERTIFICATE-----\r\n" \
 					  "MIIC9zCCAd8CAQMwDQYJKoZIhvcNAQEEBQAwgZMxCzAJBgNVBAYTAkZSMQ8wDQYD\r\n" \
 					  "VQQIEwZSYWRpdXMxEjAQBgNVBAcTCVNvbWV3aGVyZTEVMBMGA1UEChMMRXhhbXBs\r\n" \
@@ -86,7 +87,7 @@ void example_eap_config(void)
 					  "wRZ528IdwDqB7OOqsDm1PVQM8vzny9PM6ikWUCRTVNQJN8RDLkrHR3FRjy15YLdt\r\n" \
 					  "yOfDqVnT/z0wGBaxnNziSJjqPGHPpRi4bJFGXwXOhtknKmciKzfj9/npoQ==\r\n" \
 					  "-----END CERTIFICATE-----\r\n";
-	eap_client_key = \
+	eap_client_key = (const unsigned char *)\
 					 "-----BEGIN RSA PRIVATE KEY-----\r\n" \
 					 "MIICXQIBAAKBgQCoRKVXg5h8FwiBn4KzyZamIGOG8qhrT+Qh7uxqqEJ7mriyejHS\r\n" \
 					 "N2RSktxzi86ze9DtkaeKapOW0D2gXpc1TNNZbi+UlMoR+sJYrTzmXtwMcW8dq8fc\r\n" \
@@ -109,7 +110,7 @@ void example_eap_config(void)
 		If you want to use it please make sure ENABLE_EAP_SSL_VERIFY_SERVER in autoconf_eap.h is set to 1,
 		and the eap_ca_cert is set correctly.
 	*/
-	eap_ca_cert = \
+	eap_ca_cert = (const unsigned char *)\
 				  "-----BEGIN CERTIFICATE-----\r\n" \
 				  "MIIEpzCCA4+gAwIBAgIJAPvZaozpdfjkMA0GCSqGSIb3DQEBCwUAMIGTMQswCQYD\r\n" \
 				  "VQQGEwJGUjEPMA0GA1UECBMGUmFkaXVzMRIwEAYDVQQHEwlTb21ld2hlcmUxFTAT\r\n" \
@@ -138,9 +139,9 @@ void example_eap_config(void)
 				  "QTiZHgjlMQb2XXMmXLn8kBgoDnqkXFNe8j0h8uxIJSrjOoIyn1h1wvX5/w==\r\n" \
 				  "-----END CERTIFICATE-----\r\n";
 
-	eap_client_cert_len = strlen(eap_client_cert) + 1;
-	eap_client_key_len = strlen(eap_client_key) + 1;
-	eap_ca_cert_len = strlen(eap_ca_cert) + 1;
+	eap_client_cert_len = strlen((const char*)eap_client_cert) + 1;
+	eap_client_key_len = strlen((const char*)eap_client_key) + 1;
+	eap_ca_cert_len = strlen((const char*)eap_ca_cert) + 1;
 }
 
 static void example_eap_thread(void *method)

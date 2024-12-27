@@ -18,7 +18,7 @@
 
 #define I2C_DATA_LENGTH     127
 
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 uint8_t	i2cdatasrc[I2C_DATA_LENGTH];
 u32 datalength = I2C_DATA_LENGTH;
 u8 *pdatabuf;

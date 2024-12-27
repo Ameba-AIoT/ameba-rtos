@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 
 ADC_CalParaTypeDef CalParaNorm;
-u8 vref_init_done = _FALSE;
+u8 vref_init_done = FALSE;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -87,7 +87,7 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 		}
 		CAPTOUCH_DEV->CT_ANA_ADC_REG0X_LPAD = value;
 
-		vref_init_done = _TRUE;
+		vref_init_done = TRUE;
 	}
 
 	adc->ADC_INTR_CTRL = 0;
@@ -665,7 +665,7 @@ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara)
 	CalPara->cal_a = ka;
 	CalPara->cal_b = kb;
 	CalPara->cal_c = kc;
-	CalPara->init_done = _TRUE;
+	CalPara->init_done = TRUE;
 }
 
 /**

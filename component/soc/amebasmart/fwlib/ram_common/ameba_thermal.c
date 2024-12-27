@@ -324,6 +324,6 @@ float TM_GetFdegree(u32 Data)
 
 	}
 
-	return ((Cdegree * 1.8) + 32);
+	return ((Cdegree * 1.8f) + 32);
 }
 

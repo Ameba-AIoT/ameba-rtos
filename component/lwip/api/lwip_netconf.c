@@ -52,7 +52,7 @@
 #include "inic_ipc.h"
 #endif
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 struct netif eth_netif;
 extern err_t ethernetif_mii_init(struct netif *netif);
 #endif
@@ -93,7 +93,7 @@ void LwIP_Init(void)
 
 	The init function pointer must point to a initialization function for
 	your ethernet netif interface. The following code illustrates it's use.*/
-	//RTK_LOGS(NOTAG, "NET_IF_NUM:%d\n\r",NET_IF_NUM);
+	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "NET_IF_NUM:%d\n\r",NET_IF_NUM);
 	for (idx = 0; idx < NET_IF_NUM; idx++) {
 		if (idx == 0) {
 			IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
@@ -110,11 +110,11 @@ void LwIP_Init(void)
 
 		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init, &tcpip_input);
 
-		RTK_LOGS(NOTAG, "interface %d is initialized\n", idx);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "interface %d is initialized\n", idx);
 
 	}
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 	eth_netif.name[0] = 'r';
 	eth_netif.name[1] = '2';
 	IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
@@ -123,7 +123,7 @@ void LwIP_Init(void)
 
 	netifapi_netif_add(&eth_netif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_mii_init, &tcpip_input);
 
-	RTK_LOGS(NOTAG, "interface 2 is initialized\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "interface 2 is initialized\n");
 #endif
 
 	/*  Registers the default network interface. */
@@ -163,12 +163,12 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 
 	DHCP_state = dhcp_state;
 
-#if defined(CONFIG_ETHERNET_BRIDGE) && CONFIG_ETHERNET_BRIDGE
-	RTK_LOGS(NOTAG, "skip DHCP !!\n");
+#if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "skip DHCP !!\n");
 	return 0;
 #endif
 
-#if !(defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if !(defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET)
 	if (idx > 1) {
 		idx = 1;
 	}
@@ -181,13 +181,13 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		iptab[2] = (uint8_t)(user_static_ip.addr >> 16);
 		iptab[1] = (uint8_t)(user_static_ip.addr >> 8);
 		iptab[0] = (uint8_t)(user_static_ip.addr);
-		RTK_LOGS(NOTAG, "\n\rSet Interface %d static IP : %d.%d.%d.%d\n", idx, iptab[3], iptab[2], iptab[1], iptab[0]);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rSet Interface %d static IP : %d.%d.%d.%d\n", idx, iptab[3], iptab[2], iptab[1], iptab[0]);
 		return 0;
 	}
 
 	pnetif = &xnetif[idx];
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 	if (idx > 1) {
 		pnetif = &eth_netif;
 	}
@@ -205,7 +205,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 	}
 
 	for (;;) {
-		//RTK_LOGS(NOTAG, "\n\r ========DHCP_state:%d============\n\r",DHCP_state);
+		//RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r ========DHCP_state:%d============\n\r",DHCP_state);
 		switch (DHCP_state) {
 		case DHCP_START: {
 			/*acqurie wakelock to guarantee dhcp*/
@@ -219,7 +219,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					if (dhcp == NULL) {
 						dhcp = (struct dhcp *)mem_malloc(sizeof(struct dhcp));
 						if (dhcp == NULL) {
-							RTK_LOGS(NOTAG, "dhcp_start(): could not allocate dhcp\n");
+							RTK_LOGS(NOTAG, RTK_LOG_ERROR, "dhcp_start(): could not allocate dhcp\n");
 							return -1;
 						}
 					}
@@ -252,7 +252,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 				IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 				IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 				netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-				RTK_LOGS(NOTAG, "\n\rLwIP_DHCP: dhcp stop.");
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
 				return DHCP_STOP;
 			}
 
@@ -273,7 +273,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 				iptab[1] = (uint8_t)(IPaddress >> 16);
 				iptab[2] = (uint8_t)(IPaddress >> 8);
 				iptab[3] = (uint8_t)(IPaddress);
-				RTK_LOGS(NOTAG, "\n\rInterface %d IP address : %d.%d.%d.%d\n", idx, iptab[3], iptab[2], iptab[1], iptab[0]);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rInterface %d IP address : %d.%d.%d.%d\n", idx, iptab[3], iptab[2], iptab[1], iptab[0]);
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 				dhcp = ((struct dhcp *)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
@@ -304,8 +304,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					iptab[1] = STATIC_IP_ADDR2;
 					iptab[2] = STATIC_IP_ADDR1;
 					iptab[3] = STATIC_IP_ADDR0;
-					RTK_LOGS(NOTAG, "\n\rInterface %d DHCP timeout", idx);
-					RTK_LOGS(NOTAG, "\n\rStatic IP address : %d.%d.%d.%d", iptab[3], iptab[2], iptab[1], iptab[0]);
+					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rInterface %d DHCP timeout", idx);
+					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rStatic IP address : %d.%d.%d.%d", iptab[3], iptab[2], iptab[1], iptab[0]);
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 					if (p_store_fast_connect_info) {
@@ -317,7 +317,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					}
 #endif
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 					if (idx > 1) { // This is the ethernet interface, set it up for static ip address
 						netifapi_netif_set_up(pnetif);
 					}
@@ -328,11 +328,11 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		}
 		break;
 		case DHCP_RELEASE_IP:
-			RTK_LOGS(NOTAG, "\n\rLwIP_DHCP: Release ip");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: Release ip");
 			netifapi_dhcp_release(pnetif);
 			return DHCP_RELEASE_IP;
 		case DHCP_STOP:
-			RTK_LOGS(NOTAG, "\n\rLwIP_DHCP: dhcp stop.");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
 			LwIP_DHCP_stop(idx);
 			return DHCP_STOP;
 		default:
@@ -478,7 +478,7 @@ void LwIP_ethernetif_recv_inic(uint8_t idx, struct pbuf *p_buf)
 	err_enum_t error = ERR_OK;
 	error = xnetif[idx].input(p_buf, &xnetif[idx]);
 	if (error != ERR_OK) {
-		RTK_LOGS(TAG_WLAN_INIC, "lwip input err (%d)\n", error);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "lwip input err (%d)\n", error);
 		pbuf_free(p_buf);
 	}
 }
@@ -510,7 +510,7 @@ int LwIP_netif_is_valid_IP(int idx, unsigned char *ip_dest)
 		return 1;
 	}
 
-	//RTK_LOGS(NOTAG, "invalid IP: %d.%d.%d.%d ",ip_dest[0],ip_dest[1],ip_dest[2],ip_dest[3]);
+	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "invalid IP: %d.%d.%d.%d ",ip_dest[0],ip_dest[1],ip_dest[2],ip_dest[3]);
 #endif
 	UNUSED(idx);
 	UNUSED(ip_dest);
@@ -582,16 +582,16 @@ void LwIP_AUTOIP(uint8_t idx)
 		struct ip_addr netmask;
 		struct ip_addr gw;
 
-		RTK_LOGS(NOTAG, "AUTOIP timeout\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "AUTOIP timeout\n");
 
 		/* Static address used */
 		IP4_ADDR(ip_2_ip4(&ipaddr), STATIC_IP_ADDR0, STATIC_IP_ADDR1, STATIC_IP_ADDR2, STATIC_IP_ADDR3);
 		IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 		IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 		netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-		RTK_LOGS(NOTAG, "Static IP address : %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Static IP address : %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 	} else {
-		RTK_LOGS(NOTAG, "\nLink-local address: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nLink-local address: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 	}
 }
 
@@ -607,7 +607,7 @@ void LwIP_AUTOIP_IPv6(struct netif *pnetif)
 {
 	uint8_t *ipv6 = (uint8_t *) netif_ip6_addr(pnetif, 0)->addr;
 	netif_create_ip6_linklocal_address(pnetif, 1);
-	RTK_LOGS(NOTAG, "\nIPv6 link-local address: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nIPv6 link-local address: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
 			 ipv6[0], ipv6[1],  ipv6[2],  ipv6[3],  ipv6[4],  ipv6[5],  ipv6[6], ipv6[7],
 			 ipv6[8], ipv6[9], ipv6[10], ipv6[11], ipv6[12], ipv6[13], ipv6[14], ipv6[15]);
 }
@@ -645,4 +645,15 @@ uint32_t LwIP_GetRENEWTIME(uint8_t idx)
 	dhcp = ((struct dhcp *)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
 
 	return dhcp->t1_renew_time;
+}
+
+//To check successful WiFi connection and obtain of an IP address
+void LwIP_Check_Connectivity(void)
+{
+	rtos_time_delay_ms(2000);
+	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
+		rtos_time_delay_ms(2000);
+	}
 }

@@ -37,9 +37,8 @@ void prvMQTTEchoTask(void *pvParameters)
 	MQTTClientInit(&client, &network, 30000, sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf));
 
 	mqtt_printf(MQTT_INFO, "Wait Wi-Fi to be connected.");
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		rtos_time_delay_ms(2000);
-	}
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
 	mqtt_printf(MQTT_INFO, "Wi-Fi connected.");
 
 	mqtt_printf(MQTT_INFO, "Connect Network \"%s\"", address);
@@ -135,10 +134,8 @@ static void prvMQTTTask(void *pvParameters)
 	MQTTClientInit(&client, &network, 30000, sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf));
 
 	while (1) {
-		while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-			mqtt_printf(MQTT_INFO, "Wait Wi-Fi to be connected.");
-			rtos_time_delay_ms(2000);
-		}
+		// Delay to check successful WiFi connection and obtain of an IP address
+		LwIP_Check_Connectivity();
 
 		fd_set read_fds;
 		fd_set except_fds;

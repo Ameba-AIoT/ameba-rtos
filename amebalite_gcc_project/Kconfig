@@ -1,0 +1,698 @@
+mainmenu "AmebaLite Configuration"
+
+comment "-------------General config------------"
+#Release flag, set to y after release
+config AMEBA_RLS
+  def_bool y
+
+config AMEBALITE
+    def_bool y
+
+menu "CONFIG DSP Enable"
+    config DSP_EN
+        bool "Enable DSP"
+    config DSP_WITHIN_APP_IMG
+        depends on DSP_EN
+        bool "DSP within APP image"
+endmenu
+
+menu "CONFIG TrustZone"
+    config TRUSTZONE_FOR_KM4
+        bool "Enable TrustZone"
+    config TRUSTZONE_EN
+        depends on TRUSTZONE_FOR_KM4
+        bool
+        default y
+endmenu
+
+menu "CONFIG Link Option"
+    choice
+        prompt "IMG1(Bootloader) running on FLASH or SRAM?"
+        default IMG1_FLASH
+        config IMG1_FLASH
+            bool "FLASH"
+        config IMG1_SRAM
+            bool "SRAM"
+    endchoice
+
+    choice
+        prompt "IMG2(Application) running on FLASH or PSRAM?"
+        default CODE_XIP_DATA_PSRAM
+        config CODE_XIP_DATA_PSRAM
+            bool "CodeInXip_DataHeapInPsram"
+        config CODE_PSRAM_DATA_SRAM
+            bool "CodeInPsram_DataHeapInSram"
+        config CODE_PSRAM_DATA_PSRAM
+            bool "CodeInPsram_DataHeapInPsram"
+        config CODE_XIP_DATA_SRAM
+            bool "CodeInXip_DataHeapInSram"
+    endchoice
+
+    if TRUSTZONE_FOR_KM4
+        choice
+            prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
+            default IMG3_PSRAM
+            config IMG3_PSRAM
+                bool "PSRAM"
+            config IMG3_SRAM
+                bool "SRAM"
+        endchoice
+    endif
+endmenu
+
+menu "CONFIG Mass Production"
+    config MP_INCLUDED
+        bool "Enable MP"
+    if MP_INCLUDED
+        choice
+            prompt "MP Mode"
+            default MP_SHRINK
+            config MP_EXPAND
+                bool "expand"
+            config MP_SHRINK
+                bool "shrink"
+        endchoice
+    endif
+endmenu
+
+menu "CONFIG AT CMD"
+    config SUPPORT_ATCMD
+        bool "Enable ATCMD"
+        default y
+    if SUPPORT_ATCMD
+        choice
+            prompt "ATCMD Mode"
+            default ATCMD_LOGUART
+            config ATCMD_LOGUART
+                bool "LOGUART"
+            config ATCMD_MCU_CONTROL
+                bool "MCU Control"
+                select LONGER_CMD
+                if ATCMD_MCU_CONTROL
+                    choice 
+                        prompt "MCU Control Mode"
+                        default MCU_CONTROL_UART
+                        config MCU_CONTROL_UART
+                            bool "UART"
+                        config MCU_CONTROL_SPI
+                            bool "SPI"
+                    endchoice
+                endif
+        endchoice
+        config LONGER_CMD
+            bool "Enable Longer CMD"
+		config ATCMD_SOCKET
+			bool "Enable Socket"
+		config ATCMD_MQTT
+			bool "Enable MQTT"
+    endif
+endmenu
+
+menu "CONFIG VFS"
+    config VFS_LITTLEFS_INCLUDED
+        bool "Enable VFS LITTLEFS"
+        default y
+    config VFS_FATFS_INCLUDED
+        bool "Enable VFS FATFS"
+    if VFS_FATFS_INCLUDED
+        choice
+            prompt "FATFS Memory Type"
+            default FATFS_DISK_FLASH
+            config FATFS_DISK_FLASH
+                bool "FLASH"
+        endchoice
+        config FATFS_WITHIN_APP_IMG
+            bool "FATFS within APP Image"
+    endif
+endmenu
+
+menu "CONFIG OS"
+    config KERNEL
+        bool "Enable Kernel"
+        default y
+
+    if KERNEL
+        choice
+            prompt "Kernel Selecte"
+            default PLATFORM_FREERTOS
+            config PLATFORM_FREERTOS
+                bool "FREERTOS"
+        endchoice
+
+    endif
+
+endmenu
+
+menu "CONFIG OTA OPTION"
+    config UPGRADE_BOOTLOADER
+        bool "Upgrade Bootloader"
+    config COMPRESS_OTA_IMG
+        bool "Support Compressed APP Image"
+endmenu
+
+comment "----------Connectivity config----------"
+
+menu "CONFIG INIC INTF"
+	choice
+		prompt "INIC MODE"
+		default WIFI_INIC_IPC_MENU
+			config WIFI_INIC_IPC_MENU
+				bool "INIC_IPC"
+            # config FULLMAC_MENU
+            #     bool "FULLMAC"
+            config WIFI_SINGLE_CORE_MENU
+                bool "SINGLE CORE"
+			# config SDIO_BRIDGE
+			# 	bool "SDIO_BRIDGE"
+			# config SPI_FULLMAC_HOST
+			# 	bool "SPI_FULLMAC_HOST"
+
+	endchoice
+
+    if FULLMAC_MENU
+        choice
+            prompt "FULLMAC INTERFACE"
+            config SPI_FULLMAC
+                bool "SPI_FULLMAC"
+            config USB_FULLMAC
+                bool "USB_FULLMAC"
+            config SDIO_FULLMAC
+                bool "SDIO_FULLMAC"
+        endchoice
+        choice
+            prompt "WIFI Driver Location"
+            config KR4_AS_NP
+                bool "KR4"
+                select CORE_AS_NP_FOR_KR4
+            config KM4_AS_NP
+                bool "KM4"
+                select CORE_AS_NP_FOR_KM4
+        endchoice
+    endif
+
+    if !FULLMAC_MENU
+        choice
+            prompt "Select AP Core"
+            default AP_CORE_KM4
+            config AP_CORE_KM4
+                bool "KM4"
+                select CORE_AS_AP_FOR_KM4
+                select CORE_AS_NP_FOR_KR4 if WIFI_INIC_IPC_MENU
+            config AP_CORE_KR4
+                bool "KR4"
+                select CORE_AS_AP_FOR_KR4
+                select CORE_AS_NP_FOR_KM4 if WIFI_INIC_IPC_MENU
+        endchoice
+    endif
+
+
+    config CORE_AS_AP_FOR_KM4
+        bool
+    config CORE_AS_NP_FOR_KR4
+        bool
+    config CORE_AS_AP_FOR_KR4
+        bool
+    config CORE_AS_NP_FOR_KM4
+        bool
+
+endmenu
+
+menu "CONFIG WIFI"
+    config WLAN_MENU
+        bool "Enable Wifi"
+        default y
+    if WLAN_MENU
+
+        if !AMEBA_RLS
+            source "../component/wifi/Kconfig.wifi"
+        endif
+        config WIFI_INIC_IPC_MENU
+            bool
+            # select INIC_INTF_IPC
+            select WLAN
+            select AS_INIC_NP if CORE_AS_NP
+            select AS_INIC_AP if CORE_AS_AP
+            select LWIP_LAYER if CORE_AS_AP && !MP_SHRINK
+            select FW_DRIVER_COEXIST if CORE_AS_NP
+            select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
+            select ENABLE_WPS_DISCOVERY if ENABLE_WPS
+
+        config FULLMAC_MENU
+            bool
+            depends on CORE_AS_NP
+            select INIC_INTF_SDIO if SDIO_FULLMAC
+            select INIC_INTF_SPI if SPI_FULLMAC
+            select INIC_INTF_USB if USB_FULLMAC
+            select WLAN
+            select AS_INIC_NP
+            select FW_DRIVER_COEXIST
+            select WIFI_FW_EN
+
+        config SDIO_BRIDGE
+            bool
+            depends on CORE_AS_AP
+            select WLAN
+            select SINGLE_CORE_WIFI
+            select INIC_INTF_SDIO
+            select LWIP_LAYER
+
+        config SPI_FULLMAC_HOST
+            bool
+            depends on CORE_AS_AP
+            select WLAN
+            select AS_INIC_AP
+            select LWIP_LAYER
+
+        config WIFI_SINGLE_CORE_MENU
+            bool
+            depends on CORE_AS_AP
+            select WLAN
+            select SINGLE_CORE_WIFI
+            select LWIP_LAYER if !MP_SHRINK
+            select FW_DRIVER_COEXIST
+            select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
+            select ENABLE_WPS_DISCOVERY if ENABLE_WPS
+
+    endif
+
+    if !WLAN_MENU
+        config WLAN_DISABLE
+            bool
+            select AS_INIC_AP if CORE_AS_AP
+            select AS_INIC_NP if CORE_AS_NP
+    endif
+
+
+    config WLAN
+        bool
+    config INIC_INTF_IPC
+        bool
+    config AS_INIC_NP
+        bool
+    config AS_INIC_AP
+        bool
+    config LWIP_LAYER
+        bool
+    config FW_DRIVER_COEXIST
+        bool
+    config INIC_INTF_SDIO
+        bool
+    config INIC_INTF_SPI
+        bool
+    config INIC_INTF_USB
+        bool
+    config WIFI_FW_EN
+        bool
+    config SINGLE_CORE_WIFI
+        bool
+    config ENABLE_WPS
+        bool
+    config ENABLE_WPS_DISCOVERY
+        bool
+
+endmenu
+
+menu "CONFIG BT"
+    config BT_MENU
+        bool "Enable BT"
+    if BT_MENU
+
+        source 'Kconfig.bt'
+
+        config BT
+            depends on CORE_AS_AP
+            bool
+            default y
+            select FTL_ENABLED
+
+
+        if CORE_AS_AP
+            config BT_PERIPHERAL_MENU
+                bool
+                select BT_PERIPHERAL
+
+            config BT_CENTRAL_MENU
+                bool
+                select BT_CENTRAL
+
+            config BT_SCATTERNET_MENU
+                bool
+                select BT_SCATTERNET
+
+            config BT_MESH_PROVISIONER_MENU
+                bool
+                select BT_MESH_PROVISIONER
+                select BT_MESH_PROVISIONER_SUPPORT
+
+            config BT_MESH_DEVICE_MENU
+                bool
+                select BT_MESH_DEVICE
+                select BT_MESH_DEVICE_SUPPORT
+
+            config BT_MESH_PROVISIONER_SCATTERNET_MENU
+                bool
+                select BT_MESH_PROVISIONER_SCATTERNET
+                select BT_MESH_PROVISIONER_SUPPORT
+
+            config BT_MESH_DEVICE_SCATTERNET_MENU
+                bool
+                select BT_MESH_DEVICE_SCATTERNET
+                select BT_MESH_DEVICE_SUPPORT
+
+            #config BT_MESH_PROVISIONER_TEST_MENU
+            #    bool
+            #    select BT_MESH_PROVISIONER_TEST
+            #    select BT_MESH_PROVISIONER_SUPPORT
+
+            #config BT_MESH_DEVICE_TEST_MENU
+            #    bool
+            #    select BT_MESH_DEVICE_TEST
+            #    select BT_MESH_DEVICE_SUPPORT
+
+            #config BT_ISO_TEST
+            #    bool "BLE ISO Test"
+            #    default n
+
+
+            config BT_LE_AUDIO_MENU
+                bool
+                select BT_LE_AUDIO
+                select BT_APP_AUDIO_DATA
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_LC3
+
+            if BT_LE_AUDIO_MENU
+                config BT_BAP_MENU
+                    bool
+                    select BT_BAP
+                    select BT_BAP_SUPPORT
+                config BT_CAP_MENU
+                    bool
+                    select BT_CAP
+                    select BT_CAP_SUPPORT
+                config BT_PBP_MENU
+                    bool
+                    select BT_PBP
+                    select BT_PBP_SUPPORT
+                config BT_TMAP_MENU
+                    bool
+                    select BT_TMAP
+                    select BT_TMAP_SUPPORT
+                    select BT_CAP_SUPPORT
+            endif
+
+            config BT_A2DP_MENU
+                bool
+                select BT_A2DP
+                select BT_APP_AUDIO_DATA
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_SBC
+
+            config BT_HFP_MENU
+                bool
+                select BT_HFP
+                select BT_APP_AUDIO_DATA
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_CVSD
+
+            config BT_A2DP_HFP_MENU
+                bool
+                select BT_A2DP_HFP
+                select BT_APP_AUDIO_DATA
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_SBC
+                select BT_AUDIO_CODEC_CVSD
+
+            config BT_SPP_MENU
+                bool
+                select BT_SPP
+
+            config BT_RFC_MENU
+                bool
+                select BT_RFC
+
+            config BT_AUDIO_MP_TEST_MENU
+                bool
+                select BT_AUDIO_MP_TEST
+                select BT_APP_AUDIO_DATA
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_SBC
+                select BT_AUDIO_CODEC_CVSD
+
+            config BT_A2DP_SCATTERNET_MENU
+                bool
+                select BT_A2DP_SCATTERNET
+                select BT_APP_AUDIO_DATA
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_SBC
+
+            config BT_A2DP_LE_AUDIO_PBP_MENU
+                bool
+                select BT_LE_AUDIO
+                select BT_A2DP_LE_AUDIO_PBP
+                select BT_APP_AUDIO_DATA
+                select BT_PBP_SUPPORT
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_SBC
+                select BT_AUDIO_CODEC_LC3
+
+            config BT_A2DP_LE_AUDIO_TMAP_MENU
+                bool
+                select BT_LE_AUDIO
+                select BT_A2DP_LE_AUDIO_TMAP
+                select BT_APP_AUDIO_DATA
+                select BT_TMAP_SUPPORT
+                select BT_CAP_SUPPORT
+                select BT_AUDIO_CODEC_SUPPORT
+                select BT_AUDIO_CODEC_SBC
+                select BT_AUDIO_CODEC_LC3
+
+            config FTL_ENABLED
+                bool
+            config BT_PERIPHERAL
+                bool
+            config BT_CENTRAL
+                bool
+            config BT_SCATTERNET
+                bool
+            config BT_SPP
+                bool
+            config BT_RFC
+                bool
+            config BT_MESH_PROVISIONER
+                bool
+            config BT_MESH_PROVISIONER_SUPPORT
+                bool
+            config BT_MESH_PROVISIONER_SCATTERNET
+                bool
+            config BT_MESH_PROVISIONER_TEST
+                bool
+            config BT_MESH_DEVICE
+                bool
+            config BT_MESH_DEVICE_SUPPORT
+                bool
+            config BT_MESH_DEVICE_SCATTERNET
+                bool
+            config BT_MESH_DEVICE_TEST
+                bool
+            config BT_BAP
+                bool
+            config BT_BAP_SUPPORT
+                bool
+            config BT_CAP
+                bool
+            config BT_CAP_SUPPORT
+                bool
+            config BT_PBP
+                bool
+            config BT_PBP_SUPPORT
+                bool
+            config BT_TMAP
+                bool
+            config BT_TMAP_SUPPORT
+                bool
+            config BT_CAP_SUPPORT
+                bool
+            config BT_A2DP
+                bool
+            config BT_HFP
+                bool
+            config BT_A2DP_HFP
+                bool
+            config BT_A2DP_SCATTERNET
+                bool
+            config BT_LE_AUDIO
+                bool
+            config BT_A2DP_LE_AUDIO_PBP
+                bool
+            config BT_A2DP_LE_AUDIO_TMAP
+                bool
+            config BT_AUDIO_MP_TEST
+                bool
+            config BT_APP_AUDIO_DATA
+                bool
+            config BT_AUDIO_CODEC_LC3
+                bool
+            config BT_AUDIO_CODEC_SUPPORT
+                bool
+            config BT_AUDIO_CODEC_SBC
+                bool
+            config BT_AUDIO_CODEC_CVSD
+                bool
+        endif
+    endif
+endmenu
+
+menu "CONFIG LWIP"
+    config FAST_DHCP_MENU
+        bool "Enable Fast DHCP"
+        select FAST_DHCP if CORE_AS_AP
+
+    config LWIP_NETCONN_SEM_PER_THREAD_MENU
+        bool "Enable LWIP NETCONN SEM PER THREAD"
+        select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
+
+    config FAST_DHCP
+        bool
+
+    config LWIP_NETCONN_SEM_PER_THREAD
+        bool
+
+    config LWIP_DEBUG
+        bool "Enable LWIP Debug"
+        default n
+
+    if LWIP_DEBUG
+        config ETHARP_DEBUG
+            bool "Enable ETHARP DEBUG"
+        config NETIF_DEBUG
+            bool "Enable NETIF DEBUG"
+        config PBUF_DEBUG
+            bool "Enable PBUF DEBUG"
+        config API_LIB_DEBUG
+            bool "Enable API LIB DEBUG"
+        config API_MSG_DEBUG
+            bool "Enable API MSG DEBUG"
+        config SOCKETS_DEBUG
+            bool "Enable SOCKETS DEBUG"
+        config ICMP_DEBUG
+            bool "Enable ICMP DEBUG"
+        config IPNAT_DEBUG
+            bool "Enable IPNAT DEBUG"
+        config IGMP_DEBUG
+            bool "Enable IGMP DEBUG"
+        config INET_DEBUG
+            bool "Enable INET DEBUG"
+        config IP_DEBUG
+            bool "Enable IP DEBUG"
+        config IP_REASS_DEBUG
+            bool "Enable IP REASS DEBUG"
+        config RAW_DEBUG
+            bool "Enable RAW DEBUG"
+        config MEM_DEBUG
+            bool "Enable MEM DEBUG"
+        config MEMP_DEBUG
+            bool "Enable MEMP DEBUG"
+        config SYS_DEBUG
+            bool "Enable SYS DEBUG"
+        config TIMERS_DEBUG
+            bool "Enable TIMERS DEBUG"
+        config TCP_DEBUG
+            bool "Enable TCP DEBUG"
+        config TCP_INPUT_DEBUG
+            bool "Enable TCP INPUT DEBUG"
+        config TCP_FR_DEBUG
+            bool "Enable TCP FR DEBUG"
+        config TCP_RTO_DEBUG
+            bool "Enable TCP RTO DEBUG"
+        config TCP_CWND_DEBUG
+            bool "Enable TCP CWND DEBUG"
+        config TCP_WND_DEBUG
+            bool "Enable TCP WND DEBUG"
+        config TCP_OUTPUT_DEBUG
+            bool "Enable TCP OUTPUT DEBUG"
+        config TCP_RST_DEBUG
+            bool "Enable TCP RST DEBUG"
+        config TCP_QLEN_DEBUG
+            bool "Enable TCP QLEN DEBUG"
+        config UDP_DEBUG
+            bool "Enable UDP DEBUG"
+        config TCPIP_DEBUG
+            bool "Enable TCPIP DEBUG"
+        config SLIP_DEBUG
+            bool "Enable SLIP DEBUG"
+        config DHCP_DEBUG
+            bool "Enable DHCP DEBUG"
+        config AUTOIP_DEBUG
+            bool "Enable AUTOIP DEBUG"
+        config DNS_DEBUG
+            bool "Enable DNS DEBUG"
+        config IP6_DEBUG
+            bool "Enable IP6 DEBUG"
+        config DHCP6_DEBUG
+            bool "Enable DHCP6 DEBUG"
+    endif
+endmenu
+
+menu "CONFIG SSL"
+    config MBEDTLS_ENABLED_MENU
+        bool "MBEDTLS Enable"
+        select MBEDTLS_ENABLED if CORE_AS_AP
+
+    config MBEDTLS_SSL_PROTO_TLS1_3_MENU
+        depends on MBEDTLS_ENABLED_MENU
+        bool "Support TLS 1.3 protocol"
+        select MBEDTLS_SSL_PROTO_TLS1_3 if CORE_AS_AP
+
+    config MBEDTLS_ENABLED
+        bool
+
+    config MBEDTLS_SSL_PROTO_TLS1_3
+        bool
+endmenu
+
+if !AMEBA_RLS
+    comment "---------------Test Config-------------"
+    menu "Verification and Test"
+        config FPGA
+            bool "Select FPGA"
+        source "Kconfig.soc"
+    endmenu
+endif
+
+comment "--------------Build Config-------------"
+menu "Build Option"
+
+comment "Choose the build configuration"
+    choice
+        prompt "Link ROM Mode"
+        default LINK_ROM_SYMB
+        config LINK_ROM_LIB
+            bool "Link_ROM_Library"
+
+        config LINK_ROM_SYMB
+            bool "Link_ROM_Symbol"
+    endchoice
+endmenu
+
+comment "---------------KR4 config--------------"
+
+menu "MENUCONFIG FOR KR4 CONFIG"
+    source "project_kr4/Kconfig"
+endmenu
+
+comment "---------------KM4 config--------------"
+
+menu "MENUCONFIG FOR KM4 CONFIG"
+    source "project_km4/Kconfig"
+endmenu
+
+comment "---------------Config end--------------"
+
+
+menu "--DO NOT ENTER IN THIS BUTTON--"
+config CORE_AS_AP
+    bool "--PLEASE LEAVE THIS SUB MENU--"
+config CORE_AS_NP
+    bool "--PLEASE LEAVE THIS SUB MENU--"
+endmenu

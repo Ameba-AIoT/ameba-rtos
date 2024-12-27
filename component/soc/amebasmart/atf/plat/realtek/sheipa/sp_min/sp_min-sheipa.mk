@@ -6,6 +6,7 @@
 LIBPM_SRCS	:=	plat/realtek/sheipa/lib/sheipa_pm.c
 
 
+
 BL32_LIBS += $(PROJECT_DIR)/asdk/lib/soc/libpm.a
 
 BL32_SOURCES		+=	plat/realtek/sheipa/sp_min/sp_min_setup.c	\

@@ -15,7 +15,7 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *TAG = "VND";
+static const char *const TAG = "VND";
 #define CONFIG_USBH_VENDOR_HOT_PLUG_TEST 1     /* Hot plug / memory leak test */
 
 /* Private types -------------------------------------------------------------*/
@@ -56,7 +56,7 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 static int vendor_cb_detach(void)
 {
-	RTK_LOGS(TAG, "[VND] DETACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	rtos_sema_give(vendor_detach_sema);
 #endif
@@ -65,7 +65,7 @@ static int vendor_cb_detach(void)
 
 static int vendor_cb_setup(void)
 {
-	RTK_LOGS(TAG, "[VND] SETUP\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	vendor_is_ready = 1;
 	return HAL_OK;
 }
@@ -104,17 +104,17 @@ static void vendor_hotplug_thread(void *param)
 
 			rtos_time_delay_ms(10);
 
-			RTK_LOGS(TAG, "[VND] Free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, "[VND] Init USBH fail: %d\n", ret);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail: %d\n", ret);
 				break;
 			}
 
 			ret = usbh_vendor_init(&vendor_usr_cb);
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, "[VND] Init vendor fail: %d\n", ret);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init vendor fail: %d\n", ret);
 				usbh_deinit();
 				break;
 			}
@@ -160,7 +160,7 @@ void example_usbh_vendor_thread(void *param)
 error_exit:
 	rtos_sema_delete(vendor_detach_sema);
 example_exit:
-	RTK_LOGS(TAG, "[VND] USBH vendor demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH vendor demo stop\n");
 	rtos_task_delete(NULL);
 }
 
@@ -171,10 +171,10 @@ void example_usbh_vendor(void)
 	int status;
 	rtos_task_t task;
 
-	RTK_LOGS(TAG, "[VND] USBH vendor demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH vendor demo start\n");
 	status = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL, 1024U * 2, 2U);
 	if (status != SUCCESS) {
-		RTK_LOGS(TAG, "[VND] Create thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
 

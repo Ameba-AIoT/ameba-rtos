@@ -28,24 +28,20 @@ void rtos_time_delay_ms(uint32_t ms);
 void rtos_time_delay_us(uint32_t us);
 
 /**
- * @brief  For FreeRTOS, map to xTaskGetTickCount / xTaskGetTickCountFromISR,
- *         and convert the return value to milliseconds.
+ * @brief  Get the count of ticks since rtos_sched_start was called, and convert the return value to milliseconds.
  * @note   This interface does not consider systick overflow issues.
- * @retval
  */
 uint32_t rtos_time_get_current_system_time_ms(void);
 
 /**
- * @brief  Rreturn value to in microseconds.
+ * @brief  Return value to in microseconds.
  * @note   This interface does not consider systick overflow issues.
- * @retval
  */
 uint64_t rtos_time_get_current_system_time_us(void);
 
 /**
- * @brief  Rreturn value to in nanoseconds.
+ * @brief  Return value to in nanoseconds.
  * @note   This interface does not consider systick overflow issues. The accuracy is the clk frequency of the CPU
- * @retval
  */
 uint64_t rtos_time_get_current_system_time_ns(void);
 

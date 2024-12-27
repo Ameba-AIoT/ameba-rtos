@@ -27,6 +27,8 @@ extern int crash_dump(uint32_t *pc, uint32_t *sp, uint32_t *reg);
 
 extern uint32_t *vTaskStackAddr(void);
 
+extern uint32_t vTaskStackSize(void);
+
 extern volatile uint32_t *vTaskStackTOPAddr(void);
 
 extern char *vTaskName(void);

@@ -99,6 +99,7 @@ static void eap_sm_free_key(struct eap_sm *sm)
 
 static void eap_deinit_prev_method(struct eap_sm *sm, const char *txt)
 {
+	(void)txt;
 	//ext_password_free(sm->ext_pw_buf);
 	sm->ext_pw_buf = NULL;
 
@@ -475,6 +476,8 @@ void eap_peer_erp_free_keys(struct eap_sm *sm)
 
 	dl_list_for_each_safe(erp, tmp, &sm->erp_keys, struct eap_erp_key, list)
 	eap_peer_erp_free_key(erp);
+#else
+	(void)sm;
 #endif /* CONFIG_ERP */
 }
 
@@ -564,6 +567,8 @@ fail:
 	bin_clear_free(emsk, emsk_len);
 	bin_clear_free(erp, sizeof(*erp));
 	os_free(realm);
+#else
+	(void)sm;
 #endif /* CONFIG_ERP */
 }
 
@@ -1284,12 +1289,16 @@ static void eap_sm_processIdentity(struct eap_sm *sm, const struct wpabuf *req)
 static int eap_sm_set_scard_pin(struct eap_sm *sm,
 								struct eap_peer_config *conf)
 {
+	(void)sm;
+	(void)conf;
 	return -1;
 }
 
 static int eap_sm_get_scard_identity(struct eap_sm *sm,
 									 struct eap_peer_config *conf)
 {
+	(void)sm;
+	(void)conf;
 	return -1;
 }
 
@@ -1374,6 +1383,7 @@ struct wpabuf *eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted)
 
 static void eap_sm_processNotify(struct eap_sm *sm, const struct wpabuf *req)
 {
+	(void)sm;
 	const u8 *pos;
 	char *msg;
 	size_t i, msg_len;
@@ -1460,6 +1470,9 @@ static void eap_peer_initiate(struct eap_sm *sm, const struct eap_hdr *hdr,
 	}
 
 invalid:
+#else
+	(void)hdr;
+	(void)len;
 #endif /* CONFIG_ERP */
 	wpa_printf(MSG_DEBUG,
 			   "EAP: EAP-Initiate/Re-auth-Start - No suitable ERP keys available - try to start full EAP authentication");
@@ -1631,6 +1644,10 @@ no_auth_tag:
 	eapol_set_bool(sm, EAPOL_eapNoResp, TRUE);
 	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS
 			"EAP re-authentication completed successfully");
+#else
+	(void)sm;
+	(void)hdr;
+	(void)len;
 #endif /* CONFIG_ERP */
 }
 
@@ -2085,7 +2102,7 @@ int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose)
 #endif /* CONFIG_CTRL_IFACE */
 
 
-#define eap_sm_request(sm, type, msg, msglen) do { } while (0)
+#define eap_sm_request(sm, type, msg, msglen) do { (void)sm; } while (0)
 
 const char *eap_sm_get_method_name(struct eap_sm *sm)
 {
@@ -2168,6 +2185,8 @@ void eap_sm_request_pin(struct eap_sm *sm)
  */
 void eap_sm_request_otp(struct eap_sm *sm, const char *msg, size_t msg_len)
 {
+	(void)msg;
+	(void)msg_len;
 	eap_sm_request(sm, WPA_CTRL_REQ_EAP_OTP, msg, msg_len);
 }
 
@@ -2194,6 +2213,7 @@ void eap_sm_request_passphrase(struct eap_sm *sm)
  */
 void eap_sm_request_sim(struct eap_sm *sm, const char *req)
 {
+	(void)req;
 	eap_sm_request(sm, WPA_CTRL_REQ_SIM, req, os_strlen(req));
 }
 
@@ -2379,6 +2399,8 @@ const u8 *eap_get_config_identity(struct eap_sm *sm, size_t *len)
 static int eap_get_ext_password(struct eap_sm *sm,
 								struct eap_peer_config *config)
 {
+	(void)sm;
+	(void)config;
 	return -1;
 	/*
 	        char *name;
@@ -2758,6 +2780,8 @@ void eap_set_force_disabled(struct eap_sm *sm, int disabled)
  */
 void eap_set_external_sim(struct eap_sm *sm, int external_sim)
 {
+	(void)sm;
+	(void)external_sim;
 	//sm->external_sim = external_sim;
 }
 

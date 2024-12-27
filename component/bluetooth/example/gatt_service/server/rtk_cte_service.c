@@ -123,7 +123,7 @@ static cte_connless_enable_info_t cte_connless_enable_info = {
 	.adv_handle = 0,
 };
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static rtk_bt_le_ext_adv_param_t ext_adv_param = {
 	.adv_event_prop = RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_UNDIRECTED,
 	.primary_adv_interval_min = 320,
@@ -252,7 +252,7 @@ static void cte_srv_reset_connless_params(void)
 	cte_connless_param.num_ant_ids = 0;
 	cte_connless_param.ant_ids = cte_connless_antenna.ant_ids;
 
-#if ((defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
+#if ((defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
 	pa_param.pa_interval_max = 80;
 	pa_param.pa_interval_min = 64;
 
@@ -371,7 +371,7 @@ static uint16_t cte_adv_enable(uint8_t enable)
 	}
 
 	if (enable) {
-#if ((defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
+#if ((defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
 		ret = rtk_bt_le_gap_connless_cte_tx_start(&cte_connless_param,
 												  &ext_adv_param,
 												  &pa_param,
@@ -388,7 +388,7 @@ static uint16_t cte_adv_enable(uint8_t enable)
 
 	} else {
 		if (cte_connless_enable_info.enable) {
-#if ((defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
+#if ((defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
 			ret = rtk_bt_le_gap_connless_cte_tx_stop(cte_connless_enable_info.adv_handle);
 			memset(&cte_connless_enable_info, 0, sizeof(cte_connless_enable_info));
 
@@ -518,7 +518,7 @@ static uint16_t cte_srv_write_char_cte_adv_phy(uint8_t value)
 {
 	uint16_t ret = RTK_BT_OK;
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	if (ext_adv_param.secondary_adv_phy != value) {
 		ext_adv_param.secondary_adv_phy = value;
 		ret = cte_connless_tx_update();
@@ -834,7 +834,7 @@ uint16_t cte_srv_set_params(CTE_SRV_PARAM_TYPE_e param_type, uint16_t len, void 
 		break;
 	}
 	case CTE_SRV_PARAM_TYPE_ADV_CTE_PHY: {
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 		memcpy(&ext_adv_param.secondary_adv_phy, value, len);
 #endif
 		break;

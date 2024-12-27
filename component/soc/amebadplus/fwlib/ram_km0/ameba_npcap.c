@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "NPCAP";
+static const char *const TAG = "NPCAP";
 #if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 extern void wifi_hal_system_resume_wlan(void);
 #endif
@@ -37,7 +37,7 @@ void km4_clock_gate(void)
 		}
 		timeout--;
 		if (timeout == 0) {
-			RTK_LOGS(NOTAG, "KM4 wake, no need to close KM4\n");
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "KM4 wake, no need to close KM4\n");
 			return;
 		}
 	}
@@ -83,7 +83,7 @@ u32 aontimer_int_wakeup_np(UNUSED_WARN_DIS void *Data)
 	UNUSED(Data);
 
 	SOCPS_AONTimerClearINT();
-	RTK_LOGS(NOTAG, "wakereason: 0x%x\n", SOCPS_AONWakeReason());
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "wakereason: 0x%x\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 
 	IPC_MSG_STRUCT ipc_msg_temp;
@@ -97,11 +97,11 @@ u32 aontimer_int_wakeup_np(UNUSED_WARN_DIS void *Data)
 }
 
 
-u32 km4_suspend(u32 type)
+int km4_suspend(u32 type)
 {
 	UNUSED(type);
 
-	u32 ret = _SUCCESS;
+	int ret = SUCCESS;
 
 	if (HAL_READ32(PMC_BASE, WAK_MASK0_AP)) {
 		RTK_LOGD(TAG, "register KM4_wake_irq\n");
@@ -169,7 +169,7 @@ void km4_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	case SLEEP_PG:
 	case SLEEP_CG:
 		/* KM4 & KM0 share platform, KM4 enter CG first*/
-		if (_SUCCESS == km4_suspend(SLEEP_CG)) {
+		if (SUCCESS == km4_suspend(SLEEP_CG)) {
 			//pmu_set_sysactive_time(2);
 		}
 		break;

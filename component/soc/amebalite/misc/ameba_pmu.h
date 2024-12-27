@@ -35,15 +35,6 @@ typedef struct {
 	void				*wakeup_param_ptr;
 } PSM_DD_HOOK_INFO;
 
-
-/**
-  * @brief  init system active timer for PMU.
-  * @param  none.
-  * @retval status value:
-  *          - 0: _FAIL
-  *          - 1: _SUCCESS
-  * @note can just used in late resume or later, can not used in wakeup_hook_fun.
-  */
 uint32_t pmu_yield_os_check(void);
 uint32_t pmu_exec_sleep_hook_funs(void);
 void pmu_exec_wakeup_hook_funs(uint32_t nDeviceIdMax);

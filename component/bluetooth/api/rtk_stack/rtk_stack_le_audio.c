@@ -4273,9 +4273,11 @@ void bt_stack_le_audio_deinit(void)
 
 	if (p_default_pac_sink_codec != NULL) {
 		osif_mem_free(p_default_pac_sink_codec);
+		p_default_pac_sink_codec = NULL;
 	}
 	if (p_default_pac_source_codec != NULL) {
 		osif_mem_free(p_default_pac_source_codec);
+		p_default_pac_source_codec = NULL;
 	}
 
 	//broadcast source deinit
@@ -6148,7 +6150,7 @@ static uint16_t bt_stack_le_audio_group_add_device(void *data)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-	if (false == le_get_conn_addr(conn_id, addr_val, &addr_type)) {
+	if (false == le_get_conn_addr(conn_id, addr_val, (uint8_t *)&addr_type)) {
 		BT_LOGE("%s fail: le_get_conn_addr fail\r\n", __func__);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}

@@ -22,11 +22,8 @@ static void example_http_download_thread(void *param)
 
 	(void) param;
 
-	// Delay to wait for IP by DHCP
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		rtos_time_delay_ms(2000);
-	}
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
 
 	printf("\nExample: HTTP download\n");
 

@@ -1,0 +1,12 @@
+ameba_add_subdirectories_if(CONFIG_PER_TEST
+    verification
+)
+ameba_add_subdirectories_if(CONFIG_DHRYSTONE_TEST
+    coremark
+    dhrystone
+    memtester
+    cpuburn
+)
+# ameba_add_subdirectories(
+#     vmin_test
+# )
