@@ -475,6 +475,7 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
  *          port: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1
  *          latch_period: 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms
  *      when set_type == SPEAKER_SET_TSF_TIMER
+ *          enable: 1 for enable twt timer, 0 for disable
  *          tsft: absolute value for twt timer, unit ms
  *          port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1
  * @return  null.
