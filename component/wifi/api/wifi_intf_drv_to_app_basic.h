@@ -394,6 +394,7 @@ union speaker_set {
 		u8 latch_period;      /* 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms */
 	} latch_i2s_count;
 	struct { /*SPEAKER_SET_TSF_TIMER*/
+		u8 enable;			/* 1 for enable, 0 for disable */
 		u64 tsft;           /* unit us */
 		u8 port;           /* 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1 */
 	} tsf_timer;
