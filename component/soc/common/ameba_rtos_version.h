@@ -22,7 +22,7 @@
 /** Minor version number (x.X.x) */
 #define AMEBA_RTOS_VERSION_MINOR   0
 /** Patch version number (x.x.X) */
-#define AMEBA_RTOS_VERSION_PATCH   0
+#define AMEBA_RTOS_VERSION_PATCH   1
 
 /**
  * Macro to convert version number into an integer
