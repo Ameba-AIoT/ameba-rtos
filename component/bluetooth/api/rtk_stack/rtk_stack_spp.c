@@ -538,13 +538,11 @@ uint16_t bt_stack_spp_init(uint8_t role)
 	return RTK_BT_OK;
 }
 
-extern void spp_deinit(void);
-
 void bt_stack_spp_deinit(void)
 {
 	/* SPP deinit */
 	BT_LOGA("spp_demo_deinit\r\n");
-	spp_deinit();
+	bt_spp_deinit();
 }
 
 #endif

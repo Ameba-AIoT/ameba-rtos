@@ -614,9 +614,9 @@ typedef struct {
   */
 typedef struct {
 
-	u32 SP_DIR_TX_flag;
-	u32 SP_DIR_RX_flag;
-	u32 SP_Bclk;
+	u32 SP_DIR_TX_flag;   /*!< Specifies the AUDIO SPORT TX Direction flag */
+	u32 SP_DIR_RX_flag;   /*!< Specifies the AUDIO SPORT RX Direction flag */
+	u32 SP_Bclk;  /*!< Specifies the AUDIO SPORT BCLK value */
 
 } SP_RegTypeDef;
 
@@ -655,7 +655,9 @@ typedef struct {
 
 	u32 SP_Bclk;		/*!< Specifies the AUDIO SPORT BCLK */
 
-	u32 SP_Fix_Bclk;
+	u32 SP_Fix_Bclk;    /*!< Specifies the AUDIO SPORT selection of fix BCLK Mode */
+
+	u32 SP_Sel_FixBclk;   /*!< Specifies the AUDIO SPORT selection of fix BCLK value */
 
 } SP_InitTypeDef;
 
@@ -1016,6 +1018,7 @@ typedef struct {
 #define TX_FIFO1_REG0_R		((u32)0x00000005)
 #define TX_FIFO1_REG1_L		((u32)0x00000006)
 #define TX_FIFO1_REG1_R		((u32)0x00000007)
+#define DIRECT_REG_CHN		((u32)0x00000008)
 /**
   * @}
   */
@@ -1050,6 +1053,51 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_SPORT_DirectOutChannel
+* @{
+*/
+#define DIRECT_OUT_CHN0		((u32)0x00000000)
+#define DIRECT_OUT_CHN1		((u32)0x00000001)
+#define DIRECT_OUT_CHN2		((u32)0x00000002)
+#define DIRECT_OUT_CHN3		((u32)0x00000003)
+#define DIRECT_OUT_CHN4		((u32)0x00000004)
+#define DIRECT_OUT_CHN5		((u32)0x00000005)
+#define DIRECT_OUT_CHN6		((u32)0x00000006)
+#define DIRECT_OUT_CHN7		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_DirectInChannel
+* @{
+*/
+#define DIRECT_IN_CHN0		((u32)0x00000000)
+#define DIRECT_IN_CHN1		((u32)0x00000001)
+#define DIRECT_IN_CHN2		((u32)0x00000002)
+#define DIRECT_IN_CHN3		((u32)0x00000003)
+#define DIRECT_IN_CHN4		((u32)0x00000004)
+#define DIRECT_IN_CHN5		((u32)0x00000005)
+#define DIRECT_IN_CHN6		((u32)0x00000006)
+#define DIRECT_IN_CHN7		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_DirectReg
+* @{
+*/
+#define DIRECT_REG_0		((u32)0x00000000)
+#define DIRECT_REG_1		((u32)0x00000001)
+#define DIRECT_REG_2		((u32)0x00000002)
+#define DIRECT_REG_3		((u32)0x00000003)
+#define DIRECT_REG_4		((u32)0x00000004)
+#define DIRECT_REG_5		((u32)0x00000005)
+#define DIRECT_REG_6		((u32)0x00000006)
+#define DIRECT_REG_7		((u32)0x00000007)
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -1060,7 +1108,7 @@ typedef struct {
   */
 
 _LONG_CALL_ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct);
-_LONG_CALL_ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct);
+_LONG_CALL_ bool AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct);
 _LONG_CALL_ void AUDIO_SP_Unregister(u32 index, u32 direction);
 _LONG_CALL_ void AUDIO_SP_Reset(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetTXChnLen(u32 index);
@@ -1086,15 +1134,15 @@ _LONG_CALL_ u32 AUDIO_SP_GetTXWordLen(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXWordLen(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetMonoStereo(u32 index, u32 SP_MonoStereo);
 _LONG_CALL_ void AUDIO_SP_SetMasterSlave(u32 index, u32 SP_MasterSlave);
-_LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_TXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 									  IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length);
-_LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_RXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 									  IRQ_FUN CallbackFunc, u8 *pRxData, u32 Length);
-_LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Restart(u8 GDMA_Index, u8 GDMA_ChNum, u32 TX_addr,	u32 TX_length);
-_LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Restart(u8 GDMA_Index,	u8 GDMA_ChNum,	u32 RX_addr,	u32 RX_length);
-_LONG_CALL_ BOOL AUDIO_SP_LLPTXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_TXGDMA_Restart(u8 GDMA_Index, u8 GDMA_ChNum, u32 TX_addr,	u32 TX_length);
+_LONG_CALL_ bool AUDIO_SP_RXGDMA_Restart(u8 GDMA_Index,	u8 GDMA_ChNum,	u32 RX_addr,	u32 RX_length);
+_LONG_CALL_ bool AUDIO_SP_LLPTXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
-_LONG_CALL_ BOOL AUDIO_SP_LLPRXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_LLPRXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
 _LONG_CALL_ void AUDIO_SP_SetTXCounter(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val);
@@ -1111,7 +1159,11 @@ _LONG_CALL_ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir);
 _LONG_CALL_ void AUDIO_SP_SelDirectOutSource(u32 index_src, u32 index_dir);
 _LONG_CALL_ void AUDIO_SP_SetTSFTPhaseLatch(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
-
+_LONG_CALL_ void AUDIO_SP_RXSetDirectOutStart(u32 index, u32 out_chn, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn);
+_LONG_CALL_ void AUDIO_SP_SetTxDataFormat(u32 index, u32 format);
+_LONG_CALL_ void AUDIO_SP_SetRxDataFormat(u32 index, u32 format);
 
 /**
   * @}

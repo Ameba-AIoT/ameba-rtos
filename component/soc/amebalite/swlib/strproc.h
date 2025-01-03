@@ -15,7 +15,7 @@
 #include "platform_autoconf.h"
 #include "basic_types.h"
 
-extern _LONG_CALL_ SIZE_T _strlen(const char *s);
+extern _LONG_CALL_ size_t _strlen(const char *s);
 extern _LONG_CALL_ int _strcmp(const char *cs, const char *ct);
 extern _LONG_CALL_ size_t _strlen(const char *s);
 extern _LONG_CALL_ int _stricmp(const char *str1, const char *str2);

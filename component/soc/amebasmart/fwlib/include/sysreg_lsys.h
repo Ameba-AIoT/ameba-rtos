@@ -460,16 +460,16 @@
 #define LSYS_MASK_CKD_SPORT0                       ((u32)0x00000007 << 16)          /*!<R/WPD 1h  Sport clock divider, it is based on np i2s1 pll and i2s2 pll mux out 0: not valid 1: div2 2: div3 3/other: divider by this value + 1 */
 #define LSYS_CKD_SPORT0(x)                         (((u32)((x) & 0x00000007) << 16))
 #define LSYS_GET_CKD_SPORT0(x)                     ((u32)(((x >> 16) & 0x00000007)))
-#define LSYS_MASK_CKSL_I2S3                        ((u32)0x00000003 << 6)          /*!<R/W 0h  I2S pll selection for sport3 00/10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M */
+#define LSYS_MASK_CKSL_I2S3                        ((u32)0x00000003 << 6)          /*!<R/W 0h  I2S pll selection for sport3 10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M 00: reserved */
 #define LSYS_CKSL_I2S3(x)                          (((u32)((x) & 0x00000003) << 6))
 #define LSYS_GET_CKSL_I2S3(x)                      ((u32)(((x >> 6) & 0x00000003)))
-#define LSYS_MASK_CKSL_I2S2                        ((u32)0x00000003 << 4)          /*!<R/W 0h  I2S pll selection for sport2 00/10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M */
+#define LSYS_MASK_CKSL_I2S2                        ((u32)0x00000003 << 4)          /*!<R/W 0h  I2S pll selection for sport2 10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M 00: reserved */
 #define LSYS_CKSL_I2S2(x)                          (((u32)((x) & 0x00000003) << 4))
 #define LSYS_GET_CKSL_I2S2(x)                      ((u32)(((x >> 4) & 0x00000003)))
-#define LSYS_MASK_CKSL_I2S1                        ((u32)0x00000003 << 2)          /*!<R/W 0h  I2S pll selection for sport1 00/10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M */
+#define LSYS_MASK_CKSL_I2S1                        ((u32)0x00000003 << 2)          /*!<R/W 0h  I2S pll selection for sport1 10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M 00: reserved */
 #define LSYS_CKSL_I2S1(x)                          (((u32)((x) & 0x00000003) << 2))
 #define LSYS_GET_CKSL_I2S1(x)                      ((u32)(((x >> 2) & 0x00000003)))
-#define LSYS_MASK_CKSL_I2S0                        ((u32)0x00000003 << 0)          /*!<R/W 0h  I2S pll selection for sport0 00/10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M */
+#define LSYS_MASK_CKSL_I2S0                        ((u32)0x00000003 << 0)          /*!<R/W 0h  I2S pll selection for sport0 10: select i2s pll1 which is 98.304M 01: select i2s pll2 which is 45.158M 11: select i2s pll1 which is 24.576M 00: reserved */
 #define LSYS_CKSL_I2S0(x)                          (((u32)((x) & 0x00000003) << 0))
 #define LSYS_GET_CKSL_I2S0(x)                      ((u32)(((x >> 0) & 0x00000003)))
 /** @} */
@@ -655,9 +655,6 @@
 #define LSYS_BIT_BOOT_WAKE_FROM_PS_LS              ((u32)0x00000001 << 24)          /*!<R/W 0   */
 #define LSYS_BOOT_WAKE_FROM_PS_LS(x)               ((u32)(((x) & 0x00000001) << 24))
 #define LSYS_GET_BOOT_WAKE_FROM_PS_LS(x)           ((u32)(((x >> 24) & 0x00000001)))
-#define LSYS_BIT_BOOT_IMG3_EXIST                   ((u32)0x00000001 << 23)          /*!<R/W 0   */
-#define LSYS_BOOT_IMG3_EXIST(x)                    ((u32)(((x) & 0x00000001) << 23))
-#define LSYS_GET_BOOT_IMG3_EXIST(x)                ((u32)(((x >> 23) & 0x00000001)))
 #define LSYS_MASK_ROM_VERSION_SW                   ((u32)0x0000FFFF << 0)          /*!<R/W 0   */
 #define LSYS_ROM_VERSION_SW(x)                     (((u32)((x) & 0x0000FFFF) << 0))
 #define LSYS_GET_ROM_VERSION_SW(x)                 ((u32)(((x >> 0) & 0x0000FFFF)))
@@ -998,10 +995,22 @@
 #define APBPeriph_UART3                            ((u32)(2  << 30) | (0x00000001 << 7) | (0x00000001 << 3)) /*!<R/W 0  Uart reset when sys reset happen reset (Note uart3 if for BT) */
 /** @} */
 
+/** @defgroup REG_LSYS_DUMMY_090
+ * @brief
+ * @{
+ **/
+#define LSYS_MASK_SEMA_STATUS                      ((u32)0x0000FFFF << 0)          /*!<R   Dcut ECO : semaphare status bits */
+#define LSYS_SEMA_STATUS(x)                        (((u32)((x) & 0x0000FFFF) << 0))
+#define LSYS_GET_SEMA_STATUS(x)                    ((u32)(((x >> 0) & 0x0000FFFF)))
+/** @} */
+
 /** @defgroup REG_LSYS_DUMMY_094
  * @brief
  * @{
  **/
+#define LSYS_BIT_SWD_PMUX_LOC                      ((u32)0x00000001 << 31)          /*!<R/W 1'b1  Dcut ECO : swd px location selection 1: default as ccut , swd locate at PA13/PA14 0: swd locate at PB25/PB26 Note : Location valid only when SWD_PMUX_EN = 1(pad reg : 0x4200_8BF8[0]) to disable SWD PX function , only set SWD_PMUX_EN = 0 */
+#define LSYS_SWD_PMUX_LOC(x)                       ((u32)(((x) & 0x00000001) << 31))
+#define LSYS_GET_SWD_PMUX_LOC(x)                   ((u32)(((x >> 31) & 0x00000001)))
 #define LSYS_MASK_GPIOA_IE                         ((u32)0x000001FF << 0)          /*!<R/W 9'h1ff  ECO: GPIOA input enable */
 #define LSYS_GPIOA_IE(x)                           (((u32)((x) & 0x000001FF) << 0))
 #define LSYS_GET_GPIOA_IE(x)                       ((u32)(((x >> 0) & 0x000001FF)))
@@ -1017,6 +1026,42 @@
 #define LSYS_BIT_PWDPAD15N_DQ                      ((u32)0x00000001 << 1)          /*!<R/W 0  ECO: control DDRPHY DQ pad power down 0: power down 1: enable Before DDRPHY ready , this bit must set 1 to iso DRAM Note: DQ pad is shared as psram */
 #define LSYS_PWDPAD15N_DQ(x)                       ((u32)(((x) & 0x00000001) << 1))
 #define LSYS_GET_PWDPAD15N_DQ(x)                   ((u32)(((x >> 1) & 0x00000001)))
+#define LSYS_BIT_PX_SDIO_EXTRA                     ((u32)0x00000001 << 2)          /*!<R/W 0  dcut ECO : sdio extra fid */
+#define LSYS_PX_SDIO_EXTRA(x)                      ((u32)(((x) & 0x00000001) << 2))
+#define LSYS_GET_PX_SDIO_EXTRA(x)                  ((u32)(((x >> 2) & 0x00000001)))
+#define LSYS_BIT_PX_JTAG_EXTRA                     ((u32)0x00000001 << 3)          /*!<R/W 0  dcut ECO : i2s3 extra fid */
+#define LSYS_PX_JTAG_EXTRA(x)                      ((u32)(((x) & 0x00000001) << 3))
+#define LSYS_GET_PX_JTAG_EXTRA(x)                  ((u32)(((x >> 3) & 0x00000001)))
+#define LSYS_BIT_PX_I2S2_EXTRA1                    ((u32)0x00000001 << 4)          /*!<R/W 0  dcut ECO : i2s2 extra1 fid */
+#define LSYS_PX_I2S2_EXTRA1(x)                     ((u32)(((x) & 0x00000001) << 4))
+#define LSYS_GET_PX_I2S2_EXTRA1(x)                 ((u32)(((x >> 4) & 0x00000001)))
+#define LSYS_BIT_PX_I2S2_EXTRA2                    ((u32)0x00000001 << 5)          /*!<R/W 0  dcut ECO : i2s2 extra2 fid */
+#define LSYS_PX_I2S2_EXTRA2(x)                     ((u32)(((x) & 0x00000001) << 5))
+#define LSYS_GET_PX_I2S2_EXTRA2(x)                 ((u32)(((x >> 5) & 0x00000001)))
+#define LSYS_BIT_PX_I2S3_EXTRA                     ((u32)0x00000001 << 6)          /*!<R/W 0  dcut ECO : i2s3 extra fid */
+#define LSYS_PX_I2S3_EXTRA(x)                      ((u32)(((x) & 0x00000001) << 6))
+#define LSYS_GET_PX_I2S3_EXTRA(x)                  ((u32)(((x >> 6) & 0x00000001)))
+#define LSYS_BIT_PX_I2S2_DOUT_EXTRA                ((u32)0x00000001 << 7)          /*!<R/W 0  dcut ECO : i2s2 dout extra fid */
+#define LSYS_PX_I2S2_DOUT_EXTRA(x)                 ((u32)(((x) & 0x00000001) << 7))
+#define LSYS_GET_PX_I2S2_DOUT_EXTRA(x)             ((u32)(((x >> 7) & 0x00000001)))
+#define LSYS_BIT_PX_I2S3_DOUT_EXTRA                ((u32)0x00000001 << 8)          /*!<R/W 0  dcut ECO : i2s3 dout extra fid */
+#define LSYS_PX_I2S3_DOUT_EXTRA(x)                 ((u32)(((x) & 0x00000001) << 8))
+#define LSYS_GET_PX_I2S3_DOUT_EXTRA(x)             ((u32)(((x >> 8) & 0x00000001)))
+#define LSYS_BIT_PX_I2S3_DOM_EXTRA                 ((u32)0x00000001 << 9)          /*!<R/W 0  dcut ECO : i2s3 din extra fid */
+#define LSYS_PX_I2S3_DOM_EXTRA(x)                  ((u32)(((x) & 0x00000001) << 9))
+#define LSYS_GET_PX_I2S3_DOM_EXTRA(x)              ((u32)(((x >> 9) & 0x00000001)))
+#define LSYS_BIT_WAK_EVT_SEL_33                    ((u32)0x00000001 << 10)          /*!<R/W 0  dcut ECO : 0: as CCUT , wak_evt[36:33] select to wdg_evt 1: wak_evt[36:33] select to hs_tim13-10 */
+#define LSYS_WAK_EVT_SEL_33(x)                     ((u32)(((x) & 0x00000001) << 10))
+#define LSYS_GET_WAK_EVT_SEL_33(x)                 ((u32)(((x >> 10) & 0x00000001)))
+#define LSYS_BIT_WAK_EVT_SEL_34                    ((u32)0x00000001 << 11)          /*!<R/W 0   */
+#define LSYS_WAK_EVT_SEL_34(x)                     ((u32)(((x) & 0x00000001) << 11))
+#define LSYS_GET_WAK_EVT_SEL_34(x)                 ((u32)(((x >> 11) & 0x00000001)))
+#define LSYS_BIT_WAK_EVT_SEL_35                    ((u32)0x00000001 << 12)          /*!<R/W 0   */
+#define LSYS_WAK_EVT_SEL_35(x)                     ((u32)(((x) & 0x00000001) << 12))
+#define LSYS_GET_WAK_EVT_SEL_35(x)                 ((u32)(((x >> 12) & 0x00000001)))
+#define LSYS_BIT_WAK_EVT_SEL_36                    ((u32)0x00000001 << 13)          /*!<R/W 0   */
+#define LSYS_WAK_EVT_SEL_36(x)                     ((u32)(((x) & 0x00000001) << 13))
+#define LSYS_GET_WAK_EVT_SEL_36(x)                 ((u32)(((x >> 13) & 0x00000001)))
 /** @} */
 
 
@@ -1105,7 +1150,9 @@ enum CHIP_TYPE {
 #define LSYS_BIT_AP_ENABLE				((u32)0x00000001 << 2)
 
 #define REG_LSYS_NP_STATUS_SW			0x026A
-#define LSYS_BIT_NP_RUNNING				((u32)0x00000001 << 7)
+#define LSYS_BIT_NP_RUNNING                        ((u32)0x00000001 << 7)          /*!<R/W 0   */
+#define LSYS_NP_RUNNING(x)                         ((u32)(((x) & 0x00000001) << 7))
+#define LSYS_GET_NP_RUNNING(x)                     ((u32)(((x >> 7) & 0x00000001)))
 
 /* MANUAL_GEN_END */
 #endif

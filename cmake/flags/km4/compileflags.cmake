@@ -12,14 +12,21 @@ list(
     DM_ODM_SUPPORT_TYPE=32
 )
 
+list(APPEND GLOBAL_C_DEFINES MBEDTLS_CONFIG_FILE="mbedtls/config.h")
+
 if(CONFIG_AMEBALITE)
     list(APPEND GLOBAL_C_DEFINES __FPU_PRESENT)
 endif()
 
 if(CONFIG_AMEBAD)
-    list(APPEND GLOBAL_C_DEFINES CONFIG_PLATFORM_8721D)
     list(APPEND GLOBAL_C_OPTIONS -march=armv8-m.main+dsp)
     list(APPEND GLOBAL_ASM_OPTIONS -march=armv8-m.main+dsp)
+elseif(CONFIG_AMEBAGREEN2)
+    list(APPEND GLOBAL_C_OPTIONS -march=armv8.1-m.main)
+    list(APPEND GLOBAL_ASM_OPTIONS -march=armv8.1-m.main)
+elseif(CONFIG_AMEBAL2)
+    list(APPEND GLOBAL_C_OPTIONS -march=armv8.1-m.main)
+    list(APPEND GLOBAL_ASM_OPTIONS -march=armv8.1-m.main)
 else()
     list(APPEND GLOBAL_C_OPTIONS -march=armv8.1-m.main+dsp)
     list(APPEND GLOBAL_ASM_OPTIONS -march=armv8.1-m.main+dsp)
@@ -66,13 +73,13 @@ list(
     -nostartfiles
     -nostdlib
     -Wall
-    -Werror
     -Wpointer-arith
     -Wundef
     -Wno-write-strings
     -Wno-maybe-uninitialized
     -save-temps=obj
     -c
+    # -ffile-prefix-map=${BASEDIR}=.
     # -MMD -MP
 
 #When the memory length is 4 bytes, memset/memcpy will be optimized for direct 32-bit reading and writing.
@@ -82,8 +89,19 @@ list(
     -fno-builtin-printf
 
     -Wextra
-    -ffile-prefix-map=${BASEDIR}=.
 )
+
+if(NOT CONFIG_AMEBAL2)
+    list(APPEND  GLOBAL_C_OPTIONS -Werror)
+endif()
+
+if(CONFIG_AMEBAGREEN2)
+    list(APPEND  GLOBAL_C_OPTIONS -fno-builtin -Wstrict-prototypes)
+endif()
+
+if(CONFIG_AMEBAL2)
+    list(APPEND  GLOBAL_C_OPTIONS -fno-builtin -Wstrict-prototypes)
+endif()
 
 
 list(

@@ -58,7 +58,7 @@
 */
 #define SCB_AIRCR_BFHFNMINS_VAL 1
 
-//static const char *TAG = "BOOT";
+//static const char *const TAG = "BOOT";
 
 BOOT_RAM_TEXT_SECTION
 static void BOOT_SecureChip_MPCCfg(void)

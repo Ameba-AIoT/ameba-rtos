@@ -5,7 +5,7 @@
  */
 
 #include "ameba_soc.h"
-static const char *TAG = "SDIO";
+static const char *const TAG = "SDIO";
 SDIOH_InitTypeDef sdioh_init_para;
 extern int (*sd_sema_take_fn)(u32);
 

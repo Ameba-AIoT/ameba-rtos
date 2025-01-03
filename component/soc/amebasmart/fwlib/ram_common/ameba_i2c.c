@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -274,9 +274,11 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address)
 {
 	u32 tar = I2Cx->IC_TAR & ~(I2C_MASK_IC_TAR);
+	u32 sar = I2Cx->IC_SAR & ~(I2C_MASK_IC_SAR);
 
 	/*set target address to generate start signal*/
 	I2Cx->IC_TAR = (Address & I2C_MASK_IC_TAR) | tar;
+	I2Cx->IC_SAR = (Address & I2C_MASK_IC_SAR) | sar;
 }
 
 /**
@@ -664,6 +666,7 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 	u32 cnt = 0;
 	/*timout 5S*/
 	u32 timeout ;
+	u32 int_status;
 
 	if ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE)) {
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RX_DONE);
@@ -671,13 +674,15 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 	for (cnt = 0; cnt < len; cnt++) {
 		timeout = 2500000;
-		while (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RD_REQ) == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) == 0)) {
+		int_status = I2Cx->IC_RAW_INTR_STAT;
+		while (((int_status & I2C_BIT_RD_REQ) == 0) & ((int_status & I2C_BIT_RX_DONE) == 0)) {
 			DelayUs(2);
 			if (timeout == 0) {
 				RTK_LOGI(TAG, "Waiting for read request timeout\n");
 				return cnt;
 			}
 			timeout--;
+			int_status = I2Cx->IC_RAW_INTR_STAT;
 		}
 
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RD_REQ);

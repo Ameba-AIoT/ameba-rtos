@@ -79,6 +79,21 @@ if(CONFIG_MEDIA_PLAYER)
     if(CONFIG_MEDIA_CODEC_OPUS)
         list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_OPUS)
     endif()
+
+    # amr codec
+    if(CONFIG_MEDIA_CODEC_AMR)
+        list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_AMR)
+    endif()
+
+    #g711 codec
+    if(CONFIG_MEDIA_CODEC_G711)
+        list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_G711)
+    endif()
+
+    #gsm codec
+    if(CONFIG_MEDIA_CODEC_GSM)
+        list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_GSM)
+    endif()
 endif()
 
 

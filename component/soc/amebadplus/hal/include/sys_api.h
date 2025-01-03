@@ -55,7 +55,14 @@ extern "C" {
 void sys_jtag_off(void);
 void sys_reset(void);
 
-/**
+
+void sys_adc_calibration(u8 write, u16 *a, u16 *b, u16 *c);
+void sys_log_uart_on(void);
+void sys_log_uart_off(void);
+void sys_clear_ota_signature(void);
+void sys_recover_ota_signature(void);
+
+/*
   * @brief  Get currently selected boot device.
   * @retval boot device
   * @note
@@ -64,12 +71,6 @@ void sys_reset(void);
   *  BootFromUART                = 2
   */
 //uint8_t sys_get_boot_sel(void);
-
-void sys_adc_calibration(u8 write, u16 *a, u16 *b, u16 *c);
-void sys_log_uart_on(void);
-void sys_log_uart_off(void);
-void sys_clear_ota_signature(void);
-void sys_recover_ota_signature(void);
 
 #ifdef __cplusplus
 }

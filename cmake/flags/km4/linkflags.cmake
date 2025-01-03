@@ -13,6 +13,10 @@ endif()
 
 if(CONFIG_AMEBAD)
     list(APPEND LINK_OPTIONS -march=armv8-m.main+dsp)
+elseif(CONFIG_AMEBAGREEN2)
+    list(APPEND LINK_OPTIONS -march=armv8.1-m.main)
+elseif(CONFIG_AMEBAL2)
+    list(APPEND LINK_OPTIONS -march=armv8.1-m.main)
 else()
     list(APPEND LINK_OPTIONS -march=armv8.1-m.main+dsp)
 endif()
@@ -27,7 +31,6 @@ list(
     APPEND LINK_OPTIONS
     -L${PROJECTDIR}/asdk/lib/
 
-    -march=armv8.1-m.main+dsp
     -mthumb
     -mcmse
     -nostartfiles
@@ -70,30 +73,75 @@ set(
     "SHELL:-Wl,-wrap,_free_r"
     "SHELL:-Wl,-wrap,_calloc_r"
     "SHELL:-Wl,-wrap,rand"
-    "SHELL:-Wl,-wrap,fopen"
-    "SHELL:-Wl,-wrap,fclose"
-    "SHELL:-Wl,-wrap,fread"
-    "SHELL:-Wl,-wrap,fwrite"
-    "SHELL:-Wl,-wrap,fseek"
-    "SHELL:-Wl,-wrap,fsetpos"
-    "SHELL:-Wl,-wrap,fgetpos"
-    "SHELL:-Wl,-wrap,rewind"
-    "SHELL:-Wl,-wrap,fflush"
-    "SHELL:-Wl,-wrap,remove"
-    "SHELL:-Wl,-wrap,rename"
-    "SHELL:-Wl,-wrap,feof"
-    "SHELL:-Wl,-wrap,ferror"
-    "SHELL:-Wl,-wrap,ftell"
-    "SHELL:-Wl,-wrap,ftruncate"
-    "SHELL:-Wl,-wrap,fputc"
-    "SHELL:-Wl,-wrap,fputs"
-    "SHELL:-Wl,-wrap,fgets"
-    "SHELL:-Wl,-wrap,stat"
-    "SHELL:-Wl,-wrap,mkdir"
-    "SHELL:-Wl,-wrap,scandir"
-    "SHELL:-Wl,-wrap,readdir"
-    "SHELL:-Wl,-wrap,opendir"
-    "SHELL:-Wl,-wrap,access"
-    "SHELL:-Wl,-wrap,rmdir"
-    "SHELL:-Wl,-wrap,closedir"
+
+)
+
+if(CONFIG_AMEBAGREEN2)
+    list(
+        APPEND LINK_OPTIONS_WRAP
+        "SHELL:-Wl,-wrap,strcpy"
+        "SHELL:-Wl,-wrap,strncpy"
+        "SHELL:-Wl,-wrap,strtol"
+        "SHELL:-Wl,-wrap,sprintf"
+    )
+elseif(CONFIG_AMEBAL2)
+    list(
+        APPEND LINK_OPTIONS_WRAP
+        "SHELL:-Wl,-wrap,strcpy"
+        "SHELL:-Wl,-wrap,strncpy"
+        "SHELL:-Wl,-wrap,strtol"
+        "SHELL:-Wl,-wrap,sprintf"
+    )
+else()
+    list(
+        APPEND LINK_OPTIONS_WRAP
+        "SHELL:-Wl,-wrap,fopen"
+        "SHELL:-Wl,-wrap,fclose"
+        "SHELL:-Wl,-wrap,fread"
+        "SHELL:-Wl,-wrap,fwrite"
+        "SHELL:-Wl,-wrap,fseek"
+        "SHELL:-Wl,-wrap,fsetpos"
+        "SHELL:-Wl,-wrap,fgetpos"
+        "SHELL:-Wl,-wrap,rewind"
+        "SHELL:-Wl,-wrap,fflush"
+        "SHELL:-Wl,-wrap,remove"
+        "SHELL:-Wl,-wrap,rename"
+        "SHELL:-Wl,-wrap,feof"
+        "SHELL:-Wl,-wrap,ferror"
+        "SHELL:-Wl,-wrap,ftell"
+        "SHELL:-Wl,-wrap,ftruncate"
+        "SHELL:-Wl,-wrap,fputc"
+        "SHELL:-Wl,-wrap,fputs"
+        "SHELL:-Wl,-wrap,fgets"
+        "SHELL:-Wl,-wrap,stat"
+        "SHELL:-Wl,-wrap,mkdir"
+        "SHELL:-Wl,-wrap,scandir"
+        "SHELL:-Wl,-wrap,readdir"
+        "SHELL:-Wl,-wrap,opendir"
+        "SHELL:-Wl,-wrap,access"
+        "SHELL:-Wl,-wrap,rmdir"
+        "SHELL:-Wl,-wrap,closedir"
+    )
+endif()
+
+
+# This is rom wrap for amebagreen2
+set(
+    LINK_OPTIONS_ROM_WRAP
+    "SHELL:-Wl,-wrap,memchr"
+    "SHELL:-Wl,-wrap,memcmp"
+    "SHELL:-Wl,-wrap,memcpy"
+    "SHELL:-Wl,-wrap,memmove"
+    "SHELL:-Wl,-wrap,memset"
+    "SHELL:-Wl,-wrap,strcmp"
+    "SHELL:-Wl,-wrap,strlen"
+    "SHELL:-Wl,-wrap,strtoul"
+    "SHELL:-Wl,-wrap,strupr"
+    "SHELL:-Wl,-wrap,stricmp"
+    "SHELL:-Wl,-wrap,printf"
+    "SHELL:-Wl,-wrap,rand"
+    "SHELL:-Wl,-wrap,strcpy"
+    "SHELL:-Wl,-wrap,strncpy"
+    "SHELL:-Wl,-wrap,strtol"
+    "SHELL:-Wl,-wrap,sprintf"
 )

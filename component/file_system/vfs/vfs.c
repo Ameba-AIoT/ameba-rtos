@@ -138,7 +138,11 @@ void vfs_assign_region(int vfs_type, char region)
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	if (vfs_type == VFS_FATFS) {
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
+#ifndef OTA_IMGID_APP
+		u8 ota_index = ota_get_cur_index(OTA_IMGID_IMG2);
+#else
 		u8 ota_index = ota_get_cur_index(OTA_IMGID_APP);
+#endif
 		u32 img2_start_addr, img2_end_addr;
 		flash_get_layout_info(ota_index == OTA_INDEX_1 ? IMG_APP_OTA1 : IMG_APP_OTA2, &img2_start_addr, &img2_end_addr);
 		IMAGE_HEADER *img_hdr = (IMAGE_HEADER *)(img2_start_addr + 0x2000);  //add cert+manifest offset

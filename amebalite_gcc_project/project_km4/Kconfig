@@ -1,0 +1,258 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+    config CPU_HAS_FPU_FOR_KM4
+        bool
+        default y
+
+    choice
+        prompt "ArmCore"
+        default ARM_CORE_CM4_FOR_KM4
+        config ARM_CORE_CM4_FOR_KM4
+            bool "ARM_CM4"
+    endchoice
+
+endmenu
+
+
+
+comment "----------Application Config----------"
+
+# menu "802154 Config"
+    # config 802154_EN_FOR_KM4
+        # bool "Enable 802154"
+        # default n
+    # if 802154_EN_FOR_KM4
+        # comment "Must Enable MBEDTLS Before Enable THREAD"
+        # config 802154_THREAD_EN_FOR_KM4
+            # depends on !802154_PLATFORM_TEST_EN_FOR_KM4
+            # bool "Enable THREAD"
+            # default n
+        # if 802154_THREAD_EN_FOR_KM4
+            # choice
+                # depends on 802154_THREAD_EN_FOR_KM4
+                # prompt "THREAD ROLE"
+                # config 802154_THREAD_BORDER_ROUTER_EN_FOR_KM4
+                    # bool "BORDER_ROUTER"
+                # config 802154_THREAD_FTD_EN_FOR_KM4
+                    # bool "FTD"
+                # config 802154_THREAD_MTD_EN_FOR_KM4
+                    # bool "MTD"
+                # config 802154_THREAD_RCP_EN_FOR_KM4
+                    # bool "RCP"
+            # endchoice
+            # config 802154_THREAD_RADIO_RCP_EN_FOR_KM4
+                # depends on !802154_THREAD_RCP_EN_FOR_KM4
+                # bool "RCP AS RADIO"
+                # default y
+            # config 802154_THREAD_CONCURRENT_EN_FOR_KM4
+                # depends on 802154_THREAD_RADIO_RCP_EN_FOR_KM4
+                # bool "Enable Radio Concurrent"
+                # default n
+                # if 802154_THREAD_CONCURRENT_EN_FOR_KM4
+                    # choice
+                        # depends on 802154_THREAD_EN_FOR_KM4
+                        # prompt "RCP Vendor"
+                        # config 802154_THREAD_RCP_RTL8771H_FOR_KM4
+                            # bool "RTL8771H"
+                        # config 802154_THREAD_RCP_SILICON_FOR_KM4
+                            # bool "SILICON"
+                    # endchoice
+                # endif
+            # config 802154_THREAD_LLF_TEST_EN_FOR_KM4
+                # bool "Low Layer Function Test"
+                # default n
+            # config 802154_THREAD_COAP_TEST_EN_FOR_KM4
+                # bool "Rtk OT CoAP Test"
+                # default n
+        # endif
+        # config 802154_ZIGBEE_EN_FOR_KM4
+            # depends on !802154_PLATFORM_TEST_EN_FOR_KM4
+            # bool "Enable ZIGBEE"
+            # default n
+        # if 802154_ZIGBEE_EN_FOR_KM4
+            # choice
+                # depends on 802154_ZIGBEE_EN_FOR_KM4
+                # prompt "ZIGBEE USER TYPE"
+                # config 802154_ZIGBEE_APPLICATION_EN_FOR_KM4
+                    # bool "APPLICATION"
+                # config 802154_ZIGBEE_MAC_TEST_EN_FOR_KM4
+                    # bool "MAC_TEST"
+                # config 802154_ZIGBEE_ZCP_TEST_EN_FOR_KM4
+                    # bool "ZCP_TEST"
+                # config 802154_ZIGBEE_REGRESSION_TEST_EN_FOR_KM4
+                    # bool "REGRESSION_TEST"
+            # endchoice
+            # if !802154_ZIGBEE_MAC_TEST_EN_FOR_KM4
+                # choice
+                    # depends on 802154_ZIGBEE_EN_FOR_KM4
+                    # prompt "ZIGBEE DEVICE ROLE"
+                    # config 802154_ZIGBEE_ROLE_ZC_FOR_KM4
+                        # bool "ZC"
+                    # config 802154_ZIGBEE_ROLE_ZR_FOR_KM4
+                        # bool "ZR"
+                    # config 802154_ZIGBEE_ROLE_ZED_FOR_KM4
+                        # bool "ZED"
+                # endchoice
+            # endif
+            # if 802154_ZIGBEE_ZCP_TEST_EN_FOR_KM4
+                # choice
+                    # depends on 802154_ZIGBEE_ZCP_TEST_EN_FOR_KM4
+                    # prompt "ZCP TEST TYPE"
+                    # config 802154_ZIGBEE_ZCP_DEFAULT_EN_FOR_KM4
+                        # bool "DEFAULT"
+                    # if !802154_ZIGBEE_ROLE_ZED_FOR_KM4
+                    # config 802154_ZIGBEE_ZCP_GPPB_EN_FOR_KM4
+                        # bool "GPPB_CERT"
+                    # endif
+                # endchoice
+            # endif
+            # if 802154_ZIGBEE_APPLICATION_EN_FOR_KM4
+                # if 802154_ZIGBEE_ROLE_ZC_FOR_KM4
+                # choice
+                    # depends on 802154_ZIGBEE_ROLE_ZC_FOR_KM4
+                    # prompt "ZC ROLE EXAMPLE"
+                    # config 802154_ZIGBEE_EXAMPLE_ONOFFLIGHT_L_FOR_KM4
+                        # bool "ha_on_off_light_n_switch[light]"
+                    # config 802154_ZIGBEE_EXAMPLE_CUSTOM_CLUSTER_ZC_FOR_KM4
+                        # bool "ha_custom_cluster[zc]"
+                    # config 802154_ZIGBEE_EXAMPLE_LIGHTCTL_C_FOR_KM4
+                        # bool "light_control[coor]"
+                # endchoice
+                # endif
+                # if 802154_ZIGBEE_ROLE_ZR_FOR_KM4
+                # choice
+                    # depends on 802154_ZIGBEE_ROLE_ZR_FOR_KM4
+                    # prompt "ZR ROLE EXAMPLE"
+                    # config 802154_ZIGBEE_EXAMPLE_CUSTOM_CLUSTER_ZR_FOR_KM4
+                        # bool "ha_custom_cluster[zr]"
+                    # config 802154_ZIGBEE_EXAMPLE_LIGHTCTL_B_FOR_KM4
+                        # bool "light_control[bulb]"
+                # endchoice
+                # endif
+                # if 802154_ZIGBEE_ROLE_ZED_FOR_KM4
+                # choice
+                    # depends on 802154_ZIGBEE_ROLE_ZED_FOR_KM4
+                    # prompt "ZED ROLE EXAMPLE"
+                    # config 802154_ZIGBEE_EXAMPLE_ONOFFLIGHT_S_FOR_KM4
+                        # bool "ha_on_off_light_n_switch[switch]"
+                    # config 802154_ZIGBEE_EXAMPLE_LIGHTCTL_S_FOR_KM4
+                        # bool "light_control[switch]"
+                # endchoice
+                # endif
+            # endif
+        # endif
+        # config 802154_PLATFORM_TEST_EN_FOR_KM4
+            # bool "Enable 802154 Platform Test"
+            # default n
+    # endif
+# endmenu
+
+menu "Audio Config"
+    config AUDIO_FWK_FOR_KM4
+        bool "Enable Audio Framework"
+        default n
+    if AUDIO_FWK_FOR_KM4
+        choice
+            prompt "Select Audio Interfaces"
+            config AUDIO_MIXER_FOR_KM4
+                bool "Mixer"
+            config AUDIO_PASSTHROUGH_FOR_KM4
+                bool "PassThrough"
+        endchoice
+    endif
+
+    config MEDIA_PLAYER_FOR_KM4
+        bool "Enable Media Framework"
+        default n
+        select AUDIO_FWK_FOR_KM4
+
+    if MEDIA_PLAYER_FOR_KM4
+        menu "Demux"
+            config MEDIA_DEMUX_WAV_FOR_KM4
+                bool "Demux WAV"
+            config MEDIA_DEMUX_MP3_FOR_KM4
+                bool "Demux MP3"
+            config MEDIA_DEMUX_AAC_FOR_KM4
+                bool "Demux AAC"
+            config MEDIA_DEMUX_MP4_FOR_KM4
+                bool "Demux M4A"
+            config MEDIA_DEMUX_FLAC_FOR_KM4
+                bool "Demux FLAC"
+            config MEDIA_DEMUX_OGG_FOR_KM4
+                bool "Demux OGG"
+            config MEDIA_DEMUX_AMR_FOR_KM4
+                bool "Demux AMR"
+        endmenu
+
+        menu "Codec"
+            config MEDIA_CODEC_PCM_FOR_KM4
+                bool "Codec PCM"
+            config MEDIA_CODEC_MP3_FOR_KM4
+                bool "Codec MP3"
+            config MEDIA_CODEC_HAAC_FOR_KM4
+                bool "Codec AAC"
+            config MEDIA_CODEC_VORBIS_FOR_KM4
+                bool "Codec VORBIS"
+            config MEDIA_CODEC_OPUS_FOR_KM4
+                bool "Codec OPUS"
+            config MEDIA_CODEC_AMR_FOR_KM4
+                bool "Codec AMR"
+            config MEDIA_CODEC_G711_FOR_KM4
+                bool "Codec G711"
+            config MEDIA_CODEC_GSM_FOR_KM4
+                bool "Codec GSM"
+        endmenu
+    endif
+
+    menu "Third Party Lib"
+        config SPEEX_LIB_FOR_KM4
+            bool "Speex"
+            default n
+        config OPUS_LIB_FOR_KM4
+            bool "OPUS"
+            default n
+    endmenu
+
+endmenu
+
+menu "AI Config"
+    config TFLITE_MICRO_EN_FOR_KM4
+        bool "Enable TFLITE MICRO"
+        default n
+endmenu
+
+menu "GUI Config"
+    config GUI_EN_FOR_KM4
+        bool "Enable GUI"
+        default n
+    config LVGL_EN_FOR_KM4
+        depends on GUI_EN_FOR_KM4
+        bool "LVGL"
+        default n
+endmenu
+
+menu "CONFIG IPC Message Queue"
+    config IMQ_EN_FOR_KM4
+        bool "Enable IPC Message Queue"
+        default n
+    if IMQ_EN_FOR_KM4
+        config RPC_EN_FOR_KM4
+            bool "Enable RPC"
+            default n
+        config IMQ2_TEST_FOR_KM4
+            bool "Enable IPC Message Queue Test"
+            default n
+        config IPC_MSG_MASTER_FOR_KM4
+            bool
+            default y
+    endif
+endmenu
+
+#=====================    Debug Message Config Start   =====================
+comment '--------------Debug Message Config------------'
+menu "To set debug msg flag"
+    config DEBUG_CRASHDUMP_IMG1_FOR_KM4
+        bool "Enable crashdump for img1(bootloader)"
+endmenu
+

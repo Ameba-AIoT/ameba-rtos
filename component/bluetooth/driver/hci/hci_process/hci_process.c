@@ -30,44 +30,6 @@ static uint8_t hci_process_start_rf_calibration(uint16_t opcode)
 }
 #endif
 
-#if defined(hci_platform_START_IQK) && hci_platform_START_IQK
-static uint8_t hci_process_start_iqk(uint16_t opcode)
-{
-	/* OpCode: 0xFD4A, Data Len: Cmd(7), Event(6) */
-	uint8_t buf_raw[RESERVE_LEN + 7];
-	uint8_t *buf = buf_raw + RESERVE_LEN;
-
-	if (HCI_SUCCESS == hci_platform_check_iqk()) {
-		return HCI_IGNORE;
-	}
-
-	for (uint8_t i = 0; i < HCI_START_IQK_TIMES; i++) {
-		buf[0] = (uint8_t)(opcode >> 0);
-		buf[1] = (uint8_t)(opcode >> 8);
-		buf[2] = (uint8_t)(HCI_IQK_DATA_LEN);
-		buf[3] = (uint8_t)(hci_iqk_data[i].offset);
-		buf[4] = (uint8_t)(hci_iqk_data[i].value >> 0);
-		buf[5] = (uint8_t)(hci_iqk_data[i].value >> 8);
-		buf[6] = (uint8_t)(0);
-
-		if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 7, true)) {
-			return HCI_FAIL;
-		}
-
-		/* Check Resp: OpCode and Status */
-		if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-			return HCI_FAIL;
-		}
-	}
-
-	if (HCI_SUCCESS != hci_platform_start_iqk()) {
-		return HCI_FAIL;
-	}
-
-	return HCI_SUCCESS;
-}
-#endif
-
 static uint8_t hci_process_read_local_ver(uint16_t opcode)
 {
 	/* OpCode: 0x1001, Data Len: Cmd(3), Event(14) */
@@ -166,49 +128,36 @@ static uint8_t hci_process_reset_baudrate(uint16_t opcode)
 #endif
 
 #if defined(hci_platform_DOWNLOAD_PATCH) && hci_platform_DOWNLOAD_PATCH
+extern uint8_t hci_patch_download_v2(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len);
+extern uint8_t hci_patch_download_v3(uint16_t opcode, uint8_t *p_patch, uint32_t patch_len);
 static uint8_t hci_process_download_patch(uint16_t opcode)
 {
-	/* OpCode: 0xFC20, Data Len: Cmd(256), Event(7) */
-	uint8_t ret = HCI_SUCCESS;
-	uint8_t buf_raw[RESERVE_LEN + 256];
-	uint8_t *buf = buf_raw + RESERVE_LEN;
+	uint8_t patch_version;
+	uint8_t *p_patch;
+	uint32_t patch_len;
+	uint8_t ret = HCI_FAIL;
 
-	ret = hci_downlod_patch_init();
-	if (HCI_SUCCESS != ret) {
-		goto dl_patch_done;
+	patch_version = hci_patch_get_patch_version(&p_patch, &patch_len);
+
+	switch (patch_version) {
+	case PATCH_VERSION_V1:
+		BT_LOGE("Signature check success: Merge patch v1 not support\r\n");
+		break;
+
+	case PATCH_VERSION_V2:
+		BT_LOGA("Signature check success: Merge patch v2\r\n");
+		ret = hci_patch_download_v2(opcode, p_patch, patch_len);
+		break;
+
+	case PATCH_VERSION_V3:
+		BT_LOGA("Signature check success: Merge patch v3\r\n");
+		ret = hci_patch_download_v3(opcode, p_patch, patch_len);
+		break;
+
+	default:
+		BT_LOGE("Signature check fail, No available patch!\r\n");
+		break;
 	}
-
-	while (1) {
-		buf[0] = (uint8_t)(opcode >> 0);
-		buf[1] = (uint8_t)(opcode >> 8);
-		ret = hci_get_patch_cmd_len(&buf[2]);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		ret = hci_get_patch_cmd_buf(&buf[3], buf[2]);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, true);
-		if (HCI_SUCCESS != ret) {
-			goto dl_patch_done;
-		}
-
-		/* Check Resp: OpCode and Status */
-		if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {
-			goto dl_patch_done;
-		}
-
-		/* Check the last patch fragment */
-		if (buf[6] & 0x80) {
-			break;
-		}
-	}
-
-dl_patch_done:
-	hci_downlod_patch_done();
 
 	return ret;
 }
@@ -337,9 +286,6 @@ static struct {
 } hci_process_table[] = {
 #if defined(hci_platform_START_RF_CALIBRATION) && hci_platform_START_RF_CALIBRATION
 	{0,      hci_process_start_rf_calibration},
-#endif
-#if defined(hci_platform_START_IQK) && hci_platform_START_IQK
-	{0xFD4A, hci_process_start_iqk},
 #endif
 	{0x1001, hci_process_read_local_ver},
 	{0xFC6D, hci_process_read_rom_ver},

@@ -15,10 +15,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#if defined( __ICCARM__ )
-#define __asm__ __asm
-#endif
-
 static inline void arm_arch_timer_set_compare(uint64_t val) /*write CNTV_CVAL: virtual timer CompareValue register*/
 {
 	__asm__ volatile("mcrr p15, 3, %Q0, %R0, c14\n\t"

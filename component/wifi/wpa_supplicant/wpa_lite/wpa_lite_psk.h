@@ -139,7 +139,7 @@ struct wpa_sta_info {
 };
 
 struct key_joininfo {
-	u8	wappriv_psk_ssid_cfg[RTW_ESSID_MAX_SIZE + 4];
+	u8	wappriv_psk_ssid_cfg[RTW_ESSID_MAX_SIZE + 1];
 	u8	wappriv_passphrase_cfg[RTW_PASSPHRASE_MAX_SIZE + 1];
 	u8	wappriv_global_psk_cfg[A_SHA_DIGEST_LEN * 2];
 };
@@ -252,7 +252,7 @@ void rtw_psk_ap_send_eapol(struct wpa_sta_info	*pStaInfo, int resend);
 void rtw_psk_timer_hdl(void *task_psta);
 struct wpa_sta_info *rtw_psk_stainfo_get(u8 port, u8 *hwaddr);
 struct wpa_sta_info *rtw_psk_stainfo_alloc(u8 port, u8 *hwaddr);
-u32 rtw_psk_stainfo_free(u8 port, u8 *hwaddr);
+int rtw_psk_stainfo_free(u8 port, u8 *hwaddr);
 void rtw_psk_set_key(u8 port, enum key_type type, struct wpa_sta_info *pStaInfo, struct wpa_global *pGblInfo);
 void rtw_psk_get_global_joininfo(struct wpa_global *pGblInfo);
 void rtw_psk_free_global_joininfo(struct wpa_global *pGblInfo);

@@ -5,7 +5,7 @@
  */
 
 #include "ameba_soc.h"
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 
 /**
   * @brief  Set Core voltage Type.

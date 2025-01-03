@@ -6,7 +6,6 @@ set(
     CSRC
 	${DIR}/bt_atcmd/bt_utils.c
 	${DIR}/bt_atcmd/atcmd_bt_common.c
-	${DIR}/bt_atcmd/atcmd_bt_device.c
 	${DIR}/bt_atcmd/atcmd_bt_example.c
 	${DIR}/bt_atcmd/atcmd_bt_gap.c
 	${DIR}/bt_atcmd/atcmd_bt_le_gap.c
@@ -30,6 +29,7 @@ set(
 	${DIR}/bt_atcmd/atcmd_bt_mesh_common.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_config_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_datatrans_model.c
+	${DIR}/bt_atcmd/atcmd_bt_mesh_device_firmware_update_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_goo_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_remote_prov_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_light_model.c
@@ -41,6 +41,8 @@ set(
 	${DIR}/bt_atcmd/atcmd_bt_mesh_sensor_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_health_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c
+	${DIR}/bt_atcmd/atcmd_bt_mesh_subnet_bridge_model.c
+	${DIR}/bt_atcmd/atcmd_bt_mesh_private_beacon_model.c
 )
 
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

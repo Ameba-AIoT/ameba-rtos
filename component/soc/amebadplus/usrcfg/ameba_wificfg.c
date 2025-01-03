@@ -46,6 +46,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
 #endif
+#if WIFI_LOGO_CERTIFICATION
+	wifi_user_config.skb_num_ap = 16;
+#endif
 #ifdef CONFIG_SINGLE_CORE_WIFI
 	wifi_user_config.skb_num_ap = 0;
 #endif
@@ -85,7 +88,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.ampdu_tx_enable = 1;
 	wifi_user_config.bCheckDestAddress = 1;
 	wifi_user_config.ap_compatibilty_enabled = 0x0B;
-	wifi_user_config.set_channel_api_do_rfk = 0;
+	wifi_user_config.set_channel_api_do_rfk = 1;
 	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
@@ -108,5 +111,7 @@ _WEAK void wifi_set_user_config(void)
 	/*Automatic channel selection*/
 	wifi_user_config.acs_en = 0;
 
+	/*R-mesh*/
+	wifi_user_config.wtn_strong_rssi_thresh = -50;
 }
 

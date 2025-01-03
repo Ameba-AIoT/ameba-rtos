@@ -1,0 +1,214 @@
+menu "CONFIG FUNCTION TEST"
+    config PER_TEST
+        bool "Enable Peripheral Test"
+    if PER_TEST
+        config SYS_VERIFY
+            bool "System_Verify_Mode"
+        if SYS_VERIFY
+            choice
+                prompt "System Verify Type"
+                config FT
+                    bool "FT_Test"
+                config EQC
+                    bool "EQC_Test"
+                config QA
+                    bool "QA_Test"
+                config OLT
+                    bool "OLT_Test"
+                config EMC
+                    bool "EMC_Test"
+                config CORNER
+                    bool "Corner_Test"
+                config SIMULATION
+                    bool "IMG_SIM"
+            endchoice
+        endif
+        config WIFI_FW_VERIFY
+        bool "WIFI FW Test"
+        config DBGPORT_VERIFY
+        bool "DBGPORT_Verify_Mode"
+        config TIMER_VERIFY
+        bool "Timer_Verify_Mode"
+        config PRS_VERIFY
+        bool "PRS_Verify_Mode"
+        config WDG_VERIFY
+        bool "WDG_Verify_Mode"
+        config TRNG_VERIFY
+        bool "TRNG_Verify_Mode"
+        config GDMA_VERIFY
+        bool "Gdma_Verify_Mode"
+        config GPIO_VERIFY
+        bool "GPIO_Verify_Mode"
+        config PINMUX_VERIFY
+        bool "PINMUX_Verify_Mode"
+        config ZB_INT_VERIFY
+        bool "ZB_INT_Verify_Mode"
+        config SPI_COM_VERIFY
+        bool "SPI_COM_Verify_Mode"
+        config UART_VERIFY
+        bool "UART_Verify_Mode"
+        config LCDC_VERIFY
+        bool "LCDC_Verify_Mode"
+        config LEDC_VERIFY
+        bool "LEDC_Verify_Mode"
+        config I2C_VERIFY
+        bool "I2C_Verify_Mode"
+        config PMC_VERIFY
+        bool "PMC_Verify_Mode"
+        config SGPIO_VERIFY
+        bool "SGPIO_Verify_Mode"
+        config PSRAM_VERIFY
+        bool "PSRAM_Verify_Mode"
+        config AUDIO_VERIFY
+        bool "AUDIO_Verify_Mode"
+        if AUDIO_VERIFY
+            choice
+                prompt "AUDIO Verify Type"
+                config AUDIO_SNR_VERIFY
+                    bool "AUDIO_SNR_VERIFY"
+            endchoice
+        endif
+        config SOC_PS_VERIFY
+        bool "SOC_PS_Verify_Mode"
+        config CRYPTO_VERIFY
+        bool "Crypto_Verify_Mode"
+        config EFUSE_VERIFY
+        bool "EFUSE_Verify_Mode"
+        config SPIC_VERIFY
+        bool "SPIC_Verify_Mode"
+        if SPIC_VERIFY
+            choice
+                prompt "SPIC Verify Type"
+                config MCM_MEM_VERIFY
+                    bool "MCM_MEMORY_VERIFY"
+            endchoice
+        endif
+        config FTL_VERIFY
+        bool "FTL_Verify_Mode"
+        config ADC_VERIFY
+        bool "ADC_Verify_Mode"
+        config CAPTOUCH_VERIFY
+        bool "CapTouch_Verify_Mode"
+        config THERMAL_VERIFY
+        bool "Thermal_Verify_Mode"
+        config RSIP_VERIFY
+        bool "RSIP_Verify_Mode"
+        config SDIO_DEVICE_VERIFY
+        bool "SDIO_DEVICE_Verify_Mode"
+        config SDIOH_VERIFY
+        bool "SDIO_HOST_Verify_Mode"
+        config CHIP_RST_VERIFY
+        bool "chip_reset_verify"
+        config DBG_TIMER_VERIFY
+        bool "debugtimer_verify"
+        config DHRYSTONE_TEST
+        bool "Dhrystone Test"
+        config PERFORMANCE_VERIFY
+        bool "Performance_Verify_Mode"
+        config RTLIB_VERIFY
+        bool "RTLIB ROM Test"
+        config IPC_VERIFY
+        bool "IPC Test"
+        config IR_VERIFY
+        bool "IR Test"
+        config MPU_VERIFY
+        bool "MPU Test"
+        config CACHE_VERIFY
+        bool "CACHE Test"
+        config WFE_VERIFY
+        bool "WFE Test"
+        config DDR_VERIFY
+        bool "DDR Test"
+        config RSA_VERIFY
+        bool "RSA Test"
+        config ECDSA_VERIFY
+        bool "ECDSA Test"
+        config ED25519_VERIFY
+        bool "ED25519 Test"
+        config SPINAND_VERIFY
+        bool "SpiNand Test"
+        config LOGUART_VERIFY
+        bool "LOGUART Test"
+        config KEYSCAN_VERIFY
+        bool "KeyScan Test"
+        config SDM_VERIFY
+        bool "SDM Test"
+        config PPE_VERIFY
+        bool "PPE Test"
+        config QSPI_VERIFY
+        bool "QSPI Test"
+        config MEMORY_VERIFY
+        bool "Memory Test"
+        config AF_VERIFY
+        bool "AF Test"
+        config MBEDTLS_VERIFY
+        bool "mbedtls Test"
+        config FLASH_AVL
+        bool "Flash_AVL"
+        config USBD_VERIFY
+        bool "USB Test"
+        config QDEC_VERIFY
+        bool "Qdecoder_Verify_Mode"
+        config SSL_ROM_TEST
+        bool "SSL ROM Test"
+        config SBOOT_VERIFY
+        bool "SecureBoot Test"
+        config SPINAND_VERIFY
+        bool "SPI Nand Test"
+
+        config WIFI_VERIFY_MENU
+            bool "WIFI Test"
+            select WIFI_VERIFY if CORE_AS_NP
+
+        if WIFI_VERIFY_MENU
+            choice
+                prompt "WIFI Verify Type"
+                default WIFI_VERIFY_ASIC_MENU
+                config WIFI_VERIFY_ASIC_MENU
+                    bool "WIFI_ASIC"
+                    select WIFI_VERIFY_ASIC if CORE_AS_NP
+                config MAC_LBK_MENU
+                    bool "WIFI_MAC_LBK"
+                    select MAC_LBK if CORE_AS_NP
+                config WIFI_VERIFY_PSPHY_MENU
+                    bool "WIFI_2MAC_WITH_PSPHY"
+                    select WIFI_VERIFY_PSPHY if CORE_AS_NP
+                config WIFI_VERIFY_TRUEPHY_MENU
+                    bool "WIFI_2MAC_WITH_TUREPHY"
+                    select WIFI_VERIFY_TRUEPHY if CORE_AS_NP
+            endchoice
+        endif
+    endif
+
+    config WIFI_VERIFY
+        bool
+    config WIFI_VERIFY_ASIC
+        bool
+    config MAC_LBK
+        bool
+    config WIFI_VERIFY_PSPHY
+        bool
+    config WIFI_VERIFY_TRUEPHY
+        bool
+endmenu
+
+menu "CONFIG SECURE TEST"
+    config SEC_VERIFY
+        bool "SEC_Verify_Mode"
+    if SEC_VERIFY
+        config EFUSE_SEC_VERIFY
+            bool "EFUSE Secure Test"
+        config GDMA_SEC_VERIFY
+            bool "GDMA Secure Test"
+        config CRYPTO_SEC_VERIFY
+            bool "Crypto Secure Test"
+        config WDG_SEC_VERIFY
+            bool "WDG Secure Test"
+        config TRNG_SEC_VERIFY
+            bool "TRNG Secure Test"
+        config TIMER_SEC_VERIFY
+            bool "TIMER Secure Test"
+        config TZ_SEC_VERIFY
+            bool "Trustzone Secure Test"
+    endif
+endmenu

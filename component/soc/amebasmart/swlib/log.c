@@ -12,7 +12,7 @@
 static spinlock_t print_lock;
 #endif
 
-static const char *TAG = "LOG";
+static const char *const TAG = "LOG";
 /* Define default log-display level*/
 rtk_log_level_t rtk_log_default_level = RTK_LOG_DEFAULT_LEVEL;
 
@@ -34,7 +34,7 @@ int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
 	if (rtk_log_tag_array != NULL) {
 		for (uint32_t i = 0; i < index; i++) {
-			RTK_LOGS(TAG, "[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
 		}
 		return SUCCESS;
 	}
@@ -54,7 +54,7 @@ int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
 static inline void rtk_log_array_add(const char *tag, rtk_log_level_t level)
 {
 	if (rtk_log_entry_count >= LOG_TAG_CACHE_ARRAY_SIZE) {
-		RTK_LOGS(TAG, "Cache array is full, and replace old entry\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Cache array is full, and replace old entry\n");
 	}
 	/* Replace old entry with taking the remainder. */
 	rtk_log_tag_array[rtk_log_entry_count % LOG_TAG_CACHE_ARRAY_SIZE].level = level;
@@ -87,11 +87,12 @@ void rtk_log_array_clear(void)
 rtk_log_level_t rtk_log_level_get(const char *tag)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
-	assert_param(tag != NULL);
-	// Look for the tag in cache first
-	for (uint32_t i = 0; i < index; i++) {
-		if (_strcmp(rtk_log_tag_array[i].tag, tag) == 0) {
-			return (rtk_log_level_t)rtk_log_tag_array[i].level;
+	if (tag) {
+		// Look for the tag in cache first
+		for (uint32_t i = 0; i < index; i++) {
+			if (_strcmp(rtk_log_tag_array[i].tag, tag) == 0) {
+				return (rtk_log_level_t)rtk_log_tag_array[i].level;
+			}
 		}
 	}
 	// If not found, return default level
@@ -154,13 +155,13 @@ void rtk_log_memory_dump_word(uint32_t *src, uint32_t len)
 {
 	for (uint32_t i = 0; i < len; i++) {
 		if (!i) {
-			RTK_LOGS(NOTAG, "[%08x] ", (u32)src);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%08x] ", (u32)src);
 		} else if (i % DISPLAY_NUMBER == 0) {
-			RTK_LOGS(NOTAG, "\r\n[%08x] ", (u32)(src + i));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n[%08x] ", (u32)(src + i));
 		}
-		RTK_LOGS(NOTAG, "%08x ", (u32)src[i]);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%08x ", (u32)src[i]);
 	}
-	RTK_LOGS(NOTAG, "\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n");
 }
 /***
 *  @brief	dump memory in byte
@@ -177,13 +178,13 @@ void rtk_log_memory_dump_byte(uint8_t *src, uint32_t len)
 {
 	for (uint32_t i = 0; i < len; i++) {
 		if (!i) {
-			RTK_LOGS(NOTAG, "[%08x] ", (u32)src);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%08x] ", (u32)src);
 		} else if (i % DISPLAY_NUMBER == 0) {
-			RTK_LOGS(NOTAG, "\r\n[%08x] ", (u32)(src + i));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n[%08x] ", (u32)(src + i));
 		}
-		RTK_LOGS(NOTAG, "%02x ", src[i]);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%02x ", src[i]);
 	}
-	RTK_LOGS(NOTAG, "\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n");
 }
 
 /***
@@ -242,7 +243,7 @@ void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len)
 			}
 		}
 		dst_ptr += DiagSPrintf(dst_ptr, "|");
-		RTK_LOGS(NOTAG, "%s\n", dst_buff);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s\n", dst_buff);
 		src_buff += bytes_per_line;
 		buff_len -= bytes_per_line;
 	} while (buff_len);
@@ -259,42 +260,46 @@ void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len)
  */
 void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...)
 {
-	rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
-	va_list ap;
-	if (level_of_tag < level) {
-		return;
-	}
+	if (tag) {
+		rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
+		va_list ap;
+		if (level_of_tag < level) {
+			return;
+		}
 #ifdef CONFIG_ARM_CORE_CA32
-	u32 isr_status = spin_lock_irqsave(&print_lock);
+		u32 isr_status = spin_lock_irqsave(&print_lock);
 #endif
-	if (tag[0] != '#') {
-		DiagPrintf("[%s-%c] ", tag, letter);
-	}
-	va_start(ap, fmt);
-	DiagVprintf(fmt, ap);
-	va_end(ap);
+		if (tag[0] != '#') {
+			DiagPrintf("[%s-%c] ", tag, letter);
+		}
+		va_start(ap, fmt);
+		DiagVprintf(fmt, ap);
+		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-	spin_unlock_irqrestore(&print_lock, isr_status);
+		spin_unlock_irqrestore(&print_lock, isr_status);
 #endif
+	}
 }
 
 void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...)
 {
-	rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
-	va_list ap;
-	if (level_of_tag < level) {
-		return;
-	}
+	if (tag) {
+		rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
+		va_list ap;
+		if (level_of_tag < level) {
+			return;
+		}
 #ifdef CONFIG_ARM_CORE_CA32
-	u32 isr_status = spin_lock_irqsave(&print_lock);
+		u32 isr_status = spin_lock_irqsave(&print_lock);
 #endif
-	if (tag[0] != '#') {
-		DiagPrintfNano("[%s-%c] ", tag, letter);
-	}
-	va_start(ap, fmt);
-	DiagVprintfNano(fmt, ap);
-	va_end(ap);
+		if (tag[0] != '#') {
+			DiagPrintfNano("[%s-%c] ", tag, letter);
+		}
+		va_start(ap, fmt);
+		DiagVprintfNano(fmt, ap);
+		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-	spin_unlock_irqrestore(&print_lock, isr_status);
+		spin_unlock_irqrestore(&print_lock, isr_status);
 #endif
+	}
 }

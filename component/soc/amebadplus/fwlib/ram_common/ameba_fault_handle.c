@@ -2,7 +2,7 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "FAULT";
+static const char *const TAG = "FAULT";
 
 #if defined(CONFIG_ARM_CORE_CM4)
 /* Redefine secure fault handler and replace old INT_SecureFault in rom code. */
@@ -224,19 +224,15 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 
 void Fault_Hanlder_Redirect(crash_on_task crash_on_task_func)
 {
+	crash_task_info = crash_on_task_func;
 #ifdef CONFIG_ARM_CORE_CM4
-#ifdef IMAGE2_BUILD
 	NewVectorTable[3] = (HAL_VECTOR_FUN)HANDLER_HardFault;
 	NewVectorTable[4] = (HAL_VECTOR_FUN)HANDLER_MemFault;
 	NewVectorTable[5] = (HAL_VECTOR_FUN)HANDLER_BusFault;
 	NewVectorTable[6] = (HAL_VECTOR_FUN)HANDLER_UsageFault;
-	crash_task_info = crash_on_task_func;
-#else
-	(void)crash_on_task_func;
 	NewVectorTable[7] = (HAL_VECTOR_FUN)HANDLER_SecureFault;
-#endif
 #else
 	NewVectorTable[3] = (HAL_VECTOR_FUN)HANDLER_HardFault;
-	crash_task_info = crash_on_task_func;
+
 #endif
 }

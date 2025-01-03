@@ -1,6 +1,6 @@
 # Example Description
 
-This example describes how to use UART to communicate with PC by DMA, where URAT works as flow controller.
+This example describes how to use UART to communicate with PC by DMA before timeout.
 
 This example does not support the loguart command response.
 
@@ -23,12 +23,12 @@ Required Components: USBtoTTL adapter.
 
 # SW Configuration
 
-By default, `UART0` is used to communicate with PC under `38400bps` by DMA, where UART works as flow controller.
+By default, `UART0` is used to communicate with PC under `38400bps` by DMA before timeout.
 
 1. `UART_IDX` and `UART_BAUD` can be modified to configure desired UART device and baudrate.
 2. Accordingly, `UART_TX` and `UART_RX` in uart_ext.h should be updated if `UART_IDX` is modified.
    For more info of UART pins, refer to pinmux spec.
-3. `RX_TO_MS` can be modified to configure UART RX timeout limit in ms and the maximum value of RX_TO_MS is `65535/UART_BAUD`(s).
+3. `RX_TO_MS` can be modified to configure UART RX timeout limit in ms. Maximum value of RX_TO_MS is `65535/UART_BAUD`(s) for AmebaSmart/AmebaLite/AmebaDplus and `6710ms` for AmebaGreen2.
 4. `SRX_BUF_SZ` can be modified to set DMA buffer size.
 5. How to use:
     * Copy `main.c` and `uart_ext.h` to path`project\realtek_xx_va0_example\src\src_yy\`, and replace old main.c.
@@ -37,7 +37,7 @@ By default, `UART0` is used to communicate with PC under `38400bps` by DMA, wher
 # Expected Result
 
 1. Open super terminal or Ameba trace tool and set baudrate to `38400bps`, `1 stopbit`, `no parity`, `no flow control`.
-2. Characters from terminal input will be received and transferred to predefined buffer by DMA before timeout. Received characters will be transmitted to PC by DMA subsequently.
+2. Characters from terminal input will be received and transferred to predefined buffer by DMA before timeout. Received characters will be transmitted to PC by DMA subsequently. On AmebaGreen2, `'Timeout! Got NByte(s)'` will be displayed if time expires since last data sent to UART, without filling given buffer.
 3. Characters sent from PC will be displayed on the terminal.
 
 # Note

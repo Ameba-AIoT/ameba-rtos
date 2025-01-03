@@ -18,7 +18,7 @@
 /** @defgroup MPU_Exported_Constants MPU Exported Constants
   * @{
   */
-static const char *TAG = "MPU";
+static const char *const TAG = "MPU";
 u8 mpu_entry_register[MPU_MAX_REGION];
 /**@}*/
 
@@ -117,6 +117,13 @@ void mpu_set_mem_attr(uint8_t attr_idx, uint8_t mem_attr)
 void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg)
 {
 	u32 region_limit = 0;
+	uint32_t regRNR;
+	uint32_t regRBAR;
+	uint32_t regRLAR;
+	uint32_t regMAIR0;
+	uint32_t regMAIR1;
+	uint32_t regCTRL;
+	uint32_t regTYPE;
 
 	assert_param(region_num < MPU_MAX_REGION);
 
@@ -151,10 +158,19 @@ void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg)
 
 	RTK_LOGD(TAG, "mpu_region_cfg: pmpu_cfg->attr_idx:%x\n",
 			 pmpu_cfg->attr_idx);
+
+	regRNR = MPU->RNR;
+	regRBAR = MPU->RBAR;
+	regRLAR = MPU->RLAR;
+	regMAIR0 = MPU->MAIR0;
+	regMAIR1 = MPU->MAIR1;
+	regCTRL = MPU->CTRL;
+	regTYPE = MPU->TYPE;
+
 	RTK_LOGD(TAG, "mpu_region_cfg: RNR:%lx RBAR:%lx RLAR:%lx \n",
-			 MPU->RNR, MPU->RBAR, MPU->RLAR);
+			 regRNR, regRBAR, regRLAR);
 	RTK_LOGD(TAG, "mpu_region_cfg: MAIR0:%lx MAIR1:%lx CTRL:%lx TYPE:%lx\n",
-			 MPU->MAIR0, MPU->MAIR1, MPU->CTRL, MPU->TYPE);
+			 regMAIR0, regMAIR1, regCTRL, regTYPE);
 
 }
 

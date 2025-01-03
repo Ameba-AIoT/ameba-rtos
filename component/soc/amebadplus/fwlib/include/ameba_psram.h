@@ -361,7 +361,7 @@ _LONG_CALL_ void PSRAM_CTRL_Init(void);
 _LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR);
 _LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_MEM_Write(u8 cmd, u32 addr, u32 write_len, u8 *write_data);
-_LONG_CALL_ BOOL PSRAM_calibration(u32 log_en);
+_LONG_CALL_ bool PSRAM_calibration(u32 log_en);
 _LONG_CALL_ void PSRAM_WB_REG_Write(u32 regnum, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_WB_REG_Read(u32 regnum, u32 read_len, u8 *read_data, u32 CR);
 _LONG_CALL_ void PSRAM_APM_DEVIC_Init(void);

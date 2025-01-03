@@ -24,9 +24,9 @@ extern uint8_t ws_server_debug;
 	do { \
 		if(ws_server_debug) { \
 			rtos_critical_enter(); \
-			RTK_LOGS(NOTAG, "\n\r[WS_SERVER] "); \
-			RTK_LOGS(NOTAG, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, "\n\r"); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] "); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
 			rtos_critical_exit(); \
 		} \
 	} while(0)
@@ -35,9 +35,9 @@ extern uint8_t ws_server_debug;
 	do { \
 		if(ws_server_debug == WS_SERVER_DEBUG_VERBOSE) { \
 			rtos_critical_enter(); \
-			RTK_LOGS(NOTAG, "\n\r[WS_SERVER] "); \
-			RTK_LOGS(NOTAG, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, "\n\r"); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] "); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
 			rtos_critical_exit(); \
 		} \
 	} while(0)
@@ -51,11 +51,11 @@ extern uint8_t ws_server_debug;
   */
 
 typedef enum {
-	CLOSED = 0,		/*!< Client Connection closed */
-	CONNECTING,	/*!< Client is connecting */
-	CONNECTED1,	/*!< Client is connected */
-	CONNECTED2,	/*!< Connected and server sent ping to client */
-	CLOSING,	/*!< Client will be closed */
+	WSS_CLOSED = 0,		/*!< Client Connection closed */
+	WSS_CONNECTING,	/*!< Client is connecting */
+	WSS_CONNECTED1,	/*!< Client is connected */
+	WSS_CONNECTED2,	/*!< Connected and server sent ping to client */
+	WSS_CLOSING,	/*!< Client will be closed */
 } ws_conn_state;
 
 
@@ -117,7 +117,7 @@ enum opcode_type {
 /**
  * @brief     This function is used to start an WS or WSS server.
  * @param[in] port: service port
- * @param[in] max_conn: max client connections allowed
+ * @param[in] max_conn: max client connections allowed, maximum value will be limited by MEMP_NUM_NETCONN in lwipopts.h
  * @param[in] stack_bytes: thread stack size in bytes
  * @param[in] secure: security mode for WS or WSS. Must be WS_SERVER_SECURE_NONE, WS_SERVER_SECURE_TLS, WS_SERVER_SECURE_TLS_VERIFY.
  * @return		0 : if successful

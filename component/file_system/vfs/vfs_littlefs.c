@@ -13,6 +13,7 @@
 extern lfs_t g_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
 char lfs_mount_fail = 0;
+struct dirent *ent;
 
 int fmodeflags(const char *mode)
 {
@@ -78,6 +79,8 @@ int littlefs_open(const char *filename, const char *mode, vfs_file *finfo)
 	if (ret < 0) {
 		if (ret == LFS_ERR_NOENT) {
 			VFS_DBG(VFS_WARNING, "file is not exist");
+		} else if (ret == LFS_ERR_EXIST) {
+			VFS_DBG(VFS_WARNING, "file already exist %d", ret);
 		} else {
 			VFS_DBG(VFS_ERROR, "Open file error %d", ret);
 		}
@@ -278,9 +281,11 @@ struct dirent *littlefs_readdir(vfs_file *finfo)
 {
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	struct lfs_info info;
-	struct dirent *ent = rtos_mem_malloc(sizeof(struct dirent));
 	if (ent == NULL) {
-		return NULL;
+		ent = rtos_mem_malloc(sizeof(struct dirent));
+		if (ent == NULL) {
+			return NULL;
+		}
 	}
 	memset(ent, 0, sizeof(struct dirent));
 	int err = lfs_dir_read(&g_lfs, dir, &info);
@@ -308,6 +313,9 @@ int littlefs_closedir(vfs_file *finfo)
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	ret = lfs_dir_close(&g_lfs, dir);
 	rtos_mem_free(dir);
+	if (ent != NULL) {
+		rtos_mem_free(ent);
+	}
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs Close directory fail: %d", ret);
 	}

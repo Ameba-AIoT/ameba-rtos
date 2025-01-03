@@ -154,7 +154,7 @@
 
 //#define RA_RX_ACK_RSSI
 
-//#define CONFIG_P2P
+#define CONFIG_P2P
 /*************************** Config for MP_MODE *******************************/
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT
@@ -199,7 +199,7 @@
 #define WLAN_MAX_ETHFRM_LEN	1904/*max payload size of wifi frame*/
 
 /* debug log level */
-#define RELEASE_WIFI
+#undef RELEASE_WIFI
 
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8730A_H */

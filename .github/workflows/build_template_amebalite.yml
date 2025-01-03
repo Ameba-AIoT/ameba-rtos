@@ -30,53 +30,47 @@ jobs:
     - name: Configure bash
       run: |
         sudo ln -sf /bin/bash /bin/sh
+
+    - name: Install cmake environment variables
+      run: |
+        sudo apt-get install cmake ninja-build
   
     - name: Configure prerequisites
       run: |
         # set config
 
+        cd amebalite_gcc_project
+
         if ${{ inputs.artifacts_name == 'amebalite-B1' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT1
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_MIXER
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+          ./menuconfig.py -f bt1.conf audio_mixer_km4_ap.conf ipc.conf trustzone.conf wifi_all.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebalite-B2' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config LITE_CROSS
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_MIXER_CROSS
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+          ./menuconfig.py -f lite_cross.conf audio_mixer_kr4_ap.conf ipc.conf trustzone.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebalite-B3' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_PASSTHROUGH
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+          ./menuconfig.py -f lite_cross.conf audio_passthrough_km4_ap.conf ipc.conf trustzone.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebalite-B4' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config LITE_CROSS
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT2
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config IPC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config AUDIO_PASSTHROUGH_CROSS
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config TRUSTZONE
+          ./menuconfig.py -f lite_cross.conf audio_mixer_kr4_ap.conf bt2.conf ipc.conf trustzone.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebalite-B5' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config MP
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT_EN
+          ./menuconfig.py -f mp_shrink.conf bt_only.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebalite-B6' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config MP_NORMAL
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBALITE --config BT_EN
+          ./menuconfig.py -f mp_expand.conf bt_only.conf
         fi
+
+        cd -
 
     - name: Compile
       run: |
         cd amebalite_gcc_project
-        make all
+        ./build.py
         cd -
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

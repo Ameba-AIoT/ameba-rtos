@@ -56,12 +56,7 @@
 #define A2DP_DEMO_BOND_INFO_THREAD_EXIT 0xFF
 /* ---------------------------- Audio resample related Macros-------------------------- */
 #define RTK_BT_A2DP_TMAP_DEMO_OUPUT_SAMPLE_RATE        48000
-
-#if (RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1) || (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
 #define RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM        2
-#else
-#define RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM        1
-#endif
 /*
     A2DP sink will receive 595 bytes encode data per 14.5 ms from source, approximately 6.89 packets of 595 bytes per 100 milliseconds.
     When the sample rate is 44.1KHz, the above 595 bytes encode data will be parsing to 5 frames,
@@ -1858,12 +1853,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 #if defined(A2DP_TMAP_REOPEN_TEST) && A2DP_TMAP_REOPEN_TEST
 		if (a2dp_tmap_role == RTK_BT_LE_AUDIO_A2DP_SINK_UNICAST_MEDIA_SNEDER) {
 			if (g_ums_info.status == RTK_BLE_AUDIO_INITIATOR_UNICAST_START) {
-				// delete timer handle and task handle
-				//app_bt_le_audio_tmap_encode_data_control(false);
 				// stop unicast session
 				rtk_bt_bap_unicast_client_stop(0);
-				// release unicast session
-				rtk_bt_bap_unicast_client_release(0);
 			}
 		}
 #endif
@@ -2483,7 +2474,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
 		if (!ext_adv_ind->err) {
@@ -2530,7 +2521,7 @@ static rtk_bt_evt_cb_ret_t app_le_audio_gap_callback(uint8_t evt_code, void *par
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));

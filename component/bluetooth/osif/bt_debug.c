@@ -48,17 +48,17 @@ void rtk_bt_log_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
 	}
 
 	BT_LOG_MUTEX_TAKE
-	RTK_LOGS(NOTAG, str);
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, str);
 	for (i = 0; i < len; i++) {
 		if (unit == 4) {
-			RTK_LOGS(NOTAG, "%08x ", _LE_TO_U32((uint8_t *)buf + i * 4)); /* *(buf + i) may crash at AmebaLite when (buf + i) isn't aligned with 4.*/
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%08x ", _LE_TO_U32((uint8_t *)buf + i * 4)); /* *(buf + i) may crash at AmebaLite when (buf + i) isn't aligned with 4.*/
 		} else if (unit == 2) {
-			RTK_LOGS(NOTAG, "%04x ", _LE_TO_U16((uint8_t *)buf + i * 2));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%04x ", _LE_TO_U16((uint8_t *)buf + i * 2));
 		} else {
-			RTK_LOGS(NOTAG, "%02x ", *((uint8_t *)buf + i));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%02x ", *((uint8_t *)buf + i));
 		}
 		if ((i + 1) % num == 0 || (i + 1) == len) {
-			RTK_LOGS(NOTAG, "\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n");
 		}
 	}
 	BT_LOG_MUTEX_GIVE
@@ -73,15 +73,15 @@ void rtk_bt_log_dumphex(const char *str, void *buf, uint16_t len, bool reverse)
 	}
 
 	BT_LOG_MUTEX_TAKE
-	RTK_LOGS(NOTAG, str);
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, str);
 	for (i = 0; i < len; i++) {
 		if (reverse) {
-			RTK_LOGS(NOTAG, "%02x", *((uint8_t *)(buf) + len - 1 - i));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%02x", *((uint8_t *)(buf) + len - 1 - i));
 		} else {
-			RTK_LOGS(NOTAG, "%02x", *((uint8_t *)(buf) + i));
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%02x", *((uint8_t *)(buf) + i));
 		}
 	}
-	RTK_LOGS(NOTAG, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n");
 	BT_LOG_MUTEX_GIVE
 }
 

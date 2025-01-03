@@ -148,7 +148,7 @@ static inline void flash_set_bit(uint32_t *addr, uint32_t bit)
 
 static inline bool flash_get_bit(uint32_t flag, uint32_t bit)
 {
-	return (flag & bit) ? _FALSE : _TRUE;
+	return (flag & bit) ? FALSE : TRUE;
 }
 
 #ifdef  __cplusplus

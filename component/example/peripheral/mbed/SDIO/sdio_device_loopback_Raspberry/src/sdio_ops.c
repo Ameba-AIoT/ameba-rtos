@@ -601,9 +601,9 @@ void rtw_update_free_txbd(sdio_adapter *padapter)
 int rtw_sdio_query_free_txbd(sdio_adapter *padapter, u16 need_num)
 {
 	if (padapter->free_txbd > need_num) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 
@@ -639,9 +639,9 @@ void rtw_memcpy(void *dst, void *src, u32 sz)
 int rtw_thread_should_stop(void)
 {
 	if (kthread_should_stop()) {
-		return _TRUE;
+		return TRUE;
 	}
-	return _FALSE;
+	return FALSE;
 }
 
 void rtw_thread_exit(void)

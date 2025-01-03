@@ -524,7 +524,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup Leap year check
+/** @defgroup Leap_Year_Check
   * @{
   */
 #define IS_LEAP_YEAR_CHECK(YEAR, RET) do {\

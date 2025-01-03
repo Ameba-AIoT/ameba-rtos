@@ -16,6 +16,7 @@ if(CONFIG_AS_INIC_NP)
         ${DIR_COMMON}/wififw_txpkt_common.c
         ${DIR}/wififw_bcnmode.c
         ${DIR}/wififw_pwrctrl.c
+        ${DIR}/wififw_btcoex.c
         ${DIR_COMMON}/wififw_pwrctrl_common.c
         ${DIR}/wififw_csi.c
         ${DIR_COMMON}/wififw_csi_common.c
@@ -27,11 +28,14 @@ if(CONFIG_AS_INIC_NP)
         ${DIR_COMMON}/wififw_hioe_common.c
         ${DIR}/wififw_wowlan.c
         ${DIR}/wififw_lpsofld.c
+        ${DIR_COMMON}/wififw_lpsofld_common.c
         ${DIR}/wififw_ra_new.c
         ${DIR}/wififw_phy_reg_init.c
         ${DIR_COMMON}/wififw_phy_common.c
         ${DIR}/wififw_periodcca.c
-        ${DIR_COMMON}/wififw_ps_twt.c
+        ${DIR_COMMON}/wififw_ps_twt_common.c
+        ${DIR}/wififw_ps_twt.c
+        ${DIR}/wififw_h2c_c2h.c
         ${DIR_COMMON}/wififw_h2c_common.c
         ${DIR_COMMON}/wififw_c2h_common.c
         ${DIR}/wififw_gtimer.c
@@ -47,7 +51,6 @@ if(CONFIG_AS_INIC_NP)
         ${DIR_COMMON}/wififw_keepalive_common.c
         ${DIR_COMMON}/wififw_disconchk_common.c
         ${DIR_COMMON}/wififw_media_common.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib_wifi_fw_git_version.c
     )
 
     if(CONFIG_WIFI_FW_VERIFY)

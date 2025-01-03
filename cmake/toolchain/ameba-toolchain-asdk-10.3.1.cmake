@@ -2,6 +2,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
 # set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+set(TOOLCHAINVER 4291)
 
 if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 	message("current host platform is linux")
@@ -13,9 +14,9 @@ if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 		set(TOOLCHAINDIR /opt/rtk-toolchain)
 		message("Default toolchain path: ${TOOLCHAINDIR}")
 	endif()
-	set(ASDK_TOOLCHAIN ${TOOLCHAINDIR}/asdk-${ASDK_VER}/linux/newlib)
-	set(TOOLCHAINNAME asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2)
-	set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-linux-newlib-build-4072-x86_64.tar.bz2)
+	set(ASDK_TOOLCHAIN ${TOOLCHAINDIR}/asdk-${ASDK_VER}-${TOOLCHAINVER}/linux/newlib)
+	set(TOOLCHAINNAME asdk-10.3.1-linux-newlib-build-${TOOLCHAINVER}-x86_64_with_small_reent.tar.bz2)
+	set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1_v4/asdk-10.3.1-linux-newlib-build-${TOOLCHAINVER}-x86_64_with_small_reent.tar.bz2)
 elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
 	message("current host platform is windows")
 	set(EXE_SUFFIX ".exe")
@@ -26,14 +27,12 @@ elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
 		set(TOOLCHAINDIR C:/rtk-toolchain)
 		message("Default toolchain path: ${TOOLCHAINDIR}")
 	endif()
-	set(ASDK_TOOLCHAIN ${TOOLCHAINDIR}/asdk-${ASDK_VER}/mingw32/newlib)
-	set(TOOLCHAINNAME asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip)
-	set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1/asdk-10.3.1-mingw32-newlib-build-4072-x86_64.zip)
+	set(ASDK_TOOLCHAIN ${TOOLCHAINDIR}/asdk-${ASDK_VER}-${TOOLCHAINVER}/mingw32/newlib)
+	set(TOOLCHAINNAME asdk-10.3.1-mingw32-newlib-build-${TOOLCHAINVER}-x86_64_with_small_reent.zip)
+	set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/10.3.1_v4/asdk-10.3.1-mingw32-newlib-build-${TOOLCHAINVER}-x86_64_with_small_reent.zip)
 else()
 	message(FATAL_ERROR "unknown host platform ")
 endif()
-
-set(TOOLCHAINVER 4072)
 
 set(CROSS_COMPILE ${ASDK_TOOLCHAIN}/bin/arm-none-eabi-)
 
@@ -52,7 +51,8 @@ set(CMAKE_GDB ${CROSS_COMPILE}gdb${EXE_SUFFIX})
 set(CMAKE_READELF ${CROSS_COMPILE}readelf${EXE_SUFFIX})
 
 
-set(CMAKE_C_CREATE_STATIC_LIBRARY "<CMAKE_AR> rs <TARGET> <LINK_FLAGS> <OBJECTS>")
+# set(CMAKE_C_CREATE_STATIC_LIBRARY "<CMAKE_AR> rs <TARGET> <LINK_FLAGS> <OBJECTS>")
+#use default AR option, which is -qc, and the old archive file will be removed before creating.
 
 if(NOT TOOLCHAIN_DIR)
 	if (EXISTS ${ASDK_TOOLCHAIN})
@@ -80,7 +80,7 @@ if(NOT TOOLCHAIN_DIR)
 				OUTPUT_VARIABLE stdoutput
 			)
 			if(ret)
-				message(FATAL_ERROR "Download Failed. Please Check If The Network Connection Is Accessible Or Refer To AN900 Chapter 1.3")
+				message(FATAL_ERROR "Download Failed. Please Check If Wget Is Installed And Network Connection Is Accessible Or Refer To AN900 Chapter 1.3")
 			else()
 				message("Download ${TOOLCHAINNAME} Success")
 			endif()
@@ -93,8 +93,26 @@ if(NOT TOOLCHAIN_DIR)
 		else()
 			execute_process(COMMAND 7z x ${TOOLCHAINDIR}/${TOOLCHAINNAME} -o${TOOLCHAINDIR})
 		endif()
+		execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}/asdk-${ASDK_VER}-${TOOLCHAINVER})
+		execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${TOOLCHAINDIR}/asdk-${ASDK_VER} ${TOOLCHAINDIR}/asdk-${ASDK_VER}-${TOOLCHAINVER})
+		execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${TOOLCHAINDIR}/asdk-${ASDK_VER})
 		message("INSTALL SUCCESS")
 	endif()
+endif()
+
+execute_process(
+    COMMAND ${CMAKE_C_COMPILER} -check-license
+    OUTPUT_VARIABLE COMMAND_OUTPUT
+    ERROR_VARIABLE COMMAND_ERROR
+    RESULT_VARIABLE COMMAND_EXIT_CODE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(${COMMAND_EXIT_CODE} STREQUAL "0")
+    if(COMMAND_OUTPUT MATCHES "not found")
+        message(FATAL_ERROR "NOT found license, build abort")
+    endif()
+else()
+    message("gcc check-license failed: ${COMMAND_ERROR}")
 endif()
 
 #execute_process runs commands while CMake is configuring the project, prior to build system generation
@@ -105,17 +123,17 @@ execute_process(
 )
 
 if(ret)
-  message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
-  ${CMAKE_C_COMPILER} --version
-  ${stdoutput}"
-  )
-endif()
-
-string(FIND "${stdoutput}" "${TOOLCHAINVER}" ISMATCH)
-if(ISMATCH GREATER_EQUAL 0)
-	message("Toolchain Version Matched")
+	message(SEND_ERROR "Executing the below command failed. Please check toolchain path and permission.
+	${CMAKE_C_COMPILER} --version
+	${stdoutput}"
+	)
 else()
-	message(FATAL_ERROR "Current Toolchain Version Mismatched! Please delete current toolchain /asdk-$(ASDK_VER) in $(TOOLCHAINDIR) and redo make. The Latest ToolChain $(TOOLCHAINNAME) will be installed automatically during the project building")
+	string(FIND "${stdoutput}" "${TOOLCHAINVER}" ISMATCH)
+	if(ISMATCH GREATER_EQUAL 0)
+		message("Toolchain Version Matched")
+	else()
+		message(SEND_ERROR "Current Toolchain Version Mismatched! Please delete current toolchain /asdk-${ASDK_VER} in ${TOOLCHAINDIR} and rebuild. The Latest ToolChain ${TOOLCHAINNAME} will be installed automatically during the project building")
+	endif()
 endif()
 
 
@@ -124,7 +142,7 @@ find_package(Git)
 if(Git_FOUND)
 	message("Git found: ${GIT_EXECUTABLE}")
 else()
-	message(FATAL_ERROR "Git check failed")
+	message(SEND_ERROR "Git check failed")
 endif()
 
 #CHECK python
@@ -132,5 +150,5 @@ find_package(Python3)
 if(Python3_FOUND)
 	message("Python3 found: ${Python3_EXECUTABLE}")
 else()
-	message(FATAL_ERROR "Python check failed")
+	message(SEND_ERROR "Python check failed")
 endif()

@@ -18,6 +18,7 @@ set(
     ${DIR}/audio_track.c
     ${DIR}/audio_record.c
     ${DIR}/audio_service.c
+    ${DIR}/audio_manager.c
 )
 
 

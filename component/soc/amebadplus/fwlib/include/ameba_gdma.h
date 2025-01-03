@@ -12,10 +12,10 @@
   *******************************************************************************************
   * Introduction
   *******************************************************************************************
-  * Ameba supports KM4 and AP access GDMA, but KM0 does not support GDMA. GDMA in KM4 or AP has eight channels,
+  * Ameba supports KM4 and KM0 access GDMA. GDMA in KM4 or KM0 has eight channels,
   * The FIFO size of channel 0 and channel is 128bytes, and that of other channels is 64bytes.
   *
-  * GDMA0 in AP:
+  * GDMA0 in KM4:
   *		- Base Address: GDMA0_REG_BASE
   *
   *		- Channel index: 0~7
@@ -50,7 +50,7 @@
   *                  GDMA0_CHANNEL7_IRQ_AP,
   *
   *
-  * GDMA0 in KM4:
+  * GDMA0 in KM0:
   *		- Base Address: GDMA0_REG_BASE
   *
   *		- Channel index: 0~7

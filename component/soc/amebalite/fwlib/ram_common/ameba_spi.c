@@ -45,7 +45,7 @@
   * @endverbatim
   */
 
-static const char *TAG = "SPI";
+static const char *const TAG = "SPI";
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -451,7 +451,7 @@ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel, u32 RxLevel)
   * @retval   TRUE/FLASE
   */
 
-BOOL SSI_TXGDMA_Init(
+bool SSI_TXGDMA_Init(
 	u32 Index,
 	PGDMA_InitTypeDef GDMA_InitStruct,
 	void *CallbackData,
@@ -470,7 +470,7 @@ BOOL SSI_TXGDMA_Init(
 
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI5);
 	if (GdmaChnl == 0xFF) {
-		return _FALSE;
+		return FALSE;
 	}
 
 	GDMA_StructInit(GDMA_InitStruct);
@@ -507,7 +507,7 @@ BOOL SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
 			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
-			return _FALSE;
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -534,7 +534,7 @@ BOOL SSI_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -549,7 +549,7 @@ BOOL SSI_TXGDMA_Init(
   * @retval   TRUE/FLASE
   */
 
-BOOL
+bool
 SSI_RXGDMA_Init(
 	u8 Index,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -570,7 +570,7 @@ SSI_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI5);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	GDMA_StructInit(GDMA_InitStruct);
@@ -606,7 +606,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
 			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pTxData=%p, Length=%lu\n", pRxData, Length);
-			return _FALSE;
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -632,7 +632,7 @@ SSI_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**

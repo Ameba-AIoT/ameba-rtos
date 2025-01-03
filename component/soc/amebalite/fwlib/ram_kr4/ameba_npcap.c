@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 
 //KR4 is NP, KR4 control KM4
-static const char *TAG = "NPCAP";
+static const char *const TAG = "NPCAP";
 u32 KM4SleepTick = 0;
 static u32 km4_sleep_type;
 
@@ -33,7 +33,7 @@ void km4_power_gate(void)
 
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_KM4_IRQ_MASK) {
 	} else {
-		RTK_LOGS(NOTAG, "KM4 exit WFI\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "KM4 exit WFI\n");
 		return;
 	}
 
@@ -43,7 +43,7 @@ void km4_power_gate(void)
 		}
 		timeout--;
 		if (timeout == 0) {
-			RTK_LOGS(NOTAG, "KM4 wake, no need to close KM4\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "KM4 wake, no need to close KM4\n");
 			return;
 		}
 	}
@@ -83,7 +83,7 @@ void km4_clock_gate(void)
 
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_KM4_IRQ_MASK) {
 	} else {
-		RTK_LOGS(NOTAG, "KM4 exit WFI\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "KM4 exit WFI\n");
 		return;
 	}
 
@@ -93,7 +93,7 @@ void km4_clock_gate(void)
 		}
 		timeout--;
 		if (timeout == 0) {
-			RTK_LOGS(NOTAG, "KM4 wake, no need to close KM4\n");
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "KM4 wake, no need to close KM4\n");
 			return;
 		}
 	}
@@ -139,16 +139,15 @@ u32 aontimer_int_wakeup_ap(UNUSED_WARN_DIS void *Data)
 	UNUSED(Data);
 
 	SOCPS_AONTimerClearINT();
-	RTK_LOGS(NOTAG, "wakereason: 0x%x\n", SOCPS_AONWakeReason());
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "wakereason: 0x%x\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 
 	return TRUE;
 }
 
-
-u32 km4_suspend(u32 type)
+int km4_suspend(u32 type)
 {
-	u32 ret = _SUCCESS;
+	int ret = SUCCESS;
 	SLEEP_ParamDef *sleep_param;
 	u32 duration = 0;
 	RRAM_TypeDef *rram = RRAM_DEV;
@@ -160,7 +159,7 @@ u32 km4_suspend(u32 type)
 	}
 
 	if (duration > 0) {
-		RTK_LOGS(NOTAG, "duration: %lu\n", duration);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "duration: %lu\n", duration);
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		SOCPS_AONTimer(duration);
 		SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);

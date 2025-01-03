@@ -94,10 +94,17 @@ if(CONFIG_BT)
                 ${BASEDIR}/component/bluetooth/rtk_stack/platform/amebadplus/lib/btgap.a
             )
             if(CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
-                list(
-                    APPEND LINK_THIRD_APP_LIB
-                    ${BASEDIR}/component/bluetooth/rtk_stack/src/mesh/lib/amebadplus/btmesh.a
-                )
+                if(CONFIG_BT_MESH_BASED_ON_CODED_PHY)
+                    list(
+                        APPEND LINK_THIRD_APP_LIB
+                        ${BASEDIR}/component/bluetooth/rtk_stack/src/mesh/lib/amebadplus/btmesh_coded_phy.a
+                    )
+                else()
+                    list(
+                        APPEND LINK_THIRD_APP_LIB
+                        ${BASEDIR}/component/bluetooth/rtk_stack/src/mesh/lib/amebadplus/btmesh.a
+                    )
+                endif()
             endif()
         endif()
     endif()
@@ -130,7 +137,8 @@ if(CONFIG_WLAN)
         list(
             APPEND LINK_APP_LIB
             ${APP_LIB}
-        )
+        )        
+        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     elseif(CONFIG_AS_INIC_NP)
         if(CONFIG_MP_INCLUDED)
             list(
@@ -143,11 +151,11 @@ if(CONFIG_WLAN)
                 ${APP_LIB_DIR}/lib_coex.a
             )
         endif()
-
     elseif(CONFIG_SINGLE_CORE_WIFI)
         list(
             APPEND LINK_APP_LIB
             ${APP_LIB}
+            ${APP_LIB_DIR}/lib_coex_api.a
         )
         if(CONFIG_MP_INCLUDED)
             list(
@@ -159,7 +167,7 @@ if(CONFIG_WLAN)
                 APPEND LINK_APP_LIB
                 ${APP_LIB_DIR}/lib_coex.a
             )
-        endif()
+        endif()        
     endif()
 endif()
 
@@ -249,6 +257,14 @@ if(CONFIG_AUDIO_FWK)
     list(
         APPEND LINK_APP_LIB
         ${APP_LIB_DIR}/lib_base.a
+    )
+endif()
+
+if(CONFIG_TFLITE_MICRO_EN)
+    list(
+        APPEND LINK_APP_LIB
+        ${APP_LIB_DIR}/lib_tflite_micro.a
+        ${APP_LIB_DIR}/lib_cmsis_nn.a
     )
 endif()
 

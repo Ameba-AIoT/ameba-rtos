@@ -4,16 +4,10 @@
  * Author: PSP Software Group
  */
 
-#if defined( __ICCARM__)
-#include <time.h>
-#include <stdint.h>
-#else
-
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#endif
 #include "cstub.h"
 
 #include <errno.h>

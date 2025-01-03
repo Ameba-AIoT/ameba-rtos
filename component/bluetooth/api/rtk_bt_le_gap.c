@@ -174,7 +174,7 @@ uint16_t rtk_bt_le_gap_start_adv(rtk_bt_le_adv_param_t *padv_param)
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	/* When extended adv supported, ext adv apis are used to send legacy adv.
 	   Ext adv parameter needs random address, but rtk_bt_le_adv_param_t does not include own address */
 	if ((padv_param->own_addr_type == RTK_BT_LE_ADDR_TYPE_RANDOM) || (padv_param->own_addr_type == RTK_BT_LE_ADDR_TYPE_RPA_RANDOM)) {
@@ -215,7 +215,7 @@ bool rtk_bt_le_gap_adv_is_idle(void)
 	return ret ? true : false;
 }
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 uint16_t rtk_bt_le_gap_create_ext_adv(rtk_bt_le_ext_adv_param_t *p_adv_param, uint8_t *p_adv_handle)
 {
 	uint16_t ret = 0;
@@ -320,9 +320,20 @@ uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle)
 
 	return ret;
 }
-#endif /* RTK_BLE_5_0_AE_ADV_SUPPORT */
 
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+uint16_t rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(uint16_t conn_handle, uint8_t *adv_handle)
+{
+	uint16_t ret = 0;
+	rtk_bt_le_get_eadv_by_conn_handle_param_t get_adv_hdl = {
+		.conn_handle = conn_handle,
+		.adv_handle = adv_handle,
+	};
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_EXT_ADV_HANDLE_BY_CONN_HANDLE, &get_adv_hdl, sizeof(get_adv_hdl));
+
+	return ret;
+}
+
 uint16_t rtk_bt_le_gap_ext_connect(rtk_bt_le_ext_create_conn_param_t *p_ext_conn_param)
 {
 	uint16_t ret = 0;
@@ -640,7 +651,7 @@ uint16_t rtk_bt_le_gap_stop_scan(void)
 	return ret;
 }
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 {
 	uint16_t ret = 0;
@@ -658,15 +669,12 @@ uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->interval[0] < 0x04) || (p_param->interval[0] > 0x4000)) {
+		if (p_param->interval[0] < 0x04) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->window[0] < 0x04) || (p_param->window[0] > 0x4000)) {
-			return RTK_BT_ERR_PARAM_INVALID;
-		}
-
-		if (p_param->window[0] > p_param->interval[0]) {
+		if (p_param->window[0] < 0x04 ||
+			p_param->window[0] > p_param->interval[0]) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 	}
@@ -676,15 +684,12 @@ uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->interval[1] < 0x04) || (p_param->interval[1] > 0x4000)) {
+		if (p_param->interval[1] < 0x04) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->window[1] < 0x04) || (p_param->window[1] > 0x4000)) {
-			return RTK_BT_ERR_PARAM_INVALID;
-		}
-
-		if (p_param->window[1] > p_param->interval[1]) {
+		if (p_param->window[1] < 0x04 ||
+			p_param->window[1] > p_param->interval[1]) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 	}
@@ -930,7 +935,8 @@ uint16_t rtk_bt_le_gap_get_active_conn(rtk_bt_le_get_active_conn_t *p_active_con
 uint16_t rtk_bt_le_gap_get_conn_handle_by_addr(rtk_bt_le_addr_t *p_addr, uint16_t *p_conn_handle)
 {
 	uint16_t ret = 0;
-	rtk_bt_le_get_conn_handle_by_addr_param_t conn_handle_by_addr = {0};
+	rtk_bt_le_get_conn_handle_by_addr_param_t conn_handle_by_addr;
+	memset(&conn_handle_by_addr, 0, sizeof(rtk_bt_le_get_conn_handle_by_addr_param_t));
 	memcpy((void *)&conn_handle_by_addr.addr, (void *)p_addr, sizeof(rtk_bt_le_addr_t));
 	conn_handle_by_addr.p_conn_handle = p_conn_handle;
 
@@ -1525,7 +1531,7 @@ uint16_t rtk_bt_le_gap_conn_cte_tx_stop(uint16_t conn_handle)
 
 	return ret;
 }
-#if ((defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && \
+#if ((defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && \
     (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
 
 static uint16_t rtk_bt_le_gap_connless_cte_tx_enable(uint8_t adv_handle, rtk_bt_le_gap_connless_cte_tx_param_t *params)
@@ -1641,7 +1647,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_stop(uint8_t adv_handle)
 	return ret;
 }
 
-#endif /* RTK_BLE_5_0_AE_ADV_SUPPORT && RTK_BLE_5_0_PA_ADV_SUPPORT */
+#endif /* RTK_BLE_5_0_USE_EXTENDED_ADV && RTK_BLE_5_0_PA_ADV_SUPPORT */
 
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
 

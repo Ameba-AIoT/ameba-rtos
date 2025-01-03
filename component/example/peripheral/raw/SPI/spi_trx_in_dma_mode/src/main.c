@@ -154,17 +154,17 @@ static void spi_driver_init(void)
 
 }
 
-BOOL Spi_data_compare(u8 *pSrc, u8 *pDst, u32 Length)
+bool Spi_data_compare(u8 *pSrc, u8 *pDst, u32 Length)
 {
 	u32 Index;
-	u8 res = _TRUE;
+	u8 res = TRUE;
 
 	printf("\nres - idx - src data - dst data\n\n");
 
 	for (Index = 0; Index < Length; ++Index) {
 		if ((pSrc[Index] & dfs_mask) != pDst[Index]) {
 			printf("[ERR]   %lu:\t0x%x ----- 0x%x\n", Index, pSrc[Index]&dfs_mask, pDst[Index]);
-			res = _FALSE;
+			res = FALSE;
 		} else {
 			printf("[OK]    %lu:\t0x%x ----- 0x%x\n", Index, pSrc[Index]&dfs_mask, pDst[Index]);
 		}
@@ -285,7 +285,7 @@ void Spi_master_write_read_stream_dma(SPI_OBJ *spi_obj, u8 *tx_buffer, u8 *rx_bu
 
 void spi_dma_task(void)
 {
-	int result = _TRUE;
+	int result = TRUE;
 	int i = 0;
 
 	/* wait total cpus enter application to avoid log missing */
@@ -339,13 +339,13 @@ void spi_dma_task(void)
 
 	printf("\n---Master tx, Slave rx---\n");
 	result = Spi_data_compare(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
-	if (result == _FALSE) {
+	if (result == FALSE) {
 		goto TEST_RESULT;
 	}
 
 	printf("\n---Master rx, Slave tx---\n");
 	result = Spi_data_compare(SlaveTxBuf, MasterRxBuf, TEST_BUF_SIZE);
-	if (result == _FALSE) {
+	if (result == FALSE) {
 		goto TEST_RESULT;
 	}
 
@@ -374,7 +374,7 @@ void spi_dma_task(void)
 	}
 
 	result = Spi_data_compare(SlaveTxBuf, MasterRxBuf, TEST_BUF_SIZE);
-	if (result == _FALSE) {
+	if (result == FALSE) {
 		goto TEST_RESULT;
 	}
 

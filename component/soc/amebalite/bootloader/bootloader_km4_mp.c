@@ -14,7 +14,7 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 /* no mmu when mp shrink, use phy addr */
 #define img2_mp_addr		0x08014000
 #ifdef CONFIG_AP_CORE_KM4
@@ -391,10 +391,10 @@ u8 BOOT_LoadSubImage_mp(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, c
 		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
 		if ((ImgHdr.signature[0] != 0x35393138) || (ImgHdr.signature[1] != 0x31313738)) {
-			if (ErrLog == _TRUE) {
+			if (ErrLog == TRUE) {
 				RTK_LOGI(TAG, "%s Invalid\n", ImgName[i]);
 			}
-			return _FALSE;
+			return FALSE;
 		}
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
@@ -420,7 +420,7 @@ u8 BOOT_LoadSubImage_mp(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, c
 		StartAddr += Len;
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 u8 BOOT_LOAD_IMG(void)
@@ -434,7 +434,7 @@ u8 BOOT_LOAD_IMG(void)
 
 	/* img in flash, or =1 when download to ram in flashloader */
 	if (pRamStartFun->RamStartFun != NULL) {
-		return _TRUE;
+		return TRUE;
 	}
 
 	char *Km0Label[] = {"KR4 SRAM"};
@@ -443,7 +443,7 @@ u8 BOOT_LOAD_IMG(void)
 	/* KM0 SRAM only */
 	Cnt = 1;
 	PhyAddr = img2_mp_addr;
-	if (BOOT_LoadSubImage_mp(&SubImgInfo[Index], PhyAddr, Cnt, Km4Label, _TRUE) == FALSE) {
+	if (BOOT_LoadSubImage_mp(&SubImgInfo[Index], PhyAddr, Cnt, Km4Label, TRUE) == FALSE) {
 		return FALSE;
 	}
 
@@ -458,7 +458,7 @@ u8 BOOT_LOAD_IMG(void)
 	/* KM4 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = 1;
 	ImgAddr = PhyAddr;
-	if (BOOT_LoadSubImage_mp(&SubImgInfo[Index], ImgAddr, Cnt, Km0Label, _TRUE) == FALSE) {
+	if (BOOT_LoadSubImage_mp(&SubImgInfo[Index], ImgAddr, Cnt, Km0Label, TRUE) == FALSE) {
 		return FALSE;
 	}
 

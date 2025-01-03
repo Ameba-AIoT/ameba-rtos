@@ -104,7 +104,7 @@ u32 uart_recv_string_done(void *data)
 
 void uart_dma_send(char *pstr, u32 len)
 {
-	BOOL ret = _TRUE;
+	bool ret = TRUE;
 
 	UART_TXDMAConfig(UART_DEV, DMA_TX_BURST_SIZE);
 	UART_TXDMACmd(UART_DEV, ENABLE);
@@ -116,9 +116,9 @@ void uart_dma_send(char *pstr, u32 len)
 	}
 }
 
-BOOL uart_dma_recv_flow_controller(char *pstr)
+bool uart_dma_recv_flow_controller(char *pstr)
 {
-	BOOL ret = _TRUE;
+	bool ret = TRUE;
 	wait_rx = 1;
 
 	UART_RXDMAConfig(UART_DEV, DMA_RX_BURST_SIZE);
@@ -137,7 +137,7 @@ void uart_send_string(char *pstr)
 
 void uart_stream_rx_dma_flow_ctrl_demo(void)
 {
-	BOOL ret;
+	bool ret;
 
 	uart_idx = uart_get_idx(UART_DEV);
 	if (0xFF == uart_idx) {
@@ -175,7 +175,7 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 
 		if (0 == wait_rx && 0 == tx_busy) {
 			ret = uart_dma_recv_flow_controller(rx_buf);
-			if (ret == _FALSE) {
+			if (ret == FALSE) {
 				printf("rx dma thread failed!\n");
 			}
 		}

@@ -14,12 +14,11 @@
   * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
   ******************************************************************************
   */
+#include "rtw_inic_common.h"
+#if !defined (CONFIG_FULLMAC) && !defined(ZEPHYR_WIFI)
 #include "wifi_conf.h"
-#include "wifi_ind.h"
 #include "platform_stdlib.h"
-#include "basic_types.h"
-#include "inic_ipc.h"
-#if !defined(CONFIG_AS_INIC_NP)
+#if !defined(CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK
 #include "wpa_lite_intf.h"
 #include <wifi_auto_reconnect.h>
 #endif
@@ -27,11 +26,11 @@
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
-
+#endif
 /**********************************************************************************************
  *                                          Globals
  *********************************************************************************************/
-#ifndef CONFIG_AS_INIC_NP
+#if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK
 struct event_list_elem_t {
 	void (*handler)(char *buf, int len, int flags, void *user_data);
 	void	*handler_user_data;
@@ -98,7 +97,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 		LwIP_netif_set_link_down(0);
 #endif
 
-#ifndef CONFIG_AS_INIC_NP
+#if !defined(CONFIG_AS_INIC_NP) && !defined(ZEPHYR_WIFI)
 		deauth_data_pre = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
 		rtw_psk_deauth_info_flash((char *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ, NULL);
 		if (memcmp(deauth_data_pre->bssid, zero_mac, 6) != 0) {
@@ -136,7 +135,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
  * @brief internal event handle, must have same order as enum
  */
 void (*const event_internal_hdl[])(char *buf, int len, int flags, void *user_data) = {
-#ifndef CONFIG_MP_SHRINK
+#if (!defined(CONFIG_AS_INIC_NP) && !defined(ZEPHYR_WIFI)) || defined(CONFIG_ZEPHYR_SDK)
 	rtw_sae_sta_rx_auth,				/*WIFI_EVENT_RX_MGNT*/
 	rtw_sae_ap_rx_auth,					/*WIFI_EVENT_RX_MGNT_AP*/
 	rtw_sae_sta_start,					/*WIFI_EVENT_EXTERNAL_AUTH_REQ*/
@@ -150,11 +149,11 @@ void (*const event_internal_hdl[])(char *buf, int len, int flags, void *user_dat
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
 	rtw_roam_kvr_cap_update,			/*WIFI_EVENT_KVR_CAP_UPDATE*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-	rtw_wnm_btm_candidates_survey,		/*WIFI_EVENT_NB_RESP_RECV*/
+	rtw_roam_nb_rpt_elem_parsing,		/*WIFI_EVENT_NB_RESP_RECV*/
 #endif
 #ifdef CONFIG_IEEE80211V
-	rtw_wnm_process_btm_req,			/*WIFI_EVENT_BTM_REQ_RECV*/
-	wnm_dbg_cmd, 						/*WIFI_EVENT_BTM_DEBUG_CMD*/
+	rtw_wnm_btm_req_process,			/*WIFI_EVENT_BTM_REQ_RECV*/
+	rtw_wnm_dbg_cmd, 						/*WIFI_EVENT_BTM_DEBUG_CMD*/
 #endif
 #ifdef CONFIG_IEEE80211R
 	rtw_ft_auth_start,					/*WIFI_EVENT_FT_AUTH_START*/
@@ -170,7 +169,7 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 {
 	/*internal only events*/
 	if (event_cmd > WIFI_EVENT_INTERNAL_BASE) {
-#ifndef CONFIG_MP_SHRINK
+#if !defined(CONFIG_MP_SHRINK) && !defined(ZEPHYR_WIFI)
 		event_internal_hdl[event_cmd - WIFI_EVENT_INTERNAL_BASE - 1](buf, buf_len, flags, NULL);
 #else
 		UNUSED(buf_len);
@@ -193,7 +192,7 @@ int wifi_event_handle(unsigned int event_cmd, char *buf, int buf_len, int flags)
 	int i;
 
 	if ((event_cmd >= WIFI_EVENT_MAX && event_cmd <= WIFI_EVENT_INTERNAL_BASE) || event_cmd > WIFI_EVENT_INTERNAL_MAX) {
-		RTK_LOGS(TAG_WLAN_INIC, "invalid evt: %d \n", event_cmd);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "invalid evt: %d \n", event_cmd);
 		return RTW_BADARG;
 	}
 
@@ -228,7 +227,7 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
 			}
 		}
 		//there is no empty position for new handler
-		RTK_LOGS(TAG_WLAN_INIC, "WifiEvtReg fail: %d %d \n", event_cmds, WIFI_EVENT_MAX_ROW);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "WifiEvtReg fail: %d %d \n", event_cmds, WIFI_EVENT_MAX_ROW);
 	}
 }
 
@@ -254,11 +253,11 @@ void wifi_event_init(void)
 
 void wifi_indication(unsigned int event, char *buf, int buf_len, int flags)
 {
-#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_SDIO_BRIDGE)
+#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_FULLMAC_BRIDGE)
 	inic_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 
-#ifndef CONFIG_AS_INIC_NP
+#if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK
 	wifi_event_handle(event, buf, buf_len, flags);
 #endif
 }

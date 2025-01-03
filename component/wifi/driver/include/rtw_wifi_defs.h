@@ -18,13 +18,7 @@
 #ifndef	__RTW_WIFI_DEFS_H_
 #define __RTW_WIFI_DEFS_H_
 
-#if defined (__ICCARM__)
-#ifndef _WEAK
-#define _WEAK           __weak
-#endif
-#else
 #define _WEAK           __attribute__ ((weak))
-#endif
 
 /** @defgroup WIFI_Exported_Constants WIFI Exported Constants
   * @{
@@ -73,18 +67,18 @@
 #define NAN_WLAN_NAME	"wlan2"
 #endif
 
-#define IsSupported24G(band_type) ((band_type) & BAND_CAP_2G? _TRUE : _FALSE)
-#define IsSupported5G(band_type) ((band_type) & BAND_CAP_5G ?  _TRUE : _FALSE)
+#define IsSupported24G(band_type) ((band_type) & BAND_CAP_2G? TRUE : FALSE)
+#define IsSupported5G(band_type) ((band_type) & BAND_CAP_5G ?  TRUE : FALSE)
 
 #define IsLegacyOnly(NetType)  ((NetType) == ((NetType) & (WLAN_MD_11BG | WLAN_MD_11A)))
 
-#define IsSupportedTxOFDM(NetType) ((NetType) & (WLAN_MD_11G | WLAN_MD_11A) ? _TRUE : _FALSE)
+#define IsSupportedTxOFDM(NetType) ((NetType) & (WLAN_MD_11G | WLAN_MD_11A) ? TRUE : FALSE)
 
-#define is_supported_ht(NetType) ((NetType) & (WLAN_MD_11N) ? _TRUE : _FALSE)
-#define is_supported_vht(NetType) ((NetType) & (WLAN_MD_11AC) ? _TRUE : _FALSE)
-#define is_supported_he(NetType) ((NetType) & (WLAN_MD_11AX) ? _TRUE : _FALSE)
+#define is_supported_ht(NetType) ((NetType) & (WLAN_MD_11N) ? TRUE : FALSE)
+#define is_supported_vht(NetType) ((NetType) & (WLAN_MD_11AC) ? TRUE : FALSE)
+#define is_supported_he(NetType) ((NetType) & (WLAN_MD_11AX) ? TRUE : FALSE)
 
-#define IS_HT_RATE(_rate)				(((_rate) & 0x80) ? _TRUE : _FALSE)
+#define IS_HT_RATE(_rate)				(((_rate) & 0x80) ? TRUE : FALSE)
 #define IS_CCK_RATE(_rate) 				(MGN_1M == _rate || _rate == MGN_2M || _rate == MGN_5_5M || _rate == MGN_11M )
 #define IS_OFDM_RATE(_rate)				(MGN_6M <= _rate && _rate <= MGN_54M )
 
@@ -511,6 +505,7 @@ enum power_mgnt_mode {
 	PS_MODE_ACTIVE	= 0	, ///< active mode
 	PS_MODE_LEGACY		,       ///< legacy mode
 	PS_MODE_UAPSD_WMM	, ///< uapsd wmm mode
+	PS_MODE_WTNPS	, ///< wtn ps mode
 };
 
 /**

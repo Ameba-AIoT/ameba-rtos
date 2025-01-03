@@ -1,7 +1,7 @@
 set(DIR ${BASEDIR}/component/audio/media_source)
 set(
     MODULE_IFLAGS
-    ${BASEDIR}/component/ssl/mbedtls-2.16.9/include
+    ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER}/include
     ${BASEDIR}/component/audio/base/libs/src/include
     ${BASEDIR}/component/audio/base/log/interfaces
     ${BASEDIR}/component/audio/base/osal/osal_c/interfaces

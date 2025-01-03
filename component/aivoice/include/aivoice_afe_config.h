@@ -70,7 +70,7 @@ typedef struct afe_config {
 	int frame_size;                         // frame length(samples), must be 256
 
 	afe_mode_e afe_mode;                    // AFE mode, for ASR or voice communication. Only support AFE for ASR in current version.
-	bool enable_aec;                        // AEC(Acoustic Echo Cancellation) module switch
+	bool enable_aec;                        // AEC(Acoustic Echo Vancellation) module switch
 	bool enable_ns;                         // NS(Noise Suppression) module switch
 	bool enable_agc;                        // AGC(Automation Gain Control) module switch
 	bool enable_ssl;                        // SSL(Sound Source Localization) module switch. SSL is not supported in current version.
@@ -92,10 +92,9 @@ typedef struct afe_config {
 	bool enable_adaptive_agc;               // adaptive AGC switch. Not supported in current version.
 
 	// SSL module parameter
-	int ssl_resolution;                     // SSL solution(degree). Not supported for adjustment in current version.
-	int ssl_min_hz;                         // minimum frequency(Hz) of SSL module. Not supported for adjustment in current version.
-	int ssl_max_hz;                         // maximum frequency(Hz) of SSL module. Not supported for adjustment in current version.
-
+	float ssl_resolution;                   // SSL solution(degree)
+	int ssl_min_hz;                         // minimum frequency(Hz) of SSL module.
+	int ssl_max_hz;                         // maximum frequency(Hz) of SSL module.
 } afe_config_t;
 
 /*-------------------- Default config --------------------*/
@@ -110,7 +109,7 @@ typedef struct afe_config {
     .enable_agc = false, \
     .enable_ssl = false, \
     .aec_mode = AFE_AEC_SIGNAL, \
-    .aec_enable_threshold = 0, \
+    .aec_enable_threshold = 5, \
     .enable_res = false, \
     .aec_cost = AFE_AEC_FILTER_MID, \
     .res_aggressive_mode = AFE_AEC_RES_LOW, \
@@ -134,7 +133,7 @@ typedef struct afe_config {
     .enable_agc = true, \
     .enable_ssl = false, \
     .aec_mode = AFE_AEC_SIGNAL, \
-    .aec_enable_threshold = 0, \
+    .aec_enable_threshold = 5, \
     .enable_res = true, \
     .aec_cost = AFE_AEC_FILTER_MID, \
     .res_aggressive_mode = AFE_AEC_RES_HIGH, \

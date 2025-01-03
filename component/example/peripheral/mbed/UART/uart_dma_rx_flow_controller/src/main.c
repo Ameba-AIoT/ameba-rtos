@@ -73,7 +73,7 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 	serial_send_comp_handler(&sobj, (void *)uart_send_string_done, (uint32_t) &sobj);
 	serial_recv_comp_handler(&sobj, (void *)uart_recv_string_done, (uint32_t) &sobj);
 
-	ret = serial_recv_stream_dma_timeout(&sobj, rx_buf, 0, RX_TO_MS, NULL);
+	ret = serial_recv_stream_dma_timeout(&sobj, rx_buf, SRX_BUF_SZ, RX_TO_MS, NULL);
 
 	if (ret) {
 		printf(" %s: Recv Error(%d)\n", __FUNCTION__, ret);
@@ -82,11 +82,16 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 
 	while (1) {
 		if (rx_done) {
-			uart_send_string(&sobj, rx_buf);
+
+			if (_strlen(rx_buf) != 0) {
+				uart_send_string(&sobj, rx_buf);
+			}
 			rx_done = 0;
 
-			/* uart is flow controller and you can set rx timeout (unit is ms)*/
-			ret = serial_recv_stream_dma_timeout(&sobj, rx_buf, 0, RX_TO_MS, NULL);
+			/* avoid left fifo data being cleared in uart_send_string_done() */
+			while (tx_busy);
+
+			ret = serial_recv_stream_dma_timeout(&sobj, rx_buf, SRX_BUF_SZ, RX_TO_MS, NULL);
 
 			if (ret) {
 				printf(" %s: Recv Error(%d)\n", __FUNCTION__, ret);

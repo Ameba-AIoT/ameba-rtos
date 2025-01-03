@@ -6,6 +6,7 @@ set(
     ${BASEDIR}/component/wifi/driver/halcommon
     ${BASEDIR}/component/wifi/driver/halbtc
     ${BASEDIR}/component/wifi/driver/phl
+    ${BASEDIR}/component/bluetooth/driver/bt_inic
 )
 
 if(CONFIG_AMEBALITE)
@@ -42,6 +43,7 @@ if(CONFIG_AMEBASMART)
 endif()
 
 set(INICDRV ${BASEDIR}/component/wifi/inic)
+set(INICCOM ${BASEDIR}/component/wifi/inic/none_ipc_host)
 
 if(CONFIG_AS_INIC_NP)
     if(CONFIG_INIC_INTF_SPI)
@@ -52,16 +54,17 @@ if(CONFIG_AS_INIC_NP)
 
         ameba_internal_library(wifi_inic_spi_dev)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+        target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
 elseif(CONFIG_AS_INIC_AP)
-    if(CONFIG_SPI_FULLMAC_HOST)
+    if(CONFIG_INIC_INTF_SPI)
 		set(
 			CSRC 
 			${INICDRV}/spi/inic_spi_host.c
-			${INICDRV}/spi/inic_spi_host_api.c
-			${INICDRV}/spi/inic_spi_host_api_ext.c
-			${INICDRV}/spi/inic_spi_host_api_basic.c
 			${INICDRV}/spi/inic_spi_host_trx.c
+			${INICCOM}/inic_host_api.c
+			${INICCOM}/inic_host_api_ext.c
+			${INICCOM}/inic_host_api_basic.c
 		)
 	else()
 		set(

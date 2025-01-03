@@ -26,27 +26,27 @@ Setup Guide
 ~~~~~~~~~~~
 		For AmebaLite :AmebaLite Changes how example is compiled, and Removed macro controls (CONFIG_EXAMPLE_XXX)in platform_opts.h
 			GCC:use CMD "make all EXAMPLE=ota" to compile ota example.
-			
+
 Parameter Setting and Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		1. For GCC environmnet, type command "make menuconfig" and choose MBED_API => Enable MBED_API.
-		   
+
 		2. Set type to OTA_LOCAL to verify downloading firmware from local server.
 			ota_update_init(ctx, (char *)host, PORT, (char *)resource, OTA_LOCAL);
-			
+
 		3. Set type to OTA_HTTP to verify downloading firmware from http server.
 			ota_update_init(ctx, (char *)host, PORT, (char *)resource, OTA_HTTP);
-		
+
 		4. Set type to OTA_HTTPS to verify downloading firmware from https server.
 			ota_update_init(ctx, (char *)host, PORT, (char *)resource, OTA_HTTPS);
 			(1) in \component\ssl\mbedtls-2.16.9\include\mbedtls\config_rsa.h
-			#define MBEDTLS_SSL_MAX_CONTENT_LEN 16384 
+			#define MBEDTLS_SSL_MAX_CONTENT_LEN 16384
 			#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 			#define MBEDTLS_ECDH_C
-		
+
 		5. Set type to OTA_SDCARD to verify downloading firmware from sdcard.
 			ota_update_init(ctx, NULL, NULL, (char *)resource, OTA_SDCARD);
-		
+
 		6. For sdcard update, only AmebaSmart support.
 			(1) users only need to set resource.
 			#define RESOURCE    "OTA_ALL.bin" // binary file path in the sdcard.
@@ -56,16 +56,14 @@ Parameter Setting and Configuration
 			#define FF_LFN_UNICODE    2
 			(4) ensure that SDcard is in FAT32 format
 			(5) comment wifi connection if needed
-				//while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-				//	ota_printf(_OTA_INFO_, "Wait for WIFI connection ...\n");
-				//	rtos_time_delay_ms(1000);
-				//}
+                // Delay to check successful WiFi connection and obtain of an IP address
+                //LwIP_Check_Connectivity();
 			(6) Type command "make menuconfig" and choose "CONFIG VFS"
 				For VFS_FATFS with VFS_INF_SD: (Only AmebaSmart support)
 				[ ] Enable VFS LITTLEFS
 				[*] Enable VFS FATFS
 				(SD) FATFS Memory Type
-		
+
         7. For http or https update, modify PORT, HOST and RESOURCE based on your download server.
         eg: SERVER: http://m-apps.oss-cn-shenzhen.aliyuncs.com/051103061600.bin
         set:    #define PORT    80

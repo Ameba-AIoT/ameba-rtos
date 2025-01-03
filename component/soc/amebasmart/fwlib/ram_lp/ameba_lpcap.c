@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "LPCAP";
+static const char *const TAG = "LPCAP";
 u32 ap_sleep_timeout = 0xffffffff;
 u8 ap_sleep_type;
 u32 ap_pll_backup;
@@ -102,7 +102,7 @@ void ap_power_gate(void)
 	CA32_TypeDef *ca32 = CA32_BASE;
 
 	if ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_FEN) & HSYS_BIT_FEN_AP) == 0) {
-		RTK_LOGS(NOTAG, "AP PG Already\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "AP PG Already\n");
 		return;
 	}
 
@@ -199,7 +199,7 @@ void ap_clock_gate(void)
 void ap_clock_on(void)
 {
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) {
-		RTK_LOGS(NOTAG, "AP CW Already\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "AP CW Already\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -221,7 +221,7 @@ void ap_resume(void)
 	}
 
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) {
-		RTK_LOGS(NOTAG, "already clk on\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "already clk on\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -246,18 +246,16 @@ void ap_resume(void)
 	}
 }
 
-
-
-u32 ap_suspend(u32 type)
+int ap_suspend(u32 type)
 {
 	UNUSED(type);
 
-	u32 ret = _SUCCESS;
+	int ret = SUCCESS;
 	SLEEP_ParamDef *sleep_param;
 	u32 duration = 0;
 
 	if (!np_status_on()) {
-		RTK_LOGS(NOTAG, "NP is not on\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "NP is not on\n");
 		return 0;
 	}
 
@@ -278,6 +276,9 @@ u32 ap_suspend(u32 type)
 	} else {
 		ap_power_gate();
 	}
+
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RUNNING));
 
 	/*clean ap wake pending interrupt*/
 	NVIC_ClearPendingIRQ(AP_WAKE_IRQ);
@@ -309,13 +310,13 @@ void ap_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
-		if (_SUCCESS == ap_suspend(SLEEP_PG)) {
+		if (SUCCESS == ap_suspend(SLEEP_PG)) {
 			pmu_set_sysactive_time(2);
 			pmu_set_sleep_type(SLEEP_PG);
 		}
 		break;
 	case SLEEP_CG:
-		if (_SUCCESS == ap_suspend(SLEEP_CG)) {
+		if (SUCCESS == ap_suspend(SLEEP_CG)) {
 			pmu_set_sysactive_time(2);
 			pmu_set_sleep_type(SLEEP_CG);
 		}

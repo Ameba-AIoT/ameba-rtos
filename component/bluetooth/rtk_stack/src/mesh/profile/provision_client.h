@@ -21,7 +21,7 @@
 
 BEGIN_DECLS
 
-/** @addtogroup Prov_Client
+/** @addtogroup Provision_Client
   * @{
   */
 

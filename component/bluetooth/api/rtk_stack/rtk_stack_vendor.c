@@ -10,6 +10,7 @@
 #include <bt_api_config.h>
 #include <bt_vendor_config.h>
 #include <gap_vendor.h>
+#include <rtk_stack_vendor.h>
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <trace_app.h>
@@ -23,12 +24,32 @@ T_GAP_CAUSE le_vendor_one_shot_adv(void)
 	uint8_t len = 1;
 	uint8_t param[1] = {1};
 
-	if (gap_vendor_cmd_req(VENDOR_CMD_ONE_SHOT_ADV_OPCODE, len, param) == GAP_CAUSE_SUCCESS) {
-		return GAP_CAUSE_SUCCESS;
-	}
-	return GAP_CAUSE_SEND_REQ_FAILED;
+	return gap_vendor_cmd_req(VENDOR_CMD_ONE_SHOT_ADV_OPCODE, len, param);
 }
 #endif
+#endif
+
+#if defined(VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_LE_EXTENSION_FEATURE_SUPPORT
+T_GAP_CAUSE le_ae_coding_scheme(T_GAP_AE_CODING_SCHEME coding_scheme)
+{
+	uint8_t param[2];
+	param[0] = HCI_EXT_SUB_SET_CONTROLLER_PREFERRED_TX_CI;
+	param[1] = coding_scheme;
+
+	return gap_vendor_cmd_req(VENDOR_CMD_LE_EXTENSION_FEATURE_OPCODE, 2, param);
+}
+#endif
+
+#if defined(VENDOR_CMD_PLATFORM_EXTENSION_FEATURE_SUPPORT) && VENDOR_CMD_PLATFORM_EXTENSION_FEATURE_SUPPORT
+T_GAP_CAUSE le_vendor_ae_scheme(void)
+{
+	uint8_t param[3];
+	param[0] = HCI_VENDOR_EXT_SUB_SET_FEATURE;
+	param[1] = HCI_VENDOR_BT_FW_FEATURE_LEGACY_ADV_ON_CODED_PHY;
+	param[2] = 0x1;
+
+	return gap_vendor_cmd_req(VENDOR_CMD_PLATFORM_EXTENSION_FEATURE_OPCODE, 3, param);
+}
 #endif
 
 void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)

@@ -34,6 +34,7 @@ if(CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
     if(NOT CONFIG_BT_ZEPHYR)
         add_subdirectory(ble_mesh_stack)
     endif()
+    add_subdirectory(ble_mesh_ota_common)
 endif()
 
 if(CONFIG_BT_MESH_PROVISIONER)

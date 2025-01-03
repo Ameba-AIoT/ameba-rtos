@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "PMC";
+static const char *const TAG = "PMC";
 u32 PMC_MemMode_BK[6];
 
 /* light-sleep: out-circut=on, out-val=keep, mem-arry=on */

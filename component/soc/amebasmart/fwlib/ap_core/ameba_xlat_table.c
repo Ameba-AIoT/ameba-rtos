@@ -7,22 +7,6 @@
 #include "xlat_tables_v2.h"
 #include "basic_types.h"
 
-#if defined ( __ICCARM__ )
-SECTION(".data") u8 *__bss_start__ = 0;
-SECTION(".data") u8 *__bss_end__ = 0;
-SECTION(".data") u8 *__ram_nocache_start__ = 0;
-SECTION(".data") u8 *__ram_nocache_end__ = 0;
-SECTION(".data") u8 *__text_start__ = 0;
-SECTION(".data") u8 *__text_end__ = 0;
-SECTION(".data") u8 *__data_start__ = 0;
-
-extern unsigned char IMAGEBSS$$Base[];
-extern unsigned char IMAGEBSS$$Limit[];
-extern unsigned char IMAGETEXT$$Base[];
-extern unsigned char IMAGETEXT$$Limit[];
-extern unsigned char IMAGENCSRAM$$Base[];
-extern unsigned char IMAGENCSRAM$$Limit[];
-#else
 extern unsigned char __ram_nocache_start__[];
 extern unsigned char __ram_nocache_end__[];
 extern unsigned char __bss_start__[];
@@ -30,7 +14,9 @@ extern unsigned char __bss_end__[];
 extern unsigned char __dram_text_start__[];
 extern unsigned char __dram_text_end__[];
 extern unsigned char __data_start__[];
-#endif
+extern unsigned char __dram_dynamic_app_text_start__[];
+extern unsigned char __dram_dynamic_app_text_end__[];
+extern unsigned char __dram_dynamic_app_text_size__[];
 
 void mmap_add_region(unsigned long long base_pa, uintptr_t base_va, size_t size,
 					 unsigned int attr);
@@ -50,23 +36,9 @@ void *_memset(void *dst, int val, size_t count);
 *
 ******************************************************************************/
 
-void mmap_section_init(void)
-{
-#if defined ( __ICCARM__ )
-	__text_start__				= IMAGETEXT$$Base;
-	__text_end__					= IMAGETEXT$$Limit;
-	__bss_start__				= IMAGEBSS$$Base;
-	__bss_end__					= IMAGEBSS$$Limit;
-	__ram_nocache_start__			= IMAGENCSRAM$$Base;
-	__ram_nocache_end__			=  IMAGENCSRAM$$Limit;
-	__ram_nocache_end__ = (u8 *)(((((u32)__ram_nocache_end__ - 1) >> 5) + 1) << 5); //32-byte aligned
-#endif
-}
-
 void setupMMUTable(int coreID)
 {
 	if (coreID == 1) {
-		mmap_section_init();
 		/* core0: clear bss, create MMU table */
 		_memset((void *)__bss_start__, 0, (size_t)__bss_end__ - (size_t)__bss_start__);
 
@@ -80,6 +52,11 @@ void setupMMUTable(int coreID)
 						MT_CODE | MT_NS);
 		mmap_add_region((uint64_t)((int)__ram_nocache_start__), (uintptr_t)__ram_nocache_start__, (size_t)__ram_nocache_end__ - (size_t)__ram_nocache_start__,  \
 						MT_NON_CACHEABLE | MT_RW | MT_NS);
+		if ((size_t)__dram_dynamic_app_text_size__ > 0) {
+			mmap_add_region((uint64_t)((int)__dram_dynamic_app_text_start__ - 0x20), (uintptr_t)__dram_dynamic_app_text_start__ - 0x20,
+							(size_t)__dram_dynamic_app_text_end__ - (size_t)__dram_dynamic_app_text_start__ + 0x20,  \
+							MT_CODE | MT_NS);
+		}
 		mmap_add_region(0x60000000, 0x60000000,	0x80000000 - 0x60000000, MT_MEMORY | MT_RW | MT_NS);
 
 		mmap_add_region(0x80000000, 0x80000000,	0x80000000, MT_DEVICE | MT_RW | MT_NS);

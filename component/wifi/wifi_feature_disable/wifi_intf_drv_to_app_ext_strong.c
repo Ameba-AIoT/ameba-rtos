@@ -83,32 +83,32 @@ int wifi_ap_switch_chl_and_inform(struct _rtw_csa_parm_t *csa_param)
 	return -1;
 }
 
-u8 wifi_set_countrycode(char *cntcode)
+int wifi_set_countrycode(char *cntcode)
 {
 	UNUSED(cntcode);
 	call_noused = __LINE__;
-	return 0;
+	return RTW_ERROR;
 }
 
-u8 wifi_get_countrycode(struct country_code_table_t *table)
+int wifi_get_countrycode(struct country_code_table_t *table)
 {
 	UNUSED(table);
 	call_noused = __LINE__;
-	return 0;
+	return RTW_ERROR;
 }
 
-u8 wifi_set_chplan(u8 chplan)
+int wifi_set_chplan(u8 chplan)
 {
 	UNUSED(chplan);
 	call_noused = __LINE__;
-	return 0;
+	return RTW_ERROR;
 }
 
 int wifi_get_chplan(u8 *chplan)
 {
 	UNUSED(chplan);
 	call_noused = __LINE__;
-	return 0;
+	return RTW_ERROR;
 }
 
 
@@ -222,14 +222,14 @@ int wifi_set_group_id(unsigned char value)
 	return -1;
 }
 
-int wifi_get_autoreconnect(__u8 *mode)
+int wifi_get_autoreconnect(u8 *mode)
 {
 	UNUSED(mode);
 	call_noused = __LINE__;
 	return -1;
 }
 
-int wifi_add_custom_ie(void *cus_ie, int ie_num)
+int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_num);
@@ -238,7 +238,7 @@ int wifi_add_custom_ie(void *cus_ie, int ie_num)
 }
 
 
-int wifi_update_custom_ie(void *cus_ie, int ie_index)
+int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index)
 {
 	UNUSED(cus_ie);
 	UNUSED(ie_index);
@@ -309,7 +309,7 @@ int wifi_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
 	return -1;
 }
 
-int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags)
+int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags)
 {
 	UNUSED(wlan_idx);
 	UNUSED(buf);
@@ -326,36 +326,9 @@ u8 wifi_get_band_type(void)
 	return WL_BAND_2_4G;
 }
 
-void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process)
-{
-	(void)type;
-	(void)role;
-	(void)process;
-	call_noused = __LINE__;
-}
-
-void wifi_btcoex_set_bt_ant(u8 bt_ant)
-{
-	(void)bt_ant;
-	call_noused = __LINE__;
-}
-
 int wifi_set_pmf_mode(u8 pmf_mode)
 {
 	UNUSED(pmf_mode);
-	call_noused = __LINE__;
-	return -1;
-}
-
-int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param)
-{
-	UNUSED(rfk_param);
-	call_noused = __LINE__;
-	return -1;
-}
-
-int wifi_zigbee_coex_zb_rfk(void)
-{
 	call_noused = __LINE__;
 	return -1;
 }
@@ -390,21 +363,6 @@ void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)
 {
 	UNUSED(owe_param);
 	call_noused = __LINE__;
-}
-
-int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info)
-{
-	UNUSED(txpwr_ctrl_info);
-	call_noused = __LINE__;
-	return -1;
-}
-
-int wifi_get_tx_power(u8 rate, s8 *txpwr)
-{
-	UNUSED(rate);
-	UNUSED(txpwr);
-	call_noused = __LINE__;
-	return -1;
 }
 
 void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries)

@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 #include "ameba_audio_clock.h"
 
-static const char *TAG = "AUDIO";
+static const char *const TAG = "AUDIO";
 
 /** @addtogroup Ameba_Periph_Driver
   * @{

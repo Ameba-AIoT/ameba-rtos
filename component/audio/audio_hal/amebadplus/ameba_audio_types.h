@@ -1,5 +1,5 @@
-#ifndef AMEBA_COMPONENT_AUDIO_HAL_SRC_INCLUDE_AMEBA_AUDIO_TYPES_H
-#define AMEBA_COMPONENT_AUDIO_HAL_SRC_INCLUDE_AMEBA_AUDIO_TYPES_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_TYPES_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,12 +71,14 @@ enum {
  */
 enum {
 	/** play through speaker */
-	AMEBA_AUDIO_DEVICE_SPEAKER         = 0,
-	/** play through headphone*/
-	AMEBA_AUDIO_DEVICE_HEADPHONE       = 1,
+	AMEBA_AUDIO_DEVICE_NONE            = 0,
+	/** play through speaker */
+	AMEBA_AUDIO_DEVICE_SPEAKER         = 1,
 	/** play through I2S*/
 	AMEBA_AUDIO_DEVICE_I2S             = 2,
-	AMEBA_AUDIO_DEVICE_MAX_NUM         = 3,
+	/** play through headphone*/
+	AMEBA_AUDIO_DEVICE_HEADPHONE       = 3,
+	AMEBA_AUDIO_DEVICE_MAX_NUM         = 4,
 };
 
 /**
@@ -87,10 +89,9 @@ enum {
  */
 enum {
 	/** microphones */
-	AMEBA_AUDIO_IN_MIC                 = 0,
+	AMEBA_AUDIO_IN_MIC                 = 0x8000001u,
 	/** play through headphone*/
-	AMEBA_AUDIO_IN_I2S                 = 1,
-	AMEBA_AUDIO_IN_MAX_NUM             = 2,
+	AMEBA_AUDIO_IN_I2S                 = 0x8000004u,
 };
 
 /**
@@ -117,10 +118,24 @@ enum {
 	AMEBA_AUDIO_MICBST_MICIN     = 1,
 };
 
+/**
+ * @brief Defines the audio patch config.
+ */
+struct AmebaAudioPatchConfig {
+	/** rate of the sample */
+	uint32_t sample_rate;
+	/** channel count of the sample */
+	uint32_t channel_count;
+	/** format of the sample */
+	int32_t format;
+	/** audio patch device */
+	int32_t device;
+};
+
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif // AMEBA_COMPONENT_AUDIO_HAL_SRC_INCLUDE_AMEBA_AUDIO_TYPES_H
+#endif // AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_TYPES_H
 /** @} */

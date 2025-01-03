@@ -1,0 +1,135 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+
+    choice
+        prompt "ArmCore"
+        default RSICV_CORE_KR4_FOR_KR4
+        config RSICV_CORE_KR4_FOR_KR4
+            bool "RSICV_KR4"
+    endchoice
+
+endmenu
+
+
+
+comment "----------Application Config----------"
+
+menu "Audio Config"
+    config AUDIO_FWK_FOR_KR4
+        bool "Enable Audio Framework"
+        default n
+    if AUDIO_FWK_FOR_KR4
+        choice
+            prompt "Select Audio Interfaces"
+            config AUDIO_MIXER_FOR_KR4
+                bool "Mixer"
+            config AUDIO_PASSTHROUGH_FOR_KR4
+                bool "PassThrough"
+        endchoice
+    endif
+
+    config MEDIA_PLAYER_FOR_KR4
+        bool "Enable Media Framework"
+        default n
+        select AUDIO_FWK_FOR_KR4
+
+    if MEDIA_PLAYER_FOR_KR4
+        menu "Demux"
+            config MEDIA_DEMUX_WAV_FOR_KR4
+                bool "Demux WAV"
+            config MEDIA_DEMUX_MP3_FOR_KR4
+                bool "Demux MP3"
+            config MEDIA_DEMUX_AAC_FOR_KR4
+                bool "Demux AAC"
+            config MEDIA_DEMUX_MP4_FOR_KR4
+                bool "Demux M4A"
+            config MEDIA_DEMUX_FLAC_FOR_KR4
+                bool "Demux FLAC"
+            config MEDIA_DEMUX_OGG_FOR_KR4
+                bool "Demux OGG"
+            config MEDIA_DEMUX_AMR_FOR_KR4
+                bool "Demux AMR"
+        endmenu
+
+        menu "Codec"
+            config MEDIA_CODEC_PCM_FOR_KR4
+                bool "Codec PCM"
+            config MEDIA_CODEC_MP3_FOR_KR4
+                bool "Codec MP3"
+            config MEDIA_CODEC_HAAC_FOR_KR4
+                bool "Codec AAC"
+            config MEDIA_CODEC_VORBIS_FOR_KR4
+                bool "Codec VORBIS"
+            config MEDIA_CODEC_OPUS_FOR_KR4
+                bool "Codec OPUS"
+            config MEDIA_CODEC_AMR_FOR_KR4
+                bool "Codec AMR"
+            config MEDIA_CODEC_G711_FOR_KR4
+                bool "Codec G711"
+            config MEDIA_CODEC_GSM_FOR_KR4
+                bool "Codec GSM"
+        endmenu
+    endif
+
+    menu "Third Party Lib"
+        config SPEEX_LIB_FOR_KR4
+            bool "Speex"
+            default n
+        config OPUS_LIB_FOR_KR4
+            bool "OPUS"
+            default n
+    endmenu
+
+endmenu
+
+menu "GUI Config"
+    config GUI_EN_FOR_KR4
+        bool "Enable GUI"
+        default n
+    config LVGL_EN_FOR_KR4
+        depends on GUI_EN_FOR_KR4
+        bool "LVGL"
+        default n
+endmenu
+
+menu "CONFIG IPC Message Queue"
+    config IMQ_EN_FOR_KR4
+        bool "Enable IPC Message Queue"
+        default n
+    if IMQ_EN_FOR_KR4
+        config RPC_EN_FOR_KR4
+            bool "Enable RPC"
+            default n
+        config IMQ2_TEST_FOR_KR4
+            bool "Enable IPC Message Queue Test"
+            default n
+        config IPC_MSG_MASTER_FOR_KR4
+            bool
+            default y
+    endif
+endmenu
+
+#=====================    Debug Message Config   =====================
+comment '--------------Debug Message Config------------'
+menu "To set debug msg flag"
+    config DEBUG_RXI_DUMP_FOR_KR4
+        bool
+        default n
+    config DEBUG_BACK_TRACE_FOR_KR4
+        bool "Enable debug backtrace"
+        default n
+    config DEBUG_CRASH_DUMP_FOR_KR4
+        bool "Enable debug crash dump"
+        default n
+    if DEBUG_CRASH_DUMP_FOR_KR4
+        config STACK_DUMP_DEPTH_FOR_KR4
+            int
+            default 100
+        config DEBUG_CRASH_DUMP_RUNS_FOR_KR4
+            int
+            default 1
+    endif
+
+endmenu
+

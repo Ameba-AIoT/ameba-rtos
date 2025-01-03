@@ -25,8 +25,10 @@ enum aivoice_out_event_type {
 };
 
 struct aivoice_evout_vad {
-	int status;                     /*  0: vad is changed from speech to silence;
-                                        1: vad is changed from silence to speech; */
+	int status;                     /*  0: vad is changed from speech to silence,
+                                           indicating the end point of a speech segment
+                                        1: vad is changed from silence to speech,
+                                           indicating the start point of a speech segment */
 	unsigned int offset_ms;         /* time offset relative to reset point. */
 };
 
@@ -106,6 +108,19 @@ typedef int (*prtk_aivoice_feed)(void *handle, char *input_data, int length);
 void rtk_aivoice_register_callback(void *handle,
 								   aivoice_callback_handler user_callback_func,
 								   void *user_data);
+
+/**
+ * @brief set kws mode
+ *
+ * Multi mode improves kws and asr accuracy compared to single mode,
+ * while also increases computation consumption.
+ *
+ * you MUST set kws mode before prtk_aivoice_create in these flows:
+ *      aivoice_iface_full_flow_v1
+ *      aivoice_iface_afe_kws_v1
+ */
+void rtk_aivoice_set_single_kws_mode(void);
+void rtk_aivoice_set_multi_kws_mode(void);
 
 /**
  * This structure contains the functions used to do operations on aivoice.

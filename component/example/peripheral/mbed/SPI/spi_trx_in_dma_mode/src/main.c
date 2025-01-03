@@ -69,12 +69,12 @@ void Slave_tr_done_callback(uint32_t pdata, SpiIrq event)
 	}
 }
 
-BOOL Ssi_DataCompare(u16 *pSrc, u16 *pDst, u32 Length)
+bool Ssi_DataCompare(u16 *pSrc, u16 *pDst, u32 Length)
 {
 	u32 Index;
 	u8 *PSrc_8 = (u8 *)pSrc;
 	u8 *PDst_8 = (u8 *)pDst;
-	u8 res = _TRUE;
+	u8 res = TRUE;
 
 	printf("\nres - idx - src data - dst data\n\n");
 
@@ -82,7 +82,7 @@ BOOL Ssi_DataCompare(u16 *pSrc, u16 *pDst, u32 Length)
 		for (Index = 0; Index < Length; ++Index) {
 			if ((pSrc[Index] & dfs_mask) != pDst[Index]) {
 				printf("[ERR]   %lu:\t0x%x ----- 0x%x\n", Index, pSrc[Index]&dfs_mask, pDst[Index]);
-				res = _FALSE;
+				res = FALSE;
 			} else {
 				printf("[OK]    %lu:\t0x%x ----- 0x%x\n", Index, pSrc[Index]&dfs_mask, pDst[Index]);
 			}
@@ -91,7 +91,7 @@ BOOL Ssi_DataCompare(u16 *pSrc, u16 *pDst, u32 Length)
 		for (Index = 0; Index < Length; ++Index) {
 			if ((PSrc_8[Index] & dfs_mask) != PDst_8[Index]) {
 				printf("[ERR]   %lu:\t0x%x ----- 0x%x\n", Index, PSrc_8[Index]&dfs_mask, PDst_8[Index]);
-				res = _FALSE;
+				res = FALSE;
 			} else {
 				printf("[OK]    %lu:\t0x%x ----- 0x%x\n", Index, PSrc_8[Index]&dfs_mask, PDst_8[Index]);
 			}

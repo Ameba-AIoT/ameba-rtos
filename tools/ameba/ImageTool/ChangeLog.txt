@@ -130,3 +130,8 @@ ChangeLog:
                   (2) Fix checksum error in dplus uart download mode
 20240717 v2.7.17  (1) Fix download big size to flash error
                   (2) Increase timeout value when erase flash
+20241119 v2.8.0   Initial support for new download spec
+20241121 v2.8.1   (1) Fix nor erase failure
+                  (2) Enable log timestamp as default
+                  (3) Remove useless runtime settings
+20241203 v2.8.2   Fix flash full erase issue

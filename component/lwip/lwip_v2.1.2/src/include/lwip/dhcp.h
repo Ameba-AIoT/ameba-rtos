@@ -50,9 +50,8 @@ extern "C" {
 #endif
 
 /** period (in seconds) of the application calling dhcp_coarse_tmr() */
-#if CONFIG_LWIP_DHCP_COARSE_TIMER
-#define DHCP_COARSE_TIMER_SECS CONFIG_LWIP_DHCP_COARSE_TIMER    //Realtek add
-#else
+//Realtek add, unify options not in opt.h to configure in lwipopts.h
+#ifndef DHCP_COARSE_TIMER_SECS
 #define DHCP_COARSE_TIMER_SECS  60
 #endif
 /** period (in milliseconds) of the application calling dhcp_coarse_tmr() */

@@ -225,7 +225,7 @@ void KeyScan_ClearFIFOData(KSCAN_TypeDef *KeyScan)
   *     @arg KS_BIT_FIFO_FULL
   *     @arg KS_BIT_FIFO_EMPTY
   * @retval the new statue of the specified flag.
-  *   This parameter can be: _TRUE or _FALSE.
+  *   This parameter can be: TRUE or FALSE.
   */
 bool KeyScan_GetFIFOState(KSCAN_TypeDef *KeyScan, u32 KeyScan_Flag)
 {
@@ -233,9 +233,9 @@ bool KeyScan_GetFIFOState(KSCAN_TypeDef *KeyScan, u32 KeyScan_Flag)
 	assert_param(IS_KEYSCAN_ALL_PERIPH(KeyScan));
 
 	if ((KeyScan->KS_DATA_NUM & KeyScan_Flag) != 0) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 

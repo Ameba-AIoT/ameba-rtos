@@ -33,9 +33,7 @@
 #include "mbedtls/error.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/version.h"
-#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
 #include "mbedtls/psa_util.h"
-#endif
 #endif
 
 enum {

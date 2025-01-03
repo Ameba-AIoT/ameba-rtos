@@ -15,13 +15,6 @@
 #define LIB_INFO_CMD	"ATS?"
 #define ALL_CPU_RECV	0xFFFF
 
-#if defined ( __ICCARM__ )
-#pragma section=".cmd.table.data"
-
-SECTION(".data") u8 *__cmd_table_start__ = 0;
-SECTION(".data") u8 *__cmd_table_end__ = 0;
-#endif
-
 #define OpenShellRx		2
 
 extern volatile UART_LOG_CTL		shell_ctl;
@@ -101,7 +94,7 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	DCache_Invalidate(addr, sizeof(UART_LOG_BUF));
 	_memcpy(pUartLogBuf, (u32 *)addr, sizeof(UART_LOG_BUF));
 
-	shell_ctl.ExecuteCmd = _TRUE;
+	shell_ctl.ExecuteCmd = TRUE;
 	if (shell_ctl.shell_task_rdy) {
 		shell_ctl.GiveSema();
 	}
@@ -135,10 +128,10 @@ void shell_loguartRx_dispatch(void)
 				CpuId = LP_CPU_ID;
 				CONSOLE_AMEBA(); /* '\0' put # */
 				shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-				shell_ctl.ExecuteCmd = _FALSE;
+				shell_ctl.ExecuteCmd = FALSE;
 				break;
 			}
-#ifdef CONFIG_AS_INIC_KM4_NP_CA32_AP
+#ifdef CONFIG_INIC_INTF_IPC
 			if ((shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~')) {
 				i = i + 1; /* remove flag */
 				CpuId = NP_CPU_ID;	/* CMD should processed by KM4 */
@@ -182,9 +175,9 @@ void shell_loguartRx_dispatch(void)
 		u32 buflen = 1024;
 		char *buf = rtos_mem_malloc(buflen);
 		ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, "%s", buf);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", buf);
 		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, "%s", buf);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", buf);
 		rtos_mem_free(buf);
 
 		//2. Other CPU Pintf Lib Info
@@ -196,7 +189,7 @@ void shell_loguartRx_dispatch(void)
 
 	if (CpuId != LP_CPU_ID) {
 		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-		shell_ctl.ExecuteCmd = _FALSE;
+		shell_ctl.ExecuteCmd = FALSE;
 	}
 }
 #else
@@ -207,10 +200,10 @@ void shell_loguartRx_dispatch(void)
 		u32 buflen = 1024;
 		char *buf = rtos_mem_malloc(buflen);
 		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, "%s", buf);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", buf);
 		rtos_mem_free(buf);
 		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-		shell_ctl.ExecuteCmd = _FALSE;
+		shell_ctl.ExecuteCmd = FALSE;
 	}
 }
 #endif
@@ -247,13 +240,13 @@ static void shell_task_ram(void *Data)
 #endif
 			if (ret == FALSE) {
 				if (shell_cmd_exec_ram(pUartLogBuf->UARTLogBuf) == FALSE) {
-					RTK_LOGS(NOTAG, "\r\nunknown command '%s'", pUartLogBuf->UARTLogBuf);
-					RTK_LOGS(NOTAG, "\r\n\n#\r\n");
+					RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\nunknown command '%s'", pUartLogBuf->UARTLogBuf);
+					RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n\n#\r\n");
 				}
 			}
 
 			shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-			shell_ctl.ExecuteCmd = _FALSE;
+			shell_ctl.ExecuteCmd = FALSE;
 		}
 
 	} while (1);
@@ -265,16 +258,11 @@ void shell_init_ram(void)
 	atcmd_service_init();
 #endif
 
-#if defined ( __ICCARM__ )
-	__cmd_table_start__ = (u8 *)__section_begin(".cmd.table.data");
-	__cmd_table_end__ = (u8 *)__section_end(".cmd.table.data");
-#endif
-
 	shell_ctl.pCmdTbl = (PCOMMAND_TABLE)__cmd_table_start__;
 	shell_ctl.CmdTblSz = ((__cmd_table_end__ - __cmd_table_start__) / sizeof(COMMAND_TABLE));
 
-	shell_ctl.ExecuteCmd = _FALSE;
-	shell_ctl.ExecuteEsc = _TRUE; //don't check Esc anymore
+	shell_ctl.ExecuteCmd = FALSE;
+	shell_ctl.ExecuteEsc = TRUE; //don't check Esc anymore
 	shell_ctl.GiveSema = shell_give_sema;
 
 

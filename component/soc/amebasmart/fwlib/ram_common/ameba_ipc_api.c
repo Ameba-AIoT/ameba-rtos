@@ -17,17 +17,11 @@
 /** @defgroup IPC_Exported_Constants IPC Exported Constants
   * @{
   */
-static const char *TAG = "IPC";
+static const char *const TAG = "IPC";
 rtos_sema_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 
 void (*ipc_delay)(uint32_t);
 
-#if defined ( __ICCARM__ )
-#pragma section=".ipc.table.data"
-
-SECTION(".data") u8 *__ipc_table_start__ = 0;
-SECTION(".data") u8 *__ipc_table_end__ = 0;
-#endif
 /**@}*/
 
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
@@ -48,10 +42,6 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 	u32 IPC_IMR;
 	u32 IPC_IntMode;
 
-#if defined ( __ICCARM__ )
-	__ipc_table_start__ = (u8 *)__section_begin(".ipc.table.data");
-	__ipc_table_end__ = (u8 *)__section_end(".ipc.table.data");
-#endif
 	IPC_INIT_TABLE *ipc_init_table = (IPC_INIT_TABLE *)__ipc_table_start__;
 	u32 ipc_num = ((__ipc_table_end__ - __ipc_table_start__) / sizeof(IPC_INIT_TABLE));
 
@@ -145,7 +135,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
 			timeout--;
 			if (timeout == 0) {
-				RTK_LOGS(TAG, " IPC Request Timeout\r\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Request Timeout\r\n");
 				return IPC_REQ_TIMEOUT;
 			}
 		}
@@ -157,7 +147,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
 
 		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != SUCCESS) {
-			RTK_LOGS(TAG, " IPC Get Semaphore Timeout\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
 			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
 			return IPC_SEMA_TIMEOUT;
 		}
@@ -279,10 +269,10 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 			Sema_Stat = HAL_READ32(IPC_SEMA_BASE, SEM_Idx * 4);
 
 			if (Sema_Stat == 0) {
-				return _TRUE;
+				return TRUE;
 			} else {
 				if (timeout == 0) {
-					return _FALSE;
+					return FALSE;
 				}
 
 				/* yield os for high priority thread*/
@@ -302,7 +292,7 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 			Sema_Stat = HAL_READ16(IPC_IPC_SEMA_BASE, 0x0);
 			if (Sema_Stat & BIT(SEM_Idx)) {
 				if (timeout == 0) {
-					return _FALSE;
+					return FALSE;
 				}
 
 				/* yield os for high priority thread*/
@@ -313,14 +303,14 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 
 			} else {
 				HAL_WRITE16(IPC_IPC_SEMA_BASE, 0x0, Sema_Stat | BIT(SEM_Idx));
-				return _TRUE;
+				return TRUE;
 			}
 
 		} while (timeout);
 
 	}
 
-	return _FALSE;
+	return FALSE;
 }
 
 
@@ -341,7 +331,7 @@ u32 IPC_SEMFree(u32 SEM_Idx)
 		HAL_WRITE16(IPC_IPC_SEMA_BASE, 0x0, HAL_READ16(IPC_IPC_SEMA_BASE, 0x0) & (~ BIT(SEM_Idx)));
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 

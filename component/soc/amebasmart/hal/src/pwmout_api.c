@@ -215,7 +215,7 @@ float pwmout_read(pwmout_t *obj) //read duty-cycle
 	if (obj->period > 0) {
 		value = (float)obj->pulse / (float)obj->period;
 	}
-	return ((value > 1.0) ? (1.0) : (value));
+	return ((value > 1.0f) ? (1.0f) : (value));
 }
 
 /**

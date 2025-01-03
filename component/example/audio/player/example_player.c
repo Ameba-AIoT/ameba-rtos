@@ -236,8 +236,8 @@ void example_player_test_args_handle(char  *argv[])
 u32 example_player_test(u16 argc, u8 *argv[])
 {
 	(void) argc;
-	example_player_test_args_handle((char**)argv);
-	return _TRUE;
+	example_player_test_args_handle((char **)argv);
+	return TRUE;
 }
 #else
 

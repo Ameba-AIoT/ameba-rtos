@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "PMC";
+static const char *const TAG = "PMC";
 _OPTIMIZE_NONE_
 void SOCPS_SleepPG(void)
 {

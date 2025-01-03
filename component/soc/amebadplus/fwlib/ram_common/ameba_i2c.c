@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 const I2C_DevTable I2C_DEV_TABLE[2] = {
 #ifdef CONFIG_ARM_CORE_CM4
@@ -271,9 +271,11 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address)
 {
 	u32 tar = I2Cx->IC_TAR & ~(I2C_MASK_IC_TAR);
+	u32 sar = I2Cx->IC_SAR & ~(I2C_MASK_IC_SAR);
 
 	/*set target address to generate start signal*/
 	I2Cx->IC_TAR = (Address & I2C_MASK_IC_TAR) | tar;
+	I2Cx->IC_SAR = (Address & I2C_MASK_IC_SAR) | sar;
 }
 
 /**
@@ -661,6 +663,7 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 	u32 cnt = 0;
 	/*timout 5S*/
 	u32 timeout ;
+	u32 int_status;
 
 	if ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE)) {
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RX_DONE);
@@ -668,13 +671,15 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 	for (cnt = 0; cnt < len; cnt++) {
 		timeout = 2500000;
-		while (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RD_REQ) == 0) & ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) == 0)) {
+		int_status = I2Cx->IC_RAW_INTR_STAT;
+		while (((int_status & I2C_BIT_RD_REQ) == 0) & ((int_status & I2C_BIT_RX_DONE) == 0)) {
 			DelayUs(2);
 			if (timeout == 0) {
 				RTK_LOGI(TAG, "Waiting for read request timeout\n");
 				return cnt;
 			}
 			timeout--;
+			int_status = I2Cx->IC_RAW_INTR_STAT;
 		}
 
 		I2C_ClearINT(I2Cx, I2C_BIT_R_RD_REQ);
@@ -1006,7 +1011,7 @@ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen)
   * @retval   TRUE/FLASE
   * @note can not support legacy DMA mode
   */
-BOOL I2C_TXGDMA_Init(
+bool I2C_TXGDMA_Init(
 	u8 Index,
 	GDMA_InitTypeDef *GDMA_InitStruct,
 	void *CallbackData,
@@ -1024,7 +1029,7 @@ BOOL I2C_TXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, 5);
 	if (GdmaChnl == 0xFF) {
 		/*  No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -1064,7 +1069,7 @@ BOOL I2C_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1079,7 +1084,7 @@ BOOL I2C_TXGDMA_Init(
   * @retval   TRUE/FLASE
   * @note support Master or Slave RXDMA
   */
-BOOL I2C_RXGDMA_Init(
+bool I2C_RXGDMA_Init(
 	u8 Index,
 	GDMA_InitTypeDef *GDMA_InitStruct,
 	void *CallbackData,
@@ -1097,7 +1102,7 @@ BOOL I2C_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, 5);
 	if (GdmaChnl == 0xFF) {
 		/* No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -1137,7 +1142,7 @@ BOOL I2C_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 

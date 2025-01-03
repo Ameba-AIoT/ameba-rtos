@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "SPORT";
+static const char *const TAG = "SPORT";
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -90,9 +90,9 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
   * @param  index: 0 ~ 1.
   * @param  direction: SP_DIR_TX or SP_DIR_RX.
   * @param  SP_StructInit: pointer to an SP_StructInit structure.
-  * @retval value: _TRUE/_FALSE
+  * @retval value: TRUE/FALSE
 */
-BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
+bool AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 {
 	if (direction == SP_DIR_TX) {
 
@@ -150,7 +150,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 /**
 * @brief Unregister SPORT.
 * @param index: 0 ~ 1.
-* @retval value: _TRUE/_FALSE
+* @retval value: TRUE/FALSE
 */
 void AUDIO_SP_Unregister(u32 index, u32 direction)
 {
@@ -531,6 +531,7 @@ void AUDIO_SP_SelFixBclk(u32 index, u32 bclk_sel)
 *			 @arg TX_FIFO1_REG0_R
 *			 @arg TX_FIFO1_REG1_L
 *			 @arg TX_FIFO1_REG1_R
+*			 @arg DIRECT_REG_CHN
 */
 void AUDIO_SP_TXCHNSrcSel(u32 index, u32 tx_chn, u32 fifo_chn)
 {
@@ -1218,7 +1219,7 @@ void AUDIO_SP_SetPinMux(u32 i2s_sel, u32 pinfunc_sel)
   * @param  Length: TX Count.
   * @retval TRUE/FLASE
   */
-BOOL AUDIO_SP_TXGDMA_Init(
+bool AUDIO_SP_TXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1236,7 +1237,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -1276,7 +1277,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
 		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
-		return _FALSE;
+		return FALSE;
 	}
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
@@ -1288,7 +1289,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	/*	Enable GDMA for TX */
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1302,7 +1303,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
   * @param  Length: RX Count.
   * @retval TRUE/FLASE
   */
-BOOL AUDIO_SP_RXGDMA_Init(
+bool AUDIO_SP_RXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1319,7 +1320,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -1362,7 +1363,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 	//RTK_LOGD(TAG, "RXGDMA_End\n");
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1373,7 +1374,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
   * @param  TX_length: Length of data to be sent.
   * @retval TRUE
   */
-BOOL AUDIO_SP_TXGDMA_Restart(
+bool AUDIO_SP_TXGDMA_Restart(
 	u8 GDMA_Index,
 	u8 GDMA_ChNum,
 	u32 TX_addr,
@@ -1385,7 +1386,7 @@ BOOL AUDIO_SP_TXGDMA_Restart(
 	DCache_CleanInvalidate(TX_addr, TX_length);
 	GDMA_Cmd(GDMA_Index, GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1396,7 +1397,7 @@ BOOL AUDIO_SP_TXGDMA_Restart(
   * @param  TX_length: Length of data to be received.
   * @retval TRUE
   */
-BOOL AUDIO_SP_RXGDMA_Restart(
+bool AUDIO_SP_RXGDMA_Restart(
 	u8 GDMA_Index,
 	u8 GDMA_ChNum,
 	u32 RX_addr,
@@ -1408,7 +1409,7 @@ BOOL AUDIO_SP_RXGDMA_Restart(
 	DCache_CleanInvalidate(RX_addr, RX_length);
 	GDMA_Cmd(GDMA_Index, GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1424,7 +1425,7 @@ BOOL AUDIO_SP_RXGDMA_Restart(
   * @param  Lli: This parameter stores the address pointing to the next Linked List Item in block chaining.
   * @retval TRUE/FLASE
   */
-BOOL AUDIO_SP_LLPTXGDMA_Init(
+bool AUDIO_SP_LLPTXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1447,7 +1448,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	/*set GDMA initial structure member value*/
@@ -1493,7 +1494,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
 		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%lx,  Length=%lu\n", pTxData, Length);
-		return _FALSE;
+		return FALSE;
 	}
 
 
@@ -1510,7 +1511,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 	DCache_CleanInvalidate((u32)Lli, MaxLLP * sizeof(*Lli));
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1526,7 +1527,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
   * @param  Lli: This parameter stores the address pointing to the next Linked List Item in block chaining.
   * @retval TRUE/FLASE
   */
-BOOL AUDIO_SP_LLPRXGDMA_Init(
+bool AUDIO_SP_LLPRXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1547,7 +1548,7 @@ BOOL AUDIO_SP_LLPRXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	/*set GDMA initial structure member value*/
@@ -1598,7 +1599,7 @@ BOOL AUDIO_SP_LLPRXGDMA_Init(
 	DCache_CleanInvalidate((u32)Lli, MaxLLP * sizeof(*Lli));
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1760,6 +1761,240 @@ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir)
 }
 
 /**
+  * @brief  Set SPORT direct out start state.
+  * @param  index: select SPORT.
+  * @param  out_chn: select direct out channel.
+  *		   This parameter can be one of the following values:
+  *			 @arg DIRECT_OUT_CHN0
+  *			 @arg DIRECT_OUT_CHN1
+  *			 @arg DIRECT_OUT_CHN2
+  *			 @arg DIRECT_OUT_CHN3
+  *			 @arg DIRECT_OUT_CHN4
+  *			 @arg DIRECT_OUT_CHN5
+  *			 @arg DIRECT_OUT_CHN6
+  *			 @arg DIRECT_OUT_CHN7
+  * @param  NewState: ENABLE or Disable channel.
+  * @retval None
+  */
+void AUDIO_SP_RXSetDirectOutStart(u32 index, u32 out_chn, u32 NewState)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	if (NewState == ENABLE) {
+		switch (out_chn) {
+		case DIRECT_OUT_CHN0:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_0_EN;
+			break;
+		case DIRECT_OUT_CHN1:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_1_EN;
+			break;
+		case DIRECT_OUT_CHN2:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_2_EN;
+			break;
+		case DIRECT_OUT_CHN3:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_3_EN;
+			break;
+		case DIRECT_OUT_CHN4:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_4_EN;
+			break;
+		case DIRECT_OUT_CHN5:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_5_EN;
+			break;
+		case DIRECT_OUT_CHN6:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_6_EN;
+			break;
+		case DIRECT_OUT_CHN7:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_OUT_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct out channel value for enable!\n");
+			break;
+		}
+	} else {
+		switch (out_chn) {
+		case DIRECT_OUT_CHN0:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_0_EN;
+			break;
+		case DIRECT_OUT_CHN1:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_1_EN;
+			break;
+		case DIRECT_OUT_CHN2:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_2_EN;
+			break;
+		case DIRECT_OUT_CHN3:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_3_EN;
+			break;
+		case DIRECT_OUT_CHN4:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_4_EN;
+			break;
+		case DIRECT_OUT_CHN5:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_5_EN;
+			break;
+		case DIRECT_OUT_CHN6:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_6_EN;
+			break;
+		case DIRECT_OUT_CHN7:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_OUT_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct out channel value for diable!\n");
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Set SPORT direct reg start state.
+  * @param  index: select SPORT.
+  * @param  reg_chn: select direct reg channel.
+  *		   This parameter can be one of the following values:
+  *			 @arg DIRECT_REG_0
+  *			 @arg DIRECT_REG_1
+  *			 @arg DIRECT_REG_2
+  *			 @arg DIRECT_REG_3
+  *			 @arg DIRECT_REG_4
+  *			 @arg DIRECT_REG_5
+  *			 @arg DIRECT_REG_6
+  *			 @arg DIRECT_REG_7
+  * @param  NewState: ENABLE or Disable direct reg.
+  * @retval None
+  */
+void AUDIO_SP_TXSetDirectRegStart(u32 index, u32 reg_chn, u32 NewState)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	if (NewState == ENABLE) {
+		switch (reg_chn) {
+		case DIRECT_REG_0:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_0_EN;
+			break;
+		case DIRECT_REG_1:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_1_EN;
+			break;
+		case DIRECT_REG_2:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_2_EN;
+			break;
+		case DIRECT_REG_3:
+			SPORTx->SP_DIRECT_CTRL1 |= SP_BIT_DIRECT_REG_3_EN;
+			break;
+		case DIRECT_REG_4:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_4_EN;
+			break;
+		case DIRECT_REG_5:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_5_EN;
+			break;
+		case DIRECT_REG_6:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_6_EN;
+			break;
+		case DIRECT_REG_7:
+			SPORTx->SP_DIRECT_CTRL2 |= SP_BIT_DIRECT_REG_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct reg for enable!\n");
+			break;
+		}
+	} else {
+		switch (reg_chn) {
+		case DIRECT_REG_0:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_0_EN;
+			break;
+		case DIRECT_REG_1:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_1_EN;
+			break;
+		case DIRECT_REG_2:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_2_EN;
+			break;
+		case DIRECT_REG_3:
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_DIRECT_REG_3_EN;
+			break;
+		case DIRECT_REG_4:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_4_EN;
+			break;
+		case DIRECT_REG_5:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_5_EN;
+			break;
+		case DIRECT_REG_6:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_6_EN;
+			break;
+		case DIRECT_REG_7:
+			SPORTx->SP_DIRECT_CTRL2 &= ~SP_BIT_DIRECT_REG_7_EN;
+			break;
+		default:
+			RTK_LOGE(TAG, "please check direct reg for diable!\n");
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Select SPORT direct reg's source.
+  * @param  index: select SPORT.
+  * @param  reg_chn: direct reg channel.
+  *            @This parameter can be one of the following values:
+  *			 @arg DIRECT_REG_0
+  *			 @arg DIRECT_REG_1
+  *			 @arg DIRECT_REG_2
+  *			 @arg DIRECT_REG_3
+  *			 @arg DIRECT_REG_4
+  *			 @arg DIRECT_REG_5
+  *			 @arg DIRECT_REG_6
+  *			 @arg DIRECT_REG_7
+  * @param  direct_in_chn: select direct in channel.
+  *		   This parameter can be one of the following values:
+  *			 @arg DIRECT_IN_CHN0
+  *			 @arg DIRECT_IN_CHN1
+  *			 @arg DIRECT_IN_CHN2
+  *			 @arg DIRECT_IN_CHN3
+  *			 @arg DIRECT_IN_CHN4
+  *			 @arg DIRECT_IN_CHN5
+  *			 @arg DIRECT_IN_CHN6
+  *			 @arg DIRECT_IN_CHN7
+  * @retval None
+  */
+void AUDIO_SP_TXDirectRegSel(u32 index, u32 reg_chn, u32 direct_in_chn)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	switch (reg_chn) {
+	case DIRECT_REG_0:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_0_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_0_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_1:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_1_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_1_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_2:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_2_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_2_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_3:
+		SPORTx->SP_DIRECT_CTRL1 &= ~SP_MASK_DIRECT_REG_3_SEL;
+		SPORTx->SP_DIRECT_CTRL1 |= SP_DIRECT_REG_3_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_4:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_4_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_4_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_5:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_5_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_5_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_6:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_6_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_6_SEL(direct_in_chn);
+		break;
+	case DIRECT_REG_7:
+		SPORTx->SP_DIRECT_CTRL2 &= ~SP_MASK_DIRECT_REG_7_SEL;
+		SPORTx->SP_DIRECT_CTRL2 |= SP_DIRECT_REG_7_SEL(direct_in_chn);
+		break;
+	default:
+		RTK_LOGE(TAG, "please check direct reg value!\n");
+		break;
+	}
+}
+
+/**
   * @brief  Deinit SPORT.
   * @param  index: select SPORT.
   * @param  direction: SP_DIR_TX or SP_DIR_RX.
@@ -1780,9 +2015,46 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
 }
 
 /**
-  * @}
-  */
+ * @brief  Set AUDIO SPORT TX DataFormat.
+ * @param  index: select SPORT.
+ * @param  format: data format.
+ *          This parameter can be one of the following values:
+ *            @arg SP_DF_I2S
+ *            @arg SP_DF_LEFT
+ *            @arg SP_DF_PCM_A
+ *            @arg SP_DF_PCM_B
+ * @retval None
+ */
+void AUDIO_SP_SetTxDataFormat(u32 index, u32 format)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+	SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(format);
+}
 
+/**
+ * @brief  Set AUDIO SPORT RX DataFormat.
+ * @param  index: select SPORT.
+ * @param  format: data format.
+ *          This parameter can be one of the following values:
+ *            @arg SP_DF_I2S
+ *            @arg SP_DF_LEFT
+ *            @arg SP_DF_PCM_A
+ *            @arg SP_DF_PCM_B
+ * @retval None
+ */
+void AUDIO_SP_SetRxDataFormat(u32 index, u32 format)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_FORMAT &= ~SP_MASK_DATA_FORMAT_SEL_RX;
+	SPORTx->SP_FORMAT |= SP_DATA_FORMAT_SEL_RX(format);
+	SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+	SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(format);
+}
+
+/**
+ * @}
+ */
 /** @} */
 
 /** @} */

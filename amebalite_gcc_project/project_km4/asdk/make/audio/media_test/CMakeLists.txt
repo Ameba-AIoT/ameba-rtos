@@ -12,7 +12,7 @@ set(
 )
 
 set(MODULE_C_DEFINES __RTOS__)
-set(MODULE_C_OPTIONS -Wno-multichar -Wnoncompatible-pointer-types -Wnont-conversion -Wno-pointer-sign)
+set(MODULE_C_OPTIONS -Wno-multichar -Wincompatible-pointer-types -Wno-conversion -Wno-pointer-sign)
 
 if(CONFIG_MEDIA_PLAYER)
     list(APPEND MODULE_C_DEFINES MEDIA_PLAYER)

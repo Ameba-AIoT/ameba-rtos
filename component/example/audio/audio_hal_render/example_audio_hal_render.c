@@ -171,5 +171,5 @@ u32 CmdAudioHalRenderTest(u16 argc, unsigned char **argv)
 {
 	(void) argc;
 	AudioHalRenderTestApp((char **)argv);
-	return _TRUE;
+	return TRUE;
 }

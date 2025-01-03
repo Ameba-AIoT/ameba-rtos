@@ -82,8 +82,9 @@ void wifi_hal_async_register_interrupt_irq(void (*callback)(uint))
 	UNUSED(callback);
 }
 
-void wifi_hal_speaker_set_tsf_timer(u64 tsft, u8 port)
+void wifi_hal_speaker_set_tsf_timer(u8 enable, u64 tsft, u8 port)
 {
+	UNUSED(enable);
 	UNUSED(tsft);
 	UNUSED(port);
 }

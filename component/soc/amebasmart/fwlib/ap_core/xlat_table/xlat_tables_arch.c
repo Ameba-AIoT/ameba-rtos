@@ -149,14 +149,6 @@ unsigned int xlat_arch_current_el(void)
 	}
 }
 
-#if defined( __ICCARM__ )
-int __builtin_ctzll(unsigned long long x) {
-  for (int i = 0; i != 64; ++i)
-      if (x >> i & 1) return i;
-  return 0;
-}
-#endif
-
 /*******************************************************************************
  * Function for enabling the MMU in PL1 or PL2, assuming that the page tables
  * have already been created.

@@ -9,9 +9,9 @@ extern uint8_t httpd_debug;
 	do { \
 		if(httpd_debug) { \
 			rtos_critical_enter(); \
-			RTK_LOGS(NOTAG, "\n\r[HTTPD] "); \
-			RTK_LOGS(NOTAG, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, "\n\r"); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPD] "); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
 			rtos_critical_exit(); \
 		} \
 	} while(0)
@@ -20,9 +20,9 @@ extern uint8_t httpd_debug;
 	do { \
 		if(httpd_debug == HTTPD_DEBUG_VERBOSE) { \
 			rtos_critical_enter(); \
-			RTK_LOGS(NOTAG, "\n\r[HTTPD] "); \
-			RTK_LOGS(NOTAG, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, "\n\r"); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPD] "); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
 			rtos_critical_exit(); \
 		} \
 	} while(0)

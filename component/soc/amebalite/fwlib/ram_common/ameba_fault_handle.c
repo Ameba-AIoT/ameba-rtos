@@ -2,7 +2,7 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "FAULT";
+static const char *const TAG = "FAULT";
 
 /* Redefine secure fault handler and replace old INT_SecureFault in rom code. */
 void HANDLER_SecureFault(void)

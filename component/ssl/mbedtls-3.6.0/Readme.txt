@@ -1,1 +1,0 @@
-mbedtls-3.6.0 is a long-term support version.

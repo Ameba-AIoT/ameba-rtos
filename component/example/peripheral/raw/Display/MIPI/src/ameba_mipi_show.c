@@ -1,7 +1,7 @@
 #include "ameba_soc.h"
 #include "ameba_mipi_display.h"
 
-static const char *TAG = "EP_MIPI";
+static const char *const TAG = "EP_MIPI";
 #define LCDC_TEST_IMG_BUF_X				480
 #define LCDC_TEST_IMG_BUF_Y				800
 /*

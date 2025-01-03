@@ -19,14 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "platform_autoconf.h"
-
-#ifdef CONFIG_RTL8721D
-#define STD_PRINTF
-
-#include "platform_stdlib.h"
-#include "log.h"
-#endif
-
 #include <string.h>
 #include "basic_types.h"
 #include "ameba.h"
@@ -56,10 +48,6 @@ typedef rtos_task_t usb_os_task_t;
 
 /* Exported macros -----------------------------------------------------------*/
 
-#ifndef UNUSED
-#define UNUSED(X)			(void)X
-#endif
-
 #ifndef USB_DMA_ALIGNED
 #define USB_DMA_ALIGNED		__attribute__((aligned(CACHE_LINE_SIZE)))
 #endif
@@ -74,14 +62,6 @@ typedef rtos_task_t usb_os_task_t;
 
 #ifndef USB_HIGH_BYTE
 #define USB_HIGH_BYTE(x)	((u8)(((x) & 0xFF00U) >> 8U))
-#endif
-
-#ifndef MIN
-#define MIN(a, b)			(((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a, b)			(((a) > (b)) ? (a) : (b))
 #endif
 
 /* Exported variables --------------------------------------------------------*/
@@ -109,10 +89,6 @@ int usb_os_lock_delete(usb_os_lock_t lock);
 int usb_os_lock(usb_os_lock_t lock);
 
 int usb_os_unlock(usb_os_lock_t lock);
-
-int usb_os_lock_safe(usb_os_lock_t lock);
-
-int usb_os_unlock_safe(usb_os_lock_t lock);
 
 int usb_os_sema_create(usb_os_sema_t *sema);
 

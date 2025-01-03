@@ -26,9 +26,12 @@ extern  "C" {
   *============================================================================*/
 int rt_kv_init(void);
 int32_t rt_kv_set(const char *key, const void *val, int32_t len);
+int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t offset);
 int32_t rt_kv_get(const char *key, void *buffer, int32_t len);
+int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t offset);
 int32_t rt_kv_size(const char *key);
 int32_t rt_kv_delete(const char *key);
+int rt_kv_list(char *buf, int32_t len);
 
 /** @} */ /* End of group KV */
 

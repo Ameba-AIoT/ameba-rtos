@@ -189,7 +189,7 @@ void gtimer_start_one_shout(gtimer_t *obj, uint32_t duration_us, void *handler, 
 {
 	assert_param(obj->timer_id < GTIMER_MAX);
 
-	obj->is_periodcal = _FALSE;
+	obj->is_periodcal = FALSE;
 	obj->handler = handler;
 	obj->hid = hid;
 
@@ -210,7 +210,7 @@ void gtimer_start_periodical(gtimer_t *obj, uint32_t duration_us, void *handler,
 {
 	assert_param(obj->timer_id < GTIMER_MAX);
 
-	obj->is_periodcal = _TRUE;
+	obj->is_periodcal = TRUE;
 	obj->handler = handler;
 	obj->hid = hid;
 

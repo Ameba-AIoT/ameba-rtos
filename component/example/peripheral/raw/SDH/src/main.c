@@ -61,18 +61,18 @@ void raw_sd_host_demo(void)
 	/* initialize sd host and sd memory card */
 	ret = SD_Init(&sd_config);
 	if (ret != SD_OK) {
-		RTK_LOGS(NULL, "SD Init Failed!\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "SD Init Failed!\n");
 		return;
 	} else {
-		RTK_LOGS(NULL, "SD Host erase/read/write start.\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "SD Host erase/read/write start.\n");
 	}
 
 	/* erase test blocks*/
 	ret = SD_Erase(start_addr / SD_BLOCK_SIZE, end_addr / SD_BLOCK_SIZE);
 	if (ret != HAL_OK) {
-		RTK_LOGS(NULL, "Erase FAIL, ret: %d\n", (int) ret);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Erase FAIL, ret: %d\n", (int) ret);
 	} else {
-		RTK_LOGS(NULL, "Erase Succeed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Erase Succeed\n");
 	}
 
 	/*read test blocks*/
@@ -80,15 +80,15 @@ void raw_sd_host_demo(void)
 
 	ret = SD_ReadMultiBlocks(RxBuffer, start_addr / SD_BLOCK_SIZE, blk_cnt);
 	if (ret != HAL_OK) {
-		RTK_LOGS(NULL, "Read FAIL, ret: %d\n", (int) ret);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Read FAIL, ret: %d\n", (int) ret);
 	} else {
-		RTK_LOGS(NULL, "Read Succeed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Read Succeed\n");
 	}
 
 	/* Check data */
 	for (int i = 0; i < SD_BLOCK_SIZE * blk_cnt; i++) {
 		if ((RxBuffer[i] != 0) && (RxBuffer[i] != 0xff)) {
-			RTK_LOGS(NULL, "Data check fail. Something wrong when erase or read data.\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Data check fail. Something wrong when erase or read data.\n");
 			goto exit;
 		}
 	}
@@ -96,9 +96,9 @@ void raw_sd_host_demo(void)
 	/*write test blocks*/
 	ret = SD_WriteMultiBlocks(TxBuffer, start_addr / SD_BLOCK_SIZE, blk_cnt);
 	if (ret != HAL_OK) {
-		RTK_LOGS(NULL, "Write FAIL, ret: %d\n", (int) ret);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Write FAIL, ret: %d\n", (int) ret);
 	} else {
-		RTK_LOGS(NULL, "Write Succeed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Write Succeed\n");
 	}
 
 	/*read test blocks*/
@@ -106,15 +106,15 @@ void raw_sd_host_demo(void)
 
 	ret = SD_ReadMultiBlocks(RxBuffer, start_addr / SD_BLOCK_SIZE, blk_cnt);
 	if (ret != HAL_OK) {
-		RTK_LOGS(NULL, "Read FAIL, ret: %d\n", (int) ret);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Read FAIL, ret: %d\n", (int) ret);
 	} else {
-		RTK_LOGS(NULL, "Read Succeed\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Read Succeed\n");
 	}
 
 	/* Check data */
 	for (int i = 0; i < SD_BLOCK_SIZE * blk_cnt; i++) {
 		if (RxBuffer[i] != i % 256) {
-			RTK_LOGS(NULL, "Data check fail. Something wrong when write or read data.\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Data check fail. Something wrong when write or read data.\n");
 			goto exit;
 		}
 	}
@@ -135,7 +135,7 @@ int main(void)
 	DBG_ERR_MSG_ON(MODULE_SDIO);
 
 	if (SUCCESS != rtos_task_create(NULL, "RAW_SD_HOST_TASK", (rtos_task_t)raw_sd_host_demo, (void *)NULL, (3072), (1))) {
-		RTK_LOGS(NULL, "Create RAW_SD_HOST_TASK Err!!\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Create RAW_SD_HOST_TASK Err!!\n");
 	}
 
 	rtos_sched_start();

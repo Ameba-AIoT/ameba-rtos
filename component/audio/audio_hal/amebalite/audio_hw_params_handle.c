@@ -12,8 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "errno.h"
+
 #include "audio_hw_debug.h"
+
 #include "audio_hw_params_handle.h"
 
 char *param_strdup(const char *s)
@@ -32,7 +35,7 @@ char *param_strdup(const char *s)
 	return (char *) memcpy(new, sin, len);
 }
 
-char *param_strndup(const char *s, int count)
+char *param_strndup(const char *s, int32_t count)
 {
 	const char *sin = s;
 	size_t len = strnlen(sin, (count)) + 1;
@@ -151,7 +154,7 @@ struct string_cell *string_cells_create_from_str(const char *string)
 
 }
 
-int string_cells_has_key(struct string_cell *cell_head, const char *key)
+int32_t string_cells_has_key(struct string_cell *cell_head, const char *key)
 {
 	struct string_cell *cell_iterate = cell_head;
 	while (cell_iterate != NULL) {
@@ -170,8 +173,8 @@ int string_cells_has_key(struct string_cell *cell_head, const char *key)
 	return FALSE;
 }
 
-int string_cells_get_str(struct string_cell *cell_head, const char *key, char *val,
-						 int len)
+int32_t string_cells_get_str(struct string_cell *cell_head, const char *key, char *val,
+						 int32_t len)
 {
 	struct string_cell *cell_iterate = cell_head;
 	while (cell_iterate != NULL) {
@@ -191,7 +194,7 @@ int string_cells_get_str(struct string_cell *cell_head, const char *key, char *v
 	return -ENOENT;
 }
 
-int string_cells_get_int(struct string_cell *cell_head, const char *key, int *val)
+int32_t string_cells_get_int(struct string_cell *cell_head, const char *key, int32_t *val)
 {
 	struct string_cell *cell_iterate = cell_head;
 	while (cell_iterate != NULL) {
@@ -207,7 +210,7 @@ int string_cells_get_int(struct string_cell *cell_head, const char *key, int *va
 				return -ENOENT;
 			}
 			char *end;
-			*val = (int)strtol(value, &end, 0);
+			*val = (int32_t)strtol(value, &end, 0);
 			if (*value != '\0' && *end == '\0') {
 				return 0;
 			}

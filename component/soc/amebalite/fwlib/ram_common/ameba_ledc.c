@@ -240,7 +240,7 @@ u32 LEDC_GetFIFOLevel(LEDC_TypeDef *LEDCx)
   * @param  Length: Tx Count.
   * @retval   TRUE/FLASE
   */
-BOOL LEDC_TXGDMA_Init(
+bool LEDC_TXGDMA_Init(
 	LEDC_TypeDef *LEDCx,
 	PGDMA_InitTypeDef GDMA_InitStruct,
 	void *CallbackData,
@@ -260,7 +260,7 @@ BOOL LEDC_TXGDMA_Init(
 	// Allocate a GDMA channel for LEDC tx
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI5);
 	if (GdmaChnl == 0xFF) { /*	No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	LedcFIFOThr = LEDC_GetFIFOLevel(LEDCx);
@@ -293,7 +293,7 @@ BOOL LEDC_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**

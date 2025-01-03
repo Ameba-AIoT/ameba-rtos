@@ -31,54 +31,45 @@ jobs:
     - name: Configure bash
       run: |
         sudo ln -sf /bin/bash /bin/sh
+
+    - name: Install cmake environment variables
+      run: |
+        sudo apt-get install cmake ninja-build
   
     - name: Configure prerequisites
       run: |
         # set config
 
+        cd amebasmart_gcc_project
+
         if ${{ inputs.artifacts_name == 'amebasmart-B1' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT1
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config IPC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_MIXER
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config VFS_FATFS
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config USB_AP_DEVICE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config USB_AP_HOST
+          ./menuconfig.py -f bt1.conf audio_mixer_ca32_ap_km4_np.conf ipc.conf trustzone.conf vfs_fatfs.conf usb_ap_device.conf usb_ap_host.conf wifi_all.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebasmart-B2' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_MIXER_SINGLECORE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
+          ./menuconfig.py -f audio_mixer_km4_single_core.conf trustzone.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebasmart-B3' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT2
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config IPC
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_PASSTHROUGH
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config USB_HP_DEVICE
+          ./menuconfig.py -f bt2.conf ipc.conf audio_passthrough_ca32_ap_km4_np.conf trustzone.conf usb_hp_device.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebasmart-B4' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT3
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config AUDIO_PASSTHROUGH_SINGLECORE
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config TRUSTZONE
+          ./menuconfig.py -f bt3.conf audio_passthrough_km4_single_core.conf trustzone.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebasmart-B5' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config MP
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT_EN
+          ./menuconfig.py -f mp_shrink.conf bt_en.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebasmart-B6' }}; then
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config MP_NORMAL
-          ./tools/build_check/rtl_sdk_config.py --chip AMEBASMART --config BT_EN
+          ./menuconfig.py -f mp_expand.conf bt_en.conf
         fi
 
     - name: Compile
       run: |
         cd amebasmart_gcc_project
-        make all
+        ./build.py
         cd -
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

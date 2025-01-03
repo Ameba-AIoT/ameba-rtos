@@ -1,17 +1,22 @@
+# -------------General config------------
 #
+CONFIG_AMEBA_RLS=y
+CONFIG_AMEBALITE=y
 
 #
-# < CONFIG DSP Enable
+# CONFIG DSP Enable
 #
 # CONFIG_DSP_EN is not set
+# end of CONFIG DSP Enable
 
 #
-# < CONFIG TrustZone
+# CONFIG TrustZone
 #
 # CONFIG_TRUSTZONE is not set
+# end of CONFIG TrustZone
 
 #
-# < CONFIG Link Option
+# CONFIG Link Option
 #
 CONFIG_IMG1_FLASH=y
 # CONFIG_IMG1_SRAM is not set
@@ -19,114 +24,140 @@ CONFIG_IMG1_FLASH=y
 # CONFIG_CODE_PSRAM_DATA_SRAM is not set
 # CONFIG_CODE_PSRAM_DATA_PSRAM is not set
 CONFIG_CODE_XIP_DATA_SRAM=y
+# end of CONFIG Link Option
 
 #
-# < CONFIG Mass Production
+# CONFIG Mass Production
 #
 # CONFIG_MP_INCLUDED is not set
+# end of CONFIG Mass Production
 
 #
-# < CONFIG Shell CMD
+# CONFIG AT CMD
 #
 CONFIG_SUPPORT_ATCMD=y
 CONFIG_ATCMD_LOGUART=y
 # CONFIG_ATCMD_MCU_CONTROL is not set
 # CONFIG_LONGER_CMD is not set
+# CONFIG_ATCMD_SOCKET is not set
+# CONFIG_ATCMD_MQTT is not set
+# end of CONFIG AT CMD
 
 #
-# < CONFIG VFS
+# CONFIG VFS
 #
 CONFIG_VFS_LITTLEFS_INCLUDED=y
 # CONFIG_VFS_FATFS_INCLUDED is not set
+# end of CONFIG VFS
 
 #
-# < CONFIG OTA OPTION
+# CONFIG OS
+#
+CONFIG_KERNEL=y
+CONFIG_PLATFORM_FREERTOS=y
+# end of CONFIG OS
+
+#
+# CONFIG OTA OPTION
 #
 # CONFIG_UPGRADE_BOOTLOADER is not set
 # CONFIG_COMPRESS_OTA_IMG is not set
+# end of CONFIG OTA OPTION
 
 #
-# < CONFIG Application Processor
+# ----------Connectivity config----------
 #
+
+#
+# CONFIG INIC INTF
+#
+CONFIG_WIFI_INIC_IPC_MENU=y
+# CONFIG_WIFI_SINGLE_CORE_MENU is not set
 CONFIG_AP_CORE_KM4=y
 # CONFIG_AP_CORE_KR4 is not set
-CONFIG_WIFI_INIC=y
+CONFIG_CORE_AS_AP=y
+# end of CONFIG INIC INTF
 
 #
-# < CONFIG BT
-#
-# CONFIG_BT_MENU is not set
-
-#
-# < CONFIG WIFI
+# CONFIG WIFI
 #
 CONFIG_WLAN_MENU=y
-CONFIG_WLAN_KM4_AP_KR4_NP=y
-# CONFIG_WLAN_KR4_AP_KM4_NP is not set
-# CONFIG_WIFI_KM4_SINGLE_CORE is not set
-# CONFIG_WIFI_KR4_SINGLE_CORE is not set
-# CONFIG_HIGH_TP_TEST is not set
-CONFIG_WLAN=y
-CONFIG_AS_INIC_AP=y
-CONFIG_LWIP_LAYER=y
-# CONFIG_ENABLE_WPS is not set
+# CONFIG_WIFI_WPS_ENABLE_MENU is not set
 # CONFIG_WIFI_CSI_ENABLE is not set
 # CONFIG_WIFI_ANTDIV_ENABLE is not set
 # CONFIG_WIFI_11K_ENABLE is not set
 # CONFIG_WIFI_11V_ENABLE is not set
 # CONFIG_WIFI_11R_ENABLE is not set
+# CONFIG_WIFI_SPEAKER_ENABLE is not set
+# CONFIG_HIGH_TP_TEST is not set
+CONFIG_WLAN=y
+CONFIG_AS_INIC_AP=y
+CONFIG_LWIP_LAYER=y
+# end of CONFIG WIFI
 
 #
-# < CONFIG LWIP
+# CONFIG BT
 #
-# CONFIG_FAST_DHCP is not set
+# CONFIG_BT_MENU is not set
+# end of CONFIG BT
+
+#
+# CONFIG LWIP
+#
+# CONFIG_FAST_DHCP_MENU is not set
+CONFIG_LWIP_NETCONN_SEM_PER_THREAD_MENU=y
+CONFIG_LWIP_NETCONN_SEM_PER_THREAD=y
 # CONFIG_LWIP_DEBUG is not set
+# end of CONFIG LWIP
 
 #
+# CONFIG SSL
 #
-
-#
-# < MENUCONFIG FOR KM4 CONFIG
-#
-
-#
-# < CONFIG CHIP
-#
-CONFIG_AMEBALITE=y
-CONFIG_ARM_CORE_CM4=y
-# CONFIG_FPGA is not set
-
-#
-# < CONFIG OS
-#
-CONFIG_KERNEL=y
-CONFIG_PLATFORM_FREERTOS=y
-TASK_SCHEDULER_DISABLED=0
-
-#
-# < CONFIG FUNCTION TEST
-#
-# CONFIG_PER_TEST is not set
-
-#
-# < CONFIG SECURE TEST
-#
-# CONFIG_SEC_VERIFY is not set
-
-#
-# < SSL Config
-#
-CONFIG_USE_MBEDTLS_ROM=y
+CONFIG_MBEDTLS_ENABLED_MENU=y
+# CONFIG_MBEDTLS_SSL_PROTO_TLS1_3_MENU is not set
 CONFIG_MBEDTLS_ENABLED=y
-# CONFIG_SSL_ROM_TEST is not set
+# end of CONFIG SSL
 
 #
-# < GUI Config
+# --------------Build Config-------------
 #
-# CONFIG_GUI_EN is not set
 
 #
-# < Audio Config
+# Build Option
+#
+
+#
+# Choose the build configuration
+#
+# CONFIG_LINK_ROM_LIB is not set
+CONFIG_LINK_ROM_SYMB=y
+# end of Build Option
+
+#
+# ---------------KM4 config--------------
+#
+
+#
+# MENUCONFIG FOR KM4 CONFIG
+#
+
+#
+# ----------CPU config----------
+#
+
+#
+# CONFIG CHIP
+#
+CONFIG_CPU_HAS_FPU=y
+CONFIG_ARM_CORE_CM4=y
+# end of CONFIG CHIP
+
+#
+# ----------Application Config----------
+#
+
+#
+# Audio Config
 #
 # CONFIG_AUDIO_FWK is not set
 # CONFIG_MEDIA_PLAYER is not set
@@ -136,23 +167,36 @@ CONFIG_MBEDTLS_ENABLED=y
 #
 # CONFIG_SPEEX_LIB is not set
 # CONFIG_OPUS_LIB is not set
+# end of Third Party Lib
+# end of Audio Config
 
 #
-# < CONFIG IPC Message Queue
+# AI Config
+#
+# CONFIG_TFLITE_MICRO_EN is not set
+# end of AI Config
+
+#
+# GUI Config
+#
+# CONFIG_GUI_EN is not set
+# end of GUI Config
+
+#
+# CONFIG IPC Message Queue
 #
 # CONFIG_IMQ_EN is not set
+# end of CONFIG IPC Message Queue
 
 #
-# < To set debug msg flag
+# --------------Debug Message Config------------
+#
+
+#
+# To set debug msg flag
 #
 # CONFIG_DEBUG_CRASHDUMP_IMG1 is not set
-
-#
-# < Build Option
-#
-CONFIG_TOOLCHAIN_ASDK=y
-# CONFIG_TOOLCHAIN_ARM_GCC is not set
-# CONFIG_LINK_ROM_LIB is not set
-CONFIG_LINK_ROM_SYMB=y
+# end of To set debug msg flag
+# end of MENUCONFIG FOR KM4 CONFIG
 
 #

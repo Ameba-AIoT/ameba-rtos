@@ -25,7 +25,7 @@ typedef struct {
 
 
 #define I2C_ID 0
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 #define I2C_SLAVE_ADDR0    0x23
 
@@ -249,7 +249,9 @@ static void RtkI2CInit(i2c_ts *obj1, uint8_t sda, uint8_t scl)
 	I2CInitData[i2c_idx].I2CAckAddr	= I2C_SLAVE_ADDR0;
 
 	/* I2C Pin Mux Initialization */
-
+#if defined (CONFIG_AMEBAD)
+	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
+#else
 	switch (I2C_ID) {
 	case 0:
 		RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
@@ -266,8 +268,9 @@ static void RtkI2CInit(i2c_ts *obj1, uint8_t sda, uint8_t scl)
 		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
+#endif
 
-#if defined (CONFIG_AMEBASMART)
+#if defined (CONFIG_AMEBASMART) || (CONFIG_AMEBAD)
 	Pinmux_Config(I2C_SLV_SDA, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(I2C_SLV_SCL, PINMUX_FUNCTION_I2C);
 #else

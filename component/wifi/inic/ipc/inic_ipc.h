@@ -20,6 +20,7 @@
 
 /* -------------------------------- Includes -------------------------------- */
 #ifndef CONFIG_FULLMAC
+#include "rtw_wifi_common.h"
 #include "platform_autoconf.h"
 #endif
 #include "inic_def.h"
@@ -27,23 +28,20 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "rtw_wifi_constants.h"
-#include "rtw_skbuff.h"
 #include "wifi_conf.h"
-#include "inic_ipc_cfg.h"
 #endif
-
 /* -------------------------------- Defines --------------------------------- */
 /*msg q task*/
 #define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
 #if defined(CONFIG_AS_INIC_AP)
-#define WIFI_STACK_SIZE_INIC_MSG_Q	(600 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
+#define WIFI_STACK_SIZE_INIC_MSG_Q	(608 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
 #elif defined(CONFIG_AS_INIC_NP)
 #define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
 #endif
 
 /*host api task*/
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
-#define WIFI_STACK_SIZE_INIC_IPC_HST_API (2848 + 128 + CONTEXT_SAVE_SIZE)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
+#define WIFI_STACK_SIZE_INIC_IPC_HST_API (2896 + 128 + CONTEXT_SAVE_SIZE)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
 
 /* -------------------------------- Macros ---------------------------------- */
 #define FLAG_WLAN_IF_NOT_RUNNING		0xFFFFFFFF
@@ -135,5 +133,11 @@ void inic_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
 void inic_cfg80211_indicate_channel_ready(void *scan_userdata);
 #endif
 int inic_ip_in_table_indicate(u8 gate, u8 ip);
-
+#ifdef CONFIG_WIFI_TUNNEL
+int inic_wtn_identity_key_calc(u8 *password, u32 password_len);
+#ifdef CONFIG_WTN_SOCKET_APP
+int inic_wtn_socket_send(u8 *buf, u32 len);
+void inic_wtn_socket_init(u8 enable);
+#endif
+#endif
 #endif /* __INIC_IPC_H__ */

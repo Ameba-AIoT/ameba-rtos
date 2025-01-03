@@ -7,7 +7,7 @@
 #include "lv_demo_benchmark.h"
 
 
-void lv_demo_benchmark_task(void* param)
+void lv_demo_benchmark_task(void *param)
 {
 	UNUSED(param);
 	printf("lv_demo_benchmark start\n");
@@ -33,7 +33,7 @@ u32 lv_demo_benchmark_show(void)
 {
 #endif
 	rtos_task_create(NULL, "lv_demo_benchmark_task", lv_demo_benchmark_task, NULL, 1024 * 4, 1);
-	return _TRUE;
+	return TRUE;
 }
 
 

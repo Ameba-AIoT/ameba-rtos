@@ -712,65 +712,441 @@ extern mesh_model_info_t cfg_server;
  * @brief Functions declaration
  * @{
  */
+
+/**
+ * @brief register configuration client model
+ *
+ * @return true
+ * @return false
+ */
 bool cfg_client_reg(void);
+
+/**
+ * @brief configuration client key set
+ *
+ * @param[in] key_index: key index
+ * @return true
+ * @return false
+ */
 bool cfg_client_key_set(uint16_t key_index);
+
+/**
+ * @brief config composition data get
+ *
+ * @param[in] dst: destination address
+ * @param[in] page: page
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_compo_data_get(uint16_t dst, uint8_t page);
+
+/**
+ * @brief config beacon get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_beacon_get(uint16_t dst);
+
+/**
+ * @brief config beacon set
+ *
+ * @param[in] dst: destination address
+ * @param[in] state: state
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_beacon_set(uint16_t dst, uint8_t state);
+
+/**
+ * @brief config default ttl get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_default_ttl_get(uint16_t dst);
+
+/**
+ * @brief config default ttl set
+ *
+ * @param[in] dst: destination address
+ * @param[in] ttl: ttl
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_default_ttl_set(uint16_t dst, uint8_t ttl);
+
+/**
+ * @brief config proxy get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_proxy_get(uint16_t dst);
+
+/**
+ * @brief config proxy set
+ *
+ * @param[in] dst: destination address
+ * @param[in] state: state
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_proxy_set(uint16_t dst, uint8_t state);
+
+/**
+ * @brief config relay get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_relay_get(uint16_t dst);
+
+/**
+ * @brief config relay set
+ *
+ * @param[in] dst: destination address
+ * @param[in] state: state
+ * @param[in] count: count
+ * @param[in] steps: steps
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_relay_set(uint16_t dst, uint8_t state, uint8_t count, uint8_t steps);
+
+/**
+ * @brief config network transmit get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_net_transmit_get(uint16_t dst);
+
+/**
+ * @brief config network transmit set
+ *
+ * @param[in] dst: destination address
+ * @param[in] count: number of transmissions for each Network PDU originating from the node
+ * @param[in] steps: number of 10-millisecond steps between transmissions
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_net_transmit_set(uint16_t dst, uint8_t count, uint8_t steps);
+
+/**
+ * @brief config model publication get
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_pub_get(uint16_t dst, uint16_t element_addr, uint32_t model_id);
+
+/**
+ * @brief config model publication set
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] va_flag: virtual address flag
+ * @param[in] pub_addr: pointer to publication address
+ * @param[in] pub_key_info: publication key information
+ * @param[in] pub_ttl: publication ttl
+ * @param[in] pub_period: publication period
+ * @param[in] pub_retrans_info: publication retrans information
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_pub_set(uint16_t dst, uint16_t element_addr, bool va_flag,
                                         uint8_t *pub_addr, pub_key_info_t pub_key_info, uint8_t pub_ttl, pub_period_t pub_period,
                                         pub_retrans_info_t pub_retrans_info, uint32_t model_id);
+
+/**
+ * @brief config model subscription add
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] va_flag: virtual address flag
+ * @param[in] addr: pointer to subscription address
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_sub_add(uint16_t dst, uint16_t element_addr, bool va_flag,
                                         uint8_t *addr, uint32_t model_id);
+
+/**
+ * @brief config model subscription delete
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] va_flag: virtual address flag
+ * @param[in] addr: pointer to subscription address
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_sub_delete(uint16_t dst, uint16_t element_addr, bool va_flag,
                                            uint8_t *addr, uint32_t model_id);
+
+/**
+ * @brief config model subscription delete all
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_sub_delete_all(uint16_t dst, uint16_t element_addr,
                                                uint32_t model_id);
+
+/**
+ * @brief config model subscription overwrite
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] va_flag: virtual address flag
+ * @param[in] addr: pointer to subscription address
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_sub_overwrite(uint16_t dst, uint16_t element_addr, bool va_flag,
                                               uint8_t *addr, uint32_t model_id);
+
+/**
+ * @brief config model subscription get
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_sub_get(uint16_t dst, uint16_t element_addr, uint32_t model_id);
+
+/**
+ * @brief config NetKey add
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] net_key: NetKey
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_net_key_add(uint16_t dst, uint16_t net_key_index, uint8_t net_key[16]);
+
+/**
+ * @brief config NetKey update
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] net_key: NetKey
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_net_key_update(uint16_t dst, uint16_t net_key_index, uint8_t net_key[16]);
+
+/**
+ * @brief config NetKey delete
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_net_key_delete(uint16_t dst, uint16_t net_key_index);
+
+/**
+ * @brief config NetKey get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_net_key_get(uint16_t dst);
+
+/**
+ * @brief config AppKey add
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] app_key_index: AppKey index
+ * @param[in] app_key: AppKey
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_app_key_add(uint16_t dst, uint16_t net_key_index, uint16_t app_key_index,
                                       uint8_t app_key[16]);
+
+/**
+ * @brief config AppKey update
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] app_key_index: AppKey index
+ * @param[in] app_key: AppKey
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_app_key_update(uint16_t dst, uint16_t net_key_index,
                                          uint16_t app_key_index, uint8_t app_key[16]);
+
+/**
+ * @brief config AppKey delete
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] app_key_index: AppKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_app_key_delete(uint16_t dst, uint16_t net_key_index,
                                          uint16_t app_key_index);
+
+/**
+ * @brief config AppKey get
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_app_key_get(uint16_t dst, uint16_t net_key_index);
+
+/**
+ * @brief config node identity get
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_node_identity_get(uint16_t dst, uint16_t net_key_index);
+
+/**
+ * @brief config node identity set
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] identity: new Node Identity state
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_node_identity_set(uint16_t dst, uint16_t net_key_index, uint8_t identity);
+
+/**
+ * @brief config model app bind
+ *
+ * @param[in] dst: destination address destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] app_key_index: AppKey index
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_app_bind(uint16_t dst, uint16_t element_addr,
                                          uint16_t app_key_index,
                                          uint32_t model_id);
+
+/**
+ * @brief config model app unbind
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] app_key_index: AppKey index
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_app_unbind(uint16_t dst, uint16_t element_addr,
                                            uint16_t app_key_index,
                                            uint32_t model_id);
+
+/**
+ * @brief config model app get
+ *
+ * @param[in] dst: destination address
+ * @param[in] element_addr: address of the element
+ * @param[in] model_id: Model ID
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_model_app_get(uint16_t dst,  uint16_t element_addr, uint32_t model_id);
+
+/**
+ * @brief config node reset
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_node_reset(uint16_t dst);
+
+/**
+ * @brief config friend get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_frnd_get(uint16_t dst);
+
+/**
+ * @brief config friend set
+ *
+ * @param[in] dst: destination address
+ * @param[in] state: new Friend state
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_frnd_set(uint16_t dst, uint8_t state);
+
+/**
+ * @brief config low power mode PollTimeout get
+ *
+ * @param[in] dst: destination address
+ * @param[in] lpn_addr: the unicast address of the Low Power node
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_lpn_poll_timeout_get(uint16_t dst, uint16_t lpn_addr);
+
+/**
+ * @brief config key refresh phase get
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_key_refresh_phase_get(uint16_t dst, uint16_t net_key_index);
+
+/**
+ * @brief config key refresh phase set
+ *
+ * @param[in] dst: destination address
+ * @param[in] net_key_index: NetKey index
+ * @param[in] state: new Key Refresh Phase Transition
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_key_refresh_phase_set(uint16_t dst, uint16_t net_key_index,
                                                 uint8_t state);
+
+/**
+ * @brief config Heartbeat publication get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_hb_pub_get(uint16_t dst);
+
+/**
+ * @brief config Heartbeat publication set
+ *
+ * @param[in] dst: destination address
+ * @param[in] dst_pub: destination address for Heartbeat messages
+ * @param[in] count_log: number of Heartbeat messages to be sent
+ * @param[in] period_log: period for sending Heartbeat messages
+ * @param[in] ttl: TTL to be used when sending Heartbeat messages
+ * @param[in] features: bit field indicating features that trigger Heartbeat messages when changed
+ * @param[in] net_key_index: NetKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_hb_pub_set(uint16_t dst, uint16_t dst_pub, uint8_t count_log,
                                      uint8_t period_log,
                                      uint8_t ttl,
                                      hb_pub_features_t features, uint16_t net_key_index);
+
+/**
+ * @brief config Heartbeat subscription get
+ *
+ * @param[in] dst: destination address
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_hb_sub_get(uint16_t dst);
+
+/**
+ * @brief config Heartbeat subscription set
+ *
+ * @param[in] dst: destination address
+ * @param[in] src: source address for Heartbeat messages
+ * @param[in] dst_set: destination address for Heartbeat messages
+ * @param[in] period_log: period for receiving Heartbeat messages
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t cfg_hb_sub_set(uint16_t dst, uint16_t src, uint16_t dst_set,
                                      uint8_t period_log);
 /** @} */

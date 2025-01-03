@@ -56,7 +56,7 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 	printf("loopback package, size = %d (cnt = %d) heap=%lu\n", size, ++loop_cnt, rtos_mem_get_free_heap_size());
 	// loopback
 	ret = spdio_tx(&spdio_dev, tx_buf);
-	if (ret == _FALSE) {
+	if (ret == FALSE) {
 		rtos_mem_free((u8 *)tx_buf->buf_allocated);
 		rtos_mem_free((u8 *)tx_buf);
 	}

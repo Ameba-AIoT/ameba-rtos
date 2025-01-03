@@ -76,6 +76,7 @@ void QSPI_Read(QSPI_CmdAddrInfo *info, u8 *data, u32 len);
 void QSPI_WriteStart(QSPI_CmdAddrInfo *info, u32 len);
 void QSPI_WriteEnd(void);
 int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct, IRQ_FUN CallbackFunc, void *CallbackData, u8 *Pbuf, u32 Size);
+int QSPI_GDMADeinit(GDMA_InitTypeDef *GDMA_InitStruct);
 void QSPI_GDMAStart(GDMA_InitTypeDef *GDMA_InitStruct);
 
 /* MANUAL_GEN_END */

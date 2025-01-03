@@ -19,11 +19,7 @@
 #include "usbd_msc.h"
 #include "usbd_scsi.h"
 #include "os_wrapper.h"
-#if defined(CONFIG_RTL8721D)
-#include "rtl8721dhp_sd.h"
-#else
 #include "ameba_sd.h"
-#endif
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -43,7 +39,7 @@ static void usbd_msc_status_changed(usb_dev_t *dev, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "MSC";
+static const char *const TAG = "MSC";
 
 /* USB Standard Device Descriptor */
 static u8 usbd_msc_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
@@ -225,7 +221,7 @@ static int RAM_init(void)
 	if (usbd_msc_ram_disk_buf != NULL) {
 		cdev->is_ready = 1U;
 	} else {
-		RTK_LOGS(TAG, "[MSC] Alloc RAM disk buf fail");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc RAM disk buf fail");
 		result = SD_NODISK;
 	}
 
@@ -303,7 +299,7 @@ static int usbd_msc_sd_init(void)
 {
 	SD_RESULT ret;
 
-	RTK_LOGS(TAG, "[MSC] SD init\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
 
 	usbd_msc_sd_sema_init();
 
@@ -311,7 +307,7 @@ static int usbd_msc_sd_init(void)
 	if (ret == SD_OK) {
 		usbd_msc_sd_init_status = 1;
 	} else {
-		RTK_LOGS(TAG, "[MSC] Fail to init SD: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init SD: %d\n", ret);
 	}
 
 	return ret;
@@ -321,12 +317,12 @@ static int usbd_msc_sd_deinit(void)
 {
 	SD_RESULT ret;
 
-	RTK_LOGS(TAG, "[MSC] SD deinit\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SD deinit\n");
 
 	usbd_msc_sd_init_status = 0;
 	ret = SD_DeInit();
 	if (ret != SD_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to deinit SD: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit SD: %d\n", ret);
 	}
 
 	usbd_msc_sd_sema_deinit();
@@ -352,7 +348,7 @@ static int usbd_msc_sd_getcapacity(u32 *sector_count)
 	} while (++retry <= USBD_MSC_SD_ACCESS_RETRY);
 
 	if (ret != SD_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to get SD capacity: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to get SD capacity: %d\n", ret);
 	}
 
 	return ret;
@@ -376,7 +372,7 @@ static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 	} while (++retry <= USBD_MSC_SD_ACCESS_RETRY);
 
 	if (ret != SD_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to R SD blocks: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to R SD blocks: %d\n", ret);
 	}
 
 	return ret;
@@ -400,7 +396,7 @@ static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 	} while (++retry <= USBD_MSC_SD_ACCESS_RETRY);
 
 	if (ret != SD_OK) {
-		RTK_LOGS(TAG, "[MSC] Fail to W SD blocks: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to W SD blocks: %d\n", ret);
 	}
 
 	return ret;
@@ -645,7 +641,7 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 			break;
 		}
 	} else {
-		RTK_LOGS(TAG, "[MSC] EP%02x TX err: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
 	}
 
 	return HAL_OK;
@@ -801,7 +797,7 @@ static u8 *usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spe
 			break;
 		/* Add customer string here */
 		default:
-			RTK_LOGS(TAG, "[MSC] Invalid str idx %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -879,7 +875,7 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	usbd_msc_disk_ops_t *ops = &cdev->disk_ops;
 	int ret = HAL_OK;
 
-	RTK_LOGS(TAG, "[MSC] Init\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
 
 	if (cb != NULL) {
 		cdev->cb = cb;
@@ -956,7 +952,7 @@ void usbd_msc_deinit(void)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
-	RTK_LOGS(TAG, "[MSC] Deinit\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
 	cdev->is_ready = 0U;
 

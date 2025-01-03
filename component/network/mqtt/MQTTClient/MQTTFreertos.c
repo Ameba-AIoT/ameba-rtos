@@ -108,9 +108,6 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 	TimeOut_t xTimeOut;
 	int recvLen = 0;
 
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
-
 	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
 	do {
 		int rc = 0;
@@ -133,8 +130,7 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 		if (rc > 0) {
 			recvLen += rc;
 		} else if (rc < 0) {
-			getsockopt(n->my_socket, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
-			if (so_error && (so_error != EAGAIN)) {
+			if (errno && (errno != EAGAIN)) {
 				n->disconnect(n);
 			}
 			recvLen = rc;
@@ -150,9 +146,6 @@ int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
 	uint32_t xTicksToWait = timeout_ms; /* convert milliseconds to ticks */
 	TimeOut_t xTimeOut;
 	int sentLen = 0;
-
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
 
 	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
 	do {
@@ -176,8 +169,7 @@ int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
 		if (rc > 0) {
 			sentLen += rc;
 		} else if (rc < 0) {
-			getsockopt(n->my_socket, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
-			if (so_error && (so_error != EAGAIN)) {
+			if (errno && (errno != EAGAIN)) {
 				n->disconnect(n);
 			}
 			sentLen = rc;
@@ -409,11 +401,7 @@ int NetworkConnect(Network *n, char *addr, int port)
 				goto err;
 			}
 
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x03000000)
 			if (mbedtls_pk_parse_key(client_rsa, (const unsigned char *)n->private_key, strlen(n->private_key) + 1, NULL, 0, NULL, NULL) != 0) {
-#else
-			if (mbedtls_pk_parse_key(client_rsa, (const unsigned char *)n->private_key, strlen(n->private_key) + 1, NULL, 0) != 0) {
-#endif
 				mqtt_printf(MQTT_DEBUG, "parse client_rsa failed!");
 				goto err;
 			}

@@ -157,6 +157,8 @@ static struct wpabuf *eap_tls_failure(struct eap_sm *sm,
 									  struct eap_method_ret *ret, int res,
 									  struct wpabuf *resp, u8 id)
 {
+	(void)sm;
+	(void)res;
 	wpa_printf(MSG_DEBUG, "EAP-TLS: TLS processing failed");
 
 	ret->methodState = METHOD_DONE;
@@ -270,21 +272,17 @@ static struct wpabuf *eap_tls_process(struct eap_sm *sm, void *priv,
 	return resp;
 }
 
-#if !EAP_REMOVE_UNUSED_CODE
+#if defined(EAP_REMOVE_UNUSED_CODE) && (EAP_REMOVE_UNUSED_CODE == 0)
 static Boolean eap_tls_has_reauth_data(struct eap_sm *sm, void *priv)
 {
 	struct eap_tls_data *data = priv;
 	return (Boolean)tls_connection_established(data->ssl_ctx, data->ssl.conn);
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static void eap_tls_deinit_for_reauth(struct eap_sm *sm, void *priv)
 {
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static void *eap_tls_init_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_tls_data *data = priv;
@@ -297,9 +295,7 @@ static void *eap_tls_init_for_reauth(struct eap_sm *sm, void *priv)
 	}
 	return priv;
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static int eap_tls_get_status(struct eap_sm *sm, void *priv, char *buf,
 							  size_t buflen, int verbose)
 {
@@ -310,12 +306,14 @@ static int eap_tls_get_status(struct eap_sm *sm, void *priv, char *buf,
 
 static Boolean eap_tls_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
+	(void)sm;
 	struct eap_tls_data *data = priv;
 	return (Boolean)(data->key_data != NULL);
 }
 
 static u8 *eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
+	(void)sm;
 	struct eap_tls_data *data = priv;
 	u8 *key;
 
@@ -334,7 +332,7 @@ static u8 *eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	return key;
 }
 
-#if !EAP_REMOVE_UNUSED_CODE
+#if defined(EAP_REMOVE_UNUSED_CODE) && (EAP_REMOVE_UNUSED_CODE == 0)
 static u8 *eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_tls_data *data = priv;
@@ -354,9 +352,7 @@ static u8 *eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 
 	return key;
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static u8 *eap_tls_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_tls_data *data = priv;
@@ -395,7 +391,7 @@ int eap_peer_tls_register(void)
 	eap->getKey = eap_tls_getKey;
 	eap->isKeyAvailable = eap_tls_isKeyAvailable;
 
-#if !EAP_REMOVE_UNUSED_CODE
+#if defined(EAP_REMOVE_UNUSED_CODE) && (EAP_REMOVE_UNUSED_CODE == 0)
 	eap->getSessionId = eap_tls_get_session_id;
 	eap->get_status = eap_tls_get_status;
 	eap->has_reauth_data = eap_tls_has_reauth_data;
@@ -478,4 +474,5 @@ int eap_peer_wfa_unauth_tls_register(void)
 }
 #endif /* CONFIG_HS20 */
 
-//#endif /* CONFIG_TLS */
+//#endif
+/* CONFIG_TLS */

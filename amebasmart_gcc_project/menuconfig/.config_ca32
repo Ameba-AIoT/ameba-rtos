@@ -1,0 +1,130 @@
+#
+# ----------General Begin----------
+CONFIG_AMEBA_RLS=y
+CONFIG_AMEBASMART=y
+
+# CONFIG BOOT OPTION
+# CONFIG_XIP_FLASH is not set
+# end of CONFIG BOOT OPTION
+# CONFIG CLINTWOOD
+# CONFIG_CLINTWOOD is not set
+# CONFIG_IMQ_EN is not set
+# end of CONFIG CLINTWOOD
+# CONFIG TrustZone
+# end of CONFIG TrustZone
+# CONFIG Mass Production
+# CONFIG_MP_INCLUDED is not set
+# end of CONFIG Mass Production
+# CONFIG Linux
+# CONFIG_LINUX_FW_EN is not set
+# end of CONFIG Linux
+# CONFIG AT CMD
+CONFIG_SUPPORT_ATCMD=y
+CONFIG_ATCMD_LOGUART=y
+# CONFIG_ATCMD_MCU_CONTROL is not set
+# CONFIG_LONGER_CMD is not set
+# CONFIG_ATCMD_SOCKET is not set
+# CONFIG_ATCMD_MQTT is not set
+# end of CONFIG AT CMD
+# CONFIG VFS
+CONFIG_VFS_LITTLEFS_INCLUDED=y
+# CONFIG_VFS_FATFS_INCLUDED is not set
+# end of CONFIG VFS
+# CONFIG OS
+CONFIG_KERNEL=y
+CONFIG_PLATFORM_FREERTOS=y
+# end of CONFIG OS
+# CONFIG OTA OPTION
+# CONFIG_UPGRADE_BOOTLOADER is not set
+# CONFIG_COMPRESS_OTA_IMG is not set
+# end of CONFIG OTA OPTION
+# --- --------------Connectivity Config Begin------------
+# CONFIG INIC INTF
+CONFIG_WIFI_INIC_IPC_MENU=y
+# CONFIG_WIFI_SINGLE_CORE_MENU is not set
+CONFIG_CORE_AS_AP=y
+# end of CONFIG INIC INTF
+# CONFIG WIFI
+CONFIG_WLAN_MENU=y
+# CONFIG_WIFI_WPS_ENABLE_MENU is not set
+# CONFIG_WIFI_CSI_ENABLE is not set
+# CONFIG_WIFI_ANTDIV_ENABLE is not set
+# CONFIG_WIFI_11K_ENABLE is not set
+# CONFIG_WIFI_11V_ENABLE is not set
+# CONFIG_WIFI_11R_ENABLE is not set
+# CONFIG_WIFI_SPEAKER_ENABLE is not set
+# CONFIG_HIGH_TP_TEST is not set
+CONFIG_WLAN=y
+CONFIG_INIC_INTF_IPC=y
+CONFIG_AS_INIC_AP=y
+CONFIG_LWIP_LAYER=y
+CONFIG_LWIP_NETCONN_SEM_PER_THREAD=y
+# end of CONFIG WIFI
+# CONFIG BT
+# CONFIG_BT_MENU is not set
+# end of CONFIG BT
+# CONFIG LWIP
+# CONFIG_FAST_DHCP_MENU is not set
+# CONFIG_LWIP_NETCONN_SEM_PER_THREAD_MENU is not set
+# CONFIG_LWIP_DEBUG is not set
+# end of CONFIG LWIP
+# CONFIG SSL
+CONFIG_MBEDTLS_ENABLED_MENU=y
+# CONFIG_MBEDTLS_SSL_PROTO_TLS1_3_MENU is not set
+CONFIG_MBEDTLS_ENABLED=y
+# end of CONFIG SSL
+# --- --------------Build Config------------
+# Build Option
+# Choose the build configuration
+# CONFIG_LINK_ROM_LIB is not set
+CONFIG_LINK_ROM_SYMB=y
+# end of Build Option
+# ----------General End----------
+# --- --------------CA32 Begin------------
+# MENUCONFIG FOR CA32 CONFIG
+# --- --------------CPU config Start------------
+# CONFIG CHIP
+CONFIG_ARM_CORE_CA32=y
+CONFIG_AMEBASMART_A_CUT=y
+# end of CONFIG CHIP
+# --- --------------smp config Start------------
+# CONFIG SMP
+CONFIG_SMP_DUAL_CORE=y
+# CONFIG_SMP_SINGLE_CORE is not set
+CONFIG_CORE_NUM=2
+# end of CONFIG SMP
+# --- --------------Peripheral config Start------------
+# CONFIG USB
+# CONFIG_USB_OTG_EN is not set
+# end of CONFIG USB
+# --- --------------Application Config Start------------
+# 802154 Config
+# CONFIG_802154_EN is not set
+# end of 802154 Config
+# Audio Config
+# CONFIG_AUDIO_FWK is not set
+# CONFIG_MEDIA_PLAYER is not set
+# Third Party Lib
+# CONFIG_SPEEX_LIB is not set
+# CONFIG_OPUS_LIB is not set
+# end of Third Party Lib
+# end of Audio Config
+# AI Config
+# CONFIG_TFLITE_MICRO_EN is not set
+# CONFIG_AIVOICE_EN is not set
+# end of AI Config
+# IPC Message Queue Config
+# end of IPC Message Queue Config
+# GUI Config
+# CONFIG_GUI_EN is not set
+# CONFIG_GUI_LIB_PNG is not set
+# CONFIG_GUI_LIB_JPG is not set
+# end of GUI Config
+# Range Config
+# CONFIG_RANGE_ENABLED is not set
+# end of Range Config
+# Dynamic App Load Config
+# CONFIG_DYNAMIC_APP_LOAD_EN is not set
+# end of Dynamic App Load Config
+# end of MENUCONFIG FOR CA32 CONFIG
+# ----------CA32 End----------

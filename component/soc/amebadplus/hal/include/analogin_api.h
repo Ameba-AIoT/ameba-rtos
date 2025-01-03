@@ -37,17 +37,15 @@ extern "C" {
 #endif
 
 /** @addtogroup Ameba_Mbed_API
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup MBED_ADC
  *  @brief MBED_ADC driver modules.
  *  @{
  */
 
-
 /* reserved region for storage enum and structure, used by Doxygen */
-
 
 /** @} */
 /** @} */
@@ -65,4 +63,4 @@ uint32_t analogin_voltage_vbat(uint32_t adc_data);
 }
 #endif
 
-#endif//MBED_ANALOGIN_API_H
+#endif // MBED_ANALOGIN_API_H

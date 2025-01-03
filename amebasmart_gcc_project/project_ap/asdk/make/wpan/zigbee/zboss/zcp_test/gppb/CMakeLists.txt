@@ -1,0 +1,2 @@
+ameba_add_subdirectories_if(CONFIG_802154_ZIGBEE_ROLE_ZC zc)
+ameba_add_subdirectories_if(CONFIG_802154_ZIGBEE_ROLE_ZR zr)

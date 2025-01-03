@@ -47,7 +47,7 @@ void	rtw_init_listhead(_list *list);
 /**
  * @brief  This function tests whether a list is empty.
  * @param[in] phead: Pointer to the list to test.
- * @return	  _TRUE/_FALSE
+ * @return	  TRUE/FALSE
  */
 uint32_t	rtw_is_list_empty(_list *phead);
 
@@ -114,7 +114,7 @@ uint32_t	rtw_queue_empty(_queue	*pqueue);
  * @brief  This function tests whether the "pelement" is at the "queue".
  * @param[in] queue: The pointer to the queue that to be tested.
  * @param[in] pelement: The element that to be tested.
- * @return	 _TRUE/_FALSE
+ * @return	 TRUE/FALSE
  */
 uint32_t	rtw_end_of_queue_search(_list *queue, _list *pelement);
 /*************************** End Queue *******************************/

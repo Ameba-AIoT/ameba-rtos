@@ -21,12 +21,29 @@
 #if (defined(UVC_USE_HW) && (UVC_USE_HW == 1))
 
 /* Private variables ---------------------------------------------------------*/
-static const char *TAG = "UVC";
+static const char *const TAG = "UVC";
 
 static usbh_uvc_dec uvc_dec_struct[UVC_TOTAL_CHANNEL_NUM];
 
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  Get buffer number through address
+  * @param  dec: pointer to usbh_uvc_dec structure
+  * @param  addr: buffer address.
+  * @retval None
+  */
+static u32 usbh_uvc_get_number_from_addr(usbh_uvc_dec *dec, u32 addr)
+{
+	u32 i;
+	for (i = 0; i < USBH_MAX_BUF_NUM; i++) {
+		if (addr == dec->uvc_dec_buf[i].buf_start_addr) {
+			return i;
+		}
+	}
+
+	return 0;
+}
 
 /**
   * @brief  UVC decoder interrupt handler
@@ -39,11 +56,11 @@ static u32 usbh_uvc_dec_irq(u32 *Data)
 	u32 irq_status = UVC_GetIntStatus();
 	u32 start_addr, end_addr;
 
-	//RTK_LOGS(NULL, "irq:%x\n", irq_status);
+	//RTK_LOGI(TAG, "uvc irq:%x\n", irq_status);
 
 	if (irq_status & UVC_BIT_CH0_BUF0_FRM_DONE) {
 		UVC_INTClear(UVC_BIT_CH0_BUF0_FRM_DONE);
-		uvc_dec_struct[0].frame_done_num = uvc_dec_struct[0].ch_buf_num;
+		uvc_dec_struct[0].frame_done_num = usbh_uvc_get_number_from_addr(&uvc_dec_struct[0], UVC_GetBufferAddr(0, 0));
 		uvc_dec_struct[0].frame_done_size = UVC_GetFrameSize(0, 0);
 		start_addr = uvc_dec_struct[0].uvc_dec_buf[uvc_dec_struct[0].free_buf_num].buf_start_addr;
 		end_addr = start_addr + uvc_dec_struct[0].uvc_dec_buf[uvc_dec_struct[0].free_buf_num].buf_size - 1;
@@ -51,15 +68,12 @@ static u32 usbh_uvc_dec_irq(u32 *Data)
 		if (++uvc_dec_struct[0].free_buf_num > 2) {
 			uvc_dec_struct[0].free_buf_num = 0;
 		}
-		if (++uvc_dec_struct[0].ch_buf_num > 2) {
-			uvc_dec_struct[0].ch_buf_num = 0;
-		}
 		rtos_sema_give(uvc_dec_struct[0].dec_sema);
 	}
 
 	if (irq_status & UVC_BIT_CH0_BUF1_FRM_DONE) {
 		UVC_INTClear(UVC_BIT_CH0_BUF1_FRM_DONE);
-		uvc_dec_struct[0].frame_done_num = uvc_dec_struct[0].ch_buf_num;
+		uvc_dec_struct[0].frame_done_num = usbh_uvc_get_number_from_addr(&uvc_dec_struct[0], UVC_GetBufferAddr(0, 1));
 		uvc_dec_struct[0].frame_done_size = UVC_GetFrameSize(0, 1);
 		start_addr = uvc_dec_struct[0].uvc_dec_buf[uvc_dec_struct[0].free_buf_num].buf_start_addr;
 		end_addr = start_addr + uvc_dec_struct[0].uvc_dec_buf[uvc_dec_struct[0].free_buf_num].buf_size - 1;
@@ -67,15 +81,12 @@ static u32 usbh_uvc_dec_irq(u32 *Data)
 		if (++uvc_dec_struct[0].free_buf_num > 2) {
 			uvc_dec_struct[0].free_buf_num = 0;
 		}
-		if (++uvc_dec_struct[0].ch_buf_num > 2) {
-			uvc_dec_struct[0].ch_buf_num = 0;
-		}
 		rtos_sema_give(uvc_dec_struct[0].dec_sema);
 	}
 
 	if (irq_status & UVC_BIT_CH1_BUF0_FRM_DONE) {
 		UVC_INTClear(UVC_BIT_CH1_BUF0_FRM_DONE);
-		uvc_dec_struct[1].frame_done_num = uvc_dec_struct[1].ch_buf_num;
+		uvc_dec_struct[1].frame_done_num = usbh_uvc_get_number_from_addr(&uvc_dec_struct[1], UVC_GetBufferAddr(1, 0));
 		uvc_dec_struct[1].frame_done_size = UVC_GetFrameSize(1, 0);
 		start_addr = uvc_dec_struct[1].uvc_dec_buf[uvc_dec_struct[1].free_buf_num].buf_start_addr;
 		end_addr = start_addr + uvc_dec_struct[1].uvc_dec_buf[uvc_dec_struct[1].free_buf_num].buf_size - 1;
@@ -83,15 +94,12 @@ static u32 usbh_uvc_dec_irq(u32 *Data)
 		if (++uvc_dec_struct[1].free_buf_num > 2) {
 			uvc_dec_struct[1].free_buf_num = 0;
 		}
-		if (++uvc_dec_struct[1].ch_buf_num > 2) {
-			uvc_dec_struct[1].ch_buf_num = 0;
-		}
 		rtos_sema_give(uvc_dec_struct[1].dec_sema);
 	}
 
 	if (irq_status & UVC_BIT_CH1_BUF1_FRM_DONE) {
 		UVC_INTClear(UVC_BIT_CH1_BUF1_FRM_DONE);
-		uvc_dec_struct[1].frame_done_num = uvc_dec_struct[1].ch_buf_num;
+		uvc_dec_struct[1].frame_done_num = usbh_uvc_get_number_from_addr(&uvc_dec_struct[1], UVC_GetBufferAddr(1, 1));
 		uvc_dec_struct[1].frame_done_size = UVC_GetFrameSize(1, 1);
 		start_addr = uvc_dec_struct[1].uvc_dec_buf[uvc_dec_struct[1].free_buf_num].buf_start_addr;
 		end_addr = start_addr + uvc_dec_struct[1].uvc_dec_buf[uvc_dec_struct[1].free_buf_num].buf_size - 1;
@@ -99,10 +107,47 @@ static u32 usbh_uvc_dec_irq(u32 *Data)
 		if (++uvc_dec_struct[1].free_buf_num > 2) {
 			uvc_dec_struct[1].free_buf_num = 0;
 		}
-		if (++uvc_dec_struct[1].ch_buf_num > 2) {
-			uvc_dec_struct[1].ch_buf_num = 0;
-		}
 		rtos_sema_give(uvc_dec_struct[1].dec_sema);
+	}
+
+	if (irq_status & UVC_BIT_CH0_BUF0_FRM_OVERSIZE) {
+		UVC_INTClear(UVC_BIT_CH0_BUF0_FRM_OVERSIZE);
+		RTK_LOGE(TAG, "CH0 BUF0 frame oversize error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH0_BUF1_FRM_OVERSIZE) {
+		UVC_INTClear(UVC_BIT_CH0_BUF1_FRM_OVERSIZE);
+		RTK_LOGE(TAG, "CH0 BUF1 frame oversize error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH0_BUF0_HEADER_ERR) {
+		UVC_INTClear(UVC_BIT_CH0_BUF0_HEADER_ERR);
+		RTK_LOGE(TAG, "CH0 BUF0 payload header error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH0_BUF1_HEADER_ERR) {
+		UVC_INTClear(UVC_BIT_CH0_BUF1_HEADER_ERR);
+		RTK_LOGE(TAG, "CH0 BUF1 payload header error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH1_BUF0_FRM_OVERSIZE) {
+		UVC_INTClear(UVC_BIT_CH1_BUF0_FRM_OVERSIZE);
+		RTK_LOGE(TAG, "CH1 BU1 frame oversize error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH1_BUF1_FRM_OVERSIZE) {
+		UVC_INTClear(UVC_BIT_CH1_BUF1_FRM_OVERSIZE);
+		RTK_LOGE(TAG, "CH1 BUF1 frame oversize error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH1_BUF0_HEADER_ERR) {
+		UVC_INTClear(UVC_BIT_CH1_BUF0_HEADER_ERR);
+		RTK_LOGE(TAG, "CH1 BUF0 payload header error\n");
+	}
+
+	if (irq_status & UVC_BIT_CH1_BUF1_HEADER_ERR) {
+		UVC_INTClear(UVC_BIT_CH1_BUF1_HEADER_ERR);
+		RTK_LOGE(TAG, "CH1 BUF1 payload header error\n");
 	}
 
 	return 0;
@@ -119,7 +164,6 @@ static u32 usbh_uvc_dec_irq(u32 *Data)
 usbh_uvc_dec *usbh_uvc_dec_alloc_channel(void)
 {
 	u32 ch = UVC_AllocChannel();
-	//RTK_LOGS(NULL, "ch:%d\n", ch);
 	if (ch == 0xFF) {
 		RTK_LOGE(TAG, "No Free UVC decoder channel\n");
 		return NULL;
@@ -128,7 +172,6 @@ usbh_uvc_dec *usbh_uvc_dec_alloc_channel(void)
 	uvc_dec_struct[ch].ch = ch;
 	return &uvc_dec_struct[ch];
 }
-
 
 /**
   * @brief  Free UVC channel
@@ -154,17 +197,24 @@ void usbh_uvc_dec_init(usbh_uvc_dec *uvc_dec)
 	u32 hcchar = 0;
 	u32 data_pid;
 
+	if ((uvc_dec->uvc_dec_buf[0].buf_size <= 1024) || (uvc_dec->uvc_dec_buf[1].buf_size <= 1024)) {
+		RTK_LOGE(TAG, "Buffer size should > 1024 bytes\n");
+		return;
+	}
+
 	uvc_dec->free_buf_num = 2;
-	uvc_dec->ch_buf_num = 0;
 
 	UVC_StructInit(&uvc_initstruct);
 	uvc_initstruct.chn_num = uvc_dec->ch;
 	uvc_initstruct.frame_buf0_start_addr = uvc_dec->uvc_dec_buf[0].buf_start_addr;
-	uvc_initstruct.frame_buf0_end_addr = uvc_initstruct.frame_buf0_start_addr + uvc_dec->uvc_dec_buf[0].buf_size - 1;
+	uvc_initstruct.frame_buf0_end_addr = uvc_initstruct.frame_buf0_start_addr + uvc_dec->uvc_dec_buf[0].buf_size - 1 - 1024;
 	uvc_initstruct.frame_buf1_start_addr = uvc_dec->uvc_dec_buf[1].buf_start_addr;
-	uvc_initstruct.frame_buf1_end_addr = uvc_initstruct.frame_buf1_start_addr + uvc_dec->uvc_dec_buf[1].buf_size - 1;
+	uvc_initstruct.frame_buf1_end_addr = uvc_initstruct.frame_buf1_start_addr + uvc_dec->uvc_dec_buf[1].buf_size - 1 - 1024;
 	uvc_initstruct.ep_num = uvc_dec->pipe_num;
 	uvc_initstruct.binterval = uvc_dec->binterval;
+
+	/* Do not use eof as frame done flag default */
+	uvc_initstruct.eof = 0;
 
 	/* uvc cmd 0 */
 	uvc_initstruct.uvc_cmd[0].cmd_reg0.enable = 1;
@@ -228,10 +278,35 @@ void usbh_uvc_dec_init(usbh_uvc_dec *uvc_dec)
 	InterruptEn(UVC_DEC_IRQ, UVC_IRQ_PRIORITY);
 
 	if (uvc_dec->ch == 0) {
-		UVC_INTConfig(UVC_BIT_CH0_BUF0_FRM_DONE_MASK | UVC_BIT_CH0_BUF1_FRM_DONE_MASK, ENABLE);
+		UVC_INTClear(UVC_BIT_CH0_BUF0_FRM_DONE | UVC_BIT_CH0_BUF1_FRM_DONE |
+					 UVC_BIT_CH0_BUF0_FRM_OVERSIZE | UVC_BIT_CH0_BUF1_FRM_OVERSIZE |
+					 UVC_BIT_CH0_BUF0_HEADER_ERR | UVC_BIT_CH0_BUF1_HEADER_ERR);
+		UVC_INTConfig(UVC_BIT_CH0_BUF0_FRM_DONE_MASK | UVC_BIT_CH0_BUF1_FRM_DONE_MASK |
+					  UVC_BIT_CH0_BUF0_FRM_OVERSIZE_MASK | UVC_BIT_CH0_BUF1_FRM_OVERSIZE_MASK |
+					  UVC_BIT_CH0_BUF0_HEADER_ERR_MASK | UVC_BIT_CH0_BUF1_HEADER_ERR_MASK, ENABLE);
 	} else {
-		UVC_INTConfig(UVC_BIT_CH1_BUF0_FRM_DONE_MASK | UVC_BIT_CH1_BUF1_FRM_DONE_MASK, ENABLE);
+		UVC_INTClear(UVC_BIT_CH1_BUF0_FRM_DONE | UVC_BIT_CH1_BUF1_FRM_DONE |
+					 UVC_BIT_CH1_BUF0_FRM_OVERSIZE | UVC_BIT_CH1_BUF1_FRM_OVERSIZE |
+					 UVC_BIT_CH1_BUF0_HEADER_ERR | UVC_BIT_CH1_BUF1_HEADER_ERR);
+		UVC_INTConfig(UVC_BIT_CH1_BUF0_FRM_DONE_MASK | UVC_BIT_CH1_BUF1_FRM_DONE_MASK |
+					  UVC_BIT_CH1_BUF0_FRM_OVERSIZE_MASK | UVC_BIT_CH1_BUF1_FRM_OVERSIZE_MASK |
+					  UVC_BIT_CH1_BUF0_HEADER_ERR_MASK | UVC_BIT_CH1_BUF1_HEADER_ERR_MASK, ENABLE);
 	}
+}
+
+/**
+  * @brief  Deinit UVC decoder
+  * @param  uvc_dec: pointer to usbh_uvc_dec structure
+  * @retval None
+  */
+void usbh_uvc_dec_deinit(usbh_uvc_dec *uvc_dec)
+{
+	UNUSED(uvc_dec);
+	UVC_INTConfig(UVC_BIT_CH1_BUF0_FRM_DONE_MASK | UVC_BIT_CH1_BUF1_FRM_DONE_MASK | \
+				  UVC_BIT_CH1_BUF0_FRM_OVERSIZE_MASK | UVC_BIT_CH1_BUF1_FRM_OVERSIZE_MASK | \
+				  UVC_BIT_CH1_BUF0_HEADER_ERR_MASK | UVC_BIT_CH1_BUF1_HEADER_ERR_MASK, DISABLE);
+	InterruptUnRegister(UVC_DEC_IRQ);
+	InterruptDis(UVC_DEC_IRQ);
 }
 
 /**
@@ -245,7 +320,6 @@ void usbh_uvc_dec_start(usbh_uvc_dec *uvc_dec)
 	UVC_EPAutoEn(uvc_dec->ch, ENABLE);
 }
 
-
 /**
   * @brief  Stop UVC decoder
   * @param  uvc_dec: pointer to usbh_uvc_dec structure
@@ -254,6 +328,8 @@ void usbh_uvc_dec_start(usbh_uvc_dec *uvc_dec)
 void usbh_uvc_dec_stop(usbh_uvc_dec *uvc_dec)
 {
 	UVC_EPAutoEn(uvc_dec->ch, DISABLE);
+	/* After disable epautoen， maybe last frame is not processed, so need a delay to disable concat */
+	DelayMs(1);
 	UVC_ConcatEn(uvc_dec->ch, DISABLE);
 }
 

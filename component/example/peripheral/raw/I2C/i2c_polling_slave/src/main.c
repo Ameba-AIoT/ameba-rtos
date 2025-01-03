@@ -36,7 +36,7 @@ I2C_InitTypeDef I2CInitData[2];
 u32 restart_enable = 0;
 uint16_t i2c_target_addr[2];
 u32 master_addr_retry = 1;
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 i2c_t i2cslave;
 
@@ -56,7 +56,7 @@ static void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t 
 	/* I2C Pin Mux Initialization */
 
 
-#if defined (CONFIG_AMEBASMART)
+#if defined (CONFIG_AMEBASMART) || (CONFIG_AMEBAD)
 	Pinmux_Config(sda, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(scl, PINMUX_FUNCTION_I2C);
 #else
@@ -166,6 +166,9 @@ void i2c_dual_slave_task(void)
 {
 	int i2clocalcnt;
 	/* enable I2C functions */
+#if defined (CONFIG_AMEBAD)
+	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
+#else
 	switch (I2C_ID) {
 	case 0:
 		RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
@@ -182,6 +185,7 @@ void i2c_dual_slave_task(void)
 		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
+#endif
 
 	// prepare for transmission
 	_memset(&i2cdatasrc[0], 0x00, I2C_DATA_LENGTH);
@@ -256,4 +260,3 @@ int main(void)
 	rtos_sched_start();
 	return 0;
 }
-

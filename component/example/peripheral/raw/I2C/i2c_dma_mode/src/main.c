@@ -54,7 +54,7 @@ I2C_InitTypeDef I2CInitData[2];
 
 #define I2C_0 0
 #define I2C_1 1
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 /*if defined 1, master send, slave read mode.
  else master read slave send mode.*/
@@ -367,6 +367,10 @@ void RtkI2CInit(i2c_dma_t *obj, PinName sda, PinName scl)
 	I2CInitData[i2c_idx].I2CDMAMod = I2C_DMA_REGISTER;
 
 	/* I2C Pin Mux Initialization */
+#if defined (CONFIG_AMEBAD)
+	Pinmux_Config(sda, PINMUX_FUNCTION_I2C);
+	Pinmux_Config(scl, PINMUX_FUNCTION_I2C);
+#else
 	if (i2c_idx == I2C_0) {
 		Pinmux_Config(sda, PINMUX_FUNCTION_I2C0_SDA);
 		Pinmux_Config(scl, PINMUX_FUNCTION_I2C0_SCL);
@@ -374,7 +378,7 @@ void RtkI2CInit(i2c_dma_t *obj, PinName sda, PinName scl)
 		Pinmux_Config(sda, PINMUX_FUNCTION_I2C1_SDA);
 		Pinmux_Config(scl, PINMUX_FUNCTION_I2C1_SCL);
 	}
-
+#endif
 	PAD_PullCtrl(sda, GPIO_PuPd_UP);
 	PAD_PullCtrl(scl, GPIO_PuPd_UP);
 
@@ -421,9 +425,13 @@ u32 dma_rx_callback(void *data)
 void i2c_dma_test(void)
 {
 	rtos_time_delay_ms(3000);
+
+#if defined (CONFIG_AMEBAD)
+	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
+#else
 	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
 	RCC_PeriphClockCmd(APBPeriph_I2C1, APBPeriph_I2C1_CLOCK, ENABLE);
-
+#endif
 	int i2clocalcnt;
 
 	// prepare for transmission
@@ -493,8 +501,12 @@ void i2c_dma_test(void)
 
 void i2c_dma_test(void)
 {
+#if defined (CONFIG_AMEBAD)
+	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
+#else
 	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
 	RCC_PeriphClockCmd(APBPeriph_I2C1, APBPeriph_I2C1_CLOCK, ENABLE);
+#endif
 	int i2clocalcnt;
 
 	rtos_time_delay_ms(3000);

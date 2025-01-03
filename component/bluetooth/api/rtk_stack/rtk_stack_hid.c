@@ -305,6 +305,7 @@ uint16_t bt_stack_hid_init(uint8_t role)
 void bt_stack_hid_deinit(void)
 {
 	BT_LOGA("[HID]app_hid_init need to do\n");
+	bt_hid_deinit();
 	if (pdescriptor) {
 		osif_mem_free((void *)pdescriptor);
 	}

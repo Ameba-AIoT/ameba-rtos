@@ -44,7 +44,7 @@
  * http://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
 
-#if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
+#if defined(__GNUC__)
 #include <stdint.h>
 extern uint32_t SystemCoreClock;
 #endif
@@ -102,6 +102,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_TRACE_FACILITY						1
 #define configSUPPORT_STATIC_ALLOCATION					1
 #define configUSE_POSIX_ERRNO						1
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS			2
 
 /* Constants that define which hook (callback) functions should be used. */
 #define configUSE_IDLE_HOOK								1

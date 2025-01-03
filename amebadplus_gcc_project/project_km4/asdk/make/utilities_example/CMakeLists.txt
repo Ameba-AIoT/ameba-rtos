@@ -6,6 +6,7 @@ set(
     ${BASEDIR}/component/network/coap/include
     ${BASEDIR}/component/network/mqtt/MQTTClient
     ${BASEDIR}/component/network/httplite
+    ${BASEDIR}/component/network/http2/nghttp2-1.31.0/includes
     ${BASEDIR}/component/network/xml
     ${BASEDIR}/component/bluetooth
     ${BASEDIR}/component/sdio/sd_host/inc
@@ -17,6 +18,7 @@ set(
 )
 
 set(MODULE_C_DEFINES)
+set(MODULE_C_OPTIOINS)
 
 if(CONFIG_USB_DEVICE_EN)
     list(
@@ -76,14 +78,40 @@ if(CONFIG_AUDIO_FWK)
     )
 endif()
 
+if(CONFIG_TFLITE_MICRO_EN)
+    list(
+        APPEND MODULE_IFLAGS
+        ${BASEDIR}/component/tflite_micro
+        ${BASEDIR}/component/tflite_micro/third_party/gemmlowp
+        ${BASEDIR}/component/tflite_micro/third_party/flatbuffers/include
+    )
+    list(
+        APPEND MODULE_C_OPTIOINS
+        -Wno-undef
+        -Wno-unused-parameter
+        -DTF_LITE_STATIC_MEMORY
+    )
+endif()
 
+#NOTICE: The source file name and folder name for 'example' should match. That means when you
+#want to define a example named 'app', the directory of the source file must be component/example/.../app/example_app.c
+#The build cmd is "cmake .. -DEXPAMLE=app -G Ninja && ninja" or "./build.py -a app".
 if (EXAMPLE)
-    file(GLOB_RECURSE EXAMPLEDIR ${BASEDIR}/component/example/example_${EXAMPLE}.c)
+    file(GLOB_RECURSE EXAMPLEDIR
+        ${BASEDIR}/component/example/example_${EXAMPLE}.c
+        ${BASEDIR}/component/example/example_${EXAMPLE}.cc)
     cmake_path(REMOVE_FILENAME EXAMPLEDIR)
-    message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
-    file(GLOB EXAMPLE_SRC ${EXAMPLEDIR}*.c)
+    if(EXAMPLEDIR)
+        message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
+    else()
+        message(SEND_ERROR "example_${EXAMPLE}.c not found. Please check example name!")
+    endif()
+    file(GLOB_RECURSE EXAMPLE_SRC
+        ${EXAMPLEDIR}*.c
+        ${EXAMPLEDIR}*.cc)
     ameba_internal_library(utilities_example)
-    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS} ${EXAMPLEDIR})
     target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
+    target_compile_options(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_OPTIOINS})
     target_sources(${CURRENT_LIB_NAME} PRIVATE ${EXAMPLE_SRC})
 endif()

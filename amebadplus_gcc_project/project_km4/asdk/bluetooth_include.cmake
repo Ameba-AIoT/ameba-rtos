@@ -21,6 +21,7 @@ if(CONFIG_BT_ZEPHYR)
         ${BLEDIR}/zephyr/include
         ${BLEDIR}/zephyr/stack
         ${BLEDIR}/zephyr/stack/host
+        ${BLEDIR}/zephyr/stack/mesh
         ${BLEDIR}/zephyr/settings
         ${BLEDIR}/zephyr/port
     )
@@ -56,8 +57,15 @@ list(
     APPEND GLOBAL_IFLAGS
     ${BLEDIR}/api
     ${BLEDIR}/api/include
+    ${BLEDIR}/example/ble_mesh_ota_common
     ${BLEDIR}/example/bt_atcmd
     ${BLEDIR}/example/gatt_service/server
     ${BLEDIR}/example/gatt_service/client
     ${BASEDIR}/component/at_cmd
 )
+if(CONFIG_BT_INIC)
+    list(
+        APPEND GLOBAL_IFLAGS
+        ${BLEDIR}/driver/bt_inic
+    )
+endif()

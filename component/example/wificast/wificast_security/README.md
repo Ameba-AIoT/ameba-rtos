@@ -23,11 +23,11 @@ Config the user-defined data header in User Payload field.
 |  2 bytes | 2 bytes |
 * Type: The Type field is set to indicate the WIFI-CAST security data.
     ```
-    #define WIFI_CAST_UART_DATA		        BIT(13)
-    #define WIFI_CAST_SEC_SCAN_REQUEST		BIT(12)
-    #define WIFI_CAST_SEC_SCAN_RESPONSE		BIT(11)
-    #define WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST	BIT(10)
-    #define WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE	BIT(9)
+    #define WIFI_CAST_UART_DATA                     BIT(13)
+    #define WIFI_CAST_SCAN_REQUEST                  BIT(12)
+    #define WIFI_CAST_SCAN_RESPONSE                 BIT(11)
+    #define WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST   BIT(10)
+    #define WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE  BIT(9)
     ```
 * Len: The Len field is set as the length of security data.
 

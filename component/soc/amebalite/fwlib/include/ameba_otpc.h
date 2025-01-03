@@ -387,10 +387,10 @@ enum OTP_OPMode {
 //OTPC_OTP_PARAM
 #define OTPC_BIT_BUSY								BIT8
 
-extern u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
-extern u32 OTP_Read8(u32 Addr, u8 *Data);
-extern u32 OTP_Write8(u32 Addr, u8 Data);
-extern u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
+extern int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
+extern int OTP_Read8(u32 Addr, u8 *Data);
+extern int OTP_Write8(u32 Addr, u8 Data);
+extern int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
 extern u32 otp_logical_remain(void);
 
 /* MANUAL_GEN_END */

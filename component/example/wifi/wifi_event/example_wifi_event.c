@@ -4,7 +4,7 @@
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 
-static const char *TAG = "WIFI_EVENT_EXAMPLE";
+static const char *const TAG = "WIFI_EVENT_EXAMPLE";
 
 static void exampe_wifi_join_status_event_hdl(char *buf, int buf_len, int flags, void *userdata)
 {

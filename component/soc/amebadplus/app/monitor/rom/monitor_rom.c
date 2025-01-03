@@ -32,7 +32,7 @@ cmd_reboot(
 	MONITOR_LOG("\n\rRebooting ...\n\r");
 	NVIC_SystemReset();
 
-	return _TRUE;
+	return TRUE;
 }
 
 SHELL_ROM_TEXT_SECTION
@@ -54,7 +54,7 @@ cmd_Iboot_Set(
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_TESTING_CFG, temp);
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 
@@ -97,7 +97,7 @@ static u32 cmd_rom_help(u16 argc, u8  *argv[])
 	}
 	MONITOR_LOG("----------------- COMMAND MODE END  ------------------\n");
 
-	return _TRUE ;
+	return TRUE ;
 }
 #if defined  (__GNUC__)
 #pragma GCC diagnostic pop

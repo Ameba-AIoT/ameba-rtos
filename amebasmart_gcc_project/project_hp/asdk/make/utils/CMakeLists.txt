@@ -1,0 +1,1 @@
+ameba_add_subdirectories(ipc ringbuffer)

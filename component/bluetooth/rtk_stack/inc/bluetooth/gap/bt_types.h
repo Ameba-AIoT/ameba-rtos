@@ -1258,6 +1258,18 @@ extern "C" {
               ((uint32_t)(*(a + 3)) <<  0);             \
     }
 
+/** Big Endian array to uint64 */
+#define BE_ARRAY_TO_UINT64(u64, a)  {                   \
+        u64 = ((uint64_t)(*(a + 0)) << 56) +            \
+              ((uint64_t)(*(a + 1)) << 48) +            \
+              ((uint64_t)(*(a + 2)) << 40) +            \
+              ((uint64_t)(*(a + 3)) << 32) +            \
+              ((uint64_t)(*(a + 4)) << 24) +            \
+              ((uint64_t)(*(a + 5)) << 16) +            \
+              ((uint64_t)(*(a + 6)) <<  8) +            \
+              ((uint64_t)(*(a + 7)) <<  0);             \
+    }
+
 /** Big Endian uint8 to array */
 #define BE_UINT8_TO_ARRAY(a, u8)    {                   \
         *((uint8_t *)(a) + 0) = (uint8_t)(u8);          \

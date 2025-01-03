@@ -358,7 +358,7 @@ _LONG_CALL_ void LEDC_SoftReset(LEDC_TypeDef *LEDCx);
 _LONG_CALL_ void LEDC_WriteData(LEDC_TypeDef *LEDCx, u32 data);
 _LONG_CALL_ u32 LEDC_SendData(LEDC_TypeDef *LEDCx, void *data, u32 Len);
 _LONG_CALL_ void LEDC_SetFIFOLevel(LEDC_TypeDef *LEDCx, u8 FifoLevel);
-_LONG_CALL_ BOOL LEDC_TXGDMA_Init(LEDC_TypeDef *LEDCx, PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool LEDC_TXGDMA_Init(LEDC_TypeDef *LEDCx, PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData,
 								  IRQ_FUN CallbackFunc, u32 *pTxData, u32 Length);
 
 _LONG_CALL_ void LEDC_SetTotalLength(LEDC_TypeDef *LEDCx, u32 TotalData);

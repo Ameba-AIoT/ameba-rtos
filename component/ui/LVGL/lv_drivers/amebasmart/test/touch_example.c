@@ -55,7 +55,7 @@ u32 example_touch_test(IN  u16 argc, IN  u8  *argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	touch_test();
-	return _TRUE;
+	return TRUE;
 }
 
 CMD_TABLE_DATA_SECTION

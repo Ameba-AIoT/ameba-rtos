@@ -203,16 +203,23 @@ u8 shell_cmd_chk(
 
 	if (((*(*prvUartLogCtl).pTmpLogBuf).BufCount < (UART_LOG_CMD_BUFLEN - 1)) ||
 		(((*(*prvUartLogCtl).pTmpLogBuf).BufCount == (UART_LOG_CMD_BUFLEN - 1)) &&
-		 ((RevData == KB_ASCII_CR) || (RevData == '\0') ||
+		 ((RevData == KB_ASCII_LF) || (RevData == '\0') ||
 		  (RevData == KB_ASCII_BS) || (RevData == KB_ASCII_BS_7F)))) {
 
 		if (RevData == 0xFF) {  //invlid char, ignore it
 			RTNSTS = 1;
 		}
 
-		if (RevData == KB_ASCII_LF) {
-			RTNSTS = 1;
-		} else if ((RevData == KB_ASCII_CR) || (RevData == '\0')) {
+		if ((RevData == KB_ASCII_LF) && ((*(*prvUartLogCtl).pTmpLogBuf).BufCount > 0) &&
+			((*(*prvUartLogCtl).pTmpLogBuf).UARTLogBuf[(*(*prvUartLogCtl).pTmpLogBuf).BufCount - 1] == KB_ASCII_CR)) {
+			RTNSTS = 2;
+			(*prvUartLogCtl).CRSTS = 1;
+			(*(*prvUartLogCtl).pTmpLogBuf).UARTLogBuf[(*(*prvUartLogCtl).pTmpLogBuf).BufCount - 1] = '\0';
+			(*(*prvUartLogCtl).pTmpLogBuf).BufCount--;
+			if (EchoFlag) {
+				pfEcho((u8 *)"\r\n");
+			}
+		} else if (RevData == '\0') {
 			RTNSTS = 2;
 			(*prvUartLogCtl).CRSTS = 1;
 			(*(*prvUartLogCtl).pTmpLogBuf).UARTLogBuf[(*(*prvUartLogCtl).pTmpLogBuf).BufCount] = '\0';
@@ -290,7 +297,7 @@ u32 shell_uart_irq_rom(void *Data)
 	PUART_LOG_BUF pTmpRxLogBuf = &shell_rxbuf;
 
 	//For Test
-	BOOL    PullMode = _FALSE;
+	bool    PullMode = FALSE;
 	u32 IrqEn = LOGUART_GetIMR();
 
 	LOGUART_SetIMR(0);
@@ -317,8 +324,8 @@ recv_again:
 	if (pTmpRxLogBuf->UARTLogBuf[i] == KB_ASCII_ESC) {
 		i++;
 		//4 Esc detection is only valid in the first stage of boot sequence (few seconds)
-		if (shell_ctl.ExecuteEsc != _TRUE) {
-			shell_ctl.ExecuteEsc = _TRUE;
+		if (shell_ctl.ExecuteEsc != TRUE) {
+			shell_ctl.ExecuteEsc = TRUE;
 			shell_ctl.EscSTS = 0;
 		} else {
 			//4 the input commands are valid only when the task is ready to execute commands
@@ -344,7 +351,7 @@ recv_again:
 			if (shell_cmd_chk(pTmpRxLogBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, 1) == 2) {
 				//4 check UartLog buffer to prevent from incorrect access
 				if (shell_ctl.pTmpLogBuf != NULL) {
-					shell_ctl.ExecuteCmd = _TRUE;
+					shell_ctl.ExecuteCmd = TRUE;
 
 					if (shell_ctl.shell_task_rdy) {
 						shell_ctl.GiveSema();
@@ -397,8 +404,8 @@ void shell_init_rom(u32 TBLSz, void *pTBL)
 	shell_ctl.shell_task_rdy = 0;
 
 	//executing boot sequence
-	shell_ctl.ExecuteCmd = _FALSE;
-	shell_ctl.ExecuteEsc = _FALSE;
+	shell_ctl.ExecuteCmd = FALSE;
+	shell_ctl.ExecuteEsc = FALSE;
 
 	//CONSOLE_AMEBA();
 }
@@ -415,22 +422,22 @@ void shell_task_rom(void *Data)
 #endif
 	do {
 
-		if ((shell_ctl.ExecuteCmd) == _TRUE) {
+		if ((shell_ctl.ExecuteCmd) == TRUE) {
 			shell_cmd_exec_rom((PUART_LOG_CTL)&shell_ctl);
 			CONSOLE_AMEBA();
-			shell_ctl.ExecuteCmd = _FALSE;
+			shell_ctl.ExecuteCmd = FALSE;
 		}
 	} while (1);
 }
 
 _LONG_CALL_
-static BOOLEAN shell_exit(u32 MaxWaitCount)
+static bool shell_exit(u32 MaxWaitCount)
 {
 	u32 WaitCount = 0;
 
 	do {
 		if (WaitCount > MaxWaitCount) {
-			return _TRUE;// go back to the normal boot sequence
+			return TRUE;// go back to the normal boot sequence
 		}
 
 		DelayUs(100);
@@ -439,7 +446,7 @@ static BOOLEAN shell_exit(u32 MaxWaitCount)
 		WaitCount++;
 
 		//4 there is a ESC key input in Boot Sequence check stage
-		if (shell_ctl.ExecuteEsc == _TRUE) {
+		if (shell_ctl.ExecuteEsc == TRUE) {
 			CONSOLE_AMEBA();
 
 			shell_ctl.EscSTS = 0;
@@ -448,7 +455,7 @@ static BOOLEAN shell_exit(u32 MaxWaitCount)
 		}
 	} while (1);
 
-	return _FALSE;
+	return FALSE;
 
 }
 
@@ -469,10 +476,10 @@ void shell_rom(u32 MaxWaitCount)
 
 	//4 Stay in console stage
 	do {
-		if ((shell_ctl.ExecuteCmd) == _TRUE) {
+		if ((shell_ctl.ExecuteCmd) == TRUE) {
 			shell_cmd_exec_rom((PUART_LOG_CTL)&shell_ctl);
 			CONSOLE_AMEBA();
-			shell_ctl.ExecuteCmd = _FALSE;
+			shell_ctl.ExecuteCmd = FALSE;
 		}
 	} while (1);
 }

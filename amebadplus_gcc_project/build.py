@@ -23,6 +23,8 @@ def main(argc, argv):
                          choices=['km0', 'km4', 'boot', 'gdb', 'flashloader', 'imgtool_flashloader', 'gen_imgtool_floader']
                         )
     parser.add_argument('--daily-build', help='daily build flag')
+    parser.add_argument('-gdb', '--gdb', action='store_true', help='gdb')
+    parser.add_argument('-debug', '--debug', action='store_true', help='debug')
     parser.add_argument('-D', '--Defined', nargs='+', help='user defined variables')
 
     args = parser.parse_args()
@@ -65,19 +67,27 @@ def main(argc, argv):
     else:
         os.makedirs(build_dir)
 
+    if args.gdb:
+        os.system('python ./utils/jlink_script/gdb.py')
+        return
+
+    if args.debug:
+        os.system('python ./utils/jlink_script/gdb.py debug')
+        return
+
     cmd = 'cd ' + build_dir + ' && '
     if app != None:
         cmd += 'cmake "' + project_dir + '" -DEXAMPLE=' + app
     else:
         cmd += 'cmake "' + project_dir + '"'
-    
+
     if args.daily_build != None:
         cmd += ' -DDAILY_BUILD=' + args.daily_build
 
     if args.Defined !=None:
         for defs in args.Defined:
             cmd += ' -D' + defs
-    
+
     cmd += ' -G Ninja && ninja'
 
     if args.target != None:

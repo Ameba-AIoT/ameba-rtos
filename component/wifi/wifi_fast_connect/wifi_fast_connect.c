@@ -57,7 +57,7 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 
 	/* STEP1: get current connect info from wifi driver*/
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
-		RTK_LOGS(NOTAG, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
 		return RTW_ERROR;
 	}
 
@@ -288,7 +288,7 @@ int check_is_the_same_ap()
 		struct _rtw_wifi_setting_t setting;
 
 		if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
-			RTK_LOGS(NOTAG, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n %s():wifi_get_setting fail or ap mode", __func__);
 			return 0;
 		}
 

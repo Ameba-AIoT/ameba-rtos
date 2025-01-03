@@ -5,7 +5,7 @@
  */
 
 #include "ameba_soc.h"
-static const char *TAG = "PSRAM";
+static const char *const TAG = "PSRAM";
 u8 APM_WR_INIT_LATENCY_SPEC[6] = {
 	APM_WR_INIT_LATENCY_3CLK,
 	APM_WR_INIT_LATENCY_4CLK,
@@ -577,7 +577,7 @@ void PSRAM_calwindow(int window_start, int window_end, PCAL_InitTypeDef *PCAL_In
   * @retval None
   * @note cache will be disable during calibration
   */
-BOOL PSRAM_calibration(u32 log_en)
+bool PSRAM_calibration(u32 log_en)
 {
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 
@@ -666,7 +666,7 @@ BOOL PSRAM_calibration(u32 log_en)
 	DCache_Enable();
 
 	if ((window_size) < 9) {
-		return _FALSE;
+		return FALSE;
 	}
 	tempPHYPara &= (~0xfffff);
 	tempPHYPara |= PSPHY_CFG_CAL_JMAX((window_end - window_start) / 2 - 2) | \
@@ -679,7 +679,7 @@ BOOL PSRAM_calibration(u32 log_en)
 	/*start HW calibration*/
 	psram_phy->PSPHY_CAL_CTRL |= PSPHY_BIT_CFG_CAL_EN;
 
-	return _TRUE;
+	return TRUE;
 
 }
 

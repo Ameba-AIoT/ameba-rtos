@@ -66,7 +66,7 @@ const struct country_code_table_t country_code_table[] = {
 	{{'T', 'V'}, 0x21, TXPWR_LMT_ETSI}, /* 0228 Tuvalu */
 	{{'V', 'U'}, 0x26, TXPWR_LMT_ETSI}, /* 0232 Vanuatu */
 	{{'E', 'H'}, 0x3c, TXPWR_LMT_ETSI}, /* 0234 Western Sahara */
-	{{'0', '0'}, 0x7f, TXPWR_LMT_WW}, /* 0238 World Wide */
+	{{'0', '0'}, 0x17, TXPWR_LMT_WW}, /* 0238 World Wide */
 };
 
 /* These countries all use the FCC as the regulatory standard
@@ -284,11 +284,11 @@ const struct country_code_table_common_t country_code_table_common[] = {
 	{country_code_ETSI2, 0x3a, TXPWR_LMT_ETSI, sizeof(country_code_ETSI2) / sizeof(country_code_ETSI2[0])},
 };
 
-BOOLEAN wifi_get_country_code_info(char *country_code, u8 *channel_plan, u8 *power_limit)
+bool wifi_get_country_code_info(char *country_code, u8 *channel_plan, u8 *power_limit)
 {
 	u8 i, j;
 	if (!country_code) {
-		return _FALSE;
+		return FALSE;
 	}
 
 	for (i = 0; i < sizeof(country_code_table) / sizeof(country_code_table[0]); i++) {
@@ -300,7 +300,7 @@ BOOLEAN wifi_get_country_code_info(char *country_code, u8 *channel_plan, u8 *pow
 			if (power_limit) {
 				*power_limit = country_code_table[i].pwr_lmt;
 			}
-			return _TRUE;
+			return TRUE;
 		}
 	}
 
@@ -314,10 +314,10 @@ BOOLEAN wifi_get_country_code_info(char *country_code, u8 *channel_plan, u8 *pow
 				if (power_limit) {
 					*power_limit = country_code_table_common[i].pwr_lmt;
 				}
-				return _TRUE;
+				return TRUE;
 			}
 		}
 	}
 
-	return _FALSE;
+	return FALSE;
 }

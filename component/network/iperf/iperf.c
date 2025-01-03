@@ -193,10 +193,10 @@ struct iperf_data_t *init_stream_data(uint8_t protocol, uint8_t role)
 	stream_data->protocol = protocol;
 	stream_data->port = DEFAULT_PORT;
 	stream_data->report_interval = DEFAULT_REPORT_INTERVAL;
-	stream_data->time = DEFAULT_TIME;
 
 	if (role == 'c') {
 		stream_data->buf_size = CLIENT_BUF_SIZE;
+		stream_data->time = DEFAULT_TIME;
 	} else if (role == 's') {
 		stream_data->buf_size = SERVER_BUF_SIZE;
 	}
@@ -443,6 +443,7 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 	int socket_connect = 0;
 	fd_set read_fds;
 	struct timeval select_timeout;
+	int frame_num = 0;
 
 	tcp_server_buffer = rtos_mem_malloc(iperf_data.buf_size);
 	if (!tcp_server_buffer) {
@@ -557,6 +558,7 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 		end_time = rtos_time_get_current_system_time_ms();
 		total_size += recv_size;
 		report_size += recv_size;
+		frame_num++;
 		if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (1000 * iperf_data.report_interval))) {
 			tptest_res_log("tcp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 						   (int)((report_size * 8) / (end_time - report_start_time)));
@@ -565,13 +567,12 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 		}
 	}
 
+exit1:
 	if (total_size != 0) {
-		tptest_res_log("tcp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
-					   (int)(end_time - start_time),
-					   (int)((total_size * 8) / (end_time - start_time)));
+		tptest_res_log("tcp_s: [END] id[%d] Totally receive %d KBytes in %d ms, frame_num = %d, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
+					   (int)(end_time - start_time), frame_num, (int)((uint64_t)(total_size * 8) / (end_time - start_time)));
 	}
 
-exit1:
 	// close the connected socket after receiving from connected TCP client
 	close(iperf_data.client_fd);
 
@@ -820,10 +821,12 @@ int udp_server_func(struct iperf_data_t iperf_data)
 	struct iperf_udp_client_hdr client_hdr;
 	uint8_t time_boundary = 0, size_boundary = 0;
 	char *udp_server_buffer = NULL;
-	struct iperf_data_t *udp_client_data = NULL;
 	int socket_connect = 0;
 	fd_set read_fds;
 	struct timeval select_timeout;
+	int frame_num = 0;
+	int recv_timeout = 1000;
+	struct timeval timeout;
 
 	udp_server_buffer = rtos_mem_malloc(iperf_data.buf_size);
 	if (!udp_server_buffer) {
@@ -889,67 +892,17 @@ int udp_server_func(struct iperf_data_t iperf_data)
 	start_time = rtos_time_get_current_system_time_ms();
 	report_start_time = start_time;
 	end_time = start_time;
-	if (!iperf_data.bidirection) { //Server
-		//parser the amount of udp iperf setting
-		memcpy(&client_hdr, udp_server_buffer, sizeof(client_hdr));
-		if (client_hdr.mAmount != 0) {
-			client_hdr.mAmount = ntohl(client_hdr.mAmount);
-			if (client_hdr.mAmount > 0x7fffffff) {
-				client_hdr.mAmount = (~(client_hdr.mAmount) + 1) / 100;
-				time_boundary = 1;
-			} else {
-				size_boundary = 1;
-			}
-		} else {
-			//set receive timeout
-			int recv_timeout = 500;
 
-#if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)	//lwip 2.0.2
-			struct timeval timeout;
-			timeout.tv_sec  = recv_timeout / 1000;
-			timeout.tv_usec = (recv_timeout % 1000) * 1000;
-			setsockopt(iperf_data.server_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-#else	//lwip 1.4.1
-			setsockopt(iperf_data.server_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
-#endif
-		}
-		if (ntohl(client_hdr.flags) == 0x80000001) { //bi-direction, create client to send packets back
-			rtos_mutex_take(g_tptest_mutex, MUTEX_WAIT_TIMEOUT);
-			udp_client_data = init_stream_data('u', 'c');
-			rtos_mutex_give(g_tptest_mutex);
-			if (udp_client_data == NULL) {
-				tptest_res_log("[ERROR] init_stream_data failed!\n\r");
-				goto exit1;
-			}
-			if (time_boundary) {
-				udp_client_data->time = client_hdr.mAmount;
-			} else if (size_boundary) {
-				udp_client_data->total_size = client_hdr.mAmount;
-			}
-			strncpy((char *)udp_client_data->server_ip, inet_ntoa(client_addr.sin_addr), (strlen(inet_ntoa(client_addr.sin_addr))));
-			udp_client_data->port = ntohl(client_hdr.mPort);
-			udp_client_data->bandwidth = ntohl(client_hdr.mWinband);
-			udp_client_data->buf_size = CLIENT_BUF_SIZE;
-			udp_client_data->tos_value = DEFAULT_UDP_TOS_VALUE;
-			udp_client_data->report_interval = DEFAULT_REPORT_INTERVAL;
-			udp_client_data->is_sub_stream = SUBSTREAM_FLAG | iperf_data.stream_id;
-			if (rtos_task_create(&udp_client_data->task, "iperf_test_handler", iperf_test_handler, (void *) udp_client_data, BSD_STACK_SIZE * 4,
-								 1 + PRIORITIE_OFFSET) != SUCCESS) {
-				tptest_res_log("\n\rUDP ERROR: Create UDP client task failed.\n\r");
-				rtos_mutex_take(g_tptest_mutex, MUTEX_WAIT_TIMEOUT);
-				free_stream_data(udp_client_data);
-				rtos_mutex_give(g_tptest_mutex);
-				goto exit1;
-			}
-		}
-	} else { //listener
-		if (iperf_data.total_size) {
-			client_hdr.mAmount = iperf_data.total_size;
-			size_boundary = 1;
-		} else if (iperf_data.time) {
-			client_hdr.mAmount = iperf_data.time;
-			time_boundary = 1;
-		}
+	timeout.tv_sec  = recv_timeout / 1000;
+	timeout.tv_usec = (recv_timeout % 1000) * 1000;
+	setsockopt(iperf_data.server_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+	if (iperf_data.total_size) {
+		client_hdr.mAmount = iperf_data.total_size;
+		size_boundary = 1;
+	} else if (iperf_data.time) {
+		client_hdr.mAmount = iperf_data.time;
+		time_boundary = 1;
 	}
 
 	if (time_boundary) {
@@ -972,6 +925,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			end_time = rtos_time_get_current_system_time_ms();
 			total_size += recv_size;
 			report_size += recv_size;
+			frame_num++;
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (1000 * iperf_data.report_interval))) {
 				tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
@@ -999,6 +953,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			end_time = rtos_time_get_current_system_time_ms();
 			total_size += recv_size;
 			report_size += recv_size;
+			frame_num++;
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (1000 * iperf_data.report_interval))) {
 				tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
@@ -1012,6 +967,8 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			if (recv_size < 0) {
 				tptest_res_log("%s: Receive data timeout\n\r", __func__);
 				goto exit1;
+			} else if ((recv_size > 0) && (iperf_data.bidirection)) {
+				sendto(iperf_data.server_fd, udp_server_buffer, recv_size, 0, (struct sockaddr *) &client_addr, (u32_t)addrlen);
 			}
 
 			// ack data to client
@@ -1026,6 +983,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			end_time = rtos_time_get_current_system_time_ms();
 			total_size += recv_size;
 			report_size += recv_size;
+			frame_num++;
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (1000 * iperf_data.report_interval))) {
 				tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
@@ -1036,9 +994,8 @@ int udp_server_func(struct iperf_data_t iperf_data)
 	}
 exit1:
 	if (total_size != 0) {
-		tptest_res_log("udp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
-					   (int)(end_time - start_time),
-					   (int)((uint64_t)(total_size * 8) / (end_time - start_time)));
+		tptest_res_log("udp_s: [END] id[%d] Totally receive %d KBytes in %d ms, frame_num = %d, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
+					   (int)(end_time - start_time), frame_num, (int)((uint64_t)(total_size * 8) / (end_time - start_time)));
 	}
 
 
@@ -1060,6 +1017,7 @@ static void iperf_test_handler(void *param)
 {
 	/* To avoid gcc warnings */
 	struct iperf_data_t *stream_data = (struct iperf_data_t *) param;
+	int i = 0, deinit_iperf = 1;
 
 	rtos_time_delay_ms(100);
 	if (stream_data->protocol == 'u') {
@@ -1093,6 +1051,17 @@ static void iperf_test_handler(void *param)
 #if defined(INCLUDE_uxTaskGetStackHighWaterMark) && (INCLUDE_uxTaskGetStackHighWaterMark == 1)
 	tptest_res_log("Min available stack size of %s = %d * %d bytes\n\r", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL), sizeof(portBASE_TYPE));
 #endif
+
+	//If all stream finish, deinit iperf
+	for (i = 0; i < MULTI_STREAM_NUM; i++) {
+		if (g_stream_id[i].id_used != 0) {
+			deinit_iperf = 0;
+			break;
+		}
+	}
+	if (deinit_iperf) {
+		iperf_deinit();
+	}
 
 	rtos_task_delete(NULL);
 }
@@ -1189,7 +1158,7 @@ void cmd_iperf(int argc, char **argv)
 					goto exit;
 				}
 				argv_count += 2;
-			} else if ((strcmp(argv[argv_count - 1], "-d") == 0) && (stream_data->role == 'c')) {
+			} else if ((strcmp(argv[argv_count - 1], "-d") == 0)) {
 				stream_data->bidirection = 1;
 				argv_count += 1;
 			} else if (strcmp(argv[argv_count - 1], "-i") == 0) {
@@ -1267,10 +1236,6 @@ void cmd_iperf(int argc, char **argv)
 				tptest_res_log("[ERROR] init_stream_data failed!\n\r");
 				goto exit;
 			}
-			stream_data_s->bidirection = 1;
-			stream_data_s->port = stream_data->port;
-			stream_data_s->time = stream_data->time;
-			stream_data_s->total_size = stream_data->total_size;
 			if (rtos_task_create(&stream_data_s->task, "iperf_test_handler", iperf_test_handler, (void *) stream_data_s, BSD_STACK_SIZE * 4,
 								 2 + PRIORITIE_OFFSET) != SUCCESS) {
 				tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");

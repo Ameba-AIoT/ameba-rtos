@@ -33,7 +33,7 @@ typedef int32_t (*delay_execution_cb)(mesh_model_info_t *pmodel_info,
                                       uint32_t data_type);
 /** @} */
 
-/** @defgroup DELAY_EXECUTION_API Delay Execution Api
+/** @defgroup DELAY_EXECUTION_API Delay Execution API
   * @brief Functions declaration
   * @{
   */

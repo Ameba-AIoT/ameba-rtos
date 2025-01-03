@@ -27,7 +27,6 @@ typedef struct {
 	u32 frame_done_num;
 	u32 frame_done_size;
 	u32 free_buf_num;
-	u32 ch_buf_num;
 	u32 ep_num;
 	u32 pipe_num;
 	u32 binterval;
@@ -43,6 +42,7 @@ typedef struct {
 usbh_uvc_dec *usbh_uvc_dec_alloc_channel(void);
 void usbh_uvc_dec_free_channel(usbh_uvc_dec *uvc_dec);
 void usbh_uvc_dec_init(usbh_uvc_dec *uvc_dec);
+void usbh_uvc_dec_deinit(usbh_uvc_dec *uvc_dec);
 void usbh_uvc_dec_start(usbh_uvc_dec *uvc_dec);
 void usbh_uvc_dec_stop(usbh_uvc_dec *uvc_dec);
 void usbh_uvc_dec_dump_reg(void);

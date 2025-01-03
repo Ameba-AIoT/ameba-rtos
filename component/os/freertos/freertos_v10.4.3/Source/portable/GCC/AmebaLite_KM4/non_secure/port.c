@@ -50,6 +50,8 @@
 #include "ameba_pmu.h"
 #include "cmsis_gcc.h"
 
+#include "platform_autoconf.h"
+
 #if( configENABLE_TRUSTZONE == 1 )
 /* Secure components includes. */
 #include "secure_context.h"
@@ -511,6 +513,11 @@ void vPortExitCritical(void)   /* PRIVILEGED_FUNCTION */
 }
 /*-----------------------------------------------------------*/
 
+uint32_t xPortGetCriticalState(void)
+{
+	return ulCriticalNesting;
+}
+
 __attribute__((naked)) uint32_t ulPortSetInterruptMask(void)
 {
 	__asm volatile														\
@@ -920,9 +927,9 @@ void vApplicationIdleHook(void)
 	saving could be achieved by not including any demo tasks that never block. */
 
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
-	extern uint32_t driver_suspend_ret;
+	extern int32_t driver_suspend_ret;
 #if defined (CONFIG_WLAN)
-	extern uint32_t wlan_driver_check_and_suspend(void);
+	extern int32_t wlan_driver_check_and_suspend(void);
 	driver_suspend_ret = wlan_driver_check_and_suspend();
 #endif
 #endif
@@ -943,7 +950,7 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 	parameters have been corrupted, depending on the severity of the stack
 	overflow.  When this is the case pxCurrentTCB can be inspected in the
 	debugger to find the offending task. */
-	RTK_LOGS(NOTAG, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
 	for (;;);
 }
 
@@ -953,7 +960,7 @@ void vApplicationMallocFailedHook(void)
 	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
 		pcCurrentTask = pcTaskGetName(NULL);
 	}
-	RTK_LOGS(NOTAG, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KM4", pcCurrentTask, xPortGetFreeHeapSize());
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KM4", pcCurrentTask, xPortGetFreeHeapSize());
 	taskDISABLE_INTERRUPTS();
 	for (;;);
 }
@@ -1084,4 +1091,27 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	(void)xModifiableIdleTime;
 }
 
+/*-----------------------------------------------------------*/
+
+/*-----------------------------------------------------------*/
+
+void vPortCleanUpTCB(uint32_t * pxTCB)
+{
+	UNUSED(pxTCB);
+
+#if( configENABLE_TRUSTZONE == 1 )
+	/**
+	 * @brief Called when a task is deleted to delete the task's secure context,
+	 * if it has one.
+	 *
+	 * @param[in] pxTCB The TCB of the task being deleted.
+	 */
+	vPortFreeSecureContext( ( uint32_t * ) pxTCB );
+#endif
+
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+	extern void sys_thread_sem_deinit_tcb(uint32_t *pxTCB);
+	sys_thread_sem_deinit_tcb(pxTCB);
+#endif
+}
 /*-----------------------------------------------------------*/

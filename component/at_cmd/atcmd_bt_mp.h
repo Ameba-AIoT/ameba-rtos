@@ -26,8 +26,8 @@ typedef struct _at_command_mp_ext_item_ {
 #define MP_EXT2_PREFIX		"[ATM2]: "
 #define MP_EXT2_PRINTF(...) \
 		do{ \
-			RTK_LOGS(NOTAG, MP_EXT2_PREFIX); \
-			RTK_LOGS(NOTAG, __VA_ARGS__); \
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, MP_EXT2_PREFIX); \
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, __VA_ARGS__); \
 		}while(0)
 
 #define UART_BRIDGE_USAGE		"ATM2=bridge\n"
@@ -36,11 +36,11 @@ typedef struct _at_command_mp_ext_item_ {
 #define SELECTION_BT_ANTENNA	"ATM2=ant,TARGET <TARGET: s0/s1>\n"
 
 /* Exported functions --------------------------------------------------------*/
-extern void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process);
-extern void wifi_btcoex_set_bt_ant(u8 bt_ant);
 extern void rtk_bt_mp_power_on(void);
 extern void rtk_bt_mp_power_off(void);
 extern void rtk_bt_set_bt_antenna(uint8_t ant);
+extern void rtk_coex_btc_set_bt_ant(u8 bt_ant);
+extern void rtk_coex_btc_set_pta(u8 type, u8 role, u8 process);
 
 void print_bt_mp_at(void);
 void at_mp_init(void);

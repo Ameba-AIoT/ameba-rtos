@@ -12,7 +12,7 @@
 #include "bootloader_km4.h"
 #include "boot_ota_km4.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 
 u8 SecureBootEn = DISABLE;
 
@@ -30,7 +30,7 @@ u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u
 	Cnt = sizeof(Km4Img3Label) / sizeof(char *);
 
 	/* check if RDP image should decrypt. If not, copy to secure RAM directly */
-	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, 2, Km4Img3Label, _FALSE) == _TRUE) {
+	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, 2, Km4Img3Label, FALSE) == TRUE) {
 		return Cnt;
 	}
 

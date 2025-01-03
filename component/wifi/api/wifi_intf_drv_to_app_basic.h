@@ -24,6 +24,8 @@
  *  @{
  */
 #ifndef CONFIG_FULLMAC
+#include "rtw_wifi_common.h"
+#if !defined(ZEPHYR_WIFI)
 #include "rtw_wifi_constants.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
@@ -31,6 +33,8 @@
 #include "dlist.h"
 #include <rtw_skbuff.h>
 #endif
+#endif
+
 #include <wifi_ind.h>
 
 #ifdef __cplusplus
@@ -91,7 +95,6 @@ struct _rtw_mac_t {
  *                                   scan structures
  *********************************************************************************************/
 #define SCAN_LONGEST_WAIT_TIME	(12000) /**< scan longest wait time */
-#define PSCAN_ENABLE		0x01 /**< enable for partial channel scan */
 #define PSCAN_FAST_SURVEY	0x02 /**< set to select scan time to FAST_SURVEY_TO, otherwise SURVEY_TO */
 
 #pragma pack(1)/*scan related structs are 1 byte alignment for some issues long long ago*/
@@ -433,6 +436,7 @@ union speaker_set {
 		u8 latch_period;      /* 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms */
 	} latch_i2s_count;
 	struct { /*SPEAKER_SET_TSF_TIMER*/
+		u8 enable;			/* 1 for enable, 0 for disable */
 		u64 tsft;           /* unit us */
 		u8 port;           /* 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1 */
 	} tsf_timer;
@@ -560,8 +564,8 @@ enum {
  *
  */
 struct custom_ie {
-	__u8 *ie;/*format: [element ID (1byte) | length (1byte) | content (length bytes) ]*/
-	__u8 type;/*val: PROBE_REQ, PROBE_RSP...*/
+	u8 *ie;/*format: [element ID (1byte) | length (1byte) | content (length bytes) ]*/
+	u8 type;/*val: PROBE_REQ, PROBE_RSP...*/
 };
 
 /**
@@ -736,7 +740,8 @@ struct wifi_user_conf {
 
 	/*!	Specify the trx buffer size of each skb.\n
 		Cache size(32 for amebadplus&amebalite and 64 for amebasmart)alignment will be applied to the input size.\n
-		0: use default size*/
+		Considering the length field of L-SIG is 12 bits, the max PSDU size is 4095 bytes, so skb_buf_size is suggested not exceed 4k.\n
+		0: use default size */
 	unsigned int skb_buf_size;
 
 	/*!	Every data tx is forced to start with cts2self */
@@ -754,7 +759,9 @@ struct wifi_user_conf {
 		1: STA and SoftAP may run at the same time, Softap's mac address depends on softap_addr_offset_idx */
 	unsigned char concurrent_enabled;
 
-	/*!	It is valid only when concurrent_enabled =1. The range is 1~5. The lowest bit of mac[0] is 1, which represents the multicast address, so skip mac[0].\n
+	/*!	It is valid only when concurrent_enabled =1. The range is 0~5.The lowest bit of mac[0] is 1, which represents the multicast address,
+		therefore, the mac[0] of softap is incremented by 2, others is incremented by 1.\n
+		e.g. softap_addr_offset_idx = 0, chip's mac = 00:e0:4c:01:02:03, softap's mac = 02:e0:4c:01:02:03;\n
 		e.g. softap_addr_offset_idx = 1, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e1:4c:01:02:03;\n
 		e.g. softap_addr_offset_idx = 5, chip's mac = 00:e0:4c:01:02:03, softap's mac = 00:e0:4c:01:02:04*/
 	unsigned char softap_addr_offset_idx;
@@ -781,6 +788,9 @@ struct wifi_user_conf {
 
 	/*Automatic channel selection*/
 	unsigned char acs_en;
+
+	/*! R-mesh AP strong RSSI thresh, when AP rssi larger than this thresh, will try to switch to AP*/
+	signed char wtn_strong_rssi_thresh;
 };
 /** @} */
 

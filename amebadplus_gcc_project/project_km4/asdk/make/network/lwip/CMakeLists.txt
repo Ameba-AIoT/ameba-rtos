@@ -2,13 +2,18 @@ set(LWIPDIR ${BASEDIR}/component/lwip/lwip_${LWIP_VER})
 set(LWIPAPI ${BASEDIR}/component/lwip/api)
 set(NETWORK ${BASEDIR}/component/network)
 set(LWIPPORT ${LWIPDIR}/port/realtek/freertos)
+set(MODULE_IFLAGS)
 
 if(CONFIG_802154_THREAD_BORDER_ROUTER_EN)
-    set(
-    MODULE_IFLAGS
-    ${BASEDIR}/component/wpan/openthread/rtk_otbr/
-)
+    list(APPEND MODULE_IFLAGS ${BASEDIR}/component/wpan/openthread/rtk_otbr)
 endif()
+
+list(
+    APPEND MODULE_IFLAGS
+    ${FREERTOSDIR}/include
+    ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/non_secure
+)
+
 
 set(
     CSRC 

@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "CLK";
+static const char *const TAG = "CLK";
 /**
   * @brief  32K clock Enable,
   * @param  NA
@@ -179,7 +179,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 
 	if (cur_ppm >= ppm_limit) {
 		RTK_LOGE(TAG, "[CAL131K]: !!! cal fail !!! PPM: %lu PPM_Limit:%lu \n", cur_ppm, ppm_limit);
-			assert_param(0);
+		assert_param(0);
 	}
 
 	return TRUE;

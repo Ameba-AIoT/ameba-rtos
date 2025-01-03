@@ -122,3 +122,6 @@ ChangeLog:
 20240712  v2.5.25 Fix erase flash image bug when download mp to sram
 20240821  v2.5.26 (1) Support USB download for smart/dplus nor flash
                   (2) Remove useless serial port from scan device list
+20241119  v2.5.27 (1) Tune log message
+                  (2) Move floaders to devices/floaders for better maintainability
+                  (3) Remove unused files from repository and vs project

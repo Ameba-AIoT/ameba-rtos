@@ -26,7 +26,7 @@ Config the user-defined data header in User Payload field.
 
 ## How to Use the Example
 
-### Step 1: Config the Serial Port
+### Step 1: Configure the Serial Port
 
 The default PIN in the example is set as below, change them if necessary.
 ```

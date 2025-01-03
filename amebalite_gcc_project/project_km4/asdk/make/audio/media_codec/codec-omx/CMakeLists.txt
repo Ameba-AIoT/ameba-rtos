@@ -103,6 +103,32 @@ if(CONFIG_MEDIA_PLAYER)
         list(APPEND MODULE_IFLAGS ${BASEDIR}/component/audio/third_party/libopus/include)
         list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_OPUS)
     endif()
+
+    # amr codec
+    if(CONFIG_MEDIA_CODEC_AMR)
+        list(APPEND CPPSRC ${DIR}/codecs/amrdec/sw_amr_dec.cpp)
+        list(
+            APPEND MODULE_IFLAGS
+            ${BASEDIR}/component/audio/media_codec/common/amrnb/common/include
+            ${BASEDIR}/component/audio/media_codec/common/amrnb/dec/src
+            ${BASEDIR}/component/audio/media_codec/common/amrwb/include
+            ${BASEDIR}/component/audio/media_codec/common/amrwb/src
+        )
+        list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_AMR)
+    endif()
+
+    #g711 codec
+    if(CONFIG_MEDIA_CODEC_G711)
+        list(APPEND CPPSRC ${DIR}/codecs/g711dec/sw_g711_dec.cpp)
+        list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_G711)
+    endif()
+
+    #gsm codec
+    if(CONFIG_MEDIA_CODEC_GSM)
+        list(APPEND CPPSRC ${DIR}/codecs/gsmdec/sw_gsm_dec.cpp)
+        list(APPEND MODULE_IFLAGS ${BASEDIR}/component/audio/third_party/libgsm/inc)
+        list(APPEND MODULE_CPP_DEFINES MEDIA_CODEC_GSM)
+    endif()
 endif()
 
 

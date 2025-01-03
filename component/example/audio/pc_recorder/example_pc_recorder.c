@@ -536,9 +536,9 @@ bool check_cjson(char *inbuf, int len)
 	}
 
 	if (left == right && (left != 0)) {
-		return _TRUE;
+		return TRUE;
 	}
-	return _FALSE;
+	return FALSE;
 }
 
 void pc_msg_process(msg_attrib_t *pattrib)
@@ -561,7 +561,7 @@ void pc_msg_process(msg_attrib_t *pattrib)
 		return;
 	}
 
-	if (check_cjson(tempbuf, datasize) == _FALSE) {
+	if (check_cjson(tempbuf, datasize) == FALSE) {
 		printf("[PC RECORDER INFO] invaild json\n");
 		return;
 	}

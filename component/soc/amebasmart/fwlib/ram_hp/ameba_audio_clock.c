@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 #include "ameba_audio_clock.h"
 
-static const char *TAG = "AUDIO";
+static const char *const TAG = "AUDIO";
 const u32 i2s_clock_source[4] = {PLL_CLOCK_98P304M, PLL_CLOCK_24P576M, PLL_CLOCK_45P1584M, I2S_CLOCK_XTAL40M};
 const u32 mclk_div[3] = {1, 2, 4};
 

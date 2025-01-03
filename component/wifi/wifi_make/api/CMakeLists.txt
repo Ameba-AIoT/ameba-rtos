@@ -43,6 +43,13 @@ if(NOT CONFIG_AS_INIC_AP)
 	        ${USRCFG_DIR}/ameba_wifi_power_table_usrcfg_3v3_1v25.c 
         )
     endif()
+
+    if(CONFIG_AMEBAD)
+        list(
+            APPEND CSRC 
+            ${USRCFG_DIR}/ameba_wifi_power_table_usrcfg_1v8.c 
+        )
+    endif()
 endif()
 
 ameba_internal_library(wifi_api)

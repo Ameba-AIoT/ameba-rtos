@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-//static const char *TAG = "PMC";
+//static const char *const TAG = "PMC";
 
 /**
   * @brief  KM4 wake KR4 by IPC

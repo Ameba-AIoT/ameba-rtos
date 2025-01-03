@@ -75,7 +75,7 @@ typedef struct {
 	u16 ctc_press_keep_cnt; // keep press_state
 	u8 ctc_release_cnt;
 	u16 ctc_nnoise_cnt;
-	BOOL ctc_is_pressed;
+	bool ctc_is_pressed;
 #if CTC_DATA_DBG
 	u16 *praw_data;
 	u16 *pmed_data;
@@ -263,7 +263,7 @@ void ctc_base_init(PCTC_FLT_Typedef pctc_flt)
 {
 	u32 i, j;
 
-	RTK_LOGS(NOTAG, ">>>> %s\n", __FUNCTION__);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, ">>>> %s\n", __FUNCTION__);
 
 	/* reset captouch baseline by sw */
 	for (i = 0; i < CTC_EN_CH; i++) {
@@ -286,19 +286,19 @@ void ctc_base_init(PCTC_FLT_Typedef pctc_flt)
 void ctc_press_entry(PCTC_FLT_Typedef pctc_flt)
 {
 	// TODO
-	RTK_LOGS(NOTAG, "CH%d pressed.\n", pctc_flt->ctc_ch_idx);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "CH%d pressed.\n", pctc_flt->ctc_ch_idx);
 }
 
 void ctc_release_entry(PCTC_FLT_Typedef pctc_flt)
 {
 	// TODO
-	RTK_LOGS(NOTAG, "CH%d released.\n", pctc_flt->ctc_ch_idx);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "CH%d released.\n", pctc_flt->ctc_ch_idx);
 }
 
 void ctc_pnoise_entry(PCTC_FLT_Typedef pctc_flt)
 {
 	// TODO
-	RTK_LOGS(NOTAG, "CH%d P_Noise.\n", pctc_flt->ctc_ch_idx);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "CH%d P_Noise.\n", pctc_flt->ctc_ch_idx);
 	DelayMs(1);
 	ctc_base_init(ctc_flt);
 }
@@ -306,7 +306,7 @@ void ctc_pnoise_entry(PCTC_FLT_Typedef pctc_flt)
 void ctc_nnoise_entry(PCTC_FLT_Typedef pctc_flt)
 {
 	// TODO
-	// RTK_LOGS(NOTAG, "CH%d N_Noise %d.\n", pctc_flt->ctc_ch_idx, pctc_flt->ctc_nnoise_cnt);
+	// RTK_LOGS(NOTAG, RTK_LOG_INFO, "CH%d N_Noise %d.\n", pctc_flt->ctc_ch_idx, pctc_flt->ctc_nnoise_cnt);
 
 	if (++pctc_flt->ctc_nnoise_cnt >= NNOISE_RST_LMT) {
 		ctc_base_init(ctc_flt);
@@ -334,7 +334,7 @@ u32 ctc_irq_handler(void *para)
 			for (i = 0; i < CTC_EN_CH; i++) {
 				/* Not get sufficient data: clear all channel buffer */
 				if (ctc_flt[i].buf_index != PBUF_NUM) {
-					RTK_LOGS(NOTAG, "=========Corrupted FIFO=============\n");
+					RTK_LOGS(NOTAG, RTK_LOG_INFO, "=========Corrupted FIFO=============\n");
 					for (j = 0; j < CTC_EN_CH; j++) {
 						_memset((void *) & (ctc_flt[j].raw_buf[buffer_switch % 2][0]), 0x0, 2 * PBUF_NUM);
 						ctc_flt[j].buf_index = 0;
@@ -356,7 +356,7 @@ u32 ctc_irq_handler(void *para)
 	}
 
 	if (IntStatus & CT_BIT_AFIFO_OVERFLOW_INTR) {
-		RTK_LOGS(NOTAG, "CT_BIT_AFIFO_OVERFLOW_INTR \n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "CT_BIT_AFIFO_OVERFLOW_INTR \n");
 	}
 
 exit:
@@ -391,8 +391,8 @@ void ctc_board_init(void)
 	}
 
 	if (ch_idx != CTC_EN_CH) {
-		RTK_LOGS(NOTAG, "\nWarning:\n");
-		RTK_LOGS(NOTAG, "\tPlease modify CTC_EN_CH to match enabled chan num!!!\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\nWarning:\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\tPlease modify CTC_EN_CH to match enabled chan num!!!\n");
 		assert_param(0);
 	}
 
@@ -409,7 +409,7 @@ void ctc_board_init(void)
 	InterruptEn(CTOUCH_IRQ, INT_PRI_MIDDLE);
 
 	CapTouch_Cmd(CAPTOUCH_DEV, ENABLE);
-	RTK_LOGS(NOTAG, "CapTouch init done\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "CapTouch init done\r\n");
 
 	/* delay_etc = (etc_interval + 1) * scan_period */
 	/* default: etc_interval = 3 */
@@ -426,8 +426,8 @@ void ctc_board_init(void)
 		}
 		ctc_flt[i].ctc_thre = CT_GET_CHx_D_TOUCH_TH(CAPTOUCH_DEV->CT_CH[ctc_ch[i]].CT_CHx_CTRL);
 		ctc_flt[i].ctc_ch_idx = ctc_ch[i];
-		RTK_LOGS(NOTAG, "[%d]BASE %d\n", ctc_flt[i].ctc_ch_idx, ctc_flt[i].ctc_base);
-		RTK_LOGS(NOTAG, "[%d]THRE %d\n", ctc_flt[i].ctc_ch_idx, ctc_flt[i].ctc_thre);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d]BASE %d\n", ctc_flt[i].ctc_ch_idx, ctc_flt[i].ctc_base);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d]THRE %d\n", ctc_flt[i].ctc_ch_idx, ctc_flt[i].ctc_thre);
 		ctc_flt[i].ctc_acc_diff = 0;
 		ctc_flt[i].ctc_cycle_cnt = 0;
 		ctc_flt[i].ctc_press_cnt = 0;
@@ -447,11 +447,13 @@ void ctc_board_init(void)
 		ctc_flt[i].avg_idx = 0;
 		ctc_flt[i].base_idx = 0;
 
-		RTK_LOGS(NOTAG, "[%d][0x%x-0x%x]raw_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_raw_data[i], (u32)ctc_raw_data[i] + CTC_DBG_SZ * sizeof(u16));
-		RTK_LOGS(NOTAG, "[%d][0x%x-0x%x]med_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_med_data[i], (u32)ctc_med_data[i] + CTC_DBG_SZ * sizeof(u16));
-		RTK_LOGS(NOTAG, "[%d][0x%x-0x%x]iir_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_iir_data[i], (u32)ctc_iir_data[i] + CTC_DBG_SZ * sizeof(u16));
-		RTK_LOGS(NOTAG, "[%d][0x%x-0x%x]avg_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_avg_data[i], (u32)ctc_avg_data[i] + CTC_DBG_SZ * sizeof(u16) / PBUF_NUM);
-		RTK_LOGS(NOTAG, "[%d][0x%x-0x%x]base_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_base_data[i], (u32)ctc_base_data[i] + CTC_DBG_SZ * sizeof(u16) / PBUF_NUM);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d][0x%x-0x%x]raw_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_raw_data[i], (u32)ctc_raw_data[i] + CTC_DBG_SZ * sizeof(u16));
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d][0x%x-0x%x]med_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_med_data[i], (u32)ctc_med_data[i] + CTC_DBG_SZ * sizeof(u16));
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d][0x%x-0x%x]iir_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_iir_data[i], (u32)ctc_iir_data[i] + CTC_DBG_SZ * sizeof(u16));
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d][0x%x-0x%x]avg_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_avg_data[i],
+				 (u32)ctc_avg_data[i] + CTC_DBG_SZ * sizeof(u16) / PBUF_NUM);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%d][0x%x-0x%x]base_data\n", ctc_flt[i].ctc_ch_idx, (u32)ctc_base_data[i],
+				 (u32)ctc_base_data[i] + CTC_DBG_SZ * sizeof(u16) / PBUF_NUM);
 #endif
 	}
 
@@ -463,21 +465,21 @@ void ctc_board_init(void)
 u32 ctc_event_detect(PCTC_FLT_Typedef pctc_flt)
 {
 	u16 data_diff = 0;
-	BOOL larger_data = _TRUE;
+	bool larger_data = TRUE;
 
 	if (pctc_flt->ctc_flt_data >= pctc_flt->ctc_base) {
-		larger_data = _TRUE;
+		larger_data = TRUE;
 	} else {
-		larger_data = _FALSE;
+		larger_data = FALSE;
 	}
 	data_diff = ABS(pctc_flt->ctc_flt_data, pctc_flt->ctc_base);
 
 	if (!pctc_flt->ctc_is_pressed) {
 		if (!larger_data) {
 			if (data_diff > pctc_flt->ctc_thre) {
-//				RTK_LOGS(NOTAG, "p%d\n", pctc_flt->ctc_press_cnt);
+//				RTK_LOGS(NOTAG, RTK_LOG_INFO, "p%d\n", pctc_flt->ctc_press_cnt);
 				if (++pctc_flt->ctc_press_cnt >= CTC_DBC_CNT) {
-					pctc_flt->ctc_is_pressed = _TRUE;
+					pctc_flt->ctc_is_pressed = TRUE;
 					pctc_flt->ctc_press_cnt = 0;
 					pctc_flt->ctc_release_cnt = 0;
 					pctc_flt->ctc_nnoise_cnt = 0;
@@ -491,9 +493,9 @@ u32 ctc_event_detect(PCTC_FLT_Typedef pctc_flt)
 			return P_NOISE;
 		}
 	} else if (data_diff <= pctc_flt->ctc_thre) {
-//		RTK_LOGS(NOTAG, "r%d\n", pctc_flt->ctc_release_cnt);
+//		RTK_LOGS(NOTAG, RTK_LOG_INFO, "r%d\n", pctc_flt->ctc_release_cnt);
 		if (++pctc_flt->ctc_release_cnt >= CTC_DBC_CNT) {
-			pctc_flt->ctc_is_pressed = _FALSE;
+			pctc_flt->ctc_is_pressed = FALSE;
 			pctc_flt->ctc_press_cnt = 0;
 			pctc_flt->ctc_release_cnt = 0;
 			pctc_flt->ctc_nnoise_cnt = 0;
@@ -516,7 +518,7 @@ u32 ctc_event_detect(PCTC_FLT_Typedef pctc_flt)
 void ctc_base_update(PCTC_FLT_Typedef pctc_flt)
 {
 	u16 data_diff;
-	BOOL larger_data = _TRUE;
+	bool larger_data = TRUE;
 
 	if (++pctc_flt->ctc_cycle_cnt < BASE_UPD_CYCLE) {
 		return;
@@ -525,9 +527,9 @@ void ctc_base_update(PCTC_FLT_Typedef pctc_flt)
 	}
 
 	if (pctc_flt->ctc_flt_data >= pctc_flt->ctc_base) {
-		larger_data = _TRUE;
+		larger_data = TRUE;
 	} else {
-		larger_data = _FALSE;
+		larger_data = FALSE;
 	}
 	data_diff = ABS(pctc_flt->ctc_flt_data, pctc_flt->ctc_base);
 
@@ -593,7 +595,7 @@ void ctc_filter_task(void)
 					ctc_flt[i].base_idx ++;
 				}
 #else
-				RTK_LOGS(NOTAG, "CH[%d]%d-%d: %d\n", ctc_flt[i].ctc_ch_idx, ctc_flt[i].ctc_base, ctc_flt[i].ctc_flt_data, \
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "CH[%d]%d-%d: %d\n", ctc_flt[i].ctc_ch_idx, ctc_flt[i].ctc_base, ctc_flt[i].ctc_flt_data, \
 						 ctc_flt[i].ctc_base - ctc_flt[i].ctc_flt_data);
 #endif
 				ctc_base_update(&ctc_flt[i]);
@@ -609,7 +611,7 @@ int main(void)
 	}
 
 	if (rtos_task_create(NULL, "CTC_FILTER_DEMO", (rtos_task_t)ctc_filter_task, NULL, 2048, (1)) != SUCCESS) {
-		RTK_LOGS(NOTAG, "Cannot create CTC_FILTER_DEMO\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create CTC_FILTER_DEMO\r\n");
 	}
 
 	rtos_sched_start();

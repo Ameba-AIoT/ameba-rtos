@@ -1,0 +1,2 @@
+ameba_add_subdirectories(ed)
+ameba_add_subdirectories(zc_zr)

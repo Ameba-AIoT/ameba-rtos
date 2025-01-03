@@ -276,6 +276,16 @@ bool bt_hfp_ag_init(uint8_t                       link_num,
 /**
  * bt_hfp_ag.h
  *
+ * \brief  De-initialize HFP AG profile.
+ *
+ *
+ * \ingroup BT_HFP_AG
+ */
+void bt_hfp_ag_deinit(void);
+
+/**
+ * bt_hfp_ag.h
+ *
  * \brief   Send an HFP AG connection request.
  *
  * \param[in]  bd_addr       Remote BT address.

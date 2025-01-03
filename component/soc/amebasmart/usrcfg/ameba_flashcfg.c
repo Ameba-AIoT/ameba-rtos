@@ -5,7 +5,7 @@
 */
 
 #include "ameba_soc.h"
-static const char *TAG = "FLASH";
+static const char *const TAG = "FLASH";
 
 /**
 * @brif Indicate the flash baudrate. It can be one of the following value:
@@ -196,11 +196,11 @@ void flash_init_userdef(void)
 	FLASH_InitStruct->FLASH_Status2_exist = 0;
 
 	/*1.2 dummy cycle */
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = 0;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = FLASH_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = FLASH_DM_CYCLE_2IO;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = FLASH_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = FLASH_DM_CYCLE_4IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = FLASH_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = FLASH_DM_CYCLE_2IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = FLASH_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = FLASH_DM_CYCLE_4IO;
 
 	/*1.3 set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = 0xBB;
@@ -254,25 +254,25 @@ void nand_init_userdef(void)
 
 	/*1.2 dummy cycle */
 	FLASH_InitStruct->FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = NAND_DM_CYCLE_READ;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = NAND_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = 0;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = NAND_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = NAND_DM_CYCLE_READ;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = NAND_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = NAND_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = 0;
 
 
 	/*1.3 set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = 0;
 	FLASH_InitStruct->FLASH_rd_dual_o = NAND_CMD_DREAD;
-	FLASH_InitStruct->FALSH_dual_o_valid_cmd = BIT_RD_DUAL_I;
-	FLASH_InitStruct->FALSH_dual_io_valid_cmd = 0;
+	FLASH_InitStruct->FLASH_dual_o_valid_cmd = BIT_RD_DUAL_I;
+	FLASH_InitStruct->FLASH_dual_io_valid_cmd = 0;
 
 
 	/*1.4 set 4bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_quad_io = 0;
 	FLASH_InitStruct->FLASH_rd_quad_o = NAND_CMD_QREAD;
-	FLASH_InitStruct->FALSH_quad_o_valid_cmd = BIT_RD_QUAD_O;
-	FLASH_InitStruct->FALSH_quad_io_valid_cmd = 0;
+	FLASH_InitStruct->FLASH_quad_o_valid_cmd = BIT_RD_QUAD_O;
+	FLASH_InitStruct->FLASH_quad_io_valid_cmd = 0;
 
 	/*1.5 other flash commnad set */
 	FLASH_InitStruct->FLASH_cmd_wr_en = NAND_CMD_WREN;

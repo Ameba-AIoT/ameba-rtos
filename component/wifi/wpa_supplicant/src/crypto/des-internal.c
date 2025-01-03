@@ -422,6 +422,5 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 	os_memset(ek, 0, sizeof(ek));
 }
 
-/*
-
-//#endif /* CONFIG_PEAP || CONFIG_TTLS */
+//#endif
+/* CONFIG_PEAP || CONFIG_TTLS */

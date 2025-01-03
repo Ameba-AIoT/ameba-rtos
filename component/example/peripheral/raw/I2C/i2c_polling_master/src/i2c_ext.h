@@ -33,6 +33,12 @@ static u32 I2CCLK_TABLE[2] = {40000000, 40000000};
 #define I2C_MTR_SCL    _PB_3
 static u32 I2CCLK_TABLE[2] = {40000000, 40000000};
 
+#elif defined (CONFIG_AMEBAD)
+
+#define I2C_MTR_SDA    _PA_26
+#define I2C_MTR_SCL    _PA_25
+static u32 I2CCLK_TABLE[2] = {10000000, 10000000};
+
 #endif
 
 #endif

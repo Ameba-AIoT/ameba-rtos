@@ -86,7 +86,7 @@ enum CHIPEN_WORK_MODE {
 
 extern void CHIPEN_WorkMode(enum CHIPEN_WORK_MODE mode);
 extern void CHIPEN_DebounceSet(u32 Debounce);
-extern BOOL CHIPEN_IsPress(void);
+extern bool CHIPEN_IsPress(void);
 extern void CHIPEN_ThresHoldSet(u32 Thres_LP, u32 Thres_SP);
 extern void CHIPEN_AckTimeSet(u32 Tack);
 extern void CHIPEN_ClearINT(u32 INTrBit);

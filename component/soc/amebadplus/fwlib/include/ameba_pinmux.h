@@ -252,9 +252,9 @@
   */
 _LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);
 _LONG_CALL_ u32 Pinmux_ConfigGet(u8 PinName);
-_LONG_CALL_ void Pinmux_UartLogCtrl(u32  PinLocation, BOOL   Operation);
-_LONG_CALL_ void Pinmux_BootSpicCtrl(u32  PinLocation, BOOL Operation);
-_LONG_CALL_ void Pinmux_ComboSpicCtrl(u32  PinLocation, BOOL Operation);
+_LONG_CALL_ void Pinmux_UartLogCtrl(u32  PinLocation, bool   Operation);
+_LONG_CALL_ void Pinmux_BootSpicCtrl(u32  PinLocation, bool Operation);
+_LONG_CALL_ void Pinmux_ComboSpicCtrl(u32  PinLocation, bool Operation);
 _LONG_CALL_ void Pinmux_Swdoff(void);
 /** @} */
 

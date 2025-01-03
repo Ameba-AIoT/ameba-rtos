@@ -3,6 +3,7 @@
 struct inic_spi_priv_t spi_priv = {0};
 
 void rtw_pending_q_resume(void);
+void(*bt_inic_spi_recv_ptr)(uint8_t *buffer, uint16_t len);
 
 void inic_spi_dma_tx_done_cb(void *param)
 {
@@ -76,7 +77,7 @@ retry:
 		/* receives EVENTS */
 		buf = rtos_mem_zmalloc(SPI_BUFSZ);	//TODO: optimize
 		if (buf == NULL) {
-			RTK_LOGS_LVL(TAG_WLAN_INIC, RTK_LOG_ERROR, "%s, can't alloc buffer!!\n", __func__);
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "%s, can't alloc buffer!!\n", __func__);
 			goto exit;
 		}
 
@@ -85,6 +86,12 @@ retry:
 		/* free buf later, no need to modify skb. */
 		inic_dev_event_int_hdl(buf, NULL);
 
+	} else if (event >= INIC_BT_EVT_BASE) {
+
+		/* copy by bt, skb no change */
+		if (bt_inic_spi_recv_ptr) {
+			bt_inic_spi_recv_ptr(spi_priv->rx_skb->data, SPI_BUFSZ);
+		}
 	} else {
 		//RTK_LOGD(TAG_WLAN_INIC, "RX dummy data, no process\n");
 	}
@@ -114,7 +121,7 @@ u32 inic_spi_rxdma_irq_handler(void *pData)
 	}
 
 	if (int_status & ErrType) {
-		RTK_LOGS_LVL(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi rxdma err occurs!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi rxdma err occurs!!\n");
 	}
 
 	return 0;
@@ -138,7 +145,7 @@ u32 inic_spi_txdma_irq_handler(void *pData)
 	}
 
 	if (int_status & ErrType) {
-		RTK_LOGS_LVL(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi txdma err occurs!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi txdma err occurs!!\n");
 	}
 
 	return 0;
@@ -147,10 +154,7 @@ u32 inic_spi_txdma_irq_handler(void *pData)
 int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 sts)
 {
 	do {
-		if (rtos_mutex_take(inic_spi_priv->dev_sts_lock, MUTEX_WAIT_TIMEOUT) == FAIL) {
-			return FAIL;
-		}
-
+		rtos_critical_enter();
 		if ((ops == DISABLE) && (inic_spi_priv->dev_status & sts)) {
 #ifdef SPI_DEBUG
 			u32 pin = 0;
@@ -188,8 +192,6 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 					/* set DEV_RDY pin to idle */
 					set_dev_rdy_pin(DEV_READY);
 				}
-
-				rtos_sema_give(inic_spi_priv->spi_transfer_done_sema);
 			}
 #ifdef SPI_DEBUG
 			GPIO_WriteBit(pin, 0);
@@ -208,9 +210,11 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 			RTIM_Reset(TIMx[INIC_RECOVER_TIM_IDX]);
 			RTIM_Cmd(TIMx[INIC_RECOVER_TIM_IDX], ENABLE);
 		}
+		rtos_critical_exit();
 
-		rtos_mutex_give(inic_spi_priv->dev_sts_lock);
-
+		if (inic_spi_priv->dev_status == DEV_STS_IDLE) {
+			rtos_sema_give(inic_spi_priv->spi_transfer_done_sema);
+		}
 		if (inic_spi_priv->ssris_pending) {
 			inic_spi_priv->ssris_pending = FALSE;
 
@@ -236,7 +240,7 @@ u32 inic_spi_recover(void *Data)
 {
 	struct inic_spi_priv_t *inic_spi_priv = (struct inic_spi_priv_t *) Data;
 
-	RTIM_INTClear(TIM0);
+	RTIM_INTClear(TIMx[INIC_RECOVER_TIM_IDX]);
 
 	/* check if error occurs or SPI transfer is still ongoing */
 	if (SSI_Busy(INIC_SPI_DEV)) {
@@ -333,7 +337,6 @@ static void inic_spi_init(void)
 
 	index = (INIC_SPI_DEV == SPI0_DEV) ? 0 : 1;
 
-	rtos_mutex_create_static(&inic_spi_priv->dev_sts_lock);
 	rtos_mutex_create_static(&inic_spi_priv->tx_lock);
 	rtos_sema_create(&inic_spi_priv->txirq_sema, 0, RTOS_SEMA_MAX_COUNT);
 	rtos_sema_create(&inic_spi_priv->rxirq_sema, 0, RTOS_SEMA_MAX_COUNT);
@@ -362,10 +365,10 @@ static void inic_spi_init(void)
 #endif
 
 	/* Initialize Timer*/
-	RCC_PeriphClockCmd(APBPeriph_LTIM0, APBPeriph_LTIM0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_TIMx[INIC_RECOVER_TIM_IDX], APBPeriph_TIMx_CLOCK[INIC_RECOVER_TIM_IDX], ENABLE);
 	RTIM_TimeBaseStructInit(&TIM_InitStruct);
 	TIM_InitStruct.TIM_Idx = INIC_RECOVER_TIM_IDX;
-	TIM_InitStruct.TIM_Period = INIC_RECOVER_TO_US / (1000000 / 32768);
+	TIM_InitStruct.TIM_Period = INIC_RECOVER_TO_US;
 
 	RTIM_TimeBaseInit(TIMx[INIC_RECOVER_TIM_IDX], &TIM_InitStruct, TIMx_irq[INIC_RECOVER_TIM_IDX], (IRQ_FUN)inic_spi_recover, (u32)inic_spi_priv);
 	RTIM_INTConfig(TIMx[INIC_RECOVER_TIM_IDX], TIM_IT_Update, ENABLE);
@@ -424,6 +427,10 @@ static void inic_spi_init(void)
 	inic_spi_priv->dev_status = DEV_STS_IDLE;
 	set_dev_rdy_pin(DEV_READY);
 
+	if (INIC_WIFI_EVT_MAX > INIC_BT_EVT_BASE) {
+		RTK_LOGE(TAG_WLAN_INIC, "SPI ID may conflict!\n");
+	}
+
 	RTK_LOGI(TAG_WLAN_INIC, "SPI device init done!\n");
 }
 
@@ -446,7 +453,7 @@ bool inic_spi_txdma_init(
 
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
-		return _FALSE;
+		return FALSE;
 	}
 
 	GDMA_StructInit(GDMA_InitStruct);
@@ -483,7 +490,7 @@ bool inic_spi_txdma_init(
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
 			RTK_LOGE(TAG_WLAN_INIC, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
-			return _FALSE;
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -507,7 +514,7 @@ bool inic_spi_txdma_init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	//GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 void inic_dev_trigger_rx_handle(void)
@@ -560,7 +567,7 @@ void inic_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 			rtos_sema_give(event_priv.api_ret_sema);
 		} else {
 			ret_msg = (struct inic_api_info *)rxbuf;
-			RTK_LOGS_LVL(TAG_WLAN_INIC, RTK_LOG_WARN, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
 
 			/* free rx buffer */
 			rtos_mem_free((u8 *)ret_msg);
@@ -577,7 +584,7 @@ void inic_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 
 		break;
 	default:
-		RTK_LOGS_LVL(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%x) unknown!\n", event);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%x) unknown!\n", event);
 		break;
 	}
 
@@ -595,6 +602,30 @@ void inic_dev_wait_dev_idle(void)
 	}
 
 	spi_priv.wait_tx = FALSE;
+}
+
+/**
+* @brief  send buf from upper, used by BT without struct inic_buf_info.
+* @param  buf: data buf to be sent, must 4B aligned.
+* @param  buf: data len to be sent.
+* @param  buf_alloc: real buf address, to be freed after sent.
+* @return none.
+*/
+void inic_dev_send_from_upper(u8 *buf, u8 *buf_alloc, u16 len)
+{
+	struct inic_txbuf_info_t *inic_tx;
+
+	/* construct struct inic_buf_info & inic_buf_info_t */
+	inic_tx = (struct inic_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct inic_txbuf_info_t));
+
+	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)buf;
+	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = len;
+
+	inic_tx->ptr = buf_alloc;
+	inic_tx->is_skb = 0;
+
+	/* send ret_msg + ret_val(buf, len) */
+	inic_dev_send(&inic_tx->txbuf_info);
 }
 
 void inic_dev_send(struct inic_buf_info *pbuf)
@@ -656,7 +687,7 @@ void inic_dev_init(void)
 	rtk_log_level_set(TAG_WLAN_INIC, RTK_LOG_DEBUG);
 
 	wifi_set_user_config();
-	init_skb_pool(wifi_user_config.skb_num_np, SKB_CACHE_SZ);
+	init_skb_pool(wifi_user_config.skb_num_np, wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE, SKB_CACHE_SZ);
 
 	inic_spi_init();
 

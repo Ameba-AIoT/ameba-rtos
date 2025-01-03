@@ -6,33 +6,28 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "CAPTOUCH";
-extern BOOL vref_init_done;
+static const char *const TAG = "CAPTOUCH";
+extern bool vref_init_done;
 
 /** @addtogroup Ameba_Periph_Driver
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup CAPTOUCH
-* @brief CAPTOUCH driver modules
-* @{
-*/
-
+ * @brief CAPTOUCH driver modules
+ * @{
+ */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup CAPTOUCH_Exported_Functions CAPTOUCH Exported Functions
-  * @{
-  */
-
-/** @defgroup CAPTOUCH_Exported_Normal_Functions CAPTOUCH Normal Functions
-  * @{
-  */
+ * @{
+ */
 
 /**
-  * @brief  Fills each CapTouch_InitStruct member with its default value.
-  * @param  CapTouch_InitStruct: pointer to an CapTouch_InitTypeDef structure which will be initialized.
-  * @retval None
-  */
+ * @brief Fill each CapTouch_InitStruct member with its default value.
+ * @param CapTouch_InitStruct Pointer to a CapTouch_InitTypeDef structure which will be initialized.
+ * @return None
+ */
 void CapTouch_StructInit(CapTouch_InitTypeDef *CapTouch_InitStruct)
 {
 	u8 i;
@@ -47,21 +42,19 @@ void CapTouch_StructInit(CapTouch_InitTypeDef *CapTouch_InitStruct)
 	for (i = 0; i < CT_CHANNEL_NUM; i++) {
 		CapTouch_InitStruct->CT_Channel[i].CT_CHEnable = DISABLE;
 		CapTouch_InitStruct->CT_Channel[i].CT_DiffThrehold = 0xf0;
-		CapTouch_InitStruct->CT_Channel[i].CT_MbiasCurrent = 0x11; 		//6uA
+		CapTouch_InitStruct->CT_Channel[i].CT_MbiasCurrent = 0x11; // 6uA
 		CapTouch_InitStruct->CT_Channel[i].CT_ETCNNoiseThr = 100;
 		CapTouch_InitStruct->CT_Channel[i].CT_ETCPNoiseThr = 100;
 	}
 }
 
-
 /**
-  * @brief  Initializes the CapTouch peripheral according to the specified
-  *			parameters in the CapTouch_InitStruct.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  CapTouch_InitStruct: pointer to a CapTouch_InitTypeDef structure that contains
-  * 		the configuration information for the specified CapTouch peripheral.
-  * @retval None
-  */
+ * @brief Initialize the CapTouch peripheral according to the specified parameters in the CapTouch_InitStruct.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param CapTouch_InitStruct Pointer to a CapTouch_InitTypeDef structure that contains
+ * 		the configuration information of the specified CapTouch peripheral.
+ * @return None
+ */
 void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_InitStruct)
 {
 	u32 i;
@@ -77,7 +70,7 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 	assert_param(CapTouch_InitStruct->CT_ETCFactor <= 0xF);
 	assert_param(CapTouch_InitStruct->CT_ETCScanInterval <= 0x7F);
 
-	for (i = 0; i < CT_CHANNEL_NUM ; i++) {
+	for (i = 0; i < CT_CHANNEL_NUM; i++) {
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_DiffThrehold  <= 0xFFF);
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_ETCNNoiseThr <= 0xFFF);
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_ETCPNoiseThr <= 0xFFF);
@@ -103,7 +96,7 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 		}
 		PLL_BASE->PLL_LPAD0 = value;
 
-		vref_init_done = _TRUE;
+		vref_init_done = TRUE;
 	}
 
 	CapTouch->CT_INTERRUPT_ENABLE = 0;
@@ -128,7 +121,7 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 	CapTouch->CT_DEBUG_MODE_CTRL = CT_BIT_CH_SWITCH_CTRL;
 
 	/* Configure each channel */
-	for (i = 0; i < CT_CHANNEL_NUM ; i++) {
+	for (i = 0; i < CT_CHANNEL_NUM; i++) {
 		if (CapTouch_InitStruct->CT_Channel[i].CT_CHEnable) {
 			CapTouch->CT_CH[i].CT_CHx_CTRL = CT_CHx_D_TOUCH_TH(CapTouch_InitStruct->CT_Channel[i].CT_DiffThrehold) | CT_BIT_CHx_EN;
 			CapTouch->CT_CH[i].CT_CHx_MBIAS_ATH = CT_CHx_MBIAS(CapTouch_InitStruct->CT_Channel[i].CT_MbiasCurrent);
@@ -138,14 +131,13 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 	}
 }
 
-
 /**
-  * @brief  Enables or disables the specified CapTouch peripheral.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  NewState: new state of the CapTouch peripheral.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
+ * @brief Enable or disable CapTouch peripheral.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param NewState New state of the CapTouch peripheral.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
 void CapTouch_Cmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 {
 	/* Check the parameters */
@@ -156,27 +148,26 @@ void CapTouch_Cmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 		CapTouch->CT_CTC_CTRL |= CT_BIT_ENABLE | CT_BIT_BASELINE_INI;
 	} else {
 		/* Disable the CapTouch peripheral */
-		CapTouch->CT_CTC_CTRL &= (~CT_BIT_ENABLE);
+		CapTouch->CT_CTC_CTRL &= ~CT_BIT_ENABLE;
 	}
 }
 
-
 /**
-  * @brief  Enables or disables the specified CapTouch interrupts.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  CapTouch_IT: specifies the CapTouch interrupt to be enabled or masked.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg CT_BIT_CTC_BRK_BY_ADC_INTR_EN: Captouch breaked by adc interrupt
-  *            @arg CT_BIT_AFIFO_OVERLVL_INTR_EN: Raw code FIFO over level interrupt
-  *            @arg CT_BIT_OVER_N_NOISE_TH_INTR_EN: CapTouch negetive noise overflow interrupt
-  *            @arg CT_BIT_AFIFO_OVERFLOW_INTR_EN: CapTouch FIFO overflow interrupt
-  *            @arg CT_BIT_OVER_P_NOISE_TH_INTR_EN:CapTouch positive noise overflow interrupt
-  *            @arg CT_CHX_PRESS_INT(x): CapTouch channel(x) press interrupt, where x can be 0~3
-  *            @arg CT_CHX_RELEASE_INT(x): CapTouch channel(x) release interrupt, where x can be 0~3
-  * @param  NewState: new state of the specified CapTouch interrupts mask.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
+ * @brief Enable or disable specified CapTouch interrupt(s).
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param CapTouch_IT Specified CapTouch interrupt(s) to be enabled or disabled.
+ * 		This parameter can be one or combinations of the following values:
+ * 		@arg CT_BIT_CTC_BRK_BY_ADC_INTR_EN: Captouch breaked by adc interrupt.
+ * 		@arg CT_BIT_AFIFO_OVERLVL_INTR_EN: Raw code FIFO over level interrupt.
+ * 		@arg CT_BIT_OVER_N_NOISE_TH_INTR_EN: CapTouch negetive noise overflow interrupt.
+ * 		@arg CT_BIT_AFIFO_OVERFLOW_INTR_EN: CapTouch FIFO overflow interrupt.
+ * 		@arg CT_BIT_OVER_P_NOISE_TH_INTR_EN:CapTouch positive noise overflow interrupt.
+ * 		@arg CT_CHX_PRESS_INT(x): CapTouch channel(x) press interrupt, where x can be 0~3.
+ * 		@arg CT_CHX_RELEASE_INT(x): CapTouch channel(x) release interrupt, where x can be 0~3.
+ * @param NewState New state of the specified CapTouch interrupt(s).
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
 void CapTouch_INTConfig(CAPTOUCH_TypeDef *CapTouch, uint32_t CapTouch_IT, u8 newState)
 {
 	/* Check the parameters */
@@ -188,25 +179,24 @@ void CapTouch_INTConfig(CAPTOUCH_TypeDef *CapTouch, uint32_t CapTouch_IT, u8 new
 		CapTouch->CT_INTERRUPT_ENABLE |= CapTouch_IT;
 	} else {
 		/* Disable CapTouch interrupts */
-		CapTouch->CT_INTERRUPT_ENABLE &= (~CapTouch_IT);
+		CapTouch->CT_INTERRUPT_ENABLE &= ~CapTouch_IT;
 	}
 }
 
-
 /**
-  * @brief  Clears the specified CapTouch interrupt pending bit.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  CapTouch_IT: specifies the CapTouch interrupt to be cleared.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg CT_BIT_CTC_BRK_BY_ADC_CLR: Captouch breaked by adc interrupt
-  *            @arg CT_BIT_AFIFO_OVERLVL_CLR: Raw code FIFO over level interrupt
-  *            @arg CT_BIT_OVER_N_NOISE_TH_CLR: CapTouch negetive noise overflow interrupt
-  *            @arg CT_BIT_AFIFO_OVERFLOW_CLR: CapTouch FIFO overflow interrupt
-  *            @arg CT_BIT_OVER_P_NOISE_TH_CLR:CapTouch positive noise overflow interrupt
-  *            @arg CT_CHX_PRESS_INT(x): CapTouch channel(x) press interrupt, where x can be 0~3
-  *            @arg CT_CHX_RELEASE_INT(x): CapTouch channel(x) release interrupt, where x can be 0~3
-  * @retval None
-  */
+ * @brief Clear specified CapTouch interrupt pending bit(s).
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param CapTouch_IT Specified CapTouch interrupt bit(s) to be cleared.
+ * 		This parameter can be one or combinations of the following values:
+ * 		@arg CT_BIT_CTC_BRK_BY_ADC_CLR: Captouch breaked by adc interrupt.
+ * 		@arg CT_BIT_AFIFO_OVERLVL_CLR: Raw code FIFO over level interrupt.
+ * 		@arg CT_BIT_OVER_N_NOISE_TH_CLR: CapTouch negetive noise overflow interrupt.
+ * 		@arg CT_BIT_AFIFO_OVERFLOW_CLR: CapTouch FIFO overflow interrupt.
+ * 		@arg CT_BIT_OVER_P_NOISE_TH_CLR:CapTouch positive noise overflow interrupt.
+ * 		@arg CT_CHX_PRESS_INT(x): CapTouch channel(x) press interrupt, where x can be 0~3.
+ * 		@arg CT_CHX_RELEASE_INT(x): CapTouch channel(x) release interrupt, where x can be 0~3.
+ * @return None
+ */
 void CapTouch_INTClearPendingBit(CAPTOUCH_TypeDef *CapTouch, u32 CapTouch_IT)
 {
 	/* Check the parameters */
@@ -216,12 +206,11 @@ void CapTouch_INTClearPendingBit(CAPTOUCH_TypeDef *CapTouch, u32 CapTouch_IT)
 	CapTouch->CT_INTERRUPT_STATUS_CLR |= CapTouch_IT;
 }
 
-
 /**
-  * @brief  Get CapTouch Raw Interrupt Status.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @retval raw interrupt status
-  */
+ * @brief Get CapTouch raw interrupt status.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @return Raw interrupt status.
+ */
 u32 CapTouch_GetRawISR(CAPTOUCH_TypeDef *CapTouch)
 {
 	/* Check the parameters */
@@ -230,12 +219,11 @@ u32 CapTouch_GetRawISR(CAPTOUCH_TypeDef *CapTouch)
 	return CapTouch->CT_RAW_INTERRUPT_STATUS;
 }
 
-
 /**
-  * @brief  Get CapTouch interrupt status.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @retval interrupt status
-  */
+ * @brief Get CapTouch interrupt status.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @return Interrupt status.
+ */
 u32 CapTouch_GetISR(CAPTOUCH_TypeDef *CapTouch)
 {
 	/* Check the parameters */
@@ -245,11 +233,11 @@ u32 CapTouch_GetISR(CAPTOUCH_TypeDef *CapTouch)
 }
 
 /**
-  * @brief  Get CapTouch channel enable status.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @retval channel enable status.
-  */
+ * @brief Get CapTouch channel enable status.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @return Channel enable status.
+ */
 u32 CapTouch_GetChStatus(CAPTOUCH_TypeDef *CapTouch, u32 Channel)
 {
 	/* Check the parameters */
@@ -264,13 +252,13 @@ u32 CapTouch_GetChStatus(CAPTOUCH_TypeDef *CapTouch, u32 Channel)
 }
 
 /**
-  * @brief  Enable or disable specified channel.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  NewState: new state of the specified channel.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
+ * @brief Enable or disable specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param NewState New state of the specified channel.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
 void CapTouch_ChCmd(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
 {
 	/* Check the parameters */
@@ -278,7 +266,7 @@ void CapTouch_ChCmd(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
 	assert_param(IS_CT_CHANNEL(Channel));
 
 	if (NewState != DISABLE) {
-		/* Enable the CapTouch crossponding channel */
+		/* Enable the CapTouch corresponding channel */
 		CapTouch->CT_CH[Channel].CT_CHx_CTRL |= CT_BIT_CHx_EN;
 	} else {
 		/* Disable the CapTouch peripheral */
@@ -287,21 +275,21 @@ void CapTouch_ChCmd(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
 }
 
 /**
-  * @brief Set CapTouch clock source and division.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param ClkSrc: clock source, which can be one of the following values:
-  *        @arg CTC_CLK_OSC: lp adc 4m clk selection from osc4m.
-  *        @arg CTC_CLK_XTAL: lp adc 4m clk selection from xtal.
-  * @param ClkDiv: clock division, which can be one of the following values:
-  *        @arg CTC_CLK_DIV4: CapTouch clock is divided by 4.
-  *        @arg CTC_CLK_DIV8: CapTouch clock is divided by 8.
-  *        @arg CTC_CLK_DIV16: CapTouch clock is divided by 16.
-  *        @arg CTC_CLK_DIV24: CapTouch clock is divided by 24.
-  *        @arg CTC_CLK_DIV32: CapTouch clock is divided by 32.
-  *        @arg CTC_CLK_DIV64: CapTouch clock is divided by 64.
-  *        @arg CTC_CLK_DIV128: CapTouch clock is divided by 128.
-  * @retval None
-  */
+ * @brief Set CapTouch clock source and division.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param ClkSrc Clock source, which can be one of the following values:
+ * 		@arg CTC_CLK_OSC: lp adc 4m clk selection from osc4m.
+ * 		@arg CTC_CLK_XTAL: lp adc 4m clk selection from xtal.
+ * @param ClkDiv Clock division, which can be one of the following values:
+ * 		@arg CTC_CLK_DIV4: CapTouch clock is divided by 4.
+ * 		@arg CTC_CLK_DIV8: CapTouch clock is divided by 8.
+ * 		@arg CTC_CLK_DIV16: CapTouch clock is divided by 16.
+ * 		@arg CTC_CLK_DIV24: CapTouch clock is divided by 24.
+ * 		@arg CTC_CLK_DIV32: CapTouch clock is divided by 32.
+ * 		@arg CTC_CLK_DIV64: CapTouch clock is divided by 64.
+ * 		@arg CTC_CLK_DIV128: CapTouch clock is divided by 128.
+ * @return None
+ */
 void CapTouch_SetClkPara(CAPTOUCH_TypeDef *CapTouch, u8 ClkSrc, u8 ClkDiv)
 {
 	u32 TempVal;
@@ -325,11 +313,11 @@ void CapTouch_SetClkPara(CAPTOUCH_TypeDef *CapTouch, u8 ClkSrc, u8 ClkDiv)
 }
 
 /**
-  * @brief  Set CapTouch Scan interval.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param Interval: scan interval in units of ms
-  * @retval None
-  */
+ * @brief Set CapTouch Scan interval.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Interval Scan interval in ms.
+ * @return None
+ */
 void CapTouch_SetScanInterval(CAPTOUCH_TypeDef *CapTouch, u32 Interval)
 {
 	u32 TempVal;
@@ -347,12 +335,12 @@ void CapTouch_SetScanInterval(CAPTOUCH_TypeDef *CapTouch, u32 Interval)
 }
 
 /**
-  * @brief  Set Mbias current for specified channel.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  Mbias: Mbias value, relate current = 0.25*Mbias.
-  * @retval None
-  */
+ * @brief Set Mbias current for specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param Mbias Mbias value.
+ * @return None
+ */
 void CapTouch_SetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 Mbias)
 {
 	u32 TempVal;
@@ -370,12 +358,12 @@ void CapTouch_SetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 Mbias)
 }
 
 /**
-  * @brief  Set relative touch threshold for related channel.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  Threshold: Related Threshold value.
-  * @retval None
-  */
+ * @brief Set relative touch threshold for related channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param Threshold Related threshold value.
+ * @return None
+ */
 void CapTouch_SetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u32 Threshold)
 {
 	u32 TempVal;
@@ -394,12 +382,12 @@ void CapTouch_SetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u32 Thresho
 }
 
 /**
-  * @brief  Set N-noise threshold for related channel.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  Threshold: Related N-noise Threshold value.
-  * @retval None
-  */
+ * @brief Set N-noise threshold for related channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param Threshold Related N-noise threshold value.
+ * @return None
+ */
 void CapTouch_SetNNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Threshold)
 {
 	u32 TempVal;
@@ -418,12 +406,12 @@ void CapTouch_SetNNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Thresho
 }
 
 /**
-  * @brief  Set P-noise threshold for related channel.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  Threshold: Related P-noise Threshold value.
-  * @retval None
-  */
+ * @brief Set P-noise threshold for related channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param Threshold Related P-noise threshold value.
+ * @return None
+ */
 void CapTouch_SetPNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Threshold)
 {
 	u32 TempVal;
@@ -442,16 +430,16 @@ void CapTouch_SetPNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Thresho
 }
 
 /**
-  * @brief Set CapTouch full level for AFIFO.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param Level: AFIFO full level, which can be 0~63.
-  * @note When raw code FIFO is over level, AFIFO_OVERLVL_INTR will occur.
-  * @return None
-  */
+ * @brief Set CapTouch full level for AFIFO.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Level AFIFO full level, which can be 0~63.
+ * @return None
+ * @note When raw code FIFO is over level, AFIFO_OVERLVL_INTR will arise.
+ */
 void CapTouch_SetFifoLevel(CAPTOUCH_TypeDef *CapTouch, u8 Level)
 {
 	u32 TempVal;
-	BOOL ctc_is_en = _FALSE;
+	bool ctc_is_en = FALSE;
 
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
@@ -459,7 +447,7 @@ void CapTouch_SetFifoLevel(CAPTOUCH_TypeDef *CapTouch, u8 Level)
 
 	if (CapTouch->CT_CTC_CTRL & CT_BIT_ENABLE) {
 		CapTouch_Cmd(CapTouch, DISABLE);
-		ctc_is_en = _TRUE;
+		ctc_is_en = TRUE;
 	}
 
 	TempVal = CapTouch->CT_RAW_CODE_FIFO_STATUS;
@@ -473,11 +461,11 @@ void CapTouch_SetFifoLevel(CAPTOUCH_TypeDef *CapTouch, u8 Level)
 }
 
 /**
-  * @brief Get Mbias current value for specified channel.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param Channel: specified channel index, which can be 0~3.
-  * @return Mbias data.
-  */
+ * @brief Get Mbias current value for specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @return Mbias data.
+ */
 u32 CapTouch_GetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 {
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
@@ -487,11 +475,11 @@ u32 CapTouch_GetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 }
 
 /**
-  * @brief  Get relative threshold of touch judgement for specified channel.
-   * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @retval Difference threshold of specified channel.
-  */
+ * @brief Get relative threshold of touch judgement for specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @return Difference threshold of specified channel.
+ */
 u32 CapTouch_GetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 {
 	/* Check the parameters */
@@ -502,11 +490,11 @@ u32 CapTouch_GetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 }
 
 /**
-  * @brief  Get Absolute  threshold of touch judgement for specified channel.
-   * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @retval Difference threshold of specified channel.
-  */
+ * @brief Get absolute threshold of touch judgement for specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @return Difference threshold of specified channel.
+ */
 u32 CapTouch_GetChAbsThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 {
 	/* Check the parameters */
@@ -517,12 +505,12 @@ u32 CapTouch_GetChAbsThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 }
 
 /**
-  * @brief  Get positive or negative noise threshold for specified channel.
-   * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  type: can be P_NOISE_THRES or N_NOISE_THRES
-  * @retval  Noise threshold of specified channel.
-  */
+ * @brief Get positive or negative noise threshold for specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param type Noise type, which can be P_NOISE_THRES or N_NOISE_THRES.
+ * @return Noise threshold of specified channel.
+ */
 u32 CapTouch_GetNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 type)
 {
 	u32 value;
@@ -541,11 +529,11 @@ u32 CapTouch_GetNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 type)
 }
 
 /**
-  * @brief  Read Baseline data from specified channel.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @retval Baseline data
-  */
+ * @brief Read baseline data from specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @return Baseline data.
+ */
 u32 CapTouch_GetChBaseline(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 {
 	/* Check the parameters */
@@ -555,13 +543,12 @@ u32 CapTouch_GetChBaseline(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 	return CT_GET_CHx_BASELINE(CapTouch->CT_CH[Channel].CT_CHx_CTRL);
 }
 
-
 /**
-  * @brief  Read average data from specified channel.
-   * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @retval Average data
-  */
+ * @brief Read average data from specified channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @return Average data.
+ */
 u32 CapTouch_GetChAveData(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 {
 	/* Check the parameters */
@@ -571,23 +558,13 @@ u32 CapTouch_GetChAveData(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
 	return CT_GET_CHx_DATA_AVE(CapTouch->CT_CH[Channel].CT_CHx_DATA_INF);
 }
 
-
 /**
-  * @}
-  */
-
-/** @defgroup CAPTOUCH_Exported_Debug_Functions CAPTOUCH Debug Functions
-  * @{
-  */
-
-
-/**
-  * @brief  Enable or disable Debug mode.
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  NewState: new state of the Debug mode.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
+ * @brief Enable or disable Debug mode.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param NewState New state of the Debug mode.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
 void CapTouch_DbgCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 {
 	/* Check the parameters */
@@ -599,20 +576,20 @@ void CapTouch_DbgCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 	} else {
 		/* Disable the CapTouch peripheral */
 		CapTouch->CT_DEBUG_MODE_CTRL |= CT_BIT_CH_SWITCH_CTRL;
-		CapTouch->CT_DEBUG_MODE_CTRL &= (~CT_BIT_DEBUG_EN);
+		CapTouch->CT_DEBUG_MODE_CTRL &= ~CT_BIT_DEBUG_EN;
 	}
 }
 
 /**
-  * @brief select debug channel
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~3
-  * @param  NewState: can be one of the following values:
-  *		@arg ENABLE: manual channel switch.
-  *		@arg DISABLE: auto channel switch
-  * @retval none
-  * @note Manual channel switch only works when debug mode is enabled.
-  */
+ * @brief Select debug channel.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param Channel Specified channel index, which can be 0~3.
+ * @param NewState New state of channel, which can be one of the following values:
+ * 		@arg ENABLE: manual channel switch.
+ * 		@arg DISABLE: auto channel switch.
+ * @return None
+ * @note Manual channel switch only works when debug mode is enabled.
+ */
 void CapTouch_DbgChannel(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
 {
 	u32 data;
@@ -635,32 +612,32 @@ void CapTouch_DbgChannel(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
 }
 
 /**
-  * @brief Enable or disable CapTouch continous sample.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param NewState: whether to enable continous sample or not.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  * @note Continous sample only works when debug mode and manual switch are both enabled.
-  */
+ * @brief Enable or disable CapTouch continuos sample.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param NewState New state, which means whether to enable continuos sample or not.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ * @note Continuos sample only works when debug mode and manual switch are both enabled.
+ */
 void CapTouch_DbgContCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 {
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
 
 	if (NewState != DISABLE) {
-		/* Enable continous sample */
+		/* Enable continuos sample */
 		CapTouch->CT_DEBUG_MODE_CTRL |= CT_BIT_CONTINUE_SAMPLE_EN;
 	} else {
-		/* Disable continous sample */
+		/* Disable continuos sample */
 		CapTouch->CT_DEBUG_MODE_CTRL &= ~CT_BIT_CONTINUE_SAMPLE_EN;
 	}
 }
 
 /**
-  * @brief Get Raw data in debug mode
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @retval Raw data
-  */
+ * @brief Get Raw data in debug mode.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @return Raw data.
+ */
 u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch)
 {
 	u32 loop = 0;
@@ -674,20 +651,19 @@ u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch)
 
 		if (loop++ > 200000) {
 			RTK_LOGI(TAG, "sample timeout \n");
-			return  0xEAEA;
+			return 0xEAEA;
 		}
 
 	} while ((data & CT_BIT_AFIFO_RD_DATA_VLD) == 0);
 
 	return CTC_ID_AND_DATA(data);
-
 }
 
 /**
-  * @brief Dump all registers
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @retval NA
-  */
+ * @brief Dump all CapTouch registers.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @return None
+ */
 void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch)
 {
 	RTK_LOGI(TAG, "\n%p: %08lX (CT_CTC_CTRL)\n", &(CapTouch->CT_CTC_CTRL), CapTouch->CT_CTC_CTRL);
@@ -717,11 +693,11 @@ void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch)
 }
 
 /**
-  * @brief Dump all registers
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  ch: specified channel index, which can be 0~3
-  * @retval NA
-  */
+ * @brief Dump CapTouch ETC-related information.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param ch Specified channel index, which can be 0~3.
+ * @return None
+ */
 void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch)
 {
 	u32 DiffThres = 0;
@@ -747,12 +723,12 @@ void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch)
 }
 
 /**
-  * @brief Enable or disable ctc filter function.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param NewState: new state of the filter function.
-  *  This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
+ * @brief Enable or disable CapTouch filter function.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param NewState New state of the filter function.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
 void CapTouch_FilterCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 {
 	/* Check the parameters */
@@ -768,12 +744,12 @@ void CapTouch_FilterCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 }
 
 /**
-  * @brief Enable or disable ctc IIR filter function.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param NewState: new state of the IIR filter function.
-  *  This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
+ * @brief Enable or disable CapTouch IIR filter function.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param NewState New state of the IIR filter function.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
 void CapTouch_FilterIIRCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 {
 	/* Check the parameters */
@@ -789,11 +765,11 @@ void CapTouch_FilterIIRCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 }
 
 /**
-  * @brief Set decimation factor of decimation filter.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param MDec: specifies decimation of sample point.
-  * @retval None
-  */
+ * @brief Set decimation factor of decimation filter.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param MDec Specified decimation of sample point.
+ * @return None
+ */
 void CapTouch_SetMDec(CAPTOUCH_TypeDef *CapTouch, u32 MDec)
 {
 	u32 TempVal;
@@ -809,11 +785,11 @@ void CapTouch_SetMDec(CAPTOUCH_TypeDef *CapTouch, u32 MDec)
 }
 
 /**
-  * @brief Get decimation of sample point with different AC frequency.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param ACFreq: AC frequency, which should be 50 or 60.
-  * @return Decimation of sample point.
-  */
+ * @brief Get decimation of sample point with different AC frequency.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param ACFreq AC frequency, which should be 50 or 60.
+ * @return Decimation of sample point.
+ */
 u32 CapTouch_GetMDec(CAPTOUCH_TypeDef *CapTouch, u32 ACFreq)
 {
 	u32 clk_div, sample_cnt;
@@ -822,18 +798,18 @@ u32 CapTouch_GetMDec(CAPTOUCH_TypeDef *CapTouch, u32 ACFreq)
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
 
-	clk_div = CT_GET_CTC_CLK_DIV(CapTouch -> CT_CTC_SAMPLE_CTRL);
-	sample_cnt = CT_GET_SAMPLE_AVE_CTRL(CapTouch -> CT_SCAN_PERIOD);
+	clk_div = CT_GET_CTC_CLK_DIV(CapTouch->CT_CTC_SAMPLE_CTRL);
+	sample_cnt = CT_GET_SAMPLE_AVE_CTRL(CapTouch->CT_SCAN_PERIOD);
 
 	return 4000000 / div_arr[clk_div] / (ACFreq * BIT(sample_cnt + 2)) - 1;
 }
 
 /**
-  * @brief Set coefficient of median filter.
-  * @param CapTouch: which should be CAPTOUCH_DEV.
-  * @param MedCoef: specifies coefficient of median filter.
-  * @retval None
-  */
+ * @brief Set coefficient of median filter.
+ * @param CapTouch CAPTOUCH_DEV.
+ * @param MedCoef Specified coefficient of median filter.
+ * @return None
+ */
 void CapTouch_SetMedCoef(CAPTOUCH_TypeDef *CapTouch, u32 MedCoef)
 {
 	u32 TempVal;
@@ -846,14 +822,13 @@ void CapTouch_SetMedCoef(CAPTOUCH_TypeDef *CapTouch, u32 MedCoef)
 	CapTouch->CT_CTC_FILTER_CTRL0 = TempVal;
 }
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
-
-/** @} */
-
-/** @} */
+/**
+ * @}
+ */

@@ -117,6 +117,8 @@ _LONG_CALL_ void BKUP_Clear(u32 DwordIdx, u32 BitMask);
  *****************************************************************************/
 #define BKUP_BIT_UARTBURN_DEBUG				BIT(10)	/*!<  this is SW set bit before reboot, for uart download debug */
 #define BKUP_BIT_UARTBURN_BOOT				BIT(9)	/*!<  this is SW set bit before reboot, for uart download */
+
+#define BKUP_MASK_UARTBURN_BOOT				0
 /** @} */
 /** @} */
 

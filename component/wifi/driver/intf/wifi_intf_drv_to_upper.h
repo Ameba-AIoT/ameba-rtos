@@ -65,13 +65,13 @@ extern int wifi_hal_iwpriv_command(unsigned char wlan_idx, char *cmd, int show_m
 #define rtw_iwpriv_command(wlan_idx, cmd,show_msg)	wifi_hal_iwpriv_command(wlan_idx, cmd,show_msg)
 
 #ifdef CONFIG_NAN
-int nan_intfs_init(void);
-int nan_intfs_deinit(void);
-int rtw_start_nan_api(u8 master_pref, u8 band_support);
-void rtw_stop_nan_api(void);
+int rtw_nan_intfs_init(void);
+void rtw_nan_intfs_deinit(void);
+void rtw_nan_start_api(u8 master_pref, u8 band_support);
+void rtw_nan_stop_api(void);
 void rtw_nan_func_set_parameter(void *func_param, void **nan_func_pointer);
-int rtw_add_nan_func(void *func_param, void *nan_func_pointer);
-int rtw_del_nan_func(u64 cookie);
+int rtw_nan_func_add(void *func_param, void *nan_func_pointer);
+int rtw_nan_func_del(u64 cookie);
 void rtw_cfgvendor_cmd_process(u16 vendor_cmd, void *data, u32 len);
 #endif
 #ifdef CONFIG_P2P
@@ -83,7 +83,9 @@ void rtw_single_thread_wakeup(void);
 #endif
 
 int rtw_wltunnel_command(char *cmd);
-
+#ifdef CONFIG_WIFI_TUNNEL
+void wifi_tunnelapi_joinbss_identity_key_get(u8 *identity_key);
+#endif
 #ifdef	__cplusplus
 }
 #endif

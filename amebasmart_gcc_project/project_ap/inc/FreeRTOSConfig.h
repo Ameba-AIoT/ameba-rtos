@@ -76,8 +76,11 @@
 #define configUSE_COUNTING_SEMAPHORES			1
 #define configUSE_QUEUE_SETS					1
 #define configSUPPORT_STATIC_ALLOCATION			1
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS	2
 
 #define configRECORD_STACK_HIGH_ADDRESS					1
+
+#define configUSE_POSIX_ERRNO					1
 
 /* Include the query-heap CLI command to query the free heap space. */
 #define configINCLUDE_QUERY_HEAP_COMMAND		1

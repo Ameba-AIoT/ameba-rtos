@@ -40,8 +40,8 @@ typedef struct ipc_msg_struct {
 /** @defgroup IPC_RETURN_VALUE
   * @{
   */
-#define IPC_SEMA_TIMEOUT -2
-#define IPC_REQ_TIMEOUT -1
+#define IPC_SEMA_TIMEOUT 3
+#define IPC_REQ_TIMEOUT  2
 #define IPC_SEND_SUCCESS 0
 #define IPC_SEND_TIMEOUT 1
 #define IPC_SEMA_MAX_DELAY			0xFFFFFFFF

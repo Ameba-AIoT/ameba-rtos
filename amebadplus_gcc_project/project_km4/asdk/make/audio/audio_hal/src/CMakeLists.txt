@@ -29,6 +29,7 @@ set(
     ${DIR}/ameba_audio_stream_utils.c
     ${DIR}/ameba_audio_stream_render.c
     ${DIR}/ameba_audio_stream_capture.c
+    ${DIR}/ameba_audio_stream_audio_patch.c
     ${DIR}/primary_audio_hw_stream_out.c
     ${DIR}/primary_audio_hw_card.c
     ${DIR}/primary_audio_hw_stream_in.c

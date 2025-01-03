@@ -140,7 +140,7 @@ u32 ledc_dma_irq(void *param)
 	/* Clear Pending ISR */
 	GDMA_ClearINT(ledc_dma_t.GDMA_Index, ledc_dma_t.GDMA_ChNum);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -164,7 +164,7 @@ bool ledc_dma_init(PGDMA_InitTypeDef GDMA_InitStruct,
 	// Allocate a GDMA channel for LEDC tx
 	gdma_chnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, 4);
 	if (gdma_chnl == 0xFF) { /*	No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	// alloc and Init GDMA
@@ -193,7 +193,7 @@ bool ledc_dma_init(PGDMA_InitTypeDef GDMA_InitStruct,
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**

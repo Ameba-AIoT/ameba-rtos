@@ -1,7 +1,5 @@
 ################### ROM LIB ##################
-if(CONFIG_AMEBALITE_A_CUT)
-    set(ROM_LIB_DIR ${PROJECTDIR}/asdk/lib/amebalite_rom_acut)
-endif()
+set(ROM_LIB_DIR ${PROJECTDIR}/vsdk/lib/amebalite_rom_acut)
 
 if(CONFIG_LINK_ROM_SYMB)
     set(LINK_ROM_LIB)
@@ -68,6 +66,7 @@ if(CONFIG_WLAN)
     # AP Link Library
     if(CONFIG_AS_INIC_AP)
         list(APPEND LINK_APP_LIB ${APP_LIB})
+        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     # NP Link Library
     elseif(CONFIG_AS_INIC_NP)
         if(NOT CONFIG_MP_SHRINK)
@@ -97,6 +96,7 @@ if(CONFIG_WLAN)
         else()
             list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex.a)
         endif()
+        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     endif()
 endif()
 
@@ -125,6 +125,9 @@ if(CONFIG_MEDIA_PLAYER OR CONFIG_MEDIA_LITE_PLAYER)
     endif()
     if(CONFIG_MEDIA_DEMUX_OGG)
         list(APPEND LINK_THIRD_APP_LIB ${APP_LIB_DIR}/lib_vorbisdec.a)
+    endif()
+    if(CONFIG_MEDIA_CODEC_GSM)
+        list(APPEND LINK_THIRD_APP_LIB ${APP_LIB_DIR}/lib_gsm.a)
     endif()
 endif()
 

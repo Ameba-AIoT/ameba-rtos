@@ -145,7 +145,6 @@ _LONG_CALL_ u32 SYSCFG_OTP_RSIPMode(void);
 _LONG_CALL_ u32 SYSCFG_OTP_HUKDerivEn(void);
 _LONG_CALL_ u32 SYSCFG_OTP_RomPatchEn(void);
 _LONG_CALL_ u32 SYSCFG_HWTrigDownload(void);
-_LONG_CALL_ u32 SYS_M0CtrlSel(u32 id);
 _LONG_CALL_ u32 SYSCFG_SWTrigDownload(void);
 /**
   * @}

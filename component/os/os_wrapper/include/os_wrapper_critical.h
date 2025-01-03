@@ -24,16 +24,18 @@
 int rtos_critical_is_in_interrupt(void);
 
 /**
- * @brief  For FreeRTOS, map to taskENTER_CRITICAL / taskENTER_CRITICAL_FROM_ISR
- *         Internally handles interrupt status (PRIMASK/CPSR) save
+ * @brief  Internally handles interrupt status (PRIMASK/CPSR) save
  */
 void rtos_critical_enter(void);
 
 /**
- * @brief  For FreeRTOS, map to taskEXIT_CRITICAL / taskEXIT_CRITICAL_FROM_ISR
- *         Internally handles interrupt status(PRIMASK/CPSR) restore
+ * @brief  Internally handles interrupt status(PRIMASK/CPSR) restore
  */
 void rtos_critical_exit(void);
 
-
+/**
+ * @brief  get task enter critical state
+ * @retval >0: in critical state; 0: exit critical state
+ */
+uint32_t rtos_get_critical_state(void);
 #endif

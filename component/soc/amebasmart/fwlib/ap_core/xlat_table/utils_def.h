@@ -95,13 +95,9 @@
  *
  * round_down() is similar but rounds the value down instead.
  */
-#if defined( __ICCARM__ )
-#define round_boundary(value, boundary)		\
-		(((boundary) - 1))
-#else
+
 #define round_boundary(value, boundary)		\
 	((__typeof__(value))((boundary) - 1))
-#endif
 #define round_up(value, boundary)		\
 	((((value) - 1) | round_boundary(value, boundary)) + 1)
 

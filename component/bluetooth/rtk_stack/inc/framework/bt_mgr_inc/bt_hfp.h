@@ -129,6 +129,16 @@ bool bt_hfp_init(uint8_t link_num,
 /**
  * bt_hfp.h
  *
+ * \brief  De-initialize HFP profile.
+ *
+ *
+ * \ingroup BT_HFP
+ */
+void bt_hfp_deinit(void);
+
+/**
+ * bt_hfp.h
+ *
  * \brief   Send an HFP or HSP connection request.
  *
  * \param[in]  bd_addr       Remote BT address.

@@ -18,6 +18,7 @@
 #ifndef __SKBUFF_H__
 #define __SKBUFF_H__
 
+#include "rtw_autoconf.h"
 #include "rtw_wifi_constants.h"
 #include "os_wrapper.h"
 #include "rtw_atomic.h"
@@ -59,6 +60,8 @@ struct skb_raw_para {
 
 struct sk_buff {
 	struct list_head list;
+	unsigned char		*buf;/* Head of buffer */
+	/* list and buf cannot be changed after initialization */
 	unsigned char		*head;		/* Head of buffer */
 	unsigned char		*data;		/* Data head pointer */
 	unsigned char		*tail;		/* Tail pointer	*/
@@ -73,8 +76,7 @@ struct sk_buff {
 	struct skb_raw_para	tx_raw;
 
 	atomic_t ref;
-	unsigned char buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;/* buf start address and size alignmengt for pre allocate skb*/
-}; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
+} SKB_ALIGNMENT; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
 
 struct skb_priv_t {
 	/*skb_buff for managing and store skb data*/
@@ -137,7 +139,7 @@ void kfree_skb(struct sk_buff *skb);
 struct sk_buff *skb_clone(struct sk_buff *skb, int gfp_mask);
 struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int reserve_len);
 void dev_kfree_skb_any(struct sk_buff *skb);
-void init_skb_pool(uint32_t skb_num_np, unsigned char skb_cache_zise);
+void init_skb_pool(uint32_t skb_num_np, uint32_t skb_buf_size, unsigned char skb_cache_size);
 void deinit_skb_pool(void);
 struct sk_buff *get_buf_from_poll(void);
 void release_buf_to_poll(struct sk_buff *skb);

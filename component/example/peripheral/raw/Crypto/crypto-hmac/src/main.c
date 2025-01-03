@@ -52,7 +52,7 @@ int test_sha256_hmac(u32 OTPkey)
 	timeout = 0xFFF;
 
 	/*take sema to obtain the right to crypto engine*/
-	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != _TRUE) {
+	while (IPC_SEMTake(IPC_SEM_CRYPTO, timeout) != TRUE) {
 		printf("ipsec get hw sema fail\n");
 	}
 

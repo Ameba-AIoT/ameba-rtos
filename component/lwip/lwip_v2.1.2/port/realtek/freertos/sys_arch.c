@@ -81,7 +81,7 @@ err_t sys_mbox_new(sys_mbox_t *mbox, int size)
 */
 void sys_mbox_free(sys_mbox_t *mbox)
 {
-    if( rtos_queue_massage_waiting( *mbox ) )
+    if( rtos_queue_message_waiting( *mbox ) )
     {
 #if SYS_STATS
         lwip_stats.sys.mbox.err++;
@@ -416,7 +416,7 @@ void sys_mutex_free(sys_mutex_t *mutex)
 /* Lock a mutex*/
 void sys_mutex_lock(sys_mutex_t *mutex)
 {
-    sys_arch_sem_wait(*mutex, 0);
+    rtos_mutex_take(*mutex, MUTEX_WAIT_TIMEOUT);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -567,3 +567,53 @@ u32_t sys_jiffies(void)
 {
     return rtos_time_get_current_system_time_ms();
 }
+
+#if LWIP_NETCONN_SEM_PER_THREAD
+sys_sem_t *sys_thread_sem_init(void)
+{
+    sys_sem_t *sem = (sys_sem_t *)rtos_mem_malloc(sizeof(sys_sem_t));
+    if (!sem) {
+        return 0;
+    }
+    err_t err = sys_sem_new(sem, 0);
+    if (err != ERR_OK) {
+        rtos_mem_free(sem);
+        return 0;
+    }
+    rtos_task_set_thread_local_storage_pointer(NULL, LWIP_INDEX, (void *)sem);
+    return sem;
+}
+sys_sem_t* sys_thread_sem_get(void)
+{
+    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer(NULL, LWIP_INDEX);
+    if (!sem) {
+        sem = sys_thread_sem_init();
+    }
+    return sem;
+}
+void sys_thread_sem_deinit(void)
+{
+    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer(NULL, LWIP_INDEX);
+    if (sem != NULL) {
+        sys_sem_free(sem);
+        rtos_mem_free(sem);
+        rtos_task_set_thread_local_storage_pointer(NULL, LWIP_INDEX, NULL);
+    }
+}
+
+void sys_thread_sem_deinit_tcb(uint32_t *pxTCB)
+{
+    sys_sem_t *sem = (sys_sem_t *)rtos_task_get_thread_local_storage_pointer((rtos_task_t)pxTCB, LWIP_INDEX);
+    if (sem != NULL) {
+        sys_sem_free(sem);
+        rtos_mem_free(sem);
+        rtos_task_set_thread_local_storage_pointer((rtos_task_t)pxTCB, LWIP_INDEX, NULL);
+    }
+}
+#else
+void sys_thread_sem_deinit_tcb(uint32_t *pxTCB)
+{
+    ( void ) pxTCB;
+    return;
+}
+#endif

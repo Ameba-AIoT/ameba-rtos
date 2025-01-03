@@ -19,8 +19,6 @@
   */
 void CHIPEN_WorkMode(enum CHIPEN_WORK_MODE mode)
 {
-	UNUSED(mode);
-
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_CHIPEN_CTRL);
 
 	Temp &= ~ AON_MASK_CHIPEN_INTR_MODE;
@@ -61,7 +59,7 @@ void CHIPEN_DebounceSet(u32 Debounce)
   * FALSE: Released
   */
 
-BOOL CHIPEN_IsPress(void)
+bool CHIPEN_IsPress(void)
 {
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_CHIPEN_CTRL);
 

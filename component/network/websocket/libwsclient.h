@@ -24,10 +24,10 @@
 
 /****************Define the structures used*************************/
 typedef enum {
-	CLOSING,
-	CLOSED,
-	CONNECTING,
-	OPEN
+	WSC_CLOSING,
+	WSC_CLOSED,
+	WSC_CONNECTING,
+	WSC_OPEN
 } readyStateValues;
 
 struct wsheader_type {
@@ -79,6 +79,8 @@ typedef struct _wsclient_context {
 	int version_len;
 	char *custom_token;
 	int custom_token_len;
+	char *header_fields;
+	int header_fields_len;
 	uint8_t use_ssl;
 	int sockfd;
 	readyStateValues readyState;

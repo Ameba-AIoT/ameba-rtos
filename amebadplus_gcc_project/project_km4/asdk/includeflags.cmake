@@ -17,7 +17,7 @@ list(
     ${TARGETDIR}/hal/include
     ${TARGETDIR}/hal/src
     ${TARGETDIR}/usrcfg/include
-    ${BASEDIR}/component/soc/common
+    ${BASEDIR}/component/soc/common/include
 
     ${INCDIR}
     ${INCDIR}/..
@@ -62,6 +62,7 @@ list(
 
     #MBEDTLS
     ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER}/include
+    ${BASEDIR}/component/ssl/mbedtls-${MBEDTLS_VER}/library
     ${BASEDIR}/component/ssl/mbedtls_ram_map/rom
 
     #apple
@@ -93,6 +94,11 @@ if(CONFIG_EMWIN_EN)
     )
 endif()
 
+#coex
+list(
+    APPEND GLOBAL_IFLAGS
+    ${BASEDIR}/component/rtk_coex
+)
 
 #bluetooth
 if(CONFIG_BT)
