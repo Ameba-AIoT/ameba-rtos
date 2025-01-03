@@ -29,13 +29,15 @@ set(
     ${BASEDIR}/component/wifi/driver/wifi_tunnel
     ${BASEDIR}/component/wifi/inic
     ${BASEDIR}/component/wifi/inic/ipc
-    ${BASEDIR}/component/wifi/inic/common
+    ${BASEDIR}/component/wifi/inic/none_ipc_dev
+    ${BASEDIR}/component/wifi/inic/none_ipc_host
     ${BASEDIR}/component/wifi/inic/spi
     ${BASEDIR}/component/wifi/inic/sdio
     ${BASEDIR}/component/wifi/inic/usb
+    ${BASEDIR}/component/wifi/wifi_tunnel_app
 )
 
-if(CONFIG_AMEBAX)
+if(CONFIG_AMEBAL2)
     list(
         APPEND WIFI_IFLAGS 
         ${BASEDIR}/component/wifi/wifi_reg/rle1331
@@ -76,6 +78,16 @@ if(CONFIG_AMEBADPLUS)
         ${BASEDIR}/component/wifi/driver/wifi_tunnel/rtl8721da
     )
 
+endif()
+
+if(CONFIG_AMEBAD)
+    list(
+        APPEND WIFI_IFLAGS 
+        ${BASEDIR}/component/wifi/wifi_reg/rtl8721d
+        ${BASEDIR}/component/wifi/driver/rtl8721d
+        ${BASEDIR}/component/wifi/driver/rtl8721d_rom
+        ${BASEDIR}/component/wifi/driver/phydm
+    )
 endif()
 
 if(CONFIG_AMEBASMART)

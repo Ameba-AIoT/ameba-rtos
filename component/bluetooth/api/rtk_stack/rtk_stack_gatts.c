@@ -552,7 +552,7 @@ static T_APP_RESULT bt_stack_gatts_app_service_callback(T_SERVER_ID service_id, 
 		uint16_t cause = p_param->event_data.send_data_result.cause;
 		T_GATT_PDU_TYPE data_type = p_param->event_data.send_data_result.data_type;
 
-		app_result = _send_data_complete_cb(server_id, index, conn_id, cause, data_type);
+		app_result = (T_APP_RESULT)_send_data_complete_cb(server_id, index, conn_id, cause, data_type);
 	}
 
 	return app_result;
@@ -1079,7 +1079,7 @@ static T_APP_RESULT att_err_to_app_result(uint8_t att_err)
 	case RTK_BT_ATT_ERR_MIN_APPLIC_CODE:
 	case RTK_BT_ATT_ERR_CCCD_IMPROPERLY_CONFIGURED:
 	case RTK_BT_ATT_ERR_PROC_ALREADY_IN_PROGRESS:
-		app_res = (ATT_ERR | att_err);
+		app_res = (T_APP_RESULT)(ATT_ERR | att_err);
 		break;
 	default:
 		app_res = APP_RESULT_REJECT;

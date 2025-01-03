@@ -13,7 +13,7 @@
 #include "boot_ota_km4.h"
 #include "ameba_boot_lzma.h"
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 static Certificate_TypeDef Cert[2]; //Certificate of SlotA & SlotB
 static Manifest_TypeDef Manifest[2]; //Manifest of SlotA & SlotB
 u8 Signature[2][SIGN_MAX_LEN];
@@ -127,10 +127,10 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
 		if ((ImgHdr.signature[0] != 0x35393138) || (ImgHdr.signature[1] != 0x31313738)) {
-			if (ErrLog == _TRUE) {
+			if (ErrLog == TRUE) {
 				RTK_LOGE(TAG, "%s Invalid\n", ImgName[i]);
 			}
-			return _FALSE;
+			return FALSE;
 		}
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
@@ -164,7 +164,7 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 		StartAddr += Len;
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 
@@ -349,7 +349,7 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 	/* KR4 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(Kr4Label) / sizeof(char *);
 	ImgAddr = LogAddr;
-	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, Kr4Label, _TRUE) == FALSE) {
+	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, Kr4Label, TRUE) == FALSE) {
 		return FALSE;
 	}
 
@@ -377,7 +377,7 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 	/* KM4 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(Km4Label) / sizeof(char *);
 	ImgAddr = LogAddr;
-	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, Km4Label, _TRUE) == FALSE) {
+	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, Km4Label, TRUE) == FALSE) {
 		return FALSE;
 	}
 	Index += Cnt;
@@ -476,7 +476,7 @@ u8 BOOT_OTA_IMG2(void)
 	}
 	version = (u32)(Ver[ImgIndex] & 0xFFFFFFFF);
 
-	RTK_LOGI(TAG, "IMG2 BOOT from OTA %d, Version: %lx.%lx \n", ImgIndex + 1, ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+	RTK_LOGI(TAG, "IMG2 BOOT from OTA %d, Version: %ld.%ld \n", ImgIndex + 1, ((version >> 16) & 0xFFFF), (version & 0xFFFF));
 	return ImgIndex;
 
 

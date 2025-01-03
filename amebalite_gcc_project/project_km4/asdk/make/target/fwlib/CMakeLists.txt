@@ -56,6 +56,7 @@ set(
 
 	${LOGDIR}/log.c
  	${LOGDIR}/sscanf_minimal.c
+	${LOGDIR}/locks.c
 
 	${CFGDIR}/ameba_sleepcfg.c
 	${CFGDIR}/ameba_flashcfg.c

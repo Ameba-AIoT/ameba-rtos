@@ -459,13 +459,10 @@ static void example_ipv6_mcast_client(void)
 
 static void example_ipv6_thread(void *param)
 {
-	printf("\nExample: IPV6 \n");
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
 
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		printf("Please use ATW0=ssid, ATW1=password, ATWC to connect AP first time\n");
-		rtos_time_delay_ms(2000);
-	}
+	printf("\nExample: IPV6 \n");
 
 	LwIP_AUTOIP_IPv6(&xnetif[0]);
 	//Wait for ipv6 addr process conflict done

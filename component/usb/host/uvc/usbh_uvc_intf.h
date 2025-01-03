@@ -31,7 +31,7 @@
 #define UVC_URB_SIZE					(3072 + 32) * 2   /* bytes */
 
 #define UVC_VIDEO_MAX_FRAME				3  /* if using UVC HW decoder, frame buffer number should fix to 3 */
-#define UVC_VIDEO_FRAME_SIZE			500*1024    /* bytes */
+#define UVC_VIDEO_FRAME_SIZE			150*1024    /* bytes */
 
 #define UVC_DECODE_TASK_STACK			512*4    /* bytes */
 #define UVC_DECODE_TASK_PRIORITY		5

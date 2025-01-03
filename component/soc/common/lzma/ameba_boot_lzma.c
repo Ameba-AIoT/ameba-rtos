@@ -25,7 +25,7 @@
 u8 *output_buf;
 u32 g_last_block_addr, g_curr_block_addr = 0xFFFFFFFF;
 
-static const char *TAG = "BOOT";
+static const char *const TAG = "BOOT";
 
 /**
   * @brief  Write a stream of data to specified address

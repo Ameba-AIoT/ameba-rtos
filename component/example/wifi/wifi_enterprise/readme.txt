@@ -32,14 +32,16 @@ Configuration:
 
 5. For RTL8730A, RTL872XE, lib_eap is not included by default, it need to be add to your project and then build.
 	Build lib_eap
-    (for example:project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/make/network/Makefile)
-	(for example:amebasmart_gcc_project/project_ap/asdk/make/network/Makefile)
+   (for example:project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/make/network/CMakeLists.txt)
+		add_subdirectory(eap)
+   (for example:amebasmart_gcc_project/project_ap/asdk/make/network/Makefile)
 		make -C eap all
 		make -C eap clean
 
 6. Add lib_eap.a in Makefile
-   (for example:project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/make/Makefile.lib)
-	Uncomment $(APP_LIB_DIR)/lib_eap.a in APP_LIB
+   (for example:project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/libs.cmake)
+   (for example:project/amebasmart_gcc_project/project_hp/asdk/Makefile.lib)
+	Uncomment "$(APP_LIB_DIR)/lib_eap.a" in APP_LIB
 
 7.GCC:use CMD "make all EXAMPLE=wifi_enterprise" to compile wifi_enterprise example
 
@@ -48,7 +50,7 @@ An EAP connection thread will be started automatically when booting.
 
 Trouble Shooting:
 	ERROR: [eap_recvd]Malloc failed
-	Solution: Increase the FreeRTOS heap in FreeRTOSConfig.h, 
+	Solution: Increase the FreeRTOS heap in FreeRTOSConfig.h,
        	#define configTOTAL_HEAP_SIZE	( ( size_t ) ( XX * 1024 ) )
 
 Note:

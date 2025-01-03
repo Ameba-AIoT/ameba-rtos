@@ -8,7 +8,7 @@
 
 #define FLASH_CALIBRATION_DEBUG		0
 
-static const char *TAG = "FLASH";
+static const char *const TAG = "FLASH";
 static const FlashInfo_TypeDef *current_IC;
 
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
@@ -52,9 +52,9 @@ void flash_clksrc_sel(FlashDivInt_E div, u8 isCPUPLL, u8 is_handshake)
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
-u32 flash_handshake_highspeed(FlashDivInt_E div)
+int flash_handshake_highspeed(FlashDivInt_E div)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	u8 spic_mode = flash_init_para.FLASH_cur_bitmode;
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
 
@@ -63,7 +63,7 @@ u32 flash_handshake_highspeed(FlashDivInt_E div)
 
 	RSIP_MMU_Cache_Clean(); 	/* Clean Cache in RSIP when otf enabled */
 
-	if (FLASH_Read_HandShake(&flash_init_para, spic_mode, Dphy_Dly_Cnt) == _TRUE) {
+	if (FLASH_Read_HandShake(&flash_init_para, spic_mode, Dphy_Dly_Cnt) == TRUE) {
 		FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, ENABLE);
 		flash_init_para.FLASH_rd_sample_dly_cycle_cal = Dphy_Dly_Cnt + 2;
 		flash_init_para.FLASH_rd_sample_dly_cycle = flash_init_para.FLASH_rd_sample_dly_cycle_cal;
@@ -76,7 +76,7 @@ u32 flash_handshake_highspeed(FlashDivInt_E div)
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_LBUS);
 
 		RTK_LOGE(TAG, "FLASH HandShake[0x%lx FAIL]\n", div);
-		Ret = _FAIL;
+		Ret = FAIL;
 	}
 
 #if FLASH_CALIBRATION_DEBUG
@@ -86,7 +86,7 @@ u32 flash_handshake_highspeed(FlashDivInt_E div)
 	return Ret;
 }
 
-static u8 flash_get_option(u32 sys_data, BOOL is_speed)
+static u8 flash_get_option(u32 sys_data, bool is_speed)
 {
 	u16 tmp = (u16)BIT15;
 	u8 cnt = 0;
@@ -233,9 +233,9 @@ static void flash_set_status_register(void)
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
-u32 flash_rx_mode_switch(u8 read_mode)
+int flash_rx_mode_switch(u8 read_mode)
 {
-	u32 Ret = _SUCCESS;
+	int Ret = SUCCESS;
 	u8 status = 0, spic_mode = 0, i;
 	u32 pdata[2];
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
@@ -252,7 +252,7 @@ u32 flash_rx_mode_switch(u8 read_mode)
 		if (flash_init_para.FLASH_Id == FLASH_ID_MICRON) {
 			FLASH_RxCmd(0x85, 1, &status);
 
-			status = (status & 0x0f) | (flash_init_para.FLASH_rd_dummy_cyle[spic_mode] << 4);
+			status = (status & 0x0f) | (flash_init_para.FLASH_rd_dummy_cycle[spic_mode] << 4);
 			FLASH_SetStatus(0x81, 1, &status);
 		}
 
@@ -276,7 +276,7 @@ u32 flash_rx_mode_switch(u8 read_mode)
 
 	if (i == 5) {
 		RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-		Ret = _FAIL;
+		Ret = FAIL;
 	}
 
 	return Ret;
@@ -288,8 +288,8 @@ void flash_highspeed_setup(void)
 	u8 spic_ckd;
 	u32 pllm_clk = PLL_ClkGet(CLK_CPU_MPLL);
 
-	read_mode = flash_get_option(Flash_ReadMode, _FALSE);
-	flash_speed = flash_get_option(Flash_Speed, _TRUE);
+	read_mode = flash_get_option(Flash_ReadMode, FALSE);
+	flash_speed = flash_get_option(Flash_Speed, TRUE);
 
 	spic_ckd = CLKDIV_ROUND_UP(pllm_clk, SPIC_CLK_LIMIT) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);

@@ -32,8 +32,10 @@
 #define WIFI_LOGO_CERTIFICATION 0
 #define RX_AMSDU
 
+#ifndef ZEPHYR_WIFI
 /* no IOT chip supports 80M now, so close it in common */
 #define CONFIG_AUTO_RECONNECT 1
+#endif
 
 /* For WPA3 */
 #define CONFIG_IEEE80211W
@@ -60,6 +62,9 @@
 #if defined(CONFIG_AMEBADPLUS)
 /******************************* AmebaDPLUS (8721DA) *******************************/
 #include "autoconf_8721da.h"
+#elif defined(CONFIG_AMEBAD)
+/******************************* AmebaD2 (8730E) ******************************/
+#include "autoconf_8721d.h"
 #elif defined(CONFIG_AMEBASMART)
 /******************************* AmebaD2 (8730E) ******************************/
 #include "autoconf_8730e.h"
@@ -72,7 +77,9 @@
 #elif defined(CONFIG_AMEBAPRO3)
 /******************************* AmebaPro3 (8735c) ******************************/
 #include "autoconf_8720f.h"
-
+#elif defined(CONFIG_AMEBAL2)
+/******************************* AmebaL2 (6955) ******************************/
+#include "autoconf_amebax.h"
 #endif
 /****************** Configurations for each platform end **********************/
 
@@ -85,8 +92,6 @@
 #define CONFIG_IEEE80211R
 #define CONFIG_IEEE80211K
 #if WIFI_LOGO_CERTIFICATION
-#undef WLAN_MAX_ETHFRM_LEN
-#define WLAN_MAX_ETHFRM_LEN	4000
 /* 80211 - K MBO */
 #define CONFIG_RTW_MBO
 #endif

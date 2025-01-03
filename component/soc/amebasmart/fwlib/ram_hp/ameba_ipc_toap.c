@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include "ameba_soc.h"
 #include <stdarg.h>
-static const char *TAG = "IPC";
+static const char *const TAG = "IPC";
 #define LINUX_IPC_OTP_PHY_READ8		   	0
 #define LINUX_IPC_OTP_PHY_WRITE8		1
 #define LINUX_IPC_OTP_LOGI_READ_MAP		2
 #define LINUX_IPC_OTP_LOGI_WRITE_MAP		3
 #define LINUX_IPC_EFUSE_REMAIN_LEN		4
 #define OPT_REQ_MSG_PARAM_NUM			1024
+
 typedef struct otp_ipc_host_req_msg {
 	u32 otp_id;
 	u32 addr;
@@ -21,8 +21,10 @@ typedef struct otp_ipc_host_req_msg {
 	u32 write_lock;
 	u8 param_buf[OPT_REQ_MSG_PARAM_NUM];
 } otp_ipc_host_req_t;
+
 static u32 otp_data[2];
 static IPC_MSG_STRUCT ipc_msg;
+
 void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 {
 	/* To avoid gcc warnings */
@@ -53,12 +55,12 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 	case LINUX_IPC_OTP_PHY_READ8:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
 		for (i = 0 ; i < (int)recv_req->len; i++) {
-			if (OTP_Read8((recv_req->addr + i), (u8 *)&recv_req->param_buf[i]) !=  1) {
+			if (OTP_Read8((recv_req->addr + i), (u8 *)&recv_req->param_buf[i]) != SUCCESS) {
 				otp_data[0] = -1;
 				break;
 			} else {
 				otp_data[1] = i + 1;
-				otp_data[0] = 1;
+				otp_data[0] = SUCCESS;
 			}
 		}
 		DCache_CleanInvalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
@@ -144,6 +146,7 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 		break;
 	}
 }
+
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_linux_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,

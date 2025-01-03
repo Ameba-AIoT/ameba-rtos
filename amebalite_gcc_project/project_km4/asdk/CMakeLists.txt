@@ -57,8 +57,8 @@ add_subdirectory(make/bootloader)
 
 add_subdirectory(make/flashloader)
 
-if(NOT AMEBA_RLS)
-    add_subdirectory(make/RT_xmodem)
+if(NOT CONFIG_AMEBA_RLS)
+    add_subdirectory(make/imgtool_floader)
 endif()
 
 ########################### BUILD APPLICATION ##############################
@@ -67,7 +67,7 @@ add_subdirectory(make)
 
 add_subdirectory(make_secure)
 ############################# BUILD LIBS ###################################
-if(NOT AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS)
     ## build soc libs
     add_subdirectory(make_lib/bootloader_lib)
 
@@ -84,6 +84,7 @@ if(NOT AMEBA_RLS)
             add_subdirectory(make/network/httpd)
             add_subdirectory(make/network/websocket)
             add_subdirectory(make/network/tftp)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         elseif(CONFIG_AS_INIC_NP)
             if(NOT CONFIG_MP_SHRINK)
                 add_subdirectory(make/target/wifi_fw)
@@ -95,6 +96,7 @@ if(NOT AMEBA_RLS)
             add_subdirectory(make/network/websocket)
             add_subdirectory(make/network/tftp)
             add_subdirectory(make/rtk_coex)
+            add_subdirectory(make/rtk_coex/rtk_coex_api)
         endif()
     endif()
 
@@ -105,10 +107,6 @@ if(NOT AMEBA_RLS)
         endif()
     endif()
 
-    if(CONFIG_802154_ZIGBEE_EN)
-        add_subdirectory(make/wpan/zigbee)
-    endif()
-
     add_subdirectory(make/audio)
     add_subdirectory(make/utils/ipc/rpc/framework/libs)
 endif()
@@ -116,9 +114,10 @@ endif()
 
 add_custom_target(
     gdb
-    COMMAND ${CMAKE_COMMAND} -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DGNU_SCRIPT=${GNU_SCRIPT} -DPROJECTDIR=${PROJECTDIR} -P ${GNU_SCRIPT}/gdbsetup.cmake
-    COMMAND ${CMAKE_GDB} -x ${GNU_SCRIPT}/rtl_gdb_flash_write.txt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo "Note: please use command :./build.py -gdb"
+    COMMAND ${CMAKE_COMMAND} -E echo " -------------   HELP   -----------------"
+    COMMAND ${CMAKE_COMMAND} -E echo " ./build.py -gdb for loading image with gdb"
+    COMMAND ${CMAKE_COMMAND} -E echo " ./build.py -debug for debugging with gdb"
 )
 
 add_custom_target(
@@ -131,7 +130,7 @@ add_custom_target(
 
 add_custom_target(
     ${PROJECT_NAME}
-    DEPENDS target_bootloader target_img2_${PROJECT_NAME}
+    DEPENDS target_bootloader target_img2_${PROJECT_NAME} target_img2_${PROJECT_NAME}_postbuild
 )
 
 if(TARGET target_img3)

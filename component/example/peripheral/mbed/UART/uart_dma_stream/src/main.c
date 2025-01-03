@@ -57,7 +57,7 @@ void uart_stream_dma(void)
 	serial_t sobj;
 	int i = 0;
 	int ret;
-	int len = 13;
+	int len = 2;
 
 	sobj.uart_idx = UART_IDX;
 
@@ -85,8 +85,8 @@ void uart_stream_dma(void)
 			uart_send_string(&sobj, rx_buf);
 			rx_done = 0;
 
-			/* data size: 2Byte ~ 15Byte */
-			len = i % 14 + 2;
+			/* data size: 2Byte ~ 33Byte */
+			len = i % CACHE_LINE_SIZE_ + 2;
 			i++;
 
 			/* Wait for inputing [len] characters to initiate DMA. */

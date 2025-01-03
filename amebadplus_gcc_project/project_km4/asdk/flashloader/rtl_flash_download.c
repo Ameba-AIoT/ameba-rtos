@@ -60,9 +60,9 @@ void RtlFlashProgram(void)
 	//2 Need Modify
 	WDG_Refresh(IWDG_DEV);
 	InterruptDis(UART_LOG_IRQ);
-	RTK_LOGS(NOTAG, "==========================================================\n");
-	RTK_LOGS(NOTAG, "Flash Downloader Build Time: "UTS_VERSION"\n");
-	RTK_LOGS(NOTAG, "==========================================================\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "==========================================================\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Flash Downloader Build Time: "UTS_VERSION"\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "==========================================================\n");
 
 	FlashDatSrc = (u32)&FlashDataBuf;
 	FlashWriteComplete = 0;
@@ -79,7 +79,7 @@ void RtlFlashProgram(void)
 
 	/* Nor Flash, already initialized when boot */
 
-	RTK_LOGS(NOTAG, "Flash download start\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Flash download start\n");
 	//4 Program the flash from memory data
 	while (1) {
 		Gdb_Floader_Program_Start();
@@ -104,6 +104,6 @@ void RtlFlashProgram(void)
 		}
 	}
 
-	RTK_LOGS(NOTAG, "Flash download done\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Flash download done\n");
 	Gdb_Floader_Program_End();
 }

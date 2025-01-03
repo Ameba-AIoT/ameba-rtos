@@ -8,10 +8,7 @@
 //----- ------------------------------------------------------------------
 // Ethernet Buffer
 //----- ------------------------------------------------------------------
-struct eth_drv_sg {
-	unsigned int    buf;
-	unsigned int     len;
-};
+
 
 #define MAX_ETH_DRV_SG    32
 #define MAX_ETH_MSG    1540

@@ -5,7 +5,7 @@
  */
 
 #include "ameba_soc.h"
-
+#include "platform_stdlib.h"
 #include <sys_api.h>
 #include <flash_api.h>
 #include "ameba_rtos_version.h"
@@ -13,6 +13,8 @@
 #include "atcmd_service.h"
 #ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
+#include "atcmd_http.h"
+#include "atcmd_websocket.h"
 #endif
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
@@ -90,7 +92,7 @@ delta_status_t *find_free_delta(delta_status_t *delta, int cnt)
 	return NULL;
 }
 
-static void update_status(void)
+static int update_status(void)
 {
 	delta_status_t *deltaone = NULL;
 	/* init */
@@ -101,7 +103,7 @@ static void update_status(void)
 
 	if (uxTaskGetNumberOfTasks() > TASK_CNT) {
 		RTK_LOGW(NOTAG, "number of tasks : %d(exceed TASK_CNT)! Please enlarge TASK_CNT\r\n", uxTaskGetNumberOfTasks());
-		return;
+		return -1;
 	}
 
 	/* update last */
@@ -140,6 +142,8 @@ static void update_status(void)
 			}
 		}
 	}
+
+	return 0;
 }
 
 void print_delta(int delta_tick)
@@ -172,13 +176,15 @@ void cpu_stat_thread(void *dummy)
 {
 	status_cmd_para_t *ppara = rtos_mem_malloc(sizeof(status_cmd_para_t));
 	if (NULL == ppara) {
-		RTK_LOGS(NOTAG, "%s malloc failed\r\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s malloc failed\r\n", __FUNCTION__);
 		goto end;
 	}
 	memcpy(ppara, dummy, sizeof(status_cmd_para_t));
 	last_tick = portGET_RUN_TIME_COUNTER_VALUE();
 	while ((rtos_sema_take((rtos_sema_t)top_exit_sema, ppara->time * 1000) == FAIL)) {
-		update_status();
+		if (update_status()) {
+			continue;
+		}
 		int delta_tick =  portGET_RUN_TIME_COUNTER_VALUE() - last_tick;
 		last_tick = portGET_RUN_TIME_COUNTER_VALUE();
 		print_delta(delta_tick);
@@ -210,7 +216,7 @@ void at_otaclear(void *arg)
 {
 	UNUSED(arg);
 	sys_clear_ota_signature();
-	at_printf("\r\n%sOK\r\n", "+OTACLEAR:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 /****************************************************************
@@ -223,7 +229,7 @@ void at_otarecover(void *arg)
 {
 	UNUSED(arg);
 	sys_recover_ota_signature();
-	at_printf("\r\n%sOK\r\n", "+OTARECOVER:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 #if (configGENERATE_RUN_TIME_STATS == 1)
@@ -254,7 +260,7 @@ void at_cpuload(void *arg)
 
 	argc = parse_param(arg, argv);
 	if (argc > 4 || argc < 2) {
-		RTK_LOGS(NOTAG,
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,
 				 "[top]Usage: top=mode,time,count\n\r mode: 0, start count cpu usage every [time] second.\r\n mode: 1, stop mode 0.\r\n mode: 2: start count cpu usage.\r\n mode: 3: stop mode 2.\r\n "
 				 "time: CPU statistics interval.Default 1. unit(s) \r\n count: CPU statistics count, default until stop or 1,2,3...");
 		error_no = 1;
@@ -287,7 +293,10 @@ void at_cpuload(void *arg)
 			break;
 		}
 		memset(task_status, 0, sizeof(task_status_t));
-		update_status();
+		if (update_status()) {
+			error_no = 4;
+			break;
+		}
 		rtos_sema_create(&top_exit_sema, 0, 1);
 		rtos_task_create(NULL, ((const char *)"cpu_stat_thread"), cpu_stat_thread, &para_in, 4096 * 4, configMAX_PRIORITIES - 1);
 		break;
@@ -302,13 +311,18 @@ void at_cpuload(void *arg)
 		}
 		memset(task_status, 0, sizeof(task_status_t));
 		last_tick = portGET_RUN_TIME_COUNTER_VALUE();
-		update_status();
+		if (update_status()) {
+			error_no = 4;
+		}
 		break;
 	case atcmd_cpuload_type_stop:
 		if (top_exit_sema)	{
 			break;
 		}
-		update_status();
+		if (update_status()) {
+			error_no = 4;
+			break;
+		}
 		print_delta(portGET_RUN_TIME_COUNTER_VALUE() - last_tick);
 		last_tick = portGET_RUN_TIME_COUNTER_VALUE();
 		rtos_mem_free(task_status);
@@ -321,9 +335,9 @@ void at_cpuload(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+CPULOAD:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+CPULOAD:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 3) {
 			at_cpuload_help();
 		}
@@ -345,7 +359,7 @@ void at_test(void *arg)
 	}
 
 	UNUSED(arg);
-	at_printf("\r\n%sOK\r\n", "+TEST:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 /****************************************************************
@@ -373,16 +387,32 @@ void at_list(void *arg)
 	print_wifi_at();
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
+#if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	/* TCP/IP commands. */
 	at_printf("TCP/IP AT Command:\r\n");
 	print_lwip_at();
 #endif
+#if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
+	/* HTTP commands. */
+	at_printf("HTTP AT Command:\r\n");
+	print_http_at();
+#endif
+#if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
+	/* WEBSOCKET commands. */
+	at_printf("WEBSOCKET AT command:\r\n");
+	print_websocket_at();
+#endif
+#endif
+#endif
 
 #ifndef CONFIG_MP_INCLUDED
+#if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
 	/* MQTT commands. */
 	at_printf("MQTT AT command:\r\n");
 	print_mqtt_at();
+#endif
 #endif
 #endif
 
@@ -395,9 +425,7 @@ void at_list(void *arg)
 #endif
 #endif
 
-
-
-	at_printf("\r\n%sOK\r\n", "+LIST:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 /****************************************************************
@@ -409,7 +437,7 @@ AT command process:
 void at_rst(void *arg)
 {
 	UNUSED(arg);
-	at_printf("\r\n%sOK\r\n", "+RST:");
+	at_printf(ATCMD_OK_END_STR);
 	sys_reset();
 }
 
@@ -442,7 +470,7 @@ void at_state(void *arg)
 	at_printf("Heap Used Now:\t%u\r\n", total_heap_size - pxHeapStats.xAvailableHeapSpaceInBytes);
 	at_printf("Heap Used Max:\t%u\r\n", total_heap_size - pxHeapStats.xMinimumEverFreeBytesRemaining);
 
-	at_printf("\r\n%sOK\r\n", "+STATE:");
+	at_printf(ATCMD_OK_END_STR);
 }
 
 
@@ -458,7 +486,6 @@ void at_gmr(void *arg)
 	char fw_buf[32];
 
 	UNUSED(arg);
-
 	u32 buflen = 1024;
 	char *buf = rtos_mem_malloc(buflen);
 	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
@@ -471,6 +498,8 @@ void at_gmr(void *arg)
 	strncpy(at_buf, ATCMD_VERSION"."ATCMD_SUBVERSION"."ATCMD_REVISION, sizeof(at_buf));
 	strncpy(fw_buf, SDK_VERSION, sizeof(fw_buf));
 	at_printf("\r\n%s%s,%s,%s\r\n", "+GMR:", at_buf, fw_buf, RTL_FW_COMPILE_TIME);
+
+	at_printf(ATCMD_OK_END_STR);
 }
 
 static void at_log_help(void)
@@ -566,13 +595,13 @@ void at_log(void *arg)
 	RTK_LOGW(NOTAG, "[LOG] Test warning level\r\n");
 	RTK_LOGI(NOTAG, "[LOG] Test info level\r\n");
 	RTK_LOGD(NOTAG, "[LOG] Test debug level\r\n");
-	RTK_LOGS(NOTAG, "[LOG] Test LOG_ITEMS\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Test LOG_ITEMS\r\n");
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+LOG:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+LOG:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_log_help();
 	}
 }
@@ -605,9 +634,9 @@ void at_rreg(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+RREG:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+RREG:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -639,9 +668,9 @@ void at_wreg(void *arg)
 
 end:
 	if (error_no == 0) {
-		at_printf("\r\n%sOK\r\n", "+WREG:");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf("\r\n%sERROR:%d\r\n", "+WREG:", error_no);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 

@@ -1,0 +1,27 @@
+list(
+	APPEND CSRC 
+	${ZB_STACK_DIR}/mac/mac.c
+	${ZB_STACK_DIR}/mac/mac_api_trace.c
+	${ZB_STACK_DIR}/mac/mac_associate.c
+	${ZB_STACK_DIR}/mac/mac_cb_stubs.c
+	${ZB_STACK_DIR}/mac/mac_common.c
+	${ZB_STACK_DIR}/mac/mac_cr_associate.c
+	${ZB_STACK_DIR}/mac/mac_cr_coordinator.c
+	${ZB_STACK_DIR}/mac/mac_cr_data.c
+	${ZB_STACK_DIR}/mac/mac_data.c
+	${ZB_STACK_DIR}/mac/mac_disturber.c
+	${ZB_STACK_DIR}/mac/mac_dump.c
+	${ZB_STACK_DIR}/mac/mac_duty_cycle.c
+	${ZB_STACK_DIR}/mac/mac_fcs.c
+	${ZB_STACK_DIR}/mac/mac_lbt.c
+	${ZB_STACK_DIR}/mac/mac_optional.c
+	${ZB_STACK_DIR}/mac/mac_phy_testing_mode.c
+	${ZB_STACK_DIR}/mac/mac_pib.c
+	${ZB_STACK_DIR}/mac/mac_power_control.c
+	${ZB_STACK_DIR}/mac/mac_scan.c
+	${ZB_STACK_DIR}/mac/mac_source_matching.c
+	${ZB_STACK_DIR}/mac/mac_visibility.c
+	${ZB_STACK_DIR}/mac/mac_zcl_diagnostic.c
+	${ZB_STACK_DIR}/mac/mac_zgp.c
+	${ZB_STACK_DIR}/mac/zb_ie.c
+)

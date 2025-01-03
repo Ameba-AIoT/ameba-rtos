@@ -429,7 +429,11 @@ DIR *__wrap_opendir(const char *name)
 		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s", name + prefix_len);
 	}
 
-	vfs.drv[vfs_id]->opendir(finfo->name, finfo);
+	int ret = vfs.drv[vfs_id]->opendir(finfo->name, finfo);
+	if (ret != 0) {
+		free(finfo);
+		finfo = NULL;
+	}
 	return (DIR *)finfo;
 }
 

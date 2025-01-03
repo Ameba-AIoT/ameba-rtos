@@ -1,5 +1,7 @@
-# ----------General config----------
+# -------------General config------------
 #
+CONFIG_AMEBA_RLS=y
+CONFIG_AMEBADPLUS=y
 
 #
 # CONFIG TrustZone
@@ -23,13 +25,17 @@ CONFIG_IMG2_FLASH=y
 # end of CONFIG Mass Production
 
 #
-# CONFIG Shell CMD
+# CONFIG AT CMD
 #
 CONFIG_SUPPORT_ATCMD=y
 CONFIG_ATCMD_LOGUART=y
 # CONFIG_ATCMD_MCU_CONTROL is not set
 # CONFIG_LONGER_CMD is not set
-# end of CONFIG Shell CMD
+# CONFIG_ATCMD_SOCKET is not set
+# CONFIG_ATCMD_HTTP is not set
+# CONFIG_ATCMD_MQTT is not set
+# CONFIG_ATCMD_WEBSOCKET is not set
+# end of CONFIG AT CMD
 
 #
 # CONFIG VFS
@@ -39,38 +45,51 @@ CONFIG_VFS_LITTLEFS_INCLUDED=y
 # end of CONFIG VFS
 
 #
-# OTA OPTION
+# CONFIG OS
+#
+CONFIG_KERNEL=y
+CONFIG_PLATFORM_FREERTOS=y
+# end of CONFIG OS
+
+#
+# CONFIG OTA OPTION
 #
 # CONFIG_UPGRADE_BOOTLOADER is not set
 # CONFIG_COMPRESS_OTA_IMG is not set
-# end of OTA OPTION
+# end of CONFIG OTA OPTION
 
 #
-# ----------Network config----------
+# ----------Connectivity config----------
 #
 
 #
-# WIFI
+# CONFIG INIC INTF
+#
+CONFIG_WIFI_INIC_IPC_MENU=y
+# CONFIG_FULLMAC_MENU is not set
+# CONFIG_FULLMAC_BRIDGE is not set
+# CONFIG_SPI_FULLMAC_HOST is not set
+CONFIG_CORE_AS_NP=y
+# end of CONFIG INIC INTF
+
+#
+# CONFIG WIFI
 #
 CONFIG_WLAN_MENU=y
-CONFIG_KM0_NP_KM4_AP=y
-# CONFIG_SPI_FULLMAC is not set
-# CONFIG_USB_FULLMAC is not set
-# CONFIG_SDIO_FULLMAC is not set
-# CONFIG_SPI_FULLMAC_HOST is not set
-# CONFIG_HIGH_TP_TEST is not set
-CONFIG_INIC_INTF_IPC=y
-CONFIG_WLAN=y
-CONFIG_AS_INIC_NP=y
-CONFIG_FW_DRIVER_COEXIST=y
-CONFIG_WIFI_FW_EN=y
+# CONFIG_WIFI_WPS_ENABLE_MENU is not set
 # CONFIG_WIFI_CSI_ENABLE is not set
 # CONFIG_WIFI_ANTDIV_ENABLE is not set
 # CONFIG_WIFI_11K_ENABLE is not set
 # CONFIG_WIFI_11V_ENABLE is not set
 # CONFIG_WIFI_11R_ENABLE is not set
 # CONFIG_WIFI_SPEAKER_ENABLE is not set
-# end of WIFI
+# CONFIG_HIGH_TP_TEST is not set
+CONFIG_WIFI_FW_EN=y
+CONFIG_WLAN=y
+CONFIG_INIC_INTF_IPC=y
+CONFIG_AS_INIC_NP=y
+CONFIG_FW_DRIVER_COEXIST=y
+# end of CONFIG WIFI
 
 #
 # CONFIG BT
@@ -81,11 +100,36 @@ CONFIG_WIFI_FW_EN=y
 #
 # CONFIG LWIP
 #
+# CONFIG_FAST_DHCP_MENU is not set
+# CONFIG_IP_NAT_MENU is not set
+CONFIG_LWIP_NETCONN_SEM_PER_THREAD_MENU=y
 # CONFIG_LWIP_DEBUG is not set
 # end of CONFIG LWIP
 
 #
-# ----------KM0 config----------
+# CONFIG SSL
+#
+CONFIG_MBEDTLS_ENABLED_MENU=y
+# CONFIG_MBEDTLS_SSL_PROTO_TLS1_3_MENU is not set
+# end of CONFIG SSL
+
+#
+# --------------Build Config-------------
+#
+
+#
+# Build Option
+#
+
+#
+# Choose the build configuration
+#
+# CONFIG_LINK_ROM_LIB is not set
+CONFIG_LINK_ROM_SYMB=y
+# end of Build Option
+
+#
+# ---------------KM0 config--------------
 #
 
 #
@@ -99,61 +143,9 @@ CONFIG_WIFI_FW_EN=y
 #
 # CONFIG CHIP
 #
-
-#
-# Target Platform Selection
-#
-
-#
-# Choose a Vendor/Product combination
-#
-CONFIG_AMEBADPLUS=y
 CONFIG_ARM_CORE_CM0=y
-# CONFIG_FPGA is not set
 CONFIG_AMEBADPLUS_A_CUT=y
 # end of CONFIG CHIP
-
-#
-# ----------OS config----------
-#
-
-#
-# CONFIG OS
-#
-CONFIG_KERNEL=y
-CONFIG_PLATFORM_FREERTOS=y
-# end of CONFIG OS
-
-#
-# ----------Peripheral Test----------
-#
-
-#
-# CONFIG FUNCTION TEST
-#
-# CONFIG_PER_TEST is not set
-# end of CONFIG FUNCTION TEST
-
-#
-# ----------Build Config----------
-#
-
-#
-# Build Option
-#
-
-#
-# Select toolchain
-#
-CONFIG_TOOLCHAIN_ASDK=y
-# CONFIG_TOOLCHAIN_ARM_GCC is not set
-
-#
-# Choose the build configuration
-#
-# CONFIG_LINK_ROM_LIB is not set
-CONFIG_LINK_ROM_SYMB=y
-# end of Build Option
 # end of MENUCONFIG FOR KM0 CONFIG
 
 #

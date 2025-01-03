@@ -93,66 +93,7 @@ static uint8_t app_lea_vocs_features[RTK_BT_LE_AUDIO_DEFAULT_VOCS_NUM] = { RTK_B
 																		 };
 #endif
 /***************************************end common resourses********************************/
-/***************************************Power Control Test********************************/
-#if defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT
-#define BT_POWER_TEST_MODE         0
-#if defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE
-#include "rtk_bt_power_control.h"
 
-#define BT_POWER_TEST_WAKE_TIME    5    //Unit:s
-
-static void *bt_power_test_wake_timer_hdl = NULL;
-
-static void bt_power_test_wake_timeout_handler(void *arg)
-{
-	(void)arg;
-	rtk_bt_release_wakelock();
-}
-
-static void bt_power_test_suspend(void)
-{
-	BT_LOGA("[BT_PS] Enter bt_power_test_suspend\r\n");
-}
-
-static void bt_power_test_resume(void)
-{
-	BT_LOGA("[BT_PS] Enter bt_power_test_resume\r\n");
-
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		osif_timer_restart(&bt_power_test_wake_timer_hdl, BT_POWER_TEST_WAKE_TIME * 1000);
-	} else {
-		rtk_bt_release_wakelock();
-	}
-}
-
-static void bt_power_test_init(void)
-{
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		osif_timer_create(&bt_power_test_wake_timer_hdl, "bt_power_test_wake_timer", NULL, BT_POWER_TEST_WAKE_TIME * 1000, false,
-						  bt_power_test_wake_timeout_handler);
-		if (bt_power_test_wake_timer_hdl == NULL) {
-			BT_LOGE("[BT_PS] bt_power_test_wake_timer create failed!\r\n");
-			return;
-		}
-	}
-
-	rtk_bt_power_save_init((rtk_bt_ps_callback)bt_power_test_suspend, (rtk_bt_ps_callback)bt_power_test_resume);
-}
-
-static void bt_power_test_deinit(void)
-{
-	rtk_bt_power_save_deinit();
-
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		if (bt_power_test_wake_timer_hdl) {
-			osif_timer_delete(&bt_power_test_wake_timer_hdl);
-			bt_power_test_wake_timer_hdl = NULL;
-		}
-	}
-}
-#endif
-#endif
-/***************************************Power Control Test End********************************/
 /********************************************bro sink param*************************************/
 static bool g_app_lea_decode_enable = false;
 static rtk_bt_le_audio_bis_info_t sync_bis_info = {0};
@@ -363,7 +304,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
 		if (!ext_adv_ind->err) {
@@ -410,7 +351,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
@@ -977,8 +918,6 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 #endif
 
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
-extern short audio_demo[];
-extern uint32_t audio_demo_size;
 
 static uint16_t app_bt_le_audio_parse_two_chnl_pcm_data_to_one_chnl(short *in_buf, uint32_t pcm_in_len, short *out_buf, uint32_t pcm_out_len,
 																	uint32_t audio_channel_allocation)
@@ -1119,6 +1058,73 @@ exit:
 #endif
 
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+static int16_t pcm_buffer[960] = {0};
+static uint16_t app_bt_le_audio_encode_from_usb(app_lea_iso_data_path_t *p_iso_path)
+{
+	uint8_t bytes_per_num = (DEFAULT_PCM_BIT_WIDTH / 8);
+	uint32_t encode_byte = 0, encode_num = 0, pcm_frame_size = 0;
+	uint8_t encode_channels = 0;
+	uint32_t sample_rate = 0, frame_duration_us = 0;
+	rtk_bt_le_audio_cfg_codec_t *p_codec = NULL;
+	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
+	uint16_t ret = RTK_BT_OK;
+
+	if (!p_iso_path) {
+		BT_LOGE("[APP] %s p_iso_path is NULL\r\n", __func__);
+		return RTK_BT_FAIL;
+	} else {
+		p_iso_path->is_processing = true;
+		p_iso_path->iso_data_tx_queue_num++;
+		p_iso_path->p_enc_codec_buffer_t = NULL;
+		p_codec = &p_iso_path->codec;
+	}
+	if (!p_codec) {
+		BT_LOGE("[APP] %s p_codec is NULL\r\n", __func__);
+		goto exit;
+	}
+
+	sample_rate = app_bt_le_audio_translate_lea_samp_fre_to_audio_samp_rate(LEA_SOURCE_FIX_SAMPLE_FREQUENCY);
+	frame_duration_us = (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500;
+	pcm_frame_size = sample_rate * frame_duration_us / 1000 / 1000;
+	encode_channels = app_bt_le_audio_get_lea_chnl_num(p_codec->audio_channel_allocation);
+	encode_num = pcm_frame_size * encode_channels;
+	encode_byte = encode_num * bytes_per_num;
+
+	if (p_iso_path->p_encode_data == NULL) {
+		p_iso_path->p_encode_data = (short *)osif_mem_alloc(RAM_TYPE_DATA_ON, encode_byte);
+		if (p_iso_path->p_encode_data == NULL) {
+			BT_LOGE("[APP] %s p_iso_path->p_encode_data alloc fail\r\n", __func__);
+			goto exit;
+		}
+		memset(p_iso_path->p_encode_data, 0, encode_byte);
+	}
+
+	if (!demo_usb_read_buffer((uint8_t *)pcm_buffer, (uint16_t)encode_byte)) {
+		memcpy((void *)p_iso_path->p_encode_data, pcm_buffer, encode_byte);
+		p_iso_path->encode_byte = encode_byte;
+		/* encode */
+		penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_LC3, p_iso_path->codec_entity, p_iso_path->p_encode_data, p_iso_path->encode_byte);
+		if (penc_codec_buffer_t == NULL) {
+			BT_LOGE("[APP] %s rtk_bt_audio_data_encode fail\r\n", __func__);
+			goto exit;
+		}
+		p_iso_path->p_enc_codec_buffer_t = penc_codec_buffer_t;
+		ret = RTK_BT_OK;
+	} else {
+		BT_LOGE("USB buffer is NULL \r\n");
+		ret = RTK_BT_FAIL;
+		goto exit;
+	}
+exit:
+	if (ret) {
+		p_iso_path->iso_data_tx_queue_num --;
+		p_iso_path->is_processing = false;
+	}
+
+	return ret;
+}
+#else
 static int16_t pcm_buffer[960] = {0};
 static uint16_t app_bt_le_audio_encode_from_uart(app_lea_iso_data_path_t *p_iso_path)
 {
@@ -1185,6 +1191,7 @@ exit:
 
 	return ret;
 }
+#endif
 #endif
 
 #if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
@@ -1275,8 +1282,8 @@ static void app_bt_le_audio_encode_task_entry(void *ctx)
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
 	short *p_pcm_data = NULL;
 	uint32_t pcm_total_num = 0;
-	p_pcm_data = audio_demo;
-	pcm_total_num = audio_demo_size * 2;
+	p_pcm_data = (short *)birds_sing;
+	pcm_total_num = birds_sing_size / (DEFAULT_PCM_BIT_WIDTH / 8);
 #endif
 #if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
@@ -1317,10 +1324,17 @@ static void app_bt_le_audio_encode_task_entry(void *ctx)
 			}
 #endif
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+			if (RTK_BT_OK != app_bt_le_audio_encode_from_usb(p_iso_path)) {
+				BT_LOGE("[APP] %s app_bt_le_audio_encode_from_usb fail\r\n", __func__);
+				continue;
+			}
+#else
 			if (RTK_BT_OK != app_bt_le_audio_encode_from_uart(p_iso_path)) {
 				BT_LOGE("[APP] %s app_bt_le_audio_encode_from_uart fail\r\n", __func__);
 				continue;
 			}
+#endif
 #endif
 #if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
 			/* currently, not support multiple record handle, so only fetch one record pcm data and copy which to other iso_path */
@@ -2836,15 +2850,18 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			/* register le audio event callback */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_AUDIO, app_bt_le_audio_callback));
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+			if (!demo_usb_init()) {
+				BT_LOGE("demo_usb_init failed\r\n");
+			}
+#else
 			demo_uart_init();
+#endif
 #endif
 			/* intialize iso data path */
 			app_bt_le_audio_broadcast_source_init(p_bro_sour_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR;
 			p_bro_sour_info->status = RTK_BLE_AUDIO_BROADCAST_SOURCE_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -2917,9 +2934,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_broadcast_sink_init(p_bro_sink_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK;
 			p_bro_sink_info->status = RTK_BLE_AUDIO_BROADCAST_SINK_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -2967,9 +2981,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_broadcast_assistant_init(p_bro_assi_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_BRO_ASSI;
 			p_bro_assi_info->status = RTK_BLE_AUDIO_BROADCAST_ASSISTANT_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3026,9 +3037,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_scan_delegator_init(p_scan_dele_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE;
 			p_scan_dele_info->status = RTK_BLE_AUDIO_SCAN_DELEGATOR_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3106,9 +3114,6 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			app_bt_le_audio_unicast_server_init(p_uni_ser_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER;
 			p_uni_ser_info->status = RTK_BLE_AUDIO_UNICAST_SERVER_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3157,14 +3162,17 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 			/* register le audio event callback */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_AUDIO, app_bt_le_audio_callback));
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+			if (!demo_usb_init()) {
+				BT_LOGE("demo_usb_init failed\r\n");
+			}
+#else
 			demo_uart_init();
+#endif
 #endif
 			app_bt_le_audio_unicast_client_init(p_uni_cli_info);
 			bap_role |= RTK_BT_LE_AUDIO_BAP_ROLE_UNI_CLI;
 			p_uni_cli_info->status = RTK_BLE_AUDIO_UNICAST_CLIENT_ENABLE;
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_init();
-#endif
 			bap_demo_init_flag = true;
 			break;
 		}
@@ -3189,12 +3197,17 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please stop first before disable \r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			app_bt_le_audio_broadcast_source_deinit(&g_bro_sour_info);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+			if (!demo_usb_deinit()) {
+				BT_LOGE("demo_usb_deinit failed\r\n");
+			}
+#endif
+#endif
 			g_bro_sour_info.status = RTK_BLE_AUDIO_BROADCAST_SOURCE_DISABLE;
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			bap_demo_init_flag = false;
@@ -3210,9 +3223,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please terminate sync with broadcast stream before disable\r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			/* Stop and remove ea */
 			rtk_bt_le_gap_stop_ext_adv(app_lea_def_ext_adv_handle);
 
@@ -3230,9 +3241,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: already disabled\r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			app_bt_le_audio_broadcast_assistant_deinit(&g_bro_assi_info);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
@@ -3247,9 +3256,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: already disabled\r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			/* Stop and remove ea */
 			rtk_bt_le_gap_stop_ext_adv(app_lea_def_ext_adv_handle);
 
@@ -3271,9 +3278,7 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please stop unicast stream first before disable \r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			/* Stop and remove ea */
 			rtk_bt_le_gap_stop_ext_adv(app_lea_def_ext_adv_handle);
 
@@ -3295,12 +3300,17 @@ int bt_bap_main(uint8_t role, uint8_t enable)
 				BT_LOGE("[APP] %s: please stop unicast stream first before disable \r\n", __func__);
 				return -1;
 			}
-#if (defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-			bt_power_test_deinit();
-#endif
+
 			app_bt_le_audio_unicast_client_deinit(&g_uni_cli_info);
 			/* Disable BT */
 			BT_APP_PROCESS(rtk_bt_disable());
+#if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
+#if defined(AUDIO_SOURCE_OUTBAND_FROM_USB) && AUDIO_SOURCE_OUTBAND_FROM_USB
+			if (!demo_usb_deinit()) {
+				BT_LOGE("demo_usb_deinit failed\r\n");
+			}
+#endif
+#endif
 			g_uni_cli_info.status = RTK_BLE_AUDIO_UNICAST_CLIENT_DISABLE;
 			bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 			bap_demo_init_flag = false;

@@ -1,24 +1,6 @@
-#include "wifi_intf_drv_to_app_cast.h"
-#include "os_wrapper.h"
-#include "PinNames.h"
-#include "serial_api.h"
-#include "serial_ex_api.h"
+#include "example_wificast_uart.h"
 
 static const char *TAG = "example_main";
-#define WIFI_CAST_UART_DATA		BIT(13)
-
-#define UART_IDX  0
-#define UART_BAUD_RATE 1500000
-#define UART_TX_PIN    PA_28
-#define UART_RX_PIN    PA_29
-
-#define UART_RX_BUF_SZ	200
-
-struct example_frame_head {
-	u16 type;
-	u16 len;
-} __attribute__((packed));
-
 static serial_t g_uart_obj;
 
 static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, unsigned int len, signed char rssi)
@@ -136,7 +118,7 @@ CmdWifiCastTest(
 		WifiCastTestApp(argv);
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 CMD_TABLE_DATA_SECTION

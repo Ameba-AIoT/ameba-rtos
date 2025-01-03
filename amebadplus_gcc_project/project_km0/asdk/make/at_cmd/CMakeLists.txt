@@ -4,6 +4,7 @@ set(
     ${BASEDIR}/component/network/mqtt/MQTTPacket
     ${BASEDIR}/component/network/cJSON
     ${BASEDIR}/component/file_system/kv
+    ${BASEDIR}/component/utils/ringbuffer
 )
 
 set(APP_DIR ${TARGETDIR}/app/monitor)
@@ -27,8 +28,9 @@ if(CONFIG_WLAN)
 # note: apply new atcmd, add your config here!!!
     if(CONFIG_ATCMD_MCU_CONTROL)
         list(
-            APPEND CSRC 
+            APPEND CSRC
             ${DIR}/at_intf_uart.c
+            ${DIR}/at_intf_spi.c
         )
     endif()
 endif()

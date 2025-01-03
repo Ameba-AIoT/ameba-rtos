@@ -346,7 +346,7 @@ int eap_sm_init(void)
 void dump_buf(void *buf, size_t len)
 {
 	unsigned char *b = buf;
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		DiagPrintf(" %02X", (unsigned int) b[i]);
 	}
 }
@@ -479,6 +479,8 @@ exit:
 
 void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
 {
+	(void)flags;
+	(void)handler_user_data;
 //	eap_eapol_recvd(buf, buf_len, flags, handler_user_data);
 
 	char *copy_buf = os_malloc(buf_len);
@@ -493,6 +495,9 @@ void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_d
 
 void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
 {
+	(void)buf_len;
+	(void)flags;
+	(void)handler_user_data;
 	u8 *dst_mac = (u8 *)buf;
 	eap_send_eapol_start(dst_mac);
 }

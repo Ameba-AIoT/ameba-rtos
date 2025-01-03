@@ -7,37 +7,7 @@
 #ifndef _AMEBA_BOOT_H_
 #define _AMEBA_BOOT_H_
 
-#if defined ( __ICCARM__ )
-extern u8 *__image2_entry_func__;
-extern u8 *__image1_bss_start__;
-extern u8 *__image1_bss_end__;
-
-extern u8 *__bss_start__;
-extern u8 *__bss_end__;
-
-extern u8 *__cmd_table_start__;
-extern u8 *__cmd_table_end__;
-extern u8 *__psram_bss_start__;
-extern u8 *__psram_bss_end__;
-extern u8 *__ram_nocache_start__;
-extern u8 *__ram_nocache_end__;
-extern u8 *__image3_bss_start__;
-extern u8 *__image3_bss_end__;
-extern u8 __ram_image2_text_start__;
-extern u8 __ram_image2_text_end__;
-
-extern u8 *__ipc_table_start__;
-extern u8 *__ipc_table_end__;
-
-extern u8  NOCACHE_DATA$$Limit[];
-extern u8  IMAGENCSRAM$$Limit[];
-extern u8 __km0_bd_ram_end__[];
-extern u8 __km4_bd_dram_end__[];
-extern u8 __km4_heap_ext_start__[];
-extern u8 __km4_heap_ext_size__[];
-extern u8 __ca32_dram_end__[];
-
-#else
+extern u8 __ram_image1_text_start__[];
 extern u8 __image1_validate_code__[];
 extern u8 __image1_bss_start__[];
 extern u8 __image1_bss_end__[];
@@ -62,7 +32,7 @@ extern u8 __ipc_table_end__[];
 
 extern u8 __bdram_heap_buffer_start__[];
 extern u8 __bdram_heap_buffer_size__[];
-#endif
+
 extern u8 __rom_bss_start__[];
 extern u8 __rom_bss_end__[];
 extern u8 __rom_bss_start_s__[];
@@ -135,7 +105,7 @@ typedef struct {
 
 	//export to stdlib rom
 	void (*loguart_putchar)(u8 c);
-	u8(*loguart_getchar)(BOOL PullMode);
+	u8(*loguart_getchar)(bool PullMode);
 	u32(*diagprintf)(const char *fmt, ...);
 } ROM_SECURE_CALL_NS_ENTRY;
 
@@ -284,11 +254,7 @@ typedef struct _DSLP_RETENTION_FUNC_TABLE_ {
 
 #if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
 #define NS_ENTRY __attribute__((cmse_nonsecure_entry))
-#ifdef __ICCARM__
-typedef __cmse_nonsecure_call void nsfunc(void);
-#else
 typedef void __attribute__((cmse_nonsecure_call)) nsfunc(void);
-#endif
 #endif
 
 typedef u8(*FuncPtr)(void);

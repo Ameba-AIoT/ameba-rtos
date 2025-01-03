@@ -14,7 +14,7 @@ _WEAK void wifi_set_user_config(void)
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
-	wifi_user_config.concurrent_enabled = (u8)_TRUE;
+	wifi_user_config.concurrent_enabled = (u8)TRUE;
 	wifi_user_config.softap_addr_offset_idx = 1;
 	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;
@@ -61,11 +61,11 @@ _WEAK void wifi_set_user_config(void)
 	/* MISC */
 	wifi_user_config.en_mcc = (u8) DISABLE;
 	wifi_user_config.max_roaming_times = 2;
-	wifi_user_config.ampdu_rx_enable = (u8)_TRUE;
-	wifi_user_config.ampdu_tx_enable = (u8)_TRUE;
-	wifi_user_config.bCheckDestAddress = (u8)_TRUE;
+	wifi_user_config.ampdu_rx_enable = (u8)TRUE;
+	wifi_user_config.ampdu_tx_enable = (u8)TRUE;
+	wifi_user_config.bCheckDestAddress = (u8)TRUE;
 	wifi_user_config.ap_compatibilty_enabled = 0x0B;
-	wifi_user_config.set_channel_api_do_rfk = 0;
+	wifi_user_config.set_channel_api_do_rfk = 1;
 	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;

@@ -102,12 +102,12 @@ static void *eap_wsc_init(struct eap_sm *sm)
 	identity_len = WSC_ID_ENROLLEE_LEN;
 
 	if (identity_len == WSC_ID_REGISTRAR_LEN &&
-		os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == _TRUE) {
+		os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == TRUE) {
 		/* Supplicant is Registrar */
 		registrar = 1;
 		wpa_printf(MSG_INFO, "eap_wsc_init() registrar = 1, Supplicant is Registrar");
 	} else if (identity_len == WSC_ID_ENROLLEE_LEN &&
-			   os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == _TRUE) {
+			   os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == TRUE) {
 		/* Supplicant is Enrollee */
 		registrar = 0;
 		wpa_printf(MSG_INFO, "eap_wsc_init() registrar = 0, Supplicant is Enrollee");

@@ -69,6 +69,7 @@ list(
     APPEND GLOBAL_IFLAGS
     ${BLEDIR}/api
     ${BLEDIR}/api/include
+    ${BLEDIR}/example/ble_mesh_ota_common
     ${BLEDIR}/example/bt_atcmd
     ${BLEDIR}/example/gatt_service/server
     ${BLEDIR}/example/gatt_service/client

@@ -78,14 +78,14 @@ void Ssi_Print(u8 *pSrc, u8 *pDst, u32 Length)
 	}
 }
 
-BOOL Ssi_DataCompare(u8 *pSrc, u8 *pDst, u32 Length)
+bool Ssi_DataCompare(u8 *pSrc, u8 *pDst, u32 Length)
 {
 	u32 index;
-	u8 res = _TRUE;
+	u8 res = TRUE;
 
 	for (index = 0; index < Length; ++index) {
 		if ((pSrc[index] & dfs_mask) != pDst[index]) {
-			res = _FALSE;
+			res = FALSE;
 		}
 	}
 

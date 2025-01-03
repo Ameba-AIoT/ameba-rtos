@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "PMC";
+static const char *const TAG = "PMC";
 extern SLEEP_ParamDef sleep_param;
 
 /**

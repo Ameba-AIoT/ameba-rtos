@@ -8,6 +8,12 @@ if(CONFIG_802154_THREAD_BORDER_ROUTER_EN)
     list(APPEND MODULE_IFLAGS ${BASEDIR}/component/wpan/openthread/rtk_otbr)
 endif()
 
+list(
+    APPEND MODULE_IFLAGS
+    ${FREERTOSDIR}/include
+    ${FREERTOSDIR}/portable/GCC/AmebaLite_KM4/non_secure
+)
+
 set(
     CSRC
     ${NETWORK}/sntp/sntp.c

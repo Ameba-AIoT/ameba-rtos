@@ -71,7 +71,10 @@ if(CONFIG_MP_SHRINK)
     else()
         execute_process(COMMAND ${BINARY_PADING} ${IMAGE_TARGET_FOLDER}/km4_image2_all_shrink_raw.bin ${IMAGE_TARGET_FOLDER}/km4_image2_all_shrink.bin 248)
     endif()
-    execute_process(COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all_shrink.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR})
+    execute_process(
+        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all_shrink.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR}
+        WORKING_DIRECTORY ${PROJECTDIR}/..
+    )
 else()
     execute_process(
         COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/boot.bin  32
@@ -91,7 +94,10 @@ else()
         COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${IMAGE_TARGET_FOLDER}/psram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/boot_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_only_prepend.bin
         OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin
     )
-    execute_process(COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR})
+    execute_process(
+        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR}
+        WORKING_DIRECTORY ${PROJECTDIR}/..
+    )
 endif()
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
@@ -206,14 +212,14 @@ endif()
 set(OTA_ALL	${IMAGE_TARGET_FOLDER}/ota_all.bin)
 
 if(EXISTS ${APP_ALL})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${APP_ALL} ${IMAGE_TARGET_FOLDER}/../../..)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${APP_ALL} ${FINAL_IMAGE_DIR})
 endif()
 
 if(EXISTS ${OTA_ALL})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${OTA_ALL} ${IMAGE_TARGET_FOLDER}/../../..)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${OTA_ALL} ${FINAL_IMAGE_DIR})
 endif()
 
-if(NOT AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS)
     message("========== Image analyze start ==========")
     execute_process(
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}

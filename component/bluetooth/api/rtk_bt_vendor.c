@@ -27,6 +27,21 @@ extern int wifi_set_ips_internal(u8 enable);
 static bool need_restore = false;
 #endif
 
+_WEAK void hci_platform_external_fw_log_pin(void)
+{
+	BT_LOGE("External fw log pin is not supported!\r\n");
+}
+
+_WEAK void hci_platform_controller_reset(void)
+{
+	BT_LOGE("Controller reset is not supported!\r\n");
+}
+
+_WEAK void bt_power_off(void)
+{
+	BT_LOGE("BT power off is not supported!\r\n");
+}
+
 _WEAK void hci_platform_set_tx_power_gain_index(uint32_t index)
 {
 	(void)index;
@@ -44,7 +59,47 @@ _WEAK void hci_platform_debug_enable(void)
 	BT_LOGE("HCI debug is not supported!\r\n");
 }
 
+_WEAK void hci_platform_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_bdg_mask)
+{
+	(void)bt_sel;
+	(void)bt_bdg_mask;
+	BT_LOGE("BT Debug Port enable by mask is not supported!\r\n");
+}
+
+_WEAK void hci_platform_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad)
+{
+	(void)bt_sel;
+	(void)bt_dbg_port;
+	(void)pad;
+	BT_LOGE("BT Debug Port enable by pad is not supported!\r\n");
+}
+
+_WEAK void hci_platform_debug_port_shift(uint8_t original, uint8_t mapping)
+{
+	(void)original;
+	(void)mapping;
+	BT_LOGE("BT Debug Port shift is not supported!\r\n");
+}
+
+_WEAK void hci_platform_gpio_enable(uint8_t bt_gpio, char *pad)
+{
+	(void)bt_gpio;
+	(void)pad;
+	BT_LOGE("BT GPIO enable is not supported!\r\n");
+}
+
 /* -------------------------------- Functions ------------------------------*/
+
+void rtk_bt_controller_power_on(void)
+{
+	hci_platform_external_fw_log_pin();
+	hci_platform_controller_reset();
+}
+
+void rtk_bt_controller_power_off(void)
+{
+	bt_power_off();
+}
 
 void rtk_bt_set_bt_tx_power_gain_index(uint32_t index)
 {
@@ -59,6 +114,26 @@ void rtk_bt_set_bt_antenna(uint8_t ant)
 void rtk_bt_hci_debug_enable(void)
 {
 	hci_platform_debug_enable();
+}
+
+void rtk_bt_debug_port_mask_enable(uint8_t bt_sel, uint32_t bt_bdg_mask)
+{
+	hci_platform_debug_port_mask_enable(bt_sel, bt_bdg_mask);
+}
+
+void rtk_bt_debug_port_pad_enable(uint8_t bt_sel, uint8_t bt_dbg_port, char *pad)
+{
+	hci_platform_debug_port_pad_enable(bt_sel, bt_dbg_port, pad);
+}
+
+void rtk_bt_debug_port_shift(uint8_t original, uint8_t mapping)
+{
+	hci_platform_debug_port_shift(original, mapping);
+}
+
+void rtk_bt_gpio_enable(uint8_t bt_gpio, char *pad)
+{
+	hci_platform_gpio_enable(bt_gpio, pad);
 }
 
 void rtk_bt_sleep_mode(unsigned int mode)

@@ -5,7 +5,7 @@
 */
 
 #include "ameba_soc.h"
-static const char *TAG = "SECURE";
+static const char *const TAG = "SECURE";
 
 /*
  * The following example shows how to call secure entry function from NS functions.
@@ -80,7 +80,7 @@ int _read(int file, char *ptr, int len)
 		return -1;
 	}
 	for (/*Empty*/; len > 0; --len) {
-		int c = LOGUART_GetChar(_TRUE);
+		int c = LOGUART_GetChar(TRUE);
 		if ((c < 0) || (c == '\r')) {
 			*ptr = '\0';
 			break;

@@ -8,7 +8,7 @@
 #include "ameba_soc.h"
 #include "FreeRTOS.h"
 
-static const char *TAG = "PMC";
+static const char *const TAG = "PMC";
 
 void SOCPS_SleepPG(void)
 {
@@ -24,11 +24,11 @@ void SOCPS_SleepPG(void)
 		return;
 	}
 
-	RTK_LOGS(NOTAG, "APPG\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "APPG\n");
 
 	SOCPS_SleepPG_LIB();
 
-	RTK_LOGS(NOTAG, "APPW\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "APPW\n");
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
@@ -54,11 +54,11 @@ void SOCPS_SleepCG(void)
 		return;
 	}
 
-	RTK_LOGS(NOTAG, "APCG\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "APCG\n");
 
 	SOCPS_SleepCG_LIB();
 
-	RTK_LOGS(NOTAG, "APCW\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "APCW\n");
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);

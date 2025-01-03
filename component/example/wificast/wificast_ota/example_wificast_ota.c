@@ -1,66 +1,6 @@
-#include "wifi_intf_drv_to_app_cast.h"
-#include "os_wrapper.h"
-#include "flash_api.h"
-#include "sys_api.h"
-#include "ameba_ota.h"
+#include "example_wificast_ota.h"
 
-static const char *TAG = "example_main";
-
-#define WIFI_CAST_OTA_SCAN_REQUEST		BIT(8)
-#define WIFI_CAST_OTA_SCAN_RESPONSE		BIT(7)
-#define WIFI_CAST_OTA_STATUS_REQUEST	BIT(6)
-#define WIFI_CAST_OTA_STATUS_RESPONSE	BIT(5)
-#define WIFI_CAST_OTA_DATA				BIT(4)
-
-#define WIFI_CAST_OTA_PROGRESS_MAX		200
-#define WIFI_CAST_OTA_PACKET_SIZE		256
-#define WIFI_CAST_OTA_ROUND_MAX			50
-
-//upgrade status
-#define WIFI_CAST_OTA_ONGOING	0x1
-#define WIFI_CAST_OTA_FINISHED	0x2
-#define WIFI_CAST_OTA_RESET		0x3
-
-#define WIFI_CAST_OTA_SENDER	0x1
-#define WIFI_CAST_OTA_RECEIVER	0x2
-
-#define WIFI_CAST_OTA_GET_BITS(data, bits)        ( (((uint8_t *)(data))[(bits) >> 0x3]) & ( 1 << ((bits) & 0x7)) )
-#define WIFI_CAST_OTA_SET_BITS(data, bits)        do { (((uint8_t *)(data))[(bits) >> 0x3]) |= ( 1 << ((bits) & 0x7)); } while(0);
-
-struct example_frame_head {
-	u16 type;
-	u16 len;
-} __attribute__((packed));
-
-struct ota_packet_head {
-	u32 seq;
-} __attribute__((packed));
-
-struct example_ota_info {
-	u8 mac[6];
-} __attribute__((packed));
-
-struct example_ota_status {
-	u16 status;			/* upgrade status */
-	u16 packet_num;		/* upgrade packet number */
-	u16 image_id;		/* upgrade image id */
-	u32 image_addr;		/* upgrade image address */
-	u32 total_size;		/* upgrade firmware total size */
-	u32 written_size;	/* upgrade firmware size has been written into flash */
-	u8 progress_index;	/* upgrade process bitmap */
-	u8 progress_array[0][WIFI_CAST_OTA_PROGRESS_MAX]; /* upgrade process bitmap */
-} __attribute__((packed));
-
-struct example_ota_result {
-	u32 unfinished_num; /* upgrade total device number */
-	u32 successed_num;  /* upgrade successed device number */
-};
-
-struct ota_recv_data {
-	u32 data_len;
-	u8 mac[ETH_ALEN];
-	u8 *data;
-} __attribute__((packed));
+static const char *const TAG = "example_main";
 
 #define PORT	8082
 static const char *host = "192.168.137.1";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
@@ -70,7 +10,7 @@ static ota_context *ctx = NULL;
 static rtos_queue_t g_scan_report_q;
 static rtos_queue_t g_ota_request_q;
 static rtos_queue_t g_ota_recv_cb_q;
-static struct example_ota_info *g_info_list = NULL;
+static struct example_scan_info *g_info_list = NULL;
 static struct example_ota_status *g_ota_status = NULL;
 static u8 ota_role = WIFI_CAST_OTA_RECEIVER;
 static flash_t flash_obj;
@@ -148,13 +88,13 @@ static wcast_err_t example_send(u16 type, const wifi_cast_addr_t dst_mac, u8 *da
 
 static void example_ota_scan_request_cb(u8 *src_mac)
 {
-	struct example_ota_info info = {0};
-	struct _rtw_mac_t  self_mac = {0};
+	struct example_scan_info info = {0};
+	struct _rtw_mac_t self_mac = {0};
 
 	wifi_get_mac_address(0, &self_mac, 0);
 	memcpy(info.mac, self_mac.octet, 6);
 
-	if (example_send(WIFI_CAST_OTA_SCAN_RESPONSE, WIFI_CAST_BROADCAST_MAC, (u8 *)&info, sizeof(info)) != WIFI_CAST_OK) {
+	if (example_send(WIFI_CAST_SCAN_RESPONSE, WIFI_CAST_BROADCAST_MAC, (u8 *)&info, sizeof(info)) != WIFI_CAST_OK) {
 		RTK_LOGE(TAG, "%s, send fail\n", __func__);
 		return;
 	}
@@ -169,7 +109,7 @@ static void example_ota_scan_request_cb(u8 *src_mac)
 
 static void example_ota_scan_response_cb(u8 *mac)
 {
-	struct example_ota_info info = {0};
+	struct example_scan_info info = {0};
 	memcpy(info.mac, mac, 6);
 
 	RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(mac));
@@ -199,6 +139,7 @@ static void example_ota_status_request_cb(u8 *src_mac, u8 *data)
 			RTK_LOGE(TAG, "%s, g_ota_status malloc failed", __func__);
 			return;
 		}
+		rt_kv_get("ota_status", (u8 *)g_ota_status, sizeof(struct example_ota_status) + WIFI_CAST_OTA_PROGRESS_MAX * 10);
 	}
 
 	if (recv_status->status == WIFI_CAST_OTA_RESET) {
@@ -206,7 +147,8 @@ static void example_ota_status_request_cb(u8 *src_mac, u8 *data)
 		return;
 	}
 
-	if (g_ota_status->status == WIFI_CAST_OTA_ONGOING) {
+	if (g_ota_status->status == WIFI_CAST_OTA_ONGOING ||
+		(g_ota_status->total_size == recv_status->total_size && g_ota_status->checksum == recv_status->checksum)) {
 		goto response;
 	}
 
@@ -214,6 +156,8 @@ static void example_ota_status_request_cb(u8 *src_mac, u8 *data)
 	memset(g_ota_status->progress_array[0], 0x0, g_ota_status->packet_num / 8 + 1);
 	g_ota_status->status = WIFI_CAST_OTA_ONGOING;
 	start_tick = rtos_time_get_current_system_time_ms();
+
+	rt_kv_set("ota_status", g_ota_status, sizeof(struct example_ota_status) + g_ota_status->packet_num / 8 + 1);
 
 	int sector_num = g_ota_status->total_size / 4096 + 1;
 	for (int i = 0; i < sector_num; i++) {
@@ -300,12 +244,13 @@ static void example_ota_data_cb(u8 *data, u16 data_len)
 	flash_stream_write(&flash_obj, g_ota_status->image_addr + hdr->seq * size, size, data + sizeof(struct ota_packet_head));
 	WIFI_CAST_OTA_SET_BITS(g_ota_status->progress_array, hdr->seq);
 	g_ota_status->written_size += size;
+	rt_kv_set("ota_status", g_ota_status, sizeof(struct example_ota_status) + g_ota_status->packet_num / 8 + 1);
 }
 
 static void example_recv_cb_task(void *param)
 {
 	(void)param;
-	struct ota_recv_data *recv_data = NULL;
+	struct example_cb_recv_data *recv_data = NULL;
 
 	while (1) {
 		if (SUCCESS == rtos_queue_receive(g_ota_recv_cb_q, &recv_data, 10)) {
@@ -313,9 +258,9 @@ static void example_recv_cb_task(void *param)
 			RTK_LOGD(TAG, MAC_FMT", len: %d, type: %x\n", MAC_ARG(recv_data->mac), recv_data->data_len, hdr->type);
 			if (hdr->type & WIFI_CAST_OTA_DATA) {
 				example_ota_data_cb(recv_data->data + sizeof(struct example_frame_head), hdr->len);
-			} else if (hdr->type & WIFI_CAST_OTA_SCAN_REQUEST) {
+			} else if (hdr->type & WIFI_CAST_SCAN_REQUEST) {
 				example_ota_scan_request_cb(recv_data->mac);
-			} else if (hdr->type & WIFI_CAST_OTA_SCAN_RESPONSE) {
+			} else if (hdr->type & WIFI_CAST_SCAN_RESPONSE) {
 				example_ota_scan_response_cb(recv_data->mac);
 			} else if (hdr->type & WIFI_CAST_OTA_STATUS_REQUEST) {
 				example_ota_status_request_cb(recv_data->mac, recv_data->data + sizeof(struct example_frame_head));
@@ -336,8 +281,8 @@ static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, u
 	}
 	RTK_LOGD(TAG, MAC_FMT", len: %d, rssi: %d\n", MAC_ARG(pnode->mac), len, rssi);
 
-	struct ota_recv_data *recv_data = NULL;
-	recv_data = (struct ota_recv_data *)rtos_mem_zmalloc(sizeof(struct ota_recv_data));
+	struct example_cb_recv_data *recv_data = NULL;
+	recv_data = (struct example_cb_recv_data *)rtos_mem_zmalloc(sizeof(struct example_cb_recv_data));
 	if (!recv_data) {
 		RTK_LOGE(TAG, "%s, recv_data malloc failed\n", __func__);
 		return;
@@ -364,13 +309,13 @@ static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, u
 	}
 }
 
-static void example_ota_initial_scan(struct example_ota_info **info_list, int *num, u32 wait_ms)
+static void example_ota_initial_scan(struct example_scan_info **info_list, int *num, u32 wait_ms)
 {
-	struct example_ota_info info = {0};
+	struct example_scan_info info = {0};
 	int info_num = 0;
 
 	do {
-		example_send(WIFI_CAST_OTA_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
+		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
 		if (SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
 			u8 exist = 0;
 			if (g_info_list) {
@@ -385,7 +330,7 @@ static void example_ota_initial_scan(struct example_ota_info **info_list, int *n
 				continue;
 			}
 			RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(info.mac));
-			g_info_list = (struct example_ota_info *)rtos_mem_realloc(g_info_list, (info_num + 1) * sizeof(struct example_ota_info));
+			g_info_list = (struct example_scan_info *)rtos_mem_realloc(g_info_list, (info_num + 1) * sizeof(struct example_scan_info));
 			memcpy(g_info_list[info_num].mac, info.mac, 6);
 			info_num++;
 		}
@@ -424,6 +369,7 @@ static u32 example_firmware_download(struct example_ota_status *status)
 	total_size = ctx->otactrl->ImageLen;
 	status->image_id = ctx->otactrl->ImgId;
 	status->image_addr = ctx->otactrl->FlashAddr;
+	status->checksum = ctx->otaTargetHdr->FileImgHdr[0].Checksum;
 	RTK_LOGI(TAG, "%s, server firmware download is finished, spend time: %d ms, total size: %d\n",
 			 __func__, rtos_time_get_current_system_time_ms() - start_ms, total_size);
 exit:
@@ -508,7 +454,7 @@ static void example_firmware_send(struct example_ota_status *status, struct exam
 static void example_ota_task(void *param)
 {
 	(void)param;
-	struct example_ota_info *info_list = NULL;
+	struct example_scan_info *info_list = NULL;
 	int info_num = 0;
 	struct example_ota_status status = {0};
 	struct example_ota_result result = {0};
@@ -563,8 +509,8 @@ static void example_main_task(void *param)
 	WIFI_CAST_ERROR_CHECK(wifi_cast_init(&config));
 	WIFI_CAST_ERROR_CHECK(wifi_cast_register_recv_cb(example_recv_callback));
 
-	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_ota_info));
-	rtos_queue_create(&g_ota_recv_cb_q, WIFI_CAST_OTA_PROGRESS_MAX, sizeof(struct ota_recv_data *));
+	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_scan_info));
+	rtos_queue_create(&g_ota_recv_cb_q, WIFI_CAST_OTA_PROGRESS_MAX, sizeof(struct example_cb_recv_data *));
 
 	if (rtos_task_create(NULL, ((const char *)"example_recv_cb_task"), example_recv_cb_task, NULL, 1024 * 4, 1) != SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_recv_cb_task\n\r");
@@ -584,6 +530,9 @@ void WifiCastTestApp(u8  *argv[])
 {
 	if (strcmp((const char *)argv[0], "download") == 0) {
 		example_app_ota();
+	} else if (_strcmp((const char *)argv[0], "help") == 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\twificast \n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\t\t download  : start self firmware upgrade and help other devices upgrade\n");
 	}
 }
 
@@ -597,7 +546,7 @@ CmdWifiCastTest(
 		WifiCastTestApp(argv);
 	}
 
-	return _TRUE;
+	return TRUE;
 }
 
 CMD_TABLE_DATA_SECTION

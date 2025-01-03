@@ -6,14 +6,14 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "OTP";
+static const char *const TAG = "OTP";
 
 /**
   * @brief  OTP power cut Enable or Disable.
   * @param  Newstatus :specifies the target power cut status
   * @retval None
   */
-static void OTP_PowerCmd(BOOL Enable)
+static void OTP_PowerCmd(bool Enable)
 {
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_PWC);
 
@@ -32,7 +32,7 @@ static void OTP_PowerCmd(BOOL Enable)
   * @param  None
   * @retval specifies the target power cut status
   */
-static BOOL OTP_GetPowerState(void)
+static bool OTP_GetPowerState(void)
 {
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_PWC);
 
@@ -48,7 +48,7 @@ static BOOL OTP_GetPowerState(void)
   * @param  specifies the target access permision status
   * @retval None
   */
-static void OTP_AccessCmd(BOOL Enable)
+static void OTP_AccessCmd(bool Enable)
 {
 	OTPC_TypeDef *OTPC  = OTPC_DEV;
 
@@ -67,7 +67,7 @@ static void OTP_AccessCmd(BOOL Enable)
   *            @arg 0: read
   * @param  PwrState: TRUE/FALSE.
   */
-static void OTPPowerSwitch(BOOL BWrite, BOOL PwrState)
+static void OTPPowerSwitch(bool BWrite, bool PwrState)
 {
 	if (PwrState == ENABLE) {
 		if (OTP_GetPowerState() == DISABLE) {
@@ -110,13 +110,13 @@ u32 OTPGetCRC(void)
   * @param  Addr: otp physical address
   * @param  Data: one byte data buffer for otp data
   * @retval status value:
-  *          - _SUCCESS: read ok
-  *          - _FAIL: read fail
+  *          - SUCCESS: read ok
+  *          - FAIL: read fail
   */
-u32 OTP_Read8(u32 Addr, u8 *Data)
+int OTP_Read8(u32 Addr, u8 *Data)
 {
 	u32 TmpIdx = 0;
-	u32 bResult = _FAIL;
+	int bResult = FAIL;
 	volatile u32 *AccessReg = NULL;
 	OTPC_TypeDef *OTPC  = OTPC_DEV;
 
@@ -132,8 +132,8 @@ u32 OTP_Read8(u32 Addr, u8 *Data)
 		AccessReg = &(OTPC->OTPC_OTP_AS);//No Secure
 	}
 
-	while (IPC_SEMTake(IPC_SEM_OTP, 1000) != _TRUE) {
-		RTK_LOGS(TAG, "OTP read get hw sema fail\n");
+	while (IPC_SEMTake(IPC_SEM_OTP, 1000) != TRUE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP read get hw sema fail\n");
 	}
 
 	OTPPowerSwitch(DISABLE, ENABLE);
@@ -148,11 +148,11 @@ u32 OTP_Read8(u32 Addr, u8 *Data)
 
 	if (TmpIdx < OTP_POLL_TIMES) {
 		*Data = (u8)((*AccessReg) & OTPC_MASK_EF_DATA_NS);
-		bResult = _SUCCESS;
+		bResult = SUCCESS;
 	} else {
 		*Data = 0xff;
-		bResult = _FAIL;
-		RTK_LOGS(TAG, "OTP_Read8 Fail %x \n", Addr);
+		bResult = FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_Read8 Fail %x \n", Addr);
 	}
 
 	OTPPowerSwitch(DISABLE, DISABLE);
@@ -167,13 +167,13 @@ u32 OTP_Read8(u32 Addr, u8 *Data)
   * @param  Addr: otp physical address
   * @param  Data: one byte data buffer for otp data
   * @retval status value:
-  *          - _SUCCESS: read ok
-  *          - _FAIL: read fail
+  *          - SUCCESS: read ok
+  *          - FAIL: read fail
   */
-static BOOL OTP_ProgramMarginRead8(u32 Addr, u8 *Data)
+static int OTP_ProgramMarginRead8(u32 Addr, u8 *Data)
 {
 	u32 TmpIdx = 0;
-	u32 bResult = _FAIL;
+	int bResult = FAIL;
 	volatile u32 *AccessReg = NULL;
 	OTPC_TypeDef *OTPC  = OTPC_DEV;
 
@@ -189,8 +189,8 @@ static BOOL OTP_ProgramMarginRead8(u32 Addr, u8 *Data)
 		AccessReg = &(OTPC->OTPC_OTP_AS);//No Secure
 	}
 
-	while (IPC_SEMTake(IPC_SEM_OTP, 1000) != _TRUE) {
-		RTK_LOGS(TAG, "OTP read get hw sema fail\n");
+	while (IPC_SEMTake(IPC_SEM_OTP, 1000) != TRUE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP read get hw sema fail\n");
 	}
 	OTPPowerSwitch(DISABLE, ENABLE);
 
@@ -204,11 +204,11 @@ static BOOL OTP_ProgramMarginRead8(u32 Addr, u8 *Data)
 
 	if (TmpIdx < OTP_POLL_TIMES) {
 		*Data = (u8)((*AccessReg) & OTPC_MASK_EF_DATA_NS);
-		bResult = _SUCCESS;
+		bResult = SUCCESS;
 	} else {
 		*Data = 0xff;
-		bResult = _FAIL;
-		RTK_LOGS(TAG, "OTP_Read8 Fail %x \n", Addr);
+		bResult = FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_Read8 Fail %x \n", Addr);
 	}
 
 	OTPPowerSwitch(DISABLE,  DISABLE);
@@ -223,13 +223,13 @@ static BOOL OTP_ProgramMarginRead8(u32 Addr, u8 *Data)
   * @param  Addr: otp physical address
   * @param  Data: one byte data to write
   * @retval status value:
-  *          - _SUCCESS: write ok
-  *          - _FAIL: write fail
+  *          - SUCCESS: write ok
+  *          - FAIL: write fail
   */
-static u32 _OTP_Write8(u32 Addr, u8 Data)
+static int _OTP_Write8(u32 Addr, u8 Data)
 {
 	u32 TmpIdx = 0;
-	u32 bResult = _FAIL;
+	int bResult = FAIL;
 	volatile u32 *AccessReg = NULL;
 	OTPC_TypeDef *OTPC  = OTPC_DEV;
 
@@ -238,7 +238,7 @@ static u32 _OTP_Write8(u32 Addr, u8 Data)
 	}
 
 	if (Data == 0xFF) {
-		return _SUCCESS;
+		return SUCCESS;
 	}
 
 	if (TrustZone_IsSecure()) {
@@ -248,8 +248,8 @@ static u32 _OTP_Write8(u32 Addr, u8 Data)
 		AccessReg = &(OTPC->OTPC_OTP_AS);//No Secure
 	}
 
-	while (IPC_SEMTake(IPC_SEM_OTP, 1000) != _TRUE) {
-		RTK_LOGS(TAG, "OTP write get hw sema fail\n");
+	while (IPC_SEMTake(IPC_SEM_OTP, 1000) != TRUE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP write get hw sema fail\n");
 	}
 	OTPPowerSwitch(ENABLE, ENABLE);
 
@@ -261,10 +261,10 @@ static u32 _OTP_Write8(u32 Addr, u8 Data)
 	}
 
 	if (TmpIdx < OTP_POLL_TIMES) {
-		bResult = _SUCCESS;
+		bResult = SUCCESS;
 	} else {
-		bResult = _FAIL;
-		RTK_LOGS(TAG, "OTP_Write8 Fail %x \n", Addr);
+		bResult = FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_Write8 Fail %x \n", Addr);
 	}
 
 	OTPPowerSwitch(DISABLE, DISABLE);
@@ -279,10 +279,10 @@ static u32 _OTP_Write8(u32 Addr, u8 Data)
   * @param  Addr: otp physical address
   * @param  Data: one byte data to write
   * @retval status value:
-  *          - _SUCCESS: write ok
-  *          - _FAIL: write fail
+  *          - SUCCESS: write ok
+  *          - FAIL: write fail
   */
-u32 OTP_Write8(u32 Addr, u8 Data)
+int OTP_Write8(u32 Addr, u8 Data)
 {
 	u8 Temp;
 	u8 Target;
@@ -290,8 +290,8 @@ u32 OTP_Write8(u32 Addr, u8 Data)
 
 	Target = Data;
 
-	if (OTP_ProgramMarginRead8(Addr, &Temp) == _FAIL) {
-		RTK_LOGS(TAG, "PMR Read error!\n");
+	if (OTP_ProgramMarginRead8(Addr, &Temp) == FAIL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "PMR Read error!\n");
 		goto exit;
 	}
 
@@ -302,14 +302,14 @@ retry:
 	Data |= ~Temp;
 
 	/*program*/
-	if (_OTP_Write8(Addr, Data) == _FAIL) {
-		RTK_LOGS(TAG, "OTP program error!\n");
+	if (_OTP_Write8(Addr, Data) == FAIL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP program error!\n");
 		goto exit;
 	}
 
 	/*Read after program*/
-	if (OTP_ProgramMarginRead8(Addr, &Temp) == _FAIL)  {
-		RTK_LOGS(TAG, "PMR2 Read error!\n");
+	if (OTP_ProgramMarginRead8(Addr, &Temp) == FAIL)  {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "PMR2 Read error!\n");
 		goto exit;
 	}
 
@@ -323,23 +323,21 @@ retry:
 		}
 	}
 
-	return _SUCCESS;
+	return SUCCESS;
 
 exit:
-	return _FAIL;
-
+	return FAIL;
 }
-
 
 /**
   * @brief  physical map write four byte
   * @param  Addr: otp physical address
   * @param  Data: four byte data to Read
   * @retval status value:
-  *          - _SUCCESS: write ok
-  *          - _FAIL: write fail
+  *          - SUCCESS: write ok
+  *          - FAIL: write fail
   */
-static u32 OTP_Read32(u32 Addr, u32 *Data)
+static int OTP_Read32(u32 Addr, u32 *Data)
 {
 	u8 Temp;
 	u8 i;
@@ -347,16 +345,16 @@ static u32 OTP_Read32(u32 Addr, u32 *Data)
 	*Data = 0;
 
 	for (i = 0; i < 4; i++) {
-		if (OTP_Read8(Addr++, &Temp) == _FAIL) {
+		if (OTP_Read8(Addr++, &Temp) == FAIL) {
 			goto exit;
 		}
 
 		*Data |= (((u32)Temp) << (8 * i));
 	}
 
-	return _SUCCESS;
+	return SUCCESS;
 exit:
-	return _FAIL;
+	return FAIL;
 }
 
 
@@ -365,20 +363,20 @@ exit:
   * @param  offset: offsetlogical addr
   * @param  Contant: packet data
   * @retval status value:
-  *          - _SUCCESS: write ok
-  *          - _FAIL: write fail
+  *          - SUCCESS: write ok
+  *          - FAIL: write fail
   */
-static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
+static int OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 {
 	u32 Idx = 0;
 	u32 OTPData;
 
 	/* Make sure the offset is correct*/
 	if (offset > OTP_LMAP_LEN) {
-		RTK_LOGS(TAG, "Make sure OTP logical area  :%x  defined\n", offset);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Make sure OTP logical area  :%x  defined\n", offset);
 	}
 
-	RTK_LOGS(TAG, "OTP_PG_Packet Byte  [%x] %x \n", offset, Contant);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "OTP_PG_Packet Byte  [%x] %x \n", offset, Contant);
 
 	//count the physical written num of word
 	while (Idx < LOGICAL_MAP_SECTION_LEN) {
@@ -401,8 +399,8 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 	}
 
 	if (Idx  > LOGICAL_MAP_SECTION_LEN) {
-		RTK_LOGS(TAG, "OTP_PG_Packet no enough space %x\n", Idx);
-		return _FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_PG_Packet no enough space %x\n", Idx);
+		return FAIL;
 	}
 
 	OTP_Write8(Idx++, offset  & 0xFF); //header[7:0]
@@ -410,7 +408,7 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 	OTP_Write8(Idx++, Contant);
 	OTP_Write8(Idx++, ((OTP_LTYP1 << 4) | 0x0F)); //header[31:24]
 
-	return _SUCCESS;
+	return SUCCESS;
 }
 
 
@@ -420,10 +418,10 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
   * @param  len: the size will be wirte,should less than 16
   * @param  pContant: packet data
   * @retval status value:
-  *          - _SUCCESS: write ok
-  *          - _FAIL: write fail
+  *          - SUCCESS: write ok
+  *          - FAIL: write fail
   */
-static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
+static int OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 {
 	u32 Idx = 0;
 	u32 OTPData;
@@ -431,17 +429,17 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 
 	/* 4byte align and size should less than 16bytes*/
 	if ((len > OTP_LPGPKT_SIZE)  || ((len & 0x03) != 0)) {
-		RTK_LOGS(TAG, "OTP_PG_Packet_Word size error :%x len:%x \n", offset, len);
-		return _FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_PG_Packet_Word size error :%x len:%x \n", offset, len);
+		return FAIL;
 	}
 
 	/* Make sure the offset is correct*/
 	if (offset > OTP_LMAP_LEN) {
-		RTK_LOGS(TAG, "Make sure OTP logical area  :%x  defined\n", offset);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Make sure OTP logical area  :%x  defined\n", offset);
 	}
 
 	for (IdxTemp = 0; IdxTemp < len; IdxTemp++) {
-		RTK_LOGS(TAG, "OTP_PG_Packet [%x] %x \n", IdxTemp, *(pContant + IdxTemp));
+		RTK_LOGS(TAG, RTK_LOG_INFO, "OTP_PG_Packet [%x] %x \n", IdxTemp, *(pContant + IdxTemp));
 	}
 
 	//count the physical written num of word
@@ -466,8 +464,8 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 
 
 	if (Idx + len > LOGICAL_MAP_SECTION_LEN) {
-		RTK_LOGS(TAG, "OTP_PG_Packet no enough space %x \n", Idx);
-		return _FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_PG_Packet no enough space %x \n", Idx);
+		return FAIL;
 	}
 
 	OTP_Write8(Idx++, offset & 0xFF); //header[7:0]
@@ -479,7 +477,7 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 		OTP_Write8(Idx++, pContant[IdxTemp]);
 	}
 
-	return _SUCCESS;
+	return SUCCESS;
 }
 
 
@@ -487,10 +485,10 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
   * @brief  read OTP logical map
   * @param  pbuf: OTP_LMAP_LEN len buffer used for OTP Logical map
   * @retval status value:
-  *          - _SUCCESS: read ok
-  *          - _FAIL: read fail
+  *          - SUCCESS: read ok
+  *          - FAIL: read fail
   */
-u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
+int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 {
 	u32 OTP_Addr = 0;
 	u32 offset;
@@ -498,8 +496,8 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 	u8 data, plen, type;
 
 	if ((addr + len) > OTP_LMAP_LEN) {
-		RTK_LOGS(TAG, "LogicalMap Read error %x+%x  exceed limit\n", addr, len);
-		return _FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "LogicalMap Read error %x+%x  exceed limit\n", addr, len);
+		return FAIL;
 	}
 
 	/*  0xff will be OTP default value instead of 0x00. */
@@ -558,12 +556,12 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 		}
 
 		if ((OTP_Addr & 0x03) != 0) {
-			RTK_LOGS(TAG, "alignment error %x %x \n", OTP_Addr, OTPData);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "alignment error %x %x \n", OTP_Addr, OTPData);
 		}
 
 	}
 
-	return _SUCCESS;
+	return SUCCESS;
 }
 
 
@@ -573,24 +571,24 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
   * @param  cnts: byte number, should be even
   * @param  data: data buffer to be write
   * @retval status value:
-  *          - _SUCCESS: write ok
-  *          - _FAIL: write fail
+  *          - SUCCESS: write ok
+  *          - FAIL: write fail
   */
-u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
+int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 {
 	u32	base, offset;
 	u32 bytemap = 0, byte_change = 0, wordmap = 0, word_change = 0;
 	u8 word_start = 0, word_end = 0, word_offset;
 	u8 *pcontant = data;
 	u32	i, j;
-	u32	ret = _SUCCESS;
+	int	ret = SUCCESS;
 	u8	newdata[OTP_LPGPKT_SIZE];
 	s32 left_cnts = cnts;
 	u8 write_pkt;
 
 	if ((addr + cnts) > OTP_LMAP_LEN) {
-		RTK_LOGS(TAG, "LogicalMap Write error %x+%x  exceed limit\n", addr, cnts);
-		return _FAIL;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "LogicalMap Write error %x+%x  exceed limit\n", addr, cnts);
+		return FAIL;
 	}
 
 	/* 4bytes one section */
@@ -602,9 +600,9 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 		write_pkt = left_cnts + offset > OTP_LPGPKT_SIZE ? OTP_LPGPKT_SIZE : left_cnts + offset;
 		ret = OTP_LogicalMap_Read(newdata, base, OTP_LPGPKT_SIZE);
 
-		if (ret == _FAIL) {
-			RTK_LOGS(TAG, "LogicalMap Read error when write @ %x \n", base);
-			return _FAIL;
+		if (ret == FAIL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "LogicalMap Read error when write @ %x \n", base);
+			return FAIL;
 		}
 
 		/*compare and record changed data*/
@@ -614,7 +612,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 				bytemap |= BIT(i);
 				wordmap |= BIT(i >> 2);
 				byte_change++;
-				RTK_LOGS(TAG, "newdata[%x]= %x\n", i, newdata[i]);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "newdata[%x]= %x\n", i, newdata[i]);
 			}
 		}
 
@@ -663,7 +661,7 @@ next:
 		wordmap = 0;
 		byte_change = 0;
 
-		RTK_LOGS(TAG, "next write cycle Base %x cnts %x \n", base, left_cnts);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "next write cycle Base %x cnts %x \n", base, left_cnts);
 	}
 
 	return ret;

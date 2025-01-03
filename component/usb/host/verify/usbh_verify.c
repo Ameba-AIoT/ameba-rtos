@@ -46,7 +46,7 @@ static int usbh_verify_usb_status_check(void);
 static int usbh_verify_all_out_finish(void);
 static inline void usbh_verify_success(usbh_verify_xfer_t *xfer);
 /* Private variables ---------------------------------------------------------*/
-static const char *TAG = "VFY";
+static const char *const TAG = "VFY";
 static const char *TEXT_CTRL = "CTRL";
 static const char *TEXT_BULK = "BULK";
 static const char *TEXT_INTR = "INTR";
@@ -145,7 +145,7 @@ static void usbh_verify_dump_ep_info(usbh_verify_xfer_t *xfer)
 #if USBH_DUMP_EP_MSG
 	char *xfer_type = usbh_verify_get_xfer_type_text(xfer);
 	char *direction = (USB_EP_IS_IN(xfer->ep_addr)) ? "IN" : "OUT";
-	RTK_LOGS(TAG, "[VFY] Dump: %s-%s mask=0x%08x state=%d EP%02x/pipe=%d MPS=%d transize=%d type=%d interval=%d\n",
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Dump: %s-%s mask=0x%08x state=%d EP%02x/pipe=%d MPS=%d transize=%d type=%d interval=%d\n",
 			 xfer_type, direction, xfer->test_mask,
 			 xfer->state, xfer->ep_addr,
 			 xfer->pipe_id, xfer->ep_mps, xfer->trans_size,
@@ -164,15 +164,16 @@ static void usbh_verify_dump_buf(u8 *buf, u32 len)
 	}
 	for (i = 0; i < len;) {
 		if (i + 10 <= len) {
-			RTK_LOGS(TAG, " %3d %3d %3d %3d %3d %3d %3d %3d %3d %3d\n", buf[i], buf[i + 1], buf[i + 2], buf[i + 3], buf[i + 4], buf[i + 5], buf[i + 6], buf[i + 7],
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, " %3d %3d %3d %3d %3d %3d %3d %3d %3d %3d\n", buf[i], buf[i + 1], buf[i + 2], buf[i + 3], buf[i + 4], buf[i + 5], buf[i + 6],
+					 buf[i + 7],
 					 buf[i + 8],
 					 buf[i + 9]);
 			i += 10;
 		} else {
 			for (; i < len; i++) {
-				RTK_LOGS(TAG, " %3d ", buf[i]);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, " %3d ", buf[i]);
 			}
-			RTK_LOGS(TAG, "\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 			break;
 		}
 	}
@@ -187,7 +188,7 @@ static int usbh_verify_add_ep(usbh_ep_desc_t *ep_desc)
 	usbh_verify_host_t *verify = &usbh_verify_host;
 
 	if (verify->ep_count >= USBH_EP_COUNT_MAX) {
-		RTK_LOGS(TAG, "[VFY] Too much EP defined, just support %d EPs\n", USBH_EP_COUNT_MAX);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Too much EP defined, just support %d EPs\n", USBH_EP_COUNT_MAX);
 		return HAL_ERR_MEM;
 	}
 
@@ -223,7 +224,7 @@ static void usbh_verify_get_endpoints(usbh_if_desc_t *intf)
 	usbh_ep_desc_t *ep_desc;
 
 	if (intf->bNumEndpoints > USBH_EP_COUNT_MAX) {
-		RTK_LOGS(TAG, "[VFY] Too much EP cnt\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Too much EP cnt\n");
 		intf->bNumEndpoints = USBH_EP_COUNT_MAX;
 	}
 
@@ -246,7 +247,7 @@ static int usbh_verify_all_out_finish(void)
 		if ((verify->host->tick - verify->finish_tick) < USBH_FORCE_IN_EXIT_SOF_COUNT_MAX) {
 			ret = 0;
 		} else {
-			RTK_LOGS(TAG, "[VFY] Force all USB TX finish tick(%d)\n", verify->host->tick);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Force all USB TX finish tick(%d)\n", verify->host->tick);
 		}
 	} else {
 		for (ep_index = 0; ep_index < verify->ep_count; ep_index++) {
@@ -259,7 +260,7 @@ static int usbh_verify_all_out_finish(void)
 		}
 		//if ret =1 means all usb out finish,update the finish tick value
 		if ((1 == ret) && (0 == verify->finish_tick)) {
-			RTK_LOGS(TAG, "[VFY] All USB OUT transmit finish tick(%d)\n\n", verify->host->tick);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "All USB OUT transmit finish tick(%d)\n\n", verify->host->tick);
 			verify->finish_tick = verify->host->tick;
 			ret = 0;
 		}
@@ -279,7 +280,7 @@ static void usbh_verify_check_indata_valid(usbh_verify_xfer_t *rx_xfer)
 	if ((rx_xfer) && (rx_xfer->xfer_len > 0)) {
 		if (rx_xfer->expect_data != rx_xfer->xfer_buf[0]) {
 			rx_xfer->error_cnt ++;
-			RTK_LOGS(TAG, "[VFY] %s err %d/want %d get %d\n", usbh_verify_get_xfer_type_text(rx_xfer),
+			RTK_LOGS(TAG, RTK_LOG_INFO, "%s err %d/want %d get %d\n", usbh_verify_get_xfer_type_text(rx_xfer),
 					 rx_xfer->error_cnt, rx_xfer->expect_data, rx_xfer->xfer_buf[0]);
 		}
 		rx_xfer->expect_data = rx_xfer->xfer_buf[0] + 1;
@@ -295,7 +296,7 @@ static void usbh_verify_check_for_next_loop(usbh_verify_xfer_t *xfer)
 	if (usbh_verify_all_out_finish() || (xfer->xfer_cnt >= verify->test_count_limit)) {
 		xfer->state = VERIFY_STATE_IDLE;
 		verify->ep_test &= ~(xfer->test_mask);
-		RTK_LOGS(TAG, "[VFY] %s %s test finish %d/%d/%x\n", xfer_type, direction, xfer->xfer_cnt, verify->test_count_limit, verify->ep_test);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "%s %s test finish %d/%d/%x\n", xfer_type, direction, xfer->xfer_cnt, verify->test_count_limit, verify->ep_test);
 		if (xfer->ep_type == USB_CH_EP_TYPE_BULK) {
 			verify->bulk_trx_state = USBH_VERIFY_TRX_IDLE;
 		} else if (xfer->ep_type == USB_CH_EP_TYPE_INTR) {
@@ -746,7 +747,7 @@ static void usbh_verify_ctrl_process_rx(usb_host_t *host)
 	if (USBH_VERIFY_TRX_IDLE == verify->ctrl_trx_state) {
 		verify->ctrl_trx_state = USBH_VERIFY_RX;
 	}
-	//RTK_LOGS(TAG, "[VFY] CTRL in Type state=%d/len=%d\n", ep->state, ep->xfer_len);
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL in Type state=%d/len=%d\n", ep->state, ep->xfer_len);
 	switch (ep->state) {
 	case VERIFY_STATE_XFER:
 		setup.b.bmRequestType = USB_D2H | USB_REQ_RECIPIENT_DEVICE | USB_REQ_TYPE_VENDOR;
@@ -755,16 +756,16 @@ static void usbh_verify_ctrl_process_rx(usb_host_t *host)
 		setup.b.wIndex = 0x00U;
 		setup.b.wLength = ep->xfer_len;
 		ret = usbh_ctrl_request(host, &setup, ep->xfer_buf);
-		//RTK_LOGS(TAG, "[VFY] Enter ctrl RX state=%d/ret=%d\n", ep->state, ret);
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Enter ctrl RX state=%d/ret=%d\n", ep->state, ret);
 		if (ret == HAL_OK) {
 			usbh_verify_success(ep);
 			usbh_verify_check_indata_valid(ep);
 			verify->ctrl_trx_state = USBH_VERIFY_TRX_IDLE;
-			//RTK_LOGS(TAG, "[VFY] CTRL RX xferlen=%d,count=%d/%d\n", ep->xfer_len, ep->xfer_cnt, verify->test_count_limit);
+			//RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL RX xferlen=%d,count=%d/%d\n", ep->xfer_len, ep->xfer_cnt, verify->test_count_limit);
 			//usbh_verify_dump_buf(ep->xfer_buf, ep->xfer_len);
 			usb_os_memset((void *)ep->xfer_buf, (u8)ep->xfer_cnt, ep->xfer_len);
 			if (ep->xfer_cnt >= verify->test_count_limit) {
-				RTK_LOGS(TAG, "[VFY] CTRL RX test finish(%d/%d/%x)\n", ep->xfer_cnt, verify->test_count_limit, verify->ep_test);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "CTRL RX test finish(%d/%d/%x)\n", ep->xfer_cnt, verify->test_count_limit, verify->ep_test);
 				ep->state = VERIFY_STATE_IDLE;
 				verify->ep_test &= ~(ep->test_mask);
 				loop_ctl = 0;
@@ -774,12 +775,12 @@ static void usbh_verify_ctrl_process_rx(usb_host_t *host)
 
 		} else if (ret != HAL_BUSY) {
 			ep->state = VERIFY_STATE_ERROR;
-			RTK_LOGS(TAG, "[VFY] Fail to TX CTRL req, ret %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to TX CTRL req, ret %d\n", ret);
 		}
 		break;
 
 	case VERIFY_STATE_ERROR:
-		RTK_LOGS(TAG, "[VFY] Err, finish RX Test %d/%d\n", ep->xfer_cnt, verify->test_count_limit);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err, finish RX Test %d/%d\n", ep->xfer_cnt, verify->test_count_limit);
 		ret = usbh_ctrl_clear_feature(host, 0x00U);
 		if (ret == HAL_OK) {
 			ep->state = VERIFY_STATE_IDLE;
@@ -821,10 +822,10 @@ static void usbh_verify_ctrl_process_tx(usb_host_t *host)
 		if (ret == HAL_OK) {
 			usbh_verify_success(ep);
 			verify->ctrl_trx_state = USBH_VERIFY_TRX_IDLE;
-			//RTK_LOGS(TAG, "[VFY] Xferlen %d count %d/%d\n", ep->xfer_len, ep->xfer_cnt, verify->test_count_limit);
+			//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Xferlen %d count %d/%d\n", ep->xfer_len, ep->xfer_cnt, verify->test_count_limit);
 			usb_os_memset((void *)ep->xfer_buf, (u8)ep->xfer_cnt, ep->xfer_len);
 			if (ep->xfer_cnt >= verify->test_count_limit) {
-				RTK_LOGS(TAG, "[VFY] CTRL TX test finish %d/%d/%x\n", ep->xfer_cnt, verify->test_count_limit, verify->ep_test);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "CTRL TX test finish %d/%d/%x\n", ep->xfer_cnt, verify->test_count_limit, verify->ep_test);
 				ep->state = VERIFY_STATE_IDLE;
 				verify->ep_test &= ~(ep->test_mask);
 				loop_ctl = 0;
@@ -833,12 +834,12 @@ static void usbh_verify_ctrl_process_tx(usb_host_t *host)
 			}
 		} else if (ret != HAL_BUSY) {
 			ep->state = VERIFY_STATE_ERROR;
-			RTK_LOGS(TAG, "[VFY] Fail to TX CTRL req, ret %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to TX CTRL req, ret %d\n", ret);
 		}
 		break;
 
 	case VERIFY_STATE_ERROR:
-		RTK_LOGS(TAG, "[VFY] Err, finish TX test %d/%d\n", ep->xfer_cnt, verify->test_count_limit);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err, finish TX test %d/%d\n", ep->xfer_cnt, verify->test_count_limit);
 		ret = usbh_ctrl_clear_feature(host, 0x00U);
 		if (ret == HAL_OK) {
 			ep->state = VERIFY_STATE_IDLE;
@@ -910,14 +911,14 @@ int usbh_verify_switch_interface(u8 if_num, u8 if_alt)
 		if (ret == HAL_OK) {
 			break;
 		} else if (ret != HAL_BUSY) {
-			RTK_LOGS(TAG, "[VFY] Fail to TX Ctrl req, ret %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to TX Ctrl req, ret %d\n", ret);
 			return ret;
 		}
 	} while (1);
 
 	verify_if_desc = usbh_get_interface_descriptor(host, verify->interface_id, verify->interface_id);
 	if (verify_if_desc == NULL) {
-		RTK_LOGS(TAG, "[VFY] Fail to get itf desc");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to get itf desc");
 		return HAL_ERR_PARA;
 	}
 
@@ -959,7 +960,7 @@ static int usbh_verify_nak(usb_host_t *host, u8 pipe_id)
 	}
 
 	ep_type = usbh_get_ep_type(host, pipe_id);
-	//RTK_LOGS(TAG, "[VFY] nak type=%d/pipe_id=%d\n",ep_type,pipe_id);
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "nak type=%d/pipe_id=%d\n",ep_type,pipe_id);
 	if (ep_type == USB_CH_EP_TYPE_INTR) {
 		/* Do not retransmit in this loop, it will do in next SOF */
 		return HAL_OK;
@@ -985,20 +986,20 @@ static int usbh_verify_attach(usb_host_t *host)
 	/* Get interface index */
 	interface_id = usbh_get_interface(host, VERIFY_CLASS_CODE, VERIFY_SUBCLASS_CODE, VERIFY_PROTOCOL);
 	if (interface_id == 0xFFU) {
-		RTK_LOGS(TAG, "[VFY] Fail to find itf");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to find itf");
 		return HAL_ERR_PARA;
 	}
 	verify->host = host;
 
 	status = usbh_verify_switch_interface(interface_id, 0);
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, "[VFY] Fail to set itf");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to set itf");
 		return HAL_ERR_UNKNOWN;
 	}
 
 	usbh_if_desc = usbh_get_interface_descriptor(host, interface_id, 0);
 	if (usbh_if_desc == NULL) {
-		RTK_LOGS(TAG, "[VFY] Fail to get itf desc\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to get itf desc\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -1054,13 +1055,14 @@ static void usbh_verify_dump_testmask(void)
 	usbh_verify_host_t *verify = &usbh_verify_host;
 	usbh_verify_xfer_t *xfer;
 	if (verify->ep_test) {
-		RTK_LOGS(TAG, "[VFY] Ep flag=0x%08x\n", verify->ep_test);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ep flag=0x%08x\n", verify->ep_test);
 		for (ep_index = 0; ep_index < verify->ep_count; ep_index++) {
 			xfer = verify->ep_array + ep_index;
 			if (xfer->test_mask & verify->ep_test) {
-				RTK_LOGS(TAG, "[VFY] USBH %s-0x%08x", usbh_verify_get_xfer_type_text(xfer), xfer->test_mask);
+				RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "%s %s-0x%08x", usbh_verify_get_xfer_type_text(xfer), (USB_EP_IS_IN(xfer->ep_addr) ? "IN" : "OUT"), xfer->test_mask);
 			}
 		}
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "\n");
 	}
 }
 
@@ -1073,7 +1075,7 @@ static int usbh_verify_process(usb_host_t *host)
 	if (0 == verify->start_process) {
 		usb_os_sleep_ms(1000);
 		if (verify->loopcount % 60 == 0) {
-			RTK_LOGS(TAG, "[VFY] Main process idle mask 0x%08x\n", verify->ep_test);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Main process idle mask 0x%08x\n", verify->ep_test);
 		}
 		return status;
 	}
@@ -1101,14 +1103,14 @@ static int usbh_verify_process(usb_host_t *host)
 	}
 	if (verify->loopcount > USBH_MAIN_PROCESS_MONITOR_COUNT) {
 		verify->loopcount = 0;
-		RTK_LOGS(TAG, "[VFY] Process running,nexttransfor %d, testmask 0x%08x\n", verify->next_transfor, verify->ep_test);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Process running,next transfor %d, testmask 0x%08x\n", verify->next_transfor, verify->ep_test);
 		usbh_verify_dump_testmask();
 	}
 	if (verify->next_transfor) {
 		verify->next_transfor = 0;
 		usbh_notify_class_state_change(host);
 	} else {
-		RTK_LOGS(TAG, "[VFY] Main Process switch to idle, transfor %d, testmask 0x%08x\n", verify->next_transfor, verify->ep_test);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Main Process switch to idle, transfor %d, testmask 0x%08x\n", verify->next_transfor, verify->ep_test);
 		usbh_verify_dump_testmask();
 		verify->start_process = 0;
 	}
@@ -1135,7 +1137,7 @@ static int usbh_verify_usb_status_check(void)
 	usbh_verify_host_t *cdc = &usbh_verify_host;
 
 	if (cdc->usbh_state < USBH_VERIFY_SETUP) {
-		RTK_LOGS(TAG, "[VFY] USB not setup, wait\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB not setup, wait\n");
 		usb_os_sleep_ms(1000);
 		return HAL_BUSY;
 	}
@@ -1156,7 +1158,7 @@ static int usbh_verify_transmit_data(usbh_verify_xfer_t *ep)
 		usbh_verify_test_flag(verify, ep);
 		ret = HAL_OK;
 	} else {
-		RTK_LOGS(TAG, "[VFY] %s out busy %d ep=%d\n", usbh_verify_get_xfer_type_text(ep), ep->state, ep->ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "%s out busy %d ep=%d\n", usbh_verify_get_xfer_type_text(ep), ep->state, ep->ep_addr);
 		usb_os_sleep_ms(1);
 	}
 
@@ -1177,7 +1179,7 @@ static int usbh_verify_receive_data(usbh_verify_xfer_t *ep)
 		usbh_verify_test_flag(verify, ep);
 		ret = HAL_OK;
 	} else {
-		RTK_LOGS(TAG, "[VFY] %s in busy %d\n", usbh_verify_get_xfer_type_text(ep), ep->state);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "%s in busy %d\n", usbh_verify_get_xfer_type_text(ep), ep->state);
 		usb_os_sleep_ms(1);
 	}
 
@@ -1230,7 +1232,7 @@ static void usbh_verify_longrun_thread(void *param)
 		}
 	} while (usbh_verifty_test_task == 1);
 	usbh_verifty_test_task = 0;
-	RTK_LOGS(TAG, "[VFY] Exit the long run task\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Exit the long run task\n");
 	rtos_task_delete(NULL);
 }
 
@@ -1241,17 +1243,17 @@ static void usbh_verify_dump_allep(void)
 	usbh_verify_xfer_t *ep;
 	u8 ep_index;
 
-	RTK_LOGS(TAG, "[VFY] OUT/IN complete issue\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "OUT/IN complete issue\n");
 
 	ep = &verify->ctrl_out_xfer;
-	RTK_LOGS(TAG, "\tCTRL OUT done%d/err%d mask %08x\n", ep->total_xfer_cnt, ep->error_cnt, ep->test_mask);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tCTRL OUT done%d/err%d mask %08x\n", ep->total_xfer_cnt, ep->error_cnt, ep->test_mask);
 	ep = &verify->ctrl_in_xfer;
-	RTK_LOGS(TAG, "\tCTRL  IN done%d/err%d mask %08x\n", ep->total_xfer_cnt, ep->error_cnt, ep->test_mask);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tCTRL  IN done%d/err%d mask %08x\n", ep->total_xfer_cnt, ep->error_cnt, ep->test_mask);
 
 	/* Loop All EP */
 	for (ep_index = 0; ep_index < verify->ep_count; ep_index++) {
 		ep = verify->ep_array + ep_index;
-		RTK_LOGS(TAG, "\t%s %3s done%d/err%d mask %08x EP%02x/pipe %d MPS %d transize %d type %d interval %d\n", usbh_verify_get_xfer_type_text(ep),
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t%s %3s done%d/err%d mask %08x EP%02x/pipe %d MPS %d transize %d type %d interval %d\n", usbh_verify_get_xfer_type_text(ep),
 				 (USB_EP_IS_IN(ep->ep_addr) ? "IN" : "OUT"),
 				 ep->total_xfer_cnt, ep->error_cnt,
 				 ep->test_mask, ep->ep_addr, ep->pipe_id,
@@ -1273,11 +1275,11 @@ static void usbh_verify_ep_status_thread(void *param)
 			loop = 0;
 			usbh_verify_dump_allep();
 		}
-		RTK_LOGS(TAG, "[VFY] Next_transfor %d, testmask 0x%08x\n", verify->next_transfor, verify->ep_test);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Next_transfor %d, testmask 0x%08x\n", verify->next_transfor, verify->ep_test);
 		rtos_time_delay_ms(5 * 1000); //1s*n
 	} while (usbh_verifty_status_task == 1);
 	usbh_verifty_status_task = 0;
-	RTK_LOGS(TAG, "[VFY] Ep status task exit\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Ep status task exit\n");
 	rtos_task_delete(NULL);
 }
 
@@ -1344,7 +1346,7 @@ int usbh_verify_ep_enable(usbh_verify_xfer_t *xfer)
 	if (PIPE_IS_VALID(pipe_id)) {
 		xfer->pipe_id = pipe_id;
 	} else {
-		RTK_LOGS(TAG, "[VFY] Fail to alloc pipe for %s EP%02x\n", usbh_verify_get_xfer_type_text(xfer), xfer->ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc pipe for %s EP%02x\n", usbh_verify_get_xfer_type_text(xfer), xfer->ep_addr);
 		status = HAL_ERR_MEM;
 		goto exit;
 	}
@@ -1352,7 +1354,7 @@ int usbh_verify_ep_enable(usbh_verify_xfer_t *xfer)
 	status = usbh_open_pipe(host, xfer->pipe_id, xfer->ep_addr, xfer->ep_type, xfer->ep_mps);
 	if (status != HAL_OK) {
 		status = HAL_ERR_HW;
-		RTK_LOGS(TAG, "[VFY] Open pipe %02x fail\n", xfer->pipe_id);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open pipe %02x fail\n", xfer->pipe_id);
 		goto open_pipe_fail_exit;
 	}
 
@@ -1386,7 +1388,7 @@ open_pipe_fail_exit:
 	xfer->pipe_id = USBH_PIPE_VALID_VALUE;
 exit:
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, "[VFY] Ep enable fail %d\n", status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ep enable fail %d\n", status);
 	}
 	return status;
 }
@@ -1415,7 +1417,7 @@ void usbh_verify_start_process(void)
 		verify->finish_tick = 0;
 		verify->start_process = 1;
 		usbh_notify_class_state_change(host);
-		//RTK_LOGS(TAG, "[VFY] Process start\n");
+		//RTK_LOGS(TAG, RTK_LOG_INFO, "Process start\n");
 	}
 }
 
@@ -1512,7 +1514,7 @@ void usbh_verify_longrun_thread_stop(void)
 		usbh_verifty_test_task = 2;
 	}
 	do {
-		RTK_LOGS(TAG, "[VFY] Host,w ait longrun task exit\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Host,wait longrun task exit\n");
 		if (usbh_verifty_test_task == 0) {
 			break;
 		} else {
@@ -1531,7 +1533,7 @@ void usbh_verify_looprun_test(u16 size)
 	if (0 == usbh_verifty_test_task) {
 		status = rtos_task_create(&task, "usbd_ep_thread", usbh_verify_longrun_thread, NULL, 1024U, 2U);
 		if (status != SUCCESS) {
-			RTK_LOGS(TAG, "[VFY] Fail to create USBH EP status task\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USBH EP status task\n");
 			usbh_verifty_test_task = 0;
 		}
 	}
@@ -1558,7 +1560,7 @@ void usbh_verify_ep_status_start(void)
 	if (0 == usbh_verifty_status_task) {
 		status = rtos_task_create(&task, "usbd_ep_thread", usbh_verify_ep_status_thread, NULL, 1024U, 2U);
 		if (status != SUCCESS) {
-			RTK_LOGS(TAG, "[VFY] Fail to create USBH EP status task\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USBH EP status task\n");
 			usbh_verifty_status_task = 0;
 		}
 	}
@@ -1568,11 +1570,11 @@ void usbh_verify_ep_debug_dump(void)
 {
 	usbh_verify_host_t *verify = &usbh_verify_host;
 
-	RTK_LOGS(TAG, "[VFY] StartFlag %d\n", verify->start_process);
-	RTK_LOGS(TAG, "[VFY] Test mask %d\n", verify->ep_test);
-	RTK_LOGS(TAG, "[VFY] Next trans %d\n", verify->next_transfor);
-	RTK_LOGS(TAG, "[VFY] Looptimes %d\n", verify->test_count_limit);
-	RTK_LOGS(TAG, "[VFY] Ctrl-Bulk-Intr-Isoc trxsts %d %d %d %d\n",
+	RTK_LOGS(TAG, RTK_LOG_INFO, "StartFlag %d\n", verify->start_process);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Test mask %d\n", verify->ep_test);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Next trans %d\n", verify->next_transfor);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Looptimes %d\n", verify->test_count_limit);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl-Bulk-Intr-Isoc trxsts %d %d %d %d\n",
 			 verify->ctrl_trx_state, verify->bulk_trx_state, verify->intr_trx_state, verify->isoc_trx_state);
 
 	usbh_verify_dump_allep();

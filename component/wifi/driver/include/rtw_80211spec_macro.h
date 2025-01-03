@@ -151,7 +151,6 @@
 #define MAX_NETWORK_COUNT                  128
 #define MAX_CHANNEL_NUMBER                 161
 
-#define CRC_LENGTH		4U
 #define P80211_OUI_LEN 3
 #define LIB1X_EAPOL_HDRLEN	4
 
@@ -162,7 +161,7 @@
 #define RSN_HEADER_LEN 4
 #define RSN_SELECTOR_LEN 4
 #define RSNXE_MIN_LEN 3
-#define RSNXE_MAX_LEN (18)/*Draft P802.11REVmd_D5.0 p1464*/
+
 
 #define MAXTID	16
 #define WIRELESS_EXT		22
@@ -243,12 +242,6 @@
 
 #define WLAN_EID_EXT_CAP_MAX_LEN 10
 
-#define MAX_WPA_IE_LEN (257)
-#define MAX_WPS_IE_LEN (512)
-#define MAX_P2P_IE_LEN (256)
-#define MAX_WFD_IE_LEN (128)
-#define MAX_FT_IE_LEN (256)
-
 #define _WMM_IE_Length_				7  // for WMM STA
 #define _WMM_Para_Element_Length_		24
 
@@ -287,15 +280,6 @@
 
 #define BIP_MAX_KEYID 5
 #define BIP_AAD_SIZE  20
-
-/*wlan over head : [WLAN_HDR_A4_QOS_HTC][IV][SNAP][][MIC][ICV]*/
-#define WLAN_HDR_A4_QOS_HTC_LEN	36
-#define WLAN_MAX_IV_LEN	8
-#define WLAN_SNAP_HEADER	8
-#define WLAN_MAX_MIC_LEN	8
-#define WLAN_MAX_ICV_LEN	8
-#define WLAN_MAX_PROTOCOL_OVERHEAD (WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+\
-							WLAN_SNAP_HEADER+WLAN_MAX_MIC_LEN+WLAN_MAX_ICV_LEN)/*=68*/
 
 #define _TO_DS_		BIT(8)
 #define _FROM_DS_	BIT(9)
@@ -508,7 +492,7 @@
 ( \
 	( (addr[0] == 0xff) && (addr[1] == 0xff) && \
 		(addr[2] == 0xff) && (addr[3] == 0xff) && \
-		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? _TRUE : _FALSE \
+		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? TRUE : FALSE \
 )
 
 #define RTW_RSN_CAPABILITY_RSVD		BIT(15)
@@ -756,9 +740,9 @@ static inline u8 *rtw_get_beacon_interval_from_ie(u8 *ie)
 __inline static int IS_IPV6_MCAST(const u8 *da)
 {
 	if ((*da == 0x33 && *(da + 1) == 0x33)) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 
@@ -766,18 +750,18 @@ __inline static int IS_IPV6_MCAST(const u8 *da)
 __inline static int IS_MCAST(unsigned char *da)
 {
 	if ((*da) & 0x01) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 
 __inline static int IsFrameTypeCtrl(unsigned char *pframe)
 {
 	if (BIT(2) == GetFrameType(pframe)) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 

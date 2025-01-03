@@ -1,4 +1,4 @@
-if(USER_SRC_DIR)
+if(USER_SRC_DIR AND CONFIG_CORE_AS_AP)
     if(IS_ABSOLUTE USER_SRC_DIR)
         add_subdirectory(${USER_SRC_DIR} ${CMAKE_CURRENT_BINARY_DIR}/src)
     else()

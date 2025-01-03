@@ -3,7 +3,9 @@ set(
     ${BASEDIR}/component/network/mqtt/MQTTClient
     ${BASEDIR}/component/network/mqtt/MQTTPacket
     ${BASEDIR}/component/network/cJSON
+    ${BASEDIR}/component/network/websocket
     ${BASEDIR}/component/file_system/kv
+    ${BASEDIR}/component/utils/ringbuffer
 )
 
 set(APP_DIR ${TARGETDIR}/app/monitor)
@@ -36,6 +38,7 @@ if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
         APPEND CSRC
         ${DIR}/atcmd_service.c
         ${DIR}/atcmd_sys.c
+        ${DIR}/atcmd_fs.c
         ${DIR}/atcmd_bt_mp.c
     )
 
@@ -44,7 +47,8 @@ if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
             APPEND CSRC
             ${DIR}/atcmd_wifi.c
             ${DIR}/atcmd_mqtt.c
-            ${DIR}/atcmd_lwip.c
+            ${DIR}/atcmd_sockets.c
+            ${DIR}/atcmd_websocket.c
         )
     endif()
 
@@ -59,6 +63,7 @@ if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
         list(
             APPEND CSRC
             ${DIR}/at_intf_uart.c
+            ${DIR}/at_intf_spi.c
         )
     endif()
 endif()

@@ -104,7 +104,7 @@ int rtos_mutex_delete(rtos_mutex_t p_handle)
 		return SUCCESS;
 	} else {
 		vSemaphoreDelete((QueueHandle_t)p_handle);
-		RTK_LOGS(NOTAG, "[%s] %s <<< The mutex has not been released, but the mutex has been deleted. >>>\n", pcTaskGetTaskName(NULL), __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] %s <<< The mutex has not been released, but the mutex has been deleted. >>>\n", pcTaskGetTaskName(NULL), __FUNCTION__);
 		return FAIL;
 	}
 }

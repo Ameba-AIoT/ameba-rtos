@@ -3,11 +3,14 @@ set(BT_DIR ${BASEDIR}/component/bluetooth)
 set(
     CSRC 
     ${BT_DIR}/rtk_stack/src/mesh/cmd/mesh_cmd.c 
+	${BT_DIR}/rtk_stack/src/mesh/common/blob_client_app.c
+	${BT_DIR}/rtk_stack/src/mesh/common/dfu_distributor_app.c
+	${BT_DIR}/rtk_stack/src/mesh/common/dfu_initiator_app.c
+	${BT_DIR}/rtk_stack/src/mesh/model/blob_transfer_client.c
 	${BT_DIR}/rtk_stack/src/mesh/model/delay_msg_rsp.c 
-	${BT_DIR}/rtk_stack/src/mesh/model/realtek/datatrans_model.c 
-    ${BT_DIR}/rtk_stack/src/mesh/model/blob_transfer_client.c  
     ${BT_DIR}/rtk_stack/src/mesh/model/firmware_distribution_client.c 
     ${BT_DIR}/rtk_stack/src/mesh/model/firmware_update_client.c 
+	${BT_DIR}/rtk_stack/src/mesh/model/realtek/datatrans_model.c 
 	${BT_DIR}/rtk_stack/src/mesh/utility/mesh_data_dump.c
 )
 

@@ -1,17 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usbd_cdc_acm.c
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides the functionalities of the USB CDC Class
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -35,7 +26,7 @@ static int composite_hid_handle_ep0_data_out(usb_dev_t *dev);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "COMP";
+static const char *const TAG = "COMP";
 
 /* HID interface descriptor */
 static u8 usbd_composite_hid_itf_desc[] USB_DMA_ALIGNED = {
@@ -155,7 +146,7 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		default:
-			RTK_LOGS(TAG, "[COMP] Invalid bRequest 0x%02x\n", req->bRequest);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bRequest 0x%02x\n", req->bRequest);
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -176,7 +167,7 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		RTK_LOGS(TAG, "[COMP] Invalid bmRequestType 0x%02x\n", req->bmRequestType);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bmRequestType 0x%02x\n", req->bmRequestType);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -225,7 +216,7 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 	if (status == HAL_OK) {
 		/*TX done*/
 	} else {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX err: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
 	}
 
 	if (hid->cb->transmitted) {
@@ -352,7 +343,7 @@ int usbd_composite_hid_send_data(u8 *data, u16 len)
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 
 	if (!hid->is_ready) {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
 		return ret;
 	}
 

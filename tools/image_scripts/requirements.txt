@@ -1,5 +1,0 @@
-python-mbedtls
-sslcrypto
-cryptography
-pycryptodome
-ecdsa

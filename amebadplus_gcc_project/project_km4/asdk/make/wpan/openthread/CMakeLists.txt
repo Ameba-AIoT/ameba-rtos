@@ -3,36 +3,29 @@ set(RTK_OT_SUPPORT ${BASEDIR}/component/wpan/openthread/rtk_ot_support)
 set(RTK_OT_BR ${BASEDIR}/component/wpan/openthread/rtk_otbr)
 
 set(
-    MODULE_C_DEFINES
+	MODULE_C_DEFINES
 	CONFIG_802154_THREAD_RADIO_RCP_EN=1
 	OPENTHREAD_CONFIG_CORE_USER_CONFIG_HEADER_ENABLE=1
 )
 
 set(
-    MODULE_IFLAGS
+	MODULE_IFLAGS
 	${BASEDIR}/component/soc/amebadplus/fwlib/include/
-    ${BASEDIR}/component/component/os/os_dep/
+	${BASEDIR}/component/component/os/os_dep/
 	${RTK_OT_BR}/
 	${THREADDIR}/config/
-    ${THREADDIR}/openthread/src/
-    ${THREADDIR}/openthread/src/core/
-    ${THREADDIR}/openthread/include/
-    ${THREADDIR}/openthread/examples/
-    ${THREADDIR}/openthread/examples/platforms/
-    ${THREADDIR}/openthread/examples/platforms/utils/
+	${THREADDIR}/openthread/src/
+	${THREADDIR}/openthread/src/core/
+	${THREADDIR}/openthread/include/
+	${THREADDIR}/openthread/examples/
+	${THREADDIR}/openthread/examples/platforms/
+	${THREADDIR}/openthread/examples/platforms/utils/
 
-    ${THREADDIR}/openthread/cli/	
+	${THREADDIR}/openthread/cli/
 )
 
-if(CONFIG_802154_THREAD_CONCURRENT_EN)
- 	list(
-		APPEND MODULE_IFLAGS
-		${BASEDIR}/component/rtk_coex/rtk_coex_ext_chip/rtk_coex_ext_slave/
-	)
-endif()
-
 if(CONFIG_802154_THREAD_BORDER_ROUTER_EN)
-    add_subdirectory(otbr)
+	add_subdirectory(otbr)
 endif()
 
 add_subdirectory(ot_support)
@@ -62,8 +55,7 @@ option(BUILD_TESTING "BUILD_TESTING" OFF)
 
 list(
 	APPEND
-    MODULE_C_DEFINES
-	OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER=0
+	MODULE_C_DEFINES
 	OPENTHREAD_UART_RTT_ENABLE=0
 	OPENTHREAD_PLATFORM_POSIX=0
 )
@@ -89,13 +81,13 @@ endif()
 execute_process(
 	WORKING_DIRECTORY ${THREADDIR}/openthread
 	# COMMAND ${GIT_EXECUTABLE} checkout ./
-	COMMAND ${GIT_EXECUTABLE} apply ./../openthread_tcplp_dup_name_patch.ptach
+	COMMAND ${GIT_EXECUTABLE} apply ./../openthread_tcplp_dup_name_patch.patch
 	COMMAND ${GIT_EXECUTABLE} apply ./../openthread_cmake_testbigendian_patch.patch
 	# RESULT_VARIABLE ERROR_CODE
 )
 
 # if(ERROR_CODE)
-	# message(FATAL_ERROR "git apply ptach error! " ${ERROR_CODE})
+	# message(SEND_ERROR "git apply ptach error! " ${ERROR_CODE})
 # endif()
 
 

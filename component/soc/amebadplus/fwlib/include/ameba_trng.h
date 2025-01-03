@@ -273,7 +273,7 @@ typedef struct {
 
 /** @} */
 
-_LONG_CALL_ extern u32 TRNG_Security_Only(BOOL NewState);
+_LONG_CALL_ extern u32 TRNG_Security_Only(bool NewState);
 _LONG_CALL_ extern void TRNG_INTConfig(u32 TRNG_IT, u32 NewState);
 _LONG_CALL_ extern void TRNG_ClearINT(u32 INTrBit);
 _LONG_CALL_ extern u32 TRNG_GetINT(void);

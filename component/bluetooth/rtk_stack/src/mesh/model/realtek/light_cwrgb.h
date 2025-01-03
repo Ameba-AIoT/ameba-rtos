@@ -74,8 +74,26 @@ typedef struct
  * @brief Functions declaration
  * @{
  */
+
+/**
+ * @brief register light CWRGB server model
+ *
+ * @param[in] element_index: element index
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] pf_model_receive: pointer to the function of model receive
+ */
 void light_cwrgb_server_reg(uint8_t element_index, mesh_model_info_p pmodel_info,
                             model_receive_pf pf_model_receive);
+
+/**
+ * @brief light CWRGB status
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @param[in] cwrgb: CWRGB
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t light_cwrgb_stat(mesh_model_info_p pmodel_info, uint16_t dst,
                                        uint16_t app_key_index, uint8_t cwrgb[5]);
 /** @} */
@@ -85,9 +103,38 @@ mesh_msg_send_cause_t light_cwrgb_stat(mesh_model_info_p pmodel_info, uint16_t d
  * @brief Functions declaration
  * @{
  */
+
+/**
+ * @brief register light CWRGB client model
+ *
+ * @param[in] element_index: element index
+ * @param[in] pmodel_info: pointer to model info
+ * @return true
+ * @return false
+ */
 bool light_cwrgb_client_reg(uint8_t element_index, mesh_model_info_p pmodel_info);
+
+/**
+ * @brief light CWRGB get
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t light_cwrgb_get(mesh_model_info_p pmodel_info, uint16_t dst,
                                       uint16_t app_key_index);
+
+/**
+ * @brief light CWRGB set
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @param[in] cwrgb: CWRGB
+ * @param[in] ack: need acknowledge
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t light_cwrgb_set(mesh_model_info_p pmodel_info, uint16_t dst,
                                       uint16_t app_key_index, uint8_t cwrgb[5], bool ack);
 /** @} */

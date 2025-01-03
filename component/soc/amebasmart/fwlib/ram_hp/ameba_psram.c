@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "PSRAM";
+static const char *const TAG = "PSRAM";
 u8 APM_WR_INIT_LATENCY_SPEC[6] = {
 	APM_WR_INIT_LATENCY_3CLK,
 	APM_WR_INIT_LATENCY_4CLK,
@@ -98,10 +98,10 @@ void PSRAM_INFO_Update(void)
 			PsramInfo.Psram_Latency_Set = 10;
 			PsramInfo.Psram_CSHI = Psram_WB_CSHI166;
 		}
-		/* backup latency code for KM0 for sleep */
-		RRAM->PSRAM_LATENCY = PsramInfo.Psram_Latency_Set;
 	}
 
+	/* backup latency code for KM0 for sleep */
+	RRAM->PSRAM_LATENCY = PsramInfo.Psram_Latency_Set;
 	RTK_LOGI(TAG, "PSRAM Ctrl CLK: %lu Hz \n", PsramClk);
 }
 
@@ -606,7 +606,7 @@ void PSRAM_WB_REG_Write(u32 regnum, u32 write_len, u8 *write_data)
   * @retval None
   * @note cache will be disable during calibration
   */
-BOOL PSRAM_calibration(void)
+bool PSRAM_calibration(void)
 {
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 
@@ -690,7 +690,7 @@ BOOL PSRAM_calibration(void)
 	DCache_Enable();
 
 	if ((window_size) < 9) {
-		return _FALSE;
+		return FALSE;
 	}
 	tempPHYPara &= (~0xfffff);
 	tempPHYPara |= PSPHY_CFG_CAL_JMAX((window_end - window_start) / 2 - 2) | \
@@ -703,7 +703,7 @@ BOOL PSRAM_calibration(void)
 	/*start HW calibration*/
 	psram_phy->PSPHY_CAL_CTRL |= PSPHY_BIT_CFG_CAL_EN;
 
-	return _TRUE;
+	return TRUE;
 
 }
 

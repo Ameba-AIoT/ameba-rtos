@@ -8,6 +8,8 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
+#include "rtw_coex_host_api.h"
+
 #if defined(CONFIG_BT) && CONFIG_BT
 #if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
 
@@ -345,10 +347,13 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 
 	if (strcmp(argv[0], "wifi") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to WIFI.\n\r");
-		wifi_btcoex_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+		rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
 	} else if (strcmp(argv[0], "bt") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to BT.\n\r");
-		wifi_btcoex_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+	} else if (strcmp(argv[0], "auto") == 0) {
+		MP_EXT2_PRINTF("Switch GNT_BT to AUTO.\n\r");
+		rtk_coex_btc_set_pta(PTA_AUTO, PTA_HOST_BT, COMMON_ACTION);
 	}
 
 	return 0;
@@ -360,11 +365,11 @@ static int mp_ext2_ant(void **argv, int argc)
 
 	if (strcmp(argv[0], "s0") == 0) {
 		MP_EXT2_PRINTF("BT use dedicated RF s0.\n\r");
-		wifi_btcoex_set_bt_ant(0);
+		rtk_coex_btc_set_bt_ant(0);
 		rtk_bt_set_bt_antenna(0);
 	} else if (strcmp(argv[0], "s1") == 0) {
 		MP_EXT2_PRINTF("BT use share RF s1.\n\r");
-		wifi_btcoex_set_bt_ant(1);
+		rtk_coex_btc_set_bt_ant(1);
 		rtk_bt_set_bt_antenna(1);
 	}
 
@@ -386,10 +391,10 @@ void fATM2(void *arg)
 	cmd_cnt = sizeof(at_mp_ext2_items) / sizeof(at_mp_ext2_items[0]);
 	argc = parse_param(arg, argv);
 	if (argc == 1) {
-		RTK_LOGS(NOTAG, "\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n");
 		MP_EXT2_PRINTF("Command usage :\n");
 		for (idx = 0; idx < cmd_cnt; idx++) {
-			RTK_LOGS(NOTAG, "%s", at_mp_ext2_items[idx].mp_ext_usage);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s", at_mp_ext2_items[idx].mp_ext_usage);
 		}
 	} else {
 		for (idx = 0; idx < cmd_cnt; idx++) {

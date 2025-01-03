@@ -199,7 +199,7 @@ extern u32 np_sleep_timeout;
 void SOCPS_SleepCG_RAM(void);
 void np_pm_init(void);
 void np_boot_on(void);
-u32 np_suspend(u32 type);
+int np_suspend(u32 type);
 void np_resume(void);
 u32 np_status_on(void);
 void km4_set_wake_event(u32 wevt);

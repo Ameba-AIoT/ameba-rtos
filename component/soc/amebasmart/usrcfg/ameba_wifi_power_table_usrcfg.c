@@ -259,7 +259,7 @@ u8 array_mp_txpwr_byrate_5g_array_len = sizeof(array_mp_txpwr_byrate_5g) / sizeo
 
 
 s8 wifi_get_power_limit_and_limit_ru_by_ch(u8 regulation, u8 chnl, u8 limit_rate,
-		u8 band, u8 bandwith, u8 *tx_shape_idx, boolean is_lmt_ru)
+		u8 band, u8 bandwith, u8 *tx_shape_idx, bool is_lmt_ru)
 {
 	s8 val = 127;
 

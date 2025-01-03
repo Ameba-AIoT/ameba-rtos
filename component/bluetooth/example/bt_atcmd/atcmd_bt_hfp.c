@@ -140,6 +140,44 @@ static int atcmd_bt_hfp_call_terminate_req(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_hfp_dial_call_number_req(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (strlen(argv[1]) > 20) {
+		BT_LOGE("HFP dial call number illegal\r\n");
+		return -1;
+	}
+	if (rtk_bt_hfp_dial_with_number_req(bd_addr, argv[1], strlen(argv[1]))) {
+		BT_LOGE("HFP call terminate req fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("HFP call terminate req to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
+static int atcmd_bt_hfp_dial_last_call_req(int argc, char **argv)
+{
+	(void)argc;
+	char addr_str[30] = {0};
+	uint8_t bd_addr[RTK_BD_ADDR_LEN] = {0};
+
+	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
+	if (rtk_bt_hfp_dial_last_number_req(bd_addr)) {
+		BT_LOGE("HFP dial last call fail\r\n");
+		return -1;
+	}
+	rtk_bt_br_addr_to_str(bd_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("HFP dial last call req to device %s ...\r\n", addr_str);
+
+	return 0;
+}
+
 static int atcmd_bt_hfp_batt_level_report(int argc, char **argv)
 {
 	(void)argc;
@@ -206,6 +244,8 @@ static const cmd_table_t hfp_cmd_table[] = {
 	{"call_income",             atcmd_bt_hfp_call_income,              4, 4},
 	{"call_answer",             atcmd_bt_hfp_call_answer_req,          2, 2},
 	{"call_terminate",          atcmd_bt_hfp_call_terminate_req,       2, 2},
+	{"dial_call",               atcmd_bt_hfp_dial_call_number_req,     2, 3},
+	{"dial_last_call",          atcmd_bt_hfp_dial_last_call_req,       2, 2},
 	{"batt_level_report",       atcmd_bt_hfp_batt_level_report,        3, 3},
 	{"speaker_gain_report",     atcmd_bt_hfp_speaker_gain_report,      3, 3},
 	{"microphone_gain_report",  atcmd_bt_hfp_microphone_gain_report,   3, 3},

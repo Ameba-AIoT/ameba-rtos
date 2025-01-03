@@ -15,7 +15,7 @@ int loopback_send(sdio_adapter *padapter, u8 *pbuf, u32 size)
 
 query_free_page:
 	// check if hardware tx fifo page is enough
-	if (_FALSE == rtw_sdio_query_free_txbd(padapter, ptxdesc->bus_agg_num)) {
+	if (FALSE == rtw_sdio_query_free_txbd(padapter, ptxdesc->bus_agg_num)) {
 		polling_num++;
 		if ((polling_num % 60) == 0) {//or 80
 			//RTK_PRINTF("%s: FIFO starvation!(%d) len=%d agg=%d\n",
@@ -27,7 +27,7 @@ query_free_page:
 		goto query_free_page;
 	}
 
-	if (padapter->surprise_remove == _TRUE) {
+	if (padapter->surprise_remove == TRUE) {
 		RTK_PRINTF("%s: bSurpriseRemoved(wirte port)\n", __FUNCTION__);
 		return -1;
 	}
@@ -107,7 +107,7 @@ thread_return rtw_sdio_loopback_thread(thread_context context)
 	RTK_PRINTF("start %s\n", __FUNCTION__);
 
 	do {
-		if (rtw_thread_should_stop() == _TRUE) {
+		if (rtw_thread_should_stop() == TRUE) {
 			break;
 		}
 		ret = loopback_start(padapter);

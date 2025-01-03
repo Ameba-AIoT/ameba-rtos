@@ -256,6 +256,11 @@ void vPortExitCritical(void)
 }
 /*-----------------------------------------------------------*/
 
+uint32_t xPortGetCriticalState(void)
+{
+	return uxCriticalNesting;
+}
+
 uint32_t ulSetInterruptMaskFromISR(void)
 {
 	__asm volatile(
@@ -376,9 +381,9 @@ void vApplicationIdleHook(void)
 	/* Use the idle task to place the CPU into a low power mode.  Greater power
 	saving could be achieved by not including any demo tasks that never block. */
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
-	extern uint32_t driver_suspend_ret;
+	extern int32_t driver_suspend_ret;
 #if defined (CONFIG_WLAN)
-	extern uint32_t wlan_driver_check_and_suspend(void);
+	extern int32_t wlan_driver_check_and_suspend(void);
 	driver_suspend_ret = wlan_driver_check_and_suspend();
 #endif
 #endif
@@ -398,7 +403,7 @@ void vApplicationStackOverflowHook(xTaskHandle pxTask, char *pcTaskName)
 	(void) pxTask;
 	(void) pcTaskName;
 
-	RTK_LOGS(NOTAG, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] STACK OVERFLOW - TaskName(%s)\n\r", __FUNCTION__, pcTaskName);
 	for (;;);
 }
 
@@ -408,7 +413,7 @@ void vApplicationMallocFailedHook(void)
 	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
 		pcCurrentTask = pcTaskGetName(NULL);
 	}
-	RTK_LOGS(NOTAG, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KM0", pcCurrentTask, xPortGetFreeHeapSize());
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KM0", pcCurrentTask, xPortGetFreeHeapSize());
 
 	taskDISABLE_INTERRUPTS();
 	for (;;);
@@ -551,4 +556,10 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	(void)tick_before_sleep;
 }
 
+/*-----------------------------------------------------------*/
+
+void vPortCleanUpTCB(uint32_t * pxTCB)
+{
+	UNUSED(pxTCB);
+}
 /*-----------------------------------------------------------*/

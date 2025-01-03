@@ -9,6 +9,7 @@
 extern int main(void);
 extern void SOCPS_WakeFromPG(void);
 extern void freertos_risc_v_trap_handler(void);
+extern void newlib_locks_init(void);
 
 #if defined (__GNUC__)
 /* Add This for C++ support to avoid compile error */
@@ -49,6 +50,7 @@ void app_start(void)
 	/* Add This for C++ support */
 	__libc_init_array();
 #endif
+	newlib_locks_init();
 
 	/* 6. KR4 can not assign non-cache region which is less than 512M */
 	main();

@@ -213,10 +213,10 @@ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
 	u32 F0F_base = 5269;
 
 	if (action == PLL_FASTER) {
-		F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+		F0F_new = F0F_base + (u32)((double)ppm / step + 0.5);
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		F0F_new = F0F_base - (u32)((double)ppm / step + 0.5);
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
 		F0F_new = F0F_base;
@@ -254,10 +254,10 @@ float PLL_I2S_45P158M_ClkTune(float ppm, u32 action)
 	u32 F0F_base = 2076;
 
 	if (action == PLL_FASTER) {
-		F0F_new = F0F_base + (u32)(ppm / step + 0.5);
+		F0F_new = F0F_base + (u32)((double)ppm / step + 0.5);
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else if (action == PLL_SLOWER) {
-		F0F_new = F0F_base - (u32)(ppm / step + 0.5);
+		F0F_new = F0F_base - (u32)((double)ppm / step + 0.5);
 		real_ppm = (double)((double)F0F_new - (double)F0F_base) * step;
 	} else {
 		F0F_new = F0F_base;

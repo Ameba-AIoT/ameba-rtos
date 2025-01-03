@@ -18,7 +18,7 @@
 #define FTL_PRINT_LEVEL					FTL_LEVEL_ERROR
 #define FTL_PRINTF(LEVEL, pFormat, ...)     do {\
    if (LEVEL <= FTL_PRINT_LEVEL)\
-        RTK_LOGS(#LEVEL, pFormat"\r\n", ##__VA_ARGS__);\
+        RTK_LOGS(#LEVEL, RTK_LOG_ALWAYS, pFormat"\r\n", ##__VA_ARGS__);\
 }while(0)
 
 //#define DBG_EN 						1

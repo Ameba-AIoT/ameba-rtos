@@ -1,0 +1,76 @@
+set(d_GLOBAL_PLATFORM_LINK_OPTIONS)
+
+# +++++++++++++++++++ d_GLOBAL_PLATFORM_LINK_OPTIONS +++++++++++++++++ #
+
+if (NOT ${IMG3_TYPE} STREQUAL "DEFAULT")
+    if (NOT ${STDLIB_TYPE} STREQUAL "DEFAULT")
+        ameba_list_append(d_GLOBAL_PLATFORM_LINK_OPTIONS
+            "SHELL:-Wl,-wrap,memchr"
+            "SHELL:-Wl,-wrap,memcmp"
+            "SHELL:-Wl,-wrap,memcpy"
+            "SHELL:-Wl,-wrap,memmove"
+            "SHELL:-Wl,-wrap,memset"
+            "SHELL:-Wl,-wrap,strcmp"
+            "SHELL:-Wl,-wrap,stricmp"
+            "SHELL:-Wl,-wrap,strlen"
+            "SHELL:-Wl,-wrap,strtoul"
+            "SHELL:-Wl,-wrap,strupr"
+            "SHELL:-Wl,-wrap,__aeabi_drsub"
+            "SHELL:-Wl,-wrap,__aeabi_dsub"
+            "SHELL:-Wl,-wrap,__adddf3"
+            "SHELL:-Wl,-wrap,__aeabi_ui2d"
+            "SHELL:-Wl,-wrap,__aeabi_i2d"
+            "SHELL:-Wl,-wrap,__aeabi_f2d"
+            "SHELL:-Wl,-wrap,__aeabi_ul2d"
+            "SHELL:-Wl,-wrap,__aeabi_l2d"
+            "SHELL:-Wl,-wrap,__aeabi_dmul"
+            "SHELL:-Wl,-wrap,__aeabi_ddiv"
+            "SHELL:-Wl,-wrap,adddf3"
+            "SHELL:-Wl,-wrap,_adddf3"
+            "SHELL:-Wl,-wrap,fadd"
+            "SHELL:-Wl,-wrap,fsub"
+            "SHELL:-Wl,-wrap,fmul"
+            "SHELL:-Wl,-wrap,fdiv"
+        )
+    endif()
+    ameba_list_append(d_GLOBAL_PLATFORM_LINK_OPTIONS
+        "SHELL:-Wl,-wrap,malloc"
+        "SHELL:-Wl,-wrap,realloc"
+        "SHELL:-Wl,-wrap,free"
+        "SHELL:-Wl,-wrap,calloc"
+        "SHELL:-Wl,-wrap,_malloc_r"
+        "SHELL:-Wl,-wrap,_realloc_r"
+        "SHELL:-Wl,-wrap,_free_r"
+        "SHELL:-Wl,-wrap,_calloc_r"
+        "SHELL:-Wl,-wrap,rand"
+        "SHELL:-Wl,-wrap,printf"
+        "SHELL:-Wl,-wrap,fopen"
+        "SHELL:-Wl,-wrap,fclose"
+        "SHELL:-Wl,-wrap,fread"
+        "SHELL:-Wl,-wrap,fwrite"
+        "SHELL:-Wl,-wrap,fseek"
+        "SHELL:-Wl,-wrap,fsetpos"
+        "SHELL:-Wl,-wrap,fgetpos"
+        "SHELL:-Wl,-wrap,rewind"
+        "SHELL:-Wl,-wrap,fflush"
+        "SHELL:-Wl,-wrap,remove"
+        "SHELL:-Wl,-wrap,rename"
+        "SHELL:-Wl,-wrap,feof"
+        "SHELL:-Wl,-wrap,ferror"
+        "SHELL:-Wl,-wrap,ftell"
+        "SHELL:-Wl,-wrap,ftruncate"
+        "SHELL:-Wl,-wrap,fputc"
+        "SHELL:-Wl,-wrap,fputs"
+        "SHELL:-Wl,-wrap,fgets"
+        "SHELL:-Wl,-wrap,stat"
+        "SHELL:-Wl,-wrap,mkdir"
+        "SHELL:-Wl,-wrap,scandir"
+        "SHELL:-Wl,-wrap,readdir"
+        "SHELL:-Wl,-wrap,opendir"
+        "SHELL:-Wl,-wrap,access"
+        "SHELL:-Wl,-wrap,rmdir"
+        "SHELL:-Wl,-wrap,closedir"
+    )
+endif()
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8721DA_AMEBA_AUDIO_STREAM_CAPTURE_H
-#define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8721DA_AMEBA_AUDIO_STREAM_CAPTURE_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_STREAM_CAPTURE_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBADPLUS_AMEBA_AUDIO_STREAM_CAPTURE_H
 
 #include "time.h"
 
@@ -33,12 +33,14 @@ uint32_t ameba_audio_stream_rx_complete(void *data);
 void ameba_audio_stream_rx_start(Stream *stream);
 int64_t ameba_audio_stream_rx_get_trigger_time(Stream *stream);
 void ameba_audio_stream_rx_stop(Stream *stream);
-int  ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes, uint32_t time_out_ms);
+int32_t  ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes, uint32_t time_out_ms);
 void ameba_audio_stream_rx_close(Stream *stream);
-int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp);
-int  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns);
+int32_t  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp);
+int32_t  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns);
 void ameba_audio_stream_rx_sync_start(Stream *stream, uint32_t sport_index, uint32_t sport_index_extra);
 void ameba_audio_stream_rx_sync_stop(Stream *stream, uint32_t sport_index, uint32_t sport_index_extra);
+void ameba_audio_stream_rx_mask_gdma_irq(Stream *stream);
+void ameba_audio_stream_rx_unmask_gdma_irq(Stream *stream);
 
 #ifdef __cplusplus
 }

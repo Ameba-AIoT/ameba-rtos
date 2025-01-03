@@ -69,10 +69,10 @@ if(CONFIG_USBD_CDC_ACM)
     )
 endif()
 
-if(CONFIG_USBD_COMPOSITE)
+if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID)
     list(
         APPEND CSRC
-        ${COMP_DIR}/usbd_composite.c 
+        ${COMP_DIR}/usbd_composite_cdc_acm_hid.c 
         ${COMP_DIR}/usbd_composite_cdc_acm.c 
         ${COMP_DIR}/usbd_composite_hid.c
     )

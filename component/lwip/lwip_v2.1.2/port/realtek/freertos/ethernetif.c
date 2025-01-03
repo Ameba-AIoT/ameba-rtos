@@ -93,13 +93,13 @@ static void arp_timer(void *arg);
 extern unsigned char get_bridge_portnum(void);
 #endif
 
-static const char *TAG = "ETHERNET";
+static const char *const TAG = "ETHERNET";
 #define ETHERNET_DEBUG		(0)
 #define RTK_LOG_ETHERNET(format, ...) do {               \
         if ( ETHERNET_DEBUG ) DiagPrintf(format, ##__VA_ARGS__); \
     } while(0);
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 #define MAX_BUFFER_SIZE		(1536)
 #define DST_MAC_LEN			(6)
 #define SRC_MAC_LEN			(6)
@@ -253,7 +253,7 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 	(void) p;
 	RTK_LOG_ETHERNET("%s %d \n", __func__, __LINE__);
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 
 #if defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII
 	(void) TX_BUFFER;
@@ -376,7 +376,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 
 void rltk_mii_init(void)
 {
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 	rtos_mutex_create(&mii_tx_mutex);
 #endif
 }
@@ -385,7 +385,7 @@ void rltk_mii_recv(struct eth_drv_sg *sg_list, int sg_len)
 {
 	UNUSED(sg_list);
 	UNUSED(sg_len);
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 	struct eth_drv_sg *last_sg;
 	u8 *pbuf = RX_BUFFER;
 
@@ -407,7 +407,7 @@ u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 
 	RTK_LOG_ETHERNET("enter %s %d\n", __func__, __LINE__);
 
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 	u8 *pbuf;
 	u32 pkt_len_index = DST_MAC_LEN + SRC_MAC_LEN + PROTO_TYPE_LEN;
 	u16 usb_receive_mps = usbh_cdc_ecm_get_receive_mps();	//only 512 bytes is supported now.
@@ -433,7 +433,7 @@ u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 		}
 	} else {
 		if (rx_buffer_saved_data_len + frame_length > MAX_BUFFER_SIZE) {
-			RTK_LOGS(NOTAG, "frame_length(%d) and rx_buffer_saved_data_len(%d) is too long, MAX_BUFFER_SIZE = %d !\n", frame_length, rx_buffer_saved_data_len,
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "frame_length(%d) and rx_buffer_saved_data_len(%d) is too long, MAX_BUFFER_SIZE = %d !\n", frame_length, rx_buffer_saved_data_len,
 					 MAX_BUFFER_SIZE);
 			//drop packet
 			rx_buffer_saved_data_len = 0;
@@ -461,8 +461,8 @@ u8 rltk_mii_recv_data_check(u8 *mac)
 {
 	UNUSED(mac);
 	u8 check_res = TRUE;
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
-#if defined(CONFIG_ETHERNET_BRIDGE) && CONFIG_ETHERNET_BRIDGE
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
 	return check_res;
 #else
 	u8 *pbuf = RX_BUFFER;
@@ -483,7 +483,7 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 {
 	(void) buf;
 	(void) frame_len;
-#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
 	struct pbuf *p, *q;
 	int sg_len = 0;
@@ -493,18 +493,18 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 	u8 *macstr = (u8 *)(netif->hwaddr);
 
 	if (frame_len > MAX_BUFFER_SIZE) {
-		RTK_LOGS(NOTAG, "recv data len is %d\n", frame_len);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "recv data len is %d\n", frame_len);
 		return;
 	}
 
-#if defined(ETHERNET_REASSEMBLE_PACKET) && ETHERNET_REASSEMBLE_PACKET 
+#if defined(ETHERNET_REASSEMBLE_PACKET) && ETHERNET_REASSEMBLE_PACKET
 	RTK_LOG_ETHERNET("%s %d will rltk_mii_recv_data\n", __func__, __LINE__);
 	if (FALSE == rltk_mii_recv_data(buf, frame_len, &total_len)) {
 		return;
 	}
 #else
 	if(0 == frame_len) {
-		RTK_LOGS(NOTAG, "recv data len is 0\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "recv data len is 0\n");
 		return;
 	}
 	total_len = frame_len;

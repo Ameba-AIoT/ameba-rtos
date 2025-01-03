@@ -153,7 +153,7 @@ int pmu_ready_to_sleep(void)
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
 	/* check timeout */
-	if ((PMCTimer_Valid_Check(PMC_TIMER, PMC_SLEEP_TIMER) == _FALSE) || (PMCTimerCnt_Get(PMC_TIMER, PMC_SLEEP_TIMER) > 0)) {
+	if ((PMCTimer_Valid_Check(PMC_TIMER, PMC_SLEEP_TIMER) == FALSE) || (PMCTimerCnt_Get(PMC_TIMER, PMC_SLEEP_TIMER) > 0)) {
 		return FALSE;
 	}
 
@@ -170,7 +170,7 @@ int pmu_check_wakelock_timeout(void)
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
 	/* check timeout */
-	if ((PMCTimer_Valid_Check(PMC_TIMER, PMC_SLEEP_TIMER) == _FALSE) || (PMCTimerCnt_Get(PMC_TIMER, PMC_SLEEP_TIMER) > 0)) {
+	if ((PMCTimer_Valid_Check(PMC_TIMER, PMC_SLEEP_TIMER) == FALSE) || (PMCTimerCnt_Get(PMC_TIMER, PMC_SLEEP_TIMER) > 0)) {
 		return FALSE;
 	} else {
 		return TRUE;
@@ -190,7 +190,7 @@ int pmu_ready_to_dsleep(void)
 	PMCTIMER_TpyeDef *PMC_TIMER = PMC_TIMER_DEV;
 
 	/* check timeout */
-	if ((PMCTimer_Valid_Check(PMC_TIMER, PMC_DSLP_TIMER) == _FALSE) || (PMCTimerCnt_Get(PMC_TIMER, PMC_DSLP_TIMER) > 0)) {
+	if ((PMCTimer_Valid_Check(PMC_TIMER, PMC_DSLP_TIMER) == FALSE) || (PMCTimerCnt_Get(PMC_TIMER, PMC_DSLP_TIMER) > 0)) {
 		return FALSE;
 	}
 
@@ -278,7 +278,7 @@ u32 pmc_wakeuptimer_int_hdl(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
 	PMCTimer_INTClear(PMC_TIMER_DEV, PMC_WAKEUP_TIMER);
-	return _TRUE;
+	return TRUE;
 }
 
 void pmu_init_wakeup_timer(void)

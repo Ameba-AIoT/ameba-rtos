@@ -645,5 +645,5 @@ u8 DATA_FLASH_Init(u8 SpicBitMode)
 	FLASH_InitStruct->FLASH_cur_bitmode = SpicBitMode;
 	DATA_FLASH_SetSpiMode(ComboSpic, FLASH_InitStruct, SpicBitMode);
 
-	return _TRUE;
+	return TRUE;
 }

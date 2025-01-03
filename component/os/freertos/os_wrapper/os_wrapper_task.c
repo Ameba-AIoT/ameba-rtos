@@ -107,6 +107,7 @@ int rtos_task_priority_set(rtos_task_t p_handle, uint16_t priority)
 	return SUCCESS;
 }
 
+/* FreeRTOS version must be greater than 10.2.0 */
 void rtos_create_secure_context(uint32_t size)
 {
 	(void) size;
@@ -115,3 +116,16 @@ void rtos_create_secure_context(uint32_t size)
 	portALLOCATE_SECURE_CONTEXT(size);
 #endif
 }
+
+#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+// Each task contains an array of pointers that is dimensioned by the configNUM_THREAD_LOCAL_STORAGE_POINTERS setting in FreeRTOSConfig.h.
+void rtos_task_set_thread_local_storage_pointer(rtos_task_t p_handle,  uint16_t index, void *p_param)
+{
+	vTaskSetThreadLocalStoragePointer(p_handle, index, p_param);
+}
+
+void *rtos_task_get_thread_local_storage_pointer(rtos_task_t p_handle,  uint16_t index)
+{
+	return pvTaskGetThreadLocalStoragePointer(p_handle, index);
+}
+#endif

@@ -28,7 +28,7 @@ extern "C" {
  * @param[in]  table: Pointer to the currently obtained country code table
  * @return  RTW_SUCCESS or RTW_ERROR
  */
-u8 wifi_get_countrycode(struct country_code_table_t *table);
+int wifi_get_countrycode(struct country_code_table_t *table);
 
 /**
  * @brief  Set the current Media Access Control (MAC) address
@@ -50,51 +50,13 @@ int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
 void wifi_set_edcca_mode(u8 edcca_mode);
 
 /**
- * @brief  Set PTA type when coex.
- * @param[in]  type: the PTA type(PTA_BT/PTA_WIFI/PTA_AUTO).
- * @param[in]  role, PTA_HOST_BT / PTA_HOST_WIFI
- * @param[in]  process, CALIBRATION_START / CALIBRATION_STOP / COMMON_ACTION
- * @return  Null.
- */
-void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process);
-
-/**
- * @brief  Set BTS0 or BTS1.
- * @param[in]  bt_ant: the BT ant(BTS0/BTS1).
- * @return  Null.
- */
-void wifi_btcoex_set_bt_ant(u8 bt_ant);
-
-/**
-  * @brief Set vendor info to coex
-  * @param[in]  p_vendor_info: vendor info
-  * @param[in]  length: vendor info length
-  * @retval  Null
-  */
-void wifi_btcoex_vendor_info_set(void *p_vendor_info, u8 length);
-
-/**
-  * @brief Write BT RFK  data to RFC
-  * @param  calibration data
-  * @retval  BT RFK result(1:success  0:failed)
-  */
-int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param);
-
-/**
-  * @brief Notify extwpan data to COEX
-  * @param[in]  type: type for exewpan send
-  * @param[in]  data; data pointer
+  * @brief Notify app data to COEX
+  * @param[in]  type: type for app send
+  * @param[in]  pdata; data pointer
   * @param[in]  data_len; data length
-  * @retval  result(1:success  0:failed)
+  * @retval  result(0:success  -1:failed)
   */
-int wifi_extchip_coex_notify(u32 type, u32 data, u32 data_len);
-
-/**
-  * @brief Zigbee Call WL RFK
-  * @param  void
-  * @retval  ZBC RFK result(0:success  -1:failed)
-  */
-int wifi_zigbee_coex_zb_rfk(void);
+int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len);
 
 /**
  * @brief  Set global variable wifi_wpa_mode.
@@ -237,10 +199,7 @@ int wifi_set_eap_method(unsigned char eap_method);
  * @param[in]  flags: reserved, set to 0
  * @return  RTW_ERROR or RTW SUCCESS
  */
-int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
-
-
-void wifi_btcoex_bt_hci_notify(uint8_t *pdata, uint16_t len, uint8_t dir);
+int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 
 void wifi_event_init(void);
 void wifi_indication(unsigned int event, char *buf, int buf_len, int flags);

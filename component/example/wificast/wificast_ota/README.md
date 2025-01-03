@@ -20,11 +20,11 @@ Config the user-defined data header in User Payload field.
 |  2 bytes | 2 bytes | 4 bytes |
 * Type: The Type field is set to indicate the WIFI-CAST ota data.
     ```
-    #define WIFI_CAST_OTA_SCAN_REQUEST		BIT(8)
-    #define WIFI_CAST_OTA_SCAN_RESPONSE		BIT(7)
-    #define WIFI_CAST_OTA_STATUS_REQUEST	BIT(6)
-    #define WIFI_CAST_OTA_STATUS_RESPONSE	BIT(5)
-    #define WIFI_CAST_OTA_DATA				BIT(4)
+    #define WIFI_CAST_SCAN_REQUEST          BIT(12)
+    #define WIFI_CAST_SCAN_RESPONSE         BIT(11)
+    #define WIFI_CAST_OTA_STATUS_REQUEST    BIT(8)
+    #define WIFI_CAST_OTA_STATUS_RESPONSE   BIT(7)
+    #define WIFI_CAST_OTA_DATA              BIT(6)
     ```
 * Len: The Len field is set as the length of ota data.
 * Seq: The Seq field is set as the sequence number when transmit the data of WIFI_CAST_OTA_DATA.

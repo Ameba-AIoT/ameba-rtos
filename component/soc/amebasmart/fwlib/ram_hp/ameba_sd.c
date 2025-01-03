@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "SDH";
+static const char *const TAG = "SDH";
 SRAM_NOCACHE_DATA_SECTION
 static SD_CardInfo card_info;
 int (*sd_sema_take_fn)(u32);
@@ -561,7 +561,7 @@ static u32 SD_GetCSD(void)
 
 /**
   * @brief  Select/Deselect the SD card.
-  * @param  select: can be _TRUE or _FALSE.
+  * @param  select: can be TRUE or FALSE.
   * @retval  HAL_OK: Select/Deselect card successfully
   *		   Others: Fail to Select/Deselect card
   */
@@ -571,7 +571,7 @@ static u32 SD_SelectDeselect(u8 select)
 	SDIOH_CmdTypeDef cmd_attr;
 
 	/***** CMD7 *****/
-	if (select == _TRUE) {
+	if (select == TRUE) {
 		cmd_attr.arg = (card_info.rca) << 16;
 		cmd_attr.idx = SD_CMD_SelDeselCard;
 		cmd_attr.rsp_type = SDIOH_RSP_6B;
@@ -1708,7 +1708,7 @@ void SD_CardInit(void)
 			break;
 		}
 
-		ret = SD_SelectDeselect(_TRUE);
+		ret = SD_SelectDeselect(TRUE);
 		if (ret != HAL_OK) {
 			break;
 		}

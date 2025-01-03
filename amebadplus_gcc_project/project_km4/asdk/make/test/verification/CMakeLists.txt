@@ -560,6 +560,8 @@ if(CONFIG_FLASH_AVL)
 endif()
 
 
-ameba_internal_library(test_verification)
-target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+if(CSRC)
+    ameba_internal_library(test_verification)
+    target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+    target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
+endif()

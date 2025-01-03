@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
-static const char *TAG = "IPC";
+static const char *const TAG = "IPC";
 rtos_sema_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 
 /**
@@ -25,10 +25,6 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 	u32 IPC_IMR;
 	u32 IPC_IntMode;
 
-#if defined ( __ICCARM__ )
-	__ipc_table_start__ = (u8 *)__section_begin(".ipc.table.data");
-	__ipc_table_end__ = (u8 *)__section_end(".ipc.table.data");
-#endif
 	IPC_INIT_TABLE *ipc_init_table = (IPC_INIT_TABLE *)__ipc_table_start__;
 	u32 ipc_num = ((__ipc_table_end__ - __ipc_table_start__) / sizeof(IPC_INIT_TABLE));
 
@@ -109,7 +105,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		while (IPCx->IPC_DATA & (BIT(IPC_ChNum + IPC_TX_CHANNEL_SHIFT))) {
 			timeout--;
 			if (timeout == 0) {
-				RTK_LOGS(TAG, " IPC Request Timeout\r\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Request Timeout\r\n");
 				return IPC_REQ_TIMEOUT;
 			}
 		}
@@ -121,7 +117,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		IPC_INTConfig(IPCx, IPC_ChNum + IPC_TX_CHANNEL_SHIFT, ENABLE);
 
 		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != SUCCESS) {
-			RTK_LOGS(TAG, " IPC Get Semaphore Timeout\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
 			IPC_INTConfig(IPCx, IPC_ChNum + IPC_TX_CHANNEL_SHIFT, DISABLE);
 			return IPC_SEMA_TIMEOUT;
 		}

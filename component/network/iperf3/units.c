@@ -199,7 +199,7 @@ double    unit_atof(const char *s)
 	char      suffix = '\0';
 
 	if (s == NULL) {
-		RTK_LOGS("%s s == NULL\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s s == NULL\n", __FUNCTION__);
 		for (;;);
 	}
 
@@ -244,7 +244,7 @@ double    unit_atof_rate(const char *s)
 	char      suffix = '\0';
 
 	if (s == NULL) {
-		RTK_LOGS("%s s == NULL\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s s == NULL\n", __FUNCTION__);
 		for (;;);
 	}
 
@@ -291,7 +291,7 @@ iperf_size_t unit_atoi(const char *s)
 	char      suffix = '\0';
 
 	if (s == NULL) {
-		RTK_LOGS("%s s == NULL\n", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s s == NULL\n", __FUNCTION__);
 		for (;;);
 	}
 

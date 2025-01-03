@@ -15,6 +15,8 @@ u8 addr1[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};
 u8 addr2[6] = {0x00, 0xE0, 0x4C, 0x00, 0x02, 0xF0};
 u8 addr3[6] = {0xBC, 0x46, 0x99, 0x7B, 0x48, 0x74};
 
+#define WIFI_RAW_CH 1
+
 void wifi_raw_tx(void *param)
 {
 	struct raw_frame_desc_t tx_raw_data_desc = {0};
@@ -96,10 +98,7 @@ void wifi_raw_task(void *param)
 {
 	UNUSED(param);
 
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		printf("Wait for WIFI connection ...\n");
-		rtos_time_delay_ms(1000);
-	}
+	wifi_set_channel(STA_WLAN_INDEX, WIFI_RAW_CH);
 
 	if (rtos_task_create(NULL, ((const char *)"wifi_raw_tx_task"), wifi_raw_tx, NULL, 1024 * 4, 4) != SUCCESS) {
 		printf("\n\r[%s] Create wifi raw tx task failed", __FUNCTION__);

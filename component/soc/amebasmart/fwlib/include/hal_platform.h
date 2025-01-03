@@ -11,10 +11,10 @@
 #define ROMVERSION_SUB		0 /* ROM sub version */
 #define ROMINFORMATION		(ROMVERSION)
 
-#define HAL_READ32(base, addr)				rtk_le32_to_cpu(*((volatile u32*)(base + addr)))
-#define HAL_WRITE32(base, addr, value32)		((*((volatile u32*)(base + addr))) = rtk_cpu_to_le32(value32))
-#define HAL_READ16(base, addr)				rtk_le16_to_cpu(*((volatile u16*)(base + addr)))
-#define HAL_WRITE16(base, addr, value)		((*((volatile u16*)(base + addr))) = rtk_cpu_to_le16(value))
+#define HAL_READ32(base, addr)				((u32)(*((volatile u32*)(base + addr))))
+#define HAL_WRITE32(base, addr, value32)	((*((volatile u32*)(base + addr))) = ((u32)(value32)))
+#define HAL_READ16(base, addr)				((u16)(*((volatile u16*)(base + addr))))
+#define HAL_WRITE16(base, addr, value)		((*((volatile u16*)(base + addr))) = ((u16)(value)))
 #define HAL_READ8(base, addr)				(*((volatile u8*)(base + addr)))
 #define HAL_WRITE8(base, addr, value)		((*((volatile u8*)(base + addr))) = value)
 
@@ -580,6 +580,11 @@ typedef struct {
 #define LS_SRAM_ADDR_START			LP_SRAM_BASE
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00FFFFFF)
 #endif
+
+/*BT share mem with system*/
+#define SHARE_MEM_BT_ADDRESS			 HP_SRAM_EXT_BASE /*Size: 272KB*/
+/*WiFi share mem with system */
+#define SHARE_MEM_WL_ADDRESS			(HP_SRAM_EXT_BASE + 0x100000) /*40KB*/
 
 /* margin 512 for lite and 1024 for CA32 */
 #if defined(CONFIG_RSICV_CORE_KR4)

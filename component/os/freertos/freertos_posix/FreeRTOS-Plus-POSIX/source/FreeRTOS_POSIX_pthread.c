@@ -324,6 +324,92 @@ int pthread_attr_setname_np( pthread_attr_t * attr,
 }
 
 /*-----------------------------------------------------------*/
+extern void vTaskSetGotBase(TaskHandle_t xTaskToQuery, uint32_t ulStackDepth, uint32_t got_base_addr);
+int pthread_create_with_pic( pthread_t * thread,
+                    const pthread_attr_t * attr,
+                    void * ( *startroutine )( void * ),
+                    void * arg,
+                    size_t got_base_addr)
+{
+    int iStatus = 0;
+    pthread_internal_t * pxThread = NULL;
+    struct sched_param xSchedParam = { .sched_priority = tskIDLE_PRIORITY };
+
+    /* Allocate memory for new thread object. */
+    pxThread = ( pthread_internal_t * ) pvPortMalloc( sizeof( pthread_internal_t ) );
+
+    if( pxThread == NULL )
+    {
+        /* No memory. */
+        iStatus = EAGAIN;
+    }
+
+    if( iStatus == 0 )
+    {
+        /* No attributes given, use default attributes. */
+        if( attr == NULL )
+        {
+            pxThread->xAttr = xDefaultThreadAttributes;
+        }
+        /* Otherwise, use provided attributes. */
+        else
+        {
+            pxThread->xAttr = *( ( pthread_attr_internal_t * ) ( attr ) );
+        }
+
+        /* Get priority from attributes */
+        xSchedParam.sched_priority = ( int ) pthreadGET_SCHED_PRIORITY( pxThread->xAttr.usSchedPriorityDetachState );
+
+        /* Set argument and start routine. */
+        pxThread->xTaskArg = arg;
+        pxThread->pvStartRoutine = startroutine;
+
+        /* If this thread is joinable, create the synchronization mechanisms for
+         * pthread_join. */
+
+        if( pthreadIS_JOINABLE( pxThread->xAttr.usSchedPriorityDetachState ) )
+        {
+            /* These calls will not fail when their arguments aren't NULL. */
+            ( void ) xSemaphoreCreateMutexStatic( &pxThread->xJoinMutex );
+            ( void ) xSemaphoreCreateBinaryStatic( &pxThread->xJoinBarrier );
+        }
+    }
+
+    if( iStatus == 0 )
+    {
+        /* Suspend all tasks to create a critical section. This ensures that
+         * the new thread doesn't exit before a tag is assigned. */
+        vTaskSuspendAll();
+
+        /* Create the FreeRTOS task that will run the pthread. */
+        if( xTaskCreate( prvRunThread,
+                         ( pxThread->xAttr.pcName[0] == '\0' ) ? posixconfigPTHREAD_TASK_NAME : pxThread->xAttr.pcName,
+                         ( uint16_t ) ( pxThread->xAttr.usStackSize / sizeof( StackType_t ) ),
+                         ( void * ) pxThread,
+                         xSchedParam.sched_priority,
+                         &pxThread->xTaskHandle ) != pdPASS )
+        {
+            /* Task creation failed, no memory. */
+            vPortFree( pxThread );
+            iStatus = EAGAIN;
+        }
+        else
+        {
+            /* Store the pointer to the thread object in the task tag. */
+            vTaskSetApplicationTaskTag( pxThread->xTaskHandle, ( TaskHookFunction_t ) pxThread );
+
+            /* Set the thread object for the user. */
+            *thread = ( pthread_t ) pxThread;
+
+            vTaskSetGotBase(pxThread->xTaskHandle, pxThread->xAttr.usStackSize, (uint32_t)got_base_addr);
+        }
+
+        /* End the critical section. */
+        xTaskResumeAll();
+    }
+
+    return iStatus;
+}
 
 int pthread_create( pthread_t * thread,
                     const pthread_attr_t * attr,

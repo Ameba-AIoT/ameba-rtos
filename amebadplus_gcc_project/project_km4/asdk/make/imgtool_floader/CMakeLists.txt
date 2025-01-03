@@ -23,8 +23,6 @@ set(
 set(
     MODULE_C_DEFINES
     CONFIG_USB_FS
-    CONFIG_USB_DOWNLOAD_EN
-    CONFIG_USB_DOWNLOAD_IND_EN
     CONFIG_FLOADER_USBD_EN
 )
 
@@ -118,7 +116,7 @@ add_custom_command(TARGET target_imgtool_flashloader POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      imgtool_flashloader.bin"
 
     COMMAND ${CMAKE_COMMAND}
-    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR}
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DPROJECTDIR=${PROJECTDIR}
     -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE}
@@ -126,9 +124,7 @@ add_custom_command(TARGET target_imgtool_flashloader POST_BUILD
     -DIMGTOOL_LOADER=y
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../loader_postbuild.cmake
 
-    COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/target_loader.axf 	        ${FLOADER_BIN_DIR}/target_FPGA.axf
     COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/ram_1_prepend.bin           ${FLOADER_BIN_DIR}/imgtool_flashloader_raw.bin
     COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin     ${FLOADER_BIN_DIR}/floader_amebadplus.bin
-    COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin     ${FLOADER_BIN_DIR}/imgtool_flashloader.bin
     COMMAND ${CMAKE_COMMAND} -E remove -f ${IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin
 )

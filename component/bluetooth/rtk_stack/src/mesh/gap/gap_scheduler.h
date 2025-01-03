@@ -30,11 +30,11 @@
 
 BEGIN_DECLS
 
-/** @addtogroup Gap_Scheduler
+/** @addtogroup GAP_Scheduler
   * @{
   */
 
-/** @defgroup Gap_Scheduler_Exported_Macros Exported Macros
+/** @defgroup GAP_Scheduler_Exported_Macros Exported Macros
   * @brief
   * @{
   */
@@ -47,7 +47,12 @@ BEGIN_DECLS
 
 #define GAP_SCHED_SCAN_ALL_THE_TIME             1
 #define GAP_SCHED_ONE_SHOT_ADV                  1 //!< adv
+// RTK porting:only AmebaDplus support bt5 ae
+#if defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS
+#define GAP_SCHED_BT5_AE                        1
+#else
 #define GAP_SCHED_BT5_AE                        0
+#endif
 #if GAP_SCHED_BT5_AE
 #ifndef F_BT_LE_5_0_AE_ADV_SUPPORT
 #define F_BT_LE_5_0_AE_ADV_SUPPORT              1
@@ -57,6 +62,11 @@ BEGIN_DECLS
 #endif
 #include "gap_ext_adv.h"
 #include "gap_ext_scan.h"
+
+extern T_GAP_CAUSE le_vendor_ae_scheme(void);
+// RTK porting:already define T_GAP_AE_CODING_SCHEME in rtk_stack_vendor.h, if mesh lib or BT FW change the definitation, rtk_stack_vendor.h should follow mesh lib
+#include <rtk_stack_vendor.h>
+extern T_GAP_CAUSE le_ae_coding_scheme(T_GAP_AE_CODING_SCHEME coding_scheme);
 #endif
 /** Advertising interval (units of 625us, 160=100ms), Value range: 0x0020 - 0x4000 (20ms - 10240ms 0.625ms/step) */
 #define GAP_SCHED_ADV_INTERVAL_MIN              0x20 /* 20ms */
@@ -76,12 +86,12 @@ BEGIN_DECLS
 #define GAP_SCHED_SUPERVISION_TIMEOUT           1000 /* unit: 10ms */
 #define GAP_SCHED_CONN_SCAN_TIMEOUT             1000 /* unit: 10ms */
 
-/** Gap scheduler parameters */
+/** GAP scheduler parameters */
 #define GAP_SCHED_TASK_NUM                      15 //!< The max number of buffered GAP task
 
 /** @} */
 
-/** @defgroup Gap_Scheduler_Exported_Types Exported Types
+/** @defgroup GAP_Scheduler_Exported_Types Exported Types
   * @brief
   * @{
   */
@@ -241,7 +251,7 @@ typedef struct _mesh_inner_msg_t mesh_inner_msg_t;
 
 /** @} */
 
-/** @defgroup Gap_Scheduler_Exported_Functions Exported Functions
+/** @defgroup GAP_Scheduler_Exported_Functions Exported Functions
   * @brief
   * @{
   */

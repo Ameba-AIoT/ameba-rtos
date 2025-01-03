@@ -43,7 +43,7 @@
   *
   */
 
-static const char *TAG = "SPI";
+static const char *const TAG = "SPI";
 
 const SPI_DevTable SPI_DEV_TABLE[2] = {
 	{SPI0_DEV, GDMA_HANDSHAKE_INTERFACE_SPI0_TX, GDMA_HANDSHAKE_INTERFACE_SPI0_RX, SPI0_IRQ},
@@ -67,7 +67,7 @@ const SPI_DevTable SPI_DEV_TABLE[2] = {
 
 
 /**
-  * @brief  Fills each SSI_InitStruct member with its default value.
+  * @brief  Fill each SSI_InitStruct member with its default value.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure which will be
   *         initialized.
   * @retval None
@@ -92,7 +92,7 @@ SSI_StructInit(SSI_InitTypeDef *SSI_InitStruct)
 
 
 /**
-  * @brief    Initializes the SPI registers according to the specified parameters
+  * @brief    Initialize the SPI registers according to the specified parameters
   *         in SSI_InitStruct.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure that contains
@@ -139,7 +139,7 @@ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
 }
 
 /**
-  * @brief  Enables or disables SPIx peripheral.
+  * @brief  Enable or disable SPIx peripheral.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  NewStatus: This parameter can be one of the following values:
   *            @arg ENABLE
@@ -157,7 +157,7 @@ void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStatus)
 }
 
 /**
-  * @brief  Masks or unmasks SPIx interrupt.
+  * @brief  Mask or unmask SPIx interrupt.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SSI_IT: This parameter can be one of the following values or mixed:
   *            @arg SPI_BIT_TXEIM
@@ -394,7 +394,7 @@ void SSI_SetBaudDiv(SPI_TypeDef *spi_dev, u32 ClockDivider)
 
 
 /**
-  * @brief Enables or disables SPIx TDMA and RDMA .
+  * @brief Enable or disable SPIx TDMA and RDMA .
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  newState:  This parameter can be one of the following values:
   *              @arg ENABLE
@@ -466,7 +466,7 @@ bool SSI_TXGDMA_Init(
 
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
-		return _FALSE;
+		return FALSE;
 	}
 
 	GDMA_StructInit(GDMA_InitStruct);
@@ -503,7 +503,7 @@ bool SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
 			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
-			return _FALSE;
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -530,7 +530,7 @@ bool SSI_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -566,7 +566,7 @@ SSI_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	GDMA_StructInit(GDMA_InitStruct);
@@ -602,7 +602,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
 			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pRxData, Length);
-			return _FALSE;
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -628,7 +628,7 @@ SSI_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -729,7 +729,7 @@ void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
 }
 
 /**
-  * @brief  Detemines whether SPIx transmit FIFO is full or not
+  * @brief  Detemine whether SPIx transmit FIFO is full or not
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval Transmit FIFO is full or not:
   *        - 1: Not Full
@@ -775,7 +775,7 @@ u32 SSI_ReadData(SPI_TypeDef *spi_dev)
 }
 
 /**
-  * @brief  receive data from rx FIFO
+  * @brief  Receive data from rx FIFO
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  RxData: buffer to save data read from SPI FIFO.
   * @param  Length: number of data to be read.

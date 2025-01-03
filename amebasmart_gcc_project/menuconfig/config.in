@@ -55,9 +55,11 @@ bool "Enable Linux (CA32 Linux Need KM4 Support)"			CONFIG_LINUX_FW_EN
 endmenu
 
 mainmenu_option next_comment
-comment '< CONFIG Shell CMD'
+comment '< CONFIG AT CMD'
 bool "Enable ATCMD"			CONFIG_SUPPORT_ATCMD
 if [ "$CONFIG_SUPPORT_ATCMD" = "y" ]; then
+bool "Enable Socket"			CONFIG_ATCMD_SOCKET
+bool "Enable MQTT"			    CONFIG_ATCMD_MQTT
 choice 'ATCMD Mode'	"LOGUART	CONFIG_ATCMD_LOGUART \
 						MCU_Control		CONFIG_ATCMD_MCU_CONTROL \
 						"
@@ -588,9 +590,15 @@ if [ "$CONFIG_AP_CORE_CA32" = "y" ]; then
 if [ "$CONFIG_USB_DEVICE_EN_FOR_HP" = "y" ]; then
 bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_HP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_HP
+if [ "$CONFIG_USBD_COMPOSITE_FOR_HP" = "y" ]; then
+	choice 'Select Composite Class' " \
+		CDC_ACM_HID		CONFIG_USBD_COMPOSITE_CDC_ACM_HID_FOR_HP \
+		CDC_ACM_UAC		CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_FOR_HP \
+		"
+fi
 bool "HID"				CONFIG_USBD_HID_FOR_HP
 bool "MSC"				CONFIG_USBD_MSC_FOR_HP
-bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_HP
+bool "UAC(Experimental)"		CONFIG_USBD_UAC_FOR_HP
 bool "Vendor"				CONFIG_USBD_VENDOR_FOR_HP
 fi
 
@@ -611,9 +619,15 @@ if [ "$CONFIG_USB_DRD_EN_FOR_HP" = "y" ]; then
 comment 'USB Device Class'
 bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_HP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_HP
+if [ "$CONFIG_USBD_COMPOSITE_FOR_HP" = "y" ]; then
+	choice 'Select Composite Class' " \
+		CDC_ACM_HID		CONFIG_USBD_COMPOSITE_CDC_ACM_HID_FOR_HP \
+		CDC_ACM_UAC		CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_FOR_HP \
+		"
+fi
 bool "HID"				CONFIG_USBD_HID_FOR_HP
 bool "MSC"				CONFIG_USBD_MSC_FOR_HP
-bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_HP
+bool "UAC(Experimental)"		CONFIG_USBD_UAC_FOR_HP
 bool "Vendor"				CONFIG_USBD_VENDOR_FOR_HP
 
 comment 'USB Host Class'
@@ -894,6 +908,12 @@ choice 'USB Mode'			"Device		CONFIG_USB_DEVICE_EN_FOR_AP \
 if [ "$CONFIG_USB_DEVICE_EN_FOR_AP" = "y" ]; then
 bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_AP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_AP
+if [ "$CONFIG_USBD_COMPOSITE_FOR_AP" = "y" ]; then
+	choice 'Select Composite Class' " \
+			CDC_ACM_HID		CONFIG_USBD_COMPOSITE_CDC_ACM_HID_FOR_AP \
+			CDC_ACM_UAC		CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_FOR_AP \
+			"
+fi
 bool "HID"				CONFIG_USBD_HID_FOR_AP
 bool "MSC"				CONFIG_USBD_MSC_FOR_AP
 bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_AP
@@ -917,6 +937,12 @@ if [ "$CONFIG_USB_DRD_EN_FOR_AP" = "y" ]; then
 comment 'USB Device Class'
 bool "CDC ACM"				CONFIG_USBD_CDC_ACM_FOR_AP
 bool "Composite"			CONFIG_USBD_COMPOSITE_FOR_AP
+if [ "$CONFIG_USBD_COMPOSITE_FOR_AP" = "y" ]; then
+	choice 'Select Composite Class' " \
+			CDC_ACM_HID		CONFIG_USBD_COMPOSITE_CDC_ACM_HID_FOR_AP \
+			CDC_ACM_UAC		CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_FOR_AP \
+			"
+fi
 bool "HID"				CONFIG_USBD_HID_FOR_AP
 bool "MSC"				CONFIG_USBD_MSC_FOR_AP
 bool "UAC(Experimental)"				CONFIG_USBD_UAC_FOR_AP
@@ -965,6 +991,7 @@ if [ "$CONFIG_PER_TEST_FOR_AP" = "y" ]; then
 	bool "EFUSE_Verify_Mode"	CONFIG_EFUSE_VERIFY_FOR_AP
 	bool "SPIC_Verify_Mode"		CONFIG_SPIC_VERIFY_FOR_AP
 	bool "RF_Interference_Flash"		CONFIG_RF_Interference_Flash_VERIFY_FOR_AP
+	bool "MEMORY_Verify_Mode"		CONFIG_MEMORY_VERIFY_FOR_AP
 	bool "ADC_Verify_Mode"		CONFIG_ADC_VERIFY_FOR_AP
 	bool "RSIP_Verify_Mode"		CONFIG_RSIP_VERIFY_FOR_AP
 	bool "KeyScan_Verify_Mode"	CONFIG_KEYSCAN_VERIFY_FOR_AP

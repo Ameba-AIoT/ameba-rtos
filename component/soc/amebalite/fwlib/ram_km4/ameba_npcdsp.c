@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "NPCDSP";
+static const char *const TAG = "NPCDSP";
 u32 DSPSleepTick = 0;
 static u32 dsp_sleep_type;
 
@@ -110,7 +110,7 @@ void dsp_resume(void)
 	if (dsp_sleep_type == SLEEP_PG) {
 		/* check AP state, AP need be active when DSP PG Wakeup*/
 		if (!kr4_status_on()) {
-			RTK_LOGS(NOTAG, "wake KR4\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "wake KR4\n");
 			kr4_resume();
 		}
 
@@ -136,12 +136,11 @@ u32 NPWDSP_INTHandler(UNUSED_WARN_DIS void *Data)
 	return TRUE;
 }
 
-
-u32 dsp_suspend(u32 type)
+int dsp_suspend(u32 type)
 {
 	UNUSED(type);
 
-	u32 ret = _SUCCESS;
+	int ret = SUCCESS;
 	u32 sleep_wevent_config_val[2] = {0};
 	SLEEP_ParamDef *sleep_param;
 	u32 duration = 0;
@@ -162,7 +161,7 @@ u32 dsp_suspend(u32 type)
 	sleep_wevent_config_val[1] = HAL_READ32(PMC_BASE, WAK_MASK1_DSP);
 	sleep_wevent_config_val[0] = HAL_READ32(PMC_BASE, WAK_MASK0_DSP);
 
-	RTK_LOGS(NOTAG, "dsp_suspend %lx %lx\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "dsp_suspend %lx %lx\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
 	if ((sleep_wevent_config_val[0] | sleep_wevent_config_val[1])) {
 		InterruptRegister(NPWDSP_INTHandler, DSP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
 		InterruptEn(DSP_WAKE_IRQ, INT_PRI5);
@@ -181,7 +180,6 @@ u32 dsp_suspend(u32 type)
 	}
 
 	return ret;
-
 }
 
 
@@ -213,11 +211,11 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
-		if (_SUCCESS == dsp_suspend(SLEEP_PG)) {
+		if (SUCCESS == dsp_suspend(SLEEP_PG)) {
 		}
 		break;
 	case SLEEP_CG:
-		if (_SUCCESS == dsp_suspend(SLEEP_CG)) {
+		if (SUCCESS == dsp_suspend(SLEEP_CG)) {
 			pmu_set_sysactive_time(2);
 		}
 		break;

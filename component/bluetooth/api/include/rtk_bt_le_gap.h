@@ -202,7 +202,7 @@ typedef enum {
 } rtk_bt_le_phy_prim_adv_t;
 #endif
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @typedef   rtk_bt_le_adv_event_prop_t
  * @brief     Bluetooth LE GAP adv event properties.
@@ -455,7 +455,7 @@ typedef struct {
 	rtk_bt_le_adv_filter_t filter_policy;
 } rtk_bt_le_adv_param_t;
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @struct    rtk_bt_le_ext_adv_param_t
  * @brief     Bluetooth LE GAP ext adv paramter definition.
@@ -546,9 +546,7 @@ typedef struct {
 	/** Advertising Data Len */
 	uint16_t len;
 } rtk_bt_le_ext_adv_data_t;
-#endif
 
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 /**
  * @struct    rtk_bt_le_ext_create_conn_param_t
  * @brief     Bluetooth LE GAP create ext connection paramter definition.
@@ -739,7 +737,7 @@ typedef struct {
 	uint8_t duplicate_opt;
 } rtk_bt_le_scan_param_t;
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @struct    rtk_bt_le_ext_scan_param_t
  * @brief     Bluetooth LE GAP ext scan paramters definition.
@@ -759,20 +757,20 @@ typedef struct {
 	/**
 	 * This is defined as the time interval from when the Controller\n
 	 * started its last LE scan until it begins the subsequent LE scan.\n
-	 * Range: 0x0004 to 0x4000\n
-	 * Default: 0x0010 (10 ms)\n
+	 * Range: 0x0004 to 0xFFFF\n
+	 * Default: 0x0040 (40 ms)\n
 	 * Time = N * 0.625 ms\n
-	 * Time Range: 2.5 ms to 10.24 s\n
+	 * Time Range: 2.5 ms to 40.959375 s\n
 	 * interval[0] for 1M PHY, interval[1] for Coded PHY.\n
 	 */
 	uint16_t interval[2];
 	/**
 	 * The duration of the LE scan. LE_Scan_Window shall be less\n
 	 * than or equal to LE_Scan_Interval\n
-	 * Range: 0x0004 to 0x4000\n
-	 * Default: 0x0010 (10 ms)\n
+	 * Range: 0x0004 to 0xFFFF\n
+	 * Default: 0x0020 (20 ms)\n
 	 * Time = N * 0.625 ms\n
-	 * Time Range: 2.5 ms to 10.24 s\n
+	 * Time Range: 2.5 ms to 40.959375 s\n
 	 * window[0] for 1M PHY, window[1] for Coded PHY.\n
 	 */
 	uint16_t window[2];
@@ -1197,7 +1195,7 @@ typedef struct {
 	rtk_bt_le_adv_stop_reason_t  stop_reason;       /*!< Adv stop reason */
 } rtk_bt_le_adv_stop_ind_t;
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @struct    rtk_bt_le_ext_adv_ind_t
  * @brief     Bluetooth LE ext adv state indication msg.
@@ -1522,13 +1520,33 @@ typedef struct {
 	rtk_bt_le_adv_report_t adv_report;  /*!< adv data to be reported from controller */
 } rtk_bt_le_scan_res_ind_t;
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_CONNECTABLE_ADV   (1 << 0)
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_SCANNABLE_ADV     (1 << 1)
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_DIRECTED_ADV      (1 << 2)
+#define RTK_BT_LE_EXT_ADV_EVT_BIT_SCAN_RESPONSE     (1 << 3)
+
+/**
+ * @struct    rtk_bt_le_ext_adv_report_type_t
+ * @brief     Bluetooth LE ext adv report event type.
+ */
+typedef enum {
+	/*!< Other value that less than 0x10, reference RTK_BT_LE_EXT_ADV_EVT_BIT_XXX bit value. */
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_IND =                  0x13,
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_DIRECT_IND =           0x15,
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_SCAN_IND =             0x12,
+	RTK_BT_LE_EXT_EVT_LEGACY_ADV_NONCONN_IND =          0x10,
+	RTK_BT_LE_EXT_EVT_LEGACY_SCAN_RSP_TO_ADV_IND =      0x1B,
+	RTK_BT_LE_EXT_EVT_LEGACY_SCAN_RSP_TO_ADV_SCAN_IND = 0x1A,
+} rtk_bt_le_ext_adv_report_type_t;
+
 /**
  * @struct    rtk_bt_le_ext_scan_res_ind_t
  * @brief     Bluetooth LE ext scan result indication msg.
  */
 typedef struct {
-	uint16_t evt_type;
+	uint16_t evt_type;      /*!< ref @ref rtk_bt_le_ext_adv_report_type_t, more bit field information, please ref bt spec "LE Extended Advertising Report Event". */
 	rtk_bt_le_addr_t addr;
 	rtk_bt_le_addr_t direct_addr;
 	int8_t rssi;
@@ -1538,7 +1556,7 @@ typedef struct {
 	int8_t tx_power;
 	uint16_t peri_adv_interval;
 	uint16_t len;
-	uint8_t *data; /* Must be the last member */
+	uint8_t *data; /*!< Must be the last member */
 } rtk_bt_le_ext_scan_res_ind_t;
 #endif
 
@@ -1936,6 +1954,13 @@ typedef struct {
 	uint16_t conn_handle;
 	uint16_t *p_tx_pending_num;
 } rtk_bt_le_get_tx_pending_num_param_t;
+
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+typedef struct {
+	uint16_t conn_handle;
+	uint8_t *adv_handle;
+} rtk_bt_le_get_eadv_by_conn_handle_param_t;
+#endif
 
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 typedef struct {
@@ -2475,7 +2500,7 @@ uint16_t rtk_bt_le_gap_get_adv_param(rtk_bt_le_adv_param_t *padv_param);
  */
 bool rtk_bt_le_gap_adv_is_idle(void);
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @brief     Create an extended advertising set
  * @param[in] p_adv_param: Advertising parameters
@@ -2539,9 +2564,18 @@ uint16_t rtk_bt_le_gap_stop_ext_adv(uint8_t adv_handle);
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle);
-#endif
 
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+/**
+ * @brief     When an extended advertising set is stopped due to connnection established, get the stopped
+ *            advertising handle according to the connection handle.
+ * @param[in] conn_handle: Handle of connection.
+ * @param[out] adv_handle: Handle of advertising set that stopped due to this connection.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(uint16_t conn_handle, uint8_t *adv_handle);
+
 /**
  * @brief     Start extended connection, will cause event @ref RTK_BT_LE_GAP_EVT_CONNECT_IND
  * @param[in] p_ext_conn_param: Extended connection parameter.
@@ -2720,7 +2754,7 @@ uint16_t rtk_bt_le_gap_start_scan(void);
  */
 uint16_t rtk_bt_le_gap_stop_scan(void);
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @brief     Set ext scan paramters.
  * @param[in] p_param: Ext Scan paramters
@@ -3132,7 +3166,7 @@ uint16_t rtk_bt_le_gap_tx_power_report_set(uint16_t conn_handle, bool local_enab
  */
 uint16_t rtk_bt_le_gap_get_antenna_info(rtk_bt_le_gap_antenna_info_t *antenna_info);
 
-#if ((defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && \
+#if ((defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && \
     (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
 /**
  * @brief     Start connectionless CTE transmit.
@@ -3158,7 +3192,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_start(rtk_bt_le_gap_connless_cte_tx_param
  */
 uint16_t rtk_bt_le_gap_connless_cte_tx_stop(uint8_t adv_handle);
 
-#endif /* RTK_BLE_5_0_AE_ADV_SUPPORT && RTK_BLE_5_0_PA_ADV_SUPPORT */
+#endif /* RTK_BLE_5_0_USE_EXTENDED_ADV && RTK_BLE_5_0_PA_ADV_SUPPORT */
 
 /**
  * @brief     Start connectionless CTE receive.

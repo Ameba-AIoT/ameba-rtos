@@ -184,7 +184,7 @@ enum PMC_AP_WAKE_STATUS {
   * @}
   */
 
-u32 km4_suspend(u32 type);
+int km4_suspend(u32 type);
 void km4_resume(void);
 u32 km4_status_on(void);
 

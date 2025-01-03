@@ -42,7 +42,7 @@ iperf_err(struct iperf_test *test, const char *format, ...)
 	//char str[1000];
 
 	va_start(argp, format);
-	DiagVSprintf(NULL, format, argp);
+	DiagVprintf(format, argp);
 #if 0
 	vsnprintf(str, sizeof(str), format, argp);
 	if (test != NULL && test->json_output && test->json_top != NULL) {

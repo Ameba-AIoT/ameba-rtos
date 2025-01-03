@@ -315,22 +315,11 @@ void eap_autoreconnect_hdl(u8 method_id)
 
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl.h>
-
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER>=0x03000000)
 #include "mbedtls/build_info.h"
 #include <ssl_misc.h>
 #define MBEDTLS_SSL_COMPRESSION_ADD 0
 int max_buf_bio_in_size = MBEDTLS_SSL_IN_BUFFER_LEN;
 int max_buf_bio_out_size = MBEDTLS_SSL_OUT_BUFFER_LEN;
-#elif (CONFIG_MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
-#include <mbedtls/config.h>
-#include <mbedtls/ssl_internal.h>
-int max_buf_bio_in_size = MBEDTLS_SSL_IN_BUFFER_LEN;
-int max_buf_bio_out_size = MBEDTLS_SSL_OUT_BUFFER_LEN;
-#else
-#include <mbedtls/ssl_internal.h>
-int max_buf_bio_size = MBEDTLS_SSL_BUFFER_LEN;
-#endif
 
 struct eap_tls {
 	void *ssl;
@@ -468,20 +457,16 @@ int eap_cert_setup(struct eap_tls *tls_context)
 			return -1;
 		}
 		if (eap_client_key_pwd) {
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER>=0x03010000)
-			if (mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, eap_client_key_pwd, strlen(eap_client_key_pwd), TRNG_get_random_bytes_f_rng,
-									 (void *)1) != 0)
-#else
-			if (mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, eap_client_key_pwd, strlen(eap_client_key_pwd)) != 0)
-#endif
+			if (mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, (const unsigned char *)eap_client_key_pwd, strlen(eap_client_key_pwd),
+									 TRNG_get_random_bytes_f_rng,
+									 (void *)1) != 0) {
 				return -1;
+			}
 		} else {
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER>=0x03010000)
-			if (mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, eap_client_key_pwd, 0, TRNG_get_random_bytes_f_rng, (void *)1) != 0)
-#else
-			if (mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, eap_client_key_pwd, 0) != 0)
-#endif
+			if (mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, (const unsigned char *)eap_client_key_pwd, 0, TRNG_get_random_bytes_f_rng,
+									 (void *)1) != 0) {
 				return -1;
+			}
 		}
 
 		mbedtls_ssl_conf_own_cert(tls_context->conf, _cli_crt, _clikey_rsa);

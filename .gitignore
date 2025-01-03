@@ -18,13 +18,17 @@
 !/**/gnu_utility/**/*.bin
 !/tools/**/*.bin
 
+# img2 axf files
+target_img2*.axf
+
 # project library files
 
 # log files
 *.log
 
-# git version files 
+# git version files
 lib_*_git_version.c
+__tmp_*_build_info.c
 
 #wifi ext noused c files
 /**/wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
@@ -60,3 +64,7 @@ lib_*_git_version.c
 *.dep
 *.ewt
 /**/EWARM-RELEASE/Debug/
+
+# IDE extra files
+compile_commands.json
+.vscode

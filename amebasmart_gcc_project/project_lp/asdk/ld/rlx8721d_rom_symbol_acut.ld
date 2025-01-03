@@ -143,7 +143,6 @@ SECTIONS
     PROVIDE(SYSCFG_OTP_UsbDownloadEnable = 0x1f91);
     PROVIDE(SYSCFG_BootFromNor = 0x1f9d);
     PROVIDE(SYSCFG_HWTrigDownload = 0x1fc1);
-    PROVIDE(SYS_M0CtrlSel = 0x1fd3);
     PROVIDE(SYSCFG_SWTrigDownload = 0x2029);
     PROVIDE(SYSTIMER_Init = 0x2051);
     PROVIDE(SYSTIMER_TickGet = 0x209d);
@@ -222,7 +221,7 @@ SECTIONS
     PROVIDE(cmd_rom_table = 0x443d);
     PROVIDE(_rand = 0x4449);
     PROVIDE(__wrap_rand = 0x4479);
-    PROVIDE(RandBytes_Get = 0x44a9);
+    PROVIDE(_RandBytes_Get = 0x44a9);
     PROVIDE(shell_array_init = 0x45b1);
     PROVIDE(shell_get_argc = 0x45bf);
     PROVIDE(shell_get_argv = 0x45eb);

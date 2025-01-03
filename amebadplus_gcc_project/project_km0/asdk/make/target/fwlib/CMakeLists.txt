@@ -49,6 +49,7 @@ set(
 
     ${LOGDIR}/log.c
     ${LOGDIR}/sscanf_minimal.c
+    ${LOGDIR}/locks.c
 )
 
 ameba_internal_library(fwlib)

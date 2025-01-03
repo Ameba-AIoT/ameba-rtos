@@ -25,6 +25,7 @@
 #include <bt_audio_codec_wrapper.h>
 #include <app_bt_le_audio_common.h>
 #include <bt_utils.h>
+#include <app_audio_data.h>
 
 /***************************************common resourses*************************************/
 static bool cap_demo_init_flag = false;
@@ -356,7 +357,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
 		if (!ext_adv_ind->err) {
@@ -403,7 +404,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 
-#if defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
@@ -877,8 +878,6 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 #endif
 
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
-extern short audio_demo[];
-extern uint32_t audio_demo_size;
 
 static uint16_t app_bt_le_audio_parse_two_chnl_pcm_data_to_one_chnl(short *in_buf, uint32_t pcm_in_len, short *out_buf, uint32_t pcm_out_len,
 																	uint32_t audio_channel_allocation)
@@ -1106,8 +1105,8 @@ static void app_bt_le_audio_encode_task_entry(void *ctx)
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
 	short *p_pcm_data = NULL;
 	uint32_t pcm_total_num = 0;
-	p_pcm_data = audio_demo;
-	pcm_total_num = audio_demo_size * 2;
+	p_pcm_data = (short *)birds_sing;
+	pcm_total_num = birds_sing_size / (DEFAULT_PCM_BIT_WIDTH / 8);
 #endif
 #if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;

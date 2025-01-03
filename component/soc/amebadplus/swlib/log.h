@@ -42,16 +42,20 @@ extern rtk_log_tag_t rtk_log_tag_array[LOG_TAG_CACHE_ARRAY_SIZE];
 #define RTK_LOGI( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_INFO,    tag, format, 'I', ##__VA_ARGS__)
 #define RTK_LOGD( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_DEBUG,   tag, format, 'D', ##__VA_ARGS__)
 
-#define RTK_LOG_ITEMS(level, tag, format, letter, ...) do {               \
-		UNUSED(tag);	\
-		UNUSED(letter); \
-		if ( COMPIL_LOG_LEVEL >= level ) {	\
-			DiagPrintfNano(format, ##__VA_ARGS__); \
-		}	\
+//new RTK_LOGS
+#define RTK_LOG_ITEMS(level, tag, format, ...) do { 					  \
+        if (level==RTK_LOG_ALWAYS )         { rtk_log_write_nano(RTK_LOG_ALWAYS,   tag, 'A', format, ##__VA_ARGS__); } \
+        else if (level==RTK_LOG_ERROR )     { rtk_log_write_nano(RTK_LOG_ERROR,    tag, 'E', format, ##__VA_ARGS__); } \
+        else if (level==RTK_LOG_WARN )      { rtk_log_write_nano(RTK_LOG_WARN,     tag, 'W', format, ##__VA_ARGS__); } \
+        else if (level==RTK_LOG_INFO )      { rtk_log_write_nano(RTK_LOG_INFO,     tag, 'I', format, ##__VA_ARGS__); } \
+        else                                { rtk_log_write_nano(RTK_LOG_DEBUG,    tag, 'D', format, ##__VA_ARGS__); } \
+	}while(0)
+
+#define RTK_LOG_ITEMS_LEVEL(level, tag, format, ...) do {               \
+		if ( COMPIL_LOG_LEVEL >= level ) RTK_LOG_ITEMS(level, tag, format, ##__VA_ARGS__); \
 	} while(0)
 
-#define RTK_LOGS( tag, format, ... ) RTK_LOG_ITEMS(RTK_LOG_ALWAYS, tag, format, 'S', ##__VA_ARGS__)
-#define RTK_LOGS_LVL( tag, level, format, ... ) RTK_LOG_ITEMS(level, tag, format, 'S', ##__VA_ARGS__)
+#define RTK_LOGS( tag, level, format, ... ) RTK_LOG_ITEMS_LEVEL(level, tag,  format, ##__VA_ARGS__)
 
 //5. LOG set/get API
 

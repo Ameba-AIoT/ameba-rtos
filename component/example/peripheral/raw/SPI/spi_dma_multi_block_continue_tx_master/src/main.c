@@ -101,7 +101,7 @@ u32 Gdma_multiblock_irq(void *Data)
 	return 0;
 }
 
-BOOL SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length)
+bool SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length)
 {
 	u8 GdmaChnl;
 	IRQn_Type IrqNum;
@@ -113,7 +113,7 @@ BOOL SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 6);
 	if (GdmaChnl == 0xFF) {
 		printf("No Available DMA channel... \r\n");
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -149,7 +149,7 @@ BOOL SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
 			printf("SSI_TXGDMA_Init: Aligment Err: pTxData=0x%p,  Length=%lu\n", pTxData, Length);
-			return _FALSE;
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -186,7 +186,7 @@ BOOL SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 void Spi_free(SPI_TypeDef *spi_dev)

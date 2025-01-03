@@ -5,8 +5,7 @@
 #include "vfs.h"
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
-static const char *TAG = "MAIN";
-u32 use_hw_crypto_func;
+static const char *const TAG = "MAIN";
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 #include "ftl_int.h"
@@ -22,6 +21,9 @@ void app_ftl_init(void)
 }
 #endif
 
+#if (defined(CONFIG_BT) && CONFIG_BT) && (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+#include "bt_inic.h"
+#endif
 
 void app_init_debug(void)
 {
@@ -61,8 +63,6 @@ static void app_mbedtls_free_func(void *buf)
 void app_mbedtls_rom_init(void)
 {
 	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
-	use_hw_crypto_func = 0;
-	//rtl_cryptoEngine_init();
 }
 
 
@@ -216,6 +216,11 @@ int main(void)
 
 #if defined(CONFIG_WLAN)
 	wlan_initialize();
+#endif
+
+	/* initialize BT iNIC */
+#if (defined(CONFIG_BT) && CONFIG_BT) && (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+	bt_inic_init();
 #endif
 
 	/* init console */

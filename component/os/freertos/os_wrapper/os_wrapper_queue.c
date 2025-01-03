@@ -31,8 +31,8 @@ int rtos_queue_delete(rtos_queue_t p_handle)
 		return FAIL;
 	}
 
-	if (rtos_queue_massage_waiting(p_handle) != 0) {
-		RTK_LOGS(NOTAG, "[%s] %s <<< The queue is not empty, but the queue has been deleted. >>>\n", pcTaskGetTaskName(NULL), __FUNCTION__);
+	if (rtos_queue_message_waiting(p_handle) != 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] %s <<< The queue is not empty, but the queue has been deleted. >>>\n", pcTaskGetTaskName(NULL), __FUNCTION__);
 		vQueueDelete((QueueHandle_t)p_handle);
 		return FAIL;
 	} else {
@@ -41,7 +41,7 @@ int rtos_queue_delete(rtos_queue_t p_handle)
 	}
 }
 
-uint32_t rtos_queue_massage_waiting(rtos_queue_t p_handle)
+uint32_t rtos_queue_message_waiting(rtos_queue_t p_handle)
 {
 	if (p_handle == NULL) {
 		return FAIL;

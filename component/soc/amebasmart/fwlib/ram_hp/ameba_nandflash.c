@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 #include "ameba_nandflash.h"
 
-static const char *TAG = "NANDFLASH";
+static const char *const TAG = "NANDFLASH";
 u32 nand_l2p_table[2]; /*init to zero in __image1__*/
 
 /*block_id shall less than 32, bacause the max region is 0x08300000 */

@@ -42,7 +42,7 @@ if(CONFIG_RDP_BASIC)
         COMMAND ${CMAKE_COMMAND} -E touch ${IMAGE_TARGET_FOLDER}/.gitignore
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cmse_implib.lib ${IMAGE_TARGET_FOLDER}/cmse_implib.lib
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${IMAGE_TARGET_FOLDER}/text_image3.map
-        COMMAND ${CMAKE_COMMAND} -E copy target_img3.axf ${IMAGE_TARGET_FOLDER}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/target_img3.axf ${IMAGE_TARGET_FOLDER}
         COMMAND ${CMAKE_NM} ${IMAGE_TARGET_FOLDER}/target_img3.axf | sort > ${IMAGE_TARGET_FOLDER}/target_img3.map
         COMMAND ${CMAKE_OBJDUMP} -d ${IMAGE_TARGET_FOLDER}/target_img3.axf > ${IMAGE_TARGET_FOLDER}/target_img3.asm
         COMMAND ${CMAKE_COMMAND} -E copy ${IMAGE_TARGET_FOLDER}/target_img3.axf ${IMAGE_TARGET_FOLDER}/target_pure_img3.axf
@@ -78,6 +78,7 @@ if(CONFIG_RDP_BASIC)
         COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image3_all.bin ${BUILD_TYPE}
 
         DEPENDS target_img3
+        WORKING_DIRECTORY ${PROJECTDIR}/..
 
     )
 

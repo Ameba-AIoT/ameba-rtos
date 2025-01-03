@@ -33,19 +33,6 @@
 											((u8 *)(_pAddr))[5]==0xff		)	//!< Is Broadcast Address?
 
 /*
- *	IEEE 802.3 Ethernet magic constants.  The frame sizes omit the preamble
- *	and FCS/CRC (frame check sequence).
- */
-
-#define ETH_ALEN	6		/* Octets in one ethernet addr	 */
-#define ETH_HLEN	14		/* Total octets in header.	 */
-#define ETH_ZLEN	60		/* Min. octets in frame sans FCS */
-#define ETH_DATA_LEN	1500		/* Max. octets in payload	 */
-#define ETH_FRAME_LEN	1514		/* Max. octets in frame sans FCS */
-#define ETH_TYPE_LEN		2
-#define ETH_ARPHRD		1	/* ethernet hardware format */
-
-/*
  *	These are the defined Ethernet Protocol ID's.
  */
 
@@ -116,8 +103,8 @@ struct _vlan {
 };
 
 struct sockaddr_t {
-	__u8		sa_len;
-	__u8		sa_family;
+	u8		sa_len;
+	u8		sa_family;
 	char		sa_data[14];
 };
 
@@ -172,23 +159,23 @@ struct sockaddr_t {
 
 struct iphdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-	__u8	ihl: 4,
-			version: 4;
+	u8	ihl: 4,
+	 version: 4;
 #elif defined (__BIG_ENDIAN_BITFIELD)
-	__u8	version: 4,
-			ihl: 4;
+	u8	version: 4,
+	 ihl: 4;
 #else
 #error	"Please fix <asm/byteorder.h>"
 #endif
-	__u8	tos;
-	__u16	tot_len;
-	__u16	id;
-	__u16	frag_off;
-	__u8	ttl;
-	__u8	protocol;
-	__u16	check;
-	__u32	saddr;
-	__u32	daddr;
+	u8	tos;
+	u16	tot_len;
+	u16	id;
+	u16	frag_off;
+	u8	ttl;
+	u8	protocol;
+	u16	check;
+	u32	saddr;
+	u32	daddr;
 	/*The options start here. */
 };
 
@@ -204,12 +191,12 @@ struct iphdr {
  * |-----------------dest addr-----------------|
  */
 struct ipv6_hdr {
-	__u32 	v_tc_fl;
-	__u16	payload_len;
-	__u8	next_header;
-	__u8	hop_limit;
-	__u32	saddr[4];
-	__u32	daddr[4];
+	u32 	v_tc_fl;
+	u16	payload_len;
+	u8	next_header;
+	u8	hop_limit;
+	u32	saddr[4];
+	u32	daddr[4];
 };
 
 

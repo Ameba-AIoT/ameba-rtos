@@ -49,14 +49,14 @@ int efuse_get_remaining_length(void)
   */
 void efuse_mtp_read(uint8_t *data)
 {
-	u8 ret = _FAIL;
+	int ret = FAIL;
 
 	/*0xff will be eFuse default value instead of 0x00. */
 	_memset(data, 0xFF, OTP_MTP_USER_LEN);
 
 	ret = OTP_LogicalMap_Read(data, OTP_MTP_USER_START, OTP_MTP_USER_LEN);
 
-	if (ret == _FAIL) {
+	if (ret == FAIL) {
 		printf("ERR: efuse_mtp_read fail \n");
 	}
 
@@ -73,21 +73,21 @@ void efuse_mtp_read(uint8_t *data)
   */
 int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 {
-	u32 bResult;
+	int bResult = FAIL;
 
 	if ((offset + len) > OTP_MTP_USER_LEN) {
 		printf("ERR: Write MTP out of boundary\n");
-		return -1;
+		return bResult;
 	}
 
 	bResult = OTP_LogicalMap_Write((OTP_MTP_USER_START + offset), len, data);
 
-	if (!bResult) {
+	if (bResult != SUCCESS) {
 		printf("write fail \n");
-		return -1;
+		return bResult;
 	}
 
-	return 1;
+	return bResult;
 }
 
 /**
@@ -106,23 +106,23 @@ int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
 {
 	u32 index;
-	u32 bResult;
+	int bResult = FAIL;
 
 	if ((offset + len) > OTP_USER_LEN) {
 		printf("ERR: Read Out of boundary\n");
-		return -1;
+		return bResult;
 	}
 
 	for (index = 0; index < len; index++) {
 		bResult = OTP_Read8((OTP_USER_START + offset + index), (u8 *)(buf + index));
 
-		if (!bResult) {
+		if (bResult != SUCCESS) {
 			printf("ERR: Read User defined physical OTP fail\n");
-			return -1;
+			return bResult;
 		}
 	}
 
-	return 0;
+	return bResult;
 }
 
 /**
@@ -141,7 +141,7 @@ int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
 int efuse_otp_write(uint32_t offset, uint32_t len, uint8_t *buf)
 {
 	u8 index;
-	u32 bResult;
+	int bResult;
 
 	if ((offset + len) > OTP_USER_LEN) {
 		printf("ERR: Write Out of boundary\n");
@@ -151,7 +151,7 @@ int efuse_otp_write(uint32_t offset, uint32_t len, uint8_t *buf)
 	for (index = 0; index < len; index++) {
 		bResult = OTP_Write8((OTP_USER_START + offset + index), buf[index]);
 
-		if (!bResult) {
+		if (bResult != SUCCESS) {
 			printf("ERR: Write User defined physical OTP fail\n");
 			return -1;
 		}
@@ -172,7 +172,7 @@ int efuse_otp_chk(u8 len, u8 *buf)
 	/* To avoid gcc warnings */
 	(void) len;
 	(void) buf;
-	printf("AmebaDPlus not support efuse_otp_chk function!\n");
+	printf("Does not support efuse_otp_chk function!\n");
 	return 0;
 }
 

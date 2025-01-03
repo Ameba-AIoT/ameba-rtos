@@ -97,8 +97,7 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen,
 	}
 #else
 	result = connect(s, name, namelen);
-	getsockopt(s, SOL_SOCKET, SO_ERROR, &optval, &optlen);
-	if (result != 0 && optval == EINPROGRESS) {
+	if (result != 0 && errno == EINPROGRESS) {
 		fd_set wfds;
 		struct timeval time_out;
 
@@ -142,8 +141,6 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
 {
 	struct addrinfo hints, *local_res, *server_res;
 	int s;
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
 
 	if (local) {
 		memset(&hints, 0, sizeof(hints));
@@ -189,8 +186,7 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
 
 	((struct sockaddr_in *) server_res->ai_addr)->sin_port = htons(port);
 	if (timeout_connect(s, (struct sockaddr *) server_res->ai_addr, server_res->ai_addrlen, timeout) < 0) {
-		getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
-		if (so_error != EINPROGRESS) {
+		if (errno != EINPROGRESS) {
 			close(s);
 			freeaddrinfo(server_res);
 			return -1;
@@ -281,13 +277,10 @@ netannounce(int domain, int proto, char *local, int port)
 	}
 
 	freeaddrinfo(res);
-	int so_error = 0;
-	socklen_t errlen = sizeof(so_error);
 
 	if (proto == SOCK_STREAM) {
 		if (listen(s, 5) < 0) {
-			getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &errlen);
-			printf("\n%s, so_error: %d \n", __FUNCTION__, so_error);
+			printf("\n%s, errno: %d \n", __FUNCTION__, errno);
 
 			close(s);
 			return -1;

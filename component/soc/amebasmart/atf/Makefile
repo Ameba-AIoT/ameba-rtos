@@ -5,11 +5,23 @@
 #
 
 include .config
-include ../../../../amebasmart_gcc_project/menuconfig/.config_ap
+include ../../../../amebasmart_gcc_project/menuconfig/.config_ca32
 include Formosa.mk
 
-ASDK_VER = 10.3.1
-TOOLCHAINDIR	= /opt/rtk-toolchain
+ifeq (${ASDK_VER},)
+	ASDK_VER = 10.3.1
+	TOOLCHAINVER = 4291
+endif
+
+ifeq (${TOOLCHAIN_DIR},)
+	ifeq ($(OS),Windows_NT)
+		TOOLCHAINDIR = C:\\rtk-toolchain
+	else
+		TOOLCHAINDIR = /opt/rtk-toolchain
+	endif
+else
+	TOOLCHAINDIR = $(TOOLCHAIN_DIR)
+endif
 
 
 COMPILEOS = $(shell uname -o)
@@ -17,9 +29,9 @@ LINUX_OS = GNU/Linux
 PROJECT_DIR = ../../../../amebasmart_gcc_project/project_ap
 
 ifeq ($(COMPILEOS),$(LINUX_OS))
-CROSS_COMPILE = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/linux/newlib/bin/arm-none-eabi-
+CROSS_COMPILE = $(TOOLCHAINDIR)/asdk-${ASDK_VER}-${TOOLCHAINVER}/linux/newlib/bin/arm-none-eabi-
 else
-CROSS_COMPILE = $(TOOLCHAINDIR)/asdk-$(ASDK_VER)/mingw32/newlib/bin/arm-none-eabi-
+CROSS_COMPILE = $(TOOLCHAINDIR)/asdk${ASDK_VER}-${TOOLCHAINVER}/mingw32/newlib/bin/arm-none-eabi-
 endif
 
 OSTYPE = $(shell echo $(COMPILEOS) | tr A-Z a-z)
@@ -1121,7 +1133,6 @@ all: msg_start
 msg_start:
 	@echo "Building ${PLAT}"
 
-
 ifeq (${ERROR_DEPRECATED},0)
 # Check if deprecated declarations and cpp warnings should be treated as error or not.
 ifneq ($(findstring clang,$(notdir $(CC))),)
@@ -1327,7 +1338,9 @@ fwu_fip: ${BUILD_PLAT}/${FWU_FIP_NAME}
 
 .PHONY: ${FIPTOOL}
 ${FIPTOOL}:
+ifneq ($(OS),Windows_NT)
 	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" --no-print-directory -C ${FIPTOOLPATH}
+endif
 
 sptool: ${SPTOOL}
 .PHONY: ${SPTOOL}

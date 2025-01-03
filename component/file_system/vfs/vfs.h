@@ -7,9 +7,11 @@ extern "C" {
 #include "time.h"
 #include "log.h"
 #include "basic_types.h"
+#include <sys/unistd.h>
+#include <sys/stat.h>
 
 #define PATH_MAX 4096
-#define MAX_FS_SIZE 2		//number of supported file system types 
+#define MAX_FS_SIZE 2		//number of supported file system types
 #define MAX_USER_SIZE 2		//number of supported file system regions
 
 typedef int(*qsort_compar)(const void *, const void *);
@@ -95,35 +97,6 @@ struct dirent {
 	char d_name[PATH_MAX + 1];
 };
 typedef struct dirent dirent;
-#if __GNUC__ < 6
-#if __GNUC__ < 5
-typedef int dev_t;
-typedef unsigned int ino_t;
-//typedef int mode_t;
-typedef int nlink_t;
-typedef int uid_t;
-typedef int gid_t;
-typedef long int off_t;
-#endif
-typedef signed int blksize_t;
-typedef signed int blkcnt_t;
-#endif
-
-struct stat {
-	dev_t     st_dev;     /* ID of device containing file */
-	ino_t     st_ino;     /* inode number */
-	mode_t    st_mode;    /* protection */
-	nlink_t   st_nlink;   /* number of hard links */
-	uid_t     st_uid;     /* user ID of owner */
-	gid_t     st_gid;     /* group ID of owner */
-	dev_t     st_rdev;    /* device ID (if special file) */
-	off_t     st_size;    /* total size, in bytes */
-	blksize_t st_blksize; /* blocksize for file system I/O */
-	blkcnt_t  st_blocks;  /* number of 512B blocks allocated */
-	time_t    st_atime;   /* time of last access */
-	time_t    st_mtime;   /* time of last modification */
-	time_t    st_ctime;   /* time of last status change */
-};
 
 typedef struct _vfs_file {
 	int vfs_id;//Reserve
@@ -202,12 +175,6 @@ int find_vfs_number(const char *name, int *prefix_len, int *user_id);
 int vfs_user_mount(const char *prefix);
 char *find_vfs_tag(char region);
 
-/* access function */
-#define	F_OK		0	/* test for existence of file */
-#define	X_OK		0x01	/* test for execute or search permission */
-#define	W_OK		0x02	/* test for write permission */
-#define	R_OK		0x04	/* test for read permission */
-
 DIR *opendir(const char *name);
 struct dirent *readdir(DIR *dirp);
 int closedir(DIR *dirp);
@@ -217,7 +184,6 @@ int scandir(const char *dirp, struct dirent ***namelist,
 int rmdir(const char *path);
 int mkdir(const char *pathname, mode_t mode);
 int access(const char *pathname, int mode);
-int stat(const char *path, struct stat *buf);
 int alphasort(const struct dirent **a, const struct dirent **b);
 
 enum {
@@ -236,16 +202,16 @@ enum {
 do {\
 	if (level <= VFS_DBG_LEVEL) {\
 		if (level <= VFS_ERROR) {\
-			RTK_LOGS(NOTAG, "\n\r[error] %s, " fmt "\n\r", __func__, ##arg);\
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[error] %s, " fmt "\n\r", __func__, ##arg);\
 		} \
 		else if(level == VFS_WARNING){\
-			RTK_LOGS(NOTAG, "[warning] %s, " fmt "\n", __func__, ##arg);\
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "[warning] %s, " fmt "\n", __func__, ##arg);\
 		} \
 		else if(level == VFS_INFO){\
-			RTK_LOGS(NOTAG, "[info] %s, " fmt "\n", __func__, ##arg);\
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "[info] %s, " fmt "\n", __func__, ##arg);\
 		} \
 		else if(level == VFS_DEBUG){\
-			RTK_LOGS(NOTAG, "[debug] %s, " fmt "\n", __func__, ##arg);\
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "[debug] %s, " fmt "\n", __func__, ##arg);\
 		} \
 	}\
 }while(0)

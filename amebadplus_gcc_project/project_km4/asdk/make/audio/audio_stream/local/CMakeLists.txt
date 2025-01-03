@@ -23,6 +23,7 @@ set(
     ${DIR}/audio_track.cpp
     ${DIR}/audio_record.cpp
     ${DIR}/audio_service.cpp
+    ${DIR}/audio_manager.cpp
 )
 
 set_source_files_properties(${CPPSRC} DIRECTORY ../.. PROPERTIES COMPILE_DEFINITIONS "${MODULE_CPP_DEFINES}")

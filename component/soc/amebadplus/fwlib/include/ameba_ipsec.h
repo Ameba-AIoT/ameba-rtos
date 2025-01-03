@@ -725,6 +725,8 @@ _LONG_CALL_ int CRYPTO_CipherDecryptAD(HAL_CRYPTO_ADAPTER *pIE, IN const u8 *mes
 									   IN const u8 *paad, IN const u32 aadlen, OUT u8 *pResult, OUT u8 *pTag);
 _LONG_CALL_ int CRYPTO_SendSeqBuf(u8 *pDigest, hw_sha_context *ctx);
 _LONG_CALL_ void hash_save(hw_sha_context *ctx);
+_LONG_CALL_ void otf_hw_crypto(uint8_t OTF_MODE, uint8_t is_enc, size_t entry_size, uint32_t flash_entry_addr, uint8_t *rsip_iv_addr,
+							   uint8_t *input_addr, uint8_t *output_addr,  uint8_t key_id_ecb, uint8_t key_id_ctr, uint8_t *key_ecb, uint8_t *key_ctr);
 
 /* Other Definitions --------------------------------------------------------*/
 #define FIFOCNT_TIMEOUT		0x100000
@@ -734,6 +736,9 @@ extern u32 SHA_OTPKEY;
 
 #define AES_ENGINE	0x0
 #define SHA_ENGINE	0x1
+#define RSIP_AES_BLOCK_SIZE 32
+#define HW_OTPKEY_LEN 32
+#define IS_RSIP_BLOCK_ALIGNED(x)		((x & (RSIP_AES_BLOCK_SIZE - 1U)) == 0)
 
 __STATIC_INLINE
 int rtl_cryptoEngine_init(void)

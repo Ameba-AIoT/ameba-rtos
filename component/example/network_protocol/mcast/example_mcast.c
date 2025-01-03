@@ -16,18 +16,16 @@ static void example_mcast_thread(void *param)
 	const char *group_ip = "224.0.0.251";
 	uint16_t port = 5353;
 
-	// Delay to wait for IP by DHCP
-	while (!((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-		RTK_LOGS(NOTAG, "Wait for WIFI connection ...\n");
-		rtos_time_delay_ms(2000);
-	}
-	RTK_LOGS(NOTAG, "\n Example: mcast \n ");
+	// Delay to check successful WiFi connection and obtain of an IP address
+	LwIP_Check_Connectivity();
+
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n Example: mcast \n ");
 
 	// Set NETIF_FLAG_IGMP flag for netif which should process IGMP messages
 	xnetif[0].flags |= NETIF_FLAG_IGMP;
 
 	if ((socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		RTK_LOGS(NOTAG, "ERROR: socket - AF_INET, SOCK_DGRAM\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: socket - AF_INET, SOCK_DGRAM\n");
 		err = -1;
 	}
 
@@ -38,7 +36,7 @@ static void example_mcast_thread(void *param)
 		imr.imr_interface.s_addr = INADDR_ANY;
 		err = setsockopt(socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &imr, sizeof(imr));
 		if (err < 0) {
-			RTK_LOGS(NOTAG, "ERROR: setsockopt - IP_ADD_MEMBERSHIP\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: setsockopt - IP_ADD_MEMBERSHIP\n");
 		}
 	}
 
@@ -48,7 +46,7 @@ static void example_mcast_thread(void *param)
 		intfAddr.s_addr = INADDR_ANY;
 		err = setsockopt(socket, IPPROTO_IP, IP_MULTICAST_IF, &intfAddr, sizeof(struct in_addr));
 		if (err < 0) {
-			RTK_LOGS(NOTAG, "ERROR: setsockopt - IP_MULTICAST_IF\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: setsockopt - IP_MULTICAST_IF\n");
 		}
 	}
 
@@ -60,7 +58,7 @@ static void example_mcast_thread(void *param)
 		bindAddr.sin_addr.s_addr = INADDR_ANY;
 		err = bind(socket, (struct sockaddr *) &bindAddr, sizeof(bindAddr));
 		if (err < 0) {
-			RTK_LOGS(NOTAG, "ERROR: bind\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: bind\n");
 		}
 	}
 
@@ -77,7 +75,7 @@ static void example_mcast_thread(void *param)
 			if ((packetLen = recvfrom(socket, &packet, sizeof(packet), 0, &from, &fromLen)) >= 0) {
 				uint8_t *ip = (uint8_t *) &from_sin->sin_addr.s_addr;
 				uint16_t from_port = ntohs(from_sin->sin_port);
-				RTK_LOGS(NOTAG, "recvfrom - %d bytes from %d.%d.%d.%d:%d\n", packetLen, ip[0], ip[1], ip[2], ip[3], from_port);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "recvfrom - %d bytes from %d.%d.%d.%d:%d\n", packetLen, ip[0], ip[1], ip[2], ip[3], from_port);
 			}
 
 			// Send multicast
@@ -90,9 +88,9 @@ static void example_mcast_thread(void *param)
 				to_sin->sin_addr.s_addr = inet_addr(group_ip);
 
 				if ((sendLen = sendto(socket, packet, packetLen, 0, &to, sizeof(struct sockaddr))) < 0) {
-					RTK_LOGS(NOTAG, "ERROR: sendto %s\n", group_ip);
+					RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ERROR: sendto %s\n", group_ip);
 				} else {
-					RTK_LOGS(NOTAG, "sendto - %d bytes to %s:%d\n", sendLen, group_ip, port);
+					RTK_LOGS(NOTAG, RTK_LOG_INFO, "sendto - %d bytes to %s:%d\n", sendLen, group_ip, port);
 				}
 			}
 		}
@@ -100,7 +98,7 @@ static void example_mcast_thread(void *param)
 		close(socket);
 	}
 #else
-	RTK_LOGS(NOTAG, "\nSHOULD ENABLE LWIP_IGMP\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nSHOULD ENABLE LWIP_IGMP\n");
 #endif
 	rtos_task_delete(NULL);
 }
@@ -108,6 +106,6 @@ static void example_mcast_thread(void *param)
 void example_mcast(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_mcast_thread"), example_mcast_thread, NULL, 2048 * 4, 1) != SUCCESS) {
-		RTK_LOGS(NOTAG, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

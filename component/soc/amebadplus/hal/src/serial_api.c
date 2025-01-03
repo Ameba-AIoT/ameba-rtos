@@ -21,58 +21,58 @@
 #include <string.h>
 #include "ameba_uart.h"
 
-static const char *TAG = "SERIAL";
+static const char *const TAG = "SERIAL";
 
-#define UART_NUM (3)
-#define SERIAL_TX_IRQ_EN        0x01
-#define SERIAL_RX_IRQ_EN        0x02
-#define SERIAL_TX_DMA_EN        0x01
-#define SERIAL_RX_DMA_EN        0x02
+#define UART_NUM			MAX_UART_INDEX
+#define SERIAL_TX_IRQ_EN	0x01
+#define SERIAL_RX_IRQ_EN	0x02
+#define SERIAL_TX_DMA_EN	0x01
+#define SERIAL_RX_DMA_EN	0x02
 
 //#define UART_USE_GTIMER_TO		1
-#define UART_TIMER_ID	1
-#define UART_TIMER_TO	5000
+#define UART_TIMER_ID		1
+#define UART_TIMER_TO		5000
 
-#define CONFIG_GDMA_EN 1
+#define CONFIG_GDMA_EN		1
 
 /** @addtogroup Ameba_Mbed_API
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup MBED_UART
- *  @brief      MBED_UART driver modules.
+ *  @brief MBED_UART driver modules.
  *  @{
  */
 
 /** @addtogroup MBED_UART_Exported_Types
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup MBED_UART_Structure_Type Structure Type
-  * @{
-  */
+ * @{
+ */
 
 /**
-  * @brief struct MBED_UART_ADAPTER
-  */
+ * @brief struct MBED_UART_ADAPTER
+ */
 typedef struct {
-	int	TxCount;     // how many byte to TX
-	int	RxCount;     // how many bytes to RX
-	u8	*pTxBuf;
-	u8	*pRxBuf;
-	u8	UartIndex;
+	int TxCount; // how many byte to TX
+	int RxCount; // how many bytes to RX
+	u8 *pTxBuf;
+	u8 *pRxBuf;
+	u8 UartIndex;
 
 	GDMA_InitTypeDef UARTTxGdmaInitStruct;
 	GDMA_InitTypeDef UARTRxGdmaInitStruct;
 	UART_InitTypeDef UART_InitStruct;
 	UART_TypeDef *UARTx;
-	IRQn_Type   IrqNum;
+	IRQn_Type IrqNum;
 
 	/* for rx DMA timeout */
 	u32 last_dma_addr;
 
-	void (*TxCompCallback)(void *para);    // User Tx complete callback function
-	void (*RxCompCallback)(void *para);    // User Rx complete callback function
+	void (*TxCompCallback)(void *para); // User Tx complete callback function
+	void (*RxCompCallback)(void *para); // User Rx complete callback function
 	void *TxCompCbPara; // the pointer argument for TxCompCbPara
 	void *RxCompCbPara; // the pointer argument for RxCompCallback
 } MBED_UART_ADAPTER, *PMBED_UART_ADAPTER;
@@ -112,8 +112,7 @@ static const u32 PinMap_UART_RX[UART_NUM] = {
 	PINMUX_FUNCTION_UART2_RXD
 };
 
-static u32
-uart_tx_index_get(PinName tx)
+static u32 uart_tx_index_get(PinName tx)
 {
 	if (tx == PB_31) {
 		return 1;
@@ -125,8 +124,7 @@ uart_tx_index_get(PinName tx)
 	}
 }
 
-static u32
-uart_rx_index_get(PinName rx)
+static u32 uart_rx_index_get(PinName rx)
 {
 	if (rx == PB_30) {
 		return 1;
@@ -139,35 +137,30 @@ uart_rx_index_get(PinName rx)
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup MBED_UART_Exported_Functions MBED_UART Exported Functions
-  * @{
-  */
-static u32
-uart_dmasend_complete(
-	IN void *Data
-)
+ * @{
+ */
+static u32 uart_dmasend_complete(void *Data)
 {
-	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
+	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER)Data;
 	PGDMA_InitTypeDef GDMA_InitStruct;
 
 	puart_adapter->TxCount = 0;
 
 	GDMA_InitStruct = &puart_adapter->UARTTxGdmaInitStruct;
 
-	// Clean Auto Reload Bit
-	GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_DST);
-
-	// Clear Pending ISR
-	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	if (serial_dma_en[puart_adapter->UartIndex] & SERIAL_TX_DMA_EN) {
+		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+		serial_dma_en[puart_adapter->UartIndex] &= ~SERIAL_TX_DMA_EN;
+	}
 
 	/*disable UART TX DMA*/
 	UART_TXDMACmd(puart_adapter->UARTx, DISABLE);
-
-	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	UART_SetTxFlag(puart_adapter->UartIndex, 0);
 
@@ -179,15 +172,10 @@ uart_dmasend_complete(
 	return 0;
 }
 
-static u32
-uart_dmarecv_complete(
-	IN void *Data
-)
+static u32 uart_dmarecv_complete(void *Data)
 {
-	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
+	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER)Data;
 	PGDMA_InitTypeDef GDMA_InitStruct;
-	//u8 LineStatus;
-
 	GDMA_InitStruct = &puart_adapter->UARTRxGdmaInitStruct;
 
 #ifdef UART_USE_GTIMER_TO
@@ -196,20 +184,15 @@ uart_dmarecv_complete(
 	uart_gtimer_deinit();
 #endif
 
-	// Clean Auto Reload Bit
-	GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC);
-
-	// Clear Pending ISR
-	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	if (serial_dma_en[puart_adapter->UartIndex] & SERIAL_RX_DMA_EN) {
+		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+		serial_dma_en[puart_adapter->UartIndex] &= ~SERIAL_RX_DMA_EN;
+	}
 
 	/*disable UART RX DMA*/
 	UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
-
-	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-
-	// Check the Line Status
-	//LineStatus = (u8)UART_LineStatusGet(puart_adapter->UARTx);
 
 	UART_SetRxFlag(puart_adapter->UartIndex, 0);
 
@@ -224,12 +207,9 @@ uart_dmarecv_complete(
 	return 0;
 }
 
-static u32
-uart_dmarecv_irqhandler(
-	IN void *Data
-)
+static u32 uart_dmarecv_irqhandler(void *Data)
 {
-	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
+	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER)Data;
 
 	DCache_Invalidate((u32)puart_adapter->pRxBuf, puart_adapter->RxCount);
 	puart_adapter->RxCount = 0;
@@ -261,10 +241,7 @@ static void uart_rxdone_callback(void *pAdapter)
 	}
 }
 
-static void
-uart_intrecv_complete(
-	IN PMBED_UART_ADAPTER puart_adapter
-)
+static void uart_intrecv_complete(PMBED_UART_ADAPTER puart_adapter)
 {
 	//volatile u8 LineStatus;
 
@@ -282,10 +259,7 @@ uart_intrecv_complete(
 	}
 }
 
-static void
-uart_intsend_complete(
-	IN PMBED_UART_ADAPTER puart_adapter
-)
+static void uart_intsend_complete(PMBED_UART_ADAPTER puart_adapter)
 {
 	// Disable Tx FIFO empty interrupt
 	UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ETBEI, DISABLE);
@@ -298,12 +272,9 @@ uart_intsend_complete(
 	}
 }
 
-static u32
-uart_irqhandler(
-	IN void *Data
-)
+static u32 uart_irqhandler(void *Data)
 {
-	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
+	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER)Data;
 	u32 reg_lsr, reg_ier;
 	u32 RegValue;
 
@@ -368,7 +339,6 @@ uart_irqhandler(
 		}
 
 		//UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
-
 	}
 
 	//line status INT
@@ -399,12 +369,9 @@ uart_irqhandler(
 }
 
 #ifdef UART_USE_GTIMER_TO
-static void
-uart_gtimer_handle(
-	IN  void        *Data
-)
+static void uart_gtimer_handle(void *Data)
 {
-	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
+	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER)Data;
 	PGDMA_InitTypeDef GDMA_InitStruct;
 	u32 TransCnt = 0;
 
@@ -452,13 +419,12 @@ uart_gtimer_handle(
 }
 
 /**
-* @brief  Initialize the timer which is used for the UART_Rx DMA timeout.
-* @param  puart_adapter: Pointer to a PRUART_VERIFY_PARAMETER.
-* @param  PeriodUs: Desired timeout value in units of us.
-* @retval none
-*/
-static void
-uart_gtimer_init(PMBED_UART_ADAPTER puart_adapter, u32 PeriodUs)
+ * @brief Initialize the timer which is used for the UART_Rx DMA timeout.
+ * @param puart_adapter Pointer to a MBED_UART_ADAPTER.
+ * @param PeriodUs Desired timeout value in unit of us.
+ * @return None
+ */
+static void uart_gtimer_init(PMBED_UART_ADAPTER puart_adapter, u32 PeriodUs)
 {
 	RTIM_TimeBaseInitTypeDef TIM_InitStructTmp;
 
@@ -471,13 +437,12 @@ uart_gtimer_init(PMBED_UART_ADAPTER puart_adapter, u32 PeriodUs)
 	TIM_InitStructTmp.TIM_ARRProtection = DISABLE;
 
 	RTIM_TimeBaseInit(TIMx[UART_TIMER_ID], &TIM_InitStructTmp,
-					  TIMx_irq[UART_TIMER_ID], (IRQ_FUN) uart_gtimer_handle,
+					  TIMx_irq[UART_TIMER_ID], (IRQ_FUN)uart_gtimer_handle,
 					  (u32)puart_adapter);
 	RTIM_INTConfig(TIMx[UART_TIMER_ID], TIM_IT_Update, ENABLE);
 }
 
-static void
-uart_gtimer_deinit(void)
+static void uart_gtimer_deinit(void)
 {
 	InterruptDis(TIMx_irq[UART_TIMER_ID]);
 	InterruptUnRegister(TIMx_irq[UART_TIMER_ID]);
@@ -487,12 +452,13 @@ uart_gtimer_deinit(void)
 #endif
 
 /**
-  * @brief  Initialize the UART device, including clock, function, interrupt and UART registers.
-  * @param  obj: UART object defined in application software.
-  * @param  tx: Tx PinName according to pinmux spec.
-  * @param  rx: Rx PinName according to pinmux spec.
-  * @retval none
-  */
+ * @brief Initialize the UART device, including clock, function, interrupt and
+ * UART registers.
+ * @param obj UART object defined in application software.
+ * @param tx Tx PinName according to pinmux spec.
+ * @param rx Rx PinName according to pinmux spec.
+ * @return None
+ */
 void serial_init(serial_t *obj, PinName tx, PinName rx)
 {
 	PMBED_UART_ADAPTER puart_adapter = NULL;
@@ -503,7 +469,8 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 	RTK_LOGI(TAG, "uart idx: %x\n", uart_idx);
 	serial_enable(obj);
 
-	if (uart_idx == 2) { /* set bt uart2 as normal uart2 */
+	/* set bt uart2 as normal uart2 */
+	if (uart_idx == 2) {
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0) | LSYS_BIT_BT_USE_EXT_UART);
 	}
 
@@ -546,10 +513,11 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 }
 
 /**
-  * @brief  Deinitialize the UART device, including clock, function, interrupt and UART registers.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Deinitialize the UART device, including clock, function, interrupt and
+ * UART registers.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_free(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -565,27 +533,36 @@ void serial_free(serial_t *obj)
 
 #ifdef CONFIG_GDMA_EN
 	if (serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) {
-		GDMA_ChnlFree(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index,
-					  puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ClearINT(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ChnlFree(puart_adapter->UARTRxGdmaInitStruct.GDMA_Index, puart_adapter->UARTRxGdmaInitStruct.GDMA_ChNum);
 		serial_dma_en[obj->uart_idx] &= ~SERIAL_RX_DMA_EN;
+		UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
 	}
 
 	if (serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) {
-		GDMA_ChnlFree(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index,
-					  puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ClearINT(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
+		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		GDMA_Abort(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ChnlFree(puart_adapter->UARTTxGdmaInitStruct.GDMA_Index, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum);
 		serial_dma_en[obj->uart_idx] &= ~SERIAL_TX_DMA_EN;
+		UART_TXDMACmd(puart_adapter->UARTx, DISABLE);
 	}
 #endif
-	// TODO: recovery Pin Mux
 
+	UART_SetRxFlag(obj->uart_idx, 0);
+	UART_SetTxFlag(obj->uart_idx, 0);
+
+	// TODO: recovery Pin Mux
 }
 
 /**
-  * @brief  Set UART device baudrate.
-  * @param  obj: UART object defined in application software.
-  * @param  baudrate: Baud Rate in units of bps, e.g. 115200.
-  * @retval none
-  */
+ * @brief Set UART device baudrate.
+ * @param obj UART object defined in application software.
+ * @param baudrate Desired baudrate in bps.
+ * @return None
+ */
 void serial_baud(serial_t *obj, int baudrate)
 {
 	current_baudrate = baudrate;
@@ -608,22 +585,22 @@ void serial_baud(serial_t *obj, int baudrate)
 }
 
 /**
-  * @brief  Set UART format.
-  * @param  obj: UART object defined in application software.
-  * @param  data_bits: Data bits, this parameter can be one of the following values:
-  *		@arg 7
-  *		@arg 8
-  * @param  parity: This parameter can be one of the following values:
-  *		@arg ParityNone
-  *		@arg ParityOdd
-  *		@arg ParityEven
-  *		@arg ParityForced1
-  *		@arg ParityForced0
-  * @param  stop_bits: This parameter can be one of the following values:
-  *		@arg 2
-  *		@arg 1
-  * @retval none
-  */
+ * @brief Set UART format.
+ * @param obj UART object defined in application software.
+ * @param data_bits Data bits, this parameter can be one of the following values:
+ *		@arg 7
+ *		@arg 8
+ * @param parity Parity type, this parameter can be one of the following values:
+ *		@arg ParityNone
+ *		@arg ParityOdd
+ *		@arg ParityEven
+ *		@arg ParityForced1
+ *		@arg ParityForced0
+ * @param stop_bits Stop bit, this parameter can be one of the following values:
+ *		@arg 2
+ *		@arg 1
+ * @return None
+ */
 void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_bits)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -679,12 +656,12 @@ void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_b
 }
 
 /**
-  * @brief  Register UART interrupt handler if needed.
-  * @param  obj: UART object defined in application software.
-  * @param  handler: UART interrupt callback function.
-  * @param  id: UART interrupt callback parameter.
-  * @retval none
-  */
+ * @brief Register UART interrupt handler if needed.
+ * @param obj UART object defined in application software.
+ * @param handler UART interrupt callback function.
+ * @param id UART interrupt callback parameter.
+ * @return None
+ */
 void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id)
 {
 	PMBED_UART_ADAPTER puart_adapter;
@@ -699,16 +676,16 @@ void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id)
 }
 
 /**
-  * @brief  Configure UART interrupt.
-  * @param  obj: UART object defined in application software.
-  * @param  irq: Tx or Rx interrupt, this parameter can be one of the following values:
-  *		@arg RxIrq
-  *		@arg TxIrq
-  * @param  enable: This parameter can be one of the following values:
-  *		@arg 0: Disable specified irq handler.
-  *		@arg 1: Enable specified irq handler.
-  * @retval none
-  */
+ * @brief Configure UART interrupt.
+ * @param obj UART object defined in application software.
+ * @param irq Tx or Rx interrupt, this parameter can be one of the following values:
+ *		@arg RxIrq
+ *		@arg TxIrq
+ * @param enable: This parameter can be one of the following values:
+ *		@arg 0: Disable specified irq handler.
+ *		@arg 1: Enable specified irq handler.
+ * @return None
+ */
 void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable)
 {
 	PMBED_UART_ADAPTER puart_adapter;
@@ -737,11 +714,11 @@ void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable)
 }
 
 /**
-  * @brief  Get one byte data through UART.
-  * @param  obj: UART object defined in application software.
-  * @return Received character.
-  * @note This function is asynchronous API.
-  */
+ * @brief Get one byte data through UART.
+ * @param obj UART object defined in application software.
+ * @return Received character.
+ * @note This function is asynchronous API.
+ */
 int serial_getc(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -754,12 +731,12 @@ int serial_getc(serial_t *obj)
 }
 
 /**
-  * @brief  Send one byte data through UART.
-  * @param  obj: UART object defined in application software.
-  * @param  c: Data to be transmitted.
-  * @retval none
-  * @note This function is asynchronous API.
-  */
+ * @brief Send one byte data through UART.
+ * @param obj UART object defined in application software.
+ * @param c Data to be transmitted.
+ * @return None
+ * @note This function is asynchronous API.
+ */
 void serial_putc(serial_t *obj, int c)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -774,12 +751,12 @@ void serial_putc(serial_t *obj, int c)
 }
 
 /**
-  * @brief  Check if there is data in Rx FIFO.
-  * @param  obj: UART object defined in application software.
-  * @return Check result.
-  * @retval 1: TRUE and there is data in Rx FIFO.
-  * @retval 0: FALSE and there is no data in Rx FIFO.
-  */
+ * @brief Check if there is data in UART Rx FIFO.
+ * @param obj UART object defined in application software.
+ * @return Check result, which can be a value of the followings:
+ * 		- 1: There is data in Rx FIFO.
+ * 		- 0: There is no data in Rx FIFO.
+ */
 int serial_readable(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -792,12 +769,12 @@ int serial_readable(serial_t *obj)
 }
 
 /**
-  * @brief  Check whether it is permitted to write data to Tx FIFO.
-  * @param  obj: UART object defined in application software.
-  * @return Check result.
-  * @retval 1: TRUE and it is ok to write data to Tx FIFO.
-  * @retval 0: FALSE and it is not ok to write data to Tx FIFO.
-  */
+ * @brief Check whether it is permitted to write data to UART Tx FIFO.
+ * @param obj UART object defined in application software.
+ * @return Check result, which can be a value of the followings:
+ * 		- 1: It is ok to write data to Tx FIFO.
+ * 		- 0: It is not ok to write data to Tx FIFO.
+ */
 int serial_writable(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -810,10 +787,10 @@ int serial_writable(serial_t *obj)
 }
 
 /**
-  * @brief  Clear Rx FIFO.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Clear UART Rx FIFO.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_clear(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter;
@@ -824,20 +801,20 @@ void serial_clear(serial_t *obj)
 }
 
 /**
-  * @brief  Configure UART Tx pinmux.
-  * @param  tx: Tx PinName according to pinmux spec.
-  * @retval none
-  */
+ * @brief Configure UART Tx pinmux.
+ * @param tx Tx PinName according to pinmux spec.
+ * @return None
+ */
 void serial_pinout_tx(PinName tx)
 {
 	Pinmux_Config(tx, PINMUX_FUNCTION_UART);
 }
 
 /**
-  * @brief  Enable UART break contol function.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Enable UART break control function.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_break_set(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -846,10 +823,10 @@ void serial_break_set(serial_t *obj)
 }
 
 /**
-  * @brief  Disable UART break contol function.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Disable UART break control function.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_break_clear(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -858,13 +835,13 @@ void serial_break_clear(serial_t *obj)
 }
 
 /**
-  * @brief  Register UART Tx complete handler.
-  * @param  obj: UART object defined in application software.
-  * @param  handler: UART Tx complete callback function.
-  * @param  id: UART Tx complete callback parameter.
-  * @retval none
-  * @note This function is called when asynchronous API is used.
-  */
+ * @brief Register UART Tx complete handler.
+ * @param obj UART object defined in application software.
+ * @param handler UART Tx complete callback function.
+ * @param id UART Tx complete callback parameter.
+ * @return None
+ * @note This function is called when asynchronous API is used.
+ */
 void serial_send_comp_handler(serial_t *obj, void *handler, uint32_t id)
 {
 	PMBED_UART_ADAPTER puart_adapter;
@@ -875,13 +852,13 @@ void serial_send_comp_handler(serial_t *obj, void *handler, uint32_t id)
 }
 
 /**
-  * @brief  Register UART Rx complete handler.
-  * @param  obj: UART object defined in application software.
-  * @param  handler: UART Rx complete callback function.
-  * @param  id: UART Rx complete callback parameter.
-  * @retval none
-  * @note This function is called when asynchronous API is used.
-  */
+ * @brief Register UART Rx complete handler.
+ * @param obj UART object defined in application software.
+ * @param handler UART Rx complete callback function.
+ * @param id UART Rx complete callback parameter.
+ * @return None
+ * @note This function is called when asynchronous API is used.
+ */
 void serial_recv_comp_handler(serial_t *obj, void *handler, uint32_t id)
 {
 	PMBED_UART_ADAPTER puart_adapter;
@@ -892,15 +869,15 @@ void serial_recv_comp_handler(serial_t *obj, void *handler, uint32_t id)
 }
 
 /**
-  * @brief  Receive data of target length under interrupt mode.
-  * @param  obj: UART object defined in application software.
-  * @param  prxbuf: Pointer to the buffer that saves data read from UART FIFO.
-  * @param  len: Number of data to be read.
-  * @return HAL status.
-  * @retval HAL_OK(0): Success.
-  * @retval HAL_BUSY(1): Error.
-  * @note This function is asynchronous API.
-  */
+ * @brief Receive data of target length under interrupt mode.
+ * @param obj UART object defined in application software.
+ * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
+ * @param len Number of data to be read.
+ * @return HAL status, which can be a value of the followings:
+ * 		- HAL_OK(0): Success.
+ * 		- HAL_BUSY(1): Error.
+ * @note This function is asynchronous API.
+ */
 int32_t serial_recv_stream(serial_t *obj, char *prxbuf, uint32_t len)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -938,15 +915,15 @@ int32_t serial_recv_stream(serial_t *obj, char *prxbuf, uint32_t len)
 }
 
 /**
-  * @brief  Send data of target length under interrupt mode.
-  * @param  obj: UART object defined in application software.
-  * @param  ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
-  * @param  len: Number of data to be sent.
-  * @return HAL status.
-  * @retval 0: Success.
-  * @retval HAL_BUSY: Error.
-  * @note This function is asynchronous API.
-  */
+ * @brief Send data of target length under interrupt mode.
+ * @param obj UART object defined in application software.
+ * @param ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
+ * @param len: Number of data to be sent.
+ * @return HAL status, which can be a value of the followings:
+ * 		- 0: Success.
+ * 		- HAL_BUSY(1): Error.
+ * @note This function is asynchronous API.
+ */
 int32_t serial_send_stream(serial_t *obj, char *ptxbuf, uint32_t len)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -969,8 +946,8 @@ int32_t serial_send_stream(serial_t *obj, char *ptxbuf, uint32_t len)
 
 	while (cnt > 0 && puart_adapter->TxCount > 0) {
 		UART_CharPut(puart_adapter->UARTx, *puart_adapter->pTxBuf);
-		puart_adapter->TxCount --;
-		puart_adapter->pTxBuf ++;
+		puart_adapter->TxCount--;
+		puart_adapter->pTxBuf++;
 		cnt--;
 	}
 
@@ -985,15 +962,15 @@ int32_t serial_send_stream(serial_t *obj, char *ptxbuf, uint32_t len)
 }
 
 /**
-  * @brief  Receive data of target length under DMA mode.
-  * @param  obj: UART object defined in application software.
-  * @param  prxbuf: Pointer to the buffer that saves data read from UART FIFO.
-  * @param  len: Number of data to be read.
-  * @return HAL status.
-  * @retval HAL_OK(0): Success.
-  * @retval HAL_BUSY(1): Error.
-  * @note This function is asynchronous API.
-  */
+ * @brief Receive data of target length under DMA mode.
+ * @param obj UART object defined in application software.
+ * @param prxbuf: Pointer to the buffer that saves data read from UART FIFO.
+ * @param len: Number of data to be read.
+ * @return HAL status, which can be a value of the followings:
+ * 		- HAL_OK(0): Success.
+ * 		- HAL_BUSY(1): Error.
+ * @note This function is asynchronous API.
+ */
 int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -1017,20 +994,21 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 
 	// Disable Rx interrupt
 	UART_INTConfig(puart_adapter->UARTx, (RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI), DISABLE);
-	UART_RXDMAConfig(puart_adapter->UARTx, 16);
-	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
 
 	ret1 = UART_RXGDMA_Init(puart_adapter->UartIndex, &puart_adapter->UARTRxGdmaInitStruct,
 							puart_adapter, uart_dmarecv_irqhandler,
 							puart_adapter->pRxBuf, puart_adapter->RxCount);
 
 	if ((serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) == 0) {
-		if (ret1 == _TRUE) {
+		if (ret1 == TRUE) {
 			serial_dma_en[obj->uart_idx] |= SERIAL_RX_DMA_EN;
 		} else {
 			return HAL_BUSY;
 		}
 	}
+
+	UART_RXDMAConfig(puart_adapter->UARTx, 16);
+	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
 
 #ifdef UART_USE_GTIMER_TO
 	uart_gtimer_init(puart_adapter, UART_TIMER_TO);
@@ -1041,15 +1019,15 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 }
 
 /**
-  * @brief  Send data of target length under DMA mode.
-  * @param  obj: UART object defined in application software.
-  * @param  ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
-  * @param  len: Number of data to be sent.
-  * @return HAL status.
-  * @retval HAL_OK(0): Success.
-  * @retval HAL_BUSY(1): Error.
-  * @note This function is asynchronous API.
-  */
+ * @brief Send data of target length under DMA mode.
+ * @param obj UART object defined in application software.
+ * @param ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
+ * @param len: Number of data to be sent.
+ * @return HAL status, which can be a value of the followings:
+ * 		- HAL_OK(0): Success.
+ * 		- HAL_BUSY(1): Error.
+ * @note This function is asynchronous API.
+ */
 int32_t serial_send_stream_dma(serial_t *obj, char *ptxbuf, uint32_t len)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -1070,31 +1048,29 @@ int32_t serial_send_stream_dma(serial_t *obj, char *ptxbuf, uint32_t len)
 
 	UART_SetTxFlag(puart_adapter->UartIndex, STATETX_DMA);
 
-	UART_TXDMAConfig(puart_adapter->UARTx, 8);
-	UART_TXDMACmd(puart_adapter->UARTx, ENABLE);
-
 	ret1 = UART_TXGDMA_Init(puart_adapter->UartIndex, &puart_adapter->UARTTxGdmaInitStruct,
 							puart_adapter, uart_dmasend_complete,
 							puart_adapter->pTxBuf, puart_adapter->TxCount);
 
-	//NVIC_SetPriority(GDMA_GetIrqNum(0, puart_adapter->UARTTxGdmaInitStruct.GDMA_ChNum), 4);
-
 	if ((serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) == 0) {
-		if (ret1 == _TRUE) {
+		if (ret1 == TRUE) {
 			serial_dma_en[obj->uart_idx] |= SERIAL_TX_DMA_EN;
 		} else {
 			return HAL_BUSY;
 		}
 	}
 
+	UART_TXDMAConfig(puart_adapter->UARTx, 8);
+	UART_TXDMACmd(puart_adapter->UARTx, ENABLE);
+
 	return (ret);
 }
 
 /**
-  * @brief  Stop the stream or stream_dma TX.
-  * @param  obj: UART object defined in application software.
-  * @return Number of Bytes sent before stop if UART is in Tx state or HAL_OK(0) if not.
-  */
+ * @brief Stop the stream or stream_dma TX.
+ * @param obj UART object defined in application software.
+ * @return Number of Bytes sent before stop if UART is in Tx state or HAL_OK(0) if not.
+ */
 int32_t serial_send_stream_abort(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
@@ -1114,19 +1090,19 @@ int32_t serial_send_stream_abort(serial_t *obj)
 			PGDMA_InitTypeDef GDMA_InitStruct = &puart_adapter->UARTTxGdmaInitStruct;
 
 			Current_Addr = GDMA_GetSrcAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-			GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+
+			if (serial_dma_en[obj->uart_idx] & SERIAL_TX_DMA_EN) {
+				GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+				/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+				GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+				GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+				serial_dma_en[obj->uart_idx] &= ~SERIAL_TX_DMA_EN;
+			}
+
+			UART_TXDMACmd(puart_adapter->UARTx, DISABLE);
 
 			puart_adapter->TxCount = puart_adapter->TxCount - (Current_Addr - (u32)puart_adapter->pTxBuf);
 			puart_adapter->pTxBuf = (u8 *)Current_Addr;
-
-			// Clean Auto Reload Bit
-			GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_DST);
-			// Clear Pending ISR
-			GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-			//GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-			GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-
-			UART_TXDMACmd(puart_adapter->UARTx, DISABLE);
 		}
 	}
 
@@ -1140,17 +1116,17 @@ int32_t serial_send_stream_abort(serial_t *obj)
 }
 
 /**
-  * @brief  Stop the stream or stream_dma RX.
-  * @param  obj: UART object defined in application software.
-  * @return Number of Bytes received before stop.
-  */
+ * @brief Stop the stream or stream_dma RX.
+ * @param obj UART object defined in application software.
+ * @return Number of Bytes received before stop.
+ */
 int32_t serial_recv_stream_abort(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 	int ret = 0;
 
 	if (!UART_GetRxFlag(puart_adapter->UartIndex)) {
-		//RTK_LOGW(TAG, "uart rx abort: Not in TX state \n");
+		//RTK_LOGW(TAG, "uart rx abort: Not in RX state \n");
 		return HAL_OK;
 	}
 
@@ -1165,7 +1141,16 @@ int32_t serial_recv_stream_abort(serial_t *obj)
 
 			/*when stream DMA mode used, some data may be in uart rx fifo, get it if transmission aborted*/
 			Current_Addr = GDMA_GetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-			GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+
+			if (serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) {
+				GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+				/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+				GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+				GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+				serial_dma_en[obj->uart_idx] &= ~SERIAL_RX_DMA_EN;
+			}
+
+			UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
 
 			puart_adapter->RxCount = puart_adapter->RxCount - (Current_Addr - (u32)puart_adapter->pRxBuf);
 			puart_adapter->pRxBuf = (u8 *)Current_Addr;
@@ -1174,14 +1159,6 @@ int32_t serial_recv_stream_abort(serial_t *obj)
 										  puart_adapter->RxCount, 1);
 			puart_adapter->RxCount -= TransCnt;
 			puart_adapter->pRxBuf += TransCnt;
-
-			// Clean Auto Reload Bit
-			GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_DST);
-			// Clear Pending ISR
-			GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-			//GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-			GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-			UART_RXDMACmd(puart_adapter->UARTx, DISABLE);
 		}
 	}
 
@@ -1195,10 +1172,10 @@ int32_t serial_recv_stream_abort(serial_t *obj)
 }
 
 /**
-  * @brief  Clear Tx FIFO.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Clear UART Tx FIFO.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_clear_tx(serial_t *obj)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
@@ -1207,10 +1184,10 @@ void serial_clear_tx(serial_t *obj)
 }
 
 /**
-  * @brief  Clear Rx FIFO.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Clear UART Rx FIFO.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_clear_rx(serial_t *obj)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
@@ -1219,14 +1196,14 @@ void serial_clear_rx(serial_t *obj)
 }
 
 /**
-  * @brief  Receive data of target length under poll mode before timeout.
-  * @param  obj: UART object defined in application software.
-  * @param  prxbuf: Pointer to the buffer that saves data read from UART FIFO.
-  * @param  len: Number of data to be received.
-  * @param  timeout_ms: Polling time before timeout in units of ms.
-  * @return Bytes of received data.
-  * @note This function is synchronous API.
-  */
+ * @brief Receive data of target length under polling mode before timeout.
+ * @param obj UART object defined in application software.
+ * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
+ * @param len Number of data to be received.
+ * @param timeout_ms Polling time before timeout in unit of ms.
+ * @return Bytes of received data.
+ * @note This function is synchronous API.
+ */
 int32_t serial_recv_blocked(serial_t *obj, char *prxbuf, uint32_t len, uint32_t timeout_ms)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
@@ -1254,14 +1231,14 @@ int32_t serial_recv_blocked(serial_t *obj, char *prxbuf, uint32_t len, uint32_t 
 }
 
 /**
-  * @brief  Send data of target length under poll mode before timeout.
-  * @param  obj: UART object defined in application software.
-  * @param  ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
-  * @param  len: Number of data to be sent.
-  * @param  timeout_ms: Polling time before timeout.
-  * @return Bytes of transmitted data.
-  * @note This function is synchronous API.
-  */
+ * @brief Send data of target length under polling mode before timeout.
+ * @param obj UART object defined in application software.
+ * @param ptxbuf Pointer to the buffer that saves data to be written to Tx FIFO.
+ * @param len Number of data to be sent.
+ * @param timeout_ms Polling time before timeout.
+ * @return Bytes of transmitted data.
+ * @note This function is synchronous API.
+ */
 int32_t serial_send_blocked(serial_t *obj, char *ptxbuf, uint32_t len, uint32_t timeout_ms)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
@@ -1289,10 +1266,10 @@ int32_t serial_send_blocked(serial_t *obj, char *ptxbuf, uint32_t len, uint32_t 
 }
 
 /**
-  * @brief  Disable UART clock and function.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Disable UART clock and function.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_disable(serial_t *obj)
 {
 	switch (obj->uart_idx) {
@@ -1314,14 +1291,13 @@ void serial_disable(serial_t *obj)
 	default:
 		break;
 	}
-
 }
 
 /**
-  * @brief  Enable UART clock and function.
-  * @param  obj: UART object defined in application software.
-  * @retval none
-  */
+ * @brief Enable UART clock and function.
+ * @param obj UART object defined in application software.
+ * @return None
+ */
 void serial_enable(serial_t *obj)
 {
 	switch (obj->uart_idx) {
@@ -1346,15 +1322,15 @@ void serial_enable(serial_t *obj)
 }
 
 /**
-  * @brief  Receive data of target length under interrupt mode before timeout.
-  * @param  obj: UART object defined in application software.
-  * @param  prxbuf: Pointer to the buffer that saves data read from UART FIFO.
-  * @param  len: Number of data to be received.
-  * @param  timeout_ms: Polling time before timeout.
-  * @param  force_cs: Forcing context switch function.
-  * @return Bytes of data received before timeout if sussess or -1 if error happens.
-  * @note This function is asynchronous API.
-  */
+ * @brief Receive data of target length under interrupt mode before timeout.
+ * @param obj UART object defined in application software.
+ * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
+ * @param len Number of data to be received.
+ * @param timeout_ms Polling time before timeout.
+ * @param force_cs Forcing context switch function.
+ * @return Bytes of data received before timeout if sussess or -1 if error happens.
+ * @note This function is asynchronous API.
+ */
 int32_t serial_recv_stream_timeout(serial_t *obj,
 								   char *prxbuf,
 								   uint32_t len,
@@ -1422,17 +1398,17 @@ int32_t serial_recv_stream_timeout(serial_t *obj,
 }
 
 /**
-  * @brief  Receive data under DMA mode before hardware timeout and UART is flow controller.
-  * @param  obj: UART object defined in application software.
-  * @param  prxbuf: Pointer to the buffer that saves data read from UART FIFO.
-  * @param  len: Not used, reserved for compatibility.
-  * @param  timeout_ms: Hardware timeout for Rx.
-  * @param  force_cs: Not used, reserved for compatibility.
-  * @return HAL status.
-  * @retval HAL_OK(0): Success.
-  * @retval HAL_BUSY(1): Error.
-  * @note This function is asynchronous API.
-  */
+ * @brief Receive data under DMA mode before hardware timeout and UART is flow controller.
+ * @param obj UART object defined in application software.
+ * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
+ * @param len Not used, reserved for compatibility.
+ * @param timeout_ms Hardware timeout in ms for Rx.
+ * @param force_cs Not used, reserved for compatibility.
+ * @return HAL status, which can be a value of the followings:
+ * 		- HAL_OK(0): Success.
+ * 		- HAL_BUSY(1): Error.
+ * @note This function is asynchronous API.
+ */
 int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 									   char *prxbuf,
 									   uint32_t len,
@@ -1440,8 +1416,8 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 									   void *force_cs)
 {
 	/* To avoid gcc warnings */
-	(void) force_cs;
-	(void) len;
+	(void)force_cs;
+	(void)len;
 
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 	HAL_Status ret = HAL_OK;
@@ -1470,31 +1446,32 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 	UART_SetRxFlag(puart_adapter->UartIndex, STATERX_DMA);
 
 	// Disable Rx interrupt
-	UART_INTConfig(puart_adapter->UARTx, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
-
-	UART_RXDMAConfig(puart_adapter->UARTx, 16);
-	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
+	UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
 
 	ret1 = UART_RXGDMA_Init(puart_adapter->UartIndex, &puart_adapter->UARTRxGdmaInitStruct,
 							puart_adapter, uart_dmarecv_irqhandler,
 							puart_adapter->pRxBuf, 0);
 
 	if ((serial_dma_en[obj->uart_idx] & SERIAL_RX_DMA_EN) == 0) {
-		if (ret1 == _TRUE) {
+		if (ret1 == TRUE) {
 			serial_dma_en[obj->uart_idx] |= SERIAL_RX_DMA_EN;
 		} else {
 			return HAL_BUSY;
 		}
 	}
+
+	UART_RXDMAConfig(puart_adapter->UARTx, 16);
+	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
+
 	return (ret);
 }
 
 /**
-  * @brief  Set UART Rx FIFO trigger level.
-  * @param  obj: UART object defined in application software.
-  * @param  FifoLv: FIFO level enum index.
-  * @retval   none
-  */
+ * @brief Set UART Rx FIFO trigger level.
+ * @param obj UART object defined in application software.
+ * @param FifoLv FIFO level enum index.
+ * @return None
+ */
 void serial_rx_fifo_level(serial_t *obj, SerialFifoLevel FifoLv)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
@@ -1523,13 +1500,13 @@ void serial_rx_fifo_level(serial_t *obj, SerialFifoLevel FifoLv)
 }
 
 /**
-  * @brief  Set UART auto flow control.
-  * @param  obj: UART object defined in application software.
-  * @param  type: Auto flow control type.
-  * @param  rxflow: RTS pin.
-  * @param  txflow: CTS pin.
-  * @retval none
-  */
+ * @brief Set UART auto flow control.
+ * @param obj UART object defined in application software.
+ * @param type Auto flow control type.
+ * @param rxflow RTS pin.
+ * @param txflow CTS pin.
+ * @return None
+ */
 void serial_set_flow_control(serial_t *obj, FlowControl type, PinName rxflow, PinName txflow)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
@@ -1559,7 +1536,7 @@ void serial_set_flow_control(serial_t *obj, FlowControl type, PinName rxflow, Pi
 		UARTx->MCR |= RUART_BIT_AFE;
 	} else {
 		/*disable auto flow control*/
-		UARTx->MCR &= ~ RUART_BIT_AFE;
+		UARTx->MCR &= ~RUART_BIT_AFE;
 	}
 
 	/*no matter auto flow control is enabled or disabled,
@@ -1570,6 +1547,3 @@ void serial_set_flow_control(serial_t *obj, FlowControl type, PinName rxflow, Pi
 /** @} */
 /** @} */
 /** @} */
-
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

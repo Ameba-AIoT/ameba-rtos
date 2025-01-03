@@ -1,6 +1,4 @@
 ameba_executable(target_img2_${PROJECT_NAME} empty_file.c)
-target_compile_definitions(target_img2_${PROJECT_NAME} PRIVATE IMAGE2_BUILD)
-
 
 define_property(GLOBAL PROPERTY IMG2_LIBS_${PROJECT_NAME}
 BRIEF_DOCS "internal library lists which will be linked to img2"
@@ -19,6 +17,10 @@ add_subdirectory(utils)
 
 if(CONFIG_APP_DEMO)
     add_subdirectory(example)
+endif()
+
+if(CONFIG_BT)
+    add_subdirectory(bluetooth)
 endif()
 
 if(CONFIG_WLAN)
@@ -66,9 +68,9 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km0_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
-    -DAMEBA_RLS=${AMEBA_RLS}
+    -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS}
     -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${BASEDIR} -DKM4_BUILDDIR=${KM4_BUILDDIR} -DPROJECTDIR=${PROJECTDIR}
-    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR}
+    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR} -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE} -DANALYZE_MP_IMG=${ANALYZE_MP_IMG} -DDAILY_BUILD=${DAILY_BUILD}
     -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK} -DCONFIG_MP_INCLUDED=${CONFIG_MP_INCLUDED}
@@ -108,4 +110,7 @@ set_target_properties(target_img2_${PROJECT_NAME} PROPERTIES LINK_DEPENDS "${LIN
 set_property(TARGET target_img2_${PROJECT_NAME}
     PROPERTY ADDITIONAL_CLEAN_FILES
     ${IMAGE_TARGET_FOLDER}
+    ${FINAL_IMAGE_DIR}/km0_km4_app.bin
+    ${FINAL_IMAGE_DIR}/km0_km4_app_mp.bin
+    ${FINAL_IMAGE_DIR}/ota_all.bin
 )

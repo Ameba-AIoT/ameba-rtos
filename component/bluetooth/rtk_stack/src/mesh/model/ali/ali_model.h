@@ -60,7 +60,7 @@ enum
     /* system attr */
     ALI_ATTR_TYPE_ERROR = 0x0000,
     ALI_ATTR_TYPE_VERSION = 0xFF01,
-    ALI_ATTR_TYPE_DEVICE_FEATRUE = 0xFF02,
+    ALI_ATTR_TYPE_DEVICE_FEATURE = 0xFF02,
     ALI_ATTR_TYPE_FLASH_TOTAL_SIZE = 0xFF03,
     ALI_ATTR_TYPE_FLASH_USED_SIZE = 0xFF04,
     ALI_ATTR_TYPE_FLASH_UNUSED_SIZE = 0xFF05,
@@ -141,7 +141,7 @@ enum
     ALI_ATTR_TYPE_SPO2 = 0x020A,
     ALI_ATTR_TYPE_SYSTOLIC_PRESSURE = 0x020B,
     ALI_ATTR_TYPE_DIASTOLIC_PRESSURE = 0x020C,
-    ALI_ATTR_TYPE_BLUOD_GLUCOSE = 0x020D,
+    ALI_ATTR_TYPE_BLOOD_GLUCOSE = 0x020D,
     ALI_ATTR_TYPE_SPEED = 0x020E,
     ALI_ATTR_TYPE_PACE = 0x020F,
     ALI_ATTR_TYPE_SLOPE = 0x0210,
@@ -218,7 +218,7 @@ enum
     ALI_ATTR_TYPE_STEP_ACTION_ONOFF = 0x0522,
     ALI_ATTR_TYPE_HUMAN_DETECT_ONOFF = 0x0523,
     ALI_ATTR_TYPE_IR_ONOFF = 0x0524,
-    ALI_ATTR_TYPE_QUICK_FRONZEN_ONOFF = 0x0525,
+    ALI_ATTR_TYPE_QUICK_FROZEN_ONOFF = 0x0525,
     ALI_ATTR_TYPE_DEFROST_ONOFF = 0x0526,
     ALI_ATTR_TYPE_ANTIBIOSIS_ONOFF = 0x0527,
     ALI_ATTR_TYPE_SILVER_ION_ONOFF = 0x0528,
@@ -231,7 +231,7 @@ enum
     ALI_ATTR_TYPE_AIR_DRY_ONOFF = 0x052F,
     ALI_ATTR_TYPE_CONSTANT_TEMPERATURE_ONOFF = 0x0530,
     ALI_ATTR_TYPE_QUICK_STEW_ONOFF = 0x0531,
-    ALI_ATTR_TYPE_SHOCK_ABSORBTION_ONOFF = 0x0532,
+    ALI_ATTR_TYPE_SHOCK_ABSORPTION_ONOFF = 0x0532,
     ALI_ATTR_TYPE_BACKGROUND_LIGHT_ONOFF = 0x0533,
     ALI_ATTR_TYPE_MAIN_LIGHT_ONOFF = 0x0534,
     ALI_ATTR_TYPE_MUTE_ONOFF = 0x0535,
@@ -249,8 +249,8 @@ enum
     ALI_ATTR_TYPE_HEALTH_FUNCTION = 0x0541,
     ALI_ATTR_TYPE_ANGLE = 0x0542,
     ALI_ATTR_TYPE_WIND_SPEED = 0x0543,
-    ALI_ATTR_TYPE_TEMP_SWTICH = 0x0544,
-    ALI_ATTR_TYPE_MUSIC_SWTICH = 0x0545,
+    ALI_ATTR_TYPE_TEMP_SWITCH = 0x0544,
+    ALI_ATTR_TYPE_MUSIC_SWITCH = 0x0545,
     ALI_ATTR_TYPE_MASSAGE_AIR_STRENGTH = 0x0546
 } _SHORT_ENUM_;
 typedef uint16_t ali_attr_type_t;
@@ -300,7 +300,7 @@ enum
     ALI_SCENE_NUM_MUTE,
     ALI_SCENE_NUM_POWER_SAVING,
     ALI_SCENE_NUM_WIND_NORMAL,
-    ALI_SCENE_NUM_WIND_NATUAL,
+    ALI_SCENE_NUM_WIND_NATURAL,
     ALI_SCENE_NUM_WIND_SLEEP,
     ALI_SCENE_NUM_WIND_MUTE,
     ALI_SCENE_NUM_WIND_COMFORT,
@@ -463,20 +463,88 @@ typedef enum
 /** @} */
 
 /**
- * @defgroup ALI_MODEL_API MODEL API
+ * @defgroup ALI_MODEL_API Model API
  * @brief Functions declaration
  * @{
  */
+
+/**
+ * @brief ali attribute get
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @param[in] tid: tid
+ * @param[in] attr_type: attribute type
+ * @param[in] type_num: type num
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t ali_attr_get(mesh_model_info_t *pmodel_info, uint16_t dst,
                                    uint16_t app_key_index, uint8_t tid, ali_attr_type_t attr_type[], uint8_t type_num);
+
+/**
+ * @brief ali attribute confirm
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] pmesh_msg: pointer to mesh message
+ * @param[in] tid: tid
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t ali_attr_conf(mesh_model_info_t *pmodel_info, const mesh_msg_t *pmesh_msg,
                                     uint8_t tid);
+
+/**
+ * @brief ali attribute send raw data message
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @param[in] ali_opcode: ali opcode
+ * @param[in] tid: tid
+ * @param[in] raw_data: pointer to raw data
+ * @param[in] data_len: length of data
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t ali_attr_msg_raw(mesh_model_info_t *pmodel_info, uint16_t dst,
                                        uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, uint8_t raw_data[], uint16_t data_len);
+
+/**
+ * @brief ali attribute send message
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @param[in] ali_opcode: ali opcode
+ * @param[in] tid: tid
+ * @param[in] attr: attribute
+ * @param[in] attr_num: attribute num
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t ali_attr_msg(mesh_model_info_t *pmodel_info, uint16_t dst,
                                    uint16_t app_key_index, uint32_t ali_opcode, uint8_t tid, ali_attr_t attr[], uint16_t attr_num);
+
+/**
+ * @brief ali model transparent message
+ *
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] dst: destination
+ * @param[in] app_key_index: AppKey index
+ * @param[in] transparent_msg: transparent message
+ * @param[in] msg_len: message length
+ * @return mesh_msg_send_cause_t
+ */
 mesh_msg_send_cause_t ali_transparent_msg(mesh_model_info_t *pmodel_info, uint16_t dst,
                                           uint16_t app_key_index, uint8_t transparent_msg[1], uint16_t msg_len);
+
+/**
+ * @brief register ali model
+ *
+ * @param[in] element_index: element index
+ * @param[in] pmodel_info: pointer to model info
+ * @param[in] server: server or client
+ * @return true
+ * @return false
+ */
 bool ali_model_reg(uint8_t element_index, mesh_model_info_p pmodel_info, bool server);
 /** @} */
 /** @} */

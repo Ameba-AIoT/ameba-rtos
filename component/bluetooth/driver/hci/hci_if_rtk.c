@@ -22,6 +22,10 @@
 #define FLAG_BUF_FROM_STACK (1<<0)
 #define FLAG_HCI_TASK_EXIT (1<<1)
 
+#define HCI_IF_TASK_CLOSED 0
+#define HCI_IF_TASK_RUNNING 1
+#define HCI_IF_TASK_CLOSING 2
+
 struct tx_packet_t {
 	struct list_head list;
 	uint8_t *buf;
@@ -31,7 +35,7 @@ struct tx_packet_t {
 
 static struct {
 	HCI_IF_CALLBACK cb;
-	bool task_running;
+	uint8_t state;
 	uint32_t task_msg_num;
 	struct list_head tx_list;
 	void *tx_ind_sem;
@@ -118,42 +122,6 @@ static struct hci_transport_cb rtk_stack_cb = {
 	.cancel = rtk_stack_cancel,
 };
 
-static void _hci_if_open_indicate(void)
-{
-	if (hci_if_rtk.cb) {
-		hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);
-	}
-	BT_LOGA("Start upper stack\r\n");
-}
-
-
-static bool _hci_if_open(void)
-{
-	if (!hci_controller_enable()) {
-		return false;
-	}
-
-	if (!hci_is_mp_mode()) {
-		/* HCI Transport Bridge to RTK Stack */
-		hci_transport_register(&rtk_stack_cb);
-	}
-
-	_hci_if_open_indicate();
-
-	return true;
-}
-
-static bool _hci_if_close(void)
-{
-	hci_controller_disable();
-
-	if (hci_if_rtk.cb) {
-		hci_if_rtk.cb(HCI_IF_EVT_CLOSED, true, NULL, 0);
-	}
-
-	return true;
-}
-
 static void _hci_if_send(uint8_t *buf, uint32_t len, bool from_stack)
 {
 	uint16_t offset = H4_HDR_LEN;
@@ -179,7 +147,7 @@ static bool _tx_list_add(uint8_t *buf, uint32_t len, uint8_t flag)
 	hci_if_rtk.task_msg_num++;
 	osif_unlock(flags);
 
-	if (!hci_if_rtk.task_running && flag != FLAG_HCI_TASK_EXIT) {
+	if (hci_if_rtk.state != HCI_IF_TASK_RUNNING && flag != FLAG_HCI_TASK_EXIT) {
 		goto end;
 	}
 
@@ -232,10 +200,6 @@ static void hci_if_task(void *context)
 {
 	(void)context;
 
-	if (!_hci_if_open()) {
-		return;
-	}
-
 	while (true) {
 		osif_sem_take(hci_if_rtk.tx_ind_sem, BT_TIMEOUT_FOREVER);
 		while (true) {
@@ -254,7 +218,6 @@ static void hci_if_task(void *context)
 
 			if (pkt->flag & FLAG_HCI_TASK_EXIT) {
 				osif_mem_free(pkt);
-				_hci_if_close();
 				goto out;
 			}
 
@@ -264,6 +227,7 @@ static void hci_if_task(void *context)
 	}
 
 out:
+	hci_if_rtk.state = HCI_IF_TASK_CLOSED;
 	osif_task_delete(NULL);
 }
 
@@ -271,8 +235,16 @@ bool hci_if_open(HCI_IF_CALLBACK callback)
 {
 	if (hci_controller_is_enabled()) {
 		BT_LOGD("Hci Driver Already Open!\r\n");
-		_hci_if_open_indicate();
-		return true;
+		goto end;
+	}
+
+	if (!hci_controller_enable()) {
+		return false;
+	}
+
+	if (!hci_is_mp_mode()) {
+		/* HCI Transport Bridge to RTK Stack */
+		hci_transport_register(&rtk_stack_cb);
 	}
 
 	memset(&hci_if_rtk, 0, sizeof(hci_if_rtk));
@@ -283,7 +255,15 @@ bool hci_if_open(HCI_IF_CALLBACK callback)
 	osif_msg_queue_create(&hci_if_rtk.internal_cmd, sizeof(uint16_t), 10);
 	osif_task_create(&hci_if_rtk.task_hdl, "hci_if_task", hci_if_task,
 					 0, HCI_IF_TASK_SIZE, HCI_IF_TASK_PRIO);
-	hci_if_rtk.task_running = true;
+	hci_if_rtk.state = HCI_IF_TASK_RUNNING;
+
+end:
+	/* Upperstack will call hci_if_write immediately after this OPEN cb.
+	 * Therefore, please make sure hci_if_write is ready here. */
+	if (hci_if_rtk.cb) {
+		hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);
+	}
+	BT_LOGA("Start upper stack\r\n");
 	return true;
 }
 
@@ -293,7 +273,7 @@ bool hci_if_close(void)
 		return true;
 	}
 
-	hci_if_rtk.task_running = false;
+	hci_if_rtk.state = HCI_IF_TASK_CLOSING;
 
 	/* Waiting _tx_list_add() on other tasks interrupted by deinit task to complete */
 	while (hci_if_rtk.task_msg_num) {
@@ -302,13 +282,20 @@ bool hci_if_close(void)
 
 	_tx_list_add(NULL, 0, FLAG_HCI_TASK_EXIT);
 
-	while (hci_controller_is_enabled()) {
+	while (hci_if_rtk.state != HCI_IF_TASK_CLOSED) {
 		osif_delay(5);
 	}
+
+	hci_controller_disable();
 
 	osif_sem_delete(hci_if_rtk.tx_ind_sem);
 	osif_mutex_delete(hci_if_rtk.tx_list_mtx);
 	osif_msg_queue_delete(hci_if_rtk.internal_cmd);
+
+	if (hci_if_rtk.cb) {
+		hci_if_rtk.cb(HCI_IF_EVT_CLOSED, true, NULL, 0);
+	}
+
 	return true;
 }
 

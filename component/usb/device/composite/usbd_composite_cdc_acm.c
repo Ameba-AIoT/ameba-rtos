@@ -1,22 +1,13 @@
-/**
-  ******************************************************************************
-  * @file    usbd_composite_cdc_acm.c
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides the functionalities of the USB CDC ACM Class
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2020, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usbd_composite_cdc_acm.h"
 #include "usbd.h"
+#include "usbd_composite_cdc_acm.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -36,7 +27,7 @@ static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "COMP";
+static const char *const TAG = "COMP";
 
 /* USB CDC ACM Device High Speed Interface Descriptor */
 static u8 usbd_composite_cdc_acm_hs_itf_desc[] USB_DMA_ALIGNED = {
@@ -320,7 +311,7 @@ static int composite_cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		RTK_LOGS(TAG, "[COMP] Invalid bRequest 0x%02x\n", req->bRequest);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bRequest 0x%02x\n", req->bRequest);
 		ret = HAL_ERR_HW;
 		break;
 	}
@@ -370,7 +361,7 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
 		}
 #endif
 	} else {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX fail: %d\n", ep_addr, status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX fail: %d\n", ep_addr, status);
 		if (ep_addr == USBD_COMP_CDC_BULK_IN_EP) {
 			cdc->bulk_in_state = 0U;
 		}
@@ -484,7 +475,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usbd_composite_cdc_acm_ntf_t *ntf = cdc->intr_in_buf;
 
 	if (!cdc->is_ready) {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
 		return ret;
 	}
 
@@ -517,7 +508,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 			/* TX not ready*/
 		}
 	} else {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX %d busy\n", USBD_COMP_CDC_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d busy\n", USBD_COMP_CDC_INTR_IN_EP, len);
 		ret = HAL_BUSY;
 	}
 
@@ -653,7 +644,7 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 	usb_dev_t *dev = cdc->cdev->dev;
 
 	if (!cdc->is_ready) {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
 		return ret;
 	}
 
@@ -689,7 +680,7 @@ int usbd_composite_cdc_acm_transmit(u8       *buf, u16 len)
 			/*TX not ready*/
 		}
 	} else {
-		RTK_LOGS(TAG, "[COMP] EP%02x TX %d busy\n", USBD_COMP_CDC_BULK_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d busy\n", USBD_COMP_CDC_BULK_IN_EP, len);
 		ret = HAL_BUSY;
 	}
 

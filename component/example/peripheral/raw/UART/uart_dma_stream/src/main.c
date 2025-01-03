@@ -17,7 +17,6 @@
 
 #define DMA_TX_BURST_SIZE	8
 #define DMA_RX_BURST_SIZE	16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
-#define DMA_RX_MAX_BYTE		16
 
 #define CACHE_LINE_SIZE_	32
 /* NOTE: DMA buffer size must be a multiple of 32 bytes with D-Cache enabled */
@@ -96,7 +95,7 @@ u32 uart_recv_string_done(void *data)
 
 void uart_dma_send(char *pstr, u32 len)
 {
-	BOOL ret;
+	bool ret;
 
 	UART_TXDMAConfig(UART_DEV, DMA_TX_BURST_SIZE);
 	UART_TXDMACmd(UART_DEV, ENABLE);
@@ -109,9 +108,9 @@ void uart_dma_send(char *pstr, u32 len)
 	}
 }
 
-BOOL uart_dma_recv(char *pstr, u32 len)
+bool uart_dma_recv(char *pstr, u32 len)
 {
-	BOOL ret;
+	bool ret;
 
 	UART_INTConfig(UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
 	UART_RXDMAConfig(UART_DEV, DMA_RX_BURST_SIZE);
@@ -132,9 +131,9 @@ void uart_send_string(char *pstr)
 
 void uart_dma_demo(void)
 {
-	BOOL ret;
+	bool ret;
 	u32 i = 0;
-	u32 len = 13;
+	u32 len = 2;
 
 	uart_idx = uart_get_idx(UART_DEV);
 	if (0xFF == uart_idx) {
@@ -183,8 +182,8 @@ void uart_dma_demo(void)
 			uart_send_string(rx_buf);
 			while (tx_busy);
 
-			/* data size: 2Byte ~ 15Byte */
-			len = i % (DMA_RX_MAX_BYTE - 2) + 2;
+			/* data size: 2Byte ~ 33Byte */
+			len = i % CACHE_LINE_SIZE_ + 2;
 			i++;
 			printf("Receive %lu-byte-data\r\n", len);
 			ret = uart_dma_recv(rx_buf, len);

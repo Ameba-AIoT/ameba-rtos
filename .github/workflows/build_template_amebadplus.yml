@@ -46,7 +46,7 @@ jobs:
         fi
 
         if ${{ inputs.artifacts_name == 'amebadplus-B2' }}; then
-          ./menuconfig.py -f high_tp.conf wps.conf
+          ./menuconfig.py -f wifi_all.conf
         fi
 
         if ${{ inputs.artifacts_name == 'amebadplus-B3' }}; then

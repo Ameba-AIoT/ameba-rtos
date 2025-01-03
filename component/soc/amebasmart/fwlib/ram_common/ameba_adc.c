@@ -8,7 +8,7 @@
 
 ADC_CalParaTypeDef CalParaNorm;
 ADC_CalParaTypeDef CalParaVBat;
-u8 vref_init_done = _FALSE;
+u8 vref_init_done = FALSE;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -88,7 +88,7 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 		}
 		CAPTOUCH_DEV->CT_ANA_ADC_REG0X_LPAD = value;
 
-		vref_init_done = _TRUE;
+		vref_init_done = TRUE;
 	}
 
 	adc->ADC_INTR_CTRL = 0;
@@ -615,8 +615,8 @@ void ADC_TimerTrigCntCmd(u8 Tim_Idx, u32 Tim_Cnt, u32 NewState)
   * @param CalPara: Pointer to ADC calibration parameter structure.
   * @param IsVBatChan: Calibration parameter belongs to vbat channel or normal channel.
   *   This parameter can be one of the following values:
-  *        @arg _TRUE: Calibration parameter belongs to vbat channel.
-  *        @arg _FALSE: Calibration parameter belongs to normal channel.
+  *        @arg TRUE: Calibration parameter belongs to vbat channel.
+  *        @arg FALSE: Calibration parameter belongs to normal channel.
   * @retval None.
   */
 void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
@@ -671,7 +671,7 @@ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
 	CalPara->cal_a = ka;
 	CalPara->cal_b = kb;
 	CalPara->cal_c = kc;
-	CalPara->init_done = _TRUE;
+	CalPara->init_done = TRUE;
 }
 
 /**
@@ -687,7 +687,7 @@ s32 ADC_GetVoltage(u32 chan_data)
 	s32 ch_vol;
 
 	if (!CalParaNorm.init_done) {
-		ADC_InitCalPara(&CalParaNorm, _FALSE);
+		ADC_InitCalPara(&CalParaNorm, FALSE);
 	}
 
 	ka = CalParaNorm.cal_a;
@@ -712,7 +712,7 @@ s32 ADC_GetVBATVoltage(u32 vbat_data)
 	s32 ch_vol;
 
 	if (!CalParaVBat.init_done) {
-		ADC_InitCalPara(&CalParaVBat, _TRUE);
+		ADC_InitCalPara(&CalParaVBat, TRUE);
 	}
 
 	ka = CalParaVBat.cal_a;

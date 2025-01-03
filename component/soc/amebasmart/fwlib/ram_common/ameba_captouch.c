@@ -6,8 +6,8 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "CAPTOUCH";
-extern BOOL vref_init_done;
+static const char *const TAG = "CAPTOUCH";
+extern bool vref_init_done;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -99,7 +99,7 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 		}
 		CapTouch->CT_ANA_ADC_REG0X_LPAD = value;
 
-		vref_init_done = _TRUE;
+		vref_init_done = TRUE;
 	}
 
 	CapTouch->CT_INTERRUPT_ENABLE = 0;

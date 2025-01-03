@@ -18,7 +18,6 @@
 
 #define I2C_DATA_LENGTH     127
 
-static const char *TAG = "I2C";
 uint8_t	i2cdatasrc[I2C_DATA_LENGTH];
 u32 datalength = I2C_DATA_LENGTH;
 u8 *pdatabuf;
@@ -51,7 +50,9 @@ void i2c_int_task(void)
 	I2C_InitTypeDef  i2C_master;
 	I2C_IntModeCtrl i2c_intctrl;
 	i2c_intctrl.I2Cx = I2C_DEV_TABLE[I2C_MTR_ID].I2Cx;
-
+#if defined (CONFIG_AMEBAD)
+	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
+#else
 	switch (I2C_ID) {
 	case 0:
 		RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
@@ -68,7 +69,7 @@ void i2c_int_task(void)
 		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
-
+#endif
 	// prepare for transmission
 	_memset(&i2cdatasrc[0], 0x00, I2C_DATA_LENGTH);
 
@@ -93,7 +94,7 @@ void i2c_int_task(void)
 	i2c_intctrl.I2CWaitSem = i2c_take_sema;
 
 	/* I2C Pin Mux Initialization */
-#if defined (CONFIG_AMEBASMART)
+#if defined (CONFIG_AMEBASMART) || (CONFIG_AMEBAD)
 	Pinmux_Config(I2C_MTR_SDA, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(I2C_MTR_SCL, PINMUX_FUNCTION_I2C);
 #else

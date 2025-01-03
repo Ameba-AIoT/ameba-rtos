@@ -46,7 +46,7 @@ static int usbh_cdc_acm_nak(usb_host_t *host, u8 pipe_num);
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "ACM";
+static const char *const TAG = "ACM";
 
 /* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_cdc_acm_driver = {
@@ -83,7 +83,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 									   CDC_ABSTRACT_CONTROL_MODEL,
 									   CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND);
 	if (interface == 0xFFU) {
-		RTK_LOGS(TAG, "[ACM] Get itf fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get itf fail\n");
 		return status;
 	}
 
@@ -95,7 +95,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	/* Get Communication Interface */
 	comm_if_desc = usbh_get_interface_descriptor(host, interface, 0);
 	if (comm_if_desc == NULL) {
-		RTK_LOGS(TAG, "[ACM] Get comm itf fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
 		return status;
 	}
 
@@ -111,7 +111,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	if (pipe_num != 0xFFU) {
 		cdc->comm_if.intr_in_pipe = pipe_num;
 	} else {
-		RTK_LOGS(TAG, "[ACM] Alloc INTR in pipe fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc INTR in pipe fail\n");
 		return HAL_ERR_MEM;
 	}
 
@@ -127,13 +127,13 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 									   CDC_RESERVED,
 									   CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC);
 	if (interface == 0xFFU) {
-		RTK_LOGS(TAG, "[ACM] Get data itf fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
 		return status;
 	}
 
 	data_if_desc = usbh_get_interface_descriptor(host, interface, 0);
 	if (data_if_desc == NULL) {
-		RTK_LOGS(TAG, "[ACM] Get itf desc fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get itf desc fail\n");
 		return status;
 	}
 
@@ -160,7 +160,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	if (pipe_num != 0xFFU) {
 		cdc->data_if.bulk_out_pipe = pipe_num;
 	} else {
-		RTK_LOGS(TAG, "[ACM] Alloc BULK out pipe fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc BULK out pipe fail\n");
 		usbh_free_pipe(host, cdc->comm_if.intr_in_pipe);
 		return HAL_ERR_MEM;
 	}
@@ -169,7 +169,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	if (pipe_num != 0xFFU) {
 		cdc->data_if.bulk_in_pipe = pipe_num;
 	} else {
-		RTK_LOGS(TAG, "[ACM] Alloc BULK in pipe fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc BULK in pipe fail\n");
 		usbh_free_pipe(host, cdc->comm_if.intr_in_pipe);
 		usbh_free_pipe(host, cdc->data_if.bulk_out_pipe);
 		return HAL_ERR_MEM;
@@ -239,7 +239,7 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
   */
 static int usbh_cdc_acm_setup(usb_host_t *host)
 {
-	int status = HAL_ERR_UNKNOWN ;
+	int status = HAL_ERR_UNKNOWN;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
 	/*Issue the get line coding request*/
@@ -260,10 +260,10 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
   */
 static int usbh_cdc_acm_nak(usb_host_t *host, u8 pipe_num)
 {
-	u8 ep_type ;
+	u8 ep_type;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	if (pipe_num >= USB_MAX_PIPES) {
-		return HAL_ERR_PARA ;
+		return HAL_ERR_PARA;
 	}
 
 	ep_type = usbh_get_ep_type(host, pipe_num);
@@ -274,7 +274,7 @@ static int usbh_cdc_acm_nak(usb_host_t *host, u8 pipe_num)
 		return HAL_OK;
 	}
 
-	return HAL_ERR_UNKNOWN ;
+	return HAL_ERR_UNKNOWN;
 }
 
 /**
@@ -540,7 +540,7 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 
 			//should handle the ZLP packet
 			if ((cdc->rx_len >= len) && (len >= cdc->data_if.bulk_in_packet_size)) {
-				cdc->rx_len -= len ;
+				cdc->rx_len -= len;
 				cdc->rx_buf += len;
 				cdc->data_rx_state = CDC_ACM_TRANSFER_STATE_RX;
 			} else {
@@ -601,7 +601,7 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 			}
 		} else if ((urb_state == USBH_URB_ERROR) || (urb_state == USBH_URB_STALL)) {
 			cdc->intr_data_rx_state = CDC_ACM_TRANSFER_STATE_NOTIFY_RX;
-			RTK_LOGS(TAG, "[ACM] INTR in failed %d\n", urb_state);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR in failed %d\n", urb_state);
 		} else if (urb_state == USBH_URB_IDLE) {
 			if (usbh_get_elapsed_ticks(host, cdc->intr_in_idle_tick) >= cdc->comm_if.intr_in_ep_interval) { //
 				cdc->intr_data_rx_state = CDC_ACM_TRANSFER_STATE_NOTIFY_RX;
@@ -632,7 +632,7 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 		if (cb->init != NULL) {
 			ret = cb->init();
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, "[ACM] User init err %d\n", ret);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
 				return ret;
 			}
 		}
@@ -640,12 +640,12 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 
 	cdc->line_coding = (usbh_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_cdc_acm_line_coding_t));
 	if (cdc->line_coding == NULL) {
-		RTK_LOGS(TAG, "[ACM] Malloc line code fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc line code fail\n");
 		return HAL_ERR_MEM;
 	}
 	cdc->user_line_coding = (usbh_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_cdc_acm_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
-		RTK_LOGS(TAG, "[ACM] Malloc user line code fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc user line code fail\n");
 		usb_os_mfree(cdc->line_coding);
 		cdc->line_coding = NULL;
 		return HAL_ERR_MEM;
@@ -831,7 +831,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 
 		/* the user buf len < MPS, update the rx buf length */
 		if (len < cdc->comm_if.intr_in_packet_size) {
-			RTK_LOGS(TAG, "[ACM] Pls inc inbuf len %d-%d\n", len, cdc->comm_if.intr_in_packet_size);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Pls inc inbuf len %d-%d\n", len, cdc->comm_if.intr_in_packet_size);
 			cdc->comm_if.intr_in_packet_size = len;
 		}
 

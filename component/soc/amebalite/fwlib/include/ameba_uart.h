@@ -667,9 +667,9 @@ _LONG_CALL_ void UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize);
 _LONG_CALL_ void UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize);
 _LONG_CALL_ void UART_TXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ void UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState);
-_LONG_CALL_ BOOL UART_TXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool UART_TXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 								  IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
-_LONG_CALL_ BOOL UART_RXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool UART_RXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 								  IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
 _LONG_CALL_ void UART_MonitorParaConfig(UART_TypeDef *UARTx, u32 BitNumThres, u32 OscPerbitUpdCtrl);
 _LONG_CALL_ void UART_LPRxBaudSet(UART_TypeDef *UARTx, u32 BaudRate, u32 RxIPClockHz);

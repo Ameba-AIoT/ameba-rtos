@@ -28,116 +28,105 @@ u32 UART_StateTx[MAX_UART_INDEX];
 u32 UART_StateRx[MAX_UART_INDEX];
 
 /** @addtogroup Ameba_Periph_Driver
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup UART
-* @brief UART driver modules
-* @{
-*/
+ * @brief UART driver modules
+ * @{
+ */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup UART_Exported_Functions UART Exported Functions
-  * @{
-  */
-
-/** @defgroup UART_DMA_functions UART DMA Functions
-  * @{
-  */
+ * @{
+ */
 
 /**
-* @brief Configure UART TX DMA burst size.
-* @param UARTx: where x can be 0/1/2.
-* @param TxDmaBurstSize: UART TX DMA burst size.
-* @note UART tx fifo depth and DMA fifo depth are both 16 in hardware, so TxDmaBurstSize should be no more than 16.
-* @note TxDmaBurstSize should not be smaller than GDMA_DstMsize in function UART_TXGDMA_Init();
-*       For better performance, it is suggested to make TxDmaBurstSize be equal to GDMA_DstMsize, which is 4.
-* @retval None
-*/
-void
-UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize)
+ * @brief Configure UART TX DMA burst size.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param TxDmaBurstSize UART TX DMA burst size.
+ * @note UART tx FIFO depth is 16 in hardware, so TxDmaBurstSize should be no more than 16.
+ * @note TxDmaBurstSize should not be smaller than GDMA_DstMsize in function UART_TXGDMA_Init();
+ * 		For better performance, it is suggested to make TxDmaBurstSize be equal to GDMA_DstMsize, which is 4.
+ * @return None
+ */
+void UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize)
 {
 	u32 TempMiscr;
 
 	/* Set UART TX DMA burst size.*/
 	TempMiscr = UARTx->MISCR;
-	TempMiscr &= ~(RUART_MASK_TXDMA_BURSTSIZE);
+	TempMiscr &= ~RUART_MASK_TXDMA_BURSTSIZE;
 	TempMiscr |= RUART_TXDMA_BURSTSIZE(TxDmaBurstSize);
-
 	UARTx->MISCR = TempMiscr;
 }
 
 /**
-* @brief Configure UART RX DMA burst size.
-* @param UARTx: where x can be 0/1/2.
-* @param RxDmaBurstSize: UART RX DMA burst size.
-* @note Although UART rx fifo depth is 64 in hardware, RxDmaBurstSize should be no more than 16 due to DMA fifo depth limit.
-* @note RxDmaBurstSize should not be smaller than GDMA_SrcMsize in function UART_RXGDMA_Init();
-*       For better performance, it is suggested to make RxDmaBurstSize be equal to GDMA_SrcMsize, which is 16.
-* @retval None
-*/
-void
-UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize)
+ * @brief Configure UART RX DMA burst size.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param RxDmaBurstSize UART RX DMA burst size.
+ * @note Although UART rx FIFO depth is 64 in hardware, RxDmaBurstSize should be no more than 32 due to DMA FIFO depth limit.
+ * @note RxDmaBurstSize should not be smaller than GDMA_SrcMsize in function UART_RXGDMA_Init();
+ * 		For better performance, it is suggested to make RxDmaBurstSize be equal to GDMA_SrcMsize, which is 16.
+ * @return None
+ */
+void UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize)
 {
 	u32 TempMiscr;
 
 	/* Set UART Rx DMA burst size */
 	TempMiscr = UARTx->MISCR;
-	TempMiscr &= ~(RUART_MASK_RXDMA_BURSTSIZE);
+	TempMiscr &= ~RUART_MASK_RXDMA_BURSTSIZE;
 	TempMiscr |= RUART_RXDMA_BURSTSIZE(RxDmaBurstSize);
-
 	UARTx->MISCR = TempMiscr;
 }
 
 /**
-* @brief    enable or disable UART TX DMA .
-* @param  UARTx: where x can be 0/1/2.
-* @param  NewState: the new state of UART TX DMA.
-*               This parameter can be: ENABLE or DISABLE.
-* @retval   None
-*/
-void
-UART_TXDMACmd(UART_TypeDef *UARTx, u32 NewState)
+ * @brief Enable or disable UART TX DMA.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param NewState New state of UART TX DMA.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
+void UART_TXDMACmd(UART_TypeDef *UARTx, u32 NewState)
 {
 	if (NewState != DISABLE) {
 		/* enable the UART TX DMA */
 		UARTx->MISCR |= RUART_BIT_TXDMA_EN;
 	} else {
 		/* disable the UART TX DMA */
-		UARTx->MISCR &= (~ RUART_BIT_TXDMA_EN);
+		UARTx->MISCR &= ~RUART_BIT_TXDMA_EN;
 	}
 }
 
 /**
-* @brief    enable or disable UART RX DMA .
-* @param  UARTx: where x can be 0/1/2.
-* @param  NewState: the new state of UART RX DMA.
-*              This parameter can be: ENABLE or DISABLE.
-* @retval   None
-*/
-void
-UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState)
+ * @brief Enable or disable UART RX DMA.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param NewState New state of UART RX DMA.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
+void UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState)
 {
 	if (NewState != DISABLE) {
 		/* enable the UART RX DMA */
 		UARTx->MISCR |= RUART_BIT_RXDMA_EN;
 	} else {
 		/* disable the UART RX DMA */
-		UARTx->MISCR &= (~ RUART_BIT_RXDMA_EN);
+		UARTx->MISCR &= ~RUART_BIT_RXDMA_EN;
 	}
 }
 
 /**
-  * @brief    Init and Enable UART TX GDMA.
-  * @param  UartIndex: 0/1/2.
-  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
-  *         the configuration information for the GDMA peripheral.
-  * @param  CallbackData: GDMA callback data.
-  * @param  CallbackFunc: GDMA callback function.
-  * @param  pTxBuf: Tx Buffer.
-  * @param  TxCount: Tx Count.
-  * @retval   TRUE/FLASE
-  */
+ * @brief Initialize and enable UART TX GDMA.
+ * @param UartIndex UART index, which can be 0~2.
+ * @param GDMA_InitStruct Pointer to a GDMA_InitTypeDef structure that contains configuration information of the GDMA peripheral.
+ * @param CallbackData GDMA callback data.
+ * @param CallbackFunc GDMA callback function.
+ * @param pTxBuf Pointer to tx buffer.
+ * @param TxCount Tx count.
+ * @retval TRUE or FALSE.
+ */
 bool UART_TXGDMA_Init(
 	u8 UartIndex,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -156,7 +145,7 @@ bool UART_TXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		/*  No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -188,28 +177,24 @@ bool UART_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = TxCount;
 	}
 
-	/*DMA blocksize up to 65535 on D2, this parameter is u16 type, so it will be never more than 65535*/
-	//assert_param(GDMA_InitStruct->GDMA_BlockSize <= 65535);//remove to avoid warning
-
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)(pTxBuf);
 
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
-  * @brief    Init and Enable UART RX GDMA.
-  * @param  UartIndex:0/1/2.
-  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
-  *         the configuration information for the GDMA peripheral.
-  * @param  CallbackData: GDMA callback data.
-  * @param  CallbackFunc: GDMA callback function.
-  * @param  pRxBuf: Rx Buffer.
-  * @param  RxCount: Rx Count, 0 will use UART as DMA controller.
-  * @retval   TRUE/FLASE
-  */
+ * @brief Initialize and enable UART RX GDMA.
+ * @param UartIndex UART index, which can be 0~2.
+ * @param GDMA_InitStruct Pointer to a GDMA_InitTypeDef structure that contains configuration information of the GDMA peripheral.
+ * @param CallbackData GDMA callback data.
+ * @param CallbackFunc GDMA callback function.
+ * @param pRxBuf Pointer to rx buffer.
+ * @param RxCount Rx count, 0 means using UART as DMA flow controller.
+ * @retval TRUE or FALSE.
+ */
 bool UART_RXGDMA_Init(
 	u8 UartIndex,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -229,7 +214,7 @@ bool UART_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		/* No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -245,13 +230,12 @@ bool UART_RXGDMA_Init(
 		UARTx->MISCR &= (~RUART_BIT_RXDMA_OWNER);
 	}
 
-	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	GDMA_InitStruct->GDMA_SrcHandshakeInterface = UART_DEV_TABLE[UartIndex].Rx_HandshakeInterface;
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)&UART_DEV_TABLE[UartIndex].UARTx->RBR_OR_UART_THR;
 	GDMA_InitStruct->GDMA_Index   = 0;
 	GDMA_InitStruct->GDMA_ChNum   = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;//for better performance
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen; // for better performance
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
@@ -268,9 +252,6 @@ bool UART_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_BlockSize = RxCount;
 	GDMA_InitStruct->GDMA_DstAddr = (u32)(pRxBuf);
 
-	/*DMA blocksize up to 65535 on D2, this parameter is u16 type, so it will be never more than 65535*/
-	//assert_param(GDMA_InitStruct->GDMA_BlockSize <= 65535);//remove to avoid warning
-
 	/* multi block close */
 	GDMA_InitStruct->MuliBlockCunt  = 0;
 	GDMA_InitStruct->GDMA_ReloadSrc = 0;
@@ -279,21 +260,14 @@ bool UART_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
-/**
-  * @}
-  */
-
-/** @defgroup UART_Low_Power_functions UART Low Power Functions
-  * @{
-  */
 
 /**
-  * @brief  configure uart monitor parameters.
-  * @param  BitNumThres: Configure bit number threshold of one monitor period.
-  * @param  OscPerbitUpdCtrl: the OSC cycnum_perbit update bit(can be ENABLE or DISABLE).
-  * @retval None
+  * @brief Configure uart monitor parameters.
+  * @param BitNumThres Configure bit number threshold of one monitor period.
+  * @param OscPerbitUpdCtrl OSC cycnum_perbit update bit, which can be ENABLE or DISABLE.
+  * @return None
   */
 void UART_MonitorParaConfig(UART_TypeDef *UARTx, u32 BitNumThres, u32 OscPerbitUpdCtrl)
 {
@@ -308,8 +282,8 @@ void UART_MonitorParaConfig(UART_TypeDef *UARTx, u32 BitNumThres, u32 OscPerbitU
 	RegValue = UARTx->MON_BAUD_CTRL;
 
 	/*step 2: Configure bit number threshold of one monitor period.*/
-	RegValue &= (~ RUART_MASK_R_BIT_NUM_THRES);
-	RegValue |= ((BitNumThres << 1) & RUART_MASK_R_BIT_NUM_THRES);
+	RegValue &= ~RUART_MASK_R_BIT_NUM_THRES;
+	RegValue |= RUART_R_BIT_NUM_THRES(BitNumThres);
 
 	/*step 3: Configure the OSC cycnum_perbit update bit (REG_MON_BAUD_CTRL[29])*/
 	if (OscPerbitUpdCtrl != DISABLE) {
@@ -317,23 +291,21 @@ void UART_MonitorParaConfig(UART_TypeDef *UARTx, u32 BitNumThres, u32 OscPerbitU
 		RegValue |= RUART_BIT_R_UPD_OSC_IN_XTAL;
 	} else {
 		/*disable OSC cycnum_perbit update*/
-		RegValue &= ~ RUART_BIT_R_UPD_OSC_IN_XTAL;
+		RegValue &= ~RUART_BIT_R_UPD_OSC_IN_XTAL;
 	}
 	UARTx->MON_BAUD_CTRL = RegValue;
 }
 
 /**
-  * @brief    set uart baud rate of low power rx path
-  * @param  UARTx: where x can be 0/1/2.
-  * @param  BaudRate: the desired baud rate
-  * @param  RxIPClockHz: the uart rx clock. unit: [Hz]
-  * @note    according to the baud rate calculation formlula in low power rx path, method
-  *              implemented is as follows:
-  *          - CycPerbit = round( fpclock/BaudRate)
-  * @retval  None
-  */
-void
-UART_LPRxBaudSet(UART_TypeDef *UARTx, u32 BaudRate, u32 RxIPClockHz)
+ * @brief Set uart baud rate of low power rx path.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param BaudRate Desired baud rate.
+ * @param RxIPClockHz UART rx clock in Hz.
+ * @note According to the baud rate calculation formula in low power rx path,
+ * 		CycPerbit = round(fpclock/BaudRate)
+ * @return None
+ */
+void UART_LPRxBaudSet(UART_TypeDef *UARTx, u32 BaudRate, u32 RxIPClockHz)
 {
 	u32 CycPerbit = 0;
 	u32 RegValue = 0;
@@ -352,32 +324,29 @@ UART_LPRxBaudSet(UART_TypeDef *UARTx, u32 BaudRate, u32 RxIPClockHz)
 
 	/* Average clock cycle number of one bit. MON_BAUD_STS[19:0] */
 	RegValue = UARTx->MON_BAUD_STS;
-	RegValue &= (~RUART_MASK_R_CYCNUM_PERBIT_XTAL);
+	RegValue &= ~RUART_MASK_R_CYCNUM_PERBIT_XTAL;
 	RegValue |= RUART_R_CYCNUM_PERBIT_XTAL(CycPerbit);
-
 	/* set CycPerbit */
 	UARTx->MON_BAUD_STS = RegValue;
 
 	/* Average clock cycle number of one bit OSC. REG_MON_BAUD_CTRL[28:9] */
 	RegOscBaud = UARTx->MON_BAUD_CTRL;
-	RegOscBaud &= (~ RUART_MASK_R_CYCNUM_PERBIT_OSC);
+	RegOscBaud &= ~RUART_MASK_R_CYCNUM_PERBIT_OSC;
 	RegOscBaud |= RUART_R_CYCNUM_PERBIT_OSC(CycPerbit);
-
 	/*set the OSC CycPerbit*/
 	UARTx->MON_BAUD_CTRL = RegOscBaud;
 
-	UARTx->RX_PATH_CTRL &= (~RUART_MASK_RXBAUD_ADJ_10_0);
+	UARTx->RX_PATH_CTRL &= ~RUART_MASK_RXBAUD_ADJ_10_0;
 }
 
 /**
-  * @brief    enable or disable the monitor function in Low Power Rx Path( REG_MON_BAUD_CTRL[0] ).
-  * @param  UARTx: where x can be 0/1/2.
-  * @param  NewState: the new state of monitoring.
-  *              This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void
-UART_RxMonitorCmd(UART_TypeDef *UARTx, u32 NewState)
+ * @brief Enable or disable the monitor function in Low Power Rx Path.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param NewState New state of monitoring.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
+void UART_RxMonitorCmd(UART_TypeDef *UARTx, u32 NewState)
 {
 	/* configure Low Power rx monitoring function*/
 	if (NewState != DISABLE) {
@@ -385,53 +354,41 @@ UART_RxMonitorCmd(UART_TypeDef *UARTx, u32 NewState)
 		UARTx->MON_BAUD_CTRL |= RUART_BIT_R_MON_BAUD_EN;
 	} else {
 		/* Function disable of monitoring rx baud */
-		UARTx->MON_BAUD_CTRL &= (~RUART_BIT_R_MON_BAUD_EN);
+		UARTx->MON_BAUD_CTRL &= ~RUART_BIT_R_MON_BAUD_EN;
 	}
 }
 
 /**
-  * @brief    Get the Monitor Baud Rate control register value of the Low Power Rx Path.
-  * @param  UARTx: where x can be 0/1/2.
-  * @note    MON_BAUD_CTRL[28:9] field value is the monitor result under OSC 2M Hz Clock.
-  * @retval   the value of the MON_BAUD_CTRL register
-  */
-u32
-UART_RxMonBaudCtrlRegGet(UART_TypeDef *UARTx)
+ * @brief Get the Monitor Baud Rate control register value of the Low Power Rx Path.
+ * @param UARTx UART device, where x can be 0~2.
+ * @note MON_BAUD_CTRL[28:9] field value is the monitor result under OSC2M Clock.
+ * @return The value of the MON_BAUD_CTRL register.
+ */
+u32 UART_RxMonBaudCtrlRegGet(UART_TypeDef *UARTx)
 {
 	/*return the monitor baud rate control register value(MON_BAUD_CTRL)*/
 	return UARTx->MON_BAUD_CTRL;
 }
 
 /**
-  * @brief    Get the status of the Low Power Rx Monitoring.
-  * @param  UARTx: where x can be 0/1/2.
-  * @note    Read this register can clear the monitor interrupt status.
-  *              Besides,REG_MON_BAUD_STS[19:0] field value is the monitor
-  *              result under XTAL 2M Hz Clock.
-  * @retval   the value of the REG_MON_BAUD_STS register
-  */
-u32
-UART_RxMonitorSatusGet(UART_TypeDef *UARTx)
+ * @brief Get the status of the Low Power Rx Monitoring.
+ * @param UARTx UART device, where x can be 0~2.
+ * @note Read this register can clear the monitor interrupt status.
+ * 		Besides, REG_MON_BAUD_STS[19:0] field value is the monitor result under XTAL2M Clock.
+ * @return The value of the REG_MON_BAUD_STS register.
+ */
+u32 UART_RxMonitorSatusGet(UART_TypeDef *UARTx)
 {
 	/*return the monitor status register value*/
 	return UARTx->MON_BAUD_STS;
 }
-/**
-  * @}
-  */
-
-/** @defgroup UART_IRDA_functions UART IRDA Functions
-  * @{
-  */
 
 /**
-  * @brief    Fills each IrDA_InitStruct member with its default value.
-  * @param  IrDA_InitStruct : pointer to a IrDA_InitTypeDef
-  *              structure which will be initialized.
-  * @retval   None
-  */
-void
-UART_IrDAStructInit(IrDA_InitTypeDef *IrDA_InitStruct)
+ * @brief Fill each IrDA_InitStruct member with its default value.
+ * @param IrDA_InitStruct Pointer to a IrDA_InitTypeDef structure which will be initialized.
+ * @return None
+ */
+void UART_IrDAStructInit(IrDA_InitTypeDef *IrDA_InitStruct)
 {
 	/* Set the default value */
 	IrDA_InitStruct->UART_IrDARxInv     = DISABLE;
@@ -445,48 +402,44 @@ UART_IrDAStructInit(IrDA_InitTypeDef *IrDA_InitStruct)
 }
 
 /**
-  * @brief    Configures the UART's IrDA interface .
-  * @param  UARTx: where x can be 0/1/2.
-  * @param  IrDA_InitStruct: pointer to a IrDA_InitTypeDef structure that contains
-  *              the configuration information for the IrDA module.
-  * @note    the details of IrDA_InitStruct members are:
-  * @verbatim
-  *	           IrDA_InitStruct-> UART_IrDARxInv:
-  *				IrDA Rx invert bit--------------------MISCR[14]
-  *                 		ENABLE: invert irda rx
-  *                 		DISABLE: not invert irda rx
-  *
-  *	           IrDA_InitStruct->UART_IrDATxInv:
-  *				IrDA Tx invert bit---------------------MISCR[13]
-  *                 		ENABLE: invert irda tx
-  *                 		DISABLE: not invert irda tx
-  *
-  *	           IrDA_InitStruct->UART_UpperShift:
-  *			 	Upperbound(right edge) Shift direction---SIR_TX_PWC0[31]
-  *			 				UART_IRDA_PULSE_LEFT_SHIFT: shift left
-  *                 		UART_IRDA_PULSE_RIGHT_SHIFT: shift right
-  *	           IrDA_InitStruct->UpperShiftVal:
-  *				Upperbound Shift value---------------SIR_TX_PWC0[30:16]
-  *
-  *	           IrDA_InitStruct->UART_LowShift:
-  *				Lowbound(left edge) Shift direction-----SIR_TX_PWC0[15]
-  *			 				UART_IRDA_PULSE_LEFT_SHIFT: shift left
-  *                 		UART_IRDA_PULSE_RIGHT_SHIFT: shift right
-  *	           IrDA_InitStruct->UART_LowShiftVal:
-  *				Lowbound Shift value----------------SIR_TX_PWC0[14:0]
-  *
-  *	           IrDA_InitStruct->UART_RxFilterThres:
-  *				IrDA RX filter threshold---------------SIR_RX_PFC[15:1]
-  *
-  *	           IrDA_InitStruct->UART_RxFilterCmd:
-  *				IrDA RX filter enable or disable---------SIR_RX_PFC[0]
-  *                 		ENABLE: enable IrDA rx filter
-  *                 		DISABLE: disable IrDA rx filter
-  * @endverbatim
-  * @retval   None
+ * @brief Configures the UART's IrDA interface.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param IrDA_InitStruct Pointer to a IrDA_InitTypeDef structure that contains
+ * 		the configuration information of the IrDA module.
+ * @verbatim
+ * 		IrDA_InitStruct-> UART_IrDARxInv:
+ * 		IrDA Rx invert bit--------------------MISCR[14]
+ * 			- ENABLE: invert irda rx
+ * 			- DISABLE: not invert irda rx
+ * 		IrDA_InitStruct->UART_IrDATxInv:
+ * 		IrDA Tx invert bit---------------------MISCR[13]
+ * 			- ENABLE: invert irda tx
+ * 			- DISABLE: not invert irda tx
+ *
+ * 		IrDA_InitStruct->UART_UpperShift:
+ * 		Upperbound(right edge) Shift direction---SIR_TX_PWC0[31]
+ * 			- UART_IRDA_PULSE_LEFT_SHIFT: shift left
+ * 			- UART_IRDA_PULSE_RIGHT_SHIFT: shift right
+ * 		IrDA_InitStruct->UpperShiftVal:
+ * 		Upperbound Shift value---------------SIR_TX_PWC0[30:16]
+ *
+ * 		IrDA_InitStruct->UART_LowShift:
+ * 		Lowbound(left edge) Shift direction-----SIR_TX_PWC0[15]
+ * 			- UART_IRDA_PULSE_LEFT_SHIFT: shift left
+ * 			- UART_IRDA_PULSE_RIGHT_SHIFT: shift right
+ * 		IrDA_InitStruct->UART_LowShiftVal:
+ * 		Lowbound Shift value----------------SIR_TX_PWC0[14:0]
+ *
+ * 		IrDA_InitStruct->UART_RxFilterThres:
+ * 		IrDA RX filter threshold---------------SIR_RX_PFC[15:1]
+ * 		IrDA_InitStruct->UART_RxFilterCmd:
+ * 		IrDA RX filter enable or disable---------SIR_RX_PFC[0]
+ * 			- ENABLE: enable IrDA rx filter
+ * 			- DISABLE: disable IrDA rx filter
+ * @endverbatim
+ * @return None
   */
-void
-UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitStruct)
+void UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitStruct)
 {
 	u32 TempMiscr;
 	u32 TempTxpulse;
@@ -508,7 +461,7 @@ UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitStruct)
 		TempMiscr |= RUART_BIT_IRDA_RX_INV;
 	} else {
 		/*not invert the irda_rx_i*/
-		TempMiscr &= (~ RUART_BIT_IRDA_RX_INV);
+		TempMiscr &= ~RUART_BIT_IRDA_RX_INV;
 	}
 
 	/*configure the IrDA TX invert bit*/
@@ -517,7 +470,7 @@ UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitStruct)
 		TempMiscr |= RUART_BIT_IRDA_TX_INV;
 	} else {
 		/*not invert the irda_tx_o*/
-		TempMiscr &= (~ RUART_BIT_IRDA_TX_INV);
+		TempMiscr &= ~RUART_BIT_IRDA_TX_INV;
 	}
 	UARTx->MISCR = TempMiscr;
 
@@ -526,20 +479,26 @@ UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitStruct)
 
 	/*configure IrDA SIR TX Pulse Width*/
 	/*configure Upperbound(right edge) shift direction*/
-	TempTxpulse &= (~ RUART_BIT_UPPERBOUND_SHIFTRIGHT);
-	TempTxpulse |= (IrDA_InitStruct->UART_UpperShift << 31);
+	if (IrDA_InitStruct->UART_UpperShift == UART_IRDA_PULSE_RIGHT_SHIFT) {
+		TempTxpulse |= RUART_BIT_UPPERBOUND_SHIFTRIGHT;
+	} else {
+		TempTxpulse &= ~RUART_BIT_UPPERBOUND_SHIFTRIGHT;
+	}
 
 	/*configure the Upperbound shift value*/
-	TempTxpulse &= (~ RUART_MASK_UPPERBOUND_SHIFTVAL);
-	TempTxpulse |= (IrDA_InitStruct->UART_UpperShiftVal << 16);
+	TempTxpulse &= ~RUART_MASK_UPPERBOUND_SHIFTVAL;
+	TempTxpulse |= RUART_UPPERBOUND_SHIFTVAL(IrDA_InitStruct->UART_UpperShiftVal);
 
 	/*configure Lowbound(left edge) shift direction*/
-	TempTxpulse &= (~ RUART_BIT_LOWBOUND_SHIFTRIGHT);
-	TempTxpulse |= (IrDA_InitStruct->UART_LowShift << 15);
+	if (IrDA_InitStruct->UART_LowShift == UART_IRDA_PULSE_RIGHT_SHIFT) {
+		TempTxpulse |= RUART_BIT_LOWBOUND_SHIFTRIGHT;
+	} else {
+		TempTxpulse &= ~RUART_BIT_LOWBOUND_SHIFTRIGHT;
+	}
 
 	/*configure the Lowbound shift value*/
-	TempTxpulse &= (~ RUART_MASK_LOWBOUND_SHIFTVAL);
-	TempTxpulse |= (IrDA_InitStruct->UART_LowShiftVal);
+	TempTxpulse &= ~RUART_MASK_LOWBOUND_SHIFTVAL;
+	TempTxpulse |= RUART_LOWBOUND_SHIFTVAL(IrDA_InitStruct->UART_LowShiftVal);
 
 	UARTx->SIR_TX_PWC0 = TempTxpulse;
 
@@ -547,121 +506,99 @@ UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitStruct)
 	TempRxPulse = UARTx->SIR_RX_PFC;
 
 	/*configure IrDA RX filter threshold*/
-	TempRxPulse &= (~ RUART_MASK_R_SIR_RX_FILTER_THRS);
-	TempRxPulse |= (IrDA_InitStruct->UART_RxFilterThres << 1);
+	TempRxPulse &= ~RUART_MASK_R_SIR_RX_FILTER_THRS;
+	TempRxPulse |= RUART_R_SIR_RX_FILTER_THRS(IrDA_InitStruct->UART_RxFilterThres);
 
 	if (IrDA_InitStruct->UART_RxFilterCmd != DISABLE) {
 		/*enable IrDA rx filter*/
 		TempRxPulse |= RUART_BIT_R_SIR_RX_FILTER_EN;
 	} else {
 		/*disable IrDA rx filter*/
-		TempRxPulse &= (~ RUART_BIT_R_SIR_RX_FILTER_EN);
+		TempRxPulse &= ~RUART_BIT_R_SIR_RX_FILTER_EN;
 	}
 
 	UARTx->SIR_RX_PFC = TempRxPulse;
 }
 
 /**
-  * @brief    enable or disable the IrDA function.
-  * @param  UARTx: where x can be 0/1/2.
-  * @param  NewState: the new state of the IrDA.
-  *              This parameter can be: ENABLE or DISABLE.
-  * @retval   None
-  */
-void
-UART_IrDACmd(UART_TypeDef *UARTx, u32 NewState)
+ * @brief Enable or disable the IrDA function.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param NewState New state of the IrDA.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
+void UART_IrDACmd(UART_TypeDef *UARTx, u32 NewState)
 {
 	if (NewState != DISABLE) {
 		/* enable the IrDA */
 		UARTx->MISCR |= RUART_BIT_IRDA_ENABLE;
 	} else {
 		/* disable the IrDA */
-		UARTx->MISCR &= (~ RUART_BIT_IRDA_ENABLE);
+		UARTx->MISCR &= ~RUART_BIT_IRDA_ENABLE;
 	}
 }
-/**
-  * @}
-  */
-
-/** @defgroup UART_External_functions UART External Functions
-  * @{
-  */
 
 /**
-* @brief    configure UART RX Debounce Cycle.
-* @param  UARTx: where x can be 0/1/2.
-* @param  RxDebounceCycle: UART RX Debounce Cycle.
-* @note     unit is cycle of sclk.
-* @retval   None
-*/
-void
-UART_RxDebounceConfig(UART_TypeDef *UARTx, u32 RxDebounceCycle)
+ * @brief Configure UART RX Debounce Cycle.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param RxDebounceCycle UART RX Debounce Cycle.
+ * @note unit is cycle of sclk.
+ * @return None
+ */
+void UART_RxDebounceConfig(UART_TypeDef *UARTx, u32 RxDebounceCycle)
 {
 	u32 TempRXDBCR;
 
 	/* Set UART TX DMA burst size.*/
 	TempRXDBCR = UARTx->RXDBCR;
-	TempRXDBCR &= ~(RUART_MASK_DBNC_CYC);
-	TempRXDBCR |= ((RxDebounceCycle << 1) & RUART_MASK_DBNC_CYC);
-
+	TempRXDBCR &= ~RUART_MASK_DBNC_CYC;
+	TempRXDBCR |= RUART_DBNC_CYC(RxDebounceCycle);
 	UARTx->RXDBCR = TempRXDBCR;
 }
 
 /**
-  * @brief    enable or disable the rx noise detected function.
-  * @param  UARTx: where x can be 0/1/2.
-  * @param  NewState: the new state of monitoring.
-  *              This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void
-UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState)
+ * @brief Enable or disable the rx debounce function.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param NewState New state of rx debounce function.
+ * 		This parameter can be ENABLE or DISABLE.
+ * @return None
+ */
+void UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState)
 {
-	/* configure Low Power rx monitoring function*/
 	if (NewState != DISABLE) {
-		/* Function enable of monitoring rx baud */
+		/* Enable rx debounce */
 		UARTx->RXDBCR |= RUART_BIT_DBNC_FEN;
 	} else {
-		/* Function disable of monitoring rx baud */
-		UARTx->RXDBCR &= (~ RUART_BIT_DBNC_FEN);
+		/* Disable rx debounce */
+		UARTx->RXDBCR &= ~RUART_BIT_DBNC_FEN;
 	}
 }
-/**
-  * @}
-  */
-
-/** @defgroup UART_DMA_functions UART DMA Functions
-  * @{
-  */
 
 /**
- * @brief    UART RX DMA dummy data configuration .
- * @param  UARTx: where x can be 0/1/2.
- * @param  Byte: dummy data.
- * @retval   None
+ * @brief Configure UART RX DMA dummy data.
+ * @param UARTx UART device, where x can be 0~2.
+ * @param Byte dummy data.
+ * @return None
  */
-void
-UART_RxDMADummyDataConfig(UART_TypeDef *UARTx, u8 Byte)
+void UART_RxDMADummyDataConfig(UART_TypeDef *UARTx, u8 Byte)
 {
 	u32 TempMiscr;
 
 	/* Set UART RX DMA flow control mode.*/
 	TempMiscr = UARTx->MISCR;
-	TempMiscr &= ~(RUART_MASK_DUMMY_DATA);
+	TempMiscr &= ~RUART_MASK_DUMMY_DATA;
 	TempMiscr |= RUART_DUMMY_DATA(Byte);
-
 	UARTx->MISCR = TempMiscr;
 }
 
 /**
- * @brief    Get UART RX DMA dummy flag .
- * @param  UARTx: where x can be 0/1/2.
- * @retval   status value:
-	    - 0: master not read dummy data from rx fifo
-	    - 1: master read dummy data from rx fifo
+ * @brief Get UART RX DMA dummy flag.
+ * @param UARTx UART device, where x can be 0~2.
+ * @return Status value, which can be
+ * 		- 0: master not read dummy data from rx FIFO
+ * 		- 1: master read dummy data from rx FIFO
  */
-u32
-UART_GetRxDMADummyFlag(UART_TypeDef *UARTx)
+u32 UART_GetRxDMADummyFlag(UART_TypeDef *UARTx)
 {
 	if (UARTx->MISCR & RUART_BIT_CLR_DUMMY_FLAG) {
 		return 1;
@@ -671,23 +608,24 @@ UART_GetRxDMADummyFlag(UART_TypeDef *UARTx)
 }
 
 /**
- * @brief    Clear UART RX DMA dummy flag .
- * @param  UARTx: where x can be 0/1/2.
- * @retval   None
+ * @brief Clear UART RX DMA dummy flag.
+ * @param UARTx UART device, where x can be 0~2.
+ * @return None
  */
-void
-UART_RxClearDMADummyFlag(UART_TypeDef *UARTx)
+void UART_RxClearDMADummyFlag(UART_TypeDef *UARTx)
 {
 	UARTx->MISCR |= RUART_BIT_CLR_DUMMY_FLAG;
 }
 
 /**
- * @brief Force UART RTS_output to be logic 1, informing peer device to stop sending data.
+ * @brief Force UART RTS_output to be logic 1, informing peer device to stop
+ * sending data.
  * @param UARTx: where x can be 0/1/2.
  * @param NewState: This parameter can be one of the following values:
- * 		@arg ENABLE: Force RTS_output to be logic 1, informing peer device to stop sending data.
- * 		@arg DISABLE: RTS_output stays active(logic 0) until Rx FIFO level reaches RECVTRG
- * 					  and becomes active again once Rx FIFO is completely empty,
+ * 		@arg ENABLE: Force RTS_output to be logic 1, informing peer device to
+ * stop sending data.
+ * 		@arg DISABLE: RTS_output stays active(logic 0) until Rx FIFO level
+ * reaches RECVTRG and becomes active again once Rx FIFO is completely empty,
  * 					  informing peer device to continue sending data.
  * @retval None
  * @note BIT_AFE should be set to 1 when call the UART_RTSForceCmd()
@@ -703,13 +641,13 @@ void UART_RTSForceCmd(UART_TypeDef *UARTx, u32 NewState)
 	}
 }
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
-/** @} */
-
-/** @} */
+/**
+ * @}
+ */

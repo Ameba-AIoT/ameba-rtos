@@ -18,7 +18,7 @@ set(BOOTLOADER ${BASEDIR}/component/soc/amebadplus/bootloader)
 set(CMAKE_FILES_DIR ${BASEDIR}/cmake)
 
 set(FREERTOS_VER v10.4.3)
-set(MBEDTLS_VER 2.16.9)
+set(MBEDTLS_VER 3.6.2)
 set(LWIP_VER v2.1.2)
 
 set(FREERTOSDIR ${BASEDIR}/component/os/freertos/freertos_${FREERTOS_VER}/Source)
@@ -31,6 +31,14 @@ set(LDDIR ${CMAKE_CURRENT_SOURCE_DIR}/asdk/ld)
 
 set(TARGET_LIBSOC_FOLDER ${PROJECTDIR}/asdk/lib/soc)
 set(TARGET_LIBAPP_FOLDER ${PROJECTDIR}/asdk/lib/application)
+
+if(NOT FINAL_IMAGE_DIR)
+    set(FINAL_IMAGE_DIR ${PROJECTDIR}/..)
+else()
+    if(NOT EXISTS FINAL_IMAGE_DIR)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${FINAL_IMAGE_DIR})
+    endif()
+endif()
 
 ###########################################
 if(NOT ASDK_VER)

@@ -21,9 +21,6 @@
  * Macros which create inline functions to read or write CPU system
  * registers
  *********************************************************************/
-#if defined( __ICCARM__ )
-#define __asm__ __asm
-#endif
 
 #define _DEFINE_COPROCR_WRITE_FUNC(_name, coproc, opc1, CRn, CRm, opc2)	\
 static inline void write_## _name(u_register_t v)			\

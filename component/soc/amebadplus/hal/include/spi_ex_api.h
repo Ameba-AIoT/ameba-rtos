@@ -120,14 +120,6 @@ void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id);
 void spi_bus_tx_done_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id);
 void spi_slave_flush_fifo(spi_t *obj);
 
-/**
-  * @brief  Close SPI device clock.
-  * @param  obj: spi object define in application software.
-  * @param  rx_delay: sample rx delay cycle, 1T = 20ns.
-  * @retval none
-  */
-//void spi_set_master_rxdelay(spi_t *obj, u32 rx_delay);
-
 int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length);
 int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length);
 int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length);
@@ -135,15 +127,6 @@ int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length);
 int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer, char *rx_buffer, uint32_t length);
 int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms);
 int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t length);
-
-/**
-  * @brief  slave recv target undetermined length data use interrupt mode for one time.
-  * @param  obj: spi slave object define in application software.
-  * @param  rx_buffer: buffer to save data read from SPI FIFO.
-  * @param  length: number of data bytes to be read, slave could terminate the transfer even if the length is not reached.
-  * @retval  : number of bytes read already
-  */
-//int32_t spi_slave_read_stream_unfix_size(spi_t *obj, char *rx_buffer, uint32_t length);
 
 //#ifdef CONFIG_GDMA_EN
 int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length);
@@ -155,6 +138,22 @@ int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t 
 int32_t spi_slave_read_stream_dma_terminate(spi_t *obj, char *rx_buffer, uint32_t length);
 //#endif
 
+/*
+  * @brief  Close SPI device clock.
+  * @param  obj: spi object define in application software.
+  * @param  rx_delay: sample rx delay cycle, 1T = 20ns.
+  * @retval none
+  */
+//void spi_set_master_rxdelay(spi_t *obj, u32 rx_delay);
+
+/*
+  * @brief  slave recv target undetermined length data use interrupt mode for one time.
+  * @param  obj: spi slave object define in application software.
+  * @param  rx_buffer: buffer to save data read from SPI FIFO.
+  * @param  length: number of data bytes to be read, slave could terminate the transfer even if the length is not reached.
+  * @retval  : number of bytes read already
+  */
+//int32_t spi_slave_read_stream_unfix_size(spi_t *obj, char *rx_buffer, uint32_t length);
 #ifdef __cplusplus
 }
 #endif

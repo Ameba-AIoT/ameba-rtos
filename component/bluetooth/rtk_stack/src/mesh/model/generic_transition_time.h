@@ -39,7 +39,7 @@ typedef enum
     GENERIC_TRANSITION_STEP_RESOLUTION_100MILLISECONDS,
     GENERIC_TRANSITION_STEP_RESOLUTION_1SECOND,
     GENERIC_TRANSITION_STEP_RESOLUTION_10SECONDS,
-    GENERIC_TRANSITION_STEP_RESOLUTION_10MINUTS
+    GENERIC_TRANSITION_STEP_RESOLUTION_10MINUTES
 } generic_transition_step_resolution_t;
 
 typedef struct
@@ -51,7 +51,7 @@ typedef struct
 
 #define IS_MAX_GENERIC_TRANSITION_TIME(trans_time) \
     ((trans_time.num_steps == GENERIC_TRANSITION_NUM_STEPS_MAX) && \
-     (trans_time.step_resolution == GENERIC_TRANSITION_STEP_RESOLUTION_10MINUTS))
+     (trans_time.step_resolution == GENERIC_TRANSITION_STEP_RESOLUTION_10MINUTES))
 
 typedef int32_t (*generic_transition_step_change_cb)(const mesh_model_info_p pmodel_info,
                                                      uint32_t trans_type,

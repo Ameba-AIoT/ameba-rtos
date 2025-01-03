@@ -247,17 +247,12 @@ typedef struct MPU_SETTINGS {
  */
 #define portALLOCATE_SECURE_CONTEXT( ulSecureStackSize )	vPortAllocateSecureContext( ulSecureStackSize )
 
-/**
- * @brief Called when a task is deleted to delete the task's secure context,
- * if it has one.
- *
- * @param[in] pxTCB The TCB of the task being deleted.
- */
-#define portCLEAN_UP_TCB( pxTCB )							vPortFreeSecureContext( ( uint32_t * ) pxTCB )
 #else
 #define portALLOCATE_SECURE_CONTEXT( ulSecureStackSize )
-#define portCLEAN_UP_TCB( pxTCB )
 #endif /* configENABLE_TRUSTZONE */
+
+extern void vPortCleanUpTCB(uint32_t * pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )					vPortCleanUpTCB( ( uint32_t * ) pxTCB )
 /*-----------------------------------------------------------*/
 
 #if( configENABLE_MPU == 1 )

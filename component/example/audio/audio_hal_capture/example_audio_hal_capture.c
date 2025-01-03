@@ -243,5 +243,5 @@ u32 CmdAudioHalCaptureTest(u16 argc, unsigned char **argv)
 {
 	(void) argc;
 	AudioHalCaptureTestApp((char **)argv);
-	return _TRUE;
+	return TRUE;
 }

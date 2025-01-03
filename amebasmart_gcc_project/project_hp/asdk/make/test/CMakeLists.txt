@@ -1,0 +1,12 @@
+ameba_add_subdirectories_if(CONFIG_PER_TEST
+    verification
+)
+ameba_add_subdirectories_if(CONFIG_DHRYSTONE_TEST
+    coremark
+    dhrystone
+    memtester
+)
+ameba_add_subdirectories_if(CONFIG_RTLIB_VERIFY
+    std_lib
+    apple
+)

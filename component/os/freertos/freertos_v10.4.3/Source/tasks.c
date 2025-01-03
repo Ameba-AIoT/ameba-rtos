@@ -4002,6 +4002,15 @@ void vTaskExitCritical(void)
 #endif /* portCRITICAL_NESTING_IN_TCB */
 /*-----------------------------------------------------------*/
 
+#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+
+uint32_t xPortGetCriticalState(void)
+{
+	return pxCurrentTCB->uxCriticalNesting;
+}
+
+#endif /* portCRITICAL_NESTING_IN_TCB */
+
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )
 
 static char *prvWriteNameToBuffer(char *pcBuffer,

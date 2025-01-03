@@ -119,7 +119,7 @@ void serial_break_set(serial_t *obj);
 void serial_break_clear(serial_t *obj);
 void serial_pinout_tx(PinName tx);
 void serial_set_flow_control(serial_t *obj, FlowControl type, PinName rxflow, PinName txflow);
-void serial_rts_control(serial_t *obj, BOOLEAN rts_state);
+void serial_rts_control(serial_t *obj, bool rts_state);
 
 #ifdef __cplusplus
 }

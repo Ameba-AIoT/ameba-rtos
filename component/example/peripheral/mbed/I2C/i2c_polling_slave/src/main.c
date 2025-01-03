@@ -19,7 +19,7 @@
 //#include "ex_api.h"
 #define I2C_0 0
 #define I2C_1 1
-
+static const char *const TAG = "I2C";
 // RESTART verification
 //#define I2C_RESTART_DEMO
 
@@ -38,9 +38,9 @@ void i2c_slave_rx_check(void)
 	int i2clocalcnt;
 	int result = 0;
 
-	printf("check slave received data>>>\n");
+	RTK_LOGI(TAG, "check slave received data>>>\n");
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
-		printf("i2c data: %02x \t %02x\n", i2cdatadst[i2clocalcnt], i2cdatadst[i2clocalcnt + 1]);
+		RTK_LOGI(TAG, "i2c data: %02x \t %02x\n", i2cdatadst[i2clocalcnt], i2cdatadst[i2clocalcnt + 1]);
 	}
 	//HalDelayUs(5000);
 	// verify result
@@ -60,9 +60,9 @@ void i2c_slave_rx_check(void)
 	} else if (i2cdatasrc[1] == i2cdatadst[0]) {
 		for (i2clocalcnt = 1; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt++) {
 			if (i2cdatasrc[i2clocalcnt] != i2cdatadst[i2clocalcnt - 1]) {
-				printf("idx:%d, src:%x, dst:%x\n", i2clocalcnt, i2cdatasrc[i2clocalcnt], i2cdatadst[i2clocalcnt]);
+				RTK_LOGI(TAG, "idx:%d, src:%x, dst:%x\n", i2clocalcnt, i2cdatasrc[i2clocalcnt], i2cdatadst[i2clocalcnt]);
 				for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
-					printf("i2c data: %02x \t %02x\n", i2cdatadst[i2clocalcnt], i2cdatadst[i2clocalcnt + 1]);
+					RTK_LOGI(TAG, "i2c data: %02x \t %02x\n", i2cdatadst[i2clocalcnt], i2cdatadst[i2clocalcnt + 1]);
 				}
 				result = 0;
 				break;
@@ -71,7 +71,7 @@ void i2c_slave_rx_check(void)
 	} else {
 		for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt++) {
 			if (i2cdatasrc[i2clocalcnt] != i2cdatadst[i2clocalcnt]) {
-				printf("idx:%d, src:%x, dst:%x\n", i2clocalcnt, i2cdatasrc[i2clocalcnt], i2cdatadst[i2clocalcnt]);
+				RTK_LOGI(TAG, "idx:%d, src:%x, dst:%x\n", i2clocalcnt, i2cdatasrc[i2clocalcnt], i2cdatadst[i2clocalcnt]);
 				result = 0;
 				break;
 			}
@@ -79,7 +79,7 @@ void i2c_slave_rx_check(void)
 	}
 #endif
 
-	printf("\r\nSlave receive: Result is %s\r\n", (result) ? "success" : "fail");
+	RTK_LOGI(TAG, "\r\nSlave receive: Result is %s\r\n", (result) ? "success" : "fail");
 	_memset(&i2cdatadst[0], 0x00, I2C_DATA_LENGTH);
 }
 
@@ -100,7 +100,7 @@ void i2c_dual_slave_task(void)
 		i2cdatardsrc[i2clocalcnt] = i2clocalcnt + 1;
 	}
 
-	printf("Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
+	RTK_LOGI(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
 	_memset(&i2cslave, 0x00, sizeof(i2c_t));
 	i2cslave.i2c_idx = I2C_0;
 	i2c_init(&i2cslave, MBED_I2C_SLV_SDA, MBED_I2C_SLV_SCL);
@@ -109,7 +109,7 @@ void i2c_dual_slave_task(void)
 	i2c_slave_mode(&i2cslave, 1);
 
 	// Master write - Slave read
-	printf("\r\nSlave read>>>\n");
+	RTK_LOGI(TAG, "\r\nSlave read>>>\n");
 	i2c_slave_read(&i2cslave, (char *)&i2cdatadst[0], I2C_DATA_LENGTH);
 	i2c_slave_rx_check();
 
@@ -119,7 +119,7 @@ void i2c_dual_slave_task(void)
 #endif
 
 
-	printf("Slave write>>>\n");
+	RTK_LOGI(TAG, "Slave write>>>\n");
 	i2c_slave_set_for_rd_req(&i2cslave, 1);
 	i2c_slave_write(&i2cslave, (char *)&i2cdatardsrc[0], I2C_DATA_LENGTH);
 
@@ -129,7 +129,7 @@ void i2c_dual_slave_task(void)
 int main(void)
 {
 	if (rtos_task_create(NULL, "I2C DULE SLAVE DEMO", (rtos_task_t)i2c_dual_slave_task, NULL, 3072, (1)) != SUCCESS) {
-		printf("Cannot create i2c_dual_slave_task demo task\n\r");
+		RTK_LOGI(TAG, "Cannot create i2c_dual_slave_task demo task\n\r");
 	}
 
 	rtos_sched_start();

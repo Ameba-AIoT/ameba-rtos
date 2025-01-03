@@ -11,6 +11,7 @@
 
 extern int main(void);
 extern void SOCPS_WakeFromPG(void);
+extern void newlib_locks_init(void);
 
 //set all KM0 rom & ram no-cachable, just flash cachable
 //KM0 have 4 mpu entrys
@@ -51,6 +52,8 @@ void app_start(void)
 	/* 1. Redirect hardfault for debug, and register function pointer to print task information when a crash occurs */
 	Fault_Hanlder_Redirect(vTaskCrashCallback);
 
+	newlib_locks_init();
+
 	/* 2. Init heap region for printf*/
 	rtos_mem_init();
 
@@ -70,7 +73,7 @@ void app_start(void)
 	app_mpu_nocache_init();
 	/* Force SP align to 8bytes */
 	__asm(
-		"ldr r1, =#0xFFFFFF80\n"
+		"ldr r1, =#0xFFFFFFF8\n"
 		"mov r0, sp \n"
 		"and r0, r0, r1\n"
 		"mov sp, r0\n"

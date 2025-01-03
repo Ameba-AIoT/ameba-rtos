@@ -6,8 +6,7 @@
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
 
-static const char *TAG = "MAIN";
-u32 use_hw_crypto_func;
+static const char *const TAG = "MAIN";
 u32 g_Boot_Status;
 
 
@@ -75,9 +74,6 @@ static void app_mbedtls_free_func(void *buf)
 void app_mbedtls_rom_init(void)
 {
 	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
-	use_hw_crypto_func = 0;
-	//rtl_cryptoEngine_init();
-
 }
 
 

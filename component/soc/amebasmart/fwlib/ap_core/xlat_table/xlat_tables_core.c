@@ -33,7 +33,7 @@ void *_memset(void *dst, int val, size_t count);
 
 bool is_dcache_enabled(void);
 
-static const char *TAG = "#";
+static const char *const TAG = "#";
 
 /* Helper function that cleans the data cache only if it is enabled. */
 static inline __attribute__((unused)) void xlat_clean_dcache_range(uintptr_t addr, size_t size)

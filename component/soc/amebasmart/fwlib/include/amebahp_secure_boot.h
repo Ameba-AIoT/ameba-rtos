@@ -3,11 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _AMEBAHP_SECURE_BOOT_H_
-#define _AMEBAHP_SECURE_BOOT_H_
-
-#include "mbedtls/ecp.h"
+#ifndef _AMEBA_SECURITY_BOOT_H_
+#define _AMEBA_SECURITY_BOOT_H_
 
 #define SBOOT_ERR_AUTH_NOT_SUPPORT					-1
 #define SBOOT_ERR_PK_HASH_INVALID					-2
@@ -42,9 +39,10 @@
 #define AUTHID_ECDSA_SECP224K1			11
 #define AUTHID_ECDSA_SECP256K1			12
 
-#define ECP_MAX_BITS_NUM     				256   /**< Maximum bit size of groups */
-#define ECP_MAX_BYTES_NUM    				( ( ECP_MAX_BITS_NUM + 7 ) / 8 )
-#define ECP_MAX_PT_LEN_NUM   				( 2 * ECP_MAX_BYTES_NUM)
+#define SBOOT_ECP_MAX_BITS				256   /**< Maximum bit size of ecdsa groups */
+#define SBOOT_ECP_MAX_BYTES				( ( SBOOT_ECP_MAX_BITS + 7 ) / 8 )
+#define SBOOT_ECP_MAX_PT_LEN			( 2 * SBOOT_ECP_MAX_BYTES)
+#define SBOOT_ECP_BIT2BYTE(x)			( ( (x) + 7 ) / 8 )
 
 #define IS_EDDSA(x)				(x == AUTHID_EDDSA_25519)
 #define IS_ECDSA(x)				(x == AUTHID_ECDSA_SECP192R1) || \
@@ -65,10 +63,10 @@
 #define HASHID_HMAC512		5
 
 #define HASH_MAX_LEN		64
-#define PKEY_MAX_LEN		((((2 * MBEDTLS_ECP_MAX_BYTES -1) >> 4) + 1) << 4) //144 byte (16-byte aligned, format type field not included)
-#define SIGN_MAX_LEN		((((2 * MBEDTLS_ECP_MAX_BYTES -1) >> 4) + 1) << 4) //144 byte (16-byte aligned, raw data format, not ASN.1)
+#define PKEY_MAX_LEN		144 //((((2 * MBEDTLS_ECP_MAX_BYTES -1) >> 4) + 1) << 4) //144 byte (16-byte aligned, format type field not included)
+#define SIGN_MAX_LEN		144 //((((2 * MBEDTLS_ECP_MAX_BYTES -1) >> 4) + 1) << 4) //144 byte (16-byte aligned, raw data format, not ASN.1)
 
-#define CRYPTO_CHK(f, errno) do { if( ( ret = f ) != 0 ) { ret = errno; goto exit; }} while( 0 )
+#define CRYPTO_CHK(f, errno) do { if((ret = f) != 0) {ret = errno; goto exit;}} while( 0 )
 
 #define MANIFEST_SIZE_4K_ALIGN		0x1000
 
@@ -90,8 +88,8 @@ typedef struct {
 } Manifest_TypeDef;
 
 typedef struct {
-	uint32_t Addr;
-	uint32_t Len;
+	u32 Addr;
+	u32 Len;
 } SubImgInfo_TypeDef;
 
 int SBOOT_GetMdType(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac);
@@ -102,3 +100,4 @@ int SBOOT_Validate_ImgHash(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgIn
 int SBOOT_SignatureVerify(u8 *PubKeyHash, Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgCnt);
 
 #endif
+

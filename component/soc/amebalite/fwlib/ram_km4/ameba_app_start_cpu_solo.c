@@ -8,7 +8,7 @@
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 
-static const char *TAG = "APP";
+static const char *const TAG = "APP";
 
 extern int main(void);
 

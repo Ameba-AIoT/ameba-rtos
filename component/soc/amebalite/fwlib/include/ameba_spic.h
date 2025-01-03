@@ -776,10 +776,10 @@ typedef struct {
 	u32 FLASH_wr_dual_ii;			/*!< Specifies dual data/addr write cmd */
 	u32 FLASH_wr_quad_i; 			/*!< Specifies quad data write cmd */
 	u32 FLASH_wr_quad_ii;			/*!< Specifies quad data/addr write cmd */
-	u32 FALSH_dual_o_valid_cmd;		/*!< Specifies valid cmd of dual o bitmode to program/read flash in auto mode */
-	u32 FALSH_dual_io_valid_cmd;	/*!< Specifies valid cmd of dual io bitmode to program/read flash in auto mode */
-	u32 FALSH_quad_o_valid_cmd;		/*!< Specifies valid cmd of quad o bitmode to program/read flash in auto mode */
-	u32 FALSH_quad_io_valid_cmd;	/*!< Specifies valid cmd of quad io bitmode to program/read flash in auto mode */
+	u32 FLASH_dual_o_valid_cmd;		/*!< Specifies valid cmd of dual o bitmode to program/read flash in auto mode */
+	u32 FLASH_dual_io_valid_cmd;	/*!< Specifies valid cmd of dual io bitmode to program/read flash in auto mode */
+	u32 FLASH_quad_o_valid_cmd;		/*!< Specifies valid cmd of quad o bitmode to program/read flash in auto mode */
+	u32 FLASH_quad_io_valid_cmd;	/*!< Specifies valid cmd of quad io bitmode to program/read flash in auto mode */
 	u32 FLASH_rd_fast_single;		/*!< Specifies fast read cmd in auto mode.*/
 
 	/* other command set */
@@ -800,7 +800,7 @@ typedef struct {
 	/* calibration data */
 	u8 FLASH_rd_sample_dly_cycle_cal;	/*!< Specifies the read sample delay cycle obtained from calibration. this is cal sample phase get from high speed cal */
 	u8 FLASH_rd_sample_dly_cycle;		/*!< Specifies the read sample delay cycle obtained from calibration. this is current sample phase */
-	u8 FLASH_rd_dummy_cyle[5];			/*!< Specifies the read dummy cycle of different bitmode according to
+	u8 FLASH_rd_dummy_cycle[5];			/*!< Specifies the read dummy cycle of different bitmode according to
 										flash datasheet*/
 
 	/* new calibration */

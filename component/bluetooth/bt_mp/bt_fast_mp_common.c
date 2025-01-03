@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <osif.h>
 #include <basic_types.h>
@@ -8,13 +9,13 @@
 #include <bt_mp_api.h>
 #include "wifi_intf_drv_to_bt.h"
 #include "bt_fast_mp_common.h"
+#include "rtw_coex_host_api.h"
 
 bt_fast_mp_parse_efuse_t bt_efuse = {0};
 
 static void *bt_timer_hdl = NULL;
 static void *bt_stop_sema = NULL;
 
-extern void wifi_btcoex_set_pta(enum pta_type type, u8 role, u8 process);
 extern bool bt_fast_mp_golden_map_in_range(uint16_t efuse_offset);
 extern void bt_fast_mp_efuse_init(void);
 extern void bt_fast_mp_golden_map_func(uint16_t efuse_offset, uint8_t *p_efuse);
@@ -309,7 +310,7 @@ void bt_fast_mp_cmd_handle_api(void *arg)
 		}
 		BT_LOGA("BT power on.\n\r");
 		rtk_bt_mp_dtm_power_on();
-		wifi_btcoex_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
+		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
 		BT_LOGA("Switch GNT_BT to BT.\n\r");
 		if (strcmp(argv[2], "DUT") == 0) {
 			bt_fast_mp_test_start_dut_func(bt_channel);
@@ -319,7 +320,7 @@ void bt_fast_mp_cmd_handle_api(void *arg)
 		}
 		BT_LOGA("BT power off.\n\r");
 		rtk_bt_mp_dtm_power_off();
-		wifi_btcoex_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
+		rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
 		BT_LOGA("Switch GNT_BT to WIFI.\n\r");
 	} else {
 		goto exit;

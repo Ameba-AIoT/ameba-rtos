@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "IPC";
+static const char *const TAG = "IPC";
 IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
 void *IPC_IrqData[IPC_CHANNEL_NUM];
 
@@ -197,7 +197,7 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 			break;
 		} else {
 			if (timeout == 0) {
-				return _FALSE;
+				return FALSE;
 			}
 
 			if (ipc_delay) {
@@ -216,7 +216,8 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout)
 
 	/* check if cpu get this sema */
 	if ((CPUID_idx != CPUID + 1) || (PXID_idx != PXID_Idx[SEM_Idx])) {
-		RTK_LOGS(TAG, "CPU %d take sema %d for pxid %d fail: cpuid %d pxid %d has taken the sema\n", CPUID, SEM_Idx, PXID_Idx[SEM_Idx], CPUID_idx - 1, PXID_idx);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CPU %d take sema %d for pxid %d fail: cpuid %d pxid %d has taken the sema\n", CPUID, SEM_Idx, PXID_Idx[SEM_Idx], CPUID_idx - 1,
+				 PXID_idx);
 
 		irq_enable_restore(IrqStatus);
 		return FALSE;
@@ -248,7 +249,8 @@ u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx)
 	PXID_idx = IPC_GET_SEMx_PXID(IPCKR4_DEV->IPC_SEMx[SEM_Idx]);
 
 	if (CPUID_idx != (CPUID + 1)) {
-		RTK_LOGS(TAG, "CPU %d free sema %d for pxid %d fail: cpuid %d, pxid %d is taking the sema\n", CPUID, SEM_Idx, PXID_Idx[SEM_Idx], CPUID_idx - 1, PXID_idx);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CPU %d free sema %d for pxid %d fail: cpuid %d, pxid %d is taking the sema\n", CPUID, SEM_Idx, PXID_Idx[SEM_Idx], CPUID_idx - 1,
+				 PXID_idx);
 		return FALSE;
 	}
 

@@ -106,17 +106,17 @@ uint16_t rtk_bt_mesh_stack_fn_deinit(void)
 }
 #endif // end of RTK_BLE_MESH_FN_SUPPORT
 
-#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-uint16_t rtk_bt_mesh_stack_provisioner_setting_init(rtk_bt_mesh_stack_act_provisioner_init_setting_t *init_setting)
+uint16_t rtk_bt_mesh_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *init_setting)
 {
 	uint16_t ret;
 
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_ACT_PROVISIONER_INIT_SETTING, init_setting,
-						  sizeof(rtk_bt_mesh_stack_act_provisioner_init_setting_t));
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM, init_setting,
+						  sizeof(rtk_bt_mesh_stack_act_set_prov_param_t));
 
 	return ret;
 }
 
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 uint16_t rtk_bt_mesh_stack_prov_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvcon)
 {
 	uint16_t ret;

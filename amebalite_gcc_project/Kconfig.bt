@@ -1,0 +1,136 @@
+choice
+    prompt "BT Mode Selection"
+    default BT_BLE_ONLY
+    config BT_BLE_ONLY
+        bool "BLE_ONLY"
+
+    config BT_DUAL_MODE
+        bool "DUAL_MODE"
+endchoice
+
+config BT_ADVANCED_FEATURE_MENU
+    bool "BT Advanced Feature"
+    default n
+
+config BT_EXCLUDE_AT_COMMAND
+    depends on BT_ADVANCED_FEATURE_MENU
+    bool "Exclude BT AT Command"
+    default n
+
+# config BT_ZEPHYR
+#     depends on BT_ADVANCED_FEATURE_MENU
+#     bool "Use Zephyr BT Stack"
+#     default n
+
+config BT_EXAMPLE_DEMO_MENU
+    bool "BT Example Demo"
+    default n
+
+if BT_EXAMPLE_DEMO_MENU
+    config BT_PERIPHERAL_MENU
+        bool "BLE Peripheral"
+        default n
+
+    config BT_CENTRAL_MENU
+        bool "BLE Central"
+        default n
+
+    config BT_SCATTERNET_MENU
+        bool "BLE Scatternet"
+        default n
+
+    config BT_MESH_PROVISIONER_MENU
+        bool "BLE Mesh Provisioner"
+        default n
+
+    config BT_MESH_DEVICE_MENU
+        bool "BLE Mesh Device"
+        default n
+
+    config BT_MESH_PROVISIONER_SCATTERNET_MENU
+        bool "BLE Mesh Provisioner and BLE Scatternet"
+        default n
+
+    config BT_MESH_DEVICE_SCATTERNET_MENU
+        bool "BLE Mesh Device and BLE Scatternet"
+        default n
+
+    #config BT_MESH_PROVISIONER_TEST_MENU
+    #    bool "BLE Mesh Provisioner Test"
+    #    default n
+
+    #config BT_MESH_DEVICE_TEST_MENU
+    #    bool "BLE Mesh Device Test"
+    #    default n
+
+    #config BT_ISO_TEST
+    #    bool "BLE ISO Test"
+    #    default n
+
+
+    config BT_LE_AUDIO_MENU
+        bool "BLE Audio"
+        default n
+
+    if BT_LE_AUDIO_MENU
+        config BT_BAP_MENU
+            bool "BLE Audio Basic Audio Profile"
+            default n
+
+        config BT_CAP_MENU
+            bool "BLE Audio Common Audio Profile"
+            default n
+
+        config BT_PBP_MENU
+            bool "BLE Audio Public Broadcast Profile"
+            default n
+
+        config BT_TMAP_MENU
+            bool "BLE Audio Telephony and Media Audio Profile"
+            default n
+
+    endif
+
+    config BT_A2DP_MENU
+        bool "BT A2DP"
+        default n
+
+
+    config BT_HFP_MENU
+        bool "BT HFP"
+        default n
+
+
+    config BT_A2DP_HFP_MENU
+        bool "BT A2DP and BT HFP"
+        default n
+
+
+    config BT_SPP_MENU
+        bool "BT SPP"
+        default n
+
+    config BT_RFC_MENU
+        bool "BT RFC"
+        default n
+
+    config BT_AUDIO_MP_TEST_MENU
+        bool "BT Audio MP Test"
+        default n
+
+
+    config BT_A2DP_SCATTERNET_MENU
+        bool "BT A2DP and BLE Scatternet"
+        default n
+
+
+    config BT_A2DP_LE_AUDIO_PBP_MENU
+        bool "BT A2DP and BLE Audio PBP"
+        default n
+
+
+    config BT_A2DP_LE_AUDIO_TMAP_MENU
+        bool "BT A2DP and BLE Audio TMAP"
+        default n
+
+endif

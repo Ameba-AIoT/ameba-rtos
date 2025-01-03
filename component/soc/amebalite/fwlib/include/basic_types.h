@@ -8,8 +8,11 @@
 #define __BASIC_TYPES_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h> /* for size_t */
 #include <limits.h> /* for INT_MAX */
+#include "rtk_compiler.h"
+
 #define PLATFORM_LITTLE_ENDIAN                  0
 #define PLATFORM_BIG_ENDIAN                     1
 
@@ -17,15 +20,6 @@
 
 #define SUCCESS	0
 #define FAIL	(-1)
-
-#undef _SUCCESS
-#define _SUCCESS	1
-
-#undef _FAIL
-#define _FAIL		0
-
-#undef _PASS
-#define _PASS		1
 
 #ifndef FALSE
 #define FALSE   0
@@ -35,9 +29,6 @@
 #define TRUE    (!FALSE)
 #endif
 
-#define _TRUE        TRUE
-#define _FALSE	     FALSE
-
 #ifndef MIN
 #define MIN(x, y)			(((x) < (y)) ? (x) : (y))
 #endif
@@ -46,27 +37,7 @@
 #define MAX(x, y)			(((x) > (y)) ? (x) : (y))
 #endif
 
-#define Compile_Assert(exp, str) extern char __ct_[(exp) ? 1 : -1]
-#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
-
-#ifdef __GNUC__
-#ifndef __weak
-#define __weak __attribute__((weak))
-#endif
-#ifndef likely
-#define likely(x) __builtin_expect((x), 1)
-#endif
-#ifndef unlikely
-#define unlikely(x) __builtin_expect((x), 0)
-#endif
-#elif defined(__ICCARM__)
-#ifndef likely
-#define likely(x) (x)
-#endif
-#ifndef unlikely
-#define unlikely(x) (x)
-#endif
-#endif
+#define DIV_ROUND_UP(X, Y) (((X) + (Y) -1) / (Y))
 
 #ifndef UNUSED
 #define UNUSED(X)      (void)X
@@ -84,41 +55,6 @@ typedef	signed int		        sint;
 #define s64                     int64_t
 #define u64                     uint64_t
 
-typedef int8_t                  i8;
-typedef int16_t                 i16;
-typedef int32_t                 i32;
-
-typedef uint8_t __u8;
-typedef int8_t __s8;
-typedef uint16_t __u16;
-typedef int16_t __s16;
-typedef uint32_t __u32;
-typedef int32_t __s32;
-typedef	uint64_t __u64;
-typedef int64_t                 __s64;
-typedef int8_t                  __i8;
-typedef int16_t                 __i16;
-typedef int32_t                 __i32;
-
-
-#ifndef BOOL
-typedef unsigned char           BOOL;
-#endif
-#ifndef __cplusplus
-#ifndef bool
-typedef unsigned char           bool;
-#endif
-#endif
-
-#ifndef boolean
-#define boolean				bool
-#endif
-
-typedef enum _RTK_STATUS_ {
-	_EXIT_SUCCESS = 0,
-	_EXIT_FAILURE = 1
-} RTK_STATUS, *PRTK_STATUS;
-
 #define IN
 #define OUT
 #define INOUT
@@ -127,20 +63,8 @@ typedef enum _RTK_STATUS_ {
 
 typedef     u32 dma_addr_t;
 
-typedef     void (*proc_t)(void *);
-
-typedef     unsigned int __kernel_size_t;
-typedef     int __kernel_ssize_t;
-
-typedef 	__kernel_size_t	SIZE_T;
-typedef	    __kernel_ssize_t	SSIZE_T;
-#define     FIELD_OFFSET(s,field)	((SSIZE_T)&((s*)(0))->field)
-
-#define MEM_ALIGNMENT_OFFSET	(sizeof (SIZE_T))
-#define MEM_ALIGNMENT_PADDING	(sizeof(SIZE_T) - 1)
-
-#define SIZE_PTR SIZE_T
-#define SSIZE_PTR SSIZE_T
+#define     FIELD_OFFSET(s,field)	((size_t)&((s*)(0))->field)
+#define 	SIZE_PTR 				size_t
 
 #ifndef ON
 #define   ON        1
@@ -156,14 +80,6 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 
 #ifndef DISABLE
 #define   DISABLE   0
-#endif
-
-#ifndef SET_NS_STATE
-#define   SET_NS_STATE   (1)
-#endif
-
-#ifndef SET_S_STATE
-#define   SET_S_STATE    (0)
 #endif
 
 #ifndef BIT0
@@ -207,31 +123,6 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 #define BIT(__n)       (1U<<(__n))
 #endif
 
-#define ALIGNMTO(_bound)    __attribute__ ((aligned (_bound)))
-#define SECTION(_name)      __attribute__ ((__section__(_name)))
-#define _WEAK               __attribute__ ((weak))
-#define _PACKED_            __attribute__ ((packed))
-#define __NO_INLINE         __attribute__ ((noinline))
-
-#if   defined ( __CC_ARM )                                            /* ARM Compiler 4/5 */
-#define _LONG_CALL_
-#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)       /* ARM Compiler 6 */
-#define _LONG_CALL_
-#elif defined( __ICCARM__ )
-#define STRINGIFY(s) #s
-#define _LONG_CALL_
-#define _OPTIMIZE_NONE_           _Pragma( STRINGIFY(optimize=none))
-#define UNUSED_WARN_DIS
-#else
-#if defined (RISC_V)
-#define _LONG_CALL_
-#else
-#define _LONG_CALL_     __attribute__ ((long_call))
-#endif
-#define _OPTIMIZE_NONE_           __attribute__ ((optimize("O0")))
-#define UNUSED_WARN_DIS	__attribute__((unused))
-#endif
-
 #define SWAP32(x) ((u32)(                         \
  			(((u32)(x) & (u32)0x000000ff) << 24) |            \
  			(((u32)(x) & (u32)0x0000ff00) <<  8) |            \
@@ -243,32 +134,12 @@ typedef	    __kernel_ssize_t	SSIZE_T;
  			(((u16)(x) & (u16)0xff00) >>  8)))
 
 #if SYSTEM_ENDIAN == PLATFORM_LITTLE_ENDIAN
-#define CONCAT_TO_UINT32(b4, b3, b2, b1) 	(((u32)((b4) & 0xFF) << 24) | ((u32)((b3) & 0xFF) << 16) | ((u32)((b2) & 0xFF) << 8) | ((u32)((b1) & 0xFF)))
-#define CONCAT_TO_UINT16(b2, b1) 			(((u16)((b2) & 0xFF) << 8) | ((u16)((b1) & 0xFF)))
-#ifndef rtk_le16_to_cpu
-#define rtk_cpu_to_le32(x)		((u32)(x))
-#define rtk_le32_to_cpu(x)		((u32)(x))
-#define rtk_cpu_to_le16(x)		((u16)(x))
-#define rtk_le16_to_cpu(x)		((u16)(x))
+#define CONCAT_TO_UINT32(b4, b3, b2, b1) (((u32)((b4) & 0xFF) << 24) | ((u32)((b3) & 0xFF) << 16) | ((u32)((b2) & 0xFF) << 8) | ((u32)((b1) & 0xFF)))
 #define rtk_cpu_to_be32(x)		SWAP32((x))
-#define rtk_be32_to_cpu(x)		SWAP32((x))
-#define rtk_cpu_to_be16(x)		WAP16((x))
-#define rtk_be16_to_cpu(x)		WAP16((x))
-#endif
 
 #elif SYSTEM_ENDIAN == PLATFORM_BIG_ENDIAN
-#define CONCAT_TO_UINT32(b4, b3, b2, b1) 	(((u32)((b1) & 0xFF) << 24) | ((u32)((b2) & 0xFF) << 16) | ((u32)((b3) & 0xFF) << 8) | ((u32)((b4) & 0xFF)))
-#define CONCAT_TO_UINT16(b2, b1) 			(((u16)((b1) & 0xFF) << 8) | ((u16)((b2) & 0xFF)))
-#ifndef rtk_le16_to_cpu
-#define rtk_cpu_to_le32(x)		SWAP32((x))
-#define rtk_le32_to_cpu(x)		SWAP32((x))
-#define rtk_cpu_to_le16(x)		WAP16((x))
-#define rtk_le16_to_cpu(x)		WAP16((x))
-#define rtk_cpu_to_be32(x)		((__u32)(x))
-#define rtk_be32_to_cpu(x)		((__u32)(x))
-#define rtk_cpu_to_be16(x)		((__u16)(x))
-#define rtk_be16_to_cpu(x)		((__u16)(x))
-#endif
+#define CONCAT_TO_UINT32(b4, b3, b2, b1) (((u32)((b1) & 0xFF) << 24) | ((u32)((b2) & 0xFF) << 16) | ((u32)((b3) & 0xFF) << 8) | ((u32)((b4) & 0xFF)))
+#define rtk_cpu_to_be32(x)		((u32)(x))
 #endif
 
 
@@ -440,75 +311,10 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 // Get the N-bytes aligment offset from the current length
 #define N_BYTE_ALIGMENT(__Value, __Aligment) ((__Aligment == 1) ? (__Value) : (((__Value + __Aligment - 1) / __Aligment) * __Aligment))
 
-typedef unsigned char	BOOLEAN, *PBOOLEAN;
-
 #define TEST_FLAG(__Flag,__testFlag)		(((__Flag) & (__testFlag)) != 0)
 #define SET_FLAG(__Flag, __setFlag)			((__Flag) |= __setFlag)
 #define CLEAR_FLAG(__Flag, __clearFlag)		((__Flag) &= ~(__clearFlag))
 #define CLEAR_FLAGS(__Flag)					((__Flag) = 0)
 #define TEST_FLAGS(__Flag, __testFlags)		(((__Flag) & (__testFlags)) == (__testFlags))
-
-/* Define compilor specific symbol */
-//
-// inline function
-//
-
-#if defined ( __ICCARM__ )
-#define __inline__                      inline
-#define __inline                        inline
-#define __inline_definition			//In dialect C99, inline means that a function's definition is provided
-//only for inlining, and that there is another definition
-//(without inline) somewhere else in the program.
-//That means that this program is incomplete, because if
-//add isn't inlined (for example, when compiling without optimization),
-//then main will have an unresolved reference to that other definition.
-
-// Do not inline function is the function body is defined .c file and this
-// function will be called somewhere else, otherwise there is compile error
-#ifndef   __STATIC_INLINE
-#define __STATIC_INLINE           _Pragma("inline=forced")
-#endif
-#elif defined ( __CC_ARM   )
-#define __inline__			__inline	//__linine__ is not supported in keil compilor, use __inline instead
-#define inline				__inline
-#define __inline_definition			// for dialect C99
-#elif defined   (  __GNUC__  )
-#define __inline__                      inline
-#define __inline                        inline
-#define __inline_definition		inline
-#ifndef   __STATIC_INLINE
-#define __STATIC_INLINE           static inline   __attribute__((always_inline))
-#endif
-#endif
-
-//
-// pack
-//
-
-#if defined (__ICCARM__)
-
-#define RTW_PACK_STRUCT_BEGIN _Pragma( STRINGIFY(pack(1)))
-#define RTW_PACK_STRUCT_STRUCT
-#define RTW_PACK_STRUCT_END _Pragma( STRINGIFY(pack()))
-//#define RTW_PACK_STRUCT_USE_INCLUDES
-
-#elif defined (__CC_ARM)
-
-#define RTW_PACK_STRUCT_BEGIN __packed
-#define RTW_PACK_STRUCT_STRUCT
-#define RTW_PACK_STRUCT_END
-
-#elif defined (__GNUC__)
-
-#define RTW_PACK_STRUCT_BEGIN
-#define RTW_PACK_STRUCT_STRUCT __attribute__ ((__packed__))
-#define RTW_PACK_STRUCT_END
-#endif
-
-// for standard library
-#ifdef __ICCARM__
-#define __extension__		/* Ignore */
-#define	__restrict			/* Ignore */
-#endif
 
 #endif// __BASIC_TYPES_H__

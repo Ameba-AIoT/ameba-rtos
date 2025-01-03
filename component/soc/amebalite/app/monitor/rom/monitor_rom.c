@@ -32,7 +32,7 @@ cmd_reboot(
 	MONITOR_LOG("\n\rRebooting ...\n\r");
 	NVIC_SystemReset();
 
-	return _TRUE;
+	return TRUE;
 }
 
 SHELL_ROM_DATA_SECTION
@@ -70,7 +70,7 @@ static u32 cmd_rom_help(u16 argc, u8  *argv[])
 	}
 	MONITOR_LOG("----------------- COMMAND MODE END  ------------------\n");
 
-	return _TRUE ;
+	return TRUE ;
 }
 #if defined  (__GNUC__)
 #pragma GCC diagnostic pop

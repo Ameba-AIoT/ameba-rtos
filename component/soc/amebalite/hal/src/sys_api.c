@@ -25,7 +25,7 @@
 #include "ameba_ota.h"
 #include "log.h"
 
-static const char *TAG = "SYS";
+static const char *const TAG = "SYS";
 
 
 /** @addtogroup Ameba_Mbed_API

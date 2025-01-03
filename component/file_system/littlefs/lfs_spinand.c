@@ -490,7 +490,7 @@ void NAND_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
 	SPIC_TypeDef *spi_flash = SPIC;
 	u32 Value32;
 	u32 ctrl0 = 0;
-	u16 dclen = FLASH_InitStruct->FLASH_rd_dummy_cyle[SpicBitMode] * 2 * FLASH_InitStruct->FLASH_baud_rate;
+	u16 dclen = FLASH_InitStruct->FLASH_rd_dummy_cycle[SpicBitMode] * 2 * FLASH_InitStruct->FLASH_baud_rate;
 
 	/* Disable SPI_FLASH User Mode */
 	spi_flash->SSIENR = 0;
@@ -511,22 +511,22 @@ void NAND_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
 
 	switch (SpicBitMode) {
 	case SpicDualOBitMode:
-		Value32 |= FLASH_InitStruct->FALSH_dual_o_valid_cmd;
+		Value32 |= FLASH_InitStruct->FLASH_dual_o_valid_cmd;
 		ctrl0 |= (ADDR_CH(0) | DATA_CH(1));
 		FLASH_InitStruct->FLASH_cur_cmd = NAND_CMD_DREAD;
 		break;
 	case SpicDualIOBitMode:
-		Value32 |= FLASH_InitStruct->FALSH_dual_io_valid_cmd;
+		Value32 |= FLASH_InitStruct->FLASH_dual_io_valid_cmd;
 		ctrl0 |= (ADDR_CH(1) | DATA_CH(1));
 		FLASH_InitStruct->FLASH_cur_cmd = NAND_CMD_2READ;
 		break;
 	case SpicQuadOBitMode:
-		Value32 |= FLASH_InitStruct->FALSH_quad_o_valid_cmd;
+		Value32 |= FLASH_InitStruct->FLASH_quad_o_valid_cmd;
 		ctrl0 |= (ADDR_CH(0) | DATA_CH(2));
 		FLASH_InitStruct->FLASH_cur_cmd = NAND_CMD_QREAD;
 		break;
 	case SpicQuadIOBitMode:
-		Value32 |= FLASH_InitStruct->FALSH_quad_io_valid_cmd;
+		Value32 |= FLASH_InitStruct->FLASH_quad_io_valid_cmd;
 		ctrl0 |= (ADDR_CH(2) | DATA_CH(2));
 		FLASH_InitStruct->FLASH_cur_cmd = NAND_CMD_4READ;
 		break;
@@ -561,23 +561,23 @@ void NAND_StructInit_Micron(FLASH_InitTypeDef *FLASH_InitStruct)
 
 	/* calibration data */
 	FLASH_InitStruct->FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = NAND_DM_CYCLE_READ;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = NAND_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = NAND_DM_CYCLE_2IO;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = NAND_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = NAND_DM_CYCLE_4IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = NAND_DM_CYCLE_READ;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = NAND_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = NAND_DM_CYCLE_2IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = NAND_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = NAND_DM_CYCLE_4IO;
 
 	/* set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = NAND_CMD_2READ;
 	FLASH_InitStruct->FLASH_rd_dual_o = NAND_CMD_DREAD;
-	FLASH_InitStruct->FALSH_dual_o_valid_cmd = BIT_RD_DUAL_I;
-	FLASH_InitStruct->FALSH_dual_io_valid_cmd = BIT_RD_DUAL_IO;
+	FLASH_InitStruct->FLASH_dual_o_valid_cmd = BIT_RD_DUAL_I;
+	FLASH_InitStruct->FLASH_dual_io_valid_cmd = BIT_RD_DUAL_IO;
 
 	/* set 4bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_quad_io = NAND_CMD_4READ;
 	FLASH_InitStruct->FLASH_rd_quad_o = NAND_CMD_QREAD;
-	FLASH_InitStruct->FALSH_quad_o_valid_cmd = BIT_RD_QUAD_O;
-	FLASH_InitStruct->FALSH_quad_io_valid_cmd = BIT_RD_QUAD_IO;
+	FLASH_InitStruct->FLASH_quad_o_valid_cmd = BIT_RD_QUAD_O;
+	FLASH_InitStruct->FLASH_quad_io_valid_cmd = BIT_RD_QUAD_IO;
 
 	/* other flash commnad set */
 	FLASH_InitStruct->FLASH_cmd_wr_en = NAND_CMD_WREN;
@@ -635,23 +635,23 @@ void NAND_StructInit_MXIC(FLASH_InitTypeDef *FLASH_InitStruct)
 
 	/* calibration data */
 	FLASH_InitStruct->FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = NAND_DM_CYCLE_READ;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = NAND_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = 0;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = NAND_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = NAND_DM_CYCLE_READ;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = NAND_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = NAND_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = 0;
 
 	/* set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = 0;
 	FLASH_InitStruct->FLASH_rd_dual_o = NAND_CMD_DREAD;
-	FLASH_InitStruct->FALSH_dual_o_valid_cmd = BIT_RD_DUAL_I;
-	FLASH_InitStruct->FALSH_dual_io_valid_cmd = 0;
+	FLASH_InitStruct->FLASH_dual_o_valid_cmd = BIT_RD_DUAL_I;
+	FLASH_InitStruct->FLASH_dual_io_valid_cmd = 0;
 
 	/* set 4bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_quad_io = 0;
 	FLASH_InitStruct->FLASH_rd_quad_o = NAND_CMD_QREAD;
-	FLASH_InitStruct->FALSH_quad_o_valid_cmd = BIT_RD_QUAD_O;
-	FLASH_InitStruct->FALSH_quad_io_valid_cmd = 0;
+	FLASH_InitStruct->FLASH_quad_o_valid_cmd = BIT_RD_QUAD_O;
+	FLASH_InitStruct->FLASH_quad_io_valid_cmd = 0;
 
 	/* other flash commnad set */
 	FLASH_InitStruct->FLASH_cmd_wr_en = NAND_CMD_WREN;
@@ -709,23 +709,23 @@ void NAND_StructInit_GD(FLASH_InitTypeDef *FLASH_InitStruct)
 
 	/* calibration data */
 	FLASH_InitStruct->FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = NAND_DM_CYCLE_READ;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = NAND_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = 0;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = NAND_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = NAND_DM_CYCLE_READ;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = NAND_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = 0;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = NAND_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = 0;
 
 	/* set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = 0;
 	FLASH_InitStruct->FLASH_rd_dual_o = NAND_CMD_DREAD;
-	FLASH_InitStruct->FALSH_dual_o_valid_cmd = BIT_RD_DUAL_I;
-	FLASH_InitStruct->FALSH_dual_io_valid_cmd = 0;
+	FLASH_InitStruct->FLASH_dual_o_valid_cmd = BIT_RD_DUAL_I;
+	FLASH_InitStruct->FLASH_dual_io_valid_cmd = 0;
 
 	/* set 4bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_quad_io = 0;
 	FLASH_InitStruct->FLASH_rd_quad_o = NAND_CMD_QREAD;
-	FLASH_InitStruct->FALSH_quad_o_valid_cmd = BIT_RD_QUAD_O;
-	FLASH_InitStruct->FALSH_quad_io_valid_cmd = 0;
+	FLASH_InitStruct->FLASH_quad_o_valid_cmd = BIT_RD_QUAD_O;
+	FLASH_InitStruct->FLASH_quad_io_valid_cmd = 0;
 
 	/* other flash commnad set */
 	FLASH_InitStruct->FLASH_cmd_wr_en = NAND_CMD_WREN;
@@ -784,23 +784,23 @@ void NAND_StructInit(FLASH_InitTypeDef *FLASH_InitStruct)
 
 	/* calibration data */
 	FLASH_InitStruct->FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[0] = NAND_DM_CYCLE_READ;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[1] = NAND_DM_CYCLE_2O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[2] = NAND_DM_CYCLE_2IO;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[3] = NAND_DM_CYCLE_4O;
-	FLASH_InitStruct->FLASH_rd_dummy_cyle[4] = NAND_DM_CYCLE_4IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[0] = NAND_DM_CYCLE_READ;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[1] = NAND_DM_CYCLE_2O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[2] = NAND_DM_CYCLE_2IO;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[3] = NAND_DM_CYCLE_4O;
+	FLASH_InitStruct->FLASH_rd_dummy_cycle[4] = NAND_DM_CYCLE_4IO;
 
 	/* set 2bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_dual_io = NAND_CMD_2READ;
 	FLASH_InitStruct->FLASH_rd_dual_o = NAND_CMD_DREAD;
-	FLASH_InitStruct->FALSH_dual_o_valid_cmd = BIT_RD_DUAL_I;
-	FLASH_InitStruct->FALSH_dual_io_valid_cmd = BIT_RD_DUAL_IO;
+	FLASH_InitStruct->FLASH_dual_o_valid_cmd = BIT_RD_DUAL_I;
+	FLASH_InitStruct->FLASH_dual_io_valid_cmd = BIT_RD_DUAL_IO;
 
 	/* set 4bit mode cmd */
 	FLASH_InitStruct->FLASH_rd_quad_io = NAND_CMD_4READ;
 	FLASH_InitStruct->FLASH_rd_quad_o = NAND_CMD_QREAD;
-	FLASH_InitStruct->FALSH_quad_o_valid_cmd = BIT_RD_QUAD_O;
-	FLASH_InitStruct->FALSH_quad_io_valid_cmd = BIT_RD_QUAD_IO;
+	FLASH_InitStruct->FLASH_quad_o_valid_cmd = BIT_RD_QUAD_O;
+	FLASH_InitStruct->FLASH_quad_io_valid_cmd = BIT_RD_QUAD_IO;
 
 	/* other flash commnad set */
 	FLASH_InitStruct->FLASH_cmd_wr_en = NAND_CMD_WREN;
@@ -856,6 +856,6 @@ u8 NAND_Init(u8 SpicBitMode)
 	flash_init_para.FLASH_cur_bitmode = SpicBitMode;
 	NAND_SetSpiMode(&flash_init_para, SpicBitMode);
 
-	return _TRUE;
+	return TRUE;
 }
 /******************* (C) COPYRIGHT 2020 Realtek Semiconductor *****END OF FILE****/

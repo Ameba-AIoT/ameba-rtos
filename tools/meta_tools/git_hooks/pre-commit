@@ -1,0 +1,255 @@
+#!/bin/sh
+
+# Version: 7
+# Description: 
+#     This hook script will do static check with CppCheck and do indent with AStyle for changed AmebaD2 files
+#     when developers execute git commit. 
+#     Cppcheck will scan changed/new files in repository. If it finds some issues, script returns with exit code
+#     1, rejecting commit. Otherwise, script returns 0, and you can actually commit your changes after indented
+#     with AStyle.
+#
+# Usage: 
+#     Add this file to your project's .git/hooks directory, rename it to just 'pre-commit', install CppCheck & 
+#     AStyle 3.1 on your system and add their binary pathes to system PATH environment variable.
+#
+# Change Log:
+#	  Add style check for branch 9.2
+#	  Fix changes cannot be obtained issue when users commit from customized local branch @ neo_liu
+# 	  Apply style to all 9.x branch
+
+ignore_repo_list="azure|benchmark|clintwood|demoui|wifi-audio|wigadget|wms|misc_tools|ameba_tools|image_scripts|meta_tools|flash|monitor"
+ignore_component_list="RTX|SEGGER|efm32|emwin|LittlevGL|3rdparty|trusted-firmware-m|emWin|lvgl|third_party"
+
+cur_path=$PWD
+# Expected URL format example: ssh://rswn.rtkbf.com:29418/iot/sw/sdk/loong
+repo_url=`git remote -v | cut -f 2 | cut -d' ' -f 1 | head -n 1`
+repo_name=`basename $repo_url`
+if [ "$repo_name" = "manifest" ]; then
+        echo "Static check & indent skipped"
+        exit 0
+fi
+
+proj_name=${repo_url#*29418/}
+cur_dirs=`repo list | grep $proj_name | cut -d':' -f 1`
+if [ $cur_dirs = "." ]; then
+	cur_dir=$cur_dirs
+else
+	cur_dir=""
+	for dir in $cur_dirs; do
+		if [[ $cur_path = *"$dir" ]]; then
+			cur_dir=$dir
+			break
+		fi
+	done
+fi
+
+if [ "X$cur_dir" = "X" ]; then
+	echo "Error: Fail to locate repo root directory"
+	exit 1
+fi
+
+raw_repo_root_dir=${cur_path%${cur_dir%% }}
+repo_root_dir=${raw_repo_root_dir//\\/\/}
+active_hook_dir=$repo_root_dir/.repo/repo/hooks
+source_hook_dir=$repo_root_dir/tools/meta_tools/git_hooks
+
+care_repo=`echo "$repo_name" | grep -v -E "$ignore_repo_list"`
+if [ "X$care_repo" = "X" ]; then
+	echo "Static check & indent skipped"
+	exit 0
+fi
+
+if ! command -v astyle &> /dev/null
+then
+	echo "Astyle not exist, please install it first"
+	exit 1
+fi
+
+if ! command -v cppcheck &> /dev/null
+then
+	echo "CppCheck not exist, please install it first"
+	exit 1
+fi
+
+if [ ! -e "$active_hook_dir" ] || [ ! -e "$source_hook_dir" ] || [ ! -e "$active_hook_dir/pre-commit" ] || [ ! -e "$active_hook_dir/commit-msg" ] || [ ! -e "$active_hook_dir/suppression.txt" ]; then
+        echo "Repo damaged, please back up the changes and run 'repo sync' at repo root directory"
+        exit 1
+fi
+
+cmp -s $active_hook_dir/pre-commit $source_hook_dir/pre-commit
+if [ $? -ne 0 ]; then
+	echo "Please update Git hooks"
+	exit 1
+fi
+
+cmp -s $active_hook_dir/commit-msg $source_hook_dir/commit-msg
+if [ $? -ne 0 ]; then
+	echo "Please update Git hooks"
+	exit 1
+fi
+
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=$(git hash-object -t tree /dev/null)
+fi
+
+# Static check with CppCheck
+# Pass only added or modified specific C source files to CppCheck.
+changed_files=
+if [ "$repo_name" = "loong" ]; then
+	changed_files=$(git diff-index --cached $against |
+		grep -E '[MA]	component/(usb|wifi|soc/ameba).*\.(c|h)$' |
+		grep -v 'wifi/driver/include/rtw_romfunc_parms.h' |
+		grep -v 'wifi/driver/include/rtw_adapter.h' |
+		grep -v 'ameba.*/\(atf\|cmsis\|cmsis-dsp\)/' |
+		grep -v 'ameba.*/fwlib/ap_core/xlat_table/' |
+		grep -v -E "$ignore_component_list" |
+		cut -f 2)
+fi
+# TODO: activate after all issues fixed
+# elif [ "$repo_name" = "audio" ]; then
+# 	changed_files=$(git diff-index --cached $against | \
+# 		grep -E '[MA]	.*\.(c|h)$' | 
+# 		grep -v 'audio_algorithm' | 
+#		grep -v -E "$ignore_component_list" | 
+# 		cut -f 2)
+# fi
+
+if [ -n "$changed_files" ]; then
+	cppcheck --error-exitcode=1 --force --inline-suppr --suppressions-list=$active_hook_dir/suppression.txt --enable=warning,performance,portability $changed_files > /dev/null
+	err=$?
+	if [ $err -ne 0 ]; then
+		echo "Static check done, error(s) detected"
+		exit $err
+	else
+		echo "Static check done, no error detected"
+	fi
+fi
+
+# Check .py .sh shebang & chmod +111
+if [ "$repo_name" = "loong" ]; then
+	filter_py_sh=$(git diff-index --cached $against) | grep -v 'component/'
+	if [ -n "$filter_py_sh" ]; then
+		echo "Check shebang for executable scripts"
+		for f in $filter_py_sh
+		do
+			if [ "${f##*.}"x = "py"x ]; then
+				first_line=$(head -n 1 $f | sed -r 's/^[ \t]+(.*)[ \t]+$//g')
+				if [[ $first_line != \#\!* ]]; then
+					sed -i "1i#!/usr/bin/env python" $f
+					echo "$f processed"
+				fi
+				chmod +111 $f
+				git add $f
+			elif [ "${f##*.}"x = "sh"x ]; then
+				first_line=$(head -n 1 $f | sed -r 's/^[ \t]+(.*)[ \t]+$//g')
+				if [[ $first_line != \#\!* ]];then
+					sed -i "1i#!/bin/sh" $f
+					echo "$f processed"
+				fi
+				chmod +111 $f
+				git add $f
+			fi
+		done
+	fi
+fi
+
+# check include FreeRTOS.h
+if [ "$repo_name" = "loong" ] || [ "$repo_name" = "wifi-audio" ] || [ "$repo_name" = "audio" ]; then
+	freertos_h_new_include=`git diff-index --patch-with-stat --cached $against | grep -E '\+ *#include *[<"]FreeRTOS.h[>"]'`
+	if [ -n "$freertos_h_new_include" ]; then
+	    echo "Warning: New include of FreeRTOS.h is not allowed"
+	    exit 1
+	fi
+fi
+
+# check memcmp/memcpy/memset/strcmp/rand in component/soc directory
+if [ "$repo_name" = "loong" ]; then
+	#filter all change files in component/soc directory
+	check_files=`git diff-index --patch-with-stat --cached $against --name-only --diff-filter=AM | grep -E 'component/soc' | grep -Ev 'component/soc/amebasmart/atf'`
+	#check key words in each file
+	if [ -n "$check_files" ]; then
+		for f in $check_files
+		do
+			check_file_type=`echo "$f" | grep -E '\.(h|c|cpp)$'`
+			if [ -n "$check_file_type" ]; then
+				OLD_IFS=$IFS
+				IFS=''
+				keywords_include=`git diff --cached "$f" | grep -E '^\+.*(memcmp|memcpy|memset|strcmp|rand)\s*\(' | grep -Ev '_(memcmp|memcpy|memset|strcmp|rand)' | grep -Ev '^\+\s*(/\*|//)'`
+				if [ -n "$keywords_include" ]; then
+					echo "Detected keywords:"
+					echo "$keywords_include"
+					echo "Warning: The use of memcmp/memcpy/memset/strcmp/rand in soc is not allowed (file: $f)"
+					IFS=$OLD_IFS
+					exit 1
+				fi
+				IFS=$OLD_IFS
+			fi
+		done
+	fi
+fi
+
+# Indent with Astyle
+changed_files=
+if [ "$repo_name" = "loong" ]; then
+	changed_files=$(git diff-index --cached $against |
+		grep -E '[MA]	.*\.(c|h)$' |
+		grep -v 'ameba.*/\(atf\|cmsis\|cmsis-dsp\)/' |
+		grep -v 'ameba.*/fwlib/ap_core/xlat_table/' |
+		grep -v 'component/application/' |
+		grep -v 'component/bluetooth/' |
+		grep -v 'component/\(lwip/lwip_\|ssl/mbedtls-\)' |
+		grep -v -E 'freertos/freertos_.*/' |
+		grep -v 'wifi/driver/\(halmac\|phydm\)/' |
+		grep -v -E "$ignore_component_list" |
+		cut -f 2)
+elif [ "$repo_name" != "audio" ]; then
+	changed_files=$(git diff-index --cached $against |
+		grep -E '[MA]	.*\.(c|h)$' |
+		grep -v -E "$ignore_component_list" |
+		cut -f 2)
+fi
+
+if [ -n "$changed_files" ]; then
+	echo
+	echo 'Indent changed files: '
+	for f in $changed_files
+	do
+		echo $f
+	done
+	# Only for AStyle 3.1
+	astyle --style=linux -p -xg -H -U -k3 -j -xC160 -xL -T4 -z2 -n -q $changed_files
+	git add $changed_files
+fi
+
+# Special indent for BT files
+if [ "$repo_name" = "loong" ]; then
+	check_files=$(git diff-index --cached $against |
+		grep -E '[MA]	.*\.(c|h)$' |
+		grep 'component/bluetooth/' |
+		grep -v 'component/bluetooth/bt_audio/bt_codec/\(aac\|lc3\|sbc\)/' |
+		grep -v 'component/bluetooth/\(temp\|zephyr\)/' |
+		grep -v 'component/bluetooth/driver/platform/.*/\(bt_normal_patch\|bt_mp_patch\).c' |
+		grep -v 'component/bluetooth/rtk_stack/\(inc\|src\)/' |
+		grep -v 'component/bluetooth/rtk_stack/platform/.*/\(bt_flags\|upperstack_config\|version\).h' |
+		cut -d'	' -f 2)
+
+	if [ -n "$check_files" ]; then
+		# Just check, commit fails when files fail astyle check
+		check_ret=`astyle --dry-run --style=linux -p -xg -H -U -k3 -j -T4 -m0 -Y -M120 -Q -I $check_files`
+		if [[ $check_ret != '' ]]; then
+			echo $check_ret | sed 's/Formatted /\n/g'
+			echo 'Bluetooth coding style check FAIL! Please modify and commit again!'
+			exit 1
+		fi
+		# Modify max code length and line end style '-xC160 -xL -z2 -c'
+		astyle --style=linux -p -xg -H -U -k3 -j -T4 -m0 -Y -M120 -xC160 -xL -z2 -c -n -q $check_files
+		git add $check_files
+	fi
+fi
+
+echo "Commit check done, no error detected"
+exit 0

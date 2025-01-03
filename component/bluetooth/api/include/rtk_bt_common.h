@@ -224,6 +224,12 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL,          /*!< LE mesh health server model group */
 	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL,          /*!< LE mesh directed forwarding client model group */
 	RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON,          /*!< LE mesh directed forwarding common group */
+	RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL,          /*!< LE mesh subnet bridge client model group */
+	RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL,          /*!< LE mesh private beacon client model group */
+	RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL,          /*!< LE mesh dfu initiator model group */
+	RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL,          /*!< LE mesh dfu standalone updater model group */
+	RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL,          /*!< LE mesh dfu distributor model group */
+	RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL,          /*!< LE mesh dfu target model group */
 	RTK_BT_LE_GP_MAX,                           /*!< Reserved */
 } rtk_bt_le_group_t;
 
@@ -286,6 +292,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_START_EXT_ADV,
 	RTK_BT_LE_GAP_ACT_STOP_EXT_ADV,
 	RTK_BT_LE_GAP_ACT_REMOVE_EXT_ADV,
+	RTK_BT_LE_GAP_ACT_GET_EXT_ADV_HANDLE_BY_CONN_HANDLE,
 	RTK_BT_LE_GAP_ACT_EXT_SCAN_SET_PARAM,
 	RTK_BT_LE_GAP_ACT_EXT_SCAN_START,
 	RTK_BT_LE_GAP_ACT_EXT_SCAN_STOP,
@@ -979,6 +986,8 @@ typedef enum {
 	RTK_BT_HFP_ACT_CALL_INCOMING,
 	RTK_BT_HFP_ACT_CALL_ANSWER,
 	RTK_BT_HFP_ACT_CALL_TERMINATE,
+	RTK_BT_HFP_ACT_DIAL_WITH_NUMBER,
+	RTK_BT_HFP_ACT_DIAL_LAST_NUMBER,
 	RTK_BT_HFP_ACT_SEND_SCO_DATA,
 	RTK_BT_HFP_ACT_REPORT_BATT_LEVEL,
 	RTK_BT_HFP_ACT_REPORT_SPEAKER_GAIN,
@@ -1027,6 +1036,7 @@ typedef enum {
 	RTK_BT_PBAP_ACT_SET_PHONE_BOOK,
 	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL,
 	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_CONTINUE,
+	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_ABORT,
 	RTK_BT_PBAP_ACT_PHONE_BOOK_SIZE_GET,
 	RTK_BT_PBAP_ACT_PULL_CALLER_ID_NAME,
 	RTK_BT_PBAP_ACT_MAX,

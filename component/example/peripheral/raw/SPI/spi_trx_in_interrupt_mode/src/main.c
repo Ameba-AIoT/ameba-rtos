@@ -108,17 +108,17 @@ static u32  ssi_interrupt(void *Adaptor)
 	return 0;
 }
 
-BOOL Spi_data_compare(u8 *pSrc, u8 *pDst, u32 Length)
+bool Spi_data_compare(u8 *pSrc, u8 *pDst, u32 Length)
 {
 	u32 Index;
-	u8 res = _TRUE;
+	u8 res = TRUE;
 
 	printf("\nres - idx - src data - dst data\n\n");
 
 	for (Index = 0; Index < Length; ++Index) {
 		if ((pSrc[Index] & dfs_mask) != pDst[Index]) {
 			printf("[ERR]   %lu:\t0x%x ----- 0x%x\n", Index, pSrc[Index]&dfs_mask, pDst[Index]);
-			res = _FALSE;
+			res = FALSE;
 		} else {
 			printf("[OK]    %lu:\t0x%x ----- 0x%x\n", Index, pSrc[Index]&dfs_mask, pDst[Index]);
 		}
@@ -241,7 +241,7 @@ void Spi_interrupt_task(void)
 
 	u32 SclkPhase = SCPH_TOGGLES_IN_MIDDLE; // SCPH_TOGGLES_IN_MIDDLE or SCPH_TOGGLES_AT_START
 	u32 SclkPolarity = SCPOL_INACTIVE_IS_LOW; // SCPOL_INACTIVE_IS_LOW or SCPOL_INACTIVE_IS_HIGH
-	int result = _TRUE;
+	int result = TRUE;
 	int i = 0;
 
 	/* SPI1 as Master */
@@ -343,12 +343,12 @@ void Spi_interrupt_task(void)
 	}
 
 	result = Spi_data_compare(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
-	if (result == _FALSE) {
+	if (result == FALSE) {
 		goto DATA_ERROR;
 	}
 
 	result = Spi_data_compare(SlaveTxBuf, MasterRxBuf, TEST_BUF_SIZE);
-	if (result == _FALSE) {
+	if (result == FALSE) {
 		goto DATA_ERROR;
 	}
 
@@ -375,7 +375,7 @@ void Spi_interrupt_task(void)
 	}
 
 	result = Spi_data_compare(SlaveTxBuf, MasterRxBuf, TEST_BUF_SIZE);
-	if (result == _FALSE) {
+	if (result == FALSE) {
 		goto DATA_ERROR;
 	}
 

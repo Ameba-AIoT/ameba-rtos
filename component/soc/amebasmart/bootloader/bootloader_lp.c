@@ -9,34 +9,23 @@
 
 #include "ameba_soc.h"
 
-#if defined ( __ICCARM__ )
-#pragma section=".ram.bss"
-#pragma section=".rom.bss"
-#pragma section=".ram.start.table"
-#pragma section=".ram_image1.bss"
-#pragma section=".ram_image2.entry"
-
-BOOT_RAM_RODATA_SECTION u8 *__image2_entry_func__ = 0;
-//BOOT_RAM_RODATA_SECTION u8* __image1_bss_start__ = 0;
-//BOOT_RAM_RODATA_SECTION u8* __image1_bss_end__ = 0;
-#endif
-
 BOOT_RAM_TEXT_SECTION
 PRAM_START_FUNCTION BOOT_SectionInit(void)
 {
-#if defined ( __ICCARM__ )
-	// only need __bss_start__, __bss_end__
-	__image2_entry_func__		= (u8 *)__section_begin(".ram_image2.entry");
-	//__image1_bss_start__		= (u8*)__section_begin(".ram_image1.bss");
-	//__image1_bss_end__			= (u8*)__section_end(".ram_image1.bss");
-#endif
 	return (PRAM_START_FUNCTION)__image2_entry_func__;
 }
 
 BOOT_RAM_TEXT_SECTION
 void BOOT_WakeFromPG(void)
 {
+	u32 Rtemp;
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
+
+	/* if req xtal normal when sleep, km0 wake with clk src 4M, switch to xtal manually */
+	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0);
+	/* set 0x3, no need clr first */
+	Rtemp |= LSYS_CKSL_LSOC(BIT_LSYS_CKSL_LP_XTAL);
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Rtemp);
 
 	/* we should Cache_Flush when we wake */
 	Cache_Enable(ENABLE);

@@ -58,7 +58,7 @@ static inline bool is_leap_year(unsigned int year)
 /**
   * @brief  Calculate total days in a specified month of a specified year.
   * @param  year: Actual year - 1900.
-  * @param  month: Specified month, which can be 0~11.
+  * @param  month: Specified the number of months from  a specified year.
   * @note 0 represents January.
   * @return Number of days in the month of the year.
   */
@@ -318,10 +318,9 @@ u32 rtc_set_alarm(alarm_t *alrm, alarm_irq_handler alarmHandler)
 	InterruptRegister((IRQ_FUN)rtc_alarm_intr_handler, RTC_IRQ, (u32)alrm, 5);
 	InterruptEn(RTC_IRQ, 5);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /** @} */
 /** @} */
 /** @} */
-

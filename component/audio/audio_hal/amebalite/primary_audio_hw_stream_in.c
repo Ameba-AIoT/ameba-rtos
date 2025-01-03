@@ -12,18 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <inttypes.h>
+
+#include "os_wrapper.h"
+
+#include "ameba_audio_hw_usrcfg.h"
+#include "ameba_audio_types.h"
+#include "ameba_audio_stream_capture.h"
+#include "ameba_audio_stream_control.h"
 
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
 #include "audio_hw_params_handle.h"
-#include "ameba_audio_types.h"
-#include "ameba_audio_stream_capture.h"
-#include "ameba_audio_stream_control.h"
+
 #include "hardware/audio/audio_hw_types.h"
 #include "hardware/audio/audio_hw_utils.h"
 #include "hardware/audio/audio_hw_stream_in.h"
-#include "os_wrapper.h"
+
 #include "primary_audio_hw_card.h"
 
 #define NOIRQ_CAPTURE_PERIOD_SIZE     128
@@ -36,6 +42,10 @@
 // for debug (mic,mic,..ref,out), only out buffer not filled by audio fwk
 #define NO_AFE_ALL_DATA               "no_afe_all_data"
 #define REF_CHANNEL                   "ref_channel"
+//0 master, 1 slave
+#define MASTER_SLAVE                  "master_slave"
+// I2S:0, Left justified:1, pcm_a:2, pcm_b:3.
+#define CAPTURE_DATA_FORMAT           "data_format"
 #define NO_AFE_PURE_DATA_DUMP         0
 #define NO_AFE_ALL_DATA_DUMP          0
 #define DUMP_FRAME                    48000
@@ -64,13 +74,15 @@ struct PrimaryAudioHwStreamIn {
 	Stream *in_pcm;
 	void *stream_buf;
 	uint32_t cap_stream_buf_bytes;
-	int standby;
+	int32_t standby;
 	uint64_t rframe;
 	uint32_t requested_channels;
 	CAPTURE_MODE mode;
 	uint32_t channel_for_ref;
 	uint64_t mic_category;
 	uint32_t device;
+	uint32_t master_slave;
+	uint32_t data_format;
 
 #if (NO_AFE_PURE_DATA_DUMP || NO_AFE_ALL_DATA_DUMP)
 	char *in_buf;  //2s data
@@ -100,7 +112,7 @@ static uint32_t PrimaryGetStreamInSampleRate(const struct AudioHwStream *stream)
 	return cap->config.rate;
 }
 
-static int PrimarySetStreamInSampleRate(struct AudioHwStream *stream, uint32_t rate)
+static int32_t PrimarySetStreamInSampleRate(struct AudioHwStream *stream, uint32_t rate)
 {
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
 
@@ -109,7 +121,7 @@ static int PrimarySetStreamInSampleRate(struct AudioHwStream *stream, uint32_t r
 	}
 
 	cap->config.rate = rate;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static size_t PrimaryGetStreamInBufferSize(const struct AudioHwStream *stream)
@@ -126,12 +138,12 @@ static uint32_t PrimaryGetStreamInChannels(const struct AudioHwStream *stream)
 	return (uint32_t)cap->requested_channels;
 }
 
-static int PrimarySetStreamInChannels(const struct AudioHwStream *stream, uint32_t channel)
+static int32_t PrimarySetStreamInChannels(const struct AudioHwStream *stream, uint32_t channel)
 {
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
 
 	cap->config.channels = channel;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static enum AudioHwFormat PrimaryGetStreamInFormat(const struct AudioHwStream *stream)
@@ -140,14 +152,14 @@ static enum AudioHwFormat PrimaryGetStreamInFormat(const struct AudioHwStream *s
 	return cap->config.format;
 }
 
-static int PrimarySetStreamInFormat(struct AudioHwStream *stream, enum AudioHwFormat format)
+static int32_t PrimarySetStreamInFormat(struct AudioHwStream *stream, enum AudioHwFormat format)
 {
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
 	cap->config.format = format;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-static int DoInputStandby(struct PrimaryAudioHwStreamIn *cap)
+static int32_t DoInputStandby(struct PrimaryAudioHwStreamIn *cap)
 {
 	if (!cap->standby) {
 		ameba_audio_stream_rx_stop(cap->in_pcm);
@@ -168,13 +180,13 @@ static int DoInputStandby(struct PrimaryAudioHwStreamIn *cap)
 	}
 #endif
 
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-static int PrimaryStandbyStreamIn(struct AudioHwStream *stream)
+static int32_t PrimaryStandbyStreamIn(struct AudioHwStream *stream)
 {
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
-	int status;
+	int32_t status;
 
 	//rtos_mutex_take(cap->pri_card->lock, MUTEX_WAIT_TIMEOUT);
 	rtos_mutex_take(cap->lock, MUTEX_WAIT_TIMEOUT);
@@ -185,20 +197,20 @@ static int PrimaryStandbyStreamIn(struct AudioHwStream *stream)
 	return status;
 }
 
-static int PrimaryDumpStreamIn(const struct AudioHwStream *stream, int fd)
+static int32_t PrimaryDumpStreamIn(const struct AudioHwStream *stream, int32_t fd)
 {
 	(void) stream;
 	(void) fd;
-	return 0;
+	return HAL_OSAL_OK;
 }
 
-static int PrimarySetStreamInParameters(struct AudioHwStream *stream, const char *str_pairs)
+static int32_t PrimarySetStreamInParameters(struct AudioHwStream *stream, const char *str_pairs)
 {
 	HAL_AUDIO_VERBOSE("%s, keys = %s", __FUNCTION__, str_pairs);
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
 	struct string_cell *cells;
 	cells = string_cells_create_from_str(str_pairs);
-	int value;
+	int32_t value;
 	char string_value[15];
 
 	if (string_cells_has_key(cells, REF_CHANNEL)) {
@@ -223,8 +235,18 @@ static int PrimarySetStreamInParameters(struct AudioHwStream *stream, const char
 		}
 	}
 
+	if (string_cells_has_key(cells, MASTER_SLAVE)) {
+		string_cells_get_int(cells, MASTER_SLAVE, &value);
+		cap->master_slave = value;
+	}
+
+	if (string_cells_has_key(cells, CAPTURE_DATA_FORMAT)) {
+		string_cells_get_int(cells, CAPTURE_DATA_FORMAT, &value);
+		cap->data_format = value;
+	}
+
 	string_cells_destroy(cells);
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static char *PrimaryGetStreamInParameters(const struct AudioHwStream *stream,
@@ -241,10 +263,10 @@ static uint32_t PrimaryGetStreamInLatency(const struct AudioHwStreamIn *stream)
 	return 15;
 }
 
-static int PrimaryGetStreamInPosition(const struct AudioHwStreamIn *stream, uint64_t *frames, struct timespec *timestamp)
+static int32_t PrimaryGetStreamInPosition(const struct AudioHwStreamIn *stream, uint64_t *frames, struct timespec *timestamp)
 {
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
-	int ret = -1;
+	int32_t ret = HAL_OSAL_ERR_UNKNOWN_ERROR;
 
 	//rtos_mutex_take(cap->lock, MUTEX_WAIT_TIMEOUT);
 
@@ -254,7 +276,7 @@ static int PrimaryGetStreamInPosition(const struct AudioHwStreamIn *stream, uint
 			*frames = captured_frames;
 			HAL_AUDIO_VERBOSE("frames:%llu", *frames);
 			//rtos_mutex_give(cap->lock);
-			return 0;
+			return HAL_OSAL_OK;
 		} else {
 			HAL_AUDIO_ERROR("get ts fail");
 		}
@@ -267,11 +289,11 @@ static int PrimaryGetStreamInPosition(const struct AudioHwStreamIn *stream, uint
 	return ret;
 }
 
-static int PrimaryGetPresentTime(const struct AudioHwStreamIn *stream, int64_t *now_ns, int64_t *audio_ns)
+static int32_t PrimaryGetPresentTime(const struct AudioHwStreamIn *stream, int64_t *now_ns, int64_t *audio_ns)
 {
 
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
-	int ret = -1;
+	int32_t ret = HAL_OSAL_ERR_UNKNOWN_ERROR;
 
 	//Better not add mutex, because if only do record, will always lock in read api.So this api will not work.
 	//rtos_mutex_take(cap->lock, MUTEX_WAIT_TIMEOUT);
@@ -290,20 +312,20 @@ static int PrimaryGetPresentTime(const struct AudioHwStreamIn *stream, int64_t *
 static int64_t PrimaryGetTriggerTime(const struct AudioHwStreamIn *stream)
 {
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
-	int64_t ret = -1;
+	int64_t ret = HAL_OSAL_ERR_UNKNOWN_ERROR;
 	if (cap->in_pcm) {
 		ret = ameba_audio_stream_rx_get_trigger_time(cap->in_pcm);
 	}
 	return ret;
 }
 
-static int ConfigureNoAfePureData(struct PrimaryAudioHwStreamIn *cap)
+static int32_t ConfigureNoAfePureData(struct PrimaryAudioHwStreamIn *cap)
 {
 	if (cap->requested_channels == 3) {
 		cap->config.channels = 4;   //no 3 channels tdm in driver
-		unsigned int driver_bytes = PrimaryGetStreamInBufferSize((struct AudioHwStream *)&cap->stream) * cap->config.channels /
+		uint32_t driver_bytes = PrimaryGetStreamInBufferSize((struct AudioHwStream *)&cap->stream) * cap->config.channels /
 									cap->requested_channels * cap->config.period_count;   // *4chan/3chan
-		HAL_AUDIO_INFO("malloc stream_buf:%d cap->config.channels:%" PRId32 ", cap->requested_channels:%" PRId32 "", driver_bytes, cap->config.channels,
+		HAL_AUDIO_INFO("malloc stream_buf:%" PRId32 ", cap->config.channels:%" PRId32 ", cap->requested_channels:%" PRId32 "", driver_bytes, cap->config.channels,
 					   cap->requested_channels);
 		cap->stream_buf = (char *) rtos_mem_zmalloc(driver_bytes);
 		if (cap->stream_buf == NULL) {
@@ -329,7 +351,7 @@ static int ConfigureNoAfePureData(struct PrimaryAudioHwStreamIn *cap)
  *    4                       2               1                 1
  *    5                       3               1                 1
  */
-static int ConfigureNoAfePureDataAddOut(struct PrimaryAudioHwStreamIn *cap)
+static int32_t ConfigureNoAfePureDataAddOut(struct PrimaryAudioHwStreamIn *cap)
 {
 	switch (cap->requested_channels) {
 	case 3:
@@ -346,9 +368,9 @@ static int ConfigureNoAfePureDataAddOut(struct PrimaryAudioHwStreamIn *cap)
 		break;
 	}
 
-	unsigned int driver_bytes = PrimaryGetStreamInBufferSize((struct AudioHwStream *)&cap->stream) * cap->config.channels /
+	uint32_t driver_bytes = PrimaryGetStreamInBufferSize((struct AudioHwStream *)&cap->stream) * cap->config.channels /
 								cap->requested_channels * cap->config.period_count;   // *4chan/3chan
-	HAL_AUDIO_INFO("malloc stream_buf:%d cap->config.channels:%" PRId32 ", cap->requested_channels:%" PRId32 "", driver_bytes, cap->config.channels,
+	HAL_AUDIO_INFO("malloc stream_buf:%" PRId32 ", cap->config.channels:%" PRId32 ", cap->requested_channels:%" PRId32 "", driver_bytes, cap->config.channels,
 				   cap->requested_channels);
 	cap->stream_buf = (char *) rtos_mem_zmalloc(driver_bytes);
 	if (cap->stream_buf == NULL) {
@@ -367,9 +389,9 @@ static int ConfigureNoAfePureDataAddOut(struct PrimaryAudioHwStreamIn *cap)
 	return HAL_OSAL_OK;
 }
 
-static int StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
+static int32_t StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
 {
-	int ret = HAL_OSAL_OK;
+	int32_t ret = HAL_OSAL_OK;
 	cap->config.channels = cap->requested_channels;
 
 	HAL_AUDIO_INFO("%s", __FUNCTION__);
@@ -402,8 +424,13 @@ static int StartAudioHwStreamIn(struct PrimaryAudioHwStreamIn *cap)
 
 	}
 
+	if (cap->device == AMEBA_AUDIO_IN_I2S) {
+		AUDIO_SP_SetMasterSlave(AUDIO_I2S_IN_SPORT_INDEX, cap->master_slave);
+		AUDIO_SP_SetRxDataFormat(AUDIO_I2S_IN_SPORT_INDEX, cap->data_format);
+	}
+
 	ameba_audio_stream_rx_start(cap->in_pcm);
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 static ssize_t NoAfePureDataRead(struct AudioHwStreamIn *stream, void *buffer, size_t bytes)
@@ -538,7 +565,7 @@ static ssize_t NoAfePureDataAddOutRead(struct AudioHwStreamIn *stream, void *buf
 
 static ssize_t PrimaryStreamInRead(struct AudioHwStreamIn *stream, void *buffer, size_t bytes)
 {
-	int ret = 0;
+	int32_t ret = 0;
 
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
 	//struct PrimaryAudioHwCard *pri_card = cap->pri_card;
@@ -583,7 +610,7 @@ exit:
 
 static ssize_t PrimaryStreamInReadTimeout(struct AudioHwStreamIn *stream, void *buffer, size_t bytes, uint32_t time_out_ms)
 {
-	int ret = 0;
+	int32_t ret = 0;
 	(void) time_out_ms;
 
 	struct PrimaryAudioHwStreamIn *cap = (struct PrimaryAudioHwStreamIn *)stream;
@@ -622,7 +649,7 @@ exit:
 	return ret;
 }
 
-static int CheckInputParameters(uint32_t sample_rate, enum AudioHwFormat format, uint32_t channel_count)
+static int32_t CheckInputParameters(uint32_t sample_rate, enum AudioHwFormat format, uint32_t channel_count)
 {
 	switch (format) {
 	case AUDIO_HW_FORMAT_PCM_16_BIT:
@@ -655,7 +682,7 @@ static int CheckInputParameters(uint32_t sample_rate, enum AudioHwFormat format,
 		return HAL_OSAL_ERR_INVALID_PARAM;
 	}
 
-	return 0;
+	return HAL_OSAL_OK;
 }
 
 size_t GetHwInputBufferSize(uint32_t sample_rate, enum AudioHwFormat format, uint32_t channel_count)
@@ -746,6 +773,8 @@ struct AudioHwStreamIn *CreateAudioHwStreamIn(struct AudioHwCard *card, const st
 	in->config.channels = config->channel_count;
 	in->requested_channels = config->channel_count;
 	in->channel_for_ref = 2;
+	in->master_slave = AUDIO_I2S_IN_ROLE;
+	in->data_format = AUDIO_I2S_IN_DATA_FORMAT;
 
 	if (desc->flags & AUDIO_HW_INPUT_FLAG_NOIRQ) {
 		HAL_AUDIO_INFO("CreateAudioHwStreamIn in NO_IRQ mode, buffer_bytes: %" PRIu32 "", config->buffer_bytes);

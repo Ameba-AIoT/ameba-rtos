@@ -19,7 +19,7 @@
 
 
 /* Private defines -----------------------------------------------------------*/
-static const char *TAG = "MSCH";
+static const char *const TAG = "MSCH";
 #define USBH_MSC_TEST_BUF_SIZE      4096
 #define USBH_MSC_TEST_ROUNDS        20
 #define USBH_MSC_TEST_SEED          0xA5
@@ -72,14 +72,14 @@ const COMMAND_TABLE usbh_msc_cmd_table[] = {
 /* Private functions ---------------------------------------------------------*/
 static int msc_cb_attach(void)
 {
-	RTK_LOGS(TAG, "ATTACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	rtos_sema_give(msc_attach_sema);
 	return HAL_OK;
 }
 
 static int msc_cb_setup(void)
 {
-	RTK_LOGS(TAG, "SETUP\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	msc_is_ready = 1;
 	return HAL_OK;
 }
@@ -124,15 +124,15 @@ static int msc_trx_test(u8 looptime)
 
 	buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
 	if (buf == NULL) {
-		RTK_LOGS(TAG, "Fail to alloc test buf\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to alloc test buf\n");
 		goto exit;
 	}
 
 	// Register USB disk driver to fatfs
-	RTK_LOGS(TAG, "Register USB disk\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Register USB disk\n");
 	drv_num = FATFS_RegisterDiskDriver(&USB_disk_Driver);
 	if (drv_num < 0) {
-		RTK_LOGS(TAG, "Fail to register\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to register\n");
 		goto exit_free;
 	}
 
@@ -141,7 +141,7 @@ static int msc_trx_test(u8 looptime)
 	logical_drv[2] = '/';
 	logical_drv[3] = 0;
 
-	RTK_LOGS(TAG, "FatFS USB W/R performance test start...\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test start...\n");
 
 	while (1) {
 		if (msc_is_ready) {
@@ -151,14 +151,14 @@ static int msc_trx_test(u8 looptime)
 	}
 
 	if (f_mount(&fs, logical_drv, 1) != FR_OK) {
-		RTK_LOGS(TAG, "Fail to mount logical drive\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive\n");
 		goto exit_unregister;
 	}
 
 	strcpy(path, logical_drv);
 
 	if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
-		RTK_LOGS(TAG, "Fail to take sema\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to take sema\n");
 		goto exit_unmount;
 	}
 
@@ -171,11 +171,11 @@ static int msc_trx_test(u8 looptime)
 		}
 
 		sprintf(&path[3], "TEST%ld.DAT", filenum);
-		RTK_LOGS(TAG, "Open file: %s\n", path);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 		/* Open test file */
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
-			RTK_LOGS(TAG, "Fail to open file: TEST%d.DAT\n", filenum);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to open file: TEST%d.DAT\n", filenum);
 			goto exit_unmount;
 		}
 		/* Clean write and read buffer */
@@ -187,14 +187,14 @@ static int msc_trx_test(u8 looptime)
 				break;
 			}
 
-			RTK_LOGS(TAG, "W test: size %d, round %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "W test: size %d, round %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
 				res = f_write(&f, (void *)buf, test_size, (UINT *)&bw);
 				if (res || (bw < test_size)) {
 					f_lseek(&f, 0);
-					RTK_LOGS(TAG, "W err bw=%d, rc=%d\n", bw, res);
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
 					ret = 1;
 					break;
 				}
@@ -202,19 +202,19 @@ static int msc_trx_test(u8 looptime)
 
 			elapse = SYSTIMER_GetPassTime(start);
 			perf = (round * test_size * 10000 / 1024) / elapse;
-			RTK_LOGS(TAG, "W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
 			/* Move the file pointer to the file head */
 			res = f_lseek(&f, 0);
 
-			RTK_LOGS(TAG, "R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
 				res = f_read(&f, (void *)buf, test_size, (UINT *)&br);
 				if (res || (br < test_size)) {
 					f_lseek(&f, 0);
-					RTK_LOGS(TAG, "R err br=%d, rc=%d\n", br, res);
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
 					ret = 1;
 					break;
 				}
@@ -222,21 +222,21 @@ static int msc_trx_test(u8 looptime)
 
 			elapse = SYSTIMER_GetPassTime(start);
 			perf = (round * test_size * 10000 / 1024) / elapse;
-			RTK_LOGS(TAG, "R rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "R rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
 			/* Move the file pointer to the file head */
 			res = f_lseek(&f, 0);
 		}
 
-		RTK_LOGS(TAG, "FatFS USB W/R performance test %s\n", (ret == 0) ? "done" : "abort");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test %s\n", (ret == 0) ? "done" : "abort");
 
 		/* Close source file */
 		res = f_close(&f);
 		if (res) {
-			RTK_LOGS(TAG, "File close fail\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "File close fail\n");
 			ret = 1;
 		} else {
-			RTK_LOGS(TAG, "File close OK\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "File close OK\n");
 		}
 
 		if (!ret) {
@@ -248,11 +248,11 @@ static int msc_trx_test(u8 looptime)
 
 exit_unmount:
 	if (f_unmount(logical_drv) != FR_OK) {
-		RTK_LOGS(TAG, "Fail to unmount logical drive\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unmount logical drive\n");
 	}
 exit_unregister:
 	if (FATFS_UnRegisterDiskDriver(drv_num)) {
-		RTK_LOGS(TAG, "Fail to unregister disk driver from FATFS\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to unregister disk driver from FATFS\n");
 	}
 exit_free:
 	if (buf) {
@@ -268,7 +268,7 @@ static u32 usbh_msc_cmd_test(u16 argc, u8 *argv[])
 	const char *cmd;
 
 	if (argc == 0) {
-		RTK_LOGS(TAG, "Invalid USB argument\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USB argument\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -279,7 +279,7 @@ static u32 usbh_msc_cmd_test(u16 argc, u8 *argv[])
 		ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 		if (ret != HAL_OK) {
 			rtos_sema_delete(msc_attach_sema);
-			RTK_LOGS(TAG, "Fail to init USBH: %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init USBH: %d\n", ret);
 			return ret;
 		}
 
@@ -287,17 +287,17 @@ static u32 usbh_msc_cmd_test(u16 argc, u8 *argv[])
 		if (ret != HAL_OK) {
 			usbh_deinit();
 			rtos_sema_delete(msc_attach_sema);
-			RTK_LOGS(TAG, "Fail to init MSC: %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init MSC: %d\n", ret);
 		}
 	} else if (_stricmp(cmd, "deinit") == 0) {
 		ret = usbh_deinit();
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, "Fail to deinit USBH: %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit USBH: %d\n", ret);
 		}
 
 		ret = usbh_msc_deinit();
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, "Fail to deinit MSC: %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit MSC: %d\n", ret);
 		}
 		rtos_sema_delete(msc_attach_sema);
 	} else if (_stricmp(cmd, "rw_test") == 0) {
@@ -307,13 +307,12 @@ static u32 usbh_msc_cmd_test(u16 argc, u8 *argv[])
 		}
 		ret = msc_trx_test(loop);
 		if (ret == HAL_OK) {
-			RTK_LOGS(TAG, "MSC test OK\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "MSC test OK\n");
 		} else {
-			RTK_LOGS(TAG, "MSC test fail: %d\n", ret);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC test fail: %d\n", ret);
 		}
 	} else {
-		RTK_LOGS(TAG, "Input cmd err\n");
-		RTK_LOGS(TAG, "%s\n", usbh_msc_cmd_table[0].msg);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input cmd err %s\n", usbh_msc_cmd_table[0].msg);
 	}
 
 	return ret;

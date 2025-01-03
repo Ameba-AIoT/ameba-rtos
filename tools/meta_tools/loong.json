@@ -1,0 +1,41 @@
+{
+        "brief": "Realtek Loong SDK Meta Tool",
+        "version": "1.0.0",
+        "commands": [
+                {
+                        "name": "build",
+                        "script": "scripts/build.py",
+                        "help": "build application for specific board"
+                },
+                {
+                        "name": "config",
+                        "script": "scripts/config.py",
+                        "help": "configure the SDK"
+                },
+                {
+                        "name": "flash",
+                        "script": "scripts/flash/flash.py",
+                        "help": "flash image to the board"
+                },
+                {
+                        "name": "monitor",
+                        "script": "scripts/monitor/monitor.py",
+                        "help": "start serial monitor"
+                },
+                {
+                        "name": "query",
+                        "script": "scripts/query.py",
+                        "help": "query SDK information"
+                },
+                {
+                        "name": "setup",
+                        "script": "scripts/setup.py",
+                        "help": "set up the SDK workspace"
+                },
+                {
+                        "name": "update",
+                        "script": "scripts/update.py",
+                        "help": "update the SDK workspace"
+                }
+        ]
+}

@@ -26,6 +26,11 @@
 #define MBED_I2C_SLV_SDA    _PB_15
 #define MBED_I2C_SLV_SCL    _PB_16
 
+#elif defined (CONFIG_AMEBAD)
+
+#define MBED_I2C_SLV_SDA    _PA_26
+#define MBED_I2C_SLV_SCL    _PA_25
+
 #endif
 
 #endif

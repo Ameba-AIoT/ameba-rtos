@@ -696,7 +696,6 @@ lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
     err = netconn_peer(newconn, &naddr, &port);
     if (err != ERR_OK) {
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_accept(%d): netconn_peer failed, err=%d\n", s, err));
-      netconn_delete(newconn);
       free_socket(nsock, 1);
       sock_set_errno(sock, err_to_errno(err));
       done_socket(sock);
@@ -2976,18 +2975,6 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
         case SO_ERROR:
           LWIP_SOCKOPT_CHECK_OPTLEN(sock, *optlen, int);
           *(int *)optval = err_to_errno(netconn_err(sock->conn));
-/* Added by Realtek start */	  
-#if 1
-          //SO_ERROR returns only "pending errors", and EWOULDBLOCK is not one of them
-          //Check https://savannah.nongnu.org/bugs/?func=detailitem&item_id=49848#options
-          //Once you are aware of this, you can remove this warning message
-          static u8_t warning = 0;
-          if((*(int *)optval == ERR_OK) && !warning){
-            RTK_LOGS("#", "WARNING(lwip_getsockopt): EWOULDBLOCK(EAGAIN) IS NOT SO_ERROR(sockets.c:%d)\r\n", __LINE__);
-            warning = 1;
-          }
-#endif
-/* Added by Realtek end */
           LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, SOL_SOCKET, SO_ERROR) = %d\n",
                                       s, *(int *)optval));
           break;
@@ -4251,14 +4238,14 @@ int lwip_allocsocketsd(void)
 {
   struct netconn *conn;
   int i;
-  
+
   /*new a netconn due to avoid some socket->conn check*/
   conn = netconn_new_with_proto_and_callback(NETCONN_RAW, 0, NULL);
   if (!conn) {
     printf("\r\n could not create netconn");
     return -1;
   }
-  
+
   /*alloc a socket*/
   i = alloc_socket(conn, 1);
   if (i == -1) {
@@ -4266,7 +4253,7 @@ int lwip_allocsocketsd(void)
     printf("\r\n alloc socket fail!");
     return -1;
   }
-  
+
   conn->socket = i;
   return i;
 }
@@ -4285,7 +4272,7 @@ void lwip_selectevindicate(int fd)
 {
   struct lwip_select_cb *scb;
   struct lwip_sock *sock;
-  
+
   sock = get_socket(fd);
   SYS_ARCH_DECL_PROTECT(lev);
   while (1) {
@@ -4303,7 +4290,7 @@ void lwip_selectevindicate(int fd)
     }
     if (scb) {
       scb->sem_signalled = 1;
-      sys_sem_signal(&scb->sem);
+      sys_sem_signal(SELECT_SEM_PTR(scb->sem));
       SYS_ARCH_UNPROTECT(lev);
     } else {
       SYS_ARCH_UNPROTECT(lev);

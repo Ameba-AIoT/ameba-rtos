@@ -8,6 +8,8 @@
 #include "atcmd_service.h"
 #include "cJSON.h"
 #include "kv.h"
+#include "stdlib.h"
+#include "ringbuffer.h"
 
 #if defined (CONFIG_AMEBASMART)
 u8 UART_TX = _PA_3; // UART0 TX
@@ -29,32 +31,18 @@ u8 UART_RX = _PA_5; // UART RX
 u32 UART_BAUD = 38400;
 
 GDMA_InitTypeDef GDMA_InitStruct;
-volatile u8 dma_tx_busy = 0;
-volatile u8 uart_tx_busy = 0;
+rtos_mutex_t uart_tx_mutex;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
 extern char lfs_mount_fail;
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
-const u8 UART_TX_FID[MAX_UART_INDEX] = {
-	PINMUX_FUNCTION_UART0_TXD,
-	PINMUX_FUNCTION_UART1_TXD,
-	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
-	PINMUX_FUNCTION_UART3_TXD
-#endif
-};
-
-const u8 UART_RX_FID[MAX_UART_INDEX] = {
-	PINMUX_FUNCTION_UART0_RXD,
-	PINMUX_FUNCTION_UART1_RXD,
-	PINMUX_FUNCTION_UART2_RXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
-	PINMUX_FUNCTION_UART3_RXD
-#endif
-};
-#endif
+#define UART_TT_BUF_LEN 1024
+u8 uart_tt_buf[UART_TT_BUF_LEN];
+u16 uart_tt_buf_len;
+extern char g_tt_mode;
+extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
+extern rtos_sema_t atcmd_tt_mode_sema;
 
 static u32 uart_get_idx(UART_TypeDef *Uartx)
 {
@@ -81,8 +69,7 @@ u32 uart_dma_cb(void *buf)
 {
 	uart_dma_free();
 	rtos_mem_free(buf);
-	dma_tx_busy = 0;
-	uart_tx_busy = 0;
+	rtos_mutex_give(uart_tx_mutex);
 
 	return 0;
 }
@@ -90,10 +77,7 @@ u32 uart_dma_cb(void *buf)
 void atio_uart_out_dma(char *buf, int len)
 {
 	u32 uart_idx = uart_get_idx(UART_DEV);
-	BOOL ret;
-
-	do {} while (dma_tx_busy);
-	dma_tx_busy = 1;
+	bool ret;
 
 	u8 *buf_new = (u8 *)rtos_mem_malloc(len);
 	memcpy(buf_new, buf, len);
@@ -105,7 +89,7 @@ void atio_uart_out_dma(char *buf, int len)
 
 	if (!ret) {
 		RTK_LOGI(NOTAG, "%s Error(%d)\n", __FUNCTION__, ret);
-		dma_tx_busy = 0;
+		rtos_mutex_give(uart_tx_mutex);
 	}
 }
 
@@ -122,8 +106,7 @@ void atio_uart_out_polling(char *buf, int len)
 
 void atio_uart_output(char *buf, int len)
 {
-	do {} while (uart_tx_busy);
-	uart_tx_busy = 1;
+	rtos_mutex_take(uart_tx_mutex, MUTEX_WAIT_TIMEOUT);
 
 	if (len > POLL_LEN_MAX) {
 		// tx by dma
@@ -131,7 +114,7 @@ void atio_uart_output(char *buf, int len)
 	} else {
 		// tx by polling
 		atio_uart_out_polling(buf, len);
-		uart_tx_busy = 0;
+		rtos_mutex_give(uart_tx_mutex);
 	}
 }
 
@@ -157,6 +140,33 @@ u32 atio_uart_handler(void *data)
 	uart_ier = UART_DEV->IER;
 	UART_INTConfig(UART_DEV, uart_ier, DISABLE);
 
+tt_recv_again:
+
+	if (g_tt_mode) {
+		while (UART_Readable(UART_DEV)) {
+			if (uart_tt_buf_len == UART_TT_BUF_LEN) {
+				break;
+			}
+			UART_CharGet(UART_DEV, &(uart_tt_buf[uart_tt_buf_len++]));
+		}
+
+		if (uart_tt_buf_len > 0) {
+			u32 space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+			if (space >= uart_tt_buf_len) {
+				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, uart_tt_buf, uart_tt_buf_len);
+				rtos_sema_give(atcmd_tt_mode_sema);
+			} else {
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+			}
+			uart_tt_buf_len = 0;
+			goto tt_recv_again;
+		}
+
+		UART_DEV->IER = uart_ier;
+
+		return 0;
+	}
+
 recv_again:
 
 	/* fetch all data in Uart rx fifo before processing each character */
@@ -176,7 +186,7 @@ recv_again:
 	if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
 		//4 check UartLog buffer to prevent from incorrect access
 		if (shell_ctl.pTmpLogBuf != NULL) {
-			shell_ctl.ExecuteCmd = _TRUE;
+			shell_ctl.ExecuteCmd = TRUE;
 
 			if (shell_ctl.shell_task_rdy) {
 				shell_ctl.GiveSema();
@@ -196,79 +206,20 @@ recv_again:
 	return 0;
 }
 
-void atio_uart_init(void)
+int atio_uart_init(void)
 {
 	UART_InitTypeDef UART_InitStruct;
 	u32 uart_idx = uart_get_idx(UART_DEV);
 
 	if (0xFF == uart_idx) {
-		at_printf("%s FAIL!!! Invalid UART index!\n", __FUNCTION__);
-		return;
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s FAIL!!! Invalid UART index!\n", __FUNCTION__);
+		return -1;
 	}
+
+	rtos_mutex_create(&uart_tx_mutex);
 
 	/* enable uart clock and function */
 	RCC_PeriphClockCmd(APBPeriph_UARTx[uart_idx], APBPeriph_UARTx_CLOCK[uart_idx], ENABLE);
-
-#ifdef CONFIG_ATCMD_MCU_CONTROL
-	if (lfs_mount_fail) {
-		goto DEFAULT;
-	}
-
-	int file_size = rt_kv_size("atcmd_config.json");
-	if (file_size <= 0) {
-		RTK_LOGI(NOTAG, "atcmd_config.json is not exist\n");
-		goto DEFAULT;
-	}
-
-	char *atcmd_config;
-	cJSON *atcmd_ob, *interface_ob, *uart_ob, *baudrate_ob, *tx_ob, *rx_ob;
-	atcmd_config = (char *)rtos_mem_zmalloc(file_size);
-	int ret = rt_kv_get("atcmd_config.json", atcmd_config, file_size);
-	if (ret < 0) {
-		RTK_LOGI(NOTAG, "rt_kv_get atcmd_config.json fail \r\n");
-		rtos_mem_free(atcmd_config);
-		goto DEFAULT;
-	}
-
-	if ((atcmd_ob = cJSON_Parse(atcmd_config)) != NULL) {
-		interface_ob = cJSON_GetObjectItem(atcmd_ob, "interface");
-
-		if (interface_ob && strncmp(interface_ob->valuestring, "uart", strlen(interface_ob->valuestring)) != 0) {
-			RTK_LOGI(NOTAG, "ATCMD MCU Control mode only support uart now !\r\n");
-			rtos_mem_free(atcmd_config);
-			goto DEFAULT;
-		}
-
-		if ((uart_ob = cJSON_GetObjectItem(atcmd_ob, "uart")) != NULL) {
-			baudrate_ob = cJSON_GetObjectItem(uart_ob, "baudrate");
-			if (baudrate_ob) {
-				UART_BAUD = baudrate_ob->valueint;
-			}
-
-			tx_ob = cJSON_GetObjectItem(uart_ob, "tx");
-			if (tx_ob) {
-				if (strstr(tx_ob->valuestring, "PA")) {
-					UART_TX = _PA_0 + atoi(&(tx_ob->valuestring[2]));
-				} else if (strstr(tx_ob->valuestring, "PB")) {
-					UART_TX = _PB_0 + atoi(&(tx_ob->valuestring[2]));
-				}
-			}
-
-			rx_ob = cJSON_GetObjectItem(uart_ob, "rx");
-			if (rx_ob) {
-				if (strstr(rx_ob->valuestring, "PA")) {
-					UART_RX = _PA_0 + atoi(&(rx_ob->valuestring[2]));
-				} else if (strstr(tx_ob->valuestring, "PB")) {
-					UART_RX = _PB_0 + atoi(&(rx_ob->valuestring[2]));
-				}
-			}
-		}
-	}
-
-	rtos_mem_free(atcmd_config);
-
-DEFAULT:
-#endif
 
 #if defined (CONFIG_AMEBASMART)
 	/* Configure UART TX and RX pin */
@@ -276,8 +227,8 @@ DEFAULT:
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
 #elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 	/* Configure UART TX and RX pin */
-	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
-	Pinmux_Config(UART_RX, UART_RX_FID[uart_idx]);
+	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART0_TXD);
+	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART0_RXD);
 #endif
 
 	PAD_PullCtrl(UART_TX, GPIO_PuPd_UP); // pull up Tx/Rx pin
@@ -294,6 +245,8 @@ DEFAULT:
 	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI, ENABLE);
 
 	out_buffer = atio_uart_output;
-	at_printf("%s @%dbps\n", __FUNCTION__, UART_BAUD);
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s @%dbps\n", __FUNCTION__, UART_BAUD);
+
+	return 0;
 }
 

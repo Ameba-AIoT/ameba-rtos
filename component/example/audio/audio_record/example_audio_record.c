@@ -523,5 +523,5 @@ u32 example_record_test(u16 argc, unsigned char **argv)
 {
 	(void) argc;
 	RTAudioRecordTestApp((char **)argv);
-	return _TRUE;
+	return TRUE;
 }

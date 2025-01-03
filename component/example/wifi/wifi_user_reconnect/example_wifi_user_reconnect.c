@@ -11,7 +11,7 @@ char *test_ssid = "xiaomi3000";
 char *test_password = "123456789";
 u32 secure_type = RTW_SECURITY_WPA2_AES_PSK;/*Just distinguish between WEP, TKIP/WPA/WPA2/WPA3 can use the same secure_type*/
 /***********************************End**********************************/
-static const char *TAG = "WIFI_RECONN_EXAMPLE";
+static const char *const TAG = "WIFI_RECONN_EXAMPLE";
 u8 reconnect_cnt = 0;
 
 int user_wifi_connect(void)

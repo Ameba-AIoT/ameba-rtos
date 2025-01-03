@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_BUFFER_H
-#define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_BUFFER_H
+#ifndef AMEBA_AUDIO_AUDIO_HAL_AMEBALITE_AMEBA_AUDIO_STREAM_BUFFER_H
+#define AMEBA_AUDIO_AUDIO_HAL_AMEBALITE_AMEBA_AUDIO_STREAM_BUFFER_H
 
 #include "audio_hw_debug.h"
 
@@ -31,8 +31,8 @@ typedef struct _AudioBuffer {
 } AudioBuffer;
 
 AudioBuffer *ameba_audio_stream_buffer_create(void);
-void   ameba_audio_stream_buffer_release(AudioBuffer *buffer);
-void   ameba_audio_stream_buffer_alloc(AudioBuffer *buffer, size_t capacity);
+void ameba_audio_stream_buffer_release(AudioBuffer *buffer);
+void ameba_audio_stream_buffer_alloc(AudioBuffer *buffer, size_t capacity);
 size_t ameba_audio_stream_buffer_get_remain_size(AudioBuffer *buffer);
 size_t ameba_audio_stream_buffer_get_available_size(AudioBuffer *buffer);
 size_t ameba_audio_stream_buffer_get_buffer_capacity(AudioBuffer *buffer);
@@ -41,9 +41,9 @@ size_t ameba_audio_stream_buffer_write(AudioBuffer *buffer, const void *data, si
 size_t ameba_audio_stream_buffer_read(AudioBuffer *buffer, void *data, size_t bytes, uint32_t mode);
 size_t ameba_audio_stream_buffer_get_tx_readptr(AudioBuffer *buffer);
 size_t ameba_audio_stream_buffer_get_rx_writeptr(AudioBuffer *buffer);
-void   ameba_audio_stream_buffer_update_rx_writeptr(AudioBuffer *buffer, size_t bytes);
-void   ameba_audio_stream_buffer_update_tx_readptr(AudioBuffer *buffer, size_t bytes);
-void   ameba_audio_stream_buffer_flush(AudioBuffer *buffer);
+void ameba_audio_stream_buffer_update_rx_writeptr(AudioBuffer *buffer, size_t bytes);
+void ameba_audio_stream_buffer_update_tx_readptr(AudioBuffer *buffer, size_t bytes);
+void ameba_audio_stream_buffer_flush(AudioBuffer *buffer);
 
 #ifdef __cplusplus
 }

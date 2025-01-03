@@ -81,7 +81,7 @@ u32 __wrap_rand(void)
   * @retval successful or not
   */
 HAL_ROM_TEXT_SECTION _LONG_CALL_
-int RandBytes_Get(void *buf, u32 len)
+int _RandBytes_Get(void *buf, u32 len)
 {
 	uint32_t ranbuf;
 	uint32_t *lp;
@@ -99,7 +99,8 @@ int RandBytes_Get(void *buf, u32 len)
 	level = TRNG_GetFIFOLevel();
 
 	if (level == TRNG_FIFO_LEVEL_INVALID) {
-		return _FAIL;
+		// _SUCCESS(1)/ _FAIL(0) removed from SDK, change return value to SUCCESS(0) / FAIL(-1) in the future
+		return 0;
 	}
 
 	for (i = 0; (i < count) && (level > 0); i ++) {
@@ -120,6 +121,6 @@ int RandBytes_Get(void *buf, u32 len)
 		_memcpy(&lp[i], &ranbuf, len);
 	}
 
-	return _SUCCESS;
+	return 1;
 }
 

@@ -1,4 +1,4 @@
-#Note: Previously defined variables cannot be used directly in this file 
+#Note: Previously defined variables cannot be used directly in this file
 #unless passed through -D
 include(${CMAKE_FILES_DIR}/axf2bin.cmake)
 
@@ -40,7 +40,7 @@ execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .ram_retention.text -j .ram_retention.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/ram_retention.bin
     COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/COEX.trace
 )
-    
+
 message( "========== Image Info HEX ==========")
 
 execute_process(
@@ -86,10 +86,11 @@ if(CONFIG_MP_SHRINK)
     )
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin
-        OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km0_image2_all_shrink.bin    
+        OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km0_image2_all_shrink.bin
     )
     execute_process(
         COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km0_image2_all_shrink.bin ${BUILD_TYPE}
+        WORKING_DIRECTORY ${PROJECTDIR}/..
     )
 else()
     execute_process(
@@ -113,6 +114,7 @@ else()
     )
     execute_process(
         COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km0_image2_all.bin ${BUILD_TYPE}
+        WORKING_DIRECTORY ${PROJECTDIR}/..
     )
 endif()
 
@@ -206,17 +208,17 @@ set(OTA_ALL	${KM4_BUILDDIR}/asdk/image/ota_all.bin)
 
 if(EXISTS ${APP_ALL})
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${APP_ALL} ${KM4_BUILDDIR}/../
+        COMMAND ${CMAKE_COMMAND} -E copy ${APP_ALL} ${FINAL_IMAGE_DIR}
     )
 endif()
 
 if(EXISTS ${OTA_ALL})
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${OTA_ALL} ${KM4_BUILDDIR}/../
+        COMMAND ${CMAKE_COMMAND} -E copy ${OTA_ALL} ${FINAL_IMAGE_DIR}
     )
 endif()
 
-if(NOT AMEBA_RLS)
+if(NOT CONFIG_AMEBA_RLS)
     message("========== Image analyze start ==========")
     execute_process(
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}

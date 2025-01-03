@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0
-menuconfig WIFI_RTK_CFG80211_FULLMAC
-    tristate "CFG80211 WiFi FULLMAC drivers"
+config WIFI_RTK_CFG80211_FULLMAC
+	tristate "Fullmac for wifi driver"
+	select CFG80211_DEFAULT_PS
+	select CFG80211_CRDA_SUPPORT
+	select CFG80211_WEXT
+	select WLAN_VENDOR_INTEL
 
-if WIFI_RTK_CFG80211_FULLMAC
-
-source "drivers/rtkdrivers/net/wireless/cfg80211_fullmac/rtl8730e/Kconfig"
-
-endif
+	help
+	  Realtek wifi driver.
+	  802.11 a/b/g/n/ac/ax AXI wireless network adapter

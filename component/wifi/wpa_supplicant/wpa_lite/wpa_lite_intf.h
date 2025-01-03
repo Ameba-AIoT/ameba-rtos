@@ -27,7 +27,7 @@ struct wpa_param_t {
   */
 struct psk_info {
 	unsigned char index;                  ///<  index
-	unsigned char psk_essid[32 + 4]; ///< refer to NDIS_802_11_LENGTH_SSID + 4
+	unsigned char psk_essid[RTW_ESSID_MAX_SIZE + 1]; ///< refer to NDIS_802_11_LENGTH_SSID + 1
 	unsigned char psk_passphrase[RTW_MAX_PSK_LEN + 1]; ///< refer to IW_PASSPHRASE_MAX_SIZE + 1
 	unsigned char wpa_global_PSK[20 * 2]; ///< refer to A_SHA_DIGEST_LEN * 2
 	enum rtw_security security_type;
@@ -61,9 +61,9 @@ void rtw_psk_set_psk_info(struct psk_info *psk_data);
 void rtw_psk_set_pmk_from_eap(u8 *pmk, u8 *hwaddr);
 
 void rtw_psk_disconnect_hdl(char *buf, int buf_len, int flags, void *userdata);
-__weak void rtw_set_to_roam(u8 to_roam);
-__weak u8 rtw_roam_nb_ch_num_get(void);
-__weak u16 rtw_roam_nb_ch_get(u8 ch);
+void rtw_set_to_roam(u8 roam_try_cnt);
+u8 rtw_roam_nb_ch_num_get(void);
+u16 rtw_roam_nb_ch_get(u8 ch);
 
 /*event handle functions*/
 void rtw_sae_sta_rx_auth(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_RX_MGNT*/
@@ -77,17 +77,17 @@ void rtw_psk_set_psk_info_evt_hdl(char *buf, int buf_len, int flags, void *userd
 void rtw_owe_start_calc(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_OWE_START_CALC*/
 void rtw_owe_peer_key_recv(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_OWE_PEER_KEY_RECV*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K) || defined(CONFIG_IEEE80211R)
-__weak void rtw_roam_kvr_cap_update(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_KVR_CAP_UPDATE*/
+void rtw_roam_kvr_cap_update(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_KVR_CAP_UPDATE*/
 #if defined(CONFIG_IEEE80211V) || defined(CONFIG_IEEE80211K)
-__weak void rtw_wnm_btm_candidates_survey(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_NB_RESP_RECV*/
+void rtw_roam_nb_rpt_elem_parsing(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_NB_RESP_RECV*/
 #endif
 #ifdef CONFIG_IEEE80211V
-__weak void rtw_wnm_process_btm_req(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_BTM_REQ_RECV*/
-__weak void wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_BTM_DEBUG_CMD*/
+void rtw_wnm_btm_req_process(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_BTM_REQ_RECV*/
+void rtw_wnm_dbg_cmd(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_BTM_DEBUG_CMD*/
 #endif
 #ifdef CONFIG_IEEE80211R
-__weak void rtw_ft_auth_start(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_FT_AUTH_START*/
-__weak void rtw_ft_rx_mgnt(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_FT_RX_MGNT*/
+void rtw_ft_auth_start(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_FT_AUTH_START*/
+void rtw_ft_rx_mgnt(char *buf, int buf_len, int flags, void *userdata);/*WIFI_EVENT_FT_RX_MGNT*/
 #endif
 #endif
 void rtw_psk_deauth_info_flash(char *data, int len, int flags, void *userdata);/*WIFI_EVENT_DEAUTH_INFO_FLASH*/

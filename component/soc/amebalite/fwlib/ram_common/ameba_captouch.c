@@ -6,8 +6,8 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "CAPTOUCH";
-extern BOOL vref_init_done;
+static const char *const TAG = "CAPTOUCH";
+extern bool vref_init_done;
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -99,7 +99,7 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 		}
 		CapTouch->CT_ANA_ADC_REG0X_LPAD = value;
 
-		vref_init_done = _TRUE;
+		vref_init_done = TRUE;
 	}
 
 	CapTouch->CT_INTERRUPT_ENABLE = 0;
@@ -453,7 +453,7 @@ void CapTouch_SetPNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Thresho
 void CapTouch_SetFifoLevel(CAPTOUCH_TypeDef *CapTouch, u8 Level)
 {
 	u32 TempVal;
-	BOOL ctc_is_en = _FALSE;
+	bool ctc_is_en = FALSE;
 
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
@@ -461,7 +461,7 @@ void CapTouch_SetFifoLevel(CAPTOUCH_TypeDef *CapTouch, u8 Level)
 
 	if (CapTouch->CT_CTC_CTRL & CT_BIT_ENABLE) {
 		CapTouch_Cmd(CapTouch, DISABLE);
-		ctc_is_en = _TRUE;
+		ctc_is_en = TRUE;
 	}
 
 	TempVal = CapTouch->CT_RAW_CODE_FIFO_STATUS;

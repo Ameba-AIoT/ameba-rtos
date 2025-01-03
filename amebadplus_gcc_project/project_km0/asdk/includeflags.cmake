@@ -17,7 +17,7 @@ list(
     ${TARGETDIR}/hal/include
     ${TARGETDIR}/hal/src
     ${TARGETDIR}/usrcfg/include
-    ${BASEDIR}/component/soc/common
+    ${BASEDIR}/component/soc/common/include
 
     ${INCDIR}
     ${INCDIR}/..
@@ -68,6 +68,15 @@ list(
     #${BASEDIR}/component/soc/amebadplus/sboot/Curve25519 
     ${BASEDIR}/component/soc/amebadplus/sboot/ed25519 
     ${BASEDIR}/component/soc/amebadplus/sboot/sha512
-    
 )
 
+#coex
+list(
+    APPEND GLOBAL_IFLAGS
+    ${BASEDIR}/component/rtk_coex
+)
+
+#bluetooth
+if(CONFIG_BT)
+    include(bluetooth_include.cmake)
+endif()

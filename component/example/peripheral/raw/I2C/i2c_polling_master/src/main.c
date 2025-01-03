@@ -25,7 +25,6 @@ u32 master_addr_retry = 1;
 #define I2C_ID 0
 
 #define I2C_SLAVE_ADDR0    0x23
-#define I2C_BUS_CLK        100000  //hz
 
 #define I2C_DATA_LENGTH         127
 uint8_t i2cdatasrc[I2C_DATA_LENGTH];
@@ -33,7 +32,7 @@ uint8_t i2cdatadst[I2C_DATA_LENGTH];
 uint8_t i2cdatardsrc[I2C_DATA_LENGTH];
 uint8_t i2cdatarddst[I2C_DATA_LENGTH];
 I2C_InitTypeDef I2CInitData[2];
-static const char *TAG = "I2C";
+static const char *const TAG = "I2C";
 
 
 /* RESTART verification */
@@ -63,7 +62,7 @@ void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t scl, ui
 	i2c_idx = I2c_index;
 	/* I2C Pin Mux Initialization */
 
-#if defined (CONFIG_AMEBASMART)
+#if defined (CONFIG_AMEBASMART) || (CONFIG_AMEBAD)
 	Pinmux_Config(sda, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(scl, PINMUX_FUNCTION_I2C);
 #else
@@ -284,6 +283,9 @@ void i2c_dual_master_task(void)
 	int i2clocalcnt;
 
 	/* enable I2C functions */
+#if defined (CONFIG_AMEBAD)
+	RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
+#else
 	switch (I2C_ID) {
 	case 0:
 		RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
@@ -300,7 +302,7 @@ void i2c_dual_master_task(void)
 		RTK_LOGI(TAG, "I2C id error\r\n");
 		break;
 	}
-
+#endif
 	// prepare for transmission
 	_memset(&i2cdatasrc[0], 0x00, I2C_DATA_LENGTH);
 	_memset(&i2cdatadst[0], 0x00, I2C_DATA_LENGTH);

@@ -21,7 +21,8 @@
 /* external head files */
 
 /* internal head files */
-#include "rtw_autoconf.h"
+#include "rtw_wifi_common.h"
+
 /* -------------------------------- Defines --------------------------------- */
 
 #if defined(CONFIG_AMEBASMART)
@@ -120,7 +121,7 @@
 #endif
 #endif
 
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_AMEBAL2)
 #if defined(CONFIG_ARM_CORE_CM4)
 #if defined(CONFIG_AS_INIC_AP)
 /* configuration for AP */

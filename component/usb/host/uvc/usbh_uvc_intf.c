@@ -30,7 +30,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-static const char *TAG = "UVC";
+static const char *const TAG = "UVC";
 
 usbh_uvc_host_t uvc_host;
 
@@ -68,7 +68,7 @@ static int usbh_uvc_find_format_frame(uvc_stream_t *stream, uvc_config_t *contex
 	}
 
 	if (found == 0) {
-		RTK_LOGS(TAG, "[UVC] Fail to find format\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to find format\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -96,12 +96,12 @@ static int usbh_uvc_find_format_frame(uvc_stream_t *stream, uvc_config_t *contex
 				*frame_index = frame->bFrameIndex;
 			}
 		}
-		RTK_LOGS(TAG, "[UVC] Find passed_in frame @%d*%d fail\n", w, h);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find passed_in frame @%d*%d fail\n", w, h);
 
 		context->height = frame->wHeight;
 		context->width = frame->wWidth;
 
-		RTK_LOGS(TAG, "[UVC] Use closest frame @%d*%d\n", frame->wWidth, frame->wHeight);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Use closest frame @%d*%d\n", frame->wWidth, frame->wHeight);
 	}
 
 	return HAL_OK;
@@ -181,7 +181,7 @@ int usbh_uvc_init(usbh_uvc_cb_t *cb)
 		if (cb->init != NULL) {
 			ret = cb->init();
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, "[UVC] User cb init err: %d", ret);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "User cb init err: %d", ret);
 				goto init_fail;
 			}
 		}
@@ -189,7 +189,7 @@ int usbh_uvc_init(usbh_uvc_cb_t *cb)
 
 	ret = usbh_uvc_class_init();
 	if (ret) {
-		RTK_LOGS(TAG, "[UVC] Class init err: %d", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Class init err: %d", ret);
 		goto init_fail;
 	}
 
@@ -227,7 +227,7 @@ void usbh_uvc_deinit(void)
 		if (cb->deinit != NULL) {
 			ret = cb->deinit();
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, "[UVC] User cb deinit err: %d", ret);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "User cb deinit err: %d", ret);
 			}
 		}
 	}
@@ -246,7 +246,7 @@ int usbh_uvc_stream_on(u32 if_num)
 	uvc_stream_t *stream = &uvc->stream[if_num];
 
 	if (usbh_uvc_stream_state(if_num) == STREAMING_ON) {
-		RTK_LOGS(TAG, "[UVC] Stream %d is already on\n", if_num);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream %d is already on\n", if_num);
 		return HAL_OK;
 	}
 
@@ -271,7 +271,7 @@ int usbh_uvc_stream_off(u32 if_num)
 	uvc_stream_t *stream = &uvc->stream[if_num];
 
 	if (usbh_uvc_stream_state(if_num) == STREAMING_OFF) {
-		RTK_LOGS(TAG, "[UVC] Stream %d is already off\n", if_num);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream %d is already off\n", if_num);
 		return HAL_OK;
 	}
 
@@ -311,14 +311,14 @@ int usbh_uvc_set_param(uvc_config_t *para, u32 if_num)
 
 	if ((para->fmt_type != UVC_FORMAT_MJPEG) && (para->fmt_type != UVC_FORMAT_YUV) \
 		&& (para->fmt_type != UVC_FORMAT_H264)) {
-		RTK_LOGS(TAG, "[UVC] Format not support, only support MJEPG, UNCOMPRESSED and H264\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Format not support, only support MJEPG, UNCOMPRESSED and H264\n");
 		return -HAL_ERR_PARA;
 	}
 
 	/*Find format and closest resolution*/
 	ret = usbh_uvc_find_format_frame(stream, para, &format_index, &frame_index);
 	if (ret) {
-		RTK_LOGS(TAG, "[UVC] Find format or frame fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find format or frame fail\n");
 		return -HAL_ERR_PARA;
 	}
 
@@ -352,7 +352,7 @@ uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
 	if (usb_os_sema_take(stream->frame_sema, UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
 		if (list_empty(&stream->frame_chain)) {
 			/*should not reach here*/
-			RTK_LOGS(TAG, "[UVC] No frame in frame_chain\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "No frame in frame_chain\n");
 			return NULL;
 		} else {
 			frame = list_first_entry(&stream->frame_chain, uvc_frame_t, list);
@@ -360,7 +360,7 @@ uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
 			return frame;
 		}
 	} else {
-		RTK_LOGS(TAG, "[UVC] Fail to down frame sema\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to down frame sema\n");
 		return NULL;
 	}
 #else
@@ -369,7 +369,7 @@ uvc_frame_t *usbh_uvc_get_frame(u32 if_num)
 		frame = &stream->frame_buffer[stream->uvc_dec->frame_done_num];
 		return frame;
 	} else {
-		RTK_LOGS(TAG, "[UVC] Fail to down frame sema\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to down frame sema\n");
 		return NULL;
 	}
 #endif
