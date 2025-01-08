@@ -1104,25 +1104,7 @@ static void bt_coex_parse_mailbox_event(uint8_t status, uint8_t mailbox_id, uint
 void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
 {
 	uint8_t evt = pdata[0];
-	bool need_notify = FALSE;
 	switch (evt) {
-	case HCI_EV_LE_META: {
-		uint8_t sub_evt = pdata[2];
-		switch (sub_evt) {
-		case HCI_EV_LE_CONN_COMPLETE:
-		case HCI_EV_LE_ENHANCED_CONN_COMPLETE:
-		case HCI_EV_LE_CONN_UPDATE_COMPLETE:
-			need_notify = TRUE;
-			break;
-		default:
-			break;
-		}
-	}
-	break;
-	case HCI_EV_DISCONN_COMPLETE:
-		need_notify = TRUE;
-		break;
-
 	case HCI_EV_CMD_COMPLETE: {
 		/* B0: event code, B1: length, B2: Num_HCI_Command_Packets, B3&B4: Command_Opcode: B5: cmd_status */
 		uint16_t cmd_opcode = (uint16_t)((pdata[4] << 8) | pdata[3]);
@@ -1162,10 +1144,8 @@ void bt_coex_evt_notify(uint8_t *pdata, uint16_t len)
 #endif
 
 	default:
+		(void) len;
 		break;
-	}
-	if (need_notify == TRUE) {
-		rtk_coex_btc_bt_hci_notify(pdata, len, COEX_H2C_BT_HCI_NOTIFY_HCI_EVENT);
 	}
 }
 

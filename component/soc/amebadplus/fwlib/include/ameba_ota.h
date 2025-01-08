@@ -46,6 +46,7 @@
 #define OTA_LOCAL			0
 #define OTA_HTTP			1
 #define OTA_HTTPS			2
+#define OTA_VFS				3
 
 /**
   * @}

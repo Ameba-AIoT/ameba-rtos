@@ -59,8 +59,10 @@ int llhw_wifi_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 	dma_addr_t phy_addr;
 	int ret = 0;
 	struct device *pdev = global_idev.ipc_dev;
+	struct wifi_user_conf pusrcfg = {0};
 
-	phy_addr = dma_map_single(pdev, (void *)pwifi_usrcfg, sizeof(struct wifi_user_conf), DMA_TO_DEVICE);
+	memcpy(&pusrcfg, pwifi_usrcfg, sizeof(struct wifi_user_conf));
+	phy_addr = dma_map_single(pdev, &pusrcfg, sizeof(struct wifi_user_conf), DMA_TO_DEVICE);
 	if (dma_mapping_error(pdev, phy_addr)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		return -1;
@@ -101,7 +103,7 @@ int llhw_wifi_set_mac_addr(u32 wlan_idx, u8 *addr)
 	param_buf[2] = 0;
 
 	ret = llhw_ipc_send_msg(INIC_API_WIFI_SET_MAC_ADDR, param_buf, 3);
-	dma_unmap_single(pdev, phy_addr, sizeof(struct _rtw_scan_param_t), DMA_TO_DEVICE);
+	dma_unmap_single(pdev, phy_addr, ETH_ALEN, DMA_TO_DEVICE);
 
 	return ret;
 }
@@ -269,7 +271,7 @@ int llhw_wifi_get_channel(u32 wlan_idx, u8 *ch)
 {
 	int ret = -1;
 	u32 param_buf[2];
-	int *channel_temp = NULL;
+	u8 *channel_temp = NULL;
 	dma_addr_t dma_addr = 0;
 	struct device *pdev = global_idev.ipc_dev;
 
@@ -278,7 +280,7 @@ int llhw_wifi_get_channel(u32 wlan_idx, u8 *ch)
 		goto func_exit;
 	}
 
-	dma_addr = dma_map_single(pdev, channel_temp, sizeof(u8), DMA_TO_DEVICE);
+	dma_addr = dma_map_single(pdev, channel_temp, sizeof(u8), DMA_FROM_DEVICE);
 	if (dma_mapping_error(pdev, dma_addr)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		ret = -EINVAL;
@@ -418,7 +420,7 @@ int llhw_wifi_add_key(struct rtw_crypt_info *crypt)
 
 	ret = llhw_ipc_send_msg(INIC_API_WIFI_ADD_KEY, param_buf, 1);
 
-	dma_unmap_single(pdev, dma_addr_crypt, sizeof(struct rtw_crypt_info), DMA_FROM_DEVICE);
+	dma_unmap_single(pdev, dma_addr_crypt, sizeof(struct rtw_crypt_info), DMA_TO_DEVICE);
 	return ret;
 }
 
@@ -997,7 +999,7 @@ int llhw_wifi_get_edcca_mode(u8 *edcca_mode)
 		goto func_exit;
 	}
 
-	dma_addr = dma_map_single(pdev, virt_addr, sizeof(u8), DMA_TO_DEVICE);
+	dma_addr = dma_map_single(pdev, virt_addr, sizeof(u8), DMA_FROM_DEVICE);
 	if (dma_mapping_error(pdev, dma_addr)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		ret = -EINVAL;
@@ -1031,7 +1033,7 @@ int llhw_wifi_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 		goto func_exit;
 	}
 
-	dma_addr = dma_map_single(pdev, virt_addr, sizeof(u8), DMA_TO_DEVICE);
+	dma_addr = dma_map_single(pdev, virt_addr, 2 * sizeof(u8), DMA_FROM_DEVICE);
 	if (dma_mapping_error(pdev, dma_addr)) {
 		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
 		ret = -EINVAL;

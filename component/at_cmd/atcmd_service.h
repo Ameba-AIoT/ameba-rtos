@@ -20,6 +20,8 @@
 #include "atcmd_sys.h"
 #include "atcmd_fs.h"
 
+#include "rtw_autoconf.h"
+
 #ifndef CONFIG_MP_INCLUDED
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 #include "atcmd_sockets.h"
@@ -123,6 +125,9 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #endif
 #if defined(CONFIG_BT) && CONFIG_BT
 extern void at_bt_init(void);
+#endif
+#if defined(CONFIG_BT_COEXIST)
+extern void at_coex_init(void);
 #endif
 
 #endif /* ATCMD_SERVICE_H */

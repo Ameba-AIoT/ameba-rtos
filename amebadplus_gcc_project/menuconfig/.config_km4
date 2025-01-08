@@ -166,12 +166,6 @@ CONFIG_AMEBADPLUS_B_CUT=y
 #
 
 #
-# LWIP Config
-#
-# CONFIG_IP_NAT is not set
-# end of LWIP Config
-
-#
 # 802154 Config
 #
 # CONFIG_802154_EN is not set

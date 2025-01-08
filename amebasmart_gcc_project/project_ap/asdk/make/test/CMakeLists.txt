@@ -7,6 +7,6 @@ ameba_add_subdirectories_if(CONFIG_DHRYSTONE_TEST
     memtester
     cpuburn
 )
-# ameba_add_subdirectories(
-#     vmin_test
-# )
+ameba_add_subdirectories_if(CONFIG_VMIN_TEST
+    vmin_test
+)

@@ -1,5 +1,7 @@
 ameba_internal_library(bluetooth)
 
+# debug iNIC rtos host driver, compile bt_host instead of bsp and coex
+# add_subdirectory(bt_host)
 add_subdirectory(amebadplus_bsp)
 add_subdirectory(bt_coex)
 

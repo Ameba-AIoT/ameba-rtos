@@ -64,6 +64,7 @@ elseif(CONFIG_AS_INIC_AP)
 			${INICDRV}/spi/inic_spi_host_trx.c
 			${INICCOM}/inic_host_api.c
 			${INICCOM}/inic_host_api_ext.c
+			${INICCOM}/inic_host_api_bt.c
 			${INICCOM}/inic_host_api_basic.c
 		)
 	else()

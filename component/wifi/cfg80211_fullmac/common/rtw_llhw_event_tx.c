@@ -1045,13 +1045,10 @@ int llhw_wifi_driver_is_mp(void)
 
 int llhw_wifi_set_promisc_enable(u32 enable, u8 mode)
 {
-	int ret = 0;
-	u32 param_buf[3];
+	(void) enable;
+	(void) mode;
 
-	param_buf[0] = enable;
-	param_buf[1] = (u32)mode;
-	param_buf[2] = (u32)0xffffffff;
-	llhw_send_event(INIC_API_WIFI_PROMISC_INIT, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
-
-	return ret;
+	/* Only smart customer needs promisc function in Linux.
+	 * So to set this function to null. */
+	return 0;
 }

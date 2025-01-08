@@ -61,7 +61,7 @@
 #define PSM_BIP     0x1003
 #define PSM_OPP     0x1005
 
-#define CONFIG_BT_COEX_DEBUG 1
+#define CONFIG_BT_COEX_DEBUG 0
 
 #if defined(CONFIG_BT_COEX_DEBUG) && CONFIG_BT_COEX_DEBUG
 #include "bt_debug.h"

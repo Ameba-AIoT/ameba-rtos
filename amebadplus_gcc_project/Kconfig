@@ -148,6 +148,8 @@ menu "CONFIG INIC INTF"
 			config SPI_FULLMAC_HOST
 				bool "SPI_FULLMAC_HOST"
                 select CORE_AS_AP_FOR_KM4
+				select FULLMAC_HOST
+
             # config WIFI_SINGLE_CORE_MENU
                 # bool "SINGLE CORE"
                 # select CORE_AS_AP_FOR_KM4
@@ -317,6 +319,8 @@ menu "CONFIG WIFI"
         bool
     config ENABLE_WPS_DISCOVERY
         bool
+	config FULLMAC_HOST
+	    bool
 endmenu
 
 menu "CONFIG BT"

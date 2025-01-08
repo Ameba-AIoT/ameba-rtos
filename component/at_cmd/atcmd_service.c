@@ -57,6 +57,7 @@ log_init_t log_init_table[] = {
 #endif
 #endif  //CONFIG_LWIP_LAYER
 #endif  //CONFIG_WLAN
+	at_fs_init,
 #endif  //CONFIG_MP_SHRINK
 
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -65,13 +66,17 @@ log_init_t log_init_table[] = {
 	at_mp_init,
 #endif
 #endif
+
+#ifndef CONFIG_MP_INCLUDED
+#if defined(CONFIG_BT_COEXIST)
+	at_coex_init,
+#endif
+#endif
 	at_sys_init,
-	at_fs_init,
 };
 
 
 //======================================================
-/* TODO */
 #ifdef CONFIG_ATCMD_MCU_CONTROL
 char global_buf[SMALL_BUF];
 /* Out callback function */

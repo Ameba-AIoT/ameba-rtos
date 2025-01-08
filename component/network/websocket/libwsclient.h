@@ -101,6 +101,9 @@ typedef struct _wsclient_context {
 	uint8_t *receivedData;
 	struct ws_fun_ops fun_ops;
 	rtos_mutex_t queue_mutex;
+	char *client_cert;
+	char *client_key;
+	char *ca_cert;
 } wsclient_context;
 /*******************************************************************/
 
@@ -131,6 +134,7 @@ int wss_tls_handshake(void *tls_in);
 void wss_tls_close(void *tls_in, int *sock);
 int wss_tls_write(void *tls_in, char *request, int request_len);
 int wss_tls_read(void *tls_in, char *buffer, int buf_len);
+int wss_tls_set_cert_and_key(wsclient_context *wsclient, char *client_cert, char *client_key, char *ca_cert);
 /*******************************************************************/
 
 #endif

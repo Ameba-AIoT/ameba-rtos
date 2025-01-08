@@ -11,6 +11,10 @@ set(
     ${PLATFORM_CONFIG}/
 )
 
+if(CONFIG_802154_RADIO_RCP_EXT_RTK)
+	add_subdirectory(rtk_rcp_cfu)
+endif()
+
 set(CSRC)
 
 list(

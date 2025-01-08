@@ -53,6 +53,21 @@ ameba_target_set(src_${d_MCU_PROJECT_NAME}_wpan_platform p_SCOPE interface
         ${c_CMPT_WPAN_DIR}/platform/timer/rtk_802154_timer_sched.c
         ${c_CMPT_WPAN_DIR}/platform/flash/rtk_802154_flash.c
 )
+
+ameba_target_set_if(CONFIG_802154_RADIO_RCP_EXT_RTK src_${d_MCU_PROJECT_NAME}_wpan_platform p_SCOPE interface
+    p_INCLUDES
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu
+    p_SOURCES
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_file_array.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_file_fs.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_fw_array.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_fw_update_process.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_fw_update_sub_process.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_hdlc.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_rcp_config.c
+        ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu/rtk_cfu_uart.c
+)
 endif()
 #------------wpan_platform--------------#
 

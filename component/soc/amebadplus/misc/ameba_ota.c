@@ -13,6 +13,7 @@
 
 #include "os_wrapper.h"
 #include "flash_api.h"
+#include "vfs.h"
 
 u32 IMG_ADDR[OTA_IMGID_MAX][2] = {0}; /* IMG Flash Physical Address use for OTA */
 
@@ -385,13 +386,15 @@ int ota_update_conn_read(ota_context *ctx, u8 *data, int data_len)
 {
 	int bytes_rcvd = -1;
 
-	if (ctx->fd < 0) {
+	if (ctx->fd == -1) {
 		ota_printf(_OTA_INFO_, "[%s], socket is invalid\n", __FUNCTION__);
 		return bytes_rcvd;
 	}
 
 	if (ctx->type == OTA_HTTPS) {
 		bytes_rcvd = mbedtls_ssl_read(&ctx->tls->ssl, data, data_len);
+	}  else if (ctx->type == OTA_VFS) {
+		bytes_rcvd = fread(data, data_len, 1, (FILE *)ctx->fd);
 	} else {
 		bytes_rcvd = read(ctx->fd, data, data_len);
 	}
@@ -413,6 +416,26 @@ int ota_update_http_send_request(ota_context *ctx)
 	ret = ota_update_conn_write(ctx, request, strlen((char *)request));
 	rtos_mem_free(request);
 	return ret;
+}
+
+int ota_update_vfs_send_request(ota_context *ctx, u8 *buf, int buf_size)
+{
+	vfs_file *finfo;
+	int res = 0;
+
+	finfo = (vfs_file *)fopen(ctx->resource, "r");
+	if (!finfo) {
+		ota_printf(_OTA_ERR_, "[%s] File %s not exist.\n", __FUNCTION__, ctx->resource);
+		return -1;
+	}
+
+	res = fread(buf, buf_size, 1, (FILE *)finfo);
+	if (res < 0) {
+		ota_printf(_OTA_ERR_, "VFS read failed.\n");
+	}
+
+	ctx->fd = (int)finfo;
+	return res;
 }
 
 /**
@@ -971,6 +994,12 @@ int ota_update_s1_prepare(ota_context *ctx, u8 *buf, int len)
 			ota_printf(_OTA_ERR_, "[%s] Parse HTTP response failed\n", __FUNCTION__);
 			return -1;
 		}
+	} else if (ctx->type == OTA_VFS) {
+		writelen = ota_update_vfs_send_request(ctx, buf, len);
+		if (writelen < 0) {
+			ota_printf(_OTA_ERR_, "[%s] Send VFS request failed\n", __FUNCTION__);
+			return -1;
+		}
 	}
 
 	/*----------------step2: receive firmware file header---------------------*/
@@ -1017,6 +1046,10 @@ int ota_update_s0_connect_server(ota_context *ctx)
 	struct hostent *server;
 	int fd = -1;
 	int ret = -1;
+
+	if (ctx->type == OTA_VFS) {
+		return 0;
+	}
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -1105,7 +1138,9 @@ update_ota_exit:
 		rtos_mem_free(alloc);
 	}
 
-	if (ctx->fd >= 0) {
+	if ((ctx->type == OTA_VFS) && ((ctx->fd >= 0))) {
+		fclose((FILE *)ctx->fd);
+	} else if (ctx->fd >= 0) {
 		close(ctx->fd);
 	}
 
@@ -1148,8 +1183,13 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 	flash_get_layout_info(IMG_APP_OTA1, &IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1], NULL);
 	flash_get_layout_info(IMG_APP_OTA2, &IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_2], NULL);
 
-	if (!ctx || !host || !resource) {
-		ota_printf(_OTA_ERR_, "%s, ctx || host || resourse can't be null", __func__);
+	if ((type != OTA_VFS) && (!host)) {
+		ota_printf(_OTA_ERR_, "%s, host can't be null", __func__);
+		return -1;
+	}
+
+	if (!ctx || !resource) {
+		ota_printf(_OTA_ERR_, "%s, ctx || resourse can't be null", __func__);
 		return -1;
 	}
 

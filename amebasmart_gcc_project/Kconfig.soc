@@ -104,6 +104,8 @@ menu "CONFIG FUNCTION TEST"
             bool "Flash RW Test"
         config DHRYSTONE_TEST
             bool "Dhrystone Test"
+        config VMIN_TEST
+            bool "Vmin Test"
         config SSL_ROM_TEST
             bool "SSL ROM Test"
         config RTLIB_VERIFY

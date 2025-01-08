@@ -49,6 +49,7 @@ if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
        ${c_CMPT_AT_CMD_DIR}/atcmd_mqtt.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_sockets.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_websocket.c
+       ${c_CMPT_AT_CMD_DIR}/atcmd_coex.c
    )
    ameba_target_sources_if(CONFIG_BT src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
        ${c_CMPT_AT_CMD_DIR}/atcmd_bt_ext.c

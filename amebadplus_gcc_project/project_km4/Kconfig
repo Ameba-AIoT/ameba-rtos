@@ -56,12 +56,6 @@ endmenu
 
 
 comment "----------Application Config----------"
-menu "LWIP Config"
-    config IP_NAT_FOR_KM4
-        bool "NAT REPEATER Enable"
-        default n
-endmenu
-
 menu "802154 Config"
     config 802154_EN_FOR_KM4
         bool "Enable 802154"

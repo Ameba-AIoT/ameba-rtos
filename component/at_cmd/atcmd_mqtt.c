@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* #include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h" */
-
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
 #include "atcmd_service.h"
@@ -34,771 +30,9 @@ static MQTT_RESULT_ENUM mqtt_init_client_buf(MQTTClient *client, Network *networ
 static void mqtt_del_client_buf(MQTTClient *client);
 static void mqtt_message_arrived(MessageData *data, void *param);
 static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz);
-static void mqtt_clent_alive_fail(MQTT_CONTROL_BLOCK *mqttCb);
-static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set *read_fds, u8 *needAtOutpput);
 
 MQTT_AT_HANDLE mqtt_at_handle;
 MQTTPacket_connectData mqtt_default_conn_data = MQTTPacket_connectData_initializer;
-
-/****************************************************************
-Function            mqtt_main
-Brief                   The main function of mqtt AT task.
-****************************************************************/
-void mqtt_main(void *param)
-{
-	int resultNo = 0;
-	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
-	u8 needAtOutpput = 0;
-	fd_set read_fds;
-#if MQTT_EXCEPT_FDS
-	fd_set except_fds;
-#endif
-	struct timeval timeout;
-
-	if (NULL == mqttCb) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Input invalid param\r\n");
-		goto end;
-	}
-
-	while (1) {
-		if (MQTT_TASK_START != mqttCb->taskState) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Should stop now\r\n");
-			break;
-		}
-
-		FD_ZERO(&read_fds);
-#if MQTT_EXCEPT_FDS
-		FD_ZERO(&except_fds);
-#endif
-		timeout.tv_sec = MQTT_SELECT_TIMEOUT;
-		timeout.tv_usec = 0;
-
-		if (0 <= mqttCb->network.my_socket) {
-			FD_SET(mqttCb->network.my_socket, &read_fds);
-#if MQTT_EXCEPT_FDS
-			FD_SET(mqttCb->network.my_socket, &except_fds);
-			resultNo = FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, &except_fds, &timeout);
-			/* The my_socket may be close, then will try reopen in mqtt_clent_data_proc if STATUS set to MQTT_START */
-			if (FD_ISSET(mqttCb->network.my_socket, &except_fds)) {
-				mqttCb->client.mqttstatus = MQTT_START;
-			}
-#else
-			resultNo = FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, NULL, &timeout);
-			if (FD_ISSET(mqttCb->network.my_socket, &read_fds)) {
-				/* Do nothing here. The data will be processed in mqtt_clent_data_proc( ). */
-			}
-#endif
-			/* Select timeout. */
-			else if (0 == resultNo) {
-				if (mqttCb->client.isconnected) {
-					keepalive(&mqttCb->client);
-					/* ping_outstanding++ when keepalive send ping req , ping_outstanding-- if receive ping rsp ;
-					ping_outstandingis >= 2, it means we miss the ping rsp 2*keepalive intervals, maybe the link is error;
-					server will disconnect if not receive ping req in 1.5*keepalive intervals. */
-					if (2 < mqttCb->client.ping_outstanding) {
-						mqtt_clent_alive_fail(mqttCb);
-					}
-				}
-			}
-		}
-		/* Process the received data. */
-		resultNo = mqtt_clent_data_proc(mqttCb, &read_fds, &needAtOutpput);
-		if (1 == needAtOutpput) {
-			if (MQTT_OK == resultNo) {
-				at_printf_indicate("ACK\r\n");
-			} else {
-				at_printf_indicate(ATCMD_ERROR_END_STR, resultNo);
-			}
-		}
-	}
-
-end:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Stop mqtt task\r\n");
-	mqttCb->taskState = MQTT_TASK_NOT_CREATE;
-	mqttCb->taskHandle = NULL;
-	rtos_task_delete(mqttCb->taskHandle);
-}
-
-/****************************************************************
-Function            at_mqttsub
-Brief                   MQTT subscribe. The command is used to subscribe mqtt issue.
-****************************************************************/
-void at_mqttsub(void *arg)
-{
-	const u8 idIndex = 1, topicIndex = 2, qosIndex = 3;
-	s32 i = 0, found = -1, res = 0;
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-	char *argv[MAX_ARGC] = {0};
-	u8  tcpConnId = MQTT_MAX_CLIENT_NUM;
-	u8  qos = MQTT_DEFAULT_QOS;
-	u8  j = 0;
-	MQTT_CONTROL_BLOCK *mqttCb = NULL;
-
-	/* Get the parameters of AT command. */
-	if (!arg) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Usage : at_mqttsub=<tcpconnectid>,<topic>,<qos>");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	i = parse_param_advance(arg, argv);
-	if (3 > i || 4 < i) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Usage : at_mqttsub=<tcpconnectid>,<msgid>,<topic>,<qos>");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	/* link ID. */
-	res = -1;
-	if (1 == strlen(argv[idIndex])
-		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
-		res = argv[idIndex][0] - '0';
-	}
-	if (0 > res || MQTT_MAX_CLIENT_ID_LEN <= res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Invalid link ID");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	tcpConnId = (u8)res;
-
-	resultNo = mqtt_get_handle_cb(tcpConnId, &mqttCb, 0);
-	if (MQTT_OK != resultNo) {
-		resultNo = MQTT_NOT_OPEN_ERROR;
-		goto end;
-	}
-
-	/* topic. */
-	if (0 == strlen(argv[topicIndex]) || MQTT_MAX_TOPIC_LEN < strlen(argv[topicIndex])) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Invalid topic");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	for (j = 0; MAX_MESSAGE_HANDLERS > j; j++) {
-		if (NULL == mqttCb->topic[j]) {
-			if (0 > found) {
-				found = (s32)j;
-			}
-		} else if (0 == strcmp(mqttCb->topic[j], argv[topicIndex])) {
-			found = -2;
-			break;
-		}
-	}
-	if (0 > found) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Can not match.");
-		resultNo = (-2 == found) ? MQTT_ALREADY_SUBSCRIBED_ERROR : MQTT_SUBSCRIPTION_ERROR;
-		goto end;
-	}
-	j = (u8)found;
-	resultNo = mqtt_string_copy(&mqttCb->topic[j], argv[topicIndex], _strlen(argv[topicIndex]));
-	if (MQTT_OK != resultNo) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] mqtt_string_copy failed.");
-		goto end;
-	}
-
-	/* QoS. This is optional, if not including here, it should be QOS2. */
-	if (4 == i) {
-		res = (0 != strlen(argv[qosIndex])) ? atoi(argv[qosIndex]) : -1;
-		if (QOS0 > res || QOS2 < res) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Invalid QoS");
-			resultNo = MQTT_ARGS_ERROR;
-			goto end;
-		}
-		qos = (u8)res;
-	}
-
-	/* Check status. */
-	if (1 != mqttCb->client.isconnected || 0 > mqttCb->network.my_socket) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Not connected now (%d, %d)",
-				 mqttCb->client.isconnected, mqttCb->network.my_socket);
-		resultNo = MQTT_NOT_CONNECTED_ERROR;
-		goto end;
-	}
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Subscribe topic %s", mqttCb->topic[j]);
-
-	TimerInit(&mqttCb->client.cmd_timer);
-	TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
-	res = MQTTSubscribe(&mqttCb->client, mqttCb->topic[j], qos, mqtt_message_arrived);
-	if (0 != res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttsub] Subscribe ERROR");
-		resultNo = MQTT_SUBSCRIPTION_ERROR;
-		goto end;
-	}
-	mqttCb->client.mqttstatus = MQTT_SUBTOPIC;
-
-end:
-	if (MQTT_OK != resultNo) {
-		if (0 <= found && NULL != mqttCb->topic[found]) {
-			rtos_mem_free(mqttCb->topic[found]);
-			mqttCb->topic[found] = NULL;
-		}
-		at_printf(ATCMD_ERROR_END_STR, resultNo);
-	} else {
-		at_printf(ATCMD_OK_END_STR);
-	}
-}
-
-/****************************************************************
-Function            at_mqttunsub
-Brief                   MQTT unsubscribe. The command is used to unsubscribe mqtt issue.
-****************************************************************/
-void at_mqttunsub(void *arg)
-{
-	const u8 idIndex = 1, topicIndex = 2;
-	s32 i = 0, res = 0;
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-	char *argv[MAX_ARGC] = {0};
-	u8 j = 0, matched = 0, tcpConnId = MQTT_MAX_CLIENT_NUM;
-	MQTT_CONTROL_BLOCK *mqttCb = NULL;
-
-	/* Get the parameters of AT command. */
-	if (!arg) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Usage : at_mqttunsub=<tcpconnectid>,<topic>");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	i = parse_param_advance(arg, argv);
-	if (3 != i) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Usage : at_mqttunsub=<tcpconnectid>,<topic>");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	/* link ID. */
-	res = -1;
-	if (1 == strlen(argv[idIndex])
-		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
-		res = argv[idIndex][0] - '0';
-	}
-	if (0 > res || MQTT_MAX_CLIENT_ID_LEN <= res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Invalid link ID");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	tcpConnId = (u8)res;
-
-	resultNo = mqtt_get_handle_cb(tcpConnId, &mqttCb, 0);
-	if (MQTT_OK != resultNo) {
-		resultNo = MQTT_NOT_OPEN_ERROR;
-		goto end;
-	}
-
-	/* topic. */
-	if (0 == strlen(argv[topicIndex]) || MQTT_MAX_TOPIC_LEN < strlen(argv[topicIndex])) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Invalid topic");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	for (j = 0; MAX_MESSAGE_HANDLERS > j; j++) {
-		if (NULL != mqttCb->topic[j] && 0 == strcmp(mqttCb->topic[j], argv[topicIndex])) {
-			matched = 1;
-			break;
-		}
-	}
-	if (0 == matched) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Invalid topic");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	/* Check status. */
-	if (1 != mqttCb->client.isconnected || 0 > mqttCb->network.my_socket) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Invalid status (%d, %d)",
-				 mqttCb->client.isconnected, mqttCb->network.my_socket);
-		resultNo = MQTT_UNSUBSCRIPTION_ERROR;
-		goto end;
-	}
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Unsubscribe topic %s", mqttCb->topic[j]);
-
-	TimerInit(&mqttCb->client.cmd_timer);
-	TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
-	res = MQTTUnsubscribe(&mqttCb->client, mqttCb->topic[j]);
-	if (0 != res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttunsub] Unsubscribe ERROR");
-		resultNo = MQTT_UNSUBSCRIPTION_ERROR;
-		goto end;
-	}
-
-end:
-	if (1 == matched && NULL != mqttCb->topic[j]) {
-		rtos_mem_free(mqttCb->topic[j]);
-		mqttCb->topic[j] = NULL;
-		mqttCb->client.messageHandlers[j].topicFilter = 0;
-		mqttCb->client.messageHandlers[j].fp = NULL;
-	}
-	if (MQTT_OK != resultNo) {
-		at_printf(ATCMD_ERROR_END_STR, resultNo);
-	} else {
-		at_printf(ATCMD_OK_END_STR);
-	}
-}
-
-/****************************************************************
-Function            at_mqttpub
-Brief                   MQTT publish. The command is used to publish mqtt issue.
-****************************************************************/
-void at_mqttpub(void *arg)
-{
-	const u8 idIndex = 1, msgidIndex = 2, qosIndex = 3, retainIndex = 4, topicIndex = 5, msgIndex = 6;
-	s32 i = 0, len = 0, res = 0;
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-	char *argv[MAX_ARGC] = {0};
-	u8 tcpConnId = MQTT_MAX_CLIENT_NUM;
-	u16 msgId = 0;
-	MQTT_CONTROL_BLOCK *mqttCb = NULL;
-
-	/* Get the parameters of AT command. */
-	if (!arg) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Usage : at_mqttpub=<tcpConnid>,<msgid>[,<qos>,<retain>],<topic>,<msg>");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	i = parse_param_advance(arg, argv);
-	if (7 != i) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Usage : at_mqttpub=<tcpConnid>,<msgid>[,<qos>,<retain>],<topic>,<msg>");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	/* link ID. */
-	res = -1;
-	if (1 == strlen(argv[idIndex])
-		&& '0' <= argv[idIndex][0] && '0' + MQTT_MAX_CLIENT_NUM > argv[idIndex][0]) {
-		res = argv[idIndex][0] - '0';
-	}
-	if (0 > res || MQTT_MAX_CLIENT_ID_LEN <= res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid link ID");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	tcpConnId = (u8)res;
-
-	resultNo = mqtt_get_handle_cb(tcpConnId, &mqttCb, 0);
-	if (MQTT_OK != resultNo) {
-		resultNo = MQTT_NOT_OPEN_ERROR;
-		goto end;
-	}
-
-	/* msg ID. */
-	res = (0 != strlen(argv[msgidIndex])) ? atoi(argv[msgidIndex]) : -1;
-	if (0 >= res || 0xFFFF <= res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid msg ID");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	msgId = (u16)res;
-
-	/* QoS. */
-	mqttCb->pubData.qos = MQTT_DEFAULT_QOS;
-	len = strlen(argv[qosIndex]);
-	if (0 != len) {
-		res = atoi(argv[qosIndex]);
-		if (QOS0 > res || QOS2 < res) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid QoS");
-			resultNo = MQTT_ARGS_ERROR;
-			goto end;
-		}
-		mqttCb->pubData.qos = (u8)res;
-	}
-
-	/* retain. */
-	mqttCb->pubData.retain = MQTT_DEFAULT_RETAIN;
-	len = strlen(argv[retainIndex]);
-	if (0 != len) {
-		res = atoi(argv[retainIndex]);
-		if (0 > res || 1 < res) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid retain");
-			resultNo = MQTT_ARGS_ERROR;
-			goto end;
-		}
-		mqttCb->pubData.retain = (u8)res;
-	}
-
-	/* topic. */
-	len = strlen(argv[topicIndex]);
-	if (0 == len || MQTT_MAX_TOPIC_LEN < len) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid topic");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[topicIndex], len);
-	if (MQTT_OK != resultNo) {
-		goto end;
-	}
-
-	/* msg. */
-	len = strlen(argv[msgIndex]);
-	if (0 == len && MQTT_MAX_MSG_LEN < len) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid msg");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-	resultNo = mqtt_string_copy(&mqttCb->pubData.msg, argv[msgIndex], len);
-	if (MQTT_OK != resultNo) {
-		goto end;
-	}
-
-	/* send publish. */
-	if (NULL == mqttCb->pubData.msg || NULL == mqttCb->pubData.topic) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Not prepared");
-		resultNo = MQTT_COMMON_ERROR;
-		goto end;
-	}
-	if (1 != mqttCb->client.isconnected) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Invalid status (%d)", mqttCb->client.isconnected);
-		resultNo = MQTT_NOT_CONNECTED_ERROR;
-		goto end;
-	}
-	MQTTMessage mqttMsg = {.qos = mqttCb->pubData.qos,
-						   .retained = mqttCb->pubData.retain,
-						   .dup = 0,
-						   .id = msgId,
-						   .payload = mqttCb->pubData.msg,
-						   .payloadlen = strlen(mqttCb->pubData.msg)
-						  };
-	res = MQTTPublish(&mqttCb->client, mqttCb->pubData.topic, &mqttMsg);
-	if (0 != res) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[at_mqttpub] Publish ERROR");
-		resultNo = MQTT_PUBLISH_ERROR;
-		goto end;
-	}
-
-end:
-	/* After sent, clean the msg and topic. */
-	if (NULL != mqttCb) {
-		rtos_mem_free(mqttCb->pubData.topic);
-		mqttCb->pubData.topic = NULL;
-		rtos_mem_free(mqttCb->pubData.msg);
-		mqttCb->pubData.msg = NULL;
-	}
-	if (MQTT_OK != resultNo) {
-		at_printf(ATCMD_ERROR_END_STR, resultNo);
-	} else {
-		at_printf(ATCMD_OK_END_STR);
-	}
-}
-
-/* Get the Client Control block for tcpConnId.
-If the needInit == 1, we should initialise this Control block no matter it was initialised already. */
-static MQTT_RESULT_ENUM mqtt_get_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK **mqttCb, u8 needInit)
-{
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-	MQTT_AT_HANDLE *mqttAtHandle = &mqtt_at_handle;
-
-	if (NULL == mqttCb || MQTT_MAX_CLIENT_NUM <= tcpConnId) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_get_handle_cb] Invalid parameters\r\n");
-		resultNo = MQTT_COMMON_ERROR;
-		goto end;
-	}
-
-	/* Release older one. */
-	if (1 == needInit && NULL != mqttAtHandle->mqttCb[tcpConnId]) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_get_handle_cb] Cover the older information for %d\r\n", tcpConnId);
-		mqtt_del_handle_cb(&mqttAtHandle->mqttCb[tcpConnId]);
-	}
-
-	if (NULL == mqttAtHandle->mqttCb[tcpConnId]) {
-		/* Need to initialised. */
-		if (1 == needInit) {
-			resultNo = mqtt_init_handle_cb(mqttCb);
-			if (MQTT_OK != resultNo) {
-				goto end;
-			}
-			mqttAtHandle->mqttCb[tcpConnId] = *mqttCb;
-		}
-		/* If this is not the first time used. */
-		else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_get_handle_cb] NULL param\r\n");
-			resultNo = MQTT_MEMORY_ERROR;
-			*mqttCb = NULL;
-		}
-	}
-	/* Get it directly. */
-	else {
-		*mqttCb = mqttAtHandle->mqttCb[tcpConnId];
-	}
-
-end:
-	return resultNo;
-}
-
-/* Remove the Client Control block, free the malloced memories. */
-static void mqtt_del_handle_cb(MQTT_CONTROL_BLOCK **mqttCb)
-{
-	s8 i = 0;
-	MQTT_CONTROL_BLOCK *pMqttCb = NULL;
-
-	if (NULL == mqttCb || NULL == *mqttCb) {
-		goto end;
-	}
-	pMqttCb = *mqttCb;
-
-	mqtt_del_client_buf(&pMqttCb->client);
-
-	/* Delete memory malloced. */
-	rtos_mem_free(pMqttCb->connectData.will.message.cstring);
-	pMqttCb->connectData.will.message.cstring = NULL;
-	rtos_mem_free(pMqttCb->connectData.will.topicName.cstring);
-	pMqttCb->connectData.will.topicName.cstring = NULL;
-
-	/* Connection information and open information. */
-	rtos_mem_free(pMqttCb->clientId);
-	rtos_mem_free(pMqttCb->userName);
-	rtos_mem_free(pMqttCb->password);
-	rtos_mem_free(pMqttCb->host);
-	for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-		rtos_mem_free(pMqttCb->topic[i]);
-	}
-	rtos_mem_free(pMqttCb->pubData.topic);
-	rtos_mem_free(pMqttCb->pubData.msg);
-
-	if (pMqttCb->network.use_ssl) {
-		rtos_mem_free(pMqttCb->network.rootCA);
-		rtos_mem_free(pMqttCb->network.clientCA);
-		rtos_mem_free(pMqttCb->network.private_key);
-		pMqttCb->network.use_ssl = 0;
-	}
-
-	rtos_mem_free(pMqttCb);
-	*mqttCb = NULL;
-
-end:
-	return;
-}
-
-static void mqtt_set_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK *mqttCb)
-{
-	if (MQTT_MAX_CLIENT_NUM > tcpConnId) {
-		mqtt_at_handle.mqttCb[tcpConnId] = mqttCb;
-	}
-}
-
-static MQTT_RESULT_ENUM mqtt_init_handle_cb(MQTT_CONTROL_BLOCK **pMqttCb)
-{
-	MQTT_CONTROL_BLOCK *mqttCb = NULL;
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-
-	/* Malloc memory for this block. */
-	mqttCb = (MQTT_CONTROL_BLOCK *)rtos_mem_malloc(sizeof(MQTT_CONTROL_BLOCK));
-	if (NULL == mqttCb) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_init_handle_cb] mqttCb malloc failed\r\n");
-		resultNo = MQTT_MEMORY_ERROR;
-		goto end;
-	}
-
-	/* Initialise. */
-	memset(mqttCb, 0, sizeof(MQTT_CONTROL_BLOCK));
-	memcpy(&mqttCb->connectData, &mqtt_default_conn_data, sizeof(MQTTPacket_connectData));
-	mqttCb->port = MQTT_DEFAULT_PORT;
-	mqttCb->pubData.qos = MQTT_DEFAULT_QOS;
-	mqttCb->pubData.retain = MQTT_DEFAULT_RETAIN;
-
-	NetworkInit(&mqttCb->network);
-	resultNo = mqtt_init_client_buf(&mqttCb->client, &mqttCb->network, MQTT_CMD_PKT_TIMEOUT_MS);
-	if (MQTT_OK != resultNo) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_init_handle_cb] Init client failed\r\n");
-		goto end;
-	}
-	mqttCb->client.cb = (void *)mqttCb;
-
-end:
-	if (MQTT_OK != resultNo) {
-		rtos_mem_free(mqttCb);
-		*pMqttCb = NULL;
-	} else {
-		*pMqttCb = mqttCb;
-	}
-	return resultNo;
-}
-
-/* Similar with MQTTClientInit( ), but the buf and readbuf can be malloced at first. */
-static MQTT_RESULT_ENUM mqtt_init_client_buf(MQTTClient *client, Network *network, u32 timeout)
-{
-	u32 i = 0;
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-
-	client->ipstack = network;
-
-	for (; MAX_MESSAGE_HANDLERS > i; i++) {
-		client->messageHandlers[i].topicFilter = 0;
-	}
-	client->defaultMessageHandler = mqtt_message_arrived;
-	client->command_timeout_ms = timeout;
-
-	/*  Create default buf, will be realloced when get larger msg && recover after being processed. */
-	client->buf = (u8 *)rtos_mem_malloc(sizeof(u8) * MQTT_DEFAULT_SENDBUF_SIZE);
-	if (NULL == client->buf) {
-		resultNo = MQTT_MEMORY_ERROR;
-		goto end;
-	}
-	client->buf_size = MQTT_DEFAULT_SENDBUF_SIZE;
-	client->readbuf = (u8 *)rtos_mem_malloc(sizeof(u8) * MQTT_DEFAULT_SENDBUF_SIZE);
-	if (NULL == client->readbuf) {
-		resultNo = MQTT_MEMORY_ERROR;
-		goto end;
-	}
-	client->readbuf_size = MQTT_DEFAULT_SENDBUF_SIZE;
-
-	client->isconnected = 0;
-	client->ping_outstanding = 0;
-	client->next_packetid = 1;
-	client->mqttstatus = MQTT_START;
-	client->ipstack->m2m_rxevent = 0;
-	TimerInit(&client->cmd_timer);
-	TimerInit(&client->ping_timer);
-
-end:
-	if (MQTT_OK != resultNo) {
-		rtos_mem_free(client->buf);
-		client->buf = NULL;
-		client->buf_size = 0;
-		rtos_mem_free(client->readbuf);
-		client->readbuf = NULL;
-		client->readbuf_size = 0;
-	}
-	return resultNo;
-}
-
-/* Corresponding to mqtt_init_client_buf( ). */
-static void mqtt_del_client_buf(MQTTClient *client)
-{
-	if (NULL != client) {
-		rtos_mem_free(client->buf);
-		client->buf = NULL;
-		client->buf_size = 0;
-		rtos_mem_free(client->readbuf);
-		client->readbuf = NULL;
-		client->readbuf_size = 0;
-		memset(client, 0, sizeof(MQTTClient));
-	}
-}
-
-static void mqtt_message_arrived(MessageData *data, void *param)
-{
-	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
-	char *uns_buff = NULL;
-	unsigned int len_out = 0, data_shift = 0, total_data_len = 0;
-	char num_buf[8];
-	unsigned short id = 0;
-	u8 tcpconnectid = 0;
-	char *topicdest = NULL, *topicsrc = NULL;
-	int topiclen = 0;
-
-	if (mqttCb == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_message_arrived] Nothing to do\r\n");
-		goto end;
-	}
-
-	id = data->message->id;
-	tcpconnectid = mqttCb->tcpConnectId;
-
-	if (data->topicName->cstring != NULL) {
-		topicsrc = data->topicName->cstring;
-		topiclen = strlen(topicsrc);
-	} else {
-		topicsrc = data->topicName->lenstring.data;
-		topiclen = data->topicName->lenstring.len;
-	}
-
-	topicdest = (char *)rtos_mem_zmalloc(topiclen + 1);
-	if (topicdest == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_message_arrived] Memory Failure for topicdest\r\n");
-		goto end;
-	}
-	strncpy(topicdest, topicsrc, topiclen);
-
-	data_shift = strlen("%s:%d,%d,%s,") + strlen("+MQTTSUBRECV") - 2	+ sprintf(num_buf, "%d", tcpconnectid) - 2 + sprintf(num_buf, "%d",
-				 id) - 2 + strlen(topicdest) - 2;
-	len_out = data_shift + data->message->payloadlen + 1;
-	total_data_len = strlen(",%d,%d,%d,%d") + sprintf(num_buf, "%d", data->message->payloadlen) - 2 + sprintf(num_buf, "%d", data->message->qos) - 2
-					 + sprintf(num_buf, "%d", data->message->dup) - 2 + sprintf(num_buf, "%d", data->message->retained) - 2 + len_out;
-
-	uns_buff = (char *)rtos_mem_zmalloc(total_data_len);
-	if (uns_buff == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_message_arrived] Memory Failure for uns_buff\r\n");
-		goto end;
-	}
-
-	DiagSnPrintf(uns_buff, len_out, "%s:%d,%d,%s,", "+MQTTSUBRECV", tcpconnectid, id, topicdest);
-	memcpy((uns_buff + data_shift), (char *)data->message->payload, (int16_t)(data->message->payloadlen));
-	DiagSnPrintf(uns_buff + strlen(uns_buff), total_data_len - strlen(uns_buff), ",%d,%d,%d,%d", data->message->payloadlen, data->message->qos, data->message->dup,
-				 data->message->retained);
-
-	at_printf_indicate("%s\r\n", uns_buff);
-
-end:
-	rtos_mem_free(topicdest);
-	rtos_mem_free(uns_buff);
-}
-
-static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz)
-{
-	MQTT_RESULT_ENUM resultNo = MQTT_OK;
-
-	if (NULL == src) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_string_copy] ARGS error\r\n");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
-	}
-
-	/* Delete the elder string. */
-	rtos_mem_free(*dest);
-	/* sz + 1, the 1 is used for '\0'. */
-	*dest = (char *)rtos_mem_malloc(sizeof(char) * (sz + 1));
-	if (NULL == *dest) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_string_copy] Memory failure\r\n");
-		resultNo = MQTT_MEMORY_ERROR;
-		goto end;
-	}
-	strcpy(*dest, src);
-	(*dest)[sz] = '\0';
-
-end:
-	if (MQTT_OK != resultNo) {
-		rtos_mem_free(*dest);
-		*dest = NULL;
-	}
-	return resultNo;
-}
-
-static void mqtt_clent_alive_fail(MQTT_CONTROL_BLOCK *mqttCb)
-{
-	int i = 0;
-
-	if (NULL == mqttCb) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_alive_fail] Invalid param\r\n");
-		return;
-	}
-
-	if (1 == mqttCb->client.isconnected) {
-		mqttCb->client.isconnected = 0;
-		mqttCb->offline = 1;
-		for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-			rtos_mem_free(mqttCb->topic[i]);
-			mqttCb->topic[i] = NULL;
-		}
-		if (0 == mqttCb->initialConnect) {
-			at_printf("\r\n%sOK\r\n", "+MQTTUNREACH:");
-		} else {
-			/* Do not use at_printf here. */
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_alive_fail] Connect failed\r\n");
-		}
-	}
-	mqttCb->client.ping_outstanding = 0;
-	mqttCb->client.next_packetid = 1;
-
-	if (mqttCb->networkConnect) {
-		if (NULL != mqttCb->network.disconnect) {
-			mqttCb->network.disconnect(&mqttCb->network);
-		}
-		mqttCb->networkConnect = 0;
-	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_alive_fail] Set to MQTT_START\r\n");
-	mqttCb->client.mqttstatus = MQTT_START;
-}
 
 /* Process the received data.
  The res has different meaning with resultNo.
@@ -813,7 +47,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 	if (NULL == mqttCb || NULL == read_fds) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Invalid params\r\n");
 		*needAtOutpput = 1;
-		resultNo = MQTT_COMMON_ERROR;
+		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
@@ -822,53 +56,15 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 	mqttRxEvent = (0 <= mqttCb->client.ipstack->my_socket) ? FD_ISSET(mqttCb->client.ipstack->my_socket, read_fds) : 0;
 
 	if (MQTT_START == mqttStatus) {
-		/* Once disconnected, set offline = 1, and release each topic. */
 		if (mqttCb->client.isconnected) {
 			mqttCb->client.isconnected = 0;
-			mqttCb->offline = 1;
-			for (int i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-				rtos_mem_free(mqttCb->topic[i]);
-				mqttCb->topic[i] = NULL;
-			}
 			if (0 == mqttCb->initialConnect) {
-				at_printf_indicate("%sOK\r\n", "+MQTTUNREACH:");
+				at_printf_indicate("+MQTTUNREACH:OK\r\n");
 			} else {
 				/* Do not use at_printf here. */
 				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Lost connection\r\n");
 			}
 		}
-		/* Try re-connect per second, except when initial-connect. */
-#if 0
-		if (0 == mqttCb->initialConnect && 1 == mqttCb->offline && NULL != mqttCb->host && NULL != mqttCb->clientId) {
-			rtos_time_delay_ms(1000);
-			if (wifi_is_connected_to_ap() == RTW_SUCCESS) {
-				if (0 >= mqttCb->network.my_socket && 1 == mqttCb->networkConnect && NULL != mqttCb->network.disconnect) {
-					mqttCb->network.disconnect(&mqttCb->network);
-					NetworkInit(&mqttCb->network);
-					mqttCb->networkConnect = 0;
-				}
-				res = NetworkConnect(&mqttCb->network, mqttCb->host, mqttCb->port);
-				if (0 != res) {
-					// RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Reconnect failed\r\n");
-					resultNo = MQTT_CONNECTION_ERROR;
-					goto end;
-				}
-				mqttCb->networkConnect = 1;
-				TimerInit(&mqttCb->client.cmd_timer);
-				TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
-				res = MQTTConnect(&mqttCb->client, &mqttCb->connectData);
-				if (0 != res) {
-					// RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Reconnect MQTT failed\r\n");
-					resultNo = MQTT_CONNECTION_ERROR;
-					goto end;
-				}
-				mqttCb->client.mqttstatus = MQTT_CONNECT;
-				mqttCb->offline = 0;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Reconnect the network OK\r\n");
-				at_printf_indicate("\r\n%sOK\r\n", "+MQTTREACH:");
-			}
-		}
-#endif
 		goto end;
 	}
 
@@ -892,6 +88,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			if (1 == tmp) {
 				res = connack_rc;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT connected OK\r\n");
+				mqttCb->client.mqttstatus = MQTT_RUNNING;
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT can not connect\r\n");
 				res = FAILURE;
@@ -905,13 +102,6 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 		}
 		if (FAILURE == res) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT connected ERROR (%d)\r\n", mqttCb->client.isconnected);
-			if (1 == mqttCb->client.isconnected) {
-				res = MQTTDisconnect(&mqttCb->client);
-				if (0 != res) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Disconnect ERROR\r\n");
-				}
-				mqttCb->client.isconnected = 0;
-			}
 			mqttCb->client.mqttstatus = MQTT_START;
 		}
 		break;
@@ -930,8 +120,8 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			}
 			if (0x80 != res) {
 				for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-					if (NULL != mqttCb->topic[i] && mqttCb->client.messageHandlers[i].topicFilter != mqttCb->topic[i]) {
-						mqttCb->client.messageHandlers[i].topicFilter = mqttCb->topic[i];
+					if (NULL != mqttCb->subData[i].topic && mqttCb->client.messageHandlers[i].topicFilter != mqttCb->subData[i].topic) {
+						mqttCb->client.messageHandlers[i].topicFilter = mqttCb->subData[i].topic;
 						mqttCb->client.messageHandlers[i].fp = mqtt_message_arrived;
 					}
 				}
@@ -950,7 +140,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			res = FAILURE;
 		}
 		if (FAILURE == res) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] MQTT subscribe ERROR\r\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_clent_data_proc] MQTT subscribe ERROR\r\n");
 			mqttCb->client.mqttstatus = MQTT_START;
 		}
 		break;
@@ -974,8 +164,8 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 				}
 				if (0x80 != res) {
 					for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
-						if (NULL != mqttCb->topic[i] && mqttCb->client.messageHandlers[i].topicFilter != mqttCb->topic[i]) {
-							mqttCb->client.messageHandlers[i].topicFilter = mqttCb->topic[i];
+						if (NULL != mqttCb->subData[i].topic && mqttCb->client.messageHandlers[i].topicFilter != mqttCb->subData[i].topic) {
+							mqttCb->client.messageHandlers[i].topicFilter = mqttCb->subData[i].topic;
 							mqttCb->client.messageHandlers[i].fp = mqtt_message_arrived;
 						}
 					}
@@ -991,7 +181,7 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 				u8 dup = 0, type = 0;
 				tmp = MQTTDeserialize_ack(&type, &dup, &mypacketid, mqttCb->client.readbuf, mqttCb->client.readbuf_size);
 				if (1 != tmp) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Deserialize_ack failed\r\n");
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_clent_data_proc] Deserialize_ack failed\r\n");
 					res = FAILURE;
 					resultNo = MQTT_PUBLISH_ERROR;
 				}
@@ -999,17 +189,10 @@ static MQTT_RESULT_ENUM mqtt_clent_data_proc(MQTT_CONTROL_BLOCK *mqttCb, fd_set 
 			}
 			break;
 
-			case UNSUBACK: {
-				u8 i = 0;
+			case UNSUBACK:
 				RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_clent_data_proc] Unsubscribe OK\r\n");
-				for (; MAX_MESSAGE_HANDLERS > i && NULL == mqttCb->topic[i]; i++) {
-					;
-				}
-				/* If there is(are) any topic(s) remained, stay in MQTT_RUNNING. */
-				mqttCb->client.mqttstatus = (MAX_MESSAGE_HANDLERS == i) ? MQTT_CONNECT : MQTT_RUNNING;
 				*needAtOutpput = 1;
-			}
-			break;
+				break;
 
 			case PUBLISH: {
 				MQTTString topicName;
@@ -1120,13 +303,902 @@ end:
 	return resultNo;
 }
 
+/****************************************************************
+Function            mqtt_main
+Brief                   The main function of mqtt AT task.
+****************************************************************/
+void mqtt_main(void *param)
+{
+	int resultNo = 0;
+	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
+	u8 needAtOutpput = 0;
+	fd_set read_fds;
+	fd_set except_fds;
+	struct timeval timeout;
+
+	if (NULL == mqttCb) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Input invalid param\r\n");
+		goto end;
+	}
+
+	while (1) {
+		if (MQTT_TASK_START != mqttCb->taskState) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Should stop now\r\n");
+			break;
+		}
+
+		FD_ZERO(&read_fds);
+		FD_ZERO(&except_fds);
+		timeout.tv_sec = MQTT_SELECT_TIMEOUT;
+		timeout.tv_usec = 0;
+
+		if (0 <= mqttCb->network.my_socket) {
+			FD_SET(mqttCb->network.my_socket, &read_fds);
+			FD_SET(mqttCb->network.my_socket, &except_fds);
+			resultNo = FreeRTOS_Select(mqttCb->network.my_socket + 1, &read_fds, NULL, &except_fds, &timeout);
+			/* The my_socket may be close, then will try reopen in mqtt_clent_data_proc if STATUS set to MQTT_START */
+			if (FD_ISSET(mqttCb->network.my_socket, &except_fds)) {
+				mqttCb->client.mqttstatus = MQTT_START;
+			} else if (0 == resultNo) { /* Select timeout. */
+				if (mqttCb->client.isconnected) {
+					keepalive(&mqttCb->client);
+				}
+			}
+		}
+		/* Process the received data. */
+		resultNo = mqtt_clent_data_proc(mqttCb, &read_fds, &needAtOutpput);
+		if (1 == needAtOutpput) {
+			if (MQTT_OK == resultNo) {
+				at_printf_indicate("ACK\r\n");
+			} else {
+				at_printf_indicate(ATCMD_ERROR_END_STR, resultNo);
+			}
+		}
+	}
+
+end:
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] Stop mqtt task\r\n");
+	mqttCb->taskState = MQTT_TASK_NOT_CREATE;
+	mqttCb->taskHandle = NULL;
+	rtos_task_delete(mqttCb->taskHandle);
+}
+
+/* Get the Client Control block for tcpConnId.
+If the needInit == 1, we should initialise this Control block no matter it was initialised already. */
+static MQTT_RESULT_ENUM mqtt_get_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK **mqttCb, u8 needInit)
+{
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_AT_HANDLE *mqttAtHandle = &mqtt_at_handle;
+
+	if (NULL == mqttCb || MQTT_MAX_CLIENT_NUM <= tcpConnId) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_get_handle_cb] Invalid parameters\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* Release older one. */
+	if (1 == needInit && NULL != mqttAtHandle->mqttCb[tcpConnId]) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_get_handle_cb] Cover the older information for %d\r\n", tcpConnId);
+		mqtt_del_handle_cb(&mqttAtHandle->mqttCb[tcpConnId]);
+	}
+
+	if (NULL == mqttAtHandle->mqttCb[tcpConnId]) {
+		/* Need to initialized. */
+		if (1 == needInit) {
+			resultNo = mqtt_init_handle_cb(mqttCb);
+			if (MQTT_OK != resultNo) {
+				goto end;
+			}
+			mqttAtHandle->mqttCb[tcpConnId] = *mqttCb;
+		}
+		/* If this is not the first time used. */
+		else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_get_handle_cb] NULL param\r\n");
+			resultNo = MQTT_MALLOC_FAILED;
+			*mqttCb = NULL;
+		}
+	}
+	/* Get it directly. */
+	else {
+		*mqttCb = mqttAtHandle->mqttCb[tcpConnId];
+	}
+
+end:
+	return resultNo;
+}
+
+/* Remove the Client Control block, free the malloced memories. */
+static void mqtt_del_handle_cb(MQTT_CONTROL_BLOCK **mqttCb)
+{
+	s8 i = 0;
+	MQTT_CONTROL_BLOCK *pMqttCb = NULL;
+
+	if (NULL == mqttCb || NULL == *mqttCb) {
+		goto end;
+	}
+	pMqttCb = *mqttCb;
+
+	mqtt_del_client_buf(&pMqttCb->client);
+
+	/* Delete memory malloced. */
+	rtos_mem_free(pMqttCb->connectData.will.message.cstring);
+	pMqttCb->connectData.will.message.cstring = NULL;
+	rtos_mem_free(pMqttCb->connectData.will.topicName.cstring);
+	pMqttCb->connectData.will.topicName.cstring = NULL;
+
+	/* Connection information and open information. */
+	rtos_mem_free(pMqttCb->clientId);
+	rtos_mem_free(pMqttCb->userName);
+	rtos_mem_free(pMqttCb->password);
+	rtos_mem_free(pMqttCb->host);
+	for (i = 0; MAX_MESSAGE_HANDLERS > i; i++) {
+		rtos_mem_free(pMqttCb->subData[i].topic);
+	}
+	rtos_mem_free(pMqttCb->pubData.topic);
+	rtos_mem_free(pMqttCb->pubData.msg);
+
+	if (pMqttCb->network.use_ssl) {
+		rtos_mem_free(pMqttCb->network.rootCA);
+		rtos_mem_free(pMqttCb->network.clientCA);
+		rtos_mem_free(pMqttCb->network.private_key);
+		pMqttCb->network.use_ssl = 0;
+	}
+
+	rtos_mem_free(pMqttCb);
+	*mqttCb = NULL;
+
+end:
+	return;
+}
+
+static void mqtt_set_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK *mqttCb)
+{
+	if (MQTT_MAX_CLIENT_NUM > tcpConnId) {
+		mqtt_at_handle.mqttCb[tcpConnId] = mqttCb;
+	}
+}
+
+static MQTT_RESULT_ENUM mqtt_init_handle_cb(MQTT_CONTROL_BLOCK **pMqttCb)
+{
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+
+	/* Malloc memory for this block. */
+	mqttCb = (MQTT_CONTROL_BLOCK *)rtos_mem_malloc(sizeof(MQTT_CONTROL_BLOCK));
+	if (NULL == mqttCb) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_init_handle_cb] mqttCb malloc failed\r\n");
+		resultNo = MQTT_MALLOC_FAILED;
+		goto end;
+	}
+
+	/* Initialise. */
+	memset(mqttCb, 0, sizeof(MQTT_CONTROL_BLOCK));
+	memcpy(&mqttCb->connectData, &mqtt_default_conn_data, sizeof(MQTTPacket_connectData));
+	mqttCb->port = MQTT_DEFAULT_PORT;
+	mqttCb->pubData.qos = MQTT_DEFAULT_QOS;
+	mqttCb->pubData.retain = MQTT_DEFAULT_RETAIN;
+
+	NetworkInit(&mqttCb->network);
+	resultNo = mqtt_init_client_buf(&mqttCb->client, &mqttCb->network, MQTT_CMD_PKT_TIMEOUT_MS);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_init_handle_cb] Init client failed\r\n");
+		goto end;
+	}
+	mqttCb->client.cb = (void *)mqttCb;
+
+end:
+	if (MQTT_OK != resultNo) {
+		rtos_mem_free(mqttCb);
+		*pMqttCb = NULL;
+	} else {
+		*pMqttCb = mqttCb;
+	}
+	return resultNo;
+}
+
+/* Similar with MQTTClientInit( ), but the buf and readbuf can be malloced at first. */
+static MQTT_RESULT_ENUM mqtt_init_client_buf(MQTTClient *client, Network *network, u32 timeout)
+{
+	u32 i = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+
+	client->ipstack = network;
+
+	for (; MAX_MESSAGE_HANDLERS > i; i++) {
+		client->messageHandlers[i].topicFilter = 0;
+	}
+	client->defaultMessageHandler = mqtt_message_arrived;
+	client->command_timeout_ms = timeout;
+
+	/*  Create default buf, will be realloced when get larger msg && recover after being processed. */
+	client->buf = (u8 *)rtos_mem_malloc(sizeof(u8) * MQTT_DEFAULT_SENDBUF_SIZE);
+	if (NULL == client->buf) {
+		resultNo = MQTT_MALLOC_FAILED;
+		goto end;
+	}
+	client->buf_size = MQTT_DEFAULT_SENDBUF_SIZE;
+	client->readbuf = (u8 *)rtos_mem_malloc(sizeof(u8) * MQTT_DEFAULT_SENDBUF_SIZE);
+	if (NULL == client->readbuf) {
+		resultNo = MQTT_MALLOC_FAILED;
+		goto end;
+	}
+	client->readbuf_size = MQTT_DEFAULT_SENDBUF_SIZE;
+
+	client->isconnected = 0;
+	client->ping_outstanding = 0;
+	client->next_packetid = 1;
+	client->mqttstatus = MQTT_START;
+	client->ipstack->m2m_rxevent = 0;
+	TimerInit(&client->cmd_timer);
+	TimerInit(&client->ping_timer);
+
+end:
+	if (MQTT_OK != resultNo) {
+		rtos_mem_free(client->buf);
+		client->buf = NULL;
+		client->buf_size = 0;
+		rtos_mem_free(client->readbuf);
+		client->readbuf = NULL;
+		client->readbuf_size = 0;
+	}
+	return resultNo;
+}
+
+/* Corresponding to mqtt_init_client_buf( ). */
+static void mqtt_del_client_buf(MQTTClient *client)
+{
+	if (NULL != client) {
+		rtos_mem_free(client->buf);
+		client->buf = NULL;
+		client->buf_size = 0;
+		rtos_mem_free(client->readbuf);
+		client->readbuf = NULL;
+		client->readbuf_size = 0;
+		memset(client, 0, sizeof(MQTTClient));
+	}
+}
+
+static void mqtt_message_arrived(MessageData *data, void *param)
+{
+	MQTT_CONTROL_BLOCK *mqttCb = (MQTT_CONTROL_BLOCK *)param;
+	char *uns_buff = NULL;
+	unsigned int len_out = 0, data_shift = 0, total_data_len = 0;
+	char num_buf[8];
+	unsigned short id = 0;
+	u8 tcpconnectid = 0;
+	char *topicdest = NULL, *topicsrc = NULL;
+	int topiclen = 0;
+
+	if (mqttCb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_message_arrived] Nothing to do\r\n");
+		goto end;
+	}
+
+	id = data->message->id;
+	tcpconnectid = mqttCb->tcpConnectId;
+
+	if (data->topicName->cstring != NULL) {
+		topicsrc = data->topicName->cstring;
+		topiclen = strlen(topicsrc);
+	} else {
+		topicsrc = data->topicName->lenstring.data;
+		topiclen = data->topicName->lenstring.len;
+	}
+
+	topicdest = (char *)rtos_mem_zmalloc(topiclen + 1);
+	if (topicdest == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_message_arrived] Memory Failure for topicdest\r\n");
+		goto end;
+	}
+	strncpy(topicdest, topicsrc, topiclen);
+
+	data_shift = strlen("%s:%d,%d,%s,") + strlen("+MQTTSUBRECV") - 2 + sprintf(num_buf, "%d", tcpconnectid) - 2
+				 + sprintf(num_buf, "%d", id) - 2 + strlen(topicdest) - 2;
+	len_out = data_shift + data->message->payloadlen + 1;
+	total_data_len = strlen(",%d,%d,%d,%d") + sprintf(num_buf, "%d", data->message->payloadlen) - 2 + sprintf(num_buf, "%d", data->message->qos) - 2
+					 + sprintf(num_buf, "%d", data->message->dup) - 2 + sprintf(num_buf, "%d", data->message->retained) - 2 + len_out;
+
+	uns_buff = (char *)rtos_mem_zmalloc(total_data_len);
+	if (uns_buff == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_message_arrived] Memory Failure for uns_buff\r\n");
+		goto end;
+	}
+
+	DiagSnPrintf(uns_buff, len_out, "%s:%d,%d,%s,", "+MQTTSUBRECV", tcpconnectid, id, topicdest);
+	memcpy((uns_buff + data_shift), (char *)data->message->payload, (int16_t)(data->message->payloadlen));
+	DiagSnPrintf(uns_buff + strlen(uns_buff), total_data_len - strlen(uns_buff), ",%d,%d,%d,%d", data->message->payloadlen, data->message->qos, data->message->dup,
+				 data->message->retained);
+
+	at_printf_indicate("%s\r\n", uns_buff);
+
+end:
+	rtos_mem_free(topicdest);
+	rtos_mem_free(uns_buff);
+}
+
+static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz)
+{
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+
+	if (NULL == src) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_string_copy] ARGS error\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* Delete the elder string. */
+	rtos_mem_free(*dest);
+	/* sz + 1, the 1 is used for '\0'. */
+	*dest = (char *)rtos_mem_malloc(sizeof(char) * (sz + 1));
+	if (NULL == *dest) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_string_copy] Memory failure\r\n");
+		resultNo = MQTT_MALLOC_FAILED;
+		goto end;
+	}
+	strcpy(*dest, src);
+	(*dest)[sz] = '\0';
+
+end:
+	if (MQTT_OK != resultNo) {
+		rtos_mem_free(*dest);
+		*dest = NULL;
+	}
+	return resultNo;
+}
+
+static void at_mqttsub_help(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTSUB=<link_id>,<topic>,<qos>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>: \t0~3. link ID.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<topic>: \tthe topic that is subscribed to.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<qos>: \tthe QoS that is subscribed to, which can be set to 0, 1, or 2. Default 0.\r\n");
+}
+
+/****************************************************************
+Function            at_mqttsub
+Brief                   MQTT subscribe. The command is used to subscribe mqtt issue.
+AT+MQTTSUB=<link_id>,<topic>,<qos>
+****************************************************************/
+void at_mqttsub(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	int argc = 0, res = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	int link_id = MQTT_MAX_CLIENT_NUM;
+	int qos = 0;
+	int topic_index = 0;
+	u8 found = 0;
+
+	/* Get the parameters of AT command. */
+	if (!arg) {
+		at_mqttsub_help();
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 4) {
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* link_id. */
+	link_id = atoi(argv[1]);
+	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid link_id\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] The link ID does not exist\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* topic. */
+	if (0 == strlen(argv[2]) || MQTT_MAX_TOPIC_LEN < strlen(argv[2])) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid topic\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* QoS. This is optional, if not including here, it should be QOS2. */
+	qos = atoi(argv[3]);
+	if (qos < QOS0 || qos > QOS2) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid qos\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	for (topic_index = 0; MAX_MESSAGE_HANDLERS > topic_index; topic_index++) {
+		if (NULL == mqttCb->subData[topic_index].topic) {
+			found = 1;
+			break;
+		} else if (0 == strcmp(mqttCb->subData[topic_index].topic, argv[2])) {
+			resultNo = MQTT_ALREADY_SUBSCRIBED;
+			goto end;
+		}
+	}
+	if (topic_index == MAX_MESSAGE_HANDLERS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Can not match\r\n");
+		resultNo = MQTT_SUBSCRIBE_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_string_copy(&mqttCb->subData[topic_index].topic, argv[2], strlen(argv[2]));
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] mqtt_string_copy failed\r\n");
+		goto end;
+	}
+
+	mqttCb->subData[topic_index].qos = qos;
+
+	/* Check status. */
+	if (1 != mqttCb->client.isconnected || 0 > mqttCb->network.my_socket) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Not connected now (%d, %d)\r\n",
+				 mqttCb->client.isconnected, mqttCb->network.my_socket);
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
+		goto end;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTSUB] Subscribe topic %s\r\n", mqttCb->subData[topic_index].topic);
+
+	TimerInit(&mqttCb->client.cmd_timer);
+	TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
+	res = MQTTSubscribe(&mqttCb->client, mqttCb->subData[topic_index].topic, qos, mqtt_message_arrived);
+	if (0 != res) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Subscribe ERROR\r\n");
+		resultNo = MQTT_SUBSCRIBE_ERROR;
+		goto end;
+	}
+	mqttCb->client.mqttstatus = MQTT_SUBTOPIC;
+
+end:
+	if (MQTT_OK != resultNo) {
+		if (resultNo == MQTT_ALREADY_SUBSCRIBED) {
+			at_printf(ATCMD_OK_END_STR);
+			at_printf("\r\nALREADY SUBCRIBE\r\n");
+		} else {
+			if (found && NULL != mqttCb->subData[topic_index].topic) {
+				rtos_mem_free(mqttCb->subData[topic_index].topic);
+				mqttCb->subData[topic_index].topic = NULL;
+				mqttCb->subData[topic_index].qos = 0;
+			}
+			at_printf(ATCMD_ERROR_END_STR, resultNo);
+		}
+	} else {
+		at_printf(ATCMD_OK_END_STR);
+	}
+}
+
+static void at_mqttunsub_help(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTUNSUB=<link_id>,<topic>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>: \t0~3. link ID.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<topic>: \tthe topic that is subscribed.\r\n");
+}
+
+/****************************************************************
+Function            at_mqttunsub
+Brief                   MQTT unsubscribe. The command is used to unsubscribe mqtt issue.
+AT+MQTTUNSUB=<link_id>,<topic>
+****************************************************************/
+void at_mqttunsub(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	int argc = 0, res = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	int link_id = MQTT_MAX_CLIENT_NUM;
+	int topic_index = 0;
+	u8 matched = 0;
+
+	/* Get the parameters of AT command. */
+	if (!arg) {
+		at_mqttunsub_help();
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 3) {
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* link_id. */
+	link_id = atoi(argv[1]);
+	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Invalid link_id\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] The link ID does not exist\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* topic. */
+	if (0 == strlen(argv[2]) || MQTT_MAX_TOPIC_LEN < strlen(argv[2])) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Invalid topic\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	for (topic_index = 0; MAX_MESSAGE_HANDLERS > topic_index; topic_index++) {
+		if (NULL != mqttCb->subData[topic_index].topic && 0 == strcmp(mqttCb->subData[topic_index].topic, argv[2])) {
+			matched = 1;
+			break;
+		}
+	}
+	if (topic_index == MAX_MESSAGE_HANDLERS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Invalid topic\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* Check status. */
+	if (1 != mqttCb->client.isconnected || 0 > mqttCb->network.my_socket) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Invalid status (%d, %d)\r\n",
+				 mqttCb->client.isconnected, mqttCb->network.my_socket);
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
+		goto end;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTUNSUB] Unsubscribe topic %s\r\n", mqttCb->subData[topic_index].topic);
+
+	TimerInit(&mqttCb->client.cmd_timer);
+	TimerCountdownMS(&mqttCb->client.cmd_timer, mqttCb->client.command_timeout_ms);
+	res = MQTTUnsubscribe(&mqttCb->client, mqttCb->subData[topic_index].topic);
+	if (0 != res) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUNSUB] Unsubscribe ERROR\r\n");
+		resultNo = MQTT_UNSUBSCRIBE_ERROR;
+		goto end;
+	}
+
+end:
+	if (matched && NULL != mqttCb->subData[topic_index].topic) {
+		rtos_mem_free(mqttCb->subData[topic_index].topic);
+		mqttCb->subData[topic_index].topic = NULL;
+		mqttCb->subData[topic_index].qos = 0;
+		mqttCb->client.messageHandlers[topic_index].topicFilter = 0;
+		mqttCb->client.messageHandlers[topic_index].fp = NULL;
+	}
+	if (MQTT_OK != resultNo) {
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
+	} else {
+		at_printf(ATCMD_OK_END_STR);
+	}
+}
+
+static void at_mqttpub_help(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTPUB=<link_id>,<msg_id>,<topic>,<msg>,<qos>,<retain>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>: \t0~3. link ID.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<msg_id>: \t0~65535. Message ID.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<topic>: \tMQTT topic.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<msg>: \tMQTT message.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<qos>: \tQoS of message, which can be set to 0, 1, or 2. Default: 0.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<retain>: \tretain flag.\r\n");
+}
+
+/****************************************************************
+Function            at_mqttpub
+Brief                   MQTT publish. The command is used to publish mqtt issue.
+AT+MQTTPUB=<link_id>,<msg_id>,<topic>,<msg>,<qos>,<retain>
+****************************************************************/
+void at_mqttpub(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	int argc = 0, res = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	int link_id = MQTT_MAX_CLIENT_NUM;
+	int msg_id = 0, qos = 0, retain = 0;
+
+	/* Get the parameters of AT command. */
+	if (!arg) {
+		at_mqttpub_help();
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 7) {
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* link_id. */
+	link_id = atoi(argv[1]);
+	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid link_id\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] The link ID does not exist\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* msg ID. */
+	msg_id = atoi(argv[2]);
+	if (msg_id < 0 || msg_id > 0xFFFF) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid msg ID\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* topic. */
+	if (0 == strlen(argv[3]) || MQTT_MAX_TOPIC_LEN < strlen(argv[3])) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid topic\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* msg. */
+	if (0 == strlen(argv[4]) && MQTT_MAX_MSG_LEN < strlen(argv[4])) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid msg\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* QoS. */
+	qos = atoi(argv[5]);
+	if (qos < QOS0 || qos > QOS2) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid QoS\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* retain. */
+	retain = atoi(argv[6]);
+	if (retain != 0 && retain != 1) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid retain\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* topic. */
+	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[3], strlen(argv[3]));
+	if (MQTT_OK != resultNo) {
+		goto end;
+	}
+	/* msg. */
+	resultNo = mqtt_string_copy(&mqttCb->pubData.msg, argv[4], strlen(argv[4]));
+	if (MQTT_OK != resultNo) {
+		goto end;
+	}
+	mqttCb->pubData.qos = (u8)qos;
+	mqttCb->pubData.retain = (u8)retain;
+
+	/* send publish. */
+	if (1 != mqttCb->client.isconnected) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid status (%d)\r\n", mqttCb->client.isconnected);
+		resultNo = MQTT_NOT_CONNECTED_ERROR;
+		goto end;
+	}
+	MQTTMessage mqttMsg = {.qos = mqttCb->pubData.qos,
+						   .retained = mqttCb->pubData.retain,
+						   .dup = 0,
+						   .id = msg_id,
+						   .payload = mqttCb->pubData.msg,
+						   .payloadlen = strlen(mqttCb->pubData.msg)
+						  };
+	res = MQTTPublish(&mqttCb->client, mqttCb->pubData.topic, &mqttMsg);
+	if (0 != res) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Publish ERROR\r\n");
+		resultNo = MQTT_PUBLISH_ERROR;
+		goto end;
+	}
+
+end:
+	/* After sent, clean the msg and topic. */
+	if (NULL != mqttCb) {
+		rtos_mem_free(mqttCb->pubData.topic);
+		mqttCb->pubData.topic = NULL;
+		rtos_mem_free(mqttCb->pubData.msg);
+		mqttCb->pubData.msg = NULL;
+	}
+	if (MQTT_OK != resultNo) {
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
+	} else {
+		at_printf(ATCMD_OK_END_STR);
+	}
+}
+
+static void at_mqttpubraw_help(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTPUBRAW=<link_id>,<msg_id>,<topic>,<length>,<qos>,<retain>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>: \t0~3. link ID.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<msg_id>: \t0~65535. Message ID.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<topic>: \tMQTT topic.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>: \tMQTT message length.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<qos>: \tQoS of message, which can be set to 0, 1, or 2. Default: 0.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<retain>: \tretain flag.\r\n");
+}
+
+/****************************************************************
+Function            at_mqttpubraw
+Brief                   MQTT publish with long message. The command is used to publish mqtt issue.
+AT+MQTTPUBRAW=<link_id>,<msg_id>,<topic>,<length>,<qos>,<retain>
+****************************************************************/
+void at_mqttpubraw(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	int argc = 0, res = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	int link_id = MQTT_MAX_CLIENT_NUM;
+	int msg_id = 0, length = 0, qos = 0, retain = 0;
+	int frag_len = 0;
+	u8 *msg = NULL;
+
+	/* Get the parameters of AT command. */
+	if (!arg) {
+		at_mqttpubraw_help();
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 7) {
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* link_id. */
+	link_id = atoi(argv[1]);
+	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid link_id\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] The link ID does not exist\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* msg ID. */
+	msg_id = atoi(argv[2]);
+	if (msg_id < 0 || msg_id > 0xFFFF) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid msg ID\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* topic. */
+	if (0 == strlen(argv[3]) || MQTT_MAX_TOPIC_LEN < strlen(argv[3])) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid topic\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* msg length. */
+	length = atoi(argv[4]);
+	if (length <= 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid length\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* QoS. */
+	qos = atoi(argv[5]);
+	if (qos < QOS0 || qos > QOS2) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid QoS\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* retain. */
+	retain = atoi(argv[6]);
+	if (retain != 0 && retain != 1) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid retain\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	msg = (u8 *)rtos_mem_zmalloc(length);
+	if (msg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Msg malloc failed\r\n");
+		resultNo = MQTT_MALLOC_FAILED;
+		goto end;
+	}
+
+	/* tt mode */
+	res = atcmd_tt_mode_start(length);
+	if (res < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] atcmd_tt_mode_start failed\r\n");
+		resultNo = MQTT_TT_MODE_ERROR;
+		goto end;
+	}
+
+	if (length <= MAX_TT_BUF_LEN) {
+		atcmd_tt_mode_get(msg, length);
+	} else {
+		while (length > 0) {
+			frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
+			atcmd_tt_mode_get(msg, frag_len);
+			length -= frag_len;
+			msg += frag_len;
+		}
+	}
+	atcmd_tt_mode_end();
+
+	/* topic. */
+	resultNo = mqtt_string_copy(&mqttCb->pubData.topic, argv[3], strlen(argv[3]));
+	if (MQTT_OK != resultNo) {
+		goto end;
+	}
+	/* msg. */
+	resultNo = mqtt_string_copy(&mqttCb->pubData.msg, (char *)msg, length);
+	if (MQTT_OK != resultNo) {
+		goto end;
+	}
+	mqttCb->pubData.qos = (u8)qos;
+	mqttCb->pubData.retain = (u8)retain;
+
+	/* send publish. */
+	if (1 != mqttCb->client.isconnected) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Invalid status (%d)\r\n", mqttCb->client.isconnected);
+		resultNo = MQTT_PUBLISH_ERROR;
+		goto end;
+	}
+	MQTTMessage mqttMsg = {.qos = mqttCb->pubData.qos,
+						   .retained = mqttCb->pubData.retain,
+						   .dup = 0,
+						   .id = msg_id,
+						   .payload = mqttCb->pubData.msg,
+						   .payloadlen = strlen(mqttCb->pubData.msg)
+						  };
+	res = MQTTPublish(&mqttCb->client, mqttCb->pubData.topic, &mqttMsg);
+	if (0 != res) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUBRAW] Publish ERROR\r\n");
+		resultNo = MQTT_PUBLISH_ERROR;
+		goto end;
+	}
+
+end:
+	/* After sent, clean the msg and topic. */
+	if (NULL != mqttCb) {
+		rtos_mem_free(mqttCb->pubData.topic);
+		mqttCb->pubData.topic = NULL;
+		rtos_mem_free(mqttCb->pubData.msg);
+		mqttCb->pubData.msg = NULL;
+	}
+	if (msg) {
+		rtos_mem_free(msg);
+	}
+	if (MQTT_OK != resultNo) {
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
+	} else {
+		at_printf(ATCMD_OK_END_STR);
+	}
+}
+
 static void at_mqttconn_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCONN=<link_id>,<host>,<port>\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\t[0,3]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thostname\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t[0,65535]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t[1,65535]\r\n");
 }
 /****************************************************************
 Function            at_mqttconn
@@ -1199,7 +1271,9 @@ void at_mqttconn(void *arg)
 	}
 
 	/* Update the mqttCb information. */
-	mqttCb->port = port;
+	if (port != 0) {
+		mqttCb->port = port;
+	}
 	mqttCb->network.use_ssl = mqttCb->useSsl;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTCONN] Open a new connection for %s\r\n", mqttCb->host);
@@ -1209,7 +1283,7 @@ void at_mqttconn(void *arg)
 		if (0 != res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONN] Can not connect %s\r\n", mqttCb->host);
 			mqttCb->client.mqttstatus = MQTT_START;
-			resultNo = MQTT_AUTH_ERROR;
+			resultNo = MQTT_CONNECTION_ERROR;
 			goto end;
 		}
 		mqttCb->networkConnect = 1;
@@ -1245,7 +1319,7 @@ void at_mqttconn(void *arg)
 	/* Check status. */
 	if (mqttCb->client.isconnected) {
 		RTK_LOGW(TAG, "[+MQTTCONN] Already connected\r\n");
-		resultNo = MQTT_ALREADY_CONNECTED_ERROR;
+		resultNo = MQTT_ALREADY_CONNECTED;
 		goto end;
 	} else {
 		/* Reset when reconnect. */
@@ -1254,7 +1328,7 @@ void at_mqttconn(void *arg)
 	}
 	if (NULL == mqttCb->clientId) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONN] The clientid has not been set\r\n");
-		resultNo = MQTT_COMMON_ERROR;
+		resultNo = MQTT_CONNECTION_ERROR;
 		goto end;
 	}
 	mqttCb->connectData.clientID.cstring = mqttCb->clientId;
@@ -1352,7 +1426,7 @@ void at_mqttdisconn(void *arg)
 		res = MQTTDisconnect(&mqttCb->client);
 		if (0 != res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTDISCONN] Can not disconnect\r\n");
-			resultNo = MQTT_ALREADY_CONNECTED_ERROR;
+			resultNo = MQTT_DISCONNECTION_ERROR;
 			goto end;
 		}
 	}
@@ -1387,18 +1461,18 @@ static int mqttusercfg_set_ssl_certificate(char **dest, CERT_TYPE cert_type, int
 	cert_size = atcmd_get_ssl_certificate_size(cert_type, index);
 	if (cert_size <= 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] %d get size %d\r\n", cert_type, cert_size);
-		return MQTT_ARGS_ERROR;
+		return MQTT_CERTIFICATE_READ_ERROR;
 	}
 	cert_buffer = (char *)rtos_mem_zmalloc(cert_size);
 	if (cert_buffer == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] cert_buffer malloc failed\r\n");
-		return MQTT_ARGS_ERROR;
+		return MQTT_MALLOC_FAILED;
 	}
 	ret = atcmd_get_ssl_certificate(cert_buffer, cert_type, index);
 	if (ret <= 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] %d get failed\r\n", cert_type);
 		rtos_mem_free(cert_buffer);
-		return MQTT_ARGS_ERROR;
+		return MQTT_CERTIFICATE_READ_ERROR;
 	}
 
 	ret = mqtt_string_copy(dest, cert_buffer, cert_size);
@@ -1478,9 +1552,9 @@ void at_mqttusercfg(void *arg)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTUSERCFG] link_id %d already exists\r\n", link_id);
 		mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
-		if (mqttCb->client.mqttstatus == MQTT_CONNECT) {
+		if (mqttCb->client.isconnected) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] The link ID is already connected\r\n");
-			resultNo = MQTT_ALREADY_CONNECTED_ERROR;
+			resultNo = MQTT_ALREADY_CONNECTED;
 			goto end;
 		}
 	}
@@ -1504,26 +1578,30 @@ void at_mqttusercfg(void *arg)
 		goto end;
 	}
 
-	/* username. */
-	if (strlen(argv[4]) == 0 || strlen(argv[4]) > MQTT_MAX_USERNAME_LEN) {
+	/* username. (Optional) */
+	if (strlen(argv[4]) != 0 && strlen(argv[4]) > MQTT_MAX_USERNAME_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] Invalid username\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
-	resultNo = mqtt_string_copy(&mqttCb->userName, argv[4], strlen(argv[4]));
-	if (MQTT_OK != resultNo) {
-		goto end;
+	if (strlen(argv[4]) != 0) {
+		resultNo = mqtt_string_copy(&mqttCb->userName, argv[4], strlen(argv[4]));
+		if (MQTT_OK != resultNo) {
+			goto end;
+		}
 	}
 
-	/* password. */
-	if (strlen(argv[5]) == 0 || strlen(argv[5]) > MQTT_MAX_PASSWORD_LEN) {
+	/* password. (Optional) */
+	if (strlen(argv[5]) != 0 && strlen(argv[5]) > MQTT_MAX_PASSWORD_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTUSERCFG] Invalid password\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
-	resultNo = mqtt_string_copy(&mqttCb->password, argv[5], strlen(argv[5]));
-	if (MQTT_OK != resultNo) {
-		goto end;
+	if (strlen(argv[5]) != 0) {
+		resultNo = mqtt_string_copy(&mqttCb->password, argv[5], strlen(argv[5]));
+		if (MQTT_OK != resultNo) {
+			goto end;
+		}
 	}
 
 	/* certificate_index. */
@@ -1552,7 +1630,8 @@ void at_mqttusercfg(void *arg)
 				goto end;
 			}
 		}
-		mqttCb->useSsl = 1;
+		mqttCb->useSsl = conn_type;
+		mqttCb->port = MQTT_DEFAULT_PORT_TLS;
 	}
 
 end:
@@ -1560,7 +1639,7 @@ end:
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		/* Clean the Client Control block. */
-		if (mqttCb != NULL && resultNo != MQTT_ALREADY_CONNECTED_ERROR) {
+		if (mqttCb != NULL && resultNo != MQTT_ALREADY_CONNECTED) {
 			mqtt_del_handle_cb(&mqttCb);
 			mqtt_set_handle_cb(link_id, NULL);
 		}
@@ -1574,8 +1653,8 @@ static void at_mqttconncfg_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCONNCFG=<link_id>,<keepalive>,<timeout>,<disable_clean_session>,<lwt_topic>,<lwt_msg>,<lwt_qos>,<lwt_retain>\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\t0~3. link ID.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<keepalive>:\ttimeout of MQTT ping. Unit: ms.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<timeout>:\tsocket send/recv timeout. Unit: ms.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<keepalive>:\ttimeout of MQTT ping. Unit: second.\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<timeout>:\tsocket send/recv timeout. Unit: millisecond.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<disable_clean_session>:\tset MQTT clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t0:\tenable clean session.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1:\tdisable clean session.\r\n");
@@ -1584,7 +1663,7 @@ static void at_mqttconncfg_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_qos>:\tLWT QoS, which can be set to 0, 1, or 2. Default: 0.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<lwt_retain>:\tLWT retain, which can be set to 0 or 1. Default: 0.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "e.g.\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tAT+MQTTCONNCFG=0,10000,1000,0,topic/lwt,This is a lwt message,0,0\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tAT+MQTTCONNCFG=0,10,10000,0,topic/lwt,This is a lwt message,0,0\r\n");
 }
 
 /****************************************************************
@@ -1610,7 +1689,7 @@ void at_mqttconncfg(void *arg)
 
 	argc = parse_param_advance(arg, argv);
 	if (argc < 5) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Input wrong parameter");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Input wrong parameter\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1618,14 +1697,14 @@ void at_mqttconncfg(void *arg)
 	/* link_id. */
 	link_id = atoi(argv[1]);
 	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid link_id");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid link_id\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
 	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
 	if (MQTT_OK != resultNo) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] The link ID does not exist");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] The link ID does not exist\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1633,7 +1712,7 @@ void at_mqttconncfg(void *arg)
 	/* keepalive. */
 	keepalive = atoi(argv[2]);
 	if (keepalive <= 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid keepalive");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid keepalive\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1641,7 +1720,7 @@ void at_mqttconncfg(void *arg)
 	/* timeout. */
 	timeout = atoi(argv[3]);
 	if (timeout < 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid timeout");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid timeout\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1649,7 +1728,7 @@ void at_mqttconncfg(void *arg)
 	/* disable_clean_session. */
 	disable_clean_session = atoi(argv[4]);
 	if (disable_clean_session != 0 && disable_clean_session != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid disable_clean_session");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid disable_clean_session\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -1658,10 +1737,10 @@ void at_mqttconncfg(void *arg)
 	mqttCb->client.command_timeout_ms = (u32)timeout;
 	mqttCb->connectData.cleansession = (u8)disable_clean_session;
 
-	/* Last Will and Testament. */
+	/* Last Will and Testament. (Optional) */
 	if (argc == 9) {
 		if (strlen(argv[5]) == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid lwt_topic");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid lwt_topic\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
@@ -1670,7 +1749,7 @@ void at_mqttconncfg(void *arg)
 			goto end;
 		}
 		if (strlen(argv[6]) == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid lwt_msg");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid lwt_msg\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
@@ -1680,15 +1759,15 @@ void at_mqttconncfg(void *arg)
 		}
 
 		qos = atoi(argv[7]);
-		if (qos < 0 || qos > 2) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid lwt_qos");
+		if (qos < QOS0 || qos > QOS2) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid lwt_qos\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
 
 		retain = atoi(argv[8]);
 		if (retain != 0 && retain != 1) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] Invalid lwt_retain");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid lwt_retain\r\n");
 			resultNo = MQTT_ARGS_ERROR;
 			goto end;
 		}
@@ -1696,9 +1775,7 @@ void at_mqttconncfg(void *arg)
 		mqttCb->connectData.will.qos = (char)qos;
 		mqttCb->connectData.will.retained = (u8)retain;
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "\r\n[+MQTTCONNCFG] No LWT value");
-		resultNo = MQTT_ARGS_ERROR;
-		goto end;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTCONNCFG] No LWT value\r\n");
 	}
 
 end:
@@ -1722,17 +1799,17 @@ void at_mqttreset(void *arg)
 
 	UNUSED(arg);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[+MQTTRESET] reset all mqtt connections");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] reset all mqtt connections\r\n");
 	/* No need any other parameters. */
 	for (; MQTT_MAX_CLIENT_NUM > i; i++) {
 		mqttCb = mqttAtHandle->mqttCb[i];
 		if (NULL != mqttCb) {
 			/* Disconnect client. */
 			if (mqttCb->client.isconnected) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[+MQTTRESET] Still connected");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] Still connected\r\n");
 				res = MQTTDisconnect(&mqttCb->client);
 				if (0 != res) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[+MQTTRESET] Can not disconnect");
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] Can not disconnect\r\n");
 					/* Continue to stop tasks, do not break here. */
 				}
 				mqttCb->client.isconnected = 0;
@@ -1749,7 +1826,7 @@ void at_mqttreset(void *arg)
 			/* Disconnect host. */
 			if (mqttCb->networkConnect) {
 				if (NULL != mqttCb->network.disconnect) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n[+MQTTRESET] Disconnect from %s", mqttCb->host);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] Disconnect from %s\r\n", mqttCb->host);
 					mqttCb->network.disconnect(&mqttCb->network);
 				}
 				mqttCb->networkConnect = 0;
@@ -1763,6 +1840,126 @@ void at_mqttreset(void *arg)
 
 	/* This command only output "OK". */
 	at_printf(ATCMD_OK_END_STR);
+}
+
+void at_mqttquery(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	int argc = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	int link_id = MQTT_MAX_CLIENT_NUM;
+
+	/* Get the parameters of AT command. */
+	if (!arg) {
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 2) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTQUERY] Input wrong parameter\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* link_id. */
+	link_id = atoi(argv[1]);
+	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTQUERY] Invalid link_id\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTQUERY] The link ID does not exist\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	at_printf("\r\n");
+	at_printf("link_id: %d\r\n", link_id);
+	at_printf("state: %d\r\n", mqttCb->client.isconnected);
+	if (mqttCb->useSsl) {
+		at_printf("conn_type: %d\r\n", mqttCb->useSsl);
+	} else {
+		at_printf("conn_type: %d\r\n", MQTT_OVER_TCP);
+	}
+	at_printf("host: %s\r\n", mqttCb->client.isconnected ? mqttCb->host : "NULL");
+	at_printf("port: %d\r\n", mqttCb->port);
+	at_printf("clientId: %s\r\n", mqttCb->clientId);
+	at_printf("userName: %s\r\n", mqttCb->userName ? mqttCb->userName : "NULL");
+	at_printf("password: %s\r\n", mqttCb->password ? mqttCb->password : "NULL");
+	at_printf("command_timeout_ms: %d\r\n", mqttCb->client.command_timeout_ms);
+	at_printf("keepAliveInterval: %d\r\n", mqttCb->connectData.keepAliveInterval);
+	at_printf("cleansession: %d\r\n", mqttCb->connectData.cleansession);
+	at_printf("LWT: %d\r\n", mqttCb->connectData.willFlag);
+	if (mqttCb->connectData.willFlag) {
+		MQTTPacket_willOptions *will = &mqttCb->connectData.will;
+		at_printf("\tqos: %d\r\n", will->qos);
+		at_printf("\tretain: %d\r\n", will->retained);
+		at_printf("\ttopic: %s\r\n", will->topicName.cstring);
+		at_printf("\tmessage: %s\r\n", will->message.cstring);
+	}
+end:
+	if (MQTT_OK == resultNo) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
+	}
+}
+
+void at_mqttsubquery(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	int argc = 0;
+	MQTT_RESULT_ENUM resultNo = MQTT_OK;
+	MQTT_CONTROL_BLOCK *mqttCb = NULL;
+	int link_id = MQTT_MAX_CLIENT_NUM;
+
+	/* Get the parameters of AT command. */
+	if (!arg) {
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 2) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Input wrong parameter\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	/* link_id. */
+	link_id = atoi(argv[1]);
+	if (link_id >= MQTT_MAX_CLIENT_NUM || link_id < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] Invalid link_id\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	resultNo = mqtt_get_handle_cb((u8)link_id, &mqttCb, 0);
+	if (MQTT_OK != resultNo) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONNCFG] The link ID does not exist\r\n");
+		resultNo = MQTT_ARGS_ERROR;
+		goto end;
+	}
+
+	at_printf("\r\n");
+	at_printf("link_id: %d\r\n", link_id);
+	at_printf("state: %d\r\n", mqttCb->client.isconnected);
+	for (int i = 0; i < MAX_MESSAGE_HANDLERS; i++) {
+		if (mqttCb->subData[i].topic) {
+			at_printf("topic: %s, qos: %d\r\n", mqttCb->subData[i].topic, mqttCb->subData[i].qos);
+		}
+	}
+end:
+	if (MQTT_OK == resultNo) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, resultNo);
+	}
 }
 
 /* There are 4 connection IDs at most. */
@@ -1784,7 +1981,10 @@ log_item_t at_mqtt_items[ ] = {
 	{"+MQTTSUB", at_mqttsub, {NULL, NULL}},  /* MQTT subscribe. */
 	{"+MQTTUNSUB", at_mqttunsub, {NULL, NULL}},  /* MQTT unsubscribe. */
 	{"+MQTTPUB", at_mqttpub, {NULL, NULL}},  /* MQTT publish. */
-	{"+MQTTRESET", at_mqttreset, {NULL, NULL}}   /* MQTT reset. */
+	{"+MQTTPUBRAW", at_mqttpubraw, {NULL, NULL}}, /* MQTT publish raw. */
+	{"+MQTTRESET", at_mqttreset, {NULL, NULL}},   /* MQTT reset. */
+	{"+MQTTQUERY", at_mqttquery, {NULL, NULL}},    /* MQTT connection status query */
+	{"+MQTTSUBQUERY", at_mqttsubquery, {NULL, NULL}} /* MQTT subcribe query */
 };
 
 void print_mqtt_at(void)

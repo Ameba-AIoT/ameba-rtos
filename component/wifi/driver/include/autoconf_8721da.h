@@ -85,12 +85,7 @@
 //#define CONFIG_TWT
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
-#define CONFIG_TWT
 #undef CONFIG_ADDRESS_CAM
-#endif
-
-#if (defined CONFIG_MCC_MODE || defined CONFIG_WIFI_TUNNEL)
-#define CONFIG_TWT
 #endif
 
 //#define CONFIG_P2P

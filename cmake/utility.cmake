@@ -72,21 +72,19 @@ macro(ameba_option_if condition var description value)
 endmacro()
 
 macro(ameba_unset var)
-    set(options)
     set(oneValueArgs p_SCOPE)
-    set(multiValueArgs)
 
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    if (ARG_p_SCOPE)
-        if (${ARG_p_SCOPE} STREQUAL "parent")
+    cmake_parse_arguments(ameba_unset_ARG "" "${oneValueArgs}" "" ${ARGN})
+    if (ameba_unset_ARG_p_SCOPE)
+        if (${ameba_unset_ARG_p_SCOPE} STREQUAL "parent")
             unset(${var} PARENT_SCOPE)
-        elseif(${ARG_p_SCOPE} STREQUAL "current")
+        elseif(${ameba_unset_ARG_p_SCOPE} STREQUAL "current")
             unset(${var})
-        elseif(${ARG_p_SCOPE} STREQUAL "both")
+        elseif(${ameba_unset_ARG_p_SCOPE} STREQUAL "both")
             unset(${var} PARENT_SCOPE)
             unset(${var})
         else()
-            ameba_fatal("Unknown scope value: ${ARG_p_SCOPE}")
+            ameba_fatal("Unknown scope value: ${ameba_unset_ARG_p_SCOPE}")
         endif()
     else()
         unset(${var})
@@ -94,29 +92,29 @@ macro(ameba_unset var)
 endmacro()
 
 macro(ameba_set var)
-    set(options)
-    set(oneValueArgs p_SCOPE)
-    set(multiValueArgs)
+    set(ameba_set_oneValueArgs p_SCOPE)
 
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    cmake_parse_arguments(ameba_set_ARG "" "${ameba_set_oneValueArgs}" "" ${ARGN})
     set(tmp_argn "${ARGN}")
 
-    if (ARG_p_SCOPE)
+    if (ameba_set_ARG_p_SCOPE)
         _ameba_list_remove_key(tmp_argn p_SCOPE)
     else()
-        set(ARG_p_SCOPE "current")
+        set(ameba_set_ARG_p_SCOPE "current")
     endif()
-    if (${ARG_p_SCOPE} STREQUAL "parent")
+    if (${ameba_set_ARG_p_SCOPE} STREQUAL "parent")
         set(${var} ${tmp_argn} PARENT_SCOPE)
-    elseif(${ARG_p_SCOPE} STREQUAL "current")
+    elseif(${ameba_set_ARG_p_SCOPE} STREQUAL "current")
         set(${var} ${tmp_argn})
-    elseif(${ARG_p_SCOPE} STREQUAL "both")
+    elseif(${ameba_set_ARG_p_SCOPE} STREQUAL "both")
         set(${var} ${tmp_argn} PARENT_SCOPE)
         set(${var} ${tmp_argn})
     else()
-        ameba_fatal("Unknown scope value: ${ARG_p_SCOPE}")
+        ameba_fatal("Unknown scope value: ${ameba_set_ARG_p_SCOPE}")
     endif()
     unset(tmp_argn)
+    unset(ameba_set_oneValueArgs)
+    unset(ameba_set_ARG_p_SCOPE)
 endmacro()
 
 macro(ameba_set_upper var value)
@@ -126,36 +124,35 @@ macro(ameba_set_upper var value)
 endmacro()
 
 macro(ameba_set_if condition var)
-    set(options)
-    set(oneValueArgs p_SCOPE)
-    set(multiValueArgs p_ELSE)
+    set(ameba_set_if_oneValueArgs p_SCOPE)
+    set(ameba_set_if_multiValueArgs p_ELSE)
 
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    set(__tmp_ARGN "${ARGN}")
-    if(DEFINED ARG_p_ELSE)
-        _ameba_list_remove_key_and_followings(__tmp_ARGN p_ELSE)
+    cmake_parse_arguments(ameba_set_if_ARG "" "${ameba_set_if_oneValueArgs}" "${ameba_set_if_multiValueArgs}" ${ARGN})
+    set(_tmp_ameba_set_if_ARGN "${ARGN}")
+    if(DEFINED ameba_set_if_ARG_p_ELSE)
+        _ameba_list_remove_key_and_followings(_tmp_ameba_set_if_ARGN p_ELSE)
     endif()
 
-    if(DEFINED ARG_p_SCOPE)
-        _ameba_list_remove_key(__tmp_ARGN p_SCOPE)
+    if(DEFINED ameba_set_if_ARG_p_SCOPE)
+        _ameba_list_remove_key(_tmp_ameba_set_if_ARGN p_SCOPE)
     else()
-        set(ARG_p_SCOPE "current")
+        set(ameba_set_if_ARG_p_SCOPE "current")
     endif()
 
     if(DEFINED ${condition})
         if(${condition})
-            ameba_set(${var} ${__tmp_ARGN} p_SCOPE ${ARG_p_SCOPE})
+            ameba_set(${var} ${_tmp_ameba_set_if_ARGN} p_SCOPE ${ameba_set_if_ARG_p_SCOPE})
         else()
-            if(DEFINED ARG_p_ELSE)
-                ameba_set(${var} ${ARG_p_ELSE} p_SCOPE ${ARG_p_SCOPE})
+            if(DEFINED ameba_set_if_ARG_p_ELSE)
+                ameba_set(${var} ${ameba_set_if_ARG_p_ELSE} p_SCOPE ${ameba_set_if_ARG_p_SCOPE})
             endif()
         endif()
     else()
-        if(DEFINED ARG_p_ELSE)
-            ameba_set(${var} ${ARG_p_ELSE} p_SCOPE ${ARG_p_SCOPE})
+        if(DEFINED ameba_set_if_ARG_p_ELSE)
+            ameba_set(${var} ${ameba_set_if_ARG_p_ELSE} p_SCOPE ${ameba_set_if_ARG_p_SCOPE})
         endif()
     endif()
-    unset(__tmp_ARGN)
+    unset(_tmp_ameba_set_if_ARGN)
 endmacro()
 
 macro(ameba_set_if_unset var)
@@ -170,9 +167,9 @@ macro(ameba_set_move new old)
 endmacro()
 
 macro(ameba_set_basedir var)
-    get_filename_component(_tmp_val "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
-    ameba_set(${var} ${_tmp_val} ${ARGN})
-    unset(_tmp_val)
+    get_filename_component(_tmp_ameba_set_basedir_val "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+    ameba_set(${var} ${_tmp_ameba_set_basedir_val} ${ARGN})
+    unset(_tmp_ameba_set_basedir_val)
 endmacro()
 
 function(ameba_list_contains list_name item result)
@@ -200,20 +197,20 @@ macro(ameba_list_append list_name)
 endmacro()
 
 macro(ameba_list_append_if condition list_name)
-    set(options)
-    set(oneValueArgs)
-    set(multiValueArgs p_ELSE)
+    set(ameba_list_append_if_options)
+    set(ameba_list_append_if_oneValueArgs)
+    set(ameba_list_append_if_multiValueArgs p_ELSE)
 
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    cmake_parse_arguments(ARG "${ameba_list_append_if_options}" "${ameba_list_append_if_oneValueArgs}" "${ameba_list_append_if_multiValueArgs}" ${ARGN})
 
-    set(__tmp_ARGN "${ARGN}")
+    set(__tmp_ameba_list_append_if_ARGN "${ARGN}")
     if(DEFINED ARG_p_ELSE)
-        _ameba_list_remove_key_and_followings(__tmp_ARGN p_ELSE)
+        _ameba_list_remove_key_and_followings(__tmp_ameba_list_append_if_ARGN p_ELSE)
     endif()
 
     if(DEFINED ${condition})
-        if (${${condition}})
-            list(APPEND ${list_name} ${__tmp_ARGN})
+        if (${condition})
+            list(APPEND ${list_name} ${__tmp_ameba_list_append_if_ARGN})
         else()
             if(DEFINED ARG_p_ELSE)
                 list(APPEND ${list_name} ${ARG_p_ELSE})
@@ -967,7 +964,6 @@ function(ameba_execute)
     endforeach()
 endfunction()
 
-
 function(ameba_get_link_libraries TARGET OUTPUT_LIST)
     get_target_property(IMPORTED ${TARGET} IMPORTED)
     list(APPEND VISITED_TARGETS ${TARGET})
@@ -1037,6 +1033,72 @@ function(ameba_target_get_sources target result)
     set(${result} ${tmp_result} PARENT_SCOPE)
 endfunction()
 
+function(ameba_target_get_sources target result)
+    ameba_target_get_property_recursive(${target} sources tmp_result)
+    set(${result} ${tmp_result} PARENT_SCOPE)
+endfunction()
+
+function(ameba_target_get_compile_options target result)
+    ameba_target_get_property_recursive(${target} compile_options tmp_result)
+    set(${result} ${tmp_result} PARENT_SCOPE)
+endfunction()
+
+function(ameba_target_get_compile_defines target result)
+    ameba_target_get_property_recursive(${target} compile_defines tmp_result)
+    set(${result} ${tmp_result} PARENT_SCOPE)
+endfunction()
+
+function(ameba_collect_interface_library_properties)
+    set(oneValueArgs
+        p_IGNORED_TARGETS
+        p_SOURCES
+        p_INCLUDES
+        p_COMPILE_OPTIONS
+        p_COMPILE_DEFINES
+        p_LINK_LIBRARY
+    )
+
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+    set(tmp_ARGN "${ARGN}")
+    list(REMOVE_ITEM tmp_ARGN ${oneValueArgs} ${ARG_p_IGNORED_TARGETS})
+    foreach(a IN LISTS oneValueArgs)
+        if (ARG_${a})
+            list(REMOVE_ITEM tmp_ARGN ${a} ${ARG_${a}})
+        endif()
+    endforeach()
+    list(REMOVE_ITEM oneValueArgs p_IGNORED_TARGETS)
+
+    set(ignored_targets)
+    foreach(p IN LISTS oneValueArgs) # traverse properties
+        if(NOT ARG_${p})
+            continue()
+        endif()
+        string(REGEX REPLACE "^p_" "" u_property ${p})
+        string(TOLOWER ${u_property} property)
+        set(prop_results)
+        foreach(l IN LISTS tmp_ARGN) # traverse targets
+            if(TARGET ${l})
+                get_target_property(_type ${l} TYPE)
+                if(${_type} STREQUAL "INTERFACE_LIBRARY")
+                    ameba_target_get_property_recursive(${l} ${property} tmp_result)
+                    ameba_list_append_if(tmp_result prop_results ${tmp_result})
+                else()
+                    ameba_list_append(ignored_targets ${ARG_p_IGNORED_TARGETS} ${l})
+                endif()
+            elseif(${l} MATCHES "^\\-Wl")
+                ameba_list_append(ignored_targets ${ARG_p_IGNORED_TARGETS} ${l})
+            else()
+                ameba_fatal("not a target: ${l}")
+            endif()
+        endforeach()
+        ameba_set_if(prop_results ${ARG_${p}} ${prop_results} p_SCOPE parent)
+    endforeach()
+    if(ARG_p_IGNORED_TARGETS)
+        list(REMOVE_DUPLICATES ignored_targets)
+        set(${ARG_p_IGNORED_TARGETS} ${ignored_targets} PARENT_SCOPE)
+    endif()
+endfunction()
+
 function(ameba_target_get_link_libraries TARGET result)
     set(tmp_result)
     get_target_property(libs ${TARGET} LINK_LIBRARIES)
@@ -1102,6 +1164,131 @@ function(ameba_target_get_output_info target output_path ouput_name)
     set(${ouput_name} "${TARGET_PREFIX}${TARGET_OUTPUT_NAME}${TARGET_SUFFIX}" PARENT_SCOPE)
 endfunction()
 
+function(ameba_source_set_property source)
+    set(options
+        p_APPEND                    # If set, property will be appened to the given source
+    )
+
+    set(multiValueArgs
+        p_INCLUDES                  # Set source include directories
+        p_COMPILE_OPTIONS           # Set source compile options
+        p_COMPILE_DEFINES           # Set source compile definitions
+
+        # p_TARGET                    # If set, property will only bind to target which contains the source
+        p_SCOPE_DIRS                # Set property scope, refer to set_property on cmake.org for more detail
+    )
+    cmake_parse_arguments(ARG "${options}" "" "${multiValueArgs}" ${ARGN})
+
+    if (ARG_p_APPEND)
+        set(ARG_p_APPEND APPEND)
+    else()
+        unset(ARG_p_APPEND)
+    endif()
+
+    if (ARG_p_SCOPE_DIRS)
+        set(ARG_p_SCOPE_DIRS DIRECTORY ${ARG_p_SCOPE_DIRS})
+    else()
+        set(ARG_p_SCOPE_DIRS DIRECTORY ${d_MCU_PROJECT_DIR})
+    endif()
+
+    if(ARG_p_INCLUDES)
+        set_property(
+            SOURCE ${source}
+            ${ARG_p_SCOPE_DIRS}
+            ${ARG_p_APPEND} PROPERTY
+            includes ${ARG_p_INCLUDES}
+        )
+        set_source_files_properties(${source} PROPERTIES INCLUDE_DIRECTORIES "${ARG_p_INCLUDES}")
+    endif()
+    if(ARG_p_COMPILE_OPTIONS)
+        set_property(
+            SOURCE ${source}
+            ${ARG_p_SCOPE_DIRS}
+            ${ARG_p_APPEND} PROPERTY
+            compile_options ${ARG_p_COMPILE_OPTIONS}
+        )
+        set_source_files_properties(${source} PROPERTIES COMPILE_OPTIONS "${ARG_p_COMPILE_OPTIONS}")
+    endif()
+    if(ARG_p_COMPILE_DEFINES)
+        set_property(
+            SOURCE ${source}
+            ${ARG_p_SCOPE_DIRS}
+            ${ARG_p_APPEND} PROPERTY
+            compile_defines ${ARG_p_COMPILE_DEFINES}
+        )
+        set_source_files_properties(${source} PROPERTIES COMPILE_DEFINITIONS "${ARG_p_COMPILE_DEFINES}")
+    endif()
+endfunction()
+
+function(ameba_source_get_property source)
+    set(oneValueArgs
+        p_INCLUDES                  # Set source include directories
+        p_COMPILE_OPTIONS           # Set source compile options
+        p_COMPILE_DEFINES           # Set source compile definitions
+    )
+
+    set(multiValueArgs
+        # p_TARGET                    # If set, property will only bind to target which contains the source
+        p_SCOPE_DIRS                # Get property scope, refer to set_property on cmake.org for more detail
+    )
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if (ARG_p_SCOPE_DIRS)
+        set(ARG_p_SCOPE_DIRS DIRECTORY ${ARG_p_SCOPE_DIRS})
+    else()
+        set(ARG_p_SCOPE_DIRS DIRECTORY ${d_MCU_PROJECT_DIR})
+    endif()
+
+    if(ARG_p_INCLUDES)
+        get_property(
+            tmp_var
+            SOURCE ${source}
+            ${ARG_p_SCOPE_DIRS}
+            PROPERTY includes
+        )
+        get_source_file_property(tmp_var2 ${source} ${ARG_p_SCOPE_DIRS} INCLUDE_DIRECTORIES)
+        ameba_list_append_if(tmp_var2 tmp_var ${tmp_var2})
+        list(REMOVE_DUPLICATES tmp_var)
+        set(${ARG_p_INCLUDES} ${tmp_var} PARENT_SCOPE)
+    endif()
+    if(ARG_p_COMPILE_OPTIONS)
+        get_property(
+            tmp_var
+            SOURCE ${source}
+            ${ARG_p_SCOPE_DIRS}
+            PROPERTY compile_options
+        )
+        get_source_file_property(tmp_var2 ${source} ${ARG_p_SCOPE_DIRS} COMPILE_OPTIONS)
+        ameba_list_append_if(tmp_var2 tmp_var ${tmp_var2})
+        list(REMOVE_DUPLICATES tmp_var)
+        set(${ARG_p_COMPILE_OPTIONS} ${tmp_var} PARENT_SCOPE)
+    endif()
+    if(ARG_p_COMPILE_DEFINES)
+        get_property(
+            tmp_var
+            SOURCE ${source}
+            ${ARG_p_SCOPE_DIRS}
+            PROPERTY compile_defines
+        )
+        get_source_file_property(tmp_var2 ${source} ${ARG_p_SCOPE_DIRS} COMPILE_DEFINITIONS)
+        ameba_list_append_if(tmp_var2 tmp_var ${tmp_var2})
+        list(REMOVE_DUPLICATES tmp_var)
+        set(${ARG_p_COMPILE_DEFINES} ${tmp_var} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(ameba_source_property_inherite source)
+    ameba_source_get_property(${source}
+        p_INCLUDES _ins
+        p_COMPILE_OPTIONS _opts
+        p_COMPILE_DEFINES _defs
+    )
+    ameba_source_set_property(${source}
+        p_INCLUDES ${_ins}
+        p_COMPILE_OPTIONS ${_opts}
+        p_COMPILE_DEFINES ${_defs}
+    )
+endfunction()
 
 function(ameba_target_add name)
     set(options
@@ -1174,20 +1361,22 @@ function(ameba_target_add name)
             ameba_warning("NO set p_APPEND_TO_LIST for non-app/soc target: ${name}")
         endif()
     endif()
+
+    if (ARG_p_LINK_LIBRARY)
+        ameba_collect_interface_library_properties(
+            p_IGNORED_TARGETS   non_interface_libs
+            p_SOURCES           srcs_from_libs
+            p_INCLUDES          incs_from_libs
+            p_COMPILE_OPTIONS   ops_from_libs
+            p_COMPILE_DEFINES   def_from_libs
+            ${ARG_p_LINK_LIBRARY}
+        )
+    endif()
+
     if (ARG_p_DROP_IF_NO_SOURCES)
-        if(NOT ARG_p_ADD_EMPTY_C_FILE AND NOT ARG_p_SOURCES)
-            set(_tmp_has_src FALSE)
-            foreach(l IN LISTS ARG_p_LINK_LIBRARY)
-                ameba_target_get_sources(${l} srcs)
-                if (srcs)
-                    set(_tmp_has_src TRUE)
-                    break()
-                endif()
-            endforeach()
-            if (NOT _tmp_has_src)
-                ameba_warning("target ${d_CURRENT_TARGET_NAME} has no source, abort")
-                return()
-            endif()
+        if(NOT ARG_p_ADD_EMPTY_C_FILE AND NOT ARG_p_SOURCES AND NOT srcs_from_libs)
+            ameba_warning("target ${d_CURRENT_TARGET_NAME} has no source, abort")
+            return()
         endif()
     endif()
 
@@ -1301,7 +1490,14 @@ function(ameba_target_add name)
         if (${ARG_p_TYPE} STREQUAL "interface")
             target_link_libraries(${d_CURRENT_TARGET_NAME} INTERFACE ${ARG_p_LINK_LIBRARY})
         else()
-            target_link_libraries(${d_CURRENT_TARGET_NAME} PRIVATE ${ARG_p_LINK_LIBRARY})
+            foreach(s IN LISTS srcs_from_libs)
+                ameba_source_property_inherite(${s})
+            endforeach()
+            ameba_target_link_if(non_interface_libs ${d_CURRENT_TARGET_NAME}  ${non_interface_libs} p_SCOPE private)
+            ameba_target_include_if(incs_from_libs ${d_CURRENT_TARGET_NAME}  ${incs_from_libs} p_SCOPE private)
+            ameba_target_sources_if(srcs_from_libs ${d_CURRENT_TARGET_NAME}  ${srcs_from_libs} p_SCOPE private)
+            ameba_target_compile_options_if(ops_from_libs ${d_CURRENT_TARGET_NAME}  ${ops_from_libs} p_SCOPE private)
+            ameba_target_definitions_if(def_from_libs ${d_CURRENT_TARGET_NAME}  ${def_from_libs} p_SCOPE private)
         endif()
         ameba_list_append_ifdef(${d_CURRENT_TARGET_NAME}_link_libraries ${d_CURRENT_TARGET_NAME}_link_libraries ${ARG_p_LINK_LIBRARY})
     endif()
