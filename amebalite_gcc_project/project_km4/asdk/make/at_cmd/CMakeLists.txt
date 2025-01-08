@@ -52,6 +52,13 @@ if(CONFIG_AS_INIC_AP)
         )
     endif()
 
+    if(CONFIG_WLAN)
+        list(
+            APPEND CSRC
+            ${DIR}/atcmd_coex.c
+        )
+    endif()
+    
     if(CONFIG_BT)
         list(
             APPEND CSRC

@@ -18,7 +18,7 @@
 
 static const char *const AT_HTTP_TAG = "AT_HTTP";
 
-static int http_timeout = 0;	//Set by AT+HTTPCONF
+static int http_timeout = 10;	//Set by AT+HTTPCONF, default value is 10s
 static int http_server_port = 0;	//Set by AT+HTTPCONF
 
 
@@ -236,9 +236,8 @@ void at_httpget(void *arg)
 		}
 	} else  {
 		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-		http_server_port = 0;
 	}
-	http_timeout = 0;
+
 	if (ret != 0) {
 		RTK_LOGI(AT_HTTP_TAG, "[at_httpget] httpc_conn_connect failed\r\n");
 		error_no = 4;
@@ -520,9 +519,8 @@ void at_httppost(void *arg)
 		}
 	} else  {
 		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-		http_server_port = 0;
 	}
-	http_timeout = 0;
+
 	if (ret != 0) {
 		RTK_LOGI(AT_HTTP_TAG, "[at_httppost] httpc_conn_connect failed\r\n");
 		error_no = 4;
@@ -860,9 +858,8 @@ void at_httpput(void *arg)
 		}
 	} else  {
 		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-		http_server_port = 0;
 	}
-	http_timeout = 0;
+
 	if (ret != 0) {
 		RTK_LOGI(AT_HTTP_TAG, "[at_httpput] httpc_conn_connect failed\r\n");
 		error_no = 4;
@@ -1192,9 +1189,8 @@ void at_httpdel(void *arg)
 		}
 	} else  {
 		ret = httpc_conn_connect(conn_ptr, argv[1], (uint16_t)http_server_port, http_timeout);
-		http_server_port = 0;
 	}
-	http_timeout = 0;
+
 	if (ret != 0) {
 		RTK_LOGI(AT_HTTP_TAG, "[at_httpdel] httpc_conn_connect failed\r\n");
 		error_no = 4;

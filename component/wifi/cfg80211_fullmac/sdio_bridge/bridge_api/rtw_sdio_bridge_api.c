@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>             /* offsetof */
+#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <poll.h>
@@ -49,10 +50,10 @@ static inline int nla_total_size(int payload)
 	return NLA_ALIGN(nla_attr_size(payload));
 }
 
-static inline void nla_put_u32(unsigned char **pbuf, int attrtype, u32 value)
+static inline void nla_put_u32(unsigned char **pbuf, int attrtype, uint32_t value)
 {
 	struct nlattr *nla = (struct nlattr *)(*pbuf);
-	int size = sizeof(u32);
+	int size = sizeof(uint32_t);
 
 	nla->nla_type = attrtype;
 	nla->nla_len = nla_attr_size(size);
@@ -62,10 +63,10 @@ static inline void nla_put_u32(unsigned char **pbuf, int attrtype, u32 value)
 	*pbuf += nla_total_size(size);
 }
 
-static inline void nla_put_u64(unsigned char **pbuf, int attrtype, u64 value)
+static inline void nla_put_u64(unsigned char **pbuf, int attrtype, uint64_t value)
 {
 	struct nlattr *nla = (struct nlattr *)(*pbuf);
-	int size = sizeof(u64);
+	int size = sizeof(uint64_t);
 
 	nla->nla_type = attrtype;
 	nla->nla_len = nla_attr_size(size);
@@ -117,7 +118,7 @@ error:
 	return -1;
 }
 
-static void _bridge_fill_nlhdr(struct msgtemplate *msg, u16 nlmsg_type, u32 nlmsg_pid, u8 genl_cmd)
+static void _bridge_fill_nlhdr(struct msgtemplate *msg, uint16_t nlmsg_type, uint32_t nlmsg_pid, uint8_t genl_cmd)
 {
 	/* fill in header: nlmsghdr & genlmsghdr */
 	msg->n.nlmsg_len = NLMSG_LENGTH(GENL_HDRLEN);
@@ -180,7 +181,7 @@ static int _bridge_get_family_id(int fd, char *family_name)
 	na = (struct nlattr *) GENLMSG_DATA(&ans);
 	na = (struct nlattr *)((char *) na + NLA_ALIGN(na->nla_len));
 	if (na->nla_type == CTRL_ATTR_FAMILY_ID) {
-		id = *(u16 *) NLA_DATA(na);
+		id = *(uint16_t *) NLA_DATA(na);
 	}
 
 	return id;
@@ -229,11 +230,11 @@ static int _bridge_get_device_ip(int family_id, int *ip_addr)
 	int ret = 0;
 	struct msgtemplate msg;
 	unsigned char *ptr = msg.buf;
-	u32 ip = 0;
+	uint32_t ip = 0;
 	struct msgtemplate ans;
 	struct nlattr *na;
 	int rep_len;
-	u8 iptab[4];
+	uint8_t iptab[4];
 	int nl_fd;
 
 	/* initialize socket */
@@ -262,11 +263,11 @@ static int _bridge_get_device_ip(int family_id, int *ip_addr)
 	/* parse message to get ip */
 	if (ans.g.cmd == BRIDGE_CMD_REPLY) {
 		na = (struct nlattr *) GENLMSG_DATA(&ans);
-		ip = *(u32 *) NLA_DATA(na);
-		iptab[0] = (u8)(ip >> 24);
-		iptab[1] = (u8)(ip >> 16);
-		iptab[2] = (u8)(ip >> 8);
-		iptab[3] = (u8)(ip);
+		ip = *(uint32_t *) NLA_DATA(na);
+		iptab[0] = (uint8_t)(ip >> 24);
+		iptab[1] = (uint8_t)(ip >> 16);
+		iptab[2] = (uint8_t)(ip >> 8);
+		iptab[3] = (uint8_t)(ip);
 		memcpy(ip_addr, &ip, 4);
 		printf("IP Address : %d.%d.%d.%d\n", iptab[3], iptab[2], iptab[1], iptab[0]);
 	}
@@ -293,7 +294,7 @@ static int _bridge_config_host_ip(int *ip_addr)
 	sai.sin_family = AF_INET;
 	sai.sin_port = 0;
 
-	sai.sin_addr.s_addr = (u32)(*ip_addr);
+	sai.sin_addr.s_addr = (uint32_t)(*ip_addr);
 
 	p = (char *) &sai;
 	memcpy((((char *)&ifr + ifreq_offsetof(ifr_addr))),
@@ -367,7 +368,7 @@ loop_start:
 
 			if (ans.g.cmd == BRIDGE_CMD_EVENT) {
 				na = (struct nlattr *) GENLMSG_DATA(&ans);
-				event = *(u32 *) NLA_DATA(na);
+				event = *(uint32_t *) NLA_DATA(na);
 				if ((event >= 0) && (event < BRIDGE_WIFI_EVENT_MAX)) {
 					if (wifi_event_callback_list[event]) {
 						wifi_event_callback_list[event](event);
@@ -480,7 +481,7 @@ int bridge_wifi_connect(char *ssid, char *pwd)
 	if (ans.g.cmd == BRIDGE_CMD_REPLY) {
 		na = (struct nlattr *) GENLMSG_DATA(&ans);
 		if (na->nla_type == BRIDGE_ATTR_API_RET) {
-			ret = *(s32 *) NLA_DATA(na);
+			ret = *(int32_t *) NLA_DATA(na);
 			if (ret < 0) {
 				printf("wifi connect fail\n");
 			} else {
@@ -535,7 +536,7 @@ int bridge_wifi_scan(void)
 	int ret = 0;
 	struct msgtemplate msg;
 	unsigned char *ptr = msg.buf;
-	u32 ip = 0;
+	uint32_t ip = 0;
 	struct msgtemplate ans;
 	struct nlattr *na;
 	int rep_len;
@@ -577,8 +578,8 @@ int bridge_wifi_get_scanres(void)
 	struct msgtemplate ans;
 	struct nlattr *na;
 	int rep_len;
-	u8 *scanbuf;
-	u32 ap_num;
+	uint8_t *scanbuf;
+	uint32_t ap_num;
 	struct rtw_scan_result *scanned_AP_info;
 	int i = 0;
 	int nl_fd;
@@ -598,12 +599,12 @@ int bridge_wifi_get_scanres(void)
 		goto out;
 	}
 
-	scanbuf = (u8 *)malloc(64 * sizeof(struct rtw_scan_result));
+	scanbuf = (uint8_t *)malloc(64 * sizeof(struct rtw_scan_result));
 	memset(scanbuf, 0, 64 * sizeof(struct rtw_scan_result));
 
 	_bridge_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_GET_SCAN_RES);
-	nla_put_u64(&ptr, BRIDGE_ATTR_SCAN_RES_ADDR, (u64)(scanbuf));
+	nla_put_u64(&ptr, BRIDGE_ATTR_SCAN_RES_ADDR, (uint64_t)(scanbuf));
 
 	msg.n.nlmsg_len += ptr - msg.buf;
 	ret = _bridge_send_buf(nl_fd, (char *)&msg, msg.n.nlmsg_len);
@@ -619,7 +620,7 @@ int bridge_wifi_get_scanres(void)
 
 	if (ans.g.cmd == BRIDGE_CMD_REPLY) {
 		na = (struct nlattr *) GENLMSG_DATA(&ans);
-		ap_num = *(u32 *) NLA_DATA(na);
+		ap_num = *(uint32_t *) NLA_DATA(na);
 		/* print scan res */
 		if (ap_num > 0) {
 			for (i = 0; i < ap_num; i++) {

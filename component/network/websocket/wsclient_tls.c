@@ -8,6 +8,9 @@ struct wss_tls {
 	mbedtls_ssl_context ctx;
 	mbedtls_ssl_config conf;
 	mbedtls_net_context socket;
+	mbedtls_x509_crt ca;             /*!< CA certificates */
+	mbedtls_x509_crt cert;           /*!< Certificate */
+	mbedtls_pk_context key;          /*!< Private key */
 };
 
 static char *ws_itoa(int value)
@@ -85,6 +88,73 @@ exit:
 	return (void *) tls;
 }
 
+static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags)
+{
+	/* To avoid gcc warnings */
+	(void) data;
+	(void) depth;
+
+	char buf[1024];
+	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
+
+	if (*flags) {
+		WSCLIENT_ERROR("ERROR: certificate verify\n%s\n", buf);
+	}
+
+	return 0;
+}
+
+int wss_tls_set_cert_and_key(wsclient_context *wsclient, char *client_cert, char *client_key, char *ca_cert)
+{
+	int ret = 0;
+	struct wss_tls *tls = (struct wss_tls *)wsclient->tls;
+	mbedtls_ssl_config *conf = &tls->conf;
+
+	if (wsclient == NULL) {
+		WSCLIENT_ERROR("ERROR: wsclient is NULL\n");
+		ret = -1;
+		goto exit;
+	}
+
+	mbedtls_x509_crt_init(&tls->ca);
+	mbedtls_x509_crt_init(&tls->cert);
+	mbedtls_pk_init(&tls->key);
+
+	if (client_cert && client_key) {
+		if ((ret = mbedtls_x509_crt_parse(&tls->cert, (const unsigned char *) client_cert, strlen(client_cert) + 1)) != 0) {
+			WSCLIENT_ERROR("ERROR: mbedtls_x509_crt_parse %d\n", ret);
+			goto exit;
+		}
+
+		if ((ret = mbedtls_pk_parse_key(&tls->key, (const unsigned char *) client_key, strlen(client_key) + 1, NULL, 0, NULL, NULL)) != 0) {
+			WSCLIENT_ERROR("ERROR: mbedtls_pk_parse_key %d\n", ret);
+			ret = -1;
+			goto exit;
+		}
+
+		if ((ret = mbedtls_ssl_conf_own_cert(conf, &tls->cert, &tls->key)) != 0) {
+			WSCLIENT_ERROR("ERROR: mbedtls_ssl_conf_own_cert %d\n", ret);
+			ret = -1;
+			goto exit;
+		}
+	}
+
+	if (ca_cert) {
+		if ((ret = mbedtls_x509_crt_parse(&tls->ca, (const unsigned char *) ca_cert, strlen(ca_cert) + 1)) != 0) {
+			WSCLIENT_ERROR("ERROR: mbedtls_x509_crt_parse %d\n", ret);
+			ret = -1;
+			goto exit;
+		}
+
+		mbedtls_ssl_conf_ca_chain(conf, &tls->ca, NULL);
+		mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+		mbedtls_ssl_conf_verify(conf, _verify_func, NULL);
+	}
+
+exit:
+	return ret;
+}
+
 int wss_tls_handshake(void *tls_in)
 {
 	struct wss_tls *tls = (struct wss_tls *) tls_in;
@@ -117,6 +187,9 @@ void wss_tls_close(void *tls_in, int *sock)
 		*sock = -1;
 	}
 	mbedtls_ssl_free(&tls->ctx);
+	mbedtls_x509_crt_free(&tls->ca);
+	mbedtls_x509_crt_free(&tls->cert);
+	mbedtls_pk_free(&tls->key);
 	if (tls) {
 		mbedtls_ssl_config_free(&tls->conf);
 	}

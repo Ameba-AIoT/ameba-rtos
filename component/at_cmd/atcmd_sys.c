@@ -425,6 +425,14 @@ void at_list(void *arg)
 #endif
 #endif
 
+#ifndef CONFIG_MP_INCLUDED
+#if defined(CONFIG_BT_COEXIST)
+	/* COEX commands. */
+	at_printf("COEX AT command:\r\n");
+	print_coex_at();
+#endif
+#endif
+
 	at_printf(ATCMD_OK_END_STR);
 }
 
@@ -482,9 +490,6 @@ AT command process:
 ****************************************************************/
 void at_gmr(void *arg)
 {
-	char at_buf[32];
-	char fw_buf[32];
-
 	UNUSED(arg);
 	u32 buflen = 1024;
 	char *buf = rtos_mem_malloc(buflen);
@@ -495,9 +500,8 @@ void at_gmr(void *arg)
 	at_printf("%s", buf);
 	rtos_mem_free(buf);
 
-	strncpy(at_buf, ATCMD_VERSION"."ATCMD_SUBVERSION"."ATCMD_REVISION, sizeof(at_buf));
-	strncpy(fw_buf, SDK_VERSION, sizeof(fw_buf));
-	at_printf("\r\n%s%s,%s,%s\r\n", "+GMR:", at_buf, fw_buf, RTL_FW_COMPILE_TIME);
+	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
+	at_printf("COMPILE TIME: %s\r\n", RTL_FW_COMPILE_TIME);
 
 	at_printf(ATCMD_OK_END_STR);
 }

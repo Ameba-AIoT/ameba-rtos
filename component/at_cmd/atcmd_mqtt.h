@@ -30,6 +30,7 @@ extern "C" {
 #define MQTT_MAX_CLIENT_NUM         4
 
 #define MQTT_DEFAULT_PORT           1883
+#define MQTT_DEFAULT_PORT_TLS       8883
 
 #define MQTT_DEFAULT_QOS            2    /* QOS2 */
 
@@ -91,22 +92,18 @@ MQTT_CONFIG_CMD_TYPES;
 /* This enum may be modified later. */
 typedef enum MQTT_RESULT_ENUM_e {
 	MQTT_OK = 0,
-	MQTT_COMMON_ERROR,
 	MQTT_ARGS_ERROR,
-	MQTT_ALREADY_EXIST_ID,
-	MQTT_MEMORY_ERROR,
-	MQTT_NOT_ATTACH_ERROR,
-	MQTT_NOT_OPEN_ERROR,
+	MQTT_MALLOC_FAILED,
 	MQTT_CONNECTION_ERROR,
-	MQTT_AUTH_ERROR,
-	MQTT_CLIENTID_REJECTED_ERROR,
+	MQTT_DISCONNECTION_ERROR,
+	MQTT_TT_MODE_ERROR,
+	MQTT_CERTIFICATE_READ_ERROR,
 	MQTT_NOT_CONNECTED_ERROR,
-	MQTT_ALREADY_CONNECTED_ERROR,
+	MQTT_ALREADY_CONNECTED,
 	MQTT_PUBLISH_ERROR,
-	MQTT_SUBSCRIPTION_ERROR,
-	MQTT_ALREADY_SUBSCRIBED_ERROR,
-	MQTT_NOT_SUBSCRIBED_ERROR,
-	MQTT_UNSUBSCRIPTION_ERROR,
+	MQTT_SUBSCRIBE_ERROR,
+	MQTT_UNSUBSCRIBE_ERROR,
+	MQTT_ALREADY_SUBSCRIBED,
 	MQTT_WAITACK_TIMEOUT_ERROR,
 	MQTT_THREAD_CREATE_ERROR,
 	MQTT_NETWORK_LINK_ERROR
@@ -128,6 +125,12 @@ typedef struct MQTT_PUB_DATA_t {
 }
 MQTT_PUB_DATA;
 
+typedef struct MQTT_SUB_DATA_t {
+	u8 qos;
+	char *topic;
+}
+MQTT_SUB_DATA;
+
 typedef struct MQTT_CONTROL_BLOCK_t {
 	u8          tcpConnectId;   /* 0 ~ 3 */
 	char        *host;
@@ -139,7 +142,7 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 	char        *userName;
 	char        *password;
 	/* topic[i] corresponds to client.messageHandlers[i]. */
-	char        *topic[MAX_MESSAGE_HANDLERS];
+	MQTT_SUB_DATA   subData[MAX_MESSAGE_HANDLERS];
 	MQTT_PUB_DATA   pubData;
 	u8          networkConnect;
 	u8          offline;        /* Set to 1 when offline during connecting status. */

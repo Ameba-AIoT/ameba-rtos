@@ -83,6 +83,9 @@ if(CONFIG_AMEBAGREEN2)
         "SHELL:-Wl,-wrap,strncpy"
         "SHELL:-Wl,-wrap,strtol"
         "SHELL:-Wl,-wrap,sprintf"
+        "SHELL:-Wl,-wrap,readdir"
+        "SHELL:-Wl,-wrap,opendir"
+        "SHELL:-Wl,-wrap,closedir"
     )
 elseif(CONFIG_AMEBAL2)
     list(

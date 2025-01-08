@@ -53,6 +53,6 @@ ameba_target_include(src_${d_MCU_PROJECT_NAME}_benchmark_vmin p_SCOPE interface
     ${c_FREERTOS_DIR}/portable/GCC/ARM_CA7
 )
 ameba_target_sources(src_${d_MCU_PROJECT_NAME}_benchmark_vmin p_SCOPE interface
-    ${c_CMPT_APPLICATION_DIR}/benchmark/memtester/memtester.c
+    ${c_CMPT_APPLICATION_DIR}/benchmark/Vmin_Test/vmin_test.c
 )
 #--------------------------#

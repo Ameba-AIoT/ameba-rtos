@@ -258,7 +258,7 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 	}
 
 	if (global_idev.mlme_priv.pscan_req_global) {
-		memset(&info, 0, sizeof(info));;
+		memset(&info, 0, sizeof(info));
 		info.aborted = 1;
 		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
 	}

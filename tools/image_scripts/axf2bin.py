@@ -1232,7 +1232,7 @@ class IMAGETOOL():
                 CATFILE('', app, km0_image2_en, km4_image2_en)
                 CATFILE('', app_ns, km0_image2, km4_image2)
 
-            self.image2_posthandle(KM4_IMG_DIR, app, app_ns)
+            self.image2_posthandle(KM0_IMG_DIR, app, app_ns)
 
         if self.IMAGE_FILENAME == 'km0_image2_all.bin':
             ENCTOOL_AMEBAD('rsip', km0_image2, km0_image2_en, '0x0C000000', self.MANIFEST_JSON, 'app')
@@ -1250,7 +1250,7 @@ class IMAGETOOL():
                 CATFILE('', app, km0_image2_en, km4_image2_en)
                 CATFILE('', app_ns, km0_image2, km4_image2)
 
-            self.image2_posthandle(KM4_IMG_DIR, app, app_ns)
+            self.image2_posthandle(KM0_IMG_DIR, app, app_ns)
 
     def amebasmart(self, KM4_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':

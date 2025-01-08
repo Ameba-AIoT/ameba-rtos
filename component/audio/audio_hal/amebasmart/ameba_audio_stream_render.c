@@ -782,6 +782,8 @@ void ameba_audio_stream_tx_standby(Stream *stream)
 	PGDMA_InitTypeDef sp_txgdma_initstruct = &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct);
 	PGDMA_InitTypeDef extra_sp_txgdma_initstruct = &(rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct);
 
+	uint32_t sem_timeout = rstream->stream.config.period_count * rstream->stream.config.period_size * 1000 / rstream->stream.config.rate;
+
 	// if in running state:
 	// (rstream->stream.gdma_cnt != rstream->stream.gdma_irq_cnt) is always false.
 	// only in gdma interrupt, they can be the same.
@@ -797,7 +799,11 @@ void ameba_audio_stream_tx_standby(Stream *stream)
 		// please mask interrupt in the handling.
 		rstream->stream.sem_gdma_end_need_post = true;
 		GDMA_INTConfig(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
-		rtos_sema_take(rstream->stream.sem_gdma_end, RTOS_MAX_TIMEOUT);
+		// sometimes user start gdma, but never start sport, irq will never come.
+		int32_t sem_ret = rtos_sema_take(rstream->stream.sem_gdma_end, sem_timeout);
+		if (sem_ret < 0) {
+			GDMA_Abort(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum);
+		}
 		rstream->stream.sem_gdma_end_need_post = false;
 	}
 	if (rstream->stream.extra_gdma_cnt != rstream->stream.extra_gdma_irq_cnt) {
@@ -808,7 +814,11 @@ void ameba_audio_stream_tx_standby(Stream *stream)
 		if (rstream->stream.extra_channel) {
 			GDMA_INTConfig(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, extra_sp_txgdma_initstruct->GDMA_IsrType, ENABLE);
 		}
-		rtos_sema_take(rstream->stream.extra_sem_gdma_end, RTOS_MAX_TIMEOUT);
+		// sometimes user start gdma, but never start sport, irq will never come.
+		int32_t sem_ret = rtos_sema_take(rstream->stream.extra_sem_gdma_end, sem_timeout);
+		if (sem_ret < 0) {
+			GDMA_Abort(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum);
+		}
 		rstream->stream.extra_sem_gdma_end_need_post = false;
 	}
 
@@ -949,11 +959,10 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 	bool has_extra_dma = false;
 	uint32_t total_bytes = bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
-	uint32_t bytes_left_to_write = bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
+	uint32_t bytes_left_to_write = total_bytes;
 	uint32_t bytes_written = 0;
 	uint32_t tx_addr;
 	PGDMA_InitTypeDef sp_txgdma_initstruct = &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct);
-	(void) block;
 
 	uint32_t extra_total_bytes = 0;
 	uint32_t extra_bytes_left_to_write = 0;
@@ -963,6 +972,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 	char *p_buf = NULL;
 	char *p_extra_buf = NULL;
+
+	uint32_t sem_timeout = block ? RTOS_MAX_TIMEOUT : rstream->stream.config.period_size * 1000 * rstream->stream.config.period_count / rstream->stream.config.rate;
 
 	rstream->write_cnt++;
 
@@ -994,7 +1005,7 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 
 	if (has_extra_dma) {
 		extra_total_bytes = bytes * rstream->stream.extra_channel / (rstream->stream.channel + rstream->stream.extra_channel);
-		extra_bytes_left_to_write = bytes * rstream->stream.extra_channel / (rstream->stream.channel + rstream->stream.extra_channel);
+		extra_bytes_left_to_write = extra_total_bytes;
 		p_buf = (char *)calloc(total_bytes, sizeof(char));
 		p_extra_buf = (char *)calloc(extra_total_bytes, sizeof(char));
 
@@ -1013,6 +1024,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 			ameba_audio_stream_tx_mask_gdma_irq(stream);
 		}
 		bytes_written = ameba_audio_stream_buffer_write(rstream->stream.rbuffer, (u8 *)p_buf + total_bytes - bytes_left_to_write, bytes_left_to_write);
+		rstream->total_written_from_tx_start += bytes_written / rstream->stream.frame_size;
+
 		uint32_t dma_len = rstream->stream.period_bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
 		uint32_t extra_dma_len = 0;
 
@@ -1077,7 +1090,11 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 				ameba_audio_stream_tx_unmask_gdma_irq(stream);
 			}
 
-			rtos_sema_take(rstream->stream.sem, RTOS_MAX_TIMEOUT);
+			int32_t sem_ret = rtos_sema_take(rstream->stream.sem, sem_timeout);
+			if (sem_ret < 0) {
+				break;
+			}
+
 		}
 		rstream->stream.sem_need_post = false;
 
@@ -1088,8 +1105,13 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 				if (rstream->stream.dma_irq_masked) {
 					ameba_audio_stream_tx_unmask_gdma_irq(stream);
 				}
-				rtos_sema_take(rstream->stream.extra_sem, RTOS_MAX_TIMEOUT);
+
+				int32_t sem_ret = rtos_sema_take(rstream->stream.extra_sem, sem_timeout);
+				if (sem_ret < 0) {
+					break;
+				}
 			}
+
 			rstream->stream.extra_sem_need_post = false;
 		}
 
@@ -1111,8 +1133,7 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 		}
 	}
 
-	rstream->total_written_from_tx_start += bytes / rstream->stream.config.frame_size;
-	return bytes;
+	return bytes - bytes_left_to_write * (rstream->stream.channel + rstream->stream.extra_channel) / rstream->stream.channel;
 }
 
 int64_t ameba_audio_stream_tx_get_frames_written(Stream *stream)

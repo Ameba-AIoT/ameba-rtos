@@ -85,6 +85,10 @@ void BOOT_RccConfig(void)
 	TempVal |= APBPeriph_GDMA_CLOCK;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP0, TempVal);
 
+	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL);
+	TempVal |= LSYS_OTHERCPU_RST_EN(1);
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL, TempVal);
+
 	for (idx = 0; ; idx++) {
 		/*  Check if search to end */
 		if (RCC_Config[idx].func == 0xFFFFFFFF) {
@@ -609,6 +613,17 @@ void BOOT_Log_Init(void)
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
 }
 
+void Peripheral_Reset(void)
+{
+	//reason: The reason for maintaining these bits is for our debugging function.
+	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
+	//resolve: When initializing power, at bootloader, these bits are enabled.
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_OTPC | APBPeriph_LPON);
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0,
+				APBPeriph_TRNG | APBPeriph_AIP | APBPeriph_SCE | APBPeriph_FLASH | APBPeriph_KM4 | APBPeriph_PLFM | APBPeriph_HSOC);
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_THM | APBPeriph_DTIM | APBPeriph_LOGUART);
+}
+
 //3 Image 1
 void BOOT_Image1(void)
 {
@@ -621,6 +636,8 @@ void BOOT_Image1(void)
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 
 	BOOT_ReasonSet();
+
+	Peripheral_Reset();
 
 	if (BOOT_Reason() == 0) {
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));

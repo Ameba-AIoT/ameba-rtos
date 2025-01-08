@@ -228,7 +228,7 @@ void inic_api_host_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 r
 	inic_tx->is_skb = 0;
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_host_send_data(&inic_tx->txbuf_info);
+	inic_host_send_data(&inic_tx->txbuf_info);
 
 	/* wait for API calling done */
 	event_priv.b_waiting_for_ret = 1;
@@ -308,7 +308,7 @@ void inic_host_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 	inic_tx->is_skb = 0;
 
 	/* send ret_msg + ret_val(pbuf, len) */
-	rtw_host_send_data(&inic_tx->txbuf_info);
+	inic_host_send_data(&inic_tx->txbuf_info);
 
 	RTK_LOGD(TAG_WLAN_INIC, "Host API %x return\n", api_id);
 

@@ -22,7 +22,7 @@
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
-
+#include "bt_inic_defs.h"
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
 enum INIC_WIFI_CTRL_TYPE {
@@ -32,7 +32,7 @@ enum INIC_WIFI_CTRL_TYPE {
 	INIC_WIFI_EVT_API_RETURN,
 	INIC_WIFI_EVT_MAX,
 	//TODO host need BT confirm file
-	//INIC_BT_EVT_BASE = INIC_BT_ID_BASE,
+	INIC_BT_EVT_BASE = INIC_BT_ID_BASE,
 };
 
 struct inic_api_info {
