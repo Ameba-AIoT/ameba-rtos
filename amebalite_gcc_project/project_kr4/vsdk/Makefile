@@ -49,10 +49,7 @@ DSP_IMAGE_TARGET_DIR =
 RAM_OBJS_LIST = ./build/ram/*.o
 LIB_OBJS_LIST = ./build/lib/*.o
 
-ifeq ($(CONFIG_AMEBALITE_A_CUT),y)
 ROM_LIB_DIR = $(ROOTDIR)/lib/amebalite_rom_acut
-FLOADER_BIN_DIR = $(UTILITYDIR)/image_tool_flashloader/amebalite_acut
-endif
 
 LINK_ROM_LIB = $(ROM_LIB_DIR)/rom.a
 LINK_ROM_SYMBOL = ./ld/ameba_rom_symbol_empty.ld

@@ -130,6 +130,11 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 		regs[i] = cstack[i - REG_R0];
 	}
 
+	if (lr_value & EXC_RETURN_FTYPE) {
+		cstack += 8;/*Skip R0-R3, R12, LR, PC, xSPSR.*/
+	} else {
+		cstack += 26;/*Skip R0-R3, R12, LR, PC, xSPSR, S0-S15, FPSCR, Reserved Reg.*/
+	}
 	crash_dump((uint32_t *)cstack[REG_EPC], cstack, regs);
 
 	if (fault_id == SECUREFAULT_ID) {
@@ -155,6 +160,16 @@ void HANDLER_HardFault(void)
 		"MOV 		R2, LR					\n\t" /* Third parameter is LR current value */
 		"MOV 		R3, #0					\n\t"
 		"PUSH 		{R4-R7}					\n\t"
+		"MOV		R6, #16					\n\t"
+		"ADD		R4, R0, R6				\n\t" /* Skip R4-R7, and point to top of mstack*/
+		"MOV 		R5, R8					\n\t"
+		"STR        R5, [R4, #0]			\n\t"
+		"MOV 		R5, R9					\n\t"
+		"STR        R5, [R4, #4]			\n\t"
+		"MOV 		R5, R10					\n\t"
+		"STR        R5, [R4, #8]			\n\t"
+		"MOV 		R5, R11					\n\t"
+		"STR        R5, [R4, #12]			\n\t"
 		"B			Fault_Handler			\n\t"
 	);
 }
@@ -190,23 +205,27 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 	/* MSP stack
 	High addr -> |  xxx  | <--- &extra_regs[0] is mstack;
 	  ^          |  R7   | <--- extra_regs[-1]
-	  |	         |  R6   |
 	  |	         |  ...  |
-	Low addr  -> |  R4   | <--- extra_regs[-4]*/
+	  |	         |  R4   |
+	  |	         |  R8   |
+	  |	         |  ...  |
+	Low addr  -> |  R11  | <--- extra_regs[-8]*/
 
 	//point to R7, R8 ~ R11 were not saved.
 	extra_regs--;
 	for (int i = REG_R4; i <= REG_R7; i++) {
 		regs[i] = extra_regs[-REG_R7 + i];
 	}
-
+	for (int i = REG_R8; i <= REG_R11; i++) {
+		regs[i] = extra_regs[-i];
+	}
 	cstack = is_psp ? pstack : mstack;
 
 	for (int i = REG_R0; i < REG_END; i++) {
 		regs[i] = cstack[i - REG_R0];
 	}
 
-	crash_dump((uint32_t *)cstack[REG_EPC], cstack, regs);
+	crash_dump((uint32_t *)cstack[REG_EPC], cstack + 8, regs);/*Skip R0-R3, R12, LR, PC, xSPSR.*/
 
 	RTK_LOGA(TAG, "MSP     = %p\r\n", mstack);
 	RTK_LOGA(TAG, "PSP     = %p\r\n", pstack);
@@ -223,19 +242,14 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 
 void Fault_Hanlder_Redirect(crash_on_task crash_on_task_func)
 {
+	crash_task_info = crash_on_task_func;
 #ifdef ARM_CORE_CM4
-#ifdef IMAGE2_BUILD
 	NewVectorTable[3] = (HAL_VECTOR_FUN)HANDLER_HardFault;
 	NewVectorTable[4] = (HAL_VECTOR_FUN)HANDLER_MemFault;
 	NewVectorTable[5] = (HAL_VECTOR_FUN)HANDLER_BusFault;
 	NewVectorTable[6] = (HAL_VECTOR_FUN)HANDLER_UsageFault;
-	crash_task_info = crash_on_task_func;
-#else
-	(void)crash_on_task_func;
 	NewVectorTable[7] = (HAL_VECTOR_FUN)HANDLER_SecureFault;
-#endif
 #else
 	NewVectorTable[3] = (HAL_VECTOR_FUN)HANDLER_HardFault;
-	crash_task_info = crash_on_task_func;
 #endif
 }
