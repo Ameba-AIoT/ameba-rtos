@@ -237,5 +237,6 @@ void vAssertCalled(const char *pcFile, uint32_t ulLine);
 #endif
 
 #endif /* __IASMARM__ */
-
+extern void TaskExitError(void);
+#define configTASK_RETURN_ADDRESS TaskExitError
 #endif /* FREERTOS_CONFIG_H */
