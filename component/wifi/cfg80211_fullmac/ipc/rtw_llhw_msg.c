@@ -81,7 +81,7 @@ int inic_msg_q_init(struct device *pdev, void (*task_hdl)(u8 event_num, u32 msg_
 	spin_lock_init(&msg_priv->ipc_send_msg_lock);
 	INIT_LIST_HEAD(&msg_priv->queue_head);
 
-	msg_priv->p_inic_ipc_msg = dmam_alloc_coherent(pdev, sizeof(struct inic_ipc_ex_msg), &msg_priv->ipc_msg_phy_addr, GFP_KERNEL);
+	msg_priv->p_inic_ipc_msg = dma_alloc_coherent(pdev, sizeof(struct inic_ipc_ex_msg), &msg_priv->ipc_msg_phy_addr, GFP_KERNEL);
 	if (!msg_priv->p_inic_ipc_msg) {
 		dev_dbg(global_idev.fullmac_dev, "%s: allloc p_inic_ipc_msg error.\n", __func__);
 		return -ENOMEM;

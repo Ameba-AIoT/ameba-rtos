@@ -527,6 +527,13 @@ int wifi_get_tx_power(u8 rate, s8 *txpwr);
   * @return  null.
   */
 void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retries);
+
+/**
+  * @brief  for user to toggle softap whether can be discovered
+  * @param[in]  enable [1-invisible; 0-visible]
+  * @return  null.
+  */
+void wifi_ap_set_invisible(u8 enable);
 /**
   * @}
   */

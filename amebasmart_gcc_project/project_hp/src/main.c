@@ -5,10 +5,10 @@
 #include "os_wrapper.h"
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
+#include "rtw_coex_ipc.h"
 
 static const char *const TAG = "MAIN";
 u32 g_Boot_Status;
-
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 #include "ftl_int.h"
@@ -200,6 +200,9 @@ int main(void)
 
 	/* pre-processor of application example */
 	app_pre_example();
+
+	/* init coex ipc */
+	coex_ipc_entry();
 
 #ifdef CONFIG_WLAN
 	wlan_initialize();

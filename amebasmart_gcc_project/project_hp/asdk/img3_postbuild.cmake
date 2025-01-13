@@ -12,29 +12,6 @@ execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .gnu.sgstubs -j .ram_image3.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img3.axf ${IMAGE_TARGET_FOLDER}/ram_3_nsc.bin
 )
 
-message( "========== Image Info HEX ==========")
-
-execute_process(
-    COMMAND ${CMAKE_SIZE} -A --radix=16 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-)
-execute_process(
-    COMMAND ${CMAKE_SIZE} -t --radix=16 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-)
-
-message("========== Image Info HEX ==========")
-
-
-message( "========== Image Info DEC ==========")
-
-execute_process(
-    COMMAND ${CMAKE_SIZE} -A --radix=10 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-)
-execute_process(
-    COMMAND ${CMAKE_SIZE} -t --radix=10 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-)
-
-message( "========== Image Info DEC ==========")
-
 
 message( "========== Image manipulating start ==========")
 execute_process(

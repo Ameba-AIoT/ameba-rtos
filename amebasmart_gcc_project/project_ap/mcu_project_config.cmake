@@ -51,10 +51,10 @@ ameba_set(d_DEP_WIFI ON)
 ameba_set(d_DEP_NETWORK ON)
 if(CONFIG_AS_INIC_AP)
     ameba_set_if(d_DEP_UTILITIES ON)
-    ameba_set(d_DEP_RTK_COEX_API ON)
 elseif(CONFIG_AS_INIC_NP)
     ameba_set(d_DEP_RTK_COEX ON)
 endif()
+ameba_set(d_DEP_RTK_COEX_API ON)
 ameba_set(d_DEP_WPAN ON)
 
 # # - Dependencies defined in make/dependency_mcu.cmake

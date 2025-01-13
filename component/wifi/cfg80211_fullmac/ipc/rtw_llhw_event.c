@@ -555,19 +555,19 @@ func_exit:
 int llhw_event_init(struct inic_device *idev)
 {
 	struct event_priv_t	*event_priv = &global_idev.event_priv;
-	aipc_ch_t		*event_ch = global_idev.event_ch;
+	aipc_ch_t	*event_ch = global_idev.event_ch;
 
 	/* initialize the mutex to send event_priv message. */
 	mutex_init(&(event_priv->iiha_send_mutex));
 
-	event_priv->preq_msg = dmam_alloc_coherent(event_ch->pdev, sizeof(struct inic_ipc_host_req_msg), &event_priv->req_msg_phy_addr, GFP_KERNEL);
+	event_priv->preq_msg = dma_alloc_coherent(event_ch->pdev, sizeof(struct inic_ipc_host_req_msg), &event_priv->req_msg_phy_addr, GFP_KERNEL);
 	if (!event_priv->preq_msg) {
 		dev_err(global_idev.fullmac_dev, "%s: allloc req_msg error.\n", "event");
 		return -ENOMEM;
 	}
 
 	/* coherent alloc some non-cache memory for transmit network_info to NP */
-	event_priv->dev_req_network_info = dmam_alloc_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN, &event_priv->dev_req_network_info_phy, GFP_KERNEL);
+	event_priv->dev_req_network_info = dma_alloc_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN, &event_priv->dev_req_network_info_phy, GFP_KERNEL);
 	if (!event_priv->dev_req_network_info) {
 		dev_err(global_idev.fullmac_dev, "%s: allloc dev_req_network_info error.\n", "event");
 		return -ENOMEM;
@@ -582,13 +582,14 @@ int llhw_event_init(struct inic_device *idev)
 void llhw_event_deinit(void)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
+	aipc_ch_t	*event_ch = global_idev.event_ch;
 
 	/* free sema to wakeup the message queue task */
 	tasklet_kill(&(event_priv->api_tasklet));
 
-	dma_free_coherent(global_idev.ipc_dev, DEV_REQ_NETWORK_INFO_MAX_LEN,
+	dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
 					  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
-	dma_free_coherent(global_idev.ipc_dev, sizeof(struct inic_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
+	dma_free_coherent(event_ch->pdev, sizeof(struct inic_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
 
 	/* deinitialize the mutex to send event_priv message. */
 	mutex_destroy(&(event_priv->iiha_send_mutex));

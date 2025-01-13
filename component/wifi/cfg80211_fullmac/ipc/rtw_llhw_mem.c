@@ -14,7 +14,7 @@ struct axi_data *paxi_data_global;
 
 void *rtw_malloc(size_t size, dma_addr_t *paddr)
 {
-	return dmam_alloc_coherent(global_idev.fullmac_dev, size, paddr, GFP_KERNEL);
+	return dma_alloc_coherent(global_idev.fullmac_dev, size, paddr, GFP_KERNEL);
 }
 
 void rtw_mfree(size_t size, void *vaddr, dma_addr_t paddr)

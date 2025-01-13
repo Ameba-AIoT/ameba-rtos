@@ -159,12 +159,13 @@ ipc_deinit:
 
 void llhw_deinit(void)
 {
+	llhw_xmit_deinit();
 	llhw_event_deinit();
+
+	inic_msg_q_deinit();
 
 	/* Deinit ipc channel of data and event. */
 	llhw_ipc_event_ch_deinit();
 	llhw_ipc_data_ch_deinit();
 
-	llhw_xmit_deinit();
-	inic_msg_q_deinit();
 }

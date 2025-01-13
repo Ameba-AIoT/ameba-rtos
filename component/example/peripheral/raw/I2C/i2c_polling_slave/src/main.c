@@ -56,7 +56,7 @@ static void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t 
 	/* I2C Pin Mux Initialization */
 
 
-#if defined (CONFIG_AMEBASMART) || (CONFIG_AMEBAD)
+#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD))
 	Pinmux_Config(sda, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(scl, PINMUX_FUNCTION_I2C);
 #else
@@ -254,7 +254,7 @@ void i2c_dual_slave_task(void)
 int main(void)
 {
 	if (rtos_task_create(NULL, "I2C DULE SLAVE DEMO", (rtos_task_t)i2c_dual_slave_task, NULL, (3072), (1)) != SUCCESS) {
-		printf("Cannot create i2c_dual_slave_task demo task\n\r");
+		RTK_LOGI(TAG, "Cannot create i2c_dual_slave_task demo task\n\r");
 	}
 
 	rtos_sched_start();

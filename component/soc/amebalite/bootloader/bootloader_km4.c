@@ -574,10 +574,17 @@ u32 BOOT_Share_Memory_Patch(void)
 	Rtemp = HAL_READ32(SHARE_MEM_BTON_E1_ADDRESS, 0x0);
 	sum += Rtemp;
 
+	/* read bt_share_mem_rsvd to fix hw bug */
+	sum += HAL_READ32(SHARE_MEM_BTOFF_E0_ADDRESS + SHARE_MEM_BT_TOTAL_BYTES, 0x4);
+
 	Rtemp = HAL_READ32(SHARE_MEM_WIFI_TXPKTBUF_ADDRESS, 0x0);
 	sum += Rtemp;
 	Rtemp = HAL_READ32(SHARE_MEM_WIFI_RXPKTBUF_ADDRESS, 0x0);
 	sum += Rtemp;
+
+	/* read wifi_share_mem_rsvd to fix hw bug */
+	sum += HAL_READ32(SHARE_MEM_WIFI_TXPKTBUF_ADDRESS + SHARE_MEM_WIFI_TOTAL_BYTES, 0x4);
+
 	/* switch share mem control back */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL);
 	Rtemp &= ~(LSYS_BIT_SHARE_BT_MEM | LSYS_BIT_SHARE_WL_MEM);

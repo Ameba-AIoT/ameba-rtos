@@ -13,16 +13,6 @@ endif()
 
 execute_process(COMMAND ${CMAKE_OBJCOPY} -j .xip_image1.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_loader.axf ${IMAGE_TARGET_FOLDER}/xip_boot.bin)
 
-message( "========== Image Info HEX ==========")
-execute_process(COMMAND ${CMAKE_SIZE} -A --radix=16 ${IMAGE_TARGET_FOLDER}/target_loader.axf)
-execute_process(COMMAND ${CMAKE_SIZE} -t --radix=16 ${IMAGE_TARGET_FOLDER}/target_loader.axf)
-message("========== Image Info HEX ==========")
-
-message( "========== Image Info DEC ==========")
-execute_process(COMMAND ${CMAKE_SIZE} -A --radix=10 ${IMAGE_TARGET_FOLDER}/target_loader.axf)
-execute_process(COMMAND ${CMAKE_SIZE} -t --radix=10 ${IMAGE_TARGET_FOLDER}/target_loader.axf)
-message( "========== Image Info DEC ==========")
-
 
 message( "========== Image manipulating start ==========")
 

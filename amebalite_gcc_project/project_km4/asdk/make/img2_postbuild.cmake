@@ -46,18 +46,14 @@ execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/COEX.trace
 )
 
-message( "========== Image Info HEX ==========")
-execute_process(COMMAND ${CMAKE_SIZE} -A --radix=16 ${IMAGE_TARGET_FOLDER}/target_img2.axf)
-execute_process(COMMAND ${CMAKE_SIZE} -t --radix=16 ${IMAGE_TARGET_FOLDER}/target_img2.axf)
-message("========== Image Info HEX ==========")
-
-message( "========== Image Info DEC ==========")
-execute_process(COMMAND ${CMAKE_SIZE} -A --radix=10 ${IMAGE_TARGET_FOLDER}/target_img2.axf)
-execute_process(COMMAND ${CMAKE_SIZE} -t --radix=10 ${IMAGE_TARGET_FOLDER}/target_img2.axf)
-message( "========== Image Info DEC ==========")
-
 
 message( "========== Image manipulating start ==========")
+
+if (CONFIG_DSP_WITHIN_APP_IMG)
+    if(NOT EXISTS ${PROJECTDIR}/../${DSP_IMAGE_TARGET_DIR}/dsp.bin)
+        message(FATAL_ERROR "no dsp.bin in ${DSP_IMAGE_TARGET_DIR}")
+    endif()
+endif()
 
 if(CONFIG_MP_SHRINK)
     execute_process(COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin 32)

@@ -1,6 +1,7 @@
 #include "ameba_soc.h"
 #include "main.h"
 #include "os_wrapper.h"
+#include "rtw_coex_ipc.h"
 
 static const char *const TAG = "MAIN";
 
@@ -78,6 +79,9 @@ int main(void)
 #if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
 	wififw_task_create();
 #endif
+
+	/* init coex ipc */
+	coex_ipc_entry();
 
 #ifdef CONFIG_WLAN
 	wlan_initialize();

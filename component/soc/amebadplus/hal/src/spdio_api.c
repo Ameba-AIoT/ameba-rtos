@@ -184,7 +184,7 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->tx_bd_num - (u32)MIN_RX_BD_SEND_PKT))
 #endif
 			{
-				RTK_LOGW(TAG, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", \
+				RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", \
 						 RxBdRdPtr, pgSDIODev->RXBDWPtr);
 				return FALSE;
 			}
@@ -195,7 +195,7 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)MIN_RX_BD_SEND_PKT)
 #endif
 			{
-				RTK_LOGW(TAG, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", RxBdRdPtr, pgSDIODev->RXBDWPtr);
+				RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", RxBdRdPtr, pgSDIODev->RXBDWPtr);
 				return FALSE;
 			}
 		}
@@ -216,7 +216,7 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 	DCache_CleanInvalidate((u32)pRxDesc, sizeof(INIC_RX_DESC));
 
 	if (!pRxBdHdl->isFree) {
-		RTK_LOGE(TAG, "SDIO_Return_Rx_Data: Allocated a non-free RX_BD\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Return_Rx_Data: Allocated a non-free RX_BD\n");
 	}
 	pRxBdHdl->isFree = 0;
 	pRXBD->FS = 1;
@@ -249,13 +249,13 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 		} else {
 			pRXBD->BuffSize = MAX_RX_BD_BUF_SIZE;
 			pRxBdHdl->isPktEnd = 0;
-			RTK_LOGI(TAG, "SDIO_Return_Rx_Data: Split RX_BD, Offset=%d PktSize=%d\n", \
+			RTK_LOGS(TAG, RTK_LOG_INFO, "SDIO_Return_Rx_Data: Split RX_BD, Offset=%d PktSize=%d\n", \
 					 Offset, pkt_size);
 		}
 #else
 		if (pkt_size > MAX_RX_BD_BUF_SIZE) {
 			// if come to here, please enable "SDIO_RX_PKT_SIZE_OVER_16K"
-			RTK_LOGE(TAG, "SDIO_Return_Rx_Data: The Packet Size bigger than 16K\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Return_Rx_Data: The Packet Size bigger than 16K\n");
 			pkt_size = MAX_RX_BD_BUF_SIZE;
 		}
 		pRXBD->BuffSize = pkt_size;
@@ -281,7 +281,7 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 		SDIO_RxReq(SDIO_WIFI);
 	}
 
-	RTK_LOGI(TAG, "SDIO_Return_Rx_Data(%d)<==\n", RxBdWrite);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SDIO_Return_Rx_Data(%d)<==\n", RxBdWrite);
 	return TRUE;
 }
 

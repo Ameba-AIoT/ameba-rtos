@@ -17,6 +17,7 @@ ameba_target_set(src_${d_MCU_PROJECT_NAME}_rtk_coex_api p_SCOPE interface
         ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_host_api_bt.c 
         ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_host_api_ext.c 
         ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_host_api_wp.c
+        ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_ipc_host_api.c 
 )
 
 #--------------------------#

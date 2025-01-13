@@ -50,15 +50,6 @@ int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
 void wifi_set_edcca_mode(u8 edcca_mode);
 
 /**
-  * @brief Notify app data to COEX
-  * @param[in]  type: type for app send
-  * @param[in]  pdata; data pointer
-  * @param[in]  data_len; data length
-  * @retval  result(0:success  -1:failed)
-  */
-int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len);
-
-/**
  * @brief  Set global variable wifi_wpa_mode.
  * @param[in]  wpa_mode:
  	(WPA_AUTO_MODE,WPA_ONLY_MODE, WPA2_ONLY_MODE,

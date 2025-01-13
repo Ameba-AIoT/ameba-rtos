@@ -258,7 +258,6 @@ struct _rtw_softap_info_t {
 	unsigned char 		*password;
 	unsigned char 		password_len;
 	unsigned char		channel;
-	u8					b_raw_tx_reuse : 1; /* softap port used for tx_raw: pause BCN_Q & not resp probe_req */
 };
 
 #ifndef CONFIG_FULLMAC

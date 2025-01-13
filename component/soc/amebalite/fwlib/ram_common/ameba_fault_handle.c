@@ -129,6 +129,11 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 		regs[i] = cstack[i - REG_R0];
 	}
 
+	if (lr_value & EXC_RETURN_FTYPE) {
+		cstack += 8;/*Skip R0-R3, R12, LR, PC, xSPSR.*/
+	} else {
+		cstack += 26;/*Skip R0-R3, R12, LR, PC, xSPSR, S0-S15, FPSCR, Reserved Reg.*/
+	}
 	crash_dump((uint32_t *)cstack[REG_EPC], cstack, regs);
 
 	if (fault_id == SECUREFAULT_ID) {

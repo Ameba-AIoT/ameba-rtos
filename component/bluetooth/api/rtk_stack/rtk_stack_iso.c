@@ -1160,19 +1160,19 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 			p_cmd->ret = 0;//p_data->p_cig_mgr_disconnect_rsp->cause;
 			osif_sem_give(p_cmd->psem);
 		} else {
-			BT_LOGD("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command, indicate it \r\n", __func__);
-			rtk_bt_le_iso_cig_disconnect_info_t *p_info = NULL;
-			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
-										RTK_BT_LE_ISO_EVT_CIG_DISCONNECT_INFO,
-										sizeof(rtk_bt_le_iso_cig_disconnect_info_t));
-			p_info = (rtk_bt_le_iso_cig_disconnect_info_t *)p_evt->data;
-			p_info->cause = p_data->p_cig_mgr_disconnect_info->cause;
-			p_info->cis_conn_handle = p_data->p_cig_mgr_disconnect_info->cis_conn_handle;
-			p_info->conn_handle = le_get_conn_handle(p_data->p_cig_mgr_disconnect_info->conn_id);
-			p_info->cig_id = p_data->p_cig_mgr_disconnect_info->cig_id;
-			p_info->cis_id = p_data->p_cig_mgr_disconnect_info->cis_id;
-			rtk_bt_evt_indicate(p_evt, NULL);
+			BT_LOGD("[%s] MSG_CIG_MGR_DISCONNECT_INFO: find no pending command\r\n", __func__);
 		}
+		rtk_bt_le_iso_cig_disconnect_info_t *p_info = NULL;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO,
+									RTK_BT_LE_ISO_EVT_CIG_DISCONNECT_INFO,
+									sizeof(rtk_bt_le_iso_cig_disconnect_info_t));
+		p_info = (rtk_bt_le_iso_cig_disconnect_info_t *)p_evt->data;
+		p_info->cause = p_data->p_cig_mgr_disconnect_info->cause;
+		p_info->cis_conn_handle = p_data->p_cig_mgr_disconnect_info->cis_conn_handle;
+		p_info->conn_handle = le_get_conn_handle(p_data->p_cig_mgr_disconnect_info->conn_id);
+		p_info->cig_id = p_data->p_cig_mgr_disconnect_info->cig_id;
+		p_info->cis_id = p_data->p_cig_mgr_disconnect_info->cis_id;
+		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;
 

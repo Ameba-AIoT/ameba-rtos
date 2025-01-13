@@ -56,16 +56,6 @@ if(CONFIG_RDP_BASIC)
         COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.text -j .ram_image3.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img3.axf ${IMAGE_TARGET_FOLDER}/ram_3_s.bin
         COMMAND ${CMAKE_OBJCOPY}  -j .gnu.sgstubs -j .ram_image3.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img3.axf ${IMAGE_TARGET_FOLDER}/ram_3_nsc.bin
 
-        COMMAND ${CMAKE_COMMAND} -E echo "========== Image Info HEX =========="
-        COMMAND ${CMAKE_SIZE} -A --radix=16 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-        COMMAND ${CMAKE_SIZE} -t --radix=16 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-        COMMAND ${CMAKE_COMMAND} -E echo "========== Image Info HEX =========="
-
-        COMMAND ${CMAKE_COMMAND} -E echo "========== Image Info DEC =========="
-        COMMAND ${CMAKE_SIZE} -A --radix=10 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-        COMMAND ${CMAKE_SIZE} -t --radix=10 ${IMAGE_TARGET_FOLDER}/target_img3.axf
-        COMMAND ${CMAKE_COMMAND} -E echo "========== Image Info DEC =========="
-
         COMMAND ${CMAKE_COMMAND} -E echo "========== Image manipulating start =========="
         COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/ram_3_s.bin 32
         COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/ram_3_nsc.bin 32

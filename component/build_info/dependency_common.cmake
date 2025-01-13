@@ -415,11 +415,13 @@ if(CONFIG_802154_THREAD_EN)
         $<TARGET_FILE:openthread-spinel-rcp>
         $<TARGET_FILE:openthread-hdlc>
     )
-    ameba_target_link_if(CONFIG_802154_THREAD_RADIO_RCP_EN dep_${d_MCU_PROJECT_NAME}_wpan p_SCOPE interface
-        $<TARGET_FILE:openthread-hdlc>
-        $<TARGET_FILE:openthread-radio-spinel>
-        $<TARGET_FILE:openthread-spinel-rcp>
-    )
+    if(CONFIG_802154_RADIO_EXT_RCP_RTK OR CONFIG_802154_RADIO_EXT_RCP_OTHER)
+        ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wpan p_SCOPE interface
+            $<TARGET_FILE:openthread-hdlc>
+            $<TARGET_FILE:openthread-radio-spinel>
+            $<TARGET_FILE:openthread-spinel-rcp>
+        )
+    endif()
     ameba_target_link_if(CONFIG_802154_THREAD_BORDER_ROUTER_EN dep_${d_MCU_PROJECT_NAME}_wpan p_SCOPE interface
         ${d_SDK_LIB_APPLICATION_DIR}/lib_wpan_otbr.a
     )
@@ -465,7 +467,7 @@ if(CONFIG_802154_ZIGBEE_APPLICATION_EN)
 endif()
 endif()
 if(CONFIG_802154_THREAD_EN OR CONFIG_802154_ZIGBEE_EN)
-    ameba_target_link_ifnot(CONFIG_802154_THREAD_RADIO_RCP_EN dep_${d_MCU_PROJECT_NAME}_wpan p_SCOPE interface
+    ameba_target_link_if(CONFIG_802154_RADIO_INT_SW dep_${d_MCU_PROJECT_NAME}_wpan p_SCOPE interface
         ${d_SDK_LIB_APPLICATION_DIR}/lib_wpan_platform_sw_radio.a
     )
 endif()

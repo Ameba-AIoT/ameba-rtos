@@ -11,4 +11,4 @@ ameba_target_add(wpan_platform
         dep_${d_MCU_PROJECT_NAME}_wpan
 )
 
-ameba_add_subdirectories_ifnot(CONFIG_802154_THREAD_RADIO_RCP_EN sw_radio)
+ameba_add_subdirectories_if(CONFIG_802154_RADIO_INT_SW sw_radio)

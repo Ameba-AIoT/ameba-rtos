@@ -735,6 +735,9 @@ u32 BOOT_Share_Memory_Patch(void)
 	Rtemp = HAL_READ32(HP_SRAM_EXT_BASE + 0x100000, 0x0);
 	sum += Rtemp;
 
+	/* read wifi_share_mem_rsvd to fix hw bug */
+	sum += HAL_READ32(HP_SRAM_EXT_BASE + 0x100000 + 40 * 1024, 0x4);
+
 	/* switch share mem control back */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HPLAT_CTRL);
 	Rtemp &= ~(HSYS_BIT_SHARE_WL_MEM | HSYS_BIT_SHARE_BT_MEM);

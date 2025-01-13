@@ -11,8 +11,8 @@ set(
     ${PLATFORM_CONFIG}/
 )
 
-if(CONFIG_802154_RADIO_RCP_EXT_RTK)
-	add_subdirectory(rtk_rcp_cfu)
+if(CONFIG_802154_RADIO_EXT_RCP_RTK)
+    add_subdirectory(rtk_rcp_cfu)
 endif()
 
 set(MODULE_C_DEFINES)
@@ -25,7 +25,7 @@ list(
 	${FLASH}/rtk_802154_flash.c
 )
 
-if(NOT CONFIG_802154_THREAD_RADIO_RCP_EN)
+if(CONFIG_802154_RADIO_INT_SW)
 add_subdirectory(sw_radio)
 endif()
 

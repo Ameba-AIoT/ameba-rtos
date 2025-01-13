@@ -73,6 +73,32 @@ if [[ "$1" == "sdio" || "$1" == "sdiobridge" ]]; then
     esac
 fi
 
+if [[ "$1" == "usb" ]]; then
+	sed -i 's/#define CONFIG_AMEBADPLUS 1/#undef CONFIG_AMEBADPLUS/g' autoconf.h
+	sed -i 's/#define CONFIG_AMEBAGREEN2 1/#undef CONFIG_AMEBAGREEN2/g' autoconf.h
+	sed -i 's/#define CONFIG_FW_DOWNLOAD 1/#undef CONFIG_FW_DOWNLOAD/g' autoconf.h
+	sed -i 's/#define CALCULATE_FREE_TXBD 1/#undef CALCULATE_FREE_TXBD/g' autoconf.h
+
+	echo "choose target IC:"
+	echo "1) AMEBADPLUS"
+	echo "2) AMEBAGREEN2"
+
+	read -p "choose target IC: " choice
+    case $choice in
+        1)
+            echo "AMEBADPLUS select"
+            sed -i 's/#undef CONFIG_AMEBADPLUS/#define CONFIG_AMEBADPLUS 1/g' autoconf.h
+            ;;
+        2)
+            echo "AMEBAGREEN2 select"
+            sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' autoconf.h
+            ;;
+        *)
+            echo "Invalid selection"
+            ;;
+    esac
+fi
+
 mkdir -p include
 cp ../common/rtw_wifi_common.h include
 cp ../common/rtw_inic_common.h include
