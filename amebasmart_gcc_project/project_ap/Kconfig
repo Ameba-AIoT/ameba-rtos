@@ -154,26 +154,8 @@ menu "802154 Config" #DONE
                 config 802154_THREAD_MTD_EN_FOR_CA32
                     bool "MTD"
                 config 802154_THREAD_RCP_EN_FOR_CA32
-                    bool "RCP"
+                    bool "RCP(Only Use for Test)"
             endchoice
-            config 802154_THREAD_RADIO_RCP_EN_FOR_CA32
-                depends on !802154_THREAD_RCP_EN_FOR_CA32
-                bool "RCP AS RADIO"
-                default y
-            config 802154_THREAD_CONCURRENT_EN_FOR_CA32
-                depends on 802154_THREAD_RADIO_RCP_EN_FOR_CA32
-                bool "Enable Radio Concurrent"
-                default n
-                if 802154_THREAD_CONCURRENT_EN_FOR_CA32
-                    choice
-                        depends on 802154_THREAD_EN_FOR_CA32
-                        prompt "RCP Vendor"
-                        config 802154_THREAD_RCP_RTL8771H_FOR_CA32
-                            bool "RTL8771H"
-                        config 802154_THREAD_RCP_SILICON_FOR_CA32
-                            bool "SILICON"
-                    endchoice
-                endif
             config 802154_THREAD_LLF_TEST_EN_FOR_CA32
                 bool "Low Layer Function Test"
                 default n
@@ -181,6 +163,22 @@ menu "802154 Config" #DONE
                 bool "Rtk OT CoAP Test"
                 default n
         endif
+        choice
+            depends on 802154_THREAD_EN_FOR_CA32
+            prompt "Radio Type"
+            config 802154_RADIO_EXT_RCP_RTK_FOR_CA32
+                depends on !802154_THREAD_RCP_EN_FOR_CA32
+                bool "External RTK RCP as Radio, Default RTL8771H"
+            config 802154_RADIO_EXT_RCP_OTHER_FOR_CA32
+                depends on !802154_THREAD_RCP_EN_FOR_CA32
+                bool "External Other Vendor RCP as Radio, Like Silicon"
+            config 802154_RADIO_INT_SW_FOR_CA32
+                bool "Internal 802154 Radio, Software Radio(Only Use for Test)"
+        endchoice
+        config 802154_RADIO_RCP_CONCURRENT_EN_FOR_CA32
+            depends on 802154_RADIO_EXT_RCP_RTK_FOR_CA32 || 802154_RADIO_EXT_RCP_OTHER_FOR_CA32
+            bool "Enable 802154 External RCP Radio Concurrent"
+            default n
         config 802154_PLATFORM_TEST_EN_FOR_CA32
             bool "Enable 802154 Platform Test"
             default n

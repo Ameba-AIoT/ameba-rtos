@@ -269,7 +269,7 @@ void shell_init_ram(void)
 	/* Create a Semaphone */
 	rtos_sema_create_binary(&shell_sema);
 
-	if (SUCCESS != rtos_task_create(NULL, "LOGUART_TASK", shell_task_ram, NULL, SHELL_TASK_FUNC_STACK_SIZE, 5)) {
+	if (SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, SHELL_TASK_FUNC_STACK_SIZE, 5)) {
 		DiagPrintf("Create Log UART Task Err!!\n");
 	}
 

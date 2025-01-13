@@ -14,6 +14,9 @@ menu "CONFIG DSP Enable"
     config DSP_WITHIN_APP_IMG
         depends on DSP_EN
         bool "DSP within APP image"
+    config DSP_IMAGE_TARGET_DIR
+       string "DSP_IMAGE_TARGET_DIR"
+       depends on DSP_WITHIN_APP_IMG
 endmenu
 
 menu "CONFIG TrustZone"

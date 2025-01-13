@@ -1,6 +1,8 @@
 #ifndef __INIC_USB_H__
 #define __INIC_USB_H__
 
+#include "autoconf.h"
+
 #define SIZE_RX_DESC			0
 #define SIZE_TX_DESC			0
 

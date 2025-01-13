@@ -32,14 +32,14 @@ list(
     ${RTK_OT_SUPPORT}/rtk_ot_cli_uart.c
 )
 
-if(CONFIG_802154_THREAD_RADIO_RCP_EN)
+if(CONFIG_802154_RADIO_EXT_RCP_RTK OR CONFIG_802154_RADIO_EXT_RCP_OTHER)
     list(
         APPEND CPPSRC 
         #OpenThread radio
         ${RTK_OT_SUPPORT}/radio/rcp_radio/rtk_ot_radio.cpp
         ${RTK_OT_SUPPORT}/radio/rcp_radio/rtk_ot_hdlc_interface.cpp
     )
-else()
+elseif(CONFIG_802154_RADIO_INT_SW)
     set(SW_RADIO ${BASEDIR}/component/wpan/platform/sw_radio)
 
     list(

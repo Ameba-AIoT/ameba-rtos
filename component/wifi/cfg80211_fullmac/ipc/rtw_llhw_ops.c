@@ -59,18 +59,18 @@ int llhw_wifi_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 	dma_addr_t phy_addr;
 	int ret = 0;
 	struct device *pdev = global_idev.ipc_dev;
-	struct wifi_user_conf pusrcfg = {0};
+	struct wifi_user_conf *pusrcfg;
 
-	memcpy(&pusrcfg, pwifi_usrcfg, sizeof(struct wifi_user_conf));
-	phy_addr = dma_map_single(pdev, &pusrcfg, sizeof(struct wifi_user_conf), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, phy_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+	pusrcfg = rtw_malloc(sizeof(struct wifi_user_conf), &phy_addr);
+	if (!pusrcfg) {
+		dev_err(global_idev.fullmac_dev, "%s: malloc failed!\n", __func__);
 		return -1;
 	}
-	param_buf[0] = (u32)phy_addr;
+	memcpy(pusrcfg, pwifi_usrcfg, sizeof(struct wifi_user_conf));
 
+	param_buf[0] = (u32)phy_addr;
 	ret = llhw_ipc_send_msg(INIC_API_WIFI_SET_USR_CFG, param_buf, 1);
-	dma_unmap_single(pdev, phy_addr, sizeof(struct wifi_user_conf), DMA_TO_DEVICE);
+	rtw_mfree(sizeof(struct wifi_user_conf), pusrcfg, phy_addr);
 
 	return ret;
 }
@@ -499,7 +499,7 @@ u32 llhw_wifi_update_ip_addr(void)
 	u8 *ip_addr = NULL;
 	dma_addr_t ip_addr_phy = 0;
 
-	ip_addr = dmam_alloc_coherent(global_idev.fullmac_dev, sizeof(u32), &ip_addr_phy, GFP_KERNEL);
+	ip_addr = dma_alloc_coherent(global_idev.fullmac_dev, sizeof(u32), &ip_addr_phy, GFP_KERNEL);
 	if (!ip_addr) {
 		dev_err(global_idev.fullmac_dev, "%s: allloc ip_addr error.\n", __func__);
 		return -ENOMEM;

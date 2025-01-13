@@ -25,6 +25,8 @@ u8 *pdatabuf;
 rtos_sema_t txSemaphore = NULL;
 rtos_sema_t rxSemaphore = NULL;
 
+static const char *const TAG = "I2C";
+
 static void i2c_give_sema(u32 IsWrite)
 {
 	if (IsWrite) {
@@ -94,7 +96,7 @@ void i2c_int_task(void)
 	i2c_intctrl.I2CWaitSem = i2c_take_sema;
 
 	/* I2C Pin Mux Initialization */
-#if defined (CONFIG_AMEBASMART) || (CONFIG_AMEBAD)
+#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD))
 	Pinmux_Config(I2C_MTR_SDA, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(I2C_MTR_SCL, PINMUX_FUNCTION_I2C);
 #else

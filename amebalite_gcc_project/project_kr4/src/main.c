@@ -3,6 +3,7 @@
 #include "vfs.h"
 #include "os_wrapper.h"
 #include <mbedtls/platform.h>
+#include "rtw_coex_ipc.h"
 
 static const char *const TAG = "MAIN";
 
@@ -183,6 +184,9 @@ int main(void)
 
 	/* pre-processor of application example */
 	app_pre_example();
+
+	/* init coex ipc */
+	coex_ipc_entry();
 
 //only NP can init FW
 #ifdef CONFIG_WLAN

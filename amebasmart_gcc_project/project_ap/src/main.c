@@ -14,6 +14,7 @@
 #include "ameba_soc.h"
 #include "vfs.h"
 #include "os_wrapper.h"
+#include "rtw_coex_ipc.h"
 
 static const char *const TAG = "MAIN";
 
@@ -151,6 +152,9 @@ int main(void)
 
 	/* pre-processor of application example */
 	app_pre_example();
+
+	/* init coex ipc */
+	coex_ipc_entry();
 
 	/* wifi init*/
 #ifdef CONFIG_WLAN

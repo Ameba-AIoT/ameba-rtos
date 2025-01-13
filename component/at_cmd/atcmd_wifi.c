@@ -238,14 +238,14 @@ static int app_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 
 static void at_wlconn_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLCONN=[<type>,<value>,<type>,<value>......]\r\n");
-	at_printf("\t<type>:\tA string as \"ssid\",\"bssid\",\"pw\",\"key_id\",\"ch\"\r\n");
-	at_printf("\t<value>:\tAny type of <ssid>, <bssid>, <pw>, <key_id>, <channel>\r\n");
-	at_printf("\t<ssid>:\tA string SSID name\r\n");
-	at_printf("\t<bssid>:\tA hex-number string with colons, e.g. 1a:2b:3c:4d:5e:6f\r\n");
-	at_printf("\t<pw>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
-	at_printf("\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLCONN=[<type>,<value>,<type>,<value>......]\r\n");
+	RTK_LOGI(NOTAG, "\t<type>:\tA string as \"ssid\",\"bssid\",\"pw\",\"key_id\",\"ch\"\r\n");
+	RTK_LOGI(NOTAG, "\t<value>:\tAny type of <ssid>, <bssid>, <pw>, <key_id>, <channel>\r\n");
+	RTK_LOGI(NOTAG, "\t<ssid>:\tA string SSID name\r\n");
+	RTK_LOGI(NOTAG, "\t<bssid>:\tA hex-number string with colons, e.g. 1a:2b:3c:4d:5e:6f\r\n");
+	RTK_LOGI(NOTAG, "\t<pw>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
+	RTK_LOGI(NOTAG, "\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
 }
 
 /****************************************************************
@@ -385,10 +385,10 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlconn_help();
 		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -459,13 +459,13 @@ end:
 
 void at_wlscan_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLSCAN\r\n");
-	at_printf("AT+WLSCAN=[<type>,<ssid>,<type>,<chl1>:<chl2>:<chl3>:......]\r\n");
-	at_printf("\t<type>:\tIt may be \"ssid\" or \"ch\"\r\n");
-	at_printf("\t\tIf the <type> is \"ssid\", it should be the 1st parameter\r\n");
-	at_printf("\t\tIf the <type> is \"ch\", it is followed by channel list\r\n");
-	at_printf("\t\tThe colon \':\' is the segmentation of chennel list\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLSCAN\r\n");
+	RTK_LOGI(NOTAG, "AT+WLSCAN=[<type>,<ssid>,<type>,<chl1>:<chl2>:<chl3>:......]\r\n");
+	RTK_LOGI(NOTAG, "\t<type>:\tIt may be \"ssid\" or \"ch\"\r\n");
+	RTK_LOGI(NOTAG, "\t\tIf the <type> is \"ssid\", it should be the 1st parameter\r\n");
+	RTK_LOGI(NOTAG, "\t\tIf the <type> is \"ch\", it is followed by channel list\r\n");
+	RTK_LOGI(NOTAG, "\t\tThe colon \':\' is the segmentation of chennel list\r\n");
 }
 
 static int count_get_channel_list(char *arg, u8 *channel_list)
@@ -586,10 +586,10 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1) {
 			at_wlscan_help();
 		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -618,29 +618,34 @@ void at_wlrssi(void *arg)
 
 void at_wlstartap_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLSTARTAP=[<type>,<value>,<type>,<value>......]\r\n");
-	at_printf("\t<type>:\tA string as \"ssid\",\"ch\",\"pw\",\"sec\"\r\n");
-	at_printf("\t<value>:\tAny type of <ssid>, <ch>, <pw>, <sec>\r\n");
-	at_printf("\t<ssid>:\tThe ssid of AP, could not be empty\r\n");
-	at_printf("\t<ch>:\t[1,11]\r\n");
-	at_printf("\t<sec>:\topen/wep/tkip/wpa2/wpa3\r\n");
-	at_printf("\t<pw>:\tWith length in [8,64]\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLSTARTAP=[<type>,<value>,<type>,<value>......]\r\n");
+	RTK_LOGI(NOTAG, "\t<type>:\tA string as \"ssid\",\"ch\",\"pw\",\"sec\"\r\n");
+	RTK_LOGI(NOTAG, "\t<value>:\tAny type of <ssid>, <ch>, <pw>, <sec>\r\n");
+	RTK_LOGI(NOTAG, "\t<ssid>:\tThe ssid of AP, could not be empty\r\n");
+	RTK_LOGI(NOTAG, "\t<ch>:\t[1,11]\r\n");
+	RTK_LOGI(NOTAG, "\t<sec>:\topen/wep/tkip/wpa2/wpa3\r\n");
+	RTK_LOGI(NOTAG, "\t<pw>:\tWith length in [8,64]\r\n");
 #ifdef CONFIG_LWIP_LAYER
-	at_printf("\t<ip>:\tThe ip of AP, default 192.168.43.1\r\n");
-	at_printf("\t<gw>:\tThe gateway of AP, default 192.168.43.1\r\n");
-	at_printf("\t<msk>:\tThe netmask of AP, default 255.255.255.0\r\n");
-	at_printf("\t<pl>:\tThe ip pool of AP\r\n");
+	RTK_LOGI(NOTAG, "\t<ip>:\tThe ip of AP, default 192.168.43.1\r\n");
+	RTK_LOGI(NOTAG, "\t<gw>:\tThe gateway of AP, default 192.168.43.1\r\n");
+	RTK_LOGI(NOTAG, "\t<msk>:\tThe netmask of AP, default 255.255.255.0\r\n");
+	RTK_LOGI(NOTAG, "\t<pl>:\tThe ip pool of AP\r\n");
 #endif
-	at_printf("\te.g.\r\nAT+WLSTARTAP=ssid,test_ssid,pw,12345678,sec,wpa2\r\n");
+	RTK_LOGI(NOTAG, "\te.g.\r\nAT+WLSTARTAP=ssid,test_ssid,pw,12345678,sec,wpa2\r\n");
 }
 
 void get_ip_addr(unsigned char *ip, const char *str)
 {
+#ifdef CONFIG_LWIP_LAYER
 	ip[0] = (unsigned char) inet_addr(str) & 0xff;
 	ip[1] = (unsigned char)(inet_addr(str) >> 8) & 0xff;
 	ip[2] = (unsigned char)(inet_addr(str) >> 16) & 0xff;
 	ip[3] = (unsigned char)(inet_addr(str) >> 24) & 0xff;
+#else
+	(void) ip;
+	(void) str;
+#endif
 }
 
 /****************************************************************
@@ -877,10 +882,10 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlstartap_help();
 		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -909,7 +914,9 @@ AT command process:
 void at_wlstate(void *arg)
 {
 	int i = 0;
+#ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
 	uint8_t *p = NULL;
+#endif
 #ifdef CONFIG_LWIP_LAYER
 	u8 *mac = LwIP_GetMAC(0);
 	u8 *ip = LwIP_GetIP(0);
@@ -1005,21 +1012,22 @@ void at_wlstate(void *arg)
 #endif /* CONFIG_ETHERNET */
 
 	rtos_mem_free((void *)p_wifi_setting);
-	at_printf(ATCMD_OK_END_STR);
 
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
 	ipnat_dump();
 #endif
+
+	at_printf(ATCMD_OK_END_STR);
 }
 
 static void at_wlreconn_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLRECONN=<command>,<parameter>\r\n");
-	at_printf("<command>:\tauto: auto reconnect when wifi disconnect or connect fail\r\n");
-	at_printf("\t<parameter>:\t0: disable auto-reconnect, 1: enable auto-reconnect\r\n");
-	at_printf("<command>:\tfast: fast reconnect when wifi power on\r\n");
-	at_printf("\t<parameter>:\t0: clear stored flash data and disable fast reconnect, 1: enable fast reconnect\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLRECONN=<command>,<parameter>\r\n");
+	RTK_LOGI(NOTAG, "<command>:\tauto: auto reconnect when wifi disconnect or connect fail\r\n");
+	RTK_LOGI(NOTAG, "\t<parameter>:\t0: disable auto-reconnect, 1: enable auto-reconnect\r\n");
+	RTK_LOGI(NOTAG, "<command>:\tfast: fast reconnect when wifi power on\r\n");
+	RTK_LOGI(NOTAG, "\t<parameter>:\t0: clear stored flash data and disable fast reconnect, 1: enable fast reconnect\r\n");
 
 }
 
@@ -1081,17 +1089,17 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlreconn_help();
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
 static void at_wlpromisc_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLPROMISC=<enable>[,<all_apall>]\r\n");
-	at_printf("\t<enable>:\t\"enable\" or \"disable\"\r\n");
-	at_printf("\t<all_apall>:\t\"all\" or \"apall\" only when enabled\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLPROMISC=<enable>[,<all_apall>]\r\n");
+	RTK_LOGI(NOTAG, "\t<enable>:\t\"enable\" or \"disable\"\r\n");
+	RTK_LOGI(NOTAG, "\t<all_apall>:\t\"all\" or \"apall\" only when enabled\r\n");
 }
 
 /****************************************************************
@@ -1146,15 +1154,15 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlpromisc_help();
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
 static void at_wldbg_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLDBG=<command>[,<parameters>]\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLDBG=<command>[,<parameters>]\r\n");
 }
 
 /****************************************************************
@@ -1213,18 +1221,18 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1) {
 			at_wldbg_help();
 		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
 #ifdef CONFIG_WPS
 static void at_wlwps_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLWPS=<pbc_pin>\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLWPS=<pbc_pin>\r\n");
 }
 
 /****************************************************************
@@ -1270,20 +1278,20 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		if (error_no == 1 || error_no == 2) {
 			at_wlwps_help();
 		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 #endif
 
 static void at_wlps_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLPS=<mode>,<enable>[,<mode>,<enable>]");
-	at_printf("\t<mode>:\tShould be either \"lps\" or \"ips\"\r\n");
-	at_printf("\t<enable>:\t0: disable, 1: enable\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLPS=<mode>,<enable>[,<mode>,<enable>]");
+	RTK_LOGI(NOTAG, "\t<mode>:\tShould be either \"lps\" or \"ips\"\r\n");
+	RTK_LOGI(NOTAG, "\t<enable>:\t0: disable, 1: enable\r\n");
 }
 
 /****************************************************************
@@ -1346,8 +1354,8 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlps_help();
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 #endif /* CONFIG_WLAN */
@@ -1355,9 +1363,9 @@ end:
 #ifdef CONFIG_LWIP_LAYER
 static void at_wlstaticip_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+WLSTATICIP=<ip_addr>[,<gateway>,<netmask>]\r\n");
-	at_printf("\tThe <gateway> and <netmask> should be absent or present together\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLSTATICIP=<ip_addr>[,<gateway>,<netmask>]\r\n");
+	RTK_LOGI(NOTAG, "\tThe <gateway> and <netmask> should be absent or present together\r\n");
 }
 
 /****************************************************************
@@ -1397,18 +1405,18 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_wlstaticip_help();
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
 static void at_ping_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+PING=<host>[,<options>]\r\n");
-	at_printf("\t-t\tPing the specified host until stopped\r\n");
-	at_printf("\t-n\tNumber of echo requests to send (default 4 times)\r\n");
-	at_printf("\t-l\tSend buffer size (default 32 bytes)\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+PING=<host>[,<options>]\r\n");
+	RTK_LOGI(NOTAG, "\t-t\tPing the specified host until stopped\r\n");
+	RTK_LOGI(NOTAG, "\t-n\tNumber of echo requests to send (default 4 times)\r\n");
+	RTK_LOGI(NOTAG, "\t-l\tSend buffer size (default 32 bytes)\r\n");
 }
 
 /****************************************************************
@@ -1452,8 +1460,8 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_ping_help();
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
@@ -1469,15 +1477,15 @@ _WEAK void cmd_iperf3(int argc, char **argv)
 
 static void at_iperf_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+IPERF=-help\r\n");
-	at_printf("AT+IPERF=[-s|-c,host|stop],[options]\r\n");
-	at_printf("\tExample for TCP:\r\n");
-	at_printf("\tAT+IPERF=-s,-p,5002\r\n");
-	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
-	at_printf("\tExample for UDP:\r\n");
-	at_printf("\tAT+IPERF=-s,-p,5002,-u\r\n");
-	at_printf("\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF=-help\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF=[-s|-c,host|stop],[options]\r\n");
+	RTK_LOGI(NOTAG, "\tExample for TCP:\r\n");
+	RTK_LOGI(NOTAG, "\tAT+IPERF=-s,-p,5002\r\n");
+	RTK_LOGI(NOTAG, "\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
+	RTK_LOGI(NOTAG, "\tExample for UDP:\r\n");
+	RTK_LOGI(NOTAG, "\tAT+IPERF=-s,-p,5002,-u\r\n");
+	RTK_LOGI(NOTAG, "\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
 }
 
 /****************************************************************
@@ -1529,7 +1537,7 @@ void at_iperf(void *arg)
 
 	if (pos) {
 		if ((memcmp(pos - 1, "-", 1)) || (pos == char_arg)) {
-			at_printf("- needs to be added before u\r\n");
+			RTK_LOGI(NOTAG, "- needs to be added before u\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -1560,25 +1568,25 @@ void at_iperf(void *arg)
 	}
 
 end:
+	if (input) {
+		rtos_mem_free((void *)input);
+	}
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_iperf_help();
-	}
-	if (input) {
-		rtos_mem_free((void *)input);
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 
 static void at_iperf3_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+IPERF3=-help\r\n");
-	at_printf("AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
-	at_printf("\tExample:\r\n");
-	at_printf("\tAT+IPERF3=-s,-p,5002\r\n");
-	at_printf("\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF3=-help\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
+	RTK_LOGI(NOTAG, "\tExample:\r\n");
+	RTK_LOGI(NOTAG, "\tAT+IPERF3=-s,-p,5002\r\n");
+	RTK_LOGI(NOTAG, "\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
 }
 
 /****************************************************************
@@ -1632,8 +1640,8 @@ end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
 		at_iperf3_help();
+		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
 

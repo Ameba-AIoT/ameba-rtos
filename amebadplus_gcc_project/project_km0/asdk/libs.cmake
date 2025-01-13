@@ -40,9 +40,11 @@ if(CONFIG_WLAN)
             list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex.a)
         endif()
     endif()
-    if(CONFIG_AS_INIC_AP)
-        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
-    endif()
+endif()
+
+# coex api
+if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
+    list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
 endif()
 
 list(

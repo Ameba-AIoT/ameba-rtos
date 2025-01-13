@@ -102,11 +102,13 @@ if(CONFIG_WLAN)
             )
         endif()
     endif()
-    if (CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
-        ameba_target_link(dep_${d_MCU_PROJECT_NAME}_rtk_coex_api p_SCOPE interface p_WHOLE_ARCHIVE
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_coex_api.a
-        )
-    endif()
+endif()
+
+# coex api
+if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
+    ameba_target_link(dep_${d_MCU_PROJECT_NAME}_rtk_coex_api p_SCOPE interface p_WHOLE_ARCHIVE
+        ${d_SDK_LIB_APPLICATION_DIR}/lib_coex_api.a
+    )
 endif()
 ####################################### dep_rtk_coex end ##############################################
 
@@ -293,16 +295,18 @@ if(CONFIG_WLAN)
 
     # AP Link Library
     if(CONFIG_AS_INIC_AP)
-        if(CONFIG_MP_INCLUDED)
-            ameba_target_link_if(CONFIG_MP_SHRINK dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap_mp_shrink.a
-                p_ELSE
-                ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap_mp.a
-            )
-        else()
-            ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface  p_WHOLE_ARCHIVE
-                ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap.a
-            )
+        if(NOT CONFIG_INIC_INTF_SPI)
+            if(CONFIG_MP_INCLUDED)
+                ameba_target_link_if(CONFIG_MP_SHRINK dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap_mp_shrink.a
+                    p_ELSE
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap_mp.a
+                )
+            else()
+                ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface  p_WHOLE_ARCHIVE
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap.a
+                )
+            endif()
         endif()
         ameba_target_link_ifnot(CONFIG_MP_SHRINK dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
             ${d_SDK_LIB_APPLICATION_DIR}/lib_wpa_lite.a

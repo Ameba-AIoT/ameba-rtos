@@ -39,26 +39,8 @@ comment "----------Application Config----------"
                 # config 802154_THREAD_MTD_EN_FOR_KM4
                     # bool "MTD"
                 # config 802154_THREAD_RCP_EN_FOR_KM4
-                    # bool "RCP"
+                    # bool "RCP(Only Use for Test)"
             # endchoice
-            # config 802154_THREAD_RADIO_RCP_EN_FOR_KM4
-                # depends on !802154_THREAD_RCP_EN_FOR_KM4
-                # bool "RCP AS RADIO"
-                # default y
-            # config 802154_THREAD_CONCURRENT_EN_FOR_KM4
-                # depends on 802154_THREAD_RADIO_RCP_EN_FOR_KM4
-                # bool "Enable Radio Concurrent"
-                # default n
-                # if 802154_THREAD_CONCURRENT_EN_FOR_KM4
-                    # choice
-                        # depends on 802154_THREAD_EN_FOR_KM4
-                        # prompt "RCP Vendor"
-                        # config 802154_THREAD_RCP_RTL8771H_FOR_KM4
-                            # bool "RTL8771H"
-                        # config 802154_THREAD_RCP_SILICON_FOR_KM4
-                            # bool "SILICON"
-                    # endchoice
-                # endif
             # config 802154_THREAD_LLF_TEST_EN_FOR_KM4
                 # bool "Low Layer Function Test"
                 # default n
@@ -142,6 +124,22 @@ comment "----------Application Config----------"
                 # endif
             # endif
         # endif
+        # choice
+            # depends on 802154_THREAD_EN_FOR_KM4 || 802154_ZIGBEE_EN_FOR_KM4
+            # prompt "Radio Type"
+            # config 802154_RADIO_EXT_RCP_RTK_FOR_KM4
+                # depends on !802154_THREAD_RCP_EN_FOR_KM4
+                # bool "External RTK RCP as Radio, Default RTL8771H"
+            # config 802154_RADIO_EXT_RCP_OTHER_FOR_KM4
+                # depends on !802154_THREAD_RCP_EN_FOR_KM4 && !802154_ZIGBEE_EN_FOR_KM4
+                # bool "External Other Vendor RCP as Radio, Like Silicon"
+            # config 802154_RADIO_INT_SW_FOR_KM4
+                # bool "Internal 802154 Radio, Software Radio(Only Use for Test)"
+        # endchoice
+        # config 802154_RADIO_RCP_CONCURRENT_EN_FOR_KM4
+            # depends on 802154_RADIO_EXT_RCP_RTK_FOR_KM4 || 802154_RADIO_EXT_RCP_OTHER_FOR_KM4
+            # bool "Enable 802154 External RCP Radio Concurrent"
+            # default n
         # config 802154_PLATFORM_TEST_EN_FOR_KM4
             # bool "Enable 802154 Platform Test"
             # default n

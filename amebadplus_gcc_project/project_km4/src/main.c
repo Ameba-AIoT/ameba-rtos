@@ -5,6 +5,8 @@
 #include "vfs.h"
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
+#include "rtw_coex_ipc.h"
+
 static const char *const TAG = "MAIN";
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
@@ -213,6 +215,8 @@ int main(void)
 #if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined(CONFIG_USB_FULLMAC)) && defined(CONFIG_KM4_AS_NP)
 	wififw_task_create();
 #endif
+	/* init coex ipc */
+	coex_ipc_entry();
 
 #if defined(CONFIG_WLAN)
 	wlan_initialize();

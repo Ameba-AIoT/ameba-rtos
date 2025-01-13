@@ -10,7 +10,7 @@ extern "C" {
 #include <sys/unistd.h>
 #include <sys/stat.h>
 
-#define PATH_MAX 4096
+#define PATH_MAX 256
 #define MAX_FS_SIZE 2		//number of supported file system types
 #define MAX_USER_SIZE 2		//number of supported file system regions
 
@@ -103,7 +103,7 @@ typedef struct _vfs_file {
 	int interface_id;//Reserve
 	unsigned char user_id;
 	void *file;
-	char name[1024];
+	char name[PATH_MAX + 1];
 } vfs_file;
 
 typedef struct {

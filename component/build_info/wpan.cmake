@@ -54,7 +54,7 @@ ameba_target_set(src_${d_MCU_PROJECT_NAME}_wpan_platform p_SCOPE interface
         ${c_CMPT_WPAN_DIR}/platform/flash/rtk_802154_flash.c
 )
 
-ameba_target_set_if(CONFIG_802154_RADIO_RCP_EXT_RTK src_${d_MCU_PROJECT_NAME}_wpan_platform p_SCOPE interface
+ameba_target_set_if(CONFIG_802154_RADIO_EXT_RCP_RTK src_${d_MCU_PROJECT_NAME}_wpan_platform p_SCOPE interface
     p_INCLUDES
         ${c_CMPT_WPAN_DIR}/platform/rtk_rcp_cfu
     p_SOURCES
@@ -107,12 +107,12 @@ ameba_target_set(src_${d_MCU_PROJECT_NAME}_wpan_ot p_SCOPE interface
         ${c_CMPT_WPAN_DIR}/openthread/rtk_ot_support/rtk_ot_cli_uart.c
 )
 
-if(CONFIG_802154_THREAD_RADIO_RCP_EN)
+if(CONFIG_802154_RADIO_EXT_RCP_RTK OR CONFIG_802154_RADIO_EXT_RCP_OTHER)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_wpan_ot p_SCOPE interface
         ${c_CMPT_WPAN_DIR}/openthread/rtk_ot_support/radio/rcp_radio/rtk_ot_radio.cpp
         ${c_CMPT_WPAN_DIR}/openthread/rtk_ot_support/radio/rcp_radio/rtk_ot_hdlc_interface.cpp
     )
-else()
+elseif(CONFIG_802154_RADIO_INT_SW)
     ameba_target_set(src_${d_MCU_PROJECT_NAME}_wpan_ot p_SCOPE interface
         p_INCLUDES
             ${c_CMPT_WPAN_DIR}/platform/sw_radio/mac

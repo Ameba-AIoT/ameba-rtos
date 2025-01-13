@@ -18,6 +18,7 @@ if(CONFIG_MP_SHRINK)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_rtk_coex p_SCOPE interface
         ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_mp_api.c
         ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_ipc_dev.c 
+        ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_ipc_dev_api.c
     )
 else()
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_rtk_coex p_SCOPE interface
@@ -37,7 +38,7 @@ else()
         ${c_COMPONENT_DIR}/rtk_coex/rtk_coex_ext_chip/rtw_coex_ext_chip_debug.c
         ${c_COMPONENT_DIR}/rtk_coex/rtk_coex_ext_chip/rtw_coex_ext_chip_btwpan.c
         ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_ipc_dev.c 
-
+        ${c_COMPONENT_DIR}/rtk_coex/rtw_coex_ipc_dev_api.c 
     )
     if(${d_PLATFORM_TYPE} STREQUAL "amebadplus")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_rtk_coex p_SCOPE interface

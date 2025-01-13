@@ -49,7 +49,7 @@ if(CONFIG_WLAN)
     )
 endif()
 
-if(CONFIG_WLAN)
+if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
     list(
         APPEND CSRC
         ${DIR}/atcmd_coex.c

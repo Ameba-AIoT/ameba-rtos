@@ -52,7 +52,7 @@ if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
         )
     endif()
 
-    if(CONFIG_WLAN)
+    if(CONFIG_CORE_AS_AP)
         list(
             APPEND CSRC
             ${DIR}/atcmd_coex.c

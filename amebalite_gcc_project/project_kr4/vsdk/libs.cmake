@@ -66,7 +66,6 @@ if(CONFIG_WLAN)
     # AP Link Library
     if(CONFIG_AS_INIC_AP)
         list(APPEND LINK_APP_LIB ${APP_LIB})
-        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     # NP Link Library
     elseif(CONFIG_AS_INIC_NP)
         if(NOT CONFIG_MP_SHRINK)
@@ -96,8 +95,15 @@ if(CONFIG_WLAN)
         else()
             list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex.a)
         endif()
-        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     endif()
+endif()
+
+# coex api
+if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
+    list(
+        APPEND LINK_APP_LIB 
+        ${APP_LIB_DIR}/lib_coex_api.a
+    )
 endif()
 
 # soc

@@ -371,3 +371,8 @@ void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retrie
 	call_noused = __LINE__;
 }
 
+void wifi_ap_set_invisible(u8 enable)
+{
+	UNUSED(enable);
+	call_noused = __LINE__;
+}

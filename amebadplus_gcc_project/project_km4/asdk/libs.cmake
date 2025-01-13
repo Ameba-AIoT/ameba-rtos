@@ -138,7 +138,6 @@ if(CONFIG_WLAN)
             APPEND LINK_APP_LIB
             ${APP_LIB}
         )        
-        list(APPEND LINK_APP_LIB ${APP_LIB_DIR}/lib_coex_api.a)
     elseif(CONFIG_AS_INIC_NP)
         if(CONFIG_MP_INCLUDED)
             list(
@@ -155,7 +154,6 @@ if(CONFIG_WLAN)
         list(
             APPEND LINK_APP_LIB
             ${APP_LIB}
-            ${APP_LIB_DIR}/lib_coex_api.a
         )
         if(CONFIG_MP_INCLUDED)
             list(
@@ -169,6 +167,14 @@ if(CONFIG_WLAN)
             )
         endif()        
     endif()
+endif()
+
+# coex api
+if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
+    list(
+        APPEND LINK_APP_LIB 
+        ${APP_LIB_DIR}/lib_coex_api.a
+    )
 endif()
 
 if(CONFIG_USB_DEVICE_EN)

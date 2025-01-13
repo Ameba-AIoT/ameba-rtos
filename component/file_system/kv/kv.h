@@ -19,7 +19,7 @@
 extern  "C" {
 #endif  // __cplusplus
 
-#define MAX_KEY_LENGTH 128
+#define MAX_KEY_LENGTH 256
 
 /*============================================================================*
   *                                Functions

@@ -64,14 +64,14 @@ if(CONFIG_802154_THREAD_RCP_EN)
 	)
 endif()
 
-if(CONFIG_802154_THREAD_RADIO_RCP_EN)
+if(CONFIG_802154_RADIO_EXT_RCP_RTK OR CONFIG_802154_RADIO_EXT_RCP_OTHER)
 	list(
 		APPEND LINK_THIRD_APP_LIB
 		${LIB_OPENTHREAD_HDLC_DIR}/libopenthread-hdlc.a
 		${LIB_OPENTHREAD_SPINEL_DIR}/libopenthread-radio-spinel.a
 		${LIB_OPENTHREAD_SPINEL_DIR}/libopenthread-spinel-rcp.a
 	)
-else()
+elseif(CONFIG_802154_RADIO_INT_SW)
 	list(
 		APPEND LINK_APP_LIB
 		${APP_LIB_DIR}/lib_wpan_sw_radio.a

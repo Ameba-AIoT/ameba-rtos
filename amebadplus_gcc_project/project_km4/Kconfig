@@ -77,19 +77,6 @@ menu "802154 Config"
                 config 802154_THREAD_MTD_EN_FOR_KM4
                     bool "MTD"
             endchoice
-            config 802154_THREAD_CONCURRENT_EN_FOR_KM4
-                bool "Enable Radio Concurrent"
-                default n
-                if 802154_THREAD_CONCURRENT_EN_FOR_KM4
-                    choice
-                        depends on 802154_THREAD_EN_FOR_KM4
-                        prompt "RCP Vendor"
-                        config 802154_THREAD_RCP_RTL8771H_FOR_KM4
-                            bool "RTL8771H"
-                        config 802154_THREAD_RCP_SILICON_FOR_KM4
-                            bool "SILICON"
-                    endchoice
-                endif
             config 802154_THREAD_LLF_TEST_EN_FOR_KM4
                 bool "Low Layer Function Test"
                 default n
@@ -97,6 +84,18 @@ menu "802154 Config"
                 bool "Rtk OT CoAP Test"
                 default n
         endif
+        choice
+            depends on 802154_THREAD_EN_FOR_KM4
+            prompt "Radio Type"
+            config 802154_RADIO_EXT_RCP_RTK_FOR_KM4
+                bool "External RTK RCP as Radio, Default RTL8771H"
+            config 802154_RADIO_EXT_RCP_OTHER_FOR_KM4
+                bool "External Other Vendor RCP as Radio, Like Silicon"
+        endchoice
+        config 802154_RADIO_RCP_CONCURRENT_EN_FOR_KM4
+            depends on 802154_RADIO_EXT_RCP_RTK_FOR_KM4 || 802154_RADIO_EXT_RCP_OTHER_FOR_KM4
+            bool "Enable 802154 External RCP Radio Concurrent"
+            default n
         config 802154_PLATFORM_TEST_EN_FOR_KM4
             bool "Enable 802154 Platform Test"
             default n

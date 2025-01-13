@@ -73,23 +73,25 @@ if (CONFIG_WLAN)
 
     # AP Link Library
     if(CONFIG_AS_INIC_AP)
-        if(CONFIG_MP_INCLUDED)
-            if(CONFIG_MP_SHRINK)
-                list(
-                    APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_inic_ap_mp_shrink.a
-                )
+        if(NOT CONFIG_INIC_INTF_SPI)
+            if(CONFIG_MP_INCLUDED)
+                if(CONFIG_MP_SHRINK)
+                    list(
+                        APPEND LINK_APP_LIB
+                        ${APP_LIB_DIR}/lib_wifi_inic_ap_mp_shrink.a
+                    )
+                else()
+                    list(
+                        APPEND LINK_APP_LIB
+                        ${APP_LIB_DIR}/lib_wifi_inic_ap_mp.a
+                    )
+                endif()
             else()
                 list(
                     APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_inic_ap_mp.a
+                    ${APP_LIB_DIR}/lib_wifi_inic_ap.a
                 )
             endif()
-        else()
-            list(
-                APPEND LINK_APP_LIB
-                ${APP_LIB_DIR}/lib_wifi_inic_ap.a
-            )
         endif()
         if(NOT CONFIG_MP_SHRINK)
             list(

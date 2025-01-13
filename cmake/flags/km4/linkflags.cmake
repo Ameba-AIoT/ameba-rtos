@@ -94,6 +94,9 @@ elseif(CONFIG_AMEBAL2)
         "SHELL:-Wl,-wrap,strncpy"
         "SHELL:-Wl,-wrap,strtol"
         "SHELL:-Wl,-wrap,sprintf"
+        "SHELL:-Wl,-wrap,readdir"
+        "SHELL:-Wl,-wrap,opendir"
+        "SHELL:-Wl,-wrap,closedir"
     )
 else()
     list(

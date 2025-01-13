@@ -125,8 +125,8 @@ int llhw_xmit_init(void)
 	}
 
 	xmit_priv->skb_buf_max_size = ((skb_buf_size + (SKB_CACHE_SZ - 1)) & ~(SKB_CACHE_SZ - 1));
-	xmit_priv->host_skb_buff = (struct dev_sk_buff *)dmam_alloc_coherent(pdev, sizeof(struct dev_sk_buff) * skb_num_ap, &xmit_priv->host_skb_buff_phy, GFP_KERNEL);
-	skb_data_buf = dmam_alloc_coherent(pdev, xmit_priv->skb_buf_max_size * skb_num_ap, &xmit_priv->host_skb_data_phy, GFP_KERNEL);
+	xmit_priv->host_skb_buff = (struct dev_sk_buff *)dma_alloc_coherent(pdev, sizeof(struct dev_sk_buff) * skb_num_ap, &xmit_priv->host_skb_buff_phy, GFP_KERNEL);
+	skb_data_buf = dma_alloc_coherent(pdev, xmit_priv->skb_buf_max_size * skb_num_ap, &xmit_priv->host_skb_data_phy, GFP_KERNEL);
 	if (!xmit_priv->host_skb_buff || !skb_data_buf) {
 		dev_err(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
 		return -ENOMEM;
