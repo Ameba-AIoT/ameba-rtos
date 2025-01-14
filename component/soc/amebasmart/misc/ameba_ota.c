@@ -1304,11 +1304,6 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 	flash_get_layout_info(IMG_APIMG_OTA2, &IMG_ADDR[OTA_IMGID_APIMG][OTA_INDEX_2], NULL);
 #endif
 
-	if ((type != OTA_VFS) && (!host)) {
-		ota_printf(_OTA_ERR_, "%s, host can't be null", __func__);
-		return -1;
-	}
-
 	if (!ctx || !resource) {
 		ota_printf(_OTA_ERR_, "%s, ctx || resourse can't be null", __func__);
 		return -1;

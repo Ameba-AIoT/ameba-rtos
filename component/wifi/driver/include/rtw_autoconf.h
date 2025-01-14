@@ -100,11 +100,8 @@
 
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
-/* for defrag in rom, remove after rom code freeze */
-#if (defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2) || (defined(CONFIG_AMEBAPRO3) && CONFIG_AMEBAPRO3)
+#ifndef CONFIG_AMEBAL2
 #define CONFIG_FRAME_DEFRAG // support frame defragmentaion
-#else
-//#define CONFIG_FRAME_DEFRAG // support frame defragmentaion
 #endif
 
 #ifdef CONFIG_MP_INCLUDED
