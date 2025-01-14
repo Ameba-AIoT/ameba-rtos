@@ -145,36 +145,44 @@ end:
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index)
 {
 	char *prefix;
-	char *path = (char *)rtos_mem_zmalloc(128);
+	char *path = (char *)rtos_mem_zmalloc(PATH_MAX);
+
+	if (path == NULL) {
+		return -1;
+	}
+
 	struct stat stat_buf;
 	prefix = find_vfs_tag(VFS_REGION_1);
 	switch (cert_type) {
 	case CLIENT_CA:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_ca_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_ca_%d.crt", prefix, index);
 		break;
 	case CLIENT_CERT:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_cert_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_cert_%d.crt", prefix, index);
 		break;
 	case CLIENT_KEY:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_key_%d.key", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_key_%d.key", prefix, index);
 		break;
 	case SERVER_CA:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_ca_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/server_ca_%d.crt", prefix, index);
 		break;
 	case SERVER_CERT:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_cert_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/server_cert_%d.crt", prefix, index);
 		break;
 	case SERVER_KEY:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_key_%d.key", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/server_key_%d.key", prefix, index);
 		break;
 	default:
+		rtos_mem_free(path);
 		return -1;
 	}
 
 	if (stat(path, &stat_buf) < 0) {
+		rtos_mem_free(path);
 		return 0;
 	}
 
+	rtos_mem_free(path);
 	return stat_buf.st_size;
 }
 
@@ -186,46 +194,56 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 
 	int ret;
 	char *prefix;
-	char *path = (char *)rtos_mem_zmalloc(128);
+	char *path = (char *)rtos_mem_zmalloc(PATH_MAX);
+
+	if (path == NULL) {
+		return -1;
+	}
+
 	vfs_file *finfo;
 	struct stat stat_buf;
 	prefix = find_vfs_tag(VFS_REGION_1);
 	switch (cert_type) {
 	case CLIENT_CA:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_ca_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_ca_%d.crt", prefix, index);
 		break;
 	case CLIENT_CERT:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_cert_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_cert_%d.crt", prefix, index);
 		break;
 	case CLIENT_KEY:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/client_key_%d.key", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/client_key_%d.key", prefix, index);
 		break;
 	case SERVER_CA:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_ca_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/server_ca_%d.crt", prefix, index);
 		break;
 	case SERVER_CERT:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_cert_%d.crt", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/server_cert_%d.crt", prefix, index);
 		break;
 	case SERVER_KEY:
-		DiagSnPrintf(path, sizeof(path), "%s:CERT/server_key_%d.key", prefix, index);
+		DiagSnPrintf(path, PATH_MAX, "%s:CERT/server_key_%d.key", prefix, index);
 		break;
 	default:
+		rtos_mem_free(path);
 		return -1;
 	}
 
 	ret = stat(path, &stat_buf);
 	if (ret < 0 || stat_buf.st_size == 0) {
+		rtos_mem_free(path);
 		return 0;
 	}
 
 	finfo = (vfs_file *)fopen(path, "r");
 	if (finfo == NULL) {
+		rtos_mem_free(path);
 		return -1;
 	}
 
 	ret = fread(buffer, stat_buf.st_size, 1, (FILE *)finfo);
 
 	fclose((FILE *)finfo);
+
+	rtos_mem_free(path);
 
 	return ret == stat_buf.st_size ? ret : -1;
 }

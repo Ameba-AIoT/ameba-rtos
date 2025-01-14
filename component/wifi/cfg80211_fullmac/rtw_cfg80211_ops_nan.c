@@ -183,9 +183,7 @@ static int cfg80211_rtw_add_nan_func(struct wiphy *wiphy,
 		nan_param.tx_filters = (struct cfg80211_nan_func_filter *)tx_filters_phy;
 	}
 
-	if (llhw_wifi_add_nan_func(&nan_param, func) < 0) {
-		ret = -ENOTCONN;
-	}
+	func->instance_id = llhw_wifi_add_nan_func(&nan_param, func);
 
 	dump_cfg80211_nan_func(func);
 
