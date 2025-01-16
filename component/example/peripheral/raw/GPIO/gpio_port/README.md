@@ -68,3 +68,4 @@ This example does not support the loguart command response.
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaD

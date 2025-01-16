@@ -6,6 +6,8 @@
 #include "lv_hal.h"
 #include "lv_demo_widgets.h"
 
+#include "os_wrapper.h"
+
 
 void lv_demo_widgets_task(void *param)
 {

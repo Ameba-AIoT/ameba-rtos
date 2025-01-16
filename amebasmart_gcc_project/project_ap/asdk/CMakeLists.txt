@@ -61,7 +61,7 @@ ameba_add_subdirectories_if(CONFIG_RANGE_ENABLED
 
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
-    COMMAND make -j TOOLCHAIN_DIR=${TOOLCHAIN_DIR} ASDK_VER=${ASDK_VER} TOOLCHAINVER=${TOOLCHAINVER} -C ${d_SOC_PLATFORM_DIR}/atf all
+    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap -C ${d_SOC_PLATFORM_DIR}/atf all
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/make/atf
     COMMENT "Building atf project using make"
 )
@@ -70,7 +70,7 @@ ameba_target_depend(target_img2_${PROJECT_NAME} atf)
 ############################################################################
 
 #######################make_subdirs_lib_img2################################
-if(NOT d_AMEBA_REALSE)
+if(NOT d_AMEBA_RELEASE)
     ameba_add_subdirectories(
         make/usb_otg/device/lib
         make/usb_otg/host/lib
@@ -218,7 +218,8 @@ add_custom_command(
 
     COMMAND ${CMAKE_COMMAND}
     -Dd_PLATFORM_PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}
-    -Dd_MCU_PROJECT_DIR=${d_MCU_PROJECT_DIR}
+    -Dd_PLATFORM_TYPE=${d_PLATFORM_TYPE}
+    -DCROSS_COMPILE=${CROSS_COMPILE}
     -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
     -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR}
     -DASDK_VER=${ASDK_VER}

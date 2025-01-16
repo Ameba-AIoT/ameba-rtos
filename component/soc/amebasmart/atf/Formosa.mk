@@ -52,9 +52,9 @@ endif
 endif
 
 ifeq ($(CONFIG_MP_INCLUDED),y)
-BL33 := $(DIR_ATF)/../../../../amebasmart_gcc_project/project_ap/asdk/image_mp/ca32_image2_all.bin
+BL33 := $(PROJECT_DIR)/asdk/image_mp/ca32_image2_all.bin
 else
-BL33 := $(DIR_ATF)/../../../../amebasmart_gcc_project/project_ap/asdk/image/ca32_image2_all.bin
+BL33 := $(PROJECT_DIR)/asdk/image/ca32_image2_all.bin
 endif
 #$(DIR_FREERTOS)/Boards/Realtek_Sheipa_ARM_CA35_32/rtosdemo.bin
 

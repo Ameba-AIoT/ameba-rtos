@@ -545,12 +545,14 @@ void at_wsopen(void *arg)
 		goto end;
 #endif
 
-		if (!(argv[5] != NULL && (strlen(argv[5]) > 0))) {
-			RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "certificate_index is empty!\r\n");
-			error_no = 1;
-			goto end;
+		if (conn_type > WEBSOCKET_OVER_TLS) {
+			if (!(argv[5] != NULL && (strlen(argv[5]) > 0))) {
+				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "certificate_index is empty!\r\n");
+				error_no = 1;
+				goto end;
+			}
+			cert_index = atoi(argv[5]);
 		}
-		cert_index = atoi(argv[5]);
 
 		memcpy(url, "wss://", strlen("wss://"));
 		memcpy(url + strlen("wss://"), host, strlen(host));

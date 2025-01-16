@@ -57,7 +57,7 @@ void AudioHalCaptureTestApp(char **argv)
 
 	frames = CaptureSample(channels, rate, record_bytes_one_time);
 
-	printf("captured %u frames \n", frames);
+	printf("captured %lu frames \n", frames);
 
 	return;
 }
@@ -71,7 +71,6 @@ static uint32_t CaptureSample(uint32_t channels, uint32_t rate, uint32_t record_
 	uint32_t     frames = 0;
 	uint32_t     bits = 16;
 	int32_t      format = AUDIO_HW_FORMAT_PCM_16_BIT;
-	int32_t      ret;
 	uint32_t     record_size = rate * RECORD_SECONDS * channels * bits / 8;
 
 	struct AudioHwManager        *audio_manager = NULL;
@@ -194,7 +193,7 @@ static uint32_t CaptureSample(uint32_t channels, uint32_t rate, uint32_t record_
 		goto end;
 	}
 
-	printf("capturing sample: %u ch, %u hz\n", channels, rate);
+	printf("capturing sample: %lu ch, %lu hz\n", channels, rate);
 	do {
 		audio_stream_in->Read(audio_stream_in, buffer, size);
 		//drop first 100ms data of record, because record need some time to be stable, it's normal.

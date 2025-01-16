@@ -37,6 +37,10 @@ static struct _rtw_softap_info_t ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
+#if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
+extern void ipnat_dump(void);
+#endif
+
 extern int wifi_set_ips_internal(u8 enable);
 #ifdef CONFIG_AS_INIC_AP
 extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
@@ -196,44 +200,6 @@ static void print_scan_result(struct rtw_scan_result *record)
 	}
 	at_printf("\r\n");
 #endif
-}
-
-static int app_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
-{
-	struct rtw_scan_result *scanned_AP_info;
-	char *scan_buf = NULL;
-	unsigned int i = 0;
-
-	UNUSED(user_data);
-
-	if (scanned_AP_num == 0) {/* scanned no AP*/
-		return RTW_ERROR;
-	}
-
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
-		return RTW_ERROR;
-	}
-
-	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		rtos_mem_free((void *)scan_buf);
-		return RTW_ERROR;
-	}
-
-	for (i = 0; i < scanned_AP_num; i++) {
-#if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
-		at_printf("[%d],", (i + 1));
-#else
-		at_printf("%d\t ", (i + 1));
-#endif
-		scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
-		scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
-
-		print_scan_result(scanned_AP_info);
-	}
-	rtos_mem_free((void *)scan_buf);
-
-	return RTW_SUCCESS;
 }
 
 static void at_wlconn_help(void)
@@ -512,10 +478,12 @@ void at_wlscan(void *arg)
 {
 	u8 *channel_list = NULL;
 	int num_channel = 0;
-	int i = 0, j = 0, argc = 0;
+	unsigned int i = 0, j = 0, argc = 0, scanned_AP_num = 0;
 	int error_no = 0, ret = 0;
 	char *argv[MAX_ARGC] = {0};
+	char *scan_buf = NULL;
 	struct _rtw_scan_param_t scan_param;
+	struct rtw_scan_result *scanned_AP_info;
 	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	memset(&scan_param, 0, sizeof(struct _rtw_scan_param_t));
@@ -573,12 +541,44 @@ void at_wlscan(void *arg)
 		}
 	}
 
-	scan_param.scan_user_callback = app_scan_result_handler;
-	ret = wifi_scan_networks(&scan_param, 0);
-	if (ret != RTW_SUCCESS) {
+	ret = wifi_scan_networks(&scan_param, 1);
+	if (ret < RTW_SUCCESS) {
 		RTK_LOGW(NOTAG, "[+WLSCAN] wifi_scan_networks ERROR\r\n");
 		error_no = 5;
 		goto end;
+	}
+
+	/* get scan results and log them */
+	scanned_AP_num = ret;
+
+	if (scanned_AP_num != 0) {
+		scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+		if (scan_buf == NULL) {
+			RTK_LOGW(NOTAG, "[+WLSCAN]ERROR: Can not malloc memory for scan result\r\n");
+			error_no = 3;
+			goto end;
+		}
+
+		if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
+			RTK_LOGW(NOTAG, "[+WLSCAN] Get result failed\r\n");
+			rtos_mem_free((void *)scan_buf);
+			error_no = 5;
+			goto end;
+		}
+
+		for (i = 0; i < scanned_AP_num; i++) {
+#if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
+			at_printf("[%d],", (i + 1));
+#else
+			at_printf("%d\t ", (i + 1));
+#endif
+			scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
+			scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
+
+			print_scan_result(scanned_AP_info);
+		}
+
+		rtos_mem_free((void *)scan_buf);
 	}
 
 end:

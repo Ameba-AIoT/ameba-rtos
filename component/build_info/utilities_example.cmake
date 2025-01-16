@@ -19,7 +19,7 @@ ameba_target_include(src_${d_MCU_PROJECT_NAME}_utilities_example p_SCOPE interfa
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_mesh_provisioner_rtk_demo
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_mesh_device_rtk_demo
 )
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_utilities_example p_SCOPE interface
             ${c_FREERTOS_DIR}/include

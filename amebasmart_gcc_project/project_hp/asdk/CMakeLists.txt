@@ -61,7 +61,7 @@ endif()
 ############################################################################
 
 #######################make_subdirs_lib_img2################################
-if(NOT d_AMEBA_REALSE)
+if(NOT d_AMEBA_RELEASE)
     ameba_add_subdirectories(
         # make/RT_xmodem
         make_lib/bootloader_lib

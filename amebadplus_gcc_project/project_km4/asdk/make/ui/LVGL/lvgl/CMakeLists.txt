@@ -2,22 +2,22 @@ set(DIR ${BASEDIR}/component/ui/LVGL/lvgl)
 
 set(
     MODULE_IFLAGS
-    ${BASEDIR}/component/ui/LVGL/port/amebadplus 
-	${DIR}/ 
-	${DIR}/src 
-	${DIR}/src/core 
-	${DIR}/src/draw 
-	${DIR}/src/extra 
-	${DIR}/src/font 
-	${DIR}/src/hal 
-	${DIR}/src/misc 
+    ${BASEDIR}/component/ui/LVGL/port/amebadplus
+	${DIR}/
+	${DIR}/src
+	${DIR}/src/core
+	${DIR}/src/draw
+	${DIR}/src/extra
+	${DIR}/src/font
+	${DIR}/src/hal
+	${DIR}/src/misc
 	${DIR}/src/widgets
 )
 
 set(MODULE_C_DEFINES LV_CONF_INCLUDE_SIMPLE)
 
 set(
-    CSRC 
+    CSRC
     ${DIR}/src/core/lv_disp.c
 	${DIR}/src/core/lv_event.c
 	${DIR}/src/core/lv_group.c
@@ -148,7 +148,7 @@ set(
 	${DIR}/src/widgets/lv_btn.c
 	${DIR}/src/widgets/lv_btnmatrix.c
 	${DIR}/src/widgets/lv_canvas.c
-	${DIR}/src/widgets/lv_checkbox.c 
+	${DIR}/src/widgets/lv_checkbox.c
 	${DIR}/src/widgets/lv_dropdown.c
 	${DIR}/src/widgets/lv_img.c
 	${DIR}/src/widgets/lv_label.c
@@ -183,6 +183,7 @@ set(
 
 ameba_internal_library(lvgl)
 target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
+target_compile_options(${CURRENT_LIB_NAME} PRIVATE -Wno-error)
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
 

@@ -46,6 +46,11 @@ uint32_t pin_mask = 0x0FF00000;
 //each bit map to one pin: 0: pin disable; 1: pin enable
 const uint32_t led_pattern[LED_PATTERN_NUM] = {0x0FF00000, 0x0FE00000, 0x0FD00000, 0x0FB00000, 0x0F700000, 0x0EF00000, 0x0DF00000, 0x0BF00000, 0x0FF00000, 0x0FE00000, 0x0EF00000, 0x0EB00000};
 
+#elif defined (CONFIG_AMEBAD)
+//for PortA
+uint32_t pin_mask = 0x20FF000;
+const uint32_t led_pattern[LED_PATTERN_NUM] = {0x20FF000, 0x20FE000, 0x20FD000, 0x20FB000, 0x20F7000, 0x20EF000, 0x20DF000, 0x20BF000, 0x207F000, 0x00FF000, 0x20FF000, 0x0000000};
+
 #endif
 
 #endif

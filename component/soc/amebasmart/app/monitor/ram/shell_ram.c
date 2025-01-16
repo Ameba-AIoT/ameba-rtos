@@ -9,8 +9,6 @@
 
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "FreeRTOS.h"
-//#include "strproc.h"
 
 #define LIB_INFO_CMD	"ATS?"
 #define ALL_CPU_RECV	0xFFFF

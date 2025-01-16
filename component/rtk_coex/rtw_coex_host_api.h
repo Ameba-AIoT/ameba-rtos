@@ -28,6 +28,7 @@ extern "C" {
 #define COEX_BT_TYPE(x)     (((RTK_COEX_TYPE_BT << SUBTYPE_BITS) + ((x) & ((1 << SUBTYPE_BITS) - 1))) & ((1 << TOTALTYPE_BITS) - 1))
 #define COEX_EXT_TYPE(x)    (((RTK_COEX_TYPE_EXT << SUBTYPE_BITS) + ((x) & ((1 << SUBTYPE_BITS) - 1))) & ((1 << TOTALTYPE_BITS) - 1))
 #define COEX_WP_TYPE(x)     (((RTK_COEX_TYPE_WPAN << SUBTYPE_BITS) + ((x) & ((1 << SUBTYPE_BITS) - 1))) & ((1 << TOTALTYPE_BITS) - 1))
+#define COEX_COM_TYPE(x)	(((RTK_COEX_TYPE_COM << SUBTYPE_BITS) + ((x) & ((1 << SUBTYPE_BITS) - 1))) & ((1 << TOTALTYPE_BITS) - 1))
 
 #define COEX_TYPE_GET(x)    ((x & ((1 << TOTALTYPE_BITS) - 1)) >> SUBTYPE_BITS)
 #define COEX_SUBTYPE_GET(x) ((x & ((1 << TOTALTYPE_BITS) - 1)) & ((1 << SUBTYPE_BITS) - 1))
@@ -36,8 +37,18 @@ enum coex_type {
 	RTK_COEX_TYPE_BT = 0,
 	RTK_COEX_TYPE_EXT,
 	RTK_COEX_TYPE_WPAN,
+	RTK_COEX_TYPE_COM,
 	/* end */
 	RTK_COEX_TYPE_INVALID = ((1 << TYPE_BITS) - 1),
+};
+
+enum coex_subtype_h2c_com {
+	COEX_H2C_COM_UNDEF = 0,
+	COEX_H2C_COM_VENDOR_INFO_SET,
+	COEX_H2C_COM_WL_SLOT_SET,
+	COEX_H2C_COM_STATE_GET,
+	/* end */
+	COEX_H2C_COM_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
 
 enum coex_subtype_h2c_bt {
@@ -45,7 +56,6 @@ enum coex_subtype_h2c_bt {
 	COEX_H2C_BT_HCI_NOTIFY_HCI_EVENT,
 	COEX_H2C_BT_HCI_NOTIFY_HCI_CMD,
 	COEX_H2C_BT_HCI_NOTIFY_SW_MAILBOX,
-	COEX_H2C_BT_VENDOR_INFO_SET,
 	COEX_H2C_BT_RFK,
 	COEX_H2C_BT_SET_BT_SEL,
 	COEX_H2C_BT_SET_PTA,
@@ -73,6 +83,12 @@ enum coex_subtype_h2c_wpan {
 	COEX_H2C_WPAN_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
 
+enum coex_subtype_c2h_com {
+	COEX_C2H_COM_UNDEF = 0,
+	/* end */
+	COEX_C2H_COM_INVALID = ((1 << SUBTYPE_BITS) - 1),
+};
+
 enum coex_subtype_c2h_bt {
 	COEX_C2H_BT_UNDEF = 0,
 	COEX_C2H_BT_HCI_MSG_MAILBOX_TRIGGER,
@@ -90,6 +106,16 @@ enum coex_subtype_c2h_wpan {
 	COEX_C2H_WPAN_UNDEF = 0,
 	COEX_C2H_WPAN_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
+
+//////////////////////////////////////////////////////////
+///////// for COMMON Variables
+//////////////////////////////////////////////////////////
+struct rtk_coex_vendor_info {
+	uint8_t  vendor_id;
+	uint8_t  product_id;
+};
+
+
 //////////////////////////////////////////////////////////
 ///////// for BT Variables
 //////////////////////////////////////////////////////////
@@ -125,11 +151,6 @@ struct bt_rfk_param {
 	uint8_t  rfk_data2;
 	uint8_t  rfk_data3;
 	uint8_t  rfk_data4;
-};
-
-struct rtk_coex_vendor_info {
-	uint8_t  vendor_id;
-	uint8_t  product_id;
 };
 
 struct pta_para_t {
@@ -201,6 +222,28 @@ struct extchip_para_t {
 //////////////////////////////////////////////////////////
 // ADD HERE
 
+//////////////////////////////////////////////////////////
+///////// for COMMON Function Declare
+//////////////////////////////////////////////////////////
+/**
+ * @brief  Vendor info set.
+ * @param[in]  p_rfk_param  A pointer to struct rtk_coex_vendor_info.
+ * @param[in]  length 		size of struct rtk_coex_vendor_info.
+ * @return  None.
+ */
+void rtk_coex_com_vendor_info_set(void *p_vendor_info, u8 length);
+/**
+ * @brief  wlan slot duration set.
+ * @param[in]  wl_slot  wlan slot duration, unit: percent, value: [0-100].
+ * @return  None.
+ */
+void rtk_coex_com_wl_slot_set(u8 wl_slot);
+/**
+ * @brief  coex state get.
+ * @param[in]  None.
+ * @return  None. (print as result)
+ */
+void rtk_coex_com_state_get(void);
 
 //////////////////////////////////////////////////////////
 ///////// for BT Function Declare
@@ -213,13 +256,6 @@ struct extchip_para_t {
  * @return  None.
  */
 void rtk_coex_btc_bt_hci_notify(u8 *pdata, u16 len, u8 type);
-/**
- * @brief  Vendor info set.
- * @param[in]  p_rfk_param  A pointer to struct rtk_coex_vendor_info.
- * @param[in]  length 		size of struct rtk_coex_vendor_info.
- * @return  None.
- */
-void rtk_coex_btc_vendor_info_set(void *p_vendor_info, u8 length);
 /**
  * @brief  RFK for BT.
  * @param[in]  p_rfk_param  A pointer to struct bt_rfk_param.

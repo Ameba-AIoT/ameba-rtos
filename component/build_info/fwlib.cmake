@@ -9,7 +9,7 @@ add_library(src_${d_MCU_PROJECT_NAME}_fwlib_secure INTERFACE)
 add_library(src_${d_MCU_PROJECT_NAME}_fwlib_xlat_tables INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib_secure p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_trustzone.c

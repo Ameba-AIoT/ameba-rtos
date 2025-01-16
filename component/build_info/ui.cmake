@@ -210,6 +210,8 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_ui_lvgl p_SCOPE interface
 )
 ameba_target_definitions(src_${d_MCU_PROJECT_NAME}_ui_lvgl p_SCOPE interface LV_CONF_INCLUDE_SIMPLE)
 
+ameba_target_compile_options(src_${d_MCU_PROJECT_NAME}_ui_lvgl p_SCOPE interface -Wno-error)
+
 #--------------------------#
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_ui_lvgl_drivers p_SCOPE interface
     ${c_CMPT_UI_DIR}/LVGL/lv_drivers/interfaces

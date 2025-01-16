@@ -491,6 +491,10 @@ void BOOT_SOC_ClkSet(void)
 	/*HPeri target clk 200M*/
 	HPeriDiV = SocClk_Info->NPPLL_CLK / 200 - 1;
 
+	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
+		return ;
+	}
+
 	/*configure core power according user setting*/
 	if (SocClk_Info->Vol_Type == VOL_10) {
 		SWR_BST_MODE_Set(ENABLE);

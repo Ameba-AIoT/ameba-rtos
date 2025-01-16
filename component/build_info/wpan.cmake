@@ -4,7 +4,7 @@ else()
     set(__INCLUDED_WPAN_BUILD_CMAKE__ TRUE)
 endif()
 
-if(NOT d_AMEBA_REALSE)
+if(NOT d_AMEBA_RELEASE)
     include(${c_CMPT_WPAN_DIR}/make/platform/sw_radio.cmake)
 
     include(${c_CMPT_WPAN_DIR}/make/openthread/otbr.cmake)

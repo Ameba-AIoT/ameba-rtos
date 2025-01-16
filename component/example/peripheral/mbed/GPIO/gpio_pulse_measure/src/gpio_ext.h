@@ -23,6 +23,9 @@
 #define GPIO_OUT_PIN		_PB_10
 #define GPIO_IRQ_PIN		_PA_12
 
+#elif defined (CONFIG_AMEBAD)
+#define GPIO_OUT_PIN		_PA_12
+#define GPIO_IRQ_PIN		_PA_13
 #endif
 
 #endif

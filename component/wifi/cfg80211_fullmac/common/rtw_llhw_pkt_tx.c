@@ -78,6 +78,9 @@ int llhw_xmit_thread(void *data)
 				if (global_idev.pndev[1]) {
 					netif_tx_wake_all_queues(global_idev.pndev[1]);
 				}
+				if (global_idev.pndev[2]) {
+					netif_tx_wake_all_queues(global_idev.pndev[2]);
+				}
 			}
 #ifndef CONFIG_INIC_USB_ASYNC_SEND
 			/* release the memory for this message. */

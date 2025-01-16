@@ -106,6 +106,11 @@
 /** The IP header ID of the next outgoing IP packet */
 static u16_t ip_id;
 
+#if defined(IP_NAT) && (IP_NAT == 1)
+extern err_t ip_nat_transfer(struct pbuf *p, struct netif *src, struct netif *target);
+extern err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp);
+#endif
+
 #if LWIP_MULTICAST_TX_OPTIONS
 /** The default netif used for multicast */
 static struct netif *ip4_default_multicast_netif;

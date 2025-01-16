@@ -66,6 +66,129 @@ bool IsIm2ColRequired(const TfLiteConvParams* params,
   return need_im2col;
 }
 
+inline void ConvFloat(const ConvParams& params, const RuntimeShape& input_shape,
+                 const float* input_data, const RuntimeShape& filter_shape,
+                 const float* filter_data, const RuntimeShape& bias_shape,
+                 const float* bias_data, const RuntimeShape& output_shape,
+                 float* output_data, const RuntimeShape& im2col_shape,
+                 float* im2col_data/*, CpuBackendContext* cpu_backend_context*/) {
+  const int stride_width = params.stride_width;
+  const int stride_height = params.stride_height;
+  const int dilation_width_factor = params.dilation_width_factor;
+  const int dilation_height_factor = params.dilation_height_factor;
+  const float output_activation_min = params.float_activation_min;
+  const float output_activation_max = params.float_activation_max;
+  TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
+  TFLITE_DCHECK_EQ(filter_shape.DimensionsCount(), 4);
+  TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
+  TFLITE_DCHECK_EQ(im2col_shape.DimensionsCount(), 4);
+
+  //ruy::profiler::ScopeLabel label("Conv");
+
+  // NB: the float 0.0f value is represented by all zero bytes.
+  const uint8_t float_zero_byte = 0x00;
+  const float* gemm_input_data = nullptr;
+  const RuntimeShape* gemm_input_shape = nullptr;
+  const int filter_width = filter_shape.Dims(2);
+  const int filter_height = filter_shape.Dims(1);
+
+  const bool need_dilated_im2col =
+      dilation_width_factor != 1 || dilation_height_factor != 1;
+  const bool need_im2col = stride_width != 1 || stride_height != 1 ||
+                           filter_width != 1 || filter_height != 1;
+  if (need_dilated_im2col) {
+    MicroPrintf("need_dilated_im2col don't supported currently!!");
+    return;
+  } else if (need_im2col) {
+    TFLITE_DCHECK(im2col_data);
+    tflite::optimized_ops::Im2col(params, filter_height, filter_width,
+                                  float_zero_byte, input_shape, input_data,
+                                  im2col_shape, im2col_data);
+    gemm_input_data = im2col_data;
+    gemm_input_shape = &im2col_shape;
+  } else {
+    //TFLITE_DCHECK(!im2col_data);
+    //gemm_input_data = input_data;
+    //gemm_input_shape = &input_shape;
+    tflite::reference_ops::Conv(
+        params, input_shape,
+        input_data,
+        filter_shape,
+        filter_data,
+        bias_shape,
+        bias_data,
+        output_shape,
+        output_data,
+        tflite::micro::GetTensorShape(nullptr), nullptr);
+    return;
+  }
+
+  const int gemm_input_rows = gemm_input_shape->Dims(3);
+  const int gemm_input_cols = FlatSizeSkipDim(*gemm_input_shape, 3);
+  const int filter_rows = filter_shape.Dims(0);
+  const int filter_cols = FlatSizeSkipDim(filter_shape, 0);
+  const int output_rows = output_shape.Dims(3);
+  const int output_cols =
+      output_shape.Dims(0) * output_shape.Dims(1) * output_shape.Dims(2);
+
+  TFLITE_DCHECK_EQ(output_rows, filter_rows);
+  TFLITE_DCHECK_EQ(output_cols, gemm_input_cols);  //
+  TFLITE_DCHECK_EQ(filter_cols, gemm_input_rows);  //
+  TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_rows);
+
+  int m = FlatSizeSkipDim(*gemm_input_shape, 3);
+  int n = output_shape.Dims(3);
+  int k = gemm_input_shape->Dims(3);
+
+  cpu_backend_gemm::MatrixParams<float> lhs_params;
+  lhs_params.order = cpu_backend_gemm::Order::kRowMajor;
+  lhs_params.rows = n;
+  lhs_params.cols = k;
+  cpu_backend_gemm::MatrixParams<float> rhs_params;
+  rhs_params.order = cpu_backend_gemm::Order::kColMajor;
+  rhs_params.rows = k;
+  rhs_params.cols = 1;//m;
+  cpu_backend_gemm::MatrixParams<float> dst_params;
+  dst_params.order = cpu_backend_gemm::Order::kColMajor;
+  dst_params.rows = n;
+  dst_params.cols = 1;//m;
+  cpu_backend_gemm::GemmParams<float, float> gemm_params;
+  gemm_params.bias = bias_data;
+  gemm_params.clamp_min = output_activation_min;
+  gemm_params.clamp_max = output_activation_max;
+  
+  // calculate gemm as gemv loops
+  float* gemv_input_data = (float*)gemm_input_data;
+  float* gemv_output_data = output_data;
+  for(int i = 0; i < m; i++) {
+    tflite::cpu_backend_gemm::detail::CustomGemv(
+      lhs_params, filter_data, rhs_params, (const float*)gemv_input_data, dst_params,
+      gemv_output_data, gemm_params);
+    gemv_input_data += k;
+    gemv_output_data += n;
+  }
+  gemv_input_data = nullptr;
+  gemv_output_data = nullptr;
+  //cpu_backend_gemm::Gemm(lhs_params, filter_data, rhs_params, im2col_data,
+  //                       dst_params, output_data, gemm_params,
+  //                       cpu_backend_context);
+}
+
+ConvParams ConvParamsFloatCa32(const TfLiteConvParams& params,
+                           const OpDataConvCa32& data) {
+  ConvParams op_params;
+  CalculateActivationRange(params.activation, &op_params.float_activation_min,
+                           &op_params.float_activation_max);
+  op_params.padding_type = tflite::micro::RuntimePaddingType(params.padding);
+  op_params.padding_values.width = data.padding.width;
+  op_params.padding_values.height = data.padding.height;
+  op_params.stride_width = params.stride_width;
+  op_params.stride_height = params.stride_height;
+  op_params.dilation_width_factor = params.dilation_width_factor;
+  op_params.dilation_height_factor = params.dilation_height_factor;
+  return op_params;
+}
+
 // Returns a ConvParams struct with all the parameters needed for a
 // quantized computation.
 ConvParams ConvParamsQuantizedCa32(const TfLiteConvParams& params,
@@ -119,23 +242,7 @@ inline void ConvPerChannelCa32(
   const int8 input_zero_point = -input_offset;
   const uint8 zero_point_byte =
       *reinterpret_cast<const uint8*>(&input_zero_point);
-
-  if (need_dilated_im2col) {
-    MicroPrintf("need_dilated_im2col don't supported currently!!");
-    return;
-  } else if (need_im2col) {
-    TFLITE_DCHECK(im2col_data);
-    tflite::optimized_ops::Im2col(params, filter_height, filter_width,
-                                  zero_point_byte, input_shape, input_data,
-                                  im2col_shape, im2col_data);
-    gemm_input_data = im2col_data;
-    gemm_input_shape = &im2col_shape;
-  } else {
-    TFLITE_DCHECK(!im2col_data);
-    gemm_input_data = input_data;
-    gemm_input_shape = &input_shape;
-  }
-
+  
   const int gemm_input_rows = gemm_input_shape->Dims(3);
   const int gemm_input_cols = FlatSizeSkipDim(*gemm_input_shape, 3);
   const int filter_rows = filter_shape.Dims(0);
@@ -151,6 +258,29 @@ inline void ConvPerChannelCa32(
   TFLITE_DCHECK_EQ(filter_cols, gemm_input_rows);  //
   TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_rows);
 
+  if (need_dilated_im2col) {
+    MicroPrintf("need_dilated_im2col don't supported currently!!");
+    return;
+  } else if (need_im2col) {
+    TFLITE_DCHECK(im2col_data);
+    tflite::optimized_ops::Im2col(params, filter_height, filter_width,
+                                  zero_point_byte, input_shape, input_data,
+                                  im2col_shape, im2col_data);
+    gemm_input_data = im2col_data;
+    gemm_input_shape = &im2col_shape;
+  } else {
+    //TFLITE_DCHECK(!im2col_data);
+    //gemm_input_data = input_data;
+    //gemm_input_shape = &input_shape;
+    tflite::reference_integer_ops::ConvPerChannel(
+        params, output_multiplier,
+        output_shift, input_shape,
+        input_data, filter_shape,
+        filter_data, bias_shape,
+        bias_data, output_shape, output_data);
+        return;
+  }
+  
   cpu_backend_gemm::MatrixParams<int8> lhs_params;
   lhs_params.rows = filter_rows;
   lhs_params.cols = filter_cols;
@@ -213,6 +343,12 @@ inline void ConvPerChannelCa32(
     gemv_input_data = nullptr;
     gemv_output_data = nullptr;
   }
+      //tflite::reference_integer_ops::ConvPerChannel(
+      //  params, output_multiplier,
+      //  output_shift, input_shape,
+      //  input_data, filter_shape,
+      //  filter_data, bias_shape,
+      //  bias_data, output_shape, output_data);
 }
 
 TfLiteStatus CalculateOpDataConvCa32(TfLiteContext* context, TfLiteNode* node,
@@ -271,6 +407,9 @@ TfLiteStatus CalculateOpDataConvCa32(TfLiteContext* context, TfLiteNode* node,
     int batches = input->dims->data[0];
     int required_scratch = batches * out_height * out_width * input_depth *
                            filter_height * filter_width;
+    if (input->type == kTfLiteFloat32) {
+      required_scratch *= sizeof(float);
+    }
     TF_LITE_ENSURE_OK(
         context, context->RequestScratchBufferInArena(
                      context, required_scratch, &data->scratch_tensor_index));
@@ -375,13 +514,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
   const auto& data = *(static_cast<const OpDataConvCa32*>(node->user_data));
 
-  int8_t* im2col = NULL;
-  tflite::RuntimeShape im2col_shape(data.im2col_size, data.im2col_dims);
-  if (data.need_im2col) {
-    im2col = static_cast<int8_t*>(
-        context->GetScratchBuffer(context, data.scratch_tensor_index));
-  }
-
   TF_LITE_ENSURE_EQ(context, input->type, output->type);
   TF_LITE_ENSURE_MSG(
       context,
@@ -391,6 +523,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input->type) {  // Already know in/out types are same.
     case kTfLiteInt8: {
+      int8_t* im2col = NULL;
+      tflite::RuntimeShape im2col_shape(data.im2col_size, data.im2col_dims);
+      if (data.need_im2col) {
+        im2col = static_cast<int8_t*>(
+            context->GetScratchBuffer(context, data.scratch_tensor_index));
+      }
+
       ConvPerChannelCa32(
           ConvParamsQuantizedCa32(params, data),
           data.per_channel_output_multiplier, data.per_channel_output_shift,
@@ -405,9 +544,14 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       break;
     }
     case kTfLiteFloat32: {
-      const auto& data_non_ca32 = *(static_cast<const OpDataConv*>(node->user_data));
-      tflite::reference_ops::Conv(
-          ConvParamsFloat(params, data_non_ca32), tflite::micro::GetTensorShape(input),
+      float* im2col = NULL;
+      tflite::RuntimeShape im2col_shape(data.im2col_size, data.im2col_dims);
+      if (data.need_im2col) {
+        im2col = static_cast<float*>(
+            context->GetScratchBuffer(context, data.scratch_tensor_index));
+      }
+      ConvFloat(
+          ConvParamsFloatCa32(params, data), tflite::micro::GetTensorShape(input),
           tflite::micro::GetTensorData<float>(input),
           tflite::micro::GetTensorShape(filter),
           tflite::micro::GetTensorData<float>(filter),
@@ -415,7 +559,18 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetOptionalTensorData<float>(bias),
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<float>(output),
-          tflite::micro::GetTensorShape(nullptr), nullptr);
+          im2col_shape, im2col);
+      //const auto& data_non_ca32 = *(static_cast<const OpDataConv*>(node->user_data));
+      //tflite::reference_ops::Conv(
+      //    ConvParamsFloatCa32(params, data), tflite::micro::GetTensorShape(input),
+      //    tflite::micro::GetTensorData<float>(input),
+      //    tflite::micro::GetTensorShape(filter),
+      //    tflite::micro::GetTensorData<float>(filter),
+      //    tflite::micro::GetTensorShape(bias),
+      //    tflite::micro::GetOptionalTensorData<float>(bias),
+      //    tflite::micro::GetTensorShape(output),
+      //    tflite::micro::GetTensorData<float>(output),
+      //    tflite::micro::GetTensorShape(nullptr), nullptr);
         break;
     }
     default:

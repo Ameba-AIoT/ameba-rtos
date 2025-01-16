@@ -19,6 +19,7 @@ bridge_sdio-y := ../sdio/rtw_sdio_drvio.o \
 		../common/rtw_llhw_pkt_tx.o \
 		../common/rtw_llhw_hci.o \
 		../common/rtw_llhw_memory.o \
+		../common/rtw_llhw_cust_evt.o \
 		rtw_sdio_bridge.o
 
 obj-m += bridge_sdio.o

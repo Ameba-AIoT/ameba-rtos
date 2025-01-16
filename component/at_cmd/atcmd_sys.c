@@ -494,14 +494,17 @@ void at_gmr(void *arg)
 	u32 buflen = 1024;
 	char *buf = rtos_mem_malloc(buflen);
 	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
+	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
+
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);
 	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);
 	rtos_mem_free(buf);
 
-	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
 	at_printf("COMPILE TIME: %s\r\n", RTL_FW_COMPILE_TIME);
+	at_printf("COMPILE USER: %s@%s\r\n", RTL_FW_COMPILE_BY, RTL_FW_COMPILE_HOST);
+	at_printf("COMPILE ENV : %s\r\n", RTL_FW_COMPILER);
 
 	at_printf(ATCMD_OK_END_STR);
 }

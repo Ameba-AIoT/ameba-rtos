@@ -23,6 +23,10 @@
 #define GPIO_LED_PIN			_PA_30	// SWD_CLK
 #define GPIO_JTAG_ENABLE_PIN	_PA_12
 
+#elif defined (CONFIG_AMEBAD)
+#define GPIO_LED_PIN			_PB_3	// SWD_CLK
+#define GPIO_JTAG_ENABLE_PIN	_PA_13
+
 #endif
 
 #endif

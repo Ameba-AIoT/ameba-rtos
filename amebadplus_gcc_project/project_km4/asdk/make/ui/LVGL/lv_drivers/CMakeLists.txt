@@ -3,24 +3,24 @@ set(DIRLV ${BASEDIR}/component/ui/LVGL/lvgl)
 
 set(
     MODULE_IFLAGS
-    ${BASEDIR}/component/ui/LVGL/lv_drivers/interfaces 
-	${BASEDIR}/component/ui/drivers/ili9341/include 
+    ${BASEDIR}/component/ui/LVGL/lv_drivers/interfaces
+	${BASEDIR}/component/ui/drivers/ili9341/include
 	${BASEDIR}/component/ui/LVGL/port/amebadplus
-	${DIRLV}/src 
-	${DIRLV}/src/core 
-	${DIRLV}/src/draw 
-	${DIRLV}/src/extra 
-	${DIRLV}/src/font 
-	${DIRLV}/src/hal 
-	${DIRLV}/src/misc 
-	${DIRLV}/src/widgets 
+	${DIRLV}/src
+	${DIRLV}/src/core
+	${DIRLV}/src/draw
+	${DIRLV}/src/extra
+	${DIRLV}/src/font
+	${DIRLV}/src/hal
+	${DIRLV}/src/misc
+	${DIRLV}/src/widgets
 )
 
 set(MODULE_C_DEFINES __RTOS__)
-set(MODULE_C_OPTIONS -Wno-incompatible-pointer-types)
+set(MODULE_C_OPTIONS -Wno-incompatible-pointer-types -Wno-error)
 
 set(
-    CSRC 
+    CSRC
     ${DIR}/src/display.c
     ${DIR}/src/lv_hal.c
 )

@@ -1,6 +1,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "lwip_netconf.h"
 #include "main.h"
+#include "atcmd_service.h"
 #if CONFIG_WLAN
 #include "wifi_conf.h"
 #include "wifi_ind.h"
@@ -274,6 +275,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 				iptab[2] = (uint8_t)(IPaddress >> 8);
 				iptab[3] = (uint8_t)(IPaddress);
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rInterface %d IP address : %d.%d.%d.%d\n", idx, iptab[3], iptab[2], iptab[1], iptab[0]);
+				at_printf_indicate("WIFI GOT IP\r\n");
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 				dhcp = ((struct dhcp *)netif_get_client_data(pnetif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP));
@@ -306,6 +308,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					iptab[3] = STATIC_IP_ADDR0;
 					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rInterface %d DHCP timeout", idx);
 					RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rStatic IP address : %d.%d.%d.%d", iptab[3], iptab[2], iptab[1], iptab[0]);
+					at_printf_indicate("WIFI GOT IP TIMEOUT\r\n");
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 					if (p_store_fast_connect_info) {

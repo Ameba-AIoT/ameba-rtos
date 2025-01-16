@@ -8,6 +8,8 @@
 #include "mydata_source.h"
 #include "example_mydata_source_player.h"
 
+#include "os_wrapper.h"
+
 /* source data */
 #include "48k_2c_30s_mp3.h"
 

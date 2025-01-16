@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_pmc_lib INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_pmc_lib p_SCOPE interface
         ${d_SOC_PLATFORM_DIR}/lib/ram_${d_MCU_PROJECT_NAME}/ameba_pmc_lib.c
     )

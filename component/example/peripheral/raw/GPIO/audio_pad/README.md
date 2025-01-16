@@ -44,3 +44,4 @@ Logic Analyser or oscilloscope.
 # Supported IC
 
 - AmebaSmart
+- AmebaLite

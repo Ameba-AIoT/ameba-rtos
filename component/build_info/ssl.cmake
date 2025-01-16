@@ -111,7 +111,7 @@ if(NOT CONFIG_MP_INCLUDED AND CONFIG_WLAN)
         )
     endif()
 endif()
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_ssl_mbedtls p_SCOPE interface
              ${c_COMPONENT_DIR}/ssl/mbedtls-${v_MBEDTLS_VER}/library/asn1parse.c

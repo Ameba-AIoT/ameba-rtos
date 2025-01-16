@@ -52,11 +52,13 @@ struct host_priv {
 	rtos_sema_t recv_sema; /* sema to wait allloc skb from device */
 	rtos_sema_t alloc_skb_sema; /* sema to wait allloc skb from device */
 	rtos_sema_t host_send_sema; /* sema to protect inic ipc host send */
+	rtos_timer_t inic_stats_timer; /* sema to protect inic ipc host send */
 	struct __queue recv_queue; /* recv queue */
 	u32 rx_bytes; /* recv bytes */
 	u32 rx_pkts; /* recv number of packets */
 	u32 tx_bytes; /* xmit bytes */
 	u32 tx_pkts; /* xmit number of packets */
+	u32 tx_drop_pkts;
 };
 
 /* ---------------------------- Global Variables ---------------------------- */

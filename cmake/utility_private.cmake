@@ -43,26 +43,25 @@ endmacro()
 
 macro(_ameba_assert_str_equal str1 str2)
     if (NOT "${str1}" STREQUAL "${str2}")
-        message(FATAL_ERROR "_ameba_assert_str_equal faild: [${str1}] vs [${str2}]")
+        message(FATAL_ERROR "_ameba_assert_str_equal failed: [${str1}] vs [${str2}]")
     endif()
 endmacro()
 
 macro(_ameba_assert_str_not_equal str1 str2)
     if ("${str1}" STREQUAL "${str2}")
-        message(FATAL_ERROR "_ameba_assert_str_not_equal faild: [${str1}] vs [${str2}]")
+        message(FATAL_ERROR "_ameba_assert_str_not_equal failed: [${str1}] vs [${str2}]")
     endif()
 endmacro()
 
-
 macro(_ameba_assert_defined name)
     if (NOT DEFINED "${name}")
-        message(FATAL_ERROR "_ameba_assert_defined faild")
+        message(FATAL_ERROR "_ameba_assert_defined failed")
     endif()
 endmacro()
 
 macro(_ameba_assert_not_defined name)
     if (DEFINED "${name}")
-        message(FATAL_ERROR "_ameba_assert_not_defined faild")
+        message(FATAL_ERROR "_ameba_assert_not_defined failed")
     endif()
 endmacro()
 
@@ -82,7 +81,9 @@ macro(_ameba_list_contain list_name value result)
     endif()
 endmacro()
 
-
+# remove key word and the arg following key word(usually to delete oneValueArgs)
+# Usage:
+#   _ameba_list_remove_key(<list_name> <key>)
 macro(_ameba_list_remove_key list_name key)
     # set(options)
     # set(oneValueArgs)
@@ -108,6 +109,9 @@ macro(_ameba_list_remove_key list_name key)
     unset(_tmp_list)
 endmacro()
 
+# remove key and followings(usually to delete multiValueArgs), but not the multi values following p_KEEP
+# Usage:
+#   _ameba_list_remove_key_and_followings(<list_name> <key> [p_KEEP <keepvalue> ...])
 macro(_ameba_list_remove_key_and_followings list_name key)
     set(options)
     set(oneValueArgs)
@@ -148,7 +152,6 @@ macro(_ameba_list_remove_key_and_followings list_name key)
     unset(_tmp_list)
 endmacro()
 
-
 macro(_ameba_list_remove_before_keys list_name)
     set(options)
     set(oneValueArgs)
@@ -181,6 +184,10 @@ macro(_ameba_list_remove_before_keys list_name)
 endmacro()
 
 
+# get target property to result, property should be [sources/compile_options/compile_defines/includes]
+# if target is INTERFACE_LINK_LIBRARIES, than recursively get the property from the INTERFACE_LIBRARY, otherwise, just get the property from the target
+# Usage:
+#   ameba_target_get_property_recursive(<target> <property> <result>)
 function(ameba_target_get_property_recursive target property result)
     if(${property} STREQUAL sources)
         set(property_name "INTERFACE_SOURCES")
@@ -191,7 +198,7 @@ function(ameba_target_get_property_recursive target property result)
     elseif(${property} STREQUAL includes)
         set(property_name "INTERFACE_INCLUDE_DIRECTORIES")
     else()
-        message(FATAL_ERROR "unsupport property type for ameba_target_get_property_recursive: ${property}")
+        message(FATAL_ERROR "un-support property type for ameba_target_get_property_recursive: ${property}")
     endif()
 
     set(tmp_result)

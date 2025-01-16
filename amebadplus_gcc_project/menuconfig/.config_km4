@@ -36,6 +36,7 @@ CONFIG_ATCMD_LOGUART=y
 # CONFIG_ATCMD_HTTP is not set
 # CONFIG_ATCMD_MQTT is not set
 # CONFIG_ATCMD_WEBSOCKET is not set
+# CONFIG_ATCMD_OTA is not set
 # end of CONFIG AT CMD
 
 #

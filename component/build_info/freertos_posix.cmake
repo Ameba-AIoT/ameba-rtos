@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_freertos_posix INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_freertos_posix p_SCOPE interface
             ${c_FREERTOS_POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_clock.c

@@ -2,6 +2,7 @@
 
 struct inic_sdio_priv_t sdio_priv = {0};
 
+void rtw_pending_q_resume(void);
 
 static char inic_sdio_dev_rpwm_cb(void *priv, u16 value)
 {
@@ -53,31 +54,16 @@ static char inic_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size
 	(void) priv;
 	(void) type;
 
-	if (event != INIC_WIFI_EVT_XIMT_PKTS) {
-		/* SPDIO receives EVENTS */
-		buf = rtos_mem_zmalloc(size);
-
-		if (buf == NULL) {
-			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-			return FAIL;
-		}
-
-		memcpy(buf, pdata, size);
-
-		inic_dev_event_int_hdl(buf, NULL);
-
-		/* free buf later, sdio ring buffer no need to modify. */
-	} else {
-
+	if (event == INIC_WIFI_EVT_XIMT_PKTS) {
 		/* SPDIO receives XMIT_PKTS */
 		rx_skb = (struct sk_buff *)rx_buf->priv;
 
-		if ((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) {
-			return FAIL;
-		}
+		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) ||
+			((new_skb = dev_alloc_skb(SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
 
-		new_skb = dev_alloc_skb(SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN);
-		if (!new_skb) {
+			/* resume pending queue to release skb */
+			rtw_pending_q_resume();
+
 			return FAIL;
 		}
 
@@ -96,7 +82,22 @@ static char inic_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size
 		rx_skb->dev = (void *) p_msg_info->wlan_idx;
 
 		inic_dev_event_int_hdl(pdata, rx_skb);
+	} else if (event == INIC_CUST_EVT) {
+		inic_dev_recv_cust_evt(pdata);
+	} else {
+		/* SPDIO receives EVENTS */
+		buf = rtos_mem_zmalloc(size);
 
+		if (buf == NULL) {
+			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
+			return FAIL;
+		}
+
+		memcpy(buf, pdata, size);
+
+		inic_dev_event_int_hdl(buf, NULL);
+
+		/* free buf later, sdio ring buffer no need to modify. */
 	}
 
 	return SUCCESS;
