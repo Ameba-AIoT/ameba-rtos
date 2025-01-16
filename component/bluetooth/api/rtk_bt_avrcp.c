@@ -202,7 +202,7 @@ uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume)
 	return ret;
 }
 
-uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t attr)
+uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t num, uint8_t *p_attr)
 {
 	uint16_t ret = 0;
 	rtk_bt_avrcp_get_element_attr_req_t req_t = {0};
@@ -211,11 +211,11 @@ uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t attr)
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
 	memcpy((void *)&req_t.bd_addr, (void *)bd_addr, 6);
-	req_t.attr = attr;
+	req_t.num = num;
+	req_t.p_attr = p_attr;
 
 	ret = rtk_bt_send_cmd(RTK_BT_BR_GP_AVRCP, RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR,
 						  (void *)&req_t, sizeof(rtk_bt_avrcp_get_element_attr_req_t));
 
 	return ret;
 }
-

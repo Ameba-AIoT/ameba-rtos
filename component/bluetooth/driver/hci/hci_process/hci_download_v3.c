@@ -276,7 +276,7 @@ static uint8_t _get_patch_info(uint8_t *p_patch, uint32_t patch_len)
 
 	LE_TO_UINT32(version_date, info->patch_buf + sig_len);
 	LE_TO_UINT32(version_time, info->patch_buf + sig_len + sizeof(version_date));
-	BT_LOGA("FW Version: %d%d\r\n", version_date, version_time);
+	BT_LOGA("FW Version: %08d%06d\r\n", version_date, version_time);
 
 	hci_platform_get_config(&info->config_buf, &info->config_len);
 

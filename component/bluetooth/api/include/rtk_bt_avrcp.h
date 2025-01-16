@@ -70,7 +70,8 @@ typedef struct {
  */
 typedef struct {
 	uint8_t bd_addr[6];
-	uint8_t attr;
+	uint8_t num;
+	uint8_t *p_attr;
 } rtk_bt_avrcp_get_element_attr_req_t;
 
 /**
@@ -287,12 +288,13 @@ uint16_t rtk_bt_avrcp_volume_change_req(uint8_t *bd_addr, uint8_t volume);
 /**
  * @brief     send element attr get request.
  * @param[in] bd_addr: bt address
- * @param[in] attr: attr
+ * @param[in] num: attributes number
+ * @param[in] p_attr: attr pointer
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t attr);
+uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t num, uint8_t *p_attr);
 
 /**
  * @}

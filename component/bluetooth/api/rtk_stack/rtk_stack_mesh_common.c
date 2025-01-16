@@ -901,7 +901,7 @@ static void rtk_bt_mesh_gap_init(void)
 	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE, &ae, sizeof(ae))) {
 		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE fail.\r\n", __func__);
 	}
-	gap_sched_bt5_ae_adv_type_t ae_adv_type = GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_S8;
+	gap_sched_bt5_ae_adv_type_t ae_adv_type = GAP_SCHED_BT5_AE_ADV_TYPE_LEGACY_ON_C8;
 	if (!gap_sched_params_set(GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE, &ae_adv_type, sizeof(ae_adv_type))) {
 		BT_LOGE("[%s] Set GAP_SCHED_PARAMS_BT5_AE_ADV_TYPE fail.\r\n", __func__);
 	}

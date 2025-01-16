@@ -693,7 +693,7 @@ static uint16_t bt_stack_avrcp_get_element_attr_req(void *param)
 {
 	rtk_bt_avrcp_get_element_attr_req_t *req_t = (rtk_bt_avrcp_get_element_attr_req_t *)param;
 
-	if (bt_avrcp_get_element_attr_req(req_t->bd_addr, 1, &req_t->attr)) {
+	if (bt_avrcp_get_element_attr_req(req_t->bd_addr, req_t->num, req_t->p_attr)) {
 		return RTK_BT_OK;
 	}
 
