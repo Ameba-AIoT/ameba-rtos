@@ -39,6 +39,7 @@
  */
 
 #include "lwip/opt.h"
+#include "log.h"
 
 #if LWIP_IPV4
 
@@ -158,7 +159,7 @@ static void ipnat_ageing_tmr(void *arg)
 	if (total_session > 0 && total_session < 50) {
 		//nat_debug_print();
 	} else {
-		//printf("\n\r total :%d %d %d", tcp_entry_count, udp_entry_count, icmp_entry_count);
+		//RTK_LOGI(NOTAG, "\n\r total :%d %d %d", tcp_entry_count, udp_entry_count, icmp_entry_count);
 	}
 	rtos_mutex_give(nat_entry_lock);
 	sys_timeout((30 * 1000), ipnat_ageing_tmr, arg);
@@ -171,9 +172,9 @@ void ip_nat_initialize(void)
 	int i;
 
 
-	printf("\n\r");
-	printf("\n\r IP NAT Initialize!!!!!");
-	printf("\n\r");
+	RTK_LOGI(NOTAG, "\n\r");
+	RTK_LOGI(NOTAG, "\n\r IP NAT Initialize!!!!!");
+	RTK_LOGI(NOTAG, "\n\r");
 	rtos_mutex_create(&nat_entry_lock);
 	filter_drop_threshold = (IP_NAT_MAX * 80) / 100;
 	ip_nat_table = (struct nat_table *)malloc(sizeof(struct nat_table) * IP_NAT_MAX);
@@ -197,8 +198,8 @@ static void ip_nat_insert_new_rule(struct nat_table *rule_entry)
 
 	if (ti != nat_entry_idle) {
 
-		//printf("\n\r %s %d", __FUNCTION__, __LINE__);
-		//printf("\n\r");
+		//RTK_LOGI(NOTAG, "\n\r %s %d", __FUNCTION__, __LINE__);
+		//RTK_LOGI(NOTAG, "\n\r");
 	}
 	nat_entry_idle = rule_entry->next;
 	rule_entry->prev = NON_INDEX;
@@ -227,9 +228,9 @@ static void ip_nat_insert_new_rule(struct nat_table *rule_entry)
 		icmp_entry_count++;
 	}
 #endif
-//printf("\n\r");
-//printf("\n\r INSERT %d %d TCP=%d UDP=%d ICMP=%d",__LINE__, rule_entry->proto, tcp_entry_count, udp_entry_count, icmp_entry_count);
-//printf("\n\r");
+//RTK_LOGI(NOTAG, "\n\r");
+//RTK_LOGI(NOTAG, "\n\r INSERT %d %d TCP=%d UDP=%d ICMP=%d",__LINE__, rule_entry->proto, tcp_entry_count, udp_entry_count, icmp_entry_count);
+//RTK_LOGI(NOTAG, "\n\r");
 }
 
 static void ip_nat_set_entry_idle(struct nat_table *t)
@@ -658,9 +659,9 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			if (NEntry) {
 				ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
 			} else {
-				//printf("\n\r");
-				//printf("\n\r ICMP ip_nat_rx_packet NOT found!!!");
-				//printf("\n\r");
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r ICMP ip_nat_rx_packet NOT found!!!");
+				//RTK_LOGI(NOTAG, "\n\r");
 			}
 			rtos_mutex_give(nat_entry_lock);
 		}
@@ -683,7 +684,7 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 		}
 
 		if (NEntry->rst == 1) {
-			//printf("\n\r CLEAN TCP RST!!!!");
+			//RTK_LOGI(NOTAG, "\n\r CLEAN TCP RST!!!!");
 			NEntry->rst = 0;
 		}
 		ip_nat_manipulate_address_tcp(tcphdr, &iphdr->dest, NEntry->src);
@@ -740,9 +741,9 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			if (NEntry) {
 				ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
 			} else {
-				//printf("\n\r");
-				//printf("\n\r %d UDP ip_nat_rx_packet NOT found!!!",__LINE__);
-				//printf("\n\r");
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r %d UDP ip_nat_rx_packet NOT found!!!",__LINE__);
+				//RTK_LOGI(NOTAG, "\n\r");
 			}
 			rtos_mutex_give(nat_entry_lock);
 		}
@@ -781,17 +782,17 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			if (NEntry) {
 				ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			} else {
-				//printf("\n\r");
-				//printf("\n\r ICMP ip_nat_forward_packet NOT found!!!");
-				//printf("\n\r");
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r ICMP ip_nat_forward_packet NOT found!!!");
+				//RTK_LOGI(NOTAG, "\n\r");
 			}
 			rtos_mutex_give(nat_entry_lock);
 
 		} else {
 
-			//printf("\n\r");
-			//printf("\n\r ICMP type =%d ip_nat_forward_packet DO NOTthing!!", iecho->type);
-			//printf("\n\r");
+			//RTK_LOGI(NOTAG, "\n\r");
+			//RTK_LOGI(NOTAG, "\n\r ICMP type =%d ip_nat_forward_packet DO NOTthing!!", iecho->type);
+			//RTK_LOGI(NOTAG, "\n\r");
 		}
 
 		//ip4_debug_print(p);
@@ -822,7 +823,7 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			if (!NEntry) {
 				NEntry = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, tcphdr->dest, 1, 0, 0, 0);
 				if (NEntry) {
-					//printf("\n\r %s %d TCP NAT RX has update DNAT --Do Nothing %08X sport=%d ~~~%08X dport=%d",__FUNCTION__, __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
+					//RTK_LOGI(NOTAG, "\n\r %s %d TCP NAT RX has update DNAT --Do Nothing %08X sport=%d ~~~%08X dport=%d",__FUNCTION__, __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
 					rtos_mutex_give(nat_entry_lock);
 				} else {
 #if LWIP_ICMP
@@ -836,10 +837,10 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 						NEntry1->dest = iphdr->dest.addr;
 						NEntry1->dport = tcphdr->dest;
 						NEntry1->app_use = 0;
-						//printf("\n\r Update E %08X %d %08X %d", NEntry1->src,lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
+						//RTK_LOGI(NOTAG, "\n\r Update E %08X %d %08X %d", NEntry1->src,lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
 						ip_nat_insert_new_rule(NEntry1);
-						// printf("\n\r %d ~~%08X %d %08X %d~~", __LINE__, NEntry1->src, lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
-						//printf("\n\r %d ~~%08X %d %08X %d~~", __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
+						//RTK_LOGI(NOTAG, "\n\r %d ~~%08X %d %08X %d~~", __LINE__, NEntry1->src, lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
+						//RTK_LOGI(NOTAG, "\n\r %d ~~%08X %d %08X %d~~", __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
 						rtos_mutex_give(nat_entry_lock);
 						return ERR_OK;
 					} else {
@@ -903,9 +904,9 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 				if (NEntry1) {
 
 					if (NEntry1->src == iphdr->dest.addr) {
-						//   printf("\n\r %s %d NAT RX has update DNAT --Do Nothing ",__FUNCTION__, __LINE__);
+						//RTK_LOGI(NOTAG, "\n\r %s %d NAT RX has update DNAT --Do Nothing ",__FUNCTION__, __LINE__);
 					} else {
-						printf("\n\r %s %d NAT RX has NOT update forward update %X", __FUNCTION__, __LINE__, NEntry1->src);
+						RTK_LOGI(NOTAG, "\n\r %s %d NAT RX has NOT update forward update %X", __FUNCTION__, __LINE__, NEntry1->src);
 					}
 					rtos_mutex_give(nat_entry_lock);
 				} else {
@@ -929,13 +930,13 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 						NEntry->dest = iphdr->dest.addr;
 						NEntry->dport = udphdr->dest;
 						NEntry->app_use = 0;
-						//printf("\n\r %s %d GO INSERT NEntry prev=%d next=%d", __FUNCTION__, __LINE__, NEntry->prev, NEntry->next);
+						//RTK_LOGI(NOTAG, "\n\r %s %d GO INSERT NEntry prev=%d next=%d", __FUNCTION__, __LINE__, NEntry->prev, NEntry->next);
 						ip_nat_insert_new_rule(NEntry);
 
 					} else {
 
 #if LWIP_ICMP
-						//printf("\n\r%s %d icmp_dest_unreach", __FUNCTION__, __LINE__);
+						//RTK_LOGI(NOTAG, "\n\r%s %d icmp_dest_unreach", __FUNCTION__, __LINE__);
 						icmp_dest_unreach(p, ICMP_DUR_PORT);
 #endif
 
@@ -959,9 +960,9 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			if (NEntry) {
 				ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			} else {
-				//printf("\n\r");
-				//printf("\n\r UDP frag ip_nat_forward_packet NOT found!!!");
-				//printf("\n\r");
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r UDP frag ip_nat_forward_packet NOT found!!!");
+				//RTK_LOGI(NOTAG, "\n\r");
 			}
 			rtos_mutex_give(nat_entry_lock);
 		} else {
@@ -987,7 +988,7 @@ err_t ip_nat_transfer(struct pbuf *p, struct netif *src, struct netif *target)
 	iphdr_hlen *= 4;
 
 	if ((iphdr->dest.addr & PP_HTONL(0xf0000000UL)) == PP_HTONL(0xe0000000UL)) {
-		//printf("\n\r Skip Multicast ip address %08X", iphdr->dest.addr);
+		//RTK_LOGI(NOTAG, "\n\r Skip Multicast ip address %08X", iphdr->dest.addr);
 		return ERR_OK;
 	}
 
@@ -1005,12 +1006,12 @@ err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp)
 
 	iphdr_hlen *= 4;
 	if ((iphdr->dest.addr & PP_HTONL(0xf0000000UL)) == PP_HTONL(0xe0000000UL)) {
-		//printf("\n\r Skip Multicast ip address %08X", iphdr->dest.addr);
+		//RTK_LOGI(NOTAG, "\n\r Skip Multicast ip address %08X", iphdr->dest.addr);
 		return ERR_OK;
 	}
 
 	if (ip4_addr_isbroadcast_u32(iphdr->dest.addr, inp)) {
-		//printf("\n\r Skip broadcast ip address %08X", iphdr->dest.addr);
+		//RTK_LOGI(NOTAG, "\n\r Skip broadcast ip address %08X", iphdr->dest.addr);
 		return ERR_OK;
 	}
 	if (ip4_addr_cmp(&iphdr->dest, ip_2_ip4(&(inp->ip_addr)))) {
@@ -1027,7 +1028,7 @@ void ipnat_dump(void)
 	if (total_session > 0) {
 		nat_debug_print();
 	}
-	printf("\n\r total %d :%lu %lu %lu", total_session, tcp_entry_count, udp_entry_count, icmp_entry_count);
+	RTK_LOGI(NOTAG, "\n\r total %d :%lu %lu %lu", total_session, tcp_entry_count, udp_entry_count, icmp_entry_count);
 
 	rtos_mutex_give(nat_entry_lock);
 
@@ -1041,26 +1042,26 @@ void nat_debug_print(void)
 
 	int i, next;
 	u32_t now = sys_now();
-	printf("NAT session table:\n");
-	printf(" sa                      da                      sport   dport   proto    pkts    ts\n");
-	printf("+-----------------------+-----------------------+-------+-------+-----+-------+---------+\n");
+	RTK_LOGI(NOTAG, "NAT session table:\n");
+	RTK_LOGI(NOTAG, " sa                      da                      sport   dport   proto    pkts    ts\n");
+	RTK_LOGI(NOTAG, "+-----------------------+-----------------------+-------+-------+-----+-------+---------+\n");
 	for (i = nat_entry_list; i != NON_INDEX; i = next) {
 		struct nat_table *Entry = &ip_nat_table[i];
 		next = Entry->next;
 
-		printf("| %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
+		RTK_LOGI(NOTAG, "| %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
 			   ip4_addr1_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
 			   ip4_addr2_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
 			   ip4_addr3_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
 			   ip4_addr4_16(ip_2_ip4((ip_addr_t *)&Entry->src)));
 
-		printf(" %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
+		RTK_LOGI(NOTAG, " %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
 			   ip4_addr1_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
 			   ip4_addr2_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
 			   ip4_addr3_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
 			   ip4_addr4_16(ip_2_ip4((ip_addr_t *)&Entry->dest)));
 
-		printf(" %5u | %5u | %3u | %5u | %5lu\n",
+		RTK_LOGI(NOTAG, " %5u | %5u | %3u | %5u | %5lu\n",
 			   PP_HTONS(Entry->sport),
 			   PP_HTONS(Entry->dport),
 			   Entry->proto, Entry->pkt_count, GET_NAT_ENTRY_TIME_ELAPSED(now, Entry->ts));

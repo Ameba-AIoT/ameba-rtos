@@ -33,6 +33,7 @@
 #include "inic_dev_api.h"
 #include "inic_dev_trx.h"
 #include "inic_dev_msg_queue.h"
+#include "inic_dev_cust_evt.h"
 
 #ifdef CONFIG_INIC_INTF_SDIO
 #include "ameba_inic.h"
@@ -64,6 +65,7 @@ enum INIC_WIFI_CTRL_TYPE {
 	INIC_WIFI_EVT_API_CALL,
 	INIC_WIFI_EVT_API_RETURN,
 	INIC_WIFI_EVT_MAX,
+	INIC_CUST_EVT, /* the ID to transmit data for the customer. */
 
 	INIC_BT_EVT_BASE = INIC_BT_ID_BASE
 };

@@ -43,7 +43,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/wifi.cmake)
 
 include(${CMAKE_CURRENT_LIST_DIR}/img3.cmake)
 
-if(NOT d_AMEBA_REALSE)
+if(NOT d_AMEBA_RELEASE)
     include(${CMAKE_CURRENT_LIST_DIR}/rtk_coex.cmake)
     include(${CMAKE_CURRENT_LIST_DIR}/rtk_coex_api.cmake)
 endif()
@@ -196,7 +196,7 @@ elseif(${d_PLATFORM_TYPE} STREQUAL "amebadplus")
         ${c_CMPT_WIFI_DIR}/driver/wifi_tunnel/include
         ${c_CMPT_WIFI_DIR}/driver/wifi_tunnel/rtl8721da
     )
-elseif(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+elseif(CONFIG_AMEBASMART)
     ameba_target_include(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
         ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb
         ${c_CMPT_WIFI_DIR}/driver/phy_g6/bb/halbb_8730e
@@ -267,7 +267,7 @@ if(CONFIG_WLAN)
                 ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_com_sec.a
             )
         endif()
-    elseif(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+    elseif(CONFIG_AMEBASMART)
         ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
             ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_com_sec.a
         )
@@ -411,7 +411,7 @@ if(CONFIG_WLAN)
         )
     endif()
 else()
-    if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+    if(CONFIG_AMEBASMART)
         #FIXME: for lp, lib_wifi_fw.a is required even though CONFIG_WLAN not defined
         if("${d_MCU_PROJECT_NAME}" STREQUAL "lp")
             ameba_target_link_if(CONFIG_WIFI_FW_EN dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE

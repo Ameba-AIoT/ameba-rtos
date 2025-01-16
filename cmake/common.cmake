@@ -1,26 +1,28 @@
 include_guard(GLOBAL)
 include(${CMAKE_CURRENT_LIST_DIR}/global_define.cmake)
 
+# Get the current directory name to get platform and compile type, and Try matching again for the parent directory when failed.
 function(ameba_parse_platform)
     get_filename_component(CURRENT_DIR "${CMAKE_CURRENT_LIST_DIR}" NAME)
     string(REGEX MATCH "^([a-zA-Z0-9]+)_([a-zA-Z0-9_]+)$" _ "${CURRENT_DIR}")
 
     if (DEFINED CMAKE_MATCH_1 AND DEFINED CMAKE_MATCH_2)
-        ameba_set(_tmp_PLATFORM_TYPE "${CMAKE_MATCH_1}" p_SCOPE parent)
-        ameba_set(_tmp_COMPILER_TYPE "${CMAKE_MATCH_2}" p_SCOPE parent)
+        ameba_set(_tmp_PLATFORM_TYPE "${CMAKE_MATCH_1}" p_SCOPE parent) #amebaxxx
     else()
-        get_filename_component(CURRENT_DIR "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
+        get_filename_component(CURRENT_DIR "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY) # in project_xx subdirectory
         get_filename_component(DIR_NAME "${CURRENT_DIR}" NAME)
         string(REGEX MATCH "^([a-zA-Z0-9]+)_([a-zA-Z0-9_]+)$" _ "${CURRENT_DIR}")
         if (DEFINED CMAKE_MATCH_1 AND DEFINED CMAKE_MATCH_2)
             ameba_set(_tmp_PLATFORM_TYPE "${CMAKE_MATCH_1}" p_SCOPE parent)
-            ameba_set(_tmp_COMPILER_TYPE "${CMAKE_MATCH_2}" p_SCOPE parent)
         else()
             message(FATAL_ERROR "Directory name does not match expected pattern 'chip_compiler'")
         endif()
     endif()
 endfunction()
 
+# ARG_p_TYPE value maybe amebaxxx
+# Usage:
+#   ameba_platform_project_create([p_TYPE <typevalue>])
 function(ameba_platform_project_create)
     set(options)
     set(oneValueArgs p_TYPE)
@@ -28,17 +30,18 @@ function(ameba_platform_project_create)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if (ARG_p_TYPE)
-        ameba_set(_tmp_PLATFORM_TYPE ${p_TYPE} p_SCOPE both)
+        ameba_set(_tmp_PLATFORM_TYPE ${ARG_p_TYPE} p_SCOPE both)
     else()
         ameba_parse_platform()
         ameba_set(_tmp_PLATFORM_TYPE ${_tmp_PLATFORM_TYPE} p_SCOPE both)
-        ameba_set(_tmp_COMPILER_TYPE ${_tmp_COMPILER_TYPE} p_SCOPE both)
     endif()
 
     ameba_set(CMAKE_BUILD_TYPE "" p_SCOPE parent)
     ameba_set(d_PLATFORM_PROJECT_CREATED TRUE p_SCOPE parent)
 endfunction()
 
+# Usage:
+#   ameba_platform_project_init()
 function(ameba_platform_project_init)
     if (NOT d_PLATFORM_PROJECT_CREATED)
         ameba_fatal("Call ameba_platform_project_create before ameba_platform_project_init")
@@ -48,7 +51,6 @@ function(ameba_platform_project_init)
 
     ameba_set(d_PLATFORM_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR} p_SCOPE both)
     ameba_set_move(d_PLATFORM_TYPE _tmp_PLATFORM_TYPE p_SCOPE both)
-    ameba_set_move(d_COMPILER_TYPE _tmp_COMPILER_TYPE p_SCOPE both)
     ameba_set_upper(d_PLATFORM_TYPE_UPPER ${d_PLATFORM_TYPE} p_SCOPE both)
     ameba_set(d_SOC_PLATFORM_DIR ${c_BASEDIR}/component/soc/${d_PLATFORM_TYPE} p_SCOPE both)
 
@@ -56,17 +58,11 @@ function(ameba_platform_project_init)
     ameba_set(TARGETDIR ${d_SOC_PLATFORM_DIR} p_SCOPE both)
     ameba_set(BOOTLOADER ${TARGETDIR}/bootloader p_SCOPE both)
 
-
-    foreach(dep ${p_dependency_full_list})
-        if(TARGET dep_${dep})
-            add_library(dep_${dep}_headers INTERFACE)
-            target_include_directories(dep_${dep}_headers INTERFACE $<TARGET_PROPERTY:dep_${dep},INTERFACE_INCLUDE_DIRECTORIES>)
-        endif()
-    endforeach()
-
     ameba_set(d_PLATFORM_PROJECT_INITIALIZED TRUE p_SCOPE parent)
 endfunction()
 
+# Usage:
+#   ameba_platform_project_config()
 macro(ameba_platform_project_config)
     ameba_platform_project_custom_config()
     if(NOT FINAL_IMAGE_DIR)
@@ -78,6 +74,9 @@ macro(ameba_platform_project_config)
     endif()
 endmacro()
 
+# must use macro to define, otherwise project() will not work if use function.
+# Usage:
+#   ameba_mcu_project_create(<name> <mcu_type>)
 macro(ameba_mcu_project_create name mcu_type)
     ameba_set(CMAKE_BUILD_TYPE "")
     ameba_set(_tmp_MCU_TYPE ${mcu_type})
@@ -116,9 +115,11 @@ macro(ameba_mcu_project_create name mcu_type)
 
     ameba_reset_global_define()
 
-    ameba_set(d_MCU_PROJECT_CREATED TRUE p_SCOPE parent)
+    ameba_set(d_MCU_PROJECT_CREATED TRUE)
 endmacro()
 
+# Usage:
+#   ameba_mcu_project_init()
 function(ameba_mcu_project_init)
     if (NOT d_PLATFORM_PROJECT_CREATED)
         ameba_fatal("Call ameba_mcu_project_create before ameba_mcu_project_init")
@@ -135,7 +136,7 @@ function(ameba_mcu_project_init)
     ameba_set_upper(d_SDK_NAME_UPPER ${d_SDK_NAME} p_SCOPE both)
     ameba_set_upper(d_MCU_TYPE_UPPER ${d_MCU_TYPE} p_SCOPE both)
     ameba_set(d_SDK_VERSION ${v_${d_SDK_NAME_UPPER}_VER} p_SCOPE both)
-    ameba_set(d_TOOLCHAIN_DIR ${${d_SDK_NAME_UPPER}_TOOLCHAIN} p_SCOPE both) #${d_SDK_NAME_UPPER}_TOOLCHAIN is define in cmake/toolchain
+    ameba_set(d_TOOLCHAIN_DIR ${${d_SDK_NAME_UPPER}_TOOLCHAIN} p_SCOPE both)
 
     # sub dirs in ${d_MCU_PROJECT_DIR}/
     ameba_set(d_MCU_SDK_DIR ${d_MCU_PROJECT_DIR}/${d_SDK_NAME} p_SCOPE both)
@@ -158,26 +159,16 @@ function(ameba_mcu_project_init)
     ameba_set(d_SDK_LIB_SOC_DIR         ${d_MCU_SDK_DIR}/lib/soc p_SCOPE both)
 
     # more define
-    ameba_set_if(CONFIG_AMEBA_RLS d_AMEBA_REALSE ON p_ELSE OFF p_SCOPE both)
-    ameba_unset(d_MCU_DEPS p_SCOPE both)
+    ameba_set_if(CONFIG_AMEBA_RLS d_AMEBA_RELEASE ON p_ELSE OFF p_SCOPE both)
     if(NOT d_TOOLCHAIN_DIR)
-      if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
-          ameba_set(d_TOOLCHAIN_DIR /opt/rtk-toolchain/asdk-${d_SDK_VERSION}/linux/newlib p_SCOPE both)
-      elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
-          ameba_set(d_TOOLCHAIN_DIR C:/rtk-toolchain/asdk-${d_SDK_VERSION}/mingw32/newlib p_SCOPE both)
-      else()
-          message(FATAL_ERROR "unknown host platform ")
-      endif()
+          message(FATAL_ERROR "unknown toolchian dir: ${d_TOOLCHAIN_DIR}")
     endif()
 
     # dirs define on specific conditions
-    ameba_set_if(CONFIG_MP_INCLUDED d_SDK_IMAGE_FOLDER_NAME p_SCOPE both
-        image_mp
-        p_ELSE
-        image
-    )
+    ameba_set_if(CONFIG_MP_INCLUDED d_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image p_SCOPE both)
     ameba_set(d_SDK_IMAGE_TARGET_FOLDER ${d_MCU_SDK_DIR}/${d_SDK_IMAGE_FOLDER_NAME} p_SCOPE both)
 
+    #compatible with CMAKE_V0.1
     ameba_set(IMAGE_TARGET_FOLDER ${d_SDK_IMAGE_TARGET_FOLDER} p_SCOPE both)
     ameba_set_if(CONFIG_MP_INCLUDED BUILD_TYPE MFG p_ELSE NONE p_SCOPE both)
     ameba_set_if(CONFIG_MP_INCLUDED ANALYZE_MP_IMG 1 p_ELSE 0 p_SCOPE both)
@@ -199,6 +190,8 @@ function(ameba_mcu_project_init)
     ameba_set(MBEDTLS_VER ${v_MBEDTLS_VER} p_SCOPE both)
 endfunction()
 
+# Usage:
+#   ameba_mcu_project_config()
 macro(ameba_mcu_project_config)
     ameba_mcu_project_custom_config() # Call user's config function defined in mcu_project_config.cmake
 
@@ -222,25 +215,24 @@ macro(ameba_mcu_project_config)
     include(${c_COMPONENT_DIR}/build_info/dependency_common.cmake)
     include(${c_COMPONENT_DIR}/build_info/dependency_platform.cmake)
     include(${c_COMPONENT_DIR}/build_info/dependency_mcu.cmake)
-    set(tmp_deps)
+    set(d_MCU_DEPS)
     foreach(dep ${p_dependency_list_full})
         string(TOUPPER ${dep} dep_upper)
         if(d_DEP_${dep_upper})
             #TODO: add compile dep after cmake binding with dep's src
             if(TARGET dep_${d_MCU_PROJECT_NAME}_${dep})
-                ameba_list_append(tmp_deps dep_${d_MCU_PROJECT_NAME}_${dep})
+                ameba_list_append(d_MCU_DEPS dep_${d_MCU_PROJECT_NAME}_${dep})
             else()
                 ameba_fatal("not a TARGET: dep_${d_MCU_PROJECT_NAME}_${dep}")
             endif()
         endif()
     endforeach()
-    ameba_set_move(d_MCU_DEPS tmp_deps)
 
     ####################################
 
     include(${c_CMAKE_FILES_DIR}/flags/common/compile_options.cmake)
     include(${c_CMAKE_FILES_DIR}/flags/common/link_options.cmake)
-    include(${c_CMAKE_FILES_DIR}/flags/${d_PLATFORM_TYPE}/compile_options.cmake)
+    include(${c_CMAKE_FILES_DIR}/flags/${d_PLATFORM_TYPE}/compile_options.cmake) #TODO: remain discuss
     include(${c_CMAKE_FILES_DIR}/flags/${d_PLATFORM_TYPE}/link_options.cmake)
     include(${c_CMAKE_FILES_DIR}/flags/${d_MCU_TYPE}/compile_options.cmake)
     include(${c_CMAKE_FILES_DIR}/flags/${d_MCU_TYPE}/link_options.cmake)
@@ -266,7 +258,6 @@ macro(ameba_mcu_project_config)
         ${d_GLOBAL_COMMON_COMPILE_DEFINES}
         ${d_GLOBAL_MCU_COMPILE_DEFINES}
         ${d_CUSTOM_PLATFORM_COMPILE_DEFINES}
-        ${d_CUSTOM_MCU_LINK_OPTIONS}
     )
 
     add_library(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS INTERFACE)
@@ -277,6 +268,8 @@ macro(ameba_mcu_project_config)
         ${d_CUSTOM_PLATFORM_LINK_OPTIONS}   #defined in ${d_PLATFORM_TYPE}/platform_project_config.cmake
         ${d_CUSTOM_MCU_LINK_OPTIONS}        #defined in ${d_PLATFORM_TYPE}/${d_MCU_TYPE}/mcu_project_config.cmake
     )
+
+    # d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS is global build info
     target_link_libraries(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS INTERFACE ${d_MCU_DEPS})
     target_include_directories(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS INTERFACE ${d_GLOBAL_MCU_INCLUDE_DIRECTORIES})
 
@@ -290,13 +283,13 @@ macro(ameba_mcu_project_config)
     )
 
     add_library(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_INCLUDE_DIRECTORIES INTERFACE)
-    ameba_target_get_include_directories(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS A_INCLUDE_DIRS)
-    target_include_directories(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_INCLUDE_DIRECTORIES INTERFACE ${A_INCLUDE_DIRS})
+    ameba_target_get_include_directories(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS tmp_A_INCLUDE_DIRS)
+    target_include_directories(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_INCLUDE_DIRECTORIES INTERFACE ${tmp_A_INCLUDE_DIRS})
 
     # add_library(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_LIBRARIES INTERFACE)
     ameba_target_get_link_libraries(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_ALL_DEPS libs)
     # target_link_libraries(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_LIBRARIES INTERFACE ${libs})
-    set(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_LIBRARIES ${libs})
+    set(d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_LIBRARIES ${libs}) #if use interface target, than whole-archive libs may not work.
 
     set(d_LIST_${d_MCU_PROJECT_NAME_UPPER}_LOADER_LIBRARIES)
     set(d_LIST_${d_MCU_PROJECT_NAME_UPPER}_LOADER_DEPS)
@@ -326,6 +319,7 @@ macro(ameba_mcu_project_config)
             list(APPEND d_LIST_${d_MCU_PROJECT_NAME_UPPER}_SECURE_DEPS ${dep})
         endif()
 
+        # maybe one component has a global macro, add it to the global project.
         get_target_property(defs ${dep} INTERFACE_COMPILE_DEFINITIONS)
         if(defs)
             add_compile_definitions(${defs})
@@ -335,8 +329,9 @@ macro(ameba_mcu_project_config)
     ameba_debug("non loader libraries: ${d_LIST_${d_MCU_PROJECT_NAME_UPPER}_NO_LOADER_LIBRARIES}")
     ameba_debug("loader libraries: ${d_LIST_${d_MCU_PROJECT_NAME_UPPER}_LOADER_LIBRARIES}")
 
+    #NOTE: For compatibility with version CMAKE_V0.1
     add_library(ameba_interface_${PROJECT_NAME} INTERFACE)
-    target_include_directories(ameba_interface_${PROJECT_NAME} INTERFACE ${A_INCLUDE_DIRS})
+    target_include_directories(ameba_interface_${PROJECT_NAME} INTERFACE ${tmp_A_INCLUDE_DIRS})
     target_link_options(ameba_interface_${PROJECT_NAME} INTERFACE
         ${d_GLOBAL_COMMON_LINK_OPTIONS}     #defined in cmake/flags/common/link_options.cmake
         ${d_GLOBAL_PLATFORM_LINK_OPTIONS}   #defined in cmake/flags/${d_PLATFORM_TYPE}/link_options.cmake

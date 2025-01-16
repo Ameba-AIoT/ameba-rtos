@@ -73,6 +73,9 @@ int llhw_recv_process(struct sk_buff *pskb)
 			kfree_skb(pskb);
 		}
 		break;
+	case INIC_CUST_EVT:
+		llhw_recv_cust_evt((u8 *)pskb->data + SIZE_RX_DESC);
+		break;
 #ifdef CONFIG_BT_INIC
 	case INIC_BT_HOST_RX:
 		bt_recv_pkts(pskb);

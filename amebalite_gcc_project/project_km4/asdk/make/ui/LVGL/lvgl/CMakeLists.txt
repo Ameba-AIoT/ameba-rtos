@@ -184,6 +184,7 @@ set(
 ameba_internal_library(lvgl)
 target_compile_definitions(${CURRENT_LIB_NAME} PRIVATE ${MODULE_C_DEFINES})
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
+target_compile_options(${CURRENT_LIB_NAME} PRIVATE -Wno-error)
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
 
 add_custom_command(TARGET ${CURRENT_LIB_NAME} POST_BUILD

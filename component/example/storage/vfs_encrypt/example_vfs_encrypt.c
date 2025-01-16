@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "mbedtls/aes.h"
+#include "os_wrapper.h"
+
+extern void vfs_set_user_encrypt_callback(char *prefix, vfs_encrypt_callback_t encrypt_func, vfs_decrypt_callback_t decrypt_func, unsigned char iv_len);
 
 #define DUMP_BUFFER 0
 #define AES_KEY_LEN 16
@@ -14,14 +17,17 @@ static const unsigned char aeskey[32] = {
 	0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a
 } ;
 
+#if DUMP_BUFFER
 static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 {
 	printf("%s", info);
-	for (int i = 0; i < len; i++) {
+	for (uint32_t i = 0; i < len; i++) {
 		printf("%s%02X%s", i % 16 == 0 ? "\n     " : " ",
 			   buf[i], i == len - 1 ? "\n" : "");
 	}
 }
+#endif
+
 
 //output buffer should be 16 bytes aligned for aes cbc demand
 int vfs_mbedtls_aes_cbc_encrypt(unsigned char *input, unsigned char *output, unsigned int len)
@@ -83,6 +89,7 @@ int vfs_mbedtls_aes_cbc_decrypt(unsigned char *input, unsigned char *output, uns
 
 void example_vfs_encrypt_thread(void *param)
 {
+	(void)param;
 	rtos_time_delay_ms(3000);
 	char key[] = "vfs_key";
 	char val[] = "VFS module works normally with encrypt function !!!";
@@ -103,7 +110,7 @@ void example_vfs_encrypt_thread(void *param)
 	}
 
 	res = fwrite(val, strlen(val), 1, (FILE *)finfo);
-	if (res != (strlen(val) / 16 + 1) * 16) {
+	if (res != (int)(strlen(val) / 16 + 1) * 16) {
 		printf("[%s] fwrite failed,err is %d!!\r\n", __FUNCTION__, res);
 	} else {
 		printf("[%s] fwrite succeeded !!!\r\n", __FUNCTION__);

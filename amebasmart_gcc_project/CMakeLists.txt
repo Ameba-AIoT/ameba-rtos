@@ -58,6 +58,7 @@ git_describe(GIT_VER)
 set(CMAKE_BUILD_TYPE "")
 
 ameba_set(ASDK_VER ${v_ASDK_VER})
+# must include toolchain before project(xx LANGUAGES C CXX ASM)
 include (${c_CMAKE_FILES_DIR}/toolchain/ameba-toolchain-asdk-${v_ASDK_VER}.cmake)
 
 project(amebasmart LANGUAGES C CXX ASM)

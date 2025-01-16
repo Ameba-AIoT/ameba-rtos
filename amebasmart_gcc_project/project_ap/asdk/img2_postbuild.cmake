@@ -46,8 +46,8 @@ message( "========== Image manipulating start ==========")
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf img"
-    COMMAND ${CMAKE_COMMAND} -E env make -j TOOLCHAIN_DIR=${TOOLCHAIN_DIR} ASDK_VER=${ASDK_VER} TOOLCHAINVER=${TOOLCHAINVER} -C ${c_BASEDIR}/component/soc/amebasmart/atf image
-    WORKING_DIRECTORY ${c_BASEDIR}/component/soc/amebasmart/atf
+    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap -C ${c_BASEDIR}/component/soc/${d_PLATFORM_TYPE}/atf image
+    WORKING_DIRECTORY ${c_BASEDIR}/component/soc/${d_PLATFORM_TYPE}/atf
 )
 
 execute_process(
@@ -125,7 +125,7 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
 endif()
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
-    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin AND EXISTS ${c_BASEDIR}/amebasmart_gcc_project/fatfs.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin AND EXISTS ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs.bin)
 
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E rename ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_tmp.bin
@@ -144,16 +144,16 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
         )
 
         execute_process(
-            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/amebasmart_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${IMAGE_TARGET_FOLDER}/target_img2.map
+            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${IMAGE_TARGET_FOLDER}/target_img2.map
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_tmp.bin ${c_BASEDIR}/amebasmart_gcc_project/fatfs_prepend.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_tmp.bin ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs_prepend.bin
             OUTPUT_FILE ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_ns_tmp.bin ${c_BASEDIR}/amebasmart_gcc_project/fatfs_prepend.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_ns_tmp.bin ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs_prepend.bin
             OUTPUT_FILE ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_ns.bin
         )
     endif()

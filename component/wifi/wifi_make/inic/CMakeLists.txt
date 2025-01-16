@@ -71,6 +71,7 @@ if(CONFIG_AS_INIC_NP)
             ${COMDRV}/inic_dev_trx.c
             ${COMDRV}/inic_dev_api.c
             ${COMDRV}/inic_dev_protocal_offload.c
+            ${COMDRV}/inic_dev_cust_evt.c
         )
         ameba_internal_library(wifi_inic_spi_dev)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
@@ -82,6 +83,7 @@ if(CONFIG_AS_INIC_NP)
             ${COMDRV}/inic_dev_trx.c
             ${COMDRV}/inic_dev_api.c
             ${COMDRV}/inic_dev_protocal_offload.c
+            ${COMDRV}/inic_dev_cust_evt.c
             ${SDIODRV}/inic_sdio_dev.c
         )
         ameba_internal_library(wifi_inic_sdio_dev)
@@ -109,6 +111,7 @@ elseif(CONFIG_FULLMAC_BRIDGE)
             ${COMDRV}/inic_dev_api.c
             ${SDIODRV}/inic_sdio_dev.c
             ${COMDRV}/inic_dev_bridge.c
+            ${COMDRV}/inic_dev_cust_evt.c
         )
         ameba_internal_library(wifi_fullmac_sdio_bridge)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
@@ -122,6 +125,7 @@ elseif(CONFIG_FULLMAC_BRIDGE)
             ${COMDRV}/inic_dev_protocal_offload.c
             ${SPIDRV}/inic_spi_dev.c
             ${COMDRV}/inic_dev_bridge.c
+            ${COMDRV}/inic_dev_cust_evt.c
         )
         ameba_internal_library(wifi_fullmac_spi_bridge)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
@@ -136,6 +140,7 @@ elseif(CONFIG_AS_INIC_AP)
 			${INICCOM}/inic_host_api.c
 			${INICCOM}/inic_host_api_ext.c
 			${INICCOM}/inic_host_api_basic.c
+			${INICCOM}/inic_host_cust_evt.c
 		)
         ameba_internal_library(wifi_inic_spi_host)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

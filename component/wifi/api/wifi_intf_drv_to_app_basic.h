@@ -25,7 +25,7 @@
  */
 #ifndef CONFIG_FULLMAC
 #include "rtw_wifi_common.h"
-#if !defined(ZEPHYR_WIFI)
+#if !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
 #include "rtw_wifi_constants.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
@@ -791,6 +791,12 @@ struct wifi_user_conf {
 
 	/*! R-mesh AP strong RSSI thresh, when AP rssi larger than this thresh, will try to switch to AP*/
 	signed char wtn_strong_rssi_thresh;
+
+	/*! R-mesh father refresh timeout, when not receive beacon from father for this timeout, will switch to other node, unit: millisecond*/
+	u16 wtn_father_refresh_timeout;
+
+	/*! R-mesh child refresh timeout, when not receive beacon from child for this timeout, will delete this child, unit: millisecond*/
+	u16 wtn_child_refresh_timeout;
 };
 /** @} */
 

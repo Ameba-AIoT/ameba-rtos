@@ -43,3 +43,4 @@ None.
 - AmebaSmart
 - AmebaLite
 - AmebaDplus
+- AmebaD

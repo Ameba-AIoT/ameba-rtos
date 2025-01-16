@@ -49,7 +49,6 @@ ameba_set(c_FREERTOS_DIR_SUFFIX)
 ameba_set(c_FREERTOS_DIR ${c_COMPONENT_DIR}/os/freertos/freertos_${v_FREERTOS_VER}${c_FREERTOS_DIR_SUFFIX}/Source)
 ameba_set(c_MBEDTLS_DIR ${c_COMPONENT_DIR}/ssl/mbedtls-${v_MBEDTLS_VER})
 ameba_set(c_WIFIFW_DIR ${c_COMPONENT_DIR}/wifi/wifi_fw)
-ameba_set(c_WIFI_MAKE_DIR ${c_COMPONENT_DIR}/wifi/wifi_make)
 
 ############################################################
 
@@ -62,7 +61,6 @@ endmacro()
 ############################################################
 
 ameba_reset_global_define()
-
 
 #NOTE: For compatibility with version CMAKE_V0.1, use variable starts with d_ or c_ above
 ############################################################

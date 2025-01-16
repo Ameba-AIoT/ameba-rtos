@@ -1240,7 +1240,7 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 	ctx->type = type;
 	ctx->fd = -1;
 
-	ota_printf(_OTA_INFO_, "host: %s(%d), resource: %s\n", ctx->host, ctx->port, resource ? ctx->resource : "null");
+	ota_printf(_OTA_INFO_, "host: %s(%d), resource: %s\n", ctx->host ? ctx->host : "null", ctx->port, resource ? ctx->resource : "null");
 	return 0;
 exit:
 	ota_update_deinit(ctx);

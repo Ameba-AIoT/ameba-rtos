@@ -17,6 +17,7 @@
 #ifdef CONFIG_INIC_INTF_SPI
 #include "inic_spi_host.h"
 #include "inic_spi_host_trx.h"
+#include "inic_host_cust_evt.h"
 #endif
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
@@ -31,6 +32,7 @@ enum INIC_WIFI_CTRL_TYPE {
 	INIC_WIFI_EVT_API_CALL,
 	INIC_WIFI_EVT_API_RETURN,
 	INIC_WIFI_EVT_MAX,
+	INIC_CUST_EVT, /* the ID to transmit data for the customer. */
 	//TODO host need BT confirm file
 	INIC_BT_EVT_BASE = INIC_BT_ID_BASE,
 };
@@ -38,6 +40,12 @@ enum INIC_WIFI_CTRL_TYPE {
 struct inic_api_info {
 	u32	event;
 	u32	api_id;
+};
+
+/* the header for customer to send or receive the data between host and device. */
+struct inic_cust_hdr {
+	u32	event;
+	u32	len;
 };
 
 struct inic_msg_info {

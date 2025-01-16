@@ -9,7 +9,7 @@ add_library(src_${d_MCU_PROJECT_NAME}_freertos_wrapper INTERFACE)
 add_library(src_${d_MCU_PROJECT_NAME}_freertos_secure INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_freertos p_SCOPE interface
             ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure/port.c

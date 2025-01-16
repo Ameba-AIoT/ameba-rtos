@@ -20,7 +20,7 @@ ameba_add_subdirectories(
 ############################################################################
 
 #######################make_subdirs_lib_img2################################
-if(NOT d_AMEBA_REALSE)
+if(NOT d_AMEBA_RELEASE)
     ameba_add_subdirectories(
         make_lib/chipinfo_lib
         make_lib/crashdump_lib

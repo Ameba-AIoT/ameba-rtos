@@ -49,6 +49,7 @@ if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
             ${DIR}/atcmd_mqtt.c
             ${DIR}/atcmd_sockets.c
             ${DIR}/atcmd_websocket.c
+            ${DIR}/atcmd_ota.c
         )
     endif()
 

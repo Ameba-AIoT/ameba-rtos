@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_dynamic_app INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_dynamic_app p_SCOPE interface
             ${c_DYNAMIC_APP_DIR}/app_loader/app_loader.c

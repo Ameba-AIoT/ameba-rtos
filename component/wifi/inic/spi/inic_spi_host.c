@@ -178,6 +178,9 @@ int rtw_spi_recv_process(void)
 			RTK_LOGE(TAG_WLAN_INIC, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
 		}
 		break;
+	case INIC_CUST_EVT:
+		inic_host_recv_cust_evt(spi_host_priv.rx_buf + SIZE_RX_DESC);
+		break;
 	default:
 		if (event >= INIC_BT_EVT_BASE) {
 			/* copy by bt, skb no change */

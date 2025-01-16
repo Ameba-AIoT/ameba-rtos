@@ -63,9 +63,9 @@ if BT_EXAMPLE_DEMO_MENU
     #    bool "BLE Mesh Device Test"
     #    default n
 
-    #config BT_ISO_TEST
-    #    bool "BLE ISO Test"
-    #    default n
+    config BT_ISO_TEST
+        bool "BLE ISO Test"
+        default n
 
 
     config BT_LE_AUDIO_MENU

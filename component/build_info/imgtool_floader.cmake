@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_imgtool_floader INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_set(src_${d_MCU_PROJECT_NAME}_imgtool_floader p_SCOPE interface
             p_COMPILE_DEFINES

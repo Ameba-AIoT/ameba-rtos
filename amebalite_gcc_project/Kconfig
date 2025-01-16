@@ -94,10 +94,17 @@ menu "CONFIG AT CMD"
         endchoice
         config LONGER_CMD
             bool "Enable Longer CMD"
-		config ATCMD_SOCKET
-			bool "Enable Socket"
-		config ATCMD_MQTT
-			bool "Enable MQTT"
+        config ATCMD_SOCKET
+            bool "Enable Socket"
+        config ATCMD_HTTP
+            bool "Enable HTTP"
+        config ATCMD_MQTT
+            bool "Enable MQTT"
+        config ATCMD_WEBSOCKET
+            bool "Enable WEBSOCKET"
+        config ATCMD_OTA
+            bool "Enable OTA"
+            default n
     endif
 endmenu
 
@@ -138,9 +145,9 @@ endmenu
 
 menu "CONFIG OTA OPTION"
     config UPGRADE_BOOTLOADER
-        bool "Upgrade Bootloader"
+        bool "Enable Bootloader OTA"
     config COMPRESS_OTA_IMG
-        bool "Support Compressed APP Image"
+        bool "Enable Compress APP Image"
 endmenu
 
 comment "----------Connectivity config----------"
@@ -628,12 +635,12 @@ endmenu
 
 menu "CONFIG SSL"
     config MBEDTLS_ENABLED_MENU
-        bool "MBEDTLS Enable"
+        bool "Enable MbedTLS"
         select MBEDTLS_ENABLED if CORE_AS_AP
 
     config MBEDTLS_SSL_PROTO_TLS1_3_MENU
         depends on MBEDTLS_ENABLED_MENU
-        bool "Support TLS 1.3 protocol"
+        bool "Enable TLS 1.3"
         select MBEDTLS_SSL_PROTO_TLS1_3 if CORE_AS_AP
 
     config MBEDTLS_ENABLED

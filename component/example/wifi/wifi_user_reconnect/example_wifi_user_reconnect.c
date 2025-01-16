@@ -124,6 +124,7 @@ static void user_main_task(void *param)
 void example_wifi_user_reconnect(void)
 {
 	/* Disable realtek fast reconnect */
+	extern void wifi_fast_connect_enable(unsigned char enable);
 	wifi_fast_connect_enable(0);
 
 	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 1024, 1) != SUCCESS) {

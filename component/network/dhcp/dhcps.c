@@ -3,6 +3,8 @@
 #include "lwip/tcpip.h"
 #include "rtw_wifi_constants.h"
 #include "lwip_netconf.h"
+#include "atcmd_service.h"
+
 //static struct dhcp_server_state dhcp_server_state_machine;
 static uint8_t dhcp_server_state_machine = DHCP_SERVER_STATE_IDLE;
 /* recorded the client MAC addr(default sudo mac) */
@@ -546,6 +548,10 @@ static void dhcps_send_offer(struct pbuf *packet_buffer)
 		   ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip, \
 		   client_addr[0], client_addr[1], client_addr[2], \
 		   client_addr[3], client_addr[4], client_addr[5]);
+	at_printf_indicate("ASSIGN_CLIENT_IP:\""MAC_FMT"\",\"%d.%d.%d.%d\"\r\n", MAC_ARG(client_addr), \
+					   ip4_addr1(ip_2_ip4(&dhcps_network_id)), \
+					   ip4_addr2(ip_2_ip4(&dhcps_network_id)), \
+					   ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip);
 	IP4_ADDR(ip_2_ip4(&dhcps_allocated_client_address), (ip4_addr1(ip_2_ip4(&dhcps_network_id))),
 			 ip4_addr2(ip_2_ip4(&dhcps_network_id)), ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip);
 #endif

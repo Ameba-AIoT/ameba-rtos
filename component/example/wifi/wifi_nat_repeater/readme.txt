@@ -19,13 +19,11 @@ Description
 Setup Guide
 ~~~~~~~~~~~
 1.Define CONFIG_IP_NAT by selecting configuration in menuconfig：
-	a.use CMD "make menuconfig" to show configurations;
-	b.1)choose "MENUCONFIG FOR KM4 CONFIG" if you use amebadplus;
-	  2)choose "MENUCONFIG FOR CA32 CONFIG" if you use amebasmart;
-	c.choose "LWIP Config";
-	d.choose "NAT REPEATER Enable".
+	a.use CMD "./menuconfig.py" to show configurations;
+	b.choose "CONFIG LWIP";
+	c.choose "NAT REPEATER Enable".
 		
-2.Use CMD "make all EXAMPLE=wifi_nat_repeater" to compile nat repeater example.
+2.Use CMD "./build.py -a wifi_nat_repeater -p" to compile nat repeater example.
 	
 Result description
 ~~~~~~~~~~~~~~~~~~
@@ -35,12 +33,10 @@ Result description
 3.If sta has successfully connected to public WiFi which can access wan, then cellphone can also access wan.
 
 	How to use atcmd to connect to public WiFi under sta mode:
-	a.use CMD "ATW0=SSID";
-	b.use CMD "ATW1=PWD" if public WiFi is set with password otherwise don't need this CMD;
-	c.use CMD "ATWC".
+	use CMD "AT+WLCONN=ssid,xxx,pw,xxx"; if public WiFi is set with password otherwise don't need "pw,xxx";
 
 Supported List
 ~~~~~~~~~~~~~~
 [Supported List]
         Supported :
-	      amebadplus amebasmart
+	      amebadplus

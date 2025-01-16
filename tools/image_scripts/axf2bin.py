@@ -770,8 +770,9 @@ class OTA_PREPEND_TOOL():
         with open(src, "rb") as f:
             content = f.read()
             chksum = sum(content)
-            print("image_size=", os.path.getsize(src))
-            print("checksum={:08x}".format(chksum))
+            print("{:<25}{:<10}{:<10}{:<9}{:08x}".format(os.path.basename(src),
+                                    'image_size=', os.path.getsize(src),
+                                    'checksum=', chksum))
         with open(dst, "rb+") as f:
             f.seek(offset, 0)
             f.write(chksum.to_bytes(4, 'little'))
@@ -1317,6 +1318,71 @@ class IMAGETOOL():
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
             CATFILE('', os.path.join(KM4_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
 
+    def amebasmartplus(self, KM4_IMG_DIR):
+        if self.BUILD_TYPE == 'MFG':
+            CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image_mp')
+        else:
+            CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image')
+        KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
+        km0_image2 = os.path.join(KM0_IMG_DIR, 'km0_image2_all.bin')
+        km4_image2 = os.path.join(KM4_IMG_DIR, 'km4_image2_all.bin')
+        km4_image3 = os.path.join(KM4_IMG_DIR, 'km4_image3_all.bin')
+        km0_image2_en = os.path.join(KM4_IMG_DIR, 'km0_image2_all_en.bin')
+        km4_image2_en = os.path.join(KM4_IMG_DIR, 'km4_image2_all_en.bin')
+        km4_image3_en = os.path.join(KM4_IMG_DIR, 'km4_image3_all_en.bin')
+        ca32_image = os.path.join(CA32_IMG_DIR, 'ap_image_all.bin')
+        ca32_image_en = os.path.join(CA32_IMG_DIR, 'ap_image_all_en.bin')
+        app = os.path.join(KM4_IMG_DIR, 'km0_km4_app.bin')
+        app_ns = os.path.join(KM4_IMG_DIR, 'km0_km4_app_ns.bin')
+        app_ca32 = os.path.join(KM4_IMG_DIR, 'km0_km4_ca32_app.bin')
+        app_ca32_ns = os.path.join(KM4_IMG_DIR, 'km0_km4_ca32_app_ns.bin')
+
+        if self.IMAGE_FILENAME == 'km0_image2_all.bin' or self.IMAGE_FILENAME == 'km4_image2_all.bin' or self.IMAGE_FILENAME == 'ap_image_all.bin':
+            km0_image2 = self.image2_prehandle(km0_image2, km4_image2, km4_image3, app, KM4_IMG_DIR)
+
+            ENCTOOL('cert', self.MANIFEST_JSON, self.MANIFEST_JSON, self.cert, 0, 'app')
+            if os.path.exists(ca32_image):
+                ENCTOOL('rsip', ca32_image, ca32_image_en, '0x0E000000', self.MANIFEST_JSON, 'app')
+                CATFILE('', app_ca32, app, ca32_image)
+                ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app_ca32, self.manifest, 'app')
+            else:
+                ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app, self.manifest, 'app')
+            ENCTOOL('rsip', km0_image2, km0_image2_en, '0x0C000000', self.MANIFEST_JSON, 'app')
+            ENCTOOL('rsip', km4_image2, km4_image2_en, '0x0D000000', self.MANIFEST_JSON, 'app')
+
+            if os.path.exists(self.manifest) == False:
+                sys.exit(1)
+
+            if os.path.exists(km4_image3_en):
+                CATFILE('', app_ns, self.cert, self.manifest, km0_image2, km4_image2, km4_image3)
+                CATFILE('', app, self.cert, self.manifest, km0_image2_en, km4_image2_en, km4_image3_en)
+            else:
+                CATFILE('', app_ns, self.cert, self.manifest, km0_image2, km4_image2)
+                CATFILE('', app, self.cert, self.manifest, km0_image2_en, km4_image2_en)
+
+            if os.path.exists(ca32_image_en):
+                CATFILE('', app_ca32_ns, app_ns, ca32_image)
+                CATFILE('', app_ca32, app, ca32_image_en)
+
+            self.image2_posthandle(KM4_IMG_DIR, app, app_ns, app_ca32, app_ca32_ns)
+
+        IMAGE_NAME = self.IMAGE_FULLNAME
+        IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
+        IMAGE_NAME_NS = os.path.splitext(IMAGE_NAME)[0] + '_ns.bin'
+        if self.IMAGE_FILENAME == 'km4_boot_all.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x0A000000', self.MANIFEST_JSON, 'boot')
+            CATFILE('', IMAGE_NAME_NS, self.manifest, IMAGE_NAME)
+            CATFILE('', IMAGE_NAME, self.manifest, IMAGE_NAME_EN)
+            os.remove(IMAGE_NAME_EN)
+
+        if self.IMAGE_FILENAME == 'km4_image3_all.bin':
+            ENCTOOL('rdp', 'enc', IMAGE_NAME, IMAGE_NAME_EN, self.MANIFEST_JSON)
+
+        if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
+            CATFILE('', os.path.join(KM4_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+
     def amebagreen2(self, AP_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
             NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image_mp')
@@ -1458,6 +1524,7 @@ class IMAGETOOL():
     def get_handler(self, project):
         return {
             'amebasmart_gcc_project': {'handler': self.amebasmart, 'image_core': 'project_hp', 'boot_addr': '0x0A000000', 'boot_image': 'km4_boot_all'},
+            'amebasmartplus_gcc_project': {'handler': self.amebasmartplus, 'image_core': 'project_hp', 'boot_addr': '0x0A000000', 'boot_image': 'km4_boot_all'},
             'amebalite_gcc_project': {'handler': self.amebalite, 'image_core': 'project_km4', 'boot_addr': '0x0F800000', 'boot_image': 'km4_boot_all'},
             'amebadplus_gcc_project': {'handler': self.amebadplus, 'image_core': 'project_km4', 'boot_addr': '0x0F800000', 'boot_image': 'km4_boot_all'},
             'amebad_gcc_project': {'handler': self.amebad, 'image_core': 'project_km4', 'boot_addr': '', 'boot_image': 'km4_boot_all'},

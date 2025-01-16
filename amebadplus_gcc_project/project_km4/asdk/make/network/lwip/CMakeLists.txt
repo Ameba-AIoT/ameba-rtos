@@ -12,6 +12,7 @@ list(
     APPEND MODULE_IFLAGS
     ${FREERTOSDIR}/include
     ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/non_secure
+    ${BASEDIR}/component/atcmd
 )
 
 

@@ -17,7 +17,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
    ${c_CMPT_AT_CMD_DIR}/monitor.c
    ${d_SOC_PLATFORM_DIR}/app/monitor/ram/shell_ram.c
 )
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/app/monitor/ram/low_level_io.c
@@ -50,6 +50,7 @@ if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
        ${c_CMPT_AT_CMD_DIR}/atcmd_sockets.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_websocket.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_coex.c
+       ${c_CMPT_AT_CMD_DIR}/atcmd_ota.c
    )
    ameba_target_sources_if(CONFIG_BT src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
        ${c_CMPT_AT_CMD_DIR}/atcmd_bt_ext.c

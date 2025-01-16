@@ -113,5 +113,8 @@ _WEAK void wifi_set_user_config(void)
 
 	/*R-mesh*/
 	wifi_user_config.wtn_strong_rssi_thresh = -50;
+	wifi_user_config.wtn_father_refresh_timeout = 3000;
+	wifi_user_config.wtn_child_refresh_timeout = 4000;
+
 }
 

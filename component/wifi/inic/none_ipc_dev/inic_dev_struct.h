@@ -24,6 +24,12 @@ struct inic_api_info {
 	u32	api_id;
 };
 
+/* the header for customer to send or receive the data between host and device. */
+struct inic_cust_hdr {
+	u32	event;
+	u32	len;
+};
+
 struct inic_buf_info {
 	u32 buf_allocated; //The spdio buffer allocated address
 	u16 size_allocated; //The actual allocated size

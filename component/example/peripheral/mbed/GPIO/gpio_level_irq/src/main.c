@@ -45,24 +45,25 @@ void gpio_level_irq_handler(uint32_t id, gpio_irq_event event)
 	}
 
 	//do this internal gpio_irq_enable
-	//DelayUs(61);
+	// DelayUs(61);
 	gpio_irq_enable(&gpio_level);
 }
 
 void mbed_gpio_level_irq_demo(void)
 {
+	// configure gpio as signal source for high/low level trigger
+	gpio_t gpio_src;
+	gpio_init(&gpio_src, GPIO_SIGNAL_SOURCE);
+	gpio_dir(&gpio_src, PIN_OUTPUT);    // Direction: Output
+	gpio_mode(&gpio_src, PullNone);
+	gpio_write(&gpio_src, 1);
+
 	// configure level trigger handler
 	gpio_irq_init(&gpio_level, GPIO_IRQ_LEVEL_PIN, gpio_level_irq_handler, (uint32_t)(&current_level));
 	gpio_irq_pull_ctrl(&gpio_level, GPIO_PuPd_UP);
 	gpio_irq_set(&gpio_level, IRQ_LOW, 1);
 
 	gpio_irq_enable(&gpio_level);
-
-	// configure gpio as signal source for high/low level trigger
-	gpio_t gpio_src;
-	gpio_init(&gpio_src, GPIO_SIGNAL_SOURCE);
-	gpio_dir(&gpio_src, PIN_OUTPUT);    // Direction: Output
-	gpio_mode(&gpio_src, PullNone);
 
 	while (1) {
 		gpio_write(&gpio_src, 1);

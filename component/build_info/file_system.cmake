@@ -52,7 +52,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_file_system_littlefs p_SCOPE inte
     ${c_CMPT_FILE_SYSTEM_DIR}/littlefs/lfs_nand_ftl.c
     ${c_CMPT_FILE_SYSTEM_DIR}/littlefs/lfs_nand_ftl_mfg.c
 )
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_file_system_littlefs p_SCOPE interface
             ${c_CMPT_FILE_SYSTEM_DIR}/littlefs/lfs_spinand.c

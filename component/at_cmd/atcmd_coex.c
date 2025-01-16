@@ -13,6 +13,7 @@
 
 #define AT_CMD_HELP	1
 
+#define CMD_NAME_COEX	"+COEX"
 #define CMD_NAME_BTC	"+COEXBT"
 #define CMD_NAME_EXTC	"+COEXEXT"
 #define CMD_NAME_WPC	"+COEXWP"
@@ -20,33 +21,42 @@
 static const char *const AT_COEX_TAG = "AT_COEX";
 
 // @vendor
-// AT+COEXBT=<type=vendor>,vid,<vid>,pid,<pid>
-// <vid>: 0-255
-// <pid>: 0-255
-static void fBTCOEX(void *arg)
+// AT+COEX=<type=vendor>,vid,<vid>,pid,<pid>
+// <vid>: 0-255 (dec)
+// <pid>: 0-255 (dec)
+//
+// @wl_slot
+// AT+COEX=<type=wl_slot>[,<value>]
+// <value>: 0: disable, [1-100]: valid value (dec, percent)
+//
+// @state
+// AT+COEX=<type=state>
+//
+static void fCOMMONCOEX(void *arg)
 {
 	int argc = 0, error_no = 0;
 	char *argv[MAX_ARGC] = {0};
 	int pid = 0, vid = 0;
+	static int wl_slot = 0;
 	int i = 0, j = 0;
 
 	struct rtk_coex_vendor_info vendor_info = {.product_id = 0, .vendor_id = 0};
 
 	if (!arg) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_BTC);
+		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_COEX);
 		error_no = 1;
 		goto exit;
 	}
 
 	argc = parse_param(arg, argv);
 	if (argc < 2) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_BTC);
+		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_COEX);
 		error_no = 1;
 		goto exit;
 	}
 
 	if ((strlen(argv[1]) == 0)) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Input <type>  is NULL\r\n", CMD_NAME_EXTC);
+		RTK_LOGE(AT_COEX_TAG, "[AT%s] Input <type>  is NULL\r\n", CMD_NAME_COEX);
 		error_no = 1;
 		goto exit;
 	} else if (0 == strcasecmp(argv[1], "vendor")) {
@@ -56,7 +66,7 @@ static void fBTCOEX(void *arg)
 			/* vid. */
 			if (0 == strcasecmp("vid", argv[i])) {
 				if ((argc <= j) || (strlen(argv[j]) == 0) || (atoi(argv[j]) > 0xff)) {
-					RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid VID\r\n", CMD_NAME_BTC);
+					RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid VID\r\n", CMD_NAME_COEX);
 					error_no = 11;
 					goto exit;
 				}
@@ -65,7 +75,7 @@ static void fBTCOEX(void *arg)
 			/* pid. */
 			else if (0 == strcasecmp("pid", argv[i])) {
 				if ((argc <= j) || (strlen(argv[j]) == 0) || (atoi(argv[j]) > 0xff)) {
-					RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid PID\r\n", CMD_NAME_BTC);
+					RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid PID\r\n", CMD_NAME_COEX);
 					error_no = 12;
 					goto exit;
 				}
@@ -73,7 +83,7 @@ static void fBTCOEX(void *arg)
 			}
 			/* Invalid input. */
 			else {
-				RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid parameter type\r\n", CMD_NAME_BTC);
+				RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid parameter type\r\n", CMD_NAME_COEX);
 				error_no = 13;
 				goto exit;
 			}
@@ -81,8 +91,32 @@ static void fBTCOEX(void *arg)
 		at_printf("pid=0x%x, vid=0x%x\r\n", pid, vid);
 		vendor_info.product_id = pid;
 		vendor_info.vendor_id = vid;
-		rtk_coex_btc_vendor_info_set((void *)&vendor_info, sizeof(struct rtk_coex_vendor_info));
+		rtk_coex_com_vendor_info_set((void *)&vendor_info, sizeof(struct rtk_coex_vendor_info));
 
+	} else if (0 == strcasecmp(argv[1], "wl_slot")) {
+		if (argc == 2) {
+			at_printf("\r\nwl_slot=%d%%\r\n", wl_slot);
+		} else if (atoi(argv[2]) > 100) {
+			RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid wl_slot value\r\n", CMD_NAME_COEX);
+			error_no = 21;
+			goto exit;
+		} else {
+			wl_slot = atoi(argv[2]);
+			at_printf("\r\nwl_slot=%d%%\r\n", wl_slot);
+			rtk_coex_com_wl_slot_set(wl_slot);
+		}
+
+	} else if (0 == strcasecmp(argv[1], "state")) {
+		rtk_coex_com_state_get();
+
+	} else if (0 == strcasecmp(argv[1], "help")) {
+		at_printf("\r\n");
+		at_printf("AT%s=<type=vendor>,vid,<vid>,pid,<pid>\r\n", CMD_NAME_COEX);
+		at_printf("\t<vid>: 0-255 (dec)\r\n");
+		at_printf("\t<pid>: 0-255 (dec)\r\n");
+		at_printf("AT%s=<type=wl_slot>[,<value>]\r\n", CMD_NAME_COEX);
+		at_printf("\t<value>: 0: disable, [1-100]: percent (dec)\r\n");
+		at_printf("AT%s=<type=state>\r\n", CMD_NAME_COEX);
 	} else {
 		error_no = 21;
 	}
@@ -95,6 +129,14 @@ exit:
 	}
 
 	return;
+}
+
+static void fBTCOEX(void *arg)
+{
+	(void)arg;
+
+	at_printf("%s is not supported\n", CMD_NAME_BTC);
+
 }
 
 static int pad_from_string_to_value(char *str)
@@ -273,6 +315,8 @@ static void fEXTCOEX(void *arg)
 			error_no = 32;
 			goto exit;
 		}
+	} else if (0 == strcasecmp(argv[1], "help")) {
+		at_coexext_help();
 	} else {
 		error_no = 41;
 	}
@@ -299,6 +343,7 @@ static void fWPCOEX(void *arg)
 }
 
 static log_item_t at_coex_items[] = {
+	{CMD_NAME_COEX,          fCOMMONCOEX,              {NULL, NULL}},
 	{CMD_NAME_BTC,          fBTCOEX,              {NULL, NULL}},
 	{CMD_NAME_EXTC,          fEXTCOEX,              {NULL, NULL}},
 	{CMD_NAME_WPC,          fWPCOEX,              {NULL, NULL}},

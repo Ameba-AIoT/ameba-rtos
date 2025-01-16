@@ -6,7 +6,6 @@
 
 #include "ameba_soc.h"
 #include "ameba_system.h"
-#include "FreeRTOS.h"
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
 

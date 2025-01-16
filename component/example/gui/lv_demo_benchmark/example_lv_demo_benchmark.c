@@ -6,6 +6,7 @@
 #include "lv_hal.h"
 #include "lv_demo_benchmark.h"
 
+#include "os_wrapper.h"
 
 void lv_demo_benchmark_task(void *param)
 {

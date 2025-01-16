@@ -116,3 +116,8 @@ void testresample(void *param)
 	free(fin);
 	free(fout);
 }
+
+void example_speexdsp(void)
+{
+	rtos_task_create(NULL, ((const char *)"autorun_task"), testresample, NULL, 1024 * 4, 1);
+}

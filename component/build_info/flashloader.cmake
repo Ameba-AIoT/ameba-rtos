@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_flashloader INTERFACE)
 
 #--------------------------#
-if(${d_PLATFORM_TYPE} STREQUAL "amebasmart")
+if(CONFIG_AMEBASMART)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_flashloader p_SCOPE interface
             ${d_MCU_SDK_DIR}/flashloader/rtl_flash_download.c

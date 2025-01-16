@@ -8,6 +8,7 @@ list(
     APPEND MODULE_IFLAGS
     ${FREERTOSDIR}/include
     ${FREERTOSDIR}/portable/GCC/AmebaLite_KR4
+    ${BASEDIR}/component/atcmd
 )
 
 set(

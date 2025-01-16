@@ -12,7 +12,7 @@ include lib/psci/psci_lib.mk
 
 INCLUDES		+=	-Iinclude/bl32/sp_min
 INCLUDES		+=	-I../fwlib/include -I../../../os/os_wrapper/include \
-					-I../../../../amebasmart_gcc_project/project_ap/inc
+					-I$(PROJECT_DIR)/inc
 
 BL32_SOURCES		+=	bl32/sp_min/sp_min_main.c		\
 				bl32/sp_min/aarch32/entrypoint.S	\

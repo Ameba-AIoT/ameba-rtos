@@ -4,35 +4,44 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
+ifndef CROSS_COMPILE
+$(error error: CROSS_COMPILE is not defined. Please specify it by running 'make CROSS_COMPILE=<prefix>')
+endif
+
+ifndef PROJECT_DIR
+$(error error: PROJECT_DIR is not defined. Please specify it by running 'make PROJECT_DIR=xxx')
+endif
+# PROJECT_DIR = ../../../../amebasmartplus_gcc_project/project_ap
+
 include .config
-include ../../../../amebasmart_gcc_project/menuconfig/.config_ca32
+include $(PROJECT_DIR)/../menuconfig/.config_ca32
 include Formosa.mk
 
-ifeq (${ASDK_VER},)
-	ASDK_VER = 10.3.1
-	TOOLCHAINVER = 4291
-endif
+# ifeq (${ASDK_VER},)
+# 	ASDK_VER = 10.3.1
+# 	TOOLCHAINVER = 4291
+# endif
 
-ifeq (${TOOLCHAIN_DIR},)
-	ifeq ($(OS),Windows_NT)
-		TOOLCHAINDIR = C:\\rtk-toolchain
-	else
-		TOOLCHAINDIR = /opt/rtk-toolchain
-	endif
-else
-	TOOLCHAINDIR = $(TOOLCHAIN_DIR)
-endif
+# ifeq (${TOOLCHAIN_DIR},)
+# 	ifeq ($(OS),Windows_NT)
+# 		TOOLCHAINDIR = C:\\rtk-toolchain
+# 	else
+# 		TOOLCHAINDIR = /opt/rtk-toolchain
+# 	endif
+# else
+# 	TOOLCHAINDIR = $(TOOLCHAIN_DIR)
+# endif
 
 
 COMPILEOS = $(shell uname -o)
-LINUX_OS = GNU/Linux
-PROJECT_DIR = ../../../../amebasmart_gcc_project/project_ap
+# LINUX_OS = GNU/Linux
 
-ifeq ($(COMPILEOS),$(LINUX_OS))
-CROSS_COMPILE = $(TOOLCHAINDIR)/asdk-${ASDK_VER}-${TOOLCHAINVER}/linux/newlib/bin/arm-none-eabi-
-else
-CROSS_COMPILE = $(TOOLCHAINDIR)/asdk${ASDK_VER}-${TOOLCHAINVER}/mingw32/newlib/bin/arm-none-eabi-
-endif
+# ifeq ($(COMPILEOS),$(LINUX_OS))
+# CROSS_COMPILE = $(TOOLCHAINDIR)/asdk-${ASDK_VER}-${TOOLCHAINVER}/linux/newlib/bin/arm-none-eabi-
+# else
+# CROSS_COMPILE = $(TOOLCHAINDIR)/asdk${ASDK_VER}-${TOOLCHAINVER}/mingw32/newlib/bin/arm-none-eabi-
+# endif
+
 
 OSTYPE = $(shell echo $(COMPILEOS) | tr A-Z a-z)
 

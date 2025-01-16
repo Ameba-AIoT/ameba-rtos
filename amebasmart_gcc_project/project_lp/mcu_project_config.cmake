@@ -73,12 +73,12 @@ macro(ameba_mcu_project_custom_config)
     # Specially, lp's MP image folder is same as non-MP: ${d_MCU_SDK_DIR}/image
     ameba_set(IMAGE_TARGET_FOLDER ${d_MCU_SDK_DIR}/image)
 
-    if(CONFIG_${d_PLATFORM_TYPE_UPPER}_A_CUT)
+    if(CONFIG_AMEBASMART_A_CUT)
         ameba_set(ROM_LIB_DIR ${d_SDK_LIB_DIR}/${d_PLATFORM_TYPE}_rom_acut)
         # ameba_set(d_FLOADER_BIN_DIR ${d_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${d_PLATFORM_TYPE}_acut)
         ameba_set(FLOADER_BIN_DIR ${d_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${d_PLATFORM_TYPE}_acut)
     else()
-        ameba_fatal("CONFIG_${d_PLATFORM_TYPE_UPPER}_A_CUT not defined as TRUE")
+        ameba_fatal("CONFIG_AMEBASMART_A_CUT not defined as TRUE")
     endif()
 
     if(CONFIG_LINK_ROM_SYMB)

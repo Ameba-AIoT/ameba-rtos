@@ -23,6 +23,10 @@
 #define GPIO_SIGNAL_SOURCE		_PB_10
 #define GPIO_IRQ_EDGE_PIN		_PA_12
 
+#elif defined (CONFIG_AMEBAD)
+#define GPIO_SIGNAL_SOURCE		_PA_12
+#define GPIO_IRQ_EDGE_PIN		_PA_13
+
 #endif
 
 #endif

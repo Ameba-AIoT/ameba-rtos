@@ -34,6 +34,7 @@ fullmac_sdio-$(CONFIG_FULLMAC_HCI_SDIO) := \
 		../common/rtw_llhw_memory.o \
 		../common/rtw_protocal_offload.o \
 		../common/rtw_ioctl.o \
+		../common/rtw_llhw_cust_evt.o \
 		../rtw_acs.o
 
 obj-m += fullmac_sdio.o

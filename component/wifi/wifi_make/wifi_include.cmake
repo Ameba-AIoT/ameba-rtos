@@ -35,6 +35,7 @@ set(
     ${BASEDIR}/component/wifi/inic/sdio
     ${BASEDIR}/component/wifi/inic/usb
     ${BASEDIR}/component/wifi/wifi_tunnel_app
+    ${BASEDIR}/component/at_cmd
 )
 
 if(CONFIG_AMEBAL2)

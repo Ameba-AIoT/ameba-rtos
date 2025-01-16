@@ -19,6 +19,7 @@
 #include "atcmd_mqtt.h"
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
+#include "atcmd_ota.h"
 #endif
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
@@ -54,6 +55,9 @@ log_init_t log_init_table[] = {
 #endif
 #if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
 	at_websocket_init,
+#endif
+#if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
+	at_ota_init,
 #endif
 #endif  //CONFIG_LWIP_LAYER
 #endif  //CONFIG_WLAN
@@ -371,6 +375,8 @@ int atcmd_mcu_control_config_setting(void)
 			}
 		} else if (g_mcu_control_mode == AT_MCU_CONTROL_SDIO) {
 			// TODO: sdio interface
+		} else {
+			RTK_LOGE(TAG, "g_mcu_control_mode is invalid\r\n");
 		}
 	}
 
@@ -390,6 +396,8 @@ DEFAULT:
 	} else if (g_mcu_control_mode == AT_MCU_CONTROL_SDIO) {
 		// TODO: sdio interface
 		RTK_LOGI(TAG, "Confgure sdio mcu control mode!\r\n");
+	} else {
+		RTK_LOGE(TAG, "g_mcu_control_mode is invalid\r\n");
 	}
 
 	return ret;
