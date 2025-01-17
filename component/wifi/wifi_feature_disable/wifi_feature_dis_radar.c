@@ -17,10 +17,9 @@
 #include "rtw_wifi_constants.h"
 
 #ifdef CONFIG_RADAR
-extern u8 radar_en_by_user;
-void wifi_hal_radar_en_by_user(void)
+void wifi_hal_radar_en_by_user(u8 *radar_en_by_user)
 {
-	radar_en_by_user = 0;
+	*radar_en_by_user = 0;
 }
 #endif /* CONFIG_RADAR */
 

@@ -161,10 +161,19 @@ static void print_scan_result(struct rtw_scan_result *record)
 	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
 	at_printf("%s,\r\n", record->SSID.val);
 #else
-	at_printf(""MAC_FMT",", MAC_ARG(record->BSSID.octet));
-	at_printf(" %d\t ", record->signal_strength);
-	at_printf(" %d\t  ", record->channel);
-	at_printf("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open               " :
+
+	at_printf(""MAC_FMT", ", MAC_ARG(record->BSSID.octet));
+	at_printf("%d, ", record->signal_strength);
+	at_printf("%d, ", record->channel);
+	at_printf("%s, ", (record->wireless_mode == WLAN_MD_11B) ? "B" :
+			  (record->wireless_mode == WLAN_MD_11BG) ? "G" :
+			  (record->wireless_mode == WLAN_MD_11G) ? "G" :
+			  (record->wireless_mode == WLAN_MD_11A) ? "A" :
+			  (record->wireless_mode == WLAN_MD_11N) ? "N" :
+			  (record->wireless_mode == WLAN_MD_11AC) ? "AC" :
+			  (record->wireless_mode == WLAN_MD_11AX) ? "AX" :
+			  "Unknown");
+	at_printf("\"%s\", ", (record->security == RTW_SECURITY_OPEN) ? "Open" :
 			  (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
 			  (record->security == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" :
 			  (record->security == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" :
@@ -192,9 +201,9 @@ static void print_scan_result(struct rtw_scan_result *record)
 #ifdef CONFIG_OWE_SUPPORT
 			  (record->security == RTW_SECURITY_WPA3_OWE) ? "WPA3-OWE" :
 #endif
-			  "Unknown            ");
+			  "Unknown");
 
-	at_printf(" %s ", record->SSID.val);
+	at_printf("\"%s\" ", record->SSID.val);
 	if (record->bss_type == RTW_BSS_TYPE_WTN_HELPER) {
 		at_printf(" Helper\t ");
 	}
@@ -227,9 +236,9 @@ void at_wlconn(void *arg)
 	unsigned int mac[ETH_ALEN];
 	char *argv[MAX_ARGC] = {0};
 	char empty_bssid[6] = {0};
-	unsigned long tick1 = rtos_time_get_current_system_time_ms();
-	unsigned long tick2;
+
 #ifdef CONFIG_LWIP_LAYER
+	unsigned long tick1 = rtos_time_get_current_system_time_ms();
 	unsigned long tick3;
 #endif
 
@@ -336,14 +345,11 @@ void at_wlconn(void *arg)
 		goto end;
 	}
 
-	tick2 = rtos_time_get_current_system_time_ms();
-	RTK_LOGI(NOTAG, "[+WLCONN] Connected after %d ms.\r\n", (unsigned int)(tick2 - tick1));
-
 #ifdef CONFIG_LWIP_LAYER
 	/* Start DHCPClient */
 	LwIP_DHCP(0, DHCP_START);
 	tick3 = rtos_time_get_current_system_time_ms();
-	RTK_LOGI(NOTAG, "[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
+	RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
 #endif
 
 end:
@@ -570,7 +576,7 @@ void at_wlscan(void *arg)
 #if (defined(WIFI_LOGO_CERTIFICATION_CONFIG) && WIFI_LOGO_CERTIFICATION_CONFIG)
 			at_printf("[%d],", (i + 1));
 #else
-			at_printf("%d\t ", (i + 1));
+			at_printf("%2d, ", (i + 1));
 #endif
 			scanned_AP_info = (struct rtw_scan_result *)(scan_buf + i * sizeof(struct rtw_scan_result));
 			scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
@@ -582,6 +588,7 @@ void at_wlscan(void *arg)
 	}
 
 end:
+	RTK_LOGI(NOTAG, "\r\n[+WLSCAN] scan_ap_num: %d\r\n", scanned_AP_num);
 	rtos_mem_free((void *)channel_list);
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
