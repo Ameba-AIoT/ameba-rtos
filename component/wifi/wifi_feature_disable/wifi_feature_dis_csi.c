@@ -48,5 +48,10 @@ void wifi_hal_csi_pkt_hdl(void *b, void *c)
 	UNUSED(b);
 	UNUSED(c);
 }
+
+void wifi_hal_csi_en_by_user(u8 *csi_en_by_user)
+{
+	*csi_en_by_user = 0;
+}
 #endif /* CONFIG_CSI */
 
