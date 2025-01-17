@@ -542,16 +542,13 @@ static void dhcps_send_offer(struct pbuf *packet_buffer)
 #endif
 		printf("\r\n No useable ip!!!!\r\n");
 	}
-	printf("\n\r[%d]DHCP assign ip = %d.%d.%d.%d, hwaddr 0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x\n", \
-		   (int)rtos_time_get_current_system_time_ms(), ip4_addr1(ip_2_ip4(&dhcps_network_id)), \
-		   ip4_addr2(ip_2_ip4(&dhcps_network_id)), \
-		   ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip, \
-		   client_addr[0], client_addr[1], client_addr[2], \
-		   client_addr[3], client_addr[4], client_addr[5]);
-	at_printf_indicate("ASSIGN_CLIENT_IP:\""MAC_FMT"\",\"%d.%d.%d.%d\"\r\n", MAC_ARG(client_addr), \
+
+	at_printf_indicate("assign client ip:\"%d.%d.%d.%d\",hwaddr:\""MAC_FMT"\"\r\n", \
 					   ip4_addr1(ip_2_ip4(&dhcps_network_id)), \
 					   ip4_addr2(ip_2_ip4(&dhcps_network_id)), \
-					   ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip);
+					   ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip, \
+					   MAC_ARG(client_addr));
+
 	IP4_ADDR(ip_2_ip4(&dhcps_allocated_client_address), (ip4_addr1(ip_2_ip4(&dhcps_network_id))),
 			 ip4_addr2(ip_2_ip4(&dhcps_network_id)), ip4_addr3(ip_2_ip4(&dhcps_network_id)), temp_ip);
 #endif

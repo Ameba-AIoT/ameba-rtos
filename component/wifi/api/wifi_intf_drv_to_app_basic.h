@@ -122,7 +122,8 @@ struct rtw_scan_result {
 	unsigned int               channel;          /**< Radio channel that the AP beacon was received on                          */
 	u8					       band;             /**< val: RTW_802_11_BAND_5GHZ, RTW_802_11_BAND_2_4GHZ*/
 	char	country_code[2];
-	u8		rom_rsvd[4];
+	char	wireless_mode;
+	u8		rom_rsvd[3];
 };
 
 struct _rtw_channel_scan_time_t {

@@ -89,7 +89,7 @@ void rtw_reconn_join_status_hdl(char *buf, int flags)
 
 	if (rtw_reconn.cnt > wifi_user_config.auto_reconnect_count) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn max times\n");
-		at_printf_indicate("WIFI RECONNECT DONE\r\n");
+		at_printf_indicate("wifi reconnect done\r\n");
 	} else {
 		rtw_reconn.b_waiting = 1;
 		rtw_wakelock_timeout(wifi_user_config.auto_reconnect_interval * 1000 + 10);
@@ -133,7 +133,7 @@ void rtw_reconn_timer_hdl(rtos_timer_t timer_hdl)
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Create reconn task failed\n");
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "auto reconn %d\n", rtw_reconn.cnt);
-		at_printf_indicate("WIFI RECONNECTING\r\n");
+		at_printf_indicate("wifi reconnecting\r\n");
 	}
 }
 

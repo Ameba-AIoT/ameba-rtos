@@ -63,7 +63,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
-		at_printf_indicate("WIFI CONNECTED\r\n");
+		at_printf_indicate("wifi connected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 		LwIP_netif_set_link_up(0);
 #endif
@@ -92,11 +92,11 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 			rtos_sema_give(join_block_param->join_sema);
 		}
 
-		at_printf_indicate("WIFI CONNECT FAIL\r\n");
+		at_printf_indicate("wifi connect failed\r\n");
 	}
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
-		at_printf_indicate("WIFI DISCONNECTED\r\n");
+		at_printf_indicate("wifi disconnected\r\n");
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 		LwIP_DHCP_stop(0);
 		LwIP_netif_set_link_down(0);
@@ -189,11 +189,11 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 	} else if (event_cmd == WIFI_EVENT_STA_ASSOC) {
 		/* softap add sta */
 		mac_addr = GetAddr2Ptr(buf);
-		at_printf_indicate("CLIENT_CONNECTED:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
+		at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
 	} else if (event_cmd == WIFI_EVENT_STA_DISASSOC) {
 		/* softap dis sta */
 		mac_addr = (u8 *)buf;
-		at_printf_indicate("CLIENT_DISCONNECTED:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
+		at_printf_indicate("client disconnected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
 	}
 }
 
