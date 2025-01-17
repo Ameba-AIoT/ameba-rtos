@@ -80,6 +80,21 @@ static int atcmd_bt_le_iso_send_data(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_bt_le_iso_disconnect(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t cis_conn_handle = 0;
+	cis_conn_handle = (uint16_t)str_to_int(argv[0]);
+
+	if (rtk_bt_le_iso_cig_disconnect(cis_conn_handle)) {
+		BT_LOGE("LEISO cis iso cig disconnect with 0x%x failed\r\n", cis_conn_handle);
+		return -1;
+	}
+	BT_LOGA("LEISO cis iso cig disconnect with 0x%x successfully\r\n", cis_conn_handle);
+
+	return 0;
+}
+
 static int atcmd_bt_le_iso_cis_read_tx_sync(int argc, char **argv)
 {
 	(void)argc;
@@ -184,12 +199,14 @@ static const cmd_table_t iso_cis_initiator_cmd_table[] = {
 	{"create_cis_by_hdl", atcmd_bt_le_iso_create_cis_by_handle,          5, 5},
 	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
+	{"disconnect",         atcmd_bt_le_iso_disconnect,                   2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},
 	{NULL,},
 };
 
 static const cmd_table_t iso_cis_acceptor_cmd_table[] = {
 	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
+	{"disconnect",         atcmd_bt_le_iso_disconnect,                   2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},
 	{NULL,},

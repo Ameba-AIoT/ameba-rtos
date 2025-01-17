@@ -1060,6 +1060,10 @@ struct wifi_user_conf {
 	/*!	In LPS, the sta wakes up every legacy_ps_listen_interval* 102.4ms to receive beacon*/
 	unsigned char legacy_ps_listen_interval;
 
+	/*!	enable wifi lps clock gating during system active mode for reducing power consumption\n
+		lps_cg_sys_active can be set to 1 only when app will not use system tickless mode*/
+	unsigned char lps_cg_sys_active;
+
 	/*!	0: NO_LIMIT, 1: TWO_MSDU, 2: FOUR_MSDU, 3: SIX_MSDU */
 	unsigned char uapsd_max_sp_len;
 

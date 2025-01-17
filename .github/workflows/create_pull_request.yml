@@ -1,0 +1,51 @@
+name: Pull Request on Branch Push
+on:
+  push:
+    branches:
+    - master_sync_*
+    - release/v1.0_sync_*
+
+jobs:
+  auto-pull-request:
+    name: PullRequestAction
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+        chmod u+x .github/workflows/pull_request.py
+    - name: Set branch as environment variable
+      run: |
+        echo "CURRENT_DATE=$(date '+%Y-%m-%d')" >> $GITHUB_ENV
+        echo "CURRENT_BRANCH=gloriachen09:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "PULL_REQUEST_FROM_BRANCH=gloriachen09:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+    - name: pull-request-action
+      id: pull_request
+      run: |
+          echo "Today's branch is $CURRENT_BRANCH"
+          echo "Today's date is $CURRENT_DATE"
+          ./.github/workflows/pull_request.py
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PULL_REQUEST_TOKEN: ${{ secrets.PAT_TOKEN }}
+        PULL_REQUEST_BRANCH: "release/v1.0"
+        PULL_REQUEST_REPOSITORY: Ameba-AIoT/ameba-rtos
+        PASS_IF_EXISTS: true
+        PULL_REQUEST_UPDATE: true
+    - name: Test outputs
+      env:
+        pull_request_number_output: ${{ steps.pull_request.outputs.pull_request_number }}
+        pull_request_url_output: ${{ steps.pull_request.outputs.pull_request_url }}
+      run: |
+        echo "Pull request number from output: ${pull_request_number_output}"
+        echo "Pull request url from output: ${pull_request_url_output}"
+        echo "Pull request number from environment: ${PULL_REQUEST_NUMBER}"
+        echo "Pull request url from environment: ${PULL_REQUEST_URL}"
+        echo "Another way to specify from output ${{ steps.pull_request.outputs.pull_request_number }}"
