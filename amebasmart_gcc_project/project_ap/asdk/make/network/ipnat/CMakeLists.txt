@@ -1,6 +1,5 @@
 ameba_target_add(network_ipnat
     p_WRAP_TARGET_NAME
-    p_ADD_BUILD_INFO
     p_STRIP_DEBUG
     p_ENABLE_DETERMINISTIC_ARCHIVES
     p_OUTPUT_PATH ${d_SDK_LIB_APPLICATION_DIR}

@@ -25,22 +25,30 @@ u8 SPI0_MISO = _PA_14;
 u8 SPI0_SCLK = _PA_15;
 u8 SPI0_CS = _PA_16;
 
+u8 AT_SYNC_FROM_MASTER_GPIO = PA_20;
+u8 AT_SYNC_TO_MASTER_GPIO = PA_21;
+
 #elif defined (CONFIG_AMEBALITE)
 u8 SPI0_MOSI = _PA_29;
 u8 SPI0_MISO = _PA_30;
 u8 SPI0_SCLK = _PA_28;
 u8 SPI0_CS = _PA_31;
 
+u8 AT_SYNC_FROM_MASTER_GPIO = PB_2;
+u8 AT_SYNC_TO_MASTER_GPIO = PB_3;
+
 #elif defined (CONFIG_AMEBADPLUS)
 // SPI0 FID=8
-u8 SPI0_MOSI = _PB_24;
-u8 SPI0_MISO = _PB_25;
-u8 SPI0_SCLK = _PB_23;
-u8 SPI0_CS = _PB_26;
+u8 SPI0_MOSI = _PA_27;
+u8 SPI0_MISO = _PA_28;
+u8 SPI0_SCLK = _PA_26;
+u8 SPI0_CS = _PA_12;
+
+u8 AT_SYNC_FROM_MASTER_GPIO = PB_30;
+u8 AT_SYNC_TO_MASTER_GPIO = PB_31;
 #endif
 
-u8 AT_SYNC_FROM_MASTER_GPIO = PA_26;
-u8 AT_SYNC_TO_MASTER_GPIO = PA_27;
+
 
 /* for dma mode, start address of buffer should be CACHE_LINE_SIZE  aligned*/
 u8 SlaveTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -134,6 +142,13 @@ void atcmd_spi_task(void)
 		memset(SlaveTxBuf, 0, ATCMD_SPI_DMA_SIZE);
 		memset(SlaveRxBuf, 0, ATCMD_SPI_DMA_SIZE);
 
+		gpio_write(&at_spi_slave_to_master_gpio, 0);
+
+		while (spi_busy(&spi_slave)) {
+			RTK_LOGW(TAG, "spi busy, wait...\n");
+			rtos_time_delay_ms(10);
+		}
+
 		if (req.cmd == SPI_SLAVE_RD_CMD) {
 			// check ready tx data
 			u32 send_len = 0;
@@ -158,13 +173,13 @@ void atcmd_spi_task(void)
 				spi_slave_write_stream_dma(&spi_slave, (char *)SlaveTxBuf, ATCMD_SPI_DMA_SIZE);
 			}
 
-			gpio_write(&at_spi_slave_to_master_gpio, 0);
 			spi_slave_read_stream_dma(&spi_slave, (char *)SlaveRxBuf, ATCMD_SPI_DMA_SIZE);
 
 			while (rtos_sema_take(slave_rx_sema, 0) == SUCCESS) {}
 
 			gpio_write(&at_spi_slave_to_master_gpio, 1);
 			rtos_sema_take(slave_rx_sema, 0xFFFFFFFF);
+
 
 			// check rx dataheader
 			if (SlaveRxBuf[0] != 0x54 || SlaveRxBuf[1] != 0x58) {
@@ -234,11 +249,12 @@ void atcmd_spi_task(void)
 			u32 *p_tx_checksum = (u32 *)&SlaveTxBuf[send_len + 4];
 			*p_tx_checksum = tx_checksum;
 
-			gpio_write(&at_spi_slave_to_master_gpio, 0);
 			spi_slave_read_stream_dma(&spi_slave, (char *)SlaveRxBuf, ATCMD_SPI_DMA_SIZE);
 			spi_slave_write_stream_dma(&spi_slave, (char *)SlaveTxBuf, ATCMD_SPI_DMA_SIZE);
+
 			gpio_write(&at_spi_slave_to_master_gpio, 1);
 			rtos_sema_take(slave_tx_sema, 0xFFFFFFFF);
+
 
 			remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
 			if (remain_len > 0) {

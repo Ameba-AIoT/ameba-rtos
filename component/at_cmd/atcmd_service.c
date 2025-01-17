@@ -165,16 +165,16 @@ int at_printf_indicate(const char *fmt, ...)
 		goto fail;
 	}
 
-	if (len_fmt < SMALL_BUF) {
+	if (len_fmt < SMALL_BUF - 3) {
 		buf = global_buf;
-	} else if (len_fmt < MAX_BUF_LEN - 1) {
-		buf = (char *)rtos_mem_malloc(len_fmt + 2);
+	} else if (len_fmt < MAX_BUF_LEN - 3) {
+		buf = (char *)rtos_mem_malloc(len_fmt + 4);
 		if (buf == NULL) {
 			goto fail;
 		}
 
 		va_start(ap, fmt);
-		vsnprintf(buf, len_fmt + 2, fmt, ap);
+		vsnprintf(buf, len_fmt + 4, fmt, ap);
 		va_end(ap);
 	} else {
 		RTK_LOGE(TAG, "print string len %d exceed max buffer length : %d\n", (int)len_fmt, MAX_BUF_LEN - 1);
@@ -184,13 +184,15 @@ int at_printf_indicate(const char *fmt, ...)
 	ret = len_fmt;
 
 	for (int i = len_fmt; i > 0; i--) {
-		buf[i] = buf[i - 1];
+		buf[i + 2] = buf[i - 1];
 	}
 
-	buf[0] = '$';
+	buf[0] = '[';
+	buf[1] = '$';
+	buf[2] = ']';
 
 	if (out_buffer) {
-		out_buffer(buf, len_fmt + 1);
+		out_buffer(buf, len_fmt + 3);
 	}
 
 	rtos_mem_free(buf);
