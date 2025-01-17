@@ -134,7 +134,7 @@ if [ "$CONFIG_BT_MENU" = "y" ]; then
 			bool "  BLE Mesh Device and BLE Scatternet"					CONFIG_BT_MESH_DEVICE_SCATTERNET_MENU
 #			bool "  BLE Mesh Provisioner Test"							CONFIG_BT_MESH_PROVISIONER_TEST_MENU
 #			bool "  BLE Mesh Device Test"								CONFIG_BT_MESH_DEVICE_TEST_MENU
-#			bool "  BLE ISO Test"										CONFIG_BT_ISO_TEST
+			bool "  BLE ISO Test"										CONFIG_BT_ISO_TEST
 			bool "  BLE Audio"											CONFIG_BT_LE_AUDIO_MENU
 			if [ "$CONFIG_BT_LE_AUDIO_MENU" = "y" ]; then
 				bool "    BLE Audio Basic Audio Profile"				CONFIG_BT_BAP_MENU

@@ -408,8 +408,7 @@ static bool blob_client_blob_init(uint32_t blob_size, blob_transfer_mode_t trans
     uint16_t total_chunks_max = 0;
     uint16_t total_blocks_max = 0;
     bool chunk_size_suit = false;
-    // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
-    uint32_t blob_size_temp = 0;
+    uint32_t block_size_temp = 0;
 
     if (skip_caps_retrieve)
     {
@@ -496,12 +495,10 @@ static bool blob_client_blob_init(uint32_t blob_size, blob_transfer_mode_t trans
             {
                 pcaps = blob_recvs_caps_get_by_addr(pnode->addr);
                 total_chunks_max = MIN(pcaps->caps.max_total_chunks, 8 * (pcaps->caps.server_mtu_size - 6));
-                // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
-                blob_size_temp = total_chunks_max * chunk_size;
+                block_size_temp = total_chunks_max * chunk_size;
                 if (pcaps->caps.min_block_size_log <= i &&
                     pcaps->caps.max_block_size_log >= i &&
-                    // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
-                    blob_size_temp >= plt_exp2(i))
+                    block_size_temp >= plt_exp2(i))
                 {
                     avail_count++;
                 }
@@ -528,13 +525,11 @@ static bool blob_client_blob_init(uint32_t blob_size, blob_transfer_mode_t trans
             pcaps = blob_recvs_caps_get_by_addr(pnode->addr);
             total_chunks_max = MIN(pcaps->caps.max_total_chunks, 8 * (pcaps->caps.server_mtu_size - 6));
             total_blocks_max = 8 * (pcaps->caps.server_mtu_size - 19);
-            // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
-            blob_size_temp = total_chunks_max * chunk_size;
+            block_size_temp = total_chunks_max * chunk_size;
             /* set node inactive which do not match block log size */
             if (pcaps->caps.min_block_size_log > blob_client_ctx.block_size_log ||
                 pcaps->caps.max_block_size_log < blob_client_ctx.block_size_log ||
-                // RTK porting:avoid compile warning, have notify mesh stack, maybe next version fix it
-                blob_size_temp < plt_exp2(blob_client_ctx.block_size_log))
+                block_size_temp < plt_exp2(blob_client_ctx.block_size_log))
             {
                 pnode->active = false;
                 printw("blob_client_blob_init: inactive 0x%04x, block log size not match %d(%d,%d), total chunks %d, chunk size %d",

@@ -13,7 +13,6 @@
 
 #define MM_ID MM_APP
 
-#include <stdlib.h>
 #include "platform_misc.h"
 #include "blob_client_app.h"
 #include "dfu_distributor_app.h"

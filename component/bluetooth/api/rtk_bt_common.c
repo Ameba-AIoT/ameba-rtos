@@ -561,6 +561,7 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 {
 	uint16_t ret = 0;
 	uint32_t flags = 0;
+	uint32_t msg_num = 0;
 	rtk_bt_evt_t *p_evt = (rtk_bt_evt_t *)evt;
 
 	if (!evt) {
@@ -586,6 +587,19 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 	if (!event_task_running && p_evt->group != RTK_BT_EVENT_TASK_EXIT) {
 		ret = RTK_BT_ERR_NOT_READY;
 		goto end;
+	}
+
+	/* When too many scan/escan/padv reported, the event msg may make the msg queue full.
+	Then the event such as scan_stop may report fail, so let scan/escan/padv event don't
+	take all queue space, leave 1 to let other event have chance to be reported */
+	if (RTK_BT_LE_GP_GAP == p_evt->group &&
+		(RTK_BT_LE_GAP_EVT_SCAN_RES_IND == p_evt->evt ||
+		 RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND == p_evt->evt ||
+		 RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND == p_evt->evt)) {
+		if (osif_msg_queue_peek(g_evt_queue, &msg_num) && msg_num >= (EVENT_NUM - 1)) {
+			ret = RTK_BT_ERR_QUEUE_FULL;
+			goto end;
+		}
 	}
 	if (false == osif_msg_send(g_evt_queue, &evt, BT_TIMEOUT_NONE)) {
 		ret = RTK_BT_ERR_OS_OPERATION;

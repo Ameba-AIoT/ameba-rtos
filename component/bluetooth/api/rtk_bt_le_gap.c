@@ -669,15 +669,12 @@ uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->interval[0] < 0x04) || (p_param->interval[0] > 0x4000)) {
+		if (p_param->interval[0] < 0x04) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->window[0] < 0x04) || (p_param->window[0] > 0x4000)) {
-			return RTK_BT_ERR_PARAM_INVALID;
-		}
-
-		if (p_param->window[0] > p_param->interval[0]) {
+		if (p_param->window[0] < 0x04 ||
+			p_param->window[0] > p_param->interval[0]) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 	}
@@ -687,15 +684,12 @@ uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->interval[1] < 0x04) || (p_param->interval[1] > 0x4000)) {
+		if (p_param->interval[1] < 0x04) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 
-		if ((p_param->window[1] < 0x04) || (p_param->window[1] > 0x4000)) {
-			return RTK_BT_ERR_PARAM_INVALID;
-		}
-
-		if (p_param->window[1] > p_param->interval[1]) {
+		if (p_param->window[1] < 0x04 ||
+			p_param->window[1] > p_param->interval[1]) {
 			return RTK_BT_ERR_PARAM_INVALID;
 		}
 	}

@@ -757,20 +757,20 @@ typedef struct {
 	/**
 	 * This is defined as the time interval from when the Controller\n
 	 * started its last LE scan until it begins the subsequent LE scan.\n
-	 * Range: 0x0004 to 0x4000\n
-	 * Default: 0x0010 (10 ms)\n
+	 * Range: 0x0004 to 0xFFFF\n
+	 * Default: 0x0040 (40 ms)\n
 	 * Time = N * 0.625 ms\n
-	 * Time Range: 2.5 ms to 10.24 s\n
+	 * Time Range: 2.5 ms to 40.959375 s\n
 	 * interval[0] for 1M PHY, interval[1] for Coded PHY.\n
 	 */
 	uint16_t interval[2];
 	/**
 	 * The duration of the LE scan. LE_Scan_Window shall be less\n
 	 * than or equal to LE_Scan_Interval\n
-	 * Range: 0x0004 to 0x4000\n
-	 * Default: 0x0010 (10 ms)\n
+	 * Range: 0x0004 to 0xFFFF\n
+	 * Default: 0x0020 (20 ms)\n
 	 * Time = N * 0.625 ms\n
-	 * Time Range: 2.5 ms to 10.24 s\n
+	 * Time Range: 2.5 ms to 40.959375 s\n
 	 * window[0] for 1M PHY, window[1] for Coded PHY.\n
 	 */
 	uint16_t window[2];
