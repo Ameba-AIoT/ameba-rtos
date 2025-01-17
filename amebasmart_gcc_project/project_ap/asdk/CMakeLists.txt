@@ -118,14 +118,6 @@ if(NOT d_AMEBA_RELEASE)
     endif()
 
     if(CONFIG_MEDIA_PLAYER OR CONFIG_MEDIA_LITE_PLAYER)
-        ameba_add_subdirectories(
-            make/audio/media_utils     # make -C media_utils lib
-            make/audio/media_common    # make -C media_common lib
-            make/audio/media_source    # make -C media_source lib
-            make/audio/media_demux     # make -C media_demux lib
-            # make/audio/media_libmedia  # make -C media_libmedia component
-            make/audio/media_xip       # make -C media_xip lib
-        )
         ameba_add_subdirectories_if(CONFIG_MEDIA_PLAYER
             make/audio/media_codec/codec-omx       # make -C media_codec codec-omx
             make/audio/media_codec/common          # make -C media_codec codec-omx
@@ -137,6 +129,17 @@ if(NOT d_AMEBA_RELEASE)
             make/audio/media_codec/common          # make -C media_codec codec-simple
             make/audio/media_core/lite             # make -C media_core lite
             make/audio/media_libmedia/lite         # make -C media_libmedia lite
+        )
+        ameba_add_subdirectories(
+            make/audio/media_utils     # make -C media_utils lib
+            make/audio/media_common    # make -C media_common lib
+            make/audio/media_source    # make -C media_source lib
+            make/audio/media_demux     # make -C media_demux lib
+            # make/audio/media_libmedia  # make -C media_libmedia component
+
+            #NOTE: media_xip must be added after its linking subdirectory like make/audio/media_libmedia/standard
+            #FIXME: better way to solve the problem?
+            make/audio/media_xip       # make -C media_xip lib
         )
     endif()
     ameba_add_subdirectories_if(CONFIG_MEDIA_LITE_PLAYER
