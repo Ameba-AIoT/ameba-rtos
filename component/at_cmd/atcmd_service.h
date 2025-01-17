@@ -110,7 +110,7 @@ int at_printf_indicate(const char *fmt, ...);
 #else
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
 #define at_printf_indicate(fmt, args...) \
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "$");\
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[$]");\
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
 #endif
 

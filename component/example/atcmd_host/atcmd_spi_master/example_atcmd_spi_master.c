@@ -50,10 +50,10 @@ static uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 	return checksum32;
 }
 
-void uart_send_string(serial_t *sobj, char *pstr)
+void uart_send_string(serial_t *sobj, char *pstr, u16 len)
 {
 	unsigned int i = 0;
-	while (*(pstr + i) != 0) {
+	while (*(pstr + i) != 0 && i < len) {
 		serial_putc(sobj, *(pstr + i));
 		i++;
 	}
@@ -111,7 +111,7 @@ void atcmd_spi_master_demo_task(void)
 	serial_baud(&sobj, HOST_UART_BAUDRATE);
 	serial_format(&sobj, 8, ParityNone, 1);
 
-	uart_send_string(&sobj, "UART Send Command Demo...\r\n");
+	uart_send_string(&sobj, "UART Send Command Demo...\r\n", strlen("UART Send Command Demo...\r\n"));
 	serial_irq_handler(&sobj, uart_irq, (uint32_t)&sobj);
 	serial_irq_set(&sobj, RxIrq, 1);
 	serial_irq_set(&sobj, TxIrq, 1);
@@ -139,6 +139,12 @@ void atcmd_spi_master_demo_task(void)
 		memset(MasterTxBuf, 0, ATCMD_SPI_DMA_SIZE);
 
 		rtos_sema_take(master_gpio_sema, 0xFFFFFFFF);
+
+		while (spi_busy(&spi_master)) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "spi busy, wait...\n");
+			rtos_time_delay_ms(10);
+		}
+
 		//prepare tx data
 		if (uart_irq_count > 0) {
 			MasterTxBuf[0] = 0x54;
@@ -160,6 +166,7 @@ void atcmd_spi_master_demo_task(void)
 			*p_tx_checksum = tx_checksum;
 		}
 
+		spi_flush_rx_fifo(&spi_master);
 
 		// send tx data
 		spi_master_write_read_stream_dma(&spi_master, (char *)MasterTxBuf, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);
@@ -172,7 +179,7 @@ void atcmd_spi_master_demo_task(void)
 
 		u16 rx_len = MasterRxBuf[2] | (MasterRxBuf[3] << 8);
 		if (rx_len > ATCMD_SPI_DMA_SIZE - 8) {
-			uart_send_string(&sobj, "[M] recv_len error\n");
+			uart_send_string(&sobj, "[M] recv_len error\n", strlen("[M] recv_len error\n"));
 			goto NEXT;
 		}
 
@@ -180,13 +187,13 @@ void atcmd_spi_master_demo_task(void)
 		u32 rx_checksum = checksum_32_spi(0, (u8 *)MasterRxBuf, rx_len + 4);
 		u32 *p_rx_checksum = (u32 *)&MasterRxBuf[rx_len + 4];
 		if (rx_checksum != *p_rx_checksum) {
-			uart_send_string(&sobj, "[M] recv slave data checksum error\n");
+			uart_send_string(&sobj, "[M] recv slave data checksum error\n", strlen("[M] recv slave data checksum error\n"));
 			goto NEXT;
 		}
 
 		// show recv data
 		MasterRxBuf[rx_len + 4] = 0;
-		uart_send_string(&sobj, (char *)&MasterRxBuf[4]);
+		uart_send_string(&sobj, (char *)&MasterRxBuf[4], rx_len);
 
 NEXT:
 		gpio_write(&at_spi_master_to_slave_gpio, 1);
