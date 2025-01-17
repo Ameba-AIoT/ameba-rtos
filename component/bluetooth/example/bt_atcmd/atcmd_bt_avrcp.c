@@ -217,7 +217,7 @@ static int atcmd_bt_avrcp_element_attr_get(int argc, char **argv)
 
 	hexdata_str_to_bd_addr(argv[0], bd_addr, RTK_BD_ADDR_LEN);
 	attr = (uint8_t)str_to_int(argv[1]);
-	if (rtk_bt_avrcp_get_element_attr(bd_addr, attr)) {
+	if (rtk_bt_avrcp_get_element_attr(bd_addr, 1, &attr)) {
 		BT_LOGE("AVRCP element attr get fail\r\n");
 		return -1;
 	}
