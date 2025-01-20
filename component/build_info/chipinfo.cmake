@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_chipinfo_lib INTERFACE)
 
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_chipinfo_lib p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_chipinfo_lib.c
             ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_rom_patch.c
@@ -28,11 +28,11 @@ if(CONFIG_AMEBASMART)
             ${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_flash_rom.c
             ${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_wdg.c
 
-            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/amebahp_aes.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/amebahp_crypto_rom.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/amebahp_md5.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/amebahp_rsa.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/amebahp_sha.c
+            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/ameba_aes.c
+            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/ameba_crypto_rom.c
+            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/ameba_md5.c
+            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/ameba_rsa.c
+            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp/ameba_sha.c
         )
     endif()
 endif()

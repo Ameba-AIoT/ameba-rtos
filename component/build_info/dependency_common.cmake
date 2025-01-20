@@ -68,7 +68,7 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface ${c_COMP
 #NOTE: Here use list to remove DUPLICATES libs before link, which may cause link problem
 set(_tmp_dep_${d_MCU_PROJECT_NAME}_audio_wt_whole_libs) # link with -Wl,--whole-archive
 set(_tmp_dep_${d_MCU_PROJECT_NAME}_audio_wo_whole_libs) # link without -Wl,--whole-archive
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_list_append_if(CONFIG_AUDIO_EN _tmp_dep_${d_MCU_PROJECT_NAME}_audio_wt_whole_libs
             ${d_SDK_LIB_APPLICATION_DIR}/lib_ac3.a
@@ -211,7 +211,7 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_file_system p_SCOPE interface
 ####################################### dep_file_system end ##############################################
 
 ###################################### dep_flac begin #############################################
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_link_if(CONFIG_AUDIO_EN dep_${d_MCU_PROJECT_NAME}_flac p_SCOPE interface
             ${d_SDK_LIB_APPLICATION_DIR}/lib_flac.a
@@ -245,7 +245,7 @@ if(CONFIG_WLAN)
             # ${d_SDK_LIB_APPLICATION_DIR}/lib_eap.a
             # ${d_SDK_LIB_APPLICATION_DIR}/lib_mdns.a
         )
-        if(CONFIG_AMEBASMART)
+        if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
                 ameba_target_link(dep_${d_MCU_PROJECT_NAME}_network p_SCOPE interface p_WHOLE_ARCHIVE
                     ${d_SDK_LIB_APPLICATION_DIR}/lib_ipnat.a
@@ -323,7 +323,7 @@ ameba_target_link_if(CONFIG_TFLITE_MICRO_EN dep_${d_MCU_PROJECT_NAME}_tflite_mic
 ####################################### dep_tflite_micro end ###############################################
 
 ###################################### dep_aivoice begin ###################################################
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
 
         set(AFE_RESOURCE afe_res_2mic50mm)
@@ -358,7 +358,7 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_usb p_SCOPE interface ${c_COMPONE
 ####################################### dep_usb end ##############################################
 
 ###################################### dep_utilities begin #############################################
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_include(dep_${d_MCU_PROJECT_NAME}_utilities p_SCOPE interface
         ${c_CMPT_NETWORK_DIR}/httplite
         ${c_CMPT_NETWORK_DIR}/xml

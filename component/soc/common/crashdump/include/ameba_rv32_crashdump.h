@@ -11,7 +11,7 @@
 // Maximum number of instructions check while backtrace
 #define MAX_INSTR_CHECK (1024)
 
-typedef void (*crash_on_task)(uint32_t *reg);
+typedef uint32_t (*crash_on_task)(uint32_t *reg, uint32_t src);
 
 extern crash_on_task crash_task_info;
 
@@ -30,6 +30,6 @@ void crash_dump(uint32_t *pc,
 				uint32_t *sp,
 				uint32_t *reg);
 
-extern void vTaskCrashCallback(uint32_t *reg);
+extern uint32_t vTaskCrashCallback(uint32_t *reg, uint32_t src);
 
 #endif

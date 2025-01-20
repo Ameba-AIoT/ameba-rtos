@@ -1454,72 +1454,72 @@ class IMAGETOOL():
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
             CATFILE('', os.path.join(AP_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
 
-    def amebaL2(self, AP_IMG_DIR):
+    def amebaL2(self, KM4TZ_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
-            NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image_mp')
+            KM4NS_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image_mp')
         else:
-            NP_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image')
-        np_image2 = os.path.join(NP_IMG_DIR, 'np_image2_all.bin')
-        ap_image2 = os.path.join(AP_IMG_DIR, 'ap_image2_all.bin')
-        ap_image3 = os.path.join(AP_IMG_DIR, 'ap_image3_all.bin')
-        np_image2_en = os.path.join(AP_IMG_DIR, 'np_image2_all_en.bin')
-        ap_image2_en = os.path.join(AP_IMG_DIR, 'ap_image2_all_en.bin')
-        ap_image3_en = os.path.join(AP_IMG_DIR, 'ap_image3_all_en.bin')
-        app = os.path.join(AP_IMG_DIR, 'amebaL2_app.bin')
-        app_ns = os.path.join(AP_IMG_DIR, 'amebaL2_app_ns.bin')
+            KM4NS_IMG_DIR = os.path.join(self.pwd, 'project_km4ns', 'asdk', 'image')
+        km4ns_image2 = os.path.join(KM4NS_IMG_DIR, 'km4ns_image2_all.bin')
+        km4tz_image2 = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image2_all.bin')
+        km4tz_image3 = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image3_all.bin')
+        km4ns_image2_en = os.path.join(KM4TZ_IMG_DIR, 'km4ns_image2_all_en.bin')
+        km4tz_image2_en = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image2_all_en.bin')
+        km4tz_image3_en = os.path.join(KM4TZ_IMG_DIR, 'km4tz_image3_all_en.bin')
+        app = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_app.bin')
+        app_ns = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_app_ns.bin')
 
-        if self.IMAGE_FILENAME == 'np_image2_all.bin' or self.IMAGE_FILENAME == 'ap_image2_all.bin':
-            np_image2 = self.image2_prehandle(np_image2, ap_image2, ap_image3, app, AP_IMG_DIR)
+        if self.IMAGE_FILENAME == 'km4ns_image2_all.bin' or self.IMAGE_FILENAME == 'km4tz_image2_all.bin':
+            km4ns_image2 = self.image2_prehandle(km4ns_image2, km4tz_image2, km4tz_image3, app, KM4TZ_IMG_DIR)
 
             ENCTOOL('cert', self.MANIFEST_JSON, self.MANIFEST_JSON, self.cert, 0, 'app')
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, app, self.manifest, 'app')
-            np_addr = self.get_address(self.LD_FILE, 'NP_IMG2_XIP', 'ORIGIN')
-            ap_addr = self.get_address(self.LD_FILE, 'AP_IMG2_XIP', 'ORIGIN')
+            np_addr = self.get_address(self.LD_FILE, 'KM4NS_IMG2_XIP', 'ORIGIN')
+            ap_addr = self.get_address(self.LD_FILE, 'KM4TZ_IMG2_XIP', 'ORIGIN')
             if not np_addr:
-                print('error: NP_IMG2_XIP is NULL file: %s'%(__file__))
+                print('error: KM4NS_IMG2_XIP is NULL file: %s'%(__file__))
                 sys.exit(-1)
 
-            ENCTOOL('rsip', np_image2, np_image2_en, np_addr, self.MANIFEST_JSON, 'app')
+            ENCTOOL('rsip', km4ns_image2, km4ns_image2_en, np_addr, self.MANIFEST_JSON, 'app')
 
             if not ap_addr:
-                print('error: AP_IMG2_XIP is NULL file: %s'%(__file__))
+                print('error: KM4TZ_IMG2_XIP is NULL file: %s'%(__file__))
                 sys.exit(-1)
 
-            ENCTOOL('rsip', ap_image2, ap_image2_en, ap_addr, self.MANIFEST_JSON, 'app')
+            ENCTOOL('rsip', km4tz_image2, km4tz_image2_en, ap_addr, self.MANIFEST_JSON, 'app')
 
             if os.path.exists(self.manifest) == False:
                 sys.exit(1)
 
-            if os.path.exists(ap_image3_en):
-                CATFILE('', app_ns, self.cert, self.manifest, np_image2, ap_image2, ap_image3)
-                CATFILE('', app, self.cert, self.manifest, np_image2_en, ap_image2_en, ap_image3_en)
+            if os.path.exists(km4tz_image3_en):
+                CATFILE('', app_ns, self.cert, self.manifest, km4ns_image2, km4tz_image2, km4tz_image3)
+                CATFILE('', app, self.cert, self.manifest, km4ns_image2_en, km4tz_image2_en, km4tz_image3_en)
             else:
-                CATFILE('', app_ns, self.cert, self.manifest, np_image2, ap_image2)
-                CATFILE('', app, self.cert, self.manifest, np_image2_en, ap_image2_en)
+                CATFILE('', app_ns, self.cert, self.manifest, km4ns_image2, km4tz_image2)
+                CATFILE('', app, self.cert, self.manifest, km4ns_image2_en, km4tz_image2_en)
 
-            self.image2_posthandle(AP_IMG_DIR, app, app_ns)
+            self.image2_posthandle(KM4TZ_IMG_DIR, app, app_ns)
 
         if self.IMAGE_FILENAME == 'ram_all_prepend.bin':
-            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(AP_IMG_DIR, 'ram_all_prepend.bin'), self.manifest, 'boot')
-            CATFILE('', os.path.join(AP_IMG_DIR, 'ap_fullmac.bin'), os.path.join(AP_IMG_DIR, 'ram_all_prepend.bin'), self.manifest)
+            ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, os.path.join(KM4TZ_IMG_DIR, 'ram_all_prepend.bin'), self.manifest, 'boot')
+            CATFILE('', os.path.join(KM4TZ_IMG_DIR, 'ap_fullmac.bin'), os.path.join(KM4TZ_IMG_DIR, 'ram_all_prepend.bin'), self.manifest)
 
         IMAGE_NAME = self.IMAGE_FULLNAME
         IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
-        if self.IMAGE_FILENAME == 'ap_boot_all.bin':
-            boot_all = os.path.join(AP_IMG_DIR, 'amebaL2_boot.bin')
-            boot_all_ns = os.path.join(AP_IMG_DIR, 'amebaL2_boot_ns.bin')
+        if self.IMAGE_FILENAME == 'km4tz_boot_all.bin':
+            boot_all = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot.bin')
+            boot_all_ns = os.path.join(KM4TZ_IMG_DIR, 'amebaL2_boot_ns.bin')
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
             ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10400000', self.MANIFEST_JSON, 'boot')
             CATFILE('', boot_all_ns, self.manifest, IMAGE_NAME)
             CATFILE('', boot_all, self.manifest, IMAGE_NAME_EN)
             os.remove(IMAGE_NAME_EN)
 
-        if self.IMAGE_FILENAME == 'ap_image3_all.bin':
+        if self.IMAGE_FILENAME == 'km4tz_image3_all.bin':
             ENCTOOL('rsip', IMAGE_NAME, IMAGE_NAME_EN, '0x10C00000', self.MANIFEST_JSON, 'img3')
 
         if self.IMAGE_FILENAME == 'ram_1_prepend.bin':
             ENCTOOL('manifest', self.MANIFEST_JSON, self.MANIFEST_JSON, IMAGE_NAME, self.manifest, 'boot')
-            CATFILE('', os.path.join(AP_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
+            CATFILE('', os.path.join(KM4TZ_IMG_DIR, 'imgtool_flashloader.bin'), IMAGE_NAME, self.manifest)
 
     def get_handler(self, project):
         return {

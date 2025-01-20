@@ -151,10 +151,10 @@ enum _REGULATION_TXPWR_LMT {
 
 	/* ===== Add new power limit above this line. ===== */
 	TXPWR_LMT_MAX           /* Not support */
+
 };
 
 
-#define TXPWR_LMT_MAX_REGULATION_NUM  TXPWR_LMT_MAX
 #define COUNTRY_CODE_LEN 2
 
 //
@@ -509,7 +509,6 @@ enum _hw_port {
 #define CHANNEL_MAX_NUMBER_5G					54	// Please refer to "phy_GetChnlGroup8812A" and "Hal_ReadTxPowerInfo8812A"
 #define CHANNEL_MAX_NUMBER_5G_80M				7
 
-#define MAX_REGULATION_NUM	TXPWR_LMT_MAX_REGULATION_NUM
 
 #define MAX_2_4G_BANDWITH_NUM					2 // 20M, 40M
 #if !defined(CONFIG_80211AC_VHT)

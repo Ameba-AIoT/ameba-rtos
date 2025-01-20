@@ -1,6 +1,8 @@
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 ameba_set_if(d_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON p_ELSE OFF)
 
+add_compile_options(-fdata-sections -ffunction-sections)
+
 ameba_executable(target_img2_${PROJECT_NAME} ${c_EMPTY_C_FILE})
 
 ############################make_loaders####################################
@@ -219,9 +221,9 @@ add_custom_command(
 )
 
 if(CONFIG_XIP_FLASH)
-    set(IMG2_LD ${d_SDK_LD_DIR}/rlx8721d_img2_non_trustzone_xip.ld)
+    set(IMG2_LD ${d_SDK_LD_DIR}/ameba_img2_non_trustzone_xip.ld)
 else()
-    set(IMG2_LD ${d_SDK_LD_DIR}/rlx8721d_img2_non_trustzone_dram.ld)
+    set(IMG2_LD ${d_SDK_LD_DIR}/ameba_img2_non_trustzone_dram.ld)
 endif()
 
 add_custom_command(

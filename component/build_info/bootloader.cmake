@@ -7,14 +7,14 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_bootloader INTERFACE)
 
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bootloader p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/bootloader/bootloader_hp.c
             ${d_SOC_PLATFORM_DIR}/bootloader/boot_trustzone_hp.c
             ${d_SOC_PLATFORM_DIR}/bootloader/boot_security_hp.c
             ${d_SOC_PLATFORM_DIR}/bootloader/boot_ota_hp.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/amebahp_boot_trustzonecfg.c
+            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_boot_trustzonecfg.c
             ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_bootcfg.c
             ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_flashcfg.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_flashclk.c

@@ -175,8 +175,14 @@ static uint32_t _parse_patch_image(uint8_t *p_payload)
 	key_id = *(position + sizeof(chip_id) + sizeof(ic_cut));
 	ota_en = *(position + sizeof(chip_id) + sizeof(ic_cut) + sizeof(key_id));
 
-	if (chip_id != HCI_PATCH_PROJECT_ID || ic_cut != hci_patch_get_chipid() || key_id != patch_key_id || ota_en != 0) {
-		BT_LOGE("Missmatch chip id / ic cut / key id / ota en!\r\n");
+	if (chip_id != HCI_PATCH_PROJECT_ID || key_id != patch_key_id || ota_en != 0) {
+		BT_LOGE("Mismatch chip id / key id / ota en!\r\n");
+		return 0;
+	}
+
+	if (ic_cut != hci_patch_get_chipid()) {
+		/* Drop section whose ic cut mismatch */
+		BT_LOGD("Mismatch ic cut!\r\n");
 		return 0;
 	}
 

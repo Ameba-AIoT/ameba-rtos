@@ -8,7 +8,7 @@
  */
 
 #include "ameba_soc.h"
-#include "amebahp_secure_boot.h"
+#include "ameba_secure_boot.h"
 #include "bootloader_hp.h"
 #include "boot_ota_hp.h"
 #include "ameba_v8m_crashdump.h"

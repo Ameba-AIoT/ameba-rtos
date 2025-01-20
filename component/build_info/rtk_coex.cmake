@@ -45,7 +45,7 @@ else()
             ${c_COMPONENT_DIR}/rtk_coex/rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721da.c
             ${c_COMPONENT_DIR}/rtk_coex/rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8721da.c
         )
-    elseif(CONFIG_AMEBASMART)
+    elseif(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_rtk_coex p_SCOPE interface
             ${c_COMPONENT_DIR}/rtk_coex/rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8730e.c
             ${c_COMPONENT_DIR}/rtk_coex/rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8730e.c

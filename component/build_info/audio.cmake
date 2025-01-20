@@ -137,7 +137,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_audio_base_cutils_src p_SCOPE int
     ${c_CMPT_AUDIO_DIR}/base/cutils/src/rtintmap.c
     ${c_CMPT_AUDIO_DIR}/base/cutils/src/property.c
 )
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_audio_base_cutils_src p_SCOPE interface
             ${c_CMPT_AUDIO_DIR}/base/cutils/src/parcel.c
@@ -190,7 +190,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_audio_base_osal p_SCOPE interface
     ${c_CMPT_AUDIO_DIR}/base/osal/osal_cxx/adapter/freertos/threads.cpp
 )
 
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_audio_base_osal p_SCOPE interface
             ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/adapter/freertos/osal_timer.c
@@ -209,7 +209,7 @@ ameba_target_include(src_${d_MCU_PROJECT_NAME}_audio_base_osal p_SCOPE interface
     ${c_CMPT_AUDIO_DIR}/base/osal/osal_cxx/interfaces
     ${c_CMPT_AUDIO_DIR}/base/libs/src/include
 )
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_audio_base_osal p_SCOPE interface
             ${c_FREERTOS_DIR}/portable/GCC/ARM_CA7
@@ -461,7 +461,7 @@ ameba_target_include(src_${d_MCU_PROJECT_NAME}_audio_hal p_SCOPE interface
     ${c_CMPT_AUDIO_DIR}/base/cutils/interfaces
     ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/interfaces
 )
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_audio_hal p_SCOPE interface
             ${c_FREERTOS_DIR}/include
@@ -1422,7 +1422,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_audio_test p_SCOPE interface
     ${c_CMPT_AUDIO_DIR}/audio_test/audio_wav_test.cpp
     ${c_CMPT_AUDIO_DIR}/audio_test/audio_wav_test_thread.c
 )
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_audio_test p_SCOPE interface
             ${c_CMPT_AUDIO_DIR}/audio_test/audio_buffer.c
@@ -1441,7 +1441,7 @@ ameba_target_include(src_${d_MCU_PROJECT_NAME}_audio_test p_SCOPE interface
     ${c_CMPT_AUDIO_DIR}/interfaces
 )
 
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_audio_test p_SCOPE interface
             ${c_CMPT_AUDIO_DIR}/audio_algorithm/plc

@@ -8,6 +8,13 @@ if (CONFIG_WLAN)
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_com_sec.a
                 )
+				if(CONFIG_WPA_LOCATION_DEV)
+				    list(
+						APPEND LINK_APP_LIB
+						${APP_LIB_DIR}/lib_wpa_lite.a
+						${APP_LIB_DIR}/lib_wps.a
+					)
+				endif()
             elseif(CONFIG_ZEPHYR_SDK)
                 list(
                     APPEND LINK_APP_LIB

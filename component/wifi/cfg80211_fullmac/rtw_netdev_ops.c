@@ -394,6 +394,12 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 		goto exit;
 	}
 
+	if (global_idev.pndev[2]) {
+		dev_info(global_idev.fullmac_dev, "free old global_idev.pndev[2]=%x\n", global_idev.pndev[2]);
+		free_netdev(global_idev.pndev[2]);
+		global_idev.pndev[2] = NULL;
+	}
+
 	/* alloc and init netdev */
 	ndev = alloc_etherdev_mq(sizeof(struct netdev_priv_t), 1);
 	if (!ndev) {
@@ -465,36 +471,40 @@ exit:
 
 void rtw_nan_iface_free(struct wiphy *wiphy)
 {
-	if (global_idev.pndev[2]) {
-		/* hold rtnl_lock in unregister_netdev. */
-		unregister_netdevice(global_idev.pndev[2]);
-	} else {
-		goto exit;
-	}
-
-	dev_dbg(global_idev.fullmac_dev, "remove netdev done for interface NAN.");
+	bool rtnl_lock_need = !rtnl_is_locked();
 
 	if (global_idev.pwdev_global[2]) {
-		//rtnl_lock();
+		if (rtnl_lock_need) {
+			rtnl_lock();
+		}
 		cfg80211_unregister_wdev(global_idev.pwdev_global[2]);
-		//rtnl_unlock();
+		if (rtnl_lock_need) {
+			rtnl_unlock();
+		}
+		dev_dbg(global_idev.fullmac_dev, "unregister wdev done for NAN, global_idev.pndev[2]->reg_state=%d.", global_idev.pndev[2]->reg_state);
+	}
 
-		dev_dbg(global_idev.fullmac_dev, "remove wdev done for interface NAN.");
+	if (global_idev.pndev[2] && (global_idev.pndev[2]->reg_state == NETREG_REGISTERED)) {
+		if (rtnl_lock_need) {
+			/* hold rtnl_lock in unregister_netdev. */
+			unregister_netdev(global_idev.pndev[2]);
+		} else {
+			unregister_netdevice(global_idev.pndev[2]);
+		}
+	}
 
+	dev_info(global_idev.fullmac_dev, "unregister netdev done for NAN.");
+
+	if (global_idev.pwdev_global[2]) {
 		kfree((u8 *)global_idev.pwdev_global[2]);
 		global_idev.pwdev_global[2] = NULL;
+		dev_info(global_idev.fullmac_dev, "remove wdev done for NAN.");
 		/* remove wireless_dev in ndev. */
 		global_idev.pndev[2]->ieee80211_ptr = NULL;
 	}
 
-	if (global_idev.pndev[2]) {
-		free_netdev(global_idev.pndev[2]);
-		global_idev.pndev[2] = NULL;
-	}
-
 	llhw_wifi_deinit_nan();
 
-exit:
 	return;
 }
 

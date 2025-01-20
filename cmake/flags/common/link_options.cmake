@@ -7,7 +7,7 @@ list(APPEND d_GLOBAL_COMMON_LINK_OPTIONS
     -Wl,-Map=text.map
     -nostartfiles
     "SHELL:-specs nosys.specs"
-    -Wl,--gc-sections
+    # Add -Wl,--gc-sections in actual target for rom compile.
     -Wl,-Map=text.map
     -Wl,--cref
     -Wl,--build-id=none
@@ -17,5 +17,4 @@ list(APPEND d_GLOBAL_COMMON_LINK_OPTIONS
     -L${d_MCU_SDK_DIR}/lib/
 )
 
-# ameba_list_append_ifnot(ROM_CFLAG d_GLOBAL_COMMON_LINK_OPTIONS "-Wl,--gc-sections")
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

@@ -12,7 +12,7 @@ add_library(src_${d_MCU_PROJECT_NAME}_usbh_class INTERFACE)
 add_library(src_${d_MCU_PROJECT_NAME}_usbh_lib INTERFACE)
 
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap" OR "${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_usbd_class p_SCOPE interface
             ${c_CMPT_USB_DIR}/common
@@ -91,7 +91,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_usbd_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/device/core/usbd_pcd.c
 )
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap" OR "${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_usb_class p_SCOPE interface
             ${c_CMPT_USB_DIR}/common
@@ -221,7 +221,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_usb_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/host/core/usbh_hcd.c
 )
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap" OR "${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_usbh_class p_SCOPE interface
             ${c_CMPT_USB_DIR}/common
