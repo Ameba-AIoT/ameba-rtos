@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_utilities INTERFACE)
 
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_utilities p_SCOPE interface
         ${c_CMPT_NETWORK_DIR}/iperf/iperf.c
         ${c_CMPT_NETWORK_DIR}/ping/ping_test.c

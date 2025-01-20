@@ -53,16 +53,16 @@ if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         "SHELL:-Wl,-wrap,strlen"
         "SHELL:-Wl,-wrap,strtoul"
         "SHELL:-Wl,-wrap,strupr"
-        "SHELL:-Wl,-wrap,__aeabi_drsub"
-        "SHELL:-Wl,-wrap,__aeabi_dsub"
-        "SHELL:-Wl,-wrap,__adddf3"
-        "SHELL:-Wl,-wrap,__aeabi_ui2d"
-        "SHELL:-Wl,-wrap,__aeabi_i2d"
-        "SHELL:-Wl,-wrap,__aeabi_f2d"
-        "SHELL:-Wl,-wrap,__aeabi_ul2d"
-        "SHELL:-Wl,-wrap,__aeabi_l2d"
-        "SHELL:-Wl,-wrap,__aeabi_dmul"
-        "SHELL:-Wl,-wrap,__aeabi_ddiv"
+        # "SHELL:-Wl,-wrap,__aeabi_drsub"
+        # "SHELL:-Wl,-wrap,__aeabi_dsub"
+        # "SHELL:-Wl,-wrap,__adddf3"
+        # "SHELL:-Wl,-wrap,__aeabi_ui2d"
+        # "SHELL:-Wl,-wrap,__aeabi_i2d"
+        # "SHELL:-Wl,-wrap,__aeabi_f2d"
+        # "SHELL:-Wl,-wrap,__aeabi_ul2d"
+        # "SHELL:-Wl,-wrap,__aeabi_l2d"
+        # "SHELL:-Wl,-wrap,__aeabi_dmul"
+        # "SHELL:-Wl,-wrap,__aeabi_ddiv"
         "SHELL:-Wl,-wrap,adddf3"
         "SHELL:-Wl,-wrap,_adddf3"
         "SHELL:-Wl,-wrap,fadd"
@@ -85,3 +85,24 @@ elseif("${d_MCU_PROJECT_NAME}" STREQUAL "lp")
     )
 endif()
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+
+set(
+    LINK_OPTIONS_ROM_WRAP
+    "SHELL:-Wl,-wrap,memchr"
+    "SHELL:-Wl,-wrap,memcmp"
+    "SHELL:-Wl,-wrap,memcpy"
+    "SHELL:-Wl,-wrap,memmove"
+    "SHELL:-Wl,-wrap,memset"
+    "SHELL:-Wl,-wrap,strcmp"
+    "SHELL:-Wl,-wrap,strlen"
+    "SHELL:-Wl,-wrap,strtoul"
+    "SHELL:-Wl,-wrap,strupr"
+    "SHELL:-Wl,-wrap,stricmp"
+    "SHELL:-Wl,-wrap,printf"
+    "SHELL:-Wl,-wrap,rand"
+    "SHELL:-Wl,-wrap,strcpy"
+    "SHELL:-Wl,-wrap,strncpy"
+    "SHELL:-Wl,-wrap,strtol"
+    "SHELL:-Wl,-wrap,sprintf"
+)

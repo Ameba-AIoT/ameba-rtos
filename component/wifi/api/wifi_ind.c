@@ -19,7 +19,7 @@
 #if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
 #include "wifi_conf.h"
 #include "platform_stdlib.h"
-#if !defined(CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK
+#if !defined(CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK || defined(CONFIG_WPA_LOCATION_DEV)
 #include "wpa_lite_intf.h"
 #include <wifi_auto_reconnect.h>
 #endif
@@ -31,7 +31,7 @@
 /**********************************************************************************************
  *                                          Globals
  *********************************************************************************************/
-#if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK
+#if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK || defined(CONFIG_WPA_LOCATION_DEV)
 struct event_list_elem_t {
 	void (*handler)(char *buf, int len, int flags, void *user_data);
 	void	*handler_user_data;
@@ -140,7 +140,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
  * @brief internal event handle, must have same order as enum
  */
 void (*const event_internal_hdl[])(char *buf, int len, int flags, void *user_data) = {
-#if (!defined(CONFIG_AS_INIC_NP) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))) || defined(CONFIG_ZEPHYR_SDK)
+#if (!defined(CONFIG_AS_INIC_NP) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))) || defined(CONFIG_ZEPHYR_SDK) || defined(CONFIG_WPA_LOCATION_DEV)
 	rtw_sae_sta_rx_auth,				/*WIFI_EVENT_RX_MGNT*/
 	rtw_sae_ap_rx_auth,					/*WIFI_EVENT_RX_MGNT_AP*/
 	rtw_sae_sta_start,					/*WIFI_EVENT_EXTERNAL_AUTH_REQ*/
@@ -271,7 +271,7 @@ void wifi_indication(unsigned int event, char *buf, int buf_len, int flags)
 	inic_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 
-#if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK
+#if !(defined CONFIG_AS_INIC_NP) || defined CONFIG_ZEPHYR_SDK || defined(CONFIG_WPA_LOCATION_DEV)
 	wifi_event_handle(event, buf, buf_len, flags);
 #endif
 }

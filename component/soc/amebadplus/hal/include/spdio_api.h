@@ -28,7 +28,7 @@
 #ifndef __SPDIO_API_H__
 #define __SPDIO_API_H__
 
-#include <os_wrapper.h>
+#include "basic_types.h"
 
 /** @addtogroup Ameba_Mbed_API
  * @{

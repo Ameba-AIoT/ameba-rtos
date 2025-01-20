@@ -35,7 +35,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_clintwood_soc p_SCOPE interface
     ${c_CMPT_APPLICATION_DIR}/clintwood/soc/user_heap.c
 )
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_clintwood_wifi p_SCOPE interface
             ${c_CMPT_APPLICATION_DIR}/clintwood/wifi/msft_wifi_twt.c

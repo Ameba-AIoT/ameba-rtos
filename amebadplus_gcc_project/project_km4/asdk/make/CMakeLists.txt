@@ -25,7 +25,7 @@ add_subdirectory(test)
 add_subdirectory(utils)
 
 
-if(CONFIG_WPA_LOCATION_DEV)
+if(CONFIG_WPA_STD)
 	add_subdirectory(wpa_supplicant_std)
 endif()
 

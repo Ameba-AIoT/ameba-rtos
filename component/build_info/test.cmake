@@ -76,7 +76,7 @@ if (CONFIG_EQC)
     ameba_target_include(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
         ${d_SOC_PLATFORM_DIR}/verification/eqc
     )
-    if(CONFIG_AMEBASMART)
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
             ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
                 ${d_SOC_PLATFORM_DIR}/verification/eqc/ameba_eqc.c
@@ -98,7 +98,7 @@ if (CONFIG_OLT)
         ${d_SOC_PLATFORM_DIR}/verification/olt_test
         ${d_SOC_PLATFORM_DIR}/verification/wifi
     )
-    if(CONFIG_AMEBASMART)
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
             ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
                 ${d_SOC_PLATFORM_DIR}/verification/olt_test/ameba_olt_hp.c
@@ -184,7 +184,7 @@ ameba_target_sources_if(CONFIG_I2C_VERIFY src_${d_MCU_PROJECT_NAME}_test_verific
     ${d_SOC_PLATFORM_DIR}/verification/i2c/hal_i2c_test.c
 )
 if(CONFIG_PSRAM_VERIFY)
-    if(CONFIG_AMEBASMART)
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
             ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
                 ${d_SOC_PLATFORM_DIR}/verification/psram/psram_pressure_test.c
@@ -198,7 +198,7 @@ if(CONFIG_PSRAM_VERIFY)
 endif()
 
 if(CONFIG_AUDIO_VERIFY)
-    if(CONFIG_AMEBASMART)
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/verification/audio/rtl8721d_audio_test.c
         )
@@ -310,7 +310,7 @@ ameba_target_sources_if(CONFIG_WFE_VERIFY src_${d_MCU_PROJECT_NAME}_test_verific
 )
 
 if(CONFIG_IR_VERIFY)
-    if(CONFIG_AMEBASMART)
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/verification/IR/ameba_ir_test.c
             ${d_SOC_PLATFORM_DIR}/verification/IR/ameba_ir_learn.c

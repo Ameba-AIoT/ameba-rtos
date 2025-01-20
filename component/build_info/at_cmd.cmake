@@ -17,7 +17,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
    ${c_CMPT_AT_CMD_DIR}/monitor.c
    ${d_SOC_PLATFORM_DIR}/app/monitor/ram/shell_ram.c
 )
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/app/monitor/ram/low_level_io.c

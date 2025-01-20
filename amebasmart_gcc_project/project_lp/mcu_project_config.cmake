@@ -83,10 +83,10 @@ macro(ameba_mcu_project_custom_config)
 
     if(CONFIG_LINK_ROM_SYMB)
         ameba_unset(LINK_ROM_LIB)
-        ameba_set(LINK_ROM_SYMBOL    ${d_SDK_LD_DIR}/rlx8721d_rom_symbol_acut.ld)
+        ameba_set(LINK_ROM_SYMBOL    ${d_SDK_LD_DIR}/ameba_rom_symbol_acut.ld)
     else()
         ameba_set(LINK_ROM_LIB ${ROM_LIB_DIR}/rom.a)
-        ameba_set(LINK_ROM_SYMBOL ${d_SDK_LD_DIR}/rlx8721d_rom_symbol_empty.a)
+        ameba_set(LINK_ROM_SYMBOL ${d_SDK_LD_DIR}/ameba_rom_symbol_empty.a)
     endif()
 
     # ameba_unset(LINK_APP_LIB)

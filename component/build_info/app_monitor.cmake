@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_app_monitor INTERFACE)
 
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_app_monitor p_SCOPE interface
     ${c_CMPT_AT_CMD_DIR}/monitor.c
     ${d_SOC_PLATFORM_DIR}/app/monitor/ram/shell_ram.c

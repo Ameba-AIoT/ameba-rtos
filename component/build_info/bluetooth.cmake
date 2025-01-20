@@ -832,7 +832,7 @@ if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
         ${c_CMPT_BLUETOOTH_DIR}/zephyr/stack/mesh/priv_beacon_cli.c
         ${c_CMPT_BLUETOOTH_DIR}/zephyr/stack/mesh/priv_beacon_srv.c
     )
-    if(CONFIG_AMEBASMART AND "${d_MCU_PROJECT_NAME}" STREQUAL "ap")
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS AND "${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_zephyr p_SCOPE interface
             ${c_CMPT_BLUETOOTH_DIR}/zephyr/stack/mesh/provisionee.c
         )

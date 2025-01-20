@@ -168,6 +168,16 @@ menu "CONFIG INIC INTF"
                 bool "SDIO_FULLMAC"
         endchoice
 
+		#WPA Lite in dev for FULLMAC host without std wpa_supplicant
+		choice
+			prompt "WPA Lite Location"
+			default WPA_LOCATION_HOST
+			config WPA_LOCATION_HOST
+				bool "HOST"
+			config WPA_LOCATION_DEV
+				bool "DEV"
+		endchoice
+
 		menu "Debug"
 
 		choice
@@ -181,13 +191,14 @@ menu "CONFIG INIC INTF"
 				select CORE_AS_NP_FOR_KM4
 		endchoice
 
+		#choose WPA_STD will compile std supplicant in device side.
 		choice
-			prompt "WPA Supplicant Location"
-			default WPA_LOCATION_HOST
-			config WPA_LOCATION_HOST
-				bool "HOST"
-			config WPA_LOCATION_DEV
-				bool "DEV"
+			prompt "WPA Supplicant STD"
+			default WPA_LITE
+			config WPA_LITE
+				bool "LITE"
+			config WPA_STD
+				bool "STD"
 		endchoice
 
 		endmenu

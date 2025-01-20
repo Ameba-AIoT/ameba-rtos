@@ -15,7 +15,7 @@
 #include "ameba_flashcfg.h"
 #include "ameba_pinmapcfg.h"
 #include "ameba_sleepcfg.h"
-#include "amebahp_boot_trustzonecfg.h"
+#include "ameba_boot_trustzonecfg.h"
 
 /* wifi configuration */
 #include "ameba_wificfg.h"

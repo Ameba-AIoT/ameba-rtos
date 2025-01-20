@@ -1,6 +1,8 @@
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 ameba_set_if(d_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON p_ELSE OFF)
 
+add_compile_options(-fdata-sections -ffunction-sections)
+
 ameba_executable(target_img2_${PROJECT_NAME} ${c_EMPTY_C_FILE})
 
 ############################make_subdirs####################################
@@ -100,14 +102,14 @@ add_custom_target(
 
 add_custom_command(
   TARGET target_img2_${PROJECT_NAME} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${d_SDK_LD_DIR}/rlx8721d_img2_sram.ld -o ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${d_SDK_LD_DIR}/ameba_img2_sram.ld -o ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
   COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL} >> ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
 
 set(
     LINK_SCRIPTS
-    ${d_SDK_LD_DIR}/rlx8721d_img2_sram.ld
+    ${d_SDK_LD_DIR}/ameba_img2_sram.ld
     ${d_PLATFORM_PROJECT_DIR}/${d_PLATFORM_TYPE}_layout.ld
 )
 

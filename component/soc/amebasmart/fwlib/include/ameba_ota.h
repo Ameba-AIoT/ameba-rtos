@@ -7,7 +7,7 @@
 #ifndef _AMEBA_OTA_H_
 #define _AMEBA_OTA_H_
 
-#include "amebahp_secure_boot.h"
+#include "ameba_secure_boot.h"
 #include <mbedtls/config.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/net_sockets.h>

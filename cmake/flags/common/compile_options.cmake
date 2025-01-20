@@ -51,8 +51,6 @@ list(APPEND d_GLOBAL_COMMON_COMPILE_C_OPTIONS
 
     # -ffile-prefix-map=${c_BASEDIR}=.
     -Wstrict-prototypes
-    -fdata-sections
-    -ffunction-sections
 )
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

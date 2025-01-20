@@ -158,7 +158,7 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_freertos p_SCOPE interface
     ${c_FREERTOS_DIR}/include
     ${c_CMPT_OS_DIR}/freertos/os_wrapper/include
 )
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         if(CONFIG_MP_SHRINK)
             if("${CONFIG_CORE_NUM}" EQUAL 1)
@@ -183,7 +183,7 @@ if(CONFIG_AMEBASMART)
         endif()
     endif()
 endif()
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(dep_${d_MCU_PROJECT_NAME}_freertos p_SCOPE interface
             ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_HP/non_secure
@@ -204,7 +204,7 @@ endif()
 ####################################### dep_freertos end ##############################################
 
 ###################################### dep_fwlib begin ############################################
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_include(dep_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
         ${d_SOC_PLATFORM_DIR}/fwlib/include
         ${d_SOC_PLATFORM_DIR}/swlib

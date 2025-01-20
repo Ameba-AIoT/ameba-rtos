@@ -1,6 +1,8 @@
 #include "ameba_soc.h"
 #include "spdio_api.h"
 #include "ameba_inic.h"
+#include "os_wrapper.h"
+
 static const char *const TAG = "SPDIO";
 /** @addtogroup Ameba_Mbed_API
  * @{

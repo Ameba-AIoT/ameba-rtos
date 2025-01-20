@@ -6,8 +6,12 @@ endif()
 
 add_library(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE)
 
+file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${IMAGE_TARGET_FOLDER})
+target_compile_definitions(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE -DASDK_TOOLCHAIN="${ASDK_TOOLCHAIN}")
+target_compile_definitions(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE -DIMAGE_DIR="${IMAGE_DIR}")
+
 #--------------------------#
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_crashdump_lib p_SCOPE interface
         ${c_COMPONENT_DIR}/soc/common/crashdump/arm/ameba_v8m_crashdump.c
         ${c_COMPONENT_DIR}/soc/common/crashdump/arm/ameba_v8m_fault_diagnosis.c

@@ -29,7 +29,7 @@ if(NOT CONFIG_AMEBA_RLS)
         #build NP libs
         elseif(CONFIG_AS_INIC_NP)
             add_subdirectory(driver)
-            if(CONFIG_ZEPHYR_SDK)
+            if(CONFIG_ZEPHYR_SDK OR CONFIG_WPA_LOCATION_DEV)
                 add_subdirectory(wpa_supplicant/wpa_lite)
                 add_subdirectory(wpa_supplicant/wps)
             endif()

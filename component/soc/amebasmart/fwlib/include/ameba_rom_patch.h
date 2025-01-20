@@ -48,7 +48,7 @@ _LONG_CALL_ void AUDIO_SP_SetI2S2Ext2CKPinmux(u32 state);
 _LONG_CALL_ void AUDIO_SP_SetI2S2Ext1CKPinmux(u32 state);
 
 #ifdef CONFIG_ARM_CORE_CM4
-#include "amebahp_secure_boot.h"
+#include "ameba_secure_boot.h"
 
 int SBOOT_GetMdType_B(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac);
 int SBOOT_Validate_Algorithm_B(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u8 ManiHash);

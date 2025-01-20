@@ -13,6 +13,7 @@ ameba_info("target_imgtool_floader: d_LIST_${d_MCU_PROJECT_NAME_UPPER}_LOADER_LI
 target_link_libraries(
     target_imgtool_floader
     PRIVATE
+    -Wl,--gc-sections
     -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     ${d_LIST_${d_MCU_PROJECT_NAME_UPPER}_LOADER_LIBRARIES}
     d_PROJ_${d_MCU_PROJECT_NAME_UPPER}_INCLUDE_DIRECTORIES
@@ -29,12 +30,12 @@ endforeach()
 
 add_custom_command(
     TARGET target_imgtool_floader PRE_LINK
-    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${LDDIR}/rlx8721d_floader_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${LDDIR}/ameba_floader_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     COMMAND ${CMAKE_COMMAND} -E cat ${d_LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     COMMENT "build imgtool_flashloader linkerscript rlx8721d.ld"
 )
 
-set_target_properties(target_imgtool_floader PROPERTIES LINK_DEPENDS ${LDDIR}/rlx8721d_floader_s.ld)
+set_target_properties(target_imgtool_floader PROPERTIES LINK_DEPENDS ${LDDIR}/ameba_floader_s.ld)
 
 
 add_custom_command(TARGET target_imgtool_floader POST_BUILD
