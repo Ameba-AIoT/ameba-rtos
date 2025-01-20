@@ -23,9 +23,14 @@ jobs:
     - name: Set branch as environment variable
       run: |
         echo "CURRENT_DATE=$(date '+%Y-%m-%d')" >> $GITHUB_ENV
-        echo "CURRENT_BRANCH=gloriachen09:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
-        echo "PULL_REQUEST_FROM_BRANCH=gloriachen09:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "CURRENT_BRANCH=${{ github.actor }}:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "PULL_REQUEST_FROM_BRANCH=${{ github.actor }}:release/${GITHUB_REF##*/}" >> $GITHUB_ENV
 
+    - name: Get current commit message
+      run: |
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          echo "Commit message is: $COMMIT_MESSAGE"
+          # echo "PULL_REQUEST_BODY=$COMMIT_MESSAGE" >> $GITHUB_ENV
     - name: pull-request-action
       id: pull_request
       run: |
@@ -37,6 +42,7 @@ jobs:
         PULL_REQUEST_TOKEN: ${{ secrets.PAT_TOKEN }}
         PULL_REQUEST_BRANCH: "release/v1.0"
         PULL_REQUEST_REPOSITORY: Ameba-AIoT/ameba-rtos
+        PULL_REQUEST_REVIEWERS: raulcxw
         PASS_IF_EXISTS: true
         PULL_REQUEST_UPDATE: true
     - name: Test outputs
