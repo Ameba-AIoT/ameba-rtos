@@ -42,6 +42,7 @@ jobs:
         PULL_REQUEST_TOKEN: ${{ secrets.PAT_TOKEN }}
         PULL_REQUEST_BRANCH: "master"
         PULL_REQUEST_REPOSITORY: Ameba-AIoT/ameba-rtos
+        PULL_REQUEST_REVIEWERS: raulcxw
         PASS_IF_EXISTS: true
         PULL_REQUEST_UPDATE: true
     - name: Test outputs
