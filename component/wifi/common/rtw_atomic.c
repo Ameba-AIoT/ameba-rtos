@@ -43,9 +43,9 @@ void ATOMIC_ADD(ATOMIC_T *v, int i)
 #if defined(STDATOMIC)
 	atomic_fetch_add(v, i);
 #else
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	v->counter += i;
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 #endif
 }
 
@@ -54,9 +54,9 @@ void ATOMIC_SUB(ATOMIC_T *v, int i)
 #if defined(STDATOMIC)
 	atomic_fetch_sub(v, i);
 #else
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	v->counter -= i;
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 #endif
 }
 
@@ -78,11 +78,11 @@ int ATOMIC_SUB_RETURN(ATOMIC_T *v, int i)
 #else
 	int temp;
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	temp = v->counter;
 	temp -= i;
 	v->counter = temp;
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	return temp;
 #endif

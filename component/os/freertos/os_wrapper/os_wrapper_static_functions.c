@@ -102,16 +102,16 @@ static void *__reserved_get_from_poll(int component_type, struct list_head *phea
 	}
 
 	// get memory from list
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	if (list_empty(phead)) {
-		rtos_critical_exit();
+		rtos_critical_exit_old();
 		p_component = NULL;
 	} else {
 		plist = phead->next;
 		list_del_init(plist);
 		p_component = (void *)((unsigned int)plist + sizeof(struct list_head));
 		*pool_used_num = *pool_used_num + 1;
-		rtos_critical_exit();
+		rtos_critical_exit_old();
 	}
 
 	// set dynamic flags
@@ -174,7 +174,7 @@ static void __reserved_release_to_poll(int component_type, void *p_buf, struct l
 		}
 	}
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	if (is_static) {
 		plist = (struct list_head *)(((unsigned int)p_buf) - sizeof(struct list_head));
@@ -184,7 +184,7 @@ static void __reserved_release_to_poll(int component_type, void *p_buf, struct l
 		*dynamic_count = *dynamic_count - 1;
 	}
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 }
 
 static void __reserved_init_static_pool(int component_type, void *pool_arg, struct list_head *phead, uint32_t max_pool_num,

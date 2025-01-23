@@ -8,11 +8,9 @@
 #include "example_atcmd_spi_master.h"
 
 #define ATCMD_SPI_DMA_SIZE	2048
-#define SCLK_FREQ		20*1000*1000
-#define DataFrameSize	8
-#define Mode			0
-
-#define TEST_FILE_SIZE	(3 * 1024*1024)
+#define SPI_SCLK_FREQ		20*1000*1000
+#define SPI_DATA_FRAME_SIZE	8
+#define SPI_MODE			0
 
 rtos_sema_t master_tx_sema;
 rtos_sema_t master_rx_sema;
@@ -127,8 +125,8 @@ void atcmd_spi_master_demo_task(void)
 	/* SPI1 is as Master */
 	spi_master.spi_idx = MBED_SPI1;
 	spi_init(&spi_master, SPI1_MOSI, SPI1_MISO, SPI1_SCLK, SPI1_CS);
-	spi_format(&spi_master, DataFrameSize, Mode, 0);
-	spi_frequency(&spi_master, SCLK_FREQ);
+	spi_format(&spi_master, SPI_DATA_FRAME_SIZE, SPI_MODE, 0);
+	spi_frequency(&spi_master, SPI_SCLK_FREQ);
 
 	spi_irq_hook(&spi_master, (spi_irq_handler) Master_tr_done_callback, (uint32_t)&spi_master);
 
@@ -147,8 +145,8 @@ void atcmd_spi_master_demo_task(void)
 
 		//prepare tx data
 		if (uart_irq_count > 0) {
-			MasterTxBuf[0] = 0x54;
-			MasterTxBuf[1] = 0x58;
+			MasterTxBuf[0] = 0x41;
+			MasterTxBuf[1] = 0x54;
 
 			//add data length
 			u32 send_len = uart_irq_count;
@@ -173,7 +171,7 @@ void atcmd_spi_master_demo_task(void)
 		rtos_sema_take(master_tx_sema, 0xFFFFFFFF);
 
 		// check recv data
-		if (MasterRxBuf[0] != 0x54 || MasterRxBuf[1] != 0x58) {
+		if (MasterRxBuf[0] != 0x41 || MasterRxBuf[1] != 0x54) {
 			goto NEXT;
 		}
 
@@ -206,7 +204,7 @@ void example_atcmd_spi_master(void)
 	rtos_sema_create(&master_rx_sema, 0, 0xFFFF);
 	rtos_sema_create(&master_gpio_sema, 0, 0xFFFF);
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_master_demo_task"), (rtos_task_t)atcmd_spi_master_demo_task, NULL, 1024, 2) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_master_demo_task"), (rtos_task_t)atcmd_spi_master_demo_task, NULL, 1024, 5) != SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_spi_master_demo_task) failed", __FUNCTION__);
 	}
 }

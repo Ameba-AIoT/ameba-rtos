@@ -64,7 +64,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		at_printf_indicate("wifi connected\r\n");
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER && !defined(CONFIG_WIFI_HOST_BRIDGE)
 		LwIP_netif_set_link_up(0);
 #endif
 
@@ -97,7 +97,7 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
 		at_printf_indicate("wifi disconnected\r\n");
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER && !defined(CONFIG_WIFI_HOST_BRIDGE)
 		LwIP_DHCP_stop(0);
 		LwIP_netif_set_link_down(0);
 #endif
@@ -175,7 +175,7 @@ void wifi_event_handle_internal(unsigned int event_cmd, char *buf, int buf_len, 
 	u8 *mac_addr = NULL;
 	/*internal only events*/
 	if (event_cmd > WIFI_EVENT_INTERNAL_BASE) {
-#if !defined(CONFIG_MP_SHRINK) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
+#if !defined(CONFIG_MP_SHRINK) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP)) && !defined(CONFIG_WIFI_HOST_BRIDGE)
 		event_internal_hdl[event_cmd - WIFI_EVENT_INTERNAL_BASE - 1](buf, buf_len, flags, NULL);
 #else
 		UNUSED(buf_len);

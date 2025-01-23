@@ -477,7 +477,7 @@ void usbh_uvc_process_sof(usb_host_t *host)
 	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
 		stream = &uvc->stream[i];
 		if (stream->stream_data_state == STREAM_DATA_IN) {
-			rtos_critical_enter();
+			rtos_critical_enter_old();
 			if (uvc_frame_num_le(stream->cur_setting.last_frame + stream->cur_setting.interval, frame_num) && \
 				(stream->cur_packet_state == 0)) {
 				stream->cur_packet_state = 1;
@@ -491,7 +491,7 @@ void usbh_uvc_process_sof(usb_host_t *host)
 									   stream->cur_setting.pipe);
 
 			}
-			rtos_critical_exit();
+			rtos_critical_exit_old();
 		}
 	}
 #else

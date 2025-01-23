@@ -107,6 +107,7 @@
 #endif
 
 //#define CONFIG_DFS_TEST  // add for dfs test
+#define CONFIG_DFS // some application may use CSA although AmebaLite does not support 5G
 
 /* enable csi function */
 #define CONFIG_CSI
@@ -115,6 +116,14 @@
 #define RTL8720E_WORK_AROUND
 
 //#define RA_RX_ACK_RSSI
+
+/*************************** Config for Gen TxPower Tool *******************************/
+/** VERSION 0: only support extending one EXT PWR_LIMIT table
+  * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration
+  */
+#define GEN_TXPWR_TOOL_VERSION 1
+/*************************** Config for Gen TxPower Tool End **************************/
+
 /*************************** Config for MP_MODE *******************************/
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT

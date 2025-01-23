@@ -386,19 +386,12 @@ int llhw_wifi_stop_ap(void)
 int llhw_wifi_set_EDCA_params(unsigned int *AC_param)
 {
 	int ret = 0;
-	dma_addr_t dma_addr_ac_param = 0;
-	struct device *pdev = global_idev.ipc_dev;
 	u32 param_buf[1] = {0};
+	unsigned int ac_param = *AC_param;
 
-	dma_addr_ac_param = dma_map_single(pdev, AC_param, sizeof(unsigned int), DMA_TO_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr_ac_param)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		return -1;
-	}
-	param_buf[0] = (u32)dma_addr_ac_param;
+	param_buf[0] = ac_param;
 
 	ret = llhw_ipc_send_msg(INIC_API_WIFI_SET_EDCA_PARAM, param_buf, 1);
-	dma_unmap_single(pdev, dma_addr_ac_param, sizeof(unsigned int), DMA_TO_DEVICE);
 
 	return ret;
 }

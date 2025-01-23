@@ -15,7 +15,7 @@ struct inic_msg_node *inic_msg_dequeue(struct __queue *p_queue)
 	struct inic_msg_node *p_node;
 	struct list_head *plist, *phead;
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	if (rtw_queue_empty(p_queue) == TRUE) {
 		p_node = NULL;
@@ -27,7 +27,7 @@ struct inic_msg_node *inic_msg_dequeue(struct __queue *p_queue)
 		rtw_list_delete(&(p_node->list));
 	}
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	return p_node;
 }
@@ -51,9 +51,9 @@ sint inic_msg_enqueue(void *msg, struct __queue *p_queue)
 	p_node->msg = msg;
 
 	/* put the inic message to the tail of the queue */
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	rtw_list_insert_tail(&(p_node->list), get_list_head(p_queue));
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	return SUCCESS;
 }

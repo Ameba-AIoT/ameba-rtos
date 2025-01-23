@@ -28,7 +28,7 @@ void at_wscfg_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO,
-			 "AT+WSCFG=<link_id>,<ping_intv_sec>,<ping_timeout_sec>[,<buffer_size>,<max_queue_size>,<protocol>,<version>,<stable_buf_num>]\r\n");
+			 "AT+WSCFG=<link_id>,<ping_intv_sec>,<ping_timeout_sec>[,<buffer_size>][,<max_queue_size>][,<protocol>][,<version>][,<stable_buf_num>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<ping_intv_sec>:\tsend interval of ping in seconds, must be 1~%d, default is %d\r\n", MAX_PING_INTERVAL,
 			 DEFAULT_PING_INTERVAL);
@@ -158,7 +158,7 @@ void at_wsglcfg_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO,
-			 "AT+WSGLCFG=[<connect_timeout>,<recv_timeout>,<send_timeout>,<send_blocktime>,<keepalive_idle>,<keepalive_interval>,<keepalive_count>]\r\n");
+			 "AT+WSGLCFG=[<connect_timeout>][,<recv_timeout>][,<send_timeout>][,<send_blocktime>][,<keepalive_idle>][,<keepalive_interval>][,<keepalive_count>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<connect_timeout>:\ttimeout for establishing websocket connection\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<recv_timeout>:\ttimeout for receiving data\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<send_timeout>:\ttimeout for sending data\r\n");
@@ -391,10 +391,11 @@ end:
 void at_wsopen_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSOPEN=<link_id>,<host>[,<path>],<conn_type>[,<certificate_index>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSOPEN=<link_id>,<host>[,<path>][,<port>],<conn_type>[,<certificate_index>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thost of websocket server\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<path>:\tpath\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\tport of host\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<conn_type>:\twhether to use ssl and certificate, must be %d~%d\r\n", WEBSOCKET_OVER_TCP,
 			 WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<certificate_index>:\tselect certificate\r\n");
@@ -485,7 +486,7 @@ void at_wsopen(void *arg)
 	int argc = 0;
 	int error_no = 0, ret;
 	char *argv[MAX_ARGC] = {0};
-	int link_id, conn_type, cert_index, size;
+	int link_id, port, conn_type, cert_index, size;
 	char *host, *path, *req_header;
 	char url[DNS_MAX_NAME_LENGTH];
 	int i, total_header_len = 0, pos = 0;
@@ -527,7 +528,9 @@ void at_wsopen(void *arg)
 
 	path = (char *)argv[3];
 
-	conn_type = atoi(argv[4]);
+	port = atoi(argv[4]);
+
+	conn_type = atoi(argv[5]);
 	if (conn_type < WEBSOCKET_OVER_TCP || conn_type > WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT) {
 		RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "conn_type must be %d~%d\r\n", WEBSOCKET_OVER_TCP, WEBSOCKET_OVER_TLS_VERIFY_SERVER_AND_CLIENT_CERT);
 		error_no = 1;
@@ -546,19 +549,19 @@ void at_wsopen(void *arg)
 #endif
 
 		if (conn_type > WEBSOCKET_OVER_TLS) {
-			if (!(argv[5] != NULL && (strlen(argv[5]) > 0))) {
+			if (!(argv[6] != NULL && (strlen(argv[6]) > 0))) {
 				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "certificate_index is empty!\r\n");
 				error_no = 1;
 				goto end;
 			}
-			cert_index = atoi(argv[5]);
+			cert_index = atoi(argv[6]);
 		}
 
 		memcpy(url, "wss://", strlen("wss://"));
 		memcpy(url + strlen("wss://"), host, strlen(host));
 	}
 
-	wsclient = create_wsclient(url, 0, path, NULL, ws_config[link_id].buffer_size, ws_config[link_id].max_queue_size);
+	wsclient = create_wsclient(url, port, path, NULL, ws_config[link_id].buffer_size, ws_config[link_id].max_queue_size);
 	if (wsclient != NULL) {
 		if (ws_config[link_id].protocol != NULL) {
 			ws_handshake_header_set_protocol(wsclient, ws_config[link_id].protocol, strlen(ws_config[link_id].protocol));
@@ -796,7 +799,7 @@ end:
 void at_wssend_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSSEND=<link_id>,<length>[,<use_mask>,<opcode>],<data>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSSEND=<link_id>,<length>[,<use_mask>][,<opcode>],<data>\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>:\tlength of sending data\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<use_mask>:\twhether to use mask, default is 1(use)\r\n");
@@ -879,7 +882,7 @@ end:
 void at_wssendraw_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSSENDRAW=<link_id>,<length>[,<use_mask>,<opcode>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSSENDRAW=<link_id>,<length>[,<use_mask>][,<opcode>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>:\tlength of sending data\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<use_mask>:\twhether to use mask, default is 1(use)\r\n");

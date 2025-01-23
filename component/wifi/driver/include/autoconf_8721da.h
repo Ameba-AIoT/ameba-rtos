@@ -121,6 +121,14 @@
 //#define CONFIG_SPEAKER_ENCRYPT
 
 //#define CONFIG_AUDIO_TSF
+
+/*************************** Config for Gen TxPower Tool *******************************/
+/** VERSION 0: only support extending one EXT PWR_LIMIT table
+  * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration
+  */
+#define GEN_TXPWR_TOOL_VERSION 1
+/*************************** Config for Gen TxPower Tool End **************************/
+
 /*************************** Config for MP_MODE *******************************/
 #ifdef CONFIG_MP_INCLUDED
 #undef RX_SHORTCUT

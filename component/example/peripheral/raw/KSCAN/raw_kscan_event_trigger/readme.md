@@ -1,0 +1,38 @@
+# Example Description
+
+This example describes how to use key-Scan event trigger mode.
+
+This example does not support the loguart command response.
+
+# HW Configuration
+
+Support up to 8*8 keyboard, and this example hardware connection is as follows:
+
+| Row   | Pin   | Col   | Pin   |
+| ----- | ----- | ----- | ----- |
+| Row 1 | PA 25 | Col 1 | PA 23 |
+| Row 2 | PA 22 | Col 2 | PA 21 |
+| Row 3 | PA 26 | Col 3 | PA 19 |
+| Row 4 | PA 20 | Col 4 | PB 6  |
+| Row 5 | PB 9  | Col 5 | PA 30 |
+| Row 6 | PB 8  | Col 6 | PB 1  |
+| Row 7 | PA 24 | Col 7 | PB 2  |
+| Row 8 | PB 7  | Col 8 | PB 3  |
+
+# SW configuration
+
+Run cmd: `./build.py -a raw_kscan_event_trigger` in directory {sdk_path}/amebaXXX_gcc_project.
+
+# Expect result
+
+- key press, key release will generate interrupt, one press or release trigger interrupt once.
+- Supports up to 6 keys to press at the same time
+
+# Note
+
+Since the PA 30 and PA 31 pins are used for SWD, they need to be turned off before use, and can be turned off using API  `void Pinmux_Swdoff(void)`.
+
+# Supported IC
+
+- AmebaDplus
+

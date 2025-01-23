@@ -56,13 +56,13 @@ static void init_retarget_locks(void)
 // void __malloc_lock(struct _reent *r)
 // {
 // 	(void)r;
-// 	rtos_critical_enter();
+// 	rtos_critical_enter(RTOS_CRITICAL_SOC);
 // }
 
 // void __malloc_unlock(struct _reent *r)
 // {
 // 	(void)r;
-// 	rtos_critical_exit();
+// 	rtos_critical_exit(RTOS_CRITICAL_SOC);
 // }
 
 void __retarget_lock_init(_LOCK_T *lock_ptr)

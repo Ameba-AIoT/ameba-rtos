@@ -942,7 +942,7 @@ CmdAGGCmd(
 #endif
 #endif
 
-#ifdef CONFIG_AMEBAGREEN2
+#if (defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2))
 #ifdef CONFIG_ARM_CORE_CM4_KM4NS
 u32
 CmdAGGCmd(
@@ -1165,7 +1165,8 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 #if (defined(CONFIG_AMEBASMART) && defined(CONFIG_ARM_CORE_CM0)) || \
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_RSICV_CORE_KR4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM0)) || \
-	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4NS))
+	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4NS)) || \
+	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4NS))
 	{
 		(const u8 *)"AGG",	0, CmdAGGCmd,	(const u8 *)"\t@AGGCmd \n"
 		"\t\t enable and disable loguart agg function\n"

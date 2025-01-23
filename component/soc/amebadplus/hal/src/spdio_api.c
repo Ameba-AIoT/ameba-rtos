@@ -109,6 +109,22 @@ PHAL_SPDIO_ADAPTER pgSPDIODev = NULL;
  * @}
  */
 
+/* group: MBED_SPDIO_Exported_Types */
+/* Since all the members in the group are static which will not be extracted to the doxygen doc,
+  no @defgroup comment is added to avoid there is nothing displayed under the group. */
+
+/* Group3 */
+static const u8 SDIO_DEV_PAD[6] = {
+	_PB_9,  // CLK
+	_PB_8,  // CMD
+	_PB_7,  // D3
+	_PB_6,  // D2
+	_PB_14, // D1
+	_PB_13  // D0
+};
+
+/* end of group */
+
 /** @defgroup MBED_SPDIO_Exported_Functions MBED_SPDIO Exported Functions
  * @{
  */
@@ -507,20 +523,16 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 
 static void SPDIO_Board_Init(void)
 {
+	u8 idx;
+
 	/* Pinmux function and Pad control */
 	/* Group3 */
-	PAD_PullCtrl(_PB_6, GPIO_PuPd_UP);	// D2
-	PAD_PullCtrl(_PB_7, GPIO_PuPd_UP);	// D3
-	PAD_PullCtrl(_PB_8, GPIO_PuPd_UP);	// cmd
-	PAD_PullCtrl(_PB_9, GPIO_PuPd_UP);	// clk
-	PAD_PullCtrl(_PB_13, GPIO_PuPd_UP); // D0
-	PAD_PullCtrl(_PB_14, GPIO_PuPd_UP); // D1
-	Pinmux_Config(_PB_6, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_7, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_8, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_9, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_13, PINMUX_FUNCTION_SDIO);
-	Pinmux_Config(_PB_14, PINMUX_FUNCTION_SDIO);
+	for (idx = 0; idx < 6; idx++) {
+		PAD_PullCtrl(SDIO_DEV_PAD[idx], GPIO_PuPd_UP);
+		Pinmux_Config(SDIO_DEV_PAD[idx], PINMUX_FUNCTION_SDIO);
+		RTK_LOGI(TAG, "SDIO_DEV: P%c%d\n", 'A' + PORT_NUM(SDIO_DEV_PAD[idx]),
+				 PIN_NUM(SDIO_DEV_PAD[idx]));
+	}
 
 	/* SDIO function enable and clock enable*/
 	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, ENABLE);

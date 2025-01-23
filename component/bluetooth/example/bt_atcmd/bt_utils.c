@@ -10,6 +10,7 @@
 #include <atcmd_service.h>
 #include <rtk_bt_common.h>
 #include <bt_utils.h>
+#include <rtk_bt_def.h>
 
 
 static uint8_t ctoi(char c)
@@ -163,6 +164,55 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len)
 	return TRUE;
 }
 
+uint16_t bt_at_rtk_err_to_at_err(uint16_t rtk_err)
+{
+	uint16_t at_sync_err;
+	switch (rtk_err) {
+	case RTK_BT_OK:
+		at_sync_err = BT_AT_OK;
+		break;
+	case RTK_BT_FAIL:
+		at_sync_err = BT_AT_FAIL;
+		break;
+	case RTK_BT_ERR_NOT_READY:
+		at_sync_err = BT_AT_ERR_NOT_READY;
+		break;
+	case RTK_BT_ERR_NO_MEMORY:
+		at_sync_err = BT_AT_ERR_NO_MEMORY;
+		break;
+	case RTK_BT_ERR_OS_OPERATION:
+		at_sync_err = BT_AT_ERR_OS_OPERATION;
+		break;
+	case RTK_BT_ERR_PARAM_INVALID:
+		at_sync_err = BT_AT_ERR_PARAM_INVALID;
+		break;
+	case RTK_BT_ERR_ADV_LENGTH_INVALID:
+		at_sync_err = BT_AT_ERR_ADV_LENGTH_INVALID;
+		break;
+	case RTK_BT_ERR_NO_CONNECTION:
+		at_sync_err = BT_AT_ERR_NO_CONNECTION;
+		break;
+	case RTK_BT_ERR_IRK_NOT_FOUND:
+		at_sync_err = BT_AT_ERR_IRK_NOT_FOUND;
+		break;
+	case RTK_BT_ERR_NO_BOND:
+		at_sync_err = BT_AT_ERR_NO_BOND;
+		break;
+	case RTK_BT_ERR_LOWER_STACK_API:
+	case RTK_BT_ERR_LOWER_STACK_CB:
+		at_sync_err = BT_AT_ERR_LOWER_STACK;
+		break;
+	case RTK_BT_ERR_CREATE_CONN_TIMEOUT:
+		at_sync_err = BT_AT_ERR_CREATE_CONN_TIMEOUT;
+		break;
+	default:
+		at_sync_err = BT_AT_FAIL;
+		break;
+	}
+
+	return at_sync_err;
+}
+
 #if (defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL)
 
 void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str)
@@ -194,14 +244,14 @@ void bt_at_iouart_dump(uint8_t unit, const char *str, void *buf, uint16_t len)
 		return;
 	}
 
-	at_printf("%s", str);
+	at_printf("%s%s", str, ",");
 	for (i = 0; i < len; i++) {
 		if (unit == 4) {
-			at_printf(",%08x", LE_TO_U32((uint8_t *)buf + i * 4)); /* *(buf + i) may crash at AmebaLite when (buf + i) isn't aligned with 4.*/
+			at_printf("%08x", LE_TO_U32((uint8_t *)buf + i * 4)); /* *(buf + i) may crash at AmebaLite when (buf + i) isn't aligned with 4.*/
 		} else if (unit == 2) {
-			at_printf(",%04x", LE_TO_U16((uint8_t *)buf + i * 2));
+			at_printf("%04x", LE_TO_U16((uint8_t *)buf + i * 2));
 		} else {
-			at_printf(",%02x", *((uint8_t *)buf + i));
+			at_printf("%02x", *((uint8_t *)buf + i));
 		}
 	}
 	at_printf("\r\n");

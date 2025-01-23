@@ -682,11 +682,11 @@ static void ameba_audio_stream_rx_start_in_noirq_mode(Stream *stream)
 		HAL_AUDIO_INFO("gdma init: index:%d, chNum:%d", sp_rxgdma_initstruct->GDMA_Index,
 					   sp_rxgdma_initstruct->GDMA_ChNum);
 
-		rtos_critical_enter();
+		rtos_critical_enter(RTOS_CRITICAL_AUDIO);
 		AUDIO_SP_RXStart(cstream->stream.sport_dev_num, ENABLE);
 		cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 		HAL_AUDIO_INFO("noirq start at:%lld", cstream->stream.trigger_tstamp);
-		rtos_critical_exit();
+		rtos_critical_exit(RTOS_CRITICAL_AUDIO);
 
 	}
 }
@@ -716,13 +716,13 @@ static void ameba_audio_stream_rx_start_in_irq_mode(Stream *stream)
 			cstream->stream.extra_gdma_cnt++;
 		}
 
-		rtos_critical_enter();
+		rtos_critical_enter(RTOS_CRITICAL_AUDIO);
 		if (!cstream->stream.need_sync_start) {
 			AUDIO_SP_RXStart(cstream->stream.sport_dev_num, ENABLE);
 			cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 			HAL_AUDIO_INFO("no sync start at:%lld", cstream->stream.trigger_tstamp);
 		}
-		rtos_critical_exit();
+		rtos_critical_exit(RTOS_CRITICAL_AUDIO);
 
 		cstream->stream.start_gdma = true;
 	}
@@ -765,22 +765,22 @@ int64_t ameba_audio_stream_rx_get_trigger_time(Stream *stream)
 HAL_AUDIO_WEAK void ameba_audio_stream_rx_sync_start(Stream *stream, uint32_t sport_index, uint32_t sport_index_extra)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
-	rtos_critical_enter();
+	rtos_critical_enter(RTOS_CRITICAL_AUDIO);
 	AUDIO_SP_RXStart(sport_index, ENABLE);
 	AUDIO_SP_RXStart(sport_index_extra, ENABLE);
 	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
-	rtos_critical_exit();
+	rtos_critical_exit(RTOS_CRITICAL_AUDIO);
 	HAL_AUDIO_INFO("rx start at:%lld", cstream->stream.trigger_tstamp);
 }
 
 HAL_AUDIO_WEAK void ameba_audio_stream_rx_sync_stop(Stream *stream, uint32_t sport_index, uint32_t sport_index_extra)
 {
 	CaptureStream *cstream = (CaptureStream *)stream;
-	rtos_critical_enter();
+	rtos_critical_enter(RTOS_CRITICAL_AUDIO);
 	AUDIO_SP_RXStart(sport_index, DISABLE);
 	AUDIO_SP_RXStart(sport_index_extra, DISABLE);
 	cstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
-	rtos_critical_exit();
+	rtos_critical_exit(RTOS_CRITICAL_AUDIO);
 	HAL_AUDIO_INFO("rx stop at:%lld", cstream->stream.trigger_tstamp);
 }
 

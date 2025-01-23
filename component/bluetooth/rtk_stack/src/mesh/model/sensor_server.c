@@ -260,7 +260,7 @@ static mesh_msg_send_cause_t sensor_status(const mesh_model_info_p pmodel_info, 
                                            uint32_t delay_time)
 {
     sensor_status_t *pmsg;
-    uint16_t msg_len = sizeof(sensor_status_t);;
+    uint16_t msg_len = sizeof(sensor_status_t);
     for (uint16_t i = 0; i < num_sensor_data; ++i)
     {
         if ((sensor_data[i].raw_data_len <= 16) &&

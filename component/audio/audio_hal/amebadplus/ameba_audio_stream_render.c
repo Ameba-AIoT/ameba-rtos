@@ -538,13 +538,13 @@ HAL_AUDIO_WEAK void ameba_audio_stream_tx_start(Stream *stream, int32_t state)
 		rstream->stream.trigger_tstamp = rtos_time_get_current_system_time_ns();
 		rstream->stream.state = state;
 	} else {
-		rtos_critical_enter();
+		rtos_critical_enter(RTOS_CRITICAL_AUDIO);
 		if (rstream->stream.state == STATE_XRUN_NOTIFIED || rstream->stream.state == STATE_XRUN  || rstream->stream.state == STATE_STANDBY) {
 			AUDIO_SP_TXStart(rstream->stream.sport_dev_num, ENABLE);
 			rstream->stream.trigger_tstamp =  rtos_time_get_current_system_time_ns();
 		}
 		rstream->stream.state = state;
-		rtos_critical_exit();
+		rtos_critical_exit(RTOS_CRITICAL_AUDIO);
 	}
 
 	rstream->stream.total_counter = 0;

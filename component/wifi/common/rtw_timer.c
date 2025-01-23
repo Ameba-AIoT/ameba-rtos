@@ -42,14 +42,14 @@ void deinit_timer_wrapper(void)
 		RTK_LOGI(TAG, "del timer entry %d\n", timer_used_num);
 	}
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	while (rtw_end_of_queue_search(&timer_table, get_next(&timer_table)) == FALSE) {
 		plist = get_next(&timer_table);
 		rtw_list_delete(plist);
 	}
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 }
 
 void timer_wrapper(rtos_timer_t timer_hdl)
@@ -57,7 +57,7 @@ void timer_wrapper(rtos_timer_t timer_hdl)
 	_list *plist;
 	struct timer_list *timer_entry = NULL;
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	plist = get_next(&timer_table);
 	while ((rtw_end_of_queue_search(&timer_table, plist)) == FALSE) {
@@ -68,7 +68,7 @@ void timer_wrapper(rtos_timer_t timer_hdl)
 		plist = get_next(plist);
 	}
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	if (plist == &timer_table) {
 		RTK_LOGE(TAG, "Fail to find the timer_entry in timer table.\n");
@@ -96,9 +96,9 @@ void init_timer(struct timer_list *timer, const char *name)
 		if (timer->timer_hdl == NULL) {
 			RTK_LOGE(TAG, "Fail to init timer.\n");
 		} else {
-			rtos_critical_enter();
+			rtos_critical_enter_old();
 			rtw_list_insert_head(&timer->list, &timer_table);
-			rtos_critical_exit();
+			rtos_critical_exit_old();
 
 			timer_used_num ++;
 			if (timer_used_num > max_timer_used_num) {
@@ -134,7 +134,7 @@ void  cancel_timer_ex(struct timer_list *timer)
 		return;
 	}
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	plist = get_next(&timer_table);
 	while ((rtw_end_of_queue_search(&timer_table, plist)) == FALSE) {
@@ -145,7 +145,7 @@ void  cancel_timer_ex(struct timer_list *timer)
 		plist = get_next(plist);
 	}
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	if (plist == &timer_table) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CancelTimer Fail(%x)\n", (unsigned int)timer->timer_hdl);
@@ -163,7 +163,7 @@ void  del_timer_sync(struct timer_list *timer)
 		return;
 	}
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	plist = get_next(&timer_table);
 	while ((rtw_end_of_queue_search(&timer_table, plist)) == FALSE) {
@@ -175,7 +175,7 @@ void  del_timer_sync(struct timer_list *timer)
 		plist = get_next(plist);
 	}
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	if (plist == &timer_table) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "DelTimer Fail\n");

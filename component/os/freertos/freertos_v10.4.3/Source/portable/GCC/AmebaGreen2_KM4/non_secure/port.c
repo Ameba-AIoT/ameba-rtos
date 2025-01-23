@@ -1064,7 +1064,6 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	SOCPS_HWSleepFilter(ENABLE);
 	__disable_irq();
 
-	Systick_Cmd(DISABLE);
 	system_can_yield = 0;
 
 	eSleepStatus = eTaskConfirmSleepModeStatus();
@@ -1083,7 +1082,6 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	} else {
 
 		SOCPS_HWSleepFilter(DISABLE);
-		Systick_Cmd(ENABLE);
 		__DSB();
 		__WFI();
 		__NOP();	 //fix cpu fused instruction issue
@@ -1091,8 +1089,6 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	}
 
 	system_can_yield = 1;
-
-	Systick_Cmd(ENABLE);
 
 	/* Re-enable interrupts - see comments above the cpsid instruction()
 	above. */
