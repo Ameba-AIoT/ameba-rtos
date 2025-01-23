@@ -1010,6 +1010,10 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	if (dev_cred[select_index].ssid[0] != 0 && dev_cred[select_index].ssid_len <= 32) {
 		wps_config_wifi_setting(&wifi, &dev_cred[select_index]);
 		wifi_set_wps_phase(DISABLE);
+#if CONFIG_AUTO_RECONNECT
+		// reset autoreconnect status; Otherwise, if status == enable, the connection info is not stored for reconnect
+		wifi_config_autoreconnect(auto_reconnect_status);
+#endif
 		ret = wps_connect_to_AP_by_certificate(&wifi);
 		os_free(dev_cred, 0);
 		goto exit1;
