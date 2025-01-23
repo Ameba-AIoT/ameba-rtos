@@ -21,5 +21,33 @@ void wifi_hal_radar_en_by_user(u8 *radar_en_by_user)
 {
 	*radar_en_by_user = 0;
 }
+
+void wifi_hal_radar_deinit(void *a)
+{
+	UNUSED(a);
+}
+
+s32 wifi_hal_radar_cfg(void *a)
+{
+	UNUSED(a);
+	return -1;
+}
+
+s32 wifi_hal_radar_en(void *a)
+{
+	UNUSED(a);
+	return -1;
+}
+
+void wifi_hal_radar_interrupt_handle(void)
+{
+
+}
+
+void wifi_hal_radar_rpt_hdl(u8 *buf, void *a)
+{
+	UNUSED(buf);
+	UNUSED(a);
+}
 #endif /* CONFIG_RADAR */
 

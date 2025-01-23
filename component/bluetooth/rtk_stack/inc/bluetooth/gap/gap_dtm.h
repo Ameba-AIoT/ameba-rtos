@@ -294,7 +294,7 @@ T_GAP_CAUSE le_dtm_enhanced_receiver_test(uint8_t rx_chann, uint8_t phy, uint8_t
         static uint8_t phy = 1;
         tx_chann = (command & 0x3f00) >> 8;
         data_len = up_2_bits << 6 | (command & 0xfc) >> 2;
-        pkt_pl = command & 0x03;;
+        pkt_pl = command & 0x03;
 #if F_BT_LE_5_0_SUPPORT
         if (le_dtm_enhanced_transmitter_test(tx_chann, data_len, pkt_pl, phy) != GAP_CAUSE_SUCCESS)
         {

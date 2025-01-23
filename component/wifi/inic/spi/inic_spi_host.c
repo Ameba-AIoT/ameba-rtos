@@ -659,7 +659,7 @@ retry:
 
 	set_host_rdy_pin(HOST_BUSY);
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	SSI_SetDmaEnable(INIC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
 
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
@@ -667,7 +667,7 @@ retry:
 
 	spi_host_priv.txbuf_info = pbuf;
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	rtos_mutex_give(spi_host_priv.dev_lock);
 }

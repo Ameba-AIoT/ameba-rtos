@@ -18,6 +18,19 @@
 #endif
 
 /**
+ * Define CA32 SMP spin lock id
+*/
+typedef enum {
+	RTOS_CRITICAL_DEFAULT = 0,
+	RTOS_CRITICAL_SOC,
+	RTOS_CRITICAL_AUDIO,
+	RTOS_CRITICAL_WIFI,
+	RTOS_CRITICAL_BT,
+	RTOS_CRITICAL_USB,
+	RTOS_CRITICAL_MAX
+} RTOS_CRITICAL_LIST;
+
+/**
  * @brief  Check if in task interrupt
  * @retval 1: interrupt; 0: context
  */
@@ -26,12 +39,14 @@ int rtos_critical_is_in_interrupt(void);
 /**
  * @brief  Internally handles interrupt status (PRIMASK/CPSR) save
  */
-void rtos_critical_enter(void);
+void rtos_critical_enter(uint32_t component_id);
+void rtos_critical_enter_old(void); // replace this API with rtos_critical_enter. This API will be removed
 
 /**
  * @brief  Internally handles interrupt status(PRIMASK/CPSR) restore
  */
-void rtos_critical_exit(void);
+void rtos_critical_exit(uint32_t component_id);
+void rtos_critical_exit_old(void);  // replace this API with rtos_critical_exit. This API will be removed
 
 /**
  * @brief  get task enter critical state

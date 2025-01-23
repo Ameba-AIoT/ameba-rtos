@@ -135,3 +135,6 @@ ChangeLog:
                   (2) Enable log timestamp as default
                   (3) Remove useless runtime settings
 20241203 v2.8.2   Fix flash full erase issue
+20250113 v2.8.3   (1) Add support to verify fw images
+                  (2) Fix smart/lite download address error
+                  (3) Fix ram download checksum error

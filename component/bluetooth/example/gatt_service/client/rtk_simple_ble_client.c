@@ -519,7 +519,7 @@ static void simple_ble_client_cccd_enable_hdl(void *data)
 {
 	rtk_bt_gattc_cccd_update_ind_t *cccd_update =
 		(rtk_bt_gattc_cccd_update_ind_t *)data;
-	rtk_bt_status_t status = cccd_update->status;;
+	rtk_bt_status_t status = cccd_update->status;
 	uint16_t conn_handle = cccd_update->conn_handle;
 	uint8_t conn_id;
 	simple_ble_client_db_t *conn_simple_ble_db;

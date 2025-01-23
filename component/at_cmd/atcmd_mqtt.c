@@ -724,7 +724,7 @@ void at_mqttsub(void *arg)
 		}
 	}
 	if (topic_index == MAX_MESSAGE_HANDLERS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Can not match\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Topic index overflow, already subcribed %d topics\r\n", MAX_MESSAGE_HANDLERS);
 		resultNo = MQTT_SUBSCRIBE_ERROR;
 		goto end;
 	}
@@ -958,7 +958,7 @@ void at_mqttpub(void *arg)
 	/* QoS. */
 	qos = atoi(argv[5]);
 	if (qos < QOS0 || qos > QOS2) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid QoS\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid QoS\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -966,7 +966,7 @@ void at_mqttpub(void *arg)
 	/* retain. */
 	retain = atoi(argv[6]);
 	if (retain != 0 && retain != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid retain\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid retain\r\n");
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
@@ -986,7 +986,7 @@ void at_mqttpub(void *arg)
 
 	/* send publish. */
 	if (1 != mqttCb->client.isconnected) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Invalid status (%d)\r\n", mqttCb->client.isconnected);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Invalid status (%d)\r\n", mqttCb->client.isconnected);
 		resultNo = MQTT_NOT_CONNECTED_ERROR;
 		goto end;
 	}
@@ -999,7 +999,7 @@ void at_mqttpub(void *arg)
 						  };
 	res = MQTTPublish(&mqttCb->client, mqttCb->pubData.topic, &mqttMsg);
 	if (0 != res) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUB] Publish ERROR\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTPUB] Publish ERROR\r\n");
 		resultNo = MQTT_PUBLISH_ERROR;
 		goto end;
 	}

@@ -20,7 +20,7 @@ Ameba audio project can achieve:
 ## Supported IC <a name = "supported-ic"></a>
 1. AmebaSmart
 2. AmebaLite
-3. AmebaDplus(only support passthrough architecture)
+3. AmebaDplus(for mixer architecture, please set psram for img2 in menuconfig)
 
 ## Configurations <a name = "configurations"></a>
 

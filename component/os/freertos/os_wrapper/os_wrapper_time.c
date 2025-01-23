@@ -68,7 +68,7 @@ uint64_t rtos_time_get_current_system_time_us(void)
 uint64_t rtos_time_get_current_system_time_ns(void)
 {
 	uint64_t time_ns = 0;
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	uint32_t time_ms = rtos_time_get_current_system_time_ms();
 #if defined CONFIG_ARM_CORE_CM4 || defined CONFIG_ARM_CORE_CM0
 	uint64_t timer_cnt_pass = portNVIC_SYSTICK_LOAD_REG - portNVIC_SYSTICK_CURRENT_VALUE_REG;
@@ -100,6 +100,6 @@ uint64_t rtos_time_get_current_system_time_ns(void)
 #else
 #error "Undefined core"
 #endif
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 	return time_ns;
 }

@@ -150,8 +150,7 @@ enum _REGULATION_TXPWR_LMT {
 	TXPWR_LMT_EXT = 15,     /* Customer Customization */
 
 	/* ===== Add new power limit above this line. ===== */
-	TXPWR_LMT_MAX           /* Not support */
-
+	TXPWR_LMT_CONST_MAX     /* unchanging part define max */
 };
 
 

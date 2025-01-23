@@ -907,12 +907,12 @@ int atcmd_bt_transfer_module(int argc, char *argv[])
 		uint8_t op = (uint8_t)str_to_int(argv[0]);
 		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 			BT_LOGE("Error: wrong parameter (%d) for transfer module example!\r\n", op);
-			return -1;
+			return BT_AT_ERR_PARAM_INVALID;
 		}
 
 		if (ble_transfer_module_main(op)) {
 			BT_LOGE("Error: transfer module example %s failed!\r\n", (op == 1) ? "enable" : "disable");
-			return -1;
+			return BT_AT_FAIL;
 		}
 
 		BT_LOGA("transfer module example %s OK!\r\n", (op == 1) ? "enable" : "disable");

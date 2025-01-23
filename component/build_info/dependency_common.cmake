@@ -70,33 +70,6 @@ set(_tmp_dep_${d_MCU_PROJECT_NAME}_audio_wt_whole_libs) # link with -Wl,--whole-
 set(_tmp_dep_${d_MCU_PROJECT_NAME}_audio_wo_whole_libs) # link without -Wl,--whole-archive
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
-        ameba_list_append_if(CONFIG_AUDIO_EN _tmp_dep_${d_MCU_PROJECT_NAME}_audio_wt_whole_libs
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_ac3.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_amr.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_haac.a
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_hls.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_hmp3.a
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_m4a.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_m4a_self.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_mp3.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_flac.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_ekho.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_gsm610.a
-
-            #for cyberon tts
-            # ${d_SDK_LIB_APPLICATION_DIR}/LIBtts2.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_opusfile.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_opusenc.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_libogg.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_opus.a
-
-            # MMF LIBRARY
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_rtsp.a
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_g711.a
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_haac.a
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_faac.a
-            ${d_SDK_LIB_APPLICATION_DIR}/lib_cmsis_dsp.a
-        )
         ameba_list_append_if(CONFIG_SPEEX_LIB _tmp_dep_${d_MCU_PROJECT_NAME}_audio_wo_whole_libs
             ${d_SDK_LIB_APPLICATION_DIR}/lib_speexdsp.a
         )
@@ -154,6 +127,11 @@ endif()
 
 if (CONFIG_AUDIO_RPC_AFE OR CONFIG_AUDIO_LOCAL_AFE OR CONFIG_AUDIO_FWK)
     ameba_list_append(_tmp_dep_${d_MCU_PROJECT_NAME}_audio_wo_whole_libs ${d_SDK_LIB_APPLICATION_DIR}/lib_base.a)
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+        if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
+            ameba_list_append(_tmp_dep_${d_MCU_PROJECT_NAME}_audio_wo_whole_libs ${d_SDK_LIB_APPLICATION_DIR}/lib_cmsis_dsp.a)
+        endif()
+    endif()
 endif()
 list(REMOVE_DUPLICATES _tmp_dep_${d_MCU_PROJECT_NAME}_audio_wt_whole_libs)
 list(REMOVE_DUPLICATES _tmp_dep_${d_MCU_PROJECT_NAME}_audio_wo_whole_libs)

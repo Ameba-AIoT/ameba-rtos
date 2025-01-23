@@ -27,6 +27,7 @@ set(
 	${DIR}/bt_atcmd/atcmd_bt_mesh_directed_forwarding.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_subnet_bridge_model.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_private_beacon_model.c
+	${DIR}/bt_atcmd/atcmd_bt_cmd_sync.c
 )
 
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

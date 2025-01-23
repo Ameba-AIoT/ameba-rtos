@@ -72,6 +72,24 @@ struct task_struct wifi_autoreconnect_task = {0};
  ******************************************************/
 #if CONFIG_WLAN
 //----------------------------------------------------------------------------//
+#ifdef CONFIG_WIFI_HOST_BRIDGE
+int wifi_bridge_get_ip(uint8_t *ip)
+{
+	memset(ip, 0, 4);
+	inic_api_host_message_send(INIC_API_BRIDGE_GET_IP, NULL, 0, (uint8_t *)ip, 4);
+	return RTW_SUCCESS;
+
+}
+
+int wifi_bridge_dhcp(void)
+{
+	int ret = RTW_SUCCESS;
+	inic_api_host_message_send(INIC_API_BRIDGE_DHCP, NULL, 0, (uint8_t *)&ret, sizeof(int));
+	return ret;
+
+}
+#endif
+
 int wifi_is_connected_to_ap(void)
 {
 	int ret = 0;

@@ -115,8 +115,8 @@ static void wifi_set_platform_rom_os_func(void)
 	p_wifi_rom2flash->rtos_sema_take = rtos_sema_take;
 
 	/* critical */
-	p_wifi_rom2flash->rtw_rtos_critical_enter_t = rtos_critical_enter;
-	p_wifi_rom2flash->rtw_rtos_critical_exit_t = rtos_critical_exit;
+	p_wifi_rom2flash->rtw_rtos_critical_enter_t = rtos_critical_enter_old;
+	p_wifi_rom2flash->rtw_rtos_critical_exit_t = rtos_critical_exit_old;
 
 	/* os */
 	p_wifi_rom2flash->rtos_time_delay_ms_t = rtos_time_delay_ms;
@@ -155,6 +155,10 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 	u8 *ptr;
 	u8 no_need_indicate = 0;
 	struct rtw_event_join_fail_info_t fail_info = {0};
+#ifdef CONFIG_WIFI_HOST_BRIDGE
+	u8 ip_addr[4];
+	u32 ipaddr, netmask, gw;
+#endif
 
 	/* check if SoftAP is running */
 	if ((wifi_user_config.concurrent_enabled == FALSE) && wifi_is_running(SOFTAP_WLAN_INDEX)) {
@@ -265,6 +269,27 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 		}
 	}
 
+#ifdef CONFIG_WIFI_HOST_BRIDGE
+	if (result == RTW_SUCCESS) {
+		wifi_bridge_dhcp();
+
+		wifi_bridge_get_ip(ip_addr);
+		ipaddr = CONCAT_TO_UINT32(ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]);
+		netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+		gw = CONCAT_TO_UINT32(ip_addr[0], ip_addr[1], ip_addr[2], 1);
+		LwIP_SetIP(STA_WLAN_INDEX, ipaddr, netmask, gw);
+		LwIP_netif_set_link_up(0);
+	}
+#endif
+
+	/* ameba start dhcp in atcmd, check where start dhcp when connect success in no ameba ic */
+#if defined(TODO) && defined(CONFIG_LWIP_LAYER) && !defined(CONFIG_WIFI_HOST_BRIDGE)
+	if (result == RTW_SUCCESS) {
+		/* Start DHCPClient */
+		LwIP_DHCP(0, DHCP_START);
+	}
+#endif
+
 error:
 	if (param_buf) {
 		rtos_mem_free((u8 *)param_buf);
@@ -314,6 +339,9 @@ int wifi_on(u8 mode)
 	int ret = 1;
 	u32 wifi_mode;
 	static u32 wifi_boot = 0;
+#ifdef CONFIG_WIFI_HOST_BRIDGE
+	u8 mac[6];
+#endif
 
 	/* tell dev host linux or rtos */
 	inic_api_host_message_send(INIC_API_WIFI_SET_HOST_RTOS, NULL, 0, NULL, 0);
@@ -321,10 +349,15 @@ int wifi_on(u8 mode)
 	/* for common dev code, cfg follow np */
 	inic_api_host_message_send(INIC_API_WIFI_SET_USR_CFG, NULL, 0, (void *)(&wifi_user_config), sizeof(struct wifi_user_conf));
 
-	inic_host_init_skb();
-
 	wifi_mode = (u32)mode;
 	inic_api_host_message_send(INIC_API_WIFI_ON, (u8 *)&wifi_mode, 4, (u8 *)&ret, sizeof(ret));
+
+#ifdef CONFIG_WIFI_HOST_BRIDGE
+	ret = wifi_get_mac_address(STA_WLAN_INDEX, mac, 6);
+	LwIP_wlan_set_netif_info(STA_WLAN_INDEX, NULL, mac);
+#else
+	inic_api_host_message_send(INIC_API_WIFI_ON, (u8 *)&wifi_mode, 4, (u8 *)&ret, sizeof(ret));
+#endif
 
 	if (wifi_boot == 0) {
 		wifi_boot = 1;
@@ -338,7 +371,7 @@ int wifi_on(u8 mode)
 	}
 
 	if (ret == RTW_SUCCESS) { //wifi on success
-#ifdef CONFIG_LWIP_LAYER
+#if defined(CONFIG_LWIP_LAYER) && !defined(CONFIG_WIFI_HOST_BRIDGE)
 		if (mode == RTW_MODE_STA) {
 			LwIP_netif_set_up(0);
 		}

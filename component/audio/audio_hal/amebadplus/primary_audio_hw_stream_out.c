@@ -258,10 +258,10 @@ static int32_t PrimaryGetPresentTime(const struct AudioHwStreamOut *stream, int6
 
 	if (out->out_pcm) {
 
-		rtos_critical_enter();
+		rtos_critical_enter(RTOS_CRITICAL_AUDIO);
 		int64_t written_to_driver_frames = ameba_audio_stream_tx_get_frames_written(out->out_pcm);
 		ret = ameba_audio_stream_tx_get_time(out->out_pcm, &tmp_now_ns, &tmp_audio_ns);
-		rtos_critical_exit();
+		rtos_critical_exit(RTOS_CRITICAL_AUDIO);
 
 		int64_t out_written_to_hal_ns = (int64_t)(((double)out->written / (double)PrimaryGetStreamOutSampleRate((const struct AudioHwStream *)stream) *
 										(double)1000000000));

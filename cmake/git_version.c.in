@@ -1,3 +1,3 @@
 #include "section_config.h"
 GIT_VER_TABLE_SECTION
-const char @_lib_name@_git_rev[] = " @_lib_name@_ver_@_git_ver@_@_configuration_time@";
+const char @_lib_name@_git_rev[] = " @_lib_name@_ver";

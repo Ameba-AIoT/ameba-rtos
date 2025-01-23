@@ -704,15 +704,15 @@ void issue_MDNS_v4_rsp(int idx, u8 *TargetIP, u8 *TargetMAC, struct MDNS_RX_DATA
 
 	RTK_LOGD(TAG_WLAN_PROXY, "==> issue_MDNS_v4_rsp \n");
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	if (rtw_is_netdev_enable(idx)) {
 		wifi_if_tx_inc(idx);
 	} else {
 		RTK_LOGE(TAG_WLAN_DRV, "[%s] netif is DOWN\n", __FUNCTION__);
-		rtos_critical_exit();
+		rtos_critical_exit_old();
 		return;
 	}
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	skb = wifi_if_alloc_skb(WLAN_MAX_ETHFRM_LEN);
 	if (skb == NULL) {
@@ -925,9 +925,9 @@ void issue_MDNS_v4_rsp(int idx, u8 *TargetIP, u8 *TargetMAC, struct MDNS_RX_DATA
 	RTK_LOGD(TAG_WLAN_PROXY, "==> issue_MDNS_v4_rsp : no.%x - TotalLen = %x\n", issue_no, TotalLen);
 
 exit:
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	wifi_if_tx_dec(idx);
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 	return;
 }
 #endif /* CONFIG_OFFLOAD_MDNS_V4 */
@@ -1133,15 +1133,15 @@ void issue_MDNS_v6_rsp(int idx, u8 *TargetIP, u8 *TargetMAC, struct MDNS_RX_DATA
 
 	RTK_LOGD(TAG_WLAN_PROXY, "==> issue_MDNS_v6_rsp \n");
 
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	if (rtw_is_netdev_enable(idx)) {
 		wifi_if_tx_inc(idx);
 	} else {
 		RTK_LOGE(TAG_WLAN_DRV, "[%s] netif is DOWN\n", __FUNCTION__);
-		rtos_critical_exit();
+		rtos_critical_exit_old();
 		return;
 	}
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	skb = wifi_if_alloc_skb(WLAN_MAX_ETHFRM_LEN);
 	if (skb == NULL) {
@@ -1374,9 +1374,9 @@ void issue_MDNS_v6_rsp(int idx, u8 *TargetIP, u8 *TargetMAC, struct MDNS_RX_DATA
 	RTK_LOGD(TAG_WLAN_PROXY, "==> issue_MDNS_v6_rsp : no.%x - TotalLen = %x\n", issue_no, TotalLen);
 
 exit:
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 	wifi_if_tx_dec(idx);
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 	return;
 }
 

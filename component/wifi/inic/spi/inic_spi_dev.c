@@ -154,7 +154,7 @@ u32 inic_spi_txdma_irq_handler(void *pData)
 int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 sts)
 {
 	do {
-		rtos_critical_enter();
+		rtos_critical_enter_old();
 		if ((ops == DISABLE) && (inic_spi_priv->dev_status & sts)) {
 #ifdef SPI_DEBUG
 			u32 pin = 0;
@@ -210,7 +210,7 @@ int inic_spi_set_dev_status(struct inic_spi_priv_t *inic_spi_priv, u32 ops, u32 
 			RTIM_Reset(TIMx[INIC_RECOVER_TIM_IDX]);
 			RTIM_Cmd(TIMx[INIC_RECOVER_TIM_IDX], ENABLE);
 		}
-		rtos_critical_exit();
+		rtos_critical_exit_old();
 
 		if (inic_spi_priv->dev_status == DEV_STS_IDLE) {
 			rtos_sema_give(inic_spi_priv->spi_transfer_done_sema);
@@ -653,12 +653,12 @@ retry:
 	spi_priv.txbuf_info = pbuf;
 
 	/* protected by critical section to prevent interrupted by INTERRUPTS*/
-	rtos_critical_enter();
+	rtos_critical_enter_old();
 
 	/* RXF interrupt would occur after inic_dev_wait_dev_idle(). This case would increase time, during which Host would start SPI transfer.
 	 So double check SPI is not busy, then start TXDMA */
 	if (SSI_Busy(INIC_SPI_DEV)) {
-		rtos_critical_exit();
+		rtos_critical_exit_old();
 		goto retry;
 	}
 
@@ -670,7 +670,7 @@ retry:
 	set_dev_rxreq_pin(DEV_RX_REQ);
 	set_dev_rdy_pin(DEV_READY);
 
-	rtos_critical_exit();
+	rtos_critical_exit_old();
 
 	rtos_mutex_give(spi_priv.tx_lock);
 
