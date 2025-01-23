@@ -108,6 +108,7 @@
 #endif
 
 //#define CONFIG_DFS_TEST  // add for dfs test
+#define CONFIG_DFS // some application may use CSA although AmebaLite does not support 5G
 
 /* enable csi function */
 #define CONFIG_CSI

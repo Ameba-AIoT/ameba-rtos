@@ -546,7 +546,7 @@ define GEN_GIT_VER
 	then \
 		echo \#include \"section_config.h\" > .git_ver; \
 		echo GIT_VER_TABLE_SECTION >> .git_ver; \
-		echo const char $(1)_git_rev[] = \"$(1)_ver_`git rev-parse --short HEAD`_`date +%Y/%m/%d-%T`\"\; >> .git_ver; \
+		echo const char $(1)_git_rev[] = \"$(1)_ver\"\; >> .git_ver; \
 	else \
 		echo  > .git_ver; \
 	fi
