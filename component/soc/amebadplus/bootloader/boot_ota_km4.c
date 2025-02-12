@@ -441,8 +441,10 @@ u8 BOOT_OTA_IMG(void)
 		/* step3.3: load and check img2 if cert passed */
 		ret = BOOT_OTA_LoadIMGAll(ImgIndex);
 
-		/* step3.4: try another ver from cert if valid ver exsit */
+		/* step3.4: try another ver from cert if valid ver exist */
 		if (ret != TRUE) {
+			/* OTA1 and OTA2 share one MMU virtual address. when image header of one OTA is error, will cause another OTA fail, here invalid all D-cache to avoid corner case. */
+			DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 			ImgIndex = (ImgIndex + 1) % 2;
 			continue;
 		} else {
