@@ -1373,7 +1373,6 @@ function(ameba_target_add name)
         p_STRIP_DEBUG                   # If set, target will be processed by [objcopy -g]
         p_ENABLE_DETERMINISTIC_ARCHIVES # If set, target will be processed by [objcopy -D]
         p_ADD_EMPTY_C_FILE              # If set, an empty c file is added to the target sources
-        p_ADD_BUILD_INFO                # Set target compile with build info: git version, time, etc..
         p_DROP_IF_NO_SOURCES            # If set, target will not be added if no sources found
     )
     set(oneValueArgs

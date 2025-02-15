@@ -8,7 +8,11 @@
 #ifndef __RTK_BT_TMAP_H__
 #define __RTK_BT_TMAP_H__
 
-#include <app_bt_le_audio_common.h>
+#include <rtk_bt_def.h>
+#include <basic_types.h>
+#include <bt_api_config.h>
+#include <rtk_bt_le_gap.h>
+#include <rtk_bt_le_audio_def.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -17,6 +21,20 @@ extern "C"
 
 #if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
 /* ---------------------------------- Date Types ------------------------------------- */
+/**
+ * @typedef    rtk_bt_le_audio_tmap_role_t
+ * @brief     Bluetooth LE AUDIO TMAP Role.
+ */
+typedef enum {
+	RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN = 0,
+	RTK_BT_LE_AUDIO_TMAP_ROLE_CG = 0x01,                    /**< TMAP Call Gateway. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_CT = 0x02,                    /**< TMAP Call Terminal. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_UMS = 0x04,                   /**< TMAP Unicast Media Sender. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_UMR = 0x08,                   /**< TMAP Unicast Media Receiver. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_BMS = 0x10,                   /**< TMAP Broadcast Media Sender. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_BMR = 0x20,                   /**< TMAP Broadcast Media Receiver. */
+} rtk_bt_le_audio_tmap_role_t;
+
 /**
  * @typedef   rtk_bt_le_audio_tmas_client_discovery_done_ind_t
  * @brief     Bluetooth LE audio TMAS client discovery done indication
@@ -53,26 +71,6 @@ typedef struct {
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
-
-/**
- * @brief     config tmap broadcast media receiver channel or neighbor device.
- * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
- * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t sound_channel, uint8_t *p_neighbor_addr);
-
-/**
- * @brief     config tmap unicast media receiver channel or neighbor device
- * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
- * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_tmap_unicast_media_receiver_cfg(uint8_t channel, uint8_t *p_neighbor_addr);
 #endif
 
 /**

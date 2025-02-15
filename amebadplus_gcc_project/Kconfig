@@ -93,6 +93,19 @@ menu "CONFIG AT CMD"
     endif
 endmenu
 
+menu "CONFIG RTK Assert Level"
+    choice
+        prompt "RTK Assert Level"
+        default ASSERTION_ENABLE
+        config ASSERTION_ENABLE
+            bool "Assert Enable"
+        config ASSERTION_SILENT
+            bool "Assert Silent"
+        config ASSERTION_DISABLE
+            bool "Assert Disable"
+    endchoice
+endmenu
+
 menu "CONFIG VFS"
     config VFS_LITTLEFS_INCLUDED
         bool "Enable VFS LITTLEFS"
@@ -135,83 +148,81 @@ endmenu
 
 comment "----------Connectivity config----------"
 menu "CONFIG INIC INTF"
-	choice
-		prompt "INIC MODE"
-		default WIFI_INIC_IPC_MENU
-			config WIFI_INIC_IPC_MENU
-				bool "INIC_IPC"
+    choice
+        prompt "INIC MODE"
+        default WIFI_INIC_IPC_MENU
+            config WIFI_INIC_IPC_MENU
+                bool "INIC_IPC"
                 select CORE_AS_NP_FOR_KM0
                 select CORE_AS_AP_FOR_KM4
             config FULLMAC_MENU
                 bool "FULLMAC"
-			config FULLMAC_BRIDGE
-				bool "FULLMAC_BRIDGE"
+                select WIFI_HOST_CONTROL
+            config FULLMAC_BRIDGEB
+                bool "FULLMAC_BRIDGEB"
                 select CORE_AS_AP_FOR_KM4
-			config SPI_FULLMAC_HOST
-				bool "SPI_FULLMAC_HOST"
+                select WIFI_HOST_CONTROL
+            config FULLMAC_BRIDGE
+                bool "FULLMAC_BRIDGE"
                 select CORE_AS_AP_FOR_KM4
-				select FULLMAC_HOST
+                select WIFI_HOST_CONTROL
+            config FULLMAC_HOST
+                bool "FULLMAC_HOST"
+                select CORE_AS_AP_FOR_KM4
 
             # config WIFI_SINGLE_CORE_MENU
                 # bool "SINGLE CORE"
                 # select CORE_AS_AP_FOR_KM4
-	endchoice
+    endchoice
 
-    if FULLMAC_MENU
+    if !WIFI_INIC_IPC_MENU
         choice
-            prompt "FULLMAC INTERFACE"
-            config SPI_FULLMAC
-                bool "SPI_FULLMAC"
-            config USB_FULLMAC
-                bool "USB_FULLMAC"
-            config SDIO_FULLMAC
-                bool "SDIO_FULLMAC"
+           prompt "HW INTERFACE"
+           config INIC_INTF_SDIO
+                bool "INIC_INTF_SDIO"
+            config INIC_INTF_USB
+                bool "INIC_INTF_USB"
+            config INIC_INTF_SPI
+                bool "INIC_INTF_SPI"
         endchoice
-
-		#WPA Lite in dev for FULLMAC host without std wpa_supplicant
-		choice
-			prompt "WPA Lite Location"
-			default WPA_LOCATION_HOST
-			config WPA_LOCATION_HOST
-				bool "HOST"
-			config WPA_LOCATION_DEV
-				bool "DEV"
-		endchoice
-
-		menu "Debug"
-
-		choice
-			prompt "WIFI Driver Location"
-			config KM0_AS_NP
-				bool "KM0"
-				select CORE_AS_NP_FOR_KM0
-
-			config KM4_AS_NP
-				bool "KM4"
-				select CORE_AS_NP_FOR_KM4
-		endchoice
-
-		#choose WPA_STD will compile std supplicant in device side.
-		choice
-			prompt "WPA Supplicant STD"
-			default WPA_LITE
-			config WPA_LITE
-				bool "LITE"
-			config WPA_STD
-				bool "STD"
-		endchoice
-
-		endmenu
     endif
 
-    if FULLMAC_BRIDGE
+    if FULLMAC_MENU
+
+        #WPA Lite in dev for FULLMAC host without std wpa_supplicant
         choice
-            prompt "FULLMAC BRIDGE INTERFACE"
-            config SDIO_BRIDGE
-                bool "SDIO_BRIDGE"
-            config SPI_BRIDGE
-                bool "SPI_BRIDGE"
+            prompt "WPA Lite Location"
+            default WPA_LOCATION_HOST
+            config WPA_LOCATION_HOST
+                bool "HOST"
+            config WPA_LOCATION_DEV
+                bool "DEV"
         endchoice
+
+        menu "Debug"
+
+        choice
+            prompt "WIFI Driver Location"
+            default KM4_AS_NP
+            config KM0_AS_NP
+                bool "KM0"
+                select CORE_AS_NP_FOR_KM0
+
+            config KM4_AS_NP
+                bool "KM4"
+                select CORE_AS_NP_FOR_KM4
+        endchoice
+
+        #choose WPA_STD will compile std supplicant in device side.
+        choice
+            prompt "WPA Supplicant STD"
+            config WPA_NONE
+                bool "NONE"
+            config WPA_STD
+                bool "STD"
+        endchoice
+
+        endmenu
     endif
 
     config CORE_AS_AP_FOR_KM4
@@ -257,29 +268,30 @@ menu "CONFIG WIFI"
         config FULLMAC_MENU
             bool
             depends on CORE_AS_NP # only work in NP
-            select INIC_INTF_SDIO if SDIO_FULLMAC
-            select INIC_INTF_SPI if SPI_FULLMAC
-            select INIC_INTF_USB if USB_FULLMAC
             select WLAN
             select AS_INIC_NP
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN
+
+        config FULLMAC_BRIDGEB
+            bool
+            depends on CORE_AS_AP
+            select WLAN
+            select SINGLE_CORE_WIFI
+            select LWIP_LAYER
 
         config FULLMAC_BRIDGE
             bool
             depends on CORE_AS_AP
             select WLAN
             select SINGLE_CORE_WIFI
-            select INIC_INTF_SDIO if SDIO_BRIDGE
-            select INIC_INTF_SPI if SPI_BRIDGE
             select LWIP_LAYER
 
-        config SPI_FULLMAC_HOST
+        config FULLMAC_HOST
             bool
             depends on CORE_AS_AP
             select WLAN
             select AS_INIC_AP
-            select INIC_INTF_SPI
             select LWIP_LAYER
 
         config WIFI_SINGLE_CORE_MENU # this case will never be selected
@@ -332,8 +344,12 @@ menu "CONFIG WIFI"
         bool
     config ENABLE_WPS_DISCOVERY
         bool
-	config FULLMAC_HOST
-	    bool
+    config FULLMAC_HOST
+        bool
+    config FULLMAC_BRIDGE
+        bool
+    config WIFI_HOST_CONTROL
+        bool
 endmenu
 
 menu "CONFIG BT"

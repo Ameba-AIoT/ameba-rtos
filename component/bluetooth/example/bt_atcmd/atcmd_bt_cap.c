@@ -6,7 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <bt_api_config.h>
-#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
+#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,10 +18,10 @@
 #include <rtk_bt_cap.h>
 #include <atcmd_bt_impl.h>
 #include <rtk_bt_le_gap.h>
-#include <rtk_bt_le_audio.h>
+#include <rtk_bt_gattc.h>
 
 /* initiator */
-
+//rtk_bt_le_audio_mcp_server_send_data_param_t app_mcp_svr_info app_bt_le_audio_mcp_server_info_t
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 static int atcmd_bt_mcp_media_send(int argc, char **argv)
 {
@@ -33,7 +33,7 @@ static int atcmd_bt_mcp_media_send(int argc, char **argv)
 		track_value = (int32_t)str_to_int(argv[1]);
 	}
 
-	if (rtk_bt_mcp_media_send(char_uuid, track_value)) {
+	if (rtk_bt_le_audio_mcs_server_send_data(char_uuid, &track_value)) {
 		BT_LOGE("mcp media send fail\r\n");
 		return -1;
 	}
@@ -62,7 +62,7 @@ static int atcmd_bt_mcp_media_discover(int argc, char **argv)
 	uint16_t conn_handle;
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
-	if (rtk_bt_mcp_media_discover(conn_handle)) {
+	if (rtk_bt_gattc_discover_all(conn_handle)) {
 		BT_LOGE("mcp media discover fail\r\n");
 		return -1;
 	}
@@ -83,7 +83,7 @@ static int atcmd_bt_mcp_media_write(int argc, char **argv)
 		op_param = (int32_t)str_to_int(argv[2]);
 	}
 
-	if (rtk_bt_mcp_media_write(conn_handle, opcode, op_param)) {
+	if (rtk_bt_le_audio_mcs_client_write_media_cp(conn_handle, 0, true, true, opcode, &op_param)) {
 		BT_LOGE("mcp media write fail\r\n");
 		return -1;
 	}
@@ -100,7 +100,7 @@ static int atcmd_bt_mcp_media_read(int argc, char **argv)
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	char_uuid = (uint16_t)str_to_int(argv[1]);
-	if (rtk_bt_mcp_media_read(conn_handle, char_uuid)) {
+	if (rtk_bt_le_audio_mcs_client_read_char_value(conn_handle, 0, true, char_uuid)) {
 		BT_LOGE("mcp media read fail\r\n");
 		return -1;
 	}
@@ -119,7 +119,7 @@ static int atcmd_bt_mcp_media_cccd(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	cfg_cccd = (uint32_t)str_to_int(argv[1]);
 	enable = (bool)str_to_int(argv[2]);
-	if (rtk_bt_mcp_media_cccd(conn_handle, cfg_cccd, enable)) {
+	if (rtk_bt_le_audio_mcs_client_cfg_cccd(conn_handle, 0, true, cfg_cccd, enable)) {
 		BT_LOGE("mcp media cccd fail\r\n");
 		return -1;
 	}
@@ -149,7 +149,7 @@ static int atcmd_bt_vcp_server_get(int argc, char **argv)
 	(void)argv;
 	rtk_bt_le_audio_vcs_param_t vcs_param = {0};
 
-	if (rtk_bt_vcp_server_get(&vcs_param)) {
+	if (rtk_bt_le_audio_vcs_get_param(&vcs_param)) {
 		BT_LOGE("vcp server get fail\r\n");
 		return -1;
 	}
@@ -179,7 +179,7 @@ static int atcmd_bt_micp_server_get(int argc, char **argv)
 	(void)argv;
 	rtk_bt_le_audio_mics_param_t mics_param = {0};
 
-	if (rtk_bt_micp_server_get(&mics_param)) {
+	if (rtk_bt_le_audio_mics_get_param(&mics_param)) {
 		BT_LOGE("micp server get fail\r\n");
 		return -1;
 	}
@@ -206,16 +206,20 @@ static int atcmd_bt_vocs_server_get(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 	rtk_bt_le_audio_vocs_param_t vocs_param = {0};
+	uint16_t ret = RTK_BT_FAIL;
 
 	vocs_param.output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 	if (!vocs_param.output_des.p_output_des) {
 		BT_LOGE("%s: osif_mem_alloc len %d fail\r\n", __func__, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 		return -1;
 	}
-	if (rtk_bt_vocs_server_get(&vocs_param)) {
-		BT_LOGE("vocs server get fail\r\n");
-		osif_mem_free((void *)vocs_param.output_des.p_output_des);
-		return -1;
+	for (uint8_t srv_instance_id = 0; srv_instance_id < RTK_BT_LE_AUDIO_DEFAULT_VOCS_NUM; srv_instance_id++) {
+		ret = rtk_bt_le_audio_vocs_get_param(srv_instance_id, &vocs_param);
+		if (ret == RTK_BT_OK) {
+			BT_LOGA("vocs param: srv_instance_id %d, volume_offset %d, change_counter %d, audio_location 0x%x,output_des_len %d, output_des %s\r\n",
+					srv_instance_id, vocs_param.volume_offset, vocs_param.change_counter,
+					(unsigned int)vocs_param.audio_location, vocs_param.output_des.output_des_len, vocs_param.output_des.p_output_des);
+		}
 	}
 	BT_LOGA("vocs server get successfully\r\n");
 	BT_AT_PRINT("+BLECAP:acceptor,vocs,get,%d,%u,%u,%u,%s\r\n",
@@ -240,8 +244,6 @@ static int atcmd_bt_vocs_server_act(int argc, char **argv)
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 static int atcmd_bt_aics_server_get(int argc, char **argv)
 {
-	(void)argc;
-	(void)argv;
 	uint8_t value_len = 0;
 	uint8_t *p_value = NULL;
 
@@ -270,14 +272,12 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 		BT_LOGE("%s: not support aics_param_type %d for get\r\n", __func__, aics_param_type);
 		return -1;
 	}
-
 	p_value = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_len);
 	if (p_value == NULL) {
 		BT_LOGE("%s: osif_mem_alloc len %d fail\r\n", __func__, value_len);
 		return RTK_BT_ERR_NO_RESOURCE;
 	}
-
-	if (rtk_bt_aics_server_get(srv_instance_id, aics_param_type, value_len, p_value)) {
+	if (rtk_bt_le_audio_aics_get_param(srv_instance_id, aics_param_type, value_len, p_value)) {
 		BT_LOGE("aics server get fail\r\n");
 		return -1;
 	}
@@ -316,7 +316,6 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 	if (p_value) {
 		osif_mem_free((void *)p_value);
 	}
-
 	BT_LOGA("aics server get successfully\r\n");
 
 	return 0;
@@ -333,44 +332,7 @@ static int atcmd_bt_aics_server_act(int argc, char **argv)
 }
 #endif
 
-static int atcmd_bt_cap_acceptor_cfg(int argc, char **argv)
-{
-	uint8_t channel = 0;
-	uint8_t neighbor_addr[6] = {0};
-
-	if (strcmp(argv[0], "left") == 0) {
-		/* RTK_BT_LE_AUDIO_LEFT */
-		channel = 1;
-	} else if (strcmp(argv[0], "right") == 0) {
-		/* RTK_BT_LE_AUDIO_RIGHT */
-		channel = 2;
-	} else if (strcmp(argv[0], "stereo") == 0) {
-		/* RTK_BT_LE_AUDIO_STEREO */
-		channel = 3;
-	} else {
-		BT_LOGE("Unknown channel allocation\r\n");
-		return -1;
-	}
-	if (argc == 2) {
-		hexdata_str_to_bd_addr(argv[1], neighbor_addr, 6);
-		if (rtk_bt_cap_acceptor_cfg(channel, neighbor_addr)) {
-			BT_LOGE("CAP acceptor config channel neighbor address fail\r\n");
-			return -1;
-		}
-		BT_LOGA("CAP acceptor config channel neighbor address successfully\r\n");
-	} else {
-		if (rtk_bt_cap_acceptor_cfg(channel, NULL)) {
-			BT_LOGE("CAP acceptor config channel fail\r\n");
-			return -1;
-		}
-		BT_LOGA("CAP acceptor config channel successfully\r\n");
-	}
-
-	return 0;
-}
-
 /* commander */
-
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
 static int atcmd_bt_vcp_client_gmute(int argc, char **argv)
 {
@@ -380,7 +342,11 @@ static int atcmd_bt_vcp_client_gmute(int argc, char **argv)
 
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	vcs_mute = (rtk_bt_le_audio_vcs_mute_state_t)str_to_int(argv[1]);
-	if (rtk_bt_vcp_client_gmute(group_idx, vcs_mute)) {
+	if (vcs_mute > 1) {
+		BT_LOGE("%s: vcs_mute value (%d) error\r\n", __func__, vcs_mute);
+		return RTK_BT_FAIL;
+	}
+	if (rtk_bt_le_audio_vcs_change_mute(group_idx, vcs_mute)) {
 		BT_LOGE("vcp client gmute fail\r\n");
 		return -1;
 	}
@@ -397,7 +363,7 @@ static int atcmd_bt_vcp_client_gvolume(int argc, char **argv)
 
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	volume_setting = (uint8_t)str_to_int(argv[1]);
-	if (rtk_bt_vcp_client_gvolume(group_idx, volume_setting)) {
+	if (rtk_bt_le_audio_vcs_change_volume(group_idx, volume_setting)) {
 		BT_LOGE("vcp client gvolume fail\r\n");
 		return -1;
 	}
@@ -408,17 +374,22 @@ static int atcmd_bt_vcp_client_gvolume(int argc, char **argv)
 
 static int atcmd_bt_vcp_client_write(int argc, char **argv)
 {
-	uint16_t conn_handle;
 	rtk_bt_le_audio_vcs_cp_op_t cp_op;
-	uint8_t volume_setting;
+	uint16_t conn_handle;
+	rtk_bt_le_audio_vcs_cp_param_t cp_param = {
+		.volume_setting = RTK_BT_LE_AUDIO_DEFAULT_VCS_VOL_SETTING
+	};
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	cp_op = (rtk_bt_le_audio_vcs_cp_op_t)str_to_int(argv[1]);
-	if (argc == 3 && cp_op == RTK_BT_LE_AUDIO_VCS_CP_SET_ABSOLUTE_VOLUME) {
-		volume_setting = (uint8_t)str_to_int(argv[2]);
+	if (cp_op >= RTK_BT_LE_AUDIO_VCS_CP_MAX) {
+		BT_LOGE("%s: cp_op value (%d) error for write\r\n", __func__, cp_op);
+		return RTK_BT_FAIL;
 	}
-
-	if (rtk_bt_vcp_client_write(conn_handle, cp_op, volume_setting)) {
+	if (argc == 3 && cp_op == RTK_BT_LE_AUDIO_VCS_CP_SET_ABSOLUTE_VOLUME) {
+		cp_param.volume_setting = (uint8_t)str_to_int(argv[2]);
+	}
+	if (rtk_bt_le_audio_vcs_write_cp(conn_handle, cp_op, &cp_param)) {
 		BT_LOGE("vcp client write fail\r\n");
 		return -1;
 	}
@@ -434,7 +405,7 @@ static int atcmd_bt_vcp_client_get(int argc, char **argv)
 	rtk_bt_le_audio_vcs_volume_state_t volume_state = {0};
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
-	if (rtk_bt_vcp_client_get(conn_handle, &volume_state)) {
+	if (rtk_bt_le_audio_vcs_get_volume_state(conn_handle, &volume_state)) {
 		BT_LOGE("vcp client get fail\r\n");
 		return -1;
 	}
@@ -469,7 +440,7 @@ static int atcmd_bt_micp_client_gmute(int argc, char **argv)
 
 	group_idx = (uint8_t)str_to_int(argv[0]);
 	mic_mute = (rtk_bt_le_audio_mics_mute_state_t)str_to_int(argv[1]);
-	if (rtk_bt_micp_client_gmute(group_idx, mic_mute)) {
+	if (rtk_bt_le_audio_mics_change_mute(group_idx, mic_mute)) {
 		BT_LOGE("micp client gmute fail\r\n");
 		return -1;
 	}
@@ -486,7 +457,11 @@ static int atcmd_bt_micp_client_set_mute(int argc, char **argv)
 
 	conn_handle = (uint8_t)str_to_int(argv[0]);
 	mic_mute = (rtk_bt_le_audio_mics_mute_state_t)str_to_int(argv[1]);
-	if (rtk_bt_micp_client_set_mute(conn_handle, mic_mute)) {
+	if (mic_mute > 2) {
+		BT_LOGE("%s: mic_mute value (%d) error\r\n", __func__, mic_mute);
+		return RTK_BT_FAIL;
+	}
+	if (rtk_bt_le_audio_mics_set_mute_value(conn_handle, mic_mute)) {
 		BT_LOGE("micp client set mute fail\r\n");
 		return -1;
 	}
@@ -502,7 +477,7 @@ static int atcmd_bt_micp_client_get_mute(int argc, char **argv)
 	rtk_bt_le_audio_mics_mute_state_t mic_mute;
 
 	conn_handle = (uint8_t)str_to_int(argv[0]);
-	if (rtk_bt_micp_client_get_mute(conn_handle, &mic_mute)) {
+	if (rtk_bt_le_audio_mics_get_mute_value(conn_handle, &mic_mute)) {
 		BT_LOGE("micp client get mute fail\r\n");
 		return -1;
 	}
@@ -532,12 +507,18 @@ static int atcmd_bt_vocs_client_write(int argc, char **argv)
 	(void)argc;
 	uint16_t conn_handle;
 	rtk_bt_le_audio_vocs_cp_op_t cp_op;
-	int16_t volume_offset;
+	uint8_t srv_instance_id = 0;
+	rtk_bt_le_audio_vocs_cp_param_t cp_param = {
+		.counter_used = false,
+		.change_counter = 0,
+		.volume_offset = 0,
+	};
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
-	cp_op = (rtk_bt_le_audio_vocs_cp_op_t)str_to_int(argv[1]);
-	volume_offset = (int16_t)str_to_int(argv[2]);
-	if (rtk_bt_vocs_client_write(conn_handle, cp_op, volume_offset)) {
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
+	cp_op = (rtk_bt_le_audio_vocs_cp_op_t)str_to_int(argv[2]);
+	cp_param.volume_offset = (int16_t)str_to_int(argv[3]);
+	if (rtk_bt_le_audio_vocs_write_cp(conn_handle, srv_instance_id, cp_op, cp_param)) {
 		BT_LOGE("vocs client write fail\r\n");
 		return -1;
 	}
@@ -551,12 +532,24 @@ static int atcmd_bt_vocs_client_gwrite(int argc, char **argv)
 	(void)argc;
 	uint8_t group_idx;
 	rtk_bt_le_audio_vocs_cp_op_t cp_op;
-	int16_t volume_offset;
+	uint8_t srv_instance_id = 0;
+	rtk_bt_le_audio_vocs_cp_param_t cp_param = {
+		.counter_used = false,
+		.change_counter = 0,
+		.volume_offset = 0,
+	};
 
 	group_idx = (uint8_t)str_to_int(argv[0]);
-	cp_op = (rtk_bt_le_audio_vocs_cp_op_t)str_to_int(argv[1]);
-	volume_offset = (int16_t)str_to_int(argv[2]);
-	if (rtk_bt_vocs_client_gwrite(group_idx, cp_op, volume_offset)) {
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
+	cp_op = (rtk_bt_le_audio_vocs_cp_op_t)str_to_int(argv[2]);
+	if (cp_op >= RTK_BT_LE_AUDIO_VOCS_CP_MAX) {
+		BT_LOGE("%s: cp_op value (%d) error for write\r\n", __func__, cp_op);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	if (cp_op == RTK_BT_LE_AUDIO_VOCS_CP_SET_VOLUME_OFFSET) {
+		cp_param.volume_offset = (int16_t)str_to_int(argv[3]);
+	}
+	if (rtk_bt_le_audio_vocs_write_cp_by_group(group_idx, srv_instance_id, cp_op, cp_param)) {
 		BT_LOGE("vocs client gwrite fail\r\n");
 		return -1;
 	}
@@ -575,7 +568,7 @@ static int atcmd_bt_vocs_client_wdes(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	des_str = (uint8_t *)argv[2];
-	if (rtk_bt_vocs_client_wdes(conn_handle, srv_instance_id, des_str)) {
+	if (rtk_bt_le_audio_vocs_write_output_des(conn_handle, srv_instance_id, strlen((char *)des_str) + 1, des_str)) {
 		BT_LOGE("vocs client wdes fail\r\n");
 		return -1;
 	}
@@ -588,15 +581,17 @@ static int atcmd_bt_vocs_client_get_srv(int argc, char **argv)
 {
 	(void)argc;
 	uint16_t conn_handle;
+	uint8_t srv_instance_id;
 	rtk_bt_le_audio_vocs_srv_data_t srv_data = {0};
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	srv_data.output_des.p_output_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 	if (!srv_data.output_des.p_output_des) {
 		BT_LOGE("%s: conn_handle (%d) osif_mem_alloc len %d fail\r\n", __func__, conn_handle, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 		return -1;
 	}
-	if (rtk_bt_vocs_client_get_srv(conn_handle, &srv_data)) {
+	if (rtk_bt_le_audio_vocs_get_srv_data(conn_handle, srv_instance_id,  &srv_data)) {
 		BT_LOGE("vocs client get srv fail\r\n");
 		osif_mem_free((void *)srv_data.output_des.p_output_des);
 		return -1;
@@ -615,11 +610,15 @@ static int atcmd_bt_vocs_client_get_char(int argc, char **argv)
 {
 	(void)argc;
 	uint16_t conn_handle;
+	uint8_t srv_instance_id;
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
-	if (rtk_bt_vocs_client_get_char(conn_handle)) {
-		BT_LOGE("vocs client get char fail\r\n");
-		return -1;
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
+	for (uint8_t vocs_char_type = RTK_BT_LE_AUDIO_VOCS_CHAR_OFFSET_STATE; vocs_char_type <= RTK_BT_LE_AUDIO_VOCS_CHAR_AUDIO_OUTPUT_DESC; vocs_char_type++) {
+		if (rtk_bt_le_audio_vocs_read_char_value(conn_handle, srv_instance_id, vocs_char_type)) {
+			BT_LOGE("vocs client get char fail\r\n");
+			return -1;
+		}
 	}
 	BT_LOGA("vocs client get char successfully\r\n");
 
@@ -627,11 +626,11 @@ static int atcmd_bt_vocs_client_get_char(int argc, char **argv)
 }
 
 static const cmd_table_t cap_vocs_client_cmd_table[] = {
-	{"write",    atcmd_bt_vocs_client_write,    4, 4},
+	{"write",    atcmd_bt_vocs_client_write,    4, 5},
 	{"gwrite",   atcmd_bt_vocs_client_gwrite,   4, 4},
 	{"wdes",     atcmd_bt_vocs_client_wdes,     4, 4},
-	{"get_srv",  atcmd_bt_vocs_client_get_srv,  2, 2},
-	{"get_char", atcmd_bt_vocs_client_get_char, 2, 2},
+	{"get_srv",  atcmd_bt_vocs_client_get_srv,  3, 3},
+	{"get_char", atcmd_bt_vocs_client_get_char, 3, 3},
 	{NULL,},
 };
 
@@ -645,15 +644,19 @@ static int atcmd_bt_vocs_client_act(int argc, char **argv)
 static int atcmd_bt_aics_client_write(int argc, char **argv)
 {
 	uint16_t conn_handle;
+	uint8_t srv_instance_id;
 	rtk_bt_le_audio_aics_cp_op_t cp_op;
-	int8_t gaining_setting;
+	rtk_bt_le_audio_aics_cp_param_t cp_param = {
+		.gaining_setting = 0,
+	};
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
-	cp_op = (rtk_bt_le_audio_aics_cp_op_t)str_to_int(argv[1]);
-	if (argc == 3 && cp_op == RTK_BT_LE_AUDIO_AICS_CP_SET_GAIN_SETTING) {
-		gaining_setting = (int8_t)str_to_int(argv[2]);
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
+	cp_op = (rtk_bt_le_audio_aics_cp_op_t)str_to_int(argv[2]);
+	if (argc == 4 && cp_op == RTK_BT_LE_AUDIO_AICS_CP_SET_GAIN_SETTING) {
+		cp_param.gaining_setting = (int8_t)str_to_int(argv[3]);
 	}
-	if (rtk_bt_aics_client_write(conn_handle, cp_op, gaining_setting)) {
+	if (rtk_bt_le_audio_aics_write_cp(conn_handle, srv_instance_id, cp_op, cp_param)) {
 		BT_LOGE("aics client write fail\r\n");
 		return -1;
 	}
@@ -665,15 +668,19 @@ static int atcmd_bt_aics_client_write(int argc, char **argv)
 static int atcmd_bt_aics_client_gwrite(int argc, char **argv)
 {
 	uint8_t group_idx;
+	uint8_t srv_instance_id;
 	rtk_bt_le_audio_aics_cp_op_t cp_op;
-	int8_t gaining_setting;
+	rtk_bt_le_audio_aics_cp_param_t cp_param = {
+		.gaining_setting = 0,
+	};
 
 	group_idx = (uint8_t)str_to_int(argv[0]);
-	cp_op = (rtk_bt_le_audio_aics_cp_op_t)str_to_int(argv[1]);
-	if (argc == 3 && cp_op == RTK_BT_LE_AUDIO_AICS_CP_SET_GAIN_SETTING) {
-		gaining_setting = (int8_t)str_to_int(argv[2]);
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
+	cp_op = (rtk_bt_le_audio_aics_cp_op_t)str_to_int(argv[2]);
+	if (argc == 4 && cp_op == RTK_BT_LE_AUDIO_AICS_CP_SET_GAIN_SETTING) {
+		cp_param.gaining_setting = (int8_t)str_to_int(argv[3]);
 	}
-	if (rtk_bt_aics_client_gwrite(group_idx, cp_op, gaining_setting)) {
+	if (rtk_bt_le_audio_aics_write_cp_by_group(group_idx, srv_instance_id, cp_op, cp_param)) {
 		BT_LOGE("aics client gwrite fail\r\n");
 		return -1;
 	}
@@ -692,10 +699,25 @@ static int atcmd_bt_aics_client_wdes(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	des_str = (uint8_t *)argv[2];
-	if (rtk_bt_aics_client_wdes(conn_handle, srv_instance_id, des_str)) {
+	if (srv_instance_id >= RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM) {
+		BT_LOGE("%s srv_instance_id (%d) > max (%d) for wdes\r\n", __func__, srv_instance_id, RTK_BT_LE_AUDIO_DEFAULT_AICS_NUM);
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	if (srv_instance_id == 0) {
+		des_str = (uint8_t *)RTK_BT_LE_AUDIO_BLUETOOTH_DES;
+	} else if (srv_instance_id == 1) {
+		des_str = (uint8_t *)RTK_BT_LE_AUDIO_MIC_DES;
+	} else {
+		if (!des_str) {
+			BT_LOGE("%s des_str is NULL for wdes\r\n", __func__);
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+	}
+	if (rtk_bt_le_audio_aics_write_input_des(conn_handle, srv_instance_id, strlen((char *)des_str) + 1, des_str)) {
 		BT_LOGE("aics client wdes fail\r\n");
 		return -1;
 	}
+	BT_LOGA("%s: srv_instance_id %d aics_write_input_des %s OK for conn_handle=%d \r\n", __func__, srv_instance_id, des_str, conn_handle);
 	BT_LOGA("aics client wdes successfully\r\n");
 
 	return 0;
@@ -705,19 +727,27 @@ static int atcmd_bt_aics_client_get_srv(int argc, char **argv)
 {
 	(void)argc;
 	uint16_t conn_handle;
+	uint8_t srv_instance_id;
 	rtk_bt_le_audio_aics_srv_data_t srv_data = {0};
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	srv_data.input_des.p_input_des = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 	if (srv_data.input_des.p_input_des == NULL) {
 		BT_LOGE("%s: conn_handle (%d) osif_mem_alloc len %d fail\r\n", __func__, conn_handle, RTK_BT_LE_AUDIO_CHARACTERISTIC_DESCRIPTION_MAX_LENGTH);
 		return -1;
 	}
-	if (rtk_bt_aics_client_get_srv(conn_handle, &srv_data)) {
+	if (rtk_bt_le_audio_aics_get_srv_data(conn_handle, srv_instance_id, &srv_data)) {
 		BT_LOGE("aics client get srv fail\r\n");
 		osif_mem_free((void *)srv_data.input_des.p_input_des);
 		return -1;
 	}
+	BT_LOGA("aics srv data: srv_instance_id %d, type_exist 0x%x,gain_setting %d, mute %d, gain_mode %d,change_counter %d, gain_setting_units 0x%x,gain_setting_min %d,gain_setting_max %d,input_type %d,input_status %d,input_des_len %d, input_des %s\r\n",
+			srv_data.srv_instance_id, srv_data.type_exist,
+			srv_data.input_state.gain_setting, srv_data.input_state.mute, srv_data.input_state.gain_mode, srv_data.input_state.change_counter,
+			srv_data.setting_prop.gain_setting_units, srv_data.setting_prop.gain_setting_min, srv_data.setting_prop.gain_setting_max,
+			srv_data.input_type, srv_data.input_status,
+			srv_data.input_des.input_des_len, srv_data.input_des.p_input_des);
 	BT_LOGA("aics client get srv successfully\r\n");
 	BT_AT_PRINT("+BLECAP:commander,aics,get_srv,%u,%u,%d,%u,%u,%u,%u,%d,%d,%u,%u,%u,%s\r\n",
 				srv_data.srv_instance_id, srv_data.type_exist, srv_data.input_state.gain_setting,
@@ -734,11 +764,16 @@ static int atcmd_bt_aics_client_get_char(int argc, char **argv)
 {
 	(void)argc;
 	uint16_t conn_handle;
+	uint8_t srv_instance_id;
+	uint8_t aics_char_type;
 
 	conn_handle = (uint16_t)str_to_int(argv[0]);
-	if (rtk_bt_aics_client_get_char(conn_handle)) {
-		BT_LOGE("aics client get char fail\r\n");
-		return -1;
+	srv_instance_id = (uint8_t)str_to_int(argv[1]);
+	for (aics_char_type = RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_STATE; aics_char_type <= RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_DES; aics_char_type++) {
+		if (rtk_bt_le_audio_aics_read_char_value(conn_handle, srv_instance_id, aics_char_type)) {
+			BT_LOGE("aics client get char fail\r\n");
+			return -1;
+		}
 	}
 	BT_LOGA("aics client get char successfully\r\n");
 
@@ -746,11 +781,11 @@ static int atcmd_bt_aics_client_get_char(int argc, char **argv)
 }
 
 static const cmd_table_t cap_aics_client_cmd_table[] = {
-	{"write",    atcmd_bt_aics_client_write,    3, 4},
-	{"gwrite",   atcmd_bt_aics_client_gwrite,   3, 4},
+	{"write",    atcmd_bt_aics_client_write,    4, 5},
+	{"gwrite",   atcmd_bt_aics_client_gwrite,   4, 5},
 	{"wdes",     atcmd_bt_aics_client_wdes,     4, 4},
-	{"get_srv",  atcmd_bt_aics_client_get_srv,  2, 2},
-	{"get_char", atcmd_bt_aics_client_get_char, 2, 2},
+	{"get_srv",  atcmd_bt_aics_client_get_srv,  3, 3},
+	{"get_char", atcmd_bt_aics_client_get_char, 3, 3},
 	{NULL,},
 };
 
@@ -783,7 +818,6 @@ static const cmd_table_t cap_acceptor_cmd_table[] = {
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 	{"aics",        atcmd_bt_aics_server_act,               4, 4},
 #endif
-	{"cfg",         atcmd_bt_cap_acceptor_cfg,              2, 3},
 	{NULL,},
 };
 

@@ -26,7 +26,8 @@
 #include <rtk_bt_le_iso.h>
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-#include <rtk_bt_le_audio.h>
+#include <rtk_bt_bap.h>
+#include <rtk_bt_cap.h>
 #include <ble_audio.h>
 #endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
@@ -458,6 +459,34 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 			return ret;
 		}
 	}
+	if (app_profile_support & RTK_BT_PROFILE_BAP) {
+		ret = bt_stack_bap_init((void *)&papp_conf->le_audio_app_conf);
+		if (ret) {
+			return ret;
+		}
+	}
+	if (app_profile_support & RTK_BT_PROFILE_CAP) {
+		ret = bt_stack_cap_init((void *)&papp_conf->le_audio_app_conf);
+		if (ret) {
+			return ret;
+		}
+	}
+#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+	if (app_profile_support & RTK_BT_PROFILE_TMAP) {
+		ret = bt_stack_tmap_init((void *)&papp_conf->le_audio_app_conf);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
+#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+	if (app_profile_support & RTK_BT_PROFILE_GMAP) {
+		ret = bt_stack_gmap_init((void *)&papp_conf->le_audio_app_conf);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
 #endif
 	bt_stack_app_profile_conf = app_profile_support;
 
@@ -501,6 +530,12 @@ static uint16_t bt_stack_profile_deinit(void)
 	}
 	if (profile_conf & RTK_BT_PROFILE_SDP) {
 		bt_stack_sdp_deinit();
+	}
+	if (profile_conf & RTK_BT_PROFILE_BAP) {
+		bt_stack_bap_deinit();
+	}
+	if (profile_conf & RTK_BT_PROFILE_CAP) {
+		bt_stack_cap_deinit();
 	}
 	if (profile_conf & RTK_BT_PROFILE_LEAUDIO) {
 		bt_stack_le_audio_deinit();
@@ -868,10 +903,26 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GP_ISO group \r\n");
 		bt_stack_le_iso_act_handle(p_cmd);
 		break;
-	case RTK_BT_LE_GP_AUDIO:
-		BT_LOGD("RTK_BT_LE_GP_AUDIO group \r\n");
-		bt_stack_le_audio_act_handle(p_cmd);
+	case RTK_BT_LE_GP_BAP:
+		BT_LOGD("RTK_BT_LE_GP_BAP group \r\n");
+		bt_stack_bap_act_handle(p_cmd);
 		break;
+	case RTK_BT_LE_GP_CAP:
+		BT_LOGD("RTK_BT_LE_GP_CAP group \r\n");
+		bt_stack_cap_act_handle(p_cmd);
+		break;
+#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+	case RTK_BT_LE_GP_TMAP:
+		BT_LOGD("RTK_BT_LE_GP_TMAP group \r\n");
+		bt_stack_tmap_act_handle(p_cmd);
+		break;
+#endif
+#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+	case RTK_BT_LE_GP_GMAP:
+		BT_LOGD("RTK_BT_LE_GP_GMAP group \r\n");
+		bt_stack_gmap_act_handle(p_cmd);
+		break;
+#endif
 	case RTK_BT_COMMON_GP_GAP:
 		BT_LOGD("RTK_BT_COMMON_GP_GAP group \r\n");
 		bt_stack_gap_act_handle(p_cmd);

@@ -27,7 +27,7 @@
 
 
 #if defined(CONFIG_AS_INIC_AP)
-#include "inic_ipc_host_trx.h"
+#include "whc_ipc_host_trx.h"
 #endif
 
 

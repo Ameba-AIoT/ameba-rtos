@@ -471,13 +471,6 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 }
 #endif
 
-void vAssertCalled(const char *pcFile, uint32_t ulLine)
-{
-	printf("ASSERT!  Line %d of file %s\r\n", (int)ulLine, pcFile);
-	taskENTER_CRITICAL();
-	for (;;);
-}
-
 void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 {
 	uint32_t tick_passed;

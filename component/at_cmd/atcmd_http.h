@@ -20,6 +20,8 @@
 #define HTTP_READ_RESPONSE_DATA         (4000+1)
 #define HTTP_SINGLE_POST_DATA_MAX_LEN   (10000)
 
+#define HTTP_GLOBAL_REQ_HEADER_NUM      (10)
+
 void print_http_at(void);
 void at_http_init(void);
 

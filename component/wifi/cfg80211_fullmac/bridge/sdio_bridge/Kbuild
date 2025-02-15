@@ -1,0 +1,28 @@
+ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
+ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
+ccflags-$(CONFIG_FULLMAC_BRIDGE) += -DCONFIG_FULLMAC_BRIDGE
+ccflags-$(CONFIG_FULLMAC_BRIDGE_LITE) += -DCONFIG_FULLMAC_BRIDGE_LITE
+
+ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_SDIO
+ccflags-y += -I$(src)/../../common/netdev
+ccflags-y += -I$(src)/../../bridge
+ccflags-y += -I$(src)/../../common/include -I$(src)/.. -I$(src)/../../common -I$(src)/../../common/sdio -I$(src)
+
+bridge_sdio-y := \
+		../../common/sdio/rtw_sdio_drvio.o \
+		../../common/sdio/rtw_sdio_ops.o \
+		../../common/sdio/rtw_sdio_probe.o \
+		../../common/sdio/rtw_sdio_init.o	\
+		../../common/netdev/rtw_drv_probe.o \
+		../../common/netdev/rtw_ethtool_ops.o \
+		../../common/netdev/rtw_netdev_ops.o \
+		../../common/rtw_llhw_ops.o \
+		../../common/rtw_llhw_pkt_tx.o \
+		../../common/rtw_llhw_memory.o \
+		../../common/rtw_llhw_hci.o \
+		../rtw_bridge_llhw_event_tx.o \
+		../rtw_bridge_llhw_pkt_rx.o \
+		../rtw_bridge_llhw_app.o \
+		../rtw_bridge_app.o
+
+obj-m += bridge_sdio.o

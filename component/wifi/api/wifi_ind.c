@@ -267,7 +267,7 @@ void wifi_event_init(void)
 
 void wifi_indication(unsigned int event, char *buf, int buf_len, int flags)
 {
-#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_FULLMAC_BRIDGEB)
 	inic_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
 

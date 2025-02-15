@@ -642,7 +642,7 @@ CmdWTN(
 	IN  u8  *argv[]
 )
 {
-#if defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB) || defined(CONFIG_INIC_INTF_SPI)
+#if defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB) || defined(CONFIG_INIC_INTF_SPI) || defined(CONFIG_FULLMAC_BRIDGE_LITE)
 	UNUSED(argc);
 	UNUSED(argv);
 #else
@@ -967,8 +967,49 @@ CmdAGGCmd(
 
 	return 0;
 }
+
+#ifdef CONFIG_WLAN
+extern int rtw_wltunnel_command(char *cmd);
+u32
+CmdWTN(
+	IN  u16 argc,
+	IN  u8  *argv[]
+)
+{
+	if (argc != 1) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
+		return FALSE;
+	}
+	rtw_wltunnel_command((char *)argv[0]);
+	return 0;
+}
+#endif
+
 #endif
 #ifdef CONFIG_ARM_CORE_CM4_KM4TZ
+
+#ifdef CONFIG_WLAN
+extern int inic_wltunnel_command(char *cmd, unsigned int cmd_len);
+u32
+CmdWTN(
+	IN  u16 argc,
+	IN  u8  *argv[]
+)
+{
+#if defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB) || defined(CONFIG_INIC_INTF_SPI) || defined(CONFIG_FULLMAC_BRIDGE_LITE)
+	UNUSED(argc);
+	UNUSED(argv);
+#else
+	if (argc != 1) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
+		return FALSE;
+	}
+	inic_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
+#endif
+	return 0;
+}
+#endif
+
 u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 {
 	/* To avoid gcc warnings */
@@ -1172,7 +1213,7 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t enable and disable loguart agg function\n"
 	},
 #endif
-#ifdef CONFIG_AMEBADPLUS
+#if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
 #ifdef CONFIG_WLAN
 	{
 		(const u8 *)"WTN",	5, CmdWTN,	(const u8 *)"\t@WTN \n"

@@ -78,3 +78,22 @@ void RPC_SemDestroy(RPC_Sem *sem)
 	}
 
 }
+
+static int g_log_enable = 0;
+void RPC_Print(const char *tag, const char *fmt, ...)
+{
+	if (g_log_enable) {
+		va_list ap;
+		va_start(ap, fmt);
+		char buf[1024] = {0};
+		char *logBuf = buf;
+		vsnprintf(logBuf, 1023, fmt, ap);
+		printf("MCU_RPC [%s] %s", tag, buf);
+		va_end(ap);
+	}
+}
+
+void RPC_SetLog(int enable)
+{
+	g_log_enable = enable;
+}

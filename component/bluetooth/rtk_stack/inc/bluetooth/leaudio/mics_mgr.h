@@ -23,13 +23,13 @@ extern "C" {
  * \defgroup    MICP_Server_Exported_Types Microphone Control Server Exported Types
  *
  * \ingroup LEA_GAF_MICP_Server
- * \{
+ * @{
  */
 
 /**
  * mics_mgr.h
  *
- * \brief  MICS Service parameter.
+ * \brief  MICS service parameters.
  *
  * \ingroup MICP_Server_Exported_Types
  */
@@ -41,8 +41,9 @@ typedef struct
 /**
  * mics_mgr.h
  *
- * \brief  MICS Service Write Mute Indication parameter.
- *         The message data for LE_AUDIO_MSG_MICS_WRITE_MUTE_IND.
+ * \brief  MICS service write Mute indication parameter.
+ *
+ * The message data for @ref LE_AUDIO_MSG_MICS_WRITE_MUTE_IND.
  *
  * \ingroup MICP_Server_Exported_Types
  */
@@ -52,14 +53,14 @@ typedef struct
 } T_MICS_WRITE_MUTE_IND;
 /**
  * End of MICP_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    MICP_Server_Exported_Functions Microphone Control Server Exported Functions
  *
  * \ingroup LEA_GAF_MICP_Server
- * \{
+ * @{
  */
 
 /**
@@ -70,7 +71,7 @@ typedef struct
  * \param[in]  p_param   Pointer to MICS service parameter: @ref T_MICS_PARAM.
  *
  * \return         The result of set MICS service parameter.
- * \retval true    Set MICS service parameter success.
+ * \retval true    Set MICS service parameter is successful.
  * \retval false   Set MICS service parameter failed.
  *
  * \ingroup MICP_Server_Exported_Functions
@@ -84,16 +85,16 @@ bool mics_set_param(T_MICS_PARAM *p_param);
  *
  * \param[in,out]  p_param      Pointer to MICS service parameter: @ref T_MICS_PARAM.
  *
- * \return         The result of get MICS service parameter.
- * \retval true    Get MICS service parameter success.
- * \retval false   Get MICS service parameter failed.
+ * \return         The result of getting MICS service parameter.
+ * \retval true    Getting MICS service parameter is successful.
+ * \retval false   Getting MICS service parameter failed.
  *
  * \ingroup MICP_Server_Exported_Functions
  */
 bool mics_get_param(T_MICS_PARAM *p_param);
 /**
  * End of MICP_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

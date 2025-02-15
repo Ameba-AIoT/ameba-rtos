@@ -135,11 +135,10 @@ each implementation - which would waste RAM.  In this case, there is only one
 command interpreter running. */
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE		2096
 
-/* Normal assert() semantics without relying on the provision of an assert.h
-header file. */
+/* system assert level controlled by rtk_assert.h header file. */
 #ifndef __ASSEMBLER__
-void vAssertCalled(const char *pcFile, uint32_t ulLine);
-// #define configASSERT( x ) if( ( x ) == 0 ) vAssertCalled( __FILE__, __LINE__ );
+#include "rtk_assert.h"
+// #define configASSERT(x)    rtk_assert(x)
 #endif
 
 /* If configTASK_RETURN_ADDRESS is not defined then a task that attempts to

@@ -9,6 +9,14 @@ add_library(src_${d_MCU_PROJECT_NAME}_fwlib_secure INTERFACE)
 add_library(src_${d_MCU_PROJECT_NAME}_fwlib_xlat_tables INTERFACE)
 
 #--------------------------#
+if(CONFIG_AMEBASMARTPLUS)
+	if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
+		ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
+			${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_sema_rom.c
+		)
+	endif()
+endif()
+
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib_secure p_SCOPE interface
@@ -25,7 +33,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_gdma_ram.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_ir.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_ledc.c
-
             ${d_SOC_PLATFORM_DIR}/swlib/log.c
         )
 
@@ -81,6 +88,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_pinmapcfg.c
             ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_flashcfg.c
             ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_sleepcfg.c
+            ${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
         )
     elseif("${d_MCU_PROJECT_NAME}" STREQUAL "lp")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
@@ -116,6 +124,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/swlib/log.c
             ${d_SOC_PLATFORM_DIR}/swlib/locks.c
             ${d_SOC_PLATFORM_DIR}/swlib/sscanf_minimal.c
+            ${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
         )
     elseif("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
@@ -173,6 +182,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
 
             ${d_SOC_PLATFORM_DIR}/swlib/log.c
             ${d_SOC_PLATFORM_DIR}/swlib/sscanf_minimal.c
+            ${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
         )
         ameba_target_sources_if(CONFIG_AS_INIC_AP src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
             ${d_SOC_PLATFORM_DIR}/misc/ameba_ota.c

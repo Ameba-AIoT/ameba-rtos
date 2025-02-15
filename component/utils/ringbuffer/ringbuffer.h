@@ -22,9 +22,23 @@
 extern "C" {
 #endif
 
+#define SHARED_RINGBUFF		0
+#define LOCAL_RINGBUFF		1
+
+struct RingBuffer {
+	uint8_t *start;
+	uint32_t size;
+	uint32_t owns;
+	uint32_t type;
+	uint32_t rsvd0[28];
+	uint8_t *wptr;
+	uint32_t rsvd1[31];
+	uint8_t *rptr;
+	uint32_t rsvd2[31];
+};
 typedef struct RingBuffer RingBuffer;
 
-RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t owns);
+RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t type, int32_t owns);
 int32_t RingBuffer_Destroy(RingBuffer *rb);
 
 uint32_t RingBuffer_Size(RingBuffer *rb);

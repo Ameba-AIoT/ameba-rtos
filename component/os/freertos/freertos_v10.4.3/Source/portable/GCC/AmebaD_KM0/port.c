@@ -462,13 +462,6 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 }
 #endif
 
-void vAssertCalled(const char *pcFile, uint32_t ulLine)
-{
-	printf("ASSERT!  Line %d of file %s\r\n", (int)ulLine, pcFile);
-	taskENTER_CRITICAL();
-	for (;;);
-}
-
 CONFIG_FW_CRITICAL_CODE_SECTION
 void freertos_post_sleep_processing(unsigned int *expected_idle_time)
 {

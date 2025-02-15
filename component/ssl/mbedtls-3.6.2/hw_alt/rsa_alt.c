@@ -20,10 +20,62 @@
 /* define it in mbedtls_config_xxx.h */
 #if defined(RTK_LALU_MBEDTLS_RSA_CACULATION_ALT)
 
-extern int mpi_check_small_factors(const mbedtls_mpi *X);
 extern int mbedtls_rsa_deduce_crt(const mbedtls_mpi *P, const mbedtls_mpi *Q,
                            const mbedtls_mpi *D, mbedtls_mpi *DP,
                            mbedtls_mpi *DQ, mbedtls_mpi *QP);
+
+#if defined(MBEDTLS_GENPRIME)
+
+static const unsigned char small_prime_gaps[] = {
+    2, 2, 4, 2, 4, 2, 4, 6,
+    2, 6, 4, 2, 4, 6, 6, 2,
+    6, 4, 2, 6, 4, 6, 8, 4,
+    2, 4, 2, 4, 14, 4, 6, 2,
+    10, 2, 6, 6, 4, 6, 6, 2,
+    10, 2, 4, 2, 12, 12, 4, 2,
+    4, 6, 2, 10, 6, 6, 6, 2,
+    6, 4, 2, 10, 14, 4, 2, 4,
+    14, 6, 10, 2, 4, 6, 8, 6,
+    6, 4, 6, 8, 4, 8, 10, 2,
+    10, 2, 6, 4, 6, 8, 4, 2,
+    4, 12, 8, 4, 8, 4, 6, 12,
+    2, 18, 6, 10, 6, 6, 2, 6,
+    10, 6, 6, 2, 6, 6, 4, 2,
+    12, 10, 2, 4, 6, 6, 2, 12,
+    4, 6, 8, 10, 8, 10, 8, 6,
+    6, 4, 8, 6, 4, 8, 4, 14,
+    10, 12, 2, 10, 2, 4, 2, 10,
+    14, 4, 2, 4, 14, 4, 2, 4,
+    20, 4, 8, 10, 8, 4, 6, 6,
+    14, 4, 6, 6, 8, 6, /*reaches 997*/
+    0 /* the last entry is effectively unused */
+};
+
+static int mpi_check_small_factors(const mbedtls_mpi *X)
+{
+    int ret = 0;
+    size_t i;
+    mbedtls_mpi_uint r;
+    unsigned p = 3; /* The first odd prime */
+
+    if ((X->p[0] & 1) == 0) {
+        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+    }
+
+    for (i = 0; i < sizeof(small_prime_gaps); p += small_prime_gaps[i], i++) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_int(&r, X, p));
+        if (r == 0) {
+            if (mbedtls_mpi_cmp_int(X, p) == 0) {
+                return 1;
+            } else {
+                return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+            }
+        }
+    }
+
+cleanup:
+    return ret;
+}
 
 static int pke_rsa_prime_generate(size_t nbits, uint8_t *num_buf, int flags)
 {
@@ -138,7 +190,6 @@ cleanup:
 	return ret;
 }
 
-#if defined(MBEDTLS_GENPRIME)
 int mbedtls_rsa_gen_key(mbedtls_rsa_context *ctx,
                         int (*f_rng)(void *, unsigned char *, size_t),
                         void *p_rng,

@@ -74,7 +74,7 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 		track_start_threshold = RTAudioTrack_GetStartThresholdBytes(audio_track);
 		BT_LOGE("%s get start threshold:%d\r\n", __func__, (int)track_start_threshold);
 #endif
-		BT_LOGE("%s sample_rate %d, channel_cout %d, track_buf_size %d \r\n", __func__,
+		BT_LOGE("%s sample_rate %d, channel_count %d, track_buf_size %d \r\n", __func__,
 				(int)rate,
 				(int)channels,
 				(int)track_buf_size);

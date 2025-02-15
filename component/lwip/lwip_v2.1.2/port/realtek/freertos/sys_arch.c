@@ -443,13 +443,13 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn thread , void *arg,
 
    if ( s_nextthread < SYS_THREAD_MAX )
    {
-       rtos_critical_enter_old();
+       rtos_critical_enter(RTOS_CRITICAL_LWIP);
        result = rtos_task_create(&CreatedTask, (const char *) name, thread, arg, stacksize*4, prio);
 
        // For each task created, store the task handle (pid) in the timers array.
        // This scheme doesn't allow for threads to be deleted
        s_timeoutlist[s_nextthread++].pid = CreatedTask;
-       rtos_critical_exit_old();
+       rtos_critical_exit(RTOS_CRITICAL_LWIP);
 
        if(result == SUCCESS)
        {
@@ -475,7 +475,7 @@ int sys_thread_delete(rtos_task_t pid)
 
     if (s_nextthread)
     {
-        rtos_critical_enter_old();
+        rtos_critical_enter(RTOS_CRITICAL_LWIP);
 
         tend = &(s_timeoutlist[s_nextthread-1]);//the last one
         for(i = 0; i < s_nextthread; i++)
@@ -495,7 +495,7 @@ int sys_thread_delete(rtos_task_t pid)
             rtos_task_delete(pid);
         }
 
-        rtos_critical_exit_old();
+        rtos_critical_exit(RTOS_CRITICAL_LWIP);
 
         if (isFind)
         {
@@ -527,7 +527,7 @@ int sys_thread_delete(rtos_task_t pid)
 */
 sys_prot_t sys_arch_protect(void)
 {
-    rtos_critical_enter_old();
+    rtos_critical_enter(RTOS_CRITICAL_LWIP);
     return 1;
 }
 
@@ -540,7 +540,7 @@ sys_prot_t sys_arch_protect(void)
 void sys_arch_unprotect(sys_prot_t pval)
 {
     ( void ) pval;
-    rtos_critical_exit_old();
+    rtos_critical_exit(RTOS_CRITICAL_LWIP);
 }
 
 /*
@@ -553,7 +553,7 @@ void sys_assert( const char *msg )
     printf(msg);
     printf("\n\r");
     */
-    rtos_critical_enter_old(  );
+    rtos_critical_enter(RTOS_CRITICAL_LWIP);
     for(;;)
     ;
 }

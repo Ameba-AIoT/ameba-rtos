@@ -15,20 +15,22 @@ extern "C" {
 /**
  * \defgroup    LEA_GAF_Codec_QoS BAP Codec QoS
  *
- * \brief   BAP Codec QoS.
+ * \brief   BAP codec QoS.
  */
 
 /**
  * \defgroup    Codec_QoS_Exported_Types BAP Codec QoS Exported Types
  *
  * \ingroup LEA_GAF_Codec_QoS
- * \{
+ * @{
  */
 
 /**
  * codec_qos.h
  *
- * \brief  Codec Capability Configuration Items.
+ * \brief  Codec capability configuration items.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Types
  */
@@ -56,14 +58,14 @@ typedef enum
 } T_CODEC_CFG_ITEM;
 /**
  * End of Codec_QoS_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    Codec_QoS_Exported_Macros BAP Codec QoS Exported Macros
  *
  * \ingroup LEA_GAF_Codec_QoS
- * \{
+ * @{
  */
 
 /**
@@ -71,10 +73,12 @@ typedef enum
  *
  * \defgroup    CODEC_CAP_CONFIG_ITEM_BIT Codec Capability Configuration Items Bit Mask
  *
- * \brief  Define Codec Capability Configuration Items Bit Mask.
+ * \brief  Define codec capability configuration items bit mask.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Macros
- * \{
+ * @{
  */
 #define CODEC_CFG_ITEM_8_1_BIT   (1 << CODEC_CFG_ITEM_8_1)
 #define CODEC_CFG_ITEM_8_2_BIT   (1 << CODEC_CFG_ITEM_8_2)
@@ -94,18 +98,20 @@ typedef enum
 #define CODEC_CFG_ITEM_48_6_BIT  (1 << CODEC_CFG_ITEM_48_6)
 /**
  * End of CODEC_CAP_CONFIG_ITEM_BIT
- * \}
+ * @}
  */
 
 /**
  * codec_qos.h
  *
- * \defgroup    SUP_SAMPLING_FREQ_MASK Supported Sampling Frequency Table Mask
+ * \defgroup    SUP_SAMPLING_FREQ_MASK Supported Sampling_Frequency Table Mask
  *
- * \brief  Define Supported Sampling Frequency Table Mask.
+ * \brief  Define Supported Sampling_Frequency table mask.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Macros
- * \{
+ * @{
  */
 #define SAMPLE_FREQ_8K_TABLE_MASK       (CODEC_CFG_ITEM_8_1_BIT|CODEC_CFG_ITEM_8_2_BIT)
 #define SAMPLE_FREQ_16K_TABLE_MASK      (CODEC_CFG_ITEM_16_1_BIT|CODEC_CFG_ITEM_16_2_BIT)
@@ -117,48 +123,50 @@ typedef enum
                                          CODEC_CFG_ITEM_48_5_BIT|CODEC_CFG_ITEM_48_6_BIT)
 /**
  * End of SUP_SAMPLING_FREQ_MASK
- * \}
+ * @}
  */
 
 /**
  * codec_qos.h
  *
- * \defgroup    SUP_FRAME_DURA_MASK Supported Frame Duration Table Mask
+ * \defgroup    SUP_FRAME_DURA_MASK Supported_Frame_Durations Table Mask
  *
- * \brief  Define Supported Frame Duration Table Mask.
+ * \brief  Define Supported_Frame_Durations table mask.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Macros
- * \{
+ * @{
  */
 #define FRAME_DURATION_7_5M_TABLE_MASK  (CODEC_CFG_ITEM_8_1_BIT|CODEC_CFG_ITEM_16_1_BIT| \
                                          CODEC_CFG_ITEM_24_1_BIT|CODEC_CFG_ITEM_32_1_BIT| \
                                          CODEC_CFG_ITEM_441_1_BIT|CODEC_CFG_ITEM_48_1_BIT| \
-                                         CODEC_CFG_ITEM_48_3_BIT|CODEC_CFG_ITEM_48_5_BIT)   /**< 7.5 ms */
+                                         CODEC_CFG_ITEM_48_3_BIT|CODEC_CFG_ITEM_48_5_BIT)   /**< 7.5 ms. */
 #define FRAME_DURATION_10M_TABLE_MASK   (CODEC_CFG_ITEM_8_2_BIT|CODEC_CFG_ITEM_16_2_BIT| \
                                          CODEC_CFG_ITEM_24_2_BIT|CODEC_CFG_ITEM_32_2_BIT| \
                                          CODEC_CFG_ITEM_441_2_BIT|CODEC_CFG_ITEM_48_2_BIT| \
-                                         CODEC_CFG_ITEM_48_4_BIT|CODEC_CFG_ITEM_48_6_BIT)   /**< 10 ms */
+                                         CODEC_CFG_ITEM_48_4_BIT|CODEC_CFG_ITEM_48_6_BIT)   /**< 10 ms. */
 /**
  * End of SUP_FRAME_DURA_MASK
- * \}
+ * @}
  */
 
 /**
  * End of Codec_QoS_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    Codec_QoS_Exported_Types BAP Codec QoS Exported Types
  *
  * \ingroup LEA_GAF_Codec_QoS
- * \{
+ * @{
  */
 
 /**
  * codec_qos.h
  *
- * \brief  QoS Configuration Types.
+ * \brief  QoS configuration types.
  *
  * \ingroup Codec_QoS_Exported_Types
  */
@@ -173,7 +181,7 @@ typedef enum
 /**
  * codec_qos.h
  *
- * \brief  Preferred QoS Configuration.
+ * \brief  Preferred QoS configuration.
  *
  * \ingroup Codec_QoS_Exported_Types
  */
@@ -188,14 +196,14 @@ typedef struct
 } T_QOS_CFG_PREFERRED;
 /**
  * End of Codec_QoS_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    Codec_QoS_Exported_Functions BAP Codec QoS Exported Functions
  *
  * \ingroup LEA_GAF_Codec_QoS
- * \{
+ * @{
  */
 
 /**
@@ -206,9 +214,11 @@ typedef struct
  * \param[in]  item       Codec capability configuration item: @ref T_CODEC_CFG_ITEM.
  * \param[in,out]  p_cfg  Pointer to codec configuration: @ref T_CODEC_CFG.
  *
- * \return         The result of get codec preferred configuration.
- * \retval true    Get codec preferred configuration success.
- * \retval false   Get codec preferred configuration failed.
+ * \return         The result of getting codec preferred configuration.
+ * \retval true    Getting codec preferred configuration is successful.
+ * \retval false   Getting codec preferred configuration failed.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Functions
  */
@@ -222,9 +232,9 @@ bool codec_preferred_cfg_get(T_CODEC_CFG_ITEM item, T_CODEC_CFG *p_cfg);
  * \param[in]  p_cfg          Pointer to codec configuration: @ref T_CODEC_CFG.
  * \param[in,out]  p_max_len  Pointer to maximum SDU length.
  *
- * \return         The result of get maximum SDU length by codec configuration.
- * \retval true    Get maximum SDU length by codec configuration success.
- * \retval false   Get maximum SDU length by codec configuration failed.
+ * \return         The result of getting maximum SDU length by codec configuration.
+ * \retval true    Getting maximum SDU length by codec configuration is successful.
+ * \retval false   Getting maximum SDU length by codec configuration failed.
  *
  * \ingroup Codec_QoS_Exported_Functions
  */
@@ -238,9 +248,9 @@ bool codec_max_sdu_len_get(T_CODEC_CFG *p_cfg, uint16_t *p_max_len);
  * \param[in]  p_cfg          Pointer to codec configuration: @ref T_CODEC_CFG.
  * \param[in,out]  p_sdu_int  Pointer to SDU interval.
  *
- * \return         The result of get SDU interval by codec configuration.
- * \retval true    Get SDU interval by codec configuration success.
- * \retval false   Get SDU interval by codec configuration failed.
+ * \return         The result of getting SDU interval by codec configuration.
+ * \retval true    Getting SDU interval by codec configuration is successful.
+ * \retval false   Getting SDU interval by codec configuration failed.
  *
  * \ingroup Codec_QoS_Exported_Functions
  */
@@ -250,15 +260,17 @@ bool codec_sdu_interval_get(T_CODEC_CFG *p_cfg, uint32_t *p_sdu_int);
 /**
  * codec_qos.h
  *
- * \brief  Get preferred qos configuration.
+ * \brief  Get preferred QoS configuration.
  *
  * \param[in]  item       Codec capability configuration item: @ref T_CODEC_CFG_ITEM.
  * \param[in]  type       QoS configuration type: @ref T_QOS_CFG_TYPE.
  * \param[in,out]  p_qos  Pointer to preferred QoS configuration: @ref T_QOS_CFG_PREFERRED.
  *
- * \return         The result of get qos preferred configuration.
- * \retval true    Get qos preferred configuration success.
- * \retval false   Get qos preferred configuration failed.
+ * \return         The result of getting QoS preferred configuration.
+ * \retval true    Getting QoS preferred configuration succeeded.
+ * \retval false   Getting QoS preferred configuration failed.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Functions
  */
@@ -267,15 +279,17 @@ bool qos_preferred_cfg_get(T_CODEC_CFG_ITEM item, T_QOS_CFG_TYPE type, T_QOS_CFG
 /**
  * codec_qos.h
  *
- * \brief  Get preferred qos configuration by codec configuration.
+ * \brief  Get preferred QoS configuration by codec configuration.
  *
  * \param[in]  p_cfg           Pointer to codec configuration: @ref T_CODEC_CFG.
  * \param[in]  target_latency  Target latency.
  * \param[in,out]  p_qos       Pointer to QoS preferred configuration: @ref T_QOS_CFG_PREFERRED.
  *
- * \return         The result of get preferred qos configuration by codec configuration.
- * \retval true    Get preferred qos configuration by codec configuration success.
- * \retval false   Get preferred qos configuration by codec configuration failed.
+ * \return         The result of getting preferred QoS configuration by codec configuration.
+ * \retval true    Getting preferred QoS configuration by codec configuration succeeded.
+ * \retval false   Getting preferred QoS configuration by codec configuration failed.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup Codec_QoS_Exported_Functions
  */
@@ -283,7 +297,7 @@ bool qos_preferred_cfg_get_by_codec(T_CODEC_CFG *p_cfg, uint8_t target_latency,
                                     T_QOS_CFG_PREFERRED *p_qos);
 /**
  * End of Codec_QoS_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

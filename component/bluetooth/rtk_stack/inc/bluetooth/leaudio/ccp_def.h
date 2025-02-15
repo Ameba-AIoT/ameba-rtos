@@ -3,8 +3,8 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     ccp_def.h
-  * @brief    Head file for Call Control Server and Call Control Client.
-  * @details  This file defines Call Control Server and Call Control Client related definition.
+  * @brief    Header file for Call Control Server and Call Control Client.
+  * @details  This file defines Call Control Server and Call Control Client related definitions.
   * @author
   * @date
   * @version
@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup    LEA_GAF_CCP_Def Call Control Profile definition
+ * \defgroup    LEA_GAF_CCP_Def Call Control Profile Definition
  *
  * \brief   Definition for Call Control Server and Call Control Client
  */
@@ -28,7 +28,7 @@ extern "C" {
  * \defgroup CCP_Def_Exported_Macros Call Control Profile Definition Exported Macros
  *
  * \ingroup LEA_GAF_CCP_Def
- * \{
+ * @{
  */
 
 /**
@@ -39,13 +39,13 @@ extern "C" {
  * \brief Service UUID of Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define GATT_UUID_TELEPHONE_BEARER_SERVICE                                         0x184B
 #define GATT_UUID_GENERIC_TELEPHONE_BEARER_SERVICE                                 0x184C
 /**
  * End of CCP_Def_UUID_Service
- * \}
+ * @}
  */
 
 /**
@@ -56,7 +56,7 @@ extern "C" {
  * \brief Characteristic UUID in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define TBS_UUID_CHAR_BEARER_PROVIDER_NAME                                         0x2BB3
 #define TBS_UUID_CHAR_BEARER_UCI                                                   0x2BB4
@@ -76,18 +76,18 @@ extern "C" {
 #define TBS_UUID_CHAR_CALL_FRIENDLY_NAME                                           0x2BC2
 /**
  * End of TBS_UUID_CHAR
- * \}
+ * @}
  */
 
 /**
  * ccp_def.h
  *
- * \defgroup TBS_BEARER_TECHNOLOGY_CHAR_VALUE Bearer Technology characteristic values
+ * \defgroup TBS_BEARER_TECHNOLOGY_CHAR_VALUE Bearer Technology Characteristic Values
  *
  * \brief Bearer Technology characteristic values in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define TBS_BEARER_TECHNOLOGY_CHAR_VALUE_3G                                        0x01
 #define TBS_BEARER_TECHNOLOGY_CHAR_VALUE_4G                                        0x02
@@ -100,18 +100,18 @@ extern "C" {
 #define TBS_BEARER_TECHNOLOGY_CHAR_VALUE_WCDMA                                     0x09
 /**
  * End of TBS_BEARER_TECHNOLOGY_CHAR_VALUE
- * \}
+ * @}
  */
 
 /**
  * ccp_def.h
  *
- * \defgroup TBS_CALL_CONTROL_POINT_CHAR_OPCODE Call Control Point characteristic opcodes
+ * \defgroup TBS_CALL_CONTROL_POINT_CHAR_OPCODE Call Control Point Characteristic Opcodes
  *
  * \brief Call Control Point characteristic opcodes in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define TBS_CALL_CONTROL_POINT_CHAR_OPCODE_ACCEPT                                  0x00
 #define TBS_CALL_CONTROL_POINT_CHAR_OPCODE_TERMINATE                               0x01
@@ -121,7 +121,7 @@ extern "C" {
 #define TBS_CALL_CONTROL_POINT_CHAR_OPCODE_JOIN                                    0x05
 /**
  * End of TBS_CALL_CONTROL_POINT_CHAR_OPCODE
- * \}
+ * @}
  */
 
 /**
@@ -132,7 +132,7 @@ extern "C" {
  * \brief Call Control Point Notification Result Codes in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define TBS_CALL_CONTROL_POINT_NOTIFICATION_RESULT_CODES_SUCCESS                   0x00
 #define TBS_CALL_CONTROL_POINT_NOTIFICATION_RESULT_CODES_OPCODE_NOT_SUPPORTED      0x01
@@ -143,7 +143,7 @@ extern "C" {
 #define TBS_CALL_CONTROL_POINT_NOTIFICATION_RESULT_CODES_INVALID_OUTGOING_URI      0x06
 /**
  * End of TBS_CALL_CONTROL_POINT_NOTIFICATION_RESULT_CODES
- * \}
+ * @}
  */
 
 /**
@@ -154,7 +154,7 @@ extern "C" {
  * \brief Termination Reason Codes in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define TBS_TERMINATION_REASON_CODES_ORIGINATE_URI_FORMED_IMPROPERLY               0x00
 #define TBS_TERMINATION_REASON_CODES_CALL_FAIL                                     0x01
@@ -168,96 +168,96 @@ extern "C" {
 #define TBS_TERMINATION_REASON_CODES_UNSPECIFIED                                   0x09
 /**
  * End of TBS_TERMINATION_REASON_CODES
- * \}
+ * @}
  */
 
 /**
  * ccp_def.h
  *
- * \defgroup TBS_STATUS_FLAGS_CHAR_BIT_Def Status Flags characteristic bit definitions
+ * \defgroup TBS_STATUS_FLAGS_CHAR_BIT_Def Status Flags Characteristic Bit Definitions
  *
  * \brief Status Flags characteristic bit definitions in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
-#define TBS_STATUS_FLAGS_CHAR_BIT_INBAND_RINGTONE                                  0  /**< Bit 0: Inband ringtone
-                                                                                           * \arg 0 : Inband ringtone disabled
-                                                                                           * \arg 1 : Inband ringtone enabled */
-#define TBS_STATUS_FLAGS_CHAR_BIT_SILENT_MODE                                      1  /**< Bit 1: Silent mode
-                                                                                           * \arg 0: Server is not in silent mode
-                                                                                           * \arg 1: Server is in silent mode */
+#define TBS_STATUS_FLAGS_CHAR_BIT_INBAND_RINGTONE                                  0  /**< Bit 0: Inband ringtone.
+                                                                                           * \arg 0: Inband ringtone disabled.
+                                                                                           * \arg 1: Inband ringtone enabled. */
+#define TBS_STATUS_FLAGS_CHAR_BIT_SILENT_MODE                                      1  /**< Bit 1: Silent mode.
+                                                                                           * \arg 0: Server is not in silent mode.
+                                                                                           * \arg 1: Server is in silent mode. */
 /**
  * End of TBS_STATUS_FLAGS_CHAR_BIT_Def
- * \}
+ * @}
  */
 
 /**
  * ccp_def.h
  *
- * \defgroup TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def Call Control Point Optional Opcodes characteristic bit definitions
+ * \defgroup TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def Call Control Point Optional Opcodes Characteristic Bit Definitions
  *
  * \brief Call Control Point Optional Opcodes characteristic bit definitions in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
-#define TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_LOCAL_HOLD                0  /**< Bit 0: Local Hold
-                                                                                           * \arg 0: Local Hold and Local Retrieve Call Control Point Opcodes not supported
-                                                                                           * \arg 1: Local Hold and Local Retrieve Call Control Point Opcodes supported */
-#define TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_JOIN                      1  /**< Bit 1: Join
-                                                                                           * \arg 0: Join Call Control Point Opcode not supported
-                                                                                           * \arg 1: Join Call Control Point Opcode supported */
+#define TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_LOCAL_HOLD                0  /**< Bit 0: Local Hold.
+                                                                                           * \arg 0: Local Hold and Local Retrieve Call Control Point Opcodes not supported.
+                                                                                           * \arg 1: Local Hold and Local Retrieve Call Control Point Opcodes supported. */
+#define TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_JOIN                      1  /**< Bit 1: Join.
+                                                                                           * \arg 0: Join Call Control Point Opcode not supported.
+                                                                                           * \arg 1: Join Call Control Point Opcode supported. */
 /**
  * End of TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def
- * \}
+ * @}
  */
 
 /**
  * ccp_def.h
  *
- * \defgroup TBS_CALL_FLAGS_BIT_Def Call_Flags bit definitions
+ * \defgroup TBS_CALL_FLAGS_BIT_Def Call Flags Bit Definitions
  *
- * \brief Call_Flags bit definitions in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
+ * \brief Call flags bit definitions in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Macros
- * \{
+ * @{
  */
-#define TBS_CALL_FLAGS_BIT_INCOMING_OUTGOING                                       0  /**< Bit 0: Incoming/Outgoing
-                                                                                           * \arg 0: Call is an incoming call
-                                                                                           * \arg 1: Call is an outgoing call */
-#define TBS_CALL_FLAGS_BIT_INFO_WITHHELD_BY_SERVER                                 1  /**< Bit 1: Information withheld by server
-                                                                                           * \arg 0: Not withheld
-                                                                                           * \arg 1: Withheld */
-#define TBS_CALL_FLAGS_BIT_INFO_WITHHELD_BY_NETWORK                                2  /**< Bit 2: Information withheld by network
-                                                                                           * \arg 0: Provided by network
-                                                                                           * \arg 1: Withheld by network */
+#define TBS_CALL_FLAGS_BIT_INCOMING_OUTGOING                                       0  /**< Bit 0: Incoming/Outgoing.
+                                                                                           * \arg 0: Call is an incoming call.
+                                                                                           * \arg 1: Call is an outgoing call. */
+#define TBS_CALL_FLAGS_BIT_INFO_WITHHELD_BY_SERVER                                 1  /**< Bit 1: Information withheld by server.
+                                                                                           * \arg 0: Not withheld.
+                                                                                           * \arg 1: Withheld. */
+#define TBS_CALL_FLAGS_BIT_INFO_WITHHELD_BY_NETWORK                                2  /**< Bit 2: Information withheld by network.
+                                                                                           * \arg 0: Provided by network.
+                                                                                           * \arg 1: Withheld by network. */
 /**
  * End of TBS_CALL_FLAGS_BIT_Def
- * \}
+ * @}
  */
 
 /**
  * End of CCP_Def_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup CCP_Def_Exported_Types Call Control Profile Definition Exported Types
  *
  * \ingroup LEA_GAF_CCP_Def
- * \{
+ * @{
  */
 
 /**
  * ccp_def.h
  *
- * \defgroup T_TBS_CALL_STATE Call State of the call
+ * \defgroup T_TBS_CALL_STATE Call State of the Call
  *
  * \brief Call State of the call in Generic Telephone Bearer Service (GTBS) or Telephone Bearer Service (TBS)
  *
  * \ingroup CCP_Def_Exported_Types
- * \{
+ * @{
  */
 typedef enum
 {
@@ -273,12 +273,12 @@ typedef enum
 } T_TBS_CALL_STATE;
 /**
  * End of T_TBS_CALL_STATE
- * \}
+ * @}
  */
 
 /**
  * End of CCP_Def_Exported_Types
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

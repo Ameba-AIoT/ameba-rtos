@@ -197,7 +197,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 
-#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined (CONFIG_USB_FULLMAC))
+#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_FULLMAC_MENU))
 	app_filesystem_init();
 #endif
 
@@ -212,7 +212,7 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
-#if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined(CONFIG_USB_FULLMAC)) && defined(CONFIG_KM4_AS_NP)
+#if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
 	wififw_task_create();
 #endif
 	/* init coex ipc */
@@ -238,8 +238,9 @@ int main(void)
 
 	/* Execute application example */
 	app_example();
-
+	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelay(rtos_time_delay_ms);
+
 
 	RTK_LOGI(TAG, "KM4 START SCHEDULER \n");
 

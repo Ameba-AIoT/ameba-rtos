@@ -3,8 +3,8 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     ccp_mgr.h
-  * @brief    Head file for Call Control Server.
-  * @details  This file defines Call Control Server related definition.
+  * @brief    Header file for Call Control Server.
+  * @details  This file defines Call Control Server related definitions.
   * @author
   * @date
   * @version
@@ -30,7 +30,7 @@ extern "C" {
  * \defgroup CCP_Server_Exported_Types Call Control Server Exported Types
  *
  * \ingroup LEA_GAF_CCP_Server
- * \{
+ * @{
  */
 
 /**
@@ -43,22 +43,22 @@ extern "C" {
 typedef struct
 {
     bool gtbs;                             /**<
-                                                * \arg    true  : Generic Telephone Bearer Service (GTBS)
-                                                * \arg    false : Telephone Bearer Service (TBS) */
+                                                * \arg    true  : Generic Telephone Bearer Service (GTBS).
+                                                * \arg    false : Telephone Bearer Service (TBS). */
 
     struct
     {
         bool optional_property_notify;     /**<
-                                                * \arg    true  : Support Notify property
-                                                * \arg    false : Not support Notify property */
+                                                * \arg    true  : Supports Notify property.
+                                                * \arg    false : Does not support Notify property. */
     } char_bearer_uri_schemes_supported_list;
 
     struct
     {
         bool support;                      /**<
-                                                * \arg    true  : Support characteristic
-                                                * \arg    false : Not support characteristic */
-    } char_bearer_signal_strength;         /**< Bearer Signal Strength characteristic */
+                                                * \arg    true  : Supports characteristic.
+                                                * \arg    false : Does not support characteristic. */
+    } char_bearer_signal_strength;         /**< Bearer Signal Strength characteristic. */
 
     struct
     {
@@ -80,7 +80,7 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t     *p_bearer_provider_name;                 /**< UTF-8 string */
+    uint8_t     *p_bearer_provider_name;                 /**< UTF-8 string. */
     uint16_t    bearer_provider_name_len;
 } T_CCP_SERVER_BEARER_PROVIDER_NAME;
 
@@ -94,9 +94,9 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_bearer_uci;                           /**<
-                                                              * Identifier of the telephone bearer
+                                                              * Identifier of the telephone bearer.
                                                               *
-                                                              * The "client_id" field of the UCI table is used to populate the Bearer UCI characteristic as a UTF-8 string. */
+                                                              * The 'client_id' field of the UCI table is used to populate the Bearer UCI characteristic as a UTF-8 string. */
     uint16_t    bearer_uci_len;
 } T_CCP_SERVER_BEARER_UCI;
 
@@ -110,7 +110,7 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_bearer_technology; /**<
-                                           * Type of technology for telephone bearer: @ref TBS_BEARER_TECHNOLOGY_CHAR_VALUE */
+                                           * Type of technology for telephone bearer: @ref TBS_BEARER_TECHNOLOGY_CHAR_VALUE. */
     uint16_t    bearer_technology_len;
 } T_CCP_SERVER_BEARER_TECHNOLOGY;
 
@@ -124,7 +124,7 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_bearer_uri_schemes_supported_list;  /**<
-                                                            * A comma-delimited list of supported URI schemes expressed as a UTF-8 string */
+                                                            * A comma-delimited list of supported URI schemes expressed as a UTF-8 string. */
     uint16_t    bearer_uri_schemes_supported_list_len;
 } T_CCP_SERVER_BEARER_URI_SCHEMES_SUPPORTED_LIST;
 
@@ -139,11 +139,11 @@ typedef struct
 {
     uint8_t     call_index;
     uint8_t    *p_incoming_call_target_uri;          /**<
-                                                          * URI of the target of an incoming call
+                                                          * URI of the target of an incoming call.
                                                           *
                                                           * The URI is comprised of the URI scheme followed by the identity of the target of the call.
                                                           *
-                                                          * uri_scheme:identity_target_call */
+                                                          * uri_scheme:identity_target_call. */
     uint16_t    incoming_call_target_uri_len;
 } T_CCP_SERVER_INCOMING_CALL_TARGET_BEARER_URI;
 
@@ -157,7 +157,7 @@ typedef struct
 typedef struct
 {
     uint8_t     call_index;
-    uint8_t     reason_code;              /**< @ref TBS_TERMINATION_REASON_CODES */
+    uint8_t     reason_code;              /**< @ref TBS_TERMINATION_REASON_CODES. */
 } T_CCP_SERVER_TERMINATION_REASON;
 
 /**
@@ -171,11 +171,11 @@ typedef struct
 {
     uint8_t     call_index;
     uint8_t    *p_uri;     /**<
-                                * URI of the incoming caller
+                                * URI of the incoming caller.
                                 *
                                 * The URI of the incoming call is comprised of the URI scheme followed by the Caller ID of the call as a UTF-8 string.
                                 *
-                                * uri_scheme:caller_id */
+                                * uri_scheme:caller_id. */
     uint16_t    uri_len;
 } T_CCP_SERVER_INCOMING_CALL;
 
@@ -190,9 +190,9 @@ typedef struct
 {
     uint8_t     call_index;
     uint8_t    *p_friendly_name;             /**<
-                                                  * Friendly name of the incoming call or outgoing call
+                                                  * Friendly name of the incoming call or outgoing call.
                                                   *
-                                                  * UTF-8 string */
+                                                  * UTF-8 string. */
     uint16_t    friendly_name_len;
 } T_CCP_SERVER_CALL_FRIENDLY_NAME;
 
@@ -206,19 +206,19 @@ typedef struct
 typedef struct
 {
     uint16_t     char_uuid;        /**<
-                                        * \arg    @ref TBS_UUID_CHAR_CALL_CONTROL_POINT_OPTIONAL_OPCODES : Set parameter
-                                        * \arg    @ref TBS_UUID_CHAR_INCOMING_CALL_TARGET_BEARER_URI : Set parameter and send notification
-                                        * \arg    @ref TBS_UUID_CHAR_INCOMING_CALL : Set parameter
-                                        * \arg    @ref TBS_UUID_CHAR_CALL_FRIENDLY_NAME : Set parameter and send notification */
+                                        * \arg    @ref TBS_UUID_CHAR_CALL_CONTROL_POINT_OPTIONAL_OPCODES : Set parameter.
+                                        * \arg    @ref TBS_UUID_CHAR_INCOMING_CALL_TARGET_BEARER_URI : Set parameter and send notification.
+                                        * \arg    @ref TBS_UUID_CHAR_INCOMING_CALL : Set parameter.
+                                        * \arg    @ref TBS_UUID_CHAR_CALL_FRIENDLY_NAME : Set parameter and send notification. */
 
     union
     {
         uint16_t                                        call_control_point_optional_opcodes;       /**<
-                                                                                                        * Optional opcodes of the Call Control Point
+                                                                                                        * Optional opcodes of the Call Control Point.
                                                                                                         *
-                                                                                                        * A bit field
+                                                                                                        * A bit field.
                                                                                                         *
-                                                                                                        * @ref TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def */
+                                                                                                        * @ref TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def. */
         T_CCP_SERVER_INCOMING_CALL_TARGET_BEARER_URI    incoming_call_target_bearer_uri;
         T_CCP_SERVER_INCOMING_CALL                      incoming_call;
         T_CCP_SERVER_CALL_FRIENDLY_NAME                 call_friendly_name;
@@ -235,11 +235,11 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_uri;    /**<
-                                * Uniform Resource Identifier (URI) of the outgoing call
+                                * Uniform Resource Identifier (URI) of the outgoing call.
                                 *
                                 * The URI is comprised of the URI scheme followed by the Caller ID.
                                 *
-                                * uri_scheme:caller_id */
+                                * uri_scheme:caller_id. */
     uint16_t    uri_len;
 } T_CCP_SERVER_WRITE_CALL_CP_PARAM_ORIGINATE_OPCODE_PARAM;
 
@@ -266,10 +266,10 @@ typedef struct
 typedef struct
 {
     uint16_t        conn_handle;
-    uint16_t        cid;                   /**< Channel Identifier assigned by Bluetooth stack */
-    uint8_t         service_id;            /**< Service ID */
+    uint16_t        cid;                   /**< Channel Identifier assigned by Bluetooth Host. */
+    uint8_t         service_id;            /**< Service ID. */
 
-    uint8_t         opcode;                /**< @ref TBS_CALL_CONTROL_POINT_CHAR_OPCODE */
+    uint8_t         opcode;                /**< @ref TBS_CALL_CONTROL_POINT_CHAR_OPCODE. */
 
     union
     {
@@ -344,40 +344,40 @@ typedef struct
         T_CCP_SERVER_BEARER_TECHNOLOGY                  bearer_technology;
         T_CCP_SERVER_BEARER_URI_SCHEMES_SUPPORTED_LIST  bearer_uri_schemes_supported_list;
         uint8_t                                         bearer_signal_strength;                    /**<
-                                                                                                        * Level of the signal of the telephone bearer
+                                                                                                        * Level of the signal of the telephone bearer.
                                                                                                         *
-                                                                                                        * \arg    0 : No service
-                                                                                                        * \arg    1 to 99 : Meaning of the values is left up to the implementation
-                                                                                                        * \arg    100 : Maximum signal strength
-                                                                                                        * \arg    101 to 254: Reserved for future use
-                                                                                                        * \arg    255 : Signal strength is unavailable or has no meaning for this particular bearer */
+                                                                                                        * \arg    0 : No service.
+                                                                                                        * \arg    1 to 99 : Meaning of the values is left up to the implementation.
+                                                                                                        * \arg    100 : Maximum signal strength.
+                                                                                                        * \arg    101 to 254: Reserved for future use.
+                                                                                                        * \arg    255 : Signal strength is unavailable or has no meaning for this particular bearer. */
         uint16_t                                        status_flags;                              /**<
-                                                                                                        * Current status of features that Call Control Server device supports
+                                                                                                        * Current status of features that Call Control Server device supports.
                                                                                                         *
-                                                                                                        * A bit field
+                                                                                                        * A bit field.
                                                                                                         *
-                                                                                                        * @ref TBS_STATUS_FLAGS_CHAR_BIT_Def */
+                                                                                                        * @ref TBS_STATUS_FLAGS_CHAR_BIT_Def. */
         T_CCP_SERVER_BEARER_UCI                         bearer_uci;
         uint8_t                                         bearer_signal_strength_reporting_interval; /**<
-                                                                                                        * Reporting interval expressed in seconds
+                                                                                                        * Reporting interval expressed in seconds.
                                                                                                         *
-                                                                                                        * \arg    0 : Signal strength is reported as soon as the signal strength changes
-                                                                                                        * \arg    1 to 255 */
+                                                                                                        * \arg    0 : Signal strength is reported as soon as the signal strength changes.
+                                                                                                        * \arg    1 to 255. */
         uint8_t                                         content_control_id;                        /**<
-                                                                                                        * Represent a unique instance of a service that either controls
-                                                                                                        * or provides status information on an audio-related feature */
+                                                                                                        * Represent a unique instance of a service that either controls.
+                                                                                                        * or provides status information on an audio-related feature. */
     } param;
 } T_CCP_SERVER_READ_CFM;
 /**
  * End of CCP_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup CCP_Server_Exported_Functions Call Control Server Exported Functions
  *
  * \ingroup LEA_GAF_CCP_Server
- * \{
+ * @{
  */
 
 /**
@@ -386,11 +386,11 @@ typedef struct
  *
  * ccp_mgr.h
  *
- * \param[in]  p_param          Point to service registration parameter: @ref T_CCP_SERVER_REG_SRV_PARAM
+ * \param[in]  p_param          Point to service registration parameter: @ref T_CCP_SERVER_REG_SRV_PARAM.
  *
- * \return         Service ID of service registration operation
- * \retval 0xFF    Service registration operation is failed
- * \retval Others  Service ID of specific service. Service registration operation is successful
+ * \return         Service ID of service registration operation.
+ * \retval 0xFF    Service registration operation has failed.
+ * \retval Others  Service ID of specific service. Service registration operation is successful.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -410,12 +410,12 @@ uint8_t ccp_server_reg_srv(T_CCP_SERVER_REG_SRV_PARAM *p_param);
  *
  * ccp_mgr.h
  *
- * \param[in]  service_id       Service ID
- * \param[in]  p_param          Point to parameter: @ref T_CCP_SERVER_SET_PARAM
+ * \param[in]  service_id       Service ID.
+ * \param[in]  p_param          Point to parameter: @ref T_CCP_SERVER_SET_PARAM.
  *
- * \return         The result of set parameter operation
- * \retval true    Set parameter operation is successful
- * \retval false   Set parameter operation is failed
+ * \return         The result of set parameter operation.
+ * \retval true    Set parameter operation is successful.
+ * \retval false   Set parameter operation is failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -435,13 +435,13 @@ bool ccp_server_set_param(uint8_t service_id, T_CCP_SERVER_SET_PARAM *p_param);
  *
  * ccp_mgr.h
  *
- * \param[in]  service_id       Service ID
- * \param[in]  p_call_uri       Point to call URI
- * \param[in]  call_uri_len     Length of call URI
+ * \param[in]  service_id       Service ID.
+ * \param[in]  p_call_uri       Point to call URI.
+ * \param[in]  call_uri_len     Length of call URI.
  *
- * \return         Call index of creation for a Call State member
- * \retval 0x00    Creation for a Call State member is failed
- * \retval Others  Call index to identify call. Creation for a Call State member is successful
+ * \return         Call index of creation for a Call State member.
+ * \retval 0x00    Creation for a Call State member has failed.
+ * \retval Others  Call index to identify call. Creation for a Call State member is successful.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -461,17 +461,17 @@ uint8_t ccp_server_create_call(uint8_t service_id, uint8_t *p_call_uri, uint16_t
  *
  * ccp_mgr.h
  *
- * \param[in]  service_id       Service ID
- * \param[in]  call_index       Call index to identify call
- * \param[in]  call_state       @ref T_TBS_CALL_STATE
- * \param[in]  call_flags       A bit field. @ref TBS_CALL_FLAGS_BIT_Def
+ * \param[in]  service_id       Service ID.
+ * \param[in]  call_index       Call index to identify call.
+ * \param[in]  call_state       @ref T_TBS_CALL_STATE.
+ * \param[in]  call_flags       A bit field. @ref TBS_CALL_FLAGS_BIT_Def.
  * \param[in]  send_notification
- * \arg    true  : Send notification
- * \arg    false : Not send notification
+ * \arg    true  : Send notification.
+ * \arg    false : Do not send notification.
  *
- * \return         The result of update operation
- * \retval true    Update operation is successful
- * \retval false   Update operation is failed
+ * \return         The result of update operation.
+ * \retval true    Update operation is successful.
+ * \retval false   Update operation is failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -492,12 +492,12 @@ bool ccp_server_update_call_state_by_call_index(uint8_t service_id, uint8_t call
  *
  * ccp_mgr.h
  *
- * \param[in]  service_id                 Service ID
- * \param[in]  p_termination_reason       Point to parameter: @ref T_CCP_SERVER_TERMINATION_REASON
+ * \param[in]  service_id                 Service ID.
+ * \param[in]  p_termination_reason       Point to parameter: @ref T_CCP_SERVER_TERMINATION_REASON.
  *
- * \return         The result of termination for a Call State member
- * \retval true    Termination for a Call State member is successful
- * \retval false   Termination for a Call State member is failed
+ * \return         The result of termination for a Call State member.
+ * \retval true    Termination for a Call State member is successful.
+ * \retval false   Termination for a Call State member is failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -516,20 +516,20 @@ bool ccp_server_terminate_call(uint8_t service_id,
  *
  * \brief  Confirmation of read request sent by client
  *
- *         This API should be used if all of the following conditions are true:
- *            \arg char_uuid of @ref T_CCP_SERVER_READ_IND is @ref TBS_UUID_CHAR_BEARER_PROVIDER_NAME , @ref TBS_UUID_CHAR_BEARER_TECHNOLOGY ,
- *                 @ref TBS_UUID_CHAR_BEARER_URI_SCHEMES_SUPPORTED_LIST , @ref TBS_UUID_CHAR_BEARER_SIGNAL_STRENGTH , @ref TBS_UUID_CHAR_STATUS_FLAGS ,
- *                 @ref TBS_UUID_CHAR_BEARER_UCI , @ref TBS_UUID_CHAR_BEARER_SIGNAL_STRENGTH_REPORTING_INTERVAL , or @ref TBS_UUID_CHAR_CONTENT_CONTROL_ID
- *            \arg return value of callback registered by @ref ble_audio_cback_register with msg @ref LE_AUDIO_MSG_CCP_SERVER_READ_IND
- *                 is @ref BLE_AUDIO_CB_RESULT_PENDING
+ * This API should be used if all of the following conditions are true:
+ * \arg char_uuid of @ref T_CCP_SERVER_READ_IND is @ref TBS_UUID_CHAR_BEARER_PROVIDER_NAME , @ref TBS_UUID_CHAR_BEARER_TECHNOLOGY ,
+ * @ref TBS_UUID_CHAR_BEARER_URI_SCHEMES_SUPPORTED_LIST , @ref TBS_UUID_CHAR_BEARER_SIGNAL_STRENGTH , @ref TBS_UUID_CHAR_STATUS_FLAGS ,
+ * @ref TBS_UUID_CHAR_BEARER_UCI , @ref TBS_UUID_CHAR_BEARER_SIGNAL_STRENGTH_REPORTING_INTERVAL , or @ref TBS_UUID_CHAR_CONTENT_CONTROL_ID
+ * \arg return value of callback registered by @ref ble_audio_cback_register with msg @ref LE_AUDIO_MSG_CCP_SERVER_READ_IND
+ * is @ref BLE_AUDIO_CB_RESULT_PENDING
  *
  * ccp_mgr.h
  *
- * \param[in]  p_read_cfm          Point to parameter: @ref T_CCP_SERVER_READ_CFM
+ * \param[in]  p_read_cfm          Point to parameter: @ref T_CCP_SERVER_READ_CFM.
  *
- * \return         The result of operation
- * \retval true    Operation is successful
- * \retval false   Operation is failed
+ * \return         The result of operation.
+ * \retval true    Operation is successful.
+ * \retval false   Operation is failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -659,7 +659,7 @@ bool ccp_server_terminate_call(uint8_t service_id,
 bool ccp_server_read_cfm(T_CCP_SERVER_READ_CFM *p_read_cfm);
 /**
  * End of CCP_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

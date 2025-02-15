@@ -48,7 +48,7 @@ log_init_t log_init_table[] = {
 	at_mqtt_init,
 #endif
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
-	at_tcpip_init,
+	at_socket_init,
 #endif
 #if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
 	at_http_init,
@@ -213,7 +213,7 @@ int atcmd_tt_mode_start(u32 len)
 		RTK_LOGE(TAG, "tt mode size exceeds free heap size(%u), exit tt mode\n", rtos_mem_get_free_heap_size());
 		return -1;
 	}
-	atcmd_tt_mode_rx_ring_buf = RingBuffer_Create(NULL, len + 1, 1);
+	atcmd_tt_mode_rx_ring_buf = RingBuffer_Create(NULL, len + 1, LOCAL_RINGBUFF, 1);
 	if (atcmd_tt_mode_rx_ring_buf == NULL) {
 		RTK_LOGE(TAG, "create tt mode ring buffer fail\n");
 		return -1;
@@ -264,25 +264,46 @@ void atcmd_tt_mode_end(void)
 
 int atcmd_wifi_config_setting(void)
 {
+	int ret = 0;
+	char *path = NULL;
+	struct stat *stat_buf = NULL;
+	char *wifi_config = NULL;
+
 	if (lfs_mount_fail) {
-		return -1;
-	}
-
-	int file_size = rt_kv_size("wifi_config.json");
-	if (file_size <= 0) {
-		RTK_LOGI(TAG, "wifi_config.json is not exist\n");
-		return 0;
-	}
-
-	char *wifi_config;
-	cJSON *wifi_ob, *country_code_ob;
-	wifi_config = (char *)rtos_mem_zmalloc(file_size);
-	int ret = rt_kv_get("wifi_config.json", wifi_config, file_size);
-	if (ret < 0) {
-		RTK_LOGE(TAG, "rt_kv_get wifi_config.json fail \r\n");
 		ret = -1;
 		goto EXIT;
 	}
+
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+	path = (char *)rtos_mem_zmalloc(MAX_KEY_LENGTH + 2);
+	stat_buf = (struct stat *)rtos_mem_zmalloc(sizeof(struct stat));
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:%s", prefix, "wifi_config.json");
+	ret = stat(path, stat_buf);
+	if (ret < 0) {
+		RTK_LOGI(TAG, "wifi_config.json is not exist \r\n");
+		ret = 0;
+		goto EXIT;
+	}
+
+	vfs_file *finfo;
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo == NULL) {
+		RTK_LOGI(TAG, "get wifi_config.json fail \r\n");
+		ret = -1;
+		goto EXIT;
+	}
+
+
+	cJSON *wifi_ob, *country_code_ob;
+	wifi_config = (char *)rtos_mem_zmalloc(stat_buf->st_size);
+	ret = fread(wifi_config, stat_buf->st_size, 1, (FILE *)finfo);
+	if (ret < 0) {
+		RTK_LOGI(TAG, "get wifi_config.json fail \r\n");
+		fclose((FILE *)finfo);
+		goto EXIT;
+	}
+
+	fclose((FILE *)finfo);
 
 	if ((wifi_ob = cJSON_Parse(wifi_config)) != NULL) {
 		country_code_ob = cJSON_GetObjectItem(wifi_ob, "country_code");
@@ -299,7 +320,16 @@ int atcmd_wifi_config_setting(void)
 	}
 
 EXIT:
-	rtos_mem_free(wifi_config);
+	if (path) {
+		rtos_mem_free(path);
+	}
+	if (stat_buf) {
+		rtos_mem_free(stat_buf);
+	}
+	if (wifi_config) {
+		rtos_mem_free(wifi_config);
+	}
+
 	return ret;
 }
 
@@ -318,26 +348,42 @@ void atcmd_get_pin_from_json(const cJSON *const object, const char *const string
 int atcmd_mcu_control_config_setting(void)
 {
 	int ret;
+	char *path = NULL;
+	struct stat *stat_buf = NULL;
+	char *atcmd_config = NULL;
 
 	if (lfs_mount_fail) {
 		goto DEFAULT;
 	}
 
-	int file_size = rt_kv_size("atcmd_config.json");
-	if (file_size <= 0) {
-		RTK_LOGI(TAG, "atcmd_config.json is not exist\n");
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+	path = (char *)rtos_mem_zmalloc(MAX_KEY_LENGTH + 2);
+	stat_buf = (struct stat *)rtos_mem_zmalloc(sizeof(struct stat));
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:%s", prefix, "atcmd_config.json");
+	ret = stat(path, stat_buf);
+	if (ret < 0) {
+		RTK_LOGI(TAG, "atcmd_config.json is not exist \r\n");
 		goto DEFAULT;
 	}
 
-	char *atcmd_config;
-	cJSON *atcmd_ob, *interface_ob;
-	atcmd_config = (char *)rtos_mem_zmalloc(file_size);
-	ret = rt_kv_get("atcmd_config.json", atcmd_config, file_size);
-	if (ret < 0) {
-		RTK_LOGI(TAG, "rt_kv_get atcmd_config.json fail \r\n");
-		rtos_mem_free(atcmd_config);
+	vfs_file *finfo;
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo == NULL) {
+		RTK_LOGI(TAG, "get atcmd_config.json fail \r\n");
 		goto DEFAULT;
 	}
+
+
+	cJSON *atcmd_ob, *interface_ob;
+	atcmd_config = (char *)rtos_mem_zmalloc(stat_buf->st_size);
+	ret = fread(atcmd_config, stat_buf->st_size, 1, (FILE *)finfo);
+	if (ret < 0) {
+		RTK_LOGI(TAG, "get atcmd_config.json fail \r\n");
+		fclose((FILE *)finfo);
+		goto DEFAULT;
+	}
+
+	fclose((FILE *)finfo);
 
 	if ((atcmd_ob = cJSON_Parse(atcmd_config)) != NULL) {
 		interface_ob = cJSON_GetObjectItem(atcmd_ob, "interface");
@@ -351,7 +397,6 @@ int atcmd_mcu_control_config_setting(void)
 				g_mcu_control_mode = AT_MCU_CONTROL_SDIO;
 			}
 		} else {
-			rtos_mem_free(atcmd_config);
 			goto DEFAULT;
 		}
 
@@ -382,8 +427,6 @@ int atcmd_mcu_control_config_setting(void)
 		}
 	}
 
-	rtos_mem_free(atcmd_config);
-
 DEFAULT:
 	if (g_mcu_control_mode == AT_MCU_CONTROL_UART) {
 		RTK_LOGI(TAG, "ATCMD MCU Control Mode : UART, tx:%s, rx:%s, baudrate:%d\r\n",
@@ -400,6 +443,18 @@ DEFAULT:
 		RTK_LOGI(TAG, "Confgure sdio mcu control mode!\r\n");
 	} else {
 		RTK_LOGE(TAG, "g_mcu_control_mode is invalid\r\n");
+	}
+
+	if (path) {
+		rtos_mem_free(path);
+	}
+
+	if (stat_buf) {
+		rtos_mem_free(stat_buf);
+	}
+
+	if (atcmd_config) {
+		rtos_mem_free(atcmd_config);
 	}
 
 	return ret;
@@ -475,10 +530,17 @@ void atcmd_service_init(void)
 
 	if (ret < 0) {
 		RTK_LOGI(TAG, "atcmd mcu control config setting fail\n");
-	} else {
-		RTK_LOGI(TAG, ATCMD_MCU_CONTROL_INIT_STR);
-		at_printf(ATCMD_MCU_CONTROL_INIT_STR);
+		return;
 	}
+
+	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+	DiagSnPrintf(path, MAX_KEY_LENGTH, "%s:AT", prefix);
+	mkdir(path, 0);
+	rtos_mem_free(path);
+
+	RTK_LOGI(TAG, ATCMD_MCU_CONTROL_INIT_STR);
+	at_printf(ATCMD_MCU_CONTROL_INIT_STR);
 #endif
 }
 

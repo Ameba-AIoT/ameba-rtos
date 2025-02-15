@@ -1285,12 +1285,6 @@ void vApplicationMallocFailedHook(void)
 	for (;;);
 }
 
-void vAssertCalled(const char *pcFile, uint32_t ulLine)
-{
-	printf("ASSERT!  Line %d of file %s\r\n", (int)ulLine, pcFile);
-	taskENTER_CRITICAL();
-	for (;;);
-}
 /*-----------------------------------------------------------*/
 
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )

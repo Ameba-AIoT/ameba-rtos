@@ -168,12 +168,14 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
     ${c_CMPT_WIFI_DIR}/driver/nan
     ${c_CMPT_WIFI_DIR}/driver/mesh
     ${c_CMPT_WIFI_DIR}/driver/wifi_tunnel
-    ${c_CMPT_WIFI_DIR}/inic
-    ${c_CMPT_WIFI_DIR}/inic/ipc
-    ${c_CMPT_WIFI_DIR}/inic/common
-    ${c_CMPT_WIFI_DIR}/inic/spi
-    ${c_CMPT_WIFI_DIR}/inic/sdio
-    ${c_CMPT_WIFI_DIR}/inic/usb
+    ${c_CMPT_WIFI_DIR}/whc
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev
+    ${c_CMPT_WIFI_DIR}/whc/whc_host
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev/spi
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev/sdio
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev/usb
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev/app
+    ${c_CMPT_WIFI_DIR}/whc/whc_host/spi
     ${c_CMPT_WIFI_DIR}/wifi_tunnel_app
 )
 if (${d_PLATFORM_TYPE} STREQUAL "amebax")
@@ -298,13 +300,13 @@ if(CONFIG_WLAN)
         if(NOT CONFIG_INIC_INTF_SPI)
             if(CONFIG_MP_INCLUDED)
                 ameba_target_link_if(CONFIG_MP_SHRINK dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap_mp_shrink.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_ap_mp_shrink.a
                     p_ELSE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap_mp.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_ap_mp.a
                 )
             else()
                 ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface  p_WHOLE_ARCHIVE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_ap.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_ap.a
                 )
             endif()
         endif()
@@ -318,56 +320,56 @@ if(CONFIG_WLAN)
             if(CONFIG_MP_SHRINK)
                 if(CONFIG_INIC_INTF_SDIO)
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_sdio_np_mp_shrink.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_sdio_np_mp_shrink.a
                     )
                 elseif(CONFIG_INIC_INTF_SPI)
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_spi_np_mp_shrink.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_spi_np_mp_shrink.a
                     )
                 elseif(CONFIG_INIC_INTF_USB)
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_usb_np_mp_shrink.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_usb_np_mp_shrink.a
                     )
                 else()
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_np_mp_shrink.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_np_mp_shrink.a
                     )
                 endif()
             else()
                 if(CONFIG_INIC_INTF_SDIO)
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_sdio_np_mp.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_sdio_np_mp.a
                     )
                 elseif(CONFIG_INIC_INTF_SPI)
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_spi_np_mp.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_spi_np_mp.a
                     )
                 elseif(CONFIG_INIC_INTF_USB)
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_usb_np_mp.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_usb_np_mp.a
                     )
                 else()
                     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_np_mp.a
+                        ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_np_mp.a
                     )
                 endif()
             endif()
         else()
             if(CONFIG_INIC_INTF_SDIO)
                 ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_sdio_np.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_sdio_np.a
                 )
             elseif(CONFIG_INIC_INTF_SPI)
                 ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_spi_np.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_spi_np.a
                 )
             elseif(CONFIG_INIC_INTF_USB)
                 ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_usb_np.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_usb_np.a
                 )
             else()
                 ameba_target_link(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface p_WHOLE_ARCHIVE
-                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_inic_np.a
+                    ${d_SDK_LIB_APPLICATION_DIR}/lib_wifi_whc_np.a
                 )
             endif()
         endif()

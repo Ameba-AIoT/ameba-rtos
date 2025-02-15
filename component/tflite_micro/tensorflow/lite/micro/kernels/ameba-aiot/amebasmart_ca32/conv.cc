@@ -242,21 +242,7 @@ inline void ConvPerChannelCa32(
   const int8 input_zero_point = -input_offset;
   const uint8 zero_point_byte =
       *reinterpret_cast<const uint8*>(&input_zero_point);
-  
-  const int gemm_input_rows = gemm_input_shape->Dims(3);
-  const int gemm_input_cols = FlatSizeSkipDim(*gemm_input_shape, 3);
-  const int filter_rows = filter_shape.Dims(0);
-  const int filter_cols = FlatSizeSkipDim(filter_shape, 0);
-  const int output_rows = output_shape.Dims(3);
-  // See b/79927784.
-  // const int output_cols = FlatSizeSkipDim(output_shape, 3);
-  const int output_cols =
-      output_shape.Dims(0) * output_shape.Dims(1) * output_shape.Dims(2);
 
-  TFLITE_DCHECK_EQ(output_rows, filter_rows);
-  TFLITE_DCHECK_EQ(output_cols, gemm_input_cols);  //
-  TFLITE_DCHECK_EQ(filter_cols, gemm_input_rows);  //
-  TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_rows);
 
   if (need_dilated_im2col) {
     MicroPrintf("need_dilated_im2col don't supported currently!!");
@@ -280,6 +266,21 @@ inline void ConvPerChannelCa32(
         bias_data, output_shape, output_data);
         return;
   }
+
+  const int gemm_input_rows = gemm_input_shape->Dims(3);
+  const int gemm_input_cols = FlatSizeSkipDim(*gemm_input_shape, 3);
+  const int filter_rows = filter_shape.Dims(0);
+  const int filter_cols = FlatSizeSkipDim(filter_shape, 0);
+  const int output_rows = output_shape.Dims(3);
+  // See b/79927784.
+  // const int output_cols = FlatSizeSkipDim(output_shape, 3);
+  const int output_cols =
+      output_shape.Dims(0) * output_shape.Dims(1) * output_shape.Dims(2);
+
+  TFLITE_DCHECK_EQ(output_rows, filter_rows);
+  TFLITE_DCHECK_EQ(output_cols, gemm_input_cols);  //
+  TFLITE_DCHECK_EQ(filter_cols, gemm_input_rows);  //
+  TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_rows);
   
   cpu_backend_gemm::MatrixParams<int8> lhs_params;
   lhs_params.rows = filter_rows;

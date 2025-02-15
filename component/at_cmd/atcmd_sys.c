@@ -390,9 +390,9 @@ void at_list(void *arg)
 #ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
-	/* TCP/IP commands. */
-	at_printf("TCP/IP AT Command:\r\n");
-	print_lwip_at();
+	/* Socket AT Commands. */
+	at_printf("Socket AT Commands:\r\n");
+	print_socket_at();
 #endif
 #if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
 	/* HTTP commands. */
@@ -497,8 +497,6 @@ void at_gmr(void *arg)
 	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
 
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
-	at_printf("%s", buf);
-	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);
 	rtos_mem_free(buf);
 

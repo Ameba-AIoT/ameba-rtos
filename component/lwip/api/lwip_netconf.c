@@ -50,7 +50,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 #ifdef CONFIG_AS_INIC_AP
-#include "inic_ipc.h"
+#include "whc_ipc.h"
 #endif
 
 #if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET

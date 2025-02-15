@@ -3,7 +3,7 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     gmas_mgr.h
-  * @brief    Head file for Gaming Audio Server.
+  * @brief    Header file for Gaming Audio Server.
   * @details  This file defines Gaming Audio Server related API.
   * @author
   * @date
@@ -30,14 +30,14 @@ extern "C" {
  * \defgroup GMAP_Server_Exported_Types Gaming Audio Server Exported Types
  *
  * \ingroup LEA_USE_CASE_GMAP_Server
- * \{
+ * @{
  */
 
 
 /**
  * gmas_mgr.h
  *
- * \brief  The message data for LE_AUDIO_MSG_GMAS_READ_IND.
+ * \brief  The message data for @ref LE_AUDIO_MSG_GMAS_READ_IND.
  *
  * \ingroup GMAP_Server_Exported_Types
  */
@@ -50,14 +50,14 @@ typedef struct
 
 /**
  * End of GMAP_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup GMAP_Server_Exported_Functions Gaming Audio Server Exported Functions
  *
  * \ingroup LEA_USE_CASE_GMAP_Server
- * \{
+ * @{
  */
 
 /**
@@ -65,11 +65,13 @@ typedef struct
  *
  * \brief  Initialize GMAS service.
  *
+ * \xrefitem Added_API_2_14_1_0 "Added Since 2.14.1.0" "Added API"
+ *
  * \param[in]  gmap_role      GMAP role: @ref GMAP_ROLE_BIT_VALUE.
  *
- * \return         The result of initialize GMAS service.
- * \retval true    Initialize GMAS service success.
- * \retval false   Initialize GMAS service failed.
+ * \return         The result of initializing GMAS service.
+ * \retval true    Initialization of GMAS service succeeded.
+ * \retval false   Initialization of GMAS service failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -91,19 +93,20 @@ bool gmas_init(uint8_t gmap_role);
  *
  * \brief  Send GMAS characteristic value read confirm.
  *
+ * \xrefitem Added_API_2_14_1_0 "Added Since 2.14.1.0" "Added API"
+ *
  * \param[in]  conn_handle    Connection handle.
- * \param[in]  cid            Local CID assigned by Bluetooth stack.
+ * \param[in]  cid            Local CID assigned by Bluetooth Host.
  * \param[in]  char_uuid      Characteristic UUID : @ref GMAS_UUID.
  * \param[in]  features       Features of characteristic:
- *                            UGG features: @ref UGG_FEATURES_BIT_VALUE,
- *                            UGT features: @ref UGT_FEATURES_BIT_VALUE,
- *                            BGS features: @ref BGS_FEATURES_BIT_VALUE,
- *                            BGR features: @ref BGR_FEATURES_BIT_VALUE.
+ * \arg UGG features: @ref UGG_FEATURES_BIT_VALUE.
+ * \arg UGT features: @ref UGT_FEATURES_BIT_VALUE.
+ * \arg BGS features: @ref BGS_FEATURES_BIT_VALUE.
+ * \arg BGR features: @ref BGR_FEATURES_BIT_VALUE.
  *
- *
- * \return         The result of send GMAS characteristic value read confirm.
- * \retval true    Send GMAS characteristic value read confirm success.
- * \retval false   Send GMAS characteristic value read confirm failed.
+ * \return         The result of sending GMAS characteristic value read confirm.
+ * \retval true    Sending GMAS characteristic value read confirm is successful.
+ * \retval false   Sending GMAS characteristic value read confirm failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -185,7 +188,7 @@ bool gmas_features_read_confirm(uint16_t conn_handle, uint16_t cid,
 
 /**
  * End of GMAP_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

@@ -8,7 +8,9 @@ struct inic_device global_idev;
 
 int llhw_init(void)
 {
+#ifndef CONFIG_FULLMAC_BRIDGE
 	int ret = 0;
+#endif
 	struct inic_device *idev = &global_idev;
 
 #if defined(CONFIG_FULLMAC_HCI_SDIO)
@@ -26,31 +28,40 @@ int llhw_init(void)
 
 	llhw_recv_init();
 
+#ifndef CONFIG_FULLMAC_BRIDGE
 	ret = llhw_event_init(idev);
 	if (ret < 0) {
 		dev_err(idev->fullmac_dev, "llhw_event_init error(%d).\n", ret);
 		goto exit;
 	}
+#endif
 
 	memset(&global_idev.wifi_user_config, 0, sizeof(struct wifi_user_conf));
+#if !defined(CONFIG_FULLMAC_BRIDGE)
 	llhw_wifi_set_user_config(&global_idev.wifi_user_config);
+#endif
 
 	llhw_xmit_init();
 
+#if !defined(CONFIG_FULLMAC_BRIDGE)
 	/* tell KM4 to open wifi */
 	llhw_wifi_on();
-
+#endif
 	return 0;
 
+#ifndef CONFIG_FULLMAC_BRIDGE
 exit:
 	return ret;
+#endif
 }
 
 void llhw_deinit(void)
 {
 	llhw_xmit_deinit();
 
+#ifndef CONFIG_FULLMAC_BRIDGE
 	llhw_event_deinit();
+#endif
 
 	llhw_recv_deinit();
 }

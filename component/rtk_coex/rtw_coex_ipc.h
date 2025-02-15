@@ -67,12 +67,14 @@ int coex_ipc_api_dev_message_send(u32 id, u32 *param_buf, u32 buf_len);
 /*for ipc init entry*/
 static inline void coex_ipc_entry(void)
 {
+#if !defined(CONFIG_SINGLE_CORE_WIFI)
 #if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_MENU))
 	coex_ipc_host_init();
 #endif
 
-#if defined(CONFIG_CORE_AS_NP) || defined(CONFIG_SINGLE_CORE_WIFI)
+#if defined(CONFIG_CORE_AS_NP)
 	coex_ipc_dev_init();
+#endif
 #endif
 }
 #endif /* __RTW_COEX_IPC_H__ */

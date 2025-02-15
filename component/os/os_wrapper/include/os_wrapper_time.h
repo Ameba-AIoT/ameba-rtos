@@ -29,9 +29,15 @@ void rtos_time_delay_us(uint32_t us);
 
 /**
  * @brief  Get the count of ticks since rtos_sched_start was called, and convert the return value to milliseconds.
- * @note   This interface does not consider systick overflow issues.
+ * @note   This interface does not consider systick overflow issues. If need check overflow, please use rtos_time_get_current_system_time_ms_64bit.
  */
 uint32_t rtos_time_get_current_system_time_ms(void);
+
+/**
+ * @brief  Get the count of ticks since rtos_sched_start was called, and convert the return value to milliseconds. Overflow handled.
+ * @note   This API return 64-bits value.
+ */
+uint64_t rtos_time_get_current_system_time_ms_64bit(void);
 
 /**
  * @brief  Return value to in microseconds.
