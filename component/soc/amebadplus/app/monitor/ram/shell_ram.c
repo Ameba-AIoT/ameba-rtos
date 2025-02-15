@@ -12,9 +12,6 @@
 #include <stdarg.h>
 #include "FreeRTOS.h"
 
-#define LIB_INFO_CMD	"ATS?"
-#define ALL_CPU_RECV	0xFFFF
-
 static const char *TAG = "SHELL";
 #if defined ( __ICCARM__ )
 #pragma section=".cmd.table.data"
@@ -136,10 +133,6 @@ void shell_loguartRx_dispatch(void)
 				CpuId = KM4_CPU_ID;
 			}
 
-			if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[i], LIB_INFO_CMD) == 0) {
-				CpuId = ALL_CPU_RECV;
-			}
-
 			/* avoid useless space */
 			memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
 			break;
@@ -147,21 +140,6 @@ void shell_loguartRx_dispatch(void)
 	}
 
 	if (CpuId == KM4_CPU_ID) {		/* CMD should processed by KM4, inform KM4 thru IPC */
-		shell_loguratRx_Ipc_Tx(IPC_KM0_TO_KM4, IPC_N2A_LOGUART_RX_SWITCH);
-	}
-
-	if (CpuId == ALL_CPU_RECV) {
-		//1. logurat recv CPU Printf Info
-		u32 buflen = 1024;
-		char *buf = rtos_mem_malloc(buflen);
-		ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, "%s", buf);
-		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, "%s", buf);
-		rtos_mem_free(buf);
-
-		//2. Other CPU Pintf Lib Info
-		LOGUART_WaitTxComplete();
 		shell_loguratRx_Ipc_Tx(IPC_KM0_TO_KM4, IPC_N2A_LOGUART_RX_SWITCH);
 	}
 
@@ -173,16 +151,6 @@ void shell_loguartRx_dispatch(void)
 #else
 void shell_loguartRx_dispatch(void)
 {
-	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
-	if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[0], LIB_INFO_CMD) == 0) {
-		u32 buflen = 1024;
-		char *buf = rtos_mem_malloc(buflen);
-		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, "%s", buf);
-		rtos_mem_free(buf);
-		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-		shell_ctl.ExecuteCmd = _FALSE;
-	}
 }
 #endif
 

@@ -476,8 +476,6 @@ void at_gmr(void *arg)
 	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
 	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
 	at_printf("%s", buf);
-	ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-	at_printf("%s", buf);
 	rtos_mem_free(buf);
 
 	strncpy(at_buf, ATCMD_VERSION"."ATCMD_SUBVERSION"."ATCMD_REVISION, sizeof(at_buf));
