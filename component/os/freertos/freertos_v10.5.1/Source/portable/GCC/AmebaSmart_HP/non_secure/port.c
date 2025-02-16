@@ -1367,13 +1367,6 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 #endif
 /*-----------------------------------------------------------*/
 
-void vAssertCalled(const char *pcFile, uint32_t ulLine)
-{
-	printf("ASSERT!  Line %d of file %s\r\n", (int)ulLine, pcFile);
-	taskENTER_CRITICAL();
-	for (;;);
-}
-
 /* NVIC will power off under sleep power gating mode, so we can */
 /* not use systick like FreeRTOS default implementation */
 void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)

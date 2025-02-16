@@ -24,11 +24,6 @@ add_subdirectory(target)
 add_subdirectory(test)
 add_subdirectory(utils)
 
-
-if(CONFIG_WPA_STD)
-	add_subdirectory(wpa_supplicant_std)
-endif()
-
 if(CONFIG_AUDIO_FWK)
     add_subdirectory(audio/audio_config)
     add_subdirectory(audio/audio_hal)
@@ -59,7 +54,9 @@ if(CONFIG_WLAN)
         add_subdirectory(utilities)
         add_subdirectory(utilities_example)
     elseif(CONFIG_AS_INIC_NP)
-
+        if(CONFIG_WPA_STD)
+            add_subdirectory(network)
+        endif()
     elseif(CONFIG_SINGLE_CORE_WIFI)
         add_subdirectory(application)
         if(NOT CONFIG_MP_SHRINK)

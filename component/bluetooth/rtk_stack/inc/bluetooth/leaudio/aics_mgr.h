@@ -23,14 +23,15 @@ extern "C" {
  * \defgroup    AICS_Server_Exported_Types Audio Input Control Server Exported Types
  *
  * \ingroup LEA_GAF_AICS_Server
- * \{
+ * @{
  */
 
 /**
  * aics_mgr.h
  *
- * \brief  AICS Control Point Operation Parameter.
- *         The message data for LE_AUDIO_MSG_AICS_CP_IND.
+ * \brief  AICS Control Point operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_AICS_CP_IND.
  *
  * \ingroup AICS_Server_Exported_Types
  */
@@ -46,8 +47,9 @@ typedef struct
 /**
  * aics_mgr.h
  *
- * \brief  AICS Audio Input Description Parameter.
- *         The message data for LE_AUDIO_MSG_AICS_WRITE_INPUT_DES_IND.
+ * \brief  AICS Audio Input Description parameter.
+ *
+ * The message data for @ref LE_AUDIO_MSG_AICS_WRITE_INPUT_DES_IND.
  *
  * \ingroup AICS_Server_Exported_Types
  */
@@ -62,28 +64,28 @@ typedef struct
 /**
  * aics_mgr.h
  *
- * \brief  AICS Parameter Type.
+ * \brief  AICS parameter types.
  *
  * \ingroup AICS_Server_Exported_Types
  */
 typedef enum
 {
-    AICS_PARAM_INPUT_STATE       = 0x01,   /**< Parameter Data @ref T_AICS_INPUT_STATE */
-    AICS_PARAM_GAIN_SETTING_PROP = 0x02,   /**< Parameter Data @ref T_AICS_GAIN_SETTING_PROP */
-    AICS_PARAM_INPUT_TYPE        = 0x03,   /**< Parameter Data length is 1 byte */
-    AICS_PARAM_INPUT_STATUS      = 0x04,   /**< Parameter Data length is 1 byte */
-    AICS_PARAM_INPUT_DES         = 0x05,   /**< Parameter Data @ref T_AICS_INPUT_DES */
+    AICS_PARAM_INPUT_STATE       = 0x01,   /**< Parameter Data @ref T_AICS_INPUT_STATE. */
+    AICS_PARAM_GAIN_SETTING_PROP = 0x02,   /**< Parameter Data @ref T_AICS_GAIN_SETTING_PROP. */
+    AICS_PARAM_INPUT_TYPE        = 0x03,   /**< Parameter Data length is 1 byte. */
+    AICS_PARAM_INPUT_STATUS      = 0x04,   /**< Parameter Data length is 1 byte. */
+    AICS_PARAM_INPUT_DES         = 0x05,   /**< Parameter Data @ref T_AICS_INPUT_DES. */
 } T_AICS_PARAM_TYPE;
 /**
  * End of AICS_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    AICS_Server_Exported_Functions Audio Input Control Server Exported Functions
  *
  * \ingroup LEA_GAF_AICS_Server
- * \{
+ * @{
  */
 
 /**
@@ -101,11 +103,11 @@ typedef enum
  * \arg    param_type @ref AICS_PARAM_INPUT_DES, value_len is the length of audio input description.
  * \param[in]  p_value             Pointer to the AICS parameter data.
  * \param[in]  set_change_counter  Whether to set change counter.
- * \arg    true    Set change counter when param_type is AICS_PARAM_INPUT_STATE.
- * \arg    false   Not set change counter when param_type is AICS_PARAM_INPUT_STATE.
+ * \arg    true    Set change counter when param_type is @ref AICS_PARAM_INPUT_STATE.
+ * \arg    false   Not set change counter when param_type is @ref AICS_PARAM_INPUT_STATE.
  *
  * \return         The result of set AICS service parameter.
- * \retval true    Set AICS service parameter success.
+ * \retval true    Set AICS service parameter is successful.
  * \retval false   Set AICS service parameter failed.
  *
  * \ingroup AICS_Server_Exported_Functions
@@ -119,21 +121,23 @@ bool aics_set_param(uint8_t srv_instance_id, T_AICS_PARAM_TYPE param_type, uint8
  * \brief  Get AICS service parameter.
  *
  * \param[in]  srv_instance_id   Service instance id.
- * \param[in]  param_type        AICS service parameter type: @ref T_AICS_PARAM_TYPE, include
- *                               @ref AICS_PARAM_INPUT_STATE, @ref AICS_PARAM_GAIN_SETTING_PROP,
- *                               @ref AICS_PARAM_INPUT_TYPE, @ref AICS_PARAM_INPUT_STATUS.
+ * \param[in]  param_type        AICS service parameter type @ref T_AICS_PARAM_TYPE, include:
+ * \arg     @ref AICS_PARAM_INPUT_STATE
+ * \arg     @ref AICS_PARAM_GAIN_SETTING_PROP
+ * \arg     @ref AICS_PARAM_INPUT_TYPE
+ * \arg     @ref AICS_PARAM_INPUT_STATUS
  * \param[in,out]  p_value       Pointer to the parameter value.
  *
- * \return         The result of get AICS parameter.
- * \retval true    Get AICS service parameter success.
- * \retval false   Get AICS parameter failed.
+ * \return         The result of getting AICS parameter.
+ * \retval true    Getting AICS service parameter is successful.
+ * \retval false   Getting AICS parameter failed.
  *
  * \ingroup AICS_Server_Exported_Functions
  */
 bool aics_get_param(uint8_t srv_instance_id, T_AICS_PARAM_TYPE param_type, uint8_t *p_value);
 /**
  * End of AICS_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

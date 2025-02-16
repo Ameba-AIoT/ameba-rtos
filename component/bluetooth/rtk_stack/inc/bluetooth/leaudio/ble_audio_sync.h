@@ -17,36 +17,36 @@ extern "C" {
 #include "base_data_parse.h"
 
 /**
- * \defgroup    LEA_GAF_BAP BAP Profile
+ * \defgroup    LEA_GAF_LE_Audio_Sync LE Audio Sync
  *
- * \brief   Basic Audio Profile.
+ * \brief   LE audio sync related definition.
  */
 
 /**
- * \defgroup    BAP_Exported_Macros BAP Profile Exported Macros
+ * \defgroup    LE_Audio_Sync_Exported_Macros LE Audio Sync Exported Macros
  *
- * \ingroup LEA_GAF_BAP
- * \{
+ * \ingroup LEA_GAF_LE_Audio_Sync
+ * @{
  */
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Define type T_BLE_AUDIO_SYNC_HANDLE. BLE Audio Sync Handle.
+ * \brief  Define type T_BLE_AUDIO_SYNC_HANDLE. LE audio sync handle.
  *
- * \ingroup BAP_Exported_Macros
+ * \ingroup LE_Audio_Sync_Exported_Macros
  */
 typedef void *T_BLE_AUDIO_SYNC_HANDLE;
 
 /**
  * bap_audio_sync.h
  *
- * \defgroup BLE_AUDIO_SYNC_MSG BLE Audio Sync Message.
+ * \defgroup BLE_AUDIO_SYNC_MSG LE Audio Sync Message.
  *
- * \brief  Define BLE Audio Synchronization Message.
+ * \brief  Define LE audio sync message.
  *
- * \ingroup BAP_Exported_Macros
- * \{
+ * \ingroup LE_Audio_Sync_Exported_Macros
+ * @{
  */
 #define MSG_BLE_AUDIO_PA_SYNC_STATE         0x01
 #define MSG_BLE_AUDIO_PA_REPORT_INFO        0x02
@@ -61,27 +61,27 @@ typedef void *T_BLE_AUDIO_SYNC_HANDLE;
 #define MSG_BLE_AUDIO_ADDR_UPDATE           0x21
 /**
  * End of BLE_AUDIO_SYNC_MSG
- * \}
+ * @}
  */
 
 /**
- * End of BAP_Exported_Macros
- * \}
+ * End of LE_Audio_Sync_Exported_Macros
+ * @}
  */
 
 /**
- * \defgroup    BAP_Exported_Types BAP Profile Exported Types
+ * \defgroup    LE_Audio_Sync_Exported_Types LE Audio Sync Exported Types
  *
- * \ingroup LEA_GAF_BAP
- * \{
+ * \ingroup LEA_GAF_LE_Audio_Sync
+ * @{
  */
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Define BLE Audio Action Role.
+ * \brief  Define LE audio action roles.
  *
- * \ingroup BAP_Exported_Types
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef enum
 {
@@ -93,9 +93,9 @@ typedef enum
 /**
  * bap_audio_sync.h
  *
- * \brief  Define BLE Audio BIG Action.
+ * \brief  Define LE audio BIG action.
  *
- * \ingroup BAP_Exported_Types
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef enum
 {
@@ -108,10 +108,11 @@ typedef enum
 /**
  * bap_audio_sync.h
  *
- * \brief  Parameters for BLE Audio BIG Synchronization State.
- *         The message data for MSG_BLE_AUDIO_BIG_SYNC_STATE.
+ * \brief  Parameters for LE audio BIG sync state.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_BIG_SYNC_STATE.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -125,10 +126,11 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  Parameters for BLE Audio BIG Setup Data Path.
- *         The message data for MSG_BLE_AUDIO_BIG_SETUP_DATA_PATH.
+ * \brief  Parameters for LE audio BIG setup data path.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_BIG_SETUP_DATA_PATH.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -140,10 +142,11 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  Parameters for BLE Audio Base Data Modify Information.
- *         The message data for MSG_BLE_AUDIO_BASE_DATA_MODIFY_INFO.
+ * \brief  Parameters for LE audio base data modify information.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_BASE_DATA_MODIFY_INFO.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -153,10 +156,11 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  Parameters for BLE Audio BIG Remove Data Path.
- *         The message data for MSG_BLE_AUDIO_BIG_REMOVE_DATA_PATH.
+ * \brief  Parameters for LE audio BIG remove data path.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_BIG_REMOVE_DATA_PATH.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -168,9 +172,9 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  Define BLE Audio PA Action.
+ * \brief  Define LE audio PA action.
  *
- * \ingroup BAP_Exported_Types
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef enum
 {
@@ -183,10 +187,11 @@ typedef enum
 /**
  * bap_audio_sync.h
  *
- * \brief  BLE Audio PA Synchronization State.
- *         The Message Data for MSG_BLE_AUDIO_PA_SYNC_STATE.
+ * \brief  LE audio PA sync state.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_PA_SYNC_STATE.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -199,10 +204,11 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  BLE Audio Sync Handle Released Parameter.
- *         The Message Data for MSG_BLE_AUDIO_SYNC_HANDLE_RELEASED.
+ * \brief  LE audio sync handle released parameter.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_SYNC_HANDLE_RELEASED.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -212,10 +218,11 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  BLE Audio Advertiser Address Update.
- *         The Message Data for MSG_BLE_AUDIO_ADDR_UPDATE.
+ * \brief  LE audio advertiser address update.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_ADDR_UPDATE.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -225,10 +232,11 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  BLE Audio Synchronization Callback Data.
- *         The Message Data for MSG_BLE_AUDIO_ADDR_UPDATE.
+ * \brief  LE audio sync callback data.
  *
- * \ingroup BAP_Exported_Types
+ * The message data for @ref MSG_BLE_AUDIO_ADDR_UPDATE.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef union
 {
@@ -248,9 +256,9 @@ typedef union
 /**
  * bap_audio_sync.h
  *
- * \brief  BLE Audio Sync Information.
+ * \brief  LE audio sync information.
  *
- * \ingroup BAP_Exported_Types
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -274,9 +282,9 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  BLE Audio BIS Information.
+ * \brief  LE audio BIS information.
  *
- * \ingroup BAP_Exported_Types
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef struct
 {
@@ -287,30 +295,31 @@ typedef struct
 /**
  * bap_audio_sync.h
  *
- * \brief  P_FUN_BLE_AUDIO_SYNC_CB BLE Audio Sync Callback Function Point Definition.
- *         Function pointer used in ble audio module, to send events @ref BLE_AUDIO_SYNC_MSG
- *         to application.
+ * \brief  P_FUN_BLE_AUDIO_SYNC_CB LE Audio Sync Callback Function Point Definition.
  *
- * \ingroup BAP_Exported_Types
+ * Function pointer used in LE audio module, to send events @ref BLE_AUDIO_SYNC_MSG
+ * to application.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Types
  */
 typedef void(*P_FUN_BLE_AUDIO_SYNC_CB)(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t cb_type,
                                        void *p_cb_data);
 /**
- * End of BAP_Exported_Types
- * \}
+ * End of LE_Audio_Sync_Exported_Types
+ * @}
  */
 
 /**
- * \defgroup    BAP_Exported_Functions BAP Profile Exported Functions
+ * \defgroup    LE_Audio_Sync_Exported_Functions LE Audio Sync Exported Functions
  *
- * \ingroup LEA_GAF_BAP
- * \{
+ * \ingroup LEA_GAF_LE_Audio_Sync
+ * @{
  */
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Allocate ble audio sync.
+ * \brief  Allocate LE audio sync.
  *
  * \param[in]  cb_pfn                   Audio sync callback function: @ref P_FUN_BLE_AUDIO_SYNC_CB.
  * \param[in]  advertiser_address_type  Advertiser address type.
@@ -318,10 +327,10 @@ typedef void(*P_FUN_BLE_AUDIO_SYNC_CB)(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t c
  * \param[in]  adv_sid                  Advertising SID.
  * \param[in]  broadcast_id             Broadcast ID.
  *
- * \return         The ble audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \retval NULL    Allocate ble audio PA synchronization failed.
+ * \return         The LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \retval NULL    Allocate LE audio PA synchronization failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 T_BLE_AUDIO_SYNC_HANDLE ble_audio_sync_allocate(P_FUN_BLE_AUDIO_SYNC_CB cb_pfn,
                                                 uint8_t advertiser_address_type,
@@ -331,16 +340,16 @@ T_BLE_AUDIO_SYNC_HANDLE ble_audio_sync_allocate(P_FUN_BLE_AUDIO_SYNC_CB cb_pfn,
 /**
  * bap_audio_sync.h
  *
- * \brief  Register ble audio sync update callback function to handle ble audio sync message.
+ * \brief  Register LE audio sync update callback function to handle LE audio sync message.
  *
- * \param[in]  handle      BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \param[in]  cb_pfn      BLE audio sync callback function: @ref P_FUN_BLE_AUDIO_SYNC_CB.
+ * \param[in]  handle      LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  cb_pfn      LE audio sync callback function: @ref P_FUN_BLE_AUDIO_SYNC_CB.
  *
- * \return         The result of register ble audio sync update callback function.
- * \retval true    Register ble audio sync update callback function success.
- * \retval false   Register ble audio sync update callback function failed.
+ * \return         The result of registering LE audio sync update callback function.
+ * \retval true    Registering LE audio sync update callback function is successful.
+ * \retval false   Registering LE audio sync update callback function failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_sync_update_cb(T_BLE_AUDIO_SYNC_HANDLE handle,
                               P_FUN_BLE_AUDIO_SYNC_CB cb_pfn);
@@ -348,16 +357,16 @@ bool ble_audio_sync_update_cb(T_BLE_AUDIO_SYNC_HANDLE handle,
 /**
  * bap_audio_sync.h
  *
- * \brief  Update ble audio sync advertiser address.
+ * \brief  Update LE audio sync advertiser address.
  *
- * \param[in]  handle              BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  handle              LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
  * \param[in]  advertiser_address  Pointer to advertiser address.
  *
- * \return         The result of update ble audio sync advertiser address.
- * \retval true    Update ble audio sync advertiser address success.
- * \retval false   Update ble audio sync advertiser address failed.
+ * \return         The result of updating LE audio sync advertiser address.
+ * \retval true    Updating LE audio sync advertiser address is successful.
+ * \retval false   Updating LE audio sync advertiser address failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_sync_update_addr(T_BLE_AUDIO_SYNC_HANDLE handle,
                                 uint8_t *advertiser_address);
@@ -365,15 +374,15 @@ bool ble_audio_sync_update_addr(T_BLE_AUDIO_SYNC_HANDLE handle,
 /**
  * bap_audio_sync.h
  *
- * \brief  Find ble audio sync.
+ * \brief  Find LE audio sync.
  *
- * \param[in]  adv_sid                  Advertising sid.
- * \param[in]  broadcast_id             Broadcast id.
+ * \param[in]  adv_sid                  Advertising SID.
+ * \param[in]  broadcast_id             Broadcast ID.
  *
- * \return         The ble audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \retval NULL    Not find ble audio sync handle.
+ * \return         The LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \retval NULL    LE audio sync handle not found.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 T_BLE_AUDIO_SYNC_HANDLE ble_audio_sync_find(uint8_t adv_sid,
                                             uint8_t broadcast_id[BROADCAST_ID_LEN]);
@@ -381,32 +390,33 @@ T_BLE_AUDIO_SYNC_HANDLE ble_audio_sync_find(uint8_t adv_sid,
 /**
  * bap_audio_sync.h
  *
- * \brief  Get ble audio sync information.
+ * \brief  Get LE audio sync information.
  *
- * \param[in]  handle      BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \param[in,out]  p_info  Pointer to ble audio sync information: @ref T_BLE_AUDIO_SYNC_INFO.
+ * \param[in]  handle      LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in,out]  p_info  Pointer to LE audio sync information: @ref T_BLE_AUDIO_SYNC_INFO.
  *
- * \return         The result of get ble audio sync information.
- * \retval true    Get ble audio sync information success.
- * \retval false   Get ble audio sync information failed.
+ * \return         The result of getting LE audio sync information.
+ * \retval true    Getting LE audio sync information is successful.
+ * \retval false   Getting LE audio sync information failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_sync_get_info(T_BLE_AUDIO_SYNC_HANDLE handle, T_BLE_AUDIO_SYNC_INFO *p_info);
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Release ble audio sync.
- *         If this api is successfully invoked, the referred sync handle will be cleared.
+ * \brief  Release LE audio sync.
  *
- * \param[in]  p_handle     Pointer to ble audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * If this API is successfully invoked, the referred sync handle will be cleared.
  *
- * \return         The result of release ble audio sync.
- * \retval true    Release ble audio sync success.
- * \retval false   Release ble audio sync failed.
+ * \param[in]  p_handle     Pointer to LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
  *
- * \ingroup BAP_Exported_Functions
+ * \return         The result of releasing LE audio sync.
+ * \retval true    Releasing LE audio sync is successful.
+ * \retval false   Releasing LE audio sync failed.
+ *
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 
 bool ble_audio_sync_release(T_BLE_AUDIO_SYNC_HANDLE *p_handle);
@@ -414,24 +424,24 @@ bool ble_audio_sync_release(T_BLE_AUDIO_SYNC_HANDLE *p_handle);
 /**
  * bap_audio_sync.h
  *
- * \brief  Send establish ble audio PA sync request.
+ * \brief  Send establish LE audio PA sync request.
  *
- * \param[in]  handle         BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \param[in]  options        PA create sync Options.
+ * \param[in]  handle         LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  options        PA create sync options.
  * \param[in]  sync_cte_type  PA sync CTE type.
  * \param[in]  skip           The maximum number of periodic advertising events that can be
-                              skipped after a successful receive.
+                              skipped after a is successful receive.
                               Range: 0x0000 to 0x01F3
  * \param[in]  sync_timeout   Sync timeout for the PA train.
                               Range: 0x000A to 0x4000
                               Time = N*10 ms
                               Time Range: 100 ms to 163.84 s
  *
- * \return         The result of establish ble audio PA sync.
- * \retval true    Send request success.
- * \retval false   Send request failed.
+ * \return         The result of establishing LE audio PA sync.
+ * \retval true    Sending request is successful.
+ * \retval false   Sending request failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_pa_sync_establish(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t options,
                                  uint8_t sync_cte_type,
@@ -440,32 +450,32 @@ bool ble_audio_pa_sync_establish(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t options
 /**
  * bap_audio_sync.h
  *
- * \brief  Send terminate ble audio PA sync request.
+ * \brief  Send terminate LE audio PA sync request.
  *
- * \param[in]  handle      BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  handle      LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
  *
- * \return         The result of terminate ble audio PA sync.
- * \retval true    Send request success.
- * \retval false   Send request failed.
+ * \return         The result of terminating LE audio PA sync.
+ * \retval true    Sending request is successful.
+ * \retval false   Sending request failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_pa_terminate(T_BLE_AUDIO_SYNC_HANDLE handle);
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Send establish ble audio big sync request.
+ * \brief  Send establish LE audio BIG sync request.
  *
- * \param[in]  handle        BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \param[in]  p_param       Pointer to big create sync parameter:
+ * \param[in]  handle        LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  p_param       Pointer to BIG create sync parameter:
  *                           @ref T_BIG_MGR_SYNC_RECEIVER_BIG_CREATE_SYNC_PARAM.
  *
- * \return         The result of establish ble audio big sync.
- * \retval true    Send request success.
- * \retval false   Send request failed.
+ * \return         The result of establishing LE audio BIG sync.
+ * \retval true    Sending request is successful.
+ * \retval false   Sending request failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_big_sync_establish(T_BLE_AUDIO_SYNC_HANDLE handle,
                                   T_BIG_MGR_SYNC_RECEIVER_BIG_CREATE_SYNC_PARAM *p_param);
@@ -473,53 +483,53 @@ bool ble_audio_big_sync_establish(T_BLE_AUDIO_SYNC_HANDLE handle,
 /**
  * bap_audio_sync.h
  *
- * \brief  Send terminate ble audio big sync request.
+ * \brief  Send terminate LE audio BIG sync request.
  *
- * \param[in]  handle      BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  handle      LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
  *
- * \return         The result of terminate ble audio big sync.
- * \retval true    Send request success.
- * \retval false   Send request failed.
+ * \return         The result of terminating LE audio BIG sync.
+ * \retval true    Sending request is successful.
+ * \retval false   Sending request failed.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_big_terminate(T_BLE_AUDIO_SYNC_HANDLE handle);
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Get ble audio bis sync information.
+ * \brief  Get LE audio BIS sync information.
  *
- * \param[in]  handle      BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
- * \param[in,out]  p_info  Pointer to bis sync information: @ref T_BLE_AUDIO_BIS_INFO.
+ * \param[in]  handle      LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in,out]  p_info  Pointer to BIS sync information: @ref T_BLE_AUDIO_BIS_INFO.
  *
- * \return         The result of get ble audio bis sync information.
- * \retval true    Get ble audio bis sync information success.
- * \retval false   Get ble audio bis sync information failed.
+ * \return         The result of getting LE audio BIS sync information.
+ * \retval true    Successfully got LE audio BIS sync information.
+ * \retval false   Failed to get LE audio BIS sync information.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_get_bis_sync_info(T_BLE_AUDIO_SYNC_HANDLE handle, T_BLE_AUDIO_BIS_INFO *p_info);
 
 /**
  * bap_audio_sync.h
  *
- * \brief  Setup ble audio bis data path.
+ * \brief  Set up LE audio BIS data path.
  *
- * \param[in]  handle            BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  handle            LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
  * \param[in]  bis_idx           BIS index.
- * \param[in]  codec_id          Codec id.
+ * \param[in]  codec_id          Codec ID.
  * \param[in]  controller_delay  Controller delay in microseconds.
  *                               Range: 0x000000 to 0x3D0900
                                  Time range: 0 s to 4 s
  * \param[in]  codec_len         Length of codec configuration.
  * \param[in]  p_codec_data      Pointer to codec-specific configuration data.
  *
- * \return         The result of setup ble audio bis data path.
- * \retval true    Setup ble audio bis data path success.
- * \retval false   Setup ble audio bis data path failed.
+ * \return         The result of set up LE audio BIS data path.
+ * \retval true    Successfully set up LE audio BIS data path.
+ * \retval false   Failed to set up LE audio BIS data path.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_bis_setup_data_path(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t bis_idx,
                                    uint8_t codec_id[5], uint32_t controller_delay,
@@ -528,21 +538,26 @@ bool ble_audio_bis_setup_data_path(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t bis_i
 /**
  * bap_audio_sync.h
  *
- * \brief  Remove ble audio bis data path.
+ * \brief  Remove LE audio BIS data path.
  *
- * \param[in]  handle       BLE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
+ * \param[in]  handle       LE audio sync handle: @ref T_BLE_AUDIO_SYNC_HANDLE.
  * \param[in]  bis_idx      BIS index.
  *
- * \return         The result of remove ble audio bis data path.
- * \retval true    Remove ble audio bis data path success.
- * \retval false   Remove ble audio bis data path failed.
+ * \return         The result of removing LE audio BIS data path.
+ * \retval true    Successfully removed LE audio BIS data path.
+ * \retval false   Failed to remove LE audio BIS data path.
  *
- * \ingroup BAP_Exported_Functions
+ * \ingroup LE_Audio_Sync_Exported_Functions
  */
 bool ble_audio_bis_remove_data_path(T_BLE_AUDIO_SYNC_HANDLE handle, uint8_t bis_idx);
 /**
- * End of BAP_Exported_Functions
- * \}
+ * End of LE_Audio_Sync_Exported_Functions
+ * @}
+ */
+
+/**
+ * End of LEA_GAF_LE_Audio_Sync
+ * @}
  */
 
 #ifdef  __cplusplus

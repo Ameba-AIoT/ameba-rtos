@@ -54,8 +54,8 @@ set(
 	${LOGDIR}/log.c
 	${LOGDIR}/sscanf_minimal.c
 	${LOGDIR}/locks.c
+	${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
 )
-
 
 ameba_internal_library(target_fwlib)
 target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})

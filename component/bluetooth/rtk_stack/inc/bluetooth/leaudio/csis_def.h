@@ -19,7 +19,7 @@ extern "C" {
  * \defgroup    CSIP_Def_Exported_Macros Coordinated Set Identification Profile Definition Exported Macros
  *
  * \ingroup LEA_GAF_CSIP_Def
- * \{
+ * @{
  */
 
 /**
@@ -27,10 +27,10 @@ extern "C" {
  *
  * \defgroup  SET_MEMBER_FEATURE CSIS Service Features
  *
- * \brief  Define Coordinated Set Identification Service Features Exist flags.
+ * \brief  Define Coordinated Set Identification Service features exist flags.
  *
  * \ingroup CSIP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define SET_MEMBER_LOCK_EXIST          0x01
 #define SET_MEMBER_SIZE_EXIST          0x02
@@ -39,7 +39,7 @@ extern "C" {
 #define SET_MEMBER_SIZE_NOTIFY_SUPPORT 0x20
 /**
  * End of SET_MEMBER_FEATURE
- * \}
+ * @}
  */
 
 /**
@@ -47,10 +47,10 @@ extern "C" {
  *
  * \defgroup  CSIS_ERR_CODE CSIS Service Error Code
  *
- * \brief  Define Coordinated Set Identification Service Error Code.
+ * \brief  Define Coordinated Set Identification Service error code.
  *
  * \ingroup CSIP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define ATT_ERR_CSIS_LOCK_DENIED              (ATT_ERR | 0x80)
 #define ATT_ERR_CSIS_LOCK_RELEASE_NOT_ALLOWED (ATT_ERR | 0x81)
@@ -59,7 +59,7 @@ extern "C" {
 #define ATT_ERR_CSIS_LOCK_ALREADY_GRANTED     (ATT_ERR | 0x84)
 /**
  * End of CSIS_ERR_CODE
- * \}
+ * @}
  */
 
 /**
@@ -70,7 +70,7 @@ extern "C" {
  * \brief  Define Coordinated Set Identification Service UUID.
  *
  * \ingroup CSIP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define GATT_UUID_CSIS                        0x1846
 
@@ -80,13 +80,13 @@ extern "C" {
 #define CSIS_UUID_CHAR_RANK                   0x2B87
 /**
  * End of CSIS_UUID
- * \}
+ * @}
  */
 
 /**
  * csis_def.h
  *
- * \brief  Define Set Identity Resolving Key Length.
+ * \brief  Define Set Identity Resolving Key length.
  *
  * \ingroup CSIP_Def_Exported_Macros
  */
@@ -95,7 +95,7 @@ extern "C" {
 /**
  * csis_def.h
  *
- * \brief  Define Coordinated Set Identification Service Timeout.
+ * \brief  Define Coordinated Set Identification Service timeout.
  *
  * \ingroup CSIP_Def_Exported_Macros
  */
@@ -106,28 +106,28 @@ extern "C" {
  *
  * \defgroup  UNKNOWN_CSIS_VALUE Unknown CSIS Value
  *
- * \brief  Define Unknown Coordinated Set Size and Set Member Rank Value.
+ * \brief  Define unknown Coordinated Set Size and Set Member Rank value.
  *
  * \ingroup CSIP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define CSIS_SIZE_UNKNOWN     0
 #define CSIS_RANK_UNKNOWN     0
 /**
  * End of UNKNOWN_CSIS_VALUE
- * \}
+ * @}
  */
 
 /**
  * End of CSIP_Def_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    CSIP_Def_Exported_Types Coordinated Set Identification Profile Definition Exported Types
  *
  * \ingroup LEA_GAF_CSIP_Def
- * \{
+ * @{
  */
 
 /**
@@ -147,7 +147,7 @@ typedef enum
 /**
  * csis_def.h
  *
- * \brief  Define Set Identity Resolving Key Type.
+ * \brief  Define Set Identity Resolving Key types.
  *
  * \ingroup CSIP_Def_Exported_Types
  */
@@ -158,7 +158,7 @@ typedef enum
 } T_CSIS_SIRK_TYPE;
 /**
  * End of CSIP_Def_Exported_Types
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

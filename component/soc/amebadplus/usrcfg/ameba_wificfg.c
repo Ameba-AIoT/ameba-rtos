@@ -24,7 +24,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9;  /* unit 2s, default 18s */
 
-#if (defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB))
+#if (defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB)) || (defined(CONFIG_FULLMAC_BRIDGE))
 	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 8 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
@@ -98,7 +98,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wps_retry_count = 4;
 	wifi_user_config.wps_retry_interval = 5000;
 
-#if (defined(CONFIG_INIC_INTF_SDIO) && (!defined (CONFIG_SDIO_BRIDGE))) || (defined(CONFIG_INIC_INTF_SPI)) || (defined(CONFIG_INIC_INTF_USB))
+#if defined(CONFIG_FULLMAC_MENU)
 	/* Linux wifi supports cfg80211 ops. */
 	wifi_user_config.cfg80211 = 1;
 #else

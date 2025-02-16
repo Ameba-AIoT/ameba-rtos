@@ -5,7 +5,7 @@ if(NOT CONFIG_AMEBALITE)
         OUTPUT_FILE wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
     )
 endif()
-add_subdirectory(inic)
+add_subdirectory(whc)
 add_subdirectory(wifi_feature_disable)
 
 if (CONFIG_WLAN)
@@ -29,6 +29,9 @@ if(NOT CONFIG_AMEBA_RLS)
         #build NP libs
         elseif(CONFIG_AS_INIC_NP)
             add_subdirectory(driver)
+            if(CONFIG_WPA_STD)
+                add_subdirectory(wpa_supplicant_std)
+            endif()
             if(CONFIG_ZEPHYR_SDK OR CONFIG_WPA_LOCATION_DEV)
                 add_subdirectory(wpa_supplicant/wpa_lite)
                 add_subdirectory(wpa_supplicant/wps)

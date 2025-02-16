@@ -21,7 +21,7 @@ extern "C" {
  * \defgroup    ASCS_Def_Exported_Macros Audio Stream Control Service Definition Exported Macros
  *
  * \ingroup LEA_GAF_ASCS_Def
- * \{
+ * @{
  */
 
 /**
@@ -32,19 +32,19 @@ extern "C" {
  * \brief  Define Audio Stream Control Service UUID.
  *
  * \ingroup ASCS_Def_Exported_Macros
- * \{
+ * @{
  */
-#define GATT_UUID_ASCS                            0x184E      /**< Audio Stream Control Service */
+#define GATT_UUID_ASCS                            0x184E      /**< Audio Stream Control Service. */
 
-#define ASCS_UUID_CHAR_SNK_ASE                    0x2BC4      /**< Sink ASE */
-#define ASCS_UUID_CHAR_SRC_ASE                    0x2BC5      /**< Source ASE */
-#define ASCS_UUID_CHAR_ASE_CONTROL_POINT          0x2BC6      /**< ASE Control Point */
+#define ASCS_UUID_CHAR_SNK_ASE                    0x2BC4      /**< Sink ASE. */
+#define ASCS_UUID_CHAR_SRC_ASE                    0x2BC5      /**< Source ASE. */
+#define ASCS_UUID_CHAR_ASE_CONTROL_POINT          0x2BC6      /**< ASE Control Point. */
 
 #define ASCS_AES_CHAR_MAX_NUM 7
 #define ASE_INVALID_ID 0x00
 /**
  * End of ASCS_UUID
- * \}
+ * @}
  */
 
 /**
@@ -52,17 +52,17 @@ extern "C" {
  *
  * \defgroup    FRAMING_PARAM_BIT Framing Parameter Bit Mask
  *
- * \brief  Define Framing Parameter Bit Mask
+ * \brief  Define Framing parameter bit mask
  *         for an ASE in the Codec Configured state.
  *
  * \ingroup ASCS_Def_Exported_Macros
- * \{
+ * @{
  */
-#define QOS_SUPPORTED_UNFRAMED_BIT         0x01      /**< bit0, Unframed */
-#define QOS_SUPPORTED_FRAMED_BIT           0x02      /**< bit1, Framed */
+#define QOS_SUPPORTED_UNFRAMED_BIT         0x01      /**< bit0, Unframed. */
+#define QOS_SUPPORTED_FRAMED_BIT           0x02      /**< bit1, Framed. */
 /**
  * End of FRAMING_PARAM_BIT
- * \}
+ * @}
  */
 
 /**
@@ -70,11 +70,11 @@ extern "C" {
  *
  * \defgroup    QOS_PARAM_RANGE QoS Parameter Range
  *
- * \brief  Define Parameter Range for an ASE
+ * \brief  Define parameter range for an ASE
  *         written by the client in the Config QoS operation.
  *
  * \ingroup ASCS_Def_Exported_Macros
- * \{
+ * @{
  */
 #define QOS_SDU_INTERVAL_MIN               0x0000FF
 #define QOS_SDU_INTERVAL_MAX               0xFFFFFF
@@ -86,18 +86,18 @@ extern "C" {
 #define QOS_TRANSPORT_LATENCY_MAX          0x0FA0
 /**
  * End of QOS_PARAM_RANGE
- * \}
+ * @}
  */
 
 /**
  * ascs_def.h
  *
- * \defgroup    PREFERRED_PHY_BIT Preferred_PHY Bit Mask
+ * \defgroup    PREFERRED_PHY_BIT Preferred PHY Bit Mask
  *
- * \brief  Define Preferred_PHY Bit Mask for an ASE.
+ * \brief  Define Preferred PHY bit mask for an ASE.
  *
  * \ingroup ASCS_Def_Exported_Macros
- * \{
+ * @{
  */
 #define ASE_LE_1M_PHY_BIT                  0x01
 #define ASE_LE_2M_PHY_BIT                  0x02
@@ -105,7 +105,7 @@ extern "C" {
 #define ASE_LE_PHY_CFG_MASK                0x07
 /**
  * End of PREFERRED_PHY_BIT
- * \}
+ * @}
  */
 
 /**
@@ -113,14 +113,13 @@ extern "C" {
  *
  * \defgroup    ASE_CP_RES_CODE ASE CP Response Code
  *
- * \brief  Define ASE Control Point characteristic
- *         Response_Code and Reason values when notified
+ * \brief  Define ASE Control Point characteristic Response_Code and Response_Code when notified
  *
- *  Used when Response_Code = ASE_CP_RESP_UNSUPPORTED_PARAM, Response_Code = ASE_CP_RESP_REJECTED_PARAM,
- *  or ASE_CP_RESP_INVALID_PARAM.
+ * Used when Response_Code = @ref ASE_CP_RESP_UNSUPPORTED_PARAM, Response_Code = @ref ASE_CP_RESP_REJECTED_PARAM,
+ * or @ref ASE_CP_RESP_INVALID_PARAM.
  *
  * \ingroup ASCS_Def_Exported_Macros
- * \{
+ * @{
  */
 #define ASE_CP_REASON_NONE                    0x00
 #define ASE_CP_REASON_CODEC_ID                0x01
@@ -135,25 +134,25 @@ extern "C" {
 #define ASE_CP_REASON_INVALID_ASE_CIS_MAPPING 0x0A
 /**
  * End of ASE_CP_RES_CODE
- * \}
+ * @}
  */
 
 /**
  * End of ASCS_Def_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    ASCS_Def_Exported_Types Audio Stream Control Service Definition Exported Types
  *
  * \ingroup LEA_GAF_ASCS_Def
- * \{
+ * @{
  */
 
 /**
  * ascs_def.h
  *
- * \brief  Server Support for Unframed ISOAL PDUs.
+ * \brief  Server support for Unframed ISOAL PDUs.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -166,7 +165,7 @@ typedef enum
 /**
  * ascs_def.h
  *
- * \brief  Framing Parameter Value for an ASE
+ * \brief  Framing parameter value for an ASE
  *         written by the client in the Config QoS operation.
  *
  * \ingroup ASCS_Def_Exported_Types
@@ -180,7 +179,7 @@ typedef enum
 /**
  * ascs_def.h
  *
- * \brief  The States of the ASE State Machine.
+ * \brief  The states of the ASE State Machine.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -200,7 +199,7 @@ typedef enum
 /**
  * ascs_def.h
  *
- * \brief  The Data of ASE Codec Configured State.
+ * \brief  The data of ASE Codec Configured State.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -221,7 +220,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  The Format of the Additional_ASE_Parameters Field when
+ * \brief  The format of the Additional_ASE_Parameters field when
  *         ASE_State = 0x02 (QoS Configured).
  *
  * \ingroup ASCS_Def_Exported_Types
@@ -242,7 +241,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  The Format of the Additional_ASE_Parameters Field when
+ * \brief  The format of the Additional_ASE_Parameters field when
  *         ASE_State = 0x01 (Codec Configured).
  *
  * \ingroup ASCS_Def_Exported_Types
@@ -257,7 +256,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  The Format of the Additional_ASE_Parameters Field when
+ * \brief  The format of the Additional_ASE_Parameters field when
  *         ASE_State = 0x03 (Enabling), 0x04 (Streaming), or 0x05 (Disabling).
  *
  * \ingroup ASCS_Def_Exported_Types
@@ -273,7 +272,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  The Additional_ASE_Parameters Field Data for All ASE State.
+ * \brief  The Additional_ASE_Parameters field data for all ASE State.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -289,7 +288,7 @@ typedef union
 /**
  * ascs_def.h
  *
- * \brief  ASE Characteristic Data.
+ * \brief  ASE characteristic data.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -304,55 +303,55 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  ASE Control Point Characteristic Response Code.
+ * \brief  ASE Control Point characteristic Response_Code.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
 typedef enum
 {
-    ASE_CP_RESP_SUCCESS                   = 0x00,    /**< Success */
-    ASE_CP_RESP_UNSUPPORTED_OPCODE        = 0x01,    /**< Unsupported Opcode */
-    ASE_CP_RESP_INVALID_LENGTH            = 0x02,    /**< Invalid Length */
-    ASE_CP_RESP_INVALID_ASE_ID            = 0x03,    /**< Invalid ASE_ID */
-    ASE_CP_RESP_INVALID_ASE_SM_TRANSITION = 0x04,    /**< Invalid ASE State Machine Transition */
-    ASE_CP_RESP_INVALID_ASE_DIRECTION     = 0x05,    /**< Invalid ASE direction */
-    ASE_CP_RESP_UNSUPPORTED_AUDIO_CAP     = 0x06,    /**< Unsupported Audio Capabilities */
-    ASE_CP_RESP_UNSUPPORTED_PARAM         = 0x07,    /**< Unsupported Configuration Parameter Value */
-    ASE_CP_RESP_REJECTED_PARAM            = 0x08,    /**< Rejected Configuration Parameter Value */
-    ASE_CP_RESP_INVALID_PARAM             = 0x09,    /**< Invalid Configuration Parameter Value */
-    ASE_CP_RESP_UNSUPPORTED_METADATA      = 0x0A,    /**< Unsupported Metadata */
-    ASE_CP_RESP_REJECTED_METADATA         = 0x0B,    /**< Rejected Metadata */
-    ASE_CP_RESP_INVALID_METADATA          = 0x0C,    /**< Invalid Metadata */
-    ASE_CP_RESP_INSUFFICIENT_RESOURCE     = 0x0D,    /**< Insufficient Resources */
-    ASE_CP_RESP_UNSPECIFIED_ERROR         = 0x0E,    /**< Unspecified Error */
+    ASE_CP_RESP_SUCCESS                   = 0x00,    /**< Success. */
+    ASE_CP_RESP_UNSUPPORTED_OPCODE        = 0x01,    /**< Unsupported Opcode. */
+    ASE_CP_RESP_INVALID_LENGTH            = 0x02,    /**< Invalid Length. */
+    ASE_CP_RESP_INVALID_ASE_ID            = 0x03,    /**< Invalid ASE_ID. */
+    ASE_CP_RESP_INVALID_ASE_SM_TRANSITION = 0x04,    /**< Invalid ASE State Machine Transition. */
+    ASE_CP_RESP_INVALID_ASE_DIRECTION     = 0x05,    /**< Invalid ASE Direction. */
+    ASE_CP_RESP_UNSUPPORTED_AUDIO_CAP     = 0x06,    /**< Unsupported Audio Capabilities. */
+    ASE_CP_RESP_UNSUPPORTED_PARAM         = 0x07,    /**< Unsupported Configuration Parameter Value. */
+    ASE_CP_RESP_REJECTED_PARAM            = 0x08,    /**< Rejected Configuration Parameter Value. */
+    ASE_CP_RESP_INVALID_PARAM             = 0x09,    /**< Invalid Configuration Parameter Value. */
+    ASE_CP_RESP_UNSUPPORTED_METADATA      = 0x0A,    /**< Unsupported Metadata. */
+    ASE_CP_RESP_REJECTED_METADATA         = 0x0B,    /**< Rejected Metadata. */
+    ASE_CP_RESP_INVALID_METADATA          = 0x0C,    /**< Invalid Metadata. */
+    ASE_CP_RESP_INSUFFICIENT_RESOURCE     = 0x0D,    /**< Insufficient Resources. */
+    ASE_CP_RESP_UNSPECIFIED_ERROR         = 0x0E,    /**< Unspecified Error. */
+
     ASE_CP_RESP_RFU
 } T_ASE_CP_RESP;
 
 /**
  * ascs_def.h
  *
- * \brief  ASE Control Point Opcode.
+ * \brief  ASE Control Point opcodes.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
 typedef enum
 {
     ASE_CP_OP_NONE            = 0x00,
-    ASE_CP_OP_CONFIG_CODEC    = 0x01,    /**< Config Codec. Initiated by Client or Server. */
-    ASE_CP_OP_CONFIG_QOS      = 0x02,    /**< Config QoS. Initiated by Client only. */
-    ASE_CP_OP_ENABLE          = 0x03,    /**< Enable. Initiated by Client only. */
-    ASE_CP_OP_REC_START_READY = 0x04,    /**< Receiver Start Ready. Initiated by Client or Server. */
-    ASE_CP_OP_DISABLE         = 0x05,    /**< Disable. Initiated by Client or Server. */
-    ASE_CP_OP_REC_STOP_READY  = 0x06,    /**< Receiver Stop Ready. Initiated by Client or Server. */
-    ASE_CP_OP_UPDATE_METADATA = 0x07,    /**< Update Metadata. Initiated by Client or Server. */
-    ASE_CP_OP_RELEASE         = 0x08,    /**< Release. Initiated by Client or Server. */
-    ASE_CP_OP_MAX,
+    ASE_CP_OP_CONFIG_CODEC    = 0x01,    /**< Config Codec. Initiated by client or server. */
+    ASE_CP_OP_CONFIG_QOS      = 0x02,    /**< Config QoS. Initiated by client only. */
+    ASE_CP_OP_ENABLE          = 0x03,    /**< Enable. Initiated by client only. */
+    ASE_CP_OP_REC_START_READY = 0x04,    /**< Receiver Start Ready. Initiated by client or server. */
+    ASE_CP_OP_DISABLE         = 0x05,    /**< Disable. Initiated by client or server. */
+    ASE_CP_OP_REC_STOP_READY  = 0x06,    /**< Receiver Stop Ready. Initiated by client or server. */
+    ASE_CP_OP_UPDATE_METADATA = 0x07,    /**< Update Metadata. Initiated by client or server. */
+    ASE_CP_OP_RELEASE         = 0x08,    /**< Release. Initiated by client or server. */
 } T_ASE_CP_OP;
 
 /**
  * ascs_def.h
  *
- * \brief  QoS Preferences Target Latency in Codec Configured State.
+ * \brief  QoS preferences target latency in Codec Configured State.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -366,7 +365,7 @@ typedef enum
 /**
  * ascs_def.h
  *
- * \brief  PHY Parameter Target to Achieve the Target_Latency Value.
+ * \brief  PHY parameter target to achieve the Target_Latency value.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -380,7 +379,7 @@ typedef enum
 /**
  * ascs_def.h
  *
- * \brief  ASE Control Point Notify Parameter.
+ * \brief  ASE Control Point notify parameters.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -394,7 +393,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  Format of ASE Control Point Characteristic Value when Notified.
+ * \brief  Format of ASE Control Point characteristic value when notified.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -408,7 +407,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  ASE Control Point Codec Config Parameter.
+ * \brief  ASE Control Point Codec Config parameters.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -424,7 +423,7 @@ typedef struct
 /**
  * ascs_def.h
  *
- * \brief  ASE Control Point QoS Config Parameter.
+ * \brief  ASE Control Point QoS Config parameters.
  *
  * \ingroup ASCS_Def_Exported_Types
  */
@@ -443,7 +442,7 @@ typedef struct
 } T_ASE_CP_QOS_CFG_ARRAY_PARAM;
 /**
  * End of ASCS_Def_Exported_Macros
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

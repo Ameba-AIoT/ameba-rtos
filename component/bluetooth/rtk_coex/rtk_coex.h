@@ -123,8 +123,8 @@ enum rtk_coex_mailbox_cmd {
 	RTK_COEX_MAILBOX_BT_CALIBRATION_FAIL                = 0x41,
 	RTK_COEX_MAILBOX_WIFI_TDMA_IN_BT_SLOT               = 0x42,
 	RTK_COEX_MAILBOX_WIFI_RPT_TDMA                      = 0x43,
-	RTK_COEX_MAILBOX_LE_AUDIO_BT_INFO_BT_RPT            = 0x46,
-	RTK_COEX_MAILBOX_LE_AUDIO_BT_INFO_BT_RES            = 0x47,
+	RTK_COEX_MAILBOX_LE_AUDIO_BT_INFO_BY_ITSELF         = 0x46,
+	RTK_COEX_MAILBOX_LE_AUDIO_BT_INFO                   = 0x47,
 	RTK_COEX_MAILBOX_BT_SLOT_CTRL                       = 0x48
 };
 

@@ -254,15 +254,25 @@ static inline uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 }
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-uint16_t bt_stack_le_audio_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_le_audio_init(rtk_bt_app_conf_t *papp_conf, void *io_msg_q, void *evt_msg_q);
 void bt_stack_le_audio_deinit(void);
+uint16_t bt_stack_bap_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_bap_init(void *p_conf);
+void bt_stack_bap_deinit(void);
+uint16_t bt_stack_cap_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_cap_init(void *p_conf);
+void bt_stack_cap_deinit(void);
+#if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
+uint16_t bt_stack_tmap_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_tmap_init(void *p_conf);
+void bt_stack_tmap_deinit(void);
+#endif
+#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
+uint16_t bt_stack_gmap_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_gmap_init(void *p_conf);
+void bt_stack_gmap_deinit(void);
+#endif
 #else
-static inline uint16_t bt_stack_le_audio_act_handle(rtk_bt_cmd_t *p_cmd)
-{
-	(void)p_cmd;
-	return RTK_BT_OK;
-}
 static inline uint16_t bt_stack_le_audio_init(rtk_bt_app_conf_t *papp_conf, void *io_msg_q, void *evt_msg_q)
 {
 	(void)papp_conf;
@@ -271,6 +281,58 @@ static inline uint16_t bt_stack_le_audio_init(rtk_bt_app_conf_t *papp_conf, void
 	return RTK_BT_OK;
 }
 static inline void bt_stack_le_audio_deinit(void)
+{
+}
+static inline uint16_t bt_stack_bap_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	(void)p_cmd;
+	return RTK_BT_OK;
+}
+static inline uint16_t bt_stack_bap_init(void *p_conf)
+{
+	(void)p_conf;
+	return RTK_BT_OK;
+}
+static inline void bt_stack_bap_deinit(void)
+{
+}
+static inline uint16_t bt_stack_cap_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	(void)p_cmd;
+	return RTK_BT_OK;
+}
+static inline uint16_t bt_stack_cap_init(void *p_conf)
+{
+	(void)p_conf;
+	return RTK_BT_OK;
+}
+static inline void bt_stack_cap_deinit(void)
+{
+}
+static inline uint16_t bt_stack_tmap_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	(void)p_cmd;
+	return RTK_BT_OK;
+}
+static inline uint16_t bt_stack_tmap_init(void *p_conf)
+{
+	(void)p_conf;
+	return RTK_BT_OK;
+}
+static inline void bt_stack_tmap_deinit(void)
+{
+}
+static inline uint16_t bt_stack_gmap_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	(void)p_cmd;
+	return RTK_BT_OK;
+}
+static inline uint16_t bt_stack_gmap_init(void *p_conf)
+{
+	(void)p_conf;
+	return RTK_BT_OK;
+}
+static inline void bt_stack_gmap_deinit(void)
 {
 }
 #endif

@@ -43,9 +43,9 @@ void ATOMIC_ADD(ATOMIC_T *v, int i)
 #if defined(STDATOMIC)
 	atomic_fetch_add(v, i);
 #else
-	rtos_critical_enter_old();
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	v->counter += i;
-	rtos_critical_exit_old();
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 #endif
 }
 
@@ -54,9 +54,9 @@ void ATOMIC_SUB(ATOMIC_T *v, int i)
 #if defined(STDATOMIC)
 	atomic_fetch_sub(v, i);
 #else
-	rtos_critical_enter_old();
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	v->counter -= i;
-	rtos_critical_exit_old();
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 #endif
 }
 
@@ -78,11 +78,11 @@ int ATOMIC_SUB_RETURN(ATOMIC_T *v, int i)
 #else
 	int temp;
 
-	rtos_critical_enter_old();
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	temp = v->counter;
 	temp -= i;
 	v->counter = temp;
-	rtos_critical_exit_old();
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 
 	return temp;
 #endif

@@ -395,7 +395,7 @@ typedef struct
         uint32_t RESERVED1;
   __IOM uint32_t SHPR[2U];               /*!< Offset: 0x01C (R/W)  System Handlers Priority Registers. [0] is RESERVED */
   __IOM uint32_t SHCSR;                  /*!< Offset: 0x024 (R/W)  System Handler Control and State Register */
-  
+
   /****************copy from core_armv8mml.h start*******************************/
   __IOM uint32_t CFSR;                   /*!< Offset: 0x028 (R/W)  Configurable Fault Status Register */
   __IOM uint32_t HFSR;                   /*!< Offset: 0x02C (R/W)  HardFault Status Register */
@@ -794,22 +794,37 @@ typedef struct
 #define SCB_RFSR_UET_Msk                   (3UL /*<< SCB_RFSR_UET_Pos*/)                  /*!< SCB RFSR: UET Mask */
 
 /* SCB D-Cache Invalidate by Set-way Register Definitions */
+#ifndef RTK_DCACHE_2WAY
 #define SCB_DCISW_WAY_Pos                  30U                                            /*!< SCB DCISW: Way Position */
 #define SCB_DCISW_WAY_Msk                  (3UL << SCB_DCISW_WAY_Pos)                     /*!< SCB DCISW: Way Mask */
+#else
+#define SCB_DCISW_WAY_Pos                  31U                                            /*!< SCB DCISW: Way Position */
+#define SCB_DCISW_WAY_Msk                  (1UL << SCB_DCISW_WAY_Pos)                     /*!< SCB DCISW: Way Mask */
+#endif
 
 #define SCB_DCISW_SET_Pos                   5U                                            /*!< SCB DCISW: Set Position */
 #define SCB_DCISW_SET_Msk                  (0x1FFUL << SCB_DCISW_SET_Pos)                 /*!< SCB DCISW: Set Mask */
 
 /* SCB D-Cache Clean by Set-way Register Definitions */
+#ifndef RTK_DCACHE_2WAY
 #define SCB_DCCSW_WAY_Pos                  30U                                            /*!< SCB DCCSW: Way Position */
 #define SCB_DCCSW_WAY_Msk                  (3UL << SCB_DCCSW_WAY_Pos)                     /*!< SCB DCCSW: Way Mask */
+#else
+#define SCB_DCCSW_WAY_Pos                  31U                                            /*!< SCB DCCSW: Way Position */
+#define SCB_DCCSW_WAY_Msk                  (1UL << SCB_DCCSW_WAY_Pos)                     /*!< SCB DCCSW: Way Mask */
+#endif
 
 #define SCB_DCCSW_SET_Pos                   5U                                            /*!< SCB DCCSW: Set Position */
 #define SCB_DCCSW_SET_Msk                  (0x1FFUL << SCB_DCCSW_SET_Pos)                 /*!< SCB DCCSW: Set Mask */
 
 /* SCB D-Cache Clean and Invalidate by Set-way Register Definitions */
+#ifndef RTK_DCACHE_2WAY
 #define SCB_DCCISW_WAY_Pos                 30U                                            /*!< SCB DCCISW: Way Position */
 #define SCB_DCCISW_WAY_Msk                 (3UL << SCB_DCCISW_WAY_Pos)                    /*!< SCB DCCISW: Way Mask */
+#else
+#define SCB_DCCISW_WAY_Pos                 31U                                            /*!< SCB DCCISW: Way Position */
+#define SCB_DCCISW_WAY_Msk                 (1UL << SCB_DCCISW_WAY_Pos)                    /*!< SCB DCCISW: Way Mask */
+#endif
 
 #define SCB_DCCISW_SET_Pos                  5U                                            /*!< SCB DCCISW: Set Position */
 #define SCB_DCCISW_SET_Msk                 (0x1FFUL << SCB_DCCISW_SET_Pos)                /*!< SCB DCCISW: Set Mask */
@@ -1757,7 +1772,7 @@ typedef struct
 
 /* Special LR values for Secure/Non-Secure call handling and exception handling                                               */
 
-/* Function Return Payload (from ARMv8-M Architecture Reference Manual) LR value on entry from Secure BLXNS                   */ 
+/* Function Return Payload (from ARMv8-M Architecture Reference Manual) LR value on entry from Secure BLXNS                   */
 #define FNC_RETURN                 (0xFEFFFFFFUL)     /* bit [0] ignored when processing a branch                             */
 
 /* The following EXC_RETURN mask values are used to evaluate the LR on exception entry */
@@ -2389,7 +2404,7 @@ __STATIC_INLINE void TZ_SAU_Disable(void)
   @{
  */
 
- 
+
 /**
   \brief   Set Debug Authentication Control Register
   \details writes to Debug Authentication Control register.
@@ -2456,7 +2471,7 @@ __STATIC_INLINE uint32_t TZ_DCB_GetAuthCtrl_NS(void)
   @{
  */
 
- 
+
 /**
   \brief   Get Debug Authentication Status Register
   \details Reads Debug Authentication Status register.

@@ -65,7 +65,6 @@ ameba_list_append_if(CONFIG_BT_MESH_DEVICE_TEST _tmp_${d_MCU_PROJECT_NAME}_bluet
 )
 
 ameba_list_append_if(CONFIG_BT_LE_AUDIO _tmp_${d_MCU_PROJECT_NAME}_bluetooth_subdirectories
-    ble_audio_common
     ble_audio
     bt_audio
 )
@@ -116,13 +115,11 @@ ameba_list_append_if(CONFIG_BT_AUDIO_MP_TEST _tmp_${d_MCU_PROJECT_NAME}_bluetoot
 )
 
 ameba_list_append_if(CONFIG_BT_A2DP_LE_AUDIO_PBP _tmp_${d_MCU_PROJECT_NAME}_bluetooth_subdirectories
-    ble_audio_common
     bt_a2dp_pbp
     bt_audio
 )
 
 ameba_list_append_if(CONFIG_BT_A2DP_LE_AUDIO_TMAP _tmp_${d_MCU_PROJECT_NAME}_bluetooth_subdirectories
-    ble_audio_common
     bt_a2dp_tmap
     bt_audio
 )

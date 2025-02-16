@@ -2390,7 +2390,7 @@ end:
 }
 
 
-log_item_t at_lwip_items[ ] = {
+log_item_t at_socket_items[ ] = {
 	{"+SKTSERVER", at_sktserver, {NULL, NULL}},
 	{"+SKTCLIENT", at_sktclient, {NULL, NULL}},
 	{"+SKTDEL", at_sktdel, {NULL, NULL}},
@@ -2408,22 +2408,22 @@ log_item_t at_lwip_items[ ] = {
 	{"+SKTSRVCONF", at_sktsrvconf, {NULL, NULL}},
 };
 
-void print_lwip_at(void)
+void print_socket_at(void)
 {
 	int i, cmdSize;
 
-	cmdSize = sizeof(at_lwip_items) / sizeof(log_item_t);
+	cmdSize = sizeof(at_socket_items) / sizeof(log_item_t);
 	for (i = 0; cmdSize > i; i++) {
-		at_printf("AT%s\r\n", at_lwip_items[i].log_cmd);
+		at_printf("AT%s\r\n", at_socket_items[i].log_cmd);
 	}
 }
 
-void at_tcpip_init(void)
+void at_socket_init(void)
 {
 	init_node_pool();
 	mainlist = create_list_node(-1, -1);
 
-	atcmd_service_add_table(at_lwip_items, sizeof(at_lwip_items) / sizeof(at_lwip_items[0]));
+	atcmd_service_add_table(at_socket_items, sizeof(at_socket_items) / sizeof(at_socket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_SOCKET */

@@ -168,7 +168,7 @@ SECTIONS
 	{
 		. = ALIGN (32);
 		__ram_nocache_start__ = .;
-		*(.ncsram.data*)
+		*(.nocache.data*)
 		. = ALIGN (32);
 		__ram_nocache_end__ = .;
 	} > IMG2_DATA_LMA_REGION

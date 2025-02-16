@@ -13,22 +13,22 @@ extern "C" {
 #include <stdbool.h>
 
 /**
- * \defgroup    LEA_LIB BLE Audio Lib
+ * \defgroup    LEA_LIB LE Audio Library
  *
- * \brief   General interface accessing to LE Audio Lib.
+ * \brief   General interface accessing to LE audio library.
  */
 
 /**
- * \defgroup    LEA_LIB_Exported_Types BLE Audio Lib Exported Types
+ * \defgroup    LEA_LIB_Exported_Types LE Audio Lib Exported Types
  *
  * \ingroup LEA_LIB
- * \{
+ * @{
  */
 
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Check Function Type.
+ * \brief  Define Bluetooth bond check function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -37,7 +37,7 @@ typedef bool (*P_BT_BOND_CHECK)(uint8_t *bd_addr, uint8_t bd_type, uint16_t conn
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Get Key Function Type.
+ * \brief  Define Bluetooth bond get key function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -47,7 +47,7 @@ typedef bool (*P_BT_BOND_GET_KEY)(uint8_t *bd_addr, uint8_t bd_type, uint16_t co
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Get Max Bond Number Function Type.
+ * \brief  Define Bluetooth bond get maximum bond number function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -56,7 +56,7 @@ typedef uint8_t (*P_BT_BOND_GET_MAX_NUM)(bool is_le);
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Get Address Function Type.
+ * \brief  Define Bluetooth bond get address function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -67,7 +67,7 @@ typedef bool (*P_BT_BOND_GET_ADDR)(bool is_le, uint8_t bond_idx, uint8_t *bd_add
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Set CCCD Flag Function Type.
+ * \brief  Define Bluetooth bond set CCCD flag function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -78,7 +78,7 @@ typedef bool (*P_BT_BOND_SET_CCCD_FLAG)(uint8_t *bd_addr, uint8_t bd_type, uint8
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Clear CCCD Flag Function Type.
+ * \brief  Define Bluetooth bond clear CCCD flag function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -88,7 +88,7 @@ typedef bool (*P_BT_BOND_CLEAR_CCCD_FLAG)(uint8_t *bd_addr, uint8_t bd_type, uin
 /**
  * bt_bond_mgr.h
  *
- * \brief  Define Bluetooth Bond Resolve Resolvable Private Address Function Type.
+ * \brief  Define Bluetooth bond resolve resolvable private address function type.
  *
  * \ingroup LEA_LIB_Exported_Types
  */
@@ -114,27 +114,27 @@ typedef struct
 } T_BT_BOND_MGR;
 /**
  * End of LEA_LIB_Exported_Types
- * \}
+ * @}
  */
 
 /**
- * \defgroup    LEA_LIB_Exported_Functions BLE Audio Lib Exported Functions
+ * \defgroup    LEA_LIB_Exported_Functions LE Audio Lib Exported Functions
  *
  * \ingroup LEA_LIB
- * \{
+ * @{
  */
 
 /**
  * bt_bond_mgr.h
  *
- * \brief  Register bt bond manager callback functions.
+ * \brief  Register Bluetooth bond manager callback functions.
  *
- *         If Application initializes the app bond mgr module by calling bt_bond_init(),
- *         the application shall to call this function to register the bond manager callback.
+ * If Application initializes the APP bond mgr module by calling @ref bt_bond_init,
+ * the application shall to call this function to register the bond manager callback.
  *
  * \xrefitem Added_API_2_14_1_0 "Added Since 2.14.1.0" "Added API"
  *
- * \param[in]  p_mgr      BT bond manager callback types: @ref T_BT_BOND_MGR.
+ * \param[in]  p_mgr      Bluetooth bond manager callback types: @ref T_BT_BOND_MGR.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -167,7 +167,7 @@ typedef struct
 void ble_audio_reg_bond_mgr(const T_BT_BOND_MGR *p_mgr);
 /**
  * End of LEA_LIB_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

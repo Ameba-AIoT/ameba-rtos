@@ -79,8 +79,6 @@ int atcmd_bt_a2dp_hfp(int argc, char *argv[]);
 
 int atcmd_ble_iso(int argc, char *argv[]);
 
-int atcmd_bt_bap(int argc, char *argv[]);
-
 int atcmd_bt_cap(int argc, char *argv[]);
 
 int atcmd_bt_pbp(int argc, char *argv[]);
@@ -242,9 +240,6 @@ int atcmd_bt_iso_cmd(int argc, char *argv[]);
 
 /* le audio cap */
 int atcmd_bt_cap_cmd(int argc, char *argv[]);
-
-/* le audio pbp */
-int atcmd_bt_pbp_cmd(int argc, char *argv[]);
 
 /* le audio tmap */
 int atcmd_bt_tmap_cmd(int argc, char *argv[]);

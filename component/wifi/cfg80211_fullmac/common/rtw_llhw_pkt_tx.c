@@ -58,6 +58,7 @@ int llhw_xmit_thread(void *data)
 	struct inic_msg_node *p_node = NULL;
 	struct sk_buff *pskb;
 	int ret = 0;
+	int i = 0;
 
 	while (!kthread_should_stop()) {
 
@@ -74,12 +75,10 @@ int llhw_xmit_thread(void *data)
 
 			/* wake tx queue if need */
 			if (llhw_xmit_pending_q_num() < QUEUE_WAKE_THRES) {
-				netif_tx_wake_all_queues(global_idev.pndev[0]);
-				if (global_idev.pndev[1]) {
-					netif_tx_wake_all_queues(global_idev.pndev[1]);
-				}
-				if (global_idev.pndev[2]) {
-					netif_tx_wake_all_queues(global_idev.pndev[2]);
+				for (i = 0; i < INIC_MAX_NET_PORT_NUM; i++) {
+					if (global_idev.pndev[i]) {
+						netif_tx_wake_all_queues(global_idev.pndev[i]);
+					}
 				}
 			}
 #ifndef CONFIG_INIC_USB_ASYNC_SEND

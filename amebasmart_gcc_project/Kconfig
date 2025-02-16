@@ -88,6 +88,19 @@ menu "CONFIG AT CMD"
     endif # SUPPORT_ATCMD
 endmenu
 
+menu "CONFIG RTK Assert Level"
+    choice
+        prompt "RTK Assert Level"
+        default ASSERTION_ENABLE
+        config ASSERTION_ENABLE
+            bool "Assert Enable"
+        config ASSERTION_SILENT
+            bool "Assert Silent"
+        config ASSERTION_DISABLE
+            bool "Assert Disable"
+    endchoice
+endmenu
+
 menu "CONFIG VFS"
     config VFS_LITTLEFS_INCLUDED
         bool "Enable VFS LITTLEFS"
@@ -346,14 +359,6 @@ menu "CONFIG BT"
                 select BT_AUDIO_CODEC_LC3
 
             if BT_LE_AUDIO_MENU
-                config BT_BAP_MENU
-                    bool
-                    select BT_BAP
-                    select BT_BAP_SUPPORT
-                config BT_CAP_MENU
-                    bool
-                    select BT_CAP
-                    select BT_CAP_SUPPORT
                 config BT_PBP_MENU
                     bool
                     select BT_PBP
@@ -362,12 +367,10 @@ menu "CONFIG BT"
                     bool
                     select BT_TMAP
                     select BT_TMAP_SUPPORT
-                    select BT_CAP_SUPPORT
                 config BT_GMAP_MENU
                     bool
                     select BT_GMAP
                     select BT_GMAP_SUPPORT
-                    select BT_CAP_SUPPORT
 
             endif
 
@@ -435,7 +438,6 @@ menu "CONFIG BT"
                 select BT_A2DP_LE_AUDIO_TMAP
                 select BT_APP_AUDIO_DATA
                 select BT_TMAP_SUPPORT
-                select BT_CAP_SUPPORT
                 select BT_AUDIO_CODEC_SUPPORT
                 select BT_AUDIO_CODEC_SBC
                 select BT_AUDIO_CODEC_LC3
@@ -470,14 +472,6 @@ menu "CONFIG BT"
                 bool
             config BT_MESH_DEVICE_TEST
                 bool
-            config BT_BAP
-                bool
-            config BT_BAP_SUPPORT
-                bool
-            config BT_CAP
-                bool
-            config BT_CAP_SUPPORT
-                bool
             config BT_PBP
                 bool
             config BT_PBP_SUPPORT
@@ -485,8 +479,6 @@ menu "CONFIG BT"
             config BT_TMAP
                 bool
             config BT_TMAP_SUPPORT
-                bool
-            config BT_CAP_SUPPORT
                 bool
             config BT_GMAP
                 bool

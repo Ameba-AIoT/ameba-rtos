@@ -23,7 +23,7 @@ extern "C" {
  * \defgroup    BASS_Def_Exported_Macros Broadcast Audio Scan Service Definition Exported Macros
  *
  * \ingroup LEA_GAF_BASS_Def
- * \{
+ * @{
  */
 
 /**
@@ -31,16 +31,16 @@ extern "C" {
  *
  * \defgroup    BASS_ERR_CODE BASS Error Code
  *
- * \brief  Define Broadcast Audio Scan Service Error Code.
+ * \brief  Define Broadcast Audio Scan Service error code.
  *
  * \ingroup BASS_Def_Exported_Macros
- * \{
+ * @{
  */
-#define ATT_ERR_BASS_OPCODE_NOT_SUPPORT (ATT_ERR | 0x80)     /**< Opcode Not Supported */
-#define ATT_ERR_BASS_INVALID_SRC_ID     (ATT_ERR | 0x81)     /**< Invalid Source_ID */
+#define ATT_ERR_BASS_OPCODE_NOT_SUPPORT (ATT_ERR | 0x80)     /**< Opcode Not Supported. */
+#define ATT_ERR_BASS_INVALID_SRC_ID     (ATT_ERR | 0x81)     /**< Invalid Source_ID. */
 /**
  * End of BASS_ERR_CODE
- * \}
+ * @}
  */
 
 /**
@@ -48,17 +48,17 @@ extern "C" {
  *
  * \defgroup    BASS_PARAM_DESC BASS Parameter Description
  *
- * \brief  Define BASS Parameter Description.
+ * \brief  Define BASS parameter description.
  *
  * \ingroup BASS_Def_Exported_Macros
- * \{
+ * @{
  */
 #define BASS_FAILED_TO_SYNC_TO_BIG 0xFFFFFFFF
 #define BASS_CP_BIS_SYNC_NO_PREFER 0xFFFFFFFF
 #define BASS_PA_INTERVAL_UNKNOWN   0xFFFF
 /**
  * End of BASS_PARAM_DESC
- * \}
+ * @}
  */
 
 /**
@@ -66,31 +66,31 @@ extern "C" {
  *
  * \defgroup    BASS_DATE_LEN BASS Data Length
  *
- * \brief  Define Broadcast Audio Scan Service Data Length.
+ * \brief  Define Broadcast Audio Scan Service data length.
  *
  * \ingroup BASS_Def_Exported_Macros
- * \{
+ * @{
  */
-#define BASS_BRS_DATA_MIN_LEN 15                 /**< Broadcast Receive State Data Minimum Length */
+#define BASS_BRS_DATA_MIN_LEN 15                 /**< Broadcast Receive State Data minimum length. */
 
-#define BASS_CP_OP_MIN_LEN                1      /**< Broadcast Audio Scan Control Point Minimum Possible Total Length */
-#define BASS_CP_OP_REMOTE_SCAN_STOP_LEN   1      /**< Remote Scan Stopped Length */
-#define BASS_CP_OP_REMOTE_SCAN_START_LEN  1      /**< Remote Scan Started Length */
-#define BASS_CP_OP_ADD_SOURCE_MIN_LEN     16     /**< Add Source Minimum Length */
-#define BASS_CP_OP_MODIFY_SOURCE_MIN_LEN  6      /**< Modify Source Minimum Length */
-#define BASS_CP_OP_SET_BROADCAST_CODE_LEN 18     /**< Set Broadcast_Code Minimum Length */
-#define BASS_CP_OP_REMOVE_SOURCE_LEN      2      /**< Remove Source Minimum Length */
+#define BASS_CP_OP_MIN_LEN                1      /**< Broadcast Audio Scan Control Point minimum possible total length. */
+#define BASS_CP_OP_REMOTE_SCAN_STOP_LEN   1      /**< Remote Scan Stopped length. */
+#define BASS_CP_OP_REMOTE_SCAN_START_LEN  1      /**< Remote Scan Started length. */
+#define BASS_CP_OP_ADD_SOURCE_MIN_LEN     16     /**< Add Source minimum length. */
+#define BASS_CP_OP_MODIFY_SOURCE_MIN_LEN  6      /**< Modify Source minimum length. */
+#define BASS_CP_OP_SET_BROADCAST_CODE_LEN 18     /**< Set Broadcast_Code minimum length. */
+#define BASS_CP_OP_REMOVE_SOURCE_LEN      2      /**< Remove Source minimum length. */
 
 #define BASS_BRA_INC_BST_CODE_LEN         31
 /**
  * End of BASS_DATE_LEN
- * \}
+ * @}
  */
 
 /**
  * bass_def.h
  *
- * \brief  Define Broadcast Receive State Characteristic Maximum Number.
+ * \brief  Define Broadcast Receive State characteristic maximum number.
  *
  * \ingroup BASS_Def_Exported_Macros
  */
@@ -104,63 +104,63 @@ extern "C" {
  * \brief  Define Broadcast Audio Scan Service UUID.
  *
  * \ingroup BASS_Def_Exported_Macros
- * \{
+ * @{
  */
-#define GATT_UUID_BASS                           0x184F    /**< Broadcast Audio Scan Service */
-#define BASS_UUID_CHAR_BROADCAST_AUDIO_SCAN_CP   0x2BC7    /**< Broadcast Audio Scan Control Point */
-#define BASS_UUID_CHAR_BROADCAST_RECEIVE_STATE   0x2BC8    /**< Broadcast Receive State */
+#define GATT_UUID_BASS                           0x184F    /**< Broadcast Audio Scan Service. */
+#define BASS_UUID_CHAR_BROADCAST_AUDIO_SCAN_CP   0x2BC7    /**< Broadcast Audio Scan Control Point. */
+#define BASS_UUID_CHAR_BROADCAST_RECEIVE_STATE   0x2BC8    /**< Broadcast Receive State. */
 /**
  * End of BASS_UUID
- * \}
+ * @}
  */
 
 /**
  * End of BASS_Def_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    BASS_Def_Exported_Types Broadcast Audio Scan Service Definition Exported Types
  *
  * \ingroup LEA_GAF_BASS_Def
- * \{
+ * @{
  */
 
 /**
  * bass_def.h
  *
- * \brief  Broadcast Receive State PA_Sync_State Field.
+ * \brief  Broadcast Receive State characteristic PA_Sync_State field.
  *
  * \ingroup BASS_Def_Exported_Types
  */
 typedef enum
 {
-    PA_SYNC_STATE_NOT_SYNC     = 0x00,      /**< Not synchronized to PA */
-    PA_SYNC_STATE_SYNC_INFO_REQ = 0x01,     /**< SyncInfo Request */
-    PA_SYNC_STATE_SYNC         = 0x02,      /**< Synchronized to PA */
-    PA_SYNC_STATE_FAILED       = 0x03,      /**< Failed to synchronize to PA */
-    PA_SYNC_STATE_NO_PAST      = 0x04,      /**< No PAST */
+    PA_SYNC_STATE_NOT_SYNC     = 0x00,      /**< Not synchronized to PA. */
+    PA_SYNC_STATE_SYNC_INFO_REQ = 0x01,     /**< SyncInfo Request. */
+    PA_SYNC_STATE_SYNC         = 0x02,      /**< Synchronized to PA. */
+    PA_SYNC_STATE_FAILED       = 0x03,      /**< Failed to synchronize to PA. */
+    PA_SYNC_STATE_NO_PAST      = 0x04,      /**< No PAST. */
 } T_PA_SYNC_STATE;
 
 /**
  * bass_def.h
  *
- * \brief  Broadcast Receive State BIG_Encryption Field.
+ * \brief  Broadcast Receive State characteristic BIG_Encryption field.
  *
  * \ingroup BASS_Def_Exported_Types
  */
 typedef enum
 {
-    BIG_NOT_ENCRYPTED           = 0x00,      /**< Not encrypted */
-    BIG_BROADCAST_CODE_REQUIRED = 0x01,      /**< Broadcast_Code required */
-    BIG_DECRYPTING              = 0x02,      /**< Decrypting */
-    BIG_BAD_CODE                = 0x03,      /**< Bad_Code (incorrect encryption key) */
+    BIG_NOT_ENCRYPTED           = 0x00,      /**< Not encrypted. */
+    BIG_BROADCAST_CODE_REQUIRED = 0x01,      /**< Broadcast_code required. */
+    BIG_DECRYPTING              = 0x02,      /**< Decrypting. */
+    BIG_BAD_CODE                = 0x03,      /**< Bad_code (incorrect encryption key). */
 } T_BIG_ENCRYPTION_STATE;
 
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Opcode.
+ * \brief  Broadcast Audio Scan Control Point opcodes.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -177,35 +177,35 @@ typedef enum
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point PA_Sync Parameter.
+ * \brief  Broadcast Audio Scan Control Point characteristic PA_Sync parameter.
  *
  * \ingroup BASS_Def_Exported_Types
  */
 typedef enum
 {
-    BASS_PA_NOT_SYNC     = 0x00,      /**< Do not synchronize to PA */
-    BASS_PA_SYNC_PAST    = 0x01,      /**< Synchronize to PA: PAST available */
-    BASS_PA_SYNC_NO_PAST = 0x02,      /**< Synchronize to PA: PAST not available */
+    BASS_PA_NOT_SYNC     = 0x00,      /**< Do not synchronize to PA. */
+    BASS_PA_SYNC_PAST    = 0x01,      /**< Synchronize to PA: PAST available. */
+    BASS_PA_SYNC_NO_PAST = 0x02,      /**< Synchronize to PA: PAST not available. */
 } T_BASS_PA_SYNC;
 
 /**
  * bass_def.h
  *
- * \brief  PAST Service Data.
+ * \brief  PAST service data.
  *
  * \ingroup BASS_Def_Exported_Types
  */
 typedef struct
 {
-    uint8_t adv_a_match_ext_adv; /**< AdvA in PAST matches AdvA in ADB_EXT_IND, 0b0=Yes, 0b1=No/Do't know */
-    uint8_t adv_a_match_src;     /**< AdvA in PAST matches Source_Address, 0b0=Yes, 0b1=No/Do't know */
+    uint8_t adv_a_match_ext_adv; /**< AdvA in PAST matches AdvA in ADV_EXT_IND, 0b0=Yes, 0b1=No/Don't know. */
+    uint8_t adv_a_match_src;     /**< AdvA in PAST matches Source_Address, 0b0=Yes, 0b1=No/Don't know. */
     uint8_t source_id;
 } T_BASS_PAST_SRV_DATA;
 
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point BIS Information.
+ * \brief  Broadcast Audio Scan Control Point characteristic BIS information.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -219,14 +219,14 @@ typedef struct
 /**
  * bass_def.h
  *
- * \brief  Broadcast Receive State Data.
+ * \brief  Broadcast Receive State characteristic data.
  *
  * \ingroup BASS_Def_Exported_Types
  */
 typedef struct
 {
     bool brs_is_used;
-    /**< Broadcast Receive State Field */
+    /**< Broadcast Receive State field. */
     uint8_t source_id;
     uint8_t source_address_type;
     uint8_t source_address[GAP_BD_ADDR_LEN];
@@ -244,7 +244,7 @@ typedef struct
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Add Source Operation Data Format.
+ * \brief  Broadcast Audio Scan Control Point characteristic Add Source operation data format.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -264,7 +264,7 @@ typedef struct
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Modify Source Operation Data Format.
+ * \brief  Broadcast Audio Scan Control Point characteristic Modify Source operation data format.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -281,7 +281,7 @@ typedef struct
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Set Broadcast_Code Operation Data Format.
+ * \brief  Broadcast Audio Scan Control Point characteristic Set Broadcast_Code operation data format.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -294,7 +294,7 @@ typedef struct
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Remove Source Operation Data Format.
+ * \brief  Broadcast Audio Scan Control Point characteristic Remove Source operation data format.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -306,7 +306,7 @@ typedef struct
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Characteristic Parameter.
+ * \brief  Broadcast Audio Scan Control Point characteristic parameters.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -321,7 +321,7 @@ typedef union
 /**
  * bass_def.h
  *
- * \brief  Broadcast Audio Scan Control Point Characteristic Data.
+ * \brief  Broadcast Audio Scan Control Point characteristic data.
  *
  * \ingroup BASS_Def_Exported_Types
  */
@@ -332,7 +332,7 @@ typedef struct
 } T_BASS_CP_DATA;
 /**
  * End of BASS_Def_Exported_Types
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

@@ -225,11 +225,10 @@ standard names - or at least those used in the unmodified vector table. */
 #define traceLOW_POWER_IDLE_BEGIN()
 #define traceLOW_POWER_IDLE_END()
 
-/* Normal assert() semantics without relying on the provision of an assert.h
-header file. */
+/* system assert level controlled by rtk_assert.h header file. */
 #ifndef __ASSEMBLER__
-void vAssertCalled(const char *pcFile, uint32_t ulLine);
-// #define configASSERT( x ) if( ( x ) == 0 ) vAssertCalled( __FILE__, __LINE__ );
+#include "rtk_assert.h"
+// #define configASSERT(x)    rtk_assert(x)
 #endif
 
 #endif /* __IASMARM__ */

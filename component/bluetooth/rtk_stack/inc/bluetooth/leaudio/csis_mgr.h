@@ -24,49 +24,51 @@ extern "C" {
  * \defgroup    CSIP_Server_Exported_Types Coordinated Set Identification Server Exported Types
  *
  * \ingroup LEA_GAF_CSIP_Server
- * \{
+ * @{
  */
 
 /**
  * csis_mgr.h
  *
- * \brief  CSIS Service Receive Read SIRK Request Parameter.
- *         The message data for LE_AUDIO_MSG_CSIS_READ_SIRK_IND.
+ * \brief  CSIS service receive read SIRK request parameter.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_READ_SIRK_IND.
  *
  * \ingroup CSIP_Server_Exported_Types
  */
 typedef struct
 {
     uint16_t conn_handle;
-    uint8_t service_id;
+    uint8_t  service_id;
     T_CSIS_SIRK_TYPE sirk_type;
 } T_CSIS_READ_SIRK_IND;
 
 /**
  * csis_mgr.h
  *
- * \brief  CSIS Service Set Member Lock State Parameter.
- *         The message data for LE_AUDIO_MSG_CSIS_LOCK_STATE.
+ * \brief  CSIS service Set Member Lock State parameter.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_LOCK_STATE.
  *
  * \ingroup CSIP_Server_Exported_Types
  */
 typedef struct
 {
-    uint8_t service_id;
+    uint8_t  service_id;
     T_CSIS_LOCK lock_state;
     uint8_t lock_address[GAP_BD_ADDR_LEN];
     uint8_t lock_address_type;
 } T_CSIS_LOCK_STATE;
 /**
  * End of CSIP_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    CSIP_Server_Exported_Functions Coordinated Set Identification Server Exported Functions
  *
  * \ingroup LEA_GAF_CSIP_Server
- * \{
+ * @{
  */
 
 /**
@@ -78,9 +80,9 @@ typedef struct
  * \param[in]  p_sirk          Pointer to SIRK.
  * \param[in]  sirk_type       SIRK type: @ref T_CSIS_SIRK_TYPE.
  *
- * \return         The result of update CSIS service SIRK.
- * \retval true    Update CSIS service SIRK success.
- * \retval false   Update CSIS service SIRK failed.
+ * \return         The result of updating CSIS service SIRK.
+ * \retval true    Updating CSIS service SIRK is successful.
+ * \retval false   Updating CSIS service SIRK failed.
  *
  * \ingroup CSIP_Server_Exported_Functions
  */
@@ -96,9 +98,9 @@ bool csis_update_sirk(uint8_t service_id, uint8_t *p_sirk, T_CSIS_SIRK_TYPE sirk
  * \param[in]  service_id      Service id.
  * \param[in]  csis_size       Coordinated Set Size characteristic value. Range:0x01 to 0xFF.
  *
- * \return         The result of update Coordinated Set Size.
- * \retval true    Update Coordinated Set Size success.
- * \retval false   Update Coordinated Set Size failed.
+ * \return         The result of updating Coordinated Set Size.
+ * \retval true    Updating Coordinated Set Size is successful.
+ * \retval false   Updating Coordinated Set Size failed.
  *
  * \ingroup CSIP_Server_Exported_Functions
  */
@@ -114,17 +116,18 @@ bool csis_update_size(uint8_t service_id, uint8_t csis_size);
  * \param[in,out]  p_service_id    Pointer to service id: @ref T_SERVER_ID.
  * \param[in]  p_inc_srv_uuid  Pointer to set member include service uuid: @ref T_ATTR_UUID.
  *
- * \return         The result of get CSIS service id.
- * \retval true    Get CSIS service id success.
- * \retval false   Get CSIS service id failed.
+ * \return         The result of getting CSIS service id.
+ * \retval true    Getting CSIS service id is successful.
+ * \retval false   Getting CSIS service id failed.
  *
  * \ingroup CSIP_Server_Exported_Functions
  */
 bool csis_get_srv_id(uint8_t *p_service_id, T_ATTR_UUID *p_inc_srv_uuid);
 /**
  * End of CSIP_Server_Exported_Functions
- * \}
+ * @}
  */
+
 
 #ifdef  __cplusplus
 }

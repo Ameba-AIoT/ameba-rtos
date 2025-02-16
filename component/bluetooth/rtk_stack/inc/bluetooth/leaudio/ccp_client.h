@@ -3,8 +3,8 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     ccp_client.h
-  * @brief    Head file for Call Control Client.
-  * @details  This file defines Call Control Client related definition.
+  * @brief    Header file for Call Control Client.
+  * @details  This file defines Call Control Client related definitions.
   * @author
   * @date
   * @version
@@ -23,14 +23,14 @@ extern "C" {
 /**
  * \defgroup    LEA_GAF_CCP_Client Call Control Client
  *
- * \brief Make, receive and manage call
+ * \brief Make, receive and manage calls
  */
 
 /**
  * \defgroup CCP_Client_Exported_Macros Call Control Client Exported Macros
  *
  * \ingroup LEA_GAF_CCP_Client
- * \{
+ * @{
  */
 
 /**
@@ -41,7 +41,7 @@ extern "C" {
  * \brief    Use the combination of macro definitions to specify whether to configure CCCD
  *
  * \ingroup CCP_Client_Exported_Macros
- * \{
+ * @{
  */
 #define CCP_CLIENT_CFG_CCCD_FLAG_BEARER_PROVIDER_NAME                      0x00000001
 #define CCP_CLIENT_CFG_CCCD_FLAG_BEARER_TECHNOLOGY                         0x00000002
@@ -57,19 +57,19 @@ extern "C" {
 #define CCP_CLIENT_CFG_CCCD_FLAG_CALL_FRIENDLY_NAME                        0x00000800
 /**
  * End of CCP_CLIENT_CFG_CCCD_FLAG
- * \}
+ * @}
  */
 
 /**
  * End of CCP_Client_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup CCP_Client_Exported_Types Call Control Client Exported Types
  *
  * \ingroup LEA_GAF_CCP_Client
- * \{
+ * @{
  */
 
 /**
@@ -82,11 +82,11 @@ extern "C" {
 typedef struct
 {
     uint8_t     *p_uri;    /**<
-                                * Uniform Resource Identifier (URI) of the outgoing call
+                                * Uniform Resource Identifier (URI) of the outgoing call.
                                 *
                                 * The URI is comprised of the URI scheme followed by the Caller ID.
                                 *
-                                * uri_scheme:caller_id */
+                                * uri_scheme:caller_id. */
     uint16_t    uri_len;
 } T_CCP_CLIENT_WRITE_CALL_CP_PARAM_ORIGINATE_OPCODE_PARAM;
 
@@ -112,7 +112,8 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t       opcode;                                /**< @ref TBS_CALL_CONTROL_POINT_CHAR_OPCODE */
+    uint8_t
+    opcode;                                /**< @ref TBS_CALL_CONTROL_POINT_CHAR_OPCODE. */
 
     union
     {
@@ -134,7 +135,7 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t     *p_bearer_provider_name;                 /**< UTF-8 string */
+    uint8_t     *p_bearer_provider_name;                 /**< UTF-8 string. */
     uint16_t    bearer_provider_name_len;
 } T_CCP_CLIENT_BEARER_PROVIDER_NAME;
 
@@ -148,9 +149,9 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_bearer_uci;                           /**<
-                                                              * Identifier of the telephone bearer
+                                                              * Identifier of the telephone bearer.
                                                               *
-                                                              * The "client_id" field of the UCI table is used to populate the Bearer UCI characteristic as a UTF-8 string. */
+                                                              * The 'client_id' field of the UCI table is used to populate the Bearer UCI characteristic as a UTF-8 string. */
     uint16_t    bearer_uci_len;
 } T_CCP_CLIENT_BEARER_UCI;
 
@@ -164,7 +165,7 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_bearer_technology; /**<
-                                           * Type of technology for telephone bearer: @ref TBS_BEARER_TECHNOLOGY_CHAR_VALUE */
+                                           * Type of technology for telephone bearer: @ref TBS_BEARER_TECHNOLOGY_CHAR_VALUE. */
     uint16_t    bearer_technology_len;
 } T_CCP_CLIENT_BEARER_TECHNOLOGY;
 
@@ -178,7 +179,7 @@ typedef struct
 typedef struct
 {
     uint8_t     *p_bearer_uri_schemes_supported_list;  /**<
-                                                            * A comma-delimited list of supported URI schemes expressed as a UTF-8 string */
+                                                            * A comma-delimited list of supported URI schemes expressed as a UTF-8 string. */
     uint16_t    bearer_uri_schemes_supported_list_len;
 } T_CCP_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST;
 
@@ -192,17 +193,17 @@ typedef struct
 typedef struct
 {
     uint8_t    *p_bearer_list_current_calls;         /**<
-                                                          * A list of current calls
+                                                          * A list of current calls.
                                                           *
-                                                          * Each list item in the list of calls shall have the structure
-                                                          * \arg    List_Item_Length[i] (1 octet) : Total length of the item, excluding the octet for the List_Item_Length field itself
-                                                          * \arg    Call_Index[i] (1 octet): A number chosen by Call Control Server to identify call
-                                                          * \arg    Call_State[i] (1 octet): @ref T_TBS_CALL_STATE
-                                                          * \arg    Call_Flags[i] (1 octet): A bit field, @ref TBS_CALL_FLAGS_BIT_Def
-                                                          * \arg    Call_URI[i] (variable): Incoming Call URI or Outgoing Call URI */
+                                                          * Each list item in the list of calls shall have the structure.
+                                                          * \arg    List_Item_Length[i] (1 octet) : Total length of the item, excluding the octet for the List_Item_Length field itself.
+                                                          * \arg    Call_Index[i] (1 octet): A number chosen by Call Control Server to identify call.
+                                                          * \arg    Call_State[i] (1 octet): @ref T_TBS_CALL_STATE.
+                                                          * \arg    Call_Flags[i] (1 octet): A bit field, @ref TBS_CALL_FLAGS_BIT_Def.
+                                                          * \arg    Call_URI[i] (variable): Incoming Call URI or Outgoing Call URI. */
     uint16_t    bearer_list_current_calls_len;       /**<
-                                                          * \arg    0 : No calls are available
-                                                          * \arg    other values */
+                                                          * \arg    0 : No calls are available.
+                                                          * \arg    Other values. */
 } T_CCP_CLIENT_BEARER_LIST_CURRENT_CALLS;
 
 /**
@@ -216,11 +217,11 @@ typedef struct
 {
     uint8_t     call_index;
     uint8_t    *p_incoming_call_target_uri;          /**<
-                                                          * URI of the target of an incoming call
+                                                          * URI of the target of an incoming call.
                                                           *
                                                           * The URI is comprised of the URI scheme followed by the identity of the target of the call.
                                                           *
-                                                          * uri_scheme:identity_target_call */
+                                                          * uri_scheme:identity_target_call. */
     uint16_t    incoming_call_target_uri_len;
 } T_CCP_CLIENT_INCOMING_CALL_TARGET_BEARER_URI;
 
@@ -234,17 +235,17 @@ typedef struct
 typedef struct
 {
     uint8_t    *p_call_state;                        /**<
-                                                          * An array of members
+                                                          * An array of members.
                                                           *
                                                           * Each 3 octets, and represents an abstraction of the different states that telephone calls are in.
                                                           *
-                                                          * Each member in the array shall have the structure
-                                                          * \arg    Call_Index[i] (1 octet): A number chosen by Call Control Server to identify call
-                                                          * \arg    State[i] (1 octet): @ref T_TBS_CALL_STATE
-                                                          * \arg    Call_Flags[i] (1 octet): A bit field, @ref TBS_CALL_FLAGS_BIT_Def */
+                                                          * Each member in the array shall have the structure.
+                                                          * \arg    Call_Index[i] (1 octet): A number chosen by Call Control Server to identify call.
+                                                          * \arg    State[i] (1 octet): @ref T_TBS_CALL_STATE.
+                                                          * \arg    Call_Flags[i] (1 octet): A bit field, @ref TBS_CALL_FLAGS_BIT_Def. */
     uint16_t    call_state_len;                      /**<
-                                                          * \arg    0 : No calls are available
-                                                          * \arg    other values */
+                                                          * \arg    0 : No calls are available.
+                                                          * \arg    Other values. */
 } T_CCP_CLIENT_CALL_STATE;
 
 /**
@@ -257,7 +258,7 @@ typedef struct
 typedef struct
 {
     uint8_t     call_index;
-    uint8_t     reason_code;              /**< @ref TBS_TERMINATION_REASON_CODES */
+    uint8_t     reason_code;              /**< @ref TBS_TERMINATION_REASON_CODES. */
 } T_CCP_CLIENT_TERMINATION_REASON;
 
 /**
@@ -271,11 +272,11 @@ typedef struct
 {
     uint8_t     call_index;
     uint8_t    *p_uri;     /**<
-                                * URI of the incoming caller
+                                * URI of the incoming caller.
                                 *
                                 * The URI of the incoming call is comprised of the URI scheme followed by the Caller ID of the call as a UTF-8 string.
                                 *
-                                * uri_scheme:caller_id */
+                                * uri_scheme:caller_id. */
     uint16_t    uri_len;
 } T_CCP_CLIENT_INCOMING_CALL;
 
@@ -290,9 +291,9 @@ typedef struct
 {
     uint8_t     call_index;
     uint8_t    *p_friendly_name;             /**<
-                                                  * Friendly name of the incoming call or outgoing call
+                                                  * Friendly name of the incoming call or outgoing call.
                                                   *
-                                                  * UTF-8 string */
+                                                  * UTF-8 string. */
     uint16_t    friendly_name_len;
 } T_CCP_CLIENT_CALL_FRIENDLY_NAME;
 
@@ -307,14 +308,14 @@ typedef struct
 {
     uint16_t    conn_handle;
     bool        is_found;        /**<
-                                      * \arg    true  : Service is found
-                                      * \arg    false : Service is not found */
+                                      * \arg    true  : Service is found.
+                                      * \arg    false : Service is not found. */
     bool        load_from_ftl;   /**<
-                                      * \arg    true  : Service table is loaded from FTL
-                                      * \arg    false : Service table is not loaded from FTL */
+                                      * \arg    true  : Service table is loaded from FTL.
+                                      * \arg    false : Service table is not loaded from FTL. */
     bool        gtbs;            /**<
-                                      * \arg    true  : Generic Telephone Bearer Service (GTBS)
-                                      * \arg    false : Telephone Bearer Service (TBS) */
+                                      * \arg    true  : Generic Telephone Bearer Service (GTBS).
+                                      * \arg    false : Telephone Bearer Service (TBS). */
     uint8_t     srv_num;         /**< Service instance number */
 } T_CCP_CLIENT_DIS_DONE;
 
@@ -340,38 +341,38 @@ typedef struct
         T_CCP_CLIENT_BEARER_TECHNOLOGY                      bearer_technology;
         T_CCP_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST      bearer_uri_schemes_supported_list;
         uint8_t                                             bearer_signal_strength;                    /**<
-                                                                                                            * Level of the signal of the telephone bearer
+                                                                                                            * Level of the signal of the telephone bearer.
                                                                                                             *
-                                                                                                            * \arg    0 : No service
-                                                                                                            * \arg    1 to 99 : Meaning of the values is left up to the implementation
-                                                                                                            * \arg    100 : Maximum signal strength
-                                                                                                            * \arg    101 to 254: Reserved for future use
-                                                                                                            * \arg    255 : Signal strength is unavailable or has no meaning for this particular bearer */
+                                                                                                            * \arg    0 : No service.
+                                                                                                            * \arg    1 to 99 : Meaning of the values is left up to the implementation.
+                                                                                                            * \arg    100 : Maximum signal strength.
+                                                                                                            * \arg    101 to 254: Reserved for future use.
+                                                                                                            * \arg    255 : Signal strength is unavailable or has no meaning for this particular bearer. */
         uint8_t                                             bearer_signal_strength_reporting_interval; /**<
-                                                                                                            * Reporting interval expressed in seconds
+                                                                                                            * Reporting interval expressed in seconds.
                                                                                                             *
-                                                                                                            * \arg    0 : Signal strength is reported as soon as the signal strength changes
-                                                                                                            * \arg    1 to 255 */
+                                                                                                            * \arg    0 : Signal strength is reported as soon as the signal strength changes.
+                                                                                                            * \arg    1 to 255. */
         T_CCP_CLIENT_BEARER_LIST_CURRENT_CALLS              bearer_list_current_calls;
         uint16_t                                            status_flags;                              /**<
-                                                                                                            * Current status of features that Call Control Server device supports
+                                                                                                            * Current status of features that Call Control Server device supports.
                                                                                                             *
-                                                                                                            * A bit field
+                                                                                                            * A bit field.
                                                                                                             *
-                                                                                                            * @ref TBS_STATUS_FLAGS_CHAR_BIT_Def */
+                                                                                                            * @ref TBS_STATUS_FLAGS_CHAR_BIT_Def. */
         T_CCP_CLIENT_INCOMING_CALL_TARGET_BEARER_URI        incoming_call_target_bearer_uri;
         T_CCP_CLIENT_CALL_STATE                             call_state;
         uint16_t                                            call_control_point_optional_opcodes;       /**<
-                                                                                                            * Optional opcodes of the Call Control Point
+                                                                                                            * Optional opcodes of the Call Control Point.
                                                                                                             *
-                                                                                                            * A bit field
+                                                                                                            * A bit field.
                                                                                                             *
-                                                                                                            * @ref TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def */
+                                                                                                            * @ref TBS_CALL_CONTROL_POINT_OPTIONAL_OPCODES_CHAR_BIT_Def. */
         T_CCP_CLIENT_INCOMING_CALL                          incoming_call;
         T_CCP_CLIENT_CALL_FRIENDLY_NAME                     call_friendly_name;
         uint8_t                                             content_control_id;                        /**<
                                                                                                             * Represent a unique instance of a service that either controls
-                                                                                                            * or provides status information on an audio-related feature */
+                                                                                                            * or provides status information on an audio-related feature. */
     } data;
 } T_CCP_CLIENT_READ_RESULT;
 
@@ -386,8 +387,8 @@ typedef struct
 {
     uint16_t          conn_handle;
     bool              gtbs;            /**<
-                                            * \arg    true  : Generic Telephone Bearer Service (GTBS)
-                                            * \arg    false : Telephone Bearer Service (TBS) */
+                                            * \arg    true  : Generic Telephone Bearer Service (GTBS).
+                                            * \arg    false : Telephone Bearer Service (TBS). */
     uint8_t           srv_instance_id;
     uint16_t          char_uuid;       /**<
                                             * \arg    @ref TBS_UUID_CHAR_BEARER_PROVIDER_NAME
@@ -429,24 +430,24 @@ typedef struct
 {
     uint16_t    conn_handle;
     bool        gtbs;              /**<
-                                        * \arg    true  : Generic Telephone Bearer Service (GTBS)
-                                        * \arg    false : Telephone Bearer Service (TBS) */
+                                        * \arg    true  : Generic Telephone Bearer Service (GTBS).
+                                        * \arg    false : Telephone Bearer Service (TBS). */
     uint8_t     srv_instance_id;
 
-    uint8_t     requested_opcode;  /**< @ref TBS_CALL_CONTROL_POINT_CHAR_OPCODE */
+    uint8_t     requested_opcode;  /**< @ref TBS_CALL_CONTROL_POINT_CHAR_OPCODE. */
     uint8_t     call_index;
-    uint8_t     result_code;       /**< @ref TBS_CALL_CONTROL_POINT_NOTIFICATION_RESULT_CODES */
+    uint8_t     result_code;       /**< @ref TBS_CALL_CONTROL_POINT_NOTIFICATION_RESULT_CODES. */
 } T_CCP_CLIENT_CALL_CP_NOTIFY;
 /**
  * End of CCP_Client_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup CCP_Client_Exported_Functions Call Control Client Exported Functions
  *
  * \ingroup LEA_GAF_CCP_Client
- * \{
+ * @{
  */
 
 /**
@@ -455,15 +456,15 @@ typedef struct
  *
  * ccp_client.h
  *
- * \param[in]  conn_handle      Connection handle
- * \param[in]  srv_instance_id  Service instance id
- * \param[in]  cfg_flags        @ref CCP_CLIENT_CFG_CCCD_FLAG
+ * \param[in]  conn_handle      Connection handle.
+ * \param[in]  srv_instance_id  Service instance ID.
+ * \param[in]  cfg_flags        @ref CCP_CLIENT_CFG_CCCD_FLAG.
  * \param[in]  enable
- * \arg    true  : Enable CCCD
- * \arg    false : Disable CCCD
+ * \arg    true  : Enable CCCD.
+ * \arg    false : Disable CCCD.
  * \param[in]  gtbs
- * \arg    true  : Generic Telephone Bearer Service (GTBS)
- * \arg    false : Telephone Bearer Service (TBS)
+ * \arg    true  : Generic Telephone Bearer Service (GTBS).
+ * \arg    false : Telephone Bearer Service (TBS).
  *
  * \return void
  *
@@ -484,14 +485,14 @@ void ccp_client_cfg_cccd(uint16_t conn_handle, uint8_t srv_instance_id, uint32_t
  *
  * \brief  Read characteristic value
  *
- *         If sending operation is successful, the result of read characteristic value will be returned by
- *         callback registered by @ref ble_audio_cback_register with msg @ref LE_AUDIO_MSG_CCP_CLIENT_READ_RESULT
- *         and buf @ref T_CCP_CLIENT_READ_RESULT.
+ * If sending operation is successful, the result of read characteristic value will be returned by
+ * callback registered by @ref ble_audio_cback_register with msg @ref LE_AUDIO_MSG_CCP_CLIENT_READ_RESULT
+ * and buf @ref T_CCP_CLIENT_READ_RESULT.
  *
  * ccp_client.h
  *
- * \param[in]  conn_handle      Connection handle
- * \param[in]  srv_instance_id  Service instance id
+ * \param[in]  conn_handle      Connection handle.
+ * \param[in]  srv_instance_id  Service instance ID.
  * \param[in]  char_uuid
  * \arg    @ref TBS_UUID_CHAR_BEARER_PROVIDER_NAME
  * \arg    @ref TBS_UUID_CHAR_BEARER_UCI
@@ -508,12 +509,12 @@ void ccp_client_cfg_cccd(uint16_t conn_handle, uint8_t srv_instance_id, uint32_t
  * \arg    @ref TBS_UUID_CHAR_CALL_FRIENDLY_NAME
  * \arg    @ref TBS_UUID_CHAR_CONTENT_CONTROL_ID
  * \param[in]  gtbs
- * \arg    true  : Generic Telephone Bearer Service (GTBS)
- * \arg    false : Telephone Bearer Service (TBS)
+ * \arg    true  : Generic Telephone Bearer Service (GTBS).
+ * \arg    false : Telephone Bearer Service (TBS).
  *
- * \return         The result of sending operation
- * \retval true    Sending operation is successful
- * \retval false   Sending operation is failed
+ * \return         The result of the sending operation.
+ * \retval true    Sending operation is successful.
+ * \retval false   Sending operation is failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -544,25 +545,25 @@ bool ccp_client_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, u
  *
  * \brief  Write Call Control Point characteristic
  *
- *         If sending operation is successful and Call Control Server sends Call Control Point Notification,
- *         Call Control Point Notification will be returned by callback registered by @ref ble_audio_cback_register
- *         with msg @ref LE_AUDIO_MSG_CCP_CLIENT_CALL_CP_NOTIFY and buf @ref T_CCP_CLIENT_CALL_CP_NOTIFY.
+ * If sending operation is successful and Call Control Server sends Call Control Point Notification,
+ * Call Control Point Notification will be returned by callback registered by @ref ble_audio_cback_register
+ * with msg @ref LE_AUDIO_MSG_CCP_CLIENT_CALL_CP_NOTIFY and buf @ref T_CCP_CLIENT_CALL_CP_NOTIFY.
  *
  * ccp_client.h
  *
- * \param[in]  conn_handle      Connection handle
- * \param[in]  srv_instance_id  Service instance id
+ * \param[in]  conn_handle      Connection handle.
+ * \param[in]  srv_instance_id  Service instance ID.
  * \param[in]  gtbs
- * \arg    true  : Generic Telephone Bearer Service (GTBS)
- * \arg    false : Telephone Bearer Service (TBS)
+ * \arg    true  : Generic Telephone Bearer Service (GTBS).
+ * \arg    false : Telephone Bearer Service (TBS).
  * \param[in]  is_req
- * \arg    true  : Write request
- * \arg    false : Write command
- * \param[in]  p_param          Point to call control point parameter: @ref T_CCP_CLIENT_WRITE_CALL_CP_PARAM
+ * \arg    true  : Write request.
+ * \arg    false : Write command.
+ * \param[in]  p_param          Pointer to call control point parameter: @ref T_CCP_CLIENT_WRITE_CALL_CP_PARAM.
  *
- * \return         The result of sending operation
- * \retval true    Sending operation is successful
- * \retval false   Sending operation is failed
+ * \return         The result of the sending operation.
+ * \retval true    Sending operation is successful.
+ * \retval false   Sending operation is failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -571,7 +572,7 @@ bool ccp_client_read_char_value(uint16_t conn_handle, uint8_t srv_instance_id, u
         bool retval = ccp_client_write_call_cp(conn_handle, srv_instance_id, gtbs, is_req, p_param);
     }
 
-    // If sending operation is successful and Call Control Server sends Call Control Point Notification
+    // If the sending operation is successful and the Call Control Server sends Call Control Point Notification
     // Callback registered by @ref ble_audio_cback_register
     {
         switch (msg)
@@ -591,7 +592,7 @@ bool ccp_client_write_call_cp(uint16_t conn_handle, uint8_t srv_instance_id, boo
                               T_CCP_CLIENT_WRITE_CALL_CP_PARAM *p_param);
 /**
  * End of CCP_Client_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

@@ -4,6 +4,7 @@ set(CSRC)
 
 if(CONFIG_AS_INIC_AP)
     list(APPEND CSRC ${DIR}/wtn_app_socket.c)
+    list(APPEND CSRC ${DIR}/wtn_app_rnat.c)
 endif()
 
 if (CSRC)

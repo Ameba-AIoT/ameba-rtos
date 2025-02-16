@@ -76,7 +76,6 @@ if (NOT CONFIG_BT_INIC)
 endif()
 #--------------------------#
 ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_ble_audio p_SCOPE interface
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio/bap.c
     ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio/cap.c
     ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio/pbp.c
     ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio/tmap.c
@@ -84,13 +83,7 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_ble_audio p_SCOPE inter
 )
 
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_bluetooth_ble_audio p_SCOPE interface
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio_common
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_app_audio_data
-)
-
-#--------------------------#
-ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_ble_audio_common p_SCOPE interface
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio_common/app_bt_le_audio_common.c
 )
 
 #--------------------------#
@@ -398,10 +391,8 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_api p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_mesh_subnet_bridge_model.c
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_mesh_private_beacon_model.c
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_le_iso.c
-    ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_le_audio.c
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_bap.c
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_cap.c
-    ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_pbp.c
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_tmap.c
     ${c_CMPT_BLUETOOTH_DIR}/api/rtk_bt_gmap.c
 )
@@ -469,12 +460,14 @@ else()
         ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_mesh_subnet_bridge_model.c
         ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_iso.c
         ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_le_audio.c
+        ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_bap.c
+        ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_cap.c
+        ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_tmap.c
     )
 endif()
 
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_bluetooth_api p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/bt_audio/include
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio_common
 )
 ameba_target_include_if(CONFIG_BT_ZEPHYR src_${d_MCU_PROJECT_NAME}_bluetooth_api p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/zephyr/stack/mesh
@@ -485,7 +478,6 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_app_audio_data p_SCOPE 
 )
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_bluetooth_app_audio_data p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_app_audio_data
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio_common
     ${c_CMPT_USB_DIR}/common
     ${c_CMPT_USB_DIR}/device/core
     ${c_CMPT_USB_DIR}/device/uac
@@ -513,7 +505,6 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_atcmd p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_pbap.c
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_bap.c
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_cap.c
-    ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_pbp.c
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_tmap.c
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_gmap.c
     ${c_CMPT_BLUETOOTH_DIR}/example/bt_atcmd/atcmd_bt_mesh_common.c
@@ -536,7 +527,6 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_atcmd p_SCOPE interface
 )
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_bluetooth_atcmd p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/example/ble_iso
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_audio_common
     $<TARGET_PROPERTY:dep_${d_MCU_PROJECT_NAME}_at_cmd,INTERFACE_INCLUDE_DIRECTORIES>
 )
 

@@ -21,7 +21,7 @@ extern "C" {
  * \defgroup    TMAP_Server_Exported_Functions Telephony and Media Audio Server Exported Functions
  *
  * \ingroup LEA_USE_CASE_TMAP_Server
- * \{
+ * @{
  */
 
 /**
@@ -29,18 +29,18 @@ extern "C" {
  *
  * \brief  Initialize TMAS Service.
  *
- * \param[in]  role      TMAP role: @ref TMAP_ROLE_BIT_MASK.
+ * \param[in]  role      TMAP Role: @ref TMAP_ROLE_BIT_MASK.
  *
- * \return         The result of initialize TMAS Service.
- * \retval true    Initialize TMAS Service success.
- * \retval false   Initialize TMAS Service failed.
+ * \return         The result of initializing TMAS service.
+ * \retval true    Initializing TMAS service is successful.
+ * \retval false   Initializing TMAS service failed.
  *
  * \ingroup TMAP_Server_Exported_Functions
  */
 bool tmas_init(uint16_t role);
 /**
  * End of TMAP_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

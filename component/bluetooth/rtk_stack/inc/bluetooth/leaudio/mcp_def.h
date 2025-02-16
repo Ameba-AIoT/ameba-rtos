@@ -3,8 +3,8 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     mcp_def.h
-  * @brief    Head file for Media Control Server and Media Control Client.
-  * @details  This file defines Media Control Server and Media Control Client related definition.
+  * @brief    Header file for Media Control Server and Media Control Client.
+  * @details  This file defines Media Control Server and Media Control Client related definitions.
   * @author
   * @date
   * @version
@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup    LEA_GAF_MCP_Def Media Control Profile definition
+ * \defgroup    LEA_GAF_MCP_Def Media Control Profile Definition
  *
  * \brief   Definition for Media Control Server and Media Control Client
  */
@@ -28,7 +28,7 @@ extern "C" {
  * \defgroup MCP_Def_Exported_Macros Media Control Profile Definition Exported Macros
  *
  * \ingroup LEA_GAF_MCP_Def
- * \{
+ * @{
  */
 
 /**
@@ -39,13 +39,13 @@ extern "C" {
  * \brief Service UUID of Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define GATT_UUID_MEDIA_CONTROL_SERVICE                              0x1848
 #define GATT_UUID_GENERIC_MEDIA_CONTROL_SERVICE                      0x1849
 /**
  * End of MCP_Def_UUID_Service
- * \}
+ * @}
  */
 
 /**
@@ -56,7 +56,7 @@ extern "C" {
  * \brief Characteristic UUID in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_UUID_CHAR_MEDIA_PLAYER_NAME                              0x2B93
 #define MCS_UUID_CHAR_TRACK_CHANGED                                  0x2B96
@@ -70,18 +70,18 @@ extern "C" {
 #define MCS_UUID_CHAR_CONTENT_CONTROL_ID                             0x2BBA
 /**
  * End of MCS_UUID_CHAR
- * \}
+ * @}
  */
 
 /**
  * mcp_def.h
  *
- * \defgroup MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE Media Control Point characteristic opcodes
+ * \defgroup MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE Media Control Point Characteristic Opcodes
  *
  * \brief Media Control Point characteristic opcodes in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE_PLAY                     0x01
 #define MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE_PAUSE                    0x02
@@ -95,7 +95,7 @@ extern "C" {
 #define MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE_LAST_TRACK               0x33
 /**
  * End of MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE
- * \}
+ * @}
  */
 
 /**
@@ -106,7 +106,7 @@ extern "C" {
  * \brief Media Control Point Notification Result Codes in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_MEDIA_CONTROL_POINT_NOTIFICATION_RESULT_CODES_SUCCESS                       0x01
 #define MCS_MEDIA_CONTROL_POINT_NOTIFICATION_RESULT_CODES_OPCODE_NOT_SUPPORTED          0x02
@@ -114,18 +114,18 @@ extern "C" {
 #define MCS_MEDIA_CONTROL_POINT_NOTIFICATION_RESULT_CODES_COMMAND_CANNOT_BE_COMPLETED   0x04
 /**
  * End of MCS_MEDIA_CONTROL_POINT_NOTIFICATION_RESULT_CODES
- * \}
+ * @}
  */
 
 /**
  * mcp_def.h
  *
- * \defgroup MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE Media Control Point Opcodes Supported characteristic bit values
+ * \defgroup MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE Media Control Point Opcodes Supported Characteristic Bit Values
  *
  * \brief Media Control Point Opcodes Supported characteristic bit values in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE_PLAY                     0x00000001
 #define MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE_PAUSE                    0x00000002
@@ -139,18 +139,18 @@ extern "C" {
 #define MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE_LAST_TRACK               0x00004000
 /**
  * End of MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
  * mcp_def.h
  *
- * \defgroup MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE Playing Orders Supported characteristic bit values
+ * \defgroup MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE Playing Orders Supported Characteristic Bit Values
  *
  * \brief Playing Orders Supported characteristic bit values in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE_SINGLE_ONCE                     0x0001
 #define MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE_SINGLE_REPEAT                   0x0002
@@ -164,62 +164,62 @@ extern "C" {
 #define MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE_SHUFFLE_REPEAT                  0x0200
 /**
  * End of MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
  * mcp_def.h
  *
- * \defgroup MCS_TRACK_DURATION_CHAR_VALUE_UNKNOWN Track Duration characteristic value unknown
+ * \defgroup MCS_TRACK_DURATION_CHAR_VALUE_UNKNOWN Track Duration Characteristic Value Unknown
  *
  * \brief No current track or the duration of the current track is unknown in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_TRACK_DURATION_CHAR_VALUE_UNKNOWN                                           0xFFFFFFFF
 /**
  * End of MCS_TRACK_DURATION_CHAR_VALUE_UNKNOWN
- * \}
+ * @}
  */
 
 /**
  * mcp_def.h
  *
- * \defgroup MCS_TRACK_POSITION_CHAR_VALUE_UNAVAILABLE Track Position characteristic value unavailable
+ * \defgroup MCS_TRACK_POSITION_CHAR_VALUE_UNAVAILABLE Track Position Characteristic Value Unavailable
  *
  * \brief No current track or the start of the track is not well defined in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define MCS_TRACK_POSITION_CHAR_VALUE_UNAVAILABLE                                       0xFFFFFFFF
 /**
  * End of MCS_TRACK_POSITION_CHAR_VALUE_UNAVAILABLE
- * \}
+ * @}
  */
 
 /**
  * End of MCP_Def_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup MCP_Def_Exported_Types Media Control Profile Definition Exported Types
  *
  * \ingroup LEA_GAF_MCP_Def
- * \{
+ * @{
  */
 
 /**
  * mcp_def.h
  *
- * \defgroup T_MCS_MEDIA_STATE Media State characteristic values
+ * \defgroup T_MCS_MEDIA_STATE Media State Characteristic Values
  *
  * \brief Media State characteristic values in Generic Media Control Service (GMCS) or Media Control Service (MCS)
  *
  * \ingroup MCP_Def_Exported_Types
- * \{
+ * @{
  */
 typedef enum
 {
@@ -230,12 +230,12 @@ typedef enum
 } T_MCS_MEDIA_STATE;
 /**
  * End of T_MCS_MEDIA_STATE
- * \}
+ * @}
  */
 
 /**
  * End of MCP_Def_Exported_Types
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

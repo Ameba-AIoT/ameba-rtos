@@ -39,6 +39,12 @@ enum {
 	RPC_DSP_NP	=	5,
 };
 
+typedef struct RPC_INIT_STRUCT RPC_INIT_STRUCT;
+struct RPC_INIT_STRUCT {
+	int32_t task_size;
+	int32_t priority;
+};
+
 typedef struct CLNT_STRUCT CLNT_STRUCT;
 struct CLNT_STRUCT {
 	int32_t send_mode;      // (NONBLOCK_MODE, BLOCK_MODE) | (USE_POLL_BUF, USE_INTR_BUF)

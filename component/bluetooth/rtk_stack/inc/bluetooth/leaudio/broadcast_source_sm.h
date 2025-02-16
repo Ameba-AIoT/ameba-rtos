@@ -17,20 +17,20 @@ extern "C" {
 /**
  * \defgroup    LEA_GAF_Broadcast_Source_SM   Broadcast Source State Machine
  *
- * \brief   Broadcast Source State Machine.
+ * \brief   Broadcast Source state machine.
  */
 
 /**
  * \defgroup    Broadcast_Source_SM_Exported_Macros Broadcast Source State Machine Exported Macros
  *
  * \ingroup LEA_GAF_Broadcast_Source_SM
- * \{
+ * @{
  */
 
 /**
  * broadcast_source_sm.h
  *
- * \brief  Define Type T_BROADCAST_SOURCE_HANDLE. Broadcast Source Handle.
+ * \brief  Define type T_BROADCAST_SOURCE_HANDLE. Broadcast Source handle.
  *
  * \ingroup Broadcast_Source_SM_Exported_Macros
  */
@@ -39,12 +39,12 @@ typedef void *T_BROADCAST_SOURCE_HANDLE;
 /**
  * bap.h
  *
- * \defgroup   BROADCAST_SOURCE_CB_MSG Broadcast Source Callback Message
+ * \defgroup   BROADCAST_SOURCE_CB_MSG Broadcast Source callback message
  *
- * \brief  Define Broadcast Source Callback Message.
+ * \brief  Define Broadcast Source callback message.
  *
  * \ingroup Broadcast_Source_SM_Exported_Macros
- * \{
+ * @{
  */
 #define MSG_BROADCAST_SOURCE_STATE_CHANGE         0x01
 #define MSG_BROADCAST_SOURCE_METADATA_UPDATE      0x02
@@ -54,25 +54,25 @@ typedef void *T_BROADCAST_SOURCE_HANDLE;
 #define MSG_BROADCAST_SOURCE_BIG_SYNC_MODE        0x06
 /**
  * End of BROADCAST_SOURCE_CB_MSG
- * \}
+ * @}
  */
 
 /**
  * End of Broadcast_Source_SM_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    Broadcast_Source_SM_Exported_Types Broadcast Source State Machine Exported Types
  *
  * \ingroup LEA_GAF_Broadcast_Source_SM
- * \{
+ * @{
  */
 
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source State Types.
+ * \brief  Broadcast Source state types.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -96,7 +96,7 @@ typedef enum
  */
 typedef enum
 {
-    BLE_EXT_ADV_STATE_IDLE,         /**< Idle, no advertising. */
+    BLE_EXT_ADV_STATE_IDLE,         /**< Idle. No advertising. */
     BLE_EXT_ADV_STATE_START,        /**< Start Advertising. A temporary state, haven't received the result. */
     BLE_EXT_ADV_STATE_ADVERTISING,  /**< Advertising. */
     BLE_EXT_ADV_STATE_STOP,         /**< Stop Advertising. A temporary state, haven't received the result. */
@@ -105,8 +105,9 @@ typedef enum
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source State Change Parameters.
- *         The callback message data for MSG_BROADCAST_SOURCE_STATE_CHANGE.
+ * \brief  Broadcast Source state change parameters.
+ *
+ * The callback message data for @ref MSG_BROADCAST_SOURCE_STATE_CHANGE.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -119,8 +120,9 @@ typedef struct
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source BIG Sync Mode Parameters.
- *         The callback message data for MSG_BROADCAST_SOURCE_BIG_SYNC_MODE
+ * \brief  Broadcast Source BIG sync mode parameters.
+ *
+ * The callback message data for @ref MSG_BROADCAST_SOURCE_BIG_SYNC_MODE
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -133,8 +135,9 @@ typedef struct
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source Setup Data Path Parameters.
- *         The callback message data for MSG_BROADCAST_SOURCE_SETUP_DATA_PATH.
+ * \brief  Broadcast Source setup data path parameters.
+ *
+ * The callback message data for @ref MSG_BROADCAST_SOURCE_SETUP_DATA_PATH.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -148,8 +151,9 @@ typedef struct
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source Remove Data Path Parameters.
- *         The callback message data for MSG_BROADCAST_SOURCE_REMOVE_DATA_PATH.
+ * \brief  Broadcast Source remove data path parameters.
+ *
+ * The callback message data for @ref MSG_BROADCAST_SOURCE_REMOVE_DATA_PATH.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -162,7 +166,7 @@ typedef struct
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source State Machine Callback Data.
+ * \brief  Broadcast Source state machine callback data.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -178,7 +182,7 @@ typedef union
 /**
  * broadcast_source_sm.h
  *
- * \brief  Broadcast Source Information.
+ * \brief  Broadcast Source information.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -193,10 +197,11 @@ typedef struct
     uint8_t adv_handle;
     uint8_t big_handle;
     T_GAP_LOCAL_ADDR_TYPE own_address_type;
+    uint8_t big_bn;            /**< The number of new payloads in each BIS event. */
     uint16_t big_iso_interval; /**< The time between two consecutive BIG anchor points.
-                                          Range: 0x0004 to 0x0C80
-                                          Time = N * 1.25 ms
-                                          Time Range: 5 ms to 4 s. */
+                                    \arg  Range: 0x0004 to 0x0C80.
+                                    \arg  Time = N * 1.25 ms.
+                                    \arg  Time Range: 5 ms to 4 s. */
     uint32_t big_transport_latency; /**< The actual transport latency, in microseconds. */
 } T_BROADCAST_SOURCE_INFO;
 
@@ -204,8 +209,9 @@ typedef struct
  * broadcast_source_sm.h
  *
  * \brief  P_FUN_BROADCAST_SOURCE_SM_CB Broadcast Source State Machine Callback Function Definition.
- *         Function pointer is used to send broadcast source state machine callback message
- *         @ref BROADCAST_SOURCE_CB_MSG to application.
+ *
+ * Function pointer is used to send broadcast source state machine callback message
+ * @ref BROADCAST_SOURCE_CB_MSG to application.
  *
  * \ingroup Broadcast_Source_SM_Exported_Types
  */
@@ -214,14 +220,14 @@ typedef void(*P_FUN_BROADCAST_SOURCE_SM_CB)(T_BROADCAST_SOURCE_HANDLE handle,
                                             void *p_cb_data);
 /**
  * End of Broadcast_Source_SM_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    Broadcast_Source_SM_Exported_Functions Broadcast Source State Machine Exported Functions
  *
  * \ingroup LEA_GAF_Broadcast_Source_SM
- * \{
+ * @{
  */
 
 /**
@@ -250,8 +256,8 @@ T_BROADCAST_SOURCE_HANDLE broadcast_source_add(P_FUN_BROADCAST_SOURCE_SM_CB cb_p
  * \param[in]  broadcast_id      Broadcast id.
  *
  * \return         The result of updating broadcast id of broadcast source.
- * \retval true    Update broadcast id of broadcast source success.
- * \retval false   Update broadcast id of broadcast source failed.
+ * \retval true    Updating broadcast id of broadcast source is successful.
+ * \retval false   Updating broadcast id of broadcast source failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
  */
@@ -269,11 +275,13 @@ bool broadcast_source_update_broadcast_id(T_BROADCAST_SOURCE_HANDLE handle,
  * \param[in]  primary_adv_interval_min   Minimum advertising interval for undirected and low duty cycle
                                           directed advertising.
                                           Range: 0x000020 to 0xFFFFFF.
-                                          Time = N * 0.625 ms, Time Range: 20 ms to 10,485.759375 s.
+                                          Time = N * 0.625 ms.
+                                          Time Range: 20 ms to 10,485.759375 s.
  * \param[in]  primary_adv_interval_max   Maximum advertising interval for undirected and low duty cycle
                                           directed advertising.
                                           Range: 0x000020 to 0xFFFFFF
-                                          Time = N * 0.625 ms, Time Range: 20 ms to 10,485.759375 s.
+                                          Time = N * 0.625 ms.
+                                          Time Range: 20 ms to 10,485.759375 s.
  * \param[in]  primary_adv_channel_map    Primary advertising channel map: @ref ADV_CHANNEL_MAP.
  * \param[in]  own_address_type           Own address type: @ref T_GAP_LOCAL_ADDR_TYPE.
  * \param[in]  p_local_rand_addr          Pointer to local random device address.
@@ -287,8 +295,8 @@ bool broadcast_source_update_broadcast_id(T_BROADCAST_SOURCE_HANDLE handle,
  * \param[in]  p_broadcast_data           Pointer to broadcast data.
  *
  * \return         The result of broadcast source set extended advertising parameters.
- * \retval true    Broadcast source set extended advertising parameters success.
- * \retval false   Broadcast source set extended advertising parameters failed.
+ * \retval true    Set extended advertising parameters is successful.
+ * \retval false   Set extended advertising parameters failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
  */
@@ -309,17 +317,19 @@ bool broadcast_source_set_eadv_param(T_BROADCAST_SOURCE_HANDLE handle, uint8_t a
  * \param[in]  handle                      Broadcast source handle: @ref T_BROADCAST_SOURCE_HANDLE.
  * \param[in]  periodic_adv_interval_min   Minimum advertising interval for periodic advertising.
  *                                         Range: 0x0006 to 0xFFFF.
- *                                         Time = N * 1.25 ms, Time Range: 7.5 ms to 81.91875 s.
+ *                                         Time = N * 1.25 ms.
+ *                                         Time Range: 7.5 ms to 81.91875 s.
  * \param[in]  periodic_adv_interval_max   Maximum advertising interval for periodic advertising.
  *                                         Range: 0x0006 to 0xFFFF.
- *                                         Time = N * 1.25 ms, Time Range: 7.5 ms to 81.91875 s.
+ *                                         Time = N * 1.25 ms.
+ *                                         Time Range: 7.5 ms to 81.91875 s.
  * \param[in]  periodic_adv_prop           Periodic advertising properties.
  * \param[in]  basic_data_len              Length of basic data.
  * \param[in]  p_basic_data                Pointer to basic data.
  *
  * \return         The result of broadcast source set periodic advertising parameters.
- * \retval true    Broadcast source set periodic advertising parameters success.
- * \retval false   Broadcast source set periodic advertising parameters failed.
+ * \retval true    Set periodic advertising parameters is successful.
+ * \retval false   Set periodic advertising parameters failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
  */
@@ -337,8 +347,8 @@ bool broadcast_source_set_pa_param(T_BROADCAST_SOURCE_HANDLE handle,
  * \param[in, out]  p_info  Pointer to broadcast source information: @ref T_BROADCAST_SOURCE_INFO.
  *
  * \return         The result of getting broadcast source information.
- * \retval true    Get broadcast source information success.
- * \retval false   Get broadcast source information failed.
+ * \retval true    Getting broadcast source information is successful.
+ * \retval false   Getting broadcast source information failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
  */
@@ -352,7 +362,7 @@ bool broadcast_source_get_info(T_BROADCAST_SOURCE_HANDLE handle, T_BROADCAST_SOU
  * \param[in]  handle      Broadcast source handle: @ref T_BROADCAST_SOURCE_HANDLE.
  *
  * \return         The result of broadcast source action stream configuration procedure.
- * \retval true    Broadcast source action stream configuration procedure success.
+ * \retval true    Broadcast source action stream configuration procedure is successful.
  * \retval false   Broadcast source action stream configuration procedure failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -369,7 +379,7 @@ bool broadcast_source_config(T_BROADCAST_SOURCE_HANDLE handle);
  * \param[in]  p_basic_data    Pointer to basic data.
  *
  * \return         The result of broadcast source action stream reconfiguration procedure.
- * \retval true    Broadcast source action stream reconfiguration procedure success.
+ * \retval true    Broadcast source action stream reconfiguration procedure is successful.
  * \retval false   Broadcast source action stream reconfiguration procedure failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -387,7 +397,7 @@ bool broadcast_source_reconfig(T_BROADCAST_SOURCE_HANDLE handle, uint8_t basic_d
  * \param[in]  p_pa_data       Pointer to PA data.
  *
  * \return         The result of broadcast source action PA data update procedure.
- * \retval true    Broadcast source action PA data update procedure success.
+ * \retval true    Broadcast source action PA data update procedure is successful.
  * \retval false   Broadcast source action PA data update procedure failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -404,7 +414,7 @@ bool broadcast_source_pa_update(T_BROADCAST_SOURCE_HANDLE handle, uint8_t pa_dat
  * \param[in]  create_big_param  Parameter for create big: @ref T_BIG_MGR_ISOC_BROADCASTER_CREATE_BIG_PARAM.
  *
  * \return         The result of broadcast source action stream establishment procedure.
- * \retval true    Broadcast source action stream establishment procedure success.
+ * \retval true    Broadcast source action stream establishment procedure is successful.
  * \retval false   Broadcast source action stream establishment procedure failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -415,13 +425,32 @@ bool broadcast_source_establish(T_BROADCAST_SOURCE_HANDLE handle,
 /**
  * broadcast_source_sm.h
  *
+ * \brief  Broadcast source action stream establishment procedure using test command.
+ *
+ * \xrefitem Added_API_2_14_1_0 "Added Since 2.14.1.0" "Added API"
+ *
+ * \param[in]  handle          Broadcast source handle: @ref T_BROADCAST_SOURCE_HANDLE.
+ * \param[in]  test_big_param  Parameter for create big: @ref T_BIG_MGR_ISOC_BROADCASTER_CREATE_BIG_TEST_PARAM.
+ *
+ * \return         The result of broadcast source action stream establishment procedure.
+ * \retval true    Broadcast source action stream establishment procedure is successful.
+ * \retval false   Broadcast source action stream establishment procedure failed.
+ *
+ * \ingroup Broadcast_Source_SM_Exported_Functions
+ */
+bool broadcast_source_establish_test_mode(T_BROADCAST_SOURCE_HANDLE handle,
+                                          T_BIG_MGR_ISOC_BROADCASTER_CREATE_BIG_TEST_PARAM test_big_param);
+
+/**
+ * broadcast_source_sm.h
+ *
  * \brief  Broadcast source action stream disable procedure.
  *
  * \param[in]  handle      Broadcast source handle: @ref T_BROADCAST_SOURCE_HANDLE.
  * \param[in]  reason      The reason of stream disable: @ref BT_HCI_ERROR.
  *
  * \return         The result of broadcast source action stream disable procedure.
- * \retval true    Broadcast source action stream disable procedure success.
+ * \retval true    Broadcast source action stream disable procedure is successful.
  * \retval false   Broadcast source action stream disable procedure failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -436,7 +465,7 @@ bool broadcast_source_disable(T_BROADCAST_SOURCE_HANDLE handle, uint8_t reason);
  * \param[in]  handle      Broadcast source handle: @ref T_BROADCAST_SOURCE_HANDLE.
  *
  * \return         The result of broadcast source action stream release procedure.
- * \retval true    Broadcast source action stream release procedure success.
+ * \retval true    Broadcast source action stream release procedure is successful.
  * \retval false   Broadcast source action stream release procedure failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -454,7 +483,7 @@ bool broadcast_source_release(T_BROADCAST_SOURCE_HANDLE handle);
  * \arg    false   Not set big sync mode.
  *
  * \return         The result of broadcast source configure big sync mode.
- * \retval true    Broadcast source configure big sync mode success.
+ * \retval true    Broadcast source configure big sync mode is successful.
  * \retval false   Broadcast source configure big sync mode failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -475,7 +504,7 @@ bool broadcast_source_big_sync_mode(T_BROADCAST_SOURCE_HANDLE handle, bool big_s
  * \param[in]  p_codec_data      Pointer to codec configuration data.
  *
  * \return         The result of broadcast source setup data path.
- * \retval true    Broadcast source setup data path success.
+ * \retval true    Broadcast source setup data path is successful.
  * \retval false   Broadcast source setup data path failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -493,7 +522,7 @@ bool broadcast_source_setup_data_path(T_BROADCAST_SOURCE_HANDLE handle, uint8_t 
  * \param[in]  bis_idx           Bis index.
  *
  * \return         The result of broadcast source remove data path.
- * \retval true    Broadcast source remove data path success.
+ * \retval true    Broadcast source remove data path is successful.
  * \retval false   Broadcast source remove data path failed.
  *
  * \ingroup Broadcast_Source_SM_Exported_Functions
@@ -501,7 +530,7 @@ bool broadcast_source_setup_data_path(T_BROADCAST_SOURCE_HANDLE handle, uint8_t 
 bool broadcast_source_remove_data_path(T_BROADCAST_SOURCE_HANDLE handle, uint8_t bis_idx);
 /**
  * End of Broadcast_Source_SM_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

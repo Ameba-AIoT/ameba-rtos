@@ -10,7 +10,6 @@ set(
 
 set(
     CSRC
-    ${BT_DIR}/example/ble_audio/bap.c
     ${BT_DIR}/example/ble_audio/cap.c
     ${BT_DIR}/example/ble_audio/pbp.c
     ${BT_DIR}/example/ble_audio/tmap.c

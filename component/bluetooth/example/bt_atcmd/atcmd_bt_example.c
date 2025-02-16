@@ -633,81 +633,23 @@ int atcmd_ble_iso(int argc, char **argv)
 	return 0;
 }
 
-int bt_bap_main(uint8_t role, uint8_t enable);
-int atcmd_bt_bap(int argc, char *argv[])
-{
-	(void)argc;
-	uint8_t role;
-	uint8_t op;
-	char *action[] = {"disable", "enable"};
-
-	if (strcmp(argv[0], "broadcast") == 0) {
-		if (strcmp(argv[1], "source") == 0) {
-			/* RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR */
-			role = 0x01;
-			BT_LOGA("Set bap broadcast source\r\n");
-		} else if (strcmp(argv[1], "sink") == 0) {
-			/* RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK */
-			role = 0x02;
-			BT_LOGA("Set bap broadcast sink\r\n");
-		} else if (strcmp(argv[1], "assistant") == 0) {
-			/* RTK_BT_LE_AUDIO_BAP_ROLE_BRO_ASSI */
-			role = 0x04;
-			BT_LOGA("Set bap broadcast assistant\r\n");
-		} else if (strcmp(argv[1], "delegate") == 0) {
-			/* RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE */
-			role = 0x08;
-			BT_LOGA("Set bap scan delegate\r\n");
-		} else {
-			BT_LOGE("Invalid broadcast role set\r\n");
-			return -1;
-		}
-	} else if (strcmp(argv[0], "unicast") == 0) {
-		if (strcmp(argv[1], "client") == 0) {
-			/* RTK_BT_LE_AUDIO_BAP_ROLE_UNI_CLI */
-			role = 0x20;
-			BT_LOGA("Set bap unicast client\r\n");
-		} else if (strcmp(argv[1], "server") == 0) {
-			/* RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER */
-			role = 0x10;
-			BT_LOGA("Set bap unicast server\r\n");
-		} else {
-			BT_LOGE("Invalid unicast role set\r\n");
-			return -1;
-		}
-	} else {
-		BT_LOGE("Invalid bap broadcast / unicast set\r\n");
-		return -1;
-	}
-	if ((op = (uint8_t)str_to_int(argv[2])) > 2) {
-		BT_LOGE("Error: wrong value (%d) for bap example!\r\n", op);
-		return -1;
-	}
-	if (bt_bap_main(role, op)) {
-		BT_LOGE("Error: bap example %s failed!\r\n", action[op]);
-		return -1;
-	}
-
-	BT_LOGA("bap example %s OK!\r\n", action[op]);
-	return 0;
-}
-
-int bt_cap_main(uint8_t role, uint8_t enable);
+int bt_cap_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
 int atcmd_bt_cap(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	uint32_t channel = 0;
 	char *action[] = {"disable", "enable"};
 
-	if (strcmp(argv[0], "initiator") == 0) {
-		/* RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR */
-		role = 0x01;
-		BT_LOGA("Set cap initiator\r\n");
-	} else if (strcmp(argv[0], "acceptor") == 0) {
+	if (strcmp(argv[0], "acceptor") == 0) {
 		/* RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR */
-		role = 0x02;
+		role = 0x01;
 		BT_LOGA("Set cap acceptor\r\n");
+	} else if (strcmp(argv[0], "initiator") == 0) {
+		/* RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR */
+		role = 0x02;
+		BT_LOGA("Set cap initiator\r\n");
 	} else if (strcmp(argv[0], "commander") == 0) {
 		/* RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER */
 		role = 0x04;
@@ -720,7 +662,25 @@ int atcmd_bt_cap(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for cap example!\r\n", op);
 		return -1;
 	}
-	if (bt_cap_main(role, op)) {
+	if (argc == 3) {
+		if (strcmp(argv[2], "left") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL */
+			channel = 0x01;
+			BT_LOGA("Set channel left \r\n");
+		} else if (strcmp(argv[2], "right") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x02;
+			BT_LOGA("Set channel right \r\n");
+		} else if (strcmp(argv[2], "stereo") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x03;
+			BT_LOGA("Set channel stereo \r\n");
+		} else {
+			BT_LOGE("Error: cap example only support left, right and stereo channel!\r\n");
+			return -1;
+		}
+	}
+	if (bt_cap_main(role, op, channel)) {
 		BT_LOGE("Error: cap example %s failed!\r\n", action[op]);
 		return -1;
 	}
@@ -729,12 +689,13 @@ int atcmd_bt_cap(int argc, char *argv[])
 	return 0;
 }
 
-int bt_pbp_main(uint8_t role, uint8_t enable);
+int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
 int atcmd_bt_pbp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	uint32_t channel = 0;
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "source") == 0) {
@@ -757,7 +718,27 @@ int atcmd_bt_pbp(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for pbp example!\r\n", op);
 		return -1;
 	}
-	if (bt_pbp_main(role, op)) {
+
+	if (argc == 3) {
+		if (strcmp(argv[2], "left") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL */
+			channel = 0x01;
+			BT_LOGA("Set channel left \r\n");
+		} else if (strcmp(argv[2], "right") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x02;
+			BT_LOGA("Set channel right \r\n");
+		} else if (strcmp(argv[2], "stereo") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x03;
+			BT_LOGA("Set channel stereo \r\n");
+		} else {
+			BT_LOGE("Error: PBP example only support left, right or stereo channel!\r\n");
+			return -1;
+		}
+	}
+
+	if (bt_pbp_main(role, op, channel)) {
 		BT_LOGE("Error: pbp example %s failed!\r\n", action[op]);
 		return -1;
 	}
@@ -766,12 +747,13 @@ int atcmd_bt_pbp(int argc, char *argv[])
 	return 0;
 }
 
-int bt_tmap_main(uint8_t role, uint8_t enable);
+int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
 int atcmd_bt_tmap(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	uint32_t channel = 0;
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "cg") == 0) {
@@ -806,7 +788,25 @@ int atcmd_bt_tmap(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for tmap example!\r\n", op);
 		return -1;
 	}
-	if (bt_tmap_main(role, op)) {
+	if (argc == 3) {
+		if (strcmp(argv[2], "left") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL */
+			channel = 0x01;
+			BT_LOGA("Set channel left \r\n");
+		} else if (strcmp(argv[2], "right") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x02;
+			BT_LOGA("Set channel right \r\n");
+		} else if (strcmp(argv[2], "stereo") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x03;
+			BT_LOGA("Set channel stereo \r\n");
+		} else {
+			BT_LOGE("Error: cap example only support left, right and stereo channel!\r\n");
+			return -1;
+		}
+	}
+	if (bt_tmap_main(role, op, channel)) {
 		BT_LOGE("Error: tmap example %s failed!\r\n", action[op]);
 		return -1;
 	}

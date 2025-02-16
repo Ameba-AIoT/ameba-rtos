@@ -73,14 +73,6 @@ if BT_EXAMPLE_DEMO_MENU
         default n
 
     if BT_LE_AUDIO_MENU
-        config BT_BAP_MENU
-            bool "BLE Audio Basic Audio Profile"
-            default n
-
-        config BT_CAP_MENU
-            bool "BLE Audio Common Audio Profile"
-            default n
-
         config BT_PBP_MENU
             bool "BLE Audio Public Broadcast Profile"
             default n

@@ -2,12 +2,10 @@ set(DIR ${BASEDIR}/component/bluetooth)
 set(BT_API_DIR ${DIR}/api)
 set(BT_AUDIO_DIR ${DIR}/bt_audio)
 set(BT_ZEPHYR_DIR ${BASEDIR}/component/bluetooth/zephyr)
-set(BLE_AUDIO_COMMON_DIR ${DIR}/example/ble_audio_common)
 
 set(
     MODULE_IFLAGS
     ${BT_AUDIO_DIR}/include
-    ${BLE_AUDIO_COMMON_DIR}
 )
 if(CONFIG_BT_ZEPHYR)
     list(APPEND MODULE_IFLAGS ${BT_ZEPHYR_DIR}/stack/mesh)
@@ -49,10 +47,8 @@ set(
 	${BT_API_DIR}/rtk_bt_mesh_subnet_bridge_model.c
 	${BT_API_DIR}/rtk_bt_mesh_private_beacon_model.c
 	${BT_API_DIR}/rtk_bt_le_iso.c
-	${BT_API_DIR}/rtk_bt_le_audio.c
 	${BT_API_DIR}/rtk_bt_bap.c
 	${BT_API_DIR}/rtk_bt_cap.c
-	${BT_API_DIR}/rtk_bt_pbp.c
 	${BT_API_DIR}/rtk_bt_tmap.c
 )
 
@@ -122,6 +118,9 @@ else()
         ${BT_API_DIR}/rtk_stack/rtk_stack_mesh_private_beacon_model.c
         ${BT_API_DIR}/rtk_stack/rtk_stack_iso.c
         ${BT_API_DIR}/rtk_stack/rtk_stack_le_audio.c
+        ${BT_API_DIR}/rtk_stack/rtk_stack_bap.c
+        ${BT_API_DIR}/rtk_stack/rtk_stack_cap.c
+        ${BT_API_DIR}/rtk_stack/rtk_stack_tmap.c
     )
 endif()
 

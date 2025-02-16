@@ -53,10 +53,10 @@ set(
 	${DIR_COM}/ameba_psram.c
 	${DIR_COM}/ameba_fault_handle.c
 
-
 	${LOGDIR}/log.c
  	${LOGDIR}/sscanf_minimal.c
 	${LOGDIR}/locks.c
+	${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
 
 	${CFGDIR}/ameba_sleepcfg.c
 	${CFGDIR}/ameba_flashcfg.c

@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include "ameba.h"
+#include "ameba_pmu.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "os_wrapper.h"
@@ -121,6 +122,11 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
+		/* If WiFi calls this function in suspend flow, and if timeout is not 0, FreeRTOS will assert. */
+		if (!pmu_yield_os_check()) {
+			wait_ms = 0;
+		}
+
 		ret = xSemaphoreTake((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
 		if (ret != pdTRUE) {
@@ -181,6 +187,11 @@ int rtos_mutex_recursive_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 
 	if (rtos_critical_is_in_interrupt()) {
 		return FAIL;
+	}
+
+	/* If WiFi calls this function in suspend flow, and if timeout is not 0, FreeRTOS will assert. */
+	if (!pmu_yield_os_check()) {
+		wait_ms = 0;
 	}
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));

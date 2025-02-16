@@ -7,7 +7,6 @@
 #ifndef _AMEBA_BOOT_H_
 #define _AMEBA_BOOT_H_
 
-extern u8 __ram_image1_text_start__[];
 extern u8 __image1_validate_code__[];
 extern u8 __image1_bss_start__[];
 extern u8 __image1_bss_end__[];

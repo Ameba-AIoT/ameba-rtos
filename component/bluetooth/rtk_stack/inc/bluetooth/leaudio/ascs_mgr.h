@@ -22,13 +22,13 @@ extern "C" {
  * \defgroup    ASCS_Server_Exported_Types Audio Stream Control Server Exported Types
  *
  * \ingroup LEA_GAF_ASCS_Server
- * \{
+ * @{
  */
 
 /**
  * ascs_mgr.h
  *
- * \brief  ASE Control Point Update Metadata Operation Data.
+ * \brief  ASE Control Point Update Metadata operation data.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -42,7 +42,7 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASE Control Point Config Codec Operation Data.
+ * \brief  ASE Control Point Config Codec operation data.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -56,8 +56,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASE State Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_ASE_STATE.
+ * \brief  ASE State parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_ASE_STATE.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -70,8 +71,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Setup Data Path Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_SETUP_DATA_PATH.
+ * \brief  ASCS setup data path parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_SETUP_DATA_PATH.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -79,7 +81,7 @@ typedef struct
 {
     uint16_t conn_handle;
     uint8_t ase_id;
-    uint8_t path_direction;        /**< DATA_PATH_INPUT_FLAG or DATA_PATH_OUTPUT_FLAG */
+    uint8_t path_direction;        /**< @ref DATA_PATH_INPUT_FLAG or @ref DATA_PATH_OUTPUT_FLAG */
     uint16_t cis_conn_handle;
     T_CODEC_CFG codec_parsed_data;
 } T_ASCS_SETUP_DATA_PATH;
@@ -87,8 +89,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Remove Data Path Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_REMOVE_DATA_PATH.
+ * \brief  ASCS remove data path parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_REMOVE_DATA_PATH.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -96,15 +99,16 @@ typedef struct
 {
     uint16_t conn_handle;
     uint8_t ase_id;
-    uint8_t path_direction;        /**< DATA_PATH_INPUT_FLAG or DATA_PATH_OUTPUT_FLAG */
+    uint8_t path_direction;        /**< @ref DATA_PATH_INPUT_FLAG or @ref DATA_PATH_OUTPUT_FLAG */
     uint16_t cis_conn_handle;
 } T_ASCS_REMOVE_DATA_PATH;
 
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Control Point Config Codec Operation Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_CP_CONFIG_CODEC_IND.
+ * \brief  ASCS Control Point Config Codec operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CP_CONFIG_CODEC_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -118,8 +122,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Control Point Config QoS Operation Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_CP_CONFIG_QOS_IND.
+ * \brief  ASCS Control Point Config QoS operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CP_CONFIG_QOS_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -133,8 +138,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Control Point Enable Operation Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_CP_ENABLE_IND.
+ * \brief  ASCS Control Point Enable operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CP_ENABLE_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -148,8 +154,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Control Point Disable Operation Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_CP_DISABLE_IND.
+ * \brief  ASCS Control Point Disable operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CP_DISABLE_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -163,8 +170,25 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Control Point Update Metadata Operation Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_CP_UPDATE_METADATA_IND.
+ * \brief  ASCS Control Point Release operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CP_RELEASE_IND.
+ *
+ * \ingroup ASCS_Server_Exported_Types
+ */
+typedef struct
+{
+    uint16_t conn_handle;
+    uint8_t number_of_ase;
+    uint8_t ase_id[ASCS_AES_CHAR_MAX_NUM];
+} T_ASCS_CP_RELEASE_IND;
+
+/**
+ * ascs_mgr.h
+ *
+ * \brief  ASCS Control Point Update Metadata operation parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CP_UPDATE_METADATA_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -178,8 +202,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Preferred QoS Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_GET_PREFER_QOS.
+ * \brief  ASCS preferred QoS parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_GET_PREFER_QOS.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -196,8 +221,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Handle CIS Request Indication Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_CIS_REQUEST_IND.
+ * \brief  ASCS handle CIS request indication parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CIS_REQUEST_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -214,8 +240,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  CIS Disconnection Information.
- *         The message data for LE_AUDIO_MSG_ASCS_CIS_DISCONN_INFO.
+ * \brief  CIS disconnection information.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CIS_DISCONN_INFO.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -231,8 +258,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  CIS Established Connection Information.
- *         The message data for LE_AUDIO_MSG_ASCS_CIS_CONN_INFO.
+ * \brief  CIS established connection information.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_CIS_CONN_INFO.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -247,8 +275,9 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Check Audio Contexts Parameter.
- *         The message data for LE_AUDIO_MSG_ASCS_AUDIO_CONTEXTS_CHECK_IND.
+ * \brief  ASCS check Audio Contexts parameters.
+ *
+ * The message data for @ref LE_AUDIO_MSG_ASCS_AUDIO_CONTEXTS_CHECK_IND.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -264,7 +293,7 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASE Information.
+ * \brief  ASE information.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -277,22 +306,22 @@ typedef struct
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS ASE Information.
+ * \brief  ASCS ASE information.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
 typedef struct
 {
-    uint8_t snk_ase_num;                           /**< Sink ASE number */
-    uint8_t src_ase_num;                           /**< Source ASE number */
-    T_ASE_INFO snk_info[ASCS_AES_CHAR_MAX_NUM];    /**< Sink ASE information */
-    T_ASE_INFO src_info[ASCS_AES_CHAR_MAX_NUM];    /**< Source ASE information */
+    uint8_t snk_ase_num;                           /**< Sink ASE number. */
+    uint8_t src_ase_num;                           /**< Source ASE number. */
+    T_ASE_INFO snk_info[ASCS_AES_CHAR_MAX_NUM];    /**< Sink ASE information. */
+    T_ASE_INFO src_info[ASCS_AES_CHAR_MAX_NUM];    /**< Source ASE information. */
 } T_ASCS_INFO;
 
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS Preferred QoS Data.
+ * \brief  ASCS preferred QoS data.
  *
  * \ingroup ASCS_Server_Exported_Types
  */
@@ -309,14 +338,14 @@ typedef struct
 } T_ASCS_PREFER_QOS_DATA;
 /**
  * End of ASCS_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    ASCS_Server_Exported_Functions Audio Stream Control Server Exported Functions
  *
  * \ingroup LEA_GAF_ASCS_Server
- * \{
+ * @{
  */
 
 /**
@@ -328,9 +357,9 @@ typedef struct
  * \param[in]  ase_id           ASE id.
  * \param[in,out]  p_ase_data   Pointer to ASE data: @ref T_ASE_CHAR_DATA.
  *
- * \return         The result of get ASE data.
- * \retval true    Get ASE data success.
- * \retval false   Get ASE data failed.
+ * \return         The result of getting ASE data.
+ * \retval true    Getting ASE data is successful.
+ * \retval false   Getting ASE data failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -346,9 +375,9 @@ bool ascs_get_ase_data(uint16_t conn_handle, uint8_t ase_id, T_ASE_CHAR_DATA *p_
  * \param[in,out]  p_cfg        Pointer to ASE codec configuration:
  *                              @ref T_ASE_DATA_CODEC_CONFIGURED.
  *
- * \return         The result of get ASE codec configuration.
- * \retval true    Get ASE codec configuration success.
- * \retval false   Get ASE codec configuration failed.
+ * \return         The result of getting ASE codec configuration.
+ * \retval true    Getting ASE codec configuration is successful.
+ * \retval false   Getting ASE codec configuration failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -364,9 +393,9 @@ bool ascs_get_codec_cfg(uint16_t conn_handle, uint8_t ase_id, T_ASE_DATA_CODEC_C
  * \param[in,out]  p_cfg        Pointer to ASE QoS configuration:
  *                              @ref T_ASE_QOS_CFG_STATE_DATA.
  *
- * \return         The result of get ASE QoS configuration.
- * \retval true    Get ASE QoS configuration success.
- * \retval false   Get ASE QoS configuration failed.
+ * \return         The result of getting ASE QoS configuration.
+ * \retval true    Getting ASE QoS configuration is successful.
+ * \retval false   Getting ASE QoS configuration failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -380,9 +409,9 @@ bool ascs_get_qos_cfg(uint16_t conn_handle, uint8_t ase_id, T_ASE_QOS_CFG_STATE_
  * \param[in]  conn_handle      Connection handle.
  * \param[in,out]  p_info       Pointer to ASE information: @ref T_ASCS_INFO.
  *
- * \return         The result of get ASE information.
- * \retval true    Get ASE information success.
- * \retval false   Get ASE information failed.
+ * \return         The result of getting ASE information.
+ * \retval true    Getting ASE information is successful.
+ * \retval false   Getting ASE information failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -399,9 +428,11 @@ bool ascs_get_ase_info(uint16_t conn_handle, T_ASCS_INFO *p_info);
  * \param[in]  p_qos            Pointer to ASE preferred QoS data:
  *                              @ref T_ASCS_PREFER_QOS_DATA.
  *
- * \return         The result of get ASE preferred QoS data.
- * \retval true    Get ASE preferred QoS data success.
- * \retval false   Get ASE preferred QoS data failed.
+ * \return         The result of getting ASE preferred QoS data.
+ * \retval true    Getting ASE preferred QoS data is successful.
+ * \retval false   Getting ASE preferred QoS data failed.
+ *
+ * \note    Only used for LC3_CODEC_ID.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -411,16 +442,19 @@ bool ascs_get_ase_prefer_qos(uint16_t conn_handle, uint8_t ase_id, T_ASCS_PREFER
  * ascs_mgr.h
  *
  * \brief  Set ASE preferred QoS data.
- *         This api shall be called when handle LE_AUDIO_MSG_ASCS_GET_PREFER_QOS.
+ *
+ * This api shall be called when handle @ref LE_AUDIO_MSG_ASCS_GET_PREFER_QOS.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
+ * \param[in]  ase_id           ASE ID.
  * \param[in]  p_qos            Pointer to ASE preferred QoS data:
  *                              @ref T_ASCS_PREFER_QOS_DATA.
  *
  * \return         The result of set ASE preferred QoS data.
- * \retval true    Set ASE preferred QoS data success.
+ * \retval true    Set ASE preferred QoS data is successful.
  * \retval false   Set ASE preferred QoS data failed.
+ *
+ * \note    The APP must use this API for configuration when the codec is not LC3_CODEC_ID.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -432,11 +466,11 @@ bool ascs_cfg_ase_prefer_qos(uint16_t conn_handle, uint8_t ase_id, T_ASCS_PREFER
  * \brief  ASCS performs the disable operation.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
+ * \param[in]  ase_id           ASE ID.
  *
- * \return         The result of ASCS action the disable operation.
- * \retval true    ASCS action the disable operation success.
- * \retval false   ASCS action the disable operation failed.
+ * \return         The result of ASCS performing the disable operation.
+ * \retval true    ASCS performing the disable operation is successful.
+ * \retval false   ASCS performing the disable operation failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -445,16 +479,16 @@ bool ascs_action_disable(uint16_t conn_handle, uint8_t ase_id);
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS performs update metadata operation.
+ * \brief  ASCS performs the update metadata operation.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
+ * \param[in]  ase_id           ASE ID.
  * \param[in]  metadata_len     Metadata length.
- * \param[in]  p_metadata       Pointer to Metadata.
+ * \param[in]  p_metadata       Pointer to metadata.
  *
- * \return         The result of action update metadata operation.
- * \retval true    ASCS action update metadata operation success.
- * \retval false   ASCS action update metadata operation failed.
+ * \return         The result of performing the update metadata operation.
+ * \retval true    Performing the update metadata operation is successful.
+ * \retval false   Performing the update metadata operation failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -464,14 +498,14 @@ bool ascs_action_update_metadata(uint16_t conn_handle, uint8_t ase_id,
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS performs release operation.
+ * \brief  ASCS performs the release operation.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
+ * \param[in]  ase_id           ASE ID.
  *
- * \return         The result of action release operation.
- * \retval true    ASCS action release operation success.
- * \retval false   ASCS action release operation failed.
+ * \return         The result of performing the release operation.
+ * \retval true    Performing the release operation is successful.
+ * \retval false   Performing the release operation failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -480,14 +514,14 @@ bool ascs_action_release(uint16_t conn_handle, uint8_t ase_id);
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS performs release operation by CIG ID.
+ * \brief  ASCS performs the release operation by CIG ID.
  *
  * \param[in]  conn_handle      Connection handle.
  * \param[in]  cig_id           CIG ID.
  *
- * \return         The result of action release operation by CIG ID.
- * \retval true    ASCS action release operation by CIG ID success.
- * \retval false   ASCS action release operation by CIG ID failed.
+ * \return         The result of performing the release operation by CIG ID.
+ * \retval true    Performing the release operation by CIG ID is successful.
+ * \retval false   Performing the release operation by CIG ID failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -496,17 +530,17 @@ bool ascs_action_release_by_cig(uint16_t conn_handle, uint8_t cig_id);
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS send cis request confirmation.
+ * \brief  ASCS sends CIS request confirmation.
  *
  * \param[in]  cis_conn_handle      Connection handle.
- * \param[in]  accept               Whether to accept the cis request.
- * \arg    true    Accept the cis request.
- * \arg    false   Reject the cis request.
- * \param[in]  reject_reason        The reason to reject cis request.
+ * \param[in]  accept               Whether to accept the CIS request.
+ * \arg    true    Accept the CIS request.
+ * \arg    false   Reject the CIS request.
+ * \param[in]  reject_reason        The reason to reject the CIS request.
  *
- * \return         The result of ASCS send cis request confirmation.
- * \retval true    ASCS send cis request confirmation success.
- * \retval false   ASCS send cis request confirmation failed.
+ * \return         The result of ASCS sending CIS request confirmation.
+ * \retval true    Sending CIS request confirmation is successful.
+ * \retval false   Sending CIS request confirmation failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -515,20 +549,21 @@ bool ascs_cis_request_cfm(uint16_t cis_conn_handle, bool accept, uint8_t reject_
 /**
  * ascs_mgr.h
  *
- * \brief  ASCS configure Application control start/stop ready operation.
- *         This API is only used when the unicast server is audio sink role.
- *         This API is used to control whether BLE audio lib sends the receiver stop ready operation
- *         or receiver start ready operation automatically.
+ * \brief  ASCS configures Application control start/stop ready operation.
+ *
+ * This API is only used when the unicast server is in the audio sink role.
+ * This API is used to control whether the LE audio library sends the receiver stop ready operation
+ * or receiver start ready operation automatically.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
- * \param[in]  app_handshake    Application whether to control handshake. The default value is false.
- * \arg    true    Application control start/stop ready operation.
- * \arg    false   Application not control start/stop ready operation.
+ * \param[in]  ase_id           ASE ID.
+ * \param[in]  app_handshake    Application controls the handshake. The default value is false.
+ * \arg    true    Application controls the start/stop ready operation.
+ * \arg    false   Application does not control the start/stop ready operation.
  *
- * \return         The result of ASCS configure Application control handshake.
- * \retval true    ASCS configure Application control handshake success.
- * \retval false   ASCS configure Application control handshake failed.
+ * \return         The result of ASCS configuring Application control handshake.
+ * \retval true    ASCS configuring Application control handshake is successful.
+ * \retval false   ASCS configuring Application control handshake failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -538,15 +573,16 @@ bool ascs_app_ctl_handshake(uint16_t conn_handle, uint8_t ase_id, bool app_hands
  * ascs_mgr.h
  *
  * \brief  ASCS performs receiver start ready operation.
- *          This API is only used only when  the parameter app_handshake of ascs_app_ctl_handshake is true
- *          and application has received ASE_CP_OP_ENABLE.
+ *
+ * This API is only used when the parameter app_handshake of ascs_app_ctl_handshake is true
+ * and the application has received ASE_CP_OP_ENABLE.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
+ * \param[in]  ase_id           ASE ID.
  *
- * \return         The result of ASCS action receiver start ready operation.
- * \retval true    ASCS action receiver start ready operation success.
- * \retval false   ASCS action receiver start ready operation failed.
+ * \return         The result of ASCS performing receiver start ready operation.
+ * \retval true    Performing receiver start ready operation is successful.
+ * \retval false   Performing receiver start ready operation failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
@@ -556,22 +592,23 @@ bool ascs_action_rec_start_ready(uint16_t conn_handle, uint8_t ase_id);
  * ascs_mgr.h
  *
  * \brief  ASCS performs receiver stop ready operation.
- *          This API is only used only when  the parameter app_handshake of ascs_app_ctl_handshake is true
- *          and application has received ASE_CP_OP_DISABLE.
+ *
+ * This API is only used when the parameter app_handshake of ascs_app_ctl_handshake is true
+ * and the application has received ASE_CP_OP_DISABLE.
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  ase_id           ASE id.
+ * \param[in]  ase_id           ASE ID.
  *
- * \return         The result of ASCS action receiver stop ready operation.
- * \retval true    ASCS action receiver stop ready operation success.
- * \retval false   ASCS action receiver stop ready operation failed.
+ * \return         The result of ASCS performing receiver stop ready operation.
+ * \retval true    Performing receiver stop ready operation is successful.
+ * \retval false   Performing receiver stop ready operation failed.
  *
  * \ingroup ASCS_Server_Exported_Functions
  */
 bool ascs_action_rec_stop_ready(uint16_t conn_handle, uint8_t ase_id);
 /**
  * End of ASCS_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus
