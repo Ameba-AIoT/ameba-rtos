@@ -50,6 +50,7 @@ set(
     ${LOGDIR}/log.c
     ${LOGDIR}/sscanf_minimal.c
     ${LOGDIR}/locks.c
+	${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
 )
 
 ameba_internal_library(fwlib)

@@ -8,13 +8,19 @@ if (CONFIG_WLAN)
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_com_sec.a
                 )
-				if(CONFIG_WPA_LOCATION_DEV)
-				    list(
-						APPEND LINK_APP_LIB
-						${APP_LIB_DIR}/lib_wpa_lite.a
-						${APP_LIB_DIR}/lib_wps.a
-					)
-				endif()
+                if(CONFIG_WPA_LOCATION_DEV)
+                    list(
+                        APPEND LINK_APP_LIB
+                        ${APP_LIB_DIR}/lib_wpa_lite.a
+                        ${APP_LIB_DIR}/lib_wps.a
+                    )
+                endif()
+                if(CONFIG_WPA_STD)
+                    list(
+                        APPEND LINK_APP_LIB
+                        ${APP_LIB_DIR}/lib_wpa_std.a
+                    )
+                endif()
             elseif(CONFIG_ZEPHYR_SDK)
                 list(
                     APPEND LINK_APP_LIB
@@ -85,18 +91,18 @@ if (CONFIG_WLAN)
                 if(CONFIG_MP_SHRINK)
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_inic_ap_mp_shrink.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_ap_mp_shrink.a
                     )
                 else()
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_inic_ap_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_ap_mp.a
                     )
                 endif()
             else()
                 list(
                     APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_inic_ap.a
+                    ${APP_LIB_DIR}/lib_wifi_whc_ap.a
                 )
             endif()
         endif()
@@ -114,44 +120,44 @@ if (CONFIG_WLAN)
                 if(CONFIG_INIC_INTF_SDIO)
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_inic_sdio_np_mp_shrink.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_sdio_np_mp_shrink.a
                     )
                 elseif(CONFIG_INIC_INTF_SPI)
                     list(
                         APPEND LINK_APP_LIB 
-                        ${APP_LIB_DIR}/lib_wifi_inic_spi_np_mp_shrink.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_spi_np_mp_shrink.a
                     )
                 elseif(CONFIG_INIC_INTF_USB)
                     list(
                         APPEND LINK_APP_LIB 
-                        ${APP_LIB_DIR}/lib_wifi_inic_usb_np_mp_shrink.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_usb_np_mp_shrink.a
                     )
                 else()
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_inic_np_mp_shrink.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_np_mp_shrink.a
                     )
                 endif()
             else()
                 if(CONFIG_INIC_INTF_SDIO)
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_inic_sdio_np_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_sdio_np_mp.a
                     )
                 elseif(CONFIG_INIC_INTF_SPI)
                     list(
                         APPEND LINK_APP_LIB 
-                        ${APP_LIB_DIR}/lib_wifi_inic_spi_np_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_spi_np_mp.a
                     )
                 elseif(CONFIG_INIC_INTF_USB)
                     list(
                         APPEND LINK_APP_LIB 
-                        ${APP_LIB_DIR}/lib_wifi_inic_usb_np_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_usb_np_mp.a
                     )
                 else()
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_inic_np_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_whc_np_mp.a
                     )
                 endif()
             endif()
@@ -159,22 +165,22 @@ if (CONFIG_WLAN)
             if(CONFIG_INIC_INTF_SDIO)
                 list(
                     APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_inic_sdio_np.a
+                    ${APP_LIB_DIR}/lib_wifi_whc_sdio_np.a
                 )
             elseif(CONFIG_INIC_INTF_SPI)
                 list(
                     APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_inic_spi_np.a
+                    ${APP_LIB_DIR}/lib_wifi_whc_spi_np.a
                 )
             elseif(CONFIG_INIC_INTF_USB)
                 list(
                     APPEND LINK_APP_LIB 
-                    ${APP_LIB_DIR}/lib_wifi_inic_usb_np.a
+                    ${APP_LIB_DIR}/lib_wifi_whc_usb_np.a
                 )
             else()
                 list(
                     APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_inic_np.a
+                    ${APP_LIB_DIR}/lib_wifi_whc_np.a
                 )
             endif()
         endif()

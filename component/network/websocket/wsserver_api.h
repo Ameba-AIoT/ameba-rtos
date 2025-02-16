@@ -23,22 +23,22 @@ extern uint8_t ws_server_debug;
 #define ws_server_log(...) \
 	do { \
 		if(ws_server_debug) { \
-			rtos_critical_enter_old(); \
+			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] "); \
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
-			rtos_critical_exit_old(); \
+			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
 		} \
 	} while(0)
 
 #define ws_server_log_verbose(...) \
 	do { \
 		if(ws_server_debug == WS_SERVER_DEBUG_VERBOSE) { \
-			rtos_critical_enter_old(); \
+			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] "); \
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
-			rtos_critical_exit_old(); \
+			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
 		} \
 	} while(0)
 

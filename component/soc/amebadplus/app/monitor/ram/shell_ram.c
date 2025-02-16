@@ -11,9 +11,6 @@
 #include "os_wrapper.h"
 #include "FreeRTOS.h"
 
-#define LIB_INFO_CMD	"ATS?"
-#define ALL_CPU_RECV	0xFFFF
-
 static const char *const TAG = "SHELL";
 
 extern volatile UART_LOG_CTL		shell_ctl;
@@ -129,10 +126,6 @@ void shell_loguartRx_dispatch(void)
 				CpuId = KM4_CPU_ID;
 			}
 
-			if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[i], LIB_INFO_CMD) == 0) {
-				CpuId = ALL_CPU_RECV;
-			}
-
 			/* avoid useless space */
 			_memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
 			break;
@@ -140,21 +133,6 @@ void shell_loguartRx_dispatch(void)
 	}
 
 	if (CpuId == KM4_CPU_ID) {		/* CMD should processed by KM4, inform KM4 thru IPC */
-		shell_loguratRx_Ipc_Tx(IPC_KM0_TO_KM4, IPC_N2A_LOGUART_RX_SWITCH);
-	}
-
-	if (CpuId == ALL_CPU_RECV) {
-		//1. logurat recv CPU Printf Info
-		u32 buflen = 1024;
-		char *buf = rtos_mem_malloc(buflen);
-		ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", buf);
-		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", buf);
-		rtos_mem_free(buf);
-
-		//2. Other CPU Pintf Lib Info
-		LOGUART_WaitTxComplete();
 		shell_loguratRx_Ipc_Tx(IPC_KM0_TO_KM4, IPC_N2A_LOGUART_RX_SWITCH);
 	}
 
@@ -166,16 +144,6 @@ void shell_loguartRx_dispatch(void)
 #else
 void shell_loguartRx_dispatch(void)
 {
-	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
-	if (_stricmp((const char *)&pUartLogBuf->UARTLogBuf[0], LIB_INFO_CMD) == 0) {
-		u32 buflen = 1024;
-		char *buf = rtos_mem_malloc(buflen);
-		ChipInfo_GetLibVersion_ToBuf(buf, buflen - 1);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", buf);
-		rtos_mem_free(buf);
-		shell_array_init((u8 *)pUartLogBuf, sizeof(UART_LOG_BUF), '\0');
-		shell_ctl.ExecuteCmd = FALSE;
-	}
 }
 #endif
 
@@ -197,7 +165,7 @@ static void shell_task_ram(void *Data)
 		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_AS_INIC_AP)
+#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_SINGLE_CORE_WIFI) || (defined CONFIG_AS_INIC_AP))
 			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
 			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
 			ret = atcmd_service(atcmd_buf);
@@ -224,7 +192,7 @@ static void shell_task_ram(void *Data)
 
 void shell_init_ram(void)
 {
-#if (defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_AS_INIC_AP)
+#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_SINGLE_CORE_WIFI) || (defined CONFIG_AS_INIC_AP))
 	atcmd_service_init();
 #endif
 

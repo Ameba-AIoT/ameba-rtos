@@ -15,13 +15,13 @@ extern "C" {
  * \defgroup    PACS_Def_Exported_Macros Published Audio Capabilities Service Definition Exported Macros
  *
  * \ingroup LEA_GAF_PACS_Def
- * \{
+ * @{
  */
 
 /**
  * pasc_def.h
  *
- * \brief  The Minimum Length of PAC Record.
+ * \brief  The minimum length of PAC record.
  *
  * \ingroup PACS_Def_Exported_Macros
  */
@@ -35,9 +35,9 @@ extern "C" {
  * \brief  Define Published Audio Capabilities Service UUID.
  *
  * \ingroup PACS_Def_Exported_Macros
- * \{
+ * @{
  */
-#define GATT_UUID_PACS                              0x1850    /**< Published Audio Capabilities service. */
+#define GATT_UUID_PACS                              0x1850    /**< Published Audio Capabilities Service. */
 
 #define PACS_UUID_CHAR_SINK_PAC                     0x2BC9    /**< Sink PAC. */
 #define PACS_UUID_CHAR_SINK_AUDIO_LOCATIONS         0x2BCA    /**< Sink Audio Locations. */
@@ -47,12 +47,12 @@ extern "C" {
 #define PACS_UUID_CHAR_SUPPORTED_AUDIO_CONTEXTS     0x2BCE    /**< Supported Audio Contexts. */
 /**
  * End of PACS_UUID
- * \}
+ * @}
  */
 
 /**
  * End of PACS_Def_Exported_Macros
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

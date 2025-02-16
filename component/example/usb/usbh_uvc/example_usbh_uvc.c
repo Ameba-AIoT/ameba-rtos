@@ -310,7 +310,7 @@ static int uvc_vfs_start(void)
 	int ret;
 	rtos_task_t task;
 
-	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, 0);
+	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
 	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 8, 1U);
 	if (ret != SUCCESS) {
@@ -524,7 +524,7 @@ static int uvc_httpc_start(void)
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
-	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, 0);
+	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 

@@ -19,13 +19,13 @@ extern "C" {
  * \defgroup    PACS_Client_Exported_Types Published Audio Capabilities Client Exported Types
  *
  * \ingroup LEA_GAF_PACS_Client
- * \{
+ * @{
  */
 
 /**
  * pacs_client.h
  *
- * \brief  Published Audio Capabilities Service characteristic Type.
+ * \brief  Published Audio Capabilities Service characteristic types.
  *
  * \ingroup PACS_Client_Exported_Types
  */
@@ -42,8 +42,9 @@ typedef enum
 /**
  * pacs_client.h
  *
- * \brief  PACS Service Client Discover Result.
- *         The message data for LE_AUDIO_MSG_PACS_CLIENT_DIS_DONE.
+ * \brief  PACS client discover result.
+ *
+ * The message data for @ref LE_AUDIO_MSG_PACS_CLIENT_DIS_DONE.
  *
  * \ingroup PACS_Client_Exported_Types
  */
@@ -63,8 +64,9 @@ typedef struct
 /**
  * pacs_client.h
  *
- * \brief  PACS Service Client Write Characteristic Value Result.
- *         The message data for LE_AUDIO_MSG_PACS_CLIENT_WRITE_SINK_AUDIO_LOC_RESULT.
+ * \brief  PACS client write characteristic value result.
+ *
+ * The message data for @ref LE_AUDIO_MSG_PACS_CLIENT_WRITE_SINK_AUDIO_LOC_RESULT.
  *
  * \ingroup PACS_Client_Exported_Types
  */
@@ -77,8 +79,9 @@ typedef struct
 /**
  * pacs_client.h
  *
- * \brief  PACS Service Client Write Characteristic Value Result.
- *         The message data for LE_AUDIO_MSG_PACS_CLIENT_WRITE_SOURCE_AUDIO_LOC_RESULT.
+ * \brief  PACS client write characteristic value result.
+ *
+ * The message data for @ref LE_AUDIO_MSG_PACS_CLIENT_WRITE_SOURCE_AUDIO_LOC_RESULT.
  *
  * \ingroup PACS_Client_Exported_Types
  */
@@ -89,14 +92,14 @@ typedef struct
 } T_PACS_CLIENT_WRITE_SOURCE_AUDIO_LOC_RESULT;
 /**
  * End of PACS_Client_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    PACS_Client_Exported_Functions Published Audio Capabilities Client Exported Functions
  *
  * \ingroup LEA_GAF_PACS_Client
- * \{
+ * @{
  */
 
 /**
@@ -107,9 +110,9 @@ typedef struct
  * \param[in]  conn_handle          Connection handle.
  * \param[in]  sink_audio_location  Sink audio location.
  *
- * \return         The result of write sink audio locations.
- * \retval true    PACS write sink audio locations success.
- * \retval false   PACS write sink audio locations failed.
+ * \return         The result of writing sink audio locations.
+ * \retval true    PACS writing sink audio locations is successful.
+ * \retval false   PACS writing sink audio locations failed.
  *
  * \ingroup PACS_Client_Exported_Functions
  */
@@ -123,16 +126,16 @@ bool pacs_write_sink_audio_locations(uint16_t conn_handle, uint32_t sink_audio_l
  * \param[in]  conn_handle            Connection handle.
  * \param[in]  source_audio_location  Source audio location.
  *
- * \return         The result of write source audio locations.
- * \retval true    PACS write source audio locations success.
- * \retval false   PACS write source audio locations failed.
+ * \return         The result of writing source audio locations.
+ * \retval true    PACS writing source audio locations is successful.
+ * \retval false   PACS writing source audio locations failed.
  *
  * \ingroup PACS_Client_Exported_Functions
  */
 bool pacs_write_source_audio_locations(uint16_t conn_handle, uint32_t source_audio_location);
 /**
  * End of PACS_Client_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

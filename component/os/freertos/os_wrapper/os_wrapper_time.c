@@ -60,6 +60,28 @@ uint32_t rtos_time_get_current_system_time_ms(void)
 	}
 }
 
+uint64_t rtos_time_get_current_system_time_ms_64bit(void)
+{
+	static uint32_t last_ms = 0;
+	static uint64_t overflow_count = 0;
+	uint32_t current_ms;
+	uint64_t total_ms;
+
+	current_ms = rtos_time_get_current_system_time_ms();
+
+	__rtos_critical_enter_os();
+
+	if (current_ms < last_ms) {
+		overflow_count++;
+	}
+	last_ms = current_ms;
+	total_ms = ((uint64_t)overflow_count << 32) + current_ms;
+
+	__rtos_critical_exit_os();
+
+	return total_ms;
+}
+
 uint64_t rtos_time_get_current_system_time_us(void)
 {
 	return (rtos_time_get_current_system_time_ns() / 1000);
@@ -68,8 +90,8 @@ uint64_t rtos_time_get_current_system_time_us(void)
 uint64_t rtos_time_get_current_system_time_ns(void)
 {
 	uint64_t time_ns = 0;
-	rtos_critical_enter_old();
-	uint32_t time_ms = rtos_time_get_current_system_time_ms();
+	__rtos_critical_enter_os();
+	uint64_t time_ms = rtos_time_get_current_system_time_ms_64bit();
 #if defined CONFIG_ARM_CORE_CM4 || defined CONFIG_ARM_CORE_CM0
 	uint64_t timer_cnt_pass = portNVIC_SYSTICK_LOAD_REG - portNVIC_SYSTICK_CURRENT_VALUE_REG;
 	uint32_t time_pass_ns = (timer_cnt_pass * 1000) / (configCPU_CLOCK_HZ / 1000000UL);
@@ -100,6 +122,6 @@ uint64_t rtos_time_get_current_system_time_ns(void)
 #else
 #error "Undefined core"
 #endif
-	rtos_critical_exit_old();
+	__rtos_critical_exit_os();
 	return time_ns;
 }

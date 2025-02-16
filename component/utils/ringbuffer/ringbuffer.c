@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "os_wrapper.h"
+#include "ameba_soc.h"
 #include "ringbuffer.h"
 
 #define RB_LOGV(x, ...) printf("[%s][%s] " x, LOG_TAG, __func__, ##__VA_ARGS__)
@@ -27,16 +28,9 @@
 #define RB_LOGI(x, ...) printf("[%s][%s] " x, LOG_TAG, __func__, ##__VA_ARGS__)
 #define RB_LOGW(x, ...) printf("[%s][%s] warn: " x, LOG_TAG, __func__, ##__VA_ARGS__)
 #define RB_LOGE(x, ...) printf("[%s][%s] error: " x, LOG_TAG, __func__, ##__VA_ARGS__)
+#define RB_BYTE_ALIGNMENT 128
 
-struct RingBuffer {
-	uint8_t *start;
-	uint32_t size;
-	int32_t owns;
-	uint8_t *wptr;
-	uint8_t *rptr;
-};
-
-RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t owns)
+RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t type, int32_t owns)
 {
 	RingBuffer *rb = (RingBuffer *)rtos_mem_malloc(sizeof(RingBuffer));
 	if (!rb) {
@@ -58,6 +52,10 @@ RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t owns)
 	rb->wptr = rb->start;
 	rb->rptr = rb->start;
 	rb->owns = owns;
+	rb->type = type;
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Clean((uint32_t)rb, sizeof(RingBuffer));
+	}
 	return rb;
 }
 
@@ -80,11 +78,17 @@ uint32_t RingBuffer_Size(RingBuffer *rb)
 
 uint32_t RingBuffer_Space(RingBuffer *rb)
 {
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Invalidate((uint32_t)rb, sizeof(RingBuffer));
+	}
 	return ((rb->size - 1 + rb->rptr - rb->wptr) % (rb->size));
 }
 
 uint32_t RingBuffer_Available(RingBuffer *rb)
 {
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Invalidate((uint32_t)rb, sizeof(RingBuffer));
+	}
 	return ((rb->size + rb->wptr - rb->rptr) % (rb->size));
 }
 
@@ -94,9 +98,14 @@ int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 		RB_LOGW("try to write from empty buffer.\n");
 		return -1;
 	}
-
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Invalidate((uint32_t)rb, sizeof(RingBuffer));
+	}
 	if (rb->wptr < rb->rptr) {
 		memcpy(rb->wptr, buffer, count);
+		if (rb->type == SHARED_RINGBUFF) {
+			DCache_Clean((uint32_t)rb->wptr, count);
+		}
 		rb->wptr += count;
 		if (rb->wptr == rb->start + rb->size) {
 			rb->wptr = rb->start;
@@ -107,6 +116,9 @@ int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 			size = count;
 		}
 		memcpy(rb->wptr, buffer, size);
+		if (rb->type == SHARED_RINGBUFF) {
+			DCache_Clean((uint32_t)rb->wptr, size);
+		}
 		rb->wptr += size;
 		if (rb->wptr == rb->start + rb->size) {
 			rb->wptr = rb->start;
@@ -114,11 +126,17 @@ int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 
 		if (size != count) {
 			memcpy(rb->wptr, buffer + size, count - size);
+			if (rb->type == SHARED_RINGBUFF) {
+				DCache_Clean((uint32_t)rb->wptr, count - size);
+			}
 			rb->wptr += count - size;
 			if (rb->wptr == rb->start + rb->size) {
 				rb->wptr = rb->start;
 			}
 		}
+	}
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Clean((uint32_t)(&(rb->wptr)), RB_BYTE_ALIGNMENT);
 	}
 	return 0;
 }
@@ -129,8 +147,13 @@ int32_t RingBuffer_Read(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 		RB_LOGW("try to read to empty buffer.\n");
 		return -1;
 	}
-
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Invalidate((uint32_t)rb, sizeof(RingBuffer));
+	}
 	if (rb->wptr > rb->rptr) {
+		if (rb->type == SHARED_RINGBUFF) {
+			DCache_Invalidate((uint32_t)rb->rptr, count);
+		}
 		memcpy(buffer, rb->rptr, count);
 		rb->rptr += count;
 		if (rb->rptr == rb->start + rb->size) {
@@ -141,36 +164,52 @@ int32_t RingBuffer_Read(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 		if (size >= count) {
 			size = count;
 		}
+		if (rb->type == SHARED_RINGBUFF) {
+			DCache_Invalidate((uint32_t)rb->rptr, size);
+		}
 		memcpy(buffer, rb->rptr, size);
-
 		rb->rptr += size;
 		if (rb->rptr == rb->start + rb->size) {
 			rb->rptr = rb->start;
 		}
 
 		if (size != count) {
+			if (rb->type == SHARED_RINGBUFF) {
+				DCache_Invalidate((uint32_t)rb->rptr, count - size);
+			}
 			memcpy(buffer + size, rb->rptr, count - size);
-
 			rb->rptr += count - size;
 			if (rb->rptr == rb->start + rb->size) {
 				rb->rptr = rb->start;
 			}
 		}
 	}
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Clean((uint32_t)(&(rb->rptr)), RB_BYTE_ALIGNMENT);
+	}
 	return 0;
 }
 
 uint8_t *RingBuffer_GetWritePoint(RingBuffer *rb)
 {
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Invalidate((uint32_t)(&(rb->wptr)), RB_BYTE_ALIGNMENT);
+	}
 	return rb->wptr;
 }
 
 uint8_t *RingBuffer_GetReadPoint(RingBuffer *rb)
 {
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Invalidate((uint32_t)(&(rb->rptr)), RB_BYTE_ALIGNMENT);
+	}
 	return rb->rptr;
 }
 
 void RingBuffer_Reset(RingBuffer *rb)
 {
 	rb->wptr = rb->rptr = rb->start;
+	if (rb->type == SHARED_RINGBUFF) {
+		DCache_Clean((uint32_t)rb, sizeof(RingBuffer));
+	}
 }

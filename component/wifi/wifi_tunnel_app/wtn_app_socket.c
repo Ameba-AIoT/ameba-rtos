@@ -28,7 +28,6 @@
 #include "lwip_netconf.h"
 #include "log.h"
 
-#define WTN_SERVER_PORT 12346
 #define WTN_BROADCAST_PORT 12345
 
 #define WTN_BUF_NUM 5
@@ -59,7 +58,7 @@ struct wtn_buf_node *dequeue_wtn_buf(struct __queue *p_queue)
 	struct wtn_buf_node *p_node;
 	struct list_head *plist, *phead;
 
-	rtos_critical_enter_old();
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	if (rtw_queue_empty(p_queue) == TRUE) {
 		p_node = NULL;
 	} else {
@@ -68,7 +67,7 @@ struct wtn_buf_node *dequeue_wtn_buf(struct __queue *p_queue)
 		p_node = LIST_CONTAINOR(plist, struct wtn_buf_node, list);
 		rtw_list_delete(&(p_node->list));
 	}
-	rtos_critical_exit_old();
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	return p_node;
 }
 
@@ -92,7 +91,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 	buf_copy = (u8 *)rtos_mem_zmalloc(len);
 	memcpy(buf_copy, buf, len);
 	memcpy(buf_copy + 31, ip, 4);
-	rtos_critical_enter_old();
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	for (i = 0; i < WTN_BUF_NUM; i++) {
 		if (wtn_buf_pool[i].is_used == 0) {
 			wtn_buf_pool[i].is_used = 1;
@@ -100,7 +99,7 @@ int wtn_socket_send(u8 *buf, u32 len)
 			break;
 		}
 	}
-	rtos_critical_exit_old();
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	if (pnode == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "wtn not enough buf node\n");
 		return FAIL;
@@ -108,9 +107,9 @@ int wtn_socket_send(u8 *buf, u32 len)
 
 	pnode->buf_addr = buf_copy;
 	pnode->buf_len = len;
-	rtos_critical_enter_old();
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	rtw_list_insert_tail(&(pnode->list), get_list_head(&wtn_buf_queue));
-	rtos_critical_exit_old();
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	rtos_sema_give(wtn_socket_send_sema);
 	return SUCCESS;
 }
@@ -169,7 +168,7 @@ void wtn_bcmc_socket_handler(void *param)
 
 	buf = rtos_mem_zmalloc(200);
 	if (!buf) {
-		return;
+		goto exit;
 	}
 
 	while (1) {
@@ -283,9 +282,9 @@ create_socket:
 			}
 #endif
 			rtos_mem_free(pnode->buf_addr);
-			rtos_critical_enter_old();
+			rtos_critical_enter(RTOS_CRITICAL_WIFI);
 			pnode->is_used = 0;
-			rtos_critical_exit_old();
+			rtos_critical_exit(RTOS_CRITICAL_WIFI);
 		}
 		if (wtn_socket_need_close) {
 			goto exit;
@@ -299,9 +298,9 @@ create_socket:
 					break;
 				}
 				rtos_mem_free(pnode->buf_addr);
-				rtos_critical_enter_old();
+				rtos_critical_enter(RTOS_CRITICAL_WIFI);
 				pnode->is_used = 0;
-				rtos_critical_exit_old();
+				rtos_critical_exit(RTOS_CRITICAL_WIFI);
 			}
 			goto create_socket;
 		}

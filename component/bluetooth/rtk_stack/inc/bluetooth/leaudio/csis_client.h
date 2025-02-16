@@ -23,7 +23,7 @@ extern "C" {
  * \defgroup    CSIP_Client_Exported_Macros Coordinated Set Identification Client Exported Macros
  *
  * \ingroup LEA_GAF_CSIP_Client
- * \{
+ * @{
  */
 
 /**
@@ -31,10 +31,10 @@ extern "C" {
  *
  * \defgroup    CSIS_CHAR_FLAG CSIS Characteristic Flag
  *
- * \brief  Define CSIS Characteristic Flags.
+ * \brief  Define CSIS characteristic flags.
  *
  * \ingroup CSIP_Client_Exported_Macros
- * \{
+ * @{
  */
 #define CSIS_LOCK_FLAG 0x01
 #define CSIS_SIRK_FLAG 0x02
@@ -42,25 +42,25 @@ extern "C" {
 #define CSIS_RANK_FLAG 0x08
 /**
  * End of CSIS_CHAR_FLAG
- * \}
+ * @}
  */
 
 /**
  * End of CSIP_Client_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    CSIP_Client_Exported_Types Coordinated Set Identification Client Exported Types
  *
  * \ingroup LEA_GAF_CSIP_Client
- * \{
+ * @{
  */
 
 /**
  * csis_client.h
  *
- * \brief  Set Coordinator Lock State Event Types.
+ * \brief  Set Coordinator Lock State event types.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -81,7 +81,7 @@ typedef enum
 /**
  * csis_client.h
  *
- * \brief  Set Coordinator Lock State Types.
+ * \brief  Set Coordinator Lock State types.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -100,8 +100,9 @@ typedef enum
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Search Set Member Timeout.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_SEARCH_TIMEOUT.
+ * \brief  CSIS client search Set Member timeout.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_SEARCH_TIMEOUT.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -115,8 +116,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Search Set Member Result.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_SEARCH_DONE.
+ * \brief  CSIS client search Set Member result.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_SEARCH_DONE.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -130,8 +132,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Find Set Member Parameter.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_SET_MEM_FOUND.
+ * \brief  CSIS client find Set Member parameter.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_SET_MEM_FOUND.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -150,8 +153,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Discovery CSIS Service Result.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_DIS_DONE.
+ * \brief  CSIS client discovery CSIS service result.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_DIS_DONE.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -166,8 +170,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  Coordinator Lock State Change Information.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_LOCK_STATE.
+ * \brief  Coordinator Lock State change information.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_LOCK_STATE.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -181,8 +186,8 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  Set Member Information.
- *         The parameters for set member.
+ * \brief  Set Member information.
+ *         The parameters for Set Member.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -204,8 +209,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Read Characteristic Value Result.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_READ_RESULT.
+ * \brief  CSIS client read characteristic value result.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_READ_RESULT.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -221,8 +227,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Receive SIRK Change Notify.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_SIRK_NOTIFY.
+ * \brief  CSIS client receive SIRK change notify.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_SIRK_NOTIFY.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -236,8 +243,9 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  CSIS Client Receive Size Change Notify.
- *         The message data for LE_AUDIO_MSG_CSIS_CLIENT_SIZE_NOTIFY.
+ * \brief  CSIS client receive size change notify.
+ *
+ * The message data for @ref LE_AUDIO_MSG_CSIS_CLIENT_SIZE_NOTIFY.
  *
  * Note: When the Set Coordinator receives a notification of the Coordinated Set Size characteristic,
  * the Set Coordinator should execute the Set Member Discovery procedure.
@@ -254,7 +262,7 @@ typedef struct
 /**
  * csis_client.h
  *
- * \brief  Coordinator Set Group Information.
+ * \brief  Coordinator Set group information.
  *
  * \ingroup CSIP_Client_Exported_Types
  */
@@ -268,14 +276,14 @@ typedef struct
 } T_CSIS_GROUP_INFO;
 /**
  * End of CSIP_Client_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    CSIP_Client_Exported_Functions Coordinated Set Identification Client Exported Functions
  *
  * \ingroup LEA_GAF_CSIP_Client
- * \{
+ * @{
  */
 
 /**
@@ -288,9 +296,9 @@ typedef struct
  * \param[in]  bd_addr        Pointer to Address.
  * \param[in]  addr_type        Address type.
  *
- * \return         The result of CSIS client check advertising RSI.
- * \retval true    CSIS client check advertising RSI success.
- * \retval false   CSIS client check advertising RSI failed.
+ * \return         The result of CSIS client check on advertising RSI.
+ * \retval true    CSIS client check on advertising RSI is successful.
+ * \retval false   CSIS client check on advertising RSI failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
  */
@@ -302,14 +310,14 @@ bool set_coordinator_check_adv_rsi(uint8_t report_data_len, uint8_t *p_report_da
  *
  * \brief  Set coordinator configure discover mode.
  *
- * \param[in]  group_handle   BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  group_handle   LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  * \param[in]  discover       The status for discover set member.
  * \arg    true    set_coordinator is discovering set member.
  * \arg    false   set_coordinator is not discovering set member.
  * \param[in]  timeout_ms     Discover timeout. Unit: ms.
  *
  * \return         The result of set coordinator configure discover mode.
- * \retval true    Set coordinator configure discover mode success.
+ * \retval true    Set coordinator configure discover mode is successful.
  * \retval false   Set coordinator configure discover mode failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -320,20 +328,20 @@ bool set_coordinator_cfg_discover(T_BLE_AUDIO_GROUP_HANDLE group_handle, bool di
 /**
  * csis_client.h
  *
- * \brief  Set coordinator add ble audio group.
- *         When ble audio group is successfully added, the LE_AUDIO_MSG_CAP_SET_MEM_ADD
- *         will be send to Application.
+ * \brief  Set coordinator add LE audio group.
+ *
+ * When LE audio group is successfully added, the @ref LE_AUDIO_MSG_CAP_SET_MEM_ADD will be sent to Application.
  *
  * \xrefitem Added_API_2_13_1_0 "Added Since 2.13.1.0" "Added API"
  *
- * \param[in,out]  p_group_handle   Pointer to ble audio group: @ref T_BLE_AUDIO_GROUP_HANDLE.
- * \param[in]      p_fun_cb         BLE audio group callback function: @ref P_FUN_AUDIO_GROUP_CB.
- * \param[in,out]  p_dev_handle     Pointer to ble audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
+ * \param[in,out]  p_group_handle   Pointer to LE audio group: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]      p_fun_cb         LE audio group callback function: @ref P_FUN_AUDIO_GROUP_CB.
+ * \param[in,out]  p_dev_handle     Pointer to LE audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
  * \param[in]      p_mem_info       Pointer to set member information: @ref T_CSIS_SET_MEM_INFO.
  *
- * \return         The result of set coordinator add ble audio group.
- * \retval true    Set coordinator add ble audio group success.
- * \retval false   Set coordinator add ble audio group failed.
+ * \return         The result of set coordinator add LE audio group.
+ * \retval true    Set coordinator add LE audio group is successful.
+ * \retval false   Set coordinator add LE audio group failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
  */
@@ -345,17 +353,17 @@ bool set_coordinator_add_group(T_BLE_AUDIO_GROUP_HANDLE *p_group_handle,
  * csis_client.h
  *
  * \brief  Set coordinator add device.
- *         When the device is successfully added, the LE_AUDIO_MSG_CAP_SET_MEM_ADD
- *         will be send to Application.
+ *
+ * When the device is successfully added, the LE_AUDIO_MSG_CAP_SET_MEM_ADD will be sent to Application.
  *
  * \xrefitem Added_API_2_13_1_0 "Added Since 2.13.1.0" "Added API"
  *
- * \param[in]  p_group_handle   Pointer to ble audio group: @ref T_BLE_AUDIO_GROUP_HANDLE.
- * \param[in]  p_dev_handle     Pointer to ble audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
+ * \param[in]  group_handle     LE audio group: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  p_dev_handle     Pointer to LE audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
  * \param[in]  p_mem_info       Pointer to set member information: @ref T_CSIS_SET_MEM_INFO.
  *
  * \return         The result of set coordinator add device.
- * \retval true    Set coordinator add device success.
+ * \retval true    Set coordinator add device is successful.
  * \retval false   Set coordinator add device failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -369,10 +377,10 @@ bool set_coordinator_add_dev(T_BLE_AUDIO_GROUP_HANDLE group_handle,
  *
  * \brief  CSIS client write coordinator set members lock.
  *
- * \param[in]  group_handle      BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  group_handle      LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  *
  * \return         The result of CSIS client write coordinator set members lock.
- * \retval true    CSIS client write coordinator set members lock success.
+ * \retval true    CSIS client write coordinator set members lock is successful.
  * \retval false   CSIS client write coordinator set members lock failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -384,10 +392,10 @@ bool set_coordinator_write_lock(T_BLE_AUDIO_GROUP_HANDLE group_handle);
  *
  * \brief  CSIS client write coordinator set members unlock.
  *
- * \param[in]  group_handle      BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  group_handle      LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  *
  * \return         The result of CSIS client write coordinator set members unlock.
- * \retval true    CSIS client write coordinator set members unlock success.
+ * \retval true    CSIS client write coordinator set members unlock is successful.
  * \retval false   CSIS client write coordinator set members unlock failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -401,11 +409,11 @@ bool set_coordinator_write_unlock(T_BLE_AUDIO_GROUP_HANDLE group_handle);
  *
  * \xrefitem Added_API_2_13_1_0 "Added Since 2.13.1.0" "Added API"
  *
- * \param[in]  group_handle   BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  group_handle   LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  * \param[in]  p_lock         Pointer to set coordinator lock state: @ref T_SET_COORDINATOR_LOCK.
  *
  * \return         The result of set coordinator get lock state.
- * \retval true    Set coordinator get lock state success.
+ * \retval true    Set coordinator get lock state is successful.
  * \retval false   Set coordinator get lock state failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -418,9 +426,9 @@ bool set_coordinator_get_lock_state(T_BLE_AUDIO_GROUP_HANDLE group_handle,
  *
  * \brief  Find set coordinator by rsi.
  *
- * \param[in]  p_rsik      Pointer to rsi.
+ * \param[in]  p_rsi      Pointer to rsi.
  *
- * \return         BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \return         LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  * \retval NULL    Not find set coordinator by rsi.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -434,10 +442,10 @@ T_BLE_AUDIO_GROUP_HANDLE set_coordinator_find_by_rsi(uint8_t *p_rsi);
  *
  * \param[in]  bd_addr            Pointer to address.
  * \param[in]  addr_type          Address type: @ref T_GAP_REMOTE_ADDR_TYPE.
- * \param[in]  serv_uuid          Service uuid.
- * \param[in,out]  p_dev_handle   Pointer to ble audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
+ * \param[in]  srv_uuid           Service uuid.
+ * \param[in,out]  p_dev_handle   Pointer to LE audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
  *
- * \return         BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \return         LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  * \retval NULL    Not find set coordinator by sirk.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -451,11 +459,11 @@ T_BLE_AUDIO_GROUP_HANDLE set_coordinator_find_by_addr(uint8_t *bd_addr, uint8_t 
  *
  * \brief  Set coordinator get CSIS group information.
  *
- * \param[in]  group_handle    BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  group_handle    LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  * \param[in,out]  p_info      Pointer to CSIS group information: @ref T_CSIS_GROUP_INFO.
  *
  * \return         The result of set coordinator get CSIS group information.
- * \retval true    Set coordinator get CSIS group information success.
+ * \retval true    Set coordinator get CSIS group information is successful.
  * \retval false   Set coordinator get CSIS group information failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -470,12 +478,12 @@ bool set_coordinator_get_group_info(T_BLE_AUDIO_GROUP_HANDLE group_handle,
  *
  * \xrefitem Added_API_2_13_1_0 "Added Since 2.13.1.0" "Added API"
  *
- * \param[in]  group_handle    BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
- * \param[in]  dev_handle      BLE audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
+ * \param[in]  group_handle    LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  dev_handle      LE audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
  * \param[in,out]  p_info      Pointer to set member information: @ref T_CSIS_SET_MEM_INFO.
  *
  * \return         The result of set coordinator get set member information.
- * \retval true    Set coordinator get set member information success.
+ * \retval true    Set coordinator get set member information is successful.
  * \retval false   Set coordinator get set member information failed.
  *
  * \ingroup CSIP_Client_Exported_Functions
@@ -485,7 +493,7 @@ bool set_coordinator_get_mem_info(T_BLE_AUDIO_GROUP_HANDLE group_handle,
                                   T_CSIS_SET_MEM_INFO *p_info);
 /**
  * End of CSIP_Client_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

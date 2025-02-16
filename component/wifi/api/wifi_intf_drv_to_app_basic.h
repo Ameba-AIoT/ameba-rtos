@@ -698,6 +698,10 @@ struct wifi_user_conf {
 		1: API wifi_set_channel triggers RFK */
 	unsigned char set_channel_api_do_rfk;
 
+	/*!	0: Do not limit the peak current of DPD;\n
+		1: Limit the peak current of DPD */
+	unsigned char dpk_peak_limit;
+
 	/*!	RF calibration is triggered during WIFI initialization and channel switch to calibrate TRX to optimal performance,\n
 		but it takes a long time (around 100ms), so some applications can sacrifice performance so that WIFI initializes and switches faster.\n
 		Bit0: DIS_DPK;\n

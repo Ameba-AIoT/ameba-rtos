@@ -247,9 +247,7 @@ extern "C"
 #define RTK_BLE_MGR_LIB_EADV                1
 #define RTK_BLE_5_0_PA_ADV_SUPPORT          0
 #define RTK_BLE_5_0_PA_SYNC_SUPPORT         0
-#endif
 
-#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
 #define RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT    0    //can set 1 when CAP Commander role
 #define RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT      0    //can set 1 when CAP Acceptor role
 #define RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT      0    //can set 1 when CAP Commander role

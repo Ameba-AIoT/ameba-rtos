@@ -141,7 +141,7 @@ SECTIONS
 	{
 		. = ALIGN (32);
 		__ram_nocache_start__ = .;
-		*(.ncsram.data*)
+		*(.nocache.data*)
 		. = ALIGN (32);
 		__ram_nocache_end__ = .;
 	} > KM4_BD_RAM

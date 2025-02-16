@@ -62,13 +62,16 @@ uint32_t GetComponentCriticalNesting(uint32_t xCoreID)
 
 void rtos_critical_enter(uint32_t component_id)
 {
-	assert_param(component_id < RTOS_CRITICAL_MAX);
-
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	uint32_t core_id = portGET_CORE_ID();
+	UNUSED(uxSavedInterruptStatus);
+	if (component_id >= RTOS_CRITICAL_MAX) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] component_id invalid\r\n", __func__);
+	}
+
 	portDISABLE_INTERRUPTS();
 	spin_lock(&rtos_critical_spin_lock_list[component_id]);
-	uxCriticalNestingCnt[core_id] ++;
+	/* get core id after disable INT and get spin_lock */
+	uxCriticalNestingCnt[portGET_CORE_ID()] ++;
 #else
 	UNUSED(component_id);
 	/* Non-SMP env, keep privious actions */
@@ -86,16 +89,25 @@ void rtos_critical_enter(uint32_t component_id)
 
 void rtos_critical_exit(uint32_t component_id)
 {
-	assert_param(component_id < RTOS_CRITICAL_MAX);
-
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	uint32_t core_id = portGET_CORE_ID();
-	uxCriticalNestingCnt[core_id] --;
+	UNUSED(uxSavedInterruptStatus);
+	if (component_id >= RTOS_CRITICAL_MAX) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] component_id invalid\r\n", __func__);
+	}
+
+	uxCriticalNestingCnt[portGET_CORE_ID()] --;
 	spin_unlock(&rtos_critical_spin_lock_list[component_id]);
 
 	/* before enable interrupt, OS critical nesting must return to 0 */
-	if (GetComponentCriticalNesting(core_id) == 0 && GetOSCriticalNesting(core_id) == 0) {
-		portENABLE_INTERRUPTS();
+	if (GetComponentCriticalNesting(portGET_CORE_ID()) == 0) {
+		if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
+			/* if Scheduler not start, pxCurrentTCBs is invalid */
+			portENABLE_INTERRUPTS();
+		} else {
+			if (GetOSCriticalNesting(portGET_CORE_ID()) == 0) {
+				portENABLE_INTERRUPTS();
+			}
+		}
 	}
 #else
 	UNUSED(component_id);
@@ -111,7 +123,7 @@ void rtos_critical_exit(uint32_t component_id)
 #endif
 }
 
-void rtos_critical_enter_old(void)
+void __rtos_critical_enter_os(void)
 {
 	if (rtos_critical_is_in_interrupt()) {
 		portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
@@ -128,7 +140,7 @@ void rtos_critical_enter_old(void)
 	}
 }
 
-void rtos_critical_exit_old(void)
+void __rtos_critical_exit_os(void)
 {
 	if (rtos_critical_is_in_interrupt()) {
 		uxCriticalNestingCnt[portGET_CORE_ID()]--;

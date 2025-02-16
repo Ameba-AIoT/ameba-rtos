@@ -14,14 +14,14 @@ extern "C" {
 /**
  * \defgroup    LEA_GAF_Base_Data Base Data
  *
- * \brief   BAP Base Data.
+ * \brief   BAP base data.
  */
 
 /**
  * \defgroup    Base_Data_Exported_Functions Base Data Exported Functions
  *
  * \ingroup LEA_GAF_Base_Data
- * \{
+ * @{
  */
 
 /**
@@ -32,9 +32,9 @@ extern "C" {
  * \param[in,out]  p_group_idx      Pointer to base data group index.
  * \param[in]  presentation_delay   Base data presentation delay.
  *
- * \return         The result of add base data group.
- * \retval true    Add base data group success.
- * \retval false   Add base data group failed.
+ * \return         The result of adding base data group.
+ * \retval true    Adding base data group is successful.
+ * \retval false   Adding base data group failed.
  *
  * \ingroup Base_Data_Exported_Functions
  */
@@ -47,9 +47,9 @@ bool base_data_add_group(uint8_t *p_group_idx, uint32_t presentation_delay);
  *
  * \param[in]  group_idx        Base data group index.
  *
- * \return         The result of delete base data group.
- * \retval true    Delete base data group success.
- * \retval false   Delete base data group failed.
+ * \return         The result of deleting base data group.
+ * \retval true    Deleting base data group is successful.
+ * \retval false   Deleting base data group failed.
  *
  * \ingroup Base_Data_Exported_Functions
  */
@@ -68,9 +68,9 @@ bool base_data_del_group(uint8_t group_idx);
  * \param[in]  metadata_len          Metadata length.
  * \param[in]  p_metadata            Pointer to metadata.
  *
- * \return         The result of base data add subgroup.
- * \retval true    Base data add subgroup success.
- * \retval false   Base data add subgroup failed.
+ * \return         The result of adding base data subgroup.
+ * \retval true    Adding base data subgroup is successful.
+ * \retval false   Adding base data subgroup failed.
  *
  * \ingroup Base_Data_Exported_Functions
  */
@@ -89,9 +89,9 @@ bool base_data_add_subgroup(uint8_t *p_subgroup_idx, uint8_t group_idx, uint8_t 
  * \param[in]  codec_cfg_len      Codec configuration length.
  * \param[in]  p_codec_cfg        Pointer to codec configuration.
  *
- * \return         The result of base data add BIS.
- * \retval true    Base data add BIS success.
- * \retval false   Base data add BIS failed.
+ * \return         The result of adding base data BIS.
+ * \retval true    Adding base data BIS is successful.
+ * \retval false   Adding base data BIS failed.
  *
  * \ingroup Base_Data_Exported_Functions
  */
@@ -101,15 +101,15 @@ bool base_data_add_bis(uint8_t *p_bis_idx, uint8_t group_idx, uint8_t subgroup_i
 /**
  * base_data_generate.h
  *
- * \brief  Base data generate periodic advertising data.
+ * \brief  Base data generates periodic advertising data.
  *
  * \param[in]  group_idx          Base data group index.
  * \param[in,out]  p_pa_len       Pointer to periodic advertising data length.
  * \param[in,out]  pp_pa_data     Pointer to periodic advertising data.
  *
- * \return         The result of base data generate periodic advertising data.
- * \retval true    Base data generate periodic advertising data success.
- * \retval false   Base data generate periodic advertising data failed.
+ * \return         The result of base data generating periodic advertising data.
+ * \retval true    Base data generates periodic advertising data successfully.
+ * \retval false   Base data generates periodic advertising data failed.
  *
  * \ingroup Base_Data_Exported_Functions
  */
@@ -118,16 +118,16 @@ bool base_data_gen_pa_data(uint8_t group_idx, uint16_t *p_pa_len, uint8_t **pp_p
 /**
  * base_data_generate.h
  *
- * \brief  Base data update metadata.
+ * \brief  Base data updates metadata.
  *
  * \param[in]  group_idx         Base data group index.
  * \param[in]  subgroup_idx      Base data subgroup index.
  * \param[in]  metadata_len      Metadata length.
  * \param[in]  p_metadata        Pointer to metadata.
  *
- * \return         The result of base data update metadata.
- * \retval true    Base data update metadata success.
- * \retval false   Base data update metadata failed.
+ * \return         The result of base data updating metadata.
+ * \retval true    Base data updates metadata successfully.
+ * \retval false   Base data updates metadata failed.
  *
  * \ingroup Base_Data_Exported_Functions
  */
@@ -141,8 +141,8 @@ bool base_data_update_metadata(uint8_t group_idx, uint8_t subgroup_idx,
  * \param[in]  group_idx          Base data group index.
  * \param[in,out]  p_bis_num      Pointer to base data BIS number.
  *
- * \return         The result of get base data BIS number.
- * \retval true    Get base data BIS number success.
+ * \return         The result of getting base data BIS number.
+ * \retval true    Get base data BIS number successfully.
  * \retval false   Get base data BIS number failed.
  *
  * \ingroup Base_Data_Exported_Functions
@@ -150,7 +150,7 @@ bool base_data_update_metadata(uint8_t group_idx, uint8_t subgroup_idx,
 bool base_data_get_bis_num(uint8_t group_idx, uint8_t *p_bis_num);
 /**
  * End of Base_Data_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

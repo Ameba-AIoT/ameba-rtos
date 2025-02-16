@@ -24,13 +24,13 @@ extern "C" {
  * \defgroup    BAP_Unicast_Client_Exported_Macros BAP Unicast Client Exported Macros
  *
  * \ingroup LEA_GAF_BAP_Unicast_Client
- * \{
+ * @{
  */
 
 /**
  * bap_unicast_client.h
  *
- * \brief  Define BAP Unicast Server Maximum Number.
+ * \brief  Define BAP Unicast Server maximum number.
  *
  * \ingroup BAP_Unicast_Client_Exported_Macros
  */
@@ -39,7 +39,7 @@ extern "C" {
 /**
  * bap_unicast_client.h
  *
- * \brief  Define Audio Streaming Maximum ASE Number.
+ * \brief  Define audio streaming maximum ASE number.
  *
  * \ingroup BAP_Unicast_Client_Exported_Macros
  */
@@ -47,20 +47,20 @@ extern "C" {
 
 /**
  * End of BAP_Unicast_Client_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    BAP_Unicast_Client_Exported_Types BAP Unicast Client Exported Types
  *
  * \ingroup LEA_GAF_BAP_Unicast_Client
- * \{
+ * @{
  */
 
 /**
  * bap_unicast_client.h
  *
- * \brief  Define Audio Streaming Session Handle.
+ * \brief  Define audio streaming session handle.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -69,7 +69,7 @@ typedef void *T_AUDIO_STREAM_SESSION_HANDLE;
 /**
  * bap_unicast_client.h
  *
- * \brief  LC3 Unicast Audio Configuration Type.
+ * \brief  LC3 unicast audio configuration types.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -96,14 +96,14 @@ typedef enum
 } T_UNICAST_AUDIO_CFG_TYPE;
 /**
  * End of BAP_Unicast_Client_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    BAP_Unicast_Client_Exported_Macros BAP Unicast Client Exported Macros
  *
  * \ingroup LEA_GAF_BAP_Unicast_Client
- * \{
+ * @{
  */
 
 /**
@@ -111,10 +111,10 @@ typedef enum
  *
  * \defgroup    LC3_UNICAST_CONFIG LC3 Unicast Audio Configuration Type
  *
- * \brief  Define LC3 Unicast Audio Configuration Type Bit Mask.
+ * \brief  Define LC3 unicast audio configuration type bit mask.
  *
  * \ingroup BAP_Unicast_Client_Exported_Macros
- * \{
+ * @{
  */
 #define UNICAST_AUDIO_CFG_1_BIT     (1 << UNICAST_AUDIO_CFG_1)
 #define UNICAST_AUDIO_CFG_2_BIT     (1 << UNICAST_AUDIO_CFG_2)
@@ -135,17 +135,30 @@ typedef enum
 #define UNICAST_AUDIO_CFG_MASK      0x1FFFE
 /**
  * End of LC3_UNICAST_CONFIG
- * \}
+ * @}
  */
 
 /**
  * bap_unicast_client.h
  *
- * \brief  Define Audio Streaming Maximum CIS Number.
+ * \brief  Define audio streaming maximum CIS number.
  *
  * \ingroup BAP_Unicast_Client_Exported_Macros
  */
 #define AUDIO_STREAM_SRV_CIS_MAX 2
+/**
+ * End of BAP_Unicast_Client_Exported_Macros
+ * @}
+ */
+
+/**
+ * bap_unicast_client.h
+ *
+ * \brief  Define Vendor Codec Maximum Length.
+ *
+ * \ingroup BAP_Unicast_Client_Exported_Macros
+ */
+#define AUDIO_STREAM_VENDOR_CODEC_MAX_LEN 16
 /**
  * End of BAP_Unicast_Client_Exported_Macros
  * \}
@@ -155,34 +168,34 @@ typedef enum
  * \defgroup    BAP_Unicast_Client_Exported_Types BAP Unicast Client Exported Types
  *
  * \ingroup LEA_GAF_BAP_Unicast_Client
- * \{
+ * @{
  */
 
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Streaming State.
+ * \brief  Audio streaming states.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
 typedef enum
 {
-    AUDIO_STREAM_STATE_IDLE               = 0x00,   /**< Available API: bap_unicast_audio_cfg */
-    AUDIO_STREAM_STATE_IDLE_CONFIGURED    = 0x01,   /**< Available API: bap_unicast_audio_start, bap_unicast_audio_remove_cfg */
-    AUDIO_STREAM_STATE_CONFIGURED         = 0x02,   /**< Available API: bap_unicast_audio_start, bap_unicast_audio_release */
-    AUDIO_STREAM_STATE_STARTING           = 0x03,   /**< Available API: bap_unicast_audio_stop, bap_unicast_audio_release */
-    AUDIO_STREAM_STATE_STREAMING          = 0x04,   /**< Available API: bap_unicast_audio_stop, bap_unicast_audio_release,
-                                                         bap_unicast_audio_update */
-    AUDIO_STREAM_STATE_PARTIAL_STREAMING  = 0x05,   /**< Available API: bap_unicast_audio_stop, bap_unicast_audio_release,
-                                                         bap_unicast_audio_update */
-    AUDIO_STREAM_STATE_STOPPING           = 0x06,   /**< Available API: bap_unicast_audio_release */
+    AUDIO_STREAM_STATE_IDLE               = 0x00,   /**< Available API: @ref bap_unicast_audio_cfg. */
+    AUDIO_STREAM_STATE_IDLE_CONFIGURED    = 0x01,   /**< Available API: @ref bap_unicast_audio_start, @ref bap_unicast_audio_remove_cfg. */
+    AUDIO_STREAM_STATE_CONFIGURED         = 0x02,   /**< Available API: @ref bap_unicast_audio_start, @ref bap_unicast_audio_release. */
+    AUDIO_STREAM_STATE_STARTING           = 0x03,   /**< Available API: @ref bap_unicast_audio_stop, @ref bap_unicast_audio_release. */
+    AUDIO_STREAM_STATE_STREAMING          = 0x04,   /**< Available API: @ref bap_unicast_audio_stop, @ref bap_unicast_audio_release,
+                                                         @ref bap_unicast_audio_update. */
+    AUDIO_STREAM_STATE_PARTIAL_STREAMING  = 0x05,   /**< Available API: @ref bap_unicast_audio_stop, @ref bap_unicast_audio_release,
+                                                         @ref bap_unicast_audio_update. */
+    AUDIO_STREAM_STATE_STOPPING           = 0x06,   /**< Available API: @ref bap_unicast_audio_release. */
     AUDIO_STREAM_STATE_RELEASING          = 0x07,
 } T_AUDIO_STREAM_STATE;
 
 /**
  * bap_unicast_client.h
  *
- * \brief  BAP Unicast Action.
+ * \brief  BAP unicast actions.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -202,7 +215,7 @@ typedef enum
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio CIS Information.
+ * \brief  Audio CIS information.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -220,7 +233,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Streaming CIS Information.
+ * \brief  Audio streaming CIS information.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -233,7 +246,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  BAP Unicast ASE Information.
+ * \brief  BAP unicast ASE information.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -249,7 +262,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  BAP Unicast Device Information.
+ * \brief  BAP unicast device information.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -264,7 +277,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  BAP Unicast Session Information.
+ * \brief  BAP unicast session information.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -280,7 +293,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio ASE Codec Configuration.
+ * \brief  Audio ASE codec configuration.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -290,12 +303,16 @@ typedef struct
     T_ASE_TARGET_LATENCY target_latency;
     T_ASE_TARGET_PHY     target_phy;
     T_CODEC_CFG          codec_cfg;
+    uint8_t              vendor_codec_cfg_len; /**< Only used when Codec_ID does not use LC3_CODEC_ID.
+    The parameter is only valid when the bit CODEC_CAP_VENDOR_INFO_EXIST is set in codec_cfg. */
+    uint8_t              vendor_codec_cfg[AUDIO_STREAM_VENDOR_CODEC_MAX_LEN]; /**< Only used when
+    Codec_ID does not use LC3_CODEC_ID. The parameter is only valid when the bit CODEC_CAP_VENDOR_INFO_EXIST is set in codec_cfg. */
 } T_AUDIO_ASE_CODEC_CFG;
 
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio ASE QoS Configuration.
+ * \brief  Audio ASE QoS configuration.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -309,7 +326,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Session QoS Configuration.
+ * \brief  Audio session QoS configuration.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -318,8 +335,8 @@ typedef struct
     uint8_t  sca;
     uint8_t  packing;
     uint8_t  framing;
-    uint32_t sdu_interval_m_s;             /**< length: 3 bytes */
-    uint32_t sdu_interval_s_m;             /**< length: 3 bytes */
+    uint32_t sdu_interval_m_s;             /**< Length: 3 bytes. */
+    uint32_t sdu_interval_s_m;             /**< Length: 3 bytes. */
     uint16_t latency_m_s;
     uint16_t latency_s_m;
     uint32_t sink_presentation_delay;
@@ -329,7 +346,7 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  BAP Unicast Group Message Result.
+ * \brief  BAP unicast group message result.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -348,8 +365,9 @@ typedef enum
 /**
  * bap_unicast_client.h
  *
- * \brief  BAP_UNICAST_RESULT_ASE_CP_ERR Additional Information.
- *         The additional information data for BAP_UNICAST_RESULT_ASE_CP_ERR.
+ * \brief  BAP_UNICAST_RESULT_ASE_CP_ERR additional information.
+ *
+ * The additional information data for @ref BAP_UNICAST_RESULT_ASE_CP_ERR.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -365,8 +383,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  AUDIO_GROUP_MSG_BAP_STATE Additional Information.
- *         The additional information data for AUDIO_GROUP_MSG_BAP_STATE.
+ * \brief  AUDIO_GROUP_MSG_BAP_STATE additional information.
+ *
+ * The additional information data for @ref AUDIO_GROUP_MSG_BAP_STATE.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -378,8 +397,9 @@ typedef union
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP State Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_STATE.
+ * \brief  Audio group BAP state information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_STATE.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -396,8 +416,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Session Remove Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_SESSION_REMOVE.
+ * \brief  Audio group BAP session remove information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_SESSION_REMOVE.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -409,8 +430,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Start QoS Configuration Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_START_QOS_CFG.
+ * \brief  Audio group BAP start QoS configuration information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_START_QOS_CFG.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -432,8 +454,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Create CIS Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_CREATE_CIS.
+ * \brief  Audio group BAP create CIS information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_CREATE_CIS.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -448,8 +471,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Start Metadata Configuration Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_START_METADATA_CFG.
+ * \brief  Audio group BAP start metadata configuration information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_START_METADATA_CFG.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -464,8 +488,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Setup Data Path Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_SETUP_DATA_PATH.
+ * \brief  Audio group BAP setup data path information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_SETUP_DATA_PATH.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -474,16 +499,19 @@ typedef struct
     T_AUDIO_STREAM_SESSION_HANDLE handle;
     T_BLE_AUDIO_DEV_HANDLE dev_handle;
     uint8_t ase_id;
-    uint8_t path_direction;                 /**< DATA_PATH_INPUT_FLAG or DATA_PATH_OUTPUT_FLAG */
+    uint8_t path_direction;                 /**< @ref DATA_PATH_INPUT_FLAG or @ref DATA_PATH_OUTPUT_FLAG. */
     uint16_t cis_conn_handle;
     T_CODEC_CFG codec_parsed_data;
+    uint8_t  codec_cfg_len;
+    uint8_t *p_codec_cfg;
 } T_AUDIO_GROUP_MSG_BAP_SETUP_DATA_PATH;
 
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Remove Data Path Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_REMOVE_DATA_PATH.
+ * \brief  Audio group BAP remove data path information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_REMOVE_DATA_PATH.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -492,7 +520,7 @@ typedef struct
     T_AUDIO_STREAM_SESSION_HANDLE handle;
     T_BLE_AUDIO_DEV_HANDLE dev_handle;
     uint8_t ase_id;
-    uint8_t path_direction;                 /**< DATA_PATH_INPUT_FLAG or DATA_PATH_OUTPUT_FLAG */
+    uint8_t path_direction;                 /**< @ref DATA_PATH_INPUT_FLAG or @ref DATA_PATH_OUTPUT_FLAG. */
     uint16_t cis_conn_handle;
     uint16_t cause;
 } T_AUDIO_GROUP_MSG_BAP_REMOVE_DATA_PATH;
@@ -500,8 +528,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP CIS Disconnect Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_CIS_DISCONN.
+ * \brief  Audio group BAP CIS disconnect information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_CIS_DISCONN.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -518,8 +547,9 @@ typedef struct
 /**
  * bap_unicast_client.h
  *
- * \brief  Audio Group BAP Metadata Update Information.
- *         The message data for AUDIO_GROUP_MSG_BAP_METADATA_UPDATE.
+ * \brief  Audio group BAP metadata update information.
+ *
+ * The message data for @ref AUDIO_GROUP_MSG_BAP_METADATA_UPDATE.
  *
  * \ingroup BAP_Unicast_Client_Exported_Types
  */
@@ -534,14 +564,14 @@ typedef struct
 } T_AUDIO_GROUP_MSG_BAP_METADATA_UPDATE;
 /**
  * End of BAP_Unicast_Client_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    BAP_Unicast_Client_Exported_Functions BAP Unicast Client Exported Functions
  *
  * \ingroup LEA_GAF_BAP_Unicast_Client
- * \{
+ * @{
  */
 
 /**
@@ -549,7 +579,7 @@ typedef struct
  *
  * \brief  Allocate audio streaming session.
  *
- * \param[in]  group_handle      BLE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \param[in]  group_handle      LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  *
  * \return         The audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
@@ -560,11 +590,11 @@ T_AUDIO_STREAM_SESSION_HANDLE audio_stream_session_allocate(T_BLE_AUDIO_GROUP_HA
 /**
  * bap_unicast_client.h
  *
- * \brief  Get ble audio group handle by audio streaming session.
+ * \brief  Get LE audio group handle by audio streaming session.
  *
  * \param[in]  handle      Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
- * \return         The ble audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
+ * \return         The LE audio group handle: @ref T_BLE_AUDIO_GROUP_HANDLE.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -596,9 +626,9 @@ uint32_t bap_unicast_get_audio_cfg_mask(T_AUDIO_STREAM_SESSION_HANDLE handle, ui
  * \param[in]  dev_handle  Audio device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
  * \param[in,out]  p_info  Pointer to cis information: @ref T_AUDIO_STREAM_CIS_INFO.
  *
- * \return         The result of BAP unicast audio get cis information.
- * \retval true    BAP unicast audio get cis information success.
- * \retval false   BAP unicast audio get cis information failed.
+ * \return         The result of BAP unicast audio getting cis information.
+ * \retval true    Getting cis information is successful.
+ * \retval false   Getting cis information failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -614,9 +644,9 @@ bool bap_unicast_audio_get_cis_info(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * \param[in]  handle       Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in,out]  p_info   Pointer to cis information: @ref T_BAP_UNICAST_SESSION_INFO.
  *
- * \return         The result of BAP unicast audio get unicast session information.
- * \retval true    BAP unicast audio get unicast session information success.
- * \retval false   BAP unicast audio get unicast session information failed.
+ * \return         The result of BAP unicast audio getting unicast session information.
+ * \retval true    Getting unicast session information is successful.
+ * \retval false   Getting unicast session information failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -634,7 +664,7 @@ bool bap_unicast_audio_get_session_info(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * \param[in]  p_dev_tbl   Pointer to device table: @ref T_BLE_AUDIO_DEV_HANDLE.
  *
  * \return         The result of set BAP unicast audio configuration.
- * \retval true    Set BAP unicast audio configuration success.
+ * \retval true    Set BAP unicast audio configuration is successful.
  * \retval false   Set BAP unicast audio configuration failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
@@ -646,16 +676,17 @@ bool bap_unicast_audio_cfg(T_AUDIO_STREAM_SESSION_HANDLE handle, T_UNICAST_AUDIO
  * bap_unicast_client.h
  *
  * \brief  BAP unicast audio configure ASE codec.
- *         This API is used before bap_unicast_audio_start, and after bap_unicast_audio_cfg.
+ *
+ * his API is used before @ref bap_unicast_audio_start, and after @ref bap_unicast_audio_cfg.
  *
  * \param[in]  handle      Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in]  dev_handle  Device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
  * \param[in]  cfg_idx     Configuration index.
  * \param[in]  p_cfg       Pointer to ASE codec configuration: @ref T_AUDIO_ASE_CODEC_CFG.
  *
- * \return         The result of BAP unicast audio configure ASE codec.
- * \retval true    BAP unicast audio configure ASE codec success.
- * \retval false   BAP unicast audio configure ASE codec failed.
+ * \return         The result of BAP unicast audio configuring ASE codec.
+ * \retval true    Configuring ASE codec is successful.
+ * \retval false   Configuring ASE codec failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -667,14 +698,15 @@ bool bap_unicast_audio_cfg_ase_codec(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * bap_unicast_client.h
  *
  * \brief  BAP unicast audio configure session QoS.
- *         This API is used when receive AUDIO_GROUP_MSG_BAP_START_QOS_CFG.
+ *
+ * This API is used when receive @ref AUDIO_GROUP_MSG_BAP_START_QOS_CFG.
  *
  * \param[in]  handle      Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in]  p_cfg       Pointer to QoS configuration: @ref T_AUDIO_SESSION_QOS_CFG.
  *
- * \return         The result of BAP unicast audio configure session QoS.
- * \retval true    BAP unicast audio configure session QoS success.
- * \retval false   BAP unicast audio configure session QoS failed.
+ * \return         The result of BAP unicast audio configuring session QoS.
+ * \retval true    Configuring session QoS is successful.
+ * \retval false   Configuring session QoS failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -685,7 +717,8 @@ bool bap_unicast_audio_cfg_session_qos(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * bap_unicast_client.h
  *
  * \brief  BAP unicast audio configure ASE QoS.
- *         This API is used when receive AUDIO_GROUP_MSG_BAP_START_QOS_CFG.
+ *
+ * This API is used when receive @ref AUDIO_GROUP_MSG_BAP_START_QOS_CFG.
  *
  * \param[in]  handle      Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in]  dev_handle  Device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
@@ -693,7 +726,7 @@ bool bap_unicast_audio_cfg_session_qos(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * \param[in]  p_cfg       Pointer to ASE QoS configuration: @ref T_AUDIO_ASE_QOS_CFG.
  *
  * \return         The result of BAP unicast audio configure ASE QoS.
- * \retval true    BAP unicast audio configure ASE QoS success.
+ * \retval true    BAP unicast audio configure ASE QoS is successful.
  * \retval false   BAP unicast audio configure ASE QoS failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
@@ -710,9 +743,9 @@ bool bap_unicast_audio_cfg_ase_qos(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * \param[in]  handle      Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in,out]  p_cfg   Pointer to session QoS configuration: @ref T_AUDIO_SESSION_QOS_CFG.
  *
- * \return         The result of BAP unicast audio get session QoS.
- * \retval true    BAP unicast audio get session QoS success.
- * \retval false   BAP unicast audio get session QoS failed.
+ * \return         The result of BAP unicast audio getting session QoS.
+ * \retval true    Getting session QoS is successful.
+ * \retval false   Getting session QoS failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -729,9 +762,9 @@ bool bap_unicast_audio_get_session_qos(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * \param[in]  ase_id      ASE id.
  * \param[in,out]  p_cfg   Pointer to ASE QoS configuration: @ref T_AUDIO_ASE_QOS_CFG.
  *
- * \return         The result of BAP unicast audio get ASE QoS.
- * \retval true    BAP unicast audio get ASE QoS success.
- * \retval false   BAP unicast audio get ASE QoS failed.
+ * \return         The result of BAP unicast audio getting ASE QoS.
+ * \retval true    Getting ASE QoS is successful.
+ * \retval false   Getting ASE QoS failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -743,7 +776,8 @@ bool bap_unicast_audio_get_ase_qos(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * bap_unicast_client.h
  *
  * \brief  BAP unicast audio configure ASE metadata.
- *         This API is used when receive AUDIO_GROUP_MSG_BAP_START_METADATA_CFG.
+ *
+ * This API is used when receiving @ref AUDIO_GROUP_MSG_BAP_START_METADATA_CFG.
  *
  * \param[in]  handle        Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in]  dev_handle    Device handle: @ref T_BLE_AUDIO_DEV_HANDLE.
@@ -751,9 +785,9 @@ bool bap_unicast_audio_get_ase_qos(T_AUDIO_STREAM_SESSION_HANDLE handle,
  * \param[in]  metadata_len  Metadata length.
  * \param[in]  p_metadata    Pointer to metadata.
  *
- * \return         The result of BAP unicast audio configure ASE metadata.
- * \retval true    BAP unicast audio configure ASE metadata success.
- * \retval false   BAP unicast audio configure ASE metadata failed.
+ * \return         The result of BAP unicast audio configuring ASE metadata.
+ * \retval true    Configuring ASE metadata is successful.
+ * \retval false   Configuring ASE metadata failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -768,9 +802,9 @@ bool bap_unicast_audio_cfg_ase_metadata(T_AUDIO_STREAM_SESSION_HANDLE handle,
  *
  * \param[in]  handle        Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
- * \return         The result of remove BAP unicast audio configuration.
- * \retval true    Remove BAP unicast audio configuration success.
- * \retval false   Remove BAP unicast audio configuration failed.
+ * \return         The result of removing BAP unicast audio configuration.
+ * \retval true    Removing BAP unicast audio configuration is successful.
+ * \retval false   Removing BAP unicast audio configuration failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -783,9 +817,9 @@ bool bap_unicast_audio_remove_cfg(T_AUDIO_STREAM_SESSION_HANDLE handle);
  *
  * \param[in]  handle        Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
- * \return         The result of remove BAP unicast audio session.
- * \retval true    Remove BAP unicast audio session success.
- * \retval false   Remove BAP unicast audio session failed.
+ * \return         The result of removing BAP unicast audio session.
+ * \retval true    Removing BAP unicast audio session is successful.
+ * \retval false   Removing BAP unicast audio session failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -798,9 +832,9 @@ bool bap_unicast_audio_remove_session(T_AUDIO_STREAM_SESSION_HANDLE handle);
  *
  * \param[in]  handle        Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
- * \return         The result of BAP unicast audio start streaming.
- * \retval true    BAP unicast audio start streaming success.
- * \retval false   BAP unicast audio start streaming failed.
+ * \return         The result of BAP unicast audio starting streaming.
+ * \retval true    Starting streaming is successful.
+ * \retval false   Starting streaming failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -814,9 +848,9 @@ bool bap_unicast_audio_start(T_AUDIO_STREAM_SESSION_HANDLE handle);
  * \param[in]  handle          Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  * \param[in]  cis_timeout_ms  CIS timeout.
  *
- * \return         The result of BAP unicast audio stop streaming.
- * \retval true    BAP unicast audio stop streaming success.
- * \retval false   BAP unicast audio stop streaming failed.
+ * \return         The result of BAP unicast audio stopping streaming.
+ * \retval true    Stopping streaming is successful.
+ * \retval false   Stopping streaming failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -830,7 +864,7 @@ bool bap_unicast_audio_stop(T_AUDIO_STREAM_SESSION_HANDLE handle, uint32_t cis_t
  * \param[in]  handle          Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
  * \return         The result of BAP unicast audio action release.
- * \retval true    BAP unicast audio action release success.
+ * \retval true    BAP unicast audio action release is successful.
  * \retval false   BAP unicast audio action release failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
@@ -844,9 +878,9 @@ bool bap_unicast_audio_release(T_AUDIO_STREAM_SESSION_HANDLE handle);
  *
  * \param[in]  handle          Audio streaming session handle: @ref T_AUDIO_STREAM_SESSION_HANDLE.
  *
- * \return         The result of BAP unicast audio update metadata.
- * \retval true    BAP unicast audio update metadata success.
- * \retval false   BAP unicast audio update metadata failed.
+ * \return         The result of BAP unicast audio updating metadata.
+ * \retval true    BAP unicast audio updating metadata is successful.
+ * \retval false   BAP unicast audio updating metadata failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -860,13 +894,13 @@ bool bap_unicast_audio_update(T_AUDIO_STREAM_SESSION_HANDLE handle);
  * \xrefitem Added_API_2_13_1_0 "Added Since 2.13.1.0" "Added API"
  *
  * \param[in]  conn_handle      Connection handle.
- * \param[in]  instance_id      ASE characteristic instance id.
+ * \param[in]  char_instance_id ASE characteristic instance id.
  * \param[in,out]  p_ase_data   Pointer to ASE data: @ref T_ASE_CHAR_DATA.
  * \param[in]  direction        Direction: @ref T_AUDIO_DIRECTION.
  *
- * \return         The result of ASCS client get ASE data.
- * \retval true    ASCS client get ASE data success.
- * \retval false   ASCS client get ASE data failed.
+ * \return         The result of ASCS client getting ASE data.
+ * \retval true    ASCS client getting ASE data is successful.
+ * \retval false   ASCS client getting ASE data failed.
  *
  * \ingroup BAP_Unicast_Client_Exported_Functions
  */
@@ -875,7 +909,7 @@ bool ascs_client_get_ase_data(uint16_t conn_handle, uint8_t char_instance_id,
                               uint8_t direction);
 /**
  * End of BAP_Unicast_Client_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

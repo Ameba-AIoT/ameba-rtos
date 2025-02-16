@@ -25,35 +25,6 @@ macro(ameba_soc_library name)
 
 endmacro()
 
-#define soc library named lib_${name}_${PROJECT_NAME}.a, and it will be move to lib/soc
-#additionally, a git version source file will be added in this lib
-macro(ameba_soc_library_with_gitver name)
-
-    ameba_library_common(${name})
-
-    ameba_git_version_gen(${name})
-
-    add_custom_command(
-        OUTPUT ${TARGET_LIBSOC_FOLDER}/lib_${name}.a
-        COMMAND ${CMAKE_OBJCOPY} -g -D lib_${CURRENT_LIB_NAME}.a
-        COMMAND ${CMAKE_COMMAND} -E copy lib_${CURRENT_LIB_NAME}.a ${TARGET_LIBSOC_FOLDER}/lib_${name}.a
-        ${ARGN}     #append extra command
-        DEPENDS ${CURRENT_LIB_NAME}
-    )
-
-    add_custom_target(
-      ${CURRENT_LIB_NAME}_postbuild
-      DEPENDS ${TARGET_LIBSOC_FOLDER}/lib_${name}.a
-    )
-
-    get_property(ALL_EXE_TARGETS_PROPERTY GLOBAL PROPERTY ALL_EXE_TARGETS_${PROJECT_NAME})
-
-    foreach(exe_target ${ALL_EXE_TARGETS_PROPERTY})
-        add_dependencies(${exe_target} ${CURRENT_LIB_NAME}_postbuild)
-    endforeach()
-
-endmacro()
-
 #define application library named lib_${name}_${PROJECT_NAME}.a, and it will be move to lib/application
 macro(ameba_app_library name)
 

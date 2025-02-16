@@ -11,8 +11,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_set(src_${d_MCU_PROJECT_NAME}_imgtool_floader p_SCOPE interface
             p_COMPILE_DEFINES
-                CONFIG_USB_DOWNLOAD_EN
-                CONFIG_DOWNLOAD_IND_EN
                 CONFIG_NAND_DOWNLOAD_EN
                 CONFIG_FLOADER_USBD_EN
             p_INCLUDES

@@ -108,18 +108,20 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
             COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin
         )
 
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E rename ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
-        )
+        if(EXISTS ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin)
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E rename ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
+            )
 
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-            OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin
-        )
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
+                OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin
+            )
 
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
-        )
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
+            )
+        endif()
     endif()
 
 endif()

@@ -188,7 +188,7 @@ int32_t RPC_Unregister(struct REG_STRUCT *reg)
 }
 
 
-int32_t RPC_InitProxy(struct REG_STRUCT *reg, int32_t channel_id)
+int32_t RPC_InitProxy(struct REG_STRUCT *reg, int32_t channel_id, RPC_INIT_STRUCT *init_param)
 {
 	if (g_ServerThreadRunning == 0) {
 		g_ServerThreadRunning = 1;
@@ -206,8 +206,14 @@ int32_t RPC_InitProxy(struct REG_STRUCT *reg, int32_t channel_id)
 		serverStruct->mutex = pMutex;
 		serverStruct->flag = channel_id;
 		g_receiver_threads[g_thread_count] = NULL;
-		if (rtos_task_create(&g_receiver_threads[g_thread_count], ((const char *)"ReceiverLoop"), ReceiverLoop, (void *)serverStruct, 1024 * 4,
-							 3) != SUCCESS) {
+		int task_size = 1024 * 4;
+		int priority = 3;
+		if (init_param) {
+			task_size = init_param->task_size;
+			priority = init_param->priority;
+		}
+		if (rtos_task_create(&g_receiver_threads[g_thread_count], ((const char *)"ReceiverLoop"), ReceiverLoop, (void *)serverStruct, task_size,
+							 priority) != SUCCESS) {
 			RPC_LOGE("\n\r%s rtos_task_create(ReceiverLoop) failed", __FUNCTION__);
 		}
 		g_thread_count++;

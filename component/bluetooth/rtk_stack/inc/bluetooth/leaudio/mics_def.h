@@ -19,13 +19,13 @@ extern "C" {
  * \defgroup    MICP_Def_Exported_Macros Microphone Control Profile Definition Exported Macros
  *
  * \ingroup LEA_GAF_MICP_Def
- * \{
+ * @{
  */
 
 /**
  * mics_def.h
  *
- * \brief  Define MICS Service Error Code.
+ * \brief  Define MICS Service error code.
  *
  * \ingroup MICP_Def_Exported_Macros
  */
@@ -36,35 +36,35 @@ extern "C" {
  *
  * \defgroup    MICS_UUID MICS Service UUID
  *
- * \brief  Define MICS Service UUID and Characteristic UUID.
+ * \brief  Define MICS service UUID and characteristic UUID.
  *
  * \ingroup MICP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define GATT_UUID_MICS                            0x184D
 
 #define MICS_UUID_CHAR_MUTE                       0x2BC3
 /**
  * End of MICS_UUID
- * \}
+ * @}
  */
 
 /**
  * End of MICP_Def_Exported_Macros
- * \}
+ * @}
  */
 
 /**
  * \defgroup    MICP_Def_Exported_Types Microphone Control Profile Definition Exported Types
  *
  * \ingroup LEA_GAF_MICP_Def
- * \{
+ * @{
  */
 
 /**
  * mics_def.h
  *
- * \brief  MICS Service mute value.
+ * \brief  MICS service Mute value.
  *
  * \ingroup MICP_Def_Exported_Types
  */
@@ -77,7 +77,7 @@ typedef enum
 } T_MICS_MUTE;
 /**
  * End of MICP_Def_Exported_Types
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

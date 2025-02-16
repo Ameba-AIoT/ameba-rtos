@@ -201,7 +201,7 @@ SECTIONS
 
 		. = ALIGN(4096);
 		__ram_nocache_start__ = .;
-		KEEP(*(.ncsram.data))
+		KEEP(*(.nocache.data))
 		. = ALIGN(4096);
 		__ram_nocache_end__ = .;
 	} > CA32_BL3_DRAM_NS

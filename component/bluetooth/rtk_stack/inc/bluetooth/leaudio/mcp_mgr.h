@@ -3,8 +3,8 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     mcp_mgr.h
-  * @brief    Head file for Media Control Server.
-  * @details  This file defines Media Control Server related API.
+  * @brief    Header file for Media Control Server.
+  * @details  This file defines the Media Control Server related API.
   * @author
   * @date
   * @version
@@ -23,14 +23,14 @@ extern "C" {
 /**
  * \defgroup    LEA_GAF_MCP_Server Media Control Server
  *
- * \brief Provide status and control of media player
+ * \brief Provide status and control of the media player
  */
 
 /**
  * \defgroup MCP_Server_Exported_Types Media Control Server Exported Types
  *
  * \ingroup LEA_GAF_MCP_Server
- * \{
+ * @{
  */
 
 /**
@@ -43,24 +43,24 @@ extern "C" {
 typedef struct
 {
     bool gmcs;                    /**<
-                                       * \arg    true  : Generic Media Control Service (GMCS)
-                                       * \arg    false : Media Control Service (MCS) */
+                                       * \arg    true  : Generic Media Control Service (GMCS).
+                                       * \arg    false : Media Control Service (MCS). */
 
     struct
     {
         bool support;             /**<
-                                       * \arg    true  : Support characteristic
-                                       * \arg    false : Not support characteristic */
+                                       * \arg    true  : Support characteristic.
+                                       * \arg    false : Not support characteristic. */
         bool char_media_control_point_opcodes_supported_optional_property_notify; /**<
-                                                                                       * \arg    true  : Support Notify property of Media Control Point Opcodes Supported characteristic
-                                                                                       * \arg    false : Not support Notify property of Media Control Point Opcodes Supported characteristic */
-    } char_media_control_point;   /**< Media Control Point characteristic */
+                                                                                       * \arg    true  : Support Notify property of Media Control Point Opcodes Supported characteristic.
+                                                                                       * \arg    false : Not support Notify property of Media Control Point Opcodes Supported characteristic. */
+    } char_media_control_point;   /**< Media Control Point characteristic. */
 
     struct
     {
         bool optional_property_notify; /**<
-                                            * \arg    true  : Support Notify property
-                                            * \arg    false : Not support Notify property */
+                                            * \arg    true  : Support Notify property.
+                                            * \arg    false : Not support Notify property. */
     } char_media_player_name;
 
     struct
@@ -116,7 +116,7 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t       *p_media_player_name;     /**< UTF-8 string */
+    uint8_t       *p_media_player_name;     /**< UTF-8 string. */
     uint16_t      media_player_name_len;
 } T_MCP_SERVER_MEDIA_PLAYER_NAME;
 
@@ -129,7 +129,7 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t       *p_media_player_icon_url;     /**< UTF-8 string */
+    uint8_t       *p_media_player_icon_url;     /**< UTF-8 string. */
     uint16_t      media_player_icon_url_len;
 } T_MCP_SERVER_MEDIA_PLAYER_ICON_URL;
 
@@ -142,7 +142,7 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t       *p_track_title;     /**< UTF-8 string */
+    uint8_t       *p_track_title;     /**< UTF-8 string. */
     uint16_t      track_title_len;
 } T_MCP_SERVER_TRACK_TITLE;
 
@@ -156,17 +156,17 @@ typedef struct
 typedef struct
 {
     uint16_t     char_uuid;        /**<
-                                      * \arg    @ref MCS_UUID_CHAR_MEDIA_STATE : Set parameter and send notification
-                                      * \arg    @ref MCS_UUID_CHAR_PLAYING_ORDERS_SUPPORTED : Set parameter
-                                      * \arg    @ref MCS_UUID_CHAR_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED : Set parameter and send notification */
+                                      * \arg    @ref MCS_UUID_CHAR_MEDIA_STATE : Set parameter and send notification.
+                                      * \arg    @ref MCS_UUID_CHAR_PLAYING_ORDERS_SUPPORTED : Set parameter.
+                                      * \arg    @ref MCS_UUID_CHAR_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED : Set parameter and send notification. */
 
     union
     {
-        uint8_t                                         media_state;  /**< @ref T_MCS_MEDIA_STATE */
+        uint8_t                                         media_state;  /**< @ref T_MCS_MEDIA_STATE. */
         uint16_t                                        playing_orders_supported; /**<
-                                                                                      * Combination of @ref MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE */
+                                                                                      * Combination of @ref MCS_PLAYING_ORDERS_SUPPORTED_CHAR_BIT_VALUE. */
         uint32_t                                        media_control_point_opcodes_supported; /**<
-                                                                                                   * Combination of @ref MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE */
+                                                                                                   * Combination of @ref MCS_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_CHAR_BIT_VALUE. */
     } param;
 } T_MCP_SERVER_SET_PARAM;
 
@@ -180,29 +180,29 @@ typedef struct
 typedef struct
 {
     uint16_t     char_uuid;        /**<
-                                      * \arg    @ref MCS_UUID_CHAR_MEDIA_PLAYER_NAME : Send notification
-                                      * \arg    @ref MCS_UUID_CHAR_TRACK_CHANGED : Send notification
-                                      * \arg    @ref MCS_UUID_CHAR_TRACK_TITLE : Send notification
-                                      * \arg    @ref MCS_UUID_CHAR_TRACK_DURATION : Send notification
-                                      * \arg    @ref MCS_UUID_CHAR_TRACK_POSITION : Send notification */
+                                      * \arg    @ref MCS_UUID_CHAR_MEDIA_PLAYER_NAME : Send notification.
+                                      * \arg    @ref MCS_UUID_CHAR_TRACK_CHANGED : Send notification.
+                                      * \arg    @ref MCS_UUID_CHAR_TRACK_TITLE : Send notification.
+                                      * \arg    @ref MCS_UUID_CHAR_TRACK_DURATION : Send notification.
+                                      * \arg    @ref MCS_UUID_CHAR_TRACK_POSITION : Send notification. */
 
     union
     {
         T_MCP_SERVER_MEDIA_PLAYER_NAME       media_player_name;
         T_MCP_SERVER_TRACK_TITLE             track_title;
         int32_t                              track_duration;       /**<
-                                                                        * Length of the current track in 0.01-second resolution
-                                                                        * \arg    zero or greater
+                                                                        * Length of the current track in 0.01-second resolution.
+                                                                        * \arg    zero or greater.
                                                                         * \arg    @ref MCS_TRACK_DURATION_CHAR_VALUE_UNKNOWN : No current
-                                                                        *         track or the duration of the current track is unknown */
+                                                                        *         track or the duration of the current track is unknown. */
         int32_t                              track_position;       /**<
-                                                                        * Current track position of the current track in 0.01-second resolution
+                                                                        * Current track position of the current track in 0.01-second resolution.
                                                                         *
-                                                                        * Offset from the start of the track to the current playing position
-                                                                        * \arg    0: Starting position or start of the track is not well defined
+                                                                        * Offset from the start of the track to the current playing position.
+                                                                        * \arg    0: Starting position or start of the track is not well defined.
                                                                         * \arg    @ref MCS_TRACK_POSITION_CHAR_VALUE_UNAVAILABLE : No current
-                                                                        *         track or the start of the track is not well defined
-                                                                        * \arg    other values */
+                                                                        *         track or the start of the track is not well defined.
+                                                                        * \arg    Other values. */
         int8_t                               playback_speed;
         int8_t                               seeking_speed;
         uint8_t                              playing_order;
@@ -219,10 +219,10 @@ typedef struct
 typedef struct
 {
     uint16_t        conn_handle;
-    uint16_t        cid;                   /**< Channel Identifier assigned by Bluetooth stack */
-    uint8_t         service_id;            /**< Service ID */
+    uint16_t        cid;                   /**< Channel Identifier assigned by Bluetooth Host. */
+    uint8_t         service_id;            /**< Service ID. */
 
-    uint8_t         opcode;                /**< @ref MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE */
+    uint8_t         opcode;                /**< @ref MCS_MEDIA_CONTROL_POINT_CHAR_OPCODE. */
 
     union
     {
@@ -292,19 +292,19 @@ typedef struct
         uint8_t                              playing_order;
         uint8_t                              content_control_id;   /**<
                                                                         * Represent a unique instance of a service that either controls
-                                                                        * or provides status information on an audio-related feature */
+                                                                        * or provides status information on an audio-related feature. */
     } param;
 } T_MCP_SERVER_READ_CFM;
 /**
  * End of MCP_Server_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup MCP_Server_Exported_Functions Media Control Server Exported Functions
  *
  * \ingroup LEA_GAF_MCP_Server
- * \{
+ * @{
  */
 
 /**
@@ -313,11 +313,11 @@ typedef struct
  *
  * mcp_mgr.h
  *
- * \param[in]  p_param          Point to service registration parameter: @ref T_MCP_SERVER_REG_SRV_PARAM
+ * \param[in]  p_param          Point to service registration parameter: @ref T_MCP_SERVER_REG_SRV_PARAM.
  *
- * \return         Service ID of service registration operation
- * \retval 0xFF    Service registration operation is failed
- * \retval Others  Service ID of specific service. Service registration operation is successful
+ * \return         Service ID of service registration operation.
+ * \retval 0xFF    Service registration operation failed.
+ * \retval Others  Service ID of specific service. Service registration operation is successful.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -337,12 +337,12 @@ uint8_t mcp_server_reg_srv(T_MCP_SERVER_REG_SRV_PARAM *p_param);
  *
  * mcp_mgr.h
  *
- * \param[in]  service_id       Service ID
- * \param[in]  p_param          Point to parameter: @ref T_MCP_SERVER_SET_PARAM
+ * \param[in]  service_id       Service ID.
+ * \param[in]  p_param          Point to parameter: @ref T_MCP_SERVER_SET_PARAM.
  *
- * \return         The result of set parameter operation
- * \retval true    Set parameter operation is successful
- * \retval false   Set parameter operation is failed
+ * \return         The result of set parameter operation.
+ * \retval true    Set parameter operation is successful.
+ * \retval false   Set parameter operation failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -362,12 +362,12 @@ bool mcp_server_set_param(uint8_t service_id, T_MCP_SERVER_SET_PARAM *p_param);
  *
  * mcp_mgr.h
  *
- * \param[in]  service_id       Service ID
- * \param[in]  p_param          Point to parameter: @ref T_MCP_SERVER_SEND_DATA_PARAM
+ * \param[in]  service_id       Service ID.
+ * \param[in]  p_param          Point to parameter: @ref T_MCP_SERVER_SEND_DATA_PARAM.
  *
- * \return         The result of sending request
- * \retval true    Sending request is successful
- * \retval false   Sending request is failed
+ * \return         The result of sending request.
+ * \retval true    Sending request is successful.
+ * \retval false   Sending request failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -385,19 +385,19 @@ bool mcp_server_send_data(uint8_t service_id, T_MCP_SERVER_SEND_DATA_PARAM *p_pa
  *
  * \brief  Confirmation of read request sent by client
  *
- *         This API should be used if all of the following conditions are true:
- *            \arg char_uuid of @ref T_MCP_SERVER_READ_IND is @ref MCS_UUID_CHAR_MEDIA_PLAYER_NAME , @ref MCS_UUID_CHAR_TRACK_TITLE ,
- *                 @ref MCS_UUID_CHAR_TRACK_DURATION , @ref MCS_UUID_CHAR_TRACK_POSITION , or @ref MCS_UUID_CHAR_CONTENT_CONTROL_ID
- *            \arg return value of callback registered by @ref ble_audio_cback_register with msg @ref LE_AUDIO_MSG_MCP_SERVER_READ_IND
- *                 is @ref BLE_AUDIO_CB_RESULT_PENDING
+ * This API should be used if all of the following conditions are true:
+ * \arg char_uuid of @ref T_MCP_SERVER_READ_IND is @ref MCS_UUID_CHAR_MEDIA_PLAYER_NAME , @ref MCS_UUID_CHAR_TRACK_TITLE ,
+ * @ref MCS_UUID_CHAR_TRACK_DURATION , @ref MCS_UUID_CHAR_TRACK_POSITION , or @ref MCS_UUID_CHAR_CONTENT_CONTROL_ID
+ * \arg return value of callback registered by @ref ble_audio_cback_register with msg @ref LE_AUDIO_MSG_MCP_SERVER_READ_IND
+ * is @ref BLE_AUDIO_CB_RESULT_PENDING
  *
  * mcp_mgr.h
  *
- * \param[in]  p_read_cfm          Point to parameter: @ref T_MCP_SERVER_READ_CFM
+ * \param[in]  p_read_cfm          Point to parameter: @ref T_MCP_SERVER_READ_CFM.
  *
- * \return         The result of operation
- * \retval true    Operation is successful
- * \retval false   Operation is failed
+ * \return         The result of operation.
+ * \retval true    Operation is successful.
+ * \retval false   Operation failed.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -495,7 +495,7 @@ bool mcp_server_send_data(uint8_t service_id, T_MCP_SERVER_SEND_DATA_PARAM *p_pa
 bool mcp_server_read_cfm(T_MCP_SERVER_READ_CFM *p_read_cfm);
 /**
  * End of MCP_Server_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

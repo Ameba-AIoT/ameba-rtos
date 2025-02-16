@@ -58,6 +58,7 @@
 u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout);
 u32 IPC_SEMFree(u32 SEM_Idx);
 void IPC_SEMDelay(void (*pfunc)(u32));
+void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
 
 /**
   * @}

@@ -850,7 +850,7 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 		memset((void *)ptrack, 0, sizeof(rtk_bt_audio_track_t));
 		INIT_LIST_HEAD(&ptrack->list);
 	}
-	BT_LOGE("[BT AUDIO] audio track init audio channels %d, rate %d, format %d, left_volume %.2f, right_volume %.2f ! \r\n",
+	BT_LOGA("[BT AUDIO] audio track init audio channels %d, rate %d, format %d, left_volume %.2f, right_volume %.2f ! \r\n",
 			(int)channels,
 			(int)rate,
 			(int)format,

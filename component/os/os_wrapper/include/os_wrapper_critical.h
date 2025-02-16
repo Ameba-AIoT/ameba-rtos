@@ -25,8 +25,11 @@ typedef enum {
 	RTOS_CRITICAL_SOC,
 	RTOS_CRITICAL_AUDIO,
 	RTOS_CRITICAL_WIFI,
+	RTOS_CRITICAL_NETWORK,
+	RTOS_CRITICAL_LWIP,
 	RTOS_CRITICAL_BT,
 	RTOS_CRITICAL_USB,
+	RTOS_CRITICAL_WPAN,
 	RTOS_CRITICAL_MAX
 } RTOS_CRITICAL_LIST;
 
@@ -37,16 +40,30 @@ typedef enum {
 int rtos_critical_is_in_interrupt(void);
 
 /**
- * @brief  Internally handles interrupt status (PRIMASK/CPSR) save
+ * @brief  Internally handles interrupt status (PRIMASK/CPSR) save.
+ * For Smart CA32-smp: Different components do not share the same spin_lock. They also do not share the same spin_lock with the system.
+ * For other kernels: Different components use the same lock with the system.
  */
 void rtos_critical_enter(uint32_t component_id);
-void rtos_critical_enter_old(void); // replace this API with rtos_critical_enter. This API will be removed
 
 /**
  * @brief  Internally handles interrupt status(PRIMASK/CPSR) restore
+ * For Smart CA32-smp: Different components do not share the same spin_lock. They also do not share the same spin_lock with the system.
+ * For other kernels: Different components use the same lock with the system.
  */
 void rtos_critical_exit(uint32_t component_id);
-void rtos_critical_exit_old(void);  // replace this API with rtos_critical_exit. This API will be removed
+
+/**
+ * @brief  For OS wrapper internal use. It is generally not recommended to use this API
+ * For all cores: use the same lock with the system.
+ */
+void __rtos_critical_enter_os(void);
+
+/**
+ * @brief  For OS wrapper internal use. It is generally not recommended to use this API
+ * For all cores: use the same lock with the system.
+ */
+void __rtos_critical_exit_os(void);
 
 /**
  * @brief  get task enter critical state

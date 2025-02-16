@@ -27,7 +27,7 @@
 #ifndef CONFIG_WIFI_TUNNEL
 //#define CONFIG_NAN
 
-#if (defined(CONFIG_SDIO_FULLMAC) || defined (CONFIG_SPI_FULLMAC) || defined(CONFIG_USB_FULLMAC)) && defined(CONFIG_NAN)
+#if (defined(CONFIG_FULLMAC_MENU)) && defined(CONFIG_NAN)
 #define CONFIG_MCC_MODE
 #endif
 #endif

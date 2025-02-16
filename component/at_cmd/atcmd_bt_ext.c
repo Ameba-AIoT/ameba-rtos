@@ -547,7 +547,6 @@ static int atcmd_bt_vendor_help(int argc, char *argv[])
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 #define CMD_NAME_BAP             "+BLEBAP"
 #define CMD_NAME_CAP             "+BLECAP"
-#define CMD_NAME_PBP             "+BLEPBP"
 #define CMD_NAME_TMAP            "+BLETMAP"
 #define CMD_NAME_GMAP            "+BLEGMAP"
 #endif /* RTK_BLE_AUDIO_SUPPORT */
@@ -604,13 +603,8 @@ static const cmd_table_t cmd_table[] = {
 	{CMD_NAME_ISO,              atcmd_bt_iso_cmd,                               1, 9},
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	{CMD_NAME_BAP,              atcmd_bt_bap_cmd,                               3, 10},
-#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
+	{CMD_NAME_BAP,              atcmd_bt_bap_cmd,                               2, 10},
 	{CMD_NAME_CAP,              atcmd_bt_cap_cmd,                               3, 10},
-#endif
-#if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
-	{CMD_NAME_PBP,              atcmd_bt_pbp_cmd,                               3, 10},
-#endif
 #if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
 	{CMD_NAME_TMAP,             atcmd_bt_tmap_cmd,                              3, 10},
 #endif
@@ -691,17 +685,14 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_A2DP_HFP) && CONFIG_BT_A2DP_HFP
 	{"a2dp_hfp",         atcmd_bt_a2dp_hfp,         3, 3},
 #endif
-#if defined(CONFIG_BT_BAP_SUPPORT) && CONFIG_BT_BAP_SUPPORT
-	{"bap",              atcmd_bt_bap,              4, 4},
-#endif
-#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
-	{"cap",              atcmd_bt_cap,              3, 3},
+#if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+	{"cap",              atcmd_bt_cap,              3, 4},
 #endif
 #if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
-	{"pbp",              atcmd_bt_pbp,              3, 3},
+	{"pbp",              atcmd_bt_pbp,              3, 4},
 #endif
 #if defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT
-	{"tmap",             atcmd_bt_tmap,             3, 3},
+	{"tmap",             atcmd_bt_tmap,             3, 4},
 #endif
 #if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
 	{"gmap",             atcmd_bt_gmap,             3, 3},
@@ -882,19 +873,10 @@ static inline void fBLEBAP(void *arg)
 	atcmd_bt_cmd(arg, CMD_NAME_BAP, "[AT+BLEBAP]");
 }
 
-#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
 static inline void fBLECAP(void *arg)
 {
 	atcmd_bt_cmd(arg, CMD_NAME_CAP, "[AT+BLECAP]");
 }
-#endif /* CONFIG_BT_CAP_SUPPORT */
-
-#if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
-static inline void fBLEPBP(void *arg)
-{
-	atcmd_bt_cmd(arg, CMD_NAME_PBP, "[AT+BLEPBP]");
-}
-#endif /* CONFIG_BT_PBP_SUPPORT */
 
 #if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
 static inline void fBLETMAP(void *arg)
@@ -1139,12 +1121,7 @@ static log_item_t at_bt_items[] = {
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	{CMD_NAME_BAP,              fBLEBAP,              {NULL, NULL}},
-#if defined(CONFIG_BT_CAP_SUPPORT) && CONFIG_BT_CAP_SUPPORT
 	{CMD_NAME_CAP,              fBLECAP,              {NULL, NULL}},
-#endif
-#if defined(CONFIG_BT_PBP_SUPPORT) && CONFIG_BT_PBP_SUPPORT
-	{CMD_NAME_PBP,              fBLEPBP,              {NULL, NULL}},
-#endif
 #if (defined(CONFIG_BT_TMAP_SUPPORT) && CONFIG_BT_TMAP_SUPPORT)
 	{CMD_NAME_TMAP,             fBLETMAP,             {NULL, NULL}},
 #endif

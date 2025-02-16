@@ -3,8 +3,8 @@
 *     Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
 *****************************************************************************************
   * @file     gmas_def.h
-  * @brief    Head file for Gaming Audio Profile.
-  * @details  This file defines Gaming Audio Profile related definition.
+  * @brief    Header file for Gaming Audio Profile.
+  * @details  This file defines Gaming Audio Profile related definitions.
   * @author
   * @date
   * @version
@@ -23,14 +23,14 @@ extern "C" {
 /**
  * \defgroup    LEA_USE_CASE_GMAP_Def Gaming Audio Profile Definition
  *
- * \brief   Gaming Audio Profile related definition.
+ * \brief   Gaming Audio Profile related definitions.
  */
 
 /**
  * \defgroup GMAP_Def_Exported_Macros Gaming Audio Profile Definition Exported Macros
  *
  * \ingroup LEA_USE_CASE_GMAP_Def
- * \{
+ * @{
  */
 
 /**
@@ -41,7 +41,7 @@ extern "C" {
  * \brief  Define Gaming Audio Service UUID.
  *
  * \ingroup GMAP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define GATT_UUID_GMAS                        0x1858    /**< Gaming Audio Service. */
 
@@ -52,7 +52,7 @@ extern "C" {
 #define GMAS_UUID_CHAR_BGR_FEATURES           0x2C04    /**< BGR Features. */
 /**
  * End of GMAS_UUID
- * \}
+ * @}
  */
 
 /**
@@ -60,10 +60,10 @@ extern "C" {
  *
  * \defgroup  GMAP_ROLE_BIT_VALUE GMAP Role Bit Value
  *
- * \brief  Define GMAP Role Characteristic Bit Value.
+ * \brief  Define GMAP Role characteristic bit value.
  *
  * \ingroup GMAP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define GMAP_ROLE_CHAR_BIT_VALUE_UGG    0x01   /**< Bit 0: Unicast Game Gateway (UGG). */
 #define GMAP_ROLE_CHAR_BIT_VALUE_UGT    0x02   /**< Bit 1: Unicast Game Terminal (UGT). */
@@ -71,7 +71,7 @@ extern "C" {
 #define GMAP_ROLE_CHAR_BIT_VALUE_BGR    0x08   /**< Bit 3: Broadcast Game Receiver (BGR). */
 /**
  * End of GMAP_ROLE_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
@@ -79,17 +79,17 @@ extern "C" {
  *
  * \defgroup  UGG_FEATURES_BIT_VALUE UGG Features Bit Value
  *
- * \brief  Define UGG Features Characteristic Bit Value.
+ * \brief  Define UGG Features characteristic bit value.
  *
  * \ingroup GMAP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define UGG_FEATURES_CHAR_BIT_VALUE_UGG_MULTIPLEX_FEATURE_SUP      0x01    /**< Bit 0: UGG Multiplex feature support. */
 #define UGG_FEATURES_CHAR_BIT_VALUE_UGG_96K_SOURCE_FEATURE_SUP     0x02    /**< Bit 1: UGG 96 kbps Source feature support. */
 #define UGG_FEATURES_CHAR_BIT_VALUE_UGG_MULTISINK_FEATURE_SUP      0x04    /**< Bit 2: UGG Multisink feature support. */
 /**
  * End of UGG_FEATURES_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
@@ -97,10 +97,10 @@ extern "C" {
  *
  * \defgroup  UGT_FEATURES_BIT_VALUE UGT Features Bit Value
  *
- * \brief  Define UGT Features Characteristic Bit Value.
+ * \brief  Define UGT Features characteristic bit value.
  *
  * \ingroup GMAP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define UGT_FEATURES_CHAR_BIT_VALUE_UGT_SOURCE_FEATURE_SUP         0x01    /**< Bit 0: UGT Source feature support. */
 #define UGT_FEATURES_CHAR_BIT_VALUE_UGT_80K_SOURCE_FEATURE_SUP     0x02    /**< Bit 1: UGT 80 kbps Source feature support. */
@@ -111,7 +111,7 @@ extern "C" {
 #define UGT_FEATURES_CHAR_BIT_VALUE_UGT_MULTISOURCE_FEATURE_SUP    0x40    /**< Bit 6: UGT Multisource feature support. */
 /**
  * End of UGT_FEATURES_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
@@ -119,15 +119,15 @@ extern "C" {
  *
  * \defgroup  BGS_FEATURES_BIT_VALUE BGS Features Bit Value
  *
- * \brief  Define BGS Features Characteristic Bit Value.
+ * \brief  Define BGS Features characteristic bit value.
  *
  * \ingroup GMAP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define BGS_FEATURES_CHAR_BIT_VALUE_BGS_96K_FEATURE_SUP            0x01    /**< Bit 0: BGS 96 kbps feature support. */
 /**
  * End of BGS_FEATURES_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
@@ -135,21 +135,21 @@ extern "C" {
  *
  * \defgroup  BGR_FEATURES_BIT_VALUE BGR Features Bit Value
  *
- * \brief  Define BGR Features Characteristic Bit Value.
+ * \brief  Define BGR Features characteristic bit value.
  *
  * \ingroup GMAP_Def_Exported_Macros
- * \{
+ * @{
  */
 #define BGR_FEATURES_CHAR_BIT_VALUE_BGR_MULTISINK_FEATURE_SUP      0x01    /**< Bit 0: BGR Multisink feature support. */
 #define BGR_FEATURES_CHAR_BIT_VALUE_BGR_MULTIPLEX_FEATURE_SUP      0x02    /**< Bit 1: BGR Multiplex feature support. */
 /**
  * End of BGR_FEATURES_BIT_VALUE
- * \}
+ * @}
  */
 
 /**
  * End of GMAP_Def_Exported_Macros
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

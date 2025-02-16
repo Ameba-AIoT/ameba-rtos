@@ -270,6 +270,8 @@ u8 BOOT_Load_KR4_APP(void)
 		ret = BOOT_SignatureCheck(&Manifest, SubImgInfo, Cnt, &Cert[CertImgIndex], KEYID_AP); //BL1 ECC verify if need
 #endif
 		if (ret != TRUE) {
+			/* OTA1 and OTA2 share one MMU virtual address. when image header of one OTA is error, will cause another OTA fail, here invalid all D-cache to avoid corner case. */
+			DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 			ImgIndex = (ImgIndex + 1) % 2;
 			continue;
 		} else {
@@ -351,6 +353,8 @@ u8 BOOT_Load_KM4_APP(void)
 		ret = BOOT_SignatureCheck(&Manifest[ImgIndex], SubImgInfo, Cnt, &Cert[CertImgIndex], KEYID_NSPE); //BL1 ECC verify if need
 #endif
 		if (ret != TRUE) {
+			/* OTA1 and OTA2 share one MMU virtual address. when image header of one OTA is error, will cause another OTA fail, here invalid all D-cache to avoid corner case. */
+			DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 			ImgIndex = (ImgIndex + 1) % 2;
 			continue;
 		} else {

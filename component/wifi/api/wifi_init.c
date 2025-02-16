@@ -17,9 +17,9 @@
 #include "ameba_soc.h"
 #ifdef CONFIG_WLAN
 #if defined(CONFIG_AS_INIC_AP) && defined(CONFIG_SPI_FULLMAC_HOST)  && CONFIG_SPI_FULLMAC_HOST
-#include "inic_host_api.h"
+#include "whc_host_api.h"
 #else
-#include "inic_ipc.h"
+#include "whc_ipc.h"
 #endif
 #include "wifi_conf.h"
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
@@ -30,6 +30,16 @@
 #if defined(CONFIG_AS_INIC_AP) || (defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER && defined(CONFIG_SINGLE_CORE_WIFI))
 static u32 heap_tmp;
 #endif
+#endif
+
+#if defined(CONFIG_INIC_INTF_SDIO)
+#if defined(CONFIG_FULLMAC_BRIDGE)
+#include "whc_bridge_sdio_dev.h"
+#else
+#include "whc_fullmac_sdio_dev.h"
+#endif
+#elif defined(CONFIG_INIC_INTF_SPI)
+#include "whc_spi_dev.h"
 #endif
 
 #define WIFI_STACK_SIZE_INIT ((512 + 768) * 4)
@@ -118,7 +128,8 @@ void _init_thread(void *param)
 	LwIP_Init();
 	RTK_LOGI(TAG, "LWIP consume heap %d\n", heap_tmp - rtos_mem_get_free_heap_size() - TCPIP_THREAD_STACKSIZE * 4);
 #endif
-#ifdef CONFIG_FULLMAC_BRIDGE
+
+#if defined(CONFIG_FULLMAC_BRIDGEB)
 	wifi_fast_connect_enable(0);
 	inic_dev_init();
 #endif
@@ -128,6 +139,10 @@ void _init_thread(void *param)
 #if CONFIG_AUTO_RECONNECT
 	//setup reconnection flag
 	wifi_config_autoreconnect(1);
+#endif
+
+#ifdef CONFIG_FULLMAC_BRIDGE
+	inic_dev_init_lite();
 #endif
 
 	RTK_LOGI(TAG, "%s(%d), Available heap %d\n", __FUNCTION__, __LINE__, rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);

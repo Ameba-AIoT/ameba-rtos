@@ -15,20 +15,20 @@ extern "C" {
 /**
  * \defgroup    LEA_GAF_Base_Data Base Data
  *
- * \brief   BAP Base Data.
+ * \brief   BAP base data.
  */
 
 /**
  * \defgroup    Base_Data_Exported_Types Base Data Exported Types
  *
  * \ingroup LEA_GAF_Base_Data
- * \{
+ * @{
  */
 
 /**
  * base_data_parse.h
  *
- * \brief  Base Data BIS Parameters.
+ * \brief  Base data BIS parameters.
  *
  * \ingroup Base_Data_Exported_Types
  */
@@ -43,7 +43,7 @@ typedef struct
 /**
  * base_data_parse.h
  *
- * \brief  Base Data Subgroup Parameters.
+ * \brief  Base data subgroup parameters.
  *
  * \ingroup Base_Data_Exported_Types
  */
@@ -60,7 +60,7 @@ typedef struct
 /**
  * base_data_parse.h
  *
- * \brief  Base Data Mapping.
+ * \brief  Base data mapping.
  *
  * \ingroup Base_Data_Exported_Types
  */
@@ -73,14 +73,14 @@ typedef struct
 } T_BASE_DATA_MAPPING;
 /**
  * End of Base_Data_Exported_Types
- * \}
+ * @}
  */
 
 /**
  * \defgroup    Base_Data_Exported_Functions Base Data Exported Functions
  *
  * \ingroup LEA_GAF_Base_Data
- * \{
+ * @{
  */
 
 /**
@@ -105,7 +105,7 @@ T_BASE_DATA_MAPPING *base_data_parse_data(uint16_t pa_data_len, uint8_t *p_pa_da
  * \param[in]  p_mapping_a      Pointer to base data mapping a: @ref T_BASE_DATA_MAPPING.
  * \param[in]  p_mapping_b      Pointer to base data mapping b: @ref T_BASE_DATA_MAPPING.
  *
- * \return         The result of compare two base data mappings.
+ * \return         The result of comparing two base data mappings.
  * \retval true    Base data mappings are the same.
  * \retval false   Base data mappings are not the same.
  *
@@ -122,8 +122,8 @@ bool base_data_cmp(T_BASE_DATA_MAPPING *p_mapping_a, T_BASE_DATA_MAPPING *p_mapp
  * \param[in]  bis_idx        BIS index.
  * \param[in,out]  p_cfg      Pointer to codec configuration: @ref T_CODEC_CFG.
  *
- * \return         The result of get BIS codec configuration.
- * \retval true    Get BIS codec configuration success.
+ * \return         The result of getting BIS codec configuration.
+ * \retval true    Get BIS codec configuration successfully.
  * \retval false   Get BIS codec configuration failed.
  *
  * \ingroup Base_Data_Exported_Functions
@@ -143,7 +143,7 @@ bool base_data_get_bis_codec_cfg(T_BASE_DATA_MAPPING *p_mapping, uint8_t bis_idx
 void base_data_free(T_BASE_DATA_MAPPING *p_mapping);
 /**
  * End of Base_Data_Exported_Functions
- * \}
+ * @}
  */
 
 #ifdef  __cplusplus

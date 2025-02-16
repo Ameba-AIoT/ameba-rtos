@@ -62,17 +62,13 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_ERROR, "KV init fail");
-		goto exit;
-	}
-
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
 		VFS_DBG(VFS_ERROR, "key len limit exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
@@ -109,17 +105,13 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_ERROR, "KV init fail");
-		goto exit;
-	}
-
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
 		VFS_DBG(VFS_ERROR, "key len limit exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
@@ -166,17 +158,13 @@ int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_ERROR, "KV init fail");
-		goto exit;
-	}
-
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
 		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
@@ -212,17 +200,13 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_ERROR, "KV init fail");
-		goto exit;
-	}
-
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
 		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
@@ -271,17 +255,13 @@ int32_t rt_kv_size(const char *key)
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_ERROR, "KV init fail");
-		goto exit;
-	}
-
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
 		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
@@ -316,17 +296,13 @@ int32_t rt_kv_delete(const char *key)
 		goto exit;
 	}
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_INFO, "KV init fail");
-		goto exit;
-	}
-
 	if (strlen(key) > MAX_KEY_LENGTH - 3) {
 		VFS_DBG(VFS_ERROR, "key len limite exceed, max len is %d", MAX_KEY_LENGTH - 3);
 		goto exit;
 	}
 
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 
@@ -349,12 +325,8 @@ int rt_kv_list(char *buf, int32_t len)
 	char *name_str = NULL;
 	int ret = -1;
 
-	if (lfs_mount_fail) {
-		VFS_DBG(VFS_INFO, "KV init fail");
-		goto exit;
-	}
-
 	if (prefix == NULL) {
+		VFS_DBG(VFS_ERROR, "KV init fail");
 		goto exit;
 	}
 

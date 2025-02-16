@@ -120,8 +120,9 @@ typedef struct _atcmd_lwip_conf {
 } atcmd_lwip_conf;
 #endif /* ENABLE_TCPIP_AUTOLINK */
 
-void print_lwip_at(void);
-void at_tcpip_init(void);
+void print_socket_at(void);
+
+void at_socket_init(void);
 
 #endif /* CONFIG_LWIP_LAYER */
 

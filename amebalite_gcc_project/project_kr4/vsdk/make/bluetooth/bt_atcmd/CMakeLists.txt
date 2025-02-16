@@ -23,7 +23,6 @@ set(
 	${DIR}/bt_atcmd/atcmd_bt_pbap.c
 	${DIR}/bt_atcmd/atcmd_bt_bap.c
 	${DIR}/bt_atcmd/atcmd_bt_cap.c
-	${DIR}/bt_atcmd/atcmd_bt_pbp.c
 	${DIR}/bt_atcmd/atcmd_bt_tmap.c
 	${DIR}/bt_atcmd/atcmd_bt_gmap.c
 	${DIR}/bt_atcmd/atcmd_bt_mesh_common.c

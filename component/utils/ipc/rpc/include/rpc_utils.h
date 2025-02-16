@@ -24,11 +24,10 @@
 extern "C" {
 #endif
 
-#ifdef DEBUG_ENABLE
-#define RPC_LOGD(fmt, ...)  printf(LOG_TAG fmt, ##__VA_ARGS__)
-#else
-#define RPC_LOGD(fmt, ...)  do { } while(0)
-#endif
+void RPC_Print(const char *tag, const char *fmt, ...)
+__attribute__((__format__(printf, 2, 3)));
+
+#define RPC_LOGD(...)  ((void)RPC_Print(LOG_TAG, __VA_ARGS__))
 #define RPC_LOGE(fmt, ...)  printf(LOG_TAG fmt, ##__VA_ARGS__)
 
 #define ENTER() \
@@ -61,6 +60,8 @@ int32_t RPC_SemWait(RPC_Sem *sem, uint32_t ms);
 void RPC_SemPost(RPC_Sem *sem);
 
 void RPC_SemDestroy(RPC_Sem *sem);
+
+void RPC_SetLog(int enable);
 
 #ifdef __cplusplus
 }

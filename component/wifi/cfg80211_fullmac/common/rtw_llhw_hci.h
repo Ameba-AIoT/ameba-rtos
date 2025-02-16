@@ -26,9 +26,6 @@ struct event_priv_t {
 	struct sk_buff				*rx_api_ret_msg;
 
 	struct completion			api_ret_sema; /* sema to wait for API calling done */
-#ifdef CONFIG_SDIO_BRIDGE
-	struct completion			bridge_scan_done_sema; /* sema to wait for scan done */
-#endif
 
 	u8					b_waiting_for_ret: 1;
 };

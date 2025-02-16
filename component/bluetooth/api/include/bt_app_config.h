@@ -15,7 +15,7 @@ extern "C"
 
 #include <bt_api_config.h>
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-#include <rtk_bt_le_audio.h>
+#include <bt_le_audio_app_config.h>
 #endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <rtk_bt_mesh_def.h>

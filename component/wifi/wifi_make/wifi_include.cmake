@@ -27,15 +27,41 @@ set(
     ${BASEDIR}/component/wifi/driver/nan
     ${BASEDIR}/component/wifi/driver/mesh
     ${BASEDIR}/component/wifi/driver/wifi_tunnel
-    ${BASEDIR}/component/wifi/inic
-    ${BASEDIR}/component/wifi/inic/ipc
-    ${BASEDIR}/component/wifi/inic/none_ipc_dev
-    ${BASEDIR}/component/wifi/inic/none_ipc_host
-    ${BASEDIR}/component/wifi/inic/spi
-    ${BASEDIR}/component/wifi/inic/sdio
-    ${BASEDIR}/component/wifi/inic/usb
+    ${BASEDIR}/component/wifi/whc
+    ${BASEDIR}/component/wifi/whc/whc_dev
+    ${BASEDIR}/component/wifi/whc/whc_host
+    ${BASEDIR}/component/wifi/whc/whc_dev/spi
+    ${BASEDIR}/component/wifi/whc/whc_dev/sdio
+    ${BASEDIR}/component/wifi/whc/whc_dev/usb
+    ${BASEDIR}/component/wifi/whc/whc_host/spi
     ${BASEDIR}/component/wifi/wifi_tunnel_app
     ${BASEDIR}/component/at_cmd
+if(CONFIG_WPA_STD)	
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/hostapd
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/wpa_supplicant
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/freertos
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/freertos/src
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/ap
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/common
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/crypto
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/drivers
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/eap_common
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/eap_peer
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/eap_server
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/eapol_auth
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/eapol_supp
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/fst
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/l2_packet
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/p2p
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/pae
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/radius
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/rsn_supp
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/tls
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/utils
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/src/wps
+    ${BASEDIR}/component/wifi/wpa_supplicant_std/port/mbedtls
+endif()
 )
 
 if(CONFIG_AMEBAL2)
@@ -66,6 +92,14 @@ if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3)
         ${BASEDIR}/component/wifi/driver/rtl8720f_rom
 
     )
+endif()
+
+if(CONFIG_AMEBAGREEN2)
+    list(
+        APPEND WIFI_IFLAGS 
+        ${BASEDIR}/component/wifi/driver/wifi_tunnel/rtl8720f
+    )
+
 endif()
 
 if(CONFIG_AMEBADPLUS)

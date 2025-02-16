@@ -52,7 +52,7 @@ struct task_struct {
 };
 
 // ------------------------------------------------------------------
-#define HALT()				do { rtos_critical_enter_old(); for(;;);} while(0)
+#define HALT()				do { rtos_critical_enter(RTOS_CRITICAL_WIFI); for(;;);} while(0)
 #undef ASSERT
 #define ASSERT(x)			do { \
 						if((x) == 0){\

@@ -5,6 +5,247 @@
 #include "vfs.h"
 
 static const char *const TAG = "AT-FS";
+
+int32_t at_fs_delete(const char *key)
+{
+	int res;
+	char *path = NULL;
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+	if (prefix == NULL) {
+		return -1;
+	}
+
+	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		return -1;
+	}
+
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT/%s", prefix, key);
+	res = remove(path);
+	rtos_mem_free(path);
+	return res;
+}
+
+int32_t at_fs_size(const char *key)
+{
+	struct stat *stat_buf;
+	int res = -1;
+	char *path = NULL;
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+
+	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		goto exit;
+	}
+
+	if ((stat_buf = rtos_mem_zmalloc(sizeof(struct stat))) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		goto exit;
+	}
+
+	if (strlen(key) > MAX_KEY_LENGTH - 3) {
+		RTK_LOGE(TAG, "key len limite exceed, max len is %d\r\n", MAX_KEY_LENGTH - 3);
+		goto exit;
+	}
+
+	if (prefix == NULL) {
+		RTK_LOGE(TAG, "vfs init fail\r\n");
+		goto exit;
+	}
+
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT/%s", prefix, key);
+
+	res = stat(path, stat_buf);
+	if (res < 0) {
+		RTK_LOGE(TAG, "stat failed,err is %d!!!\r\n", res);
+	} else {
+		res = stat_buf->st_size;
+	}
+
+exit:
+	if (path) {
+		rtos_mem_free(path);
+	}
+
+	if (stat_buf) {
+		rtos_mem_free(stat_buf);
+	}
+
+	return res;
+}
+
+int32_t at_fs_get_offset(const char *key, void *buffer, int32_t len, int32_t offset)
+{
+	vfs_file *finfo;
+	int res = -1;
+	char *path = NULL;
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+
+	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		goto exit;
+	}
+
+	if (strlen(key) > MAX_KEY_LENGTH - 3) {
+		RTK_LOGE(TAG, "key len limite exceed, max len is %d\r\n", MAX_KEY_LENGTH - 3);
+		goto exit;
+	}
+
+	if (prefix == NULL) {
+		RTK_LOGE(TAG, "vfs init fail\r\n");
+		goto exit;
+	}
+
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT/%s", prefix, key);
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo == NULL) {
+		RTK_LOGE(TAG, "fopen failed\r\n");
+		goto exit;
+	}
+
+	if (offset > 0) {
+		res = fseek((FILE *)finfo, offset, SEEK_SET);
+		if (res < 0) {
+			RTK_LOGE(TAG, "fseek failed,err is %d!!\r\n", res);
+			goto exit;
+		}
+	}
+
+	res = fread(buffer, len, 1, (FILE *)finfo);
+	if (res < 0) {
+		RTK_LOGE(TAG, "fread failed,err is %d!!\r\n", res);
+	}
+	fclose((FILE *)finfo);
+
+exit:
+	if (path) {
+		rtos_mem_free(path);
+	}
+
+	return res;
+}
+
+int32_t at_fs_set_offset(const char *key, const void *val, int32_t len, int32_t offset)
+{
+	vfs_file *finfo;
+	int res = -1;
+	char *path = NULL;
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+
+	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		goto exit;
+	}
+
+	if (strlen(key) > MAX_KEY_LENGTH - 3) {
+		RTK_LOGE(TAG, "key len limite exceed, max len is %d\r\n", MAX_KEY_LENGTH - 3);
+		goto exit;
+	}
+
+	if (prefix == NULL) {
+		RTK_LOGE(TAG, "vfs init fail\r\n");
+		goto exit;
+	}
+
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT/%s", prefix, key);
+	finfo = (vfs_file *)fopen(path, "wx");
+	if (finfo == NULL) {
+		finfo = (vfs_file *)fopen(path, "+");
+		if (finfo == NULL) {
+			RTK_LOGE(TAG, "fopen failed\r\n");
+			goto exit;
+		}
+	}
+
+	if (offset > 0) {
+		res = fseek((FILE *)finfo, offset, SEEK_SET);
+		if (res < 0) {
+			RTK_LOGE(TAG, "fseek failed\r\n");
+			goto exit;
+		}
+	}
+
+	res = fwrite(val, len, 1, (FILE *)finfo);
+	if (res != len) {
+		RTK_LOGE(TAG, "fwrite failed\r\n");
+	}
+	fclose((FILE *)finfo);
+
+exit:
+	if (path) {
+		rtos_mem_free(path);
+	}
+
+	return res;
+}
+
+int at_fs_list(char *buf, int32_t len)
+{
+	dirent *info;
+	DIR *dir;
+	char *path = NULL;
+	char *name_str = NULL;
+	char *prefix = find_vfs_tag(VFS_REGION_1);
+	int ret = -1;
+
+	if (prefix == NULL) {
+		RTK_LOGE(TAG, "vfs init fail\r\n");
+		goto exit;
+	}
+
+	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		goto exit;
+	}
+
+	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:AT", prefix);
+
+	dir = (DIR *)opendir(path);
+	if (dir == NULL) {
+		RTK_LOGE(TAG, "opendir failed\r\n");
+		goto exit;
+	}
+
+	if ((name_str = rtos_mem_zmalloc(MAX_KEY_LENGTH + 10)) == NULL) {
+		RTK_LOGE(TAG, "malloc fail\r\n");
+		goto exit;
+	}
+
+	char *buf_ptr = buf;
+	u32 len_left = len - 1;
+	u8 fmt_len = 0;
+	while (1) {
+		info = readdir((void **)dir);
+		if (info == NULL) {
+			break;
+		} else if (strcmp(info->d_name, ".") != 0 && strcmp(info->d_name, "..") != 0) {
+			fmt_len = DiagSnPrintf(name_str, MAX_KEY_LENGTH + 10, "%s : %d\n", info->d_name, info->d_reclen);
+			if (len_left < fmt_len) {
+				RTK_LOGE(TAG, "buf len is not enough\r\n");
+				break;
+			}
+
+			memcpy(buf_ptr, name_str, fmt_len);
+			memset(name_str, 0, MAX_KEY_LENGTH + 10);
+			buf_ptr += fmt_len;
+			len_left -= fmt_len;
+		}
+	}
+
+	ret = closedir((void **)dir);
+
+exit:
+	if (path) {
+		rtos_mem_free(path);
+	}
+
+	if (name_str) {
+		rtos_mem_free(name_str);
+	}
+
+	return ret;
+}
+
 //AT+FS=<operation>,<filename>,<offset>,<length>
 // operation: 0=list, 1=delete, 2=get size, 3=read, 4=write
 void at_fs(void *arg)
@@ -47,7 +288,7 @@ void at_fs(void *arg)
 		filename = (char *)argv[2];
 		if (operation == 1) {
 			/*delete file*/
-			if (rt_kv_delete(filename)) {
+			if (at_fs_delete(filename)) {
 				error_no = 2;
 			}
 			goto end;
@@ -55,7 +296,7 @@ void at_fs(void *arg)
 
 		if (operation == 2) {
 			/*get file size*/
-			u8 size = rt_kv_size(filename);
+			u8 size = at_fs_size(filename);
 			at_printf("+FS: %d", size);
 			goto end;
 		}
@@ -77,7 +318,7 @@ void at_fs(void *arg)
 				goto end;
 			}
 
-			if (rt_kv_get_offset(filename, buffer, length, offset) == length) {
+			if (at_fs_get_offset(filename, buffer, length, offset) == length) {
 				at_printf("+FS: %s", buffer);
 			} else {
 				error_no = 2;
@@ -107,7 +348,7 @@ void at_fs(void *arg)
 			}
 
 			atcmd_tt_mode_end();
-			if (rt_kv_set_offset(filename, buffer, length, offset) != length) {
+			if (at_fs_set_offset(filename, buffer, length, offset) != length) {
 				error_no = 2;
 				goto end;
 			}
@@ -122,7 +363,7 @@ void at_fs(void *arg)
 			goto end;
 		}
 
-		if (rt_kv_list((char *)buffer, 4096) != 0) {
+		if (at_fs_list((char *)buffer, 4096) != 0) {
 			error_no = 2;
 		} else {
 			at_printf("+FS: \r\n%s", buffer);
