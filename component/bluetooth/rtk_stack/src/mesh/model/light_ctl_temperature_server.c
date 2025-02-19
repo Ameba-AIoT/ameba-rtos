@@ -377,7 +377,7 @@ static bool light_ctl_temperature_server_receive(mesh_msg_p pmesh_msg)
 static int32_t light_ctl_temperature_server_publish(mesh_model_info_p pmodel_info, bool retrans)
 {
     UNUSED(retrans);
-    light_ctl_server_get_temperature_t get_data = get_present_temperature(pmodel_info);;
+    light_ctl_server_get_temperature_t get_data = get_present_temperature(pmodel_info);
     generic_transition_time_t trans_time = {0, 0};
     light_ctl_temperature_stat(pmodel_info, 0, 0, get_data.temperature, get_data.delta_uv, FALSE, 0, 0,
                                trans_time, 0);

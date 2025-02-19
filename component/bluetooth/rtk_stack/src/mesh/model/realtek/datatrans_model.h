@@ -102,7 +102,7 @@ typedef struct
      */
     datatrans_stat_t status;
     uint16_t written_len;
-} datatrans_server_write_t;;
+} datatrans_server_write_t;
 
 typedef struct
 {

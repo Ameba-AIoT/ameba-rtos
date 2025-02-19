@@ -50,7 +50,6 @@ CSRC +=	\
 		$(LWIPDIR)/src/api/err.c \
 		$(NETWORK)/httpc/httpc_tls.c\
 		$(NETWORK)/httpd/httpd_tls.c\
-		$(NETWORK)/mDNS/mDNSPlatform.c\
 		$(LWIPDIR)/src/core/stats.c \
 		$(LWIPDIR)/src/core/sys.c \
 
