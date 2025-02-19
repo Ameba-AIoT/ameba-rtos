@@ -2200,7 +2200,7 @@ static uint16_t app_bt_le_audio_encode_data_send(app_lea_iso_data_path_t *p_iso_
 
 static uint16_t app_bt_le_audio_encode_a2dp_data(app_lea_iso_data_path_t *p_iso_path, uint8_t out_channels)
 {
-	uint32_t time_stamp_before, queue_size = 0;;
+	uint32_t time_stamp_before, queue_size = 0;
 	uint8_t bytes_per_num = (DEFAULT_PCM_BIT_WIDTH / 8);
 	uint32_t encode_byte = 0, pcm_frame_size = 0;
 	uint32_t sample_rate = 0, frame_duration_us = 0;

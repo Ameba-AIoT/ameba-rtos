@@ -34,7 +34,6 @@ CSRC =  $(NETWORK)/sntp/sntp.c \
 		$(NETWORK)/dhcp/dhcps.c \
 		$(NETWORK)/httpc/httpc_tls.c \
 		$(NETWORK)/httpd/httpd_tls.c \
-		$(NETWORK)/mDNS/mDNSPlatform.c \
 		#$(NETWORK)/coap/sn_coap_ameba_port.c\
 		#$(NETWORK)/coap/sn_coap_builder.c\
 		#$(NETWORK)/coap/sn_coap_header_check.c\
