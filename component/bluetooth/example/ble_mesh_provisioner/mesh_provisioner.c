@@ -831,7 +831,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_config_client_model_app_callback(uint8_t evt
 	}
 	case RTK_BT_MESH_CONFIG_MODEL_NET_KEY_LIST: {
 		BT_LOGA("[APP] Config client model receive message:NET_KEY_LIST SUCCESS\r\n");
-		uint16_t *net_key_list = (uint16_t *)param;;
+		uint16_t *net_key_list = (uint16_t *)param;
 		if (net_key_list[0] == 1) {
 			uint16_t key_count = net_key_list[1];
 			BT_LOGA("NetKey List: num = %d!\r\n\t", key_count);

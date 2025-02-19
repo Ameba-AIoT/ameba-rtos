@@ -3335,7 +3335,7 @@ static uint16_t bt_stack_le_gap_set_scan_rsp_data(void *param, uint32_t param_le
 
 	if (cause) {
 		BT_LOGD("bt_stack_le_gap_set_scan_rsp_data: cause = %x \r\n", cause);
-		return RTK_BT_ERR_LOWER_STACK_API;;
+		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
 	return 0;
