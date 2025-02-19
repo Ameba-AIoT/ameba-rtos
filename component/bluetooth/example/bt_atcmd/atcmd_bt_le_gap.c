@@ -144,8 +144,8 @@ static uint8_t def_scan_rsp_data[] = {
 };
 
 static rtk_bt_le_adv_param_t def_adv_param = {
-	.interval_min = 0x30,
-	.interval_max = 0x60,
+	.interval_min = 200, //units of 0.625ms
+	.interval_max = 250,
 	.type = RTK_BT_LE_ADV_TYPE_IND,
 	.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
 	.peer_addr = {

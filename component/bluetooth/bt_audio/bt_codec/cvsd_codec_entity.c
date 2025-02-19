@@ -82,7 +82,7 @@ static uint16_t cvsd_audio_handle_media_data_packet(void *p_entity, uint8_t *pac
 	*pcodec_header_flag = 0;
 	paudio_param->channels = cvsd_codec_t.decoder_t.channel_num;
 	paudio_param->channel_allocation = 1;
-	paudio_param->rate = cvsd_codec_t.decoder_t.sample_rate;;
+	paudio_param->rate = cvsd_codec_t.decoder_t.sample_rate;
 	paudio_param->bits = 16;
 
 	return 0;

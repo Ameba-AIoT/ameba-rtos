@@ -71,7 +71,6 @@ APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
 	$(APP_LIB_DIR)/lib_websocket.a \
 	$(APP_LIB_DIR)/lib_ipnat.a \
 	$(APP_LIB_DIR)/lib_ipdnrd.a \
-	#$(APP_LIB_DIR)/lib_mdns.a \
 	#$(APP_LIB_DIR)/lib_coap.a \
 	#$(APP_LIB_DIR)/lib_eap.a \
 
