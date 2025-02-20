@@ -66,6 +66,7 @@ CSRC +=	$(DIR_TEST)/wififw_serial_io_test.c \
 	   $(DIR_TEST)/wififw_phycfg_test.c \
        $(DIR_TEST)/wififw_test.c
 endif
+endif
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #

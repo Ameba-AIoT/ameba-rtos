@@ -26,6 +26,7 @@ app_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km0_km4_ca32_app_mp.bin
 else
 app_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/km0_km4_app_mp.bin
 endif
+ota_all	:= $(CURRENT_PATH)/project_hp/asdk/image_mp/ota_all.bin
 
 else
 
@@ -38,9 +39,10 @@ else
 app_all	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_app.bin
 km0_image2_all_sec	:= $(CURRENT_PATH)/project_hp/asdk/image/km0_km4_app_sec.bin
 endif
+ota_all	:= $(CURRENT_PATH)/project_hp/asdk/image/ota_all.bin
 endif
 
-ota_all			:= $(CURRENT_PATH)/project_hp/asdk/image/ota_all.bin
+
 
 # Define the Rules to build the core targets
 all: REMOVE_TARGETS AP_TARGET_ALL LP_TARGET_ALL HP_TARGET_ALL 

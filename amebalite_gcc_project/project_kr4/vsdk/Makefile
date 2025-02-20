@@ -220,6 +220,17 @@ ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
 endif
 
 ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_app_mp.bin ]; then \
+		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_app_mp.bin; \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_app_mp_compress.bin $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
+	else \
+		if [ -f $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_dsp_app_mp.bin ]; then \
+			$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_dsp_app_mp.bin; \
+			$(COPY) $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_dsp_app_mp_compress.bin $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
+		fi \
+	fi
+else
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin ]; then \
 		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin; \
 		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image/kr4_km4_app_ns.bin; \
@@ -233,6 +244,16 @@ ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
 			$(COPY) $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns_compress.bin $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
 		fi \
 	fi
+endif
+else
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_app_mp.bin ]; then \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_app_mp.bin $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
+	else \
+		if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_mp.bin ]; then \
+			$(COPY) $(KM4_BUILDDIR)/asdk/image_mp/kr4_km4_dsp_app_mp.bin $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
+		fi \
+	fi
 else
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin ]; then \
 		$(COPY) $(KM4_BUILDDIR)/asdk/image/kr4_km4_app.bin $(KM4_BUILDDIR)/asdk/image/tmp_app.bin; \
@@ -243,6 +264,7 @@ else
 			$(COPY) $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns.bin $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
 		fi \
 	fi
+endif
 endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin ]; then \

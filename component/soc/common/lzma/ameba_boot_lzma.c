@@ -171,11 +171,11 @@ static void bootLzma_flash_range_erase(u32 start_addr, u32 erase_size_bytes)
  *  @param u16 totalFiles			:The total files of lzma available
  *  @param u8 isWriteNeeded			:Function switch to turn On/Off the write function, write is not needed during first decompression
  *
- *  @return u8 retval				:TRUE -> Decompression failure, could be Hash or LZMA; FALSE -> Decompression OK
+ *  @return u8 retval				:FALSE -> Decompression failure, could be Hash or LZMA; TRUE -> Decompression OK
  */
 static u8 bootLzma_decompress(/* void *adaptor,*/ u32 read_addr, u32 lzmafile_read_addr, u32 write_addr, u16 totalFiles, u8 isWriteNeeded)
 {
-	u8 retVal = FALSE;
+	u8 retVal = TRUE;
 	u8 loop_u8 = 0U;
 	u8 prop_size = ((BOOTLZMA_LZMA_PB * 5 + BOOTLZMA_LZMA_LP) * 9) + BOOTLZMA_LZMA_LC;
 	u8 *p_lzma_file_size_addr = (u8 *)(read_addr + BOOTLZMA_HDR_TOTALFILES_SIZE + BOOTLZMA_HDR_HASHOVER_SIZE);
@@ -189,7 +189,8 @@ static u8 bootLzma_decompress(/* void *adaptor,*/ u32 read_addr, u32 lzmafile_re
 
 	for (n_file = 0; n_file < totalFiles; n_file++) {
 		if (n_file % (totalFiles / 4) == 0) {
-			RTK_LOGI(NOTAG, "\r%% %d\r\n", n_file * 100 / totalFiles);
+			RTK_LOGI(TAG, "\r LZMA Decompress %d%%\r\n", n_file * 100 / totalFiles);
+			WDG_Refresh(IWDG_DEV);
 		}
 
 		curr_lzmaFileSize = 0; //Reset buffer, then calculate for current LZMA file size
@@ -213,7 +214,7 @@ static u8 bootLzma_decompress(/* void *adaptor,*/ u32 read_addr, u32 lzmafile_re
 									 p_curr_lzma_file_addr, LZMA_PROPS_SIZE, LZMA_FINISH_ANY, &lzma_status);
 			if (result != SZ_OK) {
 				RTK_LOGE(TAG, "\r\n LZMA Decode Error: Error Code is %d \r\n", result);
-				retVal = TRUE;
+				retVal = FALSE;
 				break;
 			}
 
@@ -226,7 +227,7 @@ static u8 bootLzma_decompress(/* void *adaptor,*/ u32 read_addr, u32 lzmafile_re
 			}
 		} else {
 			RTK_LOGE(TAG, "\r\n LZMA Header Error: Data is not in LZMA Format \r\n");
-			retVal = TRUE;
+			retVal = FALSE;
 			break;
 		}
 	}
@@ -283,6 +284,9 @@ u8 bootLzma_main_function(u32 read_addr, u32 write_addr_st, u32 write_addr_end)
 
 	/* Step 4. 2nd Decompression and write decompressed data */
 	retVal = bootLzma_decompress(read_addr, lzmafile_read_addr, write_addr_st, totalFiles, TRUE);
+	if (retVal == TRUE) {
+		RTK_LOGI(TAG, "LZMA Decompress done\r\n");
+	}
 
 	/* invalid physical address and logical address in flash */
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
