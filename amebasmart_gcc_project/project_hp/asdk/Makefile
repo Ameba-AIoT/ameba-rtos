@@ -305,6 +305,17 @@ ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
 endif
 
 ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_mp.bin ]; then \
+		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_mp.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_mp_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+	else \
+		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin ]; then \
+			$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin; \
+			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		fi \
+	fi
+else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
 		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin; \
 		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_ns.bin; \
@@ -318,6 +329,16 @@ ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
 			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 		fi \
 	fi
+endif
+else
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_mp.bin ]; then \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app_mp.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+	else \
+		if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin ]; then \
+			$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+		fi \
+	fi
 else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin ]; then \
 		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_ca32_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
@@ -329,6 +350,8 @@ else
 		fi \
 	fi
 endif
+endif
+
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all.bin; \
@@ -337,6 +360,8 @@ ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+	fi
+	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	fi
 endif
