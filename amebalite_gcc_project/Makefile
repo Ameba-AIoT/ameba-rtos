@@ -29,14 +29,17 @@ km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image_mp/km4_boot_all_mp.bin
 else
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image_mp/km4_boot_all.bin
 endif
+ota_all		 := $(CURRENT_PATH)/project_km4/asdk/image_mp/ota_all.bin
 else ifeq ($(CONFIG_DSP_WITHIN_APP_IMG),y)
 app_all  := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_dsp_app.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin
+ota_all		 := $(CURRENT_PATH)/project_km4/asdk/image/ota_all.bin
 else
 app_all	 := $(CURRENT_PATH)/project_km4/asdk/image/kr4_km4_app.bin
 km4_boot_all := $(CURRENT_PATH)/project_km4/asdk/image/km4_boot_all.bin
-endif
 ota_all		 := $(CURRENT_PATH)/project_km4/asdk/image/ota_all.bin
+endif
+
 
 # Define the Rules to build the core targets
 all: REMOVE_TARGETS KM4_TARGET_ALL KR4_TARGET_ALL

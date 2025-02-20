@@ -189,7 +189,8 @@ u8 ota_checkimage_layout(update_ota_target_hdr *pOtaTgtHdr)
 
 		if ((end_addr - start_addr) < pOtaTgtHdr->FileImgHdr[index].ImgLen) {
 			ota_printf(_OTA_ERR_, "ImgID: %lu, OTA%d start addr: 0x%08X, end addr: 0x%08X, OTA image Length(%d) > Layout(%d)!!!\n",
-					   pOtaTgtHdr->FileImgHdr[index].ImgID, targetIdx + 1, (unsigned int)start_addr, (unsigned int)end_addr, pOtaTgtHdr->FileImgHdr[index].ImgLen, (end_addr - start_addr));
+					   pOtaTgtHdr->FileImgHdr[index].ImgID, targetIdx + 1, (unsigned int)start_addr, (unsigned int)end_addr, pOtaTgtHdr->FileImgHdr[index].ImgLen,
+					   (end_addr - start_addr));
 			return _FALSE;
 		}
 	}
@@ -261,8 +262,9 @@ u32 ota_update_manifest(update_ota_target_hdr *pOtaTgtHdr, u32 ota_target_index,
 	ota_printf(_OTA_INFO_, "update addr: 0x%08x\n", (unsigned int)addr);
 	ota_printf(_OTA_INFO_, "update version major: %d, minor: %d\n", manifest->MajorImgVer, manifest->MinorImgVer);
 
-	/*write the manifest finally*/
-	flash_stream_write(&flash, addr - SPI_FLASH_BASE, sizeof(Manifest_TypeDef), (u8 *)manifest);
+	/*write the manifest, write pattern finally*/
+	flash_stream_write(&flash, addr - SPI_FLASH_BASE + 8, sizeof(Manifest_TypeDef) - 8, (u8 *)manifest + 8);
+	flash_stream_write(&flash, addr - SPI_FLASH_BASE, 8, (u8 *)manifest->Pattern);
 
 	if (pOtaTgtHdr->FileImgHdr[index].ImgID == OTA_IMGID_DSP) {
 		goto finish;
