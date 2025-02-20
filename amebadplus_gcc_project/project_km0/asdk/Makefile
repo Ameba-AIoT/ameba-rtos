@@ -215,11 +215,23 @@ ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
 endif
 
 ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image_mp/km0_km4_app_mp.bin ]; then \
+		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image_mp/km0_km4_app_mp.bin; \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image_mp/km0_km4_app_mp_compress.bin $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
+	fi
+else
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin ]; then \
 		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin; \
 		$(COMPRESSTOOL) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns.bin; \
 		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_compress.bin $(KM4_BUILDDIR)/asdk/image/tmp_app.bin; \
 		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns_compress.bin $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
+	fi
+endif
+else
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image_mp/km0_km4_app_mp.bin ]; then \
+		$(COPY) $(KM4_BUILDDIR)/asdk/image_mp/km0_km4_app_mp.bin $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
 	fi
 else
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/km0_km4_app.bin ]; then \
@@ -227,16 +239,23 @@ else
 		$(COPY) $(KM4_BUILDDIR)/asdk/image/km0_km4_app_ns.bin $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
 	fi
 endif
+endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app.bin $(KM4_BUILDDIR)/asdk/image/km4_boot_all.bin; \
 		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin $(KM4_BUILDDIR)/asdk/image/km4_boot_all_ns.bin; \
 	fi
 else
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin ]; then \
+		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image_mp/tmp_app.bin; \
+	fi
+else
 	@if [ -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app.bin; \
 		$(OTAPREPENDTOOL) $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin; \
 	fi
+endif
 endif
 	@rm -f $(KM4_BUILDDIR)/asdk/image/tmp_app.bin
 	@rm -f $(KM4_BUILDDIR)/asdk/image/tmp_app_ns.bin

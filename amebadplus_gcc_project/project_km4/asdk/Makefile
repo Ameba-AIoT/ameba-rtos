@@ -461,17 +461,30 @@ ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
 endif
 	
 ifeq ($(CONFIG_COMPRESS_OTA_IMG), y)
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin ]; then \
+		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin; \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+	fi
+else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
 		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin; \
 		$(COMPRESSTOOL) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin; \
 		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
 		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns_compress.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	fi
+endif
+else
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin ]; then \
+		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_mp.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+	fi
 else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin ]; then \
 		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app.bin $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
 		$(COPY) $(IMAGE_TARGET_FOLDER)/km0_km4_app_ns.bin $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	fi
+endif
 endif
 ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
