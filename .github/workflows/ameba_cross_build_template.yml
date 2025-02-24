@@ -1,0 +1,98 @@
+name: Unified Cross Platform and Shell Build Template
+
+on:
+  workflow_call:
+    inputs:
+      ic_name:
+        required: true
+        type: string
+      build_stage_name:
+        required: true
+        type: string
+
+jobs:
+  cross-platform-build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            shell: bash
+
+#          - os: macos-latest
+#            shell: bash
+
+#          - os: windows-latest
+#            shell: bash
+            
+#          - os: windows-latest
+#            shell: cmd
+
+#          - os: windows-latest
+#            shell: powershell
+
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Platform prepare and setup
+      shell: bash
+      run: |
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build jq
+          sudo ln -sf /bin/bash /bin/sh
+        elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+          brew update
+          brew install cmake ninja jq
+        else
+          choco install cmake ninja wget jq -y --no-progress
+        fi
+
+        python -m pip install --upgrade pip
+        pip install -r tools/requirements.txt
+
+    - name: Json file parser
+      id: build_config
+      shell: bash
+      run: |        
+        # 检查文件是否存在
+        JSON_FILE=.github/workflows/ameba_build_config.json
+        if [ ! -f "$JSON_FILE" ]; then
+          echo "::error file=ameba_build_config.json::配置文件不存在"
+          exit 1
+        fi
+        
+        # 验证JSON格式
+        if ! jq empty $JSON_FILE; then
+          echo "::error file=$JSON_FILE::无效的JSON格式"
+          exit 1
+        fi
+        
+        # 提取嵌套数据
+        echo "ic ${{ inputs.ic_name }} "
+        echo "ic ${{ inputs.build_stage_name }} "
+        echo "ic ${{ github.event.inputs.build_stage_name }} "
+        BUILD_CONFIG=$(jq -r --arg ic "${{ inputs.ic_name }}" --arg stage "${{ inputs.build_stage_name }}" '.[$ic][$stage]' $JSON_FILE)
+        echo "build_config=$BUILD_CONFIG" >> $GITHUB_OUTPUT
+
+    - name: Menuconfig   
+      run: |        
+        echo "Menuconfig Current shell is ${{ matrix.shell }}"
+        echo "${{ inputs.ic_name }} stage ${{ inputs.build_stage_name }} build config ${{ steps.build_config.outputs.build_config }}"
+        
+        cd ${{ inputs.ic_name }}_gcc_project
+        python menuconfig.py -f ${{ steps.build_config.outputs.build_config }}
+      if: ${{ inputs.build_stage_name != 'B0' }}
+        
+    - name: Build
+      run: |
+        echo "Build Current shell is ${{ matrix.shell }}"
+        cd ${{ inputs.ic_name }}_gcc_project
+        python build.py
+
+    - name: Post-Build Cleanup
+      run: |
+        echo "Post-Build Current shell is ${{ matrix.shell }}"
+        cd ${{ inputs.ic_name }}_gcc_project
+        python build.py -c
