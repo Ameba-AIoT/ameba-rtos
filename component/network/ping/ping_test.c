@@ -10,7 +10,7 @@
 #define printf	DiagPrintf_minimal
 
 #define PING_IP		"192.168.159.1"
-#define PING_TO		1000
+#define PING_TO		3000
 #define PING_ID		0xABCD
 #undef BUF_SIZE
 #define BUF_SIZE	10000
