@@ -10,10 +10,8 @@
 #include "atcmd_service.h"
 
 #ifdef CONFIG_SUPPORT_ATCMD
-
-#ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
-#endif
+
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
 #endif
@@ -42,10 +40,8 @@ log_init_t log_init_table[] = {
 	at_sys_init,
 
 #ifdef CONFIG_WLAN
-#ifndef CONFIG_MP_INCLUDED
-	at_mqtt_init,
-#endif
 #ifdef CONFIG_LWIP_LAYER
+	at_mqtt_init,
 	at_tcpip_init,
 #endif
 #endif

@@ -54,11 +54,12 @@ void rtw_sdio_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 
 	mutex_lock(&priv->lock);
 
+	priv->tx_avail_int_triggered = 0;
+
 	// check if hardware tx fifo page is enough
 	while (priv->SdioTxBDFreeNum < 1) {
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		if (try_cnt ++ > 0) {
-			priv->tx_avail_int_triggered = 0;
 			if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(1000))) {
 				dev_err(&priv->func->dev, "%s: TXBD unavailable, TX FAIL\n", __FUNCTION__);
 				goto exit;
@@ -118,10 +119,6 @@ void rtw_sdio_recv_data_process(void *intf_priv)
 			return;
 		}
 	}
-
-	/* disable RX_REQ interrupt */
-	himr = cpu_to_le32(sdio_priv->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK));
-	sdio_local_write(sdio_priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
 
 	do {
 		/* validate RX_LEN_RDY before reading RX0_REQ_LEN */
