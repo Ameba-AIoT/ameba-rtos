@@ -15,12 +15,10 @@ vpath %.c $(DIR) $(shell find $(DIR) -type d)
 #*****************************************************************************#
 #                               Source FILE LIST                              #
 #*****************************************************************************#
-ifneq ($(CONFIG_MP_INCLUDED), y)
 ifeq ($(CONFIG_WLAN),y)
 # AP
 ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
 CSRC = $(DIR)/library/net_sockets.c
-endif
 endif
 endif
 

@@ -21,8 +21,6 @@ extern "C" {
 #include "MQTTConnect.h"
 #include "os_wrapper.h"
 
-#ifndef CONFIG_MP_INCLUDED
-
 /* Remain 30 bytes for command-header and other parameters. */
 #define MQTT_SINGLE_STR_LEN         (UART_LOG_CMD_BUFLEN - 30)
 
@@ -157,7 +155,6 @@ extern int keepalive(MQTTClient *c);
 extern int sendPacket(MQTTClient *c, int length, Timer *timer);
 extern int readPacket(MQTTClient *c, Timer *timer);
 extern int deliverMessage(MQTTClient *c, MQTTString *topicName, MQTTMessage *message);
-#endif /* CONFIG_MP_INCLUDED */
 
 #if defined(__cplusplus)
 }

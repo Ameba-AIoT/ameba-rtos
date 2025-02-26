@@ -20,7 +20,8 @@
 #include "wifi_conf.h"
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
+#ifdef CONFIG_LWIP_LAYER
+
 static MQTT_RESULT_ENUM mqtt_get_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK **mqttCb, u8 needInit);
 static void mqtt_del_handle_cb(MQTT_CONTROL_BLOCK **mqttCb);
 static void mqtt_set_handle_cb(u8 tcpConnId, MQTT_CONTROL_BLOCK *mqttCb);
@@ -2012,4 +2013,4 @@ void at_mqtt_init(void)
 	atcmd_service_add_table(at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
 }
 
-#endif /* CONFIG_MP_INCLUDED */
+#endif
