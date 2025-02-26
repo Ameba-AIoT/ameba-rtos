@@ -46,7 +46,7 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 {
 	struct inic_sdio *priv;
 	u8 data[4];
-	u32 value, freepage;
+	u32 value, himr, freepage;
 
 	priv = (struct inic_sdio *) sdio_get_drvdata(func);
 
@@ -88,6 +88,10 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 #endif
 		if (priv->sdio_hisr & SDIO_HISR_RX_REQUEST) {
 			priv->sdio_hisr ^= SDIO_HISR_RX_REQUEST;
+
+			/* disable RX_REQ interrupt */
+			himr = priv->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK);
+			sdio_local_write(priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
 
 			//schedule_work(&(priv->rx_work));
 			//up(&priv->sdio_rx_sema);
@@ -132,8 +136,10 @@ void rtw_sdio_init_txavailbd_threshold(struct inic_sdio *priv)
 
 	freeBDNum = sdio_cmd53_read4byte_local(priv, SDIO_REG_FREE_TXBD_NUM);
 
-	txBDTh_l = freeBDNum - 1;
-	txBDTh_h = freeBDNum / 2;
+	/* When actual FREE TXBD NUM changes from "< txBDTh_l" to ">= txBDTh_h", TXBD_AVAIL interrupt triggers.
+	Because driver would keep at least 1 TXBD available, so the actual FREE TXBD NUM would >= 1*/
+	txBDTh_l = 2;
+	txBDTh_h = 3;
 
 	rtw_write16(priv, SDIO_REG_AVAI_BD_NUM_TH_L, txBDTh_l);
 	rtw_write16(priv, SDIO_REG_AVAI_BD_NUM_TH_H, txBDTh_h);

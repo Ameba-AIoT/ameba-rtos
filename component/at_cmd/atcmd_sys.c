@@ -11,9 +11,7 @@
 #include "ameba_rtos_version.h"
 #include <build_info.h>
 #include "atcmd_service.h"
-#ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
-#endif
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
 #endif
@@ -389,9 +387,7 @@ void at_list(void *arg)
 	/* TCP/IP commands. */
 	at_printf("TCP/IP AT Command:\r\n");
 	print_lwip_at();
-#endif
 
-#ifndef CONFIG_MP_INCLUDED
 	/* MQTT commands. */
 	at_printf("MQTT AT command:\r\n");
 	print_mqtt_at();
