@@ -26,11 +26,9 @@
 //#define CONFIG_WTN_JUST_LINKAP
 #ifndef CONFIG_WIFI_TUNNEL
 //#define CONFIG_NAN
+#endif
 
-#if (defined(CONFIG_FULLMAC_MENU)) && defined(CONFIG_NAN)
 #define CONFIG_MCC_MODE
-#endif
-#endif
 
 #ifdef CONFIG_NAN
 #define NET_IF_NUM	3
@@ -43,7 +41,7 @@
 
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
-#define AP_STA_NUM	5
+#define MAX_AP_CLIENT_NUM	5
 #define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
 

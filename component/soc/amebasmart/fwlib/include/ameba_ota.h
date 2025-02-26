@@ -55,11 +55,11 @@
 
 #define OTA_IMAG			0								/*identify the OTA image*/
 
-#define OTA_LOCAL			0
 #define OTA_HTTP			1
 #define OTA_HTTPS			2
-#define OTA_SDCARD			3
-#define OTA_VFS				4
+#define OTA_USER			3
+#define OTA_SDCARD			4
+#define OTA_VFS				5
 
 /**
   * @}
@@ -159,7 +159,8 @@ typedef struct {
 	u8 SigFg;		/*!< Specifies the Flag that Manifest received finished. */
 	u8 SkipBootOTAFg;	/*!< Specifies the Flag that skip update the bootloader. */
 	u8 FirstBufFg;		/*!< Specifies the Flag that exist a buffer before downloading. */
-	u8 IsGetHdr;		/*!< Specifies the Flag that get ota target header. */
+	u8 IsGetOTAHdr;		/*!< Specifies the Flag that get ota target header. */
+	u8 IsDnldInit;		/*!< Specifies the Flag that download initialize. */
 	u8 targetIdx;		/*!< Specifies the ota target index. */
 	int index;			/*!< Specifies the current image index. */
 } update_ota_ctrl_info;

@@ -68,6 +68,9 @@ RingBuffer *at_spi_rx_ring_buf = NULL;
 RingBuffer *at_spi_tx_ring_buf = NULL;
 
 extern char g_tt_mode;
+extern char g_tt_mode_check_watermark;
+extern char g_tt_mode_indicate_high_watermark;
+extern char g_tt_mode_indicate_low_watermark;
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
 extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
@@ -204,6 +207,15 @@ void atcmd_spi_task(void)
 			u32 space = 0;
 			if (g_tt_mode) {
 				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+
+				if (g_tt_mode_check_watermark) {
+					if (space - recv_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
+						g_tt_mode_indicate_high_watermark = 1;
+						g_tt_mode_indicate_low_watermark = 0;
+						at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+					}
+				}
+
 				if (space >= recv_len) {
 					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
 					rtos_sema_give(atcmd_tt_mode_sema);
@@ -291,6 +303,15 @@ void atcmd_spi_task(void)
 			u32 space = 0;
 			if (g_tt_mode) {
 				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+
+				if (g_tt_mode_check_watermark) {
+					if (space - recv_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
+						g_tt_mode_indicate_high_watermark = 1;
+						g_tt_mode_indicate_low_watermark = 0;
+						at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+					}
+				}
+
 				if (space >= recv_len) {
 					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
 					rtos_sema_give(atcmd_tt_mode_sema);

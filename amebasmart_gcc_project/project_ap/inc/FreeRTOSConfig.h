@@ -95,7 +95,7 @@
 #if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_SINGLE_CORE_WIFI)
 #define configTIMER_QUEUE_LENGTH				(5 + 64)
 #else
-#define configTIMER_QUEUE_LENGTH				5
+#define configTIMER_QUEUE_LENGTH				15 /* Temporarily solve the ca32-smp timer Create and delete hang problem */
 #endif
 #define configTIMER_TASK_STACK_DEPTH			( configMINIMAL_STACK_SIZE * 2 )
 

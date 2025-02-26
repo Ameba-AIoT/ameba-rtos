@@ -463,6 +463,7 @@ else()
         ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_bap.c
         ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_cap.c
         ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_tmap.c
+        ${c_CMPT_BLUETOOTH_DIR}/api/rtk_stack/rtk_stack_gmap.c
     )
 endif()
 
@@ -704,9 +705,15 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_host p_SCOPE interface
 	${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/common/trace_uart.c
 	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/rtk_bt_host_api.c
 	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/rtk_stack_example.c
+	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/spi_protocol.c
+	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/spi_if.c
 	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/h4.c
 	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/uart_if.c
 	${c_CMPT_BLUETOOTH_DIR}/example/bt_host/rtos_driver/os_if.c
+)
+
+ameba_target_include(src_${d_MCU_PROJECT_NAME}_bluetooth_host p_SCOPE interface
+    ${c_CMPT_BLUETOOTH_DIR}/driver/bt_inic
 )
 
 #--------------------------#

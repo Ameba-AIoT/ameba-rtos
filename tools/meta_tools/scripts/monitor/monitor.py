@@ -33,7 +33,7 @@ key_description = miniterm.key_description
 
 TOOLCHAIN_DEFAULT_PATH_WINDOWS = r'C:\msys64\opt\rtk-toolchain'
 TOOLCHAIN_DEFAULT_PATH_LINUX = '/opt/rtk-toolchain'
-SDK_QUERY_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../query.json')
+SDK_QUERY_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'query.json')
 
 
 class Monitor():

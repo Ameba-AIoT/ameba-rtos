@@ -27,6 +27,7 @@
 #include <lwip/sockets.h>
 #include "lwip_netconf.h"
 #include "log.h"
+#include "wifi_intf_drv_to_app_basic.h"
 
 #define WTN_BROADCAST_PORT 12345
 
@@ -73,8 +74,6 @@ struct wtn_buf_node *dequeue_wtn_buf(struct __queue *p_queue)
 
 int wtn_socket_send(u8 *buf, u32 len)
 {
-	/*buf get from NP, need dcache invalidate first*/
-	DCache_Invalidate((u32)buf, len);
 	u8 *ip = 0;
 	u8 invalid_ip[4] = {0};
 	u8 *buf_copy = NULL;
@@ -120,10 +119,12 @@ void wtn_bcmc_socket_handler(void *param)
 	u8 *ip = 0;
 	u8 invalid_ip[4] = {0};
 	int bcmc_socket_fd = -1;
+	int softap_bcmc_socket_fd = -1;
 	int broadcast_enable = 1;
 	int client_len;
 	struct sockaddr_in bcmc_server_addr;
 	struct sockaddr_in bcmc_client_addr;
+	struct sockaddr_in softap_bcmc_addr;
 	struct timeval timeout;
 	u8 *buf = NULL;
 	int opt = 1;
@@ -137,6 +138,32 @@ void wtn_bcmc_socket_handler(void *param)
 			goto exit;
 		}
 		ip = (u8 *)LwIP_GetIP(0);
+	}
+
+	/*when rnat enabled, check whether softap ap has started*/
+	if (wifi_user_config.wtn_rnat_en) {
+		ip = (u8 *)LwIP_GetIP(1);
+		while (memcmp(ip, invalid_ip, 4) == 0) {
+			rtos_time_delay_ms(1000);
+			ip = (u8 *)LwIP_GetIP(1);
+		}
+		/*create the softap bcmc socket for forwarding bcmc socket pkt*/
+		softap_bcmc_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+		if (softap_bcmc_socket_fd < 0) {
+			goto exit;
+		}
+
+		setsockopt(softap_bcmc_socket_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &opt, sizeof(opt));
+
+		if (setsockopt(softap_bcmc_socket_fd, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) < 0) {
+			closesocket(softap_bcmc_socket_fd);
+			goto exit;
+		}
+
+		memset(&softap_bcmc_addr, 0, sizeof(softap_bcmc_addr));
+		softap_bcmc_addr.sin_family = AF_INET;
+		softap_bcmc_addr.sin_addr.s_addr = (u32)(ip[0] | ip[1] << 8 | ip[2] << 16 | (0xFF) << 24);
+		softap_bcmc_addr.sin_port = htons(WTN_BROADCAST_PORT);
 	}
 
 	/*bind broadcast socket*/
@@ -204,6 +231,10 @@ void wtn_bcmc_socket_handler(void *param)
 					memcpy(&wtn_server_port, buf + 10, 4);
 					wtn_server_port = htonl(wtn_server_port);
 				}
+				if (wifi_user_config.wtn_rnat_en) {
+					/*forward this packet by softap port*/
+					sendto(softap_bcmc_socket_fd, buf, ret, 0, (struct sockaddr *)&softap_bcmc_addr, sizeof(softap_bcmc_addr));
+				}
 			}
 		}
 	}
@@ -214,7 +245,9 @@ exit:
 	if (bcmc_socket_fd >= 0) {
 		closesocket(bcmc_socket_fd);
 	}
-
+	if (softap_bcmc_socket_fd >= 0) {
+		closesocket(softap_bcmc_socket_fd);
+	}
 	rtos_task_delete(NULL);
 }
 

@@ -50,6 +50,7 @@ set(
 	${BT_API_DIR}/rtk_bt_bap.c
 	${BT_API_DIR}/rtk_bt_cap.c
 	${BT_API_DIR}/rtk_bt_tmap.c
+	${BT_API_DIR}/rtk_bt_gmap.c
 )
 
 if(CONFIG_BT_ZEPHYR)
@@ -121,6 +122,7 @@ else()
         ${BT_API_DIR}/rtk_stack/rtk_stack_bap.c
         ${BT_API_DIR}/rtk_stack/rtk_stack_cap.c
         ${BT_API_DIR}/rtk_stack/rtk_stack_tmap.c
+        ${BT_API_DIR}/rtk_stack/rtk_stack_gmap.c
     )
 endif()
 

@@ -71,7 +71,7 @@ static inline void transmit_chars(void)
 
 	if (!HCI_BT_KEEP_WAKE) {
 		/* acquire host wake bt */
-		set_reg_value(0x41008280, BIT13 | BIT14, 3); /* enable HOST_WAKE_BT No GPIO | HOST_WAKE_BT */
+		set_reg_value(0x41008280, BIT13, 1); /* enable HOST_WAKE_BT */
 		while (1) {
 			if ((HAL_READ32(0x41008284, 0) & (BIT3 | BIT2 | BIT1 | BIT0)) == 5) { /* 0x41008284[3:0] */
 				/* bt active */
@@ -91,7 +91,7 @@ static inline void transmit_chars(void)
 
 	if (!HCI_BT_KEEP_WAKE) {
 		/* release host wake bt */
-		set_reg_value(0x41008280, BIT13 | BIT14, 0); /* disable HOST_WAKE_BT No GPIO | HOST_WAKE_BT */
+		set_reg_value(0x41008280, BIT13, 0); /* disable HOST_WAKE_BT */
 	}
 
 	if (g_uart->tx_len == 0) {

@@ -475,6 +475,7 @@ void LwIP_ethernetif_recv(uint8_t idx, int total_len)
 	ethernetif_recv(&xnetif[idx], total_len);
 }
 
+SRAM_WLAN_CRITICAL_CODE_SECTION
 void LwIP_ethernetif_recv_inic(uint8_t idx, struct pbuf *p_buf)
 {
 	err_enum_t error = ERR_OK;

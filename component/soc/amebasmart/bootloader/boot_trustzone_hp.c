@@ -59,6 +59,7 @@
 #define SCB_AIRCR_BFHFNMINS_VAL 1
 
 //static const char *const TAG = "BOOT";
+#define MPC_IDAU_ADDR_MASK(x) 	((x) & 0x0FFFFFFF)
 
 BOOT_RAM_TEXT_SECTION
 static void BOOT_SecureChip_MPCCfg(void)
@@ -82,16 +83,21 @@ static void BOOT_SecureChip_MPCCfg(void)
 			}
 
 			/* set MPC */
-			MPC->MPC_Entry[idex].IDAU_BARx = Config[idex].Start;
-			MPC->MPC_Entry[idex].IDAU_LARx = Config[idex].End;
+			MPC->MPC_Entry[idex].IDAU_BARx = MPC_IDAU_ADDR_MASK(Config[idex].Start);
+			/* Note: __non_secure_psram_end__ maybe not real, use the chipinfo value. */
+			if (Config[idex].End == (u32)__non_secure_psram_end__ - 1) {
+				MPC->MPC_Entry[idex].IDAU_LARx = MPC_IDAU_ADDR_MASK(ChipInfo_PsramBoundary() - 1);
+			} else {
+				MPC->MPC_Entry[idex].IDAU_LARx = MPC_IDAU_ADDR_MASK(Config[idex].End);
+			}
 			MPC->IDAU_CTRL |= BIT(idex);
 		}
 
 		if (MPC == KM4_MPC1) {
 			if (Boot_AP_Enbale == DISABLE) {
 				/* entry7 is reserved for AP ATF for security reason, but shall be set when AP disabled */
-				MPC->MPC_Entry[7].IDAU_BARx = 0x00180000;
-				MPC->MPC_Entry[7].IDAU_LARx = 0x00600000 - 1;
+				MPC->MPC_Entry[7].IDAU_BARx = MPC_IDAU_ADDR_MASK((u32)__ca32_bl1_dram_start__ - 0x20);
+				MPC->MPC_Entry[7].IDAU_LARx = MPC_IDAU_ADDR_MASK((u32)__ca32_fip_dram_start__ + CA32_FIP_MAX_SIZE - 1);
 				MPC->IDAU_CTRL |= BIT(7);
 				MPC->IDAU_LOCK = 1;
 			} else {

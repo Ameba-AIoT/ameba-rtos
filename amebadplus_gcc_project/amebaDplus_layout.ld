@@ -9,7 +9,7 @@
 #define SRAM_BASE					(0x20000000)
 #define SRAM_END					(0x20080000)
 #define PSRAM_BASE					(0x60000000)
-#define PSRAM_KR4_END				(0x60400000)
+#define PSRAM_END					(0x60400000)
 
 /* layout configuration */
 #define TZ_NSC_SIZE 	 			(4)
@@ -94,7 +94,7 @@ IMG3 size is 0.    │  │     KM4_IMG3(44K)    │    │
 #define PSRAM_KM4_IMG2_SIZE			(KBYTES(3220) - (PSRAM_TZ_NSC_SIZE + PSRAM_TZ_ENTRY_SIZE + PSRAM_KM4_IMG3_SIZE))
 #define KM4_IMG2_PSRAM_START		(KM4_PSRAM_TZ_SECURE_START + PSRAM_KM4_IMG3_SIZE)	/* 0x60010000 ~ 0x60325000 | 0x60000000 ~ 0x60325000*/
 #define KM0_IMG2_PSRAM_START		(KM4_IMG2_PSRAM_START + PSRAM_KM4_IMG2_SIZE) 	 	/* 0x60325000 ~ 0x60400000 | 0x60325000 ~ 0x60400000*/
-#define PSRAM_KM0_IMG2_SIZE			(PSRAM_KR4_END - KM0_IMG2_PSRAM_START)
+#define PSRAM_KM0_IMG2_SIZE			(PSRAM_END - KM0_IMG2_PSRAM_START)
 
 MEMORY
 {
@@ -194,6 +194,7 @@ __km4_psram_tz_nsc_start__ = ORIGIN(KM4_BD_PSRAM_TZ_NSC) - IMAGE_HEADER_LEN;
 __km4_psram_tz_entry_start__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) ;
 __km4_psram_tz_entry_end__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) + LENGTH(KM4_BD_PSRAM_TZ_ENTRY);
 __km4_bd_psram_start__ = ORIGIN(KM4_BD_PSRAM) - IMAGE_HEADER_LEN;
+__non_secure_psram_end__ = PSRAM_END;
 
 /* mp used */
 __km4_bd_boot_download_addr__ = 0x30012000;

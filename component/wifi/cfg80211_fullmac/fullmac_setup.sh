@@ -2,7 +2,6 @@
 
 sed -i 's/CONFIG_FULLMAC_HCI_IPC = y/CONFIG_FULLMAC_HCI_IPC = n/g' Makefile
 sed -i 's/CONFIG_FULLMAC_BRIDGE = y/CONFIG_FULLMAC_BRIDGE = n/g' Makefile
-sed -i 's/CONFIG_FULLMAC_BRIDGE_LITE = y/CONFIG_FULLMAC_BRIDGE_LITE = n/g' Makefile
 
 if [ "$1" == "spi" ]; then
 	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = y/CONFIG_FULLMAC_HCI_SDIO = n/g' Makefile
@@ -70,6 +69,26 @@ if [[ "$1" == "sdio" ]]; then
             echo "AMEBAGREEN2 with FW DOWNLOAD select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
             sed -i 's/#undef CONFIG_FW_DOWNLOAD/#define CONFIG_FW_DOWNLOAD 1/g' ./common/autoconf.h
+            ;;
+        *)
+            echo "Invalid selection"
+            ;;
+    esac
+fi
+
+if [[ "$1" == "spi" ]]; then
+	sed -i 's/#define CONFIG_AMEBADPLUS 1/#undef CONFIG_AMEBADPLUS/g' ./common/autoconf.h
+	sed -i 's/#define CALCULATE_FREE_TXBD 1/#undef CALCULATE_FREE_TXBD/g' ./common/autoconf.h
+
+	echo "choose target IC:"
+	echo "1) AMEBADPLUS"
+
+	read -p "choose target IC: " choice
+    case $choice in
+        1)
+            echo "AMEBADPLUS select"
+            sed -i 's/#undef CONFIG_AMEBADPLUS/#define CONFIG_AMEBADPLUS 1/g' ./common/autoconf.h
+            sed -i 's/#undef CALCULATE_FREE_TXBD/#define CALCULATE_FREE_TXBD 1/g' ./common/autoconf.h
             ;;
         *)
             echo "Invalid selection"

@@ -129,7 +129,7 @@ void shell_loguartRx_dispatch(void)
 				shell_ctl.ExecuteCmd = FALSE;
 				break;
 			}
-#ifdef CONFIG_INIC_INTF_IPC
+#ifdef CONFIG_WHC_INTF_IPC
 			if ((shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~')) {
 				i = i + 1; /* remove flag */
 				CpuId = NP_CPU_ID;	/* CMD should processed by KM4 */

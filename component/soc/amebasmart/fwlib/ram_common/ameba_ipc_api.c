@@ -22,6 +22,9 @@ rtos_sema_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 
 void (*ipc_delay)(uint32_t);
 
+void (*ipc_enter)(u32);
+void (*ipc_exit)(u32);
+
 /**@}*/
 
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
@@ -252,6 +255,17 @@ PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
 }
 
 /**
+  * @brief  Set delay function for ipc sema.
+  * @param  pfunc: delay function.
+  * @retval   None
+  */
+void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
+{
+	ipc_enter = pfunc1;
+	ipc_exit = pfunc2;
+}
+
+/**
   * @brief  Get core-to-core hardware semaphone.
   * @param  SEM_Idx: 0~15.
   * @param  timeout: timeout to wait. 0 means never wait, 0xffffffff means waiting permanently.
@@ -262,6 +276,10 @@ u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 	u32 Sema_Stat;
 	/* Check the parameters */
 	assert_param(IS_IPC_VALID_SEMID(SEM_Idx));
+
+	if (ipc_enter) {
+		ipc_enter(RTOS_CRITICAL_SEMA);
+	}
 
 	if ((SYSCFG_RLVersion()) >= SYSCFG_CUT_VERSION_D) {
 
@@ -329,6 +347,10 @@ u32 IPC_SEMFree(u32 SEM_Idx)
 		HAL_WRITE32(IPC_SEMA_BASE, (SEM_Idx * 4), 1);
 	} else {
 		HAL_WRITE16(IPC_IPC_SEMA_BASE, 0x0, HAL_READ16(IPC_IPC_SEMA_BASE, 0x0) & (~ BIT(SEM_Idx)));
+	}
+
+	if (ipc_exit) {
+		ipc_exit(RTOS_CRITICAL_SEMA);
 	}
 
 	return TRUE;

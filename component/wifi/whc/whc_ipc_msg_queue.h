@@ -15,8 +15,8 @@
   ******************************************************************************
   */
 
-#ifndef __INIC_IPC_MSG_QUEUE_H__
-#define __INIC_IPC_MSG_QUEUE_H__
+#ifndef __WHC_IPC_MSG_QUEUE_H__
+#define __WHC_IPC_MSG_QUEUE_H__
 /* -------------------------------- Includes -------------------------------- */
 /* external head files */
 #include "os_wrapper.h"
@@ -36,10 +36,10 @@ struct ipc_msg_q_priv {
 };
 
 /* -------------------------- Function declaration -------------------------- */
-void inic_msg_q_init(void);
-sint inic_msg_enqueue(struct inic_ipc_ex_msg *p_ipc_msg);
-void inic_msg_q_deinit(void);
-u8 inic_msg_get_queue_status(void);
-void inic_ipc_send_msg(u32 event_num, u32 msg_addr, u32 msg_queue_status, u32 wlan_idx);
+void whc_msg_q_init(void);
+sint whc_msg_enqueue(struct whc_ipc_ex_msg *p_ipc_msg);
+void whc_msg_q_deinit(void);
+u8 whc_msg_get_queue_status(void);
+void whc_ipc_send_msg(u32 event_num, u32 msg_addr, u32 msg_queue_status, u32 wlan_idx);
 
 #endif /* __INIC_IPC_MSG_QUEUE_H__ */

@@ -27,7 +27,7 @@ def create_logger(name, log_level="INFO", stream=sys.stdout, file=None):
     logger = logging.getLogger(name)
     if not logger.handlers:
         formatter = logging.Formatter(
-            fmt='[%(asctime)s.%(msecs)03d][%(filename)s][%(lineno)s][%(levelname)s] %(message)s',
+            fmt='[%(asctime)s.%(msecs)03d][%(levelname)s] %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S')
 
         logging.addLevelName(logging.DEBUG, f"D")

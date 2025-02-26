@@ -1,3 +1,4 @@
+if(NOT CMAKE_REFACTOR) # For temporary compatibility.
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 ameba_set_if(d_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON p_ELSE OFF)
 
@@ -288,3 +289,14 @@ add_custom_target(
     ${PROJECT_NAME}
     DEPENDS target_img2_${PROJECT_NAME}
 )
+else() # For temporary compatibility.NOTE:  script below is new version cmake
+set(CMAKE_EXECUTABLE_SUFFIX .axf)
+
+#REVIEW: move this to ameba_mcu_project_create?
+ameba_global_include(${c_GLOBAL_MCU_INCLUDE_DIRECTORIES})
+
+# ameba_add_subdirectory(image1)
+# ameba_add_subdirectory(image2)
+# ameba_add_subdirectory(image3)
+
+endif()# For temporary compatibility.

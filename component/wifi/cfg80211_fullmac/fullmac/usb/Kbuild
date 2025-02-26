@@ -9,31 +9,32 @@ ccflags-y += -I$(src)/../../common/netdev
 ccflags-y += -I$(src)/../../common/include -I$(src)/.. -I$(src)/../../common -I$(src)/../../common/usb
 
 fullmac_usb-$(CONFIG_FULLMAC_HCI_USB) := \
-		../../common/usb/rtw_usb_ops.o \
-		../../common/usb/rtw_usb_probe.o \
-		../../common/netdev/rtw_drv_probe.o \
-		../../common/netdev/rtw_ethtool_ops.o \
-		../../common/netdev/rtw_netdev_ops.o \
-		../../common/rtw_llhw_ops.o \
-		../../common/rtw_llhw_pkt_tx.o \
-		../../common/rtw_llhw_memory.o \
-		../../common/rtw_llhw_hci.o \
-		../rtw_cfg80211_ops.o \
-		../rtw_wiphy.o \
-		../rtw_regd.o \
-		../rtw_cfg80211_ops_ap.o \
-		../rtw_cfg80211_ops_key.o \
-		../rtw_cfg80211_ops_nan.o \
-		../rtw_cfg80211_ops_p2p.o \
-		../rtw_netdev_ops_p2p.o \
-		../rtw_cfgvendor.o \
-		../rtw_proc.o \
-		../rtw_llhw_event_tx.o \
-		../rtw_llhw_event_rx.o \
-		../rtw_llhw_pkt_rx.o \
-		../rtw_protocal_offload.o \
-		../rtw_ioctl.o \
-		../rtw_llhw_cust_evt.o \
-		../rtw_acs.o
+		../../common/usb/whc_usb_host_ops.o \
+		../../common/usb/whc_usb_host_probe.o \
+		../../common/netdev/whc_host_drv_probe.o \
+		../../common/netdev/whc_host_ethtool_ops.o \
+		../../common/netdev/whc_host_netdev_ops.o \
+		../../common/whc_host_ops.o \
+		../../common/whc_host_pkt_tx.o \
+		../../common/whc_host_pkt_rx.o \
+		../../common/whc_host_memory.o \
+		../../common/whc_host_hci.o \
+		../whc_fullmac_host_ops.o \
+		../whc_fullmac_host_wiphy.o \
+		../whc_fullmac_host_regd.o \
+		../whc_fullmac_host_ops_ap.o \
+		../whc_fullmac_host_ops_key.o \
+		../whc_fullmac_host_ops_nan.o \
+		../whc_fullmac_host_ops_p2p.o \
+		../whc_fullmac_host_netdev_ops_p2p.o \
+		../whc_fullmac_host_cfgvendor.o \
+		../whc_fullmac_host_proc.o \
+		../whc_fullmac_host_event_tx.o \
+		../whc_fullmac_host_event_rx.o \
+		../whc_fullmac_host_pkt_rx.o \
+		../whc_fullmac_host_protocal_offload.o \
+		../whc_fullmac_host_ioctl.o \
+		../whc_fullmac_host_cust_evt.o \
+		../whc_fullmac_host_acs.o
 
 obj-m += fullmac_usb.o

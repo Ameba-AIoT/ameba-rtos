@@ -7,8 +7,8 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
-#ifndef __INIC_SDIO_H__
-#define __INIC_SDIO_H__
+#ifndef __WHC_DEV_H__
+#define __WHC_DEV_H__
 
 /* -------------------------------- Includes -------------------------------- */
 
@@ -35,23 +35,24 @@
 #include "whc_dev_msg_queue.h"
 #include "whc_dev_cust_evt.h"
 
-#if defined(CONFIG_INIC_INTF_SDIO)
+#if defined(CONFIG_WHC_INTF_SDIO)
 #include "ameba_inic.h"
 #include "spdio_api.h"
 #include "whc_sdio_drv.h"
-#elif defined (CONFIG_INIC_INTF_SPI)
+#elif defined (CONFIG_WHC_INTF_SPI)
 #include "whc_spi_dev.h"
-#elif defined (CONFIG_INIC_INTF_USB)
+#elif defined (CONFIG_WHC_INTF_USB)
 #include "whc_usb_dev.h"
 #endif
 #if defined(CONFIG_FULLMAC_BRIDGEB) || defined(CONFIG_FULLMAC_BRIDGE)
 #include "whc_dev_bridge.h"
+#include "whc_bridge_dev_api.h"
 #endif
 
-#if defined(CONFIG_INIC_INTF_SDIO) && defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_INTF_SDIO) && defined(CONFIG_FULLMAC_BRIDGE)
 #include "whc_bridge_sdio_dev.h"
 
-#elif defined(CONFIG_INIC_INTF_SDIO)
+#elif defined(CONFIG_WHC_INTF_SDIO)
 #include "whc_fullmac_sdio_dev.h"
 #endif
 
@@ -67,15 +68,17 @@
 #ifndef CONFIG_BUILD_ROM
 #include "bt_inic_defs.h"
 
-enum INIC_WIFI_CTRL_TYPE {
-	INIC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
-	INIC_WIFI_EVT_RECV_PKTS,
-	INIC_WIFI_EVT_API_CALL,
-	INIC_WIFI_EVT_API_RETURN,
-	INIC_WIFI_EVT_MAX,
-	INIC_CUST_EVT, /* the ID to transmit data for the customer. */
+enum WHC_WIFI_CTRL_TYPE {
+	WHC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
+	WHC_WIFI_EVT_RECV_PKTS,
+	WHC_WIFI_EVT_API_CALL,
+	WHC_WIFI_EVT_API_RETURN,
+	WHC_WIFI_EVT_BRIDGE,
+	WHC_WIFI_EVT_MAX,
+	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
 
-	INIC_BT_EVT_BASE = INIC_BT_ID_BASE
+	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
+	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
 };
 #endif
 

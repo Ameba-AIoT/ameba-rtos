@@ -583,6 +583,7 @@ typedef struct {
 	uint8_t   service_id;                             /**< mcs service id */
 	uint16_t  char_uuid;                              /**< char_uuid. @ref rtk_bt_le_audio_mcs_char_uuid_t */
 	uint16_t  offset;
+	rtk_bt_le_audio_mcp_server_read_confirm_param_t  *p_cfm;
 } rtk_bt_le_audio_mcp_server_read_ind_t;
 #endif
 #endif
@@ -1212,14 +1213,6 @@ typedef enum {
 	RTK_BT_LE_AUDIO_AICS_MUTE_DISABLED              = 2
 } rtk_bt_le_audio_aics_mute_state_t;
 #endif
-#if (defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT)
-typedef struct {
-	uint16_t conn_handle;
-	uint8_t  gmap_role;
-	uint16_t cause;
-} rtk_bt_le_audio_gmas_client_read_role_result_t;
-#endif
-
 /* event struct */
 /**
  * @typedef    rtk_bt_le_audio_cap_discovery_done_ind_t

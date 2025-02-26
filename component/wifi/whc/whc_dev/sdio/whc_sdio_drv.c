@@ -29,11 +29,11 @@ static char whc_sdio_dev_tx_done_cb(void *priv, void *pbuf)
 {
 	UNUSED(priv);
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)pbuf;
-	struct inic_txbuf_info_t *inic_tx = container_of(tx_buf, struct inic_txbuf_info_t, txbuf_info);
+	struct whc_txbuf_info_t *inic_tx = container_of(tx_buf, struct whc_txbuf_info_t, txbuf_info);
 
 	if (inic_tx->is_skb) {
 		dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
-	} else if (!(inic_tx->no_need_free)) {
+	} else {
 		rtos_mem_free((u8 *)inic_tx->ptr);
 	}
 
@@ -51,12 +51,12 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 	u32 event = *(u32 *)pdata;
 	u8 *buf = NULL;
 	struct sk_buff *new_skb = NULL, *rx_skb;
-	struct inic_msg_info *p_msg_info;
+	struct whc_msg_info *p_msg_info;
 
 	(void) priv;
 	(void) type;
 
-	if (event == INIC_WIFI_EVT_XIMT_PKTS) {
+	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
 		/* SPDIO receives XMIT_PKTS */
 		rx_skb = (struct sk_buff *)rx_buf->priv;
 
@@ -75,19 +75,19 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		rx_buf->priv = new_skb;
 
 		/* handle buf data */
-		p_msg_info = (struct inic_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
+		p_msg_info = (struct whc_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
 
-		skb_reserve(rx_skb, sizeof(INIC_TX_DESC) + sizeof(struct inic_msg_info) + p_msg_info->pad_len);
-		skb_put(rx_skb, size - sizeof(struct inic_msg_info) - p_msg_info->pad_len);
+		skb_reserve(rx_skb, sizeof(INIC_TX_DESC) + sizeof(struct whc_msg_info) + p_msg_info->pad_len);
+		skb_put(rx_skb, size - sizeof(struct whc_msg_info) - p_msg_info->pad_len);
 
 		/* save wlan_idx temporaries*/
 		rx_skb->dev = (void *) p_msg_info->wlan_idx;
 
-		inic_dev_event_int_hdl(pdata, rx_skb);
+		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
 
 #ifndef  CONFIG_FULLMAC_BRIDGE
-	} else if (event == INIC_CUST_EVT) {
-		inic_dev_recv_cust_evt(pdata);
+	} else if (event == WHC_CUST_EVT) {
+		whc_dev_recv_cust_evt(pdata);
 #endif
 
 	} else {
@@ -101,7 +101,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		memcpy(buf, pdata, size);
 
-		inic_dev_event_int_hdl(buf, NULL);
+		whc_sdio_dev_event_int_hdl(buf, NULL, size);
 
 		/* free buf later, sdio ring buffer no need to modify. */
 	}
@@ -125,7 +125,7 @@ void whc_sdio_dev_init(void)
 		RTK_LOGE(TAG_WLAN_INIC, "malloc failed for spdio buffer structure!\n");
 		return;
 	}
-	DiagPrintf("%s %d %d %d dev->rx_bd_num: %d\r\n", __func__, __LINE__, SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN, dev->rx_bd_num);
+	//DiagPrintf("%s %d %d %d dev->rx_bd_num: %d\r\n", __func__, __LINE__, SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN, dev->rx_bd_num);
 
 	for (i = 0; i < dev->rx_bd_num; i++) {
 		skb = dev_alloc_skb(SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN);
@@ -179,16 +179,16 @@ u8 whc_sdio_dev_tx_path_avail(void)
 }
 
 /* data will be free after sent */
-void whc_sdio_dev_send_data(u8 *data, u32 len, u8 need_free)
+void whc_sdio_dev_send_data(u8 *data, u32 len)
 {
-	struct inic_txbuf_info_t *inic_tx = NULL;
+	struct whc_txbuf_info_t *inic_tx = NULL;
 
 	if ((u32)data & (DEV_DMA_ALIGN - 1)) {
 		RTK_LOGE(TAG_WLAN_INIC, "Send Error, Data buf unaligned!");
 		return;
 	}
 
-	inic_tx = (struct inic_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct inic_txbuf_info_t));
+	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
 	if (!inic_tx) {
 		return;
 	}
@@ -198,9 +198,7 @@ void whc_sdio_dev_send_data(u8 *data, u32 len, u8 need_free)
 
 	inic_tx->ptr = data;
 	inic_tx->is_skb = 0;
-	if (!need_free) {
-		inic_tx->no_need_free = 1;
-	}
+
 	whc_sdio_dev_send(&inic_tx->txbuf_info);
 
 	return;

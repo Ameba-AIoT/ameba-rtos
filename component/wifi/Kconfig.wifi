@@ -9,7 +9,7 @@ if FULLMAC_MENU
     endmenu
 endif
 
-if WIFI_INIC_IPC_MENU || WIFI_SINGLE_CORE_MENU
+if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
     config WIFI_WPS_ENABLE_MENU
         bool "Enable WPS"
         default n
@@ -21,6 +21,10 @@ config WIFI_CSI_ENABLE
 
 config WIFI_ANTDIV_ENABLE
     bool "Enable ANTDIV"
+    default n
+
+config WIFI_MCC_ENABLE
+    bool "Enable MCC"
     default n
 
 config WIFI_11K_ENABLE

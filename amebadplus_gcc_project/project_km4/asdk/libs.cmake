@@ -118,7 +118,6 @@ list(
 	${APP_LIB_DIR}/lib_ipnat.a
 	${APP_LIB_DIR}/lib_ipdnrd.a
 	${APP_LIB_DIR}/lib_tftp.a
-	#${APP_LIB_DIR}/lib_mdns.a 
 	#${APP_LIB_DIR}/lib_coap.a
 	#${APP_LIB_DIR}/lib_dct.a
 	#${APP_LIB_DIR}/lib_eap.a

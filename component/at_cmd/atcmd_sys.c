@@ -11,11 +11,10 @@
 #include "ameba_rtos_version.h"
 #include <build_info.h>
 #include "atcmd_service.h"
-#ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
-#endif
+#include "atcmd_network.h"
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
 #endif
@@ -387,7 +386,6 @@ void at_list(void *arg)
 	print_wifi_at();
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	/* Socket AT Commands. */
@@ -404,15 +402,17 @@ void at_list(void *arg)
 	at_printf("WEBSOCKET AT command:\r\n");
 	print_websocket_at();
 #endif
+#if defined(CONFIG_ATCMD_NETWORK) && (CONFIG_ATCMD_NETWORK == 1)
+	/* NETWORK commands. */
+	at_printf("NETWORK AT command:\r\n");
+	print_network_at();
 #endif
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
 #if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
 	/* MQTT commands. */
 	at_printf("MQTT AT command:\r\n");
 	print_mqtt_at();
-#endif
 #endif
 #endif
 

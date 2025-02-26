@@ -49,6 +49,7 @@ if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
        ${c_CMPT_AT_CMD_DIR}/atcmd_mqtt.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_sockets.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_websocket.c
+       ${c_CMPT_AT_CMD_DIR}/atcmd_network.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_coex.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_ota.c
    )

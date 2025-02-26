@@ -56,6 +56,13 @@ if (CONFIG_WLAN)
         )
     endif()
 
+    if(CONFIG_AMEBASMARTPLUS)
+        list(
+            APPEND LINK_APP_LIB
+            ${APP_LIB_DIR}/lib_wifi_com_sec.a
+        )
+    endif()
+
     if(CONFIG_AMEBALITE)
         list(
             APPEND LINK_APP_LIB
@@ -86,7 +93,7 @@ if (CONFIG_WLAN)
 
     # AP Link Library
     if(CONFIG_AS_INIC_AP)
-        if(NOT CONFIG_INIC_INTF_SPI)
+        if(NOT CONFIG_WHC_INTF_SPI)
             if(CONFIG_MP_INCLUDED)
                 if(CONFIG_MP_SHRINK)
                     list(
@@ -117,17 +124,17 @@ if (CONFIG_WLAN)
     elseif(CONFIG_AS_INIC_NP)
         if(CONFIG_MP_INCLUDED)
             if(CONFIG_MP_SHRINK)
-                if(CONFIG_INIC_INTF_SDIO)
+                if(CONFIG_WHC_INTF_SDIO)
                     list(
                         APPEND LINK_APP_LIB
                         ${APP_LIB_DIR}/lib_wifi_whc_sdio_np_mp_shrink.a
                     )
-                elseif(CONFIG_INIC_INTF_SPI)
+                elseif(CONFIG_WHC_INTF_SPI)
                     list(
                         APPEND LINK_APP_LIB 
                         ${APP_LIB_DIR}/lib_wifi_whc_spi_np_mp_shrink.a
                     )
-                elseif(CONFIG_INIC_INTF_USB)
+                elseif(CONFIG_WHC_INTF_USB)
                     list(
                         APPEND LINK_APP_LIB 
                         ${APP_LIB_DIR}/lib_wifi_whc_usb_np_mp_shrink.a
@@ -139,17 +146,17 @@ if (CONFIG_WLAN)
                     )
                 endif()
             else()
-                if(CONFIG_INIC_INTF_SDIO)
+                if(CONFIG_WHC_INTF_SDIO)
                     list(
                         APPEND LINK_APP_LIB
                         ${APP_LIB_DIR}/lib_wifi_whc_sdio_np_mp.a
                     )
-                elseif(CONFIG_INIC_INTF_SPI)
+                elseif(CONFIG_WHC_INTF_SPI)
                     list(
                         APPEND LINK_APP_LIB 
                         ${APP_LIB_DIR}/lib_wifi_whc_spi_np_mp.a
                     )
-                elseif(CONFIG_INIC_INTF_USB)
+                elseif(CONFIG_WHC_INTF_USB)
                     list(
                         APPEND LINK_APP_LIB 
                         ${APP_LIB_DIR}/lib_wifi_whc_usb_np_mp.a
@@ -162,17 +169,17 @@ if (CONFIG_WLAN)
                 endif()
             endif()
         else()
-            if(CONFIG_INIC_INTF_SDIO)
+            if(CONFIG_WHC_INTF_SDIO)
                 list(
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_whc_sdio_np.a
                 )
-            elseif(CONFIG_INIC_INTF_SPI)
+            elseif(CONFIG_WHC_INTF_SPI)
                 list(
                     APPEND LINK_APP_LIB
                     ${APP_LIB_DIR}/lib_wifi_whc_spi_np.a
                 )
-            elseif(CONFIG_INIC_INTF_USB)
+            elseif(CONFIG_WHC_INTF_USB)
                 list(
                     APPEND LINK_APP_LIB 
                     ${APP_LIB_DIR}/lib_wifi_whc_usb_np.a

@@ -221,7 +221,6 @@ if(CONFIG_WLAN)
             ${d_SDK_LIB_APPLICATION_DIR}/lib_websocket.a
             # ${d_SDK_LIB_APPLICATION_DIR}/lib_coap.a
             # ${d_SDK_LIB_APPLICATION_DIR}/lib_eap.a
-            # ${d_SDK_LIB_APPLICATION_DIR}/lib_mdns.a
         )
         if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")

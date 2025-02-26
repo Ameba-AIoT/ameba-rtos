@@ -46,6 +46,7 @@ if(CONFIG_WLAN)
 		${DIR}/atcmd_sockets.c
 		${DIR}/atcmd_http.c
 		${DIR}/atcmd_websocket.c
+		${DIR}/atcmd_network.c
         ${DIR}/atcmd_ota.c
     )
 endif()

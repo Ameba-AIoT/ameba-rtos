@@ -9,35 +9,35 @@ None
 # SW configuration
 
 1. `lwipopts.h`
-```C
+	```C
 	#define LWIP_IPV6					1
-```
+	```
 
 2. `src/include/lwip/opt.h`
-```C
+	```C
 	#define MEMP_NUM_MLD6_GROUP			6
-```
-   - If MEMP_NUM_MLD6_GROUP is not big enough, it may occur
-```
+	```
+	If MEMP_NUM_MLD6_GROUP is not big enough, it may occur
+	```
 	[ERROR] Register to ipv6 multicast group failed
-```
+	```
 
 3. `example_ipv6.h`
-```C
+	```C
 	#define UDP_SERVER_IP    "fe80:0000:0000:0000:cd3c:24de:386d:9ad1"
 	#define TCP_SERVER_IP    "fe80:0000:0000:0000:cd3c:24de:386d:9ad1"
-```
-   - Change the ipv6 address based on output of server example to run client.
+	```
+	Change the ipv6 address based on output of server example to run client.
 
 4. `example_ipv6.c` Users can only enable one example at one time.
-```C
+	```C
 	example_ipv6_udp_server();
 	// example_ipv6_tcp_server();
 	// example_ipv6_mcast_server();
 	// example_ipv6_udp_client();
 	// example_ipv6_tcp_client();
 	// example_ipv6_mcast_client();
-```
+	```
 
 3. How to use:
    - Run `./build.py -a ipv6` under project path, e.g. `amebasmart_gcc_project/`, to generate images.

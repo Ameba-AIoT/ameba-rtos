@@ -15,6 +15,7 @@ struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 _WEAK void wifi_set_user_config(void)
 {
+	int skb_num_np_rsvd;
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
@@ -24,24 +25,27 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9;  /* unit 2s, default 18s */
 
-#if (defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB)) || (defined(CONFIG_FULLMAC_BRIDGE))
-	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 8 for rx_ampdu + 2 for mgnt trx + 4 for spido rx_ring_buffer */
+#if (defined(CONFIG_WHC_INTF_SDIO) || defined(CONFIG_WHC_INTF_USB)) || (defined(CONFIG_FULLMAC_BRIDGE))
+	skb_num_np_rsvd = 10; /*4 for rx_ring_buffer + 2 for mgnt trx + 4 for spido rx_ring_buffer */
+	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
-#elif defined(CONFIG_INIC_INTF_SPI)
-	wifi_user_config.skb_num_np = 14;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 1 for spi rx_dma_buffer */
+#elif defined(CONFIG_WHC_INTF_SPI)
+	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
+	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 4;
 #else
-
+	skb_num_np_rsvd = 6; /*4 for rx_ring_buffer + 2 for mgnt trx*/
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
 	wifi_user_config.skb_num_np = 14;
 	wifi_user_config.skb_num_ap = 5;
 	wifi_user_config.rx_ampdu_num = 8;
 #else
-	wifi_user_config.skb_num_np = 10;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx*/
+	wifi_user_config.skb_num_np = 10; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 #ifdef CONFIG_WIFI_TUNNEL
-	wifi_user_config.skb_num_np = 20;  /*4 for rx_ring_buffer + 4 for rx_ampdu + 2 for mgnt trx + 10 for tunnel tx */
+	skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
+	wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 #endif
 	wifi_user_config.skb_num_ap = 4;
 	wifi_user_config.rx_ampdu_num = 4;
@@ -78,11 +82,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.legacy_ps_listen_interval = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 5;	/*should not exceed AP_STA_NUM */
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed MAX_AP_CLIENT_NUM */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
-	wifi_user_config.en_mcc = 0;
+	wifi_user_config.en_mcc = 0;  /* must select ENABLE_MCC in menuconfig when wifi_user_config.en_mcc=1 */
 	wifi_user_config.max_roaming_times = 2;
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
@@ -115,6 +119,18 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_strong_rssi_thresh = -50;
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
+	wifi_user_config.wtn_rnat_en = 0;
 
+	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
+	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
+		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;
+		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
+	}
+
+	/* ensure ap_sta_num not exceed MAX_AP_CLIENT_NUM*/
+	if (wifi_user_config.ap_sta_num > MAX_AP_CLIENT_NUM) {
+		wifi_user_config.ap_sta_num = MAX_AP_CLIENT_NUM;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to %d\n", MAX_AP_CLIENT_NUM);
+	}
 }
 

@@ -71,12 +71,12 @@ typedef struct {
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
-#endif
 
 /**
  * @}
  */
 
+#endif /* CONFIG_BT_TMAP_SUPPORT */
 #ifdef __cplusplus
 }
 #endif

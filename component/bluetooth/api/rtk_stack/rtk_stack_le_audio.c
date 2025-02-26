@@ -11,8 +11,7 @@
 #include <ble_audio_flags.h>
 #include <rtk_bt_common.h>
 #include <rtk_bt_device.h>
-#include <bt_audio_intf.h>
-#include <lc3_codec_entity.h>
+
 #include <rtk_stack_internal.h>
 #include <rtk_stack_config.h>
 #include <rtk_stack_le_audio_internal.h>
@@ -1119,183 +1118,6 @@ error:
 	return RTK_BT_ERR_LOWER_STACK_API;
 }
 
-static uint32_t bt_stack_le_audio_translate_le_chnl_to_audio_chnl(uint32_t audio_channel_allocation)
-{
-	uint32_t le_chnl = audio_channel_allocation & RTK_BT_LE_AUDIO_LOCATION_MASK;
-	uint32_t audio_chnl = RTK_BT_LE_AUDIO_LOCATION_FL;
-	while (le_chnl) {
-		if (le_chnl == 0x1) {
-			audio_chnl = RTK_BT_LE_AUDIO_LOCATION_FL; //left
-			break;
-		} else if (le_chnl == 0x2) {
-			audio_chnl = RTK_BT_LE_AUDIO_LOCATION_FR; //right
-			break;
-		} else if (le_chnl == 0x3) {
-			audio_chnl = RTK_BT_LE_AUDIO_LOCATION_FR | RTK_BT_LE_AUDIO_LOCATION_FL; //right and left
-			break;
-		}
-		le_chnl = le_chnl >> 2;
-	}
-	//BT_LOGA("%s audio_chnl = 0x%x, audio_channel_allocation=0x%x\r\n",__func__,(unsigned int)audio_chnl,(unsigned int)audio_channel_allocation);
-	return audio_chnl;
-}
-
-static uint32_t bt_stack_le_audio_translate_lea_samp_fre_to_audio_samp_rate(uint8_t sample_frequency)
-{
-	uint32_t sample_rate = 48000;
-	switch (sample_frequency) {
-	case RTK_BT_LE_SAMPLING_FREQUENCY_CFG_8K:
-		sample_rate = 8000;
-		break;
-	case RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K:
-		sample_rate = 16000;
-		break;
-	case RTK_BT_LE_SAMPLING_FREQUENCY_CFG_24K:
-		sample_rate = 24000;
-		break;
-	case RTK_BT_LE_SAMPLING_FREQUENCY_CFG_32K:
-		sample_rate = 32000;
-		break;
-	case RTK_BT_LE_SAMPLING_FREQUENCY_CFG_44_1K:
-		sample_rate = 44100;
-		break;
-	case RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K:
-		sample_rate = 48000;
-		break;
-	default:
-		BT_LOGE("%s unsupport sample_frequency 0x%x\r\n", __func__, sample_frequency);
-		break;
-	}
-	//BT_LOGA("%s sample_frequency = 0x%x, sample_rate=%d\r\n",__func__,sample_frequency,(int)sample_rate);
-	return sample_rate;
-}
-
-static uint8_t bt_stack_le_audio_get_lea_chnl_num(uint32_t audio_channel_allocation)
-{
-	uint8_t channels = 0;
-
-	//count_bits_1
-	while (audio_channel_allocation) {
-		channels ++ ;
-		audio_channel_allocation &= (audio_channel_allocation - 1);
-	}
-	//BT_LOGA("%s audio_channel_allocation = 0x%x, channels=%d\r\n",__func__,(unsigned int)audio_channel_allocation,channels);
-	return channels;
-}
-
-static void *bt_stack_le_audio_lc3_codec_entity_add(rtk_bt_le_audio_cfg_codec_t *p_codec)
-{
-	rtk_bt_audio_codec_conf_t audio_codec_conf = {0};
-	rtk_bt_le_audio_lc3_cfg_t lc3_codec_cfg = {0};
-
-	lc3_codec_cfg.frame_duration = p_codec->frame_duration;
-	lc3_codec_cfg.sample_frequency = p_codec->sample_frequency;
-	lc3_codec_cfg.codec_frame_blocks_per_sdu = p_codec->codec_frame_blocks_per_sdu;
-	lc3_codec_cfg.octets_per_codec_frame = p_codec->octets_per_codec_frame;
-#if 1
-	lc3_codec_cfg.audio_channel_allocation = bt_stack_le_audio_translate_le_chnl_to_audio_chnl(p_codec->audio_channel_allocation);
-#else //default init two channel each codec
-	lc3_codec_cfg.audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FR | RTK_BT_LE_AUDIO_LOCATION_FL;
-#endif
-	lc3_codec_cfg.compress_bytes = p_codec->octets_per_codec_frame * p_codec->codec_frame_blocks_per_sdu;
-	BT_LOGA("[LEA STACK] %s audio_channel_allocation=0x%x, sample_frequency=0x%x \r\n", __func__, (unsigned int)lc3_codec_cfg.audio_channel_allocation,
-			lc3_codec_cfg.sample_frequency);
-
-	audio_codec_conf.codec_index = RTK_BT_AUDIO_CODEC_LC3;
-	audio_codec_conf.param = (void *)&lc3_codec_cfg;
-	audio_codec_conf.param_len = sizeof(lc3_codec_cfg);
-	return rtk_bt_audio_codec_add(&audio_codec_conf);
-}
-
-static uint16_t bt_stack_le_audio_lc3_codec_entity_remove(void *codec_entity)
-{
-	return rtk_bt_audio_codec_remove(RTK_BT_AUDIO_CODEC_LC3, codec_entity);
-}
-
-static rtk_bt_audio_track_t *bt_stack_le_audio_track_add(rtk_bt_le_audio_cfg_codec_t *p_codec)
-{
-	float left_volume = 0.0, right_volume = 0.0;
-	uint8_t channels = 0;
-	uint32_t audio_chnl = 0;
-	uint32_t rate = 0;
-	uint32_t duration = 0;
-
-	rate = bt_stack_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency);
-	if (p_codec->frame_duration == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
-		duration = 10000;
-	} else {
-		duration = 7500;
-	}
-#if 1
-	channels = bt_stack_le_audio_get_lea_chnl_num(p_codec->audio_channel_allocation);
-	audio_chnl = bt_stack_le_audio_translate_le_chnl_to_audio_chnl(p_codec->audio_channel_allocation);
-	if (audio_chnl & RTK_BT_LE_AUDIO_LOCATION_FL) {
-		left_volume = RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME;
-	}
-	if (audio_chnl & RTK_BT_LE_AUDIO_LOCATION_FR) {
-		right_volume = RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME;
-	}
-#else
-	channels = 2;//default init two channel each track
-	left_volume = RTK_BT_DEFAULT_AUDIO_TRACK_LEFT_VOLUME;
-	right_volume = RTK_BT_DEFAULT_AUDIO_TRACK_RIGHT_VOLUME;
-#endif
-
-	return rtk_bt_audio_track_add(RTK_BT_AUDIO_CODEC_LC3, (float)left_volume, (float)right_volume,
-								  channels, rate, BT_AUDIO_FORMAT_PCM_16_BIT, duration, NULL, true);
-}
-
-static uint16_t bt_stack_le_audio_track_remove(void *audio_track_hdl)
-{
-	return rtk_bt_audio_track_del(RTK_BT_AUDIO_CODEC_LC3, audio_track_hdl);
-}
-
-#if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
-static rtk_bt_audio_record_t *bt_stack_le_audio_record_add(rtk_bt_le_audio_cfg_codec_t *p_codec)
-{
-	uint8_t channels = 0;
-	uint32_t channel_allocation = 0;
-	uint32_t rate = 0;
-	uint16_t desired_record_period = 0;
-	uint32_t record_frame_size = 0;
-	uint32_t buffer_bytes = 0;
-	rtk_bt_audio_record_t *leaudio_record_hdl = NULL;
-
-	//parsing channels
-	channel_allocation = p_codec->audio_channel_allocation;
-	while (channel_allocation) {
-		channels ++ ;
-		channel_allocation &= (channel_allocation - 1);
-	}
-	rate = bt_stack_le_audio_translate_lea_samp_fre_to_audio_samp_rate(p_codec->sample_frequency);
-
-	//desired record period 1 ms;
-	desired_record_period = 1;
-	//record_frame_size = sample rate 16k * 1ms / 1000 = 16
-	record_frame_size = desired_record_period * rate / 1000;
-	//buffer_bytes = record_frame_size * channels *(2 bytes) 16_bit pcm = 16*2*2 = 64 bytes
-	buffer_bytes = record_frame_size * channels * 2;
-
-	leaudio_record_hdl = rtk_bt_audio_record_add(RTK_BT_AUDIO_CODEC_LC3, channels, rate, buffer_bytes);
-	if (!leaudio_record_hdl) {
-		BT_LOGA("[LEA STACK] %s failed ! delete record\r\n", __func__);
-		rtk_bt_audio_record_del(RTK_BT_AUDIO_CODEC_LC3, leaudio_record_hdl);
-		leaudio_record_hdl = NULL;
-	}
-	// // set default mic bst gain 20DB
-	// if (rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, RTK_BT_AUDIO_MICBST_GAIN_20DB)) {
-	//     BT_LOGA("[LEA STACK] %s set le audio default mic bst gain 20DB success !\r\n", __func__);
-	// }
-
-	return leaudio_record_hdl;
-}
-#endif
-
-static uint16_t bt_stack_le_audio_record_remove(void *audio_record_hdl)
-{
-	return rtk_bt_audio_record_del(RTK_BT_AUDIO_CODEC_LC3, audio_record_hdl);
-}
-
 rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_find_iso_chann(uint16_t iso_conn_handle, uint8_t direction)
 {
 	rtk_bt_le_audio_iso_channel_info_t *p_iso_chann = NULL;
@@ -1458,15 +1280,6 @@ void bt_stack_le_audio_remove_iso_chann(uint16_t iso_conn_handle, uint8_t direct
 		osif_delay(1);
 		osif_mutex_take(pmtx, BT_TIMEOUT_FOREVER);
 	}
-	if (p_iso_chann->p_codec_entity) {
-		bt_stack_le_audio_lc3_codec_entity_remove(p_iso_chann->p_codec_entity);
-	}
-	if (p_iso_chann->p_track_hdl) {
-		bt_stack_le_audio_track_remove(p_iso_chann->p_track_hdl);
-	}
-	if (p_iso_chann->p_record_hdl) {
-		bt_stack_le_audio_record_remove(p_iso_chann->p_record_hdl);
-	}
 	list_del_init(&p_iso_chann->list);
 	p_list->count --;
 	osif_mem_free(p_iso_chann);
@@ -1513,46 +1326,10 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_handle_data_path_se
 			p_iso_chann->codec_data.sample_frequency,
 			p_iso_chann->codec_data.audio_channel_allocation,
 			p_iso_chann->presentation_delay);
-
-	/* codec track or record add */
-	{
-		p_iso_chann->p_codec_entity = bt_stack_le_audio_lc3_codec_entity_add(&p_data->codec_parsed_data);
-		if (!p_iso_chann->p_codec_entity) {
-			BT_LOGE("[LEA STACK] %s: codec add fail \r\n", __func__);
-			/* release iso channel */
-			bt_stack_le_audio_release_iso_chann(p_iso_chann);
-			goto error;
-		}
-		if (RTK_BLE_AUDIO_ISO_DATA_PATH_RX == p_iso_chann->path_direction) {
-			p_iso_chann->p_track_hdl = bt_stack_le_audio_track_add(&p_data->codec_parsed_data);
-			if (!p_iso_chann->p_track_hdl) {
-				BT_LOGE("[LEA STACK] %s track add fail \r\n", __func__);
-				bt_stack_le_audio_lc3_codec_entity_remove(p_iso_chann->p_codec_entity);
-				/* release iso channel */
-				bt_stack_le_audio_release_iso_chann(p_iso_chann);
-				goto error;
-			}
-		} else {
-#if defined(RTK_BLE_AUDIO_RECORD_SUPPORT) && RTK_BLE_AUDIO_RECORD_SUPPORT
-			p_iso_chann->p_record_hdl = bt_stack_le_audio_record_add(&p_data->codec_parsed_data);
-			if (!p_iso_chann->p_record_hdl) {
-				BT_LOGE("[LEA STACK] %s record add fail \r\n", __func__);
-				bt_stack_le_audio_lc3_codec_entity_remove(p_iso_chann->p_codec_entity);
-				/* release iso channel */
-				bt_stack_le_audio_release_iso_chann(p_iso_chann);
-				goto error;
-			}
-#endif
-		}
-	}
 	/* release iso channel */
 	bt_stack_le_audio_release_iso_chann(p_iso_chann);
 
 	return p_iso_chann;
-error:
-	bt_stack_le_audio_remove_iso_chann(p_iso_chann->iso_conn_handle, p_iso_chann->path_direction);
-
-	return NULL;
 }
 
 static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_bap_data_path_setup(rtk_bt_le_audio_bap_setup_data_path_ind_t *p_data, uint8_t iso_mode,
@@ -1647,7 +1424,6 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_broadcast_source_pa
 			}
 		}
 	}
-
 	p_iso_chann = bt_stack_le_audio_handle_data_path_setup(&data);
 	if (!p_iso_chann) {
 		BT_LOGE("[LEA STACK] %s bt_stack_le_audio_handle_data_path_setup fail \r\n", __func__);
@@ -1805,10 +1581,6 @@ uint16_t bt_stack_le_audio_common_init(void)
 		BT_LOGA("%s: bt_le_audio_priv_data is already initialized \r\n", __func__);
 		return 0;
 	}
-	if (rtk_bt_audio_init()) {
-		BT_LOGE("%s: rtk_bt_audio_init fail \r\n", __func__);
-		return 0;
-	}
 	memset((void *)&bt_le_audio_priv_data, 0, sizeof(rtk_bt_le_audio_priv_t));
 	bt_stack_le_audio_init_queue(&bt_le_audio_priv_data.iso_input_queue);
 	bt_stack_le_audio_init_queue(&bt_le_audio_priv_data.iso_output_queue);
@@ -1826,10 +1598,6 @@ void bt_stack_le_audio_common_deinit(void)
 		return;
 	}
 	bt_le_audio_priv_data.init_flag = false;
-	if (rtk_bt_audio_deinit()) {
-		BT_LOGE("%s: rtk_bt_audio_deinit fail \r\n", __func__);
-		return;
-	}
 	bt_stack_le_audio_remove_group_all();
 	bt_stack_le_audio_sync_dev_remove_all();
 	bt_stack_le_audio_handle_data_path_remove_all();

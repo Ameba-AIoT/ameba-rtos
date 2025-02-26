@@ -120,7 +120,6 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_network_lwip p_SCOPE interface
     ${c_CMPT_NETWORK_DIR}/dhcp/dhcps.c
     ${c_CMPT_NETWORK_DIR}/httpc/httpc_tls.c
     ${c_CMPT_NETWORK_DIR}/httpd/httpd_tls.c
-    ${c_CMPT_NETWORK_DIR}/mDNS/mDNSPlatform.c
     #${c_CMPT_NETWORK_DIR}/coap/sn_coap_ameba_port.c
     #${c_CMPT_NETWORK_DIR}/coap/sn_coap_builder.c
     #${c_CMPT_NETWORK_DIR}/coap/sn_coap_header_check.c
@@ -286,7 +285,6 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_network_xip p_SCOPE interface
     ${c_LWIP_DIR}/src/api/err.c
     ${c_CMPT_NETWORK_DIR}/httpc/httpc_tls.c
     ${c_CMPT_NETWORK_DIR}/httpd/httpd_tls.c
-    ${c_CMPT_NETWORK_DIR}/mDNS/mDNSPlatform.c
     ${c_LWIP_DIR}/src/core/stats.c
     ${c_LWIP_DIR}/src/core/sys.c
     ${c_CMPT_LWIP_DIR}/api/lwip_netconf.c

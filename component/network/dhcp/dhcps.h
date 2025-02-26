@@ -108,8 +108,8 @@ static const uint8_t dhcp_option_interface_mtu[] = {0x05, 0xDC};
 struct table {
 	uint32_t ip_range[8];
 #ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-	uint8_t client_mac[AP_STA_NUM][6];
-	uint8_t ip_addr4[AP_STA_NUM];
+	uint8_t client_mac[MAX_AP_CLIENT_NUM][6];
+	uint8_t ip_addr4[MAX_AP_CLIENT_NUM];
 #endif
 };
 

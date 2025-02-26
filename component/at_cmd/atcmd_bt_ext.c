@@ -695,7 +695,7 @@ static const cmd_table_t example_table[] = {
 	{"tmap",             atcmd_bt_tmap,             3, 4},
 #endif
 #if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
-	{"gmap",             atcmd_bt_gmap,             3, 3},
+	{"gmap",             atcmd_bt_gmap,             3, 4},
 #endif
 #if defined(CONFIG_BT_PTS) && CONFIG_BT_PTS
 	{"pts",              atcmd_bt_pts,              2, 4},

@@ -15,14 +15,14 @@
 
 #ifdef CONFIG_SUPPORT_ATCMD
 
-#ifndef CONFIG_MP_INCLUDED
 #include "atcmd_mqtt.h"
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
 #include "atcmd_ota.h"
-#endif
+
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
+#include "atcmd_network.h"
 #endif
 
 //======================================================
@@ -30,6 +30,9 @@ struct list_head log_hash[ATC_INDEX_NUM];
 
 RingBuffer *atcmd_tt_mode_rx_ring_buf = NULL;
 char g_tt_mode = 0;
+char g_tt_mode_check_watermark = 0;
+char g_tt_mode_indicate_high_watermark = 0;
+char g_tt_mode_indicate_low_watermark = 1;
 char g_mcu_control_mode = AT_MCU_CONTROL_UART;
 
 static const char *const TAG = "AT";
@@ -55,6 +58,9 @@ log_init_t log_init_table[] = {
 #endif
 #if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
 	at_websocket_init,
+#endif
+#if defined(CONFIG_ATCMD_NETWORK) && (CONFIG_ATCMD_NETWORK == 1)
+	at_network_init,
 #endif
 #if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
 	at_ota_init,
@@ -209,11 +215,18 @@ fail:
 
 int atcmd_tt_mode_start(u32 len)
 {
-	if (rtos_mem_get_free_heap_size() < (len + 1)) {
-		RTK_LOGE(TAG, "tt mode size exceeds free heap size(%u), exit tt mode\n", rtos_mem_get_free_heap_size());
+	u32 ring_buf_size = len >= MAX_TT_HEAP_SIZE ? MAX_TT_HEAP_SIZE : len + 1;
+
+	if (rtos_mem_get_free_heap_size() < ring_buf_size) {
+		RTK_LOGE(TAG, "free heap size(%u) is not enough, exit tt mode\n", rtos_mem_get_free_heap_size());
 		return -1;
 	}
-	atcmd_tt_mode_rx_ring_buf = RingBuffer_Create(NULL, len + 1, LOCAL_RINGBUFF, 1);
+
+	if (ring_buf_size == MAX_TT_HEAP_SIZE) {
+		g_tt_mode_check_watermark = 1;
+	}
+
+	atcmd_tt_mode_rx_ring_buf = RingBuffer_Create(NULL, ring_buf_size, LOCAL_RINGBUFF, 1);
 	if (atcmd_tt_mode_rx_ring_buf == NULL) {
 		RTK_LOGE(TAG, "create tt mode ring buffer fail\n");
 		return -1;
@@ -244,6 +257,15 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len)
 		}
 
 		actual_len = RingBuffer_Available(atcmd_tt_mode_rx_ring_buf);
+
+		if (g_tt_mode_check_watermark) {
+			if (actual_len < MAX_TT_HEAP_SIZE * TT_MODE_LOW_WATERMARK && g_tt_mode_indicate_low_watermark == 0) {
+				g_tt_mode_indicate_low_watermark = 1;
+				g_tt_mode_indicate_high_watermark = 0;
+				at_printf(ATCMD_TT_MODE_LOW_WATERMARK_STR);
+			}
+		}
+
 		actual_len = actual_len > get_len ? get_len : actual_len;
 		RingBuffer_Read(atcmd_tt_mode_rx_ring_buf, buf_temp, actual_len);
 		get_len -= actual_len;
@@ -256,6 +278,7 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len)
 void atcmd_tt_mode_end(void)
 {
 	g_tt_mode = 0;
+	g_tt_mode_check_watermark = 0;
 	RingBuffer_Destroy(atcmd_tt_mode_rx_ring_buf);
 	RTK_LOGI(TAG, "exit tt mode\n");
 	// info MCU we exit tt mode now if needed
@@ -712,7 +735,7 @@ int mp_command_handler(char *cmd)
 		char *cmdbuf = NULL;
 		cmdbuf = rtos_mem_malloc(strlen(cmd + len) + 1);
 		strcpy(cmdbuf, (const char *)(cmd + len));
-		inic_mp_command(cmdbuf, strlen(cmd + len) + 1, 1);
+		whc_ipc_host_api_mp_command(cmdbuf, strlen(cmd + len) + 1, 1);
 		rtos_mem_free(cmdbuf);
 #elif defined(CONFIG_SINGLE_CORE_WIFI)
 		wext_private_command(cmd + len, 1, NULL);

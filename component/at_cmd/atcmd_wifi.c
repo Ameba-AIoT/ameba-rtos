@@ -16,14 +16,19 @@
 #include <wifi_conf.h>
 #include <wifi_intf_drv_to_upper.h>
 #endif
+#ifdef CONFIG_AS_INIC_AP
+#ifdef CONFIG_WHC_INTF_IPC
+#include "whc_ipc_host_api.h"
+#else
+#include "whc_host_api.h"
+#endif
+#endif
 
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_LWIP_LAYER
 struct static_ip_config user_static_ip;
 extern struct netif xnetif[NET_IF_NUM];
 
-extern void cmd_iperf(int argc, char **argv);
-extern void cmd_ping(int argc, char **argv);
 unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, ap_gw[4] = {192, 168, 43, 1};
 #endif
 
@@ -42,10 +47,6 @@ extern void ipnat_dump(void);
 #endif
 
 extern int wifi_set_ips_internal(u8 enable);
-#ifdef CONFIG_AS_INIC_AP
-extern int inic_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
-
-#endif
 
 #if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
 extern struct netif eth_netif;
@@ -260,7 +261,7 @@ void at_wlconn(void *arg)
 		j = i + 1;  /* next i. */
 		/* SSID. */
 		if (0 == strcmp("ssid", argv[i])) {
-			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= INIC_MAX_SSID_LENGTH)) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= WHC_MAX_SSID_LENGTH)) {
 				RTK_LOGW(NOTAG, "[+WLCONN] Invalid SSID\r\n");
 				error_no = 2;
 				goto end;
@@ -508,7 +509,7 @@ void at_wlscan(void *arg)
 		/* SSID. */
 		if (0 == strcmp("ssid", argv[i])) {
 			if ((argc <= j) || (0 == strlen(argv[j]))
-				|| (INIC_MAX_SSID_LENGTH <= strlen(argv[j]))) {
+				|| (WHC_MAX_SSID_LENGTH <= strlen(argv[j]))) {
 				RTK_LOGW(NOTAG, "[+WLSCAN] Invalid ssid\r\n");
 				error_no = 1;
 				goto end;
@@ -692,7 +693,7 @@ void at_wlstartap(void *arg)
 		j = i + 1;  /* next i. */
 		/* SSID */
 		if (0 == strcmp("ssid", argv[i])) {
-			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= INIC_MAX_SSID_LENGTH)) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) >= WHC_MAX_SSID_LENGTH)) {
 				RTK_LOGW(NOTAG, "[+WLSTARTAP] Invalid SSID length\r\n");
 				error_no = 2;
 				goto end;
@@ -984,7 +985,7 @@ void at_wlstate(void *arg)
 					for (client_number = 0; client_number < client_info.count; client_number++) {
 						at_printf("Client %d:\r\n", client_number + 1);
 #ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-						for (int n = 0; n < AP_STA_NUM; n++) {
+						for (int n = 0; n < wifi_user_config.ap_sta_num; n++) {
 							p = ip_table.client_mac[n];
 							if (memcmp(p, client_info.mac_list[client_number].octet, 6) == 0) {
 								at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_table.ip_addr4[n]);
@@ -1072,6 +1073,9 @@ void at_wlreconn(void *arg)
 		} else if (mode == 1) {
 			RTK_LOGI(NOTAG, "[+WLRECONN] Enable autoreconnect\r\n");
 			wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
+		} else if (mode == 2) {
+			RTK_LOGI(NOTAG, "[+WLRECONN] Enable infinite autoreconnect\r\n");
+			wifi_config_autoreconnect(RTW_AUTORECONNECT_INFINITE);
 		} else {
 			error_no = 2;
 		}
@@ -1214,7 +1218,7 @@ void at_wldbg(void *arg)
 	} while ((i++) < len);
 
 #ifdef CONFIG_AS_INIC_AP
-	ret = inic_iwpriv_command(copy, strlen(copy) + 1, 1);
+	ret = whc_host_api_iwpriv_command(copy, strlen(copy) + 1, 1);
 #else
 	ret = rtw_iwpriv_command(STA_WLAN_INDEX, copy, 1);
 #endif
@@ -1416,250 +1420,11 @@ end:
 		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
-
-static void at_ping_help(void)
-{
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+PING=<host>[,<options>]\r\n");
-	RTK_LOGI(NOTAG, "\t-t\tPing the specified host until stopped\r\n");
-	RTK_LOGI(NOTAG, "\t-n\tNumber of echo requests to send (default 4 times)\r\n");
-	RTK_LOGI(NOTAG, "\t-l\tSend buffer size (default 32 bytes)\r\n");
-}
-
-/****************************************************************
-AT command process:
-	AT+PING
-	Wifi AT Command:
-	[+PING]:OK
-****************************************************************/
-void at_ping(void *arg)
-{
-	int argc = 0;
-	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	RTK_LOGI(NOTAG, "[+PING]: _AT_WLAN_PING_TEST_\r\n");
-
-	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[+PING] Usage: AT+PING=[host],[options]\r\n");
-		RTK_LOGI(NOTAG, "       stop      Terminate ping\r\n");
-		RTK_LOGI(NOTAG, "       -t    #   Ping the specified host until stopped\r\n");
-		RTK_LOGI(NOTAG, "       -n    #   Number of echo requests to send (default 4 times)\r\n");
-		RTK_LOGI(NOTAG, "       -l    #   Send buffer size (default 32 bytes)\r\n");
-		RTK_LOGI(NOTAG, "       if    #   specify ping interface, 0 is for STA and 1 is for soft\r\n");
-		RTK_LOGI(NOTAG, "   Example:\r\n");
-		RTK_LOGI(NOTAG, "       AT+PING=192.168.1.2,-n,100,-l,5000\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argv[0] = (char *)"ping";
-	argc = parse_param(arg, argv);
-	if (argc > 1) {
-		cmd_ping(argc, argv);
-	} else {
-		RTK_LOGI(NOTAG, "PING error happend\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_ping_help();
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-/*
- * To aviod compile error when cmd_iperf3 is not implemented
- */
-_WEAK void cmd_iperf3(int argc, char **argv)
-{
-	UNUSED(argc);
-	UNUSED(argv);
-	RTK_LOGW(NOTAG, " iperf3 is not supported yet\r\n");
-}
-
-static void at_iperf_help(void)
-{
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+IPERF=-help\r\n");
-	RTK_LOGI(NOTAG, "AT+IPERF=[-s|-c,host|stop],[options]\r\n");
-	RTK_LOGI(NOTAG, "\tExample for TCP:\r\n");
-	RTK_LOGI(NOTAG, "\tAT+IPERF=-s,-p,5002\r\n");
-	RTK_LOGI(NOTAG, "\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
-	RTK_LOGI(NOTAG, "\tExample for UDP:\r\n");
-	RTK_LOGI(NOTAG, "\tAT+IPERF=-s,-p,5002,-u\r\n");
-	RTK_LOGI(NOTAG, "\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
-}
-
-/****************************************************************
-AT command process:
-	AT+IPERF
-	Wifi AT Command:
-	[+IPERF]:OK
-****************************************************************/
-void at_iperf(void *arg)
-{
-	int error_no = 0;
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-	char *pos;
-	char *input = NULL;
-	char *char_arg = (char *)arg;
-
-	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[+IPERF] iperf1 Usage: AT+IPERF=[-s|-c,host|stop],[options]\r\n");
-		RTK_LOGI(NOTAG, "[+IPERF] Usage: AT+IPERF=[-s|-c,host|stop],[options]\r\n");
-		RTK_LOGI(NOTAG, "	Client/Server:\r\n");
-		RTK_LOGI(NOTAG, "	  ? 			List all stream status\r\n");
-		RTK_LOGI(NOTAG, "	 stop  #		terminate specific stream id or terminate all stream if no id specified\r\n");
-		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
-		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
-		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
-		RTK_LOGI(NOTAG, "	 -u    #		use UDP protocol (default TCP)\r\n");
-		RTK_LOGI(NOTAG, "	Server specific:\r\n");
-		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
-		RTK_LOGI(NOTAG, "	Client specific:\r\n");
-		RTK_LOGI(NOTAG, "	 -b    #[KM]	for UDP, bandwidth to send at in bits/sec (default 1 Mbit/sec)\r\n");
-		RTK_LOGI(NOTAG, "	 -c    <host>	run in client mode, connecting to <host>\r\n");
-		RTK_LOGI(NOTAG, "	 -d 			Do a bidirectional test simultaneously\r\n");
-		RTK_LOGI(NOTAG, "	 -t    #		time in seconds to transmit for (default 10 secs)\r\n");
-		RTK_LOGI(NOTAG, "	 -n    #[KM]	number of bytes to transmit (instead of -t)\r\n");
-		RTK_LOGI(NOTAG, "		-S	  # 	   for UDP, set the IP 'type of service'\r\n");
-		RTK_LOGI(NOTAG, "	Example for TCP:\r\n");
-		RTK_LOGI(NOTAG, "	 AT+IPERF=-s,-p,5002\r\n");
-		RTK_LOGI(NOTAG, "	 AT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
-		RTK_LOGI(NOTAG, "	Example for UDP:\r\n");
-		RTK_LOGI(NOTAG, "	 AT+IPERF=-s,-p,5002,-u\r\n");
-		RTK_LOGI(NOTAG, "	 AT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
-
-		error_no = 1;
-		goto end;
-	}
-
-	pos = strpbrk(char_arg, "u");
-
-	if (pos) {
-		if ((memcmp(pos - 1, "-", 1)) || (pos == char_arg)) {
-			RTK_LOGI(NOTAG, "- needs to be added before u\r\n");
-			error_no = 1;
-			goto end;
-		}
-
-		input = (char *)rtos_mem_zmalloc(strlen(char_arg) - 2); /* delete "-u,"or ",-u" and need '\0' at the end */
-		if (pos - char_arg == 1) {  // "-u" is at the beginning of arg
-			memcpy(input, char_arg + 3, strlen(char_arg) - 3);
-		} else {                      // "-u" is at the end or middle of arg
-			memcpy(input, char_arg, pos - char_arg - 2);                //copy str before "-u"
-			memcpy(input + strlen(input), pos + 1, strlen(pos) - 1);  //copy str after "-u"
-		}
-		argv[0] = (char *)"udp";
-	} else {
-		input = (char *)rtos_mem_zmalloc(strlen(char_arg) + 1); /* need '\0' at the end */
-		memcpy(input, char_arg, strlen(char_arg));
-		argv[0] = (char *)"tcp";
-	}
-
-	RTK_LOGI(NOTAG, "[+IPERF]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
-
-	argc = parse_param(input, argv);
-	if (argc > 1) {
-		cmd_iperf(argc, argv);
-	} else {
-		RTK_LOGI(NOTAG, "[+IPERF] Should be some argc\r\n");
-		error_no = 3;
-		goto end;
-	}
-
-end:
-	if (input) {
-		rtos_mem_free((void *)input);
-	}
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_iperf_help();
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-static void at_iperf3_help(void)
-{
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+IPERF3=-help\r\n");
-	RTK_LOGI(NOTAG, "AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
-	RTK_LOGI(NOTAG, "\tExample:\r\n");
-	RTK_LOGI(NOTAG, "\tAT+IPERF3=-s,-p,5002\r\n");
-	RTK_LOGI(NOTAG, "\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
-}
-
-/****************************************************************
-AT command process:
-	AT+IPERF3
-	Wifi AT Command:
-	[+IPERF3]:OK
-****************************************************************/
-void at_iperf3(void *arg)
-{
-	int error_no = 0;
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[+IPERF3] iperf3 Usage: More Usage: AT+IPERF3=-help\r\n");
-		RTK_LOGI(NOTAG, "[+IPERF3] Usage: AT+IPERF3=[-s|-c,host|stop],[options]\r\n");
-		RTK_LOGI(NOTAG, "	Client/Server:\r\n");
-		RTK_LOGI(NOTAG, "	  ? 			List all stream status\r\n");
-		RTK_LOGI(NOTAG, "	 stop  #		terminate specific stream id or terminate all stream if no id specified\r\n");
-		RTK_LOGI(NOTAG, "	 -i    #		seconds between periodic bandwidth reports\r\n");
-		RTK_LOGI(NOTAG, "	 -l    #		length of buffer to read or write (default 1460 Bytes)\r\n");
-		RTK_LOGI(NOTAG, "	 -p    #		server port to listen on/connect to (default 5001)\r\n");
-		RTK_LOGI(NOTAG, "	 -u    #		use UDP protocol (default TCP)\r\n");
-		RTK_LOGI(NOTAG, "	Server specific:\r\n");
-		RTK_LOGI(NOTAG, "	 -s 			run in server mode\r\n");
-		RTK_LOGI(NOTAG, "	Client specific:\r\n");
-		RTK_LOGI(NOTAG, "	 -c    <host>	run in client mode, connecting to <host>\r\n");
-		RTK_LOGI(NOTAG, "	 -d 			Do a bidirectional test simultaneously\r\n");
-		RTK_LOGI(NOTAG, "	 -t    #		time in seconds to transmit for (default 10 secs)\r\n");
-		RTK_LOGI(NOTAG, "	 -n    #[KM]	number of bytes to transmit (instead of -t)\r\n");
-		RTK_LOGI(NOTAG, "	Example:\r\n");
-		RTK_LOGI(NOTAG, "	 AT+IPERF3=-s,-p,5002\r\n");
-		RTK_LOGI(NOTAG, "	 AT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	RTK_LOGI(NOTAG, "[+IPERF3]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
-	argv[0] = (char *)"iperf3";
-	argc = parse_param(arg, argv);
-	if (argc > 1) {
-		cmd_iperf3(argc, argv);
-	} else {
-		RTK_LOGI(NOTAG, "[+IPERF3] Should be some argc\r\n");
-		error_no = 2;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_iperf3_help();
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
 #endif /* CONFIG_LWIP_LAYER */
 
 log_item_t at_wifi_items[ ] = {
 #ifdef CONFIG_LWIP_LAYER
 	{"+WLSTATICIP", at_wlstaticip, {NULL, NULL}},
-	{"+PING", at_ping, {NULL, NULL}},
-	{"+IPERF", at_iperf, {NULL, NULL}},
-	{"+IPERF3", at_iperf3, {NULL, NULL}},
 #endif /* CONFIG_LWIP_LAYER */
 #ifdef CONFIG_WLAN
 	{"+WLCONN", at_wlconn, {NULL, NULL}},

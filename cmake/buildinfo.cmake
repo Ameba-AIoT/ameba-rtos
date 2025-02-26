@@ -10,6 +10,10 @@ execute_process(
 cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 cmake_host_system_information(RESULT _fqdn QUERY FQDN)
 
+string(REGEX REPLACE "\\\\" "__" _user_name ${_user_name})
+string(REGEX REPLACE "\\\\" "__" _host_name ${_host_name})
+string(REGEX REPLACE "\\\\" "__" _fqdn ${_fqdn})
+
 string(TIMESTAMP _configuration_time "%Y-%m-%d %H:%M:%S")
 string(TIMESTAMP _configuration_date "%Y-%m-%d")
 

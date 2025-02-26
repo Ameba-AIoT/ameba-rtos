@@ -78,6 +78,9 @@ menu "CONFIG AT CMD"
         endchoice
         config LONGER_CMD
             bool "Enable Longer CMD"
+        config ATCMD_NETWORK
+            bool "Enable Network"
+            default y
         config ATCMD_SOCKET
             bool "Enable Socket"
         config ATCMD_HTTP
@@ -86,7 +89,6 @@ menu "CONFIG AT CMD"
             bool "Enable MQTT"
         config ATCMD_WEBSOCKET
             bool "Enable WEBSOCKET"
-            default n
         config ATCMD_OTA
             bool "Enable OTA"
             default n
@@ -147,12 +149,12 @@ menu "CONFIG OTA OPTION"
 endmenu
 
 comment "----------Connectivity config----------"
-menu "CONFIG INIC INTF"
+menu "CONFIG WHC INTF"
     choice
-        prompt "INIC MODE"
-        default WIFI_INIC_IPC_MENU
-            config WIFI_INIC_IPC_MENU
-                bool "INIC_IPC"
+        prompt "WHC MODE"
+        default WHC_INTF_IPC_MENU
+            config WHC_INTF_IPC_MENU
+                bool "WHC_IPC"
                 select CORE_AS_NP_FOR_KM0
                 select CORE_AS_AP_FOR_KM4
             config FULLMAC_MENU
@@ -175,15 +177,15 @@ menu "CONFIG INIC INTF"
                 # select CORE_AS_AP_FOR_KM4
     endchoice
 
-    if !WIFI_INIC_IPC_MENU
+    if !WHC_INTF_IPC_MENU
         choice
            prompt "HW INTERFACE"
-           config INIC_INTF_SDIO
-                bool "INIC_INTF_SDIO"
-            config INIC_INTF_USB
-                bool "INIC_INTF_USB"
-            config INIC_INTF_SPI
-                bool "INIC_INTF_SPI"
+           config WHC_INTF_SDIO
+                bool "WHC_INTF_SDIO"
+            config WHC_INTF_USB
+                bool "WHC_INTF_USB"
+            config WHC_INTF_SPI
+                bool "WHC_INTF_SPI"
         endchoice
     endif
 
@@ -254,9 +256,9 @@ menu "CONFIG WIFI"
         endchoice
         source "../component/wifi/Kconfig.wifi"
 
-        config WIFI_INIC_IPC_MENU
+        config WHC_INTF_IPC_MENU
             bool
-            select INIC_INTF_IPC
+            select WHC_INTF_IPC
             select WLAN
             select AS_INIC_NP if CORE_AS_NP
             select AS_INIC_AP if CORE_AS_AP
@@ -320,7 +322,7 @@ menu "CONFIG WIFI"
 
     config WLAN
         bool
-    config INIC_INTF_IPC
+    config WHC_INTF_IPC
         bool
     config AS_INIC_NP
         bool
@@ -330,11 +332,11 @@ menu "CONFIG WIFI"
         bool
     config FW_DRIVER_COEXIST
         bool
-    config INIC_INTF_SDIO
+    config WHC_INTF_SDIO
         bool
-    config INIC_INTF_SPI
+    config WHC_INTF_SPI
         bool
-    config INIC_INTF_USB
+    config WHC_INTF_USB
         bool
     config WIFI_FW_EN
         bool

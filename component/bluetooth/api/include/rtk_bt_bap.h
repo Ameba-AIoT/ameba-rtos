@@ -690,9 +690,6 @@ typedef struct {
  */
 typedef struct {
 	void *p_iso_chann;                                           /**< iso channel handle */
-	void *p_codec_entity;                                        /**< audio codec entity */
-	void *p_track_hdl;                                           /**< audio track handle if existed */
-	void *p_record_hdl;                                          /**< audio record handle if existed */
 	uint16_t iso_conn_handle;
 	rtk_bt_le_audio_iso_data_path_direction_t path_direction;    /**< audio path direction */
 } rtk_bt_le_audio_iso_chann_t;

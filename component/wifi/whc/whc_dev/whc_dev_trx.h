@@ -3,11 +3,11 @@
  * Copyright(c) 2020 - 2021 Realtek Corporation. All rights reserved.
  *
  ******************************************************************************/
-#ifndef __INIC_DEV_TX_H__
-#define __INIC_DEV_TX_H__
+#ifndef __WHC_DEV_TX_H__
+#define __WHC_DEV_TX_H__
 
 /* -------------------------------- Defines --------------------------------- */
-#define INIC_MSG_QUEUE_WARNING_DEPTH (4)
+#define WHC_MSG_QUEUE_WARNING_DEPTH (4)
 
 /* ------------------------------- Data Types ------------------------------- */
 /* device tx structure */
@@ -25,8 +25,8 @@ struct xmit_priv_t {
 extern struct xmit_priv_t dev_xmit_priv;
 
 /* -------------------------- Function declaration -------------------------- */
-void inic_dev_init_priv(void);
-void inic_dev_recv(int idx);
-void inic_dev_tx_done(int idx);
+void whc_dev_init_priv(void);
+void whc_dev_recv(int idx);
+void whc_dev_tx_done(int idx);
 
 #endif /* __INIC_DEV_TX_H__ */

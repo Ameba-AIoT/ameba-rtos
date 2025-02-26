@@ -75,12 +75,12 @@ static u8 usbd_inic_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
 };
 
 /* USB Full Speed Configuration Descriptor for WiFi-only mode */
-static u8 usbd_inic_wifi_only_mode_full_speed_config_desc[USBD_INIC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE] USB_DMA_ALIGNED = {
+static u8 usbd_inic_wifi_only_mode_full_speed_config_desc[USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE] USB_DMA_ALIGNED = {
 	/* Configuration Descriptor */
 	USB_LEN_CFG_DESC,						// bLength: Configuration Descriptor size
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
-	USB_LOW_BYTE(USBD_INIC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE),	// wTotalLength: number of returned bytes
-	USB_HIGH_BYTE(USBD_INIC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE),
+	USB_LOW_BYTE(USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE),	// wTotalLength: number of returned bytes
+	USB_HIGH_BYTE(USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE),
 	0x01,									// bNumInterfaces: 1 interface
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
@@ -176,24 +176,24 @@ static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	/* Init BULK IN EP3 */
-	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_WIFI_EP3_BULK_IN)];
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
 	ep->mps = USBD_INIC_FS_BULK_MPS;
 	ep->type = USB_CH_EP_TYPE_BULK;
-	usbd_ep_init(dev, USBD_INIC_WIFI_EP3_BULK_IN, USB_CH_EP_TYPE_BULK, ep->mps);
+	usbd_ep_init(dev, USBD_WHC_WIFI_EP3_BULK_IN, USB_CH_EP_TYPE_BULK, ep->mps);
 	ep->state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP4 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_WIFI_EP4_BULK_OUT)];
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
 	ep->mps = USBD_INIC_FS_BULK_MPS;
 	ep->type = USB_CH_EP_TYPE_BULK;
-	usbd_ep_init(dev, USBD_INIC_WIFI_EP4_BULK_OUT, USB_CH_EP_TYPE_BULK, ep->mps);
+	usbd_ep_init(dev, USBD_WHC_WIFI_EP4_BULK_OUT, USB_CH_EP_TYPE_BULK, ep->mps);
 	ep->state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP2 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_WIFI_EP2_BULK_OUT)];
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
 	ep->mps = USBD_INIC_FS_BULK_MPS;
 	ep->type = USB_CH_EP_TYPE_BULK;
-	usbd_ep_init(dev, USBD_INIC_WIFI_EP2_BULK_OUT, USB_CH_EP_TYPE_BULK, ep->mps);
+	usbd_ep_init(dev, USBD_WHC_WIFI_EP2_BULK_OUT, USB_CH_EP_TYPE_BULK, ep->mps);
 	ep->state = USBD_INIC_EP_STATE_IDLE;
 
 	return HAL_OK;
@@ -235,19 +235,19 @@ static int usbd_inic_clear_wifi_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	/* DeInit BULK IN EP3 */
-	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_WIFI_EP3_BULK_IN)];
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
 	ep->state = USBD_INIC_EP_STATE_IDLE;
-	usbd_ep_deinit(dev, USBD_INIC_WIFI_EP3_BULK_IN);
+	usbd_ep_deinit(dev, USBD_WHC_WIFI_EP3_BULK_IN);
 
 	/* DeInit BULK OUT EP4 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_WIFI_EP4_BULK_OUT)];
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
 	ep->state = USBD_INIC_EP_STATE_IDLE;
-	usbd_ep_deinit(dev, USBD_INIC_WIFI_EP4_BULK_OUT);
+	usbd_ep_deinit(dev, USBD_WHC_WIFI_EP4_BULK_OUT);
 
 	/* DeInit BULK OUT EP2 */
-	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_WIFI_EP2_BULK_OUT)];
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
 	ep->state = USBD_INIC_EP_STATE_IDLE;
-	usbd_ep_deinit(dev, USBD_INIC_WIFI_EP2_BULK_OUT);
+	usbd_ep_deinit(dev, USBD_WHC_WIFI_EP2_BULK_OUT);
 
 	return HAL_OK;
 }
@@ -473,7 +473,7 @@ static u8 *usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_sp
 
 	case USB_DESC_TYPE_CONFIGURATION:
 		buf = usbd_inic_wifi_only_mode_full_speed_config_desc;
-		length = USBD_INIC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE;
+		length = USBD_WHC_WIFI_ONLY_MODE_CONFIG_DESC_SIZE;
 		usb_os_memcpy((void *)desc, (void *)buf, length);
 		buf = desc;
 		*len = length;
@@ -520,19 +520,19 @@ static int usbd_inic_wifi_init(void)
 	usbd_inic_ep_t *ep;
 	u8 ep_num;
 
-	ep_num = USB_EP_NUM(USBD_INIC_WIFI_EP3_BULK_IN);
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
 	ep = &idev->in_ep[ep_num];
-	ep->addr = USBD_INIC_WIFI_EP3_BULK_IN;
+	ep->addr = USBD_WHC_WIFI_EP3_BULK_IN;
 	ep->valid = 1U;
 
-	ep_num = USB_EP_NUM(USBD_INIC_WIFI_EP4_BULK_OUT);
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT);
 	ep = &idev->out_ep[ep_num];
-	ep->addr = USBD_INIC_WIFI_EP4_BULK_OUT;
+	ep->addr = USBD_WHC_WIFI_EP4_BULK_OUT;
 	ep->valid = 1U;
 
-	ep_num = USB_EP_NUM(USBD_INIC_WIFI_EP2_BULK_OUT);
+	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num];
-	ep->addr = USBD_INIC_WIFI_EP2_BULK_OUT;
+	ep->addr = USBD_WHC_WIFI_EP2_BULK_OUT;
 	ep->valid = 1U;
 
 	return HAL_OK;
@@ -543,13 +543,13 @@ static void usbd_inic_wifi_deinit(void)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_inic_ep_t *ep;
 
-	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_WIFI_EP3_BULK_IN)];
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
 	ep->valid = 0U;
 
-	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_WIFI_EP4_BULK_OUT)];
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
 	ep->valid = 0U;
 
-	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_WIFI_EP2_BULK_OUT)];
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
 	ep->valid = 0U;
 
 }

@@ -6,7 +6,6 @@
 
 #include "platform_autoconf.h"
 
-#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 
@@ -2170,124 +2169,6 @@ end:
 }
 #endif
 
-void at_dns(void *arg)
-{
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
-	struct hostent *host_entry = NULL;
-	char **addr_list = NULL;
-
-	if (arg == NULL) {
-		RTK_LOGE(NOTAG, "[at_dns] Input parameter is NULL\r\n");
-		error_no = 1;
-		goto end;
-	}
-	argc = parse_param(arg, argv);
-	if (argc != 2) {
-		RTK_LOGE(NOTAG, "[at_dns] Invalid number of parameters\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	host_entry = gethostbyname(argv[1]);
-	if (host_entry != NULL) {
-		for (addr_list = host_entry->h_addr_list; *addr_list != NULL; addr_list++) {
-			at_printf("\r\n+DNS:%s\r\n", inet_ntoa(**addr_list));
-		}
-	} else {
-		RTK_LOGW(NOTAG, "[at_dns] Domain Name '%s' Not be resolved\r\n", argv[1]);
-		error_no = 2;
-		goto end;
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-void at_querydnssrv(void *arg)
-{
-	int error_no = 0;
-	const ip_addr_t *dns_server = NULL;
-
-	if (arg != NULL) {
-		RTK_LOGE(NOTAG, "[at_querydnssrv] Input parameter SHOULD be NULL\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	at_printf("\r\n+QUERYDNSSRV:");
-
-	dns_server = dns_getserver(0);  // Primary DNS server
-	if (*(u32_t *)dns_server != IPADDR_ANY)   {
-		at_printf("%s", ipaddr_ntoa(dns_server));
-	}
-	dns_server = dns_getserver(1);  // Secondary DNS server
-	if (*(u32_t *)dns_server != IPADDR_ANY)   {
-		at_printf(", %s", ipaddr_ntoa(dns_server));
-	}
-	at_printf("\r\n");
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-
-void at_setdnssrv(void *arg)
-{
-	int argc = 0, error_no = 0;
-	ip_addr_t dns_server1 = {0}, dns_server2 = {0};
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGE(NOTAG, "[at_setdnssrv] Input parameter is NULL\r\n");
-		error_no = 1;
-		goto end;
-	}
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 3)) {
-		RTK_LOGE(NOTAG, "[at_setdnssrv] Invalid number of parameters\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	if (inet_pton(AF_INET, argv[1], &dns_server1) != 1)  {
-		RTK_LOGW(NOTAG, "[at_setdnssrv] Invalid DNS Server IP\r\n");
-		error_no = 2;
-		goto end;
-	}
-	if (argc == 3)   {
-		if (inet_pton(AF_INET, argv[2], &dns_server2) != 1)  {
-			RTK_LOGW(NOTAG, "[at_setdnssrv] Invalid DNS Server IP\r\n");
-			error_no = 2;
-			goto end;
-		}
-	}
-	RTK_LOGI(NOTAG, "[at_setdnssrv] DNS Server IP: 0x%08x,0x%08x\r\n", htonl(dns_server1.addr), htonl(dns_server2.addr));
-
-	if (argc == 2)   {
-		dns_setserver(0, &dns_server1);  // Primary DNS server
-	} else if (argc == 3)   {
-		dns_setserver(0, &dns_server1);  // Primary DNS server
-		dns_setserver(1, &dns_server2);  // Secondary DNS server
-	}
-
-end:
-	if (error_no == 0) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
-
-
 void at_sktcliconf(void *arg)
 {
 	int argc = 0, error_no = 0;
@@ -2401,9 +2282,6 @@ log_item_t at_socket_items[ ] = {
 #if ENABLE_TCPIP_AUTOLINK
 	{"+SKTAUTOLINK", at_sktautolink, {NULL, NULL}},
 #endif
-	{"+DNS", at_dns, {NULL, NULL}},
-	{"+QUERYDNSSRV", at_querydnssrv, {NULL, NULL}},
-	{"+SETDNSSRV", at_setdnssrv, {NULL, NULL}},
 	{"+SKTCLICONF", at_sktcliconf, {NULL, NULL}},
 	{"+SKTSRVCONF", at_sktsrvconf, {NULL, NULL}},
 };
@@ -2428,4 +2306,3 @@ void at_socket_init(void)
 
 #endif /* CONFIG_ATCMD_SOCKET */
 #endif /* CONFIG_LWIP_LAYER */
-#endif /* CONFIG_MP_INCLUDED */

@@ -5,6 +5,7 @@
  ******************************************************************************/
 #include "whc_dev.h"
 #include "whc_dev_bridge.h"
+#include "whc_bridge_dev_api.h"
 
 #include "lwip/sys.h"
 #include "lwip/etharp.h"
@@ -13,94 +14,27 @@
 #include "lwip/udp.h"
 #include "lwip_netconf.h"
 
-struct bridge_pkt_filter pkt_filter_array[DEV_PORT_NUM];
 struct sk_buff *skb_transit = NULL;
-extern struct netif xnetif[NET_IF_NUM]; /* network interface structure */
-extern void inic_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len);
-static u8 bridge_default_direction = PORT_TO_HOST;
 
-u8(*inic_sdio_bridge_pkt_redirect_custom_ptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
+extern struct PktFilterNode *bridge_filter_head;
+extern struct PktFilterNode *bridge_filter_tail;
 
-#ifdef CONFIG_FULLMAC_BRIDGE
-/* set host state for dev */
-static u8 host_ready;
+u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
 
-/* customer need to set host state for dev */
-void bridge_set_host_state(u8 state)
+void whc_bridge_dev_pktfilter_init(void)
 {
-	host_ready = state;
-}
-
-u8 bridge_get_host_rdy(void)
-{
-	return host_ready;
-}
-
-#endif
-
-#if defined(CONFIG_FULLMAC_BRIDGEB)
-/* for bridgeb mode */
-void inic_event_bridge_get_dev_mac(u32 api_id, u32 *param_buf)
-{
-	(void) param_buf;
-	struct _rtw_mac_t dev_mac = {0};
-	wifi_get_mac_address(STA_WLAN_INDEX, &dev_mac, 0);
-	inic_send_api_ret_value(api_id, dev_mac.octet, 6);
-}
-
-void inic_event_bridge_DHCP(u32 api_id, u32 *param_buf)
-{
-	(void) param_buf;
-	int ret = -1;
-	LwIP_netif_set_link_up(0);
-	if (LwIP_DHCP(0, DHCP_START) == DHCP_ADDRESS_ASSIGNED) {
-		ret = 0;
+	if (!bridge_filter_head)  {
+		bridge_filter_head = (struct PktFilterNode *)rtos_mem_zmalloc(sizeof(struct PktFilterNode));
+		if (!bridge_filter_head) {
+			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer for filter head!!\n", __func__);
+			return;
+		}
+		bridge_filter_head->next = NULL;
+		bridge_filter_tail = bridge_filter_head;
 	}
-	inic_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
-void inic_event_bridge_get_ip(u32 api_id, u32 *param_buf)
-{
-	(void) param_buf;
-	u32 ip_ret = 0;
-	u8 *ip;
-	ip = LwIP_GetIP(0);
-	memcpy((u8 *)&ip_ret, ip, 4);
-	inic_send_api_ret_value(api_id, (u8 *)&ip_ret, sizeof(ip_ret));
-}
-
-void inic_event_bridge_get_scan_res(u32 api_id, u32 *param_buf)
-{
-	(void)param_buf;
-	char *scan_buf = NULL;
-	unsigned int scanned_AP_num = 0;
-	int ret = 0;
-
-	scanned_AP_num = param_buf[0];
-	if (scanned_AP_num == 0) {/* scanned no AP*/
-		goto error_exit;
-	}
-
-	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
-	if (scan_buf == NULL) {
-		goto error_exit;
-	}
-	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		rtos_mem_free((void *)scan_buf);
-		goto error_exit;
-	} else {
-		inic_send_api_ret_value(api_id, (u8 *)scan_buf, scanned_AP_num * sizeof(struct rtw_scan_result));
-		rtos_mem_free(scan_buf);
-		return;
-	}
-
-error_exit:
-	inic_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-
-}
-#endif
-
-void bridge_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
+void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -165,33 +99,7 @@ void bridge_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *p
 
 }
 
-void bridge_set_default_direction(u8 dir)
-{
-	bridge_default_direction = dir;
-}
-
-int bridge_get_filter_array(u8 idx, struct bridge_pkt_filter *filter)
-{
-	if (idx >= DEV_PORT_NUM) {
-		return -1;
-	}
-
-	memcpy(filter, &(pkt_filter_array[idx]), sizeof(struct bridge_pkt_filter));
-
-	return 0;
-}
-
-int bridge_set_filter_array(u8 idx, struct bridge_pkt_filter *filter)
-{
-	if (idx >= DEV_PORT_NUM) {
-		return -1;
-	}
-
-	memcpy(&(pkt_filter_array[idx]), filter, sizeof(struct bridge_pkt_filter));
-	return 0;
-}
-
-static bool bridge_match_filter(struct bridge_pkt_attrib *pattrib, struct bridge_pkt_filter *filter)
+static bool whc_bridge_dev_match_filter(struct bridge_pkt_attrib *pattrib, struct whc_bridge_dev_pkt_filter *filter)
 {
 	if ((filter->mask & MASK_SRC_IP) &&
 		memcmp(pattrib->src_ip, filter->src_ip, sizeof(filter->src_ip)) != 0) {
@@ -209,24 +117,27 @@ static bool bridge_match_filter(struct bridge_pkt_attrib *pattrib, struct bridge
 	return true;
 }
 
-u8_t bridge_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
+u8_t whc_bridge_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
 {
-	for (int i = 0; i < DEV_PORT_NUM; i++) {
-		if (pkt_filter_array[i].state && bridge_match_filter(pattrib, &pkt_filter_array[i])) {
-			return pkt_filter_array[i].direction;
+	struct PktFilterNode *node = bridge_filter_head->next;
+
+	while (node != NULL) {
+		if (node->filter->state && whc_bridge_dev_match_filter(pattrib, node->filter)) {
+			return node->filter->direction;
 		}
+		node = node->next;
 	}
 
-	return bridge_default_direction;
+	return whc_bridge_dev_api_get_default_direction();
 }
 
-u8 bridge_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
+u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
 {
 	u8 icmp_type = 0;
 	u8 type = PORT_TO_UNKNOWN;
 
-	if (inic_sdio_bridge_pkt_redirect_custom_ptr) {
-		type = inic_sdio_bridge_pkt_redirect_custom_ptr(skb, pattrib);
+	if (whc_bridge_sdio_dev_pkt_redir_cusptr) {
+		type = whc_bridge_sdio_dev_pkt_redir_cusptr(skb, pattrib);
 		if (type != PORT_TO_UNKNOWN) {
 			return type;
 		}
@@ -234,7 +145,7 @@ u8 bridge_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib
 
 #ifdef CONFIG_FULLMAC_BRIDGE
 	/* all pkt to upper before host rdy to avoid txbd full */
-	if (!(bridge_get_host_rdy())) {
+	if (!(whc_bridge_dev_api_get_host_rdy())) {
 		return PORT_TO_UP;
 	}
 #endif
@@ -264,12 +175,12 @@ u8 bridge_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib
 		}
 	}
 
-	type = bridge_rcvpkt_filter(pattrib);
+	type = whc_bridge_dev_rcvpkt_filter(pattrib);
 
 	return type;
 }
 
-u8 bridge_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
+u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 {
 	struct bridge_pkt_attrib *pattrib;
 	u8 direction = 0;
@@ -296,7 +207,7 @@ u8 bridge_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	/* case3: normal netdev0 pkt*/
 	skb = wifi_if_get_recv_skb(*idx);
 	pattrib = (struct bridge_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct bridge_pkt_attrib));
-	bridge_packet_attrib_parse(skb, pattrib);
+	whc_bridge_dev_packet_attrib_parse(skb, pattrib);
 
 
 	if (pattrib->protocol == lwip_htons(ETH_P_IPV6)) {
@@ -307,7 +218,7 @@ u8 bridge_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 
 	pattrib->port_idx = *idx;//BRIDGE_TODO: check if needed
 
-	direction = bridge_rcvpkt_redirect(skb, pattrib);
+	direction = whc_bridge_dev_rcvpkt_redirect(skb, pattrib);
 
 	switch (direction) {
 	case PORT_TO_BOTH:

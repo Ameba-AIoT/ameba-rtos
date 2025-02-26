@@ -31,19 +31,19 @@
 /*dnrd.c will use this*/
 char *rptssid = NULL;
 int wifi_repeater_ap_config_complete = 0;
+rtos_task_t rnat_ap_start_task_hdl = NULL;
+rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
 extern struct netif xnetif[NET_IF_NUM];
 extern void dns_relay_service_init(void);
 extern void ip_nat_reinitialize(void);
 extern void ip_nat_sync_dns_serever_data(void);
 
-static int nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 softap_ip, u32 softap_netmask)
+static void rnat_wifi_stop_ap(void)
 {
 	u32 addr;
 	u32 netmask;
 	u32 gw;
-	uint8_t iptab[4];
-	int timeout = 20;
 
 	// stop dhcp server
 	dhcps_deinit();
@@ -53,6 +53,17 @@ static int nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 sof
 	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
 
 	wifi_stop_ap();
+}
+
+static int rnat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 softap_ip, u32 softap_netmask)
+{
+	u32 addr;
+	u32 netmask;
+	u32 gw;
+	uint8_t iptab[4];
+	int timeout = 20;
+
+	rnat_wifi_stop_ap();
 
 	// start ap
 	if (wifi_start_ap(softAP_config) < 0) {
@@ -97,7 +108,7 @@ static int nat_wifi_restart_ap(struct _rtw_softap_info_t *softAP_config, u32 sof
 	return 0;
 }
 
-static int nat_avoid_confliction_ip(void)
+static int rnat_avoid_confliction_ip(void)
 {
 	struct _rtw_wifi_setting_t setting;
 	struct _rtw_softap_info_t softAP_config = {0};
@@ -135,7 +146,7 @@ static int nat_avoid_confliction_ip(void)
 		softAP_config.security_type = setting.security_type;
 		softAP_config.channel = setting.channel;
 
-		if (nat_wifi_restart_ap(&softAP_config, wlan1_ip, wlan1_mask) < 0) {
+		if (rnat_wifi_restart_ap(&softAP_config, wlan1_ip, wlan1_mask) < 0) {
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\rERROR: wifi_restart_ap Operation failed!");
 		}
 	}
@@ -143,7 +154,7 @@ static int nat_avoid_confliction_ip(void)
 	return 0;
 }
 
-static void nat_poll_ip_changed_thread(void *param)
+static void rnat_poll_ip_changed_thread(void *param)
 {
 	(void) param;
 	unsigned int oldip, newip;
@@ -159,7 +170,7 @@ static void nat_poll_ip_changed_thread(void *param)
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s(%d)oldip=%x,newip=%x\n", __FUNCTION__, __LINE__, oldip, newip);
 			ip_nat_reinitialize();
 			ip_nat_sync_dns_serever_data();
-			nat_avoid_confliction_ip();
+			rnat_avoid_confliction_ip();
 			oldip = newip;
 		}
 
@@ -207,7 +218,7 @@ static void rnat_ap_start_thread(void *param)
 	memcpy(softap_config.ssid.val, wifi_setting.ssid, softap_config.ssid.len);
 	memcpy(rptssid, wifi_setting.ssid, softap_config.ssid.len);
 	if (rptssid == NULL) {
-		rptssid = (char *)rtos_mem_zmalloc(INIC_MAX_SSID_LENGTH);
+		rptssid = (char *)rtos_mem_zmalloc(WHC_MAX_SSID_LENGTH);
 	}
 	memcpy(rptssid, wifi_setting.ssid, softap_config.ssid.len);
 	if (wifi_start_ap(&softap_config) < 0) {
@@ -240,6 +251,7 @@ static void rnat_ap_start_thread(void *param)
 
 	wifi_repeater_ap_config_complete = 1;
 exit:
+	rnat_ap_start_task_hdl = NULL;
 	rtos_task_delete(NULL);
 }
 
@@ -249,14 +261,20 @@ void wtn_rnat_ap_init(u8 enable)
 	if (enable) {
 		wifi_repeater_ap_config_complete = 0;
 
-		if (rtos_task_create(NULL, ((const char *)"rnat_start_thread"), rnat_ap_start_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,  "\n\r%s rtos_task_create failed\n", __FUNCTION__);
+		if (rnat_ap_start_task_hdl == NULL) {
+			if (rtos_task_create(&rnat_ap_start_task_hdl, ((const char *)"rnat_start_thread"), rnat_ap_start_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,  "\n\r%s rtos_task_create failed\n", __FUNCTION__);
+			}
 		}
-		if (rtos_task_create(NULL, ((const char *)"nat_poll_ip_changed_thread"), nat_poll_ip_changed_thread, NULL, 1024 * 4, 1) != SUCCESS) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
+		if (rnat_poll_ip_task_hdl == NULL) {
+			if (rtos_task_create(&rnat_poll_ip_task_hdl, ((const char *)"rnat_poll_ip_changed_thread"), rnat_poll_ip_changed_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
+			}
+			dns_relay_service_init();
 		}
-
-		dns_relay_service_init();
+	} else {
+		wifi_repeater_ap_config_complete = 0;
+		rnat_wifi_stop_ap();
 	}
 }
 #endif

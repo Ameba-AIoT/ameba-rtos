@@ -1,3 +1,0 @@
-@echo off
-DownloadServer 8082 ota.bin
-set /p DUMMY=Press Enter to Continue ...

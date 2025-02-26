@@ -62,11 +62,13 @@ extern u8 __km4_image2_entry_func__[];
 extern u8 __km4_audio_buf_start__[];
 extern u8 __ca32_fip_dram_start__[];
 extern u8 __ca32_flash_text_start__[];
+extern u8 __ca32_bl1_dram_start__[];
 
 extern u8 __psram_heap_buffer_start__[];
 extern u8 __psram_heap_buffer_size__[];
 extern u8 __psram_heap_extend_start__[];
 extern u8 __psram_heap_extend_size__[];
+extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];

@@ -20,21 +20,36 @@ _RTK_USB_VID = "0BDA"
 
 CmdEsc = b'\x1b\r\n'
 CmdSetBackupRegister = bytes("EW 0x480003C0 0x200\r\n", encoding="utf-8")
-CmdResetIntoDownloadMOde = bytes("reboot uartburn\r\n", encoding="utf-8")
+CmdResetIntoDownloadMode = bytes("reboot uartburn\r\n", encoding="utf-8")
 
 
 class Ameba(object):
-    def __init__(self, profile: RtkDeviceProfile, serial_port: serial.Serial, baudrate: int, image_path: str, setting: RtSettings, logger):
+    def __init__(self,
+                 profile: RtkDeviceProfile,
+                 serial_port: serial.Serial,
+                 baudrate: int,
+                 image_path: str,
+                 setting: RtSettings,
+                 logger,
+                 download_img_info=None,
+                 chip_erase=False,
+                 memory_type=None,
+                 erase_info=None):
+        self.logger = logger
         self.profile_info = profile
         self.serial_port = serial_port
         self.baudrate = baudrate
         self.image_path = image_path
-        self.logger = logger
+        self.download_img_info = download_img_info
+        self.chip_erase = chip_erase
+        self.memory_type = memory_type
         self.setting = setting
         self.is_usb = self.is_realtek_usb()
         self.rom_handler = RomHandler(self)
         self.floader_handler = FloaderHandler(self)
         self.download_image_list = []
+        self.device_info = None
+        self.erase_info = erase_info
 
     def read_bytes(self, timeout_seconds, size=1):
         ret = ErrType.OK
@@ -84,41 +99,45 @@ class Ameba(object):
             self.logger.debug(
                 f"Reactive port {self.serial_port.port} with baudrate {baud}")
 
-        # check if already activated
-        for retry in range(10):
-            try:
-                if self.serial_port.is_open:
-                    self.serial_port.close()
+        # if uart dtr/rts enable, should skip close/reopen operation
+        # if USB port, should close/reopen port when switch baudrate
+        if self.is_usb:
+            # check if already activated
+            for retry in range(10):
+                try:
+                    if self.serial_port.is_open:
+                        self.serial_port.close()
 
-                while self.serial_port.is_open:
-                    pass
-            except:
-                ret = ErrType.SYS_IO
+                    while self.serial_port.is_open:
+                        pass
+                except:
+                    ret = ErrType.SYS_IO
 
-            if ret == ErrType.OK:
-                break
+                if ret == ErrType.OK:
+                    break
 
-            time.sleep(0.1)
+                time.sleep(0.1)
 
-        if ret != ErrType.OK:
-            self.logger.warning(f"Failed to close {self.serial_port.port} when reactive it.")
+            if ret != ErrType.OK:
+                self.logger.warning(f"Failed to close {self.serial_port.port} when reactive it.")
 
-        time.sleep(delay_s)
+            time.sleep(delay_s)
 
         if self.serial_port.baudrate != baud:
             self.serial_port.baudrate = baud
 
-        ret = ErrType.OK
-        for rty in range(10):
-            try:
-                self.serial_port.open()
-            except:
-                ret = ErrType.SYS_IO
+        if self.is_usb:
+            ret = ErrType.OK
+            for rty in range(10):
+                try:
+                    self.serial_port.open()
+                except:
+                    ret = ErrType.SYS_IO
 
-            if ret == ErrType.OK:
-                break
+                if ret == ErrType.OK:
+                    break
 
-            time.sleep(0.1)
+                time.sleep(0.1)
 
         if ret == ErrType.OK:
             self.logger.debug(f"Reactive port {self.serial_port.port} ok")
@@ -130,12 +149,32 @@ class Ameba(object):
     def check_download_mode(self):
         ret = ErrType.SYS_IO
         is_floader = False
+        boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.rom_boot_delay_in_second
 
         self.logger.debug(f"Check download mode with baudrate {self.serial_port.baudrate}")
         retry = 0
         while retry < 3:
             retry += 1
             try:
+                self.logger.debug(f"Check whether in rom download mode")
+                ret = self.rom_handler.handshake()
+                if ret == ErrType.OK:
+                    self.logger.debug(f"Handshake ok, device in rom download mode")
+                    break
+                self.logger.debug(f"Check whether in floader with baudrate {self.baudrate}")
+
+                if not self.is_usb:
+                    self.switch_baudrate(self.baudrate, self.setting.baudrate_switch_delay_in_second, True)
+
+                ret = self.floader_handler.sense()
+                if ret == ErrType.OK:
+                    # do not reset floader
+                    is_floader = True
+                    self.logger.debug("Floader handshake ok")
+                    break
+                else:
+                    self.logger.debug(f"Floader handshake fail: {ret}")
+
                 if not self.is_usb:
                     self.logger.debug(
                         f'Assume in application or ROM normal mode with baudrate {self.profile_info.log_baudrate}')
@@ -146,17 +185,17 @@ class Ameba(object):
                     self.serial_port.flushOutput()
 
                     self.write_bytes(CmdEsc)
-                    time.sleep(0.02)
+                    time.sleep(0.1)
 
                     if self.profile_info.is_amebad():
                         self.serial_port.flushOutput()
                         self.write_bytes(CmdSetBackupRegister)
-                        time.sleep(0.02)
+                        time.sleep(0.1)
 
                     self.serial_port.flushOutput()
-                    self.write_bytes(CmdResetIntoDownloadMOde)
+                    self.write_bytes(CmdResetIntoDownloadMode)
 
-                    self.switch_baudrate(self.profile_info.handshake_baudrate, self.setting.floader_boot_delay_in_second, True)
+                    self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
 
                     self.logger.debug(
                         f'Check whether reset in ROM download mode with baudrate {self.profile_info.handshake_baudrate}')
@@ -167,20 +206,10 @@ class Ameba(object):
                         break
                     else:
                         self.logger.debug("Handshake fail, cannot enter UART download mode")
-
-                    self.logger.debug(f"Switch baudrate to {self.baudrate} for sense...")
-                    self.switch_baudrate(self.baudrate, self.setting.baudrate_switch_delay_in_second, True)
                 else:
-                    self.logger.debug(f"Start sense by USB...")
-
-                ret = self.floader_handler.sense()
-                if ret == ErrType.OK:
-                    # do not reset floader
-                    is_floader = True
-                    self.logger.debug("Floader handshake ok")
+                    ret = ErrType.SYS_IO
+                    self.logger.error(f"Handshake fail, cannot enter USB download mode")
                     break
-                else:
-                    self.logger.debug(f"Floader handshake fail: {ret}")
             except Exception as err:
                 self.logger.error(f"Check download mode exception: {err}")
 
@@ -189,7 +218,9 @@ class Ameba(object):
     def prepare(self):
         ret = ErrType.OK
         floader_init_baud = self.baudrate if self.is_usb else (self.profile_info.handshake_baudrate if
-                                                               (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
+                                                               (
+                                                                       self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
+        boot_delay = self.setting.usb_floader_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
 
         if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
             ret = self.auto_enter_download_mode()
@@ -210,7 +241,7 @@ class Ameba(object):
                 self.logger.error(f"Flashloader download fail: {ret}")
                 return ret
 
-            ret = self.switch_baudrate(floader_init_baud, self.setting.floader_boot_delay_in_second, True)
+            ret = self.switch_baudrate(floader_init_baud, boot_delay, True)
             if ret != ErrType.OK:
                 self.logger.error(f"Flashloader boot fail: {ret}")
                 return ret
@@ -290,8 +321,10 @@ class Ameba(object):
 
         return ret
 
+    # def check_and_process_flash_lock(self, is_erase):
+    #     follow_up_action =
+
     def auto_enter_download_mode(self):
-        # TODO, need verify
         ret = ErrType.OK
         if not self.serial_port.is_open:
             return ErrType.SYS_IO
@@ -344,14 +377,15 @@ class Ameba(object):
 
     def verify_images(self):
         ret = True
-        for image_info in self.profile_info.images:
-            if not image_info.mandatory:
-                continue
-            image_name = image_info.image_name
-            image_path = os.path.realpath(os.path.join(self.image_path, image_name))
-            if not os.path.exists(image_path):
-                self.logger.error(f"{image_name} NOT exists: {image_path}")
-                ret = False
+        if not self.download_img_info:
+            for image_info in self.profile_info.images:
+                if not image_info.mandatory:
+                    continue
+                image_name = image_info.image_name
+                image_path = os.path.realpath(os.path.join(self.image_path, image_name))
+                if not os.path.exists(image_path):
+                    self.logger.error(f"{image_name} NOT exists: {image_path}")
+                    ret = False
 
         return ret
 
@@ -360,6 +394,45 @@ class Ameba(object):
 
         max_addr = self.profile_info.flash_start_address + self.device_info.flash_capacity
 
+        return ret
+
+    def check_protocol_for_erase(self):
+        ret = True
+
+        if (not self.is_usb) and (self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) and (
+                self.setting.disable_nand_access_with_uart == 1):
+            ret = False
+            self.logger.warning(
+                f"NAND access via UART is not allowed, please check the COM port and make sure the device profile matches the attached device!")
+        return ret
+
+    def is_address_block_aligned(self, address):
+        ret = False
+
+        if self.device_info:
+            block_size = self.device_info.flash_block_size()
+            ret = ((address % block_size) == 0)
+
+        return ret
+
+    def post_validate_config_for_erase(self):
+        ret = ErrType.OK
+
+        if self.erase_info and (not self.profile_info.is_ram_address(self.erase_info.start_address)):
+            if not self.is_address_block_aligned(self.erase_info.start_address):
+                ret = ErrType.SYS_PARAMETER
+                self.logger.warning(
+                    f"Flash start address should be aligned to block size {self.device_info.flash_block_size}KB")
+            if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND and (
+                    not self.is_address_block_aligned(self.erase_info.end_address)):
+                ret = ErrType.SYS_PARAMETER
+                self.logger.warning(
+                    f"Flash end address should be aligned to block size {self.device_info.flash_block_size}KB")
+            if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NOR and (
+                    not self.is_address_block_aligned(self.erase_info.size_in_byte())):
+                ret = ErrType.SYS_PARAMETER
+                self.logger.warning(
+                    f"Flash size should be aligned to block size {self.device_info.flash_block_size}KB")
         return ret
 
     def calculate_checksum(self, image):
@@ -389,18 +462,40 @@ class Ameba(object):
             ret = ErrType.SYS_PARAMETER
             return ret
 
-        for image_info in self.profile_info.images:
-            is_mandatory = image_info.mandatory
-            if not is_mandatory:
-                continue
-            img_name = image_info.image_name
-            img_path = os.path.realpath(os.path.join(self.image_path, img_name))
-            self.logger.info(f"{img_name} download...")
-
-            ret = self._download_image(img_path, image_info)
+        # support chip erase
+        if self.chip_erase and (self.memory_type == MemoryInfo.MEMORY_TYPE_NOR):
+            self.logger.info(f"Chip erase start")
+            ret = self.floader_handler.erase_flash(self.memory_type, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
+                                                   0, 0xFFFFFFFF, sense=True, force=False)
             if ret != ErrType.OK:
-                self.logger.info(f"{img_name} download fail: {ret}")
-                break
+                self.logger.error(f"Chip erase fail")
+                return ret
+            self.logger.info(f"Chip erase end")
+
+        if self.download_img_info:
+            for image_info in self.download_img_info:
+                img_path = image_info.image_name
+                img_name = os.path.basename(img_path)
+                image_info.image_name = img_name
+
+                self.logger.info(f"{img_name} download...")
+                ret = self._download_image(img_path, image_info)
+                if ret != ErrType.OK:
+                    self.logger.info(f"{img_name} download fail: {ret}")
+                    break
+        else:
+            for image_info in self.profile_info.images:
+                is_mandatory = image_info.mandatory
+                if not is_mandatory:
+                    continue
+                img_name = image_info.image_name
+                img_path = os.path.realpath(os.path.join(self.image_path, img_name))
+                self.logger.info(f"{img_name} download...")
+
+                ret = self._download_image(img_path, image_info)
+                if ret != ErrType.OK:
+                    self.logger.info(f"{img_name} download fail: {ret}")
+                    break
 
         if ret == ErrType.OK:
             self.logger.info("All images download done")
@@ -439,7 +534,8 @@ class Ameba(object):
 
         addr = image_info.start_address
         tx_sum = 0
-        if ((image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or (is_ram and (self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND))):
+        if ((image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or (
+                is_ram and (self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND))):
             img = io.BytesIO(img_content)
             img_bytes = img.read(img_length)
             data_bytes = img_bytes.ljust(aligned_img_length, padding_data.to_bytes(1, byteorder="little"))
@@ -451,9 +547,11 @@ class Ameba(object):
                     ret = ErrType.SYS_OVERRANGE
                     break
 
-                ret = self.floader_handler.erase_flash(image_info.memory_type, addr, addr + block_size, block_size, sense=True)
+                ret = self.floader_handler.erase_flash(image_info.memory_type, addr, addr + block_size, block_size,
+                                                       sense=True)
                 if ret == ErrType.DEV_NAND_BAD_BLOCK or ret == ErrType.DEV_NAND_WORN_BLOCK:
-                    self.logger.debug(f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: 0x{format(addr, '08X')}")
+                    self.logger.debug(
+                        f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: 0x{format(addr, '08X')}")
                     addr += self.device_info.flash_block_size()
                     next_erase_addr = addr
                     continue
@@ -463,12 +561,14 @@ class Ameba(object):
                 next_erase_addr = addr + self.device_info.flash_block_size()
 
                 i = 0
+                progress_int = 0
                 while i < pages_per_block:
                     if tx_sum + page_size >= aligned_img_length:
                         is_last_page = True
 
                     need_sense = (is_last_page or (i == pages_per_block - 1))
-                    ret = self.floader_handler.write(image_info.memory_type, data_bytes[tx_sum: tx_sum + page_size], page_size, addr, need_sense)
+                    ret = self.floader_handler.write(image_info.memory_type, data_bytes[tx_sum: tx_sum + page_size],
+                                                     page_size, addr, need_sense)
                     if ret == ErrType.OK:
                         idx = 0
                         while idx < page_size:
@@ -486,34 +586,52 @@ class Ameba(object):
                         break
 
                     i += 1
+                progress = int((tx_sum / aligned_img_length) * 100)
+                if int((progress) / 10) != progress_int:
+                    progress_int += 1
+                    self.logger.info(f"Progress: {progress}%")
 
                 if ret != ErrType.OK:
                     break
 
             if ret == ErrType.OK:
                 if image_info.full_erase and (next_erase_addr < image_info.end_address):
-                    self.logger.debug(f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
-                    ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr, image_info.end_address,
-                                                           (image_info.end_address-next_erase_addr), sense=True)
+                    self.logger.debug(
+                        f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
+                    ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr,
+                                                           image_info.end_address,
+                                                           (image_info.end_address - next_erase_addr), sense=True)
                     if ret == ErrType.DEV_NAND_BAD_BLOCK or ret == ErrType.DEV_NAND_WORN_BLOCK:
-                        self.logger.debug(f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: {hex(addr)}")
+                        self.logger.debug(
+                            f"{'Bad' if ret == ErrType.DEV_NAND_BAD_BLOCK else 'Worn'} block: {hex(addr)}")
                     elif ret != ErrType.OK:
                         self.logger.error(f"Fail to erase block {hex(addr)}:{ret}")
 
                 if tx_sum >= aligned_img_length:
                     if aligned_img_length < 1024:
                         self.logger.debug(f"Image download done: {aligned_img_length}bytes")
-                    elif aligned_img_length < 1024*1024:
+                    elif aligned_img_length < 1024 * 1024:
                         self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
                     else:
                         self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
                 else:
                     self.logger.warning(f"Image download uncompleted: {tx_sum}/{aligned_img_length}")
+
+                elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
+                kbps = aligned_img_length * 8 // elapse_ms
+                size_kb = aligned_img_length // 1024
+
+                if self.is_usb:
+                    self.logger.info(
+                        f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+                else:
+                    self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
         else:
             write_pages = 0
             img = io.BytesIO(img_content)
             img_bytes = img.read(img_length)
             data_bytes = img_bytes.ljust(aligned_img_length, padding_data.to_bytes(1, byteorder="little"))
+            progress_int = 0
             while tx_sum < aligned_img_length:
                 if write_pages == 0:
                     if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
@@ -532,17 +650,19 @@ class Ameba(object):
                             ret = ErrType.SYS_PARAMETER
                             break
 
-                        ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr, erase_addr +block_size, block_size)
+                        ret = self.floader_handler.erase_flash(image_info.memory_type, erase_addr,
+                                                               erase_addr + block_size, block_size)
                         if ret != ErrType.OK:
                             break
 
                         last_erase_addr = erase_addr
-                        next_erase_addr = erase_addr +block_size
+                        next_erase_addr = erase_addr + block_size
 
                 need_sense = ((((write_pages + 1) % self.setting.sense_packet_count) == 0) or
                               (write_pages + 1 >= pages_per_block) or
                               (tx_sum + page_size >= aligned_img_length))
-                ret = self.floader_handler.write(image_info.memory_type, data_bytes[tx_sum: tx_sum + page_size], page_size, addr,
+                ret = self.floader_handler.write(image_info.memory_type, data_bytes[tx_sum: tx_sum + page_size],
+                                                 page_size, addr,
                                                  need_sense=need_sense)
                 if ret != ErrType.OK:
                     self.logger.debug(f"Write to addr={hex(addr)} size={page_size} fail: {ret}")
@@ -555,7 +675,7 @@ class Ameba(object):
                 idx = 0
                 while idx < page_size:
                     checksum += (data_bytes[tx_sum + idx] + (data_bytes[tx_sum + idx + 1] << 8) + (
-                                data_bytes[tx_sum + idx + 2] << 16) + (data_bytes[tx_sum + idx + 3] << 24))
+                            data_bytes[tx_sum + idx + 2] << 16) + (data_bytes[tx_sum + idx + 3] << 24))
                     idx += 4
 
                 checksum &= 0xFFFFFFFF
@@ -563,12 +683,18 @@ class Ameba(object):
                 addr += page_size
                 tx_sum += page_size
 
+                progress = int((tx_sum / aligned_img_length) * 100)
+                if int((progress) / 10) != progress_int:
+                    progress_int += 1
+                    self.logger.info(f"Progress: {progress}%")
+
             if image_info.full_erase and (next_erase_addr < image_info.end_address):
                 self.logger.debug(f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")
                 ret = self.floader_handler.erase_flash(image_info.memory_type, next_erase_addr, image_info.end_address,
-                                                 (image_info.end_address - next_erase_addr), sense=True)
+                                                       (image_info.end_address - next_erase_addr), sense=True)
                 if ret != ErrType.OK:
-                    self.logger.warning(f"Fail to extra address range {hex(next_erase_addr)}-{hex(image_info.end_address)}")
+                    self.logger.warning(
+                        f"Fail to extra address range {hex(next_erase_addr)}-{hex(image_info.end_address)}")
 
             if aligned_img_length < 1024:
                 self.logger.debug(f"Image download done: {aligned_img_length}bytes")
@@ -576,6 +702,16 @@ class Ameba(object):
                 self.logger.debug(f"Image download done: {aligned_img_length // 1024}KB")
             else:
                 self.logger.debug(f"Image download done: {round(aligned_img_length / 1024 / 1024, 2)}MB")
+
+            elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
+            kbps = aligned_img_length * 8 // elapse_ms
+            size_kb = aligned_img_length // 1024
+
+            if self.is_usb:
+                self.logger.info(
+                    f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+            else:
+                self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
 
         if ret == ErrType.OK:
             cal_checksum = 0
@@ -586,14 +722,83 @@ class Ameba(object):
                     self.logger.debug(f"Checksum fail: expect {hex(checksum)} get {hex(cal_checksum)}")
                     ret = ErrType.SYS_CHECKSUM
 
-        if ret == ErrType.OK:
-            elapse_ms = round((datetime.now() - start_time).total_seconds() * 1000, 0)
-            kbps = aligned_img_length * 8 // elapse_ms
-            size_kb = aligned_img_length // 1024
+        return ret
 
-            if self.is_usb:
-                self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+    def erase_flash(self):
+        ret = ErrType.OK
+
+        if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            erase_total_size = self.erase_info.end_address - self.erase_info.start_address
+            erase_size = 0
+            addr = self.erase_info.start_address
+            while addr < self.erase_info.end_address:
+                ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
+                                                       addr,
+                                                       addr + self.device_info.flash_block_size,
+                                                       self.device_info.flash_block_size,
+                                                       sense=True)
+                if ret == ErrType.OK:
+                    erase_size += self.device_info.flash_block_size
+                    # TODO：update erase progress
+                    # self.logger.info(f"Erase progress: {int()}")
+                    self.logger.info(
+                        f"NAND erase address  ={hex(addr)}, size = {self.device_info.flash_block_size / 1024}KB OK")
+                elif ret == ErrType.DEV_NAND_BAD_BLOCK:
+                    self.logger.warning(
+                        f"NAND erase address = {hex(addr)} size = {self.device_info.flash_block_size / 1024}KB skipped: bad block")
+                    ret = ErrType.OK
+                elif ret == ErrType.DEV_NAND_WORN_BLOCK:
+                    self.logger.warning(
+                        f"NAND erase address = {hex(addr)} size = {self.device_info.flash_block_size / 1024}KB failed: mark warning block")
+                    ret = ErrType.OK
+                else:
+                    self.logger.warning(
+                        f"NAND erase address = {hex(addr)} size = {self.device_info.flash_block_size / 1024}KB failed: {ret}")
+                    break
+            if ret == ErrType.OK:
+                self.logger.info(f"Erase nand done")
+        elif self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NOR:
+            if self.setting.erase_by_block != 0:
+                addr = self.erase_info.start_address
+                size_erased = 0
+                while size_erased < self.erase_info.size_in_byte():
+                    if ((addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0) and \
+                            ((self.erase_info.size_in_byte() - size_erased) >= 64 * FlashUtils.NorDefaultPageSize.value):
+                        block_size = 64 * FlashUtils.NorDefaultPageSize.value
+                    elif ((addr % (32 * FlashUtils.NorDefaultPageSize.value)) == 0) and \
+                            ((self.erase_info.size_in_byte() - size_erased) >= 32 * FlashUtils.NorDefaultPageSize.value):
+                        block_size = 32 * FlashUtils.NorDefaultPageSize.value
+                    else:
+                        block_size = 4 * FlashUtils.NorDefaultPageSize.value
+
+                    need_sense = ((size_erased + block_size) >= self.erase_info.size_in_byte())
+                    ret = self.floader_handler.erase_flash(self.erase_info.memory_type, addr, addr + block_size,
+                                                           block_size, sense=need_sense)
+                    if ret != ErrType.OK:
+                        break
+
+                    addr += block_size
+                    size_erased += block_size
+                    # TODO：update erase progress
+                    # self.logger.info(f"Erase Progress: {}")
             else:
-                self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
+                ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
+                                                       self.erase_info.start_address,
+                                                       self.erase_info.end_address,
+                                                       self.erase_info.size_in_byte(),
+                                                       sense=True)
+                if ret == ErrType.OK:
+                    self.logger.info(f"Erase nor done")
+        elif self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM:
+            ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
+                                                   self.erase_info.start_address,
+                                                   self.erase_info.end_address,
+                                                   self.erase_info.size_in_byte(),
+                                                   sense=True)
+            if ret == ErrType.OK:
+                self.logger.info("Erase ram done")
+        else:
+            # TBD
+            pass
 
         return ret

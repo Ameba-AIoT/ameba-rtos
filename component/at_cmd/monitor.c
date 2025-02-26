@@ -635,14 +635,14 @@ CmdWTN(
 #endif
 #ifdef CONFIG_ARM_CORE_CM4
 #ifdef CONFIG_WLAN
-extern int inic_wltunnel_command(char *cmd, unsigned int cmd_len);
+extern int whc_ipc_host_api_wltunnel_command(char *cmd, unsigned int cmd_len);
 u32
 CmdWTN(
 	IN  u16 argc,
 	IN  u8  *argv[]
 )
 {
-#if defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB) || defined(CONFIG_INIC_INTF_SPI) || defined(CONFIG_FULLMAC_BRIDGE_LITE)
+#if !defined(CONFIG_WHC_INTF_IPC)
 	UNUSED(argc);
 	UNUSED(argv);
 #else
@@ -650,7 +650,7 @@ CmdWTN(
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
 		return FALSE;
 	}
-	inic_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
+	whc_ipc_host_api_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
 #endif
 	return 0;
 }
@@ -989,14 +989,14 @@ CmdWTN(
 #ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 
 #ifdef CONFIG_WLAN
-extern int inic_wltunnel_command(char *cmd, unsigned int cmd_len);
+extern int whc_ipc_host_api_wltunnel_command(char *cmd, unsigned int cmd_len);
 u32
 CmdWTN(
 	IN  u16 argc,
 	IN  u8  *argv[]
 )
 {
-#if defined(CONFIG_INIC_INTF_SDIO) || defined(CONFIG_INIC_INTF_USB) || defined(CONFIG_INIC_INTF_SPI) || defined(CONFIG_FULLMAC_BRIDGE_LITE)
+#if defined(CONFIG_WHC_INTF_SDIO) || defined(CONFIG_WHC_INTF_USB) || defined(CONFIG_WHC_INTF_SPI)
 	UNUSED(argc);
 	UNUSED(argv);
 #else
@@ -1004,7 +1004,7 @@ CmdWTN(
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
 		return FALSE;
 	}
-	inic_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
+	whc_ipc_host_api_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
 #endif
 	return 0;
 }
@@ -1180,7 +1180,8 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 #if (defined(CONFIG_AMEBASMART) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
-	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
+	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
+	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
 	{
 		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
 		"\t\t wmap addr len data\n"

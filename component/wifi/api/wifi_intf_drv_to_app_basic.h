@@ -71,7 +71,7 @@ enum {
 /** @defgroup SSID_LEN_Defs
   * @{
   */
-#define INIC_MAX_SSID_LENGTH (33)
+#define WHC_MAX_SSID_LENGTH (33)
 /** @} */
 
 #pragma pack(1)/*_rtw_ssid_t and _rtw_mac_t are 1 byte alignment for some issues long long ago*/
@@ -80,7 +80,7 @@ enum {
   */
 struct _rtw_ssid_t {
 	unsigned char		len;     /**< SSID length */
-	unsigned char		val[INIC_MAX_SSID_LENGTH]; /**< SSID name (AP name)  */
+	unsigned char		val[WHC_MAX_SSID_LENGTH]; /**< SSID name (AP name)  */
 };
 
 /**
@@ -644,7 +644,7 @@ struct wifi_user_conf {
 		RTW_ANTDIV_DISABLE: antdiv disable */
 	unsigned char antdiv_mode;
 
-	/*!	The maximum number of STAs connected to the softap should not exceed AP_STA_NUM */
+	/*!	The maximum number of STAs connected to the softap should not exceed MAX_AP_CLIENT_NUM */
 	unsigned char ap_sta_num;
 
 	/*!	IPS(Inactive power save), If disconnected for more than 2 seconds, WIFI will be powered off*/
@@ -752,7 +752,8 @@ struct wifi_user_conf {
 	/*!	Every data tx is forced to start with cts2self */
 	unsigned char force_cts2self;
 
-	/*!	Multi Channel Concurrent mode, STA and Softap can work on different channels via TDMA, not support right now*/
+	/*!	Multi Channel Concurrent mode, STA and Softap can work on different channels via TDMA
+		NOTE: mcc performance has limitations, please contact Realtek before use to clarify your requirements */
 	unsigned char en_mcc;
 
 	unsigned char tx_shortcut_enable;
@@ -802,6 +803,9 @@ struct wifi_user_conf {
 
 	/*! R-mesh child refresh timeout, when not receive beacon from child for this timeout, will delete this child, unit: millisecond*/
 	u16 wtn_child_refresh_timeout;
+
+	/*! 0: Disable R-mesh NAT function, 1: Enable R-mesh NAT function*/
+	unsigned char wtn_rnat_en;
 };
 /** @} */
 
