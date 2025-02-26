@@ -815,12 +815,12 @@ int atcmd_bt_tmap(int argc, char *argv[])
 	return 0;
 }
 
-int bt_gmap_main(uint8_t role, uint8_t enable);
+int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
 int atcmd_bt_gmap(int argc, char *argv[])
 {
-	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	uint32_t channel = 0;
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "ugg") == 0) {
@@ -847,7 +847,25 @@ int atcmd_bt_gmap(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for gmap example!\r\n", op);
 		return -1;
 	}
-	if (bt_gmap_main(role, op)) {
+	if (argc == 3) {
+		if (strcmp(argv[2], "left") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL */
+			channel = 0x01;
+			BT_LOGA("Set channel left \r\n");
+		} else if (strcmp(argv[2], "right") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x02;
+			BT_LOGA("Set channel right \r\n");
+		} else if (strcmp(argv[2], "stereo") == 0) {
+			/* RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR */
+			channel = 0x03;
+			BT_LOGA("Set channel stereo \r\n");
+		} else {
+			BT_LOGE("Error: cap example only support left, right and stereo channel!\r\n");
+			return -1;
+		}
+	}
+	if (bt_gmap_main(role, op, channel)) {
 		BT_LOGE("Error: gmap example %s failed!\r\n", action[op]);
 		return -1;
 	}

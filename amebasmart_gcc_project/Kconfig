@@ -73,6 +73,9 @@ menu "CONFIG AT CMD"
         endchoice
         config LONGER_CMD
             bool "Enable Longer CMD"
+        config ATCMD_NETWORK
+            bool "Enable Network"
+            default y
         config ATCMD_SOCKET
             bool "Enable Socket"
         config ATCMD_HTTP
@@ -150,12 +153,12 @@ endmenu
 
 
 comment "--- --------------Connectivity Config Begin------------"
-menu "CONFIG INIC INTF"
+menu "CONFIG WHC INTF"
     choice
-        prompt "INIC MODE"
-        default WIFI_INIC_IPC_MENU if !CLINTWOOD
+        prompt "WHC MODE"
+        default WHC_INTF_IPC_MENU if !CLINTWOOD
         default WIFI_SINGLE_CORE_MENU if CLINTWOOD
-        config WIFI_INIC_IPC_MENU
+        config WHC_INTF_IPC_MENU
             depends on !CLINTWOOD
             bool "INIC_IPC"
             select CORE_AS_NP_FOR_KM4
@@ -204,9 +207,9 @@ menu "CONFIG WIFI"
 
         source "../component/wifi/Kconfig.wifi"
 
-        config WIFI_INIC_IPC_MENU
+        config WHC_INTF_IPC_MENU
             bool
-            select INIC_INTF_IPC
+            select WHC_INTF_IPC
             select WLAN if !CORE_AS_LP
             select AS_INIC_NP if CORE_AS_NP
             select AS_INIC_AP if CORE_AS_AP
@@ -218,9 +221,9 @@ menu "CONFIG WIFI"
         config FULLMAC_MENU
             bool
             depends on CORE_AS_NP
-            select INIC_INTF_SDIO if SDIO_FULLMAC
-            select INIC_INTF_SPI if SPI_FULLMAC
-            select INIC_INTF_USB if USB_FULLMAC
+            select WHC_INTF_SDIO if SDIO_FULLMAC
+            select WHC_INTF_SPI if SPI_FULLMAC
+            select WHC_INTF_USB if USB_FULLMAC
             select WLAN if !CORE_AS_LP
             select AS_INIC_NP
             select WIFI_FW_EN
@@ -230,7 +233,7 @@ menu "CONFIG WIFI"
             depends on CORE_AS_AP
             select WLAN if !CORE_AS_LP
             select SINGLE_CORE_WIFI
-            select INIC_INTF_SDIO
+            select WHC_INTF_SDIO
             select LWIP_LAYER
 
         config SPI_FULLMAC_HOST
@@ -263,7 +266,7 @@ menu "CONFIG WIFI"
 
     config WLAN
         bool
-    config INIC_INTF_IPC
+    config WHC_INTF_IPC
         bool
     config AS_INIC_AP
         bool
@@ -271,11 +274,11 @@ menu "CONFIG WIFI"
         bool
     config LWIP_LAYER
         bool
-    config INIC_INTF_SDIO
+    config WHC_INTF_SDIO
         bool
-    config INIC_INTF_SPI
+    config WHC_INTF_SPI
         bool
-    config INIC_INTF_USB
+    config WHC_INTF_USB
         bool
     config WIFI_FW_EN
         bool

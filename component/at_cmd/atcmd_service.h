@@ -20,10 +20,8 @@
 #include "atcmd_sys.h"
 #include "atcmd_fs.h"
 
-#ifndef CONFIG_MP_INCLUDED
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 #include "atcmd_sockets.h"
-#endif
 #endif
 
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -55,12 +53,17 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len);
 void atcmd_tt_mode_end(void);
 
 #define MAX_TT_BUF_LEN 1024 * 10
+#define MAX_TT_HEAP_SIZE 1024 * 100
+#define TT_MODE_HIGH_WATERMARK 0.8
+#define TT_MODE_LOW_WATERMARK 0.2
 #define ATCMD_TT_MODE_RING_BUF_SIZE 1024 * 20
 #define ATCMD_MCU_CONTROL_INIT_STR "ATCMD READY\r\n"
 #define ATCMD_OK_END_STR 		"\r\nOK\r\n"
 #define ATCMD_ERROR_END_STR 	"\r\nERROR: %d\r\n"
 #define ATCMD_ENTER_TT_MODE_STR	">>>\r\n"
 #define ATCMD_EXIT_TT_MODE_STR	"<<<\r\n"
+#define ATCMD_TT_MODE_HIGH_WATERMARK_STR	"High Watermark\r\n"
+#define ATCMD_TT_MODE_LOW_WATERMARK_STR	"Low Watermark\r\n"
 #define C_NUM_AT_CMD			4 //"ATxx", 4 characters
 #define C_NUM_AT_CMD_DLT		1 //"=", 1 charater
 #define STR_END_OF_ATCMD_RET	"\r\n\n# " //each AT command response will end with this string
@@ -116,7 +119,7 @@ int at_printf_indicate(const char *fmt, ...);
 
 #ifdef CONFIG_MP_INCLUDED
 #ifdef CONFIG_AS_INIC_AP
-extern void inic_mp_command(char *token, unsigned int cmd_len, int show_msg);
+extern void whc_ipc_host_api_mp_command(char *token, unsigned int cmd_len, int show_msg);
 #else
 extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #endif

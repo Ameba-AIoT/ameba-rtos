@@ -6,7 +6,6 @@
 
 #include "platform_autoconf.h"
 
-#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 #include "os_wrapper.h"
 #include "atcmd_service.h"
@@ -1208,4 +1207,3 @@ void at_websocket_init(void)
 
 #endif /* CONFIG_ATCMD_WEBSOCKET */
 #endif /* CONFIG_LWIP_LAYER */
-#endif /* CONFIG_MP_INCLUDED */

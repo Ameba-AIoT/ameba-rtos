@@ -240,3 +240,7 @@ ASSERT((__dram_text_end__ & 4095) == 0, "__dram_text_end__ is not 4KB aligned.")
 ASSERT((__ram_nocache_start__ & 4095) == 0, "__ram_nocache_start__ is not 4KB aligned.")
 ASSERT((__ram_nocache_end__ & 4095) == 0, "__ram_nocache_end__ is not 4KB aligned.")
 __psram_heap_buffer_size__ = ORIGIN(CA32_BL3_DRAM_NS) + LENGTH(CA32_BL3_DRAM_NS) - __psram_heap_buffer_start__;
+
+__dram_dynamic_app_text_start__ = ORIGIN(CA32_DYNAMIC_APP_LOAD_DRAM);
+__dram_dynamic_app_text_end__ = ORIGIN(CA32_DYNAMIC_APP_LOAD_DRAM) + LENGTH(CA32_DYNAMIC_APP_LOAD_DRAM);
+__dram_dynamic_app_text_size__ = LENGTH(CA32_DYNAMIC_APP_LOAD_DRAM);

@@ -16,10 +16,11 @@ class RtkDeviceProfile():
     DEVICE_ID_AMEBAZ = 0x6547
 
     def __init__(self, **kwargs):
-        self.version = kwargs.get("Version", "1.0.0")
+        self.version = kwargs.get("Version", "1.1.1")
         self.device_name = kwargs.get("DeviceName", "")
         self.device_id = kwargs.get("DeviceID", 0)
         self.memory_type = kwargs.get("MemoryType", 0)
+        self.support_usb_download = kwargs.get("SupportUsbDownload", False)
         self.flash_start_address = kwargs.get("FlashStartAddress", self.DEFAULT_FLASH_START_ADDR)
         self.ram_start_address = kwargs.get("RamStartAddress", self.DEFAULT_RAM_START_ADDR)
         self.floader = kwargs.get("Floader", "")
@@ -64,6 +65,7 @@ class RtkDeviceProfile():
             "DeviceName": self.device_name,
             "DeviceID": self.device_id,
             "MemoryType": self.memory_type.value,
+            "SupportUsbDownload": self.support_usb_download,
             "FlashStartAddress": self.flash_start_address,
             "RamStartAddress": self.ram_start_address,
             "Floader": self.floader,

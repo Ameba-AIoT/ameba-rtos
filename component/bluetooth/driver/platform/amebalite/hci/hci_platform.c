@@ -77,7 +77,7 @@ unsigned char hci_init_config[] = {
 	0x82, 0x02, 0x08, 0x3C, 0x40, 0x40, 0x3C, 0x3C, 0x45, 0x41, 0x3C,
 
 	/* RF: iqm_max_txgain_LE1M_2402(1), iqm_max_txgain_LE1M_2480(1), iqm_max_txgain_LE2M_2402(1), iqm_max_txgain_LE2M_2480(1) */
-	0x8A, 0x02, 0x04, 0x70, 0x70, 0x70, 0x70,
+	0x8A, 0x02, 0x04, 0x45, 0x45, 0x45, 0x45,
 
 	/* tmeterx4_txgaink_module(1)*/
 	0x8E, 0x02, 0x01, 0x62
@@ -349,9 +349,7 @@ static void bt_power_on(void)
 	set_reg_value(0x4100C214, BIT2, 0);             /* disable clk_osc4m_wlbt */
 	osif_delay(5);
 	if (HCI_BT_KEEP_WAKE) {
-		set_reg_value(0x4100c280, BIT14, 1);        /* enable HOST_WAKE_BT No GPIO */
-		osif_delay(5);
-		set_reg_value(0x4100c280, BIT13, 1);        /* HOST_WAKE_BT */
+		set_reg_value(0x4100c280, BIT13, 1);        /* enable HOST_WAKE_BT */
 		osif_delay(5);
 	}
 }

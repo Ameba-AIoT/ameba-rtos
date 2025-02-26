@@ -483,9 +483,6 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind->codec_cfg.audio_channel_allocation = p_data->codec_parsed_data.audio_channel_allocation;
 		p_ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		p_ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
-		p_ind->iso_chann_t.p_codec_entity = (void *)p_iso_chann->p_codec_entity;
-		p_ind->iso_chann_t.p_track_hdl = (void *)p_iso_chann->p_track_hdl;
-		p_ind->iso_chann_t.p_record_hdl = (void *)p_iso_chann->p_record_hdl;
 		p_ind->iso_chann_t.path_direction = p_data->path_direction;
 		if (p_data->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
 			rtk_bt_le_audio_group_info_t *p_group_info = bt_stack_le_audio_find_group_by_conn_handle(p_data->conn_handle);
@@ -1425,9 +1422,6 @@ static void bt_stack_le_audio_sync_cb(T_BLE_AUDIO_SYNC_HANDLE sync_handle, uint8
 			p_ind->cause = p_sync_cb->p_setup_data_path->cause;
 			p_ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 			p_ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
-			p_ind->iso_chann_t.p_codec_entity = (void *)p_iso_chann->p_codec_entity;
-			p_ind->iso_chann_t.p_track_hdl = (void *)p_iso_chann->p_track_hdl;
-			p_ind->iso_chann_t.p_record_hdl = (void *)p_iso_chann->p_record_hdl;
 			p_ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_RX;
 			if (ble_audio_sync_get_info(sync_handle, &sync_info)) {
 				base_data_get_bis_codec_cfg(sync_info.p_base_mapping, p_sync_cb->p_setup_data_path->bis_idx, (T_CODEC_CFG *)&p_ind->codec_t);
@@ -1902,9 +1896,6 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 		ind->cause = p_sm_data->p_setup_data_path->cause;
 		ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
-		ind->iso_chann_t.p_codec_entity = (void *)p_iso_chann->p_codec_entity;
-		ind->iso_chann_t.p_track_hdl = (void *)p_iso_chann->p_track_hdl;
-		ind->iso_chann_t.p_record_hdl = (void *)p_iso_chann->p_record_hdl;
 		ind->iso_chann_t.path_direction = RTK_BLE_AUDIO_ISO_DATA_PATH_TX;
 		memcpy((void *)&ind->codec_t, &bt_le_audio_priv_data.bsrc.codec_cfg, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		/* Send event */
@@ -2844,9 +2835,6 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 		memcpy(&p_ind->codec_parsed_data, &p_data->codec_parsed_data, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		p_ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		p_ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
-		p_ind->iso_chann_t.p_codec_entity = (void *)p_iso_chann->p_codec_entity;
-		p_ind->iso_chann_t.p_track_hdl = (void *)p_iso_chann->p_track_hdl;
-		p_ind->iso_chann_t.p_record_hdl = (void *)p_iso_chann->p_record_hdl;
 		p_ind->iso_chann_t.path_direction = p_data->path_direction;
 		if (p_data->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
 			rtk_bt_le_audio_group_info_t *p_group_info = bt_stack_le_audio_find_group(handle);
@@ -3620,66 +3608,51 @@ uint16_t bt_stack_bap_init(void *p_conf)
 		p_le_audio_app_conf = (rtk_bt_le_audio_app_conf_t *)p_conf;
 	}
 	ble_audio_cback_register(rtk_stack_le_audio_bap_msg_cback);
-	if (RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR == p_le_audio_app_conf->cap_role) {
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_UNI_CLI) {
-			role_info.role_mask |= BAP_UNICAST_CLT_SRC_ROLE;
-			role_info.role_mask |= BAP_UNICAST_CLT_SNK_ROLE;
-			role_info.isoc_cig_max_num = RTK_BT_LE_AUDIO_CIG_MAX_NUM;
-			role_info.isoc_cis_max_num = RTK_BT_LE_AUDIO_CIS_MAX_NUM;
+	if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_UNI_CLI) {
+		role_info.role_mask |= BAP_UNICAST_CLT_SRC_ROLE;
+		role_info.role_mask |= BAP_UNICAST_CLT_SNK_ROLE;
+		role_info.isoc_cig_max_num = RTK_BT_LE_AUDIO_CIG_MAX_NUM;
+		role_info.isoc_cis_max_num = RTK_BT_LE_AUDIO_CIS_MAX_NUM;
+	}
+	if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER) {
+		role_info.role_mask |= BAP_UNICAST_SRV_SRC_ROLE;
+		role_info.role_mask |= BAP_UNICAST_SRV_SNK_ROLE;
+		role_info.isoc_cig_max_num = RTK_BT_LE_AUDIO_CIG_MAX_NUM;
+		role_info.isoc_cis_max_num = RTK_BT_LE_AUDIO_CIS_MAX_NUM;
+		if (p_le_audio_app_conf->ascs_param.sink_ase_num) {
+			role_info.snk_ase_num = p_le_audio_app_conf->ascs_param.sink_ase_num;
+			default_sink_ase_num = p_le_audio_app_conf->ascs_param.sink_ase_num;
+		} else {
+			role_info.snk_ase_num = default_sink_ase_num;
 		}
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_ASSI) {
-			role_info.role_mask |= BAP_BROADCAST_ASSISTANT_ROLE;
+		if (p_le_audio_app_conf->ascs_param.source_ase_num) {
+			role_info.src_ase_num = p_le_audio_app_conf->ascs_param.source_ase_num;
+			default_source_ase_num = p_le_audio_app_conf->ascs_param.source_ase_num;
+		} else {
+			role_info.src_ase_num = default_source_ase_num;
 		}
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR) {
-			role_info.role_mask |= BAP_BROADCAST_SOURCE_ROLE;
-			role_info.pa_adv_num = RTK_BT_LE_AUDIO_PA_ADV_SET_MAX_NUM;
-			role_info.isoc_big_broadcaster_num = RTK_BT_LE_AUDIO_BROADCASTER_GROUP_MAX_NUM;
-			role_info.isoc_bis_broadcaster_num = RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM;
-		}
-	} else if (RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER == p_le_audio_app_conf->cap_role) {
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_ASSI) {
-			role_info.role_mask |= BAP_BROADCAST_ASSISTANT_ROLE;
-			role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
-		}
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE) {
-			role_info.role_mask |= BAP_SCAN_DELEGATOR_ROLE;
-			role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
-			role_info.brs_num = RTK_BT_LE_AUDIO_RECEIVER_BIG_MAX_NUM;
-		}
-	} else if (RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR == p_le_audio_app_conf->cap_role) {
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER) {
-			role_info.role_mask |= BAP_UNICAST_SRV_SRC_ROLE;
-			role_info.role_mask |= BAP_UNICAST_SRV_SNK_ROLE;
-			role_info.isoc_cig_max_num = RTK_BT_LE_AUDIO_CIG_MAX_NUM;
-			role_info.isoc_cis_max_num = RTK_BT_LE_AUDIO_CIS_MAX_NUM;
-			if (p_le_audio_app_conf->ascs_param.sink_ase_num) {
-				role_info.snk_ase_num = p_le_audio_app_conf->ascs_param.sink_ase_num;
-				default_sink_ase_num = p_le_audio_app_conf->ascs_param.sink_ase_num;
-			} else {
-				role_info.snk_ase_num = default_sink_ase_num;
-			}
-			if (p_le_audio_app_conf->ascs_param.source_ase_num) {
-				role_info.src_ase_num = p_le_audio_app_conf->ascs_param.source_ase_num;
-				default_source_ase_num = p_le_audio_app_conf->ascs_param.source_ase_num;
-			} else {
-				role_info.src_ase_num = default_source_ase_num;
-			}
-			BT_LOGD("[BAP]app_bap_init role_info snk_ase_num=%d, src_ase_num=%d\r\n", role_info.snk_ase_num, role_info.src_ase_num);
-		}
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE) {
-			role_info.role_mask |= BAP_SCAN_DELEGATOR_ROLE;
-			role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
-			role_info.brs_num = RTK_BT_LE_AUDIO_RECEIVER_BIG_MAX_NUM;
-		}
-		if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) {
-			role_info.role_mask |= BAP_BROADCAST_SINK_ROLE;
-			role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
-			role_info.isoc_big_receiver_num = RTK_BT_LE_AUDIO_RECEIVER_BIG_MAX_NUM;
-			role_info.isoc_bis_receiver_num = RTK_BT_LE_AUDIO_RECEIVER_BIS_MAX_NUM;
-		}
-	} else {
-		BT_LOGE("%s:unknow bap role 0x%x\r\n", __func__, p_le_audio_app_conf->cap_role);
-		return RTK_BT_FAIL;
+		BT_LOGD("[BAP]app_bap_init role_info snk_ase_num=%d, src_ase_num=%d\r\n", role_info.snk_ase_num, role_info.src_ase_num);
+	}
+	if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SOUR) {
+		role_info.role_mask |= BAP_BROADCAST_SOURCE_ROLE;
+		role_info.pa_adv_num = RTK_BT_LE_AUDIO_PA_ADV_SET_MAX_NUM;
+		role_info.isoc_big_broadcaster_num = RTK_BT_LE_AUDIO_BROADCASTER_GROUP_MAX_NUM;
+		role_info.isoc_bis_broadcaster_num = RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM;
+	}
+	if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) {
+		role_info.role_mask |= BAP_BROADCAST_SINK_ROLE;
+		role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
+		role_info.isoc_big_receiver_num = RTK_BT_LE_AUDIO_RECEIVER_BIG_MAX_NUM;
+		role_info.isoc_bis_receiver_num = RTK_BT_LE_AUDIO_RECEIVER_BIS_MAX_NUM;
+	}
+	if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_ASSI) {
+		role_info.role_mask |= BAP_BROADCAST_ASSISTANT_ROLE;
+		role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
+	}
+	if (p_le_audio_app_conf->bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_SCAN_DELE) {
+		role_info.role_mask |= BAP_SCAN_DELEGATOR_ROLE;
+		role_info.pa_sync_num = RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM;
+		role_info.brs_num = RTK_BT_LE_AUDIO_RECEIVER_BIG_MAX_NUM;
 	}
 	role_info.init_gap = true;
 	if (bap_role_init(&role_info) == false) {
@@ -3690,7 +3663,7 @@ uint16_t bt_stack_bap_init(void *p_conf)
 	bt_le_audio_priv_data.lea_source_available_contexts = p_le_audio_app_conf->pacs_param.source_available_contexts;
 	bt_le_audio_priv_data.lea_sink_supported_contexts = p_le_audio_app_conf->pacs_param.sink_supported_contexts;
 	bt_le_audio_priv_data.lea_source_supported_contexts = p_le_audio_app_conf->pacs_param.source_supported_contexts;
-	if (RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR == p_le_audio_app_conf->cap_role) {
+	if (RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR & p_le_audio_app_conf->cap_role) {
 		T_PACS_PARAMS pacs_params = {0};
 		rtk_bt_le_audio_pacs_init_param_t *p_pacs = &p_le_audio_app_conf->pacs_param;
 

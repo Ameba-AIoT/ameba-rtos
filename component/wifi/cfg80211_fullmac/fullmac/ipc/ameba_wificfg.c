@@ -5,7 +5,7 @@
 */
 
 #ifdef CONFIG_FULLMAC
-#include <rtw_cfg80211_fullmac.h>
+#include <whc_host_linux.h>
 #else
 #include "platform_autoconf.h"
 #include <wifi_conf.h>
@@ -68,11 +68,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.uapsd_ac_enable = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 12;	/*should not exceed AP_STA_NUM */
+	wifi_user_config.ap_sta_num = 12;	/*should not exceed MAX_AP_CLIENT_NUM */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
-	wifi_user_config.en_mcc = 0;
+	wifi_user_config.en_mcc = 0;  /* must select ENABLE_MCC in menuconfig when wifi_user_config.en_mcc=1 */
 	wifi_user_config.max_roaming_times = 2;
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
@@ -99,5 +99,11 @@ _WEAK void wifi_set_user_config(void)
 
 	/*Automatic channel selection*/
 	wifi_user_config.acs_en = 0;
+
+	/* ensure ap_sta_num not exceed MAX_AP_CLIENT_NUM*/
+	if (wifi_user_config.ap_sta_num > MAX_AP_CLIENT_NUM) {
+		wifi_user_config.ap_sta_num = MAX_AP_CLIENT_NUM;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to %d\n", MAX_AP_CLIENT_NUM);
+	}
 }
 

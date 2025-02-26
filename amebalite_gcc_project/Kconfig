@@ -94,6 +94,9 @@ menu "CONFIG AT CMD"
         endchoice
         config LONGER_CMD
             bool "Enable Longer CMD"
+        config ATCMD_NETWORK
+            bool "Enable Network"
+            default y
         config ATCMD_SOCKET
             bool "Enable Socket"
         config ATCMD_HTTP
@@ -165,12 +168,12 @@ endmenu
 
 comment "----------Connectivity config----------"
 
-menu "CONFIG INIC INTF"
+menu "CONFIG WHC INTF"
 	choice
-		prompt "INIC MODE"
-		default WIFI_INIC_IPC_MENU
-			config WIFI_INIC_IPC_MENU
-				bool "INIC_IPC"
+		prompt "WHC MODE"
+		default WHC_INTF_IPC_MENU
+			config WHC_INTF_IPC_MENU
+				bool "WHC_IPC"
             # config FULLMAC_MENU
             #     bool "FULLMAC"
             config WIFI_SINGLE_CORE_MENU
@@ -210,11 +213,11 @@ menu "CONFIG INIC INTF"
             config AP_CORE_KM4
                 bool "KM4"
                 select CORE_AS_AP_FOR_KM4
-                select CORE_AS_NP_FOR_KR4 if WIFI_INIC_IPC_MENU
+                select CORE_AS_NP_FOR_KR4 if WHC_INTF_IPC_MENU
             config AP_CORE_KR4
                 bool "KR4"
                 select CORE_AS_AP_FOR_KR4
-                select CORE_AS_NP_FOR_KM4 if WIFI_INIC_IPC_MENU
+                select CORE_AS_NP_FOR_KM4 if WHC_INTF_IPC_MENU
         endchoice
     endif
 
@@ -238,9 +241,9 @@ menu "CONFIG WIFI"
 
         source "../component/wifi/Kconfig.wifi"
 
-        config WIFI_INIC_IPC_MENU
+        config WHC_INTF_IPC_MENU
             bool
-            select INIC_INTF_IPC
+            select WHC_INTF_IPC
             select WLAN
             select AS_INIC_NP if CORE_AS_NP
             select AS_INIC_AP if CORE_AS_AP
@@ -252,9 +255,9 @@ menu "CONFIG WIFI"
         config FULLMAC_MENU
             bool
             depends on CORE_AS_NP
-            select INIC_INTF_SDIO if SDIO_FULLMAC
-            select INIC_INTF_SPI if SPI_FULLMAC
-            select INIC_INTF_USB if USB_FULLMAC
+            select WHC_INTF_SDIO if SDIO_FULLMAC
+            select WHC_INTF_SPI if SPI_FULLMAC
+            select WHC_INTF_USB if USB_FULLMAC
             select WLAN
             select AS_INIC_NP
             select FW_DRIVER_COEXIST
@@ -265,7 +268,7 @@ menu "CONFIG WIFI"
             depends on CORE_AS_AP
             select WLAN
             select SINGLE_CORE_WIFI
-            select INIC_INTF_SDIO
+            select WHC_INTF_SDIO
             select LWIP_LAYER
 
         config SPI_FULLMAC_HOST
@@ -297,7 +300,7 @@ menu "CONFIG WIFI"
 
     config WLAN
         bool
-    config INIC_INTF_IPC
+    config WHC_INTF_IPC
         bool
     config AS_INIC_NP
         bool
@@ -307,11 +310,11 @@ menu "CONFIG WIFI"
         bool
     config FW_DRIVER_COEXIST
         bool
-    config INIC_INTF_SDIO
+    config WHC_INTF_SDIO
         bool
-    config INIC_INTF_SPI
+    config WHC_INTF_SPI
         bool
-    config INIC_INTF_USB
+    config WHC_INTF_USB
         bool
     config WIFI_FW_EN
         bool
@@ -402,6 +405,10 @@ menu "CONFIG BT"
                     bool
                     select BT_TMAP
                     select BT_TMAP_SUPPORT
+                config BT_GMAP_MENU
+                    bool
+                    select BT_GMAP
+                    select BT_GMAP_SUPPORT
             endif
 
             config BT_A2DP_MENU
@@ -504,6 +511,10 @@ menu "CONFIG BT"
             config BT_TMAP
                 bool
             config BT_TMAP_SUPPORT
+                bool
+            config BT_GMAP
+                bool
+            config BT_GMAP_SUPPORT
                 bool
             config BT_A2DP
                 bool

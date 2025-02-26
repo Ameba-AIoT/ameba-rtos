@@ -164,9 +164,6 @@ typedef struct {
 	uint16_t pkt_seq_num;
 	uint32_t presentation_delay;
 	rtk_bt_le_audio_cfg_codec_t codec_data;
-	void *p_codec_entity;
-	void *p_track_hdl;
-	void *p_record_hdl;
 } rtk_bt_le_audio_iso_channel_info_t;
 
 typedef struct {

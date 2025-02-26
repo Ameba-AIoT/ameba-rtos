@@ -71,7 +71,11 @@
 #endif
 
 #if defined(CONFIG_AS_INIC_AP)
-extern int inic_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt);
+#if defined(CONFIG_WHC_INTF_SPI)
+#include "whc_spi_host_trx.h"
+#elif defined(CONFIG_WHC_INTF_IPC)
+#include "whc_ipc_host_trx.h"
+#endif
 #endif
 
 #define netifMTU                                (1500)
@@ -174,7 +178,7 @@ static void low_level_init(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
-
+SRAM_WLAN_CRITICAL_CODE_SECTION
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
 
@@ -220,7 +224,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	if (sg_len) {
 #if CONFIG_WLAN
 #if defined(CONFIG_AS_INIC_AP)
-		ret = inic_host_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
+		ret = whc_host_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
 		if (ret == ERR_IF) {
 			return ret;
 		}

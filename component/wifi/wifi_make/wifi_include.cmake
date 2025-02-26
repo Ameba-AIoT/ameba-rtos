@@ -29,11 +29,13 @@ set(
     ${BASEDIR}/component/wifi/driver/wifi_tunnel
     ${BASEDIR}/component/wifi/whc
     ${BASEDIR}/component/wifi/whc/whc_dev
-    ${BASEDIR}/component/wifi/whc/whc_host
+    ${BASEDIR}/component/wifi/whc/whc_host_rtos
     ${BASEDIR}/component/wifi/whc/whc_dev/spi
     ${BASEDIR}/component/wifi/whc/whc_dev/sdio
     ${BASEDIR}/component/wifi/whc/whc_dev/usb
-    ${BASEDIR}/component/wifi/whc/whc_host/spi
+    ${BASEDIR}/component/wifi/whc/whc_dev/ipc
+    ${BASEDIR}/component/wifi/whc/whc_host_rtos/spi
+    ${BASEDIR}/component/wifi/whc/whc_host_rtos/ipc
     ${BASEDIR}/component/wifi/wifi_tunnel_app
     ${BASEDIR}/component/at_cmd
 if(CONFIG_WPA_STD)	
@@ -125,7 +127,7 @@ if(CONFIG_AMEBAD)
     )
 endif()
 
-if(CONFIG_AMEBASMART)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     list(
         APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/wifi_reg/rtl8730e

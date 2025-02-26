@@ -14,47 +14,12 @@
 #include <rtk_stack_le_audio_internal.h>
 #include <rtk_stack_config.h>
 #include <rtk_bt_le_audio_def.h>
-#include <rtk_bt_cap.h>
 #include <rtk_bt_tmap.h>
-#include <trace_app.h>
-#include <bt_direct_msg.h>
-#include <gap_iso_data.h>
-#include <gap.h>
-#include <bap.h>
-#include <bap_unicast_client.h>
-#include <cap.h>
 #include <ble_audio.h>
-#include <pacs_mgr.h>
-#include <ascs_mgr.h>
-#include <bass_mgr.h>
-#include <bass_client.h>
-#include <csis_mgr.h>
-#include <csis_client.h>
-#include <mcp_client.h>
-#include <mcp_mgr.h>
-#include <ble_mgr.h>
-#include <metadata_def.h>
-#include <ble_audio_sync.h>
-#include <broadcast_source_sm.h>
-#include <base_data_generate.h>
-#include <vocs_mgr.h>
-#include <vocs_client.h>
-#include <vcs_def.h>
-#include <vcs_mgr.h>
-#include <vcs_client.h>
-#include <mics_mgr.h>
-#include <mics_client.h>
-#include <aics_def.h>
-#include <aics_mgr.h>
-#include <aics_client.h>
-#include <bt_gatt_svc.h>
-#include <bt_gatt_client.h>
 #include <tmas_mgr.h>
 #include <tmas_client.h>
 #include <tmas_def.h>
-#include <gmas_mgr.h>
-#include <gmas_client.h>
-#include <gmas_def.h>
+#include <trace_app.h>
 
 uint16_t rtk_stack_le_audio_tmas_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 {
@@ -146,7 +111,7 @@ uint16_t bt_stack_tmap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 	default:
-		BT_LOGE("bt_stack_cap_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_tmap_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = 0;
 		break;
 	}

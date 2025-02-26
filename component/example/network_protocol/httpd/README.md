@@ -9,16 +9,16 @@ None
 # SW configuration
 
 1. Both HTTP and HTTPS are supported by this exmaple, and can be changed by modifying `USE_HTTPS` in `example_httpd.c`.
-```C
+	```C
 	#define USE_HTTPS    0 //for HTTP
 	#define USE_HTTPS    1 //for HTTPS
-```
+	```
 
 2. `config_rsa.h`:
-```C
+	```C
 	#define MBEDTLS_CERTS_C
 	#define MBEDTLS_SSL_SRV_C
-```
+	```
 
 3. How to use:
    - Run `./build.py -a httpd` under project path, e.g. `amebasmart_gcc_project/`, to generate images.

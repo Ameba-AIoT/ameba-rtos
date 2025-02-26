@@ -3,11 +3,11 @@ export CONFIG_NAN = n
 export CONFIG_P2P = n
 export CONFIG_MCC = n
 export CONFIG_BT_INIC = n
-export CONFIG_FULLMAC_HCI_IPC = y
-export CONFIG_FULLMAC_HCI_SDIO = n
+export CONFIG_FULLMAC_HCI_IPC = n
+export CONFIG_FULLMAC_HCI_SDIO = y
 export CONFIG_FULLMAC_HCI_SPI = n
 export CONFIG_FULLMAC_HCI_USB = n
-export CONFIG_FULLMAC_BRIDGE = n
+export CONFIG_FULLMAC_BRIDGE = y
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
@@ -25,28 +25,28 @@ ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -I$(srctree)/$(src)/fullmac
 ccflags-$(CONFIG_FULLMAC_HCI_IPC) += -DCONFIG_FULLMAC_HCI_IPC
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= fullmac-ipc.o
-fullmac-ipc-objs			:= ./common/netdev/rtw_drv_probe.o \
-					./fullmac/rtw_wiphy.o \
-					./fullmac/rtw_regd.o \
-					./common/netdev/rtw_ethtool_ops.o \
-					./common/netdev/rtw_netdev_ops.o \
-					./fullmac/rtw_netdev_ops_p2p.o \
-					./fullmac/rtw_cfgvendor.o \
-					./fullmac/rtw_proc.o \
-					./fullmac/rtw_cfg80211_ops.o \
-					./fullmac/rtw_cfg80211_ops_ap.o \
-					./fullmac/rtw_cfg80211_ops_key.o \
-					./fullmac/rtw_cfg80211_ops_nan.o \
-					./fullmac/rtw_cfg80211_ops_p2p.o \
-					./fullmac/rtw_acs.o \
-					./fullmac/rtw_promisc.o \
-					./fullmac/ipc/rtw_llhw_hci.o \
-					./fullmac/ipc/rtw_llhw_ops.o \
-					./fullmac/ipc/rtw_llhw_event.o \
-					./fullmac/ipc/rtw_llhw_recv.o \
-					./fullmac/ipc/rtw_llhw_xmit.o \
-					./fullmac/ipc/rtw_llhw_msg.o \
-					./fullmac/ipc/rtw_llhw_mem.o \
+fullmac-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
+					./fullmac/whc_fullmac_host_wiphy.o \
+					./fullmac/whc_fullmac_host_regd.o \
+					./common/netdev/whc_host_ethtool_ops.o \
+					./common/netdev/whc_host_netdev_ops.o \
+					./fullmac/whc_fullmac_host_netdev_ops_p2p.o \
+					./fullmac/whc_fullmac_host_cfgvendor.o \
+					./fullmac/whc_fullmac_host_proc.o \
+					./fullmac/whc_fullmac_host_ops.o \
+					./fullmac/whc_fullmac_host_ops_ap.o \
+					./fullmac/whc_fullmac_host_ops_key.o \
+					./fullmac/whc_fullmac_host_ops_nan.o \
+					./fullmac/whc_fullmac_host_ops_p2p.o \
+					./fullmac/whc_fullmac_host_acs.o \
+					./fullmac/whc_fullmac_host_promisc.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_hci.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_ops.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_event.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_recv.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_xmit.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_msg.o \
+					./fullmac/ipc/whc_fullmac_ipc_host_mem.o \
 					./fullmac/ipc/ameba_wificfg.o
 
 
@@ -63,6 +63,8 @@ ifeq ($(CONFIG_FULLMAC_BRIDGE),y)
 #fullmac bridge
 ifeq ($(CONFIG_FULLMAC_HCI_SDIO),y)
 SUB := bridge/sdio_bridge
+else ifeq ($(CONFIG_FULLMAC_HCI_SPI),y)
+SUB := bridge/spi_bridge
 endif
 
 else

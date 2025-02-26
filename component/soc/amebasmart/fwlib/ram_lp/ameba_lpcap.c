@@ -142,6 +142,9 @@ void ap_clk_gate_ctrl(void)
 	/* disable CA7 clock */
 	//HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE, HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & (~HSYS_BIT_CKE_AP));
 
+	/* confirm cke_ap = 0 already */
+	while ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP));
+
 	if (RRAM->APPLL_STATE == TRUE) {
 		/* disable CA7 PLL*/
 		PLL_AP(DISABLE);

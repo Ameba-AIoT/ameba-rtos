@@ -7,7 +7,6 @@
 #include "platform_autoconf.h"
 #include "os_wrapper.h"
 #include "atcmd_service.h"
-#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
 #include "wifi_conf.h"
@@ -16,6 +15,8 @@
 static const char *const TAG = "AT-OTA";
 
 static int at_ota_status = 0;
+extern void sys_reset(void);
+extern int download_fw_program(ota_context *ctx, u8 *buf, u32 len);
 
 static void at_ota_update_task(void *param)
 {
@@ -45,14 +46,13 @@ static void at_ota_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+OTA=<type>,<host>,<port>,<resource>\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<type>: \t%d~%d. OTA type.\r\n", OTA_TYPE_MIN, OTA_TYPE_MAX);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t0: \tupdate from TCP server\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1: \tupdate from HTTP server\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t2: \tupdate from HTTPS server\r\n");
 #ifdef CONFIG_AMEBADPLUS
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from VFS\r\n");
-#elif defined(CONFIG_AMEBASMART)
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from SDCard\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from VFS\r\n");
+#elif defined(CONFIG_AMEBASMART)
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from SDCard\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t5: \tupdate from VFS\r\n");
 #endif
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thostname\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t[1,65535]\r\n");
@@ -185,8 +185,126 @@ end:
 	}
 }
 
+static void at_userota_help(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USEROTA=<length>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>:\timage ota_all.bin length\r\n");
+}
+
+/****************************************************************
+AT command process:
+	AT+USEROTA=<length>
+	Update firmware from mcu host.
+****************************************************************/
+void at_userota(void *arg)
+{
+	char *argv[MAX_ARGC] = {0};
+	ota_context *ctx = NULL;
+	u8 *buffer = NULL;
+	int argc = 0, ret = -1, err_no = 0;
+	int frag_len = 0;
+	int length = 0;
+
+	if (!arg) {
+		at_userota_help();
+		err_no = 1;
+		goto end;
+	}
+
+	argc = parse_param_advance(arg, argv);
+	if (argc < 2) {
+		err_no = 1;
+		goto end;
+	}
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+
+	if (at_ota_status) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[+USEROTA] ota is already running\r\n");
+		err_no = 4;
+		goto end;
+	}
+
+	/* ota image length. */
+	length = atoi(argv[1]);
+	if (length <= 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] Invalid length\r\n");
+		err_no = 1;
+		goto end;
+	}
+
+	buffer = (u8 *)rtos_mem_zmalloc(BUF_SIZE);
+	if (!buffer) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] Malloc failed\r\n");
+		err_no = 2;
+		goto end;
+	}
+
+	ctx = (ota_context *)rtos_mem_malloc(sizeof(ota_context));
+	if (!ctx) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] ctx malloc failed\r\n");
+		err_no = 2;
+		goto end;
+	}
+
+	memset(ctx, 0, sizeof(ota_context));
+
+	ret = ota_update_init(ctx, NULL, 0, NULL, OTA_USER);
+	if (ret != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] ota_update_init failed\r\n");
+		err_no = 5;
+		goto end;
+	}
+	at_ota_status = 1;
+
+	/* tt mode */
+	ret = atcmd_tt_mode_start(length);
+	if (ret < 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] atcmd_tt_mode_start failed\r\n");
+		err_no = 2;
+		goto end;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[+USEROTA] ota user download start, length: %d\r\n", length);
+
+	while (length > 0) {
+		frag_len = (length < BUF_SIZE) ? length : BUF_SIZE;
+		atcmd_tt_mode_get(buffer, frag_len);
+		ret = download_fw_program(ctx, buffer, frag_len);
+		if (ret != 0) {
+			if (ret == 2) {
+				at_printf(ATCMD_OK_END_STR);
+				rtos_time_delay_ms(20);
+				sys_reset();
+			} else {
+				err_no = 3;
+				atcmd_tt_mode_end();
+				goto end;
+			}
+		}
+		length -= frag_len;
+	}
+	atcmd_tt_mode_end();
+end:
+	ota_update_deinit(ctx);
+	if (ctx) {
+		rtos_mem_free(ctx);
+	}
+	if (buffer) {
+		rtos_mem_free(buffer);
+	}
+	at_ota_status = 0;
+	if (err_no != 0) {
+		at_printf(ATCMD_ERROR_END_STR, err_no);
+	} else {
+		at_printf(ATCMD_OK_END_STR);
+	}
+}
+
+
 log_item_t at_ota_items[] = {
 	{"+OTA", at_ota, {NULL, NULL}},
+	{"+USEROTA", at_userota, {NULL, NULL}},
 };
 
 void print_ota_at(void)
@@ -207,4 +325,3 @@ void at_ota_init(void)
 
 #endif /* CONFIG_ATCMD_OTA */
 #endif /* CONFIG_LWIP_LAYER */
-#endif /* CONFIG_MP_INCLUDED */

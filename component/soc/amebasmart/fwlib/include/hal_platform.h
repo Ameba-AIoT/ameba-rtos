@@ -412,8 +412,10 @@
 #define IPC_SEMA_BASE              0x420083c0
 #define IPC_IPC_SEMA_BASE          0x420082F4
 
-
-
+#define PSRAM_END                  0x60800000
+#define TZ_IDAU_SEC_OFFSET         0x10000000
+#define KBYTES(x)                  ((x) << 10)
+#define MBYTES(x)                  ((x) << 20)
 
 /**************************************************************************//**
  * @defgroup AmebaD_Peripheral_Registers_Structures  AmebaD Peripheral_Registers_Structures
@@ -580,6 +582,8 @@ typedef struct {
 #define LS_SRAM_ADDR_START			LP_SRAM_BASE
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00FFFFFF)
 #endif
+
+#define CA32_FIP_MAX_SIZE				(0x00200000)  /* 2MB */
 
 /*BT share mem with system*/
 #define SHARE_MEM_BT_ADDRESS			 HP_SRAM_EXT_BASE /*Size: 272KB*/

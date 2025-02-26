@@ -8,8 +8,8 @@
 * Copyright (C) 2023, Realtek Corporation. All rights reserved.
 */
 
-#ifndef __INIC_SDIO_PROTOCAL_OFFLOAD_H__
-#define __INIC_SDIO_PROTOCAL_OFFLOAD_H__
+#ifndef __WHC_DEV_PROTOCAL_OFFLOAD_H__
+#define __WHC_DEV_PROTOCAL_OFFLOAD_H__
 
 #define CONFIG_WAR_OFFLOAD
 #define CONFIG_OFFLOAD_MDNS_V4

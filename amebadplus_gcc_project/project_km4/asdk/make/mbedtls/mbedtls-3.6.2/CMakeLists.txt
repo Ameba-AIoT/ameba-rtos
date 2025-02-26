@@ -3,14 +3,12 @@ set(MODULE_C_DEFINES CONFIG_BUILD_NONSECURE=1)
 
 set(CSRC)
 
-if(NOT CONFIG_MP_INCLUDED)
-    if(CONFIG_WLAN)
-        if(CONFIG_AS_INIC_AP)
-            list(
-                APPEND CSRC
-                ${DIR}/library/net_sockets.c
-            )
-        endif()
+if(CONFIG_WLAN)
+    if(CONFIG_AS_INIC_AP)
+        list(
+            APPEND CSRC
+            ${DIR}/library/net_sockets.c
+        )
     endif()
 endif()
 
@@ -45,7 +43,6 @@ list(
     ${DIR}/library/memory_buffer_alloc.c
     ${DIR}/library/mps_reader.c
     ${DIR}/library/mps_trace.c
-    ${DIR}/library/net_sockets.c
     ${DIR}/library/nist_kw.c
     ${DIR}/library/oid.c
     ${DIR}/library/padlock.c

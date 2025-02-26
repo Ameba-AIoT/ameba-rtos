@@ -8,8 +8,8 @@
 * Copyright (C) 2023, Realtek Corporation. All rights reserved.
 */
 
-#ifndef __INIC_SDIO_DEV_BRIDGE_H__
-#define __INIC_SDIO_DEV_BRIDGE_H__
+#ifndef __WHC_SDIO_DEV_BRIDGE_H__
+#define __WHC_SDIO_DEV_BRIDGE_H__
 
 #include "lwip/prot/ethernet.h"
 
@@ -18,7 +18,6 @@
 #define PORT_TO_HOST	0x2
 #define PORT_TO_UNKNOWN 0xFF
 
-#define DEV_PORT_NUM 2
 #define IP_ICMP_REQUEST 0x08
 #ifndef DHCP_SERVER_PORT
 #define DHCP_SERVER_PORT 67
@@ -42,7 +41,8 @@ struct bridge_pkt_attrib {
 	u8_t port_idx;
 };
 
-struct bridge_pkt_filter {
+struct whc_bridge_dev_pkt_filter {
+	u32_t identity;
 	u8_t src_ip[4];
 	u16_t port_num; // dst port num
 	u8_t type;  //tcp or udp or icmp
@@ -52,17 +52,8 @@ struct bridge_pkt_filter {
 	u8_t rsvd[3];
 };
 
-extern u8(*inic_sdio_bridge_pkt_redirect_custom_ptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
+extern u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
 
-void inic_event_bridge_DHCP(u32 api_id, u32 *param_buf);
-void inic_event_bridge_get_ip(u32 api_id, u32 *param_buf);
-void inic_event_bridge_get_scan_res(u32 api_id, u32 *param_buf);
-void inic_event_bridge_get_dev_mac(u32 api_id, u32 *param_buf);
-
-int bridge_get_filter_array(u8 idx, struct bridge_pkt_filter *filter);
-int bridge_set_filter_array(u8 idx, struct bridge_pkt_filter *filter);
-
-void bridge_set_host_state(u8 state);
-u8 bridge_recv_pkt_process(u8 *idx, struct sk_buff **skb_send);
+u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send);
 
 #endif

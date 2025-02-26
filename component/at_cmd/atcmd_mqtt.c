@@ -16,8 +16,6 @@
 #include "wifi_conf.h"
 #endif
 
-#ifndef CONFIG_MP_INCLUDED
-
 #if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
 
 static const char *TAG = "AT-MQTT";
@@ -2005,4 +2003,3 @@ void at_mqtt_init(void)
 }
 
 #endif /* CONFIG_ATCMD_MQTT */
-#endif /* CONFIG_MP_INCLUDED */

@@ -617,8 +617,6 @@ typedef enum {
 	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP_BY_GROUP,
 	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_INPUT_DES,
 	RTK_BT_LE_AUDIO_ACT_AICS_GET_SRV_DATA,
-	RTK_BT_LE_AUDIO_ACT_GMAS_READ_ROLE,
-	RTK_BT_LE_AUDIO_ACT_GMAS_READ_FEATURES,
 	RTK_BT_LE_AUDIO_ACT_CAP_PARAM_CONFIG,
 	RTK_BT_LE_AUDIO_CAP_ACT_MAX,
 } rtk_bt_le_audio_cap_act_t;
@@ -659,10 +657,6 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND,
 	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_NOTIFY_IND,
 	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_GMAS_READ_IND,
-	RTK_BT_LE_AUDIO_EVT_GMAS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_GMAS_CLIENT_READ_ROLE_RESULT,
-	RTK_BT_LE_AUDIO_EVT_GMAS_CLIENT_READ_FEATURES_RESULT,
 	RTK_BT_LE_AUDIO_CAP_EVT_MAX,
 } rtk_bt_le_audio_cap_evt_t;
 
@@ -684,6 +678,28 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_READ_ROLE_RESULT,
 	RTK_BT_LE_AUDIO_TMAP_EVT_MAX,
 } rtk_bt_le_audio_tmap_evt_t;
+
+/**
+ * @typedef   rtk_bt_le_audio_gmap_act_t
+ * @brief     Bluetooth LE audio gmap action
+ */
+typedef enum {
+	RTK_BT_LE_AUDIO_GMAS_ACT_READ_ROLE = 1,
+	RTK_BT_LE_AUDIO_GMAS_ACT_READ_FEATURES,
+	RTK_BT_LE_AUDIO_GMAP_ACT_MAX,
+} rtk_bt_le_audio_gmap_act_t;
+
+/**
+ * @typedef   rtk_bt_le_audio_gmap_evt_t
+ * @brief     Bluetooth LE audio gmap event indication
+ */
+typedef enum {
+	RTK_BT_LE_AUDIO_GMAS_EVT_READ_IND = 1,
+	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_READ_ROLE_RESULT,
+	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_READ_FEATURES_RESULT,
+	RTK_BT_LE_AUDIO_GMAP_EVT_MAX,
+} rtk_bt_le_audio_gmap_evt_t;
 /***************************************BR/EDR group************************************/
 
 /**

@@ -63,6 +63,8 @@ static rtk_bt_le_audio_csis_sirk_type_t default_csis_sirk_type = RTK_BT_LE_CSIS_
 uint16_t default_csis_size = RTK_BT_LE_CSIS_SIRK_LEN;
 #endif
 
+extern bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code);
+
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 static uint16_t rtk_stack_mcp_client_read_result_handle(T_MCP_CLIENT_READ_RESULT *p_read_result)
 {
@@ -662,13 +664,20 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 	break;
 
 	case LE_AUDIO_MSG_MCP_SERVER_READ_IND: {
+		uint8_t cb_ret = 0;
 		T_MCP_SERVER_READ_IND *p_read_ind = (T_MCP_SERVER_READ_IND *)buf;
+		rtk_bt_le_audio_mcp_server_read_confirm_param_t app_cfm = {0};
+		T_MCP_SERVER_READ_CFM read_cfm = {0};
 		BT_LOGD("LE_AUDIO_MSG_MCP_SERVER_READ_IND: conn_handle %d, cid %d, service_id %d, char_uuid 0x%x, offset 0x%x\r\n",
 				p_read_ind->conn_handle, p_read_ind->cid, p_read_ind->service_id, p_read_ind->char_uuid, p_read_ind->offset);
 		if (p_read_ind->char_uuid == MCS_UUID_CHAR_MEDIA_PLAYER_NAME || p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_TITLE ||
 			p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_DURATION || p_read_ind->char_uuid == MCS_UUID_CHAR_TRACK_POSITION ||
 			p_read_ind->char_uuid == MCS_UUID_CHAR_CONTENT_CONTROL_ID) {
 			rtk_bt_le_audio_mcp_server_read_ind_t *p_ind = NULL;
+			if (false == rtk_bt_check_evt_cb_direct_calling(RTK_BT_LE_GP_CAP, RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND)) {
+				BT_LOGE("%s: RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND is not direct calling!\r\n", __func__);
+				break;
+			}
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_CAP,
 										RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND,
 										sizeof(rtk_bt_le_audio_mcp_server_read_ind_t));
@@ -682,9 +691,33 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			p_ind->service_id = p_read_ind->service_id;
 			p_ind->char_uuid = p_read_ind->char_uuid;
 			p_ind->offset = p_read_ind->offset;
+			p_ind->p_cfm = &app_cfm;
 			/* Send event */
-			rtk_bt_evt_indicate(p_evt, NULL);
-			app_result = BLE_AUDIO_CB_RESULT_PENDING; //first return pending, and then app call mcp_server_read_cfm
+			rtk_bt_evt_indicate(p_evt, &cb_ret);
+			if (cb_ret == RTK_BT_EVT_CB_OK) {
+				read_cfm.cause = BLE_AUDIO_CB_RESULT_SUCCESS;
+				read_cfm.conn_handle = p_read_ind->conn_handle;
+				read_cfm.cid = p_read_ind->cid;
+				read_cfm.service_id = p_read_ind->service_id;
+				read_cfm.char_uuid = p_read_ind->char_uuid;
+				read_cfm.offset = p_read_ind->offset;
+				if (read_cfm.char_uuid == RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_NAME) {
+					read_cfm.param.media_player_name.p_media_player_name = app_cfm.param.media_player_name.p_media_player_name;
+					read_cfm.param.media_player_name.media_player_name_len = app_cfm.param.media_player_name.media_player_name_len;
+				} else if (read_cfm.char_uuid == RTK_BT_LE_AUDIO_MCS_UUID_CHAR_TRACK_TITLE) {
+					read_cfm.param.track_title.p_track_title = app_cfm.param.track_title.p_track_title;
+					read_cfm.param.track_title.track_title_len = app_cfm.param.track_title.track_title_len;
+				} else if (read_cfm.char_uuid == RTK_BT_LE_AUDIO_MCS_UUID_CHAR_MEDIA_PLAYER_ICON_URL) {
+					read_cfm.param.media_player_icon_url.p_media_player_icon_url = app_cfm.param.media_player_icon_url.p_media_player_icon_url;
+					read_cfm.param.media_player_icon_url.media_player_icon_url_len = app_cfm.param.media_player_icon_url.media_player_icon_url_len;
+				} else {
+					memcpy(&read_cfm.param, &app_cfm.param, sizeof(app_cfm.param));
+				}
+				if (false == mcp_server_read_cfm(&read_cfm)) {
+					BT_LOGE("%s mcp_server_read_cfm fail\r\n", __func__);
+					return RTK_BT_ERR_LOWER_STACK_API;
+				}
+			}
 		}
 		break;
 	}
@@ -2507,54 +2540,6 @@ static uint16_t bt_stack_le_audio_aics_get_srv_data(void *data)
 
 #endif
 
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
-static uint16_t bt_stack_le_audio_gmas_client_read_role(void *data)
-{
-	uint16_t p_conn_handle = 0;
-
-	if (!data) {
-		BT_LOGE("%s fail: param error\r\n", __func__);
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
-	p_conn_handle = *((uint16_t *)data);
-
-	BT_LOGD("%s conn_handle %d\r\n", __func__, p_conn_handle);
-
-	if (false == gmas_read_gmap_role(p_conn_handle)) {
-		BT_LOGE("%s fail: gmas_read_role failed \r\n", __func__);
-		return RTK_BT_ERR_LOWER_STACK_API;
-	}
-
-	return RTK_BT_OK;
-}
-
-static uint16_t bt_stack_le_audio_gmas_client_read_features(void *data)
-{
-	uint16_t char_uuid;
-
-	if (!data) {
-		BT_LOGE("%s fail: param error\r\n", __func__);
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-	rtk_bt_le_audio_gmas_client_read_role_result_t *info = (rtk_bt_le_audio_gmas_client_read_role_result_t *)data;
-	if (info->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_UGG) {
-		char_uuid = GMAS_UUID_CHAR_UGG_FEATURES;
-	} else if (info->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_UGT) {
-		char_uuid = GMAS_UUID_CHAR_UGT_FEATURES;
-	} else if (info->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_BGS) {
-		char_uuid = GMAS_UUID_CHAR_BGS_FEATURES;
-	} else if (info->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_BGR) {
-		char_uuid = GMAS_UUID_CHAR_BGR_FEATURES;
-	}
-	if (false == gmas_read_features(info->conn_handle, char_uuid)) {
-		BT_LOGE("%s fail: gmas_read_role failed \r\n", __func__);
-		return RTK_BT_ERR_LOWER_STACK_API;
-	}
-	return RTK_BT_OK;
-}
-#endif
-
 static uint16_t bt_stack_le_audio_cap_param_config(void *data)
 {
 	rtk_bt_le_audio_cap_param_config_t *p_config = NULL;
@@ -2824,18 +2809,6 @@ uint16_t bt_stack_cap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 #endif
-#if defined(CONFIG_BT_GMAP_SUPPORT) && CONFIG_BT_GMAP_SUPPORT
-	case RTK_BT_LE_AUDIO_ACT_GMAS_READ_ROLE: {
-		BT_LOGD("RTK_BT_LE_AUDIO_ACT_GMAS_READ_ROLE \r\n");
-		ret = bt_stack_le_audio_gmas_client_read_role(p_cmd->param);
-		break;
-	}
-	case RTK_BT_LE_AUDIO_ACT_GMAS_READ_FEATURES: {
-		BT_LOGD("RTK_BT_LE_AUDIO_ACT_GMAS_READ_FEATURES \r\n");
-		ret = bt_stack_le_audio_gmas_client_read_features(p_cmd->param);
-		break;
-	}
-#endif
 	case RTK_BT_LE_AUDIO_ACT_CAP_PARAM_CONFIG: {
 		BT_LOGD("RTK_BT_LE_AUDIO_ACT_CAP_PARAM_CONFIG \r\n");
 		ret = bt_stack_le_audio_cap_param_config(p_cmd->param);
@@ -3061,7 +3034,7 @@ uint16_t bt_stack_cap_init(void *p_conf)
 	ble_audio_cback_register(rtk_stack_le_audio_cap_msg_cback);
 #if (defined(RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT) || \
     (defined(RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT)
-	if (p_le_audio_app_conf->cap_role & RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR) {
+	if (RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR & p_le_audio_app_conf->cap_role) {
 		ret = bt_stack_vc_mic_init(p_le_audio_app_conf);
 		if (ret != RTK_BT_OK) {
 			BT_LOGE("%s:bt_stack_le_audio_vcs_init fail,ret= 0x%x\r\n", __func__, ret);
@@ -3069,9 +3042,9 @@ uint16_t bt_stack_cap_init(void *p_conf)
 		}
 	}
 #endif
-	cap_init_param.cap_role = p_le_audio_app_conf->cap_role;
 	/* cap initiator */
-	if (RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR == p_le_audio_app_conf->cap_role) {
+	if (RTK_BT_LE_AUDIO_CAP_ROLE_INITIATOR & p_le_audio_app_conf->cap_role) {
+		cap_init_param.cap_role |= CAP_INITIATOR_ROLE;
 		cap_init_param.cas_client = true;
 #if defined (RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 		bt_stack_csis_cap_init(RTK_BT_CSIP_ROLE_SET_COORDINATOR, &cap_init_param, &p_le_audio_app_conf->cap_param.csis_param);
@@ -3085,8 +3058,10 @@ uint16_t bt_stack_cap_init(void *p_conf)
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 		bt_stack_mcs_server_cap_init(&cap_init_param);
 #endif
-	} else if (RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER == p_le_audio_app_conf->cap_role) {
-		/* cap commander */
+	}
+	/* cap commander */
+	if (RTK_BT_LE_AUDIO_CAP_ROLE_COMMANDER & p_le_audio_app_conf->cap_role) {
+		cap_init_param.cap_role |= CAP_COMMANDER_ROLE;
 		cap_init_param.cas_client = true;
 #if defined (RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 		bt_stack_csis_cap_init(RTK_BT_CSIP_ROLE_SET_COORDINATOR, &cap_init_param, &p_le_audio_app_conf->cap_param.csis_param);
@@ -3103,7 +3078,10 @@ uint16_t bt_stack_cap_init(void *p_conf)
 #if defined(RTK_BLE_AUDIO_VOCS_SUPPORT) && RTK_BLE_AUDIO_VOCS_SUPPORT
 		cap_init_param.vcp_micp.vcp_vocs_client = true;
 #endif
-	} else {
+	}
+	/* cap acceptor */
+	if (RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR & p_le_audio_app_conf->cap_role) {
+		cap_init_param.cap_role |= CAP_ACCEPTOR_ROLE;
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 		if (p_le_audio_app_conf->cap_param.csis_param.csis_cfg != RTK_BT_LEA_CSIS_CFG_NOT_EXIST) {
 			bt_stack_csis_cap_init(RTK_BT_CSIP_ROLE_SET_MEMBER, &cap_init_param, &p_le_audio_app_conf->cap_param.csis_param);

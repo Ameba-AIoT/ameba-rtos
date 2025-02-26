@@ -46,6 +46,8 @@
 #define SRAM_ONLY_TEXT_SECTION				SECTION(".sram.only.text")
 #define SRAM_ONLY_DATA_SECTION				SECTION(".sram.only.data")
 
+#define SRAM_WLAN_CRITICAL_CODE_SECTION
+
 // Wlan Section(Not Used)
 #define WLAN_ROM_TEXT_SECTION
 #define WLAN_ROM_DATA_SECTION

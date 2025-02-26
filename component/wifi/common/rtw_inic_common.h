@@ -14,7 +14,7 @@
 #include "wifi_ind.h"
 #include "whc_def.h"
 
-#ifndef CONFIG_FULLMAC_HOST
+#if !defined(CONFIG_FULLMAC_HOST) && defined(CONFIG_WHC_INTF_IPC)
 #if defined(CONFIG_AS_INIC_AP)
 #include "whc_ipc_host_trx.h"
 #endif
@@ -22,6 +22,6 @@
 #include "whc_ipc_msg_queue.h"
 #endif
 
-int inic_host_send_zephyr(int idx, void *pkt_addr, uint32_t len);
+int whc_ipc_host_send_zephyr(int idx, void *pkt_addr, uint32_t len);
 
 #endif

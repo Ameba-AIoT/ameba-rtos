@@ -87,6 +87,7 @@ void rtk_bt_log_dumphex(const char *str, void *buf, uint16_t len, bool reverse)
 
 void rtk_bt_fw_log_open(void)
 {
+#if !(defined(CONFIG_PLATFORM_AMEBAPRO3) && CONFIG_PLATFORM_AMEBAPRO3)
 	LOGUART_Relay_InitTypeDef LOGUART_Relay_InitStruct;
 
 	LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
@@ -101,13 +102,16 @@ void rtk_bt_fw_log_open(void)
 	LOGUART_Relay_SetBaud(LOGUART_DEV, 115200);
 #endif
 	LOGUART_Relay_RxCmd(LOGUART_DEV, ENABLE);
+#endif
 }
 
 void rtk_bt_fw_log_close(void)
 {
+#if !(defined(CONFIG_PLATFORM_AMEBAPRO3) && CONFIG_PLATFORM_AMEBAPRO3)
 	LOGUART_Relay_RxCmd(LOGUART_DEV, DISABLE);
 	LOGUART_WaitTxComplete();
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_5, DISABLE);
+#endif
 }
 
 void rtk_bt_trace_log_open(void)

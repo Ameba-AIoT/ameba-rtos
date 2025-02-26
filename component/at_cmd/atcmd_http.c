@@ -6,7 +6,6 @@
 
 #include "platform_autoconf.h"
 
-#ifndef CONFIG_MP_INCLUDED
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
 
@@ -1501,4 +1500,3 @@ void at_http_init(void)
 
 #endif /* CONFIG_ATCMD_FTTP */
 #endif /* CONFIG_LWIP_LAYER */
-#endif /* CONFIG_MP_INCLUDED */

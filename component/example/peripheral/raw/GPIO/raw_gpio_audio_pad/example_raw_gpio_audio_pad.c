@@ -112,14 +112,26 @@ void audio_pad_digital_demo(void)
 		/* keep audio HPO power be power down mode */
 		switch (PinName) {
 		case _PB_3:
-		case _PB_4:
 			/* AOUT LPLN */
 			AUDIO_CODEC_SetHPOPowerMode(CHN_L, POWER_DOWN);
 			break;
+		case _PB_4:
+			/* AOUT LPLN */
+			u32 chnlmode = AUDIO_CODEC_GetHPOMode(CHN_L);
+			if (!chnlmode) {
+				AUDIO_CODEC_SetHPOMode(CHN_L, SINGAL);
+			}
+			break;
 		case _PB_5:
-		case _PB_6:
 			/* AOUT RPRN */
 			AUDIO_CODEC_SetHPOPowerMode(CHN_R, POWER_DOWN);
+			break;
+		case _PB_6:
+			/* AOUT RPRN */
+			u32 chnrmode = AUDIO_CODEC_GetHPOMode(CHN_R);
+			if (!chnrmode) {
+				AUDIO_CODEC_SetHPOMode(CHN_R, SINGAL);
+			}
 			break;
 		default:
 			break;

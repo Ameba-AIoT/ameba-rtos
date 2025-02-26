@@ -479,7 +479,7 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 
 #else /* OS_NO_C_LIB_DEFINES */
 
-#if !defined(CONFIG_AMEBASMART) && !defined(CONFIG_AMEBADPLUS)
+#if !defined(CONFIG_AMEBASMART) && !defined(CONFIG_AMEBADPLUS) && !defined(CONFIG_AMEBASMARTPLUS)
 #ifndef os_malloc
 #define os_malloc(sz) rtos_mem_malloc(sz)
 #endif

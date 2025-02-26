@@ -86,6 +86,7 @@ extern u8 __km4_psram_tz_nsc_start__[];
 extern u8 __km4_psram_tz_entry_start__[];
 extern u8 __km4_psram_tz_entry_end__[];
 extern u8 __km4_bd_psram_start__[];
+extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 
 extern u8 __git_ver_table_start__[];
 extern u8 __git_ver_table_end__[];

@@ -21,7 +21,7 @@ struct whc_sdio_priv_t {
 void whc_sdio_dev_send(struct spdio_buf_t *pbuf);
 u8 whc_sdio_dev_tx_path_avail(void);
 void whc_sdio_dev_init(void);
-void whc_sdio_dev_send_data(u8 *data, u32 len, u8 need_free);
+void whc_sdio_dev_send_data(u8 *data, u32 len);
 void whc_sdio_dev_trigger_rx_handle(void);
 
 #endif

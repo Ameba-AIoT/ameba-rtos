@@ -9,7 +9,6 @@ add_library(src_${d_MCU_PROJECT_NAME}_wifi_realmesh INTERFACE)
 
 #--------------------------#
 ameba_target_sources(src_${d_MCU_PROJECT_NAME}_wifi_eap p_SCOPE interface
-    ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/eap_common/eap_common.c
     ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/eap_common/eap_peap_common.c
 
     ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/eap_peer/eap.c

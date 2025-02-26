@@ -22,14 +22,14 @@
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
-//#define CONFIG_MCC_MODE
+#define CONFIG_MCC_MODE
 #define NET_IF_NUM 2
 #define SUPPORT_ADAPTER_NUM	2
 /**************** configurations for concurrent mode end **********************/
 
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
-#define AP_STA_NUM	5
+#define MAX_AP_CLIENT_NUM	5
 #define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
 

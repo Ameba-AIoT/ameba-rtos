@@ -42,12 +42,24 @@ if(CONFIG_AMEBASMART)
     )
 endif()
 
+if(CONFIG_AMEBASMARTPLUS)
+    list(
+        APPEND MODULE_IFLAGS
+        ${BASEDIR}/component/wifi/driver/phy_g6
+        ${BASEDIR}/component/wifi/driver/phy_g6/bb
+        ${BASEDIR}/component/wifi/driver/phy_g6/rf
+        ${BASEDIR}/component/wifi/driver/rtl8730e
+        ${BASEDIR}/component/wifi/driver/rtl8730e_rom
+        ${BASEDIR}/component/wifi/wifi_fw/amebasmart/include
+    )
+endif()
+
 set(DEVDIR ${BASEDIR}/component/wifi/whc/whc_dev)
-set(HOSTDIR ${BASEDIR}/component/wifi/whc/whc_host)
+set(HOSTDIR ${BASEDIR}/component/wifi/whc/whc_host_rtos)
 set(COMDIR ${BASEDIR}/component/wifi/whc)
 
 
-if(CONFIG_INIC_INTF_USB)
+if(CONFIG_WHC_INTF_USB)
     list(
         APPEND MODULE_IFLAGS 
         ${BASEDIR}/component/usb/common
@@ -80,12 +92,13 @@ if(CONFIG_WIFI_HOST_CONTROL)
            list(
                APPEND CSRC
                ${DEVDIR}/whc_dev_bridge.c
+               ${DEVDIR}/whc_bridge_dev_api.c
            )
        endif()
 endif()
 
 if(CONFIG_AS_INIC_NP)
-    if(CONFIG_INIC_INTF_SPI)
+    if(CONFIG_WHC_INTF_SPI)
         list(
             APPEND CSRC
             ${DEVDIR}/spi/whc_spi_dev.c
@@ -94,7 +107,7 @@ if(CONFIG_AS_INIC_NP)
         ameba_internal_library(wifi_whc_spi_dev)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    elseif(CONFIG_INIC_INTF_SDIO)
+    elseif(CONFIG_WHC_INTF_SDIO)
         list(
             APPEND CSRC
             ${DEVDIR}/sdio/whc_sdio_drv.c
@@ -103,7 +116,7 @@ if(CONFIG_AS_INIC_NP)
         ameba_internal_library(wifi_whc_sdio_dev)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    elseif(CONFIG_INIC_INTF_USB)
+    elseif(CONFIG_WHC_INTF_USB)
         list(
             APPEND CSRC
             ${DEVDIR}/usb/whc_usb_dev.c
@@ -113,7 +126,7 @@ if(CONFIG_AS_INIC_NP)
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
 elseif(CONFIG_FULLMAC_BRIDGEB)
-    if(CONFIG_INIC_INTF_SDIO)
+    if(CONFIG_WHC_INTF_SDIO)
         list(
             APPEND CSRC
             ${DEVDIR}/sdio/whc_sdio_drv.c
@@ -122,7 +135,7 @@ elseif(CONFIG_FULLMAC_BRIDGEB)
         ameba_internal_library(wifi_fullmac_sdio_bridge)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    elseif(CONFIG_INIC_INTF_SPI)
+    elseif(CONFIG_WHC_INTF_SPI)
         list(
             APPEND CSRC
             ${DEVDIR}/spi/whc_spi_dev.c
@@ -132,7 +145,7 @@ elseif(CONFIG_FULLMAC_BRIDGEB)
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
 elseif(CONFIG_FULLMAC_BRIDGE)
-    if(CONFIG_INIC_INTF_SDIO)
+    if(CONFIG_WHC_INTF_SDIO)
         list(
             APPEND CSRC
             ${DEVDIR}/sdio/whc_sdio_drv.c
@@ -142,26 +155,27 @@ elseif(CONFIG_FULLMAC_BRIDGE)
         ameba_internal_library(wifi_fullmac_sdio_bridge_lite)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-    elseif(CONFIG_INIC_INTF_SPI)
+    elseif(CONFIG_WHC_INTF_SPI)
          list(
             APPEND CSRC
             ${DEVDIR}/spi/whc_spi_dev.c
             ${DEVDIR}/spi/whc_bridge_spi_dev.c
+            ${DEVDIR}/whc_dev_app.c
         )
         ameba_internal_library(wifi_fullmac_spi_bridge_lite)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
 elseif(CONFIG_AS_INIC_AP)
-    if(CONFIG_INIC_INTF_SPI)
+    if(CONFIG_WHC_INTF_SPI)
         list(
             APPEND CSRC
-            ${HOSTDIR}/spi/inic_spi_host.c
-            ${HOSTDIR}/spi/inic_spi_host_trx.c
-            ${HOSTDIR}/inic_host_api.c
-            ${HOSTDIR}/inic_host_api_ext.c
-            ${HOSTDIR}/inic_host_api_basic.c
-            ${HOSTDIR}/inic_host_cust_evt.c
+            ${HOSTDIR}/spi/whc_spi_host.c
+            ${HOSTDIR}/spi/whc_spi_host_trx.c
+            ${HOSTDIR}/whc_host_api.c
+            ${HOSTDIR}/whc_host_api_ext.c
+            ${HOSTDIR}/whc_host_api_basic.c
+            ${HOSTDIR}/whc_host_cust_evt.c
         )
         ameba_internal_library(wifi_whc_spi_host)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
@@ -169,11 +183,11 @@ elseif(CONFIG_AS_INIC_AP)
     elseif(NOT CONFIG_AMEBA_RLS)
         list(
             APPEND CSRC
-            ${HOSTDIR}/whc_ipc_host.c 
-            ${HOSTDIR}/whc_ipc_host_trx.c 
-            ${HOSTDIR}/whc_ipc_host_api.c 
-            ${HOSTDIR}/whc_ipc_host_api_basic.c 
-            ${HOSTDIR}/whc_ipc_host_api_ext.c 
+            ${HOSTDIR}/ipc/whc_ipc_host.c 
+            ${HOSTDIR}/ipc/whc_ipc_host_trx.c 
+            ${HOSTDIR}/ipc/whc_ipc_host_api.c 
+            ${HOSTDIR}/ipc/whc_ipc_host_api_basic.c 
+            ${HOSTDIR}/ipc/whc_ipc_host_api_ext.c 
             ${COMDIR}/whc_ipc_msg_queue.c
             )
 

@@ -914,14 +914,13 @@ void BOOT_Image1(void)
 		goto INVALID_IMG2;
 	}
 
-	BOOT_Enable_KM0();
+	/* Config Non-Security World Registers and clean Dcache */
+	BOOT_RAM_TZCfg();
 
 	/*switch shell control to KM0, disable loguart interrupt to avoid loguart irq not assigned in non-secure world */
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
 	InterruptDis(UART_LOG_IRQ);
-
-	/* Config Non-Security World Registers */
-	BOOT_RAM_TZCfg();
+	BOOT_Enable_KM0();
 
 	/* AP Power-on, AP start run */
 	if (Boot_AP_Enbale) {

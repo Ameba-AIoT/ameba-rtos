@@ -143,7 +143,7 @@ static void save_client_addr(struct ip_addr *client_ip, uint8_t *hwaddr)
 
 	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
 
-	for (i = 0; i < AP_STA_NUM; i++) {
+	for (i = 0; i < wifi_user_config.ap_sta_num; i++) {
 		if ((ip_table.ip_addr4[i] == 0 || ip_table.ip_addr4[i] == d)) {
 			ip_table.ip_addr4[i] = d;
 			memcpy(ip_table.client_mac[i], hwaddr, 6);
@@ -151,9 +151,9 @@ static void save_client_addr(struct ip_addr *client_ip, uint8_t *hwaddr)
 		}
 	}
 	/* cache of ip_table is full,write the new mac&ip instead of an invalid pairs */
-	if (i == AP_STA_NUM) {
+	if (i == wifi_user_config.ap_sta_num) {
 		wifi_get_associated_client_list(&client_info);
-		for (j = 0; j < AP_STA_NUM; j++) {
+		for (j = 0; j < wifi_user_config.ap_sta_num; j++) {
 			for (client_number = 0; client_number < client_info.count; client_number++) {
 				if (memcmp(ip_table.client_mac[j], client_info.mac_list[client_number].octet, 6) == 0) {
 					break;
@@ -193,7 +193,7 @@ static uint8_t check_client_request_ip(struct ip_addr *client_req_ip, uint8_t *h
 
 	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
 
-	for (i = 0; i < AP_STA_NUM; i++) {
+	for (i = 0; i < wifi_user_config.ap_sta_num; i++) {
 		if (memcmp(ip_table.client_mac[i], hwaddr, 6) == 0) {
 			uint8_t temp = ip_table.ip_addr4[i];
 			if ((temp % 32 != 0) && ((ip_table.ip_range[temp / 32] >> (temp % 32 - 1)) & 1)) {
@@ -205,7 +205,7 @@ static uint8_t check_client_request_ip(struct ip_addr *client_req_ip, uint8_t *h
 
 	rtos_mutex_give(dhcps_ip_table_semaphore);
 
-	if (i == AP_STA_NUM) {
+	if (i == wifi_user_config.ap_sta_num) {
 		ip_addr4 = 0;
 	}
 
@@ -236,7 +236,7 @@ static uint8_t check_client_direct_request_ip(struct ip_addr *client_req_ip, uin
 	}
 	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
 
-	for (int i = 0; i < AP_STA_NUM; i++) {
+	for (int i = 0; i < wifi_user_config.ap_sta_num; i++) {
 		if ((ip_table.ip_addr4[i] == ip_addr4 &&
 			 !(ip_table.client_mac[i][0] == hwaddr[0] &&
 			   ip_table.client_mac[i][1] == hwaddr[1] &&
@@ -264,7 +264,7 @@ void dump_client_table(void)
 	printf("\r\nip_range: 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
 		   ip_table.ip_range[0], ip_table.ip_range[1], ip_table.ip_range[2], ip_table.ip_range[3],
 		   ip_table.ip_range[4], ip_table.ip_range[5], ip_table.ip_range[6], ip_table.ip_range[7]);
-	for (i = 0; i < AP_STA_NUM; i++) {
+	for (i = 0; i < wifi_user_config.ap_sta_num; i++) {
 		p = ip_table.client_mac[i];
 		printf("\r\nip_addr4 = %d; Client[%d]: 0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x",
 			   ip_table.ip_addr4[i], i, p[0], p[1], p[2], p[3], p[4], p[5]);

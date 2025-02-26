@@ -49,7 +49,7 @@ typedef enum {
 	USBH_VERIFY_MAX,
 } usbh_verify_state_t;
 
-/* States for Verify Transfor Status */
+/* States for Verify transfer Status */
 typedef enum {
 	VERIFY_STATE_IDLE = 0U,
 	VERIFY_STATE_XFER,
@@ -57,7 +57,7 @@ typedef enum {
 	VERIFY_STATE_ERROR,
 } usbh_verify_ep_state_t;
 
-/* USB Host Transfor Status */
+/* USB Host transfer Status */
 typedef enum {
 	USBH_VERIFY_TRX_IDLE = 0U,
 	USBH_VERIFY_TX,
@@ -76,6 +76,10 @@ typedef struct {
 	u8                  init_done;
 	u8                  pipe_id;
 
+	usbh_verify_ep_trx_state_t ep_state;
+	u8                  ep_match_addr;
+	u32                 retry_time;
+
 	/* descriptor infor*/
 	u8                  ep_addr;
 	u8                  ep_type;
@@ -89,9 +93,9 @@ typedef struct {
 	__IO u16            xfer_len;
 
 	u8                  expect_data;
-	__IO u32            error_cnt;//transfor data total mismatch count
-	__IO u32            xfer_cnt;//transfor success count
-	u32                 total_xfer_cnt;//transfor total success count
+	__IO u32            error_cnt;//transfer data total mismatch count
+	__IO u32            xfer_cnt;//transfer success count
+	u32                 total_xfer_cnt;//transfer total success count
 
 
 	//idle to retry,if idle too long, force to switch to xfer
@@ -108,9 +112,9 @@ typedef struct {
 	usbh_verify_state_t  usbh_state;//host status
 
 	/* start next loop for process */
-	__IO u8             next_transfor;
+	__IO u8             next_xfer;
 
-	__IO u8             start_process;
+	__IO u8             start_flag;
 	__IO u32            finish_tick;
 
 	/* ctrl loop info*/
@@ -118,9 +122,6 @@ typedef struct {
 	usbh_verify_xfer_t  ctrl_out_xfer;
 
 	usbh_verify_ep_trx_state_t ctrl_trx_state;
-	usbh_verify_ep_trx_state_t bulk_trx_state;
-	usbh_verify_ep_trx_state_t intr_trx_state;
-	usbh_verify_ep_trx_state_t isoc_trx_state;
 
 	u8                  ep_count;
 	usbh_verify_xfer_t  ep_array[USBH_EP_COUNT_MAX];
@@ -130,7 +131,7 @@ typedef struct {
 	u8                  interface_id;//bInterfaceNumber
 	u8                  alterset_id;//bAlternateSetting
 
-	__IO u32            ep_test;
+	__IO u32            ep_mask;
 	u32                 ep_all_mask;
 	u32                 test_count_limit;
 	u32                 loopcount;
@@ -140,8 +141,29 @@ typedef struct {
 
 
 /* Exported macros -----------------------------------------------------------*/
+typedef struct {
+	/* Both direction xfer:
+	 * 	loopback = 1: OUT->IN, OUT must OK, and then switch to IN.
+	 * 	loopback = 0: start another OUT or IN when this OUT or IN done.
+	 */
+	u8 p_loopback : 1;//INTR and ISOC
+	u8 bulk_loopback : 1;
+	/* No loopback, single direction xfer: host only start IN or OUT xfer.
+	 * In only: need USBD verify cooperate with USBH verify.
+	 */
+	u8 p_in_only : 1;
+	u8 p_out_only : 1;
+	u8 bulk_in_only : 1;
+	u8 bulk_out_only : 1;
+	u8 ctrl_in_only : 1;
+	u8 ctrl_out_only : 1;
+} usbh_verify_xfer_dir_t;
 
 /* Exported variables --------------------------------------------------------*/
+extern usbh_verify_xfer_dir_t usbh_verify_xfer;
+
+/* Use 1us dbg_timer instead of SOF interrupt for FPGA USB interrupt transfer*/
+extern u8 usbh_fpga_no_sof;
 
 /* Exported functions --------------------------------------------------------*/
 int usbh_verify_init(usbh_verify_cb_t *cb);
@@ -156,7 +178,7 @@ void usbh_verify_set_test_count_max(u32 count);
 
 int usbh_verify_xfer_process(usbh_verify_xfer_t *xfer);
 void usbh_verify_transfer_by_eptype(u16 size, u8 type);
-void usbh_verify_allep_transfer(u16 size);
+void usbh_verify_all_ep_transfer(u16 size);
 void usbh_ctrl_test(u8 is_in);
 
 /*set interface apis*/

@@ -68,3 +68,6 @@ __tmp_*_build_info.c
 # IDE extra files
 compile_commands.json
 .vscode
+
+# venv
+.venv

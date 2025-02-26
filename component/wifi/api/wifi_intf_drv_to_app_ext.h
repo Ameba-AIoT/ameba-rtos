@@ -122,7 +122,9 @@ int wifi_set_lps_listen_interval(u8 interval);
 
 /**
  * @brief  Set reconnection mode with configuration.
- * @param[in]  mode: Set 1/0 to enalbe/disable the reconnection mode.
+ * @param[in]  mode: Set 0 to disable the reconnection mode
+ * Set 1 to enable the reconnection mode but sta attempts to reconnect finite times
+ * Set 2 to enable the infinite reconnection mode
  * @return  0 if success, otherwise return -1.
  * @note  Defining CONFIG_AUTO_RECONNECT in "rtw_autoconf.h" needs to be
  * 	done before compiling, or this API won't be effective.

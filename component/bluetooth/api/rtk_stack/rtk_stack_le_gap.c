@@ -5026,7 +5026,7 @@ static uint16_t bt_stack_le_sm_set_security_param(void *param)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-#if defined(F_BT_LE_SMP_OOB_SUPPORT) && F_BT_LE_SMP_OOB_SUPPORT
+#if defined(F_BT_OOB_SUPPORT) && F_BT_OOB_SUPPORT
 	cause = gap_set_param(GAP_PARAM_BOND_OOB_ENABLED, sizeof(uint8_t),
 						  &p_sec_param->oob_data_flag);
 	if (cause) {
@@ -5088,10 +5088,12 @@ static uint16_t bt_stack_le_sm_get_security_param(void *param)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
+#if defined(F_BT_OOB_SUPPORT) && F_BT_OOB_SUPPORT
 	cause = gap_get_param(GAP_PARAM_BOND_OOB_ENABLED, &p_sec_param->oob_data_flag);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
+#endif
 
 	cause = gap_get_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, &auth_flags);
 	if (cause) {

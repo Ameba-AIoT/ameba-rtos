@@ -8,23 +8,24 @@
  * @param  rxbuf: rx data.
  * @return none.
  */
-void whc_fullmac_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
+void whc_fullmac_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 {
+	(void)size;
 	u32 event = *(u32 *)rxbuf;
-	struct inic_api_info *ret_msg;
+	struct whc_api_info *ret_msg;
 
 	switch (event) {
-	case INIC_WIFI_EVT_API_CALL:
+	case WHC_WIFI_EVT_API_CALL:
 		event_priv.rx_api_msg = rxbuf;
 		rtos_sema_give(event_priv.task_wake_sema);
 
 		break;
-	case INIC_WIFI_EVT_API_RETURN:
+	case WHC_WIFI_EVT_API_RETURN:
 		if (event_priv.b_waiting_for_ret) {
 			event_priv.rx_ret_msg = rxbuf;
 			rtos_sema_give(event_priv.api_ret_sema);
 		} else {
-			ret_msg = (struct inic_api_info *)rxbuf;
+			ret_msg = (struct whc_api_info *)rxbuf;
 			RTK_LOGW(TAG_WLAN_INIC, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
 
 			/* free rx buffer */
@@ -32,9 +33,9 @@ void whc_fullmac_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 		}
 
 		break;
-	case INIC_WIFI_EVT_XIMT_PKTS:
+	case WHC_WIFI_EVT_XIMT_PKTS:
 		/* put the inic message to the queue */
-		if (inic_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == FAIL) {
+		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == FAIL) {
 			break;
 		}
 		/* wakeup task */
@@ -64,8 +65,8 @@ void whc_fullmac_sdio_dev_init(void)
 	whc_sdio_dev_init();
 
 	/* initialize the dev priv */
-	inic_dev_init_priv();
+	whc_dev_init_priv();
 
-	inic_api_init_dev();
+	whc_dev_api_init();
 }
 

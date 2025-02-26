@@ -172,6 +172,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKR4_DEV);
 
+	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
 #ifndef CONFIG_MP_INCLUDED

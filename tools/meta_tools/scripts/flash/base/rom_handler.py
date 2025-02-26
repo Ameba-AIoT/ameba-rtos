@@ -106,7 +106,7 @@ class RomHandler(object):
                 for resp_retry in range(3):
                     ret, ch = self.ameba.read_bytes(timeout)
                     if ret != ErrType.OK:
-                        self.logger.error(f"Reponse error: {ret}")
+                        self.logger.debug(f"Reponse error: {ret}")
                         break
 
                     if ch[0] == ACK:

@@ -410,6 +410,7 @@ static int atcmd_bt_vcp_client_get(int argc, char **argv)
 		return -1;
 	}
 	BT_LOGA("vcp client get successfully\r\n");
+	BT_LOGA("volume setting %x, mute %x, change_counter %x \r\n", volume_state.volume_setting, volume_state.mute, volume_state.change_counter);
 	BT_AT_PRINT("+BLECAP:commander,vcp,get,%u,%u,%u,%u\r\n",
 				conn_handle, volume_state.volume_setting,
 				volume_state.mute, volume_state.change_counter);
@@ -597,6 +598,10 @@ static int atcmd_bt_vocs_client_get_srv(int argc, char **argv)
 		return -1;
 	}
 	BT_LOGA("vocs client get srv successfully\r\n");
+	BT_LOGA("srv_instance_id 0x%x, type_exist 0x%x, volume_offset 0x%x, change_counter 0x%x, audio_location 0x%x, output_des_len 0x%x, p_output_des %s \r\n",
+			srv_data.srv_instance_id, srv_data.type_exist, srv_data.volume_offset.volume_offset,
+			srv_data.volume_offset.change_counter, srv_data.audio_location, srv_data.output_des.output_des_len,
+			srv_data.output_des.p_output_des);
 	BT_AT_PRINT("+BLECAP:commander,vocs,get_srv,%u,%u,%d,%u,%u,%u,%s\r\n",
 				srv_data.srv_instance_id, srv_data.type_exist, srv_data.volume_offset.volume_offset,
 				srv_data.volume_offset.change_counter, srv_data.audio_location, srv_data.output_des.output_des_len,
@@ -627,7 +632,7 @@ static int atcmd_bt_vocs_client_get_char(int argc, char **argv)
 
 static const cmd_table_t cap_vocs_client_cmd_table[] = {
 	{"write",    atcmd_bt_vocs_client_write,    4, 5},
-	{"gwrite",   atcmd_bt_vocs_client_gwrite,   4, 4},
+	{"gwrite",   atcmd_bt_vocs_client_gwrite,   5, 5},
 	{"wdes",     atcmd_bt_vocs_client_wdes,     4, 4},
 	{"get_srv",  atcmd_bt_vocs_client_get_srv,  3, 3},
 	{"get_char", atcmd_bt_vocs_client_get_char, 3, 3},
@@ -832,7 +837,7 @@ static const cmd_table_t cap_commander_cmd_table[] = {
 	{"micp",        atcmd_bt_micp_client_act,               2, 4},
 #endif
 #if defined(RTK_BLE_AUDIO_VOCS_SUPPORT) && RTK_BLE_AUDIO_VOCS_SUPPORT
-	{"vocs",        atcmd_bt_vocs_client_act,               2, 5},
+	{"vocs",        atcmd_bt_vocs_client_act,               2, 6},
 #endif
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 	{"aics",        atcmd_bt_aics_client_act,               2, 5},

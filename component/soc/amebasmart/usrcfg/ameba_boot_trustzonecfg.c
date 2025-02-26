@@ -29,14 +29,13 @@ const TZ_CFG_TypeDef mpc1_config[] =					/* Security configuration for DDR/PSRAM
 {
 //  Start					End						NSC
 #if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
-	{0x00000000,			0x0015B000 - 1,			0},	/* entry0: TODO */
-#elif defined (CONFIG_XIP_FLASH)
-	{0x00000000,			0x00060000 - 1, 		0}, /* entry0: TODO */
+	{0x00000000,					0x0015B000 - 1,			0},	/* entry0: TODO */
 #else
-	{0x00000000,			0x00180000 - 1,			0},	/* entry0: TODO */
+	{0x00000000,	(u32)__ca32_bl1_dram_start__ - 0x20 - 1, 		0},   /* entry0: TODO */
 #endif
-	/* FIP = BL2(256K)+BL32(1M)+BL33, [0x00600000, 0xFFFFFFFF] is safe for secure BL2/BL32 */
-	{0x00600000,			0x0FFFFFFF,				0},	/* entry1: see above */
+	/* FIP = BL2+BL32+BL33, reserved CA32_FIP_MAX_SIZE is safe for secure BL2/BL32 */
+	/* Note: __non_secure_psram_end__ maybe not real, update this info by the chipinfo value in bootloader. */
+	{(u32)__ca32_fip_dram_start__ + CA32_FIP_MAX_SIZE,	(u32)__non_secure_psram_end__ - 1,				0},	/* entry1: see above */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry2: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry3: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry4: TODO */

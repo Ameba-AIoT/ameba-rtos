@@ -41,6 +41,9 @@ extern char lfs_mount_fail;
 u8 uart_tt_buf[UART_TT_BUF_LEN];
 u16 uart_tt_buf_len;
 extern char g_tt_mode;
+extern char g_tt_mode_check_watermark;
+extern char g_tt_mode_indicate_high_watermark;
+extern char g_tt_mode_indicate_low_watermark;
 extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
 extern rtos_sema_t atcmd_tt_mode_sema;
 
@@ -108,14 +111,18 @@ void atio_uart_output(char *buf, int len)
 {
 	rtos_mutex_take(uart_tx_mutex, MUTEX_WAIT_TIMEOUT);
 
-	if (len > POLL_LEN_MAX) {
-		// tx by dma
-		atio_uart_out_dma(buf, len);
-	} else {
-		// tx by polling
-		atio_uart_out_polling(buf, len);
-		rtos_mutex_give(uart_tx_mutex);
-	}
+	atio_uart_out_polling(buf, len);
+	rtos_mutex_give(uart_tx_mutex);
+
+	// TODO: dma mode
+	// if (len > POLL_LEN_MAX) {
+	// 	// tx by dma
+	// 	atio_uart_out_dma(buf, len);
+	// } else {
+	// 	// tx by polling
+	// 	atio_uart_out_polling(buf, len);
+	// 	rtos_mutex_give(uart_tx_mutex);
+	// }
 }
 
 u32 atio_uart_handler(void *data)
@@ -152,6 +159,15 @@ tt_recv_again:
 
 		if (uart_tt_buf_len > 0) {
 			u32 space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+
+			if (g_tt_mode_check_watermark) {
+				if (space - uart_tt_buf_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
+					g_tt_mode_indicate_high_watermark = 1;
+					g_tt_mode_indicate_low_watermark = 0;
+					at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+				}
+			}
+
 			if (space >= uart_tt_buf_len) {
 				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, uart_tt_buf, uart_tt_buf_len);
 				rtos_sema_give(atcmd_tt_mode_sema);

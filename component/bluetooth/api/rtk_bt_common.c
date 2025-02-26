@@ -57,7 +57,8 @@ static uint32_t rtk_bt_le_audio_evt_bap_direct_calling_flag =
 	 (1 << RTK_BT_LE_AUDIO_EVT_ASCS_ASE_STATE_IND) |
 	 (1 << RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND) |
 	 (1 << RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND));
-static uint32_t rtk_bt_le_audio_evt_cap_direct_calling_flag = 0;
+static uint32_t rtk_bt_le_audio_evt_cap_direct_calling_flag =
+	(1 << RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND);
 static uint32_t rtk_bt_gap_evt_direct_calling_flag =
 	(1 << RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND);
 

@@ -81,6 +81,9 @@ if BT_EXAMPLE_DEMO_MENU
             bool "BLE Audio Telephony and Media Audio Profile"
             default n
 
+        config BT_GMAP_MENU
+            bool "BLE Audio Game Media Audio Profile"
+            default n
     endif
 
     config BT_A2DP_MENU

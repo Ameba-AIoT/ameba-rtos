@@ -10,6 +10,7 @@ import ctypes
 from .sense_status import *
 from .device_info import *
 from .next_op import *
+from .device_profile import *
 
 BAUDSET = 0x81
 QUERY = 0x02
@@ -101,7 +102,7 @@ class FloaderHandler(object):
 
                 ret, ret_byte = self.ameba.read_bytes(timeout)
                 if ret != ErrType.OK:
-                    self.logger.error(f"Response error: {ret}")
+                    self.logger.error(f"Response error: {ret}, timeout:{timeout}")
                     continue
                 if is_sync:
                     if ret_byte[0] == SOF:
@@ -347,17 +348,17 @@ class FloaderHandler(object):
         self.logger.debug(f"Reset in download mode")
         return self.next_operation(NextOpType.REBURN, 0)
 
-    def write(self, type, src, size, addr, need_sense=False):
+    def write(self, mem_type, src, size, addr, need_sense=False):
         sense_status = SenseStatus()
 
         write_data = [WRITE]
-        write_data.append(type&0xFF)
+        write_data.append(mem_type&0xFF)
         write_data.extend(list(addr.to_bytes(4, byteorder="little")))
 
         write_array = bytearray(write_data)
         write_array += src[:size]
 
-        self.logger.debug(f"WRITE: addr={hex(addr)}, size={size}, type={type}, need_sense={need_sense}")
+        self.logger.debug(f"WRITE: addr={hex(addr)}, size={size}, mem_type={mem_type}, need_sense={need_sense}")
         ret, _ = self.send_request(write_array, len(write_array), self.setting.write_response_timeout_in_second, is_sync=False)
         if ret == ErrType.OK:
             if need_sense:
@@ -367,15 +368,15 @@ class FloaderHandler(object):
 
         return ret
 
-    def read(self, type, addr, size):
+    def read(self, mem_type, addr, size):
         resp = None
 
         read_data = [READ]
-        read_data.append((type & 0xFF))
+        read_data.append((mem_type & 0xFF))
         read_data.extend(list(addr.to_bytes(4, byteorder="little")))
         read_data.extend(list(size.to_bytes(4, byteorder="little")))
 
-        self.logger.debug(f"READ: addr={hex(addr)}, size={size}, type={type}")
+        self.logger.debug(f"READ: addr={hex(addr)}, size={size}, mem_type={mem_type}")
         read_bytes = bytearray(read_data)
         ret, resp_ack = self.send_request(read_bytes, len(read_bytes), self.setting.sync_response_timeout_in_second)
         if ret == ErrType.OK:
@@ -389,17 +390,17 @@ class FloaderHandler(object):
 
         return ret
 
-    def checksum(self, type,  start_addr, end_addr, size):
+    def checksum(self, mem_type,  start_addr, end_addr, size):
         chk_rest = 0
         request_data = [CHKSM]
-        request_data.append((type & 0xFF))
+        request_data.append((mem_type & 0xFF))
         request_data.extend(list(start_addr.to_bytes(4, byteorder='little')))
 
         request_data.extend(list(end_addr.to_bytes(4, byteorder='little')))
 
         request_data.extend(list(size.to_bytes(4, byteorder='little')))
 
-        self.logger.debug(f"CHKSM: start={hex(start_addr)}, end={hex(end_addr)}, size={size}, type={type}")
+        self.logger.debug(f"CHKSM: start={hex(start_addr)}, end={hex(end_addr)}, size={size}, mem_type={mem_type}")
         request_bytes = bytearray(request_data)
         ret, resp = self.send_request(request_bytes, len(request_bytes), self.setting.sync_response_timeout_in_second)
         if ret == ErrType.OK:
@@ -414,10 +415,10 @@ class FloaderHandler(object):
 
         return ret, chk_rest
 
-    def erase_flash(self, type, start_addr, end_addr, size, sense=False, force=False):
+    def erase_flash(self, mem_type, start_addr, end_addr, size, sense=False, force=False):
         self.logger.debug(f"Erase flash: start_addr={hex(start_addr)}, end_addr={hex(end_addr)} size={size}")
         request_data = [FS_ERASE]
-        request_data.append((type & 0xFF))
+        request_data.append((mem_type & 0xFF))
         request_data.append(1 if force else 0)
 
         request_data.extend(list(start_addr.to_bytes(4, byteorder="little")))
@@ -426,9 +427,9 @@ class FloaderHandler(object):
         request_data.extend(list(size.to_bytes(4, byteorder="little")))
 
         if force:
-            self.logger.warning(f"FS_ERASE: start_addr={hex(start_addr)}, end_addr={hex(end_addr)}, size={size}, type={type} force")
+            self.logger.warning(f"FS_ERASE: start_addr={hex(start_addr)}, end_addr={hex(end_addr)}, size={size}, mem_type={mem_type} force")
         else:
-            self.logger.debug(f"FS_ERASE: start_addr={hex(start_addr)}, end_addr={hex(end_addr)}, size={size}, type={type}")
+            self.logger.debug(f"FS_ERASE: start_addr={hex(start_addr)}, end_addr={hex(end_addr)}, size={size}, mem_type={mem_type}")
 
         request_bytes = bytearray(request_data)
         ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)

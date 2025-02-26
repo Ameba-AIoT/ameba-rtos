@@ -270,7 +270,7 @@ void QSPI_WriteEnd(void)
 
 
 /**
-  * @brief  Init data transfer from GDMA to QSPI.
+  * @brief  Init data transfer from GDMA to QSPI. If size exceed GDMA max block size, use GDMA linklist function.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
   * @param  CallbackData: GDMA callback data.
@@ -286,7 +286,7 @@ int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct,
 				  u32 Size)
 {
 	u8 GdmaChnl;
-	u32 blocksize = 65535 * 4;   //max block size 65535, data width 4B
+	u32 blocksize = 65535 * 4;   //GDMA max block size 65535, data width 4B
 	u32 blockcnt = (Size / blocksize) + 1;
 	u32 llisize;
 
@@ -329,6 +329,9 @@ int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct,
 
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 
+	/* Note that GDMA max block size is 65536*4. If display buffer is exceed it, GDMA linklist function should be used.
+	   GDMA multi-block function is not suitable because it need extra interrupt for each block but we need only a
+	   transfer done interrupt. */
 	if (blockcnt > 1) {
 		llisize = blockcnt * sizeof(struct GDMA_CH_LLI);
 		qspi_gdma_lli = (struct GDMA_CH_LLI *) rtos_mem_malloc(llisize);

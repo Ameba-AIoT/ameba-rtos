@@ -4,6 +4,11 @@
 #include "ff.h"
 #include "diskio.h"
 
+#define __I     volatile const
+#define __O     volatile
+#define __IO    volatile
+
+
 typedef struct {
 	DSTATUS(*disk_initialize)(void);                       /*!< Initialize Disk Drive                     */
 	DSTATUS(*disk_deinitialize)(void);                       /*!< Deinitialize Disk Drive                     */

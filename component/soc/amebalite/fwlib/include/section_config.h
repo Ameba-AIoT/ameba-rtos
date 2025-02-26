@@ -46,6 +46,10 @@
 #define SRAM_ONLY_TEXT_SECTION				SECTION(".sram.only.text")
 #define SRAM_ONLY_DATA_SECTION				SECTION(".sram.only.data")
 
+/* place trx udp/tcp related functions in SRAM to avoid fluctuations of tp caused by ICache contention.
+   https://jira.realtek.com/browse/RSWLANDIOT-9400 */
+#define SRAM_WLAN_CRITICAL_CODE_SECTION	        SRAMDRAM_ONLY_TEXT_SECTION
+
 // Wlan Section(Not Used)
 #define WLAN_ROM_TEXT_SECTION
 #define WLAN_ROM_DATA_SECTION

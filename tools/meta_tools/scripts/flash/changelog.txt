@@ -1,0 +1,5 @@
+ChangeLog:
+20250218  v1.0.0.1  (1) Support erase user area
+				    (2) Support chip erase before download
+				    (3) Add version info
+20250220  v1.0.0.2  Tune command args

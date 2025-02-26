@@ -9,7 +9,7 @@
 #include "ameba_ota.h"
 #include "platform_autoconf.h"
 
-#define OTA_TYPE_MIN  OTA_LOCAL
+#define OTA_TYPE_MIN  OTA_HTTP
 #if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBASMART)
 #define OTA_TYPE_MAX  OTA_VFS
 #else

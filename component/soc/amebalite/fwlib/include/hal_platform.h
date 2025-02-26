@@ -377,6 +377,10 @@
 #define AON_BACKUP_BASE          0x4100C0E0
 #define PMC_BASE                 0x4100C300
 
+#define TZ_IDAU_SEC_OFFSET       0x10000000
+#define KBYTES(x)                ((x) << 10)
+#define MBYTES(x)                ((x) << 20)
+
 /**************************************************************************//**
  * @defgroup AmebaD_Peripheral_Declaration  AmebaD HS/LP Peripheral Declarations
  * @{

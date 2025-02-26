@@ -20,7 +20,7 @@ def main(argc, argv):
     parser.add_argument('-p', '--pristine', action='store_true', help='pristine build')
     parser.add_argument('-g', '--target',
                          help='custom target',
-                         choices=['kr4', 'km4', 'boot', 'gdb', 'flashloader', 'imgtool_flashloader', 'gen_imgtool_floader']
+                         choices=['flashloader', 'imgtool_flashloader', 'gen_imgtool_floader']
                         )
     parser.add_argument('--daily-build', help='daily build flag')
     parser.add_argument('-gdb', '--gdb', action='store_true', help='gdb')

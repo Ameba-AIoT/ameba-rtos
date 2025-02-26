@@ -1,7 +1,7 @@
 #include "platform_autoconf.h"
 #include "vfs.h"
 #include "vfs_fatfs.h"
-#if defined(FATFS_DISK_SD) && FATFS_DISK_SD
+#if defined(CONFIG_FATFS_DISK_SD) && CONFIG_FATFS_DISK_SD
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "ff.h"
@@ -295,4 +295,4 @@ void fatfs_list_files(void)
 	}
 }
 
-#endif //FATFS_DISK_SD
+#endif //CONFIG_FATFS_DISK_SD

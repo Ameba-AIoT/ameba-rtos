@@ -15,6 +15,7 @@ struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 _WEAK void wifi_set_user_config(void)
 {
+	int skb_num_np_rsvd = 6; /* 4 for rx_ring_buffer + 2 for mgnt trx */
 	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config, for details, see wifi_user_conf in wifi_intf_drv_to_app_basic.h */
@@ -24,7 +25,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
-	wifi_user_config.skb_num_np = 22;
+	wifi_user_config.skb_num_np = 22; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 8;
 #else
 #ifdef CONFIG_FULLMAC
@@ -32,7 +33,7 @@ _WEAK void wifi_set_user_config(void)
 #else
 	wifi_user_config.skb_num_ap = 8;	/*adjust to 8 for ping 10k*/
 #endif
-	wifi_user_config.skb_num_np = 22;  /*4 for rx_ring_buffer + 16 for rx_ampdu + 2 for mgnt trx*/
+	wifi_user_config.skb_num_np = 22;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 #endif
 	wifi_user_config.rx_ampdu_num = 16;
 
@@ -68,11 +69,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.uapsd_ac_enable = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 12;	/*should not exceed AP_STA_NUM */
+	wifi_user_config.ap_sta_num = 12;	/*should not exceed MAX_AP_CLIENT_NUM */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
-	wifi_user_config.en_mcc = 0;
+	wifi_user_config.en_mcc = 0;  /* must select ENABLE_MCC in menuconfig when wifi_user_config.en_mcc=1 */
 	wifi_user_config.max_roaming_times = 2;
 	wifi_user_config.ampdu_rx_enable = 1;
 	wifi_user_config.ampdu_tx_enable = 1;
@@ -99,5 +100,17 @@ _WEAK void wifi_set_user_config(void)
 
 	/*Automatic channel selection*/
 	wifi_user_config.acs_en = 0;
+
+	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
+	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
+		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;
+		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
+	}
+
+	/* ensure ap_sta_num not exceed MAX_AP_CLIENT_NUM*/
+	if (wifi_user_config.ap_sta_num > MAX_AP_CLIENT_NUM) {
+		wifi_user_config.ap_sta_num = MAX_AP_CLIENT_NUM;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to %d\n", MAX_AP_CLIENT_NUM);
+	}
 }
 

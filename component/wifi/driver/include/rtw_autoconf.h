@@ -68,6 +68,9 @@
 #elif defined(CONFIG_AMEBASMART)
 /******************************* AmebaD2 (8730E) ******************************/
 #include "autoconf_8730e.h"
+#elif defined(CONFIG_AMEBASMARTPLUS)
+/******************************* AmebaD2 (8730F) ******************************/
+#include "autoconf_8730e.h"
 #elif defined(CONFIG_AMEBALITE)
 /***************************** AmebaLite (8720E) *****************************/
 #include "autoconf_8720e.h"
@@ -123,7 +126,7 @@
 #endif
 
 #ifdef CONFIG_AS_INIC_NP
-#define INIC_SKIP_NP_MSG_TASK
+#define WHC_SKIP_NP_MSG_TASK
 #endif
 
 #endif //WLANCONFIG_H

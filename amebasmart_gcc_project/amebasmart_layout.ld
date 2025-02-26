@@ -5,6 +5,7 @@
 #define SECURE_ADDR_OFFSET 			(0x10000000)
 #define KBYTES(x)  					((x) * 1024)
 #define IMAGE_HEADER_LEN			(0x20)
+#define PSRAM_END					(0x60800000)
 
 MEMORY
 {
@@ -59,8 +60,7 @@ MEMORY
 	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60060000 - 0x60000020	/* KM4 MAIN DRAM: 384K */
 
 	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70060020, LENGTH = 0x70070000 - 0x70060020	/* CA32 BL1 DRAM S: 64k */
-	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60094000, LENGTH = 0x60800000 - 0x60094000	/* CA32 BL3 DRAM NS: 7600K */
-	CA32_DYNAMIC_APP_LOAD_DRAM (rwx) :      ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* CA32 CA32 DYNAMIC APP LOAD DRAM: 1MB */
+	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60094000, LENGTH = PSRAM_END - 0x60094000	/* CA32 BL3 DRAM NS: 7600K */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT: 0 */
 #else
 	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6015B000 - 0x60000020	/* KM4 MAIN DRAM: 1387k */
@@ -70,12 +70,10 @@ MEMORY
 
 	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70180020, LENGTH = 0x701A0000 - 0x70180020	/* CA32 BL1 DRAM S: 127k */
 	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60700000 - 0x60300000	/* CA32 BL3 DRAM NS: 4MB */
-	CA32_DYNAMIC_APP_LOAD_DRAM (rwx) :      ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* CA32 CA32 DYNAMIC APP LOAD DRAM: 1MB */
-	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x60700000, LENGTH = 0x60800000 - 0x60700000	/* KM4 PSRAM HEAP EXT: 1MB, (PSRAM Die is 8MB) */
+	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x60700000, LENGTH = PSRAM_END - 0x60700000	/* KM4 PSRAM HEAP EXT: 1MB, (PSRAM Die is 8MB) */
 #endif
 
-	/* By Default, KM4 let KM4_BD_DRAM and [0x60600000, 0x6FFFFFFF) be non-secure, ATF Will Let [CA32_BL3_DRAM_NS, 0x60600000) Non-Secure after image load done */
-	CA32_FIP_DRAM_S (rwx) :                 ORIGIN = 0x70400000, LENGTH = 0x70600000 - 0x70400000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
+	CA32_DYNAMIC_APP_LOAD_DRAM (rwx) :      ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* CA32 CA32 DYNAMIC APP LOAD DRAM: 1MB */
 
 	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
 }
@@ -89,7 +87,8 @@ __ca32_flash_text_start__ = ORIGIN(CA32_IMG2_XIP);
 
 __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
-__ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_S);
-__dram_dynamic_app_text_start__ = ORIGIN(CA32_DYNAMIC_APP_LOAD_DRAM);
-__dram_dynamic_app_text_end__ = ORIGIN(CA32_DYNAMIC_APP_LOAD_DRAM) + LENGTH(CA32_DYNAMIC_APP_LOAD_DRAM);
-__dram_dynamic_app_text_size__ = LENGTH(CA32_DYNAMIC_APP_LOAD_DRAM);
+/* By Default, KM4 let KM4_BD_DRAM and [0x60600000, PSRAM_END) be non-secure, ATF Will Let [CA32_BL3_DRAM_NS, 0x60600000) Non-Secure after image load done */
+__ca32_fip_dram_start__ = ORIGIN(CA32_BL3_DRAM_NS) + SECURE_ADDR_OFFSET; /* CA32 FIP(BL2+BL32+BL33) IMG */
+ASSERT(ORIGIN(CA32_BL3_DRAM_NS) + KBYTES(2048) < PSRAM_END, "Error: reserved 2MB for FIP Img, please check psram size.")
+
+__non_secure_psram_end__ = PSRAM_END;

@@ -28,8 +28,8 @@ To test:
 
 If you encounter some message like:
 ```
-	ERROR: sendto broadcast
-	[Driver]: skb_unavailable=1 in last 2 seconds
+ERROR: sendto broadcast
+[Driver]: skb_unavailable=1 in last 2 seconds
 ```
 It means that the skb buffer is not enough for the massive UDP packets to be sent.
 
