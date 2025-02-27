@@ -16,7 +16,6 @@ static const char *const TAG = "AT-OTA";
 
 static int at_ota_status = 0;
 extern void sys_reset(void);
-extern int download_fw_program(ota_context *ctx, u8 *buf, u32 len);
 
 static void at_ota_update_task(void *param)
 {
@@ -49,10 +48,10 @@ static void at_ota_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1: \tupdate from HTTP server\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t2: \tupdate from HTTPS server\r\n");
 #ifdef CONFIG_AMEBADPLUS
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from VFS\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from VFS\r\n");
 #elif defined(CONFIG_AMEBASMART)
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from SDCard\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t5: \tupdate from VFS\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from SDCard\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from VFS\r\n");
 #endif
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thostname\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t[1,65535]\r\n");
@@ -270,17 +269,16 @@ void at_userota(void *arg)
 	while (length > 0) {
 		frag_len = (length < BUF_SIZE) ? length : BUF_SIZE;
 		atcmd_tt_mode_get(buffer, frag_len);
-		ret = download_fw_program(ctx, buffer, frag_len);
-		if (ret != 0) {
-			if (ret == 2) {
-				at_printf(ATCMD_OK_END_STR);
-				rtos_time_delay_ms(20);
-				sys_reset();
-			} else {
-				err_no = 3;
-				atcmd_tt_mode_end();
-				goto end;
-			}
+		ret = ota_update_fw_program(ctx, buffer, frag_len);
+		if (ret == OTA_RET_FINISH) {
+			at_printf(ATCMD_OK_END_STR);
+			rtos_time_delay_ms(20);
+			sys_reset();
+		}
+		if (ret == OTA_RET_ERR) {
+			atcmd_tt_mode_end();
+			err_no = 3;
+			goto end;
 		}
 		length -= frag_len;
 	}

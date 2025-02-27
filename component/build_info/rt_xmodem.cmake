@@ -26,7 +26,7 @@ ameba_target_set(src_${d_MCU_PROJECT_NAME}_rt_xmodem p_SCOPE interface
         ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_otp.c
         ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_ipc_api.c
         ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_tim.c
-        ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_rom_patch.c
+        # ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_rom_patch.c
         ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_usb.c
         ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ram_hp/ameba_codec.c
         ${d_SOC_PLATFORM_DIR}/swlib/log.c

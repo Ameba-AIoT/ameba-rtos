@@ -416,6 +416,14 @@ int ota_update_vfs_prepare(ota_context *ctx)
 	return 0;
 }
 
+int ota_update_vfs_close(ota_context *ctx)
+{
+	if (ctx->fd > 0) {
+		fclose((FILE *)ctx->fd);
+	}
+	return 0;
+}
+
 int ota_update_http_send_request(ota_context *ctx)
 {
 	u8 *request = NULL;
@@ -441,6 +449,7 @@ int ota_update_http_parse_response(ota_context *ctx, u8 *response, u32 response_
 	update_redirect_conn *redirect = ctx->redirect;
 	char *ptr_body_end;
 
+	redirect->port = 0;
 	//Get status code
 	if (0 == result->parse_status) { //didn't get the http response
 		char *crlf_ptr = strstr((char *)response, "\r\n");
@@ -468,26 +477,22 @@ int ota_update_http_parse_response(ota_context *ctx, u8 *response, u32 response_
 				_memset(redirect->url, 0, redirect->len);
 				_memcpy(redirect->url, tmp + 10, strlen(tmp + 10));
 			}
-
-			if (redirect->host == NULL) {
-				redirect->host = (char *)rtos_mem_malloc(redirect->len);
-				if (redirect->host == NULL) {
-					return -1;
-				}
-			}
-
-			if (redirect->resource == NULL) {
-				redirect->resource = (char *)rtos_mem_malloc(redirect->len);
-				if (redirect->resource == NULL) {
-					return -1;
-				}
-			}
-
-			_memset(redirect->host, 0, redirect->len);
-			_memset(redirect->resource, 0, redirect->len);
-			if (parser_url(redirect->url, redirect->host, &redirect->port, redirect->resource, redirect->len) < 0) {
+			rtos_mem_free(ctx->host);
+			ctx->host = (char *)rtos_mem_zmalloc(redirect->len);
+			if (ctx->host == NULL) {
 				return -1;
 			}
+			rtos_mem_free(ctx->resource);
+			ctx->resource = (char *)rtos_mem_zmalloc(redirect->len);
+			if (ctx->resource == NULL) {
+				return -1;
+			}
+
+			if (parser_url(redirect->url, ctx->host, &redirect->port, ctx->resource, redirect->len) < 0) {
+				rtos_mem_free(redirect->url);
+				return -1;
+			}
+			rtos_mem_free(redirect->url);
 			return -1;
 		} else {
 			ota_printf(_OTA_INFO_, "[%s] The http response status code is %lu", __FUNCTION__, result->status_code);
@@ -678,6 +683,46 @@ int ota_update_http_connect_server(ota_context *ctx)
 exit:
 	closesocket(ctx->fd);
 	return -1;
+}
+
+int ota_update_http_prepare(ota_context *ctx)
+{
+	int ret = -1;
+
+	ret = ota_update_http_connect_server(ctx);
+	if (ret != 0) {
+		return -1;
+	}
+
+	ret = ota_update_http_send_request(ctx);
+	if (!ret) {
+		ota_printf(_OTA_ERR_, "[%s] Send HTTP request failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	ret = ota_update_http_recv_response(ctx);
+	if (ret < 0) {
+		ota_printf(_OTA_ERR_, "[%s] Parse HTTP response failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	return 0;
+}
+
+int ota_update_http_close(ota_context *ctx)
+{
+	if (ctx->fd >= 0) {
+		close(ctx->fd);
+	}
+
+	if (ctx->type == OTA_HTTPS) {
+		if (ctx->tls) {
+			mbedtls_ssl_free(&ctx->tls->ssl);
+			mbedtls_ssl_config_free(&ctx->tls->conf);
+			rtos_mem_free(ctx->tls);
+		}
+	}
+	return 0;
 }
 
 /**
@@ -890,7 +935,7 @@ int download_packet_process(ota_context *ctx, u8 *buf, int len)
 	return size;
 }
 
-int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
+int ota_update_fw_program(ota_context *ctx, u8 *buf, u32 len)
 {
 	update_ota_ctrl_info *otaCtrl = ctx->otactrl;
 	int size = 0;
@@ -910,7 +955,7 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 		temp = (u8 *)rtos_mem_zmalloc(writelen + MaxHdrLen);
 		if (!temp) {
 			ota_printf(_OTA_ERR_, "[%s] Alloc buffer failed\n", __FUNCTION__);
-			return -1;
+			return OTA_RET_ERR;
 		}
 
 		if (otaCtrl->NextImgFg == 1) {
@@ -924,27 +969,27 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 		if (!recv_ota_file_header(ctx, temp, writelen, &RevHdrLen)) {
 			rtos_mem_free(temp);
 			ota_printf(_OTA_ERR_, "[%s] rev firmware header failed", __FUNCTION__);
-			return -1;
+			return OTA_RET_ERR;
 		}
 
 		/* -------step2: parse firmware file header and get the target OTA image header-----*/
 		if (!get_ota_tartget_header(ctx, temp, RevHdrLen)) {
 			rtos_mem_free(temp);
 			ota_printf(_OTA_ERR_, "[%s] get OTA header failed\n", __FUNCTION__);
-			return -1;
+			return OTA_RET_ERR;
 		}
 
 		if (!ota_checkimage_layout(ctx->otaTargetHdr)) {
 			rtos_mem_free(temp);
 			ota_printf(_OTA_ERR_, "[%s] check image layout failed\n", __FUNCTION__);
-			return -1;
+			return OTA_RET_ERR;
 		}
 
 		if (writelen <= (int)RevHdrLen) {
 			rtos_mem_free(temp);
 			otaCtrl->IsGetOTAHdr = 1;
 			ota_printf(_OTA_INFO_, "[%s] get ota header, writelen: %d, RevHdrLen: %d", __func__, writelen, (int)RevHdrLen);
-			return 0;
+			return OTA_RET_OK;
 		}
 
 		if (otaCtrl->NextImgFg) {
@@ -985,7 +1030,7 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 		ota_printf(_OTA_INFO_, "Update file size: %d bytes, start addr:0x%08x\n", size, (unsigned int)(otaCtrl->FlashAddr + SPI_FLASH_BASE));
 		if ((u32)(size) != otaCtrl->ImageLen) {
 			ota_printf(_OTA_ERR_, "download new firmware failed\n");
-			return -1;
+			return OTA_RET_ERR;
 		}
 
 		if (otaCtrl->SkipBootOTAFg) {
@@ -997,7 +1042,7 @@ int download_fw_program(ota_context *ctx, u8 *buf, u32 len)
 		if (verify_ota_checksum(ctx->otaTargetHdr, otaCtrl->targetIdx, otaCtrl->index)) {
 			if (!ota_update_manifest(ctx->otaTargetHdr, otaCtrl->targetIdx, otaCtrl->index)) {
 				ota_printf(_OTA_ERR_, "Change signature failed\n");
-				return -1;
+				return OTA_RET_ERR;
 			}
 		}
 download_app:
@@ -1008,11 +1053,11 @@ download_app:
 			ota_printf(_OTA_INFO_, "[%s] download image index : %d", __func__, otaCtrl->index);
 		} else {
 			ota_printf(_OTA_INFO_, "[%s] download image end, total image num: %d", __func__, ctx->otaTargetHdr->ValidImgCnt);
-			return 2; // download end
+			return OTA_RET_FINISH; // download end
 		}
 	}
 
-	return 0;
+	return OTA_RET_OK;
 }
 
 int ota_update_s2_download_fw(ota_context *ctx)
@@ -1044,19 +1089,20 @@ int ota_update_s2_download_fw(ota_context *ctx)
 		if (read_bytes < 0) {
 			ota_printf(_OTA_ERR_, "[%s] Read socket failed", __FUNCTION__);
 			ret = -1;
-			goto exit;
+			break;
 		}
-		ret = download_fw_program(ctx, buf, read_bytes);
-		if (ret != 0) {
-			if (ret == 2) {
-				ret = 0;
-			}
+		ret = ota_update_fw_program(ctx, buf, read_bytes);
+		if (ret == OTA_RET_FINISH) {
+			ret = 0;
 			ota_printf(_OTA_INFO_, "[%s] end", __FUNCTION__);
-			goto exit;
+			break;
+		}
+		if (ret == OTA_RET_ERR) {
+			ota_printf(_OTA_INFO_, "[%s] error", __FUNCTION__);
+			break;
 		}
 	}
 
-exit:
 	rtos_mem_free(buf);
 	return ret;
 
@@ -1065,29 +1111,27 @@ exit:
 int ota_update_s1_prepare(ota_context *ctx)
 {
 	int ret = -1;
+	update_redirect_conn *redirect = ctx->redirect;
 
 	/*----------------connect and send request to server---------------------*/
 	if (ctx->type == OTA_HTTP || ctx->type == OTA_HTTPS) {
-		ret = ota_update_http_connect_server(ctx);
-		if (ret != 0) {
-			return -1;
-		}
-
-		ret = ota_update_http_send_request(ctx);
-		if (!ret) {
-			ota_printf(_OTA_ERR_, "[%s] Send HTTP request failed\n", __FUNCTION__);
-			return -1;
-		}
-
-		ret = ota_update_http_recv_response(ctx);
+		ret = ota_update_http_prepare(ctx);
 		if (ret < 0) {
-			ota_printf(_OTA_ERR_, "[%s] Parse HTTP response failed\n", __FUNCTION__);
-			return -1;
+			/* redirect.port != 0 means there is redirect URL can be downloaded*/
+			if (redirect->port != 0) {
+				ota_printf(_OTA_INFO_, "OTA redirect host: %s, port: %d, resource: %s\n\r", ctx->host, ctx->port, ctx->resource);
+				ret = ota_update_http_prepare(ctx);
+			}
+
+			if (ret < 0) {
+				ota_printf(_OTA_ERR_, "[%s] HTTP prepare failed\n", __FUNCTION__);
+				return -1;
+			}
 		}
 	} else if (ctx->type == OTA_VFS) {
 		ret = ota_update_vfs_prepare(ctx);
 		if (ret < 0) {
-			ota_printf(_OTA_ERR_, "[%s] Send VFS request failed\n", __FUNCTION__);
+			ota_printf(_OTA_ERR_, "[%s] VFS prepare failed\n", __FUNCTION__);
 			return -1;
 		}
 	}
@@ -1098,14 +1142,10 @@ int ota_update_s1_prepare(ota_context *ctx)
 int ota_update_start(ota_context *ctx)
 {
 	int ret = -1;
-	update_redirect_conn *redirect = ctx->redirect;
 
 	if (ctx->type == OTA_USER) {
 		return ret;
 	}
-
-restart_http_ota:
-	redirect->port = 0;
 
 	/*----------------step1: download prepare---------------------*/
 	ret = ota_update_s1_prepare(ctx);
@@ -1117,37 +1157,12 @@ restart_http_ota:
 	ret = ota_update_s2_download_fw(ctx);
 
 update_ota_exit:
-	if ((ctx->type == OTA_VFS) && ((ctx->fd >= 0))) {
-		fclose((FILE *)ctx->fd);
-	} else if (ctx->fd >= 0) {
-		close(ctx->fd);
+	if (ctx->type == OTA_HTTP || ctx->type == OTA_HTTPS) {
+		ota_update_http_close(ctx);
+	} else if (ctx->type == OTA_VFS) {
+		ota_update_vfs_close(ctx);
 	}
 
-	if (ctx->type == OTA_HTTPS) {
-		if (ctx->tls) {
-			mbedtls_ssl_free(&ctx->tls->ssl);
-			mbedtls_ssl_config_free(&ctx->tls->conf);
-			rtos_mem_free(ctx->tls);
-		}
-	}
-
-	/* redirect.port != 0 means there is redirect URL can be downloaded*/
-	if (redirect->port != 0) {
-		ctx->host = redirect->host;
-		ctx->resource = redirect->resource;
-		ctx->port = redirect->port;
-		ota_printf(_OTA_INFO_, "OTA redirect host: %s, port: %d, resource: %s\n\r", ctx->host, ctx->port, ctx->resource);
-		goto restart_http_ota;
-	}
-	if (redirect->url) {
-		rtos_mem_free(redirect->url);
-	}
-	if (redirect->host) {
-		rtos_mem_free(redirect->host);
-	}
-	if (redirect->resource) {
-		rtos_mem_free(redirect->resource);
-	}
 	return ret;
 }
 

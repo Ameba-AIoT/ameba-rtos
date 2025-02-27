@@ -376,3 +376,10 @@ void wifi_ap_set_invisible(u8 enable)
 	UNUSED(enable);
 	call_noused = __LINE__;
 }
+
+int wifi_wake_pll_rdy_in_ps_state(u8 need)
+{
+	UNUSED(need);
+	call_noused = __LINE__;
+	return -1;
+}

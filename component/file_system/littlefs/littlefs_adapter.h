@@ -39,7 +39,8 @@ int lfs_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, c
  */
 int lfs_nor_erase(const struct lfs_config *c, lfs_block_t block);
 
-#ifdef CONFIG_AMEBASMART
+
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 extern struct lfs_config g_nand_lfs_cfg;
 
 int lfs_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
