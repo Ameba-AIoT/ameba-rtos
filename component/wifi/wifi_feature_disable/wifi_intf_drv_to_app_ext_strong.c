@@ -398,4 +398,10 @@ void wifi_set_owe_param(struct rtw_owe_param_t *owe_param)
 	call_noused = __LINE__;
 }
 
+int wifi_wake_pll_rdy_in_ps_state(u8 need)
+{
+	UNUSED(need);
+	call_noused = __LINE__;
+	return -1;
+}
 
