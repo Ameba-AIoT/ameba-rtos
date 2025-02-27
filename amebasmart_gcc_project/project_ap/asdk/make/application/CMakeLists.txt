@@ -2,3 +2,4 @@
 ameba_add_subdirectories_if(CONFIG_CLINTWOOD clintwood)
 ameba_add_subdirectories(demoui)
 ameba_add_subdirectories_if(CONFIG_WIFI_AUDIO wifi-audio)
+#ameba_add_subdirectories(speechmind)

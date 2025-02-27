@@ -192,6 +192,13 @@ int wifi_set_eap_method(unsigned char eap_method);
  */
 int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 
+/**
+  * @brief  for bt to trigger wl pll ready
+  * @param[in]  need [1-wake wl pll ready; 0-off wl pll]
+  * @return  RTW_SUCCESS or RTW_ERROR.
+  */
+int wifi_wake_pll_rdy_in_ps_state(u8 need);
+
 void wifi_event_init(void);
 void wifi_indication(unsigned int event, char *buf, int buf_len, int flags);
 

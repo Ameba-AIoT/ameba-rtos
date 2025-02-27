@@ -9,8 +9,8 @@ add_library(src_${d_MCU_PROJECT_NAME}_chipinfo_lib INTERFACE)
 #--------------------------#
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_target_sources(src_${d_MCU_PROJECT_NAME}_chipinfo_lib p_SCOPE interface
-            ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_chipinfo_lib.c
-            ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_rom_patch.c
+            ${d_SOC_PLATFORM_DIR}/lib/chipinfo/ameba_chipinfo_lib.c
+            ${d_SOC_PLATFORM_DIR}/lib/chipinfo/ameba_rom_patch.c
     )
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_chipinfo_lib p_SCOPE interface

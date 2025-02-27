@@ -1,7 +1,7 @@
 #include "platform_autoconf.h"
 #include "littlefs_adapter.h"
 
-#ifdef CONFIG_AMEBASMART
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 #include "lfs_nand_ftl.h"
 #endif
 
@@ -9,7 +9,7 @@ lfs_t g_lfs;
 u32 LFS_FLASH_BASE_ADDR;
 u32 LFS_FLASH_SIZE;
 
-#ifdef CONFIG_AMEBASMART
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 struct lfs_config g_nand_lfs_cfg = {
 	.read  = lfs_nand_read,
 	.prog  = lfs_nand_prog,
@@ -196,7 +196,7 @@ int rt_lfs_init(lfs_t *lfs)
 	struct lfs_config *lfs_cfg;
 	int ret = 0;
 
-#ifdef CONFIG_AMEBASMART
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 	if (!SYSCFG_BootFromNor()) {
 		VFS_DBG(VFS_INFO, "init nand lfs cfg");
 		NAND_FTL_Init();

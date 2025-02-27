@@ -43,12 +43,14 @@
 #define OTA_IMGID_DSP		2
 #define OTA_IMGID_MAX		3
 
-#define OTA_IMAG			0								/*identify the OTA image*/
-
+#define OTA_USER			0
 #define OTA_HTTP			1
 #define OTA_HTTPS			2
-#define OTA_USER			3
 
+/* OTA download status */
+#define OTA_RET_ERR			-1
+#define OTA_RET_OK			0
+#define OTA_RET_FINISH		1
 /**
   * @}
   */
@@ -197,6 +199,7 @@ u32 ota_update_manifest(update_ota_target_hdr *pOtaTgtHdr, u32 ota_target_index,
 int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 type);
 void ota_update_deinit(ota_context *ctx);
 int ota_update_start(ota_context *ctx);
+int ota_update_fw_program(ota_context *ctx, u8 *buf, u32 len);
 
 #define OTA_GET_FWVERSION(address) \
 	(HAL_READ16(SPI_FLASH_BASE, address + 22) << 16) | HAL_READ16(SPI_FLASH_BASE, address + 20)

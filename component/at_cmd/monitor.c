@@ -176,7 +176,7 @@ u32 cmd_log_set(u16 argc, u8  *argv[])
 	return TRUE;
 }
 
-#ifdef CONFIG_AMEBASMART
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
 #ifdef CONFIG_ARM_CORE_CA32
 u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 {
@@ -1177,7 +1177,7 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t \n"
 	},
 #ifndef CONFIG_MP_SHRINK
-#if (defined(CONFIG_AMEBASMART) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
+#if ((defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
 	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
@@ -1190,7 +1190,8 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
 	},
 #endif
-#if defined(CONFIG_AMEBASMART) && defined(CONFIG_ARM_CORE_CM4)
+
+#if (defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && defined(CONFIG_ARM_CORE_CM4)
 	{
 		(const u8 *)"RTC",		4, CmdRTC,	(const u8 *)"\tRTC \n"
 		"\t\t get\n"
@@ -1204,7 +1205,7 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t KM0 help to print KM4 log\n"
 	},
 #endif
-#if (defined(CONFIG_AMEBASMART) && defined(CONFIG_ARM_CORE_CM0)) || \
+#if ((defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && defined(CONFIG_ARM_CORE_CM0)) || \
 	(defined(CONFIG_AMEBALITE) && defined(CONFIG_RSICV_CORE_KR4)) || \
 	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM0)) || \
 	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4NS)) || \

@@ -215,7 +215,7 @@ void SOCPS_SleepPG(void)
 static void SOCPS_SwitchWakeSrc(void)
 {
 	u32 temp = 0;
-	if (SYSCFG_CUT_VERSION_D == SYSCFG_RLVersion()) {
+	if (SYSCFG_CUT_VERSION_D <= SYSCFG_RLVersion()) {
 		temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098);
 		temp |= BIT(10) | BIT(11) | BIT(12) | BIT(13);
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, temp);

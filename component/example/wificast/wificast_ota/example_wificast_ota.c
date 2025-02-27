@@ -15,8 +15,6 @@ static struct example_ota_status *g_ota_status = NULL;
 static u8 ota_role = WIFI_CAST_OTA_RECEIVER;
 static flash_t flash_obj;
 
-extern int download_fw_program(ota_context *ctx, u8 *buf, u32 len);
-
 static void dump_buf(char *info, u8 *buf, int len)
 {
 	int i;
