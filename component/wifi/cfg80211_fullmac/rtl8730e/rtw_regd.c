@@ -1372,7 +1372,6 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 	int ret = 0;
 	struct country_code_table_t table;
 	struct ieee80211_regdomain *regd = NULL;
-	int rtnl_lock_need = 0;
 
 	ret = llhw_wifi_set_country_code(country);
 	if (ret == 0) {
@@ -1380,22 +1379,13 @@ static void _rtl_reg_set_country_code(struct wiphy *wiphy, u8 *country)
 		regd = _rtl_reg_get_regd(table.channel_plan);
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
 
-		rtnl_lock_need = !rtnl_is_locked();
-		if(rtnl_lock_need){
-			rtnl_lock();
-		}
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 		ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
 #else
 		ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
 #endif
-		if (ret != 0){
-			dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__,ret);
-		}
-
-		if(rtnl_lock_need){
-			rtnl_unlock();
+		if (ret != 0) {
+			dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
 		}
 	} else {
 		dev_err(global_idev.fullmac_dev, "%s set country %s failed\n", __func__, country);
@@ -1426,7 +1416,6 @@ int rtw_regd_init(void)
 	char ww_char2[2] = {'0', '0'};
 	struct ieee80211_regdomain *regd = NULL;
 	int ret = 0;
-	int rtnl_lock_need = 0;
 
 	ret = llhw_wifi_get_country_code(&table);
 	if (ret < 0) {
@@ -1453,22 +1442,16 @@ int rtw_regd_init(void)
 	wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_FOLLOW_POWER;
 	wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_IGNORE;
 
-	rtnl_lock_need = !rtnl_is_locked();
-	if(rtnl_lock_need){
-		rtnl_lock();
-	}
-
+	rtnl_lock();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 	ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
 #else
 	ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
 #endif
-	if (ret != 0){
-		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__,ret);
-	}
+	rtnl_unlock();
 
-	if(rtnl_lock_need){
-		rtnl_unlock();
+	if (ret != 0) {
+		dev_err(global_idev.fullmac_dev, "%s regulatory_set_wiphy_regd_sync_rtnl return %d\n", __func__, ret);
 	}
 
 	/* add reg_notifier to set channel plan by user.
