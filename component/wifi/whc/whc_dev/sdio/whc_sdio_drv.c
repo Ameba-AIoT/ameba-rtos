@@ -178,27 +178,32 @@ u8 whc_sdio_dev_tx_path_avail(void)
 	return ret;
 }
 
-/* data will be free after sent */
 void whc_sdio_dev_send_data(u8 *data, u32 len)
 {
 	struct whc_txbuf_info_t *inic_tx = NULL;
+	u8 *buf = NULL;
 
-	if ((u32)data & (DEV_DMA_ALIGN - 1)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Send Error, Data buf unaligned!");
+	buf = rtos_mem_zmalloc(len);
+
+	if (!buf) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s Send Error !!", __func__);
 		return;
 	}
+
+	memcpy(buf, data, len);
 
 	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
 	if (!inic_tx) {
 		return;
 	}
 
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)data;
+	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)buf;
 	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = len;
 
-	inic_tx->ptr = data;
+	inic_tx->ptr = buf;
 	inic_tx->is_skb = 0;
 
+	/* buf free in sdio send done callback */
 	whc_sdio_dev_send(&inic_tx->txbuf_info);
 
 	return;

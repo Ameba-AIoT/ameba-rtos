@@ -5,7 +5,6 @@
 #define whc_dev_init_lite      whc_bridge_spi_dev_init
 #define whc_dev_api_send_data   whc_bridge_spi_send_data
 
-void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size);
 void whc_bridge_spi_dev_init(void);
 void whc_bridge_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb);
 void whc_bridge_spi_send_data(u8 *buf, u32 len);

@@ -45,7 +45,7 @@ if(CONFIG_WLAN)
 endif()
 
 
-ameba_add_subdirectories_if(CONFIG_MBEDTLS_ENABLED
+ameba_add_subdirectories_if(CONFIG_MBEDTLS_ENABLED_MENU
     make/mbedtls             # make -C mbedtls all
 )
 ameba_add_subdirectories_if(CONFIG_BT

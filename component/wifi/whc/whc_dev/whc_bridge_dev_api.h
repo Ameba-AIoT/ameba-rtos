@@ -16,8 +16,8 @@
 
 
 struct PktFilterNode {
-	struct whc_bridge_dev_pkt_filter *filter;
-	struct PktFilterNode *next;
+	struct list_head list;
+	struct whc_bridge_dev_pkt_filter filter;
 };
 
 void whc_bridge_dev_api_set_host_state(u8 state);
@@ -32,5 +32,7 @@ void whc_bridge_dev_api_get_filter_node(struct whc_bridge_dev_pkt_filter *filter
 
 void whc_bridge_dev_api_send_to_host(u8 *data, u32 len);
 void whc_bridge_dev_pktfilter_init(void);
+
+void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size);
 
 #endif

@@ -14,6 +14,7 @@ f"""# UTF-8 encoding
 VSVersionInfo(
     ffi=FixedFileInfo(
         filevers=({version.replace(".",",")}),       # 文件版本号
+        prodvers=({version.replace(".",",")}),       # 产品版本号
         mask=0x3f,
         flags=0x0,
         OS=0x40004,
@@ -28,11 +29,12 @@ VSVersionInfo(
             u'040904B0',
             [StringStruct(u'CompanyName', u'Realtek Semiconductor Corp.'),
             StringStruct(u'FileDescription', u'Flash Tool for Realtek Ameba SoCs'),
+            StringStruct(u'FileVersion', u'{version}'),
             StringStruct(u'InternalName', u'flash.exe'),
             StringStruct(u'LegalCopyright', u'Copyright (c) 2025 Realtek Semiconductor Corp.'),
             StringStruct(u'OriginalFilename', u'flash.exe'),
             StringStruct(u'ProductName', u'Ameba Flash Tool'),
-            StringStruct(u'ProductVersion', '{version}')])
+            StringStruct(u'ProductVersion', u'{version}')])
         ]),
         VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
     ]

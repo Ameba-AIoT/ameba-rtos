@@ -589,7 +589,7 @@ class Ameba(object):
                 progress = int((tx_sum / aligned_img_length) * 100)
                 if int((progress) / 10) != progress_int:
                     progress_int += 1
-                    self.logger.info(f"Progress: {progress}%")
+                    self.logger.info(f"Programming progress: {progress}")  # customized, do not modify
 
                 if ret != ErrType.OK:
                     break
@@ -686,7 +686,7 @@ class Ameba(object):
                 progress = int((tx_sum / aligned_img_length) * 100)
                 if int((progress) / 10) != progress_int:
                     progress_int += 1
-                    self.logger.info(f"Progress: {progress}%")
+                    self.logger.info(f"Programming progress: {progress}")  # customized, do not modify
 
             if image_info.full_erase and (next_erase_addr < image_info.end_address):
                 self.logger.debug(f"Erase extra address range: {hex(next_erase_addr)}-{hex(image_info.end_address)}")

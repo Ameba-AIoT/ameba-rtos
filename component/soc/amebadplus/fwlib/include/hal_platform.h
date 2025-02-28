@@ -528,7 +528,7 @@
 #elif defined(CONFIG_ARM_CORE_CM4)
 #define CONTEXT_SAVE_SIZE	192 /* 15*4 + 16*8: s16~s31 if use float */
 #elif defined(CONFIG_ARM_CORE_CM0)
-#define CONTEXT_SAVE_SIZE	64	/* not support hw float, 15*4 */
+#define CONTEXT_SAVE_SIZE	128	/* not support hw float, 15*4 */
 #endif
 
 

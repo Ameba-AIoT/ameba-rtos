@@ -19,8 +19,7 @@ u8 whc_bridge_hostrdy;
 #endif
 
 u8 whc_bridge_default_direction = PORT_TO_HOST;
-struct PktFilterNode *bridge_filter_head = NULL;
-struct PktFilterNode *bridge_filter_tail = NULL;
+struct list_head bridge_filter_head;
 
 #ifdef CONFIG_FULLMAC_BRIDGE
 
@@ -37,15 +36,7 @@ struct PktFilterNode *whc_bridge_dev_api_create_filter_node(struct whc_bridge_de
 		return NULL;
 	}
 
-	new_node->filter = (struct whc_bridge_dev_pkt_filter *)rtos_mem_zmalloc(sizeof(struct whc_bridge_dev_pkt_filter));
-	if (!new_node->filter) {
-		rtos_mem_free(new_node);
-		RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-		return NULL;
-	}
-
-	memcpy(new_node->filter, filter, sizeof(struct whc_bridge_dev_pkt_filter));
-	new_node->next = NULL;
+	memcpy((u8 *) & (new_node->filter), (u8 *)filter, sizeof(struct whc_bridge_dev_pkt_filter));
 	return new_node;
 }
 
@@ -64,8 +55,7 @@ void whc_bridge_dev_api_add_filter_node(struct whc_bridge_dev_pkt_filter *filter
 	}
 
 	// Insert the new node at the end of the list
-	bridge_filter_tail->next = new_node;
-	bridge_filter_tail = new_node;
+	rtw_list_insert_tail(&(new_node->list), &bridge_filter_head);
 }
 
 /**
@@ -75,23 +65,35 @@ void whc_bridge_dev_api_add_filter_node(struct whc_bridge_dev_pkt_filter *filter
  */
 void whc_bridge_dev_api_get_filter_node(struct whc_bridge_dev_pkt_filter *filter, u32_t identity)
 {
-	struct PktFilterNode *temp = bridge_filter_head->next;
+	struct list_head *plist, *phead;
+	struct PktFilterNode *target;
+	u8 match = 0;
+	phead = &bridge_filter_head;
+	if (list_empty(phead)) {
+		goto error;
+	}
 
-	if (filter == NULL) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, provided filter pointer is NULL!\n", __func__);
+	plist = get_next(phead);
+
+	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
+		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
+
+		if (target && target->filter.identity == identity) {
+			match = 1;
+			break;
+		}
+		plist = get_next(plist);
+	}
+
+	if (match) {
+		memcpy((u8 *)filter, (u8 *)&target->filter, sizeof(struct whc_bridge_dev_pkt_filter));
 		return;
 	}
 
-	while (temp && temp->filter && (temp->filter->identity != identity)) {
-		temp = temp->next;
-	}
+error:
+	RTK_LOGE(TAG_WLAN_INIC, "%s, can't find valid node for identity %u!\n", __func__, identity);
+	return;
 
-	if (!temp || !temp->filter) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, can't find valid node by identity %u!!\n", __func__, identity);
-		return;
-	}
-
-	memcpy(filter, temp->filter, sizeof(struct whc_bridge_dev_pkt_filter));
 }
 
 /**
@@ -101,32 +103,36 @@ void whc_bridge_dev_api_get_filter_node(struct whc_bridge_dev_pkt_filter *filter
  */
 void whc_bridge_dev_api_delete_filter_node(u32_t identity)
 {
-	struct PktFilterNode *temp = bridge_filter_head->next;
-	struct PktFilterNode *prev = NULL;
+	struct list_head *plist, *phead;
+	struct PktFilterNode *target;
+	u8 match = 0;
 
-	if (!bridge_filter_head || !temp) {
+	phead = &bridge_filter_head;
+	if (list_empty(phead)) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s, list is empty, nothing to delete\n", __func__);
 		return;
 	}
 
-	while (temp && temp->filter && (temp->filter->identity != identity)) {
-		prev = temp;
-		temp = temp->next;
+	plist = get_next(phead);
+
+	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
+		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
+
+		if (target && target->filter.identity == identity) {
+			match = 1;
+			break;
+		}
+		plist = get_next(plist);
 	}
 
-	if (!temp || !temp->filter) {
+
+	if (!match) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s, can't find valid node for identity %u!\n", __func__, identity);
 		return;
 	}
 
-	prev->next = temp->next;
-
-	if (bridge_filter_tail == temp) {
-		bridge_filter_tail = prev;
-	}
-
-	rtos_mem_free(temp->filter);
-	rtos_mem_free(temp);
+	list_del(&(target->list));
+	rtos_mem_free(target);
 }
 
 /**
@@ -170,14 +176,13 @@ u8  whc_bridge_dev_api_get_default_direction(void)
 
 /**
  * @brief  to send data to host
- * @param  data: data buf to be sent, data shold always 4Bytes aligned.
+ * @param  data: data buf to be sent.
  * @param  len: data len to be sent.
  * @return none.
- * @note: data buf free after data move to host in RTK code, static data buf is not allowed.
  */
-void whc_bridge_dev_api_send_to_host(u8 *user_alloc_drv_free_data, u32 len)
+void whc_bridge_dev_api_send_to_host(u8 *data, u32 len)
 {
-	whc_dev_api_send_data(user_alloc_drv_free_data, len);
+	whc_dev_api_send_data(data, len);
 }
 
 #endif

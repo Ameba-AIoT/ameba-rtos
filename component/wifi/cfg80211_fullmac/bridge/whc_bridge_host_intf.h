@@ -14,6 +14,5 @@
 
 void whc_bridge_host_send_data(u8 *buf, u32 len);
 int whc_bridge_host_pkt_rx_to_user(struct sk_buff *pskb);
-int whc_bridge_host_buf_rx_to_user(u8 *buf, u16 size);
 
 #endif
