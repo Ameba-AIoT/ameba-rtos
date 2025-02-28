@@ -89,6 +89,7 @@ __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
 /* By Default, KM4 let KM4_BD_DRAM and [0x60600000, PSRAM_END) be non-secure, ATF Will Let [CA32_BL3_DRAM_NS, 0x60600000) Non-Secure after image load done */
 __ca32_fip_dram_start__ = ORIGIN(CA32_BL3_DRAM_NS) + SECURE_ADDR_OFFSET; /* CA32 FIP(BL2+BL32+BL33) IMG */
-ASSERT(ORIGIN(CA32_BL3_DRAM_NS) + KBYTES(2048) < PSRAM_END, "Error: reserved 2MB for FIP Img, please check psram size.")
+/* CA32_FIP_MAX_SIZE is KBYTES((2048) */
+ASSERT(__ca32_fip_dram_start__ + KBYTES(2048) < PSRAM_END + SECURE_ADDR_OFFSET, "Error: reserved 2MB for FIP Img, please check psram size.")
 
 __non_secure_psram_end__ = PSRAM_END;

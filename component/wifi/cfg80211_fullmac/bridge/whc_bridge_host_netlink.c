@@ -92,7 +92,7 @@ static struct genl_family whc_bridge_nl_family = {
 	.module = THIS_MODULE,
 };
 
-int whc_bridge_host_buf_rx_to_user(u8 *buf, u16 size)
+__attribute__((weak)) int whc_bridge_host_buf_rx_to_user(u8 *buf, u16 size)
 {
 	struct sk_buff *skb;
 	void *reply;

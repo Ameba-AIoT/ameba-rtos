@@ -65,12 +65,13 @@ def main(argc, argv):
     serial_port = args.port
     serial_baudrate = args.baudrate
     log_level = args.log_level.upper()
-    log_file = args.partion_table
+    log_file = args.log_file
     erase = args.erase
     start_addr = args.start_address
     end_addr = args.end_address
     size = args.size
     mem_t = args.memory_type
+    partion_table = args.partion_table
 
     if mem_t is not None:
         if mem_t == "nand":
@@ -305,46 +306,62 @@ def main(argc, argv):
             if port.is_open:
                 port.close()
                 logger.info(f"{port.port} closed.")
-            sys.exit(1)
+            sys.exit(-1)
 
         logger.info(f"Image download start...")
-        if ameba.prepare() != ErrType.OK:
+        ret = ameba.prepare()
+        if ret != ErrType.OK:
             logger.error("Download prepare fail")
             if port.is_open:
                 port.close()
                 logger.info(f"{port.port} closed.")
+            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
             sys.exit(-1)
 
-        if ameba.post_verify_images() != ErrType.OK:
+        ret = ameba.post_verify_images()
+        if ret != ErrType.OK:
             if port.is_open:
                 port.close()
                 logger.info(f"{port.port} closed.")
+            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
             sys.exit(-1)
 
-        if ameba.download_images() != ErrType.OK:
+        ret = ameba.download_images()
+        if ret != ErrType.OK:
             logger.error("Download image fail")
             if port.is_open:
                 port.close()
                 logger.info(f"{port.port} closed.")
+            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
             sys.exit(-1)
     else:
         # erase
         logger.info(f"Erase {mem_t} start...")
-        if ameba.prepare() != ErrType.OK:
+        ret = ameba.prepare()
+        if ret != ErrType.OK:
             logger.error("Erase prepare fail")
             if port.is_open:
                 port.close()
                 logger.info(f"{port.port} closed.")
+            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
             sys.exit(-1)
 
-        if ameba.post_validate_config_for_erase() != ErrType.OK:
+        ret = ameba.post_validate_config_for_erase()
+        if ret != ErrType.OK:
             if port.is_open:
                 port.close()
                 logger.info(f"{port.port} closed.")
+            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
             sys.exit(-1)
 
-        if ameba.erase_flash() != ErrType.OK:
+        ret = ameba.erase_flash()
+        if ret != ErrType.OK:
+            if port.is_open:
+                port.close()
+                logger.info(f"{port.port} closed.")
             logger.error(f"Erase {mem_t} failed")
+            logger.error(f"Finished FAIL: {ret}")  # customized, do not modify
+            sys.exit(-1)
 
     if port.is_open:
         port.close()
@@ -353,6 +370,7 @@ def main(argc, argv):
     if not port.is_open:
         logger.info(f"{port.port} closed.")
 
+    logger.info(f"Finished PASS")  # customized, do not modify
     sys.exit(0)
 
 

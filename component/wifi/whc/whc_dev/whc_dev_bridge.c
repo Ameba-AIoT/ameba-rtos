@@ -16,22 +16,13 @@
 
 struct sk_buff *skb_transit = NULL;
 
-extern struct PktFilterNode *bridge_filter_head;
-extern struct PktFilterNode *bridge_filter_tail;
+extern struct list_head bridge_filter_head;
 
 u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
 
 void whc_bridge_dev_pktfilter_init(void)
 {
-	if (!bridge_filter_head)  {
-		bridge_filter_head = (struct PktFilterNode *)rtos_mem_zmalloc(sizeof(struct PktFilterNode));
-		if (!bridge_filter_head) {
-			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer for filter head!!\n", __func__);
-			return;
-		}
-		bridge_filter_head->next = NULL;
-		bridge_filter_tail = bridge_filter_head;
-	}
+	rtw_init_listhead(&bridge_filter_head);
 }
 
 void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib)
@@ -101,6 +92,11 @@ void whc_bridge_dev_packet_attrib_parse(struct sk_buff *skb, struct bridge_pkt_a
 
 static bool whc_bridge_dev_match_filter(struct bridge_pkt_attrib *pattrib, struct whc_bridge_dev_pkt_filter *filter)
 {
+	/* consider concurrent mode */
+	if ((filter->mask & MASK_IDX) && pattrib->port_idx != filter->index) {
+		return false;
+	}
+
 	if ((filter->mask & MASK_SRC_IP) &&
 		memcmp(pattrib->src_ip, filter->src_ip, sizeof(filter->src_ip)) != 0) {
 		return false;
@@ -119,13 +115,23 @@ static bool whc_bridge_dev_match_filter(struct bridge_pkt_attrib *pattrib, struc
 
 u8_t whc_bridge_dev_rcvpkt_filter(struct bridge_pkt_attrib *pattrib)
 {
-	struct PktFilterNode *node = bridge_filter_head->next;
+	struct list_head *plist, *phead;
+	struct PktFilterNode *target;
 
-	while (node != NULL) {
-		if (node->filter->state && whc_bridge_dev_match_filter(pattrib, node->filter)) {
-			return node->filter->direction;
+	phead = &bridge_filter_head;
+	if (list_empty(phead)) {
+		return whc_bridge_dev_api_get_default_direction();
+	}
+
+	plist = get_next(phead);
+
+	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
+		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
+
+		if (target && whc_bridge_dev_match_filter(pattrib, &target->filter)) {
+			return target->filter.direction;
 		}
-		node = node->next;
+		plist = get_next(plist);
 	}
 
 	return whc_bridge_dev_api_get_default_direction();

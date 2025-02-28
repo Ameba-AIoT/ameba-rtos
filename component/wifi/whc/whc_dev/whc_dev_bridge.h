@@ -27,6 +27,7 @@
 #define MASK_SRC_IP   0x1
 #define MASK_PORT     0x2
 #define MASK_TYPE     0x4
+#define MASK_IDX      0x8
 
 struct bridge_pkt_attrib {
 	u16_t protocol;
@@ -45,11 +46,12 @@ struct whc_bridge_dev_pkt_filter {
 	u32_t identity;
 	u8_t src_ip[4];
 	u16_t port_num; // dst port num
+	u8_t index; // STA_WLAN_INDEX/SOFTAP_WLAN_INDEX
 	u8_t type;  //tcp or udp or icmp
 	u8_t mask;  //filter mask
-	u8_t direction;
+	u8_t direction; //PORT_TO_BOTH/PORT_TO_UP(DEV LWIP)/PORT_TO_HOST(HOST)
 	u8_t state; //entry enable or not
-	u8_t rsvd[3];
+	u8_t rsvd;
 };
 
 extern u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);
