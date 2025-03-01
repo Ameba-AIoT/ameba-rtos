@@ -39,7 +39,7 @@ uint16_t rtk_bt_le_audio_iso_data_send(rtk_bt_le_audio_iso_data_send_info_t *inf
 }
 
 uint16_t rtk_bt_le_audio_broadcast_source_create(rtk_bt_le_audio_codec_cfg_item_t cfg_codec_index, rtk_bt_le_audio_qos_cfg_type_t cfg_qos_type,
-												 rtk_bt_le_addr_type_t local_addr_type, bool encryption)
+												 rtk_bt_le_addr_type_t local_addr_type, bool encryption, uint16_t stream_audio_contexts)
 {
 	rtk_bt_le_audio_broadcast_source_create_param_t param = {0};
 
@@ -47,6 +47,7 @@ uint16_t rtk_bt_le_audio_broadcast_source_create(rtk_bt_le_audio_codec_cfg_item_
 	param.cfg_qos_type = cfg_qos_type;
 	param.local_addr_type = local_addr_type;
 	param.encryption = encryption;
+	param.stream_audio_contexts = stream_audio_contexts;
 
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE,
 						   (void *)&param, sizeof(rtk_bt_le_audio_broadcast_source_create_param_t));

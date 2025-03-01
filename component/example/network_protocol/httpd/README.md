@@ -14,13 +14,7 @@ None
 	#define USE_HTTPS    1 //for HTTPS
 	```
 
-2. `config_rsa.h`:
-	```C
-	#define MBEDTLS_CERTS_C
-	#define MBEDTLS_SSL_SRV_C
-	```
-
-3. How to use:
+2. How to use:
    - Run `./build.py -a httpd` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 
@@ -29,8 +23,6 @@ None
 This example is a httpd example thread is started automatically when booting.
 
 Can test with a Web browser connecting to the homepage of httpd server.
-
-Should link PolarSSL `bignum.c` to SRAM to speed up SSL handshake if starting HTTPS server.
 
 # Note
 

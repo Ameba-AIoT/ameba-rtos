@@ -24,10 +24,12 @@
 #endif
 
 // Mask definitions (These values can depend on your specific mask setup)
-#define MASK_SRC_IP   0x1
-#define MASK_PORT     0x2
-#define MASK_TYPE     0x4
-#define MASK_IDX      0x8
+#define MASK_SRC_IP       BIT0
+#define MASK_DST_IP       BIT1
+#define MASK_SRC_PORT     BIT2
+#define MASK_DST_PORT     BIT3
+#define MASK_TYPE         BIT4
+#define MASK_IDX          BIT5
 
 struct bridge_pkt_attrib {
 	u16_t protocol;
@@ -43,15 +45,17 @@ struct bridge_pkt_attrib {
 };
 
 struct whc_bridge_dev_pkt_filter {
-	u32_t identity;
+	u32_t identity; // filter id, decided by user(for dele and get)
 	u8_t src_ip[4];
-	u16_t port_num; // dst port num
+	u8_t dst_ip[4];
+	u16_t src_port; // src port num
+	u16_t dst_port; // dst port num
 	u8_t index; // STA_WLAN_INDEX/SOFTAP_WLAN_INDEX
-	u8_t type;  //tcp or udp or icmp
-	u8_t mask;  //filter mask
-	u8_t direction; //PORT_TO_BOTH/PORT_TO_UP(DEV LWIP)/PORT_TO_HOST(HOST)
-	u8_t state; //entry enable or not
-	u8_t rsvd;
+	u8_t type;  // IP_PROTO_TCP/IP_PROTO_UDP/IP_PROTO_ICMP
+	u8_t mask;  // filter mask, MASK_SRC_IP | MASK_SRC_PORT..
+	u8_t direction; // PORT_TO_BOTH/PORT_TO_UP(DEV LWIP)/PORT_TO_HOST(HOST)
+	u8_t state; // entry enable or not
+	u8_t rsvd[3];
 };
 
 extern u8(*whc_bridge_sdio_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct bridge_pkt_attrib *pattrib);

@@ -238,7 +238,7 @@ uint16_t bt_stack_gmap_init(void *p_conf)
 	}
 	p_le_audio_app_conf = (rtk_bt_le_audio_app_conf_t *)p_conf;
 
-	if ((p_le_audio_app_conf->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_UGT) || (p_le_audio_app_conf->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_UGG) ||
+	if ((p_le_audio_app_conf->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_UGT) ||
 		(p_le_audio_app_conf->gmap_role & RTK_BT_LE_AUDIO_GMAP_ROLE_BGR)) {
 		gmap_role |= p_le_audio_app_conf->gmap_role;
 		if (gmas_init(gmap_role) == false) {
