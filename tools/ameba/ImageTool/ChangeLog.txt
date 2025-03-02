@@ -147,3 +147,4 @@ ChangeLog:
                   (7) Fix chip erase issue
                   (8) Fix form resize issue
 20250221  v2.8.5  Fix request timeout issue
+20250228  v2.8.6  Fix 1 byte otp program issue

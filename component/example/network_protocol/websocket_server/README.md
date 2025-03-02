@@ -15,15 +15,7 @@ None
 		#define USE_WSS    0 //acting as the WS server
 		```
 
-2. If acting as the WSS server:
-   - `config_rsa.h`
-		```C
-		#define MBEDTLS_CERTS_C
-		#define MBEDTLS_SSL_SRV_C
-		#define MBEDTLS_X509_CRT_PARSE_C
-		```
-
-3. How to use:
+2. How to use:
    - Run `./build.py -a websocket_server` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 
@@ -32,8 +24,6 @@ None
 Can make automatical Wi-Fi connection when booting by using wlan fast connect example.
 
 A websocket server example thread will be started automatically when booting.
-
-If the connection failed, you can try to modify `configTOTAL_HEAP_SIZE` in `FreRTOSConfig.h` to make sure the heap size is enough.
 
 # Note
 

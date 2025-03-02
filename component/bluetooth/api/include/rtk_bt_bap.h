@@ -1074,8 +1074,8 @@ typedef struct {
 	rtk_bt_le_audio_qos_cfg_type_t cfg_qos_type;
 	rtk_bt_le_addr_type_t local_addr_type;
 	bool encryption;
+	uint16_t stream_audio_contexts;
 } rtk_bt_le_audio_broadcast_source_create_param_t;
-
 
 /**
  * @typedef    rtk_bt_le_audio_broadcast_sync_create_param_t
@@ -1186,12 +1186,13 @@ uint16_t rtk_bt_bap_param_config(rtk_bt_le_audio_bap_param_config_t *p_param);
  * @param[in] cfg_qos_type: qos type
  * @param[in] local_addr_type: broadcast source local address type
  * @param[in] encryption: encryption flag
+ * @param[in] stream_audio_contexts: stream_audio_contexts
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
 uint16_t rtk_bt_le_audio_broadcast_source_create(rtk_bt_le_audio_codec_cfg_item_t cfg_codec_index, rtk_bt_le_audio_qos_cfg_type_t cfg_qos_type,
-												 rtk_bt_le_addr_type_t local_addr_type, bool encryption);
+												 rtk_bt_le_addr_type_t local_addr_type, bool encryption, uint16_t stream_audio_contexts);
 
 /**
  * @brief     Start broadcast source.

@@ -93,6 +93,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t subgroup_idx;
+	uint16_t stream_audio_contexts;
 	uint8_t bis_idx[RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM];
 } rtk_bt_le_audio_broadcast_sub_group_info_t;
 
@@ -273,7 +274,6 @@ rtk_bt_le_audio_group_info_t *bt_stack_le_audio_find_group(void *group_handle);
 uint16_t bt_stack_le_audio_remove_group(void *group_handle);
 uint16_t bt_stack_le_audio_remove_group_all(void);
 rtk_bt_le_audio_group_info_t *bt_stack_le_audio_add_group(void *group_handle, uint8_t set_mem_size);
-uint16_t bt_stack_le_audio_broadcast_init(uint8_t index, uint8_t qos_type, rtk_bt_le_addr_type_t local_addr_type, bool encryption);
 rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_find_iso_chann(uint16_t iso_conn_handle, uint8_t direction);
 rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_add_iso_chann(uint16_t iso_conn_handle, uint8_t direction);
 void bt_stack_le_audio_remove_iso_chann(uint16_t iso_conn_handle, uint8_t direction);

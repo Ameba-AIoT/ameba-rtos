@@ -115,7 +115,7 @@ static char *bt_le_audio_media_track_title = "RTK media trace title";
 /* source pac */
 static uint8_t bt_le_audio_demo_pac_source_codec[] = {
 	//Number_of_PAC_records
-	1,
+	2,
 	//PAC Record
 	RTK_BT_LE_LC3_CODEC_ID, 0, 0, 0, 0,//Codec_ID
 	//Codec_Specific_Capabilities_Length
@@ -140,12 +140,37 @@ static uint8_t bt_le_audio_demo_pac_source_codec[] = {
 	0x03,
 	RTK_BT_LE_METADATA_TYPE_PREFERRED_AUDIO_CONTEXTS,
 	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_CONVERSATIONAL),
-	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_CONVERSATIONAL >> 8)
+	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_CONVERSATIONAL >> 8),
+	//PAC Record
+	RTK_BT_LE_LC3_CODEC_ID, 0, 0, 0, 0,//Codec_ID
+	//Codec_Specific_Capabilities_Length
+	16,
+	//Codec_Specific_Capabilities
+	0x03,
+	RTK_BT_LE_CODEC_CAP_TYPE_SUPPORTED_SAMPLING_FREQUENCIES,
+	(uint8_t)(RTK_BT_LE_SAMPLING_FREQUENCY_16K | RTK_BT_LE_SAMPLING_FREQUENCY_32K | RTK_BT_LE_SAMPLING_FREQUENCY_48K),
+	(uint8_t)((RTK_BT_LE_SAMPLING_FREQUENCY_16K | RTK_BT_LE_SAMPLING_FREQUENCY_32K | RTK_BT_LE_SAMPLING_FREQUENCY_48K) >> 8),
+	0x02,
+	RTK_BT_LE_CODEC_CAP_TYPE_SUPPORTED_FRAME_DURATIONS,
+	RTK_BT_LE_FRAME_DURATION_PREFER_10_MS_BIT | RTK_BT_LE_FRAME_DURATION_10_MS_BIT | RTK_BT_LE_FRAME_DURATION_PREFER_7_5_MS_BIT | RTK_BT_LE_FRAME_DURATION_7_5_MS_BIT,
+	0x02,
+	RTK_BT_LE_CODEC_CAP_TYPE_AUDIO_CHANNEL_COUNTS,
+	RTK_BT_LE_AUDIO_CHANNEL_COUNTS_1 | RTK_BT_LE_AUDIO_CHANNEL_COUNTS_2,
+	0x05,
+	RTK_BT_LE_CODEC_CAP_TYPE_SUPPORTED_OCTETS_PER_CODEC_FRAME,
+	0x1A, 0x00, 0x9B, 0x00, //0x1A(26):8_1; 0x9B(155):48_6;
+	//Metadata_Length
+	0x04,
+	//Metadata
+	0x03,
+	RTK_BT_LE_METADATA_TYPE_PREFERRED_AUDIO_CONTEXTS,
+	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_GAME),
+	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_GAME >> 8)
 };
 /* sink pac */
 static uint8_t bt_le_audio_demo_pac_sink_codec[] = {
 	//Number_of_PAC_records
-	2,
+	3,
 	//PAC Record
 	RTK_BT_LE_LC3_CODEC_ID, 0, 0, 0, 0,//Codec_ID
 	//Codec_Specific_Capabilities_Length
@@ -174,6 +199,34 @@ static uint8_t bt_le_audio_demo_pac_sink_codec[] = {
 	RTK_BT_LE_METADATA_TYPE_PREFERRED_AUDIO_CONTEXTS,
 	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_MEDIA),
 	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_MEDIA >> 8), //must fit dongle
+	//PAC Record
+	RTK_BT_LE_LC3_CODEC_ID, 0, 0, 0, 0,//Codec_ID
+	//Codec_Specific_Capabilities_Length
+	19,
+	//Codec_Specific_Capabilities
+	0x03,
+	RTK_BT_LE_CODEC_CAP_TYPE_SUPPORTED_SAMPLING_FREQUENCIES,
+	(uint8_t)(RTK_BT_LE_SAMPLING_FREQUENCY_16K | RTK_BT_LE_SAMPLING_FREQUENCY_32K | RTK_BT_LE_SAMPLING_FREQUENCY_48K),
+	(uint8_t)((RTK_BT_LE_SAMPLING_FREQUENCY_16K | RTK_BT_LE_SAMPLING_FREQUENCY_32K | RTK_BT_LE_SAMPLING_FREQUENCY_48K) >> 8),
+	0x02,
+	RTK_BT_LE_CODEC_CAP_TYPE_SUPPORTED_FRAME_DURATIONS,
+	RTK_BT_LE_FRAME_DURATION_PREFER_10_MS_BIT | RTK_BT_LE_FRAME_DURATION_10_MS_BIT | RTK_BT_LE_FRAME_DURATION_PREFER_7_5_MS_BIT | RTK_BT_LE_FRAME_DURATION_7_5_MS_BIT,
+	0x02,
+	RTK_BT_LE_CODEC_CAP_TYPE_AUDIO_CHANNEL_COUNTS,
+	RTK_BT_LE_AUDIO_CHANNEL_COUNTS_1 | RTK_BT_LE_AUDIO_CHANNEL_COUNTS_2,
+	0x05,
+	RTK_BT_LE_CODEC_CAP_TYPE_SUPPORTED_OCTETS_PER_CODEC_FRAME,
+	0x1A, 0x00, 0x9B, 0x00, //0x1A(26):8_1; 0x9B(155):48_6;
+	0x02,
+	RTK_BT_LE_CODEC_CAP_TYPE_MAX_SUPPORTED_FRAMES_PER_SDU,
+	0x02,
+	//Metadata_Length
+	0x04,
+	//Metadata
+	0x03,
+	RTK_BT_LE_METADATA_TYPE_PREFERRED_AUDIO_CONTEXTS,
+	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_GAME),
+	(uint8_t)(RTK_BT_LE_AUDIO_CONTEXT_GAME >> 8), //must fit dongle
 	//PAC Record
 	RTK_BT_LE_LC3_CODEC_ID, 0, 0, 0, 0,//Codec_ID
 	//Codec_Specific_Capabilities_Length
@@ -3496,8 +3549,11 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_CAP, app_bt_cap_callback));
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GMAP, app_bt_gmap_callback));
 			/* Broadcast source init */
-			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_CODEC_CFG_ITEM_16_2, RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY,
-																   RTK_BT_LE_ADDR_TYPE_PUBLIC, false));
+			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG,
+																   RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG,
+																   RTK_BT_LE_ADDR_TYPE_PUBLIC,
+																   false,
+																   RTK_BT_LE_AUDIO_CONTEXT_GAME));
 			/* Init scan list */
 			{
 				scan_dev_queue.count = 0;
@@ -3532,7 +3588,9 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				p_lea_app_conf->gmap_role = RTK_BT_LE_AUDIO_GMAP_ROLE_BGR;
 				/* GMAP pac available contexts */
 				p_lea_app_conf->pacs_param.sink_available_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
+				p_lea_app_conf->pacs_param.sink_supported_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
 				p_lea_app_conf->pacs_param.source_available_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
+				p_lea_app_conf->pacs_param.source_supported_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
 				if (RTK_BT_LE_AUDIO_LOCATION_FL == sound_channel) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 					p_lea_app_conf->cap_param.csis_param.csis_cfg = RTK_BT_LEA_CSIS_CFG_RANK_1;
@@ -3638,7 +3696,7 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			}
 			/* set GAP config */
 			{
-				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTC | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP;
+				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTC | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP | RTK_BT_PROFILE_GMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
 				bt_app_conf.prefer_all_phy = 0;
@@ -3705,6 +3763,11 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				p_lea_app_conf->bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNI_SER;
 				p_lea_app_conf->cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_ACCEPTOR;
 				p_lea_app_conf->gmap_role = RTK_BT_LE_AUDIO_GMAP_ROLE_UGT;
+				/* GMAP pac available contexts */
+				p_lea_app_conf->pacs_param.sink_available_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
+				p_lea_app_conf->pacs_param.sink_supported_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
+				p_lea_app_conf->pacs_param.source_available_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
+				p_lea_app_conf->pacs_param.source_supported_contexts |= RTK_BT_LE_AUDIO_CONTEXT_GAME;
 				if (RTK_BT_LE_AUDIO_LOCATION_FL == sound_channel) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 					p_lea_app_conf->cap_param.csis_param.csis_cfg = RTK_BT_LEA_CSIS_CFG_RANK_1;

@@ -672,8 +672,6 @@ bool PSRAM_calibration(u32 log_en)
 
 	int phase_cnt = -1;
 
-	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
-	DCache_Disable();
 	/*Disable HW calibration*/
 	psram_phy->PSPHY_CAL_CTRL &= (~PSPHY_BIT_CFG_CAL_EN);
 	for (phase = 0x1; phase <= 0x8; phase = phase * 2) {
@@ -686,19 +684,15 @@ bool PSRAM_calibration(u32 log_en)
 
 		for (caltempN = 0; caltempN < 32; caltempN++) {
 			psram_phy->PSPHY_CAL_PAR = tempPHYPara | caltempN | PSPHY_PRE_CAL_PHASE(phase);
-			HAL_WRITE32((u32)__km4_bd_psram_start__, 0x0, tempdatawr[0]);
-			HAL_WRITE32((u32)__km4_bd_psram_start__, 0x50000, tempdatawr[1]);
-			HAL_WRITE32((u32)__km4_bd_psram_start__, 0x100000, tempdatawr[2]);
-			HAL_WRITE32((u32)__km4_bd_psram_start__, 0x150000, tempdatawr[3]);
-			HAL_WRITE32((u32)__km4_bd_psram_start__, 0x200000, tempdatawr[4]);
-			HAL_WRITE32((u32)__km4_bd_psram_start__, 0x250000, tempdatawr[5]);
 
-			tempdatard[0] = HAL_READ32((u32)__km4_bd_psram_start__, 0x0);
-			tempdatard[1] = HAL_READ32((u32)__km4_bd_psram_start__, 0x50000);
-			tempdatard[2] = HAL_READ32((u32)__km4_bd_psram_start__, 0x100000);
-			tempdatard[3] = HAL_READ32((u32)__km4_bd_psram_start__, 0x150000);
-			tempdatard[4] = HAL_READ32((u32)__km4_bd_psram_start__, 0x200000);
-			tempdatard[5] = HAL_READ32((u32)__km4_bd_psram_start__, 0x250000);
+			/*PG needs to be recalibrated when the temperature changes sharply.
+			To avoid accessing the secure address, the calibration address starts from __km4_bd_psram_start__.*/
+
+			for (int i = 0; i < 6; i += 1) {
+				HAL_WRITE32((u32)__km4_bd_psram_start__, i * 0x50000, tempdatawr[i]);
+				DCache_CleanInvalidate((u32)__km4_bd_psram_start__ + i * 0x50000, CACHE_LINE_SIZE);
+				tempdatard[i] = HAL_READ32((u32)__km4_bd_psram_start__, i * 0x50000);
+			}
 
 			if (_memcmp(tempdatard, PSRAM_CALIB_PATTERN, 24) == 0) {
 				if (log_en) {
@@ -739,10 +733,7 @@ bool PSRAM_calibration(u32 log_en)
 	}
 
 
-
 	RTK_LOGI(TAG, "CalNmin = %x CalNmax = %x WindowSize = %x phase: %x \n", window_start, window_end, window_size, phase_cnt);
-
-	DCache_Enable();
 
 	if ((window_size) < 9) {
 		return FALSE;

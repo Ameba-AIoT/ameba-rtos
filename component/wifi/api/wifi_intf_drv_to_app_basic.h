@@ -19,10 +19,6 @@
 #ifndef __WIFI_CONF_BASIC_H
 #define __WIFI_CONF_BASIC_H
 
-/** @defgroup WIFI_API
- *  @brief      WIFI_API module
- *  @{
- */
 #ifndef CONFIG_FULLMAC
 #include "rtw_wifi_common.h"
 #if !(defined(ZEPHYR_WIFI) && defined(CONFIG_AS_INIC_AP))
@@ -41,12 +37,6 @@
 extern "C" {
 #endif
 
-/** @defgroup WIFI_Exported_Types WIFI Exported Types
-* @{
-*/
-/**********************************************************************************************
- *                                  common structures
- *********************************************************************************************/
 /**
  * @brief The enumeration lists the results of the function, size int
  */
@@ -68,11 +58,20 @@ enum {
 	RTW_CONNECT_4WAY_PASSWORD_WRONG  = -17,
 };
 
-/** @defgroup SSID_LEN_Defs
-  * @{
-  */
+/**
+ * @brief  The enumeration is wl band type.
+ */
+enum {
+	WL_BAND_2_4G = 0,   ///<2.4g band
+	WL_BAND_5G,            ///<5g band
+	WL_BAND_2_4G_5G_BOTH, ///<2.4g&5g band
+	WL_BANDMAX  ///< max band
+};
+
+/**********************************************************************************************
+ *                                  common structures
+ *********************************************************************************************/
 #define WHC_MAX_SSID_LENGTH (33)
-/** @} */
 
 #pragma pack(1)/*_rtw_ssid_t and _rtw_mac_t are 1 byte alignment for some issues long long ago*/
 /**
@@ -149,6 +148,7 @@ struct _rtw_scan_param_t {
 	int (*scan_report_acs_user_callback)(struct acs_mntr_rpt *acs_mntr_rpt);/*used for report acs info*/
 };
 #pragma pack()
+
 /**********************************************************************************************
  *                                     connect structures
  *********************************************************************************************/
@@ -222,27 +222,28 @@ struct _rtw_wifi_setting_t {
   * @brief  The structure is used to describe the sw statistics
   */
 struct _rtw_sw_statistics_t { /* software statistics for tx and rx*/
-	unsigned int    max_skbbuf_used_number; /*!< max skb buffer used number       */
-	unsigned int    skbbuf_used_number;     /*!< current used skbbuf number       */
+	unsigned int    max_skbbuf_used_number; /**< max skb buffer used number       */
+	unsigned int    skbbuf_used_number;     /**< current used skbbuf number       */
 };
 
 /**
   * @brief  The structure is used to describe the phy statistics
   */
 struct _rtw_phy_statistics_t {
-	signed char	rssi;          /*!<average mixed rssi in 1 sec (for STA mode) */
-	signed char	data_rssi;          /*!<average data rssi in 1 sec (for STA mode) */
-	signed char	beacon_rssi;          /*!<average beacon rssi in 1 sec (for STA mode) */
-	signed char	snr;          /*!< average snr in 1 sec (not include cck rate, for STA mode)*/
+	signed char	rssi;          /**<average mixed rssi in 1 sec (for STA mode) */
+	signed char	data_rssi;          /**<average data rssi in 1 sec (for STA mode) */
+	signed char	beacon_rssi;          /**<average beacon rssi in 1 sec (for STA mode) */
+	signed char	snr;          /**< average snr in 1 sec (not include cck rate, for STA mode)*/
 	unsigned int
-	cca_clm; /*<channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result>*/
-	unsigned int	edcca_clm; /*<channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result>*/
-	unsigned int	clm_channel; /*<channel corresponding to the latest clm result.>*/
+	cca_clm; /**< channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result */
+	unsigned int	edcca_clm; /**< channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result */
+	unsigned int	clm_channel; /**< channel corresponding to the latest clm result.*/
 	unsigned int	tx_retry;
 	unsigned short	tx_drop;
 	unsigned int	rx_drop;
 	unsigned int	supported_max_rate;
 };
+
 /**********************************************************************************************
  *                                     softap structures
  *********************************************************************************************/
@@ -283,7 +284,7 @@ struct _rtw_csa_parm_t {
 	unsigned char bc_action_cnt; /* indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1*/
 	/** @brief user handle when softap switch channel by csa function
 	  * @param[in] channel:  new channel
-	  * @param[in] ret: val: RTW_ERROR, RTW_SUCCESS
+	  * @param[in] ret: val: @ref RTW_ERROR, @ref RTW_SUCCESS
 	  */
 	void (*callback)(unsigned char channel, s8 ret);
 };
@@ -320,14 +321,15 @@ enum {
 
 struct _promisc_para_t {
 	/*! Receive all packets in the air or set some filtering conditions
-		- RCR_ALL_PKT: receive all packets in the air
-		- RCR_AP_ALL: receive all packtets send by connected AP*/
+		- @ref RCR_ALL_PKT : receive all packets in the air
+		- @ref RCR_AP_ALL : receive all packtets send by connected AP
+		*/
 	u8 filter_mode;
 	/** @brief user handle a packet\n
 	  * @param[in] struct rx_pkt_info:  packet's detail information
 	  * @return Should the driver continue pr8ucessing this packet after user has processed.
-	  * 	- NEED_DRIVER_HANDLE: driver continue processing this packet, This setting is usually required when the STA remains connected
-	  *     - BYPASS_DRIVER_HANDLE: driver drop this packet, This setting is usually used when STA does not need connect*/
+	  * 	- @ref NEED_DRIVER_HANDLE : driver continue processing this packet, This setting is usually required when the STA remains connected
+	  *     - @ref BYPASS_DRIVER_HANDLE : driver drop this packet, This setting is usually used when STA does not need connect*/
 	u8(*callback)(struct rx_pkt_info *pkt_info);
 };
 
@@ -414,11 +416,12 @@ struct rtw_kvr_param_t {
 #endif
 #endif
 };
+
 /**********************************************************************************************
  *                                     speaker structures
  *********************************************************************************************/
 /**
- * @brief The enumeration lists the type of pmksa operations.
+ * @brief The enumeration lists the type of speaker related settings.
  */
 enum {
 	SPEAKER_SET_INIT = 0,
@@ -442,6 +445,7 @@ union speaker_set {
 		u8 port;           /* 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1 */
 	} tsf_timer;
 };
+
 /**********************************************************************************************
  *                                     other structures
  *********************************************************************************************/
@@ -476,21 +480,6 @@ struct _Rltk_wlan_t {
 	rtos_sema_t			netif_rx_sema;	/* prevent race condition on .skb in rltk_netif_rx() */
 };
 #endif
-
-/**
- * @brief  parameters of rf_calibration_disable.
- */
-#define DIS_DPK BIT(0)
-
-/**
- * @brief  The enumeration is wl band type.
- */
-enum {
-	WL_BAND_2_4G = 0,   ///<2.4g band
-	WL_BAND_5G,            ///<5g band
-	WL_BAND_2_4G_5G_BOTH, ///<2.4g&5g band
-	WL_BANDMAX  ///< max band
-};
 
 /**
   * @brief  The structure is power limit regu map.
@@ -565,8 +554,8 @@ enum {
  *
  */
 struct custom_ie {
-	u8 *ie;/*format: [element ID (1byte) | length (1byte) | content (length bytes) ]*/
-	u8 type;/*val: PROBE_REQ, PROBE_RSP...*/
+	u8 *ie;     /**< format: [element ID (1byte) | length (1byte) | content (length bytes) ]*/
+	u8 type;    /**< val: @ref PROBE_REQ, @ref PROBE_RSP...*/
 };
 
 /**
@@ -583,24 +572,10 @@ struct rtw_tx_power_ctl_info_t {
 	u8	b_tx_pwr_force_enbale : 1;
 };
 
-#ifndef CONFIG_FULLMAC
-extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
-#define netdev_priv(dev)		dev->priv
-#define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)
-#define rtw_get_netdev(idx)		(&(rltk_wlan_info[idx].dev))
-#endif
-extern  struct wifi_user_conf wifi_user_config;
-extern struct _rtw_wifi_setting_t wifi_setting[2];
-/**
-* @}
-*/
-
 /**********************************************************************************************
  *                                    user_configure struct
  *********************************************************************************************/
-/** @defgroup WIFI_USER_CONFIG
-*  @brief	WIFI_USER_CONFIG module
-*  @{*/
+#define DIS_DPK BIT(0) /**< parameters of rf_calibration_disable. */
 
 /**
   * @brief  The structure is used to describe the wifi user configuration, can be configured in ameba_wificfg.c
@@ -807,23 +782,29 @@ struct wifi_user_conf {
 	/*! 0: Disable R-mesh NAT function, 1: Enable R-mesh NAT function*/
 	unsigned char wtn_rnat_en;
 };
-/** @} */
+
+#ifndef CONFIG_FULLMAC
+extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
+#define netdev_priv(dev)		dev->priv
+#define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)
+#define rtw_get_netdev(idx)		(&(rltk_wlan_info[idx].dev))
+#endif
+extern  struct wifi_user_conf wifi_user_config;
+extern struct _rtw_wifi_setting_t wifi_setting[2];
 
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+/** @addtogroup Basic_Functions
   * @{
   */
-/** @defgroup Basic_Functions
-  * @{
-  */
+
 /**
  * @brief  Enable Wi-Fi.
  * - Bring the Wireless interface "Up".
  * @param[in]  mode: Should always set to RTW_MODE_STA
- * @return  RTW_SUCCESS: if the WiFi chip initialized successfully.
- * @return  RTW_ERROR: if the WiFi chip initialization failed.
+ * @return  @ref RTW_SUCCESS : if the WiFi chip initialized successfully.
+ * @return  @ref RTW_ERROR : if the WiFi chip initialization failed.
  * @note  Call wifi_start_ap afther this API if want to use AP mode
  */
 int wifi_on(u8 mode);
@@ -847,19 +828,19 @@ int wifi_is_running(unsigned char wlan_idx);
  * @param[in]  block: if block is set to 1, it means synchronized wifi connect, and this
 * 	API will return until connect is finished; if block is set to 0, it means asynchronized
 * 	wifi connect, and this API will return immediately.
- * @return  RTW_SUCCESS: Join successfully for synchronized wifi connect,
+ * @return  @ref RTW_SUCCESS : Join successfully for synchronized wifi connect,
  *  or connect cmd is set successfully for asynchronized wifi connect.
- * @return  RTW_ERROR: An error occurred.
- * @return  RTW_BUSY: Wifi connect or scan is ongoing.
- * @return  RTW_NOMEM: Malloc fail during wifi connect.
- * @return  RTW_TIMEOUT: More than RTW_JOIN_TIMEOUT(~70s) without successful connection.
- * @return  RTW_CONNECT_INVALID_KEY: Password format wrong.
- * @return  RTW_CONNECT_SCAN_FAIL: Scan fail.
- * @return  RTW_CONNECT_AUTH_FAIL: Auth fail.
- * @return  RTW_CONNECT_AUTH_PASSWORD_WRONG: Password error causing auth failure, not entirely accurate.
- * @return  RTW_CONNECT_ASSOC_FAIL: Assoc fail.
- * @return  RTW_CONNECT_4WAY_HANDSHAKE_FAIL: 4 way handshake fail.
- * @return  RTW_CONNECT_4WAY_PASSWORD_WRONG: Password error causing 4 way handshake failure,not entirely accurate.
+ * @return  @ref RTW_ERROR : An error occurred.
+ * @return  @ref RTW_BUSY : Wifi connect or scan is ongoing.
+ * @return  @ref RTW_NOMEM : Malloc fail during wifi connect.
+ * @return  @ref RTW_TIMEOUT : More than RTW_JOIN_TIMEOUT(~70s) without successful connection.
+ * @return  @ref RTW_CONNECT_INVALID_KEY : Password format wrong.
+ * @return  @ref RTW_CONNECT_SCAN_FAIL : Scan fail.
+ * @return  @ref RTW_CONNECT_AUTH_FAIL : Auth fail.
+ * @return  @ref RTW_CONNECT_AUTH_PASSWORD_WRONG : Password error causing auth failure, not entirely accurate.
+ * @return  @ref RTW_CONNECT_ASSOC_FAIL : Assoc fail.
+ * @return  @ref RTW_CONNECT_4WAY_HANDSHAKE_FAIL : 4 way handshake fail.
+ * @return  @ref RTW_CONNECT_4WAY_PASSWORD_WRONG : Password error causing 4 way handshake failure,not entirely accurate.
  * @note  Please make sure the Wi-Fi is enabled before invoking this function.
  * 	(@ref wifi_on())
  * @note  if bssid in connect_param is set, then bssid will be used for connect, otherwise ssid
@@ -870,26 +851,26 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 /**
  * @brief  Disassociates from current Wi-Fi network.
  * @param  None
- * @return  RTW_SUCCESS: On successful disassociation from the AP.
- * @return  RTW_ERROR: If an error occurred.
+ * @return  @ref RTW_SUCCESS : On successful disassociation from the AP.
+ * @return  @ref RTW_ERROR : If an error occurred.
  */
 int wifi_disconnect(void);
 
 /**
  * @brief  get join status during wifi connectection
  * @param  None
- * @return RTW_JOINSTATUS_UNKNOWN: unknown
- * @return RTW_JOINSTATUS_STARTING:	starting phase
- * @return RTW_JOINSTATUS_SCANNING: scanning phase
- * @return RTW_JOINSTATUS_AUTHENTICATING: authenticating phase
- * @return RTW_JOINSTATUS_AUTHENTICATED: authenticated phase
- * @return RTW_JOINSTATUS_ASSOCIATING: associating phase
- * @return RTW_JOINSTATUS_ASSOCIATED: associated phase
- * @return RTW_JOINSTATUS_4WAY_HANDSHAKING: 4 way handshaking phase
- * @return RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE: 4 way handshake done phase
- * @return RTW_JOINSTATUS_SUCCESS: join success
- * @return RTW_JOINSTATUS_FAIL:	join fail
- * @return RTW_JOINSTATUS_DISCONNECT: disconnect
+ * @return @ref RTW_JOINSTATUS_UNKNOWN : unknown
+ * @return @ref RTW_JOINSTATUS_STARTING :	starting phase
+ * @return @ref RTW_JOINSTATUS_SCANNING : scanning phase
+ * @return @ref RTW_JOINSTATUS_AUTHENTICATING : authenticating phase
+ * @return @ref RTW_JOINSTATUS_AUTHENTICATED : authenticated phase
+ * @return @ref RTW_JOINSTATUS_ASSOCIATING : associating phase
+ * @return @ref RTW_JOINSTATUS_ASSOCIATED : associated phase
+ * @return @ref RTW_JOINSTATUS_4WAY_HANDSHAKING : 4 way handshaking phase
+ * @return @ref RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE : 4 way handshake done phase
+ * @return @ref RTW_JOINSTATUS_SUCCESS : join success
+ * @return @ref RTW_JOINSTATUS_FAIL :	join fail
+ * @return @ref RTW_JOINSTATUS_DISCONNECT : disconnect
  */
 u8 wifi_get_join_status(void);
 
@@ -909,7 +890,7 @@ u8 wifi_get_join_status(void);
  * @param[in]  block: If set to 1, it's synchronized scan and this API will return
  * 	after scan is done. If set to 0, it's asynchronized scan and this API will return
  * 	immediately.
- * @return  RTW_SUCCESS or RTW_ERROR for asynchronized scan, return RTW_ERROR or
+ * @return  @ref RTW_SUCCESS or @ref RTW_ERROR for asynchronized scan, return @ref RTW_ERROR or
  * 	scanned AP number for Synchronized scan.
  * @note  If this API is called, the scanned APs are stored in WiFi driver dynamic
  * 	allocated memory, for synchronized scan or asynchronized scan which not use RTW_SCAN_REPORT_EACH,
@@ -924,8 +905,8 @@ int wifi_scan_networks(struct _rtw_scan_param_t *scan_param, unsigned char block
  * @warning  If a STA interface is active when this function is called,
  * 	the softAP will start on the same channel as the STA.
  * 	It will NOT use the channel provided!
- * @return  RTW_SUCCESS: If successfully creates an AP.
- * @return  RTW_ERROR: If an error occurred.
+ * @return  @ref RTW_SUCCESS : If successfully creates an AP.
+ * @return  @ref RTW_ERROR : If an error occurred.
  * @note  if hidden_ssid in softAP_config is set to 1, then this softAP will start
  * 	with hidden ssid.
  * @note  Please make sure the Wi-Fi is enabled before invoking this function.
@@ -936,33 +917,28 @@ int wifi_start_ap(struct _rtw_softap_info_t *softAP_config);
 /**
  * @brief  Disable Wi-Fi interface-2.
  * @param  None
- * @return  RTW_SUCCESS: deinit success,
+ * @return  @ref RTW_SUCCESS : deinit success,
  * 	wifi mode is changed to RTW_MODE_STA.
- * @return  RTW_ERROR: otherwise.
+ * @return  @ref RTW_ERROR : otherwise.
  */
 int wifi_stop_ap(void);
 /**
  * @brief  Enable Wi-Fi interface-2.
  * @param  None
- * @return  RTW_SUCCESS: success,
+ * @return  @ref RTW_SUCCESS : success,
  * 	wifi open RTW_MODE_AP .
- * @return  RTW_ERROR: otherwise.
+ * @return  @ref RTW_ERROR : otherwise.
  */
 int _wifi_on_ap(void);
 /**
  * @brief  Disable Wi-Fi interface-2.
  * @param  None
- * @return  RTW_SUCCESS: close ap mode,
- * @return  RTW_ERROR: otherwise.
+ * @return  @ref RTW_SUCCESS : close ap mode,
+ * @return  @ref RTW_ERROR : otherwise.
  */
 int _wifi_off_ap(void);
-/**
-* @}
-*/
 
-/** @} */
-
-/** @} */
+/** @} End of Basic_Functions group */
 #ifdef __cplusplus
 }
 #endif

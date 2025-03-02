@@ -90,8 +90,49 @@ static rtk_bt_le_audio_broadcast_source_config_t bt_le_audio_broadcast_source_co
 	.periodic_adv_interval_max = RTK_BT_LE_AUDIO_PA_INTERVAL_MAX,
 	.periodic_adv_prop = 0
 };
-
-static  rtk_bt_le_audio_unicast_ase_qos_t bt_le_audio_bap_ase_qos = {
+/* this config will be overwrited by bt_stack_le_audio_gen_basic_data */
+static uint8_t bt_stack_le_audio_media_codec_level2[] = {
+	0x02,
+	RTK_BT_LE_CODEC_CFG_TYPE_SAMPLING_FREQUENCY,
+	RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE,
+	0x02,
+	RTK_BT_LE_CODEC_CFG_TYPE_FRAME_DURATION,
+	RTK_BT_LE_AUDIO_BROADCAST_SOURCE_FRAME_DURATION,
+	0x03,
+	RTK_BT_LE_CODEC_CFG_TYPE_OCTET_PER_CODEC_FRAME,
+	0x28, 0x00,
+	0x02,
+	RTK_BT_LE_CODEC_CFG_TYPE_BLOCKS_PER_SDU,
+	1
+};
+#if (RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM == 1) && (RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE == 1)
+static const uint8_t bt_stack_le_audio_media_codec_level3_left[] = {
+	0x05,
+	RTK_BT_LE_CODEC_CFG_TYPE_AUDIO_CHANNEL_ALLOCATION,
+	(uint8_t)(RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR),
+	(uint8_t)(((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) >> 8) & 0xFF),
+	(uint8_t)(((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) >> 16) & 0xFF),
+	(uint8_t)(((RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR) >> 24) & 0xFF),
+};
+#else
+static const uint8_t bt_stack_le_audio_media_codec_level3_left[] = {
+	0x05,
+	RTK_BT_LE_CODEC_CFG_TYPE_AUDIO_CHANNEL_ALLOCATION,
+	(uint8_t)RTK_BT_LE_AUDIO_LOCATION_FL,
+	(uint8_t)((RTK_BT_LE_AUDIO_LOCATION_FL >> 8) & 0xFF),
+	(uint8_t)((RTK_BT_LE_AUDIO_LOCATION_FL >> 16) & 0xFF),
+	(uint8_t)((RTK_BT_LE_AUDIO_LOCATION_FL >> 24) & 0xFF),
+};
+#endif
+static const uint8_t bt_stack_le_audio_media_codec_level3_right[] = {
+	0x05,
+	RTK_BT_LE_CODEC_CFG_TYPE_AUDIO_CHANNEL_ALLOCATION,
+	(uint8_t)RTK_BT_LE_AUDIO_LOCATION_FR,
+	(uint8_t)((RTK_BT_LE_AUDIO_LOCATION_FR >> 8) & 0xFF),
+	(uint8_t)((RTK_BT_LE_AUDIO_LOCATION_FR >> 16) & 0xFF),
+	(uint8_t)((RTK_BT_LE_AUDIO_LOCATION_FR >> 24) & 0xFF),
+};
+static rtk_bt_le_audio_unicast_ase_qos_t bt_le_audio_bap_ase_qos = {
 	.phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M,
 	.retransmission_number = RTK_BT_LE_AUDIO_DEMO_ASE_QOS_RETRANS_NUM,
 	.max_sdu = RTK_BT_LE_AUDIO_DEMO_ASE_QOS_MAX_SDU,
@@ -1932,6 +1973,235 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 	}
 }
 
+static bool bt_stack_le_audio_broadcast_source_set_codec_to_level2(uint8_t *p_codec, uint8_t codec_len, uint8_t type, uint16_t value)
+{
+	uint8_t pos = 0, *p_buffer = NULL;
+	uint8_t length = 0;
+	bool ret = false;
+
+	p_buffer = p_codec;
+	pos = 0;
+	while (pos < codec_len) {
+		/* Codec_Specific_Capabilities TLV length, one octet. */
+		length = (uint8_t) * (p_buffer + pos);
+		if (type == (uint8_t) * (p_buffer + pos + 1)) {
+			switch (type) {
+			case RTK_BT_LE_CODEC_CFG_TYPE_SAMPLING_FREQUENCY: {
+				*(p_buffer + pos + 2) = (uint8_t)value & 0xFF;
+			}
+			break;
+			case RTK_BT_LE_CODEC_CFG_TYPE_FRAME_DURATION: {
+				*(p_buffer + pos + 2) = (uint8_t)value & 0xFF;
+			}
+			break;
+			case RTK_BT_LE_CODEC_CFG_TYPE_OCTET_PER_CODEC_FRAME: {
+				*(p_buffer + pos + 2) = value & 0xFF;
+				*(p_buffer + pos + 3) = value >> 8;
+			}
+			break;
+			case RTK_BT_LE_CODEC_CFG_TYPE_BLOCKS_PER_SDU: {
+				*(p_buffer + pos + 2) = (uint8_t)value & 0xFF;
+			}
+			break;
+			default:
+				break;
+			}
+		}
+		pos += (length + 1);
+	}
+	BT_DUMPD(__func__, p_codec, codec_len);
+
+	return ret;
+}
+
+static void bt_stack_le_audio_free_basic_data(void)
+{
+	for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM; i ++) {
+		if (bt_le_audio_priv_data.bsrc.group[i].group_idx != 0xFF) {
+			base_data_del_group(bt_le_audio_priv_data.bsrc.group[i].group_idx);
+			bt_le_audio_priv_data.bsrc.group[i].group_idx = 0xFF;
+			for (uint8_t j = 0; j < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SUB_GROUP_NUM; j ++) {
+				bt_le_audio_priv_data.bsrc.group[i].sub_group[j].subgroup_idx = 0xFF;
+				for (uint8_t k = 0; k < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM; k ++) {
+					bt_le_audio_priv_data.bsrc.group[i].sub_group[j].bis_idx[k] = 0xFF;
+				}
+			}
+		}
+	}
+}
+
+static uint16_t bt_stack_le_audio_gen_basic_data(void)
+{
+	uint8_t error_idx = 0;
+	uint8_t codec_id2[RTK_BT_LE_AUDIO_CODEC_ID_LEN] = {LC3_CODEC_ID, 0, 0, 0, 0};
+
+	/* do group free firstly */
+	bt_stack_le_audio_free_basic_data();
+	/* do level2 config */
+	bt_stack_le_audio_broadcast_source_set_codec_to_level2(bt_stack_le_audio_media_codec_level2, sizeof(bt_stack_le_audio_media_codec_level2),
+														   RTK_BT_LE_CODEC_CFG_TYPE_SAMPLING_FREQUENCY, bt_le_audio_priv_data.bsrc.codec_cfg.sample_frequency);
+	bt_stack_le_audio_broadcast_source_set_codec_to_level2(bt_stack_le_audio_media_codec_level2, sizeof(bt_stack_le_audio_media_codec_level2),
+														   RTK_BT_LE_CODEC_CFG_TYPE_FRAME_DURATION, bt_le_audio_priv_data.bsrc.codec_cfg.frame_duration);
+	bt_stack_le_audio_broadcast_source_set_codec_to_level2(bt_stack_le_audio_media_codec_level2, sizeof(bt_stack_le_audio_media_codec_level2),
+														   RTK_BT_LE_CODEC_CFG_TYPE_OCTET_PER_CODEC_FRAME, bt_le_audio_priv_data.bsrc.codec_cfg.octets_per_codec_frame);
+	bt_stack_le_audio_broadcast_source_set_codec_to_level2(bt_stack_le_audio_media_codec_level2, sizeof(bt_stack_le_audio_media_codec_level2),
+														   RTK_BT_LE_CODEC_CFG_TYPE_BLOCKS_PER_SDU, bt_le_audio_priv_data.bsrc.codec_cfg.codec_frame_blocks_per_sdu);
+	/* add group */
+	for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM; i ++) {
+		bt_le_audio_priv_data.bsrc.group[i].presentation_delay = bt_le_audio_priv_data.bsrc.prefer_qos.presentation_delay;
+		if (base_data_add_group(&bt_le_audio_priv_data.bsrc.group[i].group_idx,
+								bt_le_audio_priv_data.bsrc.group[i].presentation_delay) == false) {
+			error_idx = 1;
+			bt_le_audio_priv_data.bsrc.group[i].group_idx = 0xFF;
+			goto error;
+		} else {
+			/* add subgroup */
+			for (uint8_t j = 0; j < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SUB_GROUP_NUM; j ++) {
+				/* update metadata */
+				bt_stack_le_audio_gen_metadata(bt_le_audio_metadata, &bt_le_audio_metadata_len, bt_le_audio_priv_data.bsrc.group[i].sub_group[j].stream_audio_contexts, 0,
+											   NULL);
+				if (base_data_add_subgroup(&bt_le_audio_priv_data.bsrc.group[i].sub_group[j].subgroup_idx, bt_le_audio_priv_data.bsrc.group[i].group_idx,
+										   codec_id2,
+										   sizeof(bt_stack_le_audio_media_codec_level2), bt_stack_le_audio_media_codec_level2, bt_le_audio_metadata_len,
+										   bt_le_audio_metadata) == false) {
+					error_idx = 2;
+					bt_le_audio_priv_data.bsrc.group[i].sub_group[j].subgroup_idx = 0xFF;
+					goto error;
+				} else {
+					uint8_t cfg_len = 0;
+					uint8_t *level3_cfg = NULL;
+					/* add bis */
+					for (uint8_t k = 0; k < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM; k ++) {
+						if (k == 0) {
+							cfg_len = sizeof(bt_stack_le_audio_media_codec_level3_left);
+							level3_cfg = (uint8_t *)bt_stack_le_audio_media_codec_level3_left;
+						} else if (k == 1) {
+							cfg_len = sizeof(bt_stack_le_audio_media_codec_level3_right);
+							level3_cfg = (uint8_t *)bt_stack_le_audio_media_codec_level3_right;
+						} else {
+							BT_LOGE("[LEA STACK] %s: Warning !!!!! bis num is overflow \r\n", __func__);
+							error_idx = 3;
+							goto error;
+						}
+						if (base_data_add_bis(&bt_le_audio_priv_data.bsrc.group[i].sub_group[j].bis_idx[k], bt_le_audio_priv_data.bsrc.group[i].group_idx,
+											  bt_le_audio_priv_data.bsrc.group[i].sub_group[j].subgroup_idx,
+											  cfg_len, level3_cfg) == false) {
+							error_idx = 3;
+							bt_le_audio_priv_data.bsrc.group[i].sub_group[j].bis_idx[k] = 0xFF;
+							goto error;
+						}
+					}
+				}
+			}
+		}
+	}
+	/* get bis num */
+	for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM; i ++) {
+		base_data_get_bis_num(bt_le_audio_priv_data.bsrc.group[i].group_idx, &bt_le_audio_priv_data.bsrc.group[i].group_bis_num);
+		BT_LOGA("[LEA STACK] %s: group index: %x, group bis number :%d \r\n", __func__,
+				bt_le_audio_priv_data.bsrc.group[i].group_idx, bt_le_audio_priv_data.bsrc.group[i].group_bis_num);
+	}
+
+	return 0;
+error:
+	BT_LOGE("[LEA STACK] %s:Error idx %d \r\n", __func__, error_idx);
+
+	return 1;
+}
+
+static void *bt_stack_le_audio_bsrc_get_handle(uint8_t *bd_addr, uint8_t bd_type, uint8_t adv_sid, uint8_t broadcast_id[3])
+{
+	if (bt_le_audio_priv_data.bsrc.source_handle != NULL &&
+		bt_le_audio_priv_data.bsrc.source_adv_sid == adv_sid &&
+		memcmp(bt_le_audio_priv_data.bsrc.broadcast_id, broadcast_id, 3) == 0 &&
+		bt_le_audio_priv_data.bsrc.cfg_local_addr_type == bd_type &&
+		memcmp(bt_le_audio_priv_data.bsrc.source_address, bd_addr, 6) == 0
+	   ) {
+		return bt_le_audio_priv_data.bsrc.source_handle;
+	}
+	return NULL;
+}
+
+static void bt_stack_le_audio_link_brs_char_add_source_handle(void)
+{
+	rtk_bt_le_audio_link_t *p_link = NULL;
+	T_BASS_BRS_DATA *p_brs_data = NULL;
+
+	for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_MAX_BLE_LINK_NUM; i++) {
+		if (bt_le_audio_priv_data.le_link[i].used == true &&
+			bt_le_audio_priv_data.le_link[i].brs_char_tbl != NULL) {
+			p_link = &bt_le_audio_priv_data.le_link[i];
+			for (uint8_t j = 0; j < p_link->brs_char_num; j++) {
+				if (p_link->brs_char_tbl[j].brs_is_used &&
+					p_link->brs_char_tbl[j].handle == NULL) {
+					p_brs_data = bass_get_brs_data(p_link->conn_handle, j);
+					if (p_brs_data) {
+						p_link->brs_char_tbl[j].handle = bt_stack_le_audio_bsrc_get_handle(p_brs_data->source_address,
+																						   p_brs_data->source_address_type,
+																						   p_brs_data->source_adv_sid, p_brs_data->broadcast_id);
+					}
+					p_brs_data = NULL;
+				}
+			}
+		}
+	}
+}
+
+static uint16_t bt_stack_le_audio_broadcast_init(uint8_t index, uint8_t qos_type, rtk_bt_le_addr_type_t local_addr_type, bool encryption,
+												 uint16_t stream_audio_contexts)
+{
+	T_BROADCAST_SOURCE_INFO src_info = {0};
+
+	if (bt_le_audio_priv_data.bsrc.source_handle == NULL) {
+		BT_LOGE("[LEA STACK] %s: broadcast need to add before initialized \r\n", __func__);
+		return 1;
+	}
+	bt_le_audio_priv_data.bsrc.cfg_codec_index = (rtk_bt_le_audio_codec_cfg_item_t)index;
+	for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM; i ++) {
+		bt_le_audio_priv_data.bsrc.group[i].group_idx = 0xFF;
+		bt_le_audio_priv_data.bsrc.group[i].group_bis_num = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM;
+		for (uint8_t j = 0; j < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SUB_GROUP_NUM; j ++) {
+			bt_le_audio_priv_data.bsrc.group[i].sub_group[j].subgroup_idx = 0xFF;
+			bt_le_audio_priv_data.bsrc.group[i].sub_group[j].stream_audio_contexts = stream_audio_contexts;
+			for (uint8_t k = 0; k < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM; k ++) {
+				bt_le_audio_priv_data.bsrc.group[i].sub_group[j].bis_idx[k] = 0xFF;
+			}
+		}
+	}
+	bt_le_audio_priv_data.bsrc.cfg_qos_type = (rtk_bt_le_audio_qos_cfg_type_t)qos_type;
+	bt_le_audio_priv_data.bsrc.cfg_local_addr_type = local_addr_type;
+	bt_le_audio_priv_data.bsrc.cfg_encryption = encryption;
+	/* get prefer codec */
+	if (false == codec_preferred_cfg_get((T_CODEC_CFG_ITEM)bt_le_audio_priv_data.bsrc.cfg_codec_index, (T_CODEC_CFG *)&bt_le_audio_priv_data.bsrc.codec_cfg)) {
+		BT_LOGE("%s codec_preferred_cfg_get fail\r\n", __func__);
+		goto error;
+	}
+	if (false == qos_preferred_cfg_get((T_CODEC_CFG_ITEM)index, (T_QOS_CFG_TYPE)qos_type, (T_QOS_CFG_PREFERRED *)&bt_le_audio_priv_data.bsrc.prefer_qos)) {
+		BT_LOGE("%s qos_preferred_cfg_get fail\r\n", __func__);
+		goto error;
+	}
+	if (bt_stack_le_audio_gen_basic_data()) {
+		BT_LOGE("%s bt_stack_le_audio_gen_basic_data fail \r\n", __func__);
+		goto error;
+	}
+	if (broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
+		bt_le_audio_priv_data.bsrc.source_adv_sid = src_info.adv_sid;
+		memcpy(bt_le_audio_priv_data.bsrc.broadcast_id, src_info.broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
+		if (gap_get_param(GAP_PARAM_BD_ADDR, bt_le_audio_priv_data.bsrc.source_address)) {
+			BT_LOGE("%s gap_get_param fail \r\n", __func__);
+			goto error;
+		}
+		/* for broadcast assistant */
+		bt_stack_le_audio_link_brs_char_add_source_handle();
+	}
+	return 0;
+
+error:
+	bt_stack_le_audio_free_basic_data();
+	memset((void *)&bt_le_audio_priv_data.bsrc, 0, sizeof(rtk_bt_le_audio_broadcast_source_cb_t));
+	return RTK_BT_ERR_LOWER_STACK_API;
+}
+
 static uint16_t bt_stack_le_audio_broadcast_source_create(void *data)
 {
 	rtk_bt_le_audio_broadcast_source_create_param_t *p_param = NULL;
@@ -1952,7 +2222,8 @@ static uint16_t bt_stack_le_audio_broadcast_source_create(void *data)
 		BT_LOGE("%s broadcast_source_add fail \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
-	if (bt_stack_le_audio_broadcast_init(p_param->cfg_codec_index, p_param->cfg_qos_type, p_param->local_addr_type, p_param->encryption)) {
+	if (bt_stack_le_audio_broadcast_init(p_param->cfg_codec_index, p_param->cfg_qos_type, p_param->local_addr_type, p_param->encryption,
+										 p_param->stream_audio_contexts)) {
 		BT_LOGE("%s bt_stack_le_audio_broadcast_init fail\r\n", __func__);
 		broadcast_source_release(bt_le_audio_priv_data.bsrc.source_handle);
 		bt_le_audio_priv_data.bsrc.source_handle = NULL;

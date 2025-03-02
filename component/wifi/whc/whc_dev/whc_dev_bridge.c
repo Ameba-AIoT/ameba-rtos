@@ -102,7 +102,16 @@ static bool whc_bridge_dev_match_filter(struct bridge_pkt_attrib *pattrib, struc
 		return false;
 	}
 
-	if ((filter->mask & MASK_PORT) && pattrib->src_port != filter->port_num) {
+	if ((filter->mask & MASK_DST_IP) &&
+		memcmp(pattrib->dst_ip, filter->dst_ip, sizeof(filter->dst_ip)) != 0) {
+		return false;
+	}
+
+	if ((filter->mask & MASK_SRC_PORT) && pattrib->src_port != filter->src_port) {
+		return false;
+	}
+
+	if ((filter->mask & MASK_DST_PORT) && pattrib->dst_port != filter->dst_port) {
 		return false;
 	}
 

@@ -401,6 +401,11 @@ ameba_target_sources_if(CONFIG_Flash_AVL src_${d_MCU_PROJECT_NAME}_test_verifica
 ameba_target_sources_if(CONFIG_RF_Interference_Flash src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
     ${d_SOC_PLATFORM_DIR}/verification/rf_interference/rf_interference_flash_test.c
 )
+if(CONFIG_AMEBASMARTPLUS)
+	ameba_target_sources_if(CONFIG_DIAGPRINTF_VERIFY src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
+		${d_SOC_PLATFORM_DIR}/verification/print/ameba_print_test.c
+	)
+endif()
 #--------------------------#
 ameba_target_sources_if(CONFIG_SEC_VERIFY src_${d_MCU_PROJECT_NAME}_test_verification_secure p_SCOPE interface
     ${d_SOC_PLATFORM_DIR}/verification/secure/log/ameba_log_test_secure.c
