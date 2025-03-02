@@ -207,12 +207,15 @@ elseif(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         ${c_CMPT_WIFI_DIR}/driver/phy_g6/rf
         ${c_CMPT_WIFI_DIR}/driver/rtl8730e
         ${c_CMPT_WIFI_DIR}/driver/rtl8730e_rom
-        ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730e
         ${c_CMPT_WIFI_DIR}/driver/intf/g6_intf
         ${c_CMPT_WIFI_DIR}/driver/intf/g6_intf/rtl8730e
     )
+    ameba_target_include_if(CONFIG_AMEBASMART dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
+        ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730e
+    )    
     ameba_target_include_if(CONFIG_AMEBASMARTPLUS dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
-    ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
+        ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
+        ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730f
     )    
 elseif(${d_PLATFORM_TYPE} STREQUAL "amebalite")
     ameba_target_include(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface

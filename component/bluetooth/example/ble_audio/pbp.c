@@ -2642,10 +2642,11 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_BAP, app_bt_bap_callback));
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_CAP, app_bt_cap_callback));
 			/* Broadcast source init */
-			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_CODEC_CFG_ITEM_16_2,
-																   RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY,
+			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG,
+																   RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG,
 																   RTK_BT_LE_ADDR_TYPE_PUBLIC,
-																   false));
+																   false,
+																   RTK_BT_LE_AUDIO_CONTEXT_MEDIA));
 			/* Init scan list */
 			{
 				scan_dev_queue.count = 0;

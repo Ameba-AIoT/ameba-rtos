@@ -3429,8 +3429,11 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_le_gap_set_device_name(p_lea_app_conf->device_name));
 			BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(APP_LE_AUDIO_DEMO_GAP_APPERANCE));
 			/* broadcast source init */
-			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_CODEC_CFG_ITEM_16_2, RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY,
-																   RTK_BT_LE_ADDR_TYPE_PUBLIC, false));
+			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG,
+																   RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG,
+																   RTK_BT_LE_ADDR_TYPE_PUBLIC,
+																   false,
+																   RTK_BT_LE_AUDIO_CONTEXT_MEDIA));
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 			/* when csip member disconnect, start ext scan timer in app_bt_le_audio_bap_unicast_client_common_cb*/
 			{

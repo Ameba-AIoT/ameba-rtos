@@ -9,6 +9,11 @@ add_library(src_${d_MCU_PROJECT_NAME}_imgtool_floader INTERFACE)
 #--------------------------#
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
+		if(CONFIG_AMEBASMART)
+			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_imgtool_floader p_SCOPE interface
+				${d_SOC_PLATFORM_DIR}/swlib/log.c
+			)
+		endif()
         ameba_target_set(src_${d_MCU_PROJECT_NAME}_imgtool_floader p_SCOPE interface
             p_COMPILE_DEFINES
                 CONFIG_NAND_DOWNLOAD_EN
@@ -31,7 +36,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
                 # ${d_SOC_PLATFORM_DIR}/lib/ram_common/ameba_rom_patch.c # this file also included by lib_chipinfo.a
                 ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_usb.c
                 ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_codec.c
-                ${d_SOC_PLATFORM_DIR}/swlib/log.c
                 ${c_CMPT_USB_DIR}/common/usb_hal.c
                 ${c_CMPT_USB_DIR}/common/usb_os.c
                 ${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader/usbd_cdc.c

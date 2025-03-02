@@ -64,6 +64,10 @@ extern "C"
 #define RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE RTK_BT_LE_QOS_CFG_CIS_HIG_RELIABILITY
 /*                                              user cfg unicast end                                      */
 /*                                             user cfg broadcast start                                     */
+/* broadcast init parameter */
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG               RTK_BT_LE_CODEC_CFG_ITEM_16_2
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG                 RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONETXTS_CFG   RTK_BT_LE_AUDIO_CONTEXT_MEDIA
 /* broadcast create parameter */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SDU_INTERVAL 10000
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_MAX_SDU 155

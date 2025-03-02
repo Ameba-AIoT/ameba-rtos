@@ -620,7 +620,6 @@ _LONG_CALL_ void RTIM_SetOnePulseDefaultLevel(RTIM_TypeDef *TIMx, u16 TIM_Channe
 _LONG_CALL_ void RTIM_INTConfig(RTIM_TypeDef *TIMx, u32 TIM_IT, u32 NewState);
 _LONG_CALL_ void RTIM_INTClear(RTIM_TypeDef *TIMx);
 _LONG_CALL_ void RTIM_INTClearPendingBit(RTIM_TypeDef *TIMx, u32 TIM_IT);
-_LONG_CALL_ u32 RTIM_GetFlagStatus(RTIM_TypeDef *TIMx, u32 TIM_FLAG);
 _LONG_CALL_ u32 RTIM_GetINTStatus(RTIM_TypeDef *TIMx, u32 TIM_IT);
 
 /* Phase_Sync_Functions Phase Sync Functions */
