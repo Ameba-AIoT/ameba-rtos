@@ -55,7 +55,7 @@ void mbed_pwm_demo(void)
 
 	for (i = 0; i < 4; i++) {
 		pwm_led[i].pwm_idx = i + 1;
-		pwmout_init(&pwm_led[i], pwm_led_pin[i]);
+		pwm_led[i].period = 0;
 		pwmout_period_us(&pwm_led[i], PWM_PERIOD);
 	}
 	while (1) {
@@ -88,6 +88,7 @@ void mbed_pwm_demo(void)
 				steps[i] = PWM_STEP;
 				pwms[i] = 0;
 			}
+			pwmout_init(&pwm_led[i], pwm_led_pin[i]);
 		}
 #endif
 //        wait_ms(20);
