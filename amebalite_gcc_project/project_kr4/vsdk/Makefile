@@ -213,8 +213,8 @@ ifeq ($(CONFIG_FATFS_WITHIN_APP_IMG), y)
 			sh $(UTILITYDIR)/pad.sh $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_tmp.bin; \
 			sh $(UTILITYDIR)/pad.sh $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns_tmp.bin; \
 			$(PREPENDTOOL) $(BASEDIR)/amebalite_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  $(AP_IMAGEDIR)/target_img2.map; \
-			cat$(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin; \
-			cat$(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns.bin; \
+			cat $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app.bin; \
+			cat $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns_tmp.bin $(BASEDIR)/amebalite_gcc_project/fatfs_prepend.bin > $(KM4_BUILDDIR)/asdk/image/kr4_km4_dsp_app_ns.bin; \
 		fi \
 	fi
 endif
