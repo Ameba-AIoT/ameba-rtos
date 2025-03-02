@@ -18,12 +18,6 @@
 #ifndef _WIFI_INDICATE_H
 #define _WIFI_INDICATE_H
 
-/** @addtogroup Event
- *  @ingroup    wifi
- *  @brief      wifi event
- *  @{
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,7 +26,7 @@ extern "C" {
  *                                     wifi event structures
  *********************************************************************************************/
 /**
-  * @brief  The enumeration lists the disconnet reasons in rtw_event_disconn_info_t when RTW_JOINSTATUS_DISCONNECT happenned.
+  * @brief  The enumeration lists the disconnet reasons in rtw_event_disconn_info_t when @ref RTW_JOINSTATUS_DISCONNECT happenned.
   */
 enum {
 #ifndef CONFIG_FULLMAC
@@ -77,29 +71,29 @@ enum {
 };
 
 /**
-  * @brief buf of WIFI_EVENT_JOIN_STATUS when flag is RTW_JOINSTATUS_DISCONNECT
+  * @brief buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_DISCONNECT
   */
 struct rtw_event_disconn_info_t {
-	u16 disconn_reason;/*val: WLAN_REASON_UNSPECIFIED, WLAN_REASON_PREV_AUTH_NOT_VALID...*/
-	u8	bssid[6]; /*AP's MAC address*/
+	u16 disconn_reason;      /**< val: @ref WLAN_REASON_UNSPECIFIED, @ref WLAN_REASON_PREV_AUTH_NOT_VALID...*/
+	u8	bssid[6];            /**< AP's MAC address*/
 };
 
 /**
-  * @brief buf of WIFI_EVENT_JOIN_STATUS when flag is RTW_JOINSTATUS_FAIL
+  * @brief buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
   */
 struct rtw_event_join_fail_info_t {
-	int					fail_reason;/*value: RTW_ERROR/ RTW_CONNECT_INVALID_KEY...*/
-	u16					reason_or_status_code;/*from AP, define in 802.11 spec*/
-	u8					bssid[6]; /*AP's MAC address*/
+	int					fail_reason;           /**< value: @ref RTW_ERROR/ @ref RTW_CONNECT_INVALID_KEY...*/
+	u16					reason_or_status_code; /**< from AP, define in 802.11 spec*/
+	u8					bssid[6];              /**< AP's MAC address*/
 };
 
 /**
-  * @brief flags of WIFI_EVENT_JOIN_STATUS
+  * @brief flags of @ref WIFI_EVENT_JOIN_STATUS
   */
 enum {
 	RTW_JOINSTATUS_UNKNOWN = 0,
 
-	/* The intermediate states of Linking should be added in front of RTW_JOINSTATUS_SUCCESS */
+	/* The intermediate states of Linking should be added in front of @ref RTW_JOINSTATUS_SUCCESS */
 	RTW_JOINSTATUS_STARTING,				        /**< starting phase */
 	RTW_JOINSTATUS_SCANNING,				        /**< scanning phase */
 	RTW_JOINSTATUS_AUTHENTICATING,	    		/**< authenticating phase */
@@ -110,7 +104,7 @@ enum {
 	RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE,	    /**< 4 way handshake done phase */
 	RTW_JOINSTATUS_SUCCESS,				         	/**< join success  */
 
-	/* The other result states of Linking should be added in back of RTW_JOINSTATUS_SUCCESS */
+	/* The other result states of Linking should be added in back of @ref RTW_JOINSTATUS_SUCCESS */
 	RTW_JOINSTATUS_FAIL,						        /**< join fail during wifi connect */
 	RTW_JOINSTATUS_DISCONNECT,			      	/**< disconnect after wifi connected*/
 };
@@ -137,25 +131,29 @@ enum {
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
+/** @addtogroup Event_Functions
+  * @{
+  */
+
 /**
  * @brief  Register the event listener.
  * @param[in] event_cmds : Events indicated by wifi driver.
- *                    - WIFI_EVENT_STA_ASSOC
- *                    - WIFI_EVENT_STA_DISASSOC
- *                    - WIFI_EVENT_JOIN_STATUS
- *                    - WIFI_EVENT_CSI_DONE
- *                    - WIFI_EVENT_WPA_STA_WPS_START
- *                    - WIFI_EVENT_WPA_WPS_FINISH
- *                    - WIFI_EVENT_WPA_EAPOL_START
- *                    - WIFI_EVENT_WPA_EAPOL_RECVD
+ *                    - @ref WIFI_EVENT_STA_ASSOC
+ *                    - @ref WIFI_EVENT_STA_DISASSOC
+ *                    - @ref WIFI_EVENT_JOIN_STATUS
+ *                    - @ref WIFI_EVENT_CSI_DONE
+ *                    - @ref WIFI_EVENT_WPA_STA_WPS_START
+ *                    - @ref WIFI_EVENT_WPA_WPS_FINISH
+ *                    - @ref WIFI_EVENT_WPA_EAPOL_START
+ *                    - @ref WIFI_EVENT_WPA_EAPOL_RECVD
  * @param[in] handler_func : the callback function which will receive and process the event.
  *                    - buf: event data transmitted from the driver layer to the application layer
  *                    - len: length of buf
  *                    - flag: Flag set by wifi driver
  *                    - user_data: equal handler_user_data
  * @param[in] handler_user_data : user specific data that will be passed directly to the callback function, can set to NULL
- * @return  RTW_SUCCESS : if successfully registers the event.
- * @return  RTW_ERROR : if an error occurred.
+ * @return  @ref RTW_SUCCESS : if successfully registers the event.
+ * @return  @ref RTW_ERROR : if an error occurred.
  * @note  Set the same event_cmds with empty handler_func will unregister the event_cmds.
  */
 void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data), void *handler_user_data);
@@ -163,25 +161,25 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
 /**
  * @brief  Un-register the event listener.
  * @param[in] event_cmds : Events indicated by wifi driver.
- *                    - WIFI_EVENT_STA_ASSOC
- *                    - WIFI_EVENT_STA_DISASSOC
- *                    - WIFI_EVENT_JOIN_STATUS
- *                    - WIFI_EVENT_CSI_DONE
- *                    - WIFI_EVENT_WPA_STA_WPS_START
- *                    - WIFI_EVENT_WPA_WPS_FINISH
- *                    - WIFI_EVENT_WPA_EAPOL_START
- *                    - WIFI_EVENT_WPA_EAPOL_RECVD
+ *                    - @ref WIFI_EVENT_STA_ASSOC
+ *                    - @ref WIFI_EVENT_STA_DISASSOC
+ *                    - @ref WIFI_EVENT_JOIN_STATUS
+ *                    - @ref WIFI_EVENT_CSI_DONE
+ *                    - @ref WIFI_EVENT_WPA_STA_WPS_START
+ *                    - @ref WIFI_EVENT_WPA_WPS_FINISH
+ *                    - @ref WIFI_EVENT_WPA_EAPOL_START
+ *                    - @ref WIFI_EVENT_WPA_EAPOL_RECVD
  * @param[in] handler_func : the callback function which will receive and process the event.
- * @return  RTW_SUCCESS : if successfully un-registers the event .
- * @return  RTW_ERROR : if an error occurred.
+ * @return  @ref RTW_SUCCESS : if successfully un-registers the event .
+ * @return  @ref RTW_ERROR : if an error occurred.
  */
 void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data));
+
+/** @} End of Event_Functions group*/
 
 #ifdef __cplusplus
 }
 #endif
-
-/*\@}*/
 
 #endif //_WIFI_INDICATE_H
 

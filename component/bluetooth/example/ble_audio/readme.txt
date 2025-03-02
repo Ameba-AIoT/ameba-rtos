@@ -196,8 +196,8 @@ TMAP demo ATCMD:
 3.TMAP broadcast media sender
     3.1 enable                                                      AT+BTDEMO=tmap,bms,1
     3.2 disable                                                     AT+BTDEMO=tmap,bms,0
-    3.3 start ext scan                                              AT+BLEBAP=unicast,client,escan,1
-    3.4  stop ext scan                                              AT+BLEBAP=unicast,client,escan,0
+    3.3 start ext scan                                              AT+BLEBAP=escan,1
+    3.4 stop ext scan                                               AT+BLEBAP=escan,0
     3.5 connect to tmap broadcast media receiver                    AT+BLEGAP=conn,<address type>,<bd_addr>
     3.6 start broadcast stream                                      AT+BLEBAP=broadcast_start
     3.7 stop broadcast stream                                       AT+BLEBAP=broadcast_stop
@@ -234,12 +234,14 @@ GMAP demo ATCMD:
 1.GMAP unicast game gateway
     1.1 enable                                                      AT+BTDEMO=gmap,ugg,1
     1.2 disable                                                     AT+BTDEMO=gmap,ugg,0
-    1.3 connect                                                     AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
-    1.4 start unicast stream                                        AT+BLEBAP=client_start,<group_idx>,<sink_context>,<source_context> ex: AT+BLEBAP=client_start,0,4,0   4 for RTK_BT_LE_AUDIO_CONTEXT_MEDIA
-    1.5 stop unicast stream                                         AT+BLEBAP=client_stop,<group_idx>,1000
-
+    1.3 start ext scan                                              AT+BLEBAP=escan,1
+    1.4 start ext scan                                              AT+BLEBAP=escan,0
+    1.5 connect                                                     AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>
+    1.6 start unicast stream                                        AT+BLEBAP=client_start,<group_idx>,<sink_context>,<source_context> 
+                                                                    ex: AT+BLEBAP=client_start,0,8,0   8 for RTK_BT_LE_AUDIO_CONTEXT_GAME
+    1.7 stop unicast stream                                         AT+BLEBAP=client_stop,<group_idx>,1000
 2.GMAP unicast game terminal
-    2.1 enable                                                      AT+BTDEMO=gmap,ugt,1
+    2.1 enable                                                      AT+BTDEMO=gmap,ugt,1,<sound channel> sound_channel:{left, right, stereo}
     2.2 disable                                                     AT+BTDEMO=gmap,ugt,0
 3.GMAP broadcast game sender
     3.1 enable                                                      AT+BTDEMO=gmap,bgs,1
