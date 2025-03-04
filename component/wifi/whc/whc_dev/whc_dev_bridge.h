@@ -22,6 +22,9 @@
 #ifndef DHCP_SERVER_PORT
 #define DHCP_SERVER_PORT 67
 #endif
+#ifndef DHCP_CLIENT_PORT
+#define DHCP_CLIENT_PORT 68
+#endif
 
 // Mask definitions (These values can depend on your specific mask setup)
 #define MASK_SRC_IP       BIT0

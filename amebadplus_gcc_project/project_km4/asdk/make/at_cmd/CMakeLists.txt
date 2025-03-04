@@ -36,6 +36,7 @@ list(
 	${DIR}/atcmd_sys.c
 	${DIR}/atcmd_fs.c
 	${DIR}/atcmd_bt_mp.c
+	${DIR}/atcmd_otp.c
 )
 
 if(CONFIG_WLAN)

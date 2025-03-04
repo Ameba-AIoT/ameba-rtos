@@ -3,11 +3,11 @@ export CONFIG_NAN = n
 export CONFIG_P2P = n
 export CONFIG_MCC = n
 export CONFIG_BT_INIC = n
-export CONFIG_FULLMAC_HCI_IPC = n
-export CONFIG_FULLMAC_HCI_SDIO = y
+export CONFIG_FULLMAC_HCI_IPC = y
+export CONFIG_FULLMAC_HCI_SDIO = n
 export CONFIG_FULLMAC_HCI_SPI = n
 export CONFIG_FULLMAC_HCI_USB = n
-export CONFIG_FULLMAC_BRIDGE = y
+export CONFIG_WHC_BRIDGE = n
 
 ifeq ($(CONFIG_FULLMAC_HCI_IPC),y)
 
@@ -58,7 +58,7 @@ KDIR ?= /lib/modules/$(shell uname -r)/build
 M := $(CURDIR)
 B := $(abspath $O/$M)
 
-ifeq ($(CONFIG_FULLMAC_BRIDGE),y)
+ifeq ($(CONFIG_WHC_BRIDGE),y)
 
 #fullmac bridge
 ifeq ($(CONFIG_FULLMAC_HCI_SDIO),y)

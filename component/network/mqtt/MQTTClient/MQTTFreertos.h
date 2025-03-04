@@ -21,8 +21,6 @@
 #include "lwipconf.h"
 #include "os_wrapper.h"
 #include "ameba.h"
-#include "FreeRTOS.h"
-#include "task.h"
 
 #define MQTT_OVER_SSL (1)
 #if (MQTT_OVER_SSL)
@@ -52,8 +50,8 @@ enum {
 	}while(0)
 
 typedef struct Timer {
-	uint32_t xTicksToWait;
-	TimeOut_t xTimeOut;
+	uint32_t ms_to_wait;
+	rtos_time_out_t xTimeOut;
 } Timer;
 
 typedef struct Network Network;

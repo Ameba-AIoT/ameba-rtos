@@ -77,12 +77,16 @@ static usbd_config_t cdc_acm_cfg = {
 	.dma_enable   = 1U,
 	.isr_priority = CONFIG_CDC_ACM_ISR_THREAD_PRIORITY,
 	.intr_use_ptx_fifo  = 0U,
+#if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_en        = USBD_EPMIS_INTR,
 	.nptx_max_err_cnt   = {0U, 0U, 0U, 2000U, },
-#if defined (CONFIG_AMEBAGREEN2)
+#elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 676U,
 	.ptx_fifo_depth = {16U, 256U, 32U, },
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	.rx_fifo_depth = 692U,
+	.ptx_fifo_depth = {256U, 256U, 32U, },
 #endif
 };
 

@@ -20,6 +20,10 @@
  */
 typedef void *rtos_task_t;
 typedef void (*rtos_task_function_t)(void *);
+typedef struct {
+	uint32_t over_flow_count;
+	uint32_t time_on_entering;
+} rtos_time_out_t;
 
 /**
  * @brief  Start os kernel scheduler
@@ -150,5 +154,29 @@ void rtos_task_set_thread_local_storage_pointer(rtos_task_t p_handle,  uint16_t 
  * @retval Pointer to memory the caller previously give
  */
 void *rtos_task_get_thread_local_storage_pointer(rtos_task_t p_handle,  uint16_t index);
+
+/**
+ * @brief  wrapper function for FreeRTOS API: vTaskSetTimeOutState
+ * If a task enters and exits the Blocked state more than once while it is waiting for the event to occur then the timeout used
+ * each time the task enters the Blocked state must be adjusted to ensure the total of all the time spent in the Blocked state
+ * does not exceed the originally specified timeout period. rtos_task_check_for_time_out() performs the adjustment, taking into
+ * account occasional occurrences such as tick count overflows, which would otherwise make a manual adjustment prone to error.
+ * rtos_task_set_time_out_state() is used with rtos_task_check_for_time_out(). rtos_task_set_time_out_state() is called to set
+ * the initial condition, after which rtos_task_check_for_time_out() can be called to check for a timeout condition,
+ * and adjust the remaining block time if a timeout has not occurred.
+ * @param  p_rtos_time_out: A pointer to a structure that will be initialized to hold information necessary to determine if a timeout has occurred.
+ */
+void rtos_task_set_time_out_state(rtos_time_out_t *const p_rtos_time_out);
+
+/**
+ * @brief  wrapper function for FreeRTOS API: xTaskCheckForTimeOut
+ * @param  p_rtos_time_out: A pointer to a structure that holds information necessary to determine if a timeout has occurred.
+ * 							p_rtos_time_out is initialized using rtos_task_set_time_out_state().
+ * @param  p_ms_to_wait: Used to pass out an adjusted block time in ms, which is the block time that remains after taking into account
+ * 						 the time already spent in the Blocked state.
+ * @retval TRUE: a timeout has occurred, and no block time remains
+ * @retval FALSE: not timeout. some block time remains (pass out by p_ms_to_wait), so a timeout has not occurred.
+ */
+int rtos_task_check_for_time_out(rtos_time_out_t *const p_rtos_time_out, uint32_t *p_ms_to_wait);
 
 #endif

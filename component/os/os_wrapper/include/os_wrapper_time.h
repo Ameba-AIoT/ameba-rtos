@@ -13,6 +13,7 @@
 #define RTOS_TIME_GET_PASSING_TIME_MS(start)           (rtos_time_get_current_system_time_ms() - (start))
 #define RTOS_TIME_GET_TIME_INTERVAL_MS(start, end)     ((end) - (start))
 #define RTOS_TIME_SET_MS_TO_SYSTIME(time)              (time / RTOS_TICK_RATE_MS)
+#define RTOS_TIME_SET_SYSTIME_TO_MS(tick)              (tick * RTOS_TICK_RATE_MS)
 
 /**
  * @brief  If the current system is in a scheduling and non-interrupted state, it will switch to other tasks.

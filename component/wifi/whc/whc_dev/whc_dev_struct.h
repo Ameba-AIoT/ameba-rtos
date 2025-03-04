@@ -30,7 +30,7 @@ struct whc_cust_hdr {
 	u32	len;
 };
 
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 struct whc_bridge_hdr {
 	u32	event;
 	u32	len;

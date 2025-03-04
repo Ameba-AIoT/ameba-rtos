@@ -76,6 +76,7 @@ if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
        ${c_CMPT_AT_CMD_DIR}/atcmd_sys.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_fs.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_bt_mp.c
+       ${c_CMPT_AT_CMD_DIR}/atcmd_otp.c
    )
    ameba_list_append_if(CONFIG_WLAN private_sources
        ${c_CMPT_AT_CMD_DIR}/atcmd_wifi.c

@@ -19,6 +19,7 @@
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
 #include "atcmd_ota.h"
+#include "atcmd_otp.h"
 
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
@@ -85,6 +86,9 @@ log_init_t log_init_table[] = {
 #endif
 #endif
 	at_sys_init,
+#ifndef CONFIG_AMEBAD
+	at_otp_init,
+#endif
 };
 
 

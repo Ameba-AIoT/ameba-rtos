@@ -144,6 +144,9 @@ static usbd_config_t hid_cfg = {
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 708U,
 	.ptx_fifo_depth = {16U, 256U, },
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	.rx_fifo_depth = 1010,
+	.ptx_fifo_depth = {256U, },
 #endif
 };
 

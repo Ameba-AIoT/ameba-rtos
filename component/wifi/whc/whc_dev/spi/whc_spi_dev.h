@@ -1,7 +1,7 @@
 #ifndef _WHC_SPI_DEV_H_
 #define _WHC_SPI_DEV_H_
 
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 #include "whc_bridge_spi_dev.h"
 #else
 #include "whc_fullmac_spi_dev.h"

@@ -58,10 +58,14 @@ static usbd_config_t msc_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
 	.dma_enable = 1U,
 	.isr_priority = CONFIG_USBD_MSC_ISR_THREAD_PRIORITY,
+#if defined(CONFIG_AMEBASMART)
 	.nptx_max_err_cnt = {0U, 2000U, },
-#if defined (CONFIG_AMEBAGREEN2)
+#elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 708U,
 	.ptx_fifo_depth = {16U, 256U, },
+#elif defined (CONFIG_AMEBASMARTPLUS)
+	.rx_fifo_depth = 1010,
+	.ptx_fifo_depth = {256U, },
 #endif
 };
 

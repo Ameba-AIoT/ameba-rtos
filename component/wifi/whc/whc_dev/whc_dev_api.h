@@ -104,7 +104,7 @@ void whc_event_p2p_role(u32 api_id, u32 *param_buf);
 void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 #endif
 
-#if !defined(CONFIG_FULLMAC_BRIDGEB) && !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGEB) && !defined(CONFIG_WHC_BRIDGE)
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_setting(u32 api_id, u32 *param_buf);
 void whc_event_send_eapol(u32 api_id, u32 *param_buf);
@@ -113,7 +113,7 @@ void whc_event_wpa_4way_rpt(u32 api_id, u32 *param_buf);
 void whc_event_get_sw_statistic(u32 api_id, u32 *param_buf);
 #endif
 
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 void whc_event_bridge_DHCP(u32 api_id, u32 *param_buf);
 void whc_event_bridge_get_ip(u32 api_id, u32 *param_buf);
 void whc_event_bridge_get_scan_res(u32 api_id, u32 *param_buf);

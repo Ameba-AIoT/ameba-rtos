@@ -8,6 +8,7 @@
 */
 
 #include <whc_host_linux.h>
+#include <whc_bridge_host_kernel_api.h>
 
 #ifndef _WHC_BRIDGE_HOST_INTF_H_
 #define _WHC_BRIDGE_HOST_INTF_H_

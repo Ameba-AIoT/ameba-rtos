@@ -7,7 +7,7 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "whc_dev.h"
-#ifdef CONFIG_FULLMAC_BRIDGEB
+#ifdef CONFIG_WHC_BRIDGEB
 #include "lwip_netconf.h"
 #endif
 
@@ -78,7 +78,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 #endif
 	{WHC_API_WAR_OFFLOAD_CTRL, whc_event_war_offload_ctrl},
 	{WHC_API_WAR_SET_MDNS_PARA, whc_event_war_set_mdns_para},
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 	{WHC_API_BRIDGE_DHCP, whc_event_bridge_DHCP},
 	{WHC_API_BRIDGE_GET_IP, whc_event_bridge_get_ip},
 	{WHC_API_WIFI_GET_SCANNED_AP_INFO, whc_event_bridge_get_scan_res},
@@ -182,7 +182,7 @@ exit:
 
 }
 
-#if !defined(CONFIG_FULLMAC_BRIDGEB)
+#if !defined(CONFIG_WHC_BRIDGEB)
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
@@ -636,7 +636,7 @@ void whc_event_wifi_iwpriv_info(u32 api_id, u32 *param_buf)
 
 void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 	(void) api_id;
 	(void) param_buf;
 #else
@@ -921,7 +921,7 @@ void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf)
 
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 	(void) api_id;
 	(void) param_buf;
 #else
@@ -934,7 +934,7 @@ void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 
 void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf)
 {
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 	(void) api_id;
 	(void) param_buf;
 #else
@@ -1329,7 +1329,7 @@ void whc_dev_cfg80211_indicate_channel_ready(void *scan_userdata)
 }
 #endif
 
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 /* for bridgeb mode */
 void whc_event_bridge_get_dev_mac(u32 api_id, u32 *param_buf)
 {

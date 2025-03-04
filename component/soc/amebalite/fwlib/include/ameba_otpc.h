@@ -392,6 +392,7 @@ extern int OTP_Read8(u32 Addr, u8 *Data);
 extern int OTP_Write8(u32 Addr, u8 Data);
 extern int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
 extern u32 otp_logical_remain(void);
+extern u32 OTPGetCRC(void);
 
 /* MANUAL_GEN_END */
 

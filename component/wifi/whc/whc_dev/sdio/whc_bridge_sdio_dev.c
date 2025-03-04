@@ -24,6 +24,7 @@ void whc_bridge_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 		break;
 	default:
 		whc_bridge_dev_pkt_rx_to_user(rxbuf, size);
+		rtos_mem_free(rxbuf);
 		break;
 	}
 

@@ -12,6 +12,7 @@
 
 static_assert(RTOS_TASK_MAX_PRIORITIES == configMAX_PRIORITIES, "Incorrect RTOS_TASK_MAX_PRIORITIES value config");
 static_assert(RTOS_MINIMAL_SECURE_STACK_SIZE == configMINIMAL_SECURE_STACK_SIZE, "Incorrect RTOS_MINIMAL_SECURE_STACK_SIZE value config");
+static_assert(sizeof(rtos_time_out_t) == sizeof(TimeOut_t), "sizeof(rtos_time_out_t) and sizeof(TimeOut_t) missmatch");
 
 int rtos_sched_start(void)
 {
@@ -105,6 +106,26 @@ int rtos_task_priority_set(rtos_task_t p_handle, uint16_t priority)
 	vTaskPrioritySet((TaskHandle_t)p_handle, priority);
 
 	return SUCCESS;
+}
+
+void rtos_task_set_time_out_state(rtos_time_out_t *const p_rtos_time_out)
+{
+	vTaskSetTimeOutState((TimeOut_t *const)p_rtos_time_out);
+}
+
+int rtos_task_check_for_time_out(rtos_time_out_t *const p_rtos_time_out, uint32_t *p_ms_to_wait)
+{
+	uint32_t ticks_to_wait = RTOS_TIME_SET_MS_TO_SYSTIME(*p_ms_to_wait);
+	int ret = xTaskCheckForTimeOut((TimeOut_t *const)p_rtos_time_out, &ticks_to_wait);
+	*p_ms_to_wait = RTOS_TIME_SET_SYSTIME_TO_MS(ticks_to_wait);
+
+	if (ret == pdTRUE) {
+		/* no block time remains, and a timeout has occurred */
+		return TRUE;
+	} else {
+		/* some block time remains (pass out by p_ms_to_wait), so a timeout has not occurred. */
+		return FALSE;
+	}
 }
 
 /* FreeRTOS version must be greater than 10.2.0 */

@@ -88,7 +88,6 @@ static void vendor_cb_status_changed(u8 status);
 static usbd_config_t vendor_cfg = {
 	.speed = CONFIG_USBD_VENDOR_SPEED,
 	.dma_enable = 1U,
-	.ptx_fifo_first = 1U,
 	.isr_priority = CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY,
 	.ext_intr_en =  USBD_EOPF_INTR,
 	.intr_use_ptx_fifo = 0U,

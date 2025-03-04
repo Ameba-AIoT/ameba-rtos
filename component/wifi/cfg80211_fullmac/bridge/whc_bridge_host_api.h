@@ -33,6 +33,19 @@ static inline int nla_total_size(int payload)
 	return NLA_ALIGN(nla_attr_size(payload));
 }
 
+static inline void nla_put_u8(unsigned char **pbuf, int attrtype, uint8_t value)
+{
+	struct nlattr *nla = (struct nlattr *)(*pbuf);
+	int size = sizeof(uint8_t);
+
+	nla->nla_type = attrtype;
+	nla->nla_len = nla_attr_size(size);
+
+	memcpy(NLA_DATA(nla), &value, size);
+
+	*pbuf += nla_total_size(size);
+}
+
 static inline void nla_put_u32(unsigned char **pbuf, int attrtype, uint32_t value)
 {
 	struct nlattr *nla = (struct nlattr *)(*pbuf);
@@ -98,12 +111,10 @@ static inline void nla_put_payload(unsigned char **pbuf, int attrtype, const cha
 	*pbuf += nla_total_size(size + 4); // include hdr and pad
 }
 
-/* pkt from device */
-int whc_bridge_host_buf_rx_to_user(u8 *buf, u16 size);
 /* buf in user space send to kernel, final kernel to device */
 int whc_bridge_host_api_send_nl_data(uint8_t *buf, uint32_t buf_len);
 
-int whc_bridge_host_set_mac(char *mac);
+int whc_bridge_host_set_mac(uint8_t idx, char *mac);
 int whc_bridge_host_api_create_nl_socket(int protocol, int pid);
 int whc_bridge_host_api_send_to_kernel(int fd, char *buf, int buflen);
 int whc_bridge_host_api_get_family_id(int fd, char *family_name);

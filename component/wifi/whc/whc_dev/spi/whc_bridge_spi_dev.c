@@ -19,6 +19,8 @@ static void whc_bridge_spi_dev_task(void *pData)
 
 		hdr = (struct whc_bridge_hdr *)p->rxbuf;
 		whc_bridge_dev_pkt_rx_to_user(p->rxbuf + sizeof(struct whc_bridge_hdr), hdr->len);
+		rtos_mem_free(p->rxbuf);
+		p->rxbuf = NULL;
 	}
 }
 
@@ -45,6 +47,10 @@ void whc_bridge_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 
 		break;
 	default:
+		/* wait for last handdle */
+		while (bridge_priv.rxbuf != NULL) {
+			rtos_time_delay_ms(1);
+		}
 		bridge_priv.rxbuf = rxbuf;
 		rtos_sema_give(bridge_spi_sema);
 		break;
@@ -76,7 +82,6 @@ void whc_bridge_spi_send_data(u8 *buf, u32 len)
 		hdr->len = len;
 		memcpy(txbuf + sizeof(struct whc_bridge_hdr), buf, len);
 		whc_spi_dev_send_data(txbuf, txsize);
-		rtos_mem_free(txbuf);
 	} else {
 		whc_spi_dev_send_data(buf, len);
 	}
@@ -93,6 +98,7 @@ void whc_bridge_spi_dev_init(void)
 
 	whc_spi_dev_init();
 
+	bridge_priv.rxbuf = NULL;
 	rtos_sema_create(&(bridge_spi_sema), 0, RTOS_SEMA_MAX_COUNT);
 	if (rtos_task_create(NULL, "WHC_BRIDGE_SPI_DEV_TASK", whc_bridge_spi_dev_task, (void *)&bridge_priv, 1024 * 4, 7) != SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create WHC_BRIDGE_SPI_DEV_TASK Err!!\n");

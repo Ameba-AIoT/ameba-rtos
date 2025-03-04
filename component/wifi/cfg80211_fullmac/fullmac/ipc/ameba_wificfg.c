@@ -99,11 +99,5 @@ _WEAK void wifi_set_user_config(void)
 
 	/*Automatic channel selection*/
 	wifi_user_config.acs_en = 0;
-
-	/* ensure ap_sta_num not exceed MAX_AP_CLIENT_NUM*/
-	if (wifi_user_config.ap_sta_num > MAX_AP_CLIENT_NUM) {
-		wifi_user_config.ap_sta_num = MAX_AP_CLIENT_NUM;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to %d\n", MAX_AP_CLIENT_NUM);
-	}
 }
 

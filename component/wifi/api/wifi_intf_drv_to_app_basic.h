@@ -850,7 +850,6 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 
 /**
  * @brief  Disassociates from current Wi-Fi network.
- * @param  None
  * @return  @ref RTW_SUCCESS : On successful disassociation from the AP.
  * @return  @ref RTW_ERROR : If an error occurred.
  */
@@ -858,7 +857,6 @@ int wifi_disconnect(void);
 
 /**
  * @brief  get join status during wifi connectection
- * @param  None
  * @return @ref RTW_JOINSTATUS_UNKNOWN : unknown
  * @return @ref RTW_JOINSTATUS_STARTING :	starting phase
  * @return @ref RTW_JOINSTATUS_SCANNING : scanning phase
@@ -900,7 +898,7 @@ int wifi_scan_networks(struct _rtw_scan_param_t *scan_param, unsigned char block
 
 /**
  * @brief  Trigger Wi-Fi driver to start an infrastructure Wi-Fi network.
- * @param[in]  softAP_config:the pointer of a struct which store the softAP
+ * @param[in]  softAP_config: the pointer of a struct which store the softAP
  * 	configuration, please refer to struct struct _rtw_softap_info_t in wifi_conf.h
  * @warning  If a STA interface is active when this function is called,
  * 	the softAP will start on the same channel as the STA.
@@ -916,7 +914,6 @@ int wifi_start_ap(struct _rtw_softap_info_t *softAP_config);
 
 /**
  * @brief  Disable Wi-Fi interface-2.
- * @param  None
  * @return  @ref RTW_SUCCESS : deinit success,
  * 	wifi mode is changed to RTW_MODE_STA.
  * @return  @ref RTW_ERROR : otherwise.
@@ -924,7 +921,6 @@ int wifi_start_ap(struct _rtw_softap_info_t *softAP_config);
 int wifi_stop_ap(void);
 /**
  * @brief  Enable Wi-Fi interface-2.
- * @param  None
  * @return  @ref RTW_SUCCESS : success,
  * 	wifi open RTW_MODE_AP .
  * @return  @ref RTW_ERROR : otherwise.
@@ -932,7 +928,6 @@ int wifi_stop_ap(void);
 int _wifi_on_ap(void);
 /**
  * @brief  Disable Wi-Fi interface-2.
- * @param  None
  * @return  @ref RTW_SUCCESS : close ap mode,
  * @return  @ref RTW_ERROR : otherwise.
  */

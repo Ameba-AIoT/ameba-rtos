@@ -81,7 +81,7 @@ if(CONFIG_WIFI_HOST_CONTROL)
             ${DEVDIR}/whc_dev_trx.c
             ${DEVDIR}/whc_dev_protocal_offload.c
         )
-       if(NOT CONFIG_FULLMAC_BRIDGE)
+       if(NOT CONFIG_WHC_BRIDGE)
            list(
                APPEND CSRC
                ${DEVDIR}/whc_dev_api.c
@@ -125,7 +125,7 @@ if(CONFIG_AS_INIC_NP)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
-elseif(CONFIG_FULLMAC_BRIDGEB)
+elseif(CONFIG_WHC_BRIDGEB)
     if(CONFIG_WHC_INTF_SDIO)
         list(
             APPEND CSRC
@@ -144,7 +144,7 @@ elseif(CONFIG_FULLMAC_BRIDGEB)
         target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
         target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
     endif()
-elseif(CONFIG_FULLMAC_BRIDGE)
+elseif(CONFIG_WHC_BRIDGE)
     if(CONFIG_WHC_INTF_SDIO)
         list(
             APPEND CSRC

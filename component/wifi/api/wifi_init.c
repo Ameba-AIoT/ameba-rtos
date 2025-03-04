@@ -34,7 +34,7 @@ static u32 heap_tmp;
 
 //todo clarify
 #if defined(CONFIG_WHC_INTF_SDIO)
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 #include "whc_bridge_sdio_dev.h"
 #else
 #include "whc_fullmac_sdio_dev.h"
@@ -140,7 +140,7 @@ void _init_thread(void *param)
 	RTK_LOGI(TAG, "LWIP consume heap %d\n", heap_tmp - rtos_mem_get_free_heap_size() - TCPIP_THREAD_STACKSIZE * 4);
 #endif
 
-#if defined(CONFIG_FULLMAC_BRIDGEB)
+#if defined(CONFIG_WHC_BRIDGEB)
 	wifi_fast_connect_enable(0);
 	whc_dev_init();
 #endif
@@ -152,7 +152,7 @@ void _init_thread(void *param)
 	wifi_config_autoreconnect(1);
 #endif
 
-#ifdef CONFIG_FULLMAC_BRIDGE
+#ifdef CONFIG_WHC_BRIDGE
 	whc_dev_init_lite();
 #endif
 

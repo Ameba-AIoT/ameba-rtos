@@ -126,7 +126,7 @@ exit:
 
 int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
-#ifndef CONFIG_FULLMAC_BRIDGE
+#ifndef CONFIG_WHC_BRIDGE
 	/* staion mode */
 	if (whc_fullmac_host_wifi_is_connected_to_ap() == 0) {
 		/* update ip address success */

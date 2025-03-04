@@ -679,6 +679,57 @@ end:
 	}
 }
 
+/****************************************************************
+AT command process:
+	AT+TICKPS
+	R: release os wakelock
+	A: acquire os wakelock
+	TYPE: GC OR PG
+****************************************************************/
+void at_tickps(void *arg)
+{
+	int argc = 0;
+	char *argv[MAX_ARGC] = {0};
+
+	if (arg == NULL) {
+		RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
+		return;
+	}
+	argc = parse_param(arg, argv);
+	if (argc < 2) {
+		RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
+		return;
+	}
+
+	if (_strcmp((const char *)argv[1], "R") == 0) {
+		pmu_release_wakelock(PMU_OS);
+	}
+
+	if (_strcmp((const char *)argv[1], "A") == 0) {
+		pmu_acquire_wakelock(PMU_OS);
+	}
+
+	if (_strcmp((const char *)argv[1], "TYPE") == 0) {
+		if (argc < 3) {
+			RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
+			return;
+		}
+
+		if (_strcmp((const char *)argv[2], "PG") == 0) {
+			pmu_set_sleep_type(SLEEP_PG);
+		} else if (_strcmp((const char *)argv[2], "CG") == 0) {
+			pmu_set_sleep_type(SLEEP_CG);
+		} else {
+			pmu_set_sleep_type(SLEEP_PG);
+		}
+	}
+
+	if (_strcmp((const char *)argv[1], "GET") == 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "lockbit:%lx \n", pmu_get_wakelock_status());
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "dslp_lockbit:%lx\n", pmu_get_deepwakelock_status());
+	}
+}
+
 log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"+OTACLEAR", at_otaclear, {NULL, NULL}},
@@ -695,6 +746,7 @@ log_item_t at_sys_items[] = {
 	{"+LOG", at_log, {NULL, NULL}},
 	{"+RREG", at_rreg, {NULL, NULL}},
 	{"+WREG", at_wreg, {NULL, NULL}},
+	{"+TICKPS", at_tickps, {NULL, NULL}},
 };
 
 void print_system_at(void)

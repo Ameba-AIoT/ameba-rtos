@@ -26,7 +26,7 @@ void *rtk_bt_audio_record_init(uint32_t channels, uint32_t rate, uint32_t buffer
 		record_config.sample_rate = rate;
 		record_config.format = format;
 		record_config.channel_count = channels;
-		record_config.device = RTDEVICE_IN_MIC;
+		record_config.device = RTDEVICE_IN_DMIC_REF_AMIC;
 		// record_frame = buffer_bytes / channels / 2 bytes(16 bit pcm)
 		record_config.buffer_bytes = buffer_bytes; // 0 means default period bytes
 		RTAudioRecord_Init(audio_record, &record_config, RTAUDIO_INPUT_FLAG_NONE);
