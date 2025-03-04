@@ -1,0 +1,7 @@
+config TFLITE_MICRO_EN_MENU
+    bool "Enable TFLITE MICRO"
+    select TFLITE_MICRO_EN if CORE_AS_AP
+    default n
+config TFLITE_MICRO_EN
+    bool
+

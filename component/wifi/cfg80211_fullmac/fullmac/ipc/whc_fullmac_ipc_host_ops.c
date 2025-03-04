@@ -250,7 +250,7 @@ error:
 	return ret;
 }
 
-int whc_fullmac_host_disconnect(void)
+int whc_fullmac_host_event_disconnect(void)
 {
 	int ret = 0;
 

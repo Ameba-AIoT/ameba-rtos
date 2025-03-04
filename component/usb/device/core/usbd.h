@@ -76,10 +76,8 @@ typedef struct {
 								USBD_EOPF_INTR: used to toggle frame parity for ISOC transfers, only for slave mode.
 								USBD_EPMIS_INTR: used to re-activate the transfers of multiple non-periodic endpoints when
 								Endpoint Mismatch Interrupt happens, only for shared FIFO mode.	*/
-	u16 rx_fifo_depth;			/* Shared RxFIFO depth in size of dword. */
-	u16 nptx_fifo_depth;		/* Shared NPTxFIFO depth, only for shared FIFO mode. */
-	u16 ptx_fifo_depth[USB_MAX_ENDPOINTS - 1]; /* For shared FIFO mode: depth of each PTxFIFO in size of dword.
-								For dedicated FIFO mode, depth of TxFIFO n# (for n=1; n<OTG_NUM_IN_EPS) in size of dword,
+	u16 rx_fifo_depth;			/* Only for dedicated FIFO mode, RxFIFO depth in size of dword. */
+	u16 ptx_fifo_depth[USB_MAX_ENDPOINTS - 1]; /* Only for dedicated FIFO mode. Depth of TxFIFO n# (for n=1; n<OTG_NUM_IN_EPS) in size of dword,
 								where tx_fifo_depth[n] is for TxFIFO n+1 normally used by IN EP n+1, specially for AmebaGreen2,
 								tx_fifo_depth[4] is for IN EP6. TxFIFO 0# depth in not user configurable in dedicated FIFO mode. */
 	u8 speed;					/* USB speed:
@@ -89,18 +87,6 @@ typedef struct {
 	u8 isr_priority;			/* USB ISR thread priority */
 	u8 dma_enable : 1;			/* Enable USB internal DMA mode, 0-Disable, 1-Enable. */
 	u8 intr_use_ptx_fifo : 1;	/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode. */
-	u8 ptx_fifo_first : 1;		/* For shared FIFO mode SoCs, e.g. AmabeD, AmebaSmart and AmebaDplus, the total DFIFO depth is 1016
-								and it is shared by RxFIFO, NPTxFIFO and PTxFIFO. This parameter specifies whether to assign a full
-								PTxFIFO depth to support 1024 byte periodic transfer package size:
-								ptx_fifo_first = 0:
-									RxFIFO = 512
-									NPTxFIFO = 256
-									PTxFIFO = 248
-								ptx_fifo_first = 1:
-									RxFIFO = 504
-									NPTxFIFO = 256
-									PTxFIFO = 256
-								This parameter is enabled only when rx_fifo_depth/nptx_fifo_depth/ptx_fifo_depth are not set. */
 } usbd_config_t;
 
 struct _usbd_class_driver_t;

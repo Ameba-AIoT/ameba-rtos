@@ -1,8 +1,9 @@
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
 #include <whc_bridge_host_netlink.h>
+#include <whc_bridge_host_kernel_api.h>
 
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 
 struct genl_info wifi_event_user_genl_info;
 /* netlink cmd handler */
@@ -14,6 +15,7 @@ static int whc_bridge_host_nl_cmd_process(struct sk_buff *skb, struct genl_info 
 	u8 *ptr;
 	u8 *buf;
 	u8 *payload;
+	u8 idx = 0;
 	u32 buf_len = SIZE_TX_DESC;
 	u32 payload_len;
 
@@ -47,19 +49,29 @@ static int whc_bridge_host_nl_cmd_process(struct sk_buff *skb, struct genl_info 
 		kfree(buf);
 
 	} else if (cmd == CMD_WIFI_SET_MAC) {
+		if (info->attrs[BRIDGE_ATTR_WLAN_IDX]) {
+			idx = *(u8 *)nla_data(info->attrs[BRIDGE_ATTR_WLAN_IDX]);
+		} else {
+			idx = 0;
+		}
 		if (info->attrs[BRIDGE_ATTR_MAC]) {
 			dev_mac = (char *)nla_data(info->attrs[BRIDGE_ATTR_MAC]);
 			sscanf(dev_mac, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 		}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
-		memcpy((void *)global_idev.pndev[0]->dev_addr, mac, ETH_ALEN);
+		memcpy((void *)global_idev.pndev[idx]->dev_addr, mac, ETH_ALEN);
 #else
-		eth_hw_addr_set(global_idev.pndev[0], mac);
+		eth_hw_addr_set(global_idev.pndev[idx], mac);
 #endif
 
 	} else if (cmd == CMD_WIFI_NETIF_ON) {
-		netif_carrier_on(global_idev.pndev[0]);
+		if (info->attrs[BRIDGE_ATTR_WLAN_IDX]) {
+			idx = *(u8 *)nla_data(info->attrs[BRIDGE_ATTR_WLAN_IDX]);
+		} else {
+			idx = 0;
+		}
+		netif_carrier_on(global_idev.pndev[idx]);
 	} else if (cmd == CMD_WIFI_INFO_INIT) {
 		memcpy(&wifi_event_user_genl_info, info, sizeof(struct genl_info));
 	}
@@ -68,6 +80,7 @@ static int whc_bridge_host_nl_cmd_process(struct sk_buff *skb, struct genl_info 
 
 static const struct nla_policy whc_bridge_nl_cmd_policy[6] = {
 	[BRIDGE_ATTR_API_ID] = {.type = NLA_U32},
+	[BRIDGE_ATTR_WLAN_IDX] = {.type = NLA_U8},
 	[BRIDGE_ATTR_MAC] = {.type = NLA_STRING},
 	[BRIDGE_ATTR_PAYLOAD] = {.type = NLA_BINARY},
 };

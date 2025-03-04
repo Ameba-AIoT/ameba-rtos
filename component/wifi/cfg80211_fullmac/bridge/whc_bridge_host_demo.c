@@ -34,7 +34,7 @@ void parse_arguments(char *input, char args[MAX_ARG_COUNT][MAX_ARG_LENGTH], int 
 	}
 }
 
-int whc_bridge_host_get_mac_addr(void)
+int whc_bridge_host_get_mac_addr(uint8_t idx)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -47,13 +47,16 @@ int whc_bridge_host_get_mac_addr(void)
 	*ptr = WHC_WIFI_TEST_GET_MAC_ADDR;
 	ptr += 1;
 	buf_len += 1;
+	*ptr = idx;
+	ptr += 1;
+	buf_len += 1;
 
 	ret = whc_bridge_host_api_send_nl_data(buf, buf_len);
 	return ret;
 
 }
 
-int whc_bridge_host_get_ip(void)
+int whc_bridge_host_get_ip(uint8_t idx)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -64,6 +67,9 @@ int whc_bridge_host_get_ip(void)
 	ptr += 4;
 	buf_len += 4;
 	*ptr = WHC_WIFI_TEST_GET_IP;
+	ptr += 1;
+	buf_len += 1;
+	*ptr = idx;
 	ptr += 1;
 	buf_len += 1;
 
@@ -94,7 +100,7 @@ int whc_bridge_host_set_state(void)
 }
 
 /* below for kernel setting */
-int whc_bridge_host_set_netif_on(void)
+int whc_bridge_host_set_netif_on(uint8_t idx)
 {
 	int nl_fd;
 	int nl_family_id = 0;
@@ -119,6 +125,7 @@ int whc_bridge_host_set_netif_on(void)
 
 	whc_bridge_host_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_NETIF_ON);
+	nla_put_u8(&ptr, BRIDGE_ATTR_WLAN_IDX, idx);
 	msg.n.nlmsg_len += ptr - msg.buf;
 	ret = whc_bridge_host_api_send_to_kernel(nl_fd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
@@ -131,7 +138,7 @@ int whc_bridge_host_set_netif_on(void)
 }
 
 /* msg to kernel, set mac address */
-int whc_bridge_host_set_mac(char *mac)
+int whc_bridge_host_set_mac(uint8_t idx, char *mac)
 {
 	int nl_fd;
 	int nl_family_id = 0;
@@ -156,6 +163,7 @@ int whc_bridge_host_set_mac(char *mac)
 
 	whc_bridge_host_fill_nlhdr(&msg, nl_family_id, 0, BRIDGE_CMD_ECHO);
 	nla_put_u32(&ptr, BRIDGE_ATTR_API_ID, CMD_WIFI_SET_MAC);
+	nla_put_u8(&ptr, BRIDGE_ATTR_WLAN_IDX, idx);
 	nla_put_string(&ptr, BRIDGE_ATTR_MAC, mac);
 	msg.n.nlmsg_len += ptr - msg.buf;
 
@@ -210,6 +218,7 @@ void whc_bridge_host_cmd_hdl(char *input)
 {
 	char *args[MAX_INPUT_SIZE / 2];
 	int arg_count = 0;
+	uint8_t idx = 0;
 	char *token = strtok(input, " ");
 
 	while (token != NULL) {
@@ -219,18 +228,51 @@ void whc_bridge_host_cmd_hdl(char *input)
 
 	if (arg_count > 0) {
 		if (strcmp(args[0], "getip") == 0) {
-			whc_bridge_host_get_ip();
+			if (arg_count < 2) {
+				printf("err: wlan index is needed !\n");
+			} else {
+				idx = *args[1] - '0';
+				if ((idx == 1) || (idx == 0)) {
+					whc_bridge_host_get_ip(idx);
+				} else {
+					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+				}
+			}
 		} else if (strcmp(args[0], "getmac") == 0) {
-			whc_bridge_host_get_mac_addr();
+			if (arg_count < 2) {
+				printf("err: wlan index is needed !\n");
+			} else {
+				idx = *args[1] - '0';
+				if ((idx == 1) || (idx == 0)) {
+					whc_bridge_host_get_mac_addr(idx);
+				} else {
+					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+				}
+			}
 		} else if (strcmp(args[0], "setrdy") == 0) {
 			whc_bridge_host_set_state();
 		} else if (strcmp(args[0], "setmac") == 0) {
-			if (arg_count < 2) {
-				printf("err: hw mac is needed !\n");
+			if (arg_count < 3) {
+				printf("err: hw mac and wlan index are needed !\n");
+			} else {
+				idx = *args[1] - '0';
+				if ((idx == 1) || (idx == 0)) {
+					whc_bridge_host_set_mac(idx, args[2]);
+				} else {
+					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+				}
 			}
-			whc_bridge_host_set_mac(args[1]);
 		} else if (strcmp(args[0], "netifon") == 0) {
-			whc_bridge_host_set_netif_on();
+			if (arg_count < 2) {
+				printf("err: wlan index is needed !\n");
+			} else {
+				idx = *args[1] - '0';
+				if ((idx == 1) || (idx == 0)) {
+					whc_bridge_host_set_netif_on(idx);
+				} else {
+					printf("wrong wlan index %d, must be 0 or 1!\n", idx);
+				}
+			}
 		} else if (strcmp(args[0], "init") == 0) {
 			whc_bridge_host_nl_init();
 		} else {

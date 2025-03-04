@@ -160,10 +160,9 @@ int rtw_sdio_alloc_irq(struct whc_sdio *priv);
 
 #endif
 
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 void whc_bridge_host_register_genl_family(void);
 void whc_bridge_host_unregister_genl_family(void);
-void whc_bridge_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc);
 int whc_bridge_host_recv_process(struct sk_buff *pskb);
 #else
 int whc_fullmac_host_recv_process(struct sk_buff *pskb);

@@ -158,7 +158,7 @@ u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib 
 		}
 	}
 
-#ifdef CONFIG_FULLMAC_BRIDGE
+#ifdef CONFIG_WHC_BRIDGE
 	/* all pkt to upper before host rdy to avoid txbd full */
 	if (!(whc_bridge_dev_api_get_host_rdy())) {
 		return PORT_TO_UP;
@@ -185,7 +185,9 @@ u8 whc_bridge_dev_rcvpkt_redirect(struct sk_buff *skb, struct bridge_pkt_attrib 
 	if (pattrib->type == IP_PROTO_UDP) {
 		if (pattrib->src_port == DNS_SERVER_PORT) {
 			return PORT_TO_BOTH;
-		} else if (pattrib->src_port == DHCP_SERVER_PORT) {
+		} else if ((pattrib->src_port == DHCP_SERVER_PORT) && (pattrib->port_idx == STA_WLAN_INDEX)) {
+			return PORT_TO_UP;
+		} else if ((pattrib->src_port == DHCP_CLIENT_PORT) && (pattrib->port_idx == SOFTAP_WLAN_INDEX)) {
 			return PORT_TO_UP;
 		}
 	}
@@ -202,24 +204,14 @@ u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	struct sk_buff *skb_backup;
 	struct sk_buff *skb;
 
-	/* case1: pkt for softap, no need bridge, just indicate to lwip */
-	if (*idx == 1) {
-		skb = wifi_if_get_recv_skb(*idx);
-		if (skb) {
-			LwIP_ethernetif_recv(*idx, skb->len);
-			dev_kfree_skb_any(skb);
-		}
-		return 0;
-	}
-
-	/* case2: host->dev->host pkt, when host send arp req, dev just reply with arp rsp to host */
+	/* case1: host->dev->host pkt, when host send arp req, dev just reply with arp rsp to host */
 	if (*idx == 2) {
 		*idx = 0;
 		*skb_send = skb_transit;
 		return 1; //need send to host
 	}
 
-	/* case3: normal netdev0 pkt*/
+	/* case2: normal netdev0 pkt*/
 	skb = wifi_if_get_recv_skb(*idx);
 	pattrib = (struct bridge_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct bridge_pkt_attrib));
 	whc_bridge_dev_packet_attrib_parse(skb, pattrib);

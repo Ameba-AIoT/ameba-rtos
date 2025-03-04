@@ -1,6 +1,6 @@
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
-ccflags-$(CONFIG_FULLMAC_BRIDGE) += -DCONFIG_FULLMAC_BRIDGE
+ccflags-$(CONFIG_WHC_BRIDGE) += -DCONFIG_WHC_BRIDGE
 
 ccflags-y += -DCONFIG_FULLMAC -DCONFIG_FULLMAC_HCI_SDIO
 ccflags-y += -I$(src)/../../common/netdev

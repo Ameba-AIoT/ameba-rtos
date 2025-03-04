@@ -72,8 +72,8 @@ int MutexUnlock(Mutex *mutex)
 
 void TimerCountdownMS(Timer *timer, unsigned int timeout_ms)
 {
-	timer->xTicksToWait = timeout_ms; /* convert milliseconds to ticks */
-	vTaskSetTimeOutState(&timer->xTimeOut); /* Record the time at which this function was entered. */
+	timer->ms_to_wait = timeout_ms;
+	rtos_task_set_time_out_state(&timer->xTimeOut); /* Record the time at which this function was entered. */
 }
 
 
@@ -85,40 +85,40 @@ void TimerCountdown(Timer *timer, unsigned int timeout)
 
 int TimerLeftMS(Timer *timer)
 {
-	xTaskCheckForTimeOut(&timer->xTimeOut, &timer->xTicksToWait); /* updates xTicksToWait to the number left */
-	return (timer->xTicksToWait);
+	rtos_task_check_for_time_out(&timer->xTimeOut, &timer->ms_to_wait); /* updates ms_to_wait to the number left */
+	return (timer->ms_to_wait);
 }
 
 
 char TimerIsExpired(Timer *timer)
 {
-	return xTaskCheckForTimeOut(&timer->xTimeOut, &timer->xTicksToWait) == pdTRUE;
+	return rtos_task_check_for_time_out(&timer->xTimeOut, &timer->ms_to_wait) == TRUE;
 }
 
 
 void TimerInit(Timer *timer)
 {
-	timer->xTicksToWait = 0;
+	timer->ms_to_wait = 0;
 	memset(&timer->xTimeOut, '\0', sizeof(timer->xTimeOut));
 }
 
 int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 {
-	uint32_t xTicksToWait = timeout_ms; /* convert milliseconds to ticks */
-	TimeOut_t xTimeOut;
+	uint32_t ms_to_wait = timeout_ms; /* convert milliseconds to ticks */
+	rtos_time_out_t xTimeOut;
 	int recvLen = 0;
 
-	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
+	rtos_task_set_time_out_state(&xTimeOut); /* Record the time at which this function was entered. */
 	do {
 		int rc = 0;
 #if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)
 		// timeout format is changed in lwip 1.5.0
 		struct timeval timeout;
-		timeout.tv_sec  = xTicksToWait / 1000;
-		timeout.tv_usec = (xTicksToWait % 1000) * 1000;
+		timeout.tv_sec  = ms_to_wait / 1000;
+		timeout.tv_usec = (ms_to_wait % 1000) * 1000;
 		setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval));
 #else
-		setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
+		setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, &ms_to_wait, sizeof(ms_to_wait));
 #endif
 #if (MQTT_OVER_SSL)
 		if (n->use_ssl) {
@@ -136,28 +136,28 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 			recvLen = rc;
 			break;
 		}
-	} while (recvLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
+	} while (recvLen < len && rtos_task_check_for_time_out(&xTimeOut, &ms_to_wait) == FALSE);
 
 	return recvLen;
 }
 
 int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
 {
-	uint32_t xTicksToWait = timeout_ms; /* convert milliseconds to ticks */
-	TimeOut_t xTimeOut;
+	uint32_t ms_to_wait = timeout_ms; /* convert milliseconds to ticks */
+	rtos_time_out_t xTimeOut;
 	int sentLen = 0;
 
-	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
+	rtos_task_set_time_out_state(&xTimeOut); /* Record the time at which this function was entered. */
 	do {
 		int rc = 0;
 #if defined(LWIP_SO_SNDRCVTIMEO_NONSTANDARD) && (LWIP_SO_SNDRCVTIMEO_NONSTANDARD == 0)
 		// timeout format is changed in lwip 1.5.0
 		struct timeval timeout;
-		timeout.tv_sec  = xTicksToWait / 1000;
-		timeout.tv_usec = (xTicksToWait % 1000) * 1000;
+		timeout.tv_sec  = ms_to_wait / 1000;
+		timeout.tv_usec = (ms_to_wait % 1000) * 1000;
 		setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval));
 #else
-		setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, &xTicksToWait, sizeof(xTicksToWait));
+		setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, &ms_to_wait, sizeof(ms_to_wait));
 #endif
 #if (MQTT_OVER_SSL)
 		if (n->use_ssl) {
@@ -175,7 +175,7 @@ int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
 			sentLen = rc;
 			break;
 		}
-	} while (sentLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
+	} while (sentLen < len && rtos_task_check_for_time_out(&xTimeOut, &ms_to_wait) == FALSE);
 
 	return sentLen;
 }

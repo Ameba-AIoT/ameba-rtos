@@ -163,377 +163,8 @@ u32 cmd_write_word(u16 argc, u8  *argv[])
 	return 0;
 }
 
-u32 cmd_log_set(u16 argc, u8  *argv[])
-{
-	if (argc != 2) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
-		return FALSE;
-	}
-
-	rtk_log_level_t Value = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
-	rtk_log_level_set((const char *)argv[0], Value);
-	rtk_log_array_print(rtk_log_tag_array);
-	return TRUE;
-}
-
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
-#ifdef CONFIG_ARM_CORE_CA32
-u32 cmd_efuse_protect(u16 argc, u8  *argv[])
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	u8 *EfuseBuf = NULL;
-	u32 index;
-	int ret = 0;
-
-	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
-	}
-
-	/* efuse wmap 0x0 2 2187 */
-	/* efuse wmap 0x18 4 01020304 */
-	if (_strcmp((const char *)argv[0], "wmap") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		RTK_LOGI(TAG, "efuse wmap write len:%lu, string len:%lu\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
-	}
-
-	if (_strcmp((const char *)argv[0], "rmap") == 0) {
-		RTK_LOGI(TAG, "efuse rmap \n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_LMAP_LEN;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		ret = OTP_LogicalMap_Read(EfuseBuf, Addr, Len);
-		if (ret == FAIL) {
-			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGA(NOTAG, "\n\rEFUSE[%03lx]:", index);
-			}
-			RTK_LOGA(NOTAG, " %02x", EfuseBuf[i]);
-		}
-		RTK_LOGA(NOTAG, "\n\r");
-
-	}
-
-	if (_strcmp((const char *)argv[0], "rraw") == 0) {
-		RTK_LOGI(TAG, "efuse rraw\n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_USER_END;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		for (index = Addr; index < Addr + Len; index++) {
-			OTP_Read8(index, EfuseBuf + index);
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index ++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGA(NOTAG, "\n\rRawMap[%03lx]:", index);
-			}
-			RTK_LOGA(NOTAG, " %02x", EfuseBuf[index]);
-		}
-
-		RTK_LOGA(NOTAG, "\n\r");
-
-	}
-
-	/* efuse wraw 0xA0 1 aa */
-	/* efuse wraw 0xA0 2 aabb */
-	/* efuse wraw 0xA0 4 aabbccdd */
-	if (_strcmp((const char *)argv[0], "wraw") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		RTK_LOGI(TAG, "efuse wraw write len:%lu, string len:%lu\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			RTK_LOGA(NOTAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
-			OTP_Write8((Addr + index), EfuseBuf[index]);
-		}
-	}
-
-	if (_strcmp((const char *)argv[0], "getcrc") == 0) {
-		u32 crc = OTPGetCRC();
-		RTK_LOGI(TAG, "new crc value is 0x%lx", crc);
-	}
-
-exit:
-
-	if (EfuseBuf) {
-		rtos_mem_free(EfuseBuf);
-	}
-	return ret;
-}
-
-#endif
 #ifdef CONFIG_ARM_CORE_CM4
-u32 cmd_efuse_protect(u16 argc, u8  *argv[])
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	u8 *EfuseBuf = NULL;
-	u32 index;
-	int ret = 0;
-
-	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
-	}
-
-	/* efuse wmap 0x0 2 2187 */
-	/* efuse wmap 0x18 4 01020304 */
-	if (_strcmp((const char *)argv[0], "wmap") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		RTK_LOGI(TAG, "efuse wmap write len:%lu, string len:%lu\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
-	}
-
-	if (_strcmp((const char *)argv[0], "rmap") == 0) {
-		RTK_LOGI(TAG, "efuse rmap \n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_LMAP_LEN;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		ret = OTP_LogicalMap_Read(EfuseBuf, Addr, Len);
-		if (ret == FAIL) {
-			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGA(NOTAG, "\n\rEFUSE[%03lx]:", index);
-			}
-			RTK_LOGA(NOTAG, " %02x", EfuseBuf[i]);
-		}
-		RTK_LOGA(NOTAG, "\n\r");
-
-	}
-
-	if (_strcmp((const char *)argv[0], "rraw") == 0) {
-		RTK_LOGI(TAG, "efuse rraw\n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_USER_END;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		for (index = Addr; index < Addr + Len; index++) {
-			OTP_Read8(index, EfuseBuf + index);
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index ++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGA(NOTAG, "\n\rRawMap[%03lx]:", index);
-			}
-			RTK_LOGA(NOTAG, " %02x", EfuseBuf[index]);
-		}
-
-		RTK_LOGA(NOTAG, "\n\r");
-
-	}
-
-	/* efuse wraw 0xA0 1 aa */
-	/* efuse wraw 0xA0 2 aabb */
-	/* efuse wraw 0xA0 4 aabbccdd */
-	if (_strcmp((const char *)argv[0], "wraw") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		RTK_LOGI(TAG, "efuse wraw write len:%lu, string len:%lu\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			RTK_LOGA(NOTAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
-			OTP_Write8((Addr + index), EfuseBuf[index]);
-		}
-	}
-
-	if (_strcmp((const char *)argv[0], "getcrc") == 0) {
-		u32 crc = OTPGetCRC();
-		RTK_LOGI(TAG, "new crc value is 0x%lx", crc);
-	}
-
-exit:
-
-	if (EfuseBuf) {
-		rtos_mem_free(EfuseBuf);
-	}
-	return ret;
-}
-
-u32
-CmdRTC(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	RTC_TimeTypeDef RTC_TimeStruct;
-
-	if (_strcmp((const char *)argv[0], "get") == 0) { // dump RTC
-		RTC_AlarmTypeDef RTC_AlarmStruct_temp;
-
-
-		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);
-		RTC_GetAlarm(RTC_Format_BIN, &RTC_AlarmStruct_temp);
-
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "time: %d:%d:%d:%d (%d) \n", RTC_TimeStruct.RTC_Days,
-				 RTC_TimeStruct.RTC_Hours,
-				 RTC_TimeStruct.RTC_Minutes,
-				 RTC_TimeStruct.RTC_Seconds,
-				 RTC_TimeStruct.RTC_H12_PMAM);
-
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "alarm: %d:%d:%d:%d (%d) \n", RTC_AlarmStruct_temp.RTC_AlarmTime.RTC_Days,
-				 RTC_AlarmStruct_temp.RTC_AlarmTime.RTC_Hours,
-				 RTC_AlarmStruct_temp.RTC_AlarmTime.RTC_Minutes,
-				 RTC_AlarmStruct_temp.RTC_AlarmTime.RTC_Seconds,
-				 RTC_AlarmStruct_temp.RTC_AlarmTime.RTC_H12_PMAM);
-	}
-
-	if (_strcmp((const char *)argv[0], "set") == 0) {
-		RTC_TimeStructInit(&RTC_TimeStruct);
-		RTC_TimeStruct.RTC_Hours = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
-		RTC_TimeStruct.RTC_Minutes = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		RTC_TimeStruct.RTC_Seconds = _strtoul((const char *)(argv[3]), (char **)NULL, 10);
-
-		if (_strcmp((const char *)argv[5], "pm") == 0) {
-			RTC_TimeStruct.RTC_H12_PMAM = RTC_H12_PM;
-		} else {
-			RTC_TimeStruct.RTC_H12_PMAM = RTC_H12_AM;
-		}
-
-		RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
-	}
-
-	return TRUE;
-}
-
-u32
-CmdLogBuf(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	if (_strcmp((const char *)argv[0], "on") == 0) {
-		ConfigDebugBuffer = 1;
-	} else {
-		ConfigDebugBuffer = 0;
-	}
-
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "AAAAA\n");
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "BBBBB\n");
-
-	return TRUE;
-}
-
 u32
 CmdTsfTest(
 	IN  u16 argc,
@@ -562,60 +193,10 @@ CmdTsfTest(
 	return 0;
 }
 #endif
-
-#ifdef CONFIG_ARM_CORE_CM0
-u32
-CmdAGGCmd(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	UNUSED(argc);
-	if (_strcmp((const char *)argv[0], "en") == 0) {
-		/*enable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, ENABLE); // enable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	} else if (_strcmp((const char *)argv[0], "dis") == 0) {
-		/*disable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, DISABLE); // disable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	}
-
-	return 0;
-}
-#endif
 #endif
 
 #ifdef CONFIG_AMEBADPLUS
 #ifdef CONFIG_ARM_CORE_CM0
-u32
-CmdAGGCmd(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	UNUSED(argc);
-	if (_strcmp((const char *)argv[0], "en") == 0) {
-		/*enable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, ENABLE); // enable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	} else if (_strcmp((const char *)argv[0], "dis") == 0) {
-		/*disable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, DISABLE); // disable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	}
-
-	return 0;
-}
-
 #ifdef CONFIG_WLAN
 extern int rtw_wltunnel_command(char *cmd);
 u32
@@ -655,319 +236,11 @@ CmdWTN(
 	return 0;
 }
 #endif
-u32 cmd_efuse_protect(u16 argc, u8  *argv[])
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	u8 *EfuseBuf = NULL;
-	u32 index;
-	int ret = 0;
-
-	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
-	}
-	/* efuse wmap 0x0 2 2187 */
-	/* efuse wmap 0x18 4 01020304 */
-	if (_strcmp((const char *)argv[0], "wmap") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "string length(%u) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse wmap write len:%u, string len:%u\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
-	}
-
-	if (_strcmp((const char *)argv[0], "rmap") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse rmap \n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_LMAP_LEN;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		ret = OTP_LogicalMap_Read(EfuseBuf, Addr, Len);
-
-		if (ret == FAIL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "EFUSE_LogicalMap_Read fail \n");
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\rEFUSE[%03x]:", index);
-			}
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, " %02x", EfuseBuf[i]);
-		}
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r");
-
-	}
-
-	if (_strcmp((const char *)argv[0], "rraw") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse rraw\n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_USER_END;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		for (index = Addr; index < Addr + Len; index++) {
-			OTP_Read8(index, EfuseBuf + index);
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index ++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\rRawMap[%03x]:", index);
-			}
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, " %02x", EfuseBuf[index]);
-		}
-
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r");
-	}
-
-	/* efuse wraw 0xA0 1 aa */
-	/* efuse wraw 0xA0 2 aabb */
-	/* efuse wraw 0xA0 4 aabbccdd */
-	if (_strcmp((const char *)argv[0], "wraw") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "string length(%u) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse wraw write len:%u, string len:%u\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "wraw: %x %x \n", Addr + index, EfuseBuf[index]);
-			OTP_Write8(Addr + index, EfuseBuf[index]);
-		}
-	}
-
-exit:
-
-	if (EfuseBuf) {
-		rtos_mem_free(EfuseBuf);
-	}
-	return ret;
-}
-
-#endif
-#endif
-
-#ifdef CONFIG_AMEBALITE
-#ifdef CONFIG_ARM_CORE_CM4
-u32 cmd_efuse_protect(u16 argc, u8  *argv[])
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	u8 *EfuseBuf = NULL;
-	u32 index;
-	int ret = 0;
-
-	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
-	}
-
-	/* efuse wmap 0x0 2 2187 */
-	/* efuse wmap 0x18 4 01020304 */
-	if (_strcmp((const char *)argv[0], "wmap") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "string length(%d) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		RTK_LOGI(TAG, "efuse wmap write len:%lu, string len:%lu\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
-	}
-
-	if (_strcmp((const char *)argv[0], "rmap") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse rmap \n");
-
-		ret = OTP_LogicalMap_Read(EfuseBuf, 0, OTP_LMAP_LEN);
-		if (ret == FAIL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_LogicalMap_Read fail \n");
-		}
-
-		for (index = 0; index < 1024; index += 16) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "EFUSE[%03x]: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", index,
-					 EfuseBuf[index], EfuseBuf[index + 1], EfuseBuf[index + 2], EfuseBuf[index + 3],
-					 EfuseBuf[index + 4], EfuseBuf[index + 5], EfuseBuf[index + 6], EfuseBuf[index + 7],
-					 EfuseBuf[index + 8], EfuseBuf[index + 9], EfuseBuf[index + 10], EfuseBuf[index + 11],
-					 EfuseBuf[index + 12], EfuseBuf[index + 13], EfuseBuf[index + 14], EfuseBuf[index + 15]);
-		}
-	}
-
-	if (_strcmp((const char *)argv[0], "rraw") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse rraw\n");
-
-		for (index = 0; index < OTP_USER_END; index++) {
-			OTP_Read8(index, (EfuseBuf + index));
-		}
-
-		for (index = 0; index < OTP_USER_END; index += 16) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "RawMap[%03x]: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", index,
-					 EfuseBuf[index], EfuseBuf[index + 1], EfuseBuf[index + 2], EfuseBuf[index + 3],
-					 EfuseBuf[index + 4], EfuseBuf[index + 5], EfuseBuf[index + 6], EfuseBuf[index + 7],
-					 EfuseBuf[index + 8], EfuseBuf[index + 9], EfuseBuf[index + 10], EfuseBuf[index + 11],
-					 EfuseBuf[index + 12], EfuseBuf[index + 13], EfuseBuf[index + 14], EfuseBuf[index + 15]);
-		}
-	}
-
-	/* efuse wraw 0xA0 1 aa */
-	/* efuse wraw 0xA0 2 aabb */
-	/* efuse wraw 0xA0 4 aabbccdd */
-	if (_strcmp((const char *)argv[0], "wraw") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "string length(%d) should be odd \n", Cnt);
-			ret = FALSE;
-			goto exit;
-		}
-
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
-		}
-
-		for (index = 0; index < Len; index++) {
-			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
-		}
-
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "efuse wraw write len:%d, string len:%u\n", Len, Cnt << 1);
-
-		for (index = 0; index < Len; index++) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "wraw: %x %x \n", Addr + index, EfuseBuf[index]);
-			OTP_Write8(Addr + index, EfuseBuf[index]);
-		}
-	}
-
-exit:
-
-	if (EfuseBuf) {
-		rtos_mem_free(EfuseBuf);
-	}
-	return ret;
-
-}
-#endif
-#ifdef CONFIG_RSICV_CORE_KR4
-u32
-CmdAGGCmd(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	UNUSED(argc);
-	if (_strcmp((const char *)argv[0], "en") == 0) {
-		/*enable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, ENABLE); // enable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	} else if (_strcmp((const char *)argv[0], "dis") == 0) {
-		/*disable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, DISABLE); // disable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	}
-
-	return 0;
-}
 #endif
 #endif
 
 #if (defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2))
 #ifdef CONFIG_ARM_CORE_CM4_KM4NS
-u32
-CmdAGGCmd(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	UNUSED(argc);
-	if (_strcmp((const char *)argv[0], "en") == 0) {
-		/*enable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, ENABLE); // enable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	} else if (_strcmp((const char *)argv[0], "dis") == 0) {
-		/*disable agg function*/
-		LOGUART_WaitTxComplete(); // wait until tx complete
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, DISABLE); // close all path
-		LOGUART_AGGCmd(LOGUART_DEV, DISABLE); // disable agg function
-		LOGUART_AGGPathAllCmd(LOGUART_DEV, ENABLE); // open all path
-	}
-
-	return 0;
-}
-
 #ifdef CONFIG_WLAN
 extern int rtw_wltunnel_command(char *cmd);
 u32
@@ -1009,146 +282,158 @@ CmdWTN(
 	return 0;
 }
 #endif
+#endif
+#endif
 
 u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 {
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	u8 *EfuseBuf = NULL;
 	u32 index;
-	int ret = 0;
+	u32 Len;
+	u32 Cnt;
+	u32 Addr = 0;
+	u8 *EfuseBuf = NULL;
+	char *DString;
 
 	if ((EfuseBuf = rtos_mem_zmalloc(OTP_REAL_CONTENT_LEN)) == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
+		return 0;
+	}
+
+	/* efuse rmap */
+	/* efuse rmap 0x18 4 */
+	if (_strcmp((const char *)argv[0], "rmap") == 0) {
+		Addr = 0;
+		Len = OTP_LMAP_LEN;
+
+		if (argc >= 3) {
+			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
+		}
+
+		if (OTP_LogicalMap_Read(EfuseBuf, Addr, Len) == FAIL) {
+			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			goto exit;
+		}
+
+		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
+			if (i % 16 == 0) {
+				RTK_LOGI(NOTAG, "\n\rEFUSE[%03lx]:", index);
+			}
+			RTK_LOGI(NOTAG, " %02x", EfuseBuf[i]);
+		}
+		RTK_LOGI(NOTAG, "\n\r");
 	}
 
 	/* efuse wmap 0x0 2 2187 */
 	/* efuse wmap 0x18 4 01020304 */
 	if (_strcmp((const char *)argv[0], "wmap") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "string length(%d) should be odd \n", Cnt);
-			ret = FALSE;
+		if (argc < 4) {
+			RTK_LOGE(TAG, "Invalid argc. \n");
 			goto exit;
 		}
 
-		Cnt = Cnt / 2;
-		if (Cnt != Len) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Oops: write lenth not match input string lentg, choose smaller one\n");
-			Len = (Cnt < Len) ? Cnt : Len;
+		Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+		Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
+		DString = (char *)argv[3];
+		Cnt = _strlen(DString);
+
+		if (Cnt % 2) {
+			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			goto exit;
+		} else {
+			Cnt = Cnt / 2;
 		}
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse wmap write len:%d, string len:%d\n", Len, Cnt << 1);
+		if (Cnt != Len) {
+			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
+			Len = (Cnt < Len) ? Cnt : Len;
+		}
+		RTK_LOGI(TAG, "efuse wmap write len:%lu, string len:%lu\n", Len, Cnt << 1);
 
 		for (index = 0; index < Len; index++) {
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
-		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
+		if (OTP_LogicalMap_Write(Addr, Len, (u8 *)EfuseBuf) == FAIL) {
+			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			goto exit;
+		}
 	}
 
-	if (_strcmp((const char *)argv[0], "rmap") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse rmap \n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_LMAP_LEN;
-
-		if (argc >= 3) {
-			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-		}
-
-		ret = OTP_LogicalMap_Read(EfuseBuf, Addr, Len);
-
-		if (ret == FAIL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "EFUSE_LogicalMap_Read fail \n");
-		}
-
-		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
-			if (i % 16 == 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\rEFUSE[%03x]:", index);
-			}
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, " %02x", EfuseBuf[i]);
-		}
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r");
-
-	}
-
+	/* efuse rraw */
+	/* efuse rraw,0x18,4 */
 	if (_strcmp((const char *)argv[0], "rraw") == 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse rraw\n");
-
-		u32 Addr = 0;
-		u32 Len = OTP_USER_END;
-
+		Addr = 0;
+		Len = EFUSE_REAL_CONTENT_LEN;
 		if (argc >= 3) {
 			Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
+			Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
 		}
 
 		for (index = Addr; index < Addr + Len; index++) {
-			OTP_Read8(index, EfuseBuf + index);
+			if (OTP_Read8(index, EfuseBuf + index) == FAIL) {
+				RTK_LOGE(TAG, "OTP_Read8 fail \n");
+				goto exit;
+			}
 		}
 
 		for (u32 i = 0, index = Addr; index < Addr + Len; index ++, i++) {
 			if (i % 16 == 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\rRawMap[%03x]:", index);
+				RTK_LOGI(NOTAG, "\n\rRawMap[%03lx]:", index);
 			}
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, " %02x", EfuseBuf[index]);
+			RTK_LOGI(NOTAG, " %02x", EfuseBuf[index]);
 		}
-
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r");
+		RTK_LOGI(NOTAG, "\n\r");
 	}
 
 	/* efuse wraw 0xA0 1 aa */
 	/* efuse wraw 0xA0 2 aabb */
 	/* efuse wraw 0xA0 4 aabbccdd */
 	if (_strcmp((const char *)argv[0], "wraw") == 0) {
-		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
-		char *DString = (char *)argv[3];
-		u32 Cnt;
-
-		Cnt = _strlen(DString);
-		if (Cnt % 2) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "string length(%d) should be odd \n", Cnt);
-			ret = FALSE;
+		if (argc < 4) {
+			RTK_LOGE(TAG, "Invalid argc. \n");
 			goto exit;
 		}
 
-		Cnt = Cnt / 2;
+		Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+		Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
+		DString = (char *)argv[3];
+		Cnt = _strlen(DString);
+
+		if (Cnt % 2) {
+			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			goto exit;
+		} else {
+			Cnt = Cnt / 2;
+		}
+
 		if (Cnt != Len) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Oops: write lenth not match input string lentg, choose smaller one\n");
+			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
+		RTK_LOGI(TAG, "efuse wraw write len:%lu, string len:%lu\n", Len, Cnt << 1);
 
 		for (index = 0; index < Len; index++) {
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse wraw write len:%d, string len:%d\n", Len, Cnt << 1);
-
 		for (index = 0; index < Len; index++) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "wraw: %x %x \n", Addr + index, EfuseBuf[index]);
-			OTP_Write8(Addr + index, EfuseBuf[index]);
+			RTK_LOGI(NOTAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
+			if (OTP_Write8((Addr + index), EfuseBuf[index]) == FAIL) {
+				RTK_LOGE(TAG, "OTP_Write8 fail \n");
+				goto exit;
+			}
 		}
 	}
 
-exit:
-
-	if (EfuseBuf) {
-		rtos_mem_free(EfuseBuf);
+	if (_strcmp((const char *)argv[0], "GETCRC") == 0) {
+		RTK_LOGI(TAG, "new crc value is 0x%lx",  OTPGetCRC());
 	}
-	return ret;
 
+exit:
+	rtos_mem_free(EfuseBuf);
+	return 0;
 }
-#endif
-#endif
 
 CMD_TABLE_DATA_SECTION
 static COMMAND_TABLE   shell_cmd_table[] = {
@@ -1184,35 +469,17 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
 	{
 		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
-		"\t\t wmap addr len data\n"
+		"\t\t wmap addr(hex) len(hex) data(hex)\n"
 		"\t\t rmap \n"
-		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
-		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
+		"\t\t <wmap 0x00 0x2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
+		"\t\t <wmap 0xF0 0x4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
 	},
 #endif
 
 #if (defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && defined(CONFIG_ARM_CORE_CM4)
 	{
-		(const u8 *)"RTC",		4, CmdRTC,	(const u8 *)"\tRTC \n"
-		"\t\t get\n"
-	},
-	{
 		(const u8 *)"TSFTEST",	4, CmdTsfTest,	(const u8 *)"\tTSFTEST \n"
 		"\t\t get\n"
-	},
-	{
-		(const u8 *)"LOGBUF",	4, CmdLogBuf,	(const u8 *)"\tLOGBUF \n"
-		"\t\t KM0 help to print KM4 log\n"
-	},
-#endif
-#if ((defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && defined(CONFIG_ARM_CORE_CM0)) || \
-	(defined(CONFIG_AMEBALITE) && defined(CONFIG_RSICV_CORE_KR4)) || \
-	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM0)) || \
-	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4NS)) || \
-	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4NS))
-	{
-		(const u8 *)"AGG",	0, CmdAGGCmd,	(const u8 *)"\t@AGGCmd \n"
-		"\t\t enable and disable loguart agg function\n"
 	},
 #endif
 #if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
@@ -1229,17 +496,6 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		(const u8 *)"TICKPS",	4, CmdTickPS,	(const u8 *)"\tTICKPS \n"
 		"\t\t r: release os wakelock \n"
 		"\t\t a: acquire os wakelock \n"
-	},
-	{
-		(const u8 *)"LOG",	3, cmd_log_set, (const u8 *)"\tLOG <tag, level> \n"
-		"\t\t Set the log display level of a module individually\n"
-		"\t\t <tag>: module label, If the tag is *, this will reset all tag levels except those added to the array\n"
-		"\t\t <level>:0, turn off log\n"
-		"\t\t	   1, always (Resident)log\n"
-		"\t\t	   2, error log\n"
-		"\t\t	   3, warning log\n"
-		"\t\t	   4, info log\n"
-		"\t\t	   5, debug log\n"
 	},
 #endif
 };

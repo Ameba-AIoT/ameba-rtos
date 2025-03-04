@@ -120,7 +120,7 @@ int rtw_netdev_probe(struct device *pdev)
 
 	dev_dbg(global_idev.fullmac_dev, "rtw_dev_probe start\n");
 
-#if !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGE)
 	/*step1: alloc and init wiphy */
 	ret = rtw_wiphy_init();
 	if (ret == false) {
@@ -152,12 +152,12 @@ int rtw_netdev_probe(struct device *pdev)
 		dev_err(global_idev.fullmac_dev, "ndev register fail");
 		goto os_ndevs_deinit;
 	}
-#if !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGE)
 	global_idev.mp_fw = whc_fullmac_host_dev_driver_is_mp();
 	dev_info(global_idev.fullmac_dev, "%s Wi-Fi driver!", global_idev.mp_fw ? "MP" : "Normal");
 #endif
 
-#if !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGE)
 	rtw_regd_init();
 	rtw_drv_proc_init();
 #endif
@@ -165,7 +165,7 @@ int rtw_netdev_probe(struct device *pdev)
 #ifdef CONFIG_WAR_OFFLOAD
 	rtw_proxy_init();
 #endif
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 	whc_bridge_host_register_genl_family();
 #endif
 
@@ -173,7 +173,7 @@ int rtw_netdev_probe(struct device *pdev)
 
 os_ndevs_deinit:
 	rtw_ndev_unregister();
-#if !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGE)
 	rtw_wiphy_deinit();
 
 exit:
@@ -187,7 +187,7 @@ int rtw_netdev_remove(struct device *pdev)
 
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
-#if !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGE)
 	wiphy_unregister(global_idev.pwiphy_global);
 
 	rtw_wiphy_deinit();
@@ -196,13 +196,13 @@ int rtw_netdev_remove(struct device *pdev)
 
 	whc_host_deinit();
 	dev_dbg(global_idev.fullmac_dev, "remove llhw done.");
-#if !defined(CONFIG_FULLMAC_BRIDGE)
+#if !defined(CONFIG_WHC_BRIDGE)
 	rtw_drv_proc_deinit();
 #endif
 
 	pr_info("%s done\n", __func__);
 	memset(&global_idev, 0, sizeof(struct whc_device));
-#if defined(CONFIG_FULLMAC_BRIDGE)
+#if defined(CONFIG_WHC_BRIDGE)
 	whc_bridge_host_unregister_genl_family();
 #endif
 	return 0;

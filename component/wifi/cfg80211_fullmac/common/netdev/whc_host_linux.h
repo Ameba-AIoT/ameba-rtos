@@ -109,12 +109,12 @@
 #include "whc_usb_host.h"
 #endif
 
-#if !defined(CONFIG_FULLMAC_BRIDGE) && !defined(CONFIG_FULLMAC_HCI_IPC)
+#if !defined(CONFIG_WHC_BRIDGE) && !defined(CONFIG_FULLMAC_HCI_IPC)
 #include "whc_fullmac_host_ioctl.h"
 #include "whc_fullmac_host_cust_evt.h"
 #endif
 
-#ifndef CONFIG_FULLMAC_BRIDGE
+#ifndef CONFIG_WHC_BRIDGE
 #include "whc_fullmac_host_regd.h"
 #include "whc_fullmac_host_cfgvendor.h"
 #include "whc_fullmac_host_proc.h"
@@ -132,11 +132,7 @@
 /******************************************************************/
 /********** Definitions between Linux and FULLMAC. **************/
 /******************************************************************/
-#if defined(CONFIG_FULLMAC_BRIDGE)
-#define TOTAL_IFACE_NUM			1
-#else
 #define TOTAL_IFACE_NUM			2
-#endif
 #define ETH_ALEN			6
 #define FUNC_NDEV_FMT			"%s(%s)"
 #define FUNC_NDEV_ARG(ndev)		__func__, ndev->name

@@ -58,9 +58,12 @@
 #define whc_dev_set_netif_info                           whc_ipc_dev_set_netif_info
 #define whc_dev_cfg80211_indicate_scan_report            whc_ipc_dev_cfg80211_indicate_scan_report
 #define whc_dev_api_init                                 whc_ipc_dev_api_init
+
+#ifndef CONFIG_FULLMAC
 #define whc_host_init                                    whc_ipc_host_init
 #define whc_host_api_message_send                        whc_ipc_host_api_message_send
 #define whc_host_init_skb                                whc_ipc_host_init_skb
+#endif
 
 #ifdef CONFIG_NAN
 #define whc_dev_cfg80211_indicate_nan_match              whc_ipc_dev_cfg80211_indicate_nan_match
@@ -152,19 +155,21 @@ struct ipc_host_unblk_api_func_t {
 #endif
 
 /* -------------------------- Function declaration -------------------------- */
+#ifndef CONFIG_FULLMAC
 /*for ipc host*/
 void whc_ipc_host_init(void);
 void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
-
-/*for ipc device*/
-void whc_ipc_dev_init(void);
-void whc_ipc_dev_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 
 /*for ipc host api*/
 void whc_ipc_host_api_init(void);
 void whc_ipc_host_deinit_skb(void);
 void whc_ipc_host_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 int whc_ipc_host_api_message_send(u32 id, u32 *param_buf, u32 buf_len);
+#endif
+
+/*for ipc device*/
+void whc_ipc_dev_init(void);
+void whc_ipc_dev_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 
 /*for ipc dev api*/
 void whc_ipc_dev_api_init(void);

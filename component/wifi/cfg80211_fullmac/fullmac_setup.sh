@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sed -i 's/CONFIG_FULLMAC_HCI_IPC = y/CONFIG_FULLMAC_HCI_IPC = n/g' Makefile
-sed -i 's/CONFIG_FULLMAC_BRIDGE = y/CONFIG_FULLMAC_BRIDGE = n/g' Makefile
+sed -i 's/CONFIG_WHC_BRIDGE = y/CONFIG_WHC_BRIDGE = n/g' Makefile
 
 if [ "$1" == "spi" ]; then
 	sed -i 's/CONFIG_FULLMAC_HCI_SDIO = y/CONFIG_FULLMAC_HCI_SDIO = n/g' Makefile
@@ -22,7 +22,7 @@ if [ "$#" -ge 2 ]; then
 	do
 		eval j=\$$i
 		if [ "$j" == "bridge" ]; then
-			sed -i 's/CONFIG_FULLMAC_BRIDGE = n/CONFIG_FULLMAC_BRIDGE = y/g' Makefile
+			sed -i 's/CONFIG_WHC_BRIDGE = n/CONFIG_WHC_BRIDGE = y/g' Makefile
 		fi
 	done
 fi

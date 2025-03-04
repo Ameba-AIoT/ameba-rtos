@@ -16,7 +16,7 @@ __weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
 	(void)size;
 	u8 *ptr = rxbuf;
 	u32 event = *(u32 *)rxbuf;
-	u8 *ip, *buf;
+	u8 *ip, *buf, idx = 0;
 
 	ptr += 4;
 
@@ -28,7 +28,13 @@ __weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
 		}
 		if (*ptr == BRIDGE_WIFI_TEST_GET_MAC_ADDR) {
 			struct _rtw_mac_t dev_mac = {0};
-			wifi_get_mac_address(STA_WLAN_INDEX, &dev_mac, 0);
+			idx = *(ptr + 1);
+			if (!wifi_is_running(idx)) {
+				RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
+				rtos_mem_free(buf);
+				return;
+			}
+			wifi_get_mac_address(idx, &dev_mac, 0);
 			ptr = buf;
 			*(u32 *)ptr = BRIDGE_WIFI_TEST;
 			ptr += 4;
@@ -38,7 +44,13 @@ __weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
 			//6+4+1=11
 			whc_bridge_dev_api_send_to_host(buf, BRIDGE_WIFI_TEST_BUF_SIZE);
 		} else if (*ptr == BRIDGE_WIFI_TEST_GET_IP) {
-			ip = LwIP_GetIP(0);
+			idx = *(ptr + 1);
+			if (!wifi_is_running(idx)) {
+				RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
+				rtos_mem_free(buf);
+				return;
+			}
+			ip = LwIP_GetIP(idx);
 			ptr = buf;
 			*(u32 *)ptr = BRIDGE_WIFI_TEST;
 			ptr += 4;
@@ -53,7 +65,5 @@ __weak void whc_bridge_dev_pkt_rx_to_user(u8 *rxbuf, u16 size)
 
 		rtos_mem_free(buf);
 	}
-
-	rtos_mem_free(rxbuf);
 }
 

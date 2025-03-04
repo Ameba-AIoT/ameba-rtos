@@ -43,6 +43,7 @@ if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
        ${c_CMPT_AT_CMD_DIR}/atcmd_sys.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_fs.c
        ${c_CMPT_AT_CMD_DIR}/atcmd_bt_mp.c
+       ${c_CMPT_AT_CMD_DIR}/atcmd_otp.c
    )
    ameba_target_sources_if(CONFIG_WLAN src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
        ${c_CMPT_AT_CMD_DIR}/atcmd_wifi.c

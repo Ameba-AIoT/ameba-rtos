@@ -160,12 +160,12 @@ menu "CONFIG WHC INTF"
             config FULLMAC_MENU
                 bool "FULLMAC"
                 select WIFI_HOST_CONTROL
-            config FULLMAC_BRIDGEB
-                bool "FULLMAC_BRIDGEB"
+            config WHC_BRIDGEB
+                bool "WHC_BRIDGEB"
                 select CORE_AS_AP_FOR_KM4
                 select WIFI_HOST_CONTROL
-            config FULLMAC_BRIDGE
-                bool "FULLMAC_BRIDGE"
+            config WHC_BRIDGE
+                bool "WHC_BRIDGE"
                 select CORE_AS_AP_FOR_KM4
                 select WIFI_HOST_CONTROL
             config FULLMAC_HOST
@@ -275,14 +275,14 @@ menu "CONFIG WIFI"
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN
 
-        config FULLMAC_BRIDGEB
+        config WHC_BRIDGEB
             bool
             depends on CORE_AS_AP
             select WLAN
             select SINGLE_CORE_WIFI
             select LWIP_LAYER
 
-        config FULLMAC_BRIDGE
+        config WHC_BRIDGE
             bool
             depends on CORE_AS_AP
             select WLAN
@@ -348,7 +348,7 @@ menu "CONFIG WIFI"
         bool
     config FULLMAC_HOST
         bool
-    config FULLMAC_BRIDGE
+    config WHC_BRIDGE
         bool
     config WIFI_HOST_CONTROL
         bool

@@ -166,9 +166,9 @@ static void prvMQTTTask(void *pvParameters)
 }
 #endif
 
-void vStartMQTTTasks(uint16_t usTaskStackSize, UBaseType_t uxTaskPriority)
+void vStartMQTTTasks(uint16_t usTaskStackSize, uint32_t uxTaskPriority)
 {
-	BaseType_t x = 0L;
+	uint32_t x = 0L;
 	printf("\nExample: Mqtt \n");
 #if defined(MQTT_TASK)
 	rtos_task_create(NULL, "MQTTTask", prvMQTTTask, (void *)x, usTaskStackSize * 4, uxTaskPriority);

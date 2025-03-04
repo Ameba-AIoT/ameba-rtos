@@ -2,7 +2,7 @@
 
 struct whc_sdio_priv_t sdio_priv = {0};
 
-#ifndef CONFIG_FULLMAC_BRIDGE
+#ifndef CONFIG_WHC_BRIDGE
 void rtw_pending_q_resume(void);
 #endif
 
@@ -62,7 +62,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) ||
 			((new_skb = dev_alloc_skb(SPDIO_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
-#ifndef CONFIG_FULLMAC_BRIDGE
+#ifndef CONFIG_WHC_BRIDGE
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
 #endif
@@ -85,7 +85,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
 
-#ifndef  CONFIG_FULLMAC_BRIDGE
+#ifndef  CONFIG_WHC_BRIDGE
 	} else if (event == WHC_CUST_EVT) {
 		whc_dev_recv_cust_evt(pdata);
 #endif

@@ -201,43 +201,45 @@ if (CONFIG_WLAN)
                 ${APP_LIB_DIR}/lib_wps.a
             )
         endif()
-        if(CONFIG_SDIO_BRIDGE)
-            if(CONFIG_MP_INCLUDED)
-                if(CONFIG_MP_SHRINK)
-                    list(
-                        APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_sdio_bridge_mp_shrink.a
-                    )
+        if(CONFIG_WHC_BRIDGE)
+            if(CONFIG_WHC_INTF_SDIO)
+                if(CONFIG_MP_INCLUDED)
+                    if(CONFIG_MP_SHRINK)
+                        list(
+                            APPEND LINK_APP_LIB
+                            ${APP_LIB_DIR}/lib_wifi_sdio_bridge_mp_shrink.a
+                        )
+                    else()
+                        list(
+                            APPEND LINK_APP_LIB
+                            ${APP_LIB_DIR}/lib_wifi_sdio_bridge_mp.a
+                        )
+                    endif()
                 else()
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_sdio_bridge_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_sdio_bridge.a
                     )
                 endif()
-            else()
-                list(
-                    APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_sdio_bridge.a
-                )
-            endif()
-        elseif(CONFIG_SPI_BRIDGE)
-            if(CONFIG_MP_INCLUDED)
-                if(CONFIG_MP_SHRINK)
-                    list(
-                        APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_spi_bridge_mp_shrink.a
-                    )
+            elseif(CONFIG_WHC_INTF_SPI)
+                if(CONFIG_MP_INCLUDED)
+                    if(CONFIG_MP_SHRINK)
+                        list(
+                            APPEND LINK_APP_LIB
+                            ${APP_LIB_DIR}/lib_wifi_spi_bridge_mp_shrink.a
+                        )
+                    else()
+                        list(
+                            APPEND LINK_APP_LIB
+                            ${APP_LIB_DIR}/lib_wifi_spi_bridge_mp.a
+                        )
+                    endif()
                 else()
                     list(
                         APPEND LINK_APP_LIB
-                        ${APP_LIB_DIR}/lib_wifi_spi_bridge_mp.a
+                        ${APP_LIB_DIR}/lib_wifi_spi_bridge.a
                     )
                 endif()
-            else()
-                list(
-                    APPEND LINK_APP_LIB
-                    ${APP_LIB_DIR}/lib_wifi_spi_bridge.a
-                )
             endif()
         else()
             if(CONFIG_MP_INCLUDED)

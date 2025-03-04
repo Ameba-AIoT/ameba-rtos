@@ -13,7 +13,7 @@
 #include "lwip/udp.h"
 #include "lwip_netconf.h"
 
-#ifdef CONFIG_FULLMAC_BRIDGE
+#ifdef CONFIG_WHC_BRIDGE
 /* set host state for dev */
 u8 whc_bridge_hostrdy;
 #endif
@@ -21,7 +21,7 @@ u8 whc_bridge_hostrdy;
 u8 whc_bridge_default_direction = PORT_TO_HOST;
 struct list_head bridge_filter_head;
 
-#ifdef CONFIG_FULLMAC_BRIDGE
+#ifdef CONFIG_WHC_BRIDGE
 
 /**
  * @brief  create a node for target filter

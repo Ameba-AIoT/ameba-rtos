@@ -41,7 +41,6 @@ extern "C" {
 
 /**
  * @brief  Check if Wi-Fi has connected to AP before dhcp.
- * @param  None
  * @return  @ref RTW_SUCCESS : If conneced.
  * @return  @ref RTW_ERROR : If not connect.
  */
@@ -197,7 +196,6 @@ int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psettin
 /**
  * @brief  This function is used to get wifi mode
  * 	for station mode when connecting to AP.
- * @param[in]  no
  * @return  0-unconnected, 4-wifi4, 5-wifi5, 6-wifi6.
  */
 int wifi_get_network_mode(void);
@@ -253,7 +251,6 @@ void wifi_promisc_enable(u32 enable, struct _promisc_para_t *para);
 
 /**
  * @brief  check whether current wifi driver is mp or not.
- * @param  None
  * @return  1: drv_mode is RTW_DRV_MODE_MP
  * 	0: drv_mode is not RTW_DRV_MODE_MP
  */
@@ -273,6 +270,8 @@ int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsig
 /**
  * @brief  Show the TX and RX statistic information which counted by software(wifi driver,not phy layer).
  * @param[in]  idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_IDX.
+ * @param[in]  sw_statistics: the pointer of struct _rtw_sw_statistics_t,
+ * which describe max skb buffer used number and current used skbbuf number.
  * @return  NULL.
  */
 int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *sw_statistics);
@@ -289,7 +288,6 @@ int wifi_fetch_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic);
 
 /**
  * @brief  get current remaining number of packets in HW TX buffer.
- * @param[in]  None
  * @return  @ref RTW_ERROR or the remaining packets number.
  */
 int wifi_get_txbuf_pkt_num(void);
@@ -316,7 +314,7 @@ u8 wifi_get_band_type(void);
 
 /**
  * @brief	Get wifi TSF register[63:32]&[31:0].
- * @param[in]	port: wifi port 0/1.
+ * @param[in]	port_id: wifi port 0/1.
  * @return TSF[63:0] or 0
  */
 u64 wifi_get_tsf(unsigned char port_id);
@@ -379,15 +377,14 @@ int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE list. (Information Element)
- * @param[in]  wlan_idx,
- * 	wlan_idx should be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
+ * @param[in]  wlan_idx: should be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
  * @return  0 if success, otherwise return -1.
  */
 int wifi_del_custom_ie(unsigned char wlan_idx);
 
 /**
  * @brief  send raw frame
- * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
+ * @param[in]  raw_frame_desc: the pointer of struct raw_frame_desc_t,
  * 	which describe related information, include the pointer of raw frame and so on.
  * @return  @ref RTW_ERROR or @ref RTW_SUCCESS
  */

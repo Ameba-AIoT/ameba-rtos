@@ -23,6 +23,7 @@ enum bridge_cmd_type {
 enum bridge_attr_type {
 	BRIDGE_ATTR_UNSPEC,
 	BRIDGE_ATTR_API_ID,
+	BRIDGE_ATTR_WLAN_IDX,
 	BRIDGE_ATTR_MAC,
 	BRIDGE_ATTR_PAYLOAD,
 
