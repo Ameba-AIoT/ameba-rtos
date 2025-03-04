@@ -991,7 +991,7 @@ rtk_bt_audio_record_t *rtk_bt_audio_record_add(uint32_t type, uint32_t channels,
 		osif_mutex_give(bt_audio_intf_priv_mutex);
 	}
 	rtk_bt_audio_record_set_parameters(precord->audio_record_hdl, "ch0_sel_amic=1");
-	rtk_bt_audio_record_set_capture_volume(channels, 0x2f);
+	rtk_bt_audio_record_set_capture_volume(channels, 0x7f);
 	rtk_bt_audio_record_set_mic_bst_gain(RTK_BT_AUDIO_AMIC1, RTK_BT_AUDIO_MICBST_GAIN_40DB);
 
 	return precord;
