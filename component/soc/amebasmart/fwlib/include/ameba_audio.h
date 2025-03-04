@@ -2012,6 +2012,7 @@ _LONG_CALL_ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_
 _LONG_CALL_ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
 _LONG_CALL_ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_EnableDACFifo(u32 newstate);
+_LONG_CALL_ u32 AUDIO_CODEC_GetHPOMode(u32 channel);
 
 /**
   * @}

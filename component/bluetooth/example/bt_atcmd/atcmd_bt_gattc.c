@@ -210,6 +210,9 @@ static int atcmd_bt_gattc_read(int argc, char **argv)
 			goto WRONG_ARG_NUM;
 		}
 		handle_count = str_to_int(argv[2]);
+		if ((uint32_t)argc < (handle_count + 3u)) {
+			goto WRONG_ARG_NUM;
+		}
 		for (uint32_t i = 0; i < handle_count; i++) {
 			handles_arr[i] = str_to_int(argv[3 + i]);
 		}

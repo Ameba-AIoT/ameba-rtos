@@ -395,8 +395,6 @@ static void bt_power_on(void)
 	set_reg_value(0x41008208, BIT1, 1);             /* release BTON reset */
 	osif_delay(5);
 	if (HCI_BT_KEEP_WAKE) {
-		set_reg_value(0x41008280, BIT14, 1);        /* enable HOST_WAKE_BT No GPIO */
-		osif_delay(5);
 		set_reg_value(0x41008280, BIT13, 1);        /* HOST_WAKE_BT */
 		osif_delay(5);
 	}
