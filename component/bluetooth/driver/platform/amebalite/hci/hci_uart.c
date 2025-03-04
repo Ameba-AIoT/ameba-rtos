@@ -16,7 +16,6 @@
 #define HCI_UART_DEV             (UART3_DEV)
 #define HCI_UART_IRQ             (UART3_BT_IRQ)
 #define HCI_UART_IRQ_PRIO        (INT_PRI_LOWEST)
-#define HCI_UART_TX_FIFO_SIZE    (32)
 #define HCI_UART_RX_FIFO_SIZE    (32)
 #define HCI_UART_RX_BUF_SIZE     (0x2000)   /* RX buffer size 8K */
 #define HCI_UART_RX_ENABLE_SIZE  (512)      /* Only 512 left to read */
@@ -67,31 +66,12 @@ static inline uint16_t _rx_to_write_space(void)
 
 static inline void transmit_chars(void)
 {
-	uint16_t max_count = HCI_UART_TX_FIFO_SIZE;
+	uint16_t cnt = 0;
 
-	if (!HCI_BT_KEEP_WAKE) {
-		/* acquire host wake bt */
-		set_reg_value(0x4100C280, BIT13 | BIT14, 3); /* enable HOST_WAKE_BT No GPIO | HOST_WAKE_BT */
-		while (1) {
-			if ((HAL_READ32(0x4100C284, 0) & (BIT4 | BIT3 | BIT2 | BIT1 | BIT0)) == 4) { /* 0x4100C284[4:0] */
-				/* bt active */
-				break;
-			} else if ((HAL_READ32(0x4100C208, 0) & BIT1) == 0) { /* 0x4100C208[1] */
-				/* bt power off */
-				break;
-			}
-		}
-	}
-
-	while (g_uart->tx_len > 0 && max_count-- > 0) {
-		UART_CharPut(HCI_UART_DEV, *(g_uart->tx_buf));
-		g_uart->tx_buf++;
-		g_uart->tx_len--;
-	}
-
-	if (!HCI_BT_KEEP_WAKE) {
-		/* release host wake bt */
-		set_reg_value(0x4100C280, BIT13 | BIT14, 0); /* disable HOST_WAKE_BT No GPIO | HOST_WAKE_BT */
+	if (g_uart->tx_len) {
+		cnt = (uint16_t)UART_SendDataTO(HCI_UART_DEV, g_uart->tx_buf, g_uart->tx_len, 0);
+		g_uart->tx_buf += cnt;
+		g_uart->tx_len -= cnt;
 	}
 
 	if (g_uart->tx_len == 0) {
@@ -174,13 +154,32 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 	g_uart->tx_buf = buf;
 	g_uart->tx_len = len;
 
+	if (!HCI_BT_KEEP_WAKE) {
+		/* acquire host wake bt */
+		set_reg_value(0x4100C280, BIT13, 1); /* enable HOST_WAKE_BT */
+		while (1) {
+			if ((HAL_READ32(0x4100C284, 0) & (BIT4 | BIT3 | BIT2 | BIT1 | BIT0)) == 4) { /* 0x4100C284[4:0] */
+				/* bt active */
+				break;
+			} else if ((HAL_READ32(0x4100C208, 0) & BIT1) == 0) { /* 0x4100C208[1] */
+				/* bt power off */
+				break;
+			}
+		}
+	}
+
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, ENABLE);
 
 	if (g_uart->tx_done_sem) {
 		if (osif_sem_take(g_uart->tx_done_sem, 0xFFFFFFFF) == false) {
 			BT_LOGE("g_uart->tx_done_sem take fail!\r\n");
-			return 0;
+			len = 0;
 		}
+	}
+
+	if (!HCI_BT_KEEP_WAKE) {
+		/* release host wake bt */
+		set_reg_value(0x4100C280, BIT13, 0); /* disable HOST_WAKE_BT */
 	}
 
 	/* Trigger TX Empty Interrrupt, so TX done here */
