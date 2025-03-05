@@ -1075,7 +1075,12 @@ void dhcps_init(struct netif *pnetif)
 	uint8_t *ip;
 //	printf("dhcps_init,wlan:%c\n\r",pnetif->name[1]);
 #ifdef CONFIG_DHCPS_KEPT_CLIENT_INFO
-	memset(&ip_table, 0, sizeof(struct table));
+	ip_table.client_mac = rtos_mem_zmalloc(wifi_user_config.ap_sta_num * 6 * sizeof(uint8_t));
+	ip_table.ip_addr4 = rtos_mem_zmalloc(wifi_user_config.ap_sta_num * sizeof(uint8_t));
+
+	memset(ip_table.client_mac, 0, wifi_user_config.ap_sta_num * 6 * sizeof(uint8_t));
+	memset(ip_table.ip_addr4, 0, wifi_user_config.ap_sta_num * sizeof(uint8_t));
+	memset(ip_table.ip_range, 0, sizeof(ip_table.ip_range));
 //	int i = 0;
 //	for(i=0; i< DHCPS_MAX_CLIENT_NUM+2; i++)
 //		memset(ip_table.client_mac[i], 0, 6);
@@ -1126,7 +1131,6 @@ void dhcps_init(struct netif *pnetif)
 	rtos_mutex_create(&dhcps_ip_table_semaphore);
 
 	//dhcps_ip_table = (struct ip_table *)(rtos_mem_malloc(sizeof(struct ip_table)));
-	memset(&ip_table, 0, sizeof(struct table));
 	mark_ip_in_table((uint8_t)ip4_addr4(ip_2_ip4(&dhcps_local_address)));
 	mark_ip_in_table((uint8_t)ip4_addr4(ip_2_ip4(&dhcps_local_gateway)));
 #if 0
@@ -1161,6 +1165,14 @@ void dhcps_deinit(void)
 	if (dhcps_ip_table_semaphore != NULL) {
 		rtos_mutex_delete(dhcps_ip_table_semaphore);
 		dhcps_ip_table_semaphore = NULL;
+	}
+	if (ip_table.client_mac != NULL) {
+		rtos_mem_free(ip_table.client_mac);
+		ip_table.client_mac = NULL;
+	}
+	if (ip_table.ip_addr4 != NULL) {
+		rtos_mem_free(ip_table.ip_addr4);
+		ip_table.ip_addr4 = NULL;
 	}
 #ifndef IP_NAT
 	//DNS server deinit

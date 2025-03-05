@@ -294,9 +294,8 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 #REVIEW: move this to ameba_mcu_project_create?
 ameba_global_include(${c_GLOBAL_MCU_INCLUDE_DIRECTORIES})
+add_compile_options(-fdata-sections -ffunction-sections)
 
-# ameba_add_subdirectory(image1)
-# ameba_add_subdirectory(image2)
-# ameba_add_subdirectory(image3)
+ameba_add_subdirectory(image2)
 
 endif()# For temporary compatibility.

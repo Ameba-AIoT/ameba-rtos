@@ -8,6 +8,7 @@
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#include "os_wrapper/include/os_wrapper_specific.h"
 
 static const char *const TAG = "PMU";
 
@@ -98,10 +99,12 @@ uint32_t pmu_set_sysactive_time(uint32_t timeout)
 	}
 	sysactive_timeout_temp = 0;
 
-	TimeOut = rtos_time_get_current_system_time_ms() + timeout;
+	if (timeout != 0) {
+		TimeOut = RTOS_CONVERT_MS_TO_TICKS(rtos_time_get_current_system_time_ms()) + timeout + RTOS_CONVERT_MS_TO_TICKS(rtos_time_get_current_pended_time_ms());
 
-	if (pmu_systick_check(TimeOut, sleepwakelock_timeout)) {
-		sleepwakelock_timeout = TimeOut;
+		if (pmu_systick_check(TimeOut, sleepwakelock_timeout)) {
+			sleepwakelock_timeout = TimeOut;
+		}
 	}
 
 	return 0;

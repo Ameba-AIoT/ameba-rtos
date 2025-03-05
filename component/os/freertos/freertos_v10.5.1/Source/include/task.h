@@ -1442,6 +1442,9 @@ BaseType_t xTaskResumeAll( void ) PRIVILEGED_FUNCTION;
  */
 TickType_t xTaskGetTickCount( void ) PRIVILEGED_FUNCTION;
 
+/* Realtek add */
+TickType_t xTaskGetPendedTicks(void) PRIVILEGED_FUNCTION;
+
 /**
  * task. h
  * @code{c}
@@ -1459,6 +1462,9 @@ TickType_t xTaskGetTickCount( void ) PRIVILEGED_FUNCTION;
  * \ingroup TaskUtils
  */
 TickType_t xTaskGetTickCountFromISR( void ) PRIVILEGED_FUNCTION;
+
+/* Realtek add */
+TickType_t xTaskGetPendedTicksFromISR(void) PRIVILEGED_FUNCTION;
 
 /**
  * task. h
@@ -3080,6 +3086,9 @@ void vTaskSetTaskNumber( TaskHandle_t xTask,
  * equal to the idle period.
  */
 void vTaskStepTick( TickType_t xTicksToJump ) PRIVILEGED_FUNCTION;
+
+/* Realtek add */
+void vTaskCompTick(const TickType_t xTicksToComp) PRIVILEGED_FUNCTION;
 
 /*
  * Only available when configUSE_TICKLESS_IDLE is set to 1.

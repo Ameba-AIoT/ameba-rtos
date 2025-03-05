@@ -1026,9 +1026,8 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (uint32_t)((((uint64_t)tick_passed) * 1000) >> 15);
 
-	vTaskStepTick(ms_passed); /*  update kernel tick */
-
-	pmu_set_sysactive_time(2);
+	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
+	vTaskCompTick(ms_passed);
 
 	RTK_LOGD(NOTAG, "KM4 sleeped:[%lu] ms\n", ms_passed);
 

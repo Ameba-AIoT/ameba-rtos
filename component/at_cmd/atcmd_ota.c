@@ -187,8 +187,9 @@ end:
 static void at_userota_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USEROTA=<length>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USEROTA=<length>[,<sysrst>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>:\timage ota_all.bin length\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<sysrst>:\t1: the system will reset after ota finished. 0: the system will not reset after ota finished. Default:0\r\n");
 }
 
 /****************************************************************
@@ -203,7 +204,7 @@ void at_userota(void *arg)
 	u8 *buffer = NULL;
 	int argc = 0, ret = -1, err_no = 0;
 	int frag_len = 0;
-	int length = 0;
+	int length = 0, sysrst = 0;
 
 	if (!arg) {
 		at_userota_help();
@@ -230,6 +231,15 @@ void at_userota(void *arg)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] Invalid length\r\n");
 		err_no = 1;
 		goto end;
+	}
+
+	if (argc == 3) {
+		sysrst = atoi(argv[2]);
+		if (sysrst != 0 && sysrst != 1) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+USEROTA] Invalid sysrst\r\n");
+			err_no = 1;
+			goto end;
+		}
 	}
 
 	buffer = (u8 *)rtos_mem_zmalloc(BUF_SIZE);
@@ -264,7 +274,7 @@ void at_userota(void *arg)
 		goto end;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[+USEROTA] ota user download start, length: %d\r\n", length);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[+USEROTA] ota user download start, length: %d, sysrst: %d\r\n", length, sysrst);
 
 	while (length > 0) {
 		frag_len = (length < BUF_SIZE) ? length : BUF_SIZE;
@@ -273,7 +283,9 @@ void at_userota(void *arg)
 		if (ret == OTA_RET_FINISH) {
 			at_printf(ATCMD_OK_END_STR);
 			rtos_time_delay_ms(20);
-			sys_reset();
+			if (sysrst) {
+				sys_reset();
+			}
 		}
 		if (ret == OTA_RET_ERR) {
 			atcmd_tt_mode_end();

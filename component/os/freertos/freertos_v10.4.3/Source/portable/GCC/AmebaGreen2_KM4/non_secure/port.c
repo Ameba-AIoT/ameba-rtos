@@ -1033,10 +1033,8 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (uint32_t)((((u64)tick_passed) * 1000) >> 15);
 
-	vTaskStepTick(ms_passed); /*  update kernel tick */
-
-	sysactive_timeout_flag = 0;
-	pmu_set_sysactive_time(2);
+	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
+	vTaskCompTick(ms_passed);
 
 	RTK_LOGD(NOTAG, "%s sleeped:[%d] ms\n", (SYS_CPUID() == NP_CPU_ID) ? "NP" : "AP", ms_passed);
 }

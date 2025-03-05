@@ -267,40 +267,6 @@ int whc_fullmac_host_wifi_is_connected_to_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_channel(u32 wlan_idx, u8 *ch)
-{
-	int ret = -1;
-	u32 param_buf[2];
-	u8 *channel_temp = NULL;
-	dma_addr_t dma_addr = 0;
-	struct device *pdev = global_idev.ipc_dev;
-
-	channel_temp = kzalloc(sizeof(u8), GFP_KERNEL);
-	if (channel_temp == NULL) {
-		goto func_exit;
-	}
-
-	dma_addr = dma_map_single(pdev, channel_temp, sizeof(u8), DMA_FROM_DEVICE);
-	if (dma_mapping_error(pdev, dma_addr)) {
-		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
-		ret = -EINVAL;
-		goto free_buf;
-	}
-	param_buf[0] = wlan_idx;
-	param_buf[1] = dma_addr;
-
-	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_CHANNEL, param_buf, 2);
-	/* need do cache invalidate before get value */
-	dma_unmap_single(pdev, dma_addr, sizeof(u8), DMA_FROM_DEVICE);
-	*ch = *channel_temp;
-
-free_buf:
-	kfree((u8 *)channel_temp);
-
-func_exit:
-	return ret;
-}
-
 int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch)
 {
 	int ret = -1;
@@ -549,6 +515,20 @@ int whc_fullmac_host_get_statistics(dma_addr_t statistic_phy)
 	param_buf[0] = (u32)statistic_phy;
 
 	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_PHY_STATISTIC, param_buf, 1);
+
+	return ret;
+}
+
+int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy)
+{
+	int ret = 0;
+	u32 param_buf[2];
+
+	/* ptr of settings to fullfill. */
+	param_buf[0] = (u32)wlan_idx;
+	param_buf[1] = (u32)setting_phy;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_SETTING, param_buf, 2);
 
 	return ret;
 }

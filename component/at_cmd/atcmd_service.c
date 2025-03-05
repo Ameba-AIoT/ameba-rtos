@@ -205,9 +205,7 @@ int at_printf_indicate(const char *fmt, ...)
 		out_buffer(buf, len_fmt + 3);
 	}
 
-	rtos_mem_free(buf);
-
-	if (len_fmt >= SMALL_BUF) {
+	if (len_fmt >= SMALL_BUF - 3) {
 		rtos_mem_free(buf);
 	}
 

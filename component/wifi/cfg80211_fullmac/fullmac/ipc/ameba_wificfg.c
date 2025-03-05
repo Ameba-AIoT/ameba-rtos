@@ -68,7 +68,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.uapsd_ac_enable = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 12;	/*should not exceed MAX_AP_CLIENT_NUM */
+	wifi_user_config.ap_sta_num = 12;	/*should not exceed 12 */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
@@ -99,5 +99,11 @@ _WEAK void wifi_set_user_config(void)
 
 	/*Automatic channel selection*/
 	wifi_user_config.acs_en = 0;
+
+	/* ensure ap_sta_num not exceed 12*/
+	if (wifi_user_config.ap_sta_num > 12) {
+		wifi_user_config.ap_sta_num = 12;
+		dev_err(global_idev.fullmac_dev, "change ap_sta_num to 12\n");
+	}
 }
 

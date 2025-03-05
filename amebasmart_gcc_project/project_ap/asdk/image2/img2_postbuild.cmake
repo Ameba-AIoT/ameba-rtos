@@ -1,12 +1,12 @@
 #Note: Previously defined variables cannot be used directly in this file
 #unless passed through -D
-include(${CMAKE_FILES_DIR}/axf2bin.cmake)
-include(${CMAKE_FILES_DIR}/utility.cmake)
-include(${CMAKE_FILES_DIR}/global_define.cmake)
+include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
+include(${c_CMAKE_FILES_DIR}/utility.cmake)
+include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 set(v_USER_CUSTOM_LOG_PREFIX "AP_POSTBUILD")
 
 
-file(READ ${IMAGE_TARGET_FOLDER}/target_img2.map content)
+file(READ ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map content)
 string(REPLACE "\n" ";" lines ${content})
 foreach(_line ${lines})
     string(REGEX MATCH "^.*__exidx_end" result ${_line})
@@ -19,69 +19,69 @@ list(GET match_line 0 ARMExAddr)
 
 if(0x${ARMExAddr} GREATER 0x60000000)
     execute_process(
-        COMMAND ${CMAKE_OBJCOPY} -j .code -j .ARM.extab -j .ARM.exidx -j .ctors -j .dtors -j .preinit_array -j .init_array -j .fini_array -j .data -j .mmu_tbl -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/ram_2.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/xip_image2.bin
+        COMMAND ${CMAKE_OBJCOPY} -j .code -j .ARM.extab -j .ARM.exidx -j .ctors -j .dtors -j .preinit_array -j .init_array -j .fini_array -j .data -j .mmu_tbl -Obinary ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_FOLDER}/ram_2.bin
+        COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_FOLDER}/xip_image2.bin
     )
 else()
     execute_process(
-        COMMAND ${CMAKE_OBJCOPY} -j .code -j .data -j .mmu_tbl -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/ram_2.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -j .ARM.extab -j .ARM.exidx -j .ctors -j .dtors -j .preinit_array -j .init_array -j .fini_array -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/xip_image2.bin
+        COMMAND ${CMAKE_OBJCOPY} -j .code -j .data -j .mmu_tbl -Obinary ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_FOLDER}/ram_2.bin
+        COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -j .ARM.extab -j .ARM.exidx -j .ctors -j .dtors -j .preinit_array -j .init_array -j .fini_array -Obinary ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_FOLDER}/xip_image2.bin
     )
 endif()
 
 
 if(CONFIG_BT)
     execute_process(
-        COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/APP.trace
+        COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_FOLDER}/APP.trace
     )
 endif()
 
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/ram_2.bin
-    OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/ca32_image2_all.bin
+    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_FOLDER}/ram_2.bin
+    OUTPUT_FILE ${c_SDK_IMAGE_TARGET_FOLDER}/ca32_image2_all.bin
 )
 
 message( "========== Image manipulating start ==========")
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf img"
-    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
+    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
     WORKING_DIRECTORY ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf
 )
 
 execute_process(
-    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/bl1_sram.bin 32
+    COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/bl1_sram.bin 32
 )
 execute_process(
-    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/bl1.bin 32
+    COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/bl1.bin 32
 )
 execute_process(
-    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/fip.bin 32
+    COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/fip.bin 32
 )
 execute_process(
-    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin 32
+    COMMAND ${PADTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/xip_image2.bin 32
 )
 
 
 execute_process(
-    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  __flash_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/xip_image2.bin  __flash_text_start__  ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
 )
 execute_process(
-    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/bl1_sram.bin  __ca32_bl1_sram_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/bl1_sram.bin  __ca32_bl1_sram_start__  ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
 )
 execute_process(
-    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/bl1.bin  __ca32_bl1_dram_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/bl1.bin  __ca32_bl1_dram_start__  ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
 )
 execute_process(
-    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/fip.bin  __ca32_fip_dram_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/fip.bin  __ca32_fip_dram_start__  ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
 )
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${IMAGE_TARGET_FOLDER}/bl1_sram_prepend.bin ${IMAGE_TARGET_FOLDER}/bl1_prepend.bin ${IMAGE_TARGET_FOLDER}/fip_prepend.bin
-    OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/ap_image_all.bin
+    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${c_SDK_IMAGE_TARGET_FOLDER}/bl1_sram_prepend.bin ${c_SDK_IMAGE_TARGET_FOLDER}/bl1_prepend.bin ${c_SDK_IMAGE_TARGET_FOLDER}/fip_prepend.bin
+    OUTPUT_FILE ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all.bin
 )
 execute_process(
-    COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/ap_image_all.bin ${BUILD_TYPE}
+    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all.bin ${BUILD_TYPE}
     WORKING_DIRECTORY ${PROJECTDIR}/..
 )
 
@@ -92,34 +92,34 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
 
     if(EXISTS ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin)
         execute_process(
-            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin  __dram_dynamic_app_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin  __dram_dynamic_app_text_start__  ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E rename ${IMAGE_TARGET_FOLDER}/ap_image_all.bin ${IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin
+            COMMAND ${CMAKE_COMMAND} -E rename ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all.bin ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-            OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/ap_image_all.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
+            OUTPUT_FILE ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all.bin
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin
+            COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_tmp.bin
         )
 
-        if(EXISTS ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin)
+        if(EXISTS ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_en.bin)
             execute_process(
-                COMMAND ${CMAKE_COMMAND} -E rename ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
+                COMMAND ${CMAKE_COMMAND} -E rename ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_en.bin ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
             )
 
             execute_process(
-                COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-                OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/ap_image_all_en.bin
+                COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
+                OUTPUT_FILE ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_en.bin
             )
 
             execute_process(
-                COMMAND ${CMAKE_COMMAND} -E remove ${IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
+                COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_FOLDER}/ap_image_all_en_tmp.bin
             )
         endif()
     endif()
@@ -127,7 +127,7 @@ if(CONFIG_DYNAMIC_APP_LOAD_EN)
 endif()
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
-    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin AND EXISTS ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin AND EXISTS ${c_BASEDIR}/{c_SOC_PROJECT_DIR}/fatfs.bin)
 
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E rename ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_tmp.bin
@@ -146,16 +146,16 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
         )
 
         execute_process(
-            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${IMAGE_TARGET_FOLDER}/target_img2.map
+            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/{c_SOC_PROJECT_DIR}/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_tmp.bin ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs_prepend.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_tmp.bin ${c_BASEDIR}/{c_SOC_PROJECT_DIR}/fatfs_prepend.bin
             OUTPUT_FILE ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app.bin
         )
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_ns_tmp.bin ${c_BASEDIR}/{d_PLATFORM_PROJECT_DIR}/fatfs_prepend.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_ns_tmp.bin ${c_BASEDIR}/{c_SOC_PROJECT_DIR}/fatfs_prepend.bin
             OUTPUT_FILE ${KM4_PROJECT_DIR}/asdk/image/km0_km4_ca32_app_ns.bin
         )
     endif()

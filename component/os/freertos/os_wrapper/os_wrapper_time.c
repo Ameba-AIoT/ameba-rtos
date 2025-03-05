@@ -33,6 +33,9 @@ extern uint64_t GenericTimerFreq;
 #define pdTICKS_TO_CNT	(GenericTimerFreq/RTOS_TICK_RATE_HZ)
 #endif
 
+TickType_t xTaskGetPendedTicks(void);
+TickType_t xTaskGetPendedTicksFromISR(void);
+
 void rtos_time_delay_ms(uint32_t ms)
 {
 	if (pmu_yield_os_check() && (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && (!rtos_critical_is_in_interrupt())) {
@@ -80,6 +83,19 @@ uint64_t rtos_time_get_current_system_time_ms_64bit(void)
 	__rtos_critical_exit_os();
 
 	return total_ms;
+}
+
+uint32_t rtos_time_get_current_pended_time_ms(void)
+{
+	if (rtos_critical_is_in_interrupt()
+#if defined CONFIG_AMEBALITE
+		|| (!pmu_yield_os_check())	// for Kr4, which use cpsid directly
+#endif
+	   ) {
+		return (uint32_t)(xTaskGetPendedTicksFromISR() * portTICK_PERIOD_MS);
+	} else {
+		return (uint32_t)(xTaskGetPendedTicks() * portTICK_PERIOD_MS);
+	}
 }
 
 uint64_t rtos_time_get_current_system_time_us(void)

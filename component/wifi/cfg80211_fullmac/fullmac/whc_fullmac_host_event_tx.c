@@ -330,18 +330,6 @@ int whc_fullmac_host_wifi_is_connected_to_ap(void)
 	return ret;
 }
 
-int whc_fullmac_host_get_channel(u32 wlan_idx, u8 *ch)
-{
-	int ret = 0;
-	u32 param_buf[1];
-
-	param_buf[0] = wlan_idx;
-
-	whc_fullmac_host_send_event(WHC_API_WIFI_GET_CHANNEL, (u8 *)param_buf, sizeof(param_buf), ch, sizeof(u8));
-
-	return ret;
-}
-
 int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch)
 {
 	int ret = 0;
@@ -542,6 +530,18 @@ int whc_fullmac_host_get_statistics(dma_addr_t statistic_addr)
 	int ret = 0;
 
 	whc_fullmac_host_send_event(WHC_API_WIFI_GET_PHY_STATISTIC, NULL, 0, (u8 *)statistic_addr, sizeof(struct _rtw_phy_statistics_t));
+
+	return ret;
+}
+
+int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_addr)
+{
+	int ret = 0;
+	u32 param_buf[1];
+
+	param_buf[0] = wlan_idx;
+
+	whc_fullmac_host_send_event(WHC_API_WIFI_GET_SETTING, (u8 *)param_buf, sizeof(param_buf), (u8 *)setting_addr, sizeof(struct _rtw_wifi_setting_t));
 
 	return ret;
 }

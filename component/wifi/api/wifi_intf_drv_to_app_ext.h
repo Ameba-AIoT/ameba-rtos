@@ -155,14 +155,6 @@ int wifi_del_station(unsigned char *hwaddr);
 int wifi_set_channel(unsigned char wlan_idx, u8 channel);
 
 /**
- * @brief  get current channel
- * @param[in]  wlan_idx: the wlan interface index, should be SOFTAP_WLAN_INDEX or STA_WLAN_INDEX.
- * @param[inout]  channel: the current channel
- * @return  @ref RTW_SUCCESS or @ref RTW_ERROR
- */
-int wifi_get_channel(unsigned char wlan_idx, u8 *channel);
-
-/**
  * @brief  set country code
  * @param[in]  cntcode: Pointer to the country code which want to be set
  * @return  @ref RTW_SUCCESS or @ref RTW_ERROR

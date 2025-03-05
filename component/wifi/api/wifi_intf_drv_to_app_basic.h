@@ -619,7 +619,7 @@ struct wifi_user_conf {
 		RTW_ANTDIV_DISABLE: antdiv disable */
 	unsigned char antdiv_mode;
 
-	/*!	The maximum number of STAs connected to the softap should not exceed MAX_AP_CLIENT_NUM */
+	/*!	The maximum number of STAs connected to the softap should not exceed the num specified in notes of func wifi_set_user_config()*/
 	unsigned char ap_sta_num;
 
 	/*!	IPS(Inactive power save), If disconnected for more than 2 seconds, WIFI will be powered off*/

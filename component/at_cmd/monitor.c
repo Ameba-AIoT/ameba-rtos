@@ -163,38 +163,6 @@ u32 cmd_write_word(u16 argc, u8  *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)
-#ifdef CONFIG_ARM_CORE_CM4
-u32
-CmdTsfTest(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	/* To avoid gcc warnings */
-	(void) argc;
-
-	u32 temp;
-	if (_strcmp((const char *)argv[0], "read") == 0) { // release
-		if (_strcmp((const char *)argv[1], "560") == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "0x40080560=%x\n", HAL_READ32(WIFI_REG_BASE, 0x560));
-		} else if (_strcmp((const char *)argv[1], "568") == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "0x40080568=%x\n", HAL_READ32(WIFI_REG_BASE, 0x568));
-		} else if (_strcmp((const char *)argv[1], "all") == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS, "0x40080560=%x 0x40080568=%x\n", HAL_READ32(WIFI_REG_BASE, 0x560), HAL_READ32(WIFI_REG_BASE, 0x568));
-		}
-	}
-	if (_strcmp((const char *)argv[0], "set") == 0) { // release
-		temp = HAL_READ32(WIFI_REG_BASE, 0x560);
-		HAL_WRITE32(WIFI_REG_BASE, 0x568, temp);
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "0x40080560=%x 0x40080568=%x\n", HAL_READ32(WIFI_REG_BASE, 0x560), HAL_READ32(WIFI_REG_BASE, 0x568));
-	}
-
-	return 0;
-}
-#endif
-#endif
-
 #ifdef CONFIG_AMEBADPLUS
 #ifdef CONFIG_ARM_CORE_CM0
 #ifdef CONFIG_WLAN
@@ -473,13 +441,6 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t rmap \n"
 		"\t\t <wmap 0x00 0x2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
 		"\t\t <wmap 0xF0 0x4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
-	},
-#endif
-
-#if (defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS)) && defined(CONFIG_ARM_CORE_CM4)
-	{
-		(const u8 *)"TSFTEST",	4, CmdTsfTest,	(const u8 *)"\tTSFTEST \n"
-		"\t\t get\n"
 	},
 #endif
 #if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)

@@ -14,7 +14,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     )
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_chipinfo_lib p_SCOPE interface
-            ${d_SOC_PLATFORM_DIR}/fwlib/rom_hp
             ${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_systimer_rom.c
             ${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_assert_rom.c
             ${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_syscfg_rom.c
