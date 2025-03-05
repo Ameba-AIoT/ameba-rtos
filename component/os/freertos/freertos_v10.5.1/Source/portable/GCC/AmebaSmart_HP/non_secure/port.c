@@ -1429,13 +1429,12 @@ void pmu_post_sleep_processing(uint32_t *tick_before_sleep)
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (uint32_t)((((uint64_t)tick_passed) * 1000) >> 15);
 
-	vTaskStepTick(ms_passed); /*  update kernel tick */
+	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
+	vTaskCompTick(ms_passed);
 
+	/* update sleepwakelock_timeout if sysactive_timeout_temp not 0 */
 	sysactive_timeout_flag = 0;
-
-#ifndef CONFIG_CLINTWOOD
-	pmu_set_sysactive_time(2);
-#endif
+	pmu_set_sysactive_time(0);
 
 	RTK_LOGD(NOTAG, "sleeped:[%d] ms\n", ms_passed);
 

@@ -47,7 +47,6 @@ void whc_event_wifi_disconnect(u32 api_id, u32 *param_buf);
 void whc_event_wifi_is_connected_to_ap(u32 api_id, u32 *param_buf);
 void whc_event_wifi_is_running(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_channel(u32 api_id, u32 *param_buf);
-void whc_event_wifi_get_channel(u32 api_id, u32 *param_buf);
 void whc_event_wifi_on(u32 api_id, u32 *param_buf);
 void whc_event_wifi_init_ap(u32 api_id, u32 *param_buf);
 void whc_event_wifi_off_ap(u32 api_id, u32 *param_buf);

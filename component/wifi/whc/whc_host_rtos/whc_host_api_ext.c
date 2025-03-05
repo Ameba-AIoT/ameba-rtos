@@ -110,17 +110,6 @@ int wifi_set_channel(unsigned char wlan_idx, u8 channel)
 	return ret;
 }
 
-int wifi_get_channel(unsigned char wlan_idx, u8 *channel)
-{
-	int ret = 0;
-	u32 param_buf[1];
-
-	param_buf[0] = (u32)wlan_idx;
-	whc_host_api_message_send(WHC_API_WIFI_GET_CHANNEL, (u8 *)param_buf, 4, channel, sizeof(u8));
-
-	return ret;
-}
-
 //----------------------------------------------------------------------------//
 int wifi_set_countrycode(char *cntcode)
 {

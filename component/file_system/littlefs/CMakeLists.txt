@@ -4,10 +4,10 @@
 
 set(public_includes)                #public include directories, NOTE: relative path is OK
 set(public_definitions)             #public definitions
-set(public_libraries)               #public libraries(files), NOTE: linked with whole-achive options
+set(public_libraries)               #public libraries(files), NOTE: linked with whole-archive options
 
 #------------------------------------------------------------------#
-# Coponent public part, user config begin(DO NOT remove this line)
+# Component public part, user config begin(DO NOT remove this line)
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append(public_includes
@@ -15,7 +15,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/${v_LITTLEFS_VER}
 )
 
-# Coponent public part, user config end(DO NOT remove this line)
+# Component public part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
@@ -38,7 +38,7 @@ set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
 #------------------------------------------------------------------#
-# Coponent private part, user config begin(DO NOT remove this line)
+# Component private part, user config begin(DO NOT remove this line)
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
@@ -63,10 +63,10 @@ ameba_list_append(private_includes
     ${c_CMPT_FILE_SYSTEM_DIR}/ftl_common
 )
 
-# Coponent private part, user config end(DO NOT remove this line)
+# Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
-ameba_add_internal_library(ftl
+ameba_add_internal_library(littlefs
     p_SOURCES
         ${private_sources}
     p_INCLUDES

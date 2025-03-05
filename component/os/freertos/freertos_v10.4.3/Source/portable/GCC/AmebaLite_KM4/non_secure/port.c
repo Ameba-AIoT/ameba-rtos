@@ -1030,9 +1030,11 @@ void pmu_post_sleep_processing(uint32_t *expected_idle_time)
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
 
-	vTaskStepTick(ms_passed); /*  update kernel tick */
+	/* update xTickCount and mark to trigger task list update in xTaskResumeAll */
+	vTaskCompTick(ms_passed);
+	/* update sleepwakelock_timeout if sysactive_timeout_temp not 0 */
 	sysactive_timeout_flag = 0;
-	pmu_set_sysactive_time(1);
+	pmu_set_sysactive_time(0);
 
 	RTK_LOGD(NOTAG, "%s sleeped:[%lu] ms\n", "KM4", ms_passed);	
 

@@ -34,7 +34,7 @@ extern "C" {
 
 #define MQTT_DEFAULT_RETAIN         0
 
-#define MQTT_DEFAULT_SENDBUF_SIZE   MQTT_SINGLE_STR_LEN
+#define MQTT_DEFAULT_BUF_SIZE       MQTT_SINGLE_STR_LEN
 
 #define MQTT_SELECT_TIMEOUT         1
 
@@ -58,7 +58,7 @@ extern "C" {
 #define MQTT_MAX_TOPIC_LEN          MQTT_SINGLE_STR_LEN
 
 /* msg's length  (excluding '\0'). */
-#define MQTT_MAX_MSG_LEN            MQTT_DEFAULT_SENDBUF_SIZE
+#define MQTT_MAX_MSG_LEN            MQTT_DEFAULT_BUF_SIZE
 
 #define ATCMD_MQTT_TASK_PRIORITY    4
 
@@ -130,7 +130,7 @@ typedef struct MQTT_SUB_DATA_t {
 MQTT_SUB_DATA;
 
 typedef struct MQTT_CONTROL_BLOCK_t {
-	u8          tcpConnectId;   /* 0 ~ 3 */
+	u8          linkId;   /* 0 ~ 3 */
 	char        *host;
 	u16         port;           /* 1 ~ 65535 */
 #if MQTT_OVER_SSL
@@ -143,7 +143,7 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 	MQTT_SUB_DATA   subData[MAX_MESSAGE_HANDLERS];
 	MQTT_PUB_DATA   pubData;
 	u8          networkConnect;
-	u8          offline;        /* Set to 1 when offline during connecting status. */
+	u8          initailClient;
 	u8          initialConnect; /* Set to 1 between MQTTCONN and CONN_ACK. */
 	Network         network;
 	MQTTClient  client;

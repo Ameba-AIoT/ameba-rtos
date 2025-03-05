@@ -69,7 +69,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.uapsd_ac_enable = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 12;	/*should not exceed MAX_AP_CLIENT_NUM */
+	wifi_user_config.ap_sta_num = 12;	/*should not exceed 12 */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
@@ -107,10 +107,10 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 	}
 
-	/* ensure ap_sta_num not exceed MAX_AP_CLIENT_NUM*/
-	if (wifi_user_config.ap_sta_num > MAX_AP_CLIENT_NUM) {
-		wifi_user_config.ap_sta_num = MAX_AP_CLIENT_NUM;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to %d\n", MAX_AP_CLIENT_NUM);
+	/* ensure ap_sta_num not exceed 12*/
+	if (wifi_user_config.ap_sta_num > 12) {
+		wifi_user_config.ap_sta_num = 12;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 12\n");
 	}
 }
 

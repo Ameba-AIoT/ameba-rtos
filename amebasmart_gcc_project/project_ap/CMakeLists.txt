@@ -30,7 +30,6 @@ set(c_FREERTOS_DIR_SUFFIX _smp)
 set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################
 
-#
 ameba_mcu_project_create(ap ca32)
 ameba_mcu_project_check()
 

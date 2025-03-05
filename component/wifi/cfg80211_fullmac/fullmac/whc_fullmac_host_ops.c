@@ -811,8 +811,9 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 {
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
-	u8 ch = 0;
 	struct ieee80211_channel *chan = NULL;
+	struct _rtw_wifi_setting_t *setting_vir = NULL;
+	dma_addr_t setting_phy;
 	int freq = 0;
 	int ret = 0;
 
@@ -835,13 +836,20 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 			return -EINVAL;
 		}
 
-	ret = whc_fullmac_host_get_channel(wlan_idx, &ch);
+	setting_vir = rtw_malloc(sizeof(struct _rtw_wifi_setting_t), &setting_phy);
+	if (!setting_vir) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	ret = whc_fullmac_host_get_setting(wlan_idx, setting_phy);
+
 	if (ret < 0) {
 		dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s, get channel failed(%d).", __func__, ret);
 		return ret;
 	}
 
-	freq = rtw_ch2freq(ch);
+	freq = rtw_ch2freq(setting_vir->channel);
 	chan = ieee80211_get_channel(wiphy, freq);
 	if (!chan) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: %s, ieee80211_get_channel failed.", __func__);
@@ -853,6 +861,7 @@ static int whc_fullmac_host_get_channel_ops(struct wiphy *wiphy,
 	chandef->center_freq1 = freq;
 	chandef->chan = chan;
 
+	rtw_mfree(sizeof(struct _rtw_wifi_setting_t), setting_vir, setting_phy);
 	return ret;
 }
 

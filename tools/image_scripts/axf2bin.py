@@ -1055,18 +1055,6 @@ class IMAGETOOL():
 
             self.image2_posthandle(KM4_IMG_DIR, app, app_ns, app_dsp, app_dsp_ns)
 
-        if self.IMAGE_FILENAME == 'kr4_image2_all_shrink.bin' or self.IMAGE_FILENAME == 'km4_image2_all_shrink.bin':
-            if os.path.exists(os.path.join(KR4_IMG_DIR, 'kr4_image2_all_shrink.bin')):
-                shutil.copy(os.path.join(KR4_IMG_DIR, 'kr4_image2_all_shrink.bin'), KM4_IMG_DIR)
-            if os.path.exists(os.path.join(KM4_IMG_DIR, 'kr4_image2_all_shrink.bin')) == False:
-                sys.exit(0)
-            if os.path.exists(os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin')) == False:
-                sys.exit(0)
-            CATFILE('', app, os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin'),os.path.join(KM4_IMG_DIR, 'kr4_image2_all_shrink.bin'))
-            if self.BUILD_TYPE == 'MFG':
-                if os.path.exists(app):
-                    os.rename(app, os.path.join(KM4_IMG_DIR, 'kr4_km4_app_mp.bin'))
-
         IMAGE_NAME = self.IMAGE_FULLNAME
         IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'
         IMAGE_NAME_NS = os.path.splitext(IMAGE_NAME)[0] + '_ns.bin'
@@ -1117,21 +1105,6 @@ class IMAGETOOL():
                 CATFILE('', app, self.cert, self.manifest, km0_image2_en, km4_image2_en)
 
             self.image2_posthandle(KM4_IMG_DIR, app, app_ns)
-
-        if self.IMAGE_FILENAME == 'km0_image2_all_shrink.bin' or self.IMAGE_FILENAME == 'km4_image2_all_shrink.bin':
-            if os.path.exists(os.path.join(KM0_IMG_DIR, 'km0_image2_all_shrink.bin')):
-                shutil.copy(os.path.join(KM0_IMG_DIR, 'km0_image2_all_shrink.bin'), KM4_IMG_DIR)
-            if os.path.exists(os.path.join(KM4_IMG_DIR, 'km0_image2_all_shrink.bin')) == False:
-                sys.exit(0)
-            if os.path.exists(os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin')) == False:
-                sys.exit(0)
-            if os.path.exists(app):
-                os.remove(app)
-
-            self.binary_pading(os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink.bin'), os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink_pad.bin'), 150)
-            CATFILE('', app, os.path.join(KM4_IMG_DIR, 'km4_image2_all_shrink_pad.bin'), os.path.join(KM4_IMG_DIR, 'km0_image2_all_shrink.bin'))
-
-            self.image2_posthandle(KM4_IMG_DIR, app)
 
         IMAGE_NAME = self.IMAGE_FULLNAME
         IMAGE_NAME_EN = os.path.splitext(IMAGE_NAME)[0] + '_en.bin'

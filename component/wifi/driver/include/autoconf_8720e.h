@@ -28,8 +28,6 @@
 /**************** configurations for concurrent mode end **********************/
 
 /************************* Default Values of User Configure *****************************/
-/* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
-#define MAX_AP_CLIENT_NUM	5
 #define MACID_HW_MAX_NUM		16
 /************************* Default Values of User Configure End***************************/
 

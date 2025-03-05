@@ -4,10 +4,10 @@
 
 set(public_includes)                #public include directories, NOTE: relative path is OK
 set(public_definitions)             #public definitions
-set(public_libraries)               #public libraries(files), NOTE: linked with whole-achive options
+set(public_libraries)               #public libraries(files), NOTE: linked with whole-archive options
 
 #------------------------------------------------------------------#
-# Coponent public part, user config begin(DO NOT remove this line)
+# Component public part, user config begin(DO NOT remove this line)
 
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     ameba_list_append(public_includes
@@ -23,7 +23,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     endif()
 endif()
 
-# Coponent public part, user config end(DO NOT remove this line)
+# Component public part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
@@ -47,7 +47,7 @@ set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
 #------------------------------------------------------------------#
-# Coponent private part, user config begin(DO NOT remove this line)
+# Component private part, user config begin(DO NOT remove this line)
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${c_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_list_append(private_sources
@@ -230,11 +230,11 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ap_core/xlat_table/enable_mmu.S
             ap_core/xlat_table/cache_helpers.S
         )
+        ameba_list_append(private_includes ap_core/xlat_table)
     endif()
-    ameba_list_append(private_includes ap_core/xlat_table)
 endif()
 
-# Coponent private part, user config end(DO NOT remove this line)
+# Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone

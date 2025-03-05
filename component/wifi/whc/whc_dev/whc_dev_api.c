@@ -26,7 +26,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_IS_CONNECTED_TO_AP,	whc_event_wifi_is_connected_to_ap},
 	{WHC_API_WIFI_IS_RUNNING,	whc_event_wifi_is_running},
 	{WHC_API_WIFI_SET_CHANNEL,	whc_event_wifi_set_channel},
-	{WHC_API_WIFI_GET_CHANNEL,	whc_event_wifi_get_channel},
 	{WHC_API_WIFI_ON,	whc_event_wifi_on},
 	{WHC_API_WIFI_INIT_AP,	whc_event_wifi_init_ap},
 	{WHC_API_WIFI_DEINIT_AP,	whc_event_wifi_off_ap},
@@ -409,14 +408,6 @@ void whc_event_wifi_set_channel(u32 api_id, u32 *param_buf)
 	u8 channel = (u8)param_buf[1];
 	ret = wifi_set_channel(wlan_idx, channel);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_wifi_get_channel(u32 api_id, u32 *param_buf)
-{
-	u8 channel;
-	unsigned char wlan_idx = (unsigned char)param_buf[0];
-	wifi_get_channel(wlan_idx, &channel);
-	whc_send_api_ret_value(api_id, &channel, sizeof(channel));
 }
 
 void whc_event_wifi_on(u32 api_id, u32 *param_buf)

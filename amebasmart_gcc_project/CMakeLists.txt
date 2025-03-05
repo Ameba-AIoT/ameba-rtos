@@ -138,7 +138,7 @@ where the current CMakeLists.txt is located.")
 # set(v_LWIP_VER v2.1.2)
 set(v_MBEDTLS_VER 3.6.2)
 set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
-set(d_VERBOSE_MAKEFILE FALSE)
+set(c_VERBOSE_MAKEFILE FALSE)
 ###############################################################################
 
 ameba_soc_project_create(amebasmart)
@@ -171,9 +171,9 @@ set(d_IMAGE_OTA_ALL ${d_PLATFORM_PROJECT_DIR}/project_hp/asdk/image/ota_all.bin)
 
 ###############################################################################
 # Add sub projects
-ameba_add_subdirectory(project_ap)
+# ameba_add_subdirectory(project_ap)
 # ameba_add_subdirectory(project_hp)
-# ameba_add_subdirectory(project_lp)
+ameba_add_subdirectory(project_lp)
 ###############################################################################
 
 

@@ -1,3 +1,4 @@
+if(NOT CMAKE_REFACTOR) # For temporary compatibility.
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 ameba_set_if(d_VERBOSE_MAKEFILE CMAKE_VERBOSE_MAKEFILE ON p_ELSE OFF)
 
@@ -127,3 +128,34 @@ add_custom_target(
     ${PROJECT_NAME}
     DEPENDS target_img2_${PROJECT_NAME}
 )
+else() # For temporary compatibility.NOTE:  script below is new version cmake
+set(CMAKE_EXECUTABLE_SUFFIX .axf)
+
+#REVIEW: move this to ameba_mcu_project_create?
+ameba_global_include(${c_GLOBAL_MCU_INCLUDE_DIRECTORIES})
+add_compile_options(-fdata-sections -ffunction-sections)
+
+if(CONFIG_AMEBASMART_A_CUT)
+    ameba_set(ROM_LIB_DIR ${c_SDK_LIB_DIR}/${c_SOC_TYPE}_rom_acut)
+    # ameba_set(d_FLOADER_BIN_DIR ${d_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${d_PLATFORM_TYPE}_acut)
+    ameba_set(FLOADER_BIN_DIR ${c_SDK_GNU_UTILITY_DIR}/image_tool_flashloader/${c_SOC_TYPE}_acut)
+else()
+    ameba_fatal("CONFIG_AMEBASMART_A_CUT not defined as TRUE")
+endif()
+
+if(CONFIG_LINK_ROM_SYMB)
+    ameba_unset(LINK_ROM_LIB)
+    ameba_set(LINK_ROM_SYMBOL    ${c_SDK_LD_DIR}/ameba_rom_symbol_acut.ld)
+else()
+    ameba_set(LINK_ROM_LIB ${ROM_LIB_DIR}/rom.a)
+    ameba_set(LINK_ROM_SYMBOL ${c_SDK_LD_DIR}/ameba_rom_symbol_empty.a)
+endif()
+
+ameba_add_subdirectory(image2)
+
+add_custom_target(
+    ${c_MCU_PROJECT_NAME}
+    COMMENT "build ${c_MCU_PROJECT_NAME} only"
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
+)
+endif()# For temporary compatibility.
