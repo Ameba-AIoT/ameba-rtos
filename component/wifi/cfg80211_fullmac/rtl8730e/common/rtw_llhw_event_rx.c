@@ -189,9 +189,9 @@ static void llhw_event_set_netif_info(struct event_priv_t *event_priv, u32 *para
 		/*set ap port mac address*/
 		memcpy((void *)global_idev.pndev[1]->dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
 
-		if(softap_addr_offset_idx == 0){
+		if (softap_addr_offset_idx == 0) {
 			last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
-		}else{
+		} else {
 			last = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
 		}
 		memcpy((void *)&global_idev.pndev[1]->dev_addr[softap_addr_offset_idx], &last, 1);
@@ -249,6 +249,9 @@ static u8 llhw_event_get_network_info(struct event_priv_t *event_priv, u32 *para
 	case INIC_WLAN_IS_VALID_IP:
 		return 0;
 	}
+
+	/* free rx_event_msg */
+	kfree_skb(event_priv->rx_api_msg);
 
 	buf_len = SIZE_TX_DESC + sizeof(struct inic_api_info) + rsp_len;
 	buf = kzalloc(buf_len, GFP_KERNEL);
@@ -414,6 +417,9 @@ void llhw_event_task(struct work_struct *data)
 			ret_msg->event = INIC_WIFI_EVT_API_RETURN;
 			ret_msg->api_id = p_recv_msg->api_id;
 
+			/* free rx_event_msg */
+			kfree_skb(event_priv->rx_api_msg);
+
 			llhw_send_data(buf, buf_len, NULL);
 #ifndef CONFIG_INIC_USB_ASYNC_SEND
 			kfree(buf);
@@ -422,9 +428,6 @@ void llhw_event_task(struct work_struct *data)
 	}
 
 	dev_dbg(global_idev.fullmac_dev, "-----DEVICE CALLING API %x END\n", p_recv_msg->api_id);
-
-	/* free rx_event_msg */
-	kfree_skb(event_priv->rx_api_msg);
 
 	return;
 }
