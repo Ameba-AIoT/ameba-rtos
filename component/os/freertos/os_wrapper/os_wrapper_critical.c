@@ -51,6 +51,7 @@ int rtos_critical_is_in_interrupt(void)
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 #include "spinlock.h"
 static spinlock_t rtos_critical_spin_lock_list[RTOS_CRITICAL_MAX];
+static volatile uint16_t rtos_critical_spin_lock_nesting[RTOS_NUM_CORES][RTOS_CRITICAL_MAX];
 #endif
 
 uint32_t GetOSCriticalNesting(uint32_t xCoreID);
@@ -67,9 +68,14 @@ void rtos_critical_enter(uint32_t component_id)
 	if (component_id >= RTOS_CRITICAL_MAX) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] component_id invalid\r\n", __func__);
 	}
-
 	portDISABLE_INTERRUPTS();
-	spin_lock(&rtos_critical_spin_lock_list[component_id]);
+
+	/* support the same core multi-times take a particular spin_lock */
+	if (rtos_critical_spin_lock_nesting[portGET_CORE_ID()][component_id] == 0) {
+		spin_lock(&rtos_critical_spin_lock_list[component_id]);
+	}
+	rtos_critical_spin_lock_nesting[portGET_CORE_ID()][component_id] ++;
+
 	/* get core id after disable INT and get spin_lock */
 	uxCriticalNestingCnt[portGET_CORE_ID()] ++;
 #else
@@ -96,7 +102,12 @@ void rtos_critical_exit(uint32_t component_id)
 	}
 
 	uxCriticalNestingCnt[portGET_CORE_ID()] --;
-	spin_unlock(&rtos_critical_spin_lock_list[component_id]);
+
+	/* support the same core multi-times take a particular spin_lock */
+	rtos_critical_spin_lock_nesting[portGET_CORE_ID()][component_id] --;
+	if (rtos_critical_spin_lock_nesting[portGET_CORE_ID()][component_id] == 0) {
+		spin_unlock(&rtos_critical_spin_lock_list[component_id]);
+	}
 
 	/* before enable interrupt, OS critical nesting must return to 0 */
 	if (GetComponentCriticalNesting(portGET_CORE_ID()) == 0) {

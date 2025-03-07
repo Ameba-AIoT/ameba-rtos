@@ -10,6 +10,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
+ameba_list_append(public_includes
+    lv_drivers/interfaces
+)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -37,7 +40,29 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources ${c_CMPT_SWLIB_DIR}/gcc_wrap.c)
+ameba_list_append(private_sources
+    lv_drivers/${c_SOC_TYPE}/src/display.c
+    lv_drivers/${c_SOC_TYPE}/src/lv_hal.c
+)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+    ameba_list_append(private_sources
+        lv_drivers/${c_SOC_TYPE}/src/touch.c
+    )
+endif()
+
+ameba_list_append(private_includes
+    ${c_CMPT_UI_DIR}/drivers/cst328/include
+    ${c_CMPT_UI_DIR}/drivers/st7701s/include
+)
+
+ameba_list_append(private_definitions
+    __RTOS__
+    NDEBUG
+)
+ameba_list_append(private_compile_options
+    -UDEBUG
+    -Wno-incompatible-pointer-types
+)
 
 # Component private part, user config end
 #------------------------------#
@@ -45,7 +70,7 @@ ameba_list_append(private_sources ${c_CMPT_SWLIB_DIR}/gcc_wrap.c)
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(swlib_wrapper
+ameba_add_internal_library(lvgl_drivers
     p_SOURCES
         ${private_sources}
     p_INCLUDES

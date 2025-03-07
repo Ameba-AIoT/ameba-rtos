@@ -68,8 +68,8 @@ target_link_libraries(
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
     -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
-    ${LINK_ROM_LIB}
     ${LINK_LOADER_LIB}
+    ${LINK_ROM_LIB}
 )
 
 if(CONFIG_MP_SHRINK)

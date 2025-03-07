@@ -230,7 +230,7 @@ u8 whc_bridge_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	switch (direction) {
 	case PORT_TO_BOTH:
 		skb_backup = skb_copy(skb, GFP_ATOMIC, SKB_WLAN_TX_EXTRA_LEN); 	//skb will be corrupt when copy to pbuf, thus use a new skb
-		rltk_wlan_info[0].skb = (void *)skb_backup;
+		rltk_wlan_info[*idx].skb = (void *)skb_backup;
 		LwIP_ethernetif_recv(*idx, skb_backup->len); //BRIDGE_TODO: indicate to host will happen after lwip processed, do we need accelerate
 		dev_kfree_skb_any(skb_backup);
 		break;

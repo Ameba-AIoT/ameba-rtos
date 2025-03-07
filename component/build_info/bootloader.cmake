@@ -12,6 +12,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
 		if(CONFIG_AMEBASMART)
 			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bootloader p_SCOPE interface
 				${d_SOC_PLATFORM_DIR}/swlib/log.c
+                ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
 			)
 		endif()
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bootloader p_SCOPE interface
@@ -34,7 +35,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_pll.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_reset.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_ipc_api.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
         )
         ameba_target_sources_if(CONFIG_COMPRESS_OTA_IMG src_${d_MCU_PROJECT_NAME}_bootloader p_SCOPE interface
             ${c_COMPONENT_DIR}/soc/common/lzma/ameba_boot_lzma.c

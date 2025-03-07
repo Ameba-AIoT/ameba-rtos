@@ -370,7 +370,7 @@ static int wps_connect_to_AP_by_certificate(struct _rtw_network_info_t *wifi)
 			if (retry_count == wifi_user_config.wps_retry_count) {
 				rtos_time_delay_ms(1000);    //When start wps with OPEN AP, AP will send a disassociate frame after STA connected, need reconnect here.
 			}
-			if (RTW_SUCCESS == wifi_is_connected_to_ap()) {
+			if (wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
 				wps_check_and_show_connection_info();
 				break;
 			}

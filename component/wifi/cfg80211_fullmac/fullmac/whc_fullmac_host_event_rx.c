@@ -242,6 +242,9 @@ static u8 whc_fullmac_host_event_get_network_info(struct event_priv_t *event_pri
 		return 0;
 	}
 
+	/* free rx_event_msg */
+	kfree_skb(event_priv->rx_api_msg);
+
 	buf_len = SIZE_TX_DESC + sizeof(struct whc_api_info) + rsp_len;
 	buf = kzalloc(buf_len, GFP_KERNEL);
 	if (buf) {
@@ -402,6 +405,9 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 			ret_msg->event = WHC_WIFI_EVT_API_RETURN;
 			ret_msg->api_id = p_recv_msg->api_id;
 
+			/* free rx_event_msg */
+			kfree_skb(event_priv->rx_api_msg);
+
 			whc_host_send_data(buf, buf_len, NULL);
 #ifndef CONFIG_INIC_USB_ASYNC_SEND
 			kfree(buf);
@@ -410,9 +416,6 @@ void whc_fullmac_host_event_task(struct work_struct *data)
 	}
 
 	dev_dbg(global_idev.fullmac_dev, "-----DEVICE CALLING API %x END\n", p_recv_msg->api_id);
-
-	/* free rx_event_msg */
-	kfree_skb(event_priv->rx_api_msg);
 
 	return;
 }

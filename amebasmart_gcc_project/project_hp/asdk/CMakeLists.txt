@@ -304,11 +304,11 @@ else()
 endif()
 ameba_list_append(c_LINK_ROM_SYMBOL_NS    ${c_SDK_LD_DIR}/ameba_rom_symbol_stdlib.ld)
 add_compile_options(-fdata-sections -ffunction-sections)
-ameba_add_subdirectory(image1)
-ameba_add_subdirectory(image2)
-# ameba_add_subdirectory(image3)
-ameba_add_subdirectory(image_floader)
-ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS image_imgtool_floader)
+# ameba_add_subdirectory(make/image1)
+ameba_add_subdirectory(make/image2)
+# ameba_add_subdirectory(make/image3)
+# ameba_add_subdirectory(make/image_floader)
+# ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
 
 add_custom_target(
     ${c_MCU_PROJECT_NAME}

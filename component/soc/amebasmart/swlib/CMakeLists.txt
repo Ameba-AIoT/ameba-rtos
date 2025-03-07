@@ -1,9 +1,9 @@
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+if(CONFIG_AMEBASMART)
     if(${c_MCU_PROJECT_NAME} STREQUAL "ap")
-
-    elseif(${c_MCU_PROJECT_NAME} STREQUAL "hp")
-
-    elseif(${c_MCU_PROJECT_NAME} STREQUAL "lp")
-        ameba_add_subdirectory(cmake/wrapper)
+        include(swlib.cmake)
+    else()
+        if(CONFIG_KERNEL)
+            include(swlib_wrap.cmake)
+        endif()
     endif()
 endif()

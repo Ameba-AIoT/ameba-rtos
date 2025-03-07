@@ -12,13 +12,16 @@
 
 SECTIONS
 {
-	/* sram part */
-	.sram_image2.text.data ORIGIN(KM4_BD_RAM_MP):
+	.ram_image2.entry :
 	{
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
 		. = ALIGN(32);
+	} > KM4_IMG2_ENTRY
 
+	/* sram part */
+	.sram_image2.text.data ORIGIN(KM4_BD_RAM_MP):
+	{
 		__sram_image2_start__ = .;
 		*(.sram.only.text*)
 		SRAM_INPUT_TEXT_SECTION
@@ -143,6 +146,9 @@ SECTIONS
 
 __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __bdram_heap_buffer_start__;
 
+/* secure to ns addr */
+__sram_floader_mp_start__ = ORIGIN(KM4_FLOADER_RAM_MP) - IMAGE_HEADER_LEN - 0x10000000;
+__sram_floader_mp_size__ = LENGTH(KM4_FLOADER_RAM_MP) + IMAGE_HEADER_LEN;
 
 __psram_image2_start__ = .;
 

@@ -4,6 +4,7 @@ struct whc_sdio_priv_t sdio_priv = {0};
 
 #ifndef CONFIG_WHC_BRIDGE
 void rtw_pending_q_resume(void);
+void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
 #endif
 
 static char whc_sdio_dev_rpwm_cb(void *priv, u16 value)
@@ -88,6 +89,11 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 #ifndef  CONFIG_WHC_BRIDGE
 	} else if (event == WHC_CUST_EVT) {
 		whc_dev_recv_cust_evt(pdata);
+	} else if (event >= WHC_BT_EVT_BASE) {
+		/* copy by bt, skb no change */
+		if (bt_inic_sdio_recv_ptr) {
+			bt_inic_sdio_recv_ptr(pdata, SPDIO_RX_BUFSZ);
+		}
 #endif
 
 	} else {

@@ -148,8 +148,10 @@ ameba_target_link(dep_${d_MCU_PROJECT_NAME}_chipinfo p_SCOPE interface p_WHOLE_A
 ######################### dep_chipinfo define end ##############################
 
 ############################ dep_crashdump define ###############################
-ameba_target_include(dep_${d_MCU_PROJECT_NAME}_crashdump p_SCOPE interface ${c_COMPONENT_DIR}/soc/common/crashdump/include)
-ameba_target_link(dep_${d_MCU_PROJECT_NAME}_crashdump p_SCOPE interface p_WHOLE_ARCHIVE ${d_SDK_LIB_SOC_DIR}/lib_crashdump.a)
+if(CONFIG_AMEBASMART)
+    ameba_target_include(dep_${d_MCU_PROJECT_NAME}_crashdump p_SCOPE interface ${c_COMPONENT_DIR}/soc/common/crashdump/include)
+    ameba_target_link(dep_${d_MCU_PROJECT_NAME}_crashdump p_SCOPE interface p_WHOLE_ARCHIVE ${d_SDK_LIB_SOC_DIR}/lib_crashdump.a)
+endif()
 ######################## dep_crashdump define end ##############################
 
 ###################################### dep_freertos begin #############################################

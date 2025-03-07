@@ -320,7 +320,7 @@ static int rtw_dev_suspend(struct platform_device *pdev, pm_message_t state)
 	}
 
 	/* staion mode */
-	if (whc_fullmac_host_wifi_is_connected_to_ap() == 0) {
+	if (whc_fullmac_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
 		/* wowlan */
 		ret = whc_fullmac_host_update_ip_addr();
 		if (ret == 0) {

@@ -171,9 +171,8 @@ MEMORY
 	KM4_BOOTLOADER_RAM_MP (rwx) :            ORIGIN = 0x30013400 + IMAGE_HEADER_LEN, LENGTH = 0x3001A000 - 0x30013400 - IMAGE_HEADER_LEN	/* KM4 BootLoader RAM: 32k */
 
 
-	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A000 + IMAGE_HEADER_LEN,   	LENGTH = 0x2003F800 - 0x2001A000 - IMAGE_HEADER_LEN	/* KM4 BD RAM: TZ off,150K*/
-	KM0_BD_RAM_MP (rwx) :                   ORIGIN = 0x2003F800 + IMAGE_HEADER_LEN,   	LENGTH = 0x20080000 - 0x2003F800 - IMAGE_HEADER_LEN	/* KM0 BD RAM: 270k */
-
+	KM0_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A040, LENGTH = 0x2005DF80 - 0x2001A040	/* KM0 BD RAM: 272K, (LENGTH + 0xC0) must be a multiple of 4KB */
+	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2005E040, LENGTH = 0x2007FFA0 - 0x2005E040	/* KM4 BD RAM: TZ off, 136k */
 }
 
 __km0_image2_entry_func__ = ORIGIN(KM0_BD_RAM);
@@ -199,4 +198,5 @@ __non_secure_psram_end__ = PSRAM_END;
 /* mp used */
 __km4_bd_boot_download_addr__ = 0x30012000;
 __km0_bd_ram_mp_start__ = ORIGIN(KM0_BD_RAM_MP);
+__km4_bd_ram_mp_start__ = ORIGIN(KM4_BD_RAM_MP);
 __km0_image2_entry_func_mp__ = ORIGIN(KM0_IMG2_ENTRY);

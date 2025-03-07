@@ -2,19 +2,14 @@
 #unless passed through -D
 include(${CMAKE_FILES_DIR}/axf2bin.cmake)
 
-if(CONFIG_MP_SHRINK)
-    execute_process(COMMAND ${CMAKE_OBJCOPY} -j .boot.entry -j .sram_only.text.data -j .sram_image2.text.data -j .xip_image2.text -j .psram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_2.bin)
-else()
-    execute_process(
-        COMMAND ${CMAKE_OBJCOPY} -j .boot.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/boot.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .sram_only.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_only.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_2.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/xip_image2.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/psram_2.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .ram_retention.text -j .ram_retention.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/ram_retention.bin
-    )
-endif()
-
+execute_process(
+    COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/xip_image2.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/psram_2.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_2.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .boot.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/boot.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .sram_only.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_only.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .ram_retention.text -j .ram_retention.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/ram_retention.bin
+)
 
 if(CONFIG_BT)
     execute_process(COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/APP.trace)
@@ -24,7 +19,6 @@ execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/COEX.trace
 )
 
-
 message( "========== Image manipulating start ==========")
 
 if (CONFIG_DSP_WITHIN_APP_IMG)
@@ -33,42 +27,54 @@ if (CONFIG_DSP_WITHIN_APP_IMG)
     endif()
 endif()
 
+execute_process(
+    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  32
+    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin  32
+    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin 32
+    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/boot.bin  32
+    COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_only.bin  32
+)
+
 if(CONFIG_MP_SHRINK)
-    execute_process(COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  __boot_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin
-        OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/kr4_image2_all_shrink.bin
-    )
-    execute_process(
-        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/kr4_image2_all_shrink.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR}
-        WORKING_DIRECTORY ${PROJECTDIR}/..
-    )
-else()
-    execute_process(
-        COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/boot.bin  32
-        COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_only.bin  32
-        COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  32
-        COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin  32
-        COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  32
-    )
-    execute_process(
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/boot.bin  __boot_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_only.bin __sram_only_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  __sram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin  __psram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  __flash_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-    )
-    # pad to 4K-aligned for RSIP/MMU address 4K-alignment restriction
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${IMAGE_TARGET_FOLDER}/psram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/boot_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_only_prepend.bin
-        OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/kr4_image2_all.bin
-    )
-    execute_process(COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/kr4_image2_all.bin 4096)
-    execute_process(
-        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/kr4_image2_all.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR}
-        WORKING_DIRECTORY ${PROJECTDIR}/..
-    )
+    if(CONFIG_AS_INIC_NP)
+        set(GETSEGLEN python ${CMAKE_FILES_DIR}/extract_ld_var.py SIZE)
+        set(LD_FILE ${PROJECTDIR}/../amebalite_layout.ld)
+
+        execute_process(
+            COMMAND ${GETSEGLEN} ${LD_FILE} KR4_BD_RAM_MP
+            OUTPUT_VARIABLE length
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        file(WRITE ${IMAGE_TARGET_FOLDER}/xip_image2.bin "")
+        file(WRITE ${IMAGE_TARGET_FOLDER}/psram_2.bin "")
+
+        execute_process(
+            COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin ${length}
+        )
+
+    elseif(CONFIG_AS_INIC_AP)
+        message(FATAL_ERROR "Setting KR4 as AP is NOT ALLOWED in SHRINK MP.")
+    endif()
 endif()
+
+execute_process(
+    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  __flash_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin  __psram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  __sram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/boot.bin  __boot_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_only.bin __sram_only_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+)
+# pad to 4K-aligned for RSIP/MMU address 4K-alignment restriction
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${IMAGE_TARGET_FOLDER}/psram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/boot_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_only_prepend.bin
+    OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/kr4_image2_all.bin
+)
+execute_process(COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/kr4_image2_all.bin 4096)
+execute_process(
+    COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/kr4_image2_all.bin ${BUILD_TYPE} ${DSP_IMAGE_TARGET_DIR}
+    WORKING_DIRECTORY ${PROJECTDIR}/..
+)
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
     if(EXISTS ${KM4_BUILDDIR}/asdk/image/kr4_km4_app.bin AND EXISTS ${BASEDIR}/amebalite_gcc_project/fatfs.bin)

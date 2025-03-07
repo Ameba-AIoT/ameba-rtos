@@ -743,10 +743,11 @@ static int whc_fullmac_host_disconnect_ops(struct wiphy *wiphy, struct net_devic
 		whc_fullmac_host_set_wps_phase(0);
 	}
 
+	/* KM4 will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
+	global_idev.mlme_priv.b_in_disconnect = true;
+
 	ret = whc_fullmac_host_event_disconnect();
 
-	/* KM4 will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done */
-	global_idev.mlme_priv.b_in_disconnect = true;
 	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
 
 	return ret;

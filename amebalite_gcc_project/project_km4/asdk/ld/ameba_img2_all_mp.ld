@@ -1,6 +1,6 @@
 #include "../../../amebalite_layout.ld"
 
-#define OUT_TEXT_SECTION			.xip_image2.text
+#define OUT_TEXT_SECTION			.sram_image2.text.data
 #define OUT_DATA_SECTION			.sram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		KM4_BD_RAM_MP
 #define IMG2_DATA_LMA_REGION		KM4_BD_RAM_MP
@@ -17,31 +17,14 @@ SECTIONS
 		KEEP(*(SORT(.image2.entry.data*)))
 		__boot_text_end__ = .;
 		. = ALIGN(32);
-	} > KM4_BD_RAM_MP
-
-	.sram_only.text.data :
-	{
-		__sram_only_start__ = .;
-		*(.sram.only.text*)
-		. = ALIGN(32);
-
-		*(.sram.only.data*)
-	} > KM4_BD_RAM_MP
-
-	/* xip part */
-	.xip_image2.text :
-	{
-		__flash_text_start__ = .;
-		*(.non.dram.text*)
-		__flash_text_end__ = .;
-	} > KM4_BD_RAM_MP
+	} > KM4_BOOT_RAM
 
 	/* space for TIMER and IDLE task stack: 4k */
 	.sram_timer_idle_task_stack.bss (NOLOAD):
 	{
 		*port.o(*.uxIdleTaskStack*)
 		*port.o(*.uxTimerTaskStack*)
-	} > KM4_BD_RAM_MP
+	} > KM4_TIMER_IDLE_TASK_STACK
 
 	/* sram part */
 	.sram_image2.text.data :
@@ -50,11 +33,16 @@ SECTIONS
 		SRAM_INPUT_TEXT_SECTION
 		__sram_image2_end__ = .;
 		. = ALIGN(32);
-	} > KM4_BD_RAM_MP
 
-	/* image2: normal image start */
-	.psram_image2.text.data :
-	{
+		__sram_only_start__ = .;
+		*(.sram.only.text*)
+		. = ALIGN(32);
+		*(.sram.only.data*)
+
+		__flash_text_start__ = .;
+		*(.non.dram.text*)
+		__flash_text_end__ = .;
+
 		__psram_image2_start__ = .;
 
 		PSRAM_INPUT_TEXT_SECTION
@@ -159,7 +147,7 @@ SECTIONS
 	.psram_heap.start (NOLOAD):
 	{
 		__psram_heap_buffer_start__ = .;
-	} > KM4_BD_PSRAM
+	} > KM4_BD_RAM_MP
 
 	.bluetooth_trace.text :
 	{

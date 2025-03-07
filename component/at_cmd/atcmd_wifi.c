@@ -390,7 +390,7 @@ void at_wldisconn(void *arg)
 		goto end;
 	}
 
-	if (wifi_is_connected_to_ap() != RTW_SUCCESS) {
+	if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 		RTK_LOGI(NOTAG, "[+WLDISCONN] Not connected yet\r\n");
 		goto end;
 	}
@@ -406,7 +406,7 @@ void at_wldisconn(void *arg)
 	/* error_no == 4 means time out. */
 	error_no = 4;
 	while (timeout > 0) {
-		if (wifi_is_connected_to_ap() != RTW_SUCCESS) {
+		if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 			RTK_LOGI(NOTAG, "[+WLDISCONN] disconnect done\r\n");
 			error_no = 0;
 			break;

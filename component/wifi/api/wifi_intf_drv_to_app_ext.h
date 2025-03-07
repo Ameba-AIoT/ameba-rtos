@@ -31,21 +31,19 @@
 extern "C" {
 #endif
 
-/** @addtogroup Basic_Functions
+/** @addtogroup WIFI_API
+ *  @brief      WIFI_API module
+ *  @{
+ */
+/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+ * @{
+ */
+/** @addtogroup WIFI_Exported_Basic_Functions Basic Functions
   * @{
   */
-
 /******************************************************
  *               Function Declarations
  ******************************************************/
-
-/**
- * @brief  Check if Wi-Fi has connected to AP before dhcp.
- * @return  @ref RTW_SUCCESS : If conneced.
- * @return  @ref RTW_ERROR : If not connect.
- */
-int wifi_is_connected_to_ap(void);
-
 /**
  * @brief  Get scan results
  * @param[inout]  AP_num: input the pointer to the number of scanned ap info which
@@ -149,8 +147,17 @@ int wifi_del_station(unsigned char *hwaddr);
 /**
  * @brief  set channel
  * @param[in]  wlan_idx: the wlan interface index, should be SOFTAP_WLAN_INDEX or STA_WLAN_INDEX.
- * @param[in]  channel: the channel which will be switch to
+ * @param[in]  channel: the current operating RF channel which will be switch to
  * @return  @ref RTW_SUCCESS or @ref RTW_ERROR
+ * @note there are two concepts of channels and they are generally consistent
+ * 	1) interafce(x) operating channel
+ * 	2) network channel: realAP's channel for interafce(0); softap channel for interface(1)
+ * 	If you use a wifi_set_channel() to switch interafce(0) operating channel during or after wifi_connect,
+ * 	the sta will connect fail or disconnect from realAP due to inconsistency with realAP channel caused by
+ * 	interface(0) operating channel change; If you use a wifi_set_channel() to switch interafce(1) operating
+ * 	channel after softap start, other devices may not be able to connect to or disconnect from the softap because
+ * 	the interafce(1) operating channel has changed, resulting in inconsistency with the channel claimed by BCN.
+ * 	softap channel switching recommendation: call wifi_ap_switch_chl_and_inform()
  */
 int wifi_set_channel(unsigned char wlan_idx, u8 channel);
 
@@ -227,7 +234,7 @@ int wifi_set_network_mode(u32 mode);
 /** @} End of Basic_Functions group */
 
 
-/** @addtogroup Extended_Functions
+/** @addtogroup WIFI_Exported_Extended_Functions Extended Functions
   * @{
   */
 
@@ -345,23 +352,23 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
  * @brief  Setup custom IE list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.
- * @param[in]  cus_ie: a buffer stores custom IE list, format of custom ie is struct custom_ie.
+ * @param[in]  ie_list: a buffer stores custom IE list, format of custom ie is struct custom_ie.
  *  u8 ie1[] = {221, 2, 2, 2};
  *  u8 ie2[] = {221, 2, 1, 1};
- *  struct custom_ie buf[2] = {{ie1, @ref BEACON}, {ie2, @ref PROBE_RSP}};
- *  wifi_add_custom_ie(buf, 2);
- * @param[in]  ie_num: The number of custom IEs in cus_ie.
+ *  struct custom_ie ie_list[2] = {{ie1, @ref BEACON|PROBE_RSP}, {ie2, @ref PROBE_RSP}};
+ *  wifi_add_custom_ie(ie_list, 2);
+ * @param[in]  ie_num: The number of custom IEs in ie_list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num);
+int wifi_add_custom_ie(struct custom_ie *ie_list, int ie_num);
 
 /**
  * @brief  Update the item in WIFI CUSTOM IE list.
  * 	(Information Element)
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
  *  u8 ie[] = {221, 2, 1, 3} ;
- *  struct custom_ie buf_update = {ie, @ref PROBE_RSP};
- *  wifi_update_custom_ie(&buf_update, 2);
+ *  struct custom_ie ie_update = {ie, @ref PROBE_RSP};
+ *  wifi_update_custom_ie(&ie_update, 2);
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
  */
@@ -512,6 +519,8 @@ void wifi_set_conn_step_try_limit(struct rtw_conn_step_retries *conn_step_retrie
 void wifi_ap_set_invisible(u8 enable);
 
 /** @} End of Extended_Functions group */
+/** @} End of WIFI_Exported_Functions group*/
+/** @} End of WIFI_API group*/
 
 #ifdef __cplusplus
 }

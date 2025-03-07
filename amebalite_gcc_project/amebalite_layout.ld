@@ -189,11 +189,11 @@ MEMORY
 	KM4_BOOTLOADER_RAM_MP (rwx) :            ORIGIN = 0x30013400 + IMAGE_HEADER_LEN, LENGTH = 0x3001A000 - 0x30013400 - IMAGE_HEADER_LEN	/* KM4 BootLoader RAM: 32k */
 
 #if defined(CONFIG_AP_CORE_KM4)
-	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20038000 - 0x2001A000 - IMAGE_HEADER_LEN	/* KM4 BD RAM: TZ off,120K*/
-	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x20038000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20080000 - 0x20038000 - IMAGE_HEADER_LEN	/* KR4 BD RAM: 288k */
+	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A060, LENGTH = 0x20061F80 - 0x2001A060 /* KR4 BD RAM: 288k */
+	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x20062060, LENGTH = 0x2007FFA0 - 0x20062060 /* KM4 BD RAM: TZ off,120k */
 #else
-	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20058000 - 0x2001A000 - IMAGE_HEADER_LEN	/* KM4 BD RAM: 248k */
-	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x20058000 + IMAGE_HEADER_LEN,   	LENGTH = 0x20080000 - 0x20058000 - IMAGE_HEADER_LEN	/* KR4 BD RAM: TZ off,160k */
+	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A060, LENGTH = 0x20041F80 - 0x2001A060 /* KR4 BD RAM: TZ off,160K */
+	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x20042060, LENGTH = 0x2007FFA0 - 0x20042060 /* KM4 BD RAM: 248k */
 #endif
 }
 
@@ -228,3 +228,5 @@ __ap_sram_heap_size = KBYTES(256);
 /* mp used */
 __km4_bd_boot_download_addr__ = 0x30012000;
 __kr4_bd_ram_mp_start__ = ORIGIN(KR4_BD_RAM_MP);
+__km4_bd_ram_mp_start__ = ORIGIN(KM4_BD_RAM_MP);
+__kr4_boot_entry2_addr__ = ORIGIN(KR4_RAM_ONLY);

@@ -19,34 +19,24 @@ SECTIONS
 		KEEP(*(SORT(.image1.entry.data*)))
 		__boot_text_end__ = .;
 		. = ALIGN(32);
-	} > KR4_BD_RAM_MP
+	} > KR4_BOOT_RAM_BACKUP
 
 	/* fixed region. do not add any code to this region */
 	.sram_only.text.data :
 	{
 		__sram_only_start__ = .;
-		*(.sram.only.text*)
-		. = ALIGN(32);
+
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
 		. = ALIGN(32);
-		*(.sram.only.data*)
-	} > KR4_BD_RAM_MP
-
-	/* xip part */
-	.xip_image2.text :
-	{
-		__flash_text_start__ = .;
-		*(.non.dram.text*)
-		__flash_text_end__ = .;
-	} > KR4_BD_RAM_MP
+	} > KR4_RAM_ONLY
 
 	/* space for TIMER and IDLE task stack: 4k */
 	.sram_timer_idle_task_stack.bss (NOLOAD):
 	{
 		*port.o(*.uxIdleTaskStack*)
 		*port.o(*.uxTimerTaskStack*)
-	} > KR4_BD_RAM_MP
+	} > KR4_TIMER_IDLE_TASK_STACK
 
 	/* sram part */
 	.sram_image2.text.data :
@@ -57,20 +47,22 @@ SECTIONS
 
 		__sram_image2_end__ = .;
 		. = ALIGN(32);
-	} > KR4_BD_RAM_MP
 
-	/* psram part */
-	.psram_image2.text.data ORIGIN(KR4_BD_PSRAM):
-	{
+		*(.sram.only.text*)
+		. = ALIGN(32);
+		*(.sram.only.data*)
+		. = ALIGN(32);
+
+		__flash_text_start__ = .;
+		*(.non.dram.text*)
+		__flash_text_end__ = .;
+
 		__psram_image2_start__ = .;
 
 		PSRAM_INPUT_TEXT_SECTION
 
 		__psram_image2_end__ = .;
-	} > KR4_BD_PSRAM
 
-	OUT_TEXT_SECTION :
-	{
 		__image2_backtrace_start__ = .;
 
 		*(.timesensitive.text*)
@@ -106,16 +98,13 @@ SECTIONS
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
 		__fini_array_end = .;
-		
+
 		*(.gcc_except_table*)
 		/*-----------------*/
 
 		__image2_backtrace_end__ = .;
 		. = ALIGN (32);
-	} > IMG2_TEXT_LMA_REGION
 
-	OUT_DATA_SECTION :
-	{
 		*(.timesensitive.data*)
 
 		*(.data*)
@@ -183,7 +172,7 @@ SECTIONS
 	.psram_heap.start (NOLOAD):
 	{
 		__psram_heap_buffer_start__ = .;
-	} > KR4_BD_PSRAM
+	} > KR4_BD_RAM_MP
 
 	.bluetooth_trace.text :
 	{
@@ -204,9 +193,9 @@ __global_pointer$ = MIN(__sdata_start__ + 0x800, __sbss_end__);
 
 __bdram_heap_buffer_size__ = ORIGIN(KR4_BD_RAM_MP) + LENGTH(KR4_BD_RAM_MP) - __bdram_heap_buffer_start__;
 
-/* cert + mainfest = 5k, and secure to ns addr */
-__sram_bootloader_mp_start__ = ORIGIN(KM4_BOOTLOADER_RAM_MP) - IMAGE_HEADER_LEN - 0x1400 - 0x10000000;
-__sram_bootloader_mp_size__ = LENGTH(KM4_BOOTLOADER_RAM_MP) + IMAGE_HEADER_LEN + 0x1400;
+/* cert + mainfest = 8k, and secure to ns addr */
+__sram_bootloader_mp_start__ = ORIGIN(KM4_FLOADER_RAM_MP) + LENGTH(KM4_FLOADER_RAM_MP) - 0x10000000;
+__sram_bootloader_mp_size__ = ORIGIN(KR4_BD_RAM_MP) - __sram_bootloader_mp_start__ - IMAGE_HEADER_LEN * 3;
 
 __psram_image2_start__ = .;
 

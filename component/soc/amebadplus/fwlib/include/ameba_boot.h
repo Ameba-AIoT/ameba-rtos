@@ -67,6 +67,13 @@ extern u8 __psram_heap_buffer_size__[];
 extern u8 __psram_heap_extend_start__[];
 extern u8 __psram_heap_extend_size__[];
 
+#ifdef CONFIG_MP_SHRINK
+extern u8 __sram_floader_mp_start__[];
+extern u8 __sram_floader_mp_size__[];
+extern u8 __sram_bootloader_mp_start__[];
+extern u8 __sram_bootloader_mp_size__[];
+#endif
+
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];
 extern u8 __rom_stdlib_bss_end__[];
@@ -74,7 +81,6 @@ extern u8 __rom_stdlib_data_start__[];
 extern u8 __rom_stdlib_data_end__[];
 extern u8 __rom_stdlib_text_start__[];
 extern u8 __rom_stdlib_text_end__[];
-
 
 /* sym for trustzone config */
 extern u8 __km4_tz_nsc_start__[];
@@ -93,6 +99,7 @@ extern u8 __git_ver_table_end__[];
 
 /* mp used */
 extern u8 __km0_bd_ram_mp_start__[];
+extern u8 __km4_bd_ram_mp_start__[];
 extern u8 __km0_image2_entry_func_mp__[];
 
 enum _BOOT_TYPE_ {

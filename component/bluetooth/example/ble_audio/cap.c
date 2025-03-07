@@ -1734,7 +1734,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				(unsigned int)param->codec_cfg.audio_channel_allocation);
 		//The application can set these parameters,otherwise default values in upstack lib will be used.
 		rtk_bt_le_audio_ascs_prefer_qos_data_t prefer_qos_data = {
-			.supported_framing = RTK_BLE_AUDIO_UNFRAMED_SUPPORTED,
+			.supported_framing = RTK_BLE_AUDIO_UNFRAMED,
 			.preferred_phy = 0,
 			.preferred_retrans_number = 0,
 			.max_transport_latency = 0,
@@ -3631,11 +3631,17 @@ int bt_cap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_BAP, app_bt_bap_callback));
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_CAP, app_bt_cap_callback));
 			/* broadcast source init */
-			BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG,
-																   RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG,
-																   RTK_BT_LE_ADDR_TYPE_PUBLIC,
-																   false,
-																   RTK_BT_LE_AUDIO_CONTEXT_MEDIA));
+			{
+				rtk_bt_le_audio_broadcast_source_create_param_t brs_create_param = {0};
+				brs_create_param.cfg_codec_index = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG;
+				brs_create_param.cfg_qos_type = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG;
+				brs_create_param.manual_qos_flag = false;
+				brs_create_param.p_manual_qos_cfg = NULL;
+				brs_create_param.local_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
+				brs_create_param.encryption = false;
+				brs_create_param.stream_audio_contexts = RTK_BT_LE_AUDIO_CONTEXT_MEDIA;
+				BT_APP_PROCESS(rtk_bt_le_audio_broadcast_source_create(&brs_create_param));
+			}
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 			/* when csip member disconnect, start ext scan timer in app_bt_le_audio_bap_unicast_client_common_cb*/
 			{
