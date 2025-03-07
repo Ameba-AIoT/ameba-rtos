@@ -96,6 +96,9 @@
 #include <linux/mmc/sdio_func.h>
 #include "whc_dev.h"
 #include "whc_sdio_host.h"
+#ifdef CONFIG_BT_INIC
+#include "rtb_sdio.h"
+#endif
 #elif defined(CONFIG_FULLMAC_HCI_SPI)
 #include <linux/spi/spi.h>
 #include "whc_dev.h"

@@ -196,7 +196,6 @@ int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, un
 {
 	int ret = 0;
 	struct internal_join_block_param *block_param = NULL;
-	int is_connected = -1;
 	u32 size;
 	u8 *param, *ptr;
 
@@ -289,8 +288,7 @@ int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, un
 			ret = -EINVAL;
 			goto error;
 		} else {
-			is_connected = whc_fullmac_host_wifi_is_connected_to_ap();
-			if (is_connected != 0) {
+			if (whc_fullmac_host_wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 				ret = -EINVAL;
 				global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
 				goto error;
@@ -321,13 +319,9 @@ int whc_fullmac_host_event_disconnect(void)
 	return ret;
 }
 
-int whc_fullmac_host_wifi_is_connected_to_ap(void)
+int whc_fullmac_host_wifi_get_join_status(void)
 {
-	int ret = 0;
-
-	whc_fullmac_host_send_event(WHC_API_WIFI_IS_CONNECTED_TO_AP, NULL, 0, (u8 *)&ret, sizeof(int));
-
-	return ret;
+	return global_idev.mlme_priv.rtw_join_status;
 }
 
 int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch)

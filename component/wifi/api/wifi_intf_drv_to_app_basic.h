@@ -37,6 +37,27 @@
 extern "C" {
 #endif
 
+/** @addtogroup WIFI_API
+ *  @brief      WIFI_API module
+ *  @{
+ */
+
+/** @addtogroup WIFI_Exported_Constants WIFI Exported Constants
+ * @{
+ */
+#define WHC_MAX_SSID_LENGTH (33)
+#define SCAN_LONGEST_WAIT_TIME	(12000) /**< scan longest wait time */
+#define PSCAN_FAST_SURVEY	0x02 /**< set to select scan time to FAST_SURVEY_TO, otherwise SURVEY_TO */
+#define DIS_DPK BIT(0) /**< parameters of rf_calibration_disable. */
+/** @} End of WIFI_Exported_Constants group*/
+
+/** @addtogroup WIFI_Exported_Types WIFI Exported Types
+* @{
+*/
+/** @addtogroup WIFI_Exported_Enumeration_Types Enumeration Type
+ * @{
+ */
+
 /**
  * @brief The enumeration lists the results of the function, size int
  */
@@ -68,10 +89,58 @@ enum {
 	WL_BANDMAX  ///< max band
 };
 
+/**
+ * @brief The enumeration lists the type of pmksa operations.
+ */
+enum {
+	PMKSA_SET = 0,
+	PMKSA_DEL = 1,
+	PMKSA_FLUSH = 2,
+};
+
+/**
+ * @brief The enumeration lists the type of speaker related settings.
+ */
+enum {
+	SPEAKER_SET_INIT = 0,
+	SPEAKER_SET_LATCH_I2S_COUNT = 1,
+	SPEAKER_SET_TSF_TIMER = 2,
+};
+
+/**
+ * @brief  The enumeration is transmission type for wifi custom ie.
+ */
+enum {
+	PROBE_REQ = BIT(0),  ///<probe request
+	PROBE_RSP = BIT(1),  ///<probe response
+	BEACON	  = BIT(2),     ///<beacon
+	ASSOC_REQ = BIT(3), ///<assocation request
+};
+
+/**
+ * @brief The enumeration lists rcr mode under promisc
+ */
+enum {
+	RCR_ALL_PKT,  /**< receive all packets */
+	RCR_AP_ALL     /**< receive all packtets send by connected ap */
+};
+
+/**
+ * @brief The enumeration lists promisc callback return value
+ */
+enum {
+	NEED_DRIVER_HANDLE,  /**< driver will continue process this pkt */
+	BYPASS_DRIVER_HANDLE     /**< driver will bypass this pkt */
+};
+
+/** @} End of WIFI_Exported_Enumeration_Types group*/
+
 /**********************************************************************************************
  *                                  common structures
  *********************************************************************************************/
-#define WHC_MAX_SSID_LENGTH (33)
+/** @addtogroup WIFI_Exported_Structure_Types Structure Type
+ * @{
+ */
 
 #pragma pack(1)/*_rtw_ssid_t and _rtw_mac_t are 1 byte alignment for some issues long long ago*/
 /**
@@ -93,8 +162,6 @@ struct _rtw_mac_t {
 /**********************************************************************************************
  *                                   scan structures
  *********************************************************************************************/
-#define SCAN_LONGEST_WAIT_TIME	(12000) /**< scan longest wait time */
-#define PSCAN_FAST_SURVEY	0x02 /**< set to select scan time to FAST_SURVEY_TO, otherwise SURVEY_TO */
 
 #pragma pack(1)/*scan related structs are 1 byte alignment for some issues long long ago*/
 /**
@@ -303,22 +370,6 @@ struct rx_pkt_info {
 	u32 len;
 };
 
-/**
- * @brief The enumeration lists rcr mode under promisc
- */
-enum {
-	RCR_ALL_PKT,  /**< receive all packets */
-	RCR_AP_ALL     /**< receive all packtets send by connected ap */
-};
-
-/**
- * @brief The enumeration lists promisc callback return value
- */
-enum {
-	NEED_DRIVER_HANDLE,  /**< driver will continue process this pkt */
-	BYPASS_DRIVER_HANDLE     /**< driver will bypass this pkt */
-};
-
 struct _promisc_para_t {
 	/*! Receive all packets in the air or set some filtering conditions
 		- @ref RCR_ALL_PKT : receive all packets in the air
@@ -336,15 +387,6 @@ struct _promisc_para_t {
 /**********************************************************************************************
  *                                     wpa_lite structures
  *********************************************************************************************/
-/**
- * @brief The enumeration lists the type of pmksa operations.
- */
-enum {
-	PMKSA_SET = 0,
-	PMKSA_DEL = 1,
-	PMKSA_FLUSH = 2,
-};
-
 /**
  * @brief  The structure is pmksa ops.
  */
@@ -420,15 +462,6 @@ struct rtw_kvr_param_t {
 /**********************************************************************************************
  *                                     speaker structures
  *********************************************************************************************/
-/**
- * @brief The enumeration lists the type of speaker related settings.
- */
-enum {
-	SPEAKER_SET_INIT = 0,
-	SPEAKER_SET_LATCH_I2S_COUNT = 1,
-	SPEAKER_SET_TSF_TIMER = 2,
-};
-
 union speaker_set {
 	struct { /*SPEAKER_SET_INIT*/
 		u8 mode;              /* 0 for slave, 1 for master */
@@ -540,16 +573,6 @@ struct _rtw_csi_action_parm_t {
 };
 
 /**
- * @brief  The enumeration is transmission type for wifi custom ie.
- */
-enum {
-	PROBE_REQ = BIT(0),  ///<probe request
-	PROBE_RSP = BIT(1),  ///<probe response
-	BEACON	  = BIT(2),     ///<beacon
-	ASSOC_REQ = BIT(3), ///<assocation request
-};
-
-/**
  * @brief  The structure is used to set WIFI custom ie list,
  *
  */
@@ -575,8 +598,6 @@ struct rtw_tx_power_ctl_info_t {
 /**********************************************************************************************
  *                                    user_configure struct
  *********************************************************************************************/
-#define DIS_DPK BIT(0) /**< parameters of rf_calibration_disable. */
-
 /**
   * @brief  The structure is used to describe the wifi user configuration, can be configured in ameba_wificfg.c
   */
@@ -783,6 +804,12 @@ struct wifi_user_conf {
 	unsigned char wtn_rnat_en;
 };
 
+/** @} End of WIFI_Exported_Structure_Types group*/
+/** @} End of WIFI_Exported_Types group*/
+
+/** @addtogroup WIFI_Exported_Constants WIFI Exported Constants
+ * @{
+ */
 #ifndef CONFIG_FULLMAC
 extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
 #define netdev_priv(dev)		dev->priv
@@ -791,11 +818,15 @@ extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
 #endif
 extern  struct wifi_user_conf wifi_user_config;
 extern struct _rtw_wifi_setting_t wifi_setting[2];
+/** @} End of WIFI_Exported_Constants group*/
 
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @addtogroup Basic_Functions
+/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+ * @{
+ */
+/** @addtogroup WIFI_Exported_Basic_Functions Basic Functions
   * @{
   */
 
@@ -934,6 +965,8 @@ int _wifi_on_ap(void);
 int _wifi_off_ap(void);
 
 /** @} End of Basic_Functions group */
+/** @} End of WIFI_Exported_Functions group */
+/** @} End of WIFI_API group */
 #ifdef __cplusplus
 }
 #endif

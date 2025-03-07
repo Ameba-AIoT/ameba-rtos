@@ -23,7 +23,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_CHPLAN,	whc_event_wifi_get_chplan},
 	{WHC_API_WIFI_GET_COUNTRY_CODE,	whc_event_wifi_get_countrycode},
 	{WHC_API_WIFI_DISCONNECT,	whc_event_wifi_disconnect},
-	{WHC_API_WIFI_IS_CONNECTED_TO_AP,	whc_event_wifi_is_connected_to_ap},
 	{WHC_API_WIFI_IS_RUNNING,	whc_event_wifi_is_running},
 	{WHC_API_WIFI_SET_CHANNEL,	whc_event_wifi_set_channel},
 	{WHC_API_WIFI_ON,	whc_event_wifi_on},
@@ -382,14 +381,6 @@ void whc_event_wifi_disconnect(u32 api_id, u32 *param_buf)
 	(void)param_buf;
 	int ret;
 	ret = wifi_disconnect();
-	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_event_wifi_is_connected_to_ap(u32 api_id, u32 *param_buf)
-{
-	(void)param_buf;
-	int ret;
-	ret = wifi_is_connected_to_ap();
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

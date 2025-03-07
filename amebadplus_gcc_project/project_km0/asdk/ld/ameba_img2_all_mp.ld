@@ -23,8 +23,7 @@ SECTIONS
 		*port.o(*.uxTimerTaskStack*)
 	} > KM0_TIMER_IDLE_TASK_STACK
 
-	/* sram part */
-	.sram_image2.text.data ORIGIN(KM0_BD_RAM_MP):
+	.ram_image2.entry :
 	{
 		/* KM0_IMG2_ENTRY move to 0x20004D20 before enable KM0 */
 		__img2_entry_start__ = .;
@@ -37,7 +36,11 @@ SECTIONS
 
 		__img2_entry_end__ = .;
 		. = ALIGN(32);
+	} > KM0_IMG2_ENTRY
 
+	/* sram part */
+	.sram_image2.text.data ORIGIN(KM0_BD_RAM_MP):
+	{
 		__sram_image2_start__ = .;
 		SRAM_INPUT_TEXT_SECTION
 		*(.sram.only.text*)
@@ -159,6 +162,9 @@ SECTIONS
 
 
 __bdram_heap_buffer_size__ = ORIGIN(KM0_BD_RAM_MP) + LENGTH(KM0_BD_RAM_MP) - __bdram_heap_buffer_start__;
+
+__sram_bootloader_mp_start__ = ORIGIN(KM4_FLOADER_RAM_MP) + LENGTH(KM4_FLOADER_RAM_MP) - 0x10000000;
+__sram_bootloader_mp_size__ = ORIGIN(KM0_BD_RAM_MP) - __sram_bootloader_mp_start__ - IMAGE_HEADER_LEN * 2;
 
 __psram_image2_start__ = .;
 

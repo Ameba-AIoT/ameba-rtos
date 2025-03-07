@@ -1,13 +1,11 @@
-ameba_add_image(target_imgtool_floader_${PROJECT_NAME})
+ameba_add_image(target_imgtool_floader_${PROJECT_NAME} p_EXCLUDE_FROM_ALL)
 # variable c_CURRENT_IMAGE value is target_imgtool_floader_${PROJECT_NAME}
 
 ###############################  ADD COMPONENT  ###################################
-ameba_add_subdirectory(${c_CMPT_SOC_DIR}/common/flash_download/imgtool_floader)
+ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
+ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 
-ameba_add_subdirectories(
-    make_lib/chipinfo_lib
-)
 ###############################  GENERATE IMAGE  ###################################
 
 #---------------- PRE LINK -------------------#

@@ -24,7 +24,9 @@ static int whc_sdio_host_probe(struct sdio_func *func, const struct sdio_device_
 	}
 
 	rtw_netdev_probe(&func->dev);
-
+#ifdef CONFIG_BT_INIC
+	bt_dev_probe(&func->dev);
+#endif
 	status = true;
 
 exit:
@@ -42,7 +44,9 @@ static void whc_sdio_host_remove(struct sdio_func *func)
 	struct whc_sdio *priv = (struct whc_sdio *) sdio_get_drvdata(func);
 
 	dev_info(&func->dev, "whc_sdio_host_remove: vendor=0x%04x device=0x%04x class=0x%02x\n", func->vendor, func->device, func->class);
-
+#ifdef CONFIG_BT_INIC
+	bt_dev_remove(&func->dev);
+#endif
 	rtw_netdev_remove(&func->dev);
 
 	if (priv->bSurpriseRemoved == false) {
@@ -128,7 +132,7 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
 #ifndef CONFIG_WHC_BRIDGE
 	/* staion mode */
-	if (whc_fullmac_host_wifi_is_connected_to_ap() == 0) {
+	if (whc_fullmac_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
 		/* update ip address success */
 		if (whc_fullmac_host_update_ip_addr()) {
 			return -EPERM;

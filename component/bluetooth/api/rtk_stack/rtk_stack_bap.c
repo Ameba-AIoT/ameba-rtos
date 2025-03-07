@@ -887,7 +887,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 					break;
 				}
 				if (prefer_qos_data.supported_framing == 0) {
-					prefer_qos_data.supported_framing = RTK_BLE_AUDIO_UNFRAMED_SUPPORTED;
+					prefer_qos_data.supported_framing = RTK_BLE_AUDIO_UNFRAMED;
 				}
 				if (prefer_qos_data.preferred_phy == 0) {
 					prefer_qos_data.preferred_phy = p_data->target_phy;
@@ -2147,7 +2147,9 @@ static void bt_stack_le_audio_link_brs_char_add_source_handle(void)
 	}
 }
 
-static uint16_t bt_stack_le_audio_broadcast_init(uint8_t index, uint8_t qos_type, rtk_bt_le_addr_type_t local_addr_type, bool encryption,
+static uint16_t bt_stack_le_audio_broadcast_init(rtk_bt_le_audio_codec_cfg_item_t codec_index, rtk_bt_le_audio_qos_cfg_type_t qos_type,
+												 bool manual_qos_flag, rtk_bt_le_audio_qos_cfg_preferred_t *p_manual_qos_cfg,
+												 rtk_bt_le_addr_type_t local_addr_type, bool encryption,
 												 uint16_t stream_audio_contexts)
 {
 	T_BROADCAST_SOURCE_INFO src_info = {0};
@@ -2156,7 +2158,7 @@ static uint16_t bt_stack_le_audio_broadcast_init(uint8_t index, uint8_t qos_type
 		BT_LOGE("[LEA STACK] %s: broadcast need to add before initialized \r\n", __func__);
 		return 1;
 	}
-	bt_le_audio_priv_data.bsrc.cfg_codec_index = (rtk_bt_le_audio_codec_cfg_item_t)index;
+	bt_le_audio_priv_data.bsrc.cfg_codec_index = codec_index;
 	for (uint8_t i = 0; i < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM; i ++) {
 		bt_le_audio_priv_data.bsrc.group[i].group_idx = 0xFF;
 		bt_le_audio_priv_data.bsrc.group[i].group_bis_num = RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM;
@@ -2168,7 +2170,7 @@ static uint16_t bt_stack_le_audio_broadcast_init(uint8_t index, uint8_t qos_type
 			}
 		}
 	}
-	bt_le_audio_priv_data.bsrc.cfg_qos_type = (rtk_bt_le_audio_qos_cfg_type_t)qos_type;
+	bt_le_audio_priv_data.bsrc.cfg_qos_type = qos_type;
 	bt_le_audio_priv_data.bsrc.cfg_local_addr_type = local_addr_type;
 	bt_le_audio_priv_data.bsrc.cfg_encryption = encryption;
 	/* get prefer codec */
@@ -2176,9 +2178,18 @@ static uint16_t bt_stack_le_audio_broadcast_init(uint8_t index, uint8_t qos_type
 		BT_LOGE("%s codec_preferred_cfg_get fail\r\n", __func__);
 		goto error;
 	}
-	if (false == qos_preferred_cfg_get((T_CODEC_CFG_ITEM)index, (T_QOS_CFG_TYPE)qos_type, (T_QOS_CFG_PREFERRED *)&bt_le_audio_priv_data.bsrc.prefer_qos)) {
-		BT_LOGE("%s qos_preferred_cfg_get fail\r\n", __func__);
-		goto error;
+	if (manual_qos_flag) {
+		if (NULL == p_manual_qos_cfg) {
+			BT_LOGE("%s: invalid manual qos cfg param\r\n", __func__);
+			goto error;
+		}
+		/* Qos from manual config value*/
+		memcpy((void *)&bt_le_audio_priv_data.bsrc.prefer_qos, (void *)p_manual_qos_cfg, sizeof(rtk_bt_le_audio_qos_cfg_preferred_t));
+	} else {
+		if (false == qos_preferred_cfg_get((T_CODEC_CFG_ITEM)codec_index, (T_QOS_CFG_TYPE)qos_type, (T_QOS_CFG_PREFERRED *)&bt_le_audio_priv_data.bsrc.prefer_qos)) {
+			BT_LOGE("%s qos_preferred_cfg_get fail\r\n", __func__);
+			goto error;
+		}
 	}
 	if (bt_stack_le_audio_gen_basic_data()) {
 		BT_LOGE("%s bt_stack_le_audio_gen_basic_data fail \r\n", __func__);
@@ -2222,7 +2233,9 @@ static uint16_t bt_stack_le_audio_broadcast_source_create(void *data)
 		BT_LOGE("%s broadcast_source_add fail \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
-	if (bt_stack_le_audio_broadcast_init(p_param->cfg_codec_index, p_param->cfg_qos_type, p_param->local_addr_type, p_param->encryption,
+	if (bt_stack_le_audio_broadcast_init(p_param->cfg_codec_index, p_param->cfg_qos_type,
+										 p_param->manual_qos_flag, p_param->p_manual_qos_cfg,
+										 p_param->local_addr_type, p_param->encryption,
 										 p_param->stream_audio_contexts)) {
 		BT_LOGE("%s bt_stack_le_audio_broadcast_init fail\r\n", __func__);
 		broadcast_source_release(bt_le_audio_priv_data.bsrc.source_handle);

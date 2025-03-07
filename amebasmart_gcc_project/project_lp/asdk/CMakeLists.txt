@@ -151,7 +151,7 @@ else()
     ameba_set(LINK_ROM_SYMBOL ${c_SDK_LD_DIR}/ameba_rom_symbol_empty.a)
 endif()
 
-ameba_add_subdirectory(image2)
+ameba_add_subdirectory(make/image2)
 
 add_custom_target(
     ${c_MCU_PROJECT_NAME}

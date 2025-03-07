@@ -3,6 +3,7 @@ set(RAM_COM_DIR ${TARGETDIR}/fwlib/ram_common)
 set(RAM_HP_DIR ${TARGETDIR}/fwlib/ram_km4)
 set(FTL_DIR ${BASEDIR}/component/soc/common/flash_wrapper/src)
 set(SWLIB_DIR ${TARGETDIR}/swlib)
+set(CFGDIR ${TARGETDIR}/usrcfg)
 
 set(
     MODULE_IFLAGS
@@ -29,9 +30,11 @@ set(
 	${RAM_COM_DIR}/ameba_ipc_ram.c
 	${RAM_COM_DIR}/ameba_otp.c
 	${RAM_COM_DIR}/ameba_tim.c
+	${RAM_COM_DIR}/ameba_sram_swap.c
 	${RAM_HP_DIR}/ameba_arch.c
 	${SWLIB_DIR}/log.c
-	${FL_DIR}/loguart_intf.c
+	${CFGDIR}/ameba_bootcfg.c
+    ${FL_DIR}/loguart_intf.c
 	${FL_DIR}/floader_debug.c
 	${FL_DIR}/floader_fb.c
 	${FL_DIR}/floader_intf.c
@@ -71,8 +74,8 @@ target_link_libraries(
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
     -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
-    ${LINK_ROM_LIB}
     ${LINK_LOADER_LIB}
+    ${LINK_ROM_LIB}
 )
 
 add_custom_command(

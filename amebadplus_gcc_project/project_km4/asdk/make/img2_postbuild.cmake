@@ -2,16 +2,10 @@
 #unless passed through -D
 include(${CMAKE_FILES_DIR}/axf2bin.cmake)
 
-if(CONFIG_MP_SHRINK)
-    execute_process(
-        COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_2.bin
-    )
-else()
-    execute_process(
-        COMMAND ${CMAKE_OBJCOPY} -j .ram_image2.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/entry.bin
-        COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_2.bin
-    )
-endif()
+execute_process(
+	COMMAND ${CMAKE_OBJCOPY} -j .ram_image2.entry -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/entry.bin
+	COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/sram_2.bin
+)
 
 file(READ ${IMAGE_TARGET_FOLDER}/target_img2.map content)
 string(REPLACE "\n" ";" lines ${content})
@@ -36,7 +30,6 @@ else()
     )
 endif()
 
-
 if(CONFIG_BT)
     execute_process(
         COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${IMAGE_TARGET_FOLDER}/target_pure_img2.axf ${IMAGE_TARGET_FOLDER}/APP.trace
@@ -48,51 +41,31 @@ message( "========== Image manipulating start ==========")
 
 execute_process(
     COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin 32
-)
-execute_process(
-	COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/entry.bin 32
-)
-execute_process(
 	COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin 32
-)
-execute_process(
 	COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin 32
+	COMMAND ${PADTOOL} ${IMAGE_TARGET_FOLDER}/entry.bin 32
 )
 
 if(CONFIG_MP_SHRINK)
-    execute_process(
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  __image2_entry_func__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-    )
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin
-        OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km4_image2_all_shrink.bin
-    )
-    execute_process(
-        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all_shrink.bin ${BUILD_TYPE}
-        WORKING_DIRECTORY ${PROJECTDIR}/..
-    )
-else()
-    execute_process(
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/entry.bin  __image2_entry_func__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-    )
-    execute_process(
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  __sram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-    )
-    execute_process(
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin  __psram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-    )
-    execute_process(
-        COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  __flash_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
-    )
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/psram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/entry_prepend.bin
-        OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin
-    )
-    execute_process(
-        COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin ${BUILD_TYPE}
-        WORKING_DIRECTORY ${PROJECTDIR}/..
-    )
+    file(WRITE ${IMAGE_TARGET_FOLDER}/xip_image2.bin "")
+    file(WRITE ${IMAGE_TARGET_FOLDER}/psram_2.bin "")
 endif()
+
+execute_process(
+	COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/xip_image2.bin  __flash_text_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+    COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/sram_2.bin  __sram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+	COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/psram_2.bin  __psram_image2_start__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+	COMMAND ${PREPENDTOOL} ${IMAGE_TARGET_FOLDER}/entry.bin  __image2_entry_func__  ${IMAGE_TARGET_FOLDER}/target_img2.map
+)
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E cat ${IMAGE_TARGET_FOLDER}/xip_image2_prepend.bin ${IMAGE_TARGET_FOLDER}/sram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/psram_2_prepend.bin ${IMAGE_TARGET_FOLDER}/entry_prepend.bin
+    OUTPUT_FILE ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin
+)
+execute_process(
+    COMMAND ${IMAGETOOL} ${IMAGE_TARGET_FOLDER}/km4_image2_all.bin ${BUILD_TYPE}
+    WORKING_DIRECTORY ${PROJECTDIR}/..
+)
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
     if(EXISTS ${IMAGE_TARGET_FOLDER}/km0_km4_app.bin AND EXISTS ${BASEDIR}/amebadplus_gcc_project/fatfs.bin)

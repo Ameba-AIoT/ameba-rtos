@@ -1,6 +1,7 @@
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_MCC) += -DCONFIG_MCC
+ccflags-$(CONFIG_BT_INIC) += -DCONFIG_BT_INIC
 ccflags-$(CONFIG_FULLMAC_HCI_SDIO) += -DCONFIG_FULLMAC_HCI_SDIO
 
 ccflags-y += -DCONFIG_FULLMAC
@@ -38,5 +39,7 @@ fullmac_sdio-$(CONFIG_FULLMAC_HCI_SDIO) := \
 		../whc_fullmac_host_ioctl.o \
 		../whc_fullmac_host_cust_evt.o \
 		../whc_fullmac_host_acs.o
+
+fullmac_sdio-$(CONFIG_BT_INIC) += rtb_sdio.o
 
 obj-m += fullmac_sdio.o

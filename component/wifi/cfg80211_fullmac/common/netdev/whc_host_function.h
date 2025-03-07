@@ -21,7 +21,7 @@ int whc_fullmac_host_scan(struct _rtw_scan_param_t *scan_param, u32 ssid_len, u8
 int whc_fullmac_host_scan_abort(u8 block);
 int whc_fullmac_host_event_connect(struct _rtw_network_info_t *connect_param, unsigned char block);
 int whc_fullmac_host_event_disconnect(void);
-int whc_fullmac_host_wifi_is_connected_to_ap(void);
+int whc_fullmac_host_wifi_get_join_status(void);
 int whc_fullmac_host_set_channel(u32 wlan_idx, u8 ch);
 int whc_host_init(void);
 void whc_host_deinit(void);

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "mydata_source.h"
+#include "os_wrapper.h"
 
 #include "common/audio_errnos.h"
 
@@ -14,9 +15,9 @@
 //#define MDS_READ_UNSMOOTH_TEST
 
 /* unknown length source simulation */
-//#define MDS_UNKNOWN_LENGTH_TEST
+#define MDS_UNKNOWN_LENGTH_TEST
 
-#define MDS_SLEEP_TIME_MS 10
+#define MDS_SLEEP_TIME_MS 2
 
 #ifdef MDS_PREPARE_DELAY_TEST
 int kMDSPrepareDelayTimeMs = 3000;
@@ -32,13 +33,13 @@ int kMDSReadRetry = 0;
 #endif
 
 #ifdef MDS_UNKNOWN_LENGTH_TEST
-int kMDSLengthIncreaseTotalTimeMs = 60000;
+int kMDSLengthIncreaseTotalTimeMs = 10000;
 volatile int g_source_total_length = 0;
 volatile bool g_length_increase_thread_alive = 0;
 void MyDataSource_UnknownLengthTestThread(void *Data);
 #endif
 
-void MyDataSource_WaitLoopExit();
+void MyDataSource_WaitLoopExit(void);
 
 
 // ----------------------------------------------------------------------
@@ -134,14 +135,14 @@ ssize_t MyDataSource_ReadAt(const RTDataSource *source, off_t offset, void *data
 			//printf("ReadAt offset(%d) beyond unknown length data, now data_length(%d)\n", offset, data_source->data_length);
 			return (ssize_t)RTDATA_SOURCE_READ_AGAIN;
 		}
-		printf("ReadAt offset(%d) beyond data length(%d), unknown_length(%d), source(%p), data(%p)\n",
+		printf("ReadAt offset(%ld) beyond data length(%d), unknown_length(%d), source(%p), data(%p)\n",
 			   offset,
 			   data_source->data_length, data_source->unknown_data_length,
 			   data_source, data);
 		return (ssize_t)RTDATA_SOURCE_EOF;
 	}
 
-	if ((data_source->data_length - offset) < size) {
+	if ((data_source->data_length - (int)offset) < (int)size) {
 		//printf("free size %d is smaller than read size %d, so change read size\n", data_source->data_length - offset, size);
 		size = data_source->data_length - offset;
 	}
@@ -187,7 +188,7 @@ int32_t MyDataSource_GetLength(const RTDataSource *source, off_t *size)
 
 // ----------------------------------------------------------------------
 // Private Interfaces
-void MyDataSource_WaitLoopExit()
+void MyDataSource_WaitLoopExit(void)
 {
 	int count = 10 * 1000 / MDS_SLEEP_TIME_MS; //wait 3s
 

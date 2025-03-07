@@ -194,7 +194,7 @@ static void rnat_ap_start_thread(void *param)
 
 	/*step1: check if STA port connected to AP successfully*/
 	while (1) {
-		if ((wifi_is_connected_to_ap() == RTW_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
+		if ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) {
 			break;
 		}
 		rtos_time_delay_ms(200);

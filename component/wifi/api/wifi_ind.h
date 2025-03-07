@@ -22,9 +22,21 @@
 extern "C" {
 #endif
 
+/** @addtogroup WIFI_API
+ *  @brief      WIFI_API module
+ *  @{
+ */
 /**********************************************************************************************
  *                                     wifi event structures
  *********************************************************************************************/
+/** @addtogroup WIFI_Exported_Types WIFI Exported Types
+* @{
+*/
+
+/** @addtogroup WIFI_Exported_Enumeration_Types Enumeration Type
+ * @{
+ */
+
 /**
   * @brief  The enumeration lists the disconnet reasons in rtw_event_disconn_info_t when @ref RTW_JOINSTATUS_DISCONNECT happenned.
   */
@@ -71,23 +83,6 @@ enum {
 };
 
 /**
-  * @brief buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_DISCONNECT
-  */
-struct rtw_event_disconn_info_t {
-	u16 disconn_reason;      /**< val: @ref WLAN_REASON_UNSPECIFIED, @ref WLAN_REASON_PREV_AUTH_NOT_VALID...*/
-	u8	bssid[6];            /**< AP's MAC address*/
-};
-
-/**
-  * @brief buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
-  */
-struct rtw_event_join_fail_info_t {
-	int					fail_reason;           /**< value: @ref RTW_ERROR/ @ref RTW_CONNECT_INVALID_KEY...*/
-	u16					reason_or_status_code; /**< from AP, define in 802.11 spec*/
-	u8					bssid[6];              /**< AP's MAC address*/
-};
-
-/**
   * @brief flags of @ref WIFI_EVENT_JOIN_STATUS
   */
 enum {
@@ -127,11 +122,37 @@ enum {
 #endif
 	WIFI_EVENT_MAX,
 };
+/** @} End of WIFI_Exported_Enumeration_Types group*/
+
+/** @defgroup WIFI_Exported_Structure_Types Structure Type
+ * @{
+ */
+/**
+  * @brief buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_DISCONNECT
+  */
+struct rtw_event_disconn_info_t {
+	u16 disconn_reason;      /**< val: @ref WLAN_REASON_UNSPECIFIED, @ref WLAN_REASON_PREV_AUTH_NOT_VALID...*/
+	u8	bssid[6];            /**< AP's MAC address*/
+};
+
+/**
+  * @brief buf of @ref WIFI_EVENT_JOIN_STATUS when flag is @ref RTW_JOINSTATUS_FAIL
+  */
+struct rtw_event_join_fail_info_t {
+	int					fail_reason;           /**< value: @ref RTW_ERROR/ @ref RTW_CONNECT_INVALID_KEY...*/
+	u16					reason_or_status_code; /**< from AP, define in 802.11 spec*/
+	u8					bssid[6];              /**< AP's MAC address*/
+};
+/** @} End of WIFI_Exported_Structure_Types group*/
+/** @} End of WIFI_Exported_Types group*/
 
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @addtogroup Event_Functions
+/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+ * @{
+ */
+/** @addtogroup WIFI_Exported_Event_Functions Event Functions
   * @{
   */
 
@@ -176,7 +197,8 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
 void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data));
 
 /** @} End of Event_Functions group*/
-
+/** @} End of WIFI_Exported_Functions group*/
+/** @} End of WIFI_API group*/
 #ifdef __cplusplus
 }
 #endif

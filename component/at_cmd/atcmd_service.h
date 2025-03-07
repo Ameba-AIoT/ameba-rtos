@@ -53,10 +53,9 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len);
 void atcmd_tt_mode_end(void);
 
 #define MAX_TT_BUF_LEN 1024 * 10
-#define MAX_TT_HEAP_SIZE 1024 * 100
-#define TT_MODE_HIGH_WATERMARK 0.8
+#define MAX_TT_HEAP_SIZE 1024 * 120
+#define TT_MODE_HIGH_WATERMARK 0.7
 #define TT_MODE_LOW_WATERMARK 0.2
-#define ATCMD_TT_MODE_RING_BUF_SIZE 1024 * 20
 #define ATCMD_MCU_CONTROL_INIT_STR "ATCMD READY\r\n"
 #define ATCMD_OK_END_STR 		"\r\nOK\r\n"
 #define ATCMD_ERROR_END_STR 	"\r\nERROR: %d\r\n"

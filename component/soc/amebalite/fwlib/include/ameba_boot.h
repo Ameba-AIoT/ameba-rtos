@@ -54,7 +54,9 @@ extern u8 __retention_entry_func__[];
 extern u8 __kr4_start_table_backup_addr__[];
 extern u8 __kr4_boot_entry_addr__[];
 
+extern u8 __kr4_boot_entry2_addr__[];
 extern u8 __kr4_bd_ram_mp_start__[];
+extern u8 __km4_bd_ram_mp_start__[];
 
 extern u8 __kr4_flash_text_start__[];
 extern u8 __kr4_ipc_memory_start__[];
@@ -264,6 +266,7 @@ extern u32 REG_CONFIG_PARSE(u8 index, u32 pwr_cmd_addr);
 extern void BOOT_Image1(void);
 extern void BOOT_WakeFromPG(void);
 extern void BOOT_RccConfig(void);
+extern void BOOT_SRAM_Extend_Config(void);
 extern PRAM_START_FUNCTION BOOT_SectionInit(void);
 /* sram swap */
 extern void SOCPS_memswap(void *dst0, void *src0, u32 len0);

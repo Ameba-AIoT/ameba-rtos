@@ -6,6 +6,7 @@ set(RAM_HP_DIR ${TARGETDIR}/fwlib/ram_km4)
 set(HAL_DIR ${TARGETDIR}/hal)
 set(HAL_SRC_DIR ${TARGETDIR}/hal/src)
 set(SWLIB_DIR ${TARGETDIR}/swlib)
+set(CFGDIR ${TARGETDIR}/usrcfg)
 
 set(
     MODULE_IFLAGS
@@ -37,6 +38,7 @@ set(
     ${HAL_SRC_DIR}/pinmap.c
     ${HAL_SRC_DIR}/gpio_api.c
     ${HAL_SRC_DIR}/pwmout_api.c
+    ${CFGDIR}/ameba_bootcfg.c
     ${USB_COM_DIR}/usb_os.c
     ${USB_COM_DIR}/usb_hal.c
     ${FTL_DIR}/ameba_nor_ftl.c
@@ -84,8 +86,8 @@ target_link_libraries(
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
     -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
-    ${LINK_ROM_LIB}
     ${LINK_LOADER_LIB}
+    ${LINK_ROM_LIB}
 )
 
 add_custom_command(

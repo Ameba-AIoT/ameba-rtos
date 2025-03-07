@@ -296,6 +296,6 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 ameba_global_include(${c_GLOBAL_MCU_INCLUDE_DIRECTORIES})
 add_compile_options(-fdata-sections -ffunction-sections)
 
-ameba_add_subdirectory(image2)
+ameba_add_subdirectory(make/image2)
 
 endif()# For temporary compatibility.

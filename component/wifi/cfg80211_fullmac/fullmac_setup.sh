@@ -34,10 +34,13 @@ if [ "$#" -ge 2 ]; then
 		if [ "$j" == "nan" ]; then
 			sed -i 's/CONFIG_NAN = n/CONFIG_NAN = y/g' Makefile
 		elif [ "$j" == "bt" ]; then
+			sed -i 's/CONFIG_BT_INIC = n/CONFIG_BT_INIC = y/g' Makefile
 			if [ "$1" == "spi" ]; then
-				sed -i 's/CONFIG_BT_INIC = n/CONFIG_BT_INIC = y/g' Makefile
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c spi
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h spi
+				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c ./common/spi
+				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h ./common/spi
+			elif [ "$1" == "sdio" ]; then
+				cp ../../bluetooth/example/bt_host/linux_driver/sdio/rtb_sdio.c ./common/sdio
+				cp ../../bluetooth/example/bt_host/linux_driver/sdio/rtb_sdio.h ./common/sdio
 			fi
 		fi
 	done

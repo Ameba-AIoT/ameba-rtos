@@ -1,3 +1,24 @@
+if(CMAKE_REFACTOR) # For temporary compatibility.
+    set(APP_LIB_DIR ${c_SDK_LIB_APPLICATION_DIR}) #Used in wifilib.cmake
+    set(BASEDIR ${c_BASEDIR}) #Used in wifi_include.cmake
+    set(TARGETDIR ${c_CMPT_SOC_DIR})
+    include(wifi_include.cmake)
+    include(wifilib.cmake)
+    ameba_list_append(WIFI_IFLAGS
+        ${c_CMPT_WIFI_DIR}/wifi_fw/common
+        ${c_CMPT_WIFI_DIR}/wifi_fw/${c_SOC_TYPE}/include
+    )
+    ameba_global_include(${WIFI_IFLAGS})
+    ameba_global_library(${LINK_APP_LIB})
+    ameba_global_library(p_NO_WHOLE_ARCHIVE ${LINK_THIRD_APP_LIB})
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+        if(${c_MCU_PROJECT_NAME} STREQUAL "lp")
+            #NOTE: For lp, just only add head dirs
+            return()
+        endif()
+    endif()
+endif()# For temporary compatibility.
+
 add_subdirectory(api)
 if(NOT CONFIG_AMEBALITE)
     execute_process(

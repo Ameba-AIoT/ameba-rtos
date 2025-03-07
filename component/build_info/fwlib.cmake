@@ -14,6 +14,10 @@ if(CONFIG_AMEBASMARTPLUS)
 		ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
 			${d_SOC_PLATFORM_DIR}/fwlib/rom_common/ameba_sema_rom.c
 		)
+    else()
+        ameba_target_include(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
+            ${d_SOC_PLATFORM_DIR}/rom/include
+        )
 	endif()
 endif()
 
@@ -22,6 +26,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
 		if(CONFIG_AMEBASMART)
 			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib_secure p_SCOPE interface
 				${d_SOC_PLATFORM_DIR}/swlib/log.c
+                ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
 			)
 		endif()
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib_secure p_SCOPE interface
@@ -43,6 +48,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
 		if(CONFIG_AMEBASMART)
 			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
 				${d_SOC_PLATFORM_DIR}/swlib/log.c
+                ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
 			)
 		endif()
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
@@ -89,7 +95,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_aontimer.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_wakepin.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_arch.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
 
             ${d_SOC_PLATFORM_DIR}/swlib/locks.c
             ${d_SOC_PLATFORM_DIR}/swlib/sscanf_minimal.c
@@ -102,6 +107,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
 		if(CONFIG_AMEBASMART)
 			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
 				${d_SOC_PLATFORM_DIR}/swlib/log.c
+                ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
 			)
 		endif()
         ameba_target_sources(src_${d_MCU_PROJECT_NAME}_fwlib p_SCOPE interface
@@ -131,7 +137,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_aontimer.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_wakepin.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_arch.c
-            ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_fault_handle.c
 
             ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_sleepcfg.c
             ${d_SOC_PLATFORM_DIR}/swlib/locks.c

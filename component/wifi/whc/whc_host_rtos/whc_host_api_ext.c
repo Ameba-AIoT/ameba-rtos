@@ -90,14 +90,6 @@ int wifi_bridge_dhcp(void)
 }
 #endif
 
-int wifi_is_connected_to_ap(void)
-{
-	int ret = 0;
-
-	whc_host_api_message_send(WHC_API_WIFI_IS_CONNECTED_TO_AP, NULL, 0, (u8 *)&ret, sizeof(ret));
-	return ret;
-}
-
 //----------------------------------------------------------------------------//
 int wifi_set_channel(unsigned char wlan_idx, u8 channel)
 {

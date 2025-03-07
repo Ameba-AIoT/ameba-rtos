@@ -271,7 +271,7 @@ int wifi_connect(struct _rtw_network_info_t *connect_param, unsigned char block)
 			result = RTW_TIMEOUT;
 			goto error;
 		} else {
-			if (wifi_is_connected_to_ap() != RTW_SUCCESS) {
+			if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 				result = join_fail_reason;
 				no_need_indicate = 1;
 				goto error;

@@ -135,7 +135,7 @@ void at_ota(void *arg)
 	resource[strlen(argv[4])] = '\0';
 
 	/* Check whether the network is linked. */
-	if (wifi_is_connected_to_ap() != RTW_SUCCESS) {
+	if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] The network is not ready\r\n");
 		err_no = 3;
 		goto end;

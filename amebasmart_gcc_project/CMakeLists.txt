@@ -171,8 +171,8 @@ set(d_IMAGE_OTA_ALL ${d_PLATFORM_PROJECT_DIR}/project_hp/asdk/image/ota_all.bin)
 
 ###############################################################################
 # Add sub projects
-# ameba_add_subdirectory(project_ap)
-# ameba_add_subdirectory(project_hp)
+ameba_add_subdirectory(project_ap)
+ameba_add_subdirectory(project_hp)
 ameba_add_subdirectory(project_lp)
 ###############################################################################
 

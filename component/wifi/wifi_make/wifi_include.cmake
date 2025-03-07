@@ -1,5 +1,5 @@
 set(
-    WIFI_IFLAGS 
+    WIFI_IFLAGS
     ${BASEDIR}/component/wifi/api
     ${BASEDIR}/component/wifi/driver
     ${BASEDIR}/component/wifi/driver/core
@@ -38,7 +38,7 @@ set(
     ${BASEDIR}/component/wifi/whc/whc_host_rtos/ipc
     ${BASEDIR}/component/wifi/wifi_tunnel_app
     ${BASEDIR}/component/at_cmd
-if(CONFIG_WPA_STD)	
+if(CONFIG_WPA_STD)
     ${BASEDIR}/component/wifi/wpa_supplicant_std/hostapd
     ${BASEDIR}/component/wifi/wpa_supplicant_std/wpa_supplicant
     ${BASEDIR}/component/wifi/wpa_supplicant_std/freertos
@@ -68,7 +68,7 @@ endif()
 
 if(CONFIG_AMEBAL2)
     list(
-        APPEND WIFI_IFLAGS 
+        APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/wifi_reg/rle1331
         ${BASEDIR}/component/wifi/driver/intf/g6_intf
         ${BASEDIR}/component/wifi/driver/intf/g6_intf/rle1331
@@ -83,7 +83,7 @@ endif()
 
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3)
     list(
-        APPEND WIFI_IFLAGS 
+        APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/wifi_reg/rtl7005
         ${BASEDIR}/component/wifi/driver/intf/g6_intf
         ${BASEDIR}/component/wifi/driver/intf/g6_intf/rtl8720f
@@ -98,7 +98,7 @@ endif()
 
 if(CONFIG_AMEBAGREEN2)
     list(
-        APPEND WIFI_IFLAGS 
+        APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/driver/wifi_tunnel/rtl8720f
     )
 
@@ -106,7 +106,7 @@ endif()
 
 if(CONFIG_AMEBADPLUS)
     list(
-        APPEND WIFI_IFLAGS 
+        APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/wifi_reg/rtl8721da
         ${BASEDIR}/component/wifi/driver/rtl8721da
         ${BASEDIR}/component/wifi/driver/rtl8721da_rom
@@ -119,7 +119,7 @@ endif()
 
 if(CONFIG_AMEBAD)
     list(
-        APPEND WIFI_IFLAGS 
+        APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/wifi_reg/rtl8721d
         ${BASEDIR}/component/wifi/driver/rtl8721d
         ${BASEDIR}/component/wifi/driver/rtl8721d_rom
@@ -133,12 +133,16 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         ${BASEDIR}/component/wifi/wifi_reg/rtl8730e
         ${BASEDIR}/component/wifi/driver/intf/g6_intf
         ${BASEDIR}/component/wifi/driver/intf/g6_intf/rtl8730e
+        ${BASEDIR}/component/wifi/driver/rtl8730e_rom
+        ${BASEDIR}/component/wifi/driver/phy_g6/bb
+        ${BASEDIR}/component/wifi/driver/phy_g6/bb/halbb_8730e
+        ${BASEDIR}/component/wifi/driver/phy_g6/rf
     )
 endif()
 
 if(CONFIG_AMEBALITE)
     list(
-        APPEND WIFI_IFLAGS 
+        APPEND WIFI_IFLAGS
         ${BASEDIR}/component/wifi/wifi_reg/rtl8720e
         ${BASEDIR}/component/wifi/driver/intf/g6_intf
         ${BASEDIR}/component/wifi/driver/intf/g6_intf/rtl8720e
