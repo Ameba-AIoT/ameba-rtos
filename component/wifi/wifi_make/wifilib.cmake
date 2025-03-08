@@ -47,6 +47,12 @@ if (CONFIG_WLAN)
             APPEND LINK_APP_LIB
             ${APP_LIB_DIR}/lib_wifi_com_sec.a
         )
+        if(CONFIG_ZEPHYR_SDK)
+            list(
+                APPEND LINK_APP_LIB
+                ${APP_LIB_DIR}/lib_wifi_api.a
+            )
+        endif()
     endif()
 
     if(CONFIG_AMEBASMART)

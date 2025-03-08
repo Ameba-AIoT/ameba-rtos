@@ -1,7 +1,9 @@
 set(DIR ${BASEDIR}/component/wifi)
 set(USRCFG_DIR ${TARGETDIR}/usrcfg)
 
-set(TARGET_LIB wifi_api_zephyr)
+if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
+set(TARGET_LIB wifi_api)
+endif()
 
 set(
     CSRC 
@@ -54,11 +56,10 @@ if(NOT CONFIG_AS_INIC_AP)
     endif()
 endif()
 
-if(CONFIG_ZEPHYR_SDK)
-if(CONFIG_SINGLE_CORE_WIFI)
+if(CONFIG_ZEPHYR_SDK AND CONFIG_SINGLE_CORE_WIFI)
 ameba_app_library_with_gitver(${TARGET_LIB})
-endif()
+else()
+ameba_internal_library(wifi_api)
 endif()
 
-ameba_internal_library(wifi_api)
 target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})

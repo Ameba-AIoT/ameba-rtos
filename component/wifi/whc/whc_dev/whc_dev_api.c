@@ -63,9 +63,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_NAN_DEL_FUNC,	whc_event_del_nan_func},
 	{WHC_API_NAN_CFGVENFOR,	whc_event_nan_cfgvenfor},
 #endif
-#ifdef CONFIG_WIFI_TUNNEL
-	{WHC_API_WTN_CMD, whc_event_wtn_cmd},
-#endif
 #ifdef CONFIG_MP_INCLUDED
 	{WHC_API_WIFI_MP_CMD,	whc_event_mp_cmd},
 #endif
