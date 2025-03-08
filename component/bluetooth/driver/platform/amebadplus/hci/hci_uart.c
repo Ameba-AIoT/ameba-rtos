@@ -69,18 +69,18 @@ static inline void transmit_chars(void)
 {
 	uint16_t cnt = 0;
 
-	if (g_uart->tx_len) {
-		cnt = (uint16_t)UART_SendDataTO(HCI_UART_DEV, g_uart->tx_buf, g_uart->tx_len, 0);
-		g_uart->tx_buf += cnt;
-		g_uart->tx_len -= cnt;
-	}
-
-	if (g_uart->tx_len == 0) {
+	if (g_uart->tx_len == 0) { /* Set TX done after TX FIFO is empty. */
 		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, DISABLE);
 		if (g_uart->tx_done_sem) {
 			osif_sem_give(g_uart->tx_done_sem);
 		}
+		return;
 	}
+
+	/* Send data to TX FIFO */
+	cnt = (uint16_t)UART_SendDataTO(HCI_UART_DEV, g_uart->tx_buf, g_uart->tx_len, 0);
+	g_uart->tx_buf += cnt;
+	g_uart->tx_len -= cnt;
 }
 
 static inline void receive_chars(void)
@@ -162,15 +162,6 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 		}
 		/* acquire host wake bt */
 		set_reg_value(0x41008280, BIT13, 1); /* enable HOST_WAKE_BT */
-		while (1) {
-			if ((HAL_READ32(0x41008284, 0) & (BIT3 | BIT2 | BIT1 | BIT0)) == 5) { /* 0x41008284[3:0] */
-				/* bt active */
-				break;
-			} else if ((HAL_READ32(0x41008208, 0) & BIT1) == 0) { /* 0x41008208[1] */
-				/* bt power off */
-				break;
-			}
-		}
 	}
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, ENABLE);

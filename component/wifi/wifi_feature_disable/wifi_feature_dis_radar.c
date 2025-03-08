@@ -49,5 +49,11 @@ void wifi_hal_radar_rpt_hdl(u8 *buf, void *a)
 	UNUSED(buf);
 	UNUSED(a);
 }
+
+s32 wifi_hal_radar_t2f_en(void *a)
+{
+	UNUSED(a);
+	return -1;
+}
 #endif /* CONFIG_RADAR */
 

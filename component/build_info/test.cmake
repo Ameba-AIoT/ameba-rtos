@@ -401,11 +401,38 @@ ameba_target_sources_if(CONFIG_Flash_AVL src_${d_MCU_PROJECT_NAME}_test_verifica
 ameba_target_sources_if(CONFIG_RF_Interference_Flash src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
     ${d_SOC_PLATFORM_DIR}/verification/rf_interference/rf_interference_flash_test.c
 )
+
 if(CONFIG_AMEBASMARTPLUS)
 	ameba_target_sources_if(CONFIG_DIAGPRINTF_VERIFY src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
 		${d_SOC_PLATFORM_DIR}/verification/print/ameba_print_test.c
 	)
 endif()
+
+if(CONFIG_MEMORY_VERIFY)
+	if(CONFIG_AMEBASMARTPLUS)
+		if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
+			ameba_target_include(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
+				${c_COMPONENT_DIR}/application/benchmark/memtester
+			)
+
+			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
+				${d_SOC_PLATFORM_DIR}/verification/memory/ameba_memory_test.c
+				${c_COMPONENT_DIR}/application/benchmark/memtester/memtester.c
+			)
+		
+		elseif("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
+			ameba_target_include(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
+				${c_COMPONENT_DIR}/application/benchmark/memtester
+			)
+
+			ameba_target_sources(src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
+				${d_SOC_PLATFORM_DIR}/verification/memory/ameba_memory_test.c
+				${c_COMPONENT_DIR}/application/benchmark/memtester/memtester.c
+			)
+		endif()
+	endif()
+endif()
+
 #--------------------------#
 ameba_target_sources_if(CONFIG_SEC_VERIFY src_${d_MCU_PROJECT_NAME}_test_verification_secure p_SCOPE interface
     ${d_SOC_PLATFORM_DIR}/verification/secure/log/ameba_log_test_secure.c

@@ -173,8 +173,9 @@ struct rtw_event_join_fail_info_t {
  *                    - flag: Flag set by wifi driver
  *                    - user_data: equal handler_user_data
  * @param[in] handler_user_data : user specific data that will be passed directly to the callback function, can set to NULL
- * @return  @ref RTW_SUCCESS : if successfully registers the event.
- * @return  @ref RTW_ERROR : if an error occurred.
+ * @return
+ *    - @ref RTW_SUCCESS : if successfully registers the event.
+ *    - @ref RTW_ERROR : if an error occurred.
  * @note  Set the same event_cmds with empty handler_func will unregister the event_cmds.
  */
 void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data), void *handler_user_data);
@@ -191,8 +192,9 @@ void wifi_reg_event_handler(unsigned int event_cmds, void (*handler_func)(char *
  *                    - @ref WIFI_EVENT_WPA_EAPOL_START
  *                    - @ref WIFI_EVENT_WPA_EAPOL_RECVD
  * @param[in] handler_func : the callback function which will receive and process the event.
- * @return  @ref RTW_SUCCESS : if successfully un-registers the event .
- * @return  @ref RTW_ERROR : if an error occurred.
+ * @return
+ *    - @ref RTW_SUCCESS : if successfully un-registers the event .
+ *    - @ref RTW_ERROR : if an error occurred.
  */
 void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char *buf, int len, int flag, void *user_data));
 

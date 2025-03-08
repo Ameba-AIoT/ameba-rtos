@@ -174,24 +174,6 @@ int whc_host_api_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg)
 	return ret;
 }
 
-int whc_host_api_wltunnel_command(char *cmd, unsigned int cmd_len)
-{
-	int ret = 0;
-#ifndef CONFIG_WIFI_TUNNEL
-	UNUSED(cmd);
-	UNUSED(cmd_len);
-#else
-	u32 *param_buf;
-	param_buf = (u32 *)rtos_mem_zmalloc(cmd_len);
-	if (param_buf) {
-		memcpy((void *)param_buf, (void *)cmd, cmd_len);
-		whc_host_api_message_send(WHC_API_WTN_CMD, (u8 *)param_buf, cmd_len, (u8 *)&ret, sizeof(ret));
-		rtos_mem_free(param_buf);
-	}
-#endif
-	return ret;
-}
-
 void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 {
 	u8 *buf = NULL;

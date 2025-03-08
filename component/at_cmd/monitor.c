@@ -163,96 +163,6 @@ u32 cmd_write_word(u16 argc, u8  *argv[])
 	return 0;
 }
 
-#ifdef CONFIG_AMEBADPLUS
-#ifdef CONFIG_ARM_CORE_CM0
-#ifdef CONFIG_WLAN
-extern int rtw_wltunnel_command(char *cmd);
-u32
-CmdWTN(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	if (argc != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
-		return FALSE;
-	}
-	rtw_wltunnel_command((char *)argv[0]);
-	return 0;
-}
-#endif
-#endif
-#ifdef CONFIG_ARM_CORE_CM4
-#ifdef CONFIG_WLAN
-extern int whc_ipc_host_api_wltunnel_command(char *cmd, unsigned int cmd_len);
-u32
-CmdWTN(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-#if !defined(CONFIG_WHC_INTF_IPC)
-	UNUSED(argc);
-	UNUSED(argv);
-#else
-	if (argc != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
-		return FALSE;
-	}
-	whc_ipc_host_api_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
-#endif
-	return 0;
-}
-#endif
-#endif
-#endif
-
-#if (defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2))
-#ifdef CONFIG_ARM_CORE_CM4_KM4NS
-#ifdef CONFIG_WLAN
-extern int rtw_wltunnel_command(char *cmd);
-u32
-CmdWTN(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-	if (argc != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
-		return FALSE;
-	}
-	rtw_wltunnel_command((char *)argv[0]);
-	return 0;
-}
-#endif
-
-#endif
-#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
-
-#ifdef CONFIG_WLAN
-extern int whc_ipc_host_api_wltunnel_command(char *cmd, unsigned int cmd_len);
-u32
-CmdWTN(
-	IN  u16 argc,
-	IN  u8  *argv[]
-)
-{
-#if defined(CONFIG_WHC_INTF_SDIO) || defined(CONFIG_WHC_INTF_USB) || defined(CONFIG_WHC_INTF_SPI)
-	UNUSED(argc);
-	UNUSED(argv);
-#else
-	if (argc != 1) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
-		return FALSE;
-	}
-	whc_ipc_host_api_wltunnel_command((char *)argv[0], strlen((char *)argv[0]) + 1);
-#endif
-	return 0;
-}
-#endif
-#endif
-#endif
-
 u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 {
 	u32 index;
@@ -442,16 +352,6 @@ static COMMAND_TABLE   shell_cmd_table[] = {
 		"\t\t <wmap 0x00 0x2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
 		"\t\t <wmap 0xF0 0x4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
 	},
-#endif
-#if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
-#ifdef CONFIG_WLAN
-	{
-		(const u8 *)"WTN",	5, CmdWTN,	(const u8 *)"\t@WTN \n"
-		"\t\t get_father \n"
-		"\t\t get_child \n"
-		"\t\t ... \n"
-	},
-#endif
 #endif
 	{
 		(const u8 *)"TICKPS",	4, CmdTickPS,	(const u8 *)"\tTICKPS \n"
