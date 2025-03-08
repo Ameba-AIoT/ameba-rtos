@@ -739,10 +739,11 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
 		llhw_wifi_set_wps_phase(0);
 	}
 
+	/* KM4 will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
+	global_idev.mlme_priv.b_in_disconnect = true;
+
 	ret = llhw_wifi_disconnect();
 
-	/* KM4 will report WIFI_EVENT_DISCONNECT event to linux, after disconnect done */
-	global_idev.mlme_priv.b_in_disconnect = true;
 	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
 
 	return ret;
@@ -784,11 +785,11 @@ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy, struct cfg80211
 }
 
 static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
-				    struct wireless_dev *wdev,
+									struct wireless_dev *wdev,
 #if (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
-				    unsigned int link_id,
+									unsigned int link_id,
 #endif
-				    struct cfg80211_chan_def *chandef)
+									struct cfg80211_chan_def *chandef)
 {
 	u32 wlan_idx = 0;
 	struct net_device *pnetdev = NULL;
@@ -809,11 +810,13 @@ static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
 		wlan_idx = global_idev.p2p_global.pd_wlan_idx;
 	} else
 #endif
-	if (pnetdev) {
-		wlan_idx = rtw_netdev_idx(pnetdev);
-	} else {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: %s, cannot find wlan idx.", __func__);
-		return -EINVAL;
+	{
+		if (pnetdev) {
+			wlan_idx = rtw_netdev_idx(pnetdev);
+		} else {
+			dev_err(global_idev.fullmac_dev, "[fullmac]: %s, cannot find wlan idx.", __func__);
+			return -EINVAL;
+		}
 	}
 
 	ret = llhw_wifi_get_channel(wlan_idx, &ch);
