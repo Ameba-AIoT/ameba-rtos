@@ -13,11 +13,7 @@ add_custom_target(
     DEPENDS target_bootloader
 )
 
-if (CONFIG_MP_SHRINK)
-    target_sources(target_bootloader PRIVATE ${DIR}/bootloader_km4_mp.c)
-else()
-    target_sources(target_bootloader PRIVATE ${DIR}/bootloader_km4.c)
-endif()
+target_sources(target_bootloader PRIVATE ${DIR}/bootloader_km4.c)
 
 target_sources(
     target_bootloader
@@ -72,11 +68,7 @@ target_link_libraries(
     ${LINK_ROM_LIB}
 )
 
-if(CONFIG_MP_SHRINK)
-    set(IMG1_LD ${LDDIR}/ameba_img1_all_mp.ld)
-else()
-    set(IMG1_LD ${LDDIR}/ameba_img1_all.ld)
-endif()
+set(IMG1_LD ${LDDIR}/ameba_img1_all.ld)
 
 add_custom_command(
   TARGET target_bootloader PRE_LINK

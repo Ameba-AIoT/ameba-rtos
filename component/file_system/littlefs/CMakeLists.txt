@@ -21,7 +21,7 @@ ameba_list_append(public_includes
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
 ameba_global_define(${public_defines})
-ameba_global_library(${public_libraries}) #default: whole-achived
+ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################
 ## * This part defines private part of the component
