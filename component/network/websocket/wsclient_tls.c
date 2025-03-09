@@ -215,8 +215,7 @@ int wss_tls_read(void *tls_in, char *buffer, int buf_len)
 	struct wss_tls *tls = (struct wss_tls *) tls_in;
 
 	ret = mbedtls_ssl_read(&tls->ctx, (unsigned char *)buffer, buf_len);
-	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE
-		|| ret == MBEDTLS_ERR_NET_RECV_FAILED) {
+	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 		ret = 0;
 	}
 	return ret;

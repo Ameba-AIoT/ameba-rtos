@@ -26,7 +26,6 @@ void whc_host_api_set_netif_info_handler(u32 api_id, u32 *param_buf);
 void whc_host_api_ip_table_chk(u32 api_id, u32 *param_buf);
 void whc_host_api_ap_ch_switch(u32 api_id, u32 *param_buf);
 int whc_host_api_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
-int whc_host_api_wltunnel_command(char *cmd, unsigned int cmd_len);
 void whc_host_api_task(void);
 
 #endif /* __INIC_HOST_H__ */
