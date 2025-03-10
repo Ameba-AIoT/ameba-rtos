@@ -161,14 +161,15 @@
  * @{
  *****************************************************************************/
 /********************  Bits definition for CFG register  *******************/
-#define BIT_CFGX_LO_GET_CH_Status(x)		  ((u32)(((x >> 0) & 0x00000007)))	  /*!< Lower word Bit[0:2].Indicates the channel status 111: suspend 011/101: working 110: it is normal when it only lasts for a few cycles*/
-
-#define BIT_CFGX_LO_GET_CH_INACTIVE(x)		((u32)(((x >> 0) & 0x00000001)))	  /*!< Lower word Bit[0].Indicates if the channel is inactive 1:inactive 0:not inactive*/
-#define BIT_CFGX_LO_CH_SUSP			          ((u32)(0x00000001 << 8))		        /*!< Lower word Bit[8].Channel Suspend bit*/
-#define BIT_CFGX_CH_PRIOR				          ((u32)(0x0000000F<< 4))			        /*!< Lower word Bit[4:7]. channel priority,  0 is the highest priority value, (DMAC_NUM_CHANNELS-1) is the lowest priroty value. If more than one channel are set with the same priroty value, the channel with small channel number index has higher priority.*/
-#define SET_CFGX_CH_PRIOR(x)			        ((u32)(((x) & 0x0000000F) << 4))
-#define BIT_CFGX_LO_RELOAD_SRC			      ((u32)(0x00000001 << 30))		        /*!< Lower word Bit[30].Automatic Source Reload bit*/
-#define BIT_CFGX_LO_RELOAD_DST			      ((u32)(0x00000001 << 31))		        /*!< Lower word Bit[31].Automatic Destination Reload bit*/
+#define BIT_CFGx_L_RELOAD_DST			      ((u32)(0x00000001 << 31))		      /*!< Lower word Bit[30].Automatic Source Reload bit*/
+#define BIT_CFGX_L_RELOAD_SRC			      ((u32)(0x00000001 << 30))		      /*!< Lower word Bit[31].Automatic Destination Reload bit*/
+#define BIT_CFGx_L_FIFO_EMPTY           ((u32)(0x00000001 << 9))          /*!< R 0x1  Indicates if there is data left in the channel FIFO. 1 = Channel FIFO empty 0 = Channel FIFO not empty*/
+#define BIT_CFGx_L_CH_SUSP			        ((u32)(0x00000001 << 8))		      /*!< Lower word Bit[8].Channel Suspend bit*/
+#define BIT_CFGX_CH_PRIOR				        ((u32)(0x0000000F<< 4))			      /*!< Lower word Bit[4:7]. channel priority,  0 is the highest priority value, (DMAC_NUM_CHANNELS-1) is the lowest priroty value. If more than one channel are set with the same priroty value, the channel with small channel number index has higher priority.*/
+#define SET_CFGX_CH_PRIOR(x)			      ((u32)(((x) & 0x0000000F) << 4))
+#define BIT_CFGx_L_DST_PCTL_OVER        ((u32)0x00000001 << 2)            /*!< R 0x1  DMA destination bus protocol finish, indicating the current write command has finished.*/
+#define BIT_CFGx_L_SRC_PCTL_OVER        ((u32)0x00000001 << 1)            /*!< R 0x1  DMA Source bus protocol finish, indicating the current read command has finished.*/
+#define BIT_CFGx_L_INACTIVE             ((u32)0x00000001 << 0)            /*!< R 0x1  Indicates if the channel is inactive. Can be used in conjunction with CFGx_L.CH_SUSP to cleanly disable a channel when destination is peripheral. For more information, refer to "Disabling a Channel Prior to Transfer Completion" . 1 = Channel Inactive for axi interface 0 = Channel not Inactive for axi interface*/
 
 #define BIT_CFGX_UP_SEC_DISABLE			      ((u32)(0x00000001 << 3))		        /*!< Upper word Bit[10:7]. write 0 to enable secure transfer, default is 0 */
 #define BIT_CFGX_UP_SRC_PER				        ((u32)(0x0000000F << 7))		        /*!< Upper word Bit[10:7].hardware handshaking interface for source peripheral*/
@@ -599,9 +600,9 @@ _LONG_CALL_ u8	 GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 
 _LONG_CALL_ u8   GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ u8	 GDMA_GetIrqNum(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPriority);
-_LONG_CALL_  void GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum);
-_LONG_CALL_  void GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum);
-_LONG_CALL_  void GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_ void GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_ void GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_ u8   GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum);
 
 /**
   * @}

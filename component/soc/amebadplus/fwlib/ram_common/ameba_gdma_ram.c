@@ -439,12 +439,12 @@ GDMA_ChCleanAutoReload(u8 GDMA_Index, u8 GDMA_ChNum, u32 CleanType)
 	CfgxLow = GDMA->CH[GDMA_ChNum].CFG_LOW;
 
 	if (CleanType == CLEAN_RELOAD_SRC) {
-		CfgxLow &= ~BIT_CFGX_LO_RELOAD_SRC;
+		CfgxLow &= ~BIT_CFGX_L_RELOAD_SRC;
 	} else if (CleanType == CLEAN_RELOAD_DST) {
-		CfgxLow &= ~BIT_CFGX_LO_RELOAD_DST;
+		CfgxLow &= ~BIT_CFGx_L_RELOAD_DST;
 	} else {
-		CfgxLow &= ~BIT_CFGX_LO_RELOAD_SRC;
-		CfgxLow &= ~BIT_CFGX_LO_RELOAD_DST;
+		CfgxLow &= ~BIT_CFGX_L_RELOAD_SRC;
+		CfgxLow &= ~BIT_CFGx_L_RELOAD_DST;
 	}
 
 	GDMA->CH[GDMA_ChNum].CFG_LOW = CfgxLow;
@@ -781,7 +781,7 @@ GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum)
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
-	GDMA->CH[GDMA_ChNum].CFG_LOW |= BIT_CFGX_LO_CH_SUSP;
+	GDMA->CH[GDMA_ChNum].CFG_LOW |= BIT_CFGx_L_CH_SUSP;
 }
 
 /**
@@ -800,18 +800,19 @@ GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum)
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
-	GDMA->CH[GDMA_ChNum].CFG_LOW &= ~BIT_CFGX_LO_CH_SUSP;
+	GDMA->CH[GDMA_ChNum].CFG_LOW &= ~BIT_CFGx_L_CH_SUSP;
 }
 
 /**
   * @brief  Abort a channel.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
+  * @retval TRUE/FALSE
   */
-__weak  void
+__weak  u8
 GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
 {
-	u32 timeout;
+	u32 timeout = 500;
 	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
 	if (TrustZone_IsSecure()) {
 		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
@@ -819,22 +820,24 @@ GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
 	/* Check the parameters */
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
-	while (1) {
-		timeout = 500;
-		GDMA_Suspend(GDMA_Index, GDMA_ChNum);
-		while (BIT_CFGX_LO_GET_CH_Status(GDMA->CH[GDMA_ChNum].CFG_LOW) == 0x6) {
-			timeout--;
-			if (timeout == 0) {
-				break;
-			}
-		}
 
-		if (timeout > 0) {
+	GDMA_Suspend(GDMA_Index, GDMA_ChNum);
+	/*If ChEnReg[GDMA_ChNum] is not equal to 0, it means that
+	  the channel is working and the Suspend status must be checked.*/
+	while (timeout--) {
+		if ((GDMA->ChEnReg & BIT(GDMA_ChNum)) == 0 || \
+			(GDMA->CH[GDMA_ChNum].CFG_LOW & BIT_CFGx_L_INACTIVE)) {
 			break;
 		}
-		GDMA_Resume(GDMA_Index, GDMA_ChNum);
 	}
+	/*If the channel is still active after the timeout period, resume is required*/
+	if (timeout == 0) {
+		GDMA_Resume(GDMA_Index, GDMA_ChNum);
+		return FALSE;
+	}
+
 	GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
+	return TRUE;
 }
 
 
