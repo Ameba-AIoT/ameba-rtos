@@ -660,7 +660,7 @@ void spi_frequency(spi_t *obj, int hz)
 	u32 ClockDivider;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
-	IpClk = spi_get_ipclk();//100000000;
+	IpClk = spi_get_ipclk();
 
 	/* Adjust SCK Divider to an even number */
 	ClockDivider = (u32)(IpClk / hz / 2) * 2;
@@ -672,6 +672,10 @@ void spi_frequency(spi_t *obj, int hz)
 	if (ClockDivider >= 0xFFFF) {
 		/* devider is 16 bits */
 		ClockDivider = 0xFFFE;
+	}
+
+	if (IpClk / ClockDivider != (u32)hz) {
+		RTK_LOGI(TAG, "IpClk:%luHz/div%lu, get:%luHz(target%dHz) \r\n", IpClk, ClockDivider, (IpClk / ClockDivider), hz);
 	}
 
 	SSI_SetBaudDiv(ssi_adapter->spi_dev, ClockDivider);
