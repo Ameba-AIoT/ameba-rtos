@@ -225,6 +225,13 @@ ameba_target_sources_if(CONFIG_SPIC_VERIFY src_${d_MCU_PROJECT_NAME}_test_verifi
     ${d_SOC_PLATFORM_DIR}/verification/spi_flash/rtl8721d_spi_flash_test.c
 )
 
+ameba_target_sources_if(CONFIG_QSPI_VERIFY src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
+    ${d_SOC_PLATFORM_DIR}/verification/qspi/ameba_qspi_test.c
+	${d_SOC_PLATFORM_DIR}/verification/qspi/ili9341_qspi_dma_test.c
+	${d_SOC_PLATFORM_DIR}/verification/qspi/sh8601a_qspi_test.c
+	${d_SOC_PLATFORM_DIR}/verification/qspi/st77903_qspi_dma_test.c
+)
+
 ameba_target_sources_if(CONFIG_RF_Interference_Flash_VERIFY src_${d_MCU_PROJECT_NAME}_test_verification p_SCOPE interface
     ${d_SOC_PLATFORM_DIR}/verification/rf_interference/rf_interference_flash_test.c
 )
