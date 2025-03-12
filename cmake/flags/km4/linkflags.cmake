@@ -5,8 +5,8 @@ set(LINK_OPTIONS)
 if(CONFIG_CPU_HAS_FPU)
     list(
         APPEND LINK_OPTIONS
-        -L${ASDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.main+fp/fpu
-        -L${ASDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu
+        -L${SDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.main+fp/fpu
+        -L${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu
     )
 endif()
 

@@ -5,13 +5,16 @@
  */
 
 #include "osif.h"
-#include "hci_config.h"
 #include "hci/hci_common.h"
 #include "hci/hci_transport.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include "rtk_coex.h"
 #include <string.h>
+
+#define CONFIG_HCI_RX_PRIO        5
+#define CONFIG_HCI_RX_STACK_SIZE  (2*1024)
+#define CONFIG_HCI_RX_BUF_LEN     258
 
 static struct hci_h4_t {
 	void    *rx_ind_sema;

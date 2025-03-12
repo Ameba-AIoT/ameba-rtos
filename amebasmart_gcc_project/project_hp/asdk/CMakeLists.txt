@@ -229,7 +229,7 @@ endif()
 
 add_custom_command(
   TARGET target_img2_${PROJECT_NAME} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${d_LINK_ROM_SYMBOL_NS} >> ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
@@ -280,9 +280,7 @@ add_custom_target(
 else() # For temporary compatibility.NOTE:  script below is new version cmake
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
-#REVIEW: move this to ameba_mcu_project_create?
-ameba_global_include(${c_GLOBAL_MCU_INCLUDE_DIRECTORIES})
-
+add_compile_options(-fdata-sections -ffunction-sections)
 
 if(CONFIG_AMEBASMART_B_CUT)
     ameba_set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebasmart_rom_bcut)
@@ -303,12 +301,11 @@ else()
     ameba_set(c_LINK_ROM_LIB_NS ${c_ROM_LIB_DIR}/rom_ns.a)
 endif()
 ameba_list_append(c_LINK_ROM_SYMBOL_NS    ${c_SDK_LD_DIR}/ameba_rom_symbol_stdlib.ld)
-add_compile_options(-fdata-sections -ffunction-sections)
-# ameba_add_subdirectory(make/image1)
+ameba_add_subdirectory(make/image1)
 ameba_add_subdirectory(make/image2)
 # ameba_add_subdirectory(make/image3)
-# ameba_add_subdirectory(make/image_floader)
-# ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
+ameba_add_subdirectory(make/image_floader)
+ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
 
 add_custom_target(
     ${c_MCU_PROJECT_NAME}
@@ -329,9 +326,9 @@ add_custom_target(
     COMMAND ${CMAKE_COMMAND}
         -DFILEPATH=${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/imgtool_flashloader_raw.bin
         -P${c_CMAKE_FILES_DIR}/checkexists.cmake
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/imgtool_flashloader_raw.bin ${c_SDK_IMAGE_TARGET_FOLDER}/ram_1_prepend.bin
-    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_FOLDER}/ram_1_prepend.bin ${BUILD_TYPE}
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_FOLDER}/imgtool_flashloader.bin ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/floader_${c_SOC_TYPE}.bin
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/imgtool_flashloader_raw.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin
+    COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin ${BUILD_TYPE}
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut/floader_${c_SOC_TYPE}.bin
 )
 
 endif()# For temporary compatibility.

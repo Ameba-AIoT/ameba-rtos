@@ -5,8 +5,8 @@ set(LINK_OPTIONS)
 
 list(
     APPEND LINK_OPTIONS
-    -L${VSDK_TOOLCHAIN}/riscv32-none-elf/lib/rv32imafc/ilp32f
-    -L${VSDK_TOOLCHAIN}/lib/gcc/riscv32-none-elf/${VSDK_VER}/rv32imafc/ilp32f
+    -L${SDK_TOOLCHAIN}/riscv32-none-elf/lib/rv32imafc/ilp32f
+    -L${SDK_TOOLCHAIN}/lib/gcc/riscv32-none-elf/${VSDK_VER}/rv32imafc/ilp32f
     -L${PROJECTDIR}/vsdk/lib/
     -Os
     -march=rv32imafc -mabi=ilp32f

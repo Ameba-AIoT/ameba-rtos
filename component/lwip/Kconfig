@@ -1,0 +1,105 @@
+menu "CONFIG LWIP"
+    config FAST_DHCP_MENU
+        bool "Enable Fast DHCP"
+        select FAST_DHCP if CORE_AS_AP
+
+    config IP_NAT_MENU
+        bool "Enable NAT REPEATER"
+        select IP_NAT if CORE_AS_AP
+
+    config LWIP_NETCONN_SEM_PER_THREAD_MENU
+        bool "Enable LWIP NETCONN SEM PER THREAD"
+        select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
+
+
+    config LWIP_USB_ETHERNET
+        depends on USBH_ECM_ETHERNE_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU
+        bool "Enable LWIP USB ETHERNET"
+
+    config LWIP_USB_ETHERNET_BRIDGE
+        depends on USBH_ECM_ETHERNET_BRIDGE_MENU
+        bool "Enable LWIP USB ETHERNET BRIDGE"
+
+
+    config FAST_DHCP
+        bool
+    config IP_NAT
+        bool
+    config LWIP_NETCONN_SEM_PER_THREAD
+        bool
+
+    config LWIP_DEBUG
+        bool "Enable LWIP Debug"
+        default n
+
+    if LWIP_DEBUG
+        config ETHARP_DEBUG
+            bool "Enable ETHARP DEBUG"
+        config NETIF_DEBUG
+            bool "Enable NETIF DEBUG"
+        config PBUF_DEBUG
+            bool "Enable PBUF DEBUG"
+        config API_LIB_DEBUG
+            bool "Enable API LIB DEBUG"
+        config API_MSG_DEBUG
+            bool "Enable API MSG DEBUG"
+        config SOCKETS_DEBUG
+            bool "Enable SOCKETS DEBUG"
+        config ICMP_DEBUG
+            bool "Enable ICMP DEBUG"
+        config IPNAT_DEBUG
+            bool "Enable IPNAT DEBUG"
+        config IGMP_DEBUG
+            bool "Enable IGMP DEBUG"
+        config INET_DEBUG
+            bool "Enable INET DEBUG"
+        config IP_DEBUG
+            bool "Enable IP DEBUG"
+        config IP_REASS_DEBUG
+            bool "Enable IP REASS DEBUG"
+        config RAW_DEBUG
+            bool "Enable RAW DEBUG"
+        config MEM_DEBUG
+            bool "Enable MEM DEBUG"
+        config MEMP_DEBUG
+            bool "Enable MEMP DEBUG"
+        config SYS_DEBUG
+            bool "Enable SYS DEBUG"
+        config TIMERS_DEBUG
+            bool "Enable TIMERS DEBUG"
+        config TCP_DEBUG
+            bool "Enable TCP DEBUG"
+        config TCP_INPUT_DEBUG
+            bool "Enable TCP INPUT DEBUG"
+        config TCP_FR_DEBUG
+            bool "Enable TCP FR DEBUG"
+        config TCP_RTO_DEBUG
+            bool "Enable TCP RTO DEBUG"
+        config TCP_CWND_DEBUG
+            bool "Enable TCP CWND DEBUG"
+        config TCP_WND_DEBUG
+            bool "Enable TCP WND DEBUG"
+        config TCP_OUTPUT_DEBUG
+            bool "Enable TCP OUTPUT DEBUG"
+        config TCP_RST_DEBUG
+            bool "Enable TCP RST DEBUG"
+        config TCP_QLEN_DEBUG
+            bool "Enable TCP QLEN DEBUG"
+        config UDP_DEBUG
+            bool "Enable UDP DEBUG"
+        config TCPIP_DEBUG
+            bool "Enable TCPIP DEBUG"
+        config SLIP_DEBUG
+            bool "Enable SLIP DEBUG"
+        config DHCP_DEBUG
+            bool "Enable DHCP DEBUG"
+        config AUTOIP_DEBUG
+            bool "Enable AUTOIP DEBUG"
+        config DNS_DEBUG
+            bool "Enable DNS DEBUG"
+        config IP6_DEBUG
+            bool "Enable IP6 DEBUG"
+        config DHCP6_DEBUG
+            bool "Enable DHCP6 DEBUG"
+    endif
+endmenu

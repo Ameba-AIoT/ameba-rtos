@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "hci_config.h"
 #include "hci/hci_common.h"
 
 void     hci_if_cfg_bdaddr(uint8_t *bdaddr);

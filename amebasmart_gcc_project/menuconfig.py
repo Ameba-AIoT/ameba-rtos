@@ -3,46 +3,20 @@
 
 # Copyright (c) 2024 Realtek Semiconductor Corp.
 # SPDX-License-Identifier: Apache-2.0
-"""
-Simple utility for setting configuration values from the xxx.conf.
-
-xxx.conf is loacated at menuconfig/confs_daily_build and menuconfig/confs_release_tool
-
-Usage:
-
-  $ ./menuconfig.py [-f FILE1 FILE2 ...]
-
-Sample usage:
-
-  $ ./menuconfig.py
-  $ ./menuconfig.py -f usb.conf
-  $ ./menuconfig.py -f bt1.conf audio_passthrough.conf
-
-Note: In xxx.conf files, symbol names should not be prefixed with 'CONFIG_'.
-
-There are two modes for menuconfig: cmd-ui mode and file-input mode.
-
-[CMD-UI]
-The initial configuration file is '.config', which is a default config file
-The output configuration file is '.config'.
-Each set-config action will change the default config file (i.e., '.config')
-When overwriting a configuration file, the old version is saved to .config.old
-
-[FILE-INPUT]
-The initial configuration file is '.config', which is a default config file
-The input configuration file is 'xxx.conf', which is a list of extra configurations
-The output configuration file is '.setconfig'.
-Each set-config action will not change the default config file (i.e., '.config')
-When overwriting a configuration file, the old version is saved to .setconfig.old
-"""
 
 import os
 import sys
 import argparse
-from menuconfig.manager import Manager
+import shutil
+from configparser import ConfigParser
+
+
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(f'{current_script_path}/../cmake')
+from Kconfig.manager import Manager
+
 
 def main():
-    os.environ['KCONFIG_CONFIG']="menuconfig/.config"
 
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument(
@@ -51,14 +25,64 @@ def main():
         nargs='+',
         help="extra config file"
     )
+
+    parser.add_argument(
+        "-r",
+        "--reset",
+        action='store_true',
+        help="generate default config file"
+    )
+
+    parser.add_argument(
+        "-c",
+        "--clean",
+        action='store_true',
+        help="generate default config file"
+    )
+
+    parser.add_argument(
+        "-d",
+        "--menuconfig-dir",
+        help="directory where menuconfig floader will be saved"
+    )
+
+
+    parser.add_argument(
+        "-e",
+        "--external-kconfig",
+        help="an external sub-kconfig under this path will be included"
+    )
+
+
     args = parser.parse_args()
+
+    if args.external_kconfig:
+        os.environ['RTK_APP_DIR'] = args.external_kconfig
+
+    if args.menuconfig_dir:
+        menuconfigdir = args.menuconfig_dir
+    else:
+        menuconfigdir = '.'
+
+    if args.clean:
+        if os.path.exists(os.path.join(menuconfigdir, 'menuconfig')):
+            shutil.rmtree(os.path.join(menuconfigdir, 'menuconfig'))
+        return
+
+    os.environ['KCONFIG_CONFIG']= os.path.join(menuconfigdir, 'menuconfig/.config')
+
     manager = Manager(
         {'lp': 'KM0', 'hp': 'KM4', 'ap': 'CA32'},
-        section_begin_marker_suffix = ' Begin', #full mark fmt: ${prefix}${core_name}${suffix}
-        section_end_marker_suffix = ' End'
+        section_begin_marker_prefix = 'MENUCONFIG FOR ', #full mark fmt: ${prefix}${core_name}${suffix}
+        section_end_marker_prefix = 'end of MENUCONFIG FOR ',
+        out_dir = menuconfigdir,
+        top_kconfig = os.path.join(current_script_path, 'Kconfig')
     )
+
     if args.file:
         code = manager.apply_files_config(args.file)
+    elif args.reset:
+        code = manager.apply_default_config()
     else:
         code = manager.apply_manual_config()
 

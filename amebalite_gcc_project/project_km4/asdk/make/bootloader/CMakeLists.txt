@@ -72,7 +72,7 @@ set(IMG1_LD ${LDDIR}/ameba_img1_all.ld)
 
 add_custom_command(
   TARGET target_bootloader PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG1_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG1_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${MENUCONFIGDIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build bootloader linkerscript rlx8721d.ld"
 )

@@ -1,0 +1,19 @@
+menu "IPC Message Queue Config"#DONE
+    config IMQ_EN
+        bool "Enable IPC Message Queue"
+
+    if IMQ_EN
+        config RPC_EN
+            bool "Enable RPC"
+
+        config IMQ2_TEST
+            bool "Enable IPC Message Queue Test"
+
+
+        config IPC_MSG_MASTER_FOR_KM4
+            def_bool y
+            depends on AMEBALITE||AMEBASMART||AMEBASMARTPLUS
+
+
+    endif
+endmenu

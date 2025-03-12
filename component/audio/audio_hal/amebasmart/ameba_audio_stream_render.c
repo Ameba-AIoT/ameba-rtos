@@ -41,6 +41,8 @@ static uint64_t s_counter_frames = 0;
 static uint64_t s_dma_frames = 0;
 #endif
 
+#define FIFO_BYTES 32*4
+
 int32_t ameba_audio_stream_tx_set_amp_state(bool state)
 {
 	StreamControl *control = ameba_audio_get_ctl();
@@ -677,16 +679,21 @@ int32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream)
 	RenderStream *rstream = (RenderStream *)stream;
 	PGDMA_InitTypeDef txgdma_initstruct = &(stream->gdma_struct->u.SpTxGdmaInitStruct);
 
-	if (!rstream || !rstream->stream.rbuffer || !rstream->stream.gdma_struct
-		|| rstream->stream.stream_mode == AMEBA_AUDIO_DMA_IRQ_MODE) {
+	if (!rstream || !rstream->stream.rbuffer || !rstream->stream.gdma_struct) {
 		HAL_AUDIO_ERROR("stream is not initialized\n");
 		return HAL_OSAL_ERR_NO_INIT;
 	}
 
-	uint32_t wr = (uint32_t)(rstream->stream.rbuffer->raw_data + rstream->stream.rbuffer->write_ptr);
-	uint32_t capacity = rstream->stream.rbuffer->capacity;
-	uint32_t dma_addr = GDMA_GetSrcAddr(txgdma_initstruct->GDMA_Index, txgdma_initstruct->GDMA_ChNum);
-	uint32_t remain = (wr < dma_addr) ? (capacity - (dma_addr - wr)) : (wr - dma_addr);
+	uint32_t remain = 0;
+
+	if (rstream->stream.stream_mode == AMEBA_AUDIO_DMA_NOIRQ_MODE) {
+		uint32_t wr = (uint32_t)(rstream->stream.rbuffer->raw_data + rstream->stream.rbuffer->write_ptr);
+		uint32_t capacity = rstream->stream.rbuffer->capacity;
+		uint32_t dma_addr = GDMA_GetSrcAddr(txgdma_initstruct->GDMA_Index, txgdma_initstruct->GDMA_ChNum);
+		remain = (wr < dma_addr) ? (capacity - (dma_addr - wr)) : (wr - dma_addr);
+	} else if (rstream->stream.stream_mode == AMEBA_AUDIO_DMA_IRQ_MODE) {
+		remain = ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer);
+	}
 
 	return remain;
 }
@@ -1036,7 +1043,7 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 		}
 
 		if (rstream->stream.state == STATE_INITED) {
-			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) >= dma_len) {
+			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) > MAX(dma_len, FIFO_BYTES)) {
 				tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
 
 				AUDIO_SP_TXGDMA_Init(rstream->stream.sport_dev_num, GDMA_INT, sp_txgdma_initstruct, rstream->stream.gdma_struct,
@@ -1066,7 +1073,7 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 		}
 
 		if (rstream->stream.state == STATE_XRUN_NOTIFIED || rstream->stream.state == STATE_STANDBY) {
-			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) >= dma_len) {
+			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) > MAX(dma_len, FIFO_BYTES)) {
 				tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
 				HAL_AUDIO_VERBOSE("restart gdma at rp:%u", ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
 				rstream->stream.multi_dma_xrun_mask = 0;

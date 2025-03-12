@@ -39,41 +39,15 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-
 if("${c_MCU_PROJECT_NAME}" STREQUAL "hp")
     ameba_list_append(private_sources
         bootloader_hp.c
         boot_trustzone_hp.c
         boot_security_hp.c
         boot_ota_hp.c
-        ${c_CMPT_USRCFG_DIR}/ameba_boot_trustzonecfg.c
-        ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
-        ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
-        ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_flashclk.c
-        ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_nandflash.c
-        ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_ddrphy.c
-        ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_rxi316_dram_init.c
-        ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_psram.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_clk.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_swr.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_otp.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_swr_calib.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_pll.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_ipc_api.c
-        ${c_CMPT_FWLIB_DIR}/ram_common/ameba_fault_handle.c
-        ${c_CMPT_SWLIB_DIR}/log.c
     )
-    ameba_list_append_if(CONFIG_COMPRESS_OTA_IMG private_sources
-        ${c_COMPONENT_DIR}/soc/common/lzma/ameba_boot_lzma.c
-        ${c_COMPONENT_DIR}/soc/common/lzma/LzmaDec.c
-    )
-
     ameba_list_append(private_includes
-        ${c_CMPT_SWLIB_DIR}
         ${c_CMPT_SOC_DIR}/lib/bootloader
-        ${c_COMPONENT_DIR}/soc/common/crashdump/include
-        ${c_COMPONENT_DIR}/soc/common/lzma
     )
 elseif("${c_MCU_PROJECT_NAME}" STREQUAL "lp")
     ameba_list_append(private_sources

@@ -38,36 +38,29 @@ set(private_compile_options)         #private compile_options
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-        ameba_list_append(private_sources
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_clock.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_cond.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_timer.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_mqueue.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_mutex.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_unistd.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_barrier.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_sched.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_utils.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread.c
-            FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_semaphore.c
-        )
-        ameba_list_append(private_includes
-            include
-            FreeRTOS-Plus-POSIX/include
-            FreeRTOS-Plus-POSIX/include/portable/realtek
+ameba_list_append(private_sources
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_clock.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_cond.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_timer.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_mqueue.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_mutex.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_unistd.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_barrier.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_sched.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_utils.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread.c
+    FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_semaphore.c
+)
+ameba_list_append(private_includes
+    include
+    FreeRTOS-Plus-POSIX/include
+    FreeRTOS-Plus-POSIX/include/portable/realtek
+)
 
-            ${c_FREERTOS_DIR}/include
-            ${c_FREERTOS_DIR}/portable/GCC/ARM_CA7
-        )
-
-        ameba_list_append(private_compile_options
-            -Wno-cast-function-type
-            -Wno-unused-function
-        )
-    endif()
-endif()
+ameba_list_append(private_compile_options
+    -Wno-cast-function-type
+    -Wno-unused-function
+)
 
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

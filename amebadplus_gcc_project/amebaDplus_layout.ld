@@ -1,6 +1,6 @@
 /* auto gen, please change AmebaDplus_memory_layout.xlsx and exec gen_memory_layout.py */
 
-#include "project_km4/inc/platform_autoconf.h"
+#include "project_km4/platform_autoconf.h"
 /* constant macro */
 #define SECURE_ADDR_OFFSET 			(0x10000000)
 #define KBYTES(x)  					((x) * 1024)

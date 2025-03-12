@@ -1,0 +1,364 @@
+
+config BT_ADVANCED_FEATURE_MENU
+    bool "BT Advanced Feature"
+    default n
+
+config BT_EXCLUDE_AT_COMMAND
+    depends on BT_ADVANCED_FEATURE_MENU
+    bool "Exclude BT AT Command"
+    default n
+
+config BT_MESH_BASED_ON_CODED_PHY
+    depends on AMEBADPLUS && BT_ADVANCED_FEATURE_MENU     #amebadplus
+    bool "Enable BT Mesh Based on CODED PHY"
+    default n
+
+# config BT_ZEPHYR
+#     depends on BT_ADVANCED_FEATURE_MENU
+#     bool "Use Zephyr BT Stack"
+#     default n
+
+config BT_EXAMPLE_DEMO_MENU
+    bool "BT Example Demo"
+    default n
+
+if BT_EXAMPLE_DEMO_MENU
+    config BT_PERIPHERAL_MENU
+        bool "BLE Peripheral"
+        default n
+
+    config BT_CENTRAL_MENU
+        bool "BLE Central"
+        default n
+
+    config BT_SCATTERNET_MENU
+        bool "BLE Scatternet"
+        default n
+
+    # config BT_THROUGHPUT
+    #     bool "BLE Throughput"
+    #     default n
+
+    config BT_TRANSFER_MODULE_MENU
+        bool "BLE Transfer Module"
+        depends on AMEBADPLUS           #amebadplus
+        default n
+
+    config BT_MESH_PROVISIONER_MENU
+        bool "BLE Mesh Provisioner"
+        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
+        default n
+
+    config BT_MESH_DEVICE_MENU
+        bool "BLE Mesh Device"
+        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
+        default n
+
+    config BT_MESH_PROVISIONER_SCATTERNET_MENU
+        bool "BLE Mesh Provisioner and BLE Scatternet"
+        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
+        default n
+
+    config BT_MESH_DEVICE_SCATTERNET_MENU
+        bool "BLE Mesh Device and BLE Scatternet"
+        depends on AMEBADPLUS||AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBALITE        #amebadplus amebaD amebasmart smart+ amebalite
+        default n
+
+    #config BT_MESH_PROVISIONER_TEST_MENU
+    #    bool "BLE Mesh Provisioner Test"
+    #    default n
+
+    #config BT_MESH_DEVICE_TEST_MENU
+    #    bool "BLE Mesh Device Test"
+    #    default n
+
+    config BT_ISO_TEST
+        bool "BLE ISO Test"
+        depends on AMEBASMART||AMEBASMARTPLUS   #amebasmart
+        default n
+
+
+    if AMEBASMART || AMEBASMARTPLUS || AMEBALITE  # amebalite amebasmart
+
+        config BT_LE_AUDIO_MENU
+            bool "BLE Audio"
+            default n
+
+        if BT_LE_AUDIO_MENU
+            config BT_PBP_MENU
+                bool "BLE Audio Public Broadcast Profile"
+                default n
+
+            config BT_TMAP_MENU
+                bool "BLE Audio Telephony and Media Audio Profile"
+                default n
+
+            config BT_GMAP_MENU
+                bool "BLE Audio Gaming Audio Profile"
+                default n
+
+        endif
+
+        config BT_A2DP_MENU
+            bool "BT A2DP"
+            default n
+
+
+        config BT_HFP_MENU
+            bool "BT HFP"
+            default n
+
+
+        config BT_A2DP_HFP_MENU
+            bool "BT A2DP and BT HFP"
+            default n
+
+
+        config BT_SPP_MENU
+            bool "BT SPP"
+            default n
+
+        config BT_RFC_MENU
+            bool "BT RFC"
+            default n
+
+        config BT_AUDIO_MP_TEST_MENU
+            bool "BT Audio MP Test"
+            default n
+
+
+        config BT_A2DP_SCATTERNET_MENU
+            bool "BT A2DP and BLE Scatternet"
+            default n
+
+
+        config BT_A2DP_LE_AUDIO_PBP_MENU
+            bool "BT A2DP and BLE Audio PBP"
+            default n
+
+
+        config BT_A2DP_LE_AUDIO_TMAP_MENU
+            bool "BT A2DP and BLE Audio TMAP"
+            default n
+
+    endif
+
+endif
+
+if BT
+    config BT_PERIPHERAL_MENU
+        bool
+        select BT_PERIPHERAL
+
+    config BT_CENTRAL_MENU
+        bool
+        select BT_CENTRAL
+
+    config BT_SCATTERNET_MENU
+        bool
+        select BT_SCATTERNET
+
+    config BT_TRANSFER_MODULE_MENU
+        bool
+        select BT_TRANSFER_MODULE
+
+    config BT_MESH_PROVISIONER_MENU
+        bool
+        select BT_MESH_PROVISIONER
+        select BT_MESH_PROVISIONER_SUPPORT
+
+    config BT_MESH_DEVICE_MENU
+        bool
+        select BT_MESH_DEVICE
+        select BT_MESH_DEVICE_SUPPORT
+
+    config BT_MESH_PROVISIONER_SCATTERNET_MENU
+        bool
+        select BT_MESH_PROVISIONER_SCATTERNET
+        select BT_MESH_PROVISIONER_SUPPORT
+
+    config BT_MESH_DEVICE_SCATTERNET_MENU
+        bool
+        select BT_MESH_DEVICE_SCATTERNET
+        select BT_MESH_DEVICE_SUPPORT
+
+    config BT_MESH_PROVISIONER_TEST_MENU
+       bool
+       select BT_MESH_PROVISIONER_TEST
+       select BT_MESH_PROVISIONER_SUPPORT
+
+    config BT_MESH_DEVICE_TEST_MENU
+       bool
+       select BT_MESH_DEVICE_TEST
+       select BT_MESH_DEVICE_SUPPORT
+
+    config BT_ISO_TEST_MENU
+        bool
+        select BT_ISO_TEST
+
+    config BT_LE_AUDIO_MENU
+        bool
+        select BT_LE_AUDIO
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3
+
+    config BT_PBP_MENU
+        bool
+        select BT_PBP
+        select BT_PBP_SUPPORT
+
+    config BT_TMAP_MENU
+        bool
+        select BT_TMAP
+        select BT_TMAP_SUPPORT
+
+    config BT_GMAP_MENU
+        bool
+        select BT_GMAP
+        select BT_GMAP_SUPPORT
+
+
+    config BT_A2DP_MENU
+        bool
+        select BT_A2DP
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
+
+    config BT_HFP_MENU
+        bool
+        select BT_HFP
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_CVSD
+
+    config BT_A2DP_HFP_MENU
+        bool
+        select BT_A2DP_HFP
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_CVSD
+
+    config BT_SPP_MENU
+        bool
+        select BT_SPP
+
+    config BT_RFC_MENU
+        bool
+        select BT_RFC
+
+    config BT_AUDIO_MP_TEST_MENU
+        bool
+        select BT_AUDIO_MP_TEST
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_CVSD
+
+    config BT_A2DP_SCATTERNET_MENU
+        bool
+        select BT_A2DP_SCATTERNET
+        select BT_APP_AUDIO_DATA
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
+
+    config BT_A2DP_LE_AUDIO_PBP_MENU
+        bool
+        select BT_LE_AUDIO
+        select BT_A2DP_LE_AUDIO_PBP
+        select BT_APP_AUDIO_DATA
+        select BT_PBP_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_LC3
+
+    config BT_A2DP_LE_AUDIO_TMAP_MENU
+        bool
+        select BT_LE_AUDIO
+        select BT_A2DP_LE_AUDIO_TMAP
+        select BT_APP_AUDIO_DATA
+        select BT_TMAP_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_SBC
+        select BT_AUDIO_CODEC_LC3
+endif
+
+
+config BT_PERIPHERAL
+    bool
+config BT_CENTRAL
+    bool
+config BT_SCATTERNET
+    bool
+config BT_TRANSFER_MODULE
+    bool
+config BT_MESH_PROVISIONER
+    bool
+config BT_MESH_PROVISIONER_SUPPORT
+    bool
+config BT_MESH_DEVICE
+    bool
+config BT_MESH_DEVICE_SUPPORT
+    bool
+config BT_MESH_PROVISIONER_SCATTERNET
+    bool
+config BT_MESH_PROVISIONER_SUPPORT
+    bool
+config BT_MESH_DEVICE_SCATTERNET
+    bool
+
+
+config BT_SPP
+    bool
+config BT_RFC
+    bool
+
+config BT_MESH_PROVISIONER_TEST
+    bool
+
+config BT_MESH_DEVICE_TEST
+    bool
+
+config BT_ISO_TEST
+    bool
+
+config BT_PBP
+    bool
+config BT_PBP_SUPPORT
+    bool
+config BT_TMAP
+    bool
+config BT_TMAP_SUPPORT
+    bool
+config BT_GMAP
+    bool
+config BT_GMAP_SUPPORT
+    bool
+config BT_A2DP
+    bool
+config BT_HFP
+    bool
+config BT_A2DP_HFP
+    bool
+config BT_A2DP_SCATTERNET
+    bool
+config BT_LE_AUDIO
+    bool
+config BT_A2DP_LE_AUDIO_PBP
+    bool
+config BT_A2DP_LE_AUDIO_TMAP
+    bool
+config BT_AUDIO_MP_TEST
+    bool
+config BT_APP_AUDIO_DATA
+    bool
+config BT_AUDIO_CODEC_LC3
+    bool
+config BT_AUDIO_CODEC_SUPPORT
+    bool
+config BT_AUDIO_CODEC_SBC
+    bool
+config BT_AUDIO_CODEC_CVSD
+    bool

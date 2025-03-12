@@ -30,7 +30,7 @@ endforeach()
 
 add_custom_command(
     TARGET target_flashloader PRE_LINK
-    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${LDDIR}/ameba_img1_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${LDDIR}/ameba_img1_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
     COMMAND ${CMAKE_COMMAND} -E cat ${d_LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     COMMENT "build flashloader linkerscript rlx8721d.ld"
 )

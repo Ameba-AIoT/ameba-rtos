@@ -1,0 +1,31 @@
+menu "CONFIG AT CMD"
+    config SUPPORT_ATCMD
+        bool "Enable ATCMD"
+        default n
+    if SUPPORT_ATCMD
+        choice
+            prompt "ATCMD Mode"
+            config ATCMD_LOGUART
+                bool "LOGUART"
+            config ATCMD_MCU_CONTROL
+                bool "MCU Control"
+                select LONGER_CMD
+        endchoice
+        config LONGER_CMD
+            bool "Enable Longer CMD"
+        config ATCMD_NETWORK
+            bool "Enable Network"
+            default n
+        config ATCMD_SOCKET
+            bool "Enable Socket"
+        config ATCMD_HTTP
+            bool "Enable HTTP"
+        config ATCMD_MQTT
+            bool "Enable MQTT"
+        config ATCMD_WEBSOCKET
+            bool "Enable WEBSOCKET"
+        config ATCMD_OTA
+            bool "Enable OTA"
+            default n
+    endif
+endmenu

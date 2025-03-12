@@ -235,6 +235,7 @@ void BOOT_SCBConfig_HP(void)
 void BOOT_ReasonSet(void)
 {
 	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_BOOT_REASON_HW);
+	u32 BOOT_REASON_MASK = (AON_BIT_RSTF_OCP < 1) - 1;
 
 	/*Clear the wake up reason*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_BOOT_REASON_HW, temp);
@@ -242,6 +243,7 @@ void BOOT_ReasonSet(void)
 	/*Backup it to system register,So the software can read from the register*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_REASON_SW, temp);
 
+	temp &= BOOT_REASON_MASK;
 	RTK_LOGI(TAG, "KM4 BOOT REASON %x: ", temp);
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_OCP, "OCP");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_WARM_KM02PERI, "WARM_KM02PERI");
@@ -257,7 +259,7 @@ void BOOT_ReasonSet(void)
 	if (temp == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Initial Power on\n");
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UNKNOWN\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 	}
 }
 
@@ -428,7 +430,7 @@ void Peripheral_Reset(void)
 	//reason: The reason for maintaining these bits is for our debugging function.
 	//issue: LSYS_PERIALL_RST_EN will reset cpu, causing loss of debug information, which is unexpected.
 	//resolve: When initializing power, at bootloader, these bits are enabled.
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_IWDG | APBPeriph_SDM | APBPeriph_OTPC | APBPeriph_LPON);
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_FEN, APBPeriph_SDM | APBPeriph_OTPC | APBPeriph_LPON);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0, APBPeriph_TRNG | APBPeriph_FLASH | APBPeriph_KM4 | APBPeriph_KM0 | APBPeriph_PLFM | APBPeriph_SOC);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP1, APBPeriph_DTIM | APBPeriph_LOGUART);
 }

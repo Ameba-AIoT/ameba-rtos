@@ -108,10 +108,75 @@ macro(ameba_mcu_project_create name mcu_type)
     project(${name} LANGUAGES C CXX ASM)
 
     ameba_info("import config: ${d_PLATFORM_PROJECT_DIR}/menuconfig/.config_${mcu_type}")
-    configure_file(${d_PLATFORM_PROJECT_DIR}/menuconfig/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
+
+    ameba_set_upper(_tmp_MCU_NAME_UPPER ${mcu_type})
+    message(${_tmp_MCU_NAME_UPPER})
+
+    if (EXAMPLE_FOR_${_tmp_MCU_NAME_UPPER})
+        set(d_ENABLE_EXAMPLE TRUE)
+        set(EXAMPLE ${EXAMPLE_FOR_${_tmp_MCU_NAME_UPPER}})
+    endif()
+
+
+    if (EXAMPLE)
+        if(IS_ABSOLUTE EXAMPLE)
+            set(EXAMPLEDIR ${EXAMPLE})
+        else()
+            cmake_path(ABSOLUTE_PATH EXAMPLE BASE_DIRECTORY ${CMAKE_BINARY_DIR}/.. NORMALIZE OUTPUT_VARIABLE OUTPUT_EXAMPLE)
+            message(${OUTPUT_EXAMPLE})
+            if (EXISTS ${OUTPUT_EXAMPLE})
+                set(EXAMPLEDIR ${OUTPUT_EXAMPLE})
+            else()
+                file(GLOB_RECURSE EXAMPLEDIR
+                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.c
+                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.cc)
+                cmake_path(REMOVE_FILENAME EXAMPLEDIR)
+                if(EXAMPLEDIR)
+                    message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
+                else()
+                    message(SEND_ERROR "example_${EXAMPLE}.c not found. Please check example name!")
+                endif()
+            endif()
+        endif()
+    endif()
+
+    if (EXAMPLEDIR AND EXISTS ${EXAMPLEDIR}/prj.conf)
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${c_MENUCONFIG_DIR}/prj.conf
+        )
+    endif()
+
+    set(PRJ_CONF)
+
+    if (EXISTS ${c_MENUCONFIG_DIR}/prj.conf)
+        list(APPEND PRJ_CONF ${c_MENUCONFIG_DIR}/prj.conf)
+    endif()
+
+
+    if (NOT EXISTS ${c_MENUCONFIG_DIR}/.config_${mcu_type})
+        execute_process(
+            COMMAND python menuconfig.py -f default.conf ${PRJ_CONF} -d ${CMAKE_BINARY_DIR}/..
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+    endif()
+
+    configure_file(${c_MENUCONFIG_DIR}/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
     import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
 
     include(${CMAKE_CURRENT_SOURCE_DIR}/mcu_project_config.cmake)
+
+    if (NOT EXAMPLE_FOR_${_tmp_MCU_NAME_UPPER})
+        if(EXAMPLE)
+            if(CONFIG_CORE_AS_AP)
+                set(d_ENABLE_EXAMPLE TRUE)
+            else()
+                set(d_ENABLE_EXAMPLE FALSE)
+            endif()
+        else()
+            set(d_ENABLE_EXAMPLE FALSE)
+        endif()
+    endif()
+
 
     ameba_reset_global_define()
 
@@ -136,7 +201,9 @@ function(ameba_mcu_project_init)
     ameba_set_upper(d_SDK_NAME_UPPER ${d_SDK_NAME} p_SCOPE both)
     ameba_set_upper(d_MCU_TYPE_UPPER ${d_MCU_TYPE} p_SCOPE both)
     ameba_set(d_SDK_VERSION ${v_${d_SDK_NAME_UPPER}_VER} p_SCOPE both)
-    ameba_set(d_TOOLCHAIN_DIR ${${d_SDK_NAME_UPPER}_TOOLCHAIN} p_SCOPE both)
+    ameba_set(d_TOOLCHAIN_DIR ${SDK_TOOLCHAIN} p_SCOPE both)
+    ameba_set(d_WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
+    ameba_set(c_MENUCONFIG_DIR ${d_WORKING_PROJECT_DIR}/menuconfig)
 
     # sub dirs in ${d_MCU_PROJECT_DIR}/
     ameba_set(d_MCU_SDK_DIR ${d_MCU_PROJECT_DIR}/${d_SDK_NAME} p_SCOPE both)
@@ -194,21 +261,6 @@ endfunction()
 #   ameba_mcu_project_config()
 macro(ameba_mcu_project_config)
     ameba_mcu_project_custom_config() # Call user's config function defined in mcu_project_config.cmake
-
-    if (EXAMPLE_FOR_${d_MCU_TYPE_UPPER})
-        set(d_ENABLE_EXAMPLE TRUE)
-        set(EXAMPLE ${EXAMPLE_FOR_${d_MCU_TYPE_UPPER}})
-    else()
-        if(EXAMPLE)
-            if(CONFIG_CORE_AS_AP)
-                set(d_ENABLE_EXAMPLE TRUE)
-            else()
-                set(d_ENABLE_EXAMPLE FALSE)
-            endif()
-        else()
-            set(d_ENABLE_EXAMPLE FALSE)
-        endif()
-    endif()
 
     ameba_info("example status for core: ${d_MCU_TYPE_UPPER}: enable: ${d_ENABLE_EXAMPLE}, example: ${EXAMPLE}, for_core: ${EXAMPLE_FOR_${d_MCU_TYPE_UPPER}}")
 

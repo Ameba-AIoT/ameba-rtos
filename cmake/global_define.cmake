@@ -25,6 +25,7 @@ ameba_set(c_CMAKE_FILES_DIR ${CMAKE_CURRENT_LIST_DIR})
 ameba_set(c_COMPONENT_DIR ${c_BASEDIR}/component)
 ameba_set(c_WIFI_CMAKE_DIR ${c_BASEDIR}/component/wifi/wifi_make)
 ameba_set(c_EMPTY_C_FILE ${c_COMPONENT_DIR}/build_info/empty_file.c)
+ameba_set(c_MENUCONFIG_DIR ${CMAKE_BINARY_DIR}/../menuconfig)
 
 
 ameba_set(c_CMPT_APPLICATION_DIR  ${c_COMPONENT_DIR}/application)

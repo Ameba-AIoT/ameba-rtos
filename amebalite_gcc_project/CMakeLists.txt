@@ -24,6 +24,28 @@ and xxx_app.bin final path. If FINAL_IMAGE_DIR is specified by user, final image
 <FINAL_IMAGE_DIR> after building. Default final image directory is project root path, \
 where the current CMakeLists.txt is located.")
 
+if (EXAMPLE)
+    if(IS_ABSOLUTE EXAMPLE)
+        set(EXAMPLEDIR ${EXAMPLE})
+    else()
+        cmake_path(ABSOLUTE_PATH EXAMPLE BASE_DIRECTORY ${CMAKE_BINARY_DIR}/.. NORMALIZE OUTPUT_VARIABLE OUTPUT_EXAMPLE)
+        message(${OUTPUT_EXAMPLE})
+        if (EXISTS ${OUTPUT_EXAMPLE})
+            set(EXAMPLEDIR ${OUTPUT_EXAMPLE})
+        else()
+            file(GLOB_RECURSE EXAMPLEDIR
+                ${CMAKE_CURRENT_SOURCE_DIR}/../component/example/example_${EXAMPLE}.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/..//component/example/example_${EXAMPLE}.cc)
+            cmake_path(REMOVE_FILENAME EXAMPLEDIR)
+            if(EXAMPLEDIR)
+                message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
+            else()
+                message(SEND_ERROR "example_${EXAMPLE}.c not found. Please check example name!")
+            endif()
+        endif()
+    endif()
+endif()
+
 set(ASDK_VER 10.3.1)
 include (${CMAKE_CURRENT_SOURCE_DIR}/../cmake/toolchain/ameba-toolchain-asdk-${ASDK_VER}.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/set_extensions.cmake)

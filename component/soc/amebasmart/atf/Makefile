@@ -13,8 +13,14 @@ $(error error: PROJECT_DIR is not defined. Please specify it by running 'make PR
 endif
 # PROJECT_DIR = ../../../../amebasmartplus_gcc_project/project_ap
 
+ifndef MENUCONFIG_DIR
+$(error error: MENUCONFIG_DIR is not defined. Please specify it by running 'make MENUCONFIG_DIR=xxx')
+endif
+
+AUTOCONFIG_H_DIR:= ${MENUCONFIG_DIR}/project_ap
+
 include .config
-include $(PROJECT_DIR)/../menuconfig/.config_ca32
+include $(MENUCONFIG_DIR)/.config_ca32
 include Formosa.mk
 
 # ifeq (${ASDK_VER},)

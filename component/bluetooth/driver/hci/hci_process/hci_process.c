@@ -5,9 +5,9 @@
  */
 
 #include "osif.h"
-#include "hci_config.h"
-#include "hci/hci_common.h"
+#include "hci_common.h"
 #include "hci_platform.h"
+#include "hci_transport.h"
 #include "bt_debug.h"
 
 #define USE_HCI_H4 1

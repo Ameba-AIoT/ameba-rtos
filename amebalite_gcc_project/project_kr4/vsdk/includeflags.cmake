@@ -19,6 +19,7 @@ list(
     ${TARGETDIR}/usrcfg/include
     ${BASEDIR}/component/soc/common/include
 
+    ${MENUCONFIGDIR}/project_${PROJECT_NAME}
     ${INCDIR}
     ${INCDIR}/..
 

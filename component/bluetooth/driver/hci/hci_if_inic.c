@@ -5,13 +5,13 @@
  */
 
 #include "osif.h"
-#include "hci/hci_if_inic.h"
-#include "hci/hci_transport.h"
+#include "hci_if_inic.h"
+#include "hci_transport.h"
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include "hci_common.h"
-#include "bt_inic/bt_inic.h"
+#include "bt_inic.h"
 
 void bt_inic_send_cmd_complete_evt(uint16_t opcode, uint8_t status)
 {

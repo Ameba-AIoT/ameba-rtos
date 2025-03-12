@@ -6,7 +6,6 @@ set(d_GLOBAL_MCU_COMPILE_ASM_OPTIONS)
 # +++++++++++++++++ d_GLOBAL_MCU_COMPILE_DEFINES ++++++++++++++++ #
 list(APPEND d_GLOBAL_MCU_COMPILE_DEFINES
     #TODO: add global mcu define config here
-    __FPU_PRESENT
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 

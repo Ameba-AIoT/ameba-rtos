@@ -23,7 +23,7 @@ if(CONFIG_TRUSTZONE)
     set(IMG3_LD  ${LDDIR}/ameba_img3_all.ld)
     add_custom_command(
         TARGET target_img3 PRE_LINK
-        COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG3_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+        COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG3_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${MENUCONFIGDIR}
         COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
         COMMENT "build img3 linkerscript rlx8721d.ld"
     )

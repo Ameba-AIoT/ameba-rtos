@@ -5,7 +5,6 @@
  */
 
 #include <stdio.h>
-#include <osif.h>
 #include <os_wrapper.h>
 #include <atcmd_service.h>
 #include <atcmd_bt_impl.h>
