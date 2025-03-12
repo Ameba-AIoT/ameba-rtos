@@ -39,27 +39,19 @@ set(private_compile_options)         #private compile_options
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
-
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(private_sources
-        ${c_CMPT_OS_DIR}/freertos/freertos_heap5_config.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_critical.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_memory.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_mutex.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_queue.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_semaphore.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_task.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_time.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_timer.c
-        ${c_CMPT_OS_DIR}/freertos/os_wrapper/os_wrapper_static_functions.c
-    )
-
-    if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
-        ameba_list_append(private_sources
-            ${d_SOC_PLATFORM_DIR}/swlib/gcc_wrap.c
-        )
-    endif()
-endif()
+ameba_list_append(private_sources
+    ${c_CMPT_OS_DIR}/freertos/freertos_heap5_config.c
+    os_wrapper_critical.c
+    os_wrapper_memory.c
+    os_wrapper_mutex.c
+    os_wrapper_queue.c
+    os_wrapper_semaphore.c
+    os_wrapper_task.c
+    os_wrapper_time.c
+    os_wrapper_timer.c
+    os_wrapper_static_functions.c
+    ${c_CMPT_SWLIB_DIR}/gcc_wrap.c #TODO: move this file to current dir
+)
 
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

@@ -15,8 +15,6 @@ menu "CONFIG CHIP" #DONE
 endmenu
 
 
-comment "--- --------------Application Config Start------------"
-
 comment "--- --------------WIFI FW Config Start------------"
 
 menu "CONFIG WIFI FW"

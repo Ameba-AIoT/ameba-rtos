@@ -1,5 +1,6 @@
-# ameba_add_image(target_img2_${PROJECT_NAME})
-# variable c_CURRENT_IMAGE value is target_img2_${PROJECT_NAME}
+# ameba_add_image(target_img2)
+# Use variable c_CURRENT_IMAGE to represent full image target name
+set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
 
 ###############################  ADD COMPONENT  ###################################
 
@@ -14,7 +15,7 @@ ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 # ameba_add_subdirectory(${c_CMPT_USB_DIR})
 # ameba_add_subdirectory(${c_CMPT_WPAN_DIR})
-# ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
+ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 # ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
 # ameba_add_subdirectory(${c_CMPT_SSL_DIR})
@@ -36,7 +37,7 @@ return()
 
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
-    # COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_FOLDER}
+    # COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
     COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap -C ${c_CMPT_SOC_DIR}/atf all
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/atf
     COMMENT "Building atf project using make"
@@ -54,7 +55,7 @@ endif()
 
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
 #----------------- LINKING -------------------#
@@ -81,39 +82,44 @@ target_link_libraries(${c_CURRENT_IMAGE}
 #--------------- POST BUILD ------------------#
 
 add_custom_command(
-    OUTPUT ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.axf ${HP_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_FOLDER}
-    COMMAND ${CMAKE_COMMAND} -E touch ${c_SDK_IMAGE_TARGET_FOLDER}/.gitignore
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${c_SDK_IMAGE_TARGET_FOLDER}/text_image2.map
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${c_CURRENT_IMAGE}.axf ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.axf
-    COMMAND ${CMAKE_NM} ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.axf | sort > ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.map
-    COMMAND ${CMAKE_OBJDUMP} -d ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.axf > ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.asm
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.axf ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.asm ${HP_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
-    COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_FOLDER}/target_pure_img2.axf
+    OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${HP_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
+    COMMAND ${CMAKE_COMMAND} -E touch ${c_SDK_IMAGE_TARGET_DIR}/.gitignore
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${c_SDK_IMAGE_TARGET_DIR}/text_image2.map
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${c_CURRENT_IMAGE}.axf ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf
+    COMMAND ${CMAKE_NM} ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf | sort > ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
+    COMMAND ${CMAKE_OBJDUMP} -d ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf > ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm ${HP_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
+    COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ca32_image2_all.bin"
 
     COMMAND ${CMAKE_COMMAND}
-    -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR}
-    -Dc_SOC_TYPE=${c_SOC_TYPE}
-    -DCROSS_COMPILE=${CROSS_COMPILE}
-    -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
-    -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR}
-    -DASDK_VER=${ASDK_VER}
-    -DTOOLCHAINVER=${TOOLCHAINVER}
-    -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS}
-    -DCONFIG_LINUX_FW_EN=${CONFIG_LINUX_FW_EN}
-    -DATF_TARGET_DIR=${c_MCU_PROJECT_DIR}/asdk/build/atf
-    -Dc_SDK_IMAGE_TARGET_FOLDER=${c_SDK_IMAGE_TARGET_FOLDER} -Dc_BASEDIR=${c_BASEDIR} -DKM4_PROJECT_DIR=${KM4_PROJECT_DIR} -DPROJECTDIR=${PROJECTDIR}
-    -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR}
-    -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
-    -DBUILD_TYPE=${BUILD_TYPE} -DANALYZE_MP_IMG=${ANALYZE_MP_IMG} -DDAILY_BUILD=${DAILY_BUILD}
-    -DCONFIG_BT=${CONFIG_BT} -DCONFIG_MP_SHRINK=${CONFIG_MP_SHRINK} -DCONFIG_MP_INCLUDED=${CONFIG_MP_INCLUDED}
-    -DCONFIG_FATFS_WITHIN_APP_IMG=${CONFIG_FATFS_WITHIN_APP_IMG} -DCONFIG_COMPRESS_OTA_IMG=${CONFIG_COMPRESS_OTA_IMG} -DCONFIG_UPGRADE_BOOTLOADER=${CONFIG_UPGRADE_BOOTLOADER}
-    -DCONFIG_DYNAMIC_APP_LOAD_EN=${CONFIG_DYNAMIC_APP_LOAD_EN}
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/img2_postbuild.cmake
+        # common variables
+        -Dc_BASEDIR=${c_BASEDIR}  # dir of sdk's root
+        -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
+        -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
+        -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
+        -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
+        -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
 
+        # user's variables
+        -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}
+        -DBUILD_TYPE=${BUILD_TYPE}
+        -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
+        -DDAILY_BUILD=${DAILY_BUILD}
+
+        # special variables for current image
+        -DKM4_BUILDDIR=${KM4_BUILDDIR}
+
+        # cmake toolchain variables
+        -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
+        -DCMAKE_SIZE=${CMAKE_SIZE}
+        -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
+        -DCROSS_COMPILE=${CROSS_COMPILE}
+
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
     DEPENDS ${c_CURRENT_IMAGE}
     COMMENT "${c_CURRENT_IMAGE} post handle"
 )
@@ -126,13 +132,13 @@ add_custom_target(
 
 add_custom_target(
     target_wifi_nouse
-    DEPENDS ${c_SDK_IMAGE_TARGET_FOLDER}/target_img2.axf ${HP_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
+    DEPENDS ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${HP_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
 )
 
-#------------- EXTRA PROCESS -----------------#
+################################  EXTRA PROCESS  ###################################
 
 set(clean_files
-    ${c_SDK_IMAGE_TARGET_FOLDER}
+    ${c_SDK_IMAGE_TARGET_DIR}
     ${c_MCU_PROJECT_DIR}/asdk/build/atf
 )
 

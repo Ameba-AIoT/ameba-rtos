@@ -13,6 +13,8 @@ set(KR4_BUILDDIR ${PROJECTDIR}/../project_kr4)
 cmake_path(NORMAL_PATH KR4_BUILDDIR)
 set(KM4_BUILDDIR ${PROJECTDIR})
 
+set(WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
+set(MENUCONFIGDIR ${WORKING_PROJECT_DIR}/menuconfig)
 
 set(TARGETDIR ${BASEDIR}/component/soc/amebalite)
 set(CMAKE_FILES_DIR ${BASEDIR}/cmake)
@@ -41,7 +43,7 @@ set(TARGET_LIBSOC_FOLDER ${PROJECTDIR}/asdk/lib/soc)
 set(TARGET_LIBAPP_FOLDER ${PROJECTDIR}/asdk/lib/application)
 
 if(NOT FINAL_IMAGE_DIR)
-    set(FINAL_IMAGE_DIR ${PROJECTDIR}/..)
+    set(FINAL_IMAGE_DIR ${WORKING_PROJECT_DIR})
 else()
     if(NOT EXISTS FINAL_IMAGE_DIR)
         execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${FINAL_IMAGE_DIR})
@@ -72,9 +74,30 @@ file(WRITE ${PROJECTDIR}/../utils/jlink_script/gdb.py ${content})
 include (${CMAKE_FILES_DIR}/ccache.cmake)
 
 include (${CMAKE_FILES_DIR}/extensions.cmake)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../menuconfig/.config_km4 ${CMAKE_CURRENT_BINARY_DIR}/.config_km4 COPYONLY)
+
+if (EXAMPLEDIR AND EXISTS ${EXAMPLEDIR}/prj.conf)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${MENUCONFIGDIR}/prj.conf
+    )
+endif()
+
+set(PRJ_CONF)
+
+if (EXISTS ${MENUCONFIGDIR}/prj.conf)
+    list(APPEND PRJ_CONF ${MENUCONFIGDIR}/prj.conf)
+endif()
+
+
+if (NOT EXISTS ${MENUCONFIGDIR}/.config_km4)
+    execute_process(
+        COMMAND python menuconfig.py -f default.conf ${PRJ_CONF} -d ${WORKING_PROJECT_DIR}
+        WORKING_DIRECTORY ${PROJECTDIR}/..
+    )
+endif()
+
+configure_file(${MENUCONFIGDIR}/.config_km4 ${CMAKE_CURRENT_BINARY_DIR}/.config_km4 COPYONLY)
 import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config_km4)
-set(CONFIG_CPU_HAS_FPU y) ####TEMP....TODO DELETE
+
 include (${CMAKE_FILES_DIR}/flags/${PROJECT_NAME}/compileflags.cmake)
 
 include (${CMAKE_FILES_DIR}/flags/${PROJECT_NAME}/linkflags.cmake)

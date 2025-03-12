@@ -39,10 +39,26 @@ set(private_compile_options)         #private compile_options
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
-
+if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
+    ameba_list_append(private_sources
+        ameba_boot_trustzonecfg.c
+        ameba_bootcfg.c
+        ameba_flashcfg.c
+    )
+endif()
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
-
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(usrcfg
+    p_SOURCES
+        ${private_sources}
+    p_INCLUDES
+        ${private_includes}
+    p_DEFINITIONS
+        ${private_definitions}
+    p_COMPILE_OPTIONS
+        ${private_compile_options}
+)
 ##########################################################################################

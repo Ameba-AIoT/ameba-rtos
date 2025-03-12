@@ -1,7 +1,7 @@
 ENTRY(Reset_Handler)
 
 #include "../../../amebalite_layout.ld"
-#include "../../inc/platform_autoconf.h"
+#include "project_km4/platform_autoconf.h"
 #ifdef CONFIG_IMG3_PSRAM
 	#define LMA_TZ_NSC 		KM4_BD_PSRAM_TZ_NSC
 	#define LMA_TZ_ENTRY 	KM4_BD_PSRAM_TZ_ENTRY

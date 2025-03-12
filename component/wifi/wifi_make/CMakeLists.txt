@@ -2,6 +2,7 @@ if(CMAKE_REFACTOR) # For temporary compatibility.
     set(APP_LIB_DIR ${c_SDK_LIB_APPLICATION_DIR}) #Used in wifilib.cmake
     set(BASEDIR ${c_BASEDIR}) #Used in wifi_include.cmake
     set(TARGETDIR ${c_CMPT_SOC_DIR})
+    set(c_SDK_IMAGE_TARGET_FOLDER ${c_SDK_IMAGE_TARGET_DIR})
     include(wifi_include.cmake)
     include(wifilib.cmake)
     ameba_list_append(WIFI_IFLAGS

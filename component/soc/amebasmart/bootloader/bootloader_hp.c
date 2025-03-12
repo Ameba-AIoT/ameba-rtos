@@ -428,7 +428,7 @@ void BOOT_ReasonSet(void)
 	if (temp == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Initial Power on\n");
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UNKNOWN\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 	}
 }
 

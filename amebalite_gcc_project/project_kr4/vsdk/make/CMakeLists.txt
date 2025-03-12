@@ -84,8 +84,8 @@ target_link_libraries(
     -Wl,--no-whole-archive
     ${LINK_ROM_LIB}
     ${LINK_THIRD_APP_LIB}
-    ${VSDK_TOOLCHAIN_LIBPATH}/crtbegin.o
-    ${VSDK_TOOLCHAIN_LIBPATH}/crtend.o
+    ${SDK_TOOLCHAIN}/lib/gcc/riscv32-none-elf/${VSDK_VER}/rv32imafc/ilp32f/crtbegin.o
+    ${SDK_TOOLCHAIN}/lib/gcc/riscv32-none-elf/${VSDK_VER}/rv32imafc/ilp32f/crtend.o
     -lm -lstdc++
 )
 
@@ -132,7 +132,7 @@ endif()
 
 add_custom_command(
   TARGET target_img2_${PROJECT_NAME} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${MENUCONFIGDIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${LINK_ROM_SYMBOL} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )

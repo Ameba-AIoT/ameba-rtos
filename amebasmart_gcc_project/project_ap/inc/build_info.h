@@ -1,7 +1,0 @@
-#define UTS_VERSION "2025-03-10 10:10:48"
-#define RTL_FW_COMPILE_TIME "2025-03-10 10:10:48"
-#define RTL_FW_COMPILE_DATE "2025-03-10"
-#define RTL_FW_COMPILE_BY "auto_jenkins_wlan5"
-#define RTL_FW_COMPILE_HOST "wlan5-203"
-#define RTL_FW_COMPILE_DOMAIN "wlan5-203"
-#define RTL_FW_COMPILER "arm-none-eabi-gcc"

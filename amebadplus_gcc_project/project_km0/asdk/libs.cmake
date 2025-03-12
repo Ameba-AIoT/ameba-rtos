@@ -18,7 +18,7 @@ list(APPEND LINK_ROM_SYMBOL ${LDDIR}/ameba_rom_symbol_stdlib.ld)
 
 ################### APP LIB ##################
 
-set(LINK_APP_LIB ${ASDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base/libm.a)
+set(LINK_APP_LIB ${SDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base/libm.a)
 
 if(CONFIG_WIFI_FW_EN)
     if(CONFIG_FW_DRIVER_COEXIST)

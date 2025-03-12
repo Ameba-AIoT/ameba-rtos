@@ -1,6 +1,6 @@
 mainmenu "AmebaDplus Configuration"
 
-comment "-------------General config------------"
+comment "--------MENUCONFIG FOR General---------"
 
 #Release flag, set to y after release
 config AMEBA_RLS
@@ -9,8 +9,9 @@ config AMEBA_RLS
 config AMEBADPLUS
     def_bool y
 
+
 menu "CONFIG TrustZone"
-    source "project_km4/Kconfig.tz"
+    rsource "project_km4/Kconfig.tz"
 endmenu
 
 menu "CONFIG Link Option"
@@ -62,84 +63,13 @@ menu "CONFIG Mass Production"
     endif
 endmenu
 
-menu "CONFIG AT CMD"
-    config SUPPORT_ATCMD
-        bool "Enable ATCMD"
-        default y
-    if SUPPORT_ATCMD
-        choice
-            prompt "ATCMD Mode"
-            default ATCMD_LOGUART
-            config ATCMD_LOGUART
-                bool "LOGUART"
-            config ATCMD_MCU_CONTROL
-                bool "MCU Control"
-                select LONGER_CMD
-        endchoice
-        config LONGER_CMD
-            bool "Enable Longer CMD"
-        config ATCMD_NETWORK
-            bool "Enable Network"
-            default y
-        config ATCMD_SOCKET
-            bool "Enable Socket"
-        config ATCMD_HTTP
-            bool "Enable HTTP"
-        config ATCMD_MQTT
-            bool "Enable MQTT"
-        config ATCMD_WEBSOCKET
-            bool "Enable WEBSOCKET"
-        config ATCMD_OTA
-            bool "Enable OTA"
-            default n
-    endif
-endmenu
+rsource "../component/at_cmd/Kconfig"
 
-menu "CONFIG RTK Assert Level"
-    choice
-        prompt "RTK Assert Level"
-        default ASSERTION_ENABLE
-        config ASSERTION_ENABLE
-            bool "Assert Enable"
-        config ASSERTION_SILENT
-            bool "Assert Silent"
-        config ASSERTION_DISABLE
-            bool "Assert Disable"
-    endchoice
-endmenu
+rsource "../component/soc/common/rtk_assert/Kconfig"
 
-menu "CONFIG VFS"
-    config VFS_LITTLEFS_INCLUDED
-        bool "Enable VFS LITTLEFS"
-        default y
-    config VFS_FATFS_INCLUDED
-        bool "Enable VFS FATFS"
-    if VFS_FATFS_INCLUDED
-        choice
-            prompt "FATFS Memory Type"
-            default FATFS_DISK_FLASH
-            config FATFS_DISK_FLASH
-                bool "FLASH"
-        endchoice
-        config FATFS_WITHIN_APP_IMG
-            bool "FATFS within APP Image"
-    endif
-endmenu
+rsource "../component/file_system/Kconfig"
 
-menu "CONFIG OS"
-    config KERNEL
-        bool "Enable Kernel"
-        default y
-
-    if KERNEL
-        choice
-            prompt "Kernel Selecte"
-            default PLATFORM_FREERTOS
-            config PLATFORM_FREERTOS
-                bool "FREERTOS"
-        endchoice
-    endif
-endmenu
+rsource "../component/os/Kconfig"
 
 menu "CONFIG OTA OPTION"
     config UPGRADE_BOOTLOADER
@@ -148,7 +78,24 @@ menu "CONFIG OTA OPTION"
         bool "Enable Compress APP Image"
 endmenu
 
-comment "----------Connectivity config----------"
+rsource "../component/usb/Kconfig"
+
+menu "CONFIG APPLICATION"
+
+    rsource "../component/ui/Kconfig"
+
+    rsource "../component/audio/Kconfig"
+
+    menu "AI Config"
+        rsource "../component/tflite_micro/Kconfig"
+    endmenu
+
+    orsource "${RTK_APP_DIR}/Kconfig"
+
+endmenu
+
+
+comment "-----Connectivity config-----"
 menu "CONFIG WHC INTF"
     choice
         prompt "WHC MODE"
@@ -184,6 +131,8 @@ menu "CONFIG WHC INTF"
                 bool "WHC_INTF_SDIO"
             config WHC_INTF_USB
                 bool "WHC_INTF_USB"
+                select USB_DEVICE_EN
+                select USBD_INIC
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
         endchoice
@@ -254,7 +203,7 @@ menu "CONFIG WIFI"
             config ZEPHYR_SDK_FOR_KM0
                 bool "ZEPHYR_INIC"
         endchoice
-        source "../component/wifi/Kconfig.wifi"
+        orsource "../component/wifi/Kconfig.wifi"
 
         config WHC_INTF_IPC_MENU
             bool
@@ -360,7 +309,44 @@ menu "CONFIG BT"
 
     if BT_MENU
 
-        source 'Kconfig.bt'
+        choice
+            depends on FULLMAC_MENU
+            prompt "HCI Mode"
+            default BT_INIC_SHARE
+            config BT_INIC_SHARE
+                bool "Share interface with WiFi"
+            config BT_INIC_H4
+                bool "UART H4"
+            config BT_INIC_H5
+                bool "UART H5"
+            config BT_INIC_NONE
+                bool "Internal"
+        endchoice
+
+        # set this to 'y' to debug BT inic without WiFi fullmac
+        config BT_INIC_DEBUG
+            bool
+            default n
+
+        choice
+            depends on BT_INIC_DEBUG && !FULLMAC_MENU
+            prompt "iNIC debug Interface"
+            default BT_INICD_H4
+            config BT_INICD_H4
+                bool "UART H4"
+            config BT_INICD_H5
+                bool "UART H5"
+            config BT_INICD_SPI
+                bool "SPI"
+            config BT_INICD_SDIO
+                bool "SDIO"
+        endchoice
+
+        config BT_INIC
+            depends on BT_INIC_SHARE || BT_INIC_H4 || BT_INIC_H5 || BT_INIC_DEBUG
+            bool
+            default y
+
 
         # normal case: BT is always on AP CORE
         # wifi fullmac, BT shares interface with WiFi: BT stays with WiFi on NP CORE
@@ -378,197 +364,35 @@ menu "CONFIG BT"
             bool
             default MP_INCLUDED
 
-        if BT
-            config BT_PERIPHERAL_MENU
-                bool
-                select BT_PERIPHERAL
-
-            config BT_CENTRAL_MENU
-                bool
-                select BT_CENTRAL
-
-            config BT_SCATTERNET_MENU
-                bool
-                select BT_SCATTERNET
-
-            config BT_TRANSFER_MODULE_MENU
-                bool
-                select BT_TRANSFER_MODULE
-
-            config BT_MESH_PROVISIONER_MENU
-                bool
-                select BT_MESH_PROVISIONER
-                select BT_MESH_PROVISIONER_SUPPORT
-
-            config BT_MESH_DEVICE_MENU
-                bool
-                select BT_MESH_DEVICE
-                select BT_MESH_DEVICE_SUPPORT
-
-            config BT_MESH_PROVISIONER_SCATTERNET_MENU
-                bool
-                select BT_MESH_PROVISIONER_SCATTERNET
-                select BT_MESH_PROVISIONER_SUPPORT
-
-            config BT_MESH_DEVICE_SCATTERNET_MENU
-                bool
-                select BT_MESH_DEVICE_SCATTERNET
-                select BT_MESH_DEVICE_SUPPORT
-        endif
-
         config FTL_ENABLED
             bool
-        config BT_PERIPHERAL
-            bool
-        config BT_CENTRAL
-            bool
-        config BT_SCATTERNET
-            bool
-        config BT_TRANSFER_MODULE
-            bool
-        config BT_MESH_PROVISIONER
-            bool
-        config BT_MESH_PROVISIONER_SUPPORT
-            bool
-        config BT_MESH_DEVICE
-            bool
-        config BT_MESH_DEVICE_SUPPORT
-            bool
-        config BT_MESH_PROVISIONER_SCATTERNET
-            bool
-        config BT_MESH_PROVISIONER_SUPPORT
-            bool
-        config BT_MESH_DEVICE_SCATTERNET
-            bool
-        config BT_MESH_DEVICE_SUPPORT
-            bool
+
+        if !BT_INIC
+            rsource "../component/bluetooth/Kconfig"
+        endif
     endif
 endmenu
 
-menu "CONFIG LWIP"
-    config FAST_DHCP_MENU
-        bool "Enable Fast DHCP"
-        select FAST_DHCP if CORE_AS_AP
+rsource "../component/lwip/Kconfig"
 
-    config IP_NAT_MENU
-        bool "Enable NAT REPEATER"
-        select IP_NAT if CORE_AS_AP
+rsource "../component/ssl/Kconfig"
 
-    config LWIP_NETCONN_SEM_PER_THREAD_MENU
-        bool "Enable LWIP NETCONN SEM PER THREAD"
-        select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
-
-    config FAST_DHCP
-        bool
-    config IP_NAT
-        bool
-    config LWIP_NETCONN_SEM_PER_THREAD
-        bool
-
-    config LWIP_DEBUG
-        bool "Enable LWIP Debug"
-        default n
-
-    if LWIP_DEBUG
-        config ETHARP_DEBUG
-            bool "Enable ETHARP DEBUG"
-        config NETIF_DEBUG
-            bool "Enable NETIF DEBUG"
-        config PBUF_DEBUG
-            bool "Enable PBUF DEBUG"
-        config API_LIB_DEBUG
-            bool "Enable API LIB DEBUG"
-        config API_MSG_DEBUG
-            bool "Enable API MSG DEBUG"
-        config SOCKETS_DEBUG
-            bool "Enable SOCKETS DEBUG"
-        config ICMP_DEBUG
-            bool "Enable ICMP DEBUG"
-        config IPNAT_DEBUG
-            bool "Enable IPNAT DEBUG"
-        config IGMP_DEBUG
-            bool "Enable IGMP DEBUG"
-        config INET_DEBUG
-            bool "Enable INET DEBUG"
-        config IP_DEBUG
-            bool "Enable IP DEBUG"
-        config IP_REASS_DEBUG
-            bool "Enable IP REASS DEBUG"
-        config RAW_DEBUG
-            bool "Enable RAW DEBUG"
-        config MEM_DEBUG
-            bool "Enable MEM DEBUG"
-        config MEMP_DEBUG
-            bool "Enable MEMP DEBUG"
-        config SYS_DEBUG
-            bool "Enable SYS DEBUG"
-        config TIMERS_DEBUG
-            bool "Enable TIMERS DEBUG"
-        config TCP_DEBUG
-            bool "Enable TCP DEBUG"
-        config TCP_INPUT_DEBUG
-            bool "Enable TCP INPUT DEBUG"
-        config TCP_FR_DEBUG
-            bool "Enable TCP FR DEBUG"
-        config TCP_RTO_DEBUG
-            bool "Enable TCP RTO DEBUG"
-        config TCP_CWND_DEBUG
-            bool "Enable TCP CWND DEBUG"
-        config TCP_WND_DEBUG
-            bool "Enable TCP WND DEBUG"
-        config TCP_OUTPUT_DEBUG
-            bool "Enable TCP OUTPUT DEBUG"
-        config TCP_RST_DEBUG
-            bool "Enable TCP RST DEBUG"
-        config TCP_QLEN_DEBUG
-            bool "Enable TCP QLEN DEBUG"
-        config UDP_DEBUG
-            bool "Enable UDP DEBUG"
-        config TCPIP_DEBUG
-            bool "Enable TCPIP DEBUG"
-        config SLIP_DEBUG
-            bool "Enable SLIP DEBUG"
-        config DHCP_DEBUG
-            bool "Enable DHCP DEBUG"
-        config AUTOIP_DEBUG
-            bool "Enable AUTOIP DEBUG"
-        config DNS_DEBUG
-            bool "Enable DNS DEBUG"
-        config IP6_DEBUG
-            bool "Enable IP6 DEBUG"
-        config DHCP6_DEBUG
-            bool "Enable DHCP6 DEBUG"
-    endif
-endmenu
-
-menu "CONFIG SSL"
-    config MBEDTLS_ENABLED_MENU
-        bool "Enable MbedTLS"
-        select MBEDTLS_ENABLED if CORE_AS_AP
-
-    config MBEDTLS_SSL_PROTO_TLS1_3_MENU
-        depends on MBEDTLS_ENABLED_MENU
-        bool "Enable TLS 1.3"
-        select MBEDTLS_SSL_PROTO_TLS1_3 if CORE_AS_AP
-
-    config MBEDTLS_ENABLED
-        bool
-
-    config MBEDTLS_SSL_PROTO_TLS1_3
-        bool
-endmenu
+orsource "../component/wpan/Kconfig"
 
 if !AMEBA_RLS
-comment "---------------Test Config-------------"
+comment "---------Test Config---------"
+
 menu "Verification and Test"
-    config FPGA
-        bool "Select FPGA"
-    source "Kconfig.soc"
+    rsource "../component/soc/amebadplus/Kconfig"
 endmenu
 endif
 
-comment "--------------Build Config-------------"
+comment "--------Build Config---------"
 menu "Build Option"
+
+config FPGA
+    bool "Select FPGA"
+    depends on !AMEBA_RLS
 
 comment "Choose the build configuration"
     choice
@@ -582,24 +406,21 @@ comment "Choose the build configuration"
     endchoice
 endmenu
 
-comment "---------------KM0 config--------------"
+comment "----end of MENUCONFIG FOR General------"
 
 menu "MENUCONFIG FOR KM0 CONFIG"
-    source "project_km0/Kconfig"
+    rsource "project_km0/Kconfig"
 endmenu
 
-comment "---------------KM4 config--------------"
 
 menu "MENUCONFIG FOR KM4 CONFIG"
-    source "project_km4/Kconfig"
+    rsource "project_km4/Kconfig"
 endmenu
 
-comment "---------------Config end--------------"
-
-
-menu "--DO NOT ENTER IN THIS BUTTON--"
+comment "----- DO NOT ENTER IN THIS BUTTON ------"
+menu "MENUCONFIG FOR Private"
 config CORE_AS_AP
-    bool "--PLEASE LEAVE THIS SUB MENU--"
+    bool "--DO NOT CHOOSE THIS CONFIG--"
 config CORE_AS_NP
-    bool "--PLEASE LEAVE THIS SUB MENU--"
+    bool "--DO NOT CHOOSE THIS CONFIG--"
 endmenu

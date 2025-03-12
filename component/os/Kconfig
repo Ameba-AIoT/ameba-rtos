@@ -1,0 +1,17 @@
+menu "CONFIG OS"
+    config KERNEL
+        bool "Enable Kernel"
+        default n
+
+    if KERNEL
+        choice
+            prompt "Kernel Selecte"
+            default PLATFORM_FREERTOS
+            config PLATFORM_FREERTOS
+                bool "FREERTOS"
+            config PLATFORM_FREERTOS_ROM  #amebagreen2 amebaL2
+                bool "FREERTOS_ROM"
+                depends on AMEBAGREEN2 || AMEBAL2
+        endchoice
+    endif
+endmenu

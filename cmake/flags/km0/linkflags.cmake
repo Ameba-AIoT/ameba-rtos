@@ -1,8 +1,8 @@
 
 set(
     LINK_OPTIONS
-    -L${ASDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base
-    -L${ASDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.base
+    -L${SDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base
+    -L${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.base
     -L${PROJECTDIR}/asdk/lib/
 
     -march=armv8-m.base

@@ -11,6 +11,12 @@ import sys
 
 DEFAULT_BUILD_DIR = 'build'
 
+project_dir = os.path.dirname(os.path.abspath(__file__))
+
+gdb_script_dir = os.path.join(project_dir, 'utils/jlink_script/gdb.py')
+
+copy_script_dir = os.path.join(project_dir, '../tools/scripts/copy.py')
+
 
 def main(argc, argv):
     parser = argparse.ArgumentParser(description=None)
@@ -26,21 +32,29 @@ def main(argc, argv):
     parser.add_argument('-gdb', '--gdb', action='store_true', help='gdb')
     parser.add_argument('-debug', '--debug', action='store_true', help='debug')
     parser.add_argument('-D', '--Defined', nargs='+', help='user defined variables')
+    parser.add_argument('--new',  nargs='+', help='build.py --new-prj <target_dir> [-a <APP>]')
 
     args = parser.parse_args()
 
-    project_dir = os.getcwd()
-
     app = None
     if args.app == None:
-        print('Note: No application specified, build default project')
+        print('Note: No application specified, choose default project')
     else:
-        app = os.path.normcase(args.app)
+        app = args.app
+
+    if args.new:
+        cmd = 'python ' + copy_script_dir + ' ' + ' '.join(args.new)
+        if app:
+            cmd += ' --app ' + app
+        print(cmd)
+        os.system(cmd)
+        return
 
     if args.build_dir == None:
         build_dir = DEFAULT_BUILD_DIR
     else:
         build_dir = args.build_dir
+
 
     if args.clean:
         cmd = 'cd ' + build_dir + ' && ninja clean'
@@ -67,12 +81,13 @@ def main(argc, argv):
     else:
         os.makedirs(build_dir)
 
+
     if args.gdb:
-        os.system('python ./utils/jlink_script/gdb.py')
+        os.system(f'python {gdb_script_dir}')
         return
 
     if args.debug:
-        os.system('python ./utils/jlink_script/gdb.py debug')
+        os.system(f'python {gdb_script_dir} debug')
         return
 
     cmd = 'cd ' + build_dir + ' && '

@@ -1,6 +1,6 @@
 /* auto gen, please change AmebaSmart_memory_layout.xlsx and exec gen_memory_layout.py */
 
-#include "project_hp/inc/platform_autoconf.h"
+#include "project_hp/platform_autoconf.h"
 /* constant macro */
 #define SECURE_ADDR_OFFSET 			(0x10000000)
 #define KBYTES(x)  					((x) * 1024)

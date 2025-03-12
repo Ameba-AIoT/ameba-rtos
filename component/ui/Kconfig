@@ -1,0 +1,33 @@
+menu "GUI Config"
+    config GUI_EN_MENU
+        bool "Enable GUI"
+        select GUI_EN if CORE_AS_AP
+    config LVGL_EN_MENU
+        depends on GUI_EN_MENU
+        bool "LVGL"
+        select LVGL_EN if CORE_AS_AP
+
+    menu "Third Party Lib"
+        depends on AMEBASMART||AMEBASMARTPLUS           #amebasmart smart+
+        config GUI_LIB_PNG_MENU
+            bool "PNG"
+            select GUI_LIB_PNG if CORE_AS_AP
+        config GUI_LIB_JPG_MENU
+            bool "JPG"
+            select GUI_LIB_JPG if CORE_AS_AP
+    endmenu
+endmenu
+
+
+
+
+config GUI_EN
+    bool
+config LVGL_EN
+    bool
+
+config GUI_LIB_PNG
+    bool
+
+config GUI_LIB_JPG
+    bool

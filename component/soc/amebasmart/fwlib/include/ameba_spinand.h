@@ -160,6 +160,8 @@ _LONG_CALL_ u8 NAND_Page_Read(u32 PageAddr, u32 ByteAddr, u32 ByteLen, u8 *pData
 _LONG_CALL_ void NAND_Page_Write_Data_Xfer(u8 Cmd, u32 ByteAddr, u32 ByteLen, u8 *pData);
 _LONG_CALL_ u8 NAND_Page_Write_Program_Execute(u32 PageAddr);
 _LONG_CALL_ u8 NAND_Page_Write(u32 PageAddr, u32 ByteAddr, u32 ByteLen, u8 *pData);
+_LONG_CALL_ u32 NAND_CheckBadBlock(u32 block_id);
+_LONG_CALL_ int NAND_GetPageSize(u32 *page_size_byte);
 _LONG_CALL_ void NAND_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode);
 _LONG_CALL_ void NAND_StructInit_Micron(FLASH_InitTypeDef *FLASH_InitStruct);
 _LONG_CALL_ void NAND_StructInit_MXIC(FLASH_InitTypeDef *FLASH_InitStruct);

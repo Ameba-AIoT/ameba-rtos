@@ -19,13 +19,14 @@ list(
     ${TARGETDIR}/usrcfg/include
     ${BASEDIR}/component/soc/common/include
 
+    ${MENUCONFIGDIR}/project_${PROJECT_NAME}
     ${INCDIR}
     ${INCDIR}/..
 
     ${BASEDIR}/component/stdlib
 )
 
-#wifi 
+#wifi
 include(${WIFIMAKEDIR}/wifi_include.cmake)
 list(
     APPEND GLOBAL_IFLAGS
@@ -60,7 +61,7 @@ list(
 
     ${BASEDIR}/component/wifi/wifi_fw/amebalite/include
     ${BASEDIR}/component/wifi/wifi_fw/common
-    
+
 
     #RTSP
     ${BASEDIR}/component/network/rtsp

@@ -43,10 +43,9 @@ execute_process(
 )
 
 message( "========== Image manipulating start ==========")
-
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf img"
-    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap -C ${c_BASEDIR}/component/soc/${d_PLATFORM_TYPE}/atf image
+    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap MENUCONFIG_DIR=${_tmp_MENUCONFIG_DIR} -C ${c_BASEDIR}/component/soc/${d_PLATFORM_TYPE}/atf image
     WORKING_DIRECTORY ${c_BASEDIR}/component/soc/${d_PLATFORM_TYPE}/atf
 )
 

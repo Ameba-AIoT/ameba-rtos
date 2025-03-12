@@ -7,7 +7,7 @@ endif()
 add_library(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE)
 
 file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${IMAGE_TARGET_FOLDER})
-target_compile_definitions(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE -DASDK_TOOLCHAIN="${ASDK_TOOLCHAIN}")
+target_compile_definitions(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE -DSDK_TOOLCHAIN="${SDK_TOOLCHAIN}")
 target_compile_definitions(src_${d_MCU_PROJECT_NAME}_crashdump_lib INTERFACE -DIMAGE_DIR="${IMAGE_DIR}")
 
 #--------------------------#

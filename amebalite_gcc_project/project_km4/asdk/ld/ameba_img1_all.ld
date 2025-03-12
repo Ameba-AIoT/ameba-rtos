@@ -1,14 +1,14 @@
 ENTRY(Reset_Handler)
 
 #include "../../../amebalite_layout.ld"
-#include "../../inc/platform_autoconf.h"
+#include "project_km4/platform_autoconf.h"
 /* define common load memory address */
 #ifdef  GENERATE_FLOADER_LD
 	#define IMG1_LMA_REGION 			KM4_FLOADER_RAM_S
 	#define SRAM_INPUT_TEXT_SECTION 	*(.text*)
 	#define	SRAM_INPUT_NON_DRAM			*(.non.dram.text*)
 	#define SRAM_INPUT_RODATA			*(.rodata*)
-	#define FLASH_INPUT_TEXT_SECTION 
+	#define FLASH_INPUT_TEXT_SECTION
 	#define	FLASH_INPUT_NON_DRAM
 	#define FLASH_INPUT_RODATA
 #else
@@ -16,7 +16,7 @@ ENTRY(Reset_Handler)
 	#ifdef CONFIG_IMG1_FLASH
 		#define SRAM_INPUT_TEXT_SECTION
 		#define	SRAM_INPUT_NON_DRAM
-		#define SRAM_INPUT_RODATA		
+		#define SRAM_INPUT_RODATA
 		#define FLASH_INPUT_TEXT_SECTION *(.text*)
 		#define	FLASH_INPUT_NON_DRAM	*(.non.dram.text*)
 		#define FLASH_INPUT_RODATA		*(.rodata*)
@@ -24,9 +24,9 @@ ENTRY(Reset_Handler)
 		#define SRAM_INPUT_TEXT_SECTION *(.text*)
 		#define	SRAM_INPUT_NON_DRAM		*(.non.dram.text*)
 		#define SRAM_INPUT_RODATA		*(.rodata*)
-		#define FLASH_INPUT_TEXT_SECTION 
+		#define FLASH_INPUT_TEXT_SECTION
 		#define	FLASH_INPUT_NON_DRAM
-		#define FLASH_INPUT_RODATA		
+		#define FLASH_INPUT_RODATA
 	#endif
 #endif
 SECTIONS
@@ -48,8 +48,8 @@ SECTIONS
 	.ram_image1.text . :
 	{
 		/* image1 text */
-		SRAM_INPUT_TEXT_SECTION 
-		SRAM_INPUT_NON_DRAM		
+		SRAM_INPUT_TEXT_SECTION
+		SRAM_INPUT_NON_DRAM
 		SRAM_INPUT_RODATA
 		*(.sramdram.only.text*)
 		. = ALIGN (4);
@@ -74,11 +74,11 @@ SECTIONS
 
 	.xip_image1.text : {
 		/* image1 text */
-		FLASH_INPUT_TEXT_SECTION 
+		FLASH_INPUT_TEXT_SECTION
 		FLASH_INPUT_NON_DRAM
-		FLASH_INPUT_RODATA	
+		FLASH_INPUT_RODATA
 	} > KM4_BOOT_XIP
-	
+
 	/* image2: normal image start */
 	.ram_image2.entry :
 	{

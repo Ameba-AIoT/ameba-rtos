@@ -80,6 +80,7 @@ list(APPEND d_GLOBAL_COMMON_COMPILE_ASM_OPTIONS
 
 # ++++++++++++++++ d_GLOBAL_MCU_INCLUDE_DIRECTORIES ++++++++++++++++ #
 list(APPEND d_GLOBAL_MCU_INCLUDE_DIRECTORIES
+    ${c_MENUCONFIG_DIR}/project_${d_MCU_PROJECT_NAME}
     ${d_MCU_PROJECT_DIR}/inc
 )
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

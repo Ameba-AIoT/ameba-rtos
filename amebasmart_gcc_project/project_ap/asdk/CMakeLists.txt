@@ -64,7 +64,7 @@ ameba_add_subdirectories_if(CONFIG_RANGE_ENABLED
 
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
-    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap -C ${d_SOC_PLATFORM_DIR}/atf all
+    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${d_PLATFORM_PROJECT_DIR}/project_ap MENUCONFIG_DIR=${c_MENUCONFIG_DIR} -C ${d_SOC_PLATFORM_DIR}/atf all
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/make/atf
     COMMENT "Building atf project using make"
 )
@@ -233,7 +233,7 @@ add_custom_command(
     -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS}
     -DCONFIG_LINUX_FW_EN=${CONFIG_LINUX_FW_EN}
     -DATF_TARGET_DIR=${d_MCU_PROJECT_DIR}/asdk/build/atf
-    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${c_BASEDIR} -DKM4_PROJECT_DIR=${KM4_PROJECT_DIR} -DPROJECTDIR=${PROJECTDIR}
+    -DIMAGE_TARGET_FOLDER=${IMAGE_TARGET_FOLDER} -DBASEDIR=${c_BASEDIR} -DKM4_PROJECT_DIR=${KM4_PROJECT_DIR} -DPROJECTDIR=${PROJECTDIR} -D_tmp_MENUCONFIG_DIR=${c_MENUCONFIG_DIR}
     -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR} -DCMAKE_FILES_DIR=${CMAKE_FILES_DIR}
     -DCMAKE_SIZE=${CMAKE_SIZE} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
     -DBUILD_TYPE=${BUILD_TYPE} -DANALYZE_MP_IMG=${ANALYZE_MP_IMG} -DDAILY_BUILD=${DAILY_BUILD}
@@ -265,7 +265,7 @@ endif()
 
 add_custom_command(
   TARGET target_img2_${PROJECT_NAME} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
 
@@ -292,8 +292,6 @@ add_custom_target(
 else() # For temporary compatibility.NOTE:  script below is new version cmake
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
-#REVIEW: move this to ameba_mcu_project_create?
-ameba_global_include(${c_GLOBAL_MCU_INCLUDE_DIRECTORIES})
 add_compile_options(-fdata-sections -ffunction-sections)
 
 ameba_add_subdirectory(make/image2)

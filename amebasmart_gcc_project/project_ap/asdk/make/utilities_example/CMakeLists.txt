@@ -5,14 +5,7 @@ message("EXAMPLE: " ${EXAMPLE})
 #The build cmd is "cmake .. -DEXPAMLE=app -G Ninja && ninja" or "./build.py -a app".
 
 if (d_ENABLE_EXAMPLE)
-    file(GLOB_RECURSE EXAMPLEDIR
-        ${BASEDIR}/component/example/example_${EXAMPLE}.c
-        ${BASEDIR}/component/example/example_${EXAMPLE}.cc)
-    cmake_path(REMOVE_FILENAME EXAMPLEDIR)
-    if(EXAMPLEDIR)
-        message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
-    else()
-        message(SEND_ERROR "example_${EXAMPLE}.c not found. Please check example name!")
+    if (EXAMPLEDIR)
+        add_subdirectory(${EXAMPLEDIR} ${CMAKE_CURRENT_BINARY_DIR}/${EXAMPLE})
     endif()
-    add_subdirectory(${EXAMPLEDIR} ${CMAKE_CURRENT_BINARY_DIR}/${EXAMPLE})
 endif()

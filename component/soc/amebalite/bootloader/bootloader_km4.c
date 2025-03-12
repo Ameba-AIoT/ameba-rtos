@@ -230,6 +230,7 @@ void BOOT_NVICReFill_HP(void)
 void BOOT_ReasonSet(void)
 {
 	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_BOOT_REASON_HW);
+	u32 BOOT_REASON_MASK = (AON_BIT_RSTF_HIFI_WARM2PERI < 1) - 1;
 
 	/*Clear the wake up reason*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_BOOT_REASON_HW, temp);
@@ -237,6 +238,7 @@ void BOOT_ReasonSet(void)
 	/*Backup it to system register,So the software can read from the register*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_REASON_SW, temp);
 
+	temp &= BOOT_REASON_MASK;
 	RTK_LOGI(TAG, "KM4 BOOT REASON %x: ", temp);
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_HIFI_WARM2PERI, "HIFI_WARM2PERI");
 	CHECK_AND_PRINT_FLAG(temp, AON_BIT_RSTF_KR4_WARM2PERI, "KR4_WARM2PERI");
@@ -255,7 +257,7 @@ void BOOT_ReasonSet(void)
 	if (temp == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Initial Power on\n");
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "UNKNOWN\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 	}
 }
 

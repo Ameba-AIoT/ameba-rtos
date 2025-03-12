@@ -7,8 +7,6 @@
 #ifndef _HCI_UART_H_
 #define _HCI_UART_H_
 
-#include "hci/hci_transport.h"
-
 typedef uint8_t (*HCI_RECV_IND)(void);
 
 uint8_t hci_uart_set_bdrate(uint32_t baudrate);

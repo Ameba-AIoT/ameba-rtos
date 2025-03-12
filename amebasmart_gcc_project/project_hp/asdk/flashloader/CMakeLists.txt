@@ -58,6 +58,8 @@ ameba_add_internal_library(flashloader
         ${private_definitions}
     p_COMPILE_OPTIONS
         ${private_compile_options}
+    p_DEPENDENCIES
+        ${c_BUILD_INFO}
 )
 
 ##########################################################################################

@@ -129,16 +129,6 @@ static uint8_t privacy_irk[RTK_BT_LE_GAP_IRK_LEN] = "abcdef0123456789";
 #if defined(BT_POWER_TEST_MODE) && BT_POWER_TEST_MODE
 #include "rtk_bt_power_control.h"
 
-#define BT_POWER_TEST_WAKE_TIME    5    //Unit:s
-
-static void *bt_power_test_wake_timer_hdl = NULL;
-
-static void bt_power_test_wake_timeout_handler(void *arg)
-{
-	(void)arg;
-	rtk_bt_release_wakelock();
-}
-
 static void bt_power_test_suspend(void)
 {
 	BT_LOGA("[BT_PS] Enter bt_power_test_suspend\r\n");
@@ -148,37 +138,18 @@ static void bt_power_test_resume(void)
 {
 	BT_LOGA("[BT_PS] Enter bt_power_test_resume\r\n");
 
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		osif_timer_restart(&bt_power_test_wake_timer_hdl, BT_POWER_TEST_WAKE_TIME * 1000);
-	} else {
-		rtk_bt_release_wakelock();
-	}
+	/* Our demo releases BT wake lock here, it can be released anywhere as application's request */
+	rtk_bt_release_wakelock();
 }
 
 static void bt_power_test_init(void)
 {
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		osif_timer_create(&bt_power_test_wake_timer_hdl, "bt_power_test_wake_timer", NULL, BT_POWER_TEST_WAKE_TIME * 1000, false,
-						  bt_power_test_wake_timeout_handler);
-		if (bt_power_test_wake_timer_hdl == NULL) {
-			BT_LOGE("[BT_PS] bt_power_test_wake_timer create failed!\r\n");
-			return;
-		}
-	}
-
 	rtk_bt_power_save_init((rtk_bt_ps_callback)bt_power_test_suspend, (rtk_bt_ps_callback)bt_power_test_resume);
 }
 
 static void bt_power_test_deinit(void)
 {
 	rtk_bt_power_save_deinit();
-
-	if (BT_POWER_TEST_WAKE_TIME != 0) {
-		if (bt_power_test_wake_timer_hdl) {
-			osif_timer_delete(&bt_power_test_wake_timer_hdl);
-			bt_power_test_wake_timer_hdl = NULL;
-		}
-	}
 }
 #endif
 #endif

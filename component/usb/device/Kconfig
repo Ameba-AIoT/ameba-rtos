@@ -1,0 +1,44 @@
+config USBD_CDC_ACM_MENU
+    bool "CDC ACM"
+    select USBD_CDC_ACM if CORE_AS_AP
+config USBD_COMPOSITE_MENU
+    bool "Composite"
+    select USBD_COMPOSITE if CORE_AS_AP
+
+if USBD_COMPOSITE_MENU
+    choice
+        prompt "Select Composite Class"
+        config USBD_COMPOSITE_CDC_ACM_HID_MENU
+            bool "CDC ACM + HID"
+            select USBD_COMPOSITE_CDC_ACM_HID if CORE_AS_AP
+        config USBD_COMPOSITE_CDC_ACM_UAC_MENU
+            bool "CDC ACM + UAC"
+            depends on AMEBASMART||AMEBASMARTPLUS               #amebasmart smart+
+            select USBD_COMPOSITE_CDC_ACM_UAC if CORE_AS_AP
+    endchoice
+endif
+
+config USBD_HID_MENU
+    bool "HID"
+    select USBD_HID if CORE_AS_AP
+
+config USBD_INIC_MENU
+    bool "INIC"
+    depends on AMEBADPLUS||AMEBAGREEN2||AMEBAL2          #amebasplus amebagreen2 amebaL2
+    select USBD_INIC if CORE_AS_AP
+
+config USBD_MSC_MENU
+    bool "MSC"
+    depends on AMEBASMART||AMEBAD||AMEBASMARTPLUS                       #amebasmart amebaD smart+
+    select USBD_MSC if CORE_AS_AP
+
+config USBD_UAC_MENU
+    bool "UAC(Experimental)"
+    depends on AMEBASMART||AMEBADPLUS||AMEBAD||AMEBASMARTPLUS           #amebasmart amebadplus amebaD
+    select USBD_UAC if CORE_AS_AP
+
+config USBD_VENDOR_MENU
+    bool "Vendor"
+    select USBD_VENDOR if CORE_AS_AP
+
+

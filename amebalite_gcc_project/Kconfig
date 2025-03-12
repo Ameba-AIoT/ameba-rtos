@@ -1,6 +1,7 @@
 mainmenu "AmebaLite Configuration"
 
-comment "-------------General config------------"
+comment "--------MENUCONFIG FOR General---------"
+
 #Release flag, set to y after release
 config AMEBA_RLS
   def_bool y
@@ -40,7 +41,7 @@ menu "CONFIG Link Option"
 
     choice
         prompt "IMG2(Application) running on FLASH or PSRAM?"
-        default CODE_XIP_DATA_PSRAM
+        default CODE_XIP_DATA_SRAM
         config CODE_XIP_DATA_PSRAM
             bool "CodeInXip_DataHeapInPsram"
         config CODE_PSRAM_DATA_SRAM
@@ -78,86 +79,13 @@ menu "CONFIG Mass Production"
     endif
 endmenu
 
-menu "CONFIG AT CMD"
-    config SUPPORT_ATCMD
-        bool "Enable ATCMD"
-        default y
-    if SUPPORT_ATCMD
-        choice
-            prompt "ATCMD Mode"
-            default ATCMD_LOGUART
-            config ATCMD_LOGUART
-                bool "LOGUART"
-            config ATCMD_MCU_CONTROL
-                bool "MCU Control"
-                select LONGER_CMD
-        endchoice
-        config LONGER_CMD
-            bool "Enable Longer CMD"
-        config ATCMD_NETWORK
-            bool "Enable Network"
-            default y
-        config ATCMD_SOCKET
-            bool "Enable Socket"
-        config ATCMD_HTTP
-            bool "Enable HTTP"
-        config ATCMD_MQTT
-            bool "Enable MQTT"
-        config ATCMD_WEBSOCKET
-            bool "Enable WEBSOCKET"
-        config ATCMD_OTA
-            bool "Enable OTA"
-            default n
-    endif
-endmenu
+rsource "../component/at_cmd/Kconfig"
 
-menu "CONFIG RTK Assert Level"
-    choice
-        prompt "RTK Assert Level"
-        default ASSERTION_ENABLE
-        config ASSERTION_ENABLE
-            bool "Assert Enable"
-        config ASSERTION_SILENT
-            bool "Assert Silent"
-        config ASSERTION_DISABLE
-            bool "Assert Disable"
-    endchoice
-endmenu
+rsource "../component/soc/common/rtk_assert/Kconfig"
 
-menu "CONFIG VFS"
-    config VFS_LITTLEFS_INCLUDED
-        bool "Enable VFS LITTLEFS"
-        default y
-    config VFS_FATFS_INCLUDED
-        bool "Enable VFS FATFS"
-    if VFS_FATFS_INCLUDED
-        choice
-            prompt "FATFS Memory Type"
-            default FATFS_DISK_FLASH
-            config FATFS_DISK_FLASH
-                bool "FLASH"
-        endchoice
-        config FATFS_WITHIN_APP_IMG
-            bool "FATFS within APP Image"
-    endif
-endmenu
+rsource "../component/file_system/Kconfig"
 
-menu "CONFIG OS"
-    config KERNEL
-        bool "Enable Kernel"
-        default y
-
-    if KERNEL
-        choice
-            prompt "Kernel Selecte"
-            default PLATFORM_FREERTOS
-            config PLATFORM_FREERTOS
-                bool "FREERTOS"
-        endchoice
-
-    endif
-
-endmenu
+rsource "../component/os/Kconfig"
 
 menu "CONFIG OTA OPTION"
     config UPGRADE_BOOTLOADER
@@ -166,7 +94,23 @@ menu "CONFIG OTA OPTION"
         bool "Enable Compress APP Image"
 endmenu
 
-comment "----------Connectivity config----------"
+menu "CONFIG APPLICATION"
+
+    rsource "../component/ui/Kconfig"
+
+    rsource "../component/audio/Kconfig"
+
+    rsource "../component/utils/ipc/Kconfig"
+
+    menu "AI Config"
+        rsource "../component/tflite_micro/Kconfig"
+    endmenu
+
+    orsource "${RTK_APP_DIR}/Kconfig"
+
+endmenu
+
+comment "-----Connectivity Config-----"
 
 menu "CONFIG WHC INTF"
 	choice
@@ -239,7 +183,7 @@ menu "CONFIG WIFI"
         default y
     if WLAN_MENU
 
-        source "../component/wifi/Kconfig.wifi"
+        rsource "../component/wifi/Kconfig.wifi"
 
         config WHC_INTF_IPC_MENU
             bool
@@ -332,7 +276,15 @@ menu "CONFIG BT"
         bool "Enable BT"
     if BT_MENU
 
-        source 'Kconfig.bt'
+        choice
+            prompt "BT Mode Selection"
+            default BT_BLE_ONLY
+            config BT_BLE_ONLY
+                bool "BLE_ONLY"
+
+            config BT_DUAL_MODE
+                bool "DUAL_MODE"
+        endchoice
 
         config BT
             depends on CORE_AS_AP
@@ -340,331 +292,35 @@ menu "CONFIG BT"
             default y
             select FTL_ENABLED
 
+        config FTL_ENABLED
+            bool
 
-        if CORE_AS_AP
-            config BT_PERIPHERAL_MENU
-                bool
-                select BT_PERIPHERAL
+        rsource "../component/bluetooth/Kconfig"
 
-            config BT_CENTRAL_MENU
-                bool
-                select BT_CENTRAL
-
-            config BT_SCATTERNET_MENU
-                bool
-                select BT_SCATTERNET
-
-            config BT_MESH_PROVISIONER_MENU
-                bool
-                select BT_MESH_PROVISIONER
-                select BT_MESH_PROVISIONER_SUPPORT
-
-            config BT_MESH_DEVICE_MENU
-                bool
-                select BT_MESH_DEVICE
-                select BT_MESH_DEVICE_SUPPORT
-
-            config BT_MESH_PROVISIONER_SCATTERNET_MENU
-                bool
-                select BT_MESH_PROVISIONER_SCATTERNET
-                select BT_MESH_PROVISIONER_SUPPORT
-
-            config BT_MESH_DEVICE_SCATTERNET_MENU
-                bool
-                select BT_MESH_DEVICE_SCATTERNET
-                select BT_MESH_DEVICE_SUPPORT
-
-            #config BT_MESH_PROVISIONER_TEST_MENU
-            #    bool
-            #    select BT_MESH_PROVISIONER_TEST
-            #    select BT_MESH_PROVISIONER_SUPPORT
-
-            #config BT_MESH_DEVICE_TEST_MENU
-            #    bool
-            #    select BT_MESH_DEVICE_TEST
-            #    select BT_MESH_DEVICE_SUPPORT
-
-            #config BT_ISO_TEST
-            #    bool "BLE ISO Test"
-            #    default n
-
-
-            config BT_LE_AUDIO_MENU
-                bool
-                select BT_LE_AUDIO
-                select BT_APP_AUDIO_DATA
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_LC3
-
-            if BT_LE_AUDIO_MENU
-                config BT_PBP_MENU
-                    bool
-                    select BT_PBP
-                    select BT_PBP_SUPPORT
-                config BT_TMAP_MENU
-                    bool
-                    select BT_TMAP
-                    select BT_TMAP_SUPPORT
-                config BT_GMAP_MENU
-                    bool
-                    select BT_GMAP
-                    select BT_GMAP_SUPPORT
-            endif
-
-            config BT_A2DP_MENU
-                bool
-                select BT_A2DP
-                select BT_APP_AUDIO_DATA
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_SBC
-
-            config BT_HFP_MENU
-                bool
-                select BT_HFP
-                select BT_APP_AUDIO_DATA
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_CVSD
-
-            config BT_A2DP_HFP_MENU
-                bool
-                select BT_A2DP_HFP
-                select BT_APP_AUDIO_DATA
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_SBC
-                select BT_AUDIO_CODEC_CVSD
-
-            config BT_SPP_MENU
-                bool
-                select BT_SPP
-
-            config BT_RFC_MENU
-                bool
-                select BT_RFC
-
-            config BT_AUDIO_MP_TEST_MENU
-                bool
-                select BT_AUDIO_MP_TEST
-                select BT_APP_AUDIO_DATA
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_SBC
-                select BT_AUDIO_CODEC_CVSD
-
-            config BT_A2DP_SCATTERNET_MENU
-                bool
-                select BT_A2DP_SCATTERNET
-                select BT_APP_AUDIO_DATA
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_SBC
-
-            config BT_A2DP_LE_AUDIO_PBP_MENU
-                bool
-                select BT_LE_AUDIO
-                select BT_A2DP_LE_AUDIO_PBP
-                select BT_APP_AUDIO_DATA
-                select BT_PBP_SUPPORT
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_SBC
-                select BT_AUDIO_CODEC_LC3
-
-            config BT_A2DP_LE_AUDIO_TMAP_MENU
-                bool
-                select BT_LE_AUDIO
-                select BT_A2DP_LE_AUDIO_TMAP
-                select BT_APP_AUDIO_DATA
-                select BT_TMAP_SUPPORT
-                select BT_AUDIO_CODEC_SUPPORT
-                select BT_AUDIO_CODEC_SBC
-                select BT_AUDIO_CODEC_LC3
-
-            config FTL_ENABLED
-                bool
-            config BT_PERIPHERAL
-                bool
-            config BT_CENTRAL
-                bool
-            config BT_SCATTERNET
-                bool
-            config BT_SPP
-                bool
-            config BT_RFC
-                bool
-            config BT_MESH_PROVISIONER
-                bool
-            config BT_MESH_PROVISIONER_SUPPORT
-                bool
-            config BT_MESH_PROVISIONER_SCATTERNET
-                bool
-            config BT_MESH_PROVISIONER_TEST
-                bool
-            config BT_MESH_DEVICE
-                bool
-            config BT_MESH_DEVICE_SUPPORT
-                bool
-            config BT_MESH_DEVICE_SCATTERNET
-                bool
-            config BT_MESH_DEVICE_TEST
-                bool
-            config BT_PBP
-                bool
-            config BT_PBP_SUPPORT
-                bool
-            config BT_TMAP
-                bool
-            config BT_TMAP_SUPPORT
-                bool
-            config BT_GMAP
-                bool
-            config BT_GMAP_SUPPORT
-                bool
-            config BT_A2DP
-                bool
-            config BT_HFP
-                bool
-            config BT_A2DP_HFP
-                bool
-            config BT_A2DP_SCATTERNET
-                bool
-            config BT_LE_AUDIO
-                bool
-            config BT_A2DP_LE_AUDIO_PBP
-                bool
-            config BT_A2DP_LE_AUDIO_TMAP
-                bool
-            config BT_AUDIO_MP_TEST
-                bool
-            config BT_APP_AUDIO_DATA
-                bool
-            config BT_AUDIO_CODEC_LC3
-                bool
-            config BT_AUDIO_CODEC_SUPPORT
-                bool
-            config BT_AUDIO_CODEC_SBC
-                bool
-            config BT_AUDIO_CODEC_CVSD
-                bool
-        endif
     endif
 endmenu
 
-menu "CONFIG LWIP"
-    config FAST_DHCP_MENU
-        bool "Enable Fast DHCP"
-        select FAST_DHCP if CORE_AS_AP
+rsource "../component/lwip/Kconfig"
 
-    config LWIP_NETCONN_SEM_PER_THREAD_MENU
-        bool "Enable LWIP NETCONN SEM PER THREAD"
-        select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
+rsource "../component/ssl/Kconfig"
 
-    config FAST_DHCP
-        bool
+#orsource "../component/wpan/Kconfig"
 
-    config LWIP_NETCONN_SEM_PER_THREAD
-        bool
-
-    config LWIP_DEBUG
-        bool "Enable LWIP Debug"
-        default n
-
-    if LWIP_DEBUG
-        config ETHARP_DEBUG
-            bool "Enable ETHARP DEBUG"
-        config NETIF_DEBUG
-            bool "Enable NETIF DEBUG"
-        config PBUF_DEBUG
-            bool "Enable PBUF DEBUG"
-        config API_LIB_DEBUG
-            bool "Enable API LIB DEBUG"
-        config API_MSG_DEBUG
-            bool "Enable API MSG DEBUG"
-        config SOCKETS_DEBUG
-            bool "Enable SOCKETS DEBUG"
-        config ICMP_DEBUG
-            bool "Enable ICMP DEBUG"
-        config IPNAT_DEBUG
-            bool "Enable IPNAT DEBUG"
-        config IGMP_DEBUG
-            bool "Enable IGMP DEBUG"
-        config INET_DEBUG
-            bool "Enable INET DEBUG"
-        config IP_DEBUG
-            bool "Enable IP DEBUG"
-        config IP_REASS_DEBUG
-            bool "Enable IP REASS DEBUG"
-        config RAW_DEBUG
-            bool "Enable RAW DEBUG"
-        config MEM_DEBUG
-            bool "Enable MEM DEBUG"
-        config MEMP_DEBUG
-            bool "Enable MEMP DEBUG"
-        config SYS_DEBUG
-            bool "Enable SYS DEBUG"
-        config TIMERS_DEBUG
-            bool "Enable TIMERS DEBUG"
-        config TCP_DEBUG
-            bool "Enable TCP DEBUG"
-        config TCP_INPUT_DEBUG
-            bool "Enable TCP INPUT DEBUG"
-        config TCP_FR_DEBUG
-            bool "Enable TCP FR DEBUG"
-        config TCP_RTO_DEBUG
-            bool "Enable TCP RTO DEBUG"
-        config TCP_CWND_DEBUG
-            bool "Enable TCP CWND DEBUG"
-        config TCP_WND_DEBUG
-            bool "Enable TCP WND DEBUG"
-        config TCP_OUTPUT_DEBUG
-            bool "Enable TCP OUTPUT DEBUG"
-        config TCP_RST_DEBUG
-            bool "Enable TCP RST DEBUG"
-        config TCP_QLEN_DEBUG
-            bool "Enable TCP QLEN DEBUG"
-        config UDP_DEBUG
-            bool "Enable UDP DEBUG"
-        config TCPIP_DEBUG
-            bool "Enable TCPIP DEBUG"
-        config SLIP_DEBUG
-            bool "Enable SLIP DEBUG"
-        config DHCP_DEBUG
-            bool "Enable DHCP DEBUG"
-        config AUTOIP_DEBUG
-            bool "Enable AUTOIP DEBUG"
-        config DNS_DEBUG
-            bool "Enable DNS DEBUG"
-        config IP6_DEBUG
-            bool "Enable IP6 DEBUG"
-        config DHCP6_DEBUG
-            bool "Enable DHCP6 DEBUG"
-    endif
-endmenu
-
-menu "CONFIG SSL"
-    config MBEDTLS_ENABLED_MENU
-        bool "Enable MbedTLS"
-        select MBEDTLS_ENABLED if CORE_AS_AP
-
-    config MBEDTLS_SSL_PROTO_TLS1_3_MENU
-        depends on MBEDTLS_ENABLED_MENU
-        bool "Enable TLS 1.3"
-        select MBEDTLS_SSL_PROTO_TLS1_3 if CORE_AS_AP
-
-    config MBEDTLS_ENABLED
-        bool
-
-    config MBEDTLS_SSL_PROTO_TLS1_3
-        bool
-endmenu
 
 if !AMEBA_RLS
-    comment "---------------Test Config-------------"
-    menu "Verification and Test"
-        config FPGA
-            bool "Select FPGA"
-        source "Kconfig.soc"
-    endmenu
+comment "---------Test Config---------"
+
+menu "Verification and Test"
+    rsource "../component/soc/amebalite/Kconfig"
+endmenu
 endif
 
-comment "--------------Build Config-------------"
+comment "--------Build Config---------"
 menu "Build Option"
+
+config FPGA
+    bool "Select FPGA"
+    depends on !AMEBA_RLS
 
 comment "Choose the build configuration"
     choice
@@ -678,24 +334,21 @@ comment "Choose the build configuration"
     endchoice
 endmenu
 
-comment "---------------KR4 config--------------"
+comment "-----end of MENUCONFIG FOR General-----"
 
 menu "MENUCONFIG FOR KR4 CONFIG"
-    source "project_kr4/Kconfig"
+    rsource "project_kr4/Kconfig"
 endmenu
-
-comment "---------------KM4 config--------------"
 
 menu "MENUCONFIG FOR KM4 CONFIG"
-    source "project_km4/Kconfig"
+    rsource "project_km4/Kconfig"
 endmenu
 
-comment "---------------Config end--------------"
 
-
-menu "--DO NOT ENTER IN THIS BUTTON--"
+comment "----- DO NOT ENTER IN THIS BUTTON ------"
+menu "MENUCONFIG FOR Private"
 config CORE_AS_AP
-    bool "--PLEASE LEAVE THIS SUB MENU--"
+    bool "--DO NOT CHOOSE THIS CONFIG--"
 config CORE_AS_NP
-    bool "--PLEASE LEAVE THIS SUB MENU--"
+    bool "--DO NOT CHOOSE THIS CONFIG--"
 endmenu

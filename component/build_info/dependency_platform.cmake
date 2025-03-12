@@ -127,9 +127,11 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_usrcfg p_SCOPE interface ${d_SOC_
 
 
 ###################################### dep_utils begin #############################################
-ameba_target_link_if(CONFIG_IMQ_EN dep_${d_MCU_PROJECT_NAME}_utils p_SCOPE interface p_WHOLE_ARCHIVE
-    ${d_SDK_LIB_APPLICATION_DIR}/lib_rpc.a
-)
+if(NOT "${d_MCU_PROJECT_NAME}" STREQUAL "lp")
+    ameba_target_link_if(CONFIG_IMQ_EN dep_${d_MCU_PROJECT_NAME}_utils p_SCOPE interface p_WHOLE_ARCHIVE
+        ${d_SDK_LIB_APPLICATION_DIR}/lib_rpc.a
+    )
+endif()
 ameba_target_include(dep_${d_MCU_PROJECT_NAME}_utils p_SCOPE interface
     ${c_COMPONENT_DIR}/utils/ipc/ipc/${d_PLATFORM_TYPE}/include
     ${c_COMPONENT_DIR}/utils/ipc/rpc/hal/interfaces
@@ -212,11 +214,11 @@ elseif(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     )
     ameba_target_include_if(CONFIG_AMEBASMART dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
         ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730e
-    )    
+    )
     ameba_target_include_if(CONFIG_AMEBASMARTPLUS dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
         ${c_CMPT_WIFI_DIR}/wifi_fw/amebasmart/include
         ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8730f
-    )    
+    )
 elseif(${d_PLATFORM_TYPE} STREQUAL "amebalite")
     ameba_target_include(dep_${d_MCU_PROJECT_NAME}_wifi p_SCOPE interface
         ${c_CMPT_WIFI_DIR}/wifi_reg/rtl8720e

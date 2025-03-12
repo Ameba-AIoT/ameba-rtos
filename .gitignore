@@ -34,9 +34,7 @@ __tmp_*_build_info.c
 /**/wifi_feature_disable/wifi_intf_drv_to_app_ext_noused.c
 
 # menuconfig lxdialog files
-/**/lxdialog/lxdialog
-/**/menuconfig/*.old
-/**/menuconfig/__pycache__
+/**/menuconfig/*
 
 # config files
 /**/.config.old

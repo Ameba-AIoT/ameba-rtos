@@ -1,0 +1,11 @@
+menu "CONFIG RTK Assert Level"
+    choice
+        prompt "RTK Assert Level"
+        config ASSERTION_ENABLE
+            bool "Assert Enable"
+        config ASSERTION_SILENT
+            bool "Assert Silent"
+        config ASSERTION_DISABLE
+            bool "Assert Disable"
+    endchoice
+endmenu

@@ -6,7 +6,7 @@
 
 #include "trace_uart.h"
 #include "bt_debug.h"
-#include "hci_platform.h"
+#include "ameba_soc.h"
 #include "osif.h"
 
 static void *trace_mutex = NULL;

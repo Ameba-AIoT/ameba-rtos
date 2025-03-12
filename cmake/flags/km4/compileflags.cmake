@@ -14,10 +14,6 @@ list(
 
 list(APPEND GLOBAL_C_DEFINES MBEDTLS_CONFIG_FILE="mbedtls/config.h")
 
-if(CONFIG_AMEBALITE)
-    list(APPEND GLOBAL_C_DEFINES __FPU_PRESENT)
-endif()
-
 if(CONFIG_AMEBAD)
     list(APPEND GLOBAL_C_OPTIONS -march=armv8-m.main+dsp)
     list(APPEND GLOBAL_ASM_OPTIONS -march=armv8-m.main+dsp)

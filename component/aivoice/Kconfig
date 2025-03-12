@@ -1,0 +1,42 @@
+config AIVOICE_EN_MENU
+    bool "Enable AIVoice"
+    select AIVOICE_EN if CORE_AS_AP
+
+if AIVOICE_EN_MENU
+    choice
+        prompt "Select AFE Resource"
+        default AFE_RES_2MIC50MM_MENU
+
+        config AFE_RES_1MIC_MENU
+            bool "afe_res_1mic"
+            select AFE_RES_1MIC if CORE_AS_AP
+
+        config AFE_RES_2MIC30MM_MENU
+            bool "afe_res_2mic30mm"
+            select AFE_RES_2MIC30MM if CORE_AS_AP
+
+        config AFE_RES_2MIC50MM_MENU
+            bool "afe_res_2mic50mm"
+            select AFE_RES_2MIC50MM if CORE_AS_AP
+
+        config AFE_RES_2MIC70MM_MENU
+            bool "afe_res_2mic70mm"
+            select AFE_RES_2MIC70MM if CORE_AS_AP
+
+    endchoice
+endif
+
+config AIVOICE_EN
+    bool
+
+config AFE_RES_1MIC
+    bool
+
+config AFE_RES_2MIC30MM
+    bool
+
+config AFE_RES_2MIC50MM
+    bool
+
+config AFE_RES_2MIC70MM
+    bool
