@@ -492,10 +492,16 @@ ifeq ($(CONFIG_UPGRADE_BOOTLOADER), y)
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin $(IMAGE_TARGET_FOLDER)/km4_boot_all_ns.bin; \
 	fi
 else
+ifeq ($(CONFIG_MP_INCLUDED),y)
+	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
+		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
+	fi
+else
 	@if [ -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin ]; then \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app.bin; \
 		$(OTAPREPENDTOOL) $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin; \
 	fi
+endif
 endif
 	@rm -f $(IMAGE_TARGET_FOLDER)/tmp_app.bin
 	@rm -f $(IMAGE_TARGET_FOLDER)/tmp_app_ns.bin
