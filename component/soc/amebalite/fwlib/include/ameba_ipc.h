@@ -433,6 +433,7 @@ u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout);
 u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx);
 void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
 IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
+void IPC_patch_function(void (*pfunc1)(void), void (*pfunc2)(void));
 
 /* Other definitions --------------------------------------------------------*/
 

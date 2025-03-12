@@ -44,7 +44,7 @@ _LONG_CALL_ void LOGUART_WaitTxComplete(void);
 _LONG_CALL_ u32 OTP_LogicalMap_CHK(void);
 _LONG_CALL_ int TRNG_get_random_bytes(void *dst, u32 size);
 _LONG_CALL_ int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);
-
+_LONG_CALL_ void IPC_patch_function(void (*pfunc1)(void), void (*pfunc2)(void));
 /**
   * @}
   */
