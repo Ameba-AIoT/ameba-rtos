@@ -82,7 +82,7 @@ jobs:
         echo "${{ inputs.ic_name }} stage ${{ inputs.build_stage_name }} build config ${{ steps.build_config.outputs.build_config }}"
         
         cd ${{ inputs.ic_name }}_gcc_project
-        python menuconfig.py -f utils/confs_daily_build/${{ steps.build_config.outputs.build_config }}
+        python menuconfig.py -f ${{ steps.build_config.outputs.build_config }}
       if: ${{ inputs.build_stage_name != 'B0' }}
         
     - name: Build
