@@ -237,6 +237,7 @@ int main(void)
 
 	/* Execute application example */
 	app_example();
+	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 
 	IPC_SEMDelay(rtos_time_delay_ms);
 
