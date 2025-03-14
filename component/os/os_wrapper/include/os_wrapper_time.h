@@ -40,7 +40,7 @@ uint32_t rtos_time_get_current_system_time_ms(void);
  * @note   This interface does not consider systick overflow issues.
  * @retval
  */
-uint32_t rtos_time_get_current_system_time_us(void);
+uint64_t rtos_time_get_current_system_time_us(void);
 
 /**
  * @brief  Rreturn value to in nanoseconds.
