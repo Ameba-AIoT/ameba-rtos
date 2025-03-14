@@ -58,7 +58,7 @@ uint32_t rtos_time_get_current_system_time_ms(void)
 	}
 }
 
-uint32_t rtos_time_get_current_system_time_us(void)
+uint64_t rtos_time_get_current_system_time_us(void)
 {
 	return (rtos_time_get_current_system_time_ns() / 1000);
 }
