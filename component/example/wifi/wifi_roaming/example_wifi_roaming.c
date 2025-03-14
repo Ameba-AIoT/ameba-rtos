@@ -112,7 +112,7 @@ void wifi_roaming_thread(void *param)
 	printf("\nExample: wifi_roaming \n");
 	while (1) {
 		if (wifi_is_running(WLAN0_IDX) && ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-			wifi_fetch_phy_statistic(&phy_statistics);
+			wifi_get_phy_statistic(&phy_statistics);
 			if ((phy_statistics.rssi < RSSI_THRESHOLD)) {
 				if (polling_count >= (MAX_POLLING_COUNT - 1)) {
 					wifi_get_setting(WLAN0_IDX, &setting);

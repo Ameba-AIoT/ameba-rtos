@@ -14,4 +14,76 @@ menu "CONFIG OS"
                 depends on AMEBAGREEN2 || AMEBAL2
         endchoice
     endif
+
+    if AMEBADPLUS
+        config BACK_TRACE_DEPTH_LIMIT
+            int "Crash Back Trace Depth Limit"
+            default 8
+            range 4 16
+            help
+                This defines the maximum depth of back trace. The value must be at least 4.
+
+        config HEAP_PROTECTOR
+            bool "Enable Heap Protector"
+            default n
+            help
+                Protect the block header. A heap corruption error will be printed if any of the heap's internal data structures appear overwritten.
+
+        config HEAP_CORRUPTION_DETECT_LITE
+            bool "Corruption Detection with Lite Impact"
+            default n
+            select HEAP_PROTECTOR
+            help
+                Head and Tail Canary are used to guard the boundary of buffer. More precise: even a single-byte overrun can be detected. Increases the memory usage.
+
+        config HEAP_CORRUPTION_DETECT_COMPREHENSIVE
+            bool "Corruption Detection Comperhensive (Increase CPU load)"
+            default n
+            select HEAP_CORRUPTION_DETECT_LITE
+            help
+                Checks for uninitialized-access and use-after-free bugs. Huge impact on runtime performance, only enable this mode when debugging.
+
+        config HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
+            bool "Check Heap Integrity in Task Switched Out Hook (Increase CPU load)"
+            default n
+            select HEAP_PROTECTOR
+            help
+                call ulPortCheckHeapIntegrity API in traceTASK_SWITCHED_OUT.
+                Huge impact on runtime performance, only enable this mode when debugging. Especially when HEAP_CORRUPTION_DETECT_COMPREHENSIVE enabled.
+                1. if HEAP_PROTECTOR enabled: head protector, check block header.
+                2. if HEAP_CORRUPTION_DETECT_LITE enabled: boundary protector, check block header, head/tail canary.
+                3. if HEAP_CORRUPTION_DETECT_COMPREHENSIVE enabled: content Portector, check block header, head/tail canary, additionally check if free/malloc space conforms to pattern.
+
+        config HEAP_TRACE
+            bool "Enable Heap Trace"
+            default n
+            select HEAP_PROTECTOR
+            help
+                Malloc and free calling flow during a period of time. Dump un-freed memory when a task or function has finished(Memory Leak).
+
+        if HEAP_TRACE
+            config HEAP_TRACE_MALLOC_FREE_LOG
+                bool "Enable all Malloc / Free Logs"
+                default n
+                help
+                    Print out the address and size of the buffer every time malloc/free occurs.
+                    Note that this selection will print a large amount of logs.
+                    Huge impact on runtime performance.
+
+            config HEAP_TRACE_STACK_DEPTH
+                int "Heap Trace Stack Depth"
+                default 16
+                range 1 BACK_TRACE_DEPTH_LIMIT
+                help
+                    This defines the stack depth for heap tracing. It must be less than
+                    or equal to the back trace depth limit.
+
+            config HEAP_TRACE_MAX_TASK_NUMBER
+                int "Heap Trace Max Task Number"
+                default 16
+                range 10 9999
+                help
+                    This defines the max task count for heap tracing.
+        endif
+    endif
 endmenu

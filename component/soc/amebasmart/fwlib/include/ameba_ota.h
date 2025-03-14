@@ -13,10 +13,6 @@
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 
-#define HTTPS_OTA_UPDATE
-
-#define HTTP_OTA_UPDATE
-
 /** @addtogroup Ameba_Platform
   * @{
   */
@@ -46,20 +42,20 @@
 /** @defgroup OTA_system_parameter_definitions
   * @{
   */
-#define MAX_IMG_NUM			2
 
 #define OTA_IMGID_BOOT		0
 #define OTA_IMGID_APP		1
 #define OTA_IMGID_APIMG		2
 #define OTA_IMGID_MAX		3
 
-#define OTA_IMAG			0								/*identify the OTA image*/
+#define MAX_IMG_NUM			OTA_IMGID_MAX
 
+/* OTA download type */
 #define OTA_USER			0
 #define OTA_HTTP			1
 #define OTA_HTTPS			2
-#define OTA_SDCARD			3
-#define OTA_VFS				4
+#define OTA_VFS				3
+#define OTA_SDCARD			4
 
 /* OTA download status */
 #define OTA_RET_ERR			-1
@@ -174,13 +170,8 @@ typedef struct {
   * @brief  OTA ssl structure definition
   */
 typedef struct {
-#ifdef HTTPS_OTA_UPDATE
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
-#else
-	void *ssl;
-	void *conf;
-#endif
 } update_tls;
 
 /**

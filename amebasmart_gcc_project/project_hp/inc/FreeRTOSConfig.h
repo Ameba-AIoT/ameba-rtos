@@ -69,6 +69,8 @@ extern uint32_t SystemCoreClock;
 
 #define configSUPPORT_STATIC_ALLOCATION					1
 
+#define configUSE_POSIX_ERRNO							1
+
 /* Constants related to the behaviour or the scheduler. */
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION			0
 #define configUSE_PREEMPTION							1

@@ -38,7 +38,7 @@ struct event_list_elem_t {
 };
 
 #define WIFI_EVENT_MAX_ROW	2
-static struct event_list_elem_t     event_callback_list[WIFI_EVENT_MAX][WIFI_EVENT_MAX_ROW];
+static struct event_list_elem_t event_callback_list[WIFI_EVENT_MAX][WIFI_EVENT_MAX_ROW] = {0};
 extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
 extern u8 rtw_join_status;
 extern int join_fail_reason;
@@ -60,6 +60,8 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 
 	u8 join_status = (u8)flags;
 	struct rtw_event_join_fail_info_t *fail_info = (struct rtw_event_join_fail_info_t *)buf;
+
+	rtw_join_status = join_status;
 
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
@@ -117,8 +119,6 @@ void wifi_event_join_status_internal_hdl(char *buf, int flags)
 		eap_disconnected_hdl();
 #endif
 	}
-
-	rtw_join_status = join_status;
 
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
 		/*wpa lite disconnect hdl*/
@@ -261,7 +261,8 @@ void wifi_unreg_event_handler(unsigned int event_cmds, void (*handler_func)(char
 
 void wifi_event_init(void)
 {
-	memset(event_callback_list, 0, sizeof(event_callback_list));
+	// Nothing TODO, global BSS variable default is 0
+	// memset(event_callback_list, 0, sizeof(event_callback_list));
 }
 #endif
 

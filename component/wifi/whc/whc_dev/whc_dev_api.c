@@ -567,7 +567,7 @@ void whc_event_wifi_fetch_phy_statistic(u32 api_id, u32 *param_buf)
 	(void)param_buf;
 
 	struct _rtw_phy_statistics_t statistic;
-	wifi_fetch_phy_statistic(&statistic);
+	wifi_get_phy_statistic(&statistic);
 	whc_send_api_ret_value(api_id, (u8 *)&statistic, sizeof(struct _rtw_phy_statistics_t));
 }
 

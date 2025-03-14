@@ -201,7 +201,7 @@ int wifi_get_associated_client_list(struct _rtw_client_list_t *client_list_buf)
 	return -1;
 }
 
-int wifi_fetch_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic)
+int wifi_get_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic)
 {
 	UNUSED(phy_statistic);
 	call_noused = __LINE__;

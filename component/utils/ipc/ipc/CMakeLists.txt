@@ -38,6 +38,10 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
+ameba_list_append(private_includes
+    ${c_SOC_TYPE}/include
+)
+
 
 ameba_list_append(private_sources
     ${c_SOC_TYPE}/src/ipc.c

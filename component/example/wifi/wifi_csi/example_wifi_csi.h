@@ -8,6 +8,7 @@
  *
  ******************************************************************************/
 void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdata);
+void wifi_csi_show(unsigned char *csi_buf);
 void example_wifi_csi(void);
 
 #endif //#ifndef __EXAMPLE_WIFI_CSI_H__

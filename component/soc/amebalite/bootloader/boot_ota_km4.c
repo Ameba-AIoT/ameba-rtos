@@ -11,7 +11,9 @@
 #include "ameba_secure_boot.h"
 #include "bootloader_km4.h"
 #include "boot_ota_km4.h"
+#ifdef CONFIG_COMPRESS_OTA_IMG
 #include "ameba_boot_lzma.h"
+#endif
 
 static const char *const TAG = "BOOT";
 static Certificate_TypeDef Cert[2]; //Certificate of SlotA & SlotB
@@ -272,6 +274,7 @@ u8 BOOT_Extract_SlotSelect(void)
 	return ExtractIdx;
 }
 
+#ifdef CONFIG_COMPRESS_OTA_IMG
 void BOOT_OTA_Extract(void)
 {
 	u8 ExtractIdx = BOOT_Extract_SlotSelect();
@@ -316,6 +319,7 @@ void BOOT_OTA_Extract(void)
 		DCache_Invalidate(ExtractAddr, sizeof(EmpSig));
 	}
 }
+#endif
 
 /* Load km0/km4 img and check pattern if secure boot enabled*/
 u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)

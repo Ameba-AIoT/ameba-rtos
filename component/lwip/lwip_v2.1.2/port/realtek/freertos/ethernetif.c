@@ -103,7 +103,7 @@ static const char *const TAG = "ETHERNET";
         if ( ETHERNET_DEBUG ) DiagPrintf(format, ##__VA_ARGS__); \
     } while(0);
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 #define MAX_BUFFER_SIZE		(1536)
 #define DST_MAC_LEN			(6)
 #define SRC_MAC_LEN			(6)
@@ -181,8 +181,6 @@ static void low_level_init(struct netif *netif)
 SRAM_WLAN_CRITICAL_CODE_SECTION
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
-
-
 	/* Refer to eCos lwip eth_drv_send() */
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
 	int sg_len = 0;
@@ -257,7 +255,7 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
 	(void) p;
 	RTK_LOG_ETHERNET("%s %d \n", __func__, __LINE__);
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 
 #if defined(CONFIG_ETHERNET_RMII) && CONFIG_ETHERNET_RMII
 	(void) TX_BUFFER;
@@ -380,7 +378,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 
 void rltk_mii_init(void)
 {
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	rtos_mutex_create(&mii_tx_mutex);
 #endif
 }
@@ -389,7 +387,7 @@ void rltk_mii_recv(struct eth_drv_sg *sg_list, int sg_len)
 {
 	UNUSED(sg_list);
 	UNUSED(sg_len);
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	struct eth_drv_sg *last_sg;
 	u8 *pbuf = RX_BUFFER;
 
@@ -411,7 +409,7 @@ u8 rltk_mii_recv_data(u8 *buf, u32 frame_length, u32 *total_len)
 
 	RTK_LOG_ETHERNET("enter %s %d\n", __func__, __LINE__);
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	u8 *pbuf;
 	u32 pkt_len_index = DST_MAC_LEN + SRC_MAC_LEN + PROTO_TYPE_LEN;
 	u16 usb_receive_mps = usbh_cdc_ecm_get_receive_mps();	//only 512 bytes is supported now.
@@ -465,8 +463,8 @@ u8 rltk_mii_recv_data_check(u8 *mac)
 {
 	UNUSED(mac);
 	u8 check_res = TRUE;
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
-#if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+#if defined(CONFIG_ETHERNET_BRIDGE) && CONFIG_ETHERNET_BRIDGE
 	return check_res;
 #else
 	u8 *pbuf = RX_BUFFER;
@@ -487,7 +485,7 @@ void ethernetif_mii_recv(u8 *buf, u32 frame_len)
 {
 	(void) buf;
 	(void) frame_len;
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
 	struct pbuf *p, *q;
 	int sg_len = 0;

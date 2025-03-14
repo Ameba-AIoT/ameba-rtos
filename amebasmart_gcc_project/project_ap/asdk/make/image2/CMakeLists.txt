@@ -1,45 +1,47 @@
-# ameba_add_image(target_img2)
+ameba_add_image(target_img2)
 # Use variable c_CURRENT_IMAGE to represent full image target name
-set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
+# set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
 
 ###############################  ADD COMPONENT  ###################################
 
 
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
+ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
+ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_HAL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
-# ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
-# ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
+ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
+ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
-# ameba_add_subdirectory(${c_CMPT_USB_DIR})
+ameba_add_subdirectory(${c_CMPT_USB_DIR})
 # ameba_add_subdirectory(${c_CMPT_WPAN_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
-# ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
+ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
-# ameba_add_subdirectory(${c_CMPT_SSL_DIR})
+ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_UI_DIR})
-# ameba_add_subdirectory(${c_CMPT_DYN_APP_DIR})
+ameba_add_subdirectory(${c_CMPT_DYN_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 # ameba_add_subdirectory(${c_CMPT_TFLITE_DIR})
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
-# ameba_add_subdirectory(${c_CMPT_APP_DIR})
+ameba_add_subdirectory(${c_CMPT_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
-# ameba_add_subdirectory(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory(${c_CMPT_SOC_DIR}/verification)
 
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 
 ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 
-return()
+# return()
 
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
     # COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
-    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap -C ${c_CMPT_SOC_DIR}/atf all
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/atf
+    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap MENUCONFIG_DIR=${c_MENUCONFIG_DIR} -C ${c_CMPT_SOC_DIR}/atf all
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../atf
     COMMENT "Building atf project using make"
 )
 
@@ -74,8 +76,8 @@ target_link_libraries(${c_CURRENT_IMAGE}
 
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
 
-    ${c_TOOLCHAIN_DIR}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtbegin.o
-    ${c_TOOLCHAIN_DIR}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtend.o
+    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtbegin.o
+    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtend.o
     -lm -lstdc++
 )
 
@@ -101,8 +103,9 @@ add_custom_command(
         -Dc_CMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} # dir of cmake scripts
         -Dc_SOC_PROJECT_DIR=${c_SOC_PROJECT_DIR} # dir of soc project
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
-        -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
+        -Dc_MENUCONFIG_DIR=${c_MENUCONFIG_DIR}
+        -Dc_SOC_TYPE=${c_SOC_TYPE}
 
         # user's variables
         -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}

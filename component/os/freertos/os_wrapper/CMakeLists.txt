@@ -57,7 +57,7 @@ ameba_list_append(private_sources
 #------------------------------------------------------------------#
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(os_wrapper
+ameba_add_internal_library(freertos_os_wrapper
     p_SOURCES
         ${private_sources}
     p_INCLUDES

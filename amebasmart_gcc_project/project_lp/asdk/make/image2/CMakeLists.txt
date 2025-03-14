@@ -2,6 +2,7 @@ ameba_add_image(target_img2)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
+ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})

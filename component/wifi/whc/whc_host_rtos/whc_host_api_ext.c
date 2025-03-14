@@ -287,7 +287,7 @@ int wifi_get_sw_statistic(unsigned char idx, struct _rtw_sw_statistics_t *statis
 	return ret;
 }
 
-int wifi_fetch_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic)
+int wifi_get_phy_statistic(struct _rtw_phy_statistics_t *phy_statistic)
 {
 	int ret = 0;
 

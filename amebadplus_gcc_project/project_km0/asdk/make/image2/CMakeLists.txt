@@ -1,6 +1,6 @@
-# ameba_add_image(${c_CURRENT_IMAGE})
+# ameba_add_image(target_img2)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
-set(c_CURRENT_IMAGE_TYPE image2)
+set(c_CURRENT_IMAGE_TYPE image2) #TODO: remove this line if ameba_add_image() above is uncommented
 ###############################  ADD COMPONENT  ###################################
 
 # ameba_add_subdirectory(${c_CMPT_APP_DIR}/benchmark)
@@ -14,6 +14,7 @@ ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 
 ameba_add_subdirectory(${c_CMPT_HAL_DIR})
 # ameba_add_subdirectory(${c_CMPT_MISC_DIR})
+# ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 # ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 # ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
@@ -120,8 +121,9 @@ set(clean_files
 )
 
 set(link_deps
+    ${c_LAYOUT_LD}
+    ${c_LINK_ROM_SYMBOL}
     ${c_IMG2_LD}
-    ${c_SOC_PROJECT_DIR}/amebaDplus_layout.ld
 )
 
 set_target_properties(${c_CURRENT_IMAGE} PROPERTIES

@@ -49,7 +49,7 @@ if(CONFIG_WLAN)
     endif()
 endif()
 
-ameba_add_subdirectories_if(CONFIG_MBEDTLS_ENABLED_MENU make/mbedtls)
+ameba_add_subdirectories_if(CONFIG_MBEDTLS_ENABLED make/mbedtls)
 ameba_add_subdirectories_if(CONFIG_GUI_EN make/ui)
 ameba_add_subdirectories_if(CONFIG_LINKKIT_AWSS make/linkkit)
 ameba_add_subdirectories_if(CONFIG_USB_OTG_EN make/usb_otg)

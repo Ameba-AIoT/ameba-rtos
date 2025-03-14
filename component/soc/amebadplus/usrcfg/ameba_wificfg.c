@@ -82,7 +82,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.legacy_ps_listen_interval = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 5;	/*should not exceed 5 */
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed 14 */
 	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
@@ -127,10 +127,10 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 	}
 
-	/* ensure ap_sta_num not exceed 5*/
-	if (wifi_user_config.ap_sta_num > 5) {
-		wifi_user_config.ap_sta_num = 5;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 5\n");
+	/* ensure ap_sta_num not exceed 14*/
+	if (wifi_user_config.ap_sta_num > 14) {
+		wifi_user_config.ap_sta_num = 14;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 14\n");
 	}
 }
 

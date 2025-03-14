@@ -4,6 +4,7 @@ list(
     APPEND GLOBAL_IFLAGS
     ${OSDIR}/freertos
     ${OSDIR}/os_wrapper/include
+    ${OSDIR}/freertos/heap_trace
 
     ${TARGETDIR}/cmsis
     ${TARGETDIR}/cmsis-dsp/Include

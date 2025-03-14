@@ -10,8 +10,10 @@
 #include "platform_autoconf.h"
 
 #define OTA_TYPE_MIN  OTA_HTTP
-#if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBADPLUS)
 #define OTA_TYPE_MAX  OTA_VFS
+#elif defined(CONFIG_AMEBASMART)
+#define OTA_TYPE_MAX  OTA_SDCARD
 #else
 #define OTA_TYPE_MAX  OTA_HTTPS
 #endif

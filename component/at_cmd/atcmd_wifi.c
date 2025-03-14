@@ -615,7 +615,7 @@ void at_wlrssi(void *arg)
 	UNUSED(arg);
 
 	RTK_LOGI(NOTAG, "[WLRSSI] _AT_WLAN_GET_RSSI_\r\n");
-	wifi_fetch_phy_statistic(&phy_statistics);
+	wifi_get_phy_statistic(&phy_statistics);
 
 	/* cal complement for logs */
 	at_printf("rssi = -%d\r\n", (signed char)(0xFF - phy_statistics.rssi + 1));

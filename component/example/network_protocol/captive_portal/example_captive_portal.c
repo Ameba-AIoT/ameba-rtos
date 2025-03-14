@@ -811,17 +811,16 @@ static void CreateTargetAPTableItem(char *pbuf)
 	//RTK_LOGI(NOTAG, "strlen(passwordTableItem)=%d\n", strlen(pbuf));
 }
 
-extern int wifi_is_connected_to_ap(void);
 static void CreateConnStatusTableItem(char *pbuf)
 {
 	u8 connect_status;
-	connect_status = wifi_is_connected_to_ap();
+	connect_status = wifi_get_join_status();
 
 #if USE_DIV_CSS
 	sprintf(pbuf, "<div class=\"oneline\" id=\"sconn\"><div class=\"left\">CONNECTION STATUS: </div>"\
 			"<div class=\"right\" ><input  class=\"box\" id=\"sconn_val\" type=\"text\" name=\"CONNSTATUS\" value=\"%s\" >"\
 			" </div></div>",
-			connect_status ? "connect fail" : "connect success");
+			(connect_status != RTW_JOINSTATUS_SUCCESS) ? "connect fail" : "connect success");
 
 #else
 
@@ -1218,8 +1217,8 @@ static void ConnectTargetAP(void)
 
 	RTK_LOGI(NOTAG, "Joining BSS by SSID %s [%s]...\n\r", connect_param.ssid.val, connect_param.password);
 
-	connect_status = wifi_is_connected_to_ap();
-	if (!connect_status) {
+	connect_status = wifi_get_join_status();
+	if (connect_status == RTW_JOINSTATUS_SUCCESS) {
 		wifi_disconnect();
 	}
 

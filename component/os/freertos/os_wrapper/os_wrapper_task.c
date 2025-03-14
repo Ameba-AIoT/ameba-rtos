@@ -57,7 +57,10 @@ int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, void (*p_routin
 					 void *p_param, uint16_t stack_size_in_byte, uint16_t priority)
 {
 	BaseType_t ret;
-
+#if defined (HEAP_CORRUPTION_DETECT_LITE) || defined (HEAP_TRACE)
+	/* if enable heap trace, we need to increase heap size */
+	stack_size_in_byte += 1024;
+#endif
 	ret = xTaskCreate(p_routine, (const char *)p_name, stack_size_in_byte / sizeof(portSTACK_TYPE),
 					  p_param, priority, (TaskHandle_t *)pp_handle);
 	if (ret == pdPASS) {

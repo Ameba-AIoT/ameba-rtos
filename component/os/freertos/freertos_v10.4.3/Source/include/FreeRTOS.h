@@ -377,7 +377,7 @@
 
 	/* Called before a task has been selected to run.  pxCurrentTCB holds a pointer
 	 * to the task control block of the task being switched out. */
-#define traceTASK_SWITCHED_OUT()
+#define traceTASK_SWITCHED_OUT(x)
 #endif
 
 #ifndef traceTASK_PRIORITY_INHERIT
@@ -1052,6 +1052,31 @@
 	 * the Secure Side only. */
 #ifndef configRUN_FREERTOS_SECURE_ONLY
 #define configRUN_FREERTOS_SECURE_ONLY    0
+#endif
+
+	/* Realtek: check heap trace config */
+#ifndef CONFIG_HEAP_PROTECTOR
+    #define CONFIG_HEAP_PROTECTOR    0
+#endif
+
+#ifndef CONFIG_HEAP_CORRUPTION_DETECT_LITE
+	#define CONFIG_HEAP_CORRUPTION_DETECT_LITE	0
+#endif
+
+#ifndef CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE
+	#define CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE	0
+#endif
+
+#if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
+	#if ( CONFIG_HEAP_PROTECTOR != 1 )
+		#error CONFIG_HEAP_PROTECTOR should be one if use CONFIG_HEAP_CORRUPTION_DETECT_LITE.
+	#endif
+#endif
+
+#if( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+	#if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 0 )
+		#error CONFIG_HEAP_CORRUPTION_DETECT_LITE should be one if use CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE.
+	#endif
 #endif
 
 	/* Sometimes the FreeRTOSConfig.h settings only allow a task to be created using

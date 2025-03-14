@@ -201,6 +201,15 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 add_compile_options(-fdata-sections -ffunction-sections)
 
+set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/amebaDplus_layout.ld)
+if(CONFIG_MP_SHRINK)
+    set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all_mp.ld)
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
+else()
+    set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+endif()
+
 if(CONFIG_AMEBADPLUS_A_CUT)
     set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebadplus_rom_acut)
 elseif(CONFIG_AMEBADPLUS_B_CUT)
@@ -223,12 +232,6 @@ if(CONFIG_TRUSTZONE)
     set(c_LINK_ROM_SYMBOL ${c_LINK_ROM_SYMBOL_NS})
 else()
     set(c_LINK_ROM_SYMBOL ${c_LINK_ROM_SYMBOL_S})
-endif()
-
-if(CONFIG_MP_SHRINK)
-    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
-else()
-    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 endif()
 
 list(APPEND c_LINK_ROM_SYMBOL ${c_SDK_LD_DIR}/ameba_rom_symbol_stdlib.ld)

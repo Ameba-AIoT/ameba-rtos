@@ -52,7 +52,7 @@ ameba_list_append(private_sources
     lfs_nand_ftl_mfg.c
 )
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    if("${d_MCU_PROJECT_NAME}" STREQUAL "ap")
+    if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
         ameba_list_append(private_sources
             lfs_spinand.c
         )

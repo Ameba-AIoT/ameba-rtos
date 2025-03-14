@@ -24,7 +24,7 @@ extern "C"  {
 #define PTS_VENDOR_SRV_ID                   10
 #define THROUGHPUT_SRV_ID                   11
 #define TRANSFER_MODULE_SRV_ID              12
-
+#define BLE_OTA_SRV_ID                      13
 
 #ifdef __cplusplus
 }
