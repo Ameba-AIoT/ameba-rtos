@@ -25,6 +25,8 @@ menu "CONFIG FUNCTION TEST"
         endif
         config WIFI_FW_VERIFY
         bool "WIFI FW Test"
+        config OS_VERIFY
+        bool "OS Test"
         config DBGPORT_VERIFY
         bool "DBGPORT_Verify_Mode"
         config TIMER_VERIFY

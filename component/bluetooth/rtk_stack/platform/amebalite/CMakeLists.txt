@@ -12,19 +12,19 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 if(CONFIG_BT_BLE_ONLY)
     ameba_list_append(public_libraries
-        lib/${c_MCU_TYPE}/ble_only/btgap.a
+        ${CMAKE_CURRENT_LIST_DIR}/lib/${c_MCU_TYPE}/ble_only/btgap.a
     )
 elseif(CONFIG_BT_DUAL_MODE)
     ameba_list_append(public_libraries
-        lib/${c_MCU_TYPE}/dual_mode/btgap.a
-        lib/${c_MCU_TYPE}/dual_mode/bt_mgr.a
+        ${CMAKE_CURRENT_LIST_DIR}/lib/${c_MCU_TYPE}/dual_mode/btgap.a
+        ${CMAKE_CURRENT_LIST_DIR}/lib/${c_MCU_TYPE}/bt_mgr.a
     )
 endif()
 
 ameba_list_append(public_libraries
-    lib/${c_MCU_TYPE}/leaudio.a
-    lib/${c_MCU_TYPE}/ble_mgr.a
-    lib/${c_MCU_TYPE}/sysm.a
+    ${CMAKE_CURRENT_LIST_DIR}/lib/${c_MCU_TYPE}/leaudio.a
+    ${CMAKE_CURRENT_LIST_DIR}/lib/${c_MCU_TYPE}/ble_mgr.a
+    ${CMAKE_CURRENT_LIST_DIR}/lib/${c_MCU_TYPE}/sysm.a
 )
 
 # Component public part, user config end

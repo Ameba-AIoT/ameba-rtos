@@ -53,7 +53,8 @@
 #include "whc_ipc.h"
 #endif
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
+
 struct netif eth_netif;
 extern err_t ethernetif_mii_init(struct netif *netif);
 #endif
@@ -115,7 +116,7 @@ void LwIP_Init(void)
 
 	}
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	eth_netif.name[0] = 'r';
 	eth_netif.name[1] = '2';
 	IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
@@ -169,7 +170,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 	return 0;
 #endif
 
-#if !(defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET)
+#if !(defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (!(defined(CONFIG_ETHERNET) && CONFIG_ETHERNET))
 	if (idx > 1) {
 		idx = 1;
 	}
@@ -188,7 +189,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 
 	pnetif = &xnetif[idx];
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 	if (idx > 1) {
 		pnetif = &eth_netif;
 	}
@@ -319,7 +320,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 					}
 #endif
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+#if (defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET) || (defined(CONFIG_ETHERNET) && CONFIG_ETHERNET)
 					if (idx > 1) { // This is the ethernet interface, set it up for static ip address
 						netifapi_netif_set_up(pnetif);
 					}

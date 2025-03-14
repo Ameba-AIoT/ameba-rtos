@@ -45,6 +45,10 @@ int atcmd_bt_scatternet(int argc, char *argv[]);
 
 int atcmd_bt_throughput(int argc, char *argv[]);
 
+int atcmd_bt_ota_central(int argc, char *argv[]);
+
+int atcmd_bt_ota_peripheral(int argc, char *argv[]);
+
 int atcmd_bt_mesh_provisioner(int argc, char *argv[]);
 
 int atcmd_bt_mesh_device(int argc, char *argv[]);

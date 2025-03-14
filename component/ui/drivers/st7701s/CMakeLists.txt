@@ -43,6 +43,14 @@ ameba_list_append(private_sources
 ameba_list_append(private_includes
     include
 )
+ameba_list_append(private_definitions
+    __RTOS__
+    NDEBUG
+)
+ameba_list_append(private_compile_options
+    -UDEBUG
+    -Wno-int-conversion
+)
 
 # Component private part, user config end
 #------------------------------#

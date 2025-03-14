@@ -11,18 +11,13 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 
-ameba_list_append_if(CONFIG_AUDIO_MIXER public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_media_configs.a
-)
-
-list(REMOVE_DUPLICATES public_libraries)
 # Component public part, user config end
 #----------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
 ameba_global_define(${public_defines})
-ameba_global_library(${public_libraries} p_NO_WHOLE_ARCHIVE)
+ameba_global_library(${public_libraries})
 
 ##########################################################################################
 ## * This part defines private part of the component
@@ -67,7 +62,7 @@ ameba_list_append(private_compile_options
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_tmp_library(media_configs
+ameba_add_internal_library(media_configs
     p_SOURCES
         ${private_sources}
     p_INCLUDES

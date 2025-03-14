@@ -138,6 +138,48 @@ int atcmd_bt_throughput(int argc, char *argv[])
 	return 0;
 }
 
+int ble_ota_central_main(uint8_t enable);
+int atcmd_bt_ota_central(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for ble ota central example!\r\n", op);
+		return -1;
+	}
+
+	if (ble_ota_central_main(op)) {
+		BT_LOGE("Error: ble ota central example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("ble ota central example %s OK!\r\n", action[op]);
+	return 0;
+}
+
+int ble_ota_peripheral_main(uint8_t enable);
+int atcmd_bt_ota_peripheral(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for ble ota peripheral example!\r\n", op);
+		return -1;
+	}
+
+	if (ble_ota_peripheral_main(op)) {
+		BT_LOGE("Error: ble ota peripheral example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("ble ota peripheral example %s OK!\r\n", action[op]);
+	return 0;
+}
+
 int ble_mesh_provisioner_main(uint8_t enable);
 int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 {

@@ -18,6 +18,12 @@
 #ifndef WTN_APP_SOCKET_H
 #define WTN_APP_SOCKET_H
 
+struct wtn_http_ota_param {
+	char *host;
+	char *resource;
+	u32 port;
+};
+
 /* -------------------------------- Includes -------------------------------- */
 
 int wtn_socket_send(u8 *buf, u32 len);

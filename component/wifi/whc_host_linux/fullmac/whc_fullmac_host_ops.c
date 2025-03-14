@@ -15,6 +15,7 @@ static struct wps_str wps_info;
 static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	int ret = 0;
+	unsigned char tx_rate;
 	struct _rtw_phy_statistics_t *statistic_vir = NULL;
 	dma_addr_t statistic_phy;
 
@@ -36,7 +37,21 @@ static int whc_fullmac_host_ops_get_station(struct wiphy *wiphy, struct net_devi
 	sinfo->signal = statistic_vir->rssi;
 
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
-	sinfo->txrate.legacy = statistic_vir->supported_max_rate;
+	tx_rate = statistic_vir->cur_tx_data_rate;
+	if (tx_rate <= MGN_54M) {
+		sinfo->txrate.legacy = (tx_rate / 2) * 10; // bitrate in 100kbit/s
+	} else if ((tx_rate >= MGN_MCS0) && (tx_rate <= MGN_MCS7)) {
+		sinfo->txrate.flags |= RATE_INFO_FLAGS_MCS;
+		sinfo->txrate.mcs = tx_rate - MGN_MCS0;
+	} else if ((tx_rate >= MGN_VHT1SS_MCS0) && (tx_rate <= MGN_VHT1SS_MCS8)) {
+		sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
+		sinfo->txrate.mcs = tx_rate - MGN_VHT1SS_MCS0;
+	} else if ((tx_rate >= MGN_HE1SS_MCS0) && (tx_rate <= MGN_HE1SS_MCS9)) {
+		sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
+		sinfo->txrate.mcs = tx_rate - MGN_HE1SS_MCS0;
+	} else {
+		sinfo->txrate.legacy = 540;
+	}
 
 	rtw_mfree(sizeof(struct _rtw_phy_statistics_t), statistic_vir, statistic_phy);
 

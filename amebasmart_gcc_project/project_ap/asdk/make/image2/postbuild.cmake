@@ -46,7 +46,7 @@ message( "========== Image manipulating start ==========")
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf img"
-    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
+    COMMAND ${CMAKE_COMMAND} -E env make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap MENUCONFIG_DIR=${c_MENUCONFIG_DIR} -C ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf image
     WORKING_DIRECTORY ${c_BASEDIR}/component/soc/${c_SOC_TYPE}/atf
 )
 
@@ -82,7 +82,7 @@ execute_process(
 )
 execute_process(
     COMMAND ${IMAGETOOL} ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin ${BUILD_TYPE}
-    WORKING_DIRECTORY ${PROJECTDIR}/..
+    WORKING_DIRECTORY ${c_MCU_PROJECT_DIR}/..
 )
 
 if(CONFIG_DYNAMIC_APP_LOAD_EN)
@@ -224,11 +224,11 @@ if(NOT CONFIG_AMEBA_RLS)
     message("========== Image analyze start ==========")
     execute_process(
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}
-        WORKING_DIRECTORY ${PROJECTDIR}/asdk
+        WORKING_DIRECTORY ${c_MCU_PROJECT_DIR}/asdk
     )
     execute_process(
         COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD}
-        WORKING_DIRECTORY ${PROJECTDIR}/asdk
+        WORKING_DIRECTORY ${c_MCU_PROJECT_DIR}/asdk
     )
     message("========== Image analyze end ==========")
 endif()

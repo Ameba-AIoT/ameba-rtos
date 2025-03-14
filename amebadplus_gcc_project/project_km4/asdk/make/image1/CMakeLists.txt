@@ -1,4 +1,4 @@
-ameba_add_image(target_loader_${PROJECT_NAME})
+ameba_add_image(target_loader)
 # variable c_CURRENT_IMAGE value is target_loader_${PROJECT_NAME}
 
 ###############################  ADD COMPONENT  ###################################
@@ -13,15 +13,10 @@ ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
-if(CONFIG_MP_SHRINK)
-    set(IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all_mp.ld)
-else()
-    set(IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
-endif()
 
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG1_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
+  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_IMG1_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build bootloader linkerscript rlx8721d.ld"
 )
@@ -85,8 +80,9 @@ set(clean_files
 )
 
 set(link_deps
-    ${IMG1_LD}
-    ${c_SOC_PROJECT_DIR}/amebaDplus_layout.ld
+    ${c_LAYOUT_LD}
+    ${c_IMG1_LD}
+    ${c_LINK_ROM_SYMBOL_S}
 )
 
 set_target_properties(${c_CURRENT_IMAGE} PROPERTIES

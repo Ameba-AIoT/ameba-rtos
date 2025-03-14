@@ -10,7 +10,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
-
+ameba_list_append(public_includes include)
 # Component public part, user config end
 #----------------------------------------#
 
@@ -37,20 +37,24 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+ameba_list_append(private_sources
+    ram/shell_ram.c
+)
+
+if(${c_MCU_PROJECT_NAME} STREQUAL "hp")
     ameba_list_append(private_sources
-        ${c_CMPT_AT_CMD_DIR}/monitor.c
-        ram/shell_ram.c
         ram/low_level_io.c
     )
-    ameba_list_append_if(CONFIG_LONGER_CMD private_sources
+endif()
+
+if(CONFIG_LONGER_CMD)
+    ameba_list_append(private_sources
         rom/shell_rom_patch.c
     )
-    if("${d_MCU_PROJECT_NAME}" STREQUAL "lp")
-        ameba_list_append(private_includes
-            include
-            ${c_FREERTOS_DIR}/include
-            ${c_FREERTOS_DIR}/portable/GCC/AmebaSmart_LP
+else()
+    if(${c_MCU_PROJECT_NAME} STREQUAL "ap")
+        ameba_list_append(private_sources
+            rom/shell_rom.c
         )
     endif()
 endif()

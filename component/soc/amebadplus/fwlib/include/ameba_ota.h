@@ -16,17 +16,12 @@
 /** @addtogroup Ameba_Platform
   * @{
   */
-#define MAX_IMG_NUM		2
-
 #define OTA_CLEAR_PATTERN	0
 
 #define BUF_SIZE			2048								/*the size of the buffer used for receiving firmware data from server*/
 #define HEADER_BAK_LEN		32
 #define HEADER_LEN			8
 #define SUB_HEADER_LEN		24
-
-#define HTTP_OTA_UPDATE
-#define HTTPS_OTA_UPDATE
 
 /* Exported constants --------------------------------------------------------*/
 
@@ -36,13 +31,13 @@
 /** @defgroup OTA_system_parameter_definitions
   * @{
   */
-
 #define OTA_IMGID_BOOT		0
 #define OTA_IMGID_APP		1
 #define OTA_IMGID_MAX		2
 
-#define OTA_IMAG			0								/*identify the OTA image*/
+#define MAX_IMG_NUM			OTA_IMGID_MAX
 
+/* OTA download type */
 #define OTA_USER			0
 #define OTA_HTTP			1
 #define OTA_HTTPS			2

@@ -4,6 +4,14 @@ set(CFGDIR ${TARGETDIR}/usrcfg)
 
 set(CSRC)
 
+if(CONFIG_OS_VERIFY)
+    list(
+        APPEND CSRC
+        ${DIR}/os/heap_protect_test.c
+        ${DIR}/os/heap_trace_test.c
+    )
+endif()
+
 if(CONFIG_ADC_VERIFY)
     list(
         APPEND CSRC

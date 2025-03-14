@@ -42,6 +42,10 @@
 #include "timers.h"
 #include "stack_macros.h"
 
+#ifdef CONFIG_HEAP_TRACE
+#include "heap_trace.h"
+#endif
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -116,6 +120,10 @@
 #define configIDLE_TASK_NAME    "IDLE"
 #endif
 
+#ifdef CONFIG_HEAP_TRACE
+#include "task_heap_info.h"
+extern task_heap_info_t heap_task_info[];
+#endif
 #if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 0 )
 
 /* If configUSE_PORT_OPTIMISED_TASK_SELECTION is 0 then task selection is
@@ -2448,7 +2456,7 @@ void vTaskStepTick(const TickType_t xTicksToJump)
 	/* Correct the tick count value after a period during which the tick
 	 * was suppressed.  Note this does *not* call the tick hook function for
 	 * each stepped tick. */
-	// configASSERT((xTickCount + xTicksToJump) <= xNextTaskUnblockTime);
+	configASSERT((xTickCount + xTicksToJump) <= xNextTaskUnblockTime);
 	xTickCount += xTicksToJump;
 	traceINCREASE_TICK_COUNT(xTicksToJump);
 }
@@ -2823,7 +2831,7 @@ void vTaskSwitchContext(void)
 		xYieldPending = pdTRUE;
 	} else {
 		xYieldPending = pdFALSE;
-		traceTASK_SWITCHED_OUT();
+		traceTASK_SWITCHED_OUT(FALSE);
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
 		{
@@ -3286,7 +3294,7 @@ static portTASK_FUNCTION(prvIdleTask, pvParameters)
 					/* Now the scheduler is suspended, the expected idle
 					 * time can be sampled again, and this time its value can
 					 * be used. */
-					// configASSERT(xNextTaskUnblockTime >= xTickCount);
+					configASSERT(xNextTaskUnblockTime >= xTickCount);
 					xExpectedIdleTime = prvGetExpectedIdleTime();
 
 					/* Define the following macro to set xExpectedIdleTime to 0
@@ -3708,6 +3716,16 @@ static void prvDeleteTCB(TCB_t *pxTCB)
 		/* The task can only have been allocated dynamically - free both
 		 * the stack and TCB. */
 		vPortFree(pxTCB->pxStack);
+#ifdef CONFIG_HEAP_TRACE
+		for (int i = 0; i < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; i++) {
+			if ((heap_task_info[i].TaskHandle == pxTCB) && (heap_task_info[i].isExist == pdTRUE)) {
+				heap_task_info[i].isExist = pdFALSE;
+				if (heap_task_info[i].heap_size == 0) {
+					heap_task_info[i].TaskHandle = NULL;
+				}
+			}
+		}
+#endif
 		vPortFree(pxTCB);
 	}
 #elif ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
@@ -3719,10 +3737,30 @@ static void prvDeleteTCB(TCB_t *pxTCB)
 			/* Both the stack and TCB were allocated dynamically, so both
 			 * must be freed. */
 			vPortFree(pxTCB->pxStack);
+#ifdef CONFIG_HEAP_TRACE
+			for (int i = 0; i < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; i++) {
+				if ((heap_task_info[i].TaskHandle == pxTCB) && (heap_task_info[i].isExist == pdTRUE)) {
+					heap_task_info[i].isExist = pdFALSE;
+					if (heap_task_info[i].heap_size == 0) {
+						heap_task_info[i].TaskHandle = NULL;
+					}
+				}
+			}
+#endif
 			vPortFree(pxTCB);
 		} else if (pxTCB->ucStaticallyAllocated == tskSTATICALLY_ALLOCATED_STACK_ONLY) {
 			/* Only the stack was statically allocated, so the TCB is the
 			 * only memory that must be freed. */
+#ifdef CONFIG_HEAP_TRACE
+			for (int i = 0; i < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; i++) {
+				if ((heap_task_info[i].TaskHandle == pxTCB) && (heap_task_info[i].isExist == pdTRUE)) {
+					heap_task_info[i].isExist = pdFALSE;
+					if (heap_task_info[i].heap_size == 0) {
+						heap_task_info[i].TaskHandle = NULL;
+					}
+				}
+			}
+#endif
 			vPortFree(pxTCB);
 		} else {
 			/* Neither the stack nor the TCB were allocated dynamically, so

@@ -11,7 +11,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 ameba_list_append(public_libraries
-    lib/btgap.a
+    ${CMAKE_CURRENT_LIST_DIR}/lib/btgap.a
 )
 
 # Component public part, user config end

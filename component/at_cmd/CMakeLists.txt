@@ -38,72 +38,35 @@ set(private_compile_options)         #private compile_options
 
 #NOTE: User defined section, add your private build configures here
 # You may use if-else condition to set these predefined variable
-
-if(CONFIG_WLAN)
-   if (CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
-       ameba_list_append(private_definitions SUPPORT_ATCMD=1)
-   endif()
-endif()
-
 ameba_list_append(private_sources
-   ${c_CMPT_AT_CMD_DIR}/monitor.c
-   ${c_CMPT_SOC_DIR}/app/monitor/ram/shell_ram.c
+    monitor.c
 )
-
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "hp")
-        ameba_list_append(private_sources
-            ${c_CMPT_SOC_DIR}/app/monitor/ram/low_level_io.c
-        )
-    endif()
-endif()
-
-if(CONFIG_LONGER_CMD)
+if(CONFIG_CORE_AS_AP)
     ameba_list_append(private_sources
-        ${c_CMPT_SOC_DIR}/app/monitor/rom/shell_rom_patch.c
+        atcmd_service.c
+        atcmd_sys.c
+        atcmd_fs.c
+        atcmd_bt_mp.c
+        atcmd_otp.c
+        atcmd_coex.c
     )
-else()
-    if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
-        ameba_list_append(private_sources
-            ${c_CMPT_SOC_DIR}/app/monitor/rom/shell_rom.c
-        )
-    endif()
+    ameba_list_append_if(CONFIG_WLAN private_sources
+        atcmd_http.c
+        atcmd_mqtt.c
+        atcmd_network.c
+        atcmd_ota.c
+        atcmd_sockets.c
+        atcmd_websocket.c
+        atcmd_wifi.c
+    )
+    ameba_list_append_if(CONFIG_BT private_sources
+        atcmd_bt_ext.c
+    )
+    ameba_list_append_if(CONFIG_ATCMD_MCU_CONTROL private_sources
+        at_intf_uart.c
+        at_intf_spi.c
+    )
 endif()
-
-if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
-    ameba_list_append(private_sources
-       ${c_CMPT_AT_CMD_DIR}/atcmd_service.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_sys.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_fs.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_bt_mp.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_otp.c
-   )
-   ameba_list_append_if(CONFIG_WLAN private_sources
-       ${c_CMPT_AT_CMD_DIR}/atcmd_wifi.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_mqtt.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_sockets.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_websocket.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_network.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_coex.c
-       ${c_CMPT_AT_CMD_DIR}/atcmd_ota.c
-   )
-   ameba_list_append_if(CONFIG_BT private_sources
-       ${c_CMPT_AT_CMD_DIR}/atcmd_bt_ext.c
-   )
-   ameba_list_append_if(CONFIG_ATCMD_MCU_CONTROL private_sources
-       ${c_CMPT_AT_CMD_DIR}/at_intf_uart.c
-       ${c_CMPT_AT_CMD_DIR}/at_intf_spi.c
-   )
-endif()
-ameba_list_append(private_includes
-    ${c_CMPT_NETWORK_DIR}/mqtt/MQTTClient
-    ${c_CMPT_NETWORK_DIR}/mqtt/MQTTPacket
-    ${c_CMPT_NETWORK_DIR}/cJSON
-    ${c_CMPT_NETWORK_DIR}/websocket
-    ${c_CMPT_FILE_SYSTEM_DIR}/kv
-    ${c_COMPONENT_DIR}/utils/ringbuffer
-)
-
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 

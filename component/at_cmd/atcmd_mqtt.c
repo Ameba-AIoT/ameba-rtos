@@ -1105,7 +1105,7 @@ end:
 static void at_mqttconn_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCONN=<link_id>,[<port>],<host>,<client_id>,<conn_type>[,<cert_index>,<username>,<password>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+MQTTCONN=<link_id>,<host>,<port>,<client_id>,<conn_type>[,<cert_index>,<username>,<password>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\t0~%d.\r\n", MQTT_MAX_CLIENT_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thostname\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t0~65535. \r\n");

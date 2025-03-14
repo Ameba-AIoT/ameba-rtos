@@ -407,18 +407,6 @@ void vApplicationStackOverflowHook(xTaskHandle pxTask, char *pcTaskName)
 	for (;;);
 }
 
-void vApplicationMallocFailedHook(void)
-{
-	char *pcCurrentTask = "NoTsk";
-	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-		pcCurrentTask = pcTaskGetName(NULL);
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KM0", pcCurrentTask, xPortGetFreeHeapSize());
-
-	taskDISABLE_INTERRUPTS();
-	for (;;);
-}
-
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 
 static StaticTask_t xIdleTaskTCB;

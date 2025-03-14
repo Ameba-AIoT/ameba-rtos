@@ -561,7 +561,7 @@ int wifi_roaming_scan_one_channel(wifi_roaming_ap_t	roaming_ap, u32 retry)
 		wifi_roaming_plus_find_ap_from_scan_buf((char *)roaming_ap.ssid, (void *)&roaming_ap.security_type, scanned_ap_num);
 	}
 	ROAMING_DBG("scan done(%d)\n", pscan_channel_list[0]);
-	wifi_fetch_phy_statistic(&phy_statistics);
+	wifi_get_phy_statistic(&phy_statistics);
 	cur_rssi = phy_statistics.rssi;
 	rssi_delta = ((FIND_BETTER_RSSI_DELTA - retry * 2) > 1) ? (FIND_BETTER_RSSI_DELTA - retry * 2) : 2; //at least 3db better
 	if (ap_list->rssi - cur_rssi > rssi_delta && (memcmp(roaming_ap.bssid, ap_list->bssid, ETH_ALEN))) {
@@ -697,7 +697,7 @@ void wifi_roaming_plus_thread(void *param)
 
 	while (1) {
 		if (wifi_is_running(WLAN0_IDX) && ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-			wifi_fetch_phy_statistic(&phy_statistics);
+			wifi_get_phy_statistic(&phy_statistics);
 			ap_rssi = phy_statistics.rssi;
 			ROAMING_DBG("\r\n %s():Current rssi(%d),scan threshold rssi(%d)\n", __func__, ap_rssi, RSSI_SCAN_THRESHOLD);
 			rt_kv_get("wlan_data", (uint8_t *) &read_data, sizeof(struct wifi_roaming_data));
@@ -715,7 +715,7 @@ void wifi_roaming_plus_thread(void *param)
 						ap_valid = AP_VALID_TIME;
 						while (ap_valid) {
 							if (wifi_is_running(WLAN0_IDX) && ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-								wifi_fetch_phy_statistic(&phy_statistics);
+								wifi_get_phy_statistic(&phy_statistics);
 								ap_rssi = phy_statistics.rssi;
 								ROAMING_DBG("\r\n %s():Current rssi(%d),roaming threshold rssi(%d)\n", __func__, ap_rssi, RSSI_ROAMING_THRESHOLD);
 								if ((ap_rssi < RSSI_ROAMING_THRESHOLD)) {
@@ -741,7 +741,7 @@ void wifi_roaming_plus_thread(void *param)
 						}
 #else//no pre scan
 						if (wifi_is_running(WLAN0_IDX) && ((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID))) {
-							wifi_fetch_phy_statistic(&phy_statistics);
+							wifi_get_phy_statistic(&phy_statistics);
 							ap_rssi = phy_statistics.rssi;
 							if (ap_rssi > RSSI_SCAN_THRESHOLD + 5) {
 								/*no need to roaming*/

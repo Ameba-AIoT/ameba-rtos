@@ -633,6 +633,12 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_THROUGHPUT) && CONFIG_BT_THROUGHPUT
 	{"throughput",       atcmd_bt_throughput,       2, 13},
 #endif
+#if defined(CONFIG_BT_OTA_CENTRAL) && CONFIG_BT_OTA_CENTRAL
+	{"ota_central",      atcmd_bt_ota_central,      2, 2},
+#endif
+#if defined(CONFIG_BT_OTA_PERIPHERAL) && CONFIG_BT_OTA_PERIPHERAL
+	{"ota_peripheral",   atcmd_bt_ota_peripheral,   2, 2},
+#endif
 #if defined(CONFIG_BT_MESH_PROVISIONER) && CONFIG_BT_MESH_PROVISIONER
 	{"provisioner",      atcmd_bt_mesh_provisioner, 2, 2},
 #endif

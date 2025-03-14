@@ -50,8 +50,8 @@ static void at_ota_help(void)
 #ifdef CONFIG_AMEBADPLUS
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from VFS\r\n");
 #elif defined(CONFIG_AMEBASMART)
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from SDCard\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from VFS\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t3: \tupdate from VFS\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t4: \tupdate from SDCard\r\n");
 #endif
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thostname\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t[1,65535]\r\n");
@@ -86,7 +86,7 @@ void at_ota(void *arg)
 
 	if (at_ota_status) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[+OTA] ota is already running\r\n");
-		err_no = 4;
+		err_no = 3;
 		goto end;
 	}
 
@@ -134,13 +134,6 @@ void at_ota(void *arg)
 	strcpy(resource, argv[4]);
 	resource[strlen(argv[4])] = '\0';
 
-	/* Check whether the network is linked. */
-	if (wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] The network is not ready\r\n");
-		err_no = 3;
-		goto end;
-	}
-
 	ctx = (ota_context *)rtos_mem_malloc(sizeof(ota_context));
 	if (!ctx) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] ctx malloc failed\r\n");
@@ -155,14 +148,14 @@ void at_ota(void *arg)
 	ret = ota_update_init(ctx, host, port, resource, type);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] ota_update_init failed\r\n");
-		err_no = 5;
+		err_no = 4;
 		goto end;
 	}
 
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"at_ota_update_task"), at_ota_update_task, (void *)ctx, 1024 * 8, 1) != SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] Create update task failed");
-		err_no = 6;
+		err_no = 5;
 		goto end;
 	}
 	at_ota_status = 1;
@@ -194,7 +187,7 @@ static void at_userota_help(void)
 
 /****************************************************************
 AT command process:
-	AT+USEROTA=<length>
+	AT+USEROTA=<length>[,<sysrst>]
 	Update firmware from mcu host.
 ****************************************************************/
 void at_userota(void *arg)
@@ -288,9 +281,8 @@ void at_userota(void *arg)
 			}
 		}
 		if (ret == OTA_RET_ERR) {
-			atcmd_tt_mode_end();
 			err_no = 3;
-			goto end;
+			break;
 		}
 		length -= frag_len;
 	}

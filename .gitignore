@@ -69,3 +69,16 @@ compile_commands.json
 
 # venv
 .venv
+
+# ignore submodules
+/component/application/azure/
+/component/application/benchmark
+/component/application/demoui
+/component/application/speechmind
+/component/application/wifi-audio
+/component/application/wigadget/
+/component/application/wms/
+/component/audio/
+/component/tflite_micro/
+/tools/
+/loong.py

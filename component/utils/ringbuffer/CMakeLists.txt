@@ -10,7 +10,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
-
+ameba_list_append(public_includes
+    ${c_COMPONENT_DIR}/utils/ringbuffer
+)
 ## Differentiated configuration based on SoC types
 
 # Component public part, user config end

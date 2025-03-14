@@ -792,6 +792,11 @@ end:
 			client_key = NULL;
 			wsclient->client_key = NULL;
 		}
+		if (wsclient) {
+			wsclient->fun_ops.client_close(wsclient);
+			ws_free(wsclient);
+			wsclient = NULL;
+		}
 	}
 }
 
