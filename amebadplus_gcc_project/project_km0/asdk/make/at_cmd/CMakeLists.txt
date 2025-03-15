@@ -26,7 +26,7 @@ endif()
 
 if(CONFIG_WLAN)
 # note: apply new atcmd, add your config here!!!
-    if(CONFIG_ATCMD_MCU_CONTROL)
+    if(CONFIG_ATCMD_HOST_CONTROL)
         list(
             APPEND CSRC
             ${DIR}/at_intf_uart.c

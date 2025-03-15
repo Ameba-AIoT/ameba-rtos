@@ -16,7 +16,7 @@ ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
 ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})
-# ameba_add_subdirectory(${c_CMPT_WPAN_DIR})
+ameba_add_subdirectory_if(CONFIG_802154_EN ${c_CMPT_WPAN_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
@@ -24,7 +24,7 @@ ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_DYN_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
-# ameba_add_subdirectory(${c_CMPT_TFLITE_DIR})
+ameba_add_subdirectory_if(CONFIG_TFLITE_MICRO_EN ${c_CMPT_TFLITE_DIR}/cmake)
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
 ameba_add_subdirectory(${c_CMPT_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
@@ -114,7 +114,7 @@ add_custom_command(
         -DDAILY_BUILD=${DAILY_BUILD}
 
         # special variables for current image
-        -DKM4_BUILDDIR=${KM4_BUILDDIR}
+        -DKM4_PROJECT_DIR=${HP_PROJECT_DIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}

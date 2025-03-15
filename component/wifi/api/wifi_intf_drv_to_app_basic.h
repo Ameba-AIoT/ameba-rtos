@@ -37,12 +37,12 @@
 extern "C" {
 #endif
 
-/** @addtogroup WIFI_API
+/** @addtogroup WIFI_API Wi-Fi APIs
  *  @brief      WIFI_API module
  *  @{
  */
 
-/** @addtogroup WIFI_Exported_Constants WIFI Exported Constants
+/** @addtogroup WIFI_Exported_Constants Wi-Fi Exported Constants
  * @{
  */
 #define WHC_MAX_SSID_LENGTH (33)
@@ -51,7 +51,7 @@ extern "C" {
 #define DIS_DPK BIT(0) /**< Parameters of rf_calibration_disable. */
 /** @} End of WIFI_Exported_Constants group*/
 
-/** @addtogroup WIFI_Exported_Types WIFI Exported Types
+/** @addtogroup WIFI_Exported_Types Wi-Fi Exported Types
 * @{
 */
 /** @addtogroup WIFI_Exported_Enumeration_Types Enumeration Type
@@ -238,7 +238,7 @@ struct _rtw_wpa_supp_connect_t {
   *        2. If this struct is used for wifi connect, the channel is used to config
   * 	      whether it is a full channel scan(when channel is set to 0), or it will
   * 	      only scan one channel(do active scan on the configured channel).
-  *        3. pscan_option set to PSCAN_FAST_SURVEY means do fast survey on the specified channel
+  *        3. pscan_option set to @ref PSCAN_FAST_SURVEY means do fast survey on the specified channel
   * 	      set to 0 means do normal scan on the specified channel or full channel.
   */
 struct _rtw_network_info_t {
@@ -249,7 +249,7 @@ struct _rtw_network_info_t {
 	int 						password_len;
 	int 						key_id;
 	unsigned char				channel;		/**< Set to 0 means full channel scan, set to other value means only scan on the specified channel. */
-	unsigned char				pscan_option;	/**< Used when the specified channel is set, set to 0 for normal partial scan, set to PSCAN_FAST_SURVEY for fast survey.*/
+	unsigned char				pscan_option;	/**< Used when the specified channel is set, set to 0 for normal partial scan, set to @ref PSCAN_FAST_SURVEY for fast survey.*/
 	unsigned char 				is_wps_trigger;	/**< Connection triggered by WPS process.*/
 	struct _rtw_wpa_supp_connect_t	wpa_supp; /**< Fullmac inic host used, user can ignore.*/
 	struct _rtw_mac_t		prev_bssid;
@@ -305,8 +305,8 @@ struct _rtw_phy_statistics_t {
 	signed char	data_rssi;          /**< Average data rssi in 1 sec (for STA mode). */
 	signed char	beacon_rssi;          /**< Average beacon rssi in 1 sec (for STA mode). */
 	signed char	snr;          /**< Average snr in 1 sec (not include cck rate, for STA mode).*/
-	unsigned char	cur_rx_data_rate; /*! current rx data rate (for STA mode), val: MGN_1M, MGN_2M...*/
-	unsigned char	cur_tx_data_rate; /*! current tx data rate (for STA mode), val: MGN_1M, MGN_2M... */
+	unsigned char	cur_rx_data_rate; /**< Current rx data rate (for STA mode), val: MGN_1M, MGN_2M...*/
+	unsigned char	cur_tx_data_rate; /**< Current tx data rate (for STA mode), val: MGN_1M, MGN_2M... */
 	unsigned int
 	cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 	unsigned int	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
@@ -882,11 +882,11 @@ extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
 extern  struct wifi_user_conf wifi_user_config;
 extern struct _rtw_wifi_setting_t wifi_setting[2];
 
-/** @addtogroup WIFI_API
+/** @addtogroup WIFI_API Wi-Fi APIs
  *  @brief      WIFI_API module
  *  @{
  */
-/** @addtogroup WIFI_Exported_Constants WIFI Exported Constants
+/** @addtogroup WIFI_Exported_Constants Wi-Fi Exported Constants
  * @{
  */
 #ifndef CONFIG_FULLMAC
@@ -899,7 +899,7 @@ extern struct _rtw_wifi_setting_t wifi_setting[2];
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+/** @defgroup WIFI_Exported_Functions Wi-Fi Exported Functions
  * @{
  */
 /** @addtogroup WIFI_Exported_Basic_Functions Basic Functions

@@ -213,7 +213,7 @@ uint16_t bt_at_rtk_err_to_at_err(uint16_t rtk_err)
 	return at_sync_err;
 }
 
-#if (defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL)
+#if (defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL)
 
 void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str)
 {

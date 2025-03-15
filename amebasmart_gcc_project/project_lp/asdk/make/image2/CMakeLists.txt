@@ -2,6 +2,7 @@ ameba_add_image(target_img2)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
+ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
@@ -77,7 +78,7 @@ add_custom_command(
         -DDAILY_BUILD=${DAILY_BUILD}
 
         # special variables for current image
-        -DKM4_PROJECT_DIR=${KM4_PROJECT_DIR}
+        -DKM4_PROJECT_DIR=${HP_PROJECT_DIR}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}

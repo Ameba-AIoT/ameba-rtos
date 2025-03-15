@@ -34,7 +34,7 @@ char g_tt_mode = 0;
 char g_tt_mode_check_watermark = 0;
 char g_tt_mode_indicate_high_watermark = 0;
 char g_tt_mode_indicate_low_watermark = 1;
-char g_mcu_control_mode = AT_MCU_CONTROL_UART;
+char g_host_control_mode = AT_HOST_CONTROL_UART;
 
 static const char *const TAG = "AT";
 
@@ -93,7 +93,7 @@ log_init_t log_init_table[] = {
 
 
 //======================================================
-#ifdef CONFIG_ATCMD_MCU_CONTROL
+#ifdef CONFIG_ATCMD_HOST_CONTROL
 char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
@@ -236,7 +236,7 @@ int atcmd_tt_mode_start(u32 len)
 
 	g_tt_mode = 1;
 	RTK_LOGI(TAG, "enter tt mode\n");
-	// info MCU we enter tt mode now
+	// info HOST we enter tt mode now
 	at_printf(ATCMD_ENTER_TT_MODE_STR);
 
 	return 0;
@@ -283,7 +283,7 @@ void atcmd_tt_mode_end(void)
 	g_tt_mode_check_watermark = 0;
 	RingBuffer_Destroy(atcmd_tt_mode_rx_ring_buf);
 	RTK_LOGI(TAG, "exit tt mode\n");
-	// info MCU we exit tt mode now if needed
+	// info HOST we exit tt mode now if needed
 	//at_printf(ATCMD_EXIT_TT_MODE_STR);
 }
 
@@ -370,7 +370,7 @@ void atcmd_get_pin_from_json(const cJSON *const object, const char *const string
 	}
 }
 
-int atcmd_mcu_control_config_setting(void)
+int atcmd_host_control_config_setting(void)
 {
 	int ret;
 	char *path = NULL;
@@ -415,17 +415,17 @@ int atcmd_mcu_control_config_setting(void)
 
 		if (interface_ob) {
 			if (strncmp(interface_ob->valuestring, "uart", strlen(interface_ob->valuestring)) == 0)	{
-				g_mcu_control_mode = AT_MCU_CONTROL_UART;
+				g_host_control_mode = AT_HOST_CONTROL_UART;
 			} else if (strncmp(interface_ob->valuestring, "spi", strlen(interface_ob->valuestring)) == 0) {
-				g_mcu_control_mode = AT_MCU_CONTROL_SPI;
+				g_host_control_mode = AT_HOST_CONTROL_SPI;
 			} else if (strncmp(interface_ob->valuestring, "sdio", strlen(interface_ob->valuestring)) == 0) {
-				g_mcu_control_mode = AT_MCU_CONTROL_SDIO;
+				g_host_control_mode = AT_HOST_CONTROL_SDIO;
 			}
 		} else {
 			goto DEFAULT;
 		}
 
-		if (g_mcu_control_mode == AT_MCU_CONTROL_UART) {
+		if (g_host_control_mode == AT_HOST_CONTROL_UART) {
 			cJSON *uart_ob, *baudrate_ob;
 			if ((uart_ob = cJSON_GetObjectItem(atcmd_ob, "uart")) != NULL) {
 				baudrate_ob = cJSON_GetObjectItem(uart_ob, "baudrate");
@@ -435,7 +435,7 @@ int atcmd_mcu_control_config_setting(void)
 				atcmd_get_pin_from_json(uart_ob, "tx", &UART_TX);
 				atcmd_get_pin_from_json(uart_ob, "rx", &UART_RX);
 			}
-		} else if (g_mcu_control_mode == AT_MCU_CONTROL_SPI) {
+		} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
 			cJSON *spi_ob;
 			if ((spi_ob = cJSON_GetObjectItem(atcmd_ob, "spi")) != NULL) {
 				atcmd_get_pin_from_json(spi_ob, "mosi", &SPI0_MOSI);
@@ -445,29 +445,29 @@ int atcmd_mcu_control_config_setting(void)
 				atcmd_get_pin_from_json(spi_ob, "master_sync_pin", &AT_SYNC_FROM_MASTER_GPIO);
 				atcmd_get_pin_from_json(spi_ob, "slave_sync_pin", &AT_SYNC_TO_MASTER_GPIO);
 			}
-		} else if (g_mcu_control_mode == AT_MCU_CONTROL_SDIO) {
+		} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 			// TODO: sdio interface
 		} else {
-			RTK_LOGE(TAG, "g_mcu_control_mode is invalid\r\n");
+			RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");
 		}
 	}
 
 DEFAULT:
-	if (g_mcu_control_mode == AT_MCU_CONTROL_UART) {
-		RTK_LOGI(TAG, "ATCMD MCU Control Mode : UART, tx:%s, rx:%s, baudrate:%d\r\n",
+	if (g_host_control_mode == AT_HOST_CONTROL_UART) {
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : UART, tx:%s, rx:%s, baudrate:%d\r\n",
 				 PIN_VAL_TO_NAME_STR(UART_TX), PIN_VAL_TO_NAME_STR(UART_RX), (int)UART_BAUD);
 		ret = atio_uart_init();
-	} else if (g_mcu_control_mode == AT_MCU_CONTROL_SPI) {
-		RTK_LOGI(TAG, "ATCMD Control Mode : SPI, mosi:%s, miso:%s, clk:%s, cs:%s, master_sync_pin:%s, slave_sync_pin:%s\r\n",
+	} else if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
+		RTK_LOGI(TAG, "ATCMD HOST Control Mode : SPI, mosi:%s, miso:%s, clk:%s, cs:%s, master_sync_pin:%s, slave_sync_pin:%s\r\n",
 				 PIN_VAL_TO_NAME_STR(SPI0_MOSI), PIN_VAL_TO_NAME_STR(SPI0_MISO),
 				 PIN_VAL_TO_NAME_STR(SPI0_SCLK), PIN_VAL_TO_NAME_STR(SPI0_CS),
 				 PIN_VAL_TO_NAME_STR(AT_SYNC_FROM_MASTER_GPIO), PIN_VAL_TO_NAME_STR(AT_SYNC_TO_MASTER_GPIO));
 		ret = atio_spi_init();
-	} else if (g_mcu_control_mode == AT_MCU_CONTROL_SDIO) {
+	} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
 		// TODO: sdio interface
-		RTK_LOGI(TAG, "Confgure sdio mcu control mode!\r\n");
+		RTK_LOGI(TAG, "Confgure sdio host control mode!\r\n");
 	} else {
-		RTK_LOGE(TAG, "g_mcu_control_mode is invalid\r\n");
+		RTK_LOGE(TAG, "g_host_control_mode is invalid\r\n");
 	}
 
 	if (path) {
@@ -541,7 +541,7 @@ void atcmd_service_init(void)
 		log_init_table[i]();
 	}
 
-#ifdef CONFIG_ATCMD_MCU_CONTROL
+#ifdef CONFIG_ATCMD_HOST_CONTROL
 	//initialize tt mode ring sema
 	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
 
@@ -551,10 +551,10 @@ void atcmd_service_init(void)
 		return;
 	}
 
-	ret = atcmd_mcu_control_config_setting();
+	ret = atcmd_host_control_config_setting();
 
 	if (ret < 0) {
-		RTK_LOGI(TAG, "atcmd mcu control config setting fail\n");
+		RTK_LOGI(TAG, "atcmd host control config setting fail\n");
 		return;
 	}
 
@@ -564,8 +564,8 @@ void atcmd_service_init(void)
 	mkdir(path, 0);
 	rtos_mem_free(path);
 
-	RTK_LOGI(TAG, ATCMD_MCU_CONTROL_INIT_STR);
-	at_printf(ATCMD_MCU_CONTROL_INIT_STR);
+	RTK_LOGI(TAG, ATCMD_HOST_CONTROL_INIT_STR);
+	at_printf(ATCMD_HOST_CONTROL_INIT_STR);
 #endif
 }
 

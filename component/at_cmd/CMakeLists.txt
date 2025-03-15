@@ -62,7 +62,7 @@ if(CONFIG_CORE_AS_AP)
     ameba_list_append_if(CONFIG_BT private_sources
         atcmd_bt_ext.c
     )
-    ameba_list_append_if(CONFIG_ATCMD_MCU_CONTROL private_sources
+    ameba_list_append_if(CONFIG_ATCMD_HOST_CONTROL private_sources
         at_intf_uart.c
         at_intf_spi.c
     )

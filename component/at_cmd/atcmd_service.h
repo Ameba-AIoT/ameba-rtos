@@ -56,7 +56,7 @@ void atcmd_tt_mode_end(void);
 #define MAX_TT_HEAP_SIZE 1024 * 120
 #define TT_MODE_HIGH_WATERMARK 0.7
 #define TT_MODE_LOW_WATERMARK 0.2
-#define ATCMD_MCU_CONTROL_INIT_STR "ATCMD READY\r\n"
+#define ATCMD_HOST_CONTROL_INIT_STR "ATCMD READY\r\n"
 #define ATCMD_OK_END_STR 		"\r\nOK\r\n"
 #define ATCMD_ERROR_END_STR 	"\r\nERROR: %d\r\n"
 #define ATCMD_ENTER_TT_MODE_STR	">>>\r\n"
@@ -93,16 +93,16 @@ typedef enum {
 } CERT_TYPE;
 
 enum {
-	AT_MCU_CONTROL_UART = 1,
-	AT_MCU_CONTROL_SPI,
-	AT_MCU_CONTROL_SDIO,
+	AT_HOST_CONTROL_UART = 1,
+	AT_HOST_CONTROL_SPI,
+	AT_HOST_CONTROL_SDIO,
 };
 
 int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index);
 
 /* TODO */
-#ifdef CONFIG_ATCMD_MCU_CONTROL
+#ifdef CONFIG_ATCMD_HOST_CONTROL
 typedef void (*at_write)(char *buf, int len);
 extern uint16_t atcmd_switch;
 extern char global_buf[SMALL_BUF];

@@ -4,6 +4,7 @@ list(
     APPEND GLOBAL_IFLAGS
     ${OSDIR}
     ${OSDIR}/freertos
+    ${OSDIR}/freertos/os_wrapper/include
     ${OSDIR}/os_wrapper/include
 
     ${TARGETDIR}/cmsis

@@ -22,14 +22,14 @@
 extern "C" {
 #endif
 
-/** @addtogroup WIFI_API
+/** @addtogroup WIFI_API Wi-Fi APIs
  *  @brief      WIFI_API module
  *  @{
  */
 /**********************************************************************************************
  *                                     wifi event structures
  *********************************************************************************************/
-/** @addtogroup WIFI_Exported_Types WIFI Exported Types
+/** @addtogroup WIFI_Exported_Types Wi-Fi Exported Types
 * @{
 */
 
@@ -149,7 +149,7 @@ struct rtw_event_join_fail_info_t {
 /**********************************************************************************************
  *                                     Function Declarations
  *********************************************************************************************/
-/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+/** @defgroup WIFI_Exported_Functions Wi-Fi Exported Functions
  * @{
  */
 /** @addtogroup WIFI_Exported_Event_Functions Event Functions
