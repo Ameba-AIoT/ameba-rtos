@@ -69,7 +69,7 @@ if(CONFIG_AS_INIC_AP)
         )
     endif()
 
-    if(CONFIG_ATCMD_MCU_CONTROL)
+    if(CONFIG_ATCMD_HOST_CONTROL)
         list(
             APPEND CSRC
             ${DIR}/at_intf_uart.c

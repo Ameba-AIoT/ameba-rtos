@@ -82,11 +82,14 @@ static usbd_config_t cdc_acm_cfg = {
 	.ext_intr_en        = USBD_EPMIS_INTR,
 	.nptx_max_err_cnt   = {0U, 0U, 0U, 2000U, },
 #elif defined (CONFIG_AMEBAGREEN2)
-	.rx_fifo_depth = 676U,
-	.ptx_fifo_depth = {16U, 256U, 32U, },
+	.rx_fifo_depth = 644U,
+	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
 #elif defined (CONFIG_AMEBASMARTPLUS)
-	.rx_fifo_depth = 692U,
-	.ptx_fifo_depth = {256U, 256U, 32U, },
+	.rx_fifo_depth = 898U,
+	.ptx_fifo_depth = {256U, 16U, 32U, 16U, 16U, },
+#elif defined (CONFIG_AMEBAL2)
+	.rx_fifo_depth = 661U,
+	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },
 #endif
 };
 

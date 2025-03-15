@@ -31,11 +31,11 @@
 extern "C" {
 #endif
 
-/** @addtogroup WIFI_API
+/** @addtogroup WIFI_API Wi-Fi APIs
  *  @brief      WIFI_API module
  *  @{
  */
-/** @defgroup WIFI_Exported_Functions WIFI Exported Functions
+/** @defgroup WIFI_Exported_Functions Wi-Fi Exported Functions
  * @{
  */
 /** @addtogroup WIFI_Exported_Basic_Functions Basic Functions
