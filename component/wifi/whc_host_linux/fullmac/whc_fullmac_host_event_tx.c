@@ -596,6 +596,7 @@ int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_a
 	int ret = 0;
 	u32 size;
 	u32 *param;
+	u8 *output = NULL;
 
 	size = 2 * sizeof(u32) + cmd_len;
 	param = (u32 *)kzalloc(size, GFP_KERNEL);
@@ -604,8 +605,13 @@ int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_a
 	param[1] = cmd_len;
 	memcpy((void *)(param + 2), (void *)cmd_addr, cmd_len);
 
-	whc_fullmac_host_send_event(WHC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)&ret, sizeof(int));
-
+	whc_fullmac_host_send_event(WHC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)param, size);
+	memcpy((u8 *)&ret, (u8 *)param, sizeof(int));
+	if (ret == 0) {
+		output = (u8 *)param + sizeof(int);
+		memcpy((u8 *)user_addr, output, strlen(output));
+		printk("%s", output);
+	}
 	kfree((void *)param);
 
 	return ret;

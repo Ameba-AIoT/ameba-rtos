@@ -137,6 +137,7 @@ unset(EXAMPLE CACHE)
 unset(USER_SRC_DIR CACHE)
 unset(TOOLCHAIN_DIR CACHE)
 unset(FINAL_IMAGE_DIR CACHE)
+unset(CMAKE_REFACTOR CACHE)
 
 ameba_soc_project_exit()
 ###############################################################################

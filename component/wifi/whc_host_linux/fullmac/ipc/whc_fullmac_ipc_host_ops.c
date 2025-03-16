@@ -576,13 +576,14 @@ int whc_fullmac_host_mp_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, dma_addr_t
 
 int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, dma_addr_t user_phy)
 {
-	u32 param_buf[3];
+	u32 param_buf[4];
 
 	param_buf[0] = (u32)cmd_phy;
 	param_buf[1] = (u32)cmd_len;
 	param_buf[2] = (u32)1;
+	param_buf[3] = (u32)user_phy;
 
-	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_IWPRIV_INFO, param_buf, 3);
+	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_IWPRIV_INFO, param_buf, 4);
 }
 
 void whc_fullmac_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)

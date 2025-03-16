@@ -8,7 +8,7 @@
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "os_wrapper/include/os_wrapper_specific.h"
+#include "os_wrapper_specific.h"
 
 static const char *const TAG = "PMU";
 

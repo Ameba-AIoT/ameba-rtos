@@ -57,7 +57,7 @@ if (CONFIG_SINGLE_CORE_WIFI OR CONFIG_AS_INIC_AP)
    ameba_target_sources_if(CONFIG_BT src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
        ${c_CMPT_AT_CMD_DIR}/atcmd_bt_ext.c
    )
-   ameba_target_sources_if(CONFIG_ATCMD_MCU_CONTROL src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
+   ameba_target_sources_if(CONFIG_ATCMD_HOST_CONTROL src_${d_MCU_PROJECT_NAME}_at_cmd p_SCOPE interface
        ${c_CMPT_AT_CMD_DIR}/at_intf_uart.c
        ${c_CMPT_AT_CMD_DIR}/at_intf_spi.c
    )

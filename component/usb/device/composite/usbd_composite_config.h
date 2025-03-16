@@ -39,6 +39,12 @@
 #define USBD_COMP_CDC_INTR_IN_EP          0x83U
 #define USBD_COMP_HID_INTR_OUT_EP         0x05U
 #define USBD_COMP_HID_INTR_IN_EP          0x84U
+#elif defined (CONFIG_AMEBAL2)
+#define USBD_COMP_CDC_BULK_IN_EP          0x81U
+#define USBD_COMP_CDC_BULK_OUT_EP         0x01U
+#define USBD_COMP_CDC_INTR_IN_EP          0x82U
+#define USBD_COMP_HID_INTR_OUT_EP         0x02U
+#define USBD_COMP_HID_INTR_IN_EP          0x83U
 #else
 #define USBD_COMP_CDC_BULK_IN_EP          0x81U
 #define USBD_COMP_CDC_BULK_OUT_EP         0x02U

@@ -142,11 +142,14 @@ static usbd_config_t hid_cfg = {
 	.dma_enable = 1U,
 	.isr_priority = CONFIG_USBD_HID_ISR_THREAD_PRIORITY,
 #if defined (CONFIG_AMEBAGREEN2)
-	.rx_fifo_depth = 708U,
-	.ptx_fifo_depth = {16U, 256U, },
+	.rx_fifo_depth = 660U,
+	.ptx_fifo_depth = {16U, 256U, 16U, 16U, 16U},
 #elif defined (CONFIG_AMEBASMARTPLUS)
-	.rx_fifo_depth = 1010,
-	.ptx_fifo_depth = {256U, },
+	.rx_fifo_depth = 914U,
+	.ptx_fifo_depth = {256U, 16U, 16U, 16U, 16U, },
+#elif defined (CONFIG_AMEBAL2)
+	.rx_fifo_depth = 677U,
+	.ptx_fifo_depth = {256U, 16U, 16U, 16U},
 #endif
 };
 

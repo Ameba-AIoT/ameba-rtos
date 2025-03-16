@@ -1,6 +1,10 @@
 comment "--- --------------CPU config Start------------"
 
-menu "CONFIG CHIP" #DONE
+menu "CONFIG CHIP"
+    config CPU_HAS_FPU_FOR_KM4
+        bool
+        default y
+
     choice
         prompt "ArmCore"
         default ARM_CORE_CM4_FOR_KM4
