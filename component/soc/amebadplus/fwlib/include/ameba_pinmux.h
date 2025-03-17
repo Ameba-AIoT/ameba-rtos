@@ -315,6 +315,9 @@ _LONG_CALL_ void PAD_InputCtrl(u8 PinName, u32 NewState);
 
 /** @} */
 
+#define SWD_CLK							_PA_30
+#define SWD_DAT							_PA_31
+
 
 /* PINMUX_TESTID_TRAP_ICFG_definitions */
 #define TESTID_MCM_FLASH_PG1B_ICFG			4

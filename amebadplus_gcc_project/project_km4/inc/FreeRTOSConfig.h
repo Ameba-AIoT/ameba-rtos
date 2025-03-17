@@ -62,13 +62,13 @@ extern uint32_t SystemCoreClock;
 
 /* Realtek back trace configuration. */
 #ifdef CONFIG_DEBUG_BACK_TRACE
-extern void TaskExitError();
+extern void TaskExitError(void);
 #define configTASK_RETURN_ADDRESS TaskExitError
 #endif
 
 /* Realtek Heap Integrity Check configuration. */
 #ifdef CONFIG_HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
-extern uint32_t ulPortCheckHeapIntegrity(void);
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #define traceTASK_SWITCHED_OUT ulPortCheckHeapIntegrity
 #endif
 

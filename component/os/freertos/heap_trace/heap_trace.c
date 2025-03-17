@@ -27,23 +27,20 @@
  * @brief	A module for tracing heap status for FreeRTOS.
  */
 
-#include "ameba.h"
+#include "ameba_soc.h"
 #include "stdio.h"
 #include "stdint.h"
 
 #ifdef CONFIG_HEAP_TRACE
 
-#include "ameba_v8m_backtrace.h"
 #include "heap_trace.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
-#ifdef CONFIG_DEBUG_BACK_TRACE
-#ifdef CONFIG_CPU_ARM
-#include "arm_backtrace.h"
-#else
+#if defined CONFIG_ARM_CORE_CM4
+#include "ameba_v8m_backtrace.h"
+#elif defined CONFIG_RSICV_CORE_KR4
 #include "ameba_rv32_backtrace.h"
-#endif
 #endif
 
 static_assert(CONFIG_HEAP_TRACE_STACK_DEPTH <= CONFIG_BACK_TRACE_DEPTH_LIMIT,
@@ -51,7 +48,7 @@ static_assert(CONFIG_HEAP_TRACE_STACK_DEPTH <= CONFIG_BACK_TRACE_DEPTH_LIMIT,
 static_assert(sizeof(rtos_heap_stats) == sizeof(HeapStats_t), "sizeof(rtos_heap_stats) and sizeof(HeapStats_t) missmatch");
 
 extern void vPortGetTaskHeapInfo(void);
-extern uint32_t ulPortCheckHeapIntegrity(void);
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 
 /**
  * @var     static tracing_state_t tracing
@@ -402,7 +399,7 @@ static void list_find_and_remove(void *p)
  * @param	pvAddress: The address of the allocated memory.
  * @param	uiSize: The size of the allocated memory.
  */
-void trace_malloc(void *pvAddress, uint32_t uiSize)
+void __attribute__((optimize("O0"))) trace_malloc(void *pvAddress, uint32_t uiSize)
 {
 #if defined (HEAP_TRACE_MALLOC_FREE_LOG)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] pvAddress:0x%08x, uiSize:0x%08x \n", __func__, pvAddress, uiSize);
@@ -412,11 +409,9 @@ void trace_malloc(void *pvAddress, uint32_t uiSize)
 			.address = pvAddress,
 			.size = uiSize,
 		};
-
+#if defined (CONFIG_ARM_CORE_CM4) || defined (CONFIG_RSICV_CORE_KR4)
 		get_call_stack(rec.alloced_by, CONFIG_HEAP_TRACE_STACK_DEPTH);
-
-		DelayNop(100);
-
+#endif /* CONFIG_ARM_CORE_CM4 || CONFIG_RSICV_CORE_KR4 */
 		record_allocation(&rec);
 	}
 }
@@ -427,7 +422,7 @@ void trace_malloc(void *pvAddress, uint32_t uiSize)
  * @param	pvAddress: The address of the freed memory.
  * @param	uiSize: The size of the freed memory.
  */
-void trace_free(void *pvAddress, uint32_t uiSize)
+void __attribute__((optimize("O0"))) trace_free(void *pvAddress, uint32_t uiSize)
 {
 #if defined (HEAP_TRACE_MALLOC_FREE_LOG)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] pvAddress:0x%08x, uiSize:0x%08x \n", __func__, pvAddress, uiSize);
@@ -478,14 +473,14 @@ uint32_t heap_check_integrity(void)
 {
 	uint32_t ret;
 
-	ret = ulPortCheckHeapIntegrity();
+	ret = ulPortCheckHeapIntegrity(TRUE);
 
 	return ret;
 }
 #endif
 
 #ifdef CONFIG_DEBUG_BACK_TRACE
-void TaskExitError()
+void TaskExitError(void)
 {
 	portDISABLE_INTERRUPTS();
 	while (1);

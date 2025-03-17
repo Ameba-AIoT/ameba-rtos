@@ -190,7 +190,7 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data,
 	switch (cmd_id) {
 #ifndef CONFIG_WHC_BRIDGE
 	case RTW_PRIV_DGB_CMD:
-		ret = whc_fullmac_host_iwpriv_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
+		ret = whc_fullmac_host_iwpriv_cmd(cmd_buf_phy, cmd.len, cmd_buf, user_buf);
 		break;
 	case RTW_PRIV_MP_CMD:
 		ret = whc_fullmac_host_mp_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
