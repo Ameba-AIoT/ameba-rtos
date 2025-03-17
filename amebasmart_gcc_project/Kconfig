@@ -79,7 +79,7 @@ menu "CONFIG APPLICATION"
     rsource "../component/dynamic_app/Kconfig"
 
     menu "AI Config"
-        rsource "../component/tflite_micro/Kconfig"
+        orsource "../component/tflite_micro/Kconfig"
         rsource "../component/aivoice/Kconfig"
     endmenu
 

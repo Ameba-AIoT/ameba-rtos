@@ -37,7 +37,9 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources 
+ameba_list_append(private_includes include)
+
+ameba_list_append(private_sources
     sn_coap_ameba_port.c
     sn_coap_builder.c
     sn_coap_header_check.c

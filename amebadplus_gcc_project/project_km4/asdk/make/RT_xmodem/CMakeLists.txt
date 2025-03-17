@@ -40,7 +40,7 @@ set(
 	${RAM_COM_DIR}/ameba_tim.c
 	${TAR_DIR}/ameba_floader_rom_parse.c
 	${TAR_DIR}/floader_nor_ftl.c
-	${RAM_HP_DIR}/ameba_usb.c
+	${RAM_COM_DIR}/ameba_usb.c
 	${HAL_SRC_DIR}/pinmap_common.c
 	${HAL_SRC_DIR}/pinmap.c
 	${HAL_SRC_DIR}/gpio_api.c

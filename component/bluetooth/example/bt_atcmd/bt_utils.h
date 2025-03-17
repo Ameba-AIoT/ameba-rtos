@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include "platform_autoconf.h"
 
-#if defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
 #include <atcmd_service.h>
 #endif
 
@@ -20,11 +20,11 @@ extern "C"
 {
 #endif
 
-#if defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
 #define BT_AT_SYNC      (1)
 #endif
 
-#if defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
 
 #define BT_AT_MESH_ROLE_CLIENT              (0)
 #define BT_AT_MESH_ROLE_SERVER              (1)
@@ -42,7 +42,7 @@ extern "C"
 #define BT_AT_DUMP16(str, buf, len)           bt_at_iouart_dump(2, str, buf, len)
 
 
-#else /* CONFIG_ATCMD_MCU_CONTROL */
+#else /* CONFIG_ATCMD_HOST_CONTROL */
 
 #define BT_AT_PRINT(fmt, args...)
 #define BT_AT_PRINT_INDICATE(fmt, args...)
@@ -51,7 +51,7 @@ extern "C"
 #define BT_AT_DUMP(str, buf, len)
 #define BT_AT_DUMP16(str, buf, len)
 
-#endif /* CONFIG_ATCMD_MCU_CONTROL */
+#endif /* CONFIG_ATCMD_HOST_CONTROL */
 
 #define BT_AT_PRINTOK()             BT_AT_PRINT("OK\r\n")
 #define BT_AT_PRINTERROR(errno)     BT_AT_PRINT("ERROR:%d\r\n", errno)
@@ -85,7 +85,7 @@ bool hexdata_str_to_array(char *str, uint8_t *byte_arr, uint8_t arr_len);
 
 uint16_t bt_at_rtk_err_to_at_err(uint16_t rtk_err);
 
-#if defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
 
 void bt_at_iouart_dump_hex(const char *start_str, void *buf, uint16_t len, bool reverse, const char *end_str);
 

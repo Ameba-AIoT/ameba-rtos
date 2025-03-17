@@ -6,16 +6,17 @@ set(public_includes)                #public include directories, NOTE: relative 
 set(public_definitions)             #public definitions
 set(public_libraries)               #public libraries(files), NOTE: linked with whole-archive options
 
-#------------------------------------------------------------------#
-# Component public part, user config begin(DO NOT remove this line)
+#----------------------------------------#
+# Component public part, user config begin
+
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Component public part, user config end(DO NOT remove this line)
-#------------------------------------------------------------------#
+# Component public part, user config end
+#----------------------------------------#
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
@@ -27,35 +28,33 @@ ameba_global_library(${public_libraries}) #default: whole-archived
 ## * Private part is used to build target of current component
 ## * NOTE: The build API guarantees the global build configures(mentioned above)
 ## *       applied to the target automatically. So if any configure was already added
-## *       to public, it's unnecessary to add again below.
+## *       to public above, it's unnecessary to add again below.
 
-
+#NOTE: User defined section, add your private build configures here
+# You may use if-else condition to set these predefined variable
 # They are only for ameba_add_internal_library/ameba_add_external_app_library/ameba_add_external_soc_library
 set(private_sources)                 #private source files, NOTE: relative path is OK
 set(private_includes)                #private include directories, NOTE: relative path is OK
 set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
 
-#------------------------------------------------------------------#
-# Component private part, user config begin(DO NOT remove this line)
+#------------------------------#
+# Component private part, user config begin
 
-#NOTE: User defined section, add your private build configures here
-# You may use if-else condition to set these predefined variable
-
-if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
-    ameba_list_append(private_sources
-        ftl_nand.c
-    )
-endif()
 ameba_list_append(private_sources
-    ftl_nor.c
-    ftl.c
+    ameba_pmu.c
 )
+if (CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+    ameba_list_append(private_sources ameba_ota.c)
+endif()
 
-# Component private part, user config end(DO NOT remove this line)
-#------------------------------------------------------------------#
+# Component private part, user config end
+#------------------------------#
 
-ameba_add_internal_library(ftl
+#WARNING: Select right API based on your component's release/not-release/standalone
+
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(misc
     p_SOURCES
         ${private_sources}
     p_INCLUDES

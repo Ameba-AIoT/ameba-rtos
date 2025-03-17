@@ -1174,7 +1174,7 @@ void print_bt_ext_at(void)
 	//Print nothing
 #else
 
-#if (defined(CONFIG_ATCMD_MCU_CONTROL) && CONFIG_ATCMD_MCU_CONTROL)
+#if (defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL)
 	at_printf("AT+BTDEMO\r\n");
 	at_printf("AT+BLEGAP\r\n");
 	at_printf("AT+BLEGATTS\r\n");
@@ -1189,7 +1189,7 @@ void print_bt_ext_at(void)
 			at_printf("AT%s\r\n", at_bt_items[index].log_cmd);
 		}
 	}
-#endif //CONFIG_ATCMD_MCU_CONTROL
+#endif //CONFIG_ATCMD_HOST_CONTROL
 
 #endif
 }

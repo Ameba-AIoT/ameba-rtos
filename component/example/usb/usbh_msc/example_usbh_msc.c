@@ -98,7 +98,7 @@ void example_usbh_msc_thread(void *param)
 	int drv_num = 0;
 	FRESULT res;
 	char logical_drv[4];
-	char path[64];
+	char path[64] = {'0'};
 	int ret = 0;
 	u32 br;
 	u32 bw;

@@ -32,7 +32,7 @@ set(
     ${SWLIB_DIR}/log.c
     ${RAM_COM_DIR}/ameba_reset.c
     ${RAM_COM_DIR}/ameba_tim.c
-    ${RAM_HP_DIR}/ameba_usb.c
+    ${RAM_COM_DIR}/ameba_usb.c
     ${RAM_HP_DIR}/ameba_flashclk.c
     ${HAL_SRC_DIR}/pinmap_common.c
     ${HAL_SRC_DIR}/pinmap.c

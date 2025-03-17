@@ -54,6 +54,7 @@ class Monitor():
             eol: str = 'CRLF',
             decode_coredumps: bool = False,
             target_os: Union[str, None] = None,
+            is_ca32: bool = False,
             enable_address_decoding: bool = True,
             timestamps: bool = False,
             rom_file: Union[str, None] = None,
@@ -65,6 +66,7 @@ class Monitor():
         self.console.output = wrap_stream(self.console.output, autoreset=True, convert=None, strip=None, wrap=True)
 
         self.target_os = target_os
+        self.is_ca32 = is_ca32
         self.elf_file = elf_file or ""
         self.rom_file = rom_file or ""
         self.elf_exists = os.path.exists(self.elf_file)
@@ -75,6 +77,10 @@ class Monitor():
 
         if self.target_os == "freertos":
             from base.coredump_freertos import CoreDump
+            self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
+                                     toolchain_path) if self.elf_exists else None
+        elif self.target_os == "freertos" and self.is_ca32:
+            from base.coredump_freertos_ca32 import CoreDump
             self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
                                      toolchain_path) if self.elf_exists else None
         elif self.target_os == "zephyr":
@@ -341,7 +347,7 @@ def main():
                 "--- monitor {v} on {p.name} {p.baudrate} ---".format(v=__version__, p=serial_instance))
         rom_file = ""
         monitor = cls(serial_instance, elf_file, toolchain_path, args.eol, args.decode_coredumps,
-                      target_os, args.enable_address_decoding, rom_file=rom_file)
+                      target_os, args.ca32, args.enable_address_decoding, rom_file=rom_file)
 
         print_yellow("--- Quit: {q} | Menu: {m} | Help: {m} followed by {h} ---".format(
             q=key_description(EXIT_KEY),
@@ -369,6 +375,7 @@ def get_parser():
                                              "Default: `/dev/ttyUSB0` if connected." if sys.platform == "linux" else "")
     parser.add_argument("--rom_file", nargs="?", help="Rom of application")
     parser.add_argument("--target_os", help="Target os name (used when core dump decoding is enabled)")
+    parser.add_argument("--ca32", action="store_true", help="If core is ca32, should set this.")
     parser.add_argument("--timestamps", default=False, action="store_true",
                         help="Add timestamp for each line. Default is False")
     parser.add_argument("--toolchain_dir", help="Set toolchain dir. If not set, will get from config.")

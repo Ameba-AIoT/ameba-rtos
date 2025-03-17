@@ -10,7 +10,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin(DO NOT remove this line)
 
 ameba_list_append(public_includes
-    app/monitor/include
     cmsis
     misc
     usrcfg/include
