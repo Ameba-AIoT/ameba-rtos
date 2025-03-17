@@ -5,6 +5,7 @@ list(
     ${OSDIR}/freertos
     ${OSDIR}/freertos/os_wrapper/include
     ${OSDIR}/os_wrapper/include
+    ${OSDIR}/freertos/heap_trace
 
     ${TARGETDIR}/cmsis
     ${TARGETDIR}/cmsis-dsp/Include

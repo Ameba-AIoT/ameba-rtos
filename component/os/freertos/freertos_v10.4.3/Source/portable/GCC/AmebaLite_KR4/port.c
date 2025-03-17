@@ -266,27 +266,6 @@ void vApplicationIdleHook(void)
 	}
 }
 
-void vApplicationMallocFailedHook(void)
-{
-	/* The malloc failed hook is enabled by setting
-	configUSE_MALLOC_FAILED_HOOK to 1 in FreeRTOSConfig.h.
-
-	Called if a call to pvPortMalloc() fails because there is insufficient
-	free memory available in the FreeRTOS heap.  pvPortMalloc() is called
-	internally by FreeRTOS API functions that create tasks, queues, software
-	timers, and semaphores.  The size of the FreeRTOS heap is set by the
-	configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
-	char *pcCurrentTask = "NoTsk";
-	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-		pcCurrentTask = pcTaskGetName(NULL);
-	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d]\r\n", "KR4", pcCurrentTask, xPortGetFreeHeapSize());
-
-	taskDISABLE_INTERRUPTS();
-	for (;;);
-}
-
 /*-----------------------------------------------------------*/
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {

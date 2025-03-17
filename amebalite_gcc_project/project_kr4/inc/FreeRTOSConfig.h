@@ -30,6 +30,25 @@
 #include "platform_autoconf.h"
 #include "ameba_userheapcfg.h"
 
+/* Realtek heap trace configuration. */
+#ifdef CONFIG_HEAP_TRACE
+#define traceMALLOC( pvAddress, uiSize ) trace_malloc(pvAddress,uiSize)
+#define traceFREE( pvAddress, uiSize ) trace_free(pvAddress,uiSize)
+#endif
+
+/* Realtek back trace configuration. */
+#ifdef CONFIG_DEBUG_BACK_TRACE
+#define configTASK_RETURN_ADDRESS TaskExitError
+#endif
+
+/* Realtek Heap Integrity Check configuration. */
+#ifdef CONFIG_HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
+#ifndef __ASSEMBLER__
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
+#endif
+#define traceTASK_SWITCHED_OUT ulPortCheckHeapIntegrity
+#endif
+
 #define configENABLE_FPU 								1
 #define configSUPPORT_STATIC_ALLOCATION					1
 

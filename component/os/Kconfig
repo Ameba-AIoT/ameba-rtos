@@ -15,7 +15,7 @@ menu "CONFIG OS"
         endchoice
     endif
 
-    if AMEBADPLUS
+    if AMEBADPLUS || AMEBALITE
         config BACK_TRACE_DEPTH_LIMIT
             int "Crash Back Trace Depth Limit"
             default 8

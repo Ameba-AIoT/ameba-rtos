@@ -62,7 +62,7 @@ extern uint32_t SystemCoreClock;
 
 /* Realtek back trace configuration. */
 #ifdef CONFIG_DEBUG_BACK_TRACE
-extern void TaskExitError();
+extern void TaskExitError(void);
 #define configTASK_RETURN_ADDRESS TaskExitError
 #endif
 

@@ -41,7 +41,7 @@ int whc_fullmac_host_get_statistics(dma_addr_t statistic_addr);
 int whc_fullmac_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy);
 int whc_fullmac_host_set_lps_enable(u8 enable);
 int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
-int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
+int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf);
 int whc_fullmac_host_set_mac_addr(u32 wlan_idx, u8 *addr);
 int rtw_ndev_alloc(void);
 int rtw_ndev_register(void);

@@ -80,7 +80,11 @@
 
 #ifdef CONFIG_HEAP_TRACE
 #include "heap_trace.h"
+#if defined CONFIG_ARM_CORE_CM4
 #include "ameba_v8m_backtrace.h"
+#elif defined CONFIG_RSICV_CORE_KR4
+#include "ameba_rv32_backtrace.h"
+#endif
 #endif
 
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
@@ -269,7 +273,7 @@ static void vPortRemoveHeapInfo( BlockLink_t *pxBlock )
                 /* The task name stored in heap_task_info equals to the task name calling the free,
                  * update the log
                  */
-				if(strcmp(pcTaskName,heap_task_info[x].Task_Name) == 0) 
+				if(strcmp(pcTaskName,heap_task_info[x].Task_Name) == 0)
 				{
                     configASSERT( heap_task_info[x].heap_size >= pxBlock->xBlockSize );
                     heap_task_info[x].heap_size -= pxBlock->xBlockSize;
@@ -1096,6 +1100,8 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 						}
 					}
 				}
+#else
+				UNUSED(COMPREHENSIVE_CHECK);
 #endif
 			}
 
@@ -1182,11 +1188,11 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 	return p;
 }
 
-#if defined CONFIG_AMEBADPLUS
+#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE)
 void vApplicationMallocFailedHook(size_t xWantedSize)
 {
 	char *pcCurrentTask = "NoTsk";
-	
+
 	taskENTER_CRITICAL();
 
 	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
@@ -1194,22 +1200,35 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	}
 
 	/* 1. Basic info: Task name / Free Heap Size / WantedSize */
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n", 
+#if defined (CONFIG_ARM_CORE_CM0)
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
+			"KM0", pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
+#elif defined (CONFIG_ARM_CORE_CM4)
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
 			"KM4", pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
+#elif defined (CONFIG_RSICV_CORE_KR4)
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%d]\r\n",
+			"KR4", pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
+#endif
 
 #ifdef CONFIG_HEAP_TRACE
 	rtos_heap_stats stats;
-	void *pc_trace[CONFIG_HEAP_TRACE_STACK_DEPTH] = {0};
 	/* 2. Full heap status */
     heap_get_stats(&stats);
 
 	/* 3. Task heap useage */
     heap_get_per_task_info();
-	
+
 	/* 4. Back trace */
+#if defined (CONFIG_ARM_CORE_CM4) || defined (CONFIG_RSICV_CORE_KR4)
+	void *pc_trace[CONFIG_HEAP_TRACE_STACK_DEPTH] = {0};
 	get_call_stack(pc_trace, CONFIG_HEAP_TRACE_STACK_DEPTH);
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "********** stack backtrac cmd **********\n");
+#if defined (CONFIG_ARM_CORE_CM0) || defined (CONFIG_ARM_CORE_CM4)
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s/bin/arm-none-eabi-addr2line -e %s/target_img2.axf -afpiC 0x%08x", SDK_TOOLCHAIN, IMAGE_DIR, pc_trace[0]);
+#elif defined (CONFIG_RSICV_CORE_KR4)
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s/bin/riscv32-elf-addr2line -e %s/target_img2.axf -afpiC 0x%08x", SDK_TOOLCHAIN, IMAGE_DIR, pc_trace[0]);
+#endif
 	for (size_t i = 1; i < CONFIG_HEAP_TRACE_STACK_DEPTH; i++) {
 		if (pc_trace[i] == NULL) {
 			break;
@@ -1217,6 +1236,7 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, " 0x%08x", pc_trace[i]);
 	}
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n");
+#endif /* CONFIG_ARM_CORE_CM4 || CONFIG_RSICV_CORE_KR4 */
 #endif /* CONFIG_HEAP_TRACE */
 	for (;;);
 }
