@@ -63,6 +63,7 @@ PATTERN_FS_1=0x7666735F
 PATTERN_FS_2=0x6661745F
 RSVD=0xFFFFFFFFFFFFFFFF
 IMG2SIGN=0x3831393538373131
+
 IMAGE_LEN=$(du -b $IMAGE_FILENAME | cut -f 1)
 IMAGE_ADDR="0x$(grep $IMAGE_SECTION_START_NAME $SYMBOL_LIST | awk '{print $1}')"
 if [ $IMAGE_ADDR == "0x" ]; then
@@ -88,6 +89,14 @@ fi
 
 MakeFixedWidthHeaderString $IMAGE_LEN   8  HEADER_FINAL 1
 MakeFixedWidthHeaderString $IMAGE_ADDR  8  HEADER_FINAL 1
+
+PADCOUNT=0x1fc
+if [ "$IMAGE_FILENAME_NEW" == "fatfs.bin" ]; then
+    for (( j=$PADCOUNT; j > 0; j-- ))
+    do
+        MakeFixedWidthHeaderString $RSVD  16  HEADER_FINAL 0
+    done
+fi
 
 MakeFixedWidthHeaderString $RSVD  16  HEADER_FINAL 0
 MakeFixedWidthHeaderString $RSVD  16  HEADER_FINAL 0

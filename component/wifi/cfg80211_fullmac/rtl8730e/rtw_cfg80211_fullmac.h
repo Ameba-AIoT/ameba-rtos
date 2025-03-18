@@ -130,6 +130,12 @@
 #define ETH_ALEN			6
 #define FUNC_NDEV_FMT			"%s(%s)"
 #define FUNC_NDEV_ARG(ndev)		__func__, ndev->name
+#define FULLMAC_NAME "whc_fullmac"
+#if defined(CONFIG_WHC_BRIDGE)
+#define FULLMAC_PORT_NAME "eth_sta%d"
+#else
+#define FULLMAC_PORT_NAME "wlan%d"
+#endif
 
 #ifdef CONFIG_FULLMAC_HCI_SDIO
 #define CONFIG_WOWLAN
