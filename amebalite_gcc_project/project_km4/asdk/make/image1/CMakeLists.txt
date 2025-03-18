@@ -4,6 +4,7 @@ ameba_add_image(target_loader)
 ###############################  ADD COMPONENT  ###################################
 
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
+ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_LZMA_DIR})
@@ -27,9 +28,11 @@ target_link_libraries(${c_CURRENT_IMAGE}
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
 
-    #WARNING: For image1/image_floader/image_imgtool_floader, whole archive is not required
+    -Wl,--whole-archive
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_libraries>
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_whole_archive_libs>
+    -Wl,--no-whole-archive
+
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
 
     ${c_LINK_ROM_LIB}

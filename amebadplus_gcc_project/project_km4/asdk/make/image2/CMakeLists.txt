@@ -1,14 +1,15 @@
-# ameba_add_image(target_img2)
+ameba_add_image(target_img2)
 # variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
-set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
 ###############################  ADD COMPONENT  ###################################
 
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
+ameba_add_subdirectory(${c_CMPT_APP_DIR}/benchmark)
 ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_CMSIS_DSP_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
+ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
 ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_HAL_DIR})
@@ -19,24 +20,26 @@ ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
+ameba_add_subdirectory(${c_CMPT_SOC_DIR}/verification)
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR}/libnosys)
 ameba_add_subdirectory_if(CONFIG_TFLITE_MICRO_EN ${c_CMPT_TFLITE_DIR})
 ameba_add_subdirectory(${c_CMPT_UI_DIR})
+ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 ameba_add_subdirectory_if(CONFIG_802154_EN ${c_CMPT_WPAN_DIR})
-ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR}) #port utilities_example/
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
 
-return()
+ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
+
+# return()
 
 #unhandled add_subdirectory
-add_subdirectory(test)
-add_subdirectory(project)
-add_subdirectory(application)
+# add_subdirectory(test)
+# add_subdirectory(application)
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
@@ -66,15 +69,15 @@ target_link_libraries(${c_CURRENT_IMAGE}
 
     ${c_LINK_ROM_LIB_NS}
 
-    ${ASDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu/crtbegin.o
-    ${ASDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu/crtend.o
+    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu/crtbegin.o
+    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main+fp/fpu/crtend.o
     -lm -lstdc++
 )
 
 #--------------- POST BUILD ------------------#
 
 add_custom_command(
-    OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${KM0_BUILDDIR}/asdk/image/target_img2_otrcore.asm
+    OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${KM0_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
     COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
     COMMAND ${CMAKE_COMMAND} -E touch ${c_SDK_IMAGE_TARGET_DIR}/.gitignore
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/text.map ${c_SDK_IMAGE_TARGET_DIR}/text_image2_ns.map
@@ -82,7 +85,7 @@ add_custom_command(
     COMMAND ${CMAKE_NM} ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf | sort > ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
     COMMAND ${CMAKE_OBJDUMP} -d ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf > ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm ${KM0_BUILDDIR}/asdk/image/target_img2_otrcore.asm
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_img2.asm ${KM0_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_image2_all.bin"
@@ -117,7 +120,7 @@ add_custom_target(
 
 add_custom_target(
     target_wifi_nouse
-    DEPENDS ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${KM0_BUILDDIR}/asdk/image/target_img2_otrcore.asm
+    DEPENDS ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${KM0_PROJECT_DIR}/asdk/image/target_img2_otrcore.asm
 )
 
 ################################  EXTRA PROCESS  ###################################

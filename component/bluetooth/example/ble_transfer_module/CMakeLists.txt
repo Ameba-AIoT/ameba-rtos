@@ -40,11 +40,10 @@ ameba_list_append(private_sources
 	transfer_module_server.c 
 	transfer_module_client.c 
 	../bt_atcmd/atcmd_bt_transfer_module.c 
-	../gatt_service/client/rtk_gcs_client.c
 )
 
 ameba_list_append(private_includes
-	../gatt_service/server
+	../gatt_service/client
 )
 
 # Component private part, user config end

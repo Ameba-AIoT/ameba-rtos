@@ -63,6 +63,7 @@ ameba_list_append(private_sources
     wait.c
 )
 
+ameba_list_append(private_compile_options -Wno-unused-parameter)
 
 # Component private part, user config end
 #------------------------------#

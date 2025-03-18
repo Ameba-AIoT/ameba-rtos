@@ -1,15 +1,3 @@
-if(NOT CMAKE_REFACTOR) # For temporary compatibility.
-set(DIR ${PROJECTDIR}/src)
-
-set(MODULE_IFLAGS ${DIR})
-
-set(CSRC ${DIR}/main.c)
-
-
-ameba_internal_library(project_src)
-target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else() # For temporary compatibility.NOTE:  script below is new version cmake
 ##########################################################################################
 ## * This part defines public part of the component
 ## * Public part will be used as global build configures for all component
@@ -21,7 +9,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
-# You may use if-else condition to set or update predefined variable above
+ameba_list_append(public_includes
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -49,15 +39,22 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources main.c)
+ameba_list_append(private_sources
+    ameba_pmu.c
+)
 
+if(CONFIG_AS_INIC_AP OR CONFIG_SINGLE_CORE_WIFI)
+    ameba_list_append(private_sources
+        ameba_ota.c
+    )
+endif()
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(project_src
+ameba_add_internal_library(misc
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -68,4 +65,3 @@ ameba_add_internal_library(project_src
         ${private_compile_options}
 )
 ##########################################################################################
-endif()# For temporary compatibility.

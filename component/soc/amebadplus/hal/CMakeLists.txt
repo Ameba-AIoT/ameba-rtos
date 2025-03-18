@@ -43,6 +43,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
+    src/flash_api.c
     src/pinmap_common.c
     src/sys_api.c
     src/us_ticker.c

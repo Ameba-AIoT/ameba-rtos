@@ -29,7 +29,7 @@
 #endif
 
 
-#define ATCMD_SSL_DEBUG_LEVEL             RTK_LOG_DEBUG
+#define ATCMD_SSL_DEBUG_LEVEL             0	//RTK_LOG_DEBUG
 #define ENABLE_TCPIP_AUTOLINK             0
 
 #define SSL_CERT_NUM                      1

@@ -41,11 +41,10 @@ ameba_list_append(private_sources
 	throughput_client.c 
 	throughput_common.c 
 	../bt_atcmd/atcmd_bt_throughput_test.c 
-	../gatt_service/client/rtk_gcs_client.c
 )
 
 ameba_list_append(private_includes
-	../gatt_service/server
+	../gatt_service/client
 )
 
 # Component private part, user config end

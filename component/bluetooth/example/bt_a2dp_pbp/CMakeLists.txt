@@ -40,7 +40,6 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
-    ../ble_audio_common
     ${c_CMPT_AUDIO_DIR}/interfaces
     ${c_CMPT_AUDIO_DIR}/base/osal/osal_c/interfaces
 	${c_CMPT_BLUETOOTH_DIR}/bt_audio/bt_codec/sbc/decoder/include

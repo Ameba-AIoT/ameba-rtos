@@ -45,12 +45,9 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km0")
         bootloader_km0.c
     )
 elseif("${c_MCU_PROJECT_NAME}" STREQUAL "km4")
-    ameba_list_append_if(CONFIG_MP_SHRINK private_sources
-        bootloader_km4_mp.c
-        p_ELSE
-        bootloader_km4.c
-    )
+
     ameba_list_append(private_sources
+        bootloader_km4.c
         boot_ota_km4.c
         boot_security_km4.c
     )

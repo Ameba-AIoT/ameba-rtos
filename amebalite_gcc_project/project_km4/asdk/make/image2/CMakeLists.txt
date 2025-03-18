@@ -1,38 +1,39 @@
-# ameba_add_image(target_img2)
-# variable c_CURRENT_IMAGE value is ${c_CURRENT_IMAGE}
-set(c_CURRENT_IMAGE_TYPE "image2") #TODO: remove this line if ameba_add_image() above is uncommented
+ameba_add_image(target_img2)
+# variable c_CURRENT_IMAGE value is target_img2_km4
+
 ###############################  ADD COMPONENT  ###################################
 
-# ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
-# ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
-# ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
-# ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
-# ameba_add_subdirectory(${c_CMPT_CMSIS_DIR})
-# ameba_add_subdirectory(${c_CMPT_CMSIS_DSP_DIR})
+ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
+ameba_add_subdirectory(${c_CMPT_AUDIO_DIR})
+ameba_add_subdirectory(${c_CMPT_APP_DIR}/benchmark)
+ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
+ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
+ameba_add_subdirectory(${c_CMPT_CMSIS_DIR})
+ameba_add_subdirectory(${c_CMPT_CMSIS_DSP_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
-# ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
+ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
-# ameba_add_subdirectory(${c_CMPT_HAL_DIR})
-# ameba_add_subdirectory(${c_CMPT_MISC_DIR})
-# ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
-# ameba_add_subdirectory(${c_CMPT_NETWORK_DIR}) #port network/ and utilities
+ameba_add_subdirectory(${c_CMPT_HAL_DIR})
+ameba_add_subdirectory(${c_COMPONENT_DIR}/lwip)
+ameba_add_subdirectory(${c_CMPT_MISC_DIR})
+ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
+ameba_add_subdirectory(${c_CMPT_NETWORK_DIR}) #port network/ and utilities
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
-# ameba_add_subdirectory(${c_CMPT_PMC_DIR})
-# ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
-# ameba_add_subdirectory(${c_CMPT_SSL_DIR})
-ameba_add_subdirectory(${c_CMPT_SWLIB_DIR}) #TODO: port libnosys/
-# ameba_add_subdirectory(${c_CMPT_TFLITE_DIR})
-# ameba_add_subdirectory(${c_CMPT_UI_DIR})
+ameba_add_subdirectory(${c_CMPT_PMC_DIR})
+ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
+ameba_add_subdirectory(${c_CMPT_SSL_DIR})
+ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
+ameba_add_subdirectory(${c_CMPT_TFLITE_DIR}/cmake)
+ameba_add_subdirectory(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
-# ameba_add_subdirectory(${c_CMPT_WPAN_DIR})
-# ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
+ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
+ameba_add_subdirectory(${c_CMPT_WPAN_DIR})
+ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_make)
+ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
+ameba_add_subdirectory(${c_CMPT_VERIFICATION_DIR})
 
-return()
-
-#unhandled add_subdirectory
-add_subdirectory(test)
-add_subdirectory(project)
-add_subdirectory(application)
+ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
+ameba_add_subdirectory(${c_MCU_SDK_DIR}/make/project)
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
@@ -69,7 +70,6 @@ target_link_libraries(${c_CURRENT_IMAGE}
 
 #--------------- POST BUILD ------------------#
 if(TARGET kr4)
-    #avoid making bin files in parallel
     set(DEP_KR4 kr4)
 endif()
 
@@ -111,7 +111,7 @@ add_custom_command(
         -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
 
         -P ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
-    DEPENDS ${c_CURRENT_IMAGE} ${DEP_KR4}
+    DEPENDS ${c_CURRENT_IMAGE} ${DEP_KR4} ${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake
 )
 
 add_custom_target(

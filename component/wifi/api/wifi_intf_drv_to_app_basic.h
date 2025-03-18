@@ -869,6 +869,9 @@ struct wifi_user_conf {
 
 	/*! 0: Disable R-mesh NAT function, 1: Enable R-mesh NAT function.*/
 	unsigned char wtn_rnat_en;
+
+	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
+	u16 wtn_max_node_num;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/

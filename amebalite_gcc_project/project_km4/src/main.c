@@ -1,7 +1,9 @@
 #include "ameba_soc.h"
 #include "main.h"
+#ifdef CONFIG_AS_INIC_AP
 #include "vfs.h"
 #include <mbedtls/platform.h>
+#endif
 #include "ameba_rtos_version.h"
 #include "rtw_coex_ipc.h"
 

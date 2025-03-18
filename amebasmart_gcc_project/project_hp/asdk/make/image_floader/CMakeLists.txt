@@ -19,7 +19,7 @@ add_custom_command(
 #----------------- LINKING -------------------#
 target_link_libraries(${c_CURRENT_IMAGE}
     PRIVATE
-    -T${CMAKE_CURRENT_BINARY_DIR}/make/rlx8721d.ld
+    -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     ${c_MCU_PROJ_CONFIG}
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map

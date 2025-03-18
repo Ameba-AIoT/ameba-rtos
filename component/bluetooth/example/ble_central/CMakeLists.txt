@@ -37,10 +37,6 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     central.c 
-	../gatt_service/client/rtk_gcs_client.c 
-	../gatt_service/client/rtk_bas_client.c 
-	../gatt_service/client/rtk_gaps_client.c 
-	../gatt_service/client/rtk_simple_ble_client.c
 )
 
 ameba_list_append(private_includes

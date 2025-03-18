@@ -1,10 +1,11 @@
 #include "ameba_soc.h"
 #include "main.h"
+#if defined(CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI)
 #include "vfs.h"
-#include "os_wrapper.h"
 #include <mbedtls/platform.h>
+#endif
+#include "os_wrapper.h"
 #include "rtw_coex_ipc.h"
-
 static const char *const TAG = "MAIN";
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED

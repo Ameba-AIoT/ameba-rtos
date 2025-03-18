@@ -474,14 +474,12 @@ void atcmd_lwip_receive_task(void *param)
 				if (recv_size > 0) {
 					rx_buffer[recv_size] = '\0';
 					if (curnode->protocol == NODE_MODE_UDP && curnode->role == NODE_ROLE_SERVER) {
-						at_printf("%s %d,%d,%s,%d:", "+SKTREAD:", recv_size, curnode->con_id, udp_clientaddr, udp_clientport);
-						at_printf(ATCMD_OK_END_STR);
+						at_printf("+SKTREAD:%d,%d,%s,%d:", recv_size, curnode->con_id, udp_clientaddr, udp_clientport);
 					} else {
-						at_printf("%s %d,%d:", "+SKTREAD:", recv_size, curnode->con_id);
-						at_printf(ATCMD_OK_END_STR);
+						at_printf("+SKTREAD:%d,%d:", recv_size, curnode->con_id);
 					}
 					at_printf("%s", rx_buffer);
-					at_printf("\r\n");
+					at_printf(ATCMD_OK_END_STR);
 				}
 			} else {
 				at_printf("%s %d\r\n", "+SKTREAD:", curnode->con_id);
@@ -1788,20 +1786,26 @@ end:
 	}
 }
 
-/* Delete a (all) socket server(s) / client(s). */
+
+// Delete a specific TCP/UDP/SSL connection or all connections
 void at_sktdel(void *arg)
 {
 	int con_id = INVALID_CON_ID;
 	int error_no = 0;
-	struct _node *s_node = NULL;
+	struct _node *node = NULL;
 
 	if (arg == NULL) {
-		RTK_LOGI(NOTAG, "[SKTDEL] Create task failed.\r\n");
+		RTK_LOGE(NOTAG, "[at_sktdel] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	con_id = atoi(arg);
+	if (con_id < 0) {
+		RTK_LOGE(NOTAG, "[at_sktdel] The con_id should be non-negative integer\r\n");
+		error_no = 2;
+		goto end;
+	}
 	/* 0 - Close all; others - Close specific id. */
 	if (con_id == 0) {
 		if (atcmd_lwip_is_autorecv_mode()) {
@@ -1809,9 +1813,13 @@ void at_sktdel(void *arg)
 		}
 		socket_close_all();
 	} else {
-		s_node = seek_list_node(con_id);
-		if (s_node != NULL) {
-			delete_list_node(s_node);
+		node = seek_list_node(con_id);
+		if (node != NULL) {
+			delete_list_node(node);
+		} else {
+			RTK_LOGE(NOTAG, "[at_sktdel] The con_id is not found\r\n");
+			error_no = 3;
+			goto end;
 		}
 	}
 
@@ -1991,16 +1999,14 @@ void at_sktread(void *arg)
 end:
 	if (error_no == 0) {
 		if (curnode->protocol == NODE_MODE_UDP && curnode->role == NODE_ROLE_SERVER) {
-			at_printf("%s %d,%d,%s,%d:", "+SKTREAD:", recv_size, con_id, udp_clientaddr, udp_clientport);
-			at_printf(ATCMD_OK_END_STR);
+			at_printf("+SKTREAD:%d,%d,%s,%d:", recv_size, con_id, udp_clientaddr, udp_clientport);
 		} else {
-			at_printf("%s %d,%d:", "+SKTREAD:", recv_size, con_id);
-			at_printf(ATCMD_OK_END_STR);
+			at_printf("+SKTREAD:%d,%d:", recv_size, con_id);
 		}
 		if (recv_size > 0) {
 			at_printf("%s", rx_buffer);
 		}
-		at_printf("\r\n");
+		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}

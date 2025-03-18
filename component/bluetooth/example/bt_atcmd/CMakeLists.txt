@@ -56,6 +56,7 @@ ameba_list_append(private_sources
 	atcmd_bt_rfc.c
 	atcmd_bt_hid.c
 	atcmd_bt_hfp.c
+	atcmd_bt_iso.c
 	atcmd_bt_pbap.c
 	atcmd_bt_bap.c
 	atcmd_bt_cap.c
@@ -81,9 +82,9 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
-	../ble_audio_common
     ../gatt_service/client
     ../gatt_service/server
+    ../ble_iso
 )
 
 # Component private part, user config end
