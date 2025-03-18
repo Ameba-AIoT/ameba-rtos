@@ -591,7 +591,7 @@ int whc_fullmac_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_
 	return ret;
 }
 
-int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
+int whc_fullmac_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
 {
 	int ret = 0;
 	u32 size;

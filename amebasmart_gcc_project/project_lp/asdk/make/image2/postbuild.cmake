@@ -2,7 +2,7 @@
 #unless passed through -D
 include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
-import_kconfig("CONFIG" ${c_SOC_PROJECT_DIR}/menuconfig/.config_km0)
+import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 set(t_USER_CUSTOM_LOG_PREFIX "LP_POSTBUILD")
 
 execute_process(

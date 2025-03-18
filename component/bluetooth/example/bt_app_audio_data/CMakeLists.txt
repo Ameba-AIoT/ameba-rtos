@@ -40,8 +40,7 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
-	../ble_audio_common
-	../bt_app_audio_data
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Component private part, user config end

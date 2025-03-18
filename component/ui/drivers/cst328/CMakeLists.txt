@@ -10,7 +10,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
-
+ameba_list_append(public_includes
+    include
+)
 # Component public part, user config end
 #----------------------------------------#
 
@@ -39,9 +41,6 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     src/cst328.c
-)
-ameba_list_append(private_includes
-    include
 )
 
 # Component private part, user config end

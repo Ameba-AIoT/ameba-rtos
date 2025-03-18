@@ -278,6 +278,8 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 		memset(&info, 0, sizeof(info));
 		info.aborted = 1;
 		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
+		global_idev.mlme_priv.pscan_req_global = NULL;
+		global_idev.mlme_priv.b_in_scan = false;
 	}
 #endif
 	netif_tx_stop_all_queues(pnetdev);
@@ -607,11 +609,8 @@ fail:
 int rtw_ndev_register(void)
 {
 	int i, ret = false;
-#if defined(CONFIG_WHC_BRIDGE)
-	char *wlan_name = "eth_sta%d";
-#else
-	char *wlan_name = "wlan%d";
-#endif
+	char *wlan_name = WHC_HOST_PORT_NAME;
+
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
 		rtw_ethtool_ops_init();
 		netdev_set_default_ethtool_ops(global_idev.pndev[i], &global_idev.rtw_ethtool_ops);

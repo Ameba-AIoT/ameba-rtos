@@ -185,6 +185,9 @@ int rtw_netdev_remove(struct device *pdev)
 {
 	dev_dbg(global_idev.fullmac_dev, "%s start.", __func__);
 
+#if !defined(CONFIG_WHC_BRIDGE)
+	rtw_drv_proc_deinit();
+#endif
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
 #if !defined(CONFIG_WHC_BRIDGE)
@@ -196,9 +199,6 @@ int rtw_netdev_remove(struct device *pdev)
 
 	whc_host_deinit();
 	dev_dbg(global_idev.fullmac_dev, "remove llhw done.");
-#if !defined(CONFIG_WHC_BRIDGE)
-	rtw_drv_proc_deinit();
-#endif
 
 	pr_info("%s done\n", __func__);
 	memset(&global_idev, 0, sizeof(struct whc_device));

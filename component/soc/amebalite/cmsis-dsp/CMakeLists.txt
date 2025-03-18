@@ -1,15 +1,3 @@
-if(NOT CMAKE_REFACTOR) # For temporary compatibility.
-set(DIR ${PROJECTDIR}/src)
-
-set(MODULE_IFLAGS ${DIR})
-
-set(CSRC ${DIR}/main.c)
-
-
-ameba_internal_library(project_src)
-target_include_directories(${CURRENT_LIB_NAME} PRIVATE ${MODULE_IFLAGS})
-target_sources(${CURRENT_LIB_NAME} PRIVATE ${CSRC})
-else() # For temporary compatibility.NOTE:  script below is new version cmake
 ##########################################################################################
 ## * This part defines public part of the component
 ## * Public part will be used as global build configures for all component
@@ -22,6 +10,12 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
+
+ameba_list_append(public_includes
+    Include
+)
+
+#FIXME: miss role for public_libraries
 
 # Component public part, user config end
 #----------------------------------------#
@@ -49,15 +43,34 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources main.c)
+ameba_list_append(private_includes
+    PrivateInclude
+)
+
+ameba_list_append(private_sources
+    Source/BasicMathFunctions/BasicMathFunctions.c
+    Source/BayesFunctions/BayesFunctions.c
+    Source/CommonTables/CommonTables.c
+    Source/ComplexMathFunctions/ComplexMathFunctions.c
+    Source/ControllerFunctions/ControllerFunctions.c
+    Source/DistanceFunctions/DistanceFunctions.c
+    Source/FastMathFunctions/FastMathFunctions.c
+    Source/FilteringFunctions/FilteringFunctions.c
+    Source/MatrixFunctions/MatrixFunctions.c
+    Source/StatisticsFunctions/StatisticsFunctions.c
+    Source/SupportFunctions/SupportFunctions.c
+    Source/SVMFunctions/SVMFunctions.c
+    Source/TransformFunctions/TransformFunctions.c
+    Source/TransformFunctions/arm_bitreversal2.S
+)
 
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For open-source component, always build from source
-ameba_add_internal_library(project_src
+###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
+ameba_add_external_app_library(cmsis_dsp
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -68,4 +81,3 @@ ameba_add_internal_library(project_src
         ${private_compile_options}
 )
 ##########################################################################################
-endif()# For temporary compatibility.

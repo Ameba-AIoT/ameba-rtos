@@ -50,11 +50,6 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     )
 endif()
 
-ameba_list_append(private_includes
-    ${c_CMPT_UI_DIR}/drivers/cst328/include
-    ${c_CMPT_UI_DIR}/drivers/st7701s/include
-)
-
 ameba_list_append(private_definitions
     __RTOS__
     NDEBUG

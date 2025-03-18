@@ -51,6 +51,13 @@ ameba_list_append(private_sources
 	dtm/hci_dtm.c
 )
 
+ameba_list_append(private_sources
+    platform/${c_SOC_TYPE}/hci/bt_mp_patch.c
+    platform/${c_SOC_TYPE}/hci/bt_normal_patch.c
+    platform/${c_SOC_TYPE}/hci/hci_platform.c
+    platform/${c_SOC_TYPE}/hci/hci_uart.c
+)
+
 if(CONFIG_BT_INIC)
 	ameba_list_append(private_sources hci/hci_if_inic.c)
 	if(CONFIG_BT_INIC_H4 OR CONFIG_BT_INICD_H4)

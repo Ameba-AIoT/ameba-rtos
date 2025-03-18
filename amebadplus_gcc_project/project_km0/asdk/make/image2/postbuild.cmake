@@ -85,92 +85,92 @@ execute_process(
 )
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
-    if(EXISTS ${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin AND EXISTS ${c_BASEDIR}/amebadplus_gcc_project/fatfs.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin AND EXISTS ${c_BASEDIR}/amebadplus_gcc_project/fatfs.bin)
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E rename ${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin ${KM4_BUILDDIR}/asdk/image/km0_km4_app_tmp.bin
+            COMMAND ${CMAKE_COMMAND} -E rename ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_tmp.bin
         )
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E rename ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns.bin ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns_tmp.bin
+            COMMAND ${CMAKE_COMMAND} -E rename ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns.bin ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns_tmp.bin
         )
         execute_process(
-            COMMAND ${PADTOOL} ${KM4_BUILDDIR}/asdk/image/km0_km4_app_tmp.bin 4096
+            COMMAND ${PADTOOL} ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_tmp.bin 4096
         )
         execute_process(
-            COMMAND ${PADTOOL} ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns_tmp.bin 4096
+            COMMAND ${PADTOOL} ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns_tmp.bin 4096
         )
         execute_process(
-            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${KM4_BUILDDIR}/asdk/image/target_img2.map
+            COMMAND ${PREPENDTOOL} ${c_BASEDIR}/amebadplus_gcc_project/fatfs.bin  VFS1_FLASH_BASE_ADDR  ${KM4_PROJECT_DIR}/asdk/image/target_img2.map
         )
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_BUILDDIR}/asdk/image/km0_km4_app_tmp.bin ${c_BASEDIR}/amebadplus_gcc_project/fatfs_prepend.bin
-            OUTPUT_FILE${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_tmp.bin ${c_BASEDIR}/amebadplus_gcc_project/fatfs_prepend.bin
+            OUTPUT_FILE${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin
         )
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns_tmp.bin ${c_BASEDIR}/amebadplus_gcc_project/fatfs_prepend.bin
-            OUTPUT_FILE ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns.bin
+            COMMAND ${CMAKE_COMMAND} -E cat ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns_tmp.bin ${c_BASEDIR}/amebadplus_gcc_project/fatfs_prepend.bin
+            OUTPUT_FILE ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns.bin
         )
     endif()
 endif()
 
 if(CONFIG_COMPRESS_OTA_IMG)
-    if(EXISTS ${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin)
         execute_process(
-            COMMAND ${COMPRESSTOOL} ${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin
+            COMMAND ${COMPRESSTOOL} ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin
         )
         execute_process(
-            COMMAND ${COMPRESSTOOL} ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns.bin
+            COMMAND ${COMPRESSTOOL} ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns.bin
         )
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BUILDDIR}/asdk/image/km0_km4_app_compress.bin ${KM4_BUILDDIR}/asdk/image/tmp_app.bin
+            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_compress.bin ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin
         )
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns_compress.bin ${KM4_BUILDDIR}/asdk/image/tmp_app_ns.bin
+            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns_compress.bin ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin
         )
     endif()
 else()
-    if(EXISTS ${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin)
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin ${KM4_BUILDDIR}/asdk/image/tmp_app.bin
+            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin
         )
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BUILDDIR}/asdk/image/km0_km4_app_ns.bin ${KM4_BUILDDIR}/asdk/image/tmp_app_ns.bin
+            COMMAND ${CMAKE_COMMAND} -E copy ${KM4_PROJECT_DIR}/asdk/image/km0_km4_app_ns.bin ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin
         )
     endif()
 endif()
 
 if(CONFIG_UPGRADE_BOOTLOADER)
-    if(EXISTS ${KM4_BUILDDIR}/asdk/image/tmp_app.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin)
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${KM4_BUILDDIR}/asdk/image/tmp_app.bin ${KM4_BUILDDIR}/asdk/image/km4_boot_all.bin
+            COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin ${KM4_PROJECT_DIR}/asdk/image/km4_boot_all.bin
         )
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${KM4_BUILDDIR}/asdk/image/tmp_app_ns.bin${KM4_BUILDDIR}/asdk/image/km4_boot_all_ns.bin
+            COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin${KM4_PROJECT_DIR}/asdk/image/km4_boot_all_ns.bin
         )
     endif()
 else()
-    if(EXISTS ${KM4_BUILDDIR}/asdk/image/tmp_app.bin)
+    if(EXISTS ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin)
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${KM4_BUILDDIR}/asdk/image/tmp_app.bin
+            COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin
         )
         execute_process(
-            COMMAND ${OTAPREPENDTOOL} ${KM4_BUILDDIR}/asdk/image/tmp_app_ns.bin
+            COMMAND ${OTAPREPENDTOOL} ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin
         )
     endif()
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E remove ${KM4_BUILDDIR}/asdk/image/tmp_app.bin
+    COMMAND ${CMAKE_COMMAND} -E remove ${KM4_PROJECT_DIR}/asdk/image/tmp_app.bin
 )
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E remove ${KM4_BUILDDIR}/asdk/image/tmp_app_ns.bin
+    COMMAND ${CMAKE_COMMAND} -E remove ${KM4_PROJECT_DIR}/asdk/image/tmp_app_ns.bin
 )
 message("========== Image manipulating end ==========")
 if (CONFIG_MP_INCLUDED)
-    set(APP_ALL ${KM4_BUILDDIR}/asdk/image_mp/km0_km4_app_mp.bin)
+    set(APP_ALL ${KM4_PROJECT_DIR}/asdk/image_mp/km0_km4_app_mp.bin)
 else()
-    set(APP_ALL	${KM4_BUILDDIR}/asdk/image/km0_km4_app.bin)
+    set(APP_ALL	${KM4_PROJECT_DIR}/asdk/image/km0_km4_app.bin)
 endif()
-set(OTA_ALL	${KM4_BUILDDIR}/asdk/image/ota_all.bin)
+set(OTA_ALL	${KM4_PROJECT_DIR}/asdk/image/ota_all.bin)
 
 if(EXISTS ${APP_ALL})
     execute_process(

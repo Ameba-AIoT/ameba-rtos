@@ -149,6 +149,7 @@ if(CONFIG_MP_SHRINK)
 else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 endif()
+set(c_IMG3_LD  ${c_SDK_LD_DIR}/ameba_img3_all.ld)
 
 set(c_ROM_LIB_DIR ${c_SDK_LIB_DIR}/amebalite_rom_acut)
 if(CONFIG_LINK_ROM_SYMB)
@@ -180,7 +181,10 @@ ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
 add_custom_target(
     ${c_MCU_PROJECT_NAME}
     COMMENT "build ${c_MCU_PROJECT_NAME} only"
-    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
+    DEPENDS
+        $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image1>
+        $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image2>
+        $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image2>_postbuild
 )
 
 add_custom_target(

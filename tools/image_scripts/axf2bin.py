@@ -732,6 +732,10 @@ class PREPEND_TOOL:
         if len(sys.argv) > 5: #add boot index for rom jump in amebagreen2 and later
             BOOT_INDEX=self.argv[5]
             HEADER_FINAL = HEADER_FINAL + int(BOOT_INDEX, 16).to_bytes(4, 'little') + 0xFFFFFFFF.to_bytes(4, 'little')
+        elif IMAGE_FILENAME_NEW == "fatfs.bin":
+            padcount = 0x1000 - 0x18
+            for _ in range(padcount):
+                HEADER_FINAL += (b'\xFF')
         else:
             HEADER_FINAL = HEADER_FINAL + RSVD.to_bytes(8, 'little')
         HEADER_FINAL = HEADER_FINAL + RSVD.to_bytes(8, 'little')

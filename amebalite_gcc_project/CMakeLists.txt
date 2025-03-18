@@ -142,8 +142,8 @@ set(KR4_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_kr4)
 
 ###############################################################################
 # Add sub projects
-add_subdirectory(project_km4)
 add_subdirectory(project_kr4)
+add_subdirectory(project_km4)
 ###############################################################################
 
 ###############################################################################

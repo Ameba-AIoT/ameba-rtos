@@ -105,6 +105,7 @@ add_custom_command(
         -Dc_MCU_PROJECT_DIR=${c_MCU_PROJECT_DIR} # dir of current mcu project
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
         -Dc_MENUCONFIG_DIR=${c_MENUCONFIG_DIR}
+        -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE}
         -Dc_SOC_TYPE=${c_SOC_TYPE}
 
         # user's variables
