@@ -152,7 +152,7 @@ void vfs_assign_region(int vfs_type, char region)
 		if ((u32)img_hdr >= img2_end_addr) {
 			VFS_DBG(VFS_INFO, "no fatfs binary \r\n");
 		} else {
-			FLASH_APP_BASE = (u32)img_hdr + 32 - SPI_FLASH_BASE;
+			FLASH_APP_BASE = (u32)img_hdr + 0x1000 - SPI_FLASH_BASE;
 			FLASH_SECTOR_COUNT = img_hdr->image_size / 512;
 		}
 #else

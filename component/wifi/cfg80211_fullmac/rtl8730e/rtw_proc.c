@@ -10,9 +10,6 @@
 
 #include "rtw_cfg80211_fullmac.h"
 
-#define RTW_PROC_NAME "rtl8730e"
-#define RTW_PROC_STA_NAME "wlan0"
-#define RTW_PROC_AP_NAME "ap"
 #define get_proc_net init_net.proc_net
 
 extern struct inic_device global_idev;
@@ -236,10 +233,15 @@ static const struct file_operations rtw_ap_proc_sseq_fops = {
 };
 #endif
 
-static struct proc_dir_entry *rtw_ndev_ap_proc_init(void)
+static struct proc_dir_entry *rtw_ndev_ap_proc_init(const char *name)
 {
 	struct proc_dir_entry *entry = NULL;
 	ssize_t i;
+
+	if (name == NULL) {
+		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		goto exit;
+	}
 
 	if (rtw_proc == NULL) {
 		dev_err(global_idev.fullmac_dev, "rtw driver proc dir not existed");
@@ -251,7 +253,7 @@ static struct proc_dir_entry *rtw_ndev_ap_proc_init(void)
 		goto exit;
 	}
 
-	rtw_ap_proc = rtw_proc_create_dir(RTW_PROC_AP_NAME, rtw_proc, NULL);
+	rtw_ap_proc = rtw_proc_create_dir(name, rtw_proc, NULL);
 	if (rtw_ap_proc == NULL) {
 		dev_err(global_idev.fullmac_dev, "rtw driver created ap proc failed");
 		goto exit;
@@ -277,9 +279,14 @@ exit:
 	return rtw_ap_proc;
 }
 
-static void rtw_ndev_ap_proc_deinit(void)
+static void rtw_ndev_ap_proc_deinit(const char *name)
 {
 	int i;
+
+	if (name == NULL) {
+		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		return;
+	}
 
 	if (rtw_ap_proc == NULL) {
 		dev_info(global_idev.fullmac_dev, "rtw driver ap entry not existed");
@@ -290,7 +297,7 @@ static void rtw_ndev_ap_proc_deinit(void)
 		remove_proc_entry(ndev_ap_proc_hdls[i].name, rtw_ap_proc);
 	}
 
-	remove_proc_entry(RTW_PROC_AP_NAME, rtw_proc);
+	remove_proc_entry(name, rtw_proc);
 	rtw_ap_proc = NULL;
 }
 
@@ -404,10 +411,15 @@ static const struct file_operations rtw_sta_proc_sseq_fops = {
 };
 #endif
 
-static struct proc_dir_entry *rtw_ndev_sta_proc_init(void)
+static struct proc_dir_entry *rtw_ndev_sta_proc_init(const char *name)
 {
 	struct proc_dir_entry *entry = NULL;
 	ssize_t i;
+
+	if (name == NULL) {
+		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		goto exit;
+	}
 
 	if (rtw_proc == NULL) {
 		dev_err(global_idev.fullmac_dev, "rtw driver proc dir not existed");
@@ -419,7 +431,7 @@ static struct proc_dir_entry *rtw_ndev_sta_proc_init(void)
 		goto exit;
 	}
 
-	rtw_sta_proc = rtw_proc_create_dir(RTW_PROC_STA_NAME, rtw_proc, NULL);
+	rtw_sta_proc = rtw_proc_create_dir(name, rtw_proc, NULL);
 	if (rtw_sta_proc == NULL) {
 		dev_err(global_idev.fullmac_dev, "rtw driver created sta proc failed");
 		goto exit;
@@ -445,9 +457,14 @@ exit:
 	return rtw_sta_proc;
 }
 
-static void rtw_ndev_sta_proc_deinit(void)
+static void rtw_ndev_sta_proc_deinit(const char *name)
 {
 	int i;
+
+	if (name == NULL) {
+		dev_err(global_idev.fullmac_dev, "rtw driver netdevice name not existed");
+		return;
+	}
 
 	if (rtw_sta_proc == NULL) {
 		dev_info(global_idev.fullmac_dev, "rtw driver sta entry not existed");
@@ -458,7 +475,7 @@ static void rtw_ndev_sta_proc_deinit(void)
 		remove_proc_entry(ndev_sta_proc_hdls[i].name, rtw_sta_proc);
 	}
 
-	remove_proc_entry(RTW_PROC_STA_NAME, rtw_proc);
+	remove_proc_entry(name, rtw_proc);
 	rtw_sta_proc = NULL;
 }
 
@@ -568,7 +585,7 @@ int rtw_drv_proc_init(void)
 		goto exit;
 	}
 
-	rtw_proc = rtw_proc_create_dir(RTW_PROC_NAME, get_proc_net, NULL);
+	rtw_proc = rtw_proc_create_dir(FULLMAC_NAME, get_proc_net, NULL);
 	if (rtw_proc == NULL) {
 		dev_err(global_idev.fullmac_dev, "rtw driver proc create dir failed");
 		goto exit;
@@ -592,8 +609,8 @@ int rtw_drv_proc_init(void)
 		}
 	}
 
-	rtw_ndev_sta_proc_init();
-	rtw_ndev_ap_proc_init();
+	rtw_ndev_sta_proc_init(global_idev.pndev[STA_WLAN_INDEX]->name);
+	rtw_ndev_ap_proc_init(global_idev.pndev[SOFTAP_WLAN_INDEX]->name);
 
 	ret = 1;
 
@@ -609,8 +626,8 @@ void rtw_drv_proc_deinit(void)
 		return;
 	}
 
-	rtw_ndev_sta_proc_deinit();
-	rtw_ndev_ap_proc_deinit();
+	rtw_ndev_ap_proc_deinit(global_idev.pndev[SOFTAP_WLAN_INDEX]->name);
+	rtw_ndev_sta_proc_deinit(global_idev.pndev[STA_WLAN_INDEX]->name);
 
 	if (drv_proc_hdls_num > 0) {
 		for (i = 0; i < drv_proc_hdls_num; i++) {
@@ -618,6 +635,6 @@ void rtw_drv_proc_deinit(void)
 		}
 	}
 
-	remove_proc_entry(RTW_PROC_NAME, get_proc_net);
+	remove_proc_entry(FULLMAC_NAME, get_proc_net);
 	rtw_proc = NULL;
 }

@@ -596,11 +596,12 @@ int llhw_wifi_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_
 	return ret;
 }
 
-int llhw_wifi_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr)
+int llhw_wifi_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
 {
 	int ret = 0;
 	u32 size;
 	u32 *param;
+	u8 *output = NULL;
 
 	size = 2 * sizeof(u32) + cmd_len;
 	param = (u32 *)kzalloc(size, GFP_KERNEL);
@@ -609,7 +610,13 @@ int llhw_wifi_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t u
 	param[1] = cmd_len;
 	memcpy((void *)(param + 2), (void *)cmd_addr, cmd_len);
 
-	llhw_send_event(INIC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)&ret, sizeof(int));
+	llhw_send_event(INIC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)param, size);
+	memcpy((u8 *)&ret, (u8 *)param, sizeof(int));
+	if (ret == 0) {
+		output = (u8 *)param + sizeof(int);
+		memcpy((u8 *)user_buf, output, strlen(output));
+		printk("%s", output);
+	}
 
 	kfree((void *)param);
 

@@ -185,6 +185,8 @@ int rtw_netdev_remove(struct device *pdev)
 {
 	dev_dbg(global_idev.fullmac_dev, "%s start.", __func__);
 
+	rtw_drv_proc_deinit();
+
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.fullmac_dev, "unregister netdev done.");
 #ifndef CONFIG_SDIO_BRIDGE
@@ -196,8 +198,6 @@ int rtw_netdev_remove(struct device *pdev)
 
 	llhw_deinit();
 	dev_dbg(global_idev.fullmac_dev, "remove llhw done.");
-
-	rtw_drv_proc_deinit();
 
 	pr_info("%s done\n", __func__);
 	memset(&global_idev, 0, sizeof(struct inic_device));
