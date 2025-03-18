@@ -92,6 +92,14 @@ fi
 MakeFixedWidthHeaderString $IMAGE_LEN   8  HEADER_FINAL 1
 MakeFixedWidthHeaderString $IMAGE_ADDR  8  HEADER_FINAL 1
 
+PADCOUNT=0x1fc
+if [ "$IMAGE_FILENAME_NEW" == "fatfs.bin" ]; then
+    for (( j=$PADCOUNT; j > 0; j-- ))
+    do
+        MakeFixedWidthHeaderString $RSVD  16  HEADER_FINAL 0
+    done
+fi
+
 MakeFixedWidthHeaderString $RSVD  16  HEADER_FINAL 0
 MakeFixedWidthHeaderString $RSVD  16  HEADER_FINAL 0
 # echo $HEADER_FINAL

@@ -140,13 +140,20 @@ u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb, struc
 	return rtw_1d_to_queue[skb->priority];
 }
 
+#if (KERNEL_VERSION(5, 15, 0) > LINUX_VERSION_CODE)
 int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd_id)
+#else
+int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data, int cmd_id)
+#endif
 {
 	struct rtw_priv_ioctl *wrq_data = rq->ifr_data;
 	struct rtw_priv_ioctl cmd = {NULL, 0};
 	unsigned char *cmd_buf = NULL, *user_buf = NULL;
 	static dma_addr_t cmd_buf_phy = 0, user_buf_phy = 0;
 	int ret = 0;
+#if (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE)
+	(void) data;
+#endif
 
 	if (copy_from_user(&cmd, rq->ifr_data, sizeof(struct rtw_priv_ioctl))) {
 		dev_err(global_idev.fullmac_dev, "[fullmac]: %s copy_from_user failed\n", __func__);
@@ -181,7 +188,7 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd_id)
 
 	switch (cmd_id) {
 	case RTW_PRIV_DGB_CMD:
-		ret = llhw_wifi_iwpriv_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
+		ret = llhw_wifi_iwpriv_cmd(cmd_buf_phy, cmd.len, cmd_buf, user_buf);
 		break;
 	case RTW_PRIV_MP_CMD:
 		ret = llhw_wifi_mp_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
@@ -261,6 +268,8 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 		memset(&info, 0, sizeof(info));;
 		info.aborted = 1;
 		cfg80211_scan_done(global_idev.mlme_priv.pscan_req_global, &info);
+		global_idev.mlme_priv.pscan_req_global = NULL;
+		global_idev.mlme_priv.b_in_scan = false;
 	}
 #ifdef CONFIG_SDIO_BRIDGE
 	if (llhw_wifi_is_connected_to_ap() == 0) {
@@ -337,7 +346,11 @@ static const struct net_device_ops rtw_ndev_ops = {
 	.ndo_select_queue = rtw_ndev_select_queue,
 	.ndo_set_mac_address = rtw_ndev_set_mac_address,
 	.ndo_get_stats = rtw_ndev_get_stats,
+#if (KERNEL_VERSION(5, 15, 0) > LINUX_VERSION_CODE)
 	.ndo_do_ioctl = rtw_ndev_ioctl,
+#else
+	.ndo_siocdevprivate = rtw_ndev_ioctl,
+#endif
 };
 
 static const struct net_device_ops rtw_ndev_ops_ap = {
@@ -362,7 +375,11 @@ const struct net_device_ops rtw_ndev_ops_nan = {
 	.ndo_select_queue = rtw_ndev_select_queue,
 	.ndo_set_mac_address = rtw_ndev_set_mac_address,
 	.ndo_get_stats = rtw_ndev_get_stats,
+#if (KERNEL_VERSION(5, 15, 0) > LINUX_VERSION_CODE)
 	.ndo_do_ioctl = rtw_ndev_ioctl,
+#else
+	.ndo_siocdevprivate = rtw_ndev_ioctl,
+#endif
 };
 
 int rtw_nan_iface_alloc(struct wiphy *wiphy,
@@ -554,11 +571,8 @@ fail:
 int rtw_ndev_register(void)
 {
 	int i, ret = false;
-#ifdef CONFIG_SDIO_BRIDGE
-	char *wlan_name = "eth_sta%d";
-#else
-	char *wlan_name = "wlan%d";
-#endif
+	char *wlan_name = FULLMAC_PORT_NAME;
+
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
 		rtw_ethtool_ops_init();
 		netdev_set_default_ethtool_ops(global_idev.pndev[i], &global_idev.rtw_ethtool_ops);

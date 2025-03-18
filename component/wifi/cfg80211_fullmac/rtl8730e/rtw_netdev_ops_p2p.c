@@ -78,7 +78,11 @@ const struct net_device_ops rtw_ndev_ops_p2p = {
 	.ndo_select_queue = rtw_ndev_select_queue,
 	.ndo_set_mac_address = rtw_ndev_set_mac_address,
 	.ndo_get_stats = rtw_ndev_get_stats,
+#if (KERNEL_VERSION(5, 5, 0) > LINUX_VERSION_CODE)
 	.ndo_do_ioctl = rtw_ndev_ioctl,
+#else
+	.ndo_siocdevprivate = rtw_ndev_ioctl,
+#endif
 };
 
 
@@ -273,9 +277,9 @@ void rtw_p2p_gc_intf_revert(u8 need_if2_deinit)
 
 		memcpy((void *)port0_macaddr, global_idev.pndev[1]->dev_addr, ETH_ALEN);
 
-		if(softap_addr_offset_idx == 0){
+		if (softap_addr_offset_idx == 0) {
 			last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - (1 << 1);
-		}else{
+		} else {
 			last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - 1;
 		}
 

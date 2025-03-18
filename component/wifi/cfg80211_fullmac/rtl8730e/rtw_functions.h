@@ -40,7 +40,7 @@ u32 llhw_wifi_update_ip_addr(void);
 int llhw_wifi_get_statistics(dma_addr_t statistic_addr);
 int llhw_wifi_set_lps_enable(u8 enable);
 int llhw_wifi_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
-int llhw_wifi_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
+int llhw_wifi_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf);
 int llhw_wifi_set_mac_addr(u32 wlan_idx, u8 *addr);
 int rtw_ndev_alloc(void);
 int rtw_ndev_register(void);
