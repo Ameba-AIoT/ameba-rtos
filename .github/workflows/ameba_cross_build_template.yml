@@ -19,17 +19,17 @@ jobs:
           - os: ubuntu-latest
             shell: bash
 
+          - os: windows-latest
+            shell: cmd
+ 
+          - os: windows-latest
+            shell: powershell
+
 #          - os: macos-latest
 #            shell: bash
 
 #          - os: windows-latest
 #            shell: bash
-            
-#          - os: windows-latest
-#            shell: cmd
-
-#          - os: windows-latest
-#            shell: powershell
 
 
     steps:
@@ -89,7 +89,23 @@ jobs:
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
         cd ${{ inputs.ic_name }}_gcc_project
-        python build.py
+        if [ "${{ inputs.build_stage_name }}" == "B3" || "${{ inputs.build_stage_name }}" == "B5" ]; then 
+          python build.py -D USE_ALIYUN_URL=True
+        else
+          python build.py
+        fi
+      if: ${{ matrix.os != 'windows-latest' }}
+
+    - name: Build_windows
+      run: |
+          echo "Build Current shell is ${{ matrix.shell }}"
+          cd ${{ inputs.ic_name }}_gcc_project
+          if ("${{ inputs.build_stage_name }}" -eq "B3" -or "${{ inputs.build_stage_name }}" -eq "B5") {
+            python build.py -D USE_ALIYUN_URL=True
+          } else {
+            python build.py
+          }
+      if: ${{ inputs.ic_name != 'amebasmart' && matrix.os == 'windows-latest' }}
 
     - name: Post-Build Cleanup
       run: |
