@@ -326,7 +326,7 @@ int check_is_the_same_ap()
 */
 void wifi_fast_connect_enable(u8 enable)
 {
-#if defined(CONFIG_MP_INCLUDED) || (defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD)	//always disable fastconnect in clintwood & mp
+#if defined(CONFIG_MP_INCLUDED)	//always disable fastconnect in mp
 	enable = 0;
 #endif
 	if (enable == 0) {

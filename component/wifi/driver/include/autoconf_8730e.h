@@ -143,14 +143,7 @@
 //#define DISABLE_BB_WATCHDOG
 #define PLATFOM_IS_LITTLE_ENDIAN	1/*for halbb use*/
 
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-#define DISABLE_FW
-#define CONFIG_TWT
-#define TWT_CSI_EN			0
-#define TWT_TRIGGER_EN	1
-#else
 #define PHYSTS_WORK_AROUND
-#endif
 #define RTL8730E_WORK_AROUND
 
 //#define RA_RX_ACK_RSSI
