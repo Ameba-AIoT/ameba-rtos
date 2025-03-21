@@ -25,11 +25,15 @@ and xxx_app.bin final path. If FINAL_IMAGE_DIR is specified by user, final image
 <FINAL_IMAGE_DIR> after building. Default final image directory is project root path, \
 where the current CMakeLists.txt is located.")
 
+set(WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
+set(MENUCONFIGDIR ${WORKING_PROJECT_DIR}/menuconfig)
+
+#EXAMPLE can be a absolute path, relative path where contain a CMakeLists and source files, or can be a specific example name
 if (EXAMPLE)
     if(IS_ABSOLUTE EXAMPLE)
         set(EXAMPLEDIR ${EXAMPLE})
     else()
-        cmake_path(ABSOLUTE_PATH EXAMPLE BASE_DIRECTORY ${CMAKE_BINARY_DIR}/.. NORMALIZE OUTPUT_VARIABLE OUTPUT_EXAMPLE)
+        cmake_path(ABSOLUTE_PATH EXAMPLE BASE_DIRECTORY ${WORKING_PROJECT_DIR}. NORMALIZE OUTPUT_VARIABLE OUTPUT_EXAMPLE)
         message(${OUTPUT_EXAMPLE})
         if (EXISTS ${OUTPUT_EXAMPLE})
             set(EXAMPLEDIR ${OUTPUT_EXAMPLE})
@@ -47,6 +51,18 @@ if (EXAMPLE)
     endif()
 endif()
 
+if (EXAMPLEDIR AND EXISTS ${EXAMPLEDIR}/prj.conf)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${MENUCONFIGDIR}/prj.conf
+    )
+endif()
+
+execute_process(
+    COMMAND python menuconfig.py --check -d ${WORKING_PROJECT_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND_ERROR_IS_FATAL ANY
+)
+
 set(ASDK_VER 10.3.1)
 include (${CMAKE_CURRENT_SOURCE_DIR}/../cmake/toolchain/ameba-toolchain-asdk-${ASDK_VER}.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/set_extensions.cmake)
@@ -60,7 +76,7 @@ set(CMAKE_BUILD_TYPE "")
 ExternalProject_Add(kr4
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/project_kr4
     BINARY_DIR ${CMAKE_BINARY_DIR}/project_kr4
-    CMAKE_ARGS -DEXAMPLE=${EXAMPLE} -DUSER_SRC_DIR=${USER_SRC_DIR} -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR} -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR} -DDAILY_BUILD=${DAILY_BUILD} -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS}
+    CMAKE_ARGS -DEXAMPLE=${EXAMPLE} -DUSER_SRC_DIR=${USER_SRC_DIR} -DTOOLCHAIN_DIR=${TOOLCHAIN_DIR} -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR} -DDAILY_BUILD=${DAILY_BUILD} -DCONFIG_AMEBA_RLS=${CONFIG_AMEBA_RLS} -DWORKING_PROJECT_DIR=${WORKING_PROJECT_DIR}
     BUILD_ALWAYS TRUE
     INSTALL_COMMAND ""
     USES_TERMINAL_BUILD TRUE

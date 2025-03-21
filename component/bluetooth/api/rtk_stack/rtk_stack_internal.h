@@ -253,6 +253,19 @@ static inline uint16_t bt_stack_le_iso_act_handle(rtk_bt_cmd_t *p_cmd)
 	return RTK_BT_OK;
 }
 #endif
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+uint16_t bt_stack_le_iso_init(void *p_conf);
+void bt_stack_le_iso_deinit(void);
+#else
+static inline uint16_t bt_stack_le_iso_init(void *p_conf)
+{
+	(void)p_conf;
+	return RTK_BT_OK;
+}
+static inline void bt_stack_le_iso_deinit(void)
+{
+}
+#endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 uint16_t bt_stack_le_audio_init(rtk_bt_app_conf_t *papp_conf, void *io_msg_q, void *evt_msg_q);
 void bt_stack_le_audio_deinit(void);

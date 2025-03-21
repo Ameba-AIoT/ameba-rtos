@@ -1,7 +1,7 @@
 
 #include "dhcps.h"
 #include "lwip/tcpip.h"
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 #include "lwip_netconf.h"
 #include "atcmd_service.h"
 

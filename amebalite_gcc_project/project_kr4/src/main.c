@@ -1,6 +1,6 @@
 #include "ameba_soc.h"
 #include "main.h"
-#if defined(CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI)
+#ifdef CONFIG_CORE_AS_AP
 #include "vfs.h"
 #include <mbedtls/platform.h>
 #endif
@@ -117,7 +117,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if defined(CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI)
+#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
 	int ret = 0;
 	vfs_init();
 
@@ -141,7 +141,6 @@ void app_filesystem_init(void)
 
 	RTK_LOGE(TAG, "File System Init Fail \n");
 #endif
-	return;
 }
 
 /*
@@ -176,9 +175,7 @@ int main(void)
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
-#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
-#endif
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	app_ftl_init();

@@ -57,7 +57,7 @@
 // #define IPC_A2N_BT_DATA_TRAN					5	/*!<  KM4 -->  KM0 BT DATA Exchange */
 #define IPC_A2N_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KM0WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN						7	/*!<  KM4 -->  KM0 WIFI API Message Exchange */
-//#define IPC_A2N_Channel8						8
+#define IPC_A2N_EVENT_REQ						8
 //#define IPC_A2N_Channel9						9
 //#define IPC_A2N_Channel10						10
 //#define IPC_A2N_Channel11						11

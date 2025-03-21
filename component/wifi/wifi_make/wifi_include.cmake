@@ -77,8 +77,9 @@ if(CONFIG_AMEBAL2)
         ${BASEDIR}/component/wifi/driver/intf/g6_intf
         ${BASEDIR}/component/wifi/driver/intf/g6_intf/rle1331
         ${BASEDIR}/component/wifi/driver/phy_g6/bb
-        ${BASEDIR}/component/wifi/driver/phy_g6/bb/halbb_8720f
+        ${BASEDIR}/component/wifi/driver/phy_g6/bb/halbb_6955
         ${BASEDIR}/component/wifi/driver/phy_g6/rf
+        ${BASEDIR}/component/wifi/driver/phy_g6/rf/halrf_6955
         ${BASEDIR}/component/wifi/driver/rle1331
         ${BASEDIR}/component/wifi/driver/rle1331_rom
 

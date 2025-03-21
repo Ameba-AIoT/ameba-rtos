@@ -1,17 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usb_ch9.h
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides general defines for USB SPEC CH9
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef USB_OS_H
 #define USB_OS_H
@@ -89,6 +80,10 @@ int usb_os_lock_delete(usb_os_lock_t lock);
 int usb_os_lock(usb_os_lock_t lock);
 
 int usb_os_unlock(usb_os_lock_t lock);
+
+int usb_os_enter_critical(u8 in_critical);
+
+int usb_os_exit_critical(u8 in_critical);
 
 int usb_os_sema_create(usb_os_sema_t *sema);
 

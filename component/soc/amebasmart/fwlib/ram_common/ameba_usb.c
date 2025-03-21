@@ -76,8 +76,10 @@ usb_cal_data_t *usb_chip_get_cal_data(u8 mode)
   * @param  void
   * @retval Status
   */
-int usb_chip_init(void)
+int usb_chip_init(u8 mode)
 {
+	UNUSED(mode);
+
 	u32 reg = 0;
 	u32 count = 0;
 

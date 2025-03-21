@@ -3,6 +3,7 @@
 #include "example_ipv6.h"
 #include "lwip_netconf.h"
 #include "wifi_ind.h"
+#include "lwip/mld6.h"
 
 #if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
 
@@ -14,8 +15,6 @@ extern struct netif xnetif[];
 static void ipv6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
 	struct netif *netifp = NULL;
-	struct in6_addr in6addr;
-	ip6_addr_t src, dest;
 	err_t err;
 	char send_data[MAX_SEND_SIZE] = "Hi client!";
 
@@ -31,7 +30,7 @@ static void ipv6_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
 	if (netifp == NULL) {
 		printf("\n\r[ERROR] No route, netif == NULL\n");
 	} else {
-		printf("\n\r[INFO] Receive data: %s\n", p->payload);
+		printf("\n\r[INFO] Receive data: %s\n", (char *)p->payload);
 
 		memcpy(p->payload, send_data, MAX_SEND_SIZE);
 		err = udp_sendto_if(pcb, p, addr, port, netifp);
@@ -67,7 +66,7 @@ static void example_ipv6_udp_server(void)
 	int                   server_fd;
 	struct sockaddr_in6   ser_addr, client_addr;
 
-	int addrlen = sizeof(struct sockaddr_in6);
+	u32_t addrlen = sizeof(struct sockaddr_in6);
 
 	char send_data[MAX_SEND_SIZE] = "Hi client!";
 	char recv_data[MAX_RECV_SIZE];
@@ -119,7 +118,7 @@ static void example_ipv6_udp_client(void)
 	struct sockaddr_in6 src_addr6;
 	ip6_addr_t dest_addr6;
 
-	int addrlen = sizeof(struct sockaddr_in6);
+	u32_t addrlen = sizeof(struct sockaddr_in6);
 	int recv_timeout = RECV_TO;
 
 	char recv_data[MAX_RECV_SIZE];
@@ -183,7 +182,7 @@ static void example_ipv6_tcp_server(void)
 	int                   server_fd, client_fd;
 	struct sockaddr_in6   ser_addr, client_addr;
 
-	int addrlen = sizeof(struct sockaddr_in6);
+	u32_t addrlen = sizeof(struct sockaddr_in6);
 
 	char send_data[MAX_SEND_SIZE] = "Hi client!!";
 	char recv_data[MAX_RECV_SIZE];
@@ -249,8 +248,6 @@ static void example_ipv6_tcp_client(void)
 	struct sockaddr_in6 ser_addr;
 	struct sockaddr_in6 src_addr6;
 	ip6_addr_t dest_addr6;
-
-	int addrlen = sizeof(struct sockaddr_in6);
 
 	char recv_data[MAX_RECV_SIZE];
 	char send_data[MAX_SEND_SIZE] = "Hi Server!!";
@@ -325,7 +322,7 @@ static void example_ipv6_mcast_server(void)
 		printf("\n\r[INFO] Bind successfully\n");
 
 		inet_pton(AF_INET6, MCAST_GROUP_IP, &(mcast_addr.addr));
-		if (mld6_joingroup(IP6_ADDR_ANY, &mcast_addr) != 0) {
+		if (mld6_joingroup(IP6_ADDR_ANY6, &mcast_addr) != 0) {
 			printf("\n\r[ERROR] Register to ipv6 multicast group failed\n");
 		}
 
@@ -335,12 +332,12 @@ static void example_ipv6_mcast_server(void)
 	}
 }
 #else
-static void example_ipv6_mcast_server()
+static void example_ipv6_mcast_server(void)
 {
 	int                   server_fd;
 	struct sockaddr_in6   ser_addr, client_addr;
 
-	int addrlen = sizeof(struct sockaddr_in6);
+	u32_t addrlen = sizeof(struct sockaddr_in6);
 
 	char send_data[MAX_SEND_SIZE] = "Hi client!";
 	char recv_data[MAX_RECV_SIZE];
@@ -350,7 +347,7 @@ static void example_ipv6_mcast_server()
 	inet_pton(AF_INET6, MCAST_GROUP_IP, &(mcast_addr.addr));
 	ip6_addr_assign_zone(&mcast_addr, IP6_MULTICAST, &xnetif[0]);
 
-	if (mld6_joingroup(IP6_ADDR_ANY, &mcast_addr) != 0) {
+	if (mld6_joingroup(IP6_ADDR_ANY6, &mcast_addr) != 0) {
 		printf("\n\r[ERROR] Register to ipv6 multicast group failed\n");
 	}
 
@@ -399,7 +396,7 @@ static void example_ipv6_mcast_client(void)
 	struct sockaddr_in6 src_addr6;
 	ip6_addr_t dest_addr6;
 
-	int addrlen = sizeof(struct sockaddr_in6);
+	u32_t addrlen = sizeof(struct sockaddr_in6);
 	int recv_timeout = RECV_TO;
 
 	char recv_data[MAX_RECV_SIZE];
@@ -457,8 +454,83 @@ static void example_ipv6_mcast_client(void)
 	return;
 }
 
+static void example_ipv6_udp_server_thread(void *param)
+{
+	/* To avoid gcc warnings */
+	(void) param;
+
+	printf("\nExample: IPV6 UDP Server\n");
+
+	example_ipv6_udp_server();
+
+	rtos_task_delete(NULL);
+}
+
+static void example_ipv6_tcp_server_thread(void *param)
+{
+	/* To avoid gcc warnings */
+	(void) param;
+
+	printf("\nExample: IPV6 TCP Server\n");
+
+	example_ipv6_tcp_server();
+
+	rtos_task_delete(NULL);
+}
+
+static void example_ipv6_mcast_server_thread(void *param)
+{
+	/* To avoid gcc warnings */
+	(void) param;
+
+	printf("\nExample: IPV6 MCAST Server\n");
+
+	example_ipv6_mcast_server();
+
+	rtos_task_delete(NULL);
+}
+
+static void example_ipv6_udp_client_thread(void *param)
+{
+	/* To avoid gcc warnings */
+	(void) param;
+
+	printf("\nExample: IPV6 UDP Client\n");
+
+	example_ipv6_udp_client();
+
+	rtos_task_delete(NULL);
+}
+
+static void example_ipv6_tcp_client_thread(void *param)
+{
+	/* To avoid gcc warnings */
+	(void) param;
+
+	printf("\nExample: IPV6 TCP Client\n");
+
+	example_ipv6_tcp_client();
+
+	rtos_task_delete(NULL);
+}
+
+static void example_ipv6_mcast_client_thread(void *param)
+{
+	/* To avoid gcc warnings */
+	(void) param;
+
+	printf("\nExample: IPV6 MCAST Client\n");
+
+	example_ipv6_mcast_client();
+
+	rtos_task_delete(NULL);
+}
+
 static void example_ipv6_thread(void *param)
 {
+	/* To avoid gcc warnings */
+	(void) param;
+
 	// Delay to check successful WiFi connection and obtain of an IP address
 	LwIP_Check_Connectivity();
 
@@ -471,20 +543,32 @@ static void example_ipv6_thread(void *param)
 	}
 
 	/***---open a example service once!!---***/
-	//example_ipv6_udp_server();
-	//example_ipv6_tcp_server();
-	//example_ipv6_mcast_server();
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_server_thread"), example_ipv6_udp_server_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_ipv6_udp_server_thread) failed", __FUNCTION__);
+	}
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_server_thread"), example_ipv6_tcp_server_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_ipv6_tcp_server_thread) failed", __FUNCTION__);
+	}
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_server_thread"), example_ipv6_mcast_server_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_ipv6_mcast_server_thread) failed", __FUNCTION__);
+	}
 
-	//example_ipv6_udp_client();
-	//example_ipv6_tcp_client();
-	example_ipv6_mcast_client();
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_udp_client_thread"), example_ipv6_udp_client_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_ipv6_udp_client_thread) failed", __FUNCTION__);
+	}
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_tcp_client_thread"), example_ipv6_tcp_client_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_ipv6_tcp_client_thread) failed", __FUNCTION__);
+	}
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_mcast_client_thread"), example_ipv6_mcast_client_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
+		printf("\n\r%s rtos_task_create(example_ipv6_mcast_client_thread) failed", __FUNCTION__);
+	}
 
 	rtos_task_delete(NULL);
 }
 
 void example_ipv6(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_ipv6_thread"), example_ipv6_thread, NULL, 1024 * 4, 1 + PRIORITIE_OFFSET) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_ipv6_thread"), example_ipv6_thread, NULL, 1024 * 4, 1 + 4) != SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_ipv6_thread) failed", __FUNCTION__);
 	}
 }

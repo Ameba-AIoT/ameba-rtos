@@ -1,10 +1,8 @@
-/**
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------ */
 
@@ -36,7 +34,6 @@ static const char *const TAG = "MSC";
 
 // Thread priorities
 #define CONFIG_USBD_MSC_INIT_THREAD_PRIORITY		5U
-#define CONFIG_USBD_MSC_ISR_THREAD_PRIORITY			7U
 #define CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_MSC_ISR_THREAD_PRIORITY
 
 /* Private types -------------------------------------------------------------*/
@@ -57,7 +54,7 @@ static void msc_cb_status_changed(u8 status);
 static usbd_config_t msc_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
 	.dma_enable = 1U,
-	.isr_priority = CONFIG_USBD_MSC_ISR_THREAD_PRIORITY,
+	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_err_cnt = {0U, 2000U, },
 #elif defined (CONFIG_AMEBAGREEN2)

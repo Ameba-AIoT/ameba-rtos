@@ -8,24 +8,8 @@ None
 
 # SW configuration
 
-Taking AmebaSmart in GCC environmnet for example.
-
-To run USB CDC ACM device application on AP:
-1. Type command `./menuconfig.py` under `amebasmart_gcc_project/` and choose `MENUCONFIG FOR CA32 CONFIG` -> `CONFIG USB`:
-	```
-	[*] Enable USB
-			USB Mode (Device)  --->
-			*** USB Device Class ***
-	[*] 	CDC ACM
-	```
-	Save and exit.
-
-2. How to use:
-   - Run `./build.py -a usbd_cdc_acm` under `amebasmart_gcc_project/` to generate images.
-   - `Download` images to board by Ameba Image Tool.
-
-To run USB CDC ACM device application on HP:
-1. Type command `./menuconfig.py` under `amebasmart_gcc_project/` and choose `MENUCONFIG FOR KM4 CONFIG` -> `CONFIG USB`:
+1. Menuconfig
+	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
@@ -33,15 +17,17 @@ To run USB CDC ACM device application on HP:
 	```
 	Save and exit.
 
-2. How to use:
-   - Run `./build.py --app-for-km4 usbd_cdc_acm` under `amebasmart_gcc_project/` to generate images.
-   - `Download` images to board by Ameba Image Tool.
+2. Build
+	Type command `./build.py -a usbd_cdc_acm` under the project directory to build images.
+
+3. Download
+	Download images to board by Ameba Image Tool.
 
 # Expect result
 
 1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[ACM] USBD CDC ACM demo start
+	[ACM-I] USBD CDC ACM demo start
 	```
 
 2. Connect the USB port of Ameba board to USB host (PC or another Ameba board as USB CDC ACM host) with USB cable.
@@ -50,17 +36,32 @@ To run USB CDC ACM device application on HP:
 
 # Note
 
-For other chips, refer to the AN for setup guide.
-
-Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdcAcmSetup.INF, and before the installation, please modify the PID/VID value in this INF file to sync with CDC ACM class code:
+Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdcAcmSetup.INF, and before the installation, please make sure the VID/PID value used in CDC ACM class is included in the INF file:
 ```
 [DeviceList]
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8720
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8721
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8722
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8730
-[DeviceList.NTamd64]
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8006
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8061
+; Add support for new VID/PID
+ [DeviceList.NTamd64] 
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8720
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8721
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8722
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8730
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8006
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8061
+; Add support for new VID/PID
 ```
 
 # Supported IC
 
-- AmebaSmart
-- AmebaDplus
+- RTL872XD
+- RTL8721Dx
+- RTL8711Dx
+- RTL8720F
+- RTL8721F
+- RTL8730E
+- RTL8730F

@@ -1,4 +1,3 @@
-#include "rtw_wifi_constants.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -88,7 +88,7 @@ if(CONFIG_WIFI_HOST_CONTROL)
                ${DEVDIR}/whc_dev_cust_evt.c
            )
        endif()
-       if(NOT CONFIG_FULLMAC_MENU)
+       if(NOT CONFIG_FULLMAC_DEV)
            list(
                APPEND CSRC
                ${DEVDIR}/whc_dev_bridge.c

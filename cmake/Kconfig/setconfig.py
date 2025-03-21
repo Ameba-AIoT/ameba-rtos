@@ -76,6 +76,8 @@ def main():
 
     if args.config_in is None:
         print(kconf.load_config())
+    elif args.config_in == '__empty__':
+        pass
     else:
         print(kconf.load_config(args.config_in))
 

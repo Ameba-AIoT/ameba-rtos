@@ -12,7 +12,9 @@
 /* Scheduler includes. */
 
 #include "ameba_soc.h"
+#ifdef CONFIG_CORE_AS_AP
 #include "vfs.h"
+#endif
 #include "os_wrapper.h"
 #include "rtw_coex_ipc.h"
 
@@ -83,7 +85,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if defined(CONFIG_AS_INIC_AP)
+#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
 	int ret = 0;
 	vfs_init();
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
@@ -106,7 +108,6 @@ void app_filesystem_init(void)
 
 	RTK_LOGE(TAG, "File System Init Fail \n");
 #endif
-	return;
 }
 
 void app_pmu_init(void)
@@ -141,10 +142,7 @@ int main(void)
 
 	app_pmu_init();
 
-#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
-#endif
-
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	app_ftl_init();

@@ -199,6 +199,21 @@ int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags
   */
 int wifi_wake_pll_rdy_in_ps_state(u8 need);
 
+/**
+ * @brief  Enable Wi-Fi interface-2.
+ * @return
+ *    - @ref RTW_SUCCESS : Success, wifi open RTW_MODE_AP .
+ *    - @ref RTW_ERROR : Otherwise.
+ */
+int _wifi_on_ap(void);
+/**
+ * @brief  Disable Wi-Fi interface-2.
+ * @return
+ *    - @ref RTW_SUCCESS : Close ap mode.
+ *    - @ref RTW_ERROR : Otherwise.
+ */
+int _wifi_off_ap(void);
+
 void wifi_event_init(void);
 void wifi_indication(unsigned int event, char *buf, int buf_len, int flags);
 

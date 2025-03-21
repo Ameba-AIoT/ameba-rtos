@@ -2,7 +2,9 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "main.h"
+#ifdef CONFIG_CORE_AS_AP
 #include "vfs.h"
+#endif
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
 #include "rtw_coex_ipc.h"
@@ -141,6 +143,7 @@ void app_rtc_init(void)
 
 void app_filesystem_init(void)
 {
+#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
 	int ret = 0;
 	vfs_init();
 
@@ -162,8 +165,7 @@ void app_filesystem_init(void)
 		}
 	}
 	RTK_LOGE(TAG, "File System Init Fail \n");
-
-	return;
+#endif
 }
 
 
@@ -197,9 +199,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 
-#if !(defined(CONFIG_MP_INCLUDED) || defined (CONFIG_FULLMAC_MENU))
 	app_filesystem_init();
-#endif
 
 #ifdef CONFIG_MBEDTLS_ENABLED
 	app_mbedtls_rom_init();

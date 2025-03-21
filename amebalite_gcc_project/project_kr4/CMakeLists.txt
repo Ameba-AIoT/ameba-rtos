@@ -14,7 +14,6 @@ set(KM4_BUILDDIR ${PROJECTDIR}/../project_km4)
 cmake_path(NORMAL_PATH KM4_BUILDDIR)
 set(KR4_BUILDDIR ${PROJECTDIR})
 
-set(WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/../..)
 set(MENUCONFIGDIR ${WORKING_PROJECT_DIR}/menuconfig)
 
 set(TARGETDIR ${BASEDIR}/component/soc/amebalite)
@@ -72,26 +71,6 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 include (${CMAKE_FILES_DIR}/ccache.cmake)
 
 include (${CMAKE_FILES_DIR}/extensions.cmake)
-
-if (EXAMPLEDIR AND EXISTS ${EXAMPLEDIR}/prj.conf)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${MENUCONFIGDIR}/prj.conf
-    )
-endif()
-
-set(PRJ_CONF)
-
-if (EXISTS ${MENUCONFIGDIR}/prj.conf)
-    list(APPEND PRJ_CONF ${MENUCONFIGDIR}/prj.conf)
-endif()
-
-
-if (NOT EXISTS ${MENUCONFIGDIR}/.config_kr4)
-    execute_process(
-        COMMAND python menuconfig.py -f default.conf ${PRJ_CONF} -d ${WORKING_PROJECT_DIR}
-        WORKING_DIRECTORY ${PROJECTDIR}/..
-    )
-endif()
 
 configure_file(${MENUCONFIGDIR}/.config_kr4 ${CMAKE_CURRENT_BINARY_DIR}/.config_kr4 COPYONLY)
 

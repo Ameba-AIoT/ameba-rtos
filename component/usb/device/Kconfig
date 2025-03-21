@@ -13,8 +13,12 @@ if USBD_COMPOSITE_MENU
             select USBD_COMPOSITE_CDC_ACM_HID if CORE_AS_AP
         config USBD_COMPOSITE_CDC_ACM_UAC_MENU
             bool "CDC ACM + UAC"
-            depends on AMEBASMART||AMEBASMARTPLUS               #amebasmart smart+
+            depends on AMEBASMART||AMEBASMARTPLUS
             select USBD_COMPOSITE_CDC_ACM_UAC if CORE_AS_AP
+        config USBD_COMPOSITE_CDC_ACM_UAC_HID_MENU
+            bool "CDC ACM + HID + UAC"
+            depends on AMEBASMART||AMEBASMARTPLUS
+            select USBD_COMPOSITE_CDC_ACM_UAC_HID if CORE_AS_AP
     endchoice
 endif
 
@@ -24,21 +28,15 @@ config USBD_HID_MENU
 
 config USBD_INIC_MENU
     bool "INIC"
-    depends on AMEBADPLUS||AMEBAGREEN2||AMEBAL2          #amebasplus amebagreen2 amebaL2
+    depends on AMEBADPLUS||AMEBAGREEN2
     select USBD_INIC if CORE_AS_AP
 
 config USBD_MSC_MENU
     bool "MSC"
-    depends on AMEBASMART||AMEBAD||AMEBASMARTPLUS                       #amebasmart amebaD smart+
+    depends on AMEBAD||AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2
     select USBD_MSC if CORE_AS_AP
 
 config USBD_UAC_MENU
-    bool "UAC(Experimental)"
-    depends on AMEBASMART||AMEBADPLUS||AMEBAD||AMEBASMARTPLUS           #amebasmart amebadplus amebaD
+    bool "UAC"
+    depends on AMEBASMART
     select USBD_UAC if CORE_AS_AP
-
-config USBD_VENDOR_MENU
-    bool "Vendor"
-    select USBD_VENDOR if CORE_AS_AP
-
-

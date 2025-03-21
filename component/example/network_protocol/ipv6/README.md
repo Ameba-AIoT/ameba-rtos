@@ -29,17 +29,7 @@ None
 	```
 	Change the ipv6 address based on output of server example to run client.
 
-4. `example_ipv6.c` Users can only enable one example at one time.
-	```C
-	example_ipv6_udp_server();
-	// example_ipv6_tcp_server();
-	// example_ipv6_mcast_server();
-	// example_ipv6_udp_client();
-	// example_ipv6_tcp_client();
-	// example_ipv6_mcast_client();
-	```
-
-3. How to use:
+4. How to use:
    - Run `./build.py -a ipv6` under project path, e.g. `amebasmart_gcc_project/`, to generate images.
    - `Download` images to board by Ameba Image Tool.
 

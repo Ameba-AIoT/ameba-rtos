@@ -118,7 +118,7 @@ menu "CONFIG WHC INTF"
 		default WHC_INTF_IPC_MENU
 			config WHC_INTF_IPC_MENU
 				bool "WHC_IPC"
-            # config FULLMAC_MENU
+            # config FULLMAC_DEV
             #     bool "FULLMAC"
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
@@ -129,7 +129,7 @@ menu "CONFIG WHC INTF"
 
 	endchoice
 
-    if FULLMAC_MENU
+    if FULLMAC_DEV
         choice
             prompt "FULLMAC INTERFACE"
             config SPI_FULLMAC
@@ -150,7 +150,7 @@ menu "CONFIG WHC INTF"
         endchoice
     endif
 
-    if !FULLMAC_MENU
+    if !FULLMAC_DEV
         choice
             prompt "Select AP Core"
             default AP_CORE_KM4
@@ -158,10 +158,12 @@ menu "CONFIG WHC INTF"
                 bool "KM4"
                 select CORE_AS_AP_FOR_KM4
                 select CORE_AS_NP_FOR_KR4 if WHC_INTF_IPC_MENU
+                select CORE_AS_NP_FOR_KM4 if WIFI_SINGLE_CORE_MENU
             config AP_CORE_KR4
                 bool "KR4"
                 select CORE_AS_AP_FOR_KR4
                 select CORE_AS_NP_FOR_KM4 if WHC_INTF_IPC_MENU
+                select CORE_AS_NP_FOR_KR4 if WIFI_SINGLE_CORE_MENU
         endchoice
     endif
 
@@ -196,7 +198,7 @@ menu "CONFIG WIFI"
             select ENABLE_WPS if CORE_AS_AP && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
-        config FULLMAC_MENU
+        config FULLMAC_DEV
             bool
             depends on CORE_AS_NP
             select WHC_INTF_SDIO if SDIO_FULLMAC

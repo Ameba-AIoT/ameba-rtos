@@ -108,10 +108,6 @@ extern void bt_stack_gatts_evt_indicate_mtu_exchange(uint8_t conn_id, uint16_t m
 extern void bt_stack_gattc_evt_indicate_mtu_exchange(uint8_t conn_id, uint16_t mtu);
 extern rtk_bt_le_link_role_t convert_rtk_link_role(T_GAP_ROLE role);
 
-#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-extern bool bt_stack_le_iso_init(void);
-extern void bt_stack_le_iso_deinit(void);
-#endif
 static T_GAP_DEV_STATE le_gap_dev_state = {0};
 static bt_stack_le_link_info_t bt_stack_le_link_tbl[RTK_BLE_GAP_MAX_LINKS] = {0};
 static uint16_t bt_stack_le_conn_handle[RTK_BLE_GAP_MAX_LINKS] = {0};
@@ -2007,12 +2003,6 @@ uint16_t bt_stack_le_gap_init(void *gap_conf)
 	bt_stack_le_gap_set_config(gap_conf);
 	le_register_app_cb(bt_stack_le_gap_callback);
 
-#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-	if (false == bt_stack_le_iso_init()) {
-		return RTK_BT_FAIL;
-	}
-#endif
-
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	if (false == bt_stack_le_gap_cte_init()) {
 		return RTK_BT_FAIL;
@@ -2615,9 +2605,6 @@ uint16_t bt_stack_le_gap_deinit(void)
 #endif
 #endif
 
-#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-	bt_stack_le_iso_deinit();
-#endif
 	return 0;
 }
 

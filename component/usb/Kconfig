@@ -13,11 +13,11 @@ menu "CONFIG USB"
                 select USB_DEVICE_EN if CORE_AS_AP
             config USB_HOST_EN_MENU
                 bool "Host"
-                depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAL2||AMEBAD  #amebasmart amebagreen2 amebaL2 amebaD amebasmartplus
+                depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAL2||AMEBAD
                 select USB_HOST_EN if CORE_AS_AP
             config USB_DRD_EN_MENU
                 bool "DRD"
-                depends on AMEBASMART||AMEBASMARTPLUS                  #amebasmart amebasmartplus
+                depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAL2||AMEBAD
                 select USB_DRD_EN if CORE_AS_AP
         endchoice
     endif
@@ -43,15 +43,13 @@ menu "CONFIG USB"
 
         config USBD_MSC_MENU
             bool "MSC"
+            depends on AMEBASMART||AMEBASMARTPLUS||AMEBAGREEN2||AMEBAD
             select USBD_MSC if CORE_AS_AP
 
         config USBD_UAC_MENU
-            bool "UAC(Experimental)"
+            bool "UAC"
+            depends on AMEBASMART
             select USBD_UAC if CORE_AS_AP
-
-        config USBD_VENDOR_MENU
-            bool "Vendor"
-            select USBD_VENDOR if CORE_AS_AP
 
         comment "USB Host Class"
 
@@ -66,10 +64,6 @@ menu "CONFIG USB"
         config USBH_UVC_MENU
             bool "UVC"
             select USBH_UVC if CORE_AS_AP
-
-        config USBH_VENDOR_MENU
-            bool "Vendor"
-            select USBH_VENDOR if CORE_AS_AP
     endif
 
 
@@ -90,6 +84,8 @@ menu "CONFIG USB"
     config USBD_COMPOSITE_CDC_ACM_HID
         bool
     config USBD_COMPOSITE_CDC_ACM_UAC
+        bool
+    config USBD_COMPOSITE_CDC_ACM_UAC_HID
         bool
     config USBD_HID
         bool

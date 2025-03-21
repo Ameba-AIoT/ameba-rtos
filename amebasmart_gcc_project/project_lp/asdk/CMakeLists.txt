@@ -14,7 +14,6 @@ ameba_add_subdirectories(
     make/target
     # make/cmsis
     make/project
-    make/application
     make/utils
 )
 # ameba_add_subdirectories_if(CONFIG_APP_DEMO

@@ -567,6 +567,13 @@ if(CONFIG_FLASH_AVL)
     )
 endif()
 
+if(CONFIG_DIAG_VERIFY)
+    list(
+        APPEND CSRC
+        ${DIR}/../../common/Diagnose/ameba_diag.c
+		${DIR}/../../common/Diagnose/ameba_diag_test.c
+    )
+endif()
 
 if(CSRC)
     ameba_internal_library(test_verification)

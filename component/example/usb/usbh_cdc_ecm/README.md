@@ -64,6 +64,8 @@ To run USB CDC ECM host application on HP:
 	Switch to link !!
 	```
 
+3. After get the ip address,  type command "AT+PING=XX", XX is the Router Ip Address, make sure the ping success and no packet losted
+
 # Note
 
 For other chips, refer to the AN for setup guide.

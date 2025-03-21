@@ -16,7 +16,6 @@
   */
 #include <platform_autoconf.h>
 #include "atcmd_service.h"
-#include "rtw_wifi_constants.h"
 #include "wifi_conf.h"
 #include "wifi_ind.h"
 #include <wifi_auto_reconnect.h>

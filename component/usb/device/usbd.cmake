@@ -39,6 +39,10 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
+if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAL2)
+    ameba_list_append(private_definitions CONFIG_USB_FS)
+endif()
+
 ameba_list_append(private_includes
     ../common
     core
@@ -86,32 +90,24 @@ if(CONFIG_USBD_VENDOR)
     ameba_list_append(private_sources vendor/usbd_vendor.c)
 endif()
 
-if(CONFIG_USBD_VERIFY)
-    ameba_list_append(private_includes ../verification/device verify)
-    ameba_list_append(private_sources
-        verify/usbd_verify.c
-        ../verification/device/usbd_cts.c
-        ../verification/device/usbd_cdc_acm_test.c
-        ../verification/device/usbd_cmd.c
-        ../verification/device/usbd_verify_test.c
-    )
-endif()
-
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID
+ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID private_sources
     composite/usbd_composite_cdc_acm_hid.c
     composite/usbd_composite_cdc_acm.c
     composite/usbd_composite_hid.c
 )
 
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC
+ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC private_sources
     composite/usbd_composite_cdc_acm_uac.c
     composite/usbd_composite_cdc_acm.c
     composite/usbd_composite_uac.c
 )
 
-if (CONFIG_AMEBADPLUS)
-    ameba_list_append(private_definitions CONFIG_USB_FS)
-endif()
+ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_HID private_sources
+    composite/usbd_composite_cdc_acm_uac_hid.c
+    composite/usbd_composite_hid_bi_dir.c
+    composite/usbd_composite_cdc_acm.c
+    composite/usbd_composite_uac.c
+)
 
 # Component private part, user config end
 #------------------------------#

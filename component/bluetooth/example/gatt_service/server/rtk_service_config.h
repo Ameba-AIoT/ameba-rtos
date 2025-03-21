@@ -25,6 +25,7 @@ extern "C"  {
 #define THROUGHPUT_SRV_ID                   11
 #define TRANSFER_MODULE_SRV_ID              12
 #define BLE_OTA_SRV_ID                      13
+#define BLE_WIFIMATE_SRV_ID                 14
 
 #ifdef __cplusplus
 }

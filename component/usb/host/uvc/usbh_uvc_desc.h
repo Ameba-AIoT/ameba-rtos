@@ -1,13 +1,8 @@
-/**
-  ******************************************************************************
-  * The header file for uvc class
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _USBH_UVC_DESC_H_
 #define _USBH_UVC_DESC_H_

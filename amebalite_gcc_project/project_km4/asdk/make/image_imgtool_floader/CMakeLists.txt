@@ -2,9 +2,6 @@ ameba_add_image(target_imgtool_floader p_EXCLUDE_FROM_ALL)
 # variable c_CURRENT_IMAGE value is target_loader_${PROJECT_NAME}
 
 ###############################  ADD COMPONENT  ###################################
-add_compile_definitions(
-    CONFIG_DOWNLOAD_IND_EN
-)
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})

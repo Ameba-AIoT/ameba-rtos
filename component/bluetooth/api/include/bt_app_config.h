@@ -17,6 +17,9 @@ extern "C"
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 #include <bt_le_audio_app_config.h>
 #endif
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+#include <bt_le_iso_app_config.h>
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <rtk_bt_mesh_def.h>
 #endif
@@ -55,6 +58,9 @@ typedef struct {
                                                     cccd will be saved, and when reconnect to the bonded device, @ref RTK_BT_GATTS_EVT_CCCD_IND events
                                                     will be indicated immediately.
                                                     By default, cccd will be saved. And this value will be ignored if @ref RTK_BLE_AUDIO_SUPPORT is enabled.*/
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+	rtk_bt_le_iso_app_conf_t le_iso_app_conf; /*!< Default configuration for le iso */
+#endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	rtk_bt_le_audio_app_conf_t le_audio_app_conf; /*!< Default configuration for le audio */
 #endif

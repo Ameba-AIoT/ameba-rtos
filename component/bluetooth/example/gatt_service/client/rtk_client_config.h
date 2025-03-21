@@ -19,6 +19,8 @@ extern "C"  {
 #define THROUGHPUT_CLIENT_PROFILE_ID        5
 #define TRANSFER_MODULE_CLIENT_PROFILE_ID   6
 #define BLE_OTA_CLIENT_PROFILE_ID           7
+#define BLE_WIFIMATE_CLIENT_PROFILE_ID      8
+
 
 typedef enum {
 	DISC_IDLE = 0,

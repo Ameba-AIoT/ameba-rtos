@@ -710,6 +710,12 @@ static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_TRANSFER_MODULE) && CONFIG_BT_TRANSFER_MODULE
 	{"transfer_module",  atcmd_bt_transfer_module,  2, 4},
 #endif
+#if defined(CONFIG_BT_WIFIMATE_DEVICE) && CONFIG_BT_WIFIMATE_DEVICE
+	{"ble_wifimate_device", atcmd_bt_wifimate_device, 2, 2},
+#endif
+#if defined(CONFIG_BT_WIFIMATE_CONFIGURATOR) && CONFIG_BT_WIFIMATE_CONFIGURATOR
+	{"ble_wifimate_configurator", atcmd_bt_wifimate_configurator, 2, 6},
+#endif
 	{NULL,},
 };
 
@@ -727,6 +733,9 @@ static const cmd_table_t vendor_table[] = {
 	/*{"ant",              atcmd_bt_ant,              2, 2},*/
 	{"tx_power",         atcmd_bt_set_tx_power,     4, 5},
 	{"sof",              atcmd_bt_sof_eof_ind,      2, 3},
+#if ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+	{"remote_wakeup",    atcmd_bt_remote_wakeup,    1, 1},
+#endif
 	{NULL,},
 };
 

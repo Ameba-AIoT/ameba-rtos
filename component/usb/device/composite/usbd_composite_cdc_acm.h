@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #ifndef USBD_COMPOSITE_CDC_ACM_H
 #define USBD_COMPOSITE_CDC_ACM_H
 

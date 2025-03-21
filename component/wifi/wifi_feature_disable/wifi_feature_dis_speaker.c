@@ -12,7 +12,7 @@
  * more details.
  *
 *****************************************************************************/
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 
 void wifi_hal_speaker_txrpt_parse(u8 rpt_idx)
 {

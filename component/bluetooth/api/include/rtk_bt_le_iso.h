@@ -8,46 +8,19 @@
 #define __RTK_BT_LE_ISO_H__
 
 #include <rtk_bt_def.h>
-#include <rtk_bt_common.h>
+#include <basic_types.h>
 #include <bt_api_config.h>
+#include <rtk_bt_le_gap.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-
+#include <rtk_bt_le_iso_def.h>
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))
 #endif
-
-#define RTK_BLE_CIG_MAX_NUM 2
-/* due to bt stack restrict, CIS ID need to be different even within different CIG Group */
-/* so current CIG Group Num Should be 2, each group contains 2 cis number*/
-/* CIG 1 -> CIS 1 and CIS 2
-   CIG 2 -> CIS 3 and CIS 4 */
-#define RTK_BLE_CIS_MAX_NUM 4
-#define RTK_BLE_BIG_BROADCASTER_MAX_NUM 1
-#define RTK_BLE_BIS_BROADCASTER_MAX_NUM 1
-#define RTK_BLE_BIG_RECEIVER_MAX_NUM 1
-#define RTK_BLE_BIS_RECEIVER_MAX_NUM 1
-
-#define RTK_BLE_ISO_DATA_SEND_TIMER_IN_API   1
-
-#define RTK_BLE_ISO_DEFAULT_PHY_1M                  (1) /**< bit 0:LE PHY 1M used. */
-#define RTK_BLE_ISO_DEFAULT_PHY_2M                  (2) /**< bit 1:LE PHY 2M used. */
-#define RTK_BLE_ISO_DEFAULT_PHY_CODED               (4) /**< bit 2:LE Coded PHY used. */
-
-#define RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_M_S        (10) //units: ms
-#define RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_S_M        (10) //units: ms 
-#define RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_M_S_US     (10000) //units: us
-#define RTK_BLE_ISO_DEFAULT_SDU_INTERVAL_S_M_US     (10000) //units: us 
-#define RTK_BLE_ISO_DEFAULT_LATENCY_M_S             (10)
-#define RTK_BLE_ISO_DEFAULT_LATENCY_S_M             (10)
-#define RTK_BLE_ISO_MAX_SDU_M_S                     (128)   //units: byte
-#define RTK_BLE_ISO_MAX_SDU_S_M                     (128)   //units: byte
-#define RTK_BLE_ISO_DEFAULT_RTN_M_S                 (2)
-#define RTK_BLE_ISO_DEFAULT_RTN_S_M                 (2)
 
 /**
  * @struct    rtk_bt_le_iso_role_t
@@ -360,6 +333,16 @@ typedef struct {
 } rtk_bt_le_iso_cig_initiator_set_cis_param_t;
 
 /**
+ * @struct    rtk_bt_le_iso_set_cig_cis_param_t
+ * @brief     Bluetooth LE ISO set cig parameters struct .
+ */
+typedef struct {
+	uint8_t cis_num;                                             /*!< cis number */
+	rtk_bt_le_iso_cig_initiator_set_cig_param_t set_cig_param;   /*!< cig parameter */
+	rtk_bt_le_iso_cig_initiator_set_cis_param_t set_cis_param[RTK_BLE_CIS_MAX_NUM];   /*!< cis parameter */
+} rtk_bt_le_iso_set_cig_cis_param_t;
+
+/**
  * @struct    rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle_param_t
  * @brief     Bluetooth LE ISO management create cis by cis_conn_handle for initiator.
  */
@@ -403,17 +386,6 @@ typedef struct {
 } rtk_bt_le_iso_cig_acceptor_config_sdu_param_t;
 
 /**
- * @typedef   rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t
- * @brief     Bluetooth LE ISO management config CIS request action for acceptor.
- */
-typedef enum {
-	RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT  = 0x00,    /**< accept CIS request when acceptor received CIS_REQUEST_IND from initiator. */
-	RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_REJECT,            /**< reject CIS request when acceptor received CIS_REQUEST_IND from initiator. */
-	RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_PENDING,           /**< pending CIS request when acceptor received CIS_REQUEST_IND from initiator, then APP need call
-                                                                    rtk_bt_le_iso_cig_acceptor_accept_cis or rtk_bt_le_iso_cig_acceptor_reject_cis according to the usage scenario. */
-} rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t;
-
-/**
  * @struct    rtk_bt_le_iso_cig_setup_data_path_done_t
  * @brief     Bluetooth BLE ISO management CIG setup data path done event definition.
  */
@@ -455,7 +427,15 @@ typedef struct {
  * @struct    rtk_bt_le_iso_cig_disconnect_info_t
  * @brief     Bluetooth BLE ISO management CIG disconnect indication info.
  */
-typedef rtk_bt_le_iso_cig_disconnect_rsp_t rtk_bt_le_iso_cig_disconnect_info_t;
+typedef struct {
+	uint16_t cause;                     /**< process result */
+	uint16_t cis_conn_handle;           /**< Connection handle of the CIS */
+	uint16_t conn_handle;               /**< Connection handle. If cause is not 0, conn_handle is meaningless.*/
+	uint8_t cig_id;                     /**< Identifier of a CIG. If cause is not 0, cig_id is meaningless.*/
+	uint8_t cis_id;                     /**< Identifier of a CIS. If cause is not 0, cis_id is meaningless.*/
+	uint8_t input_path_remove_ind;
+	uint8_t output_path_remove_ind;
+} rtk_bt_le_iso_cig_disconnect_info_t;
 
 /**
  * @struct    rtk_bt_le_iso_cig_read_iso_tx_sync_info_t
@@ -626,6 +606,32 @@ typedef struct {
 } rtk_bt_le_iso_cig_cis_established_info_t;
 
 /**
+ * @struct    rtk_bt_le_iso_cig_setup_data_path_info_t
+ * @brief     Bluetooth BLE ISO management CIG setup datapath indication.
+ */
+typedef struct {
+	uint16_t cause;                                     /**< process result */
+	uint16_t cis_conn_handle;                           /**< Connection handle of the CIS */
+	uint8_t conn_id;                                    /**< Connection id*/
+	uint8_t cig_id;                                     /**< Identifier of a CIG.*/
+	uint8_t cis_id;                                     /**< Identifier of a CIS.*/
+	uint8_t data_path_direction;                        /**< data path.*/
+} rtk_bt_le_iso_cig_setup_data_path_info_t;
+
+/**
+ * @struct    rtk_bt_le_iso_cig_remove_data_path_info_t
+ * @brief     Bluetooth BLE ISO management CIG remove datapath indication.
+ */
+typedef struct {
+	uint16_t cause;                                     /**< process result */
+	uint16_t cis_conn_handle;                           /**< Connection handle of the CIS */
+	uint8_t conn_id;                                    /**< Connection id*/
+	uint8_t cig_id;                                     /**< Identifier of a CIG.*/
+	uint8_t cis_id;                                     /**< Identifier of a CIS.*/
+	uint8_t data_path_direction;                        /**< data path.*/
+} rtk_bt_le_iso_cig_remove_data_path_info_t;
+
+/**
  * @struct    rtk_bt_le_iso_cig_initiator_remove_cig_done_t
  * @brief     Bluetooth BLE ISO management CIG remove CIG for initiator.
  */
@@ -643,9 +649,6 @@ typedef struct {
 	uint16_t conn_handle;             /**< Connection handle.*/
 	uint8_t cig_id;                 /**< Identifier of a CIG.*/
 	uint8_t cis_id;                 /**< Identifier of a CIS.*/
-	rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t
-	cis_req_action;         /**< Action of CIS request Indicate, default is RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT.
-                                                                                        can be configed by @ref rtk_bt_le_iso_cig_acceptor_config_cis_req_action. */
 } rtk_bt_le_iso_cig_acceptor_request_cis_ind_t;
 
 /**
@@ -737,7 +740,7 @@ typedef struct {
                                          Time = N * 1.25 ms
                                          Time Range: 5 ms to 4 s. */
 	uint8_t num_bis;                /**< Total number of BISes in the BIG. */
-	rtk_bt_le_iso_big_bis_conn_handle_info_t bis_conn_handle_info[RTK_BLE_BIS_BROADCASTER_MAX_NUM];/**< Connection handle of BIS. */
+	rtk_bt_le_iso_big_bis_conn_handle_info_t bis_conn_handle_info[RTK_BLE_BIS_MAX_NUM];/**< Connection handle of BIS. */
 } rtk_bt_le_iso_big_broadcaster_create_cmpl_info_t;
 
 typedef struct {
@@ -771,6 +774,8 @@ typedef struct {
 	uint8_t adv_handle;                          /**< Used to identify the periodic advertising train. */
 	uint8_t sync_state;                          /**< Synchronization state. @ref rtk_bt_le_iso_big_broadcaster_sync_state_t*/
 	uint8_t cause;
+	uint16_t bis_num;                              /**< for BIG_ISOC_BROADCAST_STATE_BROADCASTING to setup data path */
+	uint16_t bis_conn_handle[RTK_BLE_BIS_MAX_NUM]; /**< for BIG_ISOC_BROADCAST_STATE_BROADCASTING to setup data path */
 } rtk_bt_le_iso_big_broadcaster_sync_state_ind_t;
 
 typedef struct {
@@ -802,7 +807,7 @@ typedef struct {
                                                 Time = N*10 ms
                                                 Time Range: 100 ms to 163.84 s */
 	uint8_t  num_bis;                      /**< Total number of BISes to synchronize. */
-	uint8_t  bis[RTK_BLE_BIS_RECEIVER_MAX_NUM]; /**< A list of indices corresponding to BIS(es). */
+	uint8_t  bis[RTK_BLE_BIS_MAX_NUM]; /**< A list of indices corresponding to BIS(es). */
 } rtk_bt_le_iso_big_receiver_create_sync_param_t;
 
 typedef struct {
@@ -827,7 +832,7 @@ typedef struct {
                                           Time = N * 1.25 ms
                                           Time Range: 5 ms to 4 s. */
 	uint8_t num_bis;                 /**< Indicate the number of BISes in the synchronized BIG specified */
-	rtk_bt_le_iso_big_bis_conn_handle_info_t bis_conn_handle_info[RTK_BLE_BIS_RECEIVER_MAX_NUM]; /**< Connection handle of BIS. */
+	rtk_bt_le_iso_big_bis_conn_handle_info_t bis_conn_handle_info[RTK_BLE_BIS_MAX_NUM]; /**< Connection handle of BIS. */
 } rtk_bt_le_iso_big_receiver_sync_established_info_t;
 
 typedef enum {
@@ -843,6 +848,8 @@ typedef struct {
 	uint8_t sync_id;                 /**< Identify the periodic advertising train. */
 	uint16_t sync_handle;            /**< Sync_Handle identifying the periodic advertising train. */
 	uint8_t cause;
+	uint16_t bis_num;
+	uint16_t bis_conn_handle[RTK_BLE_BIS_MAX_NUM];
 } rtk_bt_le_iso_big_receiver_sync_state_ind_t;
 
 typedef struct {
@@ -861,6 +868,68 @@ typedef struct {
 	uint32_t duplicate_packets;         /**< The value shall be ignored for BIS. */
 } rtk_bt_le_iso_big_receiver_read_link_quality_info_t;
 
+/**
+ * @struct    rtk_bt_le_iso_big_setup_data_path_info_t
+ * @brief     Bluetooth BLE ISO management BIG setup datapath indication.
+ */
+typedef struct {
+	uint16_t cause;                                     /**< process result */
+	uint16_t bis_conn_handle;                           /**< Connection handle of the BIS */
+	uint8_t big_handle;                                 /**< Used to identify the BIG*/
+	uint8_t data_path_direction;                        /**< data path.*/
+} rtk_bt_le_iso_big_setup_data_path_info_t;
+
+/**
+ * @struct    rtk_bt_le_iso_big_remove_data_path_info_t
+ * @brief     Bluetooth BLE ISO management BIG remove datapath indication.
+ */
+typedef struct {
+	uint16_t cause;                                     /**< process result */
+	uint16_t bis_conn_handle;                           /**< Connection handle of the BIS */
+	uint8_t big_handle;                                 /**< Used to identify the BIG*/
+	uint8_t data_path_direction;                        /**< data path.*/
+} rtk_bt_le_iso_big_remove_data_path_info_t;
+
+/**
+ * @struct    rtk_bt_le_iso_sync_type_t
+ * @brief     Bluetooth BLE ISO sync info type.
+ */
+typedef enum {
+	RTK_BT_LE_ISO_PA_SYNC_STATE_SYNCHRONIZED,
+	RTK_BT_LE_ISO_PA_SYNC_STATE_TERMINATED,
+	RTK_BT_LE_ISO_GAP_EVT_DISCONN_IND
+} rtk_bt_le_iso_sync_type_t;
+
+/**
+ * @struct    rtk_bt_le_iso_sync_info_t
+ * @brief     Bluetooth BLE ISO sync info type.
+ */
+typedef struct {
+	rtk_bt_le_iso_sync_type_t type;
+	union {
+		rtk_bt_le_pa_sync_ind_t pa_sync;
+		rtk_bt_le_disconn_ind_t disc_ind;
+	} info;
+} rtk_bt_le_iso_sync_info_t;
+
+/**
+ * @struct    rtk_bt_le_iso_conn_handle_info_t
+ * @brief     Bluetooth BLE ISO connection handle information.
+ */
+typedef struct {
+	uint16_t iso_handle_num;
+	uint16_t iso_handle[RTK_BLE_BIS_MAX_NUM + RTK_BLE_CIS_MAX_NUM];
+} rtk_bt_le_iso_conn_handle_info_t;
+
+/**
+ * @struct    rtk_bt_le_iso_get_conn_handle_t
+ * @brief     Bluetooth BLE ISO get conncetion handle struct.
+ */
+typedef struct {
+	rtk_bt_le_iso_role_t role;
+	rtk_bt_le_iso_conn_handle_info_t info;
+} rtk_bt_le_iso_get_conn_handle_t;
+
 typedef struct {
 	uint16_t bis_conn_handle;                                               /**< Connection handle of the BIS. */
 	rtk_bt_le_iso_big_receiver_read_link_quality_info_t *p_link_quality_info;   /**< Read link quality info result. */
@@ -875,43 +944,13 @@ typedef struct {
  */
 
 /**
- * @brief     Initialize the number of CIG and CIS.
- * @param[in] param: The param for CIG init
+ * @brief     Start CIG Setting.
+ * @param[in]       param:  The param of setup cig.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_init(rtk_bt_le_iso_cig_init_param_t *param);
-
-/**
- * @brief     Get connection ID by CIS connection handle.
- * @param[in]   cis_conn_handle:  Connection handle of the CIS.
- * @param[out]  p_conn_handle:    Connection handle.
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_get_conn_handle(uint16_t cis_conn_handle, uint16_t *p_conn_handle);
-
-/**
- * @brief     Get CIG ID and CIS ID by CIS connection handle.
- * @param[in]   cis_conn_handle:  Connection handle of the CIS.
- * @param[out]  p_info:       CIG ID and CIS ID.
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_get_cis_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_cis_info_t *p_info);
-
-/**
- * @brief     Get information about specified CIS connection handle.
- * @param[in]   cis_conn_handle  Connection handle of the CIS.
- * @param[out]  p_info           Information about specified CIS connection handle.
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_get_isoch_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cis_channel_info_t *p_info);
+uint16_t rtk_bt_le_iso_cig_start_setting(rtk_bt_le_iso_set_cig_cis_param_t *param);
 
 /**
  * @brief     Identify and create the isochronous data path for CIS.
@@ -923,89 +962,24 @@ uint16_t rtk_bt_le_iso_cig_get_isoch_info(uint16_t cis_conn_handle, rtk_bt_le_is
 uint16_t rtk_bt_le_iso_cig_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
 
 /**
- * @brief     Remove the input and/or output data path(s) associated with CIS.
- * @param[in]       cis_conn_handle:   Connection handle of the CIS.
- * @param[in]       data_path_direction:  The param for CIG remove path.
+ * @brief     Send ISO data [ASYNC/SYNC].
+ *            If sending request operation is success, the result will be returned when the API is done.
+ * @param[in] info: The info of iso send data
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_remove_path(uint16_t cis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
+uint16_t rtk_bt_le_iso_data_send(rtk_bt_le_iso_data_send_info_t *info);
 
 /**
- * @brief     Terminate a CIS connection.
- * @param[in]   cis_conn_handle:   Connection handle of the CIS.
+ * @brief     Get information about specified CIS connection handle.
+ * @param[in]   cis_conn_handle  Connection handle of the CIS.
+ * @param[out]  p_info           Information about specified CIS connection handle.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_disconnect(uint16_t cis_conn_handle);
-
-/**
- * @brief     Read the TX_Time_Stamp and Time_Offset of a transmitted SDU identified by the Packet_Sequence_Number on a CIS.
- * @param[in]   cis_conn_handle:   Connection handle of the CIS.
- * @param[out]  p_tx_sync_info:    Point to tx sync info result.
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_read_iso_tx_sync(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_iso_tx_sync_info_t *p_tx_sync_info);
-
-/**
- * @param[in]   cis_conn_handle:        Connection handle of the CIS.
- * @param[out]  p_link_quality_info:    Point to link quality info result.
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_read_link_quality(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_link_quality_info_t *p_link_quality_info);
-
-/**
- * @brief     Add CIS for specified CIG.
- * @param[in] cig_id: Identifier of a CIG
- * @param[in] cis_id: Identifier of a CIS
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_initiator_add_cis(uint8_t cig_id, uint8_t cis_id);
-
-/**
- * @brief     Set GAP CIG parameters.
- * @param[in] param: The param for set CIG param
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_initiator_set_cig_param(rtk_bt_le_iso_cig_initiator_set_cig_param_t *param);
-
-/**
- * @brief     Set GAP CIS parameters.
- * @param[in] param: The param for set CIS param
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_initiator_set_cis_param(rtk_bt_le_iso_cig_initiator_set_cis_param_t *param);
-
-/**
- * @brief     Request to create a CIG and to set the parameters of one or more CISes in the Controller.
- * @param[in] cig_id: Identifier of a CIG
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id);
-
-/**
- * @brief     Specify the connection handle of the ACL connection associated with each CIS to be created.
- * @param[in] cis_id: Identifier of a CIS
- * @param[in] conn_handle: connection handle
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_initiator_set_cis_acl_link(uint8_t cis_id, uint16_t conn_handle);
+uint16_t rtk_bt_le_iso_cig_get_isoch_info(uint16_t cis_conn_handle, rtk_bt_le_iso_cis_channel_info_t *p_info);
 
 /**
  * @brief     create cis id and link it to acl, and cig.
@@ -1033,14 +1007,13 @@ uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cis_conn_handle(uint8_t cis_i
 																   uint16_t *p_cis_conn_handle);
 
 /**
- * @brief     Get CIS connection handle by CIS id.
- * @param[in]   cis_id:         Used to identify a CIS.
- * @param[out]  p_cis_conn_handle:   CIS connection handle.
+ * @brief     Terminate a CIS connection.
+ * @param[in] cis_conn_handle:   Connection handle of the CIS.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_initiator_get_cis_conn_handle(uint8_t cis_id, uint16_t *p_cis_conn_handle);
+uint16_t rtk_bt_le_iso_cig_disconnect(uint16_t cis_conn_handle);
 
 /**
  * @brief     Used by the Central's Host to remove the CIG.
@@ -1052,75 +1025,52 @@ uint16_t rtk_bt_le_iso_cig_initiator_get_cis_conn_handle(uint8_t cis_id, uint16_
 uint16_t rtk_bt_le_iso_cig_initiator_remove_cig(uint8_t cig_id);
 
 /**
- * @brief     Register CIG by cig_id.
- * @param[in]   cig_id:   Identifier of a CIG.
+ * @brief     Remove the input and/or output data path(s) associated with CIS.
+ * @param[in]       cis_conn_handle:   Connection handle of the CIS.
+ * @param[in]       data_path_direction:  The param for CIG remove path.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_initiator_register_callback(uint8_t cig_id);
+uint16_t rtk_bt_le_iso_cig_remove_path(uint16_t cis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
 
 /**
- * @brief     Accept the request for the CIS.
+ * @brief     Read the TX_Time_Stamp and Time_Offset of a transmitted SDU identified by the Packet_Sequence_Number on a CIS.
  * @param[in]   cis_conn_handle:   Connection handle of the CIS.
+ * @param[out]  p_tx_sync_info:    Point to tx sync info result.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_acceptor_accept_cis(uint16_t cis_conn_handle);
+uint16_t rtk_bt_le_iso_cig_read_iso_tx_sync(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_iso_tx_sync_info_t *p_tx_sync_info);
 
 /**
- * @brief     Reject the request for the CIS..
- * @param[in]   cis_conn_handle:  Connection handle of the CIS.
- * @param[in]   reason:   Reason the CIS request was rejected. @ref BT_HCI_ERROR (except @ref HCI_SUCCESS)
+ * @param[in]   cis_conn_handle:        Connection handle of the CIS.
+ * @param[out]  p_link_quality_info:    Point to link quality info result.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_acceptor_reject_cis(uint16_t cis_conn_handle, uint8_t reason);
+uint16_t rtk_bt_le_iso_cig_read_link_quality(uint16_t cis_conn_handle, rtk_bt_le_iso_cig_read_link_quality_info_t *p_link_quality_info);
 
 /**
- * @brief     Whether to check sdu length when rtk_bt_le_iso_data_send.
- * @param[in]   cis_conn_handle:   Connection handle of the CIS.
- * @param[in]   acceptor_config_sdu_flag:   Whether to check sdu length when acceptor calls @ref rtk_bt_le_iso_data_send.
- * @param[in]   sdu_interval_m_s:   The interval, in microseconds, between the start of consecutive SDUs from the Central's Host for all the CISes in the CIG. Range: 0x0000FF to 0x0FFFFF
- * @param[in]   sdu_interval_s_m:   The interval, in microseconds, between the start of consecutive SDUs from the Peripheral's Host for all the CISes in the CIG. Range: 0x0000FF to 0x0FFFFF
- * @param[in]   max_sdu_m_s:   Maximum size, in octets, of the payload from the Central's Host.
- * @param[in]   max_sdu_s_m:   Maximum size, in octets, of the payload from the Peripheral's Host.
+ * @brief     Setup data path for BIS.
+ * @param[in]   param: The param for setup BIS data path
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_acceptor_config_sdu_param(uint16_t cis_conn_handle, bool acceptor_config_sdu_flag, uint32_t sdu_interval_m_s,
-													 uint32_t sdu_interval_s_m, uint16_t max_sdu_m_s, uint16_t max_sdu_s_m);
+uint16_t rtk_bt_le_iso_big_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
 
 /**
- * @brief     Config the acceptor action when received cis request indication. Default action is RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT.
- * @param[in]   cis_req_action:   The param for config CIS param.
+ * @brief     Remove data path for BIS.
+ * @param[in]   bis_conn_handle: Connection handle of the BIS.
+ * @param[in]   data_path_direction: Specify which directions are to have the data path removed.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_cig_acceptor_config_cis_req_action(rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t cis_req_action);
-
-
-/**
- * @brief     Register acceptor gap app callback.
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_cig_acceptor_register_callback(void);
-
-/**
- * @brief     Initialize the number of BIG and BIS for Boardcaster.
- * @param[in] big_num: BIG number
- * @param[in] bis_num: BIS number
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_big_broadcaster_init(uint8_t big_num, uint8_t bis_num);
+uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
 
 /**
  * @brief     Create BIG broadcaster.
@@ -1153,16 +1103,6 @@ uint16_t rtk_bt_le_iso_big_broadcaster_terminate(uint8_t big_handle);
 uint16_t rtk_bt_le_iso_big_broadcaster_read_tx_sync(uint16_t bis_conn_handle, rtk_bt_le_iso_big_broadcaster_read_tx_sync_info_t *p_tx_sync_info);
 
 /**
- * @brief     Initialize the number of BIG and BIS for Receiver.
- * @param[in] big_num: BIG number
- * @param[in] bis_num: BIS number
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_big_receiver_init(uint8_t big_num, uint8_t bis_num);
-
-/**
  * @brief     Synchronize to a BIG described in the periodic advertising train.
  * @param[in] sync_handle: Identify the periodic advertising train
  * @param[in] sync_param: GAP Synchronized Receiver BIG create sync parameter
@@ -1193,33 +1133,23 @@ uint16_t rtk_bt_le_iso_big_receiver_terminate_sync(uint8_t big_handle);
 uint16_t rtk_bt_le_iso_big_receiver_read_iso_link_quality(uint16_t bis_conn_handle, rtk_bt_le_iso_big_receiver_read_link_quality_info_t *p_link_quality_info);
 
 /**
- * @brief     Setup data path for BIS.
- * @param[in]   param: The param for setup BIS data path
+ * @brief     Sync le info to iso stack.
+ * @param[in] p_info:   Pointer to sync information.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_big_setup_path(rtk_bt_le_iso_setup_path_param_t *param);
+uint16_t rtk_bt_le_iso_sync_info(rtk_bt_le_iso_sync_info_t *p_info);
 
 /**
- * @brief     Remove data path for BIS.
- * @param[in]   bis_conn_handle: Connection handle of the BIS.
- * @param[in]   data_path_direction: Specify which directions are to have the data path removed.
+ * @brief     rtk_bt_le_iso_get_iso_conn_handle.
+ * @param[in] role: le iso role.
+ * @param[in] p_info: Pointer to return struct.
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
  */
-uint16_t rtk_bt_le_iso_big_remove_path(uint16_t bis_conn_handle, rtk_bt_le_iso_data_path_direction_flag_t data_path_direction);
-
-/**
- * @brief     Send ISO data [ASYNC/SYNC].
- *            If sending request operation is success, the result will be returned when the API is done.
- * @param[in] info: The info of iso send data
- * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
- */
-uint16_t rtk_bt_le_iso_data_send(rtk_bt_le_iso_data_send_info_t *info);
+uint16_t rtk_bt_le_iso_get_iso_conn_handle(rtk_bt_le_iso_role_t role, rtk_bt_le_iso_conn_handle_info_t *p_info);
 
 /**
  * @}

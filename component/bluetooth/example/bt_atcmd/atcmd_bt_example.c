@@ -981,3 +981,47 @@ int atcmd_bt_transfer_module(int argc, char *argv[])
 	}
 	return ret;
 }
+
+int ble_wifimate_device_main(uint8_t enable);
+int atcmd_bt_wifimate_device(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for ble wifimate device example!\r\n", op);
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	if (ble_wifimate_device_main(op)) {
+		BT_LOGE("Error: ble wifimate device example %s failed!\r\n", action[op]);
+		return BT_AT_FAIL;
+	}
+
+	BT_LOGA("Ble wifimate device example %s OK!\r\n", action[op]);
+	return 0;
+}
+
+int ble_wifimate_configurator_main(uint8_t enable);
+int atcmd_bt_wifimate_configurator(int argc, char *argv[])
+{
+	int ret = 0;
+	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
+		uint8_t op = (uint8_t)str_to_int(argv[0]);
+		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+			BT_LOGE("Error: wrong parameter (%d) for ble wifimate configurator example!\r\n", op);
+			return BT_AT_ERR_PARAM_INVALID;
+		}
+
+		if (ble_wifimate_configurator_main(op)) {
+			BT_LOGE("Error: ble wifimate configurator example %s failed!\r\n", (op == 1) ? "enable" : "disable");
+			return BT_AT_FAIL;
+		}
+
+		BT_LOGA("ble wifimate configurator example %s OK!\r\n", (op == 1) ? "enable" : "disable");
+	} else {
+		ret = atcmd_bt_wifimate_configurator_cmd(argc, argv);
+	}
+	return ret;
+}

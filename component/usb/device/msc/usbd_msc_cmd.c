@@ -1,10 +1,8 @@
-/**
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------ */
 
@@ -24,8 +22,6 @@ static const char *const TAG = "MSCD";
 #define CONFIG_USBD_MSC_SPEED						USB_SPEED_HIGH
 #endif
 
-#define CONFIG_USBD_MSC_ISR_THREAD_PRIORITY			7U
-
 /* Private types -------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -36,7 +32,7 @@ static u32 usbd_msc_cmd_test(u16 argc, u8 *argv[]);
 static usbd_config_t msc_cmd_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
 	.dma_enable = 1U,
-	.isr_priority = CONFIG_USBD_MSC_ISR_THREAD_PRIORITY,
+	.isr_priority = INT_PRI_MIDDLE,
 	.nptx_max_err_cnt = {0U, 2000U, },
 };
 

@@ -15,7 +15,7 @@
 #ifndef __WIFI_FEATURE_DIS_KVR_C__
 #define __WIFI_FEATURE_DIS_KVR_C__
 
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 
 #if !defined(CONFIG_WIFI_11K_ENABLE) && !defined(CONFIG_WIFI_11V_ENABLE) && !defined(CONFIG_WIFI_11R_ENABLE)
 u8 rtw_check_peer_kvr_cap(void *a)

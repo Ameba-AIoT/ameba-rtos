@@ -1,11 +1,8 @@
-/**
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
-
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------ */
 
@@ -32,7 +29,6 @@ static const char *const TAG = "HID";
 
 // Thread priorities
 #define CONFIG_USBD_HID_INIT_THREAD_PRIORITY		5U
-#define CONFIG_USBD_HID_ISR_THREAD_PRIORITY			7U
 #define CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_HID_ISR_THREAD_PRIORITY
 
 // Send mouse data through monitor.
@@ -140,7 +136,7 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 static usbd_config_t hid_cfg = {
 	.speed = CONFIG_USBD_HID_SPEED,
 	.dma_enable = 1U,
-	.isr_priority = CONFIG_USBD_HID_ISR_THREAD_PRIORITY,
+	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 660U,
 	.ptx_fifo_depth = {16U, 256U, 16U, 16U, 16U},

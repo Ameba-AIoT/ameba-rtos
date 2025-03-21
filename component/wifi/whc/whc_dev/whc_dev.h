@@ -21,7 +21,6 @@
 #ifndef CONFIG_FULLMAC
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "rtw_wifi_constants.h"
 #include "rtw_skbuff.h"
 #include "rtw_queue.h"
 #include "wifi_conf.h"

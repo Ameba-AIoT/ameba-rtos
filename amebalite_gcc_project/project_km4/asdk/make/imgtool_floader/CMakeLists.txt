@@ -34,7 +34,7 @@ set(
 	${RAM_HP_DIR}/ameba_arch.c
 	${SWLIB_DIR}/log.c
 	${CFGDIR}/ameba_bootcfg.c
-    ${FL_DIR}/loguart_intf.c
+	${FL_DIR}/loguart_intf.c
 	${FL_DIR}/floader_debug.c
 	${FL_DIR}/floader_fb.c
 	${FL_DIR}/floader_intf.c

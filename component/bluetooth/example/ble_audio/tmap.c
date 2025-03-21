@@ -1125,14 +1125,14 @@ static uint16_t app_bt_le_audio_add_data_path(uint16_t iso_conn_handle, void *p_
 				}
 #endif
 			}
-			return 1;
+			return 0;
 
 error:
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
 		}
 	}
 	BT_LOGE("[APP] %s: app_bt_le_audio_add_data_path fail, APP_LE_AUDIO_DEMO_DATA_PATH_NUM not enough! \r\n", __func__);
-	return 0;
+	return 1;
 }
 
 static uint16_t app_bt_le_audio_remove_data_path(uint16_t iso_conn_handle, rtk_bt_le_audio_iso_data_path_direction_t path_direction)
@@ -1154,11 +1154,11 @@ static uint16_t app_bt_le_audio_remove_data_path(uint16_t iso_conn_handle, rtk_b
 				app_bt_le_audio_record_remove(app_le_audio_data_path[i].p_record_hdl);
 			}
 			memset((void *)&app_le_audio_data_path[i], 0, sizeof(app_bt_le_audio_data_path_t));
-			return 1;
+			return 0;
 		}
 	}
 	BT_LOGE("[APP] %s: app_bt_le_audio_remove_data_path fail, not found! \r\n", __func__);
-	return 0;
+	return 1;
 }
 
 static void app_bt_le_audio_remove_data_path_all(void)
@@ -1706,6 +1706,16 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 					(int)osif_sys_time_get(), p_bt_direct_iso->iso_conn_handle, p_bt_direct_iso->pkt_status_flag,
 					p_bt_direct_iso->pkt_seq_num, p_bt_direct_iso->ts_flag,
 					(unsigned int)p_bt_direct_iso->time_stamp, p_bt_direct_iso->iso_sdu_len, p_bt_direct_iso->p_buf, p_bt_direct_iso->buf_len, p_bt_direct_iso->offset);
+#if 0
+			{
+				static uint32_t last_pkt_num = 0;
+
+				if (p_bt_direct_iso->pkt_seq_num != (last_pkt_num + 1)) {
+					BT_LOGE("[APP] data loss: pkt_seq_num: %d, last_pkt_num: %d \r\n", p_bt_direct_iso->pkt_seq_num, last_pkt_num);
+				}
+				last_pkt_num = p_bt_direct_iso->pkt_seq_num;
+			}
+#endif
 			if (app_bt_le_audio_data_received(p_bt_direct_iso->iso_conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX,
 											  p_bt_direct_iso->p_buf + p_bt_direct_iso->offset,
 											  p_bt_direct_iso->iso_sdu_len)) {
@@ -3507,7 +3517,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 					channel[0] = 'S';
 				} else {
 					BT_LOGE("[APP] invalid channel config: 0x%x \r\n", sound_channel);
-					goto exit;
+					return -1;
 				}
 				memset((void *)p_lea_app_conf->device_name, 0, RTK_BT_GAP_DEVICE_NAME_LEN);
 				memcpy((void *)p_lea_app_conf->device_name, (uint8_t *)APP_LE_AUDIO_TMAP_BMR_DEVICE_NAME, strlen((const char *)APP_LE_AUDIO_TMAP_BMR_DEVICE_NAME));
@@ -3678,7 +3688,7 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 					channel[0] = 'S';
 				} else {
 					BT_LOGE("[APP] invalid channel config: 0x%x \r\n", sound_channel);
-					goto exit;
+					return -1;
 				}
 				memset((void *)p_lea_app_conf->device_name, 0, RTK_BT_GAP_DEVICE_NAME_LEN);
 				memcpy((void *)p_lea_app_conf->device_name, (uint8_t *)APP_LE_AUDIO_TMAP_UMR_DEVICE_NAME, strlen((const char *)APP_LE_AUDIO_TMAP_UMR_DEVICE_NAME));

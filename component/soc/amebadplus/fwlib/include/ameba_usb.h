@@ -78,7 +78,7 @@ typedef IRQ_FUN usb_irq_fun_t;
   * @{
   */
 
-int usb_chip_init(void);
+int usb_chip_init(u8 mode);
 int usb_chip_deinit(void);
 
 /** @} */

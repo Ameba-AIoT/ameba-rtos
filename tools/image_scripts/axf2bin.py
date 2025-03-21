@@ -1233,9 +1233,13 @@ class IMAGETOOL():
     def amebasmart(self, KM4_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
             CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image_mp')
+            KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image_mp')
+            if not os.path.exists(KM0_IMG_DIR):
+                #TODO: For compatibility of old cmake, km0 will use image_mp under new cmake
+                KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
         else:
             CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image')
-        KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
+            KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
         km0_image2 = os.path.join(KM0_IMG_DIR, 'km0_image2_all.bin')
         km4_image2 = os.path.join(KM4_IMG_DIR, 'km4_image2_all.bin')
         km4_image3 = os.path.join(KM4_IMG_DIR, 'km4_image3_all.bin')
@@ -1298,9 +1302,13 @@ class IMAGETOOL():
     def amebasmartplus(self, KM4_IMG_DIR):
         if self.BUILD_TYPE == 'MFG':
             CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image_mp')
+            KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image_mp')
+            if not os.path.exists(KM0_IMG_DIR):
+                #TODO: For compatibility of old cmake, km0 will use image_mp under new cmake
+                KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
         else:
             CA32_IMG_DIR = os.path.join(self.pwd, 'project_ap', 'asdk', 'image')
-        KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
+            KM0_IMG_DIR = os.path.join(self.pwd, 'project_lp', 'asdk', 'image')
         km0_image2 = os.path.join(KM0_IMG_DIR, 'km0_image2_all.bin')
         km4_image2 = os.path.join(KM4_IMG_DIR, 'km4_image2_all.bin')
         km4_image3 = os.path.join(KM4_IMG_DIR, 'km4_image3_all.bin')

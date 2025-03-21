@@ -7,7 +7,7 @@
 #ifndef __ATCMD_WIFI_H__
 #define __ATCMD_WIFI_H__
 #include "main.h"
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 #include "FreeRTOS.h"
 
 #ifndef CONFIG_MP_SHRINK

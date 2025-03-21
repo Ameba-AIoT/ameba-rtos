@@ -71,13 +71,8 @@ PSCFG_TypeDef ps_config = {
 	.km0_pg_enable = FALSE,
 	.km0_pll_off = TRUE,
 	.km0_audio_vad_on = FALSE,
-#if defined(CONFIG_CLINTWOOD ) && CONFIG_CLINTWOOD
-	.km0_config_psram = FALSE, /* if device enter sleep mode or not, false for keep active */
-	.km0_sleep_withM4 = FALSE,
-#else
 	.km0_config_psram = TRUE, /* if device enter sleep mode or not, false for keep active */
 	.km0_sleep_withM4 = TRUE,
-#endif
 	.keep_OSC4M_on = FALSE,
 	.xtal_mode_in_sleep = XTAL_OFF,
 	.swr_mode_in_sleep = SWR_PFM,

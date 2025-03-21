@@ -452,6 +452,14 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 			return ret;
 		}
 	}
+#if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+	if (app_profile_support & RTK_BT_PROFILE_LE_ISO) {
+		ret = bt_stack_le_iso_init((void *)&papp_conf->le_iso_app_conf);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_LEAUDIO) {
 		ret = bt_stack_le_audio_init(papp_conf, api_task_io_msg_q, api_task_evt_msg_q);
@@ -539,6 +547,9 @@ static uint16_t bt_stack_profile_deinit(void)
 	}
 	if (profile_conf & RTK_BT_PROFILE_LEAUDIO) {
 		bt_stack_le_audio_deinit();
+	}
+	if (profile_conf & RTK_BT_PROFILE_LE_ISO) {
+		bt_stack_le_iso_deinit();
 	}
 
 	bt_stack_app_profile_conf = 0;

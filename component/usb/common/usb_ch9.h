@@ -1,17 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usb_ch9.h
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides general defines for USB SPEC CH9
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef USB_CH9_H
 #define USB_CH9_H

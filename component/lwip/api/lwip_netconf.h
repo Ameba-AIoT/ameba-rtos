@@ -17,7 +17,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "platform_autoconf.h"
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 #include "lwipconf.h"
 #include "lwip/netifapi.h"
 

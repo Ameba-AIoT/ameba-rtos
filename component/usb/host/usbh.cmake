@@ -39,6 +39,10 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
+if(CONFIG_AMEBAL2)
+    ameba_list_append(private_definitions CONFIG_USB_FS)
+endif()
+
 ameba_list_append(private_includes
     ../common
     core
@@ -85,18 +89,6 @@ endif()
 if(CONFIG_USBH_VENDOR)
     ameba_list_append(private_includes vendor)
     ameba_list_append(private_sources vendor/usbh_vendor.c)
-endif()
-
-if(CONFIG_USBH_VERIFY)
-    ameba_list_append(private_includes verify ../verification/host)
-    ameba_list_append(private_sources
-        verify/usbh_verify.c
-        ../verification/host/usbh_cts.c
-        ../verification/host/usbh_cts_xfer_test.c
-        ../verification/host/usbh_emc.c
-        ../verification/host/usbh_cmd.c
-        ../verification/host/usbh_verify_test.c
-    )
 endif()
 
 # Component private part, user config end

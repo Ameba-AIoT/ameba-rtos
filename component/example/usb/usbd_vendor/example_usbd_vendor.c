@@ -1,10 +1,8 @@
-/**
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------ */
 
@@ -54,7 +52,6 @@ static const char *const TAG = "VND";
 
 // Thread priorities
 #define CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY			5U
-#define CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY			7U
 #define CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY
 #define CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY			6U // Should be lower than CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY
 
@@ -88,7 +85,7 @@ static void vendor_cb_status_changed(u8 status);
 static usbd_config_t vendor_cfg = {
 	.speed = CONFIG_USBD_VENDOR_SPEED,
 	.dma_enable = 1U,
-	.isr_priority = CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY,
+	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_en =  USBD_EOPF_INTR,
 	.intr_use_ptx_fifo = 0U,
 };
