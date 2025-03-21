@@ -226,11 +226,6 @@ ifeq ($(CONFIG_BT), y)
 include  $(ABS_ROOTDIR)/Makefile.include.bt.gen
 endif
 
-#clintwood
-ifeq ($(CONFIG_CLINTWOOD),y)
-IFLAGS               += -I$(BASEDIR)/component/application/clintwood/wifi
-endif
-
 #*****************************************************************************#
 #                             ARM ASSEMBLER FLAGS
 #*****************************************************************************#

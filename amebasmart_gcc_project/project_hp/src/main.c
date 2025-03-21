@@ -84,11 +84,7 @@ void app_mbedtls_rom_init(void)
 void app_pmu_init(void)
 {
 
-#if defined(CONFIG_CLINTWOOD ) && CONFIG_CLINTWOOD
-	pmu_set_sleep_type(SLEEP_CG);
-#else
 	pmu_set_sleep_type(SLEEP_PG);
-#endif
 	pmu_acquire_deepwakelock(PMU_OS);
 
 	/* if wake from deepsleep, that means we have released wakelock last time */
