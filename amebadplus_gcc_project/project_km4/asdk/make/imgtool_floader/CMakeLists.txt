@@ -3,8 +3,6 @@ set(FTL_DIR ${BASEDIR}/component/soc/common/flash_wrapper/src)
 set(USB_COM_DIR ${BASEDIR}/component/usb/common)
 set(RAM_COM_DIR ${TARGETDIR}/fwlib/ram_common)
 set(RAM_HP_DIR ${TARGETDIR}/fwlib/ram_km4)
-set(HAL_DIR ${TARGETDIR}/hal)
-set(HAL_SRC_DIR ${TARGETDIR}/hal/src)
 set(SWLIB_DIR ${TARGETDIR}/swlib)
 set(CFGDIR ${TARGETDIR}/usrcfg)
 
@@ -12,9 +10,6 @@ set(
     MODULE_IFLAGS
     ${TARGETDIR}/app/xmodem
     ${TARGETDIR}/fwlib/include
-    ${BASEDIR}/component/mbed/hal
-    ${HAL_DIR}/include
-    ${HAL_DIR}/src
     ${SWLIB_DIR}
     ${FL_DIR}
     ${USB_COM_DIR}
@@ -34,10 +29,6 @@ set(
     ${RAM_COM_DIR}/ameba_tim.c
     ${RAM_COM_DIR}/ameba_usb.c
     ${RAM_HP_DIR}/ameba_flashclk.c
-    ${HAL_SRC_DIR}/pinmap_common.c
-    ${HAL_SRC_DIR}/pinmap.c
-    ${HAL_SRC_DIR}/gpio_api.c
-    ${HAL_SRC_DIR}/pwmout_api.c
     ${CFGDIR}/ameba_bootcfg.c
     ${USB_COM_DIR}/usb_os.c
     ${USB_COM_DIR}/usb_hal.c

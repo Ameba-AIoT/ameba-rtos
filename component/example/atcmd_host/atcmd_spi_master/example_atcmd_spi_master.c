@@ -12,6 +12,8 @@
 #define SPI_DATA_FRAME_SIZE	8
 #define SPI_MODE			0
 
+#define CHECKSUM_EN 0
+
 rtos_sema_t master_tx_sema;
 rtos_sema_t master_rx_sema;
 rtos_sema_t master_gpio_sema;
@@ -29,6 +31,7 @@ u32 uart_irq_count = 0;
 u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
+#if CHECKSUM_EN
 static uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 {
 	uint32_t checksum32 = start_value;
@@ -47,6 +50,7 @@ static uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 
 	return checksum32;
 }
+#endif
 
 void uart_send_string(serial_t *sobj, char *pstr, u16 len)
 {
@@ -158,10 +162,12 @@ void atcmd_spi_master_demo_task(void)
 
 			memcpy(&MasterTxBuf[4], uart_irq_buffer, send_len);
 
+#if CHECKSUM_EN
 			// cal checksum
 			u32 tx_checksum = checksum_32_spi(0, (u8 *)MasterTxBuf, send_len + 4);
 			u32 *p_tx_checksum = (u32 *)&MasterTxBuf[send_len + 4];
 			*p_tx_checksum = tx_checksum;
+#endif
 		}
 
 		spi_flush_rx_fifo(&spi_master);
@@ -180,7 +186,7 @@ void atcmd_spi_master_demo_task(void)
 			uart_send_string(&sobj, "[M] recv_len error\n", strlen("[M] recv_len error\n"));
 			goto NEXT;
 		}
-
+#if CHECKSUM_EN
 		// check checksum
 		u32 rx_checksum = checksum_32_spi(0, (u8 *)MasterRxBuf, rx_len + 4);
 		u32 *p_rx_checksum = (u32 *)&MasterRxBuf[rx_len + 4];
@@ -188,6 +194,7 @@ void atcmd_spi_master_demo_task(void)
 			uart_send_string(&sobj, "[M] recv slave data checksum error\n", strlen("[M] recv slave data checksum error\n"));
 			goto NEXT;
 		}
+#endif
 
 		// show recv data
 		MasterRxBuf[rx_len + 4] = 0;

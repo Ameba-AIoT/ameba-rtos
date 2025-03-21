@@ -38,8 +38,10 @@ static const char *const TAG = "USB";
   * @param  void
   * @retval HAL status
   */
-int usb_chip_init(void)
+int usb_chip_init(u8 mode)
 {
+	UNUSED(mode);
+
 	int div = 0;
 	u32 reg = 0;
 	u32 pll_clk;

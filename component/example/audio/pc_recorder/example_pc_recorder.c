@@ -10,7 +10,7 @@
 
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 #include "wifi_ind.h"
 
 #include <dlist.h>

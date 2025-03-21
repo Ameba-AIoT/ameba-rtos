@@ -45,7 +45,6 @@ extern void sys_reset(void);
 
 #define WTN_UDP_SOCKET
 //#define WTN_SINGLE_NODE_OTA
-//#define WTN_COMPILE_TIME_INFO
 struct wtn_buf_node {
 	struct list_head	list;
 	u8 *buf_addr;
@@ -101,11 +100,10 @@ int wtn_socket_send(u8 *buf, u32 len)
 	memcpy(buf_copy, buf, len);
 	memcpy(buf_copy + 31, ip, 4);
 	/*fill compile time*/
-#ifdef WTN_COMPILE_TIME_INFO
 	char *compiletime = NULL;
 	compiletime = RTL_FW_COMPILE_TIME;
 	memcpy(buf_copy + 48, compiletime,  strlen(compiletime));
-#endif
+
 	rtos_critical_enter(RTOS_CRITICAL_WIFI);
 	for (i = 0; i < WTN_BUF_NUM; i++) {
 		if (wtn_buf_pool[i].is_used == 0) {

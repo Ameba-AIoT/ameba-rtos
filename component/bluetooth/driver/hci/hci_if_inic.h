@@ -8,7 +8,7 @@
 #define _HCI_IF_INIC_H_
 #include "hci/hci_common.h"
 
-#define BT_INIC_FPGA_VERIFICATION 0
+#define BT_INIC_FPGA_VERIFICATION               0
 
 #define BT_OP(ogf, ocf)                         ((ocf) | ((ogf) << 10))
 #define BT_OGF_VS                               0x3F
@@ -59,6 +59,8 @@
 #define HCI_Read_Local_Supported_Codecs_v1      0x100b
 
 #define HCI_Vendor_Set_Profile_Report_Command   0xfc1b
+#define HCI_Read_Local_Simple_Pairing_Options   0x100c
+#define HCI_Read_Local_Supported_Codecs_v2      0x100d
 #endif
 
 bool bt_inic_open(void);

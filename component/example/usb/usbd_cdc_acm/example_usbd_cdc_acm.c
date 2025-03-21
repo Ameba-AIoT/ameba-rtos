@@ -1,10 +1,8 @@
-/**
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------ */
 
@@ -41,8 +39,7 @@
 
 // Thread priorities
 #define CONFIG_CDC_ACM_INIT_THREAD_PRIORITY			5
-#define CONFIG_CDC_ACM_ISR_THREAD_PRIORITY			7
-#define CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY		8 // Should be higher than CONFIG_CDC_ACM_ISR_THREAD_PRIORITY
+#define CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY		8
 #define CONFIG_CDC_ACM_XFER_THREAD_PRIORITY			5
 
 /* Private types -------------------------------------------------------------*/
@@ -75,7 +72,7 @@ static u16 cdc_acm_ctrl_line_state;
 static usbd_config_t cdc_acm_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
 	.dma_enable   = 1U,
-	.isr_priority = CONFIG_CDC_ACM_ISR_THREAD_PRIORITY,
+	.isr_priority = INT_PRI_MIDDLE,
 	.intr_use_ptx_fifo  = 0U,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,

@@ -3,7 +3,7 @@ ameba_add_image(target_imgtool_floader p_EXCLUDE_FROM_ALL)
 
 ###############################  ADD COMPONENT  ###################################
 add_compile_definitions(
-    CONFIG_USB_FS
+    CONFIG_NAND_DOWNLOAD_EN
     CONFIG_FLOADER_USBD_EN
 )
 
@@ -44,8 +44,11 @@ target_link_libraries(${c_CURRENT_IMAGE}
     -Wl,--gc-sections
     -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/text.map
 
+    -Wl,--whole-archive
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_libraries>
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_whole_archive_libs>
+    -Wl,--no-whole-archive
+
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
 
     ${c_LINK_ROM_LIB} #WARNING: keep this at last

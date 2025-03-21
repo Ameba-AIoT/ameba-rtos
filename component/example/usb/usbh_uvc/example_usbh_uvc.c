@@ -1,13 +1,12 @@
-/**
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------ */
 
+#include <platform_autoconf.h>
 #include "example_usbh_uvc.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"

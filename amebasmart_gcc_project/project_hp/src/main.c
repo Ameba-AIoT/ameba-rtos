@@ -1,7 +1,9 @@
 
 #include "ameba_soc.h"
 #include "main.h"
+#ifdef CONFIG_CORE_AS_AP
 #include "vfs.h"
+#endif
 #include "os_wrapper.h"
 #include "ameba_rtos_version.h"
 //#include "wifi_fast_connect.h"
@@ -80,11 +82,7 @@ void app_mbedtls_rom_init(void)
 void app_pmu_init(void)
 {
 
-#if defined(CONFIG_CLINTWOOD ) && CONFIG_CLINTWOOD
-	pmu_set_sleep_type(SLEEP_CG);
-#else
 	pmu_set_sleep_type(SLEEP_PG);
-#endif
 	pmu_acquire_deepwakelock(PMU_OS);
 
 	/* if wake from deepsleep, that means we have released wakelock last time */
@@ -146,7 +144,7 @@ extern int rt_kv_init(void);
 
 void app_filesystem_init(void)
 {
-#if defined(CONFIG_SINGLE_CORE_WIFI)
+#if !(defined(CONFIG_MP_INCLUDED)) && defined(CONFIG_CORE_AS_AP)
 	int ret = 0;
 	vfs_init();
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
@@ -169,7 +167,6 @@ void app_filesystem_init(void)
 
 	RTK_LOGE(TAG, "File System Init Fail \n");
 #endif
-	return;
 }
 
 //default main
@@ -189,14 +186,11 @@ int main(void)
 	ipc_table_init(IPCNP_DEV);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
-#ifndef CONFIG_MP_INCLUDED
 	app_filesystem_init();
-#endif
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	app_ftl_init();
 #endif
-
 
 	/* pre-processor of application example */
 	app_pre_example();

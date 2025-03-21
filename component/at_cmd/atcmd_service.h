@@ -52,6 +52,10 @@ int atcmd_tt_mode_start(u32 len);
 u32 atcmd_tt_mode_get(u8 *buf, u32 len);
 void atcmd_tt_mode_end(void);
 
+int at_printf_data(char *data, u32 len);
+void at_printf_lock(void);
+void at_printf_unlock(void);
+
 #define MAX_TT_BUF_LEN 1024 * 10
 #define MAX_TT_HEAP_SIZE 1024 * 120
 #define TT_MODE_HIGH_WATERMARK 0.7
@@ -61,8 +65,8 @@ void atcmd_tt_mode_end(void);
 #define ATCMD_ERROR_END_STR 	"\r\nERROR: %d\r\n"
 #define ATCMD_ENTER_TT_MODE_STR	">>>\r\n"
 #define ATCMD_EXIT_TT_MODE_STR	"<<<\r\n"
-#define ATCMD_TT_MODE_HIGH_WATERMARK_STR	"High Watermark\r\n"
-#define ATCMD_TT_MODE_LOW_WATERMARK_STR	"Low Watermark\r\n"
+#define ATCMD_TT_MODE_HIGH_WATERMARK_STR	"[$][TT]:High Watermark\r\n"
+#define ATCMD_TT_MODE_LOW_WATERMARK_STR	"[$][TT]:Low Watermark\r\n"
 #define C_NUM_AT_CMD			4 //"ATxx", 4 characters
 #define C_NUM_AT_CMD_DLT		1 //"=", 1 charater
 #define STR_END_OF_ATCMD_RET	"\r\n\n# " //each AT command response will end with this string
@@ -126,7 +130,7 @@ extern int wext_private_command(char *cmd, int show_msg, char *user_buf);
 #if defined(CONFIG_BT) && CONFIG_BT
 extern void at_bt_init(void);
 #endif
-#if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_MENU))
+#if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_DEV))
 extern void at_coex_init(void);
 #endif
 

@@ -2,7 +2,6 @@
 #ifndef __DHCPS_H__
 #define __DHCPS_H__
 #include "lwipconf.h"
-#include "rtw_wifi_constants.h"
 #include "wifi_conf.h"
 
 #define CONFIG_DHCPS_KEPT_CLIENT_INFO

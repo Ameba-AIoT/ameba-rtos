@@ -15,7 +15,7 @@
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
 #include <rtk_bt_le_iso.h>
-#include <app_le_iso_common.h>
+#include <rtk_bt_le_iso_def.h>
 #include <atcmd_bt_impl.h>
 #include <rtk_bt_le_gap.h>
 
@@ -55,27 +55,6 @@ static int atcmd_bt_le_iso_create_cis_by_handle(int argc, char **argv)
 		return -1;
 	}
 	BT_LOGA("LEISO cis create successfully cis connection handle is 0x%x\r\n", cis_conn_handle);
-
-	return 0;
-}
-
-extern uint16_t app_le_iso_demo_data_send_start(uint8_t op);
-
-static int atcmd_bt_le_iso_send_data(int argc, char **argv)
-{
-	(void)argc;
-	uint8_t op;
-	char *action[] = {"stop", "start"};
-
-	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
-		BT_LOGE("Error: wrong value (%d) for iso data send!\r\n", op);
-		return -1;
-	}
-	if (app_le_iso_demo_data_send_start(op)) {
-		BT_LOGE("LEISO cis iso data %s send fail\r\n", action[op]);
-		return -1;
-	}
-	BT_LOGA("LEISO cis iso data %s send successfully\r\n", action[op]);
 
 	return 0;
 }
@@ -152,7 +131,15 @@ static int atcmd_bt_le_iso_bis_read_tx_sync(int argc, char **argv)
 	return 0;
 }
 
-extern rtk_bt_le_iso_big_receiver_create_sync_param_t def_bis_receiver_create_sync_param;
+rtk_bt_le_iso_big_receiver_create_sync_param_t def_bis_receiver_create_sync_param = {
+	.encryption         = 0,
+	.broadcast_code     = {0x82, 0x31, 0x5C, 0x28, 0xF6, 0x1B, 0x19, 0x58, 0x2D, 0x5E, 0x20, 0xD1, 0x23, 0x33, 0xD0, 0x8E},
+	/* Default value of TSPX_broadcast_code in PTS 8.0.0 is 8ED03323D1205E2D58191BF6285C3182 */
+	.mse                = 0,
+	.big_sync_timeout   = 0x2ee0,   /*timeout = N*10 ms = 120s*/
+	.num_bis            = RTK_BLE_BIS_MAX_NUM,
+	.bis                = {}
+};
 
 static int atcmd_bt_le_bis_create_sync(int argc, char **argv)
 {
@@ -169,20 +156,19 @@ static int atcmd_bt_le_bis_create_sync(int argc, char **argv)
 	return 0;
 }
 
-extern app_bt_le_iso_receiver_info_t g_le_iso_bis_receiver_status;
-
 static int atcmd_bt_le_bis_terminate_sync(int argc, char **argv)
 {
 	(void)argc;
+	rtk_bt_le_iso_conn_handle_info_t info = {0};
 	uint8_t big_handle = (uint8_t)str_to_int(argv[0]);
 
-	if (big_handle != g_le_iso_bis_receiver_status.big_handle) {
-		BT_LOGE("LEISO big_handle is not created\r\n");
+	/* 1. remove path */
+	if (rtk_bt_le_iso_get_iso_conn_handle(RTK_BLE_ISO_ROLE_BIS_RECEIVER, &info)) {
+		BT_LOGE("LEISO get iso conn handle fail\r\n");
 		return -1;
 	}
-	/* 1. remove path */
-	for (uint8_t i = 0; i < g_le_iso_bis_receiver_status.bis_num; i ++) {
-		rtk_bt_le_iso_big_remove_path(g_le_iso_bis_receiver_status.bis_conn_handle[i], RTK_BLE_ISO_DATA_PATH_OUTPUT_FLAG);
+	for (uint8_t i = 0; i < info.iso_handle_num; i ++) {
+		rtk_bt_le_iso_big_remove_path(info.iso_handle[i], RTK_BLE_ISO_DATA_PATH_OUTPUT_FLAG);
 	}
 	/* 2 terminate sync */
 	if (rtk_bt_le_iso_big_receiver_terminate_sync(big_handle)) {
@@ -197,7 +183,6 @@ static int atcmd_bt_le_bis_terminate_sync(int argc, char **argv)
 static const cmd_table_t iso_cis_initiator_cmd_table[] = {
 	{"create_cis_by_cig", atcmd_bt_le_iso_create_cis_by_cig,             4, 4},
 	{"create_cis_by_hdl", atcmd_bt_le_iso_create_cis_by_handle,          5, 5},
-	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
 	{"disconnect",         atcmd_bt_le_iso_disconnect,                   2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},
@@ -205,7 +190,6 @@ static const cmd_table_t iso_cis_initiator_cmd_table[] = {
 };
 
 static const cmd_table_t iso_cis_acceptor_cmd_table[] = {
-	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"disconnect",         atcmd_bt_le_iso_disconnect,                   2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_cis_read_tx_sync,              2, 2},
 	{"read_link_quality", atcmd_bt_le_iso_cis_read_link_quality,         2, 2},
@@ -213,7 +197,6 @@ static const cmd_table_t iso_cis_acceptor_cmd_table[] = {
 };
 
 static const cmd_table_t iso_bis_broadcaster_cmd_table[] = {
-	{"send_data",         atcmd_bt_le_iso_send_data,                     2, 2},
 	{"read_tx_sync",      atcmd_bt_le_iso_bis_read_tx_sync,              2, 2},
 	{NULL,},
 };

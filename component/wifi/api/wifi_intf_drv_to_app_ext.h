@@ -19,7 +19,7 @@
 #ifndef __WIFI_CONF_EXT_H
 #define __WIFI_CONF_EXT_H
 
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 #include "rom_rtw_defs.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
@@ -154,7 +154,6 @@ int wifi_del_station(unsigned char *hwaddr);
  * @note There are two concepts of channels and they are generally consistent:
  *       1. Interafce(x) operating channel;
  *       2. Network channel: realAP's channel for interafce(0); softap channel for interface(1).
- *       .
  *       - If you use a wifi_set_channel() to switch interafce(0) operating channel during or after wifi_connect(),
  *         the sta will connect fail or disconnect from realAP due to inconsistency with realAP channel caused by
  *         interface(0) operating channel change;

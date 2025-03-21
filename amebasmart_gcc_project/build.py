@@ -10,6 +10,7 @@ import shutil
 import sys
 
 DEFAULT_BUILD_DIR = 'build'
+AMEBA_RLS = True
 
 project_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -21,9 +22,6 @@ copy_script_dir = os.path.join(project_dir, '../tools/scripts/copy.py')
 def main(argc, argv):
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-a', '--app', help='example name for core act as ap')
-    parser.add_argument('--app-for-ca32', help='example name for core ca32')
-    parser.add_argument('--app-for-km4', help='example name for core km4')
-    # parser.add_argument('--app-for-km0', help='example name for core km0')
     parser.add_argument('-c', '--clean', action='store_true', help='clean')
     parser.add_argument('-d', '--build-dir', help='build directory')
     parser.add_argument('-p', '--pristine', action='store_true', help='pristine build')
@@ -45,9 +43,6 @@ def main(argc, argv):
     else:
         app = args.app
 
-    app_for_ca32 = os.path.normcase(args.app_for_ca32) if args.app_for_ca32 else None
-    app_for_km4 = os.path.normcase(args.app_for_km4) if args.app_for_km4 else None
-    # app_for_km0 = os.path.normcase(args.app_for_km0) if args.app_for_km0 else None
 
     if args.new:
         cmd = 'python ' + copy_script_dir + ' ' + ' '.join(args.new)
@@ -62,13 +57,17 @@ def main(argc, argv):
     else:
         build_dir = args.build_dir
 
+    menuconfig_dir = os.path.join(os.path.dirname(build_dir), 'menuconfig')
 
     if args.clean:
         cmd = 'cd ' + build_dir + ' && ninja clean'
         if os.path.exists(build_dir):
             os.system(cmd)
-            shutil.rmtree(build_dir)
         return
+
+    if os.path.exists(menuconfig_dir):
+        if args.pristine:
+            shutil.rmtree(menuconfig_dir)
 
     if os.path.exists(build_dir):
         if args.pristine:
@@ -89,7 +88,6 @@ def main(argc, argv):
         os.makedirs(build_dir)
 
 
-
     if args.gdb:
         os.system(f'python {gdb_script_dir}')
         return
@@ -100,8 +98,6 @@ def main(argc, argv):
 
     cmd = f'cd {build_dir} && cmake {project_dir}'
     if app: cmd += f' -DEXAMPLE={app}'
-    if app_for_ca32: cmd += f' -DEXAMPLE_FOR_CA32={app_for_ca32}'
-    if app_for_km4: cmd += f' -DEXAMPLE_FOR_KM4={app_for_km4}'
 
 
     if args.daily_build != None:
@@ -110,6 +106,14 @@ def main(argc, argv):
     if args.Defined !=None:
         for defs in args.Defined:
             cmd += ' -D' + defs
+
+    #TODO: For temporary compatibility, remove when use new cmake
+    if not AMEBA_RLS:
+        if args.Defined:
+            if not any(s.startswith("CMAKE_REFACTOR=") for s in args.Defined):
+                cmd += f' -D CMAKE_REFACTOR="TRUE"'
+        else:
+            cmd += f' -D CMAKE_REFACTOR="TRUE"'
 
     cmd += ' -G Ninja && ninja'
 

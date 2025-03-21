@@ -9,9 +9,9 @@ menu "CONFIG OS"
             default PLATFORM_FREERTOS
             config PLATFORM_FREERTOS
                 bool "FREERTOS"
-            config PLATFORM_FREERTOS_ROM  #amebagreen2 amebaL2
+            config PLATFORM_FREERTOS_ROM  #amebagreen2
                 bool "FREERTOS_ROM"
-                depends on AMEBAGREEN2 || AMEBAL2
+                depends on AMEBAGREEN2
         endchoice
     endif
 

@@ -65,6 +65,43 @@ endfunction()
 #   ameba_platform_project_config()
 macro(ameba_platform_project_config)
     ameba_platform_project_custom_config()
+    ameba_set(d_WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
+    ameba_set(c_MENUCONFIG_DIR ${d_WORKING_PROJECT_DIR}/menuconfig)
+    #EXAMPLE can be a absolute path, relative path where contain a CMakeLists and source files, or can be a specific example name
+    if (EXAMPLE)
+        if(IS_ABSOLUTE EXAMPLE)
+            set(EXAMPLEDIR ${EXAMPLE})
+        else()
+            cmake_path(ABSOLUTE_PATH EXAMPLE BASE_DIRECTORY ${d_WORKING_PROJECT_DIR} NORMALIZE OUTPUT_VARIABLE OUTPUT_EXAMPLE)
+            message(${OUTPUT_EXAMPLE})
+            if (EXISTS ${OUTPUT_EXAMPLE})
+                set(EXAMPLEDIR ${OUTPUT_EXAMPLE})
+            else()
+                file(GLOB_RECURSE EXAMPLEDIR
+                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.c
+                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.cc)
+                cmake_path(REMOVE_FILENAME EXAMPLEDIR)
+                if(EXAMPLEDIR)
+                    message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
+                else()
+                    message(SEND_ERROR "example_${EXAMPLE}.c not found. Please check example name!")
+                endif()
+            endif()
+        endif()
+    endif()
+
+    if (EXAMPLEDIR AND EXISTS ${EXAMPLEDIR}/prj.conf)
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${c_MENUCONFIG_DIR}/prj.conf
+        )
+    endif()
+
+    execute_process(
+        COMMAND python menuconfig.py --check -d ${d_WORKING_PROJECT_DIR}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
     if(NOT FINAL_IMAGE_DIR)
         set(FINAL_IMAGE_DIR ${d_PLATFORM_PROJECT_DIR})
     else()
@@ -109,74 +146,21 @@ macro(ameba_mcu_project_create name mcu_type)
 
     ameba_info("import config: ${d_PLATFORM_PROJECT_DIR}/menuconfig/.config_${mcu_type}")
 
-    ameba_set_upper(_tmp_MCU_NAME_UPPER ${mcu_type})
-    message(${_tmp_MCU_NAME_UPPER})
-
-    if (EXAMPLE_FOR_${_tmp_MCU_NAME_UPPER})
-        set(d_ENABLE_EXAMPLE TRUE)
-        set(EXAMPLE ${EXAMPLE_FOR_${_tmp_MCU_NAME_UPPER}})
-    endif()
-
-
-    if (EXAMPLE)
-        if(IS_ABSOLUTE EXAMPLE)
-            set(EXAMPLEDIR ${EXAMPLE})
-        else()
-            cmake_path(ABSOLUTE_PATH EXAMPLE BASE_DIRECTORY ${CMAKE_BINARY_DIR}/.. NORMALIZE OUTPUT_VARIABLE OUTPUT_EXAMPLE)
-            message(${OUTPUT_EXAMPLE})
-            if (EXISTS ${OUTPUT_EXAMPLE})
-                set(EXAMPLEDIR ${OUTPUT_EXAMPLE})
-            else()
-                file(GLOB_RECURSE EXAMPLEDIR
-                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.c
-                    ${c_CMPT_EXAMPLE_DIR}/example_${EXAMPLE}.cc)
-                cmake_path(REMOVE_FILENAME EXAMPLEDIR)
-                if(EXAMPLEDIR)
-                    message("THE PATH of example_${EXAMPLE}.c is " "${EXAMPLEDIR}")
-                else()
-                    message(SEND_ERROR "example_${EXAMPLE}.c not found. Please check example name!")
-                endif()
-            endif()
-        endif()
-    endif()
-
-    if (EXAMPLEDIR AND EXISTS ${EXAMPLEDIR}/prj.conf)
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${c_MENUCONFIG_DIR}/prj.conf
-        )
-    endif()
-
-    set(PRJ_CONF)
-
-    if (EXISTS ${c_MENUCONFIG_DIR}/prj.conf)
-        list(APPEND PRJ_CONF ${c_MENUCONFIG_DIR}/prj.conf)
-    endif()
-
-
-    if (NOT EXISTS ${c_MENUCONFIG_DIR}/.config_${mcu_type})
-        execute_process(
-            COMMAND python menuconfig.py -f default.conf ${PRJ_CONF} -d ${CMAKE_BINARY_DIR}/..
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        )
-    endif()
 
     configure_file(${c_MENUCONFIG_DIR}/.config_${mcu_type} ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type} COPYONLY)
     import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config_${mcu_type})
 
     include(${CMAKE_CURRENT_SOURCE_DIR}/mcu_project_config.cmake)
 
-    if (NOT EXAMPLE_FOR_${_tmp_MCU_NAME_UPPER})
-        if(EXAMPLE)
-            if(CONFIG_CORE_AS_AP)
-                set(d_ENABLE_EXAMPLE TRUE)
-            else()
-                set(d_ENABLE_EXAMPLE FALSE)
-            endif()
+    if(EXAMPLE)
+        if(CONFIG_CORE_AS_AP)
+            set(d_ENABLE_EXAMPLE TRUE)
         else()
             set(d_ENABLE_EXAMPLE FALSE)
         endif()
+    else()
+        set(d_ENABLE_EXAMPLE FALSE)
     endif()
-
 
     ameba_reset_global_define()
 
@@ -202,8 +186,7 @@ function(ameba_mcu_project_init)
     ameba_set_upper(d_MCU_TYPE_UPPER ${d_MCU_TYPE} p_SCOPE both)
     ameba_set(d_SDK_VERSION ${v_${d_SDK_NAME_UPPER}_VER} p_SCOPE both)
     ameba_set(d_TOOLCHAIN_DIR ${SDK_TOOLCHAIN} p_SCOPE both)
-    ameba_set(d_WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
-    ameba_set(c_MENUCONFIG_DIR ${d_WORKING_PROJECT_DIR}/menuconfig)
+
 
     # sub dirs in ${d_MCU_PROJECT_DIR}/
     ameba_set(d_MCU_SDK_DIR ${d_MCU_PROJECT_DIR}/${d_SDK_NAME} p_SCOPE both)

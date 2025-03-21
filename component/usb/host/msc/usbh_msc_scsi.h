@@ -1,14 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usbh_msc_scsi.h
-  * @brief   Header file for usbh_msc_scsi.c
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2020, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Define to prevent recursive  ----------------------------------------------*/
 #ifndef USBH_MSC_SCSI_H

@@ -1,4 +1,3 @@
-#include "rtw_wifi_constants.h"
 #ifdef CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #endif

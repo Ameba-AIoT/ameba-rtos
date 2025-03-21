@@ -14,7 +14,7 @@
  *****************************************************************************/
 #define __WIFI_FEATURE_DIS_MCC_C__
 
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 
 #ifdef CONFIG_MCC_MODE
 void rtw_mccapi_port0_sitesurvey_start(void)

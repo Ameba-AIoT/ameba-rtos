@@ -44,16 +44,26 @@ def main():
     parser.add_argument(
         "-d",
         "--menuconfig-dir",
-        help="directory where menuconfig floader will be saved"
+        help=argparse.SUPPRESS # directory where menuconfig floader will be saved
     )
 
+    parser.add_argument(
+        "-s",
+        "--save",
+        help="save config"
+    )
+
+    parser.add_argument(
+        "--check",
+        action='store_true',
+        help=argparse.SUPPRESS #check Kconfig update
+    )
 
     parser.add_argument(
         "-e",
         "--external-kconfig",
-        help="an external sub-kconfig under this path will be included"
+        help=argparse.SUPPRESS #an external sub-kconfig under this path will be included
     )
-
 
     args = parser.parse_args()
 
@@ -65,11 +75,6 @@ def main():
     else:
         menuconfigdir = '.'
 
-    if args.clean:
-        if os.path.exists(os.path.join(menuconfigdir, 'menuconfig')):
-            shutil.rmtree(os.path.join(menuconfigdir, 'menuconfig'))
-        return
-
     os.environ['KCONFIG_CONFIG']= os.path.join(menuconfigdir, 'menuconfig/.config')
 
     manager = Manager(
@@ -80,10 +85,18 @@ def main():
         top_kconfig = os.path.join(current_script_path, 'Kconfig')
     )
 
+    if args.clean:
+        manager.clean_all(current_script_path)
+        return
+
     if args.file:
         code = manager.apply_files_config(args.file)
     elif args.reset:
         code = manager.apply_default_config()
+    elif args.save:
+        code = manager.save_confs(args.save)
+    elif args.check:
+        code = manager.apply_check_config()
     else:
         code = manager.apply_manual_config()
 

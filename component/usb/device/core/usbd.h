@@ -1,17 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usbd.h
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides the API for USB device library
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef USBD_H
 #define USBD_H
@@ -22,6 +13,8 @@
 #include "usb_ch9.h"
 
 /* Exported defines ----------------------------------------------------------*/
+/* This define used to debug the isr time issue */
+#define USBD_ISR_TASK_TIME_DEBUG		0U
 
 /* USB descriptor configurations */
 #define USBD_MAX_NUM_INTERFACES			16U
@@ -84,7 +77,8 @@ typedef struct {
 							   	USB_SPEED_HIGH: USB 2.0 PHY, e.g. AmebaD/AmebaSmart.
 							   	USB_SPEED_HIGH_IN_FULL: USB 2.0 PHY in full speed mode, e.g. AmebaD/AmebaSmart.
 							   	USB_SPEED_FULL: USB 1.1 transceiver, e.g. AmebaDPlus. */
-	u8 isr_priority;			/* USB ISR thread priority */
+	u8 isr_priority;			/* USB ISR priority */
+	u8 isr_in_critical : 1;		/* Process USB ISR in critical state. */
 	u8 dma_enable : 1;			/* Enable USB internal DMA mode, 0-Disable, 1-Enable. */
 	u8 intr_use_ptx_fifo : 1;	/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode. */
 } usbd_config_t;
@@ -97,6 +91,13 @@ typedef struct {
 	u32 ep0_xfer_total_len;					/* The total data length to transfer */
 	u32 ep0_xfer_rem_len;					/* The remain data length to transfer */
 	u32 ep0_recv_rem_len;					/* The remain data length to receive */
+#if USBD_ISR_TASK_TIME_DEBUG
+	__IO u32 isr_func_time_cost_max;
+	__IO u32 isr_func_time_cost;
+	__IO u32 isr_trigger_time_diff_max;
+	__IO u32 isr_trigger_time_diff;
+	u32 isr_trigger_last_time;
+#endif
 	u8 *ctrl_buf;							/* Buffer for control transfer */
 	void *pcd;								/* PCD handle */
 	u16 ep0_data_len;						/* EP0 data length */

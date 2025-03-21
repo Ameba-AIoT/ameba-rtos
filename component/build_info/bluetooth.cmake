@@ -111,7 +111,6 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_ble_hogp_gamepad p_SCOP
 #--------------------------#
 ameba_target_sources(src_${d_MCU_PROJECT_NAME}_bluetooth_ble_iso p_SCOPE interface
     ${c_CMPT_BLUETOOTH_DIR}/example/ble_iso/le_iso.c
-    ${c_CMPT_BLUETOOTH_DIR}/example/ble_iso/app_le_iso_common.c
 )
 
 #--------------------------#

@@ -1,13 +1,8 @@
-/**
-  ******************************************************************************
-  * The header file for uvc class
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _USBH_UVC_H_
 #define _USBH_UVC_H_
@@ -19,9 +14,7 @@
 #include "usbh_uvc_desc.h"
 #include "usbh_uvc_intf.h"
 
-
 /* Exported defines ----------------------------------------------------------*/
-
 
 #define UVC_MAX_NUM_IN_TERMINAL			5
 #define UVC_MAX_NUM_OUT_TERMINAL		2
@@ -31,7 +24,6 @@
 #define UVC_MAX_NUM_ENCODING_UNIT		2
 #define UVC_MAX_NUM_SELECTOR_UNIT		2
 
-
 #define USBH_MAX_NUM_MJPEG_FORMAT		30
 #define USBH_MAX_NUM_UNCOMP_FRAME		30
 
@@ -39,7 +31,6 @@
 #define USBH_MAX_NUM_VS_ALTS			30
 
 #define HFNUM_MAX_FRNUM					0x3fff
-
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -57,7 +48,6 @@ typedef struct {
 	u32 dwBytesPerLine;   //for frame based payload frame type descriptor
 } uvc_vs_frame_t;
 
-
 typedef struct {
 	u8 type;
 	u8 index;
@@ -70,7 +60,6 @@ typedef struct {
 	uvc_vs_frame_t *frame;
 } uvc_vs_format_t;
 
-
 typedef struct {
 	struct list_head stream_list;
 	struct list_head format_list;
@@ -78,7 +67,6 @@ typedef struct {
 	u32 format_num;
 	u32 type;
 } uvc_vs_stream_t;
-
 
 typedef struct {
 	void *p;
@@ -90,12 +78,10 @@ typedef struct {
 	u8 *cs_intr_desc;
 } uvc_vc_t;
 
-
 typedef struct {
 	void *p;
 	usbh_ep_desc_t *endpoint;
 } uvc_alt_t;
-
 
 typedef struct {
 	void *p;
@@ -108,13 +94,11 @@ typedef struct {
 	uvc_vs_format_t *format;
 } uvc_vs_t;
 
-
 typedef struct {
 	uvc_vc_t vc_intf;
 	uvc_vs_t vs_intf[USBH_MAX_NUM_VS_DESC];
 	u8 vs_num;
 } uvc_cfg_t;
-
 
 typedef struct {
 	uvc_alt_t *altsetting;
@@ -132,12 +116,10 @@ typedef struct {
 	u8 is_processing;
 } uvc_setting_t;
 
-
 typedef struct {
 	u32 offset;
 	u32 length;
 } uvc_packet_desc_t;
-
 
 typedef struct {
 	u8 *addr;
@@ -146,7 +128,6 @@ typedef struct {
 	u32 packet_length;
 	uvc_packet_desc_t packet_info[0];
 } uvc_urb_t;
-
 
 typedef struct {
 	uvc_setting_t cur_setting;
@@ -190,7 +171,6 @@ typedef struct {
 #endif
 } uvc_stream_t;
 
-
 typedef struct {
 	usb_host_t *host;
 
@@ -204,7 +184,6 @@ typedef struct {
 
 	u32 sof_cnt;
 } usbh_uvc_host_t;
-
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -236,8 +215,6 @@ void usbh_uvc_stream_deinit(uvc_stream_t *stream);
 
 void usbh_uvc_process_sof(usb_host_t *host);
 
-
-/*parse module*/
 int usbh_uvc_parse_cfgdesc(usb_host_t *host);
 
 void usbh_uvc_desc_init(void);
@@ -245,4 +222,3 @@ void usbh_uvc_desc_init(void);
 void usbh_uvc_desc_free(void);
 
 #endif
-

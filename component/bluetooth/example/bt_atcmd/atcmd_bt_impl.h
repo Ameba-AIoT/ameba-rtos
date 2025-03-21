@@ -116,6 +116,10 @@ int atcmd_bt_set_tx_power(int argc, char *argv[]);
 
 int atcmd_bt_sof_eof_ind(int argc, char *argv[]);
 
+#if ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+int atcmd_bt_remote_wakeup(int argc, char **argv);
+#endif
+
 /* le gap cmd impl */
 int atcmd_bt_le_gap(int argc, char *argv[]);
 
@@ -259,6 +263,15 @@ int atcmd_bt_transfer_module(int argc, char *argv[]);
 
 /* transfer module cmd impl */
 int atcmd_bt_transfer_module_cmd(int argc, char *argv[]);
+
+/* ble wifimate device demo impl */
+int atcmd_bt_wifimate_device(int argc, char *argv[]);
+
+/* ble wifimate configurator demo impl */
+int atcmd_bt_wifimate_configurator(int argc, char *argv[]);
+
+/* ble wifimate configurator cmd impl */
+int atcmd_bt_wifimate_configurator_cmd(int argc, char *argv[]);
 
 #ifdef __cplusplus
 }

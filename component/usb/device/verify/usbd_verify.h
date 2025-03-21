@@ -1,13 +1,8 @@
-/**
-  ******************************************************************************
-  * The header file for usbd_verify.c
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2023, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef USBD_VERIFY_COMMON_H
 #define USBD_VERIFY_COMMON_H

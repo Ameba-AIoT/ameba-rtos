@@ -105,7 +105,7 @@ if(CONFIG_WLAN)
 endif()
 
 # coex api
-if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
+if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_DEV))
     ameba_target_link(dep_${d_MCU_PROJECT_NAME}_rtk_coex_api p_SCOPE interface p_WHOLE_ARCHIVE
         ${d_SDK_LIB_APPLICATION_DIR}/lib_coex_api.a
     )

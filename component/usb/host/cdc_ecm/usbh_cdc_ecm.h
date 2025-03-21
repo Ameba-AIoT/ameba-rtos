@@ -1,13 +1,8 @@
-/**
-  ******************************************************************************
-  * The header file for usbh_cdc_ecm.c
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2023, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef USBH_CDC_ECM_H
 #define USBH_CDC_ECM_H

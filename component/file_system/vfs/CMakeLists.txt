@@ -60,6 +60,11 @@ if(CONFIG_VFS_FATFS_INCLUDED)
         )
     endif()
 endif()
+
+#FIXME: vfs/vfs.c uses headers from mbedtls, but these two component are not always enabled at same time
+ameba_list_append(private_includes
+    ${c_MBEDTLS_DIR}/include
+)
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 

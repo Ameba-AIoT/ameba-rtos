@@ -27,7 +27,6 @@
 #ifndef CONFIG_FULLMAC
 #include "ameba_soc.h"
 #include "os_wrapper.h"
-#include "rtw_wifi_constants.h"
 #include "wifi_conf.h"
 #endif
 /* -------------------------------- Defines --------------------------------- */

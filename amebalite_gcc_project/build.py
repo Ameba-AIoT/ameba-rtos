@@ -10,6 +10,7 @@ import shutil
 import sys
 
 DEFAULT_BUILD_DIR = 'build'
+AMEBA_RLS = True
 
 project_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,13 +56,17 @@ def main(argc, argv):
     else:
         build_dir = args.build_dir
 
+    menuconfig_dir = os.path.join(os.path.dirname(build_dir), 'menuconfig')
 
     if args.clean:
         cmd = 'cd ' + build_dir + ' && ninja clean'
         if os.path.exists(build_dir):
             os.system(cmd)
-            shutil.rmtree(build_dir)
         return
+
+    if os.path.exists(menuconfig_dir):
+        if args.pristine:
+            shutil.rmtree(menuconfig_dir)
 
     if os.path.exists(build_dir):
         if args.pristine:
@@ -102,6 +107,14 @@ def main(argc, argv):
     if args.Defined !=None:
         for defs in args.Defined:
             cmd += ' -D' + defs
+
+    #TODO: For temporary compatibility, remove when use new cmake
+    if not AMEBA_RLS:
+        if args.Defined:
+            if not any(s.startswith("CMAKE_REFACTOR=") for s in args.Defined):
+                cmd += f' -D CMAKE_REFACTOR="TRUE"'
+        else:
+            cmd += f' -D CMAKE_REFACTOR="TRUE"'
 
     cmd += ' -G Ninja && ninja'
 

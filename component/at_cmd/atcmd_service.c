@@ -35,6 +35,7 @@ char g_tt_mode_check_watermark = 0;
 char g_tt_mode_indicate_high_watermark = 0;
 char g_tt_mode_indicate_low_watermark = 1;
 char g_host_control_mode = AT_HOST_CONTROL_UART;
+rtos_mutex_t at_printf_mutex = NULL;
 
 static const char *const TAG = "AT";
 
@@ -80,7 +81,7 @@ log_init_t log_init_table[] = {
 
 #ifndef CONFIG_MP_INCLUDED
 #if defined(CONFIG_BT_COEXIST)
-#if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_MENU))
+#if defined(CONFIG_CORE_AS_AP) || (!defined(CONFIG_CORE_AS_NP) && defined(CONFIG_FULLMAC_DEV))
 	at_coex_init,
 #endif
 #endif
@@ -113,6 +114,8 @@ int at_printf(const char *fmt, ...)
 	int ret = -1;
 	int len_fmt = 0;
 	char *buf;
+
+	at_printf_lock();
 
 	va_list ap;
 	va_start(ap, fmt);
@@ -150,6 +153,7 @@ int at_printf(const char *fmt, ...)
 	}
 
 fail:
+	at_printf_unlock();
 	return ret;
 }
 
@@ -165,6 +169,8 @@ int at_printf_indicate(const char *fmt, ...)
 	int ret = -1;
 	int len_fmt = 0;
 	char *buf;
+
+	at_printf_lock();
 
 	va_list ap;
 	va_start(ap, fmt);
@@ -209,10 +215,30 @@ int at_printf_indicate(const char *fmt, ...)
 		rtos_mem_free(buf);
 	}
 
-	return ret;
-
 fail:
+	at_printf_unlock();
 	return ret;
+}
+
+/**
+ * @brief Output data reported by system.
+ * @param data: pointer to data.
+ * @param len: data len
+ * @return The length of the output data or error code.
+ * @retval -1: output interface not exist.
+ * @retval others: The length of the output data.
+ */
+int at_printf_data(char *data, u32 len)
+{
+	if (out_buffer) {
+		at_printf_lock();
+		out_buffer(data, len);
+		at_printf_unlock();
+	} else {
+		return -1;
+	}
+
+	return len;
 }
 
 int atcmd_tt_mode_start(u32 len)
@@ -249,7 +275,7 @@ u32 atcmd_tt_mode_get(u8 *buf, u32 len)
 	u32 actual_len = 0;
 
 	if (get_len > MAX_TT_BUF_LEN) {
-		RTK_LOGI(TAG, "TT mode len exceeds MAX_TT_BUF_LEN\n");
+		RTK_LOGD(TAG, "TT mode len exceeds MAX_TT_BUF_LEN\n");
 		get_len = MAX_TT_BUF_LEN;
 	}
 
@@ -487,6 +513,18 @@ DEFAULT:
 
 #else
 
+int at_printf_data(char *data, u32 len)
+{
+	u32 cur_len = 0;
+	if (len > 0) {
+		for (u32 i = 0; i < len; i++) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%2x", data[cur_len + i]);
+		}
+	}
+
+	return len;
+}
+
 int atcmd_tt_mode_start(u32 len)
 {
 	(void) len;
@@ -508,6 +546,16 @@ void atcmd_tt_mode_end(void)
 }
 
 #endif
+
+void at_printf_lock()
+{
+	rtos_mutex_recursive_take(at_printf_mutex, RTOS_MAX_DELAY);
+}
+
+void at_printf_unlock()
+{
+	rtos_mutex_recursive_give(at_printf_mutex);
+}
 
 
 int hash_index(const char *str)
@@ -540,6 +588,8 @@ void atcmd_service_init(void)
 	for (i = 0; i < sizeof(log_init_table) / sizeof(log_init_t); i++) {
 		log_init_table[i]();
 	}
+
+	rtos_mutex_recursive_create(&at_printf_mutex);
 
 #ifdef CONFIG_ATCMD_HOST_CONTROL
 	//initialize tt mode ring sema

@@ -80,5 +80,7 @@ ameba_add_internal_library(at_cmd
         ${private_definitions}
     p_COMPILE_OPTIONS
         ${private_compile_options}
+    p_DEPENDENCIES
+        ${c_BUILD_INFO} #REVIEW: build_info.h is REQUIRED by atcmd_sys.c
 )
 ##########################################################################################

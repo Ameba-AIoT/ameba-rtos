@@ -73,7 +73,7 @@ if(NOT CONFIG_AMEBA_RLS)
         endif()
     endif()
 
-    if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_MENU))
+    if(CONFIG_CORE_AS_AP OR ((NOT CONFIG_CORE_AS_NP) AND CONFIG_FULLMAC_DEV))
         add_subdirectory(make/rtk_coex/rtk_coex_api)
     endif()
 endif()

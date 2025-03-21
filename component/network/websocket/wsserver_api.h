@@ -97,6 +97,7 @@ typedef struct _ws_conn {
 	uint8_t *receivedData;			/*!< Pointer to decoded receiving data which received from client */
 	ws_conn_state state;		/*!< Connection state */
 	struct task_struct task;        /*!< Connection task context */
+	int close_reason;			/*!< Connection close reason */
 } ws_conn;
 
 /**
@@ -110,6 +111,25 @@ enum opcode_type {
 	PING = 9,
 	PONG = 0xa,
 };
+
+/**
+  * @brief  The list of connection close reason
+  */
+#define WSS_CREATE_CONNECTION_FAIL	1 		/*!< Create connection fail*/
+#define WSS_CONNECTION_INIT_FAIL	2 		/*!< Connection init fail*/
+#define WSS_RECEIVE_CLIENT_CLOSE	3 		/*!< Receive close from client*/
+#define WSS_SERVER_SEND_CLOSE	4 			/*!< Server send close to client*/
+#define WSS_HANDSHAKE_FAIL	5 				/*!< Server handshake with client fail*/
+#define WSS_HANDSHAKE_SELECT_TIMEOUT	6 	/*!< Select timeout when handshake*/
+#define WSS_HANDSHAKE_FD_ISSET_FAIL	7 		/*!< FD is not set when handshake*/
+#define WSS_TLS_HANDSHAKE_FAIL	8 			/*!< Server handshake with client fail when use tls*/
+#define WSS_SET_NONBLOCK_FAIL	9 			/*!< Set nonblock fail*/
+#define WSS_READ_DATA_FAIL	10 				/*!< Server read data fail*/
+#define WSS_SEND_DATA_FAIL	11 				/*!< Server send data fail*/
+#define WSS_SET_SOCKET_OPTION_FAIL	12 		/*!< Set socket option fail*/
+#define WSS_NOT_GET_PONG	13 				/*!< Get pong timeout */
+#define WSS_IDLE_TIMEOUT	14 				/*!< Idle timeout*/
+
 /***************************************************************************/
 
 /******************Functions of the websocekt server************************/
@@ -258,5 +278,43 @@ void ws_server_sendClose(ws_conn *conn);
  */
 void ws_server_conn_remove(ws_conn *conn);
 /***************************************************************************/
+
+/**
+ * @brief     This function is used to setup the poll timeout of the websocket client connection.
+ * @param[in] timeout_sec: timeout in seconds
+ * @return    None
+ * @note      The default value is 1s.
+ */
+void ws_server_setup_poll_timeout(uint32_t timeout_sec);
+
+/**
+ * @brief	  This function is the callback function when a client connected.
+ * @param[in] callback: function that indicate the connect event.
+ * @return	  None
+ */
+void ws_server_dispatch_connect(void (*callback)(ws_conn *)) ;
+
+/**
+ * @brief	  This function is the callback function when a client disconnected.
+ * @param[in] callback: function that indicate the disconnect event.
+ * @return	  None
+ */
+void ws_server_dispatch_disconnect(void (*callback)(ws_conn *)) ;
+
+/**
+ * @brief	  This function is used to set close reason of the websocket client connection.
+ * @param[in] ws_conn: the websocket connection
+ * @param[in] reason: the close reason
+ * @return    0 : if successful
+ * @return    -1 : if error occurred
+ */
+void ws_server_set_close_reason(ws_conn *conn, int reason) ;
+
+/**
+ * @brief	  This function is used to get close reason of the websocket client connection.
+ * @param[in] ws_conn: the websocket connection
+ * @return    reason : if successful
+ */
+int ws_server_get_close_reason(ws_conn *conn) ;
 
 #endif /* _WS_SERVER_API_H_ */

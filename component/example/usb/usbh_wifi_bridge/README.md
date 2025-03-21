@@ -24,7 +24,7 @@ To run USB WIFI BRIDGE application on AP:
 			USB Mode (Host)  --->
 			*** USB Host Class ***
 	[*] 	CDC ECM
-				Select USB Ethernet (USB Ethernet)  --->
+				Select USB Ethernet(USB Ethernet Bridge)  --->
 	```
 	Save and exit.
 
@@ -43,7 +43,7 @@ To run USB WIFI BRIDGE application on HP:
 	[*] Enable USB
 			USB Mode (Host)  --->
 	[*] 	CDC ECM
-				Select USB Ethernet (USB Ethernet)  --->
+				Select USB Ethernet(USB Ethernet Bridge)   --->
 	```
 	Save and exit.
 
@@ -53,10 +53,14 @@ To run USB WIFI BRIDGE application on HP:
 
 # Expect result
 
-Reset the board, following log shall be printed on the LOGUART console and DHCP will start, make sure there is no USB related error reported:
-```
-[ECMB] USB host usbh_wifi_bridge demo started...
-```
+1. Reset the board, following log shall be printed on the LOGUART console and DHCP will start, make sure there is no USB related error reported:
+	```
+	[ECM] USB host usbh_wifi_bridge demo started...
+	```
+
+2. Type command "AT+WLCONN=ssid,xx,pw,yy" to connect to the router, xx is the routr ssid name,yy is the password,you can type command "AT+WLCONN" to get more details about the command.
+
+3. After conneting to the route by wifi, "other device" will get a valid ip address, after "other device" gets the valid ip address,  type command "ping=XX" in "other device", XX is the Router Ip Address, make sure the ping success and no packet losted
 
 # Note
 

@@ -14,7 +14,7 @@
  *****************************************************************************/
 #define __WIFI_FEATURE_DIS_ANTDIV_C__
 
-#include "rtw_wifi_constants.h"
+#include "wifi_intf_drv_to_app_types.h"
 
 #ifdef CONFIG_WIFI_ANTDIV
 void wifi_hal_antdiv_training_timer_init(void *a)

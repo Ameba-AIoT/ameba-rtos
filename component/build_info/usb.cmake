@@ -11,7 +11,7 @@ add_library(src_${d_MCU_PROJECT_NAME}_usb_lib INTERFACE)
 add_library(src_${d_MCU_PROJECT_NAME}_usbh_class INTERFACE)
 add_library(src_${d_MCU_PROJECT_NAME}_usbh_lib INTERFACE)
 
-#--------------------------#
+#-------------usb device class-------------#
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap" OR "${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_usbd_class p_SCOPE interface
@@ -59,10 +59,17 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         )
         ameba_target_set_if(CONFIG_USBD_VERIFY src_${d_MCU_PROJECT_NAME}_usbd_class p_SCOPE interface
             p_INCLUDES
-                ${c_CMPT_USB_DIR}/verification/device
+                ${c_CMPT_USB_DIR}/common
+                ${c_CMPT_USB_DIR}/device/core
+                ${c_CMPT_USB_DIR}/device/cdc_acm
                 ${c_CMPT_USB_DIR}/device/verify
+                ${c_CMPT_USB_DIR}/verification/device
             p_SOURCES
-                ${c_CMPT_USB_DIR}/device/vendor/usbd_vendor.c
+                ${c_CMPT_USB_DIR}/device/verify/usbd_verify.c
+                ${c_CMPT_USB_DIR}/verification/device/usbd_cts.c
+                ${c_CMPT_USB_DIR}/verification/device/usbd_cdc_acm_test.c
+                ${c_CMPT_USB_DIR}/verification/device/usbd_cmd.c
+                ${c_CMPT_USB_DIR}/verification/device/usbd_verify_test.c
         )
         ameba_target_sources_if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID src_${d_MCU_PROJECT_NAME}_usbd_class p_SCOPE interface
             ${c_CMPT_USB_DIR}/device/composite/usbd_composite_cdc_acm_hid.c
@@ -74,9 +81,15 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${c_CMPT_USB_DIR}/device/composite/usbd_composite_cdc_acm.c
             ${c_CMPT_USB_DIR}/device/composite/usbd_composite_uac.c
         )
+        ameba_target_sources_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC_HID src_${d_MCU_PROJECT_NAME}_usbd_class p_SCOPE interface
+            ${c_CMPT_USB_DIR}/device/composite/usbd_composite_cdc_acm_uac_hid.c
+            ${c_CMPT_USB_DIR}/device/composite/usbd_composite_hid_bi_dir.c
+            ${c_CMPT_USB_DIR}/device/composite/usbd_composite_cdc_acm.c
+			${c_CMPT_USB_DIR}/device/composite/usbd_composite_uac.c
+        )
     endif()
 endif()
-#--------------------------#
+#----------usb device core----------------#
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_usbd_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/common
     ${c_CMPT_USB_DIR}/device/core
@@ -90,7 +103,8 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_usbd_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/device/core/usbd_hal.c
     ${c_CMPT_USB_DIR}/device/core/usbd_pcd.c
 )
-#--------------------------#
+
+#-----------usb drd class---------------#
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap" OR "${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_usb_class p_SCOPE interface
@@ -201,7 +215,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         )
     endif()
 endif()
-#--------------------------#
+#------------usb drd core--------------#
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_usb_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/common
     ${c_CMPT_USB_DIR}/device/core
@@ -220,7 +234,8 @@ ameba_target_sources(src_${d_MCU_PROJECT_NAME}_usb_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/host/core/usbh_hal.c
     ${c_CMPT_USB_DIR}/host/core/usbh_hcd.c
 )
-#--------------------------#
+
+#----------usb host class----------------#
 if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
     if("${d_MCU_PROJECT_NAME}" STREQUAL "ap" OR "${d_MCU_PROJECT_NAME}" STREQUAL "hp")
         ameba_target_include(src_${d_MCU_PROJECT_NAME}_usbh_class p_SCOPE interface
@@ -280,7 +295,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
         )
     endif()
 endif()
-#--------------------------#
+#-------------usb host core-------------#
 ameba_target_include(src_${d_MCU_PROJECT_NAME}_usbh_lib p_SCOPE interface
     ${c_CMPT_USB_DIR}/common
     ${c_CMPT_USB_DIR}/host/core

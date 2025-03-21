@@ -1,17 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usbd_msc.c
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides the functionalities of the USBD MSC
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -194,8 +185,10 @@ usbd_class_driver_t usbd_msc_driver = {
 static usbd_msc_dev_t usbd_msc_dev;
 
 #if !USBD_MSC_RAM_DISK
-#if defined(CONFIG_AMEBASMART)
+
 static int usbd_msc_sd_init_status = 0;
+
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 static rtos_sema_t usbd_msc_sd_sema;
 
 static SDIOHCFG_TypeDef sd_config = {
@@ -270,7 +263,7 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 
 #else
 
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 
 static int usbd_msc_sd_give_sema(u32 timeout)
 {
@@ -295,15 +288,23 @@ static void usbd_msc_sd_sema_deinit(void)
 	SD_SetSema(NULL, NULL);
 }
 
+#endif // defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
+
 static int usbd_msc_sd_init(void)
 {
 	SD_RESULT ret;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SD init\n");
 
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 	usbd_msc_sd_sema_init();
+#endif
 
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 	ret = SD_Init(&sd_config);
+#else
+	ret = SD_Init();
+#endif
 	if (ret == SD_OK) {
 		usbd_msc_sd_init_status = 1;
 	} else {
@@ -325,7 +326,9 @@ static int usbd_msc_sd_deinit(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit SD: %d\n", ret);
 	}
 
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBASMARTPLUS) || defined(CONFIG_AMEBAGREEN2)
 	usbd_msc_sd_sema_deinit();
+#endif
 
 	return ret;
 }
@@ -401,8 +404,6 @@ static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 
 	return ret;
 }
-
-#endif // CONFIG_AMEBASMART
 
 #endif // USBD_MSC_RAM_DISK
 
@@ -838,11 +839,7 @@ int usbd_msc_disk_init(void)
 #if USBD_MSC_RAM_DISK
 	ret = RAM_init();
 #else
-#if defined(CONFIG_AMEBASMART)
 	ret = usbd_msc_sd_init();
-#else
-	ret = SD_Init();
-#endif
 #endif
 
 	return ret;
@@ -855,11 +852,7 @@ int usbd_msc_disk_deinit(void)
 #if USBD_MSC_RAM_DISK
 	ret = RAM_deinit();
 #else
-#if defined(CONFIG_AMEBASMART)
 	ret = usbd_msc_sd_deinit();
-#else
-	ret = SD_DeInit();
-#endif
 #endif
 
 	return ret;
@@ -886,15 +879,9 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	ops->disk_read = RAM_ReadBlocks;
 	ops->disk_write = RAM_WriteBlocks;
 #else
-#if defined(CONFIG_AMEBASMART)
 	ops->disk_getcapacity = usbd_msc_sd_getcapacity;
 	ops->disk_read = usbd_msc_sd_readblocks;
 	ops->disk_write = usbd_msc_sd_writeblocks;
-#else
-	ops->disk_getcapacity = SD_GetCapacity;
-	ops->disk_read = SD_ReadBlocks;
-	ops->disk_write = SD_WriteBlocks;
-#endif
 #endif
 
 	cdev->ctrl_buf = (u8 *)usb_os_malloc(USBD_MSC_CTRL_BUF_SIZE);

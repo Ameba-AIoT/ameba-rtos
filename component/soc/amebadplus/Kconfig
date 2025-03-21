@@ -157,6 +157,8 @@ menu "CONFIG FUNCTION TEST"
         bool "SecureBoot Test"
         config SPINAND_VERIFY
         bool "SPI Nand Test"
+        config DIAG_VERIFY
+        bool "Diagnose Test"
 
         config WIFI_VERIFY_MENU
             bool "WIFI Test"

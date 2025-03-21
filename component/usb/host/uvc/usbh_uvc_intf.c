@@ -1,19 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usbh_uvc_intf.c
-  * @author  Realsil WLAN5 Team
-  * @brief   This file provides the functionalities of the USB UVC Class
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
-
-
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* Includes ------------------------------------------------------------------*/
 

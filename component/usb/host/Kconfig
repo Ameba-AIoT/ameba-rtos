@@ -6,7 +6,7 @@ config USBH_CDC_ECM_MENU
     bool "CDC ECM"
     select USBH_CDC_ECM if CORE_AS_AP
 
-if AMEBASMART||AMEBASMARTPLUS                   #amebasmart smart+
+if AMEBASMART||AMEBASMARTPLUS
     if USBH_CDC_ECM_MENU
         choice
             prompt "Select USB Ethernet"
@@ -24,7 +24,7 @@ if AMEBASMART||AMEBASMARTPLUS                   #amebasmart smart+
     endif
 endif
 
-if AMEBAGREEN2||AMEBAL2              #amebagreen2  amebaL2
+if AMEBAGREEN2
     config ETHERNET_BRIDGE_MENU
         depends on USBH_CDC_ECM_MENU
         bool "Enable ethernet bridge"
@@ -63,7 +63,3 @@ config USBH_MSC_MENU
 config USBH_UVC_MENU
     bool "UVC"
     select USBH_UVC if CORE_AS_AP
-
-config USBH_VENDOR_MENU
-    bool "Vendor"
-    select USBH_VENDOR if CORE_AS_AP

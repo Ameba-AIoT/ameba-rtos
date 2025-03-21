@@ -14,13 +14,6 @@ menu "CONFIG BOOT OPTION"
         bool "XIP_FLASH"
 endmenu
 
-menu "CONFIG CLINTWOOD"
-    config CLINTWOOD
-        bool "Enable CLINTWOOD TEST"
-        select AUDIO_FWK_MENU
-        select IMQ_EN
-endmenu
-
 menu "CONFIG TrustZone"
     config TRUSTZONE_FOR_KM4
         bool "Enable TrustZone"
@@ -92,14 +85,12 @@ comment "-----Connectivity Config-----"
 menu "CONFIG WHC INTF"
     choice
         prompt "WHC MODE"
-        default WHC_INTF_IPC_MENU if !CLINTWOOD
-        default WIFI_SINGLE_CORE_MENU if CLINTWOOD
+        default WHC_INTF_IPC_MENU
         config WHC_INTF_IPC_MENU
-            depends on !CLINTWOOD
             bool "INIC_IPC"
             select CORE_AS_NP_FOR_KM4
             select CORE_AS_AP_FOR_CA32
-        # config FULLMAC_MENU
+        # config FULLMAC_DEV
         #     bool "FULLMAC"
         config WIFI_SINGLE_CORE_MENU
             bool "SINGLE CORE"
@@ -112,7 +103,7 @@ menu "CONFIG WHC INTF"
 
     endchoice
 
-    if FULLMAC_MENU
+    if FULLMAC_DEV
         choice
             prompt "FULLMAC INTERFACE"
             config SPI_FULLMAC
@@ -154,7 +145,7 @@ menu "CONFIG WIFI"
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
             select LWIP_NETCONN_SEM_PER_THREAD if CORE_AS_AP
 
-        config FULLMAC_MENU
+        config FULLMAC_DEV
             bool
             depends on CORE_AS_NP
             select WHC_INTF_SDIO if SDIO_FULLMAC

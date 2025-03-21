@@ -447,9 +447,10 @@ void usbd_composite_deinit(void)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
+	usbd_unregister_class();
+
 	usbd_composite_hid_deinit();
 	usbd_composite_cdc_acm_deinit();
-	usbd_unregister_class();
 
 	if (cdev->ctrl_buf != NULL) {
 		usb_os_mfree(cdev->ctrl_buf);

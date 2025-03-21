@@ -6,6 +6,8 @@
 
 static const char *const TAG = "AT-FS";
 
+#define MAX_CERT_LEN 4096
+
 int32_t at_fs_delete(const char *key)
 {
 	int res;
@@ -246,6 +248,16 @@ exit:
 	return ret;
 }
 
+static void at_fs_help(void)
+{
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+FS=<operation>[,<filename>][,<offset>,<length>]\r\n");
+	RTK_LOGI(TAG, "\t<operation>:\t0=list, 1=delete, 2=get size, 3=read, 4=write\r\n");
+	RTK_LOGI(TAG, "\t<filename>:\t\tneeded by operation 1,2,3,4\r\n");
+	RTK_LOGI(TAG, "\t<offset>:\t\tneeded by operation 3,4\r\n");
+	RTK_LOGI(TAG, "\t<length>:\t\tneeded by operation 3,4\r\n");
+}
+
 //AT+FS=<operation>,<filename>,<offset>,<length>
 // operation: 0=list, 1=delete, 2=get size, 3=read, 4=write
 void at_fs(void *arg)
@@ -379,6 +391,7 @@ end:
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		at_printf(ATCMD_ERROR_END_STR, error_no);
+		at_fs_help();
 	}
 
 }
@@ -489,8 +502,109 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 	return ret == stat_buf.st_size ? ret : -1;
 }
 
+static void at_cert_help(void)
+{
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+FS=<role>,<index>\r\n");
+	RTK_LOGI(TAG, "\t<role>:\t0=client, 1=server\r\n");
+	RTK_LOGI(TAG, "\t<index>:\tcert index, start from 1\r\n");
+}
+
+void at_cert(void *arg)
+{
+	int argc = 0, res;
+	char *argv[MAX_ARGC] = {0};
+	char *path = NULL;
+	char *prefix;
+	vfs_file *finfo;
+	char *buffer = NULL;
+	u8 error_no = 0, role, index;
+
+	if (arg == NULL) {
+		RTK_LOGW(TAG, "The parameters can not be ignored\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	argc = parse_param(arg, argv);
+	if (argc != 3) {
+		RTK_LOGW(TAG, "Number of parameters is wrong\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	role = atoi(argv[1]);
+	index = atoi(argv[2]);
+
+	path = (char *)rtos_mem_zmalloc(PATH_MAX);
+	buffer = (char *)rtos_mem_zmalloc(MAX_CERT_LEN + 1);
+	memset(buffer, 0, sizeof(buffer));
+	prefix = find_vfs_tag(VFS_REGION_1);
+
+	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_ca_%d.crt", prefix, role == 0 ? "client" : "server", index);
+	at_printf("%s\r\n", path);
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo != NULL) {
+		res = fread(buffer, MAX_CERT_LEN, 1, (FILE *)finfo);
+		if (res < 0) {
+			RTK_LOGW(TAG, "%s read fail \r\n", path);
+		} else {
+			at_printf("%s", buffer);
+		}
+		fclose((FILE *)finfo);
+	}
+	at_printf("\r\n");
+
+	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_key_%d.key", prefix, role == 0 ? "client" : "server", index);
+	at_printf("%s\r\n", path);
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo != NULL) {
+		res = fread(buffer, MAX_CERT_LEN, 1, (FILE *)finfo);
+		if (res < 0) {
+			RTK_LOGW(TAG, "%s read fail \r\n", path);
+		} else {
+			at_printf("%s\r\n", buffer);
+		}
+		fclose((FILE *)finfo);
+	}
+	at_printf("\r\n");
+
+	DiagSnPrintf(path, PATH_MAX, "%s:CERT/%s_cert_%d.crt", prefix, role == 0 ? "client" : "server", index);
+	at_printf("%s\r\n", path);
+	finfo = (vfs_file *)fopen(path, "r");
+	if (finfo != NULL) {
+		res = fread(buffer, MAX_CERT_LEN, 1, (FILE *)finfo);
+		if (res < 0) {
+			RTK_LOGW(TAG, "%s read fail \r\n", path);
+		} else {
+			at_printf("%s\r\n", buffer);
+		}
+		fclose((FILE *)finfo);
+	}
+	at_printf("\r\n");
+
+
+end:
+	if (buffer != NULL) {
+		rtos_mem_free(buffer);
+	}
+
+	if (path != NULL) {
+		rtos_mem_free(path);
+	}
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+		at_cert_help();
+	}
+
+}
+
 log_item_t at_fs_items[] = {
 	{"+FS", at_fs, {NULL, NULL}},
+	{"+CERT", at_cert, {NULL, NULL}},
 };
 
 void at_fs_init(void)

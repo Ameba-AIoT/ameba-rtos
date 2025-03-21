@@ -1,4 +1,4 @@
-if FULLMAC_MENU
+if FULLMAC_DEV
     menu "CONFIG WIFI MODE"
         config NAN
             bool "Enable NAN"

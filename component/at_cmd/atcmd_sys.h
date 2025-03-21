@@ -8,8 +8,8 @@
 #define __ATCMD_SYS_H__
 
 #define ATCMD_VERSION          2       /* ATCMD MAJOR VERSION, AT FORMAT CHANGED, OR PORTING NEW CHIPS */
-#define ATCMD_SUBVERSION       2       /* ATCMD MINOR VERSION, NEW COMMAND ADDED OR DELETED */
-#define ATCMD_REVISION         0       /* ATCMD FIX BUG REVISION */
+#define ATCMD_SUBVERSION       4       /* ATCMD MINOR VERSION, NEW COMMAND ADDED OR DELETED */
+#define ATCMD_REVISION         1       /* ATCMD FIX BUG REVISION */
 
 typedef enum atcmd_log_type_e {
 	atcmd_log_type_get = 0,

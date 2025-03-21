@@ -360,3 +360,23 @@ int atcmd_bt_sof_eof_ind(int argc, char *argv[])
 	return 0;
 }
 #endif
+
+#if ((defined(CONFIG_BT_INIC) && CONFIG_BT_INIC))
+#include "hci_if_inic.h"
+
+int atcmd_bt_remote_wakeup(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	uint16_t opcode = 0xfe01;
+	uint8_t status = 0;
+	uint8_t evt[6] = {0x0e, 0x04, 0x03, 0x00, 0x00, 0x00};
+	evt[3] = opcode & 0xFF;
+	evt[4] = (opcode >> 8) & 0xFF;
+	evt[5] = status;
+
+	bt_inic_send_to_host(0x04, evt, sizeof(evt));
+	BT_LOGA("Remote wakeup test");
+	return 0;
+}
+#endif

@@ -352,7 +352,7 @@ struct rtk_bt_gatt_service {
 	uint8_t alloc_ind;                      /*!< indicate whether this rtk_bt_gatt_service is mallocated */
 	uint16_t app_id;                        /*!< Service app_id */
 	rtk_bt_gatt_attr_t *attrs;              /*!< Service Attributes */
-	uint16_t attr_count;                        /*!< Service Attribute count */
+	uint16_t attr_count;                    /*!< Service Attribute count */
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 	bool assgin_handle_flag;                /*!< Flag of if the service start attr handle is assigned by user */
 	uint16_t start_handle;                  /*!< User assigned start attr handle of service */

@@ -37,7 +37,6 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     le_iso.c
-	app_le_iso_common.c
 )
 
 # Component private part, user config end

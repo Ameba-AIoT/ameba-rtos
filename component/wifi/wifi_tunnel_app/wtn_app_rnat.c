@@ -21,7 +21,6 @@
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
 #ifdef CONFIG_WIFI_TUNNEL
-#include "rtw_wifi_constants.h"
 #include "wifi_intf_drv_to_app_basic.h"
 #include "lwip_netconf.h"
 #include "wifi_conf.h"

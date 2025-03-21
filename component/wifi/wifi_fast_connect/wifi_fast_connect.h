@@ -18,7 +18,6 @@
 #ifndef __WIFI_FAST_CONNECT_H__
 #define __WIFI_FAST_CONNECT_H__
 
-#include "rtw_wifi_constants.h"
 #include "wifi_conf.h"
 #include "wpa_lite_intf.h"
 

@@ -41,7 +41,8 @@ static uint32_t rtk_bt_le_gap_evt_direct_calling_flag =
 	(1 << RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND);
 static uint32_t rtk_bt_le_gatts_evt_direct_calling_flag = 0;
 static uint32_t rtk_bt_le_gattc_evt_direct_calling_flag = 0;
-static uint32_t rtk_bt_le_iso_evt_direct_calling_flag = 0;
+static uint32_t rtk_bt_le_iso_evt_direct_calling_flag =
+	(1 << RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND);
 static uint32_t rtk_bt_br_avrcp_evt_direct_calling_flag =
 	(1 << RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED);
 static uint32_t rtk_bt_br_a2dp_evt_direct_calling_flag =

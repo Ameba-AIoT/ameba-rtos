@@ -84,9 +84,21 @@ ServiceBinary=%12%\%DRIVERFILENAME%.sys
 [SourceDisksFiles]
 [SourceDisksNames]
 [DeviceList]
-%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_4042
- [DeviceList.NTamd64] 
-%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_4042
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8720
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8721
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8722
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8730
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8006
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8061
+; Add support for new VID/PID
+ [DeviceList.NTamd64]
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8720
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8721
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8722
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8730
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8006
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8061
+; Add support for new VID/PID
  
 ;------------------------------------------------------------------------------
 ;  String Definitions

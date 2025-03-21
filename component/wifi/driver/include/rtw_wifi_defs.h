@@ -428,41 +428,41 @@ enum {
 };
 
 /**
-  * @brief csi enable or config
+  * @brief csi enable or config.
   */
 enum {
-	CSI_ACT_EN,    /**< enable or disable csi func */
-	CSI_ACT_CFG,  /**< config csi parameters */
+	CSI_ACT_EN,           /**< enable or disable csi func */
+	CSI_ACT_CFG,          /**< config csi parameters */
 	CSI_ACT_MAX
 };
 
 /**
-  * @brief csi group num
+  * @brief csi group num.
   */
 enum {
 	CSI_GROUP_NUM_1 = 0,  /**< per tone */
-	CSI_GROUP_NUM_2,         /**< per 2tone */
-	CSI_GROUP_NUM_4,        /**< per 4tone */
-	CSI_GROUP_NUM_16,     /**< per 16tone */
+	CSI_GROUP_NUM_2,      /**< per 2tone */
+	CSI_GROUP_NUM_4,      /**< per 4tone */
+	CSI_GROUP_NUM_8_16,   /**< per 8tone for dplus; per 16tone for others */
 	CSI_GROUP_NUM_MAX
 };
 
 /**
-  * @brief csi mode
+  * @brief csi mode.
   */
 enum {
-	CSI_MODE_NORMAL = 0,   ///<   normal mode
-	CSI_MODE_NDP,                ///<   ndp mode
-	CSI_MODE_RX_RESP,         ///<    rx rsp mode
-	CSI_MODE_MAX,                 ///<    max mode
+	CSI_MODE_NORMAL = 0,  /**< rx normal mode */
+	CSI_MODE_NDP,         /**< rx ndp mode: not support */
+	CSI_MODE_RX_RESP,     /**< rx response mode */
+	CSI_MODE_MAX,
 };
 
 /**
   * @brief csi accuracy.
   */
 enum {
-	CSI_ACCU_1BYTE = 0, /**< CSI_ACCU_1BYTE: S(8,4) */
-	CSI_ACCU_2BYTES,  /**< CSI_ACCU_2BYTE: S(16,12) */
+	CSI_ACCU_1BYTE = 0,   /**< CSI_ACCU_1BYTE: S(8,3) for dplus and S(8,4) for others */
+	CSI_ACCU_2BYTES,      /**< CSI_ACCU_2BYTE: S(16,11) for dplus and S(16,12) for others */
 	CSI_ACCU_MAX
 };
 
@@ -470,22 +470,22 @@ enum {
   * @brief csi alg_opt.
   */
 enum {
-	CSI_ALG_LS = 0,  /**< ls algo */
-	CSI_ALG_SMOTHING, /**< smothing algo */
-	CSI_ALG_MAX            /**< other algo */
+	CSI_ALG_LS = 0,       /**< ls algo */
+	CSI_ALG_SMOTHING,     /**< smothing algo */
+	CSI_ALG_MAX           /**< other algo */
 };
 
 /**
   * @brief csi ch_opt.
   */
 enum {
-	CSI_CH_LEGACY = 0, /**< legacy part(L-LTF) channel estmation result */
-	CSI_CH_NON_LEGACY,  /**< non-legacy(HT-LTF) part */
+	CSI_CH_LEGACY = 0,    /**< legacy part(L-LTF) channel estmation result */
+	CSI_CH_NON_LEGACY,    /**< non-legacy(HT-LTF) part */
 	CSI_CH_MAX
 };
 
 /**
-  * @brief csi play_role for sta mode.
+  * @brief csi csi_role.
   */
 enum {
 	CSI_OP_ROLE_TRX = 0,  /**< both trx */

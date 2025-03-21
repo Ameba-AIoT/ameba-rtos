@@ -1,6 +1,5 @@
 
 #include "os_wrapper.h"
-#include "rtw_wifi_constants.h"
 #include "wifi_conf.h"
 #include "lwip_netconf.h"
 #include "ameba_ota.h"

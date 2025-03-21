@@ -2,9 +2,8 @@
 #include "basic_types.h"
 #include "rtsp/rtsp_api.h"
 
-#include "wifi_conf.h"
+#include "wifi_conf.h"// for _htons
 #include "lwip_netconf.h"	// for LwIP_GetMAC
-#include "rtw_wifi_constants.h"// for _htons
 
 #define RTSP_CTX_ID_BASE	0
 static uint32_t rtsp_ctx_id_bitmap = 0;

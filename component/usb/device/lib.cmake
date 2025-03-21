@@ -41,6 +41,10 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
+if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAL2)
+    ameba_list_append(private_definitions CONFIG_USB_FS)
+endif()
+
 ameba_list_append(private_includes
     ../common
     core
@@ -56,9 +60,6 @@ ameba_list_append(private_sources
     core/usbd_pcd.c
 )
 
-if (CONFIG_AMEBADPLUS)
-    ameba_list_append(private_definitions CONFIG_USB_FS)
-endif()
 # Component private part, user config end
 #------------------------------#
 

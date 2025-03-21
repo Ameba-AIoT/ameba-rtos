@@ -79,6 +79,8 @@ static uint8_t le_rd_accept_list_size[] = {0x0e, 0x05, 0x01, 0x07, 0x20, 0x00, 0
 static uint8_t rd_page_scan_type[] = {0x0e, 0x05, 0x01, 0x46, 0x0c, 0x00, 0x00};
 static uint8_t del_stored_link_key[] = {0x0e, 0x06, 0x01, 0x12, 0x0c, 0x00, 0x00, 0x00};
 static uint8_t rd_local_codecs1[] = {0x0e, 0x05, 0x01, 0x0b, 0x10, 0x00, 0x00};
+static uint8_t rd_local_codecs2[] = {0x0e, 0x05, 0x01, 0x0d, 0x10, 0x00, 0x00};
+static uint8_t rd_local_simplepairing[] = {0x0e, 0x06, 0x01, 0x0c, 0x10, 0x00, 0x00, 0x07};
 
 struct fake_hci_evt {
 	uint16_t opcode;
@@ -109,6 +111,8 @@ static struct fake_hci_evt fake_events[] = {
 	{HCI_Read_Page_Scan_Type, rd_page_scan_type, sizeof(rd_page_scan_type)},
 	{HCI_Delete_Stored_Link_Key, del_stored_link_key, sizeof(del_stored_link_key)},
 	{HCI_Read_Local_Supported_Codecs_v1, rd_local_codecs1, sizeof(rd_local_codecs1)},
+	{HCI_Read_Local_Supported_Codecs_v2, rd_local_codecs2, sizeof(rd_local_codecs2)},
+	{HCI_Read_Local_Simple_Pairing_Options, rd_local_simplepairing, sizeof(rd_local_simplepairing)},
 };
 
 static void _handle_cmd_for_fpga(uint16_t opcode)

@@ -92,11 +92,7 @@ u8 Boot_MemSwr_Only = DISABLE;
 // NP PLL can be 800MHz~1000MHz
 SocClk_Info_TypeDef SocClk_Info[] = {
 	/* NPPLL_CLK,	APPLL_Clk,			Vol_Type,	KM4_CPU_CKD,	AP_CPU_CKD*/
-#if defined(CONFIG_CLINTWOOD ) && CONFIG_CLINTWOOD
-	{NPPLL_920M,	APPLL_NULL,		VOL_09,			CLKDIV(4),		CLKDIV(1) | ISNPPLL},	// keep a balance between power and performance
-#else
 	{NPPLL_1000M,	APPLL_1200M,	VOL_10,			CLKDIV(3),		CLKDIV(1) | ISAPPLL},	//best porformance
-#endif
 	//{NPPLL_920M,	APPLL_NULL,		VOL_09,			CLKDIV(4),		CLKDIV(1) | ISNPPLL},
 
 };

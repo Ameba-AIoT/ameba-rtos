@@ -8,11 +8,6 @@
  *
  ******************************************************************************/
 #include <rtw_autoconf.h>
-#include "lwipopts.h"
-
-#if !defined(LWIP_IPV6)
-#error "LWIP_IPV6 is not defined"
-#endif
 
 #define MAX_RECV_SIZE    1500
 #define MAX_SEND_SIZE    256

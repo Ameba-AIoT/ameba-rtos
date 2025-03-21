@@ -62,6 +62,8 @@ extern void vTaskList(char *pcWriteBuffer);
 extern u32 cmd_dump_word(u16 argc, u8  *argv[]);
 extern u32 cmd_write_word(u16 argc, u8  *argv[]);
 
+static const char *const TAG = "AT-SYS";
+
 #ifndef CONFIG_INIC_NO_FLASH
 #if (configGENERATE_RUN_TIME_STATS == 1)
 static task_status_t *task_status = NULL;
@@ -234,11 +236,11 @@ void at_otarecover(void *arg)
 #if (configGENERATE_RUN_TIME_STATS == 1)
 static void at_cpuload_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+CPULOAD=<mode>[,<time_intval>,<counter>]\r\n");
-	at_printf("\t<mode>:\t[0,2]\r\n");
-	at_printf("\t<time_intval>:\tIn sec\r\n");
-	at_printf("\t<counter>\t0 means infinit\r\n");
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+CPULOAD=<mode>[,<time_intval>,<counter>]\r\n");
+	RTK_LOGI(TAG, "\t<mode>:\t[0,2]\r\n");
+	RTK_LOGI(TAG, "\t<time_intval>:\tIn sec\r\n");
+	RTK_LOGI(TAG, "\t<counter>\t0 means infinit\r\n");
 }
 
 /****************************************************************
@@ -345,6 +347,14 @@ end:
 #endif
 #endif /* CONFIG_INIC_NO_FLASH */
 
+static void at_test_help(void)
+{
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+test=<mode>,<string/length>\r\n");
+	RTK_LOGI(TAG, "\t<mode>:\t0-echo, 1-tt mode test\r\n");
+	RTK_LOGI(TAG, "\t<string/length>:\tstring-mode 0 echo string, length-tt mode length\r\n");
+}
+
 /****************************************************************
 AT command process:
 	AT+TEST
@@ -352,13 +362,70 @@ AT command process:
 ****************************************************************/
 void at_test(void *arg)
 {
-	if (arg) {
-		at_printf("\r\n arg len = %d \r\n", strlen((char *)arg));
-		at_printf("\r\n arg = %s \r\n", (char *)arg);
+	u8 *buffer = NULL;
+	u8 error_no = 0;
+	u32 start_time, end_time, tt_len;
+	int argc = 0, mode = 0;
+	char *argv[MAX_ARGC] = {0};
+
+	argc = parse_param(arg, argv);
+	if (argc != 3) {
+		error_no = 1;
+		goto end;
 	}
 
-	UNUSED(arg);
-	at_printf(ATCMD_OK_END_STR);
+	mode = (int)atoi(argv[1]);
+
+	if (mode == 0) {
+		at_printf("\r\n arg len = %d \r\n", strlen((char *)argv[2]));
+		at_printf("\r\n arg = %s \r\n", (char *)argv[2]);
+	} else if (mode == 1) {
+		buffer = (u8 *)rtos_mem_malloc(10 * 1024);
+		if (buffer == NULL) {
+			error_no = 2;
+			goto end;
+		}
+
+		tt_len = (u32)atoi(argv[2]);
+
+		if (atcmd_tt_mode_start(tt_len) != 0) {
+			error_no = 2;
+			goto end;
+		}
+
+		u8 *buffer_ptr = buffer;
+		int get_len = 0, remain_len = tt_len;
+
+		get_len = atcmd_tt_mode_get(buffer_ptr, 1);
+		remain_len -= get_len;
+		start_time = rtos_time_get_current_system_time_ms();
+
+		while (remain_len > 0) {
+			get_len = atcmd_tt_mode_get(buffer_ptr, remain_len);
+			remain_len -= get_len;
+		}
+
+		end_time = rtos_time_get_current_system_time_ms();
+		atcmd_tt_mode_end();
+
+		at_printf("tt mode test: Send %d KBytes in %d ms, %d Kbits/sec\n\r", (int)(tt_len / 1024), (int)(end_time - start_time),
+				  (int)((tt_len * 8) / (end_time - start_time)));
+	} else {
+		error_no = 1;
+		goto end;
+	}
+
+end:
+	if (buffer != NULL) {
+		rtos_mem_free(buffer);
+	}
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+		at_test_help();
+	}
 }
 
 /****************************************************************
@@ -509,11 +576,11 @@ void at_gmr(void *arg)
 
 static void at_log_help(void)
 {
-	at_printf("\r\n");
-	at_printf("AT+LOG=<get_set>,<module>[,<log_level>]\r\n");
-	at_printf("\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\r\n");
-	at_printf("\t<module>:\t*-each module, others-specific module\r\n");
-	at_printf("\t<log_level>:\t[0,5], only applicable for set mode\r\n");
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+LOG=<get_set>,<module>[,<log_level>]\r\n");
+	RTK_LOGI(TAG, "\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\r\n");
+	RTK_LOGI(TAG, "\t<module>:\t*-each module, others-specific module\r\n");
+	RTK_LOGI(TAG, "\t<log_level>:\t[0,5], only applicable for set mode\r\n");
 }
 
 /****************************************************************

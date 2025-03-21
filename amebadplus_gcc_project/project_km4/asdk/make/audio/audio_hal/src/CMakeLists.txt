@@ -8,10 +8,6 @@ set(
     ${FREERTOSDIR}/portable/GCC/AmebaDplus_KM4/secure
 )
 
-if(CONFIG_CLINTWOOD)
-    list(APPEND MODULE_IFLAGS ${BASEDIR}/component/application/clintwood/soc)
-endif()
-
 set(DIR ${BASEDIR}/component/audio/audio_hal/amebadplus)
 
 set(MODULE_C_DEFINES __RTOS__ NDEBUG)
