@@ -24,22 +24,6 @@ bool "XIP_FLASH "  						CONFIG_XIP_FLASH
 endmenu
 
 mainmenu_option next_comment
-comment '< CLINTWOOD Config'
-
-bool "Enable CLINTWOOD TEST "  						CONFIG_CLINTWOOD
-	if [ "$CONFIG_CLINTWOOD" = "y" ]; then
-		define_bool CONFIG_CLINTWOOD_FOR_LP y
-		define_bool CONFIG_CLINTWOOD_FOR_HP y
-		define_bool CONFIG_CLINTWOOD_FOR_AP y
-		define_bool CONFIG_AUDIO_FWK_FOR_HP y
-		define_bool CONFIG_AUDIO_PASSTHROUGH_FOR_HP y
-		define_bool CONFIG_AUDIO_MIXER_FOR_HP n
-		define_bool CONFIG_IMQ_EN_FOR_HP y
-		define_bool CONFIG_IMQ_EN_FOR_AP y
-	fi
-endmenu
-
-mainmenu_option next_comment
 comment '< CONFIG Mass Production'
 bool "Enable MP"			CONFIG_MP_INCLUDED
 if [ "$CONFIG_MP_INCLUDED" = "y" ]; then
@@ -272,10 +256,6 @@ if [ "$CONFIG_WLAN_MENU" = "y" ]; then
 	if [ "$CONFIG_AP_CORE_KM4" = "y" ]; then
 		define_bool CONFIG_AS_INIC_KM4_NP_CA32_AP n
 		define_bool CONFIG_SINGLE_CORE_WIFI_KM4 y
-	fi
-	if [ "$CONFIG_CLINTWOOD" = "y" ]; then
-		define_bool CONFIG_SINGLE_CORE_WIFI_KM4 y
-		define_bool CONFIG_AS_INIC_KM4_NP_CA32_AP n
 	fi
 	if [ "$CONFIG_AS_INIC_KM4_NP_CA32_AP" = "y" ]; then
 		define_bool CONFIG_WLAN_FOR_AP y

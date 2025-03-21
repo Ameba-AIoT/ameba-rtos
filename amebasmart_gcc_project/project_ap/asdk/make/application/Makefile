@@ -14,9 +14,6 @@ OBJS =
 
 # Define the Rules to build the core targets
 all: CORE_TARGETS COPY_RAM_OBJS
-ifeq ($(CONFIG_CLINTWOOD), y)
-	make -C clintwood all
-endif
 	make -C demoui all
 ifeq ($(CONFIG_WIFI_AUDIO),y)
 	make -C wifi-audio all
@@ -35,7 +32,6 @@ CORE_TARGETS: $(OBJS)
 #                        RULES TO CLEAN TARGETS                               #
 #*****************************************************************************#
 clean:
-	make -C clintwood clean
 	make -C demoui clean
 	make -C wifi-audio clean
 ifeq ($(CONFIG_MATTER_EN), y)

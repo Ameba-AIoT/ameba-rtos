@@ -5,11 +5,6 @@
 #undef  CONFIG_XIP_FLASH
 
 /*
- * < CLINTWOOD Config
- */
-#undef  CONFIG_CLINTWOOD
-
-/*
  * < CONFIG Mass Production
  */
 #undef  CONFIG_MP_INCLUDED

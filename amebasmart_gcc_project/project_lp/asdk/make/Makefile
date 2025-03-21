@@ -17,7 +17,6 @@ all:
 	@make -C target all
 	@make -C cmsis all
 	@make -C project all
-	@make -C application all
 	@make -C utils all
 ifeq ($(CONFIG_APP_DEMO),y)
 	#@make -C example all
@@ -36,6 +35,5 @@ clean:
 	@make -C cmsis clean
 	#@make -C example clean
 	@make -C project clean
-	@make -C application clean
 	@make -C utils clean
 -include $(DEPS)
