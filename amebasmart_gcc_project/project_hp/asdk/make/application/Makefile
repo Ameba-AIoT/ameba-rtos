@@ -7,15 +7,11 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 COMPONENT :=
 #COMPONENT += realmesh
-ifeq ($(CONFIG_CLINTWOOD),y)
-COMPONENT += clintwood
-endif
 ifeq ($(CONFIG_DEMO_UI_EN),y)
 COMPONENT += demoui
 endif
 
 COMPONENT_CLEAN += realmesh
-COMPONENT_CLEAN += clintwood
 COMPONENT_CLEAN += demoui
 
 #*****************************************************************************#

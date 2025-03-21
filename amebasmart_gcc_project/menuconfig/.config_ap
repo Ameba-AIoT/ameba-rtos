@@ -6,11 +6,6 @@
 # CONFIG_XIP_FLASH is not set
 
 #
-# < CLINTWOOD Config
-#
-# CONFIG_CLINTWOOD is not set
-
-#
 # < CONFIG Mass Production
 #
 # CONFIG_MP_INCLUDED is not set

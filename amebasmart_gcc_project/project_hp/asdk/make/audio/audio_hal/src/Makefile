@@ -3,10 +3,6 @@ MODULE_IFLAGS               += -I$(BASEDIR)/component/audio/interfaces
 MODULE_IFLAGS               += -I$(BASEDIR)/component/audio/base/cutils/interfaces
 MODULE_IFLAGS               += -I$(BASEDIR)/component/audio/base/osal/osal_c/interfaces
 
-ifeq ($(CONFIG_CLINTWOOD),y)
-MODULE_IFLAGS               += -I$(BASEDIR)/component/application/clintwood/soc
-endif
-
 .PHONY: all lib clean
 TARGET_LIB = lib_audio_hal
 

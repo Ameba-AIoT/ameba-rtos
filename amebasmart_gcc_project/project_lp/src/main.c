@@ -172,13 +172,8 @@ int main(void)
 	ipc_table_init(IPCLP_DEV);
 	app_pmu_init();
 
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-	extern void MSFT_FW_init();
-	MSFT_FW_init();
-#else
 #if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
 	wififw_task_create();
-#endif
 #endif
 
 	app_init_debug();
