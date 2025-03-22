@@ -55,7 +55,7 @@ static void example_nonblock_connect_thread(void *param)
 void example_nonblock_connect(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"example_nonblock_connect_thread"), example_nonblock_connect_thread, NULL, 1024 * 4,
-						 1) != SUCCESS) {
+						 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

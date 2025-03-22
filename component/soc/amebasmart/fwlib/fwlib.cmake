@@ -28,7 +28,7 @@ endif()
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-achived
 
 ##########################################################################################
@@ -86,7 +86,6 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         ${c_CMPT_SWLIB_DIR}/log.c
         ${c_CMPT_SWLIB_DIR}/sscanf_minimal.c
         ${c_COMPONENT_DIR}/soc/common/rtk_assert/rtk_assert.c
-        ${c_CMPT_USRCFG_DIR}/ameba_sleepcfg.c
     )
 
     if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
@@ -129,8 +128,6 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ram_common/ameba_fault_handle.c
 
                 ${c_CMPT_SWLIB_DIR}/locks.c
-                ${c_CMPT_USRCFG_DIR}/ameba_pinmapcfg.c
-                ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
 
             )
         elseif("${c_MCU_PROJECT_NAME}" STREQUAL "lp")
@@ -188,7 +185,6 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ram_hp/ameba_system.c
 
                 ${c_CMPT_MISC_DIR}/ameba_pmu.c
-                ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
             )
             ameba_list_append_if(CONFIG_AS_INIC_AP private_sources
                 ${c_CMPT_MISC_DIR}/ameba_ota.c

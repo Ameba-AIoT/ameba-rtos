@@ -289,12 +289,12 @@ static void cdc_acm_speed_loopback_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback test start, times:%d, size: %d\n", USBH_CDC_ACM_LOOPBACK_CNT, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
 	ret = rtos_task_create(&rx_task, "rx_task", bulk_rx_thread, NULL, 1024U * 2, 3U);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create rx_task fail\n");
 	}
 	//start two task, one for tx, one for rx
 	ret = rtos_task_create(&tx_task, "tx_task", bulk_tx_thread, NULL, 1024U * 2, 3U);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create tx_task fail\n");
 	}
 }
@@ -334,11 +334,11 @@ static void cdc_acm_loopback_test(void)
 				return;
 			}
 
-			if (rtos_sema_take(cdc_acm_send_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+			if (rtos_sema_take(cdc_acm_send_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 				usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			}
 
-			if (rtos_sema_take(cdc_acm_receive_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+			if (rtos_sema_take(cdc_acm_receive_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 				/*check rx data*/
 				for (k = 0; k < USBH_CDC_ACM_LOOPBACK_BUF_SIZE; k++) {
 					if (cdc_acm_loopback_rx_buf[k] != k % 128) {
@@ -377,7 +377,7 @@ static void cdc_acm_notify_test_thread(void *param)
 	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 		usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 
-		if (rtos_sema_take(cdc_acm_notify_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(cdc_acm_notify_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[9], cdc_acm_notify_rx_buf[8]);
 		}
 	}
@@ -398,7 +398,7 @@ static void cdc_acm_notify_test(void)
 	int status;
 	rtos_task_t task;
 	status = rtos_task_create(&task, "notify_task", cdc_acm_notify_test_thread, NULL, 1024U, 2U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create notify thread fail(%d)\n", status);
 	}
 }
@@ -468,7 +468,7 @@ static void cdc_acm_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdc_acm_detach_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(cdc_acm_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			rtos_time_delay_ms(100);
 			usbh_cdc_acm_deinit();
 			usbh_deinit();
@@ -522,14 +522,14 @@ static void example_usbh_cdc_acm_thread(void *param)
 
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
 	status = rtos_task_create(&task, "cdc_acm_hotplug_thread", cdc_acm_hotplug_thread, NULL, 1024U, 3U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		usbh_cdc_acm_deinit();
 		usbh_deinit();
 		goto error_exit;
 	}
 #endif
 
-	if (rtos_sema_take(cdc_acm_attach_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+	if (rtos_sema_take(cdc_acm_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 		cdc_acm_request_test();
 #if  CONFIG_USBH_CDC_ACM_SPEED_TEST
 		cdc_acm_speed_loopback_test();
@@ -560,7 +560,7 @@ void example_usbh_cdc_acm(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC ACM demo start\n");
 
 	status = rtos_task_create(&task, "example_usbh_cdc_acm_thread", example_usbh_cdc_acm_thread, NULL, 1024U, 1U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }

@@ -92,7 +92,7 @@ void uart_rx_timeout_demo(void)
 
 int example_mbed_uart_int_rx_timeout(void)
 {
-	if (rtos_task_create(NULL, "uart uart_rx_timeout_demo demo", (rtos_task_t)uart_rx_timeout_demo, (void *)NULL, (2048 * 2), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "uart uart_rx_timeout_demo demo", (rtos_task_t)uart_rx_timeout_demo, (void *)NULL, (2048 * 2), (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create uart_rx_timeout_demo test demo task\n");
 	}
 

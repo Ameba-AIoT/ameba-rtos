@@ -24,7 +24,7 @@
 /*
  * we select different Mbedtls configuration files according to different target.
  */
-#if defined(CONFIG_802154_THREAD_EN) && CONFIG_802154_THREAD_EN
+#if defined(CONFIG_WPAN_THREAD_EN) && CONFIG_WPAN_THREAD_EN
 #include "mbedtls/config_thread.h"
 #else
 

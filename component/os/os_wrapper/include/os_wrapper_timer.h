@@ -24,7 +24,7 @@ typedef void *rtos_timer_t;
  * @param  interval_ms: The timer period in milliseconds.
  * @param  reload: Used to set the timer as a periodic or one-shot timer.
  * @param  p_timer_callback: The function to call when the timer expires.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_t timer_id,
 							 uint32_t interval_ms, uint8_t reload, void (*p_timer_callback)(void *));
@@ -34,7 +34,7 @@ int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, 
  * @param  p_handle: The handle of the timer being deleted.
  * @param  wait_ms: Specifies the time that the calling task should be held in the Blocked state
  *                  to wait for the delete command to be successfully sent to the timer command queue.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_delete_static(rtos_timer_t p_handle, uint32_t wait_ms);
 
@@ -59,7 +59,7 @@ int rtos_timer_delete_static(rtos_timer_t p_handle, uint32_t wait_ms);
  * @param  interval_ms: The timer period in milliseconds.
  * @param  reload: Used to set the timer as a periodic or one-shot timer.
  * @param  p_timer_callback: The function to call when the timer expires.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_create(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_t timer_id,
 					  uint32_t interval_ms, uint8_t reload, void (*p_timer_callback)(void *));
@@ -69,7 +69,7 @@ int rtos_timer_create(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_
  * @param  p_handle: The handle of the timer being deleted.
  * @param  wait_ms: Specifies the time that the calling task should be held in the Blocked state
  *                  to wait for the delete command to be successfully sent to the timer command queue.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms);
 
@@ -78,7 +78,7 @@ int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms);
  * @param  p_handle: The handle of the created timer
  * @param  wait_ms: Specifies the time that the calling task should be held in the Blocked state
  *                  to wait for the start command to be successfully sent to the timer command queue.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_start(rtos_timer_t p_handle, uint32_t wait_ms);
 
@@ -87,7 +87,7 @@ int rtos_timer_start(rtos_timer_t p_handle, uint32_t wait_ms);
  * @param  p_handle: The handle of the created timer
  * @param  wait_ms: Specifies the time that the calling task should be held in the Blocked state
  *                  to wait for the stop command to be successfully sent to the timer command queue.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_stop(rtos_timer_t p_handle, uint32_t wait_ms);
 
@@ -97,7 +97,7 @@ int rtos_timer_stop(rtos_timer_t p_handle, uint32_t wait_ms);
  * @param  interval_ms: The new period for xTimer.
  * @param  wait_ms: Specifies the time that the calling task should be held in the Blocked state
  *                  to wait for the change command to be successfully sent to the timer command queue.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_timer_change_period(rtos_timer_t p_handle, uint32_t interval_ms, uint32_t wait_ms);
 

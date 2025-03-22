@@ -367,7 +367,7 @@ void lcdc_rgb_shift_st7262(void)
 
 int main(void)
 {
-	if (rtos_task_create(NULL, "rgb_shift_st7262", (rtos_task_t)lcdc_rgb_shift_st7262, NULL, (4096), 1) != SUCCESS) {
+	if (rtos_task_create(NULL, "rgb_shift_st7262", (rtos_task_t)lcdc_rgb_shift_st7262, NULL, (4096), 1) != RTK_SUCCESS) {
 		printf("Cannot create rgb_shift_st7262 demo task\n\r");
 	}
 

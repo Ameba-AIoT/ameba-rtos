@@ -812,3 +812,11 @@ int32_t ameba_audio_stream_get_sp_tx_channel_idx(uint32_t channel)
 
 	return sp_tx_channel;
 }
+
+bool ameba_audio_sport_started(uint32_t index)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = ameba_audio_get_sport_addr(index);
+
+	return (((SPORTx->SP_CTRL0 & SP_BIT_TX_DISABLE) == 0)
+		&& ((SPORTx->SP_CTRL0 & SP_BIT_START_TX) != 0)) ? true : false;
+}

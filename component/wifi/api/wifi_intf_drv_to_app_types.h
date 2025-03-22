@@ -27,7 +27,6 @@
 #include "rtw_byteorder.h"
 
 #include "rtw_wifi_defs.h"
-#include "rtw_ethernet.h"
 #include "rtw_80211spec_macro.h"
 #include "rtw_80211spec_struct.h"
 #include "rtw_80211spec_enum.h"
@@ -143,6 +142,13 @@ enum {
 };
 
 /** @} End of WIFI_Exported_Enumeration_Types group*/
+
+/** @addtogroup WIFI_Exported_Structure_Types Structure Type
+ * @{
+ */
+
+/** @} End of WIFI_Exported_Structure_Types group*/
+
 /** @} End of WIFI_Exported_Types group*/
 /** @} End of WIFI_API group */
 #ifdef __cplusplus

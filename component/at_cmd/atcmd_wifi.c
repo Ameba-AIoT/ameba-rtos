@@ -1069,13 +1069,10 @@ void at_wlreconn(void *arg)
 	if (0 == strcmp("auto", argv[1])) {
 		if (mode == 0) {
 			RTK_LOGI(NOTAG, "[+WLRECONN] Disable autoreconnect\r\n");
-			wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE);
+			wifi_set_autoreconnect(0);
 		} else if (mode == 1) {
 			RTK_LOGI(NOTAG, "[+WLRECONN] Enable autoreconnect\r\n");
-			wifi_config_autoreconnect(RTW_AUTORECONNECT_FINITE);
-		} else if (mode == 2) {
-			RTK_LOGI(NOTAG, "[+WLRECONN] Enable infinite autoreconnect\r\n");
-			wifi_config_autoreconnect(RTW_AUTORECONNECT_INFINITE);
+			wifi_set_autoreconnect(1);
 		} else {
 			error_no = 2;
 		}

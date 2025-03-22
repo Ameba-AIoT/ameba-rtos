@@ -80,7 +80,7 @@ void raw_gpio_edge_irq_demo(void)
 
 int example_raw_gpio_edge_irq(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "RAW_GPIO_EDGE_IRQ_TASK", (rtos_task_t)raw_gpio_edge_irq_demo, (void *)NULL, (256 * 4), 1)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_GPIO_EDGE_IRQ_TASK", (rtos_task_t)raw_gpio_edge_irq_demo, (void *)NULL, (256 * 4), 1)) {
 		printf("Create RAW_GPIO_EDGE_IRQ_TASK Err!!\n");
 	}
 

@@ -142,7 +142,7 @@ void spi_singleblock_task(void)
   */
 int example_spi_dma_single_block_tx_master(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"spi_singleblock_task"), (rtos_task_t)spi_singleblock_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"spi_singleblock_task"), (rtos_task_t)spi_singleblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(spi_singleblock_task) failed", __FUNCTION__);
 	}
 

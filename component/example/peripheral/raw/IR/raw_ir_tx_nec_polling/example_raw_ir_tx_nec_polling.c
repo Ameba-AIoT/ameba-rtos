@@ -148,7 +148,7 @@ int example_raw_ir_tx_nec_polling(void)
 {
 	Board_IR_Init(PINMUX_S1);
 
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"IR_TX_THREAD", (rtos_task_t)IR_TX_thread, NULL, 1024 * 3, 5)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"IR_TX_THREAD", (rtos_task_t)IR_TX_thread, NULL, 1024 * 3, 5)) {
 		printf("creat IR TX thread error\n");
 	}
 

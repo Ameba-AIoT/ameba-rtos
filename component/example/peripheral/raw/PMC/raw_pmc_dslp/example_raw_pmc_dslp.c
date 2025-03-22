@@ -128,7 +128,7 @@ int example_raw_pmc_dslp(void)
 
 	/*for one round test, will keep active after wake from dslp */
 	if ((BOOT_Reason() & AON_BIT_RSTF_DSLP) == 0) {
-		if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_deepsleep_wakeup_task, NULL, 3072, (1)) != SUCCESS) {
+		if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_deepsleep_wakeup_task, NULL, 3072, (1)) != RTK_SUCCESS) {
 			printf("Cannot create pmu_deepsleep_wakeup_task demo task\n\r");
 		}
 	}

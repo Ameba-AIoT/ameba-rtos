@@ -128,7 +128,7 @@ void keyscan_event_trigger(void)
 
 int example_raw_kscan_event_trigger(void)
 {
-	if (rtos_task_create(NULL, "keyscan_event_trigger", (rtos_task_t)keyscan_event_trigger, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "keyscan_event_trigger", (rtos_task_t)keyscan_event_trigger, NULL, (2048), (1)) != RTK_SUCCESS) {
 		printf("Cannot create keyscan_event_trigger demo task\n\r");
 	}
 

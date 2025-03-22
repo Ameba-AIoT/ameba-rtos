@@ -47,6 +47,8 @@ where the current CMakeLists.txt is located.")
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ameba.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/platform_project_config.cmake)
 
+set(c_SOC_TYPE amebasmart)
+
 set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
 ameba_reset_global_define()
 
@@ -187,7 +189,6 @@ unset(EXAMPLE_FOR_KM0 CACHE)
 unset(USER_SRC_DIR CACHE)
 unset(TOOLCHAIN_DIR CACHE)
 unset(FINAL_IMAGE_DIR CACHE)
-unset(CMAKE_REFACTOR CACHE)
 
 ameba_soc_project_exit()
 ###############################################################################

@@ -311,7 +311,7 @@ int example_raw_spi_multi_dma_rx_slave(void)
 #if IF_SINGLE_BUF
 	printf("Data buffer size must be integer multiple of block size!\r\n");
 #else
-	if (rtos_task_create(NULL, ((const char *)"spi_multiblock_task"), (rtos_task_t)spi_multiblock_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"spi_multiblock_task"), (rtos_task_t)spi_multiblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\r\n%s rtos_task_create(spi_multiblock_task) failed\r\n", __FUNCTION__);
 	}
 

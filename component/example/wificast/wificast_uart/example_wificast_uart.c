@@ -74,7 +74,7 @@ static void example_uart_init(void)
 	serial_baud(&g_uart_obj, UART_BAUD_RATE);
 	serial_format(&g_uart_obj, 8, ParityNone, 1);
 
-	if (rtos_task_create(NULL, ((const char *)"example_uart_read_task"), example_uart_read_task, NULL, 512 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_uart_read_task"), example_uart_read_task, NULL, 512 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_uart_read_task\n\r");
 	}
 }
@@ -96,7 +96,7 @@ static void example_main_task(void *param)
 
 void app_example(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 512 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 512 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_main_task\n\r");
 	}
 }

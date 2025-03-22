@@ -1,5 +1,5 @@
 set(DIR  ${TARGETDIR}/bootloader)
-set(CFGDIR  ${TARGETDIR}/usrcfg)
+set(CFGDIR  ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 set(DIR_COM  ${TARGETDIR}/fwlib/ram_common)
 set(DIR_RAM_LP  ${TARGETDIR}/fwlib/ram_km0)
 set(MODULE_IFLAGS ${DIR}/../include)

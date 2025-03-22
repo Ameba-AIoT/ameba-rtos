@@ -189,7 +189,7 @@ void uart_auto_flow_ctrl_demo(void)
 int example_raw_uart_polling_auto_flow_ctrl(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"uart_auto_flow_ctrl_demo"), (rtos_task_t)uart_auto_flow_ctrl_demo, NULL, 1024 * 4,
-						 1) != SUCCESS) {
+						 1) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_auto_flow_ctrl_demo) failed\n", __FUNCTION__);
 	}
 

@@ -125,7 +125,7 @@ static void ppe_scale(void *para)
 
 int example_raw_ppe_scale(void)
 {
-	if (rtos_task_create(NULL, "ppe_scale", (rtos_task_t)ppe_scale, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "ppe_scale", (rtos_task_t)ppe_scale, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create ppe_scale demo task\n\r");
 	}
 

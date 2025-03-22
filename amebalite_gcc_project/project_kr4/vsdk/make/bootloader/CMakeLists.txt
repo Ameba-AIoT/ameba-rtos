@@ -1,5 +1,5 @@
 set(DIR ${TARGETDIR}/bootloader)
-set(CFGDIR ${TARGETDIR}/usrcfg)
+set(CFGDIR ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 
 set(
     MODULE_IFLAGS

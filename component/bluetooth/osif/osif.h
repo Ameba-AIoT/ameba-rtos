@@ -91,6 +91,7 @@ bool osif_timer_state_get(void **pp_handle, uint32_t *p_timer_state);
 bool osif_timer_dump(void);
 
 void osif_create_secure_context(uint32_t size);
+void osif_rand(void *val, uint32_t size);
 
 #ifdef __cplusplus
 }

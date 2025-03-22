@@ -105,6 +105,58 @@ static int proc_read_edcca_mode(struct seq_file *m, void *v)
 	return ret;
 }
 
+static int proc_read_beacon_rssi(struct seq_file *m, void *v)
+{
+	signed char	beacon_rssi;
+	int ret = 0;
+	struct _rtw_phy_statistics_t *statistic_vir = NULL;
+	dma_addr_t statistic_phy;
+
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+
+	statistic_vir = rtw_malloc(sizeof(struct _rtw_phy_statistics_t), &statistic_phy);
+	if (!statistic_vir) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	ret = whc_fullmac_host_get_statistics(statistic_phy);
+
+	beacon_rssi = statistic_vir->beacon_rssi;
+	seq_printf(m, "%d\n", beacon_rssi);
+
+	rtw_mfree(sizeof(struct _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+
+	return ret;
+}
+
+
+static int proc_read_data_rssi(struct seq_file *m, void *v)
+{
+	signed char	data_rssi;
+	int ret = 0;
+	struct _rtw_phy_statistics_t *statistic_vir = NULL;
+	dma_addr_t statistic_phy;
+
+	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
+
+	statistic_vir = rtw_malloc(sizeof(struct _rtw_phy_statistics_t), &statistic_phy);
+	if (!statistic_vir) {
+		dev_dbg(global_idev.fullmac_dev, "%s: malloc failed.", __func__);
+		return -ENOMEM;
+	}
+
+	ret = whc_fullmac_host_get_statistics(statistic_phy);
+
+	data_rssi = statistic_vir->data_rssi;
+	seq_printf(m, "%d\n", data_rssi);
+
+	rtw_mfree(sizeof(struct _rtw_phy_statistics_t), statistic_vir, statistic_phy);
+
+	return ret;
+}
+
+
 static int proc_read_antdiv_mode(struct seq_file *m, void *v)
 {
 	u8 antdiv_mode = 0;
@@ -307,6 +359,8 @@ static void rtw_ndev_ap_proc_deinit(const char *name)
 const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
 	RTW_PROC_HDL_SSEQ("bcn_time", proc_get_sta_tsf, NULL),
 	RTW_PROC_HDL_SSEQ("edcca_mode", proc_read_edcca_mode, proc_write_edcca_mode),
+	RTW_PROC_HDL_SSEQ("beacon_rssi", proc_read_beacon_rssi, NULL),
+	RTW_PROC_HDL_SSEQ("data_rssi", proc_read_data_rssi, NULL),
 	RTW_PROC_HDL_SSEQ("antdiv_mode", proc_read_antdiv_mode, NULL),
 	RTW_PROC_HDL_SSEQ("current_ant", proc_read_curr_ant, NULL),
 	RTW_PROC_HDL_SSEQ("mp_fw", proc_read_mp_fw, NULL),

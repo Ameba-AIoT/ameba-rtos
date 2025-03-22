@@ -590,15 +590,6 @@ enum {
 	RTW_MODE_MAX
 };
 
-/**
-  * @brief  The enumeration lists the supported autoreconnect mode by WIFI driver.
-  */
-enum rtw_autoreconnect_mode {
-	RTW_AUTORECONNECT_DISABLE,  ///< disable auto reconnect
-	RTW_AUTORECONNECT_FINITE,    ///< finite auto reconnect
-	RTW_AUTORECONNECT_INFINITE ///< infinite auto reconnect
-};
-
 /* For freertos, core, hal, rf, halbb. */
 enum phl_phy_idx {
 	HW_PHY_0,

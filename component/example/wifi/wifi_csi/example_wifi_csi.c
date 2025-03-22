@@ -83,7 +83,7 @@ NEXT:
 
 	while (1) {
 		/* example: when wifi csi rx done, call csi report handle function. */
-		if (rtos_sema_take(wc_ready_sema, 0xFFFFFFFF) != SUCCESS) {
+		if (rtos_sema_take(wc_ready_sema, 0xFFFFFFFF) != RTK_SUCCESS) {
 			rtos_sema_delete(wc_ready_sema);
 
 			act_param.act = CSI_ACT_EN;  /* csi dis */
@@ -170,7 +170,7 @@ void wifi_csi_show(unsigned char *csi_buf)
 
 void example_wifi_csi(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"wifi_csi_thread"), wifi_csi_thread, NULL, 1024 * 4, 0) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_csi_thread"), wifi_csi_thread, NULL, 1024 * 4, 0) != RTK_SUCCESS) {
 		RTK_LOGA(NOTAG, "\n\r%s rtos_task_create(wifi_csi_thread) failed", __FUNCTION__);
 	}
 

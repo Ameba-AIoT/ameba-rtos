@@ -27,14 +27,14 @@ typedef void *rtos_queue_t;
  * @param  pp_handle: The handle itself is a pointer, and the pp_handle means a pointer to the handle.
  * @param  msg_num:  Maximum number of messages that can be queued.
  * @param  msg_size: Message size (in bytes).
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_queue_create(rtos_queue_t *pp_handle, uint32_t msg_num, uint32_t msg_size);
 
 /**
  * @brief  Delete a queue - freeing all the memory allocated for storing of items placed on the queue.
  * @param  p_handle: A handle to the queue to be deleted.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_queue_delete(rtos_queue_t p_handle);
 
@@ -50,7 +50,7 @@ uint32_t rtos_queue_message_waiting(rtos_queue_t p_handle);
  * @param  p_handle: Address of the message queue.
  * @param  p_msg: Pointer to the message.
  * @param  wait_ms: Waiting period to add the message, 0xFFFFFFFF means Block infinitely.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_queue_send(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms);
 
@@ -59,7 +59,7 @@ int rtos_queue_send(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms);
  * @param  p_handle: Address of the message queue.
  * @param  p_msg: Pointer to the message.
  * @param  wait_ms: Waiting period to add the message, 0xFFFFFFFF means Block infinitely.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_queue_send_to_front(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms);
 
@@ -69,7 +69,7 @@ int rtos_queue_send_to_front(rtos_queue_t p_handle, void *p_msg, uint32_t wait_m
  * @param  p_handle: Address of the message queue.
  * @param  p_msg: Address of area to hold the received message.
  * @param  wait_ms: Waiting period to add the message, 0xFFFFFFFF means Block infinitely.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_queue_receive(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms);
 
@@ -80,7 +80,7 @@ int rtos_queue_receive(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms);
  * @param  p_handle: Address of the message queue.
  * @param  p_msg: Address of area to hold the received message.
  * @param  wait_ms: Waiting period to add the message, 0xFFFFFFFF means Block infinitely.
- * @retval The status is SUCCESS or FAIL
+ * @retval The status is RTK_SUCCESS or RTK_FAIL
  */
 int rtos_queue_peek(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms);
 

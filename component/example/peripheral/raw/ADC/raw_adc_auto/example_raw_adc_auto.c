@@ -77,7 +77,7 @@ void adc_auto_demo(void)
 
 int example_raw_adc_auto(void)
 {
-	if (rtos_task_create(NULL, "RAW_ADC_AUTO_TASK", (rtos_task_t)adc_auto_demo, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RAW_ADC_AUTO_TASK", (rtos_task_t)adc_auto_demo, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create RAW_ADC_AUTO_TASK\n");
 	}
 

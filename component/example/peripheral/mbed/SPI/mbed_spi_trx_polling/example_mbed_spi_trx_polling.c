@@ -96,7 +96,7 @@ void spi_task(void)
   */
 int example_mbed_spi_trx_polling(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"spi_task"), (rtos_task_t)spi_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"spi_task"), (rtos_task_t)spi_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(spi_task) failed", __FUNCTION__);
 	}
 

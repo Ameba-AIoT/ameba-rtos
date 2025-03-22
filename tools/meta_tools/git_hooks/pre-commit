@@ -232,7 +232,7 @@ if [ "$repo_name" = "loong" ]; then
 		grep 'component/bluetooth/' |
 		grep -v 'component/bluetooth/bt_audio/bt_codec/\(aac\|lc3\|sbc\)/' |
 		grep -v 'component/bluetooth/\(temp\|zephyr\)/' |
-		grep -v 'component/bluetooth/driver/platform/.*/\(bt_normal_patch\|bt_mp_patch\).c' |
+		grep -v 'component/bluetooth/driver/platform/.*/bt_.*_patch.*.c' |
 		grep -v 'component/bluetooth/rtk_stack/\(inc\|src\)/' |
 		grep -v 'component/bluetooth/rtk_stack/platform/.*/\(bt_flags\|upperstack_config\|version\).h' |
 		cut -d'	' -f 2)

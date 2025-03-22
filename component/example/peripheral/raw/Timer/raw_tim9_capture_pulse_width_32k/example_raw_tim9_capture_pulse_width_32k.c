@@ -105,7 +105,7 @@ void tim9_capture_pulse_width_32k(void)
   */
 int example_raw_tim9_capture_pulse_width_32k(void)
 {
-	if (rtos_task_create(NULL, "TIM9 CAPTURE PULSE WIDTH DEMO", (rtos_task_t)tim9_capture_pulse_width_32k, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "TIM9 CAPTURE PULSE WIDTH DEMO", (rtos_task_t)tim9_capture_pulse_width_32k, NULL, 2048, (1)) != RTK_SUCCESS) {
 		printf("Cannot create tim9 capture pulse width demo task\n\r");
 	}
 

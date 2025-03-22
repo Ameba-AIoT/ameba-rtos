@@ -42,7 +42,7 @@ void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
 void wifi_if_send_skb(int idx, struct sk_buff *skb);	//struct sk_buff as defined above comment line
 void wifi_if_netif_rx(struct sk_buff *skb, void *preorder_ctrl);
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len);
+int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, u8 is_special_pkt);
 void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
 #endif
 
