@@ -1329,7 +1329,7 @@ void at_mqttconn(void *arg)
 		if (mqttCb->network.use_ssl) {
 			stacksize = 6144;
 		}
-		if (SUCCESS != rtos_task_create(&mqttCb->taskHandle, TaskName, mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY)) {
+		if (RTK_SUCCESS != rtos_task_create(&mqttCb->taskHandle, TaskName, mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONN] Create task failed\r\n");
 			mqttCb->taskState = MQTT_TASK_NOT_CREATE;
 			resultNo = MQTT_THREAD_CREATE_ERROR;

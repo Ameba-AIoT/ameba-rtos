@@ -39,7 +39,7 @@ static void flash_test_task(void *param)
 
 int example_raw_flash_read_write(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"flash_test_task"), flash_test_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"flash_test_task"), flash_test_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGI(NOTAG, "\n\r%s rtos_task_create(flash_test_task) failed", __FUNCTION__);
 	}
 

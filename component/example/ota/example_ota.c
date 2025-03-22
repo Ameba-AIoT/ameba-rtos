@@ -60,7 +60,7 @@ exit:
 void example_ota(void)
 {
 	rtos_task_t task;
-	if (rtos_task_create(&task, ((const char *)"update_ota_task"), update_ota_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(&task, ((const char *)"update_ota_task"), update_ota_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		ota_printf(_OTA_ERR_, "\n\r[%s] Create update task failed", __FUNCTION__);
 	}
 }

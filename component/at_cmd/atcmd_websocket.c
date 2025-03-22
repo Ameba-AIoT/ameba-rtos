@@ -388,10 +388,10 @@ end:
 	}
 }
 
-void at_wsopen_help(void)
+void at_wsconn_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSOPEN=<link_id>,<host>[,<path>][,<port>],<conn_type>[,<certificate_index>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSCONN=<link_id>,<host>[,<path>][,<port>],<conn_type>[,<certificate_index>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thost of websocket server\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<path>:\tpath\r\n");
@@ -444,7 +444,7 @@ static void at_ws_handler_pong(wsclient_context **wsclient)
 	}
 }
 
-static void at_ws_handler_close(wsclient_context *wsclient)
+static void at_ws_handler_disconnect(wsclient_context *wsclient)
 {
 	int link_id;
 	int res = 0;
@@ -457,7 +457,7 @@ static void at_ws_handler_close(wsclient_context *wsclient)
 	}
 
 	if (res > 0) {
-		at_printf_indicate("[WS][EVENT]:linkid:%d, close\r\n", link_id);
+		at_printf_indicate("[WS][EVENT]:linkid:%d, disconnect\r\n", link_id);
 	}
 }
 
@@ -508,7 +508,7 @@ static void wsclient_conn_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-void at_wsopen(void *arg)
+void at_wsconn(void *arg)
 {
 	int argc = 0;
 	int error_no = 0, ret;
@@ -526,7 +526,7 @@ void at_wsopen(void *arg)
 	UNUSED(cert_index);
 
 	if (arg == NULL) {
-		at_wsopen_help();
+		at_wsconn_help();
 		error_no = 1;
 		goto end;
 	}
@@ -775,7 +775,7 @@ void at_wsopen(void *arg)
 
 			ws_dispatch(at_ws_handler_data);
 			ws_pong(at_ws_handler_pong);
-			ws_dispatch_close(at_ws_handler_close);
+			ws_dispatch_close(at_ws_handler_disconnect);
 
 			for (i = 0; i < MAX_WEBSOCKET_LINK_NUM; i++) {
 				INIT_LIST_HEAD(&ping_time_list[i]);
@@ -783,7 +783,7 @@ void at_wsopen(void *arg)
 
 			at_printf_indicate("[WS][EVENT]:linkid:%d, connected\r\n", link_id);
 
-			if (rtos_task_create(NULL, ((const char *)"wsclient_conn_thread"), wsclient_conn_thread, &link_id, 1024 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(NULL, ((const char *)"wsclient_conn_thread"), wsclient_conn_thread, &link_id, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(TAG_AT_WEBSOCKET, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wsclient_conn_thread) failed", __FUNCTION__);
 				error_no = 3;
 				goto end;
@@ -1016,15 +1016,15 @@ end:
 	}
 }
 
-void at_wsclose_help(void)
+void at_wsdisconn_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSCLOSE=<link_id>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+WSDISCONN=<link_id>\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 }
 
 
-void at_wsclose(void *arg)
+void at_wsdisconn(void *arg)
 {
 	int argc = 0;
 	int error_no = 0;
@@ -1035,7 +1035,7 @@ void at_wsclose(void *arg)
 
 	argc = parse_param(arg, argv);
 	if (arg == NULL) {
-		at_wsclose_help();
+		at_wsdisconn_help();
 		error_no = 1;
 		goto end;
 	}
@@ -1065,36 +1065,34 @@ end:
 
 void print_global_info(void)
 {
-	at_printf("\r\n");
 	at_printf("Global config:\r\n");
-	at_printf("\tconnect_timeout: %d\r\n", wsclient_connecttimeout);
-	at_printf("\trecv_timeout: %d\r\n", wsclient_recvtimeout);
-	at_printf("\tsend_timeout: %d\r\n", wsclient_sendtimeout);
-	at_printf("\tsend_blocktime: %d\r\n", wsclient_sendblocktime);
-	at_printf("\tkeepalive_idle: %d\r\n", wsclient_keepalive_idle);
-	at_printf("\tkeepalive_interval: %d\r\n", wsclient_keepalive_interval);
-	at_printf("\tkeepalive_count: %d\r\n", wsclient_keepalive_count);
+	at_printf("connect_timeout: %d\r\n", wsclient_connecttimeout);
+	at_printf("recv_timeout: %d\r\n", wsclient_recvtimeout);
+	at_printf("send_timeout: %d\r\n", wsclient_sendtimeout);
+	at_printf("send_blocktime: %d\r\n", wsclient_sendblocktime);
+	at_printf("keepalive_idle: %d\r\n", wsclient_keepalive_idle);
+	at_printf("keepalive_interval: %d\r\n", wsclient_keepalive_interval);
+	at_printf("keepalive_count: %d\r\n", wsclient_keepalive_count);
 }
 
 void print_link_info(int link_id)
 {
 	int i;
 
-	at_printf("\r\n");
 	at_printf("link_id: %d\r\n", link_id);
-	at_printf("\tstatus: %d\r\n", ws_config[link_id].ws_client ? ws_config[link_id].ws_client->readyState : WSC_CLOSED);
-	at_printf("\tping_intv_sec: %d\r\n", ws_config[link_id].ping_intv_sec);
-	at_printf("\tping_timeout_sec: %d\r\n", ws_config[link_id].ping_timeout_sec);
-	at_printf("\tbuffer_size: %d\r\n", ws_config[link_id].buffer_size);
-	at_printf("\tmax_queue_size: %d\r\n", ws_config[link_id].max_queue_size);
-	at_printf("\tprotocol: %s\r\n", ws_config[link_id].protocol ? ws_config[link_id].protocol : "");
-	at_printf("\tversion: %s\r\n", ws_config[link_id].version ? ws_config[link_id].version : "");
-	at_printf("\tstable_buf_num: %d\r\n", ws_config[link_id].stable_buf_num);
+	at_printf("status: %d\r\n", ws_config[link_id].ws_client ? ws_config[link_id].ws_client->readyState : WSC_CLOSED);
+	at_printf("ping_intv_sec: %d\r\n", ws_config[link_id].ping_intv_sec);
+	at_printf("ping_timeout_sec: %d\r\n", ws_config[link_id].ping_timeout_sec);
+	at_printf("buffer_size: %d\r\n", ws_config[link_id].buffer_size);
+	at_printf("max_queue_size: %d\r\n", ws_config[link_id].max_queue_size);
+	at_printf("protocol: %s\r\n", ws_config[link_id].protocol ? ws_config[link_id].protocol : "");
+	at_printf("version: %s\r\n", ws_config[link_id].version ? ws_config[link_id].version : "");
+	at_printf("stable_buf_num: %d\r\n", ws_config[link_id].stable_buf_num);
 
-	at_printf("\theader:\r\n");
+	at_printf("header:\r\n");
 	for (i = 0; i < MAX_HEADER_NUM; i++) {
 		if (ws_config[link_id].ws_header[i] != NULL) {
-			at_printf("\t\t%s\r\n", ws_config[link_id].ws_header[i]);
+			at_printf("%s\r\n", ws_config[link_id].ws_header[i]);
 		} else {
 			break;
 		}
@@ -1844,10 +1842,10 @@ log_item_t at_websocket_items[ ] = {
 	{"+WSGLCFG", at_wsglcfg, {NULL, NULL}},
 	{"+WSHEAD", at_wshead, {NULL, NULL}},
 	{"+WSHEADRAW", at_wsheadraw, {NULL, NULL}},
-	{"+WSOPEN", at_wsopen, {NULL, NULL}},
+	{"+WSCONN", at_wsconn, {NULL, NULL}},
 	{"+WSSEND", at_wssend, {NULL, NULL}},
 	{"+WSSENDRAW", at_wssendraw, {NULL, NULL}},
-	{"+WSCLOSE", at_wsclose, {NULL, NULL}},
+	{"+WSDISCONN", at_wsdisconn, {NULL, NULL}},
 	{"+WSQUERY", at_wsquery, {NULL, NULL}},
 	{"+WSTXQUEUECHECK", at_wsqueuecheck, {NULL, NULL}},
 

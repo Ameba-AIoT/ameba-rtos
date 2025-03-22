@@ -244,7 +244,6 @@ static void ble_throughput_server_reload_timer(void *timer_handle)
 	}
 }
 
-extern int TRNG_get_random_bytes(void *dst, uint32_t size);
 static void ble_throughput_server_tx_taskentry(void *param)
 {
 	uint16_t conn_handle = *((uint16_t *)param);
@@ -268,7 +267,7 @@ static void ble_throughput_server_tx_taskentry(void *param)
 	p_ntf_ind_param->conn_handle = conn_handle;
 	p_ntf_ind_param->len = len;
 	p_ntf_ind_param->data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, len);
-	TRNG_get_random_bytes((void *)p_ntf_ind_param->data, (uint32_t)len);
+	osif_rand((void *)p_ntf_ind_param->data, (uint32_t)len);
 	ble_throughput_inc_sequence_generate((void *)p_ntf_ind_param->data, THROUGHPUT_CMP_DATA_BYTES);
 
 	if (mode & THROUGHPUT_MODE_NOTIFY && p_conn_link->cccd_ntf_en_flag) {

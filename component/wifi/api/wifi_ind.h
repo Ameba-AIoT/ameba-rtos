@@ -116,10 +116,6 @@ enum {
 	WIFI_EVENT_WPA_WPS_FINISH,              /**< STA WPS finish.*/
 	WIFI_EVENT_WPA_EAPOL_START,             /**< STA WPA enterprise start.*/
 	WIFI_EVENT_WPA_EAPOL_RECVD,             /**< STA WPA enterprise receive a eapol packet.*/
-#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-	WIFI_EVENT_RFK_NOTIFY,                  /**< Reserved, only invalid in speical project.*/
-	WIFI_EVENT_CHANNEL_NOT_SUPPORTED,       /**< Reserved, only invalid in speical project.*/
-#endif
 	WIFI_EVENT_MAX,
 };
 /** @} End of WIFI_Exported_Enumeration_Types group*/

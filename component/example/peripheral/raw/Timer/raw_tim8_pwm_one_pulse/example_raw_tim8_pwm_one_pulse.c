@@ -102,7 +102,7 @@ void tim8_pwm_one_pulse(void)
   */
 int example_raw_tim8_pwm_one_pulse(void)
 {
-	if (rtos_task_create(NULL, "TIM8 PWM ONE PULSE DEMO", (rtos_task_t)tim8_pwm_one_pulse, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "TIM8 PWM ONE PULSE DEMO", (rtos_task_t)tim8_pwm_one_pulse, NULL, 2048, (1)) != RTK_SUCCESS) {
 		printf("Cannot create tim8 pwm one pulse mode demo task\n\r");
 	}
 

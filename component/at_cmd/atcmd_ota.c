@@ -153,7 +153,7 @@ void at_ota(void *arg)
 	}
 
 	rtos_task_t task;
-	if (rtos_task_create(&task, ((const char *)"at_ota_update_task"), at_ota_update_task, (void *)ctx, 1024 * 8, 1) != SUCCESS) {
+	if (rtos_task_create(&task, ((const char *)"at_ota_update_task"), at_ota_update_task, (void *)ctx, 1024 * 8, 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] Create update task failed");
 		err_no = 5;
 		goto end;

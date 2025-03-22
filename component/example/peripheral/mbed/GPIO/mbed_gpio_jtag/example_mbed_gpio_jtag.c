@@ -61,7 +61,7 @@ void mbed_gpio_jtag_demo(void)
 
 int example_mbed_gpio_jtag(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "MBED_GPIO_JTAG_TASK", (rtos_task_t)mbed_gpio_jtag_demo, (void *)NULL, (1024 * 4), 1)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "MBED_GPIO_JTAG_TASK", (rtos_task_t)mbed_gpio_jtag_demo, (void *)NULL, (1024 * 4), 1)) {
 		printf("Create MBED_GPIO_JTAG_TASK Err!!!\n");
 	}
 

@@ -169,7 +169,7 @@ static void uvc_img_prepare(uvc_frame_t *frame)
 #endif
 
 #if ((CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC) || (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS))
-	if (rtos_mutex_take(uvc_buf_mutex, 1000 / uvc_ctx.frame_rate / 2) == SUCCESS) {
+	if (rtos_mutex_take(uvc_buf_mutex, 1000 / uvc_ctx.frame_rate / 2) == RTK_SUCCESS) {
 		if (uvc_ctx.fmt_type == UVC_FORMAT_H264) {
 			if (RingBuffer_Space(uvc_rb) > frame->byteused) {
 				RingBuffer_Write(uvc_rb, frame->buf, frame->byteused);
@@ -210,7 +210,7 @@ static void uvc_vfs_thread(void *param)
 	prefix = find_vfs_tag(VFS_REGION_1);
 
 	while (uvc_vfs_is_init) {
-		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
+		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Fail to take img_sema\n");
 			continue;
 		}
@@ -228,7 +228,7 @@ static void uvc_vfs_thread(void *param)
 			goto exit;
 		}
 
-		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == SUCCESS) {
+		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
 			res = fwrite(uvc_buf, uvc_buf_size, 1, (FILE *)finfo);
 			if (res != 1) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "buf fwrite fail: %d\n", res);
@@ -312,7 +312,7 @@ static int uvc_vfs_start(void)
 	uvc_rb = RingBuffer_Create(uvc_buf, USBH_UVC_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
 	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 8, 1U);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create vfs thread fail\n");
 		ret = 1;
 	} else {
@@ -528,7 +528,7 @@ static int uvc_httpc_start(void)
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 
 	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 1024 * 8, 2);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create %s client thread fail\n", USBH_UVC_HTTP_TAG);
 		rtos_sema_delete(&uvc_httpc_save_img_sema);
 	}
@@ -681,7 +681,7 @@ void example_usbh_uvc(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo start\n");
 
 	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 1024 * 16U, 1U);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }

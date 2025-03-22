@@ -110,7 +110,7 @@ void sha256_hmac(void)
 
 int example_raw_crypto_hmac(void)
 {
-	if (rtos_task_create(NULL, "sha256_hmac", (rtos_task_t)sha256_hmac, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "sha256_hmac", (rtos_task_t)sha256_hmac, NULL, (3072), (1)) != RTK_SUCCESS) {
 		printf("Cannot create sha256_hmac task\n\r");
 	}
 

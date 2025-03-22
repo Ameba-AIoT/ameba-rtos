@@ -17,7 +17,7 @@ ameba_list_append(public_includes include)
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-achived
 
 ##########################################################################################
@@ -45,6 +45,23 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
         ameba_bootcfg.c
         ameba_flashcfg.c
     )
+elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
+    ameba_list_append(private_sources
+        ameba_sleepcfg.c
+    )
+    if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
+        if("${c_MCU_PROJECT_NAME}" STREQUAL "hp")
+            ameba_list_append(private_sources
+                ameba_pinmapcfg.c
+                ameba_flashcfg.c
+            )
+        endif()
+        if("${c_MCU_PROJECT_NAME}" STREQUAL "ap")
+            ameba_list_append(private_sources
+                ameba_flashcfg.c
+            )       
+        endif()
+    endif()
 endif()
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

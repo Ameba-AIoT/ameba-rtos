@@ -16,11 +16,12 @@
 
 #define ETH_ALEN	6		/* Octets in one ethernet addr	 */
 #define ETH_HLEN	14		/* Total octets in header.	 */
-#define ETH_ZLEN	60		/* Min. octets in frame sans FCS */
 #define ETH_DATA_LEN	1500		/* Max. octets in payload	 */
-#define ETH_FRAME_LEN	1514		/* Max. octets in frame sans FCS */
 #define ETH_TYPE_LEN		2
 #define ETH_ARPHRD		1	/* ethernet hardware format */
+
+#define MINIMUM_ETHERNET_PACKET_SIZE		60		//!< Minimum Ethernet Packet Size
+#define MAXIMUM_ETHERNET_PACKET_SIZE		1514	//!< Maximum Ethernet Packet Size
 
 #define WLAN_HDR_A4_QOS_HTC_LEN	36
 #define WLAN_MAX_IV_LEN	8
@@ -53,5 +54,17 @@ struct eth_drv_sg {
 	unsigned int    buf;
 	unsigned int     len;
 };
+
+
+/*
+ *	This is an Ethernet frame header.
+ */
+RTW_PACK_STRUCT_BEGIN
+struct ethhdr {
+	unsigned char	h_dest[ETH_ALEN];	/* destination eth addr	*/
+	unsigned char	h_source[ETH_ALEN];	/* source ether addr	*/
+	unsigned short	h_proto;		/* packet type ID field	*/
+} RTW_PACK_STRUCT_STRUCT;
+RTW_PACK_STRUCT_END
 
 #endif

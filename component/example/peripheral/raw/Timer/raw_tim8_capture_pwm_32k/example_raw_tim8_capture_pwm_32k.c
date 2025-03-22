@@ -127,7 +127,7 @@ void tim8_capture_pwm(void)
   */
 int example_raw_tim8_capture_pwm_32k(void)
 {
-	if (rtos_task_create(NULL, "TIM8 CAPTURE PWM DEMO", (rtos_task_t)tim8_capture_pwm, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "TIM8 CAPTURE PWM DEMO", (rtos_task_t)tim8_capture_pwm, NULL, (2048), (1)) != RTK_SUCCESS) {
 		printf("Cannot create tim8 capture pwm demo task\n\r");
 	}
 

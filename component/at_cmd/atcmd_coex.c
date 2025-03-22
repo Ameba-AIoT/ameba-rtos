@@ -215,7 +215,7 @@ static void fEXTCOEX(void *arg)
 	int state_value = 0;
 	int chan_num = 0;
 
-	struct extchip_para_t *extchip_para = NULL;
+	struct extchip_para_t extchip_para = {0};
 
 	if (!arg) {
 		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_EXTC);
@@ -271,28 +271,27 @@ static void fEXTCOEX(void *arg)
 		at_printf("req_polar = %d\r\n", req_polar);
 		at_printf("gnt_polar = %d\r\n", gnt_polar);
 
-		extchip_para = rtk_coex_extc_para_get();
-		extchip_para->pri_mode = pri_mode;
-		extchip_para->pri_det_time = pri_det_time;
-		extchip_para->trx_det_time = trx_det_time;
-		extchip_para->req_polar = req_polar;
-		extchip_para->gnt_polar = gnt_polar;
+		extchip_para.pri_mode = pri_mode;
+		extchip_para.pri_det_time = pri_det_time;
+		extchip_para.trx_det_time = trx_det_time;
+		extchip_para.req_polar = req_polar;
+		extchip_para.gnt_polar = gnt_polar;
 		if (prot == 1) {
-			extchip_para->active_protocol = EXT_PTA_PROTOCOL_WPAN;
+			extchip_para.active_protocol = EXT_PTA_PROTOCOL_WPAN;
 		} else if (prot == 2) {
-			extchip_para->active_protocol = EXT_PTA_PROTOCOL_BT;
+			extchip_para.active_protocol = EXT_PTA_PROTOCOL_BT;
 		} else if (prot == 3) {
-			extchip_para->active_protocol = EXT_PTA_PROTOCOL_BT_WPAN;
+			extchip_para.active_protocol = EXT_PTA_PROTOCOL_BT_WPAN;
 		} else {
-			extchip_para->active_protocol = EXT_PTA_PROTOCOL_UNDEF;
+			extchip_para.active_protocol = EXT_PTA_PROTOCOL_UNDEF;
 		}
-		extchip_para->pta_pad_req = pad_req;
-		extchip_para->pta_pad_pri = pad_pri;
-		extchip_para->pta_pad_gnt = pad_gnt;
-		extchip_para->pta_index = (pta_index == 0) ? EXT_PTA1 : EXT_PTA2;
-		extchip_para->pta_pad_gnt_use = (gnt_out_use == 0) ? EXT_GNT_DEFAULT : EXT_GNT_GNT_BT;
-		rtk_coex_extc_para_set(extchip_para);
-		rtk_coex_extc_ntfy_init(extchip_para, sizeof(struct extchip_para_t));
+		extchip_para.pta_pad_req = pad_req;
+		extchip_para.pta_pad_pri = pad_pri;
+		extchip_para.pta_pad_gnt = pad_gnt;
+		extchip_para.pta_index = (pta_index == 0) ? EXT_PTA1 : EXT_PTA2;
+		extchip_para.pta_pad_gnt_use = (gnt_out_use == 0) ? EXT_GNT_DEFAULT : EXT_GNT_GNT_BT;
+
+		rtk_coex_extc_ntfy_init(&extchip_para, sizeof(struct extchip_para_t));
 
 	} else if (0 == strcasecmp(argv[1], "state")) {
 		if (argc != 3) {

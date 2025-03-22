@@ -104,7 +104,7 @@ void i2c_dual_master_task(void)
 
 int example_mbed_i2c_polling_master(void)
 {
-	if (rtos_task_create(NULL, "I2C DULE MASTER DEMO", (rtos_task_t)i2c_dual_master_task, NULL, 3072, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "I2C DULE MASTER DEMO", (rtos_task_t)i2c_dual_master_task, NULL, 3072, (1)) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Cannot create i2c_dual_master_task demo task\n\r");
 	}
 

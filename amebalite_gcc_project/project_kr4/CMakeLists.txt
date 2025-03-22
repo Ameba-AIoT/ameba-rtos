@@ -8,7 +8,8 @@ set(INCDIR ${PROJECTDIR}/inc)
 set(BASEDIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 #remove ../.. in BASEDIR, because BASEDIR is used by so many CMakeLists files
 cmake_path(NORMAL_PATH BASEDIR)
-
+set(c_SOC_TYPE amebalite)
+set(c_COMPONENT_DIR ${BASEDIR}/component)
 
 set(KM4_BUILDDIR ${PROJECTDIR}/../project_km4)
 cmake_path(NORMAL_PATH KM4_BUILDDIR)

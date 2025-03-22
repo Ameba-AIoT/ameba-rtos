@@ -511,7 +511,6 @@ static uint16_t ble_throughput_client_update_conn_param(uint16_t conn_handle)
 	return RTK_BT_OK;
 }
 
-extern int TRNG_get_random_bytes(void *dst, uint32_t size);
 static void ble_throughput_client_tx_taskentry(void *param)
 {
 	uint16_t conn_handle = *((uint16_t *)param);
@@ -538,7 +537,7 @@ static void ble_throughput_client_tx_taskentry(void *param)
 	p_write_param->profile_id = THROUGHPUT_CLIENT_PROFILE_ID;
 	p_write_param->length = len;
 	p_write_param->data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, len);
-	TRNG_get_random_bytes((void *)p_write_param->data, (uint32_t)len);
+	osif_rand((void *)p_write_param->data, (uint32_t)len);
 	ble_throughput_inc_sequence_generate((void *)p_write_param->data, THROUGHPUT_CMP_DATA_BYTES);
 
 	if (mode & THROUGHPUT_MODE_WRITE_CMD) {

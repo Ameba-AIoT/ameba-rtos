@@ -145,7 +145,7 @@ void watchdog_task(void)
 	if (xTimers_WDG == NULL) {
 		printf("sw timer create error \n");
 	} else {
-		if (rtos_timer_start(xTimers_WDG, 0) != SUCCESS) {
+		if (rtos_timer_start(xTimers_WDG, 0) != RTK_SUCCESS) {
 			printf("timer start failed !\n");
 		}
 	}
@@ -155,7 +155,7 @@ void watchdog_task(void)
 int example_raw_watchdog(void)
 {
 	DelayMs(50);
-	if (SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 6), (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 6), (1))) {
 		printf("Create watchdog_task Err!!\r\n");
 	}
 

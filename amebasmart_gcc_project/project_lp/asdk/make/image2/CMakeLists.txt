@@ -10,7 +10,7 @@ ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
-
+ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_MISC_DIR})
 

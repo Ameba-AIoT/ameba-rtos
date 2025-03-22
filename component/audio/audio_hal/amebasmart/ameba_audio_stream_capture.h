@@ -29,7 +29,7 @@ typedef struct _CaptureStream {
 Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config);
 void ameba_audio_stream_rx_start(Stream *stream);
 void ameba_audio_stream_rx_stop(Stream *stream);
-int32_t  ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes);
+int32_t  ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes, uint32_t time_out_ms);
 void ameba_audio_stream_rx_close(Stream *stream);
 int32_t  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp);
 int32_t  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns);

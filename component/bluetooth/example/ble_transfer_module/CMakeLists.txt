@@ -14,7 +14,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-archived
 
 ##########################################################################################
@@ -36,10 +36,10 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    transfer_module_main.c 
-	transfer_module_server.c 
-	transfer_module_client.c 
-	../bt_atcmd/atcmd_bt_transfer_module.c 
+    transfer_module_main.c
+	transfer_module_server.c
+	transfer_module_client.c
+	../bt_atcmd/atcmd_bt_transfer_module.c
 )
 
 ameba_list_append(private_includes

@@ -212,7 +212,7 @@ void IR_RX_thread(void)
 		IR_DataStruct.codeLen = 0;
 		IR_DataStruct.irBuf[0] = 0;
 		IR_ClearRxFIFO(IR_DEV);
-		if (rtos_sema_take(IR_Recv_end_sema, 10 * 1000) == SUCCESS) {
+		if (rtos_sema_take(IR_Recv_end_sema, 10 * 1000) == RTK_SUCCESS) {
 			//rx end
 			u32 result;
 			result = IR_NECDecode(IR_InitStruct.IR_Freq, (uint8_t *)&data, &IR_DataStruct);
@@ -234,7 +234,7 @@ int example_raw_ir_rx_nec_interrupt(void)
 		rtos_sema_create_binary(&IR_Recv_end_sema);
 	}
 
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"IR_RX_THREAD", (rtos_task_t)IR_RX_thread, NULL, 256 * 16, 5)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"IR_RX_THREAD", (rtos_task_t)IR_RX_thread, NULL, 256 * 16, 5)) {
 		printf("create IR RX thread error\n");
 	}
 

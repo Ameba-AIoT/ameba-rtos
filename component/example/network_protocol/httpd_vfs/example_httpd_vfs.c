@@ -234,7 +234,7 @@ exit:
 void example_httpd_vfs(void)
 {
 	rtos_task_t task;
-	if (rtos_task_create(&task, ((const char *)"example_httpd_vfs_thread"), example_httpd_vfs_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(&task, ((const char *)"example_httpd_vfs_thread"), example_httpd_vfs_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r[%s] Create example_httpd_vfs_thread task failed", __FUNCTION__);
 	}
 }

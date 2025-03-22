@@ -34,10 +34,10 @@ int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, 
 										(void *)timer_id, (TimerCallbackFunction_t)p_timer_callback, timer);
 
 		if (*pp_handle == NULL) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
-	return SUCCESS;
+	return RTK_SUCCESS;
 #else
 	return rtos_timer_create(pp_handle, p_timer_name, timer_id, interval_ms, reload, p_timer_callback);
 #endif
@@ -47,10 +47,10 @@ int rtos_timer_delete_static(rtos_timer_t p_handle, uint32_t wait_ms)
 {
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	rtos_timer_t handle_for_delete = p_handle;
-	while (rtos_timer_delete(handle_for_delete, wait_ms) != SUCCESS) {};
+	while (rtos_timer_delete(handle_for_delete, wait_ms) != RTK_SUCCESS) {};
 	// wait timer until inactive in __reserved_release_timer_to_poll
 	__reserved_release_timer_to_poll(p_handle);
-	return SUCCESS;
+	return RTK_SUCCESS;
 #else
 	return rtos_timer_delete(p_handle, wait_ms);
 #endif
@@ -63,7 +63,7 @@ int rtos_timer_create(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_
 	TickType_t timer_ticks;
 
 	if (pp_handle == NULL || p_timer_callback == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	timer_ticks = (TickType_t)((interval_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS);
@@ -71,10 +71,10 @@ int rtos_timer_create(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_
 	*pp_handle = xTimerCreate(p_timer_name, timer_ticks, (BaseType_t)reload,
 							  (void *)timer_id, (TimerCallbackFunction_t)p_timer_callback);
 	if (*pp_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms)
@@ -82,15 +82,15 @@ int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms)
 	BaseType_t ret;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	ret = xTimerDelete((TimerHandle_t) p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -99,14 +99,14 @@ int rtos_timer_start(rtos_timer_t p_handle, uint32_t wait_ms)
 	BaseType_t ret, task_woken;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
 		task_woken = pdFALSE;
 		ret = xTimerStartFromISR((TimerHandle_t) p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -114,9 +114,9 @@ int rtos_timer_start(rtos_timer_t p_handle, uint32_t wait_ms)
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -125,14 +125,14 @@ int rtos_timer_stop(rtos_timer_t p_handle, uint32_t wait_ms)
 	BaseType_t ret, task_woken;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
 		task_woken = pdFALSE;
 		ret = xTimerStopFromISR((TimerHandle_t) p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -140,9 +140,9 @@ int rtos_timer_stop(rtos_timer_t p_handle, uint32_t wait_ms)
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -152,7 +152,7 @@ int rtos_timer_change_period(rtos_timer_t p_handle, uint32_t interval_ms, uint32
 	TickType_t timer_ticks;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	timer_ticks = RTOS_CONVERT_MS_TO_TICKS(interval_ms);
@@ -161,7 +161,7 @@ int rtos_timer_change_period(rtos_timer_t p_handle, uint32_t interval_ms, uint32
 		task_woken = pdFALSE;
 		ret = xTimerChangePeriodFromISR((TimerHandle_t) p_handle, timer_ticks, &task_woken);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -169,9 +169,9 @@ int rtos_timer_change_period(rtos_timer_t p_handle, uint32_t interval_ms, uint32
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 

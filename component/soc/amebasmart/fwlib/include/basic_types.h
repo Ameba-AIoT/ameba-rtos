@@ -20,6 +20,8 @@
 
 #define SUCCESS	0
 #define FAIL	(-1)
+#define RTK_SUCCESS	0
+#define RTK_FAIL	(-1)
 
 #ifndef FALSE
 #define FALSE   0

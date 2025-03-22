@@ -451,7 +451,7 @@ void IR_learning_thread(void)
 
 		IR_ClearRxFIFO(IR_DEV);
 
-		if (rtos_sema_take(IR_learn_sema, RMC_IR_LEARN_TIMEOUT_MS) == SUCCESS) {
+		if (rtos_sema_take(IR_learn_sema, RMC_IR_LEARN_TIMEOUT_MS) == RTK_SUCCESS) {
 			if (g_ir_learn_packet.data_receive_completed) {
 				//TODO: receive complete
 				IR_learning_wave_capture((uint32_t *)&recv_buf);
@@ -474,8 +474,8 @@ int example_raw_ir_rx_learning(void)
 		rtos_sema_create_binary(&IR_learn_sema);
 	}
 
-	if (SUCCESS != rtos_task_create(NULL, (const char *const)"IR_learning_THREAD", (rtos_task_t)IR_learning_thread,
-									NULL, 3072, 5)) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"IR_learning_THREAD", (rtos_task_t)IR_learning_thread,
+										NULL, 3072, 5)) {
 		printf("create IR RX thread error\n");
 
 		rtos_sema_delete(IR_learn_sema);

@@ -93,7 +93,7 @@ void user_wifi_join_status_event_hdl(char *buf, int buf_len, int flags, void *us
 		}
 
 		/*Creat a task to do wifi reconnect because call WIFI API in WIFI event is not safe*/
-		if (rtos_task_create(NULL, ((const char *)"user_wifi_reconnect_task"), user_wifi_reconnect_task, NULL, 1024 * 4, 1) != SUCCESS) {
+		if (rtos_task_create(NULL, ((const char *)"user_wifi_reconnect_task"), user_wifi_reconnect_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 			RTK_LOGI(TAG, "Create reconnect task failed\n");
 		}
 	}
@@ -110,7 +110,7 @@ static void user_main_task(void *param)
 	}
 
 	/* Disable realtek auto reconnect */
-	wifi_config_autoreconnect(0);
+	wifi_set_autoreconnect(0);
 
 	/* Register join status event, trigger reconnect when disconnect happen*/
 	wifi_reg_event_handler(WIFI_EVENT_JOIN_STATUS, user_wifi_join_status_event_hdl, NULL);
@@ -127,7 +127,7 @@ void example_wifi_user_reconnect(void)
 	extern void wifi_fast_connect_enable(unsigned char enable);
 	wifi_fast_connect_enable(0);
 
-	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 1024, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"user_main_task"), user_main_task, NULL, 1024, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n%s rtos_task_create failed\n", __FUNCTION__);
 	}
 }

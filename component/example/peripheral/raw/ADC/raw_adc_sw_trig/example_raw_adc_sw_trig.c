@@ -80,7 +80,7 @@ void adc_swtrig_demo(void)
 
 int example_raw_adc_sw_trig(void)
 {
-	if (rtos_task_create(NULL, "RAW_ADC_SW_TRIG_TASK", (rtos_task_t)adc_swtrig_demo, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "RAW_ADC_SW_TRIG_TASK", (rtos_task_t)adc_swtrig_demo, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGI(NOTAG, "Cannot create RAW_ADC_SW_TRIG_TASK\n");
 	}
 

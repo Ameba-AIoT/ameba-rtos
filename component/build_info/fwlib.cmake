@@ -98,9 +98,9 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
 
             ${d_SOC_PLATFORM_DIR}/swlib/locks.c
             ${d_SOC_PLATFORM_DIR}/swlib/sscanf_minimal.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_pinmapcfg.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_flashcfg.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_sleepcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_pinmapcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_sleepcfg.c
             ${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
         )
     elseif("${d_MCU_PROJECT_NAME}" STREQUAL "lp")
@@ -138,7 +138,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_wakepin.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_arch.c
 
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_sleepcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_sleepcfg.c
             ${d_SOC_PLATFORM_DIR}/swlib/locks.c
             ${d_SOC_PLATFORM_DIR}/swlib/sscanf_minimal.c
             ${BASEDIR}/component/soc/common/rtk_assert/rtk_assert.c
@@ -183,8 +183,8 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_wakepin.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_common/ameba_bor.c
 
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_flashcfg.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_sleepcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_sleepcfg.c
 
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_mipi.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_lcdc.c

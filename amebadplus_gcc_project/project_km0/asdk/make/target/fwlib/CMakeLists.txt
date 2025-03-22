@@ -1,5 +1,5 @@
 set(DIR ${TARGETDIR}/fwlib/ram_km0)
-set(CFGDIR ${TARGETDIR}/usrcfg)
+set(CFGDIR ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 set(DIR_COM ${TARGETDIR}/fwlib/ram_common)
 set(LOGDIR ${TARGETDIR}/swlib)
 

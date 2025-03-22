@@ -1,6 +1,6 @@
 set(DIR  ${TARGETDIR}/fwlib/ram_kr4)
 set(DIR_COM  ${TARGETDIR}/fwlib/ram_common)
-set(CFGDIR  ${TARGETDIR}/usrcfg)
+set(CFGDIR  ${BASEDIR}/component/soc/usrcfg/${c_SOC_TYPE})
 set(LOGDIR  ${TARGETDIR}/swlib)
 
 set(

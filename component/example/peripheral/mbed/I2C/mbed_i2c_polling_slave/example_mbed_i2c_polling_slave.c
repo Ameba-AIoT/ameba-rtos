@@ -128,7 +128,7 @@ void i2c_dual_slave_task(void)
 
 int example_mbed_i2c_polling_slave(void)
 {
-	if (rtos_task_create(NULL, "I2C DULE SLAVE DEMO", (rtos_task_t)i2c_dual_slave_task, NULL, 3072, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "I2C DULE SLAVE DEMO", (rtos_task_t)i2c_dual_slave_task, NULL, 3072, (1)) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Cannot create i2c_dual_slave_task demo task\n\r");
 	}
 

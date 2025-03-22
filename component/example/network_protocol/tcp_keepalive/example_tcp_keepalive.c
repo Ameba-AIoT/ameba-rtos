@@ -176,7 +176,7 @@ exit:
 
 void example_tcp_keepalive(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_tcp_keepalive_thread"), example_tcp_keepalive_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_tcp_keepalive_thread"), example_tcp_keepalive_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

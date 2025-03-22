@@ -139,9 +139,9 @@ void example_eap_config(void)
 				  "QTiZHgjlMQb2XXMmXLn8kBgoDnqkXFNe8j0h8uxIJSrjOoIyn1h1wvX5/w==\r\n" \
 				  "-----END CERTIFICATE-----\r\n";
 
-	eap_client_cert_len = strlen((const char*)eap_client_cert) + 1;
-	eap_client_key_len = strlen((const char*)eap_client_key) + 1;
-	eap_ca_cert_len = strlen((const char*)eap_ca_cert) + 1;
+	eap_client_cert_len = strlen((const char *)eap_client_cert) + 1;
+	eap_client_key_len = strlen((const char *)eap_client_key) + 1;
+	eap_ca_cert_len = strlen((const char *)eap_ca_cert) + 1;
 }
 
 static void example_eap_thread(void *method)
@@ -167,7 +167,7 @@ void example_eap(char *method)
 	/* disable fast connect for eap, need set it before wifi_on*/
 	wifi_fast_connect_enable(0);
 
-	if (rtos_task_create(NULL, ((const char *)"example_eap_thread"), example_eap_thread, method, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_eap_thread"), example_eap_thread, method, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}
 }

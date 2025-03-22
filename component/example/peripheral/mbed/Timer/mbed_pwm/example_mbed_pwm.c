@@ -101,7 +101,7 @@ void mbed_pwm_demo(void)
 
 int example_mbed_pwm(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "MBED_PWM_DEMO_TASK", (rtos_task_t)mbed_pwm_demo, (void *)NULL, 2048, (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "MBED_PWM_DEMO_TASK", (rtos_task_t)mbed_pwm_demo, (void *)NULL, 2048, (1))) {
 		printf("Create MBED_PWM_DEMO_TASK Err!!\n");
 	}
 

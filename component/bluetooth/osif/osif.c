@@ -37,7 +37,7 @@ uint32_t osif_sys_time_get(void)
 /****************************************************************************/
 bool osif_sched_start(void)
 {
-	return (rtos_sched_start() == SUCCESS);
+	return (rtos_sched_start() == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -45,7 +45,7 @@ bool osif_sched_start(void)
 /****************************************************************************/
 bool osif_sched_stop(void)
 {
-	return (rtos_sched_stop() == SUCCESS);
+	return (rtos_sched_stop() == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -53,7 +53,7 @@ bool osif_sched_stop(void)
 /****************************************************************************/
 bool osif_sched_suspend(void)
 {
-	return (rtos_sched_suspend() == SUCCESS);
+	return (rtos_sched_suspend() == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -61,7 +61,7 @@ bool osif_sched_suspend(void)
 /****************************************************************************/
 bool osif_sched_resume(void)
 {
-	return (rtos_sched_resume() == SUCCESS);
+	return (rtos_sched_resume() == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -78,7 +78,7 @@ bool osif_sched_is_suspended(void)
 bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(void *),
 					  void *p_param, uint16_t stack_size, uint16_t priority)
 {
-	return (rtos_task_create((rtos_task_t *)pp_handle, p_name, p_routine, p_param, stack_size, priority) == SUCCESS);
+	return (rtos_task_create((rtos_task_t *)pp_handle, p_name, p_routine, p_param, stack_size, priority) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -86,7 +86,7 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
 /****************************************************************************/
 bool osif_task_delete(void *p_handle)
 {
-	return (rtos_task_delete((rtos_task_t)p_handle) == SUCCESS);
+	return (rtos_task_delete((rtos_task_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -94,7 +94,7 @@ bool osif_task_delete(void *p_handle)
 /****************************************************************************/
 bool osif_task_suspend(void *p_handle)
 {
-	return (rtos_task_suspend((rtos_task_t)p_handle) == SUCCESS);
+	return (rtos_task_suspend((rtos_task_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -102,7 +102,7 @@ bool osif_task_suspend(void *p_handle)
 /****************************************************************************/
 bool osif_task_resume(void *p_handle)
 {
-	return (rtos_task_resume((rtos_task_t)p_handle) == SUCCESS);
+	return (rtos_task_resume((rtos_task_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -110,7 +110,7 @@ bool osif_task_resume(void *p_handle)
 /****************************************************************************/
 bool osif_task_yield(void)
 {
-	return (rtos_task_yield() == SUCCESS);
+	return (rtos_task_yield() == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -148,7 +148,7 @@ bool osif_task_priority_get(void *p_handle, uint16_t *p_priority)
 /****************************************************************************/
 bool osif_task_priority_set(void *p_handle, uint16_t priority)
 {
-	return (rtos_task_priority_set((rtos_task_t)p_handle, priority) == SUCCESS);
+	return (rtos_task_priority_set((rtos_task_t)p_handle, priority) == RTK_SUCCESS);
 }
 
 static rtos_sema_t sig_handle;
@@ -157,7 +157,7 @@ static rtos_sema_t sig_handle;
 /****************************************************************************/
 bool osif_signal_init(void)
 {
-	return (rtos_sema_create(&sig_handle, 0, 1) == SUCCESS);
+	return (rtos_sema_create(&sig_handle, 0, 1) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -187,7 +187,7 @@ bool osif_task_signal_send(void *p_handle, uint32_t signal)
 		return false;
 	}
 
-	return (rtos_sema_give(sig_handle) == SUCCESS);
+	return (rtos_sema_give(sig_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -202,7 +202,7 @@ bool osif_task_signal_recv(uint32_t *p_handle, uint32_t wait_ms)
 		return false;
 	}
 
-	return (rtos_sema_take(sig_handle, wait_ms) == SUCCESS);
+	return (rtos_sema_take(sig_handle, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -240,7 +240,7 @@ void osif_unlock(uint32_t flags)
 /****************************************************************************/
 bool osif_sem_create(void **pp_handle, uint32_t init_count, uint32_t max_count)
 {
-	return (rtos_sema_create((rtos_sema_t *)pp_handle, init_count, max_count) == SUCCESS);
+	return (rtos_sema_create((rtos_sema_t *)pp_handle, init_count, max_count) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -248,7 +248,7 @@ bool osif_sem_create(void **pp_handle, uint32_t init_count, uint32_t max_count)
 /****************************************************************************/
 bool osif_sem_delete(void *p_handle)
 {
-	return (rtos_sema_delete((rtos_sema_t)p_handle) == SUCCESS);
+	return (rtos_sema_delete((rtos_sema_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -256,7 +256,7 @@ bool osif_sem_delete(void *p_handle)
 /****************************************************************************/
 bool osif_sem_take(void *p_handle, uint32_t wait_ms)
 {
-	return (rtos_sema_take((rtos_sema_t)p_handle, wait_ms) == SUCCESS);
+	return (rtos_sema_take((rtos_sema_t)p_handle, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -264,7 +264,7 @@ bool osif_sem_take(void *p_handle, uint32_t wait_ms)
 /****************************************************************************/
 bool osif_sem_give(void *p_handle)
 {
-	return (rtos_sema_give((rtos_sema_t)p_handle) == SUCCESS);
+	return (rtos_sema_give((rtos_sema_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -280,7 +280,7 @@ uint32_t osif_sem_get_count(void *p_handle)
 /****************************************************************************/
 bool osif_mutex_create(void **pp_handle)
 {
-	return (rtos_mutex_create((rtos_mutex_t *)pp_handle) == SUCCESS);
+	return (rtos_mutex_create((rtos_mutex_t *)pp_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -288,7 +288,7 @@ bool osif_mutex_create(void **pp_handle)
 /****************************************************************************/
 bool osif_mutex_delete(void *p_handle)
 {
-	return (rtos_mutex_delete((rtos_mutex_t)p_handle) == SUCCESS);
+	return (rtos_mutex_delete((rtos_mutex_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -296,7 +296,7 @@ bool osif_mutex_delete(void *p_handle)
 /****************************************************************************/
 bool osif_mutex_take(void *p_handle, uint32_t wait_ms)
 {
-	return (rtos_mutex_take((rtos_mutex_t)p_handle, wait_ms) == SUCCESS);
+	return (rtos_mutex_take((rtos_mutex_t)p_handle, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -304,7 +304,7 @@ bool osif_mutex_take(void *p_handle, uint32_t wait_ms)
 /****************************************************************************/
 bool osif_mutex_give(void *p_handle)
 {
-	return (rtos_mutex_give((rtos_mutex_t)p_handle) == SUCCESS);
+	return (rtos_mutex_give((rtos_mutex_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -312,7 +312,7 @@ bool osif_mutex_give(void *p_handle)
 /****************************************************************************/
 bool osif_recursive_mutex_create(void **pp_handle)
 {
-	return (rtos_mutex_recursive_create((rtos_mutex_t *)pp_handle) == SUCCESS);
+	return (rtos_mutex_recursive_create((rtos_mutex_t *)pp_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -320,7 +320,7 @@ bool osif_recursive_mutex_create(void **pp_handle)
 /****************************************************************************/
 bool osif_recursive_mutex_delete(void *p_handle)
 {
-	return (rtos_mutex_recursive_delete((rtos_mutex_t)p_handle) == SUCCESS);
+	return (rtos_mutex_recursive_delete((rtos_mutex_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -328,7 +328,7 @@ bool osif_recursive_mutex_delete(void *p_handle)
 /****************************************************************************/
 bool osif_recursive_mutex_take(void *p_handle, uint32_t wait_ms)
 {
-	return (rtos_mutex_recursive_take((rtos_mutex_t)p_handle, wait_ms) == SUCCESS);
+	return (rtos_mutex_recursive_take((rtos_mutex_t)p_handle, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -336,7 +336,7 @@ bool osif_recursive_mutex_take(void *p_handle, uint32_t wait_ms)
 /****************************************************************************/
 bool osif_recursive_mutex_give(void *p_handle)
 {
-	return (rtos_mutex_recursive_give((rtos_mutex_t)p_handle) == SUCCESS);
+	return (rtos_mutex_recursive_give((rtos_mutex_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -344,7 +344,7 @@ bool osif_recursive_mutex_give(void *p_handle)
 /****************************************************************************/
 bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size)
 {
-	return (rtos_queue_create((rtos_queue_t *)pp_handle, msg_num, msg_size) == SUCCESS);
+	return (rtos_queue_create((rtos_queue_t *)pp_handle, msg_num, msg_size) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -352,7 +352,7 @@ bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size
 /****************************************************************************/
 bool osif_msg_queue_delete(void *p_handle)
 {
-	return (rtos_queue_delete((rtos_queue_t)p_handle) == SUCCESS);
+	return (rtos_queue_delete((rtos_queue_t)p_handle) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -375,7 +375,7 @@ bool osif_msg_queue_peek(void *p_handle, uint32_t *p_msg_num)
 /****************************************************************************/
 bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 {
-	return (rtos_queue_send((rtos_queue_t)p_handle, p_msg, wait_ms) == SUCCESS);
+	return (rtos_queue_send((rtos_queue_t)p_handle, p_msg, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -383,7 +383,7 @@ bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 /****************************************************************************/
 bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 {
-	return (rtos_queue_receive((rtos_queue_t)p_handle, p_msg, wait_ms) == SUCCESS);
+	return (rtos_queue_receive((rtos_queue_t)p_handle, p_msg, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -391,7 +391,7 @@ bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 /****************************************************************************/
 bool osif_msg_peek(void *p_handle, void *p_msg, uint32_t wait_ms)
 {
-	return (rtos_queue_peek((rtos_queue_t)p_handle, p_msg, wait_ms) == SUCCESS);
+	return (rtos_queue_peek((rtos_queue_t)p_handle, p_msg, wait_ms) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -484,7 +484,7 @@ bool osif_timer_id_get(void **pp_handle, uint32_t *p_timer_id)
 bool osif_timer_create(void **pp_handle, const char *p_timer_name, uint32_t timer_id,
 					   uint32_t interval_ms, bool reload, void (*p_timer_callback)(void *))
 {
-	return (rtos_timer_create((rtos_timer_t *)pp_handle, p_timer_name, timer_id, interval_ms, reload, p_timer_callback) == SUCCESS);
+	return (rtos_timer_create((rtos_timer_t *)pp_handle, p_timer_name, timer_id, interval_ms, reload, p_timer_callback) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -497,7 +497,7 @@ bool osif_timer_start(void **pp_handle)
 		return false;
 	}
 
-	return (rtos_timer_start((rtos_timer_t)(*pp_handle), 0) == SUCCESS);
+	return (rtos_timer_start((rtos_timer_t)(*pp_handle), 0) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -510,7 +510,7 @@ bool osif_timer_restart(void **pp_handle, uint32_t interval_ms)
 		return false;
 	}
 
-	return (rtos_timer_change_period((rtos_timer_t)(*pp_handle), interval_ms, 0) == SUCCESS);
+	return (rtos_timer_change_period((rtos_timer_t)(*pp_handle), interval_ms, 0) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -523,7 +523,7 @@ bool osif_timer_stop(void **pp_handle)
 		return false;
 	}
 
-	return (rtos_timer_stop((rtos_timer_t)(*pp_handle), 0) == SUCCESS);
+	return (rtos_timer_stop((rtos_timer_t)(*pp_handle), 0) == RTK_SUCCESS);
 }
 
 /****************************************************************************/
@@ -536,7 +536,7 @@ bool osif_timer_delete(void **pp_handle)
 		return false;
 	}
 
-	if (rtos_timer_delete((rtos_timer_t)(*pp_handle), 0) == SUCCESS) {
+	if (rtos_timer_delete((rtos_timer_t)(*pp_handle), 0) == RTK_SUCCESS) {
 		*pp_handle = NULL;
 		return true;
 	}
@@ -573,4 +573,15 @@ bool osif_timer_dump(void)
 void osif_create_secure_context(uint32_t size)
 {
 	rtos_create_secure_context(size);
+}
+
+extern int TRNG_get_random_bytes(void *dst, uint32_t size);
+/****************************************************************************/
+/* Generate random bytes                                                    */
+/****************************************************************************/
+void osif_rand(void *val, uint32_t size)
+{
+	if (TRNG_get_random_bytes(val, size)) {
+		BT_LOGE("%s: TRNG get random failed\r\n", __func__);
+	}
 }

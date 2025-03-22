@@ -268,7 +268,7 @@ static void cdc_acm_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdc_acm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(cdc_acm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (cdc_acm_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_cdc_acm_deinit();
@@ -308,7 +308,7 @@ static void cdc_acm_xfer_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdc_acm_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(cdc_acm_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			xfer_len = CONFIG_CDC_ACM_ASYNC_BUF_SIZE;
 			xfer_buf = cdc_acm_async_xfer_buf;
 			cdc_acm_async_xfer_busy = 1;
@@ -376,7 +376,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
 	ret = rtos_task_create(&check_task, "cdc_acm_hotplug_thread", cdc_acm_hotplug_thread, NULL, 1024, CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
 #endif
@@ -384,7 +384,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&xfer_task, "cdc_acm_xfer_thread", cdc_acm_xfer_thread, NULL, 1024, CONFIG_CDC_ACM_XFER_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_create_xfer_task_fail;
 	}
 #endif
@@ -437,7 +437,7 @@ void example_usbd_cdc_acm(void)
 	rtos_task_t task;
 
 	ret = rtos_task_create(&task, "example_usbd_cdc_acm_thread", example_usbd_cdc_acm_thread, NULL, 1024U, CONFIG_CDC_ACM_INIT_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD CDC ACM thread fail\n");
 	}
 }

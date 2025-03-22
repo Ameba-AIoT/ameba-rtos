@@ -14,37 +14,37 @@
 int rtos_queue_create(rtos_queue_t *pp_handle, uint32_t msg_num, uint32_t msg_size)
 {
 	if (pp_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	*pp_handle = (rtos_queue_t)xQueueCreate(msg_num, msg_size);
 	if (*pp_handle != NULL) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 int rtos_queue_delete(rtos_queue_t p_handle)
 {
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_queue_message_waiting(p_handle) != 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] %s <<< The queue is not empty, but the queue has been deleted. >>>\n", pcTaskGetTaskName(NULL), __FUNCTION__);
 		vQueueDelete((QueueHandle_t)p_handle);
-		return FAIL;
+		return RTK_FAIL;
 	} else {
 		vQueueDelete((QueueHandle_t)p_handle);
-		return SUCCESS;
+		return RTK_SUCCESS;
 	}
 }
 
 uint32_t rtos_queue_message_waiting(rtos_queue_t p_handle)
 {
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 	if (rtos_critical_is_in_interrupt()) {
 		return (uint32_t)uxQueueMessagesWaitingFromISR((QueueHandle_t)p_handle);
@@ -59,7 +59,7 @@ int rtos_queue_send(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	BaseType_t task_woken = pdFALSE;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
@@ -72,9 +72,9 @@ int rtos_queue_send(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -84,7 +84,7 @@ int rtos_queue_send_to_front(rtos_queue_t p_handle, void *p_msg, uint32_t wait_m
 	BaseType_t task_woken = pdFALSE;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
@@ -97,9 +97,9 @@ int rtos_queue_send_to_front(rtos_queue_t p_handle, void *p_msg, uint32_t wait_m
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -109,7 +109,7 @@ int rtos_queue_receive(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	BaseType_t task_woken = pdFALSE;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
@@ -122,9 +122,9 @@ int rtos_queue_receive(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -133,7 +133,7 @@ int rtos_queue_peek(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	BaseType_t ret;
 
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
@@ -143,8 +143,8 @@ int rtos_queue_peek(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }

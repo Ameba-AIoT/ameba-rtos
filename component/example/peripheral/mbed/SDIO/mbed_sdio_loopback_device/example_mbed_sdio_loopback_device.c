@@ -26,12 +26,12 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 	memset((u8 *)tx_buf, 0, sizeof(struct spdio_buf_t));
 
 	if (!tx_buf) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 	tx_buf->buf_allocated = (u32)rtos_mem_malloc(size + SPDIO_DMA_ALIGN_4);
 	if (!tx_buf->buf_allocated) {
 		rtos_mem_free((u8 *)tx_buf);
-		return FAIL;
+		return RTK_FAIL;
 	}
 	tx_buf->size_allocated = size + SPDIO_DMA_ALIGN_4;
 
@@ -50,7 +50,7 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 		rtos_mem_free((u8 *)tx_buf);
 	}
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 
@@ -79,7 +79,7 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 	// this buffer must be 4 byte alignment
 	rx_buf->buf_addr = (u32)N_BYTE_ALIGMENT((u32)(rx_buf->buf_allocated), SPDIO_DMA_ALIGN_4);
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 /*spdio tx done callback(Device->HOST), manage buffer*/
@@ -91,7 +91,7 @@ char ex_spdio_tx_done_cb(void *priv, void *pbuf)
 
 	rtos_mem_free((u8 *)tx_buf->buf_allocated);
 	rtos_mem_free((u8 *)tx_buf);
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 void ex_spdio_thread(void *param)
@@ -131,7 +131,7 @@ void ex_spdio_thread(void *param)
 
 int example_mbed_sdio_loopback_device(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"ex_spdio_thread"), ex_spdio_thread, NULL, EX_SPDIO_STACKSIZE * 4, 5) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"ex_spdio_thread"), ex_spdio_thread, NULL, EX_SPDIO_STACKSIZE * 4, 5) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "rtos_task_create(ex_spdio_thread) failed\n");
 	}
 

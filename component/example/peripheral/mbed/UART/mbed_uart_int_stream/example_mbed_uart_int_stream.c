@@ -83,7 +83,7 @@ void uart_stream_irq_demo(void)
 
 int example_mbed_uart_int_stream(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"uart_stream_irq_demo"), (rtos_task_t)uart_stream_irq_demo, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"uart_stream_irq_demo"), (rtos_task_t)uart_stream_irq_demo, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_stream_irq_demo) failed\n", __FUNCTION__);
 	}
 

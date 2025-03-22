@@ -193,7 +193,7 @@ void uart_stream_irq_task(void)
 
 int example_raw_uart_int_stream(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_stream_irq_task", (rtos_task_t)uart_stream_irq_task, (void *)NULL, (1024 * 4), (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "uart_stream_irq_task", (rtos_task_t)uart_stream_irq_task, (void *)NULL, (1024 * 4), (1))) {
 		RTK_LOGE(NOTAG, "Create uart_stream_irq_task Err!!\n");
 	}
 

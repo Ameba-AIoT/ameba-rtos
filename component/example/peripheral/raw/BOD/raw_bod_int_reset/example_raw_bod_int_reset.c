@@ -76,11 +76,11 @@ void bod_reset_test(void)
 int example_raw_bod_int_reset(void)
 {
 #if BOD_INTR_MODE
-	if (rtos_task_create(NULL, "BOD_INTR_TASK", (rtos_task_t)bod_intr_test, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "BOD_INTR_TASK", (rtos_task_t)bod_intr_test, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create BOD_INTR_TASK\n");
 	}
 #else
-	if (rtos_task_create(NULL, "BOD_RESET_TASK", (rtos_task_t)bod_reset_test, NULL, (3072), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "BOD_RESET_TASK", (rtos_task_t)bod_reset_test, NULL, (3072), (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create BOD_RESET_TASK\n");
 	}
 #endif

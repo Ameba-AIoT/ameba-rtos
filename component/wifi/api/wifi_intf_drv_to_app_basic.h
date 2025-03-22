@@ -704,6 +704,12 @@ struct wifi_user_conf {
 	/*!	Refe to 802.11d spec, obtain the country code information from beacon, and set the pwr limit and channel plan.*/
 	unsigned char rtw_802_11d_en;
 
+	/*!	When booting the STA, it automatically reconnects to previously connected AP*/
+	unsigned char fast_reconnect_en;
+
+	/*!	When disconnection, STA automatically reconnects.*/
+	unsigned char auto_reconnect_en;
+
 	/*!	When disconnection, STA automatically reconnects, and auto_reconnect_count is the number of attempts.*/
 	unsigned char auto_reconnect_count;
 

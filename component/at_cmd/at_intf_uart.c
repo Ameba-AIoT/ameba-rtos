@@ -92,6 +92,7 @@ void atio_uart_out_dma(char *buf, int len)
 
 	if (!ret) {
 		RTK_LOGI(NOTAG, "%s Error(%d)\n", __FUNCTION__, ret);
+		rtos_mem_free((void *)buf_new); // to avoid memory leakage
 		rtos_mutex_give(uart_tx_mutex);
 	}
 }

@@ -243,7 +243,7 @@ void example_ssl_server(void)
 {
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"example_ssl_server_thread"), example_ssl_server_thread,
-						 NULL, 2048 * 4, 1) != SUCCESS) {
+						 NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create example_ssl_server_thread failed", __FUNCTION__);
 	}
 }

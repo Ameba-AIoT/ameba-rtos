@@ -49,8 +49,8 @@ void raw_gpio_demo(void)
 
 int example_raw_gpio_light_weight(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "RAW_GPIO_DEMO_TASK", (rtos_task_t)raw_gpio_demo, (void *)NULL, (128 * 16),
-									(1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_GPIO_DEMO_TASK", (rtos_task_t)raw_gpio_demo, (void *)NULL, (128 * 16),
+										(1))) {
 		printf("Create RAW_GPIO_DEMO_TASK Err!!!\n");
 	}
 

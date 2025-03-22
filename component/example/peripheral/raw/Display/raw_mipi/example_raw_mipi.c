@@ -19,7 +19,7 @@ void example_raw_mipi(void)
 	}
 
 	// create demo Task
-	if (rtos_task_create(NULL, "MIPI DEMO", (rtos_task_t)mipi_demo, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "MIPI DEMO", (rtos_task_t)mipi_demo, NULL, (2048), (1)) != RTK_SUCCESS) {
 		printf("Cannot create demo task\n");
 	}
 }

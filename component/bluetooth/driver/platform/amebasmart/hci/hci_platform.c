@@ -171,7 +171,7 @@ static uint8_t hci_platform_read_antenna(void)
 	/* Parse BT RF PATH */
 	if (bt_ant_switch == 0xFF) { /* Priority of ATM2=ant is higher than efuse in mp image. */
 		/* Read Logic Efuse */
-		if (FAIL == OTP_LogicalMap_Read(&val, 0x133, 1)) {
+		if (RTK_FAIL == OTP_LogicalMap_Read(&val, 0x133, 1)) {
 			BT_LOGE("OTP_LogicalMap_Read 0x133 failed\r\n");
 			return HCI_FAIL;
 		}
@@ -200,7 +200,7 @@ static uint8_t hci_platform_read_efuse(void)
 	uint8_t i;
 
 	/* Read Logic Efuse */
-	if (FAIL == OTP_LogicalMap_Read(hci_lgc_efuse, HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN)) {
+	if (RTK_FAIL == OTP_LogicalMap_Read(hci_lgc_efuse, HCI_LGC_EFUSE_OFFSET, HCI_LGC_EFUSE_LEN)) {
 		BT_LOGE("OTP_LogicalMap_Read failed\r\n");
 		return HCI_FAIL;
 	}

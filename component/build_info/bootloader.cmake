@@ -20,9 +20,9 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBASMARTPLUS)
             ${d_SOC_PLATFORM_DIR}/bootloader/boot_trustzone_hp.c
             ${d_SOC_PLATFORM_DIR}/bootloader/boot_security_hp.c
             ${d_SOC_PLATFORM_DIR}/bootloader/boot_ota_hp.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_boot_trustzonecfg.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_bootcfg.c
-            ${d_SOC_PLATFORM_DIR}/usrcfg/ameba_flashcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_boot_trustzonecfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
+            ${c_CMPT_USRCFG_DIR}/ameba_flashcfg.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_flashclk.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_nandflash.c
             ${d_SOC_PLATFORM_DIR}/fwlib/ram_hp/ameba_ddrphy.c

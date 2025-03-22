@@ -274,7 +274,7 @@ struct dev_pm_ops whc_sdio_host_pm_ops = {
 };
 
 static const struct sdio_device_id whc_sdio_host_ids[] = {
-	{ SDIO_DEVICE(0x024c, 0x8006), .driver_data = 0},	//green2
+	{ SDIO_DEVICE(0x024c, 0x8006), .driver_data = 0, .class = SDIO_CLASS_WLAN},	//green2
 	{ SDIO_DEVICE(0x024c, 0x8722), .driver_data = 0},	//Dplus
 };
 

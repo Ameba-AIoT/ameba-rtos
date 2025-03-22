@@ -222,7 +222,7 @@ static void ppe_3_layer_alpha_blend(void *para)
 
 int example_raw_ppe_3_layer_alpha_blend(void)
 {
-	if (rtos_task_create(NULL, "ppe_3_layer_alpha_blend", (rtos_task_t)ppe_3_layer_alpha_blend, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "ppe_3_layer_alpha_blend", (rtos_task_t)ppe_3_layer_alpha_blend, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create ppe_3_layer_alpha_blend demo task\n\r");
 	}
 

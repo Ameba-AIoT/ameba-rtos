@@ -26,14 +26,8 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
-#include "user_heap.h"
-#define ameba_audio_gdma_calloc User_Heap_calloc
-#define ameba_audio_gdma_free User_free
-#else
 #define ameba_audio_gdma_calloc calloc
 #define ameba_audio_gdma_free free
-#endif
 
 #define HAL_AUDIO_WEAK __attribute__((weak))
 
@@ -62,6 +56,7 @@ int32_t ameba_audio_stream_get_direct_out_channel_idx(uint32_t channel);
 int32_t ameba_audio_stream_get_direct_in_channel_idx(uint32_t channel);
 int32_t ameba_audio_stream_get_direct_reg_idx(uint32_t channel);
 int32_t ameba_audio_stream_get_sp_tx_channel_idx(uint32_t channel);
+bool ameba_audio_sport_started(uint32_t index);
 
 #ifdef __cplusplus
 }

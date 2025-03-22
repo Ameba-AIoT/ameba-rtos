@@ -75,7 +75,7 @@ void raw_pwm_demo(void)
   */
 int example_raw_pwm(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "RAW_PWM_DEMO_TASK", (rtos_task_t)raw_pwm_demo, (void *)NULL, (2048), (1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_PWM_DEMO_TASK", (rtos_task_t)raw_pwm_demo, (void *)NULL, (2048), (1))) {
 		printf("Create RAW_PWM_DEMO_TASK Err!!\n");
 	}
 

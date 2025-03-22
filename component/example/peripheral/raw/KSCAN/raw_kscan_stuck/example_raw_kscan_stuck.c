@@ -110,7 +110,7 @@ void keyscan_stuck(void)
 
 int example_raw_kscan_stuck(void)
 {
-	if (rtos_task_create(NULL, "keyscan_stuck", (rtos_task_t)keyscan_stuck, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "keyscan_stuck", (rtos_task_t)keyscan_stuck, NULL, (2048), (1)) != RTK_SUCCESS) {
 		printf("Cannot create keyscan_stuck demo task\n\r");
 	}
 

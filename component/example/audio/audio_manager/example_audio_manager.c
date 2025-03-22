@@ -127,7 +127,7 @@ void example_audio_manager(char **argv)
 			argv++;
 		}
 	}
-	if (rtos_task_create(NULL, ((const char *)"example_audio_manager_thread"), example_audio_manager_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_audio_manager_thread"), example_audio_manager_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		EXAMPLE_MANAGER_ERROR("error: rtos_task_create(example_audio_manager_thread) failed");
 	}
 }
@@ -142,7 +142,7 @@ u32 example_manager_test(u16 argc, unsigned char **argv)
 #else
 void example_manager(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_audio_manager_thread"), example_audio_manager_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_audio_manager_thread"), example_audio_manager_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		EXAMPLE_MANAGER_ERROR("error: rtos_task_create(example_audio_manager_thread) failed");
 	}
 }

@@ -118,7 +118,7 @@ exit:
 
 void example_http_download(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_http_download_thread"), example_http_download_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_http_download_thread"), example_http_download_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create failed", __FUNCTION__);
 	}
 }

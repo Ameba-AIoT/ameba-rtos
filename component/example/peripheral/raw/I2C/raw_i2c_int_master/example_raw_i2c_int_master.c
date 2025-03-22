@@ -144,7 +144,7 @@ void i2c_int_task(void)
 
 int example_raw_i2c_int_master(void)
 {
-	if (rtos_task_create(NULL, "i2c_task DEMO", (rtos_task_t)i2c_int_task, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "i2c_task DEMO", (rtos_task_t)i2c_int_task, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "Cannot create i2c_int_task demo task\n\r");
 	}
 

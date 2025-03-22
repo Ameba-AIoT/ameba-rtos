@@ -711,7 +711,7 @@ static const cmd_table_t example_table[] = {
 	{"transfer_module",  atcmd_bt_transfer_module,  2, 4},
 #endif
 #if defined(CONFIG_BT_WIFIMATE_DEVICE) && CONFIG_BT_WIFIMATE_DEVICE
-	{"ble_wifimate_device", atcmd_bt_wifimate_device, 2, 2},
+	{"ble_wifimate_device", atcmd_bt_wifimate_device, 2, 3},
 #endif
 #if defined(CONFIG_BT_WIFIMATE_CONFIGURATOR) && CONFIG_BT_WIFIMATE_CONFIGURATOR
 	{"ble_wifimate_configurator", atcmd_bt_wifimate_configurator, 2, 6},

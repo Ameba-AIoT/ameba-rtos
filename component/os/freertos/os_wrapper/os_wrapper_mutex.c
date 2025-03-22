@@ -31,9 +31,9 @@ int rtos_mutex_create_static(rtos_mutex_t *pp_handle)
 		*pp_handle = xSemaphoreCreateMutexStatic(mutex);
 
 		if (*pp_handle != NULL) {
-			return SUCCESS;
+			return RTK_SUCCESS;
 		} else {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 #else
@@ -65,9 +65,9 @@ int rtos_mutex_recursive_create_static(rtos_mutex_t *pp_handle)
 		*pp_handle = xSemaphoreCreateRecursiveMutexStatic(mutex);
 
 		if (*pp_handle != NULL) {
-			return SUCCESS;
+			return RTK_SUCCESS;
 		} else {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 #else
@@ -83,30 +83,30 @@ int rtos_mutex_recursive_delete_static(rtos_mutex_t p_handle)
 int rtos_mutex_create(rtos_mutex_t *pp_handle)
 {
 	if (pp_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	*pp_handle = (rtos_mutex_t)xSemaphoreCreateMutex();
 	if (*pp_handle != NULL) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 int rtos_mutex_delete(rtos_mutex_t p_handle)
 {
 	if (p_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	if (xSemaphoreGetMutexHolder((QueueHandle_t)p_handle) == NULL) {
 		vSemaphoreDelete((QueueHandle_t)p_handle);
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
 		vSemaphoreDelete((QueueHandle_t)p_handle);
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] %s <<< The mutex has not been released, but the mutex has been deleted. >>>\n", pcTaskGetTaskName(NULL), __FUNCTION__);
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -118,7 +118,7 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR((QueueHandle_t)p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -130,11 +130,11 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 		ret = xSemaphoreTake((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 
-	return SUCCESS;
+	return RTK_SUCCESS;
 }
 
 int rtos_mutex_give(rtos_mutex_t p_handle)
@@ -145,34 +145,34 @@ int rtos_mutex_give(rtos_mutex_t p_handle)
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreGiveFromISR(p_handle, &task_woken);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
 		ret = xSemaphoreGive(p_handle);
 		if (ret != pdTRUE) {
-			return FAIL;
+			return RTK_FAIL;
 		}
 	}
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
 int rtos_mutex_recursive_create(rtos_mutex_t *pp_handle)
 {
 	if (pp_handle == NULL) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	*pp_handle = (rtos_mutex_t)xSemaphoreCreateRecursiveMutex();
 	if (*pp_handle != NULL) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -186,7 +186,7 @@ int rtos_mutex_recursive_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	BaseType_t ret;
 
 	if (rtos_critical_is_in_interrupt()) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	/* If WiFi calls this function in suspend flow, and if timeout is not 0, FreeRTOS will assert. */
@@ -197,9 +197,9 @@ int rtos_mutex_recursive_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }
 
@@ -208,13 +208,13 @@ int rtos_mutex_recursive_give(rtos_mutex_t p_handle)
 	BaseType_t ret;
 
 	if (rtos_critical_is_in_interrupt()) {
-		return FAIL;
+		return RTK_FAIL;
 	}
 
 	ret = xSemaphoreGiveRecursive((QueueHandle_t)p_handle);
 	if (ret == pdTRUE) {
-		return SUCCESS;
+		return RTK_SUCCESS;
 	} else {
-		return FAIL;
+		return RTK_FAIL;
 	}
 }

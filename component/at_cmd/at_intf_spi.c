@@ -179,7 +179,7 @@ void atcmd_spi_task(void)
 
 			spi_slave_read_stream_dma(&spi_slave, (char *)SlaveRxBuf, ATCMD_SPI_DMA_SIZE);
 
-			while (rtos_sema_take(slave_rx_sema, 0) == SUCCESS) {}
+			while (rtos_sema_take(slave_rx_sema, 0) == RTK_SUCCESS) {}
 
 			gpio_write(&at_spi_slave_to_master_gpio, 1);
 			rtos_sema_take(slave_rx_sema, 0xFFFFFFFF);
@@ -270,7 +270,7 @@ void atcmd_spi_task(void)
 			spi_slave_read_stream_dma(&spi_slave, (char *)SlaveRxBuf, ATCMD_SPI_DMA_SIZE);
 			spi_slave_write_stream_dma(&spi_slave, (char *)SlaveTxBuf, ATCMD_SPI_DMA_SIZE);
 
-			while (rtos_sema_take(slave_tx_sema, 0) == SUCCESS) {}
+			while (rtos_sema_take(slave_tx_sema, 0) == RTK_SUCCESS) {}
 
 			gpio_write(&at_spi_slave_to_master_gpio, 1);
 			rtos_sema_take(slave_tx_sema, 0xFFFFFFFF);
@@ -278,10 +278,10 @@ void atcmd_spi_task(void)
 			remain_len = RingBuffer_Available(at_spi_tx_ring_buf);
 			if (remain_len > 0) {
 				req.cmd = 0;
-				if (rtos_queue_peek(g_spi_cmd_queue, (void *)&req, 0) == SUCCESS) {
+				if (rtos_queue_peek(g_spi_cmd_queue, (void *)&req, 0) == RTK_SUCCESS) {
 					if (req.cmd != SPI_SLAVE_WR_CMD) {
 						req.cmd = SPI_SLAVE_WR_CMD;
-						if (rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0) != SUCCESS) {
+						if (rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0) != RTK_SUCCESS) {
 							RTK_LOGE(TAG, "g_spi_cmd_queue is full\n");
 						}
 					}
@@ -436,12 +436,12 @@ int atio_spi_init(void)
 
 	out_buffer = atio_spi_output;
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_task"), (rtos_task_t)atcmd_spi_task, NULL, 1024, 6) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_task"), (rtos_task_t)atcmd_spi_task, NULL, 1024, 6) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_spi_task) failed", __FUNCTION__);
 		return -1;
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_input_handler_task"), (rtos_task_t)atcmd_spi_input_handler_task, NULL, 1024, 5) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_input_handler_task"), (rtos_task_t)atcmd_spi_input_handler_task, NULL, 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_spi_input_handler_task) failed", __FUNCTION__);
 		return -1;
 	}

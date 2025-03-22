@@ -127,7 +127,7 @@ void keyscan_regular_scan(void)
 
 int example_raw_kscan_regular_scan(void)
 {
-	if (rtos_task_create(NULL, "keyscan_regular_scan", (rtos_task_t)keyscan_regular_scan, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "keyscan_regular_scan", (rtos_task_t)keyscan_regular_scan, NULL, (2048), (1)) != RTK_SUCCESS) {
 		printf("Cannot create keyscan_regular_scan demo task\n\r");
 	}
 

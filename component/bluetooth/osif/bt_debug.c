@@ -96,11 +96,7 @@ void rtk_bt_fw_log_open(void)
 	LOGUART_Relay_StructInit(&LOGUART_Relay_InitStruct);
 	LOGUART_Relay_ClearRxFifo(LOGUART_DEV);
 	LOGUART_Relay_SetFormat(LOGUART_DEV, &LOGUART_Relay_InitStruct);
-#if (defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS) || (defined(CONFIG_AMEBASMART) && CONFIG_AMEBASMART)
 	LOGUART_Relay_SetBaud(LOGUART_DEV, 833333);
-#else
-	LOGUART_Relay_SetBaud(LOGUART_DEV, 115200);
-#endif
 	LOGUART_Relay_RxCmd(LOGUART_DEV, ENABLE);
 #endif
 }

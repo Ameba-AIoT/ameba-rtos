@@ -203,8 +203,8 @@ void audio_pad_digital_demo(void)
 
 int example_raw_gpio_audio_pad(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "AUDIO_PAD_DIGITAL_TASK", (rtos_task_t)audio_pad_digital_demo, (void *)NULL, 1024 * 4,
-									(1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "AUDIO_PAD_DIGITAL_TASK", (rtos_task_t)audio_pad_digital_demo, (void *)NULL, 1024 * 4,
+										(1))) {
 		printf("Create AUDIO_PAD_DIGITAL_TASK Err!!\n");
 	}
 

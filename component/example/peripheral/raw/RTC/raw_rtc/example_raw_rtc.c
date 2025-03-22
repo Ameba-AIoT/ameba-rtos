@@ -104,8 +104,8 @@ void raw_rtc_demo(void)
 
 int example_raw_rtc(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "RAW_RTC_DEMO_TASK", (rtos_task_t)raw_rtc_demo, (void *)NULL, 1024 * 4,
-									(1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "RAW_RTC_DEMO_TASK", (rtos_task_t)raw_rtc_demo, (void *)NULL, 1024 * 4,
+										(1))) {
 		printf("Create RAW_RTC_DEMO_TASK Err!!!\n");
 	}
 

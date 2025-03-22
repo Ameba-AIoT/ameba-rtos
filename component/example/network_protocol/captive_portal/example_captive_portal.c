@@ -906,7 +906,7 @@ static void CreateScanSsidTableItem(char *pbuf)
 
 static void GenerateIndexHtmlPage(char *cDynamicPage, char *LocalBuf)
 {
-	while (rtos_sema_take(webs_wpage_sema, RTOS_MAX_DELAY) != SUCCESS);
+	while (rtos_sema_take(webs_wpage_sema, RTOS_MAX_DELAY) != RTK_SUCCESS);
 	/* Generate the page index.html...
 	... First the page header. */
 	strcpy(cDynamicPage, webHTML_HEAD_START);
@@ -1025,7 +1025,7 @@ static void web_conn_clear(void)
 
 static void GenerateWaitHtmlPage(char *cDynamicPage)
 {
-	while (rtos_sema_take(webs_wpage_sema, RTOS_MAX_DELAY) != SUCCESS);
+	while (rtos_sema_take(webs_wpage_sema, RTOS_MAX_DELAY) != RTK_SUCCESS);
 	/* Generate the dynamic page...
 	... First the page header. */
 	strcpy(cDynamicPage, webWaitHTML_START);
@@ -1488,7 +1488,7 @@ static void vProcessConnection(void *param)
 
 				if (scan_ap) {
 					scan_ap = 0;
-					if (rtos_task_create(NULL, (const char *)"wifi_scan_thread", wifi_scan_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+					if (rtos_task_create(NULL, (const char *)"wifi_scan_thread", wifi_scan_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 						RTK_LOGE(NOTAG, "Create wifi_scan_thread task failed!\n");
 					}
 
@@ -1573,7 +1573,7 @@ static void vCaptivePortalServer(void *pvParameters)
 			port_netconn_accept(pxHTTPListener, pxNewConnection->conn, ret);
 			if (pxNewConnection->conn != NULL && ret == ERR_OK) {
 				rtos_time_delay_ms(500);
-				if (rtos_task_create(&pxNewConnection->task, (const char *)"web_conn", vProcessConnection, pxNewConnection, 1024 * 4, 1) != SUCCESS) {
+				if (rtos_task_create(&pxNewConnection->task, (const char *)"web_conn", vProcessConnection, pxNewConnection, 1024 * 4, 1) != RTK_SUCCESS) {
 					RTK_LOGE(NOTAG, "ERROR: rtos_task_create web_server_conn");
 				}
 			} else {
@@ -1694,7 +1694,7 @@ static void example_start_captive_portal(void *param)
 
 	webs_terminate = 0;
 	if (webs_task == NULL) {
-		if (rtos_task_create(&webs_task, (const char *)"web_server", vCaptivePortalServer, NULL, STACKSIZE * 4, 1) != SUCCESS) {
+		if (rtos_task_create(&webs_task, (const char *)"web_server", vCaptivePortalServer, NULL, STACKSIZE * 4, 1) != RTK_SUCCESS) {
 			RTK_LOGE(NOTAG, "Create webserver task failed!\n");
 		}
 	}
@@ -1716,7 +1716,7 @@ void stop_captive_portal(void)
 		netconn_abort(pxHTTPListener);
 	}
 	if (webs_sema) {
-		if (rtos_sema_take(webs_sema, 15 * RTOS_TICK_RATE_HZ) != SUCCESS) {
+		if (rtos_sema_take(webs_sema, 15 * RTOS_TICK_RATE_HZ) != RTK_SUCCESS) {
 			if (pxHTTPListener) {
 				netconn_close(pxHTTPListener);
 				netconn_delete(pxHTTPListener);
@@ -1743,7 +1743,7 @@ void stop_captive_portal(void)
 
 void example_captive_portal(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_start_captive_portal"), example_start_captive_portal, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_start_captive_portal"), example_start_captive_portal, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "%s rtos_task_create failed\n", __FUNCTION__);
 	}
 }

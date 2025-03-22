@@ -603,7 +603,7 @@ void ctc_filter_task(void)
 	ctc_board_init();
 
 	while (1) {
-		if (SUCCESS == rtos_sema_take(ctc_sema, RTOS_MAX_DELAY)) {
+		if (RTK_SUCCESS == rtos_sema_take(ctc_sema, RTOS_MAX_DELAY)) {
 			for (i = 0; i < CTC_EN_CH; i++) {
 				ctc_flt[i].ctc_flt_data = ctc_sw_filter(&ctc_flt[i]);
 #if CTC_DATA_DBG
@@ -652,7 +652,7 @@ int  example_raw_ctc_sw_filter(void)
 		rtos_sema_create_binary(&ctc_sema);
 	}
 
-	if (rtos_task_create(NULL, "CTC_FILTER_DEMO", (rtos_task_t)ctc_filter_task, NULL, 2048, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "CTC_FILTER_DEMO", (rtos_task_t)ctc_filter_task, NULL, 2048, (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Cannot create CTC_FILTER_DEMO\r\n");
 	}
 

@@ -222,9 +222,9 @@ int wifi_set_group_id(unsigned char value)
 	return -1;
 }
 
-int wifi_get_autoreconnect(u8 *mode)
+int wifi_get_autoreconnect(u8 *enable)
 {
-	UNUSED(mode);
+	UNUSED(enable);
 	call_noused = __LINE__;
 	return -1;
 }

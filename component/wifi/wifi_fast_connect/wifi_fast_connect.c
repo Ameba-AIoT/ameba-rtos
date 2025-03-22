@@ -149,12 +149,6 @@ int wifi_do_fast_connect(void)
 	netifapi_netif_set_up(&xnetif[0]);
 #endif
 
-#if CONFIG_AUTO_RECONNECT
-	//setup reconnection flag
-	if (wifi_config_autoreconnect(1) < 0) {
-		return -1;
-	}
-#endif
 	data = (struct wlan_fast_reconnect *)malloc(sizeof(struct wlan_fast_reconnect));
 	if (data) {
 		memset(data, 0xff, sizeof(struct wlan_fast_reconnect));

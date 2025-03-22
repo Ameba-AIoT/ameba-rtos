@@ -27,6 +27,8 @@ where the current CMakeLists.txt is located.")
 
 set(WORKING_PROJECT_DIR ${CMAKE_BINARY_DIR}/..)
 set(MENUCONFIGDIR ${WORKING_PROJECT_DIR}/menuconfig)
+set(c_SOC_TYPE amebalite)
+set(c_COMPONENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../component)
 
 #EXAMPLE can be a absolute path, relative path where contain a CMakeLists and source files, or can be a specific example name
 if (EXAMPLE)

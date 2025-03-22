@@ -211,7 +211,7 @@ void example_atcmd_spi_master(void)
 	rtos_sema_create(&master_rx_sema, 0, 0xFFFF);
 	rtos_sema_create(&master_gpio_sema, 0, 0xFFFF);
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_master_demo_task"), (rtos_task_t)atcmd_spi_master_demo_task, NULL, 1024, 5) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_master_demo_task"), (rtos_task_t)atcmd_spi_master_demo_task, NULL, 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_spi_master_demo_task) failed", __FUNCTION__);
 	}
 }

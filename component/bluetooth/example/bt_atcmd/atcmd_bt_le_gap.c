@@ -1953,6 +1953,45 @@ static int atcmd_ble_gap_input_auth_oob(int argc, char **argv)
 	BT_LOGA("GAP input auth OOB TK OK!\r\n");
 	return 0;
 }
+
+static int atcmd_ble_gap_get_sc_local_oob(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	uint16_t ret = 0;
+	rtk_bt_le_sc_local_oob_data_t local_oob = {0};
+
+	ret = rtk_bt_le_sm_get_sc_local_oob(&local_oob);
+	if (ret) {
+		BT_LOGE("GAP get sc local oob data failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP get sc local oob data success\r\n");
+	BT_DUMPHEXA("rand: ", local_oob.rand, sizeof(local_oob.rand), false);
+	BT_DUMPHEXA("confirm: ", local_oob.confirm, sizeof(local_oob.confirm), false);
+	return 0;
+}
+
+static int atcmd_ble_gap_input_sc_peer_oob(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 0;
+	rtk_bt_le_sc_peer_oob_data_t peer_oob = {0};
+
+	hexdata_str_to_bd_addr(argv[0], peer_oob.addr, sizeof(peer_oob.addr));
+	hexdata_str_to_array(argv[1], peer_oob.rand, sizeof(peer_oob.rand));
+	hexdata_str_to_array(argv[2], peer_oob.confirm, sizeof(peer_oob.confirm));
+
+	ret = rtk_bt_le_sm_input_sc_peer_oob(&peer_oob);
+	if (ret) {
+		BT_LOGE("GAP input sc peer oob failed! err:0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP input sc peer oob success\r\n");
+	return 0;
+}
 #endif
 
 static int atcmd_ble_gap_get_bond_num(int argc, char **argv)
@@ -2583,6 +2622,8 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"auth_keycfm",  atcmd_ble_gap_confirm_auth_key,   3, 3},
 #if defined(RTK_BLE_SMP_OOB_SUPPORT) && RTK_BLE_SMP_OOB_SUPPORT
 	{"auth_oob",     atcmd_ble_gap_input_auth_oob,     3, 3},
+	{"sc_local_oob", atcmd_ble_gap_get_sc_local_oob,   1, 1},
+	{"sc_peer_oob",  atcmd_ble_gap_input_sc_peer_oob,  4, 4},
 #endif
 	{"bond_num",     atcmd_ble_gap_get_bond_num,       1, 1},
 	{"bond_info",    atcmd_ble_gap_get_bond_info,      1, 1},

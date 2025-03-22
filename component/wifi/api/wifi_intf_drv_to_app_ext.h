@@ -107,27 +107,27 @@ int wifi_set_lps_listen_interval(u8 interval);
 
 
 /**
- * @brief  Set reconnection mode with configuration.
- * @param[in]  mode:
- *                 - Set 0 to disable the reconnection mode.
- *                 - Set 1 to enable the reconnection mode but sta attempts to reconnect finite times.
- *                 - Set 2 to enable the infinite reconnection mode.
- * @return  0 if success, otherwise return -1.
- * @note  Defining CONFIG_AUTO_RECONNECT in "rtw_autoconf.h" needs to be
- * 	done before compiling, or this API won't be effective.
+ * @brief  Usually, user can set auto-reconnect in ameba_wificfg.c,
+ * If you need to temporarily turn auto-reconnect on or off, this API can help.
+ * @param[in]  enable:
+ *                 - 1: enable auto reconnect mode.
+ *                 - 0: disable auto reconnect mode.
+ * @return
+ *    - @ref RTW_SUCCESS
+ *    - @ref RTW_ERROR : CONFIG_AUTO_RECONNECT in not defined or creating reconnect timer failed.
  */
-int wifi_config_autoreconnect(u8 mode);
+int wifi_set_autoreconnect(u8 enable);
 
 /**
- * @brief  Get the result of setting reconnection mode.
- * @param[out]  mode: Point to the result of setting reconnection mode.
- * 	                - mode = 0 means autoreconnect is off.
- * 	                - mode = 1 means autoreconnect is on.
- * @return  0 if get the status of autoreconnect success, otherwise return -1.
- * @note  Defining CONFIG_AUTO_RECONNECT in "rtw_autoconf.h" needs to be
- * 	done before compiling, or this API won't be effective.
+ * @brief  Get the current auto-reconnect settings as a backup so you can restore the previous state after temporarily disabling it.
+ * @param[out]  enable: Point to the result of setting reconnection mode.
+ *                 - 1: enable the reconnection mode.
+ *                 - 0: disable the reconnection mode.
+ * @return
+ *    - @ref RTW_SUCCESS
+ *    - @ref RTW_ERROR : CONFIG_AUTO_RECONNECT in not defined.
  */
-int wifi_get_autoreconnect(u8 *mode);
+int wifi_get_autoreconnect(u8 *enable);
 
 /**
  * @brief  Get the associated clients with SoftAP.

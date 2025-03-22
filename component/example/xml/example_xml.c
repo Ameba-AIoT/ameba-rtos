@@ -108,7 +108,7 @@ static void example_xml_thread(void *param)
 
 void example_xml(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_xml_thread"), example_xml_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_xml_thread"), example_xml_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(init_thread) failed", __FUNCTION__);
 	}
 }

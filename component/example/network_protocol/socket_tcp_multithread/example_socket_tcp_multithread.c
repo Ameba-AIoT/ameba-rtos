@@ -115,7 +115,7 @@ static void example_socket_tcp_trx_thread(void *param)
 			//RtlInitSema(&tcp_tx_rx_sema, 1);
 			rtos_sema_create(&tcp_tx_rx_sema, 1, RTOS_SEMA_MAX_COUNT);
 
-			if (rtos_task_create(NULL, ((const char *)"tx_thread"), tx_thread, &client_fd, 2048 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(NULL, ((const char *)"tx_thread"), tx_thread, &client_fd, 2048 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(tx_thread) failed", __FUNCTION__);
 			} else {
 				tx_exit = 0;
@@ -123,7 +123,7 @@ static void example_socket_tcp_trx_thread(void *param)
 
 			rtos_time_delay_ms(10);
 
-			if (rtos_task_create(NULL, ((const char *)"rx_thread"), rx_thread, &client_fd, 2048 * 4, 1) != SUCCESS) {
+			if (rtos_task_create(NULL, ((const char *)"rx_thread"), rx_thread, &client_fd, 2048 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(rx_thread) failed", __FUNCTION__);
 			} else {
 				rx_exit = 0;
@@ -150,7 +150,7 @@ exit:
 
 void example_socket_tcp_multithread(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_socket_tcp_trx_thread"), example_socket_tcp_trx_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_socket_tcp_trx_thread"), example_socket_tcp_trx_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(example_socket_tcp_trx_thread) failed", __FUNCTION__);
 	}
 }

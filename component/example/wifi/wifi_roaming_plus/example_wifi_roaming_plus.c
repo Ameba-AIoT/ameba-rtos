@@ -218,14 +218,15 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 	struct ap_additional_info store_dhcp_info = {0};
 	struct _rtw_wifi_setting_t ap_info = {0};
 	struct psk_info PSK_INFO;
+	u8 autoreconn_en = 0;
 
 #ifdef CONFIG_LWIP_LAYER
 	netifapi_netif_set_up(&xnetif[0]);
 #endif
 	//disable autoreconnect to manually reconnect the specific ap or channel.
-#if CONFIG_AUTO_RECONNECT
-	wifi_config_autoreconnect(0);
-#endif
+	if ((wifi_get_autoreconnect(&autoreconn_en) == RTW_SUCCESS) && autoreconn_en) {
+		wifi_set_autoreconnect(0);
+	}
 #ifdef CONFIG_IEEE80211R
 	rtw_set_to_roam(1);
 #endif
@@ -318,9 +319,9 @@ WIFI_RETRY_LOOP:
 #ifdef CONFIG_IEEE80211R
 	rtw_set_to_roam(0);
 #endif
-#if CONFIG_AUTO_RECONNECT
-	wifi_config_autoreconnect(2);
-#endif
+	if (autoreconn_en) {
+		wifi_set_autoreconnect(1);
+	}
 	tick3 = rtos_time_get_current_system_time_ms();
 	ROAMING_DBG("\n\r == Roaming connect done  after %d ms = %d ms (connection) + %d ms (DHCP) ==\n", (tick3 - tick1), (tick2 - tick1), (tick3 - tick2));
 	return ret;
@@ -779,7 +780,7 @@ void wifi_roaming_plus_thread(void *param)
 
 void example_wifi_roaming_plus(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"wifi_roaming_thread"), wifi_roaming_plus_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"wifi_roaming_thread"), wifi_roaming_plus_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(wifi_roaming_thread) failed", __FUNCTION__);
 	}
 	return;

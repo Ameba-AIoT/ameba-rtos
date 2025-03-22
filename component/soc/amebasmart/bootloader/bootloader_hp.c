@@ -564,10 +564,8 @@ void BOOT_SOC_ClkSet(void)
 	RTK_LOGI(TAG, "AP Freq %lu MHz\n", APCLK);
 	RTK_LOGI(TAG, "LP Freq %lu MHz\n", LPCLK / MHZ_TICK_CNT);
 
-#ifndef CONFIG_CLINTWOOD
 	/* Note that if no anti-rollback and warm reset continuously, clear BOOT_CNT to avoid boot from older bootloader */
 	BKUP_Write(BKUP_REG0, BKUP_Read(BKUP_REG0) & ~BOOT_CNT_MASK);
-#endif
 }
 
 // 0x1 for core 0, 0x3 for core 0/1

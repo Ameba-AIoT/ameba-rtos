@@ -240,7 +240,7 @@ static void qspi_display_ili9341(void *para)
 
 int example_raw_spi_display_ili9341(void)
 {
-	if (rtos_task_create(NULL, "qspi_display_ili9341", (rtos_task_t)qspi_display_ili9341, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "qspi_display_ili9341", (rtos_task_t)qspi_display_ili9341, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Cannot create qspi_display_ili9341 demo task\n\r");
 	}
 

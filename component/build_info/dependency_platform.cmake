@@ -122,7 +122,7 @@ ameba_target_include(dep_${d_MCU_PROJECT_NAME}_swlib p_SCOPE interface ${d_SOC_P
 ####################################### dep_test end ##############################################
 
 ##################################### dep_usrcfg begin ############################################
-ameba_target_include(dep_${d_MCU_PROJECT_NAME}_usrcfg p_SCOPE interface ${d_SOC_PLATFORM_DIR}/usrcfg/include)
+ameba_target_include(dep_${d_MCU_PROJECT_NAME}_usrcfg p_SCOPE interface ${c_CMPT_USRCFG_DIR}/include)
 ###################################### dep_usrcfg end #############################################
 
 

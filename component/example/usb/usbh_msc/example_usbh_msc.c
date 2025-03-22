@@ -157,7 +157,7 @@ void example_usbh_msc_thread(void *param)
 	strcpy(path, logical_drv);
 
 	while (1) {
-		if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != SUCCESS) {
+		if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to take sema\n");
 			continue;
 		}
@@ -273,7 +273,7 @@ void example_usbh_msc(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH MSC demo start\n");
 
 	ret = rtos_task_create(&task, "example_usbh_msc_thread", example_usbh_msc_thread, NULL, USBH_MSC_THREAD_STACK_SIZE, 2);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }

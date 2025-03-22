@@ -102,8 +102,8 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 
 int example_mbed_uart_dma_rx_fc(void)
 {
-	if (SUCCESS != rtos_task_create(NULL, "uart_stream_rx_dma_flow_ctrl_demo", (rtos_task_t)uart_stream_rx_dma_flow_ctrl_demo, (void *)NULL, 3072,
-									(1))) {
+	if (RTK_SUCCESS != rtos_task_create(NULL, "uart_stream_rx_dma_flow_ctrl_demo", (rtos_task_t)uart_stream_rx_dma_flow_ctrl_demo, (void *)NULL, 3072,
+										(1))) {
 		RTK_LOGE(NOTAG, "Create uart_stream_rx_dma_flow_ctrl_demo Err!!\n");
 	}
 

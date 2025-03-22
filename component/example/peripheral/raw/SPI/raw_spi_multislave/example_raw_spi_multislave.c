@@ -415,7 +415,7 @@ void spi_multislave_task(void)
   */
 int example_raw_spi_multislave(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"spi_multislave_task"), (rtos_task_t)spi_multislave_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"spi_multislave_task"), (rtos_task_t)spi_multislave_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(spi_multislave_task) failed", __FUNCTION__);
 	}
 

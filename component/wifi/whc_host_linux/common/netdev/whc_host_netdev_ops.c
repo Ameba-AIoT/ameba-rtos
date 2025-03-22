@@ -74,7 +74,7 @@ unsigned int rtw_classify8021d(struct sk_buff *skb)
 	}
 
 	switch (skb->protocol) {
-	case htons(ETH_P_IP):
+	case htons(0x0800):
 		dscp = ip_hdr(skb)->tos & 0xfc;
 		break;
 	default:

@@ -109,7 +109,7 @@ static void msc_usb_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(msc_usb_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(msc_usb_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (msc_usb_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				msc_hotplug_ongoing_type = USBD_MSC_USB_HOTPLUG;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
@@ -151,7 +151,7 @@ static void msc_sd_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(msc_sd_status_changed_sema, RTOS_SEMA_MAX_COUNT) == SUCCESS) {
+		if (rtos_sema_take(msc_sd_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (msc_sd_status == SD_NODISK) {
 				msc_hotplug_ongoing_type = USBD_MSC_SD_HOTPLUG;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card removed\n");
@@ -232,7 +232,7 @@ static void example_usbd_msc_thread(void *param)
 
 #if CONFIG_USBD_MSC_USB_HOTPLUG
 	status = rtos_task_create(&usb_task, "msc_usb_hotplug_thread", msc_usb_hotplug_thread, NULL, 1024U, CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto exit_create_hotplug_fail;
 	}
@@ -241,7 +241,7 @@ static void example_usbd_msc_thread(void *param)
 #if CONFIG_USBD_MSC_SD_HOTPLUG
 	SD_SetCdCallback(sd_intr_cb);
 	status = rtos_task_create(&sd_task, "msc_sd_hotplug_thread", msc_sd_hotplug_thread, NULL, 1024U, CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
-	if (status != SUCCESS) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SD card hotplug thread fail\n");
 		goto exit_create_msc_sd_hotplug_fail;
 	}
@@ -288,7 +288,7 @@ void example_usbd_msc(void)
 	rtos_task_t task;
 
 	ret = rtos_task_create(&task, "example_usbd_msc_thread", example_usbd_msc_thread, NULL, 1024, CONFIG_USBD_MSC_INIT_THREAD_PRIORITY);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD MSC thread fail\n");
 	}
 }

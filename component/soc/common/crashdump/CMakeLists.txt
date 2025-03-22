@@ -18,7 +18,7 @@ ameba_list_append(public_libraries ${c_SDK_LIB_SOC_DIR}/lib_crashdump.a)
 
 #WARNING: Fixed section, DO NOT change!
 ameba_global_include(${public_includes})
-ameba_global_define(${public_defines})
+ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-achived
 
 ##########################################################################################

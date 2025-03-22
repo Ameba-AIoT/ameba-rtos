@@ -116,7 +116,7 @@ static void example_security_scan_response_cb(u8 *mac)
 	RTK_LOGD(TAG, "%s, recv response from"MAC_FMT"\n", __func__, MAC_ARG(mac));
 
 	if (g_scan_report_q) {
-		if (SUCCESS != rtos_queue_send(g_scan_report_q, &info, 0)) {
+		if (RTK_SUCCESS != rtos_queue_send(g_scan_report_q, &info, 0)) {
 			RTK_LOGW(TAG, "%s, send queue failed\n", __func__);
 			return;
 		}
@@ -192,7 +192,7 @@ static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, u
 		memcpy(info->mac, pnode->mac, 6);
 		memcpy(info->pubkey, buf + sizeof(struct example_frame_head), hdr->len);
 		if (g_pubkey_exchange_q) {
-			if (SUCCESS != rtos_queue_send(g_pubkey_exchange_q, &info, 0)) {
+			if (RTK_SUCCESS != rtos_queue_send(g_pubkey_exchange_q, &info, 0)) {
 				RTK_LOGE(TAG, "%s, send queue failed\n", __func__);
 				rtos_mem_free(info);
 				return;
@@ -209,7 +209,7 @@ static void pubkey_exchange_task(void *param)
 	struct pubkey_exchange_info *info = NULL;
 
 	while (1) {
-		if (SUCCESS == rtos_queue_receive(g_pubkey_exchange_q, &info, 0)) {
+		if (RTK_SUCCESS == rtos_queue_receive(g_pubkey_exchange_q, &info, 0)) {
 			if (info->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_REQUEST) {
 				example_security_pubkey_exchange_request_cb(info->mac, info->pubkey, info->pubkey_len);
 			} else if (info->type & WIFI_CAST_SEC_PUBKEY_EXCHANGE_RESPONSE) {
@@ -282,7 +282,7 @@ static void example_uart_init(void)
 	serial_baud(&g_uart_obj, UART_BAUD_RATE);
 	serial_format(&g_uart_obj, 8, ParityNone, 1);
 
-	if (rtos_task_create(NULL, ((const char *)"example_uart_read_task"), example_uart_read_task, NULL, 512 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_uart_read_task"), example_uart_read_task, NULL, 512 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_uart_read_task\n\r");
 	}
 }
@@ -441,7 +441,7 @@ static void example_security_initial_scan(struct example_scan_info **info_list, 
 
 	do {
 		example_send(WIFI_CAST_SCAN_REQUEST, WIFI_CAST_BROADCAST_MAC, NULL, 0);
-		if (SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
+		if (RTK_SUCCESS == rtos_queue_receive(g_scan_report_q, &info, 50)) {
 			u8 exist = 0;
 			if (g_info_list) {
 				for (int i = 0; i < info_num; i++) {
@@ -503,7 +503,7 @@ exit:
 
 static void example_security_scan(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_security_scan_task"), example_security_scan_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_security_scan_task"), example_security_scan_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_security_scan_task\n\r");
 	}
 }
@@ -522,7 +522,7 @@ static void example_main_task(void *param)
 	rtos_queue_create(&g_scan_report_q, 16, sizeof(struct example_scan_info));
 	rtos_queue_create(&g_pubkey_exchange_q, 16, sizeof(struct pubkey_exchange_info *));
 
-	if (rtos_task_create(NULL, ((const char *)"pubkey_exchange_task"), pubkey_exchange_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"pubkey_exchange_task"), pubkey_exchange_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create pubkey_exchange_task\n\r");
 	}
 
@@ -531,7 +531,7 @@ static void example_main_task(void *param)
 
 void app_example(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_main_task"), example_main_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create example_main_task\n\r");
 	}
 }

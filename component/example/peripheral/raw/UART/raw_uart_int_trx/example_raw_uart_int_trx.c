@@ -151,7 +151,7 @@ void uart_irq_demo(void)
 
 int example_raw_uart_int_trx(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"uart_irq_demo"), (rtos_task_t)uart_irq_demo, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"uart_irq_demo"), (rtos_task_t)uart_irq_demo, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_irq_demo) failed\n", __FUNCTION__);
 	}
 

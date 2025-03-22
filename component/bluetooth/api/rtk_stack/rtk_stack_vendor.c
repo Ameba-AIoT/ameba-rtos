@@ -52,6 +52,19 @@ T_GAP_CAUSE le_vendor_ae_scheme(void)
 }
 #endif
 
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+T_GAP_CAUSE le_vendor_set_mesh_packet_priority(T_GAP_LE_MESH_PACKET_PRIORITY prio)
+{
+	uint8_t param[1] = {0};
+
+	if (GAP_LE_MESH_PACKET_PRIORITY_HIGH == prio) {
+		param[0] = 0x01;
+	}
+
+	return gap_vendor_cmd_req(VENDOR_CMD_SET_MESH_INFO_OPCODE, 1, param);
+}
+#endif
+
 void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 {
 	T_GAP_VENDOR_CB_DATA cb_data;
@@ -89,6 +102,16 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 #endif
 		}
 		break;
+#endif
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+		case VENDOR_CMD_SET_MESH_INFO_OPCODE: {
+			if (cmd_rsp->cause) {
+				BT_LOGE("[%s] error cmd rsp, command: 0x%x, cause: 0x%x, is_cmpl_evt: %d, param_len: %d.\r\n", __func__, cmd_rsp->command, cmd_rsp->cause, cmd_rsp->is_cmpl_evt,
+						cmd_rsp->param_len);
+			} else {
+
+			}
+		}
 #endif
 		default:
 			(void)cmd_rsp;

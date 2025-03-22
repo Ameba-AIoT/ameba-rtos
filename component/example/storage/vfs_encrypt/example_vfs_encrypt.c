@@ -145,7 +145,7 @@ void example_vfs_encrypt_thread(void *param)
 
 void example_vfs_encrypt(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"example_vfs_encrypt_thread"), example_vfs_encrypt_thread, NULL, 2048 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_vfs_encrypt_thread"), example_vfs_encrypt_thread, NULL, 2048 * 4, 1) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(example_kv_thread) failed", __FUNCTION__);
 	}
 }

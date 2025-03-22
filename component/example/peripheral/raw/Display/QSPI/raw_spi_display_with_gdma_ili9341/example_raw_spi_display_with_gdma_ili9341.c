@@ -253,7 +253,7 @@ static void qspi_display_ili9341_gdma(void *para)
 
 int example_raw_spi_display_with_gdma_ili9341(void)
 {
-	if (rtos_task_create(NULL, "qspi_display_ili9341_gdma", (rtos_task_t)qspi_display_ili9341_gdma, NULL, (2048), (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "qspi_display_ili9341_gdma", (rtos_task_t)qspi_display_ili9341_gdma, NULL, (2048), (1)) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Cannot create qspi_display_ili9341_gdma demo task\n\r");
 	}
 

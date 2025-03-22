@@ -92,7 +92,7 @@ static void http_client_thread(void *param)
 
 void example_http_client(void)
 {
-	if (rtos_task_create(NULL, ((const char *)"http_client_thread"), http_client_thread, NULL, THREAD_STACK_SIZE * 4, 0) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"http_client_thread"), http_client_thread, NULL, THREAD_STACK_SIZE * 4, 0) != RTK_SUCCESS) {
 		printf("\n\r%s rtos_task_create(http_client_thread) failed\n", __FUNCTION__);
 	}
 	return;

@@ -335,10 +335,10 @@ void example_nat_repeater(void)
 {
 	wifi_repeater_ap_config_complete = 0;
 
-	if (rtos_task_create(NULL, ((const char *)"example_wlan_repeater_thread"), example_wlan_repeater_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_wlan_repeater_thread"), example_wlan_repeater_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}
-	if (rtos_task_create(NULL, ((const char *)"poll_ip_changed_thread"), poll_ip_changed_thread, NULL, 1024 * 4, 1) != SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"poll_ip_changed_thread"), poll_ip_changed_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGI(TAG, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 	}
 

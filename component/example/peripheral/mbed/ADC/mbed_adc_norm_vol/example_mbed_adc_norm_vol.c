@@ -42,7 +42,7 @@ void adc_analogin_voltage(void)
 
 int example_mbed_adc_norm_vol(void)
 {
-	if (rtos_task_create(NULL, "MBED_ADC_VOLTAGE_TASK", (rtos_task_t)adc_analogin_voltage, NULL, 3072, (1)) != SUCCESS) {
+	if (rtos_task_create(NULL, "MBED_ADC_VOLTAGE_TASK", (rtos_task_t)adc_analogin_voltage, NULL, 3072, (1)) != RTK_SUCCESS) {
 		RTK_LOGE(NOTAG, "Cannot create MBED_ADC_VOLTAGE_TASK\n");
 	}
 
